@@ -11145,6 +11145,9 @@
   .cosmic-hero-wrap *{ -webkit-tap-highlight-color:transparent; }
   .cosmic-orbit-ring{ fill:none; stroke:rgba(255,255,255,.16); stroke-width:1; }
   [data-theme="light"] .cosmic-orbit-ring{ stroke:rgba(18,26,32,.14); }
+  /* the rings as they were, while a new tier draws on (playRingDraw) -
+     plain here, orange by the rule below when it was orange */
+  .cosmic-ring-old{ fill:none; stroke:rgba(255,255,255,.16); stroke-width:1; }
   /* The permanent post-Supernova ring treatment \u2014 a warm, Nova-toned
      glass stroke instead of the plain neutral line every account
      starts with, with a soft matching glow so the ring itself reads
@@ -11173,10 +11176,24 @@
        .is-black - a near-black ring whose glow is ember: an eclipse
          corona. Static, like the orange. */
   .cosmic-orbit-ring.cosmic-orbit-ring-eclipse{ stroke-width:1.4; }
-  .cosmic-orbit-ring.cosmic-orbit-ring-eclipse.is-flares{
-    stroke:rgba(255,92,168,.55);
-    filter:drop-shadow(0 0 3px rgba(255,226,242,.5));
-  }
+  /* The "flares" ring carries no filter of its own: its glow is the
+     drop-shadow written out longhand so it can carry every colour - the
+     same rings again (.cosmic-ring-glow), blurred by the drop-shadow's 3px
+     (a standard deviation of 1.5 user units = 1.5/360 of the hero's width)
+     at the drop-shadow's .5. The blur sits on the svg element, which is
+     HTML-level, so iOS draws it. The pink and its drop-shadow are only the
+     fallback for when the colour picture could not be drawn (.is-flat). */
+  .cosmic-orbit-ring.cosmic-orbit-ring-eclipse.is-flares{ stroke:rgba(255,92,168,.55); }
+  .cosmic-orbit-ring.cosmic-orbit-ring-eclipse.is-flares.is-flat{ filter:drop-shadow(0 0 3px rgba(255,92,168,.5)); }
+  .cosmic-ring-svg{ position:absolute; inset:0; width:100%; height:100%; display:block; overflow:visible; }
+  .cosmic-ring-glowsvg{ opacity:.5; filter:blur(1.7px); filter:blur(calc(1.5 * 100cqw / 360)); }
+  .cosmic-ring-glow{ fill:none; stroke-width:1.4; }
+  /* THE RING DRAW (playRingDraw): the rings as they were, the new colour
+     drawing on, and the new rings hidden until it hands over. */
+  .cosmic-hero-ringlayer.is-drawing{ visibility:hidden; }
+  .cosmic-hero-ringdraw{ transform-origin:50% 47.368%; }
+  .cosmic-ring-arc{ fill:none; stroke-width:1.4; }
+  .cosmic-ring-glint{ opacity:0; }
   .cosmic-orbit-ring.cosmic-orbit-ring-eclipse.is-black{
     stroke:rgba(5,3,8,.55);
     filter:drop-shadow(0 0 3px rgba(255,112,52,.5));
@@ -59534,6 +59551,10 @@ let RING_ECLIPSE_STYLE = "flares";
    stroke carries is baked into every pixel's alpha. "" if it cannot be
    drawn; the CSS then strokes the ring in the core's pink. */
 const RING_FLARE_ORDER = ["red", "orange", "yellow", "white", "violet", "core"];
+/* chroma raised per colour: the cool two (the ice blue, the violet) are the
+   ones that washed out to lavender, so they get the most; the warm ones are
+   already near the edge of what a screen shows and would clip into red */
+const RING_FLARE_CHROMA = { red: 1.3, orange: 1.3, yellow: 1.3, white: 1.6, violet: 1.6, core: 1.3 }, RING_FLARE_LIGHT = .7;
 let ringFlaresUrlCache = null;
 function ringFlaresURL(){
   if(ringFlaresUrlCache !== null) return ringFlaresUrlCache;
@@ -59552,7 +59573,21 @@ function ringFlaresURL(){
       const l = Math.pow(L + .3963377774 * A + .2158037573 * B, 3), m = Math.pow(L - .1055613458 * A - .0638541728 * B, 3), q = Math.pow(L - .0894841775 * A - 1.2914855480 * B, 3);
       return [gam(4.0767416621 * l - 3.3077115913 * m + .2309699292 * q), gam(-1.2684380046 * l + 2.6097574011 * m - .3413193965 * q), gam(-.0041960863 * l - .7034186147 * m + 1.7076147010 * q)];
     };
-    const labs = RING_FLARE_ORDER.map(k => toLab(MYSTERY_COLOR[k]));
+    /* ROUND FOUR: "the flares ring reads paler and weaker than the
+       orange ... lavender/white with faint colour." The swatches are made
+       to sit on a bubble, not to be a 1.4-wide line at .55 on a dark sky:
+       the ice blue and the violet in particular washed out to lavender.
+       Each one here is the swatch with its chroma raised (RING_FLARE_CHROMA)
+       and its lightness held at RING_FLARE_LIGHT or above (the orange
+       tier's own colour sits at about .71), so every hue reads at phone
+       size. And each colour HOLDS for half its sixth of the ring before it
+       blends into the next, so the ring is six colours, not one long
+       blend - which is the other half of why it read as pale. */
+    const labs = RING_FLARE_ORDER.map(k => {
+      const [L, A, B] = toLab(MYSTERY_COLOR[k]);
+      const k2 = RING_FLARE_CHROMA[k] || 1.3;
+      return [Math.max(L, RING_FLARE_LIGHT), A * k2, B * k2];
+    });
     const N = 256, cv = document.createElement("canvas");
     cv.width = cv.height = N;
     const cx = cv.getContext("2d"), img = cx.createImageData(N, N), d = img.data, K = labs.length;
@@ -59561,8 +59596,9 @@ function ringFlaresURL(){
       let t = Math.atan2(x + .5 - N / 2, N / 2 - (y + .5)) / (2 * Math.PI);
       t = (t + 1) % 1 * K;
       const i = Math.floor(t) % K, j = (i + 1) % K;
-      let f = t - Math.floor(t); f = f * f * (3 - 2 * f);
-      const c = toRgb([0, 1, 2].map(n => labs[i][n] + (labs[j][n] - labs[i][n]) * f));
+      let f = Math.min(1, Math.max(0, (t - Math.floor(t) - .25) / .5)); f = f * f * (3 - 2 * f);
+      const lab = [0, 1, 2].map(n => labs[i][n] + (labs[j][n] - labs[i][n]) * f);
+      const c = toRgb(lab);
       const o = (y * N + x) * 4;
       d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 140;
     }
@@ -59570,6 +59606,130 @@ function ringFlaresURL(){
     ringFlaresUrlCache = cv.toDataURL("image/png");
   }catch(e){ ringFlaresUrlCache = ""; }
   return ringFlaresUrlCache;
+}
+/* THE RING DRAW (build 317, round four). "I do like how there's a small
+   cutscene within the main menu when the rings get colored." There was not
+   one - the rings simply changed the next time Home was built - so this is
+   it: the first time THIS DEVICE shows a ring tier above the last one it
+   showed (none -> orange, orange -> flares, none -> flares), Home opens
+   with the rings as they were, and the new colour draws on round each
+   ring - the outer first, the inner a beat behind - with a glint at its
+   head; then the new rings' glow comes up under it.
+   - The last tier shown is class26e.ringtier.seen - viewing history, like
+     class26e.daily.seen, so it is not on store and does not sync: a
+     second device gets its own moment. Missing (every device when this
+     shipped) counts as "no tier", so somebody already at a tier sees it
+     once.
+   - It is written when the draw STARTS. Leaving Home before then means
+     the next Home plays it.
+   - A drop (a reset) or Reduce motion: the new look, recorded, nothing
+     drawn.
+   - It never holds anything up and nothing waits for it. It waits for
+     them: no tour, loading screen, cutscene, reward card or What's New
+     may be up (the badge cutscenes' rule), reward cards still owed on
+     this Home go first (for up to RING_DRAW_CARD_WAIT_MS), and the page
+     has to be seen.
+   - Compositor-friendly: the old rings, and the new rings with their
+     glow, are still layers that only fade (opacity); what moves is a
+     filter-free svg of two strokes and two glints - the dash and the
+     glint's turn - for 1.6s. */
+const RING_TIER_RANK = { "": 0, supernova: 1, eclipse: 2 };
+const RING_SEEN_KEY = "class26e.ringtier.seen";
+const RING_DRAW_MS = 1400, RING_DRAW_STAGGER = 200, RING_DRAW_FADE = 450, RING_DRAW_CARD_WAIT_MS = 8000;
+let ringDrawFrom = null;
+/* A whole ring as a path that starts at `deg` clockwise from the top of
+   the planet (180,150) and runs clockwise, so a dash drawn along it grows
+   from there. */
+function ringArcPath(r, deg){
+  const a = deg * Math.PI / 180, x = 180 + r * Math.sin(a), y = 150 - r * Math.cos(a);
+  const f = n => n.toFixed(3);
+  return "M" + f(x) + " " + f(y) + " A" + r + " " + r + " 0 1 1 " + f(360 - x) + " " + f(300 - y) +
+    " A" + r + " " + r + " 0 1 1 " + f(x) + " " + f(y);
+}
+function ringTierSeen(){ try{ return localStorage.getItem(RING_SEEN_KEY); }catch(e){ return null; } }
+function markRingTierSeen(tier){ try{ localStorage.setItem(RING_SEEN_KEY, tier || ""); }catch(e){} }
+function ringMotionOff(){
+  try{
+    return !!(theme && theme.reduceMotion) || document.documentElement.dataset.reduceMotion === "true" ||
+      !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }catch(e){ return false; }
+}
+/* What showHome should build: the tier to draw FROM, or null for the
+   rings as they are (recording the tier as seen when nothing will play). */
+function ringDrawPlan(){
+  const tier = homeRingTier(), seen = ringTierSeen();
+  if(seen === tier) return null;
+  const from = (seen !== null && Object.prototype.hasOwnProperty.call(RING_TIER_RANK, seen)) ? seen : "";
+  if(RING_TIER_RANK[tier] > RING_TIER_RANK[from] && !ringMotionOff()) return from;
+  markRingTierSeen(tier);
+  return null;
+}
+function ringDrawHeld(since){
+  try{
+    if(document.hidden) return true;
+    /* reward cards owed on this Home go first (they arrive a beat after
+       it settles), so the draw is not played under one - but only for so
+       long: a card that cannot show (an open chat, a run to resume) must
+       not keep the rings in their old colour */
+    if(Date.now() - (since || 0) < RING_DRAW_CARD_WAIT_MS && homeUnlocksOwed(pendingHomeUnlocks())) return true;
+    if(document.getElementById("genprofile-overlay") || document.getElementById("splashscreen") ||
+       document.getElementById("tour-overlay") || document.getElementById("supernova-cutscene") ||
+       document.getElementById("badge-cutscene") || document.getElementById("vroom-cutscene") ||
+       document.querySelector(".rs-spot, .xs-scene, .scene-bridge, .tier-cutscene")) return true;
+    if(homeUnlockPlaying) return true;
+    if(typeof whatsNewHolds === "function" && whatsNewHolds()) return true;
+  }catch(e){}
+  return false;
+}
+function playRingDraw(hero, since){
+  if(!hero || !hero.isConnected) return;
+  since = since || Date.now();
+  const ring = hero.querySelector(".cosmic-hero-ringlayer.is-drawing"), draw = hero.querySelector(".cosmic-hero-ringdraw"),
+    old = hero.querySelector(".cosmic-hero-ringold");
+  if(!ring || !draw || !old || hero.dataset.ringDrawing) return;
+  const settle = () => { old.remove(); draw.remove(); ring.classList.remove("is-drawing"); };
+  /* switched on while it waited: the new look, no draw */
+  if(ringMotionOff()){ markRingTierSeen(ring.dataset.ringTo); settle(); return; }
+  if(ringDrawHeld(since)){ setTimeout(() => playRingDraw(hero, since), 400); return; }
+  hero.dataset.ringDrawing = "1";
+  markRingTierSeen(ring.dataset.ringTo);
+  const END = RING_DRAW_MS + RING_DRAW_STAGGER, REVEAL = END - 100;
+  /* The "flares" rings are turning (cosmic-orbit-spin); the drawn copy
+     is set to where they will be when it hands over, and its strokes
+     still start at the top (ringArcPath, the glint's arm). */
+  let phi = 0;
+  try{
+    const sp = ring.getAnimations().find(an => an.animationName === "cosmic-orbit-spin");
+    if(sp){ const dur = Number(sp.effect.getTiming().duration) || 96000; phi = (((Number(sp.currentTime) || 0) + REVEAL) % dur) / dur * 360; }
+  }catch(e){}
+  draw.style.transform = "rotate(" + phi.toFixed(3) + "deg)";
+  const ease = "cubic-bezier(.45,0,.25,1)";
+  [...draw.querySelectorAll(".cosmic-ring-arcbox")].forEach((box, i) => {
+    const arc = box.querySelector(".cosmic-ring-arc"), C = Number(arc.dataset.len);
+    arc.setAttribute("d", ringArcPath(Number(arc.dataset.r), -phi));
+    arc.animate([{ strokeDashoffset: C + 2 }, { strokeDashoffset: 0 }],
+      { duration: RING_DRAW_MS, delay: i * RING_DRAW_STAGGER, easing: ease, fill: "both" });
+  });
+  [...draw.querySelectorAll(".cosmic-ring-glintbox")].forEach((g, i) => {
+    g.animate([{ transform: "rotate(" + (-phi) + "deg)" }, { transform: "rotate(" + (360 - phi) + "deg)" }],
+      { duration: RING_DRAW_MS, delay: i * RING_DRAW_STAGGER, easing: ease, fill: "both" });
+    g.querySelector(".cosmic-ring-glint").animate([{ opacity: 0 }, { opacity: 1, offset: .08 }, { opacity: 1, offset: .82 }, { opacity: 0 }],
+      { duration: RING_DRAW_MS, delay: i * RING_DRAW_STAGGER, fill: "both" });
+  });
+  old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: END, easing: "ease-in", fill: "forwards" });
+  ring.classList.remove("is-drawing");
+  const rev = ring.animate([{ opacity: 0 }, { opacity: 1 }], { duration: RING_DRAW_FADE, delay: REVEAL, easing: "ease-out", fill: "both" });
+  draw.animate([{ opacity: 1 }, { opacity: 0 }], { duration: RING_DRAW_FADE, delay: REVEAL, easing: "ease-in", fill: "forwards" });
+  /* Tidy up once the hand-over has actually happened - read off the
+     animation, not the clock, so a paused or slowed page waits for it. */
+  const tidy = () => {
+    if(!hero.isConnected) return;
+    if(rev.playState !== "finished" && !((Number(rev.currentTime) || 0) >= REVEAL + RING_DRAW_FADE)){ setTimeout(tidy, 400); return; }
+    old.remove(); draw.remove();
+    try{ rev.cancel(); }catch(e){}
+    delete hero.dataset.ringDrawing;
+  };
+  setTimeout(tidy, END + RING_DRAW_FADE + 200);
 }
 
 /* ---- THE SWAT ITEM (build 243, reworked in 244) ----
@@ -62375,46 +62535,143 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
      sphere's filters. */
   const ringTier = homeRingTier();
   const ringStyle = ringTier === "eclipse" ? (RING_ECLIPSE_STYLE === "black" ? "black" : "flares") : "";
-  let ringLayer = null, ringPaint = "";
-  if(ringStyle){
-    ringLayer = mkLayer("cosmic-hero-ringlayer is-" + ringStyle);
+  /* A ring tier this device has not shown yet draws itself on (see
+     playRingDraw): showHome hands over the tier it showed last, and only
+     that one build uses it. */
+  const drawFrom = (useTierIcons && typeof ringDrawFrom === "string" && ringTier &&
+    RING_TIER_RANK[ringTier] > (RING_TIER_RANK[ringDrawFrom] || 0)) ? ringDrawFrom : null;
+  ringDrawFrom = null;
+  const radii = [108, useTierIcons ? HOME_OUTER_R : 152];
+  const ringSvgOf = (cls) => {
+    const l = document.createElementNS(svgNS, "svg");
+    l.setAttribute("viewBox", "0 -12 360 342");
+    l.setAttribute("class", "cosmic-ring-svg " + cls);
+    return l;
+  };
+  const ringCircle = (r, cls) => {
+    const c = document.createElementNS(svgNS, "circle");
+    c.setAttribute("cx", 180); c.setAttribute("cy", 150); c.setAttribute("r", r);
+    if(cls) c.setAttribute("class", cls);
+    return c;
+  };
+  /* the six flare colours round the ring: a conic picture, laid over the
+     whole ring as a pattern so a single stroke carries it */
+  const flarePattern = (host, id, url) => {
+    const P = 160, ld = document.createElementNS(svgNS, "defs");
+    const pat = document.createElementNS(svgNS, "pattern");
+    pat.setAttribute("id", id);
+    pat.setAttribute("patternUnits", "userSpaceOnUse");
+    pat.setAttribute("x", 180 - P); pat.setAttribute("y", 150 - P);
+    pat.setAttribute("width", 2 * P); pat.setAttribute("height", 2 * P);
+    const im = document.createElementNS(svgNS, "image");
+    im.setAttribute("x", 0); im.setAttribute("y", 0);
+    im.setAttribute("width", 2 * P); im.setAttribute("height", 2 * P);
+    im.setAttribute("preserveAspectRatio", "none");
+    im.setAttribute("href", url);
+    try{ im.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", url); }catch(e){}
+    pat.appendChild(im); ld.appendChild(pat); host.appendChild(ld);
+    return "url(#" + id + ")";
+  };
+  /* THE GLOW CARRIES THE COLOUR (round four). A drop-shadow is one colour
+     however many the ring has, so the "flares" ring's glow is the orange's
+     glow written out longhand: the same rings again, blurred by exactly
+     the drop-shadow's 3px (a standard deviation of 1.5 user units, in
+     .cosmic-ring-glowsvg) at the drop-shadow's .5. Same size, same
+     strength, every colour its own. The blur is on an HTML-level svg, not
+     on SVG elements, so iOS draws it. */
+  let ringLayer = null, ringSvg = null, ringPaint = "";
+  if(ringStyle || drawFrom !== null){
+    ringLayer = document.createElement("div");
+    ringLayer.className = "cosmic-hero-layer cosmic-hero-ringlayer" + (ringStyle ? " is-" + ringStyle : "");
+    ringLayer.setAttribute("aria-hidden", "true");
     const url = ringStyle === "flares" ? ringFlaresURL() : "";
     if(url){
-      /* the six flare colours round the ring: a conic picture, laid over
-         the whole ring as a pattern so a single stroke carries it */
-      const P = 160, ld = document.createElementNS(svgNS, "defs");
-      const pat = document.createElementNS(svgNS, "pattern");
-      pat.setAttribute("id", depthId + "flares");
-      pat.setAttribute("patternUnits", "userSpaceOnUse");
-      pat.setAttribute("x", 180 - P); pat.setAttribute("y", 150 - P);
-      pat.setAttribute("width", 2 * P); pat.setAttribute("height", 2 * P);
-      const im = document.createElementNS(svgNS, "image");
-      im.setAttribute("x", 0); im.setAttribute("y", 0);
-      im.setAttribute("width", 2 * P); im.setAttribute("height", 2 * P);
-      im.setAttribute("preserveAspectRatio", "none");
-      im.setAttribute("href", url);
-      try{ im.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", url); }catch(e){}
-      pat.appendChild(im); ld.appendChild(pat); ringLayer.appendChild(ld);
-      ringPaint = "url(#" + depthId + "flares)";
+      const gsvg = ringSvgOf("cosmic-ring-glowsvg");
+      const gp = flarePattern(gsvg, depthId + "flaresg", url);
+      radii.forEach(r => { const g = ringCircle(r, "cosmic-ring-glow"); g.style.stroke = gp; gsvg.appendChild(g); });
+      ringLayer.appendChild(gsvg);
     }
+    ringSvg = ringSvgOf("cosmic-ring-main");
+    if(url) ringPaint = flarePattern(ringSvg, depthId + "flares", url);
+    ringLayer.appendChild(ringSvg);
   }
-  [108, useTierIcons ? HOME_OUTER_R : 152].forEach(r => {
-    const ring = document.createElementNS(svgNS, "circle");
-    ring.setAttribute("cx", 180); ring.setAttribute("cy", 150); ring.setAttribute("r", r);
+  radii.forEach(r => {
+    const ring = ringCircle(r);
     /* The permanent, post-cutscene reward for the rings specifically
-       \u2014 a colored, glass-toned stroke instead of the plain neutral
+       — a colored, glass-toned stroke instead of the plain neutral
        one every account starts with, so reaching the top of the
        ladder visibly changes the sphere itself, not just one badge
        among six. */
     ring.setAttribute("class", "cosmic-orbit-ring" +
-      (ringStyle ? " cosmic-orbit-ring-eclipse is-" + ringStyle : ringTier === "supernova" ? " cosmic-orbit-ring-supernova" : ""));
-    if(ringLayer){
+      (ringStyle ? " cosmic-orbit-ring-eclipse is-" + ringStyle + (ringStyle === "flares" && !ringPaint ? " is-flat" : "")
+        : ringTier === "supernova" ? " cosmic-orbit-ring-supernova" : ""));
+    if(ringSvg){
       if(ringPaint) ring.style.stroke = ringPaint;
-      ringLayer.appendChild(ring);
+      ringSvg.appendChild(ring);
       return;
     }
     svg.appendChild(ring);
   });
+  /* THE RING DRAW's two extra layers (round four, playRingDraw): the
+     rings as they were (still, under everything), and the new colour as
+     a stroke that draws on round each ring with a glint at its head. The
+     new rings wait hidden until it plays. Only on the one Home build
+     that has a new tier to show. */
+  let ringOld = null, ringDraw = null;
+  if(drawFrom !== null){
+    ringLayer.classList.add("is-drawing");
+    ringOld = ringSvgOf("cosmic-hero-ringold");
+    radii.forEach(r => ringOld.appendChild(ringCircle(r, "cosmic-ring-old" + (drawFrom === "supernova" ? " cosmic-orbit-ring-supernova" : ""))));
+    ringDraw = document.createElement("div");
+    ringDraw.className = "cosmic-hero-layer cosmic-hero-ringdraw";
+    ringDraw.setAttribute("aria-hidden", "true");
+    const dsvg = ringSvgOf("cosmic-ring-drawsvg");
+    const gl = document.createElementNS(svgNS, "radialGradient");
+    gl.setAttribute("id", depthId + "glint");
+    const glintTint = ringStyle === "black" ? "#FF8A52" : ringStyle === "flares" ? "#FFE6F4" : "#FFC9A6";
+    [["0%", "#FFFFFF", "1"], ["35%", glintTint, ".75"], ["100%", glintTint, "0"]].forEach(([o, c, op]) => {
+      const st = document.createElementNS(svgNS, "stop");
+      st.setAttribute("offset", o); st.setAttribute("stop-color", c); st.setAttribute("stop-opacity", op);
+      gl.appendChild(st);
+    });
+    const dd = document.createElementNS(svgNS, "defs");
+    dd.appendChild(gl); dsvg.appendChild(dd);
+    const newPaint = ringStyle === "flares" ? (ringPaint || "rgba(255,92,168,.55)") : ringStyle === "black" ? "rgba(5,3,8,.55)" : "rgba(245,128,77,.55)";
+    /* outer ring first, the inner a beat behind it */
+    radii.slice().sort((x, y) => y - x).forEach(r => {
+      const C = 2 * Math.PI * r;
+      /* A path, not a circle, so it can START where the draw begins
+         (ringArcPath) without rotating its own coordinates - the flares
+         pattern is laid in those coordinates, and rotating them would turn
+         the colours away from the rings it hands over to. */
+      const box = document.createElementNS(svgNS, "g");
+      box.setAttribute("class", "cosmic-ring-arcbox");
+      const arc = document.createElementNS(svgNS, "path");
+      arc.setAttribute("class", "cosmic-ring-arc");
+      arc.setAttribute("d", ringArcPath(r, 0));
+      arc.dataset.r = r;
+      arc.setAttribute("stroke-dasharray", C.toFixed(2) + " " + (C + 4).toFixed(2));
+      arc.setAttribute("stroke-dashoffset", (C + 2).toFixed(2));
+      arc.style.stroke = newPaint;
+      arc.dataset.len = C.toFixed(2);
+      box.appendChild(arc);
+      /* the glint turns on an arm about the planet's centre: a group
+         moved to (180,150), and inside it the one that rotates */
+      const arm = document.createElementNS(svgNS, "g");
+      arm.setAttribute("transform", "translate(180 150)");
+      const gbox = document.createElementNS(svgNS, "g");
+      gbox.setAttribute("class", "cosmic-ring-glintbox");
+      const halo = document.createElementNS(svgNS, "circle");
+      halo.setAttribute("class", "cosmic-ring-glint");
+      halo.setAttribute("cx", 0); halo.setAttribute("cy", -r); halo.setAttribute("r", 5.5);
+      halo.setAttribute("fill", "url(#" + depthId + "glint)");
+      gbox.appendChild(halo); arm.appendChild(gbox);
+      dsvg.append(box, arm);
+    });
+    ringDraw.appendChild(dsvg);
+    ringLayer.dataset.ringFrom = drawFrom;
+    ringLayer.dataset.ringTo = ringTier;
+  }
   const glowFilter = document.createElementNS(svgNS, "filter");
   glowFilter.setAttribute("id", "cosmicGlowWarp");
   glowFilter.setAttribute("x", "-90%"); glowFilter.setAttribute("y", "-90%");
@@ -62757,7 +63014,9 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   }
   svg.classList.add("cosmic-hero-main");
   wrap.append(glowBox);
+  if(ringOld) wrap.appendChild(ringOld);
   if(ringLayer) wrap.appendChild(ringLayer);
+  if(ringDraw) wrap.appendChild(ringDraw);
   wrap.append(svg, animLayer, orbitLayer, innerOrbitLayer);
   /* The sphere's life, on the compositor: two soft light pools drifting
      over the surface inside a circular window the exact size of the
@@ -69415,7 +69674,11 @@ function showHome(){
      of Welcome's original generic icon set, which stays exactly as it
      was \u2014 explicitly not to be touched. Same sphere and orbit
      geometry either way; only which icons sit in the badges differs. */
+  /* a ring tier this device has not shown yet draws itself on (playRingDraw) */
+  try{ ringDrawFrom = ringDrawPlan(); }catch(e){ ringDrawFrom = null; }
   const heroWrap = buildCosmicHero(true, undefined, true);
+  ringDrawFrom = null;
+  if(heroWrap.querySelector(".cosmic-hero-ringdraw")) setTimeout(() => playRingDraw(heroWrap), 600);
 
   /* Appended inside heroWrap itself, as .homeglow-hero, instead of
      alongside it as a plain sibling of panel \u2014 see the .homeglow-hero

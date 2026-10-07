@@ -3682,8 +3682,10 @@ re-evaluated on the next check.
 - New `localStorage` keys follow `class26e.<thing>` and are wrapped in
   `try/catch`. Keys added for the update machinery: `class26e.statusbar.v1`,
   `class26e.frame.ok`, `class26e.update.dismissed`, `class26e.daily.seen`,
-  and session-scoped `class26e.updating`. None of these live on `store`, so the
-  `applyLoadedData()` default rule doesn't apply to them.
+  and session-scoped `class26e.updating`; and `class26e.ringtier.seen` (the
+  last Home ring tier this device showed - see the ring draw). None of these
+  live on `store`, so the `applyLoadedData()` default rule doesn't apply to
+  them.
 
 ---
 
@@ -14989,7 +14991,7 @@ disagree with it.
     offset from when its class went on), so a loaded machine gives the
     same frames as a quiet one. The 100% hundo trigger is not covered by
     the gate.
-- **HOME'S RINGS HAVE TWO TIERS: ORANGE, THEN THE SIX FLARES (build 317).** *"I
+- **HOME'S RINGS HAVE TWO TIERS: ORANGE, THEN THE SIX FLARES, AND THEY DRAW ON (build 317).** *"I
   noticed that the orange glowing rings light up when you hit max rank.
   Let's do it so that that happens once every one of flares and secret
   flares are lit up. OR make it where the rank one is all orange but if
@@ -15027,11 +15029,31 @@ disagree with it.
       `ringFlaresURL()` draws one once onto a canvas (in hue order -
       red, orange, yellow, ice blue, violet, pink - blended in OKLab so
       no join goes muddy, the .55 baked into every pixel's alpha) and the
-      stroke is a `<pattern>` carrying it. A pearl drop-shadow, and the
-      whole ring layer turns once every 96s (`cosmic-orbit-spin`, a full
-      turn, so the loop is seamless; on the shared loop clock; off under
-      Reduce motion). Turning a circle about its own centre moves the
-      colours and not the stroke.
+      stroke is a `<pattern>` carrying it. The whole ring layer turns
+      once every 96s (`cosmic-orbit-spin`, a full turn, so the loop is
+      seamless; on the shared loop clock; off under Reduce motion).
+      Turning a circle about its own centre moves the colours and not
+      the stroke.
+    - **Round four: "the flares ring reads paler and weaker than the
+      orange ... lavender/white with faint colour."** Three causes, all
+      fixed without touching the stroke or the .55: the swatches are
+      bubble colours, and the ice blue and violet in particular wash out
+      as a 1.4-wide line at .55 on a dark sky, so each colour's chroma is
+      raised (`RING_FLARE_CHROMA`, 1.6 for those two, 1.3 for the warm
+      four, which would clip into red any higher) and its lightness held
+      at `RING_FLARE_LIGHT` (.7, about the orange's own); each colour
+      HOLDS for half its sixth of the ring before blending, so it reads
+      as six colours rather than one long blend; and the glow was a
+      single pearl drop-shadow, which whitened everything. **A
+      drop-shadow is one colour however many the ring has**, so the
+      flares ring's glow is the orange's drop-shadow written out
+      longhand: the same two rings again in `.cosmic-ring-glowsvg`,
+      blurred by exactly the drop-shadow's 3px (a standard deviation of
+      1.5 user units, i.e. `calc(1.5 * 100cqw / 360)` on the hero's
+      container) at its .5. The blur sits on an HTML-level svg rather
+      than on SVG elements, so iOS draws it. Measured: every flare's
+      centre has a chroma (max - min channel) of 189-255 against the
+      orange's 168.
     - `"black"` - a near-black ring (`rgba(5,3,8,.55)`) whose drop-shadow
       is ember: an eclipse corona, still, the same width as the orange.
   - **The top tier's rings sit in a layer of their own**
@@ -15040,18 +15062,63 @@ disagree with it.
     transform and never repaints the sphere's turbulence filters. No SVG
     filter anywhere (those break on real iOS); the drop-shadow is the
     same CSS filter the orange has always used.
-  - There is no separate "ring-colouring" cutscene on Home: the rings
-    change tier when Home next mounts (after the Supernova cutscene, or
-    after the Genesis scene for the last secret flare), with the hero's
-    own .22s settle-in.
+  - **THE RING DRAW (round four).** *"I do like how there's a small
+    cutscene within the main menu when the rings get colored."* There was
+    none - the rings simply changed when Home was next built - so
+    `playRingDraw()` is it. The first time THIS DEVICE shows a ring tier
+    above the last one it showed (none -> orange, orange -> flares,
+    none -> flares), Home opens with the rings as they were and the new
+    colour draws on round each ring from the top, the outer first and
+    the inner 200ms behind (1.4s each), with a soft glint at the head;
+    the old rings fade under it and the real new rings (with their glow)
+    fade up as it hands over.
+    - `showHome()` asks `ringDrawPlan()` before building the hero and
+      hands the old tier over in `ringDrawFrom`, which only that one
+      build reads. That build puts the new rings in a hidden ring layer
+      (`.is-drawing`, even for the orange, which otherwise lives in the
+      main svg) and adds `.cosmic-hero-ringold` and
+      `.cosmic-hero-ringdraw`. Their classes are deliberately NOT
+      `.cosmic-orbit-ring`, so everything that counts rings still counts
+      two.
+    - The last tier shown is `class26e.ringtier.seen`, viewing history
+      like `class26e.daily.seen`: not on `store`, so it does not sync and
+      a second device gets its own moment. Missing counts as no tier, so
+      a device already at a tier when this shipped plays it once. It is
+      written when the draw STARTS, so leaving Home before then means the
+      next Home plays it. A drop (a reset) or Reduce motion records the
+      new tier and draws nothing.
+    - It holds nothing up and nothing waits for it. It waits: no tour,
+      loading screen, cutscene, reward card, scene bridge or What's New
+      may be up (`ringDrawHeld`, the badge cutscenes' rule), reward
+      cards still owed on this Home go first for up to
+      `RING_DRAW_CARD_WAIT_MS`, and the page has to be visible.
+    - Compositor-friendly: the old rings and the new rings (glow and
+      all) are still layers that only fade; what moves is one
+      filter-free svg - two dashed strokes and two glints - for 1.6s.
+      The handover and the tidy-up are read off the animations, not the
+      clock, so a slow or seeked page cannot pull the layers out early.
+      The flares rings keep turning while hidden, so the drawn copy is
+      set to the angle they will be at when it hands over.
+    - **Recording it frame-stepped needs one correction**: the draw's
+      animations are created 600ms (real time) after Home mounts, which
+      is many frames late on a recorder that takes a second a frame, so
+      the recorder puts them on the virtual clock as starting 0.6s after
+      the swap.
   - **Gate: `check_b317_rings`** - all four states on both reference
     devices, read off the rings Home really builds: the top tier matches
     the orange's stroke-width, opacity, stroke-opacity, glow shape and
     alpha and paint alpha, with no extra circles; by default its paint
     is light and carries all six flare hues round the ring (sampled off
-    the pattern's picture at 24 angles); the sweep turns and stops under
-    Reduce motion; and `"black"` is built the same way, near-black with
-    an ember glow. Fails 1888b11 (5.2 wide, six extra circles, black).
+    the pattern's picture at 24 angles), each flare's centre at least as
+    vivid as the orange and the glow the same rings blurred by the
+    drop-shadow's own amount; the sweep turns and stops under Reduce
+    motion; `"black"` is built the same way, near-black with an ember
+    glow; and the ring draw opens in the old look, draws both rings
+    filter-free with glints, records the key, hands over, does not play
+    on the second Home, waits for a tour, plays from no tier when the
+    key is missing, and does nothing under Reduce motion. Fails 1888b11
+    (5.2 wide, six extra circles, black, no draw); the vividness check
+    fails 3644f1b (round three).
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h

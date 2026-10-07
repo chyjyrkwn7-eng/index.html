@@ -13742,7 +13742,17 @@ def check_b317_rings(br):
     six secret flares' own colours round the ring (RING_ECLIPSE_STYLE
     "flares"), with "black" (a near-black ring, an ember glow) behind the
     flag. Those assertions fail on 1888b11, whose black ring was 5.2 wide
-    with six more circles round it and no glow."""
+    with six more circles round it and no glow.
+
+    Round four: "the flares ring reads paler and weaker than the orange" -
+    each flare colour must be at least as vivid as the orange along the ring,
+    and the glow must carry the colours (the drop-shadow written out
+    longhand: the same rings blurred by its 3px at its .5). And "I do like
+    how there's a small cutscene within the main menu when the rings get
+    colored" - there was none, so the ring draw: plays once per new tier per
+    device (class26e.ringtier.seen), from no tier too, waits for a tour, not
+    under Reduce motion, and never on the second Home. All of that fails on
+    1888b11, and the vividness fails on 3644f1b (round three)."""
     print("\n317. Home's rings: orange at Supernova, the top tier at Supernova plus every secret flare, built like the orange")
     for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
@@ -13775,18 +13785,31 @@ def check_b317_rings(br):
           const look = async (supernova, flares) => {
             store.supernovaAchieved = supernova; store.pendingSupernovaCutscene = false;
             store.mysteryColorsFound = {}; MYSTERY_ORDER.forEach(k => store.mysteryColorsFound[k] = flares === 'all' || (flares === 'five' && k !== 'core'));
+            /* this device has already shown this tier, so Home draws nothing */
+            try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); }catch(e){}
             showHome(); await wait(500);
             const hero = document.querySelector('.screen-home-actual .cosmic-hero-wrap');
             const rs = [...document.querySelectorAll('.screen-home-actual .cosmic-orbit-ring')];
             /* anything else drawn for the rings: the old shadow, corona and rims */
             const extras = hero ? [...hero.querySelectorAll('circle, path, ellipse')].filter(x => /orbit-(eclipse|ring)/.test(x.getAttribute('class') || '') && !x.classList.contains('cosmic-orbit-ring')).length : -1;
             const per = [];
+            const imgOf = (circle) => { const m = getComputedStyle(circle).stroke.match(/url\\("?#([^")]+)"?\\)/);
+              const pt = m && document.querySelector('[id="' + m[1] + '"]'); const im = pt && pt.querySelector('image');
+              return im ? (im.getAttribute('href') || '') : ''; };
             for(const x of rs){ const cs = getComputedStyle(x), p = await paint(x);
+              /* the glow written out longhand: the same ring, blurred, in an svg of its own */
+              const gs = hero ? [...hero.querySelectorAll('.cosmic-ring-glowsvg circle')].filter(g => g.getAttribute('r') === x.getAttribute('r')) : [];
+              const gsvg = gs[0] && gs[0].ownerSVGElement, gcs = gsvg ? getComputedStyle(gsvg) : null;
+              const blurM = gcs && String(gcs.filter).match(/blur\\(([\\d.]+)px\\)/);
+              const glow = gs.length ? { n: gs.length, sw: parseFloat(getComputedStyle(gs[0]).strokeWidth), samePaint: !!imgOf(x) && imgOf(gs[0]) === imgOf(x),
+                op: +gcs.opacity, blurPx: blurM ? +blurM[1] : -1, unitPx: hero.getBoundingClientRect().width / 360 } : null;
               per.push({ sw: parseFloat(cs.strokeWidth), op: +cs.opacity, so: +cs.strokeOpacity, shape: shape(cs.filter), glowA: glowA(cs.filter), glowC: glowC(cs.filter),
-                svgFilter: x.hasAttribute('filter') || /url\\(/.test(cs.filter), ownAnim: cs.animationName,
+                svgFilter: x.hasAttribute('filter') || /url\\(/.test(cs.filter), ownAnim: cs.animationName, glow,
                 alphas: [...new Set(p.map(q => q[3]))], lum: p.length ? Math.round(p.reduce((t, q) => t + (q[0] + q[1] + q[2]) / 3, 0) / p.length) : -1,
+                /* vividness: chroma (max - min channel) at each sample */
+                chroma: p.map(q => Math.max(q[0], q[1], q[2]) - Math.min(q[0], q[1], q[2])),
                 hues: p.map(q => hue(q[0], q[1], q[2])).filter(hh => hh >= 0).map(Math.round) }); }
-            const layer = rs[0] && rs[0].ownerSVGElement;
+            const layer = rs[0] && (rs[0].closest('.cosmic-hero-ringlayer') || rs[0].ownerSVGElement);
             return { n: rs.length,
               orange: rs.filter(x => x.classList.contains('cosmic-orbit-ring-supernova')).length,
               top: rs.filter(x => x.classList.contains('cosmic-orbit-ring-eclipse')).length,
@@ -13805,6 +13828,54 @@ def check_b317_rings(br):
             out.topStill = await look(true, 'all');
             delete document.documentElement.dataset.reduceMotion;
             try{ RING_ECLIPSE_STYLE = 'black'; out.black = await look(true, 'all'); RING_ECLIPSE_STYLE = out.style; }catch(e){ out.black = { err: String(e) }; }
+            /* THE RING DRAW. Orange shown last, every flare now found. */
+            const KEY = 'class26e.ringtier.seen', key = () => localStorage.getItem(KEY);
+            const heroNow = () => document.querySelector('.screen-home-actual .cosmic-hero-wrap');
+            const drawState = () => { const h = heroNow(); const d = h && h.querySelector('.cosmic-hero-ringdraw'), o = h && h.querySelector('.cosmic-hero-ringold'), rl = h && h.querySelector('.cosmic-hero-ringlayer');
+              const arcs = d ? [...d.querySelectorAll('.cosmic-ring-arc')] : [];
+              return { draw: !!d, old: o ? o.querySelectorAll('circle').length : 0, oldOrange: o ? o.querySelectorAll('.cosmic-orbit-ring-supernova').length : 0,
+                arcs: arcs.length, arcsMoving: arcs.filter(a => a.getAnimations().length).length,
+                glints: d ? d.querySelectorAll('.cosmic-ring-glint').length : 0,
+                filtered: d ? [d, ...d.querySelectorAll('*')].filter(e => { const f = getComputedStyle(e).filter; return (f && f !== 'none') || e.hasAttribute('filter'); }).length : -1,
+                hidden: rl ? getComputedStyle(rl).visibility === 'hidden' : null, playing: !!(h && h.dataset.ringDrawing),
+                rings: h ? h.querySelectorAll('.cosmic-orbit-ring').length : 0, key: key() }; };
+            const allFlares = v => { store.supernovaAchieved = true; store.pendingSupernovaCutscene = false; store.mysteryColorsFound = {};
+              MYSTERY_ORDER.forEach(k => store.mysteryColorsFound[k] = v === 'all' || k !== 'core'); };
+            const until = async (fn, ms) => { for(let t = 0; t < ms; t += 100){ if(fn()) return true; await wait(100); } return !!fn(); };
+            /* nothing else owed on Home: the reward cards would go first */
+            const clearCards = () => { try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); }catch(e){}
+              document.querySelectorAll('.rs-spot').forEach(x => x.remove()); try{ homeUnlockPlaying = false; }catch(e){} };
+            allFlares('all'); clearCards(); localStorage.setItem(KEY, 'supernova');
+            showHome(); await wait(150);
+            out.dPending = drawState();
+            await until(() => drawState().playing, 3000); await wait(250);
+            out.dPlaying = drawState();
+            await until(() => !drawState().draw, 5000);
+            out.dDone = drawState();
+            showHome(); await wait(1200);
+            out.dSecond = drawState();
+            /* a tour is up: it waits, then plays when the tour has gone */
+            clearCards(); localStorage.setItem(KEY, 'supernova');
+            const tov = document.createElement('div'); tov.id = 'tour-overlay'; document.body.appendChild(tov);
+            showHome(); await wait(1800);
+            out.dHeld = drawState();
+            tov.remove();
+            await until(() => drawState().playing, 3000);
+            out.dAfterTour = drawState();
+            await until(() => !drawState().draw, 5000);
+            /* never shown a tier on this device (the key missing): from no tier */
+            allFlares('five'); clearCards(); localStorage.removeItem(KEY);
+            showHome(); await wait(150);
+            out.dFresh = drawState();
+            await until(() => drawState().playing, 3000);
+            out.dFreshPlaying = drawState();
+            await until(() => !drawState().draw, 5000);
+            /* Reduce motion: the new look, recorded, nothing drawn */
+            allFlares('all'); clearCards(); localStorage.setItem(KEY, 'supernova');
+            const rm0 = theme.reduceMotion; theme.reduceMotion = true; document.documentElement.dataset.reduceMotion = 'true';
+            showHome(); await wait(1200);
+            out.dReduce = drawState();
+            theme.reduceMotion = rm0; delete document.documentElement.dataset.reduceMotion;
           }catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
         check(dev + ": nothing threw", not r.get("threw"), r.get("threw"))
@@ -13812,9 +13883,15 @@ def check_b317_rings(br):
         op_ = (o.get("per") or [{}])[0]
         def built_like_orange(x):
             if x.get("n") != 2 or x.get("extras") != 0 or len(x.get("per") or []) != 2: return False
+            m = re.search(r"([\d.]+)px\)", op_.get("shape") or "")
+            std = float(m.group(1)) / 2 if m else -9   # a drop-shadow's blur radius is twice its standard deviation
             for q in x["per"]:
+                g = q.get("glow")
+                same_glow = (q["shape"] == op_.get("shape") and abs(q["glowA"] - op_.get("glowA", -9)) < 1e-6 and not g)
+                longhand = (q["shape"] == "none" and g and g["n"] == 1 and abs(g["sw"] - q["sw"]) < 1e-6 and g["samePaint"]
+                            and abs(g["op"] - op_.get("glowA", -9)) < 1e-6 and abs(g["blurPx"] - std * g["unitPx"]) < .12)
                 if not (abs(q["sw"] - op_.get("sw", -9)) < 1e-6 and q["op"] == op_.get("op") and q["so"] == op_.get("so")
-                        and q["shape"] == op_.get("shape") and abs(q["glowA"] - op_.get("glowA", -9)) < 1e-6
+                        and (same_glow or longhand)
                         and not q["svgFilter"] and q["ownAnim"] == "none"
                         and q["alphas"] and all(abs(a - op_["alphas"][0]) <= .01 for a in q["alphas"])):
                     return False
@@ -13835,6 +13912,14 @@ def check_b317_rings(br):
               r.get("style") == "flares" and all(q.get("lum", -1) > 100 for q in tp)
               and len(fh) == 6 and all(all(any(near(h0, hh) for hh in q.get("hues") or []) for h0 in fh) for q in tp),
               {"style": r.get("style"), "lum": [q.get("lum") for q in tp], "hues": [q.get("hues") for q in tp], "flareHues": fh})
+        # each flare's own stretch of the ring (every fourth of 24 samples is a
+        # flare's centre) at least as vivid as the orange; the glow carries them
+        oc = (op_.get("chroma") or [0])[0]
+        # a flat stroke samples once; it has no flare stretches to read
+        cen = [[c[k] for k in range(0, 24, 4)] if len(c) == 24 else [] for c in (q.get("chroma") or [] for q in tp)]
+        check(dev + ": every flare colour is at least as vivid as the orange along the ring, and the glow carries the colours",
+              oc > 0 and all(len(c) == 6 and min(c) >= oc for c in cen)
+              and all((q.get("glow") or {}).get("samePaint") for q in tp), {"orange": oc, "flareCentres": cen, "glow": [q.get("glow") for q in tp]})
         check(dev + ": the flares sweep turns as a layer (a full turn, compositor only) and Reduce motion stops it",
               "cosmic-orbit-spin" in (t.get("layerAnim") or "") and "cosmic-orbit-spin" not in (ts.get("layerAnim") or "x")
               and built_like_orange(ts), [t.get("layerAnim"), ts.get("layerAnim")])
@@ -13843,6 +13928,23 @@ def check_b317_rings(br):
               built_like_orange(bk) and all(0 <= q.get("lum", -1) < 24 for q in bp)
               and all(len(q.get("glowC") or []) == 3 and q["glowC"][0] > 200 and q["glowC"][0] > q["glowC"][2] + 100 for q in bp)
               and "cosmic-orbit-spin" not in (bk.get("layerAnim") or ""), bk)
+        dp, dg, dd, d2, dh, dat, df, dfp, drm = (r.get(k) or {} for k in ("dPending", "dPlaying", "dDone", "dSecond", "dHeld", "dAfterTour", "dFresh", "dFreshPlaying", "dReduce"))
+        check(dev + ": a tier new to this device opens in the old look (the orange rings, the new ones hidden)",
+              dp.get("draw") and dp.get("old") == 2 and dp.get("oldOrange") == 2 and dp.get("hidden") is True and dp.get("rings") == 2, dp)
+        check(dev + ": ... then the new colour draws on round both rings with a glint, filter-free, and the tier is recorded",
+              dg.get("playing") and dg.get("arcs") == 2 and dg.get("arcsMoving") == 2 and dg.get("glints") == 2
+              and dg.get("filtered") == 0 and dg.get("key") == "eclipse", dg)
+        check(dev + ": ... and hands over to the real rings, the draw layers gone",
+              dd.get("draw") is False and dd.get("old") == 0 and dd.get("hidden") is False and dd.get("rings") == 2, dd)
+        check(dev + ": the second Home does not play it again",
+              d2.get("draw") is False and d2.get("key") == "eclipse", d2)
+        check(dev + ": it waits while a tour is up (key untouched), then plays",
+              dh.get("draw") and not dh.get("playing") and dh.get("key") == "supernova"
+              and dat.get("playing") and dat.get("key") == "eclipse", [dh, dat])
+        check(dev + ": a device that never recorded a tier draws it once from no tier",
+              df.get("draw") and df.get("old") == 2 and df.get("oldOrange") == 0 and dfp.get("playing") and dfp.get("key") == "supernova", [df, dfp])
+        check(dev + ": Reduce motion: no draw, the new look, the tier recorded",
+              drm.get("draw") is False and drm.get("key") == "eclipse" and drm.get("rings") == 2, drm)
         check(dev + ": every secret flare without max rank: neither treatment",
               f.get("n") == 2 and f.get("orange") == 0 and f.get("top") == 0 and f.get("extras") == 0, f)
         check(dev + ": the flare bubbles and the tiny flares are all still there in the top tier",
