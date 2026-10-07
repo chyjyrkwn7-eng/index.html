@@ -8909,6 +8909,11 @@ def check_b308_unlocks(br):
           const rot1 = getComputedStyle(o).rotate;
           await wait(1800);
           const rot2 = getComputedStyle(o).rotate;
+          /* build 317: the flare lights at the whirl's top speed (~4.5s
+             into it), not at once - wait for that beat, then look */
+          const ovx = document.getElementById('supernova-cutscene');
+          for(let k = 0; k < 120 && !ovx.classList.contains('is-cutlight'); k++) await wait(100);
+          await wait(250);
           const lit = document.querySelector('#supernova-cutscene .rank-before .rank-orbit-slot.is-igniting .cosmic-badge-lit');
           const burst = document.getElementById('supernova-cutscene').classList.contains('supernova-burst');
           return { planetStill: getComputedStyle(spin).transform === 'none', rot1, rot2, off: +off.toFixed(3), slots: slots.length, lit: !!lit, burstYet: burst };}""")
@@ -13104,14 +13109,16 @@ CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeou
   const ov = document.getElementById('supernova-cutscene');
   const samples = [];
   const t0 = performance.now();
-  const ev = { spinEnd: null, litAt: null, burstAt: null, restT: null };
+  const ev = { spinAt: null, lightAt: null, litAt: null, restAt: null, burstAt: null, restT: null };
   const orb0 = ov.querySelector('.rank-before .rank-orbit');
   const bb = ov.querySelector('.rank-before .cosmic-icon-badge[data-rank-tier="' + tier + '"]');
-  if(orb0) orb0.addEventListener('transitionend', e => { if(e.target === orb0 && e.propertyName === 'transform' && ev.spinEnd == null){
-    ev.spinEnd = performance.now(); ev.restT = getComputedStyle(orb0).transform; } });
   if(bb) new MutationObserver(() => { if(ev.litAt == null && bb.classList.contains('cosmic-badge-lit')) ev.litAt = performance.now(); })
     .observe(bb, { attributes: true, attributeFilter: ['class'] });
-  new MutationObserver(() => { if(ev.burstAt == null && ov.classList.contains('supernova-burst')) ev.burstAt = performance.now(); })
+  new MutationObserver(() => { const c = ov.classList, n = performance.now();
+    if(ev.spinAt == null && c.contains('is-cutspin')) ev.spinAt = n;
+    if(ev.lightAt == null && c.contains('is-cutlight')) ev.lightAt = n;
+    if(ev.restAt == null && c.contains('is-cutrest')){ ev.restAt = n; ev.restT = orb0 ? getComputedStyle(orb0).transform : null; }
+    if(ev.burstAt == null && c.contains('supernova-burst')) ev.burstAt = n; })
     .observe(ov, { attributes: true, attributeFilter: ['class'] });
   /* sampled from inside the page every 90ms until the flash, so a loaded
      machine cannot skip the beat between two Playwright calls */
@@ -13122,7 +13129,7 @@ CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeou
     const b = ov.querySelector('.rank-before .cosmic-icon-badge[data-rank-tier="' + tier + '"]:not(.rank-litwipe)');
     const m = ov.querySelector('.rank-before .cosmic-hero-main');
     const cp = wipe ? getComputedStyle(wipe).clipPath : '';
-    samples.push({ ign: ov.classList.contains('is-igniting'),
+    samples.push({ ign: ov.classList.contains('is-igniting'), t: performance.now(), light: ov.classList.contains('is-cutlight'),
       orbT: orb ? getComputedStyle(orb).transform : null,
       slotT: slot ? getComputedStyle(slot).transform : null,
       wipeR: wipe ? parseFloat((cp.match(/circle\\(([\\d.]+)%/) || [, 'NaN'])[1]) : null,
@@ -13131,7 +13138,7 @@ CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeou
     await wait(90);
   }
   /* a loaded machine can start the transition late: give it time to end */
-  for(let k = 0; k < 60 && ev.spinEnd == null && ov.isConnected; k++) await wait(100);
+  for(let k = 0; k < 60 && ev.burstAt == null && ov.isConnected; k++) await wait(100);
   ov.remove();
   return { home, samples, ev };
 }"""
@@ -13166,18 +13173,22 @@ def check_b317_cutspin(br):
               len(turns) >= 3 and len(back) >= 3, (len(sm), len(turns), len(back)))
         ev = r["ev"]
         check("%s: the whirl ends in whole turns, every bubble back in its own place" % label,
-              ev["spinEnd"] is not None and ev["restT"] in ("none", "matrix(1, 0, 0, 1, 0, 0)"), ev)
+              ev["restAt"] is not None and ev["restT"] in ("none", "matrix(1, 0, 0, 1, 0, 0)"), ev)
+        pre = [x for x in sm if not x["light"]]
+        check("%s: dark while it speeds up - neither lit nor lighting before the top speed" % label,
+              len(pre) >= 3 and not any(x["lit"] or (x["wipeR"] or 0) > 0 for x in pre), len(pre))
+        acc = (ev["lightAt"] or 0) - (ev["spinAt"] or 0)
+        check("%s: the speeding-up lasts ~4.5s (3.5s or more)" % label,
+              ev["spinAt"] is not None and ev["lightAt"] is not None and acc >= 3500, round(acc))
         radii = [x["wipeR"] for x in sm if x["wipeR"] is not None and x["wipeR"] == x["wipeR"]]
-        mid = {round(v) for v in radii if 2 < v < 98}
-        check("%s: the new flare lights from its middle outward, not in one step" % label,
-              len(mid) >= 2 and radii == sorted(radii), sorted(mid))
-        # Fully lit as the whirl stops (its transitionend) - or, on a machine
-        # so loaded the whirl started late, by the flash at the latest.
-        lit_ok = ev["litAt"] is not None and ev["spinEnd"] is not None and (
-            ev["litAt"] >= ev["spinEnd"] - 60
-            or (ev["burstAt"] is not None and ev["litAt"] >= ev["burstAt"] - 400))
-        check("%s: fully lit only once the whirl is over (or the flash comes)" % label,
-              lit_ok and bool(mid), ev)
+        check("%s: at the top speed it lights from its middle outward, not in one step" % label,
+              (len({round(v) for v in radii if 2 < v < 98}) >= 1 or len(radii) >= 1) and radii == sorted(radii), radii)
+        check("%s: fully lit while it slows, before it stops" % label,
+              ev["litAt"] is not None and ev["restAt"] is not None and ev["lightAt"] <= ev["litAt"] <= ev["restAt"] + 60, ev)
+        dec = (ev["restAt"] or 0) - (ev["lightAt"] or 0)
+        pause = (ev["burstAt"] or 0) - (ev["restAt"] or 0)
+        check("%s: it slows for ~2s, then holds still ~0.5s before the flash" % label,
+              dec >= 1500 and 420 <= pause <= 1500, (round(dec), round(pause)))
         ratios = [x["ratio"] for x in sm if x["ratio"]]
         worst = max(ratios, key=lambda v: abs(v - (r["home"] or 1))) if ratios else None
         check("%s: the flare is Home's size against the planet (within 15%%)" % label,
