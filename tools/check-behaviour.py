@@ -12994,6 +12994,73 @@ def check_b317_volume(br):
     ctx.close()
 
 
+def check_b317_challenge_specials(br):
+    """Build 317. "The challenge ones could be grabbing their weapon or
+    spiking their head or multiple bees coming out or the hacker could be
+    randomly turns red you see what I'm saying? Creativity, do it." Each of
+    the twelve challenge characters has a special of its own: putting
+    char-special on a live character starts more animations in its drawing
+    than the idle alone runs, every part drawn only for it (.cx-sp) is
+    invisible without the class, something in it is visible part-way
+    through, every animation it starts is finite, and taking the class off
+    puts the idle back exactly as it was. Written against 57212ce, where
+    none of the twelve had one."""
+    print("\n317. the challenge characters each have a special")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => {
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const frame = () => new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));
+      const ids = ['detective', 'masked', 'zeus', 'poseidon', 'clown', 'valkyrie', 'marksman', 'astronaut', 'hacker', 'timekeeper', 'ronin', 'hive'];
+      const out = { challenge: AVATAR_CHARACTERS.filter(c => c.feat && !c.secret && !c.retired && !c.ultimate && !c.unlock).map(c => c.id), rows: [] };
+      const running = el => el.getAnimations({ subtree: true }).filter(a => a.playState === 'running');
+      for(const id of ids){
+        const row = { id };
+        const w = document.createElement('div');
+        w.className = 'profile-hero-avatar char-live';
+        w.style.cssText = 'position:fixed;left:0;top:0;width:120px;height:120px;z-index:9999';
+        const s = drawAvatarCharSVG(id); s.style.cssText = 'width:100%;height:100%;display:block';
+        w.appendChild(s); document.body.appendChild(w);
+        await frame();
+        const sp = [...s.querySelectorAll('.cx-sp')];
+        row.parts = sp.length;
+        row.hiddenWithout = sp.length > 0 && sp.every(n => getComputedStyle(n).opacity === '0');
+        row.before = running(w).length;
+        w.classList.add('char-special'); await frame();
+        const during = running(w);
+        row.during = during.length;
+        const extra = during.filter(a => /^cxsp-/.test(a.animationName || ''));
+        row.finite = extra.length > 0 && extra.every(a => isFinite(a.effect.getComputedTiming().endTime));
+        row.endMs = Math.max(0, ...extra.map(a => a.effect.getComputedTiming().endTime));
+        /* part-way through, something drawn for it shows */
+        extra.forEach(a => { a.pause(); a.currentTime = row.endMs * .45; });
+        await frame();
+        row.shows = sp.some(n => parseFloat(getComputedStyle(n).opacity) > .5);
+        row.table = (typeof CHAR_SPECIAL_MS === 'object' && CHAR_SPECIAL_MS) ? (CHAR_SPECIAL_MS[id] || 0) : null;
+        w.classList.remove('char-special'); await frame();
+        row.after = running(w).length;
+        row.hiddenAfter = sp.every(n => getComputedStyle(n).opacity === '0');
+        w.remove();
+        out.rows.push(row);
+      }
+      return out;
+    }""")
+    check("the twelve are exactly the challenge characters",
+          sorted(r["challenge"]) == sorted(x["id"] for x in r["rows"]), r["challenge"])
+    for row in r["rows"]:
+        check("%s: char-special starts more animations than the idle (%d -> %d)"
+              % (row["id"], row["before"], row["during"]),
+              row["during"] > row["before"] and row["finite"], row)
+        check("%s: its special-only parts are hidden without it, and show part-way through"
+              % row["id"], row["parts"] > 0 and row["hiddenWithout"] and row["shows"]
+              and row["hiddenAfter"], [row["parts"], row["hiddenWithout"], row["shows"], row["hiddenAfter"]])
+        check("%s: taking it off leaves the idle as it was" % row["id"],
+              row["after"] == row["before"], [row["before"], row["after"]])
+        if row["table"] is not None:
+            check("%s: CHAR_SPECIAL_MS covers the whole special (%sms >= %dms)"
+                  % (row["id"], row["table"], row["endMs"]), row["table"] >= row["endMs"] - 50)
+    ctx.close()
+
+
 def check_b317_tabplate(br):
     """Build 317. "They got a smidge smaller so let's ensure they are still a
     nice size AND let's ensure you can see their backgrounds because right
@@ -13406,6 +13473,7 @@ def main():
             check_b316_tiles(br)
             check_b317_daily(br)
             check_b317_volume(br)
+            check_b317_challenge_specials(br)
             check_b317_tabplate(br)
             check_b317_rankup(br)
         finally:

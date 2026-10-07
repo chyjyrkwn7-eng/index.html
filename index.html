@@ -17349,6 +17349,159 @@
   @keyframes cx-lockon{ 0%{ transform:none; } 30%{ transform:rotate(90deg) scale(.55); } 55%{ transform:rotate(90deg) scale(1.1); } 70%, 100%{ transform:rotate(90deg); } }
   @keyframes cx-breathe{ 0%, 100%{ transform:none; } 50%{ transform:scale(1.012, 1.03); } }
   @keyframes cx-sleep-head{ 0%, 100%{ transform:translateY(.8px) rotate(5deg); } 50%{ transform:translateY(.45px) rotate(4.4deg); } }
+  /* ---- CHALLENGE CHARACTER SPECIALS (build 317) ----
+     "The challenge ones could be grabbing their weapon or spiking their
+     head or multiple bees coming out or the hacker could be randomly
+     turns red you see what I'm saying? Creativity, do it." One special
+     per challenge character, 2.6-3.2s, played while the live element
+     carries .char-special (the scheduler and CHAR_SPECIAL_MS are the
+     character-specials block's; the lengths below match the table entries
+     added after drawAvatarCharSVG). Every special-only part is a .cx-sp
+     group drawn with opacity="0", so the still drawing, a flip-book
+     recording and Reduce motion never show it. Finite animations only,
+     transforms, opacity and dash offsets - never a filter. */
+  .avatarchar-svg .cx-sp :is(.cx-sp-zsbolt, .cx-sp-saswing) path,
+  .avatarchar-svg .cx-sp-tkarc{ stroke-dasharray:100 100; stroke-dashoffset:100; }
+  @keyframes cxsp-show{ 0%{ opacity:0; } 5%{ opacity:1; } 93%{ opacity:1; } 100%{ opacity:0; } }
+  .char-special .avatarchar-svg :is(.cx-k-detective .cx-sp-dt, .cx-k-zeus .cx-sp-zs, .cx-k-sheriff .cx-sp-sh, .cx-k-clown .cx-sp-cl,
+    .cx-k-koi .cx-sp-koi, .cx-k-marksman .cx-sp-mks, .cx-k-starblade .cx-sp-sa, .cx-k-timekeeper .cx-sp-tk, .cx-k-ronin .cx-sp-rn,
+    .cx-k-hive .cx-sp-hv, .cx-k-masked .cx-sp-mk, .cx-k-hacker .cx-sp-hk){ animation:cxsp-show var(--sp-ms, 3s) linear both; }
+  .avatarchar-svg :is(.cx-k-detective, .cx-k-sheriff, .cx-k-ronin){ --sp-ms:2.8s; }
+  .avatarchar-svg :is(.cx-k-masked, .cx-k-marksman){ --sp-ms:2.6s; }
+  .avatarchar-svg .cx-k-hive{ --sp-ms:3.2s; }
+
+  /* Detective: the magnifier reads one eye, then the other; a glint; "!" */
+  .avatarchar-svg .cx-sp-dtbang{ transform-origin:50% 100%; }
+  .char-special .avatarchar-svg .cx-k-detective .cx-sp-dtglass{ animation:cxsp-dt-glass 2.8s ease-in-out both; }
+  .char-special .avatarchar-svg .cx-k-detective .cx-sp-dtglint{ animation:cxsp-dt-glint 2.8s linear both; }
+  .char-special .avatarchar-svg .cx-k-detective .cx-sp-dtbang{ animation:cxsp-dt-bang 2.8s ease-out both; }
+  @keyframes cxsp-dt-glass{ 0%{ transform:translate(9px,14px) rotate(-14deg); } 22%, 38%{ transform:none; }
+    54%, 70%{ transform:translate(-6.6px,.2px) rotate(3deg); } 84%{ transform:translate(-3px,1.6px) rotate(-3deg); } 100%{ transform:translate(9px,14px) rotate(-14deg); } }
+  @keyframes cxsp-dt-glint{ 0%, 24%{ opacity:0; transform:scale(.2); } 30%{ opacity:1; transform:scale(1.15) rotate(45deg); } 38%, 56%{ opacity:0; transform:scale(.3); }
+    62%{ opacity:1; transform:scale(1) rotate(45deg); } 70%, 100%{ opacity:0; transform:scale(.3); } }
+  @keyframes cxsp-dt-bang{ 0%, 56%{ opacity:0; transform:translateY(2px) scale(.3); } 63%{ opacity:1; transform:translateY(-.6px) scale(1.25); }
+    69%{ transform:none; } 74%{ transform:rotate(-8deg); } 79%{ transform:rotate(6deg); } 84%{ opacity:1; transform:none; } 96%, 100%{ opacity:0; transform:translateY(-1px); } }
+
+  /* Masked One: a red mane bristles out, the crack flares, the slots burn */
+  .avatarchar-svg .cx-sp-mkmane{ transform-origin:50% 62%; }
+  .char-special .avatarchar-svg .cx-k-masked .cx-sp-mkmane{ animation:cxsp-mk-mane 2.6s cubic-bezier(.3,1.4,.5,1) both; }
+  .char-special .avatarchar-svg .cx-k-masked .cx-sp-mkflare{ animation:cxsp-mk-flare 2.6s linear both; }
+  .char-special .avatarchar-svg .cx-k-masked .cx-sp-mkeyes{ animation:cxsp-mk-eyes 2.6s ease-out both; }
+  .char-special .avatarchar-svg .cx-k-masked .cx-sp-mkring{ animation:cxsp-mk-ring 2.6s ease-out both; }
+  @keyframes cxsp-mk-mane{ 0%, 10%{ opacity:0; transform:scale(.86); } 22%{ opacity:1; transform:scale(1.16); } 30%{ transform:scale(1.06); }
+    38%{ transform:scale(1.15); } 46%{ transform:scale(1.08); } 76%{ opacity:.9; transform:scale(1.1); } 100%{ opacity:0; transform:scale(.9); } }
+  @keyframes cxsp-mk-flare{ 0%, 8%{ opacity:0; } 12%{ opacity:1; } 15%{ opacity:.25; } 19%{ opacity:1; } 24%{ opacity:.5; } 28%, 78%{ opacity:1; } 100%{ opacity:0; } }
+  @keyframes cxsp-mk-eyes{ 0%, 16%{ opacity:0; transform:scaleX(.6); } 24%{ opacity:1; transform:scaleX(1.1); } 32%, 76%{ opacity:1; transform:none; } 100%{ opacity:0; } }
+  @keyframes cxsp-mk-ring{ 0%, 18%{ opacity:0; transform:scale(.6); } 22%{ opacity:1; } 58%, 100%{ opacity:0; transform:scale(2.2); } }
+
+  /* Zeus: the eyes charge, a bolt is hurled corner to corner */
+  .char-special .avatarchar-svg .cx-k-zeus .cx-sp-zseyes{ animation:cxsp-zs-eyes 3s ease-in-out both; }
+  .char-special .avatarchar-svg .cx-k-zeus .cx-sp-zsflash{ animation:cxsp-zs-flash 3s linear both; }
+  .char-special .avatarchar-svg .cx-k-zeus .cx-sp-zsbolt{ animation:cxsp-zs-bolt 3s steps(1, end) both; }
+  .char-special .avatarchar-svg .cx-k-zeus .cx-sp-zsbolt path{ animation:cxsp-zs-draw 3s linear both; }
+  @keyframes cxsp-zs-eyes{ 0%{ opacity:0; } 12%{ opacity:.6; } 20%{ opacity:.3; } 30%{ opacity:1; } 36%{ opacity:1; } 72%{ opacity:.8; } 100%{ opacity:0; } }
+  @keyframes cxsp-zs-flash{ 0%, 34%{ opacity:0; } 37%{ opacity:.5; } 42%{ opacity:0; } 47%{ opacity:.25; } 53%, 100%{ opacity:0; } }
+  @keyframes cxsp-zs-bolt{ 0%{ opacity:0; } 33%{ opacity:1; } 52%{ opacity:.25; } 55%{ opacity:1; } 62%{ opacity:.35; } 65%{ opacity:1; } 72%{ opacity:.6; } 76%{ opacity:.3; } 80%, 100%{ opacity:0; } }
+  @keyframes cxsp-zs-draw{ 0%, 33%{ stroke-dashoffset:100; } 41%, 100%{ stroke-dashoffset:0; } }
+
+  /* Sheriff: the quick draw - up, a shot in the air, smoke, spun away */
+  .avatarchar-svg .cx-sp-shgun{ transform-origin:60% 86%; }
+  .char-special .avatarchar-svg .cx-k-sheriff .cx-sp-shgun{ animation:cxsp-sh-gun 2.8s ease-in-out both; }
+  .char-special .avatarchar-svg .cx-k-sheriff .cx-sp-shflash{ animation:cxsp-sh-flash 2.8s ease-out both; }
+  .char-special .avatarchar-svg .cx-k-sheriff .cx-sp-shsmoke{ animation:cxsp-sh-smoke 2.8s ease-out both; }
+  @keyframes cxsp-sh-gun{ 0%{ transform:translateY(14px) rotate(-50deg); } 20%{ transform:rotate(6deg); } 27%, 40%{ transform:none; }
+    43%{ transform:translate(.5px,.6px) rotate(-18deg); } 52%, 72%{ transform:none; } 100%{ transform:translateY(14px) rotate(-410deg); } }
+  @keyframes cxsp-sh-flash{ 0%, 40%{ opacity:0; transform:scale(.4); } 42%{ opacity:1; transform:scale(1.35); } 52%, 100%{ opacity:0; transform:scale(.6); } }
+  @keyframes cxsp-sh-smoke{ 0%, 44%{ opacity:0; transform:translateY(1px) scale(.4); } 54%{ opacity:.95; transform:scale(1); } 90%, 100%{ opacity:0; transform:translate(.8px,-5px) scale(1.7); } }
+
+  /* Clown: HONK (twice), rings off the nose, confetti */
+  .char-special .avatarchar-svg .cx-k-clown .cx-sp-clnose{ animation:cxsp-cl-nose 3s ease-out both; }
+  .char-special .avatarchar-svg .cx-k-clown .cx-sp-clwaves{ animation:cxsp-cl-waves 3s ease-out both; }
+  .char-special .avatarchar-svg .cx-k-clown .cx-sp-clhonk{ animation:cxsp-cl-honk 3s ease-out both; }
+  .char-special .avatarchar-svg .cx-k-clown .cx-sp-clconf{ animation:cxsp-cl-conf 2.2s cubic-bezier(.15,.75,.4,1) both; }
+  @keyframes cxsp-cl-nose{ 0%{ transform:none; } 6%{ transform:scale(1.5,.65); } 12%{ transform:scale(.82,1.25); } 18%, 24%{ transform:none; }
+    29%{ transform:scale(1.55,.62); } 35%{ transform:scale(.8,1.28); } 42%, 100%{ transform:none; } }
+  @keyframes cxsp-cl-waves{ 0%, 4%{ opacity:0; transform:scale(.7); } 8%{ opacity:1; } 20%, 26%{ opacity:0; transform:scale(1.5); }
+    27%{ transform:scale(.7); } 31%{ opacity:1; } 45%, 100%{ opacity:0; transform:scale(1.6); } }
+  @keyframes cxsp-cl-honk{ 0%, 5%{ opacity:0; transform:scale(.2) rotate(-25deg); } 12%{ opacity:1; transform:scale(1.25) rotate(8deg); }
+    18%, 26%{ transform:none; } 31%{ transform:scale(1.2) rotate(-6deg); } 37%{ transform:none; } 72%{ opacity:1; transform:none; } 84%, 100%{ opacity:0; transform:scale(.7) rotate(10deg); } }
+  @keyframes cxsp-cl-conf{ 0%{ opacity:0; transform:none; } 6%{ opacity:1; } 45%{ transform:translate(var(--dx), var(--dy)) rotate(calc(var(--rot) * .5)); }
+    80%{ opacity:1; } 100%{ opacity:0; transform:translate(var(--dx), calc(var(--dy) + var(--fall))) rotate(var(--rot)); } }
+
+  /* Koi: a leap out of the bowl and back, a splash at each end */
+  .char-special .avatarchar-svg .cx-k-koi .cx-sp-koifish{ animation:cxsp-koi-leap 3s linear both; }
+  .char-special .avatarchar-svg .cx-k-koi .cx-sp-koisplash0{ animation:cxsp-koi-splash0 3s ease-out both; }
+  .char-special .avatarchar-svg .cx-k-koi .cx-sp-koisplash1{ animation:cxsp-koi-splash1 3s ease-out both; }
+  @keyframes cxsp-koi-leap{ 0%{ transform:translate(-4.6px,5.6px) rotate(-70deg); opacity:0; } 13%{ opacity:0; } 17%{ opacity:1; } 77%{ opacity:1; } 82%, 100%{ transform:translate(4.6px,5.6px) rotate(70deg); opacity:0; } 14.0%{ transform:translate(-4.60px,5.60px) rotate(-70deg); } 20.6%{ transform:translate(-3.68px,1.93px) rotate(-56deg); } 27.2%{ transform:translate(-2.76px,-0.93px) rotate(-42deg); } 33.8%{ transform:translate(-1.84px,-2.97px) rotate(-28deg); } 40.4%{ transform:translate(-0.92px,-4.19px) rotate(-14deg); } 47.0%{ transform:translate(0.00px,-4.60px) rotate(0deg); } 53.6%{ transform:translate(0.92px,-4.19px) rotate(14deg); } 60.2%{ transform:translate(1.84px,-2.97px) rotate(28deg); } 66.8%{ transform:translate(2.76px,-0.93px) rotate(42deg); } 73.4%{ transform:translate(3.68px,1.93px) rotate(56deg); } 80.0%{ transform:translate(4.60px,5.60px) rotate(70deg); } }
+  @keyframes cxsp-koi-splash0{ 0%, 11%{ opacity:0; transform:scale(.4); } 16%{ opacity:1; } 30%, 100%{ opacity:0; transform:scale(1.3) translateY(-.6px); } }
+  @keyframes cxsp-koi-splash1{ 0%, 77%{ opacity:0; transform:scale(.4); } 82%{ opacity:1; } 97%, 100%{ opacity:0; transform:scale(1.35) translateY(-.6px); } }
+
+  /* Marksman: the scope closes in, locks red, the shot, it lets go */
+  .char-special .avatarchar-svg .cx-k-marksman .cx-sp-mkret{ animation:cxsp-ms-ret 2.6s cubic-bezier(.2,.8,.3,1) both; }
+  .char-special .avatarchar-svg .cx-k-marksman .cx-sp-mklock{ animation:cxsp-ms-lock 2.6s ease-out both; }
+  .char-special .avatarchar-svg .cx-k-marksman .cx-sp-mkping{ animation:cxsp-ms-ping 2.6s ease-out both; }
+  .char-special .avatarchar-svg .cx-k-marksman .cx-sp-mkflash{ animation:cxsp-ms-flash 2.6s ease-out both; }
+  @keyframes cxsp-ms-ret{ 0%{ opacity:0; transform:scale(1.55) rotate(-70deg); } 34%{ opacity:1; transform:none; } 44%{ opacity:1; } 48%, 100%{ opacity:0; transform:none; } }
+  @keyframes cxsp-ms-lock{ 0%, 44%{ opacity:0; transform:scale(1.06); } 46%{ opacity:1; transform:scale(.9); } 51%{ transform:none; } 80%{ opacity:1; } 100%{ opacity:0; transform:scale(1.04); } }
+  @keyframes cxsp-ms-ping{ 0%, 45%{ opacity:0; transform:none; } 48%{ opacity:1; } 66%, 100%{ opacity:0; transform:scale(3.2); } }
+  @keyframes cxsp-ms-flash{ 0%, 57%{ opacity:0; transform:scale(.4); } 59%{ opacity:1; transform:scale(1.2) rotate(20deg); } 68%, 100%{ opacity:0; transform:scale(.5); } }
+
+  /* Orion: the emitter flares and a stroke of light sweeps over his head */
+  .char-special .avatarchar-svg .cx-k-starblade .cx-sp-saflare{ animation:cxsp-sa-flare 3s ease-out both; }
+  .char-special .avatarchar-svg .cx-k-starblade .cx-sp-saswing path{ animation:cxsp-sa-swing 3s cubic-bezier(.5,0,.3,1) both; }
+  .char-special .avatarchar-svg .cx-k-starblade .cx-sp-sastars{ animation:cxsp-sa-stars 3s ease-out both; }
+  @keyframes cxsp-sa-flare{ 0%{ opacity:0; transform:scale(.3); } 14%{ opacity:1; transform:scale(1.3) rotate(45deg); } 24%{ transform:scale(.9) rotate(60deg); }
+    32%{ opacity:1; } 42%, 100%{ opacity:0; transform:scale(.5) rotate(90deg); } }
+  @keyframes cxsp-sa-swing{ 0%, 22%{ stroke-dashoffset:100; } 40%{ stroke-dashoffset:0; } 60%, 100%{ stroke-dashoffset:-100; } }
+  @keyframes cxsp-sa-stars{ 0%, 38%{ opacity:0; transform:scale(.3); } 46%{ opacity:1; transform:scale(1.2); } 56%{ transform:none; } 76%, 100%{ opacity:0; transform:scale(.8) translateY(1px); } }
+
+  /* Hacker: SYSTEM BREACH - glitch, everything red, a skull, glitch back */
+  .char-special .avatarchar-svg .cx-k-hacker .cx-sp-hkred{ animation:cxsp-hk-red 3s steps(1, end) both; }
+  .char-special .avatarchar-svg .cx-k-hacker .cx-sp-hkskull{ animation:cxsp-hk-skull 3s ease-in-out both; }
+  .char-special .avatarchar-svg .cx-k-hacker .cx-sp-hkglitch{ animation:cxsp-hk-glitch 3s steps(1, end) both; }
+  @keyframes cxsp-hk-red{ 0%{ opacity:0; } 4%{ opacity:1; } 6%{ opacity:0; } 9%{ opacity:1; } 11%{ opacity:0; } 13%{ opacity:1; }
+    80%{ opacity:0; } 82%{ opacity:1; } 85%{ opacity:0; } 87%{ opacity:.7; } 90%, 100%{ opacity:0; } }
+  @keyframes cxsp-hk-skull{ 0%, 18%{ opacity:0; transform:scale(.6); } 22%{ opacity:1; transform:scale(1.2); } 26%{ opacity:.3; } 28%{ opacity:1; transform:none; }
+    40%{ transform:scale(1.15); } 50%{ transform:none; } 60%{ transform:scale(1.15); } 70%, 100%{ opacity:1; transform:none; } }
+  @keyframes cxsp-hk-glitch{ 0%{ opacity:0; } 2%{ opacity:1; transform:translateX(-1.6px); } 5%{ transform:translate(2px,.4px); } 8%{ transform:translateX(-1px); }
+    11%{ transform:translate(1.4px,-.5px); } 14%{ opacity:0; transform:none; } 40%{ opacity:1; transform:translate(1.2px,4px); } 42%{ opacity:0; }
+    79%{ opacity:1; transform:translateX(2px); } 83%{ transform:translate(-2px,.4px); } 87%{ transform:translateX(1px); } 91%, 100%{ opacity:0; transform:none; } }
+
+  /* Timekeeper: the hands race BACK (added to their idle turn, so they
+     carry on from wherever they were), a rewind arrow, ripples */
+  .char-special .avatarchar-svg .cx-k-timekeeper .cx-fx-hand-m{ animation:cx-spin 20s linear infinite, cxsp-tk-back3 3s cubic-bezier(.5,0,.35,1) both; animation-composition:replace, add; }
+  .char-special .avatarchar-svg .cx-k-timekeeper .cx-fx-hand-h{ animation:cx-spin 240s linear infinite, cxsp-tk-back1 3s cubic-bezier(.5,0,.35,1) both; animation-composition:replace, add; }
+  .char-special .avatarchar-svg .cx-k-timekeeper .cx-sp-tkarc{ animation:cxsp-tk-arc 3s ease-in-out both; }
+  .char-special .avatarchar-svg .cx-k-timekeeper .cx-sp-tkhead{ animation:cxsp-tk-head 3s ease-out both; }
+  .char-special .avatarchar-svg .cx-k-timekeeper .cx-sp-tkrip{ animation:cxsp-tk-rip 1.2s ease-out both; }
+  .char-special .avatarchar-svg .cx-k-timekeeper .cx-sp-tkrip1{ animation-delay:.6s; }
+  .char-special .avatarchar-svg .cx-k-timekeeper .cx-sp-tkrip2{ animation-delay:1.2s; }
+  @keyframes cxsp-tk-back3{ from{ transform:none; } to{ transform:rotate(-1080deg); } }
+  @keyframes cxsp-tk-back1{ from{ transform:none; } to{ transform:rotate(-360deg); } }
+  @keyframes cxsp-tk-arc{ 0%, 4%{ stroke-dashoffset:100; opacity:1; } 56%{ stroke-dashoffset:0; } 78%{ opacity:1; } 100%{ stroke-dashoffset:0; opacity:0; } }
+  @keyframes cxsp-tk-head{ 0%, 53%{ opacity:0; transform:scale(.3); } 58%{ opacity:1; transform:scale(1.3); } 64%, 78%{ opacity:1; transform:none; } 100%{ opacity:0; } }
+  @keyframes cxsp-tk-rip{ 0%{ opacity:0; transform:scale(.8); } 12%{ opacity:.95; } 100%{ opacity:0; transform:scale(3.1); } }
+
+  /* Ronin: a glint on the hilt, then an X of two cuts and petals off it */
+  .avatarchar-svg .cx-sp-rnslash0{ transform-origin:0% 100%; }
+  .avatarchar-svg .cx-sp-rnslash1{ transform-origin:0% 0%; }
+  .char-special .avatarchar-svg .cx-k-ronin .cx-sp-rnglint{ animation:cxsp-rn-glint 2.8s ease-out both; }
+  .char-special .avatarchar-svg .cx-k-ronin .cx-sp-rnslash0{ animation:cxsp-rn-slash0 2.8s cubic-bezier(.2,.9,.3,1) both; }
+  .char-special .avatarchar-svg .cx-k-ronin .cx-sp-rnslash1{ animation:cxsp-rn-slash1 2.8s cubic-bezier(.2,.9,.3,1) both; }
+  .char-special .avatarchar-svg .cx-k-ronin .cx-sp-rnpetal{ animation:cxsp-rn-petal 2.8s ease-out both; }
+  @keyframes cxsp-rn-glint{ 0%{ opacity:0; transform:scale(.2); } 10%{ opacity:1; transform:scale(1.25) rotate(45deg); } 22%, 100%{ opacity:0; transform:scale(.3) rotate(90deg); } }
+  @keyframes cxsp-rn-slash0{ 0%, 22%{ opacity:0; transform:scale(.15); } 25%{ opacity:1; } 30%{ transform:none; } 42%{ opacity:.85; } 56%, 100%{ opacity:0; transform:none; } }
+  @keyframes cxsp-rn-slash1{ 0%, 40%{ opacity:0; transform:scale(.15); } 43%{ opacity:1; } 48%{ transform:none; } 60%{ opacity:.85; } 74%, 100%{ opacity:0; transform:none; } }
+  @keyframes cxsp-rn-petal{ 0%, 44%{ opacity:0; transform:scale(.5); } 50%{ opacity:1; } 90%, 100%{ opacity:0; transform:translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1.2); } }
+
+  /* Hive: the swarm pours out of the door, loops and files back in */
+  .char-special .avatarchar-svg .cx-k-hive .cx-sp-hvbee{ animation:cxsp-hv-bee 2.8s ease-in-out both; }
+  .char-special .avatarchar-svg .cx-k-hive .cx-sp-hvwing{ animation:cxsp-hv-wing .1s linear 30 alternate both; }
+  @keyframes cxsp-hv-bee{ 0%{ opacity:0; transform:scale(.3); } 9%{ opacity:1; } 34%{ transform:translate(var(--dx), var(--dy)); }
+    60%{ transform:translate(calc(var(--dx) + var(--wx)), calc(var(--dy) + var(--wy))); } 84%{ opacity:1; transform:translate(calc(var(--dx) * .3), calc(var(--dy) * .3)) scale(.8); }
+    100%{ opacity:0; transform:scale(.3); } }
+  @keyframes cxsp-hv-wing{ from{ transform:none; } to{ transform:scaleY(.35); } }
+  /* ---- end CHALLENGE CHARACTER SPECIALS ---- */
   /* ---- BUILD 234: THE START SHEET, SIMPLER ---- */
   .unitoptions-modal-sheet .sect-headrow{ display:flex; align-items:baseline; justify-content:space-between; gap:.6rem; }
   .unitoptions-modal-sheet .sect-headrow .slab{ margin-bottom:0; }
@@ -40900,6 +41053,28 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M6 14.2 Q8 12.8 11 14.2 Q20 17 29 14.2 Q32 12.8 34 14.2", fill: "none", stroke: "#A88058", "stroke-width": ".35", opacity: ".8" }));
     close();
     close();
+    /* SPECIAL (build 317): hidden until .char-special - see CHALLENGE CHARACTER SPECIALS. */
+    /* The quick draw: a six-shooter comes up at his shoulder, fires one
+       into the air (a flash and a kick), the smoke curls off the muzzle
+       and it spins back down to the holster. */
+    openHidden("cx-sp cx-sp-sh");
+    { const gun = mk("g", { class: "cx-sp-shgun" });
+      const gs = mk("g", { transform: "translate(31.25 28.4) scale(1.5) translate(-31.25 -28.4)" }); gun.appendChild(gs);
+      gs.appendChild(mk("rect", { x: 30.55, y: 21.4, width: 1.4, height: 6.4, rx: .35, fill: "#5A606C", stroke: "#15171C", "stroke-width": ".25" }));
+      gs.appendChild(mk("path", { d: "M30.9 21.9 L30.9 27.2", stroke: "#C8CED8", "stroke-width": ".3", "stroke-linecap": "round" }));
+      gs.appendChild(mk("rect", { x: 29.7, y: 26.8, width: 3.1, height: 3.3, rx: .7, fill: "#3A3E46", stroke: "#15171C", "stroke-width": ".25" }));
+      gs.appendChild(mk("ellipse", { cx: 31.25, cy: 28.4, rx: 1.2, ry: 1.05, fill: "#9AA0AC", stroke: "#15171C", "stroke-width": ".2" }));
+      gs.appendChild(mk("path", { d: "M30.1 29.9 L33.2 29.9 L34.2 34.4 Q33.2 35.3 32.1 34.6 Z", fill: "#8A5228", stroke: "#2A1608", "stroke-width": ".25", "stroke-linejoin": "round" }));
+      gs.appendChild(mk("path", { d: "M29.9 30.6 Q29 31.6 30.1 32.4", fill: "none", stroke: "#15171C", "stroke-width": ".35" }));
+      svg.appendChild(gun); }
+    { const fl = mk("g", { class: "cx-sp-shflash" });
+      fl.appendChild(sparkle(31.25, 17.1, 3.2, "#FFC94A"));
+      fl.appendChild(sparkle(31.25, 17.1, 1.6, "#FFFFFF"));
+      svg.appendChild(fl); }
+    { const sm = mk("g", { class: "cx-sp-shsmoke" });
+      [[31.2, 16, 1.1], [32.2, 14.2, 1.4], [30.9, 12.2, 1.7]].forEach(([cx, cy, r]) => sm.appendChild(mk("circle", { cx, cy, r, fill: "#EFE8DC", opacity: ".8" })));
+      svg.appendChild(sm); }
+    close();
     return done();
   }
 
@@ -42039,6 +42214,25 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M11.6 15.4 Q11.5 14.4 11.8 13.6", fill: "none", stroke: "#FFFFFF", "stroke-width": ".7", "stroke-linecap": "round", opacity: ".6" }));
     noEyes();
     close();
+    /* SPECIAL (build 317): hidden until .char-special - see CHALLENGE CHARACTER SPECIALS. */
+    /* The koi leaps: up out of the water, over the top of the bowl in an
+       arc, and back in with a splash and a ring on the surface. */
+    openHidden("cx-sp cx-sp-koi");
+    { const sp = (cls, x) => { const g = mk("g", { class: "cx-sp-koisplash " + cls });
+        [[-1.6, -1.2, .45], [-.6, -2.2, .5], [.6, -2.1, .45], [1.7, -1.1, .4], [0, -2.9, .35]].forEach(([dx, dy, r]) => g.appendChild(mk("circle", { cx: x + dx, cy: 14.4 + dy, r, fill: "#FFE6F2", opacity: ".9" })));
+        g.appendChild(mk("ellipse", { cx: x, cy: 14.7, rx: 2.4, ry: .55, fill: "none", stroke: "#FFFFFF", "stroke-width": ".35", opacity: ".8" }));
+        svg.appendChild(g); };
+      sp("cx-sp-koisplash0", 15.4); sp("cx-sp-koisplash1", 24.6); }
+    { const f = mk("g", { class: "cx-sp-koifish" });
+      const k = mk("g", { transform: "translate(20 9.6) scale(1.4)" });
+      k.appendChild(mk("path", { d: "M-2 0 L-3.5 -1.35 Q-3.1 0 -3.5 1.35 Z", fill: "#FF7A2A", stroke: "#8A2A08", "stroke-width": ".18", "stroke-linejoin": "round" }));
+      k.appendChild(mk("ellipse", { cx: 0, cy: 0, rx: 2.3, ry: 1.05, fill: "#FF8A2E", stroke: "#8A2A08", "stroke-width": ".2" }));
+      k.appendChild(mk("path", { d: "M-1.2 -.9 Q0 -.2 .6 -1 Q.2 .4 -1.4 .3 Z", fill: "#FFF4EA" }));
+      k.appendChild(mk("path", { d: "M-.3 -1 L.5 -1.8 L.9 -.95 Z", fill: "#FF6A1E" }));
+      k.appendChild(mk("circle", { cx: 1.45, cy: -.25, r: .26, fill: "#1A0A04" }));
+      k.appendChild(mk("path", { d: "M-1.4 -.55 Q0 -1 1.6 -.5", fill: "none", stroke: "#FFE0C8", "stroke-width": ".2", opacity: ".8" }));
+      f.appendChild(k); svg.appendChild(f); }
+    close();
     return done();
   }
   /* ================= RONIN (build 263) =================
@@ -42135,6 +42329,24 @@ function drawAvatarCharSVG(charId){
     open("cx-fx cx-fx-ronin2petals", { opacity: "0" });
     [[8.4, 32.2, 30], [13.8, 35.4, -20], [19.6, 31.4, 60], [25.2, 34.6, 10]].forEach(([x, y, r], i) =>
       svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.05, ry: .56, fill: i % 2 ? "#FFC2DA" : "#FF7AB0", transform: "rotate(" + r + " " + x + " " + y + ")" })));
+    close();
+    /* SPECIAL (build 317): hidden until .char-special - see CHALLENGE CHARACTER SPECIALS. */
+    /* The draw: light catches the pommel, then two cuts of the katana slash
+       across the frame in an X and petals scatter off them. */
+    openHidden("cx-sp cx-sp-rn");
+    { const gl = sparkle(34.25, 15.9, 2.4, "#FFE6F2"); gl.setAttribute("class", "cx-sp-rnglint"); svg.appendChild(gl); }
+    [["cx-sp-rnslash0", "M4.6 31.6 Q17 16.6 35.4 6.2 Q19.6 19.6 4.6 31.6 Z", "M4.6 31.6 Q18 18 35.4 6.2"],
+     ["cx-sp-rnslash1", "M5 7.4 Q20 15.6 35 31 Q17.6 19.4 5 7.4 Z", "M5 7.4 Q19 17 35 31"]].forEach(([cls, d, core]) => {
+      const s = mk("g", { class: "cx-sp-rnslash " + cls });
+      s.appendChild(mk("path", { d, fill: "#FF3D8A", opacity: ".55", stroke: "#FF7AB0", "stroke-width": "1.2", "stroke-linejoin": "round" }));
+      s.appendChild(mk("path", { d, fill: "#FFE6F2" }));
+      s.appendChild(mk("path", { d: core, fill: "none", stroke: "#FFFFFF", "stroke-width": ".35", "stroke-linecap": "round" }));
+      svg.appendChild(s);
+    });
+    [[-7, -5], [6, -7], [8, 3], [-6, 6], [2, 8], [-9, -1]].forEach(([dx, dy], i) => {
+      svg.appendChild(mk("path", { class: "cx-sp-rnpetal", d: "M20 18.4 Q21.1 17.6 21.4 18.8 Q20.6 19.8 20 18.4 Z", fill: i % 2 ? "#FF9AC4" : "#FFD0E2",
+        style: "--dx:" + dx + "px;--dy:" + dy + "px;--rot:" + (120 + i * 70) + "deg" }));
+    });
     close();
     return done();
   }
@@ -42249,6 +42461,45 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("rect", { x: 9, y: 18, width: 22, height: 1, fill: green, opacity: ".6" }));
     svg.appendChild(mk("rect", { x: 7, y: 32, width: 14, height: .8, fill: "#FF2E6E", opacity: ".6" }));
     close();
+    /* SPECIAL (build 317): hidden until .char-special - see CHALLENGE CHARACTER SPECIALS. */
+    /* SYSTEM BREACH: the screen glitches, everything goes RED - the rain,
+       the face, the lenses, the deck's edge - a skull flickers up on the
+       laptop, and it glitches back to green. */
+    openHidden("cx-sp cx-sp-hk");
+    { const red = "#FF2E4E", redSoft = "#FFB0BC";
+      const rd = mk("g", { class: "cx-sp-hkred" });
+      const rain = mk("g", { mask: "url(#" + uid + "-bgm)", opacity: ".8" });
+      [4.6, 7.4, 10.2, 29.8, 32.6, 35.4].forEach((x, ci) => { for(let i = 0; i < 14; i++){ if((i + ci) % 3 === 1) continue;
+        rain.appendChild(mk("rect", { x: x - .35, y: (1 + i * 1.5 + (ci % 2) * .7).toFixed(2), width: .7, height: .9, rx: .12, fill: (i % 4) === 3 ? redSoft : red, opacity: (i % 4) === 3 ? "1" : ".6" })); } });
+      const wash = mk("radialGradient", { id: uid + "-hkspw", cx: ".5", cy: ".5", r: ".5" });
+      [["0%", red, ".42"], ["70%", red, ".2"], ["100%", red, "0"]].forEach(([o, c, op]) => wash.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+      defs.appendChild(wash);
+      rd.appendChild(mk("circle", { cx: 20, cy: 20, r: 18, fill: "url(#" + uid + "-hkspw)" }));
+      rd.appendChild(rain);
+      const fg = mk("linearGradient", { id: uid + "-hkspf", x1: "0", y1: "0", x2: "0", y2: "1" });
+      [["0%", "#14020A"], ["50%", "#3A0612"], ["100%", "#B0142E"]].forEach(([o, c]) => fg.appendChild(mk("stop", { offset: o, "stop-color": c })));
+      defs.appendChild(fg);
+      rd.appendChild(mk("path", { d: "M13.2 15.6 Q20 11.2 26.8 15.6 Q27.6 23 20 27.4 Q12.4 23 13.2 15.6 Z", fill: "url(#" + uid + "-hkspf)" }));
+      [lensL, lensR].forEach(d => rd.appendChild(mk("path", { d, fill: "#3A0010", stroke: "#0A0D10", "stroke-width": ".45" })));
+      [[16.8, 18.5], [23.2, 18.5]].forEach(([x, y]) => { rd.appendChild(mk("rect", { x: x - 1.6, y: y - .25, width: 3.2, height: .5, fill: red }));
+        rd.appendChild(mk("circle", { cx: x, cy: y, r: .55, fill: redSoft })); });
+      rd.appendChild(mk("path", { d: "M17.4 24.6 Q20 23.2 22.6 24.6", fill: "none", stroke: red, "stroke-width": ".45", "stroke-linecap": "round" }));
+      rd.appendChild(mk("path", { d: "M12.6 28.5 L27.4 28.5", stroke: red, "stroke-width": "1.4", "stroke-linecap": "round", opacity: ".5" }));
+      rd.appendChild(mk("path", { d: "M12.6 28.5 L27.4 28.5", stroke: redSoft, "stroke-width": ".45", "stroke-linecap": "round" }));
+      rd.appendChild(mk("path", { d: "M15.6 30 L24.4 30 L25 35.2 L15 35.2 Z", fill: "#14080C" }));
+      const sk = mk("g", { class: "cx-sp-hkskull" });
+      sk.appendChild(mk("path", { d: "M17.6 32.2 Q17.6 29.6 20 29.6 Q22.4 29.6 22.4 32.2 Q22.4 33.2 21.6 33.6 L21.6 34.6 L18.4 34.6 L18.4 33.6 Q17.6 33.2 17.6 32.2 Z", fill: red }));
+      sk.appendChild(mk("circle", { cx: 19.05, cy: 32, r: .62, fill: "#14080C" }));
+      sk.appendChild(mk("circle", { cx: 20.95, cy: 32, r: .62, fill: "#14080C" }));
+      sk.appendChild(mk("path", { d: "M19.6 33.4 L20 32.8 L20.4 33.4 Z M19.2 34 L19.2 34.6 M20 34 L20 34.6 M20.8 34 L20.8 34.6", fill: "#14080C", stroke: "#14080C", "stroke-width": ".22" }));
+      rd.appendChild(sk);
+      svg.appendChild(rd);
+      const gs = mk("g", { class: "cx-sp-hkglitch" });
+      gs.appendChild(mk("rect", { x: 8, y: 15.2, width: 24, height: 1.1, fill: red, opacity: ".75" }));
+      gs.appendChild(mk("rect", { x: 11, y: 21.6, width: 17, height: .7, fill: "#3DFFF0", opacity: ".6" }));
+      gs.appendChild(mk("rect", { x: 6, y: 30.4, width: 12, height: .9, fill: red, opacity: ".65" }));
+      svg.appendChild(gs); }
+    close();
     return done();
   }
   /* ================= TIMEKEEPER =================
@@ -42361,6 +42612,16 @@ function drawAvatarCharSVG(charId){
     sg.appendChild(grains);
     svg.appendChild(sg);
     [hy - 1.95, hy + 1.6].forEach(y => svg.appendChild(mk("rect", { x: hx - 1.5, y, width: 3, height: .45, rx: .2, fill: brass, stroke: "#6A4210", "stroke-width": ".12" })));
+    close();
+    /* SPECIAL (build 317): hidden until .char-special - see CHALLENGE CHARACTER SPECIALS. */
+    /* Time runs back: the hands race backwards round the dial (the hands'
+       own groups, added to their idle turn), a rewind arrow sweeps round
+       the rim and rings ripple out from the centre. */
+    openHidden("cx-sp cx-sp-tk");
+    { const arc = "M" + P(13.6, 40) + " A13.6 13.6 0 1 0 " + P(13.6, 70);
+      svg.appendChild(mk("path", { class: "cx-sp-tkarc", d: arc, pathLength: "100", fill: "none", stroke: "#FFE3A0", "stroke-width": ".7", "stroke-linecap": "round" }));
+      svg.appendChild(mk("path", { class: "cx-sp-tkhead", d: "M" + P(15, 71) + " L" + P(13.6, 63.5) + " L" + P(12.2, 71) + " Z", fill: "#FFE3A0" }));
+      [0, 1, 2].forEach(i => svg.appendChild(mk("circle", { class: "cx-sp-tkrip cx-sp-tkrip" + i, cx, cy, r: 3.6, fill: "none", stroke: amber, "stroke-width": ".5" }))); }
     close();
     return done();
   }
@@ -42505,6 +42766,24 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M29.6 4.4 L27 9.2 L28.8 9.2 L26.4 14.6 L30.6 8 L28.8 8 L31 4.4 Z",
                                  fill: "#F2FCFF", stroke: "#7FD4F5", "stroke-width": ".35", "stroke-linejoin": "round" }));
     close();
+    /* SPECIAL (build 317): hidden until .char-special - see CHALLENGE CHARACTER SPECIALS. */
+    /* The stone eyes charge white, then he hurls a bolt across the frame:
+       drawn in along its length, a flash, and it flickers out. */
+    openHidden("cx-sp cx-sp-zs");
+    { const ey = mk("g", { class: "cx-sp-zseyes" });
+      [17.3, 22.7].forEach(cx => {
+        ey.appendChild(mk("ellipse", { cx, cy: 14.3, rx: 3, ry: 1.6, fill: "#BFF0FF", opacity: ".55" }));
+        ey.appendChild(mk("ellipse", { cx, cy: 14.3, rx: 1.4, ry: .6, fill: "#FFFFFF" }));
+      });
+      svg.appendChild(ey); }
+    svg.appendChild(mk("rect", { class: "cx-sp-zsflash", x: 1.5, y: 0, width: 37, height: 37, fill: "#E8F8FF" }));
+    { const bolt = "M35.5 3 L26.4 12.6 L29.2 13.6 L19.6 21.4 L22.2 22.6 L10.8 30.2 L13.2 31.2 L4 36";
+      const b = mk("g", { class: "cx-sp-zsbolt" });
+      b.appendChild(mk("path", { d: bolt, pathLength: "100", fill: "none", stroke: "#7FD4F5", "stroke-width": "3.2", "stroke-linejoin": "round", "stroke-linecap": "round", opacity: ".45" }));
+      b.appendChild(mk("path", { d: bolt, pathLength: "100", fill: "none", stroke: "#FFE680", "stroke-width": "1.3", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+      b.appendChild(mk("path", { d: bolt, pathLength: "100", fill: "none", stroke: "#FFFFFF", "stroke-width": ".45", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+      svg.appendChild(b); }
+    close();
     return done();
   }
 
@@ -42592,6 +42871,20 @@ function drawAvatarCharSVG(charId){
     });
     svg.appendChild(bees);
     close();
+    /* SPECIAL (build 317): hidden until .char-special - see CHALLENGE CHARACTER SPECIALS. */
+    /* The swarm: bees pour out of the door, loop round the hive and file
+       back in, each on its own line and a beat apart. */
+    openHidden("cx-sp cx-sp-hv");
+    [[-12.4, -9, 30], [11.6, -10.4, -20], [14, 3, 80], [-13.2, 4.6, 200], [-6, -14, -60], [6.6, 11, 120], [-9, 12, 160], [4.2, -13.4, 10]].forEach(([dx, dy, rot], i) => {
+      const o = mk("g", { class: "cx-sp-hvbee", style: "--dx:" + dx + "px;--dy:" + dy + "px;--wx:" + (dy * .45).toFixed(1) + "px;--wy:" + (-dx * .35).toFixed(1) + "px;animation-delay:" + (i * .045).toFixed(3) + "s" });
+      const b = mk("g", { transform: "translate(20 19.8) rotate(" + rot + ") scale(1.55)" });
+      b.appendChild(mk("ellipse", { class: "cx-sp-hvwing", cx: -.2, cy: -.8, rx: .8, ry: .45, fill: "#FFFFFF", opacity: ".85" }));
+      b.appendChild(mk("ellipse", { cx: 0, cy: 0, rx: 1.05, ry: .68, fill: "#FFC72C", stroke: "#2A1A04", "stroke-width": ".18" }));
+      b.appendChild(mk("path", { d: "M-.2 -.62 L-.2 .62 M.38 -.55 L.38 .55", stroke: "#2A1A04", "stroke-width": ".26" }));
+      b.appendChild(mk("circle", { cx: 1.05, cy: 0, r: .34, fill: "#2A1A04" }));
+      o.appendChild(b); svg.appendChild(o);
+    });
+    close();
     return done();
   }
 
@@ -42600,6 +42893,10 @@ function drawAvatarCharSVG(charId){
     const coat = headGrad("#5E5870", "#332E40", "#121016");
     const mane = headGrad("#7A7294", "#453D5E", "#1B1726");
     const porcelain = headGrad("#FFFFFF", "#E6E1D9", "#9A9387");
+    /* SPECIAL (build 317): hidden until .char-special - see CHALLENGE CHARACTER SPECIALS. */
+    openHidden("cx-sp cx-sp-mkmane");
+    svg.appendChild(mk("path", { d: "M9.4 23.4 L7 18.4 L10 18.6 L8.6 12.8 L12 14.2 L12.2 8.2 L15.6 11 L17.6 5.2 L20 9.2 L22.4 5.2 L24.4 11 L27.8 8.2 L28 14.2 L31.4 12.8 L30 18.6 L33 18.4 L30.6 23.4 Q29.6 28.4 20 29.4 Q10.4 28.4 9.4 23.4 Z", fill: red, opacity: ".7", stroke: "#FF8A94", "stroke-width": ".3", "stroke-linejoin": "round" }));
+    close();
     open("cx-body");
     svg.appendChild(mk("path", { d: "M4.8 40 Q5.4 31 11.6 28.4 Q13 22.8 20 22.6 Q27 22.8 28.4 28.4 Q34.6 31 35.2 40 Z", fill: coat }));
     /* The high collar, two stiff flaps lined in red. */
@@ -42675,6 +42972,23 @@ function drawAvatarCharSVG(charId){
     open("cx-mouth");
     svg.appendChild(mk("path", { d: "M17.4 26.2 Q20 26.9 22.6 26.2", fill: "none", stroke: "#15121B", "stroke-width": ".45", "stroke-linecap": "round" }));
     close();
+    close();
+    /* SPECIAL (build 317): hidden until .char-special - see CHALLENGE CHARACTER SPECIALS. */
+    /* The crack flares red, the eye slots burn, a shock ring goes out and
+       a red mane bristles out behind the spikes (drawn first, below). */
+    openHidden("cx-sp cx-sp-mk");
+    { const fl = mk("g", { class: "cx-sp-mkflare", "clip-path": "url(#" + mkClip + ")" });
+      fl.appendChild(mk("path", { d: crack, fill: "none", stroke: red, "stroke-width": "3", "stroke-linejoin": "round", "stroke-linecap": "round", opacity: ".45" }));
+      fl.appendChild(mk("path", { d: crack + " M23.4 15.4 L20.6 14.2 M23.8 22.4 L26.6 23.6 M22.8 19.8 L19.8 20.6", fill: "none", stroke: red, "stroke-width": "1", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+      fl.appendChild(mk("path", { d: crack, fill: "none", stroke: "#FFF0F2", "stroke-width": ".45", "stroke-linejoin": "round" }));
+      svg.appendChild(fl); }
+    { const ey = mk("g", { class: "cx-sp-mkeyes" });
+      [16.5, 23.5].forEach(x => {
+        ey.appendChild(mk("ellipse", { cx: x, cy: 19.4, rx: 3.4, ry: 1.9, fill: red, opacity: ".45" }));
+        ey.appendChild(mk("ellipse", { cx: x, cy: 19.4, rx: 1.9, ry: .7, fill: "#FFD0D4" }));
+      });
+      svg.appendChild(ey); }
+    svg.appendChild(mk("circle", { class: "cx-sp-mkring", cx: 20, cy: 19.6, r: 6, fill: "none", stroke: red, "stroke-width": ".8" }));
     close();
     return done();
   }
@@ -42760,6 +43074,26 @@ function drawAvatarCharSVG(charId){
     close();
     [[7.5, 17.7, 0], [32.5, 17.7, -.9]].forEach(([x, y, d]) =>
       svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: .26, ry: .4, fill: "#B9CBE6", opacity: "0", class: "cx-fx cx-fx-dt4drip", style: "animation-delay:" + d + "s" })));
+    /* SPECIAL (build 317): hidden until .char-special - see CHALLENGE CHARACTER SPECIALS. */
+    /* The magnifier comes up from the coat, reads one eye then the other
+       (each looming large in the glass), glints, and goes; a "!" pops. */
+    openHidden("cx-sp cx-sp-dt");
+    { const gl = mk("g", { class: "cx-sp-dtglass" });
+      gl.appendChild(mk("path", { d: "M25.6 22.6 L30.4 27.4", stroke: "#3A2412", "stroke-width": "1.5", "stroke-linecap": "round" }));
+      gl.appendChild(mk("path", { d: "M26.6 23.6 L30.1 27.1", stroke: "#8A5A2E", "stroke-width": ".6", "stroke-linecap": "round" }));
+      gl.appendChild(mk("circle", { cx: 23.3, cy: 20.2, r: 3.5, fill: "#CFE8FF", opacity: ".2" }));
+      gl.appendChild(mk("ellipse", { cx: 23.3, cy: 20.2, rx: 1.75, ry: 1.45, fill: "#F2C46A" }));
+      gl.appendChild(mk("circle", { cx: 23.75, cy: 19.85, r: .6, fill: "#FFF3D6" }));
+      gl.appendChild(mk("circle", { cx: 23.3, cy: 20.2, r: 3.5, fill: "none", stroke: "#3A2412", "stroke-width": "1.05" }));
+      gl.appendChild(mk("circle", { cx: 23.3, cy: 20.2, r: 3.5, fill: "none", stroke: "#E6BF62", "stroke-width": ".5" }));
+      gl.appendChild(mk("path", { d: "M21.1 18.6 Q21.9 17.5 23.2 17.3", fill: "none", stroke: "#FFFFFF", "stroke-width": ".4", "stroke-linecap": "round", opacity: ".85" }));
+      const gt = sparkle(21.6, 18.2, 1.5, "#FFFFFF"); gt.setAttribute("class", "cx-sp-dtglint"); gl.appendChild(gt);
+      svg.appendChild(gl); }
+    { const b = mk("g", { class: "cx-sp-dtbang" });
+      b.appendChild(mk("path", { d: "M31.1 4.6 L32.9 4.6 L32.4 9.4 L31.6 9.4 Z", fill: "#FFE08A", stroke: "#5A3A12", "stroke-width": ".25", "stroke-linejoin": "round" }));
+      b.appendChild(mk("circle", { cx: 32, cy: 10.9, r: .75, fill: "#FFE08A", stroke: "#5A3A12", "stroke-width": ".25" }));
+      svg.appendChild(b); }
+    close();
     return done();
   }
   /* ================= THE SWAT (redrawn) =================
@@ -42959,6 +43293,30 @@ function drawAvatarCharSVG(charId){
       gy.appendChild(mk("circle", { cx: 19.65, cy: 30.05, r: .32, fill: "#FFFFFF", opacity: ".85" }));
       gx.appendChild(gy); svg.appendChild(gx);
     });
+    close();
+    /* SPECIAL (build 317): hidden until .char-special - see CHALLENGE CHARACTER SPECIALS. */
+    /* HONK: the nose squashes, a HONK bubble pops, sound rings off it and
+       a burst of confetti goes up and rains down. */
+    openHidden("cx-sp cx-sp-cl");
+    { const n = mk("g", { class: "cx-sp-clnose" });
+      n.appendChild(mk("circle", { cx: 20, cy: 21.6, r: 1.6, fill: "#FF3B4A" }));
+      n.appendChild(catchlight(19.4, 21, .5));
+      svg.appendChild(n); }
+    { const w = mk("g", { class: "cx-sp-clwaves" });
+      w.appendChild(mk("path", { d: "M23 19.6 Q24.4 21.6 23 23.6 M25 18.6 Q27 21.6 25 24.6 M17 19.6 Q15.6 21.6 17 23.6 M15 18.6 Q13 21.6 15 24.6", fill: "none", stroke: "#FFE27A", "stroke-width": ".45", "stroke-linecap": "round" }));
+      svg.appendChild(w); }
+    { const h = mk("g", { class: "cx-sp-clhonk" });
+      h.appendChild(mk("path", { d: "M26 3.2 L28 4.6 L30.4 2.6 L31.4 5 L34.6 4.6 L33.6 7 L36 8.6 L33.4 9.6 L34 12.2 L31.2 11.2 L29.6 13 L28.6 10.8 L25.6 11.4 L26.6 9 L24.2 7.6 L26.8 6.4 Z", fill: "#FFE27A", stroke: "#7A0E2A", "stroke-width": ".3", "stroke-linejoin": "round" }));
+      const t = mk("text", { x: 30.1, y: 8.95, "text-anchor": "middle", "font-size": "2.7", "font-weight": "900", "font-family": "Arial Black, Arial, sans-serif", fill: "#C21E3A" });
+      t.textContent = "HONK"; h.appendChild(t);
+      svg.appendChild(h); }
+    { const cols = ["#FF4A6A", "#FFD23A", "#3AD6FF", "#7CFF6A", "#B07CFF", "#FF9A3A"];
+      for(let i = 0; i < 20; i++){
+        const a = -Math.PI / 2 + (i - 9.5) * .17, d = 9 + (i * 7 % 5) * 1.4;
+        const c = mk("rect", { class: "cx-sp-clconf", x: 19.5, y: 15.6, width: i % 3 ? 1.3 : 1, height: i % 3 ? .7 : 1.4, rx: .15, fill: cols[i % cols.length],
+          style: "--dx:" + (Math.cos(a) * d).toFixed(1) + "px;--dy:" + (Math.sin(a) * d * .9).toFixed(1) + "px;--fall:" + (6 + (i * 5 % 4)).toFixed(1) + "px;--rot:" + (180 + i * 47 % 360) + "deg;animation-delay:" + (.6 + (i % 4) * .03).toFixed(2) + "s" });
+        svg.appendChild(c);
+      } }
     close();
     return done();
   }
@@ -43236,6 +43594,26 @@ function drawAvatarCharSVG(charId){
     closedEyes([[17.2, 17.6, 2.2], [22.8, 17.6, 2.2]], neon, .4);
     /* a scan of light along the visor, now and then (build 312) */
     open("cx-mouth"); close();
+    close();
+    /* SPECIAL (build 317): hidden until .char-special - see CHALLENGE CHARACTER SPECIALS. */
+    /* The blade ignites and sweeps: the emitter flares, a stroke of light
+       arcs over his head from the hilt to the far side, and stars burst
+       off the end of it. */
+    openHidden("cx-sp cx-sp-sa");
+    { const e = ax(.92, 0);
+      const fl = mk("g", { class: "cx-sp-saflare" });
+      fl.appendChild(sparkle(+e[0], +e[1], 3, "#BFF4FF"));
+      fl.appendChild(sparkle(+e[0], +e[1], 1.5, "#FFFFFF"));
+      svg.appendChild(fl); }
+    { const arc = "M33.6 13.4 Q30.6 3.4 19.6 4.4 Q9 5.6 6.4 16.6";
+      const sw = mk("g", { class: "cx-sp-saswing" });
+      sw.appendChild(mk("path", { d: arc, pathLength: "100", fill: "none", stroke: neon, "stroke-width": "3.6", "stroke-linecap": "round", opacity: ".3" }));
+      sw.appendChild(mk("path", { d: arc, pathLength: "100", fill: "none", stroke: "#8CEBFF", "stroke-width": "1.5", "stroke-linecap": "round", opacity: ".85" }));
+      sw.appendChild(mk("path", { d: arc, pathLength: "100", fill: "none", stroke: "#FFFFFF", "stroke-width": ".55", "stroke-linecap": "round" }));
+      svg.appendChild(sw); }
+    { const st = mk("g", { class: "cx-sp-sastars" });
+      [[6.2, 18.4, 1.3], [8.6, 21.4, .9], [5.2, 13.4, .8], [9.8, 15.2, .7]].forEach(([x, y, r]) => st.appendChild(sparkle(x, y, r, "#E6FBFF")));
+      svg.appendChild(st); }
     close();
     return done();
   }
@@ -44386,11 +44764,32 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("circle", { cx: 14.1, cy: 18.3, r: .36, fill: "#FF3B30" }));
     close();
     close();
+    /* SPECIAL (build 317): hidden until .char-special - see CHALLENGE CHARACTER SPECIALS. */
+    /* Scoping in: a reticle the size of the frame closes in and turns,
+       locks red on the centre with a snap, the rifle fires (a muzzle
+       flash at the suppressor), and the lock lets go. */
+    openHidden("cx-sp cx-sp-mks");
+    { const ret = (cls, col) => { const g = mk("g", { class: cls });
+        g.appendChild(mk("circle", { cx: 20, cy: 18, r: 8.4, fill: "none", stroke: col, "stroke-width": ".55" }));
+        g.appendChild(mk("circle", { cx: 20, cy: 18, r: 3.1, fill: "none", stroke: col, "stroke-width": ".35" }));
+        g.appendChild(mk("path", { d: "M20 7.6 L20 14.2 M20 21.8 L20 28.4 M9.6 18 L16.2 18 M23.8 18 L30.4 18", stroke: col, "stroke-width": ".45", "stroke-linecap": "round" }));
+        g.appendChild(mk("circle", { cx: 20, cy: 18, r: .5, fill: col }));
+        svg.appendChild(g); };
+      ret("cx-sp-mkret", "#8CFF6A"); ret("cx-sp-mklock", "#FF3B3B"); }
+    svg.appendChild(mk("circle", { class: "cx-sp-mkping", cx: 20, cy: 18, r: 3.1, fill: "none", stroke: "#FF6A6A", "stroke-width": ".6" }));
+    { const fl = mk("g", { class: "cx-sp-mkflash" });
+      fl.appendChild(sparkle(36.6, 7.9, 2.8, "#FFC94A"));
+      fl.appendChild(sparkle(36.6, 7.9, 1.4, "#FFFFFF"));
+      svg.appendChild(fl); }
+    close();
     return done();
   }
 
   return null;
 }
+/* CHALLENGE CHARACTER SPECIALS (build 317): how long each one plays. The
+   table is the specials scheduler's; a no-op where it is not declared. */
+if(typeof CHAR_SPECIAL_MS === "object") Object.assign(CHAR_SPECIAL_MS, { detective: 2800, masked: 2600, zeus: 3000, poseidon: 2800, clown: 3000, valkyrie: 3000, marksman: 2600, astronaut: 3000, hacker: 3000, timekeeper: 3000, ronin: 2800, hive: 3200 });
 
 function updateHeaderTitle(){
   titleEl.textContent = "Nova";
