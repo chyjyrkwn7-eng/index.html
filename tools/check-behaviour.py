@@ -13808,6 +13808,116 @@ def check_b317_tabplate(br):
           all(t.get("vb") == "0.5 -2 39 39" and lands(t) for t in r["tab"].values()), r["tab"])
     check("...and the tab's flip-book takes exactly the drawing's box",
           all(t.get("play") and t.get("svg") and max(abs(a - b) for a, b in zip(t["play"], t["svg"])) <= 0.6 for t in r["tab"].values()), r["tab"])
+def check_b317_plate(br):
+    """Build 317 touch-up. "One of the ones I've mentioned that gets cut off
+    around the edges. Ensure all characters are properly displayed." With
+    every head back at one size, the Profile plate cut the Ronin's hat brim,
+    the Clown's bells, the Wizard's staff orb and Umbra's moon at its rim.
+    The portrait now pops out of its plate: the figure may paint past the
+    disc (over the rim), the scenery stays on it.
+    Measured as paint, not as boxes - a bounding box ignores a clip and a
+    mask, so it reads "past the disc" on the clipped build too. Each plate
+    is shot with the scenery hidden (the figure alone), once as shown and
+    once FREE - every clip, mask and overflow round the drawing lifted -
+    at four moments of the idle loop (paused, so nothing else moves, the
+    glow filter off). What the free shot paints that the shown one does
+    not, above the line where the disc still cuts the bust, is figure the
+    plate cut off. And with the figure hidden instead, nothing of the
+    scenery may paint outside the disc. Written against e877af7, where
+    the brim, the bells, the orb and the moon all lose paint at the rim."""
+    import io as _io
+    from PIL import Image, ImageChops
+    print("\n317. the portrait pops out of its plate: no figure lost at the rim, the scenery on the disc")
+    NINE = ["ronin", "clown", "hive", "wizard", "umbra", "zeus", "marksman", "timekeeper", "solar"]
+    PREP = """async ([ch, where]) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      try{ charSpecialTiming.first = [1e9, 1e9]; charSpecialTiming.gap = [1e9, 1e9]; }catch(e){}
+      document.querySelectorAll('.invite-sheet, .sheet-backdrop, .person-card').forEach(n => n.remove());
+      store.avatarChar = ch;
+      let plate;
+      if(where === 'hero'){ showProfile('profile'); await wait(900); plate = document.querySelector('.profile-hero-avatar'); }
+      else { showHome(); await wait(500);
+        openPersonSheet({ firstName: 'Kim', avatarChar: ch, pub: 'zz9', level: 30, badges: 3, accent: 'ink', xp: 20000, hundos: 10 });
+        await wait(1200); plate = document.querySelector('.person-card-art'); }
+      document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot, .daily-alert, #pushing-update').forEach(x => x.remove());
+      if(!plate) return null;
+      plate.scrollIntoView({ block: 'center' }); await wait(200);
+      document.getAnimations().forEach(a => { try{ a.pause(); }catch(e){} });
+      const ra = plate.querySelector('.rank-avatar'); if(ra) ra.style.filter = 'none';
+      const svg = plate.querySelector('svg.avatarchar-svg');
+      const sky = k => k.tagName.toLowerCase() === 'circle' || k.classList.contains('cx-bg') || k.classList.contains('cx-sp-back') || k.classList.contains('cx-sp-front') || k.classList.contains('cx-plate-disc');
+      const L = window.__pl = { svg, plate, fig: [], sky: [], clips: [] };
+      [...svg.children].forEach(k => { if(k.tagName.toLowerCase() === 'defs') return; (sky(k) ? L.sky : L.fig).push(k); });
+      L.clips = [...svg.querySelectorAll('.cx-plate-pop, .cx-plate-disc')];
+      L.at = t => document.getAnimations().forEach(a => { try{ if(L.svg.contains(a.effect && a.effect.target)) a.currentTime = t; }catch(e){} });
+      L.free = on => {
+        [L.svg, ...(() => { const up = []; for(let e = L.svg.parentElement; e && e !== L.plate.parentElement; e = e.parentElement) up.push(e); return up; })()].forEach(e => {
+          e.style.overflow = on ? 'visible' : ''; });
+        L.svg.style.clipPath = on ? 'none' : ''; L.svg.style.webkitMaskImage = on ? 'none' : ''; L.svg.style.maskImage = on ? 'none' : '';
+        L.clips.forEach(g => { if(on){ g.dataset.cp = g.getAttribute('clip-path'); g.removeAttribute('clip-path'); } else if(g.dataset.cp){ g.setAttribute('clip-path', g.dataset.cp); } });
+      };
+      const b = plate.getBoundingClientRect();
+      return { cx: b.left + b.width / 2, cy: b.top + b.height / 2, r: b.width / 2 }; }"""
+    def shot(pg, d):
+        x0, y0 = int(d["cx"] - d["r"] - 40), int(d["cy"] - d["r"] - 40)
+        side = int(2 * d["r"] + 80)
+        png = pg.screenshot(clip={"x": max(0, x0), "y": max(0, y0), "width": side, "height": side})
+        return Image.open(_io.BytesIO(png)).convert("RGB"), max(0, x0), max(0, y0)
+    def count(a, b, d, ox, oy, keep):
+        diff = ImageChops.difference(a, b).convert("L").point(lambda v: 255 if v > 24 else 0)
+        px = diff.load(); n = 0
+        for yy in range(diff.size[1]):
+            for xx in range(diff.size[0]):
+                if px[xx, yy] and keep(ox + xx + .5, oy + yy + .5):
+                    n += 1
+        return n
+    for (w, h, dev, places) in ((440, 956, "17 Pro Max", ("hero", "card")), (834, 1194, "iPad Pro 11", ("hero",))):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        res = {}
+        for where in places:
+            for ch in NINE + ["ninja", "grizzly"]:
+                d = pg.evaluate(PREP, [ch, where])
+                if not d:
+                    res[(where, ch)] = None; continue
+                # the bust is still cut by the disc below y = 28.5 of the
+                # shared 3..37 window, and from y = 26.8 down it fades out
+                # on purpose (the mask lifted in the free shot); above
+                # that nothing may be lost
+                cut = d["cy"] - d["r"] + (26.5 - 3) / 34 * 2 * d["r"]
+                above = lambda x, y: y < cut
+                outdisc = lambda x, y: ((x - d["cx"]) ** 2 + (y - d["cy"]) ** 2) ** .5 > d["r"] + 1.5
+                lost = 0
+                for t in (0, 1500, 3000, 4500):
+                    pg.evaluate("(t) => { __pl.at(t); __pl.sky.forEach(k => k.style.visibility = 'hidden'); }", t)
+                    a, ox, oy = shot(pg, d)
+                    pg.evaluate("() => __pl.free(true)")
+                    f, _, _ = shot(pg, d)
+                    pg.evaluate("() => { __pl.free(false); __pl.sky.forEach(k => k.style.visibility = ''); }")
+                    lost = max(lost, count(a, f, d, ox, oy, above))
+                pg.evaluate("() => __pl.at(0)")
+                a, ox, oy = shot(pg, d)
+                pg.evaluate("() => __pl.fig.forEach(k => k.style.visibility = 'hidden')")
+                b, _, _ = shot(pg, d)
+                pg.evaluate("() => __pl.fig.forEach(k => k.style.visibility = '')")
+                # what the figure alone paints outside the disc, for the record
+                pg.evaluate("() => __pl.sky.forEach(k => k.style.visibility = 'hidden')")
+                c, _, _ = shot(pg, d)
+                pg.evaluate("() => __pl.sky.forEach(k => k.style.visibility = '')")
+                res[(where, ch)] = {"lost": lost, "skyOut": count(a, c, d, ox, oy, outdisc), "figOut": count(a, b, d, ox, oy, outdisc)}
+        ctx.close()
+        for where in places:
+            label = "the Profile plate" if where == "hero" else "the person card"
+            allc = NINE + ["ninja", "grizzly"]
+            check(f"{dev}, {label}: no character loses any of its figure at the rim above the bust line (px lost, worst of four moments)",
+                  all(res[(where, ch)] is not None and res[(where, ch)]["lost"] <= 6 for ch in allc),
+                  {ch: res[(where, ch)] and res[(where, ch)]["lost"] for ch in allc})
+            check(f"{dev}, {label}: some of the nine paint over the rim at rest (px past the disc)",
+                  sum(1 for ch in NINE if res[(where, ch)] and res[(where, ch)]["figOut"] >= 6) >= 3,
+                  {ch: res[(where, ch)] and res[(where, ch)]["figOut"] for ch in NINE})
+            check(f"{dev}, {label}: and no character's scenery paints past the disc",
+                  all(res[(where, ch)] is not None and res[(where, ch)]["skyOut"] <= 3 for ch in allc),
+                  {ch: res[(where, ch)] and res[(where, ch)]["skyOut"] for ch in allc})
+
+
 def check_b317_xpcap(br):
     """Build 317. Four of Madison's asks about a full XP bar, in one gate:
     "The level 80 xp bar, it says every level reached, make it so that xp
@@ -14644,6 +14754,7 @@ def main():
             check_b317_challenge_specials(br)
             check_b317_hundobox(br)
             check_b317_tabplate(br)
+            check_b317_plate(br)
             check_b317_xpcap(br)
             check_b317_pfcard(br)
             check_b317_rings(br)

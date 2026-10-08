@@ -19122,6 +19122,22 @@
       0 14px 30px rgba(0,0,0,.45);
   }
   .profile-hero.has-cover .profile-hero-avatar svg.avatarchar-svg{ clip-path:circle(50% at 50% 50%); }
+  /* THE PORTRAIT POPS OUT OF ITS PLATE (plateBreakout): the disc is cut
+     inside the drawing now, so the drawing itself is not clipped, nothing
+     round it hides overflow, and it hangs out over the plate in the tab's
+     wider window - 39/34 of the plate, 2.5 units each side, 5 over the
+     top, the bottom where it was - with the usual mask in that box's
+     percentages (the bust fades over the same stretch). */
+  .rank-avatar.has-plate{ position:relative; overflow:visible; }
+  .profile-hero .profile-hero-avatar .rank-avatar.has-plate > svg.avatarchar-svg.cx-plate,
+  .rank-avatar.has-plate > svg.avatarchar-svg.cx-plate,
+  .rank-avatar.has-plate > .char-flip-play.cx-plate{
+    position:absolute; left:-7.3529%; top:-14.7059%; width:114.7059%; height:114.7059%; margin:0; clip-path:none; }
+  .rank-avatar.has-plate > svg.avatarchar-svg.cx-plate{
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0%, #000 4.103%, #000 73.846%, rgba(0,0,0,.45) 87.795%, transparent 100%),
+                       linear-gradient(to right, transparent 0%, #000 4.103%, #000 95.897%, transparent 100%);
+            mask-image:linear-gradient(to bottom, transparent 0%, #000 4.103%, #000 73.846%, rgba(0,0,0,.45) 87.795%, transparent 100%),
+                       linear-gradient(to right, transparent 0%, #000 4.103%, #000 95.897%, transparent 100%); }
   .profile-hero.has-cover .profile-ranklineup{ margin-top:.55rem; }
   .profile-hero.has-cover .profile-ranklineup.is-unranked{ text-align:center; }
   @media (min-width:40rem){
@@ -21715,6 +21731,7 @@
     box-shadow:0 0 0 4px #12151A, 0 0 0 5.5px color-mix(in srgb, var(--char-glow, #fff) 55%, transparent), 0 12px 26px rgba(0,0,0,.45);
   }
   .person-card.has-cover .person-card-art > .rank-avatar{ border-radius:50%; overflow:hidden; }
+  .person-card.has-cover .person-card-art > .rank-avatar.has-plate{ overflow:visible; }
   /* ---- the unlock card (build 243) - see showUnlockDetail ---- */
   .invite-sheet.unlock-card{ text-align:center; padding-top:1.2rem; }
   /* build 266: no text selection carried over from a press-and-hold. */
@@ -40623,6 +40640,80 @@ const CHAR_SPECIAL_DRAW = {
    room. The tab's flip-book records the same wide window ("<id>~wide",
    see charAnimDrawing). */
 const AVATAR_WIDE_VIEWBOX = "0.5 -2 39 39";
+/* THE PORTRAIT POPS OUT OF ITS PLATE (build 317 touch-up). Madison: "One
+   of the ones I've mentioned that gets cut off around the edges. Ensure
+   all characters are properly displayed." On the Profile screen and the
+   person card a character sits in a round plate with a rim, and the whole
+   drawing used to be clipped to that disc - so with every head back at
+   one size, the Ronin's hat brim, the Clown's bells, the Wizard's staff
+   orb and Umbra's moon were cut off at the rim. Now the drawing is split
+   by what it IS, inside the svg (clipPath elements, no filter):
+     - the scenery, the halo and a special's back and front layers stay
+       on the disc (PLATE_DISC: the old circle(50%), r 17 about 20,20);
+     - the figure - hats, props, bells, staff, halo - may paint past the
+       disc and over the rim, anywhere above PLATE_POP_Y; below it the
+       disc still cuts the bust exactly where it did (the shoulders leave
+       the disc from y 29.4 on every character, measured; the lowest
+       thing that should pop, the Ronin's scarf, ends by 28).
+     - a SMALL moon (Umbra's, Orion's - glow under 8) is an object, not the
+       sky: it leaves the scenery for the figure's side, at the opacity
+       the scenery's fade gave it.
+   Each piece is wrapped in a fresh <g> that carries the clip, so a part
+   that animates its own transform (the bob) moves inside a still clip.
+   The window is the tab's (AVATAR_WIDE_VIEWBOX) and the drawing is hung
+   out over the plate by CSS (.rank-avatar.has-plate), so the shared 34
+   units - every head - land exactly where they did. A flip-book of a
+   plate records the same thing ("<id>~plate"). */
+const PLATE_POP_Y = 28.5;
+function plateBreakout(svg){
+  if(!svg || svg.classList.contains("cx-plate")) return svg;
+  const NS = "http://www.w3.org/2000/svg";
+  const mk = (tag, attrs) => { const e = document.createElementNS(NS, tag); Object.keys(attrs).forEach(k => e.setAttribute(k, attrs[k])); return e; };
+  const uid = svg.getAttribute("data-cx-uid") || ("pl" + Math.random().toString(36).slice(2, 9));
+  let defs = svg.querySelector(":scope > defs");
+  if(!defs){ defs = mk("defs", {}); svg.insertBefore(defs, svg.firstChild); }
+  const discId = uid + "-pdisc", popId = uid + "-ppop";
+  const disc = mk("clipPath", { id: discId, clipPathUnits: "userSpaceOnUse" });
+  disc.appendChild(mk("circle", { cx: "20", cy: "20", r: "17" }));
+  const half = Math.sqrt(17 * 17 - Math.pow(PLATE_POP_Y - 20, 2));
+  const pop = mk("clipPath", { id: popId, clipPathUnits: "userSpaceOnUse" });
+  pop.appendChild(mk("path", { d: "M-10 -10H50V" + PLATE_POP_Y + "H" + (20 + half).toFixed(3) +
+    "A17 17 0 0 1 " + (20 - half).toFixed(3) + " " + PLATE_POP_Y + "H-10Z" }));
+  defs.append(disc, pop);
+  const wrap = (node, id) => { const g = mk("g", { "clip-path": "url(#" + id + ")", class: "cx-plate-" + (id === popId ? "pop" : "disc") }); node.replaceWith(g); g.appendChild(node); return g; };
+  [...svg.children].forEach(k => {
+    if(k === defs) return;
+    const sky = k.tagName.toLowerCase() === "circle" || k.classList.contains("cx-bg") || k.classList.contains("cx-sp-back") || k.classList.contains("cx-sp-front");
+    if(!sky){
+      /* the figure's own sky-like parts (a code rain masked by the
+         scenery's fade) stay on the disc too */
+      k.querySelectorAll('[mask*="-bgm)"]').forEach(m => { if(!m.getAttribute("clip-path")) m.setAttribute("clip-path", "url(#" + discId + ")"); });
+    }
+    const g = wrap(k, sky ? discId : popId);
+    if(k.classList.contains("cx-bg")){
+      k.querySelectorAll(".cx-fx-bgmoon").forEach(m => {
+        /* its first circle is its glow, 2.1-2.3x the moon: Umbra's and
+           Orion's are ~6, the Ronin's sky-filling moon 22 */
+        const c = m.querySelector("circle"), r = c ? Number(c.getAttribute("r")) || 99 : 99;
+        if(r < 8){
+          const mg = mk("g", { "clip-path": "url(#" + popId + ")", class: "cx-plate-pop", opacity: ".75" });
+          mg.appendChild(m);
+          g.after(mg);
+        }
+      });
+    }
+  });
+  svg.setAttribute("viewBox", AVATAR_WIDE_VIEWBOX);
+  svg.classList.add("cx-plate");
+  return svg;
+}
+/* A character span (avatarSpanFor) sat in a round plate with a rim. */
+function platePortrait(span){
+  if(!span) return span;
+  const svg = span.querySelector(":scope > svg.avatarchar-svg");
+  if(svg){ plateBreakout(svg); span.classList.add("has-plate"); }
+  return span;
+}
 function drawAvatarCharSVG(charId){
   const svgNS = "http://www.w3.org/2000/svg";
   const def = AVATAR_CHARACTERS.find(c => c.id === charId);
@@ -61842,8 +61933,10 @@ function charAnimDrawing(charId){
     const wide = /~wide$/.test(charId);
     const svg = sil ? charSilhouetteSVG(charId.replace(/~sil$/, ""))
       : /~pick$/.test(charId) ? pickerCharSVG(charId.replace(/~pick$/, ""))
-      : buildAvatarCharSVGSafe(charId.replace(/~wide$/, ""));
+      : buildAvatarCharSVGSafe(charId.replace(/~(wide|plate)$/, ""));
     if(wide) svg.setAttribute("viewBox", AVATAR_WIDE_VIEWBOX);
+    /* "<id>~plate": the portrait that pops out of its plate */
+    if(/~plate$/.test(charId)) plateBreakout(svg);
     const uid = svg.getAttribute("data-cx-uid") || "\u0000";
     const id = charId.replace(/~/g, "_") + "-" + hashOf(new XMLSerializer().serializeToString(svg).split(uid).join("u"));
     charAnimDrawings.set(charId, { svg, id, depth: !sil });
@@ -62245,10 +62338,10 @@ function charFlipAttach(el){
   const layoutW = svg.clientWidth || parseFloat(getComputedStyle(svg).width) || 0;
   if(!layoutW) return null;
   if(layoutW > CHAR_FLIP_MAX_CSS) return false;
-  const wide = svg.classList.contains("cx-wide");
+  const wide = svg.classList.contains("cx-wide") || svg.classList.contains("cx-plate");
   const charId0 = charIdOfSvg(el, svg);
   if(!charId0) return false;
-  const charId = wide ? charId0 + "~wide" : charId0;
+  const charId = !wide ? charId0 : charId0 + (svg.classList.contains("cx-plate") ? "~plate" : "~wide");
   const scale = Math.min(window.devicePixelRatio || 1, 2);
   /* THE DRAWING'S OWN SCALE IS BAKED INTO THE SHEET (build 314). "In the
      leaderboard, all the characters are still slightly shaking." The
@@ -62311,7 +62404,7 @@ function charFlipAttach(el){
       /* the tab's wide drawing hangs over its icon by CSS (.cx-wide); the
          sheet takes exactly the same box, so no reading can catch it
          half-way through the bar coming back */
-      play.classList.add("cx-wide");
+      play.classList.add(svg.classList.contains("cx-plate") ? "cx-plate" : "cx-wide");
     } else if(ownScale){
       /* centred on the drawing as it is SHOWN, on whole device pixels */
       const shown = svg.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
@@ -69579,7 +69672,7 @@ function openPersonSheet(entry){
 
   const art = document.createElement("div");
   art.className = "person-sheet-art person-card-art";
-  art.appendChild(avatarSpanFor(entry));
+  art.appendChild(platePortrait(avatarSpanFor(entry)));
   /* Big and alone here, so this is exactly where the character's own
      light belongs - the opposite call from the list rows, which lost
      it for being a smear. */
@@ -94942,7 +95035,7 @@ function showProfile(defaultTab){
      picker reads, so the light on this card is the light that was
      previewed when it was chosen. */
   heroAvatar.style.setProperty("--char-glow", avatarGlowColor(store.avatarChar));
-  heroAvatar.appendChild(avatarSpanFor({ avatarChar: store.avatarChar }));
+  heroAvatar.appendChild(platePortrait(avatarSpanFor({ avatarChar: store.avatarChar })));
   setCharState(heroAvatar, "live");
 
   const heroId = document.createElement("div");

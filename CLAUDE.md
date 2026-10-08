@@ -14592,6 +14592,42 @@ disagree with it.
     included, as it did before 829f68a ("the drawing is clipped to the
     disc, which is what turns a bust into a portrait"). Gate: the
     wide-window block in `check_b317_tabplate`, failing on 1888b11.
+  - **THE PORTRAIT POPS OUT OF ITS PLATE (supersedes "the plate crops
+    every character" just above).** With every head back at one size,
+    the Profile plate and the person card cut the Ronin's brim, the
+    Clown's bells, the Wizard's orb and Umbra's moon at the rim.
+    `plateBreakout(svg)` (via `platePortrait(span)`, on those two only -
+    NOT the boards: build 312 asked for row characters to stay inside
+    their circles) splits the drawing by what it is, with clipPath
+    elements inside the svg, no filter: the halo, `.cx-bg` and a special's
+    `.cx-sp-back`/`.cx-sp-front` stay on the disc (r 17 about 20,20, the
+    old `circle(50%)`); the figure may paint anywhere above
+    `PLATE_POP_Y` (28.5) and below it the disc still cuts the bust where
+    it did. **Measured, not guessed:** figure ink leaves the disc from
+    y 29.4 down on every character (the shoulders), and the lowest thing
+    meant to pop, the Ronin's scarf, ends by 28. Paint the figure owns
+    that wears the scenery's fade (`mask=".. -bgm)"`, the Hacker's rain)
+    stays on the disc. A SMALL scenery moon (glow r < 8: Umbra's, Orion's)
+    is an object and moves to the figure's side at opacity .75, about
+    what the scenery's fade gave it; the Ronin's sky-filling moon stays
+    sky. Every piece is wrapped in a fresh `<g>` carrying its clip, so a
+    part that animates its own transform moves inside a still clip. The
+    svg takes the tab's wide window and is hung out over the plate by
+    `.rank-avatar.has-plate` (no `clip-path`, no `overflow:hidden`
+    anywhere round it - the person card's `.rank-avatar` rule is
+    overridden); a flip-book of a plate records `"<id>~plate"` into the
+    same CSS box (a plate is 82-113px, over `CHAR_FLIP_MAX_CSS`, so it is
+    live today; the path is there for a smaller one). Gate:
+    `check_b317_plate` measures PAINT, not boxes - a bounding box ignores
+    a clip and reads "past the disc" on the clipped build too. It shoots
+    the figure alone as shown and with every clip/mask/overflow lifted,
+    at four paused moments of the loop: nothing may be lost above y 26.5
+    (where the bust's own fade starts). The scenery alone may paint
+    nothing outside the disc. Fails on e877af7 (the Wizard loses 46-80px,
+    the Marksman 14-24, the Clown 9). Note what it found: at rest the
+    Ronin's brim and the Clown's bells sit just INSIDE the disc - what
+    read as "cut" there was the old 4.7% edge feather eating their tips,
+    which the wider window moves out past them.
   - **Every character's surfaces are lit round (`giveVolume()`, called
     from `done()`).** *"In profile some characters have a nice 3d look but
     some don't, fix that as well."* The 3D-looking ones (Alien, Ghost,
