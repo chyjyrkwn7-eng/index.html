@@ -25365,7 +25365,7 @@
     padding:env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
     background:rgba(5,7,11,0); transition:background .26s ease, opacity .45s ease;
   }
-  @media (min-width:40rem){ .bc-scene{ --cw:min(62vw, 29rem); --coin:min(36vw, 15.5rem); --stage-y:57%; } }
+  @media (min-width:40rem){ .bc-scene{ --cw:min(62vw, 29rem); --coin:min(36vw, 15.5rem); --stage-y:59%; } }
   .bc-scene.bc-in{ background:rgba(5,7,11,.93); }
   .bc-scene.bc-out{ opacity:0; }
   body.bc-covering #stage{ visibility:hidden; }
@@ -25449,10 +25449,10 @@
   .bc-flyer.bc-landed{ opacity:0; transition:opacity .12s linear; }
   .bc-persp{ position:absolute; inset:0; perspective:900px; }
   .bc-coin, .bc-sway, .bc-spin{ position:absolute; inset:0; transform-style:preserve-3d; }
-  .bc-spin{ --thick:calc(var(--coin) * .075); }
+  .bc-spin{ --thick:calc(var(--coin) * .07); }
   .bc-face, .bc-edge{ position:absolute; inset:0; }
   .bc-face{ backface-visibility:hidden; -webkit-backface-visibility:hidden; }
-  .bc-face svg, .bc-edge svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .bc-face-art, .bc-edge{ position:absolute; inset:0; width:100%; height:100%; display:block; user-select:none; -webkit-user-select:none; }
   .bc-face.is-front{ transform:translateZ(calc(var(--thick) / 2)); }
   .bc-face.is-back{ transform:translateZ(calc(var(--thick) / -2)) rotateY(180deg) scaleX(-1); }
   .bc-edge{ transform:translateZ(calc((var(--k) - .5) * var(--thick) * .96)); }
@@ -25462,7 +25462,9 @@
     background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.16) 28%, rgba(255,255,255,.58) 50%, rgba(255,255,255,.16) 72%, rgba(255,255,255,0) 100%); }
   /* the pop out of the dark, and the sway at rest that shows its edge */
   .bc-flyer.bc-show .bc-coin{ animation:bc-pop 1.7s cubic-bezier(.16,.9,.3,1) both; }
-  @keyframes bc-pop{ 0%{ transform:translateY(18vh) scale(.12); } 100%{ transform:none; } }
+  /* up out of the dark with a little lift past its mark - never scaled
+     past 1, or the drawing is shown bigger than it was drawn */
+  @keyframes bc-pop{ 0%{ transform:translateY(18vh) scale(.12); } 72%{ transform:translateY(-1.6vh) scale(1); } 100%{ transform:none; } }
   .bc-flyer.bc-alive .bc-sway{ animation:bc-sway 5.2s ease-in-out infinite; }
   @keyframes bc-sway{ 0%{ transform:none; } 25%{ transform:rotateY(15deg) rotateX(3deg) translateY(-4px); }
     75%{ transform:rotateY(-15deg) rotateX(-2deg) translateY(-2px); } 100%{ transform:none; } }
@@ -25515,7 +25517,9 @@
   .bc-sub{ margin:.3rem 0 0; font-size:.88rem; color:rgba(255,255,255,.7); }
   @media (min-width:40rem){ .bc-name{ font-size:2.1rem; } }
   /* ---- REDUCE MOTION: the case already open, nothing moving ---- */
-  .bc-scene.bc-still *, .bc-scene.bc-still{ transition:none !important; animation:none !important; }
+  /* (the pseudo-elements by name: a * never reaches a ::before, and the
+     seated slot's glow is one) */
+  .bc-scene.bc-still, .bc-scene.bc-still *, .bc-scene.bc-still *::before, .bc-scene.bc-still *::after{ transition:none !important; animation:none !important; }
   .bc-scene.bc-still .bc-flyer, .bc-scene.bc-still .bc-spill{ display:none; }
   .bc-scene.bc-still .bc-slot.is-new::before{ opacity:.6; }
   .bc-scene.bc-still .bc-slot.is-new svg{ filter:none; }
@@ -26204,7 +26208,7 @@
     /* the trim round an edge or an opening: the same aluminium in the
        shell's own 160-degree light, darker - on a two-pixel edge the
        polished ramp read as a white outline */
-    --case-trim:linear-gradient(160deg, #D3DAE2 0%, #8B97A4 18%, #616D7A 50%, #7F8B98 78%, #4C5764 100%);
+    --case-trim:linear-gradient(160deg, #AEB8C3 0%, #8692A0 14%, #5E6A77 48%, #77838F 80%, #46515D 100%);
     /* the hardware: polished, with the dark mid-band that says metal */
     --case-metal:linear-gradient(180deg, #F2F5F8 0%, #C3CCD5 30%, #808C99 58%, #A9B4BF 80%, #687480 100%);
     /* the lining the badges are cut into */
@@ -79083,7 +79087,7 @@ let lastRunResult = null;   /* the last run's numbers, for the Virtual Room's ow
    its slot, its name under it - still, for BC_STILL_MS, then done. */
 const BC_SPIN_MS = 3400;      /* the first badge's spin up */
 const BC_SPIN_TURNS = 4;
-const BC_EDGE_LAYERS = 12;
+const BC_EDGE_LAYERS = 20;
 const BC_STILL_MS = 4600;
 const BC_T = {
   coin: 300, intro: 1100, glint: 3800, sway: 4050,
@@ -79106,50 +79110,60 @@ function badgeSilhouetteURL(unitName){
     ')" fill="#fff" stroke="#fff" stroke-width="' + (2 * G.key) + '" stroke-linejoin="round"/></svg>';
   return (BADGE_SIL_CACHE[d] = 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")');
 }
-/* One slice of the token's edge: its silhouette in edge metal, lit from
-   above. Alternate slices a step apart (the milled edge of a coin) and the
-   middle of the edge the brightest (a rounded edge catches the light at
-   its widest point). Same frame as the faces, so the slices line up. */
-function buildBadgeEdgeSVG(unitName, i, n){
+/* A drawing as an image, so every layer that shows it shares one decode. */
+function badgeImageURL(svg){
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(svg));
+}
+/* The token's edge: its silhouette in edge metal, lit from above - one
+   drawing, cached by outline, that every slice of the edge shows. One
+   colour for every slice on purpose: alternate slices a step apart (a
+   milled coin's edge) read as a LADDER up the side of a turning token,
+   the "ridged" look this round was asked to take out. */
+const BADGE_EDGE_CACHE = {};
+function badgeEdgeURL(unitName){
+  const shape = badgeShapeFor(unitName), d = shape.d;
+  if(BADGE_EDGE_CACHE[d]) return BADGE_EDGE_CACHE[d];
   const NS = "http://www.w3.org/2000/svg";
-  const shape = badgeShapeFor(unitName), d = shape.d, c = shape.c, G = BADGE_GEOM;
+  const c = shape.c, G = BADGE_GEOM;
   const b = badgeBBoxFor(d) || { x: 6, y: 6, w: 88, h: 88 };
   const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("xmlns", NS);
   svg.setAttribute("viewBox", badgeViewBoxFor(d));
-  svg.setAttribute("class", "badge-edge-art");
-  svg.setAttribute("aria-hidden", "true");
-  const id = "bde" + (++badgeSvgSeq);
-  const mid = 1 - Math.abs(i / Math.max(1, n - 1) - .5) * 2;
-  const lift = (i % 2 ? .05 : 0) + mid * .14;
+  const defs = document.createElementNS(NS, "defs");
   const g = document.createElementNS(NS, "linearGradient");
-  g.setAttribute("id", id); g.setAttribute("gradientUnits", "userSpaceOnUse");
+  g.setAttribute("id", "e"); g.setAttribute("gradientUnits", "userSpaceOnUse");
   g.setAttribute("x1", "0"); g.setAttribute("y1", String(b.y - G.key));
   g.setAttribute("x2", "0"); g.setAttribute("y2", String(b.y + b.h + G.key));
-  [[0, "#C7D0DA"], [.45, "#7C8895"], [.7, "#56616D"], [1, "#3B444E"]].forEach(([o, col]) => {
+  [[0, "#D5DCE3"], [.3, "#A4AFBB"], [.55, "#6E7A87"], [.78, "#515C68"], [1, "#363E48"]].forEach(([o, col]) => {
     const st = document.createElementNS(NS, "stop");
-    st.setAttribute("offset", String(o)); st.setAttribute("stop-color", badgeShade(col, lift));
+    st.setAttribute("offset", String(o)); st.setAttribute("stop-color", col);
     g.appendChild(st);
   });
-  const defs = document.createElementNS(NS, "defs");
   defs.appendChild(g); svg.appendChild(defs);
   const p = document.createElementNS(NS, "path");
   p.setAttribute("d", d);
   p.setAttribute("transform", "translate(" + c[0] + " " + c[1] + ") scale(" + G.scale + ") translate(" + (-c[0]) + " " + (-c[1]) + ")");
-  p.setAttribute("fill", "url(#" + id + ")"); p.setAttribute("stroke", "url(#" + id + ")");
+  p.setAttribute("fill", "url(#e)"); p.setAttribute("stroke", "url(#e)");
   p.setAttribute("stroke-width", String(2 * G.key)); p.setAttribute("stroke-linejoin", "round");
   svg.appendChild(p);
-  return svg;
+  return (BADGE_EDGE_CACHE[d] = badgeImageURL(svg));
 }
 /* The token: .bc-coin (its pop in) > .bc-sway (its sway at rest, its tilt
    into the tray) > .bc-spin (its turns) > the back face, the edge, the
-   front face. Every one keeps its children in 3D. */
+   front face. Every one keeps its children in 3D. The faces and the
+   slices are IMAGES of one drawing each, so twenty-two layers cost two
+   decodes; the light on a face is HTML over it (.bc-spec), never a
+   change inside the drawing. */
 function buildBadgeCoin(unitName){
   const mk = (cls, tag) => { const e = document.createElement(tag || "div"); e.className = cls; return e; };
+  const pic = (cls, src) => { const i = mk(cls, "img"); i.alt = ""; i.decoding = "sync"; i.draggable = false; i.src = src; return i; };
   const coin = mk("bc-coin"), sway = mk("bc-sway"), spin = mk("bc-spin");
   const sil = badgeSilhouetteURL(unitName);
+  const faceSrc = badgeImageURL(buildUnitBadgeSVG(unitName, true, { slot: false }));
+  const edgeSrc = badgeEdgeURL(unitName);
   const face = side => {
     const f = mk("bc-face " + side);
-    f.appendChild(buildUnitBadgeSVG(unitName, true, { slot: false }));
+    f.appendChild(pic("bc-face-art", faceSrc));
     const sp = mk("bc-spec");
     sp.style.setProperty("-webkit-mask-image", sil);
     sp.style.setProperty("mask-image", sil);
@@ -79159,9 +79173,8 @@ function buildBadgeCoin(unitName){
   };
   spin.appendChild(face("is-back"));
   for(let i = 0; i < BC_EDGE_LAYERS; i++){
-    const e = mk("bc-edge");
+    const e = pic("bc-edge", edgeSrc);
     e.style.setProperty("--k", (i / (BC_EDGE_LAYERS - 1)).toFixed(3));
-    e.appendChild(buildBadgeEdgeSVG(unitName, i, BC_EDGE_LAYERS));
     spin.appendChild(e);
   }
   spin.appendChild(face("is-front"));

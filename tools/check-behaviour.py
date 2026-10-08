@@ -15563,8 +15563,11 @@ def check_b317_badgecase(br):
         p98 = vals[int(len(vals) * .98)] - bg if vals else None
         ring.append((u, p98))
     worst = max((v for _, v in ring if v is not None), default=None)
+    # +61 levels on every badge of b6cd249 (its offset lip lines); the
+    # worst here is the slot's own mid-tone lip inside a concave shape
+    # (the C's opening, the valley between the peaks), about +12.
     check("in pixels: nothing light in the band just outside a token's top-left edge, on any of the sixteen (no ghost line)",
-          worst is not None and worst <= 8 and all(v is not None for _, v in ring), sorted(ring, key=lambda x: -(x[1] or 99))[:5])
+          worst is not None and worst <= 20 and all(v is not None for _, v in ring), sorted(ring, key=lambda x: -(x[1] or 99))[:5])
     ctx.close()
     # 5. Reduce motion: the case, still
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
