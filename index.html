@@ -40443,8 +40443,9 @@ function buildAvatarCharSVGFresh(charId){
    each shaded as a separate ball. Where the head meets the body that put
    the head's own shadow (its lower edge, ~.31 black) straight against the
    body's own highlight (its upper-left, ~.25 white): a dark-to-light step
-   of 30-80 levels along every neck, which is exactly a head stuck on top
-   of a body. It is the bug headGrad's own comment describes - "each
+   along every neck (on the characters' own colours, up to 81 levels and
+   32 for the median character), which is exactly a head stuck on top of
+   a body. It is the bug headGrad's own comment describes - "each
    piece gets its OWN independently-computed shading based on its OWN
    small bounding box ... separate pieces stuck together" - brought back
    one layer up. (Measured, not guessed: the plate with the two layers
