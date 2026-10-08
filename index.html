@@ -63175,8 +63175,6 @@ function cosmicScarArt(){
     const G = 64, grid = new Float32Array(G * G);
     for(let i = 0; i < G * G; i++) grid[i] = rnd();
     const sm = t => t * t * (3 - 2 * t);
-    const cl = t => t < 0 ? 0 : t > 1 ? 1 : t;
-    const ss = (a, b, t) => { let k = (t - a) / (b - a); k = k < 0 ? 0 : k > 1 ? 1 : k; return k * k * (3 - 2 * k); };
     const noise = (x, y) => {
       const x0 = Math.floor(x), y0 = Math.floor(y), fx = sm(x - x0), fy = sm(y - y0);
       const xi = ((x0 % G) + G) % G, yi = ((y0 % G) + G) % G, xj = (xi + 1) % G, yj = (yi + 1) % G;
@@ -63210,8 +63208,9 @@ function cosmicScarArt(){
       }
       return pts;
     };
-    /* the rhythm of a real fracture: each midpoint pushed sideways, three
-       times over, each finer and smaller */
+    /* the rhythm of a real fracture: each midpoint pushed sideways, and
+       again, each time finer and smaller (two levels - a third made steps
+       smaller than a pixel) */
     const jag = (pts, levels, amp) => {
       let p = pts.map((q, i) => [q[0], q[1], i / (pts.length - 1)]);
       for(let l = 0; l < levels; l++){
@@ -63225,7 +63224,12 @@ function cosmicScarArt(){
       }
       return p;
     };
-    const SEG = [];   /* per segment: ax ay bx by, half-width at each end, depth at each end, heat at each end, lip, kind */
+    /* per segment: ax ay bx by, half-width at each end, depth at each end,
+       heat at each end, lip, kind (0 the arms, 1 a branch, 2 a hairline).
+       The lip field is no longer read - the lips follow the grain, smooth
+       along the crack - but its random draw stays, so the seeded geometry
+       is the same scar. */
+    const SEG = [];
     const addPath = (p, w0, w1, d0, h0, kind, wPow) => {
       const W = f => w1 + (w0 - w1) * Math.pow(1 - f, wPow);
       const D = f => d0 * Math.pow(1 - f, .6);
@@ -63348,16 +63352,16 @@ function cosmicScarArt(){
       mask = cM.toDataURL("image/png");
     }
     /* the fragments rise from the crack and the rupture: out from the
-       planet's middle and a little up, uneven so eight never read as a
+       planet's middle and a little up, uneven so ten never read as a
        pattern - [x %, y %, size %, direction (deg, 0 = right, clockwise),
        distance %, tumble, period, delay] in the sphere's own box */
     const frags = [];
     const at = (p, f) => p[Math.min(p.length - 1, Math.round(f * (p.length - 1)))];
     [[at(jA, .03), 7], [at(jA, .11), 5.5], [at(jA, .21), 5], [at(jA, .34), 4.5], [at(jB, .12), 6.5], [at(jB, .36), 5],
-     [P2([rimAt(.2, -1, .9)])[0], 7.5], [P2([rimAt(.9, -.4, .9)])[0], 6], [P2([rimAt(-.3, 1, .9)])[0], 6.5], [P2([rimAt(1, .9, .9)])[0], 5.5]].forEach(([P, s], i) => {
-      const r = Math.sqrt(P[0] * P[0] + P[1] * P[1]) || 1;
-      const dx = .8 * P[0] / r, dy = .8 * P[1] / r - .55;
-      frags.push([+((P[0] + 1) * 50).toFixed(1), +((P[1] + 1) * 50).toFixed(1), s, Math.round(Math.atan2(dy, dx) * 180 / Math.PI),
+     [P2([rimAt(.2, -1, .9)])[0], 7.5], [P2([rimAt(.9, -.4, .9)])[0], 6], [P2([rimAt(-.3, 1, .9)])[0], 6.5], [P2([rimAt(1, .9, .9)])[0], 5.5]].forEach(([pt, s], i) => {
+      const r = Math.sqrt(pt[0] * pt[0] + pt[1] * pt[1]) || 1;
+      const dx = .8 * pt[0] / r, dy = .8 * pt[1] / r - .55;
+      frags.push([+((pt[0] + 1) * 50).toFixed(1), +((pt[1] + 1) * 50).toFixed(1), s, Math.round(Math.atan2(dy, dx) * 180 / Math.PI),
         Math.round(22 + 11 * rnd()), Math.round((i % 2 ? -1 : 1) * (150 + 90 * rnd())), +(7.4 + 4 * rnd()).toFixed(1), -(+(11 * rnd()).toFixed(1))]);
     });
     const t1 = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
