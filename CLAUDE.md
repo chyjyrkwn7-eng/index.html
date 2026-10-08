@@ -6590,8 +6590,21 @@ results screen cannot count one twice. `seedVroomTop3()` backfills once
 from Firestore (`vrTop3RetroDone`). It is separate from
 `seedVroomHistory`, which everyone has already run.
 
-**Profile → Stats** has a Virtual Room section: Matches played,
-First-place finishes and Top-3 finishes, each with its explanation.
+~~**Profile → Stats** has a Virtual Room section: Matches played,
+First-place finishes and Top-3 finishes, each with its explanation.~~
+**REMOVED IN THE 317 FIX.** *"Remove the virtual room stats from the stats
+tab. I don't think there will be enough usage to care to track it."* The
+section, its three `STAT_MEANINGS` lines and its `.stat-grid-three` CSS
+are gone; Stats is the four totals and the four study-time cards (8 cards,
+two grids). ONLY THE DISPLAY WENT: `vrMatches`, `vrWins`, `vrTop3`,
+`vrTop3Rooms` are still counted by `recordVroomOutcome`, still defaulted in
+`applyLoadedData`, still synced and merged, and still read by what is built
+on them (the Clown's `vrwins5`, the Arena and Champion banners, the 25
+matches challenge). No tour step pointed at the section (the Profile tour
+points at the Stats tab button). Gates: check-statsbadges ("eight of them,
+in two sections - no Virtual Room cards") and `check_b236` ("Stats shows no
+Virtual Room cards any more"), both failing on b6cd249; check-vroom still
+asserts the counting.
 
 **The results character** reacts on the XP box's own avatar
 (`.results-level-avatar`, live until the grade lands). The one on the

@@ -10302,8 +10302,8 @@
   }
   .stat-lab{ display:block; font-size:.78rem; color:var(--soft); margin-top:.3rem; }
   /* ---------- test history and the Stats tab (build 311) ---------- */
-  .stat-grid.stat-grid-three{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
-  .stat-grid-three .stat-num{ font-size:1.45rem; }
+  /* (.stat-grid-three was the Virtual Room section's grid, gone in the
+     317 fix) */
   .thx-ring{ position:relative; display:inline-grid; place-items:center; width:2.9rem; height:2.9rem; flex:0 0 auto; }
   .thx-ring svg{ position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); overflow:visible; }
   .thx-ring-track{ fill:none; stroke:rgba(255,255,255,.1); stroke-width:3.4; }
@@ -96286,9 +96286,7 @@ function showProfile(defaultTab){
     "Correct answers": "How many of those you got right first time. There is no second chance on a question, so this never counts a retry.",
     "Tests finished": "Drills and exams you played to the end. The daily question is not a test.",
     "Hundos": "Units you have finished with every question right. A run covering three units can earn three, and the daily question earns none.",
-    "Matches played": "Virtual Room matches you finished - races, Tug of War and Battle.",
-    "First-place finishes": "Races you won outright, and team matches your side won. It needs at least one other person in the room.",
-    "Top-3 finishes": "Races where you finished first, second or third - in a room of four or more. With fewer than four there is no podium, so only a win counts, as a first place.",
+    /* (the three Virtual Room cards came off in the 317 fix - see below) */
     "All-time best answer streak": "Your longest run of correct answers ever. It carries over from test to test, so a streak can start in one test and keep going in the next. The daily question never counts either way."
   };
   const statWhyBox = document.createElement("p");
@@ -96464,22 +96462,14 @@ function showProfile(defaultTab){
   studyTimeSect.appendChild(grid);
   statsTab.appendChild(studyTimeSect);
 
-  /* ---- VIRTUAL ROOM (build 236) ----
-     "Add a section for virtual room ... like top 3 finishes, and first
-     place finishes." Top three counts only in a room of four or more -
-     see VROOM_PODIUM_MIN - which the card's explanation says. */
-  const vrSect = document.createElement("div");
-  vrSect.className = "points-progress-sect";
-  const vrHead = document.createElement("p");
-  vrHead.className = "slab"; vrHead.textContent = "Virtual Room";
-  vrSect.appendChild(vrHead);
-  const vrGrid = document.createElement("div");
-  vrGrid.className = "stat-grid stat-grid-three";
-  [["Matches played", String(store.vrMatches || 0)],
-   ["First-place finishes", String(store.vrWins || 0)],
-   ["Top-3 finishes", String(store.vrTop3 || 0)]].forEach(([label, val]) => vrGrid.appendChild(makeStatCard(label, val)));
-  vrSect.appendChild(vrGrid);
-  statsTab.appendChild(vrSect);
+  /* NO VIRTUAL ROOM SECTION (317 fix). Build 236 added one - matches,
+     first places, top threes - and it came off: "Remove the virtual room
+     stats from the stats tab. I don't think there will be enough usage
+     to care to track it." Only the display went. The Virtual Room still
+     counts store.vrMatches / vrWins / vrTop3 (recordVroomOutcome), they
+     still sync and still default in applyLoadedData, and the challenges
+     and banners built on them (vrwins5, the Arena, the Champion) still
+     read them. */
   statsTab.appendChild(statWhyBox);
 
 

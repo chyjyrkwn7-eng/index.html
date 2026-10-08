@@ -2732,8 +2732,12 @@ def check_b236(br):
     check("a podium only from four people; top three counts once, and never in a room of three",
           v.get("places") == [1, 1, 3, 3] and v.get("small") == 0 and v.get("big") == 1, r["vr"])
     st = r["stats"] if isinstance(r["stats"], list) else []
-    check("Stats has a Virtual Room section with first places and top threes",
-          "First-place finishes" in st and "Top-3 finishes" in st, st)
+    # REVISED IN THE 317 FIX: "Remove the virtual room stats from the stats
+    # tab. I don't think there will be enough usage to care to track it."
+    # The section is gone; the podium above still counts (the data stays).
+    # Fails on b6cd249, which still shows all three cards.
+    check("Stats shows no Virtual Room cards any more (the counts above are still kept)",
+          bool(st) and not any(x in st for x in ("Matches played", "First-place finishes", "Top-3 finishes")), st)
     ctx.close()
 
 
