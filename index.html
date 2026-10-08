@@ -11049,7 +11049,7 @@
      smoke (still no lit layer - build 310), each a different size, one
      mirrored, turning at speeds that never line up (61s and 47s one way,
      83s the other), each wandering off its centre as it turns and
-     breathing in and out on its own clock (17.3s, 12.7s, 9.1s) - so
+     breathing in and out on its own clock (15.7s, 12.7s, 9.1s) - so
      wisps thicken, thin and slide across one another, and the picture
      never repeats. Together they cover the planet about as much as the one
      layer did (measured: CLAUDE.md), so its colour is not hidden.
@@ -11063,7 +11063,7 @@
   .cosmic-plasma .cosmic-smoke-shade.is-b{ opacity:.17; transform:rotate(130deg) translate(3%, -2%) scale(-.86, .86); }
   .cosmic-plasma .cosmic-smoke-shade.is-c{ opacity:.2; transform:rotate(250deg) translate(-2%, -4%) scale(1.38); }
   @media (prefers-reduced-motion:no-preference){
-    .cosmic-plasma .cosmic-smoke-shade{ animation:cosmic-smoke-b 61s linear -17s infinite, cosmic-smoke-breathe-a 17.3s ease-in-out -6s infinite alternate; }
+    .cosmic-plasma .cosmic-smoke-shade{ animation:cosmic-smoke-b 61s linear -17s infinite, cosmic-smoke-breathe-a 15.7s ease-in-out -6s infinite alternate; }
     .cosmic-plasma .cosmic-smoke-shade.is-b{ animation:cosmic-smoke-c 83s linear -41s infinite, cosmic-smoke-breathe-b 12.7s ease-in-out -5s infinite alternate; }
     .cosmic-plasma .cosmic-smoke-shade.is-c{ animation:cosmic-smoke-d 47s linear -29s infinite, cosmic-smoke-breathe-c 9.1s ease-in-out -2.3s infinite alternate; }
   }
@@ -64102,10 +64102,6 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     });
   }
   wrap.appendChild(plasma);
-  /* THE SUPERNOVA SCAR (build 317), permanent once reached, on every
-     theme: right after the plasma, so everything that already paints over
-     the planet (the sixth flare, the tap box, the bubbles) still does. */
-  if(typeof store !== "undefined" && store && store.supernovaAchieved) attachCosmicScar(wrap);
   /* The planet's own shadow and edge light (build 304) came off in build
      310 - the planet is the original one again; see "DARK SMOKE ONLY". */
 
@@ -64300,6 +64296,12 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
      up every url(#...) reference to match, makes each hero instance
      fully self-contained no matter how many exist in the document
      at once. */
+  /* THE SUPERNOVA SCAR (build 317), permanent once reached, on every
+     theme: put in right after the plasma, so everything that already
+     paints over the planet (the tap box, the bubbles) still does. Attached
+     once the hero is whole (the planet round), so what it lights - the
+     flares, the rings, the bubbles near it - is all there to be found. */
+  if(typeof store !== "undefined" && store && store.supernovaAchieved) attachCosmicScar(wrap);
   const uid = "_h" + (buildCosmicHero._n = (buildCosmicHero._n || 0) + 1);
   /* Persisted so a tier already shown as freshly-lit once doesn't
      replay that animation on every subsequent Home visit \u2014 only a
