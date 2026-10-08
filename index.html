@@ -56516,9 +56516,33 @@ function playCharSpecial(el){
   return true;
 }
 /* a special asked for by an event (a rank-up, a hundo): still one at a time */
-function charSpecialFire(el, delay){
+/* NOT UNDER A SCENE (build 317 flow). A special is the character's rare
+   move and somebody has to be looking at it: walked end to end, the
+   results character's special started under a rank cutscene (the idle
+   scheduler counted the card as on screen - it is, under the scene's
+   full-screen dim) and the hundo's own one was cut a second in by the
+   badge case. Anything here covers the screen; the scheduler skips a
+   tick while one is up, and an asked-for special waits for it to go. */
+var CHAR_SPECIAL_COVERS = ".bc-scene, #supernova-cutscene, #badge-cutscene, #void-cutscene, #vroom-cutscene, .rs-spot, .fl-scene, .ff-scene, .scene-bridge, #teststart-overlay, #tour-overlay, #genprofile-overlay, #splashscreen, #intro-pop, .invite-overlay";
+/* Covered for THIS character: any of those up that it is not itself
+   inside (the person card is an .invite-overlay, and its own character is
+   one of the prominent ones), or the results reveal still running round
+   it - a special begun in the gap between two pop-ups is under the next
+   one a second later, so the results character waits for the reveal to
+   end (finish() then plays the hundo's special itself). */
+function charSpecialCovered(el){
+  try{
+    if(el && el.closest && el.closest(".rs-rewards:not(.rs-done)")) return true;
+    const covers = document.querySelectorAll(CHAR_SPECIAL_COVERS);
+    for(let i = 0; i < covers.length; i++){ if(!el || !covers[i].contains(el)) return true; }
+    return false;
+  }catch(e){ return false; }
+}
+function charSpecialFire(el, delay, tries){
   setTimeout(() => {
-    if(!el || !el.isConnected || Date.now() < charSpecialBusyUntil) return;
+    if(!el || !el.isConnected) return;
+    if(charSpecialCovered(el)){ if((tries || 0) < 60) charSpecialFire(el, 600, (tries || 0) + 1); return; }
+    if(Date.now() < charSpecialBusyUntil) return;
     if(playCharSpecial(el)) el.dataset.spNext = String(Date.now() + charSpecialMsFor(el.querySelector("svg.avatarchar-svg")) + charSpecialRand(charSpecialTiming.gap));
   }, delay || 0);
 }
@@ -56545,6 +56569,7 @@ function charSpecialTick(){
   charSpecialTimer = setTimeout(charSpecialTick, 1000);
   if(document.hidden || document.documentElement.dataset.reduceMotion === "true" || now < charSpecialBusyUntil) return;
   const due = els.filter(el => {
+    if(charSpecialCovered(el)) return false;
     if(!charHasSpecial(el)) return false;
     if(!el.dataset.spNext) el.dataset.spNext = String(now + charSpecialRand(charSpecialTiming.first));
     return +el.dataset.spNext <= now && !el.classList.contains("char-special");
@@ -78743,6 +78768,13 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
     wrap.fillMs = base + XP_BUMP_MS + (levelsUp || barBefore.fraction < 1 ? 0 : -500) + 200;
   }
   wrap.bumps = bumps;
+  /* Read by the results reveal to time the pop (build 317): a one-level
+     climb is two fills, ~2s. It used to ask the block for .is-levelup
+     while the sequence was being BUILT - a class the climb only adds
+     half-way through its own fill - so the answer was always no, and
+     the pop and the grade came in at 1.25s, with the bar still on its
+     second fill. */
+  wrap.levelsUp = levelsUp;
 
   /* Kicked off by the caller once the block is actually on screen, for
      the same reason the Profile bar is: a width set in the same tick as
@@ -81313,6 +81345,7 @@ function showRunRewards(run, hooks, opts){
      being just on the xp box" (build 236). It reacts when the grade card
      LANDS, not when it is built: the reveal is staged, and a reaction
      played while the grade is still hidden is one nobody saw. */
+  let specialAtEnd = null;
   if(!run.retake && run.total > 0){
     const react = () => {
       const av = xp.querySelector(".results-level-avatar");
@@ -81324,7 +81357,14 @@ function showRunRewards(run, hooks, opts){
       reactCharacter(av, g);
       /* a hundo: the character's special once the reaction has landed
          (build 317) */
-      if(g === "perfect"){ charSpecialWake(); charSpecialFire(av, 2600); }
+      /* ...or, when scenes are coming (build 317 flow), as the reveal's
+         last beat: at 2.6s it began just before the first scene and was
+         cut a second in. finish() fires it once the buttons are in. */
+      if(g === "perfect"){
+        charSpecialWake();
+        if(unlockItems.length && !theme.muteBanners && !quiet) specialAtEnd = av;
+        else charSpecialFire(av, 2600);
+      }
       /* A HUNDO GETS THE CHARACTER'S OWN MOVE (build 241) - "the cooler
          animations/happy for the hundo and then lower for that." The
          perfect hop and joy on top of the move each character makes when
@@ -81512,6 +81552,7 @@ function showRunRewards(run, hooks, opts){
 
   const finish = () => {
     panel.classList.add("rs-done");
+    if(specialAtEnd){ const av = specialAtEnd; specialAtEnd = null; charSpecialFire(av, 700); }
     resultsShownAt = Date.now();
     if(actions){
       const first = actions.querySelector("button");
@@ -81586,7 +81627,7 @@ function showRunRewards(run, hooks, opts){
   });
   /* The pop lands when the bar has finished, not part-way through a
      level-up's second fill (build 302): a wrap is two fills, ~1.9s. */
-  seq.add(levelBlock.fillMs ? levelBlock.fillMs : (levelBlock.matches && levelBlock.matches(".is-levelup, :has(.is-levelup)")) ? 2050 : 1250, () => { xp.classList.remove("is-charging"); xp.classList.add("is-charged"); });
+  seq.add(levelBlock.fillMs ? levelBlock.fillMs : levelBlock.levelsUp ? 2050 : 1250, () => { xp.classList.remove("is-charging"); xp.classList.add("is-charged"); });
   boxes.forEach(b => {
     seq.add(420, instant => {
       rsLand(b, instant);
@@ -81620,7 +81661,22 @@ function showRunRewards(run, hooks, opts){
        268): the scene has left its light behind (openSceneBridge) and a
        full second of that before the card read as a stall. */
     let afterScene = false;
-    const nextGap = () => { const g = afterScene ? 320 : gap; afterScene = false; return g; };
+    /* THE 100%'S EFFECT PLAYS OUT BEFORE THE FIRST SCENE (build 317).
+       The effect starts 180ms after the grade lands, the Unlocked card
+       1300ms after it, and the first scene or pop-up 1200ms after that -
+       so a badge case or a rank cutscene came up 2.3s into a World Tree
+       (5.6s) or a UFO (8.6s), and its dim faded the effect out half-way:
+       "an unrelated unlock ... covers the end of one". The first thing
+       that takes the screen now waits for the effect's tail
+       (HUNDO_FX_TAIL_AT, where its last pieces start fading) - measured
+       from the Unlocked card, which is what that step's delay counts
+       from. Confetti is over by then anyway. A tap still brings it on at
+       once, as a tap brings on any card (the delay is a plain step, not
+       a hold). */
+    const fxId = (run.isPerfect && !run.retake && run.total > 0) ? hundoFxInUse() : null;
+    let fxHold = (fxId && typeof HUNDO_FX_TAIL_AT === "object" && HUNDO_FX_TAIL_AT[fxId]) ? 180 + HUNDO_FX_TAIL_AT[fxId] - 1300 : 0;
+    const firstHeld = g => { if(fxHold > g) g = fxHold; fxHold = 0; return g; };
+    const nextGap = () => { const g = afterScene ? 320 : gap; afterScene = false; return firstHeld(g); };
     unlockItems.forEach((it, n) => {
       if(it.kind === "rank"){
         /* THE RANK IS ITS CUTSCENE, played here rather than waiting for
@@ -81638,7 +81694,7 @@ function showRunRewards(run, hooks, opts){
                lands and is read before the screen goes dark. 1200 (build
                308), since that read as broken; straight off the badge's
                case it is a short beat. */
-            seq.add(afterScene ? 700 : 1200, (instant, release) => {
+            seq.add(firstHeld(afterScene ? 700 : 1200), (instant, release) => {
               clearCelebrationsForScene();
               const back = () => { levelBlock.setRank(highest, true); release(); };
               if(highest === "titan") playSupernovaCutscene({ from: from, onDone: back });
@@ -81708,8 +81764,14 @@ function showRunRewards(run, hooks, opts){
       seq.add(theme.muteBanners ? 420 : 200, instant => rsLand(unlockRows[n], instant));
     });
   }
-  if(actions) seq.add(unlocked ? 450 : 620, instant => rsLand(actions, instant));
-  seq.add(0, () => { resultsSeq = null; finish(); });
+  /* THE BUTTONS DO NOT ARRIVE UNDER A SCENE'S DIM (build 317). A scene
+     leaves its bridge up for the pop-up it expects next (openSceneBridge)
+     and only lets go after SCENE_BRIDGE_WAIT_MS. When the last scene is
+     the last unlock - a badge case on its own - nothing claims it, so
+     Re-run and Main menu landed under 72% black and sat there ~1.4s
+     before it faded. It goes as the buttons come in. */
+  if(actions) seq.add(unlocked ? 450 : 620, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(actions, instant); });
+  seq.add(0, () => { resultsSeq = null; if(sceneBridgeOpen()) dropSceneBridge(false); finish(); });
 
   /* A TAP SPEEDS UP THE BOX ON SCREEN, NOT THE WHOLE SHOW (build 305):
      "You can tap the screen by speeding up the box it's currently
@@ -98071,8 +98133,17 @@ function scheduleRankUpLock(ms){
 /* Anything that already owns Home goes first: the same list the reward
    cards wait on, the cards themselves and their flight, and the daily
    question's XP on its way in. */
+/* A queued card that is not owed is not something to wait for (build 317
+   flow): showHome() always arms the card queue's 2.2s timer, so after a
+   rank-up whose cards the results screen already played Home sat unlocked
+   - Start Studying live - for ~2.7s waiting on a timer with nothing
+   behind it. It locks at its own 1.2s now unless a card is really due. */
+function rankUpLockCardDue(){
+  if(!homeUnlockTimer) return false;
+  try{ return homeUnlocksOwed(pendingHomeUnlocks()); }catch(e){ return true; }
+}
 function rankUpLockWaits(){
-  try{ if(homeUnlockBlocked() || homeUnlockPlaying || homeUnlockTimer || (store.pendingBadgeUnlocks || []).length) return true; }catch(e){ return true; }
+  try{ if(homeUnlockBlocked() || homeUnlockPlaying || rankUpLockCardDue() || (store.pendingBadgeUnlocks || []).length) return true; }catch(e){ return true; }
   if(document.querySelector(".rs-fly, .scene-bridge, #teststart-overlay, #intro-pop, #tour-overlay, #splashscreen")) return true;
   return Date.now() < (Number(dailyXpFlyEndsAt) || 0);
 }
