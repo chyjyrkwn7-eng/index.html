@@ -49,6 +49,8 @@ KNOWN = {
     "bl-trailmet": "a meteor that is invisible at both ends",
     "cosmic-smoke-a": "a full turn - the translate and scale are the same at both ends",
     "cosmic-smoke-b": "a full turn the other way - translate and scale the same at both ends",
+    "cosmic-smoke-c": "the mirrored smoke layer: a full turn - translate and scale the same at both ends",
+    "cosmic-smoke-d": "the large smoke layer: a full turn - translate and scale the same at both ends",
     # Build 225 banner scenes.
     "bn-fall": "a petal fades in at the top and out at the bottom",
     "bn-lantern": "a lantern fades in low and out high",

@@ -11041,16 +11041,54 @@
      planet turned its magenta pink-grey. That layer is gone; what drifts
      across the planet now is shadow, which deepens the colour instead
      of fading it. */
+  /* THE SMOKE ROILS (build 317, planet round). "the large planet in the
+     cutscene doesn't look animated? ... the planet needs more movement
+     with what it has, that dark smoke needs to move a smidge faster and
+     randomly to give that smokey look." One dark layer turning once in
+     90s read as a still texture. Now it is three layers of the same dark
+     smoke (still no lit layer - build 310), each a different size, one
+     mirrored, turning at speeds that never line up (61s and 47s one way,
+     83s the other), each wandering off its centre as it turns and
+     breathing in and out on its own clock (17.3s, 12.7s, 9.1s) - so
+     wisps thicken, thin and slide across one another, and the picture
+     never repeats. Together they cover the planet about as much as the one
+     layer did (measured: CLAUDE.md), so its colour is not hidden.
+     Transform and opacity only; the turns are whole turns, so seamless.
+     Under Reduce motion (the app's or the system's) they hold still, each
+     at its own angle. */
   .cosmic-plasma .cosmic-smoke-shade{
     background:color-mix(in srgb, var(--theme-c3, #6A3FB0) 28%, #000);
-    opacity:.5;
-    animation:cosmic-smoke-b 90s linear infinite;
+    opacity:.36; transform:rotate(-40deg) translate(-4%, 3%) scale(1.1);
+  }
+  .cosmic-plasma .cosmic-smoke-shade.is-b{ opacity:.17; transform:rotate(130deg) translate(3%, -2%) scale(-.86, .86); }
+  .cosmic-plasma .cosmic-smoke-shade.is-c{ opacity:.2; transform:rotate(250deg) translate(-2%, -4%) scale(1.38); }
+  @media (prefers-reduced-motion:no-preference){
+    .cosmic-plasma .cosmic-smoke-shade{ animation:cosmic-smoke-b 61s linear -17s infinite, cosmic-smoke-breathe-a 17.3s ease-in-out -6s infinite alternate; }
+    .cosmic-plasma .cosmic-smoke-shade.is-b{ animation:cosmic-smoke-c 83s linear -41s infinite, cosmic-smoke-breathe-b 12.7s ease-in-out -5s infinite alternate; }
+    .cosmic-plasma .cosmic-smoke-shade.is-c{ animation:cosmic-smoke-d 47s linear -29s infinite, cosmic-smoke-breathe-c 9.1s ease-in-out -2.3s infinite alternate; }
   }
   @keyframes cosmic-smoke-b{
     0%{ transform:rotate(0deg) translate(-4%, 3%) scale(1.1); }
+    25%{ transform:rotate(-90deg) translate(3%, 5%) scale(1.03); }
     50%{ transform:rotate(-180deg) translate(5%, -4%) scale(1); }
+    75%{ transform:rotate(-270deg) translate(-3%, -5%) scale(1.07); }
     100%{ transform:rotate(-360deg) translate(-4%, 3%) scale(1.1); }
   }
+  @keyframes cosmic-smoke-c{
+    0%{ transform:rotate(0deg) translate(4%, -2%) scale(-.86, .86); }
+    33%{ transform:rotate(120deg) translate(-3%, -5%) scale(-.92, .92); }
+    67%{ transform:rotate(240deg) translate(-4%, 4%) scale(-.82, .82); }
+    100%{ transform:rotate(360deg) translate(4%, -2%) scale(-.86, .86); }
+  }
+  @keyframes cosmic-smoke-d{
+    0%{ transform:rotate(0deg) translate(-2%, -4%) scale(1.38); }
+    30%{ transform:rotate(-108deg) translate(5%, -1%) scale(1.3); }
+    62%{ transform:rotate(-223deg) translate(1%, 5%) scale(1.44); }
+    100%{ transform:rotate(-360deg) translate(-2%, -4%) scale(1.38); }
+  }
+  @keyframes cosmic-smoke-breathe-a{ from{ opacity:.26; } to{ opacity:.38; } }
+  @keyframes cosmic-smoke-breathe-b{ from{ opacity:.06; } to{ opacity:.28; } }
+  @keyframes cosmic-smoke-breathe-c{ from{ opacity:.06; } to{ opacity:.34; } }
   [data-reduce-motion="true"] .cosmic-plasma .cosmic-smoke{ animation:none; }
   /* ---- THE SUPERNOVA SCAR (build 317) ----
      "the actual supernova would happen and it would be permanent like a
@@ -62783,6 +62821,47 @@ function cosmicSmokeURL(){
   }catch(e){ cosmicSmokeCache = ""; }
   return cosmicSmokeCache;
 }
+/* THE WISPS (build 317, planet round): the third smoke layer's own
+   texture. The smoke is fractal noise, soft by design; this is the same
+   noise pushed through itself (domain warping - the noise's coordinates
+   bent by two more noises), which curls it into the swirls and filaments
+   smoke actually makes. Drawn once per session like the smoke, seeded,
+   alpha only - the layer that masks with it brings the colour. */
+let cosmicWispsCache = null;
+function cosmicWispsURL(){
+  if(cosmicWispsCache !== null) return cosmicWispsCache;
+  try{
+    const N = 128, c = document.createElement("canvas");
+    c.width = N; c.height = N;
+    const g = c.getContext("2d");
+    if(!g) return (cosmicWispsCache = "");
+    let seed = 4111;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const G = 16, grid = [];
+    for(let i = 0; i < G * G; i++) grid.push(rnd());
+    const at = (x, y) => grid[((y % G + G) % G) * G + ((x % G + G) % G)];
+    const sm = t => t * t * (3 - 2 * t);
+    const noise = (x, y) => {
+      const x0 = Math.floor(x), y0 = Math.floor(y), fx = sm(x - x0), fy = sm(y - y0);
+      const a = at(x0, y0), b = at(x0 + 1, y0), c2 = at(x0, y0 + 1), d = at(x0 + 1, y0 + 1);
+      return a + (b - a) * fx + (c2 - a) * fy + (a - b - c2 + d) * fx * fy;
+    };
+    const fbm = (x, y) => { let v = 0, amp = .55; for(let o = 0; o < 4; o++){ v += amp * noise(x * (1 << o), y * (1 << o)); amp *= .5; } return v; };
+    const img = g.createImageData(N, N);
+    for(let y = 0; y < N; y++) for(let x = 0; x < N; x++){
+      const u = x * 5 / N, v = y * 5 / N;
+      const wx = fbm(u + 1.7, v + 9.2), wy = fbm(u + 8.3, v + 2.8);
+      const n = fbm(u + 2.6 * wx, v + 2.6 * wy);
+      const a = Math.max(0, Math.min(1, (n - .46) / .3));
+      const k = (y * N + x) * 4;
+      img.data[k] = img.data[k + 1] = img.data[k + 2] = 255;
+      img.data[k + 3] = Math.round(sm(a) * 255);
+    }
+    g.putImageData(img, 0, 0);
+    cosmicWispsCache = c.toDataURL("image/png");
+  }catch(e){ cosmicWispsCache = ""; }
+  return cosmicWispsCache;
+}
 /* THE SCAR, DRAWN ONCE - A CRACK ACROSS THE PLANET (build 317, planet
    round). "the permanent damage part to the sphere doesn't look too too
    good, maybe it needs a deep crack running across it, maybe it doesn't
@@ -63846,11 +63925,14 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
      drifting against each other. Nothing repaints per frame. */
   const smokeUrl = cosmicSmokeURL();
   if(smokeUrl){
-    /* the shade layer only (build 310 - see the CSS) */
-    ["cosmic-smoke cosmic-smoke-shade"].forEach(cls => {
+    /* the shade only (build 310), in three layers that roil against each
+       other (build 317, planet round - see the CSS) */
+    const wisps = cosmicWispsURL();
+    [["cosmic-smoke cosmic-smoke-shade", smokeUrl], ["cosmic-smoke cosmic-smoke-shade is-b", smokeUrl],
+     ["cosmic-smoke cosmic-smoke-shade is-c", wisps || smokeUrl]].forEach(([cls, url]) => {
       const sm = document.createElement("i");
       sm.className = cls;
-      sm.style.setProperty("--smoke", "url(" + smokeUrl + ")");
+      sm.style.setProperty("--smoke", "url(" + url + ")");
       plasma.appendChild(sm);
     });
   }
