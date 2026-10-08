@@ -233,14 +233,16 @@ def badge_queue(pg, rec):
 
 
 def badge_case(pg, rec):
-    """The results-screen badge scene (build 308): the badge spins up on
-    its own and is named, the case rises under it, the lid lifts towards
-    you, and the badge goes into its slot. ~14s."""
+    """The results-screen badge scene: the token spins up on its own and is
+    named, the case rises under it shut, the latches go, the lid swings
+    back on its hinges and STAYS open, and the token drops into its slot
+    (build 317, badge round). ~17s - a frame-stepped MP4 of it is the
+    smoother record (see CLAUDE.md, the badge round)."""
     pg.evaluate("()=>showHome()")
     pg.wait_for_timeout(700)
     rec.start(); pg.wait_for_timeout(400)
     pg.evaluate("()=>playBadgeCaseScene(['Identity Crimes'], ()=>{})")
-    pg.wait_for_timeout(15200)
+    pg.wait_for_timeout(17800)
 
 
 # THE ACCOUNT HOLDS THE RANK IT IS CELEBRATING (build 309). The account

@@ -16420,8 +16420,10 @@ them:
 - `--case-shell-bg` / `--case-shell-size`: the grain, the light falling
   across it, and the leather in the Next rank card's 160-degree light;
 - `--case-trim`: aluminium for an edge or an opening, darker than the
-  hardware. The polished ramp on a two-pixel edge read as a white
-  outline;
+  hardware (the polished ramp on a two-pixel edge read as a white
+  outline) and NEUTRAL. It is a layer of the tray's own background, and
+  check_b232 reads every colour in that background for blue: a
+  steel-blue trim failed it;
 - `--case-metal`: the hardware;
 - `--case-lining-bg`: the neutral graphite lining (check_b232 still holds:
   no blue in it);
@@ -16442,7 +16444,8 @@ handle off the case). Each context sets only its geometry:
   `perspective(42rem) rotateX(-14deg)`), the hinges where it meets the
   tray, the tray of badges in its bead, the front with its two latches,
   and the handle folded down in front. Still exactly two spans in
-  `.badge-case-front` (check_b242);
+  `.badge-case-front` (check_b242). Tapping a badge still opens its card
+  (check_b317_badgecase);
 - **the Profile card**: the same case, small and shut round its tray. Its
   shell has the trim and stitching, the strip of badges sits in the
   lining, two latches are on its front edge and the handle hangs under
@@ -16463,6 +16466,11 @@ handle off the case). Each context sets only its geometry:
   the lid passes upright. It also has a front wall. Sizes are in the
   case's own width (`--cw`, `--ch`, `--d`, `--dl` on `.bc-scene`), so one
   set of numbers frames a phone and an iPad.
+- **The open case is about 1.75 of its own width tall**, so the case and
+  the token are sized by HEIGHT as well (`44vh`, `34vh`). It was checked
+  open at 320x568, 375x667, 440x956, 834x1194, 844x390 and 1194x834. A
+  phone held sideways has no room under the case, so `placeWords` puts
+  the words beside it.
 - **The camera.** Shut, it looks from the front and above at 52deg (the
   latches and the handle). As the lid swings back to 112deg it rises to
   21deg and pulls the case back (`--open-s`). The open lid STANDS behind
@@ -16513,6 +16521,11 @@ on a Pro Max where a flat drawing was a hairline.
 - **Longer, as asked: about 16.9s for one badge** (it was about 13.4).
   Each further badge in a run adds about 3.75s: a shorter spin at the
   lid, then its own drop.
+- **A Web Animation filled forwards outlives the step that made it.**
+  A run with two badges showed the second token sitting on the first
+  one's slot, because the first flight held the flyer there over its
+  inline position. `showCoin` cancels the flyer's animations first.
+  Gated by a two-badge run on the fake clock.
 
 **REDUCE MOTION GETS THE CASE, STILL.** The scene used to be skipped
 outright. Now `playBadgeCaseScene` builds the case already open, with the
@@ -16539,6 +16552,11 @@ cannot move a frame. On both reference devices it checks:
 
 Then, for all sixteen badges: no LIGHT copy of the outline is drawn
 shifted off it, and in pixels nothing light sits in the band just outside
-a token's top-left edge. Last, the Reduce motion still scene. Every check
-fails on b6cd249. check_b308_unlocks polls for the open case instead of
-reading it at a fixed 8.4s, because the scene grew longer on request.
+a token's top-left edge (+61 levels on every badge of b6cd249; the worst
+here is +12, the slot's own lip in a concave shape, so the bar is 20).
+After that come a two-badge run and the Reduce motion still scene.
+Against b6cd249, 13 of the 15 fail. The two that pass ("tapping a badge
+still opens its card", on both devices) guard what was kept, and so
+does the two-badge run. check_b308_unlocks polls for the open case
+instead of reading it at a fixed 8.4s, because the scene grew longer on
+request. `tools/record-cutscenes.py` waits 17.8s for it now.
