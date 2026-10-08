@@ -11828,8 +11828,10 @@ def check_b313_fx(br):
           await until(T + 1300);
           out.after = document.querySelectorAll('.hfx-layer, .hfx-box.is-grade, .hfx-pane').length;
           out.borderAfter = getComputedStyle(g).borderTopColor; out.fillAfter = fill();
-          const tn = g.querySelector(':scope > .hfx-tintnum.hfx-keep');
-          out.numAfter = tn ? parseFloat(getComputedStyle(tn).opacity) : 0;
+          /* the 100% itself in the effect's ramp (build 317 round 3: the real
+             number, no copy laid over it - .hfx-tintnum is gone) */
+          const pn = g.querySelector('.rs-pct'), pcs = pn && getComputedStyle(pn);
+          out.numAfter = pcs ? { bg: pcs.backgroundImage.slice(0, 120), color: pcs.color } : null;
           out.screenUp = !!document.querySelector('.rs-screen') && g.isConnected;
           out.tintVars = ['--hfx-b', '--hfx-g1', '--hfx-g2'].map(k => g.style.getPropertyValue(k).trim());
           if(sampler){ clearInterval(sampler); out.still = still; out.cardAnims = scripted; }
@@ -11840,7 +11842,9 @@ def check_b313_fx(br):
         rgb = lambda h: "rgb(%d, %d, %d)" % tuple(int(h.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)) if h and h.startswith("#") else None
         tv = r.get("tintVars") or [None, None, None]
         check("%s: and KEEPS them once the effect has finished, the results screen still up (round 3: \"it stays yellow\")" % fx,
-              r.get("screenUp") and tv[0] and r.get("borderAfter") == rgb(tv[0]) and r.get("numAfter", 0) > .95, {k: r.get(k) for k in ("borderAfter", "numAfter", "screenUp", "tintVars")})
+              r.get("screenUp") and tv[0] and r.get("borderAfter") == rgb(tv[0])
+              and (r.get("numAfter") or {}).get("color") == "rgba(0, 0, 0, 0)" and (r.get("numAfter") or {}).get("bg", "").startswith("linear-gradient(105deg, %s" % rgb(tv[1])),
+              {k: r.get(k) for k in ("borderAfter", "numAfter", "screenUp", "tintVars")})
         check("%s: in its tail it is still on screen, fading - never cut (nothing fully shown at the last look before the layer goes)" % fx,
               r.get("tailLayer") and r.get("tailFading", 0) >= 2 and r.get("cutFull") == [], {k: r.get(k) for k in ("tailLayer", "tailFading", "cutAt", "cutFull", "total")})
         check("%s: and once it has faded every piece is gone" % fx, r.get("after") == 0 and r.get("total", 0) > 0, r)
@@ -11875,7 +11879,11 @@ def check_b313_fx(br):
                   len(ty) == 2 and float(ty[1]) > 60 and min(sc) < .8, pl)
             check("blackhole: and springs back to exactly where it was", bk.get("scale") in ("none", "1", "1 1") and bk.get("translate") in ("none", "0px", "0px 0px"), bk)
         if fx == "ufo":
-            check("ufo: the box does not light up before the beam reaches it", r.get("beforeBeam") == yellow, r.get("beforeBeam"))
+            # build 317, round 3 reverses this: "It looks like all the hundo
+            # effect boxes start as the gold default, fix that" - the box is
+            # in the UFO's green from its first frame, before the beam
+            check("ufo: the box is in the UFO's colours before the beam reaches it - never gold first (build 317)",
+                  r.get("beforeBeam") == "rgb(107, 255, 143)", r.get("beforeBeam"))
             ld = r.get("landed") or {}
             check("ufo: it lands ON the 100% box - its feet on the box's top edge, over its middle",
                   ld and abs(ld.get("feet", 99)) <= 8 and abs(ld.get("cx", 99)) <= 30, ld)
@@ -13834,160 +13842,199 @@ def check_b317_challenge_specials(br):
             check("%s: CHAR_SPECIAL_MS covers the whole special (%sms >= %dms)"
                   % (row["id"], row["table"], row["endMs"]), row["table"] >= row["endMs"] - 50)
     ctx.close()
+# A 100% results screen made directly (check-results' own recipe): every
+# answer right first time, then summarize() - no test to sit through.
+RUN100 = """window.__run100 = (unit) => {
+    cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [unit]; cfg.size = 0;
+    order = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === unit);
+    runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null; isMissedRetake = false;
+    practiceTestMinutes = null; inVirtualRoom = false; attempts = {}; picked = {}; timedOutSet = {};
+    try{ firstPick = {}; }catch(e){}
+    order.forEach(qi => { const oo = optionOrder(qi); attempts[qi] = 1; picked[qi] = oo.indexOf(QUESTIONS[qi].answer); });
+    runStartTime = Date.now() - 42000; testInProgress = true; pos = order.length - 1;
+    summarize();
+  };"""
+
+
 def check_b317_hundobox(br):
-    """Build 317. "One thing about the hundo effects, the firework one or
-    whatever, the number 100 is cutout at the percentage part, and the 10/10
-    is still gold and not matching the theme, ensure all effects are good to
-    go for those boxes." On a real 100% results screen, for EVERY effect that
-    can play (the ladder and the two still built off it), on the narrowest
-    phone and both reference devices: the 100% in the effect's colours is
-    not clipped (its copy is no wider than the number, and its % sits on the
-    real one's small raised %, inside the box), the gold number underneath
-    has given way to it, and the "12 / 12" and the GRADE label are in the
-    effect's own colours - not gold, and near the effect's hue. Written
-    against build 317 before this, where the copy was "100%" with a
-    full-size % (195px of text in a 163px box) and Fireworks' fraction was a
-    pale gold."""
-    print("\n317. every hundo effect's box: the whole 100% shows, and every word is in the effect's colours")
+    """Build 317, three rounds of one box. (1) "the number 100 is cutout at
+    the percentage part, and the 10/10 is still gold and not matching the
+    theme". (2) "the percentage sign, it looks like a solid color, ensure
+    that and the number (the hundo) look like it goes together". (3) "In
+    default the numbers beside the Hundo is white, in the others some of
+    the stuff is the theme and not ... We need this all to be more
+    cohesive", and "It looks like all the hundo effect boxes start as the
+    gold default, fix that." On a real 100% results screen, for every
+    effect that can play and the default, at 320, 440 and 834 wide:
+    the whole "100%" shows and is ONE piece of type (the % inline, painting
+    no colour of its own, under the number's gradient); the box is in its
+    effect's colours on the FIRST frame it is visible - border, number,
+    bar - exactly as it is once settled; and every word in the box (GRADE,
+    the 12 / 12, the line under it, each unit and its count) is the
+    default's colour on every effect. Plus the default gold and every
+    Customize tile, and the page-pinned dims covering the screen as it
+    scrolls. Round 3's assertions fail on 13c747f."""
+    print("\n317. every hundo effect's box: whole, one piece of type, its colours from the first frame, the default's words")
     import colorsys
 
     def rgb(c):
         m = re.match(r"rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)", c or "")
         if m:
             return [float(m.group(i)) / 255 for i in (1, 2, 3)] + [float(m.group(4) or 1)]
-        m = re.match(r"color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)(?: / ([\d.]+))?\)", c or "")
-        if m:
-            return [float(m.group(i)) for i in (1, 2, 3)] + [float(m.group(4) or 1)]
-        m = re.match(r"oklab\(([-\d.]+) ([-\d.]+) ([-\d.]+)(?: / ([\d.]+))?\)", c or "")
-        if m:   # a colour caught mid-transition is serialised in oklab
-            L, A, B = (float(m.group(i)) for i in (1, 2, 3))
-            l_, m_, s_ = ((L + .3963377774 * A + .2158037573 * B) ** 3, (L - .1055613458 * A - .0638541728 * B) ** 3,
-                          (L - .0894841775 * A - 1.2914855480 * B) ** 3)
-            lin = (4.0767416621 * l_ - 3.3077115913 * m_ + .2309699292 * s_, -1.2684380046 * l_ + 2.6097574011 * m_ - .3413193965 * s_,
-                   -.0041960863 * l_ - .7034186147 * m_ + 1.7076147010 * s_)
-            g = lambda x: max(0.0, min(1.0, 12.92 * x if x <= .0031308 else 1.055 * x ** (1 / 2.4) - .055))
-            return [g(x) for x in lin] + [float(m.group(4) or 1)]
-        h = (c or "").lstrip("#")
-        if len(h) == 6:
-            return [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)] + [1.0]
         return None
 
-    def hue(c):
-        v = rgb(c)
-        if not v:
-            return None, 0
-        h, l, sat = colorsys.rgb_to_hls(*v[:3])
-        return h * 360, sat
-
-    def near(a, b, tol=40):
-        d = abs(a - b) % 360
-        return min(d, 360 - d) <= tol
-
-    def lum(c):
-        v = rgb(c)
-        f = lambda x: x / 12.92 if x <= .03928 else ((x + .055) / 1.055) ** 2.4
-        return .2126 * f(v[0]) + .7152 * f(v[1]) + .0722 * f(v[2])
-
+    GOLD_BORDER = "rgba(242, 211, 138, 0.2)"
     for label, w, h in (("SE 1st gen", 320, 568), PHONE, TABLET):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
-        r = pg.evaluate("async () => { store.lifetime.perfectTests = 600; store.hundoFx = HUNDO_FX[1].id; saveStore(); " + FX_RUN + """
-          const out = { started: !!window.__fxAt, fx: [] };
-          await wait((HUNDO_FX_TOTAL[HUNDO_FX[1].id] || 7000) + 500);
-          const g = document.querySelector('.rs-grade'); if(!g) return out;
-          const pct = g.querySelector('.rs-pct');
-          const ids = Object.keys(HUNDO_FX_BUILD);
-          const R = e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
-          for(const id of ids){
-            const t = HFX_TINT[id] || {};
-            const hd = playHundoFx(id, { box: g, pct });
-            await wait((t.on || 0) + 2200);
-            const cs = e => getComputedStyle(e);
-            /* on a loaded machine the colours can still be on their way:
-               read them once they have stopped moving */
-            for(let i = 0, last = ''; i < 30; i++){
-              const now = cs(g.querySelector('.rs-grade-frac')).color + cs(g.querySelector('.rs-kicker')).color;
-              if(now === last && now.indexOf('oklab') < 0) break;
-              last = now; await wait(300);
-            }
-            const tn = g.querySelector('.hfx-tintnum'), sign = pct.querySelector('.rs-pct-sign');
-            const tsign = tn && tn.querySelector('.rs-pct-sign');
-            const fr = g.querySelector('.rs-grade-frac');
-            out.fx.push({ id, tint: t, tinted: g.classList.contains('hfx-tinted'),
-              grade: R(g), pct: R(pct), pctScroll: [pct.scrollWidth, pct.clientWidth], sign: sign ? R(sign) : null,
-              tn: tn ? R(tn) : null, tnScroll: tn ? [tn.scrollWidth, tn.clientWidth] : null, tsign: tsign ? R(tsign) : null,
-              tnOpacity: tn ? cs(tn).opacity : null, realColor: cs(pct).color, realOpacity: +cs(pct).opacity,
-              /* round 2: the % is the end of the same ramp - it paints no
-                 colour of its own, so the copy's gradient shows through it */
-              oneType: tsign ? { display: cs(tsign).display, color: cs(tsign).color, bg: cs(tsign).backgroundImage,
-                parentBg: cs(tn).backgroundImage.slice(0, 16), clip: cs(tn).webkitBackgroundClip || cs(tn).backgroundClip,
-                px: parseFloat(cs(tsign).fontSize) } : null,
-              frac: cs(fr).color, fracOf: [...fr.querySelectorAll('.rs-frac-of')].map(e => cs(e).color),
-              kicker: cs(g.querySelector('.rs-kicker')).color, sub: cs(g.querySelector('.rs-grade-sub')).color });
-            /* the dim is the screen's: scroll the page under it and it
-               still covers the viewport edge to edge */
-            const dim = document.querySelector('.hfx-layer > .hfx-fw-dim, .hfx-layer > .hfx-ufo-dim, .hfx-layer > .hfx-bh-dim');
-            if(dim){ const y0 = scrollY; const dy = y0 > 90 ? -90 : 90;
-              window.scrollTo({ top: y0 + dy, behavior: 'instant' }); await wait(60);
-              const b = dim.getBoundingClientRect(); out.fx[out.fx.length - 1].dim = { moved: scrollY - y0, rect: [b.left, b.top, b.right, b.bottom], vw: innerWidth, vh: innerHeight };
-              window.scrollTo({ top: y0, behavior: 'instant' }); await wait(60); }
-            if(hd && hd.stop) hd.stop();
-            await wait(800);
-          }
-          return out; }""")
+        pg.evaluate("() => { " + RUN100 + " }")
+        ids = ["confetti"] + pg.evaluate("() => Object.keys(HUNDO_FX_BUILD)")
+        res = {}
+        for fx in ids:
+            res[fx] = pg.evaluate("""async (fx) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+              store.lifetime.perfectTests = 600; if(!HUNDO_FX.some(d => d.id === fx)) HUNDO_FX[1].id = fx;
+              store.hundoFx = fx; theme.reduceMotion = false; theme.muteBanners = true; saveStore();
+              const cs = e => getComputedStyle(e);
+              const look = g => { const p = g.querySelector('.rs-pct'), f = g.querySelector('.unit-breakdown-fill');
+                return { border: cs(g).borderTopColor, num: p ? cs(p).backgroundImage.slice(0, 60) + '|' + cs(p).color : null,
+                  bar: f ? cs(f).backgroundImage.slice(0, 80) : null, shown: +cs(g).opacity }; };
+              /* the first frame the card is visible: sampled in the same task the
+                 class that lands it is set, before anything paints */
+              let first = null;
+              const mo = new MutationObserver(() => { const g = document.querySelector('.rs-screen .rs-grade');
+                if(g && !first && (g.classList.contains('rs-in') || g.classList.contains('rs-in-now'))) first = look(g); });
+              mo.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+              /* and the first frame it is actually PAINTED with any opacity at all */
+              let painted = null; const nraf = window.requestAnimationFrame.bind(window);
+              const tick = () => { const g = document.querySelector('.rs-screen .rs-grade');
+                if(g && +cs(g).opacity > 0) painted = look(g); else nraf(tick); };
+              nraf(tick);
+              window.__fxAt = 0; window.__celAt = 0;
+              const real = window.__realPlay || (window.__realPlay = playHundoFx), rc = window.__realCel || (window.__realCel = celebrate);
+              window.playHundoFx = function(a, b){ window.__fxAt = performance.now(); return real(a, b); };
+              window.celebrate = function(a, b){ window.__celAt = performance.now(); return rc(a, b); };
+              showHome(); await wait(200);
+              __run100('Identity Crimes');
+              for(let i = 0; i < 300 && !window.__fxAt && !window.__celAt; i++) await wait(50);
+              /* past every effect's old moment for its colours (the UFO's was 2.8s) */
+              await wait(3400); mo.disconnect();
+              const g = document.querySelector('.rs-screen .rs-grade'); if(!g) return null;
+              const p = g.querySelector('.rs-pct'), sg = p.querySelector('.rs-pct-sign');
+              const R = e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
+              const txt = sel => [...g.querySelectorAll(sel)].map(e => cs(e).color);
+              const out = { first, painted, settled: look(g), tinted: g.classList.contains('hfx-tinted'),
+                pctScroll: [p.scrollWidth, p.clientWidth], grade: R(g), sign: R(sg),
+                one: { display: cs(sg).display, color: cs(sg).color, bg: cs(sg).backgroundImage, parentBg: cs(p).backgroundImage.slice(0, 16),
+                  clip: cs(p).webkitBackgroundClip || cs(p).backgroundClip, px: parseFloat(cs(sg).fontSize) },
+                text: { kicker: txt(':scope > .rs-kicker'), frac: txt('.rs-grade-frac'), of: txt('.rs-grade-frac .rs-frac-of'), sub: txt('.rs-grade-sub'),
+                  unit: txt('.rs-byunit .unit-breakdown-name'), count: txt('.rs-byunit .rs-frac-of'), countAll: [...g.querySelectorAll('.rs-byunit *')].filter(e => /\\d/.test(e.textContent) && !e.children.length).map(e => cs(e).color) } };
+              const dim = document.querySelector('.hfx-layer > .hfx-fw-dim, .hfx-layer > .hfx-ufo-dim, .hfx-layer > .hfx-bh-dim');
+              if(dim){ const y0 = scrollY; const dy = y0 > 90 ? -90 : 90;
+                window.scrollTo({ top: y0 + dy, behavior: 'instant' }); await wait(60);
+                const b = dim.getBoundingClientRect(); out.dim = { moved: scrollY - y0, rect: [b.left, b.top, b.right, b.bottom], vw: innerWidth, vh: innerHeight };
+                window.scrollTo({ top: y0, behavior: 'instant' }); }
+              return out; }""", fx)
         # the default gold and the Customize tiles, the same rule
         d = pg.evaluate("""() => { const cs = e => getComputedStyle(e); const out = {};
-          const scr = document.createElement('div'); scr.className = 'rs-screen'; scr.style.cssText = 'position:absolute;left:0;top:0;';
-          const g = document.createElement('div'); g.className = 'rs-card rs-grade is-perfect';
-          const p = document.createElement('span'); p.className = 'rs-pct pct perfect'; gradePctMarkup(p, 100);
-          g.appendChild(p); scr.appendChild(g); document.body.appendChild(scr);
           const one = (num) => { const sg = num.querySelector('.rs-pct-sign'); return { display: cs(sg).display, color: cs(sg).color, bg: cs(sg).backgroundImage,
             parentBg: cs(num).backgroundImage.slice(0, 16), clip: cs(num).webkitBackgroundClip || cs(num).backgroundClip }; };
-          out.gold = one(p); scr.remove();
           out.tiles = {};
           HUNDO_FX.forEach(f => { const t = buildHundoFxTile(f.id); document.body.appendChild(t); out.tiles[f.id] = one(t.querySelector('.hfx-stage-pct')); t.remove(); });
           return out; }""")
         ctx.close()
         okone = lambda o: (o and o.get("display") == "inline" and (rgb(o.get("color")) or [0, 0, 0, 1])[3] < .05 and o.get("bg") == "none"
                            and o.get("parentBg", "").startswith("linear-gradient") and o.get("clip") == "text")
-        check("%s: the default gold 100%% is one ramp too - the %% carries its end, not a flat gold" % label, okone(d.get("gold")), d.get("gold"))
-        check("%s: and so is every Customize tile's 100%%, the default's included" % label,
+        check("%s: every Customize tile's 100%% is one piece of type, the default's included" % label,
               d.get("tiles") and all(okone(o) for o in d["tiles"].values()), d.get("tiles"))
-        fx = r.get("fx") or []
-        check("%s: a real 100%% played an effect and every built effect was measured on its box" % label,
-              r.get("started") and len(fx) >= 6, [f["id"] for f in fx])
-        for f in fx:
-            t, tag = f["tint"], "%s, %s" % (label, f["id"])
-            g, tn, ts, s = f["grade"], f["tn"], f["tsign"], f["sign"]
-            sc = f["tnScroll"] or [999, 0]
-            check("%s: the 100%% in the effect's colours is all there - no wider than the number, %% inside the box and on the real raised %%" % tag,
-                  f["tinted"] and tn and sc[0] <= sc[1] + 1 and f["pctScroll"][0] <= f["pctScroll"][1] + 1
-                  and ts and s and ts[2] <= tn[2] + 1.5 and ts[2] <= g[2] and ts[0] >= g[0]
-                  and abs(ts[0] - s[0]) <= 2 and abs(ts[1] - s[1]) <= 2 and abs(ts[3] - s[3]) <= 2,
-                  {"tnScroll": f["tnScroll"], "copy%": ts, "real%": s, "copy": tn, "box": g})
-            check("%s: the gold number under it has given way (no gold fringe)" % tag,
-                  (rgb(f["realColor"]) or [0, 0, 0, 1])[3] < .05 or f.get("realOpacity", 1) < .05, [f["realColor"], f.get("realOpacity")])
-            o = f.get("oneType") or {}
-            check("%s: \"100%%\" is one piece of type - the %% is inline, paints no colour of its own and carries the end of the number's gradient (not a solid fill), and reads at %.1fpx" % (tag, o.get("px", 0)),
-                  o.get("display") == "inline" and (rgb(o.get("color")) or [0, 0, 0, 1])[3] < .05 and o.get("bg") == "none"
-                  and o.get("parentBg", "").startswith("linear-gradient") and o.get("clip") == "text" and o.get("px", 0) >= 12, o)
-            fh, fs = hue(f["frac"])
-            keys = [k for k in ("b", "g2") if t.get(k)]
-            check("%s: the 12 / 12 is in the effect's colour, not gold - near %s's hue, readable" % (tag, "/".join(t.get(k) for k in keys)),
-                  fh is not None and not (fs > .3 and 28 <= fh <= 62)
-                  and any(near(fh, hue(t[k])[0]) for k in keys) and (lum(f["frac"]) + .05) / (.012 + .05) >= 7
-                  and all(c == f["frac"] for c in f["fracOf"]),
-                  {"frac": f["frac"], "of": f["fracOf"]})
-            if f["id"] in ("fireworks", "ufo", "blackhole"):
-                d = f.get("dim") or {}
-                rr = d.get("rect") or [9, 9, 0, 0]
+        base = (res.get("confetti") or {}).get("text")
+        check("%s: a real 100%% was made for the default and every built effect" % label,
+              all(res.get(fx) for fx in ids) and len(ids) >= 7, [fx for fx in ids if not res.get(fx)])
+        for fx in ids:
+            f = res.get(fx) or {}
+            tag = "%s, %s" % (label, fx)
+            g, sg = f.get("grade") or [0, 0, 0, 0], f.get("sign") or [9, 9, 0, 0]
+            sc = f.get("pctScroll") or [999, 0]
+            o = f.get("one") or {}
+            check("%s: the whole \"100%%\" shows - no wider than its box, the %% inside the card - and is one piece of type: the %% inline, no colour of its own, under the number's gradient, %.1fpx" % (tag, o.get("px", 0)),
+                  sc[0] <= sc[1] + 1 and sg[2] <= g[2] and sg[0] >= g[0] and okone(o) and o.get("px", 0) >= 12, {"scroll": sc, "sign": sg, "box": g, "one": o})
+            fi, pa, se = f.get("first") or {}, f.get("painted") or {}, f.get("settled") or {}
+            same = lambda a: a and all(a.get(k) == se.get(k) for k in ("border", "num", "bar"))
+            if fx == "confetti":
+                check("%s: the default is gold from its first frame" % tag, fi and fi.get("border") == GOLD_BORDER and same(fi) and same(pa), {"first": fi, "painted": pa, "settled": se})
+            else:
+                check("%s: in its colours from the FIRST frame - as the card lands and on the first painted frame it shows at all - border, 100%%, bar exactly as settled, never the gold default first" % tag,
+                      fi and pa and fi.get("border") != GOLD_BORDER and same(fi) and same(pa) and pa.get("shown", 0) > 0
+                      and f.get("tinted") and "217, 169, 58" not in (fi.get("bar") or ""), {"first": fi, "painted": pa, "settled": se})
+            check("%s: every word in the box is the default's - GRADE, 12 / 12, the line under it, each unit and its count" % tag,
+                  base and f.get("text") == base and all(f["text"].get(k) for k in ("kicker", "frac", "sub", "unit", "countAll")), {"this": f.get("text"), "default": base})
+            if fx in ("fireworks", "ufo", "blackhole"):
+                dd = f.get("dim") or {}
+                rr = dd.get("rect") or [9, 9, 0, 0]
                 check("%s: the dim still covers the whole screen when the page scrolls under it (no grey band)" % tag,
-                      d and (d.get("moved", 0) == 0 and label == TABLET[0] or abs(d.get("moved", 0)) >= 20 and rr[0] <= 0.5 and rr[1] <= 0.5 and rr[2] >= d["vw"] - .5 and rr[3] >= d["vh"] - .5), d)
-            kh, ks = hue(f["kicker"])
-            check("%s: the GRADE label and the line under the fraction lean to it too" % tag,
-                  kh is not None and ks > .3 and any(near(kh, hue(t[k])[0]) for k in keys)
-                  and hue(f["sub"])[1] > .15,
-                  {"kicker": f["kicker"], "sub": f["sub"]})
+                      dd and (dd.get("moved", 0) == 0 and label == TABLET[0] or abs(dd.get("moved", 0)) >= 20 and rr[0] <= 0.5 and rr[1] <= 0.5 and rr[2] >= dd["vw"] - .5 and rr[3] >= dd["vh"] - .5), dd)
 
+
+    # --- the UFO's beams (round 3): "the UFO's projection is shown before
+    # it's shot out of the UFO and it doesn't hit the bottom of the box".
+    # Every UFO layer is paused and seeked to fixed moments, so the reads do
+    # not depend on how loaded the machine is.
+    for label, w, h in (PHONE, TABLET):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate("() => { " + RUN100 + " }")
+        u = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.lifetime.perfectTests = 600; if(!HUNDO_FX.some(d => d.id === 'ufo')) HUNDO_FX[1].id = 'ufo';
+          store.hundoFx = 'ufo'; theme.reduceMotion = false; theme.muteBanners = true; saveStore();
+          window.__fxAt = 0; const real = playHundoFx; window.playHundoFx = function(a, b){ window.__fxAt = performance.now(); return real(a, b); };
+          showHome(); await wait(200); __run100('Identity Crimes');
+          for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(50);
+          if(!window.__fxAt) return null;
+          await wait(400);
+          const g = document.querySelector('.rs-screen .rs-grade');
+          const anims = () => document.getAnimations().filter(a => { const e = a.effect && a.effect.target; return e && e.closest && e.closest('.hfx-layer.hfx-ufo, .hfx-box.hfx-ufo'); });
+          const seek = t => anims().forEach(a => { try{ a.pause(); a.currentTime = t * 1000; }catch(e){} });
+          const op = el => { let o = 1; for(let e = el; e && e !== document.body; e = e.parentElement) o *= +getComputedStyle(e).opacity; return o; };
+          const R = el => { const b = el.getBoundingClientRect(); return { t: b.top, b: b.bottom, h: b.height, o: op(el) }; };
+          const sy = el => { const m = getComputedStyle(el).transform.match(/matrix\(([^)]+)\)/); if(!m) return 1; const v = m[1].split(',').map(Number); return Math.hypot(v[2], v[3]); };
+          const beam = document.querySelector('.hfx-saucer:not(.is-mini) > .hfx-ufo-beam'), inb = document.querySelector('.hfx-ufo-inbeam');
+          const search = [...document.querySelectorAll('.hfx-ufo-search')];
+          const out = { has: !!(beam && inb), nsearch: search.length, samples: [], ghosts: document.querySelectorAll('.hfx-ufo-ghost').length };
+          if(!out.has) return out;
+          const ts = [1.03, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.45, 2.55];
+          for(let t = 2.6; t <= 2.92; t += .02) ts.push(+t.toFixed(2));
+          ts.push(3.3, 4.7, 5.8, 6.25);
+          for(const t of ts){ seek(t); await new Promise(r => requestAnimationFrame(() => r()));
+            const gb = g.getBoundingClientRect();
+            out.samples.push({ t, box: { t: gb.top, b: gb.bottom }, beam: R(beam), inb: R(inb),
+              search: search.map(e => Object.assign(R(e), { sy: sy(e) })) }); }
+          return out; }""")
+        ctx.close()
+        tag = "%s, ufo" % label
+        if not u or not u.get("has"):
+            check("%s: a real 100%% played the UFO, with its beams" % tag, False, u)
+            continue
+        S = {x["t"]: x for x in u["samples"]}
+        shown = lambda q: q["o"] > .02 and q["h"] > 1.5
+        pre = [S[t] for t in (1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.45, 2.55)]
+        check("%s: no beam before it is fired - neither the saucer's nor the box's shows from 1.3s to 2.55s" % tag,
+              all(not shown(x["beam"]) and not shown(x["inb"]) for x in pre), [(x["t"], x["beam"], x["inb"]) for x in pre if shown(x["beam"]) or shown(x["inb"])])
+        s0 = S[1.03]["search"]
+        check("%s: the searchlights are shot OUT of the hull - switching on short (scaleY under .4), not already at full length" % tag,
+              len(s0) == 2 and all(q["o"] > 0 and q["sy"] < .4 for q in s0), s0)
+        check("%s: and they never reach the box - the beam is the only light that touches it - and are gone before it fires" % tag,
+              all(q["o"] < .02 or q["b"] <= x["box"]["t"] + 1 for x in pre for q in x["search"]) and all(q["o"] < .02 for q in S[2.55]["search"]),
+              [(x["t"], round(q["b"]), round(x["box"]["t"]), round(q["o"], 2)) for x in pre for q in x["search"] if q["o"] >= .02 and q["b"] > x["box"]["t"] + 1])
+        fire = [x for x in u["samples"] if 2.6 <= x["t"] <= 2.92]
+        check("%s: the box's beam shows only once the saucer's has reached the box's top edge" % tag,
+              all(not shown(x["inb"]) or x["beam"]["b"] >= x["box"]["t"] - 1 for x in fire) and any(shown(x["inb"]) for x in fire),
+              [(x["t"], round(x["beam"]["b"]), round(x["box"]["t"]), round(x["inb"]["o"], 2), round(x["inb"]["h"])) for x in fire])
+        feet = {t: round(S[t]["beam"]["b"] - S[t]["box"]["t"], 1) for t in (3.3, 4.7, 5.8)}
+        check("%s: the saucer's beam meets the box's top edge (0-10px into it) hovering, landed and lifting off" % tag,
+              all(0 <= v <= 10 for v in feet.values()) and all(shown(S[t]["beam"]) for t in (3.3, 4.7, 5.8)), feet)
+        x = S[3.3]
+        check("%s: the box's beam runs down to the box's bottom edge (within 4px)" % tag,
+              shown(x["inb"]) and abs(x["inb"]["b"] - x["box"]["b"]) <= 4 and x["inb"]["t"] <= x["box"]["t"] + 2,
+              {"inbeam": [round(x["inb"]["t"]), round(x["inb"]["b"])], "box": [round(x["box"]["t"]), round(x["box"]["b"])]})
+        check("%s: both beams are gone once it has lifted off (6.25s), and the grab is still there (its two halves)" % tag,
+              not shown(S[6.25]["beam"]) and not shown(S[6.25]["inb"]) and u.get("ghosts") == 2, [S[6.25]["beam"], S[6.25]["inb"], u.get("ghosts")])
 
 def check_b317_tabplate(br):
     """Build 317. "They got a smidge smaller so let's ensure they are still a

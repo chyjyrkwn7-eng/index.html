@@ -46,8 +46,9 @@ disagreed, the repo won and the difference is called out.
   rather than mounting screens. Use it for anything Madison will look at.
 - `tools/record-hundo.py OUTDIR` — an MP4 of each hundo effect on a real
   100% results screen, on a clock it owns (not virtual time, which froze
-  frames), with the settled box, and a freeze/jump count per clip. See
-  **Hundo effects**.
+  frames), with the grade box cropped at three moments (`-first`, the
+  first frame it is half shown; `-mid`, well into the effect; and the
+  settled box), and a freeze/jump count per clip. See **Hundo effects**.
 - `tools/record-cutscenes.py` — the animations, **as animations**: GIFs of
   the badge unlock, the badge queue, all seven rank cutscenes, the
   Supernova cutscene, the Void cutscene, and a real full-unit 100% run from the last question
@@ -13016,10 +13017,10 @@ behind it) and burst across the upper screen - a magenta peony, a cyan
 chrysanthemum that glitters as it dies, a ring that turns from magenta to
 gold, a gold willow that hangs, a small cyan/violet one - then three go up
 together for the finale, it crackles, and embers drift down and fade slowly
-while the dim lifts (7s; tail from 5s). The box lights as the first shell
-bursts (`HFX_TINT.fireworks.on` 950), flashes on its rim with each burst and
-keeps the colours: hot magenta `#FF5CD6`, the 100% from pale gold through
-magenta to cyan, the bar magenta to pale gold. A step up from Confetti, a
+while the dim lifts (7s; tail from 5s). The box is in its colours from its
+first frame (see the box note below), flashes on its rim with each burst and
+keeps them: hot magenta `#FF5CD6`, the 100% from pale pink through magenta
+to cyan, the bar magenta to pale pink. A step up from Confetti, a
 step below the Tree, Bubbles and the UFO.
 - **The sky is ONE CANVAS** (`hfxFwShow` builds the sparks up front,
   `hfxFwSky` draws them) - the one effect not made of elements, because a
@@ -13043,43 +13044,98 @@ screen (a `.confetti-layer.hfx-layer`) and inside the box (`.hfx-box`). The
 UFO is the one exception: the screen goes dark and it comes down out of it -
 and LANDS on the box.
 
-**THE WHOLE GRADE BOX TAKES THE EFFECT'S COLOURS**, not only its border:
-border, the wash behind it, the "100%" gradient, the "12 of 12", the glow and
-EVERY unit's progress bar (fill and glow). It is one class, `.hfx-tinted` on
+**THE GRADE BOX TAKES THE EFFECT'S COLOURS**, not only its border:
+border, the wash behind it, the "100%" gradient, the glow and EVERY unit's
+progress bar (fill and glow) - and none of its words (round 3, below). It is one class, `.hfx-tinted` on
 the card, plus `--hfx-b/g1/g2/g3` from `HFX_TINT[id]`; the wash and the bar's
 two stops are REGISTERED custom properties (`@property --hfx-wash / --hfx-fa /
 --hfx-fb`, `<color>`), which is the only way a gradient's colours can
 TRANSITION - an unregistered custom property swaps at once. The bar rule is
 `.rs-byunit .unit-breakdown-fill.is-gold{ background:linear-gradient(90deg,
 var(--hfx-fa), var(--hfx-fb)) }`, whose initial values are the gold it always
-was (`#D9A93A` -> `#F6D58E`), so a card with no effect is unchanged. Eases in
-and out over `--hfx-ease` (1s; 0.45s for the UFO, `fast`), and is gold again
-before the last pieces go. Confetti keeps the gold.
+was (`#D9A93A` -> `#F6D58E`), so a card with no effect is unchanged. It no
+longer eases in or out (`--hfx-ease` and `fast` are gone, build 317 round 3):
+it is on from the card's first frame and stays. Confetti keeps the gold.
+The registered properties stay; nothing transitions them now, and they cost
+nothing.
 
-**The whole 100% shows, and no themed box has gold in it (build 317).**
-*"the number 100 is cutout at the percentage part, and the 10/10 is still
-gold and not matching the theme, ensure all effects are good to go for those
-boxes."* Two faults, every effect. (1) `hfxTintNum` built the coloured copy of
-the number from `textContent`, so it read "100%" with a FULL-SIZE % - 195px of
-text in the real number's 163px box; the gradient only paints the box, so the
-% was cut off half-way and stood over the real one's small raised %. It clones
-the children now (`hfxCloneNum`, shared with `hfxLitText`), and gives the
-clone's % its own line-height - the copy carries the number's line-height in
-pixels, which a 28px % inherited as a 64px line and sank level with the
-digits. The gold number underneath goes transparent while the copy is there
-(`:has(> .hfx-tintnum)`), so no gold fringe, and the copy carries the glow.
-(2) The "12 / 12" was `g1`, the 100%'s palest stop, and Fireworks' `g1` was a
-pale gold. `HFX_TINT` has a `t` (text colour) per effect now - the fraction,
-the GRADE label (faded) and the caption under the fraction (leaning to it) -
-set with the other four by `hfxTintVars()`, and Fireworks' `g1` is a pale
-pink (Underwater's `g3` lost its gold too). `check_b317_hundobox` holds it on
-every built effect at 320, 440 and 834 wide, and fails on 57212ce.
+**The box: the 100% carries the effect, the words never do, and it is in
+its colours from the first frame (build 317, three rounds).**
+- Round 1: *"the number 100 is cutout at the percentage part, and the 10/10
+  is still gold"* - a coloured copy built from `textContent` (a full-size %
+  in a box sized for the small one) and a fraction coloured with Fireworks'
+  pale-gold `g1`.
+- Round 2: *"the percentage sign, it looks like a solid color"* - the % was
+  an inline-block, which `background-clip:text` does not reach into. It is
+  inline now (see the % note under World Tree, below).
+- **Round 3, which is how it is:** *"In default the numbers beside the Hundo
+  is white, in the others some of the stuff is the theme and not, and the
+  minor units and the total of questions isn't. We need this all to be more
+  cohesive"* and *"It looks like all the hundo effect boxes start as the gold
+  default, fix that."* (1) **Every word in the box is the default's on every
+  effect** - GRADE, the "12 / 12", the line under it, each unit and its
+  count. Only the 100% (`g1`-`g3`), the border and inner glow (`b`) and the
+  bars (`g2` > `g1`) carry the effect; the per-effect text colour (`t`,
+  `--hfx-t`) is gone. (2) **No gold first.** The colours used to go on when
+  the effect started, once the card had LANDED in gold, and eased in over
+  1s (the UFO's only at 2.8s, when its beam arrived). Now `hfxTintGrade()`
+  puts them on as the card is BUILT in `showRunRewards` (and on the unlock
+  card's miniature and every live stage), before anything paints;
+  `hfxApplyTint()` is idempotent, so the effect starting changes nothing;
+  the 100% is the real number with the effect's gradient (no overlaid copy,
+  `hfxTintNum` and `.hfx-tintnum` are gone); and the card's colour
+  transitions are deleted. `HFX_TINT` has no `on` any more.
+  `check_b317_hundobox` samples the card twice - in the same task as the
+  class that lands it, and on the first animation frame it is painted with
+  any opacity at all - and requires border, number and bar both times to
+  equal the settled ones; and every word (kicker, fraction, caption, unit
+  names and counts) to equal the default's, read 3.4s in, past every old
+  "on" moment. The Customize miniature's unit count is the real box's white
+  too (`.hfx-mock .rs-grade .hfx-mk-line b`), not the XP card's blue.
 
-**The UFO's box lights only when its beam reaches it.** `HFX_TINT.ufo` has
-`on` 2800 / `off` 5330 (ms): the saucer arrives, the beam switches on and
-reaches the box, THEN the box goes green; it lets go as the beam cuts. It
-used to light at the start. The gate asserts the border is still gold at
-1.6s.
+**The UFO's beam is FIRED, and it reaches the bottom of the box (build 317,
+round 3).** *"The UFO one, the UFO's projection is shown before it's shot out
+of the UFO and it doesn't hit the bottom of the box."* Two beams: the
+saucer's (`.hfx-ufo-beam`, under the card) and the box's own
+(`.hfx-ufo-inbeam`, inside it). The box's used to switch on at the same
+moment as the saucer's, so it was in the box while the saucer's was still
+leaving the hull, and it stopped just under the number. And the saucer's
+stopped 3px ABOVE the box: it starts .2 of the hull up inside the hull and
+was sized from the hull's bottom. Now: the saucer's beam is
+`-hov + .2*hull + 4` long, so its foot is 4px inside the box's top edge, and
+it is rescaled with the hull's own easing as it lands (`--bl`) and lifts off
+(`--bk`) so the foot never leaves that edge; the box's beam starts only as
+the saucer's arrives (40.4% of 7s) and runs the box's full height. Measured
+(440x956): foot at box top +5px hovering, landed and lifting; box beam 626 to
+815 against a box 625 to 813. The box flares as the beam strikes (2.84s) as
+well as on landing. The grab is unchanged.
+- **The searchlights were the other "projection".** Two cones swept the
+  dark as it came down (1.0-2.5s), and they faded up already at FULL length
+  - from the hull past the bottom of the box, before anything had been
+  fired. Now each is shot out of the underside (`scaleY` 0 to 1 over
+  0.25s), sweeps, and is drawn back in by 2.41s, before the beam fires at
+  2.59s; and each is only as long as from the rim to the box's top edge
+  where the saucer hovers (`--slh`, `-hov + .38*hull`), so they never reach
+  the box. The beam is the one light that touches it.
+- **The box is lit BY the beam.** Its own dim (`.hfx-ufo-boxdim`) used to
+  lift fully by 2.0s, 0.8s before the beam arrived, so the box lit itself.
+  It now follows the screen's dim down to .55 and holds there until the
+  beam strikes, then clears as the box's beam floods down it (3.05s).
+- `check_b317_hundobox` holds all of it on a phone and a tablet with every
+  UFO animation PAUSED AND SEEKED to fixed moments (no load noise): no beam
+  of either kind from 1.3s to 2.55s; the searchlights short when they
+  switch on, never below the box's top, gone by 2.55s; the box's beam never
+  showing before the saucer's foot is at the box's top edge (2.60-2.92s,
+  every 20ms); the saucer's foot 0-10px into the box hovering, landed and
+  lifting off; the box's beam ending within 4px of the box's bottom; both
+  gone at 6.25s. The searchlight, box-beam, foot and box-bottom checks all
+  fail on 1888b11 (70 failures across the section there, every effect's
+  first-frame and words checks included); "no beam before 2.55s" and "gone
+  at 6.25s" held there too - guards, not the bug.
+- `check_b313_fx`'s "and KEEPS them once the effect has finished" read the
+  overlaid copy's opacity (`.hfx-tintnum`), which round 3 deleted, so it
+  went red for the right build. It reads the REAL 100% now: transparent
+  text under `linear-gradient(105deg, <g1> ...)`.
 
 **"Looks laggy" was the RECORDING, not the effect.** Measured in the
 recording's own configuration: the page drew 139 frames in 7s, while the CDP
@@ -13112,7 +13168,8 @@ requestAnimationFrame and smooth `scrollTo` read a clock it advances
 exactly 1/30s a frame, every CSS/Web animation and transition is paused and
 seeked to it, and each capture waits for two real frames. 0 freezes, 0
 jumps on all five; it prints the count for every clip, so check it rather
-than assume it.
+than assume it. (Round 3's re-record: 0/0 on the five in the ladder; Black
+Hole and Underwater, which are not, show 1 jump each.)
 
 **Measured in the page as well** (rAF intervals and long tasks from the
 effect's start, 440x956, CPU 4x, three interleaved passes of 1888b11 and
@@ -13129,6 +13186,37 @@ tree. Still done for the device: the Fireworks canvas stops at the box's
 top edge (a third fewer pixels, nothing was drawn below it), Bubbles keeps
 4/6 glass heroes. Nothing here can measure an iPhone's GPU; the clips are
 what she judged, and those were the recorder.
+
+**It is not backdrop-filter (build 317, round 3) - tested, and left alone.**
+The hypothesis was that a moving effect layer forces the results cards'
+Liquid Glass to re-blur every frame. The results cards have NO
+backdrop-filter (taken off in build 282, "NO BACKDROP BLUR ON A RESULTS
+CARD"). Counted in the page while each effect plays, the only backdrop-
+filtered elements are the 44px chat button, the closed chat sheet (off
+screen) and, for Bubbles, its own four glass heroes. Hiding the chat pair
+(Fireworks, Bubbles) or the glass heroes (Bubbles), three interleaved
+passes each at 4x CPU, moved nothing outside the noise. A CDP trace puts
+the extra cost in the software compositor (Viz SoftwareRenderer: ~4.6-4.8s
+for Fireworks and Bubbles against ~2.0s with no effect over the same
+window) and, for Fireworks, the canvas commit (~1.0s against UFO's
+~0.26s) - both what headless Chromium does without a GPU, and GPU work on
+an iPhone. Over the same passes UFO ran 22-30 fps across 8.6s, World Tree
+39-55 across 5.6s, Fireworks 11-19 and the bare screen 17-27 across 7s:
+the first seconds are the results reveal's own busiest, and UFO's window
+runs longest past them. Nothing was changed for it.
+Re-checked after the b316-work merge, by trace and by three more
+interleaved passes (CPU 4x, 440x956). Trace over each effect's window:
+2 backdrop-filtered elements for UFO and Fireworks (the chat pair), 6 for
+Bubbles (plus its 4 heroes); main-thread frames UFO 499 in 8.6s, Bubbles
+361 and Fireworks 174 in 7s; Fireworks' extra is the canvas (`Commit`
+1.59s against UFO's 0.54s, `FireAnimationFrame` 0.68s), and the bare
+screen with every effect layer hidden drew only 226 frames in the same
+7s - the reveal itself. Passes, frames in the window, live / chat hidden:
+Fireworks 256, 263, 227 / 314, 240, 311; Bubbles 225, 226, 318 / 235, 185,
+226; UFO 352, 436, 395 / 398, 295, 338. The ranges overlap on every
+effect, so taking the only backdrop-filtered elements away does not
+clearly help, and the results cards have no live backdrop to swap for a
+static look. Nothing kept.
 
 **Bubbles** - no giant bubble from the number any more (`hfxCarry` is gone).
 `hfxBubblesGlass`: a few far small bubbles (sprites), **Liquid Glass heroes -

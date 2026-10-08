@@ -9473,10 +9473,19 @@
   .hfx-cling{ animation:hfx-cling var(--d) ease-in-out var(--t) both; transform-origin:50% 80%; }
   @keyframes hfx-cling{ 0%{ opacity:0; transform:scale(.2); } 14%{ opacity:1; transform:scale(1.08, .94); } 30%{ transform:scale(.95, 1.05); } 48%{ transform:scale(1.04, .97); }
     66%{ transform:scale(.98, 1.02); } 90%{ opacity:1; transform:scale(1.06); } 100%{ opacity:0; transform:scale(1.3); } }
-  .hfx-ufo-search{ position:absolute; left:calc(50% - var(--uw) * .09); top:62%; width:calc(var(--uw) * .18); height:calc(var(--uw) * 2.8); transform-origin:50% 0;
+  .hfx-ufo-search{ position:absolute; left:calc(50% - var(--uw) * .09); top:62%; width:calc(var(--uw) * .18); height:var(--slh, calc(var(--uw) * 2.8)); transform-origin:50% 0;
     background:linear-gradient(180deg, rgba(210,255,222,.42), rgba(210,255,222,.1) 60%, rgba(210,255,222,0)); clip-path:polygon(42% 0, 58% 0, 100% 100%, 0 100%);
     opacity:0; animation:hfx-ufo-search 7s linear both; }
-  @keyframes hfx-ufo-search{ 0%, 14.3%{ opacity:0; transform:rotate(var(--s0)); } 17%{ opacity:1; } 24%{ transform:rotate(var(--s1)); } 31%{ transform:rotate(var(--s0)); opacity:.9; } 36%, 100%{ opacity:0; transform:rotate(calc(var(--s1) * .3)); } }
+  /* SHOT OUT OF THE HULL AND TAKEN BACK IN (build 317, round 3): "the
+     UFO's projection is shown before it's shot out of the UFO". The
+     searchlights used to fade up already at full length - two cones from
+     the saucer to the bottom of the screen before anything had fired. Now
+     each grows out of the underside, sweeps, and is drawn back in before
+     the tractor beam fires at 37%, so the only light that ever reaches the
+     box is the beam, and it is seen leaving the hull. */
+  @keyframes hfx-ufo-search{ 0%, 14.3%{ opacity:0; transform:rotate(var(--s0)) scaleY(0); animation-timing-function:cubic-bezier(.3,.6,.4,1); } 14.6%{ opacity:1; }
+    18.5%{ transform:rotate(var(--s0)) scaleY(1); } 24%{ transform:rotate(var(--s1)) scaleY(1); } 30%{ transform:rotate(var(--s0)) scaleY(1); opacity:.9; animation-timing-function:cubic-bezier(.5,0,.75,.4); }
+    34.4%{ transform:rotate(calc(var(--s1) * .3)) scaleY(0); opacity:.6; } 34.6%, 100%{ opacity:0; transform:rotate(calc(var(--s1) * .3)) scaleY(0); } }
 
   /* ===== round 3: the results screen in miniature ===== */
   .hfx-mock{ position:relative; display:flex; flex-direction:column; gap:.38rem; width:100%; aspect-ratio:4 / 5; padding:.6rem .55rem .55rem; box-sizing:border-box;
@@ -9497,12 +9506,11 @@
   .hfx-mock > .rs-card.rs-grade.is-perfect{ border-color:rgba(242,211,138,.2); background:linear-gradient(180deg, var(--hfx-wash), rgba(24,29,37,.8) 60%); }
   .hfx-mk-row{ display:flex; align-items:center; gap:.5rem; margin:.1rem 0 .3rem; }
   .hfx-mock .rs-pct{ position:relative; font-family:var(--sans); font-weight:800; font-size:1.65rem; line-height:1; letter-spacing:-.045em; color:#F6D58E; text-shadow:0 0 14px rgba(246,213,142,.3); }
-  .hfx-mock .rs-grade-frac{ font-size:.6rem; font-weight:800; color:var(--ink); margin:0; transition:color var(--hfx-ease, 1s) ease; }
-  .hfx-mock .rs-grade.hfx-tinted .rs-grade-frac{ color:var(--hfx-t, var(--hfx-g1)); }
-  /* the miniature's box the way the real one is (build 317): its label in
-     the effect's colour, and its gold number giving way to the copy */
-  .hfx-mock .rs-grade .hfx-mk-kicker{ transition:color var(--hfx-ease, 1s) ease; }
-  .hfx-mock .rs-grade.hfx-tinted .hfx-mk-kicker{ color:color-mix(in srgb, var(--hfx-t, var(--hfx-g1)) 80%, transparent); }
+  .hfx-mock .rs-grade-frac{ font-size:.6rem; font-weight:800; color:var(--ink); margin:0; }
+  /* the miniature's box the way the real one is (build 317, round 3): its
+     words the default's on every effect - the unit's count white like the
+     real box's, not the XP card's blue */
+  .hfx-mock .rs-grade .hfx-mk-line b{ color:var(--ink); }
   .hfx-mock > .rs-actions{ display:flex; gap:.35rem; margin-top:auto; }
   /* `inherit` is not a family inside the `font` shorthand, so the whole
      declaration was dropped and these drew in the browser's own button
@@ -9534,8 +9542,12 @@
      settle, its beam and its lights, so they cannot drift apart. */
   .hfx-ufo-dim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-dim 8.4s linear both; }
   @keyframes hfx-ufo-dim{ 0%{ opacity:0; } 7.2%{ opacity:.93; } 14.5%{ opacity:.93; } 23.6%{ opacity:.55; } 67%{ opacity:.55; } 100%{ opacity:0; } }
-  .hfx-ufo-boxdim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-boxdim 2.2s linear both; }
-  @keyframes hfx-ufo-boxdim{ 0%{ opacity:0; } 27%{ opacity:.93; } 55%{ opacity:.93; } 91%, 100%{ opacity:0; } }
+  /* the box goes dark with the screen, lifts with it to the screen's .55,
+     and is LIT BY THE BEAM (build 317, round 3): the last of its dark goes
+     as the beam strikes (2.84s) and floods down it, not 0.8s before the
+     beam arrives, when it lit up on its own */
+  .hfx-ufo-boxdim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-boxdim 3.05s linear both; }
+  @keyframes hfx-ufo-boxdim{ 0%{ opacity:0; } 19.3%{ opacity:.93; } 38.7%{ opacity:.93; } 54%{ opacity:.55; } 93%{ opacity:.55; animation-timing-function:ease-out; } 100%{ opacity:0; } }
   /* (not .hfx-ufo: the effect's own layers are named hfx-<id>) */
   .hfx-saucer{ position:absolute; width:0; height:0; opacity:0; animation:hfx-ufo-path 7s linear both; }
   @keyframes hfx-ufo-path{
@@ -9566,7 +9578,10 @@
     background:radial-gradient(closest-side, rgba(150,255,175,.55), rgba(107,255,143,0)); }
   .hfx-ufo-beam{ position:absolute; left:calc(var(--bw) / -2); width:var(--bw); top:calc(var(--uh) * -.2); height:var(--bh); transform-origin:50% 0;
     background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-beam 7s linear both; }
-  @keyframes hfx-ufo-beam{ 0%, 37%{ transform:scaleY(0); opacity:0; } 40.5%{ transform:scaleY(1); opacity:1; } 84%{ transform:scaleY(1); opacity:1; } 86.5%, 100%{ transform:scaleY(0); opacity:0; } }
+  @keyframes hfx-ufo-beam{ 0%, 37%{ transform:scaleY(0); opacity:0; animation-timing-function:cubic-bezier(.3,.6,.4,1); } 37.4%{ opacity:1; }
+    40.5%{ transform:scaleY(1); opacity:1; } 48.6%{ transform:scaleY(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
+    58.6%{ transform:scaleY(var(--bl, 1)); } 77.1%{ transform:scaleY(var(--bl, 1)); animation-timing-function:cubic-bezier(.45,0,.4,1); }
+    85.7%{ transform:scaleY(var(--bk, 1)); opacity:1; animation-timing-function:ease-in; } 87.5%, 100%{ transform:scaleY(0); opacity:0; } }
   .hfx-ufo-ring{ position:absolute; left:calc(var(--rw) / -2); width:var(--rw); height:calc(var(--rw) * .3); top:calc(var(--rw) * -.15);
     background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-ring .75s ease-in var(--t) both; }
   @keyframes hfx-ufo-ring{ 0%{ transform:translateY(calc(var(--uh) * -.2)) scale(.5); opacity:0; } 20%{ opacity:1; } 100%{ transform:translateY(var(--fall)) scale(1.15); opacity:0; } }
@@ -9575,11 +9590,13 @@
   @keyframes hfx-ufo-dust{ 0%{ transform:translate(0, 0) scale(.3); opacity:0; } 15%{ opacity:1; } 100%{ transform:translate(var(--dx), -12px) scale(1.5); opacity:0; } }
   .hfx-ufo-inbeam{ position:absolute; top:0; width:var(--iw); height:var(--ih); margin-left:calc(var(--iw) / -2); transform-origin:50% 0;
     background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-inbeam 7s linear both; }
-  @keyframes hfx-ufo-inbeam{ 0%, 37%{ transform:scaleY(0); opacity:0; } 41%{ transform:scaleY(1); opacity:.45; } 58%{ opacity:.45; } 61%{ opacity:.7; } 84%{ transform:scaleY(1); opacity:.7; } 87%, 100%{ transform:scaleY(.2); opacity:0; } }
+  @keyframes hfx-ufo-inbeam{ 0%, 40.4%{ transform:scaleY(0); opacity:0; animation-timing-function:cubic-bezier(.3,.6,.4,1); } 40.6%{ opacity:.55; }
+    44%{ transform:scaleY(1); opacity:.5; } 58%{ opacity:.5; } 61%{ opacity:.72; } 84%{ transform:scaleY(1); opacity:.72; animation-timing-function:ease-in; } 87.5%, 100%{ transform:scaleY(0); opacity:0; } }
   .hfx-ufo-landglow{ position:absolute; inset:0; border-radius:inherit; opacity:0;
     box-shadow:inset 0 0 0 1.5px rgba(150,255,175,.8), inset 0 0 30px rgba(107,255,143,.35);
     animation:hfx-ufo-landglow 2.4s ease-out var(--t) both; }
   @keyframes hfx-ufo-landglow{ 0%{ opacity:0; } 10%{ opacity:1; } 60%{ opacity:.6; } 100%{ opacity:0; } }
+  .hfx-ufo-landglow.is-hit{ animation-duration:1.2s; }
   /* build 314: the scan, the lock, the score taken up, the warp, the marks */
   .hfx-ufo-scanbar{ position:absolute; width:44px; margin-left:-44px; opacity:0; transform-origin:100% 50%;
     background:linear-gradient(90deg, rgba(107,255,143,0), rgba(107,255,143,.18) 62%, rgba(200,255,214,.75) 93%, #F4FFF6 97%, rgba(244,255,246,0));
@@ -9616,49 +9633,27 @@
     animation:hfx-scan 1.6s cubic-bezier(.45,0,.55,1) var(--dl) both; }
   @keyframes hfx-scan{ 0%{ transform:translateY(0); opacity:0; } 10%{ opacity:1; } 80%{ opacity:.85; } 100%{ transform:translateY(var(--bh)); opacity:0; } }
 
-  /* THE BOX TAKES THE EFFECT'S COLOURS - ALL OF IT. "Ensure that gold
-     progress bar is color matched, you really got ensure that grade box
-     matches the effect well." One class on the card (.hfx-tinted), put on
-     and taken off by playHundoFx at each effect's own moments (the UFO's
-     when its beam reaches the box and when it cuts), turns every part:
-     the border, the card's wash, every unit bar's fill and glow, the
-     "12 of 12", and - by overlays that only fade - the numerals'
-     gradient and an inner glow. The colours are REGISTERED properties
-     (@property) so they transition like any colour; where @property is
-     missing they simply switch. */
-  .rs-screen .rs-card.rs-grade, .hfx-stage, .hfx-preview-card, .hfx-mock > .rs-card.rs-grade{
-    transition:border-color var(--hfx-ease, 1s) ease, --hfx-wash var(--hfx-ease, 1s) ease, --hfx-fa var(--hfx-ease, 1s) ease, --hfx-fb var(--hfx-ease, 1s) ease; }
+  /* THE BOX TAKES THE EFFECT'S COLOURS. "Ensure that gold progress bar is
+     color matched, you really got ensure that grade box matches the effect
+     well." One class on the card (.hfx-tinted, hfxApplyTint) turns the
+     border, the card's wash, every unit bar's fill and glow, the 100% and
+     an inner glow. Since build 317 round 3 it goes on as the card is BUILT
+     (hfxTintGrade) - no transition from gold - and the words in the box
+     stay the default's on every effect. */
   .rs-screen .rs-card.rs-grade.is-perfect.hfx-tinted, .hfx-stage.hfx-tinted, .rs-screen .rs-card.hfx-preview-card.hfx-tinted, .hfx-mock > .rs-card.rs-grade.hfx-tinted{ border-color:var(--hfx-b);
     --hfx-wash:color-mix(in srgb, var(--hfx-b) 20%, transparent); --hfx-fa:var(--hfx-g2); --hfx-fb:var(--hfx-g1); }
-  .hfx-fast{ --hfx-ease:.45s; }
-  .rs-grade .rs-grade-frac, .rs-grade > .rs-kicker, .rs-grade .rs-grade-sub{ transition:color var(--hfx-ease, 1s) ease; }
-  /* EVERY WORD IN THE BOX TOO (build 317): "the 10/10 is still gold and
-     not matching the theme, ensure all effects are good to go for those
-     boxes." The fraction is the effect's text colour (HFX_TINT's `t`),
-     the GRADE label that colour a little faded, and the line under the
-     fraction the caption grey leaning to it - never g1, which on
-     Fireworks was a pale gold. */
-  .rs-grade.hfx-tinted .rs-grade-frac{ color:var(--hfx-t, var(--hfx-g1)); }
-  .rs-grade.hfx-tinted > .rs-kicker{ color:color-mix(in srgb, var(--hfx-t, var(--hfx-g1)) 80%, transparent); }
-  .rs-grade.hfx-tinted .rs-grade-sub{ color:color-mix(in srgb, var(--hfx-t, var(--hfx-g1)) 60%, #8E9BA5); }
-  /* The gold number gives way to its copy in the effect's colours rather
-     than sitting under it: a gold fringe round every glyph, and a gold
-     glow behind a magenta 100%. Only when the copy is there (:has), so a
-     box with no copy keeps a number. The copy carries the glow instead. */
-  /* it goes once the copy is fully in, so the two never dip together */
-  .rs-screen .rs-grade.is-perfect .rs-pct.pct.perfect, .hfx-mock .rs-grade .rs-pct, .hfx-stage .hfx-stage-pct{ transition:opacity .4s ease; }
-  .rs-screen .rs-grade.is-perfect.hfx-tinted:has(> .hfx-tintnum) .rs-pct.pct.perfect,
-  .hfx-stage.hfx-tinted:has(> .hfx-tintnum) .hfx-stage-pct,
-  .hfx-mock .rs-grade.hfx-tinted:has(> .hfx-tintnum) .rs-pct{ opacity:0; transition:opacity .4s ease var(--hfx-ease, 1s); }
-  .hfx-tint{ position:absolute; inset:0; border-radius:inherit; opacity:0;
-    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--hfx-b) 55%, transparent), inset 0 0 30px color-mix(in srgb, var(--hfx-b) 26%, transparent);
-    transition:opacity var(--hfx-ease, 1s) ease; }
-  .hfx-tintnum{ position:absolute; display:block; white-space:nowrap; opacity:0; transition:opacity var(--hfx-ease, 1s) ease;
-    text-shadow:none; filter:drop-shadow(0 0 12px color-mix(in srgb, var(--hfx-b) 40%, transparent)); }
-  .hfx-tinted .hfx-tint, .hfx-tinted .hfx-tintnum{ opacity:1; }
-  .hfx-tintnum{ color:transparent;
+  /* THE 100% ITSELF IN THE EFFECT'S RAMP (build 317, round 3) - the number
+     and its inline % as one piece of type, not a copy laid over a gold
+     one: the colours are on from the card's first frame, so there is
+     nothing to cross-fade from. The words round it stay the default's. */
+  .rs-screen .rs-grade.is-perfect.hfx-tinted .rs-pct.pct.perfect, .hfx-stage.hfx-tinted .hfx-stage-pct, .hfx-mock .rs-grade.hfx-tinted .rs-pct{
+    color:transparent; text-shadow:none;
     background:linear-gradient(105deg, var(--hfx-g1), var(--hfx-g2) 55%, var(--hfx-g3, var(--hfx-g1)));
-    -webkit-background-clip:text; background-clip:text; }
+    -webkit-background-clip:text; background-clip:text;
+    filter:drop-shadow(0 0 12px color-mix(in srgb, var(--hfx-b) 40%, transparent)); }
+  .hfx-tint{ position:absolute; inset:0; border-radius:inherit; opacity:0; pointer-events:none;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--hfx-b) 55%, transparent), inset 0 0 30px color-mix(in srgb, var(--hfx-b) 26%, transparent); }
+  .hfx-tinted .hfx-tint{ opacity:1; }
   /* a blossom BUDS - a small closed knot of colour - and then OPENS */
   @keyframes hfx-bloom2{ 0%{ transform:scale(.05) rotate(var(--r0)); opacity:0; } 12%{ transform:scale(.15) rotate(var(--r0)); opacity:1; } 38%{ transform:scale(.19) rotate(var(--r0)); } 78%{ transform:scale(1.08) rotate(4deg); } 100%{ transform:scale(1) rotate(0deg); opacity:1; } }
   /* the World Tree's burst (build 317, hfxWorldTree): out like the
@@ -76722,26 +76717,30 @@ const HUNDO_FX_TAIL_AT = { fireworks: 5000, blackhole: 4000, underwater: 5900, w
    cool if the themes matches the box, cause if the just stays yellow it
    would get kinda boring." Border, wash and the numerals' gradient;
    Confetti keeps the yellow. */
-/* `t` is the box's TEXT colour (build 317): the "12 / 12", the GRADE
-   label and, faded, the line under the fraction. "the 10/10 is still
-   gold and not matching the theme" - the fraction was g1, the 100%'s
-   palest stop, and Fireworks' g1 was a pale gold, so a magenta box
-   carried a gold fraction. Every `t` is the effect's own colour lifted
-   for legibility, and no box but Confetti's has a gold stop left in it. */
+/* THE EFFECT'S COLOUR IS IN THE NUMBER, THE BAR AND THE GLASS - NOT THE
+   WORDS (build 317, round 3). "In default the numbers beside the Hundo is
+   white, in the others some of the stuff is the theme and not, and the
+   minor units and the total of questions isn't. We need this all to be
+   more cohesive." So every box's text - GRADE, the "12 / 12", the line
+   under it, each unit and its count - is the default's, on every effect;
+   only the 100% (g1-g3), the border and glow (b) and the bars (g2 > g1)
+   carry the effect. And "it looks like all the hundo effect boxes start
+   as the gold default": the colours are on from the box's first frame
+   (hfxTintGrade, at build), never eased in from gold - so there is no
+   `on` delay any more, the UFO's included. */
 const HFX_TINT = {
   /* hot magenta, the 100% from pale pink through magenta to cyan; the box
      lights as the first shell bursts */
-  fireworks: { b: "#FF5CD6", g1: "#FFD6F5", g2: "#FF5CD6", g3: "#5CE3FF", t: "#FF9DE8", on: 950 },
-  blackhole: { b: "#B48CFF", g1: "#F3EAFF", g2: "#B48CFF", g3: "#FF9A5C", t: "#D2BDFF", on: 350 },
-  underwater:{ b: "#46E0E8", g1: "#E6FFFC", g2: "#46E0E8", g3: "#8FD0FF", t: "#93F0F4", on: 650 },
-  worldtree: { b: "#7CD69A", g1: "#FFD1E4", g2: "#FF8FBF", g3: "#B8F2A0", t: "#FFB3D3" },
-  bubbles:   { b: "#9FE8FF", g1: "#B4F0FF", g2: "#FFB3E6", g3: "#C9B3FF", t: "#B4F0FF" },
-  /* beam full at 40.5% of the saucer's 7s: the box lights as it lands */
-  ufo:       { b: "#6BFF8F", g1: "#EAFFEE", g2: "#6BFF8F", g3: "#B8FFF2", t: "#9DFFB5", on: 2800, fast: true }
+  fireworks: { b: "#FF5CD6", g1: "#FFD6F5", g2: "#FF5CD6", g3: "#5CE3FF" },
+  blackhole: { b: "#B48CFF", g1: "#F3EAFF", g2: "#B48CFF", g3: "#FF9A5C" },
+  underwater:{ b: "#46E0E8", g1: "#E6FFFC", g2: "#46E0E8", g3: "#8FD0FF" },
+  worldtree: { b: "#7CD69A", g1: "#FFD1E4", g2: "#FF8FBF", g3: "#B8F2A0" },
+  bubbles:   { b: "#9FE8FF", g1: "#B4F0FF", g2: "#FFB3E6", g3: "#C9B3FF" },
+  ufo:       { b: "#6BFF8F", g1: "#EAFFEE", g2: "#6BFF8F", g3: "#B8FFF2" }
 };
 /* The box's colours as custom properties on `el` (the card, the effect's
    layer, a tile): one place, so a new one reaches all three. */
-const HFX_TINT_VARS = [["--hfx-b", "b"], ["--hfx-g1", "g1"], ["--hfx-g2", "g2"], ["--hfx-g3", "g3"], ["--hfx-t", "t"]];
+const HFX_TINT_VARS = [["--hfx-b", "b"], ["--hfx-g1", "g1"], ["--hfx-g2", "g2"], ["--hfx-g3", "g3"]];
 function hfxTintVars(el, tint){
   HFX_TINT_VARS.forEach(([k, f]) => { if(tint[f]) el.style.setProperty(k, tint[f]); });
 }
@@ -77983,9 +77982,10 @@ function buildHundoFxMock(id, o){
   const acts = el("div", "rs-actions");
   el("button", "hfx-mk-btn is-light", "Re-run", acts).tabIndex = -1;
   el("button", "hfx-mk-btn", "Main menu", acts).tabIndex = -1;
+  /* in the effect's colours from the first frame, as on the real screen */
+  hfxTintGrade(gr, id);
   if(hfxMotionOff()){
-    /* still: the box in the effect's colours, and the effect's still beside the number */
-    if(HFX_TINT[id]){ hfxApplyTint(id, { box: gr }, null); gr.classList.add("hfx-tinted"); }
+    /* still: the effect's still beside the number */
     const st = el("span", "hfx-mk-still", null, gr); st.appendChild(buildHundoFxStill(id));
     return m;
   }
@@ -78079,15 +78079,26 @@ function hfxUfo(scr, bx, c){
     const exit = { x: (Math.random() < .5 ? -1 : 1) * c.vw * .9, y: -L.y - 160 };
     const u = hfxMk(scr, "span", "hfx-saucer", { left: L.x + "px", top: L.y + "px", "--sx": (hfxR(-.3, .3) * c.vw) + "px", "--sy": (-L.y - h - 20) + "px",
       "--hov": hov + "px", "--ox": exit.x + "px", "--oy": exit.y + "px", "--uw": w + "px", "--uh": h + "px" });
-    /* the beam hangs under the hull and rides with it */
-    const beam = hfxMk(u, "i", "hfx-ufo-beam", { "--bh": (-hov + 18) + "px", "--bw": (w * .82) + "px" });
+    /* THE BEAM IS FIRED, THEN IT RIDES WITH THE HULL (build 317, round 3):
+       "the UFO's projection is shown before it's shot out of the UFO and
+       it doesn't hit the bottom of the box". It grows out of the underside
+       (its top is .2 of the hull up inside it) and its foot is ALWAYS 4px
+       inside the box's top edge: hovering, landed (--bl) and lifting off
+       (--bk), each a scale of the one hovering length. The box's own beam
+       (.hfx-ufo-inbeam) takes it from that edge to the box's bottom edge,
+       and only starts once this one has arrived. */
+    const bh = -hov + h * .2 + 4;
+    const beam = hfxMk(u, "i", "hfx-ufo-beam", { "--bh": bh + "px", "--bw": (w * .82) + "px",
+      "--bl": ((h * .2 + 4) / bh).toFixed(3), "--bk": ((74 + h * .2) / bh).toFixed(3) });
     beam.style.backgroundImage = hfxBeamURL();
     for(let k = 0; k < 3; k++){
-      hfxMk(u, "i", "hfx-ufo-ring", { "--rw": (w * .5) + "px", "--fall": (-hov) + "px", "--t": 2.75 + k * .22 }).style.backgroundImage = hfxBeamRingURL();
+      hfxMk(u, "i", "hfx-ufo-ring", { "--rw": (w * .5) + "px", "--fall": (-hov) + "px", "--t": 2.88 + k * .22 }).style.backgroundImage = hfxBeamRingURL();
     }
     const bob = hfxMk(u, "i", "hfx-ufo-bob");
     /* searchlights sweeping the dark as it comes down (round 3) */
-    [-1, 1].forEach(s => hfxMk(bob, "i", "hfx-ufo-search", { "--s0": (s * 34) + "deg", "--s1": (-s * 22) + "deg" }));
+    /* no longer than from the rim to the box's top edge where it hovers,
+       so they never reach the box: the beam is the one light that does */
+    [-1, 1].forEach(s => hfxMk(bob, "i", "hfx-ufo-search", { "--s0": (s * 34) + "deg", "--s1": (-s * 22) + "deg", "--slh": Math.round(-hov + h * .38) + "px" }));
     hfxUfoOnCards(scr, c);
     hfxMk(bob, "i", "hfx-ufo-glow");
     hfxMk(bob, "i", "hfx-ufo-body").style.backgroundImage = hfxUfoURL();
@@ -78111,7 +78122,9 @@ function hfxUfo(scr, bx, c){
     const cx = c.bw / 2;
     if(!c.boxOnly){
       if(!c.noDim) hfxMk(bx, "i", "hfx-ufo-boxdim");
-      hfxMk(bx, "i", "hfx-ufo-inbeam", { left: cx + "px", "--ih": (c.p.y + c.p.h + 14) + "px", "--iw": Math.min(c.bw * .8, c.p.w * 1.6) + "px" }).style.backgroundImage = hfxBeamURL();
+      hfxMk(bx, "i", "hfx-ufo-inbeam", { left: cx + "px", "--ih": c.bh + "px", "--iw": Math.min(c.bw * .8, c.p.w * 1.6) + "px" }).style.backgroundImage = hfxBeamURL();
+      /* the box flares as the beam strikes it, and again as it lands */
+      hfxMk(bx, "i", "hfx-ufo-landglow is-hit", { "--t": 2.84 });
       hfxMk(bx, "i", "hfx-ufo-landglow", { "--t": 4.1 });
     } else {
       /* in a small box: it comes down into the box, hovers over the
@@ -78187,23 +78200,6 @@ function hfxConfettiBox(bx, c){
 const HUNDO_FX_BUILD = { fireworks: hfxFireworks, blackhole: hfxBlackHole, underwater: hfxUnderwater,
   worldtree: hfxWorldTree, bubbles: hfxBubbles, ufo: hfxUfo };
 
-/* The 100% in the effect's colours: a copy laid exactly over the real
-   numerals, filled with the effect's gradient, fading in and out. */
-function hfxTintNum(bx, c){
-  if(!c.pct) return null;
-  const cs = getComputedStyle(c.pct);
-  const t = hfxMk(bx, "span", "hfx-tintnum", { left: c.p.x + "px", top: c.p.y + "px", width: c.p.w + "px", height: c.p.h + "px" });
-  /* CHILDREN, not textContent (build 317): "the number 100 is cutout at
-     the percentage part". textContent made the copy "100%" with a
-     full-size % - 195px of text in the real number's 163px box, so the
-     gradient, which only paints the box, stopped half-way through a %
-     that also stood over the real one's small raised sign. The clone is
-     the same markup as the number, so it is the same width. */
-  hfxCloneNum(t, c.pct);
-  t.style.fontFamily = cs.fontFamily; t.style.fontSize = cs.fontSize; t.style.fontWeight = cs.fontWeight;
-  t.style.letterSpacing = cs.letterSpacing; t.style.lineHeight = cs.lineHeight;
-  return t;
-}
 /* The number's markup into a copy laid over it. The copy is given the
    number's line-height in PIXELS (getComputedStyle), which its small %
    would inherit as pixels too - a 64px line round a 28px glyph, which
@@ -78239,24 +78235,34 @@ function hfxFadeOut(el){
    outlast it. Gold is Confetti's, the default, and nothing else's.
    With reduce motion nothing moves, but the box still takes the
    colours. */
-function hfxApplyTint(id, opts, c){
+function hfxApplyTint(id, opts){
   const tint = HFX_TINT[id];
   if(!tint || !opts.box) return null;
   const box = opts.box;
+  /* already in this effect's colours (put on at build): leave it be - a
+     second .hfx-tint would fade in from nothing over the first */
+  if(box.dataset.hfxTint === id && box.classList.contains("hfx-tinted")) return tint;
   hfxTintVars(box, tint);
   box.querySelectorAll(":scope > .hfx-keep").forEach(e => e.remove());
-  const t = hfxMk(box, "i", "hfx-tint hfx-keep");
-  t.setAttribute("aria-hidden", "true");
-  const n = c ? hfxTintNum(box, c) : null;
-  if(n){ n.classList.add("hfx-keep"); n.setAttribute("aria-hidden", "true"); }
-  box.classList.toggle("hfx-fast", !!tint.fast);
+  const t = document.createElement("i");
+  t.className = "hfx-tint hfx-keep"; t.setAttribute("aria-hidden", "true");
+  box.appendChild(t);
+  box.dataset.hfxTint = id;
+  box.classList.add("hfx-tinted");
   return tint;
+}
+/* The 100% card (or a stand-in for it) in effect `id`'s colours FROM ITS
+   FIRST FRAME: called as the card is built, before it is ever painted, so
+   nothing transitions from the default's gold. Confetti is the gold. */
+function hfxTintGrade(card, id){
+  if(!card || !id || id === "confetti" || !HFX_TINT[id]) return false;
+  return !!hfxApplyTint(id, { box: card });
 }
 function playHundoFx(id, opts){
   opts = opts || {};
   if(!HUNDO_FX_BUILD[id]) id = "confetti";
   if(hfxMotionOff()){
-    if(id !== "confetti" && opts.box && !opts.boxOnly){ const c0 = hfxContext(opts); if(hfxApplyTint(id, opts, c0)) opts.box.classList.add("hfx-tinted"); }
+    if(id !== "confetti" && opts.box && !opts.boxOnly) hfxApplyTint(id, opts);
     return null;
   }
   if(id === "confetti" && !opts.boxOnly && !opts.frame){ celebrate(opts.palette, opts.pct || opts.box); return null; }
@@ -78279,7 +78285,7 @@ function playHundoFx(id, opts){
   }
   if(tint){
     if(scr) hfxTintVars(scr, tint);
-    if(opts.box) hfxApplyTint(id, opts, c);
+    if(opts.box) hfxApplyTint(id, opts);
   }
   const undo = fade => { c.anims.forEach(a => { try{ a.cancel(); }catch(e){} }); c.anims.length = 0; c.cleanup.forEach(f => { try{ f(fade); }catch(e){} }); c.cleanup.length = 0; };
   try{
@@ -78308,14 +78314,8 @@ function playHundoFx(id, opts){
      over the screen layer while they play, so the number stays clear of
      the dark. */
   if((id === "ufo" || id === "blackhole" || id === "fireworks") && scr && opts.box) opts.box.classList.add("hfx-over");
-  /* WHEN the colours come on: at once, or (the UFO) as its beam reaches
-     the box - "the edge lights up before the alien doesn't beam" - and
-     they stay (above). */
-  let tintTimer = null;
-  if(tint && opts.box){
-    const go = () => { void opts.box.offsetWidth; opts.box.classList.add("hfx-tinted"); };
-    if(tint.on) tintTimer = setTimeout(go, tint.on); else go();
-  }
+  /* The colours are on already (hfxApplyTint above, or hfxTintGrade at
+     the card's build) and they stay (above). */
   /* The bubbles' box wobbles like the film they are blown from: its own
      `scale` property, through the Web Animations API, so the transform
      its landing animation holds is never touched and nothing restarts. */
@@ -78325,11 +78325,9 @@ function playHundoFx(id, opts){
   }
   const handle = { id, screen: scr, box: bx, total, startedAt: performance.now(), done: false };
   const lifted = () => { if(opts.box) opts.box.classList.remove("hfx-over"); };
-  /* a stopped UFO never got its colours on: put them on now */
-  const ensureTint = () => { clearTimeout(tintTimer); if(tint && opts.box && opts.box.isConnected) opts.box.classList.add("hfx-tinted"); };
-  const end = () => { if(handle.done) return; handle.done = true; if(scr) scr.remove(); if(bx) bx.remove(); if(mo) mo.disconnect(); lifted(); undo(false); ensureTint(); };
+  const end = () => { if(handle.done) return; handle.done = true; if(scr) scr.remove(); if(bx) bx.remove(); if(mo) mo.disconnect(); lifted(); undo(false); };
   handle.timer = setTimeout(end, total);
-  handle.stop = () => { if(handle.done) return; handle.done = true; clearTimeout(handle.timer); ensureTint(); if(mo) mo.disconnect(); hfxFadeOut(scr); hfxFadeOut(bx); undo(true); setTimeout(lifted, 650); };
+  handle.stop = () => { if(handle.done) return; handle.done = true; clearTimeout(handle.timer); if(mo) mo.disconnect(); hfxFadeOut(scr); hfxFadeOut(bx); undo(true); setTimeout(lifted, 650); };
   /* the screen changing under it: fade, don't leave it over the next one */
   let mo = null;
   if(scr && opts.box && !opts.preview && typeof stage !== "undefined" && stage){
@@ -78353,6 +78351,8 @@ function buildHundoFxStage(id, o){
   const pct = document.createElement("span");
   pct.className = "hfx-stage-pct"; gradePctMarkup(pct, 100);
   st.appendChild(pct);
+  /* in its colours from the first frame (build 317) */
+  hfxTintGrade(st, id);
   if(hfxMotionOff()){
     const still = document.createElement("span");
     still.className = "hfx-stage-still";
@@ -81302,6 +81302,12 @@ function showRunRewards(run, hooks, opts){
   const gradeTone = run.retake ? (run.missed.length ? "is-retake-left" : "is-retake-clear")
     : run.isPerfect ? "is-perfect" : run.pct >= PASS_MARK ? "is-pass" : "is-fail";
   grade.className = "rs-card rs-grade rs-land score " + gradeTone;
+  /* A 100 IS IN ITS EFFECT'S COLOURS BEFORE IT IS EVER SEEN (build 317):
+     "It looks like all the hundo effect boxes start as the gold default,
+     fix that." The colours used to go on when the effect started, after
+     the card had landed in gold - and the UFO's only when its beam came
+     down. Now they are on the card as it is built. */
+  if(run.isPerfect && !run.retake){ try{ hfxTintGrade(grade, hundoFxInUse()); }catch(e){} }
   /* YOUR CHARACTER REACTS TO THE GRADE (build 235), on the XP box's own
      character - "don't put the character on the grade card, it's perfect
      being just on the xp box" (build 236). It reacts when the grade card
@@ -81554,7 +81560,7 @@ function showRunRewards(run, hooks, opts){
        colours". Nothing plays; the box is simply tinted. */
     if(run.isPerfect && !run.retake){
       const fx = hundoFxInUse(), o = { box: grade, pct: grade.querySelector(".rs-pct") };
-      try{ if(fx !== "confetti" && HFX_TINT[fx] && hfxApplyTint(fx, o, hfxContext(o))) grade.classList.add("hfx-tinted"); }catch(e){}
+      try{ hfxTintGrade(grade, fx); }catch(e){}
     }
     countUp(true);
     if(levelBlock.setFinal) levelBlock.setFinal();
