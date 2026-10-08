@@ -20,6 +20,7 @@ is stubbed where a check needs it. Exits non-zero on any failure.
 """
 import functools
 import json
+import math
 import http.server
 import io
 import os
@@ -13208,7 +13209,7 @@ CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeou
     .observe(ov, { attributes: true, attributeFilter: ['class'] });
   /* sampled from inside the page every 90ms until the flash, so a loaded
      machine cannot skip the beat between two Playwright calls */
-  while(ov.isConnected && !ov.classList.contains('supernova-burst') && performance.now() - t0 < 20000){
+  while(ov.isConnected && !ov.classList.contains('supernova-burst') && performance.now() - t0 < 32000){
     const orb = ov.querySelector('.rank-before .rank-orbit');
     const slot = ov.querySelector('.rank-before .rank-orbit-slot');
     const wipe = ov.querySelector('.rank-before .rank-litwipe');
@@ -13272,9 +13273,13 @@ CUTSPIN_UNDER = """() => { const ov = document.getElementById('supernova-cutscen
         const st = document.elementsFromPoint(cx, cy);
         const iD = st.findIndex(e => e === d || d.contains(e)), iB = st.findIndex(e => e === b || b.contains(e));
         let op = 1; for(let e = b; e && e !== wrap; e = e.parentElement) op *= +getComputedStyle(e).opacity;
-        out.push({ side, bubble: b.dataset.rankTier, order: iB >= 0 && (iD < 0 || iB < iD), glass: +op.toFixed(3),
+        /* the evolution round: at speed the bubbles melt into light, and
+           the secret flares under them must melt at least as far - never
+           a flare sharper than the glass it is under */
+        let opD = 1; for(let e = d; e && e !== wrap; e = e.parentElement) opD *= +getComputedStyle(e).opacity;
+        out.push({ side, bubble: b.dataset.rankTier, order: iB >= 0 && (iD < 0 || iB < iD), glass: +op.toFixed(3), dot: +opD.toFixed(3),
           stack: (iB < 0 || iD < iB) ? st.slice(0, 6).map(e => e.tagName + '.' + String(e.getAttribute('class') || '').split(' ').slice(0, 2).join('.')) : undefined,
-          ok: iB >= 0 && (iD < 0 || iB < iD) && op >= .99 }); }); }); });
+          ok: iB >= 0 && (iD < 0 || iB < iD) && (op >= .99 || opD <= op + .02) }); }); }); });
   return out; }"""
 
 
@@ -13312,17 +13317,14 @@ def check_b317_cutspin(br):
         check("%s: dark while it speeds up - neither lit nor lighting before the top speed" % label,
               len(pre) >= 3 and not any(x["lit"] or (x["wipeR"] or 0) > 0 for x in pre), len(pre))
         acc = (ev["lightAt"] or 0) - (ev["spinAt"] or 0)
-        check("%s: the speeding-up lasts ~4.5s (3.5s or more)" % label,
-              ev["spinAt"] is not None and ev["lightAt"] is not None and acc >= 3500, round(acc))
-        radii = [x["wipeR"] for x in sm if x["wipeR"] is not None and x["wipeR"] == x["wipeR"]]
-        check("%s: at the top speed it lights from its middle outward, not in one step" % label,
-              (len({round(v) for v in radii if 2 < v < 98}) >= 1 or len(radii) >= 1) and radii == sorted(radii), radii)
+        check("%s: the speeding-up lasts ~5.6s (4.5s or more)" % label,
+              ev["spinAt"] is not None and ev["lightAt"] is not None and acc >= 4500, round(acc))
         check("%s: fully lit while it slows, before it stops" % label,
               ev["litAt"] is not None and ev["restAt"] is not None and ev["lightAt"] <= ev["litAt"] <= ev["restAt"] + 60, ev)
         dec = (ev["restAt"] or 0) - (ev["lightAt"] or 0)
         pause = (ev["burstAt"] or 0) - (ev["restAt"] or 0)
-        check("%s: it slows for ~2s, then holds still ~0.5s before the flash" % label,
-              dec >= 1500 and 420 <= pause <= 1500, (round(dec), round(pause)))
+        check("%s: it slows slowly (~4.4s), then charges up (~1.7s) before the flash" % label,
+              dec >= 3500 and 1200 <= pause <= 2800, (round(dec), round(pause)))
         sec = ev.get("secret") or {}
         check("%s: the secret flares are in the scene, under the glass bubbles, seen through them" % label,
               sec.get("dots", 0) >= 3 and sec.get("under") and sec.get("glass") not in (None, "none"), sec)
@@ -13349,20 +13351,20 @@ def check_b317_cutspin(br):
         pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
         pg.evaluate("()=>playTierCutscene('vanguard', {from:'veteran', onDone(){}})")
         t, n, bad, pops, burst_at, igs = 0.0, 0, [], [], None, []
-        for i in range(1, 316):
+        for i in range(1, 540):
             t0 = t; t = i / 30
             pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000)))
             pg.evaluate(CUTSPIN_SEEK, t)
-            if i < 90:
+            if i < 150:
                 continue
-            if i > 300:
+            if i > 470:
                 if burst_at is None and pg.evaluate("() => !!document.querySelector('#supernova-cutscene.supernova-burst')"): burst_at = i
                 continue
             ph = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene'); if(!o) return [false, false, null];
-              const lp = o.querySelector('.rank-litpop'), sl = o.querySelector('.rank-before .rank-orbit-slot.is-igniting');
+              const lp = o.querySelector('.rank-bang:not(.is-big)'), sl = o.querySelector('.rank-before .rank-orbit-slot.is-igniting');
               const pool = sl ? getComputedStyle(sl, '::before') : null;
               return [!!lp, o.classList.contains('supernova-burst'), {
-                parts: lp ? lp.children.length : null, ring: lp ? getComputedStyle(lp, '::after').borderTopWidth : null,
+                parts: lp ? [...lp.children].map(c => c.className).sort().join(',') : null,
                 pool: pool ? (pool.content === 'none' ? 0 : +pool.opacity) : 0 }]; }""")
             if ph[0]: pops.append(i)
             if ph[2]: igs.append((i, ph[2]))
@@ -13372,10 +13374,10 @@ def check_b317_cutspin(br):
                 if not x["ok"]:
                     bad.append((i, x))
         ctx.close()
-        check("%s: every frame of the whirl, a secret flare on a big bubble is UNDER its whole glass" % label,
+        check("%s: every frame of the whirl, a secret flare on a big bubble is UNDER its glass (and never sharper than it)" % label,
               n >= 10 and not bad, (n, len(bad), bad[:2]))
-        check("%s: the new flare flashes for about a second as it lights, and the big flash still comes on time" % label,
-              27 <= len(pops) <= 40 and burst_at is not None and 290 <= burst_at <= 305 and pops[-1] < burst_at,
+        check("%s: the mini-bang goes off for about a second at the top speed, and the big flash comes on time (~17s)" % label,
+              25 <= len(pops) <= 60 and burst_at is not None and 495 <= burst_at <= 525 and pops[-1] < burst_at,
               (len(pops), pops[:1], burst_at))
         # Round five: "the pulse coming off the new flare mid spin is not the
         # best". One ignition: a bloom, one halo and ONE shockwave ring on
@@ -13384,10 +13386,10 @@ def check_b317_cutspin(br):
         # second of flash. Fails on 03cd1d7 (two rings, and the pool stayed
         # through the slow-down).
         during = [x for i_, x in igs if x["parts"] is not None]
-        check("%s: the ignition is one bloom with one shockwave ring, nothing flung off, and no pool of colour outlasting it" % label,
-              len(during) >= 20 and all(x["parts"] == 1 and x["ring"] not in (None, "0px") for x in during)
+        check("%s: the bang is one burst - a core, a ring and a glow, nothing flung off - and no pool of colour stays on the flare" % label,
+              len(during) >= 20 and all(x["parts"] == "rb-core,rb-glow,rb-ring" for x in during)
               and all(x["pool"] < .02 for i_, x in igs),
-              (len(during), [x for x in during if x["parts"] != 1][:1], max([x["pool"] for i_, x in igs], default=None)))
+              (len(during), [x for x in during if x["parts"] != "rb-core,rb-glow,rb-ring"][:1], max([x["pool"] for i_, x in igs], default=None)))
 
     # Round five: "there's like a flare floating across the screen?" The
     # outro must hold the planet system still while it fades, and the bridge
@@ -13399,10 +13401,10 @@ def check_b317_cutspin(br):
     pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
     pg.evaluate("()=>playTierCutscene('vanguard', {from:'veteran', onDone(){}})")
     t, boxes, pools, titles = 0.0, [], [], []
-    # up to 25s: the scene ends near 19s, and a loaded machine can resolve
-    # the whirl's `finished` late (the fallback fires at 12s) - the loop
-    # stops as soon as the bridge has come and gone
-    for i in range(1, 750):
+    # up to 33s: the scene ends near 25s, and a loaded machine can resolve
+    # the whirl's `finished` late (the fallback fires 2.5s after the whirl)
+    # - the loop stops as soon as the bridge has come and gone
+    for i in range(1, 1000):
         t0 = t; t = i / 30
         pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000)))
         pg.evaluate(CUTSPIN_SEEK, t)
@@ -13616,7 +13618,7 @@ def check_b317_supernova(br):
     check("by the title the new planet is scarred and its rings are orange",
           bool(at_set) and (at_set["scar"] or 0) > .95 and at_set["orange"], at_set)
     total = (marks.get("gone") or 0) / 30
-    check("about the old length - ~21-25s from the first frame to the hand-back", 20 <= total <= 25.5, round(total, 1))
+    check("about the length it should be - ~24-29s from the first frame to the hand-back (the evolution round put the attention and the whirl in front)", 24 <= total <= 29.5, round(total, 1))
     check("it ends with Supernova reached and the ring tier seen as 'supernova' (Home will not draw the rings on again)",
           end[1] is True and end[2] == "supernova", end)
 
@@ -13759,6 +13761,187 @@ def check_b317_cutend(br):
         check("Reduce motion, %s: the new planet in its colour, its flare lit%s, from the first frame - and the title" %
               (label, ", scarred with orange rings" if tier == "titan" else ""), ok_look,
               look and {k: look[k] for k in ("after", "lit", "accent")})
+
+
+EVOLVE_ST = """([tier]) => { const o = document.getElementById('supernova-cutscene'); if(!o) return null;
+  const ob = o.getBoundingClientRect();
+  const rect = el => { if(!el) return null; const r = el.getBoundingClientRect(); return [r.left + r.width / 2 - ob.left, r.top + r.height / 2 - ob.top, r.width]; };
+  const nb = o.querySelector('.rank-before .cosmic-icon-badge[data-rank-tier="' + tier + '"]');
+  const ns = nb && nb.closest('.rank-orbit-slot');
+  const op = sel => { const els = [...o.querySelectorAll(sel)]; return els.length ? Math.max(...els.map(e => +getComputedStyle(e).opacity)) : null; };
+  const other = o.querySelector('.rank-before .rank-orbit-slot:not(.is-attn)');
+  const m = o.querySelector('.rank-before .cosmic-hero-main'), mr = m && m.getBoundingClientRect();
+  const fl = o.querySelector('.supernova-flash'), sp = o.querySelector('.rank-spin');
+  const st = getComputedStyle(o.querySelector('.supernova-stage'));
+  const slotM = ns ? (getComputedStyle(ns).transform.match(/matrix\(([^)]*)\)/) || [, ''])[1].split(',').map(Number) : [];
+  return { c: o.className.split(' '), flare: rect(nb), mid: [ob.width / 2, ob.height / 2],
+    planet: mr ? [mr.left + mr.width / 2 - ob.left, mr.top + mr.height * 162 / 342 - ob.top] : null,
+    attn: !!o.querySelector('.rank-attn.is-attention'), slotShift: slotM.length === 6 ? Math.hypot(slotM[4], slotM[5]) : 0,
+    stageT: st.translate, long: op('.rank-before .rank-trail.is-long'), neu: op('.rank-before .rank-trail.is-new'),
+    ring: op('.rank-before .rank-trail.is-newring'), old: op('.rank-before .rank-trail.is-old'),
+    slotOp: other ? +getComputedStyle(other).opacity : null,
+    bang: rect(o.querySelector('.rank-bang:not(.is-big)')), big: rect(o.querySelector('.rank-bang.is-big')),
+    gather: !!o.querySelector('.rank-gather'), spinScale: sp ? getComputedStyle(sp).scale : null,
+    flash: fl ? (() => { const r = fl.getBoundingClientRect(); return [r.left + r.width / 2 - ob.left, r.top + r.height / 2 - ob.top]; })() : null }; }"""
+
+EVOLVE_CARD = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  document.querySelectorAll('#pushing-update,#intro-pop').forEach(n => n.remove());
+  const out = { card: null };
+  window.playBadgeCaseScene = (units, done) => { setTimeout(done, 20); return {}; };
+  window.playTierCutscene = (k, o) => { setTimeout(() => o && o.onDone && o.onDone(), 20); return {}; };
+  window.playSupernovaCutscene = (o) => { setTimeout(() => o && o.onDone && o.onDone(), 20); return {}; };
+  window.playUnlockSpotlight = (it, n, of, release) => {
+    if(!out.card && it.rankReward){
+      const art = it.art ? it.art() : null;
+      const tiles = art ? [...art.querySelectorAll('.rs-reward-tile')] : [];
+      out.card = { kind: it.kind, parts: (it.parts || [it]).map(p => p.kind),
+        labels: tiles.map(t => (t.querySelector('.rs-reward-kind') || {}).textContent || ''),
+        flareTile: tiles.some(t => t.classList.contains('is-rankflare') && !!t.querySelector('.flare-solo.cosmic-badge-lit')) };
+    }
+    setTimeout(release, 20); return { skip(){}, stop(){} }; };
+  const topics = [...new Set(QUESTIONS.map(q => (q.topic || '').trim()))].filter(Boolean);
+  const t = topics.find(x => x === 'Identity Crimes') || topics[0];
+  store.unitPerfects = {}; store.unitPerfects[t] = Math.max(0, badgeThresholdFor(t) - 1);
+  store.lifetime.points = 30000; store.pendingBadgeUnlocks = [];
+  cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t];
+  order = QUESTIONS.map((q, i) => [q, i]).filter(([q]) => (q.topic || '').trim() === t).map(([, i]) => i);
+  runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null;
+  attempts = {}; picked = {}; timedOutSet = {};
+  order.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+  summarize();
+  for(let i = 0; i < 400 && !document.querySelector('.rs-rewards.rs-done'); i++) await wait(100);
+  out.rank = rankOf(store);
+  return out; }"""
+
+
+def check_b317_evolve(br):
+    """Build 317, the evolution round. Madison: "You know how in Pokemon
+    when someone evolves there is that super cool evolution animation ...
+    make them spin really really fast so all the colors start morphing ...
+    Almost like cars at night when they go fast, like the glow trail ...
+    the blue color (or whatever one is unlocking) gets brighter and
+    brighter during this phase as if it's evolving during the spin ... a
+    small flash of the color.. like bang (think small supernova). Then it
+    slows down slowly ... the massive flash of the color ... needs to be
+    made so it looks like the flash of the color originated from the new
+    flare as if it exploded". Frame-stepped on the page clock (every
+    animation and transition seeked to it), a rank (Platinum) on a phone:
+    - the attention on the new flare as it opens: its glow, its own loop
+      out of the slot, and the camera pushing toward it and back;
+    - the light trails: none at the start, the bubbles solid; at the top
+      speed the rings of light up and the bubbles all but gone;
+    - the new colour taking over its ring, brighter and brighter, with at
+      least two flicks back to its old light before the top;
+    - the mini-bang AT the new flare, at the top speed;
+    - the charge before the flash (the system pulsing, light gathering);
+    - the big flash starting AT the new flare, not the planet's middle;
+    - the scene ~22-26s to the hand-over;
+    - the reward card with a Flare tile, in the order Theme, Flare, ...;
+    - Supernova's blast with soft edges: no border, no blurred shadow on
+      its rings, its dust an image of its own (not the stretched smoke).
+    Written against b6cd249, where all of these fail."""
+    print("\n317v. the evolution: attention, light trails, the new colour, the bang, the charge, the flash from the flare")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("() => { store.supernovaAchieved = false; saveStore(); theme.accent = 'veteran'; applyTheme(); showHome(); document.querySelectorAll('.rs-spot,.daily-alert,#tour-overlay,.update-banner,.toast').forEach(n => n.remove()); }")
+    pg.wait_for_timeout(900)
+    pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+    pg.evaluate("() => { window.__cutDone = null; window.__cutT0 = Date.now(); playTierCutscene('vanguard', { from: 'veteran', onDone(){ window.__cutDone = Date.now(); } }); }")
+    rows, t = [], 0.0
+    for i in range(1, 30 * 32):
+        t_ = t; t = i / 30
+        # every animation to this frame's time FIRST, then the clock: a
+        # timer that reads where something is (the bang reads the flare)
+        # sees this frame, not the last one - 43 degrees at the top speed
+        pg.evaluate(CUTSPIN_SEEK, t)
+        pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
+        pg.evaluate(CUTSPIN_SEEK, t)
+        st = pg.evaluate(EVOLVE_ST, ["vanguard"])
+        rows.append((i, st))
+        if st is None and pg.evaluate("() => window.__cutDone") is not None:
+            break
+    total = pg.evaluate("() => window.__cutDone === null ? null : (window.__cutDone - window.__cutT0) / 1000")
+    ctx.close()
+    first = lambda k: next((i for i, st in rows if st and k in st["c"]), None)
+    spin_at, light_at, rest_at, burst_at = first("is-cutspin"), first("is-cutlight"), first("is-cutrest"), first("supernova-burst")
+    at = lambda i: next((st for j, st in rows if j == i), None)
+    dist = st_ = None
+    def dmid(st):
+        return math.hypot(st["flare"][0] - st["mid"][0], st["flare"][1] - st["mid"][1]) if st and st["flare"] else None
+    pre = [st for i, st in rows if st and spin_at and 36 <= i < spin_at]
+    attn = [st for st in pre if st["attn"]]
+    bw = (pre[0]["flare"][2] if pre and pre[0]["flare"] else 40) or 40
+    after = [st for i, st in rows if st and spin_at and spin_at + 3 <= i <= spin_at + 30]
+    check("attention: as the scene opens the new flare is singled out - its glow on, and it loops out of its slot and back",
+          len(attn) >= 60 and max([st["slotShift"] for st in attn] or [0]) > .4 * bw and bool(after) and not any(st["attn"] for st in after),
+          (len(attn), round(max([st["slotShift"] for st in attn] or [0]), 1), round(bw, 1)))
+    d_mid = [dmid(st) for i, st in rows if st and spin_at and 70 <= i <= 125]
+    d_after = dmid(at(spin_at - 1)) if spin_at else None
+    moved = [st["stageT"] for st in attn if st["stageT"] not in ("none", "0px", "0px 0px")]
+    check("attention: the camera pushes in toward it and eases back before the whirl",
+          bool(d_mid) and d_after is not None and min(d_mid) < .9 * d_after and len(moved) >= 30
+          and (at(spin_at + 2) or {}).get("stageT") in ("none", "0px", "0px 0px"),
+          (d_mid and round(min(d_mid)), d_after and round(d_after), len(moved)))
+    s0 = at((spin_at or 0) + 1)
+    sl = at(light_at) if light_at else None
+    check("the light trails: none as the whirl starts, the bubbles solid; at the top speed rings of light, the bubbles all but gone",
+          bool(s0 and sl) and (s0["long"] or 0) < .05 and (s0["slotOp"] or 0) > .95 and (sl["long"] or 0) > .85 and (sl["slotOp"] or 1) < .15,
+          s0 and sl and ((s0["long"], s0["slotOp"]), (sl["long"], sl["slotOp"])))
+    acc = (light_at - spin_at) if (spin_at and light_at) else 0
+    rv = lambda f: (at(spin_at + int(acc * f)) or {}).get("ring") or 0
+    check("the new colour takes over its ring - brighter and brighter through the speeding-up",
+          acc > 100 and rv(.4) < rv(.75) < rv(.97) and rv(.97) > .7, acc and (round(rv(.4), 2), round(rv(.75), 2), round(rv(.97), 2)))
+    neu = [(i, st["neu"] or 0, st["old"] or 0) for i, st in rows if st and spin_at and light_at and spin_at < i < light_at]
+    dips = [k for k in range(1, len(neu) - 1) if neu[k][1] < neu[k - 1][1] - .02 and neu[k][1] <= neu[k + 1][1] and neu[k][2] > .5]
+    check("back and forth: at least two flicks from the new colour to the old light before the top",
+          len(dips) >= 2, [neu[k][0] for k in dips])
+    bang_at = next((i for i, st in rows if st and st["bang"]), None)
+    bst = at(bang_at) if bang_at else None
+    check("the mini-bang: at the top speed, AT the new flare",
+          bool(bst and bst["flare"]) and light_at is not None and abs(bang_at - light_at) <= 2
+          and math.hypot(bst["bang"][0] - bst["flare"][0], bst["bang"][1] - bst["flare"][1]) <= .6 * bst["flare"][2],
+          bst and (bang_at, light_at, [round(v) for v in bst["bang"][:2]], [round(v) for v in bst["flare"][:2]]))
+    win = [st for i, st in rows if st and rest_at and burst_at and rest_at < i < burst_at]
+    scales = {st["spinScale"] for st in win if st["spinScale"] not in (None, "none")}
+    check("the charge before the flash: the system pulses, light gathering into the flare",
+          len(scales) >= 6 and any(st["gather"] for st in win) and max([float(v.split()[0]) for v in scales] or [1]) > 1.03,
+          (len(win), len(scales), any(st["gather"] for st in win)))
+    fb = at(burst_at) if burst_at else None
+    check("the big flash starts AT the new flare (it goes off), not at the planet's middle",
+          bool(fb and fb["flash"] and fb["flare"] and fb["planet"]) and math.hypot(fb["flash"][0] - fb["flare"][0], fb["flash"][1] - fb["flare"][1]) <= 6
+          and math.hypot(fb["flash"][0] - fb["planet"][0], fb["flash"][1] - fb["planet"][1]) >= 30 and fb["big"] is not None,
+          fb and ([round(v) for v in fb["flash"]], fb["flare"] and [round(v) for v in fb["flare"][:2]], fb["planet"] and [round(v) for v in fb["planet"]]))
+    check("longer, and it earns it: ~22-26s from the first frame to the hand-over", total is not None and 22 <= total <= 26.5, total)
+
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    card = pg.evaluate(EVOLVE_CARD)
+    ctx.close()
+    cd = card.get("card") or {}
+    check("the rank-up reward card shows the flare: Theme, then Flare, then the rest - the lit bubble as its tile",
+          cd.get("kind") == "rankrewards" and cd.get("parts", [])[:2] == ["theme", "rankflare"] and cd.get("labels", [])[:2] == ["Theme", "Flare"] and cd.get("flareTile"),
+          (card.get("rank"), cd))
+
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("() => { store.supernovaAchieved = false; saveStore(); theme.accent = 'elite'; applyTheme(); showHome(); }")
+    pg.wait_for_timeout(900)
+    pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+    pg.evaluate("() => playSupernovaCutscene({ from: 'elite', onDone(){} })")
+    t, det, edge = 0.0, None, None
+    for i in range(1, 30 * 26):
+        t_ = t; t = i / 30
+        pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
+        pg.evaluate(CUTSPIN_SEEK, t)
+        if det is None and pg.evaluate("() => !!document.querySelector('#supernova-cutscene.sn-detonate')"):
+            det = i
+        if det is not None and i - det == 6:
+            edge = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene');
+              const sh = [...o.querySelectorAll('.sn-shock')].map(e => { const c = getComputedStyle(e); return [c.borderTopWidth, c.boxShadow]; });
+              const d = o.querySelector('.sn-dust'), dc = d && getComputedStyle(d);
+              return { shocks: sh, dustMask: dc ? (dc.webkitMaskImage || dc.maskImage || 'none') : null, dustBg: dc ? dc.backgroundImage.slice(0, 22) : null }; }""")
+            break
+    ctx.close()
+    check("Supernova's blast has soft edges: its shock rings have no border and no blurred shadow, its dust is an image of its own",
+          bool(edge) and len(edge["shocks"]) >= 2 and all(b == "0px" and sh == "none" for b, sh in edge["shocks"])
+          and edge["dustMask"] in ("none", None) and (edge["dustBg"] or "").startswith("url("), edge)
 
 
 SPECIAL_CHARS = ["lunar", "solar", "tempest", "frost", "oracle", "inferno",

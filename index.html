@@ -11404,7 +11404,10 @@
   #supernova-cutscene.supernova-burst .supernova-stage .cosmic-icon-badge{ opacity:0; }
   .supernova-flash{
     position:absolute; inset:0; border-radius:50%; pointer-events:none;
-    background:radial-gradient(circle, #FFFFFF 0%, var(--theme-c1) 25%, var(--theme-c2) 45%, transparent 70%);
+    /* more stops than colours, eased, so the long soft edge has no bands */
+    background:radial-gradient(circle, #FFFFFF 0%, color-mix(in srgb, var(--theme-c1) 55%, #FFFFFF) 12%, var(--theme-c1) 25%,
+      color-mix(in srgb, var(--theme-c1) 50%, var(--theme-c2)) 35%, var(--theme-c2) 45%, color-mix(in srgb, var(--theme-c2) 62%, transparent) 54%,
+      color-mix(in srgb, var(--theme-c2) 30%, transparent) 61%, color-mix(in srgb, var(--theme-c2) 9%, transparent) 67%, transparent 72%);
     transform:scale(0); opacity:0;
   }
   #supernova-cutscene.supernova-burst .supernova-flash{
@@ -11481,35 +11484,66 @@
      as on Home (build 313's "under the glass") - a blur that costs no
      more per frame here than Home's own moving bubbles. */
   .tier-cutscene .rank-orbit, .tier-cutscene .rank-orbit-slot{ will-change:transform; }
-  /* The light from the middle at the top speed: a lit copy over the dark
-     bubble, its clip opening from a point to past its halo. */
-  .rank-orbit-slot > .rank-litwipe{ position:absolute; left:0; top:0; z-index:1; pointer-events:none;
-    clip-path:circle(0% at 50% 50%); opacity:.85;
-    transition:clip-path var(--cutlight-ms, .14s) cubic-bezier(.2,.7,.3,1), opacity var(--cutlight-ms, .14s) linear; }
-  .rank-orbit-slot > .rank-litwipe.is-open{ clip-path:circle(160% at 50% 50%); opacity:1; }
-  /* THE FLARE IGNITES (build 317, rounds three to five): "the pulse
-     coming off the new flare mid spin is not the best." One clean
-     ignition, about a second, on that bubble while it whirls: a crisp
-     bloom out of its core (::before) that peaks fast and settles back IN
-     PLACE, a soft halo (> i) that rises with it and decays, ONE shockwave
-     ring in the rank colour (::after), and the bubble itself swelling a
-     touch and settling (.is-flaring). Nothing is flung off it. Expo-out
-     curves throughout: quick to peak, long smooth decay. Transform and
-     opacity only, no filter. */
-  .rank-litpop{ position:absolute; inset:0; z-index:3; pointer-events:none; border-radius:50%; }
-  .rank-litpop::before, .rank-litpop::after, .rank-litpop > i{ content:""; position:absolute; inset:0; border-radius:50%; opacity:0; }
-  .rank-litpop::before{ background:radial-gradient(circle, #fff 0 16%, color-mix(in srgb, var(--ignite, #fff) 40%, #fff) 30%, color-mix(in srgb, var(--ignite, #fff) 75%, transparent) 50%, transparent 70%);
-    animation:rank-litpop-core 1s cubic-bezier(.16,1,.3,1) both; }
-  .rank-litpop > i{ inset:-90%; background:radial-gradient(circle, color-mix(in srgb, var(--ignite, #fff) 55%, transparent) 0%, color-mix(in srgb, var(--ignite, #fff) 18%, transparent) 40%, transparent 68%);
-    animation:rank-litpop-glow 1.1s cubic-bezier(.16,1,.3,1) both; }
-  .rank-litpop::after{ border:2.5px solid color-mix(in srgb, var(--ignite, #fff) 72%, #fff);
-    box-shadow:0 0 10px 2px color-mix(in srgb, var(--ignite, #fff) 65%, transparent), inset 0 0 6px color-mix(in srgb, var(--ignite, #fff) 45%, transparent);
-    animation:rank-litpop-ring .8s cubic-bezier(.16,1,.3,1) both; }
-  .rank-orbit-slot.is-flaring > .cosmic-icon-badge{ animation:rank-flare-swell 1s cubic-bezier(.16,1,.3,1) both; }
-  @keyframes rank-litpop-core{ 0%{ opacity:0; transform:scale(.35); } 9%{ opacity:1; transform:scale(1.3); } 30%{ opacity:.85; transform:scale(1.22); } 100%{ opacity:0; transform:scale(1); } }
-  @keyframes rank-litpop-glow{ 0%{ opacity:0; transform:scale(.7); } 12%{ opacity:.9; transform:scale(1); } 100%{ opacity:0; transform:scale(1.05); } }
-  @keyframes rank-litpop-ring{ 0%{ opacity:0; transform:scale(.85); } 7%{ opacity:1; transform:scale(1.05); } 100%{ opacity:0; transform:scale(2.6); } }
-  @keyframes rank-flare-swell{ 0%{ scale:1; } 10%{ scale:1.14; } 100%{ scale:1; } }
+  /* ---- THE EVOLUTION (build 317, the evolution round) ----
+     Madison: "You know how in Pokemon when someone evolves there is that
+     super cool evolution animation ... make them spin really really fast
+     so all the colors start morphing ... Almost like cars at night when
+     they go fast, like the glow trail ... the blue color (or whatever one
+     is unlocking) gets brighter and brighter during this phase as if it's
+     evolving during the spin ... And then a small flash of the color..
+     like bang (think small supernova). Then it slows down slowly". The
+     beats are in playRankUpScene; these are its pieces, transform and
+     opacity only, no filter:
+     - .rank-attn / .rank-attn-ring: the attention on the new flare as the
+       scene opens - a soft glow under the bubble and a halo ring over it,
+       in a hint of the rank's colour, breathing with it. The same pair is
+       the charge-up's light on the flare before the flash, and, still,
+       the mark on it in the Reduce-motion scene.
+     - .rank-trail: the light trails. Each is a ring the size of a bubble
+       orbit - a conic gradient of the bubbles' own colours, masked to a
+       soft band where they ride - inside the turning carrier, so it turns
+       with them; its opacity follows the whirl's own speed curve.
+     - .rank-bang: the mini-supernova at the new flare at the top speed;
+       .is-big, the flare going off as the big flash starts from it.
+     - .rank-aura: the planet's light breathing faster before the flash. */
+  .rank-attn, .rank-attn-ring{ position:absolute; border-radius:50%; pointer-events:none; opacity:0; }
+  .rank-attn{ inset:-60%; z-index:0;
+    background:radial-gradient(circle, color-mix(in srgb, var(--attn, #fff) 50%, #fff) 0 16%, color-mix(in srgb, var(--attn, #fff) 48%, transparent) 32%,
+      color-mix(in srgb, var(--attn, #fff) 18%, transparent) 50%, color-mix(in srgb, var(--attn, #fff) 6%, transparent) 60%, transparent 70%); }
+  .rank-attn-ring{ inset:-16%; z-index:2;
+    background:radial-gradient(circle, transparent 0 58%, color-mix(in srgb, var(--attn, #fff) 30%, transparent) 62%, color-mix(in srgb, var(--attn, #fff) 55%, #fff) 66%,
+      color-mix(in srgb, var(--attn, #fff) 45%, transparent) 70%, transparent 76%); }
+  .rank-orbit-slot.is-attn{ z-index:2; }
+  .rank-attn.is-still{ opacity:.7; }
+  .rank-attn-ring.is-still{ opacity:.85; }
+  .rank-trail{ position:absolute; left:50%; top:47.368%; aspect-ratio:1; translate:-50% -50%; border-radius:50%;
+    pointer-events:none; opacity:0; z-index:0; }
+  .rank-bang{ position:absolute; pointer-events:none; z-index:3; aspect-ratio:1; translate:-50% -50%; }
+  .rank-bang > i{ position:absolute; inset:0; border-radius:50%; opacity:0; }
+  .rank-bang > .rb-core{ background:radial-gradient(circle, #fff 0 10%, color-mix(in srgb, var(--bc, #fff) 40%, #fff) 22%,
+    color-mix(in srgb, var(--bc, #fff) 85%, transparent) 38%, color-mix(in srgb, var(--bc, #fff) 34%, transparent) 52%,
+    color-mix(in srgb, var(--bc, #fff) 10%, transparent) 62%, transparent 70%);
+    animation:rb-core .95s cubic-bezier(.16,1,.3,1) both; }
+  .rank-bang > .rb-ring{ background:radial-gradient(circle, transparent 0 52%, color-mix(in srgb, var(--bc, #fff) 22%, transparent) 57%,
+    color-mix(in srgb, var(--bc, #fff) 45%, #fff) 63%, color-mix(in srgb, var(--bc, #fff) 50%, transparent) 67%, transparent 74%);
+    animation:rb-ring 1.15s cubic-bezier(.1,.75,.3,1) both; }
+  .rank-bang > .rb-glow{ inset:-260%; background:radial-gradient(circle, color-mix(in srgb, var(--bc, #fff) 42%, transparent) 0,
+    color-mix(in srgb, var(--bc, #fff) 18%, transparent) 24%, color-mix(in srgb, var(--bc, #fff) 6%, transparent) 42%, transparent 62%);
+    animation:rb-glow 1.3s cubic-bezier(.2,.8,.3,1) both; }
+  .rank-bang.is-big > .rb-core{ animation-duration:1.3s; }
+  .rank-bang.is-big > .rb-ring{ animation-name:rb-ring-big; animation-duration:1.4s; }
+  @keyframes rb-core{ 0%{ opacity:0; transform:scale(.2); } 7%{ opacity:1; transform:scale(1.15); } 30%{ opacity:.85; transform:scale(1.35); } 100%{ opacity:0; transform:scale(1.7); } }
+  @keyframes rb-ring{ 0%{ opacity:1; transform:scale(.3); } 100%{ opacity:0; transform:scale(3.6); } }
+  @keyframes rb-ring-big{ 0%{ opacity:1; transform:scale(.3); } 100%{ opacity:0; transform:scale(7); } }
+  @keyframes rb-glow{ 0%{ opacity:0; } 9%{ opacity:1; } 100%{ opacity:0; } }
+  .rank-gather{ position:absolute; pointer-events:none; z-index:3; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0;
+    background:radial-gradient(circle, transparent 0 50%, color-mix(in srgb, var(--bc, #fff) 25%, transparent) 56%, color-mix(in srgb, var(--bc, #fff) 50%, #fff) 63%,
+      color-mix(in srgb, var(--bc, #fff) 45%, transparent) 68%, transparent 75%); }
+  .rank-aura{ position:absolute; pointer-events:none; z-index:0; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0;
+    background:radial-gradient(circle, color-mix(in srgb, var(--bc, #fff) 55%, transparent) 0 16%, color-mix(in srgb, var(--bc, #fff) 30%, transparent) 30%,
+      color-mix(in srgb, var(--bc, #fff) 13%, transparent) 46%, color-mix(in srgb, var(--bc, #fff) 4%, transparent) 58%, transparent 68%); }
+  /* the camera comes back out as the whirl slows */
+  #supernova-cutscene.tier-cutscene .supernova-stage.rank-zoomback{ transform:scale(1.15); transition:transform var(--zb-ms, 4.4s) cubic-bezier(.4,0,.3,1); }
   /* NO POOL OF COLOUR LEFT BEHIND (build 317, round five). The slot's
      breathing pool (::before, above) flooded in with the light and stayed
      through the whole slow-down as a halo - the ignition lasting two and
@@ -11611,17 +11645,28 @@
     100%{ opacity:0; transform:scale(2.2); }
   }
   #supernova-cutscene.sn-swell .rank-spin{ scale:1.14; transition:scale var(--sn-swell, 1.8s) cubic-bezier(.55,0,.85,.35); }
-  .sn-fx .sn-shock{ width:100%; height:100%; box-sizing:border-box; border:3px solid rgba(255,248,236,.95);
-    box-shadow:0 0 22px 6px rgba(255,176,96,.55), inset 0 0 14px 2px rgba(255,206,150,.45); }
-  .sn-fx .sn-shock.is-2{ border:9px solid rgba(255,122,52,.42); box-shadow:0 0 30px 10px rgba(255,92,32,.25); }
+  /* SOFT EDGES (build 317, the evolution round): "the edges of the
+     explosion part look really rough and weird and bad". The shock rings
+     were 3px and 9px BORDERS with blurred box-shadows, scaled 11x: a hard
+     band with stepped, blocky edges (a blurred shadow is drawn in tiles,
+     and at 11x the tiles show). They are soft radial-gradient rings now,
+     drawn at 8x the planet and scaled from .18 to 1.5 - never far past
+     their own size - with no border and no shadow. The dust was the
+     planet's 128px smoke stretched past 5x as a mask; it has a texture of
+     its own (snDustURL, soft at every edge by construction), drawn at its
+     final size and only ever scaled DOWN. */
+  .sn-fx .sn-shock{ width:800%; height:800%;
+    background:radial-gradient(circle, transparent 0 56%, rgba(255,226,190,.05) 61%, rgba(255,236,214,.3) 65%, rgba(255,248,236,.9) 68.5%,
+      rgba(255,214,160,.42) 70.5%, rgba(255,170,100,.1) 72.5%, transparent 75%); }
+  .sn-fx .sn-shock.is-2{
+    background:radial-gradient(circle, transparent 0 46%, rgba(255,120,48,.03) 54%, rgba(255,124,52,.12) 60%, rgba(255,116,46,.26) 65%,
+      rgba(255,112,44,.3) 67.5%, rgba(255,100,38,.2) 70.5%, rgba(255,92,32,.08) 74%, rgba(255,90,30,.02) 77%, transparent 80%); }
   #supernova-cutscene.sn-detonate .sn-shock{ animation:sn-shock 1.15s cubic-bezier(.1,.72,.25,1) both; }
   #supernova-cutscene.sn-detonate .sn-shock.is-2{ animation-duration:1.7s; animation-delay:.12s; }
-  @keyframes sn-shock{ 0%{ opacity:1; transform:scale(.9); } 70%{ opacity:.55; } 100%{ opacity:0; transform:scale(11); } }
-  .sn-fx .sn-dust{ width:270%; height:270%;
-    background:radial-gradient(circle, rgba(46,17,8,0) 0 16%, rgba(62,22,9,.84) 30%, rgba(46,17,8,.66) 44%, rgba(30,11,6,.32) 56%, rgba(30,11,6,0) 68%);
-    -webkit-mask-image:var(--smoke, none); mask-image:var(--smoke, none); -webkit-mask-size:100% 100%; mask-size:100% 100%; }
+  @keyframes sn-shock{ 0%{ opacity:1; transform:scale(.18); } 70%{ opacity:.55; } 100%{ opacity:0; transform:scale(1.5); } }
+  .sn-fx .sn-dust{ width:520%; height:520%; background:var(--dust, none) center / 100% 100% no-repeat; }
   #supernova-cutscene.sn-detonate .sn-dust{ animation:sn-dust 3.2s cubic-bezier(.2,.6,.3,1) .35s both; }
-  @keyframes sn-dust{ 0%{ opacity:0; transform:scale(.45) rotate(0deg); } 22%{ opacity:.95; transform:scale(1) rotate(12deg); } 100%{ opacity:0; transform:scale(1.9) rotate(44deg); } }
+  @keyframes sn-dust{ 0%{ opacity:0; transform:scale(.24) rotate(0deg); } 22%{ opacity:.95; transform:scale(.52) rotate(12deg); } 100%{ opacity:0; transform:scale(1) rotate(44deg); } }
   .sn-debris{ inset:0; }
   .sn-debris > i{ left:50%; top:50%; width:var(--s); aspect-ratio:1; margin:calc(var(--s) * -.5) 0 0 calc(var(--s) * -.5); opacity:0; }
   .sn-bit.is-shard::before, .sn-bit.is-shard::after{ content:""; position:absolute; }
@@ -24823,6 +24868,14 @@
   }
   .rs-reward-art > svg{ width:4rem; height:4rem; display:block; }
   .rs-reward-art .rs-themedot{ width:3.2rem; height:3.2rem; font-size:1.9rem; }
+  /* the flare tile (build 317): the rank's lit bubble, Profile's tile art,
+     floating about its own centre as it does there */
+  .rs-reward-art .flare-solo.cosmic-icon-badge.cosmic-badge-rank{ width:3.1rem; height:3.1rem; }
+  .rs-unlock-art .flare-solo.cosmic-icon-badge.cosmic-badge-rank{ width:2.3rem; height:2.3rem; }
+  @media (prefers-reduced-motion:no-preference){
+    .rs-reward-art .flare-solo.cosmic-icon-badge-0{ animation:pf-float 6s ease-in-out infinite; }
+  }
+  .rs-unlock-art .flare-solo.cosmic-icon-badge-0{ animation:none; }
   /* The theme as its moving swatch (build 317, themeUnlockItem): the
      swatch box is only a frame here, the dot is the size the old ball
      was in each place, and it keeps the ring and glow in the theme's
@@ -62993,6 +63046,47 @@ function cosmicScarURLs(){
   }catch(e){ cosmicScarCache = false; }
   return cosmicScarCache;
 }
+/* THE SUPERNOVA'S DUST (build 317, the evolution round): a ring of burnt
+   smoke, drawn once at 256px with its soft edges baked in - zero alpha at
+   the middle and at every side of the square - so it can never show a
+   hard edge or the box it is drawn in. Seeded, like the smoke. */
+let snDustCache = null;
+function snDustURL(){
+  if(snDustCache !== null) return snDustCache;
+  snDustCache = "";
+  try{
+    const N = 256, c = document.createElement("canvas");
+    c.width = N; c.height = N;
+    const g = c.getContext("2d");
+    if(!g) return snDustCache;
+    let seed = 4711;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const G = 32, grid = [];
+    for(let i = 0; i < G * G; i++) grid.push(rnd());
+    const at = (x, y) => grid[((y % G + G) % G) * G + ((x % G + G) % G)];
+    const sm = t => t * t * (3 - 2 * t);
+    const noise = (x, y) => {
+      const x0 = Math.floor(x), y0 = Math.floor(y), fx = sm(x - x0), fy = sm(y - y0);
+      const a = at(x0, y0), b = at(x0 + 1, y0), c2 = at(x0, y0 + 1), d = at(x0 + 1, y0 + 1);
+      return a + (b - a) * fx + (c2 - a) * fy + (a - b - c2 + d) * fx * fy;
+    };
+    const img = g.createImageData(N, N);
+    for(let y = 0; y < N; y++) for(let x = 0; x < N; x++){
+      const u = (x + .5) / N - .5, v = (y + .5) / N - .5, r = Math.sqrt(u * u + v * v) * 2;
+      /* a ring: rising from the middle, densest at .55, gone by .96 */
+      const ring = sm(Math.max(0, Math.min(1, (r - .1) / .4))) * (1 - sm(Math.max(0, Math.min(1, (r - .55) / .41))));
+      let n = 0, amp = .55, f = 6 / N;
+      for(let o = 0; o < 4; o++){ n += amp * noise(x * f * (1 << o) + 3, y * f * (1 << o) + 7); amp *= .5; }
+      const a = ring * sm(Math.max(0, Math.min(1, (n - .26) / .5)));
+      const k = (y * N + x) * 4;
+      img.data[k] = 58 + Math.round(30 * n); img.data[k + 1] = 22 + Math.round(12 * n); img.data[k + 2] = 10;
+      img.data[k + 3] = Math.round(a * .9 * 255);
+    }
+    g.putImageData(img, 0, 0);
+    snDustCache = c.toDataURL("image/png");
+  }catch(e){ snDustCache = ""; }
+  return snDustCache;
+}
 let cosmicDepthSeq = 0;
 /* Home's outer orbit (build 313): the outer rank bubbles sit on it by
    their centres and the outer secret flares ride it. 140, not the drawn
@@ -65414,10 +65508,19 @@ function rankTierBadge(hero, tierKey){
    the whole orbit is one compositor layer. */
 const RANK_ORBIT_MS = 30000;
 /* The whirl at the unlock beat (build 317): whole turns, so every bubble
-   comes to rest exactly where the slow orbit would have it. */
-const RANK_CUTSPIN_TURNS = 10;
-/* build 317, second round: faster and faster for 4.5s, lit at the top
-   speed, slowing for 2s, still for half a second, then the flash */
+   comes to rest exactly where the slow orbit would have it.
+   THE EVOLUTION (build 317, the evolution round): "make them spin really
+   really fast so all the colors start morphing ... Then it slows down
+   slowly". 18 turns, 5.6s faster and faster to a top speed of ~1300
+   degrees a second where the bubbles are only light trails, the
+   mini-supernova at the top, then 4.4s slowing, still a blur at first.
+   A rank then charges up for RANK_WINDUP_MS before the flash; Supernova
+   holds still for RANK_CUTSPIN_PAUSE_MS and swells (its own climax). */
+const RANK_CUTSPIN_TURNS = 18;
+const RANK_CUTSPIN_ACCEL_MS = 5600, RANK_CUTSPIN_DECEL_MS = 4400, RANK_CUTSPIN_PAUSE_MS = 500, RANK_WINDUP_MS = 1700;
+/* the attention on the new flare as the scene opens: from RANK_ATTN_AT,
+   for RANK_ATTN_MS, before the whirl */
+const RANK_ATTN_AT = 1300, RANK_ATTN_MS = 4000;
 /* round five: the planet rises this long after the dark comes up.
    THE END, ONCE (build 317, flow round): the words, the planet and the
    tint fade out TOGETHER over RANK_END_MS, and then the scene hands over -
@@ -65427,7 +65530,6 @@ const RANK_CUTSPIN_TURNS = 10;
    of about four seconds (RANK_STILL_*). */
 const RANK_ARRIVE_MS = 320, RANK_END_MS = 950, RANK_TITLE_TAP_MS = 700;
 const RANK_STILL_TITLE_MS = 300, RANK_STILL_END_AT = 3200, RANK_STILL_END_MS = 500;
-const RANK_CUTSPIN_ACCEL_MS = 4500, RANK_CUTSPIN_DECEL_MS = 2000, RANK_CUTSPIN_PAUSE_MS = 500, RANK_CUTLIGHT_MS = 140, RANK_CUTLIGHT_LEAD_MS = 120, RANK_CUTFLARE_MS = 1150;
 function rankOrbitFlares(hero){
   if(!hero) return null;
   const orbit = document.createElement("div");
@@ -65534,6 +65636,105 @@ function homeFlareFrac(){
     return f > 0 && f < 1 ? f : null;
   }catch(e){ if(panel) panel.remove(); return null; }
 }
+/* THE LIGHT TRAILS (build 317, the evolution round) - see "THE EVOLUTION"
+   in the CSS and in playRankUpScene. Built into a hero's turning carrier
+   (.rank-orbit, which is the hero's own box), so each ring of light turns
+   with the bubbles it streaks from. For each of the two orbits:
+   - a SHORT layer: every bubble a comet - its own colour, bright at the
+     bubble and fading over ~70 degrees behind it (the spin is clockwise);
+   - a LONG layer: every bubble's colour stretched to the next, a whole
+     ring of the colours - what the eye keeps at the top speed.
+   And for the new flare's orbit, three layers of its own: its arc in its
+   NEW colour, the same arc in its OLD pale light (the two are flicked
+   back and forth, Pokemon's evolve), and a whole ring of the new colour
+   that takes over at the top. Conic gradients masked to soft bands (a
+   core and a wider glow); built once, then only opacity moves. Returns
+   { short, long, col, old, ring } (arrays / elements), or null. */
+function buildRankTrails(hero, orbit, tierKey){
+  if(!hero || !orbit) return null;
+  try{
+    const slot0 = orbit.querySelector(".rank-orbit-slot");
+    const W = hero.clientWidth || hero.getBoundingClientRect().width;
+    if(!slot0 || !W) return null;
+    /* the bubble's size in the planet's own units (the viewBox is 360 wide) */
+    const D = slot0.offsetWidth / W * 360, B = D * .42;
+    const N = TIER_ORDER_FULL.length, k = TIER_ORDER_FULL.indexOf(tierKey);
+    const PALE = "222,230,244";
+    const rgbOf = c => badgeHexRgb(c).join(",");
+    const ringOf = i => (i % 2 === 0) ? HOME_OUTER_R : 108;
+    const items = TIER_ORDER_FULL.map((t, i) => ({ i, a: i * 360 / N, R: ringOf(i),
+      rgb: i < k ? rgbOf(flareColorOf(t)) : PALE }));
+    /* the gradient round the ring: at each angle every bubble's trail
+       weighs in - its own colour, bright at the bubble and fading behind
+       it, tapering to nothing at its end - and the colours BLEND where
+       trails meet, so the ring morphs from one colour into the next
+       instead of switching. `white` lifts every colour towards white (the
+       hot core line of a streak). */
+    const stops = (list, L, head, aMax, floor, rgbOver, white, tap) => {
+      tap = tap || .18;
+      const out = [];
+      for(let th = 0; th <= 360; th += 3){
+        let keep = 1, sw = 0, sr = 0, sg = 0, sb = 0;
+        list.forEach(it => {
+          const behind = ((it.a - th) % 360 + 360) % 360, ahead = ((th - it.a) % 360 + 360) % 360;
+          let al = 0;
+          if(behind <= L){
+            const t = behind / L;
+            al = (floor + (1 - floor) * Math.pow(1 - t, 1.5)) * Math.min(1, (1 - t) / tap);
+          }
+          if(ahead <= head) al = Math.max(al, Math.pow(1 - ahead / head, 1.5));
+          if(al <= 0) return;
+          const c = (rgbOver || it.rgb).split(",").map(Number);
+          keep *= 1 - al; sw += al; sr += c[0] * al; sg += c[1] * al; sb += c[2] * al;
+        });
+        const A = 1 - keep;
+        let r = sw ? sr / sw : 222, g = sw ? sg / sw : 230, bl = sw ? sb / sw : 244;
+        if(white){ r += (255 - r) * white; g += (255 - g) * white; bl += (255 - bl) * white; }
+        out.push("rgba(" + Math.round(r) + "," + Math.round(g) + "," + Math.round(bl) + "," + (A * aMax).toFixed(3) + ") " + th + "deg");
+      }
+      return out.join(", ");
+    };
+    /* a ring of light: `hot` is the narrow white core line of a streak;
+       otherwise a band the bubble's width with a wide faint glow round it */
+    const layer = (R, grad, wide, cls, hot) => {
+      const el = document.createElement("i");
+      el.className = "rank-trail " + cls;
+      el.setAttribute("aria-hidden", "true");
+      const b = B * wide, E = R + b * 2.6;
+      const pc = v => Math.max(0, v / E * 100).toFixed(2) + "%";
+      el.style.width = (2 * E / 360 * 100).toFixed(3) + "%";
+      el.style.background = "conic-gradient(from 0deg, " + grad + ")";
+      const band = (half, a) => "radial-gradient(circle closest-side, transparent " + pc(R - half) + ", rgba(0,0,0," + a + ") " + pc(R - half * .3) +
+        ", rgba(0,0,0," + a + ") " + pc(R + half * .3) + ", transparent " + pc(R + half) + ")";
+      el.style.webkitMaskImage = el.style.maskImage = hot ? band(b * .32, 1)
+        : band(b, 1) + ", radial-gradient(circle closest-side, transparent " + pc(R - b * 2.5) + ", rgba(0,0,0,.36) " + pc(R) + ", transparent " + pc(R + b * 2.5) + ")";
+      /* in build order, under the bubbles: the base trails, then the new
+         colour's layers over them */
+      orbit.insertBefore(el, slot0);
+      return el;
+    };
+    const out = { short: [], long: [] };
+    [108, HOME_OUTER_R].forEach(R => {
+      const on = items.filter(it => it.R === R);
+      if(!on.length) return;
+      out.short.push(layer(R, stops(on, 75, 7, .9, 0), 1, "is-short"));
+      out.short.push(layer(R, stops(on, 60, 5, .95, 0, null, .6), 1, "is-short is-hot", true));
+      /* long enough to reach well past the bubble behind, with a high
+         floor: at the top speed the ring is unbroken light */
+      out.long.push(layer(R, stops(on, 360 / on.length * 1.32, 22, .8, .5, null, 0, .28), 1.1, "is-long"));
+      out.long.push(layer(R, stops(on, 360 / on.length * 1.32, 16, .85, .45, null, .55, .28), 1.1, "is-long is-hot", true));
+    });
+    const me = items[k];
+    if(me){
+      const col = rgbOf(flareColorOf(tierKey));
+      out.old = layer(me.R, stops([me], 120, 7, .95, 0, PALE, .3), 1, "is-old");
+      out.col = layer(me.R, stops([me], 125, 8, 1, 0, col, .15), 1.05, "is-new");
+      out.ring = layer(me.R, stops([me], 360, 16, 1, .55, col, .2, .05), 1.3, "is-newring");
+    }
+    return out;
+  }catch(e){ return null; }
+}
+
 function playRankUpScene(tierKey, opts, spec){
   opts = opts || {};
   const inline = !!opts.onDone;
@@ -65678,8 +65879,19 @@ function playRankUpScene(tierKey, opts, spec){
   if(still){
     overlay.classList.add("rank-still", "is-igniting", "is-swapped");
     overlay.dataset.accent = tierKey;
-    /* (the new planet's own flare is lit already - syncSceneFlares) */
+    /* (the new planet's own flare is lit already - syncSceneFlares), and
+       marked, still, as the one the scene is about */
     setNewTheme();
+    try{
+      const nb = rankTierBadge(heroAfter, tierKey), ns = nb && nb.closest(".rank-orbit-slot");
+      if(ns){
+        ns.style.setProperty("--attn", flareColorOf(tierKey)); ns.classList.add("is-attn");
+        const g = document.createElement("i"), r = document.createElement("i");
+        g.className = "rank-attn is-still"; r.className = "rank-attn-ring is-still";
+        g.setAttribute("aria-hidden", "true"); r.setAttribute("aria-hidden", "true");
+        ns.insertBefore(g, nb); ns.appendChild(r);
+      }
+    }catch(e){}
     if(spec.times.swell){
       overlay.classList.add("sn-scarred");
       if(heroAfter) heroAfter.querySelectorAll(".cosmic-orbit-ring").forEach(c => c.classList.add("cosmic-orbit-ring-supernova"));
@@ -65700,67 +65912,208 @@ function playRankUpScene(tierKey, opts, spec){
     overlay.classList.add("supernova-visible");
     at(RANK_ARRIVE_MS, () => stageWrap.classList.add("is-arrive"));
   }));
-  at(T.zoom, () => stageWrap.classList.add("supernova-zoom"));
-  /* THE EMPHASIS, SPUN UP (build 317, second round). Madison: "everything
-     is normal, > spins and spins> (you can tell it's not lit up while
-     spinning ... but then when it's gets so fast that's when the color
-     change light up affect happens, and then it slows down and you see
-     the lit up flare. When it comes to a stop. There's a half second
-     pause, the flash and then the planet changes colour and so on."
-     So: every bubble on BOTH planets whirls round its ring, ACCELERATING
-     the whole way for RANK_CUTSPIN_ACCEL_MS (t squared) - the flare still
-     dark - and at the top speed the flare ignites, its light flooding out
-     from the middle in RANK_CUTLIGHT_MS; then it DECELERATES (the mirror
-     curve, so the speed is continuous through the peak) for
-     RANK_CUTSPIN_DECEL_MS and stops exactly where the slow orbit has it
-     (whole turns). Half a second of stillness, then the flash, the colour
-     change and the rest - all of which are timed off the moment the spin
-     STOPS, not off the clock, so the pause is a pause on a slow phone too.
-     COMPOSITOR ONLY: the whirl is a Web Animation of `transform` on the
-     two ring carriers and a counter-turn on each slot, all started on one
-     timeline instant so nothing drifts; the slow orbit (`rotate`) runs on
+  /* ---- THE EVOLUTION (build 317, the evolution round) ----
+     Madison: "You know how in Pokemon when someone evolves there is that
+     super cool evolution animation on the screen of them going back and
+     forth and then hitting the evolve? ... cool and suspenseful and
+     exciting." The middle of every rank-up, before the flash:
+     1. ATTENTION (RANK_ATTN_AT, RANK_ATTN_MS): the camera pushes in a
+        little toward the new flare and eases back; the flare breathes
+        larger and smaller in a glow of its colour-to-be and makes one
+        graceful loop out of its slot and back - "this is the one", with
+        everything else still in view.
+     2. THE WHIRL: every bubble on both planets whirls round its ring,
+        faster and faster for ACC (t squared) until they are only light:
+        the bubbles and the secret flares fade into light trails
+        (buildRankTrails) whose opacity follows the speed - comets first,
+        then whole rings of the bubbles' colours. The new flare's colour
+        takes over its ring, brighter and brighter, flicked back and forth
+        with its old pale light three times, ever closer together.
+     3. THE BANG at the top speed: a mini-supernova at the new flare - a
+        burst, a ring and a glow in its colour - and it is lit from here.
+     4. SLOWING for DEC (the mirror curve, so the speed is continuous at
+        the top), still a blur at first, the new colour bright and then
+        dimming as the trails resolve back into bubbles; the camera comes
+        back out to the normal view. Whole turns, so every bubble stops
+        exactly where the slow orbit has it.
+     5. THE CHARGE (a rank; Supernova swells instead): the system pulses
+        faster and faster, the flare's light and an aura round the planet
+        rising, for RANK_WINDUP_MS.
+     6. THE FLASH starts AT the new flare - the flare goes off - and
+        floods the screen; the planet changes colour under it; the theme
+        settles; the title a beat later.
+     Everything after the spin is timed off the spin's own end (`finished`),
+     not the clock, so a slow phone keeps every beat. Compositor only: Web
+     Animations of transform and opacity, the whirl's all on one timeline
+     instant so nothing drifts; the slow orbit (`rotate`) runs on
      underneath, untouched, so the start and the end cannot jump. */
   const ACC = spec.times.accel || RANK_CUTSPIN_ACCEL_MS, DEC = spec.times.decel || RANK_CUTSPIN_DECEL_MS;
   const TURNS = RANK_CUTSPIN_TURNS * 360;
   /* equal speed at the peak: A / ACC == B / DEC, A + B == TURNS */
   const PEAK_DEG = TURNS * ACC / (ACC + DEC), PEAK_AT = ACC / (ACC + DEC);
-  overlay.style.setProperty("--cutlight-ms", RANK_CUTLIGHT_MS + "ms");
-  let litWipe = null, spins = [], burstArmed = false;
+  const newColor = flareColorOf(tierKey);
+  let spins = [], burstArmed = false;
+  const newBadge = () => rankTierBadge(heroBefore, tierKey);
+  /* an element's centre, in the overlay's own pixels */
+  const centreOf = el => { const r = el.getBoundingClientRect(), o = overlay.getBoundingClientRect();
+    return { x: r.left + r.width / 2 - o.left, y: r.top + r.height / 2 - o.top, w: r.width }; };
   const lightFully = () => {
-    const b0 = rankTierBadge(heroBefore, tierKey);
+    const b0 = newBadge();
     if(b0){
-      b0.style.setProperty("--tier-glow", flareColorOf(tierKey));
+      b0.style.setProperty("--tier-glow", newColor);
       b0.classList.add("cosmic-badge-lit");
       if(FLARE_NOIR[tierKey]) b0.classList.add("cosmic-badge-noir");
     }
-    if(litWipe){ litWipe.remove(); litWipe = null; }
     overlay.classList.add("is-cutlit");
   };
-  /* the peak: the flare ignites from its middle */
-  const ignitePeak = () => {
+  /* the glow under the new flare and the halo ring over it (attention,
+     and the charge before the flash) */
+  const flareLight = (cls) => {
+    const b0 = newBadge(), slot = b0 && b0.closest(".rank-orbit-slot");
+    if(!slot) return null;
+    slot.style.setProperty("--attn", newColor);
+    slot.classList.add("is-attn");
+    const glow = document.createElement("i"), ring = document.createElement("i");
+    glow.className = "rank-attn " + (cls || ""); ring.className = "rank-attn-ring " + (cls || "");
+    glow.setAttribute("aria-hidden", "true"); ring.setAttribute("aria-hidden", "true");
+    slot.insertBefore(glow, b0); slot.appendChild(ring);
+    return { slot, glow, ring, badge: b0 };
+  };
+  /* 1. ATTENTION */
+  const attention = () => {
+    const fl = flareLight("is-attention");
+    if(!fl) return;
+    const D = RANK_ATTN_MS;
+    try{
+      const f = centreOf(fl.badge), o = overlay.getBoundingClientRect(), sr = stageWrap.getBoundingClientRect();
+      /* the camera: toward the flare - held where it is under a 1.22x
+         zoom, then brought a third of the way to the middle - and back */
+      const ox = sr.left + sr.width / 2 - o.left, oy = sr.top + sr.height / 2 - o.top, S = 1.22;
+      const tx = (f.x - ox) * (1 - S) + (o.width / 2 - f.x) * .33, ty = (f.y - oy) * (1 - S) + (o.height * .45 - f.y) * .33;
+      const at_ = tx.toFixed(1) + "px " + ty.toFixed(1) + "px";
+      stageWrap.animate([
+        { offset: 0, translate: "0px 0px", scale: "1", easing: "cubic-bezier(.45,0,.25,1)" },
+        { offset: .3, translate: at_, scale: String(S) },
+        { offset: .74, translate: at_, scale: String(S), easing: "cubic-bezier(.45,0,.3,1)" },
+        { offset: 1, translate: "0px 0px", scale: "1" }], { duration: D, fill: "none" });
+      /* the flare: two breaths, one loop out of its slot - away from the
+         planet, round, and home - and a last breath. The slot's own
+         transform (it carries the glow with it); the carrier's turn and
+         the slot's counter-turn cancel, so the loop is drawn upright. */
+      const pl = planetBox();
+      let ux = f.x - pl.cx, uy = f.y - pl.cy;
+      const n = Math.hypot(ux, uy) || 1; ux /= n; uy /= n;
+      const vx = -uy, vy = ux, R = (fl.badge.offsetWidth || 40) * .7;
+      const kf = [
+        { offset: 0, transform: "translate(0px, 0px) scale(1)", easing: "ease-in-out" },
+        { offset: .1, transform: "translate(0px, 0px) scale(1)", easing: "ease-in-out" },
+        { offset: .18, transform: "translate(0px, 0px) scale(1.32)", easing: "ease-in-out" },
+        { offset: .26, transform: "translate(0px, 0px) scale(1)", easing: "ease-in-out" },
+        { offset: .34, transform: "translate(0px, 0px) scale(1.36)", easing: "ease-in-out" },
+        { offset: .42, transform: "translate(0px, 0px) scale(1.08)" }];
+      const LOOP = 16;
+      for(let k = 1; k <= LOOP; k++){
+        const th = k / LOOP * 2 * Math.PI;
+        const x = R * (ux * (1 - Math.cos(th)) + vx * Math.sin(th)), y = R * (uy * (1 - Math.cos(th)) + vy * Math.sin(th));
+        const sc = 1.08 + .3 * Math.sin(th / 2);
+        kf.push({ offset: +(.42 + .34 * k / LOOP).toFixed(4), transform: "translate(" + x.toFixed(1) + "px, " + y.toFixed(1) + "px) scale(" + sc.toFixed(3) + ")" });
+      }
+      kf[kf.length - 1].easing = "ease-in-out";
+      kf.push({ offset: .84, transform: "translate(0px, 0px) scale(1.3)", easing: "ease-in-out" });
+      kf.push({ offset: .93, transform: "translate(0px, 0px) scale(1)" });
+      kf.push({ offset: 1, transform: "translate(0px, 0px) scale(1)" });
+      fl.slot.animate(kf, { duration: D, fill: "none" });
+      const glowKf = peak => [
+        { offset: 0, opacity: 0, transform: "scale(.6)" }, { offset: .1, opacity: .5 * peak, transform: "scale(.9)" },
+        { offset: .18, opacity: peak, transform: "scale(1.15)" }, { offset: .26, opacity: .55 * peak, transform: "scale(.95)" },
+        { offset: .34, opacity: peak, transform: "scale(1.2)" }, { offset: .42, opacity: .75 * peak, transform: "scale(1)" },
+        { offset: .76, opacity: .8 * peak, transform: "scale(1.05)" }, { offset: .84, opacity: peak, transform: "scale(1.2)" },
+        { offset: .93, opacity: .3 * peak, transform: "scale(1)" }, { offset: 1, opacity: 0, transform: "scale(.9)" }];
+      fl.glow.animate(glowKf(1), { duration: D, easing: "ease-in-out", fill: "none" });
+      fl.ring.animate(glowKf(.9), { duration: D, easing: "ease-in-out", fill: "none" });
+    }catch(e){}
+    setTimeout(() => { fl.glow.remove(); fl.ring.remove(); fl.slot.classList.remove("is-attn"); }, D + 50);
+  };
+  /* 3. THE BANG at the top speed */
+  const bangAt = (el, cls, size, life) => {
+    try{
+      const c = centreOf(el);
+      const b = document.createElement("div");
+      b.className = "rank-bang " + (cls || "");
+      b.setAttribute("aria-hidden", "true");
+      b.style.setProperty("--bc", newColor);
+      Object.assign(b.style, { left: c.x.toFixed(1) + "px", top: c.y.toFixed(1) + "px", width: (c.w * size).toFixed(1) + "px" });
+      b.innerHTML = '<i class="rb-glow"></i><i class="rb-core"></i><i class="rb-ring"></i>';
+      overlay.appendChild(b);
+      setTimeout(() => b.remove(), life);
+      return b;
+    }catch(e){ return null; }
+  };
+  const bang = () => {
     if(overlay.classList.contains("is-cutlight")) return;
     overlay.classList.add("is-cutlight");
-    const b0 = rankTierBadge(heroBefore, tierKey);
-    const slot = b0 && b0.closest(".rank-orbit-slot");
-    if(slot){ slot.style.setProperty("--ignite", flareColorOf(tierKey)); slot.classList.add("is-igniting"); }
-    if(b0 && slot && !theme.reduceMotion){
-      litWipe = b0.cloneNode(true);
-      litWipe.classList.add("rank-litwipe", "cosmic-badge-lit");
-      litWipe.classList.remove("cosmic-badge-newly-lit");
-      if(FLARE_NOIR[tierKey]) litWipe.classList.add("cosmic-badge-noir");
-      litWipe.style.setProperty("--tier-glow", flareColorOf(tierKey));
-      litWipe.setAttribute("aria-hidden", "true");
-      slot.appendChild(litWipe);
-      void litWipe.offsetWidth;
-      litWipe.classList.add("is-open");
-      const pop = document.createElement("span");
-      pop.className = "rank-litpop"; pop.setAttribute("aria-hidden", "true");
-      pop.appendChild(document.createElement("i"));
-      slot.appendChild(pop);
-      slot.classList.add("is-flaring");
-      setTimeout(() => { pop.remove(); slot.classList.remove("is-flaring"); }, RANK_CUTFLARE_MS);
-      setTimeout(lightFully, RANK_CUTLIGHT_MS + 40);
-    } else lightFully();
+    const b0 = newBadge(), slot = b0 && b0.closest(".rank-orbit-slot");
+    if(slot) slot.classList.add("is-igniting");
+    lightFully();
+    if(b0) bangAt(b0, "", 3.4, 1700);
+    /* 4. the camera comes back out as it slows */
+    stageWrap.style.setProperty("--zb-ms", DEC + "ms");
+    stageWrap.classList.add("rank-zoomback");
+  };
+  /* 5. THE CHARGE before the flash (a rank): pulses ever faster - the
+     whole system, the flare's light, and an aura round the planet */
+  const windUp = (D) => {
+    if(!(D > 0) || !spin.animate) return;
+    try{
+      const periods = [];
+      let used = 0, per = 520;
+      while(used + per <= D){ periods.push(per); used += per; per = Math.max(130, per * .8); }
+      const kS = [{ offset: 0, scale: "1" }], kG = [{ offset: 0, opacity: 0, transform: "scale(.8)" }], kA = [{ offset: 0, opacity: 0 }];
+      let acc = 0;
+      periods.forEach((p, i) => {
+        const s = periods.length > 1 ? i / (periods.length - 1) : 1;
+        const up = (acc + p * .45) / D, dn = (acc + p) / D;
+        kS.push({ offset: up, scale: (1.028 + .042 * s).toFixed(3), easing: "ease-in-out" }, { offset: dn, scale: (1 + .016 * s).toFixed(3), easing: "ease-in-out" });
+        kG.push({ offset: up, opacity: +(.5 + .5 * s).toFixed(3), transform: "scale(" + (1.05 + .3 * s).toFixed(3) + ")", easing: "ease-in-out" },
+                { offset: dn, opacity: +(.25 + .35 * s).toFixed(3), transform: "scale(1)", easing: "ease-in-out" });
+        kA.push({ offset: up, opacity: +(.3 + .6 * s).toFixed(3), easing: "ease-in-out" }, { offset: dn, opacity: +(.15 + .5 * s).toFixed(3), easing: "ease-in-out" });
+        acc += p;
+      });
+      kS.push({ offset: 1, scale: "1.06" }); kG.push({ offset: 1, opacity: 1, transform: "scale(1.35)" }); kA.push({ offset: 1, opacity: 1 });
+      spin.animate(kS, { duration: D, fill: "forwards" });
+      /* rings of light that collapse INTO the flare on every pulse - the
+         energy gathering before it goes */
+      const b0 = newBadge();
+      if(b0){
+        const c = centreOf(b0), g = document.createElement("div");
+        g.className = "rank-gather"; g.setAttribute("aria-hidden", "true");
+        g.style.setProperty("--bc", newColor);
+        Object.assign(g.style, { left: c.x.toFixed(1) + "px", top: c.y.toFixed(1) + "px", width: (c.w * 2.2).toFixed(1) + "px" });
+        overlay.appendChild(g);
+        const kR = [{ offset: 0, opacity: 0, transform: "scale(3.4)" }];
+        let a2 = 0;
+        periods.forEach((p, i) => {
+          const s = periods.length > 1 ? i / (periods.length - 1) : 1;
+          kR.push({ offset: +((a2 + p * .05) / D).toFixed(4), opacity: 0, transform: "scale(3.4)", easing: "cubic-bezier(.5,0,.9,.6)" },
+                  { offset: +((a2 + p * .8) / D).toFixed(4), opacity: +(.45 + .5 * s).toFixed(3), transform: "scale(1)", easing: "ease-out" },
+                  { offset: +((a2 + p * .98) / D).toFixed(4), opacity: 0, transform: "scale(.8)" });
+          a2 += p;
+        });
+        kR.push({ offset: 1, opacity: 0, transform: "scale(.8)" });
+        g.animate(kR, { duration: D, fill: "forwards" });
+        setTimeout(() => g.remove(), D + 100);
+      }
+      const fl = flareLight("is-charge");
+      if(fl){ fl.glow.animate(kG, { duration: D, fill: "forwards" }); fl.ring.animate(kG, { duration: D, fill: "forwards" }); }
+      const pl = planetBox();
+      const aura = document.createElement("div");
+      aura.className = "rank-aura"; aura.setAttribute("aria-hidden", "true");
+      aura.style.setProperty("--bc", newColor);
+      Object.assign(aura.style, { left: pl.cx.toFixed(1) + "px", top: pl.cy.toFixed(1) + "px", width: (pl.d * 3.4).toFixed(1) + "px" });
+      overlay.insertBefore(aura, stageWrap);
+      aura.animate(kA, { duration: D, fill: "forwards" });
+      setTimeout(() => { aura.remove(); if(fl){ fl.glow.remove(); fl.ring.remove(); } }, D + 900);
+    }catch(e){}
   };
   /* After the spin has STOPPED: the half-second, the flash, and the rest,
      each at its old distance from the flash. */
@@ -65769,23 +66122,34 @@ function playRankUpScene(tierKey, opts, spec){
     burstArmed = true;
     lightFully();
     overlay.classList.add("is-cutrest");
-    const p0 = (spec.times.pause == null ? RANK_CUTSPIN_PAUSE_MS : spec.times.pause);
     /* SUPERNOVA SWELLS FIRST (build 317): the planet heats and shakes for
-       SW before it goes; every beat after it moves back by the same. */
+       SW after a half-second's stillness, and goes. A rank charges up for
+       RANK_WINDUP_MS instead (5). Every beat after moves back by the same. */
     const SW = spec.times.swell || 0;
+    const p0 = spec.times.pause != null ? spec.times.pause : (SW ? RANK_CUTSPIN_PAUSE_MS : RANK_WINDUP_MS);
     const b = p0 + SW;
     if(SW) at(p0, snSwell);
+    else windUp(p0);
     at(b, () => {
-      /* THE FLASH IS A CIRCLE FROM THE PLANET (build 317). It was the
-         whole overlay with border-radius:50% - a tall ellipse, so its
-         first frames were a teal capsule under the planet. Now a square
-         as big as the longer side, centred on the planet's middle, so it
-         grows as a disc out of the planet and its keyframes (to 5.5x)
-         still flood every corner. */
+      /* THE FLASH IS A CIRCLE (build 317), a square box with a radial
+         fill - it was the whole overlay with border-radius:50%, a tall
+         ellipse. FROM THE NEW FLARE (the evolution round): "it needs to be
+         made so it looks like the flash of the color originated from the
+         new flare as if it exploded". A rank's flash starts at a point on
+         the flare and the flare goes off with it (a big .rank-bang);
+         Supernova's is the planet's own detonation, from its middle. The
+         box is big enough from there for its keyframes (to 2.6x at the
+         peak) to flood the far corner. */
       try{
-        const pl = planetBox(), o = overlay.getBoundingClientRect();
-        const sz = Math.max(o.width, o.height);
-        Object.assign(flash.style, { inset: "auto", left: (pl.cx - sz / 2) + "px", top: (pl.cy - sz / 2) + "px", width: sz + "px", height: sz + "px" });
+        const o = overlay.getBoundingClientRect();
+        let cx, cy;
+        const b0 = newBadge();
+        if(SW || !b0){ const pl = planetBox(); cx = pl.cx; cy = pl.cy; }
+        else { const c = centreOf(b0); cx = c.x; cy = c.y; bangAt(b0, "is-big", 4.2, 2000); }
+        const far = Math.max(Math.hypot(cx, cy), Math.hypot(o.width - cx, cy), Math.hypot(cx, o.height - cy), Math.hypot(o.width - cx, o.height - cy));
+        const sz = Math.max(o.width, o.height, far * 1.5);
+        Object.assign(flash.style, { inset: "auto", left: (cx - sz / 2) + "px", top: (cy - sz / 2) + "px", width: sz + "px", height: sz + "px" });
+        flash.dataset.originX = cx.toFixed(1); flash.dataset.originY = cy.toFixed(1);
       }catch(e){}
       overlay.classList.add("supernova-burst");
       if(SW) snDetonate();
@@ -65826,8 +66190,8 @@ function playRankUpScene(tierKey, opts, spec){
       snFx = document.createElement("div");
       snFx.className = "sn-fx"; snFx.setAttribute("aria-hidden", "true");
       Object.assign(snFx.style, { left: (pl.cx - pl.d / 2) + "px", top: (pl.cy - pl.d / 2) + "px", width: pl.d + "px", height: pl.d + "px" });
-      const smoke = cosmicSmokeURL();
-      if(smoke) snFx.style.setProperty("--smoke", "url(" + smoke + ")");
+      const dust = snDustURL();
+      if(dust) snFx.style.setProperty("--dust", "url(" + dust + ")");
       let bits = "";
       /* black shards with ember rims, and ember sparks that fly further:
          spread round the whole circle with a jitter, seeded so every
@@ -65876,8 +66240,11 @@ function playRankUpScene(tierKey, opts, spec){
       try{ stageWrap.animate(fr, { duration: 700, easing: "linear", fill: "none" }); }catch(e){}
     }
   };
+  /* 1. attention, then 2. the whirl (and the camera into it) */
+  at(RANK_ATTN_AT, attention);
   at(T.ignite, () => {
     overlay.classList.add("is-igniting", "is-cutspin");
+    stageWrap.classList.add("supernova-zoom");
     const b1 = rankTierBadge(heroAfter, tierKey);
     if(b1){ b1.style.setProperty("--tier-glow", flareColorOf(tierKey)); b1.classList.add("cosmic-badge-lit"); if(FLARE_NOIR[tierKey]) b1.classList.add("cosmic-badge-noir"); }
     /* The new planet's flare is simply lit - Home's look (build 317,
@@ -65906,15 +66273,53 @@ function playRankUpScene(tierKey, opts, spec){
     [heroBefore, heroAfter].forEach(h => {
       if(h) h.querySelectorAll(":scope > .cosmic-hero-orbitlayer").forEach(l => spins.push(l.animate(rkf, opts2)));
     });
-    /* one instant for every layer, so the carriers and their slots can
-       never drift apart by a frame */
+    /* 2. THE LIGHT: the trails, the bubbles and the secret flares fading
+       into them, and the new colour's takeover - each an opacity curve on
+       the whirl's own clock. vh(u) is the speed as a share of the top
+       speed at progress u (it rises straight to the top at PEAK_AT and
+       falls straight after), so every curve is a function of SPEED. */
+    try{
+      const P = PEAK_AT, ss = (a, b2, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b2 - a))); return t * t * (3 - 2 * t); };
+      const vh = u => u < P ? u / P : (1 - u) / (1 - P);
+      /* the flicks: the new colour gives way to the old pale light three
+         times, each closer to the top than the last */
+      const FLICKS = [.6, .77, .89], fl = u => u > P ? 0 : FLICKS.reduce((m, c) => Math.max(m, Math.exp(-Math.pow((u / P - c) / .014, 2))), 0);
+      const curve = (f, n) => {
+        const k = [], pts = new Set();
+        for(let i = 0; i <= n; i++) pts.add(+(i / n).toFixed(5));
+        pts.add(+P.toFixed(5));
+        FLICKS.forEach(c => [-.03, -.012, 0, .012, .03].forEach(d => pts.add(+((c + d) * P).toFixed(5))));
+        [...pts].filter(u => u >= 0 && u <= 1).sort((x, y) => x - y).forEach(u => k.push({ offset: u, opacity: +Math.max(0, Math.min(1, f(u))).toFixed(3) }));
+        return k;
+      };
+      const fadeIn = (el, f, n) => { if(el) spins.push(el.animate(curve(f, n || 60), opts2)); };
+      const tr = buildRankTrails(heroBefore, orbitBefore, tierKey);
+      if(tr){
+        tr.short.forEach(el => fadeIn(el, u => ss(.16, .5, vh(u)) * (1 - .88 * ss(.66, .98, vh(u)))));
+        tr.long.forEach(el => fadeIn(el, u => ss(.56, .93, vh(u))));
+        /* the new colour: rising through the whole speeding-up, brightest
+           at the top, still bright as it slows and then dimming as the
+           trails resolve - and dipping at each flick */
+        const base = u => u <= P ? ss(.22, .98, u / P) : 1 - ss(.22, .95, (u - P) / (1 - P));
+        fadeIn(tr.col, u => base(u) * (1 - .9 * fl(u)), 240);
+        fadeIn(tr.old, u => Math.max(u <= P ? ss(.12, .4, u / P) * (1 - ss(.45, .97, u / P)) : 0, fl(u)), 240);
+        fadeIn(tr.ring, u => u <= P ? .85 * ss(.55, 1, u / P) * (1 - .7 * fl(u)) : 1 - ss(.12, .9, (u - P) / (1 - P)), 240);
+      }
+      /* the bubbles and the secret flares melt into the light at speed */
+      if(orbitBefore) orbitBefore.querySelectorAll(":scope > .rank-orbit-slot").forEach(sl => fadeIn(sl, u => 1 - .94 * ss(.5, .86, vh(u))));
+      /* the secret flares go a beat earlier and further than the glass
+         over them, so one is never seen sharper than the bubble it is
+         under (round four's rule, at speed) */
+      if(heroBefore) heroBefore.querySelectorAll(":scope > .cosmic-hero-orbitlayer").forEach(l => fadeIn(l, u => 1 - .96 * ss(.45, .84, vh(u))));
+    }catch(e){}
+    /* one instant for every layer, so the carriers, their slots and the
+       light can never drift apart by a frame */
     const t0 = document.timeline.currentTime;
     spins.forEach(an => { an.startTime = t0; });
     const lead = spins[0];
     if(lead){
-      /* a beat before the very top, so the snap and its pop land while
-         the whirl is still at full speed */
-      setTimeout(ignitePeak, Math.max(0, ACC - RANK_CUTLIGHT_LEAD_MS));
+      /* 3. the bang, at the top speed */
+      setTimeout(bang, ACC);
       lead.finished.then(afterRest, afterRest);
     }
   });
@@ -65934,8 +66339,12 @@ function playTierCutscene(tierKey, opts){
        after are timed off the spin's own end, these are the nominal).
        Flow round: the title holds 600ms longer and the end is ONE fade of
        everything (RANK_END_MS) - the planet no longer sits alone after
-       the words - so the scene is ~1s shorter than it was. */
-    times: { zoom: 1200, ignite: 3000, burst: 10000, settle: 11500, outro: 15600 },
+       the words - so the scene is ~1s shorter than it was.
+       The evolution round: attention on the new flare from 1.3s, the
+       whirl from 5.3s (5.6s up, the bang, 4.4s down), the charge, the
+       flash from the flare at ~17s, the title 2.5s after it and the one
+       ending 4s after that - ~25s to the reward card. */
+    times: { ignite: RANK_ATTN_AT + RANK_ATTN_MS, burst: 17000, settle: 19500, outro: 23500 },
     onFinish: () => { store.pendingTierCutscene = null; saveStore(); }
   });
 }
@@ -66229,8 +66638,9 @@ function playSupernovaCutscene(opts){
        CLIMAX - 1.8s of the planet swelling and shaking (swell), the
        detonation at ~12.4s, the dust clearing on the scar and the rings
        turning orange, the title 3s after the blast, and the one ending
-       (RANK_END_MS) 4.9s after that. ~22s in all. */
-    times: { zoom: 1400, ignite: 3600, swell: 1800, burst: 12400, settle: 15400, outro: 20300 },
+       (RANK_END_MS) 4.9s after that. The evolution round puts the same
+       attention and whirl as every rank in front of it: ~27s in all. */
+    times: { ignite: RANK_ATTN_AT + RANK_ATTN_MS, swell: 1800, burst: 17600, settle: 20600, outro: 25500 },
     onFinish: () => {
       store.pendingSupernovaCutscene = false; store.supernovaAchieved = true; saveStore();
       /* the scene has shown the rings turning orange, so Home does not
@@ -80684,7 +81094,9 @@ function rsUnlockItems(run){
       need: rule.label || "",
       color: RANK_COLOR[c] || ACCENT_SWATCH[c], art: () => buildRankEmblemSVG(c) });
   });
-  tiers.forEach(c => { if(ACCENT_SWATCH[c]) items.push(themeUnlockItem(c)); });
+  /* each rank's theme, then its flare (build 317: the flare is an unlock
+     too - "the pop up should just show the flare") */
+  tiers.forEach(c => { if(ACCENT_SWATCH[c]) items.push(themeUnlockItem(c)); items.push(flareUnlockItem(c)); });
   /* A rank's own character and banner sit with its theme, ahead of any
      challenge's: together they are the one rank-reward pop-up. */
   const chars = run.characters.map(characterUnlockItem);
@@ -80815,6 +81227,25 @@ function themeUnlockItem(c){
       d.dataset.accent = c;
       return d; } };
 }
+/* THE FLARE A RANK LIGHTS, AS AN UNLOCK (build 317, the evolution round).
+   Madison: "Rank up pop decision, should it include the flare? Because on
+   the profile thing, it includes it ... I feel like the pop up should
+   just show the flare, I mean the road map has it and under the rank
+   challenges in profile it has it, so it would make the most sense." The
+   rank's own bubble, lit - Profile's tile art (buildFlareBubble) - on the
+   reward card between the theme and the character or banner, and as a
+   row in the results' Unlocked list. Nothing to record as shown: a flare
+   is lit by the rank itself. */
+function flareUnlockItem(c){
+  return { kind: "rankflare", rankReward: c, kicker: "Flare lit", name: ACCENT_DISPLAY_NAME[c] || RANK_DISPLAY_NAME[c] || c,
+    sub: "Lit on your planet on Home", need: "Reach " + (RANK_DISPLAY_NAME[c] || c) + " rank",
+    color: flareColorOf(c),
+    art: () => {
+      const b = buildFlareBubble(c, { lit: true, bounce: true });
+      /* its emblem's recorded motion, once it is on screen */
+      setTimeout(() => { try{ if(b.isConnected) startOrbitEmblemAnims(b.parentElement, true); }catch(e){} }, 120);
+      return b; } };
+}
 /* THE CHARACTER ARRIVES CELEBRATING (build 317): "the character also
    doesn't animate, fix that". Its idle loop is a blink every few seconds
    - right for a board of forty faces, nothing at all on a reward card. So
@@ -80847,16 +81278,23 @@ function groupRankRewards(raw){
   TIER_ORDER_FULL.forEach(r => {
     const g = byRank[r];
     if(!g) return;
-    if(rankJustReachedOnHome === r && ACCENT_SWATCH[r]) g.unshift(themeUnlockItem(r));
+    if(rankJustReachedOnHome === r){
+      g.unshift(flareUnlockItem(r));
+      if(ACCENT_SWATCH[r]) g.unshift(themeUnlockItem(r));
+    }
     out.push(g.length > 1 ? rankRewardsItem(r, g) : g[0]);
   });
   rankJustReachedOnHome = null;
   return out.concat(rest);
 }
 function isRankRewardItem(it){
-  return !!it && (it.kind === "theme" || ((it.kind === "character" || it.kind === "banner") && !!it.rankReward));
+  return !!it && (it.kind === "theme" || it.kind === "rankflare" || ((it.kind === "character" || it.kind === "banner") && !!it.rankReward));
 }
+/* The card's order: Theme, Flare, then the character and the banner -
+   "Madison wants the flare in the middle" (the evolution round). */
+const RANK_REWARD_ORDER = { theme: 0, rankflare: 1, character: 2, banner: 3 };
 function rankRewardsItem(rank, parts){
+  parts = parts.slice().sort((a, b) => (RANK_REWARD_ORDER[a.kind] == null ? 9 : RANK_REWARD_ORDER[a.kind]) - (RANK_REWARD_ORDER[b.kind] == null ? 9 : RANK_REWARD_ORDER[b.kind]));
   const chars = parts.filter(p => p.kind === "character").map(p => p.character);
   const banners = parts.filter(p => p.kind === "banner").map(p => p.banner);
   const hasTheme = parts.some(p => p.kind === "theme");
@@ -80882,7 +81320,7 @@ function rankRewardsItem(rank, parts){
         if(p.kind === "character") rsCharCelebrate(a, 1700 + i * 320);
         const k = document.createElement("span");
         k.className = "rs-reward-kind";
-        k.textContent = p.kind === "theme" ? "Theme" : p.kind === "character" ? "Character" : "Banner";
+        k.textContent = p.kind === "theme" ? "Theme" : p.kind === "rankflare" ? "Flare" : p.kind === "character" ? "Character" : "Banner";
         const n = document.createElement("b");
         n.className = "rs-reward-name"; n.textContent = p.name;
         tile.append(a, k, n);
