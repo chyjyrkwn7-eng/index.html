@@ -15323,6 +15323,57 @@ disagree with it.
     so the recorder clears `showContextualInfo._t` and closes them on the
     virtual clock, and `element.animate()` is patched to freeze each new
     animation at the virtual moment it is made.
+- **THE END OF A RUN, WALKED END TO END (build 317 flow).** Madison: *"Absolutely
+  make sure the flow of the unlock stuff is good and the flow of everything
+  else in the result screen is good to go."* Every stage was driven for real
+  (answers clicked, pop-ups read for 3s and tapped, Main menu, Home, the
+  Profile tab's call) and timed on both reference devices - a 100% that tips
+  Gold, a badge, a hundo effect, level 80, the daily, two badges at once,
+  Reduce motion, Mute banners, a Virtual Room. Five things were out of
+  order; all five are orchestration, none is inside a cutscene or an effect:
+  - **A one-level climb popped half-way through its second fill.** The
+    pop step asked `levelBlock.matches(".is-levelup")` while the sequence
+    was being BUILT - a class the climb adds 1.1s into its own fill - so it
+    always got 1.25s, the multi-level path's own `fillMs` aside. The block
+    says `levelsUp` now and the pop waits 2.05s. **Never decide a step's
+    delay from a class the animation adds later.**
+  - **The 100%'s effect was faded out 2.3s in by the first scene.** Grade
+    +180ms the effect, +1300 the Unlocked card, +1200 the badge case or
+    rank cutscene, whose dim fades the effect (`clearCelebrationsForScene`):
+    a World Tree is 5.6s, a UFO 8.6s. The first held step after the grade
+    now waits until `HUNDO_FX_TAIL_AT[id]` (`firstHeld()` in
+    `showRunRewards`) - a plain delay, so a tap still brings it on. Confetti
+    has no tail entry and is over by 2.5s anyway.
+  - **Re-run and Main menu landed under a scene's bridge.** A scene leaves
+    `openSceneBridge` up (72% black) for the pop-up it expects; a badge case
+    that is the LAST unlock has nothing to claim it, so the buttons sat
+    under it for ~1.4s. The actions step and `finish()` drop it.
+  - **The character's special played under scenes.** The idle scheduler
+    counted the results card as on screen under a rank cutscene's dim, and
+    the hundo's asked-for special (2.6s after the reaction) was cut by the
+    badge case a second in. `charSpecialCovered()` (`CHAR_SPECIAL_COVERS`:
+    the case, the cutscenes, a pop-up, the flare scenes, LOADING, a tour):
+    the scheduler skips a tick and `charSpecialFire` waits. On a run with
+    unlocks the hundo special is the reveal's last beat, fired from
+    `finish()` once the buttons are in.
+  - **Home sat unlocked ~2.7s after Main menu before the rank-up lock.**
+    `showHome()` always arms the card queue's 2.2s timer and
+    `rankUpLockWaits()` waited on the timer whether or not a card was due -
+    with Start Studying live the whole time. It waits only when a card is
+    really owed (`rankUpLockCardDue()`); otherwise it locks at its own 1.2s.
+  - **Left as they are, on purpose**: a muted or Reduce-motion run still
+    plays its rank cutscene on Home (the builds 217-218 rule), and the rank-up
+    Profile scene's ~20s is its own design.
+  - **Gate: `check_b317_flow`** - the one-level pop >= 1.9s on both
+    devices, the World Tree to its tail before the case, the special never
+    under the case and after it, no live bridge when the buttons land, the
+    lock within 1.9s with nothing owed. All six fail on e877af7.
+  - **Timelines, stills and the frame-stepped MP4** are in
+    `scratchpad/r317flow/` of that session (`flow.py` drives every scenario
+    and writes a timeline per device; `record_flow.py` is
+    `tools/record-hundo.py`'s clock over the whole walk). A screenshot
+    harness on a loaded box takes 0.5-1s a shot, so its stills lag their
+    stage; the timeline times are the measurement.
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h

@@ -11525,7 +11525,10 @@ FX_RUN = """const wait = ms => new Promise(r => setTimeout(r, ms));
     if(pos !== last && ch.length){ last = pos; const slot = correctSlot(order[pos]); ch[slot] && ch[slot].click(); }
     await wait(250);
   }
-  for(let i = 0; i < 60 && !window.__fxAt && !window.__celAt; i++) await wait(100);
+  /* 12s, not 6 (build 317 flow): a run that climbs a level now pops the
+     bar when its second fill is done (2.05s, it was 1.25s), so the grade -
+     and the effect with it - lands 0.8s later than this budget assumed */
+  for(let i = 0; i < 120 && !window.__fxAt && !window.__celAt; i++) await wait(100);
 """
 
 
@@ -14474,6 +14477,132 @@ def check_b317_rankup(br):
     ctx.close()
 
 
+# --------------------------------------------------------------------------
+B317_FLOW_RUN = """async (a)=>{
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const out = { ev: {} };
+  try{
+  document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
+  ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour'].forEach(k => store[k] = true);
+  store.lateHundos = 999; store.retroBadgePending = []; store.mergeHold = null; store.savedCodeSaved = true;
+  theme.muteBanners = false; theme.reduceMotion = false;
+  const t = 'Identity Crimes';
+  store.unitPerfects = {}; store.lifetime.perfectTests = 141; store.hundoFx = a.fx;
+  if(a.av) store.avatarChar = a.av;
+  if(a.badge){
+    /* Gold held, nowhere near Platinum's badges: the badge tips nothing */
+    const r = TIER_UNLOCKS.veteran; const U = topicsIn(QUESTIONS).filter(x => x !== t);
+    U.slice(0, r.badges).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+    store.unitPerfects[t] = badgeThresholdFor(t) - 1;
+    let n = 0; store.lifetime.points = 1000; while(levelProgress(store.lifetime.points).level < r.level && n++ < 4000) store.lifetime.points += 1500;
+  } else {
+    store.unitPerfects[t] = 3;
+    /* 150 XP short of the next level: a 100% climbs exactly one */
+    const lv = levelOf(store); store.lifetime.points = Math.max(store.lifetime.points, xpForLevel(lv + 1) - 150);
+  }
+  try{ seedBannerCounters(); seedChallenges289(); }catch(e){}
+  const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx);
+  store.pendingTierCutscene = null; store.pendingBadgeUnlocks = []; saveStore();
+  const levelBefore = levelOf(store);
+  /* the badge case stands in for itself: it leaves its bridge up, as the
+     real one does, and hands back */
+  if(a.badge) window.playBadgeCaseScene = (units, done) => { out.ev.case = performance.now(); clearCelebrationsForScene();
+    out.coverEl = document.createElement('div'); out.coverEl.className = 'bc-scene'; document.body.appendChild(out.coverEl);
+    setTimeout(() => { out.coverEl.remove(); delete out.coverEl; out.ev.caseEnd = performance.now(); openSceneBridge('#9FACBA'); setTimeout(done, 450); }, a.caseMs || 60); return {}; };
+  const T0 = performance.now();
+  const seen = (k) => { if(!(k in out.ev)) out.ev[k] = performance.now(); };
+  const mo = new MutationObserver(ms => ms.forEach(m => {
+    if(m.type === 'childList'){ m.addedNodes.forEach(n => { if(n.classList && n.classList.contains('hfx-layer')) seen('hfx'); }); return; }
+    const el = m.target, c = el.classList; if(!c) return;
+    if(c.contains('rs-xp') && c.contains('is-charging')) seen('charging');
+    if(c.contains('rs-xp') && c.contains('is-charged')) seen('charged');
+    if(c.contains('results-level') && c.contains('is-levelup')) seen('levelup');
+    if(c.contains('results-level-avatar') && c.contains('char-special')){ seen('special');
+      if(document.querySelector('.bc-scene, .rs-spot, #supernova-cutscene')) out.specialCovered = true; }
+    if(c.contains('rs-actions') && (c.contains('rs-in') || c.contains('rs-in-now')) && !('actions' in out.ev)){
+      seen('actions');
+      out.bridgeAtActions = !!document.querySelector('.scene-bridge:not(.is-off):not(.is-claimed)');
+      setTimeout(() => { out.bridgeAfter = !!document.querySelector('.scene-bridge:not(.is-off):not(.is-claimed)'); }, 400);
+    }
+  }));
+  mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+  cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t];
+  order = QUESTIONS.map((q,i) => [q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
+  runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null; isMissedRetake = false; practiceTestMinutes = null; inVirtualRoom = false;
+  attempts = {}; picked = {}; timedOutSet = {};
+  order.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+  runStartTime = Date.now() - 42000; testInProgress = true; pos = order.length - 1;
+  summarize();
+  for(let i = 0; i < 500 && !document.querySelector('.rs-rewards.rs-done'); i++) await wait(100);
+  seen('done');
+  for(let i = 0; i < (a.av ? 50 : 6) && !('special' in out.ev); i++) await wait(100);
+  mo.disconnect();
+  Object.keys(out.ev).forEach(k => out.ev[k] = Math.round(out.ev[k] - T0));
+  out.levels = [levelBefore, levelOf(store)];
+  }catch(e){ out.threw = String(e && e.stack || e); }
+  return out; }"""
+
+
+def check_b317_flow(br):
+    """Build 317, the flow of the end of a run (Madison: "Absolutely make
+    sure the flow of the unlock stuff is good and the flow of everything
+    else in the result screen is good to go"). Walked end to end on a real
+    run; four things were out of order, each fixed in the orchestration.
+    Written against e877af7, where every check here fails:
+      - a one-level climb: the bar's pop (and the grade after it) came at
+        1.25s, while the bar was still on its second fill - the step asked
+        the block for .is-levelup at BUILD time, before the climb adds it;
+      - a 100%'s effect was faded out by the first scene 2.3s in (a World
+        Tree is 5.6s): the first scene now waits for its tail;
+      - Re-run / Main menu landed under the last scene's bridge (72%
+        black) when nothing came after the scene;
+      - Home sat unlocked ~2.7s after Main menu before the rank-up lock,
+        waiting on the card timer with no card due."""
+    print("\n317f. the end of a run: the level pop, the effect before the scenes, the buttons, the lock")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate(B317_FLOW_RUN, {"fx": "confetti", "badge": False})
+        ctx.close()
+        ev = r.get("ev") or {}
+        check(f"{dev}: nothing threw (one-level climb)", not r.get("threw"), r.get("threw"))
+        check(f"{dev}: the fixture climbs exactly one level", (r.get("levels") or [0, 0])[1] - (r.get("levels") or [0, 0])[0] == 1, r.get("levels"))
+        gap = (ev.get("charged") or 0) - (ev.get("charging") or 0)
+        check(f"{dev}: a one-level climb pops when its second fill is done (>= 1.9s after it starts), not 1.25s in",
+              ev.get("levelup") is not None and gap >= 1900, [ev.get("charging"), ev.get("levelup"), ev.get("charged"), gap])
+        # (A "the bar is at its end at the pop" width check was tried and
+        # dropped: it passed on e877af7 too, so it measured nothing.)
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate(B317_FLOW_RUN, {"fx": "worldtree", "badge": True, "av": "lunar", "caseMs": 3500})
+    tail = pg.evaluate("() => HUNDO_FX_TAIL_AT.worldtree")
+    ctx.close()
+    ev = r.get("ev") or {}
+    check("nothing threw (a 100% that earns a badge)", not r.get("threw"), r.get("threw"))
+    g2 = (ev.get("case") or 0) - (ev.get("hfx") or 0)
+    check("the World Tree plays to its tail before the badge case takes the screen (>= tail - 0.5s)",
+          ev.get("hfx") is not None and ev.get("case") is not None and g2 >= tail - 500, [ev.get("hfx"), ev.get("case"), g2, tail])
+    check("the 100%'s character special does not play under the badge case - it closes the reveal instead",
+          ev.get("special") is not None and not r.get("specialCovered") and ev["special"] >= (ev.get("caseEnd") or 0),
+          [ev.get("case"), ev.get("caseEnd"), ev.get("done"), ev.get("special"), r.get("specialCovered")])
+    check("Re-run and Main menu do not land under the badge case's dim",
+          r.get("bridgeAtActions") is False and r.get("bridgeAfter") is False, [r.get("bridgeAtActions"), r.get("bridgeAfter")])
+    # Home after a rank-up whose cards the results already played: the
+    # lock comes at its own 1.2s, not after the 2.2s card timer.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("() => " + _seed_gold_js())
+    lk = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      store.rankFloor = 0; store.rankMapFx244 = true; store.rankMapSeen = 1; store.pendingTierCutscene = null; store.savedCodeSaved = true;
+      const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); saveStore();
+      document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
+      showModeSelect && showModeSelect(); await wait(400);
+      const t0 = performance.now(); showHome();
+      for(let i = 0; i < 120 && !document.body.classList.contains('rankup-lock'); i++) await wait(50);
+      return { ms: Math.round(performance.now() - t0), lock: document.body.classList.contains('rankup-lock'),
+               owed: homeUnlocksOwed(pendingHomeUnlocks()) }; }""")
+    ctx.close()
+    check("Home locks to the Profile tab within ~1.2s when no card is due (not after the 2.2s card timer)",
+          lk.get("lock") is True and lk.get("owed") is False and lk.get("ms", 9999) <= 1900, lk)
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -14649,6 +14778,7 @@ def main():
             check_b317_rings(br)
             check_b317_hometaps(br)
             check_b317_rankup(br)
+            check_b317_flow(br)
         finally:
             br.close()
     SERVER.shutdown()
