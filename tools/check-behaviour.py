@@ -15049,10 +15049,20 @@ def check_b317_hometaps(br):
           /* on the pointerdown alone, in the same task, the words are there */
           const it = document.querySelector('.home-caption > .hc-item.is-in');
           const captionOnDown = !!(it && /Gold flare/.test(it.textContent));
+          /* ...and so is the light: its animation exists in the same task.
+             Its opacity is then read 220ms into the ANIMATION, not 220ms
+             of wall clock - an animation only starts on the next frame,
+             and on a loaded box that frame came 250-500ms late on both
+             devices, which read as "no light" (o1 0) on a build whose
+             light was fine. */
+          const t = b.querySelector(':scope > .cosmic-badge-told');
+          const an = t ? t.getAnimations().find(a => a.playState === 'running') : null;
+          const lightOnDown = !!an;
+          if(an){ await Promise.race([an.ready, wait(3000)]); }
           await wait(220);
-          const t = b.querySelector(':scope > .cosmic-badge-told'); const o1 = t ? +getComputedStyle(t).opacity : -1;
+          const o1 = t ? +getComputedStyle(t).opacity : -1;
           down(); const t2 = b.querySelector(':scope > .cosmic-badge-told'); const o2 = t2 ? +getComputedStyle(t2).opacity : -1;
-          return { o1, o2, same: t === t2, captionOnDown }; }""")
+          return { o1, o2, same: t === t2, captionOnDown, lightOnDown }; }""")
         # a new answer crossfades over the last
         xf = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
           const tap = (sel) => { const b = document.querySelector(sel); b.dispatchEvent(new MouseEvent('click', { bubbles: true })); };
@@ -15094,7 +15104,7 @@ def check_b317_hometaps(br):
         check(dev + ": tapped again it says what is next, and the first ripple is still running beside the second",
               (PL2.get("text") or "").startswith("Next: Platinum rank.") and PL2.get("ripples", 0) >= 2, PL2)
         check(dev + ": the light lands on the pointerdown with the words, and a second tap carries it on from where it is",
-              chain.get("captionOnDown") and chain.get("same") and chain.get("o1", 0) > .3 and abs(chain.get("o2", 9) - chain.get("o1", -9)) < .06, chain)
+              chain.get("captionOnDown") and chain.get("lightOnDown") and chain.get("same") and chain.get("o1", 0) > .3 and abs(chain.get("o2", 9) - chain.get("o1", -9)) < .06, chain)
         check(dev + ": a new answer fades through the last (one leaving, one arriving a beat behind it)",
               xf.get("n") == 2 and xf.get("out") == 1 and xf.get("behind") and "Amethyst flare" in xf.get("live", ""), xf)
         check(dev + ": the caption goes after a few seconds, and nothing in the layout moved at any point while it came and went",
