@@ -1643,6 +1643,11 @@
     pointer-events:none;
   }
   #contextual-info-popup.contextual-info-show{ opacity:1; }
+  /* a followed box, its line and its ring, moved as one (showContextualInfo
+     follow): a fixed box the size of the screen, so its children's fixed
+     positions (top or bottom, left) mean what they always did, carried by
+     one compositor transform */
+  #contextual-info-follow{ position:fixed; inset:0; z-index:220; pointer-events:none; will-change:transform; }
   #contextual-info-line, #contextual-info-line-dot{
     position:fixed; z-index:219; pointer-events:none;
     opacity:0; transition:opacity .2s ease;
@@ -62960,7 +62965,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
       e.stopPropagation();
       /* and the planet answers the touch (build 317, planetTapFx) */
       try{ planetTapFx(wrap, e); }catch(err){}
-      showContextualInfo(sphere, "..... ");
+      showContextualInfo(sphere, "..... ", { aimEdge: true });
     });
   }
   svg.appendChild(sphere);
@@ -74902,27 +74907,91 @@ function planetTapFx(hero, ev){
   });
 }
 
+/* THE BOX RIDES WITH WHAT IT POINTS AT (build 317, round two). "The
+   things pop up when clicking the flares they slightly shake." A flare
+   turns on the compositor (its orbit's spin) and a rank bubble floats
+   there; the box used to be moved from a requestAnimationFrame loop that
+   MEASURED the target every frame and wrote the line's left/top - so on
+   any frame the main thread did not get to (a phone drops them all the
+   time) the box stood still while the flare went on, and the next frame
+   caught it up with a jump. Measured frame-stepped with two frames in
+   four missed: 1px jumps (check_b317_followglide); after, 0.01-0.07px.
+   Now the box, its line and its ring are one group, and that group is
+   given an animation of its own: the target's path over the box's life,
+   read once when it opens by stepping the target's own animations through
+   it (contextualFollowPath - the same maths the compositor uses, because
+   it IS those animations) and played back as translate3d keyframes on the
+   same timeline from the same moment. The two then move together on the
+   compositor, frame for frame, whatever the main thread is doing; no
+   layout property changes after the box is placed, nothing is rounded,
+   and the box keeps the side it opened on for its whole life (it is
+   placed once, already clear of where the target will go). */
+const CONTEXTUAL_FOLLOW_MS = 4650, CONTEXTUAL_FOLLOW_STEP = 150;
+function contextualFollowPath(el, ms){
+  const moving = [];
+  for(let n = el; n && n !== document.body; n = n.parentElement){
+    let list = [];
+    try{ list = n.getAnimations(); }catch(e){}
+    list.forEach(an => {
+      if(an.playState !== "running" && an.playState !== "paused") return;
+      let moves = false;
+      try{ moves = an.effect.getKeyframes().some(k => ["transform", "rotate", "translate", "scale"].some(pr => k[pr] !== undefined)); }catch(e){}
+      if(moves) moving.push(an);
+    });
+  }
+  if(!moving.length) return null;
+  const centre = () => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+  const saved = moving.map(an => ({ an, st: an.startTime, ct: Number(an.currentTime) || 0, rate: an.playbackRate || 1, running: an.playState === "running" }));
+  const c0 = centre(), out = [];
+  try{
+    for(let t = 0; t <= ms; t += CONTEXTUAL_FOLLOW_STEP){
+      saved.forEach(sv => { sv.an.currentTime = sv.ct + t * sv.rate; });
+      const c = centre();
+      out.push([c[0] - c0[0], c[1] - c0[1]]);
+    }
+  }catch(e){ return null; }
+  finally{
+    /* put every animation back exactly where it was: a running one by
+       its start time, so it stays tied to the timeline */
+    saved.forEach(sv => { try{ if(sv.running && sv.st !== null) sv.an.startTime = sv.st; else sv.an.currentTime = sv.ct; }catch(e){} });
+  }
+  return out;
+}
 /* A small contextual info popup that appears right next to whatever
    element it's explaining, instead of a generic toast at the bottom
-   of the screen \u2014 for exactly the situations (tapping a Flare, tapping
+   of the screen — for exactly the situations (tapping a Flare, tapping
    a ladder tier) where the message is ABOUT one specific element on
    screen, so it should visibly belong to that element rather than
    floating disconnected at the bottom. Shares the same Liquid Glass
    styling, positioning logic (centered on the target, clamped to the
    viewport, auto-flipping above/below), and thin-triangle arrow as
    the tour tooltip, since all three are the same underlying idea:
-   information anchored to a specific point on screen. */
+   information anchored to a specific point on screen.
+   - `follow` (build 313, reworked 317): the box rides with a moving
+     target - see contextualFollowPath above. `refind` finds the same
+     target again if the screen is rebuilt under it.
+   - `ring` draws a ring round the target in place of the dot, which
+     would otherwise sit on the very flare being explained, and the line
+     stops at the ring; `ringFit` sizes it round something big.
+   - `aimEdge` (build 317): the line ends on the target's top or bottom
+     edge - whichever faces the box - not at its centre. "Clicking the
+     planet, the line pointing at goes to the center, do it from the
+     bottom or top edge." */
 function showContextualInfo(targetEl, message, opts){
   opts = opts || {};
   if(showContextualInfo._raf){ cancelAnimationFrame(showContextualInfo._raf); showContextualInfo._raf = 0; }
-  const existing = document.getElementById("contextual-info-popup");
-  if(existing) existing.remove();
-  const existingLine = document.getElementById("contextual-info-line");
-  if(existingLine) existingLine.remove();
-  const existingDot = document.getElementById("contextual-info-line-dot");
-  if(existingDot) existingDot.remove();
+  if(showContextualInfo._follow){ try{ showContextualInfo._follow.cancel(); }catch(e){} showContextualInfo._follow = null; }
+  ["contextual-info-popup", "contextual-info-line", "contextual-info-line-dot", "contextual-info-follow"].forEach(id => {
+    const e = document.getElementById(id);
+    if(e) e.remove();
+  });
   if(!targetEl) return;
   const rect = targetEl.getBoundingClientRect();
+  const path = opts.follow ? contextualFollowPath(targetEl, CONTEXTUAL_FOLLOW_MS) : null;
+  /* how far the target will travel, so the box can be placed clear of
+     the screen's edges for the whole of its life */
+  const ext = { x0: 0, x1: 0, y0: 0, y1: 0 };
+  (path || []).forEach(([x, y]) => { ext.x0 = Math.min(ext.x0, x); ext.x1 = Math.max(ext.x1, x); ext.y0 = Math.min(ext.y0, y); ext.y1 = Math.max(ext.y1, y); });
 
   const popup = document.createElement("div");
   popup.id = "contextual-info-popup";
@@ -74930,12 +74999,20 @@ function showContextualInfo(targetEl, message, opts){
   line.id = "contextual-info-line";
   const lineDot = document.createElement("div");
   lineDot.id = "contextual-info-line-dot";
-  document.body.append(line, lineDot);
+  /* a followed box, its line and its ring move as one group */
+  let host = document.body, group = null;
+  if(path){
+    group = document.createElement("div");
+    group.id = "contextual-info-follow";
+    document.body.appendChild(group);
+    host = group;
+  }
+  host.append(line, lineDot);
   const text = document.createElement("p");
   text.className = "contextual-info-text";
   text.textContent = message;
   popup.append(text);
-  document.body.appendChild(popup);
+  host.appendChild(popup);
 
   const targetCenterX = rect.left + rect.width / 2;
   const targetCenterY = rect.top + rect.height / 2;
@@ -74960,7 +75037,7 @@ function showContextualInfo(targetEl, message, opts){
   const tabBar = document.querySelector(".bottomtabs:not([hidden])");
   const barBox = tabBar ? tabBar.getBoundingClientRect() : null;
   const floorY = barBox && barBox.height ? Math.min(window.innerHeight - 12, barBox.top - 8) : window.innerHeight - 12;
-  const above = rect.bottom + 14 + realHeight > floorY;
+  const above = rect.bottom + 14 + realHeight + ext.y1 > floorY;
   if(above){
     popup.style.top = "auto";
     popup.style.bottom = (window.innerHeight - rect.top + 14) + "px";
@@ -74972,107 +75049,93 @@ function showContextualInfo(targetEl, message, opts){
   popup.style.visibility = "hidden";
   const naturalWidth = popup.getBoundingClientRect().width;
   let popupLeft = targetCenterX - naturalWidth / 2;
-  popupLeft = Math.max(margin, Math.min(popupLeft, window.innerWidth - naturalWidth - margin));
+  const lo = margin - ext.x0, hi = window.innerWidth - naturalWidth - margin - ext.x1;
+  popupLeft = lo <= hi ? Math.max(lo, Math.min(popupLeft, hi))
+    : Math.max(margin, Math.min(popupLeft, window.innerWidth - naturalWidth - margin));
   popup.style.left = popupLeft + "px";
   popup.style.visibility = "visible";
 
   /* Same line-connector redesign as the main tour tooltip, and for
-     the same reason \u2014 this is the popup specifically named as broken
+     the same reason — this is the popup specifically named as broken
      (used for things like tapping the Home orbit sphere), sharing the
      exact same arrow mechanism that was the root problem there too. */
   const pRect = popup.getBoundingClientRect();
+  const aimX = targetCenterX;
+  const aimY = opts.aimEdge ? (above ? rect.top : rect.bottom) : targetCenterY;
   const lineStartY = above ? pRect.bottom - 6 : pRect.top + 6;
-  const lineStartX = pRect.left + pRect.width / 2;
-  const dx = targetCenterX - lineStartX;
-  const dy = targetCenterY - lineStartY;
-  const dist = Math.sqrt(dx * dx + dy * dy);
+  /* a followed box's line leaves from the nearest point of its edge */
+  const lineStartX = (path || opts.aimEdge) ? Math.max(pRect.left + 18, Math.min(aimX, pRect.right - 18)) : pRect.left + pRect.width / 2;
+  let ringD = 0;
+  if(opts.ring){
+    const tw = Math.max(rect.width, rect.height);
+    /* ringFit: round the whole of something big (a rank bubble), not a
+       tiny-flare-sized ring on top of it */
+    ringD = opts.ringFit ? tw + 10 : Math.max(16, Math.min(28, tw + 9));
+  }
+  const dx = aimX - lineStartX;
+  const dy = aimY - lineStartY;
+  /* in ring mode the line stops at the ring, not on the flare */
+  const dist = Math.max(0, Math.sqrt(dx * dx + dy * dy) - ringD / 2);
   const angle = Math.atan2(dy, dx) * (180 / Math.PI);
   line.style.left = lineStartX + "px";
   /* Same coordinate fix as the main tour's own line, and the same
      real cause: this line rotates around its own vertical center
      (transform-origin:0 50%), but style.top was being set to
-     lineStartY directly \u2014 the element's TOP edge, not its center.
+     lineStartY directly — the element's TOP edge, not its center.
      For this 3px-tall line that's a measured 1.5px gap between the
      intended start point and where it actually began. */
   line.style.top = (lineStartY - 1.5) + "px";
   line.style.width = dist + "px";
   line.style.transform = "rotate(" + angle + "deg)";
-  lineDot.style.left = (targetCenterX - 4.5) + "px";
-  lineDot.style.top = (targetCenterY - 4.5) + "px";
-
-  /* ---- IT FOLLOWS WHAT IT POINTS AT (build 313) ----
-     "If the text box does show up, ensure that it properly and smoothly
-     follows the selected flare while the text box is open with the arrow
-     like thing being placed in it correctly." A secret flare is on a ring
-     that turns, so the box was placed once and the flare left it behind.
-     With `follow`, every frame re-reads where the target is and moves the
-     box with it (a translate, so nothing reflows), keeps the side it
-     opened on (no flipping above and below as it goes round), and re-aims
-     the line from the nearest point of the box's edge to the target's
-     centre. `ring` draws a ring round the target in place of the dot,
-     which would otherwise sit on top of the very flare being explained.
-     If the screen is rebuilt under it, `refind` finds the same flare in
-     the new one rather than closing. */
   if(opts.ring){
     lineDot.classList.add("is-ring");
-    const tw = Math.max(rect.width, rect.height);
-    /* ringFit: round the whole of something big (a rank bubble), not a
-       tiny-flare-sized ring on top of it */
-    const d = opts.ringFit ? tw + 10 : Math.max(16, Math.min(28, tw + 9));
-    lineDot.style.width = lineDot.style.height = d + "px";
-    lineDot.style.left = (targetCenterX - d / 2) + "px";
-    lineDot.style.top = (targetCenterY - d / 2) + "px";
+    lineDot.style.width = lineDot.style.height = ringD + "px";
+    lineDot.style.left = (aimX - ringD / 2) + "px";
+    lineDot.style.top = (aimY - ringD / 2) + "px";
+  } else {
+    lineDot.style.left = (aimX - 4.5) + "px";
+    lineDot.style.top = (aimY - 4.5) + "px";
   }
-  if(opts.follow){
-    const baseLeft = popupLeft;
-    const baseTop = pRect.top;
-    let tgt = targetEl;
-    const aim = () => {
-      if(!popup.isConnected){ showContextualInfo._raf = 0; return; }
-      if(!tgt.isConnected && opts.refind){ const again = opts.refind(); if(again) tgt = again; }
-      if(tgt.isConnected){
-        const r = tgt.getBoundingClientRect();
-        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-        const w = pRect.width, h = pRect.height;
-        let left = Math.max(margin, Math.min(cx - w / 2, window.innerWidth - w - margin));
-        let top = above ? r.top - 14 - h : r.bottom + 14;
-        top = Math.max(margin, Math.min(top, window.innerHeight - h - margin));
-        popup.style.translate = (left - baseLeft).toFixed(1) + "px " + (top - baseTop).toFixed(1) + "px";
-        const sy = above ? top + h - 6 : top + 6;
-        const sx = Math.max(left + 18, Math.min(cx, left + w - 18));
-        const ddx = cx - sx, ddy = cy - sy;
-        line.style.left = sx + "px";
-        line.style.top = (sy - 1.5) + "px";
-        /* in ring mode the line stops at the ring, not on the flare */
-        const ringR = opts.ring ? (parseFloat(lineDot.style.width) || 18) / 2 : 0;
-        line.style.width = Math.max(0, Math.sqrt(ddx * ddx + ddy * ddy) - ringR) + "px";
-        line.style.transform = "rotate(" + (Math.atan2(ddy, ddx) * 180 / Math.PI) + "deg)";
-        if(opts.ring){
-          const d = parseFloat(lineDot.style.width) || 18;
-          lineDot.style.left = (cx - d / 2) + "px";
-          lineDot.style.top = (cy - d / 2) + "px";
-        } else {
-          lineDot.style.left = (cx - 4.5) + "px";
-          lineDot.style.top = (cy - 4.5) + "px";
-        }
-      }
-      showContextualInfo._raf = requestAnimationFrame(aim);
-    };
-    aim();
-  }
+
+  /* the ride: the group plays the target's own path back from here */
+  const ride = (fromX, fromY, pth, ms) => {
+    if(showContextualInfo._follow){ try{ showContextualInfo._follow.cancel(); }catch(e){} }
+    showContextualInfo._follow = null;
+    if(!group || !pth || pth.length < 2) return;
+    try{
+      showContextualInfo._follow = group.animate(pth.map(([x, y]) => ({ transform: "translate3d(" + (fromX + x) + "px, " + (fromY + y) + "px, 0)" })),
+        { duration: (pth.length - 1) * CONTEXTUAL_FOLLOW_STEP, easing: "linear", fill: "forwards" });
+    }catch(e){}
+  };
+  if(path) ride(0, 0, path);
   requestAnimationFrame(() => { popup.classList.add("contextual-info-show"); line.classList.add("contextual-info-show"); lineDot.classList.add("contextual-info-show"); });
+  const removeAll = () => { popup.remove(); line.remove(); lineDot.remove(); if(group) group.remove(); };
   /* It lives on <body>, so a screen change does not take it: tapping a
      Home flare and then a tab left "Supernova rank - 56 more levels"
      and its pointer line over the Profile screen for the rest of the
      3.2s. Same rule as the info bubbles: it goes when the thing it
      points at leaves the page. */
   if(showContextualInfo._mo) showContextualInfo._mo.disconnect();
+  let current = targetEl;
   const orphanWatch = showContextualInfo._mo = new MutationObserver(() => {
-    if(targetEl.isConnected && popup.isConnected) return;
-    /* a followed flare whose screen was rebuilt is found again by aim() */
-    if(opts.follow && opts.refind && popup.isConnected && opts.refind()) return;
+    if(current.isConnected && popup.isConnected) return;
+    /* a followed target whose screen was rebuilt is found again, and the
+       ride picks up from it for the rest of the box's life */
+    if(opts.follow && opts.refind && popup.isConnected){
+      const again = opts.refind();
+      if(again){
+        current = again;
+        if(group){
+          const r2 = again.getBoundingClientRect();
+          const done = showContextualInfo._follow ? (Number(showContextualInfo._follow.currentTime) || 0) : 0;
+          const rest = contextualFollowPath(again, Math.max(CONTEXTUAL_FOLLOW_STEP, CONTEXTUAL_FOLLOW_MS - done));
+          ride(r2.left + r2.width / 2 - targetCenterX, r2.top + r2.height / 2 - targetCenterY, rest || [[0, 0], [0, 0]]);
+        }
+        return;
+      }
+    }
     orphanWatch.disconnect();
-    popup.remove(); line.remove(); lineDot.remove();
+    removeAll();
   });
   orphanWatch.observe(stage, { childList: true });
   clearTimeout(showContextualInfo._t);
@@ -75080,7 +75143,7 @@ function showContextualInfo(targetEl, message, opts){
     popup.classList.remove("contextual-info-show");
     line.classList.remove("contextual-info-show");
     lineDot.classList.remove("contextual-info-show");
-    setTimeout(() => { popup.remove(); line.remove(); lineDot.remove(); }, 250);
+    setTimeout(removeAll, 250);
   }, opts.follow ? 4200 : 3200);
 }
 
