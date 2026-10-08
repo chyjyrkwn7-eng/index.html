@@ -13105,7 +13105,9 @@ was sized from the hull's bottom. Now: the saucer's beam is
 `-hov + .2*hull + 4` long, so its foot is 4px inside the box's top edge, and
 it is rescaled with the hull's own easing as it lands (`--bl`) and lifts off
 (`--bk`) so the foot never leaves that edge; the box's beam starts only as
-the saucer's arrives (40.4% of 7s) and runs the box's full height. Measured
+the saucer's arrives (40.4% of 7s; on round 4's long timeline every
+moment from here to the lift-off is later - see below) and runs the box's
+full height. Measured
 (440x956): foot at box top +5px hovering, landed and lifting; box beam 626 to
 815 against a box 625 to 813. The box flares as the beam strikes (2.84s) as
 well as on landing. The grab is unchanged.
@@ -13136,6 +13138,54 @@ well as on landing. The grab is unchanged.
   overlaid copy's opacity (`.hfx-tintnum`), which round 3 deleted, so it
   went red for the right build. It reads the REAL 100% now: transparent
   text under `linear-gradient(105deg, <g1> ...)`.
+
+**The UFO is 2.5s longer (build 317, round 4), by ADDING to it, not by
+slowing it.** *"Could the UFO hundo effect last another 2-3 seconds somehow?
+It's so cool I want it to be longer."* 8.6s became 11.1s
+(`HUNDO_FX_TOTAL.ufo`; its tail, `HUNDO_FX_TAIL_AT.ufo`, 7s to 9.5s):
+- **It circles the screen once before it comes down (+1.1s).** It comes in
+  from one side along the top, goes round a flat circle over the upper
+  half (smaller on the far side, bigger on the near side, banking into the
+  turns), and comes down to its hover point. A loop is no shape for
+  keyframes, so `hfxUfoArrival` samples one smooth path (in, round, down)
+  into WAAPI keyframes on the saucer's `translate` and `scale` - individual
+  properties, which compose OUTSIDE its CSS `transform`; the path's
+  keyframes hold the hover point meanwhile, so the script's offset is
+  `A - scale*hov` and the hand-over at 3.7s is exact whatever frame each
+  started on. One speed curve over the whole path (in at 1.5x the cruise,
+  cruising, to a stop over the last 0.85s), so nothing jerks where the
+  parts meet. The bank is the bob's `rotate`, read off the same path's
+  velocity.
+- **Its beam sweeps across the box before it lands (+0.9s, 4.2-5.1s):** out
+  to one side, across to the other and back, the saucer swaying with it.
+  The box's own beam moves as ONE with the saucer's - the same moments,
+  easing and distance (`hfxUfoSwa(c)`, a third of the way to each edge,
+  capped at 150px so a tablet's wide box does not make it race).
+- **It charges, then goes with a boom (+0.5s, 8.0-8.55s):** lifted, it dips,
+  shudders and a light swells under the hull (`.hfx-ufo-charge`), then it
+  breaks away: a flash lighting the screen round it (`.hfx-ufo-flash`), a
+  ring of light thrown out flat (`.hfx-ufo-boom`), then the old warp and
+  streak.
+- **The grab is untouched**: the landing, the scan, the lock, the score
+  going up the beam and the lift-off are the old timeline moved 2s later
+  (6.1s down, 7.38s the grab), the same durations and curves.
+- The small box's saucer (`.is-mini`: Customize, the unlock card) keeps
+  the 7s timeline - the long one is `-l` keyframes on
+  `.hfx-saucer:not(.is-mini)`, and the box's shared beats take a 2s shift
+  only on the results screen (`sh` in `hfxUfo`). The dims, the searchlights,
+  the box's beam and the dust are results-screen only, so they changed in
+  place.
+- **The flow waits for all of it by itself**: the first scene after a 100%
+  waits for `HUNDO_FX_TAIL_AT[id]`, so the badge case came at 9.5s into a
+  real UFO run (it would have covered the departure at the old 7s).
+- `check_b317_hundobox` reads the page's own total to pick the timeline for
+  the round 3 beam checks, and adds: 10.6-11.6s long; one full circle
+  (>= 300 degrees round, both sides, above the box) between 1.4s and 2.95s;
+  the sweep reaching 15% of the box's width each side with the two beams
+  within 4px of each other and the foot on the box's top edge; the charge,
+  flash and boom at 8.4s/8.62s and the saucer gone by 8.95s; the ghost's
+  0.6s on its own curve; and a real flow run with a badge whose case comes
+  >= 9s after the effect. `record-hundo.py` records it for 11.7s.
 
 **"Looks laggy" was the RECORDING, not the effect.** Measured in the
 recording's own configuration: the page drew 139 frames in 7s, while the CDP
@@ -13308,8 +13358,9 @@ on every effect at 320/440/834, the default and every tile; it fails on
   `HUNDO_FX_TOTAL[id]`; a scene going up or the screen changing FADES them
   (`hfxFadeOut`), never a cut. `HUNDO_FX_TAIL_AT` is where each tail starts,
   for the gate. The UFO's tail is the stars it leaves behind, twinkling out
-  between 7.4s and 8.3s as the dark lifts (it used to have an empty last
-  second, which the gate caught once the timings moved).
+  between 9.9s and 10.8s as the dark lifts (7.4-8.3s before round 4; it
+  used to have an empty last second, which the gate caught once the
+  timings moved).
 - **Every picture is a sprite: drawn once as svg, cached, then RASTERISED
   ONCE to a PNG blob** (`hfxSprite` / `hfxRasterise`, run by `hfxWarm(id)` as
   the results screen opens and as Customize settles).

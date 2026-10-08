@@ -78258,7 +78258,7 @@ function hfxUfo(scr, bx, c){
     const hov = -Math.round(Math.min(120, Math.max(60, r.top * .25)));
     const exit = { x: (Math.random() < .5 ? -1 : 1) * c.vw * .9, y: -L.y - 160 };
     /* how far its beam sweeps either way across the box (round 4) */
-    const swa = Math.round(Math.min((c.bw || 0) * .3, 110));
+    const swa = hfxUfoSwa(c);
     const u = hfxMk(scr, "span", "hfx-saucer", { left: L.x + "px", top: L.y + "px", "--sx": (hfxR(-.3, .3) * c.vw) + "px", "--sy": (-L.y - h - 20) + "px",
       "--hov": hov + "px", "--ox": exit.x + "px", "--oy": exit.y + "px", "--uw": w + "px", "--uh": h + "px", "--swa": swa + "px" });
     /* THE BEAM IS FIRED, THEN IT RIDES WITH THE HULL (build 317, round 3):
@@ -78315,7 +78315,7 @@ function hfxUfo(scr, bx, c){
     if(!c.boxOnly){
       if(!c.noDim) hfxMk(bx, "i", "hfx-ufo-boxdim");
       hfxMk(bx, "i", "hfx-ufo-inbeam", { left: cx + "px", "--ih": c.bh + "px", "--iw": Math.min(c.bw * .8, c.p.w * 1.6) + "px",
-        "--swa": Math.round(Math.min(c.bw * .3, 110)) + "px" }).style.backgroundImage = hfxBeamURL();
+        "--swa": hfxUfoSwa(c) + "px" }).style.backgroundImage = hfxBeamURL();
       /* the box flares as the beam strikes it, and again as it lands */
       hfxMk(bx, "i", "hfx-ufo-landglow is-hit", { "--t": 3.94 });
       hfxMk(bx, "i", "hfx-ufo-landglow", { "--t": 6.1 });
@@ -78370,6 +78370,11 @@ function hfxUfoAbduct(parent, c, ox, oy, uh){
   return g;
 }
 
+/* How far the beam sweeps either way across the box before it lands
+   (round 4): a third of the way to each edge on a phone's box, capped on a
+   tablet's wide one so the saucer does not race (one value, so the
+   saucer's beam and the box's own move as one). */
+function hfxUfoSwa(c){ return Math.round(Math.min((c.bw || 0) * .3, 150)); }
 /* THE CIRCLE (build 317, round 4). It comes in from one side, goes round
    the screen once - smaller on the far side of the circle, bigger on the
    near side - and comes down to where it hovers over the box, banking into
