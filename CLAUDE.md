@@ -14867,8 +14867,8 @@ disagree with it.
       number does not depend on the paint), with and without the light;
       in every column where the head's lowest pixel sits over the body,
       the light's effect 3-6px above the edge against 3-6px below. On
-      b6cd249: 21-60 levels on 22 of 26 necks, median 39; now 0-5,
-      median 0. Painting the surfaces grey matters: on their own colours
+      b6cd249: over 10 levels on 23 of the 26 necks (11-60, median 39);
+      now 0-5, median 0. Painting the surfaces grey matters: on their own colours
       the same field darkens white hair over a dark robe by 26 levels
       and the robe by 4, which reads as a step that is not one.
   - **A SECRET'S SILHOUETTE HAS ITS HEAD FITTED (317 fix,

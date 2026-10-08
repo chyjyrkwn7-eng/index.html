@@ -13235,8 +13235,9 @@ def check_b317_neck(br):
     light layers and without them. D = the difference. In every column where
     the head's lowest pixel sits over the body, D is read 3-6px above that
     edge and 3-6px below it, and the step is the median |above - below|.
-    On b6cd249 it is 21-60 levels on 22 of the 25 characters with a neck
-    (median 39); one light for the whole figure makes it 0-5."""
+    On b6cd249 it is over 10 levels on 23 of the 26 characters with a neck
+    (11-60, median 39; the other three have no lit surface at the neck);
+    one light for the whole figure makes it 0-5."""
     import io as _io
     import statistics as _st
     from PIL import Image as _Im
