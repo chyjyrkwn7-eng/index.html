@@ -11488,22 +11488,22 @@
     animation:rank-litpop-core 1s cubic-bezier(.16,1,.3,1) both; }
   .rank-litpop > i{ inset:-90%; background:radial-gradient(circle, color-mix(in srgb, var(--ignite, #fff) 55%, transparent) 0%, color-mix(in srgb, var(--ignite, #fff) 18%, transparent) 40%, transparent 68%);
     animation:rank-litpop-glow 1.1s cubic-bezier(.16,1,.3,1) both; }
-  .rank-litpop::after{ border:2px solid color-mix(in srgb, var(--ignite, #fff) 55%, #fff);
-    box-shadow:0 0 8px 1px color-mix(in srgb, var(--ignite, #fff) 60%, transparent);
-    animation:rank-litpop-ring .7s cubic-bezier(.16,1,.3,1) both; }
+  .rank-litpop::after{ border:2.5px solid color-mix(in srgb, var(--ignite, #fff) 72%, #fff);
+    box-shadow:0 0 10px 2px color-mix(in srgb, var(--ignite, #fff) 65%, transparent), inset 0 0 6px color-mix(in srgb, var(--ignite, #fff) 45%, transparent);
+    animation:rank-litpop-ring .8s cubic-bezier(.16,1,.3,1) both; }
   .rank-orbit-slot.is-flaring > .cosmic-icon-badge{ animation:rank-flare-swell 1s cubic-bezier(.16,1,.3,1) both; }
   @keyframes rank-litpop-core{ 0%{ opacity:0; transform:scale(.35); } 9%{ opacity:1; transform:scale(1.3); } 30%{ opacity:.85; transform:scale(1.22); } 100%{ opacity:0; transform:scale(1); } }
   @keyframes rank-litpop-glow{ 0%{ opacity:0; transform:scale(.7); } 12%{ opacity:.9; transform:scale(1); } 100%{ opacity:0; transform:scale(1.05); } }
-  @keyframes rank-litpop-ring{ 0%{ opacity:.9; transform:scale(.9); } 100%{ opacity:0; transform:scale(2.3); } }
+  @keyframes rank-litpop-ring{ 0%{ opacity:0; transform:scale(.85); } 7%{ opacity:1; transform:scale(1.05); } 100%{ opacity:0; transform:scale(2.6); } }
   @keyframes rank-flare-swell{ 0%{ scale:1; } 10%{ scale:1.14; } 100%{ scale:1; } }
-  /* the pool of colour floods in with it, and only breathes once lit */
-  /* the pool fades away again once it is lit (round five), so the flare
-     slows and stops as a plain lit flare */
-  .tier-cutscene.is-cutrest .rank-before .rank-orbit-slot.is-igniting::before{ opacity:0; transform:scale(1); animation:none;
-    transition:opacity 1.2s ease; }
-  .tier-cutscene .rank-before .rank-orbit-slot.is-igniting::before{
-    transition:opacity var(--cutlight-ms, .42s) ease-out, transform calc(var(--cutlight-ms, .42s) * 2) cubic-bezier(.2,.8,.2,1);
-    animation-delay:1s; }
+  /* NO POOL OF COLOUR LEFT BEHIND (build 317, round five). The slot's
+     breathing pool (::before, above) flooded in with the light and stayed
+     through the whole slow-down as a halo - the ignition lasting two and
+     a half seconds instead of one, and a "big glow" still on the flare as
+     the planet changed. In the scene the ignition's own halo (> i) is the
+     only glow, and it is gone in ~1s: the flare slows and stops as a
+     plain lit flare, Home's look. */
+  .tier-cutscene .rank-orbit-slot::before{ content:none; }
   @keyframes rank-ignite-breathe{ from{ scale:1; opacity:1; } to{ scale:1.22; opacity:.7; } }
   /* Only the ranks you do NOT hold step back while yours lights (build
      309) - dimming every other flare made the ones you already hold read
@@ -11525,11 +11525,17 @@
   /* The new planet's flares stay in view after the burst; the old one's
      dissolve into it. */
   #supernova-cutscene.tier-cutscene.supernova-burst .rank-after .cosmic-icon-badge{ opacity:1; }
-  /* The secret flares are Home's size (build 317, third round) - the
-     bubbles are, and a found one at 1.8x stood out of proportion. */
+  /* (The secret flares are Home's size in the scene too - build 317,
+     third round: a found one at 1.8x stood out of proportion.) */
+  /* A TINY BIT OF THE NEW RANK'S BACKGROUND (build 317, round five): "give
+     a very little tint of the new background ... keep it pretty dark".
+     The theme's own three glows (--theme-c1/c2/c3, which the element's
+     data-accent resolves to the NEW rank) at about a fifth of Home's
+     strength, easing in over 2.4s as the title settles and carried
+     through the outro. Measured on a 17 Pro Max: the dark goes from
+     (5,3,8) to at most ~(12,31,37) - a wash, still dark. Round circles
+     sized in vmax, so it never reads as a shape on a tall or wide screen. */
   .rank-tint{ position:absolute; inset:0; pointer-events:none; z-index:0; opacity:0;
-    /* round, sized in vmax, so it is a wash and never a shape on a tall
-       or a wide screen */
     background:
       radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--theme-c2) 20%, transparent) 0, color-mix(in srgb, var(--theme-c2) 8%, transparent) 32vmax, transparent 72vmax),
       radial-gradient(circle at 92% -4%, color-mix(in srgb, var(--theme-c3) 12%, transparent) 0, transparent 55vmax),
@@ -64838,7 +64844,10 @@ const RANK_ORBIT_MS = 30000;
 const RANK_CUTSPIN_TURNS = 10;
 /* build 317, second round: faster and faster for 4.5s, lit at the top
    speed, slowing for 2s, still for half a second, then the flash */
-const RANK_FADEOUT_MS = 850;
+/* round five: the planet and the tint go to dark this long before the
+   scene ends (rank-fadeout); the planet rises this long after the dark
+   comes up */
+const RANK_FADEOUT_MS = 850, RANK_ARRIVE_MS = 320;
 const RANK_CUTSPIN_ACCEL_MS = 4500, RANK_CUTSPIN_DECEL_MS = 2000, RANK_CUTSPIN_PAUSE_MS = 500, RANK_CUTLIGHT_MS = 140, RANK_CUTLIGHT_LEAD_MS = 120, RANK_CUTFLARE_MS = 1150;
 function rankOrbitFlares(hero){
   if(!hero) return null;
@@ -65059,9 +65068,13 @@ function playRankUpScene(tierKey, opts, spec){
   }
 
   rankOrbitCentre(orbitBefore); rankOrbitCentre(orbitAfter);
+  /* THE DARK FIRST, THEN THE PLANET (build 317, round five polish): the
+     planet used to start arriving in the same frame the dark began to
+     come up, so for a few frames a ghost of it sat over the results.
+     It rises out of the dark now, RANK_ARRIVE_MS after it. */
   requestAnimationFrame(() => requestAnimationFrame(() => {
     overlay.classList.add("supernova-visible");
-    stageWrap.classList.add("is-arrive");
+    at(RANK_ARRIVE_MS, () => stageWrap.classList.add("is-arrive"));
   }));
   at(T.zoom, () => stageWrap.classList.add("supernova-zoom"));
   /* THE EMPHASIS, SPUN UP (build 317, second round). Madison: "everything

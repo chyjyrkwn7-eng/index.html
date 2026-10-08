@@ -13300,7 +13300,7 @@ def check_b317_cutspin(br):
         pg.wait_for_timeout(1200)
         pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
         pg.evaluate("()=>playTierCutscene('vanguard', {from:'veteran', onDone(){}})")
-        t, n, bad, pops, burst_at = 0.0, 0, [], [], None
+        t, n, bad, pops, burst_at, igs = 0.0, 0, [], [], None, []
         for i in range(1, 316):
             t0 = t; t = i / 30
             pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000)))
@@ -13310,8 +13310,14 @@ def check_b317_cutspin(br):
             if i > 300:
                 if burst_at is None and pg.evaluate("() => !!document.querySelector('#supernova-cutscene.supernova-burst')"): burst_at = i
                 continue
-            ph = pg.evaluate("() => { const o = document.getElementById('supernova-cutscene'); return o ? [!!o.querySelector('.rank-litpop'), o.classList.contains('supernova-burst')] : [false, false]; }")
+            ph = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene'); if(!o) return [false, false, null];
+              const lp = o.querySelector('.rank-litpop'), sl = o.querySelector('.rank-before .rank-orbit-slot.is-igniting');
+              const pool = sl ? getComputedStyle(sl, '::before') : null;
+              return [!!lp, o.classList.contains('supernova-burst'), {
+                parts: lp ? lp.children.length : null, ring: lp ? getComputedStyle(lp, '::after').borderTopWidth : null,
+                pool: pool ? (pool.content === 'none' ? 0 : +pool.opacity) : 0 }]; }""")
             if ph[0]: pops.append(i)
+            if ph[2]: igs.append((i, ph[2]))
             if ph[1] and burst_at is None: burst_at = i
             for x in pg.evaluate(CUTSPIN_UNDER) or []:
                 n += 1
@@ -13323,6 +13329,17 @@ def check_b317_cutspin(br):
         check("%s: the new flare flashes for about a second as it lights, and the big flash still comes on time" % label,
               27 <= len(pops) <= 40 and burst_at is not None and 290 <= burst_at <= 305 and pops[-1] < burst_at,
               (len(pops), pops[:1], burst_at))
+        # Round five: "the pulse coming off the new flare mid spin is not the
+        # best". One ignition: a bloom, one halo and ONE shockwave ring on
+        # the bubble - nothing else inside it to fling off - and no pool of
+        # colour behind the bubble at any frame, so nothing outlasts the
+        # second of flash. Fails on 03cd1d7 (two rings, and the pool stayed
+        # through the slow-down).
+        during = [x for i_, x in igs if x["parts"] is not None]
+        check("%s: the ignition is one bloom with one shockwave ring, nothing flung off, and no pool of colour outlasting it" % label,
+              len(during) >= 20 and all(x["parts"] == 1 and x["ring"] not in (None, "0px") for x in during)
+              and all(x["pool"] < .02 for i_, x in igs),
+              (len(during), [x for x in during if x["parts"] != 1][:1], max([x["pool"] for i_, x in igs], default=None)))
 
     # Round five: "there's like a flare floating across the screen?" The
     # outro must hold the planet system still while it fades, and the bridge
@@ -13334,7 +13351,10 @@ def check_b317_cutspin(br):
     pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
     pg.evaluate("()=>playTierCutscene('vanguard', {from:'veteran', onDone(){}})")
     t, boxes, pools, titles = 0.0, [], [], []
-    for i in range(1, 600):
+    # up to 25s: the scene ends near 19s, and a loaded machine can resolve
+    # the whirl's `finished` late (the fallback fires at 12s) - the loop
+    # stops as soon as the bridge has come and gone
+    for i in range(1, 750):
         t0 = t; t = i / 30
         pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000)))
         pg.evaluate(CUTSPIN_SEEK, t)
