@@ -20,6 +20,7 @@ is stubbed where a check needs it. Exits non-zero on any failure.
 """
 import functools
 import json
+import math
 import http.server
 import io
 import os
@@ -2732,8 +2733,12 @@ def check_b236(br):
     check("a podium only from four people; top three counts once, and never in a room of three",
           v.get("places") == [1, 1, 3, 3] and v.get("small") == 0 and v.get("big") == 1, r["vr"])
     st = r["stats"] if isinstance(r["stats"], list) else []
-    check("Stats has a Virtual Room section with first places and top threes",
-          "First-place finishes" in st and "Top-3 finishes" in st, st)
+    # REVISED IN THE 317 FIX: "Remove the virtual room stats from the stats
+    # tab. I don't think there will be enough usage to care to track it."
+    # The section is gone; the podium above still counts (the data stays).
+    # Fails on b6cd249, which still shows all three cards.
+    check("Stats shows no Virtual Room cards any more (the counts above are still kept)",
+          bool(st) and not any(x in st for x in ("Matches played", "First-place finishes", "Top-3 finishes")), st)
     ctx.close()
 
 
@@ -4080,20 +4085,22 @@ def check_audit_a(br):
           r["input"] and home, {"input": r["input"], "stillHome": home})
     ctx.close()
 
-    # A flare's pop-up lives on <body>; tapping a tab straight after it
-    # used to carry it (and its pointer line) over the next screen.
+    # A flare's pop-up lived on <body>; tapping a tab straight after it
+    # used to carry it (and its pointer line) over the next screen. Since
+    # build 317 (round three) a tap answers in Home's own caption, which
+    # goes with Home - and nothing is left on <body>.
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async ()=>{
       const wait = ms => new Promise(r => setTimeout(r, ms));
       showHome(); await wait(900);
       const b = document.querySelector('#stage .cosmic-icon-badge.cosmic-badge-tappable');
       b.dispatchEvent(new MouseEvent('click', { bubbles: true })); await wait(300);
-      const shown = !!document.getElementById('contextual-info-popup');
+      const shown = !!document.querySelector('#stage .home-caption > .hc-item.is-in');
       document.getElementById('bottomtab-profile').click(); await wait(250);
       return { shown, onProfile: !!document.querySelector('.screen-profile'),
-        left: ['contextual-info-popup','contextual-info-line','contextual-info-line-dot'].filter(id => document.getElementById(id)) };
+        left: document.querySelectorAll('.hc-item, #contextual-info-popup, #contextual-info-line, #contextual-info-line-dot').length };
     }""")
-    check("a flare's pop-up goes with Home when a tab is tapped", r["shown"] and r["onProfile"] and not r["left"], r)
+    check("a flare's answer goes with Home when a tab is tapped", r["shown"] and r["onProfile"] and not r["left"], r)
     ctx.close()
 
     # The rankings search says what it is on the reference phone and on
@@ -11332,30 +11339,21 @@ def check_b313_flares(br):
             pg.wait_for_timeout(400)
         if not pos:
             missed.append((k, "no dot")); continue
-        pg.evaluate("()=>{ document.querySelectorAll('.app-banner, #save-code, .daily-alert, .rs-spot, #contextual-info-popup').forEach(e => e.remove()); }")
+        pg.evaluate("()=>{ document.querySelectorAll('.app-banner, #save-code, .daily-alert, .rs-spot, .hc-item').forEach(e => e.remove()); }")
         pg.mouse.click(pos[0], pos[1])
         pg.wait_for_timeout(150)
-        t = pg.evaluate("()=>{ const p = document.getElementById('contextual-info-popup'); return p ? p.textContent : ''; }")
+        # the answer is Home's caption since build 317, round three
+        t = pg.evaluate("()=>{ const p = document.querySelector('.home-caption > .hc-item:not(.is-out)'); return p ? p.textContent : ''; }")
         nm = pg.evaluate("(k)=>MYSTERY_NAME[k]", k)
         if nm in t:
             ok += 1
         else:
             missed.append((k, t[:40]))
         pg.wait_for_timeout(250)
-    check("every real tap on a found flare opens its tooltip, naming the flare", ok == 15, missed)
-    pos = pg.evaluate("""()=>{ const d = document.querySelector('.panel.home [data-flare="violet"]') || [...document.querySelectorAll('.panel.home .cosmic-orbit-dot')][3];
-      const r = d.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }""")
-    pg.mouse.click(pos[0], pos[1])
-    f = pg.evaluate("""async ()=>{ const d = document.querySelector('.panel.home [data-flare="violet"]') || [...document.querySelectorAll('.panel.home .cosmic-orbit-dot')][3];
-      const out = []; const t0 = performance.now();
-      while(performance.now() - t0 < 1200){ await new Promise(r => requestAnimationFrame(r));
-        const m = document.getElementById('contextual-info-line-dot'); if(!m) continue;
-        const a = d.getBoundingClientRect(), b = m.getBoundingClientRect();
-        out.push([Math.hypot(a.left + a.width / 2 - b.left - b.width / 2, a.top + a.height / 2 - b.top - b.height / 2), a.left, a.top]); }
-      return out; }""")
-    moved = max(abs(f[-1][1] - f[0][1]), abs(f[-1][2] - f[0][2])) if f else 0
-    worst = max(x[0] for x in f) if f else 99
-    check("the tooltip's marker stays on the flare as it moves (within 2px over 1.2s)", len(f) > 20 and moved > 3 and worst <= 2, ("frames", len(f), "moved", round(moved, 1), "worst", round(worst, 1)))
+    check("every real tap on a found flare answers, naming the flare", ok == 15, missed)
+    # (The marker that followed the flare went with the box in build 317,
+    # round three - nothing follows a flare now; check_b317_hometaps
+    # asserts there is no box, line or ring.)
     ctx.close()
 
     # The characters and the scenes.
@@ -11475,17 +11473,19 @@ def check_b313_flares_glass(br):
         if under:
             pg.mouse.click(under["x"], under["y"])
             pg.wait_for_timeout(200)
-        t = pg.evaluate("()=>{ const p = document.getElementById('contextual-info-popup'); return p ? p.textContent : ''; }")
+        # (the answer is Home's caption since build 317, round three: the
+        # flare's name, which is the rank's)
+        t = pg.evaluate("()=>{ const p = document.querySelector('.home-caption > .hc-item:not(.is-out)'); return p ? p.textContent : ''; }")
         rank = pg.evaluate("(t)=>RANK_DISPLAY_NAME[t] || ''", (under or {}).get("tier", ""))
         check(f"{label}: a tap on a bubble with a flare under it opens the bubble's rank, not the flare",
-              bool(rank) and t.startswith(rank + " rank"), [rank, t[:60]])
-        pg.evaluate("()=>{ document.getElementById('contextual-info-popup')?.remove(); document.querySelectorAll('.panel.home .cosmic-hero-wrap *').forEach(e => { e.style.animationPlayState = ''; }); }")
+              bool(rank) and t.startswith(rank + " flare"), [rank, t[:60]])
+        pg.evaluate("()=>{ document.querySelectorAll('.hc-item').forEach(e => e.remove()); document.querySelectorAll('.panel.home .cosmic-hero-wrap *').forEach(e => { e.style.animationPlayState = ''; }); }")
         clear = pg.evaluate(GLASS_SEEK, "clear")
         pg.wait_for_timeout(200)
         if clear:
             pg.mouse.click(clear["x"], clear["y"])
             pg.wait_for_timeout(200)
-        t2 = pg.evaluate("()=>{ const p = document.getElementById('contextual-info-popup'); return p ? p.textContent : ''; }")
+        t2 = pg.evaluate("()=>{ const p = document.querySelector('.home-caption > .hc-item:not(.is-out)'); return p ? p.textContent : ''; }")
         nm = pg.evaluate("()=>MYSTERY_NAME.violet")
         check(f"{label}: the same flare in the clear still takes the tap and names itself", bool(clear) and nm in t2, [clear, t2[:60]])
         # THE BUBBLES SIT ON THE RINGS, BY THEIR CENTRES - and so a flare on
@@ -11779,7 +11779,11 @@ def check_b313_fx(br):
           }
           if(fx === 'ufo'){
             out.beforeBeam = getComputedStyle(g).borderTopColor;
-            await until(4700);
+            /* landed: 4.1s-5.4s until build 317 round 4, 6.1s-7.4s since
+               (it circles the screen first, and sweeps the box with its
+               beam) - read from the page's own total so the next change
+               of length moves this with it */
+            await until(typeof HUNDO_FX_TOTAL === 'object' && HUNDO_FX_TOTAL.ufo > 9000 ? 6700 : 4700);
             out.border = getComputedStyle(g).borderTopColor; out.fill = fill();
             const b = document.querySelector('.hfx-saucer .hfx-ufo-bob'), br = b && b.getBoundingClientRect(), gr = g.getBoundingClientRect();
             out.landed = br ? { feet: Math.round(br.bottom - gr.top), cx: Math.round(br.left + br.width / 2 - (gr.left + gr.width / 2)) } : null;
@@ -13092,8 +13096,11 @@ def check_b317_pfcard(br):
               [(r.get("xpMid") or {}).get("over"), (r.get("xpTop") or {}).get("over"), r.get("topLevel")])
         check(f"{dev}: the Next rank card heads its rows 'Rank challenges', above them",
               any(k.lower() == "rank challenges" for k in r.get("kicks", [])) and r.get("kickBeforeTasks"), [r.get("kicks"), r.get("kickBeforeTasks")])
-        check(f"{dev}: what the rank unlocks leads with its flare, then its theme",
-              (r.get("tiles") or [])[:2] == ["flare", "theme"], r.get("tiles"))
+        # REVISED IN THE 317 FIX: "switch the flare and theme spot again,
+        # preferred the flare one in the middle" - theme, flare, then the
+        # character or banner (the road map's order). Fails on b6cd249.
+        check(f"{dev}: what the rank unlocks is its theme, then its flare in the middle, then the rest",
+              (r.get("tiles") or [])[:2] == ["theme", "flare"] and all(t == "other" for t in (r.get("tiles") or [])[2:]), r.get("tiles"))
         tt = r.get("topText") or ""
         check(f"{dev}: at Supernova the card says max rank, still under 'Rank challenges', and that none are left",
               r.get("top") == "titan" and "is-top" in (r.get("topCls") or "") and r.get("topTasks") == 0
@@ -13149,29 +13156,57 @@ def check_b317_volume(br):
     """Build 317. "It appears in profile some characters have a nice 3d look
     but some don't, fix that as well." Every surface a character paints with
     its headGrad light gets a shade layer and a light layer straight on top
-    of it, the same shape, so each piece reads round rather than flat - and
-    it is done with fills, never an SVG filter. Written against build 316,
-    where only the characters that drew their own highlight had one."""
-    print("\n317. every character's surfaces are lit round, with no filter")
+    of it, the same shape - and it is done with fills, never an SVG filter.
+    Written against build 316, where only the characters that drew their own
+    highlight had one.
+    REVISED IN THE 317 FIX: "Characters' heads are now not showing correctly
+    connected to the body." The layers lit each piece on its own
+    (objectBoundingBox), so a head was a ball on top of a body. They are one
+    light for the whole figure now (lightFigure): every shade layer, and
+    every light layer, is the SAME field in the drawing's units - its
+    gradientTransform carried through the transforms above the shape lands
+    on one matrix. That line fails on b6cd249 for every lit character.
+    Drawn through buildAvatarCharSVG, which is where the light is laid on
+    (after the head's own scale), not drawAvatarCharSVG."""
+    print("\n317. every character's surfaces are lit, by one light for the whole figure, with no filter")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""() => {
-      const out = { chars: 0, lit: 0, bare: [], filtered: [], threw: null };
+      const out = { chars: 0, lit: 0, bare: [], filtered: [], split: [], threw: null };
       try {
+        /* a gradient's field in the drawing's own units: the transforms
+           above the element, then the gradient's own, then its geometry
+           (objectBoundingBox - the per-piece light - has none: null) */
+        const fieldOf = (svg, el) => {
+          const id = ((el.getAttribute('fill') || '').match(/^url\\(#([^)]+)\\)$/) || [])[1];
+          const g = id && svg.querySelector('[id="' + id + '"]');
+          if(!g || g.getAttribute('gradientUnits') !== 'userSpaceOnUse') return null;
+          let m = new DOMMatrix();
+          const chain = []; for(let e = el; e && e !== svg; e = e.parentNode) chain.unshift(e);
+          chain.forEach(e => { const l = e.transform && e.transform.baseVal; if(l) for(let i = 0; i < l.numberOfItems; i++){ const t = l.getItem(i).matrix; m = m.multiply(new DOMMatrix([t.a, t.b, t.c, t.d, t.e, t.f])); } });
+          const gl = g.gradientTransform.baseVal; for(let i = 0; i < gl.numberOfItems; i++){ const t = gl.getItem(i).matrix; m = m.multiply(new DOMMatrix([t.a, t.b, t.c, t.d, t.e, t.f])); }
+          const r = parseFloat(g.getAttribute('r')) || 0;
+          m = m.translate(parseFloat(g.getAttribute('cx')) || 0, parseFloat(g.getAttribute('cy')) || 0).scale(r, r);
+          return [m.a, m.b, m.c, m.d, m.e, m.f];
+        };
+        const one = list => list.length > 0 && list.every(f => f && f.every((v, i) => Math.abs(v - list[0][i]) < 1e-3));
         AVATAR_CHARACTERS.filter(c => !c.retired).forEach(c => {
-          const s = drawAvatarCharSVG(c.id); if(!s) return;
+          const s = buildAvatarCharSVG(c.id); if(!s) return;
           out.chars++;
           const uid = s.getAttribute('data-cx-uid');
           const head = [...s.querySelectorAll('path, ellipse, circle, rect, polygon')]
-            .filter(n => (n.getAttribute('fill') || '').startsWith('url(#' + uid + '-head') && !n.closest('.cx-bg'));
+            .filter(n => (n.getAttribute('fill') || '').startsWith('url(#' + uid + '-head') && !n.closest('.cx-bg, .cx-sp'));
           let ok = head.length > 0 || ['voidwalker', 'genesis', 'zenith'].includes(c.id);
+          const shades = [], glosses = [];
           head.forEach(n => {
             const a = n.nextElementSibling, b = a && a.nextElementSibling;
             const same = x => x && x.nodeName === n.nodeName && ['d', 'cx', 'cy', 'rx', 'ry', 'r', 'points', 'transform']
               .every(k => x.getAttribute(k) === n.getAttribute(k));
-            if(!(same(a) && same(b) && /-vshade\\)$/.test(a.getAttribute('fill')) && /-vgloss\\)$/.test(b.getAttribute('fill')))) ok = false;
+            if(!(same(a) && same(b) && /-vshade\\d*\\)$/.test(a.getAttribute('fill')) && /-vgloss\\d*\\)$/.test(b.getAttribute('fill')))){ ok = false; return; }
+            shades.push(fieldOf(s, a)); glosses.push(fieldOf(s, b));
           });
           if(ok && head.length) out.lit++;
           if(!ok) out.bare.push(c.id);
+          else if(head.length && !(one(shades) && one(glosses))) out.split.push(c.id);
           if(s.querySelector('[filter]')) out.filtered.push(c.id);
         });
       } catch(e) { out.threw = String(e); }
@@ -13181,9 +13216,183 @@ def check_b317_volume(br):
           r["chars"] >= 25 and not r["bare"], [r["chars"], r["lit"], r["bare"]])
     check("the flat ones included: Detective, Sheriff, Hive, Zeus, Timekeeper, Masked One",
           r["lit"] >= 25, r["lit"])
+    check("one light for the whole figure: every shade layer is the same field in the drawing's units, and every light layer",
+          r["lit"] >= 25 and not r["split"], r["split"])
     check("no SVG filter inside any drawing", not r["filtered"], r["filtered"])
     check("nothing threw", not r["threw"], r["threw"])
     ctx.close()
+
+
+def check_b317_neck(br):
+    """The 317 fix. "Characters' heads are now not showing correctly
+    connected to the body of the character, the bodies don't look attached,
+    they don't seem connected or blended." The volume light (check_b317_volume)
+    lit every piece as its own ball, so along every neck the head's shaded
+    lower edge sat straight against the body's own highlight. Measured as
+    the STEP THE LIGHT ADDS ACROSS THE NECK: each character at 10px a unit,
+    scenery and halo hidden, every headGrad surface painted one grey (so the
+    number does not depend on the paint under the light), rendered with its
+    light layers and without them. D = the difference. In every column where
+    the head's lowest pixel sits over the body, D is read 3-6px above that
+    edge and 3-6px below it, and the step is the median |above - below|.
+    On b6cd249 it is over 10 levels on 23 of the 26 characters with a neck
+    (11-60, median 39; the other three have no lit surface at the neck);
+    one light for the whole figure makes it 0-5."""
+    import io as _io
+    import statistics as _st
+    from PIL import Image as _Im
+    print("\n317 fix. the light adds no step across the neck: heads and bodies are one figure")
+    ctx, pg = booted(br, 600, 600, seed=USED_ACCOUNT, dpr=1)
+    pg.evaluate(B314_TRANSPARENT)
+    ids = pg.evaluate("()=>AVATAR_CHARACTERS.filter(c => !c.retired).map(c => c.id)")
+    S = 340
+
+    def shot(mode):
+        pg.evaluate("""(mode) => { const s = window.__nk;
+          s.querySelectorAll('*').forEach(n => { if(n.style) n.style.visibility = ''; });
+          s.querySelectorAll('[data-nkvol]').forEach(n => n.style.display = mode === 'novol' ? 'none' : '');
+          if(mode === 'head' || mode === 'body'){
+            s.querySelectorAll('*').forEach(n => n.style && (n.style.visibility = 'hidden'));
+            s.querySelectorAll(mode === 'head' ? '.cx-head' : '.cx-body').forEach(h => { h.style.visibility = 'visible'; h.querySelectorAll('*').forEach(n => n.style && (n.style.visibility = 'visible')); });
+          } }""", mode)
+        return _Im.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": S, "height": S}, omit_background=True))).convert("RGBA")
+
+    steps, bad = {}, {}
+    for cid in ids:
+        pg.evaluate("""([cid, S]) => { document.getElementById('nkhost')?.remove();
+          const host = document.createElement('div'); host.id = 'nkhost'; host.style.cssText = 'position:fixed;left:0;top:0;width:' + S + 'px;height:' + S + 'px;z-index:99999';
+          const s = buildAvatarCharSVG(cid);
+          s.style.cssText = 'width:' + S + 'px;height:' + S + 'px;display:block;-webkit-mask-image:none;mask-image:none;filter:none';
+          host.appendChild(s); document.body.appendChild(host);
+          document.querySelectorAll('body > *:not(#nkhost)').forEach(e => { if(e.style) e.style.visibility = 'hidden'; });
+          s.querySelectorAll('.cx-bg').forEach(n => n.remove());
+          s.querySelectorAll('circle').forEach(n => { if(/url\\(#(aura|halo)-/.test(n.getAttribute('fill') || '')) n.remove(); });
+          s.querySelectorAll('[fill*="-vshade"], [fill*="-vgloss"]').forEach(n => n.setAttribute('data-nkvol', '1'));
+          const uid = s.getAttribute('data-cx-uid');
+          s.querySelectorAll('path, ellipse, circle, rect, polygon').forEach(n => { if((n.getAttribute('fill') || '').startsWith('url(#' + uid + '-head')) n.setAttribute('fill', '#808080'); });
+          window.__nk = s; }""", [cid, S])
+        head = shot("head").getchannel("A").load()
+        body = shot("body").getchannel("A").load()
+        lit = shot("vol").convert("L").load()
+        flat = shot("novol").convert("L").load()
+        cols = []
+        for x in range(0, S, 2):
+            yb = next((y for y in range(S - 1, -1, -1) if head[x, y] > 200), None)
+            if yb is None or yb + 8 >= S or yb - 8 < 0:
+                continue
+            if not all(body[x, yb + k] > 200 for k in (3, 4, 5, 6)) or not all(head[x, yb - k] > 200 for k in (3, 4, 5, 6)):
+                continue
+            above = _st.mean(lit[x, yb - k] - flat[x, yb - k] for k in (3, 4, 5, 6))
+            below = _st.mean(lit[x, yb + k] - flat[x, yb + k] for k in (3, 4, 5, 6))
+            cols.append(abs(above - below))
+        if len(cols) >= 12:
+            steps[cid] = round(_st.median(cols), 1)
+            if steps[cid] > 10:
+                bad[cid] = steps[cid]
+    ctx.close()
+    check("a neck measured on most characters (%d)" % len(steps), len(steps) >= 20, sorted(steps))
+    check("no character's light steps more than 10 levels across its neck", not bad, bad)
+    check("and the set's median step is under 3 levels", steps and _st.median(steps.values()) < 3,
+          _st.median(steps.values()) if steps else None)
+
+
+def check_b317_silhouettes(br):
+    """The 317 fix, Customize -> Secrets: "Genesis looks great, Umbra is
+    kinda bugged and too big, and Horizon is nearly perfect but also too
+    big. They are cut off." A locked secret is a black cut-out with a light
+    outline, so every unit of its shape reads: Umbra's hood rose to y 5.2 of
+    the 3..37 tile (0.6 under the top feather; Void and Genesis top out at
+    8.9 and 9.0) and stood 18% taller than the four's median head. Each
+    cut-out (charSilhouetteSVG, figure only, 10px a unit) must:
+      - stay clear of its tile's top - 2 units under the 1.6-unit feather
+        (y 6.6) - and inside its sides above the shoulders;
+      - have a head (ink of .cx-head, outline included) within 12% of the
+        four's median height.
+    Then as drawn in Customize on both reference devices (flip-book or
+    live), no outline pixel of any silhouette sits in the top 9% of its
+    tile. Fails on b6cd249 for Umbra on every line."""
+    import io as _io
+    import statistics as _st
+    from PIL import Image as _Im
+    print("\n317 fix. the secrets' silhouettes: the set's size, clear of the top of their tiles")
+    SECRETS = ["voidwalker", "umbra", "singularity", "genesis"]
+    ctx, pg = booted(br, 600, 600, seed=USED_ACCOUNT, dpr=1)
+    pg.evaluate(B314_TRANSPARENT)
+
+    def ink(cid, head, thr):
+        pg.evaluate("""([cid, head]) => { document.getElementById('silh')?.remove();
+          const host = document.createElement('div'); host.id = 'silh'; host.style.cssText = 'position:fixed;left:0;top:0;width:540px;height:540px;z-index:99999';
+          const s = charSilhouetteSVG(cid);
+          s.setAttribute('viewBox', '-7 -7 54 54');
+          s.style.cssText = 'position:absolute;left:0;top:0;width:540px;height:540px;overflow:visible;-webkit-mask-image:none;mask-image:none;filter:none';
+          host.appendChild(s); document.body.appendChild(host);
+          document.querySelectorAll('body > *:not(#silh)').forEach(e => { if(e.style) e.style.visibility = 'hidden'; });
+          if(head){
+            s.querySelectorAll('*').forEach(n => n.style && (n.style.visibility = 'hidden'));
+            s.querySelectorAll('.cx-head').forEach(h => { h.style.visibility = 'visible'; h.querySelectorAll('*').forEach(n => n.style && (n.style.visibility = 'visible')); });
+          } }""", [cid, head])
+        A = _Im.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 540, "height": 540}, omit_background=True))).convert("RGBA").getchannel("A")
+        M = A.point(lambda v: 255 if v > thr else 0)
+        bb = M.getbbox()
+        if not bb:
+            return None
+        upper = M.crop((0, 0, 540, int((28 + 7) * 10))).getbbox()
+        return {"y0": bb[1] / 10 - 7, "y1": bb[3] / 10 - 7, "h": (bb[3] - bb[1]) / 10,
+                "ux0": upper[0] / 10 - 7 if upper else None, "ux1": upper[2] / 10 - 7 if upper else None}
+
+    whole = {c: ink(c, False, 80) for c in SECRETS}
+    heads = {c: ink(c, True, 110) for c in SECRETS}
+    ctx.close()
+    high = {c: round(v["y0"], 1) for c, v in whole.items() if not v or v["y0"] < 6.6}
+    check("every secret's cut-out stays 2 units under its tile's top feather (y >= 6.6)", not high,
+          {c: round(v["y0"], 1) for c, v in whole.items() if v})
+    sides = {c: (v["ux0"], v["ux1"]) for c, v in whole.items() if not v or v["ux0"] is None or v["ux0"] < 4.6 or v["ux1"] > 35.4}
+    check("and inside the sides of its tile above the shoulders", not sides,
+          {c: (round(v["ux0"], 1), round(v["ux1"], 1)) for c, v in whole.items() if v and v["ux0"] is not None})
+    med = _st.median(v["h"] for v in heads.values() if v)
+    off = {c: (round(100 * (v["h"] / med - 1)) if v else None) for c, v in heads.items() if not v or abs(v["h"] / med - 1) > 0.12}
+    check("every secret's head is the set's size: within 12%% of the four's median height (%.1f units)" % med, not off,
+          {c: round(v["h"], 1) for c, v in heads.items() if v})
+
+    # As drawn in Customize, nothing found: no outline in the top 9% of a tile.
+    for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+        pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.mysteryColorsFound = {}; document.querySelectorAll('.app-banner, #pushing-update, #intro-pop, .daily-alert').forEach(n => n.remove());
+          showCustomize('character'); await wait(800);
+          document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot').forEach(x => x.remove());
+          const s = document.querySelector('.avatarchar-option.is-silhouette');
+          if(s) s.scrollIntoView({ block: 'center', behavior: 'instant' }); }""")
+        for _ in range(60):
+            n = pg.evaluate("() => [...document.querySelectorAll('.avatarchar-option.is-silhouette')].map(o => !!o.querySelector('.char-flip-play img') || !o.classList.contains('char-flip'))")
+            if n and all(n):
+                break
+            pg.wait_for_timeout(500)
+        pg.wait_for_timeout(400)
+        tiles = pg.evaluate("""() => [...document.querySelectorAll('.avatarchar-option.is-silhouette')].map(o => {
+          const b = o.getBoundingClientRect(); return { id: (o.title || ''), box: [b.left, b.top, b.width, b.height],
+            flip: !!o.querySelector('.char-flip-play img') }; })""")
+        shot = _Im.open(_io.BytesIO(pg.screenshot())).convert("RGB")
+        ctx.close()
+        tops = {}
+        for t in tiles:
+            x, y, tw, th = t["box"]
+            crop = shot.crop((int(x * dpr), int(y * dpr), int((x + tw) * dpr), int((y + th) * dpr)))
+            W, H = crop.size
+            px = crop.load()
+            top = None
+            for yy in range(0, int(H * .5)):
+                for xx in range(int(W * .08), int(W * .92)):
+                    r_, g_, b_ = px[xx, yy]
+                    if (r_ + g_ + b_) / 3 >= 110 and max(r_, g_, b_) - min(r_, g_, b_) <= 24:
+                        top = yy / H
+                        break
+                if top is not None:
+                    break
+            tops[t["id"]] = round(top, 3) if top is not None else None
+        bad = {k: v for k, v in tops.items() if v is None or v < 0.09}
+        check(f"{dev}: Customize shows the four secrets as silhouettes", len(tiles) == 4, [t["id"] for t in tiles])
+        check(f"{dev}: no silhouette's outline is in the top 9% of its tile (cut off at the top)", len(tiles) == 4 and not bad, tops)
 
 
 CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -13213,7 +13422,7 @@ CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeou
     .observe(ov, { attributes: true, attributeFilter: ['class'] });
   /* sampled from inside the page every 90ms until the flash, so a loaded
      machine cannot skip the beat between two Playwright calls */
-  while(ov.isConnected && !ov.classList.contains('supernova-burst') && performance.now() - t0 < 20000){
+  while(ov.isConnected && !ov.classList.contains('supernova-burst') && performance.now() - t0 < 32000){
     const orb = ov.querySelector('.rank-before .rank-orbit');
     const slot = ov.querySelector('.rank-before .rank-orbit-slot');
     const wipe = ov.querySelector('.rank-before .rank-litwipe');
@@ -13277,9 +13486,13 @@ CUTSPIN_UNDER = """() => { const ov = document.getElementById('supernova-cutscen
         const st = document.elementsFromPoint(cx, cy);
         const iD = st.findIndex(e => e === d || d.contains(e)), iB = st.findIndex(e => e === b || b.contains(e));
         let op = 1; for(let e = b; e && e !== wrap; e = e.parentElement) op *= +getComputedStyle(e).opacity;
-        out.push({ side, bubble: b.dataset.rankTier, order: iB >= 0 && (iD < 0 || iB < iD), glass: +op.toFixed(3),
+        /* the evolution round: at speed the bubbles melt into light, and
+           the secret flares under them must melt at least as far - never
+           a flare sharper than the glass it is under */
+        let opD = 1; for(let e = d; e && e !== wrap; e = e.parentElement) opD *= +getComputedStyle(e).opacity;
+        out.push({ side, bubble: b.dataset.rankTier, order: iB >= 0 && (iD < 0 || iB < iD), glass: +op.toFixed(3), dot: +opD.toFixed(3),
           stack: (iB < 0 || iD < iB) ? st.slice(0, 6).map(e => e.tagName + '.' + String(e.getAttribute('class') || '').split(' ').slice(0, 2).join('.')) : undefined,
-          ok: iB >= 0 && (iD < 0 || iB < iD) && op >= .99 }); }); }); });
+          ok: iB >= 0 && (iD < 0 || iB < iD) && (op >= .99 || opD <= op + .02) }); }); }); });
   return out; }"""
 
 
@@ -13317,17 +13530,14 @@ def check_b317_cutspin(br):
         check("%s: dark while it speeds up - neither lit nor lighting before the top speed" % label,
               len(pre) >= 3 and not any(x["lit"] or (x["wipeR"] or 0) > 0 for x in pre), len(pre))
         acc = (ev["lightAt"] or 0) - (ev["spinAt"] or 0)
-        check("%s: the speeding-up lasts ~4.5s (3.5s or more)" % label,
-              ev["spinAt"] is not None and ev["lightAt"] is not None and acc >= 3500, round(acc))
-        radii = [x["wipeR"] for x in sm if x["wipeR"] is not None and x["wipeR"] == x["wipeR"]]
-        check("%s: at the top speed it lights from its middle outward, not in one step" % label,
-              (len({round(v) for v in radii if 2 < v < 98}) >= 1 or len(radii) >= 1) and radii == sorted(radii), radii)
+        check("%s: the speeding-up lasts ~5.6s (4.5s or more)" % label,
+              ev["spinAt"] is not None and ev["lightAt"] is not None and acc >= 4500, round(acc))
         check("%s: fully lit while it slows, before it stops" % label,
               ev["litAt"] is not None and ev["restAt"] is not None and ev["lightAt"] <= ev["litAt"] <= ev["restAt"] + 60, ev)
         dec = (ev["restAt"] or 0) - (ev["lightAt"] or 0)
         pause = (ev["burstAt"] or 0) - (ev["restAt"] or 0)
-        check("%s: it slows for ~2s, then holds still ~0.5s before the flash" % label,
-              dec >= 1500 and 420 <= pause <= 1500, (round(dec), round(pause)))
+        check("%s: it slows slowly (~4.4s), then charges up (~1.7s) before the flash" % label,
+              dec >= 3500 and 1200 <= pause <= 2800, (round(dec), round(pause)))
         sec = ev.get("secret") or {}
         check("%s: the secret flares are in the scene, under the glass bubbles, seen through them" % label,
               sec.get("dots", 0) >= 3 and sec.get("under") and sec.get("glass") not in (None, "none"), sec)
@@ -13354,20 +13564,20 @@ def check_b317_cutspin(br):
         pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
         pg.evaluate("()=>playTierCutscene('vanguard', {from:'veteran', onDone(){}})")
         t, n, bad, pops, burst_at, igs = 0.0, 0, [], [], None, []
-        for i in range(1, 316):
+        for i in range(1, 540):
             t0 = t; t = i / 30
             pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000)))
             pg.evaluate(CUTSPIN_SEEK, t)
-            if i < 90:
+            if i < 150:
                 continue
-            if i > 300:
+            if i > 470:
                 if burst_at is None and pg.evaluate("() => !!document.querySelector('#supernova-cutscene.supernova-burst')"): burst_at = i
                 continue
             ph = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene'); if(!o) return [false, false, null];
-              const lp = o.querySelector('.rank-litpop'), sl = o.querySelector('.rank-before .rank-orbit-slot.is-igniting');
+              const lp = o.querySelector('.rank-bang:not(.is-big)'), sl = o.querySelector('.rank-before .rank-orbit-slot.is-igniting');
               const pool = sl ? getComputedStyle(sl, '::before') : null;
               return [!!lp, o.classList.contains('supernova-burst'), {
-                parts: lp ? lp.children.length : null, ring: lp ? getComputedStyle(lp, '::after').borderTopWidth : null,
+                parts: lp ? [...lp.children].map(c => c.className).sort().join(',') : null,
                 pool: pool ? (pool.content === 'none' ? 0 : +pool.opacity) : 0 }]; }""")
             if ph[0]: pops.append(i)
             if ph[2]: igs.append((i, ph[2]))
@@ -13377,10 +13587,10 @@ def check_b317_cutspin(br):
                 if not x["ok"]:
                     bad.append((i, x))
         ctx.close()
-        check("%s: every frame of the whirl, a secret flare on a big bubble is UNDER its whole glass" % label,
+        check("%s: every frame of the whirl, a secret flare on a big bubble is UNDER its glass (and never sharper than it)" % label,
               n >= 10 and not bad, (n, len(bad), bad[:2]))
-        check("%s: the new flare flashes for about a second as it lights, and the big flash still comes on time" % label,
-              27 <= len(pops) <= 40 and burst_at is not None and 290 <= burst_at <= 305 and pops[-1] < burst_at,
+        check("%s: the mini-bang goes off for about a second at the top speed, and the big flash comes on time (~17s)" % label,
+              25 <= len(pops) <= 60 and burst_at is not None and 495 <= burst_at <= 525 and pops[-1] < burst_at,
               (len(pops), pops[:1], burst_at))
         # Round five: "the pulse coming off the new flare mid spin is not the
         # best". One ignition: a bloom, one halo and ONE shockwave ring on
@@ -13389,10 +13599,10 @@ def check_b317_cutspin(br):
         # second of flash. Fails on 03cd1d7 (two rings, and the pool stayed
         # through the slow-down).
         during = [x for i_, x in igs if x["parts"] is not None]
-        check("%s: the ignition is one bloom with one shockwave ring, nothing flung off, and no pool of colour outlasting it" % label,
-              len(during) >= 20 and all(x["parts"] == 1 and x["ring"] not in (None, "0px") for x in during)
+        check("%s: the bang is one burst - a core, a ring and a glow, nothing flung off - and no pool of colour stays on the flare" % label,
+              len(during) >= 20 and all(x["parts"] == "rb-core,rb-glow,rb-ring" for x in during)
               and all(x["pool"] < .02 for i_, x in igs),
-              (len(during), [x for x in during if x["parts"] != 1][:1], max([x["pool"] for i_, x in igs], default=None)))
+              (len(during), [x for x in during if x["parts"] != "rb-core,rb-glow,rb-ring"][:1], max([x["pool"] for i_, x in igs], default=None)))
 
     # Round five: "there's like a flare floating across the screen?" The
     # outro must hold the planet system still while it fades, and the bridge
@@ -13404,10 +13614,10 @@ def check_b317_cutspin(br):
     pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
     pg.evaluate("()=>playTierCutscene('vanguard', {from:'veteran', onDone(){}})")
     t, boxes, pools, titles = 0.0, [], [], []
-    # up to 25s: the scene ends near 19s, and a loaded machine can resolve
-    # the whirl's `finished` late (the fallback fires at 12s) - the loop
-    # stops as soon as the bridge has come and gone
-    for i in range(1, 750):
+    # up to 33s: the scene ends near 25s, and a loaded machine can resolve
+    # the whirl's `finished` late (the fallback fires 2.5s after the whirl)
+    # - the loop stops as soon as the bridge has come and gone
+    for i in range(1, 1000):
         t0 = t; t = i / 30
         pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000)))
         pg.evaluate(CUTSPIN_SEEK, t)
@@ -13622,7 +13832,7 @@ def check_b317_supernova(br):
     check("by the title the new planet is scarred and its rings are orange",
           bool(at_set) and (at_set["scar"] or 0) > .95 and at_set["orange"], at_set)
     total = (marks.get("gone") or 0) / 30
-    check("about the old length - ~21-25s from the first frame to the hand-back", 20 <= total <= 25.5, round(total, 1))
+    check("about the length it should be - ~24-29s from the first frame to the hand-back (the evolution round put the attention and the whirl in front)", 24 <= total <= 29.5, round(total, 1))
     check("it ends with Supernova reached and the ring tier seen as 'supernova' (Home will not draw the rings on again)",
           end[1] is True and end[2] == "supernova", end)
 
@@ -13819,22 +14029,26 @@ def check_b317_planet(br):
         check("smaller and dimmer behind, larger and brighter in front", False, "no behind/front phases")
     # taps: in front; behind but round the limb; behind on the disc (the planet)
     def tap_at(t):
-        pg.evaluate("() => document.querySelectorAll('#contextual-info-popup,.rs-spot,.scene-bridge,.daily-alert,#tour-overlay').forEach(n => n.remove())")
+        pg.evaluate("() => { document.querySelectorAll('#contextual-info-popup,.rs-spot,.scene-bridge,.daily-alert,#tour-overlay').forEach(n => n.remove()); try{ homeCaptionHide(document.querySelector('#stage .panel.home')); }catch(e){} document.querySelectorAll('#stage .home-caption > .hc-item').forEach(n => n.remove()); }")
         pg.evaluate(PLANET_STEP, t)
         g = pg.evaluate(GEN)
         top = pg.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y); return e ? ((e.id ? '#' + e.id + ' ' : '') + (e.getAttribute('class') || e.tagName)).slice(0, 60) : null; }", [g["x"], g["y"]])
         pg.mouse.click(g["x"], g["y"])
         txt = ""
+        # the answer: the caption under the planet (b317-rings2), or the
+        # box it replaced on an older build
         for _ in range(60):     # a loaded machine can take seconds to open it
             pg.wait_for_timeout(100)
-            txt = pg.evaluate("() => { const p = document.getElementById('contextual-info-popup'); return p ? p.textContent : ''; }")
+            txt = pg.evaluate("""() => { const c = document.querySelector('#stage .home-caption > .hc-item.is-in, #stage .home-caption > .hc-item:not(.is-out)');
+              if(c) return c.textContent; const p = document.getElementById('contextual-info-popup'); return p ? p.textContent : ''; }""")
             if txt: break
         return txt or ("(nothing; on top: %s)" % top)
     off_behind = [(t, g) for t, g in rows if not g["onDisc"] and g["iS"] < 0 and g["iF"] >= 0 and g["w"] < (front[0][1]["w"] if front else 0) * .9]
     taps = []
     if front: taps.append(("front", "Worldheart", tap_at(front[len(front) // 2][0])))
     if off_behind: taps.append(("behind, round the limb", "Worldheart", tap_at(off_behind[len(off_behind) // 2][0])))
-    if behind: taps.append(("behind, on the disc: the planet", ".....", tap_at(behind[len(behind) // 2][0])))
+    if behind: taps.append(("behind, on the disc: the planet", "Your system" if pg.evaluate("() => typeof homeCaptionShow === 'function'") else ".....",
+                            tap_at(behind[len(behind) // 2][0])))
     check("taps: in front it answers; behind, round the limb, it answers; on the disc the planet answers",
           len(taps) == 3 and all(want in got for _, want, got in taps), [(w, got[:24]) for w, _, got in taps])
     ctx.close()
@@ -14050,6 +14264,187 @@ def check_b317_cutend(br):
         check("Reduce motion, %s: the new planet in its colour, its flare lit%s, from the first frame - and the title" %
               (label, ", scarred with orange rings" if tier == "titan" else ""), ok_look,
               look and {k: look[k] for k in ("after", "lit", "accent")})
+
+
+EVOLVE_ST = """([tier]) => { const o = document.getElementById('supernova-cutscene'); if(!o) return null;
+  const ob = o.getBoundingClientRect();
+  const rect = el => { if(!el) return null; const r = el.getBoundingClientRect(); return [r.left + r.width / 2 - ob.left, r.top + r.height / 2 - ob.top, r.width]; };
+  const nb = o.querySelector('.rank-before .cosmic-icon-badge[data-rank-tier="' + tier + '"]');
+  const ns = nb && nb.closest('.rank-orbit-slot');
+  const op = sel => { const els = [...o.querySelectorAll(sel)]; return els.length ? Math.max(...els.map(e => +getComputedStyle(e).opacity)) : null; };
+  const other = o.querySelector('.rank-before .rank-orbit-slot:not(.is-attn)');
+  const m = o.querySelector('.rank-before .cosmic-hero-main'), mr = m && m.getBoundingClientRect();
+  const fl = o.querySelector('.supernova-flash'), sp = o.querySelector('.rank-spin');
+  const st = getComputedStyle(o.querySelector('.supernova-stage'));
+  const slotM = ns ? (getComputedStyle(ns).transform.match(/matrix\(([^)]*)\)/) || [, ''])[1].split(',').map(Number) : [];
+  return { c: o.className.split(' '), flare: rect(nb), mid: [ob.width / 2, ob.height / 2],
+    planet: mr ? [mr.left + mr.width / 2 - ob.left, mr.top + mr.height * 162 / 342 - ob.top] : null,
+    attn: !!o.querySelector('.rank-attn.is-attention'), slotShift: slotM.length === 6 ? Math.hypot(slotM[4], slotM[5]) : 0,
+    stageT: st.translate, long: op('.rank-before .rank-trail.is-long'), neu: op('.rank-before .rank-trail.is-new'),
+    ring: op('.rank-before .rank-trail.is-newring'), old: op('.rank-before .rank-trail.is-old'),
+    slotOp: other ? +getComputedStyle(other).opacity : null,
+    bang: rect(o.querySelector('.rank-bang:not(.is-big)')), big: rect(o.querySelector('.rank-bang.is-big')),
+    gather: !!o.querySelector('.rank-gather'), spinScale: sp ? getComputedStyle(sp).scale : null,
+    flash: fl ? (() => { const r = fl.getBoundingClientRect(); return [r.left + r.width / 2 - ob.left, r.top + r.height / 2 - ob.top]; })() : null }; }"""
+
+EVOLVE_CARD = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  document.querySelectorAll('#pushing-update,#intro-pop').forEach(n => n.remove());
+  const out = { card: null };
+  window.playBadgeCaseScene = (units, done) => { setTimeout(done, 20); return {}; };
+  window.playTierCutscene = (k, o) => { setTimeout(() => o && o.onDone && o.onDone(), 20); return {}; };
+  window.playSupernovaCutscene = (o) => { setTimeout(() => o && o.onDone && o.onDone(), 20); return {}; };
+  window.playUnlockSpotlight = (it, n, of, release) => {
+    if(!out.card && it.rankReward){
+      const art = it.art ? it.art() : null;
+      const tiles = art ? [...art.querySelectorAll('.rs-reward-tile')] : [];
+      out.card = { kind: it.kind, parts: (it.parts || [it]).map(p => p.kind),
+        labels: tiles.map(t => (t.querySelector('.rs-reward-kind') || {}).textContent || ''),
+        flareTile: tiles.some(t => t.classList.contains('is-rankflare') && !!t.querySelector('.flare-solo.cosmic-badge-lit')) };
+    }
+    setTimeout(release, 20); return { skip(){}, stop(){} }; };
+  const topics = [...new Set(QUESTIONS.map(q => (q.topic || '').trim()))].filter(Boolean);
+  const t = topics.find(x => x === 'Identity Crimes') || topics[0];
+  store.unitPerfects = {}; store.unitPerfects[t] = Math.max(0, badgeThresholdFor(t) - 1);
+  store.lifetime.points = 30000; store.pendingBadgeUnlocks = [];
+  cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t];
+  order = QUESTIONS.map((q, i) => [q, i]).filter(([q]) => (q.topic || '').trim() === t).map(([, i]) => i);
+  runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null;
+  attempts = {}; picked = {}; timedOutSet = {};
+  order.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+  summarize();
+  for(let i = 0; i < 400 && !document.querySelector('.rs-rewards.rs-done'); i++) await wait(100);
+  out.rank = rankOf(store);
+  return out; }"""
+
+
+def check_b317_evolve(br):
+    """Build 317, the evolution round. Madison: "You know how in Pokemon
+    when someone evolves there is that super cool evolution animation ...
+    make them spin really really fast so all the colors start morphing ...
+    Almost like cars at night when they go fast, like the glow trail ...
+    the blue color (or whatever one is unlocking) gets brighter and
+    brighter during this phase as if it's evolving during the spin ... a
+    small flash of the color.. like bang (think small supernova). Then it
+    slows down slowly ... the massive flash of the color ... needs to be
+    made so it looks like the flash of the color originated from the new
+    flare as if it exploded". Frame-stepped on the page clock (every
+    animation and transition seeked to it), a rank (Platinum) on a phone:
+    - the attention on the new flare as it opens: its glow, its own loop
+      out of the slot, and the camera pushing toward it and back;
+    - the light trails: none at the start, the bubbles solid; at the top
+      speed the rings of light up and the bubbles all but gone;
+    - the new colour taking over its ring, brighter and brighter, with at
+      least two flicks back to its old light before the top;
+    - the mini-bang AT the new flare, at the top speed;
+    - the charge before the flash (the system pulsing, light gathering);
+    - the big flash starting AT the new flare, not the planet's middle;
+    - the scene ~22-26s to the hand-over;
+    - the reward card with a Flare tile, in the order Theme, Flare, ...;
+    - Supernova's blast with soft edges: no border, no blurred shadow on
+      its rings, its dust an image of its own (not the stretched smoke).
+    Written against b6cd249, where all of these fail."""
+    print("\n317v. the evolution: attention, light trails, the new colour, the bang, the charge, the flash from the flare")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("() => { store.supernovaAchieved = false; saveStore(); theme.accent = 'veteran'; applyTheme(); showHome(); document.querySelectorAll('.rs-spot,.daily-alert,#tour-overlay,.update-banner,.toast').forEach(n => n.remove()); }")
+    pg.wait_for_timeout(900)
+    pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+    pg.evaluate("() => { window.__cutDone = null; window.__cutT0 = Date.now(); playTierCutscene('vanguard', { from: 'veteran', onDone(){ window.__cutDone = Date.now(); } }); }")
+    rows, t = [], 0.0
+    for i in range(1, 30 * 32):
+        t_ = t; t = i / 30
+        # every animation to this frame's time FIRST, then the clock: a
+        # timer that reads where something is (the bang reads the flare)
+        # sees this frame, not the last one - 43 degrees at the top speed
+        pg.evaluate(CUTSPIN_SEEK, t)
+        pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
+        pg.evaluate(CUTSPIN_SEEK, t)
+        st = pg.evaluate(EVOLVE_ST, ["vanguard"])
+        rows.append((i, st))
+        if st is None and pg.evaluate("() => window.__cutDone") is not None:
+            break
+    total = pg.evaluate("() => window.__cutDone === null ? null : (window.__cutDone - window.__cutT0) / 1000")
+    ctx.close()
+    first = lambda k: next((i for i, st in rows if st and k in st["c"]), None)
+    spin_at, light_at, rest_at, burst_at = first("is-cutspin"), first("is-cutlight"), first("is-cutrest"), first("supernova-burst")
+    at = lambda i: next((st for j, st in rows if j == i), None)
+    dist = st_ = None
+    def dmid(st):
+        return math.hypot(st["flare"][0] - st["mid"][0], st["flare"][1] - st["mid"][1]) if st and st["flare"] else None
+    pre = [st for i, st in rows if st and spin_at and 36 <= i < spin_at]
+    attn = [st for st in pre if st["attn"]]
+    bw = (pre[0]["flare"][2] if pre and pre[0]["flare"] else 40) or 40
+    after = [st for i, st in rows if st and spin_at and spin_at + 3 <= i <= spin_at + 30]
+    check("attention: as the scene opens the new flare is singled out - its glow on, and it loops out of its slot and back",
+          len(attn) >= 60 and max([st["slotShift"] for st in attn] or [0]) > .4 * bw and bool(after) and not any(st["attn"] for st in after),
+          (len(attn), round(max([st["slotShift"] for st in attn] or [0]), 1), round(bw, 1)))
+    d_mid = [dmid(st) for i, st in rows if st and spin_at and 70 <= i <= 125]
+    d_after = dmid(at(spin_at - 1)) if spin_at else None
+    moved = [st["stageT"] for st in attn if st["stageT"] not in ("none", "0px", "0px 0px")]
+    check("attention: the camera pushes in toward it and eases back before the whirl",
+          bool(d_mid) and d_after is not None and min(d_mid) < .9 * d_after and len(moved) >= 30
+          and (at(spin_at + 2) or {}).get("stageT") in ("none", "0px", "0px 0px"),
+          (d_mid and round(min(d_mid)), d_after and round(d_after), len(moved)))
+    s0 = at((spin_at or 0) + 1)
+    sl = at(light_at) if light_at else None
+    check("the light trails: none as the whirl starts, the bubbles solid; at the top speed rings of light, the bubbles all but gone",
+          bool(s0 and sl) and (s0["long"] or 0) < .05 and (s0["slotOp"] or 0) > .95 and (sl["long"] or 0) > .85 and (sl["slotOp"] or 1) < .15,
+          s0 and sl and ((s0["long"], s0["slotOp"]), (sl["long"], sl["slotOp"])))
+    acc = (light_at - spin_at) if (spin_at and light_at) else 0
+    rv = lambda f: (at(spin_at + int(acc * f)) or {}).get("ring") or 0
+    check("the new colour takes over its ring - brighter and brighter through the speeding-up",
+          acc > 100 and rv(.4) < rv(.75) < rv(.97) and rv(.97) > .7, acc and (round(rv(.4), 2), round(rv(.75), 2), round(rv(.97), 2)))
+    neu = [(i, st["neu"] or 0, st["old"] or 0) for i, st in rows if st and spin_at and light_at and spin_at < i < light_at]
+    dips = [k for k in range(1, len(neu) - 1) if neu[k][1] < neu[k - 1][1] - .02 and neu[k][1] <= neu[k + 1][1] and neu[k][2] > .5]
+    check("back and forth: at least two flicks from the new colour to the old light before the top",
+          len(dips) >= 2, [neu[k][0] for k in dips])
+    bang_at = next((i for i, st in rows if st and st["bang"]), None)
+    bst = at(bang_at) if bang_at else None
+    check("the mini-bang: at the top speed, AT the new flare",
+          bool(bst and bst["flare"]) and light_at is not None and abs(bang_at - light_at) <= 2
+          and math.hypot(bst["bang"][0] - bst["flare"][0], bst["bang"][1] - bst["flare"][1]) <= .6 * bst["flare"][2],
+          bst and (bang_at, light_at, [round(v) for v in bst["bang"][:2]], [round(v) for v in bst["flare"][:2]]))
+    win = [st for i, st in rows if st and rest_at and burst_at and rest_at < i < burst_at]
+    scales = {st["spinScale"] for st in win if st["spinScale"] not in (None, "none")}
+    check("the charge before the flash: the system pulses, light gathering into the flare",
+          len(scales) >= 6 and any(st["gather"] for st in win) and max([float(v.split()[0]) for v in scales] or [1]) > 1.03,
+          (len(win), len(scales), any(st["gather"] for st in win)))
+    fb = at(burst_at) if burst_at else None
+    check("the big flash starts AT the new flare (it goes off), not at the planet's middle",
+          bool(fb and fb["flash"] and fb["flare"] and fb["planet"]) and math.hypot(fb["flash"][0] - fb["flare"][0], fb["flash"][1] - fb["flare"][1]) <= 6
+          and math.hypot(fb["flash"][0] - fb["planet"][0], fb["flash"][1] - fb["planet"][1]) >= 30 and fb["big"] is not None,
+          fb and ([round(v) for v in fb["flash"]], fb["flare"] and [round(v) for v in fb["flare"][:2]], fb["planet"] and [round(v) for v in fb["planet"]]))
+    check("longer, and it earns it: ~22-26s from the first frame to the hand-over", total is not None and 22 <= total <= 26.5, total)
+
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    card = pg.evaluate(EVOLVE_CARD)
+    ctx.close()
+    cd = card.get("card") or {}
+    check("the rank-up reward card shows the flare: Theme, then Flare, then the rest - the lit bubble as its tile",
+          cd.get("kind") == "rankrewards" and cd.get("parts", [])[:2] == ["theme", "rankflare"] and cd.get("labels", [])[:2] == ["Theme", "Flare"] and cd.get("flareTile"),
+          (card.get("rank"), cd))
+
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("() => { store.supernovaAchieved = false; saveStore(); theme.accent = 'elite'; applyTheme(); showHome(); }")
+    pg.wait_for_timeout(900)
+    pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+    pg.evaluate("() => playSupernovaCutscene({ from: 'elite', onDone(){} })")
+    t, det, edge = 0.0, None, None
+    for i in range(1, 30 * 26):
+        t_ = t; t = i / 30
+        pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
+        pg.evaluate(CUTSPIN_SEEK, t)
+        if det is None and pg.evaluate("() => !!document.querySelector('#supernova-cutscene.sn-detonate')"):
+            det = i
+        if det is not None and i - det == 6:
+            edge = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene');
+              const sh = [...o.querySelectorAll('.sn-shock')].map(e => { const c = getComputedStyle(e); return [c.borderTopWidth, c.boxShadow]; });
+              const d = o.querySelector('.sn-dust'), dc = d && getComputedStyle(d);
+              return { shocks: sh, dustMask: dc ? (dc.webkitMaskImage || dc.maskImage || 'none') : null, dustBg: dc ? dc.backgroundImage.slice(0, 22) : null }; }""")
+            break
+    ctx.close()
+    check("Supernova's blast has soft edges: its shock rings have no border and no blurred shadow, its dust is an image of its own",
+          bool(edge) and len(edge["shocks"]) >= 2 and all(b == "0px" and sh == "none" for b, sh in edge["shocks"])
+          and edge["dustMask"] in ("none", None) and (edge["dustBg"] or "").startswith("url("), edge)
 
 
 SPECIAL_CHARS = ["lunar", "solar", "tempest", "frost", "oracle", "inferno",
@@ -14404,8 +14799,15 @@ def check_b317_hundobox(br):
 
     # --- the UFO's beams (round 3): "the UFO's projection is shown before
     # it's shot out of the UFO and it doesn't hit the bottom of the box".
-    # Every UFO layer is paused and seeked to fixed moments, so the reads do
-    # not depend on how loaded the machine is.
+    # And round 4: "Could the UFO hundo effect last another 2-3 seconds
+    # somehow? It's so cool I want it to be longer" - 2.5s ADDED to it: it
+    # circles the screen once before it comes down, sweeps the box with its
+    # beam before it lands, and charges and goes with a boom; the grab is
+    # untouched, 2s later. Every UFO layer (CSS and script) is paused and
+    # seeked to fixed moments, so the reads do not depend on how loaded the
+    # machine is. The beam checks read the page's own timeline (the long
+    # one when its total says so), so they still mean the same thing on the
+    # build before round 4; the round 4 checks fail there.
     for label, w, h in (PHONE, TABLET):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         pg.evaluate("() => { " + RUN100 + " }")
@@ -14417,22 +14819,33 @@ def check_b317_hundobox(br):
           for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(50);
           if(!window.__fxAt) return null;
           await wait(400);
+          const long = HUNDO_FX_TOTAL.ufo > 9000, A = long ? 1.1 : 0, B = long ? 2 : 0;
           const g = document.querySelector('.rs-screen .rs-grade');
           const anims = () => document.getAnimations().filter(a => { const e = a.effect && a.effect.target; return e && e.closest && e.closest('.hfx-layer.hfx-ufo, .hfx-box.hfx-ufo'); });
           const seek = t => anims().forEach(a => { try{ a.pause(); a.currentTime = t * 1000; }catch(e){} });
           const op = el => { let o = 1; for(let e = el; e && e !== document.body; e = e.parentElement) o *= +getComputedStyle(e).opacity; return o; };
-          const R = el => { const b = el.getBoundingClientRect(); return { t: b.top, b: b.bottom, h: b.height, o: op(el) }; };
-          const sy = el => { const m = getComputedStyle(el).transform.match(/matrix\(([^)]+)\)/); if(!m) return 1; const v = m[1].split(',').map(Number); return Math.hypot(v[2], v[3]); };
+          const R = el => { if(!el) return null; const b = el.getBoundingClientRect(); return { t: b.top, b: b.bottom, h: b.height, cx: b.left + b.width / 2, cy: b.top + b.height / 2, o: op(el) }; };
+          const sy = el => { const m = getComputedStyle(el).transform.match(/matrix\\(([^)]+)\\)/); if(!m) return 1; const v = m[1].split(',').map(Number); return Math.hypot(v[2], v[3]); };
           const beam = document.querySelector('.hfx-saucer:not(.is-mini) > .hfx-ufo-beam'), inb = document.querySelector('.hfx-ufo-inbeam');
+          const body = document.querySelector('.hfx-saucer:not(.is-mini) .hfx-ufo-body');
           const search = [...document.querySelectorAll('.hfx-ufo-search')];
-          const out = { has: !!(beam && inb), nsearch: search.length, samples: [], ghosts: document.querySelectorAll('.hfx-ufo-ghost').length };
+          const gh = document.querySelector('.hfx-ufo-ghost'), ghs = gh && getComputedStyle(gh);
+          const out = { long, A, B, total: HUNDO_FX_TOTAL.ufo, tail: HUNDO_FX_TAIL_AT.ufo, has: !!(beam && inb), nsearch: search.length, samples: [],
+            ghosts: document.querySelectorAll('.hfx-ufo-ghost').length,
+            ghost: ghs ? { dur: ghs.animationDuration, ease: ghs.animationTimingFunction, name: ghs.animationName } : null };
           if(!out.has) return out;
-          const ts = [1.03, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.45, 2.55];
-          for(let t = 2.6; t <= 2.92; t += .02) ts.push(+t.toFixed(2));
-          ts.push(3.3, 4.7, 5.8, 6.25);
-          for(const t of ts){ seek(t); await new Promise(r => requestAnimationFrame(() => r()));
+          const pre = [1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.45, 2.55]; if(long) pre.push(2.8, 3.05, 3.3, 3.5, 3.62);
+          const ts = [1.03].concat(pre);
+          for(let t = 2.6; t <= 2.92; t += .02) ts.push(+(t + A).toFixed(2));
+          ts.push(+(3.3 + (long ? 1.9 : 0)).toFixed(2), +(4.7 + B).toFixed(2), +(5.8 + B).toFixed(2), +(6.25 + B).toFixed(2));
+          /* round 4's moments: the circle, the sweep, the charge, the boom */
+          for(let t = 1.4; t <= 2.96; t += .05) ts.push(+t.toFixed(2));
+          ts.push(4.2, 4.33, 4.47, 4.56, 4.65, 4.74, 4.83, 4.96, 5.1, 8.4, 8.62, 8.95);
+          const uniq = [...new Set(ts)].sort((a, b) => a - b);
+          for(const t of uniq){ seek(t); await new Promise(r => requestAnimationFrame(() => r()));
             const gb = g.getBoundingClientRect();
-            out.samples.push({ t, box: { t: gb.top, b: gb.bottom }, beam: R(beam), inb: R(inb),
+            out.samples.push({ t, box: { t: gb.top, b: gb.bottom, cx: gb.left + gb.width / 2, w: gb.width }, beam: R(beam), inb: R(inb), body: R(body),
+              charge: R(document.querySelector('.hfx-ufo-charge')), flash: R(document.querySelector('.hfx-ufo-flash')), boom: R(document.querySelector('.hfx-ufo-boom')),
               search: search.map(e => Object.assign(R(e), { sy: sy(e) })) }); }
           return out; }""")
         ctx.close()
@@ -14441,29 +14854,105 @@ def check_b317_hundobox(br):
             check("%s: a real 100%% played the UFO, with its beams" % tag, False, u)
             continue
         S = {x["t"]: x for x in u["samples"]}
-        shown = lambda q: q["o"] > .02 and q["h"] > 1.5
-        pre = [S[t] for t in (1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.45, 2.55)]
-        check("%s: no beam before it is fired - neither the saucer's nor the box's shows from 1.3s to 2.55s" % tag,
+        A, B = u["A"], u["B"]
+        at = lambda t: S[round(t, 2)]
+        shown = lambda q: bool(q) and q["o"] > .02 and q["h"] > 1.5
+        pre = [S[t] for t in (1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.45, 2.55) + ((2.8, 3.05, 3.3, 3.5, 3.62) if u["long"] else ())]
+        last = pre[-1]["t"]
+        check("%s: no beam before it is fired - neither the saucer's nor the box's shows from 1.3s to %.2fs" % (tag, last),
               all(not shown(x["beam"]) and not shown(x["inb"]) for x in pre), [(x["t"], x["beam"], x["inb"]) for x in pre if shown(x["beam"]) or shown(x["inb"])])
         s0 = S[1.03]["search"]
         check("%s: the searchlights are shot OUT of the hull - switching on short (scaleY under .4), not already at full length" % tag,
               len(s0) == 2 and all(q["o"] > 0 and q["sy"] < .4 for q in s0), s0)
         check("%s: and they never reach the box - the beam is the only light that touches it - and are gone before it fires" % tag,
-              all(q["o"] < .02 or q["b"] <= x["box"]["t"] + 1 for x in pre for q in x["search"]) and all(q["o"] < .02 for q in S[2.55]["search"]),
+              all(q["o"] < .02 or q["b"] <= x["box"]["t"] + 1 for x in pre for q in x["search"]) and all(q["o"] < .02 for q in S[last]["search"]),
               [(x["t"], round(q["b"]), round(x["box"]["t"]), round(q["o"], 2)) for x in pre for q in x["search"] if q["o"] >= .02 and q["b"] > x["box"]["t"] + 1])
-        fire = [x for x in u["samples"] if 2.6 <= x["t"] <= 2.92]
+        fire = [x for x in u["samples"] if 2.6 + A - .001 <= x["t"] <= 2.92 + A + .001]
         check("%s: the box's beam shows only once the saucer's has reached the box's top edge" % tag,
               all(not shown(x["inb"]) or x["beam"]["b"] >= x["box"]["t"] - 1 for x in fire) and any(shown(x["inb"]) for x in fire),
               [(x["t"], round(x["beam"]["b"]), round(x["box"]["t"]), round(x["inb"]["o"], 2), round(x["inb"]["h"])) for x in fire])
-        feet = {t: round(S[t]["beam"]["b"] - S[t]["box"]["t"], 1) for t in (3.3, 4.7, 5.8)}
+        hv, ld, lf, gn = at(3.3 + (1.9 if u["long"] else 0)), at(4.7 + B), at(5.8 + B), at(6.25 + B)
+        feet = {x["t"]: round(x["beam"]["b"] - x["box"]["t"], 1) for x in (hv, ld, lf)}
         check("%s: the saucer's beam meets the box's top edge (0-10px into it) hovering, landed and lifting off" % tag,
-              all(0 <= v <= 10 for v in feet.values()) and all(shown(S[t]["beam"]) for t in (3.3, 4.7, 5.8)), feet)
-        x = S[3.3]
+              all(0 <= v <= 10 for v in feet.values()) and all(shown(x["beam"]) for x in (hv, ld, lf)), feet)
         check("%s: the box's beam runs down to the box's bottom edge (within 4px)" % tag,
-              shown(x["inb"]) and abs(x["inb"]["b"] - x["box"]["b"]) <= 4 and x["inb"]["t"] <= x["box"]["t"] + 2,
-              {"inbeam": [round(x["inb"]["t"]), round(x["inb"]["b"])], "box": [round(x["box"]["t"]), round(x["box"]["b"])]})
-        check("%s: both beams are gone once it has lifted off (6.25s), and the grab is still there (its two halves)" % tag,
-              not shown(S[6.25]["beam"]) and not shown(S[6.25]["inb"]) and u.get("ghosts") == 2, [S[6.25]["beam"], S[6.25]["inb"], u.get("ghosts")])
+              shown(hv["inb"]) and abs(hv["inb"]["b"] - hv["box"]["b"]) <= 4 and hv["inb"]["t"] <= hv["box"]["t"] + 2,
+              {"t": hv["t"], "inbeam": [round(hv["inb"]["t"]), round(hv["inb"]["b"])], "box": [round(hv["box"]["t"]), round(hv["box"]["b"])]})
+        check("%s: both beams are gone once it has lifted off (%.2fs), and the grab is still there (its two halves)" % (tag, gn["t"]),
+              not shown(gn["beam"]) and not shown(gn["inb"]) and u.get("ghosts") == 2, [gn["beam"], gn["inb"], u.get("ghosts")])
+        gh = u.get("ghost") or {}
+        check("%s: the grab itself is untouched - the 100%% goes up the beam in the same 0.6s on the same curve" % tag,
+              gh.get("name") == "hfx-ufo-ghost" and gh.get("dur") == "0.6s" and gh.get("ease") == "cubic-bezier(0.35, 0.1, 0.6, 1)", gh)
+        # round 4
+        check("%s: it lasts 2-3s longer than its 8.6s (now %.1fs), and its tail starts where the saucer has gone" % (tag, u["total"] / 1000),
+              10600 <= u["total"] <= 11600 and u["total"] - 2000 <= u["tail"] <= u["total"] - 1200, [u["total"], u["tail"]])
+        orb = [S[t] for t in sorted(S) if 1.4 - 1e-6 <= t <= 2.96 and S[t]["body"] and S[t]["body"]["o"] > .5]
+        import math
+        xs = [x["body"]["cx"] - x["box"]["cx"] for x in orb]; ys = [x["body"]["cy"] for x in orb]
+        sweep_deg = 0.0
+        if len(orb) > 4:
+            mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
+            angs = [math.atan2(y - my, x - mx) for x, y in zip(xs, ys)]
+            for a0, a1 in zip(angs, angs[1:]):
+                d = a1 - a0
+                while d > math.pi: d -= 2 * math.pi
+                while d < -math.pi: d += 2 * math.pi
+                sweep_deg += d
+            sweep_deg = abs(math.degrees(sweep_deg))
+        check("%s: it circles the screen once before it comes down - round its circle (%.0f degrees from 1.4s to 2.95s), out to both sides, above the box" % (tag, sweep_deg),
+              len(orb) > 20 and sweep_deg >= 300 and min(xs) < -w * .12 and max(xs) > w * .12 and max(ys) < orb[0]["box"]["t"] - 40,
+              {"n": len(orb), "deg": round(sweep_deg), "x": [round(min(xs or [0])), round(max(xs or [0]))], "yMax": round(max(ys or [0])), "boxTop": round(orb[0]["box"]["t"]) if orb else None})
+        sw = [S[t] for t in (4.2, 4.33, 4.47, 4.56, 4.65, 4.74, 4.83, 4.96, 5.1)]
+        dx = [round(x["beam"]["cx"] - x["box"]["cx"]) for x in sw]
+        gap = [round(abs(x["inb"]["cx"] - x["beam"]["cx"]), 1) for x in sw]
+        bw = sw[0]["box"]["w"]
+        check("%s: before it lands its beam sweeps across the box and back - out to both sides of it - with the box's beam moving as one with it, its foot on the box's top edge" % tag,
+              min(dx) <= -bw * .15 and max(dx) >= bw * .15 and abs(dx[0]) <= 2 and abs(dx[-1]) <= 2 and max(gap) <= 4
+              and all(shown(x["beam"]) and shown(x["inb"]) and 0 <= x["beam"]["b"] - x["box"]["t"] <= 10 for x in sw),
+              {"beamX": dx, "inbeamGap": gap, "boxW": round(bw)})
+        c8, f8, g8 = S[8.4], S[8.62], S[8.95]
+        check("%s: it gathers itself before it goes (a light swelling under the hull at 8.4s), then breaks away with a boom - a flash and a ring thrown out - and is gone by 8.95s" % tag,
+              bool(c8["charge"]) and c8["charge"]["o"] > .5 and bool(f8["flash"]) and f8["flash"]["o"] > .3 and bool(f8["boom"]) and f8["boom"]["o"] > .3
+              and (not g8["body"] or g8["body"]["o"] < .02),
+              {"charge": c8["charge"] and round(c8["charge"]["o"], 2), "flash": f8["flash"] and round(f8["flash"]["o"], 2), "boom": f8["boom"] and round(f8["boom"]["o"], 2),
+               "gone": g8["body"] and round(g8["body"]["o"], 2)})
+    # and the results flow waits for all of it: the first scene comes after
+    # the saucer has gone (8.91s), not 2.3s in, nor at the old 7s tail
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    # the flow's fixture is a 141-hundo account and the UFO is 350's: it is
+    # simply held to be earned, so the run plays it
+    pg.evaluate("() => { const r = hundoFxEarned; window.hundoFxEarned = id => id === 'ufo' || r(id); }")
+    fl = pg.evaluate(B317_FLOW_RUN, {"fx": "ufo", "badge": True, "caseMs": 1500})
+    tl = pg.evaluate("() => HUNDO_FX_TAIL_AT.ufo")
+    ctx.close()
+    ev = fl.get("ev") or {}
+    g2 = (ev.get("case") or 0) - (ev.get("hfx") or 0)
+    check("ufo: a 100%% that earns a badge - the badge case waits for the whole UFO: after the saucer has gone (>= 9s) and at its tail (>= %dms - 0.5s)" % tl,
+          not fl.get("threw") and ev.get("hfx") is not None and ev.get("case") is not None and g2 >= 9000 and g2 >= tl - 500,
+          [ev.get("hfx"), ev.get("case"), g2, tl, fl.get("threw")])
+
+    # --- the Fireworks sky's backing (round 4): "make the Fireworks canvas
+    # cheaper without changing its look". On a 3x phone it is backed at
+    # 1.5x, not 2x - its commit was Fireworks' one extra cost - and it is
+    # still drawing.
+    ctx, pg = booted(br, PHONE[1], PHONE[2], seed=USED_ACCOUNT, dpr=3)
+    pg.evaluate("() => { " + RUN100 + " }")
+    sky = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      store.lifetime.perfectTests = 600; store.hundoFx = 'fireworks'; theme.reduceMotion = false; theme.muteBanners = true; saveStore();
+      window.__fxAt = 0; const real = playHundoFx; window.playHundoFx = function(a, b){ window.__fxAt = performance.now(); return real(a, b); };
+      showHome(); await wait(200); __run100('Identity Crimes');
+      for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(50);
+      await wait(1800);
+      const cv = document.querySelector('.hfx-layer.hfx-fireworks canvas.hfx-fw-sky'), g = document.querySelector('.rs-screen .rs-grade');
+      if(!cv || !g) return null;
+      const cr = cv.getBoundingClientRect(), gr = g.getBoundingClientRect();
+      const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+      let lit = 0; for(let i = 3; i < d.length; i += 4 * 7) if(d[i] > 60) lit++;
+      return { dpr: devicePixelRatio, w: cv.width, h: cv.height, cssW: cr.width, cssH: cr.height, bottom: cr.bottom, boxTop: gr.top, lit }; }""")
+    ctx.close()
+    k = (sky or {}).get("w", 0) / max(1, (sky or {}).get("cssW", 1))
+    check("iPhone 17 Pro Max at 3x, fireworks: the sky canvas is backed at 1.5x its size, not 2x (%.2fx) - and it is drawing" % k,
+          sky and sky["dpr"] == 3 and abs(k - 1.5) < .02 and abs(sky["h"] / sky["cssH"] - 1.5) < .02 and sky["lit"] > 200, sky)
 
 def check_b317_tabplate(br):
     """Build 317. "They got a smidge smaller so let's ensure they are still a
@@ -15020,204 +15509,409 @@ def check_b317_rings(br):
         ctx.close()
 
 
+# Build 317, round three: Home's taps answer in one caption under the
+# planet, and every tapped thing answers with its own effect.
+HOMETAP_PREP = """async (opts) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  opts = opts || {};
+  /* Gold reached (so bubbles both lit and not), Redshift and Accretion found,
+     Afterglow not (level 40, its window is 47-49: "next"); every rank-up and
+     unlock already seen */
+  const rule = TIER_UNLOCKS.veteran, U = topicsIn(QUESTIONS); store.unitPerfects = store.unitPerfects || {};
+  U.slice(0, rule.badges).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+  store.lifetime = store.lifetime || {}; let n = 0;
+  while(levelOf(store) < rule.level && n++ < 4000) store.lifetime.points = (store.lifetime.points || 0) + 2000;
+  store.mysteryColorsFound = { red: true, orange: true, yellow: false, violet: false, white: false, core: false };
+  store.supernovaAchieved = false; store.pendingSupernovaCutscene = false; store.pendingTierCutscene = null;
+  store.rankFloor = 0; store.rankMapFx244 = true; store.rankMapSeen = 9; store.savedCodeSaved = true; saveStore();
+  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); }catch(e){}
+  try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); }catch(e){}
+  theme.reduceMotion = !!opts.rm; if(opts.rm) document.documentElement.dataset.reduceMotion = 'true'; else delete document.documentElement.dataset.reduceMotion;
+  showHome(); scrollTo(0, 0); await wait(900); document.querySelectorAll('.rs-spot, .daily-alert').forEach(x => x.remove());
+  /* where to tap a thing NOW; a secret flare only once it is clear of the glass */
+  window.__tapAt = (what) => { const H = document.querySelector('.screen-home-actual .cosmic-hero-wrap'); let el = null;
+    if(what.startsWith('bubble:')) el = H.querySelector('.cosmic-badge-rank[data-rank-tier="' + what.slice(7) + '"]');
+    if(what.startsWith('flare:')) el = H.querySelector('[data-flare="' + what.slice(6) + '"]');
+    if(what === 'planet'){ el = H.querySelector('.cosmic-hero-main circle[style*="cursor"]'); const r = el.getBoundingClientRect(); return [r.left + r.width * .36, r.top + r.height * .62, true]; }
+    if(!el) return null; const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+    const top = document.elementFromPoint(x, y); return [x, y, !!(top && (top === el || el.contains(top)))]; };
+  return { rank: rankOf(store), level: levelOf(store) }; }"""
+
+# What a tap left: the caption, the effects on the thing, and nothing else.
+HOMETAP_READ = """(what) => { const H = document.querySelector('.screen-home-actual .cosmic-hero-wrap'), P = H.closest('.panel');
+  let el = null;
+  if(what.startsWith('bubble:')) el = H.querySelector('.cosmic-badge-rank[data-rank-tier="' + what.slice(7) + '"]');
+  if(what.startsWith('flare:')) el = H.querySelector('[data-flare="' + what.slice(6) + '"]');
+  const kfHas = (a, prop) => { try{ return a.effect.getKeyframes().some(k => k[prop] !== undefined); }catch(e){ return false; } };
+  const mine = el ? el.getAnimations().filter(a => !(window.CSSAnimation && a instanceof CSSAnimation)) : [];
+  const told = el && el.querySelector(':scope > .cosmic-badge-told');
+  const cof = el && el.querySelector(':scope > .cof-told');
+  const items = [...document.querySelectorAll('.home-caption > .hc-item')];
+  const it = items.find(i => !i.classList.contains('is-out'));
+  const c = it ? it.getBoundingClientRect() : null;
+  /* the system's floor under the caption, from the geometry (rings by their radius, bubbles by their layout box + float) */
+  const main = H.querySelector(':scope > svg.cosmic-hero-main'), SR = main.getBoundingClientRect(), u = SR.width / 360, HR = H.getBoundingClientRect();
+  let R = 0; H.querySelectorAll('.cosmic-orbit-ring[r]').forEach(x => R = Math.max(R, +x.getAttribute('r') || 0));
+  const dot = H.querySelector('.cosmic-hero-orbitlayer .cosmic-flare-dot');
+  let floor = SR.top + (150 + R + 12) * u + (dot ? dot.offsetWidth / 2 : 0);
+  if(c) H.querySelectorAll(':scope > .cosmic-icon-badge').forEach(b => { const x = HR.left + b.offsetLeft, half = b.offsetWidth / 2;
+    if(x + half > c.left && x - half < c.right) floor = Math.max(floor, HR.top + b.offsetTop + half + 7); });
+  const g = P.querySelector(':scope > .homegreeting').getBoundingClientRect();
+  return { items: items.length, out: items.filter(i => i.classList.contains('is-out')).length,
+    name: it ? (it.querySelector('.hc-name') || {}).firstChild?.textContent || '' : null,
+    state: it ? (it.querySelector('.hc-state') || {}).textContent || '' : null,
+    text: it ? (it.querySelector('.hc-text') || {}).textContent || '' : null,
+    kind: it ? [...it.classList].filter(k => /^is-(held|locked|found|unfound|planet)$/.test(k)).join('') : null,
+    cover: [...P.classList].filter(k => k.startsWith('hc-')).join(' '),
+    box: c ? [Math.round(c.left * 10) / 10, Math.round(c.top * 10) / 10, Math.round(c.right * 10) / 10, Math.round(c.bottom * 10) / 10] : null,
+    centreOff: c ? Math.round(Math.abs((c.left + c.right) / 2 - (HR.left + HR.width / 2)) * 10) / 10 : null,
+    floor: Math.round(floor * 10) / 10, greetTop: Math.round(g.top * 10) / 10,
+    popups: document.querySelectorAll('#contextual-info-popup, #contextual-info-line, #contextual-info-line-dot, #contextual-info-follow, .is-ring').length,
+    shake: mine.filter(a => kfHas(a, 'translate')).length, press: mine.filter(a => kfHas(a, 'scale')).length,
+    dim: !!(el && (el.querySelector(':scope > .cosmic-badge-dim') && (el.querySelector(':scope > .cosmic-badge-dim').getAnimations().length || el.querySelector(':scope > .cosmic-badge-dim.is-still')) || mine.some(a => kfHas(a, 'opacity')) || el.classList.contains('is-dim-still'))),
+    light: told ? told.getAnimations().length : 0, lightStill: !!(told && told.classList.contains('is-still')),
+    halo: H.querySelectorAll(':scope > .cosmic-bubble-halo').length,
+    sparks: cof ? [...cof.children].filter(b => b.getAnimations().length).length : 0, cofStill: !!(cof && cof.classList.contains('is-still')) }; }"""
+
+HOMETAP_LAY = """() => ['.screen-home-actual > .homegreeting', '.screen-home-actual > .hometitle-wrap', '#nextbtn', '.screen-home-actual .cosmic-hero-wrap']
+  .map(q => { const e = document.querySelector(q); if(!e) return null; const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)]; })"""
+
+
+def _hometap(pg, what, wait=160):
+    """A real tap at the thing's live position (pointerdown, then click). A
+    secret flare is waited for until it is clear of the glass."""
+    xy = None
+    for _ in range(60):
+        xy = pg.evaluate("(w) => window.__tapAt(w)", what)
+        if not xy or xy[2]:
+            break
+        pg.wait_for_timeout(250)
+    if xy:
+        pg.mouse.click(xy[0], xy[1])
+    pg.wait_for_timeout(wait)
+    return pg.evaluate(HOMETAP_READ, what)
+
+
 def check_b317_hometaps(br):
-    """Build 317. "I like what happens when you click the secret flares. Can
-    the large flares do the same? I also think the same could go for the
-    large planet, improve what happens when you click." Real clicks at the
-    real positions: a rank bubble answers like a secret flare (a box that
-    follows it, the ring round it - sized to the bubble - the flare's name,
-    and a light inside the glass), held and locked worded apart; a secret
-    flare still does what it did; the planet keeps its "....." and gains a
-    touch (press, ripple, halo, rings, a surge of the flare rings) that is
-    all overlay - no filter, no layout shift, one box however often it is
-    tapped; Reduce motion keeps a still answer and drops the motion. Written
-    against 1888b11, where a bubble said "Bronze rank - reached. Its flare
-    is lit." from a box that stayed put and the planet only said "....."."""
-    print("\n317t. Home taps: a rank bubble answers like a secret flare; the planet answers the touch")
+    """Build 317, round three. "I like the clicking flare effects ... Make
+    them all smooth ... Ensure the locked ones (not yet unlocked) [don't do
+    that] ... Make the secret flare do a tiny effect ... maybe all the locked
+    stuff does the same effect, like a tiny shake ... those pops take away
+    from the interactiveness. Could the pops with the words be moved ...
+    above the 'good evening' but also below the ring and centered? So maybe
+    now it doesn't get circled when clicking them, the effect would tell
+    you that you clicked it."
+
+    Real taps at the live positions on both reference devices. Each target
+    answers in ONE caption between the planet system and the greeting
+    (centred on the planet, clear of the rings and bubbles, clear of the
+    greeting), with no box, pointer line or ring anywhere; a held rank
+    lights, presses and lets a halo go and does not shake; a locked rank and
+    an unfound secret flare shake and dip and never light; a found secret
+    flare swells and throws sparks; the planet keeps planetTapFx and its
+    surge and says where you stand, then what is next; the effect and the
+    words land on the pointerdown itself; a second tap carries the light on
+    from where it is; a quick second planet tap leaves the first ripple
+    running; a new answer crossfades over the last; the caption goes after a
+    few seconds; nothing in the layout moves; Reduce motion answers still.
+    Written against 336c444, where every tap opened a box that followed the
+    target with a ring round it, a locked bubble lit up like a held one,
+    nothing shook, and a second tap cut the light off."""
+    print("\n317t. Home taps: one caption under the planet; held lights, locked shakes, found sparkles")
     for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         pg.add_style_tag(content=".rs-spot, .daily-alert{ display:none !important; }")
-        prep = """async (rm) => { const wait = ms => new Promise(r => setTimeout(r, ms));
-          /* Gold reached, so there are bubbles both lit and not; every rank-up already seen */
-          const rule = TIER_UNLOCKS.veteran, U = topicsIn(QUESTIONS); store.unitPerfects = store.unitPerfects || {};
-          U.slice(0, rule.badges).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
-          store.lifetime = store.lifetime || {}; let n = 0;
-          while(levelOf(store) < rule.level && n++ < 4000) store.lifetime.points = (store.lifetime.points || 0) + 2000;
-          store.supernovaAchieved = false; store.pendingSupernovaCutscene = false; store.pendingTierCutscene = null;
-          store.rankFloor = 0; store.rankMapFx244 = true; store.rankMapSeen = 9; store.savedCodeSaved = true; saveStore();
-          try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); }catch(e){}
-          try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); }catch(e){}
-          theme.reduceMotion = !!rm; if(rm) document.documentElement.dataset.reduceMotion = 'true'; else delete document.documentElement.dataset.reduceMotion;
-          showHome(); await wait(900); document.querySelectorAll('.rs-spot').forEach(x => x.remove());
-          const box = el => { if(!el) return null; const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.width]; };
-          const H = '.screen-home-actual .cosmic-hero-wrap';
-          return { lit: box(document.querySelector(H + ' .cosmic-badge-rank.cosmic-badge-lit')),
-                   litTier: (document.querySelector(H + ' .cosmic-badge-rank.cosmic-badge-lit') || {dataset:{}}).dataset.rankTier,
-                   dark: box(document.querySelector(H + ' .cosmic-badge-rank:not(.cosmic-badge-lit)')),
-                   darkTier: (document.querySelector(H + ' .cosmic-badge-rank:not(.cosmic-badge-lit)') || {dataset:{}}).dataset.rankTier,
-                   sphere: box(document.querySelector(H + ' .cosmic-hero-main circle[style*="cursor"]')) }; }"""
-        told = """(tier) => { const b = document.querySelector('.screen-home-actual .cosmic-badge-rank[data-rank-tier="' + tier + '"]');
-          const p = document.getElementById('contextual-info-popup'), d = document.getElementById('contextual-info-line-dot');
-          const t = b && b.querySelector('.cosmic-badge-told');
-          return { text: p ? p.textContent : null, ring: !!(d && d.classList.contains('is-ring')), ringW: d ? parseFloat(d.style.width) || 0 : 0,
-            bubbleW: b ? b.getBoundingClientRect().width : 0, follows: !!(showContextualInfo._follow && document.getElementById('contextual-info-follow') && document.getElementById('contextual-info-follow').contains(document.getElementById('contextual-info-popup'))),
-            told: !!t, toldMoving: t ? t.getAnimations().length : 0, toldOp: t ? +getComputedStyle(t).opacity : 0, toldStill: !!(t && t.classList.contains('is-still')),
-            flare: (typeof ACCENT_DISPLAY_NAME !== 'undefined' ? ACCENT_DISPLAY_NAME[tier] : ''), rank: RANK_DISPLAY_NAME[tier] }; }"""
-        lay = """() => ['.screen-home-actual .homegreeting', '#nextbtn', '.screen-home-actual .cosmic-hero-wrap'].map(q => { const e = document.querySelector(q); if(!e) return null; const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)]; })"""
-        fxs = """() => { const fx = document.querySelector('.screen-home-actual .cosmic-tapfx'); const p = document.getElementById('contextual-info-popup');
-          const kids = fx ? [...fx.querySelectorAll('*')] : [];
+        r0 = pg.evaluate(HOMETAP_PREP, {})
+        before = pg.evaluate(HOMETAP_LAY)
+        HL = _hometap(pg, "bubble:veteran")
+        pg.wait_for_timeout(700)
+        LK = _hometap(pg, "bubble:adept")
+        pg.wait_for_timeout(700)
+        FF = _hometap(pg, "flare:red")
+        pg.wait_for_timeout(700)
+        UF = _hometap(pg, "flare:yellow")
+        pg.wait_for_timeout(700)
+        PL = _hometap(pg, "planet")
+        PL.update(pg.evaluate("""() => { const fx = document.querySelector('.screen-home-actual .cosmic-tapfx'); const kids = fx ? [...fx.querySelectorAll('*')] : [];
           const surge = [...document.querySelectorAll('.screen-home-actual .cosmic-hero-orbitlayer')].map(l => l.getAnimations().filter(a => !(window.CSSAnimation && a instanceof CSSAnimation) && a.effect.getKeyframes().some(k => k.rotate !== undefined)).length);
-          return { boxes: document.querySelectorAll('.screen-home-actual .cosmic-tapfx').length, text: p ? p.textContent : null,
-            moving: kids.reduce((n, k) => n + k.getAnimations().length, 0), filtered: kids.filter(k => { const f = getComputedStyle(k).filter; return f && f !== 'none'; }).length,
-            still: !!(fx && fx.classList.contains('is-still')), surge,
-            pe: fx ? getComputedStyle(fx).pointerEvents : null }; }"""
-        r0 = pg.evaluate(prep, False)
-        out = {}
-        if r0.get("lit"):
-            pg.mouse.click(r0["lit"][0], r0["lit"][1]); pg.wait_for_timeout(250)
-            out["lit"] = pg.evaluate(told, r0["litTier"])
-        pg.wait_for_timeout(4500)
-        if r0.get("dark"):
-            pg.mouse.click(r0["dark"][0], r0["dark"][1]); pg.wait_for_timeout(250)
-            out["dark"] = pg.evaluate(told, r0["darkTier"])
-        pg.wait_for_timeout(4500)
-        # a secret flare still answers as it did
-        fl = pg.evaluate("""() => { const d = [...document.querySelectorAll('.screen-home-actual .cosmic-hero-orbitlayer .cosmic-flare-dot')]
-            .map(e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })
-            .filter(([x, y]) => { const t = document.elementFromPoint(x, y); return t && t.closest && t.closest('.cosmic-flare-dot'); }); return d[0] || null; }""")
-        if fl:
-            pg.mouse.click(fl[0], fl[1]); pg.wait_for_timeout(250)
-            out["flare"] = pg.evaluate("""() => { const p = document.getElementById('contextual-info-popup'), d = document.getElementById('contextual-info-line-dot');
-              return { text: p ? p.textContent : null, ring: !!(d && d.classList.contains('is-ring')), follows: !!(showContextualInfo._follow && document.getElementById('contextual-info-follow') && document.getElementById('contextual-info-follow').contains(document.getElementById('contextual-info-popup'))) }; }""")
-        pg.wait_for_timeout(4500)
-        before = pg.evaluate(lay)
-        sp = r0.get("sphere") or [0, 0, 0]
-        tap = (sp[0] - sp[2] * .18, sp[1] + sp[2] * .2)
-        pg.mouse.click(*tap); pg.wait_for_timeout(200)
-        out["planet"] = pg.evaluate(fxs)
-        # "the line pointing at goes to the center, do it from the bottom or top edge"
-        out["aim"] = pg.evaluate("""() => { const s = document.querySelector('.screen-home-actual .cosmic-hero-main circle[style*="cursor"]').getBoundingClientRect();
-          const d = document.getElementById('contextual-info-line-dot').getBoundingClientRect(), p = document.getElementById('contextual-info-popup').getBoundingClientRect();
-          const below = p.top > s.top + s.height / 2, dx = d.left + d.width / 2, dy = d.top + d.height / 2;
-          return { below, offX: +(dx - (s.left + s.width / 2)).toFixed(2), offEdge: +(dy - (below ? s.bottom : s.top)).toFixed(2), offCentre: +(dy - (s.top + s.height / 2)).toFixed(2) }; }""")
-        out["during"] = pg.evaluate(lay)
-        for _ in range(3):
-            pg.mouse.click(*tap); pg.wait_for_timeout(120)
-        out["again"] = pg.evaluate(fxs)
-        pg.wait_for_timeout(1500)
-        out["after"] = pg.evaluate(lay)
-        # Reduce motion: still answers, nothing moves
-        r1 = pg.evaluate(prep, True)
-        sp = r1.get("sphere") or [0, 0, 0]
-        pg.mouse.click(sp[0] - sp[2] * .18, sp[1] + sp[2] * .2); pg.wait_for_timeout(200)
-        out["rmPlanet"] = pg.evaluate(fxs)
-        pg.wait_for_timeout(3500)
-        if r1.get("lit"):
-            pg.mouse.click(r1["lit"][0], r1["lit"][1]); pg.wait_for_timeout(250)
-            out["rmLit"] = pg.evaluate(told, r1["litTier"])
+          return { fxMoving: kids.reduce((n, k) => n + k.getAnimations().length, 0), fxFiltered: kids.filter(k => { const f = getComputedStyle(k).filter; return f && f !== 'none'; }).length, surge }; }"""))
+        pg.wait_for_timeout(250)
+        PL2 = _hometap(pg, "planet", 120)
+        PL2["ripples"] = pg.evaluate("() => [...document.querySelectorAll('.screen-home-actual .cosmic-tapfx .tfx-ripple')].filter(e => e.getAnimations().length).length")
+        during = pg.evaluate(HOMETAP_LAY)
+        # the light carries on from where it is when the same bubble is tapped again
+        chain = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          const b = document.querySelector('.screen-home-actual .cosmic-badge-rank[data-rank-tier="veteran"]'); const r = b.getBoundingClientRect();
+          const down = () => b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, isPrimary: true, pointerType: 'touch', clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
+          down();
+          /* on the pointerdown alone, in the same task, the words are there */
+          const it = document.querySelector('.home-caption > .hc-item.is-in');
+          const captionOnDown = !!(it && /Gold flare/.test(it.textContent));
+          /* ...and so is the light: its animation exists in the same task.
+             Its opacity is then read 220ms into the ANIMATION, not 220ms
+             of wall clock - an animation only starts on the next frame,
+             and on a loaded box that frame came 250-500ms late on both
+             devices, which read as "no light" (o1 0) on a build whose
+             light was fine. */
+          const t = b.querySelector(':scope > .cosmic-badge-told');
+          const an = t ? t.getAnimations().find(a => a.playState === 'running') : null;
+          const lightOnDown = !!an;
+          if(an){ await Promise.race([an.ready, wait(3000)]); }
+          await wait(220);
+          const o1 = t ? +getComputedStyle(t).opacity : -1;
+          down(); const t2 = b.querySelector(':scope > .cosmic-badge-told'); const o2 = t2 ? +getComputedStyle(t2).opacity : -1;
+          return { o1, o2, same: t === t2, captionOnDown, lightOnDown }; }""")
+        # a new answer crossfades over the last
+        xf = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          const tap = (sel) => { const b = document.querySelector(sel); b.dispatchEvent(new MouseEvent('click', { bubbles: true })); };
+          tap('.screen-home-actual .cosmic-badge-rank[data-rank-tier="vanguard"]'); await wait(400);
+          tap('.screen-home-actual .cosmic-badge-rank[data-rank-tier="elite"]'); await wait(60);
+          const items = [...document.querySelectorAll('.home-caption > .hc-item')];
+          const nw = items.find(i => !i.classList.contains('is-out'));
+          return { n: items.length, out: items.filter(i => i.classList.contains('is-out')).length, live: (nw || {}).textContent || '',
+            behind: nw ? parseFloat(getComputedStyle(nw).transitionDelay) > 0 : false }; }""")
+        pg.wait_for_timeout(7600)
+        gone = pg.evaluate("() => ({ items: document.querySelectorAll('.home-caption > .hc-item').length, cover: [...document.querySelector('.panel.home.screen-home-actual').classList].filter(k => k.startsWith('hc-')) })")
+        after = pg.evaluate(HOMETAP_LAY)
+
+        check(dev + ": the fixture holds Gold at level 40", r0.get("rank") == "veteran" and r0.get("level") == 40, r0)
+        def inslot(X):
+            return (X.get("box") is not None and X["box"][1] >= X["floor"] - .5 and X["box"][3] <= X["greetTop"] + .5
+                    and X.get("centreOff") is not None and X["centreOff"] <= 1.5 and X.get("cover") == "")
+        for X, label in ((HL, "a held rank"), (LK, "a locked rank"), (FF, "a found secret flare"), (UF, "an unfound secret flare"), (PL, "the planet")):
+            check(dev + ": " + label + " answers in the caption between the planet system and the greeting, centred, and nothing else pops up",
+                  inslot(X) and X.get("popups") == 0, X)
+        check(dev + ": a held rank says its flare, what it is and when it was lit - and lights, presses and lets a halo go, no shake",
+              HL.get("kind") == "is-held" and HL.get("name") == "Gold flare" and HL.get("state") == "Lit"
+              and "A sun that makes its own light." in (HL.get("text") or "") and "Lit when you reached Gold rank." in (HL.get("text") or "")
+              and HL.get("light", 0) >= 1 and HL.get("press", 0) >= 1 and HL.get("halo", 0) >= 1 and HL.get("shake") == 0, HL)
+        check(dev + ": a locked rank says what reaching it takes and what is left - and shakes and dips, never lights",
+              LK.get("kind") == "is-locked" and LK.get("name") == "Sapphire flare" and LK.get("state") == "Locked"
+              and "Reach level 60 and earn 9 badges to light it." in (LK.get("text") or "") and "20 more levels and 4 more badges to go." in (LK.get("text") or "")
+              and LK.get("shake", 0) >= 1 and LK.get("dim") and LK.get("light") == 0 and LK.get("press") == 0, LK)
+        check(dev + ": a found secret flare names itself in its colour and sparkles - a swell, a ring and sparks, no shake",
+              FF.get("kind") == "is-found" and FF.get("name") == "Redshift" and FF.get("state") == "Secret flare"
+              and FF.get("press", 0) >= 1 and FF.get("sparks", 0) >= 3 and FF.get("shake") == 0, FF)
+        check(dev + ": an unfound secret flare hints without its name - and shakes like every locked thing, no sparkle",
+              UF.get("kind") == "is-unfound" and UF.get("name") == "Secret flare" and UF.get("state") == "Not found"
+              and "Afterglow" not in (UF.get("text") or "") and "Not out yet." in (UF.get("text") or "")
+              and UF.get("shake", 0) >= 1 and UF.get("dim") and UF.get("sparks") == 0 and UF.get("press") == 0, UF)
+        check(dev + ": the planet keeps its touch (press, ripple, halo, rings, both flare rings surge, no filter) and says where you stand",
+              PL.get("kind") == "is-planet" and PL.get("name") == "Your system" and (PL.get("text") or "").startswith("Gold rank, level 40, 5 badges.")
+              and PL.get("fxMoving", 0) >= 4 and PL.get("fxFiltered") == 0 and len(PL.get("surge") or []) == 2 and all(n >= 1 for n in PL.get("surge") or [0]), PL)
+        check(dev + ": tapped again it says what is next, and the first ripple is still running beside the second",
+              (PL2.get("text") or "").startswith("Next: Platinum rank.") and PL2.get("ripples", 0) >= 2, PL2)
+        check(dev + ": the light lands on the pointerdown with the words, and a second tap carries it on from where it is",
+              chain.get("captionOnDown") and chain.get("lightOnDown") and chain.get("same") and chain.get("o1", 0) > .3 and abs(chain.get("o2", 9) - chain.get("o1", -9)) < .06, chain)
+        check(dev + ": a new answer fades through the last (one leaving, one arriving a beat behind it)",
+              xf.get("n") == 2 and xf.get("out") == 1 and xf.get("behind") and "Amethyst flare" in xf.get("live", ""), xf)
+        check(dev + ": the caption goes after a few seconds, and nothing in the layout moved at any point while it came and went",
+              (HL.get("items") or 0) >= 1 and (xf.get("n") or 0) >= 1 and gone.get("items") == 0 and not gone.get("cover")
+              and before == during == after, [gone, before, during, after])
+        # Reduce motion: still answers, no motion
+        pg.evaluate(HOMETAP_PREP, {"rm": True})
+        RL = _hometap(pg, "bubble:adept")
+        RH = _hometap(pg, "bubble:veteran")
+        RF = _hometap(pg, "flare:red")
+        RP = _hometap(pg, "planet")
+        RP.update(pg.evaluate("""() => { const fx = document.querySelector('.screen-home-actual .cosmic-tapfx');
+          return { still: !!(fx && fx.classList.contains('is-still')), surge: [...document.querySelectorAll('.screen-home-actual .cosmic-hero-orbitlayer')].map(l => l.getAnimations().filter(a => !(window.CSSAnimation && a instanceof CSSAnimation)).length) }; }"""))
         pg.evaluate("() => { theme.reduceMotion = false; delete document.documentElement.dataset.reduceMotion; }")
-        L, D, F, P, A, RP, RL = (out.get(k) or {} for k in ("lit", "dark", "flare", "planet", "again", "rmPlanet", "rmLit"))
-        check(dev + ": the fixture has a lit and an unlit rank bubble", bool(r0.get("lit")) and bool(r0.get("dark")), r0)
-        check(dev + ": a held bubble answers like a secret flare - its flare named, a box that follows it, the ring round the whole bubble, a light in the glass",
-              (L.get("text") or "").startswith((L.get("flare") or "?") + " flare.") and "Lit since you reached " + (L.get("rank") or "?") + " rank" in (L.get("text") or "")
-              and L.get("ring") and L.get("ringW", 0) >= L.get("bubbleW", 99) and L.get("follows") and L.get("told") and L.get("toldMoving", 0) >= 1, L)
-        check(dev + ": a locked bubble says what lights it, in the same way",
-              (D.get("text") or "").startswith((D.get("flare") or "?") + " flare.")
-              and ("Reach " + (D.get("rank") or "?") + " rank to light it" in (D.get("text") or "") or "ready to reach" in (D.get("text") or ""))
-              and D.get("ring") and D.get("follows") and D.get("told"), D)
-        check(dev + ": a secret flare still answers as it did (its own words, the ring, following)",
-              ("found" in (F.get("text") or "") or "secret flare" in (F.get("text") or "")) and F.get("ring") and F.get("follows"), F)
-        check(dev + ": the planet keeps its \".....\" and answers the touch - press, ripple, halo, rings, and the flare rings surge",
-              (P.get("text") or "").strip() == "....." and P.get("boxes") == 1 and P.get("moving", 0) >= 4 and P.get("pe") == "none"
-              and len(P.get("surge") or []) == 2 and all(n >= 1 for n in P.get("surge") or [0]), P)
-        AM = out.get("aim") or {}
-        check(dev + ": the planet's pointer ends on the rim facing its box (top or bottom edge), not at the centre",
-              abs(AM.get("offX", 9)) < 1.5 and abs(AM.get("offEdge", 9)) < 1.5 and abs(AM.get("offCentre", 0)) > 20, AM)
-        check(dev + ": all of it overlay: no filter, nothing moves on the screen, one box however often it is tapped",
-              P.get("filtered") == 0 and before == out.get("during") == out.get("after") and A.get("boxes") == 1 and A.get("moving", 99) <= 5
-              and all(n == 1 for n in A.get("surge") or [0]), [before, out.get("during"), out.get("after"), A])
-        check(dev + ": Reduce motion: the planet still answers, held still, and nothing surges",
-              (RP.get("text") or "").strip() == "....." and RP.get("still") and RP.get("moving") == 0 and all(n == 0 for n in RP.get("surge") or [1]), RP)
-        check(dev + ": Reduce motion: a bubble's light is still and visible",
-              RL.get("told") and RL.get("toldStill") and RL.get("toldMoving") == 0 and RL.get("toldOp", 0) > .3 and RL.get("ring"), RL)
+        check(dev + ": Reduce motion: a locked rank dips, still, with its caption - no shake",
+              RL.get("shake") == 0 and RL.get("dim") and RL.get("light") == 0 and "Reach level 60" in (RL.get("text") or ""), RL)
+        check(dev + ": Reduce motion: a held rank's light shows still, no press, no halo",
+              RH.get("lightStill") and RH.get("light") == 0 and RH.get("press") == 0 and RH.get("halo") == 0 and RH.get("name") == "Gold flare", RH)
+        check(dev + ": Reduce motion: a found flare's ring shows still, no swell, no sparks",
+              RF.get("cofStill") and RF.get("press") == 0 and RF.get("sparks") == 0 and RF.get("name") == "Redshift", RF)
+        check(dev + ": Reduce motion: the planet answers still, nothing surges, and the caption says where you stand",
+              RP.get("still") and all(n == 0 for n in RP.get("surge") or [1]) and (RP.get("text") or "").startswith("Gold rank"), RP)
         ctx.close()
 
 
-def check_b317_followglide(br):
-    """Build 317. "The things pop up when clicking the flares they slightly
-    shake." A flare and a rank bubble move on the compositor (the orbit's
-    spin, a bubble's float); the box that follows them was moved from a
-    requestAnimationFrame loop that MEASURED the target and wrote left/top
-    and a rounded translate - so any frame the main thread did not get to
-    (a busy phone drops them all the time) left the box where it was while
-    the flare went on, and the next one caught it up with a jump.
-
-    Frame-stepped: every animation paused and set from the frame number, the
-    page left to run its frame callbacks on two frames in four and not on
-    the other two (a main thread that misses frames), and for 120 frames the
-    box's and its ring's offset from the target is measured. Fixed when the
-    offset never moves by 0.5px from one frame to the next. Fails on
-    e877af7 (the box lags on every missed frame and jumps on the next)."""
-    print("\n317g. a box that follows a flare glides with it, missed frames or not")
-    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+def check_b317_caption_fit(br):
+    """Build 317, round three: the caption fits wherever Home is. On a 320px
+    phone, an SE (375x667), the 17 Pro Max (440x956) and an iPad Pro 11"
+    (834x1194), and the 17 Pro Max in a Safari tab, every kind of answer
+    (the longest words are a locked Supernova) sits inside the screen,
+    clear of everything the planet system draws under it, clear of Start
+    Studying, the chat button, the daily question and the tab bar, and
+    clear of the greeting and the title unless they have faded out under
+    it - and the greeting, the title and the button never move. Fails on
+    336c444, which has no caption."""
+    print("\n317f. the Home caption fits on 320, 375, 440 and 834")
+    for (w, h, dev) in ((320, 568, "320 phone"), (375, 667, "SE 2nd/3rd"), (440, 956, "17 Pro Max"), (440, 846, "17 Pro Max in Safari"), (834, 1194, "iPad Pro 11")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         pg.add_style_tag(content=".rs-spot, .daily-alert{ display:none !important; }")
-        pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
-          const rule = TIER_UNLOCKS.veteran, U = topicsIn(QUESTIONS); store.unitPerfects = store.unitPerfects || {};
-          U.slice(0, rule.badges).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
-          store.lifetime = store.lifetime || {}; let n = 0;
-          while(levelOf(store) < rule.level && n++ < 4000) store.lifetime.points = (store.lifetime.points || 0) + 2000;
-          store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: true, white: true };
-          store.supernovaAchieved = false; store.pendingSupernovaCutscene = false; store.pendingTierCutscene = null;
-          store.rankFloor = 0; store.rankMapFx244 = true; store.rankMapSeen = 9; store.savedCodeSaved = true;
-          try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); }catch(e){}
-          try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); }catch(e){}
-          saveStore(); showHome(); await wait(1200); document.querySelectorAll('.rs-spot').forEach(x => x.remove()); }""")
-        res = {}
-        for what in ("innerFlare", "floatingBubble"):
-            xy = pg.evaluate("""(what) => { const H = '.screen-home-actual .cosmic-hero-wrap'; let el = null;
-              if(what === 'innerFlare') el = [...document.querySelectorAll(H + ' .cosmic-hero-orbitlayer-inner .cosmic-flare-dot')].find(e => {
-                const r = e.getBoundingClientRect(); const t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return t && t.closest && t.closest('.cosmic-flare-dot') === e; });
-              else el = [...document.querySelectorAll(H + ' .cosmic-badge-rank')].find(b => /cosmic-float/.test(getComputedStyle(b).animationName));
-              if(!el) return null; window.__tgt = el; const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }""", what)
-            if not xy:
-                res[what] = None
+        pg.evaluate(HOMETAP_PREP, {})
+        before = pg.evaluate(HOMETAP_LAY)
+        probs, modes = [], set()
+        for what in ("bubble:veteran", "bubble:titan", "flare:red", "flare:yellow", "planet", "planet"):
+            r = pg.evaluate("""async (what) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+              const H = document.querySelector('.screen-home-actual .cosmic-hero-wrap'); let el = null;
+              if(what.startsWith('bubble:')) el = H.querySelector('.cosmic-badge-rank[data-rank-tier="' + what.slice(7) + '"]');
+              if(what.startsWith('flare:')) el = H.querySelector('[data-flare="' + what.slice(6) + '"]');
+              if(what === 'planet') el = H.querySelector('.cosmic-hero-main circle[style*="cursor"]');
+              el.dispatchEvent(new MouseEvent('click', { bubbles: true })); await wait(80);
+              const it = document.querySelector('.home-caption > .hc-item:not(.is-out)'); if(!it) return null;
+              const P = it.closest('.panel'), c = it.getBoundingClientRect(), HR = H.getBoundingClientRect();
+              const main = H.querySelector(':scope > svg.cosmic-hero-main'), SR = main.getBoundingClientRect(), u = SR.width / 360;
+              let R = 0; H.querySelectorAll('.cosmic-orbit-ring[r]').forEach(x => R = Math.max(R, +x.getAttribute('r') || 0));
+              const dot = H.querySelector('.cosmic-hero-orbitlayer .cosmic-flare-dot');
+              let floor = SR.top + (150 + R + 12) * u + (dot ? dot.offsetWidth / 2 : 0);
+              H.querySelectorAll(':scope > .cosmic-icon-badge').forEach(b => { const x = HR.left + b.offsetLeft, half = b.offsetWidth / 2;
+                if(x + half > c.left && x - half < c.right) floor = Math.max(floor, HR.top + b.offsetTop + half + 7); });
+              const ink = (e) => { if(!e || getComputedStyle(e).display === 'none') return null; const rg = document.createRange(); rg.selectNodeContents(e); const r = rg.getBoundingClientRect(); return r.height ? [r.left, r.top, r.right, r.bottom] : null; };
+              const box = (e) => { if(!e) return null; const cs = getComputedStyle(e); if(cs.display === 'none' || cs.visibility === 'hidden') return null; const r = e.getBoundingClientRect(); return r.width && r.height ? [r.left, r.top, r.right, r.bottom] : null; };
+              const cover = P.className;
+              return { box: [c.left, c.top, c.right, c.bottom], vw: innerWidth, vh: innerHeight, floor, beside: it.classList.contains('is-beside'), hero: [HR.left, HR.top, HR.right, HR.bottom],
+                greet: /hc-over-(greeting|title)/.test(cover) ? null : ink(P.querySelector(':scope > .homegreeting')),
+                title: /hc-over-title/.test(cover) ? null : ink(P.querySelector(':scope > .hometitle-wrap')),
+                fixed: ['#nextbtn', '#chatdock-btn', '.daily-question-fab', '.homeversion', '.bottomtabs:not([hidden])'].map(q => [q, box(document.querySelector(q))]),
+                mode: (it.className.match(/is-(inline|clamped|beside)/g) || []).concat((cover.match(/hc-over-\\w+/g) || [])).join(' ') || 'stack' }; }""", what)
+            if not r:
+                probs.append(what + ": no caption")
                 continue
-            pg.mouse.click(xy[0], xy[1]); pg.wait_for_timeout(300)
-            r = pg.evaluate("""async () => { clearTimeout(showContextualInfo._t);
-              const raf = () => new Promise(res => requestAnimationFrame(() => res()));
-              const base = new Map();
-              const seek = (t) => document.getAnimations().forEach(a => { if(!base.has(a)) base.set(a, (Number(a.currentTime) || 0) - t);
-                a.pause(); try{ a.currentTime = base.get(a) + t; }catch(e){} });
-              const off = () => { const t = window.__tgt, p = document.getElementById('contextual-info-popup'), d = document.getElementById('contextual-info-line-dot');
-                if(!t || !p || !d) return null; const a = t.getBoundingClientRect(), b = p.getBoundingClientRect(), c = d.getBoundingClientRect();
-                const tx = a.left + a.width / 2, ty = a.top + a.height / 2;
-                return [b.left - tx, b.top - ty, c.left + c.width / 2 - tx, c.top + c.height / 2 - ty, tx, ty]; };
-              seek(0); await raf(); await raf();
-              const rows = [];
-              for(let k = 1; k <= 120; k++){
-                seek(k * 1000 / 30);
-                if(k % 4 < 2) { await raf(); await raf(); }
-                rows.push(off());
-              }
-              const ok = rows.filter(Boolean);
-              let pj = 0, mj = 0, mv = 0;
-              for(let k = 1; k < ok.length; k++){
-                pj = Math.max(pj, Math.abs(ok[k][0] - ok[k-1][0]), Math.abs(ok[k][1] - ok[k-1][1]));
-                mj = Math.max(mj, Math.abs(ok[k][2] - ok[k-1][2]), Math.abs(ok[k][3] - ok[k-1][3]));
-                mv = Math.max(mv, Math.hypot(ok[k][4] - ok[0][4], ok[k][5] - ok[0][5]));
-              }
-              document.getAnimations().forEach(a => { try{ a.play(); }catch(e){} });
-              return { n: ok.length, popupJitter: +pj.toFixed(3), ringJitter: +mj.toFixed(3), targetTravel: +mv.toFixed(1) }; }""")
-            res[what] = r
-            pg.evaluate("() => { ['contextual-info-popup', 'contextual-info-line', 'contextual-info-line-dot', 'contextual-info-follow'].forEach(id => document.getElementById(id)?.remove()); }")
-            pg.wait_for_timeout(300)
-        for what in ("innerFlare", "floatingBubble"):
-            r = res.get(what) or {}
-            check(dev + ": the box following " + ("a secret flare on the inner ring" if what == "innerFlare" else "a floating rank bubble")
-                  + " stays on it to within 0.5px every frame, missed frames or not",
-                  r.get("n") == 120 and r.get("targetTravel", 0) > 3 and r.get("popupJitter", 9) < .5 and r.get("ringJitter", 9) < .5, r)
+            modes.add(r["mode"])
+            l, t, rr, b = r["box"]
+            hit = lambda o: o and l < o[2] - .5 and rr > o[0] + .5 and t < o[3] - .5 and b > o[1] + .5
+            if l < -.5 or t < -.5 or rr > r["vw"] + .5 or b > r["vh"] + .5:
+                probs.append(f"{what}: off the screen {[round(v) for v in r['box']]}")
+            if not r["beside"] and t < r["floor"] - .5:
+                probs.append(f"{what}: on the planet system (top {round(t)} < {round(r['floor'])})")
+            if r["beside"] and hit(r["hero"]):
+                probs.append(f"{what}: beside the system but over it")
+            if hit(r["greet"]):
+                probs.append(f"{what}: on the greeting")
+            if hit(r["title"]):
+                probs.append(f"{what}: on the title")
+            for q, o in r["fixed"]:
+                if hit(o):
+                    probs.append(f"{what}: on {q}")
+        after = pg.evaluate(HOMETAP_LAY)
+        check(f"{dev} ({w}x{h}): every answer fits ({', '.join(sorted(modes))}) and nothing moved",
+              not probs and before == after, probs or [before, after])
         ctx.close()
+
+
+NOFLASH_RECT = """() => { const H = '.screen-home-actual .cosmic-hero-wrap'; const out = {};
+  document.querySelectorAll(H + ' > .cosmic-badge-rank').forEach(b => { const r = b.getBoundingClientRect(); out[b.dataset.rankTier] = [r.left, r.top, r.width, r.height]; });
+  return out; }"""
+
+
+def _noflash_lum(pg, cdp, w, h):
+    import base64 as _b64
+    from PIL import Image, ImageDraw, ImageStat
+    rects = pg.evaluate(NOFLASH_RECT)
+    d = _b64.b64decode(cdp.send("Page.captureScreenshot", {"format": "png", "clip": {"x": 0, "y": 0, "width": w, "height": h, "scale": 1}})["data"])
+    im = Image.open(io.BytesIO(d)).convert("L")
+    out = {}
+    for k, (x, y, bw, bh) in rects.items():
+        cr = im.crop((int(x + bw * .12), int(y + bh * .12), int(x + bw * .88), int(y + bh * .88)))
+        m = Image.new("L", cr.size, 0)
+        ImageDraw.Draw(m).ellipse((0, 0, cr.size[0] - 1, cr.size[1] - 1), fill=255)
+        out[k] = ImageStat.Stat(cr, m).mean[0]
+    return out
+
+
+# Every animation paused and set from a virtual clock (seconds): infinite
+# loops share one origin, anything made by element.animate() starts frozen
+# at the virtual moment it was made.
+NOFLASH_SEEK = """(t) => { window.__t0s = window.__t0s || new WeakMap(); window.__vt = t;
+  if(!window.__animPatched){ window.__animPatched = true; const orig = Element.prototype.animate;
+    Element.prototype.animate = function(k, o){ const an = orig.call(this, k, o);
+      try{ an.pause(); window.__t0s.set(an, { at: window.__vt || 0, from: 0, inf: false }); an.currentTime = 0; }catch(e){}
+      return an; }; }
+  document.getAnimations().forEach(an => { let inf = false; try{ inf = an.effect.getTiming().iterations === Infinity; }catch(e){}
+    if(inf && window.__v0 === undefined) window.__v0 = (an.currentTime || 0) - t * 1000;
+    if(!window.__t0s.has(an)) window.__t0s.set(an, { at: t, from: an.currentTime || 0, inf });
+    const s = window.__t0s.get(an); an.pause();
+    try{ an.currentTime = s.inf ? window.__v0 + t * 1000 : s.from + (t - s.at) * 1000; }catch(e){} }); }"""
+
+
+def check_b317_noflash(br):
+    """Build 317, round three: "Make them all smooth, some of the flare seem
+    to be flashing idk why." Found by stepping Home frame by frame (every
+    animation paused and set from a 30fps clock) and reading each rank
+    bubble's brightness off the screen, frame after frame:
+      - a tapped bubble's light went from nothing to full in two frames
+        (an easing on the whole effect front-loads it): +17 levels in one
+        frame;
+      - the box, its line and its ring slid over the NEIGHBOURING bubbles
+        (-58 levels in one frame on Silver, 22 on Platinum);
+      - the Supernova emblem's recorded burst peaked in one frame, every
+        three seconds, in a locked grey bubble (+5.6);
+      - a flip-book sheet that arrives after the still emblem is on screen
+        cut in, up to 12 levels away from the still drawing.
+    Asserted here on the 17 Pro Max: the tapped bubble's light never moves
+    by more than 7 levels between frames, no other bubble by more than 3.5
+    while three things are tapped, Supernova's bubble by no more than 3.5
+    over two whole bursts, and a late sheet crossfades in (no frame-to-frame
+    change over 3.5 where the cut was). All four fail on 336c444."""
+    print("\n317n. nothing on Home flashes, tapped or idle (frame-stepped luminance)")
+    w, h = 440, 956
+    ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+    pg.add_style_tag(content=".rs-spot, .daily-alert, .unlock-pop, .update-banner, #tour-overlay, .toast{ display:none !important; }")
+    pg.evaluate(HOMETAP_PREP, {})
+    pg.set_default_timeout(240000)
+    sheets = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      for(let i = 0; i < 1500; i++){ if(document.querySelectorAll('.screen-home-actual .cosmic-rank-anim').length >= 7) break; await wait(100); }
+      return document.querySelectorAll('.screen-home-actual .cosmic-rank-anim').length; }""")
+    cdp = ctx.new_cdp_session(pg)
+    series = {}
+    taps = {9: "bubble:veteran", 45: "bubble:adept", 81: "planet"}
+    for i in range(0, 200):
+        pg.evaluate(NOFLASH_SEEK, i / 30)
+        if i in taps:
+            xy = pg.evaluate("(w) => window.__tapAt(w)", taps[i])
+            if xy:
+                pg.mouse.click(xy[0], xy[1])
+            pg.evaluate(NOFLASH_SEEK, i / 30)
+        for k, v in _noflash_lum(pg, cdp, w, h).items():
+            series.setdefault(k, []).append(v)
+    def worst(s, a=1, b=None):
+        s = s[a - 1:b]
+        return round(max([abs(s[k] - s[k - 1]) for k in range(1, len(s))] or [0]), 2)
+    tapped = worst(series.get("veteran", []), 9, 40)
+    others = {k: worst(v, 9, 120) for k, v in series.items() if k not in ("veteran", "adept")}
+    titan = worst(series.get("titan", []), 1, 200)
+    # a sheet arriving late: take one bubble's sheet off, show its still
+    # emblem, and let startOrbitEmblemAnims put the sheet back (the async,
+    # already-recorded path) at the moment the two differ most
+    SWAP = """(still) => { const b = document.querySelector('.screen-home-actual .cosmic-badge-rank[data-rank-tier="ranger"]');
+      const a = b && b.querySelector('.cosmic-rank-anim'), s = b && b.querySelector('svg.cosmic-rank-emblem'); if(!a || !s) return false;
+      a.style.visibility = still ? 'hidden' : ''; s.style.visibility = still ? 'visible' : ''; return true; }"""
+    best, f0 = -1, 200
+    for f in range(200, 290, 6):
+        pg.evaluate(NOFLASH_SEEK, f / 30)
+        if not pg.evaluate(SWAP, False):
+            break
+        a = _noflash_lum(pg, cdp, w, h).get("ranger", 0)
+        pg.evaluate(SWAP, True)
+        b = _noflash_lum(pg, cdp, w, h).get("ranger", 0)
+        pg.evaluate(SWAP, False)
+        if abs(a - b) > best:
+            best, f0 = abs(a - b), f
+    late = pg.evaluate("""async () => { const b = document.querySelector('.screen-home-actual .cosmic-badge-rank[data-rank-tier="ranger"]');
+      const a = b && b.querySelector('.cosmic-rank-anim'); const s = b && b.querySelector('svg.cosmic-rank-emblem'); if(!a || !s) return false;
+      a.remove(); s.classList.remove('rk-under-anim'); s.style.visibility = ''; return true; }""")
+    late_series = []
+    if late:
+        pg.evaluate(NOFLASH_SEEK, f0 / 30)
+        late_series.append(_noflash_lum(pg, cdp, w, h)["ranger"])
+        pg.evaluate("() => { startOrbitEmblemAnims(document.querySelector('.screen-home-actual .cosmic-hero-wrap')); }")
+        pg.wait_for_timeout(450)
+        for i in range(f0, f0 + 36):
+            pg.evaluate(NOFLASH_SEEK, i / 30)
+            late_series.append(_noflash_lum(pg, cdp, w, h)["ranger"])
+    reattached = pg.evaluate("() => !!document.querySelector('.screen-home-actual .cosmic-badge-rank[data-rank-tier=\"ranger\"] .cosmic-rank-anim')")
+    late_worst = round(max([abs(late_series[k] - late_series[k - 1]) for k in range(1, len(late_series))] or [99]), 2)
+    check("the fixture's seven flip-books are on", sheets == 7, sheets)
+    check("a tapped held bubble's light rises smoothly (no frame-to-frame jump over 7 levels)", 0 < tapped <= 7, tapped)
+    check("no other bubble flashes while three things are tapped (each within 3.5 levels a frame)",
+          others and all(v <= 3.5 for v in others.values()), others)
+    check("the Supernova bubble swells instead of blinking (within 3.5 levels a frame over two bursts)", titan <= 3.5, titan)
+    check("a flip-book that arrives late crossfades in (within 3.5 levels a frame where the cut was %.1f)" % best, late and reattached and best > 3.5 and late_worst <= 3.5,
+          [late, reattached, late_worst, [round(v, 1) for v in late_series[:12]]])
+    ctx.close()
 
 
 def check_b317_rankup(br):
@@ -15274,8 +15968,8 @@ def check_b317_rankup(br):
           /* allowed: a flare bubble, the chat, the Home tab */
           const fl = document.querySelector('.panel.home .cosmic-badge-tappable');
           if(fl) fl.click(); await wait(500);
-          out.flare = !!document.getElementById('contextual-info-popup');
-          document.getElementById('contextual-info-popup')?.remove();
+          out.flare = !!document.querySelector('.home-caption > .hc-item.is-in');
+          document.querySelectorAll('.hc-item').forEach(e => e.remove());
           const cb = document.getElementById('chatdock-btn'); if(cb) cb.click(); await wait(700);
           out.chat = !!document.querySelector('.chatdock.is-open');
           if(out.chat){ cb.click(); await wait(500); }
@@ -15601,6 +16295,153 @@ def check_b317_flow(br):
           sp.get("card") is True and sp.get("cardSpecial") is True, sp)
 
 
+# --------------------------------------------------------------------------
+B317_RING_JS = r"""async (a) => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const out = {};
+  try{
+  document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
+  ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour'].forEach(k => store[k] = true);
+  store.lateHundos = 999; store.savedCodeSaved = true; store.unitPerfects = { 'Identity Crimes': 3 }; store.hundoFx = 'confetti';
+  store.dailyQuestionDate = null; saveStore();
+  const ring = el => { if(!el) return null; const cs = getComputedStyle(el); let fv = false; try{ fv = el.matches(':focus-visible'); }catch(e){}
+    return { txt: (el.textContent || '').trim().slice(0, 32), focused: document.activeElement === el, fv,
+             ring: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 }; };
+  const t = 'Identity Crimes';
+  const unitRun = async (missN) => {
+    showHome(); await wait(300);
+    cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t]; cfg.size = 0;
+    order = QUESTIONS.map((q,i) => [q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
+    runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null; isMissedRetake = false; practiceTestMinutes = null; inVirtualRoom = false;
+    attempts = {}; picked = {}; timedOutSet = {}; try{ firstPick = {}; }catch(e){}
+    order.forEach((qi, k) => { const oo = optionOrder(qi), right = oo.indexOf(QUESTIONS[qi].answer);
+      attempts[qi] = k < missN ? 2 : 1; picked[qi] = k < missN ? (right + 1) % oo.length : right; try{ if(k < missN) firstPick[qi] = (right + 1) % oo.length; }catch(e){} });
+    runStartTime = Date.now() - 42000; testInProgress = true; pos = order.length - 1;
+    summarize();
+    for(let i = 0; i < 600 && !document.querySelector('.rs-rewards.rs-done'); i++){
+      const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); await wait(100); }
+    await wait(300);
+  };
+  if(a.only === 'kbd'){ await unitRun(4); out.kbd = ring(document.querySelector('.rs-actions button')); return out; }
+  if(a.only === 'quiet-then-tab'){ await unitRun(4); out.quiet = ring(document.querySelector('.rs-actions button')); return out; }
+  await unitRun(4);
+  out.missed = ring(document.querySelector('.rs-actions button'));
+  document.querySelector('.rs-actions #nextbtn').click(); await wait(900);
+  out.review = ring(document.querySelector('.rs-final button'));
+  await unitRun(0);
+  out.perfect = ring(document.querySelector('.rs-actions button'));
+  /* a question's Next, after an answer */
+  showHome(); await wait(300);
+  cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t]; cfg.size = 0;
+  beginRun(QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === t));
+  for(let i = 0; i < 80 && !(document.querySelector('#stage .choice') && !document.querySelector('#teststart-overlay')); i++) await wait(100);
+  await wait(400);
+  const r0 = correctSlot(order[pos]); document.querySelector('#stage .choice[data-index="' + r0 + '"]').click(); await wait(500);
+  out.qnext = ring(document.getElementById('nextbtn'));
+  /* the Pause panel's Resume */
+  pauseRun(); await wait(500);
+  out.pause = ring(document.activeElement && document.activeElement !== document.body ? document.activeElement : null);
+  /* the daily question's Exit */
+  testInProgress = false; showHome(); await wait(500);
+  startDailyQuestion();
+  for(let i = 0; i < 60 && !document.querySelector('#stage .choice'); i++) await wait(100);
+  await wait(400);
+  const r1 = correctSlot(order[pos]); document.querySelector('#stage .choice[data-index="' + r1 + '"]').click(); await wait(300);
+  document.getElementById('dailyq-submitbtn').click(); await wait(900);
+  out.daily = ring(document.getElementById('dailyq-exitbtn'));
+  } catch(e){ out.threw = String(e && e.stack || e); }
+  return out; }"""
+
+
+def check_b317_focusring(br):
+    """Build 317. "There's a weird outline thing around the button there,
+    I've seen this before, I'm not sure why I'm seeing that but fix it" -
+    her iPhone, a thin light ring 2-4px outside "Continue to review (4
+    missed)". It is `.next:focus-visible` (2px of the accent, 2px out),
+    drawn because the screen focuses its first button for itself as it
+    lands: iOS never focuses a button on a tap, so a script focus has no
+    pointer to blame and WebKit shows the keyboard's ring. Chromium does the
+    same when no pointer was used, which is how this is driven: every input
+    here is a script click, as on her phone. The results' first button, the
+    review's, a question's Next, the Pause panel's Resume and the daily's
+    Exit keep their focus and lose the ring; a keyboard user still gets it.
+    On b6cd249 all six ring checks fail on both devices, and so does the
+    quiet-then-Tab one (its quiet half); the key-press check passes on both
+    builds - it guards the keyboard's ring, not the fix."""
+    print("\n317o. no focus ring on a button the screen focuses for itself (touch); the keyboard still gets one")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate(B317_RING_JS, {})
+        ctx.close()
+        check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
+        for k, label in (("missed", "the results' Continue to review"), ("perfect", "a 100%'s Re-run"), ("review", "the review's Retake"),
+                         ("qnext", "a question's Next"), ("pause", "the Pause panel's Resume"), ("daily", "the daily question's Exit")):
+            v = r.get(k) or {}
+            check(f"{dev}: {label} has the focus and no ring", v.get("focused") is True and v.get("ring") is False, v)
+    # The keyboard: a key pressed before the screen lands, and Tab after a quiet focus.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.keyboard.press("ArrowDown")
+    kb = pg.evaluate(B317_RING_JS, {"only": "kbd"})
+    pg.mouse.click(5, 300)
+    qt = pg.evaluate(B317_RING_JS, {"only": "quiet-then-tab"})
+    pg.keyboard.press("Tab")
+    tab = pg.evaluate("""() => { const el = document.activeElement; const cs = getComputedStyle(el); let fv = false; try{ fv = el.matches(':focus-visible'); }catch(e){}
+      return { txt: (el.textContent || '').trim().slice(0, 32), fv, ring: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0, quiet: document.querySelectorAll('.is-quietfocus').length }; }""")
+    ctx.close()
+    check("after a key press the results' first button shows the ring (a keyboard user sees where they are)",
+          (kb.get("kbd") or {}).get("focused") is True and (kb.get("kbd") or {}).get("ring") is True, kb)
+    check("after a tap it is quiet, and the first Tab puts a ring on the next control",
+          (qt.get("quiet") or {}).get("ring") is False and tab.get("fv") is True and tab.get("ring") is True and tab.get("quiet") == 0, [qt, tab])
+
+
+def check_b317_roadmap_chips(br):
+    """Build 317. "How it shows the unlock stuff, that long individual thing
+    it's in, those can be adjusted, they don't need to [go] from left all
+    the way to the right, on the tablets or larger devices they just need to
+    fit to what's there, it makes the rank road map boxes look bad." Every
+    road-map card on an iPad Pro 11, an iPad Pro 12.9 and a laptop window:
+    no chip wider than 60% of the card's content box (each was 100%), all of
+    them inside it, no label cut short, and the order Theme, Flare, then the
+    character or banner. The phone keeps its full-width rows (a half-phone
+    column IS a chip's width) - checked so it stays that way. The wide
+    checks fail on b6cd249; the phone and order checks pass on both."""
+    print("\n317m. the road map's unlock chips fit their content from a tablet up")
+    for (w, h, dev, wide) in ((440, 956, "17 Pro Max", False), (834, 1194, "iPad Pro 11", True),
+                              (1024, 1366, "iPad Pro 12.9", True), (1512, 852, "MacBook Pro 14 window", True)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate("() => " + _seed_gold_js())
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store)); saveStore();
+          document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
+          showRanksScreen('ranks'); await wait(1200);
+          const out = [];
+          document.querySelectorAll('.rankmap-stop .rankmap-card').forEach(c => {
+            const cs = getComputedStyle(c), cr = c.getBoundingClientRect();
+            const left = cr.left + parseFloat(cs.borderLeftWidth) + parseFloat(cs.paddingLeft);
+            const right = cr.right - parseFloat(cs.borderRightWidth) - parseFloat(cs.paddingRight);
+            const chips = [...c.querySelectorAll('.rankmap-gift')].map(g => { const b = g.getBoundingClientRect(), l = g.querySelector('.rankmap-giftlabel');
+              return { t: (l || g).textContent.trim(), w: b.width, l: b.left, r: b.right, cut: l ? l.scrollWidth > l.clientWidth + 1 : false }; });
+            out.push({ rank: (c.querySelector('.rankmap-name') || {}).textContent, inner: right - left, left, right, chips });
+          });
+          return out; }""")
+        ctx.close()
+        cards = [c for c in r if c["chips"]]
+        maxfrac = max((ch["w"] / c["inner"] for c in cards for ch in c["chips"]), default=1)
+        order_ok = all([ch["t"] for ch in c["chips"]][:2] == ["Theme", "Flare"] and len(c["chips"]) >= 2 for c in cards)
+        inside = all(ch["l"] >= c["left"] - 1 and ch["r"] <= c["right"] + 1 for c in cards for ch in c["chips"])
+        cut = [(c["rank"], ch["t"]) for c in cards for ch in c["chips"] if ch["cut"]]
+        tag = "%s (%dpx)" % (dev, w)
+        check(f"{tag}: {len(cards)} cards measured", len(cards) >= 7, len(cards))
+        if wide:
+            check(f"{tag}: every unlock chip fits its content - none wider than 60% of the card (it was 100%)",
+                  maxfrac <= 0.6, round(maxfrac, 3))
+        else:
+            check(f"{tag}: the phone keeps its full-width rows", maxfrac >= 0.97, round(maxfrac, 3))
+        check(f"{tag}: Theme, Flare, then the character or banner, on every card", order_ok,
+              [[ch["t"] for ch in c["chips"]] for c in cards][:3])
+        check(f"{tag}: every chip inside its card, no label cut short", inside and not cut, cut)
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -15766,7 +16607,10 @@ def main():
             check_b316_tiles(br)
             check_b317_daily(br)
             check_b317_volume(br)
+            check_b317_neck(br)
+            check_b317_silhouettes(br)
             check_b317_cutspin(br)
+            check_b317_evolve(br)
             check_b317_specials(br)
             check_b317_challenge_specials(br)
             check_b317_hundobox(br)
@@ -15776,11 +16620,14 @@ def main():
             check_b317_pfcard(br)
             check_b317_rings(br)
             check_b317_hometaps(br)
-            check_b317_followglide(br)
+            check_b317_caption_fit(br)
+            check_b317_noflash(br)
             check_b317_rankup(br)
             check_b317_supernova(br)
             check_b317_planet(br)
             check_b317_flow(br)
+            check_b317_focusring(br)
+            check_b317_roadmap_chips(br)
         finally:
             br.close()
     SERVER.shutdown()

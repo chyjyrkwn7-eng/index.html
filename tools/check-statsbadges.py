@@ -138,8 +138,13 @@ def main():
         # said twelve, and "THIS WEEK" for the first card, until build 315,
         # failing on every build since 311 - so the label is read off the
         # card now rather than written here.
-        check("eleven of them, in three sections",
-              r["n"] == 11 and r.get("grids") == [4, 4, 3], [r["n"], r.get("grids")])
+        # Eight since the 317 fix: "Remove the virtual room stats from the
+        # stats tab" - the three Virtual Room cards came off (the counts
+        # they showed are still kept on store).
+        check("eight of them, in two sections - no Virtual Room cards",
+              r["n"] == 8 and r.get("grids") == [4, 4]
+              and not any(l in ("Matches played", "First-place finishes", "Top-3 finishes") for l in (r.get("labels") or [])),
+              [r["n"], r.get("grids"), r.get("labels")])
         check("there is an explanation panel", r["why"] is True)
         if r["why"]:
             first = pg.evaluate("""()=>{
