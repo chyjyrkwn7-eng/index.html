@@ -13962,7 +13962,9 @@ def check_b317_planet(br):
         len: len / N, thick: best.length / (len || 1) / N, pieces: best.length,
         ember: loops(e), hot: loops(hot), frags, ms: (typeof cosmicScarArt === 'function' && cosmicScarArt()) ? cosmicScarArt().ms : null }; }""")
     check("the scar's art holds a crack: one long thin dark feature across at least 60% of the sphere's diameter",
-          bool(art) and not art.get("none") and art["len"] >= .6 and art["thick"] <= .08,
+          # thin: a mean thickness under a tenth of the diameter (the old
+          # blob measured .27; the crack with its rupture ~.08)
+          bool(art) and not art.get("none") and art["len"] >= .6 and art["thick"] <= .1,
           art and {k: (round(art[k], 3) if isinstance(art.get(k), float) else art.get(k)) for k in ("len", "thick", "pieces")})
     check("crisp on a 3x phone: drawn at no fewer pixels than the sphere has on the screen, and shown at the sphere's size",
           bool(art) and art.get("dpr") == 3 and art.get("N", 0) >= art.get("sphereDev", 1e9) * .98

@@ -11154,7 +11154,7 @@
      so the two never beat together. Without a 2D canvas, a soft dark burn. */
   .cosmic-scar canvas.csc-art{ position:absolute; inset:0; width:100%; height:100%; display:block; pointer-events:none; }
   .cosmic-scar i.csc-burn{ inset:0; background:radial-gradient(ellipse 22% 16% at 65% 63%, #070304 0 50%, rgba(16,6,4,.5) 75%, transparent 100%); }
-  .csc-ember{ animation:csc-ember 6.8s ease-in-out infinite alternate; }
+  .csc-ember, .csc-bloom{ animation:csc-ember 6.8s ease-in-out infinite alternate; }
   .csc-hot{ animation:csc-hot 4.3s ease-in-out -1.7s infinite alternate; }
   /* the fresh burn, still hot: unseen on Home; the cutscene cools it */
   .csc-glow{ left:41%; top:47%; width:48%; height:33%; rotate:-10deg; opacity:0;
@@ -11190,7 +11190,7 @@
     100%{ opacity:0; transform:translate(var(--dx), var(--dy)) rotate(var(--r)) scale(.6); }
   }
   @keyframes csc-pulse{ from{ opacity:.3; transform:scale(.8); } to{ opacity:1; transform:scale(1.15); } }
-  @keyframes csc-ember{ from{ opacity:.74; } to{ opacity:1; } }
+  @keyframes csc-ember{ from{ opacity:.84; } to{ opacity:1; } }
   @keyframes csc-hot{ from{ opacity:.3; } to{ opacity:1; } }
   @keyframes csc-heat{ from{ opacity:.55; transform:scale(1, .94) skewX(-4deg) translateY(2%); } to{ opacity:1; transform:scale(1.08, 1.02) skewX(4deg) translateY(-4%); } }
   /* the plasma's light never washes over the rupture, and its smoke
@@ -63456,9 +63456,14 @@ function scarPass1(P){
             }
             /* the ember lies deep in the crack, narrower than its opening */
             if(bH > 0 && bt < 1.05){
-              const fl = 1 - bt / .5;
-              const e = bH * ((fl > 0 ? Math.pow(fl, 1.3) * (.5 + .8 * n2) : 0) + .3 * (1 - bt / 1.05) * (1 - bt / 1.05)) * inCr;
-              if(e > em){ em = e; tp = bH * (fl > 0 ? fl : 0) * (.75 + .5 * n2); }
+              const fl = 1 - bt / .62;
+              const e = bH * ((fl > 0 ? Math.pow(fl, 1.2) * (.55 + .8 * n2) : 0) + .36 * (1 - bt / 1.05) * (1 - bt / 1.05)) * inCr;
+              if(e > em){ em = e; tp = bH * (fl > 0 ? fl : 0) * (.8 + .5 * n2); }
+            }
+            /* the gap's light on the lips and the ground beside it */
+            if(bKind < 2 && bH > .08 && bt >= .9){
+              const e = bH * .42 * Math.exp(-(bt - .9) / .55) * (.75 + .5 * n2) * inCr;
+              if(e > em){ em = e; tp = .22 + .18 * bH; }
             }
             if(bKind < 2 && bH > 0){ const sc = .5 * Math.exp(-bt / 2.4) * Math.min(1, bH * 1.8); if(sc > cov) cov = sc; }
           }
@@ -63471,7 +63476,7 @@ function scarPass1(P){
           const li = lx | 0, lj = ly | 0, ax = lx - li, ay = ly - lj, l0 = lj * LV1 + li;
           const lv = LV[l0] * (1 - ax) * (1 - ay) + LV[l0 + 1] * ax * (1 - ay) + LV[l0 + LV1] * (1 - ax) * ay + LV[l0 + LV1 + 1] * ax * ay;
           const crust = ss(.44, .58, lv + .35 * (n2 - .5));
-          const e = (1 - ss(.3, .66, qc)) * (1 - .8 * crust) * (.6 + .55 * (lv - .5) + .3 * n2) + (1 - ss(.45, .9, qc)) * .1;
+          const e = (1 - ss(.36, .76, qc)) * (1 - .78 * crust) * (.66 + .55 * (lv - .5) + .3 * n2) + (1 - ss(.5, .95, qc)) * .14;
           if(e > em){ em = e; tp = (.36 + .5 * (1 - ss(0, .66, qc))) * (1 - .5 * crust) * (.8 + .4 * n2); }
         }
         /* the rupture's light spills out over the soot round its rim */
@@ -63505,9 +63510,10 @@ function scarPass2(P){
       let disc = (1 - Math.sqrt(r2)) * N / 2;
       disc = disc > 1 ? 1 : disc;
       const k4 = k * 4;
-      /* the plasma's mask: how much each of its cells is covered (a crack
-         only half - the smoke may drift over it) */
-      const mq = ((j * ms) | 0) * MQ + ((i * ms) | 0), mv = Mat[k] === 2 ? .5 : Cov[k] * .92;
+      /* the plasma's mask: how much each of its cells is covered (the
+         crack as much as the rupture - its light pools washing over the
+         gap at half strength softened it into a smudge) */
+      const mq = ((j * ms) | 0) * MQ + ((i * ms) | 0), mv = Mat[k] === 2 ? .9 : Cov[k] * .92;
       if(mv > Msk[mq]) Msk[mq] = mv;
       const hx = (Hf[k + 1] - Hf[k - 1]) * inv2s, hy = (Hf[k + N] - Hf[k - N]) * inv2s;
       if(hx === 0 && hy === 0 && !Mat[k] && Em[k] <= .003){
@@ -63600,9 +63606,9 @@ function cosmicScarArt(){
        phone and its ~330 on an iPad (a multiple of 64, the buckets) */
     const N = dpr >= 1.5 ? 384 : 256;
     const mk = n => { const c = document.createElement("canvas"); c.width = c.height = n; return c; };
-    const cB = mk(N), cE = mk(N), cH = mk(N);
-    const gB = cB.getContext("2d"), gE = cE.getContext("2d"), gH = cH.getContext("2d");
-    if(!gB || !gE || !gH) return cosmicScarCache;
+    const cB = mk(N), cE = mk(N), cH = mk(N), cL = mk(N);
+    const gB = cB.getContext("2d"), gE = cE.getContext("2d"), gH = cH.getContext("2d"), gL = cL.getContext("2d");
+    if(!gB || !gE || !gH || !gL) return cosmicScarCache;
     let seed = 7331;
     const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
     const G = 64, grid = new Float32Array(G * G);
@@ -63622,7 +63628,7 @@ function cosmicScarArt(){
     const onS = (x, y) => [x, y, Math.sqrt(Math.max(0, 1 - x * x - y * y))];
     /* the planet's light: its highlight sits up and to the left */
     const Ll = Math.sqrt(.55 * .55 + .62 * .62 + .56 * .56), LX = -.55 / Ll, LY = -.62 / Ll, LZ = .56 / Ll;
-    const CX = .3, CY = .27, C3 = onS(CX, CY), RHO = .19;
+    const CX = .3, CY = .27, C3 = onS(CX, CY), RHO = .23;
     const slerp = (A, B, f) => {
       const om = Math.acos(Math.max(-1, Math.min(1, dot(A, B)))), so = Math.sin(om) || 1e-6;
       const a = Math.sin((1 - f) * om) / so, b = Math.sin(f * om) / so;
@@ -63666,7 +63672,7 @@ function cosmicScarArt(){
     const addPath = (p, w0, w1, d0, h0, kind, wPow) => {
       const W = f => w1 + (w0 - w1) * Math.pow(1 - f, wPow);
       const D = f => d0 * Math.pow(1 - f, .6);
-      const Hh = f => h0 * Math.exp(-f / .38) * (1 - f);
+      const Hh = f => h0 * Math.pow(1 - f, .9) * (.5 + .5 * Math.exp(-f / .28));
       for(let k = 1; k < p.length; k++){
         const a = p[k - 1], b = p[k];
         SEG.push(a[0], a[1], b[0], b[1], W(a[2]), W(b[2]), D(a[2]), D(b[2]), Hh(a[2]), Hh(b[2]), .55 + .9 * rnd(), kind);
@@ -63683,8 +63689,8 @@ function cosmicScarArt(){
     const mainA = arc(rimAt(-1, .08, .8), onS(-.95, -.08), 30, .06, 1.6, .4);
     const mainB = arc(rimAt(.9, .42, .8), onS(.8, .57), 14, .035, 1, 1.2);
     const jA = jag(P2(mainA), 2, .5), jB = jag(P2(mainB), 2, .5);
-    addPath(jA, .056, .0026, .066, 1, 0, .85);
-    addPath(jB, .044, .0026, .058, .9, 0, .9);
+    addPath(jA, .066, .0028, .072, 1, 0, .8);
+    addPath(jB, .052, .0028, .064, .95, 0, .85);
     const branch = (src, at, side, len, w0, h0) => {
       const k = Math.round(at * (src.length - 1)), P = src[k], Pn = src[Math.min(src.length - 1, k + 1)];
       const H = nrm([Pn[0] - P[0], Pn[1] - P[1], Pn[2] - P[2]]), Bn = nrm(cross(P, H));
@@ -63699,7 +63705,7 @@ function cosmicScarArt(){
     branch(mainB, .35, .7, .16, .009, .25);
     [[.3, .09], [1.1, .14], [1.9, .06], [2.5, .11], [3.4, .08], [4.3, .13], [5.2, .07]].forEach(([az, len]) => {
       const A = rimAt(Math.cos(az), Math.sin(az), .95), j = .25 * (rnd() - .5);
-      addPath(jag(P2(arc(A, rimAt(Math.cos(az + j), Math.sin(az + j), .95 + len / RHO), 5, .04, 1, 0)), 2, .55), .0065, .0018, .012, .2, 2, 1);
+      addPath(jag(P2(arc(A, rimAt(Math.cos(az + j), Math.sin(az + j), .95 + len / RHO), 5, .04, 1, 0)), 2, .55), .0075, .0018, .014, .5, 2, 1);
     });
     [[.6, 1.0, 1.42], [3.3, .9, 1.55]].forEach(([a0, span, rr]) => {
       const pts = [];
@@ -63764,7 +63770,7 @@ function cosmicScarArt(){
     const LVS = .3, LVN = Math.round(LVS * N / 4), LV1 = LVN + 1, LV = new Float32Array(LV1 * LV1);
     for(let j = 0; j <= LVN; j++) for(let i = 0; i <= LVN; i++){
       const x = CX - LVS + 2 * LVS * i / LVN, y = CY - LVS + 2 * LVS * j / LVN;
-      LV[j * LV1 + i] = fbm(x * 17 + 3.3, y * 17 + 8.1, 3);
+      LV[j * LV1 + i] = fbm(x * 15 + 12.7, y * 15 + 4.4, 3);
     }
     const P = { N, BK, Q, Q1, FI, FR, FE, FN, LV, LVN, LVS, cnt, lst, SF, CX, CY, C3x: C3[0], C3y: C3[1], C3z: C3[2], RHO, SR,
       LX, LY, LZ, NN: N * N, MQ: 96, Msk: new Float32Array(96 * 96) };
@@ -63773,6 +63779,37 @@ function cosmicScarArt(){
     P.dB = iB.data; P.dE = iE.data; P.dH = iH.data;
     scarPass2(P);
     gB.putImageData(iB, 0, 0); gE.putImageData(iE, 0, 0); gH.putImageData(iH, 0, 0);
+    /* THE BLOOM (build 317, planet round, second pass - "the permanent
+       damage ... is eh"): from arm's length a thin glowing line is a
+       scratch. The hot first half of the crack and the rupture light the
+       ground round them - a soft orange glow, drawn natively (a blurred
+       stroke and a radial gradient, under the sharp ember: destination-
+       over), clipped to the disc. It is what makes it read as fire in the
+       planet rather than a mark on it. Its own canvas, over the burn (light
+       on the soot) and under the ember, breathing with it. */
+    try{
+      const px = q => (q + 1) / 2 * N, gE = gL;
+      gE.save();
+      gE.beginPath(); gE.arc(N / 2, N / 2, N / 2 - 1, 0, Math.PI * 2); gE.clip();
+      gE.lineCap = "round"; gE.lineJoin = "round";
+      [[jA, .5, 1], [jB, .55, .9]].forEach(([path, upto, k]) => {
+        const n = Math.max(2, Math.round(path.length * upto));
+        for(let pass = 0; pass < 2; pass++){
+          gE.beginPath();
+          for(let m = 0; m < n; m++){ const q = path[m]; if(m) gE.lineTo(px(q[0]), px(q[1])); else gE.moveTo(px(q[0]), px(q[1])); }
+          gE.shadowColor = pass ? "rgba(255,120,40,.7)" : "rgba(255,70,20,.5)";
+          gE.shadowBlur = N * (pass ? .03 : .065);
+          gE.strokeStyle = pass ? "rgba(255,120,44," + (.22 * k).toFixed(2) + ")" : "rgba(226,62,20," + (.14 * k).toFixed(2) + ")";
+          gE.lineWidth = N * (pass ? .03 : .06);
+          gE.stroke();
+        }
+      });
+      gE.shadowBlur = 0; gE.shadowColor = "transparent";
+      const cx = px(CX), cy = px(CY), rg = gE.createRadialGradient(cx, cy, N * RHO * .2, cx, cy, N * RHO * 1.15);
+      rg.addColorStop(0, "rgba(255,150,56,.42)"); rg.addColorStop(.42, "rgba(255,96,30,.2)"); rg.addColorStop(1, "rgba(200,50,16,0)");
+      gE.fillStyle = rg; gE.beginPath(); gE.arc(cx, cy, N * RHO * 1.15, 0, Math.PI * 2); gE.fill();
+      gE.restore();
+    }catch(e){}
     /* the plasma's light pools and smoke must not wash over the rupture,
        and only partly over the crack (smoke drifting over it is what
        makes it the planet's own): a small soft mask, cover inverted */
@@ -63798,7 +63835,7 @@ function cosmicScarArt(){
         Math.round(22 + 11 * rnd()), Math.round((i % 2 ? -1 : 1) * (150 + 90 * rnd())), +(7.4 + 4 * rnd()).toFixed(1), -(+(11 * rnd()).toFixed(1))]);
     });
     const t1 = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
-    cosmicScarCache = { n: N, burn: cB, ember: cE, hot: cH, mask, frags,
+    cosmicScarCache = { n: N, burn: cB, ember: cE, hot: cH, bloom: cL, mask, frags,
       /* where the hole is, seen from the planet's middle: degrees clockwise
          from the top - what the rings and the flares passing it key off */
       angle: Math.atan2(CX, -CY) * 180 / Math.PI, crater: [(CX + 1) * 50, (CY + 1) * 50], ms: t1 - t0 };
@@ -64818,7 +64855,7 @@ function buildCosmicScar(){
   let drawn = false;
   if(art){
     try{
-      ["burn", "ember", "hot"].forEach(k => {
+      ["burn", "bloom", "ember", "hot"].forEach(k => {
         const c = document.createElement("canvas");
         c.className = "csc-art csc-" + k;
         c.width = c.height = art.n;
