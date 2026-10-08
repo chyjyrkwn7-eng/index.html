@@ -25867,7 +25867,13 @@
   .bc-face-art, .bc-edge{ position:absolute; inset:0; width:100%; height:100%; display:block; user-select:none; -webkit-user-select:none; }
   .bc-face.is-front{ transform:translateZ(calc(var(--thick) / 2)); }
   .bc-face.is-back{ transform:translateZ(calc(var(--thick) / -2)) rotateY(180deg) scaleX(-1); }
-  .bc-edge{ transform:translateZ(calc((var(--k) - .5) * var(--thick) * .96)); }
+  /* each slice a hair smaller than the face (build 317, badge2): twenty
+     silhouettes exactly behind it stacked their half-covered edge
+     pixels into one hard, stepped outline round the face - the "rough
+     edges" at rest. Inset, the face's own antialiased edge lies over the
+     background, and turned, the band is 1% narrower, which reads as the
+     edge's own bevel. */
+  .bc-edge{ transform:translateZ(calc((var(--k) - .5) * var(--thick) * .96)) scale(.988); }
   .bc-spec{ position:absolute; inset:0; overflow:hidden; pointer-events:none;
     -webkit-mask-size:100% 100%; mask-size:100% 100%; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; }
   .bc-spec i{ position:absolute; top:-25%; bottom:-25%; left:32%; width:36%; opacity:0;
@@ -52328,7 +52334,7 @@ const BADGE_STRIKE = {
   menis: .06, menisL: 1.2,
   flat: .42, chamfer: .8, bevel: .3,   /* the profile: flat top, chamfer, wall */
   dome: .006,           /* the face's gentle dome (slope per token unit) */
-  ao: .5, aoL: 1, wallAO: .7, coat: .09,
+  ao: .4, aoL: 1, wallAO: .55, coat: .09,
   sliver: 1.5,          /* no enamel thinner than twice this */
   geoW: 288, geoBlur: 2,
   ceilLo: .2, ceilHi: .62, edge0: -.02, edgeW: .16, ceilTilt: .12, ceilA: .5, ceilB: .9,
