@@ -13829,8 +13829,24 @@ def check_b317_supernova(br):
     pg.evaluate("() => { store.supernovaAchieved = false; store.mysteryColorsFound = {red:true, orange:true}; saveStore(); try{ localStorage.removeItem('class26e.ringtier.seen'); }catch(e){} theme.accent = 'elite'; applyTheme(); showHome(); }")
     pg.wait_for_timeout(1200)
     pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+    # cut3: every call for the Supernova art, whether it was drawn already
+    # and whether the scene was on screen at the time
+    pg.evaluate("""() => { window.__artLog = []; window.__artBefore = [cosmicScarCache !== null, typeof snDustCache === 'undefined' ? null : snDustCache !== null];
+      const wrap = (n, drawn) => { const f = window[n]; if(typeof f !== 'function') return;
+        window[n] = function(){ const o = document.getElementById('supernova-cutscene');
+          window.__artLog.push([n, drawn(), !!(o && o.classList.contains('supernova-visible'))]); return f.apply(this, arguments); }; };
+      wrap('cosmicScarArt', () => cosmicScarCache !== null); wrap('snDustURL', () => snDustCache !== null); }""")
     pg.evaluate("() => playSupernovaCutscene({ from: 'elite', onDone(){ window.__snDone = Date.now(); } })")
     marks, at_det, at_set, at_top, at_sweep, at_settled, t0 = {}, None, None, None, None, None, pg.evaluate("() => Date.now()")
+    # cut3: per frame, the ring debris seen on either planet, and any second
+    # set (the sweep's own shards) seen beside it
+    DEBRIS = """() => { const o = document.getElementById('supernova-cutscene'); if(!o) return null;
+      const vis = el => { let op = 1; for(let e = el; e && e !== o; e = e.parentElement){ const c = getComputedStyle(e);
+        if(c.display === 'none' || c.visibility === 'hidden') return 0; op *= +c.opacity; } return op; };
+      const n = s => [...o.querySelectorAll(s)].filter(e => vis(e) > .05).length;
+      return { c: o.className, before: n('.rank-before .csc-ringfrag'), after: n('.rank-after .csc-ringfrag'),
+        extra: n('.rank-after .sn-sweep > :not(.is-ember)') }; }"""
+    deb = []
     RINGS = """() => { const o = document.getElementById('supernova-cutscene');
       const rings = [...o.querySelectorAll('.rank-after .cosmic-orbit-ring')];
       return rings.map(r => getComputedStyle(r).stroke); }"""
@@ -13840,12 +13856,14 @@ def check_b317_supernova(br):
         pg.evaluate(CUTSPIN_SEEK, t)
         pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
         pg.evaluate(CUTSPIN_SEEK, t)
-        c = pg.evaluate("() => { const o = document.getElementById('supernova-cutscene'); return o ? o.className : null; }")
+        dq = pg.evaluate(DEBRIS)
+        c = dq and dq["c"]
         if c is None:
             if marks: marks.setdefault("gone", i); break
             continue
+        deb.append((i, dq))
         for k in ("is-cutspin", "is-cutlight", "is-cutrest", "sn-swell", "supernova-burst", "sn-detonate", "is-swapped", "sn-scarred",
-                  "sn-settled", "sn-rings", "supernova-settle", "rank-outro"):
+                  "sn-swept", "sn-settled", "sn-rings", "supernova-settle", "rank-outro"):
             if k in c.split() and k not in marks:
                 marks[k] = i
         if "is-cutlight" in c.split() and at_top is None:
@@ -13864,12 +13882,14 @@ def check_b317_supernova(br):
             # the fragments, ~0.3s after the system starts settling: out on
             # the rings, in the after-planet's own units (the hero is 360 wide,
             # the planet's centre at 180,150 in a 0 -12 360 342 box)
+            # cut3: the fragments ARE Home's ring debris, thrown out (and
+            # still flying - a finite animation of their own on them)
             at_sweep = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene');
               const h = o.querySelector('.rank-after .cosmic-hero-wrap'); if(!h) return null;
               const r = h.getBoundingClientRect(), u = r.width / 360, cx = r.left + r.width / 2, cy = r.top + r.height * 162 / 342;
-              const orbs = [...o.querySelectorAll('.rank-after .sn-sweep > .sn-orb')];
-              const vis = orbs.filter(e => +getComputedStyle(e).opacity > .5);
-              return { orbs: orbs.length, vis: vis.length, run: orbs.filter(e => e.getAnimations().some(a => a.playState === 'running' || a.playState === 'paused')).length,
+              const orbs = [...o.querySelectorAll('.rank-after .csc-ringfrag')];
+              const vis = orbs.filter(e => getComputedStyle(e).visibility !== 'hidden' && +getComputedStyle(e).opacity > .5);
+              return { orbs: orbs.length, vis: vis.length, run: orbs.filter(e => e.getAnimations().some(a => a.effect.getComputedTiming().iterations !== Infinity)).length,
                 d: vis.map(e => { const q = e.getBoundingClientRect(); return +(Math.hypot(q.left + q.width / 2 - cx, q.top + q.height / 2 - cy) / u).toFixed(1); }) }; }""")
             at_sweep["rings"] = pg.evaluate(RINGS)
         if "supernova-settle" in c.split() and at_set is None and i - marks["supernova-settle"] >= 45:
@@ -13884,12 +13904,20 @@ def check_b317_supernova(br):
               finally{ store.supernovaAchieved = had; window.saveStore = save; }
               const scene = h ? [...h.children].filter(e => !/^(rank-|sn-)/.test(e.getAttribute('class') || '')) : [];
               const rev = h ? [...h.querySelectorAll(':scope > [data-sn-reveal]')] : [];
-              return { scar: sc ? +getComputedStyle(sc).opacity : null,
+              /* cut3: the debris and the passing light, as Home has them */
+              const hn = (() => { const had2 = store.supernovaAchieved, save2 = window.saveStore;
+                try{ store.supernovaAchieved = true; window.saveStore = () => {}; const hh = buildCosmicHero(true, 'titan');
+                  return [hh.querySelectorAll('.csc-ringfrag').length, hh.querySelectorAll('.csc-pass').length]; }
+                finally{ store.supernovaAchieved = had2; window.saveStore = save2; } })();
+              const pass = h ? [...h.querySelectorAll('.csc-pass')] : [];
+              return { scar: sc ? +getComputedStyle(sc).opacity : null, homeDebris: hn[0], homePass: hn[1],
+                pass: pass.length, passOn: pass.filter(e => getComputedStyle(e).display !== 'none' && !/opacity\(0\)/.test(getComputedStyle(e).filter)).length,
                 orange: rings.length && rings.every(r => r.classList.contains('cosmic-orbit-ring-supernova')),
                 stroke: rings[0] ? getComputedStyle(rings[0]).stroke : null,
                 /* (the bubbles are moved into the scene's own carrier) */
                 home: home.filter(k => !/cosmic-icon-badge/.test(k)), scene: scene.map(key).filter(k => !/cosmic-icon-badge/.test(k)), revealed: rev.length, shown: rev.filter(e => +getComputedStyle(e).opacity > .95).length }; }""")
     end = pg.evaluate("() => [window.__snDone || null, store.supernovaAchieved, (() => { try{ return localStorage.getItem('class26e.ringtier.seen'); }catch(e){ return 'x'; } })()]")
+    art = pg.evaluate("() => ({ log: window.__artLog, before: window.__artBefore, after: [cosmicScarCache !== null, typeof snDustCache === 'undefined' ? null : snDustCache !== null] })")
     ctx.close()
     order = ["is-cutrest", "sn-swell", "sn-detonate", "is-swapped", "sn-scarred", "supernova-settle", "rank-outro"]
     seq = [marks.get(k) for k in order]
@@ -13916,7 +13944,7 @@ def check_b317_supernova(br):
     check("after the blast the system transforms, in order: the scar, the system settling into its new look, THEN the rings change colour, then the title",
           all(v is not None for v in seq2) and seq2 == sorted(seq2) and len(set(seq2)) == 5 and (seq2[3] - seq2[0]) >= 120, seq2)
     near = [d for d in (at_sweep or {}).get("d", []) if 92 <= d <= 158]
-    check("black fragments sweep out of the planet and ride the rings round, in orbit (most of them on a ring, moving)",
+    check("black fragments sweep out of the planet and ride the rings round, in orbit (most of them on a ring, still settling)",
           bool(at_sweep) and at_sweep["orbs"] >= 16 and at_sweep["vis"] >= 12 and at_sweep["run"] >= 12 and len(near) >= .75 * at_sweep["vis"],
           at_sweep and (at_sweep["orbs"], at_sweep["vis"], at_sweep["run"], len(near)))
     plain_ring = lambda strokes: bool(strokes) and all("255, 255, 255" in x for x in strokes)
@@ -13926,6 +13954,30 @@ def check_b317_supernova(br):
     check("it ends on HOME'S OWN Supernova planet: everything Home's build has, the scene's has - what it adds over a plain planet brought in beat by beat, all of it showing by the title",
           bool(at_set) and at_set["home"] and sorted(at_set["home"]) == sorted(at_set["scene"]) and at_set["revealed"] >= 1 and at_set["shown"] == at_set["revealed"],
           at_set and (at_set["revealed"], at_set["shown"], sorted(set(at_set["home"]) ^ set(at_set["scene"]))))
+    # CUT3, with the planet round's debris on Home's rings (fails on
+    # 748ddc9, where the debris was on the planet from the swap - before the
+    # scar, before the sweep - and the sweep's own 28 shards rode the rings
+    # beside it: two sets). Nothing of the Supernova state shows before its
+    # beat, and the end is Home's look with ONE set of debris.
+    cut = marks.get("sn-swept") or marks.get("sn-settled") or 10 ** 6
+    early = [(i, d["after"]) for i, d in deb if i < cut and d["after"]] + [(i, d["before"]) for i, d in deb if d["before"]]
+    two = [(i, d["after"], d["extra"]) for i, d in deb if d["after"] and d["extra"]]
+    hd = (at_set or {}).get("homeDebris") or 0
+    final = [d for i, d in deb if marks.get("supernova-settle") and marks["supernova-settle"] + 45 <= i < (marks.get("rank-outro") or 10 ** 6)]
+    check("the ring debris: none seen before the blast, nor after it until the sweep throws it out - and exactly one set at the end, Home's own",
+          hd > 0 and marks.get("sn-swept") is not None and not early and not two and bool(final)
+          and all(d["after"] == hd and d["extra"] == 0 for d in final),
+          (hd, marks.get("sn-swept"), early[:2], two[:2], final[:1]))
+    check("and the end is Home's in the rest of it too: the light that passes the scar is live, all of it",
+          bool(at_set) and at_set["pass"] == at_set["homePass"] and at_set["passOn"] == at_set["pass"],
+          at_set and (at_set["homePass"], at_set["pass"], at_set["passOn"]))
+    # the scar's first draw (~60-140ms) and the dust's (~25ms) land before
+    # the scene's first frame, never inside it (748ddc9 drew the dust at the
+    # swell, with the planet shaking)
+    drew = [x for x in art["log"] if not x[1]]
+    check("the Supernova art is drawn before the scene is on screen - never in the middle of it",
+          art["before"] == [False, False] and art["after"] == [True, True] and bool(drew) and not any(x[2] for x in drew),
+          (art["before"], art["after"], drew))
     total = (marks.get("gone") or 0) / 30
     check("longer: ~33-37.5s from the first frame to the hand-over (it was ~25s)", 33 <= total <= 37.5, round(total, 1))
     check("it ends with Supernova reached and the ring tier seen as 'supernova' (Home will not draw the rings on again)",
