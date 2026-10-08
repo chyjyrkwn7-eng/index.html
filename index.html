@@ -9354,7 +9354,7 @@
   .hfx-uw-sheen{ position:absolute; left:0; right:0; top:0; height:22%; background:linear-gradient(180deg, rgba(210,250,255,.2), rgba(210,250,255,0)); }
   .hfx-uw-caus{ position:absolute; background-repeat:repeat; opacity:.24; animation:hfx-uw-caus var(--d) linear both; }
   .hfx-uw-caus.is-b{ opacity:.15; }
-  @keyframes hfx-uw-caus{ 0%{ transform:translate(0, 0) scale(1); } 50%{ transform:translate(calc(var(--cx) * .5), calc(var(--cy) * .5)) scale(1.07); } 100%{ transform:translate(var(--cx), var(--cy)) scale(1); } }
+  @keyframes hfx-uw-caus{ 0%{ transform:translate(calc(var(--cx) * -.5), calc(var(--cy) * -.5)) scale(1); } 50%{ transform:translate(0, 0) scale(1.04); } 100%{ transform:translate(calc(var(--cx) * .5), calc(var(--cy) * .5)) scale(1); } }
   .hfx-uw-ray{ position:absolute; top:-2px; width:var(--rw); height:var(--rh); margin-left:calc(var(--rw) / -2); transform-origin:50% 0;
     background:center top / 100% 100% no-repeat; opacity:0; transform:rotate(var(--ra)); animation:hfx-uw-ray var(--d) ease-in-out var(--t) both; }
   @keyframes hfx-uw-ray{ 0%{ opacity:0; transform:rotate(var(--ra)); } 20%{ opacity:.95; } 50%{ opacity:.6; transform:rotate(calc(var(--ra) - 3deg)); }
@@ -78761,9 +78761,11 @@ function hfxSea(parent, o){
      layers, and the rays */
   hfxMk(body, "i", "hfx-uw-sheen");
   [0, 1].forEach(j => {
-    const tile = (j ? 330 : 236) * k, cw = o.W + tile * 2, ch = bodyH + tile * 2;
-    const l = hfxMk(body, "i", "hfx-uw-caus" + (j ? " is-b" : ""), { left: (-tile) + "px", top: (-tile) + "px", width: cw + "px", height: ch + "px",
-      "--cx": ((j ? 1 : -1) * tile * .9) + "px", "--cy": ((j ? -1 : 1) * tile * .35) + "px", "--d": o.total + .2 });
+    /* only as much bigger than the water as its drift needs: these are
+       the two largest layers on the screen */
+    const tile = (j ? 330 : 236) * k, m = tile * .42, cw = o.W + m * 2, ch = bodyH + m * 2;
+    const l = hfxMk(body, "i", "hfx-uw-caus" + (j ? " is-b" : ""), { left: (-m) + "px", top: (-m) + "px", width: cw + "px", height: ch + "px",
+      "--cx": ((j ? 1 : -1) * tile * .36) + "px", "--cy": ((j ? -1 : 1) * tile * .16) + "px", "--d": o.total + .2 });
     l.style.backgroundImage = hfxCausticTile(j);
     l.style.backgroundSize = tile + "px " + tile + "px";
   });
