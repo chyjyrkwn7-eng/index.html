@@ -15606,6 +15606,121 @@ disagree with it.
       a ~1.7s charge, the flash at ~frame 510, and under the glass "or
       never sharper than it" at speed; `check_b317_supernova` expects
       24-29.5s.
+  - **THE SECOND EVOLUTION ROUND (supersedes beats 1, 2, 4 and 6 above,
+    and the times).** Madison, on the first cut:
+    - *"I like how the flare pulses before the spin, I don't like the
+      movement though so don't do the movement ... The pulse at the
+      beginning should not show the color, it should flash and pulse in
+      its position ... keep the pulsing part and stuff in its place so
+      it's still a long enough cut scene."* **Attention is in place**: no
+      camera, no loop. `pulseInPlace(fl, D, beats)` animates the SLOT's
+      `transform` with scale only (it never moves) and its glow and halo
+      ring's opacity with it - five breaths over the whole `RANK_ATTN_MS`,
+      the third and last the brightest - in the flare's OLD look,
+      `RANK_ATTN_PALE` (#EAF0F8, a white flash: no colour until the whirl).
+    - *"The spinning part, drag that out a couple 2-3 seconds longer."* and
+      *"Make the slowdown phase a smidge longer."* 22 turns, 7.2s up and
+      5.4s down (`RANK_CUTSPIN_*`) - 2.6s longer, the same top speed.
+    - *"Make the color flash a slight build up, like that unlock one gets
+      brighter and brighter and then the pop."* **No flicks**: the new
+      colour's arc only ever climbs, from the first turns to the bang
+      (`pow(ss(.15, 1, u/P), 1.15)`), its whole ring from ~40% of the way;
+      the old pale light it replaces only ever fades.
+    - *"When it gets to a stop/starts slowing down, the unlocked flare
+      needs to be bright as if it just went through a change, and then the
+      more it slows down, the dimmer it gets, when the spinning completely
+      stops, it does the pulse (don't make it move just the pulse here)
+      and then the flash and then the rest."* At the bang the new flare
+      gets an **after-glow** (`flareLight("is-afterglow", newColor)`, glow
+      and ring 1 -> .16 over the slowing, on DEC's own clock) and its
+      bubble comes back out of the light a little sooner than the rest.
+      **At the stop, the pulse** (`windUp`): the flare breathes in place
+      in its new colour, each breath shorter and brighter (520ms down to
+      180ms), the aura round the planet breathing with it (opacity only).
+      **The system does not move**: no `.rank-spin` scale, no
+      `.rank-gather` rings (both still in the CSS, unused).
+    Times: a rank `{ ignite 5300, burst 19600, settle 22100, outro 26100 }`
+    - ~27.8s to the reward card.
+  - **SUPERNOVA, LONGER AND ITS OWN (the second evolution round).** *"needs
+    to be longer, something during the supernova cutscene needs to be
+    different ... after the flash at the end, something happens and then
+    the planet system looks different and then that's when the rings
+    change color? Maybe some of the fragments could be going around the
+    rings like in an orbit ... make it cool."*
+    - **Its own whirl**: `times.accel/decel/turns` (8.2s, 6.2s, 28 turns -
+      a touch faster at the top than a rank); the planet heats with the
+      speed (`.sn-spinheat`, in the before-hero under the bubbles, an
+      opacity curve on the whirl's clock); dark streaks with ember leading
+      edges run through the light (`buildRankTrails(..., withVoid)` ->
+      `.rank-trail.is-void`, built LAST so they cut through the new
+      colour's red ring too - built first, the red ring hid them); its
+      bang is bigger and throws a dark ring (`.rb-void`) with a 380ms kick
+      of the stage.
+    - **The transformation, after the blast** (all timed off the blast,
+      `b`): `sn-scarred` (b+1.3s, the scar burns in through the dust),
+      `snSweep()` (b+2s: 28 black shards with ember rims spiral out of the
+      planet to the two rings and ride them round, fading by ~b+6s),
+      `sn-settled` (b+4.3s), and only then `sn-rings` (b+4.9s) - the
+      rings turn, a glint (`.sn-ringglint`) running round each. Title at
+      b+7s; `{ ignite 5300, accel 8200, decel 6200, turns 28, swell 1800,
+      burst 22000, settle 29000, outro 33900 }` - ~35.5s in all.
+    - **IT ENDS ON HOME'S OWN PLANET.** The after-planet is built by
+      `buildCosmicHero` AS A SUPERNOVA ACCOUNT (`quietBuild`:
+      `store.supernovaAchieved` set for the length of the build,
+      `window.saveStore` stubbed so the builder records nothing early),
+      and a plain build is diffed against it: every top-level child the
+      Supernova build adds (keyed by tag + its sorted `cosmic-*` classes)
+      is marked `data-sn-reveal` - `scar` for `.cosmic-scar`, `new` for
+      anything else - and held at opacity 0 until its beat. So whatever
+      Home draws for Supernova, now or after another branch changes it
+      (the planet branch's fragments orbiting the rings), is what the
+      scene ends on, with no second copy to keep in step. The rings are
+      the one thing NOT hidden: they are held plain by CSS until
+      `sn-rings` (`:not(.sn-rings) ... .cosmic-orbit-ring{ stroke: plain
+      !important }`, which beats the top tier's inline pattern paint too)
+      and then ease into their colour. **A new Supernova layer on Home
+      that animates its OWN opacity will fight the reveal** - animate its
+      children, not the layer.
+    - **Gates**: `check_b317_evolve` re-asserts against 7ee6c51: attention
+      in place (no slot shift, no stage translate, the flare's distance
+      from the planet within 2% of its width), in the pale light, 4+
+      swells; ~7.2s up and ~5.4s down; the build with no drop; the
+      after-glow bright -> dim and non-increasing; at the stop 3+ swells,
+      no `.rank-spin` scale, no gather, the charge brighter late than
+      early; 26.5-29.5s. `check_b317_cutspin`: 6.5s+ up, 4.8s+ down, the
+      flash at frame 575-605. `check_b317_supernova`: its own whirl
+      (7.8s+ / 5.8s+), the heat, the dark streaks and the dark ring; the
+      transformation in order (scar, settled, rings, title, the rings
+      4s+ after the blast); 16+ shards, most within 92-158 units of the
+      planet's centre (the rings are 108 and 140); the rings' stroke
+      plain at the blast and during the sweep; the scene's planet the
+      same set of top-level layers as Home's Supernova build, every
+      revealed one showing by the title; 33-37.5s. `check_b317_cutend`
+      runs to 40s (Supernova's title is up at ~29s). The Home-size check
+      in `check_b317_cutspin` skips the flare while its slot is `.is-attn`
+      (it breathes in scale there, by design).
+    - **TWO HARNESS FAULTS IN THE FRAME-STEPPER (`CUTSPIN_SEEK`, and the
+      recorder's copy), both found because the slowing measured short.**
+      (1) A finite animation that appears mid-run was started from its own
+      `currentTime` when first seen - but the document timeline is REAL
+      time, not the page clock, so that was the real time the harness took
+      to get round to it: up to a third of a second under load, the 5.4s
+      slowing measuring 4.87s. It starts from 0 now (infinite loops, and
+      everything present at the first seek, keep theirs - Home syncs its
+      loops to the wall clock). (2) Then the whirl never finished:
+      `(17.9 - 5.3) * 1000` is 12599.999..., which parked it a hair short
+      of its end, PAUSED, and `finish()` on an animation paused at its end
+      leaves it paused - its `finished` never resolved and the scene ran
+      on its 2.5s fallback. The seek is rounded to the microsecond, and if
+      `finish()` leaves it unfinished, `play(); finish()`. **A frame-stepped
+      timing that comes out wrong by a fixed amount is worth suspecting in
+      the stepper before the scene.**
+    - **Seams (an add-on, same round)**: `rk-nova-shock-soft` and
+      `rk-nova-frag-soft` (the Supernova emblem's recorded bubble) were
+      invisible at both ends but did not END where they began; their last
+      frame is their first now - the way back is taken at opacity 0 (the
+      shock's last 2%, the fragments' from 82%) - and check-loops reports
+      0 seams.
   - **The lag and the "placed off" flares.** The second round took the
     bubbles' `backdrop-filter` blur off inside a scene (re-sampled every
     frame while they move); the third round put it back, because the

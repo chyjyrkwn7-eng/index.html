@@ -155,7 +155,7 @@ with sync_playwright() as pw:
     pg.evaluate("()=>document.getElementById('dailyq-exitbtn').click()")
     saw_cut = wait_for(pg, "()=>!!document.getElementById('supernova-cutscene')", 6000)
     ck("Exit plays the rank cutscene on Home", saw_cut)
-    lunar = wait_for(pg, "()=>{ const s=document.querySelector('.rs-spot.is-rankreward'); return !!(s && /Lunar/.test(s.textContent)) && !document.getElementById('supernova-cutscene'); }", 30000)
+    lunar = wait_for(pg, "()=>{ const s=document.querySelector('.rs-spot.is-rankreward'); return !!(s && /Lunar/.test(s.textContent)) && !document.getElementById('supernova-cutscene'); }", 40000)
     ck("then the rank's character arrives on Home, as a Rank reward", lunar)
     ctx.close()
 
