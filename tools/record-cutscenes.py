@@ -282,14 +282,15 @@ def supernova(pg, rec):
 
 
 def void_cutscene(pg, rec):
-    """The three Secret Flares falling together into Void.
+    """Void from Home - the path a pendingVoidCutscene stored before build
+    215 still takes. Since build 317 it plays the rebuilt Void scene
+    (playVoidFlareScene, see flare_scene below), so the old three-orbs-
+    and-a-flash cutscene is gone from every path.
 
     THE REAL LENGTH MATTERS, which this file has already paid for once
-    on Supernova: the fall starts at 1.5s, the last orb lands at 2.0s,
-    the collapse is at 3.4s, the reveal at 3.9s, the name at 4.8s, and
-    it hands back to Home at 8.6s with the unlock banner after it. A 5s
-    capture of this is a recording of three dots drifting and nothing
-    else."""
+    on Supernova: the scene hands back to Home at ~28.7s, with the unlock
+    card ~0.4s after it. Anything shorter records the build-up and misses
+    the silhouette and the reveal, which are the point."""
     pg.evaluate("()=>showHome()")
     pg.wait_for_timeout(700)
     rec.start(); pg.wait_for_timeout(400)
@@ -297,7 +298,7 @@ def void_cutscene(pg, rec):
         store.mysteryColorsFound = { red:true, orange:true, yellow:true };
         store.pendingVoidCutscene = true;
         playVoidCutscene();}""")
-    pg.wait_for_timeout(11800)   # 8.6s cutscene, then the CHARACTER UNLOCKED banner
+    pg.wait_for_timeout(32000)   # ~28.7s scene, then Home and Void's card
 
 
 def test_to_badge(pg, rec):
@@ -353,10 +354,12 @@ def test_to_rank(pg, rec):
 
 def flare_scene(color, void_flare):
     """The secret-flare scene that actually plays at the end of a run
-    (playFinalFlareScene), rebuilt in build 312: the flare streaks in, the
-    planet collapses, the dark holds, the figure's own flares light alone,
-    and it fades up round them. 18.2s long - a shorter capture misses the
-    whole point of the rebuild, which is the slow arrival."""
+    (playFlareFoundScene). Rebuilt in build 317 (sfScene): the build-up,
+    the dark, the character as a live silhouette, its special, the light
+    rising over it, the title - about 28s for a character's scene, 10s for
+    the first two. A shorter capture misses the reveal, which is the point.
+    (tools/... frame-stepped recordings: see CLAUDE.md, "THE SECRET FLARE
+    SCENES".)"""
     def body(pg, rec):
         pg.evaluate("()=>showHome()")
         pg.wait_for_timeout(700)
@@ -368,7 +371,7 @@ def flare_scene(color, void_flare):
             store.mysteryColorsFound = {}; order.slice(0, order.indexOf(a.c) + 1).forEach(k => store.mysteryColorsFound[k] = true);
             if(a.v) playFlareFoundScene(a.c, false, () => {});
             else playFinalFlareScene(a.c, () => {});}""", {"c": color, "v": void_flare})
-        pg.wait_for_timeout(19500)
+        pg.wait_for_timeout(30500)
     return body
 
 

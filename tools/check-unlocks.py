@@ -559,9 +559,11 @@ def check_find(pg):
     check("so Home is just Home", home["voidScene"] is False and home["home"] == "home", home)
     scene = pg.evaluate("""()=>{ window.__ffDone = false;
       const h = playFlareFoundScene(MYSTERY_ORDER[2], true, () => { window.__ffDone = true; });
+      /* build 317: the scene is rebuilt (sfScene) - the three flares'
+         spots round the planet, and Void as its own live drawing */
       const r = { scene: !!document.querySelector('.ff-scene'),
-                  flares: document.querySelectorAll('.ff-scene .ff-spot').length,
-                  voidDrawn: !!document.querySelector('.ff-scene .ff-void svg'),
+                  flares: document.querySelectorAll('.ff-scene .sfv-spot').length,
+                  voidDrawn: !!document.querySelector('.ff-scene .sf-fig .sf-real svg[data-char="voidwalker"]'),
                   oldCutscene: !!document.getElementById('void-cutscene') };
       if(h && h.stop) h.stop();
       return r; }""")
