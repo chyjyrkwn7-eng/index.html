@@ -76879,8 +76879,13 @@ const HUNDO_FX_TAIL_MS = 1200;
 const HUNDO_FX_TOTAL = { fireworks: 7000, blackhole: 5600, underwater: 7400, worldtree: 5600, bubbles: 7000, ufo: 11100 };
 const HUNDO_FX_BOX_TOTAL = { confetti: 3000, fireworks: 3600, blackhole: 3600, underwater: 4800, worldtree: 3600, bubbles: 4600, ufo: 7400 };
 /* When the last tail starts, for the gate: everything is still on
-   screen and part-way faded between this and the total. */
-const HUNDO_FX_TAIL_AT = { fireworks: 5000, blackhole: 4000, underwater: 5900, worldtree: 4100, bubbles: 5300, ufo: 9500 };
+   screen and part-way faded between this and the total. (The results
+   flow's first scene waits for it too.) Bubbles' was 5.3s, which is after
+   its last bubble has gone: paused and seeked, ~25 pieces are fading at
+   4.6s, 6 at 5.0s and none from 5.2s (the same on 336c444) - so its gate
+   passed only when the machine was slow enough to start the effect late.
+   4.6s is where its last pieces go. */
+const HUNDO_FX_TAIL_AT = { fireworks: 5000, blackhole: 4000, underwater: 5900, worldtree: 4100, bubbles: 4600, ufo: 9500 };
 /* THE BOX'S COLOURS WHILE EACH ONE PLAYS (build 313): "Would be pretty
    cool if the themes matches the box, cause if the just stays yellow it
    would get kinda boring." Border, wash and the numerals' gradient;

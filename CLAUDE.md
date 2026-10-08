@@ -13357,7 +13357,12 @@ on every effect at 320/440/834, the default and every tile; it fails on
   fade over at least `HUNDO_FX_TAIL_MS` (1.2s); layers come off only at
   `HUNDO_FX_TOTAL[id]`; a scene going up or the screen changing FADES them
   (`hfxFadeOut`), never a cut. `HUNDO_FX_TAIL_AT` is where each tail starts,
-  for the gate. The UFO's tail is the stars it leaves behind, twinkling out
+  for the gate - and the results flow's first scene waits for it, so it
+  has to be TRUE: measure it paused and seeked, never trust it. Bubbles'
+  said 5.3s while its last bubble was gone by 5.2s (~25 pieces fading at
+  4.6s, 6 at 5.0s, none from 5.2s, the same on 336c444), so its gate
+  passed only on runs slow enough to start the effect late (3 of the 6 in
+  round 4 failed); it is 4.6s now. The UFO's tail is the stars it leaves behind, twinkling out
   between 9.9s and 10.8s as the dark lifts (7.4-8.3s before round 4; it
   used to have an empty last second, which the gate caught once the
   timings moved).
