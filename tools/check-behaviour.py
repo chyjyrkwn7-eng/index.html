@@ -14674,8 +14674,10 @@ def check_b317_hundobox(br):
                [(x, y) for y in range(m, H - m) for x in list(range(0, 3)) + list(range(W - 3, W))]
         # a beam enters at the top: the band under the top edge, its middle
         # against its right (the GRADE label is on the left)
+        # (the column by brightness, not green: the beam is blue - round 5)
         band = lambda f0, f1: [(x, y) for x in range(int(W * f0), int(W * f1)) for y in range(int(H * .03), int(H * .2))]
-        return {"ring": round(gsum(ring), 1), "col": round(gsum(band(.43, .57)) - gsum(band(.76, .9)), 1)}
+        lum = lambda pts: sum(.3 * px[x, y][0] + .59 * px[x, y][1] + .11 * px[x, y][2] for x, y in pts) / max(1, len(pts))
+        return {"ring": round(gsum(ring), 1), "col": round(lum(band(.43, .57)) - lum(band(.76, .9)), 1)}
     for label, w, h, multi in (("iPhone 17 Pro Max", 440, 956, False), ("iPad Pro 11\"", 834, 1194, False), ("iPhone 17 Pro Max, two units", 440, 956, True)):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=2)
         pg.evaluate("() => { " + RUN100 + RUN100M + " }")
