@@ -13953,6 +13953,121 @@ def check_b317_rings(br):
         ctx.close()
 
 
+def check_b317_hometaps(br):
+    """Build 317. "I like what happens when you click the secret flares. Can
+    the large flares do the same? I also think the same could go for the
+    large planet, improve what happens when you click." Real clicks at the
+    real positions: a rank bubble answers like a secret flare (a box that
+    follows it, the ring round it - sized to the bubble - the flare's name,
+    and a light inside the glass), held and locked worded apart; a secret
+    flare still does what it did; the planet keeps its "....." and gains a
+    touch (press, ripple, halo, rings, a surge of the flare rings) that is
+    all overlay - no filter, no layout shift, one box however often it is
+    tapped; Reduce motion keeps a still answer and drops the motion. Written
+    against 1888b11, where a bubble said "Bronze rank - reached. Its flare
+    is lit." from a box that stayed put and the planet only said "....."."""
+    print("\n317t. Home taps: a rank bubble answers like a secret flare; the planet answers the touch")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.add_style_tag(content=".rs-spot, .daily-alert{ display:none !important; }")
+        prep = """async (rm) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          /* Gold reached, so there are bubbles both lit and not; every rank-up already seen */
+          const rule = TIER_UNLOCKS.veteran, U = topicsIn(QUESTIONS); store.unitPerfects = store.unitPerfects || {};
+          U.slice(0, rule.badges).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+          store.lifetime = store.lifetime || {}; let n = 0;
+          while(levelOf(store) < rule.level && n++ < 4000) store.lifetime.points = (store.lifetime.points || 0) + 2000;
+          store.supernovaAchieved = false; store.pendingSupernovaCutscene = false; store.pendingTierCutscene = null;
+          store.rankFloor = 0; store.rankMapFx244 = true; store.rankMapSeen = 9; store.savedCodeSaved = true; saveStore();
+          try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); }catch(e){}
+          try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); }catch(e){}
+          theme.reduceMotion = !!rm; if(rm) document.documentElement.dataset.reduceMotion = 'true'; else delete document.documentElement.dataset.reduceMotion;
+          showHome(); await wait(900); document.querySelectorAll('.rs-spot').forEach(x => x.remove());
+          const box = el => { if(!el) return null; const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.width]; };
+          const H = '.screen-home-actual .cosmic-hero-wrap';
+          return { lit: box(document.querySelector(H + ' .cosmic-badge-rank.cosmic-badge-lit')),
+                   litTier: (document.querySelector(H + ' .cosmic-badge-rank.cosmic-badge-lit') || {dataset:{}}).dataset.rankTier,
+                   dark: box(document.querySelector(H + ' .cosmic-badge-rank:not(.cosmic-badge-lit)')),
+                   darkTier: (document.querySelector(H + ' .cosmic-badge-rank:not(.cosmic-badge-lit)') || {dataset:{}}).dataset.rankTier,
+                   sphere: box(document.querySelector(H + ' .cosmic-hero-main circle[style*="cursor"]')) }; }"""
+        told = """(tier) => { const b = document.querySelector('.screen-home-actual .cosmic-badge-rank[data-rank-tier="' + tier + '"]');
+          const p = document.getElementById('contextual-info-popup'), d = document.getElementById('contextual-info-line-dot');
+          const t = b && b.querySelector('.cosmic-badge-told');
+          return { text: p ? p.textContent : null, ring: !!(d && d.classList.contains('is-ring')), ringW: d ? parseFloat(d.style.width) || 0 : 0,
+            bubbleW: b ? b.getBoundingClientRect().width : 0, follows: !!showContextualInfo._raf,
+            told: !!t, toldMoving: t ? t.getAnimations().length : 0, toldOp: t ? +getComputedStyle(t).opacity : 0, toldStill: !!(t && t.classList.contains('is-still')),
+            flare: (typeof ACCENT_DISPLAY_NAME !== 'undefined' ? ACCENT_DISPLAY_NAME[tier] : ''), rank: RANK_DISPLAY_NAME[tier] }; }"""
+        lay = """() => ['.screen-home-actual .homegreeting', '#nextbtn', '.screen-home-actual .cosmic-hero-wrap'].map(q => { const e = document.querySelector(q); if(!e) return null; const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)]; })"""
+        fxs = """() => { const fx = document.querySelector('.screen-home-actual .cosmic-tapfx'); const p = document.getElementById('contextual-info-popup');
+          const kids = fx ? [...fx.querySelectorAll('*')] : [];
+          const surge = [...document.querySelectorAll('.screen-home-actual .cosmic-hero-orbitlayer')].map(l => l.getAnimations().filter(a => !(window.CSSAnimation && a instanceof CSSAnimation) && a.effect.getKeyframes().some(k => k.rotate !== undefined)).length);
+          return { boxes: document.querySelectorAll('.screen-home-actual .cosmic-tapfx').length, text: p ? p.textContent : null,
+            moving: kids.reduce((n, k) => n + k.getAnimations().length, 0), filtered: kids.filter(k => { const f = getComputedStyle(k).filter; return f && f !== 'none'; }).length,
+            still: !!(fx && fx.classList.contains('is-still')), surge,
+            pe: fx ? getComputedStyle(fx).pointerEvents : null }; }"""
+        r0 = pg.evaluate(prep, False)
+        out = {}
+        if r0.get("lit"):
+            pg.mouse.click(r0["lit"][0], r0["lit"][1]); pg.wait_for_timeout(250)
+            out["lit"] = pg.evaluate(told, r0["litTier"])
+        pg.wait_for_timeout(4500)
+        if r0.get("dark"):
+            pg.mouse.click(r0["dark"][0], r0["dark"][1]); pg.wait_for_timeout(250)
+            out["dark"] = pg.evaluate(told, r0["darkTier"])
+        pg.wait_for_timeout(4500)
+        # a secret flare still answers as it did
+        fl = pg.evaluate("""() => { const d = [...document.querySelectorAll('.screen-home-actual .cosmic-hero-orbitlayer .cosmic-flare-dot')]
+            .map(e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })
+            .filter(([x, y]) => { const t = document.elementFromPoint(x, y); return t && t.closest && t.closest('.cosmic-flare-dot'); }); return d[0] || null; }""")
+        if fl:
+            pg.mouse.click(fl[0], fl[1]); pg.wait_for_timeout(250)
+            out["flare"] = pg.evaluate("""() => { const p = document.getElementById('contextual-info-popup'), d = document.getElementById('contextual-info-line-dot');
+              return { text: p ? p.textContent : null, ring: !!(d && d.classList.contains('is-ring')), follows: !!showContextualInfo._raf }; }""")
+        pg.wait_for_timeout(4500)
+        before = pg.evaluate(lay)
+        sp = r0.get("sphere") or [0, 0, 0]
+        tap = (sp[0] - sp[2] * .18, sp[1] + sp[2] * .2)
+        pg.mouse.click(*tap); pg.wait_for_timeout(200)
+        out["planet"] = pg.evaluate(fxs)
+        out["during"] = pg.evaluate(lay)
+        for _ in range(3):
+            pg.mouse.click(*tap); pg.wait_for_timeout(120)
+        out["again"] = pg.evaluate(fxs)
+        pg.wait_for_timeout(1500)
+        out["after"] = pg.evaluate(lay)
+        # Reduce motion: still answers, nothing moves
+        r1 = pg.evaluate(prep, True)
+        sp = r1.get("sphere") or [0, 0, 0]
+        pg.mouse.click(sp[0] - sp[2] * .18, sp[1] + sp[2] * .2); pg.wait_for_timeout(200)
+        out["rmPlanet"] = pg.evaluate(fxs)
+        pg.wait_for_timeout(3500)
+        if r1.get("lit"):
+            pg.mouse.click(r1["lit"][0], r1["lit"][1]); pg.wait_for_timeout(250)
+            out["rmLit"] = pg.evaluate(told, r1["litTier"])
+        pg.evaluate("() => { theme.reduceMotion = false; delete document.documentElement.dataset.reduceMotion; }")
+        L, D, F, P, A, RP, RL = (out.get(k) or {} for k in ("lit", "dark", "flare", "planet", "again", "rmPlanet", "rmLit"))
+        check(dev + ": the fixture has a lit and an unlit rank bubble", bool(r0.get("lit")) and bool(r0.get("dark")), r0)
+        check(dev + ": a held bubble answers like a secret flare - its flare named, a box that follows it, the ring round the whole bubble, a light in the glass",
+              (L.get("text") or "").startswith((L.get("flare") or "?") + " flare.") and "Lit since you reached " + (L.get("rank") or "?") + " rank" in (L.get("text") or "")
+              and L.get("ring") and L.get("ringW", 0) >= L.get("bubbleW", 99) and L.get("follows") and L.get("told") and L.get("toldMoving", 0) >= 1, L)
+        check(dev + ": a locked bubble says what lights it, in the same way",
+              (D.get("text") or "").startswith((D.get("flare") or "?") + " flare.")
+              and ("Reach " + (D.get("rank") or "?") + " rank to light it" in (D.get("text") or "") or "ready to reach" in (D.get("text") or ""))
+              and D.get("ring") and D.get("follows") and D.get("told"), D)
+        check(dev + ": a secret flare still answers as it did (its own words, the ring, following)",
+              ("found" in (F.get("text") or "") or "secret flare" in (F.get("text") or "")) and F.get("ring") and F.get("follows"), F)
+        check(dev + ": the planet keeps its \".....\" and answers the touch - press, ripple, halo, rings, and the flare rings surge",
+              (P.get("text") or "").strip() == "....." and P.get("boxes") == 1 and P.get("moving", 0) >= 4 and P.get("pe") == "none"
+              and len(P.get("surge") or []) == 2 and all(n >= 1 for n in P.get("surge") or [0]), P)
+        check(dev + ": all of it overlay: no filter, nothing moves on the screen, one box however often it is tapped",
+              P.get("filtered") == 0 and before == out.get("during") == out.get("after") and A.get("boxes") == 1 and A.get("moving", 99) <= 5
+              and all(n == 1 for n in A.get("surge") or [0]), [before, out.get("during"), out.get("after"), A])
+        check(dev + ": Reduce motion: the planet still answers, held still, and nothing surges",
+              (RP.get("text") or "").strip() == "....." and RP.get("still") and RP.get("moving") == 0 and all(n == 0 for n in RP.get("surge") or [1]), RP)
+        check(dev + ": Reduce motion: a bubble's light is still and visible",
+              RL.get("told") and RL.get("toldStill") and RL.get("toldMoving") == 0 and RL.get("toldOp", 0) > .3 and RL.get("ring"), RL)
+        ctx.close()
+
+
 def check_b317_rankup(br):
     """Build 317. "When you rank up, the next time you open the Profile tab
     it should be a cool thing. After a second, a black loading screen that
@@ -14344,6 +14459,7 @@ def main():
             check_b317_xpcap(br)
             check_b317_pfcard(br)
             check_b317_rings(br)
+            check_b317_hometaps(br)
             check_b317_rankup(br)
         finally:
             br.close()

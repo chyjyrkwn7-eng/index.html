@@ -15119,6 +15119,61 @@ disagree with it.
     key is missing, and does nothing under Reduce motion. Fails 1888b11
     (5.2 wide, six extra circles, black, no draw); the vividness check
     fails 3644f1b (round three).
+- **HOME'S TAPS: A RANK BUBBLE ANSWERS LIKE A SECRET FLARE, AND THE PLANET
+  ANSWERS THE TOUCH (build 317).** *"I like what happens when you click the
+  secret flares. Can the large flares do the same? I also think the same
+  could go for the large planet, improve what happens when you click."*
+  - **What a secret flare does** (and still does, untouched):
+    `showContextualInfo(dot, flareSays(...), { follow, ring, refind })` - a
+    box that follows the turning dot, a ring round it in place of the grey
+    dot, found again if Home is rebuilt, open 4.2s; pressing it moves
+    nothing.
+  - **A rank bubble now makes the same call**, with `ringFit` (new: the
+    ring is the bubble's own width + 10px, not the 16-28px a tiny flare
+    gets), and answers in the glass with `flareBubbleTold()`: a light of
+    its own colour (`--rank-color`) swelling from the middle and fading,
+    0.9s, a child of the bubble so its clip keeps it inside. Before, a
+    bubble opened a box that stayed where it was put, with "Bronze rank -
+    reached. Its flare is lit." **It never opened the Rank screen and
+    still opens nothing.** The bubbles do not orbit on Home (only in the
+    rank-up scene); `follow` costs nothing and keeps the box on the
+    bubble through any re-layout.
+  - **The flare and its rank share a name now** (`ACCENT_DISPLAY_NAME` was
+    renamed to the rank names), so the words are "Gold flare. Lit since
+    you reached Gold rank." held, and "Platinum flare. Reach Platinum rank
+    to light it: 10 more levels, 2 more badges." locked - the old flare
+    names (Ember, Comet) do not exist any more.
+  - **The planet keeps its "....." and gains a touch** (`planetTapFx`): the
+    surface presses in (its edge darkens), a ripple of light runs out from
+    where the finger landed, a halo leaves the rim, the inner ring then the
+    outer one brighten (outline overlays, not the rings themselves, which
+    live in the filtered svg), and the two rings of secret flares surge a
+    few degrees and give them back over nine seconds - the individual
+    `rotate` property on the orbit layers, which adds to their `transform`
+    spin, so they end on the shared loop clock again. All in one
+    `.cosmic-tapfx` box made on the first tap and placed just before the
+    rank bubbles: over the sphere and anything later drawn on it (the
+    Supernova scar), under the bubbles, `pointer-events:none`. The
+    planet's own DOM is not touched. Transform and opacity only.
+  - **Reduce motion**: no ripple, no surge, no swell; the press, the halo,
+    the rings and the bubble's light show still for a moment. No layout
+    moves (measured: the greeting, Start Studying and the hero box are
+    identical before, during and after). A tap is the only thing that
+    starts any of it, so it cannot collide with the unlock queue, a tour
+    (which takes the tap itself) or the daily alert.
+  - The bubble's light is removed when its animation finishes, not on a
+    timer, so a slowed or seeked page keeps it until it has played.
+  - **Gate: `check_b317_hometaps`** - real clicks at the live positions on
+    both reference devices: a held and a locked bubble (words, ring sized
+    to the bubble, following, the light), a secret flare unchanged, the
+    planet ("....." kept, five overlay animations, both flare rings
+    surging, no filter, no layout shift, one box after four taps, at most
+    one surge per ring), and Reduce motion (still and visible, nothing
+    moving). Fails 1888b11.
+  - Recorded frame-stepped: the popups' 3.2/4.2s timers run in real time,
+    so the recorder clears `showContextualInfo._t` and closes them on the
+    virtual clock, and `element.animate()` is patched to freeze each new
+    animation at the virtual moment it is made.
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h

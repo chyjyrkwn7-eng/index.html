@@ -12114,6 +12114,31 @@
   .cosmic-badge-tappable:active{ transform:scale(.88); }
   .cosmic-badge-tappable:focus{ outline:none; }
   .cosmic-badge-tappable:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; }
+  /* A tapped rank bubble's light (flareBubbleTold): its own colour inside
+     the glass, above the emblem and under nothing. */
+  .cosmic-icon-badge .cosmic-badge-told{
+    position:absolute; inset:0; border-radius:50%; pointer-events:none; z-index:3; opacity:0;
+    background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.75) 0 14%, color-mix(in srgb, var(--rank-color, #FFFFFF) 70%, transparent) 38%, transparent 72%);
+  }
+  .cosmic-icon-badge .cosmic-badge-told.is-still{ opacity:.6; }
+  /* TAPPING THE PLANET (planetTapFx): overlays over the sphere (centre
+     180,150 and radius 52 in the 0 -12 360 342 viewBox), a halo off its
+     rim and the two rings' outlines. Transform and opacity only. */
+  .cosmic-tapfx{ position:absolute; inset:0; pointer-events:none; }
+  .cosmic-tapfx > *{ position:absolute; left:50%; top:47.368%; aspect-ratio:1; border-radius:50%; translate:none; transform:translate(-50%, -50%); opacity:0; pointer-events:none; }
+  .cosmic-tapfx .tfx-planet{ width:28.889%; overflow:hidden; opacity:1; }
+  .cosmic-tapfx .tfx-planet > i{ position:absolute; border-radius:50%; opacity:0; }
+  .cosmic-tapfx .tfx-press{ inset:0; background:radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 38%, rgba(12,4,10,.42) 82%, rgba(12,4,10,.6) 100%); }
+  .cosmic-tapfx .tfx-ripple{ width:230%; aspect-ratio:1; left:50%; top:50%; transform:translate(-50%, -50%) scale(.06);
+    background:radial-gradient(circle, rgba(255,255,255,0) 0 40%, rgba(255,236,222,.5) 46%, rgba(255,255,255,.16) 50%, rgba(255,255,255,0) 57%); }
+  .cosmic-tapfx .tfx-rim{ width:28.889%; box-shadow:0 0 0 1.5px rgba(255,236,222,.55), 0 0 22px 6px rgba(255,190,160,.32); }
+  .cosmic-tapfx .tfx-ring{ border:1.5px solid rgba(255,244,236,.5); box-shadow:0 0 10px rgba(255,236,222,.28), inset 0 0 8px rgba(255,236,222,.18); }
+  .cosmic-tapfx .tfx-ring.is-in{ width:60%; }
+  .cosmic-tapfx .tfx-ring.is-out{ width:var(--tfx-outer, 77.778%); }
+  /* Reduce motion: the same answer, held still for a moment */
+  .cosmic-tapfx.is-still .tfx-press{ opacity:.7; }
+  .cosmic-tapfx.is-still .tfx-rim{ opacity:.6; }
+  .cosmic-tapfx.is-still .tfx-ring{ opacity:.55; }
   /* A tier that's actually been reached breaks out of the plain grey
      glass treatment entirely \u2014 real color, a solid glowing ring, and
      a soft halo behind it, so reaching a tier visibly changes this
@@ -62776,6 +62801,8 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     sphere.style.cursor = "pointer";
     sphere.addEventListener("click", (e) => {
       e.stopPropagation();
+      /* and the planet answers the touch (build 317, planetTapFx) */
+      try{ planetTapFx(wrap, e); }catch(err){}
       showContextualInfo(sphere, "..... ");
     });
   }
@@ -63199,16 +63226,29 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
       badge.setAttribute("tabindex", "0");
       const flareName = ACCENT_DISPLAY_NAME[pos.tier];
       const rankName = RANK_DISPLAY_NAME[pos.tier];
-      /* Worded as the rank, since the bubble IS the rank now - "ensure
-         the flare descriptions are updated". */
+      /* THE SAME TAP AS A SECRET FLARE (build 317). "I like what happens
+         when you click the secret flares. Can the large flares do the
+         same?" So it is the same call - a box that follows the bubble
+         ({ follow }), the ring round it in place of the dot ({ ring },
+         sized to the bubble), found again if Home is rebuilt under it
+         ({ refind }) - and the bubble answers the tap with a short light
+         of its own colour inside the glass (flareBubbleTold). It never
+         opened anything; it still opens nothing. The flare and its rank
+         share a name now, so the text names the flare and says what
+         lights it. */
       const showFlareInfo = () => {
+        flareBubbleTold(badge);
+        let text;
         if(achieved){
-          showContextualInfo(badge, rankName + " rank \u2014 reached. Its flare is lit.");
-          return;
+          text = flareName + " flare. Lit since you reached " + rankName + " rank.";
+        } else {
+          const parts = tierShortfall(TIER_UNLOCKS[pos.tier]);
+          text = flareName + " flare. " + (parts.length
+            ? "Reach " + rankName + " rank to light it: " + parts.join(", ") + "."
+            : rankName + " rank is ready to reach.");
         }
-        const parts = tierShortfall(TIER_UNLOCKS[pos.tier]);
-        showContextualInfo(badge, rankName + " rank \u2014 " +
-          (parts.length ? parts.join(", ") + " to go. Reaching it lights this flare." : "ready to reach."));
+        showContextualInfo(badge, text, { follow: true, ring: true, ringFit: true,
+          refind: () => document.querySelector('.panel.home .cosmic-hero-wrap .cosmic-badge-rank[data-rank-tier="' + pos.tier + '"]') });
       };
       badge.addEventListener("click", showFlareInfo);
       badge.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); showFlareInfo(); } });
@@ -74580,6 +74620,112 @@ const LEVEL_CONFETTI = {
    tabindex=-1 keep it out of the accessibility tree and tab order. */
 
 
+/* A RANK BUBBLE ANSWERS A TAP (build 317) - a short light of its own
+   colour inside the glass, swelling from the middle and fading: the
+   bubble's version of the secret flare's lit look. A child, so the
+   bubble's clip keeps it inside; transform and opacity only. Under
+   Reduce motion it is a still glow for the same moment. */
+function flareBubbleTold(badge){
+  if(!badge) return;
+  badge.querySelectorAll(".cosmic-badge-told").forEach(x => x.remove());
+  const i = document.createElement("i");
+  i.className = "cosmic-badge-told";
+  i.setAttribute("aria-hidden", "true");
+  badge.appendChild(i);
+  /* gone when its light has played (read off the animation, so a page
+     that is paused or slowed keeps it until then), or after a still
+     moment under Reduce motion */
+  let an = null;
+  if(!ringMotionOff()){
+    try{
+      an = i.animate([{ opacity: 0, transform: "scale(.55)" }, { opacity: 1, transform: "scale(1)", offset: .22 }, { opacity: 0, transform: "scale(1.15)" }],
+        { duration: 900, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" });
+    }catch(e){ an = null; }
+  }
+  if(an && an.finished) an.finished.then(() => i.remove(), () => {});
+  else{ i.classList.add("is-still"); setTimeout(() => i.remove(), 900); }
+}
+/* TAPPING THE PLANET (build 317). "I also think the same could go for
+   the large planet, improve what happens when you click." It kept its
+   "....." and gained a touch: the surface presses in (its edge
+   darkens), a ripple of light runs out across it from where the finger
+   landed, a halo leaves its rim, the rings brighten one after the other
+   going outward, and the two rings of secret flares surge forward and
+   ease back.
+   - Every piece is an overlay - a clipped disc over the sphere, a halo,
+     two ring outlines - in one .cosmic-tapfx box added to the hero the
+     first time it is tapped, just before the rank bubbles, so it sits
+     over the sphere and anything drawn on it, under the bubbles. The
+     planet's own DOM is not touched.
+   - Transform and opacity only, no filters. The surge is the orbit
+     layers' individual `rotate` (their spin is on `transform`, so the
+     two add): a few degrees forward fast, then given back slowly over
+     nine seconds, so the flares end up on the shared loop clock again.
+   - Reduce motion: no ripple and no surge; the press, the halo and the
+     rings show still for a moment. Nothing waits for it and it waits
+     for nothing - it is the answer to a tap. */
+function planetTapFx(hero, ev){
+  if(!hero) return;
+  let fx = hero.querySelector(":scope > .cosmic-tapfx");
+  if(!fx){
+    fx = document.createElement("div");
+    fx.className = "cosmic-tapfx";
+    fx.setAttribute("aria-hidden", "true");
+    fx.innerHTML = '<div class="tfx-planet"><i class="tfx-press"></i><i class="tfx-ripple"></i></div>' +
+      '<i class="tfx-rim"></i><i class="tfx-ring is-in"></i><i class="tfx-ring is-out"></i>';
+    hero.insertBefore(fx, hero.querySelector(":scope > .cosmic-icon-badge"));
+  }
+  /* the outer ring's real radius (Home's is HOME_OUTER_R) */
+  const outer = hero.querySelector(".cosmic-orbit-ring[r]:not([r='108'])");
+  const R = outer ? Number(outer.getAttribute("r")) || HOME_OUTER_R : HOME_OUTER_R;
+  fx.style.setProperty("--tfx-outer", (2 * R / 360 * 100).toFixed(3) + "%");
+  const parts = {
+    press: fx.querySelector(".tfx-press"), ripple: fx.querySelector(".tfx-ripple"), rim: fx.querySelector(".tfx-rim"),
+    rin: fx.querySelector(".tfx-ring.is-in"), rout: fx.querySelector(".tfx-ring.is-out")
+  };
+  Object.values(parts).forEach(el => el.getAnimations().forEach(a => a.cancel()));
+  /* where the finger landed, on the sphere */
+  const disc = fx.querySelector(".tfx-planet").getBoundingClientRect();
+  let ox = 50, oy = 50;
+  if(ev && typeof ev.clientX === "number" && disc.width){
+    ox = Math.max(10, Math.min(90, (ev.clientX - disc.left) / disc.width * 100));
+    oy = Math.max(10, Math.min(90, (ev.clientY - disc.top) / disc.height * 100));
+  }
+  parts.ripple.style.left = ox.toFixed(1) + "%";
+  parts.ripple.style.top = oy.toFixed(1) + "%";
+  if(ringMotionOff()){
+    fx.classList.add("is-still");
+    clearTimeout(planetTapFx._still);
+    planetTapFx._still = setTimeout(() => fx.classList.remove("is-still"), 800);
+    return;
+  }
+  fx.classList.remove("is-still");
+  const A = (el, kf, o) => { try{ el.animate(kf, Object.assign({ fill: "backwards" }, o)); }catch(e){} };
+  A(parts.press, [{ opacity: 0 }, { opacity: 1, offset: .2 }, { opacity: 0 }], { duration: 520, easing: "ease-out" });
+  A(parts.ripple, [{ opacity: .95, transform: "translate(-50%, -50%) scale(.06)" }, { opacity: 0, transform: "translate(-50%, -50%) scale(1)" }],
+    { duration: 1100, easing: "cubic-bezier(.15,.6,.3,1)" });
+  A(parts.rim, [{ opacity: 0, transform: "translate(-50%, -50%) scale(1)" }, { opacity: .9, offset: .15 }, { opacity: 0, transform: "translate(-50%, -50%) scale(1.42)" }],
+    { duration: 1000, easing: "ease-out" });
+  A(parts.rin, [{ opacity: 0 }, { opacity: 1, offset: .3 }, { opacity: 0 }], { duration: 900, delay: 140, easing: "ease-in-out" });
+  A(parts.rout, [{ opacity: 0 }, { opacity: 1, offset: .3 }, { opacity: 0 }], { duration: 900, delay: 300, easing: "ease-in-out" });
+  /* the surge: forward fast, then given back slowly, from wherever an
+     earlier surge has got to */
+  hero.querySelectorAll(":scope > .cosmic-hero-orbitlayer").forEach(layer => {
+    const inner = layer.classList.contains("cosmic-hero-orbitlayer-inner");
+    let cur = 0;
+    layer.getAnimations().forEach(a => { if(a.__tfxSurge){ cur = parseFloat(getComputedStyle(layer).rotate) || 0; a.cancel(); } });
+    const X = inner ? 10 : 5;
+    try{
+      const an = layer.animate([
+        { rotate: cur + "deg", easing: "cubic-bezier(.25,.7,.35,1)" },
+        { rotate: (cur + X) + "deg", offset: .13, easing: "cubic-bezier(.45,0,.55,1)" },
+        { rotate: "0deg" }
+      ], { duration: 9000, fill: "none" });
+      an.__tfxSurge = true;
+    }catch(e){}
+  });
+}
+
 /* A small contextual info popup that appears right next to whatever
    element it's explaining, instead of a generic toast at the bottom
    of the screen \u2014 for exactly the situations (tapping a Flare, tapping
@@ -74694,7 +74840,9 @@ function showContextualInfo(targetEl, message, opts){
   if(opts.ring){
     lineDot.classList.add("is-ring");
     const tw = Math.max(rect.width, rect.height);
-    const d = Math.max(16, Math.min(28, tw + 9));
+    /* ringFit: round the whole of something big (a rank bubble), not a
+       tiny-flare-sized ring on top of it */
+    const d = opts.ringFit ? tw + 10 : Math.max(16, Math.min(28, tw + 9));
     lineDot.style.width = lineDot.style.height = d + "px";
     lineDot.style.left = (targetCenterX - d / 2) + "px";
     lineDot.style.top = (targetCenterY - d / 2) + "px";
