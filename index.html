@@ -11456,7 +11456,10 @@
   #supernova-cutscene.supernova-burst .supernova-stage .cosmic-icon-badge{ opacity:0; }
   .supernova-flash{
     position:absolute; inset:0; border-radius:50%; pointer-events:none;
-    background:radial-gradient(circle, #FFFFFF 0%, var(--theme-c1) 25%, var(--theme-c2) 45%, transparent 70%);
+    /* more stops than colours, eased, so the long soft edge has no bands */
+    background:radial-gradient(circle, #FFFFFF 0%, color-mix(in srgb, var(--theme-c1) 55%, #FFFFFF) 12%, var(--theme-c1) 25%,
+      color-mix(in srgb, var(--theme-c1) 50%, var(--theme-c2)) 35%, var(--theme-c2) 45%, color-mix(in srgb, var(--theme-c2) 62%, transparent) 54%,
+      color-mix(in srgb, var(--theme-c2) 30%, transparent) 61%, color-mix(in srgb, var(--theme-c2) 9%, transparent) 67%, transparent 72%);
     transform:scale(0); opacity:0;
   }
   #supernova-cutscene.supernova-burst .supernova-flash{
@@ -11694,17 +11697,28 @@
     100%{ opacity:0; transform:scale(2.2); }
   }
   #supernova-cutscene.sn-swell .rank-spin{ scale:1.14; transition:scale var(--sn-swell, 1.8s) cubic-bezier(.55,0,.85,.35); }
-  .sn-fx .sn-shock{ width:100%; height:100%; box-sizing:border-box; border:3px solid rgba(255,248,236,.95);
-    box-shadow:0 0 22px 6px rgba(255,176,96,.55), inset 0 0 14px 2px rgba(255,206,150,.45); }
-  .sn-fx .sn-shock.is-2{ border:9px solid rgba(255,122,52,.42); box-shadow:0 0 30px 10px rgba(255,92,32,.25); }
+  /* SOFT EDGES (build 317, the evolution round): "the edges of the
+     explosion part look really rough and weird and bad". The shock rings
+     were 3px and 9px BORDERS with blurred box-shadows, scaled 11x: a hard
+     band with stepped, blocky edges (a blurred shadow is drawn in tiles,
+     and at 11x the tiles show). They are soft radial-gradient rings now,
+     drawn at 8x the planet and scaled from .18 to 1.5 - never far past
+     their own size - with no border and no shadow. The dust was the
+     planet's 128px smoke stretched past 5x as a mask; it has a texture of
+     its own (snDustURL, soft at every edge by construction), drawn at its
+     final size and only ever scaled DOWN. */
+  .sn-fx .sn-shock{ width:800%; height:800%;
+    background:radial-gradient(circle, transparent 0 56%, rgba(255,226,190,.05) 61%, rgba(255,236,214,.3) 65%, rgba(255,248,236,.9) 68.5%,
+      rgba(255,214,160,.42) 70.5%, rgba(255,170,100,.1) 72.5%, transparent 75%); }
+  .sn-fx .sn-shock.is-2{
+    background:radial-gradient(circle, transparent 0 50%, rgba(255,120,48,.04) 57%, rgba(255,124,52,.18) 63%, rgba(255,112,44,.34) 67%,
+      rgba(255,96,36,.18) 71%, rgba(255,90,30,.05) 75%, transparent 79%); }
   #supernova-cutscene.sn-detonate .sn-shock{ animation:sn-shock 1.15s cubic-bezier(.1,.72,.25,1) both; }
   #supernova-cutscene.sn-detonate .sn-shock.is-2{ animation-duration:1.7s; animation-delay:.12s; }
-  @keyframes sn-shock{ 0%{ opacity:1; transform:scale(.9); } 70%{ opacity:.55; } 100%{ opacity:0; transform:scale(11); } }
-  .sn-fx .sn-dust{ width:270%; height:270%;
-    background:radial-gradient(circle, rgba(46,17,8,0) 0 16%, rgba(62,22,9,.84) 30%, rgba(46,17,8,.66) 44%, rgba(30,11,6,.32) 56%, rgba(30,11,6,0) 68%);
-    -webkit-mask-image:var(--smoke, none); mask-image:var(--smoke, none); -webkit-mask-size:100% 100%; mask-size:100% 100%; }
+  @keyframes sn-shock{ 0%{ opacity:1; transform:scale(.18); } 70%{ opacity:.55; } 100%{ opacity:0; transform:scale(1.5); } }
+  .sn-fx .sn-dust{ width:520%; height:520%; background:var(--dust, none) center / 100% 100% no-repeat; }
   #supernova-cutscene.sn-detonate .sn-dust{ animation:sn-dust 3.2s cubic-bezier(.2,.6,.3,1) .35s both; }
-  @keyframes sn-dust{ 0%{ opacity:0; transform:scale(.45) rotate(0deg); } 22%{ opacity:.95; transform:scale(1) rotate(12deg); } 100%{ opacity:0; transform:scale(1.9) rotate(44deg); } }
+  @keyframes sn-dust{ 0%{ opacity:0; transform:scale(.24) rotate(0deg); } 22%{ opacity:.95; transform:scale(.52) rotate(12deg); } 100%{ opacity:0; transform:scale(1) rotate(44deg); } }
   .sn-debris{ inset:0; }
   .sn-debris > i{ left:50%; top:50%; width:var(--s); aspect-ratio:1; margin:calc(var(--s) * -.5) 0 0 calc(var(--s) * -.5); opacity:0; }
   .sn-bit.is-shard::before, .sn-bit.is-shard::after{ content:""; position:absolute; }
@@ -24789,6 +24803,14 @@
   }
   .rs-reward-art > svg{ width:4rem; height:4rem; display:block; }
   .rs-reward-art .rs-themedot{ width:3.2rem; height:3.2rem; font-size:1.9rem; }
+  /* the flare tile (build 317): the rank's lit bubble, Profile's tile art,
+     floating about its own centre as it does there */
+  .rs-reward-art .flare-solo.cosmic-icon-badge.cosmic-badge-rank{ width:3.1rem; height:3.1rem; }
+  .rs-unlock-art .flare-solo.cosmic-icon-badge.cosmic-badge-rank{ width:2.3rem; height:2.3rem; }
+  @media (prefers-reduced-motion:no-preference){
+    .rs-reward-art .flare-solo.cosmic-icon-badge-0{ animation:pf-float 6s ease-in-out infinite; }
+  }
+  .rs-unlock-art .flare-solo.cosmic-icon-badge-0{ animation:none; }
   /* The theme as its moving swatch (build 317, themeUnlockItem): the
      swatch box is only a frame here, the dot is the size the old ball
      was in each place, and it keeps the ring and glow in the theme's
@@ -62932,6 +62954,47 @@ function cosmicScarURLs(){
   }catch(e){ cosmicScarCache = false; }
   return cosmicScarCache;
 }
+/* THE SUPERNOVA'S DUST (build 317, the evolution round): a ring of burnt
+   smoke, drawn once at 256px with its soft edges baked in - zero alpha at
+   the middle and at every side of the square - so it can never show a
+   hard edge or the box it is drawn in. Seeded, like the smoke. */
+let snDustCache = null;
+function snDustURL(){
+  if(snDustCache !== null) return snDustCache;
+  snDustCache = "";
+  try{
+    const N = 256, c = document.createElement("canvas");
+    c.width = N; c.height = N;
+    const g = c.getContext("2d");
+    if(!g) return snDustCache;
+    let seed = 4711;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const G = 32, grid = [];
+    for(let i = 0; i < G * G; i++) grid.push(rnd());
+    const at = (x, y) => grid[((y % G + G) % G) * G + ((x % G + G) % G)];
+    const sm = t => t * t * (3 - 2 * t);
+    const noise = (x, y) => {
+      const x0 = Math.floor(x), y0 = Math.floor(y), fx = sm(x - x0), fy = sm(y - y0);
+      const a = at(x0, y0), b = at(x0 + 1, y0), c2 = at(x0, y0 + 1), d = at(x0 + 1, y0 + 1);
+      return a + (b - a) * fx + (c2 - a) * fy + (a - b - c2 + d) * fx * fy;
+    };
+    const img = g.createImageData(N, N);
+    for(let y = 0; y < N; y++) for(let x = 0; x < N; x++){
+      const u = (x + .5) / N - .5, v = (y + .5) / N - .5, r = Math.sqrt(u * u + v * v) * 2;
+      /* a ring: rising from the middle, densest at .55, gone by .96 */
+      const ring = sm(Math.max(0, Math.min(1, (r - .1) / .4))) * (1 - sm(Math.max(0, Math.min(1, (r - .55) / .41))));
+      let n = 0, amp = .55, f = 6 / N;
+      for(let o = 0; o < 4; o++){ n += amp * noise(x * f * (1 << o) + 3, y * f * (1 << o) + 7); amp *= .5; }
+      const a = ring * sm(Math.max(0, Math.min(1, (n - .26) / .5)));
+      const k = (y * N + x) * 4;
+      img.data[k] = 58 + Math.round(30 * n); img.data[k + 1] = 22 + Math.round(12 * n); img.data[k + 2] = 10;
+      img.data[k + 3] = Math.round(a * .9 * 255);
+    }
+    g.putImageData(img, 0, 0);
+    snDustCache = c.toDataURL("image/png");
+  }catch(e){ snDustCache = ""; }
+  return snDustCache;
+}
 let cosmicDepthSeq = 0;
 /* Home's outer orbit (build 313): the outer rank bubbles sit on it by
    their centres and the outer secret flares ride it. 140, not the drawn
@@ -66055,8 +66118,8 @@ function playRankUpScene(tierKey, opts, spec){
       snFx = document.createElement("div");
       snFx.className = "sn-fx"; snFx.setAttribute("aria-hidden", "true");
       Object.assign(snFx.style, { left: (pl.cx - pl.d / 2) + "px", top: (pl.cy - pl.d / 2) + "px", width: pl.d + "px", height: pl.d + "px" });
-      const smoke = cosmicSmokeURL();
-      if(smoke) snFx.style.setProperty("--smoke", "url(" + smoke + ")");
+      const dust = snDustURL();
+      if(dust) snFx.style.setProperty("--dust", "url(" + dust + ")");
       let bits = "";
       /* black shards with ember rims, and ember sparks that fly further:
          spread round the whole circle with a jitter, seeded so every
@@ -80643,7 +80706,9 @@ function rsUnlockItems(run){
       need: rule.label || "",
       color: RANK_COLOR[c] || ACCENT_SWATCH[c], art: () => buildRankEmblemSVG(c) });
   });
-  tiers.forEach(c => { if(ACCENT_SWATCH[c]) items.push(themeUnlockItem(c)); });
+  /* each rank's theme, then its flare (build 317: the flare is an unlock
+     too - "the pop up should just show the flare") */
+  tiers.forEach(c => { if(ACCENT_SWATCH[c]) items.push(themeUnlockItem(c)); items.push(flareUnlockItem(c)); });
   /* A rank's own character and banner sit with its theme, ahead of any
      challenge's: together they are the one rank-reward pop-up. */
   const chars = run.characters.map(characterUnlockItem);
@@ -80774,6 +80839,25 @@ function themeUnlockItem(c){
       d.dataset.accent = c;
       return d; } };
 }
+/* THE FLARE A RANK LIGHTS, AS AN UNLOCK (build 317, the evolution round).
+   Madison: "Rank up pop decision, should it include the flare? Because on
+   the profile thing, it includes it ... I feel like the pop up should
+   just show the flare, I mean the road map has it and under the rank
+   challenges in profile it has it, so it would make the most sense." The
+   rank's own bubble, lit - Profile's tile art (buildFlareBubble) - on the
+   reward card between the theme and the character or banner, and as a
+   row in the results' Unlocked list. Nothing to record as shown: a flare
+   is lit by the rank itself. */
+function flareUnlockItem(c){
+  return { kind: "rankflare", rankReward: c, kicker: "Flare lit", name: ACCENT_DISPLAY_NAME[c] || RANK_DISPLAY_NAME[c] || c,
+    sub: "Lit on your planet on Home", need: "Reach " + (RANK_DISPLAY_NAME[c] || c) + " rank",
+    color: flareColorOf(c),
+    art: () => {
+      const b = buildFlareBubble(c, { lit: true, bounce: true });
+      /* its emblem's recorded motion, once it is on screen */
+      setTimeout(() => { try{ if(b.isConnected) startOrbitEmblemAnims(b.parentElement, true); }catch(e){} }, 120);
+      return b; } };
+}
 /* THE CHARACTER ARRIVES CELEBRATING (build 317): "the character also
    doesn't animate, fix that". Its idle loop is a blink every few seconds
    - right for a board of forty faces, nothing at all on a reward card. So
@@ -80806,16 +80890,23 @@ function groupRankRewards(raw){
   TIER_ORDER_FULL.forEach(r => {
     const g = byRank[r];
     if(!g) return;
-    if(rankJustReachedOnHome === r && ACCENT_SWATCH[r]) g.unshift(themeUnlockItem(r));
+    if(rankJustReachedOnHome === r){
+      g.unshift(flareUnlockItem(r));
+      if(ACCENT_SWATCH[r]) g.unshift(themeUnlockItem(r));
+    }
     out.push(g.length > 1 ? rankRewardsItem(r, g) : g[0]);
   });
   rankJustReachedOnHome = null;
   return out.concat(rest);
 }
 function isRankRewardItem(it){
-  return !!it && (it.kind === "theme" || ((it.kind === "character" || it.kind === "banner") && !!it.rankReward));
+  return !!it && (it.kind === "theme" || it.kind === "rankflare" || ((it.kind === "character" || it.kind === "banner") && !!it.rankReward));
 }
+/* The card's order: Theme, Flare, then the character and the banner -
+   "Madison wants the flare in the middle" (the evolution round). */
+const RANK_REWARD_ORDER = { theme: 0, rankflare: 1, character: 2, banner: 3 };
 function rankRewardsItem(rank, parts){
+  parts = parts.slice().sort((a, b) => (RANK_REWARD_ORDER[a.kind] == null ? 9 : RANK_REWARD_ORDER[a.kind]) - (RANK_REWARD_ORDER[b.kind] == null ? 9 : RANK_REWARD_ORDER[b.kind]));
   const chars = parts.filter(p => p.kind === "character").map(p => p.character);
   const banners = parts.filter(p => p.kind === "banner").map(p => p.banner);
   const hasTheme = parts.some(p => p.kind === "theme");
@@ -80841,7 +80932,7 @@ function rankRewardsItem(rank, parts){
         if(p.kind === "character") rsCharCelebrate(a, 1700 + i * 320);
         const k = document.createElement("span");
         k.className = "rs-reward-kind";
-        k.textContent = p.kind === "theme" ? "Theme" : p.kind === "character" ? "Character" : "Banner";
+        k.textContent = p.kind === "theme" ? "Theme" : p.kind === "rankflare" ? "Flare" : p.kind === "character" ? "Character" : "Banner";
         const n = document.createElement("b");
         n.className = "rs-reward-name"; n.textContent = p.name;
         tile.append(a, k, n);
