@@ -15806,6 +15806,37 @@ disagree with it.
     the whole walk, with the person acting on that clock. A screenshot
     harness on a loaded box takes 0.5-1s a shot, so stills lag their
     stage; the poll's times are the measurement.
+- **A FOCUS RING IS FOR THE KEYBOARD (build 317).** *"There's a weird
+  outline thing around the button there, I've seen this before, I'm not
+  sure why I'm seeing that but fix it"* - her iPhone, a failed run's
+  results, a thin light ring 2-4px outside "Continue to review (4
+  missed)" and nowhere else. It was `.next:focus-visible` (2px of the
+  accent, `outline-offset:2px`) on the button the SCREEN focuses for
+  itself as it lands. iOS never focuses a button on a tap, so when a
+  script does, WebKit has no pointer to blame and draws the keyboard's
+  ring; Chromium does the same when nothing was pointed at, which is how
+  it reproduces here (script clicks only) - and hides it after a real
+  tap, which is why every earlier screenshot pass looked clean. Seven places
+  did it: the results' first button (Continue to review, or Re-run on a
+  100%), the review's Retake, a question's Next (`.floatbtn`, an inset
+  ring), the Pause panel's Resume, the daily's Exit, the leave-a-match
+  sheet's Keep playing and the leave-chat sheet's Cancel.
+  - **`focusQuietly(el)` is the only way a screen focuses a control now.**
+    The focus stays - Enter and a screen reader start from it - but unless
+    the last input was a key (`lastInputKeyboard`, set by any non-modifier
+    keydown and cleared by any pointerdown/touchstart/mousedown, all in
+    capture), the element carries `.is-quietfocus`, and
+    `.is-quietfocus:focus-visible{ outline:none !important }` takes any
+    ring off it, the UA's included. The first key press takes the class
+    off every element, so a keyboard user sees exactly where they are; a
+    blur takes it off too. Text fields are still focused plainly - a caret
+    and the keyboard are the point there.
+  - **Gate: `check_b317_focusring`** - on both reference devices, each of
+    the six has the focus and no ring after script-only input; after a key
+    press the results' first button HAS its ring; after a real tap it is
+    quiet and the first Tab rings the next control. All six ring checks
+    fail on b6cd249 on both devices; the key-press check passes on both
+    builds (it guards the keyboard, not the fix).
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h

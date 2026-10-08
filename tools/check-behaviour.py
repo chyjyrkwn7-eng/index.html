@@ -15315,6 +15315,105 @@ def check_b317_flow(br):
           sp.get("card") is True and sp.get("cardSpecial") is True, sp)
 
 
+# --------------------------------------------------------------------------
+B317_RING_JS = r"""async (a) => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const out = {};
+  try{
+  document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
+  ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour'].forEach(k => store[k] = true);
+  store.lateHundos = 999; store.savedCodeSaved = true; store.unitPerfects = { 'Identity Crimes': 3 }; store.hundoFx = 'confetti';
+  store.dailyQuestionDate = null; saveStore();
+  const ring = el => { if(!el) return null; const cs = getComputedStyle(el); let fv = false; try{ fv = el.matches(':focus-visible'); }catch(e){}
+    return { txt: (el.textContent || '').trim().slice(0, 32), focused: document.activeElement === el, fv,
+             ring: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 }; };
+  const t = 'Identity Crimes';
+  const unitRun = async (missN) => {
+    showHome(); await wait(300);
+    cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t]; cfg.size = 0;
+    order = QUESTIONS.map((q,i) => [q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
+    runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null; isMissedRetake = false; practiceTestMinutes = null; inVirtualRoom = false;
+    attempts = {}; picked = {}; timedOutSet = {}; try{ firstPick = {}; }catch(e){}
+    order.forEach((qi, k) => { const oo = optionOrder(qi), right = oo.indexOf(QUESTIONS[qi].answer);
+      attempts[qi] = k < missN ? 2 : 1; picked[qi] = k < missN ? (right + 1) % oo.length : right; try{ if(k < missN) firstPick[qi] = (right + 1) % oo.length; }catch(e){} });
+    runStartTime = Date.now() - 42000; testInProgress = true; pos = order.length - 1;
+    summarize();
+    for(let i = 0; i < 600 && !document.querySelector('.rs-rewards.rs-done'); i++){
+      const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); await wait(100); }
+    await wait(300);
+  };
+  if(a.only === 'kbd'){ await unitRun(4); out.kbd = ring(document.querySelector('.rs-actions button')); return out; }
+  if(a.only === 'quiet-then-tab'){ await unitRun(4); out.quiet = ring(document.querySelector('.rs-actions button')); return out; }
+  await unitRun(4);
+  out.missed = ring(document.querySelector('.rs-actions button'));
+  document.querySelector('.rs-actions #nextbtn').click(); await wait(900);
+  out.review = ring(document.querySelector('.rs-final button'));
+  await unitRun(0);
+  out.perfect = ring(document.querySelector('.rs-actions button'));
+  /* a question's Next, after an answer */
+  showHome(); await wait(300);
+  cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t]; cfg.size = 0;
+  beginRun(QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === t));
+  for(let i = 0; i < 80 && !(document.querySelector('#stage .choice') && !document.querySelector('#teststart-overlay')); i++) await wait(100);
+  await wait(400);
+  const r0 = correctSlot(order[pos]); document.querySelector('#stage .choice[data-index="' + r0 + '"]').click(); await wait(500);
+  out.qnext = ring(document.getElementById('nextbtn'));
+  /* the Pause panel's Resume */
+  pauseRun(); await wait(500);
+  out.pause = ring(document.activeElement && document.activeElement !== document.body ? document.activeElement : null);
+  /* the daily question's Exit */
+  testInProgress = false; showHome(); await wait(500);
+  startDailyQuestion();
+  for(let i = 0; i < 60 && !document.querySelector('#stage .choice'); i++) await wait(100);
+  await wait(400);
+  const r1 = correctSlot(order[pos]); document.querySelector('#stage .choice[data-index="' + r1 + '"]').click(); await wait(300);
+  document.getElementById('dailyq-submitbtn').click(); await wait(900);
+  out.daily = ring(document.getElementById('dailyq-exitbtn'));
+  } catch(e){ out.threw = String(e && e.stack || e); }
+  return out; }"""
+
+
+def check_b317_focusring(br):
+    """Build 317. "There's a weird outline thing around the button there,
+    I've seen this before, I'm not sure why I'm seeing that but fix it" -
+    her iPhone, a thin light ring 2-4px outside "Continue to review (4
+    missed)". It is `.next:focus-visible` (2px of the accent, 2px out),
+    drawn because the screen focuses its first button for itself as it
+    lands: iOS never focuses a button on a tap, so a script focus has no
+    pointer to blame and WebKit shows the keyboard's ring. Chromium does the
+    same when no pointer was used, which is how this is driven: every input
+    here is a script click, as on her phone. The results' first button, the
+    review's, a question's Next, the Pause panel's Resume and the daily's
+    Exit keep their focus and lose the ring; a keyboard user still gets it.
+    On b6cd249 all six ring checks fail on both devices, and so does the
+    quiet-then-Tab one (its quiet half); the key-press check passes on both
+    builds - it guards the keyboard's ring, not the fix."""
+    print("\n317o. no focus ring on a button the screen focuses for itself (touch); the keyboard still gets one")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate(B317_RING_JS, {})
+        ctx.close()
+        check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
+        for k, label in (("missed", "the results' Continue to review"), ("perfect", "a 100%'s Re-run"), ("review", "the review's Retake"),
+                         ("qnext", "a question's Next"), ("pause", "the Pause panel's Resume"), ("daily", "the daily question's Exit")):
+            v = r.get(k) or {}
+            check(f"{dev}: {label} has the focus and no ring", v.get("focused") is True and v.get("ring") is False, v)
+    # The keyboard: a key pressed before the screen lands, and Tab after a quiet focus.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.keyboard.press("ArrowDown")
+    kb = pg.evaluate(B317_RING_JS, {"only": "kbd"})
+    pg.mouse.click(5, 300)
+    qt = pg.evaluate(B317_RING_JS, {"only": "quiet-then-tab"})
+    pg.keyboard.press("Tab")
+    tab = pg.evaluate("""() => { const el = document.activeElement; const cs = getComputedStyle(el); let fv = false; try{ fv = el.matches(':focus-visible'); }catch(e){}
+      return { txt: (el.textContent || '').trim().slice(0, 32), fv, ring: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0, quiet: document.querySelectorAll('.is-quietfocus').length }; }""")
+    ctx.close()
+    check("after a key press the results' first button shows the ring (a keyboard user sees where they are)",
+          (kb.get("kbd") or {}).get("focused") is True and (kb.get("kbd") or {}).get("ring") is True, kb)
+    check("after a tap it is quiet, and the first Tab puts a ring on the next control",
+          (qt.get("quiet") or {}).get("ring") is False and tab.get("fv") is True and tab.get("ring") is True and tab.get("quiet") == 0, [qt, tab])
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -15494,6 +15593,7 @@ def main():
             check_b317_rankup(br)
             check_b317_supernova(br)
             check_b317_flow(br)
+            check_b317_focusring(br)
         finally:
             br.close()
     SERVER.shutdown()
