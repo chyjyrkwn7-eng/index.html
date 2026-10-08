@@ -14871,6 +14871,26 @@ disagree with it.
     size (the scene's 1.8x is gone). `check_b317_cutspin` asserts the
     secret flares are in the scene, under the glass, and whirl (fails on
     1888b11).
+  - **ROUND FOUR - a second of flash, and the glass stays whole.** *"The
+    moment that flare lights up, that flare needs to flash for a second.
+    Some moments the secret flares don't go behind the large flares."*
+    The light-up is now ~1s on that bubble while it whirls
+    (`RANK_CUTFLARE_MS`): a white-hot core in the rank colour, a glow
+    swelling round it, two rings bursting off, and the bubble swelling and
+    settling (`.is-flaring`, the `scale` property) - all transform/opacity;
+    nothing after it moves. **The layering was not a paint-order fault**:
+    stepped frame by frame with `elementsFromPoint` inside each round glass
+    (not its square box - the corners belong to the slot), every secret
+    flare was under every bubble at every ring phase. The fault was the
+    step-back: `opacity:.5` on each whole unreached SLOT, so a flare under
+    it came through at half strength and sharp, beside its own blurred
+    image, and read as lying on top. The step-back dims the emblem inside
+    the bubble now and the glass stays at full opacity.
+    `check_b317_cutspin` steps the whirl (page clock + every animation
+    seeked; the rings' slow phases pinned 7s in, so every run crosses the
+    same flares) and asserts, every frame 90-300, under AND whole glass;
+    and that the flash lasts ~1s with the big flash still at ~frame 300.
+    Both fail on 68531d9.
   - **The lag and the "placed off" flares.** The second round took the
     bubbles' `backdrop-filter` blur off inside a scene (re-sampled every
     frame while they move); the third round put it back, because the
