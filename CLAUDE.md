@@ -12152,7 +12152,8 @@ A 44px `::after` disc takes the tap.
 
 **The sixth flare skims the planet** - **until build 317's planet round,
 which sends it round the planet: behind it for real and back in front (r
-72, 16s, see "THE PLANET ROUND"). The hiding described here is gone.**
+72, 16s, see "THE PLANET ROUND"). The hiding described here is gone. And
+since planet2 it is on the inner ring like the others - see "PLANET2".**
 *"Somehow placed in a cool way on
 the planet ... that moves in a cool way."* `.cosmic-core-orbit`: a low
 orbit (r 62 round the r 52 planet) tilted -18deg and squashed to .3, one
@@ -16094,6 +16095,9 @@ disagree with it.
     and is invisible at both ends of its cycle (KNOWN, "Build 317").
 - **THE PLANET ROUND: THE SMOKE ROILS, A CRACK ACROSS THE PLANET, GENESIS
   GOES BEHIND IT, AND THE SCAR LIGHTS WHAT PASSES (build 317, b317-planet).**
+  **(Planet2 replaced Genesis's orbit, the burning look of the scar and the
+  light off it - see "PLANET2" below. The smoke, the crack's geometry, the
+  debris, `decorateSupernovaHero` and the gate's method stand.)**
   Four notes from Madison, all about the planet:
   - **The smoke.** *"the large planet in the cutscene doesn't look
     animated? If that's how the planet normally looks and I'm just now
@@ -16342,6 +16346,115 @@ disagree with it.
     at one time** (`common.py` FREEZE) is how before and after were made
     comparable; the two builds' Genesis laps differ (14s and 16s), so pick
     a time when it is behind in both (12s) for a close-up of the scar.
+- **PLANET2: GENESIS ON THE RINGS, THE SCAR BURNT OUT, THE RINGS BLACK
+  (build 317, b317-planet2).** *"I'm not a fan of the genesis secret flare
+  at all, could it be on the rings like the others as well? But let's make
+  it so voids 3 are maybe on the outside and the other 3 are on the inside?
+  ... Not a fan of the way the planet looks still with the permanent
+  destruction scar, needs to be black charring. I'm also not a fan of the
+  rainbow rings after seeing them here. Let's try a dark color. I want
+  black black to work, I think that'd be sick... or white? Black would be
+  so cool though."* This SUPERSEDES three parts of "THE PLANET ROUND"
+  above: Genesis's orbit, the burning scar and the light off it.
+  - **Three and three.** `FLARE_SPOT` is `[ring, degrees]` now (ring 1 the
+    outer - `radii[1]`, so Welcome's flares ride its drawn 152 rather than
+    sitting 12 units inside it - ring 0 the inner 108): Void's three on the
+    OUTER ring at 337 / 97 / 211, Umbra's, Horizon's and Genesis's on the
+    INNER at 32 / 141 / 262. Gaps 120/114/126 outside, 109/121/130 inside:
+    spread so neither ring has an empty half, never equal (even spacing
+    read as a pattern, build 313). Genesis's flare is made and placed like
+    the others - the inner orbit layer, its turn, its glass, its tap.
+    Retired with its orbit: `.cosmic-core-orbit` / `.cco-*` and their
+    keyframes (and their check-loops entries), `CORE_ORBIT`,
+    `ORBIT_LAP_S.core`, Genesis's crater glint, and the planet round's
+    tap pass-through (`.cosmic-hero-main{pointer-events:none}` plus
+    `.cosmic-sphere-hit` - it existed only so a flare behind the planet
+    could be tapped). **Keys and find rule untouched**: `core` in
+    `MYSTERY_ORDER`, `store.mysteryColorsFound.core`, the level 78-80
+    window, `FLARE_CHARACTER`. No migration. The rank and Supernova scenes
+    needed nothing: the flare is in the orbit layer they already turn.
+    The "core" find scene (`playGenesisFlareScene`) shows the flare DIVING
+    INTO the planet, never coming out of it, so it stands; only its dead
+    `.sf-dive .cosmic-core-orbit` rule went. Copy that put it on the
+    planet changed: its line (*"The first light of a world being born."*),
+    its hint, the Genesis challenge (*"Find Worldheart, the sixth secret
+    flare"*), the find card and the scene's sub (*"The sixth and last
+    secret flare"*), and Horizon's *"One more waits on the rings."*
+  - **The debris moved with them**: `RING_DEBRIS`' streams sit in the
+    gaps between each ring's three, off-centre, none within 12 degrees of
+    a flare.
+  - **The scar is char.** Same seeded geometry (the crack, its branches,
+    the crater, the fractures), coloured and lit as burnt-out:
+    - neutral char black (13,11,11) where dense, scorched brown at its
+      thinning edge; a dense core with a ragged edge at two scales and a
+      softer scorch beyond it (one soft soot read as a smudge at 3x);
+    - the crater floor is charcoal: plates split by thin organic seams
+      (where the lava field crosses its middle - contour lines, not a
+      cell grid, which once gave a "#"), pale ash on the plates, the floor
+      only half-darkened by depth so it reads;
+    - lit surfaces (crack lips, the crater's far wall, the plates' edges)
+      take a dull grey sheen, never warm, never past .34;
+    - **the field's grids are eased between points** (smoothstep weights,
+      not bilinear): the light reads the field's slope, and bilinear left
+      the lit walls in 4px facets;
+    - the last of the ember: one dull red (150,30,10) in the deepest
+      seams at the crater's middle, peak alpha well under .45 (measured
+      .17), breathing over 8.3s (`csc-ember`, .45 -> 1);
+    - gone: the bloom canvas, the hot canvas, `.csc-heat`, the frags'
+      ember glow (`.csc-frag::before`, `csc-pulse`). The flakes and the
+      ring debris are char with a grey lit edge. **The ring debris edge
+      was raised** (#BDB7B0 at its tip) so every shard reads against a
+      black ring - measured off its own pixels at 3x and 2x.
+    - `.csc-glow` (the fresh burn the Supernova scene cools) is untouched:
+      the scene shows it hot and cooling, which is now exactly the story.
+    - **Cost**: cold 86-92ms against 9e62633's 95-106 at DPR 3 (sync
+      compile, both in fresh pages on the same loaded machine, the old one
+      injected under other names - `r317planet2/cost.py`), warm 22-27 against
+      25-39: no worse, because the bloom's blurred native strokes and a
+      third putImageData went.
+  - **What passes it is marked by SOOT, not light** (`scarPassEffects`):
+    the rings are sooted over a 48-degree arc at the scar (`.csc-ringsoot`
+    - a dark band fading out at both ends, breathing on 9.7s / 13.3s), and
+    a secret flare dims under a dark veil as it crosses the scar's angle
+    (`.cof-scarveil`, the same `cof-scarpass` lap-locked loop the glint
+    was; a little less on the outer ring). The bubbles' firelight is gone.
+    Still `.csc-pass`, so the Supernova scene's `.csc-live` switch (cut3)
+    works unchanged.
+  - **Black rings that work.** What sank black twice: at the orange's .55
+    a black line over a dark sky is just darker sky (a gap), and the cures
+    added width and an ember corona until it was not the orange's object.
+    Now: the orange's one circle, 1.4 wide, in OPAQUE black, and a RIM -
+    the same rings again just under it in an HTML-level svg
+    (`.cosmic-ring-glowsvg.is-rim`, 2.4 wide, #DDE5F4, softened .35 units,
+    at .7), so a hairline of cool light shows on both sides of the black.
+    Restrained, colourless, the same on every theme, no filter on the ring
+    (iOS draws no CSS filter on an svg element; the rim's blur is on its
+    HTML-level svg). Static, like the orange. The ring draw draws black
+    with its rim under it (`.cosmic-ring-arcrim`, filter-free) and a
+    silver glint. Judged on the 17 Pro Max at 3x and the iPad Pro 11 at
+    2x on three themes. In the Supernova scene, where the hero is half
+    Home's size, the rim reads more than the black - it is still a dark
+    ring edged in light, not a rainbow and not a gap.
+  - **Merged b316-work at 402eff1** (cut3: the Supernova sweep throws
+    Home's own ring debris; Underwater). One conflict, in check_b317_planet's
+    tap section - this round's version kept (the behind-the-planet taps are
+    gone). The scene's end, read off frame by frame for an account with
+    every flare: 20 debris and no second set, both rings `is-black`, the
+    scar's two canvases, Genesis's flare in the inner layer, the soot and
+    six veils there.
+  - **Gates.** `check_b317_planet` sections 2-4 rewritten: black char (no
+    warm light in any of the scar's pictures at their brightest over a
+    plain planet, the solid part char; the ember faint, dull red, in the
+    crater, slow; no warm colour in the flakes or debris); Genesis a ring
+    flare (inner layer, same build, no orbit, answers a tap), three and
+    three on their lines, the gaps, the debris in them, turning with the
+    inner ring, no copy putting it on the planet; soot and veils, nothing
+    burning. `check_b317_rings`: black by default (true black, the
+    orange's width and opacity, one thin cool HTML-level rim, no filter,
+    still), debris and flares readable against it off their own pixels,
+    the draw draws black, flares and white as the alternatives.
+    `check_b313_flares`: the six on the rings. Every new assertion fails
+    on 9e62633.
 - **A CHARACTER'S SPECIAL: THE RARE MOVE IF YOU KEEP LOOKING (build 317).**
   *"Let's give each rank character a unique animation ... characters will
   have multiple animations so typically they will be still, if you look at
@@ -16470,8 +16583,10 @@ disagree with it.
     one circle with those exact numbers; the gate compares them property
     by property.
   - **`RING_ECLIPSE_STYLE` picks the colour** (a `let` beside
-    `homeRingTier()`, only so the gate can draw both):
-    - `"flares"` (the default) - the six secret flares' own colours
+    `homeRingTier()`, only so the gate can draw every one). **Since
+    planet2 the default is `"black"`** - see "PLANET2" below; `"flares"`
+    and `"white"` are one line away.
+    - `"flares"` (the default until planet2) - the six secret flares' own colours
       (`MYSTERY_COLOR`) round the ring. SVG has no conic gradient, so
       `ringFlaresURL()` draws one once onto a canvas (in hue order -
       red, orange, yellow, ice blue, violet, pink - blended in OKLab so
@@ -16501,8 +16616,13 @@ disagree with it.
       than on SVG elements, so iOS draws it. Measured: every flare's
       centre has a chroma (max - min channel) of 189-255 against the
       orange's 168.
-    - `"black"` - a near-black ring (`rgba(5,3,8,.55)`) whose drop-shadow
-      is ember: an eclipse corona, still, the same width as the orange.
+    - `"black"` - **the default since planet2, rebuilt**: true black
+      (`RING_BLACK`, opaque), the orange's one 1.4-wide circle, edged by
+      a thin cool rim (`.cosmic-ring-glowsvg.is-rim`); no drop-shadow, no
+      ember corona. It was a near-black at .55 with an ember drop-shadow,
+      which is a darker patch of sky with a brown halo. See "PLANET2".
+    - `"white"` - the same circle in white at .8 (`RING_WHITE`), its rim
+      the orange's own glow (1.4 wide, blurred 1.5 units, at .5) in white.
   - **The top tier's rings sit in a layer of their own**
     (`.cosmic-hero-ringlayer`), placed UNDER the main svg - where the
     orange paints, first in that svg - so the sweep is a compositor
