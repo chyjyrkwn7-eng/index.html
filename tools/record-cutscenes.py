@@ -282,14 +282,15 @@ def supernova(pg, rec):
 
 
 def void_cutscene(pg, rec):
-    """The three Secret Flares falling together into Void.
+    """Void from Home - the path a pendingVoidCutscene stored before build
+    215 still takes. Since build 317 it plays the rebuilt Void scene
+    (playVoidFlareScene, see flare_scene below), so the old three-orbs-
+    and-a-flash cutscene is gone from every path.
 
     THE REAL LENGTH MATTERS, which this file has already paid for once
-    on Supernova: the fall starts at 1.5s, the last orb lands at 2.0s,
-    the collapse is at 3.4s, the reveal at 3.9s, the name at 4.8s, and
-    it hands back to Home at 8.6s with the unlock banner after it. A 5s
-    capture of this is a recording of three dots drifting and nothing
-    else."""
+    on Supernova: the scene hands back to Home at ~28.7s, with the unlock
+    card ~0.4s after it. Anything shorter records the build-up and misses
+    the silhouette and the reveal, which are the point."""
     pg.evaluate("()=>showHome()")
     pg.wait_for_timeout(700)
     rec.start(); pg.wait_for_timeout(400)
@@ -297,7 +298,7 @@ def void_cutscene(pg, rec):
         store.mysteryColorsFound = { red:true, orange:true, yellow:true };
         store.pendingVoidCutscene = true;
         playVoidCutscene();}""")
-    pg.wait_for_timeout(11800)   # 8.6s cutscene, then the CHARACTER UNLOCKED banner
+    pg.wait_for_timeout(32000)   # ~28.7s scene, then Home and Void's card
 
 
 def test_to_badge(pg, rec):

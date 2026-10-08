@@ -15459,6 +15459,28 @@ def _sf_still_run(br, c):
     return out
 
 
+def _sf_home_run(br):
+    """The Home path a pendingVoidCutscene stored before build 215 still
+    takes (playVoidCutscene): the rebuilt Void scene, once - a second
+    showHome() inside it must not stack another - then Home and Void's
+    card, as before."""
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(SF_FIX, "yellow")
+    pg.evaluate("() => { showHome(); }"); pg.wait_for_timeout(500)
+    _sf_clock(pg)
+    out = pg.evaluate("""() => { document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.rs-spot,.daily-alert').forEach(n => n.remove());
+        window.__spots = [];
+        window.playUnlockSpotlight = (it, n, of, release) => { window.__spots.push(it.kind + ':' + (it.character || '')); return { skip(){}, stop(){} }; };
+        store.pendingVoidCutscene = true; saveStore(); showHome(); showHome();
+        return { scenes: document.querySelectorAll('.sf-scene.sf-void').length, old: document.querySelectorAll('#void-cutscene').length,
+                 voidLive: !!document.querySelector('.sf-void .sf-fig .sf-real svg[data-char="voidwalker"]') }; }""")
+    pg.clock.run_for(31000)
+    out.update(pg.evaluate("""() => ({ after: document.querySelectorAll('.sf-scene, #void-cutscene').length, flag: store.pendingVoidCutscene,
+        home: ((document.querySelector('#stage [data-screen]') || { dataset: {} }).dataset.screen) || null, spots: window.__spots.slice() })"""))
+    ctx.close()
+    return out
+
+
 SF_FLOW_RUN = """(a) => {
   const log = window.__sfLog = [];
   document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
@@ -15541,6 +15563,8 @@ def check_b317_sflare(br):
         titled by 0.6s, no special - and a quiet results screen plays it;
       - the flow is unchanged: the first two flares' scene then its card;
         a character flare's card, its scene, then the character's card.
+      - the Home path (a pendingVoidCutscene stored before build 215,
+        playVoidCutscene) plays the rebuilt Void scene too, once.
     On b6cd249 every silhouette/lit, duration, filter and Reduce motion
     assertion fails (no live copies, a figure that faded up in colour, a
     filtered drawing, 18-19s scenes, nothing at all under Reduce motion);
@@ -15589,6 +15613,11 @@ def check_b317_sflare(br):
               "sf-still" in (a2.get("o") or "") and "sf-titled" in (a6.get("o") or "") and not r.get("special")
               and (c not in SF_CHAR or ("is-revealed" in (a2.get("f") or "") and a2.get("realVis") is True and a2.get("silVis") is False)),
               [a2.get("o"), a2.get("f"), a6.get("o"), r.get("special")])
+    r = _sf_home_run(br)
+    check("the Home path (a pendingVoidCutscene stored before build 215) plays the rebuilt Void scene, once - never the old cutscene",
+          r.get("scenes") == 1 and r.get("old") == 0 and r.get("voidLive") is True, r)
+    check("and hands over as it always did: the flag cleared, Home, then Void's card",
+          r.get("after") == 0 and r.get("flag") is False and r.get("home") == "home" and "character:voidwalker" in (r.get("spots") or []), r)
     for c in ("red", "yellow", "violet"):
         r = _sf_flow_run(br, c)
         log = r.get("log") or []

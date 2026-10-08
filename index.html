@@ -65920,114 +65920,42 @@ function playTierCutscene(tierKey, opts){
   });
 }
 
-/* THE VOID CUTSCENE - the payoff for the whole hunt, and the one
-   cutscene in the app built out of something the person collected
-   rather than something they climbed to.
-
-   The three orbiting lights on Home ARE the tally, and that is what
-   this is made of: the same three colours in the same three places,
-   which come loose, fall together, and collapse into the character.
-   Asked for that way - "ensure there is a cool cut scene involving
-   those tiny secret glares" - and it is the right shape anyway,
-   because the only thing a person has actually seen of this feature
-   before now is three dots going one by one from grey to lit.
-
-   The convergence is a TRANSITION, not a keyframe animation, and
-   deliberately: the global [data-reduce-motion="true"] *{animation:none}
-   rule strips keyframes, which would have left three orbs sitting
-   motionless in a ring for nine seconds. Transitions survive it, so
-   reduce-motion gets the same beats at the same times, just without
-   the drifting. */
+/* THE VOID CUTSCENE ON HOME - a path kept for one stored flag.
+   Since build 215 nothing queues it: the third flare's scene plays on the
+   results screen, straight after the flare lands (playFlareFoundScene).
+   `pendingVoidCutscene` is still loaded from a stored document, so an
+   account that found its third flare before then and never came back to
+   Home would land here. Build 317 rebuilt every secret flare scene (see
+   THE SECRET FLARE SCENES), and this one plays that same Void scene
+   rather than the old 8.6s one - three orbs falling into a flash and a
+   still Void raised out of it, the "still character with the body"
+   Madison asked to go - so no path in the app still shows it. What
+   follows is unchanged: Home, then Void's card out of the scene's light.
+   (The #void-cutscene CSS is unused since.) */
 function playVoidCutscene(onDone){
-  const overlay = document.createElement("div");
-  overlay.id = "void-cutscene";
-
-  const field = document.createElement("div");
-  field.className = "void-field";
-  /* The same three positions the Home orbit uses, scaled: the top one
-     far out, the right one level with the middle, the left one low and
-     close. Read off buildCosmicHero's own dot table rather than chosen,
-     so the thing that falls in is recognisably the thing that was
-     lighting up. */
-  const SPOTS = [[0, -104], [104, 2], [-74, 16]];
-  const orbs = VOID_FLARES.map((key, i) => {
-    const orb = document.createElement("div");
-    orb.className = "void-orb";
-    orb.style.setProperty("--ox", SPOTS[i][0] + "px");
-    orb.style.setProperty("--oy", SPOTS[i][1] + "px");
-    orb.style.setProperty("--flare-color", MYSTERY_COLOR[key]);
-    orb.appendChild(buildFlareOrb(MYSTERY_COLOR[key], "vc"));
-    field.appendChild(orb);
-    return orb;
-  });
-
-  const core = document.createElement("div");
-  core.className = "void-core";
-  core.appendChild(buildAvatarCharSVGSafe("voidwalker"));
-  field.appendChild(core);
-  overlay.appendChild(field);
-
-  /* INSIDE THE FIELD, not on the overlay. On the overlay it is centred
-     on the SCREEN while the orbs are centred on the field, and the
-     field sits higher than centre because the title and the subtitle
-     below it take real height - so the burst came out offset from the
-     thing it is supposed to be bursting out of, which on a recording
-     read as a circle with a flat bottom. */
-  const flash = document.createElement("div");
-  flash.className = "void-flash";
-  field.appendChild(flash);
-
-  const title = document.createElement("p");
-  title.className = "void-title"; title.textContent = "VOID";
-  overlay.appendChild(title);
-
-  const sub = document.createElement("p");
-  sub.className = "void-sub";
-  sub.textContent = "All three Secret Flares found.";
-  overlay.appendChild(sub);
-
-
-  document.body.appendChild(overlay);
-
-  let finished = false;
-  function finish(){
-    if(finished) return;
-    finished = true;
-    overlay.classList.add("void-exit");
-    openSceneBridge(avatarGlowColor("voidwalker"));
+  /* the scene is ~29s now: a second showHome() inside it (a sync, a
+     re-render) must not stack a second one on top */
+  if(document.querySelector(".sf-scene.sf-void")) return null;
+  return playVoidFlareScene(() => {
+    store.pendingVoidCutscene = false;
+    saveStore();
+    /* From the results screen it hands straight back there - the
+       Void unlock is already in its "Unlocked" card. */
+    if(onDone){ onDone(); return; }
+    showHome();
+    /* The card AFTER the cutscene, not instead of it - it is what says
+       where to go and do something about it, which a cutscene cannot.
+       Build 268: the same centre card every other unlock gets, straight
+       out of the cutscene's light (see openSceneBridge). */
+    if(theme.muteBanners){ markUnlocksShown(["voidwalker"], []); return; }
     setTimeout(() => {
-      overlay.remove();
-      store.pendingVoidCutscene = false;
-      saveStore();
-      /* From the results screen it hands straight back there - the
-         Void unlock is already in its "Unlocked" card. */
-      if(onDone){ onDone(); return; }
-      showHome();
-      /* The card AFTER the cutscene, not instead of it - it is what says
-         where to go and do something about it, which a cutscene cannot.
-         Build 268: the same centre card every other unlock gets, straight
-         out of the cutscene's light (see openSceneBridge), rather than a
-         pill at the top of a screen that had just come back up. */
-      if(theme.muteBanners){ markUnlocksShown(["voidwalker"], []); return; }
-      setTimeout(() => {
-        try{
-          const it = characterUnlockItem("voidwalker");
-          it.flyToProfile = true;
-          playUnlockSpotlight(it, 1, 1, () => {});
-        }catch(e){ dropSceneBridge(false); showCharacterUnlockBanner("voidwalker"); }
-      }, 380);
-    }, 500);
-  }
-
-  requestAnimationFrame(() => overlay.classList.add("void-visible"));
-  /* The fall. Each one a beat after the last, so it reads as three
-     things arriving rather than one shape shrinking. */
-  orbs.forEach((orb, i) => setTimeout(() => orb.classList.add("void-orb-fall"), 1500 + i * 260));
-  setTimeout(() => overlay.classList.add("void-collapse"), 3400);
-  setTimeout(() => overlay.classList.add("void-reveal"), 3900);
-  setTimeout(() => overlay.classList.add("void-named"), 4800);
-  setTimeout(finish, 8600);
-
+      try{
+        const it = characterUnlockItem("voidwalker");
+        it.flyToProfile = true;
+        playUnlockSpotlight(it, 1, 1, () => {});
+      }catch(e){ dropSceneBridge(false); showCharacterUnlockBanner("voidwalker"); }
+    }, 380);
+  });
 }
 
 /* The banner announcing the level-up itself, shown right after
