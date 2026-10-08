@@ -9331,38 +9331,55 @@
      the rim. Under the card's own content (the card isolates). */
   /* vines on the glass: living green, with a lit edge */
 
-  /* ===== round 3: underwater ===== */
-  .hfx-uw-sea{ position:absolute; left:0; top:0; width:100%; height:var(--vh); overflow:hidden; transform:translateY(var(--vh));
-    animation:hfx-uw-rise var(--rd) cubic-bezier(.3,.6,.4,1) var(--rt) both; }
-  .hfx-uw-drain{ position:absolute; inset:0; animation:hfx-uw-drain var(--dd) cubic-bezier(.5,0,.75,.5) var(--dt) both; }
-  @keyframes hfx-uw-rise{ from{ transform:translateY(var(--vh)); } to{ transform:translateY(0); } }
-  @keyframes hfx-uw-drain{ from{ transform:translateY(0); } to{ transform:translateY(var(--vh)); } }
-  .hfx-uw-water{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(90,220,235,.26), rgba(24,130,170,.36) 45%, rgba(8,62,96,.5)); }
-  .hfx-uw-caus{ position:absolute; left:-30%; top:-20%; background-repeat:repeat; opacity:.55; animation:hfx-uw-drift 7s linear both; }
-  .hfx-uw-caus.is-b{ opacity:.35; animation-duration:6s; }
-  @keyframes hfx-uw-drift{ from{ transform:translate(0, 0) scale(1); } 50%{ transform:translate(calc(var(--cx) * .5), calc(var(--cy) * .5)) scale(1.06); } to{ transform:translate(var(--cx), var(--cy)) scale(1); } }
-  .hfx-uw-ray{ position:absolute; top:-6%; width:var(--rw); height:var(--rh); margin-left:calc(var(--rw) / -2); transform-origin:50% 0; transform:rotate(var(--ra));
-    background:radial-gradient(50% 100% at 50% 0%, rgba(225,255,255,.3), rgba(225,255,255,.1) 45%, rgba(225,255,255,0) 100%); opacity:0;
-    animation:hfx-uw-ray var(--d) ease-in-out var(--t) both; }
-  @keyframes hfx-uw-ray{ 0%{ opacity:0; transform:rotate(var(--ra)); } 18%{ opacity:1; } 50%{ opacity:.65; transform:rotate(calc(var(--ra) + 5deg)); } 82%{ opacity:1; } 100%{ opacity:0; transform:rotate(calc(var(--ra) - 2deg)); } }
-  .hfx-uw-surf{ position:absolute; left:0; top:0; height:40px; margin-top:-14px; background-repeat:repeat-x; transform:translate(0, calc(var(--vh) + 20px));
-    animation:hfx-uw-surf-up var(--rd) cubic-bezier(.3,.6,.4,1) var(--rt) both, hfx-uw-surf-down var(--dd) cubic-bezier(.5,0,.75,.5) var(--dt) forwards; }
-  @keyframes hfx-uw-surf-up{ from{ transform:translate(0, calc(var(--vh) + 20px)); } to{ transform:translate(-160px, -60px); } }
-  @keyframes hfx-uw-surf-down{ from{ transform:translate(-160px, -60px); } to{ transform:translate(-340px, calc(var(--vh) + 20px)); } }
-  .hfx-uw-kelp{ position:absolute; transform-origin:50% 100%; background:center bottom / 100% 100% no-repeat; opacity:0; transform:scaleY(0);
-    animation:hfx-uw-kelp var(--d) ease-in-out var(--t) both; }
-  @keyframes hfx-uw-kelp{ 0%{ opacity:0; transform:scaleY(.1) rotate(0deg); } 14%{ opacity:1; transform:scaleY(1) rotate(0deg); } 34%{ transform:scaleY(1) rotate(var(--sw)); }
-    56%{ transform:scaleY(1) rotate(calc(var(--sw) * -1)); } 78%{ opacity:1; transform:scaleY(1) rotate(calc(var(--sw) * .6)); } 100%{ opacity:0; transform:scaleY(.25) rotate(calc(var(--sw) * 1.4)); } }
+  /* ===== underwater, rebuilt (build 317, round 4) - see hfxSea =====
+     One body of water that rises from below the screen's bottom edge and
+     settles with its surface in view near the top; fixed to the screen on
+     the results screen (100lvh, under the safe area too), its frame's or
+     box's own size elsewhere. */
+  .hfx-uw-ocean{ position:absolute; left:0; top:0; width:100%; height:100%; overflow:hidden; pointer-events:none; }
+  .confetti-layer.hfx-layer.is-page > .hfx-uw-ocean{ position:fixed; height:100vh; height:100lvh; }
+  .hfx-uw-ocean.is-box{ z-index:0; }
+  /* in a box on its own (a pop-up's or Customize's), the number is under
+     the water: shallower, so it reads through */
+  .hfx-uw-ocean.is-box .hfx-uw-body{ background:linear-gradient(180deg, rgba(118,220,236,.16) 0%, rgba(40,150,196,.2) 55%, rgba(10,72,112,.3) 100%); }
+  .hfx-uw-ocean.is-box .hfx-uw-caus{ opacity:.18; }
+  .hfx-uw-ocean.is-box .hfx-uw-caus.is-b{ opacity:.1; }
+  .hfx-uw-sea{ position:absolute; left:0; right:0; bottom:0; transform:translateY(calc(100% + var(--wh)));
+    animation:hfx-uw-rise var(--rd) cubic-bezier(.42,0,.28,1) var(--rt) both, hfx-uw-drain var(--dd) cubic-bezier(.55,0,.8,.5) var(--dt) forwards; }
+  @keyframes hfx-uw-rise{ 0%{ transform:translateY(calc(100% + var(--wh))); } 82%{ transform:translateY(-6px); } 100%{ transform:translateY(0); } }
+  @keyframes hfx-uw-drain{ from{ transform:translateY(0); } to{ transform:translateY(calc(100% + var(--wh))); } }
+  /* deeper is darker: a lit cyan under the surface to a blue at the floor */
+  .hfx-uw-body{ position:absolute; inset:0; overflow:hidden;
+    background:linear-gradient(180deg, rgba(118,220,236,.24) 0%, rgba(52,170,206,.3) 28%, rgba(18,104,148,.4) 64%, rgba(6,54,90,.54) 100%); }
+  .hfx-uw-sheen{ position:absolute; left:0; right:0; top:0; height:22%; background:linear-gradient(180deg, rgba(210,250,255,.2), rgba(210,250,255,0)); }
+  .hfx-uw-caus{ position:absolute; background-repeat:repeat; opacity:.24; animation:hfx-uw-caus var(--d) linear both; }
+  .hfx-uw-caus.is-b{ opacity:.15; }
+  @keyframes hfx-uw-caus{ 0%{ transform:translate(calc(var(--cx) * -.5), calc(var(--cy) * -.5)) scale(1); } 50%{ transform:translate(0, 0) scale(1.04); } 100%{ transform:translate(calc(var(--cx) * .5), calc(var(--cy) * .5)) scale(1); } }
+  .hfx-uw-ray{ position:absolute; top:-2px; width:var(--rw); height:var(--rh); margin-left:calc(var(--rw) / -2); transform-origin:50% 0;
+    background:center top / 100% 100% no-repeat; opacity:0; transform:rotate(var(--ra)); animation:hfx-uw-ray var(--d) ease-in-out var(--t) both; }
+  @keyframes hfx-uw-ray{ 0%{ opacity:0; transform:rotate(var(--ra)); } 20%{ opacity:.95; } 50%{ opacity:.6; transform:rotate(calc(var(--ra) - 3deg)); }
+    80%{ opacity:.9; transform:rotate(calc(var(--ra) + 1deg)); } 100%{ opacity:0; transform:rotate(var(--ra)); } }
+  .hfx-uw-mote{ animation:hfx-uw-mote var(--d) ease-in-out var(--t) both; }
+  @keyframes hfx-uw-mote{ 0%{ opacity:0; transform:translate(0, 0); } 20%{ opacity:.8; } 80%{ opacity:.6; } 100%{ opacity:0; transform:translate(var(--mx), var(--my)); } }
+  /* a bubble rises with a wobble and breaks at the surface */
+  .hfx-uw-bub{ animation:hfx-uw-bub var(--d) cubic-bezier(.45,.05,.75,.6) var(--t) both; }
+  @keyframes hfx-uw-bub{ 0%{ opacity:0; transform:translate(0, 0) scale(.4); } 8%{ opacity:1; transform:translate(0, calc(var(--up) * .04)) scale(.9); }
+    35%{ transform:translate(var(--wx), calc(var(--up) * .35)) scale(1); } 65%{ transform:translate(calc(var(--wx) * -.7), calc(var(--up) * .68)) scale(1.05); }
+    94%{ opacity:1; transform:translate(calc(var(--wx) * .4), calc(var(--up) * .985)) scale(1.12); } 100%{ opacity:0; transform:translate(calc(var(--wx) * .4), var(--up)) scale(1.5); } }
+  /* the surface: two seamless wave tiles sliding opposite ways, each by
+     exactly one period per cycle, a finite number of cycles */
+  .hfx-uw-surface{ position:absolute; left:0; right:0; top:calc(var(--wh) * -1); height:var(--wh); overflow:hidden; }
+  .hfx-uw-wave{ position:absolute; left:0; top:0; height:100%; width:calc(100% + var(--p)); background-repeat:repeat-x; background-position:0 0;
+    animation:hfx-uw-wave var(--wd) linear 0s var(--wn) both; }
+  .hfx-uw-wave.is-back{ top:-5px; animation-name:hfx-uw-wave-back; }
+  @keyframes hfx-uw-wave{ from{ transform:translateX(0); } to{ transform:translateX(calc(var(--p) * -1)); } }
+  @keyframes hfx-uw-wave-back{ from{ transform:translateX(calc(var(--p) * -1)); } to{ transform:translateX(0); } }
   .hfx-uw-fish, .hfx-uw-manta{ left:0; top:0; }
-  .hfx-uw-bub{ animation:hfx-uw-bub var(--d) cubic-bezier(.4,0,.8,.7) var(--t) both; }
-  @keyframes hfx-uw-bub{ 0%{ opacity:0; transform:translate(0, 0) scale(.3); } 10%{ opacity:.95; transform:translate(0, -10px) scale(1); } 40%{ transform:translate(var(--wx), calc(var(--up) * .35)) scale(1.05); }
-    70%{ transform:translate(calc(var(--wx) * -.6), calc(var(--up) * .7)) scale(1); opacity:.9; } 100%{ opacity:0; transform:translate(calc(var(--wx) * .3), var(--up)) scale(1.1); } }
   .hfx-uw-drop{ animation:hfx-uw-drop var(--d) cubic-bezier(.55,0,.8,.6) var(--t) both; }
   @keyframes hfx-uw-drop{ 0%{ opacity:0; transform:translateY(0) scaleY(.6); } 14%{ opacity:1; transform:translateY(2px) scaleY(1); } 100%{ opacity:0; transform:translateY(var(--fall)) scaleY(1.35); } }
   .hfx-uw-ring{ position:absolute; width:var(--rs); height:calc(var(--rs) * .34); margin:calc(var(--rs) * -.17) 0 0 calc(var(--rs) / -2); border-radius:50%;
     border:1.5px solid rgba(225,255,255,.75); box-shadow:0 0 10px rgba(120,230,240,.45); opacity:0; animation:hfx-uw-ring 1.8s ease-out var(--t) both; }
   @keyframes hfx-uw-ring{ 0%{ opacity:0; transform:scale(.15); } 15%{ opacity:1; } 100%{ opacity:0; transform:scale(1.25); } }
-  .hfx-uw-sea.is-box{ z-index:0; }
   .hfx-uw-fish.is-box{ z-index:1; }
 
   /* ===== round 3: black hole ===== */
@@ -40399,16 +40416,35 @@ const HUNDO_FX = [
   { id: "confetti",  name: "Confetti",   need: 0,   color: "#FFD37A" },
   /* the first rung (round 4): Fireworks - "Still not a fan of that giddy
      one. Maybe the first one should just be fireworks or something?" The
-     Black Hole and Underwater stay built in HUNDO_FX_BUILD; swapping is
-     this row's id and name. A saved "blackhole" pick is no rung here, so
-     it plays Confetti until Fireworks is picked (hundoFxInUse). */
+     Black Hole stays built in HUNDO_FX_BUILD; swapping is this row's id
+     and name. A saved "blackhole" pick is no rung here, so it plays
+     Confetti until Fireworks is picked (hundoFxInUse). */
   { id: "fireworks", name: "Fireworks",   need: 50,  color: "#FF5CD6" },
-  { id: "worldtree", name: "World Tree",  need: 100, color: "#FF9EC8" },
+  /* THE 100 IS UNDERWATER (build 317, round 4). "I like the underwater one,
+     but the water that's on screen looks terrible, and it doesn't start
+     from the very bottom. The world tree is not the answer." Live build 313
+     ships the World Tree at this rung, so its id is kept READABLE, not
+     playable on the ladder: a saved pick, a pop-up already shown and a tile
+     already looked at, all as "worldtree", mean this rung and are read as
+     Underwater (hundoFxId, HUNDO_FX_ALIAS) - nobody is left holding an
+     effect that is no longer there. The tree itself stays built in
+     HUNDO_FX_BUILD like the Black Hole. */
+  { id: "underwater", name: "Underwater", need: 100, color: "#46E0E8" },
   { id: "bubbles",   name: "Bubbles",     need: 200, color: "#9FE8FF" },
   /* "the one after bubbles is ... a ufo landing on the grade box" */
   { id: "ufo",       name: "UFO",         need: 350, color: "#6BFF8F" }
 ];
-function hundoFxDef(id){ return HUNDO_FX.find(d => d.id === id) || null; }
+/* An id from an older build, read as the rung that replaced it. */
+const HUNDO_FX_ALIAS = { worldtree: "underwater" };
+function hundoFxId(id){ return (typeof id === "string" && Object.prototype.hasOwnProperty.call(HUNDO_FX_ALIAS, id)) ? HUNDO_FX_ALIAS[id] : id; }
+/* A list of ids (a shown or seen record) in this build's terms: aliases
+   read as their rung, each once. */
+function hundoFxIds(list){
+  const out = [];
+  (Array.isArray(list) ? list : []).forEach(x => { if(typeof x !== "string") return; const id = hundoFxId(x); if(out.indexOf(id) < 0) out.push(id); });
+  return out;
+}
+function hundoFxDef(id){ id = hundoFxId(id); return HUNDO_FX.find(d => d.id === id) || null; }
 /* Held at `hundos` (this account's own count when left out). */
 function hundoFxEarned(id, hundos){
   const d = hundoFxDef(id);
@@ -40421,7 +40457,7 @@ function earnedHundoFx(hundos){ return HUNDO_FX.filter(d => d.need > 0 && hundoF
 /* What plays on a 100%: the pick, or Confetti when the pick is not held
    here (a copy from elsewhere, an id from another build). */
 function hundoFxInUse(){
-  const id = store && store.hundoFx;
+  const id = hundoFxId(store && store.hundoFx);
   return id && hundoFxEarned(id) ? id : "confetti";
 }
 function hundoFxNeedText(d){ return d.need > 0 ? "Earn " + d.need + " hundos" : "Yours from day one"; }
@@ -47068,7 +47104,7 @@ function applyLoadedData(got){
   /* build 313: the hundo effects looked at. Not in SEEN_KINDS - a record
      without it is still a whole record, and ensureSeenUnlocks() starts it
      empty - so nothing written before this build re-seeds. */
-  if(store.seenUnlocks && Array.isArray(got.seenUnlocks.fx)) store.seenUnlocks.fx = got.seenUnlocks.fx.filter(x => typeof x === "string");
+  if(store.seenUnlocks && Array.isArray(got.seenUnlocks.fx)) store.seenUnlocks.fx = hundoFxIds(got.seenUnlocks.fx);
   store.unlocksShown = (got.unlocksShown && Array.isArray(got.unlocksShown.chars) && Array.isArray(got.unlocksShown.banners))
     ? { chars: got.unlocksShown.chars.filter(x => typeof x === "string"),
         banners: got.unlocksShown.banners.filter(x => typeof x === "string"),
@@ -47077,7 +47113,8 @@ function applyLoadedData(got){
            one when this ships is meant to get its pop-up once ("For the
            people who meet these, they will get the popups next time they
            log on or are at the main menu"). */
-        fx: Array.isArray(got.unlocksShown.fx) ? got.unlocksShown.fx.filter(x => typeof x === "string") : [] }
+        /* build 317, round 4: a World Tree shown is this rung shown */
+        fx: hundoFxIds(got.unlocksShown.fx) }
     : null;
   /* Build 220. The counters default to zero and the two "done" flags to
      false, so every existing account is seeded once from what it has
@@ -47107,7 +47144,8 @@ function applyLoadedData(got){
   /* build 313: the hundo effect picked in Customize. Confetti for
      anybody who has never picked one; an id this build does not know is
      kept (it may be a later build's) and falls back at play time. */
-  store.hundoFx = typeof got.hundoFx === "string" && got.hundoFx ? got.hundoFx : "confetti";
+  /* build 317, round 4: a World Tree pick is the 100's rung - Underwater */
+  store.hundoFx = typeof got.hundoFx === "string" && got.hundoFx ? hundoFxId(got.hundoFx) : "confetti";
   store.pendingVoidCutscene = got.pendingVoidCutscene === true;
   store.weekRankSeen = (got.weekRankSeen && typeof got.weekRankSeen === "object"
     && typeof got.weekRankSeen.week === "string" && typeof got.weekRankSeen.rank === "number")
@@ -79268,7 +79306,7 @@ function hfxWarm(id){
     else if(id === "worldtree"){ [0, 1, 2].forEach(i => urls.push(hfxBlossomURL(i))); urls.push(hfxLeafURL()); HFX_BLOOM.forEach(cl => urls.push(hfxPetalURL(cl))); }
     else if(id === "fireworks"){ hfxFwHeads(); urls.push(hfxGlintURL()); }
     else if(id === "blackhole"){ urls.push(hfxDiscURL(), hfxSwirlURL(), hfxStreakURL(), hfxGlintURL()); }
-    else if(id === "underwater"){ urls.push(hfxCausticURL(0), hfxCausticURL(1), hfxSurfaceURL(), hfxMantaURL(), hfxDropURL(), hfxGlintURL()); [0, 1, 2].forEach(k => urls.push(hfxFishURL(k), hfxKelpURL(k), hfxBubbleURL([190, 170, 210][k], true))); }
+    else if(id === "underwater"){ hfxCausticTile(0, true); hfxCausticTile(1, true); urls.push(hfxWaveURL(0), hfxWaveURL(1), hfxRayURL(), hfxUwBubbleURL(), hfxMoteURL(), hfxMantaURL(), hfxDropURL(), hfxGlintURL()); [0, 1, 2].forEach(k => urls.push(hfxFishURL(k))); }
   }catch(e){}
   /* every sprite made so far, this effect's included, to a bitmap */
   Object.keys(hfxSprites).forEach(k => hfxRasterise(hfxSprites[k]));
@@ -79556,48 +79594,163 @@ function hfxWorldTree(scr, bx, c){
   }
 }
 
-/* ============ UNDERWATER ============
-   "Maybe make it like underwater? That could be cool." The screen
-   floods from the bottom: the water rises past the box with its bright
-   surface line, and then everything is under it - caustic light rippling
-   across the cards, shafts of light swaying down from the surface, kelp
-   rising from the floor and swaying, a school of fish and a manta ray
-   crossing, bubbles streaming up out of the box (the treasure) and its
-   number glinting gold. The cards sway as if the water moves them. Then
-   it drains, the surface sinking past the box, and drops run down the
-   screen. Transform and opacity throughout; the water is one layer, the
-   caustics two tiled layers that drift, everything else a sprite. */
-const HFX_UW = { rise: .15, riseD: 1.1, drain: 5.0, drainD: 1.15 };
-/* caustics: a seamless tile of light, a net of soft bright lines */
+/* ============ UNDERWATER (the 100-hundo rung since build 317, round 4) ============
+   "I like the underwater one, but the water that's on screen looks
+   terrible, and it doesn't start from the very bottom." Rebuilt as WATER:
+   - IT RISES FROM THE VERY BOTTOM OF THE SCREEN. The water is one fixed
+     body (`.hfx-uw-ocean`, position:fixed and 100lvh tall on the results
+     screen - the dims' rule - so the safe area is under it too and the
+     results' own scroll never leaves a dry band at the foot). Its surface
+     starts just below the bottom edge, sweeps up over the cards with a
+     surge and a small settle, and STAYS IN VIEW near the top: a cross-
+     section of a sea you are looking into, not a screen that was painted
+     blue. It drains back out through the bottom edge.
+   - A REAL SURFACE: two wave layers, each a seamless tile (hfxWaveURL) of
+     a crest made of three sines, sliding opposite ways at different
+     speeds - the interference is what makes it read as water rather than a
+     drawn zigzag. The front crest carries the light: a bright specular
+     line, a glow over it, and under it the darker refraction band and a
+     paler lens band you see through a meniscus.
+   - DEPTH: a tint that deepens from a pale lit cyan under the surface to a
+     dark blue at the floor, and a sheen of light just under the surface.
+   - CAUSTICS, REFRACTION LIGHT: a Worley (cellular) web of thin bright
+     lines, computed ONCE into a seamless tile (hfxCausticTile, on a canvas,
+     jittered-grid Voronoi, ~1M distance tests, as the results screen
+     opens), in two layers of different scale drifting different ways and
+     breathing - where they cross the light shimmers. Not the old hand-drawn
+     blob net, which read as crumpled plastic.
+   - LIGHT RAYS fanning down from the surface, swaying; BUBBLES rising in
+     streams from vents in the floor and off the 100% box, wobbling, and
+     breaking at the surface; motes drifting in the light; the school of
+     fish and the manta from the first build, and the cards swaying.
+   Transform and opacity only; every picture drawn once and rasterised;
+   no svg filters, no backdrop-filter, nothing painted per frame. ~60
+   pieces on a phone. */
+const HFX_UW = { rise: .15, riseD: 1.6, drain: 5.0, drainD: 1.2, wavePeriod: 220, waveH: 34 };
+/* the body's colour right under the surface - the wave tiles are filled
+   with exactly this, so crest and body are one water */
+const HFX_UW_TOP = "rgba(118,220,236,.24)";
+/* The surface, side on: one period of a crest made of three sines (so it
+   repeats seamlessly), filled below with the water's top colour. The front
+   one is lit; the back one is a fainter sheet behind it. */
+function hfxWaveURL(back){
+  return hfxSprite("uwave" + (back ? "b" : "f"), () => {
+    const P = HFX_UW.wavePeriod, H = HFX_UW.waveH, base = back ? 11 : 15, ph = back ? 2.2 : 0;
+    const y = x => base + (back ? 3.6 : 4.4) * Math.sin(2 * Math.PI * x / P + ph) + (back ? 2.2 : 1.7) * Math.sin(4 * Math.PI * x / P + .9 + ph) + .8 * Math.sin(6 * Math.PI * x / P + 2.1 + ph);
+    let crest = "";
+    for(let x = 0; x <= P; x += 4) crest += (x ? " L" : "M") + x + " " + y(x).toFixed(2);
+    const shift = dy => crest.replace(/(-?[\d.]+) (-?[\d.]+)/g, (m, a, b) => a + " " + (+b + dy).toFixed(2));
+    const fill = crest + " L" + P + " " + H + " L0 " + H + " Z";
+    if(back) return 'viewBox="0 0 ' + P + ' ' + H + '"><path d="' + fill + '" fill="#9FEAF4" fill-opacity=".12"/>' +
+      '<path d="' + crest + '" fill="none" stroke="#E6FFFF" stroke-opacity=".45" stroke-width="1.1"/></svg>';
+    return 'viewBox="0 0 ' + P + ' ' + H + '"><path d="' + fill + '" fill="' + HFX_UW_TOP + '"/>' +
+      /* the lens band and the dark refraction line under the meniscus */
+      '<path d="' + shift(7) + '" fill="none" stroke="#D8FAFF" stroke-opacity=".16" stroke-width="6"/>' +
+      '<path d="' + shift(3.2) + '" fill="none" stroke="#064A6A" stroke-opacity=".28" stroke-width="2.2"/>' +
+      /* the glow over the crest, then the specular line itself */
+      '<path d="' + crest + '" fill="none" stroke="#C9FAFF" stroke-opacity=".22" stroke-width="7" stroke-linejoin="round"/>' +
+      '<path d="' + crest + '" fill="none" stroke="#F4FFFF" stroke-opacity=".95" stroke-width="1.7" stroke-linejoin="round"/></svg>';
+  }, Math.round(HFX_UW.wavePeriod * 3));
+}
+/* CAUSTICS, computed: a seamless tile of thin bright lines where the
+   cells of a jittered-grid Voronoi meet (F2 - F1 small), a soft halo
+   round each line. Drawn once into a canvas and kept as a bitmap. */
+/* Computed IN SLICES. A whole tile is ~1M distance tests: 100-140ms at
+   4x CPU, as one task as the results screen opens. hfxWarm starts each
+   tile as a job of 24-row slices, one per timer tick (~10ms each), done
+   long before the effect plays; asked for before it is done, a tile
+   finishes on the spot. */
+const hfxCausticJobs = {};
+function hfxCausticJob(seed){
+  const S = 288, G = 5, cell = S / G, rnd = bnRand(171 + seed * 37), TAU = Math.PI * 2, PAD = 2, GW = G + PAD * 2;
+  const base = [];
+  for(let gy = 0; gy < G; gy++) for(let gx = 0; gx < G; gx++) base.push([(gx + .1 + rnd() * .8) * cell, (gy + .1 + rnd() * .8) * cell]);
+  /* the points of the cells round the tile too, so no wrap per pixel */
+  const px = new Float32Array(GW * GW), py = new Float32Array(GW * GW);
+  for(let gy = -PAD; gy < G + PAD; gy++) for(let gx = -PAD; gx < G + PAD; gx++){
+    const ix = ((gx % G) + G) % G, iy = ((gy % G) + G) % G, q = base[iy * G + ix], j = (gy + PAD) * GW + (gx + PAD);
+    px[j] = q[0] + (gx - ix) * cell; py[j] = q[1] + (gy - iy) * cell;
+  }
+  const p1 = rnd() * TAU, p2 = rnd() * TAU, p3 = rnd() * TAU, p4 = rnd() * TAU, A = cell * .22;
+  const cv = document.createElement("canvas"); cv.width = S; cv.height = S;
+  const x2 = cv.getContext("2d"), im = x2.createImageData(S, S), d = im.data;
+  const job = { key: "caus3" + seed, y: 0, done: false };
+  job.rows = n => {
+    for(const end = Math.min(S, job.y + n); job.y < end; job.y++){
+      const y = job.y;
+      for(let x = 0; x < S; x++){
+        /* Worley F2 - F1 seen through a periodic domain warp, so the cells
+           are wavy, uneven loops and the lines vary in strength - real
+           caustics are never a net */
+        const wx = x + A * Math.sin(TAU * 2 * y / S + p1) + A * .5 * Math.sin(TAU * 3 * (x + y) / S + p2);
+        const wy = y + A * Math.sin(TAU * 2 * x / S + p3) + A * .5 * Math.sin(TAU * 3 * (x - y) / S + p4);
+        const cx = Math.floor(wx / cell) + PAD, cy = Math.floor(wy / cell) + PAD;
+        let f1 = 1e9, f2 = 1e9;
+        for(let oy = -1; oy <= 1; oy++){
+          const row = (cy + oy) * GW;
+          for(let ox = -1; ox <= 1; ox++){
+            const j = row + cx + ox, ddx = px[j] - wx, ddy = py[j] - wy, dd = ddx * ddx + ddy * ddy;
+            if(dd < f1){ f2 = f1; f1 = dd; } else if(dd < f2) f2 = dd;
+          }
+        }
+        const e = Math.sqrt(f2) - Math.sqrt(f1);
+        const m = .45 + .55 * Math.max(0, Math.sin(TAU * 2 * x / S + p2) * Math.sin(TAU * 3 * y / S + p1) * .5 + .5);
+        const v = Math.min(1, (Math.exp(-(e * e) / 3.2) * .9 + Math.exp(-(e * e) / 40) * .16) * m);
+        const i = (y * S + x) * 4;
+        d[i] = 226; d[i + 1] = 255; d[i + 2] = 250; d[i + 3] = (v * 255) | 0;
+      }
+    }
+    if(job.y >= S && !job.done){
+      job.done = true;
+      x2.putImageData(im, 0, 0);
+      const url = 'url("' + cv.toDataURL("image/png") + '")';
+      hfxSprites[job.key] = { text: "", svg: url, png: url, px: S };
+    }
+  };
+  return job;
+}
+function hfxCausticTile(seed, sliced){
+  const key = "caus3" + seed;
+  if(hfxSprites[key] && hfxSprites[key].png) return hfxSprites[key].png;
+  try{
+    const job = hfxCausticJobs[key] || (hfxCausticJobs[key] = hfxCausticJob(seed));
+    if(sliced){
+      if(!job.ticking){ job.ticking = true; const tick = () => { if(job.done) return; job.rows(24); if(!job.done) setTimeout(tick, 16); }; setTimeout(tick, 0); }
+      return null;
+    }
+    job.rows(1e6);
+    return hfxSprites[key].png;
+  }catch(e){ return hfxCausticURL(seed); }
+}
+/* the old hand-drawn net, kept only as the fallback if a canvas fails */
 function hfxCausticURL(seed){
   return hfxSprite("caus" + seed, () => {
     const rnd = bnRand(91 + seed), S = 240; let o = "";
-    const blob = (x, y, r) => {
-      let d = "";
-      const n = 6, pts = [];
-      for(let i = 0; i < n; i++){ const a = i / n * Math.PI * 2 + rnd() * .5, rr = r * (.7 + rnd() * .5); pts.push([x + Math.cos(a) * rr, y + Math.sin(a) * rr]); }
-      d = "M" + pts[0][0].toFixed(1) + " " + pts[0][1].toFixed(1);
-      for(let i = 0; i < n; i++){ const p = pts[i], q = pts[(i + 1) % n], m = [(p[0] + q[0]) / 2 + (rnd() - .5) * r * .5, (p[1] + q[1]) / 2 + (rnd() - .5) * r * .5]; d += " Q" + m[0].toFixed(1) + " " + m[1].toFixed(1) + " " + q[0].toFixed(1) + " " + q[1].toFixed(1); }
-      return d + "Z";
-    };
     for(let i = 0; i < 18; i++){
-      const x = rnd() * S, y = rnd() * S, r = 16 + rnd() * 22, d = blob(x, y, r);
-      [-S, 0, S].forEach(dx => [-S, 0, S].forEach(dy => {
-        if(x + dx + r * 1.4 < 0 || x + dx - r * 1.4 > S || y + dy + r * 1.4 < 0 || y + dy - r * 1.4 > S) return;
-        o += '<path d="' + d + '" transform="translate(' + dx + ' ' + dy + ')"/>';
-      }));
+      const x = rnd() * S, y = rnd() * S, r = 16 + rnd() * 22;
+      o += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r.toFixed(1) + '"/>';
     }
-    return 'viewBox="0 0 ' + S + ' ' + S + '"><g fill="none" stroke="#E8FFFB" stroke-linejoin="round"><g stroke-opacity=".08" stroke-width="6">' + o + '</g><g stroke-opacity=".3" stroke-width="1.4">' + o + '</g></g></svg>';
+    return 'viewBox="0 0 ' + S + ' ' + S + '"><g fill="none" stroke="#E8FFFB" stroke-opacity=".25" stroke-width="1.4">' + o + '</g></svg>';
   }, 240);
 }
-/* the surface seen from below: a bright wavy line with a glow under it */
-function hfxSurfaceURL(){
-  return hfxSprite("surf", () => {
-    let d = "M0 14";
-    for(let x = 0; x <= 400; x += 20) d += " Q" + (x + 10) + " " + (x % 40 ? 20 : 8) + " " + (x + 20) + " 14";
-    return 'viewBox="0 0 400 40"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#CFFBFF" stop-opacity=".0"/><stop offset=".35" stop-color="#CFFBFF" stop-opacity=".55"/><stop offset="1" stop-color="#5FD6E8" stop-opacity="0"/></linearGradient></defs>' +
-      '<rect x="0" y="10" width="400" height="30" fill="url(#g)"/><path d="' + d + '" fill="none" stroke="#F2FFFF" stroke-width="2.4" stroke-opacity=".9"/></svg>';
-  }, 600);
+/* a shaft of light from the surface: soft-edged (three nested wedges),
+   bright at the top and gone by its foot */
+function hfxRayURL(){
+  return hfxSprite("uwray", () => 'viewBox="0 0 60 400"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E6FFFF" stop-opacity=".55"/>' +
+    '<stop offset=".35" stop-color="#BFF4FF" stop-opacity=".22"/><stop offset="1" stop-color="#9FE8FF" stop-opacity="0"/></linearGradient></defs>' +
+    '<path d="M18 0 L42 0 L60 400 L0 400 Z" fill="url(#g)" opacity=".35"/><path d="M22 0 L38 0 L50 400 L10 400 Z" fill="url(#g)" opacity=".5"/>' +
+    '<path d="M26 0 L34 0 L40 400 L20 400 Z" fill="url(#g)" opacity=".6"/></svg>', 400);
+}
+/* a bubble in water: clear, a bright rim, a lit highlight, a dimmer
+   reflection opposite */
+function hfxUwBubbleURL(){
+  return hfxSprite("uwbub", () => 'viewBox="0 0 40 40"><defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset=".55" stop-color="#E6FFFF" stop-opacity=".04"/>' +
+    '<stop offset=".84" stop-color="#C8F6FF" stop-opacity=".28"/><stop offset=".96" stop-color="#FFFFFF" stop-opacity=".85"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient></defs>' +
+    '<circle cx="20" cy="20" r="19.5" fill="url(#g)"/><ellipse cx="13.5" cy="12.5" rx="4.6" ry="2.6" fill="#fff" fill-opacity=".9" transform="rotate(-38 13.5 12.5)"/>' +
+    '<path d="M27 30 Q31 27 32 22" stroke="#fff" stroke-opacity=".45" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>', 96);
+}
+function hfxMoteURL(){
+  return hfxSprite("uwmote", () => 'viewBox="0 0 20 20"><defs><radialGradient id="g"><stop offset="0" stop-color="#F2FFFF" stop-opacity=".9"/><stop offset="1" stop-color="#BFF4FF" stop-opacity="0"/></radialGradient></defs><circle cx="10" cy="10" r="10" fill="url(#g)"/></svg>', 32);
 }
 function hfxFishURL(k){
   const body = ["#9FD8E6", "#C6EEF6", "#7FC2D6"][k % 3];
@@ -79610,80 +79763,123 @@ function hfxMantaURL(){
     '<path d="M100 18 Q120 20 132 34 Q160 40 198 60 Q160 64 138 72 Q120 92 100 96 Q80 92 62 72 Q40 64 2 60 Q40 40 68 34 Q80 20 100 18 Z" fill="url(#g)" fill-opacity=".85"/>' +
     '<path d="M92 18 Q90 8 84 4 M108 18 Q110 8 116 4" stroke="#0A2A38" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M100 96 Q101 104 103 110" stroke="#0A2A38" stroke-width="2" fill="none"/></svg>', 360);
 }
-function hfxKelpURL(k){
-  return hfxSprite("kelp" + k, () => {
-    const rnd = bnRand(13 + k); let blades = "", d = "M30 300";
-    let x = 30;
-    for(let y = 300; y > 10; y -= 30){ const nx = 30 + Math.sin(y / 40 + k) * 10; d += " Q" + (x + (rnd() - .5) * 14).toFixed(1) + " " + (y - 15) + " " + nx.toFixed(1) + " " + (y - 30); x = nx;
-      const s = (y / 30) % 2 ? 1 : -1; blades += '<path d="M' + nx.toFixed(1) + ' ' + (y - 30) + ' q' + (s * 18) + ' -8 ' + (s * 22) + ' -26 q' + (-s * 10) + ' 12 ' + (-s * 22) + ' 26 Z" fill="url(#g)"/>'; }
-    return 'viewBox="0 0 60 300"><defs><linearGradient id="g" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#0A3A2C" stop-opacity=".95"/><stop offset="1" stop-color="#2E8A62" stop-opacity=".85"/></linearGradient></defs>' +
-      '<path d="' + d + '" fill="none" stroke="url(#g)" stroke-width="5" stroke-linecap="round"/>' + blades + '</svg>';
-  }, 220);
-}
 function hfxDropURL(){
   return hfxSprite("drop", () => 'viewBox="0 0 20 40"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2FFFF" stop-opacity=".95"/><stop offset="1" stop-color="#7FD9E8" stop-opacity=".35"/></linearGradient></defs>' +
     '<path d="M10 1 Q15 22 15 30 A5 5 0 0 1 5 30 Q5 22 10 1 Z" fill="url(#g)"/><ellipse cx="8" cy="29" rx="1.6" ry="3" fill="#fff" fill-opacity=".9"/></svg>', 64);
 }
+/* The sea, built into `parent`: the rising body with its surface, its
+   light and what lives in it. `o`: W, H (the ocean's size), lvl (the
+   surface's rest, px from the top), k (scale), t (rise, riseD, drain,
+   drainD in s), n (counts), box (the 100% box at rest, in ocean px, or
+   null), total (s). Returns the body, so callers can add to it. */
+/* PIECES GO IN WHEN THEY ARE DUE (as the World Tree's did): a piece
+   waiting on a delay is still a compositing layer, and the sea's
+   bubbles, fish and drops start over 5s - all put in at once, the screen
+   carried ~116 layers at 2.6s against the UFO's ~96. Each goes in a beat
+   before its start, its delay moved by however late that really is. */
+function hfxDue(c){
+  const t0 = performance.now(), ids = [];
+  if(c) hfxOnEnd(c, () => ids.forEach(id => clearTimeout(id)));
+  return (at, fn) => {
+    const lead = at - .4;
+    if(lead <= .05){ fn(0); return; }
+    ids.push(setTimeout(() => fn((performance.now() - t0) / 1000), lead * 1000));
+  };
+}
+function hfxSea(parent, o){
+  const k = o.k, t = o.t, P = HFX_UW.wavePeriod * k, WH = HFX_UW.waveH * k, bodyH = o.H - o.lvl;
+  const ocean = hfxMk(parent, "span", "hfx-uw-ocean" + (o.cls ? " " + o.cls : ""));
+  const sec = v => (+v).toFixed(3) + "s";
+  const sea = hfxMk(ocean, "span", "hfx-uw-sea", { top: o.lvl + "px", "--wh": WH + "px", "--rt": sec(t.rise), "--rd": sec(t.riseD), "--dt": sec(t.drain), "--dd": sec(t.drainD) });
+  const body = hfxMk(sea, "span", "hfx-uw-body");
+  /* light: the sheen just under the surface, the caustic web in two
+     layers, and the rays */
+  hfxMk(body, "i", "hfx-uw-sheen");
+  [0, 1].forEach(j => {
+    /* only as much bigger than the water as its drift needs: these are
+       the two largest layers on the screen */
+    const tile = (j ? 330 : 236) * k, m = tile * .42, cw = o.W + m * 2, ch = bodyH + m * 2;
+    const l = hfxMk(body, "i", "hfx-uw-caus" + (j ? " is-b" : ""), { left: (-m) + "px", top: (-m) + "px", width: cw + "px", height: ch + "px",
+      "--cx": ((j ? 1 : -1) * tile * .36) + "px", "--cy": ((j ? -1 : 1) * tile * .16) + "px", "--d": o.total + .2 });
+    l.style.backgroundImage = hfxCausticTile(j);
+    l.style.backgroundSize = tile + "px " + tile + "px";
+  });
+  for(let i = 0; i < o.n.rays; i++){
+    const x = o.W * (.06 + (i + .5) / o.n.rays * .9) + hfxR(-14, 14) * k;
+    hfxMk(body, "i", "hfx-uw-ray", { left: x + "px", "--rw": hfxR(46, 110) * k + "px", "--rh": bodyH * hfxR(.6, .92) + "px",
+      "--ra": hfxR(8, 18).toFixed(1) + "deg", "--t": t.rise + t.riseD * .7 + i * .1, "--d": t.drain - t.rise - t.riseD * .7 + .25 - i * .1 }).style.backgroundImage = hfxRayURL();
+  }
+  /* motes drifting in the light */
+  const due = o.due || ((at, fn) => fn(0));
+  /* a piece that has played is taken out - one less layer */
+  const gone = el => { el.addEventListener("animationend", e => { if(e.target === el) el.remove(); }); return el; };
+  for(let i = 0; i < o.n.motes; i++){
+    const at = t.rise + t.riseD * .6 + hfxR(0, .8), x = hfxR(.04, .96) * o.W, y = hfxR(.08, .9) * bodyH, sz = hfxR(3, 6) * k, mx = hfxR(-18, 18) * k, my = hfxR(-26, -6) * k;
+    due(at, off => gone(hfxPiece(body, "hfx-uw-mote", hfxMoteURL(), x, y, sz, { "--mx": mx + "px", "--my": my + "px", "--t": at - off, "--d": t.drain - t.rise - t.riseD * .6 + .1 - Math.max(0, off - at) })));
+  }
+  /* bubbles: streams from vents in the floor, and off the box; each rises
+     to the surface and breaks there */
+  const vents = [];
+  for(let v = 0; v < o.n.vents; v++) vents.push(o.W * ((v + .5) / o.n.vents) + hfxR(-.08, .08) * o.W / o.n.vents);
+  for(let i = 0; i < o.n.bubbles; i++){
+    const fromBox = o.box && i % 3 === 1;
+    const x = fromBox ? o.box.left + o.box.width * hfxR(.12, .88) : vents[i % vents.length] + hfxR(-10, 10) * k;
+    const y = fromBox ? Math.max(30 * k, o.box.top - o.lvl) : bodyH + 6;
+    const sz = hfxR(5, 14) * k, d = hfxR(1.9, 2.8) * Math.max(.6, Math.min(1.2, y / 700));
+    const at = t.rise + t.riseD * (fromBox ? .75 : .45) + (i / o.n.bubbles) * (t.drain - t.rise - t.riseD - d * .6) + hfxR(0, .2), wx = hfxR(-14, 14) * k;
+    due(at, off => gone(hfxPiece(body, "hfx-uw-bub", hfxUwBubbleURL(), x, y, sz, { "--up": (-(y - sz * .6)) + "px", "--wx": wx + "px", "--t": at - off, "--d": d })));
+  }
+  /* the surface: a back sheet and the lit front crest, sliding opposite
+     ways - the interference is the water moving */
+  const surf = hfxMk(sea, "span", "hfx-uw-surface");
+  [1, 0].forEach(back => {
+    const per = back ? 3.9 : 2.7, n = Math.max(1, Math.ceil(o.total / per));
+    const w = hfxMk(surf, "i", "hfx-uw-wave" + (back ? " is-back" : ""), { "--p": P + "px", "--wd": per + "s", "--wn": String(n) });
+    w.style.backgroundImage = hfxWaveURL(back);
+    w.style.backgroundSize = P + "px " + WH + "px";
+  });
+  return { ocean, sea, body, bodyH };
+}
 function hfxUnderwater(scr, bx, c){
-  const r = c.br, small = c.vw < 600, mini = !!c.frame, k = mini ? .55 : 1;
+  const small = c.vw < 600, mini = !!c.frame || c.mini, k = mini ? .55 : 1;
   const U = HFX_UW, tot = HUNDO_FX_TOTAL.underwater / 1000;
+  const t = { rise: U.rise, riseD: U.riseD, drain: U.drain, drainD: U.drainD };
   if(scr){
-    const sea = hfxMk(hfxMk(scr, "span", "hfx-uw-sea", { "--rt": U.rise + "s", "--rd": U.riseD + "s", "--dt": U.drain + "s", "--dd": U.drainD + "s", "--vh": c.vh + "px" }), "span", "hfx-uw-drain");
-    hfxMk(sea, "i", "hfx-uw-water");
-    /* the caustics: two tiles drifting different ways, over the cards */
-    const cw = c.vw * 1.6, ch = c.vh * 1.4;
-    [0, 1].forEach(j => {
-      const l = hfxMk(sea, "i", "hfx-uw-caus" + (j ? " is-b" : ""), { width: cw + "px", height: ch + "px", "--cx": ((j ? 1 : -1) * c.vw * .22) + "px", "--cy": ((j ? -1 : 1) * c.vh * .08) + "px" });
-      l.style.backgroundImage = hfxCausticURL(j);
-      l.style.backgroundSize = (j ? 300 : 230) * k + "px";
-    });
-    /* light from the surface */
-    for(let i = 0; i < (small ? 4 : 6); i++){
-      hfxMk(sea, "i", "hfx-uw-ray", { left: (c.vw * (.08 + i / (small ? 4 : 6) * .9)) + "px", "--rw": (hfxR(40, 90) * k) + "px", "--rh": (c.vh * 1.1) + "px",
-        "--ra": hfxR(-14, -6).toFixed(1) + "deg", "--t": U.rise + U.riseD * .6 + i * .12, "--d": U.drain - U.rise - U.riseD * .6 + .4 - i * .12 });
-    }
-    /* the surface line: rises with the water and goes off the top, and comes back down as it drains */
-    const sf = hfxMk(scr, "i", "hfx-uw-surf", { "--vh": c.vh + "px", "--rt": U.rise + "s", "--rd": U.riseD + "s", "--dt": U.drain + "s", "--dd": U.drainD + "s", width: (c.vw * 2) + "px" });
-    sf.style.backgroundImage = hfxSurfaceURL(); sf.style.backgroundSize = (400 * k) + "px 100%";
-    /* kelp from the floor */
-    const nK = mini ? 3 : small ? 5 : 7;
-    for(let i = 0; i < nK; i++){
-      const h = c.vh * hfxR(.14, .26) * (i % 2 ? .8 : 1), x = (i + .5) / nK * c.vw + hfxR(-18, 18);
-      const kp = hfxMk(scr, "i", "hfx-uw-kelp", { left: (x - h * .1) + "px", top: (c.vh - h + 6) + "px", width: (h * .2) + "px", height: h + "px", "--t": U.rise + .25 + i * .05, "--d": U.drain + .6 - U.rise - i * .05,
-        "--sw": hfxR(3, 7).toFixed(1) + "deg" });
-      kp.style.backgroundImage = hfxKelpURL(i % 3);
-    }
-    /* a school of fish, across in a curve, and a manta ray behind them */
-    const dir = Math.random() < .5 ? 1 : -1, y0 = r.top - c.vh * hfxR(.1, .22);
+    /* the box where it will REST: the results reveal scrolls the page to its
+       foot as later cards land, and the sea is fixed to the screen */
+    const de = document.documentElement, page = !c.frame && !(c.box && c.box.closest && c.box.closest(".rs-spot"));
+    const rest = page ? Math.max(0, de.scrollHeight - (window.innerHeight || c.vh)) - (window.scrollY || 0) : 0;
+    const r = c.br, box = { left: r.left, top: r.top - rest, width: r.width, height: r.height };
+    const lvl = Math.round(Math.max(c.vh * (mini ? .1 : .085), mini ? 14 : 40));
+    const due = hfxDue(c);
+    const S = hfxSea(scr, { W: c.vw, H: c.vh, lvl, k, t, total: tot, box, due,
+      n: { rays: mini ? 3 : small ? 4 : 6, motes: mini ? 3 : small ? 6 : 10, vents: small || mini ? 3 : 4, bubbles: mini ? 8 : small ? 14 : 20 } });
+    const body = S.body, bodyH = S.bodyH;
+    /* a school of fish across, above the box, and a manta behind them */
+    const dir = Math.random() < .5 ? 1 : -1, y0 = Math.max(60 * k, box.top - lvl - c.vh * hfxR(.12, .22));
     for(let i = 0; i < (mini ? 5 : small ? 8 : 12); i++){
-      const s = (hfxR(26, 40)) * k, dy = hfxR(-40, 40) * k, lag = i * .07 + hfxR(0, .12);
-      const f = hfxPiece(scr, "hfx-uw-fish", hfxFishURL(i % 3), 0, 0, s, { "--fl": dir < 0 ? "1" : "-1" });
-      const xs = dir > 0 ? -60 : c.vw + 60, xe = dir > 0 ? c.vw + 60 : -60;
-      hfxAnim(c, f, [
-        { transform: "translate(" + xs + "px," + (y0 + dy + 40) + "px) scaleX(" + (dir > 0 ? -1 : 1) + ")", opacity: 0 },
-        { transform: "translate(" + (xs + (xe - xs) * .15) + "px," + (y0 + dy + 20) + "px) scaleX(" + (dir > 0 ? -1 : 1) + ")", opacity: 1, offset: .12 },
-        { transform: "translate(" + (xs + (xe - xs) * .5) + "px," + (y0 + dy - 10) + "px) scaleX(" + (dir > 0 ? -1 : 1) + ")", opacity: 1, offset: .5 },
-        { transform: "translate(" + (xs + (xe - xs) * .85) + "px," + (y0 + dy + 14) + "px) scaleX(" + (dir > 0 ? -1 : 1) + ")", opacity: 1, offset: .88 },
-        { transform: "translate(" + xe + "px," + (y0 + dy + 4) + "px) scaleX(" + (dir > 0 ? -1 : 1) + ")", opacity: 0 }
-      ], { duration: 3000, delay: (U.rise + U.riseD + .2 + lag) * 1000, fill: "both", easing: "ease-in-out" });
+      const s = hfxR(26, 40) * k, dy = hfxR(-40, 40) * k, lag = i * .07 + hfxR(0, .12), at = U.rise + U.riseD + .15 + lag;
+      const xs = dir > 0 ? -60 : c.vw + 60, xe = dir > 0 ? c.vw + 60 : -60, fl = dir > 0 ? -1 : 1;
+      due(at, off => { const f = hfxPiece(body, "hfx-uw-fish", hfxFishURL(i % 3), 0, 0, s, {}); const a = hfxAnim(c, f, [
+        { transform: "translate(" + xs + "px," + (y0 + dy + 40) + "px) scaleX(" + fl + ")", opacity: 0 },
+        { transform: "translate(" + (xs + (xe - xs) * .15) + "px," + (y0 + dy + 20) + "px) scaleX(" + fl + ")", opacity: 1, offset: .12 },
+        { transform: "translate(" + (xs + (xe - xs) * .5) + "px," + (y0 + dy - 10) + "px) scaleX(" + fl + ")", opacity: 1, offset: .5 },
+        { transform: "translate(" + (xs + (xe - xs) * .85) + "px," + (y0 + dy + 14) + "px) scaleX(" + fl + ")", opacity: 1, offset: .88 },
+        { transform: "translate(" + xe + "px," + (y0 + dy + 4) + "px) scaleX(" + fl + ")", opacity: 0 }
+      ], { duration: 3000, delay: Math.max(0, at - off) * 1000, fill: "both", easing: "ease-in-out" }); if(a) a.onfinish = () => f.remove(); });
     }
     const mw = (mini ? 120 : small ? 190 : 260);
-    const m = hfxPiece(scr, "hfx-uw-manta", hfxMantaURL(), 0, 0, mw, {});
-    const my = Math.max(c.vh * .14, r.top - c.vh * .34);
-    hfxAnim(c, m, [
+    const my = Math.max(bodyH * .1, box.top - lvl - c.vh * .3), mat = U.rise + U.riseD + .05;
+    due(mat, off => hfxAnim(c, hfxPiece(body, "hfx-uw-manta", hfxMantaURL(), 0, 0, mw, {}), [
       { transform: "translate(" + (dir > 0 ? c.vw + mw : -mw) + "px," + (my + 30) + "px) rotate(" + (dir > 0 ? -6 : 6) + "deg) scale(.8)", opacity: 0 },
-      { transform: "translate(" + (c.vw / 2) + "px," + (my - 10) + "px) rotate(0deg) scale(1)", opacity: .9, offset: .5 },
+      { transform: "translate(" + (c.vw / 2) + "px," + (my - 10) + "px) rotate(0deg) scale(1)", opacity: .85, offset: .5 },
       { transform: "translate(" + (dir > 0 ? -mw : c.vw + mw) + "px," + (my - 40) + "px) rotate(" + (dir > 0 ? 6 : -6) + "deg) scale(.9)", opacity: 0 }
-    ], { duration: 3400, delay: (U.rise + U.riseD + .1) * 1000, fill: "both", easing: "ease-in-out" });
-    /* bubbles streaming up out of the box, and a few from the floor */
-    for(let i = 0; i < (mini ? 8 : small ? 18 : 26); i++){
-      const fromBox = i % 3 !== 2, x = fromBox ? r.left + r.width * hfxR(.15, .85) : hfxR(.05, .95) * c.vw, y = fromBox ? r.top + 4 : c.vh;
-      hfxPiece(scr, "hfx-uw-bub", hfxBubbleURL([190, 170, 210][i % 3], true), x, y, hfxR(6, 16) * k, { "--up": (-(y + 30)) + "px", "--wx": hfxR(-26, 26) * k + "px",
-        "--t": U.rise + U.riseD * .5 + i * (mini ? .3 : small ? .17 : .12), "--d": hfxR(2.2, 2.9) });
-    }
-    /* drops running down the screen as it drains */
+    ], { duration: 3400, delay: Math.max(0, mat - off) * 1000, fill: "both", easing: "ease-in-out" }));
+    /* drops running down the glass once the water has gone */
+    const drops = hfxMk(scr, "span", "hfx-uw-ocean is-drops");
     for(let i = 0; i < (mini ? 4 : small ? 9 : 13); i++){
-      hfxPiece(scr, "hfx-uw-drop", hfxDropURL(), hfxR(.04, .96) * c.vw, hfxR(.05, .6) * c.vh, hfxR(10, 18) * k, { "--fall": (hfxR(.15, .4) * c.vh) + "px", "--t": U.drain + U.drainD * .4 + hfxR(0, .7), "--d": hfxR(1.2, 1.8) });
+      const at = U.drain + U.drainD * .45 + hfxR(0, .7), x = hfxR(.04, .96) * c.vw, y = hfxR(.05, .6) * c.vh, sz = hfxR(10, 18) * k, fall = hfxR(.15, .4) * c.vh, d = hfxR(1.2, 1.7);
+      due(at, off => hfxPiece(drops, "hfx-uw-drop", hfxDropURL(), x, y, sz, { "--fall": fall + "px", "--t": at - off, "--d": d }));
     }
     /* the cards sway with the water */
     if(c.scene) c.scene.warp.forEach((el, i) => {
@@ -79695,22 +79891,23 @@ function hfxUnderwater(scr, bx, c){
   if(bx){
     const t0 = c.boxOnly ? .1 : U.rise + U.riseD * .55;
     if(c.boxOnly){
-      /* the box floods on its own */
-      const bs = hfxMk(hfxMk(bx, "span", "hfx-uw-sea is-box", { "--rt": ".1s", "--rd": ".7s", "--dt": "3.2s", "--dd": ".8s", "--vh": c.bh + "px" }), "span", "hfx-uw-drain");
-      hfxMk(bs, "i", "hfx-uw-water");
-      const cl = hfxMk(bs, "i", "hfx-uw-caus", { width: (c.bw * 1.6) + "px", height: (c.bh * 1.6) + "px", "--cx": (c.bw * .2) + "px", "--cy": "0px" });
-      cl.style.backgroundImage = hfxCausticURL(0); cl.style.backgroundSize = (c.mini ? 110 : 160) + "px";
+      /* the box floods on its own: the same water, the box its screen */
+      const bt = { rise: .1, riseD: .8, drain: 3.3, drainD: .8 };
+      hfxSea(bx, { W: c.bw, H: c.bh, lvl: Math.round(c.bh * .16), k: c.mini ? .4 : .55, t: bt, total: HUNDO_FX_BOX_TOTAL.underwater / 1000, box: null, cls: "is-box", due: hfxDue(c),
+        n: { rays: 2, motes: c.mini ? 2 : 4, vents: 2, bubbles: c.mini ? 4 : 7 } });
       for(let i = 0; i < 3; i++){
         const f = hfxPiece(bx, "hfx-uw-fish is-box", hfxFishURL(i), 0, 0, (c.mini ? 14 : 22), {});
-        hfxAnim(c, f, [{ transform: "translate(" + (c.bw + 20) + "px," + (c.bh * (.25 + i * .18)) + "px) scaleX(1)", opacity: 0 }, { transform: "translate(" + (c.bw * .5) + "px," + (c.bh * (.2 + i * .2)) + "px) scaleX(1)", opacity: 1, offset: .5 },
-          { transform: "translate(-20px," + (c.bh * (.3 + i * .15)) + "px) scaleX(1)", opacity: 0 }], { duration: 2200, delay: (.8 + i * .25) * 1000, fill: "both", easing: "ease-in-out" });
+        hfxAnim(c, f, [{ transform: "translate(" + (c.bw + 20) + "px," + (c.bh * (.32 + i * .16)) + "px) scaleX(1)", opacity: 0 }, { transform: "translate(" + (c.bw * .5) + "px," + (c.bh * (.3 + i * .18)) + "px) scaleX(1)", opacity: 1, offset: .5 },
+          { transform: "translate(-20px," + (c.bh * (.36 + i * .14)) + "px) scaleX(1)", opacity: 0 }], { duration: 2200, delay: (.8 + i * .25) * 1000, fill: "both", easing: "ease-in-out" });
       }
     }
-    /* the treasure: the number glints gold, rings spread on the water over it */
+    /* the treasure: the number glints, rings spread on the water over it */
     for(let i = 0; i < 3; i++) hfxMk(bx, "i", "hfx-uw-ring", { left: (c.p.x + c.p.w / 2) + "px", top: (c.p.y + c.p.h / 2) + "px", "--rs": (c.p.w * 1.4) + "px", "--t": t0 + .3 + i * .7 });
-    hfxLitText(bx, c, { mode: "sweep", color: "#FFF6D6", glow: "#FFD27A", dl: t0 + .6, dur: 1.2 });
+    hfxLitText(bx, c, { mode: "sweep", color: "#F2FFFF", glow: "#7FE9F2", dl: t0 + .6, dur: 1.2 });
+    const bdue = hfxDue(c);
     for(let i = 0; i < (c.mini ? 3 : 6); i++){
-      hfxPiece(bx, "hfx-glint is-uw", hfxGlintURL(), c.p.x + c.p.w * hfxR(.05, .95), c.p.y + c.p.h * hfxR(.1, .9), (c.mini ? 9 : 15), { "--t": t0 + .8 + i * .35, "--d": 1.4 });
+      const at = t0 + .8 + i * .35, x = c.p.x + c.p.w * hfxR(.05, .95), y = c.p.y + c.p.h * hfxR(.1, .9);
+      bdue(at, off => hfxPiece(bx, "hfx-glint is-uw", hfxGlintURL(), x, y, (c.mini ? 9 : 15), { "--t": at - off, "--d": 1.4 }));
     }
   }
 }
@@ -80800,6 +80997,30 @@ function hundoFxPosterSVG(id){
       if(Math.abs(x - 80) < 27 && Math.abs(y - 30) < 10) continue;
       body += i % 3 === 2 ? leaf(x, y, 2.2 + rnd(), rnd() * 180) : petal(x, y, 1.6 + rnd() * .9, rnd() * 360, HFX_BLOOM[i % HFX_BLOOM.length]);
     }
+  } else if(id === "underwater"){
+    /* build 317, round 4: the new water, small - the lit surface near the
+       top, the body deepening below it, caustics, three rays, a few
+       bubbles rising to break at the surface, and a school of fish */
+    defs += '<linearGradient id="' + g + 'sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#76DCEC" stop-opacity=".28"/><stop offset=".4" stop-color="#34AACE" stop-opacity=".3"/><stop offset="1" stop-color="#06365A" stop-opacity=".55"/></linearGradient>' +
+      '<linearGradient id="' + g + 'ray" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E6FFFF" stop-opacity=".45"/><stop offset="1" stop-color="#9FE8FF" stop-opacity="0"/></linearGradient>';
+    const wy = x => 9 + 1.3 * Math.sin(x / 9) + .6 * Math.sin(x / 4.3 + 1);
+    let crest = ""; for(let x = 0; x <= 160; x += 4) crest += (x ? " L" : "M") + x + " " + F(wy(x));
+    body += '<path d="' + crest + ' L160 60 L0 60 Z" fill="url(#' + g + 'sea)"/>';
+    [[30, 9], [74, 12], [122, 8]].forEach(([x, w]) => { body += '<path d="M' + F(x - w * .3) + ' ' + F(wy(x)) + ' L' + F(x + w * .3) + ' ' + F(wy(x)) + ' L' + F(x + w + 10) + ' 60 L' + F(x - w + 10) + ' 60 Z" fill="url(#' + g + 'ray)"/>'; });
+    /* caustics: a few wavy loops of light */
+    for(let i = 0; i < 16; i++){
+      const cx = rnd() * 160, cy = 16 + rnd() * 42, r = 4 + rnd() * 5;
+      /* a smooth, uneven loop: quadratic curves through the midpoints */
+      const pts = []; for(let q = 0; q < 7; q++){ const th = q / 7 * Math.PI * 2, rr = r * (.7 + .45 * Math.sin(th * 2 + i) + rnd() * .2); pts.push([cx + Math.cos(th) * rr * 1.3, cy + Math.sin(th) * rr * .8]); }
+      const mid = (u, v) => [(u[0] + v[0]) / 2, (u[1] + v[1]) / 2];
+      let m0 = mid(pts[6], pts[0]), d = "M" + F(m0[0]) + " " + F(m0[1]);
+      for(let q = 0; q < 7; q++){ const m = mid(pts[q], pts[(q + 1) % 7]); d += " Q" + F(pts[q][0]) + " " + F(pts[q][1]) + " " + F(m[0]) + " " + F(m[1]); }
+      body += '<path d="' + d + 'Z" fill="none" stroke="#E2FFFA" stroke-opacity="' + F(.12 + rnd() * .14) + '" stroke-width=".55"/>';
+    }
+    body += '<path d="' + crest + '" fill="none" stroke="#C9FAFF" stroke-opacity=".25" stroke-width="2.6"/><path d="' + crest + '" fill="none" stroke="#F4FFFF" stroke-width=".8"/>';
+    for(let i = 0; i < 12; i++){ const x = 8 + rnd() * 144, y = 18 + rnd() * 40; if(Math.abs(x - 80) < 30 && Math.abs(y - 30) < 11) continue;
+      body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(.6 + rnd() * 1.1) + '" fill="none" stroke="#F2FFFF" stroke-opacity=".7" stroke-width=".4"/>'; }
+    [[124, 44], [131, 41], [137, 46], [129, 49], [118, 48]].forEach(([x, y]) => { body += '<path d="M' + x + ' ' + y + ' q3 -2 6 0 l2 -1.4 v2.8 l-2 -1.4 q-3 2 -6 0 Z" fill="#C6EEF6" fill-opacity=".85"/>'; });
   } else if(id === "bubbles"){
     rg("b", [[0, "#9FE8FF", 0], [0.62, "#9FE8FF", 0.04], [0.8, "#C79BFF", 0.4], [0.92, "#FFB3D1", 0.8], [1, "#FFFFFF", 0.25]]);
     rg("w", [[0, "#9FE8FF", 0.28], [1, "#9FE8FF", 0]]);
@@ -80864,10 +81085,14 @@ function buildHundoFxStill(id){
       '<ellipse cx="24" cy="24" rx="22" ry="8" fill="url(#' + g + 'd)" transform="rotate(-12 24 24)"/><circle cx="24" cy="24" r="7.5" fill="#000"/><circle cx="24" cy="24" r="8.3" fill="none" stroke="#FFE8D2" stroke-width="1"/>' +
       '<path d="M24 4 Q36 8 34 18 M44 24 Q40 36 30 34 M24 44 Q12 40 14 30 M4 24 Q8 12 18 14" stroke="#B48CFF" stroke-opacity=".7" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
   } else if(id === "underwater"){
-    body = '<defs><linearGradient id="' + g + 'w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6FE3EE" stop-opacity=".55"/><stop offset="1" stop-color="#0E5A80" stop-opacity=".8"/></linearGradient></defs>' +
-      '<rect x="2" y="10" width="44" height="36" rx="5" fill="url(#' + g + 'w)"/><path d="M2 12 Q8 8 13 12 T24 12 T35 12 T46 12" stroke="#E9FFFF" stroke-width="1.6" fill="none"/>' +
-      '<path d="M10 46 Q7 36 11 28 Q14 22 10 16" stroke="#3FB57A" stroke-width="2" fill="none"/><path d="M38 46 Q41 38 37 32" stroke="#3FB57A" stroke-width="2" fill="none"/>' +
-      '<path d="M18 26 Q24 21 31 25 L35 21 Q34 26 35 30 L31 27 Q24 31 18 26 Z" fill="#0F3D4F"/><circle cx="26" cy="36" r="2" fill="#E8FFFF" fill-opacity=".8"/><circle cx="29" cy="31" r="1.3" fill="#E8FFFF" fill-opacity=".8"/>';
+    /* build 317, round 4: the new water - a lit surface, rays, a fish, bubbles */
+    body = '<defs><linearGradient id="' + g + 'w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#76DCEC" stop-opacity=".5"/><stop offset="1" stop-color="#06365A" stop-opacity=".85"/></linearGradient>' +
+      '<linearGradient id="' + g + 'r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E6FFFF" stop-opacity=".55"/><stop offset="1" stop-color="#9FE8FF" stop-opacity="0"/></linearGradient></defs>' +
+      '<path d="M2 13 Q7.5 10 13 13 T24 13 T35 13 T46 13 L46 41 Q46 46 41 46 L7 46 Q2 46 2 41 Z" fill="url(#' + g + 'w)"/>' +
+      '<path d="M12 13 L16 13 L22 46 L12 46 Z M28 13 L31 13 L38 46 L30 46 Z" fill="url(#' + g + 'r)"/>' +
+      '<path d="M2 13 Q7.5 10 13 13 T24 13 T35 13 T46 13" stroke="#C9FAFF" stroke-opacity=".35" stroke-width="3.4" fill="none"/><path d="M2 13 Q7.5 10 13 13 T24 13 T35 13 T46 13" stroke="#F4FFFF" stroke-width="1.3" fill="none"/>' +
+      '<path d="M15 30 Q22 25 30 29 L34 25 Q33 30 34 34 L30 31 Q22 35 15 30 Z" fill="#C6EEF6"/><circle cx="19" cy="29" r="1" fill="#0B2530"/>' +
+      '<circle cx="36" cy="22" r="2.1" fill="none" stroke="#F2FFFF" stroke-opacity=".85" stroke-width=".8"/><circle cx="33" cy="17" r="1.3" fill="none" stroke="#F2FFFF" stroke-opacity=".85" stroke-width=".7"/><circle cx="10" cy="38" r="1.6" fill="none" stroke="#F2FFFF" stroke-opacity=".7" stroke-width=".7"/>';
   } else if(id === "ufo"){
     body = '<defs><linearGradient id="' + g + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C8FFD4" stop-opacity=".7"/><stop offset="1" stop-color="#6BFF8F" stop-opacity="0"/></linearGradient></defs>' +
       '<path d="M20 26 L28 26 L40 47 L8 47 Z" fill="url(#' + g + 'b)"/>' +
@@ -83183,7 +83408,7 @@ function hundoFxUnlockItem(id){
      over while it is up ("maybe the popup could show the effects
      animated"); the top three first play the WHOLE thing once across the
      pop-up - the UFO most of all. */
-  const top = ["worldtree", "bubbles", "ufo"].indexOf(id) >= 0;
+  const top = ["underwater", "worldtree", "bubbles", "ufo"].indexOf(id) >= 0;
   return { kind: "fx", fx: id, feat: true, kicker: "Hundo effect unlocked", name: d.name,
     sub: "Plays when you score 100%", need: hundoFxNeedText(d), color: d.color,
     art: () => buildHundoFxStill(id),
@@ -83358,6 +83583,8 @@ function ensureUnlocksShown(){
   if(u && Array.isArray(u.chars) && Array.isArray(u.banners)){
     /* not seeded with what is held, unlike the two above - see applyLoadedData */
     if(!Array.isArray(u.fx)) u.fx = [];
+    /* a merge from an older build can bring "worldtree" in (317, round 4) */
+    else if(u.fx.some(x => hundoFxId(x) !== x)) u.fx = hundoFxIds(u.fx);
     return u;
   }
   const waiting = (store.pendingCharUnlocks || []).concat(UNLOCKS_NEW_IN_235);
@@ -83427,6 +83654,7 @@ function ensureSeenUnlocks(){
      that has none: they are new to everybody, so an account that holds
      some the day they ship gets the dot on each. */
   if(ok && !Array.isArray(s.fx)){ s.fx = []; saveStore(); }
+  else if(ok && s.fx.some(x => hundoFxId(x) !== x)) s.fx = hundoFxIds(s.fx);
   if(ok && s.v === SEEN_VERSION) return s;
   const u = unlockedIdsNow();
   const charDef = id => (typeof AVATAR_CHARACTERS !== "undefined" ? AVATAR_CHARACTERS.find(c => c.id === id) : null);

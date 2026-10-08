@@ -13030,7 +13030,8 @@ at the main menu. The others will get it in the result screen."*
 **The ladder: FOUR to earn.** `HUNDO_FX` (above `ULTIMATE_TOP`, ahead of
 everything that runs at boot, because `ultimateProgress()` reads it) is the
 ONE table: **Confetti 0** (everybody's - `celebrate()`, untouched),
-**Fireworks 50, World Tree 100, Bubbles 200, UFO 350**, counted in
+**Fireworks 50, Underwater 100, Bubbles 200, UFO 350** (the World Tree held
+the 100 until build 317 round 4 - see below), counted in
 `hundosOf(store)` (= `lifetime.perfectTests`). Holding one is not stored - it
 is read off the count - only the pick is: `store.hundoFx`, default
 `"confetti"` in the fresh store, `applyLoadedData()` (any non-empty string is
@@ -13071,8 +13072,10 @@ step below the Tree, Bubbles and the UFO.
   layers.
 - In Customize and the pop-up it plays a small show inside the box, out of
   the number; on the miniature screen, the whole thing.
-- **The Black Hole and Underwater stay built** in `HUNDO_FX_BUILD` (not
-  listed); bringing one back is the id and name in the `HUNDO_FX` row.
+- **The Black Hole and the World Tree stay built** in `HUNDO_FX_BUILD` (not
+  listed); bringing one back is the id and name in the `HUNDO_FX` row - but
+  the World Tree's id is an ALIAS for Underwater now (below), so its row
+  would need the alias taken out first.
   Neon Trails, Party Poppers, Hologram and the first Fireworks are gone.
 
 **Every effect starts AT the 100% box and spreads out**, plays across the
@@ -13420,6 +13423,77 @@ tint. **The drawn tree is gone**, with its glass panes, `hfxTreeGlass`,
 Customize poster and the reduce-motion still are the burst too. If a tree
 ever comes back, the lesson of the old one is in git: it was ~140-400 nodes
 across the whole layout and the measured cost of the effect.
+
+**UNDERWATER IS THE 100 (build 317, round 4).** *"I like the underwater one,
+but the water that's on screen looks terrible, and it doesn't start from the
+very bottom. The world tree is not the answer and the black hole is too eh
+too lame."* So the World Tree (the burst above, and a drawn tree that wrapped
+the cards in round 3 - on the unmerged branch `b317-tree`, not here) is off
+the ladder and Underwater, rebuilt, holds the 100.
+- **The old id stays readable, never playable on the ladder.** Live build
+  313 ships the World Tree at this rung, so a saved pick, a pop-up shown and
+  a tile seen are all stored as `"worldtree"`. `HUNDO_FX_ALIAS` /
+  `hundoFxId()` read it as `"underwater"`: in `applyLoadedData` (the pick,
+  `unlocksShown.fx`, `seenUnlocks.fx`, mapped and de-duplicated by
+  `hundoFxIds`), in `hundoFxInUse` and `hundoFxDef`, and in
+  `ensureUnlocksShown` / `ensureSeenUnlocks`, because a merge from an older
+  device can bring the old id back into either record. Somebody shown the
+  World Tree's pop-up is NOT shown an Underwater one - the rung was
+  announced; to announce the new effect instead, drop the alias from the
+  `unlocksShown` mapping only. Nobody is ever left on an effect that is gone.
+- **From the VERY bottom, and the screen's, not the page's.** The water is
+  `.hfx-uw-ocean`, `position:fixed` and `100lvh` inside the page-pinned
+  layer (the dims' rule), so the safe area is under it and the results'
+  own scroll (the reveal follows the cards to the foot of the page) never
+  leaves a dry band at the bottom edge - the old sea was page-pinned at the
+  scroll it started at and stopped short by exactly that scroll. `.hfx-uw-sea`
+  starts translated by its own height plus a wave below the bottom edge,
+  rises with a surge and a small settle (`hfx-uw-rise`, 0.15s + 1.6s) and
+  STAYS with its surface in view at ~8.5% of the screen - you look into a
+  sea, the surface waving at the top - then drains out through the bottom
+  (5.0s + 1.2s); drops run down the glass after it. Positions that depend
+  on the box use where it will REST (the page's maximum scroll).
+- **What makes it water** (`hfxSea`, shared by the screen, the miniature
+  results screen and a box on its own): two seamless wave tiles
+  (`hfxWaveURL`, three sines over one period, so they repeat) sliding
+  opposite ways by exactly one period per cycle - the interference is the
+  movement; the front crest lit (specular line, glow, a dark refraction band
+  and a pale lens band under the meniscus) and filled with exactly the
+  body's top colour (`HFX_UW_TOP`) so crest and body are one water; a depth
+  tint from lit cyan to blue at the floor and a sheen under the surface;
+  CAUSTICS that are a domain-warped Worley web (F2 - F1), computed once into
+  a 288px tile on a canvas (`hfxCausticTile`) in two layers of different
+  scale, drifting different ways and breathing; light rays swaying down from
+  the surface; motes; bubbles in streams from vents in the floor and off the
+  box, rising to break at the surface; the fish school and the manta. The
+  hand-drawn blob net (it read as crumpled plastic), the zigzag surf line
+  and the kelp are gone. In a box on its own the sea is shallower, so the
+  number reads through it. The Customize tile and the still are this water.
+- **Cost.** Transform and opacity only, every picture rasterised once.
+  Measured, and fixed: the caustic tile is ~1M distance tests - 70-180ms at
+  4x CPU as one task, so `hfxWarm` computes it in 24-row slices as the
+  results screen opens (`hfxCausticJob`), ~10ms a tick, finished on the spot
+  if asked for early; pieces waiting on a delay are compositing layers, so
+  bubbles, fish, motes, drops and glints go in when due (`hfxDue`, their
+  delays moved by however late they go in) and come out when done; and the
+  caustic layers are only as much bigger than the water as their drift
+  needs (they had been the two biggest layers on screen). ~100 layers
+  mid-effect against the UFO's ~96. Frames in the 7s at 4x CPU, 440x956 dpr
+  3, interleaved with 7ee6c51 on a shared box (load
+  12-16): Underwater 240-288 (>25ms: 85-98) against the UFO's 214-315
+  (58-82) on the same build; the old Underwater ran 327-354 - the new water
+  is more to draw, and on a par with the UFO.
+- **Gates** (`check_b313_fx`, all failing on 7ee6c51): the rung is
+  Underwater; a stored World Tree pick, pop-up and tile load as Underwater,
+  also after a merge brings the old id back, with no repeat pop-up; a 100%
+  with the old id plays Underwater; the water reaches the bottom edge at
+  0.3s with its surface in the bottom fifth, and with the page scrolled to
+  its foot it is still the whole screen's (fixed) with its surface between 3%
+  and 20% from the top; two wave layers slide opposite ways; two computed
+  caustic layers, a tint deepening to the floor, rays and bubbles. The tree
+  is out of `FX_ALL`; the Customize, tile-hold and flow gates name the 100
+  rung by `HUNDO_FX[2]`. Recordings (frame-stepped, `tools/record-hundo.py`):
+  `/tmp/claude-0/-home-user-Nova-Test/3e626f0f-e6a2-5bdd-98d8-db73a6ec23b7/scratchpad/r317water/`.
 
 **The % is the end of the number's ramp, on every 100% (build 317, round
 2).** *"the percentage sign, it looks like a solid color, ensure that and the
