@@ -13136,7 +13136,8 @@ CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeou
       slotT: slot ? getComputedStyle(slot).transform : null,
       wipeR: wipe ? parseFloat((cp.match(/circle\\(([\\d.]+)%/) || [, 'NaN'])[1]) : null,
       lit: !!(b && b.classList.contains('cosmic-badge-lit')),
-      ratio: b && m ? b.getBoundingClientRect().width / m.getBoundingClientRect().width : null });
+      /* not while it flares for its second (round four's swell) */
+      ratio: b && m && !b.closest('.is-flaring') ? b.getBoundingClientRect().width / m.getBoundingClientRect().width : null });
     await wait(90);
   }
   /* the secret flares: in the scene, painted under the glass bubbles (an
@@ -13156,6 +13157,39 @@ CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeou
   ov.remove();
   return { home, samples, ev };
 }"""
+
+
+CUTSPIN_SEEK = """(t) => { const M = window.__t0s = window.__t0s || new WeakMap();
+  document.getAnimations().forEach(an => {
+    /* the rings' slow spins start on a shared wall clock: from 0 here, so
+       every run crosses the same flares over the same bubbles (7s in: many crossings) */
+    if(!M.has(an)) M.set(an, { at: t, from: /orbit/.test(an.animationName || '') ? 7000 : (an.currentTime || 0), done: false });
+    const s = M.get(an); if(s.done) return;
+    const want = s.from + (t - s.at) * 1000;
+    let end = Infinity; try{ end = an.effect.getComputedTiming().endTime; }catch(e){}
+    if(want >= end && isFinite(end)){ s.done = true; try{ an.finish(); }catch(e){} return; }
+    if(an.playState !== 'paused') an.pause();
+    try{ an.currentTime = want; }catch(e){} }); }"""
+
+CUTSPIN_UNDER = """() => { const ov = document.getElementById('supernova-cutscene'); if(!ov) return null;
+  const out = [];
+  ['.rank-before', '.rank-after'].forEach(side => {
+    const h = ov.querySelector(side); if(!h || +getComputedStyle(h).opacity < .05) return;
+    const wrap = h.querySelector('.cosmic-hero-wrap') || h;
+    const bubs = [...h.querySelectorAll('.rank-orbit-slot > .cosmic-icon-badge.cosmic-badge-rank:not(.rank-litwipe)')];
+    h.querySelectorAll('.cosmic-flare-dot').forEach(d => { const r = d.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      bubs.forEach(b => { const q = b.getBoundingClientRect();
+        /* inside the round glass, not just its square box: the corners are
+           the slot's, not the bubble's */
+        if(Math.hypot(cx - (q.left + q.width / 2), cy - (q.top + q.height / 2)) > q.width / 2 - 2) return;
+        const st = document.elementsFromPoint(cx, cy);
+        const iD = st.findIndex(e => e === d || d.contains(e)), iB = st.findIndex(e => e === b || b.contains(e));
+        let op = 1; for(let e = b; e && e !== wrap; e = e.parentElement) op *= +getComputedStyle(e).opacity;
+        out.push({ side, bubble: b.dataset.rankTier, order: iB >= 0 && (iD < 0 || iB < iD), glass: +op.toFixed(3),
+          stack: (iB < 0 || iD < iB) ? st.slice(0, 6).map(e => e.tagName + '.' + String(e.getAttribute('class') || '').split(' ').slice(0, 2).join('.')) : undefined,
+          ok: iB >= 0 && (iD < 0 || iB < iD) && op >= .99 }); }); }); });
+  return out; }"""
 
 
 def check_b317_cutspin(br):
@@ -13213,6 +13247,41 @@ def check_b317_cutspin(br):
         check("%s: the flare is Home's size against the planet (within 15%%)" % label,
               bool(r["home"]) and worst is not None and abs(worst / r["home"] - 1) <= 0.15,
               (r["home"] and round(r["home"], 4), worst and round(worst, 4)))
+
+    # Round four: "some moments the secret flares don't go behind the large
+    # flares". Frame-stepped (page clock + every animation seeked to it, so
+    # load cannot skip a frame) through the whole whirl, frames 90-300: at
+    # every frame where a secret flare's centre lies on a big bubble, the
+    # bubble must be above it in paint order AND its glass whole (nothing
+    # between the hero and the bubble below full opacity) - a translucent
+    # bubble lets the flare through sharp, which reads as on top.
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.add_style_tag(content=".tier-cutscene .rank-orbit, .tier-cutscene .rank-orbit *{pointer-events:auto !important}")
+        pg.evaluate("()=>{ document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); store.mysteryColorsFound = {red:true, orange:true}; showHome(); }")
+        pg.wait_for_timeout(1200)
+        pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+        pg.evaluate("()=>playTierCutscene('vanguard', {from:'veteran', onDone(){}})")
+        t, n, bad, pops, burst_at = 0.0, 0, [], [], None
+        for i in range(1, 301):
+            t0 = t; t = i / 30
+            pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000)))
+            pg.evaluate(CUTSPIN_SEEK, t)
+            if i < 90:
+                continue
+            ph = pg.evaluate("() => { const o = document.getElementById('supernova-cutscene'); return o ? [!!o.querySelector('.rank-litpop'), o.classList.contains('supernova-burst')] : [false, false]; }")
+            if ph[0]: pops.append(i)
+            if ph[1] and burst_at is None: burst_at = i
+            for x in pg.evaluate(CUTSPIN_UNDER) or []:
+                n += 1
+                if not x["ok"]:
+                    bad.append((i, x))
+        ctx.close()
+        check("%s: every frame of the whirl, a secret flare on a big bubble is UNDER its whole glass" % label,
+              n >= 10 and not bad, (n, len(bad), bad[:2]))
+        check("%s: the new flare flashes for about a second as it lights, and the big flash still comes on time" % label,
+              27 <= len(pops) <= 40 and burst_at is not None and 290 <= burst_at <= 305 and pops[-1] < burst_at,
+              (len(pops), pops[:1], burst_at))
 
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     cards = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
