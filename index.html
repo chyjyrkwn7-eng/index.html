@@ -19136,8 +19136,9 @@
      enough: the Hive's bees and the Ronin's slash flew out of it and
      were cut at its edge. A mask clips to the element's box, so the box
      has to hold everything that pops. The mask is the usual one in this
-     box's percentages: a 1.5-unit feather at the top and sides (nothing
-     reaches it), the bust full to 26.8, .45 at 32.24, gone at 37. The
+     box's percentages, as recordCharSheet bakes it for a "~plate" sheet:
+     a 1.6-unit feather at the top and sides (nothing reaches it), the
+     bust full to 26.8, .45 at 32.24, gone at 37. The
      svg takes no taps: the plate's own box is the target, as it was. */
   .rank-avatar.has-plate{ position:relative; overflow:visible; }
   .profile-hero .profile-hero-avatar .rank-avatar.has-plate > svg.avatarchar-svg.cx-plate,
@@ -19145,10 +19146,10 @@
   .rank-avatar.has-plate > .char-flip-play.cx-plate{
     position:absolute; left:-20.5882%; top:-26.4706%; width:141.1765%; height:141.1765%; margin:0; clip-path:none; pointer-events:none; }
   .rank-avatar.has-plate > svg.avatarchar-svg.cx-plate{
-    -webkit-mask-image:linear-gradient(to bottom, transparent 0%, #000 3.125%, #000 68.333%, rgba(0,0,0,.45) 79.667%, transparent 89.583%),
-                       linear-gradient(to right, transparent 0%, #000 3.125%, #000 96.875%, transparent 100%);
-            mask-image:linear-gradient(to bottom, transparent 0%, #000 3.125%, #000 68.333%, rgba(0,0,0,.45) 79.667%, transparent 89.583%),
-                       linear-gradient(to right, transparent 0%, #000 3.125%, #000 96.875%, transparent 100%); }
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0%, #000 3.333%, #000 68.333%, rgba(0,0,0,.45) 79.667%, transparent 89.583%),
+                       linear-gradient(to right, transparent 0%, #000 3.333%, #000 96.667%, transparent 100%);
+            mask-image:linear-gradient(to bottom, transparent 0%, #000 3.333%, #000 68.333%, rgba(0,0,0,.45) 79.667%, transparent 89.583%),
+                       linear-gradient(to right, transparent 0%, #000 3.333%, #000 96.667%, transparent 100%); }
   .profile-hero.has-cover .profile-ranklineup{ margin-top:.55rem; }
   .profile-hero.has-cover .profile-ranklineup.is-unranked{ text-align:center; }
   @media (min-width:40rem){
@@ -19872,10 +19873,19 @@
      blue for a second ... If you are going over cause you are at max,
      that's when both would be blue, the same blue." A deeper blue than
      the old #8FC1FF - "should be a darker blue". */
+  /* ONE BLUE FOR ALL OF IT (317 touch-up, supersedes the grey above):
+     "your current earned for the current level, it being grey is not the
+     move ... I guess the same blue for both? I guess the total xp should
+     be the same?" What you have, what the level asks and the total XP
+     under the bar are all --xpnum - the XP numbers' one blue, sat
+     between the bar's own #3D8BFF and #8FC1FF and kept as deep as round
+     seven asked ("should be a darker blue"). Over a cap nothing changes
+     colour any more; the level-up on a results card still lights the
+     new level's number for a second, in the bar's light end. */
   :root{ --xpnum:#5A9BEF; }
-  .xpnums-have{ color:rgba(255,255,255,.55); transition:color .6s ease; }
+  .xpnums-have{ color:var(--xpnum); transition:color .6s ease; }
   .xpnums-need{ color:var(--xpnum); }
-  .xpnums.is-over .xpnums-have, .xpnums.is-flash .xpnums-have{ color:var(--xpnum); transition-duration:.15s; }
+  .xpnums.is-flash .xpnums-have{ color:#8FC1FF; transition-duration:.15s; }
   /* The challenge sheet */
   .level-chal-sheet{ text-align:center; }
   .penal-note-sheet{ text-align:center; }
@@ -20189,12 +20199,12 @@
   .pf-idsep{ opacity:.35; }
   /* the XP is blue, the bar's own light blue - never the rank's colour
      (build 259: "I don't like the bronze all the way through") */
-  /* THE TOTAL IS A DEEPER BLUE THAN THE LEVEL'S NUMBERS (build 317):
-     "Total xp, this needs to be a darker blue or something, looks too
-     much like the others to the left." Same family, clearly a step
-     down, and a lighter weight, so it reads as a running total rather
-     than a third number about this level. */
-  .pf-xp-total{ color:var(--xptotal, #3B64C8); white-space:nowrap; font-weight:700; }
+  /* THE TOTAL IS THE SAME BLUE AS THE LEVEL'S NUMBERS (317 touch-up,
+     supersedes build 317's deeper #3B64C8 "--xptotal"): "I guess the
+     total xp should be the same?" One XP blue under the bar; the total
+     keeps its lighter weight, so it still reads as a running total
+     rather than a third number about this level. */
+  .pf-xp-total{ color:var(--xpnum); white-space:nowrap; font-weight:700; }
   .pf-xp{ display:block; margin-top:.85rem; }
   .pf-xpbar.xpbar-track{ display:block; }
   .pf-xpbar .xpbar-fill{ display:block; height:100%; border-radius:inherit; }
@@ -50625,8 +50635,9 @@ function xpBarBump(host, onSettle){
   setTimeout(() => { if(onSettle) onSettle(); }, 170);
   setTimeout(() => host.classList.remove("is-xpbump"), XP_BUMP_MS + 40);
 }
-/* "into / span XP" with the loud half flipped by whether you are past
-   the requirement - see the Profile bar. */
+/* "into / span XP", both halves the XP numbers' one blue (--xpnum, 317
+   touch-up); `over` still marks a bar past its requirement (is-over), which
+   the knock and the gates read - it no longer changes a colour. */
 function buildXpNumbers(into, span, over){
   const w = document.createElement("span");
   w.className = "xpnums" + (over ? " is-over" : "");
@@ -64293,10 +64304,10 @@ const PROFILE_TIPS_289 = [
     text: "Customize changes your name, your character, your banner and the app\u2019s colour. More of each unlock as you climb the ranks and finish challenges." },
   { target: ".profile-hero .pf-standing", align: "left", vplacement: "below",
     text: "Your rank and your level. XP fills the bar; your badges decide how high your level can go." },
-  { target: ".profile-hero .pf-case", align: "left", vplacement: "above",
-    text: "Your badges \u2014 one per unit, earned with enough hundos (100% on the whole unit) in it. Tap to open your badge case and see how close each one is." },
   { target: ".profile-hero .pf-goal", align: "left", vplacement: "above",
-    text: "The rank challenges for your next rank, ticked off as you get there, and what it unlocks. Tap to see every rank." }
+    text: "The rank challenges for your next rank, ticked off as you get there, and what it unlocks. Tap to see every rank." },
+  { target: ".profile-hero .pf-case", align: "left", vplacement: "above",
+    text: "Your badges \u2014 one per unit, earned with enough hundos (100% on the whole unit) in it. Tap to open your badge case and see how close each one is." }
 ];
 
 function startSimpleTour(steps, onComplete, _waitedMs){
@@ -95412,12 +95423,13 @@ function showProfile(defaultTab){
   const standing = buildProfileStanding(prog, rankNow);
   const xpFill = standing.querySelector(".xpbar-fill");
   heroSect.appendChild(standing);
-  /* WHAT YOU ARE, WHAT YOU HAVE, WHAT'S NEXT (build 317): the case sits
-     above the Next rank card - "I feel like it being at the bottom is
-     weird". Identity and level, then the badges you hold, then the
-     challenges ahead. */
-  heroSect.appendChild(buildProfileCase(badgeCount, totalUnitsForBadges));
+  /* THE BADGE CASE IS AT THE BOTTOM AGAIN (317 touch-up, reverting build
+     317's move above the Next rank card): "The badge case being at the
+     top is not the move, revert that location at the bottom." Where you
+     stand, the next rank (its challenges and unlocks), then the case,
+     its new-badge dot still against the arrow. */
   heroSect.appendChild(buildProfileGoal(prog));
+  heroSect.appendChild(buildProfileCase(badgeCount, totalUnitsForBadges));
   /* The class no longer rides at the foot of the identity card. It was
      one line there because it was one line of content; now that it is
      today's schedule, the next class day and a count, it is its own box

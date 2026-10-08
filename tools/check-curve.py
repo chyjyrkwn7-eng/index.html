@@ -592,9 +592,11 @@ def main():
               if(!m) return null; const v = m.slice(0, 3).map(Number); return /^color\\(/.test(c) ? v.map(x => Math.round(x * 255)) : v; };
             const readProfile = () => {
               const tasks = [...document.querySelectorAll('.pf-goal .pf-task')];
-              /* build 317: the case moved above the Next rank card - what
-                 you are, what you have, what's next */
-              const order = ['.pf-standing', '.pf-case', '.pf-goal'].map(sel => document.querySelector('.profile-hero ' + sel));
+              /* build 317 moved the case above the Next rank card; the 317
+                 touch-up put it back at the bottom ("The badge case being
+                 at the top is not the move, revert that location at the
+                 bottom") */
+              const order = ['.pf-standing', '.pf-goal', '.pf-case'].map(sel => document.querySelector('.profile-hero ' + sel));
               return {
                 blocks: order.map(n => !!n),
                 inOrder: order.every(Boolean) && !!(order[0].compareDocumentPosition(order[1]) & 4) && !!(order[1].compareDocumentPosition(order[2]) & 4),
@@ -712,7 +714,9 @@ def main():
             # Build 315: Madison picked option A - standing, next rank, case.
             # REVISED IN 317: "Would it make more sense if the badge case was
             # put above the rank challenge box thing?" - standing, case, next.
-            check("Profile's card is three blocks in order: where you stand, the badge case, the next rank - nothing tappable nested in them, no Study button",
+            # REVISED BACK IN THE 317 TOUCH-UP: "The badge case being at the
+            # top is not the move, revert that location at the bottom."
+            check("Profile's card is three blocks in order: where you stand, the next rank, the badge case - nothing tappable nested in them, no Study button",
                   pf["blocks"] == [True, True, True] and pf["inOrder"] and pf["nested"] == 0 and not pf["study"], pf)
             # "How do we still get that nice xp stuff where it shows how much
             # over you are, how much till the next level ... we wouldn't need
@@ -724,9 +728,11 @@ def main():
             # REVISED IN 317: "The total xp you have earned should be on the
             # bottom right under the xp bar not above it", in a deeper blue;
             # and over at a cap both numbers are the same blue.
-            check("Profile at a cap: this level's XP marked over under the bar (both numbers blue), the total under the bar saying 'total XP', the bar banked, and no Next gate box",
+            # REVISED IN THE 317 TOUCH-UP: one XP blue for the numbers and
+            # the total ("I guess the total xp should be the same?").
+            check("Profile at a cap: this level's XP marked over under the bar (both numbers and the total one blue), the total under the bar saying 'total XP', the bar banked, and no Next gate box",
                   pf["nums"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["nums"]) and pf["over"]
-                  and pf["haveCol"] == pf["needCol"] and blue(pf["needCol"])
+                  and pf["haveCol"] == pf["needCol"] == pf["totalCol"] and blue(pf["needCol"])
                   and re.match(r"^[0-9,]+ total XP$", pf["total"] or "") and pf["totalUnder"] and blue(pf["totalCol"]) and pf["banked"]
                   and not pf["max"] and not pf["nextGate"] and pf["level"] == "Level 29", pf)
             # "I don't like how it means that 5th badge part": no ordinal.

@@ -7623,7 +7623,9 @@ def check_b299(br):
           const tops = [...hero.querySelectorAll('.pf-standing, .pf-goal, .pf-case')].map(el => [pick(el), el.getBoundingClientRect().top]);
           return tops.sort((a, b) => a[1] - b[1]).map(x => x[0]).join(','); }""")
         # REVISED IN 317: the case moved above the Next rank card.
-        check(f"{dev}: the Profile card reads where you stand, the badge case, the next rank from the top", order == "standing,case,next", order)
+        # REVISED BACK IN THE 317 TOUCH-UP: "The badge case being at the top
+        # is not the move, revert that location at the bottom."
+        check(f"{dev}: the Profile card reads where you stand, the next rank, the badge case from the top", order == "standing,next,case", order)
         ctx.close()
 
 
@@ -7920,6 +7922,10 @@ def check_b302(br):
           out.total = tot ? tot.textContent : '';
           out.totalOnLine = !!(tot && tot.closest('.pf-idline') && bar && (bar.compareDocumentPosition(tot) & Node.DOCUMENT_POSITION_PRECEDING));
           out.barNums = (document.querySelector('.pf-standing .pf-xpnums') || {}).textContent || '';
+          /* 317 touch-up: the numbers and the total are one blue */
+          out.xpCols = ['.xpnums-have', '.xpnums-need', '.pf-xp-total'].map(sel => { const e = document.querySelector('.pf-standing ' + sel);
+            if(!e) return null; const c = getComputedStyle(e).color, m = c.match(/[\d.]+/g); if(!m) return null;
+            const v = m.slice(0, 3).map(Number); return /^color\(/.test(c) ? v.map(x => Math.round(x * 255)) : v; });
           if(keepPerf === undefined) delete store.unitPerfects[keepU0]; else store.unitPerfects[keepU0] = keepPerf;
           store.lifetime.points = keepPts;
           const fill = document.querySelector('.profile-xpbar .xpbar-fill');
@@ -7970,9 +7976,15 @@ def check_b302(br):
         # REVISED IN 317 (7602082, Madison's "Profile XP colours/total"
         # round): the total went back under the bar, beside this level's XP,
         # in its own darker blue - so it is NOT on the rank line any more.
+        # REVISED IN THE 317 TOUCH-UP: "I guess the same blue for both? I
+        # guess the total xp should be the same?" - no darker blue, no grey:
+        # this level's XP, what it asks and the total are one blue.
         check(f"{dev}: under the bar, this level's XP and the total XP; the total is not on the rank line",
               r.get("totalOnLine") is False and re.match(r"^[0-9,]+ total XP$", r.get("total") or "")
               and re.match(r"^[0-9,]+ / [0-9,]+ XP[0-9,]+ total XP$", r.get("barNums") or ""), [r.get("totalOnLine"), r.get("total"), r.get("barNums")])
+        xc = r.get("xpCols") or [None, None, None]
+        check(f"{dev}: ...all three in one blue, none grey",
+              None not in xc and xc[0] == xc[1] == xc[2] and xc[0][2] - xc[0][0] >= 80, xc)
         check(f"{dev}: the XP bar carries its slow light", r.get("glide") == "xp-glide", r.get("glide"))
         check(f"{dev}: back on Home, no flare bubble is empty", r.get("bubbles", 0) >= 7 and r.get("blank") == 0, [r.get("bubbles"), r.get("blank")])
         check(f"{dev}: Sapphire turns on a half-turn loop, Platinum has its spiral, Silver's star glints",
@@ -12964,8 +12976,15 @@ def check_b317_pfcard(br):
     challenge box thing?"; "the flare and the theme unlock box thing in
     profile should swap". Written against 74cc518, where every check fails
     but 'nothing threw' and 'it goes once the new badge is seen' - that one
-    guards what was kept, not what changed."""
-    print("\n317p. Profile: the new-badge dot by the case's arrow, 'Rank challenges' on the Next rank card, the max-rank state, the case above it")
+    guards what was kept, not what changed.
+    REVISED IN THE 317 TOUCH-UP, two of Madison's asks: "The badge case
+    being at the top is not the move, revert that location at the bottom"
+    (the case is the last block again, under the Next rank card) and "your
+    current earned for the current level, it being grey is not the move
+    ... I guess the same blue for both? I guess the total xp should be the
+    same?" (this level's XP, its requirement and the total: one blue, at a
+    mid level and at level 80). Both fail on e877af7."""
+    print("\n317p. Profile: the new-badge dot by the case's arrow, 'Rank challenges' on the Next rank card, the max-rank state, the case at the bottom, one XP blue")
     for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         r = pg.evaluate("""async () => { const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -12993,9 +13012,16 @@ def check_b317_pfcard(br):
           out.inKick = !!(dot && dot.closest('.pf-kick'));
           out.newWord = ((cs && cs.querySelector('.pf-case-new')) || {}).textContent || null;
           const st = document.querySelector('.profile-hero .pf-standing'), gl = document.querySelector('.profile-hero .pf-goal');
-          out.caseFirst = !!(cs && gl && (cs.compareDocumentPosition(gl) & 4));
-          out.gaps = (st && cs && gl) ? [Math.round(cs.getBoundingClientRect().top - st.getBoundingClientRect().bottom),
-            Math.round(gl.getBoundingClientRect().top - cs.getBoundingClientRect().bottom)] : null;
+          out.caseLast = !!(cs && gl && (gl.compareDocumentPosition(cs) & 4) && cs.parentElement.lastElementChild === cs);
+          out.gaps = (st && cs && gl) ? [Math.round(gl.getBoundingClientRect().top - st.getBoundingClientRect().bottom),
+            Math.round(cs.getBoundingClientRect().top - gl.getBoundingClientRect().bottom)] : null;
+          /* the XP under the bar: what you have, what the level asks, the total */
+          const col = sel => { const e = document.querySelector('.profile-hero .pf-standing ' + sel); if(!e) return null;
+            const c = getComputedStyle(e).color, m = c.match(/[\d.]+/g); if(!m) return null;
+            const v = m.slice(0, 3).map(Number); return /^color\(/.test(c) ? v.map(x => Math.round(x * 255)) : v; };
+          const xpCols = () => ({ have: col('.xpnums-have'), need: col('.xpnums-need'), total: col('.pf-xp-total'),
+            over: !!document.querySelector('.profile-hero .pf-standing .xpnums.is-over') });
+          out.xpMid = xpCols();
           out.rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
           const kicks = gl ? [...gl.querySelectorAll('.pf-kick')].map(k => k.textContent.trim()) : [];
           out.kicks = kicks;
@@ -13012,8 +13038,9 @@ def check_b317_pfcard(br):
           showProfile('profile'); await wait(700); clean();
           out.dotAfter = !!document.querySelector('.profile-hero .pf-case .new-dot');
           out.newAfter = !!document.querySelector('.profile-hero .pf-case .pf-case-new');
-          /* Supernova */
-          seat(units.length, xpForLevel(80) + 4000);
+          /* Supernova - and level 80 past what an 81st level would cost,
+             the over-the-wall state (317 touch-up: the XP blue there too) */
+          seat(units.length, xpForLevel(80) + 60000);
           store.seenUnlocks.badges = units.slice();
           showProfile('profile'); await wait(900); clean();
           out.top = rankOf(store);
@@ -13021,6 +13048,7 @@ def check_b317_pfcard(br):
           out.topCls = tg ? tg.className : null;
           out.topText = tg ? tg.textContent : null;
           out.topTasks = tg ? tg.querySelectorAll('.pf-task').length : -1;
+          out.xpTop = xpCols(); out.topLevel = levelStateFor(store).level;
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
         check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
@@ -13033,10 +13061,22 @@ def check_b317_pfcard(br):
         check(f"{dev}: ...with the word New beside it", (r.get("newWord") or "").strip() == "New", r.get("newWord"))
         check(f"{dev}: ...and it goes once the new badge is seen", r.get("dotAfter") is False and r.get("newAfter") is False,
               [r.get("dotAfter"), r.get("newAfter")])
-        check(f"{dev}: the badge case comes before the Next rank card", r.get("caseFirst") is True, r.get("caseFirst"))
+        # REVISED IN THE 317 TOUCH-UP: "The badge case being at the top is
+        # not the move, revert that location at the bottom."
+        check(f"{dev}: the badge case is at the bottom of the card, after the Next rank card", r.get("caseLast") is True, r.get("caseLast"))
         g, rem = r.get("gaps"), r.get("rem") or 16
         check(f"{dev}: ...with the card's usual gaps (1.05rem under the bar, .8rem between the boxes)",
               bool(g) and abs(g[0] - 1.05 * rem) <= 1.5 and abs(g[1] - 0.8 * rem) <= 1.5, [g, rem])
+        # REVISED IN THE 317 TOUCH-UP: no grey. This level's XP, what it
+        # asks and the total are one blue - mid level (not over) and at
+        # level 80 (over).
+        blue = lambda c: c is not None and c[2] - c[0] >= 80
+        for tag, xc in (("mid level", r.get("xpMid") or {}), ("level %s" % r.get("topLevel"), r.get("xpTop") or {})):
+            check(f"{dev}, {tag}: this level's XP, what it asks and the total XP are one blue, none grey",
+                  xc.get("have") is not None and xc.get("have") == xc.get("need") == xc.get("total") and blue(xc.get("have")), xc)
+        check(f"{dev}: ...the mid account is under its requirement and level 80 is over it (both states seen)",
+              (r.get("xpMid") or {}).get("over") is False and (r.get("xpTop") or {}).get("over") is True and r.get("topLevel") == 80,
+              [(r.get("xpMid") or {}).get("over"), (r.get("xpTop") or {}).get("over"), r.get("topLevel")])
         check(f"{dev}: the Next rank card heads its rows 'Rank challenges', above them",
               any(k.lower() == "rank challenges" for k in r.get("kicks", [])) and r.get("kickBeforeTasks"), [r.get("kicks"), r.get("kickBeforeTasks")])
         check(f"{dev}: what the rank unlocks leads with its flare, then its theme",
@@ -13965,8 +14005,14 @@ def check_b317_xpcap(br):
     a 'failure' effect happens and then it goes to the overflow number".
     The bump is asserted by its class appearing on the bar while XP is
     added, and NOT appearing on a bar merely shown full. Written against
-    build 317's first cut (74cc518), where every one of these fails."""
-    print("\n317. a full XP bar: level 80 keeps counting, the wall note, the total's blue, the knock")
+    build 317's first cut (74cc518), where every one of these fails.
+    REVISED IN THE 317 TOUCH-UP: "your current earned for the current
+    level, it being grey is not the move ... I guess the same blue for
+    both? I guess the total xp should be the same?" The total is no
+    longer a deeper blue: this level's XP, its requirement and the total
+    are one blue at a mid level, at a wall and at level 80. Fails on
+    e877af7 (the have grey, the total #3B64C8)."""
+    print("\n317. a full XP bar: level 80 keeps counting, the wall note, one XP blue, the knock")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate("""() => {
       window.__acct = (pts, nb) => { const units = topicsIn(QUESTIONS);
@@ -13982,7 +14028,8 @@ def check_b317_xpcap(br):
         over: !!document.querySelector('.pf-standing .xpnums.is-over'), cap: q('.pf-standing .pf-xp-cap'),
         note: q('.pf-standing .pf-xp-note'), text: q('.pf-standing'),
         tot: document.querySelector('.pf-standing .pf-xp-total') && getComputedStyle(document.querySelector('.pf-standing .pf-xp-total')).color,
-        need: document.querySelector('.pf-standing .xpnums-need') && getComputedStyle(document.querySelector('.pf-standing .xpnums-need')).color });
+        need: document.querySelector('.pf-standing .xpnums-need') && getComputedStyle(document.querySelector('.pf-standing .xpnums-need')).color,
+        have: document.querySelector('.pf-standing .xpnums-have') && getComputedStyle(document.querySelector('.pf-standing .xpnums-have')).color });
     }""")
     # Generous: headless Chromium runs this page's rAF at a few frames a
     # second, and the knock is a fill, a timer and a count-up in a row.
@@ -14007,10 +14054,15 @@ def check_b317_xpcap(br):
     def rgb(c):
         v = [float(x) for x in re.findall(r"[\d.]+", c or "")[:3]]
         return [round(x * 255) for x in v] if (c or "").startswith("color(") else v
-    t, n = rgb(wall["tot"]), rgb(wall["need"])
-    lum = lambda c: 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
-    check("the total XP is a clearly deeper blue than the level's numbers, and still blue",
-          len(t) == 3 and len(n) == 3 and t[2] - t[0] >= 80 and lum(n) - lum(t) >= 25, [t, n])
+    # REVISED IN THE 317 TOUCH-UP: one blue, not a deeper one for the total
+    mid = pg.evaluate("""async () => { __acct(xpForLevel(33) + 400, 3); showProfile('identity'); %s return __pf(); }""" % (wait % 900))
+    blue = lambda c: len(c) == 3 and c[2] - c[0] >= 80
+    for tag, st in (("a mid level, under its requirement", mid), ("a wall", wall), ("level 80, over the wall", l80)):
+        hv, nd, tt = rgb(st["have"]), rgb(st["need"]), rgb(st["tot"])
+        check(f"{tag}: this level's XP, what it asks and the total XP are one blue, none grey",
+              blue(hv) and hv == nd == tt, [hv, nd, tt, st["nums"], st["over"]])
+    check("...and the mid level is under its requirement, so the have number is blue without being over",
+          mid["over"] is False and bool(re.match(r"^[0-9,]+ / [0-9,]+ XP$", mid["nums"] or "")), [mid["over"], mid["nums"]])
     # 3. the knock: results card, XP added into a bar at a wall
     res = pg.evaluate("""async () => {
       const out = {};
