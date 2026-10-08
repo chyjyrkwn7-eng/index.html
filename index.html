@@ -25538,11 +25538,11 @@
   .sf-scene p{ margin:0; }
   .sf-tint{ position:absolute; inset:0; pointer-events:none; opacity:0;
     background:
-      radial-gradient(circle at 50% var(--cy), color-mix(in srgb, var(--fc) 22%, transparent) 0, color-mix(in srgb, var(--fc) 8%, transparent) 30vmax, transparent 70vmax),
-      radial-gradient(circle at 92% -4%, color-mix(in srgb, var(--fc) 12%, transparent) 0, transparent 55vmax),
-      radial-gradient(circle at 8% 104%, color-mix(in srgb, var(--fc) 9%, transparent) 0, transparent 55vmax);
+      radial-gradient(circle at 50% var(--cy), color-mix(in srgb, var(--tc) 13%, transparent) 0, color-mix(in srgb, var(--tc) 5%, transparent) 30vmax, transparent 70vmax),
+      radial-gradient(circle at 92% -4%, color-mix(in srgb, var(--tc) 8%, transparent) 0, transparent 55vmax),
+      radial-gradient(circle at 8% 104%, color-mix(in srgb, var(--tc) 6%, transparent) 0, transparent 55vmax);
     transition:opacity 2.6s cubic-bezier(.4,0,.2,1); }
-  .sf-scene.is-lit .sf-tint, .sf-scene.sf-final .sf-tint{ opacity:1; }
+  .sf-scene.sf-lit .sf-tint, .sf-scene.sf-final .sf-tint{ opacity:1; }
   .sf-stars{ position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity 1.4s ease .3s; }
   .sf-in .sf-stars{ opacity:1; }
   .sf-stars > i{ position:absolute; width:2px; height:2px; border-radius:50%; background:#fff; opacity:.75;
@@ -25563,7 +25563,7 @@
   @keyframes sf-flash{ 0%{ opacity:0; transform:scale(.15); } 18%{ opacity:1; transform:scale(1.7); } 100%{ opacity:0; transform:scale(8); } }
   @keyframes sf-flash-soft{ 0%{ opacity:0; transform:scale(.3); } 24%{ opacity:.8; transform:scale(1.5); } 100%{ opacity:0; transform:scale(4.2); } }
   /* the words: a line of the story while it plays, and the title at the end */
-  .sf-cap, .sf-titleblock{ position:absolute; left:0; right:0; top:calc(var(--cy) + var(--S) * .37); padding:0 1.4rem; text-align:center; pointer-events:none; z-index:3; }
+  .sf-cap, .sf-titleblock{ position:absolute; left:0; right:0; top:calc(var(--cy) + var(--S) * .4); padding:0 1.4rem; text-align:center; pointer-events:none; z-index:3; }
   .sf-cap{ opacity:0; transform:translateY(10px); transition:opacity .42s ease, transform .42s ease; }
   .sf-cap.is-in{ opacity:1; transform:none; }
   .sf-cap-k, .sf-title-k{ font-size:.72rem; font-weight:800; letter-spacing:.26em; text-transform:uppercase; color:color-mix(in srgb, var(--fc) 72%, #fff); }
@@ -25598,15 +25598,15 @@
   .sf-litpop::after{ border:2.5px solid color-mix(in srgb, var(--ignite, #fff) 72%, #fff); animation:rank-litpop-ring .95s cubic-bezier(.16,1,.3,1) both; }
 
   /* ---- THE FIGURE (sfFigure) ---- */
-  .sf-fig{ left:50%; top:50%; width:76cqw; aspect-ratio:1; translate:-50% -50%; perspective:900px; z-index:2;
+  .sf-fig{ left:50%; top:50%; width:90cqw; aspect-ratio:1; translate:-50% -50%; perspective:900px; z-index:2;
     opacity:0; transition:opacity 1.6s ease; }
   .sf-fig.is-keys{ opacity:1; }
   .sf-backlight{ position:absolute; inset:-16%; border-radius:50%; pointer-events:none; opacity:0; scale:.8;
     background:radial-gradient(closest-side at 50% 45%, color-mix(in srgb, var(--glow) 64%, transparent), color-mix(in srgb, var(--glow) 26%, transparent) 40%, color-mix(in srgb, var(--glow) 8%, transparent) 62%, transparent 76%);
     transition:opacity 4.6s ease, scale 6s cubic-bezier(.3,.6,.3,1); }
-  .sf-fig.is-emerging .sf-backlight{ opacity:.3; scale:.94; }
-  .sf-fig.is-catch .sf-backlight{ opacity:.46; scale:1; transition:opacity 1.6s ease, scale 2s ease; }
-  .sf-fig.is-revealing .sf-backlight{ opacity:.95; scale:1.14; transition:opacity 1.2s ease, scale 2.6s cubic-bezier(.2,.8,.2,1); }
+  .sf-fig.is-emerging .sf-backlight{ opacity:.4; scale:.95; }
+  .sf-fig.is-catch .sf-backlight{ opacity:.62; scale:1; transition:opacity 1.6s ease, scale 2s ease; }
+  .sf-fig.is-revealing .sf-backlight{ opacity:.74; scale:1.12; transition:opacity 1.2s ease, scale 2.6s cubic-bezier(.2,.8,.2,1); }
   .sf-figmove{ position:absolute; inset:0; transform-origin:50% 62%; rotate:y -13deg; translate:0 4%; scale:.93;
     transition:rotate 7s cubic-bezier(.4,0,.3,1), translate 7s cubic-bezier(.4,0,.3,1), scale 7s cubic-bezier(.4,0,.3,1); }
   .sf-fig.is-emerging .sf-figmove{ rotate:y 6deg; translate:0 1.5%; scale:.975; }
@@ -25617,14 +25617,22 @@
   .sf-fig.is-emerging .sf-breath{ animation:sf-breathe 3.9s ease-in-out infinite alternate; }
   @keyframes sf-breathe{ from{ scale:1; } to{ scale:1.024; } }
   .sf-figbody, .sf-sil, .sf-real{ position:absolute; inset:0; }
-  /* both drawings: no filter, and the bust dissolves into the dark */
-  .sf-fig svg.avatarchar-svg{ position:absolute; inset:0; width:100%; height:100%; display:block; filter:none;
+  /* THE BUST DISSOLVES INTO THE DARK - on the wrapper, never on the svg.
+     A CSS mask on the <svg> element itself (the app-wide .avatarchar-svg
+     edge mask included) stops Chromium honouring the clip-paths inside
+     the drawing at this size: Umbra's brow moon came out a full disc, and
+     under the 3D turn a blurred square. On the wrapper both copies are
+     masked as one picture and every inner clip draws. */
+  .sf-figbody{
     -webkit-mask-image:linear-gradient(to bottom, transparent 0%, #000 3%, #000 70%, rgba(0,0,0,.55) 84%, transparent 97%),
                        linear-gradient(to right, transparent 0%, #000 5%, #000 95%, transparent 100%);
     -webkit-mask-composite:source-in;
             mask-image:linear-gradient(to bottom, transparent 0%, #000 3%, #000 70%, rgba(0,0,0,.55) 84%, transparent 97%),
                        linear-gradient(to right, transparent 0%, #000 5%, #000 95%, transparent 100%);
             mask-composite:intersect; }
+  /* both drawings: no filter (avatarDepth is an svg filter), no mask of their own */
+  .sf-fig svg.avatarchar-svg{ position:absolute; inset:0; width:100%; height:100%; display:block; filter:none;
+    -webkit-mask-image:none; mask-image:none; }
   /* the silhouette: its first lit parts, then the rest, then the edge */
   .sf-sil-svg .sf-key{ opacity:0; transition:opacity 3s ease; }
   .sf-sil-svg .sf-key-first{ transition-duration:2s; }
@@ -25642,14 +25650,16 @@
   .sf-wipe-in{ position:absolute; left:8.3333%; width:83.3333%; top:0; height:80%; transform:translateY(-100%); }
   .sf-fig.is-revealing .sf-wipe{ transform:translateY(-20%); transition:transform 1.7s cubic-bezier(.45,.05,.3,1); }
   .sf-fig.is-revealing .sf-wipe-in{ transform:translateY(25%); transition:transform 1.7s cubic-bezier(.45,.05,.3,1); }
-  .sf-band{ position:absolute; left:-12%; width:124%; top:0; height:22%; pointer-events:none; opacity:0; transform:translateY(460%);
-    background:radial-gradient(50% 50% at 50% 50%, rgba(255,255,255,.92) 0%, color-mix(in srgb, var(--glow) 62%, #fff) 20%, color-mix(in srgb, var(--glow) 40%, transparent) 46%, transparent 72%); }
-  .sf-fig.is-revealing .sf-band{ transform:translateY(-107%); transition:transform 1.7s cubic-bezier(.45,.05,.3,1); animation:sf-band 1.7s linear both; }
-  @keyframes sf-band{ 0%{ opacity:0; } 12%{ opacity:.9; } 72%{ opacity:.65; } 100%{ opacity:0; } }
   /* the flares found, going round it on a tilted ring (tiltedOrbit) */
-  .sf-orbit{ z-index:3; }
+  .sf-orbit.is-back{ z-index:1; clip-path:inset(0 0 50% 0); }
+  .sf-orbit.is-front{ z-index:3; clip-path:inset(50% 0 0 0); }
   .sf-orbit .xs-oback{ width:7.5cqw; height:7.5cqw; }
-  .sf-scene.is-orbit .sf-orbit, .sf-scene.sf-final .sf-orbit{ opacity:1; scale:1; }
+  /* round the shoulders, not the head (the specials' rule: at head height
+     the near half crosses the face) */
+  .sf-orbit:is(.sfv-ring, .sfu-ring){ top:66%; width:124%; }
+  .sf-orbit.sfh-orbit{ top:62%; width:124%; }
+  .sf-orbit.sfg-orbit.is-back{ z-index:-1; }
+  .sf-scene.sf-orbits .sf-orbit, .sf-scene.sf-final .sf-orbit{ opacity:1; scale:1; }
   /* riders on a tilted orbit (tiltedOrbit) */
   .xs-oplane{ position:absolute; left:50%; top:50%; width:96%; aspect-ratio:1; translate:-50% -50%; transform:rotate(var(--tilt, 0deg)) scaleY(var(--sq, .3)); opacity:0; scale:.2; transition:opacity 1.4s ease, scale 2.4s cubic-bezier(.2,1.2,.3,1); }
   .xs-ospin{ position:absolute; inset:0; animation:xs-turn 11s linear infinite; }
@@ -25672,8 +25682,8 @@
     box-shadow:0 0 9cqw color-mix(in srgb, var(--theme-c2, #F5804D) 40%, transparent), inset -4cqw -5cqw 9cqw rgba(0,0,0,.45); }
   .sfv-drain{ position:absolute; inset:-1%; border-radius:50%; scale:0;
     background:radial-gradient(circle, #000 0 46%, #05020A 57%, color-mix(in srgb, var(--fc1) 50%, #000) 64%, transparent 70%); }
-  .is-pull .sfv-drain{ scale:1.04; transition:scale 4s cubic-bezier(.55,0,.8,.45); }
-  .is-pull .sfv-halo{ opacity:.25; scale:.7; }
+  .sf-pull .sfv-drain{ scale:1.04; transition:scale 4s cubic-bezier(.55,0,.8,.45); }
+  .sf-pull .sfv-halo{ opacity:.25; scale:.7; }
   .sfv-spot{ position:absolute; left:50%; top:50%; width:11cqw; aspect-ratio:1; margin:-5.5cqw 0 0 -5.5cqw; transform:translate(var(--x), var(--y)); }
   .sfv-spot > svg{ position:relative; width:100%; height:100%; display:block; overflow:visible; opacity:0; transition:opacity .35s ease; }
   .sfv-spot.is-lit > svg{ opacity:1; }
@@ -25685,47 +25695,47 @@
   .sfv-tail{ position:absolute; left:50%; top:50%; width:0; height:0; rotate:var(--ta); }
   .sfv-tail::before{ content:""; position:absolute; left:0; top:-1.3cqw; width:24cqw; height:2.6cqw; border-radius:999px; transform-origin:0 50%; scale:0 1; opacity:0;
     background:linear-gradient(90deg, color-mix(in srgb, var(--c) 85%, #fff), color-mix(in srgb, var(--c) 35%, transparent) 40%, transparent); }
-  .is-whirl .sfv-tail::before{ scale:1 1; opacity:.85; transition:scale 4.6s cubic-bezier(.6,0,.9,.6), opacity 1.2s ease; }
-  .is-whirl .sfv-orbit{ animation:sfv-whirl 5.6s cubic-bezier(.55,0,.95,.55) both; }
+  .sf-whirl .sfv-tail::before{ scale:1 1; opacity:.85; transition:scale 4.6s cubic-bezier(.6,0,.9,.6), opacity 1.2s ease; }
+  .sf-whirl .sfv-orbit{ animation:sfv-whirl 5.6s cubic-bezier(.55,0,.95,.55) both; }
   @keyframes sfv-whirl{ from{ rotate:0deg; } to{ rotate:1260deg; } }
-  .is-fall .sfv-orbit{ scale:.03; transition:scale 1.05s cubic-bezier(.55,0,.9,.45); }
-  .is-fall .sfv-spot{ opacity:0; transition:opacity .3s ease .75s; }
+  .sf-fall .sfv-orbit{ scale:.03; transition:scale 1.05s cubic-bezier(.55,0,.9,.45); }
+  .sf-fall .sfv-spot{ opacity:0; transition:opacity .3s ease .75s; }
   .sfv-comet{ --tail:-24deg; translate:16cqw 0; transform:translateY(78cqw) scale(1.6); opacity:0;
     transition:translate 1.25s cubic-bezier(.2,.6,.3,1), transform 1.25s cubic-bezier(.45,0,.2,1), opacity .35s ease; }
   .sfv-comet.is-go{ opacity:1; translate:var(--x) 0; transform:translateY(var(--y)) scale(1); }
   .sfv-streak{ position:absolute; left:50%; top:50%; width:0; height:0; rotate:var(--a); }
   .sfv-streak > i{ position:absolute; left:0; top:-.25cqw; width:var(--l); height:.5cqw; min-height:1.5px; border-radius:999px; transform-origin:0 50%; opacity:0;
     background:linear-gradient(90deg, rgba(255,240,222,.95), color-mix(in srgb, var(--c) 70%, transparent) 38%, transparent); }
-  .is-pull .sfv-streak > i{ animation:sfv-infall var(--t) cubic-bezier(.55,0,.9,.45) var(--dl) 5 both; }
+  .sf-pull .sfv-streak > i{ animation:sfv-infall var(--t) cubic-bezier(.55,0,.9,.45) var(--dl) 5 both; }
   @keyframes sfv-infall{ 0%{ transform:translateX(var(--d)) scaleX(.25); opacity:0; } 22%{ opacity:.9; } 100%{ transform:translateX(5cqw) scaleX(1.5); opacity:0; } }
-  .is-void .sfv-streaks{ opacity:0; transition:opacity .35s ease; }
+  .sf-absence .sfv-streaks{ opacity:0; transition:opacity .35s ease; }
   .sfv-implode{ left:50%; top:50%; width:30cqw; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0;
     border:.7cqw solid color-mix(in srgb, var(--fc1) 70%, #fff); box-shadow:0 0 3cqw color-mix(in srgb, var(--fc1) 60%, transparent); }
   .sfv-implode.is-2{ border-color:color-mix(in srgb, var(--fc0) 70%, #fff); }
-  .is-collapse .sfv-implode{ animation:sfv-implode .62s cubic-bezier(.55,0,.9,.45) both; }
-  .is-collapse .sfv-implode.is-2{ animation-delay:.12s; }
+  .sf-collapse .sfv-implode{ animation:sfv-implode .62s cubic-bezier(.55,0,.9,.45) both; }
+  .sf-collapse .sfv-implode.is-2{ animation-delay:.12s; }
   @keyframes sfv-implode{ 0%{ opacity:0; transform:scale(3.4); } 30%{ opacity:.9; } 100%{ opacity:0; transform:scale(.06); } }
-  .is-collapse .sfv-planet{ scale:.04; opacity:0; }
-  .is-collapse .sfv-halo{ opacity:0; transition:opacity .5s ease; }
+  .sf-collapse .sfv-planet{ scale:.04; opacity:0; }
+  .sf-collapse .sfv-halo{ opacity:0; transition:opacity .5s ease; }
   .sfv-point{ left:50%; top:50%; width:7cqw; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0; scale:0;
     background:radial-gradient(circle, #fff 0 18%, #FFE6C8 32%, color-mix(in srgb, var(--fc1) 60%, transparent) 52%, transparent 72%); }
-  .is-point .sfv-point{ opacity:1; scale:1; transition:scale .22s cubic-bezier(.2,1.6,.4,1), opacity .1s ease; }
-  .is-void .sfv-point{ opacity:0; scale:0; transition:scale .18s ease-in, opacity .18s ease-in; }
+  .sf-point .sfv-point{ opacity:1; scale:1; transition:scale .22s cubic-bezier(.2,1.6,.4,1), opacity .1s ease; }
+  .sf-absence .sfv-point{ opacity:0; scale:0; transition:scale .18s ease-in, opacity .18s ease-in; }
   /* THE ABSENCE: a wave of black runs out and takes the sky with it */
   .sfv-blackwave{ left:50%; top:50%; width:24cqw; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0; z-index:5;
-    background:radial-gradient(circle, #000 0 60%, #000 63%, color-mix(in srgb, var(--fc1) 55%, #120400) 65.5%, color-mix(in srgb, var(--fc1) 18%, transparent) 68%, transparent 71%); }
-  .is-void .sfv-blackwave{ animation:sfv-blackwave 2.6s cubic-bezier(.15,.55,.25,1) both; }
+    background:radial-gradient(circle, #030209 0 60%, #030209 63%, color-mix(in srgb, var(--fc1) 55%, #120400) 65.5%, color-mix(in srgb, var(--fc1) 18%, transparent) 68%, transparent 71%); }
+  .sf-absence .sfv-blackwave{ animation:sfv-blackwave 2.6s cubic-bezier(.15,.55,.25,1) both; }
   @keyframes sfv-blackwave{ 0%{ opacity:1; transform:scale(.05); } 100%{ opacity:1; transform:scale(16); } }
-  .is-dark .sfv-blackwave{ visibility:hidden; }
-  .sf-void.is-void .sf-stars{ opacity:0; transition:opacity 1.6s ease .35s; }
-  .sf-void.is-lit .sf-stars{ opacity:.8; transition:opacity 4s ease 1s; }
+  .sf-dark .sfv-blackwave{ visibility:hidden; }
+  .sf-void.sf-absence .sf-stars{ opacity:0; transition:opacity 1.6s ease .35s; }
+  .sf-void.sf-lit .sf-stars{ opacity:.8; transition:opacity 4s ease 1s; }
   .sfv-swirl{ left:50%; top:50%; width:112cqw; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0; scale:.7;
     background:conic-gradient(from 90deg, transparent, color-mix(in srgb, var(--fc0) 45%, transparent), transparent 30%,
       color-mix(in srgb, var(--fc1) 45%, transparent), transparent 63%, color-mix(in srgb, var(--fc2) 45%, transparent), transparent);
     -webkit-mask:radial-gradient(circle, transparent 24%, #000 38%, rgba(0,0,0,.4) 54%, transparent 68%);
             mask:radial-gradient(circle, transparent 24%, #000 38%, rgba(0,0,0,.4) 54%, transparent 68%);
     animation:xs-turn 18s linear infinite reverse; transition:opacity 3s ease, scale 4s cubic-bezier(.2,.7,.2,1); }
-  .sf-void.is-lit .sfv-swirl, .sf-void.sf-final .sfv-swirl{ opacity:.85; scale:1; }
+  .sf-void.sf-lit .sfv-swirl, .sf-void.sf-final .sfv-swirl{ opacity:.55; scale:1; }
   .sf-void.sf-final :is(.sfv-sys, .sfv-comet){ display:none; }
 
   /* ---- UMBRA ---- */
@@ -25739,25 +25749,25 @@
       radial-gradient(circle at 68% 68%, rgba(70,40,130,.2) 0 12%, transparent 13%), radial-gradient(circle at 46% 44%, rgba(70,40,130,.14) 0 5%, transparent 6%); }
   .sfu-limb{ position:absolute; inset:0; border-radius:50%; opacity:0; transition:opacity 1.4s ease;
     background:radial-gradient(circle at 26% 24%, rgba(139,92,246,.7), rgba(139,92,246,.25) 30%, transparent 55%); }
-  .is-touch .sfu-limb{ opacity:1; }
+  .sf-touch .sfu-limb{ opacity:1; }
   .sfu-shadow{ position:absolute; inset:-2%; border-radius:50%; background:radial-gradient(circle at 46% 46%, #0A0714, #030207 70%); translate:122% 0; }
-  .is-eclipse .sfu-shadow{ translate:0 0; transition:translate 5.3s cubic-bezier(.42,0,.35,1); }
-  .is-eclipse .sfu-moonglow{ opacity:.12; }
-  .is-eclipse .sf-stars{ opacity:1; }
+  .sf-eclipse .sfu-shadow{ translate:0 0; transition:translate 5.3s cubic-bezier(.42,0,.35,1); }
+  .sf-eclipse .sfu-moonglow{ opacity:.12; }
+  .sf-eclipse .sf-stars{ opacity:1; }
   .sfu-touch{ left:calc(50% - 16.3cqw); top:calc(50% - 16.3cqw); width:12cqw; aspect-ratio:1; translate:-50% -50%; }
   .sfu-comet{ --tail:-36deg; transform:translate(-62cqw, 70cqw) scale(1.6); transition:transform 1.15s cubic-bezier(.4,0,.2,1), opacity .3s ease; }
   .sfu-comet.is-go{ opacity:1; transform:translate(-16.3cqw, -16.3cqw) scale(1); }
   .sfu-beads{ left:50%; top:50%; width:0; height:0; }
   .sfu-beads > i{ position:absolute; left:0; top:0; width:2.4cqw; height:2.4cqw; margin:-1.2cqw; border-radius:50%; translate:var(--x) var(--y); opacity:0;
     background:radial-gradient(circle, #fff 0 25%, rgba(237,228,255,.75) 45%, transparent 70%); }
-  .is-beads .sfu-beads > i{ animation:sfu-bead .9s ease-out both; }
+  .sf-beads .sfu-beads > i{ animation:sfu-bead .9s ease-out both; }
   @keyframes sfu-bead{ 0%{ opacity:0; transform:scale(.3); } 30%{ opacity:1; transform:scale(1.25); } 100%{ opacity:0; transform:scale(.6); } }
   .sfu-diamond{ left:calc(50% - 16.3cqw); top:calc(50% - 16.3cqw); width:18cqw; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0; z-index:4;
     background:radial-gradient(circle, #fff 0 10%, rgba(245,243,255,.85) 20%, rgba(196,181,253,.35) 45%, transparent 70%); }
   .sfu-diamond::after{ content:""; position:absolute; left:-70%; right:-70%; top:50%; height:2px; margin-top:-1px; border-radius:2px;
     background:linear-gradient(90deg, transparent, #fff, transparent); }
   .sfu-diamond.is-third{ left:calc(50% + 16.3cqw); top:calc(50% + 16.3cqw); }
-  .is-total .sfu-diamond:not(.is-third), .is-third .sfu-diamond.is-third{ animation:sfu-diamond 1.7s ease-out both; }
+  .sf-total .sfu-diamond:not(.is-third), .sf-thirdc .sfu-diamond.is-third{ animation:sfu-diamond 1.7s ease-out both; }
   @keyframes sfu-diamond{ 0%{ opacity:0; transform:scale(.3); } 14%{ opacity:1; transform:scale(1.4); } 100%{ opacity:0; transform:scale(.7); } }
   .sfu-corona{ left:50%; top:50%; width:120cqw; aspect-ratio:1; translate:-50% -50%; opacity:0; scale:.8;
     transition:opacity 1.6s ease, scale 2.4s cubic-bezier(.2,.9,.2,1); }
@@ -25769,9 +25779,9 @@
     -webkit-mask:radial-gradient(circle, transparent 18%, #000 21%, rgba(0,0,0,.5) 33%, transparent 54%); mask:radial-gradient(circle, transparent 18%, #000 21%, rgba(0,0,0,.5) 33%, transparent 54%);
     animation:xs-turn 80s linear infinite; }
   .sfu-rays.is-2{ inset:-2%; rotate:23deg; opacity:.7; animation-duration:130s; animation-direction:reverse; }
-  .is-total .sfu-corona, .sf-umbra.sf-final .sfu-corona{ opacity:1; scale:1; }
-  .is-lamp .sfu-corona{ opacity:.16; transition:opacity .6s ease; }
-  .is-third .sfu-corona{ opacity:1; scale:1.07; transition:opacity 1.1s ease, scale 2.4s cubic-bezier(.2,.8,.2,1); }
+  .sf-total .sfu-corona, .sf-umbra.sf-final .sfu-corona{ opacity:1; scale:1; }
+  .sf-lamp .sfu-corona{ opacity:.16; transition:opacity .6s ease; }
+  .sf-thirdc .sfu-corona{ opacity:1; scale:1.07; transition:opacity 1.1s ease, scale 2.4s cubic-bezier(.2,.8,.2,1); }
   .sf-umbra.sf-final .sfu-shadow{ translate:0 0; }
   .sf-umbra.sf-final .sfu-moonglow{ opacity:.12; }
   .sfu-phases{ left:50%; top:50%; width:0; height:0; animation:xs-turn 54s linear infinite; z-index:3; }
@@ -25779,10 +25789,11 @@
   .sfu-phase-in{ position:absolute; width:6.5cqw; height:6.5cqw; left:-3.25cqw; top:-3.25cqw; translate:0 -45cqw; opacity:0; scale:.3;
     transition:opacity .9s ease var(--d, 0s), scale 1.2s cubic-bezier(.2,1.3,.3,1) var(--d, 0s); }
   .sfu-phase-in svg{ width:100%; height:100%; display:block; }
-  .is-phased .sfu-phase-in, .sf-umbra.sf-final .sfu-phase-in{ opacity:1; scale:1; }
+  .sf-phased .sfu-phase-in, .sf-umbra.sf-final .sfu-phase-in{ opacity:1; scale:1; }
 
   /* ---- HORIZON ---- */
   .sfh-bh, .sfh-ringbox{ position:absolute; inset:0; transition:translate 1.7s cubic-bezier(.5,0,.3,1), scale 1.7s cubic-bezier(.5,0,.3,1), opacity 1.2s ease .5s; }
+  .sfh-hole, .sfh-disk, .sfh-disk-back, .sfh-lens{ position:absolute; }
   .sfh-hole{ left:50%; top:50%; width:24cqw; aspect-ratio:1; translate:-50% -50%; border-radius:50%; background:#010205; opacity:0; scale:.15;
     box-shadow:0 0 0 .5cqw rgba(240,250,255,.92), 0 0 6cqw 1.6cqw rgba(127,200,255,.55); transition:opacity 1s ease, scale 2.6s cubic-bezier(.2,.8,.2,1); }
   .sfh-disk, .sfh-disk-back{ left:50%; top:50%; width:118cqw; aspect-ratio:1; translate:-50% -50%; transform:rotate(-8deg) scaleY(.13); opacity:0; transition:opacity 1.6s ease .4s; }
@@ -25794,49 +25805,51 @@
     animation:xs-turn 4s linear infinite; }
   .sfh-lens{ left:50%; top:50%; width:40cqw; height:32cqw; translate:-50% -50%; border-radius:50%; opacity:0; scale:.2; clip-path:inset(0 0 52% 0);
     box-shadow:0 0 0 .45cqw rgba(221,244,255,.8), 0 0 4cqw .8cqw rgba(127,200,255,.45), inset 0 0 3cqw rgba(127,200,255,.4); transition:opacity 1.2s ease .3s, scale 2.6s cubic-bezier(.2,.8,.2,1) .2s; }
-  .is-hole :is(.sfh-hole, .sfh-lens){ opacity:1; scale:1; }
-  .is-hole :is(.sfh-disk, .sfh-disk-back){ opacity:1; }
+  .sf-hole :is(.sfh-hole, .sfh-lens){ opacity:1; scale:1; }
+  .sf-hole :is(.sfh-disk, .sfh-disk-back){ opacity:1; }
   .sfh-ring{ position:absolute; left:50%; top:50%; width:0; height:0; }
   .sfh-arm{ position:absolute; left:0; top:0; width:34cqw; height:0; transform-origin:0 0; }
   .sfh-orb{ position:absolute; left:100%; top:0; width:10cqw; aspect-ratio:1; margin:-5cqw 0 0 -5cqw; rotate:90deg; }
   .sfh-orb > svg{ width:100%; height:100%; display:block; overflow:visible; }
   .sfh-orb.is-new > svg{ opacity:0; transition:opacity .3s ease; }
-  .is-found .sfh-orb.is-new > svg{ opacity:1; animation:sf-spot-land 1.1s cubic-bezier(.16,1,.3,1) both; }
+  .sf-found .sfh-orb.is-new > svg{ opacity:1; animation:sf-spot-land 1.1s cubic-bezier(.16,1,.3,1) both; }
   .sfh-ring{ opacity:0; transition:opacity .8s ease .5s; }
   .sf-in .sfh-ring{ opacity:1; }
-  .is-pull .sfh-ring{ animation:sfh-spiral 3.4s cubic-bezier(.55,0,.85,.55) forwards; }
-  .is-pull .sfh-orb{ animation:sfh-stretch 3.4s cubic-bezier(.55,0,.85,.55) forwards; }
+  .sf-pull .sfh-ring{ animation:sfh-spiral 3.4s cubic-bezier(.55,0,.85,.55) forwards; }
+  .sf-pull .sfh-orb{ animation:sfh-stretch 3.4s cubic-bezier(.55,0,.85,.55) forwards; }
   @keyframes sfh-spiral{ from{ transform:rotate(0deg) scale(1); } to{ transform:rotate(760deg) scale(.37); } }
   @keyframes sfh-stretch{ 0%{ transform:scale(1, 1); } 70%{ transform:scale(.55, 2.4); } 100%{ transform:scale(.4, 3.2); } }
-  .is-freeze .sfh-orb > svg{ opacity:.42; transition:opacity 1.6s ease; }
-  .is-freeze :is(.sfh-disk, .sfh-disk-back)::before{ animation-duration:40s; }
+  .sf-freeze .sfh-orb > svg{ opacity:.42; transition:opacity 1.6s ease; }
+  .sf-freeze :is(.sfh-disk, .sfh-disk-back)::before{ animation-duration:40s; }
   .sfh-comet{ --tail:180deg; left:50%; top:50%; transform:rotate(var(--a)) translateX(34cqw) rotate(calc(-1 * var(--a))) translateY(-62cqw) scale(1.6);
     transition:transform 1.1s cubic-bezier(.4,0,.2,1), opacity .3s ease; }
   .sfh-comet.is-go{ opacity:1; transform:rotate(var(--a)) translateX(34cqw) rotate(calc(-1 * var(--a))) translateY(0) scale(1); }
   /* the edge lies down flat: a horizon */
-  .is-flat .sfh-bh, .is-flat .sfh-ringbox{ translate:0 24cqw; scale:.22; opacity:0; }
-  .sfh-line{ left:50%; top:70%; width:230cqw; height:.6cqw; min-height:2px; margin-top:-.3cqw; translate:-50% 0; border-radius:999px; z-index:4; scale:0 1; opacity:0;
+  .sf-flat .sfh-bh, .sf-flat .sfh-ringbox{ translate:0 24cqw; scale:.22; opacity:0; }
+  .sfh-line{ left:50%; top:76%; width:230cqw; height:.6cqw; min-height:2px; margin-top:-.3cqw; translate:-50% 0; border-radius:999px; z-index:4; scale:0 1; opacity:0;
     background:linear-gradient(90deg, transparent, rgba(127,200,255,.35) 25%, rgba(221,244,255,.85) 44%, #fff 50%, rgba(221,244,255,.85) 56%, rgba(127,200,255,.35) 75%, transparent); }
-  .is-flat .sfh-line{ scale:1 1; opacity:.75; transition:scale 1.5s cubic-bezier(.3,0,.2,1) .7s, opacity .6s ease .7s; }
-  .is-dawn .sfh-line{ opacity:1; }
-  .sfh-below{ left:50%; top:69%; width:260cqw; height:80cqw; translate:-50% 0; z-index:3; opacity:0;
+  .sf-flat .sfh-line{ scale:1 1; opacity:.75; transition:scale 1.5s cubic-bezier(.3,0,.2,1) .7s, opacity .6s ease .7s; }
+  .sf-dawn .sfh-line{ opacity:1; }
+  .sfh-below{ left:50%; top:75%; width:260cqw; height:80cqw; translate:-50% 0; z-index:3; opacity:0;
     background:linear-gradient(180deg, rgba(3,2,9,0), #030209 2.4cqw); transition:opacity .8s ease .8s; }
-  .is-flat .sfh-below, .sf-horizon.sf-final .sfh-below{ opacity:1; }
-  .sfh-dawn{ left:50%; top:70%; width:190cqw; height:96cqw; translate:-50% -50%; border-radius:50%; opacity:0; scale:1 0; z-index:1;
+  .sf-flat .sfh-below, .sf-horizon.sf-final .sfh-below{ opacity:1; }
+  .sfh-dawn{ left:50%; top:76%; width:190cqw; height:96cqw; translate:-50% -50%; border-radius:50%; opacity:0; scale:1 0; z-index:1;
     background:radial-gradient(closest-side, rgba(255,255,255,.95) 0, rgba(221,244,255,.7) 8%, rgba(127,200,255,.36) 26%, rgba(74,122,204,.14) 50%, transparent 74%);
     transition:opacity 2.4s ease, scale 4.5s cubic-bezier(.2,.7,.2,1); }
-  .is-dawn .sfh-dawn{ opacity:.85; scale:1 .62; }
-  .is-lit .sfh-dawn, .sf-horizon.sf-final .sfh-dawn{ opacity:1; scale:1 1; }
-  .sfh-rays{ left:50%; top:70%; width:170cqw; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0; z-index:1;
+  .sf-dawn .sfh-dawn{ opacity:.85; scale:1 .62; }
+  .sf-lit .sfh-dawn, .sf-horizon.sf-final .sfh-dawn{ opacity:1; scale:1 1; }
+  .sfh-rays{ left:50%; top:76%; width:170cqw; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0; z-index:1;
     background:repeating-conic-gradient(from 0deg, rgba(221,244,255,.32) 0deg 2.2deg, transparent 2.2deg 9deg, rgba(191,230,255,.18) 9deg 10.5deg, transparent 10.5deg 17deg);
     -webkit-mask:radial-gradient(circle, transparent 3%, #000 10%, rgba(0,0,0,.35) 32%, transparent 48%); mask:radial-gradient(circle, transparent 3%, #000 10%, rgba(0,0,0,.35) 32%, transparent 48%);
     transition:opacity 3s ease; }
-  .is-dawn .sfh-rays{ opacity:.7; animation:sfh-rays 9s ease-in-out infinite alternate; }
-  .is-lit .sfh-rays, .sf-horizon.sf-final .sfh-rays{ opacity:1; }
+  .sf-dawn .sfh-rays{ opacity:.7; animation:sfh-rays 9s ease-in-out infinite alternate; }
+  .sf-lit .sfh-rays, .sf-horizon.sf-final .sfh-rays{ opacity:1; }
   @keyframes sfh-rays{ from{ rotate:-3deg; } to{ rotate:3deg; } }
-  .sf-horizon .sf-fig{ top:47%; translate:-50% calc(-50% + 34cqw); transition:opacity 1.6s ease, translate 5.2s cubic-bezier(.25,.7,.25,1); }
-  .sf-horizon.is-rise .sf-fig, .sf-horizon.sf-final .sf-fig{ translate:-50% -50%; }
-  .sfh-orbit{ top:47%; }
+  /* it rises out of the horizon: from wholly under it, to its head over
+     the edge in the dark, to its shoulders in the light */
+  .sf-horizon .sf-fig{ top:44%; translate:-50% calc(-50% + 70cqw); transition:opacity 1.6s ease, translate 6s cubic-bezier(.25,.7,.25,1); }
+  .sf-horizon.sf-rise .sf-fig{ translate:-50% calc(-50% + 12cqw); }
+  .sf-horizon.sf-lit .sf-fig, .sf-horizon.sf-final .sf-fig{ translate:-50% -50%; transition:opacity 1.6s ease, translate 2.8s cubic-bezier(.2,.8,.2,1); }
   .sf-horizon.sf-final :is(.sfh-bh, .sfh-ringbox, .sfh-comet){ display:none; }
   .sf-horizon.sf-final .sfh-line{ scale:1 1; opacity:1; }
 
@@ -25846,23 +25859,23 @@
   .sf-in .sfg-planetwrap{ opacity:1; }
   .sfg-planetwrap .cosmic-hero-wrap, .sfg-planetwrap .cosmic-hero-wrap *{ pointer-events:none !important; }
   .sfg-shakebox{ position:relative; }
-  .is-clear .sfg-planetwrap .cosmic-icon-badge{ opacity:0; transition:opacity 1.2s ease; }
+  .sf-clear .sfg-planetwrap .cosmic-icon-badge{ opacity:0; transition:opacity 1.2s ease; }
   /* the orbit layers' settle-in animation holds their opacity, so it goes */
-  .is-clear .sfg-planetwrap .cosmic-hero-orbitlayer{ animation:none !important; opacity:0; transition:opacity 1.2s ease; }
-  .is-clear .sfg-planetwrap :is(.cosmic-orbit-ring, .cosmic-pulse-ring){ opacity:0; transition:opacity 1.2s ease; }
-  .is-clear .sfg-planetwrap{ transform:scale(1.85); }
-  .is-dive .sfg-planetwrap .cosmic-core-orbit{ opacity:0; transition:opacity .3s ease; }
+  .sf-clear .sfg-planetwrap .cosmic-hero-orbitlayer{ animation:none !important; opacity:0; transition:opacity 1.2s ease; }
+  .sf-clear .sfg-planetwrap :is(.cosmic-orbit-ring, .cosmic-pulse-ring){ opacity:0; transition:opacity 1.2s ease; }
+  .sf-clear .sfg-planetwrap{ transform:scale(1.85); }
+  .sf-dive .sfg-planetwrap .cosmic-core-orbit{ opacity:0; transition:opacity .3s ease; }
   .sfg-planetfx{ position:absolute; left:50%; top:47.37%; width:28.89%; aspect-ratio:1; translate:-50% -50%; border-radius:50%; z-index:4; }
   .sfg-cracks{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
   .sfg-crack{ opacity:0; transition:opacity .5s ease; }
-  .is-crack1 .sfg-crack-1, .is-crack2 .sfg-crack-2{ opacity:1; }
-  .is-crack1 .sfg-crack-1{ animation:xs-flick 1.1s ease-in-out .5s infinite alternate; }
+  .sf-crack1 .sfg-crack-1, .sf-crack2 .sfg-crack-2{ opacity:1; }
+  .sf-crack1 .sfg-crack-1{ animation:xs-flick 1.1s ease-in-out .5s infinite alternate; }
   @keyframes xs-flick{ from{ opacity:1; } to{ opacity:.65; } }
   .sfg-coreglow{ position:absolute; inset:-30%; border-radius:50%; opacity:0; scale:.4; transition:opacity 1.6s ease, scale 2.4s ease;
     background:radial-gradient(closest-side, rgba(255,240,224,.9), rgba(255,92,168,.55) 35%, rgba(255,92,168,.15) 60%, transparent); }
-  .is-crack1 .sfg-coreglow{ opacity:.55; scale:.8; }
-  .is-crack2 .sfg-coreglow{ opacity:.85; scale:1.05; }
-  .is-quake .sfg-shakebox{ animation:sfg-quake 1.8s linear 1; }
+  .sf-crack1 .sfg-coreglow{ opacity:.55; scale:.8; }
+  .sf-crack2 .sfg-coreglow{ opacity:.85; scale:1.05; }
+  .sf-quake .sfg-shakebox{ animation:sfg-quake 1.8s linear 1; }
   @keyframes sfg-quake{ 0%,100%{ transform:none; } 8%{ transform:translate(-.6px,.3px); } 16%{ transform:translate(.8px,-.5px); } 24%{ transform:translate(-1.2px,.4px); }
     32%{ transform:translate(1.4px,.8px); } 40%{ transform:translate(-1.8px,-.9px); } 48%{ transform:translate(2px,1.2px); } 56%{ transform:translate(-2.6px,.6px); }
     64%{ transform:translate(2.8px,-1.4px); } 72%{ transform:translate(-3.2px,1.6px); } 80%{ transform:translate(3.4px,-.8px); } 88%{ transform:translate(-3.6px,-1.8px); } 95%{ transform:translate(2px,1px); } }
@@ -25873,43 +25886,43 @@
     background:radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--pl0) 80%, #fff), var(--pl1) 22%, var(--pl2) 58%, color-mix(in srgb, var(--pl2) 45%, #12040E) 100%);
     box-shadow:inset -10px -12px 24px rgba(0,0,0,.45); }
   .sfg-half-in::after{ content:""; position:absolute; inset:0; border-radius:50%; background:radial-gradient(circle at 50% 50%, rgba(255,92,168,.5), transparent 60%); }
-  .is-split .sfg-half{ opacity:1; transition:opacity .15s ease .12s; }
+  .sf-split .sfg-half{ opacity:1; transition:opacity .15s ease .12s; }
   /* the hero's own layers go at the flash (visibility, because their
      settle-in animation holds opacity); the effects inside it stay */
-  .is-split .sfg-planetwrap .cosmic-hero-wrap > :not(.sfg-planetfx):not(.sfg-comet){ visibility:hidden; transition:visibility 0s linear .14s; }
-  .is-split .sfg-cracks{ opacity:0; transition:opacity .4s ease .5s; }
-  .is-forge .sfg-half.is-l{ transform:translate(-64%, 8%) rotate(-18deg); opacity:0; transition:transform 4.6s cubic-bezier(.2,.7,.2,1), opacity 3.6s ease 1.4s; }
-  .is-forge .sfg-half.is-r{ transform:translate(64%, 8%) rotate(18deg); opacity:0; transition:transform 4.6s cubic-bezier(.2,.7,.2,1), opacity 3.6s ease 1.4s; }
+  .sf-split .sfg-planetwrap .cosmic-hero-wrap > :not(.sfg-planetfx):not(.sfg-comet){ visibility:hidden; transition:visibility 0s linear .14s; }
+  .sf-split .sfg-cracks{ opacity:0; transition:opacity .4s ease .5s; }
+  .sf-forge .sfg-half.is-l{ transform:translate(-64%, 8%) rotate(-18deg); opacity:0; transition:transform 4.6s cubic-bezier(.2,.7,.2,1), opacity 3.6s ease 1.4s; }
+  .sf-forge .sfg-half.is-r{ transform:translate(64%, 8%) rotate(18deg); opacity:0; transition:transform 4.6s cubic-bezier(.2,.7,.2,1), opacity 3.6s ease 1.4s; }
   .sfg-core{ position:absolute; inset:18%; border-radius:50%; opacity:0; scale:.3;
     background:radial-gradient(circle, #FFFFFF 0 22%, #FFE2C4 38%, rgba(255,92,168,.75) 58%, transparent 72%); }
-  .is-split .sfg-core{ opacity:1; scale:1.2; transition:opacity .3s ease, scale 1.2s cubic-bezier(.2,1.3,.3,1); }
-  .is-forge .sfg-core{ opacity:.0; scale:2.6; transition:opacity 4.4s ease 1.6s, scale 5s ease; }
+  .sf-split .sfg-core{ opacity:1; scale:1.2; transition:opacity .3s ease, scale 1.2s cubic-bezier(.2,1.3,.3,1); }
+  .sf-forge .sfg-core{ opacity:.0; scale:2.6; transition:opacity 4.4s ease 1.6s, scale 5s ease; }
   .sfg-beam{ position:absolute; left:50%; bottom:50%; width:30%; height:340%; translate:-50% 0; transform-origin:50% 100%; scale:1 0; opacity:0; border-radius:999px;
     background:linear-gradient(0deg, rgba(255,240,224,.95), rgba(255,92,168,.55) 40%, transparent);
     -webkit-mask-image:linear-gradient(90deg, transparent, #000 32%, #000 68%, transparent); mask-image:linear-gradient(90deg, transparent, #000 32%, #000 68%, transparent); }
-  .is-split .sfg-beam{ scale:1 1; opacity:1; transition:scale .9s cubic-bezier(.2,.9,.2,1), opacity .3s ease; }
-  .is-forge .sfg-beam{ opacity:0; transition:opacity 3.4s ease 1.6s; }
+  .sf-split .sfg-beam{ scale:1 1; opacity:1; transition:scale .9s cubic-bezier(.2,.9,.2,1), opacity .3s ease; }
+  .sf-forge .sfg-beam{ opacity:0; transition:opacity 3.4s ease 1.6s; }
   .sfg-comet{ position:absolute; left:50%; top:47.37%; width:30px; height:30px; margin:-15px 0 0 -15px; opacity:0; transform:translate(90px, -96px) scale(1.4); z-index:5; }
   .sfg-comet svg{ width:100%; height:100%; display:block; overflow:visible; }
   .sfg-comet > .sf-litpop{ display:none; }
-  .is-found .sfg-comet{ opacity:1; transform:translate(70px, -78px) scale(1.2); transition:transform 1.3s cubic-bezier(.2,.8,.2,1), opacity .4s ease; }
-  .is-found .sfg-comet > .sf-litpop{ display:block; }
-  .is-dive .sfg-comet{ opacity:1; transform:translate(0, 0) scale(.2); transition:transform .8s cubic-bezier(.55,0,.9,.4), opacity .2s ease; }
-  .is-crack1 .sfg-comet{ opacity:0; transition:opacity .2s ease; }
+  .sf-found .sfg-comet{ opacity:1; transform:translate(70px, -78px) scale(1.2); transition:transform 1.3s cubic-bezier(.2,.8,.2,1), opacity .4s ease; }
+  .sf-found .sfg-comet > .sf-litpop{ display:block; }
+  .sf-dive .sfg-comet{ opacity:1; transform:translate(0, 0) scale(.2); transition:transform .8s cubic-bezier(.55,0,.9,.4), opacity .2s ease; }
+  .sf-crack1 .sfg-comet{ opacity:0; transition:opacity .2s ease; }
   /* the core's glare: what the silhouette stands in front of */
   .sfg-glare{ left:50%; top:50%; width:100cqw; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0; scale:.5; z-index:1;
     background:radial-gradient(closest-side, rgba(255,246,236,.95) 0, rgba(255,214,190,.8) 14%, rgba(255,92,168,.45) 36%, rgba(194,59,122,.16) 58%, transparent 76%);
     transition:opacity 1.4s ease, scale 4s cubic-bezier(.2,.7,.2,1); }
-  .is-forge .sfg-glare{ opacity:1; scale:.86; }
-  .is-lit .sfg-glare, .sf-genesis.sf-final .sfg-glare{ opacity:.5; scale:1.05; transition:opacity 2.4s ease, scale 3s ease; }
+  .sf-forge .sfg-glare{ opacity:1; scale:.86; }
+  .sf-lit .sfg-glare, .sf-genesis.sf-final .sfg-glare{ opacity:.5; scale:1.05; transition:opacity 2.4s ease, scale 3s ease; }
   .sfg-disc{ left:50%; top:50%; width:96cqw; aspect-ratio:1; translate:-50% -50%; transform:rotate(-12deg) scaleY(.24); opacity:0; scale:.2; z-index:1;
     transition:opacity 1.5s ease .3s, scale 4.2s cubic-bezier(.2,.7,.2,1); }
   .sfg-disc-spin{ position:absolute; inset:0; animation:xs-turn 9s linear infinite; }
   .sfg-disc-spin > i{ position:absolute; left:50%; top:50%; width:0; height:0; }
   .sfg-disc-spin > i::before{ content:""; position:absolute; left:var(--r); top:0; width:2.2cqw; height:2.2cqw; margin:-1.1cqw; border-radius:50%; scale:var(--s);
     background:radial-gradient(circle, #fff 0, var(--c) 40%, transparent 72%); }
-  .is-forge .sfg-disc{ opacity:.9; scale:1; }
-  .is-lit .sfg-disc{ opacity:0; transition:opacity 2s ease; }
+  .sf-forge .sfg-disc{ opacity:.9; scale:1; }
+  .sf-lit .sfg-disc{ opacity:0; transition:opacity 2s ease; }
   .sf-genesis.sf-final :is(.sfg-planetwrap, .sfg-disc){ display:none; }
   /* the world's ring, the one the six flares ride (the orbit plane is 96%
      wide, squashed to .24 and tilted -12deg - so this is its ellipse) */
@@ -25917,8 +25930,8 @@
     border:2px solid rgba(255,227,196,.9); box-shadow:0 0 14px rgba(255,92,168,.6), inset 0 0 10px rgba(255,92,168,.45); transition:scale 1.6s cubic-bezier(.2,.9,.2,1), opacity .6s ease; }
   .sfg-ring{ clip-path:inset(50% -10% -10% -10%); }
   .sfg-ring-back{ clip-path:inset(-10% -10% 50% -10%); z-index:-1; }
-  .is-ringup :is(.sfg-ring, .sfg-ring-back), .sf-genesis.sf-final :is(.sfg-ring, .sfg-ring-back){ scale:1 1; opacity:1; }
-  .is-ringup .sfg-ring-back, .sf-genesis.sf-final .sfg-ring-back{ opacity:.55; }
+  .sf-ringup :is(.sfg-ring, .sfg-ring-back), .sf-genesis.sf-final :is(.sfg-ring, .sfg-ring-back){ scale:1 1; opacity:1; }
+  .sf-ringup .sfg-ring-back, .sf-genesis.sf-final .sfg-ring-back{ opacity:.55; }
 
   /* ---- THE FIRST TWO ---- */
   .sfs-sys{ position:absolute; inset:0; }
@@ -25930,10 +25943,10 @@
     box-shadow:0 0 9cqw color-mix(in srgb, var(--theme-c2, #F5804D) 40%, transparent), inset -4cqw -5cqw 9cqw rgba(0,0,0,.45); }
   .sfs-catch{ position:absolute; inset:-30%; border-radius:50%; opacity:0;
     background:radial-gradient(closest-side, color-mix(in srgb, var(--fc) 34%, transparent), transparent); transition:opacity 1.2s ease; }
-  .is-landed .sfs-catch{ opacity:1; }
-  .is-thread .sfs-catch{ opacity:.5; transition:opacity 2s ease; }
+  .sf-landed .sfs-catch{ opacity:1; }
+  .sf-thread .sfs-catch{ opacity:.5; transition:opacity 2s ease; }
   .sfs-thread{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; opacity:0; }
-  .is-thread .sfs-thread{ animation:sfs-thread 2.8s ease-in-out both; }
+  .sf-thread .sfs-thread{ animation:sfs-thread 2.8s ease-in-out both; }
   @keyframes sfs-thread{ 0%{ opacity:0; } 35%, 60%{ opacity:.55; } 100%{ opacity:0; } }
   .sfs-spot{ position:absolute; left:50%; top:50%; width:11cqw; aspect-ratio:1; margin:-5.5cqw 0 0 -5.5cqw; transform:translate(var(--x), var(--y)); }
   .sfs-spot > svg{ position:relative; width:100%; height:100%; display:block; overflow:visible; opacity:0; transition:opacity .3s ease; }
@@ -25942,17 +25955,17 @@
     background:radial-gradient(circle at 36% 30%, rgba(255,255,255,.3), rgba(200,214,232,.08) 55%, rgba(200,214,232,.03)); box-shadow:inset 0 0 0 1px rgba(220,232,250,.24); }
   .sfs-spot.is-lit .sfs-glass{ opacity:0; }
   .sfs-spot.is-new > svg{ animation:sf-spot-land 1.1s cubic-bezier(.16,1,.3,1) both; }
-  .is-thread .sfs-spot.is-lit > svg{ animation:sfs-pulse 1.4s ease-in-out .3s both; }
+  .sf-thread .sfs-spot.is-lit > svg{ animation:sfs-pulse 1.4s ease-in-out .3s both; }
   @keyframes sfs-pulse{ 0%, 100%{ transform:none; } 45%{ transform:scale(1.22); } }
   .sfs-path{ position:absolute; left:50%; top:50%; width:0; height:0; rotate:var(--a0); z-index:4; }
   .sfs-comet{ --tail:180deg; left:0; top:0; margin:-6cqw 0 0 -6cqw; translate:76cqw 0; scale:.35; opacity:0; }
-  .is-glint .sfs-comet{ opacity:.85; animation:sfs-glint 1s ease-in-out both; }
+  .sf-glint .sfs-comet{ opacity:.85; animation:sfs-glint 1s ease-in-out both; }
   @keyframes sfs-glint{ 0%{ scale:.15; } 50%{ scale:.6; } 100%{ scale:.42; } }
   .sfs-comet::before{ opacity:0; transition:opacity .4s ease; }
-  .is-come .sfs-path{ rotate:var(--a1); transition:rotate 1.65s cubic-bezier(.33,0,.2,1); }
-  .is-come .sfs-comet{ opacity:1; translate:var(--r1) 0; scale:1; transition:translate 1.65s cubic-bezier(.5,0,.25,1), scale 1.2s ease, opacity .3s ease; }
-  .is-come .sfs-comet::before{ opacity:1; }
-  .is-landed .sfs-comet{ opacity:0; transition:opacity .2s ease; }
+  .sf-come .sfs-path{ rotate:var(--a1); transition:rotate 1.65s cubic-bezier(.33,0,.2,1); }
+  .sf-come .sfs-comet{ opacity:1; translate:var(--r1) 0; scale:1; transition:translate 1.65s cubic-bezier(.5,0,.25,1), scale 1.2s ease, opacity .3s ease; }
+  .sf-come .sfs-comet::before{ opacity:1; }
+  .sf-landed .sfs-comet{ opacity:0; transition:opacity .2s ease; }
   .sf-small.sf-final .sfs-comet{ display:none; }
 
   /* REDUCE MOTION: THE STILL SCENE (see sfScene). The end state from the
@@ -79340,7 +79353,6 @@ function sfLitSVG(ch){
            .sf-figbody
              .sf-sil.char-live        the black shape (sfSilhouetteSVG)
              .sf-wipe > .sf-wipe-in > .sf-real.char-live    the lit one
-           .sf-band    the line of light that rides the wipe's edge
    THE WIPE IS TWO TRANSFORMS, never a clip-path or a moving mask: the
    window (.sf-wipe, overflow hidden, its top edge feathered by a still
    mask) slides up while its content (.sf-wipe-in) slides down by exactly
@@ -79354,43 +79366,57 @@ function sfFigure(S, ch){
   const move = sfEl("sf-figmove", fig);
   const breath = sfEl("sf-breath", move);
   const bodyBox = sfEl("sf-figbody", breath);
-  const sil = sfEl("sf-sil char-live", bodyBox);
+  const sil = sfEl("sf-sil", bodyBox);
   const wipe = sfEl("sf-wipe", bodyBox), wipeIn = sfEl("sf-wipe-in", wipe);
-  const real = sfEl("sf-real char-live", wipeIn);
+  const real = sfEl("sf-real", wipeIn);
   try{ sil.appendChild(sfSilhouetteSVG(ch)); }catch(e){}
   try{ real.appendChild(sfLitSVG(ch)); }catch(e){}
-  sfEl("sf-band", breath);
   const F = {
     el: fig, ch, sil, real,
+    /* ALIVE FROM THE MOMENT IT CAN BE SEEN: both copies take .char-live in
+       the same frame, so every idle loop (and later the special) runs in
+       step across the wipe's edge - and nothing in an invisible figure
+       repaints through the build-up */
+    live(){ if(!sil.classList.contains("char-live")){ sil.classList.add("char-live"); real.classList.add("char-live"); } },
     /* its eyes and the flare it wears, first and alone in the dark */
-    keys(){ fig.classList.add("is-keys"); },
+    keys(){ F.live(); fig.classList.add("is-keys"); },
     /* the shape itself, barely: the black against its own faint light */
-    emerge(){ fig.classList.add("is-keys", "is-emerging"); },
+    emerge(){ F.live(); fig.classList.add("is-keys", "is-emerging"); },
     /* the light finds its edge */
     catchLight(){ fig.classList.add("is-catch"); },
     /* its own move, on both copies in the same frame */
     special(){
+      F.live();
       const ms = CHAR_SPECIAL_MS[ch] || CHAR_SPECIAL_DEFAULT_MS;
       [sil, real].forEach(h => h.classList.add("char-special"));
       S.later(ms + 150, () => [sil, real].forEach(h => h.classList.remove("char-special")));
       return ms;
     },
     reveal(){
+      F.live();
       fig.classList.add("is-keys", "is-emerging", "is-revealing");
       S.later(SF_WIPE_MS + 120, () => fig.classList.add("is-revealed"));
     },
     /* the still scene: lit from the first frame */
-    lit(){ fig.classList.add("is-keys", "is-emerging", "is-catch", "is-revealing", "is-revealed", "is-lit"); }
+    lit(){ F.live(); fig.classList.add("is-keys", "is-emerging", "is-catch", "is-revealing", "is-revealed", "is-lit"); }
   };
   return F;
 }
 /* the flares found so far going round the figure on a tilted ring */
-function sfOrbit(keys, squash, tilt, cls){
-  return tiltedOrbit("sf-orbit " + (cls || ""), keys.length, i => {
+/* Two copies of the ring turning together: the far half (the top of the
+   squashed plane) under the figure, the near half over it, so a flare
+   really goes round behind it and comes back in front; at the ends of the
+   ellipse the two halves of a flare meet. */
+function sfOrbit(host, fig, keys, squash, tilt, cls){
+  const mk = half => tiltedOrbit("sf-orbit is-" + half + " " + (cls || ""), keys.length, i => {
     const o = sfEl("xs-orb");
-    o.appendChild(buildFlareOrb(MYSTERY_COLOR[keys[i]], "sfo" + i));
+    o.appendChild(buildFlareOrb(MYSTERY_COLOR[keys[i]], "sfo" + half[0] + i));
     return o;
   }, squash, tilt);
+  const back = mk("back"), front = mk("front");
+  host.insertBefore(back, fig.parentNode === host ? fig : host.firstChild);
+  host.appendChild(front);
+  return { back, front };
 }
 /* A flare igniting where it lands: a bloom out of its core, one halo and
    one ring in its colour - the rank-up's .rank-litpop, at this scale. */
@@ -79410,6 +79436,10 @@ function sfScene(kind, color, ch, done, opts){
   overlay.dataset.flare = color;
   overlay.style.setProperty("--fc", fc);
   overlay.style.setProperty("--flare-color", fc);
+  /* the wash the light leaves: the character's own colour (the flare's for
+     the first two) - Void's ember, not its yellow flare, which on black
+     reads olive */
+  overlay.style.setProperty("--tc", ch ? avatarGlowColor(ch) : fc);
   sfEl("sf-tint", overlay);
   const stars = sfEl("sf-stars", overlay);
   const rnd = sfRand(kind.length * 977 + color.length * 31 + 7);
@@ -79544,7 +79574,7 @@ function playVoidFlareScene(done){
   sfEl("sfv-swirl", st);
   const F = sfFigure(S, "voidwalker");
   st.appendChild(F.el);
-  st.appendChild(sfOrbit(VOID_FLARES, .26, -8, "sfv-ring"));
+  sfOrbit(st, F.el, VOID_FLARES, .2, -8, "sfv-ring");
   const kick = "ALL THREE SECRET FLARES";
   if(S.still){
     F.lit();
@@ -79558,16 +79588,16 @@ function playVoidFlareScene(done){
     sfIgnite(spots[2], MYSTERY_COLOR.yellow);
     S.say("SECRET FLARE FOUND", MYSTERY_NAME.yellow + " — 3 of 3", "Every flare in the sky is lit.");
   });
-  S.step(3700, "is-whirl");
+  S.step(3700, "sf-whirl");
   S.later(4300, () => S.hush());
-  S.step(4500, "is-pull");
+  S.step(4500, "sf-pull");
   S.later(5600, () => S.say("THE PULL", "The dark is pulling the light in", ""));
-  S.step(8300, "is-fall");
+  S.step(8300, "sf-fall");
   S.later(8400, () => S.hush());
-  S.step(9350, "is-collapse");
-  S.step(9950, "is-point");
-  S.step(10250, "is-void");
-  S.step(12000, "is-dark");
+  S.step(9350, "sf-collapse");
+  S.step(9950, "sf-point");
+  S.step(10250, "sf-absence");
+  S.step(12000, "sf-dark");
   S.later(12500, () => S.say(kick, "Something stirs in the dark", ""));
   S.later(13000, () => F.keys());
   S.later(14200, () => F.emerge());
@@ -79577,8 +79607,8 @@ function playVoidFlareScene(done){
      into a disc, spiral back into its face and go off in white (3.12s in):
      that white is the light coming up */
   S.later(17100, () => F.special());
-  S.later(20200, () => { F.reveal(); S.overlay.classList.add("is-lit"); S.flashAt(50, 50, "is-soft"); });
-  S.step(21500, "is-orbit");
+  S.later(20200, () => { F.reveal(); S.overlay.classList.add("sf-lit"); S.flashAt(50, 50, "is-soft"); });
+  S.step(21500, "sf-orbits");
   S.later(22300, () => S.title(kick, "VOID", "Three more flares are still out there."));
   S.later(27300, S.endScene);
   return S.handle;
@@ -79625,7 +79655,7 @@ function playUmbraFlareScene(done){
     inner.style.rotate = (-i * 45) + "deg";
     inner.appendChild(phaseMoonSVG(k));
   });
-  st.appendChild(sfOrbit(MYSTERY_ORDER.filter(k => k === "violet" || (store.mysteryColorsFound || {})[k]).slice(0, 4), .22, -10, "sfu-ring"));
+  sfOrbit(st, F.el, MYSTERY_ORDER.filter(k => k === "violet" || (store.mysteryColorsFound || {})[k]).slice(0, 4), .2, -10, "sfu-ring");
   const who = AVATAR_DISPLAY_NAME.umbra || "Umbra";
   if(S.still){
     F.lit();
@@ -79635,16 +79665,16 @@ function playUmbraFlareScene(done){
   S.later(800, () => comet.classList.add("is-go"));
   S.later(1950, () => {
     comet.classList.add("is-done");
-    S.overlay.classList.add("is-touch");
+    S.overlay.classList.add("sf-touch");
     sfIgnite(sfEl("sfu-touch", st), MYSTERY_COLOR.violet);
     S.say("SECRET FLARE FOUND", MYSTERY_NAME.violet, "The fourth secret flare");
   });
-  S.step(3700, "is-eclipse");
+  S.step(3700, "sf-eclipse");
   S.later(4300, () => S.say("FIRST CONTACT", "The moon goes dark", ""));
-  S.step(8300, "is-beads");
-  S.step(9100, "is-total");
+  S.step(8300, "sf-beads");
+  S.step(9100, "sf-total");
   S.later(9300, () => S.say("TOTALITY", "", ""));
-  S.later(10700, () => { F.keys(); S.overlay.classList.add("is-eyes"); });
+  S.later(10700, () => { F.keys(); S.overlay.classList.add("sf-eyes"); });
   S.later(11000, () => S.say("TOTALITY", "Something opens its eyes", ""));
   S.later(12000, () => F.emerge());
   S.later(13800, () => S.hush());
@@ -79652,10 +79682,10 @@ function playUmbraFlareScene(done){
   /* its move: the light goes out (the corona with it), the flare at its
      throat flickers like a failing lamp, catches, and pulses twice - the
      second pulse is third contact */
-  S.later(15400, () => { F.special(); S.overlay.classList.add("is-lamp"); });
-  S.later(17650, () => { F.reveal(); S.overlay.classList.remove("is-lamp"); S.overlay.classList.add("is-third", "is-lit"); S.flashAt(50, 50, "is-soft"); });
-  S.step(18700, "is-phased");
-  S.step(19300, "is-orbit");
+  S.later(15400, () => { F.special(); S.overlay.classList.add("sf-lamp"); });
+  S.later(17650, () => { F.reveal(); S.overlay.classList.remove("sf-lamp"); S.overlay.classList.add("sf-thirdc", "sf-lit"); S.flashAt(50, 50, "is-soft"); });
+  S.step(18700, "sf-phased");
+  S.step(19300, "sf-orbits");
   S.later(19800, () => S.title("FROM THE SHADOW", who.toUpperCase(), "Two more are still out there."));
   S.later(26300, S.endScene);
   return S.handle;
@@ -79698,7 +79728,7 @@ function playHorizonFlareScene(done){
   st.appendChild(F.el);
   sfEl("sfh-below", st);
   sfEl("sfh-line", st);
-  st.appendChild(sfOrbit(found, .2, -6, "sfh-orbit"));
+  sfOrbit(st, F.el, found, .16, -6, "sfh-orbit");
   const who = AVATAR_DISPLAY_NAME.singularity || "Horizon";
   if(S.still){
     F.lit();
@@ -79708,28 +79738,39 @@ function playHorizonFlareScene(done){
   S.later(820, () => comet.classList.add("is-go"));
   S.later(1950, () => {
     comet.classList.add("is-done");
-    S.overlay.classList.add("is-found");
+    S.overlay.classList.add("sf-found");
     const o = ring.querySelector(".sfh-orb.is-new");
     if(o) sfIgnite(o, MYSTERY_COLOR.white);
     S.say("SECRET FLARE FOUND", MYSTERY_NAME.white, "The fifth secret flare");
   });
-  S.step(3600, "is-hole");
+  S.step(3600, "sf-hole");
   S.later(4100, () => S.say("THE PULL", "Every light you found, falling", ""));
-  S.step(4700, "is-pull");
-  S.step(8200, "is-freeze");
+  S.step(4700, "sf-pull");
+  S.step(8200, "sf-freeze");
   S.later(8400, () => S.say("THE EVENT HORIZON", "Nothing comes back from here", ""));
-  S.step(10600, "is-flat");
+  S.step(10600, "sf-flat");
   S.later(11000, () => S.hush());
-  S.step(12000, "is-dawn");
+  S.step(12000, "sf-dawn");
   S.later(12500, () => S.say("THE EVENT HORIZON", "Light is coming back over the edge", ""));
-  S.later(12900, () => { F.keys(); F.emerge(); S.overlay.classList.add("is-rise"); });
+  /* ITS HAIR ON THE SCENE'S CLOCK. Horizon's two surges run on long,
+     uneven clocks (17s white, 29s deep blue - "at random points") that
+     start with the drawing's loops, here at KEYS; left alone, the blue
+     drain landed exactly on the reveal. Set before the loops start, so
+     the white surge runs up the hair as the light rises and the drain
+     stays out of the scene. */
+  const KEYS = 12900, REVEAL = 18750;
+  S.later(KEYS, () => {
+    F.el.querySelectorAll(".cx-fx-sgsurgew").forEach(g => { g.style.animationDelay = ((REVEAL - KEYS) / 1000 - 5.3).toFixed(2) + "s"; });
+    F.el.querySelectorAll(".cx-fx-sgsurgeb").forEach(g => { g.style.animationDelay = "-21.6s"; });
+    F.keys(); F.emerge(); S.overlay.classList.add("sf-rise");
+  });
   S.later(15000, () => S.hush());
   S.later(15400, () => F.catchLight());
   /* its move: the flare slips its brow, goes round with a tail of light,
      and is pulled back in - the flash as it goes back is the light rising */
   S.later(16400, () => F.special());
-  S.later(18750, () => { F.reveal(); S.overlay.classList.add("is-lit"); S.flashAt(50, 34, "is-soft"); });
-  S.step(19900, "is-orbit");
+  S.later(REVEAL, () => { F.reveal(); S.overlay.classList.add("sf-lit"); S.flashAt(50, 34, "is-soft"); });
+  S.step(19900, "sf-orbits");
   S.later(20400, () => S.title("THE EVENT HORIZON", who.toUpperCase(), "One more waits on the planet."));
   S.later(26900, S.endScene);
   return S.handle;
@@ -79796,24 +79837,24 @@ function playGenesisFlareScene(done){
   sfEl("sfg-ring-back", F.el);
   sfEl("sfg-ring", F.el);
   st.appendChild(F.el);
-  F.el.appendChild(sfOrbit(MYSTERY_ORDER, .24, -12, "sfg-orbit"));
+  sfOrbit(F.el, F.el.querySelector(".sf-figmove"), MYSTERY_ORDER, .24, -12, "sfg-orbit");
   const who = AVATAR_DISPLAY_NAME.genesis || "Genesis";
   if(S.still){
     F.lit();
     S.stillEnd("THE LAST SECRET FLARE", who.toUpperCase(), "Every secret flare is yours.");
     return S.handle;
   }
-  S.later(900, () => { S.overlay.classList.add("is-found");
+  S.later(900, () => { S.overlay.classList.add("sf-found");
     S.say("SECRET FLARE FOUND", MYSTERY_NAME.core, "The planet's own light — the last secret flare"); });
-  S.step(3600, "is-clear");
-  S.step(4300, "is-dive");
+  S.step(3600, "sf-clear");
+  S.step(4300, "sf-dive");
   S.later(4500, () => S.say("YOUR PLANET", "It is waking up", ""));
-  S.step(5000, "is-crack1");
-  S.step(6100, "is-crack2");
-  S.step(6900, "is-quake");
-  S.step(8700, "is-split");
+  S.step(5000, "sf-crack1");
+  S.step(6100, "sf-crack2");
+  S.step(6900, "sf-quake");
+  S.step(8700, "sf-split");
   S.later(8700, () => S.flashAt(50, 50, "is-rose"));
-  S.step(8950, "is-forge");
+  S.step(8950, "sf-forge");
   S.later(9300, () => S.hush());
   S.later(10600, () => S.say("GENESIS", "Out of the core, a world", ""));
   S.later(11300, () => F.keys());
@@ -79824,9 +79865,9 @@ function playGenesisFlareScene(done){
      like a moon and dives in - the planet flashes rose (2.82s in), and
      that is the light coming up */
   S.later(15500, () => F.special());
-  S.later(18300, () => { F.reveal(); S.overlay.classList.add("is-lit"); S.flashAt(50, 42, "is-soft"); });
-  S.step(19000, "is-ringup");
-  S.step(20000, "is-orbit");
+  S.later(18300, () => { F.reveal(); S.overlay.classList.add("sf-lit"); S.flashAt(50, 42, "is-soft"); });
+  S.step(19000, "sf-ringup");
+  S.step(20000, "sf-orbits");
   S.later(20500, () => S.title("THE LAST SECRET FLARE", who.toUpperCase(), "Every secret flare is yours."));
   S.later(27200, S.endScene);
   return S.handle;
@@ -79879,18 +79920,18 @@ function playFirstFlaresScene(color, done){
   const sub2 = left === 1 ? "One more is out there." : left + " more are out there.";
   if(S.still){
     if(target) target.classList.add("is-lit");
-    S.overlay.classList.add("is-landed");
+    S.overlay.classList.add("sf-landed");
     S.stillEnd("SECRET FLARE FOUND", MYSTERY_NAME[color], n + " of " + VOID_FLARES.length + " in the sky · " + sub2);
     return S.handle;
   }
-  S.step(900, "is-glint");
-  S.step(1700, "is-come");
+  S.step(900, "sf-glint");
+  S.step(1700, "sf-come");
   S.later(3350, () => {
-    S.overlay.classList.add("is-landed");
+    S.overlay.classList.add("sf-landed");
     if(target){ target.classList.add("is-lit", "is-new"); sfIgnite(target, MYSTERY_COLOR[color]); }
   });
   S.later(3700, () => S.title("SECRET FLARE FOUND", MYSTERY_NAME[color], n + " of " + VOID_FLARES.length + " in the sky"));
-  S.step(6100, "is-thread");
+  S.step(6100, "sf-thread");
   S.later(6500, () => { S.overlay.querySelector(".sf-title-s").textContent = n + " of " + VOID_FLARES.length + " in the sky · " + sub2; });
   S.later(8900, S.endScene);
   return S.handle;
@@ -81949,6 +81990,15 @@ function showRunRewards(run, hooks, opts){
     fillBars(".rs-byunit .unit-breakdown-fill[data-to]");
     xp.classList.add("is-charged");
     finish();
+    /* A FLARE FOUND STILL GETS ITS MOMENT (build 317). With Reduce motion
+       the results land at once and play no pop-ups, and the flare's scene
+       went with them - the find simply never happened on screen. It plays
+       its still version now (sfScene: the character lit in its colour,
+       the title, ~4.4s) over the landed results. Not when coming back from
+       the review (opts.instant), and not with banners muted. */
+    if(!(opts && opts.instant) && run.flare && !theme.muteBanners && typeof playFlareFoundScene === "function"){
+      setTimeout(() => { if(panel.isConnected && !document.querySelector(".sf-scene")) playFlareFoundScene(run.flare, run.flareAll, () => {}); }, 500);
+    }
     return;
   }
 
