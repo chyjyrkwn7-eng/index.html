@@ -11539,8 +11539,8 @@ FX_RUN = """const wait = ms => new Promise(r => setTimeout(r, ms));
 # of the other two starts from the box by design (the hole darkens the
 # whole screen as it opens, the water floods up from the bottom), so each
 # has checks of its own instead.
-FX_EARLY = {"worldtree": .6, "bubbles": .55}
-FX_LATE = {"worldtree": 2.8, "bubbles": 3.4}
+FX_EARLY = {"worldtree": .35, "bubbles": .55}
+FX_LATE = {"worldtree": 2.4, "bubbles": 3.4}
 FX_ALL = ["fireworks", "blackhole", "underwater", "worldtree", "bubbles", "ufo"]
 
 
@@ -11734,9 +11734,11 @@ def check_b313_fx(br):
           const fill = () => { const f = document.querySelector('.rs-screen .unit-breakdown-fill.is-gold'); return f ? getComputedStyle(f).backgroundImage : null; };
           out.border = getComputedStyle(g).borderTopColor; out.fill = fill();
           if(fx === 'worldtree'){
-            await until(3000);
-            out.panes = document.querySelectorAll('.rs-screen > .rs-card > .hfx-pane').length;
-            out.sharp = document.querySelectorAll('.hfx-layer.hfx-worldtree .hfx-seg.is-wood').length;
+            await until(1200);
+            const lay = document.querySelector('.hfx-layer.hfx-worldtree');
+            out.bits = lay ? lay.querySelectorAll('.hfx-bl-p').length : 0;
+            out.flash = lay ? lay.querySelectorAll('.stardust-flash, .stardust-ring').length : 0;
+            out.wood = document.querySelectorAll('.hfx-seg, .hfx-pane, .hfx-tree').length;
           }
           if(fx === 'underwater'){
             await until(2600);
@@ -11834,7 +11836,11 @@ def check_b313_fx(br):
         check("%s: the box's progress bar takes the effect's colours too, and keeps them after" % fx,
               r.get("fill") and gold not in r["fill"] and tv[2] and r.get("fillAfter") == "linear-gradient(90deg, %s, %s)" % (rgb(tv[2]), rgb(tv[1])), {"during": r.get("fill"), "after": r.get("fillAfter")})
         if fx == "worldtree":
-            check("worldtree: the cards become glass - a pane in each card, the tree passing behind them", r.get("panes", 0) >= 2 and r.get("sharp", 0) >= 4, r)
+            # build 317: "The tree one looks terrible, fix that ... the alien
+            # one is cool because it takes the default one and makes it the
+            # alien theme" - the default's burst, in petals and leaves
+            check("worldtree: the default's burst in blossom - its flash and rings, petals and leaves thrown out of the number, and no drawn tree",
+                  r.get("bits", 0) >= 40 and r.get("flash", 0) >= 3 and r.get("wood", 1) == 0, {k: r.get(k) for k in ("bits", "flash", "wood")})
         if fx == "fireworks":
             ea, la, ba = r.get("early") or {}, r.get("late") or {}, r.get("boxAt") or {}
             check("fireworks: it starts AT the 100% box - the first shell is climbing out of its top edge, nothing lit anywhere else",
@@ -12666,71 +12672,8 @@ def check_b314_unlocks(br):
           r and r.get("n", 0) >= 1 and all(r.get("popped") or [False]), r)
     ctx.close()
 
-    # --- World Tree: the wood meets every card's edge and never crosses into
-    # one. Measured in PIXELS: at 5.8s every animation is held, the page is
-    # shot with only the tree's wood showing and again with nothing, and the
-    # difference is the wood as drawn - clip-paths, rotations and all.
-    from PIL import Image, ImageChops
-    for w, h, units in ((440, 956, "single"), (834, 1194, "single"), (440, 956, "multi"), (375, 667, "single")):
-        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
-        run = FX_RUN if units == "single" else FX_RUN.replace("cfg.units = ['Identity Crimes']", "cfg.units = ['Identity Crimes', 'Racial Profiling', 'Victims of Crime']") \
-            .replace("QUESTIONS[i].topic.trim() === 'Identity Crimes'", "['Identity Crimes', 'Racial Profiling', 'Victims of Crime'].indexOf(QUESTIONS[i].topic.trim()) >= 0")
-        # muteBanners: an unrelated unlock (a time-of-day banner) must not
-        # cover the screen being measured; the effect does not read it
-        r = pg.evaluate("async () => { store.lifetime.perfectTests = 600; store.hundoFx = 'worldtree'; theme.muteBanners = true; saveStore(); " + run + """
-          for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(100);
-          if(!window.__fxAt) return null; const d = 5800 - (performance.now() - window.__fxAt); if(d > 0) await wait(d);
-          document.getAnimations().forEach(a => { try{ a.pause(); }catch(e){} });
-          /* and the reveal's scroll held where it is, so the shots and the rects agree */
-          window.scrollTo({ top: window.scrollY, behavior: 'instant' }); window.__holdY = window.scrollY;
-          window.addEventListener('scroll', () => window.scrollTo({ top: window.__holdY, behavior: 'instant' }));
-          await wait(120);
-          const layer = document.querySelector('.hfx-layer.hfx-worldtree');
-          if(!layer) return { missing: true, fx: window.__fxId, at: Math.round(performance.now() - window.__fxAt), spot: (document.querySelector('.rs-spot') || {}).className || null,
-            others: [...document.querySelectorAll('.hfx-layer, .confetti-layer')].map(e => e.className) };
-          const cards = [...document.querySelectorAll('.rs-screen > .rs-card')].map(e => { const r = e.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; });
-          const gr = document.querySelector('.rs-screen > .rs-grade').getBoundingClientRect();
-          const head = document.querySelector('.rs-screen > .rs-head');
-          const xp = document.querySelector('.rs-screen > .rs-xp').getBoundingClientRect();
-          const crownBase = [...document.querySelectorAll('.hfx-layer.hfx-worldtree .hfx-branch.is-trunk')].map(e => Math.round((e.getBoundingClientRect().bottom - xp.top) * 10) / 10);
-          const st = document.createElement('style'); st.id = '__woodonly';
-          st.textContent = 'body *{ visibility:hidden !important; } .hfx-seg.is-wood{ visibility:visible !important; }';
-          document.head.appendChild(st);
-          return { cards, gradeTop: gr.top, headOver: !!head && head.classList.contains('hfx-over'), crownBase, n: document.querySelectorAll('.hfx-layer.hfx-worldtree .hfx-seg.is-wood').length }; }""")
-        tag = "%dx%d %s" % (w, h, units)
-        if not r or r.get("missing"):
-            check("World Tree %s: it plays" % tag, False, r); ctx.close(); continue
-        A = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
-        pg.evaluate("() => { document.getElementById('__woodonly').textContent = 'body *{ visibility:hidden !important; }'; }")
-        B = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
-        m = ImageChops.difference(A, B).convert("L").point(lambda v: 255 if v > 24 else 0)
-        px = m.load(); W, H = m.size
-        worst = 0; bad = 0
-        for c in r["cards"]:
-            x0, y0, x1, y1 = [int(round(v)) for v in c]
-            for y in range(max(0, y0 + 1), min(H, y1 - 1)):
-                for x in range(max(0, x0 + 1), min(W, x1 - 1)):
-                    if px[x, y]:
-                        bad += 1; worst = max(worst, min(x - x0, x1 - 1 - x, y - y0, y1 - 1 - y))
-        # the trunk in each gap between two stacked cards: wood on the row
-        # touching the upper card and on the row touching the lower one
-        gaps = []
-        cs = sorted(r["cards"], key=lambda c: c[1])
-        for a, b in zip(cs, cs[1:]):
-            # the trunk climbs from the 100% box to the XP card: the gaps between those
-            if b[1] - a[3] < 4 or b[1] > r["gradeTop"] + 1: continue
-            # only a gap that is on the screen can be read off the shot (the
-            # reveal's scroll can leave the lowest one under the fold)
-            if a[3] < 0 or b[1] >= H - 1: continue
-            cx = int((a[0] + a[2]) / 2)
-            row = lambda y: sum(1 for x in range(max(0, cx - 60), min(W, cx + 60)) if 0 <= y < H and px[x, y])
-            gaps.append([max(row(int(a[3])), row(int(a[3]) + 1)), max(row(int(b[1]) - 1), row(int(b[1])))])
-        check("World Tree %s: no wood is drawn inside a card - %d pixel(s), deepest %dpx" % (tag, bad, worst), r["n"] > 3 and worst <= 1, {"pieces": r["n"], "bad": bad, "worst": worst})
-        check("World Tree %s: in every gap between cards the trunk reaches both edges (wood pixels on the rows touching each)" % tag,
-              gaps and all(g[0] >= 6 and g[1] >= 6 for g in gaps), gaps)
-        check("World Tree %s: the crown rises from the XP card's top edge, not from inside it, and the header is over the crown" % tag,
-              r["headOver"] and r["crownBase"] and all(-3 <= b <= 2.5 for b in r["crownBase"][:1]), {k: r[k] for k in ("headOver", "crownBase")})
-        ctx.close()
+    # (The World Tree's wood checks went with the tree in build 317: it is
+    # the default's burst in blossom now - see check_b313_fx.)
 
 
 def check_b315_customize(br):
@@ -13634,7 +13577,12 @@ def check_b317_hundobox(br):
             out.fx.push({ id, tint: t, tinted: g.classList.contains('hfx-tinted'),
               grade: R(g), pct: R(pct), pctScroll: [pct.scrollWidth, pct.clientWidth], sign: sign ? R(sign) : null,
               tn: tn ? R(tn) : null, tnScroll: tn ? [tn.scrollWidth, tn.clientWidth] : null, tsign: tsign ? R(tsign) : null,
-              tnOpacity: tn ? cs(tn).opacity : null, realColor: cs(pct).color,
+              tnOpacity: tn ? cs(tn).opacity : null, realColor: cs(pct).color, realOpacity: +cs(pct).opacity,
+              /* round 2: the % is the end of the same ramp - it paints no
+                 colour of its own, so the copy's gradient shows through it */
+              oneType: tsign ? { display: cs(tsign).display, color: cs(tsign).color, bg: cs(tsign).backgroundImage,
+                parentBg: cs(tn).backgroundImage.slice(0, 16), clip: cs(tn).webkitBackgroundClip || cs(tn).backgroundClip,
+                px: parseFloat(cs(tsign).fontSize) } : null,
               frac: cs(fr).color, fracOf: [...fr.querySelectorAll('.rs-frac-of')].map(e => cs(e).color),
               kicker: cs(g.querySelector('.rs-kicker')).color, sub: cs(g.querySelector('.rs-grade-sub')).color });
             /* the dim is the screen's: scroll the page under it and it
@@ -13648,7 +13596,24 @@ def check_b317_hundobox(br):
             await wait(800);
           }
           return out; }""")
+        # the default gold and the Customize tiles, the same rule
+        d = pg.evaluate("""() => { const cs = e => getComputedStyle(e); const out = {};
+          const scr = document.createElement('div'); scr.className = 'rs-screen'; scr.style.cssText = 'position:absolute;left:0;top:0;';
+          const g = document.createElement('div'); g.className = 'rs-card rs-grade is-perfect';
+          const p = document.createElement('span'); p.className = 'rs-pct pct perfect'; gradePctMarkup(p, 100);
+          g.appendChild(p); scr.appendChild(g); document.body.appendChild(scr);
+          const one = (num) => { const sg = num.querySelector('.rs-pct-sign'); return { display: cs(sg).display, color: cs(sg).color, bg: cs(sg).backgroundImage,
+            parentBg: cs(num).backgroundImage.slice(0, 16), clip: cs(num).webkitBackgroundClip || cs(num).backgroundClip }; };
+          out.gold = one(p); scr.remove();
+          out.tiles = {};
+          HUNDO_FX.forEach(f => { const t = buildHundoFxTile(f.id); document.body.appendChild(t); out.tiles[f.id] = one(t.querySelector('.hfx-stage-pct')); t.remove(); });
+          return out; }""")
         ctx.close()
+        okone = lambda o: (o and o.get("display") == "inline" and (rgb(o.get("color")) or [0, 0, 0, 1])[3] < .05 and o.get("bg") == "none"
+                           and o.get("parentBg", "").startswith("linear-gradient") and o.get("clip") == "text")
+        check("%s: the default gold 100%% is one ramp too - the %% carries its end, not a flat gold" % label, okone(d.get("gold")), d.get("gold"))
+        check("%s: and so is every Customize tile's 100%%, the default's included" % label,
+              d.get("tiles") and all(okone(o) for o in d["tiles"].values()), d.get("tiles"))
         fx = r.get("fx") or []
         check("%s: a real 100%% played an effect and every built effect was measured on its box" % label,
               r.get("started") and len(fx) >= 6, [f["id"] for f in fx])
@@ -13662,7 +13627,11 @@ def check_b317_hundobox(br):
                   and abs(ts[0] - s[0]) <= 2 and abs(ts[1] - s[1]) <= 2 and abs(ts[3] - s[3]) <= 2,
                   {"tnScroll": f["tnScroll"], "copy%": ts, "real%": s, "copy": tn, "box": g})
             check("%s: the gold number under it has given way (no gold fringe)" % tag,
-                  (rgb(f["realColor"]) or [0, 0, 0, 1])[3] < .05, f["realColor"])
+                  (rgb(f["realColor"]) or [0, 0, 0, 1])[3] < .05 or f.get("realOpacity", 1) < .05, [f["realColor"], f.get("realOpacity")])
+            o = f.get("oneType") or {}
+            check("%s: \"100%%\" is one piece of type - the %% is inline, paints no colour of its own and carries the end of the number's gradient (not a solid fill), and reads at %.1fpx" % (tag, o.get("px", 0)),
+                  o.get("display") == "inline" and (rgb(o.get("color")) or [0, 0, 0, 1])[3] < .05 and o.get("bg") == "none"
+                  and o.get("parentBg", "").startswith("linear-gradient") and o.get("clip") == "text" and o.get("px", 0) >= 12, o)
             fh, fs = hue(f["frac"])
             keys = [k for k in ("b", "g2") if t.get(k)]
             check("%s: the 12 / 12 is in the effect's colour, not gold - near %s's hue, readable" % (tag, "/".join(t.get(k) for k in keys)),
