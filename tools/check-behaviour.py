@@ -8946,15 +8946,22 @@ def check_b308_unlocks(br):
         check(dev + ": the rank's flare lights while they turn, before the flash", sc["lit"] and not sc["burstYet"], sc)
 
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        # REVISED IN THE 317 BADGE ROUND: the case fades on its STAGE now (an
+        # opacity on a 3D case flattens it), so "not up yet" is the case's
+        # effective opacity - the product up its ancestors - and the lid is
+        # read once the case has opened, polled, rather than at a fixed 8.4s
+        # of a scene that grew longer on request.
         bc = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
           document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
           playBadgeCaseScene(['Identity Crimes'], ()=>{});
           await wait(2600);
           const kase = document.querySelector('.bc-case');
           const intro = document.querySelector('.bc-intro');
-          const first = { caseOp: +getComputedStyle(kase).opacity, introIn: intro && intro.classList.contains('is-in'),
+          let op = 1; for(let e = kase; e && e !== document.body; e = e.parentElement) op *= parseFloat(getComputedStyle(e).opacity);
+          const first = { caseOp: op, introIn: intro && intro.classList.contains('is-in'),
                           named: intro ? intro.textContent : '' };
-          await wait(5800);
+          for(let i = 0; i < 160 && !kase.classList.contains('bc-open'); i++) await wait(100);
+          await wait(1200);
           const m = getComputedStyle(document.querySelector('.bc-lid')).transform;
           const v = (m.match(/matrix3d\\(([^)]*)\\)/) || [, ''])[1].split(',').map(Number);
           return { first, lidSin: v.length > 6 ? v[6] : null, lidOpen: kase.classList.contains('bc-open') };}""")
@@ -16401,6 +16408,305 @@ def check_b317_sflare(br):
 
 
 # --------------------------------------------------------------------------
+# BUILD 317, BADGE ROUND - the briefcase and the token.
+# --------------------------------------------------------------------------
+# Every timer, frame and animation on a fake clock: the page's own timers
+# advance only when the check says so, and every CSS and Web Animation is
+# paused and seeked to the same instant, so a loaded machine cannot move a
+# frame (the recorders' method, tools/record-hundo.py).
+_SEEK = """(t) => { const M = window.__t0s = window.__t0s || new WeakMap();
+  document.getAnimations().forEach(an => {
+    if(!M.has(an)) M.set(an, { at: t, from: an.currentTime || 0, done: false });
+    const s = M.get(an); if(s.done) return;
+    const want = s.from + (t - s.at) * 1000;
+    let end = Infinity; try{ end = an.effect.getComputedTiming().endTime; }catch(e){}
+    if(want >= end && isFinite(end)){ s.done = true; try{ an.finish(); }catch(e){} return; }
+    if(an.playState !== 'paused') an.pause();
+    try{ an.currentTime = want; }catch(e){} }); }"""
+
+
+class _Stepper:
+    def __init__(self, pg):
+        self.pg, self.t = pg, 0.0
+        pg.clock.install()
+        pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+
+    def step(self, dt):
+        t0 = self.t
+        self.t += dt
+        self.pg.clock.run_for(max(1, int(round(self.t * 1000)) - int(round(t0 * 1000))))
+        self.pg.evaluate(_SEEK, self.t)
+
+
+def _lum_stats(png, box):
+    from PIL import Image, ImageStat
+    im = Image.open(io.BytesIO(png)).convert("L")
+    x0, y0, x1, y1 = [int(round(v)) for v in box]
+    x0, y0 = max(0, x0), max(0, y0)
+    x1, y1 = min(im.width, x1), min(im.height, y1)
+    if x1 - x0 < 4 or y1 - y0 < 4:
+        return None
+    st = ImageStat.Stat(im.crop((x0, y0, x1, y1)))
+    return {"mean": round(st.mean[0], 1), "sd": round(st.stddev[0], 1)}
+
+
+def check_b317_badgecase(br):
+    """Build 317, badge round. Madison: "when you open the briefcase, the lid
+    disappears, I think the lid should still be there so it gets that
+    briefcase feel ... Ensure the badges when spinning and being placed and
+    everything really give off that 3d look ... Ensure the edges of the
+    badge look clean and not ridged or rough ... keeping that briefcase
+    feel app wide ... in the badge tab, it's a different shape than what you
+    get in the cutscene, in the profile thing under the challenges it's
+    different". Written against b6cd249, where every check here fails:
+      - the open lid: it faded to nothing there (opacity 0 after 118deg);
+        here it stands behind the tray, lining out, and the pixels say so;
+      - the token's edge: a flat drawing turned edge-on is a hairline; a
+        token with a thickness keeps a band of metal - measured against the
+        face's own width at that angle;
+      - one case: the cutscene, the Badges tab and the Profile card each
+        build their case from the same .nova-case-* parts, and the parts'
+        computed materials are identical across the three;
+      - clean edges: no LIGHT copy of the outline drawn offset from it (the
+        ghost lines round the old star, bolt and burst), and in pixels,
+        nothing light in the band just outside a token's top-left edge;
+      - Reduce motion gets the case, still: open, the badge seated, named,
+        and it ends by itself;
+      - and it is longer ("longer is better"): a single badge's scene ran
+        ~13.4s; it is over 15s now, on the virtual clock."""
+    print("\n317b. the badge case: the lid stays open, a token with an edge, one case everywhere, clean edges, a still scene")
+    for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 2), (834, 1194, "iPad Pro 11", 2)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+        pg.evaluate("""() => { const units = topicsIn(QUESTIONS).filter(u => u !== 'Identity Crimes');
+          store.unitPerfects = store.unitPerfects || {}; units.slice(0, 4).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+          store.unitPerfects['Identity Crimes'] = badgeThresholdFor('Identity Crimes');
+          store.pendingBadgeUnlocks = []; theme.muteBanners = false; theme.reduceMotion = false; applyTheme();
+          document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert').forEach(n => n.remove());
+          const st = document.createElement('style'); st.textContent = '.bc-rays, .bc-glow, .bc-coin-shadow{ display:none !important; } body.b317b-nofly .bc-flyer{ visibility:hidden !important; }';
+          st.id = 'b317b-quiet'; document.head.appendChild(st); }""")
+        clk = _Stepper(pg)
+        pg.evaluate("() => { window.__bcDone = null; window.__bcT0 = performance.now(); playBadgeCaseScene(['Identity Crimes'], () => { window.__bcDone = performance.now() - window.__bcT0; }); }")
+        # 1. the spin: the frame nearest edge-on, and the painted width there
+        SPIN = """() => { const sp = document.querySelector('.bc-flyer .bc-spin') || document.querySelector('.bc-flyer .bc-coin');
+          const fl = document.querySelector('.bc-flyer'); if(!sp || !fl) return null;
+          const m = getComputedStyle(sp).transform; const v = (m.match(/matrix(3d)?\\(([^)]*)\\)/) || [, , ''])[2].split(',').map(Number);
+          const r = fl.getBoundingClientRect();
+          return { cos: v.length >= 16 ? Math.abs(v[0]) : (v.length === 6 ? Math.abs(v[0]) : 1), box: [r.left, r.top, r.right, r.bottom] }; }"""
+        best = None
+        rest = None
+        from PIL import Image as _I
+        while clk.t < 4.2:
+            clk.step(1 / 60)
+            s = pg.evaluate(SPIN)
+            if not s:
+                continue
+            if clk.t > 0.9 and s["cos"] < 0.1 and (best is None or s["cos"] < best["cos"]):
+                png = pg.screenshot()
+                im = _I.open(io.BytesIO(png)).convert("L")
+                x0, y0, x1, y1 = [int(round(v * dpr)) for v in s["box"]]
+                x0, y0, x1, y1 = max(0, x0), max(0, y0), min(im.width, x1), min(im.height, y1)
+                crop = im.crop((x0, y0, x1, y1))
+                edge = max(crop.crop((0, 0, crop.width, 3)).getextrema()[1], crop.crop((0, 0, 3, crop.height)).getextrema()[1])
+                bb = crop.point(lambda p, e=edge: 255 if p > e + 28 else 0).getbbox()
+                best = {"cos": round(s["cos"], 4), "t": round(clk.t, 3), "w": (bb[2] - bb[0]) if bb else 0, "h": (bb[3] - bb[1]) if bb else 0}
+        # at rest, facing you: the face's own width for its height
+        for _ in range(20):
+            clk.step(1 / 30)
+        s = pg.evaluate(SPIN)
+        if s:
+            png = pg.screenshot()
+            im = _I.open(io.BytesIO(png)).convert("L")
+            x0, y0, x1, y1 = [int(round(v * dpr)) for v in s["box"]]
+            crop = im.crop((max(0, x0), max(0, y0), min(im.width, x1), min(im.height, y1)))
+            edge = max(crop.crop((0, 0, crop.width, 3)).getextrema()[1], crop.crop((0, 0, 3, crop.height)).getextrema()[1])
+            bb = crop.point(lambda p, e=edge: 255 if p > e + 28 else 0).getbbox()
+            rest = {"cos": round(s["cos"], 3), "w": (bb[2] - bb[0]) if bb else 0, "h": (bb[3] - bb[1]) if bb else 0}
+        ok_edge = False
+        if best and rest and best["h"] > 20 and rest["h"] > 20:
+            aspect = rest["w"] / rest["h"]
+            ok_edge = best["w"] / best["h"] >= aspect * best["cos"] + 0.045 and best["w"] >= 6 * dpr
+        check(f"{dev}: the token has a band of edge as it turns - edge-on it keeps its thickness (more than the face's own width at that angle)",
+              ok_edge, {"edge-on": best, "rest": rest})
+        # 2. on to the open case: the lid, once it has stopped moving
+        opened = None
+        for _ in range(400):
+            clk.step(0.1)
+            if pg.evaluate("() => !!document.querySelector('.bc-case.bc-open')"):
+                opened = clk.t
+                break
+        for _ in range(30):
+            clk.step(0.1)
+        lid = pg.evaluate("""() => { const lid = document.querySelector('.bc-lid'); const face = document.querySelector('.bc-lid-in') || lid;
+          const tray = document.querySelector('.bc-tray') || document.querySelector('.bc-body') || document.querySelector('.bc-lining');
+          if(!lid || !face || !tray) return null;
+          let op = 1; for(let e = face; e && e !== document.body; e = e.parentElement) op *= parseFloat(getComputedStyle(e).opacity);
+          const f = face.getBoundingClientRect(), t = tray.getBoundingClientRect();
+          return { op: Math.round(op * 100) / 100, face: [f.left, f.top, f.right, f.bottom], tray: [t.left, t.top, t.right, t.bottom],
+                   area: Math.round(f.width * f.height), trayArea: Math.round(t.width * t.height) }; }""")
+        stats = ref = None
+        if lid:
+            fb = lid["face"]
+            cx0, cy0 = fb[0] + (fb[2] - fb[0]) * .2, fb[1] + (fb[3] - fb[1]) * .2
+            cx1, cy1 = fb[2] - (fb[2] - fb[0]) * .2, fb[3] - (fb[3] - fb[1]) * .2
+            pg.evaluate("() => document.body.classList.add('b317b-nofly')")
+            png = pg.screenshot()
+            pg.evaluate("() => document.body.classList.remove('b317b-nofly')")
+            stats = _lum_stats(png, [v * dpr for v in (cx0, cy0, cx1, cy1)])
+            # the plain backdrop beside the case, at the same height
+            ref = _lum_stats(png, [v * dpr for v in (2, cy0, max(6, min(fb[0], lid["tray"][0]) - 4), cy1)])
+        seen = bool(stats and ref) and (abs(stats["mean"] - ref["mean"]) >= 8 or stats["sd"] >= ref["sd"] + 4)
+        check(f"{dev}: once the case is open the lid is still there, standing behind the tray with its lining towards you",
+              bool(lid) and opened is not None and lid["op"] >= 0.99 and lid["area"] >= 0.3 * lid["trayArea"]
+              and lid["face"][3] <= lid["tray"][1] + 0.12 * (lid["tray"][3] - lid["tray"][1]) and seen,
+              {"opened": opened, "lid": lid, "pixels": stats, "backdrop": ref})
+        # 3. one case: the cutscene's parts and materials, read now
+        MAT = """(root) => { const r = typeof root === 'string' ? document.querySelector(root) : root; if(!r) return null;
+          const q = s => r.matches(s) ? r : r.querySelector(s); const all = s => [...r.querySelectorAll(s)];
+          const bg = e => e ? getComputedStyle(e).backgroundImage : null;
+          const first = (str, fn) => { if(!str) return null; const i = str.indexOf(fn + '('); if(i < 0) return null; let d = 0;
+            for(let j = i; j < str.length; j++){ if(str[j] === '(') d++; else if(str[j] === ')'){ d--; if(!d) return str.slice(i, j + 1); } } return null; };
+          const shell = r.matches('.nova-case-shell, .nova-case-trimmed') ? r : q('.nova-case-shell');
+          const sb = bg(shell) || '';
+          return { root: r.matches('.nova-case') || !!r.closest('.nova-case') || !!r.querySelector('.nova-case'),
+            lining: first(bg(q('.nova-case-lining')), 'radial-gradient'), latches: all('.nova-case-latch').length,
+            latch: bg(all('.nova-case-latch')[0]), handle: bg(q('.nova-case-handle')),
+            grain: /data:image\\/png;base64/.test(sb), leather: first(sb.slice(sb.indexOf('160deg') - 20), 'linear-gradient') }; }"""
+        cut = pg.evaluate(MAT, ".bc-scene")
+        while clk.t < 40 and not pg.evaluate("() => window.__bcDone != null"):
+            clk.step(0.25)
+        took = pg.evaluate("() => window.__bcDone")
+        check(f"{dev}: it is longer - one badge's scene runs over 15s (it was ~13.4s)", took is not None and took >= 15000, took)
+        ctx.close()
+        # the Badges tab and the Profile card, same account
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=1)
+        r = pg.evaluate("""async (MAT) => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          try{
+          const mat = eval(MAT);
+          const units = topicsIn(QUESTIONS); units.slice(0, 5).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+          theme.muteBanners = true; store.pendingBadgeUnlocks = [];
+          store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
+          document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert').forEach(n => n.remove());
+          showRanksScreen('badges'); await wait(900);
+          out.tab = mat(document.querySelector('.badges-tab .badge-case'));
+          /* tap-to-view still works through the case */
+          const tile = document.querySelector('.badges-tab .badge-tile'); if(tile){ tile.click(); await wait(500); }
+          out.tapCard = !!document.querySelector('.unlock-card-badge .unlock-card-art svg');
+          document.querySelectorAll('.invite-overlay, .unlock-detail, .unlockdetail-overlay').forEach(n => n.remove());
+          showProfile('profile'); await wait(900);
+          out.pf = mat(document.querySelector('.profile-hero .pf-case'));
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""", MAT)
+        tab, pf = r.get("tab") or {}, r.get("pf") or {}
+        same = lambda k: cut and cut.get(k) and cut.get(k) == tab.get(k) == pf.get(k)
+        check(f"{dev}: the cutscene, the Badges tab and the Profile card are one case - the same parts (lining, two latches, handle) in each",
+              bool(cut) and all(x.get("root") and x.get("lining") and x.get("latches", 0) >= 2 and x.get("handle") for x in (cut, tab, pf)),
+              {"cut": cut and {k: cut[k] for k in ("root", "latches")}, "tab": {k: tab.get(k) for k in ("root", "latches")}, "pf": {k: pf.get(k) for k in ("root", "latches")}})
+        check(f"{dev}: ...in the same materials: one lining, one metal for the latches, one handle, one grained leather",
+              same("lining") and same("latch") and same("handle") and same("leather") and all(x.get("grain") for x in (cut, tab, pf)),
+              {"lining": [x and (x.get("lining") or "")[:48] for x in (cut, tab, pf)], "leather": [x and (x.get("leather") or "")[:40] for x in (cut, tab, pf)]})
+        check(f"{dev}: a badge in the case still opens its card when tapped", r.get("tapCard") is True and not r.get("threw"), r.get("threw") or r.get("tapCard"))
+        ctx.close()
+    # 4. clean edges, every badge: no light copy of the outline drawn off it,
+    #    and nothing light just outside a token's top-left edge
+    ctx, pg = booted(br, 900, 900, seed=USED_ACCOUNT, dpr=2)
+    ghosts = pg.evaluate("""() => { const out = [];
+      topicsIn(QUESTIONS).forEach(u => { const d = badgeShapeFor(u).d; const sv = buildUnitBadgeSVG(u, true);
+        const lum = c => { if(!c || c === 'none' || /^url/.test(c)) return null; const m = String(c).match(/[\\d.]+/g); if(!m) return null;
+          const h = c.charAt(0) === '#' ? [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)] : m.slice(0, 3).map(Number);
+          return (0.3 * h[0] + 0.59 * h[1] + 0.11 * h[2]) / 255; };
+        [...sv.querySelectorAll('path')].filter(p => p.getAttribute('d') === d && /translate\\(\\s*-?[\\d.]+[ ,]+-?[\\d.]+\\s*\\)/.test(p.getAttribute('transform') || '')
+            && !/scale/.test(p.getAttribute('transform') || '') && !p.closest('defs, clipPath, mask'))
+          .forEach(p => { const l = Math.max(lum(p.getAttribute('stroke')) || 0, lum(p.getAttribute('fill')) || 0);
+            if(l > 0.45) out.push(u + ': ' + (p.getAttribute('stroke') || p.getAttribute('fill')) + ' ' + p.getAttribute('transform')); }); });
+      return out; }""")
+    check("no badge draws a light copy of its own outline shifted off it (the ghost lines round the star, the bolt, the burst)", ghosts == [], ghosts[:6])
+    ring = []
+    from PIL import Image as _I, ImageFilter as _F, ImageChops as _C
+    for u in pg.evaluate("() => topicsIn(QUESTIONS)"):
+        shots = []
+        for earned in ("true", "false"):
+            pg.evaluate("""([u, e]) => { document.getElementById('b317-edge')?.remove(); const h = document.createElement('div'); h.id = 'b317-edge';
+              h.style.cssText = 'position:fixed;left:0;top:0;width:300px;height:300px;z-index:99999;background:#171A1F';
+              const s = buildUnitBadgeSVG(u, e === 'true'); s.style.cssText = 'width:300px;height:300px;display:block'; h.appendChild(s); document.body.appendChild(h); }""", [u, earned])
+            shots.append(_I.open(io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 300, "height": 300}))).convert("L"))
+        tok = _C.difference(shots[0], shots[1]).point(lambda p: 255 if p > 14 else 0)
+        bb = tok.getbbox()
+        if not bb:
+            ring.append((u, None)); continue
+        cxp, cyp = (bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2
+        near = tok.filter(_F.MaxFilter(5)); far = tok.filter(_F.MaxFilter(21))
+        band = _C.subtract(far, near)
+        img = shots[0]
+        bg = img.getpixel((4, 4))
+        vals = []
+        bp = band.load(); ip = img.load()
+        for y in range(0, int(cyp)):
+            for x in range(0, int(cxp)):
+                if bp[x, y]:
+                    vals.append(ip[x, y])
+        vals.sort()
+        p98 = vals[int(len(vals) * .98)] - bg if vals else None
+        ring.append((u, p98))
+    worst = max((v for _, v in ring if v is not None), default=None)
+    # +61 levels on every badge of b6cd249 (its offset lip lines); the
+    # worst here is the slot's own mid-tone lip inside a concave shape
+    # (the C's opening, the valley between the peaks), about +12.
+    check("in pixels: nothing light in the band just outside a token's top-left edge, on any of the sixteen (no ghost line)",
+          worst is not None and worst <= 20 and all(v is not None for _, v in ring), sorted(ring, key=lambda x: -(x[1] or 99))[:5])
+    ctx.close()
+    # 5. two badges in one run: the second token waits up over the case,
+    #    not on the slot the first one landed in (the first flight's
+    #    animation is filled forwards and held the flyer there - caught on
+    #    a recording of this build, so it guards a fix of this round and
+    #    passes on b6cd249 too, which had no Web Animations to hold it)
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("""() => { ['Identity Crimes', 'Penal Code'].forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+      theme.muteBanners = false; theme.reduceMotion = false; applyTheme();
+      document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert').forEach(n => n.remove()); }""")
+    clk = _Stepper(pg)
+    pg.evaluate("() => { window.__bc2 = 0; playBadgeCaseScene(['Identity Crimes', 'Penal Code'], () => {}); }")
+    seen = None
+    for _ in range(260):
+        clk.step(0.1)
+        r2 = pg.evaluate("""() => { const n = document.querySelector('.bc-flyer .bc-face-art, .bc-flyer svg'); const f = document.querySelector('.bc-flyer');
+          const w = document.querySelector('.bc-words .bc-name, .bc-name');
+          const nm = [...document.querySelectorAll('.bc-words .bc-name')].map(x => x.textContent).join('|');
+          if(!f || nm.indexOf('Penal Code') < 0) return null;
+          const b = f.getBoundingClientRect(); return { cy: Math.round(b.top + b.height / 2), op: parseFloat(getComputedStyle(f).opacity), h: innerHeight }; }""")
+        if r2 and r2["op"] > 0.9:
+            seen = r2
+            break
+    check("two badges in one run: the second token waits up over the case before its drop, not on the first one's slot",
+          bool(seen) and seen["cy"] < 0.45 * seen["h"], seen)
+    ctx.close()
+    # 6. Reduce motion: the case, still
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    rm = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+      store.unitPerfects['Identity Crimes'] = badgeThresholdFor('Identity Crimes');
+      theme.muteBanners = false; theme.reduceMotion = true; applyTheme();
+      document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert').forEach(n => n.remove());
+      let doneAt = null; const t0 = performance.now();
+      playBadgeCaseScene(['Identity Crimes'], () => { doneAt = performance.now() - t0; });
+      await wait(700);
+      const ov = document.querySelector('.bc-scene');
+      out.scene = !!ov; out.doneEarly = doneAt;
+      out.open = !!document.querySelector('.bc-case.bc-open');
+      const slot = [...document.querySelectorAll('.bc-slot.is-held')].find(s => s.querySelector('svg.badge-art.is-earned') && s.classList.contains('is-new'));
+      out.seated = !!slot;
+      out.named = ((document.querySelector('.bc-words.bc-words-in') || {}).textContent || '');
+      out.moving = ov ? document.getAnimations().filter(a => a.playState === 'running' && a.effect && a.effect.target && ov.contains(a.effect.target)).length : -1;
+      for(let i = 0; i < 80 && doneAt == null; i++) await wait(100);
+      out.done = doneAt;
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    check("Reduce motion: the case is up at once, open, the new badge already in its slot and named, nothing moving - and it ends by itself",
+          rm.get("scene") and rm.get("doneEarly") is None and rm.get("open") and rm.get("seated") and "Identity Crimes" in (rm.get("named") or "")
+          and rm.get("moving") == 0 and rm.get("done") is not None and 3000 <= rm["done"] <= 7000, rm)
+    ctx.close()
+
+
+# --------------------------------------------------------------------------
 B317_RING_JS = r"""async (a) => {
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const out = {};
@@ -16731,6 +17037,7 @@ def main():
             check_b317_supernova(br)
             check_b317_flow(br)
             check_b317_sflare(br)
+            check_b317_badgecase(br)
             check_b317_focusring(br)
             check_b317_roadmap_chips(br)
         finally:
