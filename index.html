@@ -12150,6 +12150,12 @@
     .hc-name{ font-size:.8rem; }
     .hc-text{ font-size:1.02rem; }
   }
+  /* the smallest screens (a 4-inch phone, an SE in a Safari tab, any phone
+     on its side) take a step down, so the longest answer still fits whole */
+  @media (max-width:21rem), (max-height:36rem){
+    .hc-name{ font-size:.64rem; margin-bottom:.18rem; }
+    .hc-text{ font-size:.79rem; line-height:1.32; }
+  }
   /* TAPPING THE PLANET (planetTapFx): overlays over the sphere (centre
      180,150 and radius 52 in the 0 -12 360 342 viewBox), a halo off its
      rim and the two rings' outlines. Transform and opacity only. */
@@ -75104,9 +75110,15 @@ function homeCaptionShow(panel, item, key){
       const sp = document.createElement("span"); sp.className = "hc-s"; sp.textContent = t; tx.appendChild(sp);
     });
     el.append(nm, " ", tx);
+    /* what a run of taps has faded stays faded until the caption goes, so
+       a short answer after a long one does not bring the greeting back
+       for a moment and take it away again */
+    const was = live ? (panel.classList.contains("hc-over-title") ? 2 : panel.classList.contains("hc-over-greeting") ? 1 : 0) : 0;
     if(live) homeCaptionRetire(live);
     box.appendChild(el);
-    homeCaptionCover(panel, homeCaptionPlace(panel, el));
+    const mode = homeCaptionPlace(panel, el);
+    const need = mode === "over-title" ? 2 : mode === "over-greeting" ? 1 : 0;
+    homeCaptionCover(panel, ["", "over-greeting", "over-title"][Math.max(was, need)]);
     /* placing it measured it, so its first look is already computed and
        the fade-in runs from this very frame - the words arrive with the
        touch, not a frame after it */
