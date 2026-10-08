@@ -25576,6 +25576,7 @@
     opacity:0; transform:translateY(12px) scale(.96); transition:opacity 1.1s ease .12s, transform 1.5s cubic-bezier(.2,.8,.2,1) .12s; }
   .sf-title-s{ margin-top:.6rem !important; font-size:.95rem; color:rgba(255,246,232,.78); text-wrap:balance; opacity:0; transition:opacity 1s ease .55s; }
   .sf-titled :is(.sf-title-k, .sf-title-n, .sf-title-s){ opacity:1; transform:none; }
+  .sf-titled .sf-title-s.is-swap{ opacity:0; transition:opacity .3s ease; }
   .sf-small .sf-title-n{ font-size:2.2rem; letter-spacing:.04em; }
   @media (min-width:40rem){ .sf-cap-n{ font-size:2.1rem; } .sf-title-n{ font-size:3.3rem; } .sf-small .sf-title-n{ font-size:2.6rem; } }
   /* THE END, ONCE: the stage, the light, the sky and the words fade
@@ -60160,7 +60161,7 @@ function ringDrawHeld(since){
     if(document.getElementById("genprofile-overlay") || document.getElementById("splashscreen") ||
        document.getElementById("tour-overlay") || document.getElementById("supernova-cutscene") ||
        document.getElementById("badge-cutscene") || document.getElementById("vroom-cutscene") ||
-       document.querySelector(".rs-spot, .xs-scene, .scene-bridge, .tier-cutscene")) return true;
+       document.querySelector(".rs-spot, .sf-scene, .scene-bridge, .tier-cutscene")) return true;
     if(homeUnlockPlaying) return true;
     if(typeof whatsNewHolds === "function" && whatsNewHolds()) return true;
   }catch(e){}
@@ -79932,7 +79933,9 @@ function playFirstFlaresScene(color, done){
   });
   S.later(3700, () => S.title("SECRET FLARE FOUND", MYSTERY_NAME[color], n + " of " + VOID_FLARES.length + " in the sky"));
   S.step(6100, "sf-thread");
-  S.later(6500, () => { S.overlay.querySelector(".sf-title-s").textContent = n + " of " + VOID_FLARES.length + " in the sky · " + sub2; });
+  /* the line under it fades over to how many are left */
+  S.later(6300, () => { const ts = S.overlay.querySelector(".sf-title-s"); ts.classList.add("is-swap");
+    S.later(340, () => { ts.textContent = n + " of " + VOID_FLARES.length + " in the sky · " + sub2; ts.classList.remove("is-swap"); }); });
   S.later(8900, S.endScene);
   return S.handle;
 }
