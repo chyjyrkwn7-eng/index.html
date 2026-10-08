@@ -51356,54 +51356,84 @@ function badgeShapeFor(unitName){
 
 let badgeSvgSeq = 0;
 
+/* ---- A STRUCK BADGE, BUILT IN BANDS (build 317, badge round) ----
+   "Ensure the edges of the badge look clean and not ridged or rough ...
+   They need to look a tad bit more real ... rough around the edges and
+   the surface. They don't look detailed and legit enough. I want that
+   shine on them, that 3d feel, yeah still feel like a token/badge."
+   Measured on the old drawing, the roughness was construction, not
+   resolution: every edge that was not the outline itself was a COPY of
+   the outline nudged sideways (the slot's lip, the plate's bevel, the
+   band's catch-light), and a nudged copy of a concave shape crosses its
+   own inside - the star, the bolt and the burst each grew ghost lines -
+   while the token was scaled about the FRAME's centre and the plate
+   about the shape's, so the bolt and the ring sat lopsided in their
+   holes and the silver was thick at one tip and a hairline at the next.
+
+   Now every band is a uniform distance from the outline, by one rule: a
+   stroke is symmetric about its path, so a stroke of width 2r painted
+   with the fill covers exactly "within r outside the outline", and the
+   same stroke clipped to the outline covers exactly "within r inside
+   it". Painted outermost first, those give the slot's lip and wall, the
+   dark keyline, the silver rim, the plate's dark edge and the enamel's
+   own shade as concentric rings of even width round ANY shape - concave
+   corners included, joins round - with no copy nudged anywhere and no
+   filter. The recipe is unchanged (keyline, silver band, plates with
+   their dark edge, silver channels, a slot cut to the outline); what is
+   new is that each of those is now a surface lit from the top-left:
+     - the rim is a rounded piece of polished metal: its outer slope
+       catches the light at the top-left and turns away at the
+       bottom-right, its inner slope the other way round, with a bright
+       crest between them and one soft specular where the light is;
+     - the enamel is seated BELOW the rim: the rim's shade falls on it
+       along the top-left, its far edge picks up a little light, and one
+       broad soft bloom sits at its top - a lacquer, never a streak
+       ("too shiny" came back twice);
+     - each channel is a bar of the same metal, lit on its top or left
+       face, throwing a little shade onto the enamel beside it;
+     - the token sits in its slot with an even gap all the way round
+       (both scaled about the shape's own centre), its shadow in the gap.
+   Every unit is in the token's own units; BADGE_GEOM is the whole of
+   the proportions. */
+const BADGE_GEOM = {
+  scale: .86,   /* the token in its frame, about the shape's own centre (the old size) */
+  key: 6.5,     /* the dark keyline's outer edge, outside the outline */
+  metal: 4.5,   /* the silver's outer edge, outside the outline */
+  inner: 4.4,   /* how far the silver runs inside it */
+  edge: 2.0,    /* the plate's dark edge, inside the silver */
+  gap: 1.7,     /* the slot's clearance round a seated token */
+  lip: 1.2,     /* the lining's lit edge round the hole */
+  wall: 2.8     /* an empty hole's wall, inside its lip */
+};
+/* Polished silver: a ramp with the bright-dark-bright of a reflected
+   room in it (the contrast is what reads as metal and not grey paint),
+   and the grey badge's own neutral version - no blue in it. */
+const BADGE_METAL = [[0, "#EEF2F6"], [.18, "#D3DAE2"], [.36, "#A6B1BD"], [.47, "#6E7A87"], [.6, "#7C8895"], [.78, "#C6CED7"], [.9, "#E3E8EE"], [1, "#8C98A4"]];
+const BADGE_METAL_GREY = [[0, "#D6D7D8"], [.18, "#BBBDBF"], [.36, "#949699"], [.47, "#626568"], [.6, "#6C6F72"], [.78, "#AEB0B2"], [.9, "#C6C8CA"], [1, "#7E8184"]];
+/* A channel's bar, across its width: lit face, crest, shaded face. */
+const BADGE_BAR = [[0, "#F2F5F8"], [.34, "#CDD5DE"], [.56, "#8F9BA8"], [1, "#A8B3BF"]];
+const BADGE_BAR_GREY = [[0, "#D9DADB"], [.34, "#B4B6B8"], [.56, "#76797C"], [1, "#8B8E91"]];
+
 /* EVERY BADGE INSIDE ITS OWN FRAME (build 270). "The top of the
    multiculturalism and human relations badge is like cutoff ... ensure
-   it's fixed everywhere though." The trefoil's top lobe runs to y=-7.5
-   once its keyline is drawn, and Victims of Crime's to -5.5, in a 0-100
-   viewBox - and an svg clips at its viewBox, so both lost their tops on
-   the unit card, in the case and on the Badges tab alike. Each outline is
-   measured once (cached by its path) and the frame grows, square and
-   centred on 50,50, to hold it with room for the keyline, so the shape
+   it's fixed everywhere though." The trefoil's top lobe runs past the
+   0-100 viewBox once its keyline is drawn, and an svg clips at its
+   viewBox. Each outline is measured once (cached by its path) and the
+   frame grows, square and centred on 50,50, to hold it, so the shape
    only shrinks as much as it has to and every other badge keeps its
    0-100 frame exactly. One builder draws every badge, so this is every
-   place a badge appears. */
+   place a badge appears.
+   Build 317 (badge round): the frame holds what is really drawn - the
+   token and its slot scaled about the shape's own centre, out to the
+   slot's lip - rather than the outline plus a flat margin. */
 const BADGE_VIEWBOX_CACHE = {};
-function badgeViewBoxFor(d){
-  if(BADGE_VIEWBOX_CACHE[d]) return BADGE_VIEWBOX_CACHE[d];
-  let vb = "0 0 100 100";
+const BADGE_BBOX_CACHE = {};
+const BADGE_CENTRE_OF = {};
+Object.keys(BADGE_SHAPE).forEach(k => { BADGE_CENTRE_OF[BADGE_SHAPE[k].d] = BADGE_SHAPE[k].c; });
+/* One host, every outline asked for in it, one layout. */
+function badgeMeasure(ds){
   try{
     const NS = "http://www.w3.org/2000/svg";
-    const host = document.createElementNS(NS, "svg");
-    host.setAttribute("viewBox", "0 0 100 100");
-    host.setAttribute("style", "position:absolute;left:-9999px;top:0;width:100px;height:100px;visibility:hidden");
-    const p = document.createElementNS(NS, "path");
-    p.setAttribute("d", d);
-    host.appendChild(p);
-    (document.body || document.documentElement).appendChild(host);
-    const b = p.getBBox();
-    host.remove();
-    const m = 6.5; /* the keyline and the slot's lip, measured: the drawn badge reaches 6 past its outline */
-    const half = Math.max(50, 50 - (b.x - m), (b.x + b.width + m) - 50, 50 - (b.y - m), (b.y + b.height + m) - 50);
-    if(half > 50.01){
-      const h = Math.ceil(half * 10) / 10;
-      vb = (50 - h) + " " + (50 - h) + " " + (2 * h) + " " + (2 * h);
-    }
-    if(b.width) BADGE_VIEWBOX_CACHE[d] = vb;
-  }catch(e){}
-  return vb;
-}
-/* ALL SIXTEEN MEASURED AT ONCE, BEFORE ANYONE ASKS (build 288). Each
-   badgeViewBoxFor() measures its outline with getBBox(), and every one
-   of those forces a fresh layout of the whole document - sixteen of them
-   back to back on the first results screen of a session, ~80ms on a
-   throttled phone, right in the middle of the reveal. One host, every
-   outline in it, one layout, in idle time a few seconds after launch;
-   the per-shape path stays for anything not warmed yet. */
-function warmBadgeViewBoxes(){
-  try{
-    const NS = "http://www.w3.org/2000/svg";
-    const ds = Object.keys(BADGE_SHAPE).map(k => BADGE_SHAPE[k] && BADGE_SHAPE[k].d).filter(d => d && !BADGE_VIEWBOX_CACHE[d]);
-    if(!ds.length) return;
     const host = document.createElementNS(NS, "svg");
     host.setAttribute("viewBox", "0 0 100 100");
     host.setAttribute("style", "position:absolute;left:-9999px;top:0;width:100px;height:100px;visibility:hidden");
@@ -51411,18 +51441,41 @@ function warmBadgeViewBoxes(){
     (document.body || document.documentElement).appendChild(host);
     const boxes = paths.map(p => { try{ return p.getBBox(); }catch(e){ return null; } });
     host.remove();
-    const m = 6.5;
-    ds.forEach((d, i) => {
-      const b = boxes[i];
-      if(!b || !b.width) return;
-      let vb = "0 0 100 100";
-      const half = Math.max(50, 50 - (b.x - m), (b.x + b.width + m) - 50, 50 - (b.y - m), (b.y + b.height + m) - 50);
-      if(half > 50.01){
-        const h = Math.ceil(half * 10) / 10;
-        vb = (50 - h) + " " + (50 - h) + " " + (2 * h) + " " + (2 * h);
-      }
-      BADGE_VIEWBOX_CACHE[d] = vb;
-    });
+    ds.forEach((d, i) => { const b = boxes[i]; if(b && b.width) BADGE_BBOX_CACHE[d] = { x: b.x, y: b.y, w: b.width, h: b.height }; });
+  }catch(e){}
+}
+function badgeBBoxFor(d){
+  if(!BADGE_BBOX_CACHE[d]) badgeMeasure([d]);
+  return BADGE_BBOX_CACHE[d] || null;
+}
+function badgeViewBoxFor(d){
+  if(BADGE_VIEWBOX_CACHE[d]) return BADGE_VIEWBOX_CACHE[d];
+  const b = badgeBBoxFor(d);
+  if(!b) return "0 0 100 100";
+  const c = BADGE_CENTRE_OF[d] || [b.x + b.w / 2, b.y + b.h / 2];
+  const S = BADGE_GEOM.scale, ext = S * (BADGE_GEOM.key + BADGE_GEOM.gap + BADGE_GEOM.lip) + .8;
+  const x0 = c[0] + S * (b.x - c[0]) - ext, x1 = c[0] + S * (b.x + b.w - c[0]) + ext;
+  const y0 = c[1] + S * (b.y - c[1]) - ext, y1 = c[1] + S * (b.y + b.h - c[1]) + ext;
+  const half = Math.max(50, 50 - x0, x1 - 50, 50 - y0, y1 - 50);
+  let vb = "0 0 100 100";
+  if(half > 50.01){
+    const h = Math.ceil(half * 10) / 10;
+    vb = (50 - h) + " " + (50 - h) + " " + (2 * h) + " " + (2 * h);
+  }
+  BADGE_VIEWBOX_CACHE[d] = vb;
+  return vb;
+}
+/* ALL SIXTEEN MEASURED AT ONCE, BEFORE ANYONE ASKS (build 288). Each
+   measurement forces a fresh layout of the whole document - sixteen of
+   them back to back on the first results screen of a session, ~80ms on
+   a throttled phone, right in the middle of the reveal. One host, every
+   outline in it, one layout, in idle time a few seconds after launch;
+   the per-shape path stays for anything not warmed yet. */
+function warmBadgeViewBoxes(){
+  try{
+    const ds = Object.keys(BADGE_SHAPE).map(k => BADGE_SHAPE[k].d).filter(d => !BADGE_BBOX_CACHE[d]);
+    if(ds.length) badgeMeasure(ds);
+    Object.keys(BADGE_SHAPE).forEach(k => badgeViewBoxFor(BADGE_SHAPE[k].d));
   }catch(e){}
 }
 setTimeout(() => {
@@ -51430,9 +51483,14 @@ setTimeout(() => {
   const go = () => { warmBadgeViewBoxes(); try{ buildAvatarCharSVGSafe((store && store.avatarChar) || AVATAR_CHARACTERS[0].id); }catch(e){} };
   if(typeof window.requestIdleCallback === "function") window.requestIdleCallback(go, { timeout: 4000 }); else go();
 }, 4000);
-/* earned: true draws the badge, false the empty slot, and "grey" (build
-   314) the badge's FORM with nothing of its colour - see below. */
-function buildUnitBadgeSVG(unitName, earned){
+
+/* earned: true draws the badge in its slot, false the empty slot, and
+   "grey" (build 314) the badge's FORM with nothing of its colour - see
+   below. opts.slot === false draws the token alone, no slot (the badge
+   case cutscene's coin, which brings its own shadow); same frame, so a
+   token laid over a slot lands on it to the pixel. */
+function buildUnitBadgeSVG(unitName, earned, opts){
+  opts = opts || {};
   const NS = "http://www.w3.org/2000/svg";
   const shape = badgeShapeFor(unitName);
   /* A BADGE NOT YET EARNED IS SEEN, NOT SHOWN (build 314). "The badges
@@ -51444,25 +51502,27 @@ function buildUnitBadgeSVG(unitName, earned){
      the prize") and the case showed only the hole. Now both show the
      piece itself - its metal, its bevels, its channels, sitting in its
      slot - struck in plain grey and dimmed: the shape is a hint, the
-     colour is the reward. No unit colour reaches the drawing at all. */
+     colour is the reward. No unit colour reaches the drawing at all.
+     (Not a local called `theme` - that shadows the app's settings.) */
   const grey = earned === "grey";
-  const theme = grey ? { p: "#6B6E73" } : badgeThemeFor(unitName);
+  const bt = grey ? { p: "#6B6E73" } : badgeThemeFor(unitName);
   const outline = shape.d;
   const cx = shape.c[0], cy = shape.c[1];
+  const G = BADGE_GEOM;
   const uid = "bdg" + (++badgeSvgSeq);
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("viewBox", badgeViewBoxFor(outline));
-  svg.setAttribute("class", "badge-art" + (earned === true ? " is-earned" : " is-locked") + (grey ? " is-grey" : ""));
+  svg.setAttribute("class", "badge-art" + (earned === true ? " is-earned" : " is-locked") + (grey ? " is-grey" : "") + (opts.slot === false ? " is-token" : ""));
   svg.setAttribute("aria-hidden", "true");
 
   const defs = document.createElementNS(NS, "defs");
   svg.appendChild(defs);
-  function clip(id, d, transform){
+  function clip(id, d, rule){
     const cp = document.createElementNS(NS, "clipPath");
     cp.setAttribute("id", id);
     const pa = document.createElementNS(NS, "path");
     pa.setAttribute("d", d);
-    if(transform) pa.setAttribute("transform", transform);
+    if(rule) pa.setAttribute("clip-rule", rule);
     cp.appendChild(pa); defs.appendChild(cp);
     return "url(#" + id + ")";
   }
@@ -51479,263 +51539,162 @@ function buildUnitBadgeSVG(unitName, earned){
     (parent || svg).appendChild(g);
     return g;
   }
-  function ramp(id, stops, x1, y1, x2, y2){
+  function stopsInto(g, stops){
+    stops.forEach(([o, c, a]) => {
+      const st = document.createElementNS(NS, "stop");
+      st.setAttribute("offset", String(o)); st.setAttribute("stop-color", c);
+      if(a !== undefined) st.setAttribute("stop-opacity", String(a));
+      g.appendChild(st);
+    });
+    defs.appendChild(g);
+    return "url(#" + g.getAttribute("id") + ")";
+  }
+  /* userSpaceOnUse unless told otherwise: a band is a stroke, and a
+     gradient resolved against a stroke's own box is the zero-width-box
+     trap this file has been bitten by three times. */
+  function ramp(id, stops, x1, y1, x2, y2, units){
     const g = document.createElementNS(NS, "linearGradient");
     g.setAttribute("id", id);
+    g.setAttribute("gradientUnits", units || "userSpaceOnUse");
     g.setAttribute("x1", x1); g.setAttribute("y1", y1);
     g.setAttribute("x2", x2); g.setAttribute("y2", y2);
-    stops.forEach(([o, c, a]) => {
-      const st = document.createElementNS(NS, "stop");
-      st.setAttribute("offset", String(o)); st.setAttribute("stop-color", c);
-      if(a !== undefined) st.setAttribute("stop-opacity", String(a));
-      g.appendChild(st);
-    });
-    defs.appendChild(g);
-    return "url(#" + id + ")";
+    return stopsInto(g, stops);
   }
-  function radial(id, stops, cx, cy, r){
+  function radial(id, stops, rcx, rcy, r, units){
     const g = document.createElementNS(NS, "radialGradient");
     g.setAttribute("id", id);
-    g.setAttribute("cx", cx); g.setAttribute("cy", cy); g.setAttribute("r", r);
-    stops.forEach(([o, c, a]) => {
-      const st = document.createElementNS(NS, "stop");
-      st.setAttribute("offset", String(o)); st.setAttribute("stop-color", c);
-      if(a !== undefined) st.setAttribute("stop-opacity", String(a));
-      g.appendChild(st);
-    });
-    defs.appendChild(g);
-    return "url(#" + id + ")";
+    g.setAttribute("gradientUnits", units || "userSpaceOnUse");
+    g.setAttribute("cx", rcx); g.setAttribute("cy", rcy); g.setAttribute("r", r);
+    return stopsInto(g, stops);
   }
-  /* A fine diagonal hatch, as a real <pattern>. This is the literal
-     "texture" the plates were missing: at 6% it is not a stripe you can
-     pick out, it is the surface not being perfectly smooth, which is
-     what stops a large flat colour reading as printed ink. A pattern
-     rather than a filter, because filters are the one SVG feature that
-     has bitten this app on real iOS hardware. */
-  function hatch(id){
-    const pt = document.createElementNS(NS, "pattern");
-    pt.setAttribute("id", id);
-    /* Finer and a little stronger than it was. At 4 units and 5% it was
-       below the threshold where a 5rem tile shows it at all, which is
-       most of why these still read as printed rather than struck -
-       "maybe it's missing some more texture? To really make them feel
-       like they are badges". Grain, not stripes: at 3 units the pair
-       reads as a surface at every size the app draws a badge. */
-    pt.setAttribute("width", "3"); pt.setAttribute("height", "3");
-    pt.setAttribute("patternUnits", "userSpaceOnUse");
-    pt.setAttribute("patternTransform", "rotate(38)");
-    const a = document.createElementNS(NS, "path");
-    a.setAttribute("d", "M0 0V3");
-    a.setAttribute("stroke", "#FFFFFF"); a.setAttribute("stroke-width", "1.1");
-    a.setAttribute("stroke-opacity", ".085");
-    const b = document.createElementNS(NS, "path");
-    b.setAttribute("d", "M1.5 0V3");
-    b.setAttribute("stroke", "#000000"); b.setAttribute("stroke-width", "1.1");
-    b.setAttribute("stroke-opacity", ".075");
-    pt.append(a, b); defs.appendChild(pt);
-    return "url(#" + id + ")";
+  /* A ring of even width r OUTSIDE the outline (fill + stroke), and a
+     band of even width round it either side (stroke alone; clip it to
+     the outline for the inside half). Round joins, so a corner is a
+     corner of the same width. */
+  const solid = (r, paint, parent, extra) => add(outline, Object.assign({ fill: paint, stroke: paint, "stroke-width": String(2 * r), "stroke-linejoin": "round" }, extra || {}), parent);
+  const ring = (r, paint, parent, extra) => add(outline, Object.assign({ fill: "none", stroke: paint, "stroke-width": String(2 * r), "stroke-linejoin": "round" }, extra || {}), parent);
+
+  const b = badgeBBoxFor(outline) || { x: 6, y: 6, w: 88, h: 88 };
+  /* The light comes from the top-left, across the token's own box. */
+  const X0 = b.x - G.key, Y0 = b.y - G.key, X1 = b.x + b.w + G.key, Y1 = b.y + b.h + G.key;
+  const lit = (id, stops) => ramp(id, stops, X0, Y0, X1, Y1);
+  const root = group({ transform: "translate(" + cx + " " + cy + ") scale(" + G.scale + ") translate(" + (-cx) + " " + (-cy) + ")" });
+
+  /* ---- the slot, cut into the lining ----
+     A hole lit from the top-left has its WALL in shadow along the
+     top-left and lit along the bottom-right - the opposite of a raised
+     object, and the whole reason it reads as a hole - and the lining's
+     edge round it catches the light on the far side. Each is a ring of
+     even width round the token's own outline, so a seated badge has the
+     same narrow gap all the way round. The recess is not black: it is
+     the lining seen in shadow. */
+  if(opts.slot !== false){
+    const hole = G.key + G.gap;
+    solid(hole + G.lip, lit(uid + "-lip", [[0, "#000000", .34], [.5, "#7D8896", .10], [1, "#D2E2F6", .30]]), root);
+    solid(hole, lit(uid + "-wall", [[0, "#06080B"], [.55, "#10151C"], [1, "#29323D"]]), root);
+    if(!earned){
+      /* The floor, with the overhang's shade along its top-left edge in
+         three soft steps. */
+      const fl = hole - G.wall;
+      solid(fl, lit(uid + "-f1", [[0, "#05070A"], [.6, "#121820"], [1, "#1B222B"]]), root);
+      solid(fl - 1.1, lit(uid + "-f2", [[0, "#0A0D12"], [.6, "#141A22"], [1, "#1C232C"]]), root);
+      solid(fl - 2.2, lit(uid + "-f3", [[0, "#10141A"], [.6, "#161C24"], [1, "#1E252E"]]), root);
+      return svg;
+    }
+    /* ---- ITS SHADOW IN THE SLOT (build 242) ---- down and right, inside
+       the gap: "a pin sitting in a case throws a shadow into the hole it
+       sits in". (The fill string is the one check_b242 looks for.) */
+    solid(G.key, "rgba(0,0,0,.42)", root, { transform: "translate(1 1.25)" });
   }
 
-  /* ---- the slot, cut into the tray ----
-     A recess lit from the top-left has its SHADOW on the top-left inner
-     edge and its catch-light on the bottom-right, which is the opposite
-     of a raised object and the whole reason it reads as a hole. Two
-     copies of the outline offset in opposite directions and clipped to
-     it do that without a filter - filters are the one SVG feature that
-     has bitten this app on real iOS hardware. The lip is wide and low
-     opacity so the hole reads as cut into something soft. */
-  const slotClip = clip(uid + "-slot", outline);
-  /* The floor of the hole, not a flat fill. A recess is darkest where
-     the lip overhangs it - top-left, under the light - and picks up a
-     little bounce on the far wall, and a single flat colour says
-     neither. This was #171B22 everywhere, which on a tray of almost the
-     same value read as a black SHAPE rather than as a hole: reported as
-     "the badges that are unlocked don't appear to be in a slot". */
-  const WELL = ramp(uid + "-well",
-    [[0, "#0B0E13"], [0.45, "#141921"], [1, "#222A34"]], "0", "0", ".9", "1");
-  add(outline, { fill: WELL });
-  const slotShade = group({ "clip-path": slotClip });
-  /* Offset DOWN-RIGHT and clipped back, so what survives is a band along
-     the TOP-LEFT inner edge - the overhang's own shadow. Deeper and
-     wider than it was; the geometry was already right and only the
-     contrast was missing. */
-  add(outline, { fill: "none", stroke: "rgba(0,0,0,.72)", "stroke-width": "8",
-                 "stroke-linejoin": "round", transform: "translate(2.6 3)" }, slotShade);
-  add(outline, { fill: "none", stroke: "rgba(0,0,0,.42)", "stroke-width": "15",
-                 "stroke-linejoin": "round", transform: "translate(1.3 1.6)" }, slotShade);
-  /* And the catch-light on the far wall, bottom-right. */
-  add(outline, { fill: "none", stroke: "rgba(196,218,246,.26)", "stroke-width": "5",
-                 "stroke-linejoin": "round", transform: "translate(-2.2 -2.6)" }, slotShade);
-  /* The lip where the cut meets the lining: a fine light line on the
-     bottom-right of the OUTSIDE edge, which is the one thing that says
-     the surrounding surface has thickness. */
-  add(outline, { fill: "none", stroke: "rgba(210,228,250,.22)", "stroke-width": "1.7",
-                 "stroke-linejoin": "round" });
-  add(outline, { fill: "none", stroke: "rgba(255,255,255,.10)", "stroke-width": "1.2",
-                 "stroke-linejoin": "round", transform: "translate(-.9 -1.1)" });
+  const tok = group(grey ? { opacity: ".7", class: "badge-token" } : { class: "badge-token" }, root);
+  const AG = ramp(uid + "-ag", grey ? BADGE_METAL_GREY : BADGE_METAL, cx - .22 * b.w, Y0, cx + .22 * b.w, Y1);
+  const inside = clip(uid + "-in", outline);
 
-  if(!earned) return svg;
+  /* The token's own thickness: its edge, in shadow, carried on past the
+     keyline along the bottom-right - the dark edge is heavier on the side
+     away from the light, which is what says it is raised. (A LIGHT sliver
+     there was tried: it read as a second outline, the very ghost line
+     this rebuild took out.) */
+  solid(G.key, lit(uid + "-x", [[0, "#272C33"], [1, "#0E1013"]]), tok, { transform: "translate(.85 1.05)" });
+  /* The keyline: dark, and the dominant edge. */
+  solid(G.key, "#14171C", tok);
+  /* The enamel: a tonal ramp lit from the top-left - a real fall of
+     light, not an opacity change - in the unit's own colour. */
+  add(outline, { fill: ramp(uid + "-pl", [[0, badgeShade(bt.p, .22)], [.42, bt.p], [1, badgeShade(bt.p, -.28)]],
+    ".15", "0", ".85", "1", "objectBoundingBox") }, tok);
+  const plate = group({ "clip-path": inside }, tok);
+  /* One soft bloom of lacquer up where the light is, and a little of it
+     back off the bottom - broad and edgeless, never a streak. */
+  add(outline, { fill: radial(uid + "-sh", [[0, "#FFFFFF", .34], [.35, "#FFFFFF", .15], [.7, "#FFFFFF", .04], [1, "#FFFFFF", 0]],
+    ".34", ".2", ".62", "objectBoundingBox") }, plate);
+  add(outline, { fill: ramp(uid + "-bo", [[0, "#FFFFFF", 0], [.72, "#FFFFFF", 0], [1, "#FFFFFF", .16]], "0", "0", "0", "1", "objectBoundingBox") }, plate);
+  /* The enamel sits BELOW the rim: the rim's shade on its top-left edge,
+     softening inward, and a little light along its bottom-right. */
+  const E0 = G.inner + G.edge;
+  /* Nine thin rings rather than three wide ones: a ring's shade cannot
+     fade ACROSS its width (only along the light), so a soft edge is many
+     faint steps - each under a device pixel wide and a few levels deep,
+     which reads as a falloff instead of as three printed lines. */
+  const ISH = lit(uid + "-is", [[0, "#000000", .042], [.52, "#000000", 0]]);
+  for(let k = 9; k >= 1; k--) ring(E0 + k * .42, ISH, plate);
+  ring(E0 + .9, lit(uid + "-il", [[0, "#FFFFFF", 0], [.55, "#FFFFFF", 0], [1, "#FFFFFF", .26]]), plate);
+  /* The plate's own dark edge. */
+  ring(E0, "#14171C", plate);
+  /* The channels: bars of the same metal crossing the enamel, each lit
+     on its top (or left) face and throwing a little shade onto the
+     enamel below (or right of) it. Every cut is a straight H or V line,
+     so its ramp runs across it in user space - a ramp resolved against a
+     line's own zero-width box paints black. */
+  shape.cuts.forEach((c, i) => {
+    const n = (c.match(/-?\d+(\.\d+)?/g) || []).map(Number);
+    const vert = /V/.test(c);
+    const at = vert ? n[0] : n[1];
+    const bar = ramp(uid + "-ch" + i, grey ? BADGE_BAR_GREY : BADGE_BAR,
+      vert ? at - 4.5 : 0, vert ? 0 : at - 4.5, vert ? at + 4.5 : 0, vert ? 0 : at + 4.5);
+    add(c, { fill: "none", stroke: "#000000", "stroke-width": "12", opacity: ".32", transform: "translate(1.1 1.4)" }, plate);
+    add(c, { fill: "none", stroke: "#14171C", "stroke-width": "13" }, plate);
+    add(c, { fill: "none", stroke: bar, "stroke-width": "9" }, plate);
+    add(c, { fill: "none", stroke: "#FFFFFF", "stroke-width": "1.3", opacity: ".6",
+             transform: vert ? "translate(-2.2 0)" : "translate(0 -2.2)" }, plate);
+  });
+  /* The silver: inside the outline (clipped), then outside it over the
+     seam, from one ramp in one space, so the two halves are one piece. */
+  ring(G.inner, AG, plate);
+  ring(G.metal, AG, tok);
+  /* Its form. The inner slope turns away from the light at the top-left
+     and towards it at the bottom-right; the outer slope the other way
+     round; a bright crest runs between them; and one soft specular sits
+     on the rim where the light is. */
+  ring(G.inner, lit(uid + "-rs", [[0, "#000000", .46], [.44, "#000000", 0], [.6, "#FFFFFF", 0], [1, "#FFFFFF", .3]]), group({ "clip-path": inside }, tok));
+  const outside = clip(uid + "-out", "M-80 -80H180V180H-80Z " + outline, "evenodd");
+  ring(G.metal, lit(uid + "-ro", [[0, "#FFFFFF", .4], [.42, "#FFFFFF", 0], [.58, "#000000", 0], [1, "#000000", .52]]), group({ "clip-path": outside }, tok));
+  ring(.7, lit(uid + "-cr", [[0, "#FFFFFF", .95], [.5, "#FFFFFF", .42], [1, "#FFFFFF", .12]]), tok);
+  ring(G.metal, radial(uid + "-sp", [[0, "#FFFFFF", .7], [.45, "#FFFFFF", .22], [1, "#FFFFFF", 0]],
+    X0 + .22 * (X1 - X0), Y0 + .16 * (Y1 - Y0), .42 * (X1 - X0)), tok);
 
-  /* ---- the badge, placed in it ----
-     Scaled under the slot so the cut edge stays visible all the way
-     round. A badge exactly the size of its hole looks printed on. */
-  /* ---- ITS SHADOW ON THE FLOOR OF THE SLOT (build 242) ----
-     "The badges don't look 3d enough, they need to be flat but they
-     don't look real enough." A pin sitting in a case throws a shadow
-     down-right into the hole it sits in, and without one it reads as
-     printed on the lining. Two offset copies of the token's own
-     outline, clipped to the slot: a tight dark one and a wide soft one.
-     No filter - see above. */
-  const castShade = group({ "clip-path": slotClip });
-  const TOK = "translate(50 50) scale(.86) translate(-50 -50)";
-  add(outline, { fill: "rgba(0,0,0,.30)", stroke: "rgba(0,0,0,.18)", "stroke-width": "9", "stroke-linejoin": "round",
-                 transform: "translate(3.4 4.2) " + TOK }, castShade);
-  add(outline, { fill: "rgba(0,0,0,.42)", transform: "translate(1.6 2.1) " + TOK }, castShade);
-  const token = group(grey ? { transform: TOK, opacity: ".7" } : { transform: TOK });
-
-  /* The metal. Lit from the top-left, through shadow, back up at the
-     bottom edge - a flat grey band is a drawn line, a ramp is a piece of
-     metal catching light. */
-  /* POLISHED, not satin (build 242): a real struck pin's metal has a
-     hard highlight, a dark mid-band and a second catch at the bottom -
-     the contrast is what makes it read as metal and not grey paint. */
-  const AG = ramp(uid + "-ag", grey
-    ? [[0, "#D9DADB"], [0.16, "#BFC1C3"], [0.38, "#8C8F93"], [0.55, "#5C5F63"], [0.72, "#737679"], [0.86, "#B3B5B8"], [1, "#838689"]]
-    : [[0, "#FFFFFF"], [0.16, "#E6ECF2"], [0.38, "#A7B2BE"], [0.55, "#6F7B88"], [0.72, "#8A96A3"],
-     [0.86, "#D9E1E9"], [1, "#9AA6B3"]],
-    "0", "0", ".35", "1");
-  /* The plate. The reference's colour fields are not flat - they carry a
-     real fall across them - but they are not glass either, which is what
-     one version tried and what came back as too shiny.
-
-     This used to vary OPACITY across the plate (.82 -> 1 -> .78) rather
-     than tone, which on a dark tray is almost no change at all: the
-     colour just let a little more of the backing through at each end and
-     the plate still read as printed. It is a genuine tonal ramp now,
-     lit from the top-left like everything else on the badge. */
-  const PL = ramp(uid + "-pl",
-    [[0, badgeShade(theme.p, 0.20)], [0.45, theme.p],
-     [1, badgeShade(theme.p, -0.22)]], ".1", "0", ".85", "1");
-  /* The sheen over it: a broad WASH across the upper-left, never a
-     streak. A hard bright band laid across the colour is exactly what
-     came back as "too shiny", and a wash reads as a lacquered surface
-     without ever becoming an object sitting on the badge. */
-  const SH = ramp(uid + "-sh",
-    [[0, "#FFFFFF", 0.26], [0.40, "#FFFFFF", 0.08], [0.64, "#FFFFFF", 0]],
-    "0", "0", ".6", "1");
-  /* A linear ramp on its own describes a flat panel tilted towards the
-     light. The reference's colour fields are not flat panels - they are
-     domed, and the giveaway is that the light falls off in every
-     direction from one point rather than along one axis. This is that
-     dome, and it is what the plate was still missing after the ramp and
-     the wash went on. */
-  const DOME = radial(uid + "-dm",
-    [[0, "#FFFFFF", 0.34], [0.38, "#FFFFFF", 0.12], [0.72, "#FFFFFF", 0.01],
-     [1, "#000000", 0.14]], "34%", "30%", "78%");
-  /* And the bounce: a lit surface is never at its darkest right at the
-     bottom edge, because the edge picks light back up off whatever it
-     is sitting in. Without it the plate reads as fading out rather than
-     as turning away. */
-  const BOUNCE = ramp(uid + "-bo",
-    [[0, "#FFFFFF", 0], [0.72, "#FFFFFF", 0], [1, "#FFFFFF", 0.20]],
-    "0", "0", "0", "1");
-
-  const FIELD = "translate(" + cx + " " + cy + ") scale(.8) translate(" + (-cx) + " " + (-cy) + ")";
-
-  /* The dark keyline first, then the silver band inside it. What shows
-     of the dark is a line on either side of the metal - outside it
-     against the case, inside it against the colour. */
-  add(outline, { fill: "none", stroke: "#14171C", "stroke-width": "13",
-                 "stroke-linejoin": "round" }, token);
-  add(outline, { fill: AG, stroke: AG, "stroke-width": "9",
-                 "stroke-linejoin": "round" }, token);
-  /* The plate, inset about the SHAPE'S OWN centre rather than the
-     frame's. Half these silhouettes are not centred on 50,50 - the ring
-     and the bolt least of all - and scaling about the frame put their
-     colour off to one side of their own metal. */
-  add(outline, { fill: PL, stroke: "#14171C", "stroke-width": "4.5",
-                 "stroke-linejoin": "round", transform: FIELD }, token);
-
-  /* The plate's own depth, all of it clipped to the plate so nothing
-     strays onto the metal. A raised surface lit from the top-left has
-     its highlight on the TOP-LEFT inner edge and its shadow on the
-     bottom-right - the opposite of the recess the slot is drawn as, and
-     the reason the two read as a thing sitting IN a hole. Offsetting a
-     stroked copy of the outline and clipping it back puts each on the
-     right edge without a filter. */
-  const plateClip = clip(uid + "-plt", outline, FIELD);
-  const plate = group({ "clip-path": plateClip }, token);
-  /* HARD ENAMEL IS FLAT AND GLOSSY (build 242): no grain across the
-     colour - the hatch that was here read as diagonal stripes printed
-     on it - and no dome. One lacquer reflection, a soft-edged oval up
-     at the top-left where the light is, is what says "glass-smooth
-     enamel" while the colour itself stays flat. */
-  add(outline, { fill: SH, transform: FIELD }, plate);
-  const GLOSS = radial(uid + "-gl",
-    [[0, "#FFFFFF", 0.42], [0.55, "#FFFFFF", 0.16], [1, "#FFFFFF", 0]], "50%", "50%", "50%");
-  const gl = document.createElementNS(NS, "ellipse");
-  gl.setAttribute("cx", String(cx - 9)); gl.setAttribute("cy", String(cy - 12));
-  gl.setAttribute("rx", "20"); gl.setAttribute("ry", "11");
-  gl.setAttribute("fill", GLOSS);
-  gl.setAttribute("transform", "rotate(-28 " + (cx - 9) + " " + (cy - 12) + ")");
-  plate.appendChild(gl);
-  add(outline, { fill: BOUNCE, transform: FIELD }, plate);
-  /* The plate's bevel, raised. It is the edge that tells you the colour
-     is a piece of enamel seated in the metal rather than a fill inside
-     an outline, and at .26/.22 it was doing that only in close-up. */
-  add(outline, { fill: "none", stroke: "#FFFFFF", "stroke-width": "2.8", opacity: ".40",
-                 "stroke-linejoin": "round",
-                 transform: FIELD + " translate(1.5 1.8)" }, plate);
-  add(outline, { fill: "none", stroke: "#000000", "stroke-width": "3", opacity: ".34",
-                 "stroke-linejoin": "round",
-                 transform: FIELD + " translate(-1.5 -1.8)" }, plate);
-  /* And the metal's own catch-light: a hairline just inside the outer
-     edge, top-left. The band already runs a ramp along its length; this
-     is the edge itself picking up the same light, which is most of what
-     separates a piece of metal from a grey outline. */
-  const bandLit = group({ "clip-path": clip(uid + "-band", outline) }, token);
-  add(outline, { fill: "none", stroke: "#FFFFFF", "stroke-width": "1.8", opacity: ".5",
-                 "stroke-linejoin": "round", transform: "translate(1 1.2)" }, bandLit);
-  /* The band's own grain. Real struck metal is brushed, and a perfectly
-     smooth ramp is the one thing that keeps reading as vector art - the
-     setting looked poured rather than made. Drawn as a STROKE filled
-     with the pattern so it follows the silhouette round rather than
-     being a rectangle of texture clipped to it, and at a higher
-     contrast than the plate's grain because metal shows its tooling
-     far more than enamel does. */
-  /* No brushed grain on the metal any more (build 242) - it read as
-     stripes. The bevel does the work instead: a bright hairline on the
-     outer edge, top-left, and a dark one where the metal steps down to
-     the enamel, bottom-right. */
-  add(outline, { fill: "none", stroke: "rgba(20,24,30,.55)", "stroke-width": "1.3",
-                 "stroke-linejoin": "round", transform: FIELD + " scale(1.035) translate(-.4 -.4)" }, bandLit);
-
-  /* The channels: the band showing THROUGH the plate, not lines drawn on
-     top of it. Clipped to the plate so a channel stops at the colour's
-     edge instead of cutting the band in half, and flat silver rather
-     than the ramp - a linear gradient resolves against its path's
-     bounding box, and a straight line's box is zero wide in one axis, so
-     the ramp degenerates and the channel comes out as a dark bar. */
-  if(shape.cuts.length){
-    const cutClip = clip(uid + "-fld", outline, FIELD);
-    const cuts = group({ "clip-path": cutClip }, token);
-    shape.cuts.forEach(c => {
-      add(c, { fill: "none", stroke: "#14171C", "stroke-width": "13" }, cuts);
-      add(c, { fill: "none", stroke: grey ? "#86898D" : "#9FACBA", "stroke-width": "9" }, cuts);
-      add(c, { fill: "none", stroke: grey ? "#D4D5D7" : "#E4ECF4", "stroke-width": "2.6", opacity: ".45",
-               transform: "translate(-1 -1.2)" }, cuts);
-    });
-  }
-  /* THE GLISTEN LIVES INSIDE THE BADGE, clipped to its outline - "the
+  /* THE GLISTEN LIVES INSIDE THE BADGE, masked to its silhouette - "the
      reflection that hits your brief case across all the badges, I can
-     tell it's not only happening to the badges but in the square hit
-     box it's on, ensure that effect is only to the badges". It was a
-     ::after sweeping the whole square slot. Invisible until something
-     animates it (the badge case's .bc-glisten). */
+     tell it's not only happening to the badges but in the square hit box
+     it's on, ensure that effect is only to the badges". Invisible until
+     something animates it (.badge-shine-band). A mask rather than a clip
+     because the silhouette includes the rim outside the outline, which
+     only a stroke can draw; userSpaceOnUse so the region does not follow
+     the band as it moves. */
   if(grey) return svg;
-  const shineGrad = ramp(uid + "-shn", [[0, "#FFFFFF", 0], [0.5, "#FFFFFF", 0.8], [1, "#FFFFFF", 0]], "0", "0", "1", "0");
-  const shineClip = group({ "clip-path": "url(#" + uid + "-band)", class: "badge-shine" }, token);
-  const shineTilt = group({ transform: "rotate(24 50 50)" }, shineClip);
+  const mask = document.createElementNS(NS, "mask");
+  mask.setAttribute("id", uid + "-sil");
+  mask.setAttribute("maskUnits", "userSpaceOnUse");
+  mask.setAttribute("x", "-80"); mask.setAttribute("y", "-80");
+  mask.setAttribute("width", "260"); mask.setAttribute("height", "260");
+  const mp = document.createElementNS(NS, "path");
+  mp.setAttribute("d", outline);
+  mp.setAttribute("fill", "#FFFFFF"); mp.setAttribute("stroke", "#FFFFFF");
+  mp.setAttribute("stroke-width", String(2 * G.key)); mp.setAttribute("stroke-linejoin", "round");
+  mask.appendChild(mp); defs.appendChild(mask);
+  const shineGrad = ramp(uid + "-shn", [[0, "#FFFFFF", 0], [0.5, "#FFFFFF", 0.8], [1, "#FFFFFF", 0]], "0", "0", "1", "0", "objectBoundingBox");
+  const shine = group({ mask: "url(#" + uid + "-sil)", class: "badge-shine" }, tok);
+  const shineTilt = group({ transform: "rotate(24 50 50)" }, shine);
   const band = document.createElementNS(NS, "rect");
   band.setAttribute("x", "-46"); band.setAttribute("y", "-30");
   band.setAttribute("width", "30"); band.setAttribute("height", "160");
