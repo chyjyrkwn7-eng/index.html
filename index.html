@@ -11171,6 +11171,48 @@
     -webkit-mask-size:100% 100%; mask-size:100% 100%; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; }
   @media (prefers-reduced-motion:reduce){ .cosmic-scar, .cosmic-scar *, .cosmic-scar *::before{ animation:none !important; } }
   [data-reduce-motion="true"] .cosmic-scar *, [data-reduce-motion="true"] .cosmic-scar *::before{ animation:none !important; }
+  /* ---- WHAT PASSES THE SCAR CATCHES ITS LIGHT (build 317, planet round) ----
+     scarPassEffects: a secret flare's glint (a warm rim on its planet
+     side, the crack's light) is a loop of its ring's own lap, offset in JS
+     so its peak lands as the flare crosses the scar's angle - it rises and
+     falls over 6% of a lap either way (about 22 degrees), weaker on the
+     outer ring, which is further from the hole; the rings run hot over a
+     short arc at the scar, flickering on two clocks that never line up;
+     the bubbles nearest the hole hold its firelight, faint and flickering.
+     Transform and opacity only; held still and dark under Reduce motion;
+     never in the rank cutscene. */
+  .cosmic-flare-dot > i.cof-scarlit{ inset:-70%; opacity:0; rotate:var(--rl, 0deg);
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255,150,70,0) 0 26%, rgba(255,196,128,.95) 30%, rgba(255,120,48,.5) 35%, rgba(255,90,30,0) 43%),
+      radial-gradient(ellipse 62% 46% at 50% 24%, rgba(255,150,64,.5) 0, rgba(255,100,36,.16) 52%, rgba(255,90,30,0) 78%);
+    -webkit-mask-image:linear-gradient(180deg, #000 0, #000 34%, transparent 62%); mask-image:linear-gradient(180deg, #000 0, #000 34%, transparent 62%); }
+  .cosmic-flare-dot > i.cof-scarlit.is-far{
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255,150,70,0) 0 26%, rgba(255,196,128,.7) 30%, rgba(255,120,48,.36) 35%, rgba(255,90,30,0) 43%),
+      radial-gradient(ellipse 62% 46% at 50% 24%, rgba(255,150,64,.34) 0, rgba(255,100,36,.1) 52%, rgba(255,90,30,0) 78%); }
+  .csc-ringheat{ position:absolute; inset:0; pointer-events:none; }
+  .csc-ringheat > svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; opacity:.72; }
+  .csc-ringheat .csc-rh-glow{ opacity:.24; }
+  .csc-ringheat .csc-rh-core{ opacity:.62; }
+  .cosmic-icon-badge > i.cosmic-badge-scarlit{ position:absolute; inset:-1px; border-radius:50%; pointer-events:none; z-index:2; rotate:var(--rl, 0deg); }
+  .cosmic-icon-badge > i.cosmic-badge-scarlit > i{ position:absolute; inset:0; border-radius:50%; opacity:.8;
+    background:radial-gradient(ellipse 72% 38% at 50% 0, rgba(255,146,64,.6) 0, rgba(255,104,40,.2) 55%, rgba(255,90,30,0) 82%);
+    box-shadow:inset 0 2px 2.5px -1px rgba(255,160,84,.7); }
+  @media (prefers-reduced-motion:no-preference){
+    .cosmic-flare-dot > i.cof-scarlit{ animation:cof-scarpass var(--pass-lap, 52s) linear var(--pass-delay, 0s) infinite; }
+    .csc-ringheat > svg{ animation:csc-ringflick 5.3s linear infinite; }
+    .csc-ringheat > svg.is-out{ animation-duration:7.9s; animation-delay:-3.1s; }
+    .cosmic-icon-badge > i.cosmic-badge-scarlit > i{ animation:csc-ringflick 6.1s linear -2.2s infinite; }
+  }
+  @keyframes cof-scarpass{
+    0%, 44%{ opacity:0; animation-timing-function:ease-in-out; } 50%{ opacity:1; animation-timing-function:ease-in-out; } 56%, 100%{ opacity:0; animation-timing-function:ease-in-out; }
+  }
+  @keyframes csc-ringflick{
+    0%{ opacity:.6; } 9%{ opacity:.8; } 15%{ opacity:.56; } 31%{ opacity:.9; } 38%{ opacity:.68; } 52%{ opacity:.95; }
+    61%{ opacity:.64; } 74%{ opacity:.84; } 86%{ opacity:.58; } 100%{ opacity:.6; }
+  }
+  [data-reduce-motion="true"] .csc-pass, [data-reduce-motion="true"] .csc-pass *{ animation:none !important; }
+  .tier-cutscene .csc-pass{ display:none !important; }
   /* ---- DEPTH ON HOME'S PLANET SYSTEM (build 304) ----
      One light, from the upper left, everywhere. The planet: a terminator
      - the night side - falling away to the lower right, a thin bright
@@ -64348,7 +64390,123 @@ function attachCosmicScar(hero){
   const art = cosmicScarArt();
   if(art && art.mask) hero.style.setProperty("--scar-mask", "url(" + art.mask + ")");
   hero.classList.add("is-scarred");
+  try{ scarPassEffects(hero, art); }catch(e){}
   return sc;
+}
+/* WHAT PASSES THE SCAR CATCHES ITS LIGHT (build 317, planet round). "a
+   cool effect would be once the explosion happens maybe the rings and
+   everything, as it passes the hole something happens ... incorporate the
+   damage effects to the rings and what's on them when passing it somehow
+   in a cool way? Not over the top."
+   - The scar's place is an angle: where the rupture sits, seen from the
+     planet's middle (cosmicScarArt().angle, ~132 degrees clockwise from
+     the top - its lower right).
+   - A secret flare on a ring passes that angle once a lap. Its glint - a
+     warm rim on the side facing the planet, the crack's light - is a CSS
+     loop of the ring's own lap, offset so its peak falls exactly as the
+     flare crosses: worked out from where the flare starts (its left/top in
+     the hero) and the lap (ORBIT_LAP_S, the rings' cosmic-orbit-spin).
+     Both run on the same clock (syncLoopClock sets them together), so it
+     never drifts and nothing is measured per frame.
+   - Genesis's flare crosses the planet's face in front of the rupture: its
+     glint peaks at the point of its lap nearest it, worked out from the
+     orbit (CORE_ORBIT, the same numbers as .cco-plane) the same way.
+   - The rings, where they pass the scar, run hot: a short arc of ember
+     over each, fading out at both ends, flickering on two clocks.
+   - The flare bubbles do not orbit on Home; the ones nearest the hole
+     carry its firelight on their near side, faint, flickering.
+   All of it is .csc-pass: transform and opacity only, held still under
+   Reduce motion, and left out of the rank cutscene (its scene is its own). */
+const ORBIT_LAP_S = { outer: 120, inner: 52, core: 16 };   /* = cosmic-orbit-spin on the two rings, and cco-turn */
+const CORE_ORBIT = { r: 72, squash: .36, tilt: -18 };      /* = .cosmic-core-orbit / .cco-plane */
+let scarHeatSeq = 0;
+function scarPassEffects(hero, art){
+  if(!hero || hero.querySelector(":scope > .csc-ringheat")) return;
+  const ang = art && isFinite(art.angle) ? art.angle : 132;
+  const rad = Math.PI / 180;
+  /* a loop of `lap` seconds whose peak (its 50%) lands `at` seconds into the lap */
+  const delayFor = (at, lap) => { let d = (at - lap / 2) % lap; if(d > 0) d -= lap; return d.toFixed(2) + "s"; };
+  const glint = (dot, at, lap, toward) => {
+    const g = document.createElement("i");
+    g.className = "csc-pass cof-scarlit";
+    g.style.setProperty("--pass-lap", lap + "s");
+    g.style.setProperty("--pass-delay", delayFor(at, lap));
+    g.style.setProperty("--rl", toward.toFixed(1) + "deg");
+    dot.appendChild(g);
+  };
+  /* the secret flares on the two rings */
+  hero.querySelectorAll(":scope > .cosmic-hero-orbitlayer .cosmic-flare-dot").forEach(dot => {
+    const lap = dot.closest(".cosmic-hero-orbitlayer-inner") ? ORBIT_LAP_S.inner : ORBIT_LAP_S.outer;
+    const cx = parseFloat(dot.style.left) * 3.6, cy = parseFloat(dot.style.top) * 3.42 - 12;
+    if(!isFinite(cx) || !isFinite(cy)) return;
+    const a0 = Math.atan2(cx - 180, 150 - cy) / rad;
+    const at = (((ang - a0) % 360) + 360) % 360 / 360 * lap;
+    /* the rim faces the planet: the flare turns with its ring, so the
+       planet stays in the same place in its own frame */
+    glint(dot, at, lap, a0 + 180);
+    if(lap === ORBIT_LAP_S.outer) dot.lastChild.classList.add("is-far");
+  });
+  /* Genesis's flare: the point of its lap nearest the rupture */
+  const core = hero.querySelector(":scope > .cosmic-core-orbit .cosmic-flare-dot");
+  if(core && art && art.crater){
+    const kx = (art.crater[0] - 50) / 100 * 104, ky = (art.crater[1] - 50) / 100 * 104;
+    const c = Math.cos(CORE_ORBIT.tilt * rad), s = Math.sin(CORE_ORBIT.tilt * rad);
+    let best = 0, bd = 1e9, bx = 0, by = 0;
+    for(let a = 0; a < 180; a += .5){
+      const lx = CORE_ORBIT.r * Math.cos(a * rad), ly = CORE_ORBIT.squash * CORE_ORBIT.r * Math.sin(a * rad);
+      const x = lx * c - ly * s, y = lx * s + ly * c, d = (x - kx) * (x - kx) + (y - ky) * (y - ky);
+      if(d < bd){ bd = d; best = a; bx = x; by = y; }
+    }
+    glint(core, best / 360 * ORBIT_LAP_S.core, ORBIT_LAP_S.core, Math.atan2(kx - bx, by - ky) / rad);
+  }
+  /* the rings run hot where they pass the scar */
+  const svgNS = "http://www.w3.org/2000/svg";
+  const radii = [...hero.querySelectorAll(".cosmic-orbit-ring")].map(r => Number(r.getAttribute("r"))).filter(r => r > 60);
+  const rh = document.createElement("div");
+  rh.className = "csc-pass csc-ringheat";
+  rh.setAttribute("aria-hidden", "true");
+  (radii.length ? [...new Set(radii)] : [108, HOME_OUTER_R]).slice(0, 2).forEach((R, i) => {
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("viewBox", "0 -12 360 342");
+    svg.setAttribute("class", i ? "is-out" : "is-in");
+    const P = a => [180 + R * Math.sin(a * rad), 150 - R * Math.cos(a * rad)];
+    const [x0, y0] = P(ang - 26), [x1, y1] = P(ang + 26);
+    const id = "cscrh" + (++scarHeatSeq);
+    const defs = document.createElementNS(svgNS, "defs"), lg = document.createElementNS(svgNS, "linearGradient");
+    lg.setAttribute("id", id); lg.setAttribute("gradientUnits", "userSpaceOnUse");
+    lg.setAttribute("x1", x0.toFixed(2)); lg.setAttribute("y1", y0.toFixed(2)); lg.setAttribute("x2", x1.toFixed(2)); lg.setAttribute("y2", y1.toFixed(2));
+    [[0, "#FF6A22", 0], [.28, "#FF7A30", .75], [.5, "#FFC07A", 1], [.72, "#FF7A30", .75], [1, "#FF6A22", 0]].forEach(([o, col, a]) => {
+      const st = document.createElementNS(svgNS, "stop");
+      st.setAttribute("offset", o); st.setAttribute("stop-color", col); st.setAttribute("stop-opacity", a);
+      lg.appendChild(st);
+    });
+    defs.appendChild(lg); svg.appendChild(defs);
+    const d = "M" + x0.toFixed(2) + " " + y0.toFixed(2) + " A" + R + " " + R + " 0 0 1 " + x1.toFixed(2) + " " + y1.toFixed(2);
+    [["csc-rh-glow", 5.5], ["csc-rh-core", 1.5]].forEach(([cls, w]) => {
+      const pa = document.createElementNS(svgNS, "path");
+      pa.setAttribute("d", d); pa.setAttribute("class", cls);
+      pa.setAttribute("fill", "none"); pa.setAttribute("stroke", "url(#" + id + ")"); pa.setAttribute("stroke-width", w);
+      pa.setAttribute("stroke-linecap", "round");
+      svg.appendChild(pa);
+    });
+    rh.appendChild(svg);
+  });
+  const main = hero.querySelector(":scope > .cosmic-hero-main");
+  hero.insertBefore(rh, main ? main.nextSibling : hero.firstChild);
+  /* the bubbles nearest the hole: its firelight on their near side */
+  hero.querySelectorAll(":scope > .cosmic-icon-badge").forEach(b => {
+    const cx = parseFloat(b.style.left) * 3.6, cy = parseFloat(b.style.top) * 3.42 - 12;
+    if(!isFinite(cx) || !isFinite(cy)) return;
+    const a0 = Math.atan2(cx - 180, 150 - cy) / rad;
+    let da = Math.abs(((a0 - ang) % 360 + 540) % 360 - 180);
+    if(da > 36) return;
+    const w = document.createElement("i");
+    w.className = "csc-pass cosmic-badge-scarlit";
+    w.style.opacity = (.85 * (1 - da / 36)).toFixed(2);
+    w.style.setProperty("--rl", (a0 + 180).toFixed(1) + "deg");
+    w.appendChild(document.createElement("i"));
+    b.appendChild(w);
+  });
 }
 
 function showWelcome(){
