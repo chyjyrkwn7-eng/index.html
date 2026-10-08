@@ -13495,9 +13495,9 @@ def check_b317_supernova(br):
     check("its fragments loop - infinite and running", r0.get("frags", 0) >= 6 and r0.get("loops") == r0.get("frags"),
           (r0.get("frags"), r0.get("loops")))
     # the fragments move: the same fragment, a second apart
-    mv = pg.evaluate("""async () => { const f = document.querySelector('.panel.home .cosmic-scar .csc-frag');
+    mv = pg.evaluate("""async () => { const f = document.querySelector('.panel.home .cosmic-scar .csc-frag'); if(!f) return null;
       const a = getComputedStyle(f).transform; await new Promise(r => setTimeout(r, 900)); return [a, getComputedStyle(f).transform]; }""")
-    check("and drift (a fragment's transform moves)", mv[0] != mv[1], mv)
+    check("and drift (a fragment's transform moves)", bool(mv) and mv[0] != mv[1], mv)
     check("layered right after the plasma with no z-index, so the tap box and the bubbles paint over it",
           r0.get("afterPlasma") and r0.get("z") == "auto" and r0.get("scarred"), (r0.get("afterPlasma"), r0.get("z")))
     tap = pg.evaluate("""() => { const h = document.querySelector('.panel.home .cosmic-hero-wrap');
