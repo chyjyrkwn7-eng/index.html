@@ -39984,16 +39984,35 @@ const HUNDO_FX = [
   { id: "confetti",  name: "Confetti",   need: 0,   color: "#FFD37A" },
   /* the first rung (round 4): Fireworks - "Still not a fan of that giddy
      one. Maybe the first one should just be fireworks or something?" The
-     Black Hole and Underwater stay built in HUNDO_FX_BUILD; swapping is
-     this row's id and name. A saved "blackhole" pick is no rung here, so
-     it plays Confetti until Fireworks is picked (hundoFxInUse). */
+     Black Hole stays built in HUNDO_FX_BUILD; swapping is this row's id
+     and name. A saved "blackhole" pick is no rung here, so it plays
+     Confetti until Fireworks is picked (hundoFxInUse). */
   { id: "fireworks", name: "Fireworks",   need: 50,  color: "#FF5CD6" },
-  { id: "worldtree", name: "World Tree",  need: 100, color: "#FF9EC8" },
+  /* THE 100 IS UNDERWATER (build 317, round 4). "I like the underwater one,
+     but the water that's on screen looks terrible, and it doesn't start
+     from the very bottom. The world tree is not the answer." Live build 313
+     ships the World Tree at this rung, so its id is kept READABLE, not
+     playable on the ladder: a saved pick, a pop-up already shown and a tile
+     already looked at, all as "worldtree", mean this rung and are read as
+     Underwater (hundoFxId, HUNDO_FX_ALIAS) - nobody is left holding an
+     effect that is no longer there. The tree itself stays built in
+     HUNDO_FX_BUILD like the Black Hole. */
+  { id: "underwater", name: "Underwater", need: 100, color: "#46E0E8" },
   { id: "bubbles",   name: "Bubbles",     need: 200, color: "#9FE8FF" },
   /* "the one after bubbles is ... a ufo landing on the grade box" */
   { id: "ufo",       name: "UFO",         need: 350, color: "#6BFF8F" }
 ];
-function hundoFxDef(id){ return HUNDO_FX.find(d => d.id === id) || null; }
+/* An id from an older build, read as the rung that replaced it. */
+const HUNDO_FX_ALIAS = { worldtree: "underwater" };
+function hundoFxId(id){ return (typeof id === "string" && Object.prototype.hasOwnProperty.call(HUNDO_FX_ALIAS, id)) ? HUNDO_FX_ALIAS[id] : id; }
+/* A list of ids (a shown or seen record) in this build's terms: aliases
+   read as their rung, each once. */
+function hundoFxIds(list){
+  const out = [];
+  (Array.isArray(list) ? list : []).forEach(x => { if(typeof x !== "string") return; const id = hundoFxId(x); if(out.indexOf(id) < 0) out.push(id); });
+  return out;
+}
+function hundoFxDef(id){ id = hundoFxId(id); return HUNDO_FX.find(d => d.id === id) || null; }
 /* Held at `hundos` (this account's own count when left out). */
 function hundoFxEarned(id, hundos){
   const d = hundoFxDef(id);
@@ -40006,7 +40025,7 @@ function earnedHundoFx(hundos){ return HUNDO_FX.filter(d => d.need > 0 && hundoF
 /* What plays on a 100%: the pick, or Confetti when the pick is not held
    here (a copy from elsewhere, an id from another build). */
 function hundoFxInUse(){
-  const id = store && store.hundoFx;
+  const id = hundoFxId(store && store.hundoFx);
   return id && hundoFxEarned(id) ? id : "confetti";
 }
 function hundoFxNeedText(d){ return d.need > 0 ? "Earn " + d.need + " hundos" : "Yours from day one"; }
@@ -46653,7 +46672,7 @@ function applyLoadedData(got){
   /* build 313: the hundo effects looked at. Not in SEEN_KINDS - a record
      without it is still a whole record, and ensureSeenUnlocks() starts it
      empty - so nothing written before this build re-seeds. */
-  if(store.seenUnlocks && Array.isArray(got.seenUnlocks.fx)) store.seenUnlocks.fx = got.seenUnlocks.fx.filter(x => typeof x === "string");
+  if(store.seenUnlocks && Array.isArray(got.seenUnlocks.fx)) store.seenUnlocks.fx = hundoFxIds(got.seenUnlocks.fx);
   store.unlocksShown = (got.unlocksShown && Array.isArray(got.unlocksShown.chars) && Array.isArray(got.unlocksShown.banners))
     ? { chars: got.unlocksShown.chars.filter(x => typeof x === "string"),
         banners: got.unlocksShown.banners.filter(x => typeof x === "string"),
@@ -46662,7 +46681,8 @@ function applyLoadedData(got){
            one when this ships is meant to get its pop-up once ("For the
            people who meet these, they will get the popups next time they
            log on or are at the main menu"). */
-        fx: Array.isArray(got.unlocksShown.fx) ? got.unlocksShown.fx.filter(x => typeof x === "string") : [] }
+        /* build 317, round 4: a World Tree shown is this rung shown */
+        fx: hundoFxIds(got.unlocksShown.fx) }
     : null;
   /* Build 220. The counters default to zero and the two "done" flags to
      false, so every existing account is seeded once from what it has
@@ -46692,7 +46712,8 @@ function applyLoadedData(got){
   /* build 313: the hundo effect picked in Customize. Confetti for
      anybody who has never picked one; an id this build does not know is
      kept (it may be a later build's) and falls back at play time. */
-  store.hundoFx = typeof got.hundoFx === "string" && got.hundoFx ? got.hundoFx : "confetti";
+  /* build 317, round 4: a World Tree pick is the 100's rung - Underwater */
+  store.hundoFx = typeof got.hundoFx === "string" && got.hundoFx ? hundoFxId(got.hundoFx) : "confetti";
   store.pendingVoidCutscene = got.pendingVoidCutscene === true;
   store.weekRankSeen = (got.weekRankSeen && typeof got.weekRankSeen === "object"
     && typeof got.weekRankSeen.week === "string" && typeof got.weekRankSeen.rank === "number")
@@ -81569,7 +81590,7 @@ function hundoFxUnlockItem(id){
      over while it is up ("maybe the popup could show the effects
      animated"); the top three first play the WHOLE thing once across the
      pop-up - the UFO most of all. */
-  const top = ["worldtree", "bubbles", "ufo"].indexOf(id) >= 0;
+  const top = ["underwater", "worldtree", "bubbles", "ufo"].indexOf(id) >= 0;
   return { kind: "fx", fx: id, feat: true, kicker: "Hundo effect unlocked", name: d.name,
     sub: "Plays when you score 100%", need: hundoFxNeedText(d), color: d.color,
     art: () => buildHundoFxStill(id),
@@ -81744,6 +81765,8 @@ function ensureUnlocksShown(){
   if(u && Array.isArray(u.chars) && Array.isArray(u.banners)){
     /* not seeded with what is held, unlike the two above - see applyLoadedData */
     if(!Array.isArray(u.fx)) u.fx = [];
+    /* a merge from an older build can bring "worldtree" in (317, round 4) */
+    else if(u.fx.some(x => hundoFxId(x) !== x)) u.fx = hundoFxIds(u.fx);
     return u;
   }
   const waiting = (store.pendingCharUnlocks || []).concat(UNLOCKS_NEW_IN_235);
@@ -81813,6 +81836,7 @@ function ensureSeenUnlocks(){
      that has none: they are new to everybody, so an account that holds
      some the day they ship gets the dot on each. */
   if(ok && !Array.isArray(s.fx)){ s.fx = []; saveStore(); }
+  else if(ok && s.fx.some(x => hundoFxId(x) !== x)) s.fx = hundoFxIds(s.fx);
   if(ok && s.v === SEEN_VERSION) return s;
   const u = unlockedIdsNow();
   const charDef = id => (typeof AVATAR_CHARACTERS !== "undefined" ? AVATAR_CHARACTERS.find(c => c.id === id) : null);
