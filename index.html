@@ -12126,11 +12126,11 @@
   .hc-item.is-out{ opacity:0; transform:translateY(-3px); transition:opacity .2s ease, transform .22s ease; }
   .hc-name{
     display:block; font-family:var(--sans); font-size:.7rem; font-weight:700; letter-spacing:.13em;
-    text-transform:uppercase; line-height:1.3; color:var(--hc, #FFFFFF); margin:0 0 .28rem;
+    text-transform:uppercase; line-height:1.3; color:var(--hc, #FFFFFF); margin:0 0 .22rem;
   }
   .hc-state{ color:rgba(236,240,245,.5); font-weight:600; }
   .hc-state::before{ content:"\00B7"; margin:0 .5em; color:rgba(236,240,245,.35); }
-  .hc-text{ display:block; font-size:.86rem; line-height:1.38; color:rgba(236,240,245,.86); text-wrap:balance; }
+  .hc-text{ display:block; font-size:.86rem; line-height:1.34; color:rgba(236,240,245,.86); text-wrap:balance; }
   .hc-s{ display:inline-block; }
   .hc-item.is-inline .hc-name{ display:inline; margin:0 .6em 0 0; }
   .hc-item.is-inline .hc-text{ display:inline; }
@@ -74920,7 +74920,7 @@ function homeTapCopyPlanet(n){
        ("hc-over-greeting"), or the greeting, NOVA and the tagline
        ("hc-over-title"), never Start Studying. The words are clamped
        only if even that is too short. */
-const HOME_CAPTION_GAP = 6;
+const HOME_CAPTION_GAP = 5;
 function homeCaptionPlace(panel, el){
   const R = e => e ? e.getBoundingClientRect() : null;
   const shown = e => !!e && getComputedStyle(e).display !== "none" && e.getBoundingClientRect().height > 0;
