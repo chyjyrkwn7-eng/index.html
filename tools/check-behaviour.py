@@ -13266,11 +13266,14 @@ def check_b317_cutspin(br):
         pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
         pg.evaluate("()=>playTierCutscene('vanguard', {from:'veteran', onDone(){}})")
         t, n, bad, pops, burst_at = 0.0, 0, [], [], None
-        for i in range(1, 301):
+        for i in range(1, 316):
             t0 = t; t = i / 30
             pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000)))
             pg.evaluate(CUTSPIN_SEEK, t)
             if i < 90:
+                continue
+            if i > 300:
+                if burst_at is None and pg.evaluate("() => !!document.querySelector('#supernova-cutscene.supernova-burst')"): burst_at = i
                 continue
             ph = pg.evaluate("() => { const o = document.getElementById('supernova-cutscene'); return o ? [!!o.querySelector('.rank-litpop'), o.classList.contains('supernova-burst')] : [false, false]; }")
             if ph[0]: pops.append(i)
@@ -13295,7 +13298,7 @@ def check_b317_cutspin(br):
     pg.wait_for_timeout(1000)
     pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
     pg.evaluate("()=>playTierCutscene('vanguard', {from:'veteran', onDone(){}})")
-    t, boxes, pools = 0.0, [], []
+    t, boxes, pools, titles = 0.0, [], [], []
     for i in range(1, 600):
         t0 = t; t = i / 30
         pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000)))
@@ -13304,16 +13307,30 @@ def check_b317_cutspin(br):
           const b = document.querySelector('.scene-bridge');
           const m = o && o.querySelector('.rank-after .cosmic-hero-main');
           const r = m && m.getBoundingClientRect();
-          return { outro: !!(o && o.classList.contains('rank-outro')), box: r ? [r.left + r.width / 2, r.top + r.height / 2, r.width] : null,
+          const settle = !!(o && o.classList.contains('supernova-settle'));
+          const nf = o && o.querySelector('.rank-after .cosmic-icon-badge[data-rank-tier="vanguard"]');
+          const ns = nf && nf.closest('.rank-orbit-slot');
+          const tint = o && o.querySelector('.rank-tint');
+          return { settle, extra: settle && nf && !o.classList.contains('rank-fadeout') ? { pool: +getComputedStyle(ns, '::before').opacity, popping: nf.classList.contains('cosmic-badge-newly-lit') || !!o.querySelector('.rank-litpop'),
+                     lit: nf.classList.contains('cosmic-badge-lit'), tint: tint ? +getComputedStyle(tint).opacity : null } : null,
+                   outro: !!(o && o.classList.contains('rank-outro')), box: r ? [r.left + r.width / 2, r.top + r.height / 2, r.width] : null,
                    pool: b ? getComputedStyle(b).backgroundImage : null }; }""")
         if st["outro"] and st["box"]:
             boxes.append(st["box"])
+        if st.get("extra"):
+            titles.append(st["extra"])
         if st["pool"] is not None:
             pools.append(st["pool"])
         if pools and not st["outro"] and st["box"] is None:
             break
     ctx.close()
     drift = max((max(abs(b[k] - boxes[0][k]) for b in boxes) for k in range(3)), default=None) if boxes else None
+    check("from the title on, the new flare is a plain lit flare - no glow pool, no pop, nothing shooting off it",
+          len(titles) >= 30 and all(x["lit"] and not x["popping"] and x["pool"] < .02 for x in titles),
+          (len(titles), [x for x in titles if not (x["lit"] and not x["popping"] and x["pool"] < .02)][:1]))
+    tints = [x["tint"] for x in titles if x["tint"] is not None]
+    check("and a faint wash of the new rank's background eases in behind the title (over ~2s, carried into the outro)",
+          len(tints) >= 30 and tints[0] < .3 and tints[-1] > .95 and tints == sorted(tints), (len(tints), tints[:1], tints[-1:]))
     check("the outro holds the planet system still while it fades (within 1px)",
           len(boxes) >= 30 and drift is not None and drift <= 1, (len(boxes), drift))
     check("and the bridge to the reward card is a plain dim - no round pool of colour floating over the results",
