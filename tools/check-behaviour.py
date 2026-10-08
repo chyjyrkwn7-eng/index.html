@@ -14319,8 +14319,9 @@ def check_b317_hometaps(br):
               chain.get("captionOnDown") and chain.get("same") and chain.get("o1", 0) > .3 and abs(chain.get("o2", 9) - chain.get("o1", -9)) < .06, chain)
         check(dev + ": a new answer crossfades over the last (one leaving, one live)",
               xf.get("n") == 2 and xf.get("out") == 1 and "Amethyst flare" in xf.get("live", ""), xf)
-        check(dev + ": the caption goes after a few seconds, and nothing in the layout moved at any point",
-              gone.get("items") == 0 and not gone.get("cover") and before == during == after, [gone, before, during, after])
+        check(dev + ": the caption goes after a few seconds, and nothing in the layout moved at any point while it came and went",
+              (HL.get("items") or 0) >= 1 and (xf.get("n") or 0) >= 1 and gone.get("items") == 0 and not gone.get("cover")
+              and before == during == after, [gone, before, during, after])
         # Reduce motion: still answers, no motion
         pg.evaluate(HOMETAP_PREP, {"rm": True})
         RL = _hometap(pg, "bubble:adept")
