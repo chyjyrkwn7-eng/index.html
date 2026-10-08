@@ -10474,7 +10474,10 @@ motion `*` rule does not match pseudo-elements, so both `::before` and
 `::after` are named.
 
 **One XP blue.** Results, the "+N XP" banner, the daily outro and the
-Virtual Room standings use the Profile bar's `#3D8BFF` / `#8FC1FF`.
+Virtual Room standings use the Profile bar's `#3D8BFF` / `#8FC1FF`. The
+numbers under an XP bar ("400 / 2,156 XP", and the Profile's "N total
+XP") are one deeper step of it, `--xpnum` #5A9BEF, all of them - no grey
+half (317 touch-up).
 
 **Results XP.** The count-up runs on `requestAnimationFrame` and writes
 only when the figure changes; the "charged" pop waits for a level-up's
@@ -14539,12 +14542,28 @@ disagree with it.
     instead, so the label still fits on one line there. From 40rem the
     count goes back to the right, where a tablet has the room.
 - **PROFILE, ROUND SEVEN (build 317)** - from one long message:
-  - **XP numbers: what you have grey, what the level asks blue**
-    (`--xpnum:#5A9BEF`, deeper than the old #8FC1FF - "should be a darker
-    blue"). Over a cap (`.is-over`) both are that blue. On the results
-    card the "have" number flashes blue for ~1s (`.is-flash`) when the
-    final level-up wrap lands. Same rule wherever `buildXpNumbers` is
-    used.
+  - ~~XP numbers: what you have grey, what the level asks blue~~
+    **SUPERSEDED IN THE 317 TOUCH-UP - ONE XP BLUE, NO GREY.** *"your
+    current earned for the current level, it being grey is not the move,
+    I'm not sure what the best option for the color of those would be. I
+    guess the same blue for both? I guess the total xp should be the
+    same?"* This level's XP, what it asks ("400 / 2,156 XP") and the
+    total ("183,125 total XP") are all `--xpnum` (#5A9BEF): the XP
+    numbers' one blue, between the bar's own #3D8BFF and #8FC1FF, kept as
+    deep as round seven asked ("should be a darker blue" than #8FC1FF).
+    Same at a wall, at level 80 over the wall, and wherever
+    `buildXpNumbers` is used (the results card too). `.is-over` still
+    marks a full bar for the knock and the gates; it no longer changes a
+    colour. The results card's level-up flash (`.is-flash`) now lights
+    the new level's number in the bar's light end (#8FC1FF) for ~1s,
+    since it is already blue. The total keeps its lighter weight (700 to
+    the numbers' 800) so it still reads as a running total. The "N XP to
+    level X" text `profileXpNote` can return is not shown on the card
+    any more (the total took its place in 317). Gates: the colour
+    assertions in `check_b317_xpcap` (mid level, a wall, level 80),
+    `check_b317_pfcard` (mid and level 80, both reference devices),
+    `check_b302` and check-curve, all asserting one equal blue rather
+    than a grey/blue pair.
   - **The total XP is under the bar, bottom right** (`.pf-xp-total` inside
     `.pf-xpnums`), not on the rank line; it took the place of "N XP to
     level X". `fitProfileIdLine()` still runs and is now a no-op there.
@@ -14594,6 +14613,97 @@ disagree with it.
     included, as it did before 829f68a ("the drawing is clipped to the
     disc, which is what turns a bust into a portrait"). Gate: the
     wide-window block in `check_b317_tabplate`, failing on 1888b11.
+  - **THE PORTRAIT POPS OUT OF ITS PLATE (supersedes "the plate crops
+    every character" just above).** With every head back at one size,
+    the Profile plate and the person card cut the Ronin's brim, the
+    Clown's bells, the Wizard's orb and Umbra's moon at the rim.
+    `plateBreakout(svg)` (via `platePortrait(span)`, on those two only -
+    NOT the boards: build 312 asked for row characters to stay inside
+    their circles; nor the Customize pick, a soft glow disc with no rim,
+    nor the results avatar, which never clipped) splits the drawing by
+    what it is, with clipPath elements inside the svg, no filter:
+    - **On the disc** (r 17 about 20,20, the old `circle(50%)`): the
+      halo, `.cx-bg`, and the figure's own LIGHT wherever it sits - a
+      special's `.cx-sp-back`/`.cx-sp-front` layers (motes, rings,
+      Umbra's veil, a circle of night r 20), anything that washes the
+      whole frame (a `rect` 34+ units both ways - Zeus's flash, 37
+      square; a `circle` r 17+ - the Hacker's r 18 glitch) and paint that
+      wears the scenery's fade (`mask=".. -bgm)"`, the Hacker's rain).
+      Left in the figure, Zeus's flash painted a SQUARE out over the rim
+      and Umbra's veil a dark slab; light is not a prop. Those parts sit
+      inside the art-scale wrapper (`AVATAR_ART_SCALE`, a transform
+      attribute), and a userSpaceOnUse clip is read in the space of the
+      element carrying it, so `discFor()` hands the circle the inverse of
+      every transform attribute above it (one clipPath per distinct
+      matrix). A CSS bob on an ancestor (half a unit) moves that clip
+      with it; nothing reads it.
+    - **Free to pop:** the figure - hats, props, bells, staff, the bees,
+      the slash, the bolt - anywhere above `PLATE_POP_Y` (28.5); below it
+      the disc still cuts the bust where it did. **Measured, not
+      guessed:** figure ink leaves the disc from y 29.4 down on every
+      character (the shoulders), and the lowest thing meant to pop, the
+      Ronin's scarf, ends by 28. A SMALL scenery moon (glow r < 8:
+      Umbra's, Orion's) is an object and moves to the figure's side at
+      opacity .75, about what the scenery's fade gave it; the Ronin's
+      sky-filling moon stays sky.
+    - Every piece is wrapped in a fresh `<g>` carrying its clip, so a part
+      that animates its own transform moves inside a still clip (no CSS in
+      the file uses a child combinator on these parts - checked).
+    - **Its own window, `AVATAR_PLATE_VIEWBOX` "-4 -6 48 48"**, hung out
+      over the plate by `.rank-avatar.has-plate` (48/34 of the plate, 7
+      units each side and 9 over the top, so the shared 34 units - every
+      head - land on the plate to the pixel). The tab's 39-unit window was
+      tried first and was not enough: the Hive's bees and the Ronin's
+      slash flew out of it and were cut at its edge, which is invisible at
+      rest and obvious mid-special. **A CSS mask clips to the element's
+      box**, so the box has to hold everything that pops; its mask is the
+      usual one in this box's percentages (a 1.6-unit feather, the bust
+      full to 26.8, .45 at 32.24, gone at 37), the same stops
+      `recordCharSheet` bakes for a `"<id>~plate"` sheet. No `clip-path`
+      and no `overflow:hidden` anywhere round it (the person card's
+      `.rank-avatar` rule is overridden), and the svg takes no taps
+      (`pointer-events:none`): the plate's own box is the target, as it
+      was, so the bigger box cannot steal a tap from Customize beside it.
+      The svg box is 2x the plate's area, and `avatarDepth` runs over its
+      box - one element per screen, live.
+    - **The flip-book path is there but unused today**: the svg is
+      ~100-180px (72px card plate on a Pro Max, 125px Profile plate on an
+      iPad, times 48/34), over `CHAR_FLIP_MAX_CSS` (80), so `charFlipAttach`
+      leaves both plates live; a smaller plate would record
+      `"<id>~plate"` (`charAnimDrawing` runs `plateBreakout` on it) into
+      the same CSS box. The specials play on the live drawing as before
+      (`playCharSpecial` is untouched).
+    - **Gate: `check_b317_plate` measures PAINT, not boxes** - a bounding
+      box ignores a clip and reads "past the disc" on the clipped build
+      too. On the Profile plate (17 Pro Max, iPad Pro 11) and the person
+      card (17 Pro Max), for the nine plus the Ninja and the Grizzly, at
+      four paused moments of the idle loop and every 400ms through the
+      special (its end-of-run timer disarmed through `__charSpecial`, or
+      it takes `.char-special` off half-way through the shots - which is
+      how a first draft "found" losses that were the special ending), it
+      shoots the scenery alone, the figure alone as shown, the figure
+      FREE (every clip, mask and overflow round the drawing lifted, its
+      own disc-bound light kept) and the figure without its light, and
+      counts with PIL region masks: at least seven of the nine reach past
+      the disc in the free shot and every one that does shows it OVER the
+      rim; nothing the free shot paints is missing above y 26.5 (where
+      the bust's fade starts); the scenery and the light paint nothing
+      outside the disc. Passes here; on e877af7 no figure shows a pixel
+      past the disc and the Wizard, Marksman, Clown, Hive, Umbra, Zeus,
+      Ronin and Timekeeper all lose paint at the rim (20-200px each on a
+      Pro Max plate; Zeus 2,981 with its flash). `PLATE_DEBUG=<dir>`
+      saves the five shots of any moment that fails.
+    - **What it found, worth knowing before "fixing" the rest:** at rest
+      only the Wizard's orb, the Marksman's rifle and Umbra's moon leave
+      the disc; the Ronin, Clown, Hive and Zeus do it in their specials
+      (the slash, the bells' confetti, the bees, the bolt). **The
+      Timekeeper and the Solar never leave the disc** at the shared head
+      size - their clock ring and crown sit inside r 17 - and what read
+      as cut on them, and on the Ronin's brim and the Clown's bells at
+      rest, was the old 4.7% edge feather eating their tips inside the
+      disc, which the bigger window moves out past them. Making those two
+      reach the rim would mean drawing them bigger, which is a head-size
+      change (check_b272 / check_b314_sizes).
   - **Every character's surfaces are lit round (`giveVolume()`, called
     from `done()`).** *"In profile some characters have a nice 3d look but
     some don't, fix that as well."* The 3D-looking ones (Alien, Ghost,
@@ -14627,16 +14737,22 @@ disagree with it.
   - **ROUND SEVEN, SECOND PASS - the card's order and its last pieces
     (supersedes the new-dot placement above and ROUND FIVE's block
     order):**
-    - **WHAT YOU ARE, WHAT YOU HAVE, WHAT'S NEXT.** *"Would it make more
-      sense if the badge case was put above the rank challenge box thing?
-      ... I feel like it being at the bottom is weird."* The card is now
-      the standing line, then the badge case, then the Next rank card -
-      identity and level, the badges you hold, the challenges ahead. Still
-      inside the one Profile card (not a box of its own); the gaps are the
-      same two numbers as before (1.05rem under the bar, .8rem between the
-      boxes). The Profile tour's case and Next rank steps swapped to match.
-      The rank-up scene swaps `.pf-standing` and `.pf-goal` in place with
-      `replaceWith`, so it needed nothing.
+    - ~~WHAT YOU ARE, WHAT YOU HAVE, WHAT'S NEXT~~ - **REVERTED IN THE
+      317 TOUCH-UP: THE BADGE CASE IS AT THE BOTTOM AGAIN.** Round seven
+      moved it above the Next rank card (*"Would it make more sense if the
+      badge case was put above the rank challenge box thing?"*); it came
+      back: *"The badge case being at the top is not the move, revert
+      that location at the bottom."* The card is the standing line, then
+      the Next rank card (its rank challenges and unlocks), then the badge
+      case - the last block, its new-badge dot and NEW still against the
+      arrow. Same gaps (1.05rem under the bar, .8rem between the boxes);
+      the CSS already handled either order (`.pf-standing + .pf-goal`).
+      The Profile tour's steps are back to standing, Next rank, case. The
+      rank-up scene swaps `.pf-standing` and `.pf-goal` in place with
+      `replaceWith`, so it needed nothing. Gates: `check_b317_pfcard`
+      ("the badge case is at the bottom of the card"), `check_b299`'s
+      order line and check-curve's three-block order, all failing on
+      e877af7.
     - **THE NEW-BADGE DOT SITS AGAINST THE CASE'S ARROW, WITH "NEW".**
       *"it blends in with the badges now and it doesn't look like a
       notification thing, should be near the arrow still somehow."* On
@@ -14718,11 +14834,10 @@ disagree with it.
       toward those levels when they are added." check-curve holds the
       shape (top level, which rank's challenges, "still counts"), not the
       prose.
-    - **Total XP is a deeper blue** (`--xptotal`, #3B64C8, weight 700)
-      - *"needs to be a darker blue or something, looks too much like the
-      others to the left"*. Same family as `--xpnum` (#5A9BEF), clearly a
-      step down (deeper and more saturated, blue channel kept over 200 so
-      check_b258 still reads it as blue); about 3.2:1 on the dark card, bold.
+    - ~~Total XP is a deeper blue (`--xptotal`, #3B64C8)~~ - **superseded
+      in the 317 touch-up**: *"I guess the total xp should be the same?"*
+      The total is `--xpnum` like the numbers beside it; `--xptotal` is
+      gone (see "ONE XP BLUE, NO GREY" above). Weight 700 kept.
     - **THE KNOCK** (`xpBarBump`, `.is-xpbump`): *"Anytime you see an xp
       bar WHILE earning xp ... still do the up thing but like a 'failure'
       effect happens and then it goes to the overflow number."* XP earned

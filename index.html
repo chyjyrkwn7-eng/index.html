@@ -19295,6 +19295,29 @@
       0 14px 30px rgba(0,0,0,.45);
   }
   .profile-hero.has-cover .profile-hero-avatar svg.avatarchar-svg{ clip-path:circle(50% at 50% 50%); }
+  /* THE PORTRAIT POPS OUT OF ITS PLATE (plateBreakout): the disc is cut
+     inside the drawing now, so the drawing itself is not clipped, nothing
+     round it hides overflow, and it hangs out over the plate in its own
+     window, AVATAR_PLATE_VIEWBOX "-4 -6 48 48" - 48/34 of the plate, 7
+     units each side and 9 over the top, so the shared 34 units (every
+     head) land exactly on the plate. The tab's 39-unit window was not
+     enough: the Hive's bees and the Ronin's slash flew out of it and
+     were cut at its edge. A mask clips to the element's box, so the box
+     has to hold everything that pops. The mask is the usual one in this
+     box's percentages, as recordCharSheet bakes it for a "~plate" sheet:
+     a 1.6-unit feather at the top and sides (nothing reaches it), the
+     bust full to 26.8, .45 at 32.24, gone at 37. The
+     svg takes no taps: the plate's own box is the target, as it was. */
+  .rank-avatar.has-plate{ position:relative; overflow:visible; }
+  .profile-hero .profile-hero-avatar .rank-avatar.has-plate > svg.avatarchar-svg.cx-plate,
+  .rank-avatar.has-plate > svg.avatarchar-svg.cx-plate,
+  .rank-avatar.has-plate > .char-flip-play.cx-plate{
+    position:absolute; left:-20.5882%; top:-26.4706%; width:141.1765%; height:141.1765%; margin:0; clip-path:none; pointer-events:none; }
+  .rank-avatar.has-plate > svg.avatarchar-svg.cx-plate{
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0%, #000 3.333%, #000 68.333%, rgba(0,0,0,.45) 79.667%, transparent 89.583%),
+                       linear-gradient(to right, transparent 0%, #000 3.333%, #000 96.667%, transparent 100%);
+            mask-image:linear-gradient(to bottom, transparent 0%, #000 3.333%, #000 68.333%, rgba(0,0,0,.45) 79.667%, transparent 89.583%),
+                       linear-gradient(to right, transparent 0%, #000 3.333%, #000 96.667%, transparent 100%); }
   .profile-hero.has-cover .profile-ranklineup{ margin-top:.55rem; }
   .profile-hero.has-cover .profile-ranklineup.is-unranked{ text-align:center; }
   @media (min-width:40rem){
@@ -20018,10 +20041,19 @@
      blue for a second ... If you are going over cause you are at max,
      that's when both would be blue, the same blue." A deeper blue than
      the old #8FC1FF - "should be a darker blue". */
+  /* ONE BLUE FOR ALL OF IT (317 touch-up, supersedes the grey above):
+     "your current earned for the current level, it being grey is not the
+     move ... I guess the same blue for both? I guess the total xp should
+     be the same?" What you have, what the level asks and the total XP
+     under the bar are all --xpnum - the XP numbers' one blue, sat
+     between the bar's own #3D8BFF and #8FC1FF and kept as deep as round
+     seven asked ("should be a darker blue"). Over a cap nothing changes
+     colour any more; the level-up on a results card still lights the
+     new level's number for a second, in the bar's light end. */
   :root{ --xpnum:#5A9BEF; }
-  .xpnums-have{ color:rgba(255,255,255,.55); transition:color .6s ease; }
+  .xpnums-have{ color:var(--xpnum); transition:color .6s ease; }
   .xpnums-need{ color:var(--xpnum); }
-  .xpnums.is-over .xpnums-have, .xpnums.is-flash .xpnums-have{ color:var(--xpnum); transition-duration:.15s; }
+  .xpnums.is-flash .xpnums-have{ color:#8FC1FF; transition-duration:.15s; }
   /* The challenge sheet */
   .level-chal-sheet{ text-align:center; }
   .penal-note-sheet{ text-align:center; }
@@ -20335,12 +20367,12 @@
   .pf-idsep{ opacity:.35; }
   /* the XP is blue, the bar's own light blue - never the rank's colour
      (build 259: "I don't like the bronze all the way through") */
-  /* THE TOTAL IS A DEEPER BLUE THAN THE LEVEL'S NUMBERS (build 317):
-     "Total xp, this needs to be a darker blue or something, looks too
-     much like the others to the left." Same family, clearly a step
-     down, and a lighter weight, so it reads as a running total rather
-     than a third number about this level. */
-  .pf-xp-total{ color:var(--xptotal, #3B64C8); white-space:nowrap; font-weight:700; }
+  /* THE TOTAL IS THE SAME BLUE AS THE LEVEL'S NUMBERS (317 touch-up,
+     supersedes build 317's deeper #3B64C8 "--xptotal"): "I guess the
+     total xp should be the same?" One XP blue under the bar; the total
+     keeps its lighter weight, so it still reads as a running total
+     rather than a third number about this level. */
+  .pf-xp-total{ color:var(--xpnum); white-space:nowrap; font-weight:700; }
   .pf-xp{ display:block; margin-top:.85rem; }
   .pf-xpbar.xpbar-track{ display:block; }
   .pf-xpbar .xpbar-fill{ display:block; height:100%; border-radius:inherit; }
@@ -21888,6 +21920,7 @@
     box-shadow:0 0 0 4px #12151A, 0 0 0 5.5px color-mix(in srgb, var(--char-glow, #fff) 55%, transparent), 0 12px 26px rgba(0,0,0,.45);
   }
   .person-card.has-cover .person-card-art > .rank-avatar{ border-radius:50%; overflow:hidden; }
+  .person-card.has-cover .person-card-art > .rank-avatar.has-plate{ overflow:visible; }
   /* ---- the unlock card (build 243) - see showUnlockDetail ---- */
   .invite-sheet.unlock-card{ text-align:center; padding-top:1.2rem; }
   /* build 266: no text selection carried over from a press-and-hold. */
@@ -40797,6 +40830,126 @@ const CHAR_SPECIAL_DRAW = {
    room. The tab's flip-book records the same wide window ("<id>~wide",
    see charAnimDrawing). */
 const AVATAR_WIDE_VIEWBOX = "0.5 -2 39 39";
+/* THE PORTRAIT POPS OUT OF ITS PLATE (build 317 touch-up). Madison: "One
+   of the ones I've mentioned that gets cut off around the edges. Ensure
+   all characters are properly displayed." On the Profile screen and the
+   person card a character sits in a round plate with a rim, and the whole
+   drawing used to be clipped to that disc - so with every head back at
+   one size, the Ronin's hat brim, the Clown's bells, the Wizard's staff
+   orb and Umbra's moon were cut off at the rim. Now the drawing is split
+   by what it IS, inside the svg (clipPath elements, no filter):
+     - the scenery, the halo and the figure's own LIGHT stay on the disc
+       (the old circle(50%), r 17 about 20,20): a special's back and front
+       layers, a wash of the whole frame (Zeus's flash, Umbra's veil) and
+       paint masked by the scenery's fade - wherever in the figure they
+       sit (see discFor below);
+     - the figure - hats, props, bells, staff, halo - may paint past the
+       disc and over the rim, anywhere above PLATE_POP_Y; below it the
+       disc still cuts the bust exactly where it did (the shoulders leave
+       the disc from y 29.4 on every character, measured; the lowest
+       thing that should pop, the Ronin's scarf, ends by 28).
+     - a SMALL moon (Umbra's, Orion's - glow under 8) is an object, not the
+       sky: it leaves the scenery for the figure's side, at the opacity
+       the scenery's fade gave it.
+   Each piece is wrapped in a fresh <g> that carries the clip, so a part
+   that animates its own transform (the bob) moves inside a still clip.
+   The window is its own (AVATAR_PLATE_VIEWBOX, 7 units round the sides
+   and 9 over the top - the bees and the slash fly that far) and the
+   drawing is hung out over the plate by CSS (.rank-avatar.has-plate), so
+   the shared 34 units - every head - land exactly where they did. A flip-book of a
+   plate records the same thing ("<id>~plate"). */
+const PLATE_POP_Y = 28.5;
+const AVATAR_PLATE_VIEWBOX = "-4 -6 48 48";
+function plateBreakout(svg){
+  if(!svg || svg.classList.contains("cx-plate")) return svg;
+  const NS = "http://www.w3.org/2000/svg";
+  const mk = (tag, attrs) => { const e = document.createElementNS(NS, tag); Object.keys(attrs).forEach(k => e.setAttribute(k, attrs[k])); return e; };
+  const uid = svg.getAttribute("data-cx-uid") || ("pl" + Math.random().toString(36).slice(2, 9));
+  let defs = svg.querySelector(":scope > defs");
+  if(!defs){ defs = mk("defs", {}); svg.insertBefore(defs, svg.firstChild); }
+  const discId = uid + "-pdisc", popId = uid + "-ppop";
+  const disc = mk("clipPath", { id: discId, clipPathUnits: "userSpaceOnUse" });
+  disc.appendChild(mk("circle", { cx: "20", cy: "20", r: "17" }));
+  const half = Math.sqrt(17 * 17 - Math.pow(PLATE_POP_Y - 20, 2));
+  const pop = mk("clipPath", { id: popId, clipPathUnits: "userSpaceOnUse" });
+  pop.appendChild(mk("path", { d: "M-10 -10H50V" + PLATE_POP_Y + "H" + (20 + half).toFixed(3) +
+    "A17 17 0 0 1 " + (20 - half).toFixed(3) + " " + PLATE_POP_Y + "H-10Z" }));
+  defs.append(disc, pop);
+  const wrap = (node, id) => { const g = mk("g", { "clip-path": "url(#" + id + ")", class: "cx-plate-" + (id === popId ? "pop" : "disc") }); node.replaceWith(g); g.appendChild(node); return g; };
+  /* The disc as seen from INSIDE the figure. A special's layers sit in
+     the art-scale wrapper (AVATAR_ART_SCALE, a transform attribute), and a
+     userSpaceOnUse clip is read in the space of the element carrying it -
+     so the circle is handed the inverse of every transform above it, and
+     the disc lands exactly where the scenery's does. Only attributes are
+     read: a CSS bob on an ancestor (half a unit) moves the clip with it. */
+  const discFor = (() => {
+    const made = new Map();
+    return node => {
+      let m = new DOMMatrix();
+      const chain = [];
+      for(let e = node.parentNode; e && e !== svg; e = e.parentNode) chain.unshift(e);
+      chain.forEach(e => {
+        const list = e.transform && e.transform.baseVal;
+        if(list) for(let i = 0; i < list.numberOfItems; i++){
+          const x = list.getItem(i).matrix;
+          m = m.multiply(new DOMMatrix([x.a, x.b, x.c, x.d, x.e, x.f]));
+        }
+      });
+      if(m.isIdentity) return discId;
+      const inv = m.inverse(), key = [inv.a, inv.b, inv.c, inv.d, inv.e, inv.f].map(v => +v.toFixed(5)).join(" ");
+      if(!made.has(key)){
+        const id = discId + made.size;
+        const cp = mk("clipPath", { id, clipPathUnits: "userSpaceOnUse" });
+        cp.appendChild(mk("circle", { cx: "20", cy: "20", r: "17", transform: "matrix(" + key + ")" }));
+        defs.appendChild(cp);
+        made.set(key, id);
+      }
+      return made.get(key);
+    };
+  })();
+  [...svg.children].forEach(k => {
+    if(k === defs) return;
+    const sky = k.tagName.toLowerCase() === "circle" || k.classList.contains("cx-bg") || k.classList.contains("cx-sp-back") || k.classList.contains("cx-sp-front");
+    if(!sky){
+      /* THE FIGURE'S OWN SKY STAYS ON THE DISC. Light is not a prop: a
+         special's back and front layers (motes, rings, Umbra's veil - a
+         circle of night r 20), anything that washes the whole frame
+         (Zeus's flash, a 37-unit square; the Hacker's r 18 glitch), and
+         a code rain masked by the scenery's fade. Left in the figure,
+         each painted a square or a ring of light out over the rim. */
+      const own = [...k.querySelectorAll('.cx-sp-back, .cx-sp-front, [mask*="-bgm)"], rect, circle')].filter(n => {
+        const t = n.tagName.toLowerCase();
+        if(t === "rect") return Number(n.getAttribute("width")) >= 34 && Number(n.getAttribute("height")) >= 34;
+        if(t === "circle") return Number(n.getAttribute("r")) >= 17 && !n.closest(".cx-sp-back, .cx-sp-front");
+        return true;
+      });
+      own.filter(n => !own.some(o => o !== n && o.contains(n))).forEach(n => wrap(n, discFor(n)));
+    }
+    const g = wrap(k, sky ? discId : popId);
+    if(k.classList.contains("cx-bg")){
+      k.querySelectorAll(".cx-fx-bgmoon").forEach(m => {
+        /* its first circle is its glow, 2.1-2.3x the moon: Umbra's and
+           Orion's are ~6, the Ronin's sky-filling moon 22 */
+        const c = m.querySelector("circle"), r = c ? Number(c.getAttribute("r")) || 99 : 99;
+        if(r < 8){
+          const mg = mk("g", { "clip-path": "url(#" + popId + ")", class: "cx-plate-pop", opacity: ".75" });
+          mg.appendChild(m);
+          g.after(mg);
+        }
+      });
+    }
+  });
+  svg.setAttribute("viewBox", AVATAR_PLATE_VIEWBOX);
+  svg.classList.add("cx-plate");
+  return svg;
+}
+/* A character span (avatarSpanFor) sat in a round plate with a rim. */
+function platePortrait(span){
+  if(!span) return span;
+  const svg = span.querySelector(":scope > svg.avatarchar-svg");
+  if(svg){ plateBreakout(svg); span.classList.add("has-plate"); }
+  return span;
+}
 function drawAvatarCharSVG(charId){
   const svgNS = "http://www.w3.org/2000/svg";
   const def = AVATAR_CHARACTERS.find(c => c.id === charId);
@@ -50654,8 +50807,9 @@ function xpBarBump(host, onSettle){
   setTimeout(() => { if(onSettle) onSettle(); }, 170);
   setTimeout(() => host.classList.remove("is-xpbump"), XP_BUMP_MS + 40);
 }
-/* "into / span XP" with the loud half flipped by whether you are past
-   the requirement - see the Profile bar. */
+/* "into / span XP", both halves the XP numbers' one blue (--xpnum, 317
+   touch-up); `over` still marks a bar past its requirement (is-over), which
+   the knock and the gates read - it no longer changes a colour. */
 function buildXpNumbers(into, span, over){
   const w = document.createElement("span");
   w.className = "xpnums" + (over ? " is-over" : "");
@@ -62016,8 +62170,10 @@ function charAnimDrawing(charId){
     const wide = /~wide$/.test(charId);
     const svg = sil ? charSilhouetteSVG(charId.replace(/~sil$/, ""))
       : /~pick$/.test(charId) ? pickerCharSVG(charId.replace(/~pick$/, ""))
-      : buildAvatarCharSVGSafe(charId.replace(/~wide$/, ""));
+      : buildAvatarCharSVGSafe(charId.replace(/~(wide|plate)$/, ""));
     if(wide) svg.setAttribute("viewBox", AVATAR_WIDE_VIEWBOX);
+    /* "<id>~plate": the portrait that pops out of its plate */
+    if(/~plate$/.test(charId)) plateBreakout(svg);
     const uid = svg.getAttribute("data-cx-uid") || "\u0000";
     const id = charId.replace(/~/g, "_") + "-" + hashOf(new XMLSerializer().serializeToString(svg).split(uid).join("u"));
     charAnimDrawings.set(charId, { svg, id, depth: !sil });
@@ -62419,10 +62575,10 @@ function charFlipAttach(el){
   const layoutW = svg.clientWidth || parseFloat(getComputedStyle(svg).width) || 0;
   if(!layoutW) return null;
   if(layoutW > CHAR_FLIP_MAX_CSS) return false;
-  const wide = svg.classList.contains("cx-wide");
+  const wide = svg.classList.contains("cx-wide") || svg.classList.contains("cx-plate");
   const charId0 = charIdOfSvg(el, svg);
   if(!charId0) return false;
-  const charId = wide ? charId0 + "~wide" : charId0;
+  const charId = !wide ? charId0 : charId0 + (svg.classList.contains("cx-plate") ? "~plate" : "~wide");
   const scale = Math.min(window.devicePixelRatio || 1, 2);
   /* THE DRAWING'S OWN SCALE IS BAKED INTO THE SHEET (build 314). "In the
      leaderboard, all the characters are still slightly shaking." The
@@ -62485,7 +62641,7 @@ function charFlipAttach(el){
       /* the tab's wide drawing hangs over its icon by CSS (.cx-wide); the
          sheet takes exactly the same box, so no reading can catch it
          half-way through the bar coming back */
-      play.classList.add("cx-wide");
+      play.classList.add(svg.classList.contains("cx-plate") ? "cx-plate" : "cx-wide");
     } else if(ownScale){
       /* centred on the drawing as it is SHOWN, on whole device pixels */
       const shown = svg.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
@@ -64493,10 +64649,10 @@ const PROFILE_TIPS_289 = [
     text: "Customize changes your name, your character, your banner and the app\u2019s colour. More of each unlock as you climb the ranks and finish challenges." },
   { target: ".profile-hero .pf-standing", align: "left", vplacement: "below",
     text: "Your rank and your level. XP fills the bar; your badges decide how high your level can go." },
-  { target: ".profile-hero .pf-case", align: "left", vplacement: "above",
-    text: "Your badges \u2014 one per unit, earned with enough hundos (100% on the whole unit) in it. Tap to open your badge case and see how close each one is." },
   { target: ".profile-hero .pf-goal", align: "left", vplacement: "above",
-    text: "The rank challenges for your next rank, ticked off as you get there, and what it unlocks. Tap to see every rank." }
+    text: "The rank challenges for your next rank, ticked off as you get there, and what it unlocks. Tap to see every rank." },
+  { target: ".profile-hero .pf-case", align: "left", vplacement: "above",
+    text: "Your badges \u2014 one per unit, earned with enough hundos (100% on the whole unit) in it. Tap to open your badge case and see how close each one is." }
 ];
 
 function startSimpleTour(steps, onComplete, _waitedMs){
@@ -70039,7 +70195,7 @@ function openPersonSheet(entry){
 
   const art = document.createElement("div");
   art.className = "person-sheet-art person-card-art";
-  art.appendChild(avatarSpanFor(entry));
+  art.appendChild(platePortrait(avatarSpanFor(entry)));
   /* Big and alone here, so this is exactly where the character's own
      light belongs - the opposite call from the list rows, which lost
      it for being a smear. */
@@ -95460,7 +95616,7 @@ function showProfile(defaultTab){
      picker reads, so the light on this card is the light that was
      previewed when it was chosen. */
   heroAvatar.style.setProperty("--char-glow", avatarGlowColor(store.avatarChar));
-  heroAvatar.appendChild(avatarSpanFor({ avatarChar: store.avatarChar }));
+  heroAvatar.appendChild(platePortrait(avatarSpanFor({ avatarChar: store.avatarChar })));
   setCharState(heroAvatar, "live");
 
   const heroId = document.createElement("div");
@@ -95725,12 +95881,13 @@ function showProfile(defaultTab){
   const standing = buildProfileStanding(prog, rankNow);
   const xpFill = standing.querySelector(".xpbar-fill");
   heroSect.appendChild(standing);
-  /* WHAT YOU ARE, WHAT YOU HAVE, WHAT'S NEXT (build 317): the case sits
-     above the Next rank card - "I feel like it being at the bottom is
-     weird". Identity and level, then the badges you hold, then the
-     challenges ahead. */
-  heroSect.appendChild(buildProfileCase(badgeCount, totalUnitsForBadges));
+  /* THE BADGE CASE IS AT THE BOTTOM AGAIN (317 touch-up, reverting build
+     317's move above the Next rank card): "The badge case being at the
+     top is not the move, revert that location at the bottom." Where you
+     stand, the next rank (its challenges and unlocks), then the case,
+     its new-badge dot still against the arrow. */
   heroSect.appendChild(buildProfileGoal(prog));
+  heroSect.appendChild(buildProfileCase(badgeCount, totalUnitsForBadges));
   /* The class no longer rides at the foot of the identity card. It was
      one line there because it was one line of content; now that it is
      today's schedule, the next class day and a count, it is its own box

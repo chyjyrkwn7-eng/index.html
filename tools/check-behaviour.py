@@ -7623,7 +7623,9 @@ def check_b299(br):
           const tops = [...hero.querySelectorAll('.pf-standing, .pf-goal, .pf-case')].map(el => [pick(el), el.getBoundingClientRect().top]);
           return tops.sort((a, b) => a[1] - b[1]).map(x => x[0]).join(','); }""")
         # REVISED IN 317: the case moved above the Next rank card.
-        check(f"{dev}: the Profile card reads where you stand, the badge case, the next rank from the top", order == "standing,case,next", order)
+        # REVISED BACK IN THE 317 TOUCH-UP: "The badge case being at the top
+        # is not the move, revert that location at the bottom."
+        check(f"{dev}: the Profile card reads where you stand, the next rank, the badge case from the top", order == "standing,next,case", order)
         ctx.close()
 
 
@@ -7920,6 +7922,10 @@ def check_b302(br):
           out.total = tot ? tot.textContent : '';
           out.totalOnLine = !!(tot && tot.closest('.pf-idline') && bar && (bar.compareDocumentPosition(tot) & Node.DOCUMENT_POSITION_PRECEDING));
           out.barNums = (document.querySelector('.pf-standing .pf-xpnums') || {}).textContent || '';
+          /* 317 touch-up: the numbers and the total are one blue */
+          out.xpCols = ['.xpnums-have', '.xpnums-need', '.pf-xp-total'].map(sel => { const e = document.querySelector('.pf-standing ' + sel);
+            if(!e) return null; const c = getComputedStyle(e).color, m = c.match(/[\d.]+/g); if(!m) return null;
+            const v = m.slice(0, 3).map(Number); return /^color\(/.test(c) ? v.map(x => Math.round(x * 255)) : v; });
           if(keepPerf === undefined) delete store.unitPerfects[keepU0]; else store.unitPerfects[keepU0] = keepPerf;
           store.lifetime.points = keepPts;
           const fill = document.querySelector('.profile-xpbar .xpbar-fill');
@@ -7970,9 +7976,15 @@ def check_b302(br):
         # REVISED IN 317 (7602082, Madison's "Profile XP colours/total"
         # round): the total went back under the bar, beside this level's XP,
         # in its own darker blue - so it is NOT on the rank line any more.
+        # REVISED IN THE 317 TOUCH-UP: "I guess the same blue for both? I
+        # guess the total xp should be the same?" - no darker blue, no grey:
+        # this level's XP, what it asks and the total are one blue.
         check(f"{dev}: under the bar, this level's XP and the total XP; the total is not on the rank line",
               r.get("totalOnLine") is False and re.match(r"^[0-9,]+ total XP$", r.get("total") or "")
               and re.match(r"^[0-9,]+ / [0-9,]+ XP[0-9,]+ total XP$", r.get("barNums") or ""), [r.get("totalOnLine"), r.get("total"), r.get("barNums")])
+        xc = r.get("xpCols") or [None, None, None]
+        check(f"{dev}: ...all three in one blue, none grey",
+              None not in xc and xc[0] == xc[1] == xc[2] and xc[0][2] - xc[0][0] >= 80, xc)
         check(f"{dev}: the XP bar carries its slow light", r.get("glide") == "xp-glide", r.get("glide"))
         check(f"{dev}: back on Home, no flare bubble is empty", r.get("bubbles", 0) >= 7 and r.get("blank") == 0, [r.get("bubbles"), r.get("blank")])
         check(f"{dev}: Sapphire turns on a half-turn loop, Platinum has its spiral, Silver's star glints",
@@ -12964,8 +12976,15 @@ def check_b317_pfcard(br):
     challenge box thing?"; "the flare and the theme unlock box thing in
     profile should swap". Written against 74cc518, where every check fails
     but 'nothing threw' and 'it goes once the new badge is seen' - that one
-    guards what was kept, not what changed."""
-    print("\n317p. Profile: the new-badge dot by the case's arrow, 'Rank challenges' on the Next rank card, the max-rank state, the case above it")
+    guards what was kept, not what changed.
+    REVISED IN THE 317 TOUCH-UP, two of Madison's asks: "The badge case
+    being at the top is not the move, revert that location at the bottom"
+    (the case is the last block again, under the Next rank card) and "your
+    current earned for the current level, it being grey is not the move
+    ... I guess the same blue for both? I guess the total xp should be the
+    same?" (this level's XP, its requirement and the total: one blue, at a
+    mid level and at level 80). Both fail on e877af7."""
+    print("\n317p. Profile: the new-badge dot by the case's arrow, 'Rank challenges' on the Next rank card, the max-rank state, the case at the bottom, one XP blue")
     for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         r = pg.evaluate("""async () => { const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -12993,9 +13012,16 @@ def check_b317_pfcard(br):
           out.inKick = !!(dot && dot.closest('.pf-kick'));
           out.newWord = ((cs && cs.querySelector('.pf-case-new')) || {}).textContent || null;
           const st = document.querySelector('.profile-hero .pf-standing'), gl = document.querySelector('.profile-hero .pf-goal');
-          out.caseFirst = !!(cs && gl && (cs.compareDocumentPosition(gl) & 4));
-          out.gaps = (st && cs && gl) ? [Math.round(cs.getBoundingClientRect().top - st.getBoundingClientRect().bottom),
-            Math.round(gl.getBoundingClientRect().top - cs.getBoundingClientRect().bottom)] : null;
+          out.caseLast = !!(cs && gl && (gl.compareDocumentPosition(cs) & 4) && cs.parentElement.lastElementChild === cs);
+          out.gaps = (st && cs && gl) ? [Math.round(gl.getBoundingClientRect().top - st.getBoundingClientRect().bottom),
+            Math.round(cs.getBoundingClientRect().top - gl.getBoundingClientRect().bottom)] : null;
+          /* the XP under the bar: what you have, what the level asks, the total */
+          const col = sel => { const e = document.querySelector('.profile-hero .pf-standing ' + sel); if(!e) return null;
+            const c = getComputedStyle(e).color, m = c.match(/[\d.]+/g); if(!m) return null;
+            const v = m.slice(0, 3).map(Number); return /^color\(/.test(c) ? v.map(x => Math.round(x * 255)) : v; };
+          const xpCols = () => ({ have: col('.xpnums-have'), need: col('.xpnums-need'), total: col('.pf-xp-total'),
+            over: !!document.querySelector('.profile-hero .pf-standing .xpnums.is-over') });
+          out.xpMid = xpCols();
           out.rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
           const kicks = gl ? [...gl.querySelectorAll('.pf-kick')].map(k => k.textContent.trim()) : [];
           out.kicks = kicks;
@@ -13012,15 +13038,19 @@ def check_b317_pfcard(br):
           showProfile('profile'); await wait(700); clean();
           out.dotAfter = !!document.querySelector('.profile-hero .pf-case .new-dot');
           out.newAfter = !!document.querySelector('.profile-hero .pf-case .pf-case-new');
-          /* Supernova */
-          seat(units.length, xpForLevel(80) + 4000);
+          /* Supernova - and level 80 past what an 81st level would cost,
+             the over-the-wall state (317 touch-up: the XP blue there too) */
+          seat(units.length, xpForLevel(80) + 60000);
           store.seenUnlocks.badges = units.slice();
+          /* shown, not earned: no knock in the middle of the reading */
+          try{ localStorage.setItem('class26e.pfxp.seen', String(store.lifetime.points)); }catch(e){}
           showProfile('profile'); await wait(900); clean();
           out.top = rankOf(store);
           const tg = document.querySelector('.profile-hero .pf-goal');
           out.topCls = tg ? tg.className : null;
           out.topText = tg ? tg.textContent : null;
           out.topTasks = tg ? tg.querySelectorAll('.pf-task').length : -1;
+          out.xpTop = xpCols(); out.topLevel = levelStateFor(store).level;
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
         check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
@@ -13033,10 +13063,22 @@ def check_b317_pfcard(br):
         check(f"{dev}: ...with the word New beside it", (r.get("newWord") or "").strip() == "New", r.get("newWord"))
         check(f"{dev}: ...and it goes once the new badge is seen", r.get("dotAfter") is False and r.get("newAfter") is False,
               [r.get("dotAfter"), r.get("newAfter")])
-        check(f"{dev}: the badge case comes before the Next rank card", r.get("caseFirst") is True, r.get("caseFirst"))
+        # REVISED IN THE 317 TOUCH-UP: "The badge case being at the top is
+        # not the move, revert that location at the bottom."
+        check(f"{dev}: the badge case is at the bottom of the card, after the Next rank card", r.get("caseLast") is True, r.get("caseLast"))
         g, rem = r.get("gaps"), r.get("rem") or 16
         check(f"{dev}: ...with the card's usual gaps (1.05rem under the bar, .8rem between the boxes)",
               bool(g) and abs(g[0] - 1.05 * rem) <= 1.5 and abs(g[1] - 0.8 * rem) <= 1.5, [g, rem])
+        # REVISED IN THE 317 TOUCH-UP: no grey. This level's XP, what it
+        # asks and the total are one blue - mid level (not over) and at
+        # level 80 (over).
+        blue = lambda c: c is not None and c[2] - c[0] >= 80
+        for tag, xc in (("mid level", r.get("xpMid") or {}), ("level %s" % r.get("topLevel"), r.get("xpTop") or {})):
+            check(f"{dev}, {tag}: this level's XP, what it asks and the total XP are one blue, none grey",
+                  xc.get("have") is not None and xc.get("have") == xc.get("need") == xc.get("total") and blue(xc.get("have")), xc)
+        check(f"{dev}: ...the mid account is under its requirement and level 80 is over it (both states seen)",
+              (r.get("xpMid") or {}).get("over") is False and (r.get("xpTop") or {}).get("over") is True and r.get("topLevel") == 80,
+              [(r.get("xpMid") or {}).get("over"), (r.get("xpTop") or {}).get("over"), r.get("topLevel")])
         check(f"{dev}: the Next rank card heads its rows 'Rank challenges', above them",
               any(k.lower() == "rank challenges" for k in r.get("kicks", [])) and r.get("kickBeforeTasks"), [r.get("kicks"), r.get("kickBeforeTasks")])
         check(f"{dev}: what the rank unlocks leads with its flare, then its theme",
@@ -14012,6 +14054,151 @@ def check_b317_tabplate(br):
           all(t.get("vb") == "0.5 -2 39 39" and lands(t) for t in r["tab"].values()), r["tab"])
     check("...and the tab's flip-book takes exactly the drawing's box",
           all(t.get("play") and t.get("svg") and max(abs(a - b) for a, b in zip(t["play"], t["svg"])) <= 0.6 for t in r["tab"].values()), r["tab"])
+def check_b317_plate(br):
+    """Build 317 touch-up. "One of the ones I've mentioned that gets cut off
+    around the edges. Ensure all characters are properly displayed." With
+    every head back at one size, the Profile plate cut the Ronin's hat brim,
+    the Clown's bells, the Wizard's staff orb and Umbra's moon at its rim.
+    The portrait now pops out of its plate: the figure may paint past the
+    disc (over the rim), the scenery stays on it.
+    Measured as PAINT, not as boxes - a bounding box ignores a clip and a
+    mask, so it reads "past the disc" on the clipped build too. At four
+    paused moments of the idle loop and every 400ms through the
+    character's special, each plate is shot with the scenery hidden (the
+    figure alone): as shown, FREE (every clip, mask and overflow round the
+    drawing lifted, the figure's own disc-bound light kept), and with the
+    figure hidden as well. Then:
+      - at least seven of the nine reach past the disc in the FREE shot
+        (the drawing itself, at some moment of its loop or its special),
+        and every one that does paints that OVER the rim as shown - so the
+        figure's painted box extends past the disc. The Timekeeper and the
+        Solar never leave the disc at the shared head size (their clock
+        ring and crown sit inside r 17); what read as cut on them was the
+        old 4.7% edge feather, and the next line holds them to being whole;
+      - nothing the free shot paints is missing from the shown one above
+        y 26.5 of the shared window, where the bust's own fade begins -
+        below it the disc still cuts the bust, on purpose;
+      - the scenery, and the light of a special (its layers, Zeus's flash,
+        Umbra's veil), paint nothing outside the disc.
+    Written against e877af7, where the whole drawing was clipped to the
+    disc: no figure reaches past it (0 px on all nine), and the Wizard's
+    orb, the Marksman's rifle, the Clown's bells, the Hive's bees and every
+    special that leaves the frame lose paint at the rim. PLATE_DEBUG=<dir>
+    saves the five shots of any moment that loses paint or leaks light."""
+    import io as _io
+    from PIL import Image, ImageChops, ImageDraw
+    print("\n317. the portrait pops out of its plate: the figure over the rim, the scenery on the disc")
+    NINE = ["ronin", "clown", "hive", "wizard", "umbra", "zeus", "marksman", "timekeeper", "solar"]
+    ALL = NINE + ["ninja", "grizzly"]
+    PREP = """async ([ch, where]) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      try{ charSpecialTiming.first = [1e9, 1e9]; charSpecialTiming.gap = [1e9, 1e9]; }catch(e){}
+      document.querySelectorAll('.invite-sheet, .sheet-backdrop, .person-card').forEach(n => n.remove());
+      store.avatarChar = ch;
+      let plate;
+      if(where === 'hero'){ showProfile('profile'); await wait(900); plate = document.querySelector('.profile-hero-avatar'); }
+      else { showHome(); await wait(500);
+        openPersonSheet({ firstName: 'Kim', avatarChar: ch, pub: 'zz9', level: 30, badges: 3, accent: 'ink', xp: 20000, hundos: 10 });
+        await wait(1200); plate = document.querySelector('.person-card-art'); }
+      document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot, .daily-alert, #pushing-update').forEach(x => x.remove());
+      if(!plate) return null;
+      plate.scrollIntoView({ block: 'center' }); await wait(200);
+      const ra = plate.querySelector('.rank-avatar'); if(ra) ra.style.filter = 'none';
+      const svg = plate.querySelector('svg.avatarchar-svg');
+      if(!svg) return null;
+      const top = k => k.tagName.toLowerCase() === 'circle' || k.classList.contains('cx-bg') || k.classList.contains('cx-sp-back') || k.classList.contains('cx-sp-front') || k.classList.contains('cx-plate-disc');
+      const L = window.__pl = { svg, plate, fig: [], sky: [] };
+      [...svg.children].forEach(k => { if(k.tagName.toLowerCase() === 'defs') return; (top(k) ? L.sky : L.fig).push(k); });
+      /* the figure's own light, put on the disc inside it (none on e877af7) */
+      L.light = [...svg.querySelectorAll('.cx-plate-disc')].filter(g => !L.sky.includes(g));
+      L.show = list => { [['fig', L.fig], ['sky', L.sky], ['light', L.light]].forEach(([n, ks]) => ks.forEach(k => k.style.visibility = list.includes(n) ? '' : 'hidden')); };
+      L.free = on => {
+        for(let e = L.svg; e && e !== L.plate.parentElement; e = e.parentElement) e.style.overflow = on ? 'visible' : '';
+        L.svg.style.clipPath = on ? 'none' : ''; L.svg.style.webkitMaskImage = on ? 'none' : ''; L.svg.style.maskImage = on ? 'none' : '';
+        svg.querySelectorAll('.cx-plate-pop').forEach(g => { if(on){ g.dataset.cp = g.getAttribute('clip-path'); g.removeAttribute('clip-path'); } else if(g.dataset.cp){ g.setAttribute('clip-path', g.dataset.cp); } });
+      };
+      L.at = t => document.getAnimations().forEach(a => { try{ a.pause(); if(L.plate.contains(a.effect && a.effect.target)) a.currentTime = t; }catch(e){} });
+      /* the special's own end-of-run timer is disarmed (it checks this
+         token), or it would take .char-special off half-way through */
+      L.special = () => { plate.classList.remove('char-special'); const ok = playCharSpecial(plate); plate.__charSpecial = { held: true }; return ok ? charSpecialMsFor(svg) : 0; };
+      L.at(0);
+      const b = plate.getBoundingClientRect();
+      return { cx: b.left + b.width / 2, cy: b.top + b.height / 2, r: b.width / 2 }; }"""
+    for (w, h, dev, places) in ((440, 956, "17 Pro Max", ("hero", "card")), (834, 1194, "iPad Pro 11", ("hero",))):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        res = {}
+        for where in places:
+            for ch in ALL:
+                d = pg.evaluate(PREP, [ch, where])
+                if not d:
+                    res[(where, ch)] = None; continue
+                x0, y0 = max(0, int(d["cx"] - d["r"] - 40)), max(0, int(d["cy"] - d["r"] - 40))
+                side = int(2 * d["r"] + 80)
+                clip = {"x": x0, "y": y0, "width": side, "height": side}
+                # the bust is still cut by the disc below y = 28.5 of the
+                # shared 3..37 window, and fades from 26.8 down on purpose
+                cut = d["cy"] - d["r"] + (26.5 - 3) / 34 * 2 * d["r"] - y0
+                cx, cy, rr = d["cx"] - x0, d["cy"] - y0, d["r"] + 1.5
+                above = Image.new("L", (side, side), 0)
+                ImageDraw.Draw(above).rectangle([0, 0, side, max(0, cut)], fill=255)
+                outd = Image.new("L", (side, side), 255)
+                ImageDraw.Draw(outd).ellipse([cx - rr, cy - rr, cx + rr, cy + rr], fill=0)
+                out_above = ImageChops.multiply(outd, above)
+                def shot():
+                    return Image.open(_io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+                def count(a, b, region):
+                    diff = ImageChops.difference(a, b).convert("L").point(lambda v: 255 if v > 24 else 0)
+                    return ImageChops.multiply(diff, region).histogram()[255]
+                r = {"lost": 0, "figOut": 0, "freeOut": 0, "skyOut": 0, "lightOut": 0, "moments": 0}
+                def moment(t):
+                    pg.evaluate("(t) => __pl.at(t)", t)
+                    pg.evaluate("() => __pl.show([])"); none = shot()
+                    pg.evaluate("() => __pl.show(['fig', 'light'])"); a = shot()
+                    pg.evaluate("() => __pl.free(true)"); f = shot(); pg.evaluate("() => __pl.free(false)")
+                    pg.evaluate("() => __pl.show(['fig'])"); nolight = shot()
+                    pg.evaluate("() => __pl.show(['sky'])"); s = shot()
+                    pg.evaluate("() => __pl.show(['fig', 'sky', 'light'])")
+                    if os.environ.get("PLATE_DEBUG") and (count(a, f, above) > 6 or count(a, nolight, outd) > 3):
+                        strip = Image.new("RGB", (side * 5, side))
+                        for i, im in enumerate((none, a, f, nolight, s)): strip.paste(im, (i * side, 0))
+                        strip.save(os.path.join(os.environ["PLATE_DEBUG"], "%s-%s-%s-%d.png" % (dev.replace(" ", ""), where, ch, t)))
+                    r["lost"] = max(r["lost"], count(a, f, above))
+                    r["figOut"] = max(r["figOut"], count(none, nolight, out_above))
+                    pg.evaluate("() => { __pl.show(['fig']); __pl.free(true); }"); fnl = shot()
+                    pg.evaluate("() => { __pl.free(false); __pl.show(['fig', 'sky', 'light']); }")
+                    r["freeOut"] = max(r["freeOut"], count(none, fnl, out_above))
+                    r["lightOut"] = max(r["lightOut"], count(a, nolight, outd))
+                    r["skyOut"] = max(r["skyOut"], count(none, s, outd))
+                    r["moments"] += 1
+                for t in (0, 1500, 3000, 4500):
+                    moment(t)
+                ms = pg.evaluate("() => __pl.special()")
+                for t in range(200, ms or 0, 400):
+                    moment(t)
+                pg.evaluate("() => { __pl.plate.classList.remove('char-special'); __pl.at(0); }")
+                res[(where, ch)] = r
+        ctx.close()
+        for where in places:
+            label = "the Profile plate" if where == "hero" else "the person card"
+            g = lambda ch, k: res[(where, ch)] and res[(where, ch)][k]
+            # what the drawing itself reaches past the disc, free of every
+            # clip: those must show it over the rim; the rest are shown whole
+            reach = [ch for ch in NINE if res[(where, ch)] and res[(where, ch)]["freeOut"] >= 6]
+            check(f"{dev}, {label}: most of the nine reach past the disc (px of the free drawing outside it, worst moment)",
+                  len(reach) >= 7, {ch: g(ch, "freeOut") for ch in ALL})
+            check(f"{dev}, {label}: ...and every one that does paints it OVER the rim, as shown (px past the disc)",
+                  all(res[(where, ch)]["figOut"] >= max(6, res[(where, ch)]["freeOut"] - 6) for ch in reach),
+                  {ch: g(ch, "figOut") for ch in ALL})
+            check(f"{dev}, {label}: no character loses any of its figure at the rim above the bust line (px lost)",
+                  all(res[(where, ch)] is not None and res[(where, ch)]["lost"] <= 6 for ch in ALL),
+                  {ch: g(ch, "lost") for ch in ALL})
+            check(f"{dev}, {label}: and the scenery stays on the disc",
+                  all(res[(where, ch)] is not None and res[(where, ch)]["skyOut"] <= 3 for ch in ALL),
+                  {ch: g(ch, "skyOut") for ch in ALL})
+            check(f"{dev}, {label}: ...and so does a special's light (its layers, Zeus's flash, Umbra's veil)",
+                  all(res[(where, ch)] is not None and res[(where, ch)]["lightOut"] <= 3 for ch in ALL),
+                  {ch: g(ch, "lightOut") for ch in ALL})
+
+
 def check_b317_xpcap(br):
     """Build 317. Four of Madison's asks about a full XP bar, in one gate:
     "The level 80 xp bar, it says every level reached, make it so that xp
@@ -14024,8 +14211,14 @@ def check_b317_xpcap(br):
     a 'failure' effect happens and then it goes to the overflow number".
     The bump is asserted by its class appearing on the bar while XP is
     added, and NOT appearing on a bar merely shown full. Written against
-    build 317's first cut (74cc518), where every one of these fails."""
-    print("\n317. a full XP bar: level 80 keeps counting, the wall note, the total's blue, the knock")
+    build 317's first cut (74cc518), where every one of these fails.
+    REVISED IN THE 317 TOUCH-UP: "your current earned for the current
+    level, it being grey is not the move ... I guess the same blue for
+    both? I guess the total xp should be the same?" The total is no
+    longer a deeper blue: this level's XP, its requirement and the total
+    are one blue at a mid level, at a wall and at level 80. Fails on
+    e877af7 (the have grey, the total #3B64C8)."""
+    print("\n317. a full XP bar: level 80 keeps counting, the wall note, one XP blue, the knock")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate("""() => {
       window.__acct = (pts, nb) => { const units = topicsIn(QUESTIONS);
@@ -14041,7 +14234,8 @@ def check_b317_xpcap(br):
         over: !!document.querySelector('.pf-standing .xpnums.is-over'), cap: q('.pf-standing .pf-xp-cap'),
         note: q('.pf-standing .pf-xp-note'), text: q('.pf-standing'),
         tot: document.querySelector('.pf-standing .pf-xp-total') && getComputedStyle(document.querySelector('.pf-standing .pf-xp-total')).color,
-        need: document.querySelector('.pf-standing .xpnums-need') && getComputedStyle(document.querySelector('.pf-standing .xpnums-need')).color });
+        need: document.querySelector('.pf-standing .xpnums-need') && getComputedStyle(document.querySelector('.pf-standing .xpnums-need')).color,
+        have: document.querySelector('.pf-standing .xpnums-have') && getComputedStyle(document.querySelector('.pf-standing .xpnums-have')).color });
     }""")
     # Generous: headless Chromium runs this page's rAF at a few frames a
     # second, and the knock is a fill, a timer and a count-up in a row.
@@ -14066,10 +14260,15 @@ def check_b317_xpcap(br):
     def rgb(c):
         v = [float(x) for x in re.findall(r"[\d.]+", c or "")[:3]]
         return [round(x * 255) for x in v] if (c or "").startswith("color(") else v
-    t, n = rgb(wall["tot"]), rgb(wall["need"])
-    lum = lambda c: 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
-    check("the total XP is a clearly deeper blue than the level's numbers, and still blue",
-          len(t) == 3 and len(n) == 3 and t[2] - t[0] >= 80 and lum(n) - lum(t) >= 25, [t, n])
+    # REVISED IN THE 317 TOUCH-UP: one blue, not a deeper one for the total
+    mid = pg.evaluate("""async () => { __acct(xpForLevel(33) + 400, 3); showProfile('identity'); %s return __pf(); }""" % (wait % 900))
+    blue = lambda c: len(c) == 3 and c[2] - c[0] >= 80
+    for tag, st in (("a mid level, under its requirement", mid), ("a wall", wall), ("level 80, over the wall", l80)):
+        hv, nd, tt = rgb(st["have"]), rgb(st["need"]), rgb(st["tot"])
+        check(f"{tag}: this level's XP, what it asks and the total XP are one blue, none grey",
+              blue(hv) and hv == nd == tt, [hv, nd, tt, st["nums"], st["over"]])
+    check("...and the mid level is under its requirement, so the have number is blue without being over",
+          mid["over"] is False and bool(re.match(r"^[0-9,]+ / [0-9,]+ XP$", mid["nums"] or "")), [mid["over"], mid["nums"]])
     # 3. the knock: results card, XP added into a bar at a wall
     res = pg.evaluate("""async () => {
       const out = {};
@@ -14933,6 +15132,7 @@ def main():
             check_b317_challenge_specials(br)
             check_b317_hundobox(br)
             check_b317_tabplate(br)
+            check_b317_plate(br)
             check_b317_xpcap(br)
             check_b317_pfcard(br)
             check_b317_rings(br)
