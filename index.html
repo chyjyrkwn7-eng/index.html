@@ -9576,7 +9576,7 @@
   @keyframes hfx-chase{ from{ opacity:.12; } to{ opacity:1; } }
   @keyframes hfx-chase-b{ from{ opacity:1; } to{ opacity:.12; } }
   .hfx-ufo-glow{ position:absolute; left:15%; right:15%; bottom:-14%; height:50%; border-radius:50%;
-    background:radial-gradient(closest-side, rgba(150,255,175,.55), rgba(107,255,143,0)); }
+    background:radial-gradient(closest-side, rgba(var(--bmg, 150,255,175), .55), rgba(var(--bmd, 107,255,143), 0)); }
   .hfx-ufo-beam{ position:absolute; left:calc(var(--bw) / -2); width:var(--bw); top:calc(var(--uh) * -.2); height:var(--bh); transform-origin:50% 0;
     background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-beam 7s linear both; }
   @keyframes hfx-ufo-beam{ 0%, 37%{ transform:scaleY(0); opacity:0; animation-timing-function:cubic-bezier(.3,.6,.4,1); } 37.4%{ opacity:1; }
@@ -9610,7 +9610,8 @@
     box-shadow:inset 0 0 0 1.5px rgba(150,255,175,.8), inset 0 0 30px rgba(107,255,143,.35);
     animation:hfx-ufo-landglow 2.4s ease-out var(--t) both; }
   @keyframes hfx-ufo-landglow{ 0%{ opacity:0; } 10%{ opacity:1; } 60%{ opacity:.6; } 100%{ opacity:0; } }
-  .hfx-ufo-landglow.is-hit{ animation-duration:1.2s; }
+  .hfx-ufo-landglow.is-hit{ animation-duration:1.2s;
+    box-shadow:inset 0 0 0 1.5px rgba(var(--bmg, 150,255,175), .8), inset 0 0 30px rgba(var(--bmd, 107,255,143), .35); }
   /* build 314: the scan, the lock, the score taken up, the warp, the marks */
   .hfx-ufo-scanbar{ position:absolute; width:44px; margin-left:-44px; opacity:0; transform-origin:100% 50%;
     background:linear-gradient(90deg, rgba(107,255,143,0), rgba(107,255,143,.18) 62%, rgba(200,255,214,.75) 93%, #F4FFF6 97%, rgba(244,255,246,0));
@@ -79257,13 +79258,32 @@ function hfxUfoLightsURL(odd){
     return 'viewBox="0 0 200 124">' + o + '</svg>';
   }, 640);
 }
+/* THE TRACTOR BEAM'S COLOUR (build 317, round 5): "could the beam be blue
+   btw? Would that be cool? Or is green the best for the beam?" Both are
+   built - the beam itself (the saucer's and the box's), its falling
+   rings, the glow under the hull it comes from and the box's flare where
+   it strikes; everything else on the UFO (its lights, the scan, the box's
+   own colours) stays the UFO's green. Which one plays is this one line.
+   BLUE, compared side by side in the real effect at the same seeded
+   moments (strike, sweep, landed, grab): a green beam in a green box reads
+   as more of the box's own glow, while a blue one reads as a beam - light
+   from the saucer, on the box only while it is there - and the green 100%
+   going up it stays clear. Green is the other value. */
+const HFX_UFO_BEAMS = {
+  green: { hi: "#C8FFD4", c: "#6BFF8F", ring: "#B8FFC8", glow: "150,255,175", deep: "107,255,143" },
+  blue:  { hi: "#D4F1FF", c: "#5CC2FF", ring: "#BFE8FF", glow: "150,215,255", deep: "92,194,255" }
+};
+const HFX_UFO_BEAM = "blue";
+function hfxUfoBeam(){ return HFX_UFO_BEAMS[HFX_UFO_BEAM] || HFX_UFO_BEAMS.green; }
 function hfxBeamURL(){
-  return hfxSprite("beam", () => 'viewBox="0 0 100 200"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C8FFD4" stop-opacity=".75"/><stop offset=".35" stop-color="#6BFF8F" stop-opacity=".38"/><stop offset="1" stop-color="#6BFF8F" stop-opacity=".1"/></linearGradient>' +
+  const b = hfxUfoBeam();
+  return hfxSprite("beam-" + HFX_UFO_BEAM, () => 'viewBox="0 0 100 200"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + b.hi + '" stop-opacity=".75"/><stop offset=".35" stop-color="' + b.c + '" stop-opacity=".38"/><stop offset="1" stop-color="' + b.c + '" stop-opacity=".1"/></linearGradient>' +
     '<linearGradient id="c" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>' +
     '<path d="M38 0 L62 0 L100 200 L0 200 Z" fill="url(#b)"/><path d="M45 0 L55 0 L70 200 L30 200 Z" fill="url(#c)"/></svg>', 400);
 }
 function hfxBeamRingURL(){
-  return hfxSprite("bring", () => 'viewBox="0 0 100 30"><ellipse cx="50" cy="15" rx="46" ry="11" fill="none" stroke="#B8FFC8" stroke-width="2.6" stroke-opacity=".85"/><ellipse cx="50" cy="15" rx="46" ry="11" fill="none" stroke="#6BFF8F" stroke-width="7" stroke-opacity=".25"/></svg>', 256);
+  const b = hfxUfoBeam();
+  return hfxSprite("bring-" + HFX_UFO_BEAM, () => 'viewBox="0 0 100 30"><ellipse cx="50" cy="15" rx="46" ry="11" fill="none" stroke="' + b.ring + '" stroke-width="2.6" stroke-opacity=".85"/><ellipse cx="50" cy="15" rx="46" ry="11" fill="none" stroke="' + b.c + '" stroke-width="7" stroke-opacity=".25"/></svg>', 256);
 }
 function hfxUfo(scr, bx, c){
   const r = c.br, small = c.vw < 600;
@@ -79282,7 +79302,8 @@ function hfxUfo(scr, bx, c){
     /* how far its beam sweeps either way across the box (round 4) */
     const swa = hfxUfoSwa(c);
     const u = hfxMk(scr, "span", "hfx-saucer", { left: L.x + "px", top: L.y + "px", "--sx": (hfxR(-.3, .3) * c.vw) + "px", "--sy": (-L.y - h - 20) + "px",
-      "--hov": hov + "px", "--ox": exit.x + "px", "--oy": exit.y + "px", "--uw": w + "px", "--uh": h + "px", "--swa": swa + "px" });
+      "--hov": hov + "px", "--ox": exit.x + "px", "--oy": exit.y + "px", "--uw": w + "px", "--uh": h + "px", "--swa": swa + "px",
+      "--bmg": hfxUfoBeam().glow, "--bmd": hfxUfoBeam().deep });
     /* THE BEAM IS FIRED, THEN IT RIDES WITH THE HULL (build 317, round 3):
        "the UFO's projection is shown before it's shot out of the UFO and
        it doesn't hit the bottom of the box". It grows out of the underside
@@ -79341,7 +79362,7 @@ function hfxUfo(scr, bx, c){
       hfxMk(bx, "i", "hfx-ufo-inbeam", { left: cx + "px", "--ih": c.bh + "px", "--iw": Math.min(c.bw * .8, c.p.w * 1.6) + "px",
         "--swa": hfxUfoSwa(c) + "px" }).style.backgroundImage = hfxBeamURL();
       /* the box flares as the beam strikes it, and again as it lands */
-      hfxMk(bx, "i", "hfx-ufo-landglow is-hit", { "--t": 3.94 });
+      hfxMk(bx, "i", "hfx-ufo-landglow is-hit", { "--t": 3.94, "--bmg": hfxUfoBeam().glow, "--bmd": hfxUfoBeam().deep });
       hfxMk(bx, "i", "hfx-ufo-landglow", { "--t": 6.1 });
     } else {
       /* in a small box: it comes down into the box, hovers over the
