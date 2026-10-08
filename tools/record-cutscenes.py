@@ -353,10 +353,12 @@ def test_to_rank(pg, rec):
 
 def flare_scene(color, void_flare):
     """The secret-flare scene that actually plays at the end of a run
-    (playFinalFlareScene), rebuilt in build 312: the flare streaks in, the
-    planet collapses, the dark holds, the figure's own flares light alone,
-    and it fades up round them. 18.2s long - a shorter capture misses the
-    whole point of the rebuild, which is the slow arrival."""
+    (playFlareFoundScene). Rebuilt in build 317 (sfScene): the build-up,
+    the dark, the character as a live silhouette, its special, the light
+    rising over it, the title - about 28s for a character's scene, 10s for
+    the first two. A shorter capture misses the reveal, which is the point.
+    (tools/... frame-stepped recordings: see CLAUDE.md, "THE SECRET FLARE
+    SCENES".)"""
     def body(pg, rec):
         pg.evaluate("()=>showHome()")
         pg.wait_for_timeout(700)
@@ -368,7 +370,7 @@ def flare_scene(color, void_flare):
             store.mysteryColorsFound = {}; order.slice(0, order.indexOf(a.c) + 1).forEach(k => store.mysteryColorsFound[k] = true);
             if(a.v) playFlareFoundScene(a.c, false, () => {});
             else playFinalFlareScene(a.c, () => {});}""", {"c": color, "v": void_flare})
-        pg.wait_for_timeout(19500)
+        pg.wait_for_timeout(30500)
     return body
 
 

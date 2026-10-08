@@ -10317,17 +10317,24 @@ def check_b312_flares(br):
       const art = document.querySelector('.rs-spot .rs-spot-art');
       out.cardFilter = art ? getComputedStyle(art).filter : 'missing';
       h.stop();
-      /* the Void scene */
+      /* the Void scene (rebuilt in build 317: the figure is a live
+         silhouette that the light rises over - see check_b317_sflare) */
       store.mysteryColorsFound = { red: true, orange: true, yellow: true };
       const sc = playFinalFlareScene('yellow', () => {});
-      await wait(9800);
+      for(let i = 0; i < 300 && !document.querySelector('.ff-scene .sf-fig.is-keys'); i++) await wait(100);
+      await wait(1600);
       const ov = document.querySelector('.ff-scene');
       out.hop = !!(ov && ov.querySelector('.char-react-win'));
-      const fig = ov && ov.querySelector('.ff-fig');
+      const fig = ov && ov.querySelector('.sf-fig');
       out.figFilter = fig ? getComputedStyle(fig).filter : 'missing';
-      out.figAnim = fig ? getComputedStyle(fig).animationName : 'missing';
-      out.flaresFirst = !!(ov && ov.querySelector('.ff-figflares svg'));
-      await wait(6800);
+      /* nothing on the figure moves it up and down: the move is a slow
+         turn and a breath (scale), never a translate keyframe */
+      out.figAnim = fig ? [fig, ...fig.querySelectorAll('.sf-figmove, .sf-breath')].map(e => getComputedStyle(e).animationName).filter(n => n !== 'none' && n !== 'sf-breathe').join(',') || 'none' : 'missing';
+      /* its flares light first, alone in the dark: the silhouette's first
+         lit parts are up while its edge is not */
+      const first = fig && fig.querySelector('.sf-sil .sf-key-first');
+      out.flaresFirst = !!(first && first.querySelector('.cx-fx-flares') && fig.classList.contains('is-keys'));
+      await wait(4000);
       out.stillUpAt16s = !!document.querySelector('.ff-scene');
       sc && sc.stop && sc.stop();
       /* the Home card */
@@ -11374,7 +11381,7 @@ def check_b313_flares(br):
       out.scenes = [];
       for(const c of ['violet', 'white', 'core']){
         const h = playFlareFoundScene(c, false, () => {}); await wait(400);
-        const o = document.querySelector('.ff-scene'); out.scenes.push(o ? o.className.split(' ').filter(x => /^xs-(umbra|horizon|genesis)$/.test(x)).join('') : 'none');
+        const o = document.querySelector('.ff-scene'); out.scenes.push(o ? o.className.split(' ').filter(x => /^sf-(umbra|horizon|genesis)$/.test(x)).join('').replace('sf-', 'xs-') : 'none');
         h && h.stop && h.stop(); await wait(100);
       }
       }catch(e){ out.err = String(e && e.stack || e); }
@@ -15315,6 +15322,294 @@ def check_b317_flow(br):
           sp.get("card") is True and sp.get("cardSpecial") is True, sp)
 
 
+
+# --------------------------------------------------------------------------
+# BUILD 317: THE SECRET FLARE SCENES, REBUILT. Stepped on the page clock
+# with every animation seeked (rec4's method), so a loaded machine gives
+# the same frames as a quiet one. A CSS animation whose name has left the
+# element is cancelled, as a page that never scripted it would do (Chrome
+# keeps one a script has paused or finished).
+SF_SEEK = """(t) => { const M = window.__t0s = window.__t0s || new WeakMap();
+  document.getAnimations().forEach(an => {
+    if(!M.has(an)) M.set(an, { at: t, from: an.currentTime || 0, done: false });
+    const s = M.get(an); if(s.done) return;
+    if(an.animationName && an.effect && an.effect.target){ try{
+      const cs = getComputedStyle(an.effect.target, an.effect.pseudoElement || null);
+      if(cs.animationName.split(',').map(x => x.trim()).indexOf(an.animationName) < 0){ s.done = true; an.cancel(); return; }
+    }catch(e){} }
+    const want = s.from + (t - s.at) * 1000;
+    let end = Infinity; try{ end = an.effect.getComputedTiming().endTime; }catch(e){}
+    if(want >= end && isFinite(end)){ s.done = true; try{ an.finish(); }catch(e){} return; }
+    if(an.playState !== 'paused') an.pause();
+    try{ an.currentTime = want; }catch(e){} }); }"""
+
+SF_FIX = """(c) => { const o = MYSTERY_ORDER; store.mysteryColorsFound = store.mysteryColorsFound || {};
+  o.forEach(k => store.mysteryColorsFound[k] = false); o.slice(0, o.indexOf(c) + 1).forEach(k => store.mysteryColorsFound[k] = true);
+  store.pendingVoidCutscene = false; saveStore();
+  document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.rs-spot,.daily-alert').forEach(n => n.remove()); }"""
+
+SF_STATE = """() => { const o = document.querySelector('.ff-scene, .fl-scene'); const f = o && o.querySelector('.sf-fig');
+  const vis = el => !!el && getComputedStyle(el).visibility !== 'hidden';
+  return { o: o ? o.className : null, f: f ? f.className : null, d: window.__sfD, blocked: homeUnlockBlocked(),
+           special: !!(f && f.querySelector('.char-special')), realVis: f ? vis(f.querySelector('.sf-real')) : null,
+           silVis: f ? vis(f.querySelector('.sf-sil')) : null }; }"""
+
+SF_FACTS = r"""() => { const f = document.querySelector('.sf-fig'); if(!f) return null;
+  const sil = f.querySelector('.sf-sil > svg.avatarchar-svg'), real = f.querySelector('.sf-real > svg.avatarchar-svg');
+  const rgb = c => (String(c).match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+  const body = sil ? [...sil.querySelectorAll('.sf-silbody path, .sf-silbody circle, .sf-silbody ellipse')]
+    .filter(n => !n.closest('.sf-key') && getComputedStyle(n).fill !== 'none' && getComputedStyle(n).visibility !== 'hidden') : [];
+  const dark = body.filter(n => Math.max.apply(null, rgb(getComputedStyle(n).fill)) <= 24).length;
+  const keys = sil ? [...sil.querySelectorAll('.sf-key')].filter(k => +getComputedStyle(k).opacity > .5).length : 0;
+  const outside = [...document.querySelectorAll('.sf-scene *')].filter(e => !e.closest('.cosmic-hero-wrap'));
+  return { silChar: sil && sil.getAttribute('data-char'), realChar: real && real.getAttribute('data-char'),
+    silLive: !!(sil && sil.closest('.char-live')), realLive: !!(real && real.closest('.char-live')),
+    silAnims: sil ? sil.getAnimations({ subtree: true }).length : 0, realAnims: real ? real.getAnimations({ subtree: true }).length : 0,
+    body: body.length, dark, keys,
+    filtered: outside.filter(e => getComputedStyle(e).filter !== 'none').length + outside.filter(e => e.tagName.toLowerCase() === 'filter').length,
+    svgFilter: [sil, real].map(x => x ? getComputedStyle(x).filter : 'missing') }; }"""
+
+SF_OLD_S = {"red": 5.1, "orange": 5.1, "yellow": 18.7, "violet": 18.9, "white": 19.1, "core": 19.3}
+SF_CHAR = {"yellow": "voidwalker", "violet": "umbra", "white": "singularity", "core": "genesis"}
+
+
+def _sf_lum(png):
+    from PIL import Image
+    im = Image.open(io.BytesIO(png)).convert("L")
+    px = list(im.tobytes()); n = max(1, len(px))
+    return {"mean": round(sum(px) / n, 1), "p60": round(sum(1 for v in px if v > 60) / n * 100, 2)}
+
+
+def _sf_clock(pg):
+    pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+
+
+def _sf_scene_run(br, c):
+    """One scene, the way the results play it: real time up to its
+    silhouette (are the drawings' loops RUNNING?), then again from the
+    start on the page clock, stepped, sampling the silhouette and the
+    lit figure and timing it to its hand-over."""
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    out = {"c": c, "running": None}
+    pg.evaluate(SF_FIX, c)
+    pg.evaluate("() => { showHome(); }"); pg.wait_for_timeout(700)
+    pg.evaluate("() => document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.rs-spot,.daily-alert').forEach(n => n.remove())")
+    if c in SF_CHAR:
+        out["running"] = pg.evaluate("""async (c) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          const h = playFlareFoundScene(c, c === 'yellow', () => {});
+          let f = null; for(let i = 0; i < 260; i++){ f = document.querySelector('.sf-fig.is-keys'); if(f) break; await wait(100); }
+          if(!f){ h && h.stop && h.stop(); return null; }
+          await wait(700);
+          const n = sel => { const s = f.querySelector(sel); return s ? s.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length : 0; };
+          const r = { sil: n('.sf-sil > svg'), real: n('.sf-real > svg') };
+          h && h.stop && h.stop(); await wait(200); return r; }""", c)
+    _sf_clock(pg)
+    pg.evaluate("(c) => { window.__sfD = null; const t0 = performance.now(); window.__sfH = playFlareFoundScene(c, c === 'yellow', () => { window.__sfD = performance.now() - t0; }); }", c)
+    t = 0.0; st = {}; first = {}; samples = {}; unblocked = 0
+    while t < 45:
+        t0 = t; t = round(t + .1, 3)
+        pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000))); pg.evaluate(SF_SEEK, t)
+        st = pg.evaluate(SF_STATE)
+        if st["o"] and not st["blocked"]:
+            unblocked += 1
+        f = st["f"] or ""
+        for k in ("is-keys", "is-emerging", "is-catch", "is-revealing", "is-revealed"):
+            if k in f and k not in first:
+                first[k] = t
+        if st["special"] and "special" not in first:
+            first["special"] = t
+        if st["realVis"] and "realVis" not in first:
+            first["realVis"] = t
+        for key, at, lag in (("sil", first.get("is-catch"), .5), ("lit", first.get("is-revealed"), 1.5)):
+            if at is not None and key not in samples and t >= at + lag:
+                box = pg.evaluate("() => { const r = document.querySelector('.sf-fig').getBoundingClientRect(); return { x: Math.max(0, r.left), y: Math.max(0, r.top), w: Math.min(innerWidth, r.right) - Math.max(0, r.left), h: r.height * .72 }; }")
+                png = pg.screenshot(clip={"x": box["x"], "y": box["y"], "width": box["w"], "height": box["h"]})
+                samples[key] = _sf_lum(png)
+                samples[key]["facts"] = pg.evaluate(SF_FACTS)
+                samples[key]["state"] = dict(st)
+        if st["d"] is not None:
+            break
+    out.update({"dur": round(st["d"] / 1000, 2) if st.get("d") is not None else None, "first": first, "samples": samples, "unblocked": unblocked})
+    ctx.close()
+    return out
+
+
+def _sf_still_run(br, c):
+    """Reduce motion (the app's switch): the still scene."""
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(SF_FIX, c)
+    pg.evaluate("() => { theme.reduceMotion = true; applyTheme(); saveTheme(); showHome(); }"); pg.wait_for_timeout(500)
+    _sf_clock(pg)
+    pg.evaluate("(c) => { window.__sfD = null; const t0 = performance.now(); window.__sfH = playFlareFoundScene(c, c === 'yellow', () => { window.__sfD = performance.now() - t0; }); }", c)
+    t = 0.0; out = {"c": c, "rm": pg.evaluate("() => document.documentElement.dataset.reduceMotion"), "special": False}
+    while t < 12:
+        t0 = t; t = round(t + .1, 3)
+        pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000)))
+        st = pg.evaluate(SF_STATE)
+        if st["special"]:
+            out["special"] = True
+        if abs(t - .2) < .01:
+            out["at02"] = st
+        if abs(t - .6) < .01:
+            out["at06"] = st
+        if st["d"] is not None:
+            out["dur"] = round(st["d"] / 1000, 2)
+            break
+    ctx.close()
+    return out
+
+
+SF_FLOW_RUN = """(a) => {
+  const log = window.__sfLog = [];
+  document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
+  ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour'].forEach(k => store[k] = true);
+  theme.muteBanners = false; theme.reduceMotion = !!a.rm; applyTheme();
+  window.playBadgeCaseScene = (units, done) => { log.push('badge'); setTimeout(done, 20); return {}; };
+  window.playTierCutscene = (k, o) => { log.push('rank:' + k); setTimeout(() => o && o.onDone && o.onDone(), 20); return {}; };
+  window.playSupernovaCutscene = (o) => { log.push('rank:titan'); setTimeout(() => o && o.onDone && o.onDone(), 20); return {}; };
+  window.playUnlockSpotlight = (it, n, of, release) => {
+    log.push('spot:' + it.kind + ':' + (it.character || it.flare || it.banner || ''));
+    setTimeout(release, 20); return { skip(){}, stop(){} }; };
+  const realScene = playFlareFoundScene;
+  window.playFlareFoundScene = (color, all, done) => { log.push('scene:' + color + (all ? ':all' : ''));
+    const h = realScene(color, all, () => { log.push('scene-done'); done(); });
+    setTimeout(() => { const o = document.querySelector('.ff-scene, .fl-scene'); log.push('overlay:' + (o ? (o.classList.contains('sf-still') ? 'still' : 'motion') : 'none')); }, 50);
+    return h; };
+  const realRR = showRunRewards;
+  window.showRunRewards = (run, hooks, opts) => { window.__sfRun = run; window.__sfHooks = hooks; return realRR(run, hooks, opts); };
+  const o = MYSTERY_ORDER; store.mysteryColorsFound = {}; o.forEach(k => store.mysteryColorsFound[k] = false);
+  o.slice(0, o.indexOf(a.c)).forEach(k => store.mysteryColorsFound[k] = true);
+  const t = 'Identity Crimes';
+  cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t];
+  order = QUESTIONS.map((q,i) => [q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
+  runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null;
+  attempts = {}; picked = {}; timedOutSet = {};
+  order.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+  mysteryColorThisRun = a.c; mysteryFoundThisSession = false; foundMysteryFlare(null);
+  const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); saveStore();
+  summarize();
+  return true; }"""
+
+
+def _sf_flow_run(br, c, rm=False):
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    _sf_clock(pg)
+    pg.evaluate(SF_FLOW_RUN, {"c": c, "rm": rm})
+    out = {"c": c, "rm": rm}
+    settled = 0
+    for _ in range(400):
+        pg.clock.run_for(250)
+        # done, and left a while (a quiet screen plays its still scene a
+        # beat after it lands)
+        if pg.evaluate("() => !!document.querySelector('.rs-rewards.rs-done') && !document.querySelector('.ff-scene, .fl-scene')"):
+            settled += 1
+            if settled > 24:
+                break
+        else:
+            settled = 0
+    out["log"] = pg.evaluate("() => window.__sfLog.slice()")
+    if rm:
+        # back from the review: the finished screen at once, and no scene again
+        n0 = len(out["log"])
+        pg.evaluate("() => showRunRewards(window.__sfRun, window.__sfHooks, { instant: true })")
+        for _ in range(20):
+            pg.clock.run_for(250)
+        out["again"] = pg.evaluate("() => window.__sfLog.slice()")[n0:]
+    ctx.close()
+    return out
+
+
+def check_b317_sflare(br):
+    """Build 317: the secret-flare cutscenes, rebuilt (Madison: "they could
+    be longer, and I think the way the character pops out is kind of lame,
+    it's just a still character with the body ... super dark and you can
+    barely see the character but still can tell it's a character ... on par
+    with" the rank-up). For every scene, played the way the results play it
+    and stepped on the page clock:
+      - the character is its own LIVE drawing, twice (a silhouette copy and
+        a lit one), both under .char-live with their loops running;
+      - before the reveal it is a silhouette: the lit copy hidden, the
+        silhouette's body painted near-black with its eyes / worn flare lit,
+        and the figure dark on screen (a low mean, but some light: the rim
+        and the eyes); after it, the lit copy is up, the silhouette gone and
+        the figure far brighter;
+      - no filter on the drawings or anything of the scene's own;
+      - longer than build 317's first cut (b6cd249) by 4s or more (the first
+        two flares' short scene by 60%);
+      - the Home unlock queue is held for the whole scene;
+      - Reduce motion: a still scene of 3.8-5.5s, lit from the first frame,
+        titled by 0.6s, no special - and a quiet results screen plays it;
+      - the flow is unchanged: the first two flares' scene then its card;
+        a character flare's card, its scene, then the character's card.
+    On b6cd249 every silhouette/lit, duration, filter and Reduce motion
+    assertion fails (no live copies, a figure that faded up in colour, a
+    filtered drawing, 18-19s scenes, nothing at all under Reduce motion);
+    the flow and the queue assertions pass there too - they are guards."""
+    print("\n317s. the secret flare scenes: longer, a live silhouette reveal, the flow kept, a still scene under Reduce motion")
+    for c in ("red", "orange", "yellow", "violet", "white", "core"):
+        r = _sf_scene_run(br, c)
+        name = "%s (%s)" % (c, SF_CHAR.get(c, "first flares"))
+        need = SF_OLD_S[c] + 4 if c in SF_CHAR else SF_OLD_S[c] * 1.6
+        check(name + ": longer than it was (%.1fs -> >= %.1fs)" % (SF_OLD_S[c], need), (r.get("dur") or 0) >= need, r.get("dur"))
+        check(name + ": the Home queue waits for the whole scene", r.get("unblocked") == 0, r.get("unblocked"))
+        if c not in SF_CHAR:
+            continue
+        ch = SF_CHAR[c]
+        sil = (r.get("samples") or {}).get("sil") or {}
+        lit = (r.get("samples") or {}).get("lit") or {}
+        sf, lf = sil.get("facts") or {}, lit.get("facts") or {}
+        fi = r.get("first") or {}
+        run = r.get("running") or {}
+        check(name + ": the character is its own live drawing, twice (silhouette and lit), both alive",
+              sf.get("silChar") == ch and sf.get("realChar") == ch and sf.get("silLive") and sf.get("realLive")
+              and sf.get("silAnims", 0) >= 3 and sf.get("realAnims", 0) >= 3, sf)
+        check(name + ": their loops are running in real time from the moment it shows",
+              run.get("sil", 0) >= 3 and run.get("real", 0) >= 3, run)
+        check(name + ": a silhouette first - eyes/flare lit, then the shape, then the light catching it, then its move, then the light",
+              all(k in fi for k in ("is-keys", "is-emerging", "is-catch", "special", "is-revealing", "realVis"))
+              and fi["is-keys"] <= fi["is-emerging"] < fi["is-catch"] < fi["special"] <= fi["is-revealing"] <= fi["realVis"], fi)
+        st = sil.get("state") or {}
+        check(name + ": in the silhouette the lit drawing is hidden and the body is black (eyes / worn flare kept lit)",
+              st.get("realVis") is False and st.get("silVis") is True and sf.get("body", 0) >= 4
+              and sf.get("dark", 0) >= sf.get("body", 1) * .9 and sf.get("keys", 0) >= 1, [st, sf.get("body"), sf.get("dark"), sf.get("keys")])
+        check(name + ": super dark but there - the figure's mean light is low, and its rim and eyes show",
+              sil.get("mean") is not None and sil["mean"] <= 36 and sil.get("p60", 0) >= 2.0, {k: sil.get(k) for k in ("mean", "p60")})
+        lst = lit.get("state") or {}
+        check(name + ": after the reveal the lit drawing is up, the silhouette gone, and the figure far brighter",
+              lst.get("realVis") is True and lst.get("silVis") is False and lit.get("mean") is not None
+              and lit["mean"] >= max(35, 1.6 * (sil.get("mean") or 99)), [lst.get("realVis"), lst.get("silVis"), sil.get("mean"), lit.get("mean")])
+        check(name + ": no filter on the drawings or on anything of the scene's own",
+              sf.get("svgFilter") == ["none", "none"] and sf.get("filtered") == 0, [sf.get("svgFilter"), sf.get("filtered")])
+    for c in ("red", "yellow", "violet", "white", "core"):
+        r = _sf_still_run(br, c)
+        a2, a6 = r.get("at02") or {}, r.get("at06") or {}
+        name = "Reduce motion, %s:" % c
+        check(name + " a still scene of 3.8-5.5s (not nothing)", r.get("rm") == "true" and 3.8 <= (r.get("dur") or 0) <= 5.5, [r.get("rm"), r.get("dur")])
+        check(name + " the still look from the first frame, titled by 0.6s, no special",
+              "sf-still" in (a2.get("o") or "") and "sf-titled" in (a6.get("o") or "") and not r.get("special")
+              and (c not in SF_CHAR or ("is-revealed" in (a2.get("f") or "") and a2.get("realVis") is True and a2.get("silVis") is False)),
+              [a2.get("o"), a2.get("f"), a6.get("o"), r.get("special")])
+    for c in ("red", "yellow", "violet"):
+        r = _sf_flow_run(br, c)
+        log = r.get("log") or []
+        def at(x):
+            return next((i for i, e in enumerate(log) if e.startswith(x)), None)
+        sc, dn = at("scene:" + c), at("scene-done")
+        if c == "red":
+            card = at("spot:flare:" + c)
+            ok = None not in (sc, dn, card) and sc < dn < card
+        else:
+            ch = SF_CHAR[c]
+            card, chc = at("spot:flare:" + c), at("spot:character:" + ch)
+            ok = None not in (sc, dn, card, chc) and card < sc < dn < chc
+        check("the flow, %s: %s" % (c, "its scene, then its card" if c == "red" else "its card, its scene, then the character's card"), ok, log)
+    r = _sf_flow_run(br, "violet", rm=True)
+    log = r.get("log") or []
+    check("Reduce motion: a quiet results screen plays the flare's still scene (once), and not again on the way back from the review",
+          "scene:violet" in log and "overlay:still" in log and "scene-done" in log and not any(e.startswith("scene:") for e in (r.get("again") or [])),
+          [log, r.get("again")])
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -15494,6 +15789,7 @@ def main():
             check_b317_rankup(br)
             check_b317_supernova(br)
             check_b317_flow(br)
+            check_b317_sflare(br)
         finally:
             br.close()
     SERVER.shutdown()
