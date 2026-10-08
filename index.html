@@ -78737,6 +78737,20 @@ function hfxDropURL(){
    surface's rest, px from the top), k (scale), t (rise, riseD, drain,
    drainD in s), n (counts), box (the 100% box at rest, in ocean px, or
    null), total (s). Returns the body, so callers can add to it. */
+/* PIECES GO IN WHEN THEY ARE DUE (as the World Tree's did): a piece
+   waiting on a delay is still a compositing layer, and the sea's
+   bubbles, fish and drops start over 5s - all put in at once, the screen
+   carried ~116 layers at 2.6s against the UFO's ~96. Each goes in a beat
+   before its start, its delay moved by however late that really is. */
+function hfxDue(c){
+  const t0 = performance.now(), ids = [];
+  if(c) hfxOnEnd(c, () => ids.forEach(id => clearTimeout(id)));
+  return (at, fn) => {
+    const lead = at - .4;
+    if(lead <= .05){ fn(0); return; }
+    ids.push(setTimeout(() => fn((performance.now() - t0) / 1000), lead * 1000));
+  };
+}
 function hfxSea(parent, o){
   const k = o.k, t = o.t, P = HFX_UW.wavePeriod * k, WH = HFX_UW.waveH * k, bodyH = o.H - o.lvl;
   const ocean = hfxMk(parent, "span", "hfx-uw-ocean" + (o.cls ? " " + o.cls : ""));
@@ -78759,9 +78773,12 @@ function hfxSea(parent, o){
       "--ra": hfxR(8, 18).toFixed(1) + "deg", "--t": t.rise + t.riseD * .7 + i * .1, "--d": t.drain - t.rise - t.riseD * .7 + .25 - i * .1 }).style.backgroundImage = hfxRayURL();
   }
   /* motes drifting in the light */
+  const due = o.due || ((at, fn) => fn(0));
+  /* a piece that has played is taken out - one less layer */
+  const gone = el => { el.addEventListener("animationend", e => { if(e.target === el) el.remove(); }); return el; };
   for(let i = 0; i < o.n.motes; i++){
-    hfxPiece(body, "hfx-uw-mote", hfxMoteURL(), hfxR(.04, .96) * o.W, hfxR(.08, .9) * bodyH, hfxR(3, 6) * k,
-      { "--mx": hfxR(-18, 18) * k + "px", "--my": hfxR(-26, -6) * k + "px", "--t": t.rise + t.riseD * .6 + hfxR(0, .8), "--d": t.drain - t.rise - t.riseD * .6 + .1 });
+    const at = t.rise + t.riseD * .6 + hfxR(0, .8), x = hfxR(.04, .96) * o.W, y = hfxR(.08, .9) * bodyH, sz = hfxR(3, 6) * k, mx = hfxR(-18, 18) * k, my = hfxR(-26, -6) * k;
+    due(at, off => gone(hfxPiece(body, "hfx-uw-mote", hfxMoteURL(), x, y, sz, { "--mx": mx + "px", "--my": my + "px", "--t": at - off, "--d": t.drain - t.rise - t.riseD * .6 + .1 - Math.max(0, off - at) })));
   }
   /* bubbles: streams from vents in the floor, and off the box; each rises
      to the surface and breaks there */
@@ -78772,8 +78789,8 @@ function hfxSea(parent, o){
     const x = fromBox ? o.box.left + o.box.width * hfxR(.12, .88) : vents[i % vents.length] + hfxR(-10, 10) * k;
     const y = fromBox ? Math.max(30 * k, o.box.top - o.lvl) : bodyH + 6;
     const sz = hfxR(5, 14) * k, d = hfxR(1.9, 2.8) * Math.max(.6, Math.min(1.2, y / 700));
-    hfxPiece(body, "hfx-uw-bub", hfxUwBubbleURL(), x, y, sz, { "--up": (-(y - sz * .6)) + "px", "--wx": hfxR(-14, 14) * k + "px",
-      "--t": t.rise + t.riseD * (fromBox ? .75 : .45) + (i / o.n.bubbles) * (t.drain - t.rise - t.riseD - d * .6) + hfxR(0, .2), "--d": d });
+    const at = t.rise + t.riseD * (fromBox ? .75 : .45) + (i / o.n.bubbles) * (t.drain - t.rise - t.riseD - d * .6) + hfxR(0, .2), wx = hfxR(-14, 14) * k;
+    due(at, off => gone(hfxPiece(body, "hfx-uw-bub", hfxUwBubbleURL(), x, y, sz, { "--up": (-(y - sz * .6)) + "px", "--wx": wx + "px", "--t": at - off, "--d": d })));
   }
   /* the surface: a back sheet and the lit front crest, sliding opposite
      ways - the interference is the water moving */
@@ -78797,35 +78814,35 @@ function hfxUnderwater(scr, bx, c){
     const rest = page ? Math.max(0, de.scrollHeight - (window.innerHeight || c.vh)) - (window.scrollY || 0) : 0;
     const r = c.br, box = { left: r.left, top: r.top - rest, width: r.width, height: r.height };
     const lvl = Math.round(Math.max(c.vh * (mini ? .1 : .085), mini ? 14 : 40));
-    const S = hfxSea(scr, { W: c.vw, H: c.vh, lvl, k, t, total: tot, box,
-      n: { rays: mini ? 3 : small ? 4 : 6, motes: mini ? 4 : small ? 8 : 12, vents: small || mini ? 3 : 4, bubbles: mini ? 9 : small ? 18 : 24 } });
+    const due = hfxDue(c);
+    const S = hfxSea(scr, { W: c.vw, H: c.vh, lvl, k, t, total: tot, box, due,
+      n: { rays: mini ? 3 : small ? 4 : 6, motes: mini ? 3 : small ? 6 : 10, vents: small || mini ? 3 : 4, bubbles: mini ? 8 : small ? 14 : 20 } });
     const body = S.body, bodyH = S.bodyH;
     /* a school of fish across, above the box, and a manta behind them */
     const dir = Math.random() < .5 ? 1 : -1, y0 = Math.max(60 * k, box.top - lvl - c.vh * hfxR(.12, .22));
     for(let i = 0; i < (mini ? 5 : small ? 8 : 12); i++){
-      const s = hfxR(26, 40) * k, dy = hfxR(-40, 40) * k, lag = i * .07 + hfxR(0, .12);
-      const f = hfxPiece(body, "hfx-uw-fish", hfxFishURL(i % 3), 0, 0, s, {});
+      const s = hfxR(26, 40) * k, dy = hfxR(-40, 40) * k, lag = i * .07 + hfxR(0, .12), at = U.rise + U.riseD + .15 + lag;
       const xs = dir > 0 ? -60 : c.vw + 60, xe = dir > 0 ? c.vw + 60 : -60, fl = dir > 0 ? -1 : 1;
-      hfxAnim(c, f, [
+      due(at, off => { const f = hfxPiece(body, "hfx-uw-fish", hfxFishURL(i % 3), 0, 0, s, {}); const a = hfxAnim(c, f, [
         { transform: "translate(" + xs + "px," + (y0 + dy + 40) + "px) scaleX(" + fl + ")", opacity: 0 },
         { transform: "translate(" + (xs + (xe - xs) * .15) + "px," + (y0 + dy + 20) + "px) scaleX(" + fl + ")", opacity: 1, offset: .12 },
         { transform: "translate(" + (xs + (xe - xs) * .5) + "px," + (y0 + dy - 10) + "px) scaleX(" + fl + ")", opacity: 1, offset: .5 },
         { transform: "translate(" + (xs + (xe - xs) * .85) + "px," + (y0 + dy + 14) + "px) scaleX(" + fl + ")", opacity: 1, offset: .88 },
         { transform: "translate(" + xe + "px," + (y0 + dy + 4) + "px) scaleX(" + fl + ")", opacity: 0 }
-      ], { duration: 3000, delay: (U.rise + U.riseD + .15 + lag) * 1000, fill: "both", easing: "ease-in-out" });
+      ], { duration: 3000, delay: Math.max(0, at - off) * 1000, fill: "both", easing: "ease-in-out" }); if(a) a.onfinish = () => f.remove(); });
     }
     const mw = (mini ? 120 : small ? 190 : 260);
-    const m = hfxPiece(body, "hfx-uw-manta", hfxMantaURL(), 0, 0, mw, {});
-    const my = Math.max(bodyH * .1, box.top - lvl - c.vh * .3);
-    hfxAnim(c, m, [
+    const my = Math.max(bodyH * .1, box.top - lvl - c.vh * .3), mat = U.rise + U.riseD + .05;
+    due(mat, off => hfxAnim(c, hfxPiece(body, "hfx-uw-manta", hfxMantaURL(), 0, 0, mw, {}), [
       { transform: "translate(" + (dir > 0 ? c.vw + mw : -mw) + "px," + (my + 30) + "px) rotate(" + (dir > 0 ? -6 : 6) + "deg) scale(.8)", opacity: 0 },
       { transform: "translate(" + (c.vw / 2) + "px," + (my - 10) + "px) rotate(0deg) scale(1)", opacity: .85, offset: .5 },
       { transform: "translate(" + (dir > 0 ? -mw : c.vw + mw) + "px," + (my - 40) + "px) rotate(" + (dir > 0 ? 6 : -6) + "deg) scale(.9)", opacity: 0 }
-    ], { duration: 3400, delay: (U.rise + U.riseD + .05) * 1000, fill: "both", easing: "ease-in-out" });
+    ], { duration: 3400, delay: Math.max(0, mat - off) * 1000, fill: "both", easing: "ease-in-out" }));
     /* drops running down the glass once the water has gone */
     const drops = hfxMk(scr, "span", "hfx-uw-ocean is-drops");
     for(let i = 0; i < (mini ? 4 : small ? 9 : 13); i++){
-      hfxPiece(drops, "hfx-uw-drop", hfxDropURL(), hfxR(.04, .96) * c.vw, hfxR(.05, .6) * c.vh, hfxR(10, 18) * k, { "--fall": (hfxR(.15, .4) * c.vh) + "px", "--t": U.drain + U.drainD * .45 + hfxR(0, .7), "--d": hfxR(1.2, 1.7) });
+      const at = U.drain + U.drainD * .45 + hfxR(0, .7), x = hfxR(.04, .96) * c.vw, y = hfxR(.05, .6) * c.vh, sz = hfxR(10, 18) * k, fall = hfxR(.15, .4) * c.vh, d = hfxR(1.2, 1.7);
+      due(at, off => hfxPiece(drops, "hfx-uw-drop", hfxDropURL(), x, y, sz, { "--fall": fall + "px", "--t": at - off, "--d": d }));
     }
     /* the cards sway with the water */
     if(c.scene) c.scene.warp.forEach((el, i) => {
@@ -78839,7 +78856,7 @@ function hfxUnderwater(scr, bx, c){
     if(c.boxOnly){
       /* the box floods on its own: the same water, the box its screen */
       const bt = { rise: .1, riseD: .8, drain: 3.3, drainD: .8 };
-      hfxSea(bx, { W: c.bw, H: c.bh, lvl: Math.round(c.bh * .16), k: c.mini ? .4 : .55, t: bt, total: HUNDO_FX_BOX_TOTAL.underwater / 1000, box: null, cls: "is-box",
+      hfxSea(bx, { W: c.bw, H: c.bh, lvl: Math.round(c.bh * .16), k: c.mini ? .4 : .55, t: bt, total: HUNDO_FX_BOX_TOTAL.underwater / 1000, box: null, cls: "is-box", due: hfxDue(c),
         n: { rays: 2, motes: c.mini ? 2 : 4, vents: 2, bubbles: c.mini ? 4 : 7 } });
       for(let i = 0; i < 3; i++){
         const f = hfxPiece(bx, "hfx-uw-fish is-box", hfxFishURL(i), 0, 0, (c.mini ? 14 : 22), {});
@@ -78850,8 +78867,10 @@ function hfxUnderwater(scr, bx, c){
     /* the treasure: the number glints, rings spread on the water over it */
     for(let i = 0; i < 3; i++) hfxMk(bx, "i", "hfx-uw-ring", { left: (c.p.x + c.p.w / 2) + "px", top: (c.p.y + c.p.h / 2) + "px", "--rs": (c.p.w * 1.4) + "px", "--t": t0 + .3 + i * .7 });
     hfxLitText(bx, c, { mode: "sweep", color: "#F2FFFF", glow: "#7FE9F2", dl: t0 + .6, dur: 1.2 });
+    const bdue = hfxDue(c);
     for(let i = 0; i < (c.mini ? 3 : 6); i++){
-      hfxPiece(bx, "hfx-glint is-uw", hfxGlintURL(), c.p.x + c.p.w * hfxR(.05, .95), c.p.y + c.p.h * hfxR(.1, .9), (c.mini ? 9 : 15), { "--t": t0 + .8 + i * .35, "--d": 1.4 });
+      const at = t0 + .8 + i * .35, x = c.p.x + c.p.w * hfxR(.05, .95), y = c.p.y + c.p.h * hfxR(.1, .9);
+      bdue(at, off => hfxPiece(bx, "hfx-glint is-uw", hfxGlintURL(), x, y, (c.mini ? 9 : 15), { "--t": at - off, "--d": 1.4 }));
     }
   }
 }
