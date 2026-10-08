@@ -11259,7 +11259,9 @@ def check_b313_flares(br):
           /* 2. three, then five, then six */
           await home(F.none); out.count3 = document.querySelectorAll('.panel.home .cosmic-orbit-dot').length;
           await home(F.five); out.count6 = document.querySelectorAll('.panel.home .cosmic-orbit-dot').length;
-          out.coreOnPlanet = !!document.querySelector('.panel.home .cosmic-core-orbit [data-flare="core"]');
+          /* planet2: on the rings, Void's three outside, the other three inside */
+          out.rings = ['red', 'orange', 'yellow', 'violet', 'white', 'core'].map(k => { const d = document.querySelector('.panel.home [data-flare="' + k + '"]');
+            return !d ? 'none' : d.closest('.cosmic-hero-orbitlayer-inner') ? 'in' : d.closest('.cosmic-hero-orbitlayer') ? 'out' : 'elsewhere'; });
           /* 3. the inner ring is well over twice as quick */
           const dur = el => el ? parseFloat(getComputedStyle(el).animationDuration.split(',').pop()) : 0;
           out.spin = [dur(document.querySelector('.cosmic-hero-orbitlayer:not(.cosmic-hero-orbitlayer-inner)')), dur(document.querySelector('.cosmic-hero-orbitlayer-inner'))];
@@ -11307,7 +11309,8 @@ def check_b313_flares(br):
         check(f"{label}: the flare being hunted next is marked (once Void is held) - in plain light, not its colour (build 314)", r.get("nextTinted") is True, r.get("nextTinted"))
         check(f"{label}: three flares before Void, five with it, six once the fifth is found",
               (r.get("count3"), r.get("countVoid"), r.get("count6")) == (3, 5, 6), (r.get("count3"), r.get("countVoid"), r.get("count6")))
-        check(f"{label}: the sixth flare is on the planet", r.get("coreOnPlanet") is True)
+        check(f"{label}: the six ride the rings - Void's three on the outer, the other three (Genesis's too) on the inner (planet2)",
+              r.get("rings") == ["out"] * 3 + ["in"] * 3, r.get("rings"))
         sp = r.get("spin") or [0, 0]
         check(f"{label}: the inner ring turns at least twice as fast as the outer", sp[1] > 0 and sp[0] >= 2 * sp[1], sp)
         nm = r.get("names") or []

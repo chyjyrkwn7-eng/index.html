@@ -12283,73 +12283,9 @@
   @keyframes cof-tint{ 0%,100%{ opacity:.3; } 50%{ opacity:.6; } }
   @keyframes cof-tint-hunt{ 0%,100%{ opacity:.5; } 50%{ opacity:.9; } }
   @keyframes cof-call{ 0%{ opacity:.9; transform:scale(.8); } 70%,100%{ opacity:0; transform:scale(3.2); } }
-  /* ---- The sixth, skimming the planet (build 313) ----
-     ---- and now going ROUND it (build 317, planet round) ----
-     "I'm not a fan of how that one rotates or whatever, could it feel
-     more like it was rotating around the sphere? Like going behind it and
-     back around?" It skimmed the planet (r 62 round its r 52) and, for
-     the stretch where the planet was in front of it, simply vanished - it
-     never went BEHIND anything. Now it is a real orbit: r 72, tilted 18
-     degrees and seen from just above (squashed to .36), one lap in 16s.
-     - BEHIND, FOR REAL: the orbit sits in the hero just BEFORE the planet's
-       own svg (buildCosmicHero), so painted in place (z-index 0) the
-       planet covers it - the far half of every lap passes behind, the
-       flare sliding under the limb and out the other side. For the near
-       half it is lifted over everything (z-index 3, cco-layer). The two
-       swaps fall at the ends of the ellipse, where the flare is 20 units
-       clear of the disc and the corona round it has faded to nothing, so
-       the swap itself cannot be seen.
-     - DEPTH: larger and brighter in front (x1.22, and a glow of its own
-       colour, cco-shine), smaller and dimmer at the back (x.74 at 62%) -
-       cco-depth follows the sine of the lap.
-     - Taps: in front it is on top as before; behind, the planet's svg
-       lets taps through (.cosmic-hero-main has pointer-events:none, the
-       sphere circle takes its own), so wherever the flare can be seen
-       round the limb it can be tapped, and on the disc the planet answers.
-     Transforms and opacity on the compositor; the z-index flips twice a
-     lap. At rest (Reduce motion) it sits on the near side, in front. */
-  .cosmic-core-orbit{ position:absolute; left:50%; top:47.368%; width:40%; aspect-ratio:1; translate:-50% -50%; z-index:3; pointer-events:none; }
-  .cosmic-core-orbit.is-found{ --cco-c:#FF5CA8; }
-  .cosmic-core-orbit .cosmic-badge-tappable{ pointer-events:auto; }
-  .cco-plane{ position:absolute; inset:0; transform:rotate(-18deg) scaleY(.36); }
-  .cco-spin{ position:absolute; inset:0; }
-  .cco-arm{ position:absolute; left:50%; top:50%; width:50%; height:0; }
-  /* The flare's box: 15% of the arm (r 72 of 360), the same ~3% of the
-     hero it has always been. */
-  .cco-counter{ position:absolute; left:100%; top:0; width:15%; aspect-ratio:1; translate:-50% -50%; transform:scaleY(2.7778) rotate(18deg); }
-  .cco-counter > .cosmic-flare-dot{ left:50%; top:50%; width:100%; }
-  .cco-shine{ position:absolute; left:50%; top:50%; width:270%; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0; pointer-events:none;
-    background:radial-gradient(circle, color-mix(in srgb, var(--cco-c, #fff) 42%, transparent) 0, color-mix(in srgb, var(--cco-c, #fff) 13%, transparent) 36%, transparent 64%); }
-  /* The tail lies in the orbit's plane, behind the flare (a clockwise turn
-     moves the arm's end towards its local +y, so behind is -y). */
-  .cco-tail{ position:absolute; left:98%; bottom:0; width:5%; aspect-ratio:1 / 11; translate:-50% 0; border-radius:999px; opacity:0;
-    background:linear-gradient(180deg, transparent, color-mix(in srgb, var(--cco-c, #fff) 75%, transparent)); }
-  .cosmic-core-orbit.is-found .cco-tail{ opacity:.85; }
-  .cosmic-core-orbit:not(.is-found) .cco-tail{ opacity:.35; }
-  @media (prefers-reduced-motion:no-preference){
-    .cosmic-core-orbit{ animation:cco-layer 16s linear infinite; }
-    .cco-spin{ animation:cco-turn 16s linear infinite; }
-    .cco-counter{ animation:cco-back 16s linear infinite; }
-    .cco-counter > .cosmic-flare-dot{ animation:cco-depth 16s linear infinite; }
-    .cco-shine{ animation:cco-shine 16s linear infinite; }
-  }
-  /* at rest (reduce motion) it sits on the near side, in front of the planet */
-  .cco-spin{ rotate:62deg; }
-  .cco-counter{ rotate:-62deg; }
-  @keyframes cco-turn{ from{ rotate:0deg; } to{ rotate:360deg; } }
-  @keyframes cco-back{ from{ rotate:0deg; } to{ rotate:-360deg; } }
-  /* the near half of the lap (0-50%) over everything, the far half (50-
-     100%) in its place under the planet */
-  @keyframes cco-layer{ 0%, 50%{ z-index:3; } 50.02%, 99.98%{ z-index:0; } 100%{ z-index:3; } }
-  @keyframes cco-depth{
-    0%{ scale:.97; opacity:.9; animation-timing-function:ease-out; } 25%{ scale:1.22; opacity:1; animation-timing-function:ease-in; }
-    50%{ scale:.97; opacity:.9; animation-timing-function:ease-out; } 75%{ scale:.74; opacity:.62; animation-timing-function:ease-in; } 100%{ scale:.97; opacity:.9; animation-timing-function:ease-out; }
-  }
-  @keyframes cco-shine{ 0%{ opacity:0; } 25%{ opacity:.85; } 50%, 100%{ opacity:0; } }
-  /* the planet's svg lets taps through to what is behind it (the sixth
-     flare, round the limb); the sphere itself still takes its own */
-  .cosmic-hero-main{ pointer-events:none; }
-  .cosmic-hero-main .cosmic-sphere-hit{ pointer-events:visiblePainted; }
+  /* (The sixth flare's own orbit - skimming the planet in build 313,
+     round behind it in the planet round - is gone: since planet2 it rides
+     the inner ring like the others. See buildCosmicHero's FLARE_SPOT.) */
   /* A full orbit every two minutes \u2014 slow enough to read as graceful
      drift rather than a spinning wheel, since this sits right next to
      text people are meant to actually read. transform-origin uses the
@@ -26294,7 +26230,6 @@
   .sf-clear .sfg-planetwrap .cosmic-hero-orbitlayer{ animation:none !important; opacity:0; transition:opacity 1.2s ease; }
   .sf-clear .sfg-planetwrap :is(.cosmic-orbit-ring, .cosmic-pulse-ring){ opacity:0; transition:opacity 1.2s ease; }
   .sf-clear .sfg-planetwrap{ transform:scale(1.85); }
-  .sf-dive .sfg-planetwrap .cosmic-core-orbit{ opacity:0; transition:opacity .3s ease; }
   .sfg-planetfx{ position:absolute; left:50%; top:47.37%; width:28.89%; aspect-ratio:1; translate:-50% -50%; border-radius:50%; z-index:4; }
   .sfg-cracks{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
   .sfg-crack{ opacity:0; transition:opacity .5s ease; }
@@ -39993,7 +39928,8 @@ const AVATAR_CHARACTERS = [
   { id: "umbra",       kind: "umbra",       feat: "flare4", secret: true },
   { id: "singularity", kind: "singularity", feat: "flare5", secret: true },
   /* GENESIS (build 313), the last of them: the planet on Home, alive.
-     Found on the planet itself at level 78-80 - see MYSTERY_ORDER. */
+     Found at level 78-80 - see MYSTERY_ORDER. (Its flare rides Home's
+     inner ring since build 317, planet2; it was on the planet before.) */
   { id: "genesis",     kind: "genesis",     feat: "flare6", secret: true },
   /* ---- RANK REWARDS (build 244) ----
      One per rank from Silver up, each a crowned sovereign of its rank's
@@ -40333,8 +40269,8 @@ const CHARACTER_FEATS = {
   flare5:    { label: "Find Event Horizon, the fifth secret flare",
                done: () => !!(store.mysteryColorsFound || {}).white,
                have: () => ((store.mysteryColorsFound || {}).white ? 1 : 0), need: 1 },
-  /* build 313: the sixth, on the planet itself, from level 78 */
-  flare6:    { label: "Find Worldheart, the planet's own secret flare",
+  /* build 313: the sixth, from level 78 (on the inner ring since planet2) */
+  flare6:    { label: "Find Worldheart, the sixth secret flare",
                done: () => !!(store.mysteryColorsFound || {}).core,
                have: () => ((store.mysteryColorsFound || {}).core ? 1 : 0), need: 1 },
   /* ASTRAL and CELESTIAL (build 312): the two ultimates under Zenith -
@@ -46937,7 +46873,7 @@ function applyLoadedData(got){
       yellow: got.mysteryColorsFound.yellow === true,
       violet: got.mysteryColorsFound.violet === true,
       white: got.mysteryColorsFound.white === true,
-      /* the sixth (build 313), on the planet itself - nobody has it yet */
+      /* the sixth (build 313) - nobody has it yet */
       core: got.mysteryColorsFound.core === true
     };
   } else if(got.mysteryFound === true){
@@ -60581,7 +60517,7 @@ const FLARE_CHARACTER = { violet: "umbra", white: "singularity", core: "genesis"
 const CHARACTER_FLARE = { voidwalker: "yellow", umbra: "violet", singularity: "white", genesis: "core" };
 /* WHAT HOME SHOWS, IN THREE STEPS (build 313): "there will be only be 3
    at first, THE 4th and 5th flare will appear once void is unlocked."
-   And the sixth, the planet's own, once the fifth is found - the hunt is
+   And the sixth, Genesis's, once the fifth is found - the hunt is
    in order, so a sixth light before the fifth would give the order away. */
 function homeFlareKeys(){
   const f = (typeof store !== "undefined" && store.mysteryColorsFound) || {};
@@ -64614,8 +64550,6 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   const sphere = document.createElementNS(svgNS, "circle");
   sphere.setAttribute("cx", 180); sphere.setAttribute("cy", 150); sphere.setAttribute("r", 52);
   sphere.setAttribute("fill", "url(#cosmicSphereGrad)");
-  /* the one thing in the planet's svg that takes a tap (build 317) */
-  sphere.setAttribute("class", "cosmic-sphere-hit");
   if(useTierIcons){
     /* A small, playful easter egg \u2014 tapping the sphere itself (not
        one of the orbiting badges) gets a little "..... " thinking
@@ -64791,9 +64725,20 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   orbitLayer.className = "cosmic-hero-layer cosmic-hero-orbitlayer";
   const innerOrbitLayer = document.createElement("div");
   innerOrbitLayer.className = "cosmic-hero-layer cosmic-hero-orbitlayer cosmic-hero-orbitlayer-inner";
-  /* [ring radius, degrees clockwise from the top], in the 0 -12 360 342
-     viewBox the planet is drawn in (centre 180,150; rings 108 and 152). */
-  const FLARE_SPOT = { red: [HOME_OUTER_R, 337], orange: [HOME_OUTER_R, 128], yellow: [108, 236], violet: [108, 32], white: [108, 141] };
+  /* [ring, degrees clockwise from the top], in the 0 -12 360 342 viewBox
+     the planet is drawn in (centre 180,150): ring 1 the outer (Home's
+     HOME_OUTER_R, Welcome's drawn 152 - radii[1], so a flare rides the
+     ring it is drawn on), ring 0 the inner (108).
+     THREE AND THREE (build 317, planet2). "could it be on the rings like
+     the others as well? But let's make it so voids 3 are maybe on the
+     outside and the other 3 are on the inside." Void's three (the light it
+     swallowed) ride the outer ring; Umbra's, Horizon's and Genesis's the
+     inner. Each ring's three are spread round it - gaps of 120, 114 and
+     126 degrees outside, 109, 121 and 130 inside - so neither ring has an
+     empty half, but no two gaps are the same: even spacing read as a
+     pattern (build 313). The debris on the rings (RING_DEBRIS) lies in
+     the gaps between them. */
+  const FLARE_SPOT = { red: [1, 337], orange: [1, 97], yellow: [1, 211], violet: [0, 32], white: [0, 141], core: [0, 262] };
   /* What a tapped flare says is homeTapCopyFlare's (build 317, round
      three): a found one its name and a line about it, a missing one a
      hint that gives nothing away. */
@@ -64833,42 +64778,26 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   shownFlares.forEach(key => {
     const spot = FLARE_SPOT[key];
     if(!spot) return;
-    const a = spot[1] * Math.PI / 180;
-    const cx = 180 + spot[0] * Math.sin(a), cy = 150 - spot[0] * Math.cos(a);
+    const R = radii[spot[0]], a = spot[1] * Math.PI / 180;
+    const cx = 180 + R * Math.sin(a), cy = 150 - R * Math.cos(a);
     const el = makeFlare(key);
     el.style.left = (cx / 360 * 100).toFixed(3) + "%";
     el.style.top = ((cy + 12) / 342 * 100).toFixed(3) + "%";
-    (spot[0] < 130 ? innerOrbitLayer : orbitLayer).appendChild(el);
+    (spot[0] ? orbitLayer : innerOrbitLayer).appendChild(el);
   });
-  /* ---- THE SIXTH, ON THE PLANET (build 313) ----
-     "This flare will be a secret flare that is somehow placed in a cool
-     way on the planet ... that moves in a cool way." It skims the planet
-     in a low, tilted orbit - across the face, round the limb, and BEHIND
-     it, gone for a moment, then back round the other side. One orbit,
-     drawn with transforms only: a squashed, tilted plane turns an arm,
-     and the flare at the arm's end turns back the other way and is
-     un-squashed, so it stays a round bead moving on an ellipse. It hides
-     on the far side only where the planet is in front of it (see
-     cof-occlude), and its short tail lies in the orbit's own plane. */
-  let coreFlare = null;
-  if(shownFlares.indexOf("core") >= 0){
-    coreFlare = document.createElement("div");
-    coreFlare.className = "cosmic-core-orbit";
-    coreFlare.innerHTML = '<div class="cco-plane"><div class="cco-spin"><div class="cco-arm"><i class="cco-tail"></i><div class="cco-counter"><i class="cco-shine"></i></div></div></div></div>';
-    const fl = makeFlare("core");
-    fl.classList.add("is-core");
-    if(fl.classList.contains("is-found")) coreFlare.classList.add("is-found");
-    coreFlare.querySelector(".cco-counter").appendChild(fl);
-  }
+  /* THE SIXTH RIDES THE INNER RING (build 317, planet2). It skimmed the
+     planet from build 313 and went round behind it in the planet round
+     (a 3D orbit of its own); "I'm not a fan of the genesis secret flare
+     at all, could it be on the rings like the others as well?" It is one
+     of the inner three now, made and placed like them - the same layer,
+     the same turn, the same glass to pass under, the same light off the
+     scar. Its key, its find rule and everything stored under it are
+     unchanged. */
   svg.classList.add("cosmic-hero-main");
   wrap.append(glowBox);
   if(ringOld) wrap.appendChild(ringOld);
   if(ringLayer) wrap.appendChild(ringLayer);
   if(ringDraw) wrap.appendChild(ringDraw);
-  /* the sixth flare's orbit just BEFORE the planet's svg: in place it is
-     under the planet (the far half of its lap), lifted it is over
-     everything (the near half) - see "and now going ROUND it" */
-  if(coreFlare) wrap.appendChild(coreFlare);
   wrap.append(svg, animLayer, orbitLayer, innerOrbitLayer);
   /* The sphere's life, on the compositor: two soft light pools drifting
      over the surface inside a circular window the exact size of the
@@ -65204,15 +65133,16 @@ function attachCosmicScar(hero){ return decorateSupernovaHero(hero); }
    motion. One table: [ring (0 inner, 1 outer), degrees clockwise from the
    top, off the line (units, + outward), size (% of the hero), tumble
    seconds (- the other way), place in the tumble (s)]. */
+/* Planet2: the streams moved with the flares - one in each gap between
+   a ring's three (FLARE_SPOT: outer 337, 97, 211; inner 32, 141, 262),
+   off its middle, so no flare rides through a stream. */
 const RING_DEBRIS = [
-  [1, 14, 3, 1.5, 11.3, -2.1], [1, 21, -2.5, 1.1, -8.7, -5.4], [1, 27, 5, 1.3, 13.9, -9.2],
-  [1, 93, -4, 1.6, -10.1, -3.3], [1, 101, 2, 1.0, 7.9, -6.6],
-  [1, 192, 4, 1.4, 12.7, -1.4], [1, 199, -3, 1.0, -9.6, -7.7], [1, 207, 1, 1.7, 15.1, -4.9], [1, 214, -5, 1.1, -8.2, -2.8],
-  [1, 296, 2.5, 1.3, 10.6, -8.1], [1, 305, -4, 1.0, -12.2, -5.9],
-  [0, 54, -3, 1.2, -9.3, -4.4], [0, 61, 3.5, 1.5, 12.1, -1.9], [0, 67, -1, 1.0, 8.4, -6.2],
-  [0, 165, 4, 1.3, -11.6, -3.7], [0, 174, -2.5, 1.1, 9.9, -7.3],
-  [0, 249, -4, 1.4, 13.3, -2.5], [0, 257, 2, 1.0, -7.6, -5.1], [0, 265, 5, 1.2, 10.8, -8.6],
-  [0, 338, -2, 1.3, -12.9, -4.0]
+  [1, 26, 3, 1.5, 11.3, -2.1], [1, 33, -2.5, 1.1, -8.7, -5.4], [1, 39, 5, 1.3, 13.9, -9.2], [1, 47, -4, 1.6, -10.1, -3.3],
+  [1, 151, 2, 1.0, 7.9, -6.6], [1, 158, 4, 1.4, 12.7, -1.4], [1, 166, -3, 1.0, -9.6, -7.7],
+  [1, 262, 1, 1.7, 15.1, -4.9], [1, 269, -5, 1.1, -8.2, -2.8], [1, 277, 2.5, 1.3, 10.6, -8.1], [1, 284, -4, 1.0, -12.2, -5.9],
+  [0, 76, -3, 1.2, -9.3, -4.4], [0, 83, 3.5, 1.5, 12.1, -1.9], [0, 89, -1, 1.0, 8.4, -6.2],
+  [0, 196, 4, 1.3, -11.6, -3.7], [0, 204, -2.5, 1.1, 9.9, -7.3], [0, 211, -4, 1.4, 13.3, -2.5],
+  [0, 318, 2, 1.0, -7.6, -5.1], [0, 325, 5, 1.2, 10.8, -8.6], [0, 333, -2, 1.3, -12.9, -4.0]
 ];
 function addRingDebris(hero){
   if(!hero || hero.querySelector(".csc-ringfrag")) return;
@@ -65252,17 +65182,15 @@ function addRingDebris(hero){
      the hero) and the lap (ORBIT_LAP_S, the rings' cosmic-orbit-spin).
      Both run on the same clock (syncLoopClock sets them together), so it
      never drifts and nothing is measured per frame.
-   - Genesis's flare crosses the planet's face in front of the rupture: its
-     glint peaks at the point of its lap nearest it, worked out from the
-     orbit (CORE_ORBIT, the same numbers as .cco-plane) the same way.
+   - Genesis's flare is one of the inner three since planet2, so it
+     passes the scar like the rest.
    - The rings, where they pass the scar, run hot: a short arc of ember
      over each, fading out at both ends, flickering on two clocks.
    - The flare bubbles do not orbit on Home; the ones nearest the hole
      carry its firelight on their near side, faint, flickering.
    All of it is .csc-pass: transform and opacity only, held still under
    Reduce motion, and left out of the rank cutscene (its scene is its own). */
-const ORBIT_LAP_S = { outer: 120, inner: 52, core: 16 };   /* = cosmic-orbit-spin on the two rings, and cco-turn */
-const CORE_ORBIT = { r: 72, squash: .36, tilt: -18 };      /* = .cosmic-core-orbit / .cco-plane */
+const ORBIT_LAP_S = { outer: 120, inner: 52 };   /* = cosmic-orbit-spin on the two rings */
 let scarHeatSeq = 0;
 function scarPassEffects(hero, art){
   if(!hero || hero.querySelector(":scope > .csc-ringheat")) return;
@@ -65290,19 +65218,6 @@ function scarPassEffects(hero, art){
     glint(dot, at, lap, a0 + 180);
     if(lap === ORBIT_LAP_S.outer) dot.lastChild.classList.add("is-far");
   });
-  /* Genesis's flare: the point of its lap nearest the rupture */
-  const core = hero.querySelector(":scope > .cosmic-core-orbit .cosmic-flare-dot");
-  if(core && art && art.crater){
-    const kx = (art.crater[0] - 50) / 100 * 104, ky = (art.crater[1] - 50) / 100 * 104;
-    const c = Math.cos(CORE_ORBIT.tilt * rad), s = Math.sin(CORE_ORBIT.tilt * rad);
-    let best = 0, bd = 1e9, bx = 0, by = 0;
-    for(let a = 0; a < 180; a += .5){
-      const lx = CORE_ORBIT.r * Math.cos(a * rad), ly = CORE_ORBIT.squash * CORE_ORBIT.r * Math.sin(a * rad);
-      const x = lx * c - ly * s, y = lx * s + ly * c, d = (x - kx) * (x - kx) + (y - ky) * (y - ky);
-      if(d < bd){ bd = d; best = a; bx = x; by = y; }
-    }
-    glint(core, best / 360 * ORBIT_LAP_S.core, ORBIT_LAP_S.core, Math.atan2(kx - bx, by - ky) / rad);
-  }
   /* the rings run hot where they pass the scar */
   const svgNS = "http://www.w3.org/2000/svg";
   const radii = [...hero.querySelectorAll(".cosmic-orbit-ring")].map(r => Number(r.getAttribute("r"))).filter(r => r > 60);
@@ -77275,7 +77190,7 @@ const HOME_SECRET_LINE = {
   yellow: "The light left behind when a star goes out.",
   violet: "The half-shadow at the edge of an eclipse.",
   white: "The edge that nothing comes back from.",
-  core: "The light at the heart of the planet."
+  core: "The first light of a world being born."
 };
 function homeJoin(parts){
   return parts.length < 2 ? (parts[0] || "") : parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
@@ -82194,7 +82109,7 @@ function playHorizonFlareScene(done){
   const who = AVATAR_DISPLAY_NAME.singularity || "Horizon";
   if(S.still){
     F.lit();
-    S.stillEnd("THE EVENT HORIZON", who.toUpperCase(), "One more waits on the planet.");
+    S.stillEnd("THE EVENT HORIZON", who.toUpperCase(), "One more waits on the rings.");
     return S.handle;
   }
   S.later(820, () => comet.classList.add("is-go"));
@@ -82233,7 +82148,7 @@ function playHorizonFlareScene(done){
   S.later(16400, () => F.special());
   S.later(REVEAL, () => { F.reveal(); S.overlay.classList.add("sf-lit"); S.flashAt(50, 34, "is-soft"); });
   S.step(19900, "sf-orbits");
-  S.later(20400, () => S.title("THE EVENT HORIZON", who.toUpperCase(), "One more waits on the planet."));
+  S.later(20400, () => S.title("THE EVENT HORIZON", who.toUpperCase(), "One more waits on the rings."));
   S.later(26900, S.endScene);
   return S.handle;
 }
@@ -82307,7 +82222,7 @@ function playGenesisFlareScene(done){
     return S.handle;
   }
   S.later(900, () => { S.overlay.classList.add("sf-found");
-    S.say("SECRET FLARE FOUND", MYSTERY_NAME.core, "The planet's own light — the last secret flare"); });
+    S.say("SECRET FLARE FOUND", MYSTERY_NAME.core, "The sixth and last secret flare"); });
   S.step(3600, "sf-clear");
   S.step(4300, "sf-dive");
   S.later(4500, () => S.say("YOUR PLANET", "It is waking up", ""));
@@ -83113,8 +83028,8 @@ function rsUnlockItems(run){
     const nthAll = MYSTERY_ORDER.indexOf(run.flare) + 1;
     items.push({ kind: "flare", flare: run.flare, kicker: "Secret flare found",
       name: MYSTERY_NAME[run.flare],
-      sub: run.flare === "core" ? "The planet's own light — the last secret flare"
-        : run.flare === "white" ? "The " + ["", "first", "second", "third", "fourth", "fifth"][nthAll] + " secret flare — one more waits on the planet"
+      sub: run.flare === "core" ? "The sixth and last secret flare"
+        : run.flare === "white" ? "The " + ["", "first", "second", "third", "fourth", "fifth"][nthAll] + " secret flare — one more waits on the rings"
         : "The " + ["", "first", "second", "third", "fourth", "fifth"][nthAll] + " secret flare",
       color: MYSTERY_COLOR[run.flare], art: () => buildFlareOrb(MYSTERY_COLOR[run.flare], "ul") });
     items.push({ kind: "character", character: ch, feat: true, secret: true, kicker: "Character unlocked",
@@ -83570,7 +83485,7 @@ function pendingFlareHints(){
   const out = [];
   if(!isLockedCharacter("voidwalker") && isLockedCharacter("umbra") && shown.indexOf("umbra") < 0) out.push("umbra");
   if(!isLockedCharacter("umbra") && isLockedCharacter("singularity") && shown.indexOf("singularity") < 0) out.push("singularity");
-  /* build 313: holding Horizon opens the last one, the planet's own */
+  /* build 313: holding Horizon opens the last one, Genesis's */
   if(!isLockedCharacter("singularity") && isLockedCharacter("genesis") && shown.indexOf("genesis") < 0) out.push("genesis");
   return out;
 }
@@ -83588,7 +83503,7 @@ function flareHintItem(ch){
     sub: ch === "umbra"
       ? "A fourth flare, " + MYSTERY_NAME.violet + ", is hiding in your tests. Find it to unlock " + who + "."
       : ch === "genesis"
-      ? "The last flare, " + MYSTERY_NAME.core + ", is the planet's own. From level " + FLARE_WINDOWS.core[0] + " it can turn up in your tests. Find it to unlock " + who + "."
+      ? "The last flare, " + MYSTERY_NAME.core + ", can turn up in your tests from level " + FLARE_WINDOWS.core[0] + ". Find it to unlock " + who + "."
       : "A fifth flare, " + MYSTERY_NAME.white + ", is hiding in your tests. Find it to unlock " + who + ".",
     /* the flare is not found yet, so it is shown without its colour
        (build 314 - FLARE_UNFOUND_TINT) */
