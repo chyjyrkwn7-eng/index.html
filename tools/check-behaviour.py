@@ -14036,6 +14036,29 @@ def check_b317_hundobox(br):
         check("%s: both beams are gone once it has lifted off (6.25s), and the grab is still there (its two halves)" % tag,
               not shown(S[6.25]["beam"]) and not shown(S[6.25]["inb"]) and u.get("ghosts") == 2, [S[6.25]["beam"], S[6.25]["inb"], u.get("ghosts")])
 
+    # --- the Fireworks sky's backing (round 4): "make the Fireworks canvas
+    # cheaper without changing its look". On a 3x phone it is backed at
+    # 1.5x, not 2x - its commit was Fireworks' one extra cost - and it is
+    # still drawing.
+    ctx, pg = booted(br, PHONE[1], PHONE[2], seed=USED_ACCOUNT, dpr=3)
+    pg.evaluate("() => { " + RUN100 + " }")
+    sky = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      store.lifetime.perfectTests = 600; store.hundoFx = 'fireworks'; theme.reduceMotion = false; theme.muteBanners = true; saveStore();
+      window.__fxAt = 0; const real = playHundoFx; window.playHundoFx = function(a, b){ window.__fxAt = performance.now(); return real(a, b); };
+      showHome(); await wait(200); __run100('Identity Crimes');
+      for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(50);
+      await wait(1800);
+      const cv = document.querySelector('.hfx-layer.hfx-fireworks canvas.hfx-fw-sky'), g = document.querySelector('.rs-screen .rs-grade');
+      if(!cv || !g) return null;
+      const cr = cv.getBoundingClientRect(), gr = g.getBoundingClientRect();
+      const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+      let lit = 0; for(let i = 3; i < d.length; i += 4 * 7) if(d[i] > 60) lit++;
+      return { dpr: devicePixelRatio, w: cv.width, h: cv.height, cssW: cr.width, cssH: cr.height, bottom: cr.bottom, boxTop: gr.top, lit }; }""")
+    ctx.close()
+    k = (sky or {}).get("w", 0) / max(1, (sky or {}).get("cssW", 1))
+    check("iPhone 17 Pro Max at 3x, fireworks: the sky canvas is backed at 1.5x its size, not 2x (%.2fx) - and it is drawing" % k,
+          sky and sky["dpr"] == 3 and abs(k - 1.5) < .02 and abs(sky["h"] / sky["cssH"] - 1.5) < .02 and sky["lit"] > 200, sky)
+
 def check_b317_tabplate(br):
     """Build 317. "They got a smidge smaller so let's ensure they are still a
     nice size AND let's ensure you can see their backgrounds because right

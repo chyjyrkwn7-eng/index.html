@@ -13029,7 +13029,7 @@ step below the Tree, Bubbles and the UFO.
   and a trail is the spark's own path over the last fraction of a second;
   trails are batched into one stroke per colour, alpha and width, heads are
   one pre-drawn glow each (`hfxFwHeads`), all added (`lighter`) so crossings
-  burn white. Backing capped at 2x. The loop ends at the effect's total, or
+  burn white. Backing capped at 1.5x (round 4, below). The loop ends at the effect's total, or
   is stopped (`hfxOnEnd`), drawing on through a stop's fade. The dim, the
   light each burst throws (`.hfx-fw-glow`) and the box's pieces are plain
   layers.
@@ -13217,6 +13217,39 @@ Fireworks 256, 263, 227 / 314, 240, 311; Bubbles 225, 226, 318 / 235, 185,
 effect, so taking the only backdrop-filtered elements away does not
 clearly help, and the results cards have no live backdrop to swap for a
 static look. Nothing kept.
+
+**What Fireworks does cost is its canvas, and it is backed at 1.5x now
+(build 317, round 4).** Measured at 3x (the 17 Pro Max) and 4x CPU, with
+`Commit`'s CPU time (`tdur`) per frame, not wall-clock frames: this sandbox
+has 4 cores at load 8-15 from other sessions, and the same build's frame
+count in a 7s window moved 65-243 between passes, while CPU per frame held
+within ~15%. Hiding the sky canvas alone cut the window's commit from
+2.8s to 0.39s, so the canvas IS the cost: every frame it is redrawn, and
+the whole bitmap is copied for the compositor - 9-12ms of main-thread CPU
+a frame at 880x1388, of a 16-22ms frame. At 1.5x (660x1041, 44% fewer
+pixels) the commit is 6.7-8.9ms and the frame 14.9-18.2ms: lower in every
+one of 8 interleaved pairs across two sets (medians -20% to -32% commit,
+-10% to -17% frame). The copy has a fixed part too, which is why 44%
+fewer pixels is not 44% less time. Wall-clock frames stayed inside the noise (5 passes:
+205, 179, 163, 232, 225 before; 187, 182, 195, 240, 294 after). It looks
+the same, checked rather than assumed: the SAME show (Math.random seeded
+after the recorder's clock is installed, so both builds draw identical
+sparks) at the same moments, 1.3/2.2/3.5/5.0s, differs from 2x by
+0.05-0.18 of a level on average at 3x, 0.001-0.013% of pixels by more than
+30, and the region of largest difference, zoomed, is the same picture; at
+2x (an iPad), 0.11-0.28 and 0.1%. Tried and NOT kept: skipping the
+redraw while the sky is empty (only ~6% of the window, nothing
+measurable). Already right, so left: the sparks' heads are pre-drawn
+sprites (`hfxFwHeads`), there is no `shadowBlur` and no per-spark
+gradient, trails are one stroke per colour/alpha/width, and the canvas
+stops at the box's top edge. Particle counts were not cut: that changes
+the look. `check_b317_hundobox` asserts the 1.5x backing at 3x, and that
+the sky is still drawing; it fails on d5808b3 (2.00x).
+**Bubbles, the same check:** nothing obvious. Its main thread is ~11-12ms
+a frame (no canvas; commit ~1ms); its 4 glass heroes are ~3ms of the
+software compositor's ~9-10ms a frame (hidden: ~6.6ms) - the refraction
+IS the effect, and a software compositor's backdrop blur is not an
+iPhone's. Left alone.
 
 **Bubbles** - no giant bubble from the number any more (`hfxCarry` is gone).
 `hfxBubblesGlass`: a few far small bubbles (sprites), **Liquid Glass heroes -

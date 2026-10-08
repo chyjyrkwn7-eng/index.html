@@ -77640,7 +77640,8 @@ function hfxBlackHole(scr, bx, c){
    own path over the last fraction of a second, batched into one stroke
    per colour, alpha and width, with a pre-drawn glow for its head, all
    added ("lighter") so where sparks cross they burn white. The canvas
-   backing is capped at 2x. Nothing in it outlives the layer: the loop
+   backing is capped at 1.5x (round 4, measured - see hfxFwSky). Nothing in
+   it outlives the layer: the loop
    ends at the effect's total, or when it is stopped. */
 const HFX_FW_COL = { m: [255, 92, 214], c: [92, 227, 255], g: [255, 211, 140], w: [255, 246, 236], v: [178, 146, 255] };
 const HFX_FW_TOT = 7, HFX_FW_BOX_TOT = 3.6;
@@ -77725,7 +77726,17 @@ function hfxFwShow(kk){
 function hfxFwSky(parent, c, S, W, H, end, floor){
   const cv = document.createElement("canvas");
   cv.className = "hfx-fw-sky";
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  /* BACKED AT 1.5x, NOT 2x (build 317, round 4). The sky is redrawn and
+     sent to the compositor every frame, and that send is the one cost
+     Fireworks has over every other effect - measured at 3x, 4x CPU: the
+     canvas's commit was 9-12ms of main-thread CPU in a 16-22ms frame. At
+     1.5x it is 44% fewer pixels (660x1041 on a 17 Pro Max against
+     880x1388): 6.7-8.9ms a commit, 14.9-18.2ms a frame. Everything on it
+     is a soft glow or a trail a pixel or two wide, so it looks the same:
+     the same seeded show at the same moments differs by 0.05-0.18 of a
+     level on average, 0.01% of pixels by more than 30. Do not raise it
+     without measuring again. */
+  const dpr = Math.min(1.5, window.devicePixelRatio || 1);
   /* ONLY AS TALL AS THE SKY (build 317). Nothing is drawn below `floor`
      (the box's top edge) - it used to be erased there every frame - so
      the canvas stops at it: on a phone that is a third fewer pixels to
