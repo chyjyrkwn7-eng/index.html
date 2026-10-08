@@ -63046,6 +63046,11 @@ function scarPass1(P){
           const e = (1 - ss(.3, .66, qc)) * (1 - .8 * crust) * (.6 + .55 * (lv - .5) + .3 * n2) + (1 - ss(.45, .9, qc)) * .1;
           if(e > em){ em = e; tp = (.36 + .5 * (1 - ss(0, .66, qc))) * (1 - .5 * crust) * (.8 + .4 * n2); }
         }
+        /* the rupture's light spills out over the soot round its rim */
+        if(qc > .85 && qc < 2.2){
+          const sp = .26 * Math.exp(-(qc - .85) * 2.6) * (.7 + .6 * n2);
+          if(sp > em){ em = sp; tp = .3 + .2 * Math.exp(-(qc - .85) * 3); }
+        }
         const cv = cov * (.78 + .44 * n2);
         if(h === 0 && cv < .004 && chr < .004 && em < .004) continue;
         On[k] = 1; Hf[k] = h; Cov[k] = cv > chr ? cv : chr; Mat[k] = chr >= cv ? mat : 0; Em[k] = em; Tp[k] = tp; Dp[k] = dp;
@@ -63233,7 +63238,7 @@ function cosmicScarArt(){
     const addPath = (p, w0, w1, d0, h0, kind, wPow) => {
       const W = f => w1 + (w0 - w1) * Math.pow(1 - f, wPow);
       const D = f => d0 * Math.pow(1 - f, .6);
-      const Hh = f => h0 * Math.exp(-f / .32) * (1 - f);
+      const Hh = f => h0 * Math.exp(-f / .38) * (1 - f);
       for(let k = 1; k < p.length; k++){
         const a = p[k - 1], b = p[k];
         SEG.push(a[0], a[1], b[0], b[1], W(a[2]), W(b[2]), D(a[2]), D(b[2]), Hh(a[2]), Hh(b[2]), .55 + .9 * rnd(), kind);
@@ -63250,8 +63255,8 @@ function cosmicScarArt(){
     const mainA = arc(rimAt(-1, .08, .8), onS(-.95, -.08), 30, .06, 1.6, .4);
     const mainB = arc(rimAt(.9, .42, .8), onS(.8, .57), 14, .035, 1, 1.2);
     const jA = jag(P2(mainA), 2, .5), jB = jag(P2(mainB), 2, .5);
-    addPath(jA, .05, .0026, .062, 1, 0, .95);
-    addPath(jB, .04, .0026, .055, .9, 0, 1);
+    addPath(jA, .056, .0026, .066, 1, 0, .85);
+    addPath(jB, .044, .0026, .058, .9, 0, .9);
     const branch = (src, at, side, len, w0, h0) => {
       const k = Math.round(at * (src.length - 1)), P = src[k], Pn = src[Math.min(src.length - 1, k + 1)];
       const H = nrm([Pn[0] - P[0], Pn[1] - P[1], Pn[2] - P[2]]), Bn = nrm(cross(P, H));

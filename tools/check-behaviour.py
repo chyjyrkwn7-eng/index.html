@@ -13822,13 +13822,14 @@ def check_b317_planet(br):
         pg.evaluate("() => document.querySelectorAll('#contextual-info-popup,.rs-spot,.scene-bridge,.daily-alert,#tour-overlay').forEach(n => n.remove())")
         pg.evaluate(PLANET_STEP, t)
         g = pg.evaluate(GEN)
+        top = pg.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y); return e ? ((e.id ? '#' + e.id + ' ' : '') + (e.getAttribute('class') || e.tagName)).slice(0, 60) : null; }", [g["x"], g["y"]])
         pg.mouse.click(g["x"], g["y"])
         txt = ""
-        for _ in range(30):
+        for _ in range(60):     # a loaded machine can take seconds to open it
             pg.wait_for_timeout(100)
             txt = pg.evaluate("() => { const p = document.getElementById('contextual-info-popup'); return p ? p.textContent : ''; }")
             if txt: break
-        return txt
+        return txt or ("(nothing; on top: %s)" % top)
     off_behind = [(t, g) for t, g in rows if not g["onDisc"] and g["iS"] < 0 and g["iF"] >= 0 and g["w"] < (front[0][1]["w"] if front else 0) * .9]
     taps = []
     if front: taps.append(("front", "Worldheart", tap_at(front[len(front) // 2][0])))
