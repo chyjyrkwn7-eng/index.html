@@ -61911,28 +61911,37 @@ const RELEASE_NOTES = [
     version: "7.7",
     groups: [
       { label: "Hundo Effects", items: [
-        { icon: buildSparkleIcon, color: "#FFD84D", title: "Effects For Your Hundos", body: "A screen effect plays when you score 100%, and you earn new ones as your hundos climb: Fireworks at 50, the World Tree at 100, Bubbles at 200 and a UFO at 350, plus Confetti from the start. Choose yours in Customize, and tap one there to see it play." }
+        { icon: buildSparkleIcon, color: "#FFD84D", title: "Effects For Your Hundos", body: "A screen effect plays when you score 100%, and you earn new ones as your hundos climb: Fireworks at 50, Underwater at 100, Bubbles at 200 and a UFO at 350, plus Confetti from the start. Choose yours in Customize, and tap one there to see it play." }
+      ]},
+      { label: "Home", items: [
+        { icon: buildPlanetIcon, color: "#7FC8FF", title: "A Home You Can Tap", body: "Tap a flare or the planet and it reacts, with a line saying what it is. Flares you have not unlocked yet give a small shake." }
       ]},
       { label: "Studying", items: [
         { icon: buildChecklistIcon, color: "#4DD0E1", title: "Flashcards", body: "Review has a Flashcards option for any unit: tap a card to flip it, swipe to move on, and starred questions come with you." },
         { icon: buildSwipeIcon, color: "#F5804D", title: "A Better Test", body: "Answer feedback is quicker, a small swipe bounces back until you mean it, the Next button arrives at a steadier pace, and Review and Flashcards get their own short loading screen." },
-        { icon: buildClipboardIcon, color: "#5CA8FF", title: "A Simpler Start Sheet", body: "The question bank is all questions by default, with one switch for starred questions only, and the slider tells you when it is already at the most it can be." }
+        { icon: buildClipboardIcon, color: "#5CA8FF", title: "A Simpler Start Sheet", body: "The question bank is all questions by default, with one switch for starred questions only, and the slider tells you when it is already at the most it can be." },
+        { icon: buildClipboardIcon, color: "#FF7A59", title: "Penal Code: Slides 55\u2013124", body: "Penal Code has a second version with only the questions from slides 55\u2013124. Pick it when you choose the unit." },
+        { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "Daily Question", body: "Pick an answer, then tap Submit answer." }
       ]},
       { label: "Characters & Banners", items: [
         { icon: buildPersonIcon, color: "#FF2E88", title: "Characters, Refined", body: "Every character is the same size and reacts to your score in its own way. They animate in Customize and on the tab bar, nothing is cut off, and locked ones stay a silhouette until you earn them." },
         { icon: buildSwatchClusterIcon, color: "#4DD0E1", title: "Customize, Organized", body: "Customize opens on what you have on: your character, banner, theme color and hundo effect. Tap one to open its own page." },
-        { icon: buildPaletteIcon, color: "#C583FF", title: "New Banners And Pop-Ups", body: "New banners for the secret flare characters, and every unlock pop-up now matches the colours of what you unlocked. Silver looks like silver." }
+        { icon: buildPaletteIcon, color: "#C583FF", title: "New Banners And Pop-Ups", body: "New banners for the secret flare characters, and every unlock pop-up now matches the colours of what you unlocked. Silver looks like silver." },
+        { icon: buildSparkleIcon, color: "#7FC8FF", title: "New Secret Flare Cutscenes", body: "Finding a secret flare plays a longer cutscene, and the character it hands over rises out of the dark." },
+        { icon: buildStarIcon, color: "#FF9EC8", title: "Rare Moves", body: "Every earned character now has a rare move of its own. Keep an eye on yours." }
       ]},
       { label: "Ranks, Levels & Badges", items: [
-        { icon: buildLadderIcon, color: "#E8B84A", title: "Every Rank Is A Gate", body: "Each rank now owns a band of levels: Bronze 21\u201329, Silver 30\u201339, up to Supernova at 80. Every rank has two challenges, a level and a number of badges. If your XP is ahead of your rank, your level stays at the top of your band until you complete the next rank's challenges; your XP is all still there and turns into levels the moment you rank up. Nobody loses a rank." },
-        { icon: buildStarIcon, color: "#FFD84D", title: "A New Rank Ladder", body: "Each rank owns a block of levels: Bronze 21-29, Silver 30-39, Gold 40-49, Platinum 50-59, Sapphire 60-69, Amethyst 70-79, Supernova 80. You can level to the top of the next rank's block; past it takes ranking up. Your XP is never lost: it keeps counting and turns into levels the moment you rank up. Badge requirements are the same, and nobody loses a rank." },
-        { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Stats, Profile And The Road Map", body: "Profile shows your rank, level and XP together, the next rank as a checklist, and your badge case, each one tap away. Every rank you have reached glows on the road map, and the Stats page is clearer." }
+        { icon: buildRocketIcon, color: "#FFD84D", title: "Rank-Ups, Reimagined", body: "Ranking up plays a new cutscene: your flares spin faster and faster, the new one lights up, and your whole system takes on its colour. Reaching Supernova is a cutscene of its own, and it leaves its mark on your Home screen." },
+        { icon: buildLadderIcon, color: "#E8B84A", title: "Rank Challenges", body: "Every rank has two challenges, a level and a number of badges, and completing both ranks you up. If your XP gets ahead, your level waits until you complete the next rank's challenges. None of that XP is lost: it turns into levels the moment you rank up. Nobody loses a rank." },
+        { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Stats, Profile And The Road Map", body: "Profile shows your rank, level and XP together, the next rank as a checklist, and your badge case, each one tap away. Every rank you have reached glows on the road map, and the Stats page is clearer." },
+        { icon: buildStarIcon, color: "#B8C4D6", title: "New Badges, One Case", body: "All sixteen badges are redrawn, and your briefcase looks the same everywhere: on Profile, on the Badges tab and in the cutscene when you earn one." }
       ]},
       { label: "Results", items: [
         { icon: buildTrophyIcon, color: "#4ADE80", title: "Results, Overhauled", body: "Your rewards first, revealed one at a time, with your character reacting to the score, then the full review." }
       ]},
       { label: "Fixes & polish", items: [
         { icon: buildSmoothCurveIcon, color: "#C583FF", title: "Smoother Everywhere", body: "Faster tabs, screens that load every time, smoother chat, a calmer Virtual Room start, and a more accurate leaderboard." },
+        { icon: buildCloudIcon, color: "#3DA9FC", title: "Safer Saving", body: "Before your progress is saved, the app checks what is already there, so a phone with an older copy can no longer write over newer progress." },
         { icon: buildRetryIcon, color: "#4DD0E1", title: "Bug Fixes", body: "A long list of smaller fixes from your reports." }
       ]}
     ]
@@ -71849,10 +71858,21 @@ function showIntroPopup(){
       card.appendChild(note);
     }
   }catch(e){}
+  /* BUILD 317 adds three rows to Madison's list, newest first: the
+     rank-ups, Home's taps and the badges. Her rows keep her order. */
   [
+    ["M12 2.6 19.4 10H15v5H9v-5H4.6L12 2.6ZM6 17h12v1.8H6V17Zm0 3.2h12V22H6v-1.8Z",
+     "#E8B84A", "Rank-ups, reimagined",
+     "A new cutscene when you rank up, and rank challenges that say exactly what comes next."],
     ["M12 2.5l1.9 5.9 5.9 1.9-5.9 1.9-1.9 5.9-1.9-5.9-5.9-1.9 5.9-1.9L12 2.5Zm6.5 12.5.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z",
      "#FFD84D", "Hundo effects",
-     "Earn new screen effects as your hundos climb: Fireworks, the World Tree, Bubbles and a UFO. Pick yours in Customize."],
+     "Earn new screen effects as your hundos climb: Fireworks, Underwater, Bubbles and a UFO. Pick yours in Customize."],
+    ["M10.5 6.5a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM19 3.2a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2Z",
+     "#7FC8FF", "A Home you can tap",
+     "Tap the flares and the planet on Home to see what each one is."],
+    ["M12 2l8 3v6.2c0 5-3.4 9.1-8 10.8-4.6-1.7-8-5.8-8-10.8V5l8-3Zm0 5.2-1.5 3.1-3.4.5 2.5 2.4-.6 3.4 3-1.6 3 1.6-.6-3.4 2.5-2.4-3.4-.5L12 7.2Z",
+     "#B8C4D6", "New badges and case",
+     "All sixteen badges redrawn, in one briefcase everywhere."],
     ["M6 2h8.5L20 7.5V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 1.8V8h4.2L14 3.8ZM7.5 11v1.6h9V11h-9Zm0 3.4V16h9v-1.6h-9Zm0 3.4v1.6h6v-1.6h-6Z",
      "#FF7A59", "Penal Code: slides 55\u2013124",
      "Penal Code has a second version with only the questions from slides 55\u2013124. Pick it when you choose the unit."],
@@ -71861,7 +71881,7 @@ function showIntroPopup(){
      "Review has a new Flashcards option for any unit. Tap a card to flip it, swipe to move on."],
     ["M12 12a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 2c-4.6 0-8.2 2.3-8.2 5.2V20h16.4v-.8c0-2.9-3.6-5.2-8.2-5.2Z",
      "#FF2E88", "Characters and banners",
-     "Characters refined and animating everywhere, and new banners to earn."],
+     "Characters refined, with rare moves of their own, new banners, and new secret flare cutscenes."],
     /* ICONS THAT SAY THE THING (build 314): "some of the icons are bad
        there and don't match what's being talked about" - each row's icon
        is its own subject. Penal Code sits second and "Results,
@@ -71874,7 +71894,7 @@ function showIntroPopup(){
      "A clearer Stats page, a fuller test history, and a cleaner Profile."],
     ["M21.7 6.3a5.6 5.6 0 0 1-7.6 6.3L7.4 19.3a2.2 2.2 0 1 1-3.1-3.1l6.7-6.7A5.6 5.6 0 0 1 17.3 1.9l-3.4 3.4.8 3.4 3.4.8 3.4-3.4c.1.1.1.2.2.2Z",
      "#C583FF", "Refined everywhere",
-     "Faster tabs, smoother screens, and a long list of fixes from your reports."]
+     "Faster tabs, smoother screens, safer syncing, and a long list of fixes from your reports."]
   ].forEach(([glyph, color, t, b]) => card.appendChild(introRow(glyph, color, t, b)));
 
   const go = document.createElement("button");
