@@ -24,7 +24,7 @@ sys.argv = [sys.argv[0]]
 WT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 spec = importlib.util.spec_from_file_location("cb", WT + "/tools/check-behaviour.py")
 cb = importlib.util.module_from_spec(spec); spec.loader.exec_module(cb)
-import subprocess, base64
+import subprocess, base64, io
 from playwright.sync_api import sync_playwright
 import imageio_ffmpeg
 FF = imageio_ffmpeg.get_ffmpeg_exe()
@@ -32,7 +32,9 @@ os.makedirs(OUT, exist_ok=True)
 SRC = open(WT + "/tools/check-results.py").read()
 i = SRC.index('SETUP = """') + len('SETUP = """'); SETUP = SRC[i:SRC.index('"""', i)]
 FPS = 30
-LEN = {"confetti": 6.0, "fireworks": 7.6, "worldtree": 6.2, "bubbles": 7.6, "ufo": 9.2}
+LEN = {"confetti": 6.0, "fireworks": 7.6, "worldtree": 6.2, "bubbles": 7.6, "ufo": 9.2, "blackhole": 6.4, "underwater": 8.0}
+# a moment well into each, for the mid-effect crop (s after it starts)
+MID = {"confetti": .8, "fireworks": 2.6, "worldtree": 1.2, "bubbles": 2.4, "ufo": 4.6, "blackhole": 2.0, "underwater": 2.6}
 def smoothness(path, W2=220, H2=478):
     """(frozen frames between moving ones, sudden jumps) in an MP4."""
     from PIL import Image, ImageChops, ImageStat
@@ -124,12 +126,24 @@ with sync_playwright() as pw:
         p = subprocess.Popen([FF, "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", str(FPS), "-c:v", "mjpeg", "-i", "-",
             "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "19", "-preset", "medium",
             "-movflags", "+faststart", "-r", str(FPS), path], stdin=subprocess.PIPE)
-        n = 0; t0 = None; ts = []
+        n = 0; t0 = None; ts = []; got_first = False
         while n < LEN[fx] * FPS:
             ts.append(pg.evaluate("async () => { await __clk.advance(1000 / 30); return performance.now(); }"))
             fr = base64.b64decode(cdp.send("Page.captureScreenshot", {"format": "jpeg", "quality": 92})["data"])
             p.stdin.write(fr); n += 1
             if t0 is None and pg.evaluate("() => window.__fxAt > 0"): t0 = n
+            # the grade box cropped out of this very frame: the first frame
+            # it is half visible ("first"), and well into the effect ("mid")
+            tag = None
+            if not got_first and pg.evaluate("() => { const g = document.querySelector('.rs-grade'); return !!g && +getComputedStyle(g).opacity >= .5; }"):
+                tag = "first"; got_first = True
+            elif t0 is not None and n == t0 + int(MID.get(fx, 2) * FPS):
+                tag = "mid"
+            if tag:
+                rr = pg.evaluate("() => { const b = document.querySelector('.rs-grade').getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; }")
+                from PIL import Image
+                im = Image.open(io.BytesIO(fr)); k = im.width / W
+                im.crop(tuple(int(round(v * k)) for v in rr)).save(OUT + "/box-%s-%dx%d-%s.png" % (fx, W, H, tag))
             if n % 30 == 0: open(OUT + "/f-%s-%02d.jpg" % (fx, n // 30), "wb").write(fr)
         p.stdin.close(); p.wait()
         for _ in range(int(1.5 * FPS)): pg.evaluate("async () => { await __clk.advance(1000 / 30); }")

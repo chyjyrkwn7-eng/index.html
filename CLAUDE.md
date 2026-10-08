@@ -13051,30 +13051,53 @@ was (`#D9A93A` -> `#F6D58E`), so a card with no effect is unchanged. Eases in
 and out over `--hfx-ease` (1s; 0.45s for the UFO, `fast`), and is gold again
 before the last pieces go. Confetti keeps the gold.
 
-**The whole 100% shows, and no themed box has gold in it (build 317).**
-*"the number 100 is cutout at the percentage part, and the 10/10 is still
-gold and not matching the theme, ensure all effects are good to go for those
-boxes."* Two faults, every effect. (1) `hfxTintNum` built the coloured copy of
-the number from `textContent`, so it read "100%" with a FULL-SIZE % - 195px of
-text in the real number's 163px box; the gradient only paints the box, so the
-% was cut off half-way and stood over the real one's small raised %. It clones
-the children now (`hfxCloneNum`, shared with `hfxLitText`), and gives the
-clone's % its own line-height - the copy carries the number's line-height in
-pixels, which a 28px % inherited as a 64px line and sank level with the
-digits. The gold number underneath goes transparent while the copy is there
-(`:has(> .hfx-tintnum)`), so no gold fringe, and the copy carries the glow.
-(2) The "12 / 12" was `g1`, the 100%'s palest stop, and Fireworks' `g1` was a
-pale gold. `HFX_TINT` has a `t` (text colour) per effect now - the fraction,
-the GRADE label (faded) and the caption under the fraction (leaning to it) -
-set with the other four by `hfxTintVars()`, and Fireworks' `g1` is a pale
-pink (Underwater's `g3` lost its gold too). `check_b317_hundobox` holds it on
-every built effect at 320, 440 and 834 wide, and fails on 57212ce.
+**The box: the 100% carries the effect, the words never do, and it is in
+its colours from the first frame (build 317, three rounds).**
+- Round 1: *"the number 100 is cutout at the percentage part, and the 10/10
+  is still gold"* - a coloured copy built from `textContent` (a full-size %
+  in a box sized for the small one) and a fraction coloured with Fireworks'
+  pale-gold `g1`.
+- Round 2: *"the percentage sign, it looks like a solid color"* - the % was
+  an inline-block, which `background-clip:text` does not reach into. It is
+  inline now (see the % note under World Tree, below).
+- **Round 3, which is how it is:** *"In default the numbers beside the Hundo
+  is white, in the others some of the stuff is the theme and not, and the
+  minor units and the total of questions isn't. We need this all to be more
+  cohesive"* and *"It looks like all the hundo effect boxes start as the gold
+  default, fix that."* (1) **Every word in the box is the default's on every
+  effect** - GRADE, the "12 / 12", the line under it, each unit and its
+  count. Only the 100% (`g1`-`g3`), the border and inner glow (`b`) and the
+  bars (`g2` > `g1`) carry the effect; the per-effect text colour (`t`,
+  `--hfx-t`) is gone. (2) **No gold first.** The colours used to go on when
+  the effect started, once the card had LANDED in gold, and eased in over
+  1s (the UFO's only at 2.8s, when its beam arrived). Now `hfxTintGrade()`
+  puts them on as the card is BUILT in `showRunRewards` (and on the unlock
+  card's miniature and every live stage), before anything paints;
+  `hfxApplyTint()` is idempotent, so the effect starting changes nothing;
+  the 100% is the real number with the effect's gradient (no overlaid copy,
+  `hfxTintNum` and `.hfx-tintnum` are gone); and the card's colour
+  transitions are deleted. `HFX_TINT` has no `on` any more.
+  `check_b317_hundobox` samples the card in the same task as the class that
+  lands it - its first visible frame - and requires border, number and bar
+  to equal the settled ones, plus the default's words on every effect; it
+  fails on 13c747f (34 failures).
 
-**The UFO's box lights only when its beam reaches it.** `HFX_TINT.ufo` has
-`on` 2800 / `off` 5330 (ms): the saucer arrives, the beam switches on and
-reaches the box, THEN the box goes green; it lets go as the beam cuts. It
-used to light at the start. The gate asserts the border is still gold at
-1.6s.
+**The UFO's beam is FIRED, and it reaches the bottom of the box (build 317,
+round 3).** *"The UFO one, the UFO's projection is shown before it's shot out
+of the UFO and it doesn't hit the bottom of the box."* Two beams: the
+saucer's (`.hfx-ufo-beam`, under the card) and the box's own
+(`.hfx-ufo-inbeam`, inside it). The box's used to switch on at the same
+moment as the saucer's, so it was in the box while the saucer's was still
+leaving the hull, and it stopped just under the number. And the saucer's
+stopped 3px ABOVE the box: it starts .2 of the hull up inside the hull and
+was sized from the hull's bottom. Now: the saucer's beam is
+`-hov + .2*hull + 4` long, so its foot is 4px inside the box's top edge, and
+it is rescaled with the hull's own easing as it lands (`--bl`) and lifts off
+(`--bk`) so the foot never leaves that edge; the box's beam starts only as
+the saucer's arrives (40.4% of 7s) and runs the box's full height. Measured
+(440x956): foot at box top +5px hovering, landed and lifting; box beam 626 to
+815 against a box 625 to 813. The box flares as the beam strikes (2.84s) as
+well as on landing. The grab is unchanged.
 
 **"Looks laggy" was the RECORDING, not the effect.** Measured in the
 recording's own configuration: the page drew 139 frames in 7s, while the CDP
@@ -13124,6 +13147,24 @@ tree. Still done for the device: the Fireworks canvas stops at the box's
 top edge (a third fewer pixels, nothing was drawn below it), Bubbles keeps
 4/6 glass heroes. Nothing here can measure an iPhone's GPU; the clips are
 what she judged, and those were the recorder.
+
+**It is not backdrop-filter (build 317, round 3) - tested, and left alone.**
+The hypothesis was that a moving effect layer forces the results cards'
+Liquid Glass to re-blur every frame. The results cards have NO
+backdrop-filter (taken off in build 282, "NO BACKDROP BLUR ON A RESULTS
+CARD"). Counted in the page while each effect plays, the only backdrop-
+filtered elements are the 44px chat button, the closed chat sheet (off
+screen) and, for Bubbles, its own four glass heroes. Hiding the chat pair
+(Fireworks, Bubbles) or the glass heroes (Bubbles), three interleaved
+passes each at 4x CPU, moved nothing outside the noise. A CDP trace puts
+the extra cost in the software compositor (Viz SoftwareRenderer: ~4.6-4.8s
+for Fireworks and Bubbles against ~2.0s with no effect over the same
+window) and, for Fireworks, the canvas commit (~1.0s against UFO's
+~0.26s) - both what headless Chromium does without a GPU, and GPU work on
+an iPhone. Over the same passes UFO ran 22-30 fps across 8.6s, World Tree
+39-55 across 5.6s, Fireworks 11-19 and the bare screen 17-27 across 7s:
+the first seconds are the results reveal's own busiest, and UFO's window
+runs longest past them. Nothing was changed for it.
 
 **Bubbles** - no giant bubble from the number any more (`hfxCarry` is gone).
 `hfxBubblesGlass`: a few far small bubbles (sprites), **Liquid Glass heroes -
