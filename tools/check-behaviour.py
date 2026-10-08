@@ -15757,7 +15757,14 @@ def check_b317_rings(br):
     colored" - there was none, so the ring draw: plays once per new tier per
     device (class26e.ringtier.seen), from no tier too, waits for a tour, not
     under Reduce motion, and never on the second Home. All of that fails on
-    1888b11, and the vividness fails on 3644f1b (round three)."""
+    1888b11, and the vividness fails on 3644f1b (round three).
+
+    Planet2: "I want black black to work". The default top tier is black -
+    the orange's one circle in TRUE black with a thin cool rim (an
+    HTML-level svg under it), no filter, still; the draw draws it black;
+    the debris and the flares read against it, off their own pixels at the
+    device's ratio; "flares" and "white" are the alternatives. Those fail
+    on 9e62633."""
     print("\n317. Home's rings: orange at Supernova, the top tier at Supernova plus every secret flare, built like the orange")
     for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
