@@ -13436,8 +13436,10 @@ CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeou
       slotT: slot ? getComputedStyle(slot).transform : null,
       wipeR: wipe ? parseFloat((cp.match(/circle\\(([\\d.]+)%/) || [, 'NaN'])[1]) : null,
       lit: !!(b && b.classList.contains('cosmic-badge-lit')),
-      /* not while it flares for its second (round four's swell) */
-      ratio: b && m && !b.closest('.is-flaring') ? b.getBoundingClientRect().width / m.getBoundingClientRect().width : null });
+      /* not while it flares for its second (round four's swell), nor while
+         it breathes in place (.is-attn - the second evolution round's
+         attention, after-glow and pulse at the stop scale the slot) */
+      ratio: b && m && !b.closest('.is-flaring') && !b.closest('.is-attn') ? b.getBoundingClientRect().width / m.getBoundingClientRect().width : null });
     await wait(90);
   }
   /* the secret flares: in the scene, painted under the glass bubbles (an
@@ -13472,9 +13474,14 @@ CUTSPIN_SEEK = """(t) => { const M = window.__t0s = window.__t0s || new WeakMap(
     let fin = true; try{ fin = an.effect.getComputedTiming().iterations !== Infinity; }catch(e){}
     if(!M.has(an)) M.set(an, { at: t, from: /orbit/.test(an.animationName || '') ? 7000 : (!first && fin ? 0 : (an.currentTime || 0)), done: false });
     const s = M.get(an); if(s.done) return;
-    const want = s.from + (t - s.at) * 1000;
+    /* to the microsecond: (17.9 - 5.3) * 1000 is 12599.999..., which parked
+       the whirl a hair short of its end, PAUSED there - and finish() on an
+       animation paused at its end leaves it paused, so its finished never
+       came and the scene ran on its 2.5s fallback */
+    const want = s.from + Math.round((t - s.at) * 1e6) / 1e3;
     let end = Infinity; try{ end = an.effect.getComputedTiming().endTime; }catch(e){}
-    if(want >= end && isFinite(end)){ s.done = true; try{ an.finish(); }catch(e){} return; }
+    if(want >= end - 1e-6 && isFinite(end)){ s.done = true; try{ an.finish(); }catch(e){}
+      if(an.playState !== 'finished'){ try{ an.play(); an.finish(); }catch(e){} } return; }
     if(an.playState !== 'paused') an.pause();
     try{ an.currentTime = want; }catch(e){} }); }"""
 
