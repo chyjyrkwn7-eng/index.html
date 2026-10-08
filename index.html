@@ -25839,7 +25839,13 @@
   .bc-face-art, .bc-edge{ position:absolute; inset:0; width:100%; height:100%; display:block; user-select:none; -webkit-user-select:none; }
   .bc-face.is-front{ transform:translateZ(calc(var(--thick) / 2)); }
   .bc-face.is-back{ transform:translateZ(calc(var(--thick) / -2)) rotateY(180deg) scaleX(-1); }
-  .bc-edge{ transform:translateZ(calc((var(--k) - .5) * var(--thick) * .96)); }
+  /* each slice a hair smaller than the face (build 317, badge2): twenty
+     silhouettes exactly behind it stacked their half-covered edge
+     pixels into one hard, stepped outline round the face - the "rough
+     edges" at rest. Inset, the face's own antialiased edge lies over the
+     background, and turned, the band is 1% narrower, which reads as the
+     edge's own bevel. */
+  .bc-edge{ transform:translateZ(calc((var(--k) - .5) * var(--thick) * .96)) scale(.988); }
   .bc-spec{ position:absolute; inset:0; overflow:hidden; pointer-events:none;
     -webkit-mask-size:100% 100%; mask-size:100% 100%; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; }
   .bc-spec i{ position:absolute; top:-25%; bottom:-25%; left:32%; width:36%; opacity:0;
@@ -26765,7 +26771,7 @@
     box-shadow:0 14px 30px -12px rgba(0,0,0,.7), 0 0 0 1px rgba(0,0,0,.55);
   }
   .pf-case.nova-case::before{ content:""; position:absolute; inset:5px; border-radius:.9rem; border:1px dashed var(--case-stitch); pointer-events:none; }
-  .pf-case.nova-case .pf-case-head{ z-index:1; }
+  .pf-case.nova-case .pf-case-head{ z-index:1; justify-content:flex-end; margin-bottom:.5rem; }
   .pf-case.nova-case .pf-strip.badge-strip{ position:relative; padding:.4rem .45rem; border-radius:.7rem; border:2px solid transparent;
     background-color:#111418; background-image:var(--case-lining-bg), var(--case-trim);
     background-origin:padding-box, border-box; background-clip:padding-box, border-box;
@@ -26773,7 +26779,25 @@
   .pf-case-front{ position:absolute; left:20%; right:20%; bottom:-.32rem; display:flex; justify-content:space-between; pointer-events:none; z-index:1; }
   .pf-case-front .nova-case-latch{ position:relative; width:1.7rem; height:.62rem; }
   .pf-case-front .nova-case-latch::after{ top:40%; height:22%; }
-  .pf-case-handle{ position:absolute; left:39%; right:39%; bottom:-.62rem; height:.5rem; z-index:1; pointer-events:none; }
+  .pf-case-handle{ position:absolute; left:39%; right:39%; bottom:-.84rem; height:.5rem; z-index:1; pointer-events:none; }
+
+  /* ---- the case's name, on its side (build 317, badge2) ----
+     One plate on the front wall of every case, between the latches: a
+     smaller cut of the engraved plate, sized by the wall it is on. */
+  .nova-case-sideplate{ font-size:.5rem; padding:.22rem .62rem; letter-spacing:.24em; font-style:normal; position:relative; z-index:2;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.85), inset 0 -1px 0 rgba(0,0,0,.25), 0 0 0 1px rgba(0,0,0,.55), 0 2px 4px rgba(0,0,0,.5); }
+  /* On the front wall, hung from its top edge and leaning out a little,
+     the way a nameplate sits on a bevelled edge: the wall is seen nearly
+     edge-on once the case is open (the camera is 21deg over it), and a
+     plate flat on it shrank to a sliver there. Leaning 42deg it faces
+     the camera within ~27deg both shut (52deg) and open. It is on the
+     base, so the lid never takes it with it or covers it. */
+  .bc-sideplate{ position:absolute; left:50%; top:8%; transform-origin:50% 0;
+    transform:translateX(-50%) translateZ(2px) rotateX(42deg);
+    font-size:calc(var(--cw) * .03); padding:calc(var(--cw) * .013) calc(var(--cw) * .036); }
+  .badges-tab .badge-case.nova-case .badge-case-front .badge-case-sideplate{ align-self:flex-start; margin-top:.22rem; }
+  .pf-case-front{ align-items:center; z-index:2; }   /* over the handle's mounts */
+  .pf-case-front .pf-case-sideplate{ font-size:.42rem; padding:.16rem .5rem; letter-spacing:.22em; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -52082,7 +52106,7 @@ const BADGE_SHAPE = {
   hex:        { c: [50.0, 50.0], cuts: ["M-6 34H106", "M-6 66H106"],
     d: "M43.9 8.4Q50.0 5.0 56.1 8.4L84.9 24.6Q91.0 28.0 91.0 35.0L91.0 65.0Q91.0 72.0 84.9 75.4L56.1 91.6Q50.0 95.0 43.9 91.6L15.1 75.4Q9.0 72.0 9.0 65.0L9.0 35.0Q9.0 28.0 15.1 24.6Z" },
   cross:      { c: [50.0, 50.0], cuts: ["M50 -10V110"],
-    d: "M36.0 13.0Q36.0 8.0 41.0 8.0L59.0 8.0Q64.0 8.0 64.0 13.0L64.0 31.0Q64.0 36.0 69.0 36.0L87.0 36.0Q92.0 36.0 92.0 41.0L92.0 59.0Q92.0 64.0 87.0 64.0L69.0 64.0Q64.0 64.0 64.0 69.0L64.0 87.0Q64.0 92.0 59.0 92.0L41.0 92.0Q36.0 92.0 36.0 87.0L36.0 69.0Q36.0 64.0 31.0 64.0L13.0 64.0Q8.0 64.0 8.0 59.0L8.0 41.0Q8.0 36.0 13.0 36.0L31.0 36.0Q36.0 36.0 36.0 31.0Z" },
+    d: "M32.0 13.0Q32.0 8.0 37.0 8.0L63.0 8.0Q68.0 8.0 68.0 13.0L68.0 27.0Q68.0 32.0 73.0 32.0L87.0 32.0Q92.0 32.0 92.0 37.0L92.0 63.0Q92.0 68.0 87.0 68.0L73.0 68.0Q68.0 68.0 68.0 73.0L68.0 87.0Q68.0 92.0 63.0 92.0L37.0 92.0Q32.0 92.0 32.0 87.0L32.0 73.0Q32.0 68.0 27.0 68.0L13.0 68.0Q8.0 68.0 8.0 63.0L8.0 37.0Q8.0 32.0 13.0 32.0L27.0 32.0Q32.0 32.0 32.0 27.0Z" },
   spire:      { c: [50.0, 50.6], cuts: ["M-10 46H110"],
     d: "M44.7 9.6Q50.0 5.0 55.3 9.6L82.7 33.4Q88.0 38.0 86.5 44.8L77.5 87.2Q76.0 94.0 69.0 94.0L31.0 94.0Q24.0 94.0 22.5 87.2L13.5 44.8Q12.0 38.0 17.3 33.4Z" },
   fan:        { c: [50.0, 47.2], cuts: ["M-10 56H110"],
@@ -52091,7 +52115,7 @@ const BADGE_SHAPE = {
     d: "M48.3 8.6Q50.0 5.0 51.7 8.6L58.2 22.4Q59.9 26.0 63.7 24.6L78.1 19.5Q81.8 18.2 80.5 21.9L75.4 36.3Q74.0 40.1 77.6 41.8L91.4 48.3Q95.0 50.0 91.4 51.7L77.6 58.2Q74.0 59.9 75.4 63.7L80.5 78.1Q81.8 81.8 78.1 80.5L63.7 75.4Q59.9 74.0 58.2 77.6L51.7 91.4Q50.0 95.0 48.3 91.4L41.8 77.6Q40.1 74.0 36.3 75.4L21.9 80.5Q18.2 81.8 19.5 78.1L24.6 63.7Q26.0 59.9 22.4 58.2L8.6 51.7Q5.0 50.0 8.6 48.3L22.4 41.8Q26.0 40.1 24.6 36.3L19.5 21.9Q18.2 18.2 21.9 19.5L36.3 24.6Q40.1 26.0 41.8 22.4Z" },
   cring:      { c: [60.6, 50.0], cuts: ["M-6 50H106"],
     d: "M50 6A44 44 0 1 1 26 86L34 68A25 25 0 1 0 50 24Z" },
-  bolt:       { c: [49.3, 50.2], cuts: ["M-10 50H110"],
+  bolt:       { c: [49.3, 50.2], cuts: [],
     d: "M17.8 14.0Q18.0 10.0 22.0 10.0L66.0 10.0Q70.0 10.0 68.1 13.5L53.9 40.5Q52.0 44.0 56.0 44.0L80.0 44.0Q84.0 44.0 81.1 46.8L36.9 89.2Q34.0 92.0 35.3 88.2L44.7 59.8Q46.0 56.0 42.0 56.0L20.0 56.0Q16.0 56.0 16.2 52.0Z" },
   star5:      { c: [50.0, 46.0], cuts: ["M-10 46H110"],
     d: "M47.2 9.3Q50.0 4.0 52.8 9.3L61.3 25.3Q64.1 30.6 70.0 31.6L87.8 34.7Q93.7 35.8 89.6 40.1L77.0 53.1Q72.8 57.4 73.7 63.4L76.2 81.3Q77.0 87.2 71.6 84.6L55.4 76.6Q50.0 74.0 44.6 76.6L28.4 84.6Q23.0 87.2 23.8 81.3L26.3 63.4Q27.2 57.4 23.0 53.1L10.4 40.1Q6.3 35.8 12.2 34.7L30.0 31.6Q35.9 30.6 38.7 25.3Z" },
@@ -52264,6 +52288,453 @@ setTimeout(() => {
   if(typeof window.requestIdleCallback === "function") window.requestIdleCallback(go, { timeout: 4000 }); else go();
 }, 4000);
 
+/* ---- STRUCK, NOT DRAWN (build 317, badge2) ----
+   "I feel like all the silver parts of the badges look different/don't
+   connect either, they also seem fake and have rough edges!!! I've
+   already said this though." All three were the drawing method, not its
+   settings. The silver was a ramp laid across each shape's own box, so
+   the light fell differently on every badge (a tall shape and a wide one
+   could not match), the channels were a second ramp of their own that
+   met the rim at a step, and the enamel was flat colour inside a printed
+   line. A gradient by POSITION can never read as metal: real metal is lit
+   by which way its surface FACES.
+
+   So the token is rendered, once per badge and size, from a height field:
+     - ONE CASTING. The rim's inner half and every channel rise by the
+       same profile (a polished flat top, a chamfer, a steep wall) from the
+       same thing - the distance to the enamel - so they are one piece of
+       metal by construction, meeting with a cast fillet, never a seam.
+       The rim's outer half falls by that profile to the outline.
+     - ENAMEL BELOW THE METAL. It sits at 38% of the rim's height with a
+       slight meniscus up the walls, darkened where the walls overhang it
+       and shaded where they stand between it and the light.
+     - ONE LIGHT. Every surface is lit by its normal from one studio: a
+       lit ceiling with a softbox edge across it, a dark horizon, one big
+       softbox at the top-left. The whole face is very gently domed, so a
+       flat face shows the light giving way to shade across it - the
+       thing that reads as polished metal and not grey paint.
+     - CLEAN EDGES. Every edge is antialiased from a distance field at the
+       resolution it is shown at (the signed-distance-font trick), so a
+       badge is as crisp at 40px as at 700px, and no cell of enamel is
+       thinner than 3 units (a thinner one is cast metal, walls and all) -
+       the hairline slivers the cross used to have.
+   The slot, the token's shadow in it and the glisten stay vector; the
+   token is an <image> of the render, in the same frame. If a canvas is
+   not available the vector token below is drawn instead. */
+const BADGE_STRIKE = {
+  relief: 2.6,          /* the rim's height, in token units */
+  enamel: .38,          /* the enamel's level, as a share of it */
+  menis: .06, menisL: 1.2,
+  flat: .42, chamfer: .8, bevel: .3,   /* the profile: flat top, chamfer, wall */
+  dome: .006,           /* the face's gentle dome (slope per token unit) */
+  ao: .4, aoL: 1, wallAO: .55, coat: .09,
+  sliver: 1.5,          /* no enamel thinner than twice this */
+  geoW: 288, geoBlur: 2,
+  ceilLo: .2, ceilHi: .62, edge0: -.02, edgeW: .16, ceilTilt: .12, ceilA: .5, ceilB: .9,
+  boxA: .35, boxB: .7, box: 1.5, wall: .035, wallTilt: .06
+};
+const BADGE_STRIKE_PX = 92;      /* CSS px a badge is taken to show at until it is measured */
+function badgeDpr(){ return Math.min(3, Math.max(1, window.devicePixelRatio || 1)); }
+/* Rendered at the size it is shown at, to 4 device pixels: a render
+   scaled down by the browser turns a polished edge's one-pixel highlight
+   into a dotted line. */
+function badgeStrikeSize(px){ return Math.max(32, Math.min(1024, Math.ceil(px / 4) * 4)); }
+const BADGE_STRIKE_BIG = 1e20;
+function badgeCoverage(W, draw){
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = W;
+  const g = cv.getContext("2d");
+  draw(g);
+  const px = g.getImageData(0, 0, W, W).data;
+  const a = new Float32Array(W * W);
+  for(let i = 0; i < W * W; i++) a[i] = px[i * 4 + 3] / 255;
+  return a;
+}
+/* The nearest seed to every pixel: an exact Euclidean feature transform
+   (Felzenszwalb-Huttenlocher, keeping the argmin). -1 where there is none. */
+function badgeFeatureTransform(seed, W){
+  const N = W * W, BIG = BADGE_STRIKE_BIG;
+  const colY = new Int32Array(N), g = new Float64Array(N);
+  for(let x = 0; x < W; x++){
+    let last = -1;
+    for(let y = 0; y < W; y++){ if(seed[y * W + x]) last = y; colY[y * W + x] = last; }
+    let next = -1;
+    for(let y = W - 1; y >= 0; y--){
+      const i = y * W + x;
+      if(seed[i]) next = y;
+      const a = colY[i];
+      if(next >= 0 && (a < 0 || next - y < y - a)) colY[i] = next;
+      const c = colY[i];
+      g[i] = c < 0 ? BIG : (y - c) * (y - c);
+    }
+  }
+  const out = new Int32Array(N);
+  const v = new Int32Array(W), z = new Float64Array(W + 1), f = new Float64Array(W);
+  for(let y = 0; y < W; y++){
+    const o = y * W;
+    for(let x = 0; x < W; x++) f[x] = g[o + x];
+    let k = 0; v[0] = 0; z[0] = -BIG; z[1] = BIG;
+    for(let q = 1; q < W; q++){
+      const fq = f[q] + q * q;
+      let r = v[k];
+      let s2 = (fq - (f[r] + r * r)) / (2 * q - 2 * r);
+      while(s2 <= z[k]){ k--; r = v[k]; s2 = (fq - (f[r] + r * r)) / (2 * q - 2 * r); }
+      k++; v[k] = q; z[k] = s2; z[k + 1] = BIG;
+    }
+    k = 0;
+    for(let q = 0; q < W; q++){
+      while(z[k + 1] < q) k++;
+      const r = v[k];
+      out[o + q] = f[r] >= BIG ? -1 : colY[o + r] * W + r;
+    }
+  }
+  return out;
+}
+/* Signed distance to a coverage's edge, in pixels (negative inside), to a
+   fraction of a pixel: each edge pixel stands for the point where its own
+   coverage says the edge crosses it, and every pixel measures to the
+   nearest of those points. */
+function badgeSignedDistance(a, W){
+  const N = W * W;
+  const seed = new Uint8Array(N), bx = new Float32Array(N), by = new Float32Array(N);
+  for(let y = 0; y < W; y++) for(let x = 0; x < W; x++){
+    const i = y * W + x, ai = a[i];
+    const l = x > 0 ? a[i - 1] : 0, r = x < W - 1 ? a[i + 1] : 0, u = y > 0 ? a[i - W] : 0, dn = y < W - 1 ? a[i + W] : 0;
+    const inside = ai >= .5;
+    const edge = (ai > .004 && ai < .996) || (inside ? (l < .5 || r < .5 || u < .5 || dn < .5) : (l >= .5 || r >= .5 || u >= .5 || dn >= .5));
+    if(!edge) continue;
+    seed[i] = 1;
+    let gx = (r - l) * .5, gy = (dn - u) * .5;
+    const gl = Math.sqrt(gx * gx + gy * gy);
+    if(gl < 1e-6){ bx[i] = x; by[i] = y; continue; }
+    gx /= gl; gy /= gl;
+    const off = Math.max(-.7, Math.min(.7, ai - .5));
+    bx[i] = x - gx * off; by[i] = y - gy * off;
+  }
+  const ft = badgeFeatureTransform(seed, W);
+  const sd = new Float32Array(N);
+  for(let y = 0; y < W; y++) for(let x = 0; x < W; x++){
+    const i = y * W + x, q = ft[i];
+    let dd = 1e4;
+    if(q >= 0){ const dx = x - bx[q], dy = y - by[q]; dd = Math.sqrt(dx * dx + dy * dy); }
+    sd[i] = a[i] >= .5 ? -dd : dd;
+  }
+  return sd;
+}
+function badgeBoxBlur(a, W, r){
+  if(r < 1) return a;
+  const t = new Float32Array(W * W), o = new Float32Array(W * W), n = 2 * r + 1, M = W - 1;
+  for(let y = 0; y < W; y++){
+    const row = y * W; let acc = 0;
+    for(let x = -r; x <= r; x++) acc += a[row + (x < 0 ? 0 : x > M ? M : x)];
+    for(let x = 0; x < W; x++){
+      t[row + x] = acc / n;
+      const xa = x + r + 1, xs = x - r;
+      acc += a[row + (xa > M ? M : xa)] - a[row + (xs < 0 ? 0 : xs)];
+    }
+  }
+  for(let x = 0; x < W; x++){
+    let acc = 0;
+    for(let y = -r; y <= r; y++) acc += t[(y < 0 ? 0 : y > M ? M : y) * W + x];
+    for(let y = 0; y < W; y++){
+      o[y * W + x] = acc / n;
+      const ya = y + r + 1, ys = y - r;
+      acc += t[(ya > M ? M : ya) * W + x] - t[(ys < 0 ? 0 : ys) * W + x];
+    }
+  }
+  return o;
+}
+/* GEOMETRY, ONCE PER SHAPE: distance fields at a fixed resolution - to
+   the outline, and to the enamel as opened - with their gradients, so a
+   render at any size gets smooth normals by the chain rule. */
+const BADGE_STRIKE_GEOM = {};
+function badgeStrikeGeometry(shape){
+  const d = shape.d;
+  if(BADGE_STRIKE_GEOM[d]) return BADGE_STRIKE_GEOM[d];
+  const P = BADGE_STRIKE, G = BADGE_GEOM, S = G.scale, cx = shape.c[0], cy = shape.c[1];
+  const vb = badgeViewBoxFor(d).split(/\s+/).map(Number);
+  const vx = vb[0], vy = vb[1], vw = vb[2];
+  const W = P.geoW, pxPerF = W / vw, k = pxPerF * S;
+  const path = new Path2D(d);
+  const setT = g => { g.setTransform(pxPerF, 0, 0, pxPerF, -vx * pxPerF, -vy * pxPerF); g.translate(cx, cy); g.scale(S, S); g.translate(-cx, -cy); };
+  const KEY = G.key, IN = G.inner + G.edge, RH = (KEY + IN) / 2;
+  const ins = badgeCoverage(W, g => { setT(g); g.fillStyle = "#000"; g.fill(path); });
+  const ena0 = badgeCoverage(W, g => { setT(g); g.fillStyle = "#000"; g.fill(path);
+    g.globalCompositeOperation = "destination-out"; g.lineJoin = "round"; g.lineWidth = 2 * IN; g.strokeStyle = "#000"; g.stroke(path);
+    g.lineWidth = 2 * RH; g.lineCap = "butt"; shape.cuts.forEach(c => g.stroke(new Path2D(c))); });
+  const N = W * W;
+  const sdO = badgeSignedDistance(ins, W), sdE0 = badgeSignedDistance(ena0, W);
+  /* the enamel opened by r0: eroded, then grown back */
+  const r0k = P.sliver * k;
+  const eroC = new Float32Array(N);
+  for(let i = 0; i < N; i++){ const c = -sdE0[i] - r0k + .5; eroC[i] = c >= 1 ? 1 : c <= 0 ? 0 : c; }
+  const sdEro = badgeSignedDistance(eroC, W);
+  const O = new Float32Array(N), E = new Float32Array(N);
+  for(let i = 0; i < N; i++){
+    O[i] = sdO[i] / k;
+    const de = sdEro[i] - r0k;
+    E[i] = (de > 0 ? de : Math.max(de, sdE0[i])) / k;   /* token units: + in the metal, - in the enamel */
+  }
+  /* a light smoothing: a distance field is linear away from its ridges,
+     so this only takes out the sub-pixel ripple a diagonal edge leaves,
+     which a sharp reflection would otherwise draw as a dashed line */
+  const Os = badgeBoxBlur(badgeBoxBlur(O, W, P.geoBlur), W, P.geoBlur), Es = badgeBoxBlur(badgeBoxBlur(E, W, P.geoBlur), W, P.geoBlur);
+  const grad = F => { const gx = new Float32Array(N), gy = new Float32Array(N);
+    for(let y = 0; y < W; y++) for(let x = 0; x < W; x++){ const i = y * W + x;
+      gx[i] = (F[x < W - 1 ? i + 1 : i] - F[x > 0 ? i - 1 : i]) * .5 * k;
+      gy[i] = (F[y < W - 1 ? i + W : i] - F[y > 0 ? i - W : i]) * .5 * k; }
+    return [gx, gy]; };
+  const [Ox, Oy] = grad(Os), [Ex, Ey] = grad(Es);
+  return (BADGE_STRIKE_GEOM[d] = { O, E, Ox, Oy, Ex, Ey, vx, vy, vw, cx, cy, S, W });
+}
+/* The profile and its slope, as tables. */
+let BADGE_PROF = null, BADGE_DPROF = null;
+const BADGE_PROF_N = 2048;
+function badgeProfileTables(){
+  if(BADGE_PROF) return;
+  const P = BADGE_STRIKE, PN = BADGE_PROF_N;
+  BADGE_PROF = new Float32Array(PN + 2); BADGE_DPROF = new Float32Array(PN + 2);
+  const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const f = t => (1 - P.bevel * ss(P.flat, P.chamfer, t)) * Math.pow(1 - ss(P.chamfer, 1, t), .55);
+  for(let i = 0; i <= PN + 1; i++) BADGE_PROF[i] = f(Math.min(1, i / PN));
+  for(let i = 0; i <= PN; i++) BADGE_DPROF[i] = (BADGE_PROF[i + 1] - BADGE_PROF[i]) * PN;
+  BADGE_DPROF[PN + 1] = BADGE_DPROF[PN];
+}
+/* THE STUDIO, as tables over the surface's normal. Polished metal shows
+   what it reflects: a lit ceiling whose softbox edge runs diagonally, a
+   dark horizon, one big softbox at the top-left, a little fill from the
+   bottom-right. All of it in linear light. */
+const BADGE_LIGHT_N = 256;
+let BADGE_LIGHT = null;
+function badgeLightTables(){
+  if(BADGE_LIGHT) return BADGE_LIGHT;
+  const P = BADGE_STRIKE, LN = BADGE_LIGHT_N, M = LN * LN;
+  const E = new Float32Array(M), SP = new Float32Array(M), SPE = new Float32Array(M), DIF = new Float32Array(M), FR = new Float32Array(M);
+  const L = [-.5, -.62, .6], Ll = Math.sqrt(L[0] * L[0] + L[1] * L[1] + L[2] * L[2]), l = L.map(x => x / Ll);
+  const Hh = [l[0], l[1], l[2] + 1], Hl = Math.sqrt(Hh[0] * Hh[0] + Hh[1] * Hh[1] + Hh[2] * Hh[2]), hh = Hh.map(x => x / Hl);
+  const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  for(let j = 0; j < LN; j++) for(let i = 0; i < LN; i++){
+    const nx = (i / (LN - 1)) * 2 - 1, ny = (j / (LN - 1)) * 2 - 1;
+    const q = nx * nx + ny * ny, nz = q < 1 ? Math.sqrt(1 - q) : 0;
+    const rx = 2 * nz * nx, ry = 2 * nz * ny, rz = 2 * nz * nz - 1;
+    const rl = Math.sqrt(rx * rx + ry * ry) || 1e-6;
+    const tl = -(rx * .6 + ry * .8) / rl, tlc = -(rx * .6 + ry * .8);
+    const ceilW = ss(P.ceilA, P.ceilB, rz);
+    const ceil = P.ceilLo + (P.ceilHi - P.ceilLo) * ss(P.edge0 - P.edgeW, P.edge0 + P.edgeW, tlc) + P.ceilTilt * tlc;
+    const box = ss(P.boxA, P.boxB, tl) * ss(-.05, .12, rz) * (1 - ss(P.ceilA - .05, P.ceilB, rz));
+    let side = (P.wall + P.wallTilt * Math.max(0, tl)) * (ss(-.25, .25, rz) * .8 + .2);
+    side = side * (1 - box) + P.box * box;
+    const at = j * LN + i;
+    E[at] = Math.max(0, side * (1 - ceilW) + ceil * ceilW);
+    const nh = Math.max(0, nx * hh[0] + ny * hh[1] + nz * hh[2]);
+    SP[at] = Math.pow(nh, 220); SPE[at] = Math.pow(nh, 60);
+    DIF[at] = Math.max(0, nx * l[0] + ny * l[1] + nz * l[2]) / l[2];
+    FR[at] = .04 + .96 * Math.pow(1 - nz, 5);
+  }
+  const TO_LIN = new Float32Array(256);
+  for(let i = 0; i < 256; i++){ const c = i / 255; TO_LIN[i] = c <= .04045 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); }
+  const ENC = new Uint8ClampedArray(4097);
+  for(let i = 0; i <= 4096; i++){ const c = i / 4096; ENC[i] = Math.round(255 * (c <= .0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - .055)); }
+  return (BADGE_LIGHT = { E, SP, SPE, DIF, FR, l, TO_LIN, ENC });
+}
+/* One token, W device pixels across its frame, as a canvas. */
+function renderBadgeStrike(unitName, grey, W){
+  const P = BADGE_STRIKE, G = BADGE_GEOM, PN = BADGE_PROF_N;
+  const g = badgeStrikeGeometry(badgeShapeFor(unitName));
+  badgeProfileTables();
+  const PROF = BADGE_PROF, DPROF = BADGE_DPROF;
+  const KEY = G.key, IN = G.inner + G.edge, RC = (KEY - IN) / 2, RH = (KEY + IN) / 2;
+  const pxPerF = W / g.vw, k = pxPerF * g.S, GW = g.W, GM = GW - 1, sc = GW / W;
+  const N = W * W;
+  const H = new Float32Array(N), NX = new Float32Array(N), NY = new Float32Array(N), A = new Float32Array(N), AE = new Float32Array(N), WD = new Float32Array(N);
+  const GO = g.O, GE = g.E, GOx = g.Ox, GOy = g.Oy, GEx = g.Ex, GEy = g.Ey;
+  const pcx = (g.cx - g.vx) * pxPerF, pcy = (g.cy - g.vy) * pxPerF;
+  for(let y = 0; y < W; y++){
+    let fy = (y + .5) * sc - .5; if(fy < 0) fy = 0; if(fy > GM) fy = GM;
+    const iy = fy | 0, ay = fy - iy, iy1 = iy < GM ? iy + 1 : iy;
+    for(let x = 0; x < W; x++){
+      let fx = (x + .5) * sc - .5; if(fx < 0) fx = 0; if(fx > GM) fx = GM;
+      const ix = fx | 0, ax = fx - ix, ix1 = ix < GM ? ix + 1 : ix;
+      const i00 = iy * GW + ix, i01 = iy * GW + ix1, i10 = iy1 * GW + ix, i11 = iy1 * GW + ix1;
+      const w00 = (1 - ax) * (1 - ay), w01 = ax * (1 - ay), w10 = (1 - ax) * ay, w11 = ax * ay;
+      const o = GO[i00] * w00 + GO[i01] * w01 + GO[i10] * w10 + GO[i11] * w11;
+      const i = y * W + x;
+      /* the silhouette, antialiased from the distance at THIS size */
+      let a = .5 - (o - KEY) * k; a = a >= 1 ? 1 : a <= 0 ? 0 : a;
+      A[i] = a;
+      if(a <= 0) continue;
+      const e = GE[i00] * w00 + GE[i01] * w01 + GE[i10] * w10 + GE[i11] * w11;
+      let ae = .5 - e * k; ae = ae >= 1 ? 1 : ae <= 0 ? 0 : ae;
+      AE[i] = ae; WD[i] = -e;
+      let h, hx = 0, hy = 0;
+      const tin = e <= 0 ? 1 : e >= RH ? 0 : 1 - e / RH;
+      const hin = e <= 0 ? 0 : PROF[(tin * PN) | 0];
+      const tout = o <= RC ? 0 : (o - RC) / RH;
+      const hout = tout >= 1 ? 0 : PROF[(tout * PN) | 0];
+      if(hin <= hout){
+        h = hin;
+        if(e > 0 && e < RH){ const dp = -DPROF[(tin * PN) | 0] / RH;
+          hx = dp * (GEx[i00] * w00 + GEx[i01] * w01 + GEx[i10] * w10 + GEx[i11] * w11);
+          hy = dp * (GEy[i00] * w00 + GEy[i01] * w01 + GEy[i10] * w10 + GEy[i11] * w11); }
+      } else {
+        h = hout;
+        if(tout > 0 && tout < 1){ const dp = DPROF[(tout * PN) | 0] / RH;
+          hx = dp * (GOx[i00] * w00 + GOx[i01] * w01 + GOx[i10] * w10 + GOx[i11] * w11);
+          hy = dp * (GOy[i00] * w00 + GOy[i01] * w01 + GOy[i10] * w10 + GOy[i11] * w11); }
+      }
+      if(e < .5){
+        const m = P.enamel + P.menis * Math.exp((e < 0 ? e : 0) / P.menisL);
+        if(m > h){
+          h = m;
+          if(e < 0){ const dm = P.menis / P.menisL * Math.exp(e / P.menisL);
+            hx = dm * (GEx[i00] * w00 + GEx[i01] * w01 + GEx[i10] * w10 + GEx[i11] * w11);
+            hy = dm * (GEy[i00] * w00 + GEy[i01] * w01 + GEy[i10] * w10 + GEy[i11] * w11); }
+          else { hx = 0; hy = 0; }
+        }
+      }
+      H[i] = h;
+      const sx = hx * P.relief - (x - pcx) / k * P.dome, sy = hy * P.relief - (y - pcy) / k * P.dome;
+      const nl = 1 / Math.sqrt(sx * sx + sy * sy + 1);
+      NX[i] = -sx * nl; NY[i] = -sy * nl;
+    }
+  }
+  const Lt = badgeLightTables(), LN = BADGE_LIGHT_N, LN1 = LN - 1, EE = Lt.E, ENC = Lt.ENC;
+  const en = badgeHexRgb(grey ? "#6B6E73" : badgeThemeFor(unitName).p).map(c => Lt.TO_LIN[Math.max(0, Math.min(255, Math.round(c)))]);
+  const tint = grey ? [1, 1, 1] : [.92, .955, 1];
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = W;
+  const ctx = cv.getContext("2d");
+  const img = ctx.createImageData(W, W), od = img.data;
+  const l = Lt.l, ll = Math.sqrt(l[0] * l[0] + l[1] * l[1]);
+  const ldx = l[0] / ll, ldy = l[1] / ll, rise = l[2] / ll;
+  const Zp = P.relief * k, shStep = Math.max(1, .5 * k), shN = 8;
+  for(let y = 0; y < W; y++){
+    for(let x = 0; x < W; x++){
+      const i = y * W + x, aS = A[i];
+      if(aS <= 0) continue;
+      const fx = (NX[i] + 1) * .5 * LN1, fy = (NY[i] + 1) * .5 * LN1;
+      const ix = fx | 0, iy = fy | 0, ax = fx - ix, ay = fy - iy;
+      const li = ix + iy * LN, li1 = li + (ix < LN1 ? 1 : 0), li2 = li + (iy < LN1 ? LN : 0), li3 = li2 + (ix < LN1 ? 1 : 0);
+      const ev = (EE[li] * (1 - ax) + EE[li1] * ax) * (1 - ay) + (EE[li2] * (1 - ax) + EE[li3] * ax) * ay;
+      const sp = Lt.SP[li], h0 = H[i];
+      /* metal: what it reflects, darker toward the foot of a wall */
+      const occ = h0 < .5 ? .25 + .75 * (h0 / .5) : 1;
+      const mm = ev * .95 * (1 - P.wallAO + P.wallAO * occ);
+      const mr = mm * tint[0] + sp, mg = mm * tint[1] + sp, mb = mm * tint[2] + sp;
+      const aE = AE[i];
+      let er = 0, eg = 0, eb = 0;
+      if(aE > 0){
+        let shade = .6 + .4 * Lt.DIF[li];
+        const wd = WD[i] > 0 ? WD[i] : 0;
+        shade *= 1 - P.ao * Math.exp(-wd / P.aoL);
+        /* the walls stand between the enamel and the light */
+        let oc = 0; const hz = h0 * Zp;
+        for(let t = 1; t <= shN; t++){
+          const qx = (x - ldx * shStep * t + .5) | 0, qy = (y - ldy * shStep * t + .5) | 0;
+          if(qx < 0 || qy < 0 || qx >= W || qy >= W) break;
+          const over = H[qy * W + qx] * Zp - (hz + rise * shStep * t);
+          if(over > 0){ const q = over / (.3 * Zp); if(q > oc) oc = q > 1 ? 1 : q; }
+        }
+        shade *= 1 - .55 * oc;
+        const cc = (P.coat + .6 * Lt.FR[li]) * ev + .45 * Lt.SPE[li];
+        er = en[0] * shade + cc; eg = en[1] * shade + cc; eb = en[2] * shade + cc;
+      }
+      const cM = aS - aE;
+      const R = (mr * cM + er * aE) / aS, Gc = (mg * cM + eg * aE) / aS, B = (mb * cM + eb * aE) / aS;
+      const j = i * 4;
+      od[j] = ENC[R <= 0 ? 0 : R >= 1 ? 4096 : (R * 4096) | 0];
+      od[j + 1] = ENC[Gc <= 0 ? 0 : Gc >= 1 ? 4096 : (Gc * 4096) | 0];
+      od[j + 2] = ENC[B <= 0 ? 0 : B >= 1 ? 4096 : (B * 4096) | 0];
+      od[j + 3] = (255 * aS + .5) | 0;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return cv;
+}
+/* Rendered tokens, by badge and size. A cached one at most 8% bigger
+   than asked for is reused; anything else is rendered. null if there is
+   no canvas. */
+const BADGE_STRIKE_CACHE = {};
+let badgeStrikeBroken = false;
+function badgeStrikeURL(unitName, grey, W){
+  if(badgeStrikeBroken) return null;
+  const key = String(unitName) + (grey ? "|g" : "|c");
+  const list = BADGE_STRIKE_CACHE[key] || (BADGE_STRIKE_CACHE[key] = []);
+  let best = null;
+  list.forEach(e => { if(e.W >= W && e.W <= W * 1.08 && (!best || e.W < best.W)) best = e; });
+  if(best) return best.url;
+  try{
+    const url = renderBadgeStrike(unitName, grey, W).toDataURL("image/png");
+    if(!/^data:image\/png/.test(url)) throw new Error("no png");
+    list.push({ W, url });
+    return url;
+  }catch(e){ badgeStrikeBroken = true; return null; }
+}
+/* A token shown at a size it was not rendered for is re-rendered once it
+   is on screen and measured - batched, a few milliseconds a frame. */
+const BADGE_STRIKE_WATCH = new Set();
+let badgeStrikeRaf = 0;
+function badgeStrikeWatch(im){
+  BADGE_STRIKE_WATCH.add(im);
+  if(!badgeStrikeRaf) badgeStrikeRaf = requestAnimationFrame(badgeStrikeUpgrade);
+}
+function badgeStrikeUpgrade(){
+  badgeStrikeRaf = 0;
+  const dpr = badgeDpr(), todo = [];
+  BADGE_STRIKE_WATCH.forEach(im => {
+    const st = im.__strike; st.tries++;
+    const svg = im.ownerSVGElement;
+    const w = svg && svg.isConnected ? svg.getBoundingClientRect().width : 0;
+    if(!w){ if(st.tries > 40) BADGE_STRIKE_WATCH.delete(im); return; }
+    BADGE_STRIKE_WATCH.delete(im);
+    const need = badgeStrikeSize(w * dpr);
+    if(need > st.W || need < st.W * .92) todo.push([im, need]);
+  });
+  const t0 = performance.now();
+  todo.forEach(([im, need]) => {
+    if(performance.now() - t0 > 12){ BADGE_STRIKE_WATCH.add(im); return; }
+    const st = im.__strike, url = badgeStrikeURL(st.unit, st.grey, need);
+    if(url){ im.setAttribute("href", url); st.W = need; }
+  });
+  if(BADGE_STRIKE_WATCH.size) badgeStrikeRaf = requestAnimationFrame(badgeStrikeUpgrade);
+}
+/* The token as an <image> for buildUnitBadgeSVG, or null. */
+function badgeStrikeImage(unitName, grey, opts){
+  const W = badgeStrikeSize((opts.px || BADGE_STRIKE_PX) * badgeDpr());
+  const url = badgeStrikeURL(unitName, grey, W);
+  if(!url) return null;
+  const im = document.createElementNS("http://www.w3.org/2000/svg", "image");
+  im.setAttribute("class", "badge-raster");
+  im.setAttribute("href", url);
+  im.setAttribute("preserveAspectRatio", "none");
+  /* what the enamel was rendered in (none for grey: no unit colour
+     reaches a badge not yet earned) */
+  if(!grey) im.setAttribute("data-enamel", String(badgeThemeFor(unitName).p));
+  im.__strike = { unit: unitName, grey, W, tries: 0 };
+  if(!opts.px) badgeStrikeWatch(im);
+  return im;
+}
+/* ALL SIXTEEN READY BEFORE ANYONE ASKS. Each shape's geometry is ~20-40ms
+   once; each render at the case's size ~10ms. One piece of work per idle
+   slice, a few seconds after launch, so the Badges tab and the case
+   open on rendered badges. */
+function warmBadgeStrikes(){
+  try{
+    if(badgeStrikeBroken) return;
+    const units = unitsInTeachingOrder();
+    const W = badgeStrikeSize(BADGE_STRIKE_PX * badgeDpr());
+    const jobs = [];
+    units.forEach(u => jobs.push(() => badgeStrikeGeometry(badgeShapeFor(u))));
+    units.forEach(u => jobs.push(() => badgeStrikeURL(u, !unitBadgeEarned(u), W)));
+    const ric = f => (typeof window.requestIdleCallback === "function") ? window.requestIdleCallback(f, { timeout: 3000 }) : setTimeout(() => f(null), 60);
+    const step = dl => {
+      let n = 0;
+      while(jobs.length && (n++ === 0 || (dl && dl.timeRemaining && dl.timeRemaining() > 14))){ try{ jobs.shift()(); }catch(e){} }
+      if(jobs.length) ric(step);
+    };
+    ric(step);
+  }catch(e){}
+}
+setTimeout(warmBadgeStrikes, 5000);
+
 /* earned: true draws the badge in its slot, false the empty slot, and
    "grey" (build 314) the badge's FORM with nothing of its colour - see
    below. opts.slot === false draws the token alone, no slot (the badge
@@ -52389,6 +52860,19 @@ function buildUnitBadgeSVG(unitName, earned, opts){
   }
 
   const tok = group(grey ? { opacity: ".7", class: "badge-token" } : { class: "badge-token" }, root);
+  /* THE TOKEN, STRUCK (build 317, badge2): the render above, laid over
+     the frame in root's own units; the vector drawing below only when
+     there is no canvas to render with. */
+  const strike = opts.vector ? null : badgeStrikeImage(unitName, grey, opts);
+  if(strike){
+    const vb = badgeViewBoxFor(outline).split(/\s+/).map(Number);
+    if(opts.slot !== false) solid(G.key, lit(uid + "-x", [[0, "#272C33"], [1, "#0E1013"]]), tok, { transform: "translate(.85 1.05)" });
+    strike.setAttribute("x", String(cx + (vb[0] - cx) / G.scale));
+    strike.setAttribute("y", String(cy + (vb[1] - cy) / G.scale));
+    strike.setAttribute("width", String(vb[2] / G.scale));
+    strike.setAttribute("height", String(vb[3] / G.scale));
+    tok.appendChild(strike);
+  } else {
   const AG = ramp(uid + "-ag", grey ? BADGE_METAL_GREY : BADGE_METAL, cx - .22 * b.w, Y0, cx + .22 * b.w, Y1);
   const inside = clip(uid + "-in", outline);
 
@@ -52464,6 +52948,7 @@ function buildUnitBadgeSVG(unitName, earned, opts){
     spun.setAttribute("cx", String(cx)); spun.setAttribute("cy", String(cy)); spun.setAttribute("r", ".8");
     spun.setAttribute("spreadMethod", "repeat");
     ring(G.metal, stopsInto(spun, [[0, "#FFFFFF", .045], [.5, "#000000", .04], [1, "#FFFFFF", .045]]), tok);
+  }
   }
 
   /* THE GLISTEN LIVES INSIDE THE BADGE, masked to its silhouette - "the
@@ -81566,6 +82051,16 @@ function badgeEdgeURL(unitName){
   svg.appendChild(p);
   return (BADGE_EDGE_CACHE[d] = badgeImageURL(svg));
 }
+/* The coin's face: the struck token rendered at the coin's own size in
+   device pixels - the size --coin gives it - so no frame of the spin is
+   an image scaled up. (The vector drawing only if there is no canvas.) */
+function badgeCoinFaceURL(unitName){
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const wide = !!(window.matchMedia && window.matchMedia("(min-width:40rem)").matches);
+  const css = wide ? Math.min(innerWidth * .36, 15.5 * rem, innerHeight * .34) : Math.min(innerWidth * .52, 14 * rem, innerHeight * .34);
+  return badgeStrikeURL(unitName, false, badgeStrikeSize(css * badgeDpr())) ||
+    badgeImageURL(buildUnitBadgeSVG(unitName, true, { slot: false, fine: true, vector: true }));
+}
 /* The token: .bc-coin (its pop in) > .bc-sway (its sway at rest, its tilt
    into the tray) > .bc-spin (its turns) > the back face, the edge, the
    front face. Every one keeps its children in 3D. The faces and the
@@ -81577,7 +82072,7 @@ function buildBadgeCoin(unitName){
   const pic = (cls, src) => { const i = mk(cls, "img"); i.alt = ""; i.decoding = "sync"; i.draggable = false; i.src = src; return i; };
   const coin = mk("bc-coin"), sway = mk("bc-sway"), spin = mk("bc-spin");
   const sil = badgeSilhouetteURL(unitName);
-  const faceSrc = badgeImageURL(buildUnitBadgeSVG(unitName, true, { slot: false, fine: true }));
+  const faceSrc = badgeCoinFaceURL(unitName);
   const edgeSrc = badgeEdgeURL(unitName);
   const face = side => {
     const f = mk("bc-face " + side);
@@ -81644,6 +82139,16 @@ function bcGlintCoin(flyer, ms){
 /* THE CASE ITSELF, in 3D. The parts share their materials (.nova-case-*)
    with the Badges tab's case and the Profile card's, so the case you
    watch open is the case you find on both. */
+/* The case's name, on its side: one plate, the same in the cutscene, on
+   the Badges tab and on the Profile card. A <b>, not a span, so the
+   clasps stay the only spans on a front (check_b242 counts them). */
+function buildCaseSidePlate(extra){
+  const b = document.createElement("b");
+  b.className = "nova-case-plate nova-case-sideplate" + (extra ? " " + extra : "");
+  b.textContent = "Badge case";
+  b.setAttribute("aria-hidden", "true");
+  return b;
+}
 function buildBadgeCase3D(all, held){
   const mk = (cls, tag) => { const e = document.createElement(tag || "div"); e.className = cls; return e; };
   const stage = mk("bc-stage");
@@ -81655,6 +82160,12 @@ function buildBadgeCase3D(all, held){
     latch.appendChild(mk("bc-hasp nova-case-hasp", "i"));
     front.appendChild(latch);
   });
+  /* THE NAME ON ITS SIDE (build 317, badge2): "not sure why when you
+     open the case the word badge case would be under the top, it should
+     be on the side and still be on the side as it opens and fully
+     opens." It is on the front wall between the latches - part of the
+     base, so it never moves with the lid and the lid never covers it. */
+  front.appendChild(buildCaseSidePlate("bc-sideplate"));
   const handle = mk("bc-handle nova-case-handle");
   const tray = mk("bc-tray nova-case-shell nova-case-trimmed");
   const lining = mk("bc-lining nova-case-lining");
@@ -81671,8 +82182,7 @@ function buildBadgeCase3D(all, held){
   const lid = mk("bc-lid");
   const lidIn = mk("bc-lid-in nova-case-shell nova-case-trimmed");
   const pad = mk("bc-lid-pad nova-case-lid");
-  const lp = mk("bc-lid-plate nova-case-plate", "span"); lp.textContent = "Badge case";
-  pad.appendChild(lp); lidIn.appendChild(pad);
+  lidIn.appendChild(pad);
   const lidOut = mk("bc-lid-out nova-case-shell nova-case-trimmed");
   const plate = mk("bc-plate nova-case-plate", "span"); plate.textContent = "Nova · Class 26E";
   lidOut.appendChild(plate);
@@ -98687,8 +99197,6 @@ function buildProfileCase(have, total){
   box.className = "pf-case";
   const head = document.createElement("span");
   head.className = "pf-case-head";
-  const k = document.createElement("span");
-  k.className = "pf-kick"; k.textContent = "Badge case";
   /* THE NEW-BADGE DOT SITS BESIDE THE ARROW (build 317, round two). On
      the arrow it hid it ("you can't see the arrow"); after the words
      "Badge case" it sat in a row of gold badges and "blends in with the
@@ -98703,7 +99211,10 @@ function buildProfileCase(have, total){
   const arrow = document.createElement("span");
   arrow.className = "pf-case-arrow"; arrow.setAttribute("aria-hidden", "true"); arrow.textContent = "›";
   n.append(num, arrow);
-  head.append(k, n);
+  /* No "Badge case" heading over the tray any more (build 317, badge2):
+     the name is on the case's side, the plate between the latches, the
+     same as the cutscene's case and the Badges tab's. */
+  head.append(n);
   box.appendChild(head);
   try{ box.appendChild(buildBadgeStrip("pf-strip nova-case-lining")); }catch(e){}
   /* THE SAME CASE, SMALL (build 317, badge round): the cutscene's case,
@@ -98713,6 +99224,9 @@ function buildProfileCase(have, total){
   const latches = document.createElement("span");
   latches.className = "pf-case-front"; latches.setAttribute("aria-hidden", "true");
   ["l", "r"].forEach(() => { const c = document.createElement("i"); c.className = "nova-case-latch"; latches.appendChild(c); });
+  /* its name on its side, between the latches - the same plate as the
+     cutscene's case and the Badges tab's (build 317, badge2) */
+  latches.insertBefore(buildCaseSidePlate("pf-case-sideplate"), latches.lastChild);
   const handle = document.createElement("span");
   handle.className = "pf-case-handle nova-case-handle"; handle.setAttribute("aria-hidden", "true");
   box.append(latches, handle);
@@ -100249,15 +100763,13 @@ function buildBadgesTab(){
   kase.className = "badge-case nova-case nova-case-shell";
   const lid = document.createElement("div");
   lid.className = "badge-case-lid nova-case-lid";
-  const plate = document.createElement("span");
-  plate.className = "badge-case-plate nova-case-plate";
-  plate.textContent = "Badge case \u00b7 Class 26E";
-  lid.appendChild(plate);
   grid.classList.add("nova-case-lining");
   const front = document.createElement("div");
   front.className = "badge-case-front nova-case-shell";
   front.setAttribute("aria-hidden", "true");
   ["l", "r"].forEach(() => { const c = document.createElement("span"); c.className = "nova-case-latch"; front.appendChild(c); });
+  /* its name on its side, between the clasps (build 317, badge2) */
+  front.insertBefore(buildCaseSidePlate("badge-case-sideplate"), front.lastChild);
   const hinges = ["l", "r"].map(side => { const h = document.createElement("span"); h.className = "badge-case-hinge nova-case-hinge is-" + side; h.setAttribute("aria-hidden", "true"); return h; });
   const handle = document.createElement("span");
   handle.className = "badge-case-handle nova-case-handle";

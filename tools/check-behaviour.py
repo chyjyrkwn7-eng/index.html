@@ -3130,7 +3130,9 @@ def check_b242(br):
         /* build 282: the medal is the Rank tab's gold ring; the count is
            still struck into the middle of it */
         medal: (document.querySelector('.badges-head .statring .statring-num') || {}).textContent || '',
-        lid: !!document.querySelector('.badge-case .badge-case-lid .badge-case-plate'),
+        /* REVISED IN 317 (badge2): the name is on the case's SIDE, the
+           front wall, not on the lid ("it should be on the side") */
+        lid: !!document.querySelector('.badge-case .badge-case-lid') && !!document.querySelector('.badge-case .badge-case-front .nova-case-sideplate'),
         clasps: document.querySelectorAll('.badge-case .badge-case-front span').length,
         earned: String(badgesEarnedList().length) };
       /* 6. an earned badge: no printed grain, and a shadow in its slot */
@@ -3208,7 +3210,7 @@ def check_b242(br):
     # The number is the app's own earned count, not a literal: it was "6"
     # until the 279 bands made the same fixture worth 7 badges.
     # AND IN 282: the medal became the Rank tab's ring, number inside.
-    check("the Badges tab heads with its count in a ring, no meter, and sits in a case with a lid and two clasps",
+    check("the Badges tab heads with its count in a ring, no meter, and sits in a case with a lid, its name on its side, and two clasps",
           bt.get("strip") == 0 and bt.get("segs") == 0 and bt.get("medal") == bt.get("earned") and bt.get("medal") not in ("", "0") and bt.get("lid") and bt.get("clasps") == 2, bt)
     ba = r.get("badgeArt") or {}
     check("an earned badge has no printed grain and throws a shadow into its slot",
@@ -10960,12 +10962,16 @@ def check_b314_chars(br):
       const tiles = [...document.querySelectorAll('.badge-tile.is-locked')];
       out.lockedTiles = tiles.length;
       out.tileLeaks = tiles.map((t, i) => leaks(t.querySelector('svg'), units.filter(x => !unitBadgeEarned(x))[i] || u)).filter(l => l.length).length;
-      out.tileForm = tiles.filter(t => t.querySelectorAll('svg path').length > 12).length;
+      /* REVISED IN 317 (badge2): the token is a struck render now - one
+         grey image.badge-raster with no data-enamel - or, with no canvas,
+         the vector drawing's many paths */
+      const form = sv => !!sv && (sv.querySelectorAll('path').length > 12 || !!sv.querySelector('image.badge-raster:not([data-enamel])'));
+      out.tileForm = tiles.filter(t => form(t.querySelector('svg'))).length;
       out.tileGlowNeutral = tiles.every(t => spread(getComputedStyle(t.querySelector('.badge-tile-art')).getPropertyValue('--badge-glow').trim()) < 10);
       showUnlockDetail(badgeDetail(u)); await wait(400);
       const card = document.querySelector('.unlock-card-badge .unlock-card-art');
       out.cardLeaks = card ? leaks(card.querySelector('svg'), u) : ['missing'];
-      out.cardForm = card ? card.querySelectorAll('svg path').length > 12 : false;
+      out.cardForm = card ? form(card.querySelector('svg')) : false;
       out.cardGlow = card ? spread(getComputedStyle(card).getPropertyValue('--badge-glow').trim()) : 999;
       document.querySelectorAll('.invite-overlay').forEach(n => n.remove());
       /* an earned one keeps its colour */
@@ -13204,7 +13210,8 @@ def check_b317_pfcard(br):
       store.seenUnlocks.badges = units.slice(0, Math.max(0, n - fresh));
       showProfile('profile'); await wait(900);
       const B = s => { const e = document.querySelector('.profile-hero ' + s); if(!e) return null; const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
-      out.kick = B('.pf-case-head > .pf-kick'); out.num = B('.pf-case-num'); out.nums = B('.pf-xpnums'); out.xn = B('.pf-xpnums .xpnums'); out.tot = B('.pf-xp-total');
+      /* REVISED IN 317 (badge2): the case's name is its side plate, not a heading over the tray */
+      out.kick = B('.pf-case-front .nova-case-sideplate'); out.num = B('.pf-case-num'); out.nums = B('.pf-xpnums'); out.xn = B('.pf-xpnums .xpnums'); out.tot = B('.pf-xp-total');
       out.tasks = [...document.querySelectorAll('.profile-hero .pf-task')].map(t => { const a = t.querySelector('.pf-task-label').getBoundingClientRect(), v = t.querySelector('.pf-task-val').getBoundingClientRect();
         const lab = t.querySelector('.pf-task-label');
         /* the label's TEXT, not its box: squeezed, the box was 28px and the words ran out of it into the count */
@@ -13221,8 +13228,8 @@ def check_b317_pfcard(br):
         ctx.close()
         check(f"squeeze, {dev}: nothing threw", not r.get("threw"), r.get("threw"))
         k, n_ = r.get("kick"), r.get("num")
-        check(f"squeeze, {dev}: 'Badge case' and its count have a gap, and the count is one line",
-              bool(k and n_) and (n_["l"] - k["r"] >= 4 or n_["t"] >= k["b"] - 0.5) and n_["b"] - n_["t"] <= 26, [k, n_])
+        check(f"squeeze, {dev}: the count is one line, and 'Badge case' is on the case's side, below it",
+              bool(k and n_) and k["t"] >= n_["b"] and n_["b"] - n_["t"] <= 26, [k, n_])
         nm, xn, tot = r.get("nums"), r.get("xn"), r.get("tot")
         check(f"squeeze, {dev}: the total XP sits at the right, wrapped or not",
               bool(nm and tot) and abs(tot["r"] - nm["r"]) <= 1.5 and (tot["t"] >= xn["b"] - 0.5 or tot["l"] >= xn["r"]), [nm, xn, tot])
@@ -17664,6 +17671,197 @@ B317_RING_JS = r"""async (a) => {
   return out; }"""
 
 
+def check_b317_badge2(br):
+    """Build 317, badge2. Madison: "not sure why when you open the case the
+    word badge case would be under the top, it should be on the side and
+    still be on the side as it opens and fully opens. I already told you the
+    badges need to look better, they also need to look better in the
+    cutscenes ... all the silver parts of the badges look different/don't
+    connect either, they also seem fake and have rough edges!!!"
+    Written against 9e62633, where these fail:
+      - the name: "Badge case" was a plate INSIDE the lid (and over the
+        tray on the tab and the Profile card); it is a plate on the case's
+        front wall now, and it is checked at five moments of the opening -
+        there, facing the camera enough to read, and nothing over it;
+      - struck at the size it is shown: every badge on the Badges tab and
+        the coin's face are images rendered at their own device pixels;
+      - one casting: along every channel's centreline, from the middle of
+        the badge out into the rim, the metal has no step where the two
+        meet (the old channel was a second ramp, a step of ~50 levels);
+      - no hairline enamel: no cell of colour thinner than ~3 units (the
+        cross's two slivers either side of its channel);
+      - the coin's rim at rest: the edge slices behind the face add nothing
+        to its outline (twenty stacked silhouettes made it one hard,
+        stepped line)."""
+    print("\n317c. badge2: the name on the case's side, struck badges, one casting, no slivers, a clean coin outline")
+    from PIL import Image as _I
+    import io as _io
+    HIT = ("() => { const s = document.createElement('style'); s.id = 'b317c-hit';"
+           " s.textContent = '.bc-stage, .bc-stage *{ pointer-events:auto !important; } .bc-flyer, .bc-glow, .bc-rays{ visibility:hidden !important; }';"
+           " document.head.appendChild(s); }")
+    PLATE = """() => { const p = document.querySelector('.bc-stage .bc-front .nova-case-sideplate');
+      const inLid = [...document.querySelectorAll('.bc-lid *')].some(e => /badge case/i.test(e.textContent || '') && !e.children.length);
+      if(!p) return { found: false, inLid };
+      const r = p.getBoundingClientRect(), x = (r.left + r.right) / 2, y = (r.top + r.bottom) / 2;
+      const hit = document.elementFromPoint(x, y);
+      return { found: true, inLid, hit: !!(hit && hit.closest('.nova-case-sideplate')), hitIs: hit ? hit.className : null,
+        squash: +(r.height / (p.offsetHeight || 1)).toFixed(2), text: p.textContent.trim() }; }"""
+    for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2)):
+        # ---- 1. the cutscene: the name on the side, closed to fully open ----
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+        pg.evaluate("""() => { const units = topicsIn(QUESTIONS).filter(u => u !== 'Identity Crimes');
+          store.unitPerfects = store.unitPerfects || {}; units.slice(0, 4).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+          store.unitPerfects['Identity Crimes'] = badgeThresholdFor('Identity Crimes');
+          store.pendingBadgeUnlocks = []; theme.muteBanners = false; theme.reduceMotion = false; applyTheme();
+          document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert').forEach(n => n.remove()); }""")
+        clk = _Stepper(pg)
+        pg.evaluate("() => { playBadgeCaseScene(['Identity Crimes'], () => {}); }")
+        # the coin at rest, before its sway: with and without the edge slices
+        while clk.t < 3.86:
+            clk.step(1 / 30)
+        pg.evaluate("() => document.querySelectorAll('.bc-spec, .bc-coin-shadow, .bc-rays, .bc-glow').forEach(e => e.style.visibility = 'hidden')")
+        clk.step(1 / 60)
+        fb = pg.evaluate("() => { const b = document.querySelector('.bc-flyer .bc-face.is-front').getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; }")
+        box = [int(fb[0] * dpr) - 6, int(fb[1] * dpr) - 6, int(fb[2] * dpr) + 6, int(fb[3] * dpr) + 6]
+        a = _I.open(_io.BytesIO(pg.screenshot())).convert("L").crop(box)
+        pg.evaluate("() => document.querySelectorAll('.bc-edge').forEach(e => e.style.visibility = 'hidden')")
+        clk.step(1 / 600)
+        b = _I.open(_io.BytesIO(pg.screenshot())).convert("L").crop(box)
+        diff = [abs(p - q) for p, q in zip(a.getdata(), b.getdata())]
+        hard = sum(1 for d in diff if d > 24)
+        perim = 2 * (box[2] - box[0] + box[3] - box[1])
+        check(f"{dev}: the coin at rest - the edge slices behind its face add nothing to its outline (no stacked, stepped rim)",
+              hard <= perim * 0.05, {"pixels changed >24": hard, "perimeter": perim})
+        pg.evaluate("() => document.querySelectorAll('.bc-spec, .bc-coin-shadow, .bc-edge').forEach(e => e.style.visibility = '')")
+        # the face: rendered at its own device pixels
+        face = pg.evaluate("""(dpr) => { const i = document.querySelector('.bc-face.is-front .bc-face-art');
+          return i ? { nat: i.naturalWidth, need: Math.round(i.offsetWidth * dpr), png: /^data:image\\/png/.test(i.src) } : null; }""", dpr)
+        check(f"{dev}: the coin's face is the struck render at the coin's own device pixels",
+              bool(face) and face["png"] and face["need"] * 0.98 <= face["nat"] <= face["need"] * 1.1, face)
+        pg.evaluate(HIT)
+        seen = {}
+        for t in (7.6, 8.75, 9.6, 10.4, 12.5):
+            while clk.t < t:
+                clk.step(1 / 30)
+            seen[t] = pg.evaluate(PLATE)
+        ok = all(v.get("found") and v.get("hit") and not v.get("inLid") and v.get("squash", 0) >= 0.55 and v.get("text", "").lower() == "badge case" for v in seen.values())
+        check(f"{dev}: 'Badge case' is on the case's side - shut, unlatched, opening and fully open: readable, nothing over it, never in the lid",
+              ok, seen)
+        ctx.close()
+        # ---- 2. the Badges tab and the Profile card: the same plate on the same side ----
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+        pg.evaluate("""() => { const units = unitsInTeachingOrder(); store.unitPerfects = store.unitPerfects || {};
+          units.forEach((u, i) => store.unitPerfects[u] = i % 2 ? badgeThresholdFor(u) : 0);
+          store.seenUnlocks = store.seenUnlocks || { chars: [], banners: [], themes: [], badges: [] }; store.seenUnlocks.badges = units.slice();
+          store.pendingBadgeUnlocks = []; theme.muteBanners = true;
+          document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert').forEach(n => n.remove());
+          const s = document.createElement('style'); s.textContent = '.bottomtabs{ visibility:hidden !important; }'; document.head.appendChild(s); }""")
+        SIDE = """(sel) => { const p = document.querySelector(sel); if(!p) return null;
+          p.scrollIntoView({ block: 'center', behavior: 'instant' });
+          /* the case's fronts are decoration (pointer-events:none); for the hit test only */
+          for(let e = p; e && e !== document.body; e = e.parentElement) e.style.pointerEvents = 'auto';
+          const r = p.getBoundingClientRect(), hit = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
+          const cs = getComputedStyle(p);
+          return { text: p.textContent.trim(), hit: !!(hit && hit.closest('.nova-case-sideplate')), bg: cs.backgroundImage.slice(0, 60), font: cs.fontWeight + ' ' + cs.letterSpacing }; }"""
+        pg.evaluate("() => showProfile('profile')")
+        pg.wait_for_timeout(1200)
+        pf = pg.evaluate(SIDE, ".profile-hero .pf-case .pf-case-front .nova-case-sideplate")
+        pfHead = pg.evaluate("() => { const h = document.querySelector('.profile-hero .pf-case .pf-case-head'); return h ? /badge case/i.test(h.textContent) : null; }")
+        pg.evaluate("() => showRanksScreen('badges')")
+        pg.wait_for_timeout(1500)
+        tab = pg.evaluate(SIDE, ".badge-case .badge-case-front .nova-case-sideplate")
+        tabLid = pg.evaluate("() => { const l = document.querySelector('.badge-case .badge-case-lid'); return l ? /badge case/i.test(l.textContent) : null; }")
+        good = lambda v: bool(v) and v["text"].lower() == "badge case" and v["hit"]
+        check(f"{dev}: the Badges tab's case has the same plate on its side, and nothing on its lid",
+              good(tab) and tabLid is False, {"plate": tab, "lid says it": tabLid})
+        check(f"{dev}: ...and so does the Profile card's - its name on its side, no heading over the tray",
+              good(pf) and pfHead is False, {"plate": pf, "head says it": pfHead})
+        check(f"{dev}: ...one plate: the same metal and lettering on both",
+              bool(tab and pf) and tab["bg"] == pf["bg"] and tab["font"].split(" ")[0] == pf["font"].split(" ")[0], [tab and tab["bg"], pf and pf["bg"]])
+        # every badge on the tab: struck at its own device pixels (after the measure)
+        pg.wait_for_timeout(1200)
+        res = pg.evaluate("""(dpr) => { const out = [];
+          return Promise.all([...document.querySelectorAll('.badges-tab .badge-tile svg.badge-art')].map(sv => new Promise(done => {
+            const im = sv.querySelector('image.badge-raster'); if(!im){ out.push({ raster: false }); return done(); }
+            const need = sv.getBoundingClientRect().width * dpr, i = new Image();
+            i.onload = () => { out.push({ raster: true, nat: i.naturalWidth, need: Math.round(need) }); done(); };
+            i.onerror = () => { out.push({ raster: true, nat: 0, need }); done(); };
+            i.src = im.getAttribute('href'); }))).then(() => out); }""", dpr)
+        bad = [r for r in res if not r["raster"] or not (r["need"] * 0.97 <= r["nat"] <= r["need"] * 1.12)]
+        check(f"{dev}: every badge on the Badges tab is struck at the size it is shown (no image scaled up or crushed)",
+              len(res) == 16 and not bad, {"tiles": len(res), "off": bad[:4]})
+        ctx.close()
+    # ---- 3. one casting, no slivers: all sixteen, big, at 3x ----
+    ctx, pg = booted(br, 1240, 1240, seed=USED_ACCOUNT, dpr=3)
+    BIG = 300
+    geo = pg.evaluate("""(BIG) => { document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert').forEach(n => n.remove());
+      const units = unitsInTeachingOrder(); const host = document.createElement('div');
+      host.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;display:grid;grid-template-columns:repeat(4,' + BIG + 'px);gap:0;background:#20242A';
+      const out = [];
+      units.forEach((u, n) => { const c = document.createElement('div'); c.style.cssText = 'width:' + BIG + 'px;height:' + BIG + 'px';
+        const s = buildUnitBadgeSVG(u, true, { slot: false, px: BIG }); s.style.cssText = 'width:100%;height:100%;display:block'; c.appendChild(s); host.appendChild(c);
+        const sh = badgeShapeFor(u), vb = badgeViewBoxFor(sh.d).split(/\\s+/).map(Number), S = BADGE_GEOM.scale;
+        out.push({ u, col: n % 4, row: (n / 4) | 0, vb, c: sh.c, S, cuts: sh.cuts, p: String(badgeThemeFor(u).p) }); });
+      document.body.appendChild(host); return out; }""", BIG)
+    pg.wait_for_timeout(1500)
+    shot = _I.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 4 * BIG, "height": 4 * BIG}))).convert("RGB")
+    ctx.close()
+    D = 3
+    steps, slivers = {}, {}
+    BG = (32, 36, 42)
+    for g in geo:
+        vx, vy, vw = g["vb"][0], g["vb"][1], g["vb"][2]
+        ox, oy = g["col"] * BIG * D, g["row"] * BIG * D
+        pxu = BIG * D / vw   # device px per frame unit
+        tok = lambda tx, ty: (ox + (g["c"][0] + (tx - g["c"][0]) * g["S"] - vx) * pxu, oy + (g["c"][1] + (ty - g["c"][1]) * g["S"] - vy) * pxu)
+        lum = lambda x, y: (lambda p: .299 * p[0] + .587 * p[1] + .114 * p[2])(shot.getpixel((int(x), int(y))))
+        isbg = lambda x, y: sum(abs(a - b) for a, b in zip(shot.getpixel((int(x), int(y))), BG)) < 12
+        worst = 0
+        for cut in g["cuts"]:
+            import re as _re
+            nums = [float(v) for v in _re.findall(r"-?\d+(?:\.\d+)?", cut)]
+            vert = "V" in cut
+            at = nums[0] if vert else nums[1]
+            for sgn in (-1, 1):
+                # from the badge's centre along the channel to the silhouette's edge
+                pts = []
+                for k in range(0, 2000):
+                    t = k * 0.1 * sgn
+                    tx, ty = (at, g["c"][1] + t) if vert else (g["c"][0] + t, at)
+                    x, y = tok(tx, ty)
+                    if x < ox or y < oy or x >= ox + BIG * D or y >= oy + BIG * D or isbg(x, y):
+                        break
+                    pts.append((x, y))
+                # leave out the outer chamfer and wall (the last 6 token units): that light is meant
+                cut_n = int(6.0 / 0.1)
+                run = pts[:-cut_n] if len(pts) > cut_n + 20 else []
+                L = [lum(x, y) for (x, y) in run]
+                # over 1.5 token units: a step, not a gentle fall of light
+                win = 15
+                for i in range(win, len(L)):
+                    worst = max(worst, abs(L[i] - L[i - win]))
+        steps[g["u"]] = round(worst, 1)
+        # slivers: the enamel mask (pixels near the unit's own colour, far from grey), opened by ~1.25 units
+        from PIL import ImageFilter as _F
+        cell = shot.crop((ox, oy, ox + BIG * D, oy + BIG * D))
+        pr = tuple(int(g["p"][i:i + 2], 16) for i in (1, 3, 5)) if g["p"].startswith("#") else None
+        def enamel(p):
+            ch = max(p) - min(p)
+            return 255 if ch > 26 else 0
+        mask = cell.point(lambda v: v).convert("RGB")
+        mk = _I.new("L", cell.size)
+        mk.putdata([enamel(p) for p in cell.getdata()])
+        r = max(1, int(round(1.25 * g["S"] * pxu)))
+        opened = mk.filter(_F.MinFilter(2 * r + 1)).filter(_F.MaxFilter(2 * r + 1))
+        tot = sum(1 for v in mk.getdata() if v)
+        lost = sum(1 for a2, b2 in zip(mk.getdata(), opened.getdata()) if a2 and not b2)
+        slivers[g["u"]] = round(lost / max(1, tot), 3)
+    check("one casting: along every channel, out from the badge's middle into its rim, the metal has no step (one metal, not two ramps)",
+          bool(steps) and max(steps.values()) <= 30, sorted(steps.items(), key=lambda kv: -kv[1])[:5])
+    check("no hairline enamel: no cell of colour thinner than ~3 units on any of the sixteen",
+          bool(slivers) and max(slivers.values()) <= 0.06, sorted(slivers.items(), key=lambda kv: -kv[1])[:5])
+
+
 def check_b317_focusring(br):
     """Build 317. "There's a weird outline thing around the button there,
     I've seen this before, I'm not sure why I'm seeing that but fix it" -
@@ -17939,6 +18137,7 @@ def main():
             check_b317_flow(br)
             check_b317_sflare(br)
             check_b317_badgecase(br)
+            check_b317_badge2(br)
             check_b317_focusring(br)
             check_b317_roadmap_chips(br)
         finally:
