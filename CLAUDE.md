@@ -13186,6 +13186,15 @@ It's so cool I want it to be longer."* 8.6s became 11.1s
   flash and boom at 8.4s/8.62s and the saucer gone by 8.95s; the ghost's
   0.6s on its own curve; and a real flow run with a badge whose case comes
   >= 9s after the effect. `record-hundo.py` records it for 11.7s.
+- **A gate run under heavy load can start the whole effect seconds late**,
+  and the layer still comes off at `HUNDO_FX_TOTAL` from the CALL
+  (`setTimeout(end, total)` in `playHundoFx`), so its tail is cut. Seen
+  once in round 4 (load 21 on 4 cores): `check_b313_fx` read the UFO's
+  saucer still at its entry point 6.7s in and fully shown at 11.07s - every
+  part of it 3s+ behind, CSS and script alike - while the same build passed
+  that section twice at lower load. The margin is the same as before round
+  4 (the saucer gone 2.2s before the layer comes off). If it ever matters
+  on a device, start the end timer from the first frame, not the call.
 
 **"Looks laggy" was the RECORDING, not the effect.** Measured in the
 recording's own configuration: the page drew 139 frames in 7s, while the CDP
