@@ -15833,6 +15833,50 @@ disagree with it.
       later hero copies the three canvases (`drawImage`); and in the
       Supernova cutscene's set-up if that is the first scarred hero of the
       session.
+  - **SECOND PASS: A BURNING FISSURE, NOT A MARK.** Madison, of the
+    Supernova planet she had (the first scar): *"The permanent damage to
+    the supernova thing is eh."* The first redesign was right up close and
+    a thin dark scratch from arm's length - **what reads at phone size is
+    light**, so the crack burns along most of its length: its heat cools
+    slowly (half of it holds to the far end), its molten floor is wider,
+    and the gap lights its own lips and the ground beside it (computed with
+    the crack, so the gap keeps its dark walls); a soft bloom over the hot
+    half and round the rupture is drawn natively (a blurred stroke and a
+    radial gradient) on a fourth canvas, `.csc-bloom`, between the burn and
+    the ember and breathing with the ember; the rupture is larger (`RHO`
+    .23) with a bigger molten floor, its hairline fractures glow near the
+    rim, the crack is .066 wide at the impact. Two things that undid it on
+    the way: **the bloom first went into the ember layer, over the burn**,
+    and washed orange over the dark gap until the crack was a smudge - it
+    belongs over the soot, under the ember; and **the plasma's light pools
+    washing over the crack at half strength** (the first pass let the smoke
+    drift over it to make it "the planet's own") softened it the same way
+    at 3x - the mask now keeps them off the crack as it does the rupture.
+    The lava noise moved (it made a '+' of crust in the middle), and the
+    ember pulses .84-1 so it never goes dull. Seen at both ends of the
+    pulse before calling it done.
+  - **THE DEBRIS ON THE RINGS.** *"Maybe some of the fragments could be
+    going around the rings like in an orbit like the other stuff but
+    scattered slightly."* `addRingDebris`: twenty black shards with a
+    cooling ember edge (`RING_DEBRIS`, one table: ring, angle, how far off
+    the line, size, tumble, phase) in loose streams on both rings, 1-5
+    units off the lines either way. **They are children of the two orbit
+    layers** that carry the secret flares, so they go round with exactly
+    the same motion - the rings' turn, the shared loop clock, a tap's
+    surge - and under the bubbles' glass; nothing is computed per frame.
+    Each tumbles on its own clock (`crf-tumble`, the individual `rotate`
+    property, a whole turn). Sized x1.35 over the table (they read as
+    specks at first). Not `.cosmic-flare-dot`/`.cosmic-orbit-dot`, so no
+    flare count changes.
+  - **ONE CALL: `decorateSupernovaHero(hero)`** puts the whole Supernova
+    state on any built hero - the scar, the debris, the passing light -
+    and calling it twice is calling it once. Home calls it from
+    `buildCosmicHero`; `attachCosmicScar` is the same call under its first
+    name (the rank cutscene's call). For a scene that ends on the Home
+    system (b317-cut2): build the hero with `buildCosmicHero(true, ...)`,
+    call `decorateSupernovaHero` on it, and add `.csc-live` to it if the
+    passing light (glints, hot ring arcs, bubble firelight) should show -
+    inside `.tier-cutscene` it is hidden otherwise.
   - **Genesis's flare goes round the planet.** *"There's also a random
     floating secret flare which I'm assuming is Genesis, I'm not a fan of
     how that one rotates or whatever, could it feel more like it was
@@ -15885,9 +15929,14 @@ disagree with it.
       the hole hold its firelight faintly on their near side, flickering.
     - The scar is now attached at the END of `buildCosmicHero` (still put
       in right after the plasma), so the bubbles exist to be lit.
-    - Held still and dark under Reduce motion; **never in the rank
-      cutscene** (`.tier-cutscene .csc-pass{display:none}` - that scene is
-      another round's).
+    - Held still and dark under Reduce motion; hidden in the rank
+      cutscene unless the hero carries `.csc-live` (that scene is another
+      round's; see "ONE CALL").
+  - **Merged with b316-work at 7ee6c51** (rings2's caption round): taps on
+    Home answer in the caption under the planet, so the gate reads the
+    answer there; and b316-work as merged failed check-loops on cut2's two
+    soft Supernova loops (`rk-nova-frag-soft`, `rk-nova-shock-soft`, both
+    invisible at both ends) - they are in KNOWN now.
   - **The surge and the glints**: a tap on the planet surges the rings a
     few degrees (`planetTapFx`) for nine seconds; the glints follow the
     slow clock, so for those seconds they are a few degrees off. Left so.
@@ -15904,8 +15953,14 @@ disagree with it.
     same with and without it there, changed in front), smaller and dimmer
     behind, and taps; every ring flare's glint peaking within 4 degrees of
     the scar's angle and dark 40 degrees away; Genesis's glint; the hot
-    arcs; firelight only near the hole; Reduce motion; none without
-    Supernova or in the cutscene. All four parts fail on b6cd249.
+    arcs; firelight only near the hole; the debris (both rings, inside the
+    orbit layers, off the lines, tumbling, still under Reduce motion);
+    `decorateSupernovaHero` turning a plain hero into the Supernova planet
+    (twice is once); Reduce motion; none without Supernova or in the
+    cutscene. The crack's "thin" is a mean thickness under a tenth of the
+    diameter (the old blob .27; this crack with its rupture .078). The
+    hidden-flare pixel test takes the visible shot twice and only compares
+    a still scene. All of it fails on b6cd249.
     `check_b317_supernova` reads the art as canvases or a data URL.
     Two traps found writing it: **hiding an element with `display:none`
     cancels its CSS animations**, and they restart out of step with
