@@ -3197,9 +3197,14 @@
   .next[hidden]{ display:none; }
   .next:disabled{ opacity:.35; cursor:default; }
   /* The daily question's Submit answer before a choice is picked: the
-     pill's own 3D shadows otherwise keep it reading as live. */
+     pill's own 3D shadows otherwise keep it reading as live. OPAQUE
+     (build 317 touch-up): it is fixed over a page that scrolls under it,
+     and at 22% white the choice under it read straight through - "Submit
+     answer" printed over "performing an act of ..." on an SE. #44474B is
+     that 22% white over the app's own #12161B, so it looks the same with
+     nothing behind it. */
   .foot > .floatbtn.qnext.dailyq-btn:disabled{
-    opacity:1; background-color:rgba(245,246,247,.22); background-image:none; color:rgba(255,255,255,.55);
+    opacity:1; background-color:#44474B; background-image:none; color:rgba(255,255,255,.55);
     box-shadow:0 0 0 1px rgba(255,255,255,.14) inset;
   }
   /* build 308: a reset with nothing to reset - looks off, still explains
@@ -8275,7 +8280,7 @@
      "They got a smidge smaller so let's ensure they are still a nice size
      AND let's ensure you can see their backgrounds." A bare 28px drawing
      on the bar's glass lost its scene and its own light, and read small
-     once the wide characters got their AVATAR_VIEWBOX room. A lit disc
+     once the tab got its wider window (AVATAR_WIDE_VIEWBOX). A lit disc
      with a ring was tried first and turned down - "the character is
      circled in, let's not do that" - so it is a soft pool of the
      character's own colour instead, fading to nothing with no edge.
@@ -8289,6 +8294,22 @@
       color-mix(in srgb, var(--char-glow, var(--accent)) 18%, transparent) 55%, transparent 100%);
   }
   .bottomtabs.has-options-tab #bottomtab-profile > .bottomtab-icon-avatar{ width:1.92rem; height:1.92rem; margin:-.27rem 0 -.05rem; }
+  /* THE WIDE WINDOW (AVATAR_WIDE_VIEWBOX "0.5 -2 39 39" against everyone's
+     3 3 34 34): the drawing - and its flip-book, the same box - is 39/34
+     of the icon and hangs 2.5 units out each side and 5 over the top, so
+     the 34 shared units land exactly on the icon and only the edges gain
+     room; the bottom is unchanged. Its mask is the usual one in the
+     wider box's percentages: a 1.6-unit feather at the top and sides,
+     the bust full to 26.8, .45 at 32.24, gone at 37. */
+  #bottomtab-profile > .bottomtab-icon-avatar{ overflow:visible; }
+  #bottomtab-profile > .bottomtab-icon-avatar > svg.avatarchar-svg.cx-wide,
+  #bottomtab-profile > .bottomtab-icon-avatar > .char-flip-play.cx-wide{
+    position:absolute; left:-7.3529%; top:-14.7059%; width:114.7059%; height:114.7059%; margin:0; }
+  #bottomtab-profile > .bottomtab-icon-avatar > svg.avatarchar-svg.cx-wide{
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0%, #000 4.103%, #000 73.846%, rgba(0,0,0,.45) 87.795%, transparent 100%),
+                       linear-gradient(to right, transparent 0%, #000 4.103%, #000 95.897%, transparent 100%);
+            mask-image:linear-gradient(to bottom, transparent 0%, #000 4.103%, #000 73.846%, rgba(0,0,0,.45) 87.795%, transparent 100%),
+                       linear-gradient(to right, transparent 0%, #000 4.103%, #000 95.897%, transparent 100%); }
   @media (min-width:40rem){
     .bottomtabs:not(.has-options-tab) #bottomtab-profile > .bottomtab-icon-avatar{ width:2.64rem; height:2.64rem; margin:-.34rem 0 -.1rem; }
   }
@@ -20337,6 +20358,36 @@
     .pf-swatch.swatch{ width:3.1rem; height:3.1rem; }
     .pf-swatch.swatch .dot{ width:2.7rem; height:2.7rem; }
     .pf-strip.badge-strip{ grid-template-columns:repeat(16, minmax(0, 1fr)); }
+  }
+  /* SQUEEZE CASES (build 317 touch-up), measured at 375 and 320:
+     - the total XP wraps under the numbers once the two do not fit (a
+       6-digit total, level 80, any 320px phone); it keeps to the RIGHT
+       there, where it sits on one row, instead of dropping to the left
+       as a second line of the same blue numbers;
+     - the case's head always has a gap, and its two halves never wrap
+       inside themselves: "BADGE CASE3 of 16" touched on a 375 phone with
+       NEW up, and on a 320 one "3 / of / 16" stood three lines tall. If
+       they do not fit side by side the count takes its own row, right;
+     - on a 320 phone a challenge row's label had 28px beside its count,
+       so "Reach level 40" ran into "33 / 40"; there the count goes under
+       the label, over its bar;
+     - four unlock tiles (a rank that hands over a banner) left each label
+       34-38px on a 375-402 phone and 22px on a 320 one: "Th...", "Or...",
+       "F...". Up to 26rem the four sit two by two instead, ~100px each.
+       Three tiles are fine down to 375; on a 320 phone the type comes down
+       a step and the side padding goes, so "Theme" is whole. */
+  .pf-xp-total{ margin-left:auto; }
+  .pf-case-head{ flex-wrap:wrap; gap:.3rem .6rem; }
+  .pf-case-head > .pf-kick, .pf-case-num{ white-space:nowrap; }
+  .pf-case-count{ margin-left:auto; }
+  @media (max-width:26rem){
+    .pf-rewards:has(> .pf-rw:nth-child(4)){ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width:22rem){
+    .pf-task{ grid-template-columns:1.45rem minmax(0, 1fr); }
+    .pf-task-val, .pf-bar, .pf-task-note{ grid-column:2; }
+    .pf-rw{ padding-left:.05rem; padding-right:.05rem; }
+    .pf-rw-lab{ font-size:.68rem; }
   }
   .profile-xp-total{ font-size:.8rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; }
   /* ---- THREE RINGS, ONE SIZE (build 302) ----
@@ -40551,35 +40602,33 @@ const CHAR_SPECIAL_DRAW = {
   }
 };
 
-/* ROOM AT THE EDGES FOR THE ONES THAT REACH THEM (build 317). Every
-   character is drawn on a 40-unit square and shown through the same
-   34-unit window, 3 to 37 - and a few reach that window's edge or past it:
-   the Ronin's hat brim and scarf, the Clown's bells, the Hive's bees, the
-   Wizard's staff, Umbra's moon, Zeus's crown, the Marksman's scope ring,
-   the Timekeeper's halo and Solar's rays. In a frame with no border of its
-   own - the Profile tab - those read as cut off: "One of the ones I've
-   mentioned that gets cut off around the edges. Ensure all characters are
-   properly displayed". Each of these gets a wider window, still centred on
-   x = 20 and still ending at 37 so the bust is cut at the same line; the
-   drawing comes out a few percent smaller, nothing else moves. The flip-
-   books are cut from the same drawing, so they follow. */
-const AVATAR_VIEWBOX = {
-  ronin:      "1.5 0 37 37",
-  clown:      "0.5 -2 39 39",
-  hive:       "1.5 0 37 37",
-  wizard:     "1 -1 38 38",
-  umbra:      "1 -1 38 38",
-  zeus:       "1.5 0 37 37",
-  marksman:   "1 -1 38 38",
-  timekeeper: "1.5 0 37 37",
-  solar:      "1 -1 38 38"
-};
+/* ROOM AT THE EDGES, IN THE TAB (build 317, reworked). Every character is
+   drawn on a 40-unit square and shown through the same 34-unit window, 3
+   to 37 - and a few reach that window's edge or past it: the Ronin's hat
+   brim and scarf, the Clown's bells, the Hive's bees, the Wizard's staff,
+   Umbra's moon, Zeus's crown, the Marksman's scope ring, the Timekeeper's
+   halo and Solar's rays. In a frame with no border of its own - the
+   Profile tab in the bottom bar - those read as cut off ("Ensure all
+   characters are properly displayed").
+   The first fix gave those nine a wider viewBox each, which drew them
+   3-13% SMALLER than everyone else (the Clown's 39-unit window against
+   34) - build 314's "ensure all the characters are the same size" undone,
+   and check_b272 / check_b314_sizes red. So the window stays 3 3 34 34
+   for every character everywhere, and the TAB alone looks through a wider
+   one: AVATAR_WIDE_VIEWBOX, the union of what the nine need (still centred
+   on x = 20, still ending at 37 so the bust is cut on the same line), for
+   EVERY character, with the drawing made bigger by the same 39/34 and
+   pulled up and out over the icon's own box (.cx-wide) - so the 34 units
+   everyone shares land exactly where they did and only the edges gain
+   room. The tab's flip-book records the same wide window ("<id>~wide",
+   see charAnimDrawing). */
+const AVATAR_WIDE_VIEWBOX = "0.5 -2 39 39";
 function drawAvatarCharSVG(charId){
   const svgNS = "http://www.w3.org/2000/svg";
   const def = AVATAR_CHARACTERS.find(c => c.id === charId);
   if(!def) return null;
   const svg = document.createElementNS(svgNS, "svg");
-  svg.setAttribute("viewBox", AVATAR_VIEWBOX[charId] || "3 3 34 34");
+  svg.setAttribute("viewBox", "3 3 34 34");
   svg.setAttribute("class", "avatarchar-svg");
   svg.setAttribute("aria-hidden", "true");
   const mk = (tag, attrs) => {
@@ -45507,6 +45556,8 @@ function syncBottomTabAvatar(){
     const want = RETIRED_CHARACTER_TO[store.avatarChar] || store.avatarChar;
     if(tabIcon.dataset.char === want && tabIcon.querySelector(":scope > svg.avatarchar-svg")) return;
     const svg = buildAvatarCharSVG(store.avatarChar);
+    /* the tab's wider window, for everyone - see AVATAR_WIDE_VIEWBOX */
+    if(svg){ svg.setAttribute("viewBox", AVATAR_WIDE_VIEWBOX); svg.classList.add("cx-wide"); }
     /* Alive in the tab bar too (build 304): "your character needs to
        have its animations displayed as well." */
     if(svg){ tabIcon.replaceChildren(svg); tabIcon.dataset.char = want;
@@ -61787,8 +61838,12 @@ function charAnimDrawing(charId){
        secret character plays as a flip-book too, drawn without the depth
        shading, as it is on the page */
     const sil = /~sil$/.test(charId);
+    /* "<id>~wide" is the tab's wider window (AVATAR_WIDE_VIEWBOX) */
+    const wide = /~wide$/.test(charId);
     const svg = sil ? charSilhouetteSVG(charId.replace(/~sil$/, ""))
-      : /~pick$/.test(charId) ? pickerCharSVG(charId.replace(/~pick$/, "")) : buildAvatarCharSVGSafe(charId);
+      : /~pick$/.test(charId) ? pickerCharSVG(charId.replace(/~pick$/, ""))
+      : buildAvatarCharSVGSafe(charId.replace(/~wide$/, ""));
+    if(wide) svg.setAttribute("viewBox", AVATAR_WIDE_VIEWBOX);
     const uid = svg.getAttribute("data-cx-uid") || "\u0000";
     const id = charId.replace(/~/g, "_") + "-" + hashOf(new XMLSerializer().serializeToString(svg).split(uid).join("u"));
     charAnimDrawings.set(charId, { svg, id, depth: !sil });
@@ -62021,7 +62076,13 @@ async function recordCharSheet(drawing, px){
         const lg = document.createElementNS(svgNS, "linearGradient");
         lg.setAttribute("id", "cxfadeg"); lg.setAttribute("x1", "0"); lg.setAttribute("y1", "0"); lg.setAttribute("x2", "0"); lg.setAttribute("y2", "1");
         /* build 314: the top and the sides feather too, as in the CSS */
-        [["0", "#000000"], [".047", "#FFFFFF"], [".7", "#FFFFFF"], [".86", "#737373"], ["1", "#000000"]].forEach(([o, c]) => {
+        /* in the drawing's own units, so a wider window (the tab's, see
+           AVATAR_WIDE_VIEWBOX) feathers at ITS edges and fades the bust
+           over the same stretch: 1.6 units in from the top, full to
+           26.8, .45 at 32.24, gone at 37. For 3 3 34 34 these are the
+           CSS mask's .047 / .7 / .86 exactly. */
+        const at = y => String(Math.max(0, Math.min(1, (y - vb[1]) / vb[3])));
+        [["0", "#000000"], [at(vb[1] + 1.6), "#FFFFFF"], [at(26.8), "#FFFFFF"], [at(32.24), "#737373"], [at(37), "#000000"]].forEach(([o, c]) => {
           const st = document.createElementNS(svgNS, "stop"); st.setAttribute("offset", o); st.setAttribute("stop-color", c); lg.appendChild(st);
         });
         const mk = document.createElementNS(svgNS, "mask");
@@ -62039,7 +62100,7 @@ async function recordCharSheet(drawing, px){
           [["0", a0], ["1", a1]].forEach(([o, op]) => { const st = document.createElementNS(svgNS, "stop"); st.setAttribute("offset", o); st.setAttribute("stop-color", "#000000"); st.setAttribute("stop-opacity", String(op)); hg.appendChild(st); });
           defs.appendChild(hg);
           const sr = document.createElementNS(svgNS, "rect");
-          const sw = vb[2] * 0.047;
+          const sw = 1.6;
           sr.setAttribute("x", k ? vb[0] + vb[2] - sw : vb[0]); sr.setAttribute("y", vb[1]); sr.setAttribute("width", sw); sr.setAttribute("height", vb[3]);
           sr.setAttribute("fill", "url(#" + id + ")");
           mk.appendChild(sr);
@@ -62184,8 +62245,10 @@ function charFlipAttach(el){
   const layoutW = svg.clientWidth || parseFloat(getComputedStyle(svg).width) || 0;
   if(!layoutW) return null;
   if(layoutW > CHAR_FLIP_MAX_CSS) return false;
-  const charId = charIdOfSvg(el, svg);
-  if(!charId) return false;
+  const wide = svg.classList.contains("cx-wide");
+  const charId0 = charIdOfSvg(el, svg);
+  if(!charId0) return false;
+  const charId = wide ? charId0 + "~wide" : charId0;
   const scale = Math.min(window.devicePixelRatio || 1, 2);
   /* THE DRAWING'S OWN SCALE IS BAKED INTO THE SHEET (build 314). "In the
      leaderboard, all the characters are still slightly shaking." The
@@ -62244,7 +62307,12 @@ function charFlipAttach(el){
     svg.style.transform = prevT;
     const S = sr.width > 0 ? sr.width / layoutW : 1;
     const inset = (layoutW - cellCss) / 2;
-    if(ownScale){
+    if(wide){
+      /* the tab's wide drawing hangs over its icon by CSS (.cx-wide); the
+         sheet takes exactly the same box, so no reading can catch it
+         half-way through the bar coming back */
+      play.classList.add("cx-wide");
+    } else if(ownScale){
       /* centred on the drawing as it is SHOWN, on whole device pixels */
       const shown = svg.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
       const snap = v => Math.round(v * dpr) / dpr;
@@ -97717,7 +97785,12 @@ if(backToTopBtn){
      rather than padded, because extra room at the bottom would make
      every screen that fits exactly start to scroll. */
   const BACKTOTOP_END_ZONE = 260;
-  const TAPPABLE = 'button, a[href], [role="button"], input, select, textarea, label, summary, .is-tappable, [tabindex]:not([tabindex="-1"])';
+  /* `.dailyq-outro` is not tappable but is the same case (build 317
+     touch-up): the answered daily scrolls its result card up to sit just
+     over the pill, which on an SE or a 320 phone is past 320px - so the
+     button came up over the card's corner (22x30px). The card is the
+     answer; the button steps aside for it. */
+  const TAPPABLE = 'button, a[href], [role="button"], input, select, textarea, label, summary, .is-tappable, [tabindex]:not([tabindex="-1"]), .dailyq-outro';
   const backToTopBlocked = () => {
     const left = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
     if(left > BACKTOTOP_END_ZONE) return false;
@@ -98725,7 +98798,14 @@ document.addEventListener("keydown", (e) => {
     /* Not a results button that has not landed yet - the same hole as
        the tap, from a keyboard. */
     if(next && next.closest(".rs-land:not(.rs-in):not(.rs-in-now)")) return;
-    if(next && !next.hidden && !next.disabled){ e.preventDefault(); next.click(); }
+    if(next && !next.hidden && !next.disabled){ e.preventDefault(); next.click(); return; }
+    /* THE DAILY QUESTION'S OWN PILL (build 317 touch-up). #nextbtn is
+       always hidden there, so Enter did nothing at all on a laptop while
+       the hint under the question said "Press Enter to continue": a key
+       picks, Enter submits, and once answered Enter is Exit. A pick
+       still needs a choice first - a disabled Submit is left alone. */
+    const dq = document.getElementById("dailyq-submitbtn") || document.getElementById("dailyq-exitbtn");
+    if(dq && stage.contains(dq) && !dq.disabled){ e.preventDefault(); dq.click(); }
   }
 });
 

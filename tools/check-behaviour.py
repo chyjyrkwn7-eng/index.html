@@ -12850,6 +12850,55 @@ def check_b317_daily(br):
         check("%s: no Detective progress banner, on the question or on Home" % dev,
               r.get("pending") in (None,) and r.get("seen") == "" and r.get("home") is True,
               [r.get("pending"), r.get("seen"), r.get("home")])
+    # THE PILL OFF, AND FROM A KEYBOARD (build 317 touch-up). Written against
+    # 1888b11, where both fail: the off Submit was 22% white, so the choice
+    # scrolling under it read through it; and Enter did nothing at all, the
+    # hint under the question saying "Press Enter to continue".
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      store.dailyCorrectStreak = 3; store.dailyQuestionDate = null; saveStore();
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n => n.remove());
+      startDailyQuestion();
+      for(let t = 0; t < 80 && !document.querySelector('.qpanel .choice'); t++) await wait(100);
+      await wait(400); }""")
+    bg = pg.evaluate("() => { const b = document.getElementById('dailyq-submitbtn'); return b ? [b.disabled, getComputedStyle(b).backgroundColor] : null; }")
+    alpha = 1.0
+    m = re.match(r"rgba\([^)]*,\s*([\d.]+)\)$", (bg or [0, ""])[1])
+    if m:
+        alpha = float(m.group(1))
+    check("the daily's Submit, off, is opaque - nothing scrolling under it shows through", bool(bg) and bg[0] is True and alpha >= 0.999, bg)
+    pg.keyboard.press("Enter"); pg.wait_for_timeout(300)
+    k0 = pg.evaluate("() => ({ locked: dailyQuestionLocked, exit: !!document.getElementById('dailyq-exitbtn') })")
+    slot = pg.evaluate("() => correctSlot(order[pos])")
+    pg.keyboard.press(str(slot + 1)); pg.wait_for_timeout(300)
+    k1 = pg.evaluate("() => ({ locked: dailyQuestionLocked, picked: !!document.querySelector('.qpanel .choice.is-picked') })")
+    pg.keyboard.press("Enter"); pg.wait_for_timeout(1500)
+    k2 = pg.evaluate("() => ({ locked: dailyQuestionLocked, exit: !!document.getElementById('dailyq-exitbtn'), correct: !!store.dailyQuestionCorrect })")
+    pg.keyboard.press("Enter"); pg.wait_for_timeout(1500)
+    home = pg.evaluate("() => !!document.querySelector('[data-screen=\"home\"]')")
+    ctx.close()
+    check("keyboard: Enter with nothing picked does nothing", k0["locked"] is False and k0["exit"] is False, k0)
+    check("keyboard: a number key picks, and does not answer", k1["locked"] is False and k1["picked"] is True, k1)
+    check("keyboard: Enter submits the pick", k2["exit"] is True and k2["correct"] is True, k2)
+    check("keyboard: and Enter again is Exit to main menu", home is True, home)
+    # ...and on an SE the back-to-top button came up over the result card's
+    # corner, the card having been scrolled up past 320px (1888b11: 22x30px).
+    ctx, pg = booted(br, 375, 667, seed=USED_ACCOUNT)
+    bt = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      store.dailyCorrectStreak = 3; store.dailyQuestionDate = null; saveStore();
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n => n.remove());
+      startDailyQuestion();
+      for(let t = 0; t < 80 && !document.querySelector('.qpanel .choice'); t++) await wait(100);
+      await wait(400);
+      [...document.querySelectorAll('.qpanel .choice')][0].click(); await wait(200);
+      document.getElementById('dailyq-submitbtn').click(); await wait(2500);
+      const o = document.querySelector('.dailyq-outro'), b = document.querySelector('.backtotop.show');
+      const ov = (o && b) ? (() => { const x = o.getBoundingClientRect(), y = b.getBoundingClientRect();
+        return Math.max(0, Math.min(x.right, y.right) - Math.max(x.left, y.left)) * Math.max(0, Math.min(x.bottom, y.bottom) - Math.max(x.top, y.top)); })() : 0;
+      return { card: !!o, scrolled: Math.round(scrollY), overlap: Math.round(ov) }; }""")
+    ctx.close()
+    check("SE: the back-to-top button does not sit on the answered daily's result card",
+          bt["card"] and bt["overlap"] == 0, bt)
 
 
 def check_b316_tiles(br):
@@ -12998,6 +13047,49 @@ def check_b317_pfcard(br):
               and re.search(r"rank challenges", tt, re.I) and re.search(r"no rank challenges left", tt, re.I) and re.search(r"max rank", tt, re.I),
               [r.get("top"), r.get("topCls"), tt])
         ctx.close()
+    # THE SAME CARD SQUEEZED (build 317 touch-up). Written against 1888b11,
+    # where every one of these fails: on a 375 phone "BADGE CASE" and "3 of
+    # 16" touched with NEW up, and at level 80 the total XP dropped to the
+    # LEFT under the numbers; on a 320 one the count stood three lines tall
+    # and "Reach level 40" ran into "33 / 40"; and four unlock tiles cut
+    # their labels to "Th..." on every phone up to 402px.
+    SQUEEZE = """async (st) => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+      document.getElementById('pushing-update')?.remove(); theme.muteBanners = true; store.pendingBadgeUnlocks = [];
+      const units = topicsIn(QUESTIONS).slice().sort((a, b) => badgeThresholdFor(a) - badgeThresholdFor(b));
+      const [n, lvl, fresh] = st;
+      store.unitPerfects = {}; units.slice(0, n).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+      store.lifetime.points = xpForLevel(lvl) + (lvl >= LEVEL_CAP ? 60000 : 400); store.rankFloor = 0; store.levelFloor = 0;
+      store.pendingSupernovaCutscene = false; store.pendingTierCutscene = null; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
+      if(!store.seenUnlocks) store.seenUnlocks = { chars: [], banners: [], themes: [], badges: [] };
+      store.seenUnlocks.badges = units.slice(0, Math.max(0, n - fresh));
+      showProfile('profile'); await wait(900);
+      const B = s => { const e = document.querySelector('.profile-hero ' + s); if(!e) return null; const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
+      out.kick = B('.pf-case-head > .pf-kick'); out.num = B('.pf-case-num'); out.nums = B('.pf-xpnums'); out.xn = B('.pf-xpnums .xpnums'); out.tot = B('.pf-xp-total');
+      out.tasks = [...document.querySelectorAll('.profile-hero .pf-task')].map(t => { const a = t.querySelector('.pf-task-label').getBoundingClientRect(), v = t.querySelector('.pf-task-val').getBoundingClientRect();
+        const lab = t.querySelector('.pf-task-label');
+        /* the label's TEXT, not its box: squeezed, the box was 28px and the words ran out of it into the count */
+        return { clear: lab.scrollWidth <= lab.clientWidth + 0.5 && (v.left >= a.right - 0.5 || v.top >= a.bottom - 0.5), txt: lab.textContent, sw: lab.scrollWidth, cw: lab.clientWidth }; });
+      out.cut = [...document.querySelectorAll('.profile-hero .pf-rw-lab')].filter(l => l.scrollWidth > l.clientWidth + 0.5).map(l => l.textContent);
+      out.tiles = document.querySelectorAll('.profile-hero .pf-rw').length;
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }"""
+    for (w, h, dev, st) in ((375, 667, "SE 2/3, a new badge", (3, 33, 1)), (375, 667, "SE 2/3, level 80", (16, 80, 0)),
+                            (320, 568, "320 phone, a new badge", (3, 33, 1)), (393, 852, "393 phone, four unlock tiles", (9, 64, 0)),
+                            (320, 568, "320 phone, four unlock tiles", (9, 64, 0))):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate(SQUEEZE, list(st))
+        ctx.close()
+        check(f"squeeze, {dev}: nothing threw", not r.get("threw"), r.get("threw"))
+        k, n_ = r.get("kick"), r.get("num")
+        check(f"squeeze, {dev}: 'Badge case' and its count have a gap, and the count is one line",
+              bool(k and n_) and (n_["l"] - k["r"] >= 4 or n_["t"] >= k["b"] - 0.5) and n_["b"] - n_["t"] <= 26, [k, n_])
+        nm, xn, tot = r.get("nums"), r.get("xn"), r.get("tot")
+        check(f"squeeze, {dev}: the total XP sits at the right, wrapped or not",
+              bool(nm and tot) and abs(tot["r"] - nm["r"]) <= 1.5 and (tot["t"] >= xn["b"] - 0.5 or tot["l"] >= xn["r"]), [nm, xn, tot])
+        check(f"squeeze, {dev}: no challenge row's count runs into its label",
+              r.get("tasks") is not None and all(t["clear"] for t in r["tasks"]), r.get("tasks"))
+        check(f"squeeze, {dev}: no unlock tile's label is cut short ({r.get('tiles')} tiles)", not r.get("cut"), r.get("cut"))
 
 
 def check_b317_volume(br):
@@ -13680,6 +13772,42 @@ def check_b317_tabplate(br):
         check(f"{dev}: the labels stay level - the bar did not grow round it", r["labelsLevel"] <= 1 and r["gap"] >= 0, [r["labelsLevel"], r["gap"]])
         check(f"{dev}: and it still animates in the tab", r["anims"] > 0, r["anims"])
         ctx.close()
+    # THE TAB'S WIDE WINDOW (317 touch-up). 829f68a gave nine characters a
+    # wider viewBox each so their edges were not cut in the tab, which drew
+    # them 3-13% smaller than everyone else everywhere (check_b272 and
+    # check_b314_sizes went red). Now every drawing is 3 3 34 34, and the
+    # tab alone looks through one wider window, for everyone, with the
+    # drawing - and its flip-book - hung out over the icon so the shared 34
+    # units land on the icon exactly. Written against 1888b11, where the
+    # nine had their own windows and the tab had no wide one.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = { vb: {}, tab: {} };
+      const nine = ['ronin', 'clown', 'hive', 'wizard', 'umbra', 'zeus', 'marksman', 'timekeeper', 'solar', 'ninja', 'grizzly'];
+      nine.forEach(id => { const s = buildAvatarCharSVG(id); out.vb[id] = s && s.getAttribute('viewBox'); });
+      const R = e => { if(!e) return null; const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
+      for(const id of ['ronin', 'clown', 'ninja']){
+        store.avatarChar = id; const t = document.querySelector('#bottomtab-profile .bottomtab-icon');
+        delete t.dataset.char; syncBottomTabAvatar(); showHome();
+        for(let k = 0; k < 60 && !t.querySelector('.char-flip-play img'); k++) await wait(500);
+        const sv = t.querySelector('svg.avatarchar-svg');
+        out.tab[id] = { vb: sv && sv.getAttribute('viewBox'), icon: R(t), svg: R(sv), play: R(t.querySelector('.char-flip-play')) };
+      }
+      return out; }""")
+    ctx.close()
+    check("every character's own drawing is the shared 3 3 34 34 window, the nine wide ones included",
+          set(r["vb"].values()) == {"3 3 34 34"}, r["vb"])
+    def lands(t):
+        vb = [float(x) for x in (t.get("vb") or "0 0 0 0").split()]
+        ic, sv = t.get("icon"), t.get("svg")
+        if not (ic and sv) or not vb[2]:
+            return False
+        k = (sv[2] - sv[0]) / vb[2]     # px per unit
+        x3, y3 = sv[0] + (3 - vb[0]) * k, sv[1] + (3 - vb[1]) * k
+        return abs(x3 - ic[0]) <= 0.6 and abs(y3 - ic[1]) <= 0.6 and abs(k * 34 - (ic[2] - ic[0])) <= 0.6 and abs(sv[3] - ic[3]) <= 0.6
+    check("the tab looks through a wider window for everyone, and the shared 34 units land on the icon exactly",
+          all(t.get("vb") == "0.5 -2 39 39" and lands(t) for t in r["tab"].values()), r["tab"])
+    check("...and the tab's flip-book takes exactly the drawing's box",
+          all(t.get("play") and t.get("svg") and max(abs(a - b) for a, b in zip(t["play"], t["svg"])) <= 0.6 for t in r["tab"].values()), r["tab"])
 def check_b317_xpcap(br):
     """Build 317. Four of Madison's asks about a full XP bar, in one gate:
     "The level 80 xp bar, it says every level reached, make it so that xp
