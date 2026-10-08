@@ -11259,7 +11259,9 @@ def check_b313_flares(br):
           /* 2. three, then five, then six */
           await home(F.none); out.count3 = document.querySelectorAll('.panel.home .cosmic-orbit-dot').length;
           await home(F.five); out.count6 = document.querySelectorAll('.panel.home .cosmic-orbit-dot').length;
-          out.coreOnPlanet = !!document.querySelector('.panel.home .cosmic-core-orbit [data-flare="core"]');
+          /* planet2: on the rings, Void's three outside, the other three inside */
+          out.rings = ['red', 'orange', 'yellow', 'violet', 'white', 'core'].map(k => { const d = document.querySelector('.panel.home [data-flare="' + k + '"]');
+            return !d ? 'none' : d.closest('.cosmic-hero-orbitlayer-inner') ? 'in' : d.closest('.cosmic-hero-orbitlayer') ? 'out' : 'elsewhere'; });
           /* 3. the inner ring is well over twice as quick */
           const dur = el => el ? parseFloat(getComputedStyle(el).animationDuration.split(',').pop()) : 0;
           out.spin = [dur(document.querySelector('.cosmic-hero-orbitlayer:not(.cosmic-hero-orbitlayer-inner)')), dur(document.querySelector('.cosmic-hero-orbitlayer-inner'))];
@@ -11307,7 +11309,8 @@ def check_b313_flares(br):
         check(f"{label}: the flare being hunted next is marked (once Void is held) - in plain light, not its colour (build 314)", r.get("nextTinted") is True, r.get("nextTinted"))
         check(f"{label}: three flares before Void, five with it, six once the fifth is found",
               (r.get("count3"), r.get("countVoid"), r.get("count6")) == (3, 5, 6), (r.get("count3"), r.get("countVoid"), r.get("count6")))
-        check(f"{label}: the sixth flare is on the planet", r.get("coreOnPlanet") is True)
+        check(f"{label}: the six ride the rings - Void's three on the outer, the other three (Genesis's too) on the inner (planet2)",
+              r.get("rings") == ["out"] * 3 + ["in"] * 3, r.get("rings"))
         sp = r.get("spin") or [0, 0]
         check(f"{label}: the inner ring turns at least twice as fast as the outer", sp[1] > 0 and sp[0] >= 2 * sp[1], sp)
         nm = r.get("names") or []
@@ -14068,23 +14071,32 @@ def check_b317_planet(br):
        holds one long thin dark feature spanning at least 60% of the
        sphere's diameter (the crack, measured off the art's own pixels,
        whatever form the art takes), drawn at no fewer pixels than the
-       sphere has on a 3x phone; the ember is two layers pulsing on
-       different clocks; the fragments start on the scar.
-    3. "could it feel more like it was rotating around the sphere? Like
-       going behind it and back around?" - Genesis's flare never vanishes;
-       for part of its lap the planet is painted over it (and a screenshot
-       with and without it is the same there), for another part it is over
-       the planet; smaller and dimmer behind; taps answer in front, round
-       the limb behind, and the planet answers on the disc.
-    4. "as it passes the hole something happens" - every secret flare's
-       glint peaks as it crosses the scar's angle and is dark well away
-       from it; Genesis's flare glints at the point of its lap nearest the
-       rupture; the rings run hot over an arc centred on the scar; the
-       bubbles near the hole hold its firelight; nothing moves under
-       Reduce motion; none of it in the rank cutscene or without Supernova.
-    Measured on the app's own clocks, paused and stepped together. Written
-    against b6cd249, where all four fail."""
-    print("\n317p. the planet round: the smoke roils, a crack across the planet, Genesis goes behind, the scar lights what passes")
+       sphere has on a 3x phone; the fragments start on the scar.
+       PLANET2: "needs to be black charring" - every picture the scar shows,
+       at its brightest over a plain planet, holds no warm light, and its
+       solid part is char; any ember left is a faint dull red inside the
+       crater, breathing slowly, with no bloom, hot layer or heat shimmer;
+       the fragments and the ring debris carry no warm colour.
+    3. PLANET2: "could it be on the rings like the others as well? ... voids
+       3 are maybe on the outside and the other 3 are on the inside" -
+       Genesis's flare is a ring flare like the rest (the inner layer, the
+       same build, no orbit of its own); Void's three ride the outer ring,
+       the other three the inner, each on its ring's line; each ring's
+       gaps are 90-150 degrees and not equal; no debris within 12 degrees
+       of a flare; it turns with the inner ring; it answers a tap like the
+       others; nothing says it is on the planet. (The planet round's
+       assertions - behind the planet, round the limb - are gone with the
+       orbit.)
+    4. "as it passes the hole something happens" - PLANET2: soot, not light:
+       every secret flare, Genesis's too, dims under a dark veil as it
+       crosses the scar's angle and is clear away from it; the rings are
+       sooted over an arc centred on the scar; nothing burns (no ember arc,
+       glint or firelight on the bubbles); nothing moves under Reduce
+       motion; none of it in the rank cutscene or without Supernova.
+    Measured on the app's own clocks, paused and stepped together. Sections
+    1-4 were written against b6cd249; the planet2 assertions (2's char, 3,
+    4) against 9e62633, where each fails."""
+    print("\n317p. the planet round: the smoke roils, a charred crack across the planet, Genesis on the inner ring, the scar's soot marks what passes")
     import json as _json
     # nothing owed on Home: the reward cards for a seeded Supernova account
     # with every flare would otherwise come up over it a few seconds in
@@ -14128,7 +14140,8 @@ def check_b317_planet(br):
     check("Reduce motion (the system's): the smoke holds still too", len(rs) >= 1 and not any(x["turn"] or x["breathe"] for x in rs), [x["turn"] for x in rs])
     ctx.close()
 
-    # 2. the scar's art: a crack across the planet, crisp on a 3x phone
+    # 2. the scar's art: a crack across the planet, crisp on a 3x phone -
+    # and since planet2, black char, not fire
     acct = _json.loads(USED_ACCOUNT)
     acct["supernovaAchieved"] = True
     acct["mysteryColorsFound"] = {k: True for k in ["red", "orange", "yellow", "violet", "white", "core"]}
@@ -14159,141 +14172,170 @@ def check_b317_planet(br):
       const th = .5 * Math.atan2(2 * sxy, sxx - syy), ux = Math.cos(th), uy = Math.sin(th);
       let lo = 1e9, hi = -1e9; best.forEach(q => { const p = (q % N) * ux + ((q / N) | 0) * uy; if(p < lo) lo = p; if(p > hi) hi = p; });
       const len = hi - lo;
-      const e = sc.querySelector('canvas.csc-ember'), hot = sc.querySelector('canvas.csc-hot');
+      /* EVERY picture the scar shows, at its brightest (each at full
+         opacity), laid in order over a plain grey planet: what of it is
+         LIGHT - a warm colour brighter than the planet under it - and how
+         dark its char is where it is solid */
+      const arts = [...sc.querySelectorAll('canvas.csc-art')];
+      const comp = new Float32Array(N * N * 3).fill(128);
+      arts.forEach(c => { if(c.width !== N) return; const e = c.getContext('2d').getImageData(0, 0, N, N).data;
+        for(let k = 0; k < N * N; k++){ const a = e[k * 4 + 3] / 255; if(!a) continue;
+          for(let ch = 0; ch < 3; ch++) comp[k * 3 + ch] = comp[k * 3 + ch] * (1 - a) + e[k * 4 + ch] * a; } });
+      let foot = 0, glowing = 0, core = 0, coreLum = 0;
+      for(let k = 0; k < N * N; k++){ const a = d[k * 4 + 3]; if(a < 64) continue; foot++;
+        const R = comp[k * 3], G = comp[k * 3 + 1], B = comp[k * 3 + 2];
+        if(R > 150 && R > B + 45 && (R + G + B) / 3 > 110) glowing++;
+        if(a > 220){ core++; coreLum += (R + G + B) / 3; } }
+      /* the ember, if any is left: how bright, what colour, where */
+      const em = sc.querySelector('canvas.csc-ember');
+      let emPeak = 0, emG = 0, emArea = 0, emFar = 0;
+      const cr = (typeof cosmicScarArt === 'function' && cosmicScarArt() && cosmicScarArt().crater) || [65, 63];
+      if(em){ const e = em.getContext('2d').getImageData(0, 0, N, N).data;
+        for(let k = 0; k < N * N; k++){ const a = e[k * 4 + 3] / 255; if(a < .02) continue;
+          const v = a * Math.max(e[k * 4], e[k * 4 + 1], e[k * 4 + 2]) / 255; if(v > emPeak){ emPeak = v; emG = e[k * 4 + 1]; }
+          if(a > .1){ emArea++; const x = (k % N) / N * 100, y = ((k / N) | 0) / N * 100; if(Math.hypot(x - cr[0], y - cr[1]) > 12) emFar++; } } }
       const loops = el => el ? el.getAnimations().filter(a => a.playState === 'running' && a.effect.getComputedTiming().iterations === Infinity).map(a => a.effect.getComputedTiming().duration / 1000) : [];
+      /* every colour the scar and the debris are drawn in by CSS */
+      const cols = [];
+      [...sc.querySelectorAll('.csc-frag')].slice(0, 4).concat([...h.querySelectorAll('.csc-ringfrag')].slice(0, 3)).forEach(f => {
+        ['::before', '::after'].forEach(ps => { const bg = getComputedStyle(f, ps).backgroundImage || '';
+          (bg.match(/rgba?\\([^)]*\\)/g) || []).forEach(c => { const v = c.match(/[\\d.]+/g).map(Number); if(v.length < 4 || v[3] > .05) cols.push(v.slice(0, 3)); }); }); });
       /* where each fragment starts, against the art: on the scar (soot, burn or crack) */
       const frags = [...sc.querySelectorAll('.csc-frag')].map(f => { const x = parseFloat(f.style.getPropertyValue('--x')), y = parseFloat(f.style.getPropertyValue('--y'));
         const px = Math.min(N - 1, Math.max(0, Math.round(x / 100 * N))), py = Math.min(N - 1, Math.max(0, Math.round(y / 100 * N)));
         return d[(py * N + px) * 4 + 3]; });
       return { N, sphereDev: sp.width * devicePixelRatio, dpr: devicePixelRatio, shown: shown ? [shown.width, sp.width] : null,
         len: len / N, thick: best.length / (len || 1) / N, pieces: best.length,
-        ember: loops(e), hot: loops(hot), frags, ms: (typeof cosmicScarArt === 'function' && cosmicScarArt()) ? cosmicScarArt().ms : null }; }""")
+        layers: arts.map(c => [...c.classList].filter(x => x !== 'csc-art').join('')), foot, glowing, coreLum: core ? coreLum / core : 999,
+        emPeak, emG, emArea, emFar, ember: loops(em), heat: sc.querySelectorAll('.csc-heat').length,
+        warm: cols.filter(v => v[0] > 110 && v[0] > v[2] + 60), ncols: cols.length,
+        frags, ms: (typeof cosmicScarArt === 'function' && cosmicScarArt()) ? cosmicScarArt().ms : null }; }""")
     check("the scar's art holds a crack: one long thin dark feature across at least 60% of the sphere's diameter",
           # thin: a mean thickness under a tenth of the diameter (the old
-          # blob measured .27; the crack with its rupture ~.08)
+          # blob measured .27; the crack with its crater ~.08)
           bool(art) and not art.get("none") and art["len"] >= .6 and art["thick"] <= .1,
           art and {k: (round(art[k], 3) if isinstance(art.get(k), float) else art.get(k)) for k in ("len", "thick", "pieces")})
     check("crisp on a 3x phone: drawn at no fewer pixels than the sphere has on the screen, and shown at the sphere's size",
           bool(art) and art.get("dpr") == 3 and art.get("N", 0) >= art.get("sphereDev", 1e9) * .98
           and art.get("shown") and abs(art["shown"][0] - art["shown"][1]) <= 1.5,
           art and (art.get("N"), round(art.get("sphereDev") or 0), art.get("shown")))
-    check("the ember pulses on two layers at clocks of their own, slowly (4s or more)",
-          bool(art) and len(art.get("ember") or []) == 1 and len(art.get("hot") or []) == 1 and min(art["ember"] + art["hot"]) >= 4
-          and art["ember"][0] != art["hot"][0], art and (art.get("ember"), art.get("hot")))
+    # planet2: "needs to be black charring" - nothing in it burns any more
+    check("black char, not fire: every picture the scar shows, at its brightest, over a plain planet - no warm light anywhere in it (under 0.2% of it), and where it is solid it is char (mean under 40)",
+          bool(art) and art.get("foot", 0) > 1000 and art["glowing"] <= art["foot"] * .002 and art["coreLum"] < 40,
+          art and {k: (round(art[k], 1) if isinstance(art.get(k), float) else art.get(k)) for k in ("layers", "foot", "glowing", "coreLum")})
+    check("at most a faint dying ember: a dull red (never orange or white), no brighter than .45, over under 1% of the scar and only in the crater, breathing slowly (8s or more); no bloom, no hot layer, no heat shimmer",
+          bool(art) and art.get("emPeak", 1) <= .45 and art.get("emG", 255) < 60 and art.get("emArea", 1e9) <= art.get("foot", 0) * .01
+          and art.get("emFar", 1) == 0 and (not art.get("ember") or (len(art["ember"]) == 1 and art["ember"][0] >= 8))
+          and art.get("layers") == ["csc-burn", "csc-ember"] and art.get("heat") == 0,
+          art and {k: (round(art[k], 3) if isinstance(art.get(k), float) else art.get(k)) for k in ("emPeak", "emG", "emArea", "emFar", "ember", "layers", "heat")})
+    check("the fragments and the debris are char too: no warm colour in what they are drawn with",
+          bool(art) and art.get("ncols", 0) >= 4 and not art.get("warm"), art and (art.get("ncols"), (art.get("warm") or [])[:3]))
     fr = (art or {}).get("frags") or []
     check("the fragments rise from the scar: every one starts on it", len(fr) >= 6 and all(a > 40 for a in fr), fr)
     print("        (the scar's art drew in %s ms on this machine, cold, as Home was first built)" % (round(art["ms"]) if art and art.get("ms") is not None else "?"))
     ctx.close()
 
-    # 3. Genesis's flare goes round: behind the planet and back in front
+    # 3. Genesis's flare rides the inner ring, one of the inner three (planet2)
     ctx, pg = booted(br, 440, 956, seed=seed_all, dpr=2)
     pg.evaluate("() => { try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); }catch(e){} }")
     pg.evaluate(HOMEJS); pg.wait_for_timeout(1500)
+    lay = pg.evaluate("""() => { const h = document.querySelector('.panel.home .cosmic-hero-wrap');
+      const at = e => { const x = parseFloat(e.style.left) * 3.6 - 180, y = parseFloat(e.style.top) * 3.42 - 12 - 150;
+        if(!isFinite(x) || !isFinite(y)) return [-999, -999];   /* not placed on a ring at all */
+        return [(Math.atan2(x, -y) * 180 / Math.PI + 360) % 360, Math.hypot(x, y)]; };
+      const out = { own: h.querySelectorAll('.cosmic-core-orbit, .cco-plane').length, flares: {}, debris: [] };
+      h.querySelectorAll('.cosmic-flare-dot').forEach(d => { const [a, r] = at(d);
+        out.flares[d.dataset.flare] = { a, r, layer: d.closest('.cosmic-hero-orbitlayer-inner') ? 'in' : d.closest('.cosmic-hero-orbitlayer') ? 'out' : 'none',
+          cls: [...d.classList].filter(c => /^cosmic-(orbit|flare)-dot$/.test(c)).sort().join(' '), w: d.offsetWidth }; });
+      h.querySelectorAll('.csc-ringfrag').forEach(e => { const [a] = at(e); out.debris.push([a, e.closest('.cosmic-hero-orbitlayer-inner') ? 'in' : 'out']); });
+      out.copy = [HOME_SECRET_LINE.core, (flareHintItem('genesis') || {}).sub || '', (CHARACTER_FEATS.flare6 && CHARACTER_FEATS.flare6.label) || ''];
+      return out; }""")
+    fl = lay["flares"]
+    g, v = fl.get("core") or {}, fl.get("violet") or {}
+    rings = {k: (fl.get(k) or {}).get("layer") for k in ("red", "orange", "yellow", "violet", "white", "core")}
+    radii = {k: round((fl.get(k) or {}).get("r", 0)) for k in rings}
+    check("Void's three on the outer ring, Umbra's, Horizon's and Genesis's on the inner - each riding its ring's own line",
+          rings == {"red": "out", "orange": "out", "yellow": "out", "violet": "in", "white": "in", "core": "in"}
+          and all(abs(radii[k] - 140) <= 2 for k in ("red", "orange", "yellow")) and all(abs(radii[k] - 108) <= 2 for k in ("violet", "white", "core")),
+          (rings, radii))
+    def gaps(keys):
+        a = sorted((fl.get(k) or {}).get("a", 0) for k in keys)
+        return [round((a[(i + 1) % 3] - a[i]) % 360, 1) for i in range(3)]
+    go, gi = gaps(("red", "orange", "yellow")), gaps(("violet", "white", "core"))
+    check("spaced to look meant: on each ring no gap under 90 or over 150 degrees, and no two the same (even spacing read as a pattern)",
+          all(90 <= x <= 150 for x in go + gi) and all(max(G) - min(G) >= 8 for G in (go, gi)), (go, gi))
+    def near(a, b):
+        return abs((a - b + 540) % 360 - 180)
+    clash = [(round(da), lr, k) for da, lr in lay["debris"] for k, f in fl.items() if f["layer"] == lr and near(da, f["a"]) < 12]
+    check("the debris streams lie in the gaps between all six: no shard within 12 degrees of a flare on its ring",
+          len(lay["debris"]) >= 12 and not clash and len(fl) == 6 and all(f["layer"] in ("in", "out") for f in fl.values()), (clash[:4], {k: f["layer"] for k, f in fl.items()}))
+    check("nothing says it is on the planet any more: its line, its hint and its challenge",
+          all(c and "planet" not in c.lower() for c in lay["copy"]), lay["copy"])
+    # it turns with the inner ring: its angle advances at the inner lap and
+    # holds its place against the other two inner flares
     pg.evaluate(PLANET_PAUSE)
-    GEN = """() => { const f = document.querySelector('.panel.home [data-flare="core"]'); if(!f) return null;
-      const s = document.querySelector('.panel.home .cosmic-hero-main circle[fill^="url(#cosmicSphereGrad"]'), sr = s.getBoundingClientRect();
-      const r = f.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
-      const stack = document.elementsFromPoint(x, y), iF = stack.findIndex(e => e === f || f.contains(e)), iS = stack.indexOf(s);
-      let op = 1; for(let n = f; n && n !== document.body; n = n.parentElement) op *= +getComputedStyle(n).opacity;
-      return { x, y, w: r.width, op, vis: f.checkVisibility ? f.checkVisibility({ visibilityProperty: true }) : getComputedStyle(f).visibility === 'visible',
-        onDisc: Math.hypot(x - sr.left - sr.width / 2, y - sr.top - sr.height / 2) < sr.width / 2 * .8, iF, iS }; }"""
-    rows = []
-    for i in range(0, 64):
-        pg.evaluate(PLANET_STEP, i * .25)
-        g = pg.evaluate(GEN)
-        if g: rows.append((i * .25, g))
-    seen_all = len(rows) == 64 and all(g["vis"] and g["op"] > .3 for _, g in rows)
-    # behind: there, and drawn, and the planet above it (a flare simply
-    # hidden is not behind anything)
-    behind = [(t, g) for t, g in rows if g["onDisc"] and g["vis"] and g["op"] > .3 and 0 <= g["iS"] < g["iF"]]
-    front = [(t, g) for t, g in rows if g["onDisc"] and g["iF"] >= 0 and (g["iS"] < 0 or g["iF"] < g["iS"])]
-    check("Genesis's flare never vanishes - it is drawn (visible, not faded out) at every point of its lap",
-          seen_all, [(t, round(g["op"], 2), g["vis"]) for t, g in rows if not (g["vis"] and g["op"] > .3)][:4])
-    check("for part of its lap the planet is painted over it (behind), for another part it is over the planet (in front)",
-          len(behind) >= 4 and len(front) >= 4, (len(behind), len(front)))
-    # the picture itself: behind, the flare adds nothing over the disc; in front it does
-    def crop_diff(t):
-        from PIL import Image, ImageChops
-        def diff(a, b):
-            dimg = ImageChops.difference(Image.open(io.BytesIO(a)).convert("RGB"), Image.open(io.BytesIO(b)).convert("RGB"))
-            return max(dimg.getextrema()[c][1] for c in range(3))
-        for _ in range(4):
-            pg.evaluate(PLANET_STEP, t)
-            g = pg.evaluate(GEN)
-            box = {"x": g["x"] - 4, "y": g["y"] - 4, "width": 8, "height": 8}
-            a = pg.screenshot(clip=box)
-            a2 = pg.screenshot(clip=box)
-            # hidden by visibility, never display: display:none would cancel its
-            # animations and they would restart out of step with the lap
-            pg.evaluate("() => { document.querySelector('.panel.home .cosmic-core-orbit').style.visibility = 'hidden'; }")
-            b = pg.screenshot(clip=box)
-            pg.evaluate("() => { document.querySelector('.panel.home .cosmic-core-orbit').style.visibility = ''; }")
-            # only a still scene says anything: something else changing in
-            # the crop between two shots is not the flare
-            if diff(a, a2) <= 6:
-                return diff(a, b)
-        return 999
-    if behind and front:
-        sp = pg.evaluate("() => { const r = document.querySelector('.panel.home .cosmic-hero-main circle[fill^=\"url(#cosmicSphereGrad\"]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
-        tb = min(behind, key=lambda tg: (tg[1]["x"] - sp[0]) ** 2 + (tg[1]["y"] - sp[1]) ** 2)[0]
-        tf = sorted(front, key=lambda tg: -tg[1]["w"])[0][0]
-        db, df = crop_diff(tb), crop_diff(tf)
-        check("and the picture agrees: behind, the planet hides it completely; in front, it is seen", db <= 6 and df >= 40, (tb, db, tf, df))
-        wb = min(g["w"] for _, g in behind); wf = max(g["w"] for _, g in front)
-        ob = min(g["op"] for _, g in behind); of = max(g["op"] for _, g in front)
-        check("smaller and dimmer behind, larger and brighter in front", wb < wf * .75 and ob < of * .8, (round(wb, 1), round(wf, 1), round(ob, 2), round(of, 2)))
-    else:
-        check("and the picture agrees: behind, the planet hides it completely; in front, it is seen", False, "no behind/front phases")
-        check("smaller and dimmer behind, larger and brighter in front", False, "no behind/front phases")
-    # taps: in front; behind but round the limb; behind on the disc (the planet)
-    def tap_at(t):
-        pg.evaluate("() => { document.querySelectorAll('#contextual-info-popup,.rs-spot,.scene-bridge,.daily-alert,#tour-overlay').forEach(n => n.remove()); try{ homeCaptionHide(document.querySelector('#stage .panel.home')); }catch(e){} document.querySelectorAll('#stage .home-caption > .hc-item').forEach(n => n.remove()); }")
+    ANG = """() => { const s = document.querySelector('.panel.home .cosmic-hero-main circle[fill^="url(#cosmicSphereGrad"]').getBoundingClientRect();
+      const cx = s.left + s.width / 2, cy = s.top + s.height / 2, o = {};
+      document.querySelectorAll('.panel.home .cosmic-flare-dot').forEach(d => { const r = d.getBoundingClientRect();
+        o[d.dataset.flare] = (Math.atan2(r.left + r.width / 2 - cx, -(r.top + r.height / 2 - cy)) * 180 / Math.PI + 360) % 360; });
+      return o; }"""
+    snaps = []
+    for t in (0, 6.5, 13):
         pg.evaluate(PLANET_STEP, t)
-        g = pg.evaluate(GEN)
-        top = pg.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y); return e ? ((e.id ? '#' + e.id + ' ' : '') + (e.getAttribute('class') || e.tagName)).slice(0, 60) : null; }", [g["x"], g["y"]])
-        pg.mouse.click(g["x"], g["y"])
+        snaps.append(pg.evaluate(ANG))
+    rate = [((b["core"] - a["core"]) % 360) / 6.5 for a, b in zip(snaps, snaps[1:])]
+    rel = [round((x["core"] - x["violet"]) % 360, 1) for x in snaps]
+    check("it turns with the inner ring (a lap in 52s, clockwise) and keeps its place among the inner three",
+          all(abs(r - 360 / 52) < .25 for r in rate) and max(rel) - min(rel) < 1.5, ([round(r, 2) for r in rate], rel))
+    # taps: it answers like the others once it is clear of the glass; the planet answers as the planet
+    def tap(what):
+        pg.evaluate("() => { document.querySelectorAll('#contextual-info-popup,.rs-spot,.scene-bridge,.daily-alert,#tour-overlay').forEach(n => n.remove()); try{ homeCaptionHide(document.querySelector('#stage .panel.home')); }catch(e){} document.querySelectorAll('#stage .home-caption > .hc-item').forEach(n => n.remove()); }")
+        xy = None
+        for i in range(40):
+            xy = pg.evaluate("""(w) => { const H = document.querySelector('.panel.home .cosmic-hero-wrap');
+              if(w === 'planet'){ const r = H.querySelector('.cosmic-hero-main circle[fill^="url(#cosmicSphereGrad"]').getBoundingClientRect(); return [r.left + r.width * .3, r.top + r.height * .3, true]; }
+              const e = H.querySelector('[data-flare="' + w + '"]'), r = e.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+              const t = document.elementFromPoint(x, y); return [x, y, !!(t && (t === e || e.contains(t)))]; }""", what)
+            if xy[2]:
+                break
+            pg.evaluate(PLANET_STEP, 13 + 1.5 * (i + 1))
+        pg.mouse.click(xy[0], xy[1])
         txt = ""
-        # the answer: the caption under the planet (b317-rings2), or the
-        # box it replaced on an older build
-        for _ in range(60):     # a loaded machine can take seconds to open it
+        for _ in range(60):
             pg.wait_for_timeout(100)
-            txt = pg.evaluate("""() => { const c = document.querySelector('#stage .home-caption > .hc-item.is-in, #stage .home-caption > .hc-item:not(.is-out)');
-              if(c) return c.textContent; const p = document.getElementById('contextual-info-popup'); return p ? p.textContent : ''; }""")
+            txt = pg.evaluate("() => { const c = document.querySelector('#stage .home-caption > .hc-item.is-in, #stage .home-caption > .hc-item:not(.is-out)'); return c ? c.textContent : ''; }")
             if txt: break
-        return txt or ("(nothing; on top: %s)" % top)
-    off_behind = [(t, g) for t, g in rows if not g["onDisc"] and g["iS"] < 0 and g["iF"] >= 0 and g["w"] < (front[0][1]["w"] if front else 0) * .9]
-    taps = []
-    if front: taps.append(("front", "Worldheart", tap_at(front[len(front) // 2][0])))
-    if off_behind: taps.append(("behind, round the limb", "Worldheart", tap_at(off_behind[len(off_behind) // 2][0])))
-    # the planet's own caption name, read off the app (b317-rings2 renamed
-    # it "Your flares"; a literal here went stale the day it merged)
-    planet_says = pg.evaluate("""() => { try{ if(typeof homeTapCopyPlanet === 'function') return homeTapCopyPlanet(0).name; }catch(e){}
-      return typeof homeCaptionShow === 'function' ? 'Your system' : '.....'; }""")
-    if behind: taps.append(("behind, on the disc: the planet", planet_says, tap_at(behind[len(behind) // 2][0])))
-    check("taps: in front it answers; behind, round the limb, it answers; on the disc the planet answers",
-          len(taps) == 3 and all(want in got for _, want, got in taps), [(w, got[:24]) for w, _, got in taps])
+        return txt
+    want_planet = pg.evaluate("() => { try{ return homeTapCopyPlanet(0).name; }catch(e){ return '?'; } }")
+    tg, tp = tap("core"), tap("planet")
+    check("Genesis's flare is one of the ring flares: in the inner ring's layer, built and sized like the others, no orbit of its own, and a tap on it answers with its name like theirs (the planet still answers as the planet)",
+          g.get("layer") == "in" and g.get("cls") == v.get("cls") == "cosmic-flare-dot cosmic-orbit-dot" and g.get("w") == v.get("w") and lay["own"] == 0
+          and "Worldheart" in tg and want_planet in tp, (g, v.get("cls"), v.get("w"), lay["own"], tg[:30], tp[:30], want_planet))
     ctx.close()
 
-    # 4. the scar lights what passes it
+    # 4. the scar marks what passes it - soot, not light (planet2)
     for reduce in (False, True):
         ctx, pg = booted(br, 440, 956, seed=seed_all, dpr=1)
         pg.evaluate("([r]) => { theme.reduceMotion = r; applyTheme(); saveTheme(); try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); }catch(e){} }", [reduce])
         pg.evaluate(HOMEJS); pg.wait_for_timeout(1500)
         info = pg.evaluate("""() => { const h = document.querySelector('.panel.home .cosmic-hero-wrap'); const a = (typeof cosmicScarArt === 'function') ? cosmicScarArt() : null;
-          const rh = h.querySelector('.csc-ringheat');
-          const arcs = rh ? [...rh.querySelectorAll('svg')].map(sv => { const p = sv.querySelector('path'); const m = (p.getAttribute('d') || '').match(/M([\\d.-]+) ([\\d.-]+) A[\\d.]+ [\\d.]+ 0 0 1 ([\\d.-]+) ([\\d.-]+)/);
+          const lum = c => { const v = (c.match(/[\\d.]+/g) || []).map(Number); return v.length >= 3 ? (v[0] + v[1] + v[2]) / 3 : (/^#/.test(c) ? (parseInt(c.slice(1, 3), 16) + parseInt(c.slice(3, 5), 16) + parseInt(c.slice(5, 7), 16)) / 3 : 999); };
+          const rs = h.querySelector('.csc-ringsoot');
+          const arcs = rs ? [...rs.querySelectorAll('svg')].map(sv => { const p = sv.querySelector('path'); const m = (p.getAttribute('d') || '').match(/M([\\d.-]+) ([\\d.-]+) A[\\d.]+ [\\d.]+ 0 0 1 ([\\d.-]+) ([\\d.-]+)/);
             const mid = m ? Math.atan2((+m[1] + +m[3]) / 2 - 180, 150 - (+m[2] + +m[4]) / 2) * 180 / Math.PI : null;
             const an = sv.getAnimations().filter(x => x.playState === 'running' && x.effect.getComputedTiming().iterations === Infinity);
-            return { mid: mid === null ? null : (mid + 360) % 360, loops: an.map(x => x.effect.getComputedTiming().duration / 1000) }; }) : [];
-          const bubbles = [...h.querySelectorAll(':scope > .cosmic-icon-badge')].map(b => { const cx = parseFloat(b.style.left) * 3.6, cy = parseFloat(b.style.top) * 3.42 - 12;
-            return [Math.round((Math.atan2(cx - 180, 150 - cy) * 180 / Math.PI + 360) % 360), !!b.querySelector('.cosmic-badge-scarlit')]; });
+            return { mid: mid === null ? null : (mid + 360) % 360, loops: an.map(x => x.effect.getComputedTiming().duration / 1000),
+              dark: [...sv.querySelectorAll('stop')].every(st => lum(st.getAttribute('stop-color') || '') < 30) }; }) : [];
+          const veils = [...h.querySelectorAll('.cof-scarveil')];
+          const vdark = veils.length && veils.every(v => ((getComputedStyle(v).backgroundImage.match(/rgba?\\([^)]*\\)/g)) || ['x']).every(c => lum(c) < 30));
           const moving = [...h.querySelectorAll('.csc-pass')].reduce((n, e) => n + e.getAnimations({ subtree: true }).filter(x => x.playState === 'running').length, 0);
-          return { angle: a ? a.angle : null, crater: a ? a.crater : null, arcs, bubbles, moving, glints: h.querySelectorAll('.cof-scarlit').length }; }""")
+          return { angle: a ? a.angle : null, arcs, veils: veils.length, vdark, moving,
+            fire: h.querySelectorAll('.cosmic-badge-scarlit, .cof-scarlit, .csc-ringheat').length }; }""")
         if reduce:
-            g = pg.evaluate("() => [...document.querySelectorAll('.panel.home .cof-scarlit')].map(e => +getComputedStyle(e).opacity)")
+            g = pg.evaluate("() => [...document.querySelectorAll('.panel.home .cof-scarveil')].map(e => +getComputedStyle(e).opacity)")
             dm = pg.evaluate("() => [...document.querySelectorAll('.panel.home .csc-ringfrag')].reduce((n, e) => n + e.getAnimations().length, 0)")
-            check("Reduce motion: nothing the scar lights moves, no glint is left lit, and the debris holds still",
-                  info["glints"] >= 6 and info["moving"] == 0 and g and max(g) < .01 and dm == 0, (info["glints"], info["moving"], g, dm))
+            check("Reduce motion: nothing the scar marks moves, no flare is left veiled, and the debris holds still",
+                  info["veils"] >= 6 and info["moving"] == 0 and g and max(g) < .01 and dm == 0, (info["veils"], info["moving"], g, dm))
             ctx.close()
             continue
         ang = info["angle"] if info["angle"] is not None else 132
@@ -14305,39 +14347,27 @@ def check_b317_planet(br):
             r = pg.evaluate("""() => { const h = document.querySelector('.panel.home .cosmic-hero-wrap'); const s = h.querySelector('.cosmic-hero-main circle[fill^="url(#cosmicSphereGrad"]').getBoundingClientRect();
               const cx = s.left + s.width / 2, cy = s.top + s.height / 2, out = {};
               h.querySelectorAll('.cosmic-flare-dot').forEach(d => { const r = d.getBoundingClientRect(); const x = r.left + r.width / 2 - cx, y = r.top + r.height / 2 - cy;
-                const g = d.querySelector('.cof-scarlit');
-                out[d.dataset.flare] = [(Math.atan2(x, -y) * 180 / Math.PI + 360) % 360, g ? +getComputedStyle(g).opacity : null, x / s.width * 104, y / s.width * 104]; });
+                const g = d.querySelector('.cof-scarveil');
+                out[d.dataset.flare] = [(Math.atan2(x, -y) * 180 / Math.PI + 360) % 360, g ? +getComputedStyle(g).opacity : null]; });
               return out; }""")
             for k, v in r.items():
                 samp.setdefault(k, []).append((t, v))
-        ring = [k for k in samp if k != "core"]
         near_ok, far_ok, per = True, True, {}
-        for k in ring:
-            v = samp[k]
+        for k, v in samp.items():
             dang = lambda a: abs((a - ang + 540) % 360 - 180)
-            near = [o for t, (a, o, x, y) in v if dang(a) <= 4]
-            far = [o for t, (a, o, x, y) in v if dang(a) >= 40]
+            near = [o for t, (a, o) in v if dang(a) <= 4]
+            far = [o for t, (a, o) in v if dang(a) >= 40]
             per[k] = (round(max(near), 2) if near and None not in near else None, round(max(far), 2) if far and None not in far else None)
             near_ok = near_ok and bool(near) and None not in near and max(near) >= .8
             far_ok = far_ok and bool(far) and None not in far and max(far) <= .02
-        check("every secret flare on a ring glints as it crosses the scar's angle (peak >= .8 within 4 degrees)", len(ring) >= 5 and near_ok, per)
-        check("... and is dark well away from it (40 degrees and more)", len(ring) >= 5 and far_ok, per)
-        cv = samp.get("core") or []
-        if cv and info["crater"]:
-            kx, ky = (info["crater"][0] - 50) / 100 * 104, (info["crater"][1] - 50) / 100 * 104
-            nearest = min(cv, key=lambda tv: (tv[1][2] - kx) ** 2 + (tv[1][3] - ky) ** 2)
-            back = [o for t, (a, o, x, y) in cv if y < -8]
-            check("Genesis's flare glints at the point of its lap nearest the rupture, and not behind the planet",
-                  nearest[1][1] is not None and nearest[1][1] >= .8 and back and max(back) <= .02, (nearest[0], nearest[1][1], max(back) if back else None))
-        else:
-            check("Genesis's flare glints at the point of its lap nearest the rupture, and not behind the planet", False, "no glint / no art")
+        check("every secret flare - Genesis's too - dims as it passes through the scar's soot (a dark veil, deepest within 4 degrees of its angle)",
+              len(samp) == 6 and near_ok and info["vdark"], (per, info["vdark"]))
+        check("... and is clear well away from it (40 degrees and more)", len(samp) == 6 and far_ok, per)
         arcs = info["arcs"]
-        check("the rings run hot over an arc centred on the scar, one per ring, flickering on clocks of their own",
-              len(arcs) == 2 and all(a["mid"] is not None and abs((a["mid"] - ang + 540) % 360 - 180) <= 3 for a in arcs)
+        check("the rings are sooted over an arc centred on the scar, one per ring, dark, breathing on clocks of their own",
+              len(arcs) == 2 and all(a["mid"] is not None and abs((a["mid"] - ang + 540) % 360 - 180) <= 3 and a["dark"] for a in arcs)
               and all(len(a["loops"]) == 1 for a in arcs) and arcs[0]["loops"] != arcs[1]["loops"], arcs)
-        bub = info["bubbles"]
-        check("the bubbles near the hole hold its firelight, and only those",
-              any(b[1] for b in bub) and all(b[1] == (abs((b[0] - ang + 540) % 360 - 180) <= 36) for b in bub), bub)
+        check("and nothing burns: no ember arc on the rings, no glint, no firelight on the bubbles", info["fire"] == 0, info["fire"])
         # the debris on the rings: in both orbit layers (so it goes round with
         # them), a few units off the lines, tumbling; one call decorates a hero
         deb = pg.evaluate("""() => { const h = document.querySelector('.panel.home .cosmic-hero-wrap');
@@ -14355,8 +14385,8 @@ def check_b317_planet(br):
         api = pg.evaluate("""() => { if(typeof decorateSupernovaHero !== 'function') return null; const was = store.supernovaAchieved; store.supernovaAchieved = false;
           const h = buildCosmicHero(true); store.supernovaAchieved = was; const before = [h.querySelectorAll('.cosmic-scar').length, h.querySelectorAll('.csc-ringfrag').length];
           decorateSupernovaHero(h); decorateSupernovaHero(h);
-          return { before, after: [h.querySelectorAll('.cosmic-scar').length, h.querySelectorAll('.csc-ringfrag').length, h.querySelectorAll('.cof-scarlit').length, h.querySelectorAll('.csc-ringheat').length] }; }""")
-        check("one call, decorateSupernovaHero(hero), makes any plain hero the Supernova planet - scar, debris, passing light - and twice is once",
+          return { before, after: [h.querySelectorAll('.cosmic-scar').length, h.querySelectorAll('.csc-ringfrag').length, h.querySelectorAll('.cof-scarveil').length, h.querySelectorAll('.csc-ringsoot').length] }; }""")
+        check("one call, decorateSupernovaHero(hero), makes any plain hero the Supernova planet - scar, debris, what passes it - and twice is once",
               bool(api) and api["before"] == [0, 0] and api["after"][0] == 1 and api["after"][1] >= 12 and api["after"][2] >= 1 and api["after"][3] == 1, api)
         # none of it without Supernova, and none of it in the rank cutscene
         none = pg.evaluate("""() => { const was = store.supernovaAchieved; store.supernovaAchieved = false; const plain = buildCosmicHero(true);
@@ -15831,7 +15861,14 @@ def check_b317_rings(br):
     colored" - there was none, so the ring draw: plays once per new tier per
     device (class26e.ringtier.seen), from no tier too, waits for a tour, not
     under Reduce motion, and never on the second Home. All of that fails on
-    1888b11, and the vividness fails on 3644f1b (round three)."""
+    1888b11, and the vividness fails on 3644f1b (round three).
+
+    Planet2: "I want black black to work". The default top tier is black -
+    the orange's one circle in TRUE black with a thin cool rim (an
+    HTML-level svg under it), no filter, still; the draw draws it black;
+    the debris and the flares read against it, off their own pixels at the
+    device's ratio; "flares" and "white" are the alternatives. Those fail
+    on 9e62633."""
     print("\n317. Home's rings: orange at Supernova, the top tier at Supernova plus every secret flare, built like the orange")
     for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
@@ -15877,12 +15914,19 @@ def check_b317_rings(br):
               return im ? (im.getAttribute('href') || '') : ''; };
             for(const x of rs){ const cs = getComputedStyle(x), p = await paint(x);
               /* the glow written out longhand: the same ring, blurred, in an svg of its own */
-              const gs = hero ? [...hero.querySelectorAll('.cosmic-ring-glowsvg circle')].filter(g => g.getAttribute('r') === x.getAttribute('r')) : [];
+              const gs = hero ? [...hero.querySelectorAll('.cosmic-ring-glowsvg:not(.is-rim) circle')].filter(g => g.getAttribute('r') === x.getAttribute('r')) : [];
               const gsvg = gs[0] && gs[0].ownerSVGElement, gcs = gsvg ? getComputedStyle(gsvg) : null;
               const blurM = gcs && String(gcs.filter).match(/blur\\(([\\d.]+)px\\)/);
               const glow = gs.length ? { n: gs.length, sw: parseFloat(getComputedStyle(gs[0]).strokeWidth), samePaint: !!imgOf(x) && imgOf(gs[0]) === imgOf(x),
                 op: +gcs.opacity, blurPx: blurM ? +blurM[1] : -1, unitPx: hero.getBoundingClientRect().width / 360 } : null;
-              per.push({ sw: parseFloat(cs.strokeWidth), op: +cs.opacity, so: +cs.strokeOpacity, shape: shape(cs.filter), glowA: glowA(cs.filter), glowC: glowC(cs.filter),
+              /* planet2: the black and white tiers' rim - the same ring again in an svg of its own */
+              const rims = hero ? [...hero.querySelectorAll('.cosmic-ring-glowsvg.is-rim circle')].filter(g => g.getAttribute('r') === x.getAttribute('r')) : [];
+              const rsvg = rims[0] && rims[0].ownerSVGElement, rcs = rsvg ? getComputedStyle(rsvg) : null, rcc = rims[0] ? getComputedStyle(rims[0]) : null;
+              const rimBlur = rcs && String(rcs.filter).match(/blur\(([\d.]+)px\)/);
+              const rv = rcc ? (rcc.stroke.match(/[\d.]+/g) || []).map(Number) : [];
+              const rim = rims.length ? { n: rims.length, sw: parseFloat(rcc.strokeWidth), op: +rcs.opacity, rgb: rv.slice(0, 3),
+                blurU: rimBlur ? +rimBlur[1] / (hero.getBoundingClientRect().width / 360) : -1, html: rsvg.parentElement && rsvg.parentElement.namespaceURI === 'http://www.w3.org/1999/xhtml' } : null;
+              per.push({ sw: parseFloat(cs.strokeWidth), op: +cs.opacity, so: +cs.strokeOpacity, shape: shape(cs.filter), glowA: glowA(cs.filter), glowC: glowC(cs.filter), rim,
                 svgFilter: x.hasAttribute('filter') || /url\\(/.test(cs.filter), ownAnim: cs.animationName, glow,
                 alphas: [...new Set(p.map(q => q[3]))], lum: p.length ? Math.round(p.reduce((t, q) => t + (q[0] + q[1] + q[2]) / 3, 0) / p.length) : -1,
                 /* vividness: chroma (max - min channel) at each sample */
@@ -15906,7 +15950,12 @@ def check_b317_rings(br):
             document.documentElement.dataset.reduceMotion = 'true';
             out.topStill = await look(true, 'all');
             delete document.documentElement.dataset.reduceMotion;
-            try{ RING_ECLIPSE_STYLE = 'black'; out.black = await look(true, 'all'); RING_ECLIPSE_STYLE = out.style; }catch(e){ out.black = { err: String(e) }; }
+            try{ RING_ECLIPSE_STYLE = 'flares'; out.flares = await look(true, 'all');
+              document.documentElement.dataset.reduceMotion = 'true'; out.flaresStill = await look(true, 'all'); delete document.documentElement.dataset.reduceMotion;
+              RING_ECLIPSE_STYLE = 'white'; out.white = await look(true, 'all'); RING_ECLIPSE_STYLE = out.style; }catch(e){ out.flares = { err: String(e) }; RING_ECLIPSE_STYLE = out.style; }
+            /* planet2: the debris and the flares against the black rings - each
+               shard's own pixels (a dark body AND a light edge), at 2x */
+            out.debris = [...document.querySelectorAll('.screen-home-actual .csc-ringfrag')].length;
             /* THE RING DRAW. Orange shown last, every flare now found. */
             const KEY = 'class26e.ringtier.seen', key = () => localStorage.getItem(KEY);
             const heroNow = () => document.querySelector('.screen-home-actual .cosmic-hero-wrap');
@@ -15915,6 +15964,7 @@ def check_b317_rings(br):
               return { draw: !!d, old: o ? o.querySelectorAll('circle').length : 0, oldOrange: o ? o.querySelectorAll('.cosmic-orbit-ring-supernova').length : 0,
                 arcs: arcs.length, arcsMoving: arcs.filter(a => a.getAnimations().length).length,
                 glints: d ? d.querySelectorAll('.cosmic-ring-glint').length : 0,
+                arcPaint: arcs.map(a => (getComputedStyle(a).stroke.match(/[\d.]+/g) || []).map(Number)), rims: d ? d.querySelectorAll('.cosmic-ring-arcrim').length : 0,
                 filtered: d ? [d, ...d.querySelectorAll('*')].filter(e => { const f = getComputedStyle(e).filter; return (f && f !== 'none') || e.hasAttribute('filter'); }).length : -1,
                 hidden: rl ? getComputedStyle(rl).visibility === 'hidden' : null, playing: !!(h && h.dataset.ringDrawing),
                 rings: h ? h.querySelectorAll('.cosmic-orbit-ring').length : 0, key: key() }; };
@@ -15958,7 +16008,36 @@ def check_b317_rings(br):
           }catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
         check(dev + ": nothing threw", not r.get("threw"), r.get("threw"))
-        p, o, t, f, ts, bk = (r.get(k) or {} for k in ("plain", "orange", "top", "flaresOnly", "topStill", "black"))
+        # planet2, "check this": the debris and the flares against the black
+        # rings, off the pixels - each one's own (what changes when it is
+        # hidden), so the ring or the sky round it cannot pass for its edge -
+        # at the device's own pixel ratio (3x phone, 2x iPad)
+        main_pg = pg
+        rctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=3 if w < 600 else 2)
+        pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          theme.reduceMotion = true; document.documentElement.dataset.reduceMotion = 'true';
+          store.supernovaAchieved = true; store.pendingSupernovaCutscene = false; store.mysteryColorsFound = {}; MYSTERY_ORDER.forEach(k => store.mysteryColorsFound[k] = true);
+          try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); }catch(e){}
+          try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); homeUnlockPlaying = false; }catch(e){}
+          showHome(); await wait(900); document.querySelectorAll('.rs-spot, .daily-alert, .home-caption > .hc-item').forEach(x => x.remove()); }""")
+        def own_pixels(sel, i):
+            from PIL import Image, ImageChops
+            box = pg.evaluate("([q, i]) => { const e = document.querySelectorAll(q)[i]; const r = e.getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }", [sel, i])
+            clip = {"x": max(0, box[0] - 1), "y": max(0, box[1] - 1), "width": box[2] + 2, "height": box[3] + 2}
+            a = Image.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+            pg.evaluate("([q, i]) => { document.querySelectorAll(q)[i].style.visibility = 'hidden'; }", [sel, i])
+            b = Image.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+            pg.evaluate("([q, i]) => { document.querySelectorAll(q)[i].style.visibility = ''; }", [sel, i])
+            lums = [sum(pa) / 3 for pa, pb in zip(a.getdata(), b.getdata()) if max(abs(x - y) for x, y in zip(pa, pb)) > 12]
+            return (min(lums), max(lums)) if lums else None
+        nsh = pg.evaluate("() => document.querySelectorAll('.screen-home-actual .csc-ringfrag').length")
+        sh = [own_pixels(".screen-home-actual .csc-ringfrag", i) for i in range(nsh)]
+        fls_ = [own_pixels(".screen-home-actual .cosmic-flare-dot", i) for i in range(pg.evaluate("() => document.querySelectorAll('.screen-home-actual .cosmic-flare-dot').length"))]
+        r["readable"] = {"shards": nsh, "edged": sum(1 for x in sh if x and x[0] < 40 and x[1] >= 90),
+                         "flares": len([x for x in fls_ if x]), "flareMin": round(min((x[1] for x in fls_ if x), default=0)),
+                         "sample": [tuple(round(v) for v in x) if x else None for x in sh[:5]]}
+        rctx.close(); pg = main_pg
+        p, o, t, f, ts, fl, fls, wh = (r.get(k) or {} for k in ("plain", "orange", "top", "flaresOnly", "topStill", "flares", "flaresStill", "white"))
         op_ = (o.get("per") or [{}])[0]
         def built_like_orange(x):
             if x.get("n") != 2 or x.get("extras") != 0 or len(x.get("per") or []) != 2: return False
@@ -15982,37 +16061,57 @@ def check_b317_rings(br):
               and op_.get("sw") == 1.4 and op_.get("alphas") == [0.55] and op_.get("shape") == "drop-shadow( 0px 0px 3px)" and op_.get("glowA") == 0.5, o)
         check(dev + ": max rank AND every secret flare: the top tier and NOT the orange one",
               t.get("n") == 2 and t.get("top") == 2 and t.get("orange") == 0, {k: t.get(k) for k in ("n", "top", "orange")})
-        check(dev + ": the top tier is built exactly like the orange: one circle a ring, same stroke-width, paint alpha, opacity and glow",
-              built_like_orange(t), {"orange": op_, "top": t.get("per"), "extras": t.get("extras")})
+        # PLANET2: "I want black black to work". The default top tier is
+        # black: the orange's one circle a ring - its width, its opacity -
+        # in TRUE black, edged by a thin cool rim (the same ring again in an
+        # HTML-level svg just under it), no filter on the ring, no colour
+        # and no corona, and still.
         tp = t.get("per") or [{}]
+        def black_ring(x):
+            if x.get("n") != 2 or x.get("extras") != 0 or len(x.get("per") or []) != 2: return False
+            for q in x["per"]:
+                rim = q.get("rim") or {}
+                if not (abs(q["sw"] - op_.get("sw", -9)) < 1e-6 and q["op"] == op_.get("op") and q["so"] == op_.get("so")
+                        and q["shape"] == "none" and not q["svgFilter"] and q["ownAnim"] == "none" and not q.get("glow")
+                        and q.get("alphas") == [1] and 0 <= q.get("lum", -1) < 8
+                        and rim.get("n") == 1 and rim.get("html") and q["sw"] < rim.get("sw", 0) <= q["sw"] + 1.2
+                        and 0 < rim.get("blurU", -1) <= .5 and 0 < rim.get("op", 0) <= .8
+                        and len(rim.get("rgb") or []) == 3 and min(rim["rgb"]) >= 190 and max(rim["rgb"]) - min(rim["rgb"]) <= 30):
+                    return False
+            return True
+        check(dev + ": the top tier is black by default - the orange's one circle (same width, opacity) in true black, with a thin cool rim, no filter, no colour, no corona",
+              r.get("style") == "black" and black_ring(t), {"style": r.get("style"), "top": tp, "extras": t.get("extras")})
+        check(dev + ": ... and still, like the orange, Reduce motion or not",
+              "cosmic-orbit-spin" not in (t.get("layerAnim") or "") and black_ring(ts), [t.get("layerAnim"), ts.get("layerAnim")])
+        rd = r.get("readable") or {}
+        check(dev + ": the debris and the secret flares read against the black rings: every shard has a dark body and a light edge, every flare is far lighter than the ring",
+              rd.get("shards", 0) >= 12 and rd.get("edged", 0) >= rd.get("shards", 1) * .9 and rd.get("flares") == 6 and rd.get("flareMin", 0) >= 100,
+              rd)
+        # the alternatives: the flares (round four's) and white, one line away
+        flp = fl.get("per") or [{}]
         fh = r.get("flareHues") or []
         near = lambda a, b: min(abs(a - b), 360 - abs(a - b)) <= 25
-        check(dev + ": by default it is NOT black - it carries all six secret flares' colours round the ring",
-              r.get("style") == "flares" and all(q.get("lum", -1) > 100 for q in tp)
-              and len(fh) == 6 and all(all(any(near(h0, hh) for hh in q.get("hues") or []) for h0 in fh) for q in tp),
-              {"style": r.get("style"), "lum": [q.get("lum") for q in tp], "hues": [q.get("hues") for q in tp], "flareHues": fh})
-        # each flare's own stretch of the ring (every fourth of 24 samples is a
-        # flare's centre) at least as vivid as the orange; the glow carries them
+        check(dev + ": the \"flares\" alternative is built exactly like the orange and carries all six secret flares' colours round the ring",
+              built_like_orange(fl) and all(q.get("lum", -1) > 100 for q in flp)
+              and len(fh) == 6 and all(all(any(near(h0, hh) for hh in q.get("hues") or []) for h0 in fh) for q in flp),
+              {"lum": [q.get("lum") for q in flp], "hues": [q.get("hues") for q in flp], "flareHues": fh})
         oc = (op_.get("chroma") or [0])[0]
-        # a flat stroke samples once; it has no flare stretches to read
-        cen = [[c[k] for k in range(0, 24, 4)] if len(c) == 24 else [] for c in (q.get("chroma") or [] for q in tp)]
-        check(dev + ": every flare colour is at least as vivid as the orange along the ring, and the glow carries the colours",
-              oc > 0 and all(len(c) == 6 and min(c) >= oc for c in cen)
-              and all((q.get("glow") or {}).get("samePaint") for q in tp), {"orange": oc, "flareCentres": cen, "glow": [q.get("glow") for q in tp]})
-        check(dev + ": the flares sweep turns as a layer (a full turn, compositor only) and Reduce motion stops it",
-              "cosmic-orbit-spin" in (t.get("layerAnim") or "") and "cosmic-orbit-spin" not in (ts.get("layerAnim") or "x")
-              and built_like_orange(ts), [t.get("layerAnim"), ts.get("layerAnim")])
-        bp = bk.get("per") or [{}]
-        check(dev + ": the \"black\" alternative is built the same way: near-black, with an ember glow, and still",
-              built_like_orange(bk) and all(0 <= q.get("lum", -1) < 24 for q in bp)
-              and all(len(q.get("glowC") or []) == 3 and q["glowC"][0] > 200 and q["glowC"][0] > q["glowC"][2] + 100 for q in bp)
-              and "cosmic-orbit-spin" not in (bk.get("layerAnim") or ""), bk)
+        cen = [[c[k] for k in range(0, 24, 4)] if len(c) == 24 else [] for c in (q.get("chroma") or [] for q in flp)]
+        check(dev + ": ... each flare colour at least as vivid as the orange along the ring, the glow carrying the colours, turning (and still under Reduce motion)",
+              oc > 0 and all(len(c) == 6 and min(c) >= oc for c in cen) and all((q.get("glow") or {}).get("samePaint") for q in flp)
+              and "cosmic-orbit-spin" in (fl.get("layerAnim") or "") and "cosmic-orbit-spin" not in (fls.get("layerAnim") or "x") and built_like_orange(fls),
+              {"orange": oc, "flareCentres": cen, "spin": [fl.get("layerAnim"), fls.get("layerAnim")]})
+        wp = wh.get("per") or [{}]
+        check(dev + ": the \"white\" alternative: the same one circle in white, its rim the orange's glow in white light",
+              wh.get("n") == 2 and wh.get("extras") == 0 and all(abs(q.get("sw", 0) - 1.4) < 1e-6 and q.get("lum", 0) > 240 and (q.get("rim") or {}).get("n") == 1
+              and abs((q.get("rim") or {}).get("sw", 0) - 1.4) < 1e-6 for q in wp), wp)
         dp, dg, dd, d2, dh, dat, df, dfp, drm = (r.get(k) or {} for k in ("dPending", "dPlaying", "dDone", "dSecond", "dHeld", "dAfterTour", "dFresh", "dFreshPlaying", "dReduce"))
         check(dev + ": a tier new to this device opens in the old look (the orange rings, the new ones hidden)",
               dp.get("draw") and dp.get("old") == 2 and dp.get("oldOrange") == 2 and dp.get("hidden") is True and dp.get("rings") == 2, dp)
-        check(dev + ": ... then the new colour draws on round both rings with a glint, filter-free, and the tier is recorded",
+        check(dev + ": ... then the new colour - black, its rim under it - draws on round both rings with a glint, filter-free, and the tier is recorded",
               dg.get("playing") and dg.get("arcs") == 2 and dg.get("arcsMoving") == 2 and dg.get("glints") == 2
-              and dg.get("filtered") == 0 and dg.get("key") == "eclipse", dg)
+              and dg.get("filtered") == 0 and dg.get("key") == "eclipse"
+              and len(dg.get("arcPaint") or []) == 2 and all(len(c) >= 3 and sum(c[:3]) / 3 < 10 for c in dg["arcPaint"]) and dg.get("rims") == 2, dg)
         check(dev + ": ... and hands over to the real rings, the draw layers gone",
               dd.get("draw") is False and dd.get("old") == 0 and dd.get("hidden") is False and dd.get("rings") == 2, dd)
         check(dev + ": the second Home does not play it again",
