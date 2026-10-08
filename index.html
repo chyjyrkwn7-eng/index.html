@@ -11497,20 +11497,29 @@
     clip-path:circle(0% at 50% 50%); opacity:.85;
     transition:clip-path var(--cutlight-ms, .14s) cubic-bezier(.2,.7,.3,1), opacity var(--cutlight-ms, .14s) linear; }
   .rank-orbit-slot > .rank-litwipe.is-open{ clip-path:circle(160% at 50% 50%); opacity:1; }
-  /* THE POP AS IT LIGHTS (build 317, third round): "when the change
-     happens to the flare color, ensure it's moving faster and make it
-     cooler like maybe it gets a quick flash". A white-hot core and a ring
-     in the rank's colour bursting off the bubble, 220ms, transform and
-     opacity only, no filter. */
+  /* THE FLARE AS IT LIGHTS (build 317, rounds three and four): "the
+     moment that flare lights up, that flare needs to flash for a second."
+     About a second on that bubble while it keeps whirling: a white-hot
+     core in the rank's colour (::before), a soft glow swelling round it
+     (> i), two rings bursting off it (::after, then > b a beat later), and
+     the bubble itself swelling a little and settling (.is-flaring) - all
+     transform and opacity, no filter. It settles into the lit look by the
+     time the slow-down is half done; nothing after it waits for it. */
   .rank-litpop{ position:absolute; inset:0; z-index:3; pointer-events:none; border-radius:50%; }
-  .rank-litpop::before, .rank-litpop::after{ content:""; position:absolute; inset:0; border-radius:50%; opacity:0; }
-  .rank-litpop::before{ background:radial-gradient(circle, #fff 0 22%, color-mix(in srgb, var(--ignite, #fff) 70%, #fff) 40%, transparent 70%);
-    animation:rank-litpop-core .22s cubic-bezier(.2,.8,.3,1) both; }
-  .rank-litpop::after{ border:3px solid color-mix(in srgb, var(--ignite, #fff) 75%, #fff);
-    box-shadow:0 0 10px 2px color-mix(in srgb, var(--ignite, #fff) 70%, transparent);
-    animation:rank-litpop-ring .24s cubic-bezier(.15,.7,.3,1) both; }
-  @keyframes rank-litpop-core{ 0%{ opacity:0; transform:scale(.4); } 30%{ opacity:1; transform:scale(1.5); } 100%{ opacity:0; transform:scale(2.2); } }
-  @keyframes rank-litpop-ring{ 0%{ opacity:1; transform:scale(.7); } 100%{ opacity:0; transform:scale(2.6); } }
+  .rank-litpop::before, .rank-litpop::after, .rank-litpop > i, .rank-litpop > b{ content:""; position:absolute; inset:0; border-radius:50%; opacity:0; }
+  .rank-litpop::before{ background:radial-gradient(circle, #fff 0 20%, color-mix(in srgb, var(--ignite, #fff) 55%, #fff) 38%, color-mix(in srgb, var(--ignite, #fff) 60%, transparent) 58%, transparent 72%);
+    animation:rank-litpop-core 1s cubic-bezier(.2,.7,.3,1) both; }
+  .rank-litpop > i{ inset:-120%; background:radial-gradient(circle, color-mix(in srgb, var(--ignite, #fff) 70%, transparent) 0%, color-mix(in srgb, var(--ignite, #fff) 28%, transparent) 38%, transparent 66%);
+    animation:rank-litpop-glow 1.05s cubic-bezier(.2,.7,.3,1) both; }
+  .rank-litpop::after, .rank-litpop > b{ border:3px solid color-mix(in srgb, var(--ignite, #fff) 70%, #fff);
+    box-shadow:0 0 12px 2px color-mix(in srgb, var(--ignite, #fff) 70%, transparent);
+    animation:rank-litpop-ring .45s cubic-bezier(.15,.7,.3,1) both; }
+  .rank-litpop > b{ animation-delay:.22s; animation-duration:.55s; }
+  .rank-orbit-slot.is-flaring > .cosmic-icon-badge{ animation:rank-flare-swell 1s cubic-bezier(.2,.8,.3,1) both; }
+  @keyframes rank-litpop-core{ 0%{ opacity:0; transform:scale(.5); } 10%{ opacity:1; transform:scale(1.55); } 35%{ opacity:.95; transform:scale(1.8); } 100%{ opacity:0; transform:scale(1.15); } }
+  @keyframes rank-litpop-glow{ 0%{ opacity:0; transform:scale(.5); } 18%{ opacity:1; transform:scale(1.1); } 55%{ opacity:.7; transform:scale(1.25); } 100%{ opacity:0; transform:scale(1); } }
+  @keyframes rank-litpop-ring{ 0%{ opacity:1; transform:scale(.7); } 100%{ opacity:0; transform:scale(2.8); } }
+  @keyframes rank-flare-swell{ 0%{ scale:1; } 14%{ scale:1.22; } 100%{ scale:1; } }
   /* the pool of colour floods in with it, and only breathes once lit */
   .tier-cutscene .rank-before .rank-orbit-slot.is-igniting::before{
     transition:opacity var(--cutlight-ms, .42s) ease-out, transform calc(var(--cutlight-ms, .42s) * 2) cubic-bezier(.2,.8,.2,1);
@@ -11519,7 +11528,17 @@
   /* Only the ranks you do NOT hold step back while yours lights (build
      309) - dimming every other flare made the ones you already hold read
      as locked. */
-  .tier-cutscene.is-igniting:not(.is-swapped) .rank-before .rank-orbit-slot:not(.is-igniting):not(:has(> .cosmic-badge-lit)){ opacity:.5; }
+  /* THE GLASS STAYS WHOLE (build 317, round four): "some moments the
+     secret flares don't go behind the large flares." The paint order was
+     right in every frame (stepped, elementsFromPoint) - the stepping-back
+     was the fault: it set opacity:.5 on the whole slot, so a secret flare
+     under an unreached bubble came through at half strength, sharp,
+     beside its own blurred image, and read as lying on top. The step back
+     dims what is INSIDE the bubble now (the emblem and its motion), and
+     the glass itself stays opaque, so a flare under it is only ever seen
+     through the blur. */
+  .tier-cutscene .rank-before .rank-orbit-slot > .cosmic-icon-badge > :is(svg, .cosmic-rank-anim){ transition:opacity 1s ease; }
+  .tier-cutscene.is-igniting:not(.is-swapped) .rank-before .rank-orbit-slot:not(.is-igniting):not(:has(> .cosmic-badge-lit)) > .cosmic-icon-badge > :is(svg, .cosmic-rank-anim){ opacity:.35; }
   .rank-after{ position:absolute; inset:0; opacity:0; pointer-events:none; }
   .tier-cutscene.is-swapped .rank-before{ opacity:0; transition:opacity .2s ease; }
   .tier-cutscene.is-swapped .rank-after{ opacity:1; transition:opacity .35s ease; }
@@ -64757,7 +64776,7 @@ const RANK_ORBIT_MS = 30000;
 const RANK_CUTSPIN_TURNS = 10;
 /* build 317, second round: faster and faster for 4.5s, lit at the top
    speed, slowing for 2s, still for half a second, then the flash */
-const RANK_CUTSPIN_ACCEL_MS = 4500, RANK_CUTSPIN_DECEL_MS = 2000, RANK_CUTSPIN_PAUSE_MS = 500, RANK_CUTLIGHT_MS = 140, RANK_CUTLIGHT_LEAD_MS = 120;
+const RANK_CUTSPIN_ACCEL_MS = 4500, RANK_CUTSPIN_DECEL_MS = 2000, RANK_CUTSPIN_PAUSE_MS = 500, RANK_CUTLIGHT_MS = 140, RANK_CUTLIGHT_LEAD_MS = 120, RANK_CUTFLARE_MS = 1150;
 function rankOrbitFlares(hero){
   if(!hero) return null;
   const orbit = document.createElement("div");
@@ -65025,8 +65044,10 @@ function playRankUpScene(tierKey, opts, spec){
       litWipe.classList.add("is-open");
       const pop = document.createElement("span");
       pop.className = "rank-litpop"; pop.setAttribute("aria-hidden", "true");
+      pop.append(document.createElement("i"), document.createElement("b"));
       slot.appendChild(pop);
-      setTimeout(() => pop.remove(), 400);
+      slot.classList.add("is-flaring");
+      setTimeout(() => { pop.remove(); slot.classList.remove("is-flaring"); }, RANK_CUTFLARE_MS);
       setTimeout(lightFully, RANK_CUTLIGHT_MS + 40);
     } else lightFully();
   };
