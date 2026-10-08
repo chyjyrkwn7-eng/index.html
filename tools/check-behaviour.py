@@ -7967,9 +7967,12 @@ def check_b302(br):
         # be with all the xp stuff" - the total joined the bar's numbers.
         # REVISED IN 316: back on the rank line, as the mockup had it; the
         # bar's numbers are this level's and what is left to the next.
-        check(f"{dev}: the total XP is on the rank line above the bar; under the bar, this level's XP and what is left",
-              r.get("totalOnLine") is True and re.match(r"^[0-9,]+ total XP$", r.get("total") or "")
-              and re.match(r"^[0-9,]+ / [0-9,]+ XP[0-9,]+ XP to level \d+$", r.get("barNums") or ""), [r.get("total"), r.get("barNums")])
+        # REVISED IN 317 (7602082, Madison's "Profile XP colours/total"
+        # round): the total went back under the bar, beside this level's XP,
+        # in its own darker blue - so it is NOT on the rank line any more.
+        check(f"{dev}: under the bar, this level's XP and the total XP; the total is not on the rank line",
+              r.get("totalOnLine") is False and re.match(r"^[0-9,]+ total XP$", r.get("total") or "")
+              and re.match(r"^[0-9,]+ / [0-9,]+ XP[0-9,]+ total XP$", r.get("barNums") or ""), [r.get("totalOnLine"), r.get("total"), r.get("barNums")])
         check(f"{dev}: the XP bar carries its slow light", r.get("glide") == "xp-glide", r.get("glide"))
         check(f"{dev}: back on Home, no flare bubble is empty", r.get("bubbles", 0) >= 7 and r.get("blank") == 0, [r.get("bubbles"), r.get("blank")])
         check(f"{dev}: Sapphire turns on a half-turn loop, Platinum has its spiral, Silver's star glints",
