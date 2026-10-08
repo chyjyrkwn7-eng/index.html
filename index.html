@@ -14929,6 +14929,22 @@
     .rankmap-req{ font-size:.8rem; }
     .rankmap-gift{ font-size:.68rem; }
   }
+  /* FIT TO WHAT'S THERE, FROM A TABLET UP (build 317). "That long
+     individual thing it's in ... they don't need to go from left all the
+     way to the right, on the tablets or larger devices they just need to
+     fit to what's there, it makes the rank road map boxes look bad." A
+     full-width row was right for half a phone (a 116px column, where a
+     chip IS the column) and wrong for a 280-340px card, where "Theme" sat
+     at the start of a 281px pill. From 40rem the chips are two columns,
+     each as wide as its widest chip and no wider: Theme and Flare side by
+     side, the character and the banner under them - the order the card
+     always had. Each chip still fills its column, so the icons in a column
+     share one line and the words one start (builds 311 and 316), and
+     every card starts its chips at the left edge, under "Unlocks", on
+     either side of the road. The rank's lore card keeps its own grid. */
+  @media (min-width:40rem){
+    .rankmap-card .rankmap-gifts{ grid-template-columns:repeat(2, max-content); justify-content:start; }
+  }
   /* ---- THE RANK-UP, SHOWN ON PROFILE (build 317) ----
      See playRankUpProfileScene. Everything here is a new rule on the
      scene's own classes (ru-*); the road map's, Profile's and the tab
