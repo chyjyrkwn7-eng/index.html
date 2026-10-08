@@ -11816,8 +11816,10 @@ def check_b313_fx(br):
           await until(T + 1300);
           out.after = document.querySelectorAll('.hfx-layer, .hfx-box.is-grade, .hfx-pane').length;
           out.borderAfter = getComputedStyle(g).borderTopColor; out.fillAfter = fill();
-          const tn = g.querySelector(':scope > .hfx-tintnum.hfx-keep');
-          out.numAfter = tn ? parseFloat(getComputedStyle(tn).opacity) : 0;
+          /* the 100% itself in the effect's ramp (build 317 round 3: the real
+             number, no copy laid over it - .hfx-tintnum is gone) */
+          const pn = g.querySelector('.rs-pct'), pcs = pn && getComputedStyle(pn);
+          out.numAfter = pcs ? { bg: pcs.backgroundImage.slice(0, 120), color: pcs.color } : null;
           out.screenUp = !!document.querySelector('.rs-screen') && g.isConnected;
           out.tintVars = ['--hfx-b', '--hfx-g1', '--hfx-g2'].map(k => g.style.getPropertyValue(k).trim());
           if(sampler){ clearInterval(sampler); out.still = still; out.cardAnims = scripted; }
@@ -11828,7 +11830,9 @@ def check_b313_fx(br):
         rgb = lambda h: "rgb(%d, %d, %d)" % tuple(int(h.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)) if h and h.startswith("#") else None
         tv = r.get("tintVars") or [None, None, None]
         check("%s: and KEEPS them once the effect has finished, the results screen still up (round 3: \"it stays yellow\")" % fx,
-              r.get("screenUp") and tv[0] and r.get("borderAfter") == rgb(tv[0]) and r.get("numAfter", 0) > .95, {k: r.get(k) for k in ("borderAfter", "numAfter", "screenUp", "tintVars")})
+              r.get("screenUp") and tv[0] and r.get("borderAfter") == rgb(tv[0])
+              and (r.get("numAfter") or {}).get("color") == "rgba(0, 0, 0, 0)" and (r.get("numAfter") or {}).get("bg", "").startswith("linear-gradient(105deg, %s" % rgb(tv[1])),
+              {k: r.get(k) for k in ("borderAfter", "numAfter", "screenUp", "tintVars")})
         check("%s: in its tail it is still on screen, fading - never cut (nothing fully shown at the last look before the layer goes)" % fx,
               r.get("tailLayer") and r.get("tailFading", 0) >= 2 and r.get("cutFull") == [], {k: r.get(k) for k in ("tailLayer", "tailFading", "cutAt", "cutFull", "total")})
         check("%s: and once it has faded every piece is gone" % fx, r.get("after") == 0 and r.get("total", 0) > 0, r)
