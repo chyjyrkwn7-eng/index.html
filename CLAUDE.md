@@ -12152,7 +12152,8 @@ A 44px `::after` disc takes the tap.
 
 **The sixth flare skims the planet** - **until build 317's planet round,
 which sends it round the planet: behind it for real and back in front (r
-72, 16s, see "THE PLANET ROUND"). The hiding described here is gone.**
+72, 16s, see "THE PLANET ROUND"). The hiding described here is gone. And
+since planet2 it is on the inner ring like the others - see "PLANET2".**
 *"Somehow placed in a cool way on
 the planet ... that moves in a cool way."* `.cosmic-core-orbit`: a low
 orbit (r 62 round the r 52 planet) tilted -18deg and squashed to .3, one
@@ -13030,7 +13031,8 @@ at the main menu. The others will get it in the result screen."*
 **The ladder: FOUR to earn.** `HUNDO_FX` (above `ULTIMATE_TOP`, ahead of
 everything that runs at boot, because `ultimateProgress()` reads it) is the
 ONE table: **Confetti 0** (everybody's - `celebrate()`, untouched),
-**Fireworks 50, World Tree 100, Bubbles 200, UFO 350**, counted in
+**Fireworks 50, Underwater 100, Bubbles 200, UFO 350** (the World Tree held
+the 100 until build 317 round 4 - see below), counted in
 `hundosOf(store)` (= `lifetime.perfectTests`). Holding one is not stored - it
 is read off the count - only the pick is: `store.hundoFx`, default
 `"confetti"` in the fresh store, `applyLoadedData()` (any non-empty string is
@@ -13071,8 +13073,10 @@ step below the Tree, Bubbles and the UFO.
   layers.
 - In Customize and the pop-up it plays a small show inside the box, out of
   the number; on the miniature screen, the whole thing.
-- **The Black Hole and Underwater stay built** in `HUNDO_FX_BUILD` (not
-  listed); bringing one back is the id and name in the `HUNDO_FX` row.
+- **The Black Hole and the World Tree stay built** in `HUNDO_FX_BUILD` (not
+  listed); bringing one back is the id and name in the `HUNDO_FX` row - but
+  the World Tree's id is an ALIAS for Underwater now (below), so its row
+  would need the alias taken out first.
   Neon Trails, Party Poppers, Hologram and the first Fireworks are gone.
 
 **Every effect starts AT the 100% box and spreads out**, plays across the
@@ -13174,6 +13178,53 @@ well as on landing. The grab is unchanged.
   overlaid copy's opacity (`.hfx-tintnum`), which round 3 deleted, so it
   went red for the right build. It reads the REAL 100% now: transparent
   text under `linear-gradient(105deg, <g1> ...)`.
+
+**ONE beam, from the hull to the box's floor (build 317, round 6).** *"The
+ufo one, the ray beam is still being shown in the box before it even gets
+there and when it gets there it's not matching up perfectly."* There were
+two beams. The saucer's ran from the hull to 4px inside the box's top edge
+and was drawn UNDER the box (the box is lifted over the effect's screen
+layer so its number is never dimmed); the box's own (`.hfx-ufo-inbeam`)
+was a second copy of the beam inside the box, started at that edge. They
+could not match: the same trapezoid sprite at two lengths, so at the edge
+the saucer's ended wide and faint (alpha .1, ~67px across on a phone) and
+the box's began narrow and bright (alpha .75 x .5); and the box's grew
+from scaleY(0) as a flat fan the full width of its foot, so on the frame
+it appeared it was already a wide light right across the top of the box
+while the saucer's beam had only just touched it - the beam "in the box
+before it gets there". On top of that the box lit (rim, wash, dim lifting)
+as the beam touched its top, all at once, ahead of any beam inside it.
+- Now the saucer and its ONE beam fly in a layer of their own just over the
+  box (`hfxUfoTopLayer`: a twin of the screen layer, same place and
+  colours, z-index two above it, put in beside it once it is in the
+  document and taken away or faded with it). The beam runs on from inside
+  the hull through the box's edge to 3px off its floor (`--bt` is where its
+  head crosses the edge, at 3.83s; it reaches the floor at 4.18s; `--bl`
+  and `--bk` keep the foot on the floor landed and lifting). Nothing meets
+  at the edge, so nothing can disagree there, sweeping, landed or grabbing.
+  The sprite's tail is a little stronger (.2, was .1) so it reads to the
+  floor.
+- The box stays dark (its own dim at .55, rim unlit) until the head reaches
+  its floor; THEN it lights and flares (`hfxUfoLight` at 4.18s, the strike
+  flare too). Before that the only light in the box is the beam, behind
+  its head.
+- **One clock.** Once the UFO's animations have started, every one still
+  running (the saucer's layer, the screen layer, the box's, the script's)
+  is set to the earliest start among them, so a layer that started a frame
+  late on some device cannot run a frame behind the others. Paused ones (a
+  recorder, a gate) are left alone.
+- `check_b317_hundobox` reads it off the pixels, everything paused and
+  seeked: every 1/30s from 3.75s until the head reaches the floor, the box
+  below the head is exactly as dark as before (9e62633: up to 46 levels
+  brighter from 3.95s); and at 4.3-5.3s, hovering and sweeping, the beam
+  4-10px above the edge and 3-6px below it - the frame less the same frame
+  with every beam hidden, so the box's rim, its label and a twinkling star
+  cancel out - has the same centre (3px), width (6px) and a brightness
+  ratio of .4-2.5 (9e62633: 12-21px narrower inside). The beam checks now
+  ask for no second beam at any moment, and the foot on the box's floor
+  hovering, landed, lifting and all through the sweep. The pixel blocks
+  hold `HUNDO_FX_TOTAL.ufo` at 60s so the layers are not taken away while
+  a slow machine is still reading them.
 
 **No beam on the UFO's box until the saucer fires it, and the beam is blue
 (build 317, round 5).** *"before the ufo lands on it, the box already has
@@ -13420,6 +13471,77 @@ tint. **The drawn tree is gone**, with its glass panes, `hfxTreeGlass`,
 Customize poster and the reduce-motion still are the burst too. If a tree
 ever comes back, the lesson of the old one is in git: it was ~140-400 nodes
 across the whole layout and the measured cost of the effect.
+
+**UNDERWATER IS THE 100 (build 317, round 4).** *"I like the underwater one,
+but the water that's on screen looks terrible, and it doesn't start from the
+very bottom. The world tree is not the answer and the black hole is too eh
+too lame."* So the World Tree (the burst above, and a drawn tree that wrapped
+the cards in round 3 - on the unmerged branch `b317-tree`, not here) is off
+the ladder and Underwater, rebuilt, holds the 100.
+- **The old id stays readable, never playable on the ladder.** Live build
+  313 ships the World Tree at this rung, so a saved pick, a pop-up shown and
+  a tile seen are all stored as `"worldtree"`. `HUNDO_FX_ALIAS` /
+  `hundoFxId()` read it as `"underwater"`: in `applyLoadedData` (the pick,
+  `unlocksShown.fx`, `seenUnlocks.fx`, mapped and de-duplicated by
+  `hundoFxIds`), in `hundoFxInUse` and `hundoFxDef`, and in
+  `ensureUnlocksShown` / `ensureSeenUnlocks`, because a merge from an older
+  device can bring the old id back into either record. Somebody shown the
+  World Tree's pop-up is NOT shown an Underwater one - the rung was
+  announced; to announce the new effect instead, drop the alias from the
+  `unlocksShown` mapping only. Nobody is ever left on an effect that is gone.
+- **From the VERY bottom, and the screen's, not the page's.** The water is
+  `.hfx-uw-ocean`, `position:fixed` and `100lvh` inside the page-pinned
+  layer (the dims' rule), so the safe area is under it and the results'
+  own scroll (the reveal follows the cards to the foot of the page) never
+  leaves a dry band at the bottom edge - the old sea was page-pinned at the
+  scroll it started at and stopped short by exactly that scroll. `.hfx-uw-sea`
+  starts translated by its own height plus a wave below the bottom edge,
+  rises with a surge and a small settle (`hfx-uw-rise`, 0.15s + 1.6s) and
+  STAYS with its surface in view at ~8.5% of the screen - you look into a
+  sea, the surface waving at the top - then drains out through the bottom
+  (5.0s + 1.2s); drops run down the glass after it. Positions that depend
+  on the box use where it will REST (the page's maximum scroll).
+- **What makes it water** (`hfxSea`, shared by the screen, the miniature
+  results screen and a box on its own): two seamless wave tiles
+  (`hfxWaveURL`, three sines over one period, so they repeat) sliding
+  opposite ways by exactly one period per cycle - the interference is the
+  movement; the front crest lit (specular line, glow, a dark refraction band
+  and a pale lens band under the meniscus) and filled with exactly the
+  body's top colour (`HFX_UW_TOP`) so crest and body are one water; a depth
+  tint from lit cyan to blue at the floor and a sheen under the surface;
+  CAUSTICS that are a domain-warped Worley web (F2 - F1), computed once into
+  a 288px tile on a canvas (`hfxCausticTile`) in two layers of different
+  scale, drifting different ways and breathing; light rays swaying down from
+  the surface; motes; bubbles in streams from vents in the floor and off the
+  box, rising to break at the surface; the fish school and the manta. The
+  hand-drawn blob net (it read as crumpled plastic), the zigzag surf line
+  and the kelp are gone. In a box on its own the sea is shallower, so the
+  number reads through it. The Customize tile and the still are this water.
+- **Cost.** Transform and opacity only, every picture rasterised once.
+  Measured, and fixed: the caustic tile is ~1M distance tests - 70-180ms at
+  4x CPU as one task, so `hfxWarm` computes it in 24-row slices as the
+  results screen opens (`hfxCausticJob`), ~10ms a tick, finished on the spot
+  if asked for early; pieces waiting on a delay are compositing layers, so
+  bubbles, fish, motes, drops and glints go in when due (`hfxDue`, their
+  delays moved by however late they go in) and come out when done; and the
+  caustic layers are only as much bigger than the water as their drift
+  needs (they had been the two biggest layers on screen). ~100 layers
+  mid-effect against the UFO's ~96. Frames in the 7s at 4x CPU, 440x956 dpr
+  3, interleaved with 7ee6c51 on a shared box (load
+  12-16): Underwater 240-288 (>25ms: 85-98) against the UFO's 214-315
+  (58-82) on the same build; the old Underwater ran 327-354 - the new water
+  is more to draw, and on a par with the UFO.
+- **Gates** (`check_b313_fx`, all failing on 7ee6c51): the rung is
+  Underwater; a stored World Tree pick, pop-up and tile load as Underwater,
+  also after a merge brings the old id back, with no repeat pop-up; a 100%
+  with the old id plays Underwater; the water reaches the bottom edge at
+  0.3s with its surface in the bottom fifth, and with the page scrolled to
+  its foot it is still the whole screen's (fixed) with its surface between 3%
+  and 20% from the top; two wave layers slide opposite ways; two computed
+  caustic layers, a tint deepening to the floor, rays and bubbles. The tree
+  is out of `FX_ALL`; the Customize, tile-hold and flow gates name the 100
+  rung by `HUNDO_FX[2]`. Recordings (frame-stepped, `tools/record-hundo.py`):
+  `/tmp/claude-0/-home-user-Nova-Test/3e626f0f-e6a2-5bdd-98d8-db73a6ec23b7/scratchpad/r317water/`.
 
 **The % is the end of the number's ramp, on every 100% (build 317, round
 2).** *"the percentage sign, it looks like a solid color, ensure that and the
@@ -15771,7 +15893,65 @@ disagree with it.
       invisible at both ends but did not END where they began; their last
       frame is their first now - the way back is taken at opacity 0 (the
       shock's last 2%, the fragments' from 82%) - and check-loops reports
-      0 seams.
+      0 seams. (Their check-loops allow-list entries, which two branches
+      had each added, are gone - cut3.)
+  - **SUPERNOVA WITH THE PLANET ROUND'S DEBRIS (cut3).** The planet round's
+    `decorateSupernovaHero` (which `attachCosmicScar` now is) puts 20
+    shards of debris INSIDE the two orbit layers (`.csc-ringfrag`) and the
+    light that passes the scar (`.csc-pass`) into the hero. The scene's
+    reveal only ever held back TOP-LEVEL children the plain build lacks,
+    so - proved frame by frame on 748ddc9 - the debris was on the new
+    planet from the swap (b+0.9s, before the scar, before the sweep), the
+    sweep's own 28 shards then rode the rings beside it (48 pieces at
+    once: two sets), and the passing light never showed (`.tier-cutscene`
+    hides `.csc-pass` without `.csc-live`), so the end was not Home's look.
+    - **The sweep throws Home's own debris out.** No second set: `snSweep`
+      takes every `.csc-ringfrag` in the after-planet, reads its resting
+      place off the layout (offsets plus its own `translate`, converted
+      from % - neither a turning layer nor the stage's scale changes
+      them), and flies it there on its `translate` and `scale` (Web
+      Animations, composed from its own values, ending exactly on them):
+      out of the planet's middle in a spiral, a 6% overshoot, settling,
+      the turn easing to nothing so it lands at rest in its layer. A hot
+      glow (`.sn-hot`, a child under its shard) cools as it lands. Its own
+      tumble (`rotate`) runs straight through. Eight embers that are not
+      debris fly further and burn out. Until the sweep (`sn-swept`) the
+      debris is `visibility:hidden` - not opacity, which a piece may
+      animate itself. **Nothing depends on how a piece is drawn, which
+      layer carries it, or where Genesis is** - the next planet round is
+      changing all three.
+    - **The passing light**: `.csc-live` goes on the after-planet with the
+      scar (`sn-scarred`), every `.csc-pass` held at `filter:opacity(0)` -
+      their own opacity is animated, which a transition cannot fade - and
+      eased up with the rings (`sn-rings`). The scene ends with all of it
+      live, as Home has it.
+    - **The before-planet is never Supernova's** (`quietBuild(false)`), so a
+      replayed scene starts from the planet before the scar.
+    - **The art is drawn before the first frame.** `warmSupernovaArt()`
+      (the scar, `cosmicScarArt`, ~62ms here; the dust, `snDustURL`,
+      ~25-35ms - which used to be drawn AT THE SWELL, mid-scene, with the
+      planet shaking) runs as the scene is built, ~200ms in all before the
+      dark comes up. Measured at that moment on the results screen: the
+      end of a held beat, with only transform and opacity animations
+      running (the compositor's; a busy main thread does not stop them);
+      on Home, a cleared stage. Drawing it as the results screen is built
+      was tried and measured too: +150ms between the last answer and the
+      results, a delay someone would feel. Taken out.
+    - Beats: scar b+1.3s (and `.csc-live`), the sweep b+1.8s, settled
+      b+4.4s, rings b+5.4s, the title b+7.4s - `{ burst 22000, settle
+      29400, outro 34300 }`, ~36s.
+    - **Gate** (`check_b317_supernova`, fail on 748ddc9): every frame, no
+      debris seen on either planet before `sn-swept`, never the debris
+      and a second set at once, and from the title exactly as many
+      pieces showing as Home's own Supernova build has, none extra; the
+      passing light all live at the end, as many as Home's; and every
+      first (uncached) draw of the scar and the dust made before
+      `supernova-visible`. The sweep check now reads the debris itself
+      (still in flight, most of it 92-158 units out).
+    - `check_b317_planet`'s tap on the disc expected the literal "Your
+      system" and went red at the merge with the caption round, which
+      names the planet "Your flares" - the label rule again. It reads the
+      name off the app now (`homeTapCopyPlanet(0).name`).
   - **The lag and the "placed off" flares.** The second round took the
     bubbles' `backdrop-filter` blur off inside a scene (re-sampled every
     frame while they move); the third round put it back, because the
@@ -15915,6 +16095,9 @@ disagree with it.
     and is invisible at both ends of its cycle (KNOWN, "Build 317").
 - **THE PLANET ROUND: THE SMOKE ROILS, A CRACK ACROSS THE PLANET, GENESIS
   GOES BEHIND IT, AND THE SCAR LIGHTS WHAT PASSES (build 317, b317-planet).**
+  **(Planet2 replaced Genesis's orbit, the burning look of the scar and the
+  light off it - see "PLANET2" below. The smoke, the crack's geometry, the
+  debris, `decorateSupernovaHero` and the gate's method stand.)**
   Four notes from Madison, all about the planet:
   - **The smoke.** *"the large planet in the cutscene doesn't look
     animated? If that's how the planet normally looks and I'm just now
@@ -16111,7 +16294,9 @@ disagree with it.
       in right after the plasma), so the bubbles exist to be lit.
     - Held still and dark under Reduce motion; hidden in the rank
       cutscene unless the hero carries `.csc-live` (that scene is another
-      round's; see "ONE CALL").
+      round's; see "ONE CALL"). The Supernova scene now adds it, with the
+      scar, and fades the light up with the rings - see "SUPERNOVA WITH
+      THE PLANET ROUND'S DEBRIS (cut3)".
   - **Merged with b316-work at 7ee6c51** (rings2's caption round): taps on
     Home answer in the caption under the planet, so the gate reads the
     answer there; and b316-work as merged failed check-loops on cut2's two
@@ -16161,6 +16346,115 @@ disagree with it.
     at one time** (`common.py` FREEZE) is how before and after were made
     comparable; the two builds' Genesis laps differ (14s and 16s), so pick
     a time when it is behind in both (12s) for a close-up of the scar.
+- **PLANET2: GENESIS ON THE RINGS, THE SCAR BURNT OUT, THE RINGS BLACK
+  (build 317, b317-planet2).** *"I'm not a fan of the genesis secret flare
+  at all, could it be on the rings like the others as well? But let's make
+  it so voids 3 are maybe on the outside and the other 3 are on the inside?
+  ... Not a fan of the way the planet looks still with the permanent
+  destruction scar, needs to be black charring. I'm also not a fan of the
+  rainbow rings after seeing them here. Let's try a dark color. I want
+  black black to work, I think that'd be sick... or white? Black would be
+  so cool though."* This SUPERSEDES three parts of "THE PLANET ROUND"
+  above: Genesis's orbit, the burning scar and the light off it.
+  - **Three and three.** `FLARE_SPOT` is `[ring, degrees]` now (ring 1 the
+    outer - `radii[1]`, so Welcome's flares ride its drawn 152 rather than
+    sitting 12 units inside it - ring 0 the inner 108): Void's three on the
+    OUTER ring at 337 / 97 / 211, Umbra's, Horizon's and Genesis's on the
+    INNER at 32 / 141 / 262. Gaps 120/114/126 outside, 109/121/130 inside:
+    spread so neither ring has an empty half, never equal (even spacing
+    read as a pattern, build 313). Genesis's flare is made and placed like
+    the others - the inner orbit layer, its turn, its glass, its tap.
+    Retired with its orbit: `.cosmic-core-orbit` / `.cco-*` and their
+    keyframes (and their check-loops entries), `CORE_ORBIT`,
+    `ORBIT_LAP_S.core`, Genesis's crater glint, and the planet round's
+    tap pass-through (`.cosmic-hero-main{pointer-events:none}` plus
+    `.cosmic-sphere-hit` - it existed only so a flare behind the planet
+    could be tapped). **Keys and find rule untouched**: `core` in
+    `MYSTERY_ORDER`, `store.mysteryColorsFound.core`, the level 78-80
+    window, `FLARE_CHARACTER`. No migration. The rank and Supernova scenes
+    needed nothing: the flare is in the orbit layer they already turn.
+    The "core" find scene (`playGenesisFlareScene`) shows the flare DIVING
+    INTO the planet, never coming out of it, so it stands; only its dead
+    `.sf-dive .cosmic-core-orbit` rule went. Copy that put it on the
+    planet changed: its line (*"The first light of a world being born."*),
+    its hint, the Genesis challenge (*"Find Worldheart, the sixth secret
+    flare"*), the find card and the scene's sub (*"The sixth and last
+    secret flare"*), and Horizon's *"One more waits on the rings."*
+  - **The debris moved with them**: `RING_DEBRIS`' streams sit in the
+    gaps between each ring's three, off-centre, none within 12 degrees of
+    a flare.
+  - **The scar is char.** Same seeded geometry (the crack, its branches,
+    the crater, the fractures), coloured and lit as burnt-out:
+    - neutral char black (13,11,11) where dense, scorched brown at its
+      thinning edge; a dense core with a ragged edge at two scales and a
+      softer scorch beyond it (one soft soot read as a smudge at 3x);
+    - the crater floor is charcoal: plates split by thin organic seams
+      (where the lava field crosses its middle - contour lines, not a
+      cell grid, which once gave a "#"), pale ash on the plates, the floor
+      only half-darkened by depth so it reads;
+    - lit surfaces (crack lips, the crater's far wall, the plates' edges)
+      take a dull grey sheen, never warm, never past .34;
+    - **the field's grids are eased between points** (smoothstep weights,
+      not bilinear): the light reads the field's slope, and bilinear left
+      the lit walls in 4px facets;
+    - the last of the ember: one dull red (150,30,10) in the deepest
+      seams at the crater's middle, peak alpha well under .45 (measured
+      .17), breathing over 8.3s (`csc-ember`, .45 -> 1);
+    - gone: the bloom canvas, the hot canvas, `.csc-heat`, the frags'
+      ember glow (`.csc-frag::before`, `csc-pulse`). The flakes and the
+      ring debris are char with a grey lit edge. **The ring debris edge
+      was raised** (#BDB7B0 at its tip) so every shard reads against a
+      black ring - measured off its own pixels at 3x and 2x.
+    - `.csc-glow` (the fresh burn the Supernova scene cools) is untouched:
+      the scene shows it hot and cooling, which is now exactly the story.
+    - **Cost**: cold 86-92ms against 9e62633's 95-106 at DPR 3 (sync
+      compile, both in fresh pages on the same loaded machine, the old one
+      injected under other names - `r317planet2/cost.py`), warm 22-27 against
+      25-39: no worse, because the bloom's blurred native strokes and a
+      third putImageData went.
+  - **What passes it is marked by SOOT, not light** (`scarPassEffects`):
+    the rings are sooted over a 48-degree arc at the scar (`.csc-ringsoot`
+    - a dark band fading out at both ends, breathing on 9.7s / 13.3s), and
+    a secret flare dims under a dark veil as it crosses the scar's angle
+    (`.cof-scarveil`, the same `cof-scarpass` lap-locked loop the glint
+    was; a little less on the outer ring). The bubbles' firelight is gone.
+    Still `.csc-pass`, so the Supernova scene's `.csc-live` switch (cut3)
+    works unchanged.
+  - **Black rings that work.** What sank black twice: at the orange's .55
+    a black line over a dark sky is just darker sky (a gap), and the cures
+    added width and an ember corona until it was not the orange's object.
+    Now: the orange's one circle, 1.4 wide, in OPAQUE black, and a RIM -
+    the same rings again just under it in an HTML-level svg
+    (`.cosmic-ring-glowsvg.is-rim`, 2.4 wide, #DDE5F4, softened .35 units,
+    at .7), so a hairline of cool light shows on both sides of the black.
+    Restrained, colourless, the same on every theme, no filter on the ring
+    (iOS draws no CSS filter on an svg element; the rim's blur is on its
+    HTML-level svg). Static, like the orange. The ring draw draws black
+    with its rim under it (`.cosmic-ring-arcrim`, filter-free) and a
+    silver glint. Judged on the 17 Pro Max at 3x and the iPad Pro 11 at
+    2x on three themes. In the Supernova scene, where the hero is half
+    Home's size, the rim reads more than the black - it is still a dark
+    ring edged in light, not a rainbow and not a gap.
+  - **Merged b316-work at 402eff1** (cut3: the Supernova sweep throws
+    Home's own ring debris; Underwater). One conflict, in check_b317_planet's
+    tap section - this round's version kept (the behind-the-planet taps are
+    gone). The scene's end, read off frame by frame for an account with
+    every flare: 20 debris and no second set, both rings `is-black`, the
+    scar's two canvases, Genesis's flare in the inner layer, the soot and
+    six veils there.
+  - **Gates.** `check_b317_planet` sections 2-4 rewritten: black char (no
+    warm light in any of the scar's pictures at their brightest over a
+    plain planet, the solid part char; the ember faint, dull red, in the
+    crater, slow; no warm colour in the flakes or debris); Genesis a ring
+    flare (inner layer, same build, no orbit, answers a tap), three and
+    three on their lines, the gaps, the debris in them, turning with the
+    inner ring, no copy putting it on the planet; soot and veils, nothing
+    burning. `check_b317_rings`: black by default (true black, the
+    orange's width and opacity, one thin cool HTML-level rim, no filter,
+    still), debris and flares readable against it off their own pixels,
+    the draw draws black, flares and white as the alternatives.
+    `check_b313_flares`: the six on the rings. Every new assertion fails
+    on 9e62633.
 - **A CHARACTER'S SPECIAL: THE RARE MOVE IF YOU KEEP LOOKING (build 317).**
   *"Let's give each rank character a unique animation ... characters will
   have multiple animations so typically they will be still, if you look at
@@ -16289,8 +16583,10 @@ disagree with it.
     one circle with those exact numbers; the gate compares them property
     by property.
   - **`RING_ECLIPSE_STYLE` picks the colour** (a `let` beside
-    `homeRingTier()`, only so the gate can draw both):
-    - `"flares"` (the default) - the six secret flares' own colours
+    `homeRingTier()`, only so the gate can draw every one). **Since
+    planet2 the default is `"black"`** - see "PLANET2" below; `"flares"`
+    and `"white"` are one line away.
+    - `"flares"` (the default until planet2) - the six secret flares' own colours
       (`MYSTERY_COLOR`) round the ring. SVG has no conic gradient, so
       `ringFlaresURL()` draws one once onto a canvas (in hue order -
       red, orange, yellow, ice blue, violet, pink - blended in OKLab so
@@ -16320,8 +16616,13 @@ disagree with it.
       than on SVG elements, so iOS draws it. Measured: every flare's
       centre has a chroma (max - min channel) of 189-255 against the
       orange's 168.
-    - `"black"` - a near-black ring (`rgba(5,3,8,.55)`) whose drop-shadow
-      is ember: an eclipse corona, still, the same width as the orange.
+    - `"black"` - **the default since planet2, rebuilt**: true black
+      (`RING_BLACK`, opaque), the orange's one 1.4-wide circle, edged by
+      a thin cool rim (`.cosmic-ring-glowsvg.is-rim`); no drop-shadow, no
+      ember corona. It was a near-black at .55 with an ember drop-shadow,
+      which is a darker patch of sky with a brown halo. See "PLANET2".
+    - `"white"` - the same circle in white at .8 (`RING_WHITE`), its rim
+      the orange's own glow (1.4 wide, blurred 1.5 units, at .5) in white.
   - **The top tier's rings sit in a layer of their own**
     (`.cosmic-hero-ringlayer`), placed UNDER the main svg - where the
     orange paints, first in that svg - so the sweep is a compositor

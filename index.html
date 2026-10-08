@@ -9199,6 +9199,10 @@
      layers are removed only after it. */
   .hfx-out{ opacity:0 !important; transition:opacity .6s ease !important; }
   .rs-card.hfx-over{ z-index:61; }
+  /* the UFO's own layer over the lifted box (round 6): the saucer and its
+     one beam, so the beam can cross the box's edge as one piece of light
+     (its z-index is set from the effect's layer, two above it) */
+  .confetti-layer.hfx-layer.hfx-ufo-top{ background:none; }
   .rs-head.hfx-over{ position:relative; z-index:61; text-shadow:0 1px 6px rgba(8,10,14,.85); }
   .hfx-mock > .rs-head.hfx-over{ z-index:3; }
   .wrap > .top.hfx-over{ z-index:61; }
@@ -9331,38 +9335,55 @@
      the rim. Under the card's own content (the card isolates). */
   /* vines on the glass: living green, with a lit edge */
 
-  /* ===== round 3: underwater ===== */
-  .hfx-uw-sea{ position:absolute; left:0; top:0; width:100%; height:var(--vh); overflow:hidden; transform:translateY(var(--vh));
-    animation:hfx-uw-rise var(--rd) cubic-bezier(.3,.6,.4,1) var(--rt) both; }
-  .hfx-uw-drain{ position:absolute; inset:0; animation:hfx-uw-drain var(--dd) cubic-bezier(.5,0,.75,.5) var(--dt) both; }
-  @keyframes hfx-uw-rise{ from{ transform:translateY(var(--vh)); } to{ transform:translateY(0); } }
-  @keyframes hfx-uw-drain{ from{ transform:translateY(0); } to{ transform:translateY(var(--vh)); } }
-  .hfx-uw-water{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(90,220,235,.26), rgba(24,130,170,.36) 45%, rgba(8,62,96,.5)); }
-  .hfx-uw-caus{ position:absolute; left:-30%; top:-20%; background-repeat:repeat; opacity:.55; animation:hfx-uw-drift 7s linear both; }
-  .hfx-uw-caus.is-b{ opacity:.35; animation-duration:6s; }
-  @keyframes hfx-uw-drift{ from{ transform:translate(0, 0) scale(1); } 50%{ transform:translate(calc(var(--cx) * .5), calc(var(--cy) * .5)) scale(1.06); } to{ transform:translate(var(--cx), var(--cy)) scale(1); } }
-  .hfx-uw-ray{ position:absolute; top:-6%; width:var(--rw); height:var(--rh); margin-left:calc(var(--rw) / -2); transform-origin:50% 0; transform:rotate(var(--ra));
-    background:radial-gradient(50% 100% at 50% 0%, rgba(225,255,255,.3), rgba(225,255,255,.1) 45%, rgba(225,255,255,0) 100%); opacity:0;
-    animation:hfx-uw-ray var(--d) ease-in-out var(--t) both; }
-  @keyframes hfx-uw-ray{ 0%{ opacity:0; transform:rotate(var(--ra)); } 18%{ opacity:1; } 50%{ opacity:.65; transform:rotate(calc(var(--ra) + 5deg)); } 82%{ opacity:1; } 100%{ opacity:0; transform:rotate(calc(var(--ra) - 2deg)); } }
-  .hfx-uw-surf{ position:absolute; left:0; top:0; height:40px; margin-top:-14px; background-repeat:repeat-x; transform:translate(0, calc(var(--vh) + 20px));
-    animation:hfx-uw-surf-up var(--rd) cubic-bezier(.3,.6,.4,1) var(--rt) both, hfx-uw-surf-down var(--dd) cubic-bezier(.5,0,.75,.5) var(--dt) forwards; }
-  @keyframes hfx-uw-surf-up{ from{ transform:translate(0, calc(var(--vh) + 20px)); } to{ transform:translate(-160px, -60px); } }
-  @keyframes hfx-uw-surf-down{ from{ transform:translate(-160px, -60px); } to{ transform:translate(-340px, calc(var(--vh) + 20px)); } }
-  .hfx-uw-kelp{ position:absolute; transform-origin:50% 100%; background:center bottom / 100% 100% no-repeat; opacity:0; transform:scaleY(0);
-    animation:hfx-uw-kelp var(--d) ease-in-out var(--t) both; }
-  @keyframes hfx-uw-kelp{ 0%{ opacity:0; transform:scaleY(.1) rotate(0deg); } 14%{ opacity:1; transform:scaleY(1) rotate(0deg); } 34%{ transform:scaleY(1) rotate(var(--sw)); }
-    56%{ transform:scaleY(1) rotate(calc(var(--sw) * -1)); } 78%{ opacity:1; transform:scaleY(1) rotate(calc(var(--sw) * .6)); } 100%{ opacity:0; transform:scaleY(.25) rotate(calc(var(--sw) * 1.4)); } }
+  /* ===== underwater, rebuilt (build 317, round 4) - see hfxSea =====
+     One body of water that rises from below the screen's bottom edge and
+     settles with its surface in view near the top; fixed to the screen on
+     the results screen (100lvh, under the safe area too), its frame's or
+     box's own size elsewhere. */
+  .hfx-uw-ocean{ position:absolute; left:0; top:0; width:100%; height:100%; overflow:hidden; pointer-events:none; }
+  .confetti-layer.hfx-layer.is-page > .hfx-uw-ocean{ position:fixed; height:100vh; height:100lvh; }
+  .hfx-uw-ocean.is-box{ z-index:0; }
+  /* in a box on its own (a pop-up's or Customize's), the number is under
+     the water: shallower, so it reads through */
+  .hfx-uw-ocean.is-box .hfx-uw-body{ background:linear-gradient(180deg, rgba(118,220,236,.16) 0%, rgba(40,150,196,.2) 55%, rgba(10,72,112,.3) 100%); }
+  .hfx-uw-ocean.is-box .hfx-uw-caus{ opacity:.18; }
+  .hfx-uw-ocean.is-box .hfx-uw-caus.is-b{ opacity:.1; }
+  .hfx-uw-sea{ position:absolute; left:0; right:0; bottom:0; transform:translateY(calc(100% + var(--wh)));
+    animation:hfx-uw-rise var(--rd) cubic-bezier(.42,0,.28,1) var(--rt) both, hfx-uw-drain var(--dd) cubic-bezier(.55,0,.8,.5) var(--dt) forwards; }
+  @keyframes hfx-uw-rise{ 0%{ transform:translateY(calc(100% + var(--wh))); } 82%{ transform:translateY(-6px); } 100%{ transform:translateY(0); } }
+  @keyframes hfx-uw-drain{ from{ transform:translateY(0); } to{ transform:translateY(calc(100% + var(--wh))); } }
+  /* deeper is darker: a lit cyan under the surface to a blue at the floor */
+  .hfx-uw-body{ position:absolute; inset:0; overflow:hidden;
+    background:linear-gradient(180deg, rgba(118,220,236,.24) 0%, rgba(52,170,206,.3) 28%, rgba(18,104,148,.4) 64%, rgba(6,54,90,.54) 100%); }
+  .hfx-uw-sheen{ position:absolute; left:0; right:0; top:0; height:22%; background:linear-gradient(180deg, rgba(210,250,255,.2), rgba(210,250,255,0)); }
+  .hfx-uw-caus{ position:absolute; background-repeat:repeat; opacity:.24; animation:hfx-uw-caus var(--d) linear both; }
+  .hfx-uw-caus.is-b{ opacity:.15; }
+  @keyframes hfx-uw-caus{ 0%{ transform:translate(calc(var(--cx) * -.5), calc(var(--cy) * -.5)) scale(1); } 50%{ transform:translate(0, 0) scale(1.04); } 100%{ transform:translate(calc(var(--cx) * .5), calc(var(--cy) * .5)) scale(1); } }
+  .hfx-uw-ray{ position:absolute; top:-2px; width:var(--rw); height:var(--rh); margin-left:calc(var(--rw) / -2); transform-origin:50% 0;
+    background:center top / 100% 100% no-repeat; opacity:0; transform:rotate(var(--ra)); animation:hfx-uw-ray var(--d) ease-in-out var(--t) both; }
+  @keyframes hfx-uw-ray{ 0%{ opacity:0; transform:rotate(var(--ra)); } 20%{ opacity:.95; } 50%{ opacity:.6; transform:rotate(calc(var(--ra) - 3deg)); }
+    80%{ opacity:.9; transform:rotate(calc(var(--ra) + 1deg)); } 100%{ opacity:0; transform:rotate(var(--ra)); } }
+  .hfx-uw-mote{ animation:hfx-uw-mote var(--d) ease-in-out var(--t) both; }
+  @keyframes hfx-uw-mote{ 0%{ opacity:0; transform:translate(0, 0); } 20%{ opacity:.8; } 80%{ opacity:.6; } 100%{ opacity:0; transform:translate(var(--mx), var(--my)); } }
+  /* a bubble rises with a wobble and breaks at the surface */
+  .hfx-uw-bub{ animation:hfx-uw-bub var(--d) cubic-bezier(.45,.05,.75,.6) var(--t) both; }
+  @keyframes hfx-uw-bub{ 0%{ opacity:0; transform:translate(0, 0) scale(.4); } 8%{ opacity:1; transform:translate(0, calc(var(--up) * .04)) scale(.9); }
+    35%{ transform:translate(var(--wx), calc(var(--up) * .35)) scale(1); } 65%{ transform:translate(calc(var(--wx) * -.7), calc(var(--up) * .68)) scale(1.05); }
+    94%{ opacity:1; transform:translate(calc(var(--wx) * .4), calc(var(--up) * .985)) scale(1.12); } 100%{ opacity:0; transform:translate(calc(var(--wx) * .4), var(--up)) scale(1.5); } }
+  /* the surface: two seamless wave tiles sliding opposite ways, each by
+     exactly one period per cycle, a finite number of cycles */
+  .hfx-uw-surface{ position:absolute; left:0; right:0; top:calc(var(--wh) * -1); height:var(--wh); overflow:hidden; }
+  .hfx-uw-wave{ position:absolute; left:0; top:0; height:100%; width:calc(100% + var(--p)); background-repeat:repeat-x; background-position:0 0;
+    animation:hfx-uw-wave var(--wd) linear 0s var(--wn) both; }
+  .hfx-uw-wave.is-back{ top:-5px; animation-name:hfx-uw-wave-back; }
+  @keyframes hfx-uw-wave{ from{ transform:translateX(0); } to{ transform:translateX(calc(var(--p) * -1)); } }
+  @keyframes hfx-uw-wave-back{ from{ transform:translateX(calc(var(--p) * -1)); } to{ transform:translateX(0); } }
   .hfx-uw-fish, .hfx-uw-manta{ left:0; top:0; }
-  .hfx-uw-bub{ animation:hfx-uw-bub var(--d) cubic-bezier(.4,0,.8,.7) var(--t) both; }
-  @keyframes hfx-uw-bub{ 0%{ opacity:0; transform:translate(0, 0) scale(.3); } 10%{ opacity:.95; transform:translate(0, -10px) scale(1); } 40%{ transform:translate(var(--wx), calc(var(--up) * .35)) scale(1.05); }
-    70%{ transform:translate(calc(var(--wx) * -.6), calc(var(--up) * .7)) scale(1); opacity:.9; } 100%{ opacity:0; transform:translate(calc(var(--wx) * .3), var(--up)) scale(1.1); } }
   .hfx-uw-drop{ animation:hfx-uw-drop var(--d) cubic-bezier(.55,0,.8,.6) var(--t) both; }
   @keyframes hfx-uw-drop{ 0%{ opacity:0; transform:translateY(0) scaleY(.6); } 14%{ opacity:1; transform:translateY(2px) scaleY(1); } 100%{ opacity:0; transform:translateY(var(--fall)) scaleY(1.35); } }
   .hfx-uw-ring{ position:absolute; width:var(--rs); height:calc(var(--rs) * .34); margin:calc(var(--rs) * -.17) 0 0 calc(var(--rs) / -2); border-radius:50%;
     border:1.5px solid rgba(225,255,255,.75); box-shadow:0 0 10px rgba(120,230,240,.45); opacity:0; animation:hfx-uw-ring 1.8s ease-out var(--t) both; }
   @keyframes hfx-uw-ring{ 0%{ opacity:0; transform:scale(.15); } 15%{ opacity:1; } 100%{ opacity:0; transform:scale(1.25); } }
-  .hfx-uw-sea.is-box{ z-index:0; }
   .hfx-uw-fish.is-box{ z-index:1; }
 
   /* ===== round 3: black hole ===== */
@@ -9505,8 +9526,10 @@
      and is LIT BY THE BEAM (build 317, round 3): the last of its dark goes
      as the beam strikes (3.94s on the long timeline) and floods down it,
      not before the beam arrives, when it lit up on its own */
-  .hfx-ufo-boxdim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-boxdim 4.15s linear both; }
-  @keyframes hfx-ufo-boxdim{ 0%{ opacity:0; } 14.22%{ opacity:.93; } 69.88%{ opacity:.93; } 89.16%{ opacity:.55; } 94.82%{ opacity:.55; animation-timing-function:ease-out; } 100%{ opacity:0; } }
+  /* (round 6: dark until the beam's head reaches the box's floor, 4.18s;
+     the beam goes down through a dark box, then the box lights) */
+  .hfx-ufo-boxdim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-boxdim 4.4s linear both; }
+  @keyframes hfx-ufo-boxdim{ 0%{ opacity:0; } 13.41%{ opacity:.93; } 65.91%{ opacity:.93; } 84.09%{ opacity:.55; } 95%{ opacity:.55; animation-timing-function:ease-out; } 100%{ opacity:0; } }
   /* (not .hfx-ufo: the effect's own layers are named hfx-<id>) */
   .hfx-saucer{ position:absolute; width:0; height:0; opacity:0; animation:hfx-ufo-path 7s linear both; }
   @keyframes hfx-ufo-path{
@@ -9584,8 +9607,12 @@
     58.6%{ transform:scaleY(var(--bl, 1)); } 77.1%{ transform:scaleY(var(--bl, 1)); animation-timing-function:cubic-bezier(.45,0,.4,1); }
     85.7%{ transform:scaleY(var(--bk, 1)); opacity:1; animation-timing-function:ease-in; } 87.5%, 100%{ transform:scaleY(0); opacity:0; } }
   .hfx-saucer:not(.is-mini) > .hfx-ufo-beam{ animation-name:hfx-ufo-beam-l; animation-duration:9.5s; }
-  @keyframes hfx-ufo-beam-l{ 0%, 38.84%{ transform:scaleY(0); opacity:0; animation-timing-function:cubic-bezier(.3,.6,.4,1); } 39.14%{ opacity:1; }
-    41.42%{ transform:scaleY(1); opacity:1; } 56.84%{ transform:scaleY(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
+  /* ONE BEAM, hull to the box's floor (round 6): fired at 3.69s, its head
+     crosses the box's top edge at 3.83s (--bt) and reaches the box's floor
+     at 4.18s, at about the speed it came down at */
+  @keyframes hfx-ufo-beam-l{ 0%, 38.84%{ transform:scaleY(0); opacity:0; animation-timing-function:linear; } 39.14%{ opacity:1; }
+    40.32%{ transform:scaleY(var(--bt, 1)); animation-timing-function:cubic-bezier(.3,.5,.5,1); }
+    44%{ transform:scaleY(1); opacity:1; } 56.84%{ transform:scaleY(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
     64.21%{ transform:scaleY(var(--bl, 1)); } 77.89%{ transform:scaleY(var(--bl, 1)); animation-timing-function:cubic-bezier(.45,0,.4,1); }
     84.21%{ transform:scaleY(var(--bk, 1)); opacity:1; animation-timing-function:ease-in; } 85.53%, 100%{ transform:scaleY(0); opacity:0; } }
   .hfx-ufo-ring{ position:absolute; left:calc(var(--rw) / -2); width:var(--rw); height:calc(var(--rw) * .3); top:calc(var(--rw) * -.15);
@@ -9594,18 +9621,8 @@
   .hfx-ufo-dust{ position:absolute; width:60px; height:30px; margin:-15px 0 0 -30px; border-radius:50%;
     background:radial-gradient(closest-side, rgba(200,255,215,.6), rgba(200,255,215,0)); opacity:0; animation:hfx-ufo-dust 1.3s ease-out 6.1s both; }
   @keyframes hfx-ufo-dust{ 0%{ transform:translate(0, 0) scale(.3); opacity:0; } 15%{ opacity:1; } 100%{ transform:translate(var(--dx), -12px) scale(1.5); opacity:0; } }
-  .hfx-ufo-inbeam{ position:absolute; top:0; width:var(--iw); height:var(--ih); margin-left:calc(var(--iw) / -2); transform-origin:50% 0;
-    background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-inbeam 9.5s linear both; }
-  /* on the 9.5s timeline; across the box and back with the saucer's sweep
-     (the same moments and easing as hfx-ufo-path-l, so the two beams are
-     one) */
-  @keyframes hfx-ufo-inbeam{ 0%, 41.35%{ transform:translateX(0) scaleY(0); opacity:0; animation-timing-function:cubic-bezier(.3,.6,.4,1); } 41.49%{ opacity:.55; }
-    44%{ transform:translateX(0) scaleY(1); opacity:.5; }
-    44.21%{ transform:translateX(0) scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
-    47.05%{ transform:translateX(calc(var(--swa) * -1)) scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
-    50.84%{ transform:translateX(var(--swa)) scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
-    53.68%{ transform:translateX(0) scaleY(1); } 63.79%{ opacity:.5; } 66%{ opacity:.72; }
-    82.95%{ transform:translateX(0) scaleY(1); opacity:.72; animation-timing-function:ease-in; } 85.53%, 100%{ transform:translateX(0) scaleY(0); opacity:0; } }
+  /* (the box's own beam, .hfx-ufo-inbeam, is gone - round 6: the saucer's
+     beam reaches the box's floor itself; see hfxUfo) */
   .hfx-ufo-landglow{ position:absolute; inset:0; border-radius:inherit; opacity:0;
     box-shadow:inset 0 0 0 1.5px rgba(150,255,175,.8), inset 0 0 30px rgba(107,255,143,.35);
     animation:hfx-ufo-landglow 2.4s ease-out var(--t) both; }
@@ -11163,38 +11180,32 @@
   .cosmic-scar{ position:absolute; left:50%; top:47.368%; width:28.889%; aspect-ratio:1; translate:-50% -50%; pointer-events:none; }
   .cosmic-scar i{ position:absolute; display:block; pointer-events:none; }
   .csc-disc{ position:absolute; inset:0; border-radius:50%; overflow:hidden; clip-path:circle(50% at 50% 50%); }
-  /* The art is drawn once per launch (cosmicScarArt) and copied onto three
-     canvases: the burn (the lit, broken surface and its soot - still),
-     the ember (deep in the crack and the rupture's molten floor) and the
-     hottest of it, each pulsing slowly on its own clock - 6.8s and 4.3s,
-     so the two never beat together. Without a 2D canvas, a soft dark burn. */
+  /* The art is drawn once per launch (cosmicScarArt) and copied onto two
+     canvases (planet2 - "needs to be black charring"): the burn - the
+     lit, broken surface, char black, scorched brown at its edge, ash on
+     it, still - and the last of the ember, a dull red in the deepest
+     seams of the crater floor, breathing very slowly (8.3s) like a coal
+     going out. There was a bloom and a white-hot layer over it; both
+     went with the fire. Without a 2D canvas, a soft dark burn. */
   .cosmic-scar canvas.csc-art{ position:absolute; inset:0; width:100%; height:100%; display:block; pointer-events:none; }
   .cosmic-scar i.csc-burn{ inset:0; background:radial-gradient(ellipse 22% 16% at 65% 63%, #070304 0 50%, rgba(16,6,4,.5) 75%, transparent 100%); }
-  .csc-ember, .csc-bloom{ animation:csc-ember 6.8s ease-in-out infinite alternate; }
-  .csc-hot{ animation:csc-hot 4.3s ease-in-out -1.7s infinite alternate; }
+  .csc-ember{ animation:csc-ember 8.3s ease-in-out infinite alternate; }
   /* the fresh burn, still hot: unseen on Home; the cutscene cools it */
   .csc-glow{ left:41%; top:47%; width:48%; height:33%; rotate:-10deg; opacity:0;
     background:radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255,226,170,.95) 0, rgba(255,140,60,.7) 38%, rgba(255,80,24,0) 74%); }
-  /* the heat shimmer off the limb, where the crack goes over it */
-  .csc-heat{ left:88%; top:77%; width:56%; height:40%; translate:-50% -50%; border-radius:50%;
-    background:radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255,128,52,.15) 0, rgba(255,92,30,.06) 50%, rgba(255,92,30,0) 72%);
-    animation:csc-heat 2.6s ease-in-out infinite alternate; }
-  .csc-heat.is-2{ left:76%; top:84%; width:42%; height:30%; animation-duration:3.3s; animation-delay:-1.4s; }
-  /* the fragments: a black shard with an ember rim (::after) in a pulsing
-     ember glow (::before), drifting off the scar and fading at both ends */
+  /* (the heat shimmer off the limb went in planet2: the scar is cold) */
+  /* the fragments: flakes of char drifting off the scar and fading at
+     both ends */
   .csc-frags{ position:absolute; inset:0; }
   .cosmic-scar .csc-frag{ left:var(--x); top:var(--y); width:var(--s); aspect-ratio:1;
     margin:calc(var(--s) * -.5) 0 0 calc(var(--s) * -.5);
     opacity:.9; transform:translate(calc(var(--dx) * .32), calc(var(--dy) * .32)) rotate(calc(var(--r) * .32));
     animation:csc-drift var(--t) cubic-bezier(.3,.1,.5,1) var(--d) infinite; }
-  .csc-frag::before, .csc-frag::after{ content:""; position:absolute; }
-  /* a shard of the crust: black, its underside still lit by the ember it
-     came out of, in a faint pulsing glow; four shapes, all splinters - a
-     square with an orange edge read as a cube (build 317, planet round) */
-  .csc-frag::before{ inset:-80%; border-radius:50%;
-    background:radial-gradient(circle, rgba(255,128,52,.5) 0, rgba(255,86,26,.18) 34%, rgba(255,86,26,0) 62%);
-    animation:csc-pulse 1.7s ease-in-out var(--d) infinite alternate; }
-  .csc-frag::after{ inset:0; background:linear-gradient(170deg, #050203 0, #120807 46%, #3A140A 66%, #C24A16 84%, #FFB05E 100%);
+  .csc-frag::after{ content:""; position:absolute; }
+  /* a flake of the crust: char black, one edge catching the light in a
+     dull grey - no ember under it and no glow round it any more (planet2);
+     four shapes, all splinters - a square read as a cube (planet round) */
+  .csc-frag::after{ inset:0; background:linear-gradient(170deg, #040303 0, #0C0A0A 48%, #24201F 68%, #5E5955 86%, #9A948E 100%);
     clip-path:polygon(38% 0, 62% 14%, 100% 52%, 72% 64%, 58% 100%, 30% 70%, 0 58%, 22% 30%); }
   .csc-frag:nth-child(4n+2)::after{ clip-path:polygon(12% 8%, 54% 0, 100% 34%, 86% 58%, 40% 100%, 30% 62%, 0 46%); }
   .csc-frag:nth-child(4n+3)::after{ clip-path:polygon(50% 0, 70% 30%, 100% 70%, 56% 82%, 22% 100%, 18% 54%, 0 24%); }
@@ -11205,10 +11216,7 @@
     68%{ opacity:.85; }
     100%{ opacity:0; transform:translate(var(--dx), var(--dy)) rotate(var(--r)) scale(.6); }
   }
-  @keyframes csc-pulse{ from{ opacity:.3; transform:scale(.8); } to{ opacity:1; transform:scale(1.15); } }
-  @keyframes csc-ember{ from{ opacity:.84; } to{ opacity:1; } }
-  @keyframes csc-hot{ from{ opacity:.3; } to{ opacity:1; } }
-  @keyframes csc-heat{ from{ opacity:.55; transform:scale(1, .94) skewX(-4deg) translateY(2%); } to{ opacity:1; transform:scale(1.08, 1.02) skewX(4deg) translateY(-4%); } }
+  @keyframes csc-ember{ from{ opacity:.45; } to{ opacity:1; } }
   /* the plasma's light never washes over the rupture, and its smoke
      drifts only partly over the crack - the art's own mask (--scar-mask) */
   .cosmic-hero-wrap.is-scarred > .cosmic-plasma{
@@ -11217,46 +11225,34 @@
     -webkit-mask-size:100% 100%; mask-size:100% 100%; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; }
   @media (prefers-reduced-motion:reduce){ .cosmic-scar, .cosmic-scar *, .cosmic-scar *::before{ animation:none !important; } }
   [data-reduce-motion="true"] .cosmic-scar *, [data-reduce-motion="true"] .cosmic-scar *::before{ animation:none !important; }
-  /* ---- WHAT PASSES THE SCAR CATCHES ITS LIGHT (build 317, planet round) ----
-     scarPassEffects: a secret flare's glint (a warm rim on its planet
-     side, the crack's light) is a loop of its ring's own lap, offset in JS
-     so its peak lands as the flare crosses the scar's angle - it rises and
-     falls over 6% of a lap either way (about 22 degrees), weaker on the
-     outer ring, which is further from the hole; the rings run hot over a
-     short arc at the scar, flickering on two clocks that never line up;
-     the bubbles nearest the hole hold its firelight, faint and flickering.
-     Transform and opacity only; held still and dark under Reduce motion;
-     never in the rank cutscene. */
-  .cosmic-flare-dot > i.cof-scarlit{ inset:-70%; opacity:0; rotate:var(--rl, 0deg);
-    background:
-      radial-gradient(circle at 50% 50%, rgba(255,150,70,0) 0 26%, rgba(255,196,128,.95) 30%, rgba(255,120,48,.5) 35%, rgba(255,90,30,0) 43%),
-      radial-gradient(ellipse 62% 46% at 50% 24%, rgba(255,150,64,.5) 0, rgba(255,100,36,.16) 52%, rgba(255,90,30,0) 78%);
-    -webkit-mask-image:linear-gradient(180deg, #000 0, #000 34%, transparent 62%); mask-image:linear-gradient(180deg, #000 0, #000 34%, transparent 62%); }
-  .cosmic-flare-dot > i.cof-scarlit.is-far{
-    background:
-      radial-gradient(circle at 50% 50%, rgba(255,150,70,0) 0 26%, rgba(255,196,128,.7) 30%, rgba(255,120,48,.36) 35%, rgba(255,90,30,0) 43%),
-      radial-gradient(ellipse 62% 46% at 50% 24%, rgba(255,150,64,.34) 0, rgba(255,100,36,.1) 52%, rgba(255,90,30,0) 78%); }
-  .csc-ringheat{ position:absolute; inset:0; pointer-events:none; }
-  .csc-ringheat > svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; opacity:.72; }
-  .csc-ringheat .csc-rh-glow{ opacity:.24; }
-  .csc-ringheat .csc-rh-core{ opacity:.62; }
-  .cosmic-icon-badge > i.cosmic-badge-scarlit{ position:absolute; inset:-1px; border-radius:50%; pointer-events:none; z-index:2; rotate:var(--rl, 0deg); }
-  .cosmic-icon-badge > i.cosmic-badge-scarlit > i{ position:absolute; inset:0; border-radius:50%; opacity:.8;
-    background:radial-gradient(ellipse 72% 38% at 50% 0, rgba(255,146,64,.6) 0, rgba(255,104,40,.2) 55%, rgba(255,90,30,0) 82%);
-    box-shadow:inset 0 2px 2.5px -1px rgba(255,160,84,.7); }
+  /* ---- WHAT PASSES THE SCAR (build 317, planet round; planet2) ----
+     scarPassEffects. The scar is cold char since planet2, so it lights
+     nothing; what it leaves is soot. The rings are sooted over a short arc
+     at the scar - a dark band fading out at both ends, breathing slowly on
+     two clocks that never line up (9.7s, 13.3s) - and a secret flare
+     passing through it dims: a dark veil over its light, a loop of its
+     ring's own lap offset in JS so it is deepest as the flare crosses the
+     scar's angle, rising and falling over 6% of a lap either way (about
+     22 degrees); a little less on the outer ring, further from the scar.
+     Transform and opacity only; under Reduce motion the soot holds still
+     and no veil is drawn; never in the rank cutscene unless .csc-live. */
+  .cosmic-flare-dot > i.cof-scarveil{ inset:-55%; opacity:0;
+    background:radial-gradient(circle, rgba(8,6,6,.56) 0 24%, rgba(8,6,6,.38) 38%, rgba(8,6,6,.11) 54%, rgba(8,6,6,0) 66%); }
+  .cosmic-flare-dot > i.cof-scarveil.is-far{
+    background:radial-gradient(circle, rgba(8,6,6,.46) 0 24%, rgba(8,6,6,.3) 38%, rgba(8,6,6,.08) 54%, rgba(8,6,6,0) 66%); }
+  .csc-ringsoot{ position:absolute; inset:0; pointer-events:none; }
+  .csc-ringsoot > svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; opacity:.8; }
+  .csc-ringsoot .csc-rs-haze{ opacity:.3; }
+  .csc-ringsoot .csc-rs-core{ opacity:.72; }
   @media (prefers-reduced-motion:no-preference){
-    .cosmic-flare-dot > i.cof-scarlit{ animation:cof-scarpass var(--pass-lap, 52s) linear var(--pass-delay, 0s) infinite; }
-    .csc-ringheat > svg{ animation:csc-ringflick 5.3s linear infinite; }
-    .csc-ringheat > svg.is-out{ animation-duration:7.9s; animation-delay:-3.1s; }
-    .cosmic-icon-badge > i.cosmic-badge-scarlit > i{ animation:csc-ringflick 6.1s linear -2.2s infinite; }
+    .cosmic-flare-dot > i.cof-scarveil{ animation:cof-scarpass var(--pass-lap, 52s) linear var(--pass-delay, 0s) infinite; }
+    .csc-ringsoot > svg{ animation:csc-soot 9.7s ease-in-out infinite alternate; }
+    .csc-ringsoot > svg.is-out{ animation-duration:13.3s; animation-delay:-4.1s; }
   }
   @keyframes cof-scarpass{
     0%, 44%{ opacity:0; animation-timing-function:ease-in-out; } 50%{ opacity:1; animation-timing-function:ease-in-out; } 56%, 100%{ opacity:0; animation-timing-function:ease-in-out; }
   }
-  @keyframes csc-ringflick{
-    0%{ opacity:.6; } 9%{ opacity:.8; } 15%{ opacity:.56; } 31%{ opacity:.9; } 38%{ opacity:.68; } 52%{ opacity:.95; }
-    61%{ opacity:.64; } 74%{ opacity:.84; } 86%{ opacity:.58; } 100%{ opacity:.6; }
-  }
+  @keyframes csc-soot{ from{ opacity:.62; } to{ opacity:.9; } }
   [data-reduce-motion="true"] .csc-pass, [data-reduce-motion="true"] .csc-pass *{ animation:none !important; }
   .tier-cutscene .cosmic-hero-wrap:not(.csc-live) .csc-pass{ display:none !important; }
   /* THE DEBRIS ON THE RINGS (addRingDebris): black shards with a cooling
@@ -11264,7 +11260,7 @@
      turn on the individual rotate property). */
   .csc-ringfrag{ position:absolute; display:block; width:var(--s, 1.2%); aspect-ratio:1; translate:-50% -50%; rotate:var(--r0, 0deg); pointer-events:none; }
   .csc-ringfrag::after{ content:""; position:absolute; inset:0;
-    background:linear-gradient(165deg, #040203 0, #0E0706 48%, #2A0F08 68%, #9A3812 86%, #F08A48 100%);
+    background:linear-gradient(165deg, #040303 0, #0C0A0A 38%, #2E2A28 56%, #77716B 76%, #BDB7B0 100%);
     clip-path:polygon(38% 0, 62% 14%, 100% 52%, 72% 64%, 58% 100%, 30% 70%, 0 58%, 22% 30%); }
   .csc-ringfrag:nth-child(3n+1)::after{ clip-path:polygon(12% 8%, 54% 0, 100% 34%, 86% 58%, 40% 100%, 30% 62%, 0 46%); }
   .csc-ringfrag:nth-child(3n+2)::after{ clip-path:polygon(50% 0, 70% 30%, 100% 70%, 56% 82%, 22% 100%, 18% 54%, 0 24%); }
@@ -11382,10 +11378,30 @@
   .cosmic-hero-ringdraw{ transform-origin:50% 47.368%; }
   .cosmic-ring-arc{ fill:none; stroke-width:1.4; }
   .cosmic-ring-glint{ opacity:0; }
-  .cosmic-orbit-ring.cosmic-orbit-ring-eclipse.is-black{
-    stroke:rgba(5,3,8,.55);
-    filter:drop-shadow(0 0 3px rgba(255,112,52,.5));
-  }
+  /* BLACK, AND MADE TO WORK (planet2) - "I want black black to work, I
+     think that'd be sick... or white? Black would be so cool though." The
+     default top tier since planet2. The orange's one circle, its 1.4
+     width, in true black (opaque - at the orange's .55 a black line over a
+     dark sky is only a darker patch of sky, which is how the first black
+     rings came to read as a gap). What makes it read is its RIM: the same
+     rings again just under it (.cosmic-ring-glowsvg.is-rim, built only
+     for the black and white tiers), 2.4 wide in a cool silver and
+     softened by a third of a unit, so a thin edge of light shows along
+     both sides of the black - restrained, the same on every theme, no
+     corona and no colour of its own. No filter on the ring itself (iOS
+     does not draw one on an svg element; the rim's softening is on its
+     HTML-level svg). Static, like the orange.
+     "white" (RING_ECLIPSE_STYLE) is the one-line alternative: the same
+     circle in white at .8, its rim the orange's own glow (1.4 wide,
+     blurred by the drop-shadow's 3px, at .5) in white light. */
+  .cosmic-orbit-ring.cosmic-orbit-ring-eclipse.is-black{ stroke:#000000; }
+  .cosmic-orbit-ring.cosmic-orbit-ring-eclipse.is-white{ stroke:rgba(250,252,255,.8); }
+  .cosmic-ring-glowsvg.is-rim{ opacity:.7; filter:blur(.4px); filter:blur(calc(.35 * 100cqw / 360)); }
+  .cosmic-ring-glow.cosmic-ring-rim{ stroke:#DDE5F4; stroke-width:2.4; }
+  .cosmic-hero-ringlayer.is-white .cosmic-ring-glowsvg.is-rim{ opacity:.5; filter:blur(1.7px); filter:blur(calc(1.5 * 100cqw / 360)); }
+  .cosmic-hero-ringlayer.is-white .cosmic-ring-glow.cosmic-ring-rim{ stroke:#FFFFFF; stroke-width:1.4; }
+  /* the draw's own rim: filter-free, so a little narrower and fainter */
+  .cosmic-ring-arcrim{ fill:none; stroke:rgba(221,229,244,.55); stroke-width:2.2; }
   /* The flares' sweep: the whole ring layer turns about the planet's
      centre (180,150 in the 0 -12 360 342 viewBox = 50% 47.368%), so the
      colours travel round the ring while the circle itself never moves.
@@ -11893,9 +11909,10 @@
      playRankUpScene); whatever that build adds over a plain one is marked
      data-sn-reveal and held back, then brought in beat by beat:
      - sn-scarred: the scar comes up through the dust, hot, and cools;
-     - .sn-sweep: black fragments with ember rims spiral out of the planet
-       to the two rings and ride them round, fading as Home's own look
-       takes over under them;
+     - sn-swept: the debris Home carries on the rings for Supernova is
+       thrown out of the planet and settles into its places in orbit (cut3:
+       the real pieces, not a second set - see snSweep), a few embers
+       (.sn-sweep > .sn-orb.is-ember) flying further and burning out;
      - sn-settled: the rest of the Supernova build ("new") settles in;
      - sn-rings: only now do the rings turn - plain until here, whichever
        tier they are (an !important over the top tier's inline pattern
@@ -11910,6 +11927,23 @@
   #supernova-cutscene:not(.sn-rings) .rank-after .cosmic-orbit-ring{ stroke:rgba(255,255,255,.16) !important; stroke-width:1; filter:none; }
   .tier-cutscene .rank-after .cosmic-ring-glowsvg{ transition:opacity 2.4s ease; }
   #supernova-cutscene:not(.sn-rings) .rank-after .cosmic-ring-glowsvg{ opacity:0; }
+  /* CUT3: what Home's Supernova build puts INSIDE its layers is held back
+     too, by class rather than by data-sn-reveal, and without depending on
+     how any of it is drawn:
+     - the debris on the rings (.csc-ringfrag) is out of sight until the
+       sweep throws it out (sn-swept) - visibility, so nothing the piece
+       does with its own opacity can show it early;
+     - .sn-hot is the heat a piece flies out in, under its shard, cooling
+       as it lands;
+     - the light that passes the scar (.csc-pass) is displayed from
+       sn-scarred (.csc-live on the planet) at filter:opacity(0) - its own
+       opacity is animated, which a transition cannot fade - and comes up
+       with the rings (sn-rings). */
+  #supernova-cutscene:not(.sn-swept) .rank-after .csc-ringfrag{ visibility:hidden; }
+  .csc-ringfrag > .sn-hot{ position:absolute; inset:-130%; border-radius:50%; z-index:-1; pointer-events:none; opacity:0;
+    background:radial-gradient(circle, rgba(255,214,150,.9) 0, rgba(255,132,52,.48) 26%, rgba(255,86,26,.12) 48%, rgba(255,86,26,0) 64%); }
+  .tier-cutscene .rank-after .csc-pass{ transition:filter 2s ease; }
+  #supernova-cutscene:not(.sn-rings) .rank-after .csc-pass{ filter:opacity(0); }
   .sn-sweep{ position:absolute; inset:0; pointer-events:none; z-index:2; }
   .sn-sweep > .sn-orb{ position:absolute; left:50%; top:47.368%; width:var(--s); aspect-ratio:1;
     margin:calc(var(--s) * -.5) 0 0 calc(var(--s) * -.5); opacity:0; }
@@ -11919,6 +11953,8 @@
     clip-path:polygon(50% 0, 100% 38%, 78% 100%, 12% 82%, 0 30%); }
   .sn-orb:nth-child(3n+2)::after{ clip-path:polygon(20% 0, 100% 22%, 70% 100%, 0 68%); }
   .sn-orb:nth-child(3n)::after{ clip-path:polygon(0 18%, 62% 0, 100% 60%, 38% 100%); }
+  .sn-orb.is-ember::after{ display:none; }
+  .sn-orb.is-ember::before{ inset:-60%; background:radial-gradient(circle, rgba(255,226,170,.95) 0, rgba(255,140,58,.55) 30%, rgba(255,86,26,0) 66%); }
   .sn-ringglint{ position:absolute; left:50%; top:47.368%; aspect-ratio:1; translate:-50% -50%; border-radius:50%;
     pointer-events:none; opacity:0; z-index:2; }
   /* SUPERNOVA'S SPIN IS ITS OWN: the planet heats with the speed
@@ -12283,73 +12319,9 @@
   @keyframes cof-tint{ 0%,100%{ opacity:.3; } 50%{ opacity:.6; } }
   @keyframes cof-tint-hunt{ 0%,100%{ opacity:.5; } 50%{ opacity:.9; } }
   @keyframes cof-call{ 0%{ opacity:.9; transform:scale(.8); } 70%,100%{ opacity:0; transform:scale(3.2); } }
-  /* ---- The sixth, skimming the planet (build 313) ----
-     ---- and now going ROUND it (build 317, planet round) ----
-     "I'm not a fan of how that one rotates or whatever, could it feel
-     more like it was rotating around the sphere? Like going behind it and
-     back around?" It skimmed the planet (r 62 round its r 52) and, for
-     the stretch where the planet was in front of it, simply vanished - it
-     never went BEHIND anything. Now it is a real orbit: r 72, tilted 18
-     degrees and seen from just above (squashed to .36), one lap in 16s.
-     - BEHIND, FOR REAL: the orbit sits in the hero just BEFORE the planet's
-       own svg (buildCosmicHero), so painted in place (z-index 0) the
-       planet covers it - the far half of every lap passes behind, the
-       flare sliding under the limb and out the other side. For the near
-       half it is lifted over everything (z-index 3, cco-layer). The two
-       swaps fall at the ends of the ellipse, where the flare is 20 units
-       clear of the disc and the corona round it has faded to nothing, so
-       the swap itself cannot be seen.
-     - DEPTH: larger and brighter in front (x1.22, and a glow of its own
-       colour, cco-shine), smaller and dimmer at the back (x.74 at 62%) -
-       cco-depth follows the sine of the lap.
-     - Taps: in front it is on top as before; behind, the planet's svg
-       lets taps through (.cosmic-hero-main has pointer-events:none, the
-       sphere circle takes its own), so wherever the flare can be seen
-       round the limb it can be tapped, and on the disc the planet answers.
-     Transforms and opacity on the compositor; the z-index flips twice a
-     lap. At rest (Reduce motion) it sits on the near side, in front. */
-  .cosmic-core-orbit{ position:absolute; left:50%; top:47.368%; width:40%; aspect-ratio:1; translate:-50% -50%; z-index:3; pointer-events:none; }
-  .cosmic-core-orbit.is-found{ --cco-c:#FF5CA8; }
-  .cosmic-core-orbit .cosmic-badge-tappable{ pointer-events:auto; }
-  .cco-plane{ position:absolute; inset:0; transform:rotate(-18deg) scaleY(.36); }
-  .cco-spin{ position:absolute; inset:0; }
-  .cco-arm{ position:absolute; left:50%; top:50%; width:50%; height:0; }
-  /* The flare's box: 15% of the arm (r 72 of 360), the same ~3% of the
-     hero it has always been. */
-  .cco-counter{ position:absolute; left:100%; top:0; width:15%; aspect-ratio:1; translate:-50% -50%; transform:scaleY(2.7778) rotate(18deg); }
-  .cco-counter > .cosmic-flare-dot{ left:50%; top:50%; width:100%; }
-  .cco-shine{ position:absolute; left:50%; top:50%; width:270%; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0; pointer-events:none;
-    background:radial-gradient(circle, color-mix(in srgb, var(--cco-c, #fff) 42%, transparent) 0, color-mix(in srgb, var(--cco-c, #fff) 13%, transparent) 36%, transparent 64%); }
-  /* The tail lies in the orbit's plane, behind the flare (a clockwise turn
-     moves the arm's end towards its local +y, so behind is -y). */
-  .cco-tail{ position:absolute; left:98%; bottom:0; width:5%; aspect-ratio:1 / 11; translate:-50% 0; border-radius:999px; opacity:0;
-    background:linear-gradient(180deg, transparent, color-mix(in srgb, var(--cco-c, #fff) 75%, transparent)); }
-  .cosmic-core-orbit.is-found .cco-tail{ opacity:.85; }
-  .cosmic-core-orbit:not(.is-found) .cco-tail{ opacity:.35; }
-  @media (prefers-reduced-motion:no-preference){
-    .cosmic-core-orbit{ animation:cco-layer 16s linear infinite; }
-    .cco-spin{ animation:cco-turn 16s linear infinite; }
-    .cco-counter{ animation:cco-back 16s linear infinite; }
-    .cco-counter > .cosmic-flare-dot{ animation:cco-depth 16s linear infinite; }
-    .cco-shine{ animation:cco-shine 16s linear infinite; }
-  }
-  /* at rest (reduce motion) it sits on the near side, in front of the planet */
-  .cco-spin{ rotate:62deg; }
-  .cco-counter{ rotate:-62deg; }
-  @keyframes cco-turn{ from{ rotate:0deg; } to{ rotate:360deg; } }
-  @keyframes cco-back{ from{ rotate:0deg; } to{ rotate:-360deg; } }
-  /* the near half of the lap (0-50%) over everything, the far half (50-
-     100%) in its place under the planet */
-  @keyframes cco-layer{ 0%, 50%{ z-index:3; } 50.02%, 99.98%{ z-index:0; } 100%{ z-index:3; } }
-  @keyframes cco-depth{
-    0%{ scale:.97; opacity:.9; animation-timing-function:ease-out; } 25%{ scale:1.22; opacity:1; animation-timing-function:ease-in; }
-    50%{ scale:.97; opacity:.9; animation-timing-function:ease-out; } 75%{ scale:.74; opacity:.62; animation-timing-function:ease-in; } 100%{ scale:.97; opacity:.9; animation-timing-function:ease-out; }
-  }
-  @keyframes cco-shine{ 0%{ opacity:0; } 25%{ opacity:.85; } 50%, 100%{ opacity:0; } }
-  /* the planet's svg lets taps through to what is behind it (the sixth
-     flare, round the limb); the sphere itself still takes its own */
-  .cosmic-hero-main{ pointer-events:none; }
-  .cosmic-hero-main .cosmic-sphere-hit{ pointer-events:visiblePainted; }
+  /* (The sixth flare's own orbit - skimming the planet in build 313,
+     round behind it in the planet round - is gone: since planet2 it rides
+     the inner ring like the others. See buildCosmicHero's FLARE_SPOT.) */
   /* A full orbit every two minutes \u2014 slow enough to read as graceful
      drift rather than a spinning wheel, since this sits right next to
      text people are meant to actually read. transform-origin uses the
@@ -26300,7 +26272,6 @@
   .sf-clear .sfg-planetwrap .cosmic-hero-orbitlayer{ animation:none !important; opacity:0; transition:opacity 1.2s ease; }
   .sf-clear .sfg-planetwrap :is(.cosmic-orbit-ring, .cosmic-pulse-ring){ opacity:0; transition:opacity 1.2s ease; }
   .sf-clear .sfg-planetwrap{ transform:scale(1.85); }
-  .sf-dive .sfg-planetwrap .cosmic-core-orbit{ opacity:0; transition:opacity .3s ease; }
   .sfg-planetfx{ position:absolute; left:50%; top:47.37%; width:28.89%; aspect-ratio:1; translate:-50% -50%; border-radius:50%; z-index:4; }
   .sfg-cracks{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
   .sfg-crack{ opacity:0; transition:opacity .5s ease; }
@@ -40017,7 +39988,8 @@ const AVATAR_CHARACTERS = [
   { id: "umbra",       kind: "umbra",       feat: "flare4", secret: true },
   { id: "singularity", kind: "singularity", feat: "flare5", secret: true },
   /* GENESIS (build 313), the last of them: the planet on Home, alive.
-     Found on the planet itself at level 78-80 - see MYSTERY_ORDER. */
+     Found at level 78-80 - see MYSTERY_ORDER. (Its flare rides Home's
+     inner ring since build 317, planet2; it was on the planet before.) */
   { id: "genesis",     kind: "genesis",     feat: "flare6", secret: true },
   /* ---- RANK REWARDS (build 244) ----
      One per rank from Silver up, each a crowned sovereign of its rank's
@@ -40357,8 +40329,8 @@ const CHARACTER_FEATS = {
   flare5:    { label: "Find Event Horizon, the fifth secret flare",
                done: () => !!(store.mysteryColorsFound || {}).white,
                have: () => ((store.mysteryColorsFound || {}).white ? 1 : 0), need: 1 },
-  /* build 313: the sixth, on the planet itself, from level 78 */
-  flare6:    { label: "Find Worldheart, the planet's own secret flare",
+  /* build 313: the sixth, from level 78 (on the inner ring since planet2) */
+  flare6:    { label: "Find Worldheart, the sixth secret flare",
                done: () => !!(store.mysteryColorsFound || {}).core,
                have: () => ((store.mysteryColorsFound || {}).core ? 1 : 0), need: 1 },
   /* ASTRAL and CELESTIAL (build 312): the two ultimates under Zenith -
@@ -40423,16 +40395,35 @@ const HUNDO_FX = [
   { id: "confetti",  name: "Confetti",   need: 0,   color: "#FFD37A" },
   /* the first rung (round 4): Fireworks - "Still not a fan of that giddy
      one. Maybe the first one should just be fireworks or something?" The
-     Black Hole and Underwater stay built in HUNDO_FX_BUILD; swapping is
-     this row's id and name. A saved "blackhole" pick is no rung here, so
-     it plays Confetti until Fireworks is picked (hundoFxInUse). */
+     Black Hole stays built in HUNDO_FX_BUILD; swapping is this row's id
+     and name. A saved "blackhole" pick is no rung here, so it plays
+     Confetti until Fireworks is picked (hundoFxInUse). */
   { id: "fireworks", name: "Fireworks",   need: 50,  color: "#FF5CD6" },
-  { id: "worldtree", name: "World Tree",  need: 100, color: "#FF9EC8" },
+  /* THE 100 IS UNDERWATER (build 317, round 4). "I like the underwater one,
+     but the water that's on screen looks terrible, and it doesn't start
+     from the very bottom. The world tree is not the answer." Live build 313
+     ships the World Tree at this rung, so its id is kept READABLE, not
+     playable on the ladder: a saved pick, a pop-up already shown and a tile
+     already looked at, all as "worldtree", mean this rung and are read as
+     Underwater (hundoFxId, HUNDO_FX_ALIAS) - nobody is left holding an
+     effect that is no longer there. The tree itself stays built in
+     HUNDO_FX_BUILD like the Black Hole. */
+  { id: "underwater", name: "Underwater", need: 100, color: "#46E0E8" },
   { id: "bubbles",   name: "Bubbles",     need: 200, color: "#9FE8FF" },
   /* "the one after bubbles is ... a ufo landing on the grade box" */
   { id: "ufo",       name: "UFO",         need: 350, color: "#6BFF8F" }
 ];
-function hundoFxDef(id){ return HUNDO_FX.find(d => d.id === id) || null; }
+/* An id from an older build, read as the rung that replaced it. */
+const HUNDO_FX_ALIAS = { worldtree: "underwater" };
+function hundoFxId(id){ return (typeof id === "string" && Object.prototype.hasOwnProperty.call(HUNDO_FX_ALIAS, id)) ? HUNDO_FX_ALIAS[id] : id; }
+/* A list of ids (a shown or seen record) in this build's terms: aliases
+   read as their rung, each once. */
+function hundoFxIds(list){
+  const out = [];
+  (Array.isArray(list) ? list : []).forEach(x => { if(typeof x !== "string") return; const id = hundoFxId(x); if(out.indexOf(id) < 0) out.push(id); });
+  return out;
+}
+function hundoFxDef(id){ id = hundoFxId(id); return HUNDO_FX.find(d => d.id === id) || null; }
 /* Held at `hundos` (this account's own count when left out). */
 function hundoFxEarned(id, hundos){
   const d = hundoFxDef(id);
@@ -40445,7 +40436,7 @@ function earnedHundoFx(hundos){ return HUNDO_FX.filter(d => d.need > 0 && hundoF
 /* What plays on a 100%: the pick, or Confetti when the pick is not held
    here (a copy from elsewhere, an id from another build). */
 function hundoFxInUse(){
-  const id = store && store.hundoFx;
+  const id = hundoFxId(store && store.hundoFx);
   return id && hundoFxEarned(id) ? id : "confetti";
 }
 function hundoFxNeedText(d){ return d.need > 0 ? "Earn " + d.need + " hundos" : "Yours from day one"; }
@@ -46961,7 +46952,7 @@ function applyLoadedData(got){
       yellow: got.mysteryColorsFound.yellow === true,
       violet: got.mysteryColorsFound.violet === true,
       white: got.mysteryColorsFound.white === true,
-      /* the sixth (build 313), on the planet itself - nobody has it yet */
+      /* the sixth (build 313) - nobody has it yet */
       core: got.mysteryColorsFound.core === true
     };
   } else if(got.mysteryFound === true){
@@ -47092,7 +47083,7 @@ function applyLoadedData(got){
   /* build 313: the hundo effects looked at. Not in SEEN_KINDS - a record
      without it is still a whole record, and ensureSeenUnlocks() starts it
      empty - so nothing written before this build re-seeds. */
-  if(store.seenUnlocks && Array.isArray(got.seenUnlocks.fx)) store.seenUnlocks.fx = got.seenUnlocks.fx.filter(x => typeof x === "string");
+  if(store.seenUnlocks && Array.isArray(got.seenUnlocks.fx)) store.seenUnlocks.fx = hundoFxIds(got.seenUnlocks.fx);
   store.unlocksShown = (got.unlocksShown && Array.isArray(got.unlocksShown.chars) && Array.isArray(got.unlocksShown.banners))
     ? { chars: got.unlocksShown.chars.filter(x => typeof x === "string"),
         banners: got.unlocksShown.banners.filter(x => typeof x === "string"),
@@ -47101,7 +47092,8 @@ function applyLoadedData(got){
            one when this ships is meant to get its pop-up once ("For the
            people who meet these, they will get the popups next time they
            log on or are at the main menu"). */
-        fx: Array.isArray(got.unlocksShown.fx) ? got.unlocksShown.fx.filter(x => typeof x === "string") : [] }
+        /* build 317, round 4: a World Tree shown is this rung shown */
+        fx: hundoFxIds(got.unlocksShown.fx) }
     : null;
   /* Build 220. The counters default to zero and the two "done" flags to
      false, so every existing account is seeded once from what it has
@@ -47131,7 +47123,8 @@ function applyLoadedData(got){
   /* build 313: the hundo effect picked in Customize. Confetti for
      anybody who has never picked one; an id this build does not know is
      kept (it may be a later build's) and falls back at play time. */
-  store.hundoFx = typeof got.hundoFx === "string" && got.hundoFx ? got.hundoFx : "confetti";
+  /* build 317, round 4: a World Tree pick is the 100's rung - Underwater */
+  store.hundoFx = typeof got.hundoFx === "string" && got.hundoFx ? hundoFxId(got.hundoFx) : "confetti";
   store.pendingVoidCutscene = got.pendingVoidCutscene === true;
   store.weekRankSeen = (got.weekRankSeen && typeof got.weekRankSeen === "object"
     && typeof got.weekRankSeen.week === "string" && typeof got.weekRankSeen.rank === "number")
@@ -61066,7 +61059,7 @@ const FLARE_CHARACTER = { violet: "umbra", white: "singularity", core: "genesis"
 const CHARACTER_FLARE = { voidwalker: "yellow", umbra: "violet", singularity: "white", genesis: "core" };
 /* WHAT HOME SHOWS, IN THREE STEPS (build 313): "there will be only be 3
    at first, THE 4th and 5th flare will appear once void is unlocked."
-   And the sixth, the planet's own, once the fifth is found - the hunt is
+   And the sixth, Genesis's, once the fifth is found - the hunt is
    in order, so a sixth light before the fifth would give the order away. */
 function homeFlareKeys(){
   const f = (typeof store !== "undefined" && store.mysteryColorsFound) || {};
@@ -61249,7 +61242,11 @@ function homeRingTier(){
      "black"  - the eclipse Madison first pictured: a near-black ring with
                 an ember corona (the drop-shadow), static like the orange.
    A let, not a const, only so a gate can draw both. */
-let RING_ECLIPSE_STYLE = "flares";
+let RING_ECLIPSE_STYLE = "black";
+/* the two plain colours' paint: black is opaque, the true black asked for
+   ("I want black black to work"), not the orange's .55 (which over a dark
+   sky is only a darker sky); white is the orange's .55 in white light */
+const RING_BLACK = "#000000", RING_WHITE = "rgba(250,252,255,.8)";
 /* The flare colours round a circle, drawn once onto a canvas and used as
    the "flares" ring's stroke (a pattern - SVG has no conic gradient). In
    hue order rather than MYSTERY_ORDER, so each colour runs into a near
@@ -61413,9 +61410,12 @@ function playRingDraw(hero, since){
   const ease = "cubic-bezier(.45,0,.25,1)";
   [...draw.querySelectorAll(".cosmic-ring-arcbox")].forEach((box, i) => {
     const arc = box.querySelector(".cosmic-ring-arc"), C = Number(arc.dataset.len);
-    arc.setAttribute("d", ringArcPath(Number(arc.dataset.r), -phi));
-    arc.animate([{ strokeDashoffset: C + 2 }, { strokeDashoffset: 0 }],
-      { duration: RING_DRAW_MS, delay: i * RING_DRAW_STAGGER, easing: ease, fill: "both" });
+    /* (and its rim, if it has one - the black and white rings) */
+    box.querySelectorAll(".cosmic-ring-arc, .cosmic-ring-arcrim").forEach(a => {
+      a.setAttribute("d", ringArcPath(Number(arc.dataset.r), -phi));
+      a.animate([{ strokeDashoffset: C + 2 }, { strokeDashoffset: 0 }],
+        { duration: RING_DRAW_MS, delay: i * RING_DRAW_STAGGER, easing: ease, fill: "both" });
+    });
   });
   [...draw.querySelectorAll(".cosmic-ring-glintbox")].forEach((g, i) => {
     g.animate([{ transform: "rotate(" + (-phi) + "deg)" }, { transform: "rotate(" + (360 - phi) + "deg)" }],
@@ -64134,15 +64134,15 @@ function cosmicWispsURL(){
    rows. Neither calls a closure: every noise is read off a grid made
    before them. */
 function scarSS(a, b, t){ let k = (t - a) / (b - a); k = k < 0 ? 0 : k > 1 ? 1 : k; return k * k * (3 - 2 * k); }
-/* Pass one: the height field, the soot, what is burnt through, and the
-   ember, for every pixel the scar can touch (the buckets with a crack in
-   them, and those round the rupture). */
+/* Pass one: the height field, the soot, the ash, what is burnt through,
+   and the last of the ember, for every pixel the scar can touch (the
+   buckets with a crack in them, and those round the crater). */
 function scarPass1(P){
   const N = P.N, BK = P.BK, Q = P.Q, Q1 = P.Q1, FI = P.FI, FR = P.FR, FE = P.FE, FN = P.FN, LV = P.LV, LVN = P.LVN, LVS = P.LVS;
   const cnt = P.cnt, lst = P.lst, SF = P.SF, CX = P.CX, CY = P.CY, C3x = P.C3x, C3y = P.C3y, C3z = P.C3z, SR = P.SR;
   const NN = P.NN, LV1 = LVN + 1, ss = scarSS;
   const Hf = P.Hf = new Float32Array(NN), Cov = P.Cov = new Float32Array(NN), Mat = P.Mat = new Uint8Array(NN);
-  const Em = P.Em = new Float32Array(NN), Tp = P.Tp = new Float32Array(NN), Dp = P.Dp = new Float32Array(NN), On = P.On = new Uint8Array(NN);
+  const Em = P.Em = new Float32Array(NN), As = P.As = new Float32Array(NN), Dp = P.Dp = new Float32Array(NN), On = P.On = new Uint8Array(NN);
   const rhoC = 2 * Math.sin(P.RHO / 2), PXMIN = 1.5 / N, BPX = N / BK, reach2 = (SR + .06) * (SR + .06);
   /* the buckets the scar touches, nearest the impact first: every branch
      below (the floor, the rim, a crack, plain soot) runs in the first few
@@ -64176,6 +64176,10 @@ function scarPass1(P){
         if(ii > Q - 1) ii = Q - 1;
         if(jj > Q - 1) jj = Q - 1;
         fx -= ii; fy -= jj;
+        /* eased between the grid's points, so the field's slope - which
+           the light reads - has no seams at the cells (bilinear left the
+           lit walls in facets, planet2) */
+        fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
         const q0 = jj * Q1 + ii;
         const w00 = (1 - fx) * (1 - fy), w10 = fx * (1 - fy), w01 = (1 - fx) * fy, w11 = fx * fy;
         const n1 = FI[q0] * w00 + FI[q0 + 1] * w10 + FI[q0 + Q1] * w01 + FI[q0 + Q1 + 1] * w11;
@@ -64186,16 +64190,20 @@ function scarPass1(P){
         const ex = x - C3x, ey = y - C3y, ez = z - C3z;
         const ch = Math.sqrt(ex * ex + ey * ey + ez * ez) / rhoC;
         const qc = ch * (1 + .5 * (edg - .5) + .22 * (n1 - .5));
-        let h = 0, em = 0, tp = 0, dp = 0, mat = 0;
-        if(qc < 1){ h -= .045 * ss(1, .5, qc) * (.9 + .2 * n2); dp = .7 * ss(1, .55, qc); }
+        let h = 0, em = 0, ash = 0, dp = 0, mat = 0;
+        /* (the floor is seen from above, so it is only half hidden - its
+           charcoal has to read) */
+        if(qc < 1){ h -= .045 * ss(1, .5, qc) * (.9 + .2 * n2); dp = .34 * ss(1, .55, qc); }
         if(qc < 2.4){
           const rr = (qc - 1.04) / .13;
           h += .009 * Math.exp(-rr * rr) * (.35 + 1.3 * n1);
           if(qc > 1) h += .0035 * Math.exp(-(qc - 1) * 2.4);
         }
-        /* soot: soft, ragged, with streaks thrown out of the impact */
-        const qs = ch * (1 + .8 * (n1 - .5));
-        let cov = qs < 2.6 ? .9 * (1 - ss(.75, 2.6, qs)) : 0;
+        /* the burn: dense char close in, its edge ragged at two scales, and
+           a softer scorch beyond it, with streaks thrown out of the impact
+           (planet2: one soft soot read as a smudge at 3x) */
+        const qs = ch * (1 + .8 * (n1 - .5) + .3 * (n2 - .5));
+        let cov = qs < 2.8 ? Math.max(.96 * (1 - ss(1.05, 1.55, qs)), .5 * (1 - ss(1.2, 2.8, qs))) : 0;
         if(qs > .7 && qs < 3.3 && ray > .52){ const st = .66 * ss(.52, .72, ray) * (1 - ss(1.2, 3.3, qs)) * ss(.7, 1.15, qs); if(st > cov) cov = st; }
         let chr = qc < 1 ? 1 - ss(.88, 1.0, qc) : 0;
         if(chr > 0) mat = 1;
@@ -64228,49 +64236,44 @@ function scarPass1(P){
               const c2 = Math.min(1, (1 - bt) * 2.4) * bW * inCr;
               if(c2 > chr){ chr = c2; mat = 2; }
             }
-            /* the ember lies deep in the crack, narrower than its opening */
-            if(bH > 0 && bt < 1.05){
-              const fl = 1 - bt / .62;
-              const e = bH * ((fl > 0 ? Math.pow(fl, 1.2) * (.55 + .8 * n2) : 0) + .36 * (1 - bt / 1.05) * (1 - bt / 1.05)) * inCr;
-              if(e > em){ em = e; tp = bH * (fl > 0 ? fl : 0) * (.8 + .5 * n2); }
-            }
-            /* the gap's light on the lips and the ground beside it */
-            if(bKind < 2 && bH > .08 && bt >= .9){
-              const e = bH * .42 * Math.exp(-(bt - .9) / .55) * (.75 + .5 * n2) * inCr;
-              if(e > em){ em = e; tp = .22 + .18 * bH; }
-            }
-            if(bKind < 2 && bH > 0){ const sc = .5 * Math.exp(-bt / 2.4) * Math.min(1, bH * 1.8); if(sc > cov) cov = sc; }
+            /* burnt along its length: the ground either side scorched, more
+               the nearer the crater (the crack's old heat, bH) - planet2:
+               nothing in it glows any more */
+            if(bKind < 2 && bH > 0){ const sc = .64 * Math.exp(-bt / 2.9) * Math.min(1, bH * 1.8); if(sc > cov) cov = sc; }
           }
         }
-        /* the rupture's floor: molten, seen down inside its walls, with
-           dark crust drifting on it - mottled, never a pattern */
+        /* THE CRATER'S FLOOR, BURNT OUT (planet2): what was molten is
+           charcoal now - lumps of it (the lava field, lit as relief) split
+           by seams, ash settled on the lumps, and in the deepest seams the
+           last of the heat: a dull red, faint, and only at the bottom */
         if(qc < 1.02){
           let lx = (x - CX + LVS) / (2 * LVS) * LVN, ly = (y - CY + LVS) / (2 * LVS) * LVN;
           lx = lx < 0 ? 0 : lx > LVN - .001 ? LVN - .001 : lx; ly = ly < 0 ? 0 : ly > LVN - .001 ? LVN - .001 : ly;
           const li = lx | 0, lj = ly | 0, ax = lx - li, ay = ly - lj, l0 = lj * LV1 + li;
           const lv = LV[l0] * (1 - ax) * (1 - ay) + LV[l0 + 1] * ax * (1 - ay) + LV[l0 + LV1] * (1 - ax) * ay + LV[l0 + LV1 + 1] * ax * ay;
-          const crust = ss(.44, .58, lv + .35 * (n2 - .5));
-          const e = (1 - ss(.36, .76, qc)) * (1 - .78 * crust) * (.66 + .55 * (lv - .5) + .3 * n2) + (1 - ss(.5, .95, qc)) * .14;
-          if(e > em){ em = e; tp = (.36 + .5 * (1 - ss(0, .66, qc))) * (1 - .5 * crust) * (.8 + .4 * n2); }
-        }
-        /* the rupture's light spills out over the soot round its rim */
-        if(qc > .85 && qc < 2.2){
-          const sp = .26 * Math.exp(-(qc - .85) * 2.6) * (.7 + .6 * n2);
-          if(sp > em){ em = sp; tp = .3 + .2 * Math.exp(-(qc - .85) * 3); }
+          /* the seams: where the field crosses its middle - thin, organic
+             lines, a broken crust of plates rather than a grid */
+          const dv = lv + .2 * (n2 - .5) - .5, seam = 1 - ss(.012, .04, dv < 0 ? -dv : dv), floor = 1 - ss(.38, .62, qc);
+          h += (.004 * (dv > 0 ? 1 : .4) - .006 * seam) * floor;
+          if(seam > chr * .5 && floor > .2){ dp = dp > .6 * seam ? dp : .6 * seam; }
+          const e = seam * (1 - ss(.1, .5, qc)) * ss(.44, .68, n2) * .9;
+          if(e > em) em = e;
+          ash = ss(.56, .7, n1 + .5 * (n2 - .5)) * (1 - seam) * floor * .5;
         }
         const cv = cov * (.78 + .44 * n2);
         if(h === 0 && cv < .004 && chr < .004 && em < .004) continue;
-        On[k] = 1; Hf[k] = h; Cov[k] = cv > chr ? cv : chr; Mat[k] = chr >= cv ? mat : 0; Em[k] = em; Tp[k] = tp; Dp[k] = dp;
+        On[k] = 1; Hf[k] = h; Cov[k] = cv > chr ? cv : chr; Mat[k] = chr >= cv ? mat : 0; Em[k] = em; As[k] = ash; Dp[k] = dp;
       }
     }
   }
 }
-/* Pass two: the height field lit by the planet's own light, and the
-   ember's colour, into the three pictures. */
+/* Pass two: the height field lit by the planet's own light, coloured as
+   char - black, a scorched brown where the burn thins out, pale ash, a
+   dull sheen where a lump or a lip faces the light - and the last of the
+   ember, into the two pictures (planet2). */
 function scarPass2(P){
-  const N = P.N, Hf = P.Hf, Cov = P.Cov, Mat = P.Mat, Em = P.Em, Tp = P.Tp, Dp = P.Dp, On = P.On, dB = P.dB, dE = P.dE, dH = P.dH;
+  const N = P.N, Hf = P.Hf, Cov = P.Cov, Mat = P.Mat, Em = P.Em, As = P.As, Dp = P.Dp, On = P.On, dB = P.dB, dE = P.dE;
   const LX = P.LX, LY = P.LY, LZ = P.LZ, AMB = .3, inv2s = N / 4, MQ = P.MQ, Msk = P.Msk, ms = MQ / N;
-  const RT = [0, 60, 8, 3, .3, 160, 30, 6, .55, 240, 84, 20, .78, 255, 150, 56, 1, 255, 226, 160];
   const order = P.order, BK = P.BK, BPX = N / BK;
   for(let oi = 0; oi < order.length; oi++){
     const bb = order[oi] % (BK * BK), by = (bb / BK) | 0, bx = bb - by * BK;
@@ -64285,51 +64288,46 @@ function scarPass2(P){
       disc = disc > 1 ? 1 : disc;
       const k4 = k * 4;
       /* the plasma's mask: how much each of its cells is covered (the
-         crack as much as the rupture - its light pools washing over the
+         crack as much as the crater - its light pools washing over the
          gap at half strength softened it into a smudge) */
       const mq = ((j * ms) | 0) * MQ + ((i * ms) | 0), mv = Mat[k] === 2 ? .9 : Cov[k] * .92;
       if(mv > Msk[mq]) Msk[mq] = mv;
+      const A0 = Cov[k], mt = Mat[k], as = As[k];
+      /* the char, and where it thins out at its edge, the planet scorched
+         brown rather than blackened */
+      const sc = !mt && A0 < .55 ? 1 - A0 / .55 : 0;
+      let mr = 13 + 40 * sc, mg = 11 + 20 * sc, mb = 11 + 8 * sc;
+      if(mt){ const dd = 1 - .85 * Dp[k]; mr = 24 * dd; mg = 22 * dd; mb = 22 * dd; }
+      if(as > 0){ mr += (96 - mr) * as; mg += (93 - mg) * as; mb += (90 - mb) * as; }
       const hx = (Hf[k + 1] - Hf[k - 1]) * inv2s, hy = (Hf[k + N] - Hf[k - N]) * inv2s;
-      if(hx === 0 && hy === 0 && !Mat[k] && Em[k] <= .003){
-        /* flat soot: nothing to light */
-        dB[k4] = 18; dB[k4 + 1] = 10; dB[k4 + 2] = 8; dB[k4 + 3] = Cov[k] * disc * 255;
-        continue;
-      }
-      const z = Math.sqrt(1 - r2 > 1e-4 ? 1 - r2 : 1e-4);
-      /* the sphere's normal tipped by the slope (the surface P + h n,
-         differentiated along screen x and y) */
-      let nx = x - hx * (1 - x * x) + hy * x * y, ny = y - hy * (1 - y * y) + hx * x * y, nz = z + (hx * x + hy * y) * z;
-      const nl = Math.sqrt(nx * nx + ny * ny + nz * nz);
-      nx /= nl; ny /= nl; nz /= nl;
-      const l0 = x * LX + y * LY + z * LZ, l1 = nx * LX + ny * LY + nz * LZ;
-      const f = (AMB + (1 - AMB) * (l1 > 0 ? l1 : 0)) / (AMB + (1 - AMB) * (l0 > 0 ? l0 : 0)) * (1 - .8 * Dp[k]);
-      const A0 = Cov[k], mt = Mat[k];
-      let mr = 18, mg = 10, mb = 8;
-      if(mt){ const dd = 1 - .85 * Dp[k]; mr = 40 * dd; mg = 28 * dd; mb = 24 * dd; }
-      let A, R, Gc, Bc;
-      if(f <= 1){
-        const dk = (1 - f) * .95 < .94 ? (1 - f) * .95 : .94;
-        A = 1 - (1 - A0) * (1 - dk);
-        const keep = A0 * (1 - dk) / (A || 1);
-        R = mr * keep; Gc = mg * keep; Bc = mb * keep;
-      } else {
-        const lift = ((f - 1) * .42 < .42 ? (f - 1) * .42 : .42) * (1 - .62 * A0);
-        A = 1 - (1 - A0) * (1 - lift);
-        const ia = 1 / (A || 1), wg = mt ? 176 : 214, wb = mt ? 120 : 182;
-        R = (mr * A0 * (1 - lift) + 255 * lift) * ia; Gc = (mg * A0 * (1 - lift) + wg * lift) * ia; Bc = (mb * A0 * (1 - lift) + wb * lift) * ia;
+      let A = A0, R = mr, Gc = mg, Bc = mb;
+      if(hx !== 0 || hy !== 0 || mt){
+        const z = Math.sqrt(1 - r2 > 1e-4 ? 1 - r2 : 1e-4);
+        /* the sphere's normal tipped by the slope (the surface P + h n,
+           differentiated along screen x and y) */
+        let nx = x - hx * (1 - x * x) + hy * x * y, ny = y - hy * (1 - y * y) + hx * x * y, nz = z + (hx * x + hy * y) * z;
+        const nl = Math.sqrt(nx * nx + ny * ny + nz * nz);
+        nx /= nl; ny /= nl; nz /= nl;
+        const l0 = x * LX + y * LY + z * LZ, l1 = nx * LX + ny * LY + nz * LZ;
+        const f = (AMB + (1 - AMB) * (l1 > 0 ? l1 : 0)) / (AMB + (1 - AMB) * (l0 > 0 ? l0 : 0)) * (1 - .8 * Dp[k]);
+        if(f <= 1){
+          const dk = (1 - f) * .95 < .94 ? (1 - f) * .95 : .94;
+          A = 1 - (1 - A0) * (1 - dk);
+          const keep = A0 * (1 - dk) / (A || 1);
+          R = mr * keep; Gc = mg * keep; Bc = mb * keep;
+        } else {
+          /* charcoal's own dull sheen, grey and never warm: a burnt
+             surface catches the light, it does not give any */
+          const lift = ((f - 1) * .4 < .34 ? (f - 1) * .4 : .34) * (1 - .3 * A0);
+          A = 1 - (1 - A0) * (1 - lift);
+          const ia = 1 / (A || 1);
+          R = (mr * A0 * (1 - lift) + 132 * lift) * ia; Gc = (mg * A0 * (1 - lift) + 128 * lift) * ia; Bc = (mb * A0 * (1 - lift) + 125 * lift) * ia;
+        }
       }
       dB[k4] = R; dB[k4 + 1] = Gc; dB[k4 + 2] = Bc; dB[k4 + 3] = A * disc * 255;
+      /* the last of the heat: one dull red, never brighter than this */
       const e = Em[k];
-      if(e > .003){
-        const t = Tp[k] > 1 ? 1 : Tp[k];
-        let m = 4;
-        while(m < 16 && RT[m] < t) m += 4;
-        const fa = (t - RT[m - 4]) / (RT[m] - RT[m - 4] || 1);
-        dE[k4] = RT[m - 3] + (RT[m + 1] - RT[m - 3]) * fa; dE[k4 + 1] = RT[m - 2] + (RT[m + 2] - RT[m - 2]) * fa; dE[k4 + 2] = RT[m - 1] + (RT[m + 3] - RT[m - 1]) * fa;
-        dE[k4 + 3] = (e > .87 ? 1 : e * 1.15) * disc * 255;
-        const hot = (t - .5) / .5;
-        if(hot > 0){ dH[k4] = 255; dH[k4 + 1] = 190 + 50 * hot; dH[k4 + 2] = 110 + 80 * hot; dH[k4 + 3] = (hot * e * 1.2 < 1 ? hot * e * 1.2 : 1) * disc * 255; }
-      }
+      if(e > .003){ dE[k4] = 150; dE[k4 + 1] = 30; dE[k4 + 2] = 10; dE[k4 + 3] = (e > 1 ? 1 : e) * .62 * disc * 255; }
     }
     }
   }
@@ -64380,9 +64378,9 @@ function cosmicScarArt(){
        phone and its ~330 on an iPad (a multiple of 64, the buckets) */
     const N = dpr >= 1.5 ? 384 : 256;
     const mk = n => { const c = document.createElement("canvas"); c.width = c.height = n; return c; };
-    const cB = mk(N), cE = mk(N), cH = mk(N), cL = mk(N);
-    const gB = cB.getContext("2d"), gE = cE.getContext("2d"), gH = cH.getContext("2d"), gL = cL.getContext("2d");
-    if(!gB || !gE || !gH || !gL) return cosmicScarCache;
+    const cB = mk(N), cE = mk(N);
+    const gB = cB.getContext("2d"), gE = cE.getContext("2d");
+    if(!gB || !gE) return cosmicScarCache;
     let seed = 7331;
     const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
     const G = 64, grid = new Float32Array(G * G);
@@ -64549,41 +64547,13 @@ function cosmicScarArt(){
     const P = { N, BK, Q, Q1, FI, FR, FE, FN, LV, LVN, LVS, cnt, lst, SF, CX, CY, C3x: C3[0], C3y: C3[1], C3z: C3[2], RHO, SR,
       LX, LY, LZ, NN: N * N, MQ: 96, Msk: new Float32Array(96 * 96) };
     scarPass1(P);
-    const iB = gB.createImageData(N, N), iE = gE.createImageData(N, N), iH = gH.createImageData(N, N);
-    P.dB = iB.data; P.dE = iE.data; P.dH = iH.data;
+    const iB = gB.createImageData(N, N), iE = gE.createImageData(N, N);
+    P.dB = iB.data; P.dE = iE.data;
     scarPass2(P);
-    gB.putImageData(iB, 0, 0); gE.putImageData(iE, 0, 0); gH.putImageData(iH, 0, 0);
-    /* THE BLOOM (build 317, planet round, second pass - "the permanent
-       damage ... is eh"): from arm's length a thin glowing line is a
-       scratch. The hot first half of the crack and the rupture light the
-       ground round them - a soft orange glow, drawn natively (a blurred
-       stroke and a radial gradient, under the sharp ember: destination-
-       over), clipped to the disc. It is what makes it read as fire in the
-       planet rather than a mark on it. Its own canvas, over the burn (light
-       on the soot) and under the ember, breathing with it. */
-    try{
-      const px = q => (q + 1) / 2 * N, gE = gL;
-      gE.save();
-      gE.beginPath(); gE.arc(N / 2, N / 2, N / 2 - 1, 0, Math.PI * 2); gE.clip();
-      gE.lineCap = "round"; gE.lineJoin = "round";
-      [[jA, .5, 1], [jB, .55, .9]].forEach(([path, upto, k]) => {
-        const n = Math.max(2, Math.round(path.length * upto));
-        for(let pass = 0; pass < 2; pass++){
-          gE.beginPath();
-          for(let m = 0; m < n; m++){ const q = path[m]; if(m) gE.lineTo(px(q[0]), px(q[1])); else gE.moveTo(px(q[0]), px(q[1])); }
-          gE.shadowColor = pass ? "rgba(255,120,40,.7)" : "rgba(255,70,20,.5)";
-          gE.shadowBlur = N * (pass ? .03 : .065);
-          gE.strokeStyle = pass ? "rgba(255,120,44," + (.22 * k).toFixed(2) + ")" : "rgba(226,62,20," + (.14 * k).toFixed(2) + ")";
-          gE.lineWidth = N * (pass ? .03 : .06);
-          gE.stroke();
-        }
-      });
-      gE.shadowBlur = 0; gE.shadowColor = "transparent";
-      const cx = px(CX), cy = px(CY), rg = gE.createRadialGradient(cx, cy, N * RHO * .2, cx, cy, N * RHO * 1.15);
-      rg.addColorStop(0, "rgba(255,150,56,.42)"); rg.addColorStop(.42, "rgba(255,96,30,.2)"); rg.addColorStop(1, "rgba(200,50,16,0)");
-      gE.fillStyle = rg; gE.beginPath(); gE.arc(cx, cy, N * RHO * 1.15, 0, Math.PI * 2); gE.fill();
-      gE.restore();
-    }catch(e){}
+    gB.putImageData(iB, 0, 0); gE.putImageData(iE, 0, 0);
+    /* (The bloom - a soft orange glow drawn round the hot half of the
+       crack and the crater - went in planet2 with the rest of the fire:
+       "needs to be black charring". Nothing here gives light any more.) */
     /* the plasma's light pools and smoke must not wash over the rupture,
        and only partly over the crack (smoke drifting over it is what
        makes it the planet's own): a small soft mask, cover inverted */
@@ -64609,7 +64579,7 @@ function cosmicScarArt(){
         Math.round(22 + 11 * rnd()), Math.round((i % 2 ? -1 : 1) * (150 + 90 * rnd())), +(7.4 + 4 * rnd()).toFixed(1), -(+(11 * rnd()).toFixed(1))]);
     });
     const t1 = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
-    cosmicScarCache = { n: N, burn: cB, ember: cE, hot: cH, bloom: cL, mask, frags,
+    cosmicScarCache = { n: N, burn: cB, ember: cE, mask, frags,
       /* where the hole is, seen from the planet's middle: degrees clockwise
          from the top - what the rings and the flares passing it key off */
       angle: Math.atan2(CX, -CY) * 180 / Math.PI, crater: [(CX + 1) * 50, (CY + 1) * 50], ms: t1 - t0 };
@@ -64621,6 +64591,15 @@ function cosmicScarArt(){
    the middle and at every side of the square - so it can never show a
    hard edge or the box it is drawn in. Seeded, like the smoke. */
 let snDustCache = null;
+/* SUPERNOVA'S ART, DRAWN AHEAD (cut3): the scar (cosmicScarArt, ~60-140ms
+   the first time in a session) and the blast's dust (snDustURL, ~25-35ms).
+   Called as the scene is built, before its first frame, where a dropped
+   frame cannot be seen - so neither lands in the middle of the scene.
+   Both are cached, so a second call is free. */
+function warmSupernovaArt(){
+  try{ cosmicScarArt(); }catch(e){}
+  try{ snDustURL(); }catch(e){}
+}
 function snDustURL(){
   if(snDustCache !== null) return snDustCache;
   snDustCache = "";
@@ -64867,7 +64846,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
      sweep can turn as a compositor transform without repainting the
      sphere's filters. */
   const ringTier = homeRingTier();
-  const ringStyle = ringTier === "eclipse" ? (RING_ECLIPSE_STYLE === "black" ? "black" : "flares") : "";
+  const ringStyle = ringTier === "eclipse" ? (RING_ECLIPSE_STYLE === "flares" || RING_ECLIPSE_STYLE === "white" ? RING_ECLIPSE_STYLE : "black") : "";
   /* A ring tier this device has not shown yet draws itself on (see
      playRingDraw): showHome hands over the tier it showed last, and only
      that one build uses it. */
@@ -64923,6 +64902,16 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
       const gp = flarePattern(gsvg, depthId + "flaresg", url);
       radii.forEach(r => { const g = ringCircle(r, "cosmic-ring-glow"); g.style.stroke = gp; gsvg.appendChild(g); });
       ringLayer.appendChild(gsvg);
+    } else if(ringStyle === "black" || ringStyle === "white"){
+      /* THE RIM (planet2): the same rings again under the ring itself, a
+         little wider and softened, in a cool light - so a black ring is
+         edged on both sides and reads as a thing on a dark sky rather than
+         a line missing from it. HTML-level blur, as for the flares' glow:
+         iOS does not draw a CSS filter on an svg element. See
+         .cosmic-ring-glowsvg.is-rim. */
+      const gsvg = ringSvgOf("cosmic-ring-glowsvg is-rim");
+      radii.forEach(r => gsvg.appendChild(ringCircle(r, "cosmic-ring-glow cosmic-ring-rim")));
+      ringLayer.appendChild(gsvg);
     }
     ringSvg = ringSvgOf("cosmic-ring-main");
     if(url) ringPaint = flarePattern(ringSvg, depthId + "flares", url);
@@ -64961,7 +64950,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     const dsvg = ringSvgOf("cosmic-ring-drawsvg");
     const gl = document.createElementNS(svgNS, "radialGradient");
     gl.setAttribute("id", depthId + "glint");
-    const glintTint = ringStyle === "black" ? "#FF8A52" : ringStyle === "flares" ? "#FFE6F4" : "#FFC9A6";
+    const glintTint = ringStyle === "black" || ringStyle === "white" ? "#E2E9F8" : ringStyle === "flares" ? "#FFE6F4" : "#FFC9A6";
     [["0%", "#FFFFFF", "1"], ["35%", glintTint, ".75"], ["100%", glintTint, "0"]].forEach(([o, c, op]) => {
       const st = document.createElementNS(svgNS, "stop");
       st.setAttribute("offset", o); st.setAttribute("stop-color", c); st.setAttribute("stop-opacity", op);
@@ -64969,7 +64958,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     });
     const dd = document.createElementNS(svgNS, "defs");
     dd.appendChild(gl); dsvg.appendChild(dd);
-    const newPaint = ringStyle === "flares" ? (ringPaint || "rgba(255,92,168,.55)") : ringStyle === "black" ? "rgba(5,3,8,.55)" : "rgba(245,128,77,.55)";
+    const newPaint = ringStyle === "flares" ? (ringPaint || "rgba(255,92,168,.55)") : ringStyle === "black" ? RING_BLACK : ringStyle === "white" ? RING_WHITE : "rgba(245,128,77,.55)";
     /* outer ring first, the inner a beat behind it */
     radii.slice().sort((x, y) => y - x).forEach(r => {
       const C = 2 * Math.PI * r;
@@ -64987,6 +64976,14 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
       arc.setAttribute("stroke-dashoffset", (C + 2).toFixed(2));
       arc.style.stroke = newPaint;
       arc.dataset.len = C.toFixed(2);
+      /* a black or white ring draws on with its rim under it, so it reads
+         while it draws (no blur here: the draw is filter-free) */
+      if(ringStyle === "black" || ringStyle === "white"){
+        const rim = arc.cloneNode(false);
+        rim.setAttribute("class", "cosmic-ring-arcrim");
+        rim.removeAttribute("style");
+        box.appendChild(rim);
+      }
       box.appendChild(arc);
       /* the glint turns on an arm about the planet's centre: a group
          moved to (180,150), and inside it the one that rotates */
@@ -65099,8 +65096,6 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   const sphere = document.createElementNS(svgNS, "circle");
   sphere.setAttribute("cx", 180); sphere.setAttribute("cy", 150); sphere.setAttribute("r", 52);
   sphere.setAttribute("fill", "url(#cosmicSphereGrad)");
-  /* the one thing in the planet's svg that takes a tap (build 317) */
-  sphere.setAttribute("class", "cosmic-sphere-hit");
   if(useTierIcons){
     /* A small, playful easter egg \u2014 tapping the sphere itself (not
        one of the orbiting badges) gets a little "..... " thinking
@@ -65276,9 +65271,20 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   orbitLayer.className = "cosmic-hero-layer cosmic-hero-orbitlayer";
   const innerOrbitLayer = document.createElement("div");
   innerOrbitLayer.className = "cosmic-hero-layer cosmic-hero-orbitlayer cosmic-hero-orbitlayer-inner";
-  /* [ring radius, degrees clockwise from the top], in the 0 -12 360 342
-     viewBox the planet is drawn in (centre 180,150; rings 108 and 152). */
-  const FLARE_SPOT = { red: [HOME_OUTER_R, 337], orange: [HOME_OUTER_R, 128], yellow: [108, 236], violet: [108, 32], white: [108, 141] };
+  /* [ring, degrees clockwise from the top], in the 0 -12 360 342 viewBox
+     the planet is drawn in (centre 180,150): ring 1 the outer (Home's
+     HOME_OUTER_R, Welcome's drawn 152 - radii[1], so a flare rides the
+     ring it is drawn on), ring 0 the inner (108).
+     THREE AND THREE (build 317, planet2). "could it be on the rings like
+     the others as well? But let's make it so voids 3 are maybe on the
+     outside and the other 3 are on the inside." Void's three (the light it
+     swallowed) ride the outer ring; Umbra's, Horizon's and Genesis's the
+     inner. Each ring's three are spread round it - gaps of 120, 114 and
+     126 degrees outside, 109, 121 and 130 inside - so neither ring has an
+     empty half, but no two gaps are the same: even spacing read as a
+     pattern (build 313). The debris on the rings (RING_DEBRIS) lies in
+     the gaps between them. */
+  const FLARE_SPOT = { red: [1, 337], orange: [1, 97], yellow: [1, 211], violet: [0, 32], white: [0, 141], core: [0, 262] };
   /* What a tapped flare says is homeTapCopyFlare's (build 317, round
      three): a found one its name and a line about it, a missing one a
      hint that gives nothing away. */
@@ -65318,42 +65324,26 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   shownFlares.forEach(key => {
     const spot = FLARE_SPOT[key];
     if(!spot) return;
-    const a = spot[1] * Math.PI / 180;
-    const cx = 180 + spot[0] * Math.sin(a), cy = 150 - spot[0] * Math.cos(a);
+    const R = radii[spot[0]], a = spot[1] * Math.PI / 180;
+    const cx = 180 + R * Math.sin(a), cy = 150 - R * Math.cos(a);
     const el = makeFlare(key);
     el.style.left = (cx / 360 * 100).toFixed(3) + "%";
     el.style.top = ((cy + 12) / 342 * 100).toFixed(3) + "%";
-    (spot[0] < 130 ? innerOrbitLayer : orbitLayer).appendChild(el);
+    (spot[0] ? orbitLayer : innerOrbitLayer).appendChild(el);
   });
-  /* ---- THE SIXTH, ON THE PLANET (build 313) ----
-     "This flare will be a secret flare that is somehow placed in a cool
-     way on the planet ... that moves in a cool way." It skims the planet
-     in a low, tilted orbit - across the face, round the limb, and BEHIND
-     it, gone for a moment, then back round the other side. One orbit,
-     drawn with transforms only: a squashed, tilted plane turns an arm,
-     and the flare at the arm's end turns back the other way and is
-     un-squashed, so it stays a round bead moving on an ellipse. It hides
-     on the far side only where the planet is in front of it (see
-     cof-occlude), and its short tail lies in the orbit's own plane. */
-  let coreFlare = null;
-  if(shownFlares.indexOf("core") >= 0){
-    coreFlare = document.createElement("div");
-    coreFlare.className = "cosmic-core-orbit";
-    coreFlare.innerHTML = '<div class="cco-plane"><div class="cco-spin"><div class="cco-arm"><i class="cco-tail"></i><div class="cco-counter"><i class="cco-shine"></i></div></div></div></div>';
-    const fl = makeFlare("core");
-    fl.classList.add("is-core");
-    if(fl.classList.contains("is-found")) coreFlare.classList.add("is-found");
-    coreFlare.querySelector(".cco-counter").appendChild(fl);
-  }
+  /* THE SIXTH RIDES THE INNER RING (build 317, planet2). It skimmed the
+     planet from build 313 and went round behind it in the planet round
+     (a 3D orbit of its own); "I'm not a fan of the genesis secret flare
+     at all, could it be on the rings like the others as well?" It is one
+     of the inner three now, made and placed like them - the same layer,
+     the same turn, the same glass to pass under, the same light off the
+     scar. Its key, its find rule and everything stored under it are
+     unchanged. */
   svg.classList.add("cosmic-hero-main");
   wrap.append(glowBox);
   if(ringOld) wrap.appendChild(ringOld);
   if(ringLayer) wrap.appendChild(ringLayer);
   if(ringDraw) wrap.appendChild(ringDraw);
-  /* the sixth flare's orbit just BEFORE the planet's svg: in place it is
-     under the planet (the far half of its lap), lifted it is over
-     everything (the near half) - see "and now going ROUND it" */
-  if(coreFlare) wrap.appendChild(coreFlare);
   wrap.append(svg, animLayer, orbitLayer, innerOrbitLayer);
   /* The sphere's life, on the compositor: two soft light pools drifting
      over the surface inside a circular window the exact size of the
@@ -65621,15 +65611,14 @@ function buildCosmicScar(){
     return '<i class="csc-frag" style="--x:' + x + '%;--y:' + y + '%;--s:' + s + '%;--dx:' + dx.toFixed(1) + '%;--dy:' + dy.toFixed(1) +
       '%;--r:' + r + 'deg;--t:' + t + 's;--d:' + d + 's"></i>';
   }).join("");
-  sc.innerHTML = '<div class="csc-disc"></div>' +
-    '<i class="csc-heat"></i><i class="csc-heat is-2"></i><div class="csc-frags">' + frags + '</div>';
+  sc.innerHTML = '<div class="csc-disc"></div><div class="csc-frags">' + frags + '</div>';
   const disc = sc.firstChild;
   /* the art, copied onto this hero's own canvases (a canvas is one place
      in the page; drawImage is a GPU copy, nothing re-drawn) */
   let drawn = false;
   if(art){
     try{
-      ["burn", "bloom", "ember", "hot"].forEach(k => {
+      ["burn", "ember"].forEach(k => {
         const c = document.createElement("canvas");
         c.className = "csc-art csc-" + k;
         c.width = c.height = art.n;
@@ -65689,15 +65678,16 @@ function attachCosmicScar(hero){ return decorateSupernovaHero(hero); }
    motion. One table: [ring (0 inner, 1 outer), degrees clockwise from the
    top, off the line (units, + outward), size (% of the hero), tumble
    seconds (- the other way), place in the tumble (s)]. */
+/* Planet2: the streams moved with the flares - one in each gap between
+   a ring's three (FLARE_SPOT: outer 337, 97, 211; inner 32, 141, 262),
+   off its middle, so no flare rides through a stream. */
 const RING_DEBRIS = [
-  [1, 14, 3, 1.5, 11.3, -2.1], [1, 21, -2.5, 1.1, -8.7, -5.4], [1, 27, 5, 1.3, 13.9, -9.2],
-  [1, 93, -4, 1.6, -10.1, -3.3], [1, 101, 2, 1.0, 7.9, -6.6],
-  [1, 192, 4, 1.4, 12.7, -1.4], [1, 199, -3, 1.0, -9.6, -7.7], [1, 207, 1, 1.7, 15.1, -4.9], [1, 214, -5, 1.1, -8.2, -2.8],
-  [1, 296, 2.5, 1.3, 10.6, -8.1], [1, 305, -4, 1.0, -12.2, -5.9],
-  [0, 54, -3, 1.2, -9.3, -4.4], [0, 61, 3.5, 1.5, 12.1, -1.9], [0, 67, -1, 1.0, 8.4, -6.2],
-  [0, 165, 4, 1.3, -11.6, -3.7], [0, 174, -2.5, 1.1, 9.9, -7.3],
-  [0, 249, -4, 1.4, 13.3, -2.5], [0, 257, 2, 1.0, -7.6, -5.1], [0, 265, 5, 1.2, 10.8, -8.6],
-  [0, 338, -2, 1.3, -12.9, -4.0]
+  [1, 26, 3, 1.5, 11.3, -2.1], [1, 33, -2.5, 1.1, -8.7, -5.4], [1, 39, 5, 1.3, 13.9, -9.2], [1, 47, -4, 1.6, -10.1, -3.3],
+  [1, 151, 2, 1.0, 7.9, -6.6], [1, 158, 4, 1.4, 12.7, -1.4], [1, 166, -3, 1.0, -9.6, -7.7],
+  [1, 262, 1, 1.7, 15.1, -4.9], [1, 269, -5, 1.1, -8.2, -2.8], [1, 277, 2.5, 1.3, 10.6, -8.1], [1, 284, -4, 1.0, -12.2, -5.9],
+  [0, 76, -3, 1.2, -9.3, -4.4], [0, 83, 3.5, 1.5, 12.1, -1.9], [0, 89, -1, 1.0, 8.4, -6.2],
+  [0, 196, 4, 1.3, -11.6, -3.7], [0, 204, -2.5, 1.1, 9.9, -7.3], [0, 211, -4, 1.4, 13.3, -2.5],
+  [0, 318, 2, 1.0, -7.6, -5.1], [0, 325, 5, 1.2, 10.8, -8.6], [0, 333, -2, 1.3, -12.9, -4.0]
 ];
 function addRingDebris(hero){
   if(!hero || hero.querySelector(".csc-ringfrag")) return;
@@ -65722,47 +65712,41 @@ function addRingDebris(hero){
     (ring ? outer : inner).appendChild(el);
   });
 }
-/* WHAT PASSES THE SCAR CATCHES ITS LIGHT (build 317, planet round). "a
-   cool effect would be once the explosion happens maybe the rings and
-   everything, as it passes the hole something happens ... incorporate the
-   damage effects to the rings and what's on them when passing it somehow
-   in a cool way? Not over the top."
-   - The scar's place is an angle: where the rupture sits, seen from the
+/* WHAT PASSES THE SCAR (build 317, planet round; reworked in planet2).
+   "a cool effect would be once the explosion happens maybe the rings and
+   everything, as it passes the hole something happens ... Not over the
+   top." In the planet round the scar was a burning fissure and what passed
+   it caught its light. In planet2 it is cold char ("needs to be black
+   charring"), and a cold scar gives no light - so what it gives instead is
+   its SOOT:
+   - The scar's place is an angle: where the crater sits, seen from the
      planet's middle (cosmicScarArt().angle, ~132 degrees clockwise from
      the top - its lower right).
-   - A secret flare on a ring passes that angle once a lap. Its glint - a
-     warm rim on the side facing the planet, the crack's light - is a CSS
-     loop of the ring's own lap, offset so its peak falls exactly as the
-     flare crosses: worked out from where the flare starts (its left/top in
-     the hero) and the lap (ORBIT_LAP_S, the rings' cosmic-orbit-spin).
-     Both run on the same clock (syncLoopClock sets them together), so it
-     never drifts and nothing is measured per frame.
-   - Genesis's flare crosses the planet's face in front of the rupture: its
-     glint peaks at the point of its lap nearest it, worked out from the
-     orbit (CORE_ORBIT, the same numbers as .cco-plane) the same way.
-   - The rings, where they pass the scar, run hot: a short arc of ember
-     over each, fading out at both ends, flickering on two clocks.
-   - The flare bubbles do not orbit on Home; the ones nearest the hole
-     carry its firelight on their near side, faint, flickering.
-   All of it is .csc-pass: transform and opacity only, held still under
-   Reduce motion, and left out of the rank cutscene (its scene is its own). */
-const ORBIT_LAP_S = { outer: 120, inner: 52, core: 16 };   /* = cosmic-orbit-spin on the two rings, and cco-turn */
-const CORE_ORBIT = { r: 72, squash: .36, tilt: -18 };      /* = .cosmic-core-orbit / .cco-plane */
-let scarHeatSeq = 0;
+   - The rings, where they pass it, are sooted: a short dark arc laid over
+     each ring, fading out at both ends, breathing slowly like smoke on two
+     clocks - the orange tier dims there, the black tier's silver rim goes
+     dull.
+   - A secret flare on a ring passes through that soot once a lap and dims
+     as it does: a dark veil over its light, a CSS loop of the ring's own
+     lap offset so its deepest falls exactly as the flare crosses the angle
+     - worked out from where the flare starts (its left/top in the hero) and
+     the lap (ORBIT_LAP_S, the rings' cosmic-orbit-spin). Both run on the
+     same clock (syncLoopClock sets them together), so it never drifts and
+     nothing is measured per frame. Genesis's flare is one of the inner
+     three since planet2, so it passes like the rest.
+   - Nothing lights the bubbles any more (their firelight went with the
+     fire).
+   All of it is .csc-pass: transform and opacity only, held still (and the
+   veils clear) under Reduce motion, and left out of the rank cutscene
+   unless the scene asks for it (.csc-live). */
+const ORBIT_LAP_S = { outer: 120, inner: 52 };   /* = cosmic-orbit-spin on the two rings */
+let scarSootSeq = 0;
 function scarPassEffects(hero, art){
-  if(!hero || hero.querySelector(":scope > .csc-ringheat")) return;
+  if(!hero || hero.querySelector(":scope > .csc-ringsoot")) return;
   const ang = art && isFinite(art.angle) ? art.angle : 132;
   const rad = Math.PI / 180;
   /* a loop of `lap` seconds whose peak (its 50%) lands `at` seconds into the lap */
   const delayFor = (at, lap) => { let d = (at - lap / 2) % lap; if(d > 0) d -= lap; return d.toFixed(2) + "s"; };
-  const glint = (dot, at, lap, toward) => {
-    const g = document.createElement("i");
-    g.className = "csc-pass cof-scarlit";
-    g.style.setProperty("--pass-lap", lap + "s");
-    g.style.setProperty("--pass-delay", delayFor(at, lap));
-    g.style.setProperty("--rl", toward.toFixed(1) + "deg");
-    dot.appendChild(g);
-  };
   /* the secret flares on the two rings */
   hero.querySelectorAll(":scope > .cosmic-hero-orbitlayer .cosmic-flare-dot").forEach(dot => {
     const lap = dot.closest(".cosmic-hero-orbitlayer-inner") ? ORBIT_LAP_S.inner : ORBIT_LAP_S.outer;
@@ -65770,72 +65754,48 @@ function scarPassEffects(hero, art){
     if(!isFinite(cx) || !isFinite(cy)) return;
     const a0 = Math.atan2(cx - 180, 150 - cy) / rad;
     const at = (((ang - a0) % 360) + 360) % 360 / 360 * lap;
-    /* the rim faces the planet: the flare turns with its ring, so the
-       planet stays in the same place in its own frame */
-    glint(dot, at, lap, a0 + 180);
-    if(lap === ORBIT_LAP_S.outer) dot.lastChild.classList.add("is-far");
+    const v = document.createElement("i");
+    v.className = "csc-pass cof-scarveil" + (lap === ORBIT_LAP_S.outer ? " is-far" : "");
+    v.style.setProperty("--pass-lap", lap + "s");
+    v.style.setProperty("--pass-delay", delayFor(at, lap));
+    dot.appendChild(v);
   });
-  /* Genesis's flare: the point of its lap nearest the rupture */
-  const core = hero.querySelector(":scope > .cosmic-core-orbit .cosmic-flare-dot");
-  if(core && art && art.crater){
-    const kx = (art.crater[0] - 50) / 100 * 104, ky = (art.crater[1] - 50) / 100 * 104;
-    const c = Math.cos(CORE_ORBIT.tilt * rad), s = Math.sin(CORE_ORBIT.tilt * rad);
-    let best = 0, bd = 1e9, bx = 0, by = 0;
-    for(let a = 0; a < 180; a += .5){
-      const lx = CORE_ORBIT.r * Math.cos(a * rad), ly = CORE_ORBIT.squash * CORE_ORBIT.r * Math.sin(a * rad);
-      const x = lx * c - ly * s, y = lx * s + ly * c, d = (x - kx) * (x - kx) + (y - ky) * (y - ky);
-      if(d < bd){ bd = d; best = a; bx = x; by = y; }
-    }
-    glint(core, best / 360 * ORBIT_LAP_S.core, ORBIT_LAP_S.core, Math.atan2(kx - bx, by - ky) / rad);
-  }
-  /* the rings run hot where they pass the scar */
+  /* the rings sooted where they pass the scar */
   const svgNS = "http://www.w3.org/2000/svg";
   const radii = [...hero.querySelectorAll(".cosmic-orbit-ring")].map(r => Number(r.getAttribute("r"))).filter(r => r > 60);
-  const rh = document.createElement("div");
-  rh.className = "csc-pass csc-ringheat";
-  rh.setAttribute("aria-hidden", "true");
+  const rs = document.createElement("div");
+  rs.className = "csc-pass csc-ringsoot";
+  rs.setAttribute("aria-hidden", "true");
   (radii.length ? [...new Set(radii)] : [108, HOME_OUTER_R]).slice(0, 2).forEach((R, i) => {
     const svg = document.createElementNS(svgNS, "svg");
     svg.setAttribute("viewBox", "0 -12 360 342");
     svg.setAttribute("class", i ? "is-out" : "is-in");
     const P = a => [180 + R * Math.sin(a * rad), 150 - R * Math.cos(a * rad)];
-    const [x0, y0] = P(ang - 26), [x1, y1] = P(ang + 26);
-    const id = "cscrh" + (++scarHeatSeq);
+    const [x0, y0] = P(ang - 24), [x1, y1] = P(ang + 24);
+    const id = "cscrs" + (++scarSootSeq);
     const defs = document.createElementNS(svgNS, "defs"), lg = document.createElementNS(svgNS, "linearGradient");
     lg.setAttribute("id", id); lg.setAttribute("gradientUnits", "userSpaceOnUse");
     lg.setAttribute("x1", x0.toFixed(2)); lg.setAttribute("y1", y0.toFixed(2)); lg.setAttribute("x2", x1.toFixed(2)); lg.setAttribute("y2", y1.toFixed(2));
-    [[0, "#FF6A22", 0], [.28, "#FF7A30", .75], [.5, "#FFC07A", 1], [.72, "#FF7A30", .75], [1, "#FF6A22", 0]].forEach(([o, col, a]) => {
+    [[0, 0], [.3, .7], [.5, 1], [.7, .7], [1, 0]].forEach(([o, a]) => {
       const st = document.createElementNS(svgNS, "stop");
-      st.setAttribute("offset", o); st.setAttribute("stop-color", col); st.setAttribute("stop-opacity", a);
+      st.setAttribute("offset", o); st.setAttribute("stop-color", "#070505"); st.setAttribute("stop-opacity", a);
       lg.appendChild(st);
     });
     defs.appendChild(lg); svg.appendChild(defs);
     const d = "M" + x0.toFixed(2) + " " + y0.toFixed(2) + " A" + R + " " + R + " 0 0 1 " + x1.toFixed(2) + " " + y1.toFixed(2);
-    [["csc-rh-glow", 5.5], ["csc-rh-core", 1.5]].forEach(([cls, w]) => {
+    [["csc-rs-haze", 7], ["csc-rs-core", 2.6]].forEach(([cls, w]) => {
       const pa = document.createElementNS(svgNS, "path");
       pa.setAttribute("d", d); pa.setAttribute("class", cls);
       pa.setAttribute("fill", "none"); pa.setAttribute("stroke", "url(#" + id + ")"); pa.setAttribute("stroke-width", w);
       pa.setAttribute("stroke-linecap", "round");
       svg.appendChild(pa);
     });
-    rh.appendChild(svg);
+    rs.appendChild(svg);
   });
+  /* over the rings (they are under the planet's svg, the orange ones in
+     it): right after the planet's svg, under the flares' layers */
   const main = hero.querySelector(":scope > .cosmic-hero-main");
-  hero.insertBefore(rh, main ? main.nextSibling : hero.firstChild);
-  /* the bubbles nearest the hole: its firelight on their near side */
-  hero.querySelectorAll(":scope > .cosmic-icon-badge").forEach(b => {
-    const cx = parseFloat(b.style.left) * 3.6, cy = parseFloat(b.style.top) * 3.42 - 12;
-    if(!isFinite(cx) || !isFinite(cy)) return;
-    const a0 = Math.atan2(cx - 180, 150 - cy) / rad;
-    let da = Math.abs(((a0 - ang) % 360 + 540) % 360 - 180);
-    if(da > 36) return;
-    const w = document.createElement("i");
-    w.className = "csc-pass cosmic-badge-scarlit";
-    w.style.opacity = (.85 * (1 - da / 36)).toFixed(2);
-    w.style.setProperty("--rl", (a0 + 180).toFixed(1) + "deg");
-    w.appendChild(document.createElement("i"));
-    b.appendChild(w);
-  });
+  hero.insertBefore(rs, main ? main.nextSibling : hero.firstChild);
 }
 
 function showWelcome(){
@@ -67563,9 +67523,31 @@ function playRankUpScene(tierKey, opts, spec){
   const before = document.createElement("div");
   before.className = "rank-before";
   let heroBefore = null, heroAfter = null;
-  /* THE PLANET YOU HAD: your own theme, and this rank's flare still dark. */
+  /* THE SCAR'S FIRST DRAW, BEFORE THE FIRST FRAME (cut3). The Supernova
+     art (cosmicScarArt, ~60-140ms the first time in a session) and the
+     blast's dust (snDustURL, ~25ms) are drawn here, while nothing of the
+     scene is on screen yet - the dust used to be drawn at the swell, a
+     dropped frame or two with the planet shaking. Measured (cut3): ~200ms
+     here in all, before the dark comes up; on the results screen that is
+     the end of a held beat with only transform and opacity animations
+     running (the compositor's, which a busy main thread does not stop),
+     on Home a cleared stage. Drawing it as the results screen is built
+     instead was measured too, and added ~150ms between the last answer
+     and the results - a delay someone would feel, for nothing. */
+  if(spec.times.swell) warmSupernovaArt();
+  /* Home's own builder, with store.supernovaAchieved held at `sn` for the
+     length of the build and the save it makes held back (nothing is
+     recorded early). */
+  const quietBuild = (sn, accentKey) => {
+    const had = store.supernovaAchieved, save = window.saveStore;
+    try{ store.supernovaAchieved = sn; window.saveStore = () => {}; return buildCosmicHero(true, accentKey); }
+    finally{ store.supernovaAchieved = had; window.saveStore = save; }
+  };
+  /* THE PLANET YOU HAD: your own theme, and this rank's flare still dark.
+     Never Supernova's (cut3): a replayed Supernova scene starts from the
+     planet before it, not from one already scarred and carrying debris. */
   try{
-    heroBefore = buildCosmicHero(true);
+    heroBefore = spec.times.swell ? quietBuild(false) : buildCosmicHero(true);
     syncSceneFlares(heroBefore, tierKey, false);
     before.appendChild(heroBefore);
   }catch(e){}
@@ -67586,17 +67568,15 @@ function playRankUpScene(tierKey, opts, spec){
      ends on. Everything that build adds over a plain one, top-level, is
      marked and revealed beat by beat after the blast (data-sn-reveal):
      the scar as the dust clears, the rest as the system settles; the rings
-     stay plain until the last beat. */
-  const quietBuild = (sn) => {
-    const had = store.supernovaAchieved, save = window.saveStore;
-    try{ store.supernovaAchieved = sn; window.saveStore = () => {}; return buildCosmicHero(true, tierKey); }
-    finally{ store.supernovaAchieved = had; window.saveStore = save; }
-  };
+     stay plain until the last beat. What the build puts INSIDE its layers
+     is held back by CSS instead (cut3): the debris on the rings until the
+     sweep throws it out (sn-swept), the light that passes the scar
+     (.csc-pass, live from sn-scarred as .csc-live) until sn-rings. */
   try{
     if(spec.times.swell){
-      heroAfter = quietBuild(true);
+      heroAfter = quietBuild(true, tierKey);
       const keyOf = el => el.tagName + ":" + String(el.getAttribute("class") || "").split(/\s+/).filter(c => /^cosmic-/.test(c)).sort().join(" ");
-      const plain = new Set([...quietBuild(false).children].map(keyOf));
+      const plain = new Set([...quietBuild(false, tierKey).children].map(keyOf));
       /* (a ring layer of its own - the top ring tier - is not hidden: the
          rings are there throughout, held plain in CSS until sn-rings) */
       [...heroAfter.children].forEach(el => {
@@ -67718,7 +67698,10 @@ function playRankUpScene(tierKey, opts, spec){
         ns.insertBefore(g, nb); ns.appendChild(r);
       }
     }catch(e){}
-    if(spec.times.swell) overlay.classList.add("sn-scarred", "sn-settled", "sn-rings");
+    if(spec.times.swell){
+      overlay.classList.add("sn-scarred", "sn-swept", "sn-settled", "sn-rings");
+      if(heroAfter) heroAfter.classList.add("csc-live");
+    }
     requestAnimationFrame(() => requestAnimationFrame(() => {
       overlay.classList.add("supernova-visible");
       stageWrap.classList.add("is-arrive");
@@ -67965,10 +67948,10 @@ function playRankUpScene(tierKey, opts, spec){
        look settles in under them; and only THEN do the rings change
        colour, a glint running round each. */
     if(SW){
-      at(b + 1300, () => overlay.classList.add("sn-scarred"));
-      at(b + 2000, snSweep);
-      at(b + 4300, () => overlay.classList.add("sn-settled"));
-      at(b + 4900, () => { overlay.classList.add("sn-rings"); snRingGlint(); });
+      at(b + 1300, () => { overlay.classList.add("sn-scarred"); if(heroAfter) heroAfter.classList.add("csc-live"); });
+      at(b + 1800, snSweep);
+      at(b + 4400, () => overlay.classList.add("sn-settled"));
+      at(b + 5400, () => { overlay.classList.add("sn-rings"); snRingGlint(); });
     }
     at(b + (T.settle - T.burst), () => overlay.classList.add("supernova-settle"));
     /* the show is unskippable up to the title; once it is up, a tap ends it */
@@ -68031,36 +68014,84 @@ function playRankUpScene(tierKey, opts, spec){
       try{ before.animate(fr, { duration: sw, easing: "linear", fill: "none" }); }catch(e){}
     }
   };
-  /* black fragments out of the planet, spiralling out to the two rings
-     and settling into scattered orbits along them; they hand over to
-     Home's own look as it settles (sn-settled) */
+  /* THE DEBRIS IS THROWN OUT, AND SETTLES INTO ORBIT (cut3). The planet
+     you are getting is Home's own Supernova build, so whatever Home puts on
+     the rings for Supernova (.csc-ringfrag, the planet round's debris) is
+     already in it - held out of sight (CSS) until now. The sweep throws
+     THOSE pieces out: each spirals from the planet's middle to its own
+     place on its ring, overshoots a little and settles there, hot as it
+     flies and cooling as it lands - so the scene ends on Home's look with
+     one set of debris, seen settling into orbit ("some of the fragments
+     could be going around the rings like in an orbit like the other stuff
+     but scattered slightly"). A handful of embers that are not debris fly
+     further and burn out. Nothing here depends on how a piece is drawn or
+     which layer carries it: its place is read off the layout (offsets,
+     which a turning layer and the stage's scale leave alone) and the
+     flight is its `translate` and `scale` (composed onto its own), so its
+     own tumble carries on through it. */
   const snSweep = () => {
     if(!heroAfter) return;
+    overlay.classList.add("sn-swept");
+    const D = 3400, DONE = [];
     try{
+      const W = heroAfter.clientWidth || 300, H = heroAfter.clientHeight || W * 342 / 360;
+      const cx = W / 2, cy = H * 162 / 342, u = W / 360;
+      const at0 = el => { let x = 0, y = 0, e = el;
+        while(e && e !== heroAfter){ x += e.offsetLeft; y += e.offsetTop; e = e.offsetParent; }
+        return e === heroAfter ? [x, y] : null; };
+      const px = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+      const eo = (x, k) => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), k || 3);
+      const ss = (a, b2, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b2 - a))); return t * t * (3 - 2 * t); };
+      let sd = 1717;
+      const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+      [...heroAfter.querySelectorAll(".csc-ringfrag")].forEach((el, i) => {
+        const o = at0(el);
+        if(!o) return;
+        const cs = getComputedStyle(el);
+        /* its own translate (the debris centres itself with -50% -50%: a
+           percentage of its own box), in pixels */
+        const tr = (cs.translate && cs.translate !== "none") ? cs.translate.split(/\s+/) : [];
+        const len = (v, size) => v == null ? 0 : /%$/.test(v) ? px(v) / 100 * size : px(v);
+        const bx = len(tr[0], el.offsetWidth), by = len(tr[1], el.offsetHeight);
+        const sc0 = (cs.scale && cs.scale !== "none") ? px(cs.scale.split(/\s+/)[0]) || 1 : 1;
+        /* its resting centre, from the planet's middle */
+        const ex = o[0] + el.offsetWidth / 2 + bx - cx, ey = o[1] + el.offsetHeight / 2 + by - cy;
+        const R = Math.hypot(ex, ey), th = Math.atan2(ey, ex), sw = (200 + rnd() * 130) * Math.PI / 180;
+        const kT = [], kS = [], N = 24;
+        for(let k = 0; k <= N; k++){
+          const f = k / N;
+          const r = 1.06 * eo(f / .62) - .06 * ss(.62, .92, f);
+          const a = th - sw * (1 - eo(f, 2.6));
+          const dx = R * r * Math.cos(a) - ex, dy = R * r * Math.sin(a) - ey;
+          kT.push({ offset: f, translate: (bx + dx).toFixed(2) + "px " + (by + dy).toFixed(2) + "px" });
+          kS.push({ offset: f, scale: String(+(sc0 * (f < .3 ? .35 + .95 * eo(f / .3, 2) : 1.3 - .3 * ss(.3, .85, f))).toFixed(3)), opacity: f === 0 ? 0 : Math.min(1, f / .05) });
+        }
+        const hot = document.createElement("i");
+        hot.className = "sn-hot"; hot.setAttribute("aria-hidden", "true");
+        el.appendChild(hot);
+        const opt = { duration: D, delay: i * 30, fill: "backwards" };
+        try{
+          el.animate(kT, opt); el.animate(kS, opt);
+          hot.animate([{ opacity: 0 }, { opacity: 1, offset: .06 }, { opacity: .85, offset: .5 }, { opacity: 0, offset: .95 }, { opacity: 0 }], { duration: D, delay: i * 30, fill: "both" });
+        }catch(e){}
+        DONE.push(hot);
+      });
+      /* the embers that are not debris: further out, and gone */
       const layer = document.createElement("div");
       layer.className = "sn-sweep"; layer.setAttribute("aria-hidden", "true");
       heroAfter.insertBefore(layer, heroAfter.querySelector(":scope > .rank-orbit"));
-      const W = heroAfter.clientWidth || 300;
-      let sd = 1717;
-      const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
-      const D = 3600, N = 28;
-      for(let i = 0; i < N; i++){
-        const ring = i % 2 ? 108 : HOME_OUTER_R;
-        const R = (ring + (rnd() - .5) * 12) / 360 * W, a0 = rnd() * 360, sw = 210 + rnd() * 140, sp = (rnd() - .5) * 720;
-        const sz = 1.9 + rnd() * 1.9;
-        const o = document.createElement("i");
-        o.className = "sn-orb";
-        o.style.setProperty("--s", sz.toFixed(2) + "%");
-        layer.appendChild(o);
-        const k = (f, r, sc, op, easing) => ({ offset: f, opacity: op, easing: easing || "linear",
-          transform: "rotate(" + (a0 + sw * Math.min(1, f / .65) + (f > .65 ? (f - .65) / .35 * 18 : 0)).toFixed(1) + "deg) translateX(" + (R * r).toFixed(1) + "px) rotate(" + (sp * f).toFixed(1) + "deg) scale(" + sc + ")" });
-        try{
-          o.animate([k(0, 0, .3, 0, "cubic-bezier(.2,.6,.3,1)"), k(.08, .2, .6, 1, "cubic-bezier(.25,.6,.3,1)"), k(.35, .78, .95, 1, "cubic-bezier(.3,.5,.3,1)"),
-            k(.65, 1, 1, 1), k(.82, 1, 1, .55), k(1, 1, 1, 0)], { duration: D, delay: i * 22, fill: "both" });
-        }catch(e){}
+      for(let i = 0; i < 8; i++){
+        const R = (150 + rnd() * 50) * u, a0 = rnd() * 360, sw = 160 + rnd() * 120;
+        const e = document.createElement("i");
+        e.className = "sn-orb is-ember";
+        e.style.setProperty("--s", (1.4 + rnd() * 1.2).toFixed(2) + "%");
+        layer.appendChild(e);
+        const k = (f, r, op) => ({ offset: f, opacity: op, transform: "rotate(" + (a0 + sw * eo(f, 2.4)).toFixed(1) + "deg) translateX(" + (R * r).toFixed(1) + "px)" });
+        try{ e.animate([k(0, 0, 0), k(.08, .25, 1), k(.4, .8, .9), k(.75, 1, 0), k(1, 1, 0)], { duration: D * .8, delay: 60 + i * 70, fill: "both", easing: "cubic-bezier(.2,.6,.3,1)" }); }catch(err){}
       }
-      setTimeout(() => layer.remove(), D + 900);
+      DONE.push(layer);
     }catch(e){}
+    setTimeout(() => DONE.forEach(n => n.remove()), D + 1400);
   };
   /* a glint running round each ring as it takes its new colour */
   const snRingGlint = () => {
@@ -68448,9 +68479,11 @@ function playSupernovaCutscene(opts){
        light - and after the blast a held beat where the system TRANSFORMS
        (the scar, the fragments sweeping out onto the rings, Home's
        Supernova look settling, and only then the rings' colour): the
-       title 7s after the blast, ~35s in all. */
+       title 7s after the blast, ~35s in all. Cut3: the debris thrown out
+       and settling (b+1.8s), the system settled at b+4.4s, the rings at
+       b+5.4s, the title at b+7.4s - ~36s. */
     times: { ignite: RANK_ATTN_AT + RANK_ATTN_MS, accel: 8200, decel: 6200, turns: 28, swell: 1800,
-      burst: 22000, settle: 29000, outro: 33900 },
+      burst: 22000, settle: 29400, outro: 34300 },
     onFinish: () => {
       store.pendingSupernovaCutscene = false; store.supernovaAchieved = true; saveStore();
       /* the scene has shown the rings turning orange, so Home does not
@@ -77760,7 +77793,7 @@ const HOME_SECRET_LINE = {
   yellow: "The light left behind when a star goes out.",
   violet: "The half-shadow at the edge of an eclipse.",
   white: "The edge that nothing comes back from.",
-  core: "The light at the heart of the planet."
+  core: "The first light of a world being born."
 };
 function homeJoin(parts){
   return parts.length < 2 ? (parts[0] || "") : parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
@@ -79753,7 +79786,7 @@ function hfxWarm(id){
     else if(id === "worldtree"){ [0, 1, 2].forEach(i => urls.push(hfxBlossomURL(i))); urls.push(hfxLeafURL()); HFX_BLOOM.forEach(cl => urls.push(hfxPetalURL(cl))); }
     else if(id === "fireworks"){ hfxFwHeads(); urls.push(hfxGlintURL()); }
     else if(id === "blackhole"){ urls.push(hfxDiscURL(), hfxSwirlURL(), hfxStreakURL(), hfxGlintURL()); }
-    else if(id === "underwater"){ urls.push(hfxCausticURL(0), hfxCausticURL(1), hfxSurfaceURL(), hfxMantaURL(), hfxDropURL(), hfxGlintURL()); [0, 1, 2].forEach(k => urls.push(hfxFishURL(k), hfxKelpURL(k), hfxBubbleURL([190, 170, 210][k], true))); }
+    else if(id === "underwater"){ hfxCausticTile(0, true); hfxCausticTile(1, true); urls.push(hfxWaveURL(0), hfxWaveURL(1), hfxRayURL(), hfxUwBubbleURL(), hfxMoteURL(), hfxMantaURL(), hfxDropURL(), hfxGlintURL()); [0, 1, 2].forEach(k => urls.push(hfxFishURL(k))); }
   }catch(e){}
   /* every sprite made so far, this effect's included, to a bitmap */
   Object.keys(hfxSprites).forEach(k => hfxRasterise(hfxSprites[k]));
@@ -80041,48 +80074,163 @@ function hfxWorldTree(scr, bx, c){
   }
 }
 
-/* ============ UNDERWATER ============
-   "Maybe make it like underwater? That could be cool." The screen
-   floods from the bottom: the water rises past the box with its bright
-   surface line, and then everything is under it - caustic light rippling
-   across the cards, shafts of light swaying down from the surface, kelp
-   rising from the floor and swaying, a school of fish and a manta ray
-   crossing, bubbles streaming up out of the box (the treasure) and its
-   number glinting gold. The cards sway as if the water moves them. Then
-   it drains, the surface sinking past the box, and drops run down the
-   screen. Transform and opacity throughout; the water is one layer, the
-   caustics two tiled layers that drift, everything else a sprite. */
-const HFX_UW = { rise: .15, riseD: 1.1, drain: 5.0, drainD: 1.15 };
-/* caustics: a seamless tile of light, a net of soft bright lines */
+/* ============ UNDERWATER (the 100-hundo rung since build 317, round 4) ============
+   "I like the underwater one, but the water that's on screen looks
+   terrible, and it doesn't start from the very bottom." Rebuilt as WATER:
+   - IT RISES FROM THE VERY BOTTOM OF THE SCREEN. The water is one fixed
+     body (`.hfx-uw-ocean`, position:fixed and 100lvh tall on the results
+     screen - the dims' rule - so the safe area is under it too and the
+     results' own scroll never leaves a dry band at the foot). Its surface
+     starts just below the bottom edge, sweeps up over the cards with a
+     surge and a small settle, and STAYS IN VIEW near the top: a cross-
+     section of a sea you are looking into, not a screen that was painted
+     blue. It drains back out through the bottom edge.
+   - A REAL SURFACE: two wave layers, each a seamless tile (hfxWaveURL) of
+     a crest made of three sines, sliding opposite ways at different
+     speeds - the interference is what makes it read as water rather than a
+     drawn zigzag. The front crest carries the light: a bright specular
+     line, a glow over it, and under it the darker refraction band and a
+     paler lens band you see through a meniscus.
+   - DEPTH: a tint that deepens from a pale lit cyan under the surface to a
+     dark blue at the floor, and a sheen of light just under the surface.
+   - CAUSTICS, REFRACTION LIGHT: a Worley (cellular) web of thin bright
+     lines, computed ONCE into a seamless tile (hfxCausticTile, on a canvas,
+     jittered-grid Voronoi, ~1M distance tests, as the results screen
+     opens), in two layers of different scale drifting different ways and
+     breathing - where they cross the light shimmers. Not the old hand-drawn
+     blob net, which read as crumpled plastic.
+   - LIGHT RAYS fanning down from the surface, swaying; BUBBLES rising in
+     streams from vents in the floor and off the 100% box, wobbling, and
+     breaking at the surface; motes drifting in the light; the school of
+     fish and the manta from the first build, and the cards swaying.
+   Transform and opacity only; every picture drawn once and rasterised;
+   no svg filters, no backdrop-filter, nothing painted per frame. ~60
+   pieces on a phone. */
+const HFX_UW = { rise: .15, riseD: 1.6, drain: 5.0, drainD: 1.2, wavePeriod: 220, waveH: 34 };
+/* the body's colour right under the surface - the wave tiles are filled
+   with exactly this, so crest and body are one water */
+const HFX_UW_TOP = "rgba(118,220,236,.24)";
+/* The surface, side on: one period of a crest made of three sines (so it
+   repeats seamlessly), filled below with the water's top colour. The front
+   one is lit; the back one is a fainter sheet behind it. */
+function hfxWaveURL(back){
+  return hfxSprite("uwave" + (back ? "b" : "f"), () => {
+    const P = HFX_UW.wavePeriod, H = HFX_UW.waveH, base = back ? 11 : 15, ph = back ? 2.2 : 0;
+    const y = x => base + (back ? 3.6 : 4.4) * Math.sin(2 * Math.PI * x / P + ph) + (back ? 2.2 : 1.7) * Math.sin(4 * Math.PI * x / P + .9 + ph) + .8 * Math.sin(6 * Math.PI * x / P + 2.1 + ph);
+    let crest = "";
+    for(let x = 0; x <= P; x += 4) crest += (x ? " L" : "M") + x + " " + y(x).toFixed(2);
+    const shift = dy => crest.replace(/(-?[\d.]+) (-?[\d.]+)/g, (m, a, b) => a + " " + (+b + dy).toFixed(2));
+    const fill = crest + " L" + P + " " + H + " L0 " + H + " Z";
+    if(back) return 'viewBox="0 0 ' + P + ' ' + H + '"><path d="' + fill + '" fill="#9FEAF4" fill-opacity=".12"/>' +
+      '<path d="' + crest + '" fill="none" stroke="#E6FFFF" stroke-opacity=".45" stroke-width="1.1"/></svg>';
+    return 'viewBox="0 0 ' + P + ' ' + H + '"><path d="' + fill + '" fill="' + HFX_UW_TOP + '"/>' +
+      /* the lens band and the dark refraction line under the meniscus */
+      '<path d="' + shift(7) + '" fill="none" stroke="#D8FAFF" stroke-opacity=".16" stroke-width="6"/>' +
+      '<path d="' + shift(3.2) + '" fill="none" stroke="#064A6A" stroke-opacity=".28" stroke-width="2.2"/>' +
+      /* the glow over the crest, then the specular line itself */
+      '<path d="' + crest + '" fill="none" stroke="#C9FAFF" stroke-opacity=".22" stroke-width="7" stroke-linejoin="round"/>' +
+      '<path d="' + crest + '" fill="none" stroke="#F4FFFF" stroke-opacity=".95" stroke-width="1.7" stroke-linejoin="round"/></svg>';
+  }, Math.round(HFX_UW.wavePeriod * 3));
+}
+/* CAUSTICS, computed: a seamless tile of thin bright lines where the
+   cells of a jittered-grid Voronoi meet (F2 - F1 small), a soft halo
+   round each line. Drawn once into a canvas and kept as a bitmap. */
+/* Computed IN SLICES. A whole tile is ~1M distance tests: 100-140ms at
+   4x CPU, as one task as the results screen opens. hfxWarm starts each
+   tile as a job of 24-row slices, one per timer tick (~10ms each), done
+   long before the effect plays; asked for before it is done, a tile
+   finishes on the spot. */
+const hfxCausticJobs = {};
+function hfxCausticJob(seed){
+  const S = 288, G = 5, cell = S / G, rnd = bnRand(171 + seed * 37), TAU = Math.PI * 2, PAD = 2, GW = G + PAD * 2;
+  const base = [];
+  for(let gy = 0; gy < G; gy++) for(let gx = 0; gx < G; gx++) base.push([(gx + .1 + rnd() * .8) * cell, (gy + .1 + rnd() * .8) * cell]);
+  /* the points of the cells round the tile too, so no wrap per pixel */
+  const px = new Float32Array(GW * GW), py = new Float32Array(GW * GW);
+  for(let gy = -PAD; gy < G + PAD; gy++) for(let gx = -PAD; gx < G + PAD; gx++){
+    const ix = ((gx % G) + G) % G, iy = ((gy % G) + G) % G, q = base[iy * G + ix], j = (gy + PAD) * GW + (gx + PAD);
+    px[j] = q[0] + (gx - ix) * cell; py[j] = q[1] + (gy - iy) * cell;
+  }
+  const p1 = rnd() * TAU, p2 = rnd() * TAU, p3 = rnd() * TAU, p4 = rnd() * TAU, A = cell * .22;
+  const cv = document.createElement("canvas"); cv.width = S; cv.height = S;
+  const x2 = cv.getContext("2d"), im = x2.createImageData(S, S), d = im.data;
+  const job = { key: "caus3" + seed, y: 0, done: false };
+  job.rows = n => {
+    for(const end = Math.min(S, job.y + n); job.y < end; job.y++){
+      const y = job.y;
+      for(let x = 0; x < S; x++){
+        /* Worley F2 - F1 seen through a periodic domain warp, so the cells
+           are wavy, uneven loops and the lines vary in strength - real
+           caustics are never a net */
+        const wx = x + A * Math.sin(TAU * 2 * y / S + p1) + A * .5 * Math.sin(TAU * 3 * (x + y) / S + p2);
+        const wy = y + A * Math.sin(TAU * 2 * x / S + p3) + A * .5 * Math.sin(TAU * 3 * (x - y) / S + p4);
+        const cx = Math.floor(wx / cell) + PAD, cy = Math.floor(wy / cell) + PAD;
+        let f1 = 1e9, f2 = 1e9;
+        for(let oy = -1; oy <= 1; oy++){
+          const row = (cy + oy) * GW;
+          for(let ox = -1; ox <= 1; ox++){
+            const j = row + cx + ox, ddx = px[j] - wx, ddy = py[j] - wy, dd = ddx * ddx + ddy * ddy;
+            if(dd < f1){ f2 = f1; f1 = dd; } else if(dd < f2) f2 = dd;
+          }
+        }
+        const e = Math.sqrt(f2) - Math.sqrt(f1);
+        const m = .45 + .55 * Math.max(0, Math.sin(TAU * 2 * x / S + p2) * Math.sin(TAU * 3 * y / S + p1) * .5 + .5);
+        const v = Math.min(1, (Math.exp(-(e * e) / 3.2) * .9 + Math.exp(-(e * e) / 40) * .16) * m);
+        const i = (y * S + x) * 4;
+        d[i] = 226; d[i + 1] = 255; d[i + 2] = 250; d[i + 3] = (v * 255) | 0;
+      }
+    }
+    if(job.y >= S && !job.done){
+      job.done = true;
+      x2.putImageData(im, 0, 0);
+      const url = 'url("' + cv.toDataURL("image/png") + '")';
+      hfxSprites[job.key] = { text: "", svg: url, png: url, px: S };
+    }
+  };
+  return job;
+}
+function hfxCausticTile(seed, sliced){
+  const key = "caus3" + seed;
+  if(hfxSprites[key] && hfxSprites[key].png) return hfxSprites[key].png;
+  try{
+    const job = hfxCausticJobs[key] || (hfxCausticJobs[key] = hfxCausticJob(seed));
+    if(sliced){
+      if(!job.ticking){ job.ticking = true; const tick = () => { if(job.done) return; job.rows(24); if(!job.done) setTimeout(tick, 16); }; setTimeout(tick, 0); }
+      return null;
+    }
+    job.rows(1e6);
+    return hfxSprites[key].png;
+  }catch(e){ return hfxCausticURL(seed); }
+}
+/* the old hand-drawn net, kept only as the fallback if a canvas fails */
 function hfxCausticURL(seed){
   return hfxSprite("caus" + seed, () => {
     const rnd = bnRand(91 + seed), S = 240; let o = "";
-    const blob = (x, y, r) => {
-      let d = "";
-      const n = 6, pts = [];
-      for(let i = 0; i < n; i++){ const a = i / n * Math.PI * 2 + rnd() * .5, rr = r * (.7 + rnd() * .5); pts.push([x + Math.cos(a) * rr, y + Math.sin(a) * rr]); }
-      d = "M" + pts[0][0].toFixed(1) + " " + pts[0][1].toFixed(1);
-      for(let i = 0; i < n; i++){ const p = pts[i], q = pts[(i + 1) % n], m = [(p[0] + q[0]) / 2 + (rnd() - .5) * r * .5, (p[1] + q[1]) / 2 + (rnd() - .5) * r * .5]; d += " Q" + m[0].toFixed(1) + " " + m[1].toFixed(1) + " " + q[0].toFixed(1) + " " + q[1].toFixed(1); }
-      return d + "Z";
-    };
     for(let i = 0; i < 18; i++){
-      const x = rnd() * S, y = rnd() * S, r = 16 + rnd() * 22, d = blob(x, y, r);
-      [-S, 0, S].forEach(dx => [-S, 0, S].forEach(dy => {
-        if(x + dx + r * 1.4 < 0 || x + dx - r * 1.4 > S || y + dy + r * 1.4 < 0 || y + dy - r * 1.4 > S) return;
-        o += '<path d="' + d + '" transform="translate(' + dx + ' ' + dy + ')"/>';
-      }));
+      const x = rnd() * S, y = rnd() * S, r = 16 + rnd() * 22;
+      o += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r.toFixed(1) + '"/>';
     }
-    return 'viewBox="0 0 ' + S + ' ' + S + '"><g fill="none" stroke="#E8FFFB" stroke-linejoin="round"><g stroke-opacity=".08" stroke-width="6">' + o + '</g><g stroke-opacity=".3" stroke-width="1.4">' + o + '</g></g></svg>';
+    return 'viewBox="0 0 ' + S + ' ' + S + '"><g fill="none" stroke="#E8FFFB" stroke-opacity=".25" stroke-width="1.4">' + o + '</g></svg>';
   }, 240);
 }
-/* the surface seen from below: a bright wavy line with a glow under it */
-function hfxSurfaceURL(){
-  return hfxSprite("surf", () => {
-    let d = "M0 14";
-    for(let x = 0; x <= 400; x += 20) d += " Q" + (x + 10) + " " + (x % 40 ? 20 : 8) + " " + (x + 20) + " 14";
-    return 'viewBox="0 0 400 40"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#CFFBFF" stop-opacity=".0"/><stop offset=".35" stop-color="#CFFBFF" stop-opacity=".55"/><stop offset="1" stop-color="#5FD6E8" stop-opacity="0"/></linearGradient></defs>' +
-      '<rect x="0" y="10" width="400" height="30" fill="url(#g)"/><path d="' + d + '" fill="none" stroke="#F2FFFF" stroke-width="2.4" stroke-opacity=".9"/></svg>';
-  }, 600);
+/* a shaft of light from the surface: soft-edged (three nested wedges),
+   bright at the top and gone by its foot */
+function hfxRayURL(){
+  return hfxSprite("uwray", () => 'viewBox="0 0 60 400"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E6FFFF" stop-opacity=".55"/>' +
+    '<stop offset=".35" stop-color="#BFF4FF" stop-opacity=".22"/><stop offset="1" stop-color="#9FE8FF" stop-opacity="0"/></linearGradient></defs>' +
+    '<path d="M18 0 L42 0 L60 400 L0 400 Z" fill="url(#g)" opacity=".35"/><path d="M22 0 L38 0 L50 400 L10 400 Z" fill="url(#g)" opacity=".5"/>' +
+    '<path d="M26 0 L34 0 L40 400 L20 400 Z" fill="url(#g)" opacity=".6"/></svg>', 400);
+}
+/* a bubble in water: clear, a bright rim, a lit highlight, a dimmer
+   reflection opposite */
+function hfxUwBubbleURL(){
+  return hfxSprite("uwbub", () => 'viewBox="0 0 40 40"><defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset=".55" stop-color="#E6FFFF" stop-opacity=".04"/>' +
+    '<stop offset=".84" stop-color="#C8F6FF" stop-opacity=".28"/><stop offset=".96" stop-color="#FFFFFF" stop-opacity=".85"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient></defs>' +
+    '<circle cx="20" cy="20" r="19.5" fill="url(#g)"/><ellipse cx="13.5" cy="12.5" rx="4.6" ry="2.6" fill="#fff" fill-opacity=".9" transform="rotate(-38 13.5 12.5)"/>' +
+    '<path d="M27 30 Q31 27 32 22" stroke="#fff" stroke-opacity=".45" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>', 96);
+}
+function hfxMoteURL(){
+  return hfxSprite("uwmote", () => 'viewBox="0 0 20 20"><defs><radialGradient id="g"><stop offset="0" stop-color="#F2FFFF" stop-opacity=".9"/><stop offset="1" stop-color="#BFF4FF" stop-opacity="0"/></radialGradient></defs><circle cx="10" cy="10" r="10" fill="url(#g)"/></svg>', 32);
 }
 function hfxFishURL(k){
   const body = ["#9FD8E6", "#C6EEF6", "#7FC2D6"][k % 3];
@@ -80095,80 +80243,123 @@ function hfxMantaURL(){
     '<path d="M100 18 Q120 20 132 34 Q160 40 198 60 Q160 64 138 72 Q120 92 100 96 Q80 92 62 72 Q40 64 2 60 Q40 40 68 34 Q80 20 100 18 Z" fill="url(#g)" fill-opacity=".85"/>' +
     '<path d="M92 18 Q90 8 84 4 M108 18 Q110 8 116 4" stroke="#0A2A38" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M100 96 Q101 104 103 110" stroke="#0A2A38" stroke-width="2" fill="none"/></svg>', 360);
 }
-function hfxKelpURL(k){
-  return hfxSprite("kelp" + k, () => {
-    const rnd = bnRand(13 + k); let blades = "", d = "M30 300";
-    let x = 30;
-    for(let y = 300; y > 10; y -= 30){ const nx = 30 + Math.sin(y / 40 + k) * 10; d += " Q" + (x + (rnd() - .5) * 14).toFixed(1) + " " + (y - 15) + " " + nx.toFixed(1) + " " + (y - 30); x = nx;
-      const s = (y / 30) % 2 ? 1 : -1; blades += '<path d="M' + nx.toFixed(1) + ' ' + (y - 30) + ' q' + (s * 18) + ' -8 ' + (s * 22) + ' -26 q' + (-s * 10) + ' 12 ' + (-s * 22) + ' 26 Z" fill="url(#g)"/>'; }
-    return 'viewBox="0 0 60 300"><defs><linearGradient id="g" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#0A3A2C" stop-opacity=".95"/><stop offset="1" stop-color="#2E8A62" stop-opacity=".85"/></linearGradient></defs>' +
-      '<path d="' + d + '" fill="none" stroke="url(#g)" stroke-width="5" stroke-linecap="round"/>' + blades + '</svg>';
-  }, 220);
-}
 function hfxDropURL(){
   return hfxSprite("drop", () => 'viewBox="0 0 20 40"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2FFFF" stop-opacity=".95"/><stop offset="1" stop-color="#7FD9E8" stop-opacity=".35"/></linearGradient></defs>' +
     '<path d="M10 1 Q15 22 15 30 A5 5 0 0 1 5 30 Q5 22 10 1 Z" fill="url(#g)"/><ellipse cx="8" cy="29" rx="1.6" ry="3" fill="#fff" fill-opacity=".9"/></svg>', 64);
 }
+/* The sea, built into `parent`: the rising body with its surface, its
+   light and what lives in it. `o`: W, H (the ocean's size), lvl (the
+   surface's rest, px from the top), k (scale), t (rise, riseD, drain,
+   drainD in s), n (counts), box (the 100% box at rest, in ocean px, or
+   null), total (s). Returns the body, so callers can add to it. */
+/* PIECES GO IN WHEN THEY ARE DUE (as the World Tree's did): a piece
+   waiting on a delay is still a compositing layer, and the sea's
+   bubbles, fish and drops start over 5s - all put in at once, the screen
+   carried ~116 layers at 2.6s against the UFO's ~96. Each goes in a beat
+   before its start, its delay moved by however late that really is. */
+function hfxDue(c){
+  const t0 = performance.now(), ids = [];
+  if(c) hfxOnEnd(c, () => ids.forEach(id => clearTimeout(id)));
+  return (at, fn) => {
+    const lead = at - .4;
+    if(lead <= .05){ fn(0); return; }
+    ids.push(setTimeout(() => fn((performance.now() - t0) / 1000), lead * 1000));
+  };
+}
+function hfxSea(parent, o){
+  const k = o.k, t = o.t, P = HFX_UW.wavePeriod * k, WH = HFX_UW.waveH * k, bodyH = o.H - o.lvl;
+  const ocean = hfxMk(parent, "span", "hfx-uw-ocean" + (o.cls ? " " + o.cls : ""));
+  const sec = v => (+v).toFixed(3) + "s";
+  const sea = hfxMk(ocean, "span", "hfx-uw-sea", { top: o.lvl + "px", "--wh": WH + "px", "--rt": sec(t.rise), "--rd": sec(t.riseD), "--dt": sec(t.drain), "--dd": sec(t.drainD) });
+  const body = hfxMk(sea, "span", "hfx-uw-body");
+  /* light: the sheen just under the surface, the caustic web in two
+     layers, and the rays */
+  hfxMk(body, "i", "hfx-uw-sheen");
+  [0, 1].forEach(j => {
+    /* only as much bigger than the water as its drift needs: these are
+       the two largest layers on the screen */
+    const tile = (j ? 330 : 236) * k, m = tile * .42, cw = o.W + m * 2, ch = bodyH + m * 2;
+    const l = hfxMk(body, "i", "hfx-uw-caus" + (j ? " is-b" : ""), { left: (-m) + "px", top: (-m) + "px", width: cw + "px", height: ch + "px",
+      "--cx": ((j ? 1 : -1) * tile * .36) + "px", "--cy": ((j ? -1 : 1) * tile * .16) + "px", "--d": o.total + .2 });
+    l.style.backgroundImage = hfxCausticTile(j);
+    l.style.backgroundSize = tile + "px " + tile + "px";
+  });
+  for(let i = 0; i < o.n.rays; i++){
+    const x = o.W * (.06 + (i + .5) / o.n.rays * .9) + hfxR(-14, 14) * k;
+    hfxMk(body, "i", "hfx-uw-ray", { left: x + "px", "--rw": hfxR(46, 110) * k + "px", "--rh": bodyH * hfxR(.6, .92) + "px",
+      "--ra": hfxR(8, 18).toFixed(1) + "deg", "--t": t.rise + t.riseD * .7 + i * .1, "--d": t.drain - t.rise - t.riseD * .7 + .25 - i * .1 }).style.backgroundImage = hfxRayURL();
+  }
+  /* motes drifting in the light */
+  const due = o.due || ((at, fn) => fn(0));
+  /* a piece that has played is taken out - one less layer */
+  const gone = el => { el.addEventListener("animationend", e => { if(e.target === el) el.remove(); }); return el; };
+  for(let i = 0; i < o.n.motes; i++){
+    const at = t.rise + t.riseD * .6 + hfxR(0, .8), x = hfxR(.04, .96) * o.W, y = hfxR(.08, .9) * bodyH, sz = hfxR(3, 6) * k, mx = hfxR(-18, 18) * k, my = hfxR(-26, -6) * k;
+    due(at, off => gone(hfxPiece(body, "hfx-uw-mote", hfxMoteURL(), x, y, sz, { "--mx": mx + "px", "--my": my + "px", "--t": at - off, "--d": t.drain - t.rise - t.riseD * .6 + .1 - Math.max(0, off - at) })));
+  }
+  /* bubbles: streams from vents in the floor, and off the box; each rises
+     to the surface and breaks there */
+  const vents = [];
+  for(let v = 0; v < o.n.vents; v++) vents.push(o.W * ((v + .5) / o.n.vents) + hfxR(-.08, .08) * o.W / o.n.vents);
+  for(let i = 0; i < o.n.bubbles; i++){
+    const fromBox = o.box && i % 3 === 1;
+    const x = fromBox ? o.box.left + o.box.width * hfxR(.12, .88) : vents[i % vents.length] + hfxR(-10, 10) * k;
+    const y = fromBox ? Math.max(30 * k, o.box.top - o.lvl) : bodyH + 6;
+    const sz = hfxR(5, 14) * k, d = hfxR(1.9, 2.8) * Math.max(.6, Math.min(1.2, y / 700));
+    const at = t.rise + t.riseD * (fromBox ? .75 : .45) + (i / o.n.bubbles) * (t.drain - t.rise - t.riseD - d * .6) + hfxR(0, .2), wx = hfxR(-14, 14) * k;
+    due(at, off => gone(hfxPiece(body, "hfx-uw-bub", hfxUwBubbleURL(), x, y, sz, { "--up": (-(y - sz * .6)) + "px", "--wx": wx + "px", "--t": at - off, "--d": d })));
+  }
+  /* the surface: a back sheet and the lit front crest, sliding opposite
+     ways - the interference is the water moving */
+  const surf = hfxMk(sea, "span", "hfx-uw-surface");
+  [1, 0].forEach(back => {
+    const per = back ? 3.9 : 2.7, n = Math.max(1, Math.ceil(o.total / per));
+    const w = hfxMk(surf, "i", "hfx-uw-wave" + (back ? " is-back" : ""), { "--p": P + "px", "--wd": per + "s", "--wn": String(n) });
+    w.style.backgroundImage = hfxWaveURL(back);
+    w.style.backgroundSize = P + "px " + WH + "px";
+  });
+  return { ocean, sea, body, bodyH };
+}
 function hfxUnderwater(scr, bx, c){
-  const r = c.br, small = c.vw < 600, mini = !!c.frame, k = mini ? .55 : 1;
+  const small = c.vw < 600, mini = !!c.frame || c.mini, k = mini ? .55 : 1;
   const U = HFX_UW, tot = HUNDO_FX_TOTAL.underwater / 1000;
+  const t = { rise: U.rise, riseD: U.riseD, drain: U.drain, drainD: U.drainD };
   if(scr){
-    const sea = hfxMk(hfxMk(scr, "span", "hfx-uw-sea", { "--rt": U.rise + "s", "--rd": U.riseD + "s", "--dt": U.drain + "s", "--dd": U.drainD + "s", "--vh": c.vh + "px" }), "span", "hfx-uw-drain");
-    hfxMk(sea, "i", "hfx-uw-water");
-    /* the caustics: two tiles drifting different ways, over the cards */
-    const cw = c.vw * 1.6, ch = c.vh * 1.4;
-    [0, 1].forEach(j => {
-      const l = hfxMk(sea, "i", "hfx-uw-caus" + (j ? " is-b" : ""), { width: cw + "px", height: ch + "px", "--cx": ((j ? 1 : -1) * c.vw * .22) + "px", "--cy": ((j ? -1 : 1) * c.vh * .08) + "px" });
-      l.style.backgroundImage = hfxCausticURL(j);
-      l.style.backgroundSize = (j ? 300 : 230) * k + "px";
-    });
-    /* light from the surface */
-    for(let i = 0; i < (small ? 4 : 6); i++){
-      hfxMk(sea, "i", "hfx-uw-ray", { left: (c.vw * (.08 + i / (small ? 4 : 6) * .9)) + "px", "--rw": (hfxR(40, 90) * k) + "px", "--rh": (c.vh * 1.1) + "px",
-        "--ra": hfxR(-14, -6).toFixed(1) + "deg", "--t": U.rise + U.riseD * .6 + i * .12, "--d": U.drain - U.rise - U.riseD * .6 + .4 - i * .12 });
-    }
-    /* the surface line: rises with the water and goes off the top, and comes back down as it drains */
-    const sf = hfxMk(scr, "i", "hfx-uw-surf", { "--vh": c.vh + "px", "--rt": U.rise + "s", "--rd": U.riseD + "s", "--dt": U.drain + "s", "--dd": U.drainD + "s", width: (c.vw * 2) + "px" });
-    sf.style.backgroundImage = hfxSurfaceURL(); sf.style.backgroundSize = (400 * k) + "px 100%";
-    /* kelp from the floor */
-    const nK = mini ? 3 : small ? 5 : 7;
-    for(let i = 0; i < nK; i++){
-      const h = c.vh * hfxR(.14, .26) * (i % 2 ? .8 : 1), x = (i + .5) / nK * c.vw + hfxR(-18, 18);
-      const kp = hfxMk(scr, "i", "hfx-uw-kelp", { left: (x - h * .1) + "px", top: (c.vh - h + 6) + "px", width: (h * .2) + "px", height: h + "px", "--t": U.rise + .25 + i * .05, "--d": U.drain + .6 - U.rise - i * .05,
-        "--sw": hfxR(3, 7).toFixed(1) + "deg" });
-      kp.style.backgroundImage = hfxKelpURL(i % 3);
-    }
-    /* a school of fish, across in a curve, and a manta ray behind them */
-    const dir = Math.random() < .5 ? 1 : -1, y0 = r.top - c.vh * hfxR(.1, .22);
+    /* the box where it will REST: the results reveal scrolls the page to its
+       foot as later cards land, and the sea is fixed to the screen */
+    const de = document.documentElement, page = !c.frame && !(c.box && c.box.closest && c.box.closest(".rs-spot"));
+    const rest = page ? Math.max(0, de.scrollHeight - (window.innerHeight || c.vh)) - (window.scrollY || 0) : 0;
+    const r = c.br, box = { left: r.left, top: r.top - rest, width: r.width, height: r.height };
+    const lvl = Math.round(Math.max(c.vh * (mini ? .1 : .085), mini ? 14 : 40));
+    const due = hfxDue(c);
+    const S = hfxSea(scr, { W: c.vw, H: c.vh, lvl, k, t, total: tot, box, due,
+      n: { rays: mini ? 3 : small ? 4 : 6, motes: mini ? 3 : small ? 6 : 10, vents: small || mini ? 3 : 4, bubbles: mini ? 8 : small ? 14 : 20 } });
+    const body = S.body, bodyH = S.bodyH;
+    /* a school of fish across, above the box, and a manta behind them */
+    const dir = Math.random() < .5 ? 1 : -1, y0 = Math.max(60 * k, box.top - lvl - c.vh * hfxR(.12, .22));
     for(let i = 0; i < (mini ? 5 : small ? 8 : 12); i++){
-      const s = (hfxR(26, 40)) * k, dy = hfxR(-40, 40) * k, lag = i * .07 + hfxR(0, .12);
-      const f = hfxPiece(scr, "hfx-uw-fish", hfxFishURL(i % 3), 0, 0, s, { "--fl": dir < 0 ? "1" : "-1" });
-      const xs = dir > 0 ? -60 : c.vw + 60, xe = dir > 0 ? c.vw + 60 : -60;
-      hfxAnim(c, f, [
-        { transform: "translate(" + xs + "px," + (y0 + dy + 40) + "px) scaleX(" + (dir > 0 ? -1 : 1) + ")", opacity: 0 },
-        { transform: "translate(" + (xs + (xe - xs) * .15) + "px," + (y0 + dy + 20) + "px) scaleX(" + (dir > 0 ? -1 : 1) + ")", opacity: 1, offset: .12 },
-        { transform: "translate(" + (xs + (xe - xs) * .5) + "px," + (y0 + dy - 10) + "px) scaleX(" + (dir > 0 ? -1 : 1) + ")", opacity: 1, offset: .5 },
-        { transform: "translate(" + (xs + (xe - xs) * .85) + "px," + (y0 + dy + 14) + "px) scaleX(" + (dir > 0 ? -1 : 1) + ")", opacity: 1, offset: .88 },
-        { transform: "translate(" + xe + "px," + (y0 + dy + 4) + "px) scaleX(" + (dir > 0 ? -1 : 1) + ")", opacity: 0 }
-      ], { duration: 3000, delay: (U.rise + U.riseD + .2 + lag) * 1000, fill: "both", easing: "ease-in-out" });
+      const s = hfxR(26, 40) * k, dy = hfxR(-40, 40) * k, lag = i * .07 + hfxR(0, .12), at = U.rise + U.riseD + .15 + lag;
+      const xs = dir > 0 ? -60 : c.vw + 60, xe = dir > 0 ? c.vw + 60 : -60, fl = dir > 0 ? -1 : 1;
+      due(at, off => { const f = hfxPiece(body, "hfx-uw-fish", hfxFishURL(i % 3), 0, 0, s, {}); const a = hfxAnim(c, f, [
+        { transform: "translate(" + xs + "px," + (y0 + dy + 40) + "px) scaleX(" + fl + ")", opacity: 0 },
+        { transform: "translate(" + (xs + (xe - xs) * .15) + "px," + (y0 + dy + 20) + "px) scaleX(" + fl + ")", opacity: 1, offset: .12 },
+        { transform: "translate(" + (xs + (xe - xs) * .5) + "px," + (y0 + dy - 10) + "px) scaleX(" + fl + ")", opacity: 1, offset: .5 },
+        { transform: "translate(" + (xs + (xe - xs) * .85) + "px," + (y0 + dy + 14) + "px) scaleX(" + fl + ")", opacity: 1, offset: .88 },
+        { transform: "translate(" + xe + "px," + (y0 + dy + 4) + "px) scaleX(" + fl + ")", opacity: 0 }
+      ], { duration: 3000, delay: Math.max(0, at - off) * 1000, fill: "both", easing: "ease-in-out" }); if(a) a.onfinish = () => f.remove(); });
     }
     const mw = (mini ? 120 : small ? 190 : 260);
-    const m = hfxPiece(scr, "hfx-uw-manta", hfxMantaURL(), 0, 0, mw, {});
-    const my = Math.max(c.vh * .14, r.top - c.vh * .34);
-    hfxAnim(c, m, [
+    const my = Math.max(bodyH * .1, box.top - lvl - c.vh * .3), mat = U.rise + U.riseD + .05;
+    due(mat, off => hfxAnim(c, hfxPiece(body, "hfx-uw-manta", hfxMantaURL(), 0, 0, mw, {}), [
       { transform: "translate(" + (dir > 0 ? c.vw + mw : -mw) + "px," + (my + 30) + "px) rotate(" + (dir > 0 ? -6 : 6) + "deg) scale(.8)", opacity: 0 },
-      { transform: "translate(" + (c.vw / 2) + "px," + (my - 10) + "px) rotate(0deg) scale(1)", opacity: .9, offset: .5 },
+      { transform: "translate(" + (c.vw / 2) + "px," + (my - 10) + "px) rotate(0deg) scale(1)", opacity: .85, offset: .5 },
       { transform: "translate(" + (dir > 0 ? -mw : c.vw + mw) + "px," + (my - 40) + "px) rotate(" + (dir > 0 ? 6 : -6) + "deg) scale(.9)", opacity: 0 }
-    ], { duration: 3400, delay: (U.rise + U.riseD + .1) * 1000, fill: "both", easing: "ease-in-out" });
-    /* bubbles streaming up out of the box, and a few from the floor */
-    for(let i = 0; i < (mini ? 8 : small ? 18 : 26); i++){
-      const fromBox = i % 3 !== 2, x = fromBox ? r.left + r.width * hfxR(.15, .85) : hfxR(.05, .95) * c.vw, y = fromBox ? r.top + 4 : c.vh;
-      hfxPiece(scr, "hfx-uw-bub", hfxBubbleURL([190, 170, 210][i % 3], true), x, y, hfxR(6, 16) * k, { "--up": (-(y + 30)) + "px", "--wx": hfxR(-26, 26) * k + "px",
-        "--t": U.rise + U.riseD * .5 + i * (mini ? .3 : small ? .17 : .12), "--d": hfxR(2.2, 2.9) });
-    }
-    /* drops running down the screen as it drains */
+    ], { duration: 3400, delay: Math.max(0, mat - off) * 1000, fill: "both", easing: "ease-in-out" }));
+    /* drops running down the glass once the water has gone */
+    const drops = hfxMk(scr, "span", "hfx-uw-ocean is-drops");
     for(let i = 0; i < (mini ? 4 : small ? 9 : 13); i++){
-      hfxPiece(scr, "hfx-uw-drop", hfxDropURL(), hfxR(.04, .96) * c.vw, hfxR(.05, .6) * c.vh, hfxR(10, 18) * k, { "--fall": (hfxR(.15, .4) * c.vh) + "px", "--t": U.drain + U.drainD * .4 + hfxR(0, .7), "--d": hfxR(1.2, 1.8) });
+      const at = U.drain + U.drainD * .45 + hfxR(0, .7), x = hfxR(.04, .96) * c.vw, y = hfxR(.05, .6) * c.vh, sz = hfxR(10, 18) * k, fall = hfxR(.15, .4) * c.vh, d = hfxR(1.2, 1.7);
+      due(at, off => hfxPiece(drops, "hfx-uw-drop", hfxDropURL(), x, y, sz, { "--fall": fall + "px", "--t": at - off, "--d": d }));
     }
     /* the cards sway with the water */
     if(c.scene) c.scene.warp.forEach((el, i) => {
@@ -80180,22 +80371,23 @@ function hfxUnderwater(scr, bx, c){
   if(bx){
     const t0 = c.boxOnly ? .1 : U.rise + U.riseD * .55;
     if(c.boxOnly){
-      /* the box floods on its own */
-      const bs = hfxMk(hfxMk(bx, "span", "hfx-uw-sea is-box", { "--rt": ".1s", "--rd": ".7s", "--dt": "3.2s", "--dd": ".8s", "--vh": c.bh + "px" }), "span", "hfx-uw-drain");
-      hfxMk(bs, "i", "hfx-uw-water");
-      const cl = hfxMk(bs, "i", "hfx-uw-caus", { width: (c.bw * 1.6) + "px", height: (c.bh * 1.6) + "px", "--cx": (c.bw * .2) + "px", "--cy": "0px" });
-      cl.style.backgroundImage = hfxCausticURL(0); cl.style.backgroundSize = (c.mini ? 110 : 160) + "px";
+      /* the box floods on its own: the same water, the box its screen */
+      const bt = { rise: .1, riseD: .8, drain: 3.3, drainD: .8 };
+      hfxSea(bx, { W: c.bw, H: c.bh, lvl: Math.round(c.bh * .16), k: c.mini ? .4 : .55, t: bt, total: HUNDO_FX_BOX_TOTAL.underwater / 1000, box: null, cls: "is-box", due: hfxDue(c),
+        n: { rays: 2, motes: c.mini ? 2 : 4, vents: 2, bubbles: c.mini ? 4 : 7 } });
       for(let i = 0; i < 3; i++){
         const f = hfxPiece(bx, "hfx-uw-fish is-box", hfxFishURL(i), 0, 0, (c.mini ? 14 : 22), {});
-        hfxAnim(c, f, [{ transform: "translate(" + (c.bw + 20) + "px," + (c.bh * (.25 + i * .18)) + "px) scaleX(1)", opacity: 0 }, { transform: "translate(" + (c.bw * .5) + "px," + (c.bh * (.2 + i * .2)) + "px) scaleX(1)", opacity: 1, offset: .5 },
-          { transform: "translate(-20px," + (c.bh * (.3 + i * .15)) + "px) scaleX(1)", opacity: 0 }], { duration: 2200, delay: (.8 + i * .25) * 1000, fill: "both", easing: "ease-in-out" });
+        hfxAnim(c, f, [{ transform: "translate(" + (c.bw + 20) + "px," + (c.bh * (.32 + i * .16)) + "px) scaleX(1)", opacity: 0 }, { transform: "translate(" + (c.bw * .5) + "px," + (c.bh * (.3 + i * .18)) + "px) scaleX(1)", opacity: 1, offset: .5 },
+          { transform: "translate(-20px," + (c.bh * (.36 + i * .14)) + "px) scaleX(1)", opacity: 0 }], { duration: 2200, delay: (.8 + i * .25) * 1000, fill: "both", easing: "ease-in-out" });
       }
     }
-    /* the treasure: the number glints gold, rings spread on the water over it */
+    /* the treasure: the number glints, rings spread on the water over it */
     for(let i = 0; i < 3; i++) hfxMk(bx, "i", "hfx-uw-ring", { left: (c.p.x + c.p.w / 2) + "px", top: (c.p.y + c.p.h / 2) + "px", "--rs": (c.p.w * 1.4) + "px", "--t": t0 + .3 + i * .7 });
-    hfxLitText(bx, c, { mode: "sweep", color: "#FFF6D6", glow: "#FFD27A", dl: t0 + .6, dur: 1.2 });
+    hfxLitText(bx, c, { mode: "sweep", color: "#F2FFFF", glow: "#7FE9F2", dl: t0 + .6, dur: 1.2 });
+    const bdue = hfxDue(c);
     for(let i = 0; i < (c.mini ? 3 : 6); i++){
-      hfxPiece(bx, "hfx-glint is-uw", hfxGlintURL(), c.p.x + c.p.w * hfxR(.05, .95), c.p.y + c.p.h * hfxR(.1, .9), (c.mini ? 9 : 15), { "--t": t0 + .8 + i * .35, "--d": 1.4 });
+      const at = t0 + .8 + i * .35, x = c.p.x + c.p.w * hfxR(.05, .95), y = c.p.y + c.p.h * hfxR(.1, .9);
+      bdue(at, off => hfxPiece(bx, "hfx-glint is-uw", hfxGlintURL(), x, y, (c.mini ? 9 : 15), { "--t": at - off, "--d": 1.4 }));
     }
   }
 }
@@ -80781,7 +80973,7 @@ const HFX_UFO_BEAM = "blue";
 function hfxUfoBeam(){ return HFX_UFO_BEAMS[HFX_UFO_BEAM] || HFX_UFO_BEAMS.green; }
 function hfxBeamURL(){
   const b = hfxUfoBeam();
-  return hfxSprite("beam-" + HFX_UFO_BEAM, () => 'viewBox="0 0 100 200"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + b.hi + '" stop-opacity=".75"/><stop offset=".35" stop-color="' + b.c + '" stop-opacity=".38"/><stop offset="1" stop-color="' + b.c + '" stop-opacity=".1"/></linearGradient>' +
+  return hfxSprite("beam-" + HFX_UFO_BEAM, () => 'viewBox="0 0 100 200"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + b.hi + '" stop-opacity=".75"/><stop offset=".35" stop-color="' + b.c + '" stop-opacity=".4"/><stop offset="1" stop-color="' + b.c + '" stop-opacity=".2"/></linearGradient>' +
     '<linearGradient id="c" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>' +
     '<path d="M38 0 L62 0 L100 200 L0 200 Z" fill="url(#b)"/><path d="M45 0 L55 0 L70 200 L30 200 Z" fill="url(#c)"/></svg>', 400);
 }
@@ -80805,20 +80997,36 @@ function hfxUfo(scr, bx, c){
     const exit = { x: (Math.random() < .5 ? -1 : 1) * c.vw * .9, y: -L.y - 160 };
     /* how far its beam sweeps either way across the box (round 4) */
     const swa = hfxUfoSwa(c);
-    const u = hfxMk(scr, "span", "hfx-saucer", { left: L.x + "px", top: L.y + "px", "--sx": (hfxR(-.3, .3) * c.vw) + "px", "--sy": (-L.y - h - 20) + "px",
+    /* THE SAUCER FLIES OVER THE BOX (round 6): "the ray beam is still being
+       shown in the box before it even gets there and when it gets there
+       it's not matching up perfectly". The beam was two: the saucer's,
+       under the box (the box is lifted over the effect's screen layer, so
+       its number is never dimmed), and the box's own, inside it - a second
+       copy of the beam that started over again at the box's edge, narrow
+       and bright where the first ended wide and faint (63px against 138px
+       on a phone), and fanned out at once the moment it appeared, so the
+       box lit with a beam that had not reached it yet. Now the saucer and
+       its ONE beam are in a layer of their own just over the box, and the
+       beam runs on from the hull through the box's edge to its floor:
+       nothing can disagree at the edge because nothing meets there. */
+    const top = document.createElement("div");
+    top.setAttribute("aria-hidden", "true");
+    const u = hfxMk(top, "span", "hfx-saucer", { left: L.x + "px", top: L.y + "px", "--sx": (hfxR(-.3, .3) * c.vw) + "px", "--sy": (-L.y - h - 20) + "px",
       "--hov": hov + "px", "--ox": exit.x + "px", "--oy": exit.y + "px", "--uw": w + "px", "--uh": h + "px", "--swa": swa + "px",
       "--bmg": hfxUfoBeam().glow, "--bmd": hfxUfoBeam().deep });
     /* THE BEAM IS FIRED, THEN IT RIDES WITH THE HULL (build 317, round 3):
        "the UFO's projection is shown before it's shot out of the UFO and
        it doesn't hit the bottom of the box". It grows out of the underside
-       (its top is .2 of the hull up inside it) and its foot is ALWAYS 4px
-       inside the box's top edge: hovering, landed (--bl) and lifting off
-       (--bk), each a scale of the one hovering length. The box's own beam
-       (.hfx-ufo-inbeam) takes it from that edge to the box's bottom edge,
-       and only starts once this one has arrived. */
-    const bh = -hov + h * .2 + 4;
-    const beam = hfxMk(u, "i", "hfx-ufo-beam", { "--bh": bh + "px", "--bw": (w * .82) + "px",
-      "--bl": ((h * .2 + 4) / bh).toFixed(3), "--bk": ((74 + h * .2) / bh).toFixed(3) });
+       (its top is .2 of the hull up inside it), and since round 6 it runs
+       on through the box's top edge to the box's floor, hovering, landed
+       (--bl) and lifting off (--bk), each a scale of the one hovering
+       length - one beam, no second one in the box. */
+    /* (round 6) its length is from inside the hull to 3px off the box's
+       floor; --bt is where its head crosses the box's top edge, --bl and
+       --bk the same floor seen from the landed and the lifted hull */
+    const floor = Math.max(8, (c.bh || 0) - 3), bh = -hov + h * .2 + floor;
+    const beam = hfxMk(u, "i", "hfx-ufo-beam", { "--bh": bh + "px", "--bw": (w * .82) + "px", "--bt": ((-hov + h * .2 + 1) / bh).toFixed(4),
+      "--bl": ((h * .2 + floor) / bh).toFixed(4), "--bk": ((70 + h * .2 + floor) / bh).toFixed(4) });
     beam.style.backgroundImage = hfxBeamURL();
     for(let k = 0; k < 3; k++){
       hfxMk(u, "i", "hfx-ufo-ring", { "--rw": (w * .5) + "px", "--fall": (-hov) + "px", "--t": 3.98 + k * .22 }).style.backgroundImage = hfxBeamRingURL();
@@ -80856,6 +81064,7 @@ function hfxUfo(scr, bx, c){
     const tr = hfxMk(scr, "span", "hfx-mt", { left: ex.x + "px", top: ex.y + "px", "--ra": ang.toFixed(1) + "deg" });
     const run = hfxMk(tr, "i", "hfx-mt-run is-big hfx-ufo-trail", { "--ml": "300px", "--dist": (Math.hypot(exit.x, exit.y + 70) + 240) + "px", "--t": 8.62, "--d": .42 });
     run.style.backgroundImage = hfxMeteorURL("#9DFFB4");
+    hfxUfoTopLayer(c, scr, top, bx);
   }
   if(bx){
     const cx = c.bw / 2;
@@ -80863,10 +81072,8 @@ function hfxUfo(scr, bx, c){
     hfxUfoLight(c);
     if(!c.boxOnly){
       if(!c.noDim) hfxMk(bx, "i", "hfx-ufo-boxdim");
-      hfxMk(bx, "i", "hfx-ufo-inbeam", { left: cx + "px", "--ih": c.bh + "px", "--iw": Math.min(c.bw * .8, c.p.w * 1.6) + "px",
-        "--swa": hfxUfoSwa(c) + "px" }).style.backgroundImage = hfxBeamURL();
-      /* the box flares as the beam strikes it, and again as it lands */
-      hfxMk(bx, "i", "hfx-ufo-landglow is-hit", { "--t": 3.94, "--bmg": hfxUfoBeam().glow, "--bmd": hfxUfoBeam().deep });
+      /* the box flares as the beam reaches its floor, and again as it lands */
+      hfxMk(bx, "i", "hfx-ufo-landglow is-hit", { "--t": 4.18, "--bmg": hfxUfoBeam().glow, "--bmd": hfxUfoBeam().deep });
       hfxMk(bx, "i", "hfx-ufo-landglow", { "--t": 6.1 });
     } else {
       /* in a small box: it comes down into the box, hovers over the
@@ -80944,7 +81151,9 @@ function hfxUfoUnlit(card){
 function hfxUfoLight(c){
   const card = c.box;
   if(!card || !card.animate) return;
-  const D = c.boxOnly ? 7 : 9.5, at = c.boxOnly ? 2.8 : 3.92, dur = .25;
+  /* (round 6: on the results screen, as the beam's head reaches the box's
+     floor - before that the only light in the box is the beam itself) */
+  const D = c.boxOnly ? 7 : 9.5, at = c.boxOnly ? 2.8 : 4.18, dur = .25;
   const had = card.classList.contains("hfx-ufo-unlit");
   card.classList.add("hfx-ufo-unlit");
   const u = getComputedStyle(card), ub = u.borderColor, uw = u.getPropertyValue("--hfx-wash").trim();
@@ -80960,6 +81169,34 @@ function hfxUfoLight(c){
   const t = card.querySelector(":scope > .hfx-tint");
   if(t) hfxAnim(c, t, k({ opacity: 0 }, { opacity: 1 }), o);
   hfxOnEnd(c, () => card.classList.remove("hfx-ufo-unlit"));
+}
+/* The UFO's own layer, over the box (round 6): a twin of the effect's
+   screen layer - the same place, size and colours, two above it - put in
+   beside it once the screen layer is in the document, and taken away with
+   it (faded when it is faded). And ONE CLOCK for everything the UFO is
+   made of: once its animations have started, every one still running -
+   this layer's, the screen layer's, the box's and the script's - is set to
+   the earliest start among them, so a layer that began a frame late on
+   some device cannot run a frame behind the rest. (Paused ones, as a
+   recorder or a gate holds them, are left alone.) */
+function hfxUfoTopLayer(c, scr, top, bx){
+  queueMicrotask(() => {
+    if(!scr.isConnected || !scr.parentNode){ return; }
+    top.className = scr.className + " hfx-ufo-top";
+    top.style.cssText = scr.style.cssText;
+    const z = parseInt(getComputedStyle(scr).zIndex, 10);
+    top.style.zIndex = String((isFinite(z) ? z : 60) + 2);
+    scr.parentNode.insertBefore(top, scr.nextSibling);
+    const all = () => [top, scr, bx].filter(Boolean).reduce((a, el) => a.concat(el.getAnimations ? el.getAnimations({ subtree: true }) : []), []).concat(c.anims || []);
+    const list = all();
+    Promise.all(list.map(a => a.ready.catch(() => null))).then(() => {
+      const run = all().filter(a => a.playState === "running" && a.startTime != null);
+      if(run.length < 2) return;
+      const t0 = Math.min(...run.map(a => a.startTime));
+      run.forEach(a => { if(a.startTime !== t0){ try{ a.startTime = t0; }catch(e){} } });
+    });
+  });
+  hfxOnEnd(c, fade => { if(fade) hfxFadeOut(top); else top.remove(); });
 }
 /* THE CIRCLE (build 317, round 4). It comes in from one side, goes round
    the screen once - smaller on the far side of the circle, bigger on the
@@ -81285,6 +81522,30 @@ function hundoFxPosterSVG(id){
       if(Math.abs(x - 80) < 27 && Math.abs(y - 30) < 10) continue;
       body += i % 3 === 2 ? leaf(x, y, 2.2 + rnd(), rnd() * 180) : petal(x, y, 1.6 + rnd() * .9, rnd() * 360, HFX_BLOOM[i % HFX_BLOOM.length]);
     }
+  } else if(id === "underwater"){
+    /* build 317, round 4: the new water, small - the lit surface near the
+       top, the body deepening below it, caustics, three rays, a few
+       bubbles rising to break at the surface, and a school of fish */
+    defs += '<linearGradient id="' + g + 'sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#76DCEC" stop-opacity=".28"/><stop offset=".4" stop-color="#34AACE" stop-opacity=".3"/><stop offset="1" stop-color="#06365A" stop-opacity=".55"/></linearGradient>' +
+      '<linearGradient id="' + g + 'ray" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E6FFFF" stop-opacity=".45"/><stop offset="1" stop-color="#9FE8FF" stop-opacity="0"/></linearGradient>';
+    const wy = x => 9 + 1.3 * Math.sin(x / 9) + .6 * Math.sin(x / 4.3 + 1);
+    let crest = ""; for(let x = 0; x <= 160; x += 4) crest += (x ? " L" : "M") + x + " " + F(wy(x));
+    body += '<path d="' + crest + ' L160 60 L0 60 Z" fill="url(#' + g + 'sea)"/>';
+    [[30, 9], [74, 12], [122, 8]].forEach(([x, w]) => { body += '<path d="M' + F(x - w * .3) + ' ' + F(wy(x)) + ' L' + F(x + w * .3) + ' ' + F(wy(x)) + ' L' + F(x + w + 10) + ' 60 L' + F(x - w + 10) + ' 60 Z" fill="url(#' + g + 'ray)"/>'; });
+    /* caustics: a few wavy loops of light */
+    for(let i = 0; i < 16; i++){
+      const cx = rnd() * 160, cy = 16 + rnd() * 42, r = 4 + rnd() * 5;
+      /* a smooth, uneven loop: quadratic curves through the midpoints */
+      const pts = []; for(let q = 0; q < 7; q++){ const th = q / 7 * Math.PI * 2, rr = r * (.7 + .45 * Math.sin(th * 2 + i) + rnd() * .2); pts.push([cx + Math.cos(th) * rr * 1.3, cy + Math.sin(th) * rr * .8]); }
+      const mid = (u, v) => [(u[0] + v[0]) / 2, (u[1] + v[1]) / 2];
+      let m0 = mid(pts[6], pts[0]), d = "M" + F(m0[0]) + " " + F(m0[1]);
+      for(let q = 0; q < 7; q++){ const m = mid(pts[q], pts[(q + 1) % 7]); d += " Q" + F(pts[q][0]) + " " + F(pts[q][1]) + " " + F(m[0]) + " " + F(m[1]); }
+      body += '<path d="' + d + 'Z" fill="none" stroke="#E2FFFA" stroke-opacity="' + F(.12 + rnd() * .14) + '" stroke-width=".55"/>';
+    }
+    body += '<path d="' + crest + '" fill="none" stroke="#C9FAFF" stroke-opacity=".25" stroke-width="2.6"/><path d="' + crest + '" fill="none" stroke="#F4FFFF" stroke-width=".8"/>';
+    for(let i = 0; i < 12; i++){ const x = 8 + rnd() * 144, y = 18 + rnd() * 40; if(Math.abs(x - 80) < 30 && Math.abs(y - 30) < 11) continue;
+      body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(.6 + rnd() * 1.1) + '" fill="none" stroke="#F2FFFF" stroke-opacity=".7" stroke-width=".4"/>'; }
+    [[124, 44], [131, 41], [137, 46], [129, 49], [118, 48]].forEach(([x, y]) => { body += '<path d="M' + x + ' ' + y + ' q3 -2 6 0 l2 -1.4 v2.8 l-2 -1.4 q-3 2 -6 0 Z" fill="#C6EEF6" fill-opacity=".85"/>'; });
   } else if(id === "bubbles"){
     rg("b", [[0, "#9FE8FF", 0], [0.62, "#9FE8FF", 0.04], [0.8, "#C79BFF", 0.4], [0.92, "#FFB3D1", 0.8], [1, "#FFFFFF", 0.25]]);
     rg("w", [[0, "#9FE8FF", 0.28], [1, "#9FE8FF", 0]]);
@@ -81349,10 +81610,14 @@ function buildHundoFxStill(id){
       '<ellipse cx="24" cy="24" rx="22" ry="8" fill="url(#' + g + 'd)" transform="rotate(-12 24 24)"/><circle cx="24" cy="24" r="7.5" fill="#000"/><circle cx="24" cy="24" r="8.3" fill="none" stroke="#FFE8D2" stroke-width="1"/>' +
       '<path d="M24 4 Q36 8 34 18 M44 24 Q40 36 30 34 M24 44 Q12 40 14 30 M4 24 Q8 12 18 14" stroke="#B48CFF" stroke-opacity=".7" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
   } else if(id === "underwater"){
-    body = '<defs><linearGradient id="' + g + 'w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6FE3EE" stop-opacity=".55"/><stop offset="1" stop-color="#0E5A80" stop-opacity=".8"/></linearGradient></defs>' +
-      '<rect x="2" y="10" width="44" height="36" rx="5" fill="url(#' + g + 'w)"/><path d="M2 12 Q8 8 13 12 T24 12 T35 12 T46 12" stroke="#E9FFFF" stroke-width="1.6" fill="none"/>' +
-      '<path d="M10 46 Q7 36 11 28 Q14 22 10 16" stroke="#3FB57A" stroke-width="2" fill="none"/><path d="M38 46 Q41 38 37 32" stroke="#3FB57A" stroke-width="2" fill="none"/>' +
-      '<path d="M18 26 Q24 21 31 25 L35 21 Q34 26 35 30 L31 27 Q24 31 18 26 Z" fill="#0F3D4F"/><circle cx="26" cy="36" r="2" fill="#E8FFFF" fill-opacity=".8"/><circle cx="29" cy="31" r="1.3" fill="#E8FFFF" fill-opacity=".8"/>';
+    /* build 317, round 4: the new water - a lit surface, rays, a fish, bubbles */
+    body = '<defs><linearGradient id="' + g + 'w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#76DCEC" stop-opacity=".5"/><stop offset="1" stop-color="#06365A" stop-opacity=".85"/></linearGradient>' +
+      '<linearGradient id="' + g + 'r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E6FFFF" stop-opacity=".55"/><stop offset="1" stop-color="#9FE8FF" stop-opacity="0"/></linearGradient></defs>' +
+      '<path d="M2 13 Q7.5 10 13 13 T24 13 T35 13 T46 13 L46 41 Q46 46 41 46 L7 46 Q2 46 2 41 Z" fill="url(#' + g + 'w)"/>' +
+      '<path d="M12 13 L16 13 L22 46 L12 46 Z M28 13 L31 13 L38 46 L30 46 Z" fill="url(#' + g + 'r)"/>' +
+      '<path d="M2 13 Q7.5 10 13 13 T24 13 T35 13 T46 13" stroke="#C9FAFF" stroke-opacity=".35" stroke-width="3.4" fill="none"/><path d="M2 13 Q7.5 10 13 13 T24 13 T35 13 T46 13" stroke="#F4FFFF" stroke-width="1.3" fill="none"/>' +
+      '<path d="M15 30 Q22 25 30 29 L34 25 Q33 30 34 34 L30 31 Q22 35 15 30 Z" fill="#C6EEF6"/><circle cx="19" cy="29" r="1" fill="#0B2530"/>' +
+      '<circle cx="36" cy="22" r="2.1" fill="none" stroke="#F2FFFF" stroke-opacity=".85" stroke-width=".8"/><circle cx="33" cy="17" r="1.3" fill="none" stroke="#F2FFFF" stroke-opacity=".85" stroke-width=".7"/><circle cx="10" cy="38" r="1.6" fill="none" stroke="#F2FFFF" stroke-opacity=".7" stroke-width=".7"/>';
   } else if(id === "ufo"){
     body = '<defs><linearGradient id="' + g + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C8FFD4" stop-opacity=".7"/><stop offset="1" stop-color="#6BFF8F" stop-opacity="0"/></linearGradient></defs>' +
       '<path d="M20 26 L28 26 L40 47 L8 47 Z" fill="url(#' + g + 'b)"/>' +
@@ -82704,7 +82969,7 @@ function playHorizonFlareScene(done){
   const who = AVATAR_DISPLAY_NAME.singularity || "Horizon";
   if(S.still){
     F.lit();
-    S.stillEnd("THE EVENT HORIZON", who.toUpperCase(), "One more waits on the planet.");
+    S.stillEnd("THE EVENT HORIZON", who.toUpperCase(), "One more waits on the rings.");
     return S.handle;
   }
   S.later(820, () => comet.classList.add("is-go"));
@@ -82743,7 +83008,7 @@ function playHorizonFlareScene(done){
   S.later(16400, () => F.special());
   S.later(REVEAL, () => { F.reveal(); S.overlay.classList.add("sf-lit"); S.flashAt(50, 34, "is-soft"); });
   S.step(19900, "sf-orbits");
-  S.later(20400, () => S.title("THE EVENT HORIZON", who.toUpperCase(), "One more waits on the planet."));
+  S.later(20400, () => S.title("THE EVENT HORIZON", who.toUpperCase(), "One more waits on the rings."));
   S.later(26900, S.endScene);
   return S.handle;
 }
@@ -82817,7 +83082,7 @@ function playGenesisFlareScene(done){
     return S.handle;
   }
   S.later(900, () => { S.overlay.classList.add("sf-found");
-    S.say("SECRET FLARE FOUND", MYSTERY_NAME.core, "The planet's own light — the last secret flare"); });
+    S.say("SECRET FLARE FOUND", MYSTERY_NAME.core, "The sixth and last secret flare"); });
   S.step(3600, "sf-clear");
   S.step(4300, "sf-dive");
   S.later(4500, () => S.say("YOUR PLANET", "It is waking up", ""));
@@ -83623,8 +83888,8 @@ function rsUnlockItems(run){
     const nthAll = MYSTERY_ORDER.indexOf(run.flare) + 1;
     items.push({ kind: "flare", flare: run.flare, kicker: "Secret flare found",
       name: MYSTERY_NAME[run.flare],
-      sub: run.flare === "core" ? "The planet's own light — the last secret flare"
-        : run.flare === "white" ? "The " + ["", "first", "second", "third", "fourth", "fifth"][nthAll] + " secret flare — one more waits on the planet"
+      sub: run.flare === "core" ? "The sixth and last secret flare"
+        : run.flare === "white" ? "The " + ["", "first", "second", "third", "fourth", "fifth"][nthAll] + " secret flare — one more waits on the rings"
         : "The " + ["", "first", "second", "third", "fourth", "fifth"][nthAll] + " secret flare",
       color: MYSTERY_COLOR[run.flare], art: () => buildFlareOrb(MYSTERY_COLOR[run.flare], "ul") });
     items.push({ kind: "character", character: ch, feat: true, secret: true, kicker: "Character unlocked",
@@ -83693,7 +83958,7 @@ function hundoFxUnlockItem(id){
      over while it is up ("maybe the popup could show the effects
      animated"); the top three first play the WHOLE thing once across the
      pop-up - the UFO most of all. */
-  const top = ["worldtree", "bubbles", "ufo"].indexOf(id) >= 0;
+  const top = ["underwater", "worldtree", "bubbles", "ufo"].indexOf(id) >= 0;
   return { kind: "fx", fx: id, feat: true, kicker: "Hundo effect unlocked", name: d.name,
     sub: "Plays when you score 100%", need: hundoFxNeedText(d), color: d.color,
     art: () => buildHundoFxStill(id),
@@ -83868,6 +84133,8 @@ function ensureUnlocksShown(){
   if(u && Array.isArray(u.chars) && Array.isArray(u.banners)){
     /* not seeded with what is held, unlike the two above - see applyLoadedData */
     if(!Array.isArray(u.fx)) u.fx = [];
+    /* a merge from an older build can bring "worldtree" in (317, round 4) */
+    else if(u.fx.some(x => hundoFxId(x) !== x)) u.fx = hundoFxIds(u.fx);
     return u;
   }
   const waiting = (store.pendingCharUnlocks || []).concat(UNLOCKS_NEW_IN_235);
@@ -83937,6 +84204,7 @@ function ensureSeenUnlocks(){
      that has none: they are new to everybody, so an account that holds
      some the day they ship gets the dot on each. */
   if(ok && !Array.isArray(s.fx)){ s.fx = []; saveStore(); }
+  else if(ok && s.fx.some(x => hundoFxId(x) !== x)) s.fx = hundoFxIds(s.fx);
   if(ok && s.v === SEEN_VERSION) return s;
   const u = unlockedIdsNow();
   const charDef = id => (typeof AVATAR_CHARACTERS !== "undefined" ? AVATAR_CHARACTERS.find(c => c.id === id) : null);
@@ -84080,7 +84348,7 @@ function pendingFlareHints(){
   const out = [];
   if(!isLockedCharacter("voidwalker") && isLockedCharacter("umbra") && shown.indexOf("umbra") < 0) out.push("umbra");
   if(!isLockedCharacter("umbra") && isLockedCharacter("singularity") && shown.indexOf("singularity") < 0) out.push("singularity");
-  /* build 313: holding Horizon opens the last one, the planet's own */
+  /* build 313: holding Horizon opens the last one, Genesis's */
   if(!isLockedCharacter("singularity") && isLockedCharacter("genesis") && shown.indexOf("genesis") < 0) out.push("genesis");
   return out;
 }
@@ -84098,7 +84366,7 @@ function flareHintItem(ch){
     sub: ch === "umbra"
       ? "A fourth flare, " + MYSTERY_NAME.violet + ", is hiding in your tests. Find it to unlock " + who + "."
       : ch === "genesis"
-      ? "The last flare, " + MYSTERY_NAME.core + ", is the planet's own. From level " + FLARE_WINDOWS.core[0] + " it can turn up in your tests. Find it to unlock " + who + "."
+      ? "The last flare, " + MYSTERY_NAME.core + ", can turn up in your tests from level " + FLARE_WINDOWS.core[0] + ". Find it to unlock " + who + "."
       : "A fifth flare, " + MYSTERY_NAME.white + ", is hiding in your tests. Find it to unlock " + who + ".",
     /* the flare is not found yet, so it is shown without its colour
        (build 314 - FLARE_UNFOUND_TINT) */

@@ -20,7 +20,7 @@ seconds into the effect), cropped out of the clip's own frames, and
 f-<fx>-NN.jpg, one frame a second. Needs ffmpeg from imageio_ffmpeg."""
 import importlib.util, sys, os, json
 OUT = os.path.abspath(sys.argv[1])
-FXS = (sys.argv[2] if len(sys.argv) > 2 else "confetti,fireworks,worldtree,bubbles,ufo").split(",")
+FXS = (sys.argv[2] if len(sys.argv) > 2 else "confetti,fireworks,underwater,bubbles,ufo").split(",")
 W = int(sys.argv[3]) if len(sys.argv) > 3 else 440; H = int(sys.argv[4]) if len(sys.argv) > 4 else 956
 sys.argv = [sys.argv[0]]
 WT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

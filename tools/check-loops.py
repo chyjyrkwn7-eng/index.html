@@ -74,8 +74,6 @@ KNOWN = {
     # Build 304.
     "cx-sg3-orbit": "Horizon's disk: shifted by exactly one lap (18.78 = the ellipse's circumference = its dash + gap)",
     # Build 313: the secret flares.
-    "cco-turn": "the planet flare's orbit - a full turn",
-    "cco-back": "the planet flare turned back the other way as it goes - a full turn",
     "cof-call": "the hunted flare's ring: fades to nothing at the end, restarts from small",
     "cx-gn-spin": "Genesis's moon round its ring - a full turn",
     "cx-gn-back": "Genesis's moon kept upright - a full turn the other way",
@@ -127,14 +125,11 @@ KNOWN = {
     "bn-shock": "a shockwave that fades to nothing at both ends",
     "rk-nova-frag": "a Supernova emblem fragment flung out, invisible at both ends",
     "rk-nova-shock": "the Supernova emblem's shockwave, invisible at both ends",
-    "rk-nova-frag-soft": "the softer Supernova fragment (rank record host): opacity 0 at 0% and 100%",
-    "rk-nova-shock-soft": "the softer Supernova shockwave (rank record host): opacity 0 at 0% and 100%",
     "xp-glide": "a band of light from off one end of the lit bar to off the other, resting between",
     "csc-drift": "a Supernova scar fragment drifting off the burn - fades to nothing at both ends",
     "crf-tumble": "a shard of debris on Home's rings tumbling - a full turn",
-    # Came in with b317-cut2 (the soft Supernova edges); checked by hand.
-    "rk-nova-frag-soft": "a Supernova emblem fragment flung out, invisible at both ends (opacity 0)",
-    "rk-nova-shock-soft": "the Supernova emblem's soft shockwave, invisible at both ends (opacity 0)",
+    # (rk-nova-frag-soft and rk-nova-shock-soft need no entry: since
+    # b317-cut2 their last frame is their first)
 }
 s = open(SRC, encoding="utf-8").read()
 kf = {}
