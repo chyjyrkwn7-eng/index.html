@@ -14283,7 +14283,9 @@ def check_b317_hometaps(br):
           tap('.screen-home-actual .cosmic-badge-rank[data-rank-tier="vanguard"]'); await wait(400);
           tap('.screen-home-actual .cosmic-badge-rank[data-rank-tier="elite"]'); await wait(60);
           const items = [...document.querySelectorAll('.home-caption > .hc-item')];
-          return { n: items.length, out: items.filter(i => i.classList.contains('is-out')).length, live: (items.find(i => !i.classList.contains('is-out')) || {}).textContent || '' }; }""")
+          const nw = items.find(i => !i.classList.contains('is-out'));
+          return { n: items.length, out: items.filter(i => i.classList.contains('is-out')).length, live: (nw || {}).textContent || '',
+            behind: nw ? parseFloat(getComputedStyle(nw).transitionDelay) > 0 : false }; }""")
         pg.wait_for_timeout(7600)
         gone = pg.evaluate("() => ({ items: document.querySelectorAll('.home-caption > .hc-item').length, cover: [...document.querySelector('.panel.home.screen-home-actual').classList].filter(k => k.startsWith('hc-')) })")
         after = pg.evaluate(HOMETAP_LAY)
@@ -14317,8 +14319,8 @@ def check_b317_hometaps(br):
               (PL2.get("text") or "").startswith("Next: Platinum rank.") and PL2.get("ripples", 0) >= 2, PL2)
         check(dev + ": the light lands on the pointerdown with the words, and a second tap carries it on from where it is",
               chain.get("captionOnDown") and chain.get("same") and chain.get("o1", 0) > .3 and abs(chain.get("o2", 9) - chain.get("o1", -9)) < .06, chain)
-        check(dev + ": a new answer crossfades over the last (one leaving, one live)",
-              xf.get("n") == 2 and xf.get("out") == 1 and "Amethyst flare" in xf.get("live", ""), xf)
+        check(dev + ": a new answer fades through the last (one leaving, one arriving a beat behind it)",
+              xf.get("n") == 2 and xf.get("out") == 1 and xf.get("behind") and "Amethyst flare" in xf.get("live", ""), xf)
         check(dev + ": the caption goes after a few seconds, and nothing in the layout moved at any point while it came and went",
               (HL.get("items") or 0) >= 1 and (xf.get("n") or 0) >= 1 and gone.get("items") == 0 and not gone.get("cover")
               and before == during == after, [gone, before, during, after])

@@ -15385,10 +15385,12 @@ disagree with it.
     combinations). A kicker (the name in the thing's colour, then a quiet
     state: Lit / Locked / Secret flare / Not found) over one or two
     sentences, each sentence an inline-block (`.hc-s`) so lines break
-    between thoughts, not in the middle of one. A new answer crossfades over
-    the last (the old one `.is-out`), the same answer tapped again only
-    keeps it up, and it goes after `3.4s + 32ms a character` (at most 7s)
-    of no taps.
+    between thoughts, not in the middle of one. A new answer replaces the
+    last as a FADE-THROUGH (the old one `.is-out` goes in 120ms, the new
+    one `.is-after` starts 90ms later - a plain crossfade put two answers
+    at half strength in one place, a jumble on the recording of rapid
+    taps), the same answer tapped again only keeps it up, and it goes
+    after `3.4s + 32ms a character` (at most 7s) of no taps.
   - **Where it goes, measured at every show and on resize.** The floor is
     the planet system's lowest point under the caption's width, FROM THE
     GEOMETRY: the outer ring by its radius in the 0 -12 360 342 viewBox
@@ -15489,7 +15491,7 @@ disagree with it.
     sparkles; unfound hints without its name; the planet keeps its touch
     and surge and then says what is next with the first ripple still
     running; the words on the pointerdown; a second tap carries the light
-    on; crossfade; fade-out; no layout shift; Reduce motion still and
+    on; fade-through; fade-out; no layout shift; Reduce motion still and
     visible), `check_b317_caption_fit` (320x568, 375x667, 440x956, 440x846
     in Safari, 834x1194: inside the screen, off the system, the button, the
     chat button, the daily question, the version and the tab bar, off the
