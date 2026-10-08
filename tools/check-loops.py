@@ -125,6 +125,8 @@ KNOWN = {
     "bn-shock": "a shockwave that fades to nothing at both ends",
     "rk-nova-frag": "a Supernova emblem fragment flung out, invisible at both ends",
     "rk-nova-shock": "the Supernova emblem's shockwave, invisible at both ends",
+    "rk-nova-frag-soft": "the softer Supernova fragment (rank record host): opacity 0 at 0% and 100%",
+    "rk-nova-shock-soft": "the softer Supernova shockwave (rank record host): opacity 0 at 0% and 100%",
     "xp-glide": "a band of light from off one end of the lit bar to off the other, resting between",
     "csc-drift": "a Supernova scar fragment drifting off the burn - fades to nothing at both ends",
 }
