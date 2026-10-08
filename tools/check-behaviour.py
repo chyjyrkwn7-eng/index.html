@@ -15246,8 +15246,33 @@ HOMETAP_PREP = """async (opts) => { const wait = ms => new Promise(r => setTimeo
     const top = document.elementFromPoint(x, y); return [x, y, !!(top && (top === el || el.contains(top)))]; };
   return { rank: rankOf(store), level: levelOf(store) }; }"""
 
+# The caption title's computed colour against the colour it should be (round
+# four): a rank's flare its own lifted rank colour (flareColorOf), a found
+# secret flare its own (MYSTERY_COLOR), the planet's "Your flares" the
+# theme's --theme-c2 lifted 16% towards white, an unfound flare none. A
+# computed colour may come back as rgb() or as CSS Color 4 color(srgb 0-1).
+HOMETAP_TITLE = """
+  const __rgb = (v) => { v = String(v || '').trim(); let m;
+    if((m = v.match(/^#([0-9a-f]{6})$/i))) return [0, 2, 4].map(i => parseInt(m[1].substr(i, 2), 16));
+    if((m = v.match(/^#([0-9a-f]{3})$/i))) return [0, 1, 2].map(i => parseInt(m[1][i] + m[1][i], 16));
+    if((m = v.match(/color\\(srgb\\s+([\\d.e-]+)\\s+([\\d.e-]+)\\s+([\\d.e-]+)/))) return [m[1], m[2], m[3]].map(x => Math.round(parseFloat(x) * 255));
+    if((m = v.match(/rgba?\\(\\s*([\\d.]+)[ ,]+([\\d.]+)[ ,]+([\\d.]+)/))) return [m[1], m[2], m[3]].map(x => Math.round(parseFloat(x)));
+    return null; };
+  const __title = (it, what) => { const n = it && it.querySelector('.hc-name'); if(!n) return null;
+    const got = __rgb(getComputedStyle(n).color); let want = null;
+    if(what.startsWith('bubble:')) want = __rgb(flareColorOf(what.slice(7)));
+    else if(what.startsWith('flare:') && it.classList.contains('is-found')) want = __rgb(MYSTERY_COLOR[what.slice(6)]);
+    else if(what === 'planet'){ const c2 = __rgb(getComputedStyle(document.documentElement).getPropertyValue('--theme-c2')); want = c2 && c2.map(x => Math.round(x * .84 + 255 * .16)); }
+    const dist = got && want ? Math.max(...got.map((x, i) => Math.abs(x - want[i]))) : null;
+    /* and the nearest of the seven rank colours is this rank's own */
+    let nearest = null;
+    if(got && what.startsWith('bubble:')){ let best = 1e9;
+      TIER_ORDER_FULL.forEach(t => { const w = __rgb(flareColorOf(t)); const d = Math.max(...got.map((x, i) => Math.abs(x - w[i]))); if(d < best){ best = d; nearest = t; } }); }
+    return { got, want, dist, nearest, chroma: got ? Math.max(...got) - Math.min(...got) : null }; };
+"""
+
 # What a tap left: the caption, the effects on the thing, and nothing else.
-HOMETAP_READ = """(what) => { const H = document.querySelector('.screen-home-actual .cosmic-hero-wrap'), P = H.closest('.panel');
+HOMETAP_READ = """(what) => { """ + HOMETAP_TITLE + """ const H = document.querySelector('.screen-home-actual .cosmic-hero-wrap'), P = H.closest('.panel');
   let el = null;
   if(what.startsWith('bubble:')) el = H.querySelector('.cosmic-badge-rank[data-rank-tier="' + what.slice(7) + '"]');
   if(what.startsWith('flare:')) el = H.querySelector('[data-flare="' + what.slice(6) + '"]');
@@ -15271,6 +15296,7 @@ HOMETAP_READ = """(what) => { const H = document.querySelector('.screen-home-act
     state: it ? (it.querySelector('.hc-state') || {}).textContent || '' : null,
     text: it ? (it.querySelector('.hc-text') || {}).textContent || '' : null,
     kind: it ? [...it.classList].filter(k => /^is-(held|locked|found|unfound|planet)$/.test(k)).join('') : null,
+    title: it ? __title(it, what) : null,
     cover: [...P.classList].filter(k => k.startsWith('hc-')).join(' '),
     box: c ? [Math.round(c.left * 10) / 10, Math.round(c.top * 10) / 10, Math.round(c.right * 10) / 10, Math.round(c.bottom * 10) / 10] : null,
     centreOff: c ? Math.round(Math.abs((c.left + c.right) / 2 - (HR.left + HR.width / 2)) * 10) / 10 : null,
@@ -15393,23 +15419,27 @@ def check_b317_hometaps(br):
         check(dev + ": a held rank says its flare, what it is and when it was lit - and lights, presses and lets a halo go, no shake",
               HL.get("kind") == "is-held" and HL.get("name") == "Gold flare" and HL.get("state") == "Lit"
               and "A sun that makes its own light." in (HL.get("text") or "") and "Lit when you reached Gold rank." in (HL.get("text") or "")
-              and HL.get("light", 0) >= 1 and HL.get("press", 0) >= 1 and HL.get("halo", 0) >= 1 and HL.get("shake") == 0, HL)
+              and HL.get("light", 0) >= 1 and HL.get("press", 0) >= 1 and HL.get("halo", 0) >= 1 and HL.get("shake") == 0
+              and (HL.get("title") or {}).get("nearest") == "veteran" and ((HL.get("title") or {}).get("dist") if (HL.get("title") or {}).get("dist") is not None else 99) <= 10, HL)
         check(dev + ": a locked rank says what reaching it takes and what is left - and shakes and dips, never lights",
               LK.get("kind") == "is-locked" and LK.get("name") == "Sapphire flare" and LK.get("state") == "Locked"
               and "Reach level 60 and earn 9 badges to light it." in (LK.get("text") or "") and "20 more levels and 4 more badges to go." in (LK.get("text") or "")
-              and LK.get("shake", 0) >= 1 and LK.get("dim") and LK.get("light") == 0 and LK.get("press") == 0, LK)
-        check(dev + ": a found secret flare names itself in its colour and sparkles - a swell, a ring and sparks, no shake",
+              and LK.get("shake", 0) >= 1 and LK.get("dim") and LK.get("light") == 0 and LK.get("press") == 0
+              and (LK.get("title") or {}).get("nearest") == "adept" and ((LK.get("title") or {}).get("dist") if (LK.get("title") or {}).get("dist") is not None else 99) <= 10, LK)
+        check(dev + ": a found secret flare is its name in its colour and its one line, nothing after - and sparkles: a swell, a ring and sparks, no shake",
               FF.get("kind") == "is-found" and FF.get("name") == "Redshift" and FF.get("state") == "Secret flare"
+              and FF.get("text") == "Light stretched red as it races away." and ((FF.get("title") or {}).get("dist") if (FF.get("title") or {}).get("dist") is not None else 99) <= 10
               and FF.get("press", 0) >= 1 and FF.get("sparks", 0) >= 3 and FF.get("shake") == 0, FF)
-        check(dev + ": an unfound secret flare hints without its name - and shakes like every locked thing, no sparkle",
+        check(dev + ": an unfound secret flare says only that it has not been found (no name, no colour) - and shakes like every locked thing, no sparkle",
               UF.get("kind") == "is-unfound" and UF.get("name") == "Secret flare" and UF.get("state") == "Not found"
-              and "Afterglow" not in (UF.get("text") or "") and "Not out yet." in (UF.get("text") or "")
+              and UF.get("text") == "Secret flare has not been found." and ((UF.get("title") or {}).get("chroma") or 99) <= 24
               and UF.get("shake", 0) >= 1 and UF.get("dim") and UF.get("sparks") == 0 and UF.get("press") == 0, UF)
-        check(dev + ": the planet keeps its touch (press, ripple, halo, rings, both flare rings surge, no filter) and says where you stand",
-              PL.get("kind") == "is-planet" and PL.get("name") == "Your system" and (PL.get("text") or "").startswith("Gold rank, level 40, 5 badges.")
+        check(dev + ": the planet keeps its touch (press, ripple, halo, rings, both flare rings surge, no filter) and counts your flares under \"Your flares\" in the theme's colour",
+              PL.get("kind") == "is-planet" and PL.get("name") == "Your flares" and PL.get("text") == "3 of 7 rank flares lit, 2 of 3 secret flares found."
+              and ((PL.get("title") or {}).get("dist") if (PL.get("title") or {}).get("dist") is not None else 99) <= 10
               and PL.get("fxMoving", 0) >= 4 and PL.get("fxFiltered") == 0 and len(PL.get("surge") or []) == 2 and all(n >= 1 for n in PL.get("surge") or [0]), PL)
         check(dev + ": tapped again it says what is next, and the first ripple is still running beside the second",
-              (PL2.get("text") or "").startswith("Next: Platinum rank.") and PL2.get("ripples", 0) >= 2, PL2)
+              (PL2.get("text") or "").startswith("Next: the Platinum flare.") and PL2.get("ripples", 0) >= 2, PL2)
         check(dev + ": the light lands on the pointerdown with the words, and a second tap carries it on from where it is",
               chain.get("captionOnDown") and chain.get("lightOnDown") and chain.get("same") and chain.get("o1", 0) > .3 and abs(chain.get("o2", 9) - chain.get("o1", -9)) < .06, chain)
         check(dev + ": a new answer fades through the last (one leaving, one arriving a beat behind it)",
@@ -15417,6 +15447,28 @@ def check_b317_hometaps(br):
         check(dev + ": the caption goes after a few seconds, and nothing in the layout moved at any point while it came and went",
               (HL.get("items") or 0) >= 1 and (xf.get("n") or 0) >= 1 and gone.get("items") == 0 and not gone.get("cover")
               and before == during == after, [gone, before, during, after])
+        # Round four: every rank's title in that flare's own colour, held or
+        # locked, and "Your flares" in the theme's colour under a set theme too
+        cols = pg.evaluate("""async () => { """ + HOMETAP_TITLE + """ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          for(const t of TIER_ORDER_FULL){
+            document.querySelector('.screen-home-actual .cosmic-badge-rank[data-rank-tier="' + t + '"]').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            await wait(30);
+            const it = document.querySelector('.home-caption > .hc-item:not(.is-out)'); const r = __title(it, 'bubble:' + t);
+            out[t] = { held: !!document.querySelector('.screen-home-actual .cosmic-badge-rank.cosmic-badge-lit[data-rank-tier="' + t + '"]'), dist: r && r.dist, nearest: r && r.nearest, got: r && r.got };
+          }
+          theme.accent = 'adept'; applyTheme(); showHome(); await wait(700);
+          document.querySelector('.screen-home-actual .cosmic-hero-main circle[style*="cursor"]').dispatchEvent(new MouseEvent('click', { bubbles: true })); await wait(60);
+          const it = document.querySelector('.home-caption > .hc-item:not(.is-out)'); const r = __title(it, 'planet');
+          out.planetSapphire = { name: it && (it.querySelector('.hc-name') || {}).textContent, dist: r && r.dist, got: r && r.got, want: r && r.want };
+          theme.accent = 'ink'; applyTheme();
+          return out; }""")
+        ranks = {k: v for k, v in cols.items() if k in ("rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan")}
+        check(dev + ": every rank flare's title is in that flare's own colour, held or locked (all seven)",
+              len(ranks) == 7 and any(v["held"] for v in ranks.values()) and any(not v["held"] for v in ranks.values())
+              and all(v.get("nearest") == k and v.get("dist") is not None and v["dist"] <= 10 for k, v in ranks.items()), ranks)
+        PS = cols.get("planetSapphire") or {}
+        check(dev + ": under the Sapphire theme, \"Your flares\" reads in the Sapphire theme's colour",
+              (PS.get("name") or "").startswith("Your flares") and PS.get("dist") is not None and PS["dist"] <= 10, PS)
         # Reduce motion: still answers, no motion
         pg.evaluate(HOMETAP_PREP, {"rm": True})
         RL = _hometap(pg, "bubble:adept")
@@ -15432,8 +15484,8 @@ def check_b317_hometaps(br):
               RH.get("lightStill") and RH.get("light") == 0 and RH.get("press") == 0 and RH.get("halo") == 0 and RH.get("name") == "Gold flare", RH)
         check(dev + ": Reduce motion: a found flare's ring shows still, no swell, no sparks",
               RF.get("cofStill") and RF.get("press") == 0 and RF.get("sparks") == 0 and RF.get("name") == "Redshift", RF)
-        check(dev + ": Reduce motion: the planet answers still, nothing surges, and the caption says where you stand",
-              RP.get("still") and all(n == 0 for n in RP.get("surge") or [1]) and (RP.get("text") or "").startswith("Gold rank"), RP)
+        check(dev + ": Reduce motion: the planet answers still, nothing surges, and the caption counts your flares",
+              RP.get("still") and all(n == 0 for n in RP.get("surge") or [1]) and (RP.get("text") or "").startswith("3 of 7 rank flares lit"), RP)
         ctx.close()
 
 
@@ -15445,8 +15497,10 @@ def check_b317_caption_fit(br):
     clear of everything the planet system draws under it, clear of Start
     Studying, the chat button, the daily question and the tab bar, and
     clear of the greeting and the title unless they have faded out under
-    it - and the greeting, the title and the button never move. Fails on
-    336c444, which has no caption."""
+    it - and the greeting, the title and the button never move; and (round
+    four) each title is in its flare's own colour, the planet's in the
+    theme's. Fails on 336c444, which has no caption, and on 7ee6c51, whose
+    locked titles are grey and whose planet title is a fixed peach."""
     print("\n317f. the Home caption fits on 320, 375, 440 and 834")
     for (w, h, dev) in ((320, 568, "320 phone"), (375, 667, "SE 2nd/3rd"), (440, 956, "17 Pro Max"), (440, 846, "17 Pro Max in Safari"), (834, 1194, "iPad Pro 11")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
@@ -15455,7 +15509,7 @@ def check_b317_caption_fit(br):
         before = pg.evaluate(HOMETAP_LAY)
         probs, modes = [], set()
         for what in ("bubble:veteran", "bubble:titan", "flare:red", "flare:yellow", "planet", "planet"):
-            r = pg.evaluate("""async (what) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+            r = pg.evaluate("""async (what) => { """ + HOMETAP_TITLE + """ const wait = ms => new Promise(r => setTimeout(r, ms));
               const H = document.querySelector('.screen-home-actual .cosmic-hero-wrap'); let el = null;
               if(what.startsWith('bubble:')) el = H.querySelector('.cosmic-badge-rank[data-rank-tier="' + what.slice(7) + '"]');
               if(what.startsWith('flare:')) el = H.querySelector('[data-flare="' + what.slice(6) + '"]');
@@ -15472,7 +15526,7 @@ def check_b317_caption_fit(br):
               const ink = (e) => { if(!e || getComputedStyle(e).display === 'none') return null; const rg = document.createRange(); rg.selectNodeContents(e); const r = rg.getBoundingClientRect(); return r.height ? [r.left, r.top, r.right, r.bottom] : null; };
               const box = (e) => { if(!e) return null; const cs = getComputedStyle(e); if(cs.display === 'none' || cs.visibility === 'hidden') return null; const r = e.getBoundingClientRect(); return r.width && r.height ? [r.left, r.top, r.right, r.bottom] : null; };
               const cover = P.className;
-              return { box: [c.left, c.top, c.right, c.bottom], vw: innerWidth, vh: innerHeight, floor, beside: it.classList.contains('is-beside'), hero: [HR.left, HR.top, HR.right, HR.bottom],
+              return { box: [c.left, c.top, c.right, c.bottom], vw: innerWidth, vh: innerHeight, floor, beside: it.classList.contains('is-beside'), hero: [HR.left, HR.top, HR.right, HR.bottom], tcol: __title(it, what),
                 greet: /hc-over-(greeting|title)/.test(cover) ? null : ink(P.querySelector(':scope > .homegreeting')),
                 title: /hc-over-title/.test(cover) ? null : ink(P.querySelector(':scope > .hometitle-wrap')),
                 fixed: ['#nextbtn', '#chatdock-btn', '.daily-question-fab', '.homeversion', '.bottomtabs:not([hidden])'].map(q => [q, box(document.querySelector(q))]),
@@ -15496,6 +15550,10 @@ def check_b317_caption_fit(br):
             for q, o in r["fixed"]:
                 if hit(o):
                     probs.append(f"{what}: on {q}")
+            # round four: the title in the flare's own colour (the theme's for the planet)
+            ti = r.get("tcol") or {}
+            if what != "flare:yellow" and (ti.get("dist") is None or ti["dist"] > 10):
+                probs.append(f"{what}: title colour {ti.get('got')} is not {ti.get('want')}")
         after = pg.evaluate(HOMETAP_LAY)
         check(f"{dev} ({w}x{h}): every answer fits ({', '.join(sorted(modes))}) and nothing moved",
               not probs and before == after, probs or [before, after])

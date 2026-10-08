@@ -12446,7 +12446,11 @@
   .hc-item.is-clamped .hc-s{ display:inline; }
   .hc-item.is-beside.is-right{ text-align:left; }
   .hc-item.is-beside.is-left{ text-align:right; }
-  .hc-item.is-unfound .hc-name, .hc-item.is-locked .hc-name{ color:rgba(222,229,238,.82); }
+  /* every flare's title in that flare's colour, held or locked (round
+     four); one not found has no colour to give away; the planet's "Your
+     flares" is the theme's own colour, lifted a little for a dark screen */
+  .hc-item.is-unfound .hc-name{ color:rgba(222,229,238,.82); }
+  .hc-item.is-planet .hc-name{ color:color-mix(in srgb, var(--theme-c2, #F5804D) 84%, #FFFFFF); }
   [data-reduce-motion="true"] .hc-item{ transform:none !important; }
   @media (prefers-reduced-motion:reduce){ .hc-item{ transform:none !important; } }
   .panel.home.screen-home-actual > .homegreeting, .panel.home.screen-home-actual > .hometitle-wrap{ transition:opacity .25s ease; }
@@ -76236,63 +76240,43 @@ function homeTapCopyRank(tier){
   const rule = TIER_UNLOCKS[tier] || {};
   const parts = tierShortfall(rule);
   const need = "Reach level " + rule.level + " and earn " + rule.badges + " " + (rule.badges === 1 ? "badge" : "badges") + " to light it.";
-  return { kind: "locked", name: flare + " flare", state: "Locked", color: "",
+  return { kind: "locked", name: flare + " flare", state: "Locked", color: flareColorOf(tier),
     parts: parts.length ? [need, homeJoin(parts) + " to go."] : [rank + " rank is ready to reach."] };
 }
-/* A secret flare: found, its name and a line about it; not found, a hint
-   that gives nothing away - no name, no colour, nothing the hunt does not
-   already say (a hint card that has named it unlocks its character line). */
+/* A secret flare: found, its name and a line about it; not found, only
+   that - no name, no colour, no hint. */
 function homeTapCopyFlare(key){
-  const f = (store && store.mysteryColorsFound) || {};
   const st = flareHuntState(key);
+  /* ROUND FOUR (build 317): "this would shorten them and make them
+     simple" - a found flare is its name and its line, nothing after it;
+     one not found says only that, with no name, no colour and no hint. */
   if(st === "found"){
-    let tail;
-    if(VOID_FLARES.indexOf(key) >= 0){
-      const have = VOID_FLARES.filter(k => f[k]).length;
-      tail = have >= VOID_FLARES.length ? "One of the three that made Void."
-        : "One of three. " + (VOID_FLARES.length - have === 1 ? "One more to find." : "Two more to find.");
-    } else if(key === "core"){
-      tail = "It woke Genesis.";
-    } else {
-      tail = "It brought " + (AVATAR_DISPLAY_NAME[FLARE_CHARACTER[key]] || "its character") + " out of the dark.";
-    }
     return { kind: "found", name: MYSTERY_NAME[key], state: "Secret flare", color: MYSTERY_COLOR[key],
-      parts: [HOME_SECRET_LINE[key] || "", tail] };
+      parts: [HOME_SECRET_LINE[key] || ""] };
   }
-  let parts;
-  if(st === "hunting") parts = ["Out there now, hiding in one of your tests.", "Keep your eyes open."];
-  else if(st === "next"){
-    let left = 99;
-    try{ left = mysteryLevelGate(key) - levelOf(store); }catch(e){}
-    parts = ["Not out yet.", left <= 3 ? "A few more levels and it starts hiding in your tests."
-      : "It starts hiding in your tests further up the levels."];
-  } else parts = ["Still hidden.", "Its turn comes once the one before it is found."];
-  const ch = FLARE_CHARACTER[key];
-  if(ch && Array.isArray(store.flareHintsShown) && store.flareHintsShown.indexOf(ch) >= 0){
-    parts[parts.length - 1] += " Find it to unlock " + (AVATAR_DISPLAY_NAME[ch] || ch) + ".";
-  }
-  return { kind: "unfound", name: "Secret flare", state: "Not found", color: "", parts };
+  return { kind: "unfound", name: "Secret flare", state: "Not found", color: "", parts: ["Secret flare has not been found."] };
 }
-/* The planet: where you stand, then (tapped again) what is next. */
+/* The planet: your flares, counted, then (tapped again) the next one to
+   light. Round four: "Your flares", in the theme's own colour (--theme-c2,
+   lifted a little for a dark screen - see .hc-item.is-planet), and the
+   rank/level/badges line is gone. */
 function homeTapCopyPlanet(n){
-  const rk = rankOf(store), lvl = levelOf(store), b = badgeCountOf(store);
   if(n % 2 === 1){
     const next = TIER_ORDER_FULL.find(t => !tierColorUnlocked(t));
     let parts;
     if(next){
       const left = tierShortfall(TIER_UNLOCKS[next]);
-      parts = ["Next: " + RANK_DISPLAY_NAME[next] + " rank.", left.length ? homeJoin(left) + " to go." : "It is ready to reach."];
+      parts = ["Next: the " + (ACCENT_DISPLAY_NAME[next] || RANK_DISPLAY_NAME[next]) + " flare.", left.length ? homeJoin(left) + " to go." : "It is ready to light."];
     } else {
       parts = homeRingTier() === "eclipse" ? ["Every flare is lit,", "the secret ones too."] : ["Every rank flare is lit."];
     }
-    return { kind: "planet", name: "Your system", state: "", color: "#FFC98A", parts };
+    return { kind: "planet", name: "Your flares", state: "", color: "", parts };
   }
   const keys = homeFlareKeys(), f = store.mysteryColorsFound || {};
   const lit = TIER_ORDER_FULL.filter(t => tierColorUnlocked(t)).length;
   const found = keys.filter(k => f[k]).length;
-  return { kind: "planet", name: "Your system", state: "", color: "#FFC98A",
-    parts: [(rk ? RANK_DISPLAY_NAME[rk] + " rank" : "No rank yet") + ", level " + lvl + ", " + b + " " + (b === 1 ? "badge" : "badges") + ".",
-      lit + " of " + TIER_ORDER_FULL.length + " rank flares lit, " + found + " of " + keys.length + " secret flares found."] };
+  return { kind: "planet", name: "Your flares", state: "", color: "",
+    parts: [lit + " of " + TIER_ORDER_FULL.length + " rank flares lit,", found + " of " + keys.length + " secret flares found."] };
 }
 
 /* ---- THE CAPTION ----
