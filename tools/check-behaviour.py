@@ -13286,6 +13286,39 @@ def check_b317_cutspin(br):
               27 <= len(pops) <= 40 and burst_at is not None and 290 <= burst_at <= 305 and pops[-1] < burst_at,
               (len(pops), pops[:1], burst_at))
 
+    # Round five: "there's like a flare floating across the screen?" The
+    # outro must hold the planet system still while it fades, and the bridge
+    # it leaves to the reward card must be a plain dim with no round pool of
+    # colour (that pool read as a flare floating over the results).
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("()=>{ document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); showHome(); }")
+    pg.wait_for_timeout(1000)
+    pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+    pg.evaluate("()=>playTierCutscene('vanguard', {from:'veteran', onDone(){}})")
+    t, boxes, pools = 0.0, [], []
+    for i in range(1, 600):
+        t0 = t; t = i / 30
+        pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000)))
+        pg.evaluate(CUTSPIN_SEEK, t)
+        st = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene');
+          const b = document.querySelector('.scene-bridge');
+          const m = o && o.querySelector('.rank-after .cosmic-hero-main');
+          const r = m && m.getBoundingClientRect();
+          return { outro: !!(o && o.classList.contains('rank-outro')), box: r ? [r.left + r.width / 2, r.top + r.height / 2, r.width] : null,
+                   pool: b ? getComputedStyle(b).backgroundImage : null }; }""")
+        if st["outro"] and st["box"]:
+            boxes.append(st["box"])
+        if st["pool"] is not None:
+            pools.append(st["pool"])
+        if pools and not st["outro"] and st["box"] is None:
+            break
+    ctx.close()
+    drift = max((max(abs(b[k] - boxes[0][k]) for b in boxes) for k in range(3)), default=None) if boxes else None
+    check("the outro holds the planet system still while it fades (within 1px)",
+          len(boxes) >= 30 and drift is not None and drift <= 1, (len(boxes), drift))
+    check("and the bridge to the reward card is a plain dim - no round pool of colour floating over the results",
+          bool(pools) and all(p == "none" for p in pools), (len(pools), pools[:1]))
+
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     cards = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());

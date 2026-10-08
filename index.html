@@ -11450,7 +11450,11 @@
   .tier-cutscene .supernova-stage.is-arrive{ transform:scale(1); opacity:1; }
   .tier-cutscene .supernova-stage.supernova-zoom{ transform:scale(1.55); transition:transform 4.8s cubic-bezier(.45,0,.25,1); }
   #supernova-cutscene.tier-cutscene.supernova-settle .supernova-stage{ transform:scale(1.15); transition:transform 2.4s cubic-bezier(.2,.7,.2,1); }
-  #supernova-cutscene.tier-cutscene.rank-outro .supernova-stage{ transform:scale(.92); transition:transform 2.6s cubic-bezier(.3,.6,.2,1); }
+  /* A STEADY OUTRO (build 317, round five): "there's like a flare floating
+     across the screen?" The planet used to ease back from 1.15 to .92 as
+     the words went, and then fade - a system drifting while it fades. It
+     holds where the title left it now, and only fades. */
+  #supernova-cutscene.tier-cutscene.rank-outro .supernova-stage{ transform:scale(1.15); }
   /* The planet no longer spins (build 308) - see rankOrbitFlares. */
   .rank-orbit{ position:absolute; inset:0; pointer-events:none; z-index:3;
     animation:rank-orbit var(--orbit-ms, 30s) linear infinite; will-change:transform; }
@@ -24309,6 +24313,7 @@
      fully opaque, so nothing sees it arrive - and a fade-in there was a
      crossover where both layers were half-strength and the screen behind
      showed through. It only ever fades on the way out. */
+  .scene-bridge.is-plain{ background:rgba(6,8,12,.72); }
   .scene-bridge.is-off{ opacity:0; transition:opacity .5s ease; }
   /* Claimed: the pop-up's own dim is under it now, so only the pool of
      light has anything left to do - it swells into the card and goes. */
@@ -64964,7 +64969,10 @@ function playRankUpScene(tierKey, opts, spec){
        rank's reward cards next; on Home, the unlock queue does. */
     let next = inline;
     if(!inline){ try{ next = homeUnlocksOwed(pendingHomeUnlocks()); }catch(e){} }
-    if(next) openSceneBridge(RANK_COLOR[tierKey]);
+    /* no pool of colour on this bridge (build 317, round five): after a
+       rank scene the round teal pool in the middle of the dim read as a
+       flare floating over the results before the card came */
+    if(next) openSceneBridge(RANK_COLOR[tierKey], { plain: true });
     if(!inline) rankJustReachedOnHome = tierKey;
     setTimeout(() => {
       overlay.remove();
@@ -80658,11 +80666,11 @@ function flyArtToProfile(art){
    under every scene (420 and 500), so it is only ever seen between. */
 const SCENE_BRIDGE_WAIT_MS = 1900;
 let sceneBridge = null, sceneBridgeTimer = null;
-function openSceneBridge(color){
+function openSceneBridge(color, opts){
   if(resultsMotionOff() || theme.muteBanners) return;
   dropSceneBridge(true);
   const b = document.createElement("div");
-  b.className = "scene-bridge";
+  b.className = "scene-bridge" + (opts && opts.plain ? " is-plain" : "");
   b.setAttribute("aria-hidden", "true");
   if(color) b.style.setProperty("--bridge-color", color);
   document.body.appendChild(b);
