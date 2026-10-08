@@ -14912,13 +14912,18 @@ disagree with it.
       it. I like it but could be better."*) The line under the bar already
       says where the XP goes, so this one no longer does. Still no badge
       count (316), and away from a wall the row still has no note.
-    - **THE FLARE LEADS THE UNLOCK TILES, THEN THE THEME.** *"the flare and
-      the theme unlock box thing in profile should swap ... your call."*
-      Kept after looking at both: the flare is the rank's own mark (what
-      reaching it lights on Home), and the theme's flat disc between the
-      two ringed pieces balances the row. The road map's chips still read
-      Theme, Flare (`buildRankGifts`) - not changed
-      here.
+    - ~~THE FLARE LEADS THE UNLOCK TILES, THEN THE THEME~~ - **REVERSED
+      IN THE 317 FIX: THEME, FLARE IN THE MIDDLE, THEN THE CHARACTER OR
+      BANNER.** *"In the rank profile challenge rewards, switch the flare
+      and theme spot again, preferred the flare one in the middle."*
+      `buildRankRewardTiles` (the Next rank card's tiles - its only
+      caller) now matches the road map's chips (`buildRankGifts`), which
+      were always Theme, Flare, character, banner. The rank-up REWARD CARD
+      gets the same order on its own branch; it is not this function.
+      Nothing in the CSS keys on the tiles' order (only on a fourth tile,
+      `:has(> .pf-rw:nth-child(4))`). Gates: `check_b317_pfcard` ("its
+      theme, then its flare in the middle, then the rest") and check-curve
+      ("its theme, then its flare"), both failing on b6cd249.
     - `check_b317_pfcard` holds all five on both reference devices and
       fails 8 of 10 against 74cc518 (the two that pass are "nothing threw"
       and the dot clearing, which guards what was kept).

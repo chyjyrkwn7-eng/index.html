@@ -13092,8 +13092,11 @@ def check_b317_pfcard(br):
               [(r.get("xpMid") or {}).get("over"), (r.get("xpTop") or {}).get("over"), r.get("topLevel")])
         check(f"{dev}: the Next rank card heads its rows 'Rank challenges', above them",
               any(k.lower() == "rank challenges" for k in r.get("kicks", [])) and r.get("kickBeforeTasks"), [r.get("kicks"), r.get("kickBeforeTasks")])
-        check(f"{dev}: what the rank unlocks leads with its flare, then its theme",
-              (r.get("tiles") or [])[:2] == ["flare", "theme"], r.get("tiles"))
+        # REVISED IN THE 317 FIX: "switch the flare and theme spot again,
+        # preferred the flare one in the middle" - theme, flare, then the
+        # character or banner (the road map's order). Fails on b6cd249.
+        check(f"{dev}: what the rank unlocks is its theme, then its flare in the middle, then the rest",
+              (r.get("tiles") or [])[:2] == ["theme", "flare"] and all(t == "other" for t in (r.get("tiles") or [])[2:]), r.get("tiles"))
         tt = r.get("topText") or ""
         check(f"{dev}: at Supernova the card says max rank, still under 'Rank challenges', and that none are left",
               r.get("top") == "titan" and "is-top" in (r.get("topCls") or "") and r.get("topTasks") == 0
