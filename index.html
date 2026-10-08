@@ -9684,6 +9684,21 @@
   .hfx-tint{ position:absolute; inset:0; border-radius:inherit; opacity:0; pointer-events:none;
     box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--hfx-b) 55%, transparent), inset 0 0 30px color-mix(in srgb, var(--hfx-b) 26%, transparent); }
   .hfx-tinted .hfx-tint{ opacity:1; }
+  /* THE UFO'S BOX IS DARK UNTIL ITS BEAM STRIKES (build 317, round 5):
+     "before the ufo lands on it, the box already has the beam there, I've
+     mentioned this a few times but fix that, the beam shouldn't be there
+     till the ufo uses the beam". Since round 3 every box is in its
+     effect's colours from its first frame, and for the UFO that meant a
+     bright green rim, a green wash poured down from its top and a green
+     glow inside - the beam's light, on the box from the moment it landed,
+     long before the saucer came. Now the UFO's box is in its colours but
+     UNLIT (the rim faint, as the default's is; no wash; no inner glow)
+     until the beam strikes, and the light comes on with the beam
+     (hfxUfoLight, on the effect's own clock). The number and the bars
+     keep the green throughout - colour, not light. */
+  .rs-screen .rs-card.rs-grade.is-perfect.hfx-tinted.hfx-ufo-unlit, .hfx-stage.hfx-tinted.hfx-ufo-unlit, .hfx-mock > .rs-card.rs-grade.hfx-tinted.hfx-ufo-unlit{
+    border-color:color-mix(in srgb, var(--hfx-b) 22%, transparent); --hfx-wash:rgba(107,255,143,0); }
+  .hfx-tinted.hfx-ufo-unlit > .hfx-tint{ opacity:0; }
   /* a blossom BUDS - a small closed knot of colour - and then OPENS */
   @keyframes hfx-bloom2{ 0%{ transform:scale(.05) rotate(var(--r0)); opacity:0; } 12%{ transform:scale(.15) rotate(var(--r0)); opacity:1; } 38%{ transform:scale(.19) rotate(var(--r0)); } 78%{ transform:scale(1.08) rotate(4deg); } 100%{ transform:scale(1) rotate(0deg); opacity:1; } }
   /* the World Tree's burst (build 317, hfxWorldTree): out like the
@@ -79167,8 +79182,10 @@ function buildHundoFxMock(id, o){
   const acts = el("div", "rs-actions");
   el("button", "hfx-mk-btn is-light", "Re-run", acts).tabIndex = -1;
   el("button", "hfx-mk-btn", "Main menu", acts).tabIndex = -1;
-  /* in the effect's colours from the first frame, as on the real screen */
+  /* in the effect's colours from the first frame, as on the real screen
+     (the UFO's unlit until its beam strikes) */
   hfxTintGrade(gr, id);
+  if(id === "ufo") hfxUfoUnlit(gr);
   if(hfxMotionOff()){
     /* still: the effect's still beside the number */
     const st = el("span", "hfx-mk-still", null, gr); st.appendChild(buildHundoFxStill(id));
@@ -79317,6 +79334,8 @@ function hfxUfo(scr, bx, c){
   }
   if(bx){
     const cx = c.bw / 2;
+    /* the box dark until the beam strikes it (round 5) */
+    hfxUfoLight(c);
     if(!c.boxOnly){
       if(!c.noDim) hfxMk(bx, "i", "hfx-ufo-boxdim");
       hfxMk(bx, "i", "hfx-ufo-inbeam", { left: cx + "px", "--ih": c.bh + "px", "--iw": Math.min(c.bw * .8, c.p.w * 1.6) + "px",
@@ -79380,6 +79399,43 @@ function hfxUfoAbduct(parent, c, ox, oy, uh){
    tablet's wide one so the saucer does not race (one value, so the
    saucer's beam and the box's own move as one). */
 function hfxUfoSwa(c){ return Math.round(Math.min((c.bw || 0) * .3, 150)); }
+/* The UFO's box, unlit until its beam strikes (round 5): put on as the
+   card is built wherever the UFO is about to play on it, so not even the
+   card's landing shows the beam's light. Not with reduce motion - no beam
+   is coming then, and the box simply wears its colours. */
+function hfxUfoUnlit(card){
+  if(!card || hfxMotionOff()) return;
+  card.classList.add("hfx-ufo-unlit");
+}
+/* ...and lit BY the beam: the rim, the wash and the inner glow come up
+   as the beam reaches the box (3.92s on the results screen's timeline,
+   2.8s in a small box's 7s one) - animations on the effect's own clock,
+   so they cannot drift from the beam, and seekable like the rest of it.
+   Unlit from the start whether or not the card was built unlit: a replay
+   (the unlock card's miniature, a Customize preview) dims the lit box as
+   the dark falls (the implicit first keyframe). At the end the class
+   comes off as the animations are cancelled, so the settled box is
+   exactly the lit one it always was. */
+function hfxUfoLight(c){
+  const card = c.box;
+  if(!card || !card.animate) return;
+  const D = c.boxOnly ? 7 : 9.5, at = c.boxOnly ? 2.8 : 3.92, dur = .25;
+  const had = card.classList.contains("hfx-ufo-unlit");
+  card.classList.add("hfx-ufo-unlit");
+  const u = getComputedStyle(card), ub = u.borderColor, uw = u.getPropertyValue("--hfx-wash").trim();
+  card.classList.remove("hfx-ufo-unlit");
+  const l = getComputedStyle(card), lb = l.borderColor, lw = l.getPropertyValue("--hfx-wash").trim();
+  if(had) card.classList.add("hfx-ufo-unlit");
+  const o = { duration: D * 1000, fill: "forwards", easing: "linear" };
+  /* lit to the end of the timeline (offset 1, said outright: left implicit,
+     the last keyframe would be the class's unlit look again) */
+  const k = (a, b) => [Object.assign({ offset: .05 }, a), Object.assign({ offset: at / D }, a), Object.assign({ offset: (at + dur) / D }, b), Object.assign({ offset: 1 }, b)];
+  hfxAnim(c, card, k({ borderColor: ub }, { borderColor: lb }), o);
+  if(uw && lw) hfxAnim(c, card, k({ "--hfx-wash": uw }, { "--hfx-wash": lw }), o);
+  const t = card.querySelector(":scope > .hfx-tint");
+  if(t) hfxAnim(c, t, k({ opacity: 0 }, { opacity: 1 }), o);
+  hfxOnEnd(c, () => card.classList.remove("hfx-ufo-unlit"));
+}
 /* THE CIRCLE (build 317, round 4). It comes in from one side, goes round
    the screen once - smaller on the far side of the circle, bigger on the
    near side - and comes down to where it hovers over the box, banking into
@@ -79607,8 +79663,10 @@ function buildHundoFxStage(id, o){
   const pct = document.createElement("span");
   pct.className = "hfx-stage-pct"; gradePctMarkup(pct, 100);
   st.appendChild(pct);
-  /* in its colours from the first frame (build 317) */
+  /* in its colours from the first frame (build 317; the UFO's unlit
+     until its beam strikes, where it is going to play) */
   hfxTintGrade(st, id);
+  if(id === "ufo" && o.live) hfxUfoUnlit(st);
   if(hfxMotionOff()){
     const still = document.createElement("span");
     still.className = "hfx-stage-still";
@@ -82598,7 +82656,7 @@ function showRunRewards(run, hooks, opts){
      fix that." The colours used to go on when the effect started, after
      the card had landed in gold - and the UFO's only when its beam came
      down. Now they are on the card as it is built. */
-  if(run.isPerfect && !run.retake){ try{ hfxTintGrade(grade, hundoFxInUse()); }catch(e){} }
+  if(run.isPerfect && !run.retake){ try{ hfxTintGrade(grade, hundoFxInUse()); if(!quiet && hundoFxInUse() === "ufo") hfxUfoUnlit(grade); }catch(e){} }
   /* YOUR CHARACTER REACTS TO THE GRADE (build 235), on the XP box's own
      character - "don't put the character on the grade card, it's perfect
      being just on the xp box" (build 236). It reacts when the grade card
