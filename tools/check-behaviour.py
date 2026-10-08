@@ -14181,7 +14181,7 @@ def check_b317_hometaps(br):
           const p = document.getElementById('contextual-info-popup'), d = document.getElementById('contextual-info-line-dot');
           const t = b && b.querySelector('.cosmic-badge-told');
           return { text: p ? p.textContent : null, ring: !!(d && d.classList.contains('is-ring')), ringW: d ? parseFloat(d.style.width) || 0 : 0,
-            bubbleW: b ? b.getBoundingClientRect().width : 0, follows: !!showContextualInfo._raf,
+            bubbleW: b ? b.getBoundingClientRect().width : 0, follows: !!(showContextualInfo._follow && document.getElementById('contextual-info-follow') && document.getElementById('contextual-info-follow').contains(document.getElementById('contextual-info-popup'))),
             told: !!t, toldMoving: t ? t.getAnimations().length : 0, toldOp: t ? +getComputedStyle(t).opacity : 0, toldStill: !!(t && t.classList.contains('is-still')),
             flare: (typeof ACCENT_DISPLAY_NAME !== 'undefined' ? ACCENT_DISPLAY_NAME[tier] : ''), rank: RANK_DISPLAY_NAME[tier] }; }"""
         lay = """() => ['.screen-home-actual .homegreeting', '#nextbtn', '.screen-home-actual .cosmic-hero-wrap'].map(q => { const e = document.querySelector(q); if(!e) return null; const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)]; })"""
@@ -14209,13 +14209,18 @@ def check_b317_hometaps(br):
         if fl:
             pg.mouse.click(fl[0], fl[1]); pg.wait_for_timeout(250)
             out["flare"] = pg.evaluate("""() => { const p = document.getElementById('contextual-info-popup'), d = document.getElementById('contextual-info-line-dot');
-              return { text: p ? p.textContent : null, ring: !!(d && d.classList.contains('is-ring')), follows: !!showContextualInfo._raf }; }""")
+              return { text: p ? p.textContent : null, ring: !!(d && d.classList.contains('is-ring')), follows: !!(showContextualInfo._follow && document.getElementById('contextual-info-follow') && document.getElementById('contextual-info-follow').contains(document.getElementById('contextual-info-popup'))) }; }""")
         pg.wait_for_timeout(4500)
         before = pg.evaluate(lay)
         sp = r0.get("sphere") or [0, 0, 0]
         tap = (sp[0] - sp[2] * .18, sp[1] + sp[2] * .2)
         pg.mouse.click(*tap); pg.wait_for_timeout(200)
         out["planet"] = pg.evaluate(fxs)
+        # "the line pointing at goes to the center, do it from the bottom or top edge"
+        out["aim"] = pg.evaluate("""() => { const s = document.querySelector('.screen-home-actual .cosmic-hero-main circle[style*="cursor"]').getBoundingClientRect();
+          const d = document.getElementById('contextual-info-line-dot').getBoundingClientRect(), p = document.getElementById('contextual-info-popup').getBoundingClientRect();
+          const below = p.top > s.top + s.height / 2, dx = d.left + d.width / 2, dy = d.top + d.height / 2;
+          return { below, offX: +(dx - (s.left + s.width / 2)).toFixed(2), offEdge: +(dy - (below ? s.bottom : s.top)).toFixed(2), offCentre: +(dy - (s.top + s.height / 2)).toFixed(2) }; }""")
         out["during"] = pg.evaluate(lay)
         for _ in range(3):
             pg.mouse.click(*tap); pg.wait_for_timeout(120)
@@ -14246,6 +14251,9 @@ def check_b317_hometaps(br):
         check(dev + ": the planet keeps its \".....\" and answers the touch - press, ripple, halo, rings, and the flare rings surge",
               (P.get("text") or "").strip() == "....." and P.get("boxes") == 1 and P.get("moving", 0) >= 4 and P.get("pe") == "none"
               and len(P.get("surge") or []) == 2 and all(n >= 1 for n in P.get("surge") or [0]), P)
+        AM = out.get("aim") or {}
+        check(dev + ": the planet's pointer ends on the rim facing its box (top or bottom edge), not at the centre",
+              abs(AM.get("offX", 9)) < 1.5 and abs(AM.get("offEdge", 9)) < 1.5 and abs(AM.get("offCentre", 0)) > 20, AM)
         check(dev + ": all of it overlay: no filter, nothing moves on the screen, one box however often it is tapped",
               P.get("filtered") == 0 and before == out.get("during") == out.get("after") and A.get("boxes") == 1 and A.get("moving", 99) <= 5
               and all(n == 1 for n in A.get("surge") or [0]), [before, out.get("during"), out.get("after"), A])
@@ -14253,6 +14261,83 @@ def check_b317_hometaps(br):
               (RP.get("text") or "").strip() == "....." and RP.get("still") and RP.get("moving") == 0 and all(n == 0 for n in RP.get("surge") or [1]), RP)
         check(dev + ": Reduce motion: a bubble's light is still and visible",
               RL.get("told") and RL.get("toldStill") and RL.get("toldMoving") == 0 and RL.get("toldOp", 0) > .3 and RL.get("ring"), RL)
+        ctx.close()
+
+
+def check_b317_followglide(br):
+    """Build 317. "The things pop up when clicking the flares they slightly
+    shake." A flare and a rank bubble move on the compositor (the orbit's
+    spin, a bubble's float); the box that follows them was moved from a
+    requestAnimationFrame loop that MEASURED the target and wrote left/top
+    and a rounded translate - so any frame the main thread did not get to
+    (a busy phone drops them all the time) left the box where it was while
+    the flare went on, and the next one caught it up with a jump.
+
+    Frame-stepped: every animation paused and set from the frame number, the
+    page left to run its frame callbacks on two frames in four and not on
+    the other two (a main thread that misses frames), and for 120 frames the
+    box's and its ring's offset from the target is measured. Fixed when the
+    offset never moves by 0.5px from one frame to the next. Fails on
+    e877af7 (the box lags on every missed frame and jumps on the next)."""
+    print("\n317g. a box that follows a flare glides with it, missed frames or not")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.add_style_tag(content=".rs-spot, .daily-alert{ display:none !important; }")
+        pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          const rule = TIER_UNLOCKS.veteran, U = topicsIn(QUESTIONS); store.unitPerfects = store.unitPerfects || {};
+          U.slice(0, rule.badges).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+          store.lifetime = store.lifetime || {}; let n = 0;
+          while(levelOf(store) < rule.level && n++ < 4000) store.lifetime.points = (store.lifetime.points || 0) + 2000;
+          store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: true, white: true };
+          store.supernovaAchieved = false; store.pendingSupernovaCutscene = false; store.pendingTierCutscene = null;
+          store.rankFloor = 0; store.rankMapFx244 = true; store.rankMapSeen = 9; store.savedCodeSaved = true;
+          try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); }catch(e){}
+          try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); }catch(e){}
+          saveStore(); showHome(); await wait(1200); document.querySelectorAll('.rs-spot').forEach(x => x.remove()); }""")
+        res = {}
+        for what in ("innerFlare", "floatingBubble"):
+            xy = pg.evaluate("""(what) => { const H = '.screen-home-actual .cosmic-hero-wrap'; let el = null;
+              if(what === 'innerFlare') el = [...document.querySelectorAll(H + ' .cosmic-hero-orbitlayer-inner .cosmic-flare-dot')].find(e => {
+                const r = e.getBoundingClientRect(); const t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return t && t.closest && t.closest('.cosmic-flare-dot') === e; });
+              else el = [...document.querySelectorAll(H + ' .cosmic-badge-rank')].find(b => /cosmic-float/.test(getComputedStyle(b).animationName));
+              if(!el) return null; window.__tgt = el; const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }""", what)
+            if not xy:
+                res[what] = None
+                continue
+            pg.mouse.click(xy[0], xy[1]); pg.wait_for_timeout(300)
+            r = pg.evaluate("""async () => { clearTimeout(showContextualInfo._t);
+              const raf = () => new Promise(res => requestAnimationFrame(() => res()));
+              const base = new Map();
+              const seek = (t) => document.getAnimations().forEach(a => { if(!base.has(a)) base.set(a, (Number(a.currentTime) || 0) - t);
+                a.pause(); try{ a.currentTime = base.get(a) + t; }catch(e){} });
+              const off = () => { const t = window.__tgt, p = document.getElementById('contextual-info-popup'), d = document.getElementById('contextual-info-line-dot');
+                if(!t || !p || !d) return null; const a = t.getBoundingClientRect(), b = p.getBoundingClientRect(), c = d.getBoundingClientRect();
+                const tx = a.left + a.width / 2, ty = a.top + a.height / 2;
+                return [b.left - tx, b.top - ty, c.left + c.width / 2 - tx, c.top + c.height / 2 - ty, tx, ty]; };
+              seek(0); await raf(); await raf();
+              const rows = [];
+              for(let k = 1; k <= 120; k++){
+                seek(k * 1000 / 30);
+                if(k % 4 < 2) { await raf(); await raf(); }
+                rows.push(off());
+              }
+              const ok = rows.filter(Boolean);
+              let pj = 0, mj = 0, mv = 0;
+              for(let k = 1; k < ok.length; k++){
+                pj = Math.max(pj, Math.abs(ok[k][0] - ok[k-1][0]), Math.abs(ok[k][1] - ok[k-1][1]));
+                mj = Math.max(mj, Math.abs(ok[k][2] - ok[k-1][2]), Math.abs(ok[k][3] - ok[k-1][3]));
+                mv = Math.max(mv, Math.hypot(ok[k][4] - ok[0][4], ok[k][5] - ok[0][5]));
+              }
+              document.getAnimations().forEach(a => { try{ a.play(); }catch(e){} });
+              return { n: ok.length, popupJitter: +pj.toFixed(3), ringJitter: +mj.toFixed(3), targetTravel: +mv.toFixed(1) }; }""")
+            res[what] = r
+            pg.evaluate("() => { ['contextual-info-popup', 'contextual-info-line', 'contextual-info-line-dot', 'contextual-info-follow'].forEach(id => document.getElementById(id)?.remove()); }")
+            pg.wait_for_timeout(300)
+        for what in ("innerFlare", "floatingBubble"):
+            r = res.get(what) or {}
+            check(dev + ": the box following " + ("a secret flare on the inner ring" if what == "innerFlare" else "a floating rank bubble")
+                  + " stays on it to within 0.5px every frame, missed frames or not",
+                  r.get("n") == 120 and r.get("targetTravel", 0) > 3 and r.get("popupJitter", 9) < .5 and r.get("ringJitter", 9) < .5, r)
         ctx.close()
 
 
@@ -14648,6 +14733,7 @@ def main():
             check_b317_pfcard(br)
             check_b317_rings(br)
             check_b317_hometaps(br)
+            check_b317_followglide(br)
             check_b317_rankup(br)
         finally:
             br.close()

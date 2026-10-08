@@ -12070,7 +12070,9 @@ text box won't show up."*
 
 **The tooltip follows the flare.** *"Ensure that it properly and smoothly
 follows the selected flare while the text box is open with the arrow like
-thing being placed in it correctly."* `showContextualInfo(target, text,
+thing being placed in it correctly."* (Build 317 replaced the per-frame
+measuring below with a compositor ride - see "Home's taps" - because it
+shook whenever the main thread missed a frame.) `showContextualInfo(target, text,
 { follow, ring, refind })`: every frame it re-reads the target's box and
 moves the popup with a `translate` (no reflow), keeps the side it opened
 on (no flipping above/below as the ring turns), and re-aims the line from
@@ -15319,6 +15321,38 @@ disagree with it.
     surging, no filter, no layout shift, one box after four taps, at most
     one surge per ring), and Reduce motion (still and visible, nothing
     moving). Fails 1888b11.
+  - **The box rides with the flare, on the compositor (round two).**
+    *"The things pop up when clicking the flares they slightly shake."*
+    The follow was a requestAnimationFrame loop that MEASURED the target
+    each frame and wrote the line's left/top and a rounded translate. The
+    flare moves on the compositor (the orbit's spin, a bubble's float), so
+    on any frame the main thread missed the box stood still while the
+    flare went on, then jumped to catch up. Now the box, its line and its
+    ring are one group (`#contextual-info-follow`, fixed, the size of the
+    screen, so the children's fixed positions mean what they always did),
+    and `contextualFollowPath()` reads the target's path over the box's
+    life ONCE, by stepping the target's own animations (every ancestor
+    animation that moves it, the surge included) through 4.65s in 150ms
+    steps and measuring, then puts every one back (running ones by their
+    start time, so they stay on the timeline). The group plays that path
+    as translate3d keyframes from the same moment, so box and flare move
+    together on the compositor frame for frame. No layout property is
+    written after placement, nothing is rounded, and the box is placed
+    once already clear of the screen edges for the whole path, so it
+    never flips side. `refind` re-reads the path from the new target if
+    Home is rebuilt underneath. Nothing moving (Reduce motion) means no
+    path and a still box. **Measured** (`check_b317_followglide`,
+    frame-stepped, the page's frame callbacks run on two frames in four):
+    worst frame-to-frame change of the box's offset from an inner-ring
+    flare 1.02px on e877af7 (17 Pro Max), 0.012/0.033px after (17 Pro Max
+    / iPad Pro 11); from a floating bubble 0.36/0.35px before (a slow
+    bob, under the bar, so only the flare case fails before) and
+    0.023/0.068px after.
+  - **The planet's pointer ends on its rim** (`aimEdge`): *"clicking the
+    planet, the line pointing at goes to the center, do it from the
+    bottom or top edge."* The line runs to the sphere's bottom edge when
+    the box is below it and its top edge when above. The tap effect
+    itself is unchanged (*"The effect when clicking it is cool."*).
   - Recorded frame-stepped: the popups' 3.2/4.2s timers run in real time,
     so the recorder clears `showContextualInfo._t` and closes them on the
     virtual clock, and `element.animate()` is patched to freeze each new
