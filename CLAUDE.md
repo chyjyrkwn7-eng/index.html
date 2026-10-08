@@ -44,6 +44,10 @@ disagreed, the repo won and the difference is called out.
 - `tools/shoot-flow.py` — screenshots every onboarding screen, Home and
   Settings by *clicking through* from a fresh install on seven devices,
   rather than mounting screens. Use it for anything Madison will look at.
+- `tools/record-hundo.py OUTDIR` — an MP4 of each hundo effect on a real
+  100% results screen, on a clock it owns (not virtual time, which froze
+  frames), with the settled box, and a freeze/jump count per clip. See
+  **Hundo effects**.
 - `tools/record-cutscenes.py` — the animations, **as animations**: GIFs of
   the badge unlock, the badge queue, all seven rank cutscenes, the
   Supernova cutscene, the Void cutscene, and a real full-unit 100% run from the last question
@@ -13087,9 +13091,41 @@ animation pending, and the capture then waits for a frame virtual time never
 lets come - a silent hang. Also `--disable-threaded-animation`, or
 compositor animations run on the real clock regardless.
 
+**"Super laggy in the videos" was the recorder AGAIN (build 317, round 2),
+and virtual time is retired for these clips.** *"The alien one is sick, all
+the others came through super laggy in the videos."* Counted frame by
+frame (mean difference between consecutive frames; a near-still frame
+between two moving ones is a freeze, a spike is a jump): the virtual-time
+MP4s had 5-12 freezes-then-jumps per clip, UFO included - it moves slowly
+enough that nobody saw them. Under `setVirtualTimePolicy(pause)` the
+compositor makes no frame between steps, so a capture can hand back the
+previous one. **`tools/record-hundo.py OUTDIR`** runs real time and owns
+only the PAGE'S clock: performance.now, Date.now, setTimeout/setInterval,
+requestAnimationFrame and smooth `scrollTo` read a clock it advances
+exactly 1/30s a frame, every CSS/Web animation and transition is paused and
+seeked to it, and each capture waits for two real frames. 0 freezes, 0
+jumps on all five; it prints the count for every clip, so check it rather
+than assume it.
+
+**Measured in the page as well** (rAF intervals and long tasks from the
+effect's start, 440x956, CPU 4x, three interleaved passes of 1888b11 and
+this build). The sandbox was shared at load 12-16 and the same build moved
++-40% between passes, so only big differences mean anything. **World Tree:
+~10 fps over 8.8s before (70-102 frames), ~30 fps over 5.6s after (162-187)
+- now as light as anything here.** Fireworks (~12-15 fps), Bubbles
+(~10-16 fps) and Confetti (its 3s window is the reveal's busiest) did not
+move outside the noise; UFO read 13-14 fps before and 20-23 after with its
+code untouched, which is the noise. Fireworks' own JS is ~1-3ms a frame
+and hiding any ONE of its parts (sky, glows and dim, box) changed nothing -
+the screen layer as a whole is the cost, as the old ablation found for the
+tree. Still done for the device: the Fireworks canvas stops at the box's
+top edge (a third fewer pixels, nothing was drawn below it), Bubbles keeps
+4/6 glass heroes. Nothing here can measure an iPhone's GPU; the clips are
+what she judged, and those were the recorder.
+
 **Bubbles** - no giant bubble from the number any more (`hfxCarry` is gone).
 `hfxBubblesGlass`: a few far small bubbles (sprites), **Liquid Glass heroes -
-6 on a phone, 9 on a tablet - with a real `backdrop-filter` (`.hfx-glass`,
+4 on a phone, 6 on a tablet (6 and 9 until build 317, cut for frame time) - with a real `backdrop-filter` (`.hfx-glass`,
 blur 2.5px, saturate 1.9, brightness 1.2)** so the card behind bends and
 brightens through them, mid bubbles as sprites, chains, two merges, and a
 final flourish: a ring of 9/12 bubbles that pop together with a ring and
@@ -13099,18 +13135,41 @@ here (each is a separate filtered layer); a backdrop root (any ancestor with
 opacity < 1) would flatten them to plain discs, so the layer fades its
 CHILDREN, not itself.
 
-**World Tree** - it now reads the real layout (`hfxLayout`: the rects of the
-XP card, the header, the unlocked row, the buttons and the grade box, by the
-offset chain so a landing transform does not skew them) and grows ACROSS it:
-the trunk from the grade box's top edge, limbs wrapping the XP card's edges
-and curling at its corners, side branches with blossoms in the margins, a
-crown over the header, two corner trees leaning in, roots round the buttons
-(and an upturned root tree below them when there is room), sap pulses running
-up the wood (`hfxRunner`), leaves unfurling, blossoms opening, petals on the
-wind, fireflies. Pre-drawn: every branch is a segment (`.hfx-seg`) that grows
-by `scaleX` from its own base (`hfxGrowLine`), so the whole tree is transform
-and opacity. Off the results screen (a pop-up, Customize) it falls back to the
-box-rooted tree.
+**World Tree (build 317, round 2) is the DEFAULT'S BURST IN BLOSSOM, not a
+tree.** *"The tree one looks terrible, fix that. The default one is the
+confetti, but the alien one is cool because it takes the default one and
+makes it the alien theme."* So `hfxWorldTree` is `celebrate()`'s recipe -
+`.stardust-flash`, two `.stardust-ring`s and a few `.stardust-p.is-spark` -
+with the motes swapped for petals (`hfxPetalURL`, `HFX_BLOOM`) and leaves
+(`hfxLeafURL`) that catch the air: each `.hfx-bl-p` is thrown up and out of
+the number like a fountain (22% of its flight) and then falls and drifts,
+while its inner `.hfx-bl-i` flutters (rotate + scaleX, alternate, a finite
+count). Three blossom clusters open on the box's top edge and shed a second,
+gentler fall. ~75 sprites on a phone, 5.6s, tail from 4.1s; the box keeps its
+tint. **The drawn tree is gone**, with its glass panes, `hfxTreeGlass`,
+`hfxTree`, `hfxGrowLine`, the vines and wipes, and all their CSS; the
+Customize poster and the reduce-motion still are the burst too. If a tree
+ever comes back, the lesson of the old one is in git: it was ~140-400 nodes
+across the whole layout and the measured cost of the effect.
+
+**The % is the end of the number's ramp, on every 100% (build 317, round
+2).** *"the percentage sign, it looks like a solid color, ensure that and the
+number (the hundo) look like it goes together, the color should go into
+that."* `.rs-pct-sign` is `display:inline` now. `background-clip:text` paints
+through a box's in-flow INLINE text and stops at an inline-block, which is
+why every gradient "100%" had a % in a flat colour of its own (the copy
+gave it `--hfx-g3`; the posters re-started the gradient inside it). It is
+raised the same as before without the margin an inline cannot have:
+`vertical-align:top` with a line .4em taller than the number's, so .2em of
+half-leading sits over the glyph. The default gold is a ramp too
+(`#FFEBC2` > `#F6D58E` > `#E3AC4C`, with a drop-shadow glow, since a
+text-shadow paints over a clipped background), on the results screen, the
+miniature and every Customize tile; and the gold number now goes by
+OPACITY under the effect's copy (it is transparent text, so a colour change
+no longer hides it). `check_b317_hundobox` asserts it structurally - the %
+inline, no colour or background of its own, its parent a clipped gradient -
+on every effect at 320/440/834, the default and every tile; it fails on
+1888b11.
 
 **Rules they keep** (comment above `HUNDO_FX_TAIL_MS`):
 - Transform and opacity only (backdrop-filter on the glass heroes is the one
@@ -13131,7 +13190,7 @@ box-rooted tree.
   cards land.
 - **The effect's layers are named `hfx-<id>`, so no piece may be called
   that** (the saucer is `.hfx-saucer`, not `.hfx-ufo`).
-- The World Tree and the UFO lift the card over their screen layer
+- The UFO lifts the card over its screen layer
   (`.rs-card.hfx-over`), so the number is never covered or dimmed.
 - **Measure the box where it will REST** (`hfxContext`): an effect starts
   while the grade card is still landing at 1.45x.

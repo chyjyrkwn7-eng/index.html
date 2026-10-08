@@ -11536,7 +11536,7 @@ FX_RUN = """const wait = ms => new Promise(r => setTimeout(r, ms));
 # of the other two starts from the box by design (the hole darkens the
 # whole screen as it opens, the water floods up from the bottom), so each
 # has checks of its own instead.
-FX_EARLY = {"worldtree": .25, "bubbles": .55}
+FX_EARLY = {"worldtree": .35, "bubbles": .55}
 FX_LATE = {"worldtree": 2.4, "bubbles": 3.4}
 FX_ALL = ["fireworks", "blackhole", "underwater", "worldtree", "bubbles", "ufo"]
 
