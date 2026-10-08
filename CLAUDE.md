@@ -13505,43 +13505,108 @@ the ladder and Underwater, rebuilt, holds the 100.
   results screen and a box on its own): two seamless wave tiles
   (`hfxWaveURL`, three sines over one period, so they repeat) sliding
   opposite ways by exactly one period per cycle - the interference is the
-  movement; the front crest lit (specular line, glow, a dark refraction band
-  and a pale lens band under the meniscus) and filled with exactly the
-  body's top colour (`HFX_UW_TOP`) so crest and body are one water; a depth
-  tint from lit cyan to blue at the floor and a sheen under the surface;
-  CAUSTICS that are a domain-warped Worley web (F2 - F1), computed once into
-  a 288px tile on a canvas (`hfxCausticTile`) in two layers of different
-  scale, drifting different ways and breathing; light rays swaying down from
-  the surface; motes; bubbles in streams from vents in the floor and off the
-  box, rising to break at the surface; the fish school and the manta. The
-  hand-drawn blob net (it read as crumpled plastic), the zigzag surf line
-  and the kelp are gone. In a box on its own the sea is shallower, so the
-  number reads through it. The Customize tile and the still are this water.
-- **Cost.** Transform and opacity only, every picture rasterised once.
-  Measured, and fixed: the caustic tile is ~1M distance tests - 70-180ms at
-  4x CPU as one task, so `hfxWarm` computes it in 24-row slices as the
-  results screen opens (`hfxCausticJob`), ~10ms a tick, finished on the spot
-  if asked for early; pieces waiting on a delay are compositing layers, so
-  bubbles, fish, motes, drops and glints go in when due (`hfxDue`, their
-  delays moved by however late they go in) and come out when done; and the
-  caustic layers are only as much bigger than the water as their drift
-  needs (they had been the two biggest layers on screen). ~100 layers
-  mid-effect against the UFO's ~96. Frames in the 7s at 4x CPU, 440x956 dpr
-  3, interleaved with 7ee6c51 on a shared box (load
-  12-16): Underwater 240-288 (>25ms: 85-98) against the UFO's 214-315
-  (58-82) on the same build; the old Underwater ran 327-354 - the new water
-  is more to draw, and on a par with the UFO.
-- **Gates** (`check_b313_fx`, all failing on 7ee6c51): the rung is
-  Underwater; a stored World Tree pick, pop-up and tile load as Underwater,
-  also after a merge brings the old id back, with no repeat pop-up; a 100%
-  with the old id plays Underwater; the water reaches the bottom edge at
-  0.3s with its surface in the bottom fifth, and with the page scrolled to
-  its foot it is still the whole screen's (fixed) with its surface between 3%
-  and 20% from the top; two wave layers slide opposite ways; two computed
-  caustic layers, a tint deepening to the floor, rays and bubbles. The tree
-  is out of `FX_ALL`; the Customize, tile-hold and flow gates name the 100
-  rung by `HUNDO_FX[2]`. Recordings (frame-stepped, `tools/record-hundo.py`):
-  `/tmp/claude-0/-home-user-Nova-Test/3e626f0f-e6a2-5bdd-98d8-db73a6ec23b7/scratchpad/r317water/`.
+  movement; the front crest one soft specular line with a glow, filled with
+  exactly the body's top colour (`HFX_UW_TOP`) so crest and body are one
+  water; a depth tint from lit cyan to blue at the floor (the blue cast on
+  everything under it); light rays; motes; the fish school and the manta.
+  In a box on its own the sea is shallower, so the number reads through it.
+
+**UNDERWATER, ROUND 5 (build 317).** *"The screenshot of the water does not
+look good, I just really don't like it. Not sure what is it, maybe it's those
+white lines, maybe it needs lol water bubbles? Maybe the screen when under
+water doesn't do anything? Maybe the character should have the holding
+breath animation when going under?"* All four, answered:
+- **No white lines.** The caustic web is gone, both versions of it (the
+  hand-drawn net, then the computed Worley web with its sliced job - deleted,
+  nothing is computed any more). What is left of that light is soft,
+  out-of-focus patches (`hfxUwLightURL`): fifteen blurred ovals in an svg
+  strip that tiles sideways, masked to fade out a third of the way down, in
+  two layers drifting opposite ways through each other - faint, near the
+  surface. The surface lost its lines too: the dark refraction line and the
+  pale band under the crest are gone, the back sheet's crest is a soft glow
+  and its fill fades out downward (a flat fill ended in a straight line
+  across the screen), and the sheen under the surface starts from nothing
+  (starting at its brightest it drew another). Three straight edges, each
+  found on a cropped frame, none visible in the code.
+- **The surface refracts what is behind it** through `.hfx-uw-lens`, a
+  child of the FRONT wave sheet - so it slides with the crest - masked by
+  `hfxUwLensURL` (the crest's water shape, fading with depth) and carrying
+  a small `backdrop-filter` (blur 1.5px, brighter, more saturated). A
+  straight lens strip was tried first and read as one more white bar; the
+  mask is what makes it follow the crest and leave no edge. It is the one
+  blur in the effect, ~20px tall.
+- **Bubbles, plenty, and each one a bubble** (`hfxUwBubbleURL`: clear, a rim
+  brightest underneath, a highlight, a dimmer one opposite). From ~3px to
+  ~22px: streams from vents in the floor, off the top of the 100% box once
+  the water is over it, strays from the deep, and a last rush as it drains.
+  The rise (`translate`, speeding up a little - the curve's slope goes from
+  ~.6 to ~1.3) and the wobble (`transform`, side to side, `alternate`, its
+  own length: `.2s + .034s` a px, so a small one is quick and tight and a
+  big one slower, wider and squashing) are two animations on ONE element, so
+  a bubble is one layer. At the surface a small one pops and a big one
+  flattens out (`scale`, from the moment its rise ends; it is removed on
+  THAT animation's end, not the first one's). Each carries `data-from`
+  (vent / box / deep / rush) for the gate. ~70 on a phone, ~80 on a tablet.
+- **The screen is under it** (`hfxUwScreen`). Ten times a second the cards'
+  centres are compared with the waterline - computed from the css rise and
+  drain curves (`hfxBezier`) on the WATER'S OWN CLOCK, read off
+  `document.timeline` from the sea animation's `startTime` (a finished
+  animation's own `currentTime` stops at its end: reading it froze the
+  waterline at the top and nothing ever settled). A card starts to sway the
+  moment the surface passes its middle - a dip as the water takes it, then
+  a drift and roll easing in, a script animation on its own `translate` and
+  `rotate` - and when the water leaves it, it settles from wherever it is to
+  exactly nothing. A card the water never reaches (the header on a phone)
+  never moves. Only on the results screen or a frame: a pop-up's scene
+  plays its water in a spot of its own.
+- **The character holds its breath** (`hfxUwHold`), on the results
+  character only. Two states beside char-live/char-sleep/char-special:
+  `char-hold` - a breath in a beat before the water arrives (the waterline
+  0.25s ahead), then head swollen on its own `scale` (cheeks puffed), eyes
+  squeezed shut, a tremble, a bubble escaping from its mouth now and then -
+  and `char-gasp` when the water has gone: eyes wide, an O, a shake that
+  flicks drops off, back to normal after 1s. It works for every character
+  through the parts every drawing has, and touches none of their animations
+  (the hundo's own move is playing on them at that moment): the parts are
+  hidden with `visibility` and stand-ins drawn beside them in the same group
+  - the closed eyes (`closedEyes()` curves) redrawn as chevrons pointing
+  in, > <, or pressed flatter where drawn some other way; the mouth pursed;
+  the O. A mouth that is a jaw, a muzzle, a grille or a beard (the six the
+  fail reaction leaves alone) keeps its own. The breath, tremble and shake
+  are on the drawing's svg root, which nothing else animates. In the gasp
+  the eyes it has stay (a hundo's move often ends on happy closed eyes;
+  hiding those left a blank face), and a bubble still rising is removed -
+  out of the water it would float in air. The character's special waits
+  while either state is on (`charSpecialCovered`).
+- **Cost.** Transform and opacity only, every picture rasterised once,
+  pieces in when due and out when done. Measured: the light strips are only
+  as wide as their drift needs and do not breathe (scaling two 1300px layers
+  showed up); bubbles were trimmed from ~110 to ~70 a phone and rise faster
+  (143 layers mid-effect fell to ~120); the svg-root tremble and the lens
+  measured as noise. Frames in the 7s at 4x CPU, 440x956 dpr 3,
+  interleaved on a shared box: at load ~3-4, Underwater 292-384 against the
+  UFO's 358-405 (round 4's water ran ~400); at load ~12, 161-233 against
+  the UFO's 229-363. So it is now ~15-25% behind the UFO - the bubbles are
+  the cost (no bubbles at all gave back roughly that much). If it has to
+  come down further, the rush and the box stream go first.
+- **Gates** (`check_b313_fx`): the rung is Underwater; a stored World Tree
+  pick, pop-up and tile load as Underwater, also after a merge brings the
+  old id back, with no repeat pop-up; a 100% with the old id plays
+  Underwater; the water reaches the bottom edge at 0.3s with its surface in
+  the bottom fifth, and with the page scrolled to its foot it is still the
+  whole screen's (fixed) with its surface between 3% and 20% from the top;
+  two wave layers slide opposite ways; a tint deepening to the floor, rays
+  and bubbles. Round 5, each failing on f1b1fea: every big repeating light
+  layer in the water read off its own image - no step sharper than 40 alpha
+  levels a screen px (the web's lines were ~250), faint, brightest at the
+  top; 40+ bubbles, 5px or less to 14px or more, from vents, the box, the
+  deep and the rush; every bubble's own alternating wobble, small ones
+  quicker; cards sway while under and no card the water has not reached
+  moves; char-hold at every look while under, a gasp after, nothing left.
+  "Back to exactly where it was" passes on f1b1fea too (its sway also
+  ended at zero) - it is there to hold the new settle to it. The tree is
+  out of `FX_ALL`; the Customize, tile-hold and flow gates name the 100
+  rung by `HUNDO_FX[2]`.
 
 **The % is the end of the number's ramp, on every 100% (build 317, round
 2).** *"the percentage sign, it looks like a solid color, ensure that and the
