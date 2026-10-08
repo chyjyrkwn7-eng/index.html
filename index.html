@@ -66235,7 +66235,10 @@ function playRankUpScene(tierKey, opts, spec){
       }
       /* the bubbles and the secret flares melt into the light at speed */
       if(orbitBefore) orbitBefore.querySelectorAll(":scope > .rank-orbit-slot").forEach(sl => fadeIn(sl, u => 1 - .94 * ss(.5, .86, vh(u))));
-      if(heroBefore) heroBefore.querySelectorAll(":scope > .cosmic-hero-orbitlayer").forEach(l => fadeIn(l, u => 1 - .88 * ss(.45, .82, vh(u))));
+      /* the secret flares go a beat earlier and further than the glass
+         over them, so one is never seen sharper than the bubble it is
+         under (round four's rule, at speed) */
+      if(heroBefore) heroBefore.querySelectorAll(":scope > .cosmic-hero-orbitlayer").forEach(l => fadeIn(l, u => 1 - .96 * ss(.45, .84, vh(u))));
     }catch(e){}
     /* one instant for every layer, so the carriers, their slots and the
        light can never drift apart by a frame */
