@@ -34,9 +34,9 @@ os.makedirs(OUT, exist_ok=True)
 SRC = open(WT + "/tools/check-results.py").read()
 i = SRC.index('SETUP = """') + len('SETUP = """'); SETUP = SRC[i:SRC.index('"""', i)]
 FPS = 30
-LEN = {"confetti": 6.0, "fireworks": 7.6, "worldtree": 6.2, "bubbles": 7.6, "ufo": 9.2, "blackhole": 6.4, "underwater": 8.0}
+LEN = {"confetti": 6.0, "fireworks": 7.6, "worldtree": 6.2, "bubbles": 7.6, "ufo": 11.7, "blackhole": 6.4, "underwater": 8.0}
 # a moment well into each, for the mid-effect crop (s after it starts)
-MID = {"confetti": .8, "fireworks": 2.6, "worldtree": 1.2, "bubbles": 2.4, "ufo": 4.6, "blackhole": 2.0, "underwater": 2.6}
+MID = {"confetti": .8, "fireworks": 2.6, "worldtree": 1.2, "bubbles": 2.4, "ufo": 6.6, "blackhole": 2.0, "underwater": 2.6}
 def smoothness(path, W2=220, H2=478):
     """(frozen frames between moving ones, sudden jumps) in an MP4."""
     from PIL import Image, ImageChops, ImageStat
