@@ -13178,6 +13178,53 @@ well as on landing. The grab is unchanged.
   went red for the right build. It reads the REAL 100% now: transparent
   text under `linear-gradient(105deg, <g1> ...)`.
 
+**ONE beam, from the hull to the box's floor (build 317, round 6).** *"The
+ufo one, the ray beam is still being shown in the box before it even gets
+there and when it gets there it's not matching up perfectly."* There were
+two beams. The saucer's ran from the hull to 4px inside the box's top edge
+and was drawn UNDER the box (the box is lifted over the effect's screen
+layer so its number is never dimmed); the box's own (`.hfx-ufo-inbeam`)
+was a second copy of the beam inside the box, started at that edge. They
+could not match: the same trapezoid sprite at two lengths, so at the edge
+the saucer's ended wide and faint (alpha .1, ~67px across on a phone) and
+the box's began narrow and bright (alpha .75 x .5); and the box's grew
+from scaleY(0) as a flat fan the full width of its foot, so on the frame
+it appeared it was already a wide light right across the top of the box
+while the saucer's beam had only just touched it - the beam "in the box
+before it gets there". On top of that the box lit (rim, wash, dim lifting)
+as the beam touched its top, all at once, ahead of any beam inside it.
+- Now the saucer and its ONE beam fly in a layer of their own just over the
+  box (`hfxUfoTopLayer`: a twin of the screen layer, same place and
+  colours, z-index two above it, put in beside it once it is in the
+  document and taken away or faded with it). The beam runs on from inside
+  the hull through the box's edge to 3px off its floor (`--bt` is where its
+  head crosses the edge, at 3.83s; it reaches the floor at 4.18s; `--bl`
+  and `--bk` keep the foot on the floor landed and lifting). Nothing meets
+  at the edge, so nothing can disagree there, sweeping, landed or grabbing.
+  The sprite's tail is a little stronger (.2, was .1) so it reads to the
+  floor.
+- The box stays dark (its own dim at .55, rim unlit) until the head reaches
+  its floor; THEN it lights and flares (`hfxUfoLight` at 4.18s, the strike
+  flare too). Before that the only light in the box is the beam, behind
+  its head.
+- **One clock.** Once the UFO's animations have started, every one still
+  running (the saucer's layer, the screen layer, the box's, the script's)
+  is set to the earliest start among them, so a layer that started a frame
+  late on some device cannot run a frame behind the others. Paused ones (a
+  recorder, a gate) are left alone.
+- `check_b317_hundobox` reads it off the pixels, everything paused and
+  seeked: every 1/30s from 3.75s until the head reaches the floor, the box
+  below the head is exactly as dark as before (9e62633: up to 46 levels
+  brighter from 3.95s); and at 4.3-5.3s, hovering and sweeping, the beam
+  4-10px above the edge and 3-6px below it - the frame less the same frame
+  with every beam hidden, so the box's rim, its label and a twinkling star
+  cancel out - has the same centre (3px), width (6px) and a brightness
+  ratio of .4-2.5 (9e62633: 12-21px narrower inside). The beam checks now
+  ask for no second beam at any moment, and the foot on the box's floor
+  hovering, landed, lifting and all through the sweep. The pixel blocks
+  hold `HUNDO_FX_TOTAL.ufo` at 60s so the layers are not taken away while
+  a slow machine is still reading them.
+
 **No beam on the UFO's box until the saucer fires it, and the beam is blue
 (build 317, round 5).** *"before the ufo lands on it, the box already has
 the beam there, I've mentioned this a few times but fix that, the beam
