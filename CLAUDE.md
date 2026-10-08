@@ -16177,20 +16177,37 @@ disagree with it.
     planet). Clamped only on an SE 1st gen in a Safari tab and on its side
     (the device this file already says does not fit Home).
   - **The copy** (`homeTapCopyRank` / `Flare` / `Planet`, tables
-    `HOME_FLARE_MEANING`, `HOME_SECRET_LINE`): a held rank "Gold flare -
-    Lit / A sun that makes its own light. Lit when you reached Gold rank."
-    (there is no reach date on `store`, so "when" is the rank, never a
-    date); a locked rank "Sapphire flare - Locked / Reach level 60 and earn
-    9 badges to light it. 20 more levels and 4 more badges to go."; a found
-    secret flare its name and a line (Void's three say how many of the
-    three are still to find until all are, then "One of the three that
-    made Void."); one not found "Secret flare - Not found" and a hint from
-    its hunt state (hunting / next - "a few more levels" within 3 of its
-    level - / missing), never its name or colour, plus "Find it to unlock
-    X." only once a hint card has named it; the planet "Your system" and
-    where you stand (rank, level, badges, rank flares lit, secret flares
-    found OF THOSE SHOWN - 3, 5 or 6, so the count gives nothing away),
-    tapped again while it is up "Next: <rank> rank. <what is left> to go."
+    `HOME_FLARE_MEANING`, `HOME_SECRET_LINE`). **ROUND FOUR, shorter:**
+    *"this would shorten them and make them simple."*
+    - a held rank: "Gold flare - Lit / A sun that makes its own light. Lit
+      when you reached Gold rank." (there is no reach date on `store`, so
+      "when" is the rank, never a date);
+    - a locked rank: "Sapphire flare - Locked / Reach level 60 and earn 9
+      badges to light it. 20 more levels and 4 more badges to go.";
+    - a found secret flare: its name and its one line ("Redshift - Secret
+      flare / Light stretched red as it races away."), NOTHING after it -
+      the "One of three ..." / "It brought Umbra out of the dark." tails
+      are gone;
+    - one not found: "Secret flare - Not found / Secret flare has not been
+      found." - no name, no colour, no hint of when or where (the
+      hunting/next/missing variants are gone);
+    - the planet: "Your flares / 3 of 7 rank flares lit, 2 of 3 secret
+      flares found." (secret flares counted OF THOSE SHOWN - 3, 5 or 6 - so
+      the count gives nothing away; the rank/level/badges line is gone),
+      tapped again while it is up "Next: the Platinum flare. 10 more
+      levels and 2 more badges to go.", and with nothing left "Every rank
+      flare is lit." / "Every flare is lit, the secret ones too."
+    **Every title is in its own colour (round four):** a rank's flare -
+    held OR locked - in `flareColorOf(tier)` (RANK_COLOR lifted for a dark
+    screen; the locked ones were grey), a found secret flare in
+    `MYSTERY_COLOR`, "Your flares" in the theme's `--theme-c2` lifted 16%
+    towards white (`.hc-item.is-planet .hc-name`, so it follows a theme
+    change without a rebuild), and only an unfound flare stays plain grey.
+    `check_b317_hometaps` asserts all seven ranks (held and locked: within
+    10 levels of their colour, and the nearest of the seven is their own),
+    the found flare, and "Your flares" under the default and the Sapphire
+    theme; `check_b317_caption_fit` asserts the colours on every size. Both
+    fail on 7ee6c51.
   - **The answers**: a held rank lights in its glass (`flareBubbleTold`),
     presses (`homeBubblePress`, the individual `scale`, which adds to the
     float) and lets a ring of its colour go (`homeBubbleHalo`, a sibling at
