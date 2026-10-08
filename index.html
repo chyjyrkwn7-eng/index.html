@@ -40669,8 +40669,11 @@ const AVATAR_WIDE_VIEWBOX = "0.5 -2 39 39";
    one size, the Ronin's hat brim, the Clown's bells, the Wizard's staff
    orb and Umbra's moon were cut off at the rim. Now the drawing is split
    by what it IS, inside the svg (clipPath elements, no filter):
-     - the scenery, the halo and a special's back and front layers stay
-       on the disc (PLATE_DISC: the old circle(50%), r 17 about 20,20);
+     - the scenery, the halo and the figure's own LIGHT stay on the disc
+       (the old circle(50%), r 17 about 20,20): a special's back and front
+       layers, a wash of the whole frame (Zeus's flash, Umbra's veil) and
+       paint masked by the scenery's fade - wherever in the figure they
+       sit (see discFor below);
      - the figure - hats, props, bells, staff, halo - may paint past the
        disc and over the rim, anywhere above PLATE_POP_Y; below it the
        disc still cuts the bust exactly where it did (the shoulders leave
