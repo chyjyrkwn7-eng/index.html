@@ -40164,10 +40164,34 @@ function silGreyPaint(svg, v){
   }
   return silGreyOf(v) || v;
 }
+/* A CUT-OUT IS ALL EDGE, SO ITS HEAD IS FITTED (317 fix). "Genesis looks
+   great, Umbra is kinda bugged and too big, and Horizon is nearly perfect
+   but also too big. They are cut off." Drawn, Umbra's hood is a dark
+   violet point that fades into a dark scene, and Horizon's locks fade out
+   towards their tips; as a black shape with a light outline, every unit
+   of both reads. Measured as cut-outs, Umbra's hood rose to y 5.2 of the
+   3..37 tile - 0.6 under the top feather, 3.7 above Void and Genesis
+   (8.9, 9.0) and 18% taller than the four's median head - and Horizon's
+   crown spanned 6.7..33.2, the whole tile bar the feather. So the
+   SILHOUETTE's head (only - the drawing you unlock is untouched) comes
+   down onto its own shoulders, about the foot of the head, the way
+   AVATAR_HEAD_SCALE fits a drawing: [k, x, y] in the drawing's own units.
+   Umbra's point now tops out at ~8.7, level with Void's and Genesis's;
+   Horizon's crown at ~9.7, 7.8..32.2 wide. check_b317_silhouettes holds
+   every secret's cut-out to the four's median head height and clear of
+   its tile's top, in Customize on both reference devices. */
+const SIL_HEAD_FIT = { umbra: [.86, 20, 31.2], singularity: [.92, 20, 30.4] };
 function charSilhouetteSVG(id){
   const svg = buildAvatarCharSVGSafe(id);
   svg.classList.add("char-sil-svg");
   svg.setAttribute("data-char", id + "~sil");
+  const fit = SIL_HEAD_FIT[id];
+  if(fit) svg.querySelectorAll(".cx-head").forEach(h => {
+    const w = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    w.setAttribute("transform", "translate(" + fit[1] + " " + fit[2] + ") scale(" + fit[0] + ") translate(" + (-fit[1]) + " " + (-fit[2]) + ")");
+    while(h.firstChild) w.appendChild(h.firstChild);
+    h.appendChild(w);
+  });
   /* the scenery and the halo are left out; so is the light */
   svg.querySelectorAll(".cx-bg").forEach(n => n.remove());
   [...svg.querySelectorAll("circle")].forEach(n => { if(/url\(#(aura|halo)-/.test(n.getAttribute("fill") || "")) n.remove(); });

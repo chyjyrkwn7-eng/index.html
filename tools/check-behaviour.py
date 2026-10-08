@@ -13295,6 +13295,105 @@ def check_b317_neck(br):
           _st.median(steps.values()) if steps else None)
 
 
+def check_b317_silhouettes(br):
+    """The 317 fix, Customize -> Secrets: "Genesis looks great, Umbra is
+    kinda bugged and too big, and Horizon is nearly perfect but also too
+    big. They are cut off." A locked secret is a black cut-out with a light
+    outline, so every unit of its shape reads: Umbra's hood rose to y 5.2 of
+    the 3..37 tile (0.6 under the top feather; Void and Genesis top out at
+    8.9 and 9.0) and stood 18% taller than the four's median head. Each
+    cut-out (charSilhouetteSVG, figure only, 10px a unit) must:
+      - stay clear of its tile's top - 2 units under the 1.6-unit feather
+        (y 6.6) - and inside its sides above the shoulders;
+      - have a head (ink of .cx-head, outline included) within 12% of the
+        four's median height.
+    Then as drawn in Customize on both reference devices (flip-book or
+    live), no outline pixel of any silhouette sits in the top 9% of its
+    tile. Fails on b6cd249 for Umbra on every line."""
+    import io as _io
+    import statistics as _st
+    from PIL import Image as _Im
+    print("\n317 fix. the secrets' silhouettes: the set's size, clear of the top of their tiles")
+    SECRETS = ["voidwalker", "umbra", "singularity", "genesis"]
+    ctx, pg = booted(br, 600, 600, seed=USED_ACCOUNT, dpr=1)
+    pg.evaluate(B314_TRANSPARENT)
+
+    def ink(cid, head, thr):
+        pg.evaluate("""([cid, head]) => { document.getElementById('silh')?.remove();
+          const host = document.createElement('div'); host.id = 'silh'; host.style.cssText = 'position:fixed;left:0;top:0;width:540px;height:540px;z-index:99999';
+          const s = charSilhouetteSVG(cid);
+          s.setAttribute('viewBox', '-7 -7 54 54');
+          s.style.cssText = 'position:absolute;left:0;top:0;width:540px;height:540px;overflow:visible;-webkit-mask-image:none;mask-image:none;filter:none';
+          host.appendChild(s); document.body.appendChild(host);
+          document.querySelectorAll('body > *:not(#silh)').forEach(e => { if(e.style) e.style.visibility = 'hidden'; });
+          if(head){
+            s.querySelectorAll('*').forEach(n => n.style && (n.style.visibility = 'hidden'));
+            s.querySelectorAll('.cx-head').forEach(h => { h.style.visibility = 'visible'; h.querySelectorAll('*').forEach(n => n.style && (n.style.visibility = 'visible')); });
+          } }""", [cid, head])
+        A = _Im.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 540, "height": 540}, omit_background=True))).convert("RGBA").getchannel("A")
+        M = A.point(lambda v: 255 if v > thr else 0)
+        bb = M.getbbox()
+        if not bb:
+            return None
+        upper = M.crop((0, 0, 540, int((28 + 7) * 10))).getbbox()
+        return {"y0": bb[1] / 10 - 7, "y1": bb[3] / 10 - 7, "h": (bb[3] - bb[1]) / 10,
+                "ux0": upper[0] / 10 - 7 if upper else None, "ux1": upper[2] / 10 - 7 if upper else None}
+
+    whole = {c: ink(c, False, 80) for c in SECRETS}
+    heads = {c: ink(c, True, 110) for c in SECRETS}
+    ctx.close()
+    high = {c: round(v["y0"], 1) for c, v in whole.items() if not v or v["y0"] < 6.6}
+    check("every secret's cut-out stays 2 units under its tile's top feather (y >= 6.6)", not high,
+          {c: round(v["y0"], 1) for c, v in whole.items() if v})
+    sides = {c: (v["ux0"], v["ux1"]) for c, v in whole.items() if not v or v["ux0"] is None or v["ux0"] < 4.6 or v["ux1"] > 35.4}
+    check("and inside the sides of its tile above the shoulders", not sides,
+          {c: (round(v["ux0"], 1), round(v["ux1"], 1)) for c, v in whole.items() if v and v["ux0"] is not None})
+    med = _st.median(v["h"] for v in heads.values() if v)
+    off = {c: (round(100 * (v["h"] / med - 1)) if v else None) for c, v in heads.items() if not v or abs(v["h"] / med - 1) > 0.12}
+    check("every secret's head is the set's size: within 12%% of the four's median height (%.1f units)" % med, not off,
+          {c: round(v["h"], 1) for c, v in heads.items() if v})
+
+    # As drawn in Customize, nothing found: no outline in the top 9% of a tile.
+    for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+        pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.mysteryColorsFound = {}; document.querySelectorAll('.app-banner, #pushing-update, #intro-pop, .daily-alert').forEach(n => n.remove());
+          showCustomize('character'); await wait(800);
+          document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot').forEach(x => x.remove());
+          const s = document.querySelector('.avatarchar-option.is-silhouette');
+          if(s) s.scrollIntoView({ block: 'center', behavior: 'instant' }); }""")
+        for _ in range(60):
+            n = pg.evaluate("() => [...document.querySelectorAll('.avatarchar-option.is-silhouette')].map(o => !!o.querySelector('.char-flip-play img') || !o.classList.contains('char-flip'))")
+            if n and all(n):
+                break
+            pg.wait_for_timeout(500)
+        pg.wait_for_timeout(400)
+        tiles = pg.evaluate("""() => [...document.querySelectorAll('.avatarchar-option.is-silhouette')].map(o => {
+          const b = o.getBoundingClientRect(); return { id: (o.title || ''), box: [b.left, b.top, b.width, b.height],
+            flip: !!o.querySelector('.char-flip-play img') }; })""")
+        shot = _Im.open(_io.BytesIO(pg.screenshot())).convert("RGB")
+        ctx.close()
+        tops = {}
+        for t in tiles:
+            x, y, tw, th = t["box"]
+            crop = shot.crop((int(x * dpr), int(y * dpr), int((x + tw) * dpr), int((y + th) * dpr)))
+            W, H = crop.size
+            px = crop.load()
+            top = None
+            for yy in range(0, int(H * .5)):
+                for xx in range(int(W * .08), int(W * .92)):
+                    r_, g_, b_ = px[xx, yy]
+                    if (r_ + g_ + b_) / 3 >= 110 and max(r_, g_, b_) - min(r_, g_, b_) <= 24:
+                        top = yy / H
+                        break
+                if top is not None:
+                    break
+            tops[t["id"]] = round(top, 3) if top is not None else None
+        bad = {k: v for k, v in tops.items() if v is None or v < 0.09}
+        check(f"{dev}: Customize shows the four secrets as silhouettes", len(tiles) == 4, [t["id"] for t in tiles])
+        check(f"{dev}: no silhouette's outline is in the top 9% of its tile (cut off at the top)", len(tiles) == 4 and not bad, tops)
+
+
 CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeout(r, ms));
   document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
   const idx = TIER_ORDER_FULL.indexOf(tier);
@@ -15590,6 +15689,7 @@ def main():
             check_b317_daily(br)
             check_b317_volume(br)
             check_b317_neck(br)
+            check_b317_silhouettes(br)
             check_b317_cutspin(br)
             check_b317_specials(br)
             check_b317_challenge_specials(br)

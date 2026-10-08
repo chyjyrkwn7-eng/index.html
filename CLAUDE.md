@@ -14871,6 +14871,34 @@ disagree with it.
       median 0. Painting the surfaces grey matters: on their own colours
       the same field darkens white hair over a dark robe by 26 levels
       and the robe by 4, which reads as a step that is not one.
+  - **A SECRET'S SILHOUETTE HAS ITS HEAD FITTED (317 fix,
+    `SIL_HEAD_FIT`).** *"Genesis looks great, Umbra is kinda bugged and
+    too big, and Horizon is nearly perfect but also too big. They are cut
+    off."* (Her screenshot was most likely the LIVE app, build 313, where
+    Umbra's flames were still blacked into a hood half again as tall -
+    build 314's SIL_LIGHT fixed that. What was left on b6cd249 was still
+    measurably wrong, so it was fixed anyway.) A cut-out is a black shape
+    with a light outline, so every unit of it reads, where the drawing's
+    hood fades into a dark scene and Horizon's locks fade out at the tips:
+    Umbra's hood rose to y 5.2 of the 3..37 tile (0.6 under the top
+    feather - Void and Genesis top out at 8.9 and 9.0) and stood 18%
+    taller than the four's median head; Horizon's crown spanned
+    6.7..33.2. `charSilhouetteSVG` now scales the SILHOUETTE's `.cx-head`
+    about the foot of the head before the outline copy is made (so both
+    copies, and the "~sil" flip-book, carry it) - Umbra .86 about (20,
+    31.2), Horizon .92 about (20, 30.4): Umbra tops out at 8.8, Horizon at
+    9.9 and 7.8..32.2 wide. The worn flares are in the head and move with
+    it. **The drawing you unlock is untouched** - it passes the head rules
+    as it is; only the cut-out was all edge. Silhouettes appear in
+    Customize, the unlock-detail card (a 7.6rem circle, already inside
+    it) and the Home hint card's ghost; never at sign-up (starters only)
+    or on a board (a classmate's character is drawn as itself). Gate:
+    `check_b317_silhouettes` - every cut-out 2 units under its tile's top
+    feather, inside the sides above the shoulders, its head within 12% of
+    the four's median height, and in Customize on both reference devices
+    no outline pixel in the top 9% of a tile. Fails four times on
+    b6cd249 (Umbra 5.2; 27.9 against a median of 23.6; 7.4% and 6.2% from
+    the top on the phone and the iPad).
   - **The Profile tab's character: bigger, with its colour behind it, and
     NOT circled.** *"They got a smidge smaller ... ensure you can see their
     backgrounds ... and ensure they still get animations on the tab."* A
