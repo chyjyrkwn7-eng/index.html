@@ -346,7 +346,14 @@ def main():
     ap.add_argument("--only", help="substring of the device label")
     ap.add_argument("--quick", action="store_true", help="one representative per family")
     ap.add_argument("--verbose", action="store_true", help="print every passing combination")
+    # Build 317: the Supernova scar lives on Home's planet only once the
+    # account has reached Supernova, which the seed has not - so a sweep
+    # of the scar has to ask for it.
+    ap.add_argument("--supernova", action="store_true", help="seed the account as having reached Supernova (Home's planet carries the scar)")
     args = ap.parse_args()
+    seed = SEED.replace("leaderboardOptIn:true,", "leaderboardOptIn:true,supernovaAchieved:true,") if args.supernova else SEED
+    if args.supernova:
+        assert seed != SEED, "the seed no longer has the line --supernova edits"
 
     devices = DEVICES
     if args.quick:
@@ -365,7 +372,7 @@ def main():
             browser = pw.chromium.launch(executable_path=CHROME)
             for label, orientation, mode, vw, vh, insets in combos:
                 ctx = browser.new_context(viewport={"width": vw, "height": vh})
-                ctx.add_init_script(SEED)
+                ctx.add_init_script(seed)
                 ctx.add_init_script(RESULTS_STAGE)
                 if mode == "home screen":
                     ctx.add_init_script(STANDALONE)

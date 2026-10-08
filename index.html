@@ -62630,13 +62630,28 @@ function cosmicScarURLs(){
       const d = Math.sqrt((x / A) * (x / A) + (y / B) * (y / B));
       return d - .55 * (fbm(u * 6 + 11, v * 6 + 3, 4) - .5) - .22 * (fbm(u * 15 + 5, v * 15 + 9, 3) - .5);
     };
+    /* COST: the two smooth fields (the burn's edge and its colour noise)
+       are sampled on a half-resolution grid and interpolated - they have
+       no detail finer than that - and only the crust's fine noise is read
+       per pixel, inside the burn. A quarter of the noise work; it runs
+       once, as Home is first built. */
+    const M = N / 2, M1 = M + 1, FG = new Float32Array(M1 * M1), NG = new Float32Array(M1 * M1);
+    for(let j = 0; j <= M; j++) for(let i = 0; i <= M; i++){
+      const u = i / M, v = j / M, q = j * M1 + i;
+      if((u - .5) * (u - .5) + (v - .5) * (v - .5) > .3){ FG[q] = 9; NG[q] = .5; continue; }
+      FG[q] = field(u, v); NG[q] = fbm(u * 9 + 3, v * 9 + 7, 3);
+    }
+    const lerp2 = (G, u, v) => {
+      const x = u * M, y = v * M, i = Math.min(M - 1, Math.floor(x)), j = Math.min(M - 1, Math.floor(y)), fx = x - i, fy = y - j, q = j * M1 + i;
+      return G[q] * (1 - fx) * (1 - fy) + G[q + 1] * fx * (1 - fy) + G[q + M1] * (1 - fx) * fy + G[q + M1 + 1] * fx * fy;
+    };
     const ib = gb.createImageData(N, N), ie = ge.createImageData(N, N);
     for(let y = 0; y < N; y++) for(let x = 0; x < N; x++){
       const u = (x + .5) / N, v = (y + .5) / N;
       const rr = Math.sqrt((u - .5) * (u - .5) + (v - .5) * (v - .5));
       const disc = cl((.5 - rr) * N);
       if(disc <= 0) continue;
-      const f = field(u, v), n = fbm(u * 9 + 3, v * 9 + 7, 3);
+      const f = lerp2(FG, u, v), n = lerp2(NG, u, v);
       const k = (y * N + x) * 4;
       /* scorched halo, then the burn over it */
       const halo = .62 * (1 - sm(cl((f - 1) / 1.05))) * (.72 + .28 * n);

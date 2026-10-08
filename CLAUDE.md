@@ -15088,6 +15088,99 @@ disagree with it.
     the flare within 15% of Home's share (phone and tablet), the theme
     tile animating, the character's hop then its live loop, and on Home a
     rank's card before a badge cutscene. Fails on 57212ce.
+- **SUPERNOVA GOES OFF, AND THE PLANET KEEPS THE SCAR (build 317).**
+  Madison: *"Ensure when reaching supernova rank, the cutscene is sick and
+  the planet looks different, maybe black fragments coming off the pulse,
+  maybe a burn/scorch mark and it would stay there permanently, even when
+  any other theme is set ... the actual supernova would happen and it
+  would be permanent like a scar after the explosion and then the effects
+  coming off it in the main menu could be pulsing black fragments ... if
+  you change the theme, it would still be there."*
+  - **The scar** (`buildCosmicScar` / `attachCosmicScar`, CSS "THE
+    SUPERNOVA SCAR"): a burn across the lower right of the planet's face -
+    a scorched halo, black burn, an ember rim that pulses, glowing crust
+    specks, three jagged fissures with branches - plus a heat shimmer off
+    the limb and eight black shards with ember rims pulsing and drifting
+    off it (`SCAR_FRAGS`, one table: start, size, direction, distance,
+    tumble, period, phase; every one stays inside the inner ring). Its
+    colours are its own, black and ember, so it is the same scar on every
+    theme and accent. `buildCosmicHero` attaches it whenever
+    `store.supernovaAchieved` - Home, Welcome if the store has it, any
+    hero built after - so an account that already had Supernova has it on
+    its first Home with no cutscene replayed.
+  - **Drawn once on a canvas, not built from gradients**
+    (`cosmicScarURLs`, seeded, the same choice as `cosmicSmokeURL`). The
+    gradient version read as a cluster of overlapping circles and its
+    three straight fissures met at a point like clock hands. The burn's
+    edge is a tilted ellipse pushed in and out by fractal noise; two
+    images - the burn (static) and the ember (its own layer, pulsing on
+    opacity). The smooth fields are sampled on a half-resolution grid and
+    interpolated; only the crust's fine noise is read per pixel, inside
+    the burn. It runs once per launch, when Home is first built.
+  - **Layering, without touching the planet's DOM.** The scar goes right
+    after `.cosmic-plasma` with NO z-index, so the tap box
+    (`.cosmic-tapfx`, inserted before the bubbles) and the bubbles paint
+    over it exactly as they paint over the planet. The plasma is
+    `z-index:1` and would wash its light pools over the burn, so a scarred
+    hero (`.is-scarred`) masks the plasma out where the burn is - a CSS
+    gradient mask, not a filter.
+  - **Seamless and still.** The drift fades to nothing at both ends (in
+    check-loops' KNOWN as `csc-drift`); the pulses and the shimmer
+    alternate. Reduce motion (the app's switch and the OS's): the scar
+    stays and every shard holds still a third of the way along its path.
+    `*` does not match a pseudo-element, so the shards' `::before` pulse
+    is named in the reduce-motion rules.
+  - **The cutscene's own climax** (`spec.times.swell`, Supernova only):
+    after the approved whirl / light / stop / half-second, `sn-swell` -
+    the planet swells 1.14x (`.rank-spin` `scale`, about the planet's own
+    centre) and heats white from the core (`.sn-heat`) for 1.8s with a
+    tremor that grows (a Web Animation of `translate` on `.rank-before`);
+    then `sn-detonate` with the shared flash - two shockwave rings racing
+    out to 11x, the stage kicked and settling, 26 pieces flung out (16
+    black shards with ember rims, 10 sparks that fly further; seeded, so
+    it is the same blast every time), and a ring of burnt dust (the smoke
+    texture as its mask) that blooms and clears; the swap under the
+    flash's peak; `sn-scarred` 1.3s after the blast - the new planet's
+    scar (attached from the start, hidden) fades in hot (`.csc-glow`,
+    cooling over 4.2s) and its rings turn orange (the real
+    `cosmic-orbit-ring-supernova` class, eased in by a scene-scoped
+    transition; the ring CSS itself is untouched); the title 3s after the
+    blast with the round-five tint. Every layer is on `.sn-fx`, laid over
+    the planet in overlay pixels, above the flash (z 3) so the black
+    reads against the white. Times: `{ zoom 1400, ignite 3600, swell
+    1800, burst 12400, settle 15400, outro 19700, hold 3000 }` - ~23.4s
+    to the hand-back, against ~21 before.
+  - **ONE ANIMATION PER ELEMENT PER BEAT.** The heat was first two CSS
+    animations swapped by class (`sn-heat` on swell, `sn-heat-out` on
+    detonate); the first one's `fill:both` stayed in force and the new
+    planet sat white-hot over its scar through the title. Its keyframes
+    now carry both phases (heat to 80%, blow-out after) on one animation
+    `--sn-swell` x 1.25 long. Anything that has to change phase on a later
+    class should be one animation, or a transition.
+  - **The ring draw is not replayed.** The scene shows the rings turning
+    orange, so `onFinish` marks `class26e.ringtier.seen` as "supernova"
+    (`markRingTierSeen`, try/catch inside). An account with every secret
+    flare then gets Home's own supernova-to-flares draw, which is the next
+    step up and correct.
+  - **Gate: `check_b317_supernova`** - no scar without Supernova; the
+    scar (drawn art) on Home under three accents; eight fragments, all
+    infinite and running, and one measurably moving; after the plasma
+    with z-index auto, and a tap's box after it; Reduce motion keeps the
+    scar with the shards still and visible; an account seeded with
+    Supernova has it on its first Home and no cutscene; and, frame-stepped,
+    the cutscene's order (rest, swell, detonate with the burst, swap,
+    scarred, title, outro), ~1.8s of swell, two shockwaves and 26 pieces
+    (16 shards) and the dust animating, the scar at full opacity and the
+    rings orange by the title, 20-25.5s in all, and Supernova reached with
+    the ring tier seen as "supernova". Fails on 1888b11.
+  - **`sweep-layout.py --supernova`** seeds the account as having reached
+    Supernova, so the sweep lays out Home with the scar on it.
+  - **check-loops could not see a loop with an eased curve.** It split
+    `animation:` on every comma, so `cubic-bezier(.3,.1,.5,1)` cut a layer
+    in two and the `infinite` landed in another piece: every loop written
+    with a cubic-bezier went unread. It splits on top-level commas now,
+    which found six existing loops besides the scar's; each was checked
+    and is invisible at both ends of its cycle (KNOWN, "Build 317").
 - **A CHARACTER'S SPECIAL: THE RARE MOVE IF YOU KEEP LOOKING (build 317).**
   *"Let's give each rank character a unique animation ... characters will
   have multiple animations so typically they will be still, if you look at
