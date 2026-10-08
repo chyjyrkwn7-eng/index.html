@@ -15273,15 +15273,51 @@ disagree with it.
     - **The polish pass.** The planet rises out of the dark
       `RANK_ARRIVE_MS` (320ms) after the dark starts coming up, not in the
       same frame (a ghost of it sat over the results for a few frames);
-      and the end goes to dark FIRST - `rank-fadeout`, `RANK_FADEOUT_MS`
-      (850) before the end, fades the planet and the tint out over the
-      dark, and only then does the dark give way to the dim over the
-      results, so no ghost of the planet sits over the 100% box. Every
-      approved beat keeps its time (the flash is still at ~frame 300 on
-      the gate's clock).
+      and the end goes to dark FIRST - `rank-fadeout` fades the planet and
+      the tint out over the dark, and only then does the dark give way to
+      the dim over the results, so no ghost of the planet sits over the
+      100% box. (The flow round below made that fade happen WITH the
+      words, not 1.8s after them.) Every approved beat keeps its time (the
+      flash is still at ~frame 300 on the gate's clock).
     - The bridge check's window is 25s, not 20: under load the whirl's
       `finished` can resolve late (the fallback fires at 12s), and a run
       that was green alone went red beside a second gate run.
+  - **THE FLOW ROUND - a tap at the title, one ending, a still scene
+    under Reduce motion.** Three notes from the flow audit, all held by
+    `check_b317_cutend` (frame-stepped, phone, a tier and Supernova) and
+    all failing on dad93cb:
+    - **Taps.** The scene took a tap only during its outro, so for its
+      whole length it read as ignoring them, where the badge case, the
+      flare scenes and the pop-ups all take one. The show stays
+      unskippable up to the title; from `RANK_TITLE_TAP_MS` (700ms) after
+      the title arrives (`titleUp`), a tap calls `endScene()` - the same
+      ending the schedule uses, so it is a fade, never a cut. The returned
+      `skip()` does the same. **The scene catches its taps on the way
+      DOWN** (a capture listener that stops them): the planet in the scene
+      is a real hero, and its sphere's own tap - the "....." bubble -
+      stops the event, so a tap on the planet never reached the scene and
+      could put a Home bubble over the cutscene. The gate taps the middle
+      of the screen, which is the planet on a tier scene: that is how it
+      was found.
+    - **One ending.** The words faded at the outro and the planet sat
+      alone for ~1.8s before its own fade and the exit - an ending, then
+      another. `endScene()` adds `rank-outro` and `rank-fadeout` together:
+      the words, the planet and the tint go in one ~.9s fade
+      (`RANK_END_MS` 950), then the scene hands over. The title holds
+      600ms longer to make up for it (tier outro 15600, Supernova 20300),
+      and `times.hold` is gone. A tier scene is ~1s shorter than it was,
+      Supernova ~22s.
+    - **Reduce motion: the still scene.** Under the app's switch, the
+      system's setting or no Web Animations (`ringMotionOff() ||
+      !overlay.animate`), the full scene was ~13s of a near-still screen.
+      Now `rank-still`: the planet you are getting, already in its colour
+      with its flare lit (`is-swapped` from the first frame, the theme set
+      at once), the stage at its final size, the title at 300ms, and the
+      end at 3.2s with a .5s fade - ~4.4s to the reward card. Supernova
+      shows the scar and the orange rings from the first frame. No whirl,
+      swell, shake or flash; the orbits are held. Under the system's
+      setting alone the fades are kept, short (.35s); the app's own
+      switch turns every transition off as it always did.
   - **The lag and the "placed off" flares.** The second round took the
     bubbles' `backdrop-filter` blur off inside a scene (re-sampled every
     frame while they move); the third round put it back, because the
@@ -15731,6 +15767,78 @@ disagree with it.
     so the recorder clears `showContextualInfo._t` and closes them on the
     virtual clock, and `element.animate()` is patched to freeze each new
     animation at the virtual moment it is made.
+- **THE END OF A RUN, WALKED END TO END (build 317 flow).** Madison: *"Absolutely
+  make sure the flow of the unlock stuff is good and the flow of everything
+  else in the result screen is good to go."* Every stage was driven for real
+  (answers clicked, pop-ups read for 3s and tapped, Main menu, Home, the
+  Profile tab's call) and timed on both reference devices - a 100% that tips
+  Gold, a badge, a hundo effect, level 80, the daily, two badges at once,
+  Reduce motion, Mute banners, a Virtual Room. Five things were out of
+  order; all five are orchestration, none is inside a cutscene or an effect:
+  - **A one-level climb popped half-way through its second fill.** The
+    pop step asked `levelBlock.matches(".is-levelup")` while the sequence
+    was being BUILT - a class the climb adds 1.1s into its own fill - so it
+    always got 1.25s, the multi-level path's own `fillMs` aside. The block
+    says `levelsUp` now and the pop waits 2.05s. **Never decide a step's
+    delay from a class the animation adds later.**
+  - **The 100%'s effect was faded out 2.3s in by the first scene.** Grade
+    +180ms the effect, +1300 the Unlocked card, +1200 the badge case or
+    rank cutscene, whose dim fades the effect (`clearCelebrationsForScene`):
+    a World Tree is 5.6s, a UFO 8.6s. The first held step after the grade
+    now waits until `HUNDO_FX_TAIL_AT[id]` (`firstHeld()` in
+    `showRunRewards`) - a plain delay, so a tap still brings it on. Confetti
+    has no tail entry and is over by 2.5s anyway.
+  - **Re-run and Main menu landed under a scene's bridge.** A scene leaves
+    `openSceneBridge` up (72% black) for the pop-up it expects; a badge case
+    that is the LAST unlock has nothing to claim it, so the buttons sat
+    under it for ~1.4s. The actions step and `finish()` drop it.
+  - **The character's special played under scenes** - "no character
+    special while any cutscene, overlay or reward card is up". The idle
+    scheduler counted the results card as on screen under the badge case,
+    the rank cutscene and a reward card (it is: under their dim), and the
+    hundo's own special (2.6s after the reaction) was cut by the badge case
+    a second in. `charSpecialCovered(el)`: anything in `CHAR_SPECIAL_COVERS`
+    (the case, every cutscene, a pop-up, the flare scenes, the scene bridge,
+    LOADING, a tour, What's New, the generating overlay, a sheet) that the
+    character is NOT itself inside - the person card is an `.invite-overlay`
+    and its character is one of the prominent ones - or, for the results
+    character, the reveal still running (`.rs-rewards:not(.rs-done)`: a
+    special begun in the gap between two pop-ups is under the next one a
+    second later). The scheduler passes over a covered character and
+    `charSpecialFire` waits for it to clear. On a run with unlocks the
+    hundo special is the reveal's last beat, fired from `finish()` 0.7s
+    after the buttons are in.
+  - **Home sat unlocked ~2.7s after Main menu before the rank-up lock.**
+    `showHome()` always arms the card queue's 2.2s timer and
+    `rankUpLockWaits()` waited on the timer whether or not a card was due -
+    with Start Studying live the whole time. It waits only when a card is
+    really owed (`rankUpLockCardDue()`); otherwise it locks at its own 1.2s.
+  - **Left as they are, on purpose**: a muted or Reduce-motion run still
+    plays its rank cutscene on Home (the builds 217-218 rule) - under
+    Reduce motion it is the ~4.4s still scene now (see the rank-up
+    cutscene's flow round) - and the rank-up
+    Profile scene's ~20s is its own design.
+  - **Gate: `check_b317_flow`** - the one-level pop >= 1.9s on both
+    devices, the World Tree to its tail before the case, the hundo special
+    never under the case and after it, no live bridge when the buttons land,
+    the lock within 1.9s with nothing owed, the idle special never under a
+    cutscene and played once it goes. All seven fail on e877af7; the eighth
+    (a person card's own character still plays its special) guards the
+    inside-the-overlay exception and passes on both. `FX_RUN` (the gates'
+    real 100%) now waits 12s for the effect, not 6: a run that climbs a
+    level lands its grade 0.8s later than it did, and check_b314_unlocks'
+    Fireworks and Bubbles sections ran out of budget on a loaded box.
+  - **How it was measured, for next time**: a 40ms poll in the page
+    records every stage turning on and off (each card landing, the pop,
+    the effect's layer, the case, the cutscene, each pop-up and its kind,
+    the bridge, the buttons, the lock, the call, LOADING, the map, the
+    arrival, each special), while a scripted person reads each pop-up for
+    3s and taps it, taps Main menu 1.5s after the buttons and Profile 2.2s
+    after the call. The MP4 is `tools/record-hundo.py`'s clock (every
+    timer, rAF and animation on a clock advanced 1/30s a frame) run over
+    the whole walk, with the person acting on that clock. A screenshot
+    harness on a loaded box takes 0.5-1s a shot, so stills lag their
+    stage; the poll's times are the measurement.
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h

@@ -11610,8 +11610,22 @@
   #supernova-cutscene.supernova-settle .rank-tint{ opacity:1; }
   /* The end goes to dark FIRST (round five): the planet and the tint fade
      out over the dark, and only then does the dark itself give way to the
-     dim over the results - no ghost of the planet over the 100% box. */
+     dim over the results - no ghost of the planet over the 100% box.
+     THE END, ONCE (flow round): rank-fadeout and rank-outro now arrive
+     together (endScene), so the words, the planet and the tint all go in
+     the same ~.9s - not the words, then the planet alone for ~1.8s. */
   #supernova-cutscene.tier-cutscene.rank-fadeout :is(.supernova-stage, .rank-tint){ opacity:0; transition:opacity .8s ease; }
+  /* REDUCE MOTION: THE STILL SCENE (build 317, flow round) - see
+     playRankUpScene. The new planet is up from the first frame at its
+     final size; nothing moves: no transform transitions, the orbits held,
+     the scar shown cooled and the rings already orange. The app's own
+     switch turns every transition off already; under the system's
+     setting the fades are kept, short. */
+  #supernova-cutscene.rank-still .supernova-stage{ transform:scale(1.15) !important; }
+  #supernova-cutscene.rank-still :is(.rank-orbit, .rank-orbit-slot, .cosmic-hero-orbitlayer, .csc-glow){ animation:none !important; }
+  #supernova-cutscene.rank-still .rank-after :is(.cosmic-scar, .cosmic-orbit-ring){ transition:none !important; }
+  :root:not([data-reduce-motion="true"]) #supernova-cutscene.rank-still :is(.supernova-stage, .rank-tint, .rank-before, .rank-after){ transition:opacity .35s ease !important; }
+  :root:not([data-reduce-motion="true"]) #supernova-cutscene.rank-still :is(.supernova-kicker, .supernova-title, .supernova-subtitle){ transform:none !important; transition:opacity .35s ease !important; }
   .tier-cutscene .supernova-stage, .tier-cutscene .supernova-kicker, .tier-cutscene .supernova-title, .tier-cutscene .supernova-subtitle{ z-index:1; }
   .tier-cutscene .supernova-flash{ z-index:2; }
   /* ---- THE SUPERNOVA GOES OFF (build 317) ----
@@ -56516,9 +56530,33 @@ function playCharSpecial(el){
   return true;
 }
 /* a special asked for by an event (a rank-up, a hundo): still one at a time */
-function charSpecialFire(el, delay){
+/* NOT UNDER A SCENE (build 317 flow). A special is the character's rare
+   move and somebody has to be looking at it: walked end to end, the
+   results character's special started under a rank cutscene (the idle
+   scheduler counted the card as on screen - it is, under the scene's
+   full-screen dim) and the hundo's own one was cut a second in by the
+   badge case. Anything here covers the screen; the scheduler skips a
+   tick while one is up, and an asked-for special waits for it to go. */
+var CHAR_SPECIAL_COVERS = ".bc-scene, #supernova-cutscene, #badge-cutscene, #void-cutscene, #vroom-cutscene, .rs-spot, .fl-scene, .ff-scene, .scene-bridge, #teststart-overlay, #tour-overlay, #genprofile-overlay, #splashscreen, #intro-pop, .invite-overlay";
+/* Covered for THIS character: any of those up that it is not itself
+   inside (the person card is an .invite-overlay, and its own character is
+   one of the prominent ones), or the results reveal still running round
+   it - a special begun in the gap between two pop-ups is under the next
+   one a second later, so the results character waits for the reveal to
+   end (finish() then plays the hundo's special itself). */
+function charSpecialCovered(el){
+  try{
+    if(el && el.closest && el.closest(".rs-rewards:not(.rs-done)")) return true;
+    const covers = document.querySelectorAll(CHAR_SPECIAL_COVERS);
+    for(let i = 0; i < covers.length; i++){ if(!el || !covers[i].contains(el)) return true; }
+    return false;
+  }catch(e){ return false; }
+}
+function charSpecialFire(el, delay, tries){
   setTimeout(() => {
-    if(!el || !el.isConnected || Date.now() < charSpecialBusyUntil) return;
+    if(!el || !el.isConnected) return;
+    if(charSpecialCovered(el)){ if((tries || 0) < 60) charSpecialFire(el, 600, (tries || 0) + 1); return; }
+    if(Date.now() < charSpecialBusyUntil) return;
     if(playCharSpecial(el)) el.dataset.spNext = String(Date.now() + charSpecialMsFor(el.querySelector("svg.avatarchar-svg")) + charSpecialRand(charSpecialTiming.gap));
   }, delay || 0);
 }
@@ -56545,6 +56583,7 @@ function charSpecialTick(){
   charSpecialTimer = setTimeout(charSpecialTick, 1000);
   if(document.hidden || document.documentElement.dataset.reduceMotion === "true" || now < charSpecialBusyUntil) return;
   const due = els.filter(el => {
+    if(charSpecialCovered(el)) return false;
     if(!charHasSpecial(el)) return false;
     if(!el.dataset.spNext) el.dataset.spNext = String(now + charSpecialRand(charSpecialTiming.first));
     return +el.dataset.spNext <= now && !el.classList.contains("char-special");
@@ -65307,10 +65346,15 @@ const RANK_ORBIT_MS = 30000;
 const RANK_CUTSPIN_TURNS = 10;
 /* build 317, second round: faster and faster for 4.5s, lit at the top
    speed, slowing for 2s, still for half a second, then the flash */
-/* round five: the planet and the tint go to dark this long before the
-   scene ends (rank-fadeout); the planet rises this long after the dark
-   comes up */
-const RANK_FADEOUT_MS = 850, RANK_ARRIVE_MS = 320;
+/* round five: the planet rises this long after the dark comes up.
+   THE END, ONCE (build 317, flow round): the words, the planet and the
+   tint fade out TOGETHER over RANK_END_MS, and then the scene hands over -
+   they used to go one after the other, the planet sitting alone for ~1.8s
+   after the words. A tap once the title has been up RANK_TITLE_TAP_MS
+   starts that same ending. Under Reduce motion the scene is a still one
+   of about four seconds (RANK_STILL_*). */
+const RANK_ARRIVE_MS = 320, RANK_END_MS = 950, RANK_TITLE_TAP_MS = 700;
+const RANK_STILL_TITLE_MS = 300, RANK_STILL_END_AT = 3200, RANK_STILL_END_MS = 500;
 const RANK_CUTSPIN_ACCEL_MS = 4500, RANK_CUTSPIN_DECEL_MS = 2000, RANK_CUTSPIN_PAUSE_MS = 500, RANK_CUTLIGHT_MS = 140, RANK_CUTLIGHT_LEAD_MS = 120, RANK_CUTFLARE_MS = 1150;
 function rankOrbitFlares(hero){
   if(!hero) return null;
@@ -65500,7 +65544,19 @@ function playRankUpScene(tierKey, opts, spec){
 
   const timers = [];
   const at = (ms, fn) => timers.push(setTimeout(fn, ms));
-  let finished = false, outro = false;
+  /* Reduce motion (the app's switch or the system's), or no Web
+     Animations: the still scene - see below. */
+  const still = ringMotionOff() || !overlay.animate;
+  let finished = false, outro = false, titleUp = false;
+  /* THE END, ONCE: the words, the planet and the tint fade out together,
+     then the scene hands over. From the schedule, or from a tap once the
+     title is up - the same ending either way, never a cut. */
+  function endScene(){
+    if(outro || finished) return;
+    outro = true;
+    overlay.classList.add("rank-outro", "rank-fadeout");
+    timers.push(setTimeout(finish, still ? RANK_STILL_END_MS : RANK_END_MS));
+  }
   function finish(){
     if(finished) return;
     finished = true;
@@ -65535,6 +65591,35 @@ function playRankUpScene(tierKey, opts, spec){
   }
 
   rankOrbitCentre(orbitBefore); rankOrbitCentre(orbitAfter);
+  /* Every tap in the scene is the scene's, caught on the way DOWN: the
+     planet here is a real hero, and its sphere's own tap (the "....."
+     bubble) and the bubbles' and flares' taps would otherwise answer it -
+     the sphere stops the event, so a tap on the planet never ended the
+     scene, and could put a bubble over it. */
+  overlay.addEventListener("click", (e) => { e.stopPropagation(); if(titleUp) endScene(); }, true);
+  /* REDUCE MOTION: A SHORT, STILL SCENE (build 317, flow round). The full
+     scene under Reduce motion was ~13s of a near-still screen. Now: the
+     planet you are getting, already in its colour with its flare lit (for
+     Supernova, already scarred with its rings orange), the title, and the
+     end - about four seconds, no whirl, swell, shake or flash. The theme
+     is set at once, as the swap would have set it. */
+  if(still){
+    overlay.classList.add("rank-still", "is-igniting", "is-swapped");
+    overlay.dataset.accent = tierKey;
+    /* (the new planet's own flare is lit already - syncSceneFlares) */
+    setNewTheme();
+    if(spec.times.swell){
+      overlay.classList.add("sn-scarred");
+      if(heroAfter) heroAfter.querySelectorAll(".cosmic-orbit-ring").forEach(c => c.classList.add("cosmic-orbit-ring-supernova"));
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      overlay.classList.add("supernova-visible");
+      stageWrap.classList.add("is-arrive");
+    }));
+    at(RANK_STILL_TITLE_MS, () => { overlay.classList.add("supernova-settle"); titleUp = true; });
+    at(RANK_STILL_END_AT, endScene);
+    return { skip(){ if(titleUp) endScene(); } };
+  }
   /* THE DARK FIRST, THEN THE PLANET (build 317, round five polish): the
      planet used to start arriving in the same frame the dark began to
      come up, so for a few frames a ghost of it sat over the results.
@@ -65645,9 +65730,9 @@ function playRankUpScene(tierKey, opts, spec){
       if(heroAfter) heroAfter.querySelectorAll(".cosmic-orbit-ring").forEach(c => c.classList.add("cosmic-orbit-ring-supernova"));
     });
     at(b + (T.settle - T.burst), () => overlay.classList.add("supernova-settle"));
-    at(b + (T.outro - T.burst), () => { outro = true; overlay.classList.add("rank-outro"); });
-    at(b + (T.outro - T.burst) + T.hold - RANK_FADEOUT_MS, () => overlay.classList.add("rank-fadeout"));
-    at(b + (T.outro - T.burst) + T.hold, finish);
+    /* the show is unskippable up to the title; once it is up, a tap ends it */
+    at(b + (T.settle - T.burst) + RANK_TITLE_TAP_MS, () => { titleUp = true; });
+    at(b + (T.outro - T.burst), endScene);
   };
   /* The planet's centre and size in the overlay's pixels, as drawn now. */
   const planetBox = () => {
@@ -65728,7 +65813,6 @@ function playRankUpScene(tierKey, opts, spec){
        should fade out". No pool of colour behind it and no one-time
        celebration pop (that pop fired just as the title came up and read
        as light shooting off the flare). */
-    if(theme.reduceMotion || !overlay.animate){ ignitePeak(); at(1200, afterRest); return; }
     const kf = sign => [
       { transform: "rotate(0deg)", easing: "cubic-bezier(.333,0,.667,.333)" },
       { transform: "rotate(" + (sign * PEAK_DEG).toFixed(2) + "deg)", offset: PEAK_AT, easing: "cubic-bezier(.333,.667,.667,1)" },
@@ -65764,8 +65848,7 @@ function playRankUpScene(tierKey, opts, spec){
   });
   /* never stuck: whatever happens to the animation, the flash comes */
   at(T.ignite + ACC + DEC + 2500, afterRest);
-  overlay.addEventListener("click", () => { if(outro) finish(); });
-  return { skip: finish };
+  return { skip(){ if(titleUp) endScene(); } };
 }
 
 function playTierCutscene(tierKey, opts){
@@ -65776,8 +65859,11 @@ function playTierCutscene(tierKey, opts){
     /* build 317: ignite 3000, then 4.5s faster and faster, lit at the
        peak, 2s slowing, 0.5s still - the flash at ~10000, and settle,
        outro and the end at their old distances from it (the flash and
-       after are timed off the spin's own end, these are the nominal) */
-    times: { zoom: 1200, ignite: 3000, burst: 10000, settle: 11500, outro: 15000, hold: 2600 },
+       after are timed off the spin's own end, these are the nominal).
+       Flow round: the title holds 600ms longer and the end is ONE fade of
+       everything (RANK_END_MS) - the planet no longer sits alone after
+       the words - so the scene is ~1s shorter than it was. */
+    times: { zoom: 1200, ignite: 3000, burst: 10000, settle: 11500, outro: 15600 },
     onFinish: () => { store.pendingTierCutscene = null; saveStore(); }
   });
 }
@@ -66070,8 +66156,9 @@ function playSupernovaCutscene(opts){
     /* build 317: the same whirl as every rank, then SUPERNOVA'S OWN
        CLIMAX - 1.8s of the planet swelling and shaking (swell), the
        detonation at ~12.4s, the dust clearing on the scar and the rings
-       turning orange, the title 3s after the blast. ~22.7s in all. */
-    times: { zoom: 1400, ignite: 3600, swell: 1800, burst: 12400, settle: 15400, outro: 19700, hold: 3000 },
+       turning orange, the title 3s after the blast, and the one ending
+       (RANK_END_MS) 4.9s after that. ~22s in all. */
+    times: { zoom: 1400, ignite: 3600, swell: 1800, burst: 12400, settle: 15400, outro: 20300 },
     onFinish: () => {
       store.pendingSupernovaCutscene = false; store.supernovaAchieved = true; saveStore();
       /* the scene has shown the rings turning orange, so Home does not
@@ -78754,6 +78841,13 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
     wrap.fillMs = base + XP_BUMP_MS + (levelsUp || barBefore.fraction < 1 ? 0 : -500) + 200;
   }
   wrap.bumps = bumps;
+  /* Read by the results reveal to time the pop (build 317): a one-level
+     climb is two fills, ~2s. It used to ask the block for .is-levelup
+     while the sequence was being BUILT - a class the climb only adds
+     half-way through its own fill - so the answer was always no, and
+     the pop and the grade came in at 1.25s, with the bar still on its
+     second fill. */
+  wrap.levelsUp = levelsUp;
 
   /* Kicked off by the caller once the block is actually on screen, for
      the same reason the Profile bar is: a width set in the same tick as
@@ -81324,6 +81418,7 @@ function showRunRewards(run, hooks, opts){
      being just on the xp box" (build 236). It reacts when the grade card
      LANDS, not when it is built: the reveal is staged, and a reaction
      played while the grade is still hidden is one nobody saw. */
+  let specialAtEnd = null;
   if(!run.retake && run.total > 0){
     const react = () => {
       const av = xp.querySelector(".results-level-avatar");
@@ -81335,7 +81430,14 @@ function showRunRewards(run, hooks, opts){
       reactCharacter(av, g);
       /* a hundo: the character's special once the reaction has landed
          (build 317) */
-      if(g === "perfect"){ charSpecialWake(); charSpecialFire(av, 2600); }
+      /* ...or, when scenes are coming (build 317 flow), as the reveal's
+         last beat: at 2.6s it began just before the first scene and was
+         cut a second in. finish() fires it once the buttons are in. */
+      if(g === "perfect"){
+        charSpecialWake();
+        if(unlockItems.length && !theme.muteBanners && !quiet) specialAtEnd = av;
+        else charSpecialFire(av, 2600);
+      }
       /* A HUNDO GETS THE CHARACTER'S OWN MOVE (build 241) - "the cooler
          animations/happy for the hundo and then lower for that." The
          perfect hop and joy on top of the move each character makes when
@@ -81523,6 +81625,7 @@ function showRunRewards(run, hooks, opts){
 
   const finish = () => {
     panel.classList.add("rs-done");
+    if(specialAtEnd){ const av = specialAtEnd; specialAtEnd = null; charSpecialFire(av, 700); }
     resultsShownAt = Date.now();
     if(actions){
       const first = actions.querySelector("button");
@@ -81597,7 +81700,7 @@ function showRunRewards(run, hooks, opts){
   });
   /* The pop lands when the bar has finished, not part-way through a
      level-up's second fill (build 302): a wrap is two fills, ~1.9s. */
-  seq.add(levelBlock.fillMs ? levelBlock.fillMs : (levelBlock.matches && levelBlock.matches(".is-levelup, :has(.is-levelup)")) ? 2050 : 1250, () => { xp.classList.remove("is-charging"); xp.classList.add("is-charged"); });
+  seq.add(levelBlock.fillMs ? levelBlock.fillMs : levelBlock.levelsUp ? 2050 : 1250, () => { xp.classList.remove("is-charging"); xp.classList.add("is-charged"); });
   boxes.forEach(b => {
     seq.add(420, instant => {
       rsLand(b, instant);
@@ -81631,7 +81734,22 @@ function showRunRewards(run, hooks, opts){
        268): the scene has left its light behind (openSceneBridge) and a
        full second of that before the card read as a stall. */
     let afterScene = false;
-    const nextGap = () => { const g = afterScene ? 320 : gap; afterScene = false; return g; };
+    /* THE 100%'S EFFECT PLAYS OUT BEFORE THE FIRST SCENE (build 317).
+       The effect starts 180ms after the grade lands, the Unlocked card
+       1300ms after it, and the first scene or pop-up 1200ms after that -
+       so a badge case or a rank cutscene came up 2.3s into a World Tree
+       (5.6s) or a UFO (8.6s), and its dim faded the effect out half-way:
+       "an unrelated unlock ... covers the end of one". The first thing
+       that takes the screen now waits for the effect's tail
+       (HUNDO_FX_TAIL_AT, where its last pieces start fading) - measured
+       from the Unlocked card, which is what that step's delay counts
+       from. Confetti is over by then anyway. A tap still brings it on at
+       once, as a tap brings on any card (the delay is a plain step, not
+       a hold). */
+    const fxId = (run.isPerfect && !run.retake && run.total > 0) ? hundoFxInUse() : null;
+    let fxHold = (fxId && typeof HUNDO_FX_TAIL_AT === "object" && HUNDO_FX_TAIL_AT[fxId]) ? 180 + HUNDO_FX_TAIL_AT[fxId] - 1300 : 0;
+    const firstHeld = g => { if(fxHold > g) g = fxHold; fxHold = 0; return g; };
+    const nextGap = () => { const g = afterScene ? 320 : gap; afterScene = false; return firstHeld(g); };
     unlockItems.forEach((it, n) => {
       if(it.kind === "rank"){
         /* THE RANK IS ITS CUTSCENE, played here rather than waiting for
@@ -81649,7 +81767,7 @@ function showRunRewards(run, hooks, opts){
                lands and is read before the screen goes dark. 1200 (build
                308), since that read as broken; straight off the badge's
                case it is a short beat. */
-            seq.add(afterScene ? 700 : 1200, (instant, release) => {
+            seq.add(firstHeld(afterScene ? 700 : 1200), (instant, release) => {
               clearCelebrationsForScene();
               const back = () => { levelBlock.setRank(highest, true); release(); };
               if(highest === "titan") playSupernovaCutscene({ from: from, onDone: back });
@@ -81719,8 +81837,14 @@ function showRunRewards(run, hooks, opts){
       seq.add(theme.muteBanners ? 420 : 200, instant => rsLand(unlockRows[n], instant));
     });
   }
-  if(actions) seq.add(unlocked ? 450 : 620, instant => rsLand(actions, instant));
-  seq.add(0, () => { resultsSeq = null; finish(); });
+  /* THE BUTTONS DO NOT ARRIVE UNDER A SCENE'S DIM (build 317). A scene
+     leaves its bridge up for the pop-up it expects next (openSceneBridge)
+     and only lets go after SCENE_BRIDGE_WAIT_MS. When the last scene is
+     the last unlock - a badge case on its own - nothing claims it, so
+     Re-run and Main menu landed under 72% black and sat there ~1.4s
+     before it faded. It goes as the buttons come in. */
+  if(actions) seq.add(unlocked ? 450 : 620, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(actions, instant); });
+  seq.add(0, () => { resultsSeq = null; if(sceneBridgeOpen()) dropSceneBridge(false); finish(); });
 
   /* A TAP SPEEDS UP THE BOX ON SCREEN, NOT THE WHOLE SHOW (build 305):
      "You can tap the screen by speeding up the box it's currently
@@ -98082,8 +98206,17 @@ function scheduleRankUpLock(ms){
 /* Anything that already owns Home goes first: the same list the reward
    cards wait on, the cards themselves and their flight, and the daily
    question's XP on its way in. */
+/* A queued card that is not owed is not something to wait for (build 317
+   flow): showHome() always arms the card queue's 2.2s timer, so after a
+   rank-up whose cards the results screen already played Home sat unlocked
+   - Start Studying live - for ~2.7s waiting on a timer with nothing
+   behind it. It locks at its own 1.2s now unless a card is really due. */
+function rankUpLockCardDue(){
+  if(!homeUnlockTimer) return false;
+  try{ return homeUnlocksOwed(pendingHomeUnlocks()); }catch(e){ return true; }
+}
 function rankUpLockWaits(){
-  try{ if(homeUnlockBlocked() || homeUnlockPlaying || homeUnlockTimer || (store.pendingBadgeUnlocks || []).length) return true; }catch(e){ return true; }
+  try{ if(homeUnlockBlocked() || homeUnlockPlaying || rankUpLockCardDue() || (store.pendingBadgeUnlocks || []).length) return true; }catch(e){ return true; }
   if(document.querySelector(".rs-fly, .scene-bridge, #teststart-overlay, #intro-pop, #tour-overlay, #splashscreen")) return true;
   return Date.now() < (Number(dailyXpFlyEndsAt) || 0);
 }

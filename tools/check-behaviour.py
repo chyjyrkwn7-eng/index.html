@@ -11537,7 +11537,10 @@ FX_RUN = """const wait = ms => new Promise(r => setTimeout(r, ms));
     if(pos !== last && ch.length){ last = pos; const slot = correctSlot(order[pos]); ch[slot] && ch[slot].click(); }
     await wait(250);
   }
-  for(let i = 0; i < 60 && !window.__fxAt && !window.__celAt; i++) await wait(100);
+  /* 12s, not 6 (build 317 flow): a run that climbs a level now pops the
+     bar when its second fill is done (2.05s, it was 1.25s), so the grade -
+     and the effect with it - lands 0.8s later than this budget assumed */
+  for(let i = 0; i < 120 && !window.__fxAt && !window.__celAt; i++) await wait(100);
 """
 
 
@@ -13623,6 +13626,146 @@ def check_b317_supernova(br):
           end[1] is True and end[2] == "supernova", end)
 
 
+def check_b317_cutend(br):
+    """Build 317, flow round - three notes on the rank cutscene from the
+    flow audit:
+    1. It ignored taps for its whole length, where the badge case, the
+       flare scenes and the pop-ups all take one. The show stays
+       unskippable up to the title; once the title is up, a tap ends it
+       SMOOTHLY - the words, the planet and the tint fade together and the
+       scene hands over - never a cut. Supernova too.
+    2. It ended twice: the words faded, then the planet sat alone ~1.8s
+       before the exit. It ends once now.
+    3. Under Reduce motion it was ~13s of a near-still screen. Now a still
+       scene of ~4-5s: the new planet in its colour with its flare lit, the
+       title, the end; for Supernova the scar and the orange rings. No
+       whirl, swell, shake or flash.
+    Frame-stepped on the page clock (every animation and transition seeked
+    to it). Written against dad93cb, where all three fail."""
+    print("\n317e. the rank cutscene: a tap once the title is up, one ending, a still scene under Reduce motion")
+    ST = """() => { const o = document.getElementById('supernova-cutscene'); if(!o) return null;
+      const op = s => { const e = o.querySelector(s); return e ? +getComputedStyle(e).opacity : null; };
+      return { c: o.className.split(' '), stage: op('.supernova-stage'), words: op('.supernova-title'), ov: +getComputedStyle(o).opacity,
+               info: !!document.querySelector('.contextual-info-text') }; }"""
+
+    def scene(tier, frm, reduce=False, tap_at=None, tap_early=None, w=440, h=956):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate("""([r]) => { store.supernovaAchieved = false; saveStore(); theme.reduceMotion = r; applyTheme(); saveTheme();
+          showHome(); document.querySelectorAll('.rs-spot,.daily-alert,#tour-overlay,.update-banner,.toast').forEach(n => n.remove()); }""", [reduce])
+        pg.wait_for_timeout(900)
+        pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+        fn = "playSupernovaCutscene({ from: f, onDone(){ window.__cutDone = performance.now(); } })" if tier == "titan" else \
+             "playTierCutscene(t, { from: f, onDone(){ window.__cutDone = performance.now(); } })"
+        pg.evaluate("([t, f]) => { window.__cutDone = null; window.__cutT0 = performance.now(); " + fn + "; }", [tier, frm])
+        rows, t, settle_at, tapped, early = [], 0.0, None, None, None
+        for i in range(1, 30 * 30):
+            t_ = t; t = i / 30
+            pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
+            pg.evaluate(CUTSPIN_SEEK, t)
+            st = pg.evaluate(ST)
+            rows.append((i, st))
+            if st is None:
+                if pg.evaluate("() => window.__cutDone") is not None:
+                    break
+                continue
+            if "supernova-settle" in st["c"] and settle_at is None:
+                settle_at = i
+            if tap_early is not None and early is None and i == tap_early:
+                pg.mouse.click(w / 2, h / 2); early = i
+            if tap_at is not None and tapped is None and settle_at is not None and i == settle_at + tap_at:
+                pg.mouse.click(w / 2, h / 2); tapped = i
+        extra = pg.evaluate("""([tier]) => ({ done: window.__cutDone, t0: window.__cutT0, accent: document.documentElement.dataset.accent || '' })""", [tier])
+        ctx.close()
+        return rows, settle_at, tapped, early, extra
+
+    def first(rows, pred, after=0):
+        for i, st in rows:
+            if i > after and pred(st):
+                return i
+        return None
+
+    # 1. taps - a tier and Supernova
+    for tier, frm, label in (("vanguard", "veteran", "Platinum"), ("titan", "elite", "Supernova")):
+        rows, settle_at, tapped, early, ex = scene(tier, frm, tap_at=45, tap_early=200)
+        alive_after_early = [st for i, st in rows if early and early < i <= early + 45]
+        check("%s: a tap during the show (before the title) is ignored - the scene plays on" % label,
+              bool(early) and len(alive_after_early) == 45 and all(st and "rank-outro" not in st["c"] for st in alive_after_early), early)
+        began = first(rows, lambda st: st is not None and "rank-outro" in st["c"] and "rank-fadeout" in st["c"], tapped or 0)
+        gone = first(rows, lambda st: st is None, tapped or 0)
+        fade = [st["stage"] for i, st in rows if tapped and began and st and began <= i < (gone or 10 ** 6)]
+        mids = [v for v in fade if .15 < v < .85]
+        check("%s: once the title is up, a tap ends it at once" % label,
+              bool(tapped) and began is not None and began - tapped <= 2, (tapped, began))
+        # the planet in the scene is a real hero: a tap on it must be the
+        # scene's, never the sphere's own "....." bubble over the scene
+        check("%s: no tap in the scene opens a Home bubble over it (the planet's own tap)" % label,
+              not any(st and st.get("info") for i, st in rows), [i for i, st in rows if st and st.get("info")][:2])
+        check("%s: and smoothly - the planet fades over frames, no cut, and it hands over within ~2s" % label,
+              began is not None and gone is not None and len(mids) >= 5 and fade == sorted(fade, reverse=True) and (gone - tapped) <= 66,
+              (len(mids), gone and tapped and gone - tapped))
+
+    # 2. one ending: the words are up until everything goes, and go with it
+    rows, settle_at, tapped, early, ex = scene("vanguard", "veteran")
+    end_at = first(rows, lambda st: st is not None and "rank-outro" in st["c"], settle_at or 0)
+    words_gone = first(rows, lambda st: st is not None and (st["words"] or 0) < .05, end_at or 10 ** 6)
+    stage_gone = first(rows, lambda st: st is None or (st["stage"] or 0) < .05, end_at or 10 ** 6)
+    alone = [i for i, st in rows if end_at and i > end_at and st and (st["words"] or 0) < .05 and (st["stage"] or 0) > .3]
+    words_up = [st["words"] for i, st in rows if settle_at and settle_at + 45 <= i < (end_at or 0) and st]
+    check("the words stay up until the end begins", len(words_up) >= 30 and min(words_up) > .9, (len(words_up), min(words_up) if words_up else None))
+    check("it ends once: the planet never sits alone after the words (under ~0.3s, it was ~1.8s)",
+          end_at is not None and words_gone is not None and stage_gone is not None and len(alone) <= 9 and abs(stage_gone - words_gone) <= 9,
+          (len(alone), words_gone and stage_gone and stage_gone - words_gone))
+
+    # 3. Reduce motion: a still scene of ~4-5s
+    for tier, frm, label in (("vanguard", "veteran", "Platinum"), ("titan", "elite", "Supernova")):
+        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+        pg.evaluate("""() => { store.supernovaAchieved = false; saveStore(); theme.reduceMotion = true; applyTheme(); saveTheme(); showHome();
+          document.querySelectorAll('.rs-spot,.daily-alert,#tour-overlay,.update-banner,.toast').forEach(n => n.remove()); }""")
+        pg.wait_for_timeout(900)
+        pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+        fn = "playSupernovaCutscene({ from: f, onDone(){ window.__cutDone = Date.now(); } })" if tier == "titan" else \
+             "playTierCutscene(t, { from: f, onDone(){ window.__cutDone = Date.now(); } })"
+        pg.evaluate("([t, f]) => { window.__cutDone = null; window.__cutT0 = Date.now(); " + fn + "; }", [tier, frm])
+        seen, moving, first_vis, titled, look, t = set(), 0, None, None, None, 0.0
+        for i in range(1, 30 * 20):
+            t_ = t; t = i / 30
+            pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
+            st = pg.evaluate("""([tier]) => { const o = document.getElementById('supernova-cutscene'); if(!o) return null;
+              const nf = o.querySelector('.rank-after .cosmic-icon-badge[data-rank-tier="' + tier + '"]');
+              const sc = o.querySelector('.rank-after .cosmic-scar');
+              const rings = [...o.querySelectorAll('.rank-after .cosmic-orbit-ring')];
+              return { c: o.className.split(' '), vis: o.classList.contains('supernova-visible'),
+                anims: o.getAnimations({ subtree: true }).filter(a => a.playState === 'running' && !(a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('.cosmic-scar'))).length,
+                lit: !!(nf && nf.classList.contains('cosmic-badge-lit')), after: +getComputedStyle(o.querySelector('.rank-after')).opacity,
+                scar: sc ? +getComputedStyle(sc).opacity : null, orange: rings.length > 0 && rings.every(r => r.classList.contains('cosmic-orbit-ring-supernova')),
+                accent: o.dataset.accent || '' }; }""", [tier])
+            if st is None:
+                if pg.evaluate("() => window.__cutDone") is not None:
+                    break
+                continue
+            seen.update(st["c"])
+            moving = max(moving, st["anims"])
+            if st["vis"] and first_vis is None:
+                first_vis = i
+                look = st
+            if "supernova-settle" in st["c"] and titled is None:
+                titled = i
+                look_t = st
+        total = pg.evaluate("() => window.__cutDone === null ? null : (window.__cutDone - window.__cutT0) / 1000")
+        ctx.close()
+        check("Reduce motion, %s: a still scene of ~4-5s, then the hand-over to the card" % label,
+              total is not None and 3.5 <= total <= 5.5, total)
+        check("Reduce motion, %s: no whirl, no swell, no shake, no flash - nothing moving" % label,
+              not ({"is-cutspin", "supernova-burst", "sn-swell", "sn-detonate"} & seen) and moving == 0,
+              (sorted({"is-cutspin", "supernova-burst", "sn-swell", "sn-detonate"} & seen), moving))
+        ok_look = bool(look) and look["after"] > .95 and look["lit"] and look["accent"] == tier and titled is not None and titled - (first_vis or 0) <= 15
+        if tier == "titan":
+            ok_look = ok_look and (look_t["scar"] or 0) > .95 and look_t["orange"]
+        check("Reduce motion, %s: the new planet in its colour, its flare lit%s, from the first frame - and the title" %
+              (label, ", scarred with orange rings" if tier == "titan" else ""), ok_look,
+              look and {k: look[k] for k in ("after", "lit", "accent")})
+
+
 SPECIAL_CHARS = ["lunar", "solar", "tempest", "frost", "oracle", "inferno",
                  "umbra", "singularity", "genesis", "voidwalker",
                  "astral", "celestial", "zenith"]
@@ -15032,6 +15175,169 @@ def check_b317_rankup(br):
     ctx.close()
 
 
+# --------------------------------------------------------------------------
+B317_FLOW_RUN = """async (a)=>{
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const out = { ev: {} };
+  try{
+  document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
+  ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour'].forEach(k => store[k] = true);
+  store.lateHundos = 999; store.retroBadgePending = []; store.mergeHold = null; store.savedCodeSaved = true;
+  theme.muteBanners = false; theme.reduceMotion = false;
+  const t = 'Identity Crimes';
+  store.unitPerfects = {}; store.lifetime.perfectTests = 141; store.hundoFx = a.fx;
+  if(a.av) store.avatarChar = a.av;
+  if(a.badge){
+    /* Gold held, nowhere near Platinum's badges: the badge tips nothing */
+    const r = TIER_UNLOCKS.veteran; const U = topicsIn(QUESTIONS).filter(x => x !== t);
+    U.slice(0, r.badges).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+    store.unitPerfects[t] = badgeThresholdFor(t) - 1;
+    let n = 0; store.lifetime.points = 1000; while(levelProgress(store.lifetime.points).level < r.level && n++ < 4000) store.lifetime.points += 1500;
+  } else {
+    store.unitPerfects[t] = 3;
+    /* 150 XP short of the next level: a 100% climbs exactly one */
+    const lv = levelOf(store); store.lifetime.points = Math.max(store.lifetime.points, xpForLevel(lv + 1) - 150);
+  }
+  try{ seedBannerCounters(); seedChallenges289(); }catch(e){}
+  const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx);
+  store.pendingTierCutscene = null; store.pendingBadgeUnlocks = []; saveStore();
+  const levelBefore = levelOf(store);
+  /* the badge case stands in for itself: it leaves its bridge up, as the
+     real one does, and hands back */
+  if(a.badge) window.playBadgeCaseScene = (units, done) => { out.ev.case = performance.now(); clearCelebrationsForScene();
+    out.coverEl = document.createElement('div'); out.coverEl.className = 'bc-scene'; document.body.appendChild(out.coverEl);
+    setTimeout(() => { out.coverEl.remove(); delete out.coverEl; out.ev.caseEnd = performance.now(); openSceneBridge('#9FACBA'); setTimeout(done, 450); }, a.caseMs || 60); return {}; };
+  const T0 = performance.now();
+  const seen = (k) => { if(!(k in out.ev)) out.ev[k] = performance.now(); };
+  const mo = new MutationObserver(ms => ms.forEach(m => {
+    if(m.type === 'childList'){ m.addedNodes.forEach(n => { if(n.classList && n.classList.contains('hfx-layer')) seen('hfx'); }); return; }
+    const el = m.target, c = el.classList; if(!c) return;
+    if(c.contains('rs-xp') && c.contains('is-charging')) seen('charging');
+    if(c.contains('rs-xp') && c.contains('is-charged')) seen('charged');
+    if(c.contains('results-level') && c.contains('is-levelup')) seen('levelup');
+    if(c.contains('results-level-avatar') && c.contains('char-special')){ seen('special');
+      if(document.querySelector('.bc-scene, .rs-spot, #supernova-cutscene')) out.specialCovered = true; }
+    if(c.contains('rs-actions') && (c.contains('rs-in') || c.contains('rs-in-now')) && !('actions' in out.ev)){
+      seen('actions');
+      out.bridgeAtActions = !!document.querySelector('.scene-bridge:not(.is-off):not(.is-claimed)');
+      setTimeout(() => { out.bridgeAfter = !!document.querySelector('.scene-bridge:not(.is-off):not(.is-claimed)'); }, 400);
+    }
+  }));
+  mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+  cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t];
+  order = QUESTIONS.map((q,i) => [q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
+  runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null; isMissedRetake = false; practiceTestMinutes = null; inVirtualRoom = false;
+  attempts = {}; picked = {}; timedOutSet = {};
+  order.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+  runStartTime = Date.now() - 42000; testInProgress = true; pos = order.length - 1;
+  summarize();
+  for(let i = 0; i < 500 && !document.querySelector('.rs-rewards.rs-done'); i++) await wait(100);
+  seen('done');
+  for(let i = 0; i < (a.av ? 50 : 6) && !('special' in out.ev); i++) await wait(100);
+  mo.disconnect();
+  Object.keys(out.ev).forEach(k => out.ev[k] = Math.round(out.ev[k] - T0));
+  out.levels = [levelBefore, levelOf(store)];
+  }catch(e){ out.threw = String(e && e.stack || e); }
+  return out; }"""
+
+
+def check_b317_flow(br):
+    """Build 317, the flow of the end of a run (Madison: "Absolutely make
+    sure the flow of the unlock stuff is good and the flow of everything
+    else in the result screen is good to go"). Walked end to end on a real
+    run; four things were out of order, each fixed in the orchestration.
+    Written against e877af7, where every check here fails:
+      - a one-level climb: the bar's pop (and the grade after it) came at
+        1.25s, while the bar was still on its second fill - the step asked
+        the block for .is-levelup at BUILD time, before the climb adds it;
+      - a 100%'s effect was faded out by the first scene 2.3s in (a World
+        Tree is 5.6s): the first scene now waits for its tail;
+      - Re-run / Main menu landed under the last scene's bridge (72%
+        black) when nothing came after the scene;
+      - Home sat unlocked ~2.7s after Main menu before the rank-up lock,
+        waiting on the card timer with no card due."""
+    print("\n317f. the end of a run: the level pop, the effect before the scenes, the buttons, the lock")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate(B317_FLOW_RUN, {"fx": "confetti", "badge": False})
+        ctx.close()
+        ev = r.get("ev") or {}
+        check(f"{dev}: nothing threw (one-level climb)", not r.get("threw"), r.get("threw"))
+        check(f"{dev}: the fixture climbs exactly one level", (r.get("levels") or [0, 0])[1] - (r.get("levels") or [0, 0])[0] == 1, r.get("levels"))
+        gap = (ev.get("charged") or 0) - (ev.get("charging") or 0)
+        check(f"{dev}: a one-level climb pops when its second fill is done (>= 1.9s after it starts), not 1.25s in",
+              ev.get("levelup") is not None and gap >= 1900, [ev.get("charging"), ev.get("levelup"), ev.get("charged"), gap])
+        # (A "the bar is at its end at the pop" width check was tried and
+        # dropped: it passed on e877af7 too, so it measured nothing.)
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate(B317_FLOW_RUN, {"fx": "worldtree", "badge": True, "av": "lunar", "caseMs": 3500})
+    tail = pg.evaluate("() => HUNDO_FX_TAIL_AT.worldtree")
+    ctx.close()
+    ev = r.get("ev") or {}
+    check("nothing threw (a 100% that earns a badge)", not r.get("threw"), r.get("threw"))
+    g2 = (ev.get("case") or 0) - (ev.get("hfx") or 0)
+    check("the World Tree plays to its tail before the badge case takes the screen (>= tail - 0.5s)",
+          ev.get("hfx") is not None and ev.get("case") is not None and g2 >= tail - 500, [ev.get("hfx"), ev.get("case"), g2, tail])
+    check("the 100%'s character special does not play under the badge case - it closes the reveal instead",
+          ev.get("special") is not None and not r.get("specialCovered") and ev["special"] >= (ev.get("caseEnd") or 0),
+          [ev.get("case"), ev.get("caseEnd"), ev.get("done"), ev.get("special"), r.get("specialCovered")])
+    check("Re-run and Main menu do not land under the badge case's dim",
+          r.get("bridgeAtActions") is False and r.get("bridgeAfter") is False, [r.get("bridgeAtActions"), r.get("bridgeAfter")])
+    # Home after a rank-up whose cards the results already played: the
+    # lock comes at its own 1.2s, not after the 2.2s card timer.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("() => " + _seed_gold_js())
+    lk = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      store.rankFloor = 0; store.rankMapFx244 = true; store.rankMapSeen = 1; store.pendingTierCutscene = null; store.savedCodeSaved = true;
+      const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); saveStore();
+      document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
+      showModeSelect && showModeSelect(); await wait(400);
+      const t0 = performance.now(); showHome();
+      for(let i = 0; i < 120 && !document.body.classList.contains('rankup-lock'); i++) await wait(50);
+      return { ms: Math.round(performance.now() - t0), lock: document.body.classList.contains('rankup-lock'),
+               owed: homeUnlocksOwed(pendingHomeUnlocks()) }; }""")
+    ctx.close()
+    check("Home locks to the Profile tab within ~1.2s when no card is due (not after the 2.2s card timer)",
+          lk.get("lock") is True and lk.get("owed") is False and lk.get("ms", 9999) <= 1900, lk)
+    # The idle scheduler under a cutscene: nothing while one is up, the
+    # special as soon as it goes - and a person card's own character, which
+    # lives INSIDE an overlay, still gets its moment.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("() => " + _seed_gold_js())
+    sp = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+      store.rankMapSeen = null; store.avatarChar = 'lunar'; saveStore();
+      document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
+      charSpecialTiming = { first: [300, 600], gap: [300, 600] };
+      showProfile(); await wait(700);
+      const hero = document.querySelector('.profile-hero-avatar');
+      let cover = null; out.under = 0; out.clear = 0;
+      const mo = new MutationObserver(() => { if(hero.classList.contains('char-special')){ if(cover && cover.isConnected) out.under++; else out.clear++; } });
+      mo.observe(hero, { attributes: true, attributeFilter: ['class'] });
+      cover = document.createElement('div'); cover.id = 'supernova-cutscene'; document.body.appendChild(cover);
+      delete hero.dataset.spNext; charSpecialWake();
+      await wait(4500);
+      cover.remove();
+      for(let i = 0; i < 80 && !out.clear; i++) await wait(100);
+      mo.disconnect();
+      /* the person card: its character is inside the overlay */
+      await wait(3500);
+      openPersonSheet({ pub: 'PUB-TEST-1', firstName: 'Kim', avatarChar: 'lunar', level: 44, badges: 5, hundos: 60, xp: 50000 });
+      await wait(300);
+      const pc = document.querySelector('.invite-overlay .person-card-art');
+      out.card = !!pc; out.cardSpecial = false;
+      if(pc){ const m2 = new MutationObserver(() => { if(pc.classList.contains('char-special')) out.cardSpecial = true; });
+        m2.observe(pc, { attributes: true, attributeFilter: ['class'] }); charSpecialWake();
+        for(let i = 0; i < 80 && !out.cardSpecial; i++) await wait(100); m2.disconnect(); }
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    ctx.close()
+    check("the idle special never plays under a cutscene, and plays once it has gone",
+          not sp.get("threw") and sp.get("under") == 0 and (sp.get("clear") or 0) >= 1, sp)
+    check("a person card's own character (inside its overlay) still plays its special",
+          sp.get("card") is True and sp.get("cardSpecial") is True, sp)
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -15210,6 +15516,7 @@ def main():
             check_b317_followglide(br)
             check_b317_rankup(br)
             check_b317_supernova(br)
+            check_b317_flow(br)
         finally:
             br.close()
     SERVER.shutdown()
