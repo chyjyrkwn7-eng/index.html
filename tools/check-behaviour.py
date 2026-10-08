@@ -15796,6 +15796,153 @@ def check_b317_flow(br):
           sp.get("card") is True and sp.get("cardSpecial") is True, sp)
 
 
+# --------------------------------------------------------------------------
+B317_RING_JS = r"""async (a) => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const out = {};
+  try{
+  document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
+  ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour'].forEach(k => store[k] = true);
+  store.lateHundos = 999; store.savedCodeSaved = true; store.unitPerfects = { 'Identity Crimes': 3 }; store.hundoFx = 'confetti';
+  store.dailyQuestionDate = null; saveStore();
+  const ring = el => { if(!el) return null; const cs = getComputedStyle(el); let fv = false; try{ fv = el.matches(':focus-visible'); }catch(e){}
+    return { txt: (el.textContent || '').trim().slice(0, 32), focused: document.activeElement === el, fv,
+             ring: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 }; };
+  const t = 'Identity Crimes';
+  const unitRun = async (missN) => {
+    showHome(); await wait(300);
+    cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t]; cfg.size = 0;
+    order = QUESTIONS.map((q,i) => [q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
+    runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null; isMissedRetake = false; practiceTestMinutes = null; inVirtualRoom = false;
+    attempts = {}; picked = {}; timedOutSet = {}; try{ firstPick = {}; }catch(e){}
+    order.forEach((qi, k) => { const oo = optionOrder(qi), right = oo.indexOf(QUESTIONS[qi].answer);
+      attempts[qi] = k < missN ? 2 : 1; picked[qi] = k < missN ? (right + 1) % oo.length : right; try{ if(k < missN) firstPick[qi] = (right + 1) % oo.length; }catch(e){} });
+    runStartTime = Date.now() - 42000; testInProgress = true; pos = order.length - 1;
+    summarize();
+    for(let i = 0; i < 600 && !document.querySelector('.rs-rewards.rs-done'); i++){
+      const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); await wait(100); }
+    await wait(300);
+  };
+  if(a.only === 'kbd'){ await unitRun(4); out.kbd = ring(document.querySelector('.rs-actions button')); return out; }
+  if(a.only === 'quiet-then-tab'){ await unitRun(4); out.quiet = ring(document.querySelector('.rs-actions button')); return out; }
+  await unitRun(4);
+  out.missed = ring(document.querySelector('.rs-actions button'));
+  document.querySelector('.rs-actions #nextbtn').click(); await wait(900);
+  out.review = ring(document.querySelector('.rs-final button'));
+  await unitRun(0);
+  out.perfect = ring(document.querySelector('.rs-actions button'));
+  /* a question's Next, after an answer */
+  showHome(); await wait(300);
+  cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t]; cfg.size = 0;
+  beginRun(QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === t));
+  for(let i = 0; i < 80 && !(document.querySelector('#stage .choice') && !document.querySelector('#teststart-overlay')); i++) await wait(100);
+  await wait(400);
+  const r0 = correctSlot(order[pos]); document.querySelector('#stage .choice[data-index="' + r0 + '"]').click(); await wait(500);
+  out.qnext = ring(document.getElementById('nextbtn'));
+  /* the Pause panel's Resume */
+  pauseRun(); await wait(500);
+  out.pause = ring(document.activeElement && document.activeElement !== document.body ? document.activeElement : null);
+  /* the daily question's Exit */
+  testInProgress = false; showHome(); await wait(500);
+  startDailyQuestion();
+  for(let i = 0; i < 60 && !document.querySelector('#stage .choice'); i++) await wait(100);
+  await wait(400);
+  const r1 = correctSlot(order[pos]); document.querySelector('#stage .choice[data-index="' + r1 + '"]').click(); await wait(300);
+  document.getElementById('dailyq-submitbtn').click(); await wait(900);
+  out.daily = ring(document.getElementById('dailyq-exitbtn'));
+  } catch(e){ out.threw = String(e && e.stack || e); }
+  return out; }"""
+
+
+def check_b317_focusring(br):
+    """Build 317. "There's a weird outline thing around the button there,
+    I've seen this before, I'm not sure why I'm seeing that but fix it" -
+    her iPhone, a thin light ring 2-4px outside "Continue to review (4
+    missed)". It is `.next:focus-visible` (2px of the accent, 2px out),
+    drawn because the screen focuses its first button for itself as it
+    lands: iOS never focuses a button on a tap, so a script focus has no
+    pointer to blame and WebKit shows the keyboard's ring. Chromium does the
+    same when no pointer was used, which is how this is driven: every input
+    here is a script click, as on her phone. The results' first button, the
+    review's, a question's Next, the Pause panel's Resume and the daily's
+    Exit keep their focus and lose the ring; a keyboard user still gets it.
+    On b6cd249 all six ring checks fail on both devices, and so does the
+    quiet-then-Tab one (its quiet half); the key-press check passes on both
+    builds - it guards the keyboard's ring, not the fix."""
+    print("\n317o. no focus ring on a button the screen focuses for itself (touch); the keyboard still gets one")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate(B317_RING_JS, {})
+        ctx.close()
+        check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
+        for k, label in (("missed", "the results' Continue to review"), ("perfect", "a 100%'s Re-run"), ("review", "the review's Retake"),
+                         ("qnext", "a question's Next"), ("pause", "the Pause panel's Resume"), ("daily", "the daily question's Exit")):
+            v = r.get(k) or {}
+            check(f"{dev}: {label} has the focus and no ring", v.get("focused") is True and v.get("ring") is False, v)
+    # The keyboard: a key pressed before the screen lands, and Tab after a quiet focus.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.keyboard.press("ArrowDown")
+    kb = pg.evaluate(B317_RING_JS, {"only": "kbd"})
+    pg.mouse.click(5, 300)
+    qt = pg.evaluate(B317_RING_JS, {"only": "quiet-then-tab"})
+    pg.keyboard.press("Tab")
+    tab = pg.evaluate("""() => { const el = document.activeElement; const cs = getComputedStyle(el); let fv = false; try{ fv = el.matches(':focus-visible'); }catch(e){}
+      return { txt: (el.textContent || '').trim().slice(0, 32), fv, ring: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0, quiet: document.querySelectorAll('.is-quietfocus').length }; }""")
+    ctx.close()
+    check("after a key press the results' first button shows the ring (a keyboard user sees where they are)",
+          (kb.get("kbd") or {}).get("focused") is True and (kb.get("kbd") or {}).get("ring") is True, kb)
+    check("after a tap it is quiet, and the first Tab puts a ring on the next control",
+          (qt.get("quiet") or {}).get("ring") is False and tab.get("fv") is True and tab.get("ring") is True and tab.get("quiet") == 0, [qt, tab])
+
+
+def check_b317_roadmap_chips(br):
+    """Build 317. "How it shows the unlock stuff, that long individual thing
+    it's in, those can be adjusted, they don't need to [go] from left all
+    the way to the right, on the tablets or larger devices they just need to
+    fit to what's there, it makes the rank road map boxes look bad." Every
+    road-map card on an iPad Pro 11, an iPad Pro 12.9 and a laptop window:
+    no chip wider than 60% of the card's content box (each was 100%), all of
+    them inside it, no label cut short, and the order Theme, Flare, then the
+    character or banner. The phone keeps its full-width rows (a half-phone
+    column IS a chip's width) - checked so it stays that way. The wide
+    checks fail on b6cd249; the phone and order checks pass on both."""
+    print("\n317m. the road map's unlock chips fit their content from a tablet up")
+    for (w, h, dev, wide) in ((440, 956, "17 Pro Max", False), (834, 1194, "iPad Pro 11", True),
+                              (1024, 1366, "iPad Pro 12.9", True), (1512, 852, "MacBook Pro 14 window", True)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate("() => " + _seed_gold_js())
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store)); saveStore();
+          document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
+          showRanksScreen('ranks'); await wait(1200);
+          const out = [];
+          document.querySelectorAll('.rankmap-stop .rankmap-card').forEach(c => {
+            const cs = getComputedStyle(c), cr = c.getBoundingClientRect();
+            const left = cr.left + parseFloat(cs.borderLeftWidth) + parseFloat(cs.paddingLeft);
+            const right = cr.right - parseFloat(cs.borderRightWidth) - parseFloat(cs.paddingRight);
+            const chips = [...c.querySelectorAll('.rankmap-gift')].map(g => { const b = g.getBoundingClientRect(), l = g.querySelector('.rankmap-giftlabel');
+              return { t: (l || g).textContent.trim(), w: b.width, l: b.left, r: b.right, cut: l ? l.scrollWidth > l.clientWidth + 1 : false }; });
+            out.push({ rank: (c.querySelector('.rankmap-name') || {}).textContent, inner: right - left, left, right, chips });
+          });
+          return out; }""")
+        ctx.close()
+        cards = [c for c in r if c["chips"]]
+        maxfrac = max((ch["w"] / c["inner"] for c in cards for ch in c["chips"]), default=1)
+        order_ok = all([ch["t"] for ch in c["chips"]][:2] == ["Theme", "Flare"] and len(c["chips"]) >= 2 for c in cards)
+        inside = all(ch["l"] >= c["left"] - 1 and ch["r"] <= c["right"] + 1 for c in cards for ch in c["chips"])
+        cut = [(c["rank"], ch["t"]) for c in cards for ch in c["chips"] if ch["cut"]]
+        tag = "%s (%dpx)" % (dev, w)
+        check(f"{tag}: {len(cards)} cards measured", len(cards) >= 7, len(cards))
+        if wide:
+            check(f"{tag}: every unlock chip fits its content - none wider than 60% of the card (it was 100%)",
+                  maxfrac <= 0.6, round(maxfrac, 3))
+        else:
+            check(f"{tag}: the phone keeps its full-width rows", maxfrac >= 0.97, round(maxfrac, 3))
+        check(f"{tag}: Theme, Flare, then the character or banner, on every card", order_ok,
+              [[ch["t"] for ch in c["chips"]] for c in cards][:3])
+        check(f"{tag}: every chip inside its card, no label cut short", inside and not cut, cut)
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -15977,6 +16124,8 @@ def main():
             check_b317_rankup(br)
             check_b317_supernova(br)
             check_b317_flow(br)
+            check_b317_focusring(br)
+            check_b317_roadmap_chips(br)
         finally:
             br.close()
     SERVER.shutdown()

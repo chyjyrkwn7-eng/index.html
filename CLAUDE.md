@@ -14618,9 +14618,10 @@ disagree with it.
     slot is one size now (`--gift-slot` on `.rankmap-gifts`, which also
     sets the chip's height, so the two cannot drift); icons keep their own
     sizes, centred in it. **Size the icon inside the slot, never the slot
-    by kind of chip.** The chips still run the card's full inner width.
-    The chip gate measured boxes only, which is how this passed; the
-    number that catches it is where each label's text starts.
+    by kind of chip.** The chips ran the card's full inner width until
+    build 317 (below: from 40rem they fit their content). The chip gate
+    measured boxes only, which is how this passed; the number that catches
+    it is where each label's text starts.
   - **THE PICKED CHARACTER WEARS A RING, NOT A BOX** ("maybe it could just
     be a circle?"). Every character is drawn for a round frame, so a
     rounded square round it read as a box round a round thing.
@@ -16165,6 +16166,62 @@ disagree with it.
     caption's own timer runs in real time, so the recorder takes it over
     and hides the caption on the virtual clock; `element.animate()` is
     patched to freeze each new animation at the virtual moment it is made).
+- **A FOCUS RING IS FOR THE KEYBOARD (build 317).** *"There's a weird
+  outline thing around the button there, I've seen this before, I'm not
+  sure why I'm seeing that but fix it"* - her iPhone, a failed run's
+  results, a thin light ring 2-4px outside "Continue to review (4
+  missed)" and nowhere else. It was `.next:focus-visible` (2px of the
+  accent, `outline-offset:2px`) on the button the SCREEN focuses for
+  itself as it lands. iOS never focuses a button on a tap, so when a
+  script does, WebKit has no pointer to blame and draws the keyboard's
+  ring; Chromium does the same when nothing was pointed at, which is how
+  it reproduces here (script clicks only) - and hides it after a real
+  tap, which is why every earlier screenshot pass looked clean. Seven places
+  did it: the results' first button (Continue to review, or Re-run on a
+  100%), the review's Retake, a question's Next (`.floatbtn`, an inset
+  ring), the Pause panel's Resume, the daily's Exit, the leave-a-match
+  sheet's Keep playing and the leave-chat sheet's Cancel.
+  - **`focusQuietly(el)` is the only way a screen focuses a control now.**
+    The focus stays - Enter and a screen reader start from it - but unless
+    the last input was a key (`lastInputKeyboard`, set by any non-modifier
+    keydown and cleared by any pointerdown/touchstart/mousedown, all in
+    capture), the element carries `.is-quietfocus`, and
+    `.is-quietfocus:focus-visible{ outline:none !important }` takes any
+    ring off it, the UA's included. The first key press takes the class
+    off every element, so a keyboard user sees exactly where they are; a
+    blur takes it off too. Text fields are still focused plainly - a caret
+    and the keyboard are the point there.
+  - **Gate: `check_b317_focusring`** - on both reference devices, each of
+    the six has the focus and no ring after script-only input; after a key
+    press the results' first button HAS its ring; after a real tap it is
+    quiet and the first Tab rings the next control. All six ring checks
+    fail on b6cd249 on both devices; the key-press check passes on both
+    builds (it guards the keyboard, not the fix).
+- **THE ROAD MAP'S UNLOCK CHIPS FIT THEIR CONTENT FROM A TABLET UP (build
+  317).** *"How it shows the unlock stuff, that long individual thing it's
+  in, those can be adjusted, they don't need to [go] from left all the way
+  to the right, on the tablets or larger devices they just need to fit to
+  what's there, it makes the rank road map boxes look bad."* Build 311 made
+  every chip a full-width row so the icons and words would line up; on a
+  half-phone column (116px inside the card) that IS a chip's width, and on
+  a 280-340px tablet or laptop card it was "Theme" at the start of a 281px
+  pill. From 40rem, `.rankmap-card .rankmap-gifts` is
+  `repeat(2, max-content)`: two columns, each as wide as its widest chip,
+  Theme and Flare side by side and the character and banner under them -
+  the order the card always had. Each chip still fills its column, so a
+  column's icons share one line and its words one start (311/316 hold), and
+  every card's chips start at its left edge under "Unlocks", on either side
+  of the road. Under 40rem nothing changed. The rank's lore card
+  (`.ranklore-card`) keeps its own two-column grid. Measured: the widest
+  chip is 36% of the card on an iPad Pro 11 and 32% on a 12.9 and a laptop
+  (100% before), and no label is cut at 640px (a card 212px inside, the
+  narrowest this reaches), 700px, an iPad mini (744) or a phone on its side
+  (932x430).
+  - **Gate: `check_b317_roadmap_chips`** - iPad Pro 11, 12.9 and a
+    MacBook Pro 14 window: no chip over 60% of its card (fails on b6cd249,
+    1.0), every chip inside its card, no label cut short, Theme then Flare
+    first on every card; the iPhone 17 Pro Max keeps full-width rows
+    (passes on both, a guard).
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h

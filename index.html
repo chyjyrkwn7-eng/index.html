@@ -3147,6 +3147,10 @@
   [data-reduce-motion="true"] .foot > .floatbtn.qnext.is-rising{ animation:none; }
   .next.ghost:active{ background:rgba(128,128,128,.15); opacity:1; }
   .next:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  /* a focus the SCREEN gave, not the keyboard: no ring until a key is
+     pressed (focusQuietly, build 317 - the "weird outline thing around the
+     button" on the results). Any element, so the UA's own ring goes too. */
+  .is-quietfocus:focus-visible{ outline:none !important; }
   .next[hidden]{ display:none; }
   .next:disabled{ opacity:.35; cursor:default; }
   /* The daily question's Submit answer before a choice is picked: the
@@ -15112,6 +15116,22 @@
     .rankmap-name{ font-size:1.45rem; }
     .rankmap-req{ font-size:.8rem; }
     .rankmap-gift{ font-size:.68rem; }
+  }
+  /* FIT TO WHAT'S THERE, FROM A TABLET UP (build 317). "That long
+     individual thing it's in ... they don't need to go from left all the
+     way to the right, on the tablets or larger devices they just need to
+     fit to what's there, it makes the rank road map boxes look bad." A
+     full-width row was right for half a phone (a 116px column, where a
+     chip IS the column) and wrong for a 280-340px card, where "Theme" sat
+     at the start of a 281px pill. From 40rem the chips are two columns,
+     each as wide as its widest chip and no wider: Theme and Flare side by
+     side, the character and the banner under them - the order the card
+     always had. Each chip still fills its column, so the icons in a column
+     share one line and the words one start (builds 311 and 316), and
+     every card starts its chips at the left edge, under "Unlocks", on
+     either side of the road. The rank's lore card keeps its own grid. */
+  @media (min-width:40rem){
+    .rankmap-card .rankmap-gifts{ grid-template-columns:repeat(2, max-content); justify-content:start; }
   }
   /* ---- THE RANK-UP, SHOWN ON PROFILE (build 317) ----
      See playRankUpProfileScene. Everything here is a new rule on the
@@ -59361,6 +59381,35 @@ function renderPausedScreen(){
    all mount through here: the same .is-pause panel, the same stacked
    equal-width buttons, the same group centred on the screen - so going
    from Pause to its confirmation and back moves nothing but the words. */
+/* ---- A FOCUS RING IS FOR THE KEYBOARD (build 317) ----
+   "There's a weird outline thing around the button there, I've seen this
+   before." It was `.next:focus-visible` - 2px of the accent, 2px out -
+   on the button a screen focuses for itself as it lands (the results'
+   first button, the review's, the daily's Exit, a question's Next, the
+   Pause panel's Resume). iOS never focuses a button on a tap, so when the
+   script does, WebKit has no pointer to blame and draws the keyboard's
+   ring; Chromium hides it after a real tap and draws it after none. The
+   focus stays (Enter and a screen reader start from it), but unless the
+   last thing somebody did was press a key, it is a QUIET focus: no ring
+   (`.is-quietfocus`) until the first key, which takes the class off every
+   element so a keyboard user sees exactly where they are. */
+var lastInputKeyboard = false;
+function focusQuietly(el){
+  if(!el || !el.focus) return;
+  try{
+    if(!lastInputKeyboard){
+      el.classList.add("is-quietfocus");
+      el.addEventListener("blur", () => el.classList.remove("is-quietfocus"), { once: true });
+    }
+    el.focus({ preventScroll: true });
+  }catch(e){}
+}
+document.addEventListener("keydown", e => {
+  if(e.key === "Shift" || e.key === "Control" || e.key === "Alt" || e.key === "Meta" || e.key === "CapsLock") return;
+  lastInputKeyboard = true;
+  document.querySelectorAll(".is-quietfocus").forEach(el => el.classList.remove("is-quietfocus"));
+}, true);
+["pointerdown", "touchstart", "mousedown"].forEach(t => document.addEventListener(t, () => { lastInputKeyboard = false; }, { capture: true, passive: true }));
 function mountPausePanel(panel, children, focusBtn){
   panel.classList.add("is-pause");
   const stack = document.createElement("div");
@@ -59370,7 +59419,7 @@ function mountPausePanel(panel, children, focusBtn){
   stage.replaceChildren(panel);
   toTop();
   centerPauseStack(panel, stack);
-  if(focusBtn) focusBtn.focus({ preventScroll: true });
+  if(focusBtn) focusQuietly(focusBtn);
 }
 
 /* THE BUTTONS ON ONE LINE, ON THE SCREEN'S MIDDLE (build 297). The panel
@@ -59603,7 +59652,7 @@ function confirmLeaveTeamMatch(){
   card.append(t, b, row);
   wrap.appendChild(card);
   document.body.appendChild(wrap);
-  try{ stay.focus({ preventScroll: true }); }catch(e){}
+  focusQuietly(stay);
 }
 
 /* Rebuilding the waiting screen is the only way back from that
@@ -68839,7 +68888,7 @@ function confirmLeaveChat(code, onLeave){
   inner.append(card, stay);
   wrap.appendChild(inner);
   host.appendChild(wrap);
-  try{ stay.focus({ preventScroll: true }); }catch(e){}
+  focusQuietly(stay);
 }
 
 function leaveChatRoom(quiet){
@@ -75209,7 +75258,7 @@ function render(){
   }
 
   stage.replaceChildren(...(dailyTitleBlock ? [dailyTitleBlock, panel, foot] : [panel, foot]));
-  if(!next.hidden) next.focus({ preventScroll: true });
+  if(!next.hidden) focusQuietly(next);
   if(isDaily) panel.classList.add("is-dailyq");
 }
 
@@ -82610,7 +82659,7 @@ function showRunRewards(run, hooks, opts){
     resultsShownAt = Date.now();
     if(actions){
       const first = actions.querySelector("button");
-      if(first) first.focus({ preventScroll: true });
+      if(first) focusQuietly(first);
       hooks.tour();
     }
     if(hooks.onDone) hooks.onDone(slot);
@@ -82945,7 +82994,7 @@ function showRunReview(run, hooks){
   stage.replaceChildren(panel);
   toTop(true);
   const first = actions.querySelector("button");
-  if(first) first.focus({ preventScroll: true });
+  if(first) focusQuietly(first);
 }
 
 /* Kept for anything still holding a reference to it: the results
@@ -83546,7 +83595,7 @@ function summarize(){
          Submit answer was - the button does not move when you answer. */
       toTop();
       const exitBtn = document.getElementById("dailyq-exitbtn");
-      if(exitBtn) exitBtn.focus({ preventScroll: true });
+      if(exitBtn) focusQuietly(exitBtn);
       /* The card is the answer, so it must not sit behind the pill: on a
          phone a long question leaves it under the button, half read.
          Bring its bottom edge up to just above the pill. */
