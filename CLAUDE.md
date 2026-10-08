@@ -15965,7 +15965,13 @@ disagree with it.
     `animation-name` - so a scene that clears something with
     `animation:none` (Genesis clearing the Home hero's flares) showed it
     still there in the recording while a real page cleared it. The seek
-    now cancels such an animation itself (`SF_SEEK`, the recorder's SEEK).
+    now cancels such an animation itself (`SF_SEEK`, the recorder's SEEK)
+    - and checks EVERY step, finished ones included: skipping an animation
+    once the seek had finished it let one that ended before its name went
+    hold its last frame for good, and whether it had ended by then varies
+    run to run (its start is read off the real timeline), so one take of
+    Genesis showed the Home flares flying out with the zoom and the next
+    did not.
     Recordings and sheets of this build: the scratchpad's
     `r317sflare/before|after`.
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus

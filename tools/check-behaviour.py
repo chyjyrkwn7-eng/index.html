@@ -15332,11 +15332,12 @@ def check_b317_flow(br):
 SF_SEEK = """(t) => { const M = window.__t0s = window.__t0s || new WeakMap();
   document.getAnimations().forEach(an => {
     if(!M.has(an)) M.set(an, { at: t, from: an.currentTime || 0, done: false });
-    const s = M.get(an); if(s.done) return;
+    const s = M.get(an); if(s.gone) return;
     if(an.animationName && an.effect && an.effect.target){ try{
       const cs = getComputedStyle(an.effect.target, an.effect.pseudoElement || null);
-      if(cs.animationName.split(',').map(x => x.trim()).indexOf(an.animationName) < 0){ s.done = true; an.cancel(); return; }
+      if(cs.animationName.split(',').map(x => x.trim()).indexOf(an.animationName) < 0){ s.gone = true; an.cancel(); return; }
     }catch(e){} }
+    if(s.done) return;
     const want = s.from + (t - s.at) * 1000;
     let end = Infinity; try{ end = an.effect.getComputedTiming().endTime; }catch(e){}
     if(want >= end && isFinite(end)){ s.done = true; try{ an.finish(); }catch(e){} return; }
