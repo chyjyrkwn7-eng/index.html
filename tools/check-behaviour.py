@@ -13042,6 +13042,8 @@ def check_b317_pfcard(br):
              the over-the-wall state (317 touch-up: the XP blue there too) */
           seat(units.length, xpForLevel(80) + 60000);
           store.seenUnlocks.badges = units.slice();
+          /* shown, not earned: no knock in the middle of the reading */
+          try{ localStorage.setItem('class26e.pfxp.seen', String(store.lifetime.points)); }catch(e){}
           showProfile('profile'); await wait(900); clean();
           out.top = rankOf(store);
           const tg = document.querySelector('.profile-hero .pf-goal');
