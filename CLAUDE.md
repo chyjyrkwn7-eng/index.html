@@ -16535,6 +16535,14 @@ screen's quiet path plays it once over the landed screen, but never on
 the way back from the review (`opts.instant`), and Mute banners still
 mutes it. **A `*` selector never reaches a `::before`**: the still scene
 names the pseudo-elements, because the seated slot's glow is one.
+- **The still scene does NOT hide the screen under it** (`bc-covering`).
+  That class saves the painting under a moving scene, and nothing in the
+  still scene moves. With it, check-results' type audit, which reads only
+  visible text, found no numbers on the three screens it opened during
+  those 4.6s.
+- **A still scene played over the results ends with them**
+  (`opts.alive`). Otherwise it would sit over whatever screen replaced
+  the results.
 
 **Gates.** `check_b317_badgecase` runs on a fake clock (the recorders'
 method: every timer, frame and animation stepped and seeked), so load

@@ -79283,7 +79283,7 @@ function buildBadgeCase3D(all, held){
   return { stage, kase, slots, lid, lidIn, tray, handle, front };
 }
 
-function playBadgeCaseScene(units, done, retro){
+function playBadgeCaseScene(units, done, retro, opts){
   if(!units || !units.length || theme.muteBanners){ done(); return null; }
   const still = resultsMotionOff();
   const all = unitsInTeachingOrder();
@@ -79382,9 +79382,17 @@ function playBadgeCaseScene(units, done, retro){
     sub.textContent = units.length > 1 ? units.join(" · ") : countLine(0);
     overlay.classList.add("bc-in", "bc-up");
     requestAnimationFrame(() => { placeWords(); words.classList.add("bc-words-in"); });
-    at(320, () => document.body.classList.add("bc-covering"));
+    /* No bc-covering here: that hides the screen under the dim to save the
+       painting under a moving scene, and nothing here moves. And a still
+       scene played over a screen ends if that screen is replaced (opts.alive),
+       rather than sitting over whatever came next. */
+    const stopNow = () => { finished = true; timers.forEach(clearTimeout); overlay.remove(); };
+    if(opts && typeof opts.alive === "function"){
+      const watch = setInterval(() => { if(finished){ clearInterval(watch); return; } if(!opts.alive()){ clearInterval(watch); stopNow(); done(); } }, 200);
+      timers.push(watch);
+    }
     at(BC_STILL_MS, finish);
-    return { skip: finish, stop(){ finished = true; timers.forEach(clearTimeout); document.body.classList.remove("bc-covering"); overlay.remove(); } };
+    return { skip: finish, stop: stopNow };
   }
 
   /* ---- where the token goes ---- */
@@ -82046,7 +82054,7 @@ function showRunRewards(run, hooks, opts){
        back from the review (opts.instant), and Mute banners still mutes it
        (playBadgeCaseScene). */
     if(!(opts && opts.instant) && run.badges && run.badges.length && typeof playBadgeCaseScene === "function"){
-      setTimeout(() => { if(panel.isConnected) playBadgeCaseScene(run.badges.slice(), () => {}, run.retroBadges); }, 400);
+      setTimeout(() => { if(panel.isConnected) playBadgeCaseScene(run.badges.slice(), () => {}, run.retroBadges, { alive: () => panel.isConnected }); }, 400);
     }
     return;
   }
