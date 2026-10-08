@@ -11079,20 +11079,23 @@
   .cosmic-scar{ position:absolute; left:50%; top:47.368%; width:28.889%; aspect-ratio:1; translate:-50% -50%; pointer-events:none; }
   .cosmic-scar i{ position:absolute; display:block; pointer-events:none; }
   .csc-disc{ position:absolute; inset:0; border-radius:50%; overflow:hidden; clip-path:circle(50% at 50% 50%); }
-  /* the burn and its ember are drawn once on a canvas (cosmicScarURLs):
-     the scorched halo and black burn, static; the ember rim, crust and
-     fissures over it, pulsing. Without a canvas, a soft dark burn. */
-  .csc-burn, .csc-ember{ inset:0; background-size:100% 100%; background-repeat:no-repeat; }
-  .csc-burn{ background-image:var(--scar-burn, radial-gradient(ellipse 28% 19% at 65% 63%, #070304 0 50%, rgba(16,6,4,.5) 75%, transparent 100%)); }
-  .csc-ember{ background-image:var(--scar-ember, none); animation:csc-ember 4.8s ease-in-out infinite alternate; }
+  /* The art is drawn once per launch (cosmicScarArt) and copied onto three
+     canvases: the burn (the lit, broken surface and its soot - still),
+     the ember (deep in the crack and the rupture's molten floor) and the
+     hottest of it, each pulsing slowly on its own clock - 6.8s and 4.3s,
+     so the two never beat together. Without a 2D canvas, a soft dark burn. */
+  .cosmic-scar canvas.csc-art{ position:absolute; inset:0; width:100%; height:100%; display:block; pointer-events:none; }
+  .cosmic-scar i.csc-burn{ inset:0; background:radial-gradient(ellipse 22% 16% at 65% 63%, #070304 0 50%, rgba(16,6,4,.5) 75%, transparent 100%); }
+  .csc-ember{ animation:csc-ember 6.8s ease-in-out infinite alternate; }
+  .csc-hot{ animation:csc-hot 4.3s ease-in-out -1.7s infinite alternate; }
   /* the fresh burn, still hot: unseen on Home; the cutscene cools it */
-  .csc-glow{ left:30%; top:38%; width:68%; height:50%; rotate:-24deg; opacity:0;
-    background:radial-gradient(ellipse 50% 50% at 48% 50%, rgba(255,226,170,.95) 0, rgba(255,140,60,.7) 38%, rgba(255,80,24,0) 74%); }
-  /* the heat shimmer off the limb, outside the planet */
-  .csc-heat{ left:84%; top:70%; width:62%; height:44%; translate:-50% -50%; border-radius:50%;
-    background:radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255,128,52,.17) 0, rgba(255,92,30,.07) 50%, rgba(255,92,30,0) 72%);
+  .csc-glow{ left:41%; top:47%; width:48%; height:33%; rotate:-10deg; opacity:0;
+    background:radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255,226,170,.95) 0, rgba(255,140,60,.7) 38%, rgba(255,80,24,0) 74%); }
+  /* the heat shimmer off the limb, where the crack goes over it */
+  .csc-heat{ left:88%; top:77%; width:56%; height:40%; translate:-50% -50%; border-radius:50%;
+    background:radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255,128,52,.15) 0, rgba(255,92,30,.06) 50%, rgba(255,92,30,0) 72%);
     animation:csc-heat 2.6s ease-in-out infinite alternate; }
-  .csc-heat.is-2{ left:70%; top:86%; width:46%; height:34%; animation-duration:3.3s; animation-delay:-1.4s; }
+  .csc-heat.is-2{ left:76%; top:84%; width:42%; height:30%; animation-duration:3.3s; animation-delay:-1.4s; }
   /* the fragments: a black shard with an ember rim (::after) in a pulsing
      ember glow (::before), drifting off the scar and fading at both ends */
   .csc-frags{ position:absolute; inset:0; }
@@ -11115,12 +11118,15 @@
     100%{ opacity:0; transform:translate(var(--dx), var(--dy)) rotate(var(--r)) scale(.6); }
   }
   @keyframes csc-pulse{ from{ opacity:.3; transform:scale(.8); } to{ opacity:1; transform:scale(1.15); } }
-  @keyframes csc-ember{ from{ opacity:.72; } to{ opacity:1; } }
+  @keyframes csc-ember{ from{ opacity:.74; } to{ opacity:1; } }
+  @keyframes csc-hot{ from{ opacity:.3; } to{ opacity:1; } }
   @keyframes csc-heat{ from{ opacity:.55; transform:scale(1, .94) skewX(-4deg) translateY(2%); } to{ opacity:1; transform:scale(1.08, 1.02) skewX(4deg) translateY(-4%); } }
-  /* the plasma's light never washes over the burn */
+  /* the plasma's light never washes over the rupture, and its smoke
+     drifts only partly over the crack - the art's own mask (--scar-mask) */
   .cosmic-hero-wrap.is-scarred > .cosmic-plasma{
-    -webkit-mask-image:radial-gradient(ellipse 34% 28% at 65% 63%, transparent 0 55%, #000 100%);
-    mask-image:radial-gradient(ellipse 34% 28% at 65% 63%, transparent 0 55%, #000 100%); }
+    -webkit-mask-image:var(--scar-mask, radial-gradient(ellipse 30% 24% at 65% 63%, transparent 0 55%, #000 100%));
+    mask-image:var(--scar-mask, radial-gradient(ellipse 30% 24% at 65% 63%, transparent 0 55%, #000 100%));
+    -webkit-mask-size:100% 100%; mask-size:100% 100%; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; }
   @media (prefers-reduced-motion:reduce){ .cosmic-scar, .cosmic-scar *, .cosmic-scar *::before{ animation:none !important; } }
   [data-reduce-motion="true"] .cosmic-scar *, [data-reduce-motion="true"] .cosmic-scar *::before{ animation:none !important; }
   /* ---- DEPTH ON HOME'S PLANET SYSTEM (build 304) ----
@@ -62777,127 +62783,350 @@ function cosmicSmokeURL(){
   }catch(e){ cosmicSmokeCache = ""; }
   return cosmicSmokeCache;
 }
-/* THE SCAR, DRAWN ONCE (build 317). Gradients alone made the burn a
-   cluster of overlapping circles and its fissures three straight lines
-   meeting at a point - a clock face. Drawn on a canvas instead, seeded so
-   it is the same scar every launch, in the sphere's own box (the disc is
-   the circle of radius .5 about the middle; the burn is a tilted blob at
-   .65 .63 whose edge is pushed in and out by fractal noise):
-   - burn: the scorched halo and the black burn, alpha only where they
-     are. Static.
-   - ember: the glowing rim along the burn's edge (patchy, hottest where
-     the noise says), crust specks glowing inside the burn, and three
-     jagged fissures with branches running out across the face. It pulses
-     (opacity) on its own layer.
-   Pixels, not an SVG filter - the same choice as cosmicSmokeURL. */
+/* THE SCAR, DRAWN ONCE - A CRACK ACROSS THE PLANET (build 317, planet
+   round). "the permanent damage part to the sphere doesn't look too too
+   good, maybe it needs a deep crack running across it, maybe it doesn't
+   feel legit? Idk but I want to love it." The first scar was a black
+   blob with a glowing outline and three straight fissures laid on top - a
+   sticker. This one is the planet's own SURFACE, broken and lit:
+   - A height field on the sphere: the impact's rupture (steep walls down
+     to a floor, a raised, ragged rim); one deep crack walked ON the
+     sphere along a meandering great circle, from the rupture across the
+     face to the far limb, and a short arm over the near limb - so it
+     bends with the planet and foreshortens towards the edge - widest at
+     the impact and narrowing to hairlines, with raised lips; a few
+     branches; fine hairline fractures round the rim, and two arcs.
+   - Lit by the planet's own light (upper left): the sphere's normal tipped
+     by the field's slope, compared with the plain sphere's. A lip facing
+     the light catches it, the other lip and the walls facing away go
+     dark, the walls hide the bottom of the crack (and the deeper, the
+     darker), and all of it is dimmer on the side away from the light.
+     Soot settles round the impact with a soft, ragged edge and streaks
+     thrown out of it.
+   - The ember, on layers of its own: deep in the crack (narrower than
+     its opening), hottest at the impact and cooling along it; the
+     rupture's floor molten, with dark crust drifting on it. Two layers -
+     all of it, and only the hottest - pulse slowly on clocks that never
+     line up.
+   Seeded, so it is the same scar every launch. Pixels, not an SVG filter
+   (the same choice as cosmicSmokeURL). Drawn once per launch, only for an
+   account with Supernova, at the size the screen needs (512 on a 3x
+   phone, so it is crisp there), into canvases that each hero copies
+   (drawImage - nothing is encoded as a PNG). What it costs is measured in
+   CLAUDE.md (build 317, the planet round). */
 let cosmicScarCache = null;
-function cosmicScarURLs(){
+function cosmicScarArt(){
   if(cosmicScarCache !== null) return cosmicScarCache;
   cosmicScarCache = false;
   try{
-    const N = 320;
-    const mk = () => { const c = document.createElement("canvas"); c.width = N; c.height = N; return c; };
-    const cb = mk(), ce = mk(), gb = cb.getContext("2d"), ge = ce.getContext("2d");
-    if(!gb || !ge) return cosmicScarCache;
-    let seed = 9001;
+    const t0 = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+    const dpr = (typeof window !== "undefined" && window.devicePixelRatio) || 1;
+    const N = dpr >= 2.5 ? 512 : dpr >= 1.5 ? 448 : 320;
+    const mk = n => { const c = document.createElement("canvas"); c.width = c.height = n; return c; };
+    const cB = mk(N), cE = mk(N), cH = mk(N);
+    const gB = cB.getContext("2d"), gE = cE.getContext("2d"), gH = cH.getContext("2d");
+    if(!gB || !gE || !gH) return cosmicScarCache;
+    let seed = 7331;
     const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-    const G = 32, grid = [];
-    for(let i = 0; i < G * G; i++) grid.push(rnd());
-    const at = (x, y) => grid[((y % G + G) % G) * G + ((x % G + G) % G)];
+    const G = 64, grid = new Float32Array(G * G);
+    for(let i = 0; i < G * G; i++) grid[i] = rnd();
     const sm = t => t * t * (3 - 2 * t);
     const cl = t => t < 0 ? 0 : t > 1 ? 1 : t;
+    const ss = (a, b, t) => { let k = (t - a) / (b - a); k = k < 0 ? 0 : k > 1 ? 1 : k; return k * k * (3 - 2 * k); };
     const noise = (x, y) => {
       const x0 = Math.floor(x), y0 = Math.floor(y), fx = sm(x - x0), fy = sm(y - y0);
-      const a = at(x0, y0), b = at(x0 + 1, y0), c = at(x0, y0 + 1), d = at(x0 + 1, y0 + 1);
+      const xi = ((x0 % G) + G) % G, yi = ((y0 % G) + G) % G, xj = (xi + 1) % G, yj = (yi + 1) % G;
+      const a = grid[yi * G + xi], b = grid[yi * G + xj], c = grid[yj * G + xi], d = grid[yj * G + xj];
       return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
     };
-    const fbm = (x, y, oct) => { let v = 0, amp = .5, f = 1; for(let o = 0; o < oct; o++){ v += amp * noise(x * f, y * f); amp *= .5; f *= 2; } return v / (1 - Math.pow(.5, oct)); };
-    const CX = .65, CY = .63, A = .285, B = .19, ROT = 24 * Math.PI / 180, cr = Math.cos(ROT), sr = Math.sin(ROT);
-    /* the burn's distance field: < 1 inside, the edge pushed about by noise */
-    const field = (u, v) => {
-      const dx = u - CX, dy = v - CY;
-      const x = dx * cr - dy * sr, y = dx * sr + dy * cr;
-      const d = Math.sqrt((x / A) * (x / A) + (y / B) * (y / B));
-      return d - .55 * (fbm(u * 6 + 11, v * 6 + 3, 4) - .5) - .22 * (fbm(u * 15 + 5, v * 15 + 9, 3) - .5);
+    const fbm = (x, y, o) => { let v = 0, amp = .5, f = 1, tot = 0; for(let k = 0; k < o; k++){ v += amp * noise(x * f, y * f); tot += amp; amp *= .5; f *= 2.03; } return v / tot; };
+    /* ---- the geometry, in the sphere's own units: x and y -1..1 (y down), z towards you ---- */
+    const nrm = a => { const l = Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+    const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    const onS = (x, y) => [x, y, Math.sqrt(Math.max(0, 1 - x * x - y * y))];
+    /* the planet's light: its highlight sits up and to the left */
+    const Ll = Math.sqrt(.55 * .55 + .62 * .62 + .56 * .56), LX = -.55 / Ll, LY = -.62 / Ll, LZ = .56 / Ll;
+    const CX = .3, CY = .27, C3 = onS(CX, CY), RHO = .165;
+    const slerp = (A, B, f) => {
+      const om = Math.acos(Math.max(-1, Math.min(1, dot(A, B)))), so = Math.sin(om) || 1e-6;
+      const a = Math.sin((1 - f) * om) / so, b = Math.sin(f * om) / so;
+      return nrm([A[0] * a + B[0] * b, A[1] * a + B[1] * b, A[2] * a + B[2] * b]);
     };
-    /* COST: the two smooth fields (the burn's edge and its colour noise)
-       are sampled on a half-resolution grid and interpolated - they have
-       no detail finer than that - and only the crust's fine noise is read
-       per pixel, inside the burn. A quarter of the noise work; it runs
-       once, as Home is first built. */
-    const M = N / 2, M1 = M + 1, FG = new Float32Array(M1 * M1), NG = new Float32Array(M1 * M1);
-    for(let j = 0; j <= M; j++) for(let i = 0; i <= M; i++){
-      const u = i / M, v = j / M, q = j * M1 + i;
-      if((u - .5) * (u - .5) + (v - .5) * (v - .5) > .3){ FG[q] = 9; NG[q] = .5; continue; }
-      FG[q] = field(u, v); NG[q] = fbm(u * 9 + 3, v * 9 + 7, 3);
-    }
-    const lerp2 = (G, u, v) => {
-      const x = u * M, y = v * M, i = Math.min(M - 1, Math.floor(x)), j = Math.min(M - 1, Math.floor(y)), fx = x - i, fy = y - j, q = j * M1 + i;
-      return G[q] * (1 - fx) * (1 - fy) + G[q + 1] * fx * (1 - fy) + G[q + M1] * (1 - fx) * fy + G[q + M1 + 1] * fx * fy;
+    /* a crack ON the sphere: the great circle from A to B, pushed side to
+       side - so it bends with the planet and foreshortens at the limb */
+    const arc = (A, B, n, mAmp, mFreq, ph) => {
+      const pts = [], side = nrm(cross(A, B));
+      let wal = 0;
+      for(let k = 0; k <= n; k++){
+        const f = k / n;
+        wal = wal * .7 + (rnd() - .5) * .5;
+        const P = slerp(A, B, f), push = (Math.sin(f * Math.PI * mFreq + ph) * .7 + wal * .5) * mAmp * Math.sin(f * Math.PI);
+        pts.push(nrm([P[0] + side[0] * push, P[1] + side[1] * push, P[2] + side[2] * push]));
+      }
+      return pts;
     };
-    const ib = gb.createImageData(N, N), ie = ge.createImageData(N, N);
-    for(let y = 0; y < N; y++) for(let x = 0; x < N; x++){
-      const u = (x + .5) / N, v = (y + .5) / N;
-      const rr = Math.sqrt((u - .5) * (u - .5) + (v - .5) * (v - .5));
-      const disc = cl((.5 - rr) * N);
-      if(disc <= 0) continue;
-      const f = lerp2(FG, u, v), n = lerp2(NG, u, v);
-      const k = (y * N + x) * 4;
-      /* scorched halo, then the burn over it */
-      const halo = .62 * (1 - sm(cl((f - 1) / 1.05))) * (.72 + .28 * n);
-      const burn = sm(cl((1.04 - f) / .1));
-      const a = Math.max(halo, burn);
-      const t = burn / (a || 1);
-      ib.data[k] = Math.round(22 * (1 - t) + (6 + 10 * n) * t);
-      ib.data[k + 1] = Math.round(9 * (1 - t) + (3 + 4 * n) * t);
-      ib.data[k + 2] = Math.round(5 * (1 - t) + 3 * t);
-      ib.data[k + 3] = Math.round(a * disc * 255);
-      /* the ember: a patchy rim, a soft glow beyond it, crust specks inside */
-      const rim = Math.exp(-Math.pow((f - .99) / .075, 2)) * (.35 + .65 * sm(cl((n - .3) / .5)));
-      const glow = .32 * Math.exp(-Math.pow((f - 1.1) / .2, 2));
-      const crust = f < .82 ? sm(cl((fbm(u * 26 + 1, v * 26 + 4, 3) - .64) / .14)) * .7 * (1 - sm(cl((f - .6) / .22))) : 0;
-      const e = Math.min(1, rim + glow + crust);
-      const hot = cl(rim * 1.2 + crust * .6);
-      ie.data[k] = 255;
-      ie.data[k + 1] = Math.round(78 + 132 * hot);
-      ie.data[k + 2] = Math.round(22 + 98 * hot * hot);
-      ie.data[k + 3] = Math.round(e * disc * 255);
-    }
-    gb.putImageData(ib, 0, 0);
-    ge.putImageData(ie, 0, 0);
-    /* three fissures out of the burn's edge across the face, each a jagged
-       walk with a branch, tapering, with a canvas glow (rasterised once) */
-    const edgePoint = ang => { let r = .05; while(r < .6){ const u = CX + r * Math.cos(ang), v = CY + r * Math.sin(ang); if(field(u, v) >= .96) return [u, v]; r += .004; } return [CX, CY]; };
-    const crack = (ang, len, w0) => {
-      let [u, v] = edgePoint(ang), a = ang;
-      const pts = [[u, v]];
-      const steps = 9;
-      for(let s = 0; s < steps; s++){ a += (rnd() - .5) * .9; u += Math.cos(a) * len / steps; v += Math.sin(a) * len / steps; pts.push([u, v]); }
-      return { pts, w0 };
+    /* the rhythm of a real fracture: each midpoint pushed sideways, three
+       times over, each finer and smaller */
+    const jag = (pts, levels, amp) => {
+      let p = pts.map((q, i) => [q[0], q[1], i / (pts.length - 1)]);
+      for(let l = 0; l < levels; l++){
+        const out = [p[0]];
+        for(let k = 1; k < p.length; k++){
+          const a = p[k - 1], b = p[k], dx = b[0] - a[0], dy = b[1] - a[1], Ln = Math.sqrt(dx * dx + dy * dy) || 1e-6;
+          const off = (rnd() - .5) * amp * Ln;
+          out.push([(a[0] + b[0]) / 2 - dy / Ln * off, (a[1] + b[1]) / 2 + dx / Ln * off, (a[2] + b[2]) / 2], b);
+        }
+        p = out; amp *= .7;
+      }
+      return p;
     };
-    const draw = ({ pts, w0 }) => {
-      for(let s = 1; s < pts.length; s++){
-        const t = s / pts.length;
-        ge.beginPath(); ge.moveTo(pts[s - 1][0] * N, pts[s - 1][1] * N); ge.lineTo(pts[s][0] * N, pts[s][1] * N);
-        ge.lineWidth = Math.max(.6, w0 * (1 - t * .85)); ge.strokeStyle = "rgba(255," + Math.round(196 - 90 * t) + "," + Math.round(120 - 80 * t) + "," + (.95 - .55 * t).toFixed(2) + ")";
-        ge.stroke();
+    const SEG = [];   /* per segment: ax ay bx by, half-width at each end, depth at each end, heat at each end, lip, kind */
+    const addPath = (p, w0, w1, d0, h0, kind, wPow) => {
+      const W = f => w1 + (w0 - w1) * Math.pow(1 - f, wPow);
+      const D = f => d0 * Math.pow(1 - f, .6);
+      const Hh = f => h0 * Math.exp(-f / .32) * (1 - f);
+      for(let k = 1; k < p.length; k++){
+        const a = p[k - 1], b = p[k];
+        SEG.push(a[0], a[1], b[0], b[1], W(a[2]), W(b[2]), D(a[2]), D(b[2]), Hh(a[2]), Hh(b[2]), .55 + .9 * rnd(), kind);
       }
     };
-    ge.save();
-    ge.beginPath(); ge.arc(N / 2, N / 2, N / 2 - .5, 0, Math.PI * 2); ge.clip();
-    ge.lineCap = "round"; ge.lineJoin = "round";
-    ge.shadowColor = "rgba(255,110,40,.9)"; ge.shadowBlur = 5;
-    [[Math.PI * 1.08, .3, 3.2], [Math.PI * 1.36, .22, 2.6], [Math.PI * .86, .17, 2.2]].forEach(([ang, len, w]) => {
-      const c = crack(ang, len, w);
-      draw(c);
-      const mid = c.pts[Math.floor(c.pts.length / 2)];
-      let a = ang + (rnd() < .5 ? -.8 : .8), u = mid[0], v = mid[1];
-      const br = [[u, v]];
-      for(let s = 0; s < 4; s++){ a += (rnd() - .5) * .8; u += Math.cos(a) * len * .09; v += Math.sin(a) * len * .09; br.push([u, v]); }
-      draw({ pts: br, w0: w * .55 });
+    const rimAt = (dx, dy, k) => {
+      const kk = dx * C3[0] + dy * C3[1], H = nrm([dx - kk * C3[0], dy - kk * C3[1], -kk * C3[2]]);
+      const c = Math.cos(RHO * k), s = Math.sin(RHO * k);
+      return nrm([C3[0] * c + H[0] * s, C3[1] * c + H[1] * s, C3[2] * c + H[2] * s]);
+    };
+    const P2 = pts => pts.map(P => [P[0], P[1]]);
+    /* the long arm, out of the rupture, under the middle of the face, to the
+       far limb; the short arm the other way, over the near limb */
+    const mainA = arc(rimAt(-1, .08, .8), onS(-.95, -.08), 30, .06, 1.6, .4);
+    const mainB = arc(rimAt(.9, .42, .8), onS(.8, .57), 14, .035, 1, 1.2);
+    const jA = jag(P2(mainA), 3, .46), jB = jag(P2(mainB), 3, .46);
+    addPath(jA, .05, .0026, .062, 1, 0, .95);
+    addPath(jB, .04, .0026, .055, .9, 0, 1);
+    const branch = (src, at, side, len, w0, h0) => {
+      const k = Math.round(at * (src.length - 1)), P = src[k], Pn = src[Math.min(src.length - 1, k + 1)];
+      const H = nrm([Pn[0] - P[0], Pn[1] - P[1], Pn[2] - P[2]]), Bn = nrm(cross(P, H));
+      const dir = nrm([H[0] * .78 + Bn[0] * side, H[1] * .78 + Bn[1] * side, H[2] * .78 + Bn[2] * side]);
+      const E = nrm([P[0] + dir[0] * len, P[1] + dir[1] * len, P[2] + dir[2] * len]);
+      addPath(jag(P2(arc(P, E, 8, .05, 1.4, rnd() * 3)), 2, .5), w0, .0022, .02, h0, 1, 1.3);
+    };
+    branch(mainA, .16, -.55, .3, .012, .35);
+    branch(mainA, .3, .6, .26, .009, .2);
+    branch(mainA, .5, -.5, .22, .007, .06);
+    branch(mainA, .7, .55, .16, .005, 0);
+    branch(mainB, .35, .7, .16, .009, .25);
+    [[.3, .09], [1.1, .14], [1.9, .06], [2.5, .11], [3.4, .08], [4.3, .13], [5.2, .07]].forEach(([az, len]) => {
+      const A = rimAt(Math.cos(az), Math.sin(az), .95), j = .25 * (rnd() - .5);
+      addPath(jag(P2(arc(A, rimAt(Math.cos(az + j), Math.sin(az + j), .95 + len / RHO), 5, .04, 1, 0)), 2, .55), .0065, .0018, .012, .2, 2, 1);
     });
-    ge.restore();
-    cosmicScarCache = { burn: cb.toDataURL("image/png"), ember: ce.toDataURL("image/png") };
+    [[.6, 1.0, 1.42], [3.3, .9, 1.55]].forEach(([a0, span, rr]) => {
+      const pts = [];
+      for(let m = 0; m <= 10; m++){ const az = a0 + span * m / 10; pts.push(rimAt(Math.cos(az), Math.sin(az), rr)); }
+      addPath(jag(P2(pts), 2, .6), .0048, .0016, .008, .12, 2, .3);
+    });
+    const NS = SEG.length / 12, SF = Float32Array.from(SEG);
+    /* every segment into the buckets it can touch, so a pixel tests only its own */
+    const BK = 64, cnt = new Int32Array(BK * BK + 1);
+    const reachBox = o => {
+      const r = 2.2 * Math.max(SF[o + 4], SF[o + 5]) + 3 / N;
+      return [Math.max(0, Math.floor((Math.min(SF[o], SF[o + 2]) - r + 1) / 2 * BK)), Math.min(BK - 1, Math.floor((Math.max(SF[o], SF[o + 2]) + r + 1) / 2 * BK)),
+              Math.max(0, Math.floor((Math.min(SF[o + 1], SF[o + 3]) - r + 1) / 2 * BK)), Math.min(BK - 1, Math.floor((Math.max(SF[o + 1], SF[o + 3]) + r + 1) / 2 * BK))];
+    };
+    for(let i = 0; i < NS; i++){ const b = reachBox(i * 12); for(let by = b[2]; by <= b[3]; by++) for(let bx = b[0]; bx <= b[1]; bx++) cnt[by * BK + bx + 1]++; }
+    for(let i = 0; i < BK * BK; i++) cnt[i + 1] += cnt[i];
+    const fill = cnt.slice(0, BK * BK), lst = new Int32Array(cnt[BK * BK]);
+    for(let i = 0; i < NS; i++){ const b = reachBox(i * 12); for(let by = b[2]; by <= b[3]; by++) for(let bx = b[0]; bx <= b[1]; bx++) lst[fill[by * BK + bx]++] = i * 12; }
+    /* the smooth fields on coarse grids, and only round the scar */
+    const SR = .62;
+    const Q = N / 4, Q1 = Q + 1, FI = new Float32Array(Q1 * Q1), FR = new Float32Array(Q1 * Q1), FE = new Float32Array(Q1 * Q1);
+    for(let j = 0; j <= Q; j++) for(let i = 0; i <= Q; i++){
+      const x = i / Q * 2 - 1, y = j / Q * 2 - 1, q = j * Q1 + i, dx = x - CX, dy = y - CY;
+      FI[q] = .5; FE[q] = .5; FR[q] = 0;
+      if(dx * dx + dy * dy > (SR + .12) * (SR + .12) || x * x + y * y > 1.1) continue;
+      FI[q] = fbm(x * 2.6 + 11, y * 2.6 + 3, 4);
+      const az = Math.atan2(dy, dx), ca = Math.cos(az), sa = Math.sin(az);
+      FR[q] = fbm(ca * 3.1 + 20, sa * 3.1 + 7, 3);
+      FE[q] = fbm(ca * 2.2 + 31, sa * 2.2 + 17, 4);
+    }
+    const H2 = N / 2, H21 = H2 + 1, FN = new Float32Array(H21 * H21);
+    for(let j = 0; j <= H2; j++) for(let i = 0; i <= H2; i++){
+      const x = i / H2 * 2 - 1, y = j / H2 * 2 - 1;
+      FN[j * H21 + i] = x * x + y * y > 1.05 ? .5 : fbm(x * 13 + 5, y * 13 + 9, 3);
+    }
+    const NN = N * N;
+    const Hf = new Float32Array(NN), Cov = new Float32Array(NN), Mat = new Uint8Array(NN), Em = new Float32Array(NN), Tp = new Float32Array(NN), Dp = new Float32Array(NN), On = new Uint8Array(NN);
+    const rhoC = 2 * Math.sin(RHO / 2), PXMIN = 1.5 / N, BPX = N / BK;
+    for(let by = 0; by < BK; by++) for(let bx = 0; bx < BK; bx++){
+      const b0 = cnt[by * BK + bx], b1 = cnt[by * BK + bx + 1];
+      const bcx = (bx + .5) / BK * 2 - 1 - CX, bcy = (by + .5) / BK * 2 - 1 - CY;
+      if(b0 === b1 && bcx * bcx + bcy * bcy > (SR + .06) * (SR + .06)) continue;
+      for(let j = by * BPX; j < (by + 1) * BPX; j++){
+        const y = (j + .5) / N * 2 - 1, gy = (y + 1) / 2;
+        for(let i = bx * BPX; i < (bx + 1) * BPX; i++){
+          const x = (i + .5) / N * 2 - 1, r2 = x * x + y * y;
+          if(r2 >= 1) continue;
+          const k = j * N + i, z = Math.sqrt(1 - r2), r = Math.sqrt(r2), gx = (x + 1) / 2;
+          let fx = gx * Q, fy = gy * Q, ii = fx | 0, jj = fy | 0;
+          if(ii > Q - 1) ii = Q - 1; if(jj > Q - 1) jj = Q - 1; fx -= ii; fy -= jj;
+          let q0 = jj * Q1 + ii;
+          const w00 = (1 - fx) * (1 - fy), w10 = fx * (1 - fy), w01 = (1 - fx) * fy, w11 = fx * fy;
+          const n1 = FI[q0] * w00 + FI[q0 + 1] * w10 + FI[q0 + Q1] * w01 + FI[q0 + Q1 + 1] * w11;
+          const ray = FR[q0] * w00 + FR[q0 + 1] * w10 + FR[q0 + Q1] * w01 + FR[q0 + Q1 + 1] * w11;
+          const edg = FE[q0] * w00 + FE[q0 + 1] * w10 + FE[q0 + Q1] * w01 + FE[q0 + Q1 + 1] * w11;
+          fx = gx * H2; fy = gy * H2; ii = fx | 0; jj = fy | 0;
+          if(ii > H2 - 1) ii = H2 - 1; if(jj > H2 - 1) jj = H2 - 1; fx -= ii; fy -= jj; q0 = jj * H21 + ii;
+          const n2 = FN[q0] * (1 - fx) * (1 - fy) + FN[q0 + 1] * fx * (1 - fy) + FN[q0 + H21] * (1 - fx) * fy + FN[q0 + H21 + 1] * fx * fy;
+          /* the rupture: distance on the sphere, its edge torn by noise */
+          const ex = x - C3[0], ey = y - C3[1], ez = z - C3[2];
+          const ch = Math.sqrt(ex * ex + ey * ey + ez * ez) / rhoC;
+          const qc = ch * (1 + .5 * (edg - .5) + .22 * (n1 - .5));
+          let h = 0, em = 0, tp = 0, dp = 0, mat = 0;
+          if(qc < 1){ h -= .04 * ss(1, .55, qc) * (.9 + .2 * n2); dp = .55 * ss(1, .5, qc); }
+          const rr = (qc - 1.04) / .13;
+          h += .011 * Math.exp(-rr * rr) * (.35 + 1.3 * n1);
+          if(qc > 1) h += .0035 * Math.exp(-(qc - 1) * 2.4);
+          /* soot: soft, ragged, with streaks thrown out of the impact */
+          const qs = ch * (1 + .8 * (n1 - .5));
+          let cov = .9 * (1 - ss(.75, 2.6, qs));
+          const st = .66 * ss(.52, .72, ray) * (1 - ss(1.2, 3.3, qs)) * ss(.7, 1.15, qs);
+          if(st > cov) cov = st;
+          let chr = 1 - ss(.88, 1.0, qc);
+          if(chr > 0) mat = 1;
+          /* the cracks: the nearest, measured on the sphere (a step towards
+             the limb is longer than it looks), against its local width */
+          let bt = 9, bD = 0, bH = 0, bLip = 0, bKind = -1, bW = 1;
+          for(let m = b0; m < b1; m++){
+            const o = lst[m];
+            const ax = SF[o], ay = SF[o + 1], dx = SF[o + 2] - ax, dy = SF[o + 3] - ay;
+            let t = ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy + 1e-12); t = t < 0 ? 0 : t > 1 ? 1 : t;
+            const ox = x - ax - t * dx, oy = y - ay - t * dy;
+            let d2 = ox * ox + oy * oy;
+            if(r > .001){ const orr = (ox * x + oy * y) / r, zz = z < .1 ? .1 : z; d2 += orr * orr * (1 / (zz * zz) - 1); }
+            const w = SF[o + 4] + t * (SF[o + 5] - SF[o + 4]), we = w > PXMIN ? w : PXMIN;
+            const tt2 = d2 / (we * we);
+            if(tt2 < bt){ bt = tt2; bW = w / we; bD = (SF[o + 6] + t * (SF[o + 7] - SF[o + 6])) * bW; bH = (SF[o + 8] + t * (SF[o + 9] - SF[o + 8])) * bW; bLip = SF[o + 10]; bKind = SF[o + 11]; }
+          }
+          if(bKind >= 0){
+            bt = Math.sqrt(bt);
+            const inCr = ss(.55, 1.0, qc);
+            if(bt < 3){
+              const g = bt < 1 ? -bD * Math.pow(1 - bt * bt, .55) : 0;
+              const lr = (bt - 1.25) / .42;
+              const lip = bKind < 2 ? bD * .45 * bLip * Math.exp(-lr * lr) * (.5 + n2) : 0;
+              h += (g + lip) * inCr;
+              if(bt < 1){
+                const dq = (1 - bt * bt) * bW * inCr; if(dq > dp) dp = dq;
+                const c2 = Math.min(1, (1 - bt) * 2.4) * bW * inCr; if(c2 > chr){ chr = c2; mat = 2; }
+              }
+              /* the ember lies deep in the crack, narrower than its opening */
+              const fl = 1 - bt / .5;
+              const e = bH * ((fl > 0 ? Math.pow(fl, 1.3) * (.5 + .8 * n2) : 0) + (bt < 1.05 ? .3 * (1 - bt / 1.05) * (1 - bt / 1.05) : 0)) * inCr;
+              if(e > em){ em = e; tp = bH * (fl > 0 ? fl : 0) * (.75 + .5 * n2); }
+              if(bKind < 2){ const sc = .5 * Math.exp(-bt / 2.4) * Math.min(1, bH * 1.8); if(sc > cov) cov = sc; }
+            }
+          }
+          /* the rupture's floor: molten, seen down inside its walls, with
+             dark crust drifting on it - mottled, never a pattern */
+          if(qc < 1.02){
+            const lv = fbm(x * 17 + 3.3, y * 17 + 8.1, 3);
+            const crust = ss(.5, .64, lv + .35 * (n2 - .5));
+            const e = (1 - ss(.34, .74, qc)) * (1 - .78 * crust) * (.62 + .5 * (lv - .5) + .3 * n2) + (1 - ss(.5, .98, qc)) * .13;
+            if(e > em){ em = e; tp = (.38 + .44 * (1 - ss(0, .74, qc))) * (1 - .5 * crust) * (.8 + .4 * n2); }
+          }
+          const cv = cov * (.78 + .44 * n2);
+          if(h === 0 && cv < .004 && chr < .004 && em < .004) continue;
+          On[k] = 1; Hf[k] = h; Cov[k] = cv > chr ? cv : chr; Mat[k] = chr >= cv ? mat : 0; Em[k] = em; Tp[k] = tp; Dp[k] = dp;
+        }
+      }
+    }
+    /* ---- the light: the height field lit by the planet's own ---- */
+    const iB = gB.createImageData(N, N), iE = gE.createImageData(N, N), iH = gH.createImageData(N, N);
+    const dB = iB.data, dE = iE.data, dH = iH.data;
+    const AMB = .3, inv2s = N / 4;
+    const RT = [0, 60, 8, 3, .3, 160, 30, 6, .55, 240, 84, 20, .78, 255, 150, 56, 1, 255, 226, 160];
+    for(let j = 1; j < N - 1; j++){
+      const y = (j + .5) / N * 2 - 1;
+      for(let i = 1; i < N - 1; i++){
+        const k = j * N + i;
+        if(!On[k]) continue;
+        const x = (i + .5) / N * 2 - 1, r2 = x * x + y * y;
+        if(r2 >= 1) continue;
+        const k4 = k * 4, z = Math.sqrt(Math.max(1e-4, 1 - r2)), disc = cl((1 - Math.sqrt(r2)) * N / 2);
+        const hx = (Hf[k + 1] - Hf[k - 1]) * inv2s, hy = (Hf[k + N] - Hf[k - N]) * inv2s;
+        /* the sphere's normal tipped by the slope (the surface P + h n,
+           differentiated along screen x and y) */
+        let nx = x - hx * (1 - x * x) + hy * x * y, ny = y - hy * (1 - y * y) + hx * x * y, nz = z + (hx * x + hy * y) * z;
+        const nl = Math.sqrt(nx * nx + ny * ny + nz * nz); nx /= nl; ny /= nl; nz /= nl;
+        const l0 = x * LX + y * LY + z * LZ, l1 = nx * LX + ny * LY + nz * LZ;
+        const f = (AMB + (1 - AMB) * (l1 > 0 ? l1 : 0)) / (AMB + (1 - AMB) * (l0 > 0 ? l0 : 0)) * (1 - .8 * Dp[k]);
+        const A0 = Cov[k];
+        let mr = 18, mg = 10, mb = 8;
+        if(Mat[k]){ const dd = 1 - .85 * Dp[k]; mr = 40 * dd; mg = 28 * dd; mb = 24 * dd; }
+        let A, R, Gc, Bc;
+        if(f <= 1){
+          const dk = Math.min(.94, (1 - f) * .95);
+          A = 1 - (1 - A0) * (1 - dk);
+          const keep = A0 * (1 - dk) / (A || 1);
+          R = mr * keep; Gc = mg * keep; Bc = mb * keep;
+        } else {
+          const lift = Math.min(.55, (f - 1) * .5) * (1 - .35 * A0);
+          A = 1 - (1 - A0) * (1 - lift);
+          const ia = 1 / (A || 1);
+          R = (mr * A0 * (1 - lift) + 255 * lift) * ia; Gc = (mg * A0 * (1 - lift) + 236 * lift) * ia; Bc = (mb * A0 * (1 - lift) + 218 * lift) * ia;
+        }
+        dB[k4] = R; dB[k4 + 1] = Gc; dB[k4 + 2] = Bc; dB[k4 + 3] = A * disc * 255;
+        const e = Em[k];
+        if(e > .003){
+          const t = Tp[k] > 1 ? 1 : Tp[k];
+          let m = 4; while(m < 16 && RT[m] < t) m += 4;
+          const fa = (t - RT[m - 4]) / (RT[m] - RT[m - 4] || 1);
+          dE[k4] = RT[m - 3] + (RT[m + 1] - RT[m - 3]) * fa; dE[k4 + 1] = RT[m - 2] + (RT[m + 2] - RT[m - 2]) * fa; dE[k4 + 2] = RT[m - 1] + (RT[m + 3] - RT[m - 1]) * fa;
+          dE[k4 + 3] = (e > .87 ? 1 : e * 1.15) * disc * 255;
+          const hot = (t - .5) / .5;
+          if(hot > 0){ dH[k4] = 255; dH[k4 + 1] = 190 + 50 * hot; dH[k4 + 2] = 110 + 80 * hot; dH[k4 + 3] = Math.min(1, hot * e * 1.2) * disc * 255; }
+        }
+      }
+    }
+    gB.putImageData(iB, 0, 0); gE.putImageData(iE, 0, 0); gH.putImageData(iH, 0, 0);
+    /* the plasma's light pools and smoke must not wash over the rupture,
+       and only partly over the crack (smoke drifting over it is what
+       makes it the planet's own): a small soft mask, cover inverted */
+    const MQ = 96, cM = mk(MQ), gM = cM.getContext("2d");
+    let mask = "";
+    if(gM){
+      const iM = gM.createImageData(MQ, MQ), dM = iM.data, st = N / MQ;
+      for(let j = 0; j < MQ; j++) for(let i = 0; i < MQ; i++){
+        let c = 0;
+        for(let b = 0; b < st; b += 2) for(let a = 0; a < st; a += 2){
+          const k = (Math.floor(j * st + b)) * N + Math.floor(i * st + a);
+          const v = Mat[k] === 2 ? .5 : Cov[k] * .92;
+          if(v > c) c = v;
+        }
+        const q = (j * MQ + i) * 4;
+        dM[q] = dM[q + 1] = dM[q + 2] = 0; dM[q + 3] = Math.round((1 - c) * 255);
+      }
+      gM.putImageData(iM, 0, 0);
+      mask = cM.toDataURL("image/png");
+    }
+    /* the fragments rise from the crack and the rupture: out from the
+       planet's middle and a little up, uneven so eight never read as a
+       pattern - [x %, y %, size %, direction (deg, 0 = right, clockwise),
+       distance %, tumble, period, delay] in the sphere's own box */
+    const frags = [];
+    const at = (p, f) => p[Math.min(p.length - 1, Math.round(f * (p.length - 1)))];
+    [[at(jA, .03), 8.5], [at(jA, .11), 7], [at(jA, .21), 6.5], [at(jA, .34), 6], [at(jB, .12), 8], [at(jB, .36), 6.5],
+     [P2([rimAt(.2, -1, .9)])[0], 9], [P2([rimAt(.9, -.4, .9)])[0], 7.5], [P2([rimAt(-.3, 1, .9)])[0], 8], [P2([rimAt(1, .9, .9)])[0], 7]].forEach(([P, s], i) => {
+      const r = Math.sqrt(P[0] * P[0] + P[1] * P[1]) || 1;
+      const dx = .8 * P[0] / r, dy = .8 * P[1] / r - .55;
+      frags.push([+((P[0] + 1) * 50).toFixed(1), +((P[1] + 1) * 50).toFixed(1), s, Math.round(Math.atan2(dy, dx) * 180 / Math.PI),
+        Math.round(22 + 11 * rnd()), Math.round((i % 2 ? -1 : 1) * (150 + 90 * rnd())), +(7.4 + 4 * rnd()).toFixed(1), -(+(11 * rnd()).toFixed(1))]);
+    });
+    const t1 = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+    cosmicScarCache = { n: N, burn: cB, ember: cE, hot: cH, mask, frags,
+      /* where the hole is, seen from the planet's middle: degrees clockwise
+         from the top - what the rings and the flares passing it key off */
+      angle: Math.atan2(CX, -CY) * 180 / Math.PI, crater: [(CX + 1) * 50, (CY + 1) * 50], ms: t1 - t0 };
   }catch(e){ cosmicScarCache = false; }
   return cosmicScarCache;
 }
@@ -63851,11 +64080,13 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
 }
 
 /* THE SUPERNOVA SCAR (build 317) - see the CSS block of the same name.
-   Its fragments, from one table, in the sphere's own box: where each
-   leaves the burn (x, y %), its size (% of the sphere), the way it drifts
+   Its fragments come from the art (cosmicScarArt().frags: they rise from
+   the crack and the rupture); this table is only for a device with no 2D
+   canvas, where there is no art to take them from. Each: where it leaves
+   the planet (x, y %), its size (% of the sphere), the way it drifts
    (degrees, 0 = right, clockwise) and how far (% of the sphere), its
    tumble, its period and its place in the loop. Uneven on purpose, so
-   eight never read as a pattern; every one stays inside the inner ring. */
+   they never read as a pattern; every one stays inside the inner ring. */
 const SCAR_FRAGS = [
   [84, 57, 10, -15, 30, 160, 8.2, 0], [86, 69, 8, 20, 33, -210, 9.6, -3.1],
   [77, 78, 9.5, 55, 27, 190, 7.4, -5.6], [65, 83, 7.5, 85, 25, -150, 10.4, -1.7],
@@ -63866,23 +64097,43 @@ function buildCosmicScar(){
   const sc = document.createElement("div");
   sc.className = "cosmic-scar";
   sc.setAttribute("aria-hidden", "true");
-  const frags = SCAR_FRAGS.map(([x, y, s, a, dist, r, t, d]) => {
+  const art = cosmicScarArt();
+  const frags = ((art && art.frags) || SCAR_FRAGS).map(([x, y, s, a, dist, r, t, d]) => {
     const rad = a * Math.PI / 180;
     /* the drift in the fragment's own size, since a translate's % is */
     const dx = dist * Math.cos(rad) / s * 100, dy = dist * Math.sin(rad) / s * 100;
     return '<i class="csc-frag" style="--x:' + x + '%;--y:' + y + '%;--s:' + s + '%;--dx:' + dx.toFixed(1) + '%;--dy:' + dy.toFixed(1) +
       '%;--r:' + r + 'deg;--t:' + t + 's;--d:' + d + 's"></i>';
   }).join("");
-  const art = cosmicScarURLs();
-  if(art){ sc.style.setProperty("--scar-burn", "url(" + art.burn + ")"); sc.style.setProperty("--scar-ember", "url(" + art.ember + ")"); }
-  sc.innerHTML = '<div class="csc-disc"><i class="csc-burn"></i><i class="csc-ember"></i>' +
-    '<i class="csc-glow"></i></div>' +
+  sc.innerHTML = '<div class="csc-disc"></div>' +
     '<i class="csc-heat"></i><i class="csc-heat is-2"></i><div class="csc-frags">' + frags + '</div>';
+  const disc = sc.firstChild;
+  /* the art, copied onto this hero's own canvases (a canvas is one place
+     in the page; drawImage is a GPU copy, nothing re-drawn) */
+  let drawn = false;
+  if(art){
+    try{
+      ["burn", "ember", "hot"].forEach(k => {
+        const c = document.createElement("canvas");
+        c.className = "csc-art csc-" + k;
+        c.width = c.height = art.n;
+        c.getContext("2d").drawImage(art[k], 0, 0);
+        disc.appendChild(c);
+      });
+      drawn = true;
+    }catch(e){ disc.textContent = ""; }
+  }
+  if(!drawn) disc.innerHTML = '<i class="csc-burn"></i>';
+  const glow = document.createElement("i");
+  glow.className = "csc-glow";
+  disc.appendChild(glow);
   return sc;
 }
 /* Into a built hero, once, right after the plasma - see buildCosmicHero.
    The planet's DOM is otherwise untouched; the hero only gains
-   .is-scarred, which masks the plasma's light off the burn. */
+   .is-scarred and the art's mask (--scar-mask), which keeps the plasma's
+   light off the rupture and lets its smoke drift only partly over the
+   crack. */
 function attachCosmicScar(hero){
   if(!hero) return null;
   const had = hero.querySelector(":scope > .cosmic-scar");
@@ -63891,6 +64142,8 @@ function attachCosmicScar(hero){
   const plasma = hero.querySelector(":scope > .cosmic-plasma");
   hero.insertBefore(sc, plasma ? plasma.nextSibling :
     hero.querySelector(":scope > .cosmic-core-orbit, :scope > .cosmic-tapfx, :scope > .cosmic-icon-badge, :scope > .rank-orbit"));
+  const art = cosmicScarArt();
+  if(art && art.mask) hero.style.setProperty("--scar-mask", "url(" + art.mask + ")");
   hero.classList.add("is-scarred");
   return sc;
 }
