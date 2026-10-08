@@ -3682,8 +3682,10 @@ re-evaluated on the next check.
 - New `localStorage` keys follow `class26e.<thing>` and are wrapped in
   `try/catch`. Keys added for the update machinery: `class26e.statusbar.v1`,
   `class26e.frame.ok`, `class26e.update.dismissed`, `class26e.daily.seen`,
-  and session-scoped `class26e.updating`. None of these live on `store`, so the
-  `applyLoadedData()` default rule doesn't apply to them.
+  and session-scoped `class26e.updating`; and `class26e.ringtier.seen` (the
+  last Home ring tier this device showed - see the ring draw). None of these
+  live on `store`, so the `applyLoadedData()` default rule doesn't apply to
+  them.
 
 ---
 
@@ -15009,7 +15011,7 @@ disagree with it.
     offset from when its class went on), so a loaded machine gives the
     same frames as a quiet one. The 100% hundo trigger is not covered by
     the gate.
-- **HOME'S RINGS HAVE TWO TIERS: ORANGE, THEN BLACK (build 317).** *"I
+- **HOME'S RINGS HAVE TWO TIERS: ORANGE, THEN THE SIX FLARES, AND THEY DRAW ON (build 317).** *"I
   noticed that the orange glowing rings light up when you hit max rank.
   Let's do it so that that happens once every one of flares and secret
   flares are lit up. OR make it where the rank one is all orange but if
@@ -15025,25 +15027,173 @@ disagree with it.
     `mysteryAllFound()`: that one means the three Void flares and has
     since build 302. `.cosmic-orbit-ring-eclipse` and NOT the orange
     class. Every secret flare without Supernova is plain - tier two
-    needs both.
-  - The black is a near-black body whose light is on its edges. Round
-    one (3.4 wide, a hairline rim fading to .42, one faint haze) came
-    back *"I can't see the black ones ... could be better"*: on the dark
-    sky a dim rim is no rim. Now: `#030207` at 5.2 wide, a rim either
-    side at 1.15/.85 in a per-hero gradient (`depthId + "eclipse"`,
-    white at the upper left - the system's one light - to icy cyan,
-    never below .78), a stacked-stroke dark shadow under it, and a
-    CORONA - three soft strokes of violet/blue light off the black,
-    outside and in. Dark core plus halo is what reads as an eclipse.
-    **A dark ring is seen by its light, so the light has to be strong
-    and continuous.** Every piece is a
-    plain stroke - **no filter at all**, so iOS paints what Chromium
-    does. Static, like the orange tier (the orange rings never moved),
-    so Reduce motion has nothing to stop; the rings live in the static
-    sphere layer, and animating anything there repaints the turbulence.
+    needs both. The key is still `"eclipse"` whatever it looks like.
+  - **THE TOP TIER IS BUILT EXACTLY LIKE THE ORANGE, AND ONLY ITS COLOUR
+    IS ITS OWN.** Round three, after *"I don't like the black rings on the
+    main menu, they don't look like the other orange, they are thicker,
+    they just look different.. maybe black isn't the move but I figured
+    black would be sick."* What was wrong, measured: the orange is ONE
+    circle a ring, stroke-width 1.4, paint at .55 alpha, opacity 1,
+    `filter:drop-shadow(0 0 3px)` at .5. The black was SEVEN circles a
+    ring - a 5.2-wide near-black body, a 13-wide shadow, three corona
+    strokes (6, 3.4, 3) and two rims (.85, 1.15) - a band about 13 units
+    across, with no glow at all. Two rounds of making a dark ring
+    readable on a dark sky had each added light and width round it, so
+    it stopped being the same object as the orange. Now both styles are
+    one circle with those exact numbers; the gate compares them property
+    by property.
+  - **`RING_ECLIPSE_STYLE` picks the colour** (a `let` beside
+    `homeRingTier()`, only so the gate can draw both):
+    - `"flares"` (the default) - the six secret flares' own colours
+      (`MYSTERY_COLOR`) round the ring. SVG has no conic gradient, so
+      `ringFlaresURL()` draws one once onto a canvas (in hue order -
+      red, orange, yellow, ice blue, violet, pink - blended in OKLab so
+      no join goes muddy, the .55 baked into every pixel's alpha) and the
+      stroke is a `<pattern>` carrying it. The whole ring layer turns
+      once every 96s (`cosmic-orbit-spin`, a full turn, so the loop is
+      seamless; on the shared loop clock; off under Reduce motion).
+      Turning a circle about its own centre moves the colours and not
+      the stroke.
+    - **Round four: "the flares ring reads paler and weaker than the
+      orange ... lavender/white with faint colour."** Three causes, all
+      fixed without touching the stroke or the .55: the swatches are
+      bubble colours, and the ice blue and violet in particular wash out
+      as a 1.4-wide line at .55 on a dark sky, so each colour's chroma is
+      raised (`RING_FLARE_CHROMA`, 1.6 for those two, 1.3 for the warm
+      four, which would clip into red any higher) and its lightness held
+      at `RING_FLARE_LIGHT` (.7, about the orange's own); each colour
+      HOLDS for half its sixth of the ring before blending, so it reads
+      as six colours rather than one long blend; and the glow was a
+      single pearl drop-shadow, which whitened everything. **A
+      drop-shadow is one colour however many the ring has**, so the
+      flares ring's glow is the orange's drop-shadow written out
+      longhand: the same two rings again in `.cosmic-ring-glowsvg`,
+      blurred by exactly the drop-shadow's 3px (a standard deviation of
+      1.5 user units, i.e. `calc(1.5 * 100cqw / 360)` on the hero's
+      container) at its .5. The blur sits on an HTML-level svg rather
+      than on SVG elements, so iOS draws it. Measured: every flare's
+      centre has a chroma (max - min channel) of 189-255 against the
+      orange's 168.
+    - `"black"` - a near-black ring (`rgba(5,3,8,.55)`) whose drop-shadow
+      is ember: an eclipse corona, still, the same width as the orange.
+  - **The top tier's rings sit in a layer of their own**
+    (`.cosmic-hero-ringlayer`), placed UNDER the main svg - where the
+    orange paints, first in that svg - so the sweep is a compositor
+    transform and never repaints the sphere's turbulence filters. No SVG
+    filter anywhere (those break on real iOS); the drop-shadow is the
+    same CSS filter the orange has always used.
+  - **THE RING DRAW (round four).** *"I do like how there's a small
+    cutscene within the main menu when the rings get colored."* There was
+    none - the rings simply changed when Home was next built - so
+    `playRingDraw()` is it. The first time THIS DEVICE shows a ring tier
+    above the last one it showed (none -> orange, orange -> flares,
+    none -> flares), Home opens with the rings as they were and the new
+    colour draws on round each ring from the top, the outer first and
+    the inner 200ms behind (1.4s each), with a soft glint at the head;
+    the old rings fade under it and the real new rings (with their glow)
+    fade up as it hands over.
+    - `showHome()` asks `ringDrawPlan()` before building the hero and
+      hands the old tier over in `ringDrawFrom`, which only that one
+      build reads. That build puts the new rings in a hidden ring layer
+      (`.is-drawing`, even for the orange, which otherwise lives in the
+      main svg) and adds `.cosmic-hero-ringold` and
+      `.cosmic-hero-ringdraw`. Their classes are deliberately NOT
+      `.cosmic-orbit-ring`, so everything that counts rings still counts
+      two.
+    - The last tier shown is `class26e.ringtier.seen`, viewing history
+      like `class26e.daily.seen`: not on `store`, so it does not sync and
+      a second device gets its own moment. Missing counts as no tier, so
+      a device already at a tier when this shipped plays it once. It is
+      written when the draw STARTS, so leaving Home before then means the
+      next Home plays it. A drop (a reset) or Reduce motion records the
+      new tier and draws nothing.
+    - It holds nothing up and nothing waits for it. It waits: no tour,
+      loading screen, cutscene, reward card, scene bridge or What's New
+      may be up (`ringDrawHeld`, the badge cutscenes' rule), reward
+      cards still owed on this Home go first for up to
+      `RING_DRAW_CARD_WAIT_MS`, and the page has to be visible.
+    - Compositor-friendly: the old rings and the new rings (glow and
+      all) are still layers that only fade; what moves is one
+      filter-free svg - two dashed strokes and two glints - for 1.6s.
+      The handover and the tidy-up are read off the animations, not the
+      clock, so a slow or seeked page cannot pull the layers out early.
+      The flares rings keep turning while hidden, so the drawn copy is
+      set to the angle they will be at when it hands over.
+    - **Recording it frame-stepped needs one correction**: the draw's
+      animations are created 600ms (real time) after Home mounts, which
+      is many frames late on a recorder that takes a second a frame, so
+      the recorder puts them on the virtual clock as starting 0.6s after
+      the swap.
   - **Gate: `check_b317_rings`** - all four states on both reference
-    devices, read off the rings Home really builds; fails 74cc518 (the
-    max-everything account is still orange there).
+    devices, read off the rings Home really builds: the top tier matches
+    the orange's stroke-width, opacity, stroke-opacity, glow shape and
+    alpha and paint alpha, with no extra circles; by default its paint
+    is light and carries all six flare hues round the ring (sampled off
+    the pattern's picture at 24 angles), each flare's centre at least as
+    vivid as the orange and the glow the same rings blurred by the
+    drop-shadow's own amount; the sweep turns and stops under Reduce
+    motion; `"black"` is built the same way, near-black with an ember
+    glow; and the ring draw opens in the old look, draws both rings
+    filter-free with glints, records the key, hands over, does not play
+    on the second Home, waits for a tour, plays from no tier when the
+    key is missing, and does nothing under Reduce motion. Fails 1888b11
+    (5.2 wide, six extra circles, black, no draw); the vividness check
+    fails 3644f1b (round three).
+- **HOME'S TAPS: A RANK BUBBLE ANSWERS LIKE A SECRET FLARE, AND THE PLANET
+  ANSWERS THE TOUCH (build 317).** *"I like what happens when you click the
+  secret flares. Can the large flares do the same? I also think the same
+  could go for the large planet, improve what happens when you click."*
+  - **What a secret flare does** (and still does, untouched):
+    `showContextualInfo(dot, flareSays(...), { follow, ring, refind })` - a
+    box that follows the turning dot, a ring round it in place of the grey
+    dot, found again if Home is rebuilt, open 4.2s; pressing it moves
+    nothing.
+  - **A rank bubble now makes the same call**, with `ringFit` (new: the
+    ring is the bubble's own width + 10px, not the 16-28px a tiny flare
+    gets), and answers in the glass with `flareBubbleTold()`: a light of
+    its own colour (`--rank-color`) swelling from the middle and fading,
+    0.9s, a child of the bubble so its clip keeps it inside. Before, a
+    bubble opened a box that stayed where it was put, with "Bronze rank -
+    reached. Its flare is lit." **It never opened the Rank screen and
+    still opens nothing.** The bubbles do not orbit on Home (only in the
+    rank-up scene); `follow` costs nothing and keeps the box on the
+    bubble through any re-layout.
+  - **The flare and its rank share a name now** (`ACCENT_DISPLAY_NAME` was
+    renamed to the rank names), so the words are "Gold flare. Lit since
+    you reached Gold rank." held, and "Platinum flare. Reach Platinum rank
+    to light it: 10 more levels, 2 more badges." locked - the old flare
+    names (Ember, Comet) do not exist any more.
+  - **The planet keeps its "....." and gains a touch** (`planetTapFx`): the
+    surface presses in (its edge darkens), a ripple of light runs out from
+    where the finger landed, a halo leaves the rim, the inner ring then the
+    outer one brighten (outline overlays, not the rings themselves, which
+    live in the filtered svg), and the two rings of secret flares surge a
+    few degrees and give them back over nine seconds - the individual
+    `rotate` property on the orbit layers, which adds to their `transform`
+    spin, so they end on the shared loop clock again. All in one
+    `.cosmic-tapfx` box made on the first tap and placed just before the
+    rank bubbles: over the sphere and anything later drawn on it (the
+    Supernova scar), under the bubbles, `pointer-events:none`. The
+    planet's own DOM is not touched. Transform and opacity only.
+  - **Reduce motion**: no ripple, no surge, no swell; the press, the halo,
+    the rings and the bubble's light show still for a moment. No layout
+    moves (measured: the greeting, Start Studying and the hero box are
+    identical before, during and after). A tap is the only thing that
+    starts any of it, so it cannot collide with the unlock queue, a tour
+    (which takes the tap itself) or the daily alert.
+  - The bubble's light is removed when its animation finishes, not on a
+    timer, so a slowed or seeked page keeps it until it has played.
+  - **Gate: `check_b317_hometaps`** - real clicks at the live positions on
+    both reference devices: a held and a locked bubble (words, ring sized
+    to the bubble, following, the light), a secret flare unchanged, the
+    planet ("....." kept, five overlay animations, both flare rings
+    surging, no filter, no layout shift, one box after four taps, at most
+    one surge per ring), and Reduce motion (still and visible, nothing
+    moving). Fails 1888b11.
+  - Recorded frame-stepped: the popups' 3.2/4.2s timers run in real time,
+    so the recorder clears `showContextualInfo._t` and closes them on the
+    virtual clock, and `element.animate()` is patched to freeze each new
+    animation at the virtual moment it is made.
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h
