@@ -12068,7 +12068,9 @@ text box won't show up."*
   skipped while it is behind the planet, where the planet takes the tap -
   correct).
 
-**The tooltip follows the flare.** *"Ensure that it properly and smoothly
+**The tooltip followed the flare** (REPLACED in build 317, round three:
+no tooltip follows anything now - a tap answers in Home's caption, see
+"HOME'S TAPS, ROUND THREE"). *"Ensure that it properly and smoothly
 follows the selected flare while the text box is open with the arrow like
 thing being placed in it correctly."* (Build 317 replaced the per-frame
 measuring below with a compositor ride - see "Home's taps" - because it
@@ -15274,12 +15276,18 @@ disagree with it.
   ANSWERS THE TOUCH (build 317).** *"I like what happens when you click the
   secret flares. Can the large flares do the same? I also think the same
   could go for the large planet, improve what happens when you click."*
-  - **What a secret flare does** (and still does, untouched):
+  **REPLACED BY ROUND THREE (below): there is no box, no pointer line, no
+  ring and no follow any more** - `showContextualInfo`,
+  `contextualFollowPath`, `ringFit`, `aimEdge`, `refind` and
+  `check_b317_followglide` are gone. What follows in this bullet is the
+  history of rounds one and two; the planet's touch (`planetTapFx`) and the
+  bubble's light (`flareBubbleTold`, reworked) are the parts that survive.
+  - **What a secret flare did** (REPLACED - round three):
     `showContextualInfo(dot, flareSays(...), { follow, ring, refind })` - a
     box that follows the turning dot, a ring round it in place of the grey
     dot, found again if Home is rebuilt, open 4.2s; pressing it moves
     nothing.
-  - **A rank bubble now makes the same call**, with `ringFit` (new: the
+  - **A rank bubble made the same call** (REPLACED - round three), with `ringFit` (new: the
     ring is the bubble's own width + 10px, not the 16-28px a tiny flare
     gets), and answers in the glass with `flareBubbleTold()`: a light of
     its own colour (`--rank-color`) swelling from the middle and fading,
@@ -15314,14 +15322,15 @@ disagree with it.
     (which takes the tap itself) or the daily alert.
   - The bubble's light is removed when its animation finishes, not on a
     timer, so a slowed or seeked page keeps it until it has played.
-  - **Gate: `check_b317_hometaps`** - real clicks at the live positions on
+  - **Gate (round one, rewritten in round three): `check_b317_hometaps`** - real clicks at the live positions on
     both reference devices: a held and a locked bubble (words, ring sized
     to the bubble, following, the light), a secret flare unchanged, the
     planet ("....." kept, five overlay animations, both flare rings
     surging, no filter, no layout shift, one box after four taps, at most
     one surge per ring), and Reduce motion (still and visible, nothing
     moving). Fails 1888b11.
-  - **The box rides with the flare, on the compositor (round two).**
+  - **The box rode with the flare, on the compositor (round two - REPLACED:
+    there is no box to ride).**
     *"The things pop up when clicking the flares they slightly shake."*
     The follow was a requestAnimationFrame loop that MEASURED the target
     each frame and wrote the line's left/top and a rounded translate. The
@@ -15348,7 +15357,7 @@ disagree with it.
     / iPad Pro 11); from a floating bubble 0.36/0.35px before (a slow
     bob, under the bar, so only the flare case fails before) and
     0.023/0.068px after.
-  - **The planet's pointer ends on its rim** (`aimEdge`): *"clicking the
+  - **The planet's pointer ended on its rim** (REPLACED - no pointer) (`aimEdge`): *"clicking the
     planet, the line pointing at goes to the center, do it from the
     bottom or top edge."* The line runs to the sphere's bottom edge when
     the box is below it and its top edge when above. The tap effect
@@ -15357,6 +15366,145 @@ disagree with it.
     so the recorder clears `showContextualInfo._t` and closes them on the
     virtual clock, and `element.animate()` is patched to freeze each new
     animation at the virtual moment it is made.
+- **HOME'S TAPS, ROUND THREE (build 317): ONE CAPTION UNDER THE PLANET,
+  AND EVERY TAP ITS OWN ANSWER.** Madison: *"I like the clicking flare
+  effects. When you click it does an effect and it's great ... Make them
+  all smooth, some of the flare seem to be flashing idk why. Ensure the
+  locked ones (not yet unlocked) [don't do that] yet. Make the secret flare
+  do a tiny effect ... the non unlocked ones do nothing ... maybe all the
+  locked stuff does the same effect, like a tiny shake ... those pops take
+  away from the interactiveness. Could the pops with the words be moved ...
+  above the 'good evening' but also below the ring and centered? So maybe
+  now it doesn't get circled when clicking them, the effect would tell you
+  that you clicked it ... longer ones cause more room?"*
+  - **The words: one caption** (`homeCaptionShow`, `homeCaptionPlace`), an
+    absolutely placed `<p class="hc-item">` in Home's panel (inside
+    `.home-caption`, `role=status`), so showing, changing or hiding it can
+    never move the greeting, NOVA, the tagline or Start Studying (measured:
+    their boxes identical before, during and after, on all 74
+    combinations). A kicker (the name in the thing's colour, then a quiet
+    state: Lit / Locked / Secret flare / Not found) over one or two
+    sentences, each sentence an inline-block (`.hc-s`) so lines break
+    between thoughts, not in the middle of one. A new answer crossfades over
+    the last (the old one `.is-out`), the same answer tapped again only
+    keeps it up, and it goes after `3.4s + 32ms a character` (at most 7s)
+    of no taps.
+  - **Where it goes, measured at every show and on resize.** The floor is
+    the planet system's lowest point under the caption's width, FROM THE
+    GEOMETRY: the outer ring by its radius in the 0 -12 360 342 viewBox
+    (a turning ring layer's box is a rotated square, far bigger than its
+    circle), plus half a secret flare, and every bubble by its layout box
+    plus the float's 8px - never the bubbles' current float, which put
+    successive answers 1-3px apart. Then, in order: centred in the gap
+    under the system, stacked; the same in one run (`is-inline`); over the
+    greeting (`hc-over-greeting` fades it out while the caption is up);
+    over the greeting and the title block (`hc-over-title`); one run
+    across the column; BESIDE the planet in the largest free stretch of
+    its own side (`is-beside`, landscape phones - every fixed control and
+    the centred button counted as obstacles); clamped only as the last
+    resort. Cover levels are sticky within a run of taps (a short answer
+    after a long one does not bring the greeting back for a moment). The
+    type steps down on the smallest screens (`max-width:21rem`,
+    `max-height:36rem`) and up with Home's tablet block.
+    **What that means per device (the longest words):** stacked in the
+    gap with nothing fading - Madison's two (17 Pro Max installed, iPad Pro
+    11 installed and in Safari), the 85%-zoom Pro Max, iPad Air, 12.9/13 in
+    portrait, iPad 10.2 and mini (6th) installed, Android tablet upright, a
+    1440p display. The greeting fades under it - the 17 Pro Max in Safari,
+    a 14/15/16 installed (longer answers only), iPad 10.2/mini in Safari,
+    MacBook Pro 14/16 and FHD windows, most iPads on their side installed.
+    The greeting AND NOVA/tagline fade under it - 13 mini, SE 2nd/3rd, a
+    14/15/16 in Safari, Android phone, short laptop windows (1366x638,
+    MacBook Air, 1280x670), iPads on their side in Safari, an Android tablet
+    on its side. Beside the planet - every phone on its side. Clamped only
+    on an SE 1st gen in a Safari tab and on its side (the device this file
+    already says does not fit Home). The full matrix:
+    `scratchpad/r317taps/capfit.py` (74 combinations, 0 overlaps).
+  - **The copy** (`homeTapCopyRank` / `Flare` / `Planet`, tables
+    `HOME_FLARE_MEANING`, `HOME_SECRET_LINE`): a held rank "Gold flare -
+    Lit / A sun that makes its own light. Lit when you reached Gold rank."
+    (there is no reach date on `store`, so "when" is the rank, never a
+    date); a locked rank "Sapphire flare - Locked / Reach level 60 and earn
+    9 badges to light it. 20 more levels and 4 more badges to go."; a found
+    secret flare its name and a line (Void's three say how many of the
+    three are still to find until all are, then "One of the three that
+    made Void."); one not found "Secret flare - Not found" and a hint from
+    its hunt state (hunting / next - "a few more levels" within 3 of its
+    level - / missing), never its name or colour, plus "Find it to unlock
+    X." only once a hint card has named it; the planet "Your system" and
+    where you stand (rank, level, badges, rank flares lit, secret flares
+    found OF THOSE SHOWN - 3, 5 or 6, so the count gives nothing away),
+    tapped again while it is up "Next: <rank> rank. <what is left> to go."
+  - **The answers**: a held rank lights in its glass (`flareBubbleTold`),
+    presses (`homeBubblePress`, the individual `scale`, which adds to the
+    float) and lets a ring of its colour go (`homeBubbleHalo`, a sibling at
+    the bubble's place and current float). A locked rank and a secret flare
+    not found answer ALIKE (`homeLockedNudge`): a 320ms damped shake on the
+    individual `translate` (both are centred with `-50% -50%`, which the
+    keyframes keep) and a dip - a dark disc inside the glass, never the
+    bubble's own opacity, which would show a secret flare under it sharp.
+    A found secret flare (`secretFlareTold`) swells, lets a ring of its
+    colour go and throws four sparks - children of the flare, so they ride
+    its orbit. The planet keeps `planetTapFx` exactly; only a quick second
+    tap changed (below). The shared `:active` shrink is off on the bubbles.
+  - **On the touch, chained, smooth.** `homeTapBind`: the effect and the
+    words land on `pointerdown`; the click from the same touch is ignored,
+    and a click with no touch before it (keyboard, a script, the rank-up
+    gate's `.click()`) still answers. Every effect starts from where the
+    last one on that thing has got to (opacity, `scale`, the shake's
+    offset - `homeShakeAt` reads our own keyframes), and what a tap leaves
+    behind (halo, ring, sparks, the planet's ripple and rim halo - three
+    copies each) runs side by side, so nothing restarts from zero. All
+    transform/opacity, no filters.
+  - **THE FLASHING, FOUND BY STEPPING FRAMES.** Every animation paused and
+    set from a 30fps clock, each bubble's brightness read off the screen
+    frame after frame (`check_b317_noflash`; the probes are
+    `scratchpad/r317taps/flash.py` and `attach.py`):
+    - the tap light went 0 -> .96 in 67ms: the WAAPI `easing` OPTION eases
+      the whole effect, so a peak at 22% arrives in two frames - +17 levels
+      in one frame. **Put easing on the keyframes, not the options, for
+      anything with an early peak.** Now a quarter-second bloom (<= 4.9);
+    - the box, its line and its ring slid over NEIGHBOURING bubbles (-58 on
+      Silver, 22-33 on Platinum) - gone with the box;
+    - the locked bubbles lit up with the held light - they never light now
+      (the first cut of the dip was itself a dark flash, -22.8 in a frame;
+      it is .32 over 460ms);
+    - Supernova's recorded burst peaked in one 46px flip-book frame every
+      three seconds, in a locked grey bubble (+5.6). The bubbles'
+      recordings (`.rk-record-host`: Home, the Profile card, the road
+      map's chips) now play `rk-nova-*-soft`, built over a third of the
+      loop (<= 1.8); the Rank tab's big emblem keeps the bang.
+      `ORBIT_MOTION_REV` renames titan's sheet so a device records it
+      again, once - **a recorded motion change with no drawing change
+      needs a new sheet name, or the cache keeps the old one forever**;
+    - a sheet that arrives after the still emblem is on screen (the first
+      Home of a session) cut in up to 12-13 levels off the still drawing;
+      it crossfades in over 520ms now (`attachOrbitSheet(..., fade)`; a
+      reused emblem cancels a fade that was under way). A sheet put on
+      before the first paint (`startOrbitEmblemAnimsKnown`) never fades.
+  - **Gates** (all fail on 336c444): `check_b317_hometaps` (rewritten:
+    every target type answers in the caption between the system and the
+    greeting, centred, with no box/line/ring; held lights/presses/haloes
+    and does not shake; locked shakes/dips and never lights; found
+    sparkles; unfound hints without its name; the planet keeps its touch
+    and surge and then says what is next with the first ripple still
+    running; the words on the pointerdown; a second tap carries the light
+    on; crossfade; fade-out; no layout shift; Reduce motion still and
+    visible), `check_b317_caption_fit` (320x568, 375x667, 440x956, 440x846
+    in Safari, 834x1194: inside the screen, off the system, the button, the
+    chat button, the daily question, the version and the tab bar, off the
+    greeting and title unless they have faded, nothing moved) and
+    `check_b317_noflash` (the tapped light <= 7 a frame, every other bubble
+    <= 3.5 while three things are tapped, Supernova <= 3.5 over two bursts,
+    a late sheet <= 3.5 a frame where the cut was 12+). The older sections
+    that read the box (audit A's "goes with Home", 91's names, 93's
+    under-the-glass tap, the rank-up lock's "a flare still answers") read
+    the caption now; 91's "marker stays on the flare" is gone with the
+    marker.
+  - **Recorded frame-stepped**: `scratchpad/r317taps/rectaps.py` (the
+    caption's own timer runs in real time, so the recorder takes it over
+    and hides the caption on the virtual clock; `element.animate()` is
+    patched to freeze each new animation at the virtual moment it is made).
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h
