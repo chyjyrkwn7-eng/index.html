@@ -5678,7 +5678,7 @@ lobby / Main menu. Tug of War is untouched.
   and once the dim is opaque `body.bc-covering` hides `#stage` behind it.
   No filter is animated anywhere in the case - glows are gradients that
   change opacity. Measured after: no frame over 34ms in three runs.
-- **The third flare is its own bigger scene** (`playFinalFlareScene`): the
+- **The third flare is its own bigger scene** (`playFinalFlareScene`; rebuilt in build 317 - see "THE SECRET FLARE SCENES, REBUILT"): the
   last flare streaks in, all three whirl round the planet, fall in, the
   planet implodes, flash and shockwaves, and Void comes up out of the dark
   in a three-colour ring. It does not announce a character; the next
@@ -5874,7 +5874,7 @@ orbit dots are built from it; `mysteryAllFound()` means those three.
 `flareCompletedVoidThisSession` is what makes a find "the one that made
 Void" - `mysteryAllFound()` is true for every find after it too.
 
-**The flare scene is one function for both hunts**:
+**The flare scene is one function for both hunts** (history: build 317 rebuilt every flare scene - see "THE SECRET FLARE SCENES, REBUILT"):
 `playFinalFlareScene(color, done, { voidFlare })` lays out every found
 flare round the centre and raises the character the flare hands over.
 The reveal was rebuilt because Void read as a sticker in a ring: big,
@@ -12201,7 +12201,7 @@ flare character, hidden until it is yours." then how (or "Unlock X to see
 how" while the flare before is missing). The onboarding picker shows no
 locked characters, so nothing changes there.
 
-**Four scenes, none shared.** *"Ensure the cutscenes for the 2nd and 3rd
+**Four scenes, none shared** (history: rebuilt in build 317 on one engine - see "THE SECRET FLARE SCENES, REBUILT"). *"Ensure the cutscenes for the 2nd and 3rd
 secret flare characters are cooler and are different from each other and
 different than void ... [the 4th's] more about the planet."* Void keeps
 build 312's scene. `flareSceneShell()` holds what the other three share
@@ -16118,6 +16118,174 @@ disagree with it.
     the whole walk, with the person acting on that clock. A screenshot
     harness on a loaded box takes 0.5-1s a shot, so stills lag their
     stage; the poll's times are the measurement.
+- **THE SECRET FLARE SCENES, REBUILT (build 317).** Madison: *"The secret
+  flare cutscenes, these are a huge one ... they could be longer, and I think
+  the way the character pops out is kind of lame, it's just a still character
+  with the body, could it be animated? Maybe you make it so it's super dark
+  and you can barely see the character but still can tell it's a character
+  ... Change that part for them all ... they should all be different but
+  similar ... This rank up cutscene is nearly perfect, I need these ones to
+  be on par"*, and *"If the cutscene needs to be longer to make it cooler
+  then do it. THAT GOES FOR ANY CUTSCENE IN THE APP, longer is better."*
+  Every scene a find plays is new: `playFlareFoundScene` picks
+  `playFirstFlaresScene` (red, orange), `playVoidFlareScene` (the third),
+  `playUmbraFlareScene`, `playHorizonFlareScene`, `playGenesisFlareScene`.
+  `playFinalFlareScene` is kept as an alias for old callers.
+  - **One engine, one arc** (`sfScene`, `sfFigure`; CSS "THE SECRET FLARE
+    SCENES"), in the rank-up's language: an opaque dark (#030209), the
+    subject rising out of it .32s later, the FIND (the flare streaks in and
+    ignites - the rank-up's `.rank-litpop`, `sfIgnite`), the BUILD-UP (the
+    flare's own story, speeding up to a climax), the DARK, the SILHOUETTE,
+    ITS MOVE, THE LIGHT RISES, the TITLE (the rank-up's type: kicker, the
+    name big in the serif with a glow of its colour, one line), ONE ending
+    (`sf-end`: stage, sky, wash and words fade together, then `sf-out` and
+    the bridge in the character's colour). Lengths, start to hand-over
+    (b6cd249 -> now): first two 5.1 -> 10.3s, Void 18.7 -> 28.7, Umbra
+    18.9 -> 27.7, Horizon 19.1 -> 28.3, Genesis 19.3 -> 28.6.
+  - **The four stories.** *Void* - absence: the three spots round the
+    planet, Afterglow lands, the three whirl faster and faster, light
+    streams in off the sky, the planet's core goes black from inside, the
+    flares spiral in and are swallowed, it implodes to a point that goes
+    out, and a wave of black runs out and takes every star with it; then
+    three small lights in a triangle (its face) and the hood round them.
+    *Umbra* - the eclipse: Penumbra lights the moon's limb, the shadow
+    slides across, Baily's beads, the diamond ring, the corona round a
+    black disc; two violet eyes open IN the disc and the hood grows out
+    of it, the corona its rim light; its move turns the corona down
+    (`sf-lamp`) and its second pulse is third contact (the diamond on the
+    far limb), the light back, the moon's phases round it. *Horizon* - the
+    edge: a black hole pulls every flare found in, stretched, and they
+    freeze at its edge; the hole sinks and its disc lies down flat - a
+    horizon line; light breaks over it like a dawn (glow and rays) and
+    Horizon rises out of it in three stages (wholly under, head over the
+    edge in the dark, shoulders in the light). *Genesis* - creation: your
+    own Home planet (`buildCosmicHero(true)`), Worldheart dives in, the
+    ranks clear and the camera closes in, cracks, a growing quake, the
+    split on a blazing core with a column of light, the matter flung off
+    becomes a disc round the core, and the silhouette stands in the core's
+    glare. Overlay states are `sf-*` (`sf-pull`, `sf-total` ...): the Home
+    hero inside Genesis styles `.is-found` and friends, so a bare `is-*`
+    on the overlay could one day match its descendants.
+  - **THE CHARACTER IS NEVER A STILL PUT ON SCREEN.** `sfFigure` holds the
+    live drawing twice, built in the same moment: `sfSilhouetteSVG` (ONE
+    svg: a copy of the figure painted in a rim-light gradient of its
+    flare's colour, a hair larger about the chest and lifted, under a copy
+    painted near-black - so only the edge catches the light; `SF_SIL[ch]`
+    says what stays lit in its own paint (`keep`: eyes, the worn flare,
+    the special's parts; `first`: what lights before the rest) and what
+    is light rather than shape (`drop`)) and `sfLitSVG` (the drawing as
+    everywhere else, without its little scenery - the scene is its
+    scenery). Both take `.char-live` in ONE frame (`F.live()`, at the
+    first beat the figure shows), so every idle loop and later the special
+    run in step across the wipe's edge, and nothing invisible repaints
+    through the build-up. In the dark it BREATHES (`.sf-breath`, the
+    `scale` property, alternate) and TURNS towards you (`.sf-figmove`, a
+    flat turn: the body narrowed as if turned 13deg away, opening out
+    through 6 to facing you, with a drift, a lean, a rise and a settle -
+    `scale` x/y, `translate`, `rotate`, three transitions). **Never
+    `rotate:y`**: it was, under a perspective, and a 3D transform on any
+    ancestor makes Chromium raster the drawing's CLIPPED parts coarse -
+    Umbra's brow moon was a blurred block for the whole silhouette while
+    everything round it stayed sharp (found frame by frame on the
+    recording; real time showed the same). At 13deg the keystone a real
+    turn adds is a few per cent.
+  - **Its own special turns the light on.** `F.special()` puts
+    `char-special` on both copies for `CHAR_SPECIAL_MS[ch]`; the reveal is
+    timed to the special's own flash (Void's white at 3.12s, Umbra's
+    second pulse, Horizon's flare pulled back in at 2.35s, Genesis's rose
+    at 2.82s). One gesture, the same in all four: the family resemblance.
+  - **The light rises as a wipe of the lit copy over the dark one, on two
+    transforms**: `.sf-wipe` (overflow hidden, its top edge feathered by a
+    STILL mask) slides up while `.sf-wipe-in` slides down by exactly as
+    much, so the drawing holds still and the edge passes over it - the
+    compositor's job, never a clip-path or a moving mask. A line of light
+    riding the edge was tried and dropped: it travelled over the empty air
+    above the head and read as an ellipse floating there.
+  - **A CSS MASK ON THE <svg> BREAKS ITS INNER CLIP-PATHS IN CHROMIUM.**
+    The bust-dissolving mask was first on the svgs (as the app-wide
+    `.avatarchar-svg` edge mask is): Umbra's brow moon drew as a full disc,
+    and under the 3D turn as a blurred square; on the wrapper
+    (`.sf-figbody`) every clip draws. The scene's drawings carry
+    `mask-image:none` and `filter:none` (avatarDepth is an svg filter).
+    Not checked: whether the app-wide mask does the same to Umbra's moon
+    at board size in Chromium - at 12px nobody would see it, and iOS is
+    WebKit.
+  - **The flares go round the shoulders, behind and in front** (`sfOrbit`):
+    two copies of one `tiltedOrbit` turning on one clock, the far half
+    (`clip-path:inset(0 0 50% 0)` in the squashed plane's own coordinates)
+    under the figure and the near half over it; at the ellipse's ends the
+    two halves of a flare meet. Round the shoulders, not the head (the
+    specials' rule: at head height the near half crosses the face).
+  - **The wash is the character's colour, not the flare's** (`--tc`,
+    `.sf-tint`, about a fifth of Home's strength): Void's flare is yellow,
+    and yellow on black is olive.
+  - **Horizon's hair on the scene's clock.** Its surges run on 17s (white)
+    and 29s (deep blue) clocks that start with its loops; left alone the
+    blue drain landed on the reveal. The scene sets both delays when the
+    loops start (`KEYS`, `REVEAL`) so the white surge runs up as the light
+    rises. Re-time those two numbers if Horizon's beats move.
+  - **Taps**: none until the title (the rank-up's rule); from
+    `SF_TITLE_TAP_MS` after it a tap starts the same ending. Caught on the
+    way down (Genesis's planet is a real hero with taps of its own).
+  - **Reduce motion: the still scene** (`sf-still`, `sf-final`, `F.lit()`):
+    the end state from the first frame - the character lit in its colour,
+    its backdrop, every flare in place - titled at .3s, ending at 3.9s
+    (`SF_STILL_*`), ~4.8s to the hand-over; no special. And it is actually
+    seen now: a Reduce-motion results screen lands everything at once and
+    plays no pop-ups, so the find never appeared at all - the quiet path
+    plays the still scene over the landed results (not on the way back
+    from the review, `opts.instant`; not with banners muted).
+  - **Kept**: where each plays and what follows (the flare card, 1.8s, the
+    scene, the character's card, its banner; the first two: the scene,
+    then the flare card); the overlays still carry `.ff-scene` / `.fl-scene`
+    (`homeUnlockBlocked`, `CHAR_SPECIAL_COVERS`); `ringDrawHeld` names
+    `.sf-scene` (it named `.xs-scene`, which three of the old scenes had).
+    Muted banners play nothing, as before.
+  - **The old Home Void cutscene is gone from every path.**
+    `playVoidCutscene` (Home, for a `pendingVoidCutscene` stored before
+    build 215 - nothing has queued one since) plays `playVoidFlareScene`
+    and then Home and Void's card as it always did, and refuses to start a
+    second while one is up (a second `showHome()` inside the ~29s scene
+    stacked two old ones on b6cd249). Its `#void-cutscene` CSS is unused;
+    the busy-checks that still name `#void-cutscene` are harmless (Home has
+    returned early while the scene plays, so none of them can run).
+  - **Gate: `check_b317_sflare`** - stepped on the page clock with every
+    animation seeked (`SF_SEEK`), all six scenes: the character's own live
+    drawing twice, loops running in real time; a silhouette first (lit copy
+    hidden, black body, its eyes / flare lit; the figure's mean light <= 36
+    with its rim showing) and lit after (silhouette hidden, >= 1.6x and >=
+    35 - measured 15-30 against 39-76); the beats in order (eyes, shape,
+    catch, special, light); no filter on the drawings or the scene's own
+    parts; 4s+ longer than b6cd249 (the first two 60%); the Home queue held
+    throughout; under Reduce motion a 3.8-5.5s still scene lit from the
+    first frame, and the quiet results path playing it once; the flow on a
+    real run (summarize, the real scene, the cards logged); the figure
+    turns flat (no 3D over the drawing) and Horizon's ground reaches the
+    bottom of the screen (both fail on 141b640); the Home path plays the
+    new Void scene once (fails on b6cd249). 46+ assertions fail on
+    b6cd249; the ones that pass there are the guards (queue, flow,
+    hand-over).
+    check_b312_flares, check_b313_flares, check-unlocks (third flare) and
+    record-cutscenes moved to the new structure. **Pre-existing, not this
+    stream's:** check_b313_flares_glass's "a tap on a bubble with a flare
+    under it opens the bubble's rank" fails on b6cd249 as well (the
+    bubble's words changed in build 317's taps round).
+  - **RECORDING A SCENE, FRAME-STEPPED - AND ONE TRAP.** The before/after
+    MP4s are the page clock advanced 1/30s a frame with every animation
+    paused and seeked (rec4's method). Chrome keeps a CSS animation that a
+    script has paused or finished even after its name leaves
+    `animation-name` - so a scene that clears something with
+    `animation:none` (Genesis clearing the Home hero's flares) showed it
+    still there in the recording while a real page cleared it. The seek
+    now cancels such an animation itself (`SF_SEEK`, the recorder's SEEK)
+    - and checks EVERY step, finished ones included: skipping an animation
+    once the seek had finished it let one that ended before its name went
+    hold its last frame for good, and whether it had ended by then varies
+    run to run (its start is read off the real timeline), so one take of
+    Genesis showed the Home flares flying out with the zoom and the next
+    did not.
+    Recordings and sheets of this build: the scratchpad's
+    `r317sflare/before|after`.
 - **HOME'S TAPS, ROUND THREE (build 317): ONE CAPTION UNDER THE PLANET,
   AND EVERY TAP ITS OWN ANSWER.** Madison: *"I like the clicking flare
   effects. When you click it does an effect and it's great ... Make them
