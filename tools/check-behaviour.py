@@ -15147,7 +15147,7 @@ def check_b317_hundobox(br):
           const body = document.querySelector('.hfx-saucer:not(.is-mini) .hfx-ufo-body');
           const search = [...document.querySelectorAll('.hfx-ufo-search')];
           const gh = document.querySelector('.hfx-ufo-ghost'), ghs = gh && getComputedStyle(gh);
-          const out = { long, A, B, total: HUNDO_FX_TOTAL.ufo, tail: HUNDO_FX_TAIL_AT.ufo, has: !!(beam && inb), nsearch: search.length, samples: [],
+          const out = { long, A, B, total: HUNDO_FX_TOTAL.ufo, tail: HUNDO_FX_TAIL_AT.ufo, has: !!beam, nsearch: search.length, samples: [],
             ghosts: document.querySelectorAll('.hfx-ufo-ghost').length,
             ghost: ghs ? { dur: ghs.animationDuration, ease: ghs.animationTimingFunction, name: ghs.animationName } : null };
           if(!out.has) return out;
@@ -15184,18 +15184,18 @@ def check_b317_hundobox(br):
         check("%s: and they never reach the box - the beam is the only light that touches it - and are gone before it fires" % tag,
               all(q["o"] < .02 or q["b"] <= x["box"]["t"] + 1 for x in pre for q in x["search"]) and all(q["o"] < .02 for q in S[last]["search"]),
               [(x["t"], round(q["b"]), round(x["box"]["t"]), round(q["o"], 2)) for x in pre for q in x["search"] if q["o"] >= .02 and q["b"] > x["box"]["t"] + 1])
+        # round 6: ONE beam - "when it gets there it's not matching up
+        # perfectly". No second beam of the box's own anywhere in its life,
+        # and the saucer's runs on through the box's top edge to its floor.
         fire = [x for x in u["samples"] if 2.6 + A - .001 <= x["t"] <= 2.92 + A + .001]
-        check("%s: the box's beam shows only once the saucer's has reached the box's top edge" % tag,
-              all(not shown(x["inb"]) or x["beam"]["b"] >= x["box"]["t"] - 1 for x in fire) and any(shown(x["inb"]) for x in fire),
-              [(x["t"], round(x["beam"]["b"]), round(x["box"]["t"]), round(x["inb"]["o"], 2), round(x["inb"]["h"])) for x in fire])
+        check("%s: one beam - no second beam of the box's own, at any moment from firing to lift-off" % tag,
+              not any(shown(x["inb"]) for x in u["samples"]) and any(shown(x["beam"]) for x in fire),
+              [(x["t"], x["inb"]) for x in u["samples"] if shown(x["inb"])][:6])
         hv, ld, lf, gn = at(3.3 + (1.9 if u["long"] else 0)), at(4.7 + B), at(5.8 + B), at(6.25 + B)
-        feet = {x["t"]: round(x["beam"]["b"] - x["box"]["t"], 1) for x in (hv, ld, lf)}
-        check("%s: the saucer's beam meets the box's top edge (0-10px into it) hovering, landed and lifting off" % tag,
-              all(0 <= v <= 10 for v in feet.values()) and all(shown(x["beam"]) for x in (hv, ld, lf)), feet)
-        check("%s: the box's beam runs down to the box's bottom edge (within 4px)" % tag,
-              shown(hv["inb"]) and abs(hv["inb"]["b"] - hv["box"]["b"]) <= 4 and hv["inb"]["t"] <= hv["box"]["t"] + 2,
-              {"t": hv["t"], "inbeam": [round(hv["inb"]["t"]), round(hv["inb"]["b"])], "box": [round(hv["box"]["t"]), round(hv["box"]["b"])]})
-        check("%s: both beams are gone once it has lifted off (%.2fs), and the grab is still there (its two halves)" % (tag, gn["t"]),
+        feet = {x["t"]: [round(x["beam"]["t"] - x["box"]["t"], 1), round(x["beam"]["b"] - (x["box"]["b"] - 3), 1)] for x in (hv, ld, lf)}
+        check("%s: the saucer's beam runs on through the box's top edge to its floor (within 4px of 3px off it) hovering, landed and lifting off" % tag,
+              all(v[0] < -2 and abs(v[1]) <= 4 for v in feet.values()) and all(shown(x["beam"]) for x in (hv, ld, lf)), feet)
+        check("%s: the beam is gone once it has lifted off (%.2fs), and the grab is still there (its two halves)" % (tag, gn["t"]),
               not shown(gn["beam"]) and not shown(gn["inb"]) and u.get("ghosts") == 2, [gn["beam"], gn["inb"], u.get("ghosts")])
         gh = u.get("ghost") or {}
         check("%s: the grab itself is untouched - the 100%% goes up the beam in the same 0.6s on the same curve" % tag,
@@ -15221,12 +15221,12 @@ def check_b317_hundobox(br):
               {"n": len(orb), "deg": round(sweep_deg), "x": [round(min(xs or [0])), round(max(xs or [0]))], "yMax": round(max(ys or [0])), "boxTop": round(orb[0]["box"]["t"]) if orb else None})
         sw = [S[t] for t in (4.2, 4.33, 4.47, 4.56, 4.65, 4.74, 4.83, 4.96, 5.1)]
         dx = [round(x["beam"]["cx"] - x["box"]["cx"]) for x in sw]
-        gap = [round(abs(x["inb"]["cx"] - x["beam"]["cx"]), 1) for x in sw]
+        foot = [round(x["beam"]["b"] - (x["box"]["b"] - 3), 1) for x in sw]
         bw = sw[0]["box"]["w"]
-        check("%s: before it lands its beam sweeps across the box and back - out to both sides of it - with the box's beam moving as one with it, its foot on the box's top edge" % tag,
-              min(dx) <= -bw * .15 and max(dx) >= bw * .15 and abs(dx[0]) <= 2 and abs(dx[-1]) <= 2 and max(gap) <= 4
-              and all(shown(x["beam"]) and shown(x["inb"]) and 0 <= x["beam"]["b"] - x["box"]["t"] <= 10 for x in sw),
-              {"beamX": dx, "inbeamGap": gap, "boxW": round(bw)})
+        check("%s: before it lands its beam sweeps across the box and back - out to both sides of it - one beam, its foot on the box's floor all the way" % tag,
+              min(dx) <= -bw * .15 and max(dx) >= bw * .15 and abs(dx[0]) <= 2 and abs(dx[-1]) <= 2
+              and all(shown(x["beam"]) and not shown(x["inb"]) and abs(f) <= 4 for x, f in zip(sw, foot)),
+              {"beamX": dx, "foot": foot, "boxW": round(bw)})
         c8, f8, g8 = S[8.4], S[8.62], S[8.95]
         check("%s: it gathers itself before it goes (a light swelling under the hull at 8.4s), then breaks away with a boom - a flash and a ring thrown out - and is gone by 8.95s" % tag,
               bool(c8["charge"]) and c8["charge"]["o"] > .5 and bool(f8["flash"]) and f8["flash"]["o"] > .3 and bool(f8["boom"]) and f8["boom"]["o"] > .3
@@ -15268,6 +15268,9 @@ def check_b317_hundobox(br):
           store.lifetime.perfectTests = 600; if(!HUNDO_FX.some(d => d.id === 'ufo')) HUNDO_FX[1].id = 'ufo';
           store.hundoFx = 'ufo'; theme.reduceMotion = false; theme.muteBanners = true; saveStore();
           window.__fxAt = 0; const real = playHundoFx; window.playHundoFx = function(a, b){ window.__fxAt = performance.now(); return real(a, b); };
+          /* its layers stay up while it is paused and read, however long the
+             screenshots take (the total only times their removal) */
+          HUNDO_FX_TOTAL.ufo = Math.max(HUNDO_FX_TOTAL.ufo, 60000);
           showHome(); await wait(200);
           if(multi){ const n = {}; QUESTIONS.forEach(q => { const t = (q.topic || '').trim(); n[t] = (n[t] || 0) + 1; });
             const two = Object.keys(n).sort((a, b) => n[a] - n[b]).slice(0, 2); __run100m(two); }
@@ -15309,6 +15312,107 @@ def check_b317_hundobox(br):
                   tag, "/".join("%.1fs" % t for t in pre), 45, L["ring"], " (%d unit rows)" % info["rows"] if multi else ""),
               not bad and L["ring"] >= 12 and L["col"] >= 3 and (multi is False or info["rows"] >= 2),
               {"bad": bad, "lit": L, "rows": info["rows"], "pre": {t: shots[t][1] for t in pre}})
+    # --- ONE BEAM, ARRIVING AS ONE (round 6): "the ray beam is still being
+    # shown in the box before it even gets there and when it gets there it's
+    # not matching up perfectly". Two beams met at the box's edge: the
+    # saucer's ended there wide and faint, the box's own began there narrow
+    # and bright, and fanned out at once the moment it appeared. Read off the
+    # pixels, every UFO animation paused and seeked:
+    #  - from just before it fires to when its head reaches the box's floor
+    #    (every 1/30s), the box below the beam's head is exactly as dark as
+    #    it was before it fired - no light ahead of the head;
+    #  - hovering, sweeping and lifting off, the beam just above the box's
+    #    top edge and just below it is one beam: the same centre, the same
+    #    width, and no step in brightness.
+    def _rows(im, ref, y0, y1):
+        # the beam's own light on each row - the frame with the beam less the
+        # same frame with every beam hidden, so the box's rim, its label and
+        # a twinkling star cancel out: its two edges (the outermost pixels
+        # it lights by more than 6 levels) and its peak
+        px, p0 = im.load(), ref.load(); W = im.size[0]
+        lum = lambda q, x, y: .3 * q[x, y][0] + .59 * q[x, y][1] + .11 * q[x, y][2]
+        l = r = pk = 0.0; n = 0
+        for y in range(y0, y1):
+            d = [lum(px, x, y) - lum(p0, x, y) for x in range(W)]
+            on = [x for x in range(W) if d[x] > 6]
+            if len(on) < 4: continue
+            l += on[0]; r += on[-1]; pk += max(d[x] for x in on); n += 1
+        return {"cx": (l + r) / 2 / n, "w": (r - l) / n, "peak": pk / n} if n else None
+    for label, w, h, multi in (("iPhone 17 Pro Max", 440, 956, False), ("iPad Pro 11\"", 834, 1194, False), ("iPhone 17 Pro Max, two units", 440, 956, True)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=2)
+        pg.evaluate("() => { " + RUN100 + RUN100M + " }")
+        info = pg.evaluate("""async (multi) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.lifetime.perfectTests = 600; if(!HUNDO_FX.some(d => d.id === 'ufo')) HUNDO_FX[1].id = 'ufo';
+          store.hundoFx = 'ufo'; theme.reduceMotion = false; theme.muteBanners = true; saveStore();
+          window.__fxAt = 0; const real = playHundoFx; window.playHundoFx = function(a, b){ window.__fxAt = performance.now(); return real(a, b); };
+          /* its layers stay up while it is paused and read, however long the
+             screenshots take (the total only times their removal) */
+          HUNDO_FX_TOTAL.ufo = Math.max(HUNDO_FX_TOTAL.ufo, 60000);
+          showHome(); await wait(200);
+          if(multi){ const n = {}; QUESTIONS.forEach(q => { const t = (q.topic || '').trim(); n[t] = (n[t] || 0) + 1; });
+            __run100m(Object.keys(n).sort((a, b) => n[a] - n[b]).slice(0, 2)); }
+          else __run100('Identity Crimes');
+          for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(50);
+          if(!window.__fxAt) return null;
+          await wait(500);
+          document.querySelector('.rs-screen .rs-grade').scrollIntoView({ block: 'center', behavior: 'instant' });
+          return { long: getComputedStyle(document.querySelector('.hfx-saucer:not(.is-mini)')).animationDuration === '9.5s' }; }""", multi)
+        if not info or not info["long"]:
+            check("%s, ufo: a real 100%% played the long UFO" % label, False, info); ctx.close(); continue
+        SEEK = """(t) => { const g = document.querySelector('.rs-screen .rs-grade');
+          document.getAnimations().forEach(a => { const e = a.effect && a.effect.target; if(!e) return;
+            const mine = e.closest && e.closest('.hfx-layer.hfx-ufo, .hfx-box.hfx-ufo') || ((e === g || e.parentElement === g) && !(a instanceof CSSAnimation));
+            if(mine){ try{ a.pause(); a.currentTime = t * 1000; }catch(x){} } });
+          const r = g.getBoundingClientRect(), bm = document.querySelector('.hfx-saucer:not(.is-mini) > .hfx-ufo-beam');
+          let o = 1; for(let e = bm; e && e !== document.body; e = e.parentElement) o *= +getComputedStyle(e).opacity;
+          const b = bm ? bm.getBoundingClientRect() : null;
+          return { box: [r.left, r.top, r.right, r.bottom], beam: b && o > .02 && b.height > 1 ? [b.left, b.top, b.right, b.bottom] : null }; }"""
+        frames = []
+        base = None
+        # (from 3.72s: the box's own dim settles at .55 at 3.7s)
+        for k in range(0, 18):
+            t = round(3.72 + k / 30, 3)
+            d = pg.evaluate(SEEK, t); pg.wait_for_timeout(40)
+            x0, y0, x1, y1 = d["box"]
+            im = _Img.open(io.BytesIO(pg.screenshot(clip={"x": x0, "y": y0, "width": x1 - x0, "height": y1 - y0}))).convert("L")
+            if base is None:
+                base = im; continue
+            head = d["beam"][3] if d["beam"] else y0 - 999
+            if d["beam"]: bx0, bx1 = d["beam"][0], d["beam"][2]
+            else: bx0, bx1 = x0 + (x1 - x0) * .3, x0 + (x1 - x0) * .7
+            ya, yb = int(max(4, head - y0 + 6) * 2), int((y1 - y0 - 4) * 2)
+            xa, xb = int(max(0, bx0 - x0) * 2), int(min(x1 - x0, bx1 - x0) * 2)
+            if yb - ya < 4 or xb - xa < 4:
+                frames.append((t, None)); continue
+            p1, p0 = im.load(), base.load()
+            ex = [p1[x, y] - p0[x, y] for y in range(ya, yb, 2) for x in range(xa, xb, 2)]
+            frames.append((t, round(sum(ex) / len(ex), 2)))
+        ahead = [f for f in frames if f[1] is not None and f[1] > 2.5]
+        check("%s, ufo: no light in the box ahead of the beam's head - from 3.75s to its floor (every 1/30s) the box below the head is as dark as before it fired%s" % (label, " (two units)" if multi else ""),
+              not ahead and sum(1 for f in frames if f[1] is not None) >= 3, {"ahead": ahead, "frames": frames})
+        seams = []
+        for t in (4.3, 4.4, 4.47, 4.83, 5.2, 5.3):
+            d = pg.evaluate(SEEK, t); pg.wait_for_timeout(40)
+            x0, y0, x1, y1 = d["box"]
+            if not d["beam"]:
+                seams.append((t, "no beam")); continue
+            clip = {"x": x0, "y": y0 - 16, "width": x1 - x0, "height": 32}
+            im = _Img.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+            pg.evaluate("() => document.querySelectorAll('.hfx-ufo-beam, .hfx-ufo-inbeam').forEach(e => e.style.visibility = 'hidden')")
+            pg.wait_for_timeout(40)
+            ref = _Img.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+            pg.evaluate("() => document.querySelectorAll('.hfx-ufo-beam, .hfx-ufo-inbeam').forEach(e => e.style.visibility = '')")
+            # 4-10px above the edge, 3-6px below it (over the box's top, under
+            # its GRADE label)
+            up, dn = _rows(im, ref, 2 * 6, 2 * 12), _rows(im, ref, 2 * 19, 2 * 22)
+            if not up or not dn:
+                seams.append((t, "unseen", up, dn)); continue
+            dxp, dwp, rat = abs(up["cx"] - dn["cx"]) / 2, abs(up["w"] - dn["w"]) / 2, dn["peak"] / max(1, up["peak"])
+            if dxp > 3 or dwp > 6 or not (.4 <= rat <= 2.5):
+                seams.append((t, round(dxp, 1), round(dwp, 1), round(rat, 2), {k: round(v, 1) for k, v in up.items()}, {k: round(v, 1) for k, v in dn.items()}))
+        ctx.close()
+        check("%s, ufo: one beam across the box's edge - the same centre (within 3px), width (within 6px) and brightness just above it and just below it, hovering and sweeping%s" % (label, " (two units)" if multi else ""),
+              not seams, seams)
     # ...and the same in the unlock card's miniature (the whole effect in a
     # small results screen) and a live Customize stage (the small box's own
     # 7s UFO): the box's rim and glow are unlit until its beam fires
@@ -15318,7 +15422,7 @@ def check_b317_hundobox(br):
       const m = buildHundoFxMock('ufo', { delay: 0 }); host.appendChild(m);
       const st = buildHundoFxStage('ufo', { live: true, big: true, delay: 0 }); const h2 = document.createElement('div'); h2.style.cssText = 'position:fixed;left:10px;top:420px;width:300px;z-index:9999;'; h2.appendChild(st); document.body.appendChild(h2);
       const first = { mock: getComputedStyle(m.querySelector('.rs-grade')).borderTopColor, stage: getComputedStyle(st).borderTopColor };
-      for(let i = 0; i < 60 && !(m.querySelector('.hfx-ufo-inbeam') && st.querySelector('.hfx-saucer.is-mini')); i++) await wait(100);
+      for(let i = 0; i < 60 && !(m.querySelector('.hfx-box.hfx-ufo') && st.querySelector('.hfx-saucer.is-mini')); i++) await wait(100);
       const mg = m.querySelector('.rs-grade');
       const look = (card, t, layerSel) => { document.getAnimations().forEach(a => { const e = a.effect && a.effect.target; if(!e) return;
           if((e.closest && e.closest(layerSel)) || ((e === card || e.parentElement === card) && !(a instanceof CSSAnimation))){ try{ a.pause(); a.currentTime = t * 1000; }catch(x){} } });

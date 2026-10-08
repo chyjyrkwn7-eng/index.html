@@ -9199,6 +9199,10 @@
      layers are removed only after it. */
   .hfx-out{ opacity:0 !important; transition:opacity .6s ease !important; }
   .rs-card.hfx-over{ z-index:61; }
+  /* the UFO's own layer over the lifted box (round 6): the saucer and its
+     one beam, so the beam can cross the box's edge as one piece of light
+     (its z-index is set from the effect's layer, two above it) */
+  .confetti-layer.hfx-layer.hfx-ufo-top{ background:none; }
   .rs-head.hfx-over{ position:relative; z-index:61; text-shadow:0 1px 6px rgba(8,10,14,.85); }
   .hfx-mock > .rs-head.hfx-over{ z-index:3; }
   .wrap > .top.hfx-over{ z-index:61; }
@@ -9522,8 +9526,10 @@
      and is LIT BY THE BEAM (build 317, round 3): the last of its dark goes
      as the beam strikes (3.94s on the long timeline) and floods down it,
      not before the beam arrives, when it lit up on its own */
-  .hfx-ufo-boxdim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-boxdim 4.15s linear both; }
-  @keyframes hfx-ufo-boxdim{ 0%{ opacity:0; } 14.22%{ opacity:.93; } 69.88%{ opacity:.93; } 89.16%{ opacity:.55; } 94.82%{ opacity:.55; animation-timing-function:ease-out; } 100%{ opacity:0; } }
+  /* (round 6: dark until the beam's head reaches the box's floor, 4.18s;
+     the beam goes down through a dark box, then the box lights) */
+  .hfx-ufo-boxdim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-boxdim 4.4s linear both; }
+  @keyframes hfx-ufo-boxdim{ 0%{ opacity:0; } 13.41%{ opacity:.93; } 65.91%{ opacity:.93; } 84.09%{ opacity:.55; } 95%{ opacity:.55; animation-timing-function:ease-out; } 100%{ opacity:0; } }
   /* (not .hfx-ufo: the effect's own layers are named hfx-<id>) */
   .hfx-saucer{ position:absolute; width:0; height:0; opacity:0; animation:hfx-ufo-path 7s linear both; }
   @keyframes hfx-ufo-path{
@@ -9601,8 +9607,12 @@
     58.6%{ transform:scaleY(var(--bl, 1)); } 77.1%{ transform:scaleY(var(--bl, 1)); animation-timing-function:cubic-bezier(.45,0,.4,1); }
     85.7%{ transform:scaleY(var(--bk, 1)); opacity:1; animation-timing-function:ease-in; } 87.5%, 100%{ transform:scaleY(0); opacity:0; } }
   .hfx-saucer:not(.is-mini) > .hfx-ufo-beam{ animation-name:hfx-ufo-beam-l; animation-duration:9.5s; }
-  @keyframes hfx-ufo-beam-l{ 0%, 38.84%{ transform:scaleY(0); opacity:0; animation-timing-function:cubic-bezier(.3,.6,.4,1); } 39.14%{ opacity:1; }
-    41.42%{ transform:scaleY(1); opacity:1; } 56.84%{ transform:scaleY(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
+  /* ONE BEAM, hull to the box's floor (round 6): fired at 3.69s, its head
+     crosses the box's top edge at 3.83s (--bt) and reaches the box's floor
+     at 4.18s, at about the speed it came down at */
+  @keyframes hfx-ufo-beam-l{ 0%, 38.84%{ transform:scaleY(0); opacity:0; animation-timing-function:linear; } 39.14%{ opacity:1; }
+    40.32%{ transform:scaleY(var(--bt, 1)); animation-timing-function:cubic-bezier(.3,.5,.5,1); }
+    44%{ transform:scaleY(1); opacity:1; } 56.84%{ transform:scaleY(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
     64.21%{ transform:scaleY(var(--bl, 1)); } 77.89%{ transform:scaleY(var(--bl, 1)); animation-timing-function:cubic-bezier(.45,0,.4,1); }
     84.21%{ transform:scaleY(var(--bk, 1)); opacity:1; animation-timing-function:ease-in; } 85.53%, 100%{ transform:scaleY(0); opacity:0; } }
   .hfx-ufo-ring{ position:absolute; left:calc(var(--rw) / -2); width:var(--rw); height:calc(var(--rw) * .3); top:calc(var(--rw) * -.15);
@@ -9611,18 +9621,8 @@
   .hfx-ufo-dust{ position:absolute; width:60px; height:30px; margin:-15px 0 0 -30px; border-radius:50%;
     background:radial-gradient(closest-side, rgba(200,255,215,.6), rgba(200,255,215,0)); opacity:0; animation:hfx-ufo-dust 1.3s ease-out 6.1s both; }
   @keyframes hfx-ufo-dust{ 0%{ transform:translate(0, 0) scale(.3); opacity:0; } 15%{ opacity:1; } 100%{ transform:translate(var(--dx), -12px) scale(1.5); opacity:0; } }
-  .hfx-ufo-inbeam{ position:absolute; top:0; width:var(--iw); height:var(--ih); margin-left:calc(var(--iw) / -2); transform-origin:50% 0;
-    background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-inbeam 9.5s linear both; }
-  /* on the 9.5s timeline; across the box and back with the saucer's sweep
-     (the same moments and easing as hfx-ufo-path-l, so the two beams are
-     one) */
-  @keyframes hfx-ufo-inbeam{ 0%, 41.35%{ transform:translateX(0) scaleY(0); opacity:0; animation-timing-function:cubic-bezier(.3,.6,.4,1); } 41.49%{ opacity:.55; }
-    44%{ transform:translateX(0) scaleY(1); opacity:.5; }
-    44.21%{ transform:translateX(0) scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
-    47.05%{ transform:translateX(calc(var(--swa) * -1)) scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
-    50.84%{ transform:translateX(var(--swa)) scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
-    53.68%{ transform:translateX(0) scaleY(1); } 63.79%{ opacity:.5; } 66%{ opacity:.72; }
-    82.95%{ transform:translateX(0) scaleY(1); opacity:.72; animation-timing-function:ease-in; } 85.53%, 100%{ transform:translateX(0) scaleY(0); opacity:0; } }
+  /* (the box's own beam, .hfx-ufo-inbeam, is gone - round 6: the saucer's
+     beam reaches the box's floor itself; see hfxUfo) */
   .hfx-ufo-landglow{ position:absolute; inset:0; border-radius:inherit; opacity:0;
     box-shadow:inset 0 0 0 1.5px rgba(150,255,175,.8), inset 0 0 30px rgba(107,255,143,.35);
     animation:hfx-ufo-landglow 2.4s ease-out var(--t) both; }
@@ -80595,7 +80595,7 @@ const HFX_UFO_BEAM = "blue";
 function hfxUfoBeam(){ return HFX_UFO_BEAMS[HFX_UFO_BEAM] || HFX_UFO_BEAMS.green; }
 function hfxBeamURL(){
   const b = hfxUfoBeam();
-  return hfxSprite("beam-" + HFX_UFO_BEAM, () => 'viewBox="0 0 100 200"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + b.hi + '" stop-opacity=".75"/><stop offset=".35" stop-color="' + b.c + '" stop-opacity=".38"/><stop offset="1" stop-color="' + b.c + '" stop-opacity=".1"/></linearGradient>' +
+  return hfxSprite("beam-" + HFX_UFO_BEAM, () => 'viewBox="0 0 100 200"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + b.hi + '" stop-opacity=".75"/><stop offset=".35" stop-color="' + b.c + '" stop-opacity=".4"/><stop offset="1" stop-color="' + b.c + '" stop-opacity=".2"/></linearGradient>' +
     '<linearGradient id="c" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>' +
     '<path d="M38 0 L62 0 L100 200 L0 200 Z" fill="url(#b)"/><path d="M45 0 L55 0 L70 200 L30 200 Z" fill="url(#c)"/></svg>', 400);
 }
@@ -80619,20 +80619,36 @@ function hfxUfo(scr, bx, c){
     const exit = { x: (Math.random() < .5 ? -1 : 1) * c.vw * .9, y: -L.y - 160 };
     /* how far its beam sweeps either way across the box (round 4) */
     const swa = hfxUfoSwa(c);
-    const u = hfxMk(scr, "span", "hfx-saucer", { left: L.x + "px", top: L.y + "px", "--sx": (hfxR(-.3, .3) * c.vw) + "px", "--sy": (-L.y - h - 20) + "px",
+    /* THE SAUCER FLIES OVER THE BOX (round 6): "the ray beam is still being
+       shown in the box before it even gets there and when it gets there
+       it's not matching up perfectly". The beam was two: the saucer's,
+       under the box (the box is lifted over the effect's screen layer, so
+       its number is never dimmed), and the box's own, inside it - a second
+       copy of the beam that started over again at the box's edge, narrow
+       and bright where the first ended wide and faint (63px against 138px
+       on a phone), and fanned out at once the moment it appeared, so the
+       box lit with a beam that had not reached it yet. Now the saucer and
+       its ONE beam are in a layer of their own just over the box, and the
+       beam runs on from the hull through the box's edge to its floor:
+       nothing can disagree at the edge because nothing meets there. */
+    const top = document.createElement("div");
+    top.setAttribute("aria-hidden", "true");
+    const u = hfxMk(top, "span", "hfx-saucer", { left: L.x + "px", top: L.y + "px", "--sx": (hfxR(-.3, .3) * c.vw) + "px", "--sy": (-L.y - h - 20) + "px",
       "--hov": hov + "px", "--ox": exit.x + "px", "--oy": exit.y + "px", "--uw": w + "px", "--uh": h + "px", "--swa": swa + "px",
       "--bmg": hfxUfoBeam().glow, "--bmd": hfxUfoBeam().deep });
     /* THE BEAM IS FIRED, THEN IT RIDES WITH THE HULL (build 317, round 3):
        "the UFO's projection is shown before it's shot out of the UFO and
        it doesn't hit the bottom of the box". It grows out of the underside
-       (its top is .2 of the hull up inside it) and its foot is ALWAYS 4px
-       inside the box's top edge: hovering, landed (--bl) and lifting off
-       (--bk), each a scale of the one hovering length. The box's own beam
-       (.hfx-ufo-inbeam) takes it from that edge to the box's bottom edge,
-       and only starts once this one has arrived. */
-    const bh = -hov + h * .2 + 4;
-    const beam = hfxMk(u, "i", "hfx-ufo-beam", { "--bh": bh + "px", "--bw": (w * .82) + "px",
-      "--bl": ((h * .2 + 4) / bh).toFixed(3), "--bk": ((74 + h * .2) / bh).toFixed(3) });
+       (its top is .2 of the hull up inside it), and since round 6 it runs
+       on through the box's top edge to the box's floor, hovering, landed
+       (--bl) and lifting off (--bk), each a scale of the one hovering
+       length - one beam, no second one in the box. */
+    /* (round 6) its length is from inside the hull to 3px off the box's
+       floor; --bt is where its head crosses the box's top edge, --bl and
+       --bk the same floor seen from the landed and the lifted hull */
+    const floor = Math.max(8, (c.bh || 0) - 3), bh = -hov + h * .2 + floor;
+    const beam = hfxMk(u, "i", "hfx-ufo-beam", { "--bh": bh + "px", "--bw": (w * .82) + "px", "--bt": ((-hov + h * .2 + 1) / bh).toFixed(4),
+      "--bl": ((h * .2 + floor) / bh).toFixed(4), "--bk": ((70 + h * .2 + floor) / bh).toFixed(4) });
     beam.style.backgroundImage = hfxBeamURL();
     for(let k = 0; k < 3; k++){
       hfxMk(u, "i", "hfx-ufo-ring", { "--rw": (w * .5) + "px", "--fall": (-hov) + "px", "--t": 3.98 + k * .22 }).style.backgroundImage = hfxBeamRingURL();
@@ -80670,6 +80686,7 @@ function hfxUfo(scr, bx, c){
     const tr = hfxMk(scr, "span", "hfx-mt", { left: ex.x + "px", top: ex.y + "px", "--ra": ang.toFixed(1) + "deg" });
     const run = hfxMk(tr, "i", "hfx-mt-run is-big hfx-ufo-trail", { "--ml": "300px", "--dist": (Math.hypot(exit.x, exit.y + 70) + 240) + "px", "--t": 8.62, "--d": .42 });
     run.style.backgroundImage = hfxMeteorURL("#9DFFB4");
+    hfxUfoTopLayer(c, scr, top, bx);
   }
   if(bx){
     const cx = c.bw / 2;
@@ -80677,10 +80694,8 @@ function hfxUfo(scr, bx, c){
     hfxUfoLight(c);
     if(!c.boxOnly){
       if(!c.noDim) hfxMk(bx, "i", "hfx-ufo-boxdim");
-      hfxMk(bx, "i", "hfx-ufo-inbeam", { left: cx + "px", "--ih": c.bh + "px", "--iw": Math.min(c.bw * .8, c.p.w * 1.6) + "px",
-        "--swa": hfxUfoSwa(c) + "px" }).style.backgroundImage = hfxBeamURL();
-      /* the box flares as the beam strikes it, and again as it lands */
-      hfxMk(bx, "i", "hfx-ufo-landglow is-hit", { "--t": 3.94, "--bmg": hfxUfoBeam().glow, "--bmd": hfxUfoBeam().deep });
+      /* the box flares as the beam reaches its floor, and again as it lands */
+      hfxMk(bx, "i", "hfx-ufo-landglow is-hit", { "--t": 4.18, "--bmg": hfxUfoBeam().glow, "--bmd": hfxUfoBeam().deep });
       hfxMk(bx, "i", "hfx-ufo-landglow", { "--t": 6.1 });
     } else {
       /* in a small box: it comes down into the box, hovers over the
@@ -80758,7 +80773,9 @@ function hfxUfoUnlit(card){
 function hfxUfoLight(c){
   const card = c.box;
   if(!card || !card.animate) return;
-  const D = c.boxOnly ? 7 : 9.5, at = c.boxOnly ? 2.8 : 3.92, dur = .25;
+  /* (round 6: on the results screen, as the beam's head reaches the box's
+     floor - before that the only light in the box is the beam itself) */
+  const D = c.boxOnly ? 7 : 9.5, at = c.boxOnly ? 2.8 : 4.18, dur = .25;
   const had = card.classList.contains("hfx-ufo-unlit");
   card.classList.add("hfx-ufo-unlit");
   const u = getComputedStyle(card), ub = u.borderColor, uw = u.getPropertyValue("--hfx-wash").trim();
@@ -80774,6 +80791,34 @@ function hfxUfoLight(c){
   const t = card.querySelector(":scope > .hfx-tint");
   if(t) hfxAnim(c, t, k({ opacity: 0 }, { opacity: 1 }), o);
   hfxOnEnd(c, () => card.classList.remove("hfx-ufo-unlit"));
+}
+/* The UFO's own layer, over the box (round 6): a twin of the effect's
+   screen layer - the same place, size and colours, two above it - put in
+   beside it once the screen layer is in the document, and taken away with
+   it (faded when it is faded). And ONE CLOCK for everything the UFO is
+   made of: once its animations have started, every one still running -
+   this layer's, the screen layer's, the box's and the script's - is set to
+   the earliest start among them, so a layer that began a frame late on
+   some device cannot run a frame behind the rest. (Paused ones, as a
+   recorder or a gate holds them, are left alone.) */
+function hfxUfoTopLayer(c, scr, top, bx){
+  queueMicrotask(() => {
+    if(!scr.isConnected || !scr.parentNode){ return; }
+    top.className = scr.className + " hfx-ufo-top";
+    top.style.cssText = scr.style.cssText;
+    const z = parseInt(getComputedStyle(scr).zIndex, 10);
+    top.style.zIndex = String((isFinite(z) ? z : 60) + 2);
+    scr.parentNode.insertBefore(top, scr.nextSibling);
+    const all = () => [top, scr, bx].filter(Boolean).reduce((a, el) => a.concat(el.getAnimations ? el.getAnimations({ subtree: true }) : []), []).concat(c.anims || []);
+    const list = all();
+    Promise.all(list.map(a => a.ready.catch(() => null))).then(() => {
+      const run = all().filter(a => a.playState === "running" && a.startTime != null);
+      if(run.length < 2) return;
+      const t0 = Math.min(...run.map(a => a.startTime));
+      run.forEach(a => { if(a.startTime !== t0){ try{ a.startTime = t0; }catch(e){} } });
+    });
+  });
+  hfxOnEnd(c, fade => { if(fade) hfxFadeOut(top); else top.remove(); });
 }
 /* THE CIRCLE (build 317, round 4). It comes in from one side, goes round
    the screen once - smaller on the far side of the circle, bigger on the
