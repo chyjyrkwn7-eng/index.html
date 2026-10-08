@@ -17754,6 +17754,10 @@ badge tab, it's a different shape than what you get in the cutscene, in the
 profile thing under the challenges it's different, how do we make it all
 the same and make it look good without ruining the cohesiveness."*
 
+> **Superseded for the TOKEN by "Build 317, badge2" below.** The bands
+> still draw the slot and stay as the token's fallback with no canvas;
+> the token itself is now rendered from a height field.
+
 **BADGES ARE BUILT IN BANDS (`buildUnitBadgeSVG`, supersedes "the plate is
 the silhouette scaled about ITS OWN centre" and the token's `.86` about the
 frame's centre in the Badges section).** Measured on the old drawing, the
@@ -17982,3 +17986,92 @@ second token sat on the first one's slot). The two that pass ("tapping
 a badge still opens its card", on both devices) guard what was kept. check_b308_unlocks polls for the open case
 instead of reading it at a fixed 8.4s, because the scene grew longer on
 request. `tools/record-cutscenes.py` waits 17.8s for it now.
+
+### Build 317, badge2 - badges struck, not drawn; the case's name on its side
+
+Madison, after the briefcase round: *"not sure why when you open the case
+the word badge case would be under the top, it should be on the side and
+still be on the side as it opens and fully opens. I already told you the
+badges need to look better, they also need to look better in the
+cutscenes ... I feel like all the silver parts of the badges look
+different/don't connect either, they also seem fake and have rough
+edges!!! I've already said this though."*
+
+**THE TOKEN IS RENDERED FROM A HEIGHT FIELD (`renderBadgeStrike`), and
+no vector recipe could have fixed what she named.** Every silver part of
+the band drawing was a gradient laid out by POSITION across that shape's
+own box, so the light fell differently on every badge (a wide shape and a
+tall one cannot match), and the channels were a second ramp that met the
+rim at a step. Real metal is lit by which way its surface FACES. So:
+- **One casting.** The rim's inner half and every channel rise by the
+  same profile (flat polished top, chamfer, steep wall) from the same
+  field - the distance to the enamel - so they are one piece by
+  construction, with a cast fillet wherever they meet. The rim's outer
+  half falls by the same profile to the outline.
+- **Enamel below the metal**, at 38% of the rim's height, a slight
+  meniscus up the walls, occluded at their foot and shaded where a wall
+  stands between it and the light (a short ray-march).
+- **One light.** Every surface is lit by its normal from one studio
+  (`badgeLightTables`): a lit ceiling with a softbox edge across it, a dark
+  horizon, a big softbox top-left, all in LINEAR light (values tuned as
+  if they were sRGB came out white - 0.78 linear is 229 on screen). The
+  face is very gently domed (`dome`), which is what makes a flat face
+  show light giving way to shade - the cue that reads as polished metal.
+- **Clean edges.** Every edge is antialiased from a distance field at the
+  size it is SHOWN at (the signed-distance-font trick). The fields are
+  computed once per shape at 288px (`badgeStrikeGeometry`: an exact
+  feature transform to sub-pixel edge points from the canvas's own
+  coverage, then lightly smoothed - unsmoothed, a diagonal edge left a
+  ripple a sharp reflection drew as a dashed line), and a render at any
+  size samples them, with normals by the chain rule.
+- **No slivers.** The enamel is OPENED by 1.5 units (eroded, grown back):
+  no cell thinner than 3 units survives - it becomes cast metal, walls and
+  all - which also fillets every enamel corner. Doing that by colouring
+  the sliver metal but keeping its walls left a trench with a ridge in it;
+  the walls have to come from the distance to the OPENED enamel.
+- **Two shapes changed for it.** The cross's arms are 36 wide, not 28 (28
+  left 1-unit slivers either side of its channel), and the bolt has no
+  channel (its middle band is 12 units tall, all rim anyway, and the cut
+  only shrank the lower cell to a fleck).
+
+**Rendered at the size it is shown, to 4 device pixels
+(`badgeStrikeSize`).** A render scaled down by the browser (576 to 450)
+turned a polished edge's one-pixel highlight into a dotted line. Each
+`image.badge-raster` is measured after mount and re-rendered at its own
+size (`badgeStrikeUpgrade`, a 12ms budget a frame); geometry for all
+sixteen and the case-size renders are warmed in idle time 5s after
+launch. Costs here: geometry ~30-40ms a shape once; a render ~12ms at
+case size, ~40ms for a 700px coin face. The slot, the token's shadow
+(check_b242's fill string) and the glisten stay vector. `data-enamel` on
+an earned token's image is the colour it was rendered in; a grey one has
+none - no unit colour reaches a badge not yet earned.
+
+**The coin's face is the render at the coin's own device pixels
+(`badgeCoinFaceURL`)**, and its twenty edge slices are each `scale(.988)`
+of the face: exactly behind it, their half-covered edge pixels stacked
+into one hard, stepped outline round the face at rest. The softness a 3D
+layer adds (measured: the same face flattened is sharper) is the
+compositor resampling a transformed layer; the old SVG face had it too.
+
+**THE CASE'S NAME IS ON ITS SIDE, one plate in all three
+(`buildCaseSidePlate`, `.nova-case-sideplate`).** The front wall between
+the latches: on the cutscene's base (never in the lid, never under it),
+on the Badges tab's front strip (the lid is plain quilting now), and on
+the Profile card's front edge - whose "Badge case" heading over the tray
+is gone for the same reason. In the cutscene the plate hangs from the
+wall's top edge leaning 42deg: once the case is open the camera is 21deg
+over it and the wall is nearly edge-on, and a plate flat on it shrank to
+an unreadable sliver. It is a `<b>`, so the clasps stay the only spans in
+a front (check_b242 counts two).
+
+**Gates.** `check_b317_badge2` (16 checks, all 16 fail on 9e62633): the
+plate's centre hit-tests to the plate at five moments from shut to fully
+open, unsquashed, nothing in the lid saying it; the tab's and Profile's
+plates are the same plate and nothing over their trays says it; every tab
+badge and the coin face are rendered at their device pixels; along every
+channel from the badge's middle into its rim the metal has no step over
+1.5 units (worst 6 levels; the old ramps stepped 90-220); no enamel cell
+fails a 1.25-unit opening (worst 5%, the old cross 10%); and the coin at
+rest gains no outline from its slices (47 changed pixels against 1299).
+`check_b242` and the Profile squeeze check now read the name off the
+case's side.
