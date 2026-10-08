@@ -13653,6 +13653,11 @@ def check_b317_hundobox(br):
               const mo = new MutationObserver(() => { const g = document.querySelector('.rs-screen .rs-grade');
                 if(g && !first && (g.classList.contains('rs-in') || g.classList.contains('rs-in-now'))) first = look(g); });
               mo.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+              /* and the first frame it is actually PAINTED with any opacity at all */
+              let painted = null; const nraf = window.requestAnimationFrame.bind(window);
+              const tick = () => { const g = document.querySelector('.rs-screen .rs-grade');
+                if(g && +cs(g).opacity > 0) painted = look(g); else nraf(tick); };
+              nraf(tick);
               window.__fxAt = 0; window.__celAt = 0;
               const real = window.__realPlay || (window.__realPlay = playHundoFx), rc = window.__realCel || (window.__realCel = celebrate);
               window.playHundoFx = function(a, b){ window.__fxAt = performance.now(); return real(a, b); };
@@ -13665,7 +13670,7 @@ def check_b317_hundobox(br):
               const p = g.querySelector('.rs-pct'), sg = p.querySelector('.rs-pct-sign');
               const R = e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
               const txt = sel => [...g.querySelectorAll(sel)].map(e => cs(e).color);
-              const out = { first, settled: look(g), tinted: g.classList.contains('hfx-tinted'),
+              const out = { first, painted, settled: look(g), tinted: g.classList.contains('hfx-tinted'),
                 pctScroll: [p.scrollWidth, p.clientWidth], grade: R(g), sign: R(sg),
                 one: { display: cs(sg).display, color: cs(sg).color, bg: cs(sg).backgroundImage, parentBg: cs(p).backgroundImage.slice(0, 16),
                   clip: cs(p).webkitBackgroundClip || cs(p).backgroundClip, px: parseFloat(cs(sg).fontSize) },
@@ -13700,13 +13705,14 @@ def check_b317_hundobox(br):
             o = f.get("one") or {}
             check("%s: the whole \"100%%\" shows - no wider than its box, the %% inside the card - and is one piece of type: the %% inline, no colour of its own, under the number's gradient, %.1fpx" % (tag, o.get("px", 0)),
                   sc[0] <= sc[1] + 1 and sg[2] <= g[2] and sg[0] >= g[0] and okone(o) and o.get("px", 0) >= 12, {"scroll": sc, "sign": sg, "box": g, "one": o})
-            fi, se = f.get("first") or {}, f.get("settled") or {}
+            fi, pa, se = f.get("first") or {}, f.get("painted") or {}, f.get("settled") or {}
+            same = lambda a: a and all(a.get(k) == se.get(k) for k in ("border", "num", "bar"))
             if fx == "confetti":
-                check("%s: the default is gold from its first frame" % tag, fi and fi.get("border") == GOLD_BORDER and all(fi.get(k) == se.get(k) for k in ("border", "num", "bar")), {"first": fi, "settled": se})
+                check("%s: the default is gold from its first frame" % tag, fi and fi.get("border") == GOLD_BORDER and same(fi) and same(pa), {"first": fi, "painted": pa, "settled": se})
             else:
-                check("%s: in its colours from the FIRST frame it is visible - border, 100%%, bar exactly as settled, never the gold default first" % tag,
-                      fi and fi.get("border") != GOLD_BORDER and fi.get("border") == se.get("border") and fi.get("num") == se.get("num")
-                      and fi.get("bar") == se.get("bar") and f.get("tinted") and "217, 169, 58" not in (fi.get("bar") or ""), {"first": fi, "settled": se})
+                check("%s: in its colours from the FIRST frame - as the card lands and on the first painted frame it shows at all - border, 100%%, bar exactly as settled, never the gold default first" % tag,
+                      fi and pa and fi.get("border") != GOLD_BORDER and same(fi) and same(pa) and pa.get("shown", 0) > 0
+                      and f.get("tinted") and "217, 169, 58" not in (fi.get("bar") or ""), {"first": fi, "painted": pa, "settled": se})
             check("%s: every word in the box is the default's - GRADE, 12 / 12, the line under it, each unit and its count" % tag,
                   base and f.get("text") == base and all(f["text"].get(k) for k in ("kicker", "frac", "sub", "unit", "countAll")), {"this": f.get("text"), "default": base})
             if fx in ("fireworks", "ufo", "blackhole"):
@@ -13715,6 +13721,69 @@ def check_b317_hundobox(br):
                 check("%s: the dim still covers the whole screen when the page scrolls under it (no grey band)" % tag,
                       dd and (dd.get("moved", 0) == 0 and label == TABLET[0] or abs(dd.get("moved", 0)) >= 20 and rr[0] <= 0.5 and rr[1] <= 0.5 and rr[2] >= dd["vw"] - .5 and rr[3] >= dd["vh"] - .5), dd)
 
+
+    # --- the UFO's beams (round 3): "the UFO's projection is shown before
+    # it's shot out of the UFO and it doesn't hit the bottom of the box".
+    # Every UFO layer is paused and seeked to fixed moments, so the reads do
+    # not depend on how loaded the machine is.
+    for label, w, h in (PHONE, TABLET):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate("() => { " + RUN100 + " }")
+        u = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.lifetime.perfectTests = 600; if(!HUNDO_FX.some(d => d.id === 'ufo')) HUNDO_FX[1].id = 'ufo';
+          store.hundoFx = 'ufo'; theme.reduceMotion = false; theme.muteBanners = true; saveStore();
+          window.__fxAt = 0; const real = playHundoFx; window.playHundoFx = function(a, b){ window.__fxAt = performance.now(); return real(a, b); };
+          showHome(); await wait(200); __run100('Identity Crimes');
+          for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(50);
+          if(!window.__fxAt) return null;
+          await wait(400);
+          const g = document.querySelector('.rs-screen .rs-grade');
+          const anims = () => document.getAnimations().filter(a => { const e = a.effect && a.effect.target; return e && e.closest && e.closest('.hfx-layer.hfx-ufo, .hfx-box.hfx-ufo'); });
+          const seek = t => anims().forEach(a => { try{ a.pause(); a.currentTime = t * 1000; }catch(e){} });
+          const op = el => { let o = 1; for(let e = el; e && e !== document.body; e = e.parentElement) o *= +getComputedStyle(e).opacity; return o; };
+          const R = el => { const b = el.getBoundingClientRect(); return { t: b.top, b: b.bottom, h: b.height, o: op(el) }; };
+          const sy = el => { const m = getComputedStyle(el).transform.match(/matrix\(([^)]+)\)/); if(!m) return 1; const v = m[1].split(',').map(Number); return Math.hypot(v[2], v[3]); };
+          const beam = document.querySelector('.hfx-saucer:not(.is-mini) > .hfx-ufo-beam'), inb = document.querySelector('.hfx-ufo-inbeam');
+          const search = [...document.querySelectorAll('.hfx-ufo-search')];
+          const out = { has: !!(beam && inb), nsearch: search.length, samples: [], ghosts: document.querySelectorAll('.hfx-ufo-ghost').length };
+          if(!out.has) return out;
+          const ts = [1.03, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.45, 2.55];
+          for(let t = 2.6; t <= 2.92; t += .02) ts.push(+t.toFixed(2));
+          ts.push(3.3, 4.7, 5.8, 6.25);
+          for(const t of ts){ seek(t); await new Promise(r => requestAnimationFrame(() => r()));
+            const gb = g.getBoundingClientRect();
+            out.samples.push({ t, box: { t: gb.top, b: gb.bottom }, beam: R(beam), inb: R(inb),
+              search: search.map(e => Object.assign(R(e), { sy: sy(e) })) }); }
+          return out; }""")
+        ctx.close()
+        tag = "%s, ufo" % label
+        if not u or not u.get("has"):
+            check("%s: a real 100%% played the UFO, with its beams" % tag, False, u)
+            continue
+        S = {x["t"]: x for x in u["samples"]}
+        shown = lambda q: q["o"] > .02 and q["h"] > 1.5
+        pre = [S[t] for t in (1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.45, 2.55)]
+        check("%s: no beam before it is fired - neither the saucer's nor the box's shows from 1.3s to 2.55s" % tag,
+              all(not shown(x["beam"]) and not shown(x["inb"]) for x in pre), [(x["t"], x["beam"], x["inb"]) for x in pre if shown(x["beam"]) or shown(x["inb"])])
+        s0 = S[1.03]["search"]
+        check("%s: the searchlights are shot OUT of the hull - switching on short (scaleY under .4), not already at full length" % tag,
+              len(s0) == 2 and all(q["o"] > 0 and q["sy"] < .4 for q in s0), s0)
+        check("%s: and they never reach the box - the beam is the only light that touches it - and are gone before it fires" % tag,
+              all(q["o"] < .02 or q["b"] <= x["box"]["t"] + 1 for x in pre for q in x["search"]) and all(q["o"] < .02 for q in S[2.55]["search"]),
+              [(x["t"], round(q["b"]), round(x["box"]["t"]), round(q["o"], 2)) for x in pre for q in x["search"] if q["o"] >= .02 and q["b"] > x["box"]["t"] + 1])
+        fire = [x for x in u["samples"] if 2.6 <= x["t"] <= 2.92]
+        check("%s: the box's beam shows only once the saucer's has reached the box's top edge" % tag,
+              all(not shown(x["inb"]) or x["beam"]["b"] >= x["box"]["t"] - 1 for x in fire) and any(shown(x["inb"]) for x in fire),
+              [(x["t"], round(x["beam"]["b"]), round(x["box"]["t"]), round(x["inb"]["o"], 2), round(x["inb"]["h"])) for x in fire])
+        feet = {t: round(S[t]["beam"]["b"] - S[t]["box"]["t"], 1) for t in (3.3, 4.7, 5.8)}
+        check("%s: the saucer's beam meets the box's top edge (0-10px into it) hovering, landed and lifting off" % tag,
+              all(0 <= v <= 10 for v in feet.values()) and all(shown(S[t]["beam"]) for t in (3.3, 4.7, 5.8)), feet)
+        x = S[3.3]
+        check("%s: the box's beam runs down to the box's bottom edge (within 4px)" % tag,
+              shown(x["inb"]) and abs(x["inb"]["b"] - x["box"]["b"]) <= 4 and x["inb"]["t"] <= x["box"]["t"] + 2,
+              {"inbeam": [round(x["inb"]["t"]), round(x["inb"]["b"])], "box": [round(x["box"]["t"]), round(x["box"]["b"])]})
+        check("%s: both beams are gone once it has lifted off (6.25s), and the grab is still there (its two halves)" % tag,
+              not shown(S[6.25]["beam"]) and not shown(S[6.25]["inb"]) and u.get("ghosts") == 2, [S[6.25]["beam"], S[6.25]["inb"], u.get("ghosts")])
 
 def check_b317_tabplate(br):
     """Build 317. "They got a smidge smaller so let's ensure they are still a
