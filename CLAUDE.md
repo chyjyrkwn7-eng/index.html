@@ -13013,10 +13013,10 @@ behind it) and burst across the upper screen - a magenta peony, a cyan
 chrysanthemum that glitters as it dies, a ring that turns from magenta to
 gold, a gold willow that hangs, a small cyan/violet one - then three go up
 together for the finale, it crackles, and embers drift down and fade slowly
-while the dim lifts (7s; tail from 5s). The box lights as the first shell
-bursts (`HFX_TINT.fireworks.on` 950), flashes on its rim with each burst and
-keeps the colours: hot magenta `#FF5CD6`, the 100% from pale gold through
-magenta to cyan, the bar magenta to pale gold. A step up from Confetti, a
+while the dim lifts (7s; tail from 5s). The box is in its colours from its
+first frame (see the box note below), flashes on its rim with each burst and
+keeps them: hot magenta `#FF5CD6`, the 100% from pale pink through magenta
+to cyan, the bar magenta to pale pink. A step up from Confetti, a
 step below the Tree, Bubbles and the UFO.
 - **The sky is ONE CANVAS** (`hfxFwShow` builds the sparks up front,
   `hfxFwSky` draws them) - the one effect not made of elements, because a
@@ -13040,18 +13040,20 @@ screen (a `.confetti-layer.hfx-layer`) and inside the box (`.hfx-box`). The
 UFO is the one exception: the screen goes dark and it comes down out of it -
 and LANDS on the box.
 
-**THE WHOLE GRADE BOX TAKES THE EFFECT'S COLOURS**, not only its border:
-border, the wash behind it, the "100%" gradient, the "12 of 12", the glow and
-EVERY unit's progress bar (fill and glow). It is one class, `.hfx-tinted` on
+**THE GRADE BOX TAKES THE EFFECT'S COLOURS**, not only its border:
+border, the wash behind it, the "100%" gradient, the glow and EVERY unit's
+progress bar (fill and glow) - and none of its words (round 3, below). It is one class, `.hfx-tinted` on
 the card, plus `--hfx-b/g1/g2/g3` from `HFX_TINT[id]`; the wash and the bar's
 two stops are REGISTERED custom properties (`@property --hfx-wash / --hfx-fa /
 --hfx-fb`, `<color>`), which is the only way a gradient's colours can
 TRANSITION - an unregistered custom property swaps at once. The bar rule is
 `.rs-byunit .unit-breakdown-fill.is-gold{ background:linear-gradient(90deg,
 var(--hfx-fa), var(--hfx-fb)) }`, whose initial values are the gold it always
-was (`#D9A93A` -> `#F6D58E`), so a card with no effect is unchanged. Eases in
-and out over `--hfx-ease` (1s; 0.45s for the UFO, `fast`), and is gold again
-before the last pieces go. Confetti keeps the gold.
+was (`#D9A93A` -> `#F6D58E`), so a card with no effect is unchanged. It no
+longer eases in or out (`--hfx-ease` and `fast` are gone, build 317 round 3):
+it is on from the card's first frame and stays. Confetti keeps the gold.
+The registered properties stay; nothing transitions them now, and they cost
+nothing.
 
 **The box: the 100% carries the effect, the words never do, and it is in
 its colours from the first frame (build 317, three rounds).**
@@ -13079,10 +13081,13 @@ its colours from the first frame (build 317, three rounds).**
   the 100% is the real number with the effect's gradient (no overlaid copy,
   `hfxTintNum` and `.hfx-tintnum` are gone); and the card's colour
   transitions are deleted. `HFX_TINT` has no `on` any more.
-  `check_b317_hundobox` samples the card in the same task as the class that
-  lands it - its first visible frame - and requires border, number and bar
-  to equal the settled ones, plus the default's words on every effect; it
-  fails on 13c747f (34 failures).
+  `check_b317_hundobox` samples the card twice - in the same task as the
+  class that lands it, and on the first animation frame it is painted with
+  any opacity at all - and requires border, number and bar both times to
+  equal the settled ones; and every word (kicker, fraction, caption, unit
+  names and counts) to equal the default's, read 3.4s in, past every old
+  "on" moment. The Customize miniature's unit count is the real box's white
+  too (`.hfx-mock .rs-grade .hfx-mk-line b`), not the XP card's blue.
 
 **The UFO's beam is FIRED, and it reaches the bottom of the box (build 317,
 round 3).** *"The UFO one, the UFO's projection is shown before it's shot out
@@ -13100,6 +13105,26 @@ the saucer's arrives (40.4% of 7s) and runs the box's full height. Measured
 (440x956): foot at box top +5px hovering, landed and lifting; box beam 626 to
 815 against a box 625 to 813. The box flares as the beam strikes (2.84s) as
 well as on landing. The grab is unchanged.
+- **The searchlights were the other "projection".** Two cones swept the
+  dark as it came down (1.0-2.5s), and they faded up already at FULL length
+  - from the hull past the bottom of the box, before anything had been
+  fired. Now each is shot out of the underside (`scaleY` 0 to 1 over
+  0.25s), sweeps, and is drawn back in by 2.41s, before the beam fires at
+  2.59s; and each is only as long as from the rim to the box's top edge
+  where the saucer hovers (`--slh`, `-hov + .38*hull`), so they never reach
+  the box. The beam is the one light that touches it.
+- **The box is lit BY the beam.** Its own dim (`.hfx-ufo-boxdim`) used to
+  lift fully by 2.0s, 0.8s before the beam arrived, so the box lit itself.
+  It now follows the screen's dim down to .55 and holds there until the
+  beam strikes, then clears as the box's beam floods down it (3.05s).
+- `check_b317_hundobox` holds all of it on a phone and a tablet with every
+  UFO animation PAUSED AND SEEKED to fixed moments (no load noise): no beam
+  of either kind from 1.3s to 2.55s; the searchlights short when they
+  switch on, never below the box's top, gone by 2.55s; the box's beam never
+  showing before the saucer's foot is at the box's top edge (2.60-2.92s,
+  every 20ms); the saucer's foot 0-10px into the box hovering, landed and
+  lifting off; the box's beam ending within 4px of the box's bottom; both
+  gone at 6.25s. All of these fail on 1888b11.
 
 **"Looks laggy" was the RECORDING, not the effect.** Measured in the
 recording's own configuration: the page drew 139 frames in 7s, while the CDP
