@@ -14506,16 +14506,31 @@ disagree with it.
     fills its box is now centred by CSS (`left/top:50%` + negative
     margins) in `charFlipAttach()`; scaled drawings keep the measured
     path. An SVG has no offsetLeft, so layout offsets were not an option.
-  - **`AVATAR_VIEWBOX`: a wider window for the characters that reach
-    the edge** (Ronin, Clown, Hive, Wizard, Umbra, Zeus, Marksman,
-    Timekeeper, Solar). Everyone else keeps "3 3 34 34". Each override is
-    square, centred on x = 20 and ends at y = 37, so the bust is cut on
-    the same line and the character is only a few percent smaller.
-    Measured, not guessed: leaf-shape boxes through their transforms,
-    scenery and the halo left out (the bottom running to 40 is the bust
-    and is meant to be cut). Hacker, Orion and Genesis measure far past
-    the edge only because of animated pieces that start off-frame - they
-    look whole and were left alone.
+  - **THE TAB LOOKS THROUGH A WIDER WINDOW - FOR EVERYONE (supersedes
+    `AVATAR_VIEWBOX`).** Nine characters reach the 3 3 34 34 window's edge
+    (Ronin, Clown, Hive, Wizard, Umbra, Zeus, Marksman, Timekeeper, Solar)
+    and read as cut off in the tab, which has no border of its own. The
+    first fix gave those nine a wider viewBox EACH, everywhere - and a
+    wider window is a smaller drawing: 3-13% under everyone else (the
+    Clown's 39 units against 34), build 314's "all characters the same
+    size" undone and check_b272 / check_b314_sizes red (earned median
+    18.8, Solar 29% narrower). **A per-character window is a per-character
+    size; never fix an edge that way.** Now every drawing is 3 3 34 34,
+    and only the tab's Profile icon looks through `AVATAR_WIDE_VIEWBOX`
+    ("0.5 -2 39 39", the union the nine need, centred on x = 20, ending at
+    37) for EVERY character: `syncBottomTabAvatar()` sets it and
+    `.cx-wide`, the drawing is 39/34 of the icon and hangs 2.5 units out
+    each side and 5 over the top (`overflow:visible` on that icon), so the
+    shared 34 units land on the icon to the pixel and only the edges gain
+    room; its mask is the usual one in the wider box's percentages. The
+    flip-book records the same window as `"<id>~wide"` (`charAnimDrawing`)
+    and its `.char-flip-play` takes the svg's CSS box, and
+    `recordCharSheet` now bakes the feather and the bust fade in the
+    drawing's own units, so any window fades at the same y. The Profile
+    screen's plate is unchanged: the disc crops every character, the nine
+    included, as it did before 829f68a ("the drawing is clipped to the
+    disc, which is what turns a bust into a portrait"). Gate: the
+    wide-window block in `check_b317_tabplate`, failing on 1888b11.
   - **Every character's surfaces are lit round (`giveVolume()`, called
     from `done()`).** *"In profile some characters have a nice 3d look but
     some don't, fix that as well."* The 3D-looking ones (Alien, Ghost,
@@ -14537,7 +14552,7 @@ disagree with it.
     NOT circled.** *"They got a smidge smaller ... ensure you can see their
     backgrounds ... and ensure they still get animations on the tab."* A
     bare 28px drawing on the bar's glass lost its scene and read small once
-    the wide characters had their `AVATAR_VIEWBOX` room. A lit disc with a
+    the wide characters had their room (now the tab's `AVATAR_WIDE_VIEWBOX`). A lit disc with a
     ring was built first and turned down on sight: *"the character is
     circled in, let's not do that."* So it is a soft radial pool of the
     character's own colour (`--char-glow`, set in `syncBottomTabAvatar()`)

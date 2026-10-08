@@ -13712,6 +13712,42 @@ def check_b317_tabplate(br):
         check(f"{dev}: the labels stay level - the bar did not grow round it", r["labelsLevel"] <= 1 and r["gap"] >= 0, [r["labelsLevel"], r["gap"]])
         check(f"{dev}: and it still animates in the tab", r["anims"] > 0, r["anims"])
         ctx.close()
+    # THE TAB'S WIDE WINDOW (317 touch-up). 829f68a gave nine characters a
+    # wider viewBox each so their edges were not cut in the tab, which drew
+    # them 3-13% smaller than everyone else everywhere (check_b272 and
+    # check_b314_sizes went red). Now every drawing is 3 3 34 34, and the
+    # tab alone looks through one wider window, for everyone, with the
+    # drawing - and its flip-book - hung out over the icon so the shared 34
+    # units land on the icon exactly. Written against 1888b11, where the
+    # nine had their own windows and the tab had no wide one.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = { vb: {}, tab: {} };
+      const nine = ['ronin', 'clown', 'hive', 'wizard', 'umbra', 'zeus', 'marksman', 'timekeeper', 'solar', 'ninja', 'grizzly'];
+      nine.forEach(id => { const s = buildAvatarCharSVG(id); out.vb[id] = s && s.getAttribute('viewBox'); });
+      const R = e => { if(!e) return null; const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
+      for(const id of ['ronin', 'clown', 'ninja']){
+        store.avatarChar = id; const t = document.querySelector('#bottomtab-profile .bottomtab-icon');
+        delete t.dataset.char; syncBottomTabAvatar(); showHome();
+        for(let k = 0; k < 60 && !t.querySelector('.char-flip-play img'); k++) await wait(500);
+        const sv = t.querySelector('svg.avatarchar-svg');
+        out.tab[id] = { vb: sv && sv.getAttribute('viewBox'), icon: R(t), svg: R(sv), play: R(t.querySelector('.char-flip-play')) };
+      }
+      return out; }""")
+    ctx.close()
+    check("every character's own drawing is the shared 3 3 34 34 window, the nine wide ones included",
+          set(r["vb"].values()) == {"3 3 34 34"}, r["vb"])
+    def lands(t):
+        vb = [float(x) for x in (t.get("vb") or "0 0 0 0").split()]
+        ic, sv = t.get("icon"), t.get("svg")
+        if not (ic and sv) or not vb[2]:
+            return False
+        k = (sv[2] - sv[0]) / vb[2]     # px per unit
+        x3, y3 = sv[0] + (3 - vb[0]) * k, sv[1] + (3 - vb[1]) * k
+        return abs(x3 - ic[0]) <= 0.6 and abs(y3 - ic[1]) <= 0.6 and abs(k * 34 - (ic[2] - ic[0])) <= 0.6 and abs(sv[3] - ic[3]) <= 0.6
+    check("the tab looks through a wider window for everyone, and the shared 34 units land on the icon exactly",
+          all(t.get("vb") == "0.5 -2 39 39" and lands(t) for t in r["tab"].values()), r["tab"])
+    check("...and the tab's flip-book takes exactly the drawing's box",
+          all(t.get("play") and t.get("svg") and max(abs(a - b) for a, b in zip(t["play"], t["svg"])) <= 0.6 for t in r["tab"].values()), r["tab"])
 def check_b317_xpcap(br):
     """Build 317. Four of Madison's asks about a full XP bar, in one gate:
     "The level 80 xp bar, it says every level reached, make it so that xp
