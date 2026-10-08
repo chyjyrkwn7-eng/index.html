@@ -13771,7 +13771,8 @@ def check_b317_supernova(br):
       const fr = [...sc.querySelectorAll('.csc-frag')];
       const an = fr.map(f => f.getAnimations()[0]).filter(Boolean);
       return { hero: true, scar: true, accent: document.documentElement.dataset.accent || '',
-        art: getComputedStyle(sc).getPropertyValue('--scar-burn').indexOf('data:image') >= 0,
+        /* drawn art: the planet round's canvases, or (before it) a data URL */
+        art: !!sc.querySelector('canvas.csc-burn') || getComputedStyle(sc).getPropertyValue('--scar-burn').indexOf('data:image') >= 0,
         frags: fr.length, loops: an.filter(a => a.effect.getComputedTiming().iterations === Infinity && a.playState === 'running').length,
         afterPlasma: kids.indexOf(sc) === kids.indexOf(h.querySelector(':scope > .cosmic-plasma')) + 1,
         z: getComputedStyle(sc).zIndex, scarred: h.classList.contains('is-scarred'),
@@ -13928,6 +13929,327 @@ def check_b317_supernova(br):
     check("it ends with Supernova reached and the ring tier seen as 'supernova' (Home will not draw the rings on again)",
           end[1] is True and end[2] == "supernova", end)
 
+
+
+# The app's own clocks, paused and then stepped together: every animation is
+# paused where the app put it (syncLoopClock's wall-clock phases and each
+# loop's own delay), and every sample moves them all on by the same amount -
+# so what is measured is the phase relation the app set up, not one a
+# harness imposed.
+PLANET_PAUSE = """() => { window.__pz = new Map(); document.getAnimations().forEach(a => { try{ a.pause(); window.__pz.set(a, Number(a.currentTime) || 0); }catch(e){} }); return window.__pz.size; }"""
+PLANET_STEP = """(dt) => { document.getAnimations().forEach(a => { try{ if(!window.__pz.has(a)){ a.pause(); window.__pz.set(a, Number(a.currentTime) || 0); }
+  a.currentTime = window.__pz.get(a) + dt * 1000; }catch(e){} }); }"""
+
+
+def check_b317_planet(br):
+    """Build 317, the planet round. Four of Madison's notes on the planet:
+    1. "the large planet in the cutscene doesn't look animated? ... that dark
+       smoke needs to move a smidge faster and randomly to give that smokey
+       look." - the smoke is several dark layers turning at durations that
+       never line up (none an integer multiple of another), the main one
+       faster than the old 90s, each breathing, and still under Reduce
+       motion (the app's switch and the system's).
+    2. "the permanent damage part to the sphere doesn't look too too good,
+       maybe it needs a deep crack running across it" - the scar's burn art
+       holds one long thin dark feature spanning at least 60% of the
+       sphere's diameter (the crack, measured off the art's own pixels,
+       whatever form the art takes), drawn at no fewer pixels than the
+       sphere has on a 3x phone; the ember is two layers pulsing on
+       different clocks; the fragments start on the scar.
+    3. "could it feel more like it was rotating around the sphere? Like
+       going behind it and back around?" - Genesis's flare never vanishes;
+       for part of its lap the planet is painted over it (and a screenshot
+       with and without it is the same there), for another part it is over
+       the planet; smaller and dimmer behind; taps answer in front, round
+       the limb behind, and the planet answers on the disc.
+    4. "as it passes the hole something happens" - every secret flare's
+       glint peaks as it crosses the scar's angle and is dark well away
+       from it; Genesis's flare glints at the point of its lap nearest the
+       rupture; the rings run hot over an arc centred on the scar; the
+       bubbles near the hole hold its firelight; nothing moves under
+       Reduce motion; none of it in the rank cutscene or without Supernova.
+    Measured on the app's own clocks, paused and stepped together. Written
+    against b6cd249, where all four fail."""
+    print("\n317p. the planet round: the smoke roils, a crack across the planet, Genesis goes behind, the scar lights what passes")
+    import json as _json
+    # nothing owed on Home: the reward cards for a seeded Supernova account
+    # with every flare would otherwise come up over it a few seconds in
+    HOMEJS = """() => { try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); }catch(e){}
+      try{ homeUnlockPlaying = false; }catch(e){}
+      showHome(); document.querySelectorAll('.rs-spot,.scene-bridge,.daily-alert,#tour-overlay,.update-banner,.toast,#contextual-info-popup').forEach(n => n.remove()); }"""
+
+    # 1. the smoke
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(HOMEJS); pg.wait_for_timeout(1200)
+    SMOKE = """() => { const sm = [...document.querySelectorAll('.panel.home .cosmic-plasma .cosmic-smoke')];
+      const kf = a => { try{ return a.effect.getKeyframes(); }catch(x){ return []; } };
+      return sm.map(e => { const an = e.getAnimations().filter(a => a.playState === 'running' && a.effect.getComputedTiming().iterations === Infinity);
+        return { turn: an.filter(a => kf(a).some(k => k.transform)).map(a => a.effect.getComputedTiming().duration / 1000),
+                 breathe: an.filter(a => kf(a).some(k => k.opacity !== undefined)).map(a => a.effect.getComputedTiming().duration / 1000),
+                 op: +getComputedStyle(e).opacity, tf: getComputedStyle(e).transform }; }); }"""
+    sm = pg.evaluate(SMOKE)
+    t1 = [x["tf"] for x in sm]
+    pg.wait_for_timeout(1000)
+    t2 = [x["tf"] for x in pg.evaluate(SMOKE)]
+    turns = sorted(d for x in sm for d in x["turn"])
+    breathes = sorted(d for x in sm for d in x["breathe"])
+    def apart(ds):
+        return all(abs(b / a - round(b / a)) > .1 for i, a in enumerate(ds) for b in ds[i + 1:])
+    check("the smoke is several layers, each turning, at durations that differ and never line up (no one a multiple of another)",
+          len(sm) >= 2 and all(x["turn"] for x in sm) and len(set(turns)) >= 2 and apart(turns), turns)
+    check("the main smoke turns faster than the old 90s lap", bool(turns) and min(turns) < 90 and max(turns) < 90, turns)
+    check("and breathes on clocks of its own (at least two opacity loops, different durations)",
+          len(set(breathes)) >= 2 and apart(breathes), breathes)
+    check("it moves (every layer's transform changes over a second)", len(t1) == len(t2) and len(t1) >= 2 and all(a != b for a, b in zip(t1, t2)), list(zip(t1, t2))[:1])
+    pg.evaluate("() => { theme.reduceMotion = true; applyTheme(); saveTheme(); }")
+    pg.evaluate(HOMEJS); pg.wait_for_timeout(900)
+    rm = pg.evaluate(SMOKE)
+    check("Reduce motion (the app's): the smoke holds still, every layer still there, each at its own angle",
+          len(rm) >= 2 and not any(x["turn"] or x["breathe"] for x in rm) and all(x["op"] > .05 for x in rm) and len({x["tf"] for x in rm}) == len(rm),
+          [(x["turn"], x["op"]) for x in rm])
+    pg.evaluate("() => { theme.reduceMotion = false; applyTheme(); saveTheme(); }")
+    pg.emulate_media(reduced_motion="reduce")
+    pg.evaluate(HOMEJS); pg.wait_for_timeout(900)
+    rs = pg.evaluate(SMOKE)
+    check("Reduce motion (the system's): the smoke holds still too", len(rs) >= 1 and not any(x["turn"] or x["breathe"] for x in rs), [x["turn"] for x in rs])
+    ctx.close()
+
+    # 2. the scar's art: a crack across the planet, crisp on a 3x phone
+    acct = _json.loads(USED_ACCOUNT)
+    acct["supernovaAchieved"] = True
+    acct["mysteryColorsFound"] = {k: True for k in ["red", "orange", "yellow", "violet", "white", "core"]}
+    seed_all = _json.dumps(acct).replace("'", "\\'")
+    ctx, pg = booted(br, 440, 956, seed=seed_all, dpr=3)
+    pg.evaluate("() => { try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); }catch(e){} }")
+    pg.evaluate(HOMEJS); pg.wait_for_timeout(1500)
+    art = pg.evaluate("""async () => { const h = document.querySelector('.panel.home .cosmic-hero-wrap'); const sc = h && h.querySelector(':scope > .cosmic-scar');
+      if(!sc) return null;
+      const sp = h.querySelector('.cosmic-hero-main circle[fill^="url(#cosmicSphereGrad"]').getBoundingClientRect();
+      let cv = sc.querySelector('canvas.csc-burn'), shown = cv ? cv.getBoundingClientRect() : null;
+      if(!cv){ const m = getComputedStyle(sc).getPropertyValue('--scar-burn').match(/url\\(["']?(data:[^"')]+)/); if(!m) return { none: true };
+        const im = new Image(); im.src = m[1]; await im.decode(); cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = im.naturalHeight;
+        cv.getContext('2d').drawImage(im, 0, 0); const b = sc.querySelector('.csc-burn'); shown = b ? b.getBoundingClientRect() : null; }
+      const N = cv.width, d = cv.getContext('2d').getImageData(0, 0, N, N).data;
+      /* the dark, solid pixels; their largest connected piece; its length
+         along its own main axis and its mean thickness */
+      const dark = new Uint8Array(N * N);
+      for(let k = 0; k < N * N; k++){ const a = d[k * 4 + 3], l = (d[k * 4] + d[k * 4 + 1] + d[k * 4 + 2]) / 3; if(a > 200 && l < 48) dark[k] = 1; }
+      const seen = new Uint8Array(N * N); let best = [];
+      for(let k = 0; k < N * N; k++){ if(!dark[k] || seen[k]) continue; const comp = [], st = [k]; seen[k] = 1;
+        while(st.length){ const q = st.pop(); comp.push(q); const x = q % N, y = (q / N) | 0;
+          for(let dy = -1; dy <= 1; dy++) for(let dx = -1; dx <= 1; dx++){ const xx = x + dx, yy = y + dy; if(xx < 0 || yy < 0 || xx >= N || yy >= N) continue;
+            const r = yy * N + xx; if(dark[r] && !seen[r]){ seen[r] = 1; st.push(r); } } }
+        if(comp.length > best.length) best = comp; }
+      let mx = 0, my = 0; best.forEach(q => { mx += q % N; my += (q / N) | 0; }); mx /= best.length || 1; my /= best.length || 1;
+      let sxx = 0, syy = 0, sxy = 0; best.forEach(q => { const x = q % N - mx, y = ((q / N) | 0) - my; sxx += x * x; syy += y * y; sxy += x * y; });
+      const th = .5 * Math.atan2(2 * sxy, sxx - syy), ux = Math.cos(th), uy = Math.sin(th);
+      let lo = 1e9, hi = -1e9; best.forEach(q => { const p = (q % N) * ux + ((q / N) | 0) * uy; if(p < lo) lo = p; if(p > hi) hi = p; });
+      const len = hi - lo;
+      const e = sc.querySelector('canvas.csc-ember'), hot = sc.querySelector('canvas.csc-hot');
+      const loops = el => el ? el.getAnimations().filter(a => a.playState === 'running' && a.effect.getComputedTiming().iterations === Infinity).map(a => a.effect.getComputedTiming().duration / 1000) : [];
+      /* where each fragment starts, against the art: on the scar (soot, burn or crack) */
+      const frags = [...sc.querySelectorAll('.csc-frag')].map(f => { const x = parseFloat(f.style.getPropertyValue('--x')), y = parseFloat(f.style.getPropertyValue('--y'));
+        const px = Math.min(N - 1, Math.max(0, Math.round(x / 100 * N))), py = Math.min(N - 1, Math.max(0, Math.round(y / 100 * N)));
+        return d[(py * N + px) * 4 + 3]; });
+      return { N, sphereDev: sp.width * devicePixelRatio, dpr: devicePixelRatio, shown: shown ? [shown.width, sp.width] : null,
+        len: len / N, thick: best.length / (len || 1) / N, pieces: best.length,
+        ember: loops(e), hot: loops(hot), frags, ms: (typeof cosmicScarArt === 'function' && cosmicScarArt()) ? cosmicScarArt().ms : null }; }""")
+    check("the scar's art holds a crack: one long thin dark feature across at least 60% of the sphere's diameter",
+          # thin: a mean thickness under a tenth of the diameter (the old
+          # blob measured .27; the crack with its rupture ~.08)
+          bool(art) and not art.get("none") and art["len"] >= .6 and art["thick"] <= .1,
+          art and {k: (round(art[k], 3) if isinstance(art.get(k), float) else art.get(k)) for k in ("len", "thick", "pieces")})
+    check("crisp on a 3x phone: drawn at no fewer pixels than the sphere has on the screen, and shown at the sphere's size",
+          bool(art) and art.get("dpr") == 3 and art.get("N", 0) >= art.get("sphereDev", 1e9) * .98
+          and art.get("shown") and abs(art["shown"][0] - art["shown"][1]) <= 1.5,
+          art and (art.get("N"), round(art.get("sphereDev") or 0), art.get("shown")))
+    check("the ember pulses on two layers at clocks of their own, slowly (4s or more)",
+          bool(art) and len(art.get("ember") or []) == 1 and len(art.get("hot") or []) == 1 and min(art["ember"] + art["hot"]) >= 4
+          and art["ember"][0] != art["hot"][0], art and (art.get("ember"), art.get("hot")))
+    fr = (art or {}).get("frags") or []
+    check("the fragments rise from the scar: every one starts on it", len(fr) >= 6 and all(a > 40 for a in fr), fr)
+    print("        (the scar's art drew in %s ms on this machine, cold, as Home was first built)" % (round(art["ms"]) if art and art.get("ms") is not None else "?"))
+    ctx.close()
+
+    # 3. Genesis's flare goes round: behind the planet and back in front
+    ctx, pg = booted(br, 440, 956, seed=seed_all, dpr=2)
+    pg.evaluate("() => { try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); }catch(e){} }")
+    pg.evaluate(HOMEJS); pg.wait_for_timeout(1500)
+    pg.evaluate(PLANET_PAUSE)
+    GEN = """() => { const f = document.querySelector('.panel.home [data-flare="core"]'); if(!f) return null;
+      const s = document.querySelector('.panel.home .cosmic-hero-main circle[fill^="url(#cosmicSphereGrad"]'), sr = s.getBoundingClientRect();
+      const r = f.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+      const stack = document.elementsFromPoint(x, y), iF = stack.findIndex(e => e === f || f.contains(e)), iS = stack.indexOf(s);
+      let op = 1; for(let n = f; n && n !== document.body; n = n.parentElement) op *= +getComputedStyle(n).opacity;
+      return { x, y, w: r.width, op, vis: f.checkVisibility ? f.checkVisibility({ visibilityProperty: true }) : getComputedStyle(f).visibility === 'visible',
+        onDisc: Math.hypot(x - sr.left - sr.width / 2, y - sr.top - sr.height / 2) < sr.width / 2 * .8, iF, iS }; }"""
+    rows = []
+    for i in range(0, 64):
+        pg.evaluate(PLANET_STEP, i * .25)
+        g = pg.evaluate(GEN)
+        if g: rows.append((i * .25, g))
+    seen_all = len(rows) == 64 and all(g["vis"] and g["op"] > .3 for _, g in rows)
+    # behind: there, and drawn, and the planet above it (a flare simply
+    # hidden is not behind anything)
+    behind = [(t, g) for t, g in rows if g["onDisc"] and g["vis"] and g["op"] > .3 and 0 <= g["iS"] < g["iF"]]
+    front = [(t, g) for t, g in rows if g["onDisc"] and g["iF"] >= 0 and (g["iS"] < 0 or g["iF"] < g["iS"])]
+    check("Genesis's flare never vanishes - it is drawn (visible, not faded out) at every point of its lap",
+          seen_all, [(t, round(g["op"], 2), g["vis"]) for t, g in rows if not (g["vis"] and g["op"] > .3)][:4])
+    check("for part of its lap the planet is painted over it (behind), for another part it is over the planet (in front)",
+          len(behind) >= 4 and len(front) >= 4, (len(behind), len(front)))
+    # the picture itself: behind, the flare adds nothing over the disc; in front it does
+    def crop_diff(t):
+        from PIL import Image, ImageChops
+        def diff(a, b):
+            dimg = ImageChops.difference(Image.open(io.BytesIO(a)).convert("RGB"), Image.open(io.BytesIO(b)).convert("RGB"))
+            return max(dimg.getextrema()[c][1] for c in range(3))
+        for _ in range(4):
+            pg.evaluate(PLANET_STEP, t)
+            g = pg.evaluate(GEN)
+            box = {"x": g["x"] - 4, "y": g["y"] - 4, "width": 8, "height": 8}
+            a = pg.screenshot(clip=box)
+            a2 = pg.screenshot(clip=box)
+            # hidden by visibility, never display: display:none would cancel its
+            # animations and they would restart out of step with the lap
+            pg.evaluate("() => { document.querySelector('.panel.home .cosmic-core-orbit').style.visibility = 'hidden'; }")
+            b = pg.screenshot(clip=box)
+            pg.evaluate("() => { document.querySelector('.panel.home .cosmic-core-orbit').style.visibility = ''; }")
+            # only a still scene says anything: something else changing in
+            # the crop between two shots is not the flare
+            if diff(a, a2) <= 6:
+                return diff(a, b)
+        return 999
+    if behind and front:
+        sp = pg.evaluate("() => { const r = document.querySelector('.panel.home .cosmic-hero-main circle[fill^=\"url(#cosmicSphereGrad\"]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
+        tb = min(behind, key=lambda tg: (tg[1]["x"] - sp[0]) ** 2 + (tg[1]["y"] - sp[1]) ** 2)[0]
+        tf = sorted(front, key=lambda tg: -tg[1]["w"])[0][0]
+        db, df = crop_diff(tb), crop_diff(tf)
+        check("and the picture agrees: behind, the planet hides it completely; in front, it is seen", db <= 6 and df >= 40, (tb, db, tf, df))
+        wb = min(g["w"] for _, g in behind); wf = max(g["w"] for _, g in front)
+        ob = min(g["op"] for _, g in behind); of = max(g["op"] for _, g in front)
+        check("smaller and dimmer behind, larger and brighter in front", wb < wf * .75 and ob < of * .8, (round(wb, 1), round(wf, 1), round(ob, 2), round(of, 2)))
+    else:
+        check("and the picture agrees: behind, the planet hides it completely; in front, it is seen", False, "no behind/front phases")
+        check("smaller and dimmer behind, larger and brighter in front", False, "no behind/front phases")
+    # taps: in front; behind but round the limb; behind on the disc (the planet)
+    def tap_at(t):
+        pg.evaluate("() => { document.querySelectorAll('#contextual-info-popup,.rs-spot,.scene-bridge,.daily-alert,#tour-overlay').forEach(n => n.remove()); try{ homeCaptionHide(document.querySelector('#stage .panel.home')); }catch(e){} document.querySelectorAll('#stage .home-caption > .hc-item').forEach(n => n.remove()); }")
+        pg.evaluate(PLANET_STEP, t)
+        g = pg.evaluate(GEN)
+        top = pg.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y); return e ? ((e.id ? '#' + e.id + ' ' : '') + (e.getAttribute('class') || e.tagName)).slice(0, 60) : null; }", [g["x"], g["y"]])
+        pg.mouse.click(g["x"], g["y"])
+        txt = ""
+        # the answer: the caption under the planet (b317-rings2), or the
+        # box it replaced on an older build
+        for _ in range(60):     # a loaded machine can take seconds to open it
+            pg.wait_for_timeout(100)
+            txt = pg.evaluate("""() => { const c = document.querySelector('#stage .home-caption > .hc-item.is-in, #stage .home-caption > .hc-item:not(.is-out)');
+              if(c) return c.textContent; const p = document.getElementById('contextual-info-popup'); return p ? p.textContent : ''; }""")
+            if txt: break
+        return txt or ("(nothing; on top: %s)" % top)
+    off_behind = [(t, g) for t, g in rows if not g["onDisc"] and g["iS"] < 0 and g["iF"] >= 0 and g["w"] < (front[0][1]["w"] if front else 0) * .9]
+    taps = []
+    if front: taps.append(("front", "Worldheart", tap_at(front[len(front) // 2][0])))
+    if off_behind: taps.append(("behind, round the limb", "Worldheart", tap_at(off_behind[len(off_behind) // 2][0])))
+    if behind: taps.append(("behind, on the disc: the planet", "Your system" if pg.evaluate("() => typeof homeCaptionShow === 'function'") else ".....",
+                            tap_at(behind[len(behind) // 2][0])))
+    check("taps: in front it answers; behind, round the limb, it answers; on the disc the planet answers",
+          len(taps) == 3 and all(want in got for _, want, got in taps), [(w, got[:24]) for w, _, got in taps])
+    ctx.close()
+
+    # 4. the scar lights what passes it
+    for reduce in (False, True):
+        ctx, pg = booted(br, 440, 956, seed=seed_all, dpr=1)
+        pg.evaluate("([r]) => { theme.reduceMotion = r; applyTheme(); saveTheme(); try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); }catch(e){} }", [reduce])
+        pg.evaluate(HOMEJS); pg.wait_for_timeout(1500)
+        info = pg.evaluate("""() => { const h = document.querySelector('.panel.home .cosmic-hero-wrap'); const a = (typeof cosmicScarArt === 'function') ? cosmicScarArt() : null;
+          const rh = h.querySelector('.csc-ringheat');
+          const arcs = rh ? [...rh.querySelectorAll('svg')].map(sv => { const p = sv.querySelector('path'); const m = (p.getAttribute('d') || '').match(/M([\\d.-]+) ([\\d.-]+) A[\\d.]+ [\\d.]+ 0 0 1 ([\\d.-]+) ([\\d.-]+)/);
+            const mid = m ? Math.atan2((+m[1] + +m[3]) / 2 - 180, 150 - (+m[2] + +m[4]) / 2) * 180 / Math.PI : null;
+            const an = sv.getAnimations().filter(x => x.playState === 'running' && x.effect.getComputedTiming().iterations === Infinity);
+            return { mid: mid === null ? null : (mid + 360) % 360, loops: an.map(x => x.effect.getComputedTiming().duration / 1000) }; }) : [];
+          const bubbles = [...h.querySelectorAll(':scope > .cosmic-icon-badge')].map(b => { const cx = parseFloat(b.style.left) * 3.6, cy = parseFloat(b.style.top) * 3.42 - 12;
+            return [Math.round((Math.atan2(cx - 180, 150 - cy) * 180 / Math.PI + 360) % 360), !!b.querySelector('.cosmic-badge-scarlit')]; });
+          const moving = [...h.querySelectorAll('.csc-pass')].reduce((n, e) => n + e.getAnimations({ subtree: true }).filter(x => x.playState === 'running').length, 0);
+          return { angle: a ? a.angle : null, crater: a ? a.crater : null, arcs, bubbles, moving, glints: h.querySelectorAll('.cof-scarlit').length }; }""")
+        if reduce:
+            g = pg.evaluate("() => [...document.querySelectorAll('.panel.home .cof-scarlit')].map(e => +getComputedStyle(e).opacity)")
+            dm = pg.evaluate("() => [...document.querySelectorAll('.panel.home .csc-ringfrag')].reduce((n, e) => n + e.getAnimations().length, 0)")
+            check("Reduce motion: nothing the scar lights moves, no glint is left lit, and the debris holds still",
+                  info["glints"] >= 6 and info["moving"] == 0 and g and max(g) < .01 and dm == 0, (info["glints"], info["moving"], g, dm))
+            ctx.close()
+            continue
+        ang = info["angle"] if info["angle"] is not None else 132
+        pg.evaluate(PLANET_PAUSE)
+        samp = {}
+        for i in range(0, 250):
+            t = i * .5
+            pg.evaluate(PLANET_STEP, t)
+            r = pg.evaluate("""() => { const h = document.querySelector('.panel.home .cosmic-hero-wrap'); const s = h.querySelector('.cosmic-hero-main circle[fill^="url(#cosmicSphereGrad"]').getBoundingClientRect();
+              const cx = s.left + s.width / 2, cy = s.top + s.height / 2, out = {};
+              h.querySelectorAll('.cosmic-flare-dot').forEach(d => { const r = d.getBoundingClientRect(); const x = r.left + r.width / 2 - cx, y = r.top + r.height / 2 - cy;
+                const g = d.querySelector('.cof-scarlit');
+                out[d.dataset.flare] = [(Math.atan2(x, -y) * 180 / Math.PI + 360) % 360, g ? +getComputedStyle(g).opacity : null, x / s.width * 104, y / s.width * 104]; });
+              return out; }""")
+            for k, v in r.items():
+                samp.setdefault(k, []).append((t, v))
+        ring = [k for k in samp if k != "core"]
+        near_ok, far_ok, per = True, True, {}
+        for k in ring:
+            v = samp[k]
+            dang = lambda a: abs((a - ang + 540) % 360 - 180)
+            near = [o for t, (a, o, x, y) in v if dang(a) <= 4]
+            far = [o for t, (a, o, x, y) in v if dang(a) >= 40]
+            per[k] = (round(max(near), 2) if near and None not in near else None, round(max(far), 2) if far and None not in far else None)
+            near_ok = near_ok and bool(near) and None not in near and max(near) >= .8
+            far_ok = far_ok and bool(far) and None not in far and max(far) <= .02
+        check("every secret flare on a ring glints as it crosses the scar's angle (peak >= .8 within 4 degrees)", len(ring) >= 5 and near_ok, per)
+        check("... and is dark well away from it (40 degrees and more)", len(ring) >= 5 and far_ok, per)
+        cv = samp.get("core") or []
+        if cv and info["crater"]:
+            kx, ky = (info["crater"][0] - 50) / 100 * 104, (info["crater"][1] - 50) / 100 * 104
+            nearest = min(cv, key=lambda tv: (tv[1][2] - kx) ** 2 + (tv[1][3] - ky) ** 2)
+            back = [o for t, (a, o, x, y) in cv if y < -8]
+            check("Genesis's flare glints at the point of its lap nearest the rupture, and not behind the planet",
+                  nearest[1][1] is not None and nearest[1][1] >= .8 and back and max(back) <= .02, (nearest[0], nearest[1][1], max(back) if back else None))
+        else:
+            check("Genesis's flare glints at the point of its lap nearest the rupture, and not behind the planet", False, "no glint / no art")
+        arcs = info["arcs"]
+        check("the rings run hot over an arc centred on the scar, one per ring, flickering on clocks of their own",
+              len(arcs) == 2 and all(a["mid"] is not None and abs((a["mid"] - ang + 540) % 360 - 180) <= 3 for a in arcs)
+              and all(len(a["loops"]) == 1 for a in arcs) and arcs[0]["loops"] != arcs[1]["loops"], arcs)
+        bub = info["bubbles"]
+        check("the bubbles near the hole hold its firelight, and only those",
+              any(b[1] for b in bub) and all(b[1] == (abs((b[0] - ang + 540) % 360 - 180) <= 36) for b in bub), bub)
+        # the debris on the rings: in both orbit layers (so it goes round with
+        # them), a few units off the lines, tumbling; one call decorates a hero
+        deb = pg.evaluate("""() => { const h = document.querySelector('.panel.home .cosmic-hero-wrap');
+          const rs = [...h.querySelectorAll('.cosmic-orbit-ring')].map(r => +r.getAttribute('r')), R1 = Math.max(...rs), R0 = Math.min(...rs);
+          const fr = [...h.querySelectorAll('.csc-ringfrag')].map(e => { const cx = parseFloat(e.style.left) * 3.6 - 180, cy = parseFloat(e.style.top) * 3.42 - 12 - 150;
+            const inner = !!e.closest('.cosmic-hero-orbitlayer-inner'), d = Math.hypot(cx, cy) - (inner ? R0 : R1);
+            return { layer: !!e.closest('.cosmic-hero-orbitlayer'), inner, off: +d.toFixed(2),
+              tumble: e.getAnimations().filter(a => a.effect.getComputedTiming().iterations === Infinity).length }; });
+          return { fr, api: typeof decorateSupernovaHero === 'function' }; }""")
+        fr = deb["fr"]
+        check("debris on both rings, riding the orbit layers with the flares, scattered a few units off the lines, tumbling",
+              len(fr) >= 12 and all(f["layer"] for f in fr) and any(f["inner"] for f in fr) and any(not f["inner"] for f in fr)
+              and all(abs(f["off"]) <= 6 for f in fr) and sum(1 for f in fr if abs(f["off"]) >= 1.5) >= len(fr) // 2
+              and all(f["tumble"] == 1 for f in fr), [(f["inner"], f["off"], f["tumble"]) for f in fr][:6])
+        api = pg.evaluate("""() => { if(typeof decorateSupernovaHero !== 'function') return null; const was = store.supernovaAchieved; store.supernovaAchieved = false;
+          const h = buildCosmicHero(true); store.supernovaAchieved = was; const before = [h.querySelectorAll('.cosmic-scar').length, h.querySelectorAll('.csc-ringfrag').length];
+          decorateSupernovaHero(h); decorateSupernovaHero(h);
+          return { before, after: [h.querySelectorAll('.cosmic-scar').length, h.querySelectorAll('.csc-ringfrag').length, h.querySelectorAll('.cof-scarlit').length, h.querySelectorAll('.csc-ringheat').length] }; }""")
+        check("one call, decorateSupernovaHero(hero), makes any plain hero the Supernova planet - scar, debris, passing light - and twice is once",
+              bool(api) and api["before"] == [0, 0] and api["after"][0] == 1 and api["after"][1] >= 12 and api["after"][2] >= 1 and api["after"][3] == 1, api)
+        # none of it without Supernova, and none of it in the rank cutscene
+        none = pg.evaluate("""() => { const was = store.supernovaAchieved; store.supernovaAchieved = false; const plain = buildCosmicHero(true);
+          store.supernovaAchieved = was; const n0 = plain.querySelectorAll('.csc-pass').length;
+          const sc = document.createElement('div'); sc.className = 'tier-cutscene'; sc.style.cssText = 'position:fixed;left:0;top:0;width:300px';
+          const h = buildCosmicHero(true); attachCosmicScar(h); sc.appendChild(h); document.body.appendChild(sc);
+          const shown = [...h.querySelectorAll('.csc-pass')].filter(e => getComputedStyle(e).display !== 'none').length, all = h.querySelectorAll('.csc-pass').length;
+          sc.remove(); return [n0, all, shown]; }""")
+        check("none of it on a planet without Supernova, and none shown in the rank cutscene", none[0] == 0 and none[1] > 0 and none[2] == 0, none)
+        ctx.close()
 
 def check_b317_cutend(br):
     """Build 317, flow round - three notes on the rank cutscene from the
@@ -17167,6 +17489,7 @@ def main():
             check_b317_noflash(br)
             check_b317_rankup(br)
             check_b317_supernova(br)
+            check_b317_planet(br)
             check_b317_flow(br)
             check_b317_sflare(br)
             check_b317_badgecase(br)

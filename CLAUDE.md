@@ -11576,7 +11576,9 @@ screenshots and nothing turns on until she picks one.
   (b) the plasma at .9 opacity, (c) the night-side/atmosphere disc
   (`.cosmic-sphere-shade`). (a) and (c) are gone, (b) is back to .55,
   and the smoke is the dark layer only, a little deeper. Do not re-add a
-  light smoke layer: it is the thing she was describing.
+  light smoke layer: it is the thing she was describing. (Build 317's
+  planet round makes the dark smoke three dark layers that roil - still
+  no light one; see "THE PLANET ROUND".)
 - **The tiny secret flares are tiny bubbles, all alike**: r 5 (the
   original 4.5-ish size, not 308's 7.5 glow), a rim-bright gradient and
   a separate `.cosmic-orbit-rim` circle - separate because the dot's own
@@ -12148,7 +12150,10 @@ A 44px `::after` disc takes the tap.
   close to see). *"Ensure the flares in the middle are moving at a faster
   pace."*
 
-**The sixth flare skims the planet.** *"Somehow placed in a cool way on
+**The sixth flare skims the planet** - **until build 317's planet round,
+which sends it round the planet: behind it for real and back in front (r
+72, 16s, see "THE PLANET ROUND"). The hiding described here is gone.**
+*"Somehow placed in a cool way on
 the planet ... that moves in a cool way."* `.cosmic-core-orbit`: a low
 orbit (r 62 round the r 52 planet) tilted -18deg and squashed to .3, one
 turn every 14s. The squash/tilt is undone on the rider
@@ -15772,7 +15777,9 @@ disagree with it.
   coming off it in the main menu could be pulsing black fragments ... if
   you change the theme, it would still be there."*
   - **The scar** (`buildCosmicScar` / `attachCosmicScar`, CSS "THE
-    SUPERNOVA SCAR"): a burn across the lower right of the planet's face -
+    SUPERNOVA SCAR") - **REDRAWN in the planet round (below): a crack
+    across the planet, lit; what follows describes the first version.**
+    It was a burn across the lower right of the planet's face -
     a scorched halo, black burn, an ember rim that pulses, glowing crust
     specks, three jagged fissures with branches - plus a heat shimmer off
     the limb and eight black shards with ember rims pulsing and drifting
@@ -15784,7 +15791,8 @@ disagree with it.
     hero built after - so an account that already had Supernova has it on
     its first Home with no cutscene replayed.
   - **Drawn once on a canvas, not built from gradients**
-    (`cosmicScarURLs`, seeded, the same choice as `cosmicSmokeURL`). The
+    (`cosmicScarURLs` then, `cosmicScarArt` since the planet round,
+    seeded, the same choice as `cosmicSmokeURL`). The
     gradient version read as a cluster of overlapping circles and its
     three straight fissures met at a point like clock hands. The burn's
     edge is a tilted ellipse pushed in and out by fractal noise; two
@@ -15859,6 +15867,254 @@ disagree with it.
     with a cubic-bezier went unread. It splits on top-level commas now,
     which found six existing loops besides the scar's; each was checked
     and is invisible at both ends of its cycle (KNOWN, "Build 317").
+- **THE PLANET ROUND: THE SMOKE ROILS, A CRACK ACROSS THE PLANET, GENESIS
+  GOES BEHIND IT, AND THE SCAR LIGHTS WHAT PASSES (build 317, b317-planet).**
+  Four notes from Madison, all about the planet:
+  - **The smoke.** *"the large planet in the cutscene doesn't look
+    animated? If that's how the planet normally looks and I'm just now
+    seeing it, the planet needs more movement with what it has, that dark
+    smoke needs to move a smidge faster and randomly to give that smokey
+    look."* One dark layer turned once in 90s, which reads as a still
+    texture, in the cutscene too (it is the same planet). Now THREE dark
+    layers (still no lit one - build 310's rule stands): `cosmic-smoke-b`
+    61s, a mirrored layer the other way (`cosmic-smoke-c`, 83s) and a large
+    one (`cosmic-smoke-d`, 47s) on a texture of its own - `cosmicWispsURL()`,
+    the smoke noise pushed through itself (domain warping), which curls
+    into swirls. Each wanders off its centre as it turns and breathes on its
+    own clock (15.7s / 12.7s / 9.1s, `cosmic-smoke-breathe-a/b/c`). No
+    duration is within 10% of a multiple of another (17.3s against 9.1s
+    was, and the gate caught it), so the picture never repeats. Together
+    they cover the planet as the one layer did: mean luminance of the disc
+    108.1 against 108.0 before (the light pools hidden: 98.4 / 99.1). Held
+    still under the app's Reduce motion and now the system's too (the turns
+    are inside `prefers-reduced-motion:no-preference`), each at its own
+    angle so they do not stack into one.
+  - **The scar, redrawn as the planet's own broken surface.** *"the
+    permanent damage part to the sphere doesn't look too too good, maybe it
+    needs a deep crack running across it, maybe it doesn't feel legit? Idk
+    but I want to love it."* The first scar was a black blob with a glowing
+    outline and three straight fissures laid on top - a sticker.
+    `cosmicScarArt()` (replacing `cosmicScarURLs`) builds a HEIGHT FIELD on
+    the sphere and lights it:
+    - the rupture: steep walls down to a floor, a raised ragged rim, its
+      edge torn by an angular noise (`RHO` .19 radians, at sphere (.3, .27));
+    - the crack: walked ON the sphere along a meandering great circle from
+      the rupture across the face to the far limb (`mainA`), and a short arm
+      over the near limb (`mainB`) - so it bends with the planet and
+      foreshortens towards the edge; distances to it are measured in the
+      sphere's own metric (a step towards the limb is longer than it looks);
+      widest at the impact, narrowing to hairlines; raised lips; branches;
+      seven hairline fractures and two arcs round the rim. Fractal zigzag
+      (`jag`, two levels: three made sub-pixel steps);
+    - lit by the planet's own light (upper left, where its highlight is):
+      the sphere's normal tipped by the field's slope (the surface P + h n
+      differentiated - the formula is in `scarPass2`), compared with the
+      plain sphere's, so a lip facing the light catches it, the other lip
+      and the walls facing away go dark, the walls hide the bottom of the
+      crack, and all of it is dimmer on the side away from the light. The
+      light inside the rupture and the crack is warm (the ember's);
+    - soot with a soft, ragged edge and streaks thrown out of the impact;
+    - the ember on two canvases of its own: deep in the crack (narrower
+      than its opening), hottest at the impact and cooling along it, and
+      the rupture's molten floor with dark crust drifting on it (a cell
+      pattern read as a '#' at this size; it is thresholded noise now).
+      `.csc-ember` pulses over 6.8s, `.csc-hot` (only the hottest) 4.3s.
+    - **Lips are smooth along the crack** (the grain noise): a random lip
+      height per segment read as fur at 6x. **The rupture is a hole, not a
+      dome**: the char inside is dark and the walls carry the shading.
+    - **Crisp**: drawn at 384 px for any 2x/3x screen (the sphere is 360
+      device px on a 17 Pro Max, ~330 on an iPad Pro 11) and 256 at 1x,
+      into three canvases (burn, ember, hot) that every hero copies with
+      `drawImage` - a canvas can be in one place only, and nothing is
+      encoded as a PNG (the old art's two `toDataURL`s were half its cost).
+      Only the plasma's mask is a data URL, 96 px.
+    - **The plasma's mask is the art's own** (`--scar-mask` on the hero):
+      the light pools and the smoke stay off the rupture and drift only
+      half over the crack - smoke passing over the crack is what makes it
+      the planet's own rather than a sticker on it.
+    - **The fragments rise from the crack and the rupture**
+      (`cosmicScarArt().frags`, computed from the art: points on the crack
+      near the impact and on the rim, moving out from the planet's middle
+      and a little up); splinters of crust lit from below, not cubes.
+      `SCAR_FRAGS` is only the fallback for a device with no 2D canvas.
+    - **The cost.** Two kernels (`scarPass1` / `scarPass2`, small top-level
+      functions with everything in locals) instead of loops inside one big
+      closure; the buckets nearest the impact go FIRST, so the loop is
+      optimised with every branch already seen (in row order V8 optimised
+      it on the top-left's plain soot and threw it out three times as the
+      crack and the rupture turned up - `--trace-deopt`); the streaks and
+      the torn edge are 256-angle tables, the broad noise an eighth-size
+      grid (most of the first cold time was interpreted noise calls); the
+      segments are bucketed (64x64, CSR) so a pixel tests ~5; and an
+      eighth of the buckets, spread over every distance, go before the rest
+      (the soot's streaks are a branch the impact's buckets never take, and
+      it still cost two deopts). **Measured, final** (after the second pass;
+      `r317planet/scarcost.py` and `coldsteps.py` in the session's
+      scratchpad: each draw in a FRESH page, which is what a launch pays,
+      against the old art from b6cd249 in the same browser, compilation
+      forced onto the main thread - on this shared, loaded box V8's
+      background compile threads were starved and default-mode cold
+      numbers swung 3x run to run): cold, new 128-144ms (median 170-230),
+      old 91-110ms (median 105-185); warm, new 43-60ms, old 28-33ms; a
+      reference loop (1e7 sqrt) ran ~21ms in the same pages against ~12ms
+      quiet, so divide by ~1.7: **about 75-85ms cold** (the old art ~55-65)
+      on a quiet desktop-class CPU. Of the cold time pass one is 100-160ms
+      here, pass two 40-60, the grids 8-30, the three putImageData and the
+      bloom 2-9, the mask 1-2. Fewer pixels does not buy it back (a tighter
+      soot reach cut 18% of them and moved nothing - the cold time is the
+      JIT warming up). It runs ONCE per launch, only for an account with
+      Supernova, while Home is first built (under the splash on a cold
+      start); every later hero copies the four canvases (`drawImage`); and
+      in the Supernova cutscene's set-up if that is the first scarred hero
+      of the session.
+  - **SECOND PASS: A BURNING FISSURE, NOT A MARK.** Madison, of the
+    Supernova planet she had (the first scar): *"The permanent damage to
+    the supernova thing is eh."* The first redesign was right up close and
+    a thin dark scratch from arm's length - **what reads at phone size is
+    light**, so the crack burns along most of its length: its heat cools
+    slowly (half of it holds to the far end), its molten floor is wider,
+    and the gap lights its own lips and the ground beside it (computed with
+    the crack, so the gap keeps its dark walls); a soft bloom over the hot
+    half and round the rupture is drawn natively (a blurred stroke and a
+    radial gradient) on a fourth canvas, `.csc-bloom`, between the burn and
+    the ember and breathing with the ember; the rupture is larger (`RHO`
+    .23) with a bigger molten floor, its hairline fractures glow near the
+    rim, the crack is .066 wide at the impact. Two things that undid it on
+    the way: **the bloom first went into the ember layer, over the burn**,
+    and washed orange over the dark gap until the crack was a smudge - it
+    belongs over the soot, under the ember; and **the plasma's light pools
+    washing over the crack at half strength** (the first pass let the smoke
+    drift over it to make it "the planet's own") softened it the same way
+    at 3x - the mask now keeps them off the crack as it does the rupture.
+    The lava noise moved (it made a '+' of crust in the middle), and the
+    ember pulses .84-1 so it never goes dull. Seen at both ends of the
+    pulse before calling it done.
+  - **THE DEBRIS ON THE RINGS.** *"Maybe some of the fragments could be
+    going around the rings like in an orbit like the other stuff but
+    scattered slightly."* `addRingDebris`: twenty black shards with a
+    cooling ember edge (`RING_DEBRIS`, one table: ring, angle, how far off
+    the line, size, tumble, phase) in loose streams on both rings, 1-5
+    units off the lines either way. **They are children of the two orbit
+    layers** that carry the secret flares, so they go round with exactly
+    the same motion - the rings' turn, the shared loop clock, a tap's
+    surge - and under the bubbles' glass; nothing is computed per frame.
+    Each tumbles on its own clock (`crf-tumble`, the individual `rotate`
+    property, a whole turn). Sized x1.35 over the table (they read as
+    specks at first). Not `.cosmic-flare-dot`/`.cosmic-orbit-dot`, so no
+    flare count changes.
+  - **ONE CALL: `decorateSupernovaHero(hero)`** puts the whole Supernova
+    state on any built hero - the scar, the debris, the passing light -
+    and calling it twice is calling it once. Home calls it from
+    `buildCosmicHero`; `attachCosmicScar` is the same call under its first
+    name (the rank cutscene's call). For a scene that ends on the Home
+    system (b317-cut2): build the hero with `buildCosmicHero(true, ...)`,
+    call `decorateSupernovaHero` on it, and add `.csc-live` to it if the
+    passing light (glints, hot ring arcs, bubble firelight) should show -
+    inside `.tier-cutscene` it is hidden otherwise.
+  - **Genesis's flare goes round the planet.** *"There's also a random
+    floating secret flare which I'm assuming is Genesis, I'm not a fan of
+    how that one rotates or whatever, could it feel more like it was
+    rotating around the sphere? Like going behind it and back around?"* It
+    is the sixth secret flare, Worldheart (`core`), on `.cosmic-core-orbit`.
+    It skimmed the planet (r 62 round its r 52) and, for the stretch where
+    the planet was in front of it, faded out and went `visibility:hidden` -
+    it never went BEHIND anything. Now a real orbit, r 72, tilted 18 degrees
+    and seen from just above (.36), a lap in 16s:
+    - **Behind, for real.** The orbit is put in the hero just BEFORE the
+      planet's own svg, so painted in place (`z-index:0`) the planet covers
+      it: the far half of every lap passes behind, the flare sliding under
+      the limb and out the other side. For the near half it is lifted over
+      everything (`z-index:3`) by `cco-layer`. The swaps fall at the two
+      ends of the ellipse, where the flare is ~20 units clear of the disc
+      and the corona has faded, so the swap itself cannot be seen.
+    - **Depth**: x1.22 and a glow of its own colour in front (`cco-shine`),
+      x.74 at 62% behind (`cco-depth`, on the sine of the lap).
+    - **Taps**: `.cosmic-hero-main` is `pointer-events:none` now and the
+      sphere circle (`.cosmic-sphere-hit`) takes its own taps, so the flare
+      answers wherever it can be seen - in front, and round the limb behind
+      - and on the disc the planet does ("....."). The orbit's DOM position
+      is the only thing that moved; the tap layer still goes in before the
+      bubbles, the scar still right after the plasma.
+  - **What passes the scar catches its light.** *"a cool effect would be
+    once the explosion happens maybe the rings and everything, as it passes
+    the hole something happens... incorporate the damage effects to the
+    rings and what's on them when passing it somehow in a cool way? Not
+    over the top."* (`scarPassEffects`, from `attachCosmicScar`; all of it
+    `.csc-pass`):
+    - The scar's place is an ANGLE: where the rupture sits seen from the
+      planet's middle (`cosmicScarArt().angle`, ~132 degrees clockwise from
+      the top).
+    - **A secret flare's glint is phase-locked to its ring.** A warm rim on
+      the side facing the planet (`.cof-scarlit`, a masked crescent turned
+      by `--rl`), animated by a loop of the ring's own lap
+      (`ORBIT_LAP_S` = `cosmic-orbit-spin`'s 120s / 52s) whose 50% is put,
+      by its delay, at the moment the flare crosses the scar's angle -
+      worked out from where the flare starts (its left/top in the hero). It
+      runs on the same clock as the spin (`syncLoopClock` sets both), so it
+      cannot drift and nothing is measured per frame. Rises and falls over
+      6% of a lap either way; weaker on the outer ring (`.is-far`).
+    - **Genesis's flare** glints at the point of its lap nearest the
+      rupture, found from `CORE_ORBIT` (the same numbers as `.cco-plane`)
+      when the hero is built, facing the rupture.
+    - **The rings run hot over a short arc at the scar** (`.csc-ringheat`,
+      right after the planet's svg: ember fading out at both ends, a glow
+      and a core over each ring), flickering on 5.3s and 7.9s.
+    - **The bubbles do not orbit on Home**; the ones within 36 degrees of
+      the hole hold its firelight faintly on their near side, flickering.
+    - The scar is now attached at the END of `buildCosmicHero` (still put
+      in right after the plasma), so the bubbles exist to be lit.
+    - Held still and dark under Reduce motion; hidden in the rank
+      cutscene unless the hero carries `.csc-live` (that scene is another
+      round's; see "ONE CALL").
+  - **Merged with b316-work at 7ee6c51** (rings2's caption round): taps on
+    Home answer in the caption under the planet, so the gate reads the
+    answer there; and b316-work as merged failed check-loops on cut2's two
+    soft Supernova loops (`rk-nova-frag-soft`, `rk-nova-shock-soft`, both
+    invisible at both ends) - they are in KNOWN now.
+  - **The surge and the glints**: a tap on the planet surges the rings a
+    few degrees (`planetTapFx`) for nine seconds; the glints follow the
+    slow clock, so for those seconds they are a few degrees off. Left so.
+  - **Gate: `check_b317_planet`** (after `check_b317_supernova`), measured
+    on the app's own clocks - every animation paused where the app put it,
+    then all stepped on together (`PLANET_PAUSE` / `PLANET_STEP`), so the
+    phase relations tested are the app's own: the smoke (several layers,
+    durations that never line up, faster than 90s, breathing, still under
+    both Reduce motions); the crack (one long thin dark piece of the burn
+    art across >= 60% of the diameter, read off its own pixels whatever
+    form the art takes) and crispness at DPR 3; two ember clocks; the
+    fragments on the scar; Genesis drawn at every point of its lap, the
+    planet painted over it for part of it and the PIXELS agreeing (the
+    same with and without it there, changed in front), smaller and dimmer
+    behind, and taps; every ring flare's glint peaking within 4 degrees of
+    the scar's angle and dark 40 degrees away; Genesis's glint; the hot
+    arcs; firelight only near the hole; the debris (both rings, inside the
+    orbit layers, off the lines, tumbling, still under Reduce motion);
+    `decorateSupernovaHero` turning a plain hero into the Supernova planet
+    (twice is once); Reduce motion; none without Supernova or in the
+    cutscene. The crack's "thin" is a mean thickness under a tenth of the
+    diameter (the old blob .27; this crack with its rupture .078). The
+    hidden-flare pixel test takes the visible shot twice and only compares
+    a still scene. All of it fails on b6cd249.
+    `check_b317_supernova` reads the art as canvases or a data URL.
+    Two traps found writing it: **hiding an element with `display:none`
+    cancels its CSS animations**, and they restart out of step with
+    everything else - hide with `visibility` to take a reference
+    screenshot; and **a seeded account with every flare is owed reward
+    cards**, which come up over Home a few seconds in and swallow taps -
+    mark them shown first, as `check_b317_rings` does.
+  - **Recorded** frame-stepped (every loop on one virtual clock, as
+    `syncLoopClock` does with the wall clock; `r317planet/rec_home.py` in
+    the session's scratchpad, after r317rings3's rec3.py):
+    `video/home-supernova-iphone17promax.mp4` (15s: the smoke, the orange
+    flare's glint at ~1s, Genesis crossing the rupture at ~3.6s, going
+    behind from ~8s and out round the limb at ~14.5s, the violet flare's
+    glint at ~14.4s), `video/home-normal-iphone17promax.mp4` and a 4x
+    planet crop of the same smoke; stills before/after on both reference
+    devices (`before/`, `after/`) and a 3x close-up of the scar
+    (`scar-closeup-before-after-3x.png`). **A still frozen with every loop
+    at one time** (`common.py` FREEZE) is how before and after were made
+    comparable; the two builds' Genesis laps differ (14s and 16s), so pick
+    a time when it is behind in both (12s) for a close-up of the scar.
 - **A CHARACTER'S SPECIAL: THE RARE MOVE IF YOU KEEP LOOKING (build 317).**
   *"Let's give each rank character a unique animation ... characters will
   have multiple animations so typically they will be still, if you look at

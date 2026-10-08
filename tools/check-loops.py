@@ -49,6 +49,8 @@ KNOWN = {
     "bl-trailmet": "a meteor that is invisible at both ends",
     "cosmic-smoke-a": "a full turn - the translate and scale are the same at both ends",
     "cosmic-smoke-b": "a full turn the other way - translate and scale the same at both ends",
+    "cosmic-smoke-c": "the mirrored smoke layer: a full turn - translate and scale the same at both ends",
+    "cosmic-smoke-d": "the large smoke layer: a full turn - translate and scale the same at both ends",
     # Build 225 banner scenes.
     "bn-fall": "a petal fades in at the top and out at the bottom",
     "bn-lantern": "a lantern fades in low and out high",
@@ -129,6 +131,10 @@ KNOWN = {
     "rk-nova-shock-soft": "the softer Supernova shockwave (rank record host): opacity 0 at 0% and 100%",
     "xp-glide": "a band of light from off one end of the lit bar to off the other, resting between",
     "csc-drift": "a Supernova scar fragment drifting off the burn - fades to nothing at both ends",
+    "crf-tumble": "a shard of debris on Home's rings tumbling - a full turn",
+    # Came in with b317-cut2 (the soft Supernova edges); checked by hand.
+    "rk-nova-frag-soft": "a Supernova emblem fragment flung out, invisible at both ends (opacity 0)",
+    "rk-nova-shock-soft": "the Supernova emblem's soft shockwave, invisible at both ends (opacity 0)",
 }
 s = open(SRC, encoding="utf-8").read()
 kf = {}
