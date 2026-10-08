@@ -16563,8 +16563,8 @@ shifted off it, and in pixels nothing light sits in the band just outside
 a token's top-left edge (+61 levels on every badge of b6cd249; the worst
 here is +12, the slot's own lip in a concave shape, so the bar is 20).
 After that come a two-badge run and the Reduce motion still scene.
-Against b6cd249, 13 of the 15 fail. The two that pass ("tapping a badge
-still opens its card", on both devices) guard what was kept, and so
-does the two-badge run. check_b308_unlocks polls for the open case
+Against b6cd249, 14 of the 16 fail, the two-badge run included (its
+second token sat on the first one's slot). The two that pass ("tapping
+a badge still opens its card", on both devices) guard what was kept. check_b308_unlocks polls for the open case
 instead of reading it at a fixed 8.4s, because the scene grew longer on
 request. `tools/record-cutscenes.py` waits 17.8s for it now.
