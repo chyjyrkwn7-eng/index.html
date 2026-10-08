@@ -13626,6 +13626,146 @@ def check_b317_supernova(br):
           end[1] is True and end[2] == "supernova", end)
 
 
+def check_b317_cutend(br):
+    """Build 317, flow round - three notes on the rank cutscene from the
+    flow audit:
+    1. It ignored taps for its whole length, where the badge case, the
+       flare scenes and the pop-ups all take one. The show stays
+       unskippable up to the title; once the title is up, a tap ends it
+       SMOOTHLY - the words, the planet and the tint fade together and the
+       scene hands over - never a cut. Supernova too.
+    2. It ended twice: the words faded, then the planet sat alone ~1.8s
+       before the exit. It ends once now.
+    3. Under Reduce motion it was ~13s of a near-still screen. Now a still
+       scene of ~4-5s: the new planet in its colour with its flare lit, the
+       title, the end; for Supernova the scar and the orange rings. No
+       whirl, swell, shake or flash.
+    Frame-stepped on the page clock (every animation and transition seeked
+    to it). Written against dad93cb, where all three fail."""
+    print("\n317e. the rank cutscene: a tap once the title is up, one ending, a still scene under Reduce motion")
+    ST = """() => { const o = document.getElementById('supernova-cutscene'); if(!o) return null;
+      const op = s => { const e = o.querySelector(s); return e ? +getComputedStyle(e).opacity : null; };
+      return { c: o.className.split(' '), stage: op('.supernova-stage'), words: op('.supernova-title'), ov: +getComputedStyle(o).opacity,
+               info: !!document.querySelector('.contextual-info-text') }; }"""
+
+    def scene(tier, frm, reduce=False, tap_at=None, tap_early=None, w=440, h=956):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate("""([r]) => { store.supernovaAchieved = false; saveStore(); theme.reduceMotion = r; applyTheme(); saveTheme();
+          showHome(); document.querySelectorAll('.rs-spot,.daily-alert,#tour-overlay,.update-banner,.toast').forEach(n => n.remove()); }""", [reduce])
+        pg.wait_for_timeout(900)
+        pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+        fn = "playSupernovaCutscene({ from: f, onDone(){ window.__cutDone = performance.now(); } })" if tier == "titan" else \
+             "playTierCutscene(t, { from: f, onDone(){ window.__cutDone = performance.now(); } })"
+        pg.evaluate("([t, f]) => { window.__cutDone = null; window.__cutT0 = performance.now(); " + fn + "; }", [tier, frm])
+        rows, t, settle_at, tapped, early = [], 0.0, None, None, None
+        for i in range(1, 30 * 30):
+            t_ = t; t = i / 30
+            pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
+            pg.evaluate(CUTSPIN_SEEK, t)
+            st = pg.evaluate(ST)
+            rows.append((i, st))
+            if st is None:
+                if pg.evaluate("() => window.__cutDone") is not None:
+                    break
+                continue
+            if "supernova-settle" in st["c"] and settle_at is None:
+                settle_at = i
+            if tap_early is not None and early is None and i == tap_early:
+                pg.mouse.click(w / 2, h / 2); early = i
+            if tap_at is not None and tapped is None and settle_at is not None and i == settle_at + tap_at:
+                pg.mouse.click(w / 2, h / 2); tapped = i
+        extra = pg.evaluate("""([tier]) => ({ done: window.__cutDone, t0: window.__cutT0, accent: document.documentElement.dataset.accent || '' })""", [tier])
+        ctx.close()
+        return rows, settle_at, tapped, early, extra
+
+    def first(rows, pred, after=0):
+        for i, st in rows:
+            if i > after and pred(st):
+                return i
+        return None
+
+    # 1. taps - a tier and Supernova
+    for tier, frm, label in (("vanguard", "veteran", "Platinum"), ("titan", "elite", "Supernova")):
+        rows, settle_at, tapped, early, ex = scene(tier, frm, tap_at=45, tap_early=200)
+        alive_after_early = [st for i, st in rows if early and early < i <= early + 45]
+        check("%s: a tap during the show (before the title) is ignored - the scene plays on" % label,
+              bool(early) and len(alive_after_early) == 45 and all(st and "rank-outro" not in st["c"] for st in alive_after_early), early)
+        began = first(rows, lambda st: st is not None and "rank-outro" in st["c"] and "rank-fadeout" in st["c"], tapped or 0)
+        gone = first(rows, lambda st: st is None, tapped or 0)
+        fade = [st["stage"] for i, st in rows if tapped and began and st and began <= i < (gone or 10 ** 6)]
+        mids = [v for v in fade if .15 < v < .85]
+        check("%s: once the title is up, a tap ends it at once" % label,
+              bool(tapped) and began is not None and began - tapped <= 2, (tapped, began))
+        # the planet in the scene is a real hero: a tap on it must be the
+        # scene's, never the sphere's own "....." bubble over the scene
+        check("%s: no tap in the scene opens a Home bubble over it (the planet's own tap)" % label,
+              not any(st and st.get("info") for i, st in rows), [i for i, st in rows if st and st.get("info")][:2])
+        check("%s: and smoothly - the planet fades over frames, no cut, and it hands over within ~2s" % label,
+              began is not None and gone is not None and len(mids) >= 5 and fade == sorted(fade, reverse=True) and (gone - tapped) <= 66,
+              (len(mids), gone and tapped and gone - tapped))
+
+    # 2. one ending: the words are up until everything goes, and go with it
+    rows, settle_at, tapped, early, ex = scene("vanguard", "veteran")
+    end_at = first(rows, lambda st: st is not None and "rank-outro" in st["c"], settle_at or 0)
+    words_gone = first(rows, lambda st: st is not None and (st["words"] or 0) < .05, end_at or 10 ** 6)
+    stage_gone = first(rows, lambda st: st is None or (st["stage"] or 0) < .05, end_at or 10 ** 6)
+    alone = [i for i, st in rows if end_at and i > end_at and st and (st["words"] or 0) < .05 and (st["stage"] or 0) > .3]
+    words_up = [st["words"] for i, st in rows if settle_at and settle_at + 45 <= i < (end_at or 0) and st]
+    check("the words stay up until the end begins", len(words_up) >= 30 and min(words_up) > .9, (len(words_up), min(words_up) if words_up else None))
+    check("it ends once: the planet never sits alone after the words (under ~0.3s, it was ~1.8s)",
+          end_at is not None and words_gone is not None and stage_gone is not None and len(alone) <= 9 and abs(stage_gone - words_gone) <= 9,
+          (len(alone), words_gone and stage_gone and stage_gone - words_gone))
+
+    # 3. Reduce motion: a still scene of ~4-5s
+    for tier, frm, label in (("vanguard", "veteran", "Platinum"), ("titan", "elite", "Supernova")):
+        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+        pg.evaluate("""() => { store.supernovaAchieved = false; saveStore(); theme.reduceMotion = true; applyTheme(); saveTheme(); showHome();
+          document.querySelectorAll('.rs-spot,.daily-alert,#tour-overlay,.update-banner,.toast').forEach(n => n.remove()); }""")
+        pg.wait_for_timeout(900)
+        pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+        fn = "playSupernovaCutscene({ from: f, onDone(){ window.__cutDone = Date.now(); } })" if tier == "titan" else \
+             "playTierCutscene(t, { from: f, onDone(){ window.__cutDone = Date.now(); } })"
+        pg.evaluate("([t, f]) => { window.__cutDone = null; window.__cutT0 = Date.now(); " + fn + "; }", [tier, frm])
+        seen, moving, first_vis, titled, look, t = set(), 0, None, None, None, 0.0
+        for i in range(1, 30 * 20):
+            t_ = t; t = i / 30
+            pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
+            st = pg.evaluate("""([tier]) => { const o = document.getElementById('supernova-cutscene'); if(!o) return null;
+              const nf = o.querySelector('.rank-after .cosmic-icon-badge[data-rank-tier="' + tier + '"]');
+              const sc = o.querySelector('.rank-after .cosmic-scar');
+              const rings = [...o.querySelectorAll('.rank-after .cosmic-orbit-ring')];
+              return { c: o.className.split(' '), vis: o.classList.contains('supernova-visible'),
+                anims: o.getAnimations({ subtree: true }).filter(a => a.playState === 'running' && !(a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('.cosmic-scar'))).length,
+                lit: !!(nf && nf.classList.contains('cosmic-badge-lit')), after: +getComputedStyle(o.querySelector('.rank-after')).opacity,
+                scar: sc ? +getComputedStyle(sc).opacity : null, orange: rings.length > 0 && rings.every(r => r.classList.contains('cosmic-orbit-ring-supernova')),
+                accent: o.dataset.accent || '' }; }""", [tier])
+            if st is None:
+                if pg.evaluate("() => window.__cutDone") is not None:
+                    break
+                continue
+            seen.update(st["c"])
+            moving = max(moving, st["anims"])
+            if st["vis"] and first_vis is None:
+                first_vis = i
+                look = st
+            if "supernova-settle" in st["c"] and titled is None:
+                titled = i
+                look_t = st
+        total = pg.evaluate("() => window.__cutDone === null ? null : (window.__cutDone - window.__cutT0) / 1000")
+        ctx.close()
+        check("Reduce motion, %s: a still scene of ~4-5s, then the hand-over to the card" % label,
+              total is not None and 3.5 <= total <= 5.5, total)
+        check("Reduce motion, %s: no whirl, no swell, no shake, no flash - nothing moving" % label,
+              not ({"is-cutspin", "supernova-burst", "sn-swell", "sn-detonate"} & seen) and moving == 0,
+              (sorted({"is-cutspin", "supernova-burst", "sn-swell", "sn-detonate"} & seen), moving))
+        ok_look = bool(look) and look["after"] > .95 and look["lit"] and look["accent"] == tier and titled is not None and titled - (first_vis or 0) <= 15
+        if tier == "titan":
+            ok_look = ok_look and (look_t["scar"] or 0) > .95 and look_t["orange"]
+        check("Reduce motion, %s: the new planet in its colour, its flare lit%s, from the first frame - and the title" %
+              (label, ", scarred with orange rings" if tier == "titan" else ""), ok_look,
+              look and {k: look[k] for k in ("after", "lit", "accent")})
+
+
 SPECIAL_CHARS = ["lunar", "solar", "tempest", "frost", "oracle", "inferno",
                  "umbra", "singularity", "genesis", "voidwalker",
                  "astral", "celestial", "zenith"]

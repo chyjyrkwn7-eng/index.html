@@ -15240,15 +15240,51 @@ disagree with it.
     - **The polish pass.** The planet rises out of the dark
       `RANK_ARRIVE_MS` (320ms) after the dark starts coming up, not in the
       same frame (a ghost of it sat over the results for a few frames);
-      and the end goes to dark FIRST - `rank-fadeout`, `RANK_FADEOUT_MS`
-      (850) before the end, fades the planet and the tint out over the
-      dark, and only then does the dark give way to the dim over the
-      results, so no ghost of the planet sits over the 100% box. Every
-      approved beat keeps its time (the flash is still at ~frame 300 on
-      the gate's clock).
+      and the end goes to dark FIRST - `rank-fadeout` fades the planet and
+      the tint out over the dark, and only then does the dark give way to
+      the dim over the results, so no ghost of the planet sits over the
+      100% box. (The flow round below made that fade happen WITH the
+      words, not 1.8s after them.) Every approved beat keeps its time (the
+      flash is still at ~frame 300 on the gate's clock).
     - The bridge check's window is 25s, not 20: under load the whirl's
       `finished` can resolve late (the fallback fires at 12s), and a run
       that was green alone went red beside a second gate run.
+  - **THE FLOW ROUND - a tap at the title, one ending, a still scene
+    under Reduce motion.** Three notes from the flow audit, all held by
+    `check_b317_cutend` (frame-stepped, phone, a tier and Supernova) and
+    all failing on dad93cb:
+    - **Taps.** The scene took a tap only during its outro, so for its
+      whole length it read as ignoring them, where the badge case, the
+      flare scenes and the pop-ups all take one. The show stays
+      unskippable up to the title; from `RANK_TITLE_TAP_MS` (700ms) after
+      the title arrives (`titleUp`), a tap calls `endScene()` - the same
+      ending the schedule uses, so it is a fade, never a cut. The returned
+      `skip()` does the same. **The scene catches its taps on the way
+      DOWN** (a capture listener that stops them): the planet in the scene
+      is a real hero, and its sphere's own tap - the "....." bubble -
+      stops the event, so a tap on the planet never reached the scene and
+      could put a Home bubble over the cutscene. The gate taps the middle
+      of the screen, which is the planet on a tier scene: that is how it
+      was found.
+    - **One ending.** The words faded at the outro and the planet sat
+      alone for ~1.8s before its own fade and the exit - an ending, then
+      another. `endScene()` adds `rank-outro` and `rank-fadeout` together:
+      the words, the planet and the tint go in one ~.9s fade
+      (`RANK_END_MS` 950), then the scene hands over. The title holds
+      600ms longer to make up for it (tier outro 15600, Supernova 20300),
+      and `times.hold` is gone. A tier scene is ~1s shorter than it was,
+      Supernova ~22s.
+    - **Reduce motion: the still scene.** Under the app's switch, the
+      system's setting or no Web Animations (`ringMotionOff() ||
+      !overlay.animate`), the full scene was ~13s of a near-still screen.
+      Now `rank-still`: the planet you are getting, already in its colour
+      with its flare lit (`is-swapped` from the first frame, the theme set
+      at once), the stage at its final size, the title at 300ms, and the
+      end at 3.2s with a .5s fade - ~4.4s to the reward card. Supernova
+      shows the scar and the orange rings from the first frame. No whirl,
+      swell, shake or flash; the orbits are held. Under the system's
+      setting alone the fades are kept, short (.35s); the app's own
+      switch turns every transition off as it always did.
   - **The lag and the "placed off" flares.** The second round took the
     bubbles' `backdrop-filter` blur off inside a scene (re-sampled every
     frame while they move); the third round put it back, because the
@@ -15745,7 +15781,9 @@ disagree with it.
     with Start Studying live the whole time. It waits only when a card is
     really owed (`rankUpLockCardDue()`); otherwise it locks at its own 1.2s.
   - **Left as they are, on purpose**: a muted or Reduce-motion run still
-    plays its rank cutscene on Home (the builds 217-218 rule), and the rank-up
+    plays its rank cutscene on Home (the builds 217-218 rule) - under
+    Reduce motion it is the ~4.4s still scene now (see the rank-up
+    cutscene's flow round) - and the rank-up
     Profile scene's ~20s is its own design.
   - **Gate: `check_b317_flow`** - the one-level pop >= 1.9s on both
     devices, the World Tree to its tail before the case, the hundo special

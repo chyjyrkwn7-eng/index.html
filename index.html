@@ -11610,8 +11610,22 @@
   #supernova-cutscene.supernova-settle .rank-tint{ opacity:1; }
   /* The end goes to dark FIRST (round five): the planet and the tint fade
      out over the dark, and only then does the dark itself give way to the
-     dim over the results - no ghost of the planet over the 100% box. */
+     dim over the results - no ghost of the planet over the 100% box.
+     THE END, ONCE (flow round): rank-fadeout and rank-outro now arrive
+     together (endScene), so the words, the planet and the tint all go in
+     the same ~.9s - not the words, then the planet alone for ~1.8s. */
   #supernova-cutscene.tier-cutscene.rank-fadeout :is(.supernova-stage, .rank-tint){ opacity:0; transition:opacity .8s ease; }
+  /* REDUCE MOTION: THE STILL SCENE (build 317, flow round) - see
+     playRankUpScene. The new planet is up from the first frame at its
+     final size; nothing moves: no transform transitions, the orbits held,
+     the scar shown cooled and the rings already orange. The app's own
+     switch turns every transition off already; under the system's
+     setting the fades are kept, short. */
+  #supernova-cutscene.rank-still .supernova-stage{ transform:scale(1.15) !important; }
+  #supernova-cutscene.rank-still :is(.rank-orbit, .rank-orbit-slot, .cosmic-hero-orbitlayer, .csc-glow){ animation:none !important; }
+  #supernova-cutscene.rank-still .rank-after :is(.cosmic-scar, .cosmic-orbit-ring){ transition:none !important; }
+  :root:not([data-reduce-motion="true"]) #supernova-cutscene.rank-still :is(.supernova-stage, .rank-tint, .rank-before, .rank-after){ transition:opacity .35s ease !important; }
+  :root:not([data-reduce-motion="true"]) #supernova-cutscene.rank-still :is(.supernova-kicker, .supernova-title, .supernova-subtitle){ transform:none !important; transition:opacity .35s ease !important; }
   .tier-cutscene .supernova-stage, .tier-cutscene .supernova-kicker, .tier-cutscene .supernova-title, .tier-cutscene .supernova-subtitle{ z-index:1; }
   .tier-cutscene .supernova-flash{ z-index:2; }
   /* ---- THE SUPERNOVA GOES OFF (build 317) ----
@@ -65332,10 +65346,15 @@ const RANK_ORBIT_MS = 30000;
 const RANK_CUTSPIN_TURNS = 10;
 /* build 317, second round: faster and faster for 4.5s, lit at the top
    speed, slowing for 2s, still for half a second, then the flash */
-/* round five: the planet and the tint go to dark this long before the
-   scene ends (rank-fadeout); the planet rises this long after the dark
-   comes up */
-const RANK_FADEOUT_MS = 850, RANK_ARRIVE_MS = 320;
+/* round five: the planet rises this long after the dark comes up.
+   THE END, ONCE (build 317, flow round): the words, the planet and the
+   tint fade out TOGETHER over RANK_END_MS, and then the scene hands over -
+   they used to go one after the other, the planet sitting alone for ~1.8s
+   after the words. A tap once the title has been up RANK_TITLE_TAP_MS
+   starts that same ending. Under Reduce motion the scene is a still one
+   of about four seconds (RANK_STILL_*). */
+const RANK_ARRIVE_MS = 320, RANK_END_MS = 950, RANK_TITLE_TAP_MS = 700;
+const RANK_STILL_TITLE_MS = 300, RANK_STILL_END_AT = 3200, RANK_STILL_END_MS = 500;
 const RANK_CUTSPIN_ACCEL_MS = 4500, RANK_CUTSPIN_DECEL_MS = 2000, RANK_CUTSPIN_PAUSE_MS = 500, RANK_CUTLIGHT_MS = 140, RANK_CUTLIGHT_LEAD_MS = 120, RANK_CUTFLARE_MS = 1150;
 function rankOrbitFlares(hero){
   if(!hero) return null;
@@ -65525,7 +65544,19 @@ function playRankUpScene(tierKey, opts, spec){
 
   const timers = [];
   const at = (ms, fn) => timers.push(setTimeout(fn, ms));
-  let finished = false, outro = false;
+  /* Reduce motion (the app's switch or the system's), or no Web
+     Animations: the still scene - see below. */
+  const still = ringMotionOff() || !overlay.animate;
+  let finished = false, outro = false, titleUp = false;
+  /* THE END, ONCE: the words, the planet and the tint fade out together,
+     then the scene hands over. From the schedule, or from a tap once the
+     title is up - the same ending either way, never a cut. */
+  function endScene(){
+    if(outro || finished) return;
+    outro = true;
+    overlay.classList.add("rank-outro", "rank-fadeout");
+    timers.push(setTimeout(finish, still ? RANK_STILL_END_MS : RANK_END_MS));
+  }
   function finish(){
     if(finished) return;
     finished = true;
@@ -65560,6 +65591,35 @@ function playRankUpScene(tierKey, opts, spec){
   }
 
   rankOrbitCentre(orbitBefore); rankOrbitCentre(orbitAfter);
+  /* Every tap in the scene is the scene's, caught on the way DOWN: the
+     planet here is a real hero, and its sphere's own tap (the "....."
+     bubble) and the bubbles' and flares' taps would otherwise answer it -
+     the sphere stops the event, so a tap on the planet never ended the
+     scene, and could put a bubble over it. */
+  overlay.addEventListener("click", (e) => { e.stopPropagation(); if(titleUp) endScene(); }, true);
+  /* REDUCE MOTION: A SHORT, STILL SCENE (build 317, flow round). The full
+     scene under Reduce motion was ~13s of a near-still screen. Now: the
+     planet you are getting, already in its colour with its flare lit (for
+     Supernova, already scarred with its rings orange), the title, and the
+     end - about four seconds, no whirl, swell, shake or flash. The theme
+     is set at once, as the swap would have set it. */
+  if(still){
+    overlay.classList.add("rank-still", "is-igniting", "is-swapped");
+    overlay.dataset.accent = tierKey;
+    /* (the new planet's own flare is lit already - syncSceneFlares) */
+    setNewTheme();
+    if(spec.times.swell){
+      overlay.classList.add("sn-scarred");
+      if(heroAfter) heroAfter.querySelectorAll(".cosmic-orbit-ring").forEach(c => c.classList.add("cosmic-orbit-ring-supernova"));
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      overlay.classList.add("supernova-visible");
+      stageWrap.classList.add("is-arrive");
+    }));
+    at(RANK_STILL_TITLE_MS, () => { overlay.classList.add("supernova-settle"); titleUp = true; });
+    at(RANK_STILL_END_AT, endScene);
+    return { skip(){ if(titleUp) endScene(); } };
+  }
   /* THE DARK FIRST, THEN THE PLANET (build 317, round five polish): the
      planet used to start arriving in the same frame the dark began to
      come up, so for a few frames a ghost of it sat over the results.
@@ -65670,9 +65730,9 @@ function playRankUpScene(tierKey, opts, spec){
       if(heroAfter) heroAfter.querySelectorAll(".cosmic-orbit-ring").forEach(c => c.classList.add("cosmic-orbit-ring-supernova"));
     });
     at(b + (T.settle - T.burst), () => overlay.classList.add("supernova-settle"));
-    at(b + (T.outro - T.burst), () => { outro = true; overlay.classList.add("rank-outro"); });
-    at(b + (T.outro - T.burst) + T.hold - RANK_FADEOUT_MS, () => overlay.classList.add("rank-fadeout"));
-    at(b + (T.outro - T.burst) + T.hold, finish);
+    /* the show is unskippable up to the title; once it is up, a tap ends it */
+    at(b + (T.settle - T.burst) + RANK_TITLE_TAP_MS, () => { titleUp = true; });
+    at(b + (T.outro - T.burst), endScene);
   };
   /* The planet's centre and size in the overlay's pixels, as drawn now. */
   const planetBox = () => {
@@ -65753,7 +65813,6 @@ function playRankUpScene(tierKey, opts, spec){
        should fade out". No pool of colour behind it and no one-time
        celebration pop (that pop fired just as the title came up and read
        as light shooting off the flare). */
-    if(theme.reduceMotion || !overlay.animate){ ignitePeak(); at(1200, afterRest); return; }
     const kf = sign => [
       { transform: "rotate(0deg)", easing: "cubic-bezier(.333,0,.667,.333)" },
       { transform: "rotate(" + (sign * PEAK_DEG).toFixed(2) + "deg)", offset: PEAK_AT, easing: "cubic-bezier(.333,.667,.667,1)" },
@@ -65789,8 +65848,7 @@ function playRankUpScene(tierKey, opts, spec){
   });
   /* never stuck: whatever happens to the animation, the flash comes */
   at(T.ignite + ACC + DEC + 2500, afterRest);
-  overlay.addEventListener("click", () => { if(outro) finish(); });
-  return { skip: finish };
+  return { skip(){ if(titleUp) endScene(); } };
 }
 
 function playTierCutscene(tierKey, opts){
@@ -65801,8 +65859,11 @@ function playTierCutscene(tierKey, opts){
     /* build 317: ignite 3000, then 4.5s faster and faster, lit at the
        peak, 2s slowing, 0.5s still - the flash at ~10000, and settle,
        outro and the end at their old distances from it (the flash and
-       after are timed off the spin's own end, these are the nominal) */
-    times: { zoom: 1200, ignite: 3000, burst: 10000, settle: 11500, outro: 15000, hold: 2600 },
+       after are timed off the spin's own end, these are the nominal).
+       Flow round: the title holds 600ms longer and the end is ONE fade of
+       everything (RANK_END_MS) - the planet no longer sits alone after
+       the words - so the scene is ~1s shorter than it was. */
+    times: { zoom: 1200, ignite: 3000, burst: 10000, settle: 11500, outro: 15600 },
     onFinish: () => { store.pendingTierCutscene = null; saveStore(); }
   });
 }
@@ -66095,8 +66156,9 @@ function playSupernovaCutscene(opts){
     /* build 317: the same whirl as every rank, then SUPERNOVA'S OWN
        CLIMAX - 1.8s of the planet swelling and shaking (swell), the
        detonation at ~12.4s, the dust clearing on the scar and the rings
-       turning orange, the title 3s after the blast. ~22.7s in all. */
-    times: { zoom: 1400, ignite: 3600, swell: 1800, burst: 12400, settle: 15400, outro: 19700, hold: 3000 },
+       turning orange, the title 3s after the blast, and the one ending
+       (RANK_END_MS) 4.9s after that. ~22s in all. */
+    times: { zoom: 1400, ignite: 3600, swell: 1800, burst: 12400, settle: 15400, outro: 20300 },
     onFinish: () => {
       store.pendingSupernovaCutscene = false; store.supernovaAchieved = true; saveStore();
       /* the scene has shown the rings turning orange, so Home does not
