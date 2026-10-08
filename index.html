@@ -63402,6 +63402,12 @@ function scarPass1(P){
     order.push(Math.floor(d2 * 1e4) * BK * BK + by * BK + bx);
   }
   order.sort((a, b) => a - b);
+  /* ...and an eighth of them, spread over every distance, ahead of the
+     rest: the streaks out in the soot are a branch the impact's own
+     buckets never take, and without this the loop was still thrown out
+     twice when they turned up */
+  const spread = order.filter((v, i) => i % 8 === 0), rest = order.filter((v, i) => i % 8 !== 0);
+  order.length = 0; order.push(...spread, ...rest);
   P.order = order;
   for(let oi = 0; oi < order.length; oi++){
     const bb = order[oi] % (BK * BK), by = (bb / BK) | 0, bx = bb - by * BK;

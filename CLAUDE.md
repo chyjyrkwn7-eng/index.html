@@ -15814,25 +15814,28 @@ disagree with it.
       crack and the rupture turned up - `--trace-deopt`); the streaks and
       the torn edge are 256-angle tables, the broad noise an eighth-size
       grid (most of the first cold time was interpreted noise calls); the
-      segments are bucketed (64x64, CSR) so a pixel tests ~5. **Measured**
-      (`r317planet/scarcost.py` and `coldsteps.py` in the scratchpad: each
-      draw in a FRESH page, which is what a launch pays, against the old
-      art from b6cd249 in the same browser, with compilation forced onto
-      the main thread - on this shared, loaded box V8's background compile
-      threads were starved and the default-mode cold numbers swung 3x run
-      to run): cold, new 132-200ms (median 280-450), old 88-100ms (median
-      150-170); warm, new 28-55ms, old 37-43ms; a reference loop (1e7
-      sqrt) ran 25-39ms in the same pages against ~12ms on a quiet machine,
-      so divide by ~2.5: **about 55-65ms cold and 15-20ms warm** on a quiet
-      desktop-class CPU. Cold it is ~1.5x the old art: pass one 85-119ms of
-      it, pass two 25-42, the grids 9-16, the three putImageData 2-8, the
-      mask 2. Fewer pixels does not buy it back (a tighter soot reach cut
-      18% of them and moved nothing - the cold time is the JIT warming
-      up). It runs ONCE per launch, only for an account with Supernova,
-      while Home is first built (under the splash on a cold start); every
-      later hero copies the three canvases (`drawImage`); and in the
-      Supernova cutscene's set-up if that is the first scarred hero of the
-      session.
+      segments are bucketed (64x64, CSR) so a pixel tests ~5; and an
+      eighth of the buckets, spread over every distance, go before the rest
+      (the soot's streaks are a branch the impact's buckets never take, and
+      it still cost two deopts). **Measured, final** (after the second pass;
+      `r317planet/scarcost.py` and `coldsteps.py` in the session's
+      scratchpad: each draw in a FRESH page, which is what a launch pays,
+      against the old art from b6cd249 in the same browser, compilation
+      forced onto the main thread - on this shared, loaded box V8's
+      background compile threads were starved and default-mode cold
+      numbers swung 3x run to run): cold, new 128-144ms (median 170-230),
+      old 91-110ms (median 105-185); warm, new 43-60ms, old 28-33ms; a
+      reference loop (1e7 sqrt) ran ~21ms in the same pages against ~12ms
+      quiet, so divide by ~1.7: **about 75-85ms cold** (the old art ~55-65)
+      on a quiet desktop-class CPU. Of the cold time pass one is 100-160ms
+      here, pass two 40-60, the grids 8-30, the three putImageData and the
+      bloom 2-9, the mask 1-2. Fewer pixels does not buy it back (a tighter
+      soot reach cut 18% of them and moved nothing - the cold time is the
+      JIT warming up). It runs ONCE per launch, only for an account with
+      Supernova, while Home is first built (under the splash on a cold
+      start); every later hero copies the four canvases (`drawImage`); and
+      in the Supernova cutscene's set-up if that is the first scarred hero
+      of the session.
   - **SECOND PASS: A BURNING FISSURE, NOT A MARK.** Madison, of the
     Supernova planet she had (the first scar): *"The permanent damage to
     the supernova thing is eh."* The first redesign was right up close and
