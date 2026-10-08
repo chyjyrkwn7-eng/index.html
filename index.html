@@ -12096,7 +12096,7 @@
     position:absolute; inset:0; border-radius:50%; pointer-events:none; z-index:3; opacity:0;
     background:radial-gradient(circle at 50% 45%, rgba(6,8,12,.55), rgba(6,8,12,.78) 70%);
   }
-  .cosmic-icon-badge .cosmic-badge-dim.is-still{ opacity:.5; }
+  .cosmic-icon-badge .cosmic-badge-dim.is-still{ opacity:.32; }
   .cosmic-flare-dot.is-dim-still{ opacity:.45; }
   /* A FOUND SECRET FLARE ANSWERS IN ITS OWN COLOUR (secretFlareTold): it
      swells, a ring of its colour goes out and four sparks fly off it.
@@ -12134,7 +12134,10 @@
   .hc-s{ display:inline-block; }
   .hc-item.is-inline .hc-name{ display:inline; margin:0 .6em 0 0; }
   .hc-item.is-inline .hc-text{ display:inline; }
-  .hc-item.is-clamped .hc-text{ display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:var(--hc-lines, 2); overflow:hidden; }
+  .hc-item.is-clamped{ display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:var(--hc-lines, 2); overflow:hidden; line-height:1.38; }
+  .hc-item.is-clamped .hc-s{ display:inline; }
+  .hc-item.is-beside.is-right{ text-align:left; }
+  .hc-item.is-beside.is-left{ text-align:right; }
   .hc-item.is-unfound .hc-name, .hc-item.is-locked .hc-name{ color:rgba(222,229,238,.82); }
   [data-reduce-motion="true"] .hc-item{ transform:none !important; }
   @media (prefers-reduced-motion:reduce){ .hc-item{ transform:none !important; } }
@@ -74954,7 +74957,7 @@ function homeCaptionPlace(panel, el){
   };
   const tryMode = (mode, w, top0, bottom0) => {
     el.classList.toggle("is-inline", mode === "inline");
-    el.classList.remove("is-clamped");
+    el.classList.remove("is-clamped", "is-beside", "is-right", "is-left");
     el.style.width = w + "px";
     const h = el.offsetHeight;
     return { h, fits: h + 2 * HOME_CAPTION_GAP <= bottom0 - top0 };
@@ -74978,14 +74981,79 @@ function homeCaptionPlace(panel, el){
     const t = tryMode("stack", wide, fl, bottom);
     if(t.fits){ put(wide, fl + (bottom - fl - t.h) / 2); return mode; }
   }
-  /* nothing fits: the words take the lines there are */
-  el.classList.remove("is-inline");
-  el.style.width = wide + "px";
-  const nameH = (el.querySelector(".hc-name") || el).offsetHeight;
-  const lh = parseFloat(getComputedStyle(el.querySelector(".hc-text") || el).lineHeight) || 18;
-  el.style.setProperty("--hc-lines", String(Math.max(1, Math.floor((B - fl - 2 * HOME_CAPTION_GAP - nameH) / lh))));
+  /* a phone on its side or a 4-inch phone: one run across the column */
+  const full = Math.max(wide, room);
+  const tf = tryMode("inline", full, fl, B);
+  if(tf.fits){ put(full, fl + (B - fl - tf.h) / 2); return "over-title"; }
+  /* No room under the system at all (a 54px planet on a phone held
+     sideways, a 4-inch phone): beside it, where the column leaves the
+     screen empty, in the largest free stretch of its own side - clear of
+     everything there (the centred button reaches past a small planet, the
+     chat button, the daily question, the version, the tab bar) - centred
+     on the planet as far as that allows. */
+  const OB = [];
+  const ob = (e, ink) => {
+    if(!shown(e)) return;
+    let r = R(e);
+    if(ink){ try{ const rg = document.createRange(); rg.selectNodeContents(e); r = rg.getBoundingClientRect(); }catch(err){} }
+    if(r.width && r.height) OB.push(r);
+  };
+  ob(greet, true); ob(tw, true); ob(btn);
+  ["#chatdock-btn", ".daily-question-fab", ".homeversion", ".bottomtabs:not([hidden])"].forEach(q => ob(document.querySelector(q)));
+  const cy = H.top + H.height / 2, vh = window.innerHeight || P.bottom;
+  const spanAt = (x0, x1) => {
+    let a = Math.max(0, P.top) + 4, b = vh - 4;
+    for(const r of OB){
+      if(r.right <= x0 || r.left >= x1) continue;
+      if(r.bottom <= cy) a = Math.max(a, r.bottom + 6);
+      else if(r.top >= cy) b = Math.min(b, r.top - 6);
+      else return null;
+    }
+    return b > a ? [a, b] : null;
+  };
+  const cands = [];
+  const bR = btn ? R(btn) : null;
+  const side = (name, x0, x1) => {
+    if(x1 - x0 >= 10 * 16) cands.push([name, x0, x1]);
+    /* the same side short of a button that reaches past the planet */
+    if(bR && bR.right > x0 && bR.left < x1){
+      if(name === "right" && x1 - (bR.right + 10) >= 10 * 16) cands.push([name, bR.right + 10, x1]);
+      if(name === "left" && (bR.left - 10) - x0 >= 10 * 16) cands.push([name, x0, bR.left - 10]);
+    }
+  };
+  side("right", H.right + 14, P.right - 12);
+  side("left", P.left + 12, H.left - 14);
+  let best = null;
+  for(const [name, x0, x1] of cands){
+    const w = Math.min(x1 - x0, 20 * 16);
+    const sp = spanAt(name === "right" ? x0 : x1 - w, name === "right" ? x0 + w : x1);
+    if(!sp) continue;
+    const t = tryMode("stack", w, 0, 1e5);
+    if(t.h <= sp[1] - sp[0]){
+      el.classList.add("is-beside", "is-" + name);
+      el.style.left = ((name === "right" ? x0 : x1 - w) - P.left - panel.clientLeft) + "px";
+      const top = Math.max(sp[0], Math.min(cy - t.h / 2, sp[1] - t.h));
+      el.style.top = (top - P.top - panel.clientTop) + "px";
+      return "beside";
+    }
+    if(!best || sp[1] - sp[0] > best.room) best = { name, x0, x1, w, sp, room: sp[1] - sp[0] };
+  }
+  /* and if nothing is big enough, the words take the lines there are, in
+     the roomiest free space found - under the system or beside it */
+  const under = B - fl - 2 * HOME_CAPTION_GAP;
+  tryMode("inline", best && best.room > under ? best.w : full, 0, 1e5);
+  const lh = parseFloat(getComputedStyle(el).lineHeight) || 18;
+  if(best && best.room > under){
+    el.style.setProperty("--hc-lines", String(Math.max(1, Math.floor(best.room / lh))));
+    el.classList.add("is-clamped", "is-beside", "is-" + best.name);
+    el.style.left = ((best.name === "right" ? best.x0 : best.x1 - best.w) - P.left - panel.clientLeft) + "px";
+    const h = el.offsetHeight;
+    el.style.top = (Math.max(best.sp[0], Math.min(cy - h / 2, best.sp[1] - h)) - P.top - panel.clientTop) + "px";
+    return "beside";
+  }
+  el.style.setProperty("--hc-lines", String(Math.max(1, Math.floor(under / lh))));
   el.classList.add("is-clamped");
-  put(wide, fl + HOME_CAPTION_GAP);
+  put(full, fl + HOME_CAPTION_GAP);
   return "over-title";
 }
 function homeCaptionRetire(el){
@@ -75179,7 +75247,7 @@ function homeLockedNudge(el, isBubble){
     } else {
       const op = homeFxNow(d, "opacity", 0);
       homeFxCancel(d, "__dim");
-      try{ d.animate([{ opacity: op, easing: "cubic-bezier(.3,.6,.4,1)" }, { opacity: .55, offset: .3, easing: "ease-in-out" }, { opacity: 0 }], { duration: 420 }).__dim = true; }catch(e){}
+      try{ d.animate([{ opacity: op, easing: "cubic-bezier(.45,0,.55,1)" }, { opacity: .32, offset: .36, easing: "cubic-bezier(.45,0,.55,1)" }, { opacity: 0 }], { duration: 460 }).__dim = true; }catch(e){}
     }
   } else if(still){
     el.classList.add("is-dim-still"); clearTimeout(el.__still);
@@ -75187,7 +75255,7 @@ function homeLockedNudge(el, isBubble){
   } else {
     const op = homeFxNow(el, "opacity", 1);
     homeFxCancel(el, "__dim");
-    try{ el.animate([{ opacity: op, easing: "cubic-bezier(.3,.6,.4,1)" }, { opacity: .45, offset: .3, easing: "ease-in-out" }, { opacity: 1 }], { duration: 420 }).__dim = true; }catch(e){}
+    try{ el.animate([{ opacity: op, easing: "cubic-bezier(.45,0,.55,1)" }, { opacity: .55, offset: .36, easing: "cubic-bezier(.45,0,.55,1)" }, { opacity: 1 }], { duration: 460 }).__dim = true; }catch(e){}
   }
   if(still) return;
   let from = 0;
