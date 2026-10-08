@@ -12095,49 +12095,72 @@
   @keyframes cof-tint-hunt{ 0%,100%{ opacity:.5; } 50%{ opacity:.9; } }
   @keyframes cof-call{ 0%{ opacity:.9; transform:scale(.8); } 70%,100%{ opacity:0; transform:scale(3.2); } }
   /* ---- The sixth, skimming the planet (build 313) ----
-     The planet is 104 units across at the hero's 50% / 47.368%; the orbit
-     is 124 across (r 62), tilted 18 degrees and squashed to .3 - a ring
-     seen from just above. The arm turns once every 14s; the flare at its
-     end turns back the other way and undoes the squash, so it stays round.
-     cco-occlude hides it on the stretch of the far side where the planet
-     is in front of it (the far half of the orbit is |sin| > .57 over the
-     disc: 59.7% to 90.3% of a turn), and dims and shrinks it as it goes
-     round the back. */
-  .cosmic-core-orbit{ position:absolute; left:50%; top:47.368%; width:34.44%; aspect-ratio:1; translate:-50% -50%; z-index:3; pointer-events:none; }
+     ---- and now going ROUND it (build 317, planet round) ----
+     "I'm not a fan of how that one rotates or whatever, could it feel
+     more like it was rotating around the sphere? Like going behind it and
+     back around?" It skimmed the planet (r 62 round its r 52) and, for
+     the stretch where the planet was in front of it, simply vanished - it
+     never went BEHIND anything. Now it is a real orbit: r 72, tilted 18
+     degrees and seen from just above (squashed to .36), one lap in 16s.
+     - BEHIND, FOR REAL: the orbit sits in the hero just BEFORE the planet's
+       own svg (buildCosmicHero), so painted in place (z-index 0) the
+       planet covers it - the far half of every lap passes behind, the
+       flare sliding under the limb and out the other side. For the near
+       half it is lifted over everything (z-index 3, cco-layer). The two
+       swaps fall at the ends of the ellipse, where the flare is 20 units
+       clear of the disc and the corona round it has faded to nothing, so
+       the swap itself cannot be seen.
+     - DEPTH: larger and brighter in front (x1.22, and a glow of its own
+       colour, cco-shine), smaller and dimmer at the back (x.74 at 62%) -
+       cco-depth follows the sine of the lap.
+     - Taps: in front it is on top as before; behind, the planet's svg
+       lets taps through (.cosmic-hero-main has pointer-events:none, the
+       sphere circle takes its own), so wherever the flare can be seen
+       round the limb it can be tapped, and on the disc the planet answers.
+     Transforms and opacity on the compositor; the z-index flips twice a
+     lap. At rest (Reduce motion) it sits on the near side, in front. */
+  .cosmic-core-orbit{ position:absolute; left:50%; top:47.368%; width:40%; aspect-ratio:1; translate:-50% -50%; z-index:3; pointer-events:none; }
+  .cosmic-core-orbit.is-found{ --cco-c:#FF5CA8; }
   .cosmic-core-orbit .cosmic-badge-tappable{ pointer-events:auto; }
-  .cco-plane{ position:absolute; inset:0; transform:rotate(-18deg) scaleY(.3); }
+  .cco-plane{ position:absolute; inset:0; transform:rotate(-18deg) scaleY(.36); }
   .cco-spin{ position:absolute; inset:0; }
   .cco-arm{ position:absolute; left:50%; top:50%; width:50%; height:0; }
-  /* The flare's box: 2.9% of the hero, which is 16.84% of the arm (the
-     arm is r 62 of 360) - a touch bigger, as the nearest thing to you. */
-  .cco-counter{ position:absolute; left:100%; top:0; width:17.5%; aspect-ratio:1; translate:-50% -50%; transform:scaleY(3.3333) rotate(18deg); }
+  /* The flare's box: 15% of the arm (r 72 of 360), the same ~3% of the
+     hero it has always been. */
+  .cco-counter{ position:absolute; left:100%; top:0; width:15%; aspect-ratio:1; translate:-50% -50%; transform:scaleY(2.7778) rotate(18deg); }
   .cco-counter > .cosmic-flare-dot{ left:50%; top:50%; width:100%; }
+  .cco-shine{ position:absolute; left:50%; top:50%; width:270%; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0; pointer-events:none;
+    background:radial-gradient(circle, color-mix(in srgb, var(--cco-c, #fff) 42%, transparent) 0, color-mix(in srgb, var(--cco-c, #fff) 13%, transparent) 36%, transparent 64%); }
   /* The tail lies in the orbit's plane, behind the flare (a clockwise turn
      moves the arm's end towards its local +y, so behind is -y). */
   .cco-tail{ position:absolute; left:98%; bottom:0; width:5%; aspect-ratio:1 / 11; translate:-50% 0; border-radius:999px; opacity:0;
     background:linear-gradient(180deg, transparent, color-mix(in srgb, var(--cco-c, #fff) 75%, transparent)); }
-  .cosmic-core-orbit.is-found .cco-tail{ --cco-c:#FF5CA8; opacity:.85; }
+  .cosmic-core-orbit.is-found .cco-tail{ opacity:.85; }
   .cosmic-core-orbit:not(.is-found) .cco-tail{ opacity:.35; }
   @media (prefers-reduced-motion:no-preference){
-    .cco-spin{ animation:cco-turn 14s linear infinite; }
-    .cco-counter{ animation:cco-back 14s linear infinite; }
-    .cco-arm{ animation:cco-occlude 14s linear infinite; }
-    .cco-counter > .cosmic-flare-dot{ animation:cco-depth 14s linear infinite; }
+    .cosmic-core-orbit{ animation:cco-layer 16s linear infinite; }
+    .cco-spin{ animation:cco-turn 16s linear infinite; }
+    .cco-counter{ animation:cco-back 16s linear infinite; }
+    .cco-counter > .cosmic-flare-dot{ animation:cco-depth 16s linear infinite; }
+    .cco-shine{ animation:cco-shine 16s linear infinite; }
   }
   /* at rest (reduce motion) it sits on the near side, in front of the planet */
   .cco-spin{ rotate:62deg; }
   .cco-counter{ rotate:-62deg; }
   @keyframes cco-turn{ from{ rotate:0deg; } to{ rotate:360deg; } }
   @keyframes cco-back{ from{ rotate:0deg; } to{ rotate:-360deg; } }
-  @keyframes cco-occlude{
-    0%, 58.6%{ opacity:1; visibility:visible; }
-    60.4%, 89.6%{ opacity:0; visibility:hidden; }
-    91.4%, 100%{ opacity:1; visibility:visible; }
-  }
+  /* the near half of the lap (0-50%) over everything, the far half (50-
+     100%) in its place under the planet */
+  @keyframes cco-layer{ 0%, 50%{ z-index:3; } 50.02%, 99.98%{ z-index:0; } 100%{ z-index:3; } }
   @keyframes cco-depth{
-    0%{ scale:.96; animation-timing-function:ease-out; } 25%{ scale:1.16; animation-timing-function:ease-in; }
-    50%{ scale:.96; animation-timing-function:ease-out; } 75%{ scale:.78; animation-timing-function:ease-in; } 100%{ scale:.96; animation-timing-function:ease-out; }
+    0%{ scale:.97; opacity:.9; animation-timing-function:ease-out; } 25%{ scale:1.22; opacity:1; animation-timing-function:ease-in; }
+    50%{ scale:.97; opacity:.9; animation-timing-function:ease-out; } 75%{ scale:.74; opacity:.62; animation-timing-function:ease-in; } 100%{ scale:.97; opacity:.9; animation-timing-function:ease-out; }
   }
+  @keyframes cco-shine{ 0%{ opacity:0; } 25%{ opacity:.85; } 50%, 100%{ opacity:0; } }
+  /* the planet's svg lets taps through to what is behind it (the sixth
+     flare, round the limb); the sphere itself still takes its own */
+  .cosmic-hero-main{ pointer-events:none; }
+  .cosmic-hero-main .cosmic-sphere-hit{ pointer-events:visiblePainted; }
   /* A full orbit every two minutes \u2014 slow enough to read as graceful
      drift rather than a spinning wheel, since this sits right next to
      text people are meant to actually read. transform-origin uses the
@@ -63745,6 +63768,8 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   const sphere = document.createElementNS(svgNS, "circle");
   sphere.setAttribute("cx", 180); sphere.setAttribute("cy", 150); sphere.setAttribute("r", 52);
   sphere.setAttribute("fill", "url(#cosmicSphereGrad)");
+  /* the one thing in the planet's svg that takes a tap (build 317) */
+  sphere.setAttribute("class", "cosmic-sphere-hit");
   if(useTierIcons){
     /* A small, playful easter egg \u2014 tapping the sphere itself (not
        one of the orbiting badges) gets a little "..... " thinking
@@ -63987,7 +64012,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   if(shownFlares.indexOf("core") >= 0){
     coreFlare = document.createElement("div");
     coreFlare.className = "cosmic-core-orbit";
-    coreFlare.innerHTML = '<div class="cco-plane"><div class="cco-spin"><div class="cco-arm"><i class="cco-tail"></i><div class="cco-counter"></div></div></div></div>';
+    coreFlare.innerHTML = '<div class="cco-plane"><div class="cco-spin"><div class="cco-arm"><i class="cco-tail"></i><div class="cco-counter"><i class="cco-shine"></i></div></div></div></div>';
     const fl = makeFlare("core");
     fl.classList.add("is-core");
     if(fl.classList.contains("is-found")) coreFlare.classList.add("is-found");
@@ -63998,6 +64023,10 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   if(ringOld) wrap.appendChild(ringOld);
   if(ringLayer) wrap.appendChild(ringLayer);
   if(ringDraw) wrap.appendChild(ringDraw);
+  /* the sixth flare's orbit just BEFORE the planet's svg: in place it is
+     under the planet (the far half of its lap), lifted it is over
+     everything (the near half) - see "and now going ROUND it" */
+  if(coreFlare) wrap.appendChild(coreFlare);
   wrap.append(svg, animLayer, orbitLayer, innerOrbitLayer);
   /* The sphere's life, on the compositor: two soft light pools drifting
      over the surface inside a circular window the exact size of the
@@ -64035,8 +64064,6 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
      theme: right after the plasma, so everything that already paints over
      the planet (the sixth flare, the tap box, the bubbles) still does. */
   if(typeof store !== "undefined" && store && store.supernovaAchieved) attachCosmicScar(wrap);
-  /* above the plasma, so the sixth flare crosses in front of the planet */
-  if(coreFlare) wrap.appendChild(coreFlare);
   /* The planet's own shadow and edge light (build 304) came off in build
      310 - the planet is the original one again; see "DARK SMOKE ONLY". */
 
