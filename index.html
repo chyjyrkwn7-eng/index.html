@@ -81838,27 +81838,25 @@ function hundoFxPosterSVG(id){
     }
   } else if(id === "underwater"){
     /* build 317, round 4: the new water, small - the lit surface near the
-       top, the body deepening below it, caustics, three rays, a few
-       bubbles rising to break at the surface, and a school of fish */
+       top, the body deepening below it, soft light under the surface
+       (round 5), three rays, bubbles, and a school of fish */
     defs += '<linearGradient id="' + g + 'sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#76DCEC" stop-opacity=".28"/><stop offset=".4" stop-color="#34AACE" stop-opacity=".3"/><stop offset="1" stop-color="#06365A" stop-opacity=".55"/></linearGradient>' +
       '<linearGradient id="' + g + 'ray" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E6FFFF" stop-opacity=".45"/><stop offset="1" stop-color="#9FE8FF" stop-opacity="0"/></linearGradient>';
     const wy = x => 9 + 1.3 * Math.sin(x / 9) + .6 * Math.sin(x / 4.3 + 1);
     let crest = ""; for(let x = 0; x <= 160; x += 4) crest += (x ? " L" : "M") + x + " " + F(wy(x));
     body += '<path d="' + crest + ' L160 60 L0 60 Z" fill="url(#' + g + 'sea)"/>';
     [[30, 9], [74, 12], [122, 8]].forEach(([x, w]) => { body += '<path d="M' + F(x - w * .3) + ' ' + F(wy(x)) + ' L' + F(x + w * .3) + ' ' + F(wy(x)) + ' L' + F(x + w + 10) + ' 60 L' + F(x - w + 10) + ' 60 Z" fill="url(#' + g + 'ray)"/>'; });
-    /* caustics: a few wavy loops of light */
-    for(let i = 0; i < 16; i++){
-      const cx = rnd() * 160, cy = 16 + rnd() * 42, r = 4 + rnd() * 5;
-      /* a smooth, uneven loop: quadratic curves through the midpoints */
-      const pts = []; for(let q = 0; q < 7; q++){ const th = q / 7 * Math.PI * 2, rr = r * (.7 + .45 * Math.sin(th * 2 + i) + rnd() * .2); pts.push([cx + Math.cos(th) * rr * 1.3, cy + Math.sin(th) * rr * .8]); }
-      const mid = (u, v) => [(u[0] + v[0]) / 2, (u[1] + v[1]) / 2];
-      let m0 = mid(pts[6], pts[0]), d = "M" + F(m0[0]) + " " + F(m0[1]);
-      for(let q = 0; q < 7; q++){ const m = mid(pts[q], pts[(q + 1) % 7]); d += " Q" + F(pts[q][0]) + " " + F(pts[q][1]) + " " + F(m[0]) + " " + F(m[1]); }
-      body += '<path d="' + d + 'Z" fill="none" stroke="#E2FFFA" stroke-opacity="' + F(.12 + rnd() * .14) + '" stroke-width=".55"/>';
+    /* round 5: the light is soft patches near the surface, not loops of line */
+    defs += '<radialGradient id="' + g + 'lp"><stop offset="0" stop-color="#F2FFFF" stop-opacity=".5"/><stop offset="1" stop-color="#C8F7FF" stop-opacity="0"/></radialGradient>';
+    for(let i = 0; i < 9; i++){
+      const cx = rnd() * 160, cy = 14 + rnd() * 16, rx = 6 + rnd() * 9;
+      body += '<ellipse cx="' + F(cx) + '" cy="' + F(cy) + '" rx="' + F(rx) + '" ry="' + F(rx * (.4 + rnd() * .3)) + '" fill="url(#' + g + 'lp)" opacity="' + F(.5 + rnd() * .5) + '"/>';
     }
-    body += '<path d="' + crest + '" fill="none" stroke="#C9FAFF" stroke-opacity=".25" stroke-width="2.6"/><path d="' + crest + '" fill="none" stroke="#F4FFFF" stroke-width=".8"/>';
-    for(let i = 0; i < 12; i++){ const x = 8 + rnd() * 144, y = 18 + rnd() * 40; if(Math.abs(x - 80) < 30 && Math.abs(y - 30) < 11) continue;
-      body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(.6 + rnd() * 1.1) + '" fill="none" stroke="#F2FFFF" stroke-opacity=".7" stroke-width=".4"/>'; }
+    body += '<path d="' + crest + '" fill="none" stroke="#C9FAFF" stroke-opacity=".22" stroke-width="2.6"/><path d="' + crest + '" fill="none" stroke="#F4FFFF" stroke-opacity=".8" stroke-width=".7"/>';
+    /* bubbles, a rim and a highlight each, of different sizes */
+    for(let i = 0; i < 14; i++){ const x = 8 + rnd() * 144, y = 18 + rnd() * 40, r = .6 + Math.pow(rnd(), 1.6) * 2.6; if(Math.abs(x - 80) < 30 && Math.abs(y - 30) < 11) continue;
+      body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(r) + '" fill="#E6FFFF" fill-opacity=".08" stroke="#F2FFFF" stroke-opacity=".75" stroke-width="' + F(Math.min(.5, .2 + r * .12)) + '"/>' +
+        (r > 1.2 ? '<circle cx="' + F(x - r * .38) + '" cy="' + F(y - r * .4) + '" r="' + F(r * .22) + '" fill="#fff" fill-opacity=".85"/>' : ''); }
     [[124, 44], [131, 41], [137, 46], [129, 49], [118, 48]].forEach(([x, y]) => { body += '<path d="M' + x + ' ' + y + ' q3 -2 6 0 l2 -1.4 v2.8 l-2 -1.4 q-3 2 -6 0 Z" fill="#C6EEF6" fill-opacity=".85"/>'; });
   } else if(id === "bubbles"){
     rg("b", [[0, "#9FE8FF", 0], [0.62, "#9FE8FF", 0.04], [0.8, "#C79BFF", 0.4], [0.92, "#FFB3D1", 0.8], [1, "#FFFFFF", 0.25]]);
