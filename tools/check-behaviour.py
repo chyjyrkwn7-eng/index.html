@@ -15569,7 +15569,32 @@ def check_b317_badgecase(br):
     check("in pixels: nothing light in the band just outside a token's top-left edge, on any of the sixteen (no ghost line)",
           worst is not None and worst <= 20 and all(v is not None for _, v in ring), sorted(ring, key=lambda x: -(x[1] or 99))[:5])
     ctx.close()
-    # 5. Reduce motion: the case, still
+    # 5. two badges in one run: the second token waits up over the case,
+    #    not on the slot the first one landed in (the first flight's
+    #    animation is filled forwards and held the flyer there - caught on
+    #    a recording of this build, so it guards a fix of this round and
+    #    passes on b6cd249 too, which had no Web Animations to hold it)
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("""() => { ['Identity Crimes', 'Penal Code'].forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+      theme.muteBanners = false; theme.reduceMotion = false; applyTheme();
+      document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert').forEach(n => n.remove()); }""")
+    clk = _Stepper(pg)
+    pg.evaluate("() => { window.__bc2 = 0; playBadgeCaseScene(['Identity Crimes', 'Penal Code'], () => {}); }")
+    seen = None
+    for _ in range(260):
+        clk.step(0.1)
+        r2 = pg.evaluate("""() => { const n = document.querySelector('.bc-flyer .bc-face-art, .bc-flyer svg'); const f = document.querySelector('.bc-flyer');
+          const w = document.querySelector('.bc-words .bc-name, .bc-name');
+          const nm = [...document.querySelectorAll('.bc-words .bc-name')].map(x => x.textContent).join('|');
+          if(!f || nm.indexOf('Penal Code') < 0) return null;
+          const b = f.getBoundingClientRect(); return { cy: Math.round(b.top + b.height / 2), op: parseFloat(getComputedStyle(f).opacity), h: innerHeight }; }""")
+        if r2 and r2["op"] > 0.9:
+            seen = r2
+            break
+    check("two badges in one run: the second token waits up over the case before its drop, not on the first one's slot",
+          bool(seen) and seen["cy"] < 0.45 * seen["h"], seen)
+    ctx.close()
+    # 6. Reduce motion: the case, still
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     rm = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       try{

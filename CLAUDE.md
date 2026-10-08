@@ -2529,7 +2529,10 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   black. This has now bitten three times in this file: the old badge
   leading, the rank glows, and these channels. Anything that is a line
   gets a flat colour; anything that needs a ramp gets a shape with area.
-- **The plate is the silhouette scaled about ITS OWN centre**, which is
+- (SUPERSEDED in build 317's badge round: every band is a uniform
+  distance from the outline now, and the token and its slot both scale
+  about the shape's centre - see the section **Build 317, badge round - badges built in bands, a briefcase that stays open, a token with an edge, one case everywhere**.)
+  **The plate is the silhouette scaled about ITS OWN centre**, which is
   what `c:` in each `BADGE_SHAPE` entry is for —
   `translate(cx cy) scale(.8) translate(-cx -cy)`. Scaling about the
   128-unit frame's centre instead leaves the inset thick on one side and
@@ -2624,6 +2627,8 @@ all keyed by them, so renaming a key is a migration for a cosmetic gain.
   hole. Two copies of the outline, offset in opposite directions and
   clipped to it, do that without a filter — filters are the one SVG
   feature that has bitten this app on real iOS hardware.
+  (Build 317, badge round: the slot is the token's own outline offset
+  by an even gap, all in bands - see **Build 317, badge round - badges built in bands, a briefcase that stays open, a token with an edge, one case everywhere**.)
   The token is scaled to `.945` inside its slot: exactly the size of the
   hole and it looks printed on.
 - **The recess is not black.** It is the lining seen in shadow, so a
@@ -3070,6 +3075,11 @@ pull the rope, so each question you get one chance."*
   "the invite list is still empty".
 
 ### The badge cutscene
+
+**Rebuilt in build 317's badge round** - a 3D case whose lid stays open, a
+token with an edge, ~16.9s, a still scene under Reduce motion: see **Build 317, badge round - badges built in bands, a briefcase that stays open, a token with an edge, one case everywhere**.
+`BADGE_CUTSCENE_MS` below is the old Home cutscene's (`#badge-cutscene`,
+for a queued badge), not the case's.
 
 - **`BADGE_CUTSCENE_MS` is the app's number and the gate reads it off
   the page.** `check-behaviour` hardcoded 2600 and went red on the
@@ -5768,6 +5778,8 @@ pending one after a muted or reduce-motion run).
   words - about a second and a half before it is readable, and it holds
   4.4-6.2s. Every banner names what it took (`item.need`); a challenge
   character gets the "Challenge complete" strip (`.rs-spot.is-challenge`).
+- (Superseded in build 317's badge round: the lid no longer lifts away and
+  fades, it stays open - see **Build 317, badge round - badges built in bands, a briefcase that stays open, a token with an edge, one case everywhere**.)
 - **The badge case is ~4s longer**: floats up (1.9s), latches go one at a
   time, the lid cracks with light spilling out, then lifts over 1.9s.
   **The glisten lives inside each badge's SVG, clipped to its outline**
@@ -6964,10 +6976,14 @@ gate; all fifteen of its checks fail on 241.
   each in its badge's enamel - and `badgeNextLine()` (the closest unearned
   badge by share of its threshold). The set itself is the case below it.
   `buildBadgeStrip` is no longer used on either.
+- (Build 317, badge round: the metal, the enamel and the shadow are
+  rebuilt in even bands, lit - see **Build 317, badge round - badges built in bands, a briefcase that stays open, a token with an edge, one case everywhere**.)
 - **Badges look like struck pins**: polished metal (hard highlight, dark
   mid-band, second catch), flat enamel with ONE lacquer gloss, no hatch
   on either - the grain read as printed stripes - and a two-layer shadow
   cast into the slot, clipped to it.
+- (Build 317, badge round: the tab's case is now the cutscene's own case
+  standing open, in the shared `.nova-case-*` materials - see **Build 317, badge round - badges built in bands, a briefcase that stays open, a token with an edge, one case everywhere**.)
 - **A case, not a tray**: `.badge-case` is a stitched shell with a lid
   (`.badge-case-lid`, the brass plate moved onto it) and two clasps
   (`.badge-case-front`). Its padding is trimmed under 40rem so no unit
@@ -16308,3 +16324,221 @@ only one of them was the gate.
   at the last look. Fails d9a116f (four shown at 6.97s), passes every
   effect here.
 
+### Build 317, badge round - badges built in bands, a briefcase that stays open, a token with an edge, one case everywhere
+
+Madison: *"The badge cutscene is great, the only technical flaw right now
+is when you open the briefcase, the lid disappears, I think the lid should
+still be there so it gets that briefcase feel ... Ensure the badges when
+spinning and being placed and everything really give off that 3d look ...
+Ensure the edges of the badge look clean and not ridged or rough ... They
+need to look a tad bit more real ... rough around the edges and the
+surface ... I want that shine on them, that 3d feel, yeah still feel like a
+token/badge. If the cutscene needs to be longer to make it cooler then do
+it. THAT GOES FOR ANY CUTSCENE IN THE APP, longer is better ... keeping that
+briefcase feel app wide now so it's for sure seen as a briefcase ... in the
+badge tab, it's a different shape than what you get in the cutscene, in the
+profile thing under the challenges it's different, how do we make it all
+the same and make it look good without ruining the cohesiveness."*
+
+**BADGES ARE BUILT IN BANDS (`buildUnitBadgeSVG`, supersedes "the plate is
+the silhouette scaled about ITS OWN centre" and the token's `.86` about the
+frame's centre in the Badges section).** Measured on the old drawing, the
+roughness was construction, not resolution. Every edge that was not the
+outline itself was a COPY of the outline nudged sideways (the slot's lip,
+the plate's bevel, the band's catch-light), and a nudged copy of a concave
+shape crosses its own inside: the star, the bolt and the burst grew ghost
+lines. The token was scaled about the FRAME's centre and the plate about
+the shape's, so the bolt and the ring sat lopsided in their holes, and the
+silver was thick at one tip and a hairline at the next. One rule replaces
+all of it: **a stroke is symmetric about its path, so a stroke of width 2r
+painted with the fill covers exactly "within r outside the outline", and
+the same stroke clipped to the outline covers exactly "within r inside
+it".** Painted outermost first, those give every band as a ring of even
+width round ANY shape, concave corners included (joins round). The order
+is: the slot's lip, then its wall (for an empty slot, its floor in three
+soft steps), then the token's shadow in the gap, then the keyline, the
+enamel, the enamel's shade and light, the plate's dark edge, the channels,
+the silver inside then outside the outline (one ramp in one space, so the
+halves are one piece), then the rim's form. `BADGE_GEOM` holds every
+proportion. The recipe is untouched (a dominant dark keyline, a broad
+silver band, plates with their own dark edge, silver channels, a slot cut
+to the outline). What is new is that each part is a surface lit from the
+top-left:
+- the rim is a rounded piece of polished metal: its outer slope catches
+  the light at the top-left and turns away at the bottom-right, its inner
+  slope the other way, with a crest between and one soft specular where
+  the light is. It needed a ramp darker than instinct. The first one read
+  as a white sticker outline;
+- the enamel sits BELOW the rim, with the rim's shade along its top-left
+  edge, a little light along its far edge, and one broad soft bloom at its
+  top (a lacquer, never a streak);
+- each channel is a bar of the same metal, lit on its top or left face,
+  shading the enamel beside it. Every cut is a straight H or V line, so
+  its ramp runs ACROSS it in user space (a ramp resolved against a line's
+  own box is the zero-width trap);
+- the token's dark edge carries on past the keyline along the
+  bottom-right, which is what says it is raised. A LIGHT sliver there was
+  tried and read as a second outline, the very ghost line being removed;
+- the token and its slot both scale about the shape's own centre, so a
+  seated badge has the same narrow gap all the way round.
+- **A ring's shade cannot fade ACROSS its width**, only along the light, so
+  the enamel's soft shade is NINE thin faint rings (each under a device
+  pixel at 3x, a few levels deep). Three wide ones showed as three printed
+  lines.
+- **The uniform inset has a cost on thin shapes**: the bolt's lower plate
+  and the star's arms lose enamel to the rim. `inner` is 4.4 for that
+  reason, not the old ~5.8.
+- Kept on purpose, and gated: no `<pattern>` (check_b242, "no printed
+  grain"), the cast shadow's fill is still `rgba(0,0,0,.42)` (check_b242
+  reads that literal), a grey badge has more than 12 paths and no unit
+  colour anywhere in its markup, and an earned one has its colour
+  literally (check_b314_chars). No filter, no gloss streak, no sparkle,
+  no glass, no motif.
+- **The frame holds what is drawn.** `badgeViewBoxFor` measures the
+  outline (`badgeMeasure`, one layout for many) and grows the frame round
+  the token and slot as scaled about the shape's centre, out to the lip.
+  The trefoil and the quatrefoil still grow theirs; check_b270 holds it.
+- `buildUnitBadgeSVG(u, true, { slot: false })` is the token alone, in the
+  same frame: the cutscene's coin. Laid over a slot, it lands on it to the
+  pixel.
+- **The rim's spun finish exists only where a badge is drawn big
+  (`opts.fine`)**: the cutscene's token and a badge's own card. It is
+  fine rings round the shape's own centre (a repeating radial gradient,
+  0.8 units, about 4% each way), reading as turned metal.
+  - At the case's sizes, rings that fine would beat against the pixels,
+    and straight grain across the colour was "printed stripes" in build
+    242.
+  - A coarser, stronger version (1.15-unit rings at 7%) was tried first
+    and read as hatching.
+
+**THE BRIEFCASE IS ONE OBJECT, IN THREE SIZES.** Its materials are defined
+once, as tokens on `:root`, and every part of every case is drawn from
+them:
+- `--case-grain`: a 96px seamless PNG of pebbled leather (an emboss of
+  blurred noise, generated once, about 7KB). It is an IMAGE, not an SVG
+  filter;
+- `--case-shell-bg` / `--case-shell-size`: the grain, the light falling
+  across it, and the leather in the Next rank card's 160-degree light;
+- `--case-trim`: aluminium for an edge or an opening, darker than the
+  hardware. The polished ramp on a two-pixel edge read as a white
+  outline;
+- `--case-metal`: the hardware;
+- `--case-lining-bg`: the neutral graphite lining (check_b232 still holds:
+  no blue in it);
+- `--case-lid-bg`: the lid's quilting.
+
+The classes: `.nova-case` (the root), `.nova-case-shell`,
+`.nova-case-trimmed` (a shell panel inside an aluminium edge),
+`.nova-case-lining` (the lining inside its aluminium bead),
+`.nova-case-lid`, `.nova-case-plate` (engraved: dark letters with a lit
+lower lip), `.nova-case-latch` (with its catch), `.nova-case-hasp`,
+`.nova-case-hinge` (a barrel with its knuckle joints) and
+`.nova-case-handle` (leather on two mounts; it takes its `position` from
+its context, because a shared `position:relative` threw the cutscene's
+handle off the case). Each context sets only its geometry:
+- **the cutscene**: the whole case in 3D, below;
+- **the Badges tab**: the same case standing open. The lid sits behind the
+  tray (its quilted lining, the plate, leaning towards you a little on
+  `perspective(42rem) rotateX(-14deg)`), the hinges where it meets the
+  tray, the tray of badges in its bead, the front with its two latches,
+  and the handle folded down in front. Still exactly two spans in
+  `.badge-case-front` (check_b242);
+- **the Profile card**: the same case, small and shut round its tray. Its
+  shell has the trim and stitching, the strip of badges sits in the
+  lining, two latches are on its front edge and the handle hangs under
+  it. It keeps a gradient and a tinted border (check_b316_tiles) and its
+  head row is untouched (check_b317_pfcard).
+
+**THE CUTSCENE'S CASE IS A REAL BOX (`buildBadgeCase3D`) AND ITS LID STAYS.**
+- **The structure.** `.bc-stage` holds the camera and the fade. Under it,
+  `.bc-case` (preserve-3d) holds: a shadow on the table; the base's top
+  (`.bc-tray`, trimmed shell) with the lining and the slots, and the
+  hinges on its far edge; the front wall (`.bc-front`, hung from the
+  tray's near edge by `rotateX(-90deg)`) with the latches; the handle,
+  folded down in front at a third of the base's height; the light inside
+  (`.bc-spill`); and the lid. The lid is hinged on the far edge with
+  `transform-origin` at its top. Its outer shell is backface-hidden, with
+  the plate. Its inside is a leather frame round a quilted pad with the
+  "Badge case" plate, flipped by `rotateX(180deg)` so it faces you once
+  the lid passes upright. It also has a front wall. Sizes are in the
+  case's own width (`--cw`, `--ch`, `--d`, `--dl` on `.bc-scene`), so one
+  set of numbers frames a phone and an iPad.
+- **The camera.** Shut, it looks from the front and above at 52deg (the
+  latches and the handle). As the lid swings back to 112deg it rises to
+  21deg and pulls the case back (`--open-s`). The open lid STANDS behind
+  the tray with its lining towards you, which is the briefcase feel. The
+  latches' hasps flip out and down (`rotateX(-158deg)`), the lid cracks
+  with the light spilling out of the gap, and the case gives a small thud
+  when the badge seats.
+- **NEVER FADE A preserve-3d ELEMENT.** An opacity below 1 (and a filter,
+  `overflow:hidden`, a mask, `isolation`) flattens it, so the front wall
+  and the lid fold flat into the case's plane for the length of the fade.
+  The case fades on its STAGE and the token on its FLYER, both of which
+  are flat parents of the 3D. check_b308_unlocks reads the case's
+  EFFECTIVE opacity now, the product up its ancestors.
+- Under 3D a slot's `getBoundingClientRect()` is its projected box, which
+  is what the landing aims at.
+
+**THE TOKEN (`buildBadgeCoin`) HAS AN EDGE.** Two faces with the edge
+between them: `BC_EDGE_LAYERS` (20) copies of the silhouette in edge
+metal, stacked through a thickness of 7% of the coin. Turned, it shows the
+side of the metal the way a turning coin does. Edge-on it is a 35px band
+on a Pro Max where a flat drawing was a hairline.
+- **The faces and the slices are IMAGES of one drawing each** (a
+  `data:` SVG), so twenty-two layers cost two decodes.
+- **The edge is one colour, every slice.** Alternate slices a step apart (a
+  milled coin's edge) were tried and read as a LADDER up the side of the
+  token as it turned through 45-80deg, the "ridged" look this round was
+  asked to remove. Twelve slices were tried too, and the gaps between
+  them showed.
+- **One angle curve drives everything that follows from the turn.** The
+  angle eases out to rest facing you, and it is sampled into Web
+  Animations for the spin, the floor shadow's width (`|cos|`, so the
+  shadow narrows edge-on) and the light on each face (it crosses the face
+  as the face turns through the light and is gone either side). The
+  samples are linear between, so the four stay in step on the compositor
+  (`bcSpinCoin`).
+- **The light on a face is HTML, not the drawing.** It is a band behind a
+  CSS mask of the token's silhouette (`badgeSilhouetteURL`), moved by a
+  transform, so a turn never repaints a drawing.
+- Its moments are: a spin up out of the dark (four turns over 3.4s), the
+  glint once at rest, a sway (plus or minus 15deg) that shows its edge
+  while it waits, a lift, waiting in front of the open lid, then the
+  drop. The drop is a short rise, then down into the slot with one more
+  flip and a tilt to lie in the tray (`rotateX(21deg)`, the camera's).
+  It lands on the slot's own drawing (`flyInto` aims at the slot's svg,
+  which shares the coin's frame). The seat follows: the slot takes the
+  badge, a ring of light opens out, its glisten crosses it, the case
+  thuds and the words come up under the case's handle (`placeWords`).
+- **Longer, as asked: about 16.9s for one badge** (it was about 13.4).
+  Each further badge in a run adds about 3.75s: a shorter spin at the
+  lid, then its own drop.
+
+**REDUCE MOTION GETS THE CASE, STILL.** The scene used to be skipped
+outright. Now `playBadgeCaseScene` builds the case already open, with the
+latches undone and the new badges seated and softly lit, names them,
+holds `BC_STILL_MS` (4.6s) and ends; a tap ends it sooner. The results
+screen's quiet path plays it once over the landed screen, but never on
+the way back from the review (`opts.instant`), and Mute banners still
+mutes it. **A `*` selector never reaches a `::before`**: the still scene
+names the pseudo-elements, because the seated slot's glow is one.
+
+**Gates.** `check_b317_badgecase` runs on a fake clock (the recorders'
+method: every timer, frame and animation stepped and seeked), so load
+cannot move a frame. On both reference devices it checks:
+- the token keeps a band of edge at its most edge-on frame, more than the
+  face's own width at that angle (`w/h >= aspect * |cos| + 0.045`);
+- the lid is still there once the case has opened: opacity 1, at least
+  30% of the tray's area, standing above it, and in pixels against the
+  plain backdrop beside the case;
+- the scene runs over 15s;
+- the cutscene, the Badges tab and the Profile card are built from the
+  same parts (a lining, two latches, a handle), with identical computed
+  lining, latch, handle and leather;
+- tapping a badge in the case still opens its card.
+
+Then, for all sixteen badges: no LIGHT copy of the outline is drawn
+shifted off it, and in pixels nothing light sits in the band just outside
+a token's top-left edge. Last, the Reduce motion still scene. Every check
+fails on b6cd249. check_b308_unlocks polls for the open case instead of
+reading it at a fixed 8.4s, because the scene grew longer on request.
