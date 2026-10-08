@@ -9475,17 +9475,20 @@
     66%{ transform:scale(.98, 1.02); } 90%{ opacity:1; transform:scale(1.06); } 100%{ opacity:0; transform:scale(1.3); } }
   .hfx-ufo-search{ position:absolute; left:calc(50% - var(--uw) * .09); top:62%; width:calc(var(--uw) * .18); height:var(--slh, calc(var(--uw) * 2.8)); transform-origin:50% 0;
     background:linear-gradient(180deg, rgba(210,255,222,.42), rgba(210,255,222,.1) 60%, rgba(210,255,222,0)); clip-path:polygon(42% 0, 58% 0, 100% 100%, 0 100%);
-    opacity:0; animation:hfx-ufo-search 7s linear both; }
+    opacity:0; animation:hfx-ufo-search 9.5s linear both; }
   /* SHOT OUT OF THE HULL AND TAKEN BACK IN (build 317, round 3): "the
      UFO's projection is shown before it's shot out of the UFO". The
      searchlights used to fade up already at full length - two cones from
      the saucer to the bottom of the screen before anything had fired. Now
      each grows out of the underside, sweeps, and is drawn back in before
-     the tractor beam fires at 37%, so the only light that ever reaches the
-     box is the beam, and it is seen leaving the hull. */
-  @keyframes hfx-ufo-search{ 0%, 14.3%{ opacity:0; transform:rotate(var(--s0)) scaleY(0); animation-timing-function:cubic-bezier(.3,.6,.4,1); } 14.6%{ opacity:1; }
-    18.5%{ transform:rotate(var(--s0)) scaleY(1); } 24%{ transform:rotate(var(--s1)) scaleY(1); } 30%{ transform:rotate(var(--s0)) scaleY(1); opacity:.9; animation-timing-function:cubic-bezier(.5,0,.75,.4); }
-    34.4%{ transform:rotate(calc(var(--s1) * .3)) scaleY(0); opacity:.6; } 34.6%, 100%{ opacity:0; transform:rotate(calc(var(--s1) * .3)) scaleY(0); } }
+     the tractor beam fires, so the only light that ever reaches the box is
+     the beam, and it is seen leaving the hull. On the long timeline (round
+     4, 9.5s): on at 1.0s as it comes in, sweeping while it circles, back in
+     by 3.35s - the beam fires at 3.69s. */
+  @keyframes hfx-ufo-search{ 0%, 10.53%{ opacity:0; transform:rotate(var(--s0)) scaleY(0); animation-timing-function:cubic-bezier(.3,.6,.4,1); } 10.84%{ opacity:1; }
+    13.68%{ transform:rotate(var(--s0)) scaleY(1); } 18.42%{ transform:rotate(var(--s1)) scaleY(1); } 23.16%{ transform:rotate(var(--s0)) scaleY(1); }
+    27.89%{ transform:rotate(var(--s1)) scaleY(1); } 32.11%{ transform:rotate(var(--s0)) scaleY(1); opacity:.9; animation-timing-function:cubic-bezier(.5,0,.75,.4); }
+    35.26%{ transform:rotate(calc(var(--s1) * .3)) scaleY(0); opacity:.6; } 35.47%, 100%{ opacity:0; transform:rotate(calc(var(--s1) * .3)) scaleY(0); } }
 
   /* ===== round 3: the results screen in miniature ===== */
   .hfx-mock{ position:relative; display:flex; flex-direction:column; gap:.38rem; width:100%; aspect-ratio:4 / 5; padding:.6rem .55rem .55rem; box-sizing:border-box;
@@ -9538,16 +9541,20 @@
     animation:hfx-bub-halo 2.2s cubic-bezier(.15,.7,.3,1) var(--t) both; }
   @keyframes hfx-bub-halo{ 0%{ transform:scale(.25); opacity:0; } 10%{ opacity:.95; } 100%{ transform:scale(1.15); opacity:0; } }
 
-  /* UFO. One 7s timeline shared by the saucer's path, its rocking and
-     settle, its beam and its lights, so they cannot drift apart. */
-  .hfx-ufo-dim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-dim 8.4s linear both; }
-  @keyframes hfx-ufo-dim{ 0%{ opacity:0; } 7.2%{ opacity:.93; } 14.5%{ opacity:.93; } 23.6%{ opacity:.55; } 67%{ opacity:.55; } 100%{ opacity:0; } }
+  /* UFO. One timeline shared by the saucer's path, its rocking and
+     settle, its beam and its lights, so they cannot drift apart: 7s in a
+     small box (.is-mini, Customize and the unlock card) and 9.5s on the
+     results screen (round 4, the -l keyframes below). */
+  /* dark until it has circled (2.9s), lifting to .55 as it comes down to
+     the box, and gone by 10.9s, inside the 11.1s total */
+  .hfx-ufo-dim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-dim 10.9s linear both; }
+  @keyframes hfx-ufo-dim{ 0%{ opacity:0; } 5.5%{ opacity:.93; } 26.61%{ opacity:.93; } 33.94%{ opacity:.55; } 70%{ opacity:.55; } 100%{ opacity:0; } }
   /* the box goes dark with the screen, lifts with it to the screen's .55,
      and is LIT BY THE BEAM (build 317, round 3): the last of its dark goes
-     as the beam strikes (2.84s) and floods down it, not 0.8s before the
-     beam arrives, when it lit up on its own */
-  .hfx-ufo-boxdim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-boxdim 3.05s linear both; }
-  @keyframes hfx-ufo-boxdim{ 0%{ opacity:0; } 19.3%{ opacity:.93; } 38.7%{ opacity:.93; } 54%{ opacity:.55; } 93%{ opacity:.55; animation-timing-function:ease-out; } 100%{ opacity:0; } }
+     as the beam strikes (3.94s on the long timeline) and floods down it,
+     not before the beam arrives, when it lit up on its own */
+  .hfx-ufo-boxdim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-boxdim 4.15s linear both; }
+  @keyframes hfx-ufo-boxdim{ 0%{ opacity:0; } 14.22%{ opacity:.93; } 69.88%{ opacity:.93; } 89.16%{ opacity:.55; } 94.82%{ opacity:.55; animation-timing-function:ease-out; } 100%{ opacity:0; } }
   /* (not .hfx-ufo: the effect's own layers are named hfx-<id>) */
   .hfx-saucer{ position:absolute; width:0; height:0; opacity:0; animation:hfx-ufo-path 7s linear both; }
   @keyframes hfx-ufo-path{
@@ -9562,8 +9569,49 @@
     86.5%{ transform:translate(0, -72px) scale(1); animation-timing-function:cubic-bezier(.55,0,1,.5); }
     90.7%{ transform:translate(var(--ox), var(--oy)) scale(.2); opacity:1; }
     91.6%, 100%{ transform:translate(var(--ox), var(--oy)) scale(.2); opacity:0; } }
+  /* THE LONG UFO (build 317, round 4): "Could the UFO hundo effect last
+     another 2-3 seconds somehow? It's so cool I want it to be longer." 2.5s
+     added by adding to it, not by slowing it: it circles the screen once
+     before it comes down (+1.1s; the circle itself is script - hfxUfoArrival
+     - since a loop is no shape for keyframes), its beam sweeps across the
+     box before it lands (+0.9s), and it charges before it goes, then goes
+     with a boom (+0.5s). Everything from the landing to the lift-off - the
+     scan, the lock, the grab - is the old timeline moved 2s later, untouched.
+     Seconds, for the script's side: arrives 3.7, beam 3.69-3.935, sweep
+     4.2-5.1, lands 6.1, grab 7.38, lifted 8.0, charge 8.0-8.5, exit
+     8.55-8.85, gone 8.91. During the arrival the path holds the hover point
+     and the script's `translate`/`scale` carry it. */
+  .hfx-saucer:not(.is-mini){ animation-name:hfx-ufo-path-l; animation-duration:9.5s; }
+  @keyframes hfx-ufo-path-l{
+    0%{ transform:translate(0, var(--hov)) scale(1); opacity:0; }
+    10.53%{ opacity:0; } 11.79%{ opacity:1; }
+    44.21%{ transform:translate(0, var(--hov)) scale(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
+    47.05%{ transform:translate(calc(var(--swa) * -1), var(--hov)) scale(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
+    50.84%{ transform:translate(var(--swa), var(--hov)) scale(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
+    53.68%{ transform:translate(0, var(--hov)) scale(1); }
+    56.84%{ transform:translate(0, var(--hov)) scale(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
+    64.21%{ transform:translate(0, 0) scale(1); }
+    77.89%{ transform:translate(0, 0) scale(1); animation-timing-function:cubic-bezier(.45,0,.4,1); }
+    84.21%{ transform:translate(0, -70px) scale(1); animation-timing-function:ease-in-out; }
+    86.84%{ transform:translate(0, -66px) scale(1); animation-timing-function:ease-in-out; }
+    89.47%{ transform:translate(0, -72px) scale(1); }
+    90%{ transform:translate(0, -72px) scale(1); animation-timing-function:cubic-bezier(.55,0,1,.5); }
+    93.16%{ transform:translate(var(--ox), var(--oy)) scale(.2); opacity:1; }
+    93.79%, 100%{ transform:translate(var(--ox), var(--oy)) scale(.2); opacity:0; } }
   .hfx-ufo-bob{ position:absolute; left:calc(var(--uw) / -2); top:calc(var(--uh) * -1); width:var(--uw); height:var(--uh); transform-origin:50% 100%;
     animation:hfx-ufo-bob 7s linear both; }
+  /* banked by the script while it circles; then the old settle, a sway
+     each way with the sweep, the landing, and a shudder as it charges */
+  .hfx-saucer:not(.is-mini) .hfx-ufo-bob{ animation-name:hfx-ufo-bob-l; animation-duration:9.5s; }
+  @keyframes hfx-ufo-bob-l{ 0%, 38.95%{ transform:rotate(0deg); } 41.05%{ transform:rotate(2.5deg); } 43.26%{ transform:translateY(-3px) rotate(-1.5deg); }
+    44.21%{ transform:translateY(-2px) rotate(0deg); } 45.58%{ transform:translateY(-2px) rotate(-6deg); } 47.05%{ transform:translateY(-2px) rotate(1deg); }
+    48.95%{ transform:translateY(-2px) rotate(6deg); } 50.84%{ transform:translateY(-2px) rotate(-1deg); } 52.21%{ transform:translateY(-2px) rotate(-4deg); }
+    53.68%{ transform:translateY(-1px) rotate(0deg); } 56.84%{ transform:translateY(0) rotate(0deg); }
+    64.21%{ transform:translateY(0) scale(1, 1); } 65.63%{ transform:translateY(2px) scale(1.05, .9); } 67.47%{ transform:translateY(-6px) scale(.98, 1.03); }
+    69.32%{ transform:translateY(0) scale(1, 1); } 72.63%{ transform:translateY(-2px); } 75.58%{ transform:translateY(0); } 77.89%{ transform:rotate(0deg); }
+    84.21%{ transform:rotate(-4deg); } 85.05%{ transform:rotate(-2.4deg); } 85.89%{ transform:rotate(-5.2deg); } 86.74%{ transform:rotate(-2.6deg); }
+    87.58%{ transform:rotate(-5.6deg); } 88.42%{ transform:rotate(-2.2deg); } 89.47%, 90%{ transform:rotate(-4deg); }
+    93.16%, 100%{ transform:rotate(14deg) scale(1.35, .7); } }
   @keyframes hfx-ufo-bob{ 0%, 14.3%{ transform:rotate(-8deg); } 22%{ transform:rotate(6deg); } 30%{ transform:rotate(-4deg); } 37.1%{ transform:rotate(2deg); }
     43%{ transform:translateY(-3px) rotate(-1.5deg); } 48.6%{ transform:translateY(0) rotate(0deg); }
     58.6%{ transform:translateY(0) scale(1, 1); } 60.5%{ transform:translateY(2px) scale(1.05, .9); } 63%{ transform:translateY(-6px) scale(.98, 1.03); }
@@ -9572,6 +9620,7 @@
   .hfx-ufo-body, .hfx-ufo-lights{ position:absolute; inset:0; background:center / 100% 100% no-repeat; }
   .hfx-ufo-lights{ animation:hfx-chase .45s ease-in-out 1s 13 alternate both; }
   .hfx-ufo-lights.is-odd{ animation-name:hfx-chase-b; }
+  .hfx-saucer:not(.is-mini) .hfx-ufo-lights{ animation-iteration-count:19; }
   @keyframes hfx-chase{ from{ opacity:.12; } to{ opacity:1; } }
   @keyframes hfx-chase-b{ from{ opacity:1; } to{ opacity:.12; } }
   .hfx-ufo-glow{ position:absolute; left:15%; right:15%; bottom:-14%; height:50%; border-radius:50%;
@@ -9582,16 +9631,29 @@
     40.5%{ transform:scaleY(1); opacity:1; } 48.6%{ transform:scaleY(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
     58.6%{ transform:scaleY(var(--bl, 1)); } 77.1%{ transform:scaleY(var(--bl, 1)); animation-timing-function:cubic-bezier(.45,0,.4,1); }
     85.7%{ transform:scaleY(var(--bk, 1)); opacity:1; animation-timing-function:ease-in; } 87.5%, 100%{ transform:scaleY(0); opacity:0; } }
+  .hfx-saucer:not(.is-mini) > .hfx-ufo-beam{ animation-name:hfx-ufo-beam-l; animation-duration:9.5s; }
+  @keyframes hfx-ufo-beam-l{ 0%, 38.84%{ transform:scaleY(0); opacity:0; animation-timing-function:cubic-bezier(.3,.6,.4,1); } 39.14%{ opacity:1; }
+    41.42%{ transform:scaleY(1); opacity:1; } 56.84%{ transform:scaleY(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
+    64.21%{ transform:scaleY(var(--bl, 1)); } 77.89%{ transform:scaleY(var(--bl, 1)); animation-timing-function:cubic-bezier(.45,0,.4,1); }
+    84.21%{ transform:scaleY(var(--bk, 1)); opacity:1; animation-timing-function:ease-in; } 85.53%, 100%{ transform:scaleY(0); opacity:0; } }
   .hfx-ufo-ring{ position:absolute; left:calc(var(--rw) / -2); width:var(--rw); height:calc(var(--rw) * .3); top:calc(var(--rw) * -.15);
     background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-ring .75s ease-in var(--t) both; }
   @keyframes hfx-ufo-ring{ 0%{ transform:translateY(calc(var(--uh) * -.2)) scale(.5); opacity:0; } 20%{ opacity:1; } 100%{ transform:translateY(var(--fall)) scale(1.15); opacity:0; } }
   .hfx-ufo-dust{ position:absolute; width:60px; height:30px; margin:-15px 0 0 -30px; border-radius:50%;
-    background:radial-gradient(closest-side, rgba(200,255,215,.6), rgba(200,255,215,0)); opacity:0; animation:hfx-ufo-dust 1.3s ease-out 4.1s both; }
+    background:radial-gradient(closest-side, rgba(200,255,215,.6), rgba(200,255,215,0)); opacity:0; animation:hfx-ufo-dust 1.3s ease-out 6.1s both; }
   @keyframes hfx-ufo-dust{ 0%{ transform:translate(0, 0) scale(.3); opacity:0; } 15%{ opacity:1; } 100%{ transform:translate(var(--dx), -12px) scale(1.5); opacity:0; } }
   .hfx-ufo-inbeam{ position:absolute; top:0; width:var(--iw); height:var(--ih); margin-left:calc(var(--iw) / -2); transform-origin:50% 0;
-    background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-inbeam 7s linear both; }
-  @keyframes hfx-ufo-inbeam{ 0%, 40.4%{ transform:scaleY(0); opacity:0; animation-timing-function:cubic-bezier(.3,.6,.4,1); } 40.6%{ opacity:.55; }
-    44%{ transform:scaleY(1); opacity:.5; } 58%{ opacity:.5; } 61%{ opacity:.72; } 84%{ transform:scaleY(1); opacity:.72; animation-timing-function:ease-in; } 87.5%, 100%{ transform:scaleY(0); opacity:0; } }
+    background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-inbeam 9.5s linear both; }
+  /* on the 9.5s timeline; across the box and back with the saucer's sweep
+     (the same moments and easing as hfx-ufo-path-l, so the two beams are
+     one) */
+  @keyframes hfx-ufo-inbeam{ 0%, 41.35%{ transform:translateX(0) scaleY(0); opacity:0; animation-timing-function:cubic-bezier(.3,.6,.4,1); } 41.49%{ opacity:.55; }
+    44%{ transform:translateX(0) scaleY(1); opacity:.5; }
+    44.21%{ transform:translateX(0) scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
+    47.05%{ transform:translateX(calc(var(--swa) * -1)) scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
+    50.84%{ transform:translateX(var(--swa)) scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
+    53.68%{ transform:translateX(0) scaleY(1); } 63.79%{ opacity:.5; } 66%{ opacity:.72; }
+    82.95%{ transform:translateX(0) scaleY(1); opacity:.72; animation-timing-function:ease-in; } 85.53%, 100%{ transform:translateX(0) scaleY(0); opacity:0; } }
   .hfx-ufo-landglow{ position:absolute; inset:0; border-radius:inherit; opacity:0;
     box-shadow:inset 0 0 0 1.5px rgba(150,255,175,.8), inset 0 0 30px rgba(107,255,143,.35);
     animation:hfx-ufo-landglow 2.4s ease-out var(--t) both; }
@@ -9617,6 +9679,22 @@
   @keyframes hfx-ufo-ghost{ 0%{ opacity:0; transform:translate(0, 0) scale(1); } 10%{ opacity:.95; }
     40%{ transform:translate(calc(var(--ux) * .62), calc(var(--up) * .3)) scale(.72); }
     75%{ opacity:.9; } 100%{ opacity:0; transform:translate(var(--ux), var(--up)) scale(.14, .24); } }
+  /* round 4: it gathers itself before it goes - a light swelling under
+     the hull as it shudders - then breaks away with a boom: a ring of
+     light thrown out flat from where it was, and the screen lit by it */
+  .hfx-ufo-charge{ position:absolute; left:4%; right:4%; bottom:-34%; height:84%; border-radius:50%; opacity:0;
+    background:radial-gradient(closest-side, rgba(240,255,244,.95), rgba(160,255,185,.62) 34%, rgba(107,255,143,0));
+    animation:hfx-ufo-charge .55s cubic-bezier(.4,0,.7,.6) var(--t) both; }
+  @keyframes hfx-ufo-charge{ 0%{ opacity:0; transform:scale(.3); } 30%{ opacity:.65; transform:scale(.62); } 52%{ opacity:.45; transform:scale(.56); }
+    82%{ opacity:1; transform:scale(1.05); } 100%{ opacity:1; transform:scale(1.22); } }
+  .hfx-ufo-boom{ position:absolute; width:180px; height:180px; margin:-90px 0 0 -90px; border-radius:50%; opacity:0;
+    border:3px solid rgba(225,255,232,.95); box-shadow:0 0 22px rgba(150,255,175,.75), inset 0 0 20px rgba(150,255,175,.55);
+    animation:hfx-ufo-boom .75s cubic-bezier(.15,.6,.3,1) var(--t) both; }
+  @keyframes hfx-ufo-boom{ 0%{ opacity:0; transform:scale(.12, .05); } 10%{ opacity:1; } 100%{ opacity:0; transform:scale(2.8, 1.05); } }
+  .hfx-ufo-flash{ position:absolute; inset:0; opacity:0;
+    background:radial-gradient(circle at var(--fx) var(--fy), rgba(232,255,238,.6), rgba(150,255,175,.2) 26%, rgba(107,255,143,0) 62%);
+    animation:hfx-ufo-flash .55s ease-out var(--t) both; }
+  @keyframes hfx-ufo-flash{ 0%{ opacity:0; } 14%{ opacity:1; } 100%{ opacity:0; } }
   .hfx-ufo-warp{ position:absolute; width:120px; height:120px; margin:-60px 0 0 -60px; border-radius:50%; opacity:0;
     background:radial-gradient(closest-side, #FFFFFF, rgba(190,255,205,.85) 18%, rgba(107,255,143,.22) 48%, rgba(107,255,143,0));
     animation:hfx-ufo-warp .42s ease-out var(--t) both; }
@@ -76795,11 +76873,14 @@ function celebrate(palette, origin){
 const HUNDO_FX_TAIL_MS = 1200;
 /* When each effect's layers are removed: every piece has faded out by
    then. The box-only play (Customize, the unlock card) runs shorter. */
-const HUNDO_FX_TOTAL = { fireworks: 7000, blackhole: 5600, underwater: 7400, worldtree: 5600, bubbles: 7000, ufo: 8600 };
+/* The UFO is 11.1s (8.6s until build 317 round 4: "Could the UFO hundo
+   effect last another 2-3 seconds somehow? It's so cool I want it to be
+   longer") - see hfxUfoArrival and the hfx-ufo-*-l keyframes. */
+const HUNDO_FX_TOTAL = { fireworks: 7000, blackhole: 5600, underwater: 7400, worldtree: 5600, bubbles: 7000, ufo: 11100 };
 const HUNDO_FX_BOX_TOTAL = { confetti: 3000, fireworks: 3600, blackhole: 3600, underwater: 4800, worldtree: 3600, bubbles: 4600, ufo: 7400 };
 /* When the last tail starts, for the gate: everything is still on
    screen and part-way faded between this and the total. */
-const HUNDO_FX_TAIL_AT = { fireworks: 5000, blackhole: 4000, underwater: 5900, worldtree: 4100, bubbles: 5300, ufo: 7000 };
+const HUNDO_FX_TAIL_AT = { fireworks: 5000, blackhole: 4000, underwater: 5900, worldtree: 4100, bubbles: 5300, ufo: 9500 };
 /* THE BOX'S COLOURS WHILE EACH ONE PLAYS (build 313): "Would be pretty
    cool if the themes matches the box, cause if the just stays yellow it
    would get kinda boring." Border, wash and the numerals' gradient;
@@ -78029,7 +78110,8 @@ function hfxBubblesOnCards(scr, c){
 function hfxUfoOnCards(scr, c){
   const S = c.scene, k = c.frame ? .55 : 1;
   if(!S) return;
-  const on = 2.85, off = 6.0;
+  /* while the beam is on (round 4's long timeline: 3.95s to 8.0s) */
+  const on = 3.95, off = 8.0;
   S.warp.forEach((el, i) => {
     const rc = S.at(el); if(!rc) return;
     if(rc.bottom > c.br.top + 4) return;
@@ -78167,16 +78249,18 @@ function hfxUfo(scr, bx, c){
   if(scr){
     if(!c.noDim) hfxMk(scr, "i", "hfx-ufo-dim");
     /* the stars it leaves behind are the tail: each twinkles out between
-       7.4s and 8.3s, after the saucer has gone, as the dark lifts */
+       9.9s and 10.8s, after the saucer has gone, as the dark lifts */
     for(let i = 0; i < (small ? 14 : 20); i++){
       const t = .45 + hfxR(0, 1.1);
-      hfxPiece(scr, "hfx-glint is-ufo", hfxGlintURL(), hfxR(.04, .96) * c.vw, hfxR(.03, .97) * c.vh, hfxR(8, 18), { "--t": t, "--d": 7.4 + hfxR(0, .9) - t });
+      hfxPiece(scr, "hfx-glint is-ufo", hfxGlintURL(), hfxR(.04, .96) * c.vw, hfxR(.03, .97) * c.vh, hfxR(8, 18), { "--t": t, "--d": 9.9 + hfxR(0, .9) - t });
     }
     const w = c.frame ? c.vw * .42 : small ? 168 : 230, h = w * .62;
     const hov = -Math.round(Math.min(120, Math.max(60, r.top * .25)));
     const exit = { x: (Math.random() < .5 ? -1 : 1) * c.vw * .9, y: -L.y - 160 };
+    /* how far its beam sweeps either way across the box (round 4) */
+    const swa = Math.round(Math.min((c.bw || 0) * .3, 110));
     const u = hfxMk(scr, "span", "hfx-saucer", { left: L.x + "px", top: L.y + "px", "--sx": (hfxR(-.3, .3) * c.vw) + "px", "--sy": (-L.y - h - 20) + "px",
-      "--hov": hov + "px", "--ox": exit.x + "px", "--oy": exit.y + "px", "--uw": w + "px", "--uh": h + "px" });
+      "--hov": hov + "px", "--ox": exit.x + "px", "--oy": exit.y + "px", "--uw": w + "px", "--uh": h + "px", "--swa": swa + "px" });
     /* THE BEAM IS FIRED, THEN IT RIDES WITH THE HULL (build 317, round 3):
        "the UFO's projection is shown before it's shot out of the UFO and
        it doesn't hit the bottom of the box". It grows out of the underside
@@ -78190,7 +78274,7 @@ function hfxUfo(scr, bx, c){
       "--bl": ((h * .2 + 4) / bh).toFixed(3), "--bk": ((74 + h * .2) / bh).toFixed(3) });
     beam.style.backgroundImage = hfxBeamURL();
     for(let k = 0; k < 3; k++){
-      hfxMk(u, "i", "hfx-ufo-ring", { "--rw": (w * .5) + "px", "--fall": (-hov) + "px", "--t": 2.88 + k * .22 }).style.backgroundImage = hfxBeamRingURL();
+      hfxMk(u, "i", "hfx-ufo-ring", { "--rw": (w * .5) + "px", "--fall": (-hov) + "px", "--t": 3.98 + k * .22 }).style.backgroundImage = hfxBeamRingURL();
     }
     const bob = hfxMk(u, "i", "hfx-ufo-bob");
     /* searchlights sweeping the dark as it comes down (round 3) */
@@ -78199,9 +78283,14 @@ function hfxUfo(scr, bx, c){
     [-1, 1].forEach(s => hfxMk(bob, "i", "hfx-ufo-search", { "--s0": (s * 34) + "deg", "--s1": (-s * 22) + "deg", "--slh": Math.round(-hov + h * .38) + "px" }));
     hfxUfoOnCards(scr, c);
     hfxMk(bob, "i", "hfx-ufo-glow");
+    /* it gathers itself before it goes (round 4): under the hull, so the
+       hull is drawn over it */
+    hfxMk(bob, "i", "hfx-ufo-charge", { "--t": 8.0 });
     hfxMk(bob, "i", "hfx-ufo-body").style.backgroundImage = hfxUfoURL();
     hfxMk(bob, "i", "hfx-ufo-lights").style.backgroundImage = hfxUfoLightsURL(false);
     hfxMk(bob, "i", "hfx-ufo-lights is-odd").style.backgroundImage = hfxUfoLightsURL(true);
+    /* round once over the screen before it comes down to the box */
+    hfxUfoArrival(c, u, bob, L, hov, w);
     /* dust where the feet touch the box */
     [-1, 1].forEach(s => hfxMk(scr, "i", "hfx-ufo-dust", { left: (L.x + s * w * .32) + "px", top: L.y + "px", "--dx": (s * 26) + "px" }));
     /* on the way out it takes the score with it (build 314): the copy
@@ -78209,21 +78298,27 @@ function hfxUfo(scr, bx, c){
        box's top edge; the one in the box (below) carries it up to there
        on the same path, so the two meet at the edge without a seam */
     hfxUfoAbduct(scr, c, r.left, r.top, h);
-    /* and it goes in a warp: a flash where it was, then the streak */
-    hfxMk(scr, "i", "hfx-ufo-warp", { left: L.x + "px", top: (L.y - 72 - h * .45) + "px", "--t": 6.04 });
+    /* and it goes in a warp: a flash where it was, then the streak - and
+       (round 4) a boom: a ring of light thrown out flat from where it
+       broke away, and the screen lit by it */
+    const ex = { x: L.x, y: L.y - 72 - h * .45 };
+    hfxMk(scr, "i", "hfx-ufo-flash", { "--fx": ex.x + "px", "--fy": ex.y + "px", "--t": 8.55 });
+    hfxMk(scr, "i", "hfx-ufo-boom", { left: ex.x + "px", top: ex.y + "px", "--t": 8.55 });
+    hfxMk(scr, "i", "hfx-ufo-warp", { left: ex.x + "px", top: ex.y + "px", "--t": 8.54 });
     const ang = Math.atan2(exit.y + 70, exit.x) * 180 / Math.PI;
-    const tr = hfxMk(scr, "span", "hfx-mt", { left: L.x + "px", top: (L.y - 72 - h * .45) + "px", "--ra": ang.toFixed(1) + "deg" });
-    const run = hfxMk(tr, "i", "hfx-mt-run is-big hfx-ufo-trail", { "--ml": "300px", "--dist": (Math.hypot(exit.x, exit.y + 70) + 240) + "px", "--t": 6.12, "--d": .42 });
+    const tr = hfxMk(scr, "span", "hfx-mt", { left: ex.x + "px", top: ex.y + "px", "--ra": ang.toFixed(1) + "deg" });
+    const run = hfxMk(tr, "i", "hfx-mt-run is-big hfx-ufo-trail", { "--ml": "300px", "--dist": (Math.hypot(exit.x, exit.y + 70) + 240) + "px", "--t": 8.62, "--d": .42 });
     run.style.backgroundImage = hfxMeteorURL("#9DFFB4");
   }
   if(bx){
     const cx = c.bw / 2;
     if(!c.boxOnly){
       if(!c.noDim) hfxMk(bx, "i", "hfx-ufo-boxdim");
-      hfxMk(bx, "i", "hfx-ufo-inbeam", { left: cx + "px", "--ih": c.bh + "px", "--iw": Math.min(c.bw * .8, c.p.w * 1.6) + "px" }).style.backgroundImage = hfxBeamURL();
+      hfxMk(bx, "i", "hfx-ufo-inbeam", { left: cx + "px", "--ih": c.bh + "px", "--iw": Math.min(c.bw * .8, c.p.w * 1.6) + "px",
+        "--swa": Math.round(Math.min(c.bw * .3, 110)) + "px" }).style.backgroundImage = hfxBeamURL();
       /* the box flares as the beam strikes it, and again as it lands */
-      hfxMk(bx, "i", "hfx-ufo-landglow is-hit", { "--t": 2.84 });
-      hfxMk(bx, "i", "hfx-ufo-landglow", { "--t": 4.1 });
+      hfxMk(bx, "i", "hfx-ufo-landglow is-hit", { "--t": 3.94 });
+      hfxMk(bx, "i", "hfx-ufo-landglow", { "--t": 6.1 });
     } else {
       /* in a small box: it comes down into the box, hovers over the
          number with its beam on it, and goes */
@@ -78238,19 +78333,21 @@ function hfxUfo(scr, bx, c){
       hfxMk(bob, "i", "hfx-ufo-lights is-odd").style.backgroundImage = hfxUfoLightsURL(true);
     }
     /* THE SCAN (build 314): a bar of its light sweeps the number one way
-       and back, lighting it as it passes, and the brackets lock on */
-    const pad = Math.round(c.p.h * .3);
+       and back, lighting it as it passes, and the brackets lock on. On the
+       results screen it all comes 2s later (round 4: the circle and the
+       sweep come first) - the same beats in the same order. */
+    const pad = Math.round(c.p.h * .3), sh = c.boxOnly ? 0 : 2;
     hfxMk(bx, "i", "hfx-ufo-scanbar", { left: (c.p.x - 6) + "px", top: (c.p.y - pad) + "px", height: (c.p.h + pad * 2) + "px",
-      "--sw": (c.p.w + 12) + "px", "--t": 4.3 });
-    hfxLitText(bx, c, { mode: "sweep", color: "#F0FFF2", glow: "#6BFF8F", dl: 4.3, dur: .62 });
+      "--sw": (c.p.w + 12) + "px", "--t": 4.3 + sh });
+    hfxLitText(bx, c, { mode: "sweep", color: "#F0FFF2", glow: "#6BFF8F", dl: 4.3 + sh, dur: .62 });
     hfxMk(bx, "i", "hfx-ufo-lock", { left: (c.p.x - 9) + "px", top: (c.p.y - pad - 2) + "px", width: (c.p.w + 18) + "px", height: (c.p.h + pad * 2 + 4) + "px",
-      "--lk": (c.mini ? 7 : 12) + "px", "--t": 4.95 });
+      "--lk": (c.mini ? 7 : 12) + "px", "--t": 4.95 + sh });
     if(!c.boxOnly){
       /* the score up the beam, from the number to the box's top edge */
       hfxUfoAbduct(bx, c, 0, 0, (c.frame ? c.vw * .42 : c.vw < 600 ? 168 : 230) * .62);
       /* where its feet stood, glowing as it goes */
       const w = c.frame ? c.vw * .42 : c.vw < 600 ? 168 : 230;
-      hfxMk(bx, "i", "hfx-ufo-marks", { left: (cx - w * .36) + "px", width: (w * .72) + "px", "--t": 5.4 });
+      hfxMk(bx, "i", "hfx-ufo-marks", { left: (cx - w * .36) + "px", width: (w * .72) + "px", "--t": 7.4 });
     }
   }
 }
@@ -78264,13 +78361,64 @@ function hfxUfoAbduct(parent, c, ox, oy, uh){
   /* up the beam to the saucer's underside, over the middle of the box */
   const up = -(c.p.y + c.p.h / 2) - 70 - uh * .12, ux = c.bw / 2 - (c.p.x + c.p.w / 2);
   const g = hfxMk(parent, "span", "hfx-ufo-ghost", { left: (ox + c.p.x) + "px", top: (oy + c.p.y) + "px", width: c.p.w + "px", height: c.p.h + "px",
-    "--up": Math.round(up) + "px", "--ux": Math.round(ux) + "px", "--t": 5.38 });
+    "--up": Math.round(up) + "px", "--ux": Math.round(ux) + "px", "--t": 7.38 });
   /* children, not textContent, as hfxLitText does: a grade drawn as a
      number and a smaller % span keeps its shape in the copy */
   c.pct.childNodes.forEach(n => g.appendChild(n.cloneNode(true)));
   g.style.fontFamily = cs.fontFamily; g.style.fontSize = cs.fontSize; g.style.fontWeight = cs.fontWeight;
   g.style.letterSpacing = cs.letterSpacing; g.style.lineHeight = cs.lineHeight;
   return g;
+}
+
+/* THE CIRCLE (build 317, round 4). It comes in from one side, goes round
+   the screen once - smaller on the far side of the circle, bigger on the
+   near side - and comes down to where it hovers over the box, banking into
+   every turn. One smooth path, sampled into keyframes on the saucer's own
+   `translate` and `scale` - which compose with its path's `transform`,
+   holding the hover point meanwhile, so the hand-over at 3.7s is exact -
+   with one speed curve over the whole of it (in fast, cruising, slowing
+   to a stop), so nothing jerks where the parts of the path meet. The bank
+   is the bob's `rotate`, read off the same path. 1.0s to 3.7s. */
+function hfxUfoArrival(c, u, bob, L, hov, w){
+  const T0 = 1, T1 = 3.7, D = T1 - T0, side = Math.random() < .5 ? 1 : -1;
+  const ry = Math.max(12, Math.min(70, L.y * .12)), rx = Math.min(c.vw * .27, 230), cy = -L.y * .52;
+  const Fy = cy - ry, ex = side > 0 ? -(L.x + w * .75) : (c.vw - L.x + w * .75);
+  const P = [];
+  /* in: a curve from off the side that meets the circle along it */
+  for(let i = 0; i <= 40; i++){ const a = i / 40, b = 1 - a;
+    P.push([b * b * ex + 2 * b * a * ex * .35, b * b * (Fy - 30) + (2 * b * a + a * a) * Fy, .45 + .1 * a]); }
+  /* round once */
+  for(let i = 1; i <= 120; i++){ const th = i / 120 * Math.PI * 2;
+    P.push([side * rx * Math.sin(th), cy - ry * Math.cos(th), .55 + .1 * (1 - Math.cos(th))]); }
+  /* and down, leaving the circle along it */
+  const q = [[0, Fy], [side * rx * .6, Fy], [side * rx * .45, hov - (hov - Fy) * .35], [0, hov]];
+  for(let i = 1; i <= 60; i++){ const a = i / 60, b = 1 - a, k = [b * b * b, 3 * b * b * a, 3 * b * a * a, a * a * a];
+    P.push([k[0] * q[0][0] + k[1] * q[1][0] + k[2] * q[2][0] + k[3] * q[3][0],
+            k[0] * q[0][1] + k[1] * q[1][1] + k[2] * q[2][1] + k[3] * q[3][1], .55 + .45 * a * a * (3 - 2 * a)]); }
+  const len = [0];
+  for(let i = 1; i < P.length; i++) len.push(len[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+  /* the speed: in at 1.5x the cruise, settling to it, and to a stop over the last 0.85s */
+  const shape = t => t < .45 ? 1 + .25 * (1 + Math.cos(Math.PI * t / .45)) : t > D - .85 ? .5 * (1 + Math.cos(Math.PI * (t - D + .85) / .85)) : 1;
+  const dt = .001, cum = [0];
+  for(let t = dt; t <= D + 1e-9; t += dt) cum.push(cum[cum.length - 1] + shape(t - dt / 2) * dt);
+  const k = len[len.length - 1] / cum[cum.length - 1];
+  const at = t => { const sArc = k * cum[Math.min(cum.length - 1, Math.max(0, Math.round(t / dt)))];
+    let j = 1; while(j < len.length - 1 && len[j] < sArc) j++;
+    const f = Math.max(0, Math.min(1, (sArc - len[j - 1]) / ((len[j] - len[j - 1]) || 1)));
+    return [0, 1, 2].map(m => P[j - 1][m] + (P[j][m] - P[j - 1][m]) * f); };
+  const N = 81, path = [], bank = [];
+  path.push({ offset: 0, translate: ex + "px " + (Fy - 30 - .45 * hov) + "px", scale: ".45" });
+  bank.push({ offset: 0, rotate: "0deg" });
+  for(let i = 0; i < N; i++){
+    const t = D * i / (N - 1), o = (T0 + t) / T1, p = at(t);
+    const a = at(Math.max(0, t - .04)), b = at(Math.min(D, t + .04));
+    const vx = (b[0] - a[0]) / (Math.min(D, t + .04) - Math.max(0, t - .04));
+    const last = i === N - 1;
+    path.push({ offset: o, translate: last ? "0px 0px" : p[0].toFixed(1) + "px " + (p[1] - p[2] * hov).toFixed(1) + "px", scale: last ? "1" : p[2].toFixed(3) });
+    bank.push({ offset: o, rotate: last ? "0deg" : Math.max(-11, Math.min(11, vx / (k || 1) * 9)).toFixed(2) + "deg" });
+  }
+  hfxAnim(c, u, path, { duration: T1 * 1000, easing: "linear" });
+  hfxAnim(c, bob, bank, { duration: T1 * 1000, easing: "linear" });
 }
 
 /* A small nova for the box-only play (Customize, the unlock card):
