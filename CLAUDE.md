@@ -15408,20 +15408,22 @@ disagree with it.
     after a long one does not bring the greeting back for a moment). The
     type steps down on the smallest screens (`max-width:21rem`,
     `max-height:36rem`) and up with Home's tablet block.
-    **What that means per device (the longest words):** stacked in the
-    gap with nothing fading - Madison's two (17 Pro Max installed, iPad Pro
-    11 installed and in Safari), the 85%-zoom Pro Max, iPad Air, 12.9/13 in
-    portrait, iPad 10.2 and mini (6th) installed, Android tablet upright, a
+    **What that means per device** (`scratchpad/r317taps/capfit.py`, the
+    whole matrix, six answers each, the longest a locked Supernova: 74
+    combinations, 0 overlaps, nothing moved). Stacked in the gap with
+    nothing fading - Madison's two (17 Pro Max installed, iPad Pro 11
+    installed and in Safari), the 85%-zoom Pro Max, iPad Air, 12.9/13
+    upright, iPad 10.2 and mini (6th) installed, Android tablet upright, a
     1440p display. The greeting fades under it - the 17 Pro Max in Safari,
-    a 14/15/16 installed (longer answers only), iPad 10.2/mini in Safari,
-    MacBook Pro 14/16 and FHD windows, most iPads on their side installed.
-    The greeting AND NOVA/tagline fade under it - 13 mini, SE 2nd/3rd, a
-    14/15/16 in Safari, Android phone, short laptop windows (1366x638,
-    MacBook Air, 1280x670), iPads on their side in Safari, an Android tablet
-    on its side. Beside the planet - every phone on its side. Clamped only
-    on an SE 1st gen in a Safari tab and on its side (the device this file
-    already says does not fit Home). The full matrix:
-    `scratchpad/r317taps/capfit.py` (74 combinations, 0 overlaps).
+    a 14/15/16 or 13 mini installed (longer answers), the iPad minis and
+    10.2 in Safari, MacBook Pro 14/16 and FHD windows, most iPads on their
+    side. The greeting AND NOVA/tagline fade under it - SE 2nd/3rd, a 13
+    mini or 14/15/16 in Safari, Android phone, short laptop windows
+    (1366x638, MacBook Air, 1280x670), iPads on their side in Safari, an
+    Android tablet on its side. Beside the planet - every phone on its side
+    (a Pro Max on its side puts the shorter answers in one run under the
+    planet). Clamped only on an SE 1st gen in a Safari tab and on its side
+    (the device this file already says does not fit Home).
   - **The copy** (`homeTapCopyRank` / `Flare` / `Planet`, tables
     `HOME_FLARE_MEANING`, `HOME_SECRET_LINE`): a held rank "Gold flare -
     Lit / A sun that makes its own light. Lit when you reached Gold rank."

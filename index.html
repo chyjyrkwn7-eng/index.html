@@ -75122,7 +75122,8 @@ function homeCaptionShow(panel, item, key){
     box.appendChild(el);
     const mode = homeCaptionPlace(panel, el);
     const need = mode === "over-title" ? 2 : mode === "over-greeting" ? 1 : 0;
-    homeCaptionCover(panel, ["", "over-greeting", "over-title"][Math.max(was, need)]);
+    /* (an answer beside the planet covers nothing, whatever came before) */
+    homeCaptionCover(panel, ["", "over-greeting", "over-title"][mode === "beside" ? 0 : Math.max(was, need)]);
     /* placing it measured it, so its first look is already computed and
        the fade-in runs from this very frame - the words arrive with the
        touch, not a frame after it */
