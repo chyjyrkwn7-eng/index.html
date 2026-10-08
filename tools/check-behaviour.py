@@ -14006,20 +14006,29 @@ def check_b317_planet(br):
           len(behind) >= 4 and len(front) >= 4, (len(behind), len(front)))
     # the picture itself: behind, the flare adds nothing over the disc; in front it does
     def crop_diff(t):
-        pg.evaluate(PLANET_STEP, t)
-        g = pg.evaluate(GEN)
-        box = {"x": g["x"] - 4, "y": g["y"] - 4, "width": 8, "height": 8}
-        a = pg.screenshot(clip=box)
-        # hidden by visibility, never display: display:none would cancel its
-        # animations and they would restart out of step with the lap
-        pg.evaluate("() => { document.querySelector('.panel.home .cosmic-core-orbit').style.visibility = 'hidden'; }")
-        b = pg.screenshot(clip=box)
-        pg.evaluate("() => { document.querySelector('.panel.home .cosmic-core-orbit').style.visibility = ''; }")
         from PIL import Image, ImageChops
-        dimg = ImageChops.difference(Image.open(io.BytesIO(a)).convert("RGB"), Image.open(io.BytesIO(b)).convert("RGB"))
-        return max(dimg.getextrema()[c][1] for c in range(3))
+        def diff(a, b):
+            dimg = ImageChops.difference(Image.open(io.BytesIO(a)).convert("RGB"), Image.open(io.BytesIO(b)).convert("RGB"))
+            return max(dimg.getextrema()[c][1] for c in range(3))
+        for _ in range(4):
+            pg.evaluate(PLANET_STEP, t)
+            g = pg.evaluate(GEN)
+            box = {"x": g["x"] - 4, "y": g["y"] - 4, "width": 8, "height": 8}
+            a = pg.screenshot(clip=box)
+            a2 = pg.screenshot(clip=box)
+            # hidden by visibility, never display: display:none would cancel its
+            # animations and they would restart out of step with the lap
+            pg.evaluate("() => { document.querySelector('.panel.home .cosmic-core-orbit').style.visibility = 'hidden'; }")
+            b = pg.screenshot(clip=box)
+            pg.evaluate("() => { document.querySelector('.panel.home .cosmic-core-orbit').style.visibility = ''; }")
+            # only a still scene says anything: something else changing in
+            # the crop between two shots is not the flare
+            if diff(a, a2) <= 6:
+                return diff(a, b)
+        return 999
     if behind and front:
-        tb = sorted(behind, key=lambda tg: -abs(tg[1]["w"]))[len(behind) // 2][0]
+        sp = pg.evaluate("() => { const r = document.querySelector('.panel.home .cosmic-hero-main circle[fill^=\"url(#cosmicSphereGrad\"]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
+        tb = min(behind, key=lambda tg: (tg[1]["x"] - sp[0]) ** 2 + (tg[1]["y"] - sp[1]) ** 2)[0]
         tf = sorted(front, key=lambda tg: -tg[1]["w"])[0][0]
         db, df = crop_diff(tb), crop_diff(tf)
         check("and the picture agrees: behind, the planet hides it completely; in front, it is seen", db <= 6 and df >= 40, (tb, db, tf, df))
@@ -14072,8 +14081,9 @@ def check_b317_planet(br):
           return { angle: a ? a.angle : null, crater: a ? a.crater : null, arcs, bubbles, moving, glints: h.querySelectorAll('.cof-scarlit').length }; }""")
         if reduce:
             g = pg.evaluate("() => [...document.querySelectorAll('.panel.home .cof-scarlit')].map(e => +getComputedStyle(e).opacity)")
-            check("Reduce motion: nothing the scar lights moves, and no glint is left lit", info["glints"] >= 6 and info["moving"] == 0 and g and max(g) < .01,
-                  (info["glints"], info["moving"], g))
+            dm = pg.evaluate("() => [...document.querySelectorAll('.panel.home .csc-ringfrag')].reduce((n, e) => n + e.getAnimations().length, 0)")
+            check("Reduce motion: nothing the scar lights moves, no glint is left lit, and the debris holds still",
+                  info["glints"] >= 6 and info["moving"] == 0 and g and max(g) < .01 and dm == 0, (info["glints"], info["moving"], g, dm))
             ctx.close()
             continue
         ang = info["angle"] if info["angle"] is not None else 132
@@ -14118,6 +14128,26 @@ def check_b317_planet(br):
         bub = info["bubbles"]
         check("the bubbles near the hole hold its firelight, and only those",
               any(b[1] for b in bub) and all(b[1] == (abs((b[0] - ang + 540) % 360 - 180) <= 36) for b in bub), bub)
+        # the debris on the rings: in both orbit layers (so it goes round with
+        # them), a few units off the lines, tumbling; one call decorates a hero
+        deb = pg.evaluate("""() => { const h = document.querySelector('.panel.home .cosmic-hero-wrap');
+          const rs = [...h.querySelectorAll('.cosmic-orbit-ring')].map(r => +r.getAttribute('r')), R1 = Math.max(...rs), R0 = Math.min(...rs);
+          const fr = [...h.querySelectorAll('.csc-ringfrag')].map(e => { const cx = parseFloat(e.style.left) * 3.6 - 180, cy = parseFloat(e.style.top) * 3.42 - 12 - 150;
+            const inner = !!e.closest('.cosmic-hero-orbitlayer-inner'), d = Math.hypot(cx, cy) - (inner ? R0 : R1);
+            return { layer: !!e.closest('.cosmic-hero-orbitlayer'), inner, off: +d.toFixed(2),
+              tumble: e.getAnimations().filter(a => a.effect.getComputedTiming().iterations === Infinity).length }; });
+          return { fr, api: typeof decorateSupernovaHero === 'function' }; }""")
+        fr = deb["fr"]
+        check("debris on both rings, riding the orbit layers with the flares, scattered a few units off the lines, tumbling",
+              len(fr) >= 12 and all(f["layer"] for f in fr) and any(f["inner"] for f in fr) and any(not f["inner"] for f in fr)
+              and all(abs(f["off"]) <= 6 for f in fr) and sum(1 for f in fr if abs(f["off"]) >= 1.5) >= len(fr) // 2
+              and all(f["tumble"] == 1 for f in fr), [(f["inner"], f["off"], f["tumble"]) for f in fr][:6])
+        api = pg.evaluate("""() => { if(typeof decorateSupernovaHero !== 'function') return null; const was = store.supernovaAchieved; store.supernovaAchieved = false;
+          const h = buildCosmicHero(true); store.supernovaAchieved = was; const before = [h.querySelectorAll('.cosmic-scar').length, h.querySelectorAll('.csc-ringfrag').length];
+          decorateSupernovaHero(h); decorateSupernovaHero(h);
+          return { before, after: [h.querySelectorAll('.cosmic-scar').length, h.querySelectorAll('.csc-ringfrag').length, h.querySelectorAll('.cof-scarlit').length, h.querySelectorAll('.csc-ringheat').length] }; }""")
+        check("one call, decorateSupernovaHero(hero), makes any plain hero the Supernova planet - scar, debris, passing light - and twice is once",
+              bool(api) and api["before"] == [0, 0] and api["after"][0] == 1 and api["after"][1] >= 12 and api["after"][2] >= 1 and api["after"][3] == 1, api)
         # none of it without Supernova, and none of it in the rank cutscene
         none = pg.evaluate("""() => { const was = store.supernovaAchieved; store.supernovaAchieved = false; const plain = buildCosmicHero(true);
           store.supernovaAchieved = was; const n0 = plain.querySelectorAll('.csc-pass').length;

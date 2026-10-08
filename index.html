@@ -11242,7 +11242,21 @@
     61%{ opacity:.64; } 74%{ opacity:.84; } 86%{ opacity:.58; } 100%{ opacity:.6; }
   }
   [data-reduce-motion="true"] .csc-pass, [data-reduce-motion="true"] .csc-pass *{ animation:none !important; }
-  .tier-cutscene .csc-pass{ display:none !important; }
+  .tier-cutscene .cosmic-hero-wrap:not(.csc-live) .csc-pass{ display:none !important; }
+  /* THE DEBRIS ON THE RINGS (addRingDebris): black shards with a cooling
+     ember edge, riding the orbit layers; each tumbles (crf-tumble, a whole
+     turn on the individual rotate property). */
+  .csc-ringfrag{ position:absolute; display:block; width:var(--s, 1.2%); aspect-ratio:1; translate:-50% -50%; rotate:var(--r0, 0deg); pointer-events:none; }
+  .csc-ringfrag::after{ content:""; position:absolute; inset:0;
+    background:linear-gradient(165deg, #040203 0, #0E0706 48%, #2A0F08 68%, #9A3812 86%, #F08A48 100%);
+    clip-path:polygon(38% 0, 62% 14%, 100% 52%, 72% 64%, 58% 100%, 30% 70%, 0 58%, 22% 30%); }
+  .csc-ringfrag:nth-child(3n+1)::after{ clip-path:polygon(12% 8%, 54% 0, 100% 34%, 86% 58%, 40% 100%, 30% 62%, 0 46%); }
+  .csc-ringfrag:nth-child(3n+2)::after{ clip-path:polygon(50% 0, 70% 30%, 100% 70%, 56% 82%, 22% 100%, 18% 54%, 0 24%); }
+  @media (prefers-reduced-motion:no-preference){
+    .csc-ringfrag{ animation:crf-tumble var(--t, 10s) linear var(--d, 0s) infinite var(--dir, normal); }
+  }
+  @keyframes crf-tumble{ from{ rotate:0deg; } to{ rotate:360deg; } }
+  [data-reduce-motion="true"] .csc-ringfrag{ animation:none !important; }
   /* ---- DEPTH ON HOME'S PLANET SYSTEM (build 304) ----
      One light, from the upper left, everywhere. The planet: a terminator
      - the night side - falling away to the lower right, a thin bright
@@ -64796,7 +64810,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
      paints over the planet (the tap box, the bubbles) still does. Attached
      once the hero is whole (the planet round), so what it lights - the
      flares, the rings, the bubbles near it - is all there to be found. */
-  if(typeof store !== "undefined" && store && store.supernovaAchieved) attachCosmicScar(wrap);
+  if(typeof store !== "undefined" && store && store.supernovaAchieved) decorateSupernovaHero(wrap);
   const uid = "_h" + (buildCosmicHero._n = (buildCosmicHero._n || 0) + 1);
   /* Persisted so a tier already shown as freshly-lit once doesn't
      replay that animation on every subsequent Home visit \u2014 only a
@@ -64871,24 +64885,82 @@ function buildCosmicScar(){
   disc.appendChild(glow);
   return sc;
 }
-/* Into a built hero, once, right after the plasma - see buildCosmicHero.
-   The planet's DOM is otherwise untouched; the hero only gains
-   .is-scarred and the art's mask (--scar-mask), which keeps the plasma's
-   light off the rupture and lets its smoke drift only partly over the
-   crack. */
-function attachCosmicScar(hero){
+/* ONE CALL MAKES A PLANET SUPERNOVA'S (build 317, planet round):
+   decorateSupernovaHero(hero) puts everything the Supernova state adds
+   onto a built hero (buildCosmicHero's wrap), once - safe to call again:
+   - the scar (right after the plasma - the planet's DOM is otherwise
+     untouched; the hero gains .is-scarred and the art's mask,
+     --scar-mask, which keeps the plasma's light off the rupture and the
+     crack);
+   - the debris on the rings (addRingDebris);
+   - what passes the scar catching its light (scarPassEffects).
+   Home calls it from buildCosmicHero whenever store.supernovaAchieved; a
+   scene can call it on any hero it builds (the rank cutscene does, on the
+   planet you are getting). Inside .tier-cutscene the passing light
+   (.csc-pass) is hidden unless the hero carries .csc-live - add that to
+   a scene's planet that should look exactly like Home. Returns the scar.
+   attachCosmicScar is the same call under its first name. */
+function decorateSupernovaHero(hero){
   if(!hero) return null;
-  const had = hero.querySelector(":scope > .cosmic-scar");
-  if(had) return had;
-  const sc = buildCosmicScar();
-  const plasma = hero.querySelector(":scope > .cosmic-plasma");
-  hero.insertBefore(sc, plasma ? plasma.nextSibling :
-    hero.querySelector(":scope > .cosmic-core-orbit, :scope > .cosmic-tapfx, :scope > .cosmic-icon-badge, :scope > .rank-orbit"));
+  let sc = hero.querySelector(":scope > .cosmic-scar");
+  if(!sc){
+    sc = buildCosmicScar();
+    const plasma = hero.querySelector(":scope > .cosmic-plasma");
+    hero.insertBefore(sc, plasma ? plasma.nextSibling :
+      hero.querySelector(":scope > .cosmic-tapfx, :scope > .cosmic-icon-badge, :scope > .rank-orbit"));
+  }
   const art = cosmicScarArt();
   if(art && art.mask) hero.style.setProperty("--scar-mask", "url(" + art.mask + ")");
   hero.classList.add("is-scarred");
+  try{ addRingDebris(hero); }catch(e){}
   try{ scarPassEffects(hero, art); }catch(e){}
   return sc;
+}
+function attachCosmicScar(hero){ return decorateSupernovaHero(hero); }
+/* THE DEBRIS ON THE RINGS (build 317, planet round). "Maybe some of the
+   fragments could be going around the rings like in an orbit like the
+   other stuff but scattered slightly." Black shards of the crust, in loose
+   streams on both rings, a few units off the ring lines either way. They
+   are children of the two orbit layers - the same elements that carry the
+   secret flares - so they go round with exactly the same motion (the
+   rings' own turn, the shared clock, a tap's surge) and pass under the
+   bubbles' glass the way the flares do. Each tumbles on a clock of its
+   own; transform only, nothing drawn per frame; still under Reduce
+   motion. One table: [ring (0 inner, 1 outer), degrees clockwise from the
+   top, off the line (units, + outward), size (% of the hero), tumble
+   seconds (- the other way), place in the tumble (s)]. */
+const RING_DEBRIS = [
+  [1, 14, 3, 1.5, 11.3, -2.1], [1, 21, -2.5, 1.1, -8.7, -5.4], [1, 27, 5, 1.3, 13.9, -9.2],
+  [1, 93, -4, 1.6, -10.1, -3.3], [1, 101, 2, 1.0, 7.9, -6.6],
+  [1, 192, 4, 1.4, 12.7, -1.4], [1, 199, -3, 1.0, -9.6, -7.7], [1, 207, 1, 1.7, 15.1, -4.9], [1, 214, -5, 1.1, -8.2, -2.8],
+  [1, 296, 2.5, 1.3, 10.6, -8.1], [1, 305, -4, 1.0, -12.2, -5.9],
+  [0, 54, -3, 1.2, -9.3, -4.4], [0, 61, 3.5, 1.5, 12.1, -1.9], [0, 67, -1, 1.0, 8.4, -6.2],
+  [0, 165, 4, 1.3, -11.6, -3.7], [0, 174, -2.5, 1.1, 9.9, -7.3],
+  [0, 249, -4, 1.4, 13.3, -2.5], [0, 257, 2, 1.0, -7.6, -5.1], [0, 265, 5, 1.2, 10.8, -8.6],
+  [0, 338, -2, 1.3, -12.9, -4.0]
+];
+function addRingDebris(hero){
+  if(!hero || hero.querySelector(".csc-ringfrag")) return;
+  const outer = hero.querySelector(":scope > .cosmic-hero-orbitlayer:not(.cosmic-hero-orbitlayer-inner)");
+  const inner = hero.querySelector(":scope > .cosmic-hero-orbitlayer-inner");
+  if(!outer || !inner) return;
+  const rs = [...hero.querySelectorAll(".cosmic-orbit-ring")].map(r => Number(r.getAttribute("r"))).filter(r => r > 60);
+  const R1 = rs.length ? Math.max(...rs) : HOME_OUTER_R, R0 = rs.length ? Math.min(...rs) : 108;
+  RING_DEBRIS.forEach(([ring, deg, dr, size, t, d], i) => {
+    const R = (ring ? R1 : R0) + dr, a = deg * Math.PI / 180;
+    const cx = 180 + R * Math.sin(a), cy = 150 - R * Math.cos(a);
+    const el = document.createElement("i");
+    el.className = "csc-ringfrag";
+    el.setAttribute("aria-hidden", "true");
+    el.style.left = (cx / 360 * 100).toFixed(3) + "%";
+    el.style.top = ((cy + 12) / 342 * 100).toFixed(3) + "%";
+    el.style.setProperty("--s", (size * 1.35).toFixed(2) + "%");   /* x1.35: at the table's sizes they read as specks on a phone */
+    el.style.setProperty("--t", Math.abs(t) + "s");
+    el.style.setProperty("--d", d + "s");
+    el.style.setProperty("--dir", t < 0 ? "reverse" : "normal");
+    el.style.setProperty("--r0", (i * 47 % 360) + "deg");
+    (ring ? outer : inner).appendChild(el);
+  });
 }
 /* WHAT PASSES THE SCAR CATCHES ITS LIGHT (build 317, planet round). "a
    cool effect would be once the explosion happens maybe the rings and

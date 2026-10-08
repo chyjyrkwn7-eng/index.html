@@ -129,6 +129,10 @@ KNOWN = {
     "rk-nova-shock": "the Supernova emblem's shockwave, invisible at both ends",
     "xp-glide": "a band of light from off one end of the lit bar to off the other, resting between",
     "csc-drift": "a Supernova scar fragment drifting off the burn - fades to nothing at both ends",
+    "crf-tumble": "a shard of debris on Home's rings tumbling - a full turn",
+    # Came in with b317-cut2 (the soft Supernova edges); checked by hand.
+    "rk-nova-frag-soft": "a Supernova emblem fragment flung out, invisible at both ends (opacity 0)",
+    "rk-nova-shock-soft": "the Supernova emblem's soft shockwave, invisible at both ends (opacity 0)",
 }
 s = open(SRC, encoding="utf-8").read()
 kf = {}
