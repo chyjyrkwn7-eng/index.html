@@ -15826,6 +15826,10 @@ disagree with it.
       first (uncached) draw of the scar and the dust made before
       `supernova-visible`. The sweep check now reads the debris itself
       (still in flight, most of it 92-158 units out).
+    - `check_b317_planet`'s tap on the disc expected the literal "Your
+      system" and went red at the merge with the caption round, which
+      names the planet "Your flares" - the label rule again. It reads the
+      name off the app now (`homeTapCopyPlanet(0).name`).
   - **The lag and the "placed off" flares.** The second round took the
     bubbles' `backdrop-filter` blur off inside a scene (re-sampled every
     frame while they move); the third round put it back, because the

@@ -14205,8 +14205,11 @@ def check_b317_planet(br):
     taps = []
     if front: taps.append(("front", "Worldheart", tap_at(front[len(front) // 2][0])))
     if off_behind: taps.append(("behind, round the limb", "Worldheart", tap_at(off_behind[len(off_behind) // 2][0])))
-    if behind: taps.append(("behind, on the disc: the planet", "Your system" if pg.evaluate("() => typeof homeCaptionShow === 'function'") else ".....",
-                            tap_at(behind[len(behind) // 2][0])))
+    # the planet's own caption name, read off the app (b317-rings2 renamed
+    # it "Your flares"; a literal here went stale the day it merged)
+    planet_says = pg.evaluate("""() => { try{ if(typeof homeTapCopyPlanet === 'function') return homeTapCopyPlanet(0).name; }catch(e){}
+      return typeof homeCaptionShow === 'function' ? 'Your system' : '.....'; }""")
+    if behind: taps.append(("behind, on the disc: the planet", planet_says, tap_at(behind[len(behind) // 2][0])))
     check("taps: in front it answers; behind, round the limb, it answers; on the disc the planet answers",
           len(taps) == 3 and all(want in got for _, want, got in taps), [(w, got[:24]) for w, _, got in taps])
     ctx.close()
