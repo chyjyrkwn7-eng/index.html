@@ -13031,7 +13031,7 @@ step below the Tree, Bubbles and the UFO.
   and a trail is the spark's own path over the last fraction of a second;
   trails are batched into one stroke per colour, alpha and width, heads are
   one pre-drawn glow each (`hfxFwHeads`), all added (`lighter`) so crossings
-  burn white. Backing capped at 2x. The loop ends at the effect's total, or
+  burn white. Backing capped at 1.5x (round 4, below). The loop ends at the effect's total, or
   is stopped (`hfxOnEnd`), drawing on through a stop's fade. The dim, the
   light each burst throws (`.hfx-fw-glow`) and the box's pieces are plain
   layers.
@@ -13107,7 +13107,9 @@ was sized from the hull's bottom. Now: the saucer's beam is
 `-hov + .2*hull + 4` long, so its foot is 4px inside the box's top edge, and
 it is rescaled with the hull's own easing as it lands (`--bl`) and lifts off
 (`--bk`) so the foot never leaves that edge; the box's beam starts only as
-the saucer's arrives (40.4% of 7s) and runs the box's full height. Measured
+the saucer's arrives (40.4% of 7s; on round 4's long timeline every
+moment from here to the lift-off is later - see below) and runs the box's
+full height. Measured
 (440x956): foot at box top +5px hovering, landed and lifting; box beam 626 to
 815 against a box 625 to 813. The box flares as the beam strikes (2.84s) as
 well as on landing. The grab is unchanged.
@@ -13138,6 +13140,63 @@ well as on landing. The grab is unchanged.
   overlaid copy's opacity (`.hfx-tintnum`), which round 3 deleted, so it
   went red for the right build. It reads the REAL 100% now: transparent
   text under `linear-gradient(105deg, <g1> ...)`.
+
+**The UFO is 2.5s longer (build 317, round 4), by ADDING to it, not by
+slowing it.** *"Could the UFO hundo effect last another 2-3 seconds somehow?
+It's so cool I want it to be longer."* 8.6s became 11.1s
+(`HUNDO_FX_TOTAL.ufo`; its tail, `HUNDO_FX_TAIL_AT.ufo`, 7s to 9.5s):
+- **It circles the screen once before it comes down (+1.1s).** It comes in
+  from one side along the top, goes round a flat circle over the upper
+  half (smaller on the far side, bigger on the near side, banking into the
+  turns), and comes down to its hover point. A loop is no shape for
+  keyframes, so `hfxUfoArrival` samples one smooth path (in, round, down)
+  into WAAPI keyframes on the saucer's `translate` and `scale` - individual
+  properties, which compose OUTSIDE its CSS `transform`; the path's
+  keyframes hold the hover point meanwhile, so the script's offset is
+  `A - scale*hov` and the hand-over at 3.7s is exact whatever frame each
+  started on. One speed curve over the whole path (in at 1.5x the cruise,
+  cruising, to a stop over the last 0.85s), so nothing jerks where the
+  parts meet. The bank is the bob's `rotate`, read off the same path's
+  velocity.
+- **Its beam sweeps across the box before it lands (+0.9s, 4.2-5.1s):** out
+  to one side, across to the other and back, the saucer swaying with it.
+  The box's own beam moves as ONE with the saucer's - the same moments,
+  easing and distance (`hfxUfoSwa(c)`, a third of the way to each edge,
+  capped at 150px so a tablet's wide box does not make it race).
+- **It charges, then goes with a boom (+0.5s, 8.0-8.55s):** lifted, it dips,
+  shudders and a light swells under the hull (`.hfx-ufo-charge`), then it
+  breaks away: a flash lighting the screen round it (`.hfx-ufo-flash`), a
+  ring of light thrown out flat (`.hfx-ufo-boom`), then the old warp and
+  streak.
+- **The grab is untouched**: the landing, the scan, the lock, the score
+  going up the beam and the lift-off are the old timeline moved 2s later
+  (6.1s down, 7.38s the grab), the same durations and curves.
+- The small box's saucer (`.is-mini`: Customize, the unlock card) keeps
+  the 7s timeline - the long one is `-l` keyframes on
+  `.hfx-saucer:not(.is-mini)`, and the box's shared beats take a 2s shift
+  only on the results screen (`sh` in `hfxUfo`). The dims, the searchlights,
+  the box's beam and the dust are results-screen only, so they changed in
+  place.
+- **The flow waits for all of it by itself**: the first scene after a 100%
+  waits for `HUNDO_FX_TAIL_AT[id]`, so the badge case came at 9.5s into a
+  real UFO run (it would have covered the departure at the old 7s).
+- `check_b317_hundobox` reads the page's own total to pick the timeline for
+  the round 3 beam checks, and adds: 10.6-11.6s long; one full circle
+  (>= 300 degrees round, both sides, above the box) between 1.4s and 2.95s;
+  the sweep reaching 15% of the box's width each side with the two beams
+  within 4px of each other and the foot on the box's top edge; the charge,
+  flash and boom at 8.4s/8.62s and the saucer gone by 8.95s; the ghost's
+  0.6s on its own curve; and a real flow run with a badge whose case comes
+  >= 9s after the effect. `record-hundo.py` records it for 11.7s.
+- **A gate run under heavy load can start the whole effect seconds late**,
+  and the layer still comes off at `HUNDO_FX_TOTAL` from the CALL
+  (`setTimeout(end, total)` in `playHundoFx`), so its tail is cut. Seen
+  once in round 4 (load 21 on 4 cores): `check_b313_fx` read the UFO's
+  saucer still at its entry point 6.7s in and fully shown at 11.07s - every
+  part of it 3s+ behind, CSS and script alike - while the same build passed
+  that section twice at lower load. The margin is the same as before round
+  4 (the saucer gone 2.2s before the layer comes off). If it ever matters
+  on a device, start the end timer from the first frame, not the call.
 
 **"Looks laggy" was the RECORDING, not the effect.** Measured in the
 recording's own configuration: the page drew 139 frames in 7s, while the CDP
@@ -13220,6 +13279,39 @@ effect, so taking the only backdrop-filtered elements away does not
 clearly help, and the results cards have no live backdrop to swap for a
 static look. Nothing kept.
 
+**What Fireworks does cost is its canvas, and it is backed at 1.5x now
+(build 317, round 4).** Measured at 3x (the 17 Pro Max) and 4x CPU, with
+`Commit`'s CPU time (`tdur`) per frame, not wall-clock frames: this sandbox
+has 4 cores at load 8-15 from other sessions, and the same build's frame
+count in a 7s window moved 65-243 between passes, while CPU per frame held
+within ~15%. Hiding the sky canvas alone cut the window's commit from
+2.8s to 0.39s, so the canvas IS the cost: every frame it is redrawn, and
+the whole bitmap is copied for the compositor - 9-12ms of main-thread CPU
+a frame at 880x1388, of a 16-22ms frame. At 1.5x (660x1041, 44% fewer
+pixels) the commit is 6.7-8.9ms and the frame 14.9-18.2ms: lower in every
+one of 8 interleaved pairs across two sets (medians -20% to -32% commit,
+-10% to -17% frame). The copy has a fixed part too, which is why 44%
+fewer pixels is not 44% less time. Wall-clock frames stayed inside the noise (5 passes:
+205, 179, 163, 232, 225 before; 187, 182, 195, 240, 294 after). It looks
+the same, checked rather than assumed: the SAME show (Math.random seeded
+after the recorder's clock is installed, so both builds draw identical
+sparks) at the same moments, 1.3/2.2/3.5/5.0s, differs from 2x by
+0.05-0.18 of a level on average at 3x, 0.001-0.013% of pixels by more than
+30, and the region of largest difference, zoomed, is the same picture; at
+2x (an iPad), 0.11-0.28 and 0.1%. Tried and NOT kept: skipping the
+redraw while the sky is empty (only ~6% of the window, nothing
+measurable). Already right, so left: the sparks' heads are pre-drawn
+sprites (`hfxFwHeads`), there is no `shadowBlur` and no per-spark
+gradient, trails are one stroke per colour/alpha/width, and the canvas
+stops at the box's top edge. Particle counts were not cut: that changes
+the look. `check_b317_hundobox` asserts the 1.5x backing at 3x, and that
+the sky is still drawing; it fails on d5808b3 (2.00x).
+**Bubbles, the same check:** nothing obvious. Its main thread is ~11-12ms
+a frame (no canvas; commit ~1ms); its 4 glass heroes are ~3ms of the
+software compositor's ~9-10ms a frame (hidden: ~6.6ms) - the refraction
+IS the effect, and a software compositor's backdrop blur is not an
+iPhone's. Left alone.
+
 **Bubbles** - no giant bubble from the number any more (`hfxCarry` is gone).
 `hfxBubblesGlass`: a few far small bubbles (sprites), **Liquid Glass heroes -
 4 on a phone, 6 on a tablet (6 and 9 until build 317, cut for frame time) - with a real `backdrop-filter` (`.hfx-glass`,
@@ -13276,9 +13368,15 @@ on every effect at 320/440/834, the default and every tile; it fails on
   fade over at least `HUNDO_FX_TAIL_MS` (1.2s); layers come off only at
   `HUNDO_FX_TOTAL[id]`; a scene going up or the screen changing FADES them
   (`hfxFadeOut`), never a cut. `HUNDO_FX_TAIL_AT` is where each tail starts,
-  for the gate. The UFO's tail is the stars it leaves behind, twinkling out
-  between 7.4s and 8.3s as the dark lifts (it used to have an empty last
-  second, which the gate caught once the timings moved).
+  for the gate - and the results flow's first scene waits for it, so it
+  has to be TRUE: measure it paused and seeked, never trust it. Bubbles'
+  said 5.3s while its last bubble was gone by 5.2s (~25 pieces fading at
+  4.6s, 6 at 5.0s, none from 5.2s, the same on 336c444), so its gate
+  passed only on runs slow enough to start the effect late (3 of the 6 in
+  round 4 failed); it is 4.6s now. The UFO's tail is the stars it leaves behind, twinkling out
+  between 9.9s and 10.8s as the dark lifts (7.4-8.3s before round 4; it
+  used to have an empty last second, which the gate caught once the
+  timings moved).
 - **Every picture is a sprite: drawn once as svg, cached, then RASTERISED
   ONCE to a PNG blob** (`hfxSprite` / `hfxRasterise`, run by `hfxWarm(id)` as
   the results screen opens and as Customize settles).

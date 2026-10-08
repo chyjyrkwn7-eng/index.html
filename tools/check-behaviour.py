@@ -11775,7 +11775,11 @@ def check_b313_fx(br):
           }
           if(fx === 'ufo'){
             out.beforeBeam = getComputedStyle(g).borderTopColor;
-            await until(4700);
+            /* landed: 4.1s-5.4s until build 317 round 4, 6.1s-7.4s since
+               (it circles the screen first, and sweeps the box with its
+               beam) - read from the page's own total so the next change
+               of length moves this with it */
+            await until(typeof HUNDO_FX_TOTAL === 'object' && HUNDO_FX_TOTAL.ufo > 9000 ? 6700 : 4700);
             out.border = getComputedStyle(g).borderTopColor; out.fill = fill();
             const b = document.querySelector('.hfx-saucer .hfx-ufo-bob'), br = b && b.getBoundingClientRect(), gr = g.getBoundingClientRect();
             out.landed = br ? { feet: Math.round(br.bottom - gr.top), cx: Math.round(br.left + br.width / 2 - (gr.left + gr.width / 2)) } : null;
@@ -14296,8 +14300,15 @@ def check_b317_hundobox(br):
 
     # --- the UFO's beams (round 3): "the UFO's projection is shown before
     # it's shot out of the UFO and it doesn't hit the bottom of the box".
-    # Every UFO layer is paused and seeked to fixed moments, so the reads do
-    # not depend on how loaded the machine is.
+    # And round 4: "Could the UFO hundo effect last another 2-3 seconds
+    # somehow? It's so cool I want it to be longer" - 2.5s ADDED to it: it
+    # circles the screen once before it comes down, sweeps the box with its
+    # beam before it lands, and charges and goes with a boom; the grab is
+    # untouched, 2s later. Every UFO layer (CSS and script) is paused and
+    # seeked to fixed moments, so the reads do not depend on how loaded the
+    # machine is. The beam checks read the page's own timeline (the long
+    # one when its total says so), so they still mean the same thing on the
+    # build before round 4; the round 4 checks fail there.
     for label, w, h in (PHONE, TABLET):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         pg.evaluate("() => { " + RUN100 + " }")
@@ -14309,22 +14320,33 @@ def check_b317_hundobox(br):
           for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(50);
           if(!window.__fxAt) return null;
           await wait(400);
+          const long = HUNDO_FX_TOTAL.ufo > 9000, A = long ? 1.1 : 0, B = long ? 2 : 0;
           const g = document.querySelector('.rs-screen .rs-grade');
           const anims = () => document.getAnimations().filter(a => { const e = a.effect && a.effect.target; return e && e.closest && e.closest('.hfx-layer.hfx-ufo, .hfx-box.hfx-ufo'); });
           const seek = t => anims().forEach(a => { try{ a.pause(); a.currentTime = t * 1000; }catch(e){} });
           const op = el => { let o = 1; for(let e = el; e && e !== document.body; e = e.parentElement) o *= +getComputedStyle(e).opacity; return o; };
-          const R = el => { const b = el.getBoundingClientRect(); return { t: b.top, b: b.bottom, h: b.height, o: op(el) }; };
-          const sy = el => { const m = getComputedStyle(el).transform.match(/matrix\(([^)]+)\)/); if(!m) return 1; const v = m[1].split(',').map(Number); return Math.hypot(v[2], v[3]); };
+          const R = el => { if(!el) return null; const b = el.getBoundingClientRect(); return { t: b.top, b: b.bottom, h: b.height, cx: b.left + b.width / 2, cy: b.top + b.height / 2, o: op(el) }; };
+          const sy = el => { const m = getComputedStyle(el).transform.match(/matrix\\(([^)]+)\\)/); if(!m) return 1; const v = m[1].split(',').map(Number); return Math.hypot(v[2], v[3]); };
           const beam = document.querySelector('.hfx-saucer:not(.is-mini) > .hfx-ufo-beam'), inb = document.querySelector('.hfx-ufo-inbeam');
+          const body = document.querySelector('.hfx-saucer:not(.is-mini) .hfx-ufo-body');
           const search = [...document.querySelectorAll('.hfx-ufo-search')];
-          const out = { has: !!(beam && inb), nsearch: search.length, samples: [], ghosts: document.querySelectorAll('.hfx-ufo-ghost').length };
+          const gh = document.querySelector('.hfx-ufo-ghost'), ghs = gh && getComputedStyle(gh);
+          const out = { long, A, B, total: HUNDO_FX_TOTAL.ufo, tail: HUNDO_FX_TAIL_AT.ufo, has: !!(beam && inb), nsearch: search.length, samples: [],
+            ghosts: document.querySelectorAll('.hfx-ufo-ghost').length,
+            ghost: ghs ? { dur: ghs.animationDuration, ease: ghs.animationTimingFunction, name: ghs.animationName } : null };
           if(!out.has) return out;
-          const ts = [1.03, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.45, 2.55];
-          for(let t = 2.6; t <= 2.92; t += .02) ts.push(+t.toFixed(2));
-          ts.push(3.3, 4.7, 5.8, 6.25);
-          for(const t of ts){ seek(t); await new Promise(r => requestAnimationFrame(() => r()));
+          const pre = [1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.45, 2.55]; if(long) pre.push(2.8, 3.05, 3.3, 3.5, 3.62);
+          const ts = [1.03].concat(pre);
+          for(let t = 2.6; t <= 2.92; t += .02) ts.push(+(t + A).toFixed(2));
+          ts.push(+(3.3 + (long ? 1.9 : 0)).toFixed(2), +(4.7 + B).toFixed(2), +(5.8 + B).toFixed(2), +(6.25 + B).toFixed(2));
+          /* round 4's moments: the circle, the sweep, the charge, the boom */
+          for(let t = 1.4; t <= 2.96; t += .05) ts.push(+t.toFixed(2));
+          ts.push(4.2, 4.33, 4.47, 4.56, 4.65, 4.74, 4.83, 4.96, 5.1, 8.4, 8.62, 8.95);
+          const uniq = [...new Set(ts)].sort((a, b) => a - b);
+          for(const t of uniq){ seek(t); await new Promise(r => requestAnimationFrame(() => r()));
             const gb = g.getBoundingClientRect();
-            out.samples.push({ t, box: { t: gb.top, b: gb.bottom }, beam: R(beam), inb: R(inb),
+            out.samples.push({ t, box: { t: gb.top, b: gb.bottom, cx: gb.left + gb.width / 2, w: gb.width }, beam: R(beam), inb: R(inb), body: R(body),
+              charge: R(document.querySelector('.hfx-ufo-charge')), flash: R(document.querySelector('.hfx-ufo-flash')), boom: R(document.querySelector('.hfx-ufo-boom')),
               search: search.map(e => Object.assign(R(e), { sy: sy(e) })) }); }
           return out; }""")
         ctx.close()
@@ -14333,29 +14355,105 @@ def check_b317_hundobox(br):
             check("%s: a real 100%% played the UFO, with its beams" % tag, False, u)
             continue
         S = {x["t"]: x for x in u["samples"]}
-        shown = lambda q: q["o"] > .02 and q["h"] > 1.5
-        pre = [S[t] for t in (1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.45, 2.55)]
-        check("%s: no beam before it is fired - neither the saucer's nor the box's shows from 1.3s to 2.55s" % tag,
+        A, B = u["A"], u["B"]
+        at = lambda t: S[round(t, 2)]
+        shown = lambda q: bool(q) and q["o"] > .02 and q["h"] > 1.5
+        pre = [S[t] for t in (1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.45, 2.55) + ((2.8, 3.05, 3.3, 3.5, 3.62) if u["long"] else ())]
+        last = pre[-1]["t"]
+        check("%s: no beam before it is fired - neither the saucer's nor the box's shows from 1.3s to %.2fs" % (tag, last),
               all(not shown(x["beam"]) and not shown(x["inb"]) for x in pre), [(x["t"], x["beam"], x["inb"]) for x in pre if shown(x["beam"]) or shown(x["inb"])])
         s0 = S[1.03]["search"]
         check("%s: the searchlights are shot OUT of the hull - switching on short (scaleY under .4), not already at full length" % tag,
               len(s0) == 2 and all(q["o"] > 0 and q["sy"] < .4 for q in s0), s0)
         check("%s: and they never reach the box - the beam is the only light that touches it - and are gone before it fires" % tag,
-              all(q["o"] < .02 or q["b"] <= x["box"]["t"] + 1 for x in pre for q in x["search"]) and all(q["o"] < .02 for q in S[2.55]["search"]),
+              all(q["o"] < .02 or q["b"] <= x["box"]["t"] + 1 for x in pre for q in x["search"]) and all(q["o"] < .02 for q in S[last]["search"]),
               [(x["t"], round(q["b"]), round(x["box"]["t"]), round(q["o"], 2)) for x in pre for q in x["search"] if q["o"] >= .02 and q["b"] > x["box"]["t"] + 1])
-        fire = [x for x in u["samples"] if 2.6 <= x["t"] <= 2.92]
+        fire = [x for x in u["samples"] if 2.6 + A - .001 <= x["t"] <= 2.92 + A + .001]
         check("%s: the box's beam shows only once the saucer's has reached the box's top edge" % tag,
               all(not shown(x["inb"]) or x["beam"]["b"] >= x["box"]["t"] - 1 for x in fire) and any(shown(x["inb"]) for x in fire),
               [(x["t"], round(x["beam"]["b"]), round(x["box"]["t"]), round(x["inb"]["o"], 2), round(x["inb"]["h"])) for x in fire])
-        feet = {t: round(S[t]["beam"]["b"] - S[t]["box"]["t"], 1) for t in (3.3, 4.7, 5.8)}
+        hv, ld, lf, gn = at(3.3 + (1.9 if u["long"] else 0)), at(4.7 + B), at(5.8 + B), at(6.25 + B)
+        feet = {x["t"]: round(x["beam"]["b"] - x["box"]["t"], 1) for x in (hv, ld, lf)}
         check("%s: the saucer's beam meets the box's top edge (0-10px into it) hovering, landed and lifting off" % tag,
-              all(0 <= v <= 10 for v in feet.values()) and all(shown(S[t]["beam"]) for t in (3.3, 4.7, 5.8)), feet)
-        x = S[3.3]
+              all(0 <= v <= 10 for v in feet.values()) and all(shown(x["beam"]) for x in (hv, ld, lf)), feet)
         check("%s: the box's beam runs down to the box's bottom edge (within 4px)" % tag,
-              shown(x["inb"]) and abs(x["inb"]["b"] - x["box"]["b"]) <= 4 and x["inb"]["t"] <= x["box"]["t"] + 2,
-              {"inbeam": [round(x["inb"]["t"]), round(x["inb"]["b"])], "box": [round(x["box"]["t"]), round(x["box"]["b"])]})
-        check("%s: both beams are gone once it has lifted off (6.25s), and the grab is still there (its two halves)" % tag,
-              not shown(S[6.25]["beam"]) and not shown(S[6.25]["inb"]) and u.get("ghosts") == 2, [S[6.25]["beam"], S[6.25]["inb"], u.get("ghosts")])
+              shown(hv["inb"]) and abs(hv["inb"]["b"] - hv["box"]["b"]) <= 4 and hv["inb"]["t"] <= hv["box"]["t"] + 2,
+              {"t": hv["t"], "inbeam": [round(hv["inb"]["t"]), round(hv["inb"]["b"])], "box": [round(hv["box"]["t"]), round(hv["box"]["b"])]})
+        check("%s: both beams are gone once it has lifted off (%.2fs), and the grab is still there (its two halves)" % (tag, gn["t"]),
+              not shown(gn["beam"]) and not shown(gn["inb"]) and u.get("ghosts") == 2, [gn["beam"], gn["inb"], u.get("ghosts")])
+        gh = u.get("ghost") or {}
+        check("%s: the grab itself is untouched - the 100%% goes up the beam in the same 0.6s on the same curve" % tag,
+              gh.get("name") == "hfx-ufo-ghost" and gh.get("dur") == "0.6s" and gh.get("ease") == "cubic-bezier(0.35, 0.1, 0.6, 1)", gh)
+        # round 4
+        check("%s: it lasts 2-3s longer than its 8.6s (now %.1fs), and its tail starts where the saucer has gone" % (tag, u["total"] / 1000),
+              10600 <= u["total"] <= 11600 and u["total"] - 2000 <= u["tail"] <= u["total"] - 1200, [u["total"], u["tail"]])
+        orb = [S[t] for t in sorted(S) if 1.4 - 1e-6 <= t <= 2.96 and S[t]["body"] and S[t]["body"]["o"] > .5]
+        import math
+        xs = [x["body"]["cx"] - x["box"]["cx"] for x in orb]; ys = [x["body"]["cy"] for x in orb]
+        sweep_deg = 0.0
+        if len(orb) > 4:
+            mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
+            angs = [math.atan2(y - my, x - mx) for x, y in zip(xs, ys)]
+            for a0, a1 in zip(angs, angs[1:]):
+                d = a1 - a0
+                while d > math.pi: d -= 2 * math.pi
+                while d < -math.pi: d += 2 * math.pi
+                sweep_deg += d
+            sweep_deg = abs(math.degrees(sweep_deg))
+        check("%s: it circles the screen once before it comes down - round its circle (%.0f degrees from 1.4s to 2.95s), out to both sides, above the box" % (tag, sweep_deg),
+              len(orb) > 20 and sweep_deg >= 300 and min(xs) < -w * .12 and max(xs) > w * .12 and max(ys) < orb[0]["box"]["t"] - 40,
+              {"n": len(orb), "deg": round(sweep_deg), "x": [round(min(xs or [0])), round(max(xs or [0]))], "yMax": round(max(ys or [0])), "boxTop": round(orb[0]["box"]["t"]) if orb else None})
+        sw = [S[t] for t in (4.2, 4.33, 4.47, 4.56, 4.65, 4.74, 4.83, 4.96, 5.1)]
+        dx = [round(x["beam"]["cx"] - x["box"]["cx"]) for x in sw]
+        gap = [round(abs(x["inb"]["cx"] - x["beam"]["cx"]), 1) for x in sw]
+        bw = sw[0]["box"]["w"]
+        check("%s: before it lands its beam sweeps across the box and back - out to both sides of it - with the box's beam moving as one with it, its foot on the box's top edge" % tag,
+              min(dx) <= -bw * .15 and max(dx) >= bw * .15 and abs(dx[0]) <= 2 and abs(dx[-1]) <= 2 and max(gap) <= 4
+              and all(shown(x["beam"]) and shown(x["inb"]) and 0 <= x["beam"]["b"] - x["box"]["t"] <= 10 for x in sw),
+              {"beamX": dx, "inbeamGap": gap, "boxW": round(bw)})
+        c8, f8, g8 = S[8.4], S[8.62], S[8.95]
+        check("%s: it gathers itself before it goes (a light swelling under the hull at 8.4s), then breaks away with a boom - a flash and a ring thrown out - and is gone by 8.95s" % tag,
+              bool(c8["charge"]) and c8["charge"]["o"] > .5 and bool(f8["flash"]) and f8["flash"]["o"] > .3 and bool(f8["boom"]) and f8["boom"]["o"] > .3
+              and (not g8["body"] or g8["body"]["o"] < .02),
+              {"charge": c8["charge"] and round(c8["charge"]["o"], 2), "flash": f8["flash"] and round(f8["flash"]["o"], 2), "boom": f8["boom"] and round(f8["boom"]["o"], 2),
+               "gone": g8["body"] and round(g8["body"]["o"], 2)})
+    # and the results flow waits for all of it: the first scene comes after
+    # the saucer has gone (8.91s), not 2.3s in, nor at the old 7s tail
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    # the flow's fixture is a 141-hundo account and the UFO is 350's: it is
+    # simply held to be earned, so the run plays it
+    pg.evaluate("() => { const r = hundoFxEarned; window.hundoFxEarned = id => id === 'ufo' || r(id); }")
+    fl = pg.evaluate(B317_FLOW_RUN, {"fx": "ufo", "badge": True, "caseMs": 1500})
+    tl = pg.evaluate("() => HUNDO_FX_TAIL_AT.ufo")
+    ctx.close()
+    ev = fl.get("ev") or {}
+    g2 = (ev.get("case") or 0) - (ev.get("hfx") or 0)
+    check("ufo: a 100%% that earns a badge - the badge case waits for the whole UFO: after the saucer has gone (>= 9s) and at its tail (>= %dms - 0.5s)" % tl,
+          not fl.get("threw") and ev.get("hfx") is not None and ev.get("case") is not None and g2 >= 9000 and g2 >= tl - 500,
+          [ev.get("hfx"), ev.get("case"), g2, tl, fl.get("threw")])
+
+    # --- the Fireworks sky's backing (round 4): "make the Fireworks canvas
+    # cheaper without changing its look". On a 3x phone it is backed at
+    # 1.5x, not 2x - its commit was Fireworks' one extra cost - and it is
+    # still drawing.
+    ctx, pg = booted(br, PHONE[1], PHONE[2], seed=USED_ACCOUNT, dpr=3)
+    pg.evaluate("() => { " + RUN100 + " }")
+    sky = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      store.lifetime.perfectTests = 600; store.hundoFx = 'fireworks'; theme.reduceMotion = false; theme.muteBanners = true; saveStore();
+      window.__fxAt = 0; const real = playHundoFx; window.playHundoFx = function(a, b){ window.__fxAt = performance.now(); return real(a, b); };
+      showHome(); await wait(200); __run100('Identity Crimes');
+      for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(50);
+      await wait(1800);
+      const cv = document.querySelector('.hfx-layer.hfx-fireworks canvas.hfx-fw-sky'), g = document.querySelector('.rs-screen .rs-grade');
+      if(!cv || !g) return null;
+      const cr = cv.getBoundingClientRect(), gr = g.getBoundingClientRect();
+      const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+      let lit = 0; for(let i = 3; i < d.length; i += 4 * 7) if(d[i] > 60) lit++;
+      return { dpr: devicePixelRatio, w: cv.width, h: cv.height, cssW: cr.width, cssH: cr.height, bottom: cr.bottom, boxTop: gr.top, lit }; }""")
+    ctx.close()
+    k = (sky or {}).get("w", 0) / max(1, (sky or {}).get("cssW", 1))
+    check("iPhone 17 Pro Max at 3x, fireworks: the sky canvas is backed at 1.5x its size, not 2x (%.2fx) - and it is drawing" % k,
+          sky and sky["dpr"] == 3 and abs(k - 1.5) < .02 and abs(sky["h"] / sky["cssH"] - 1.5) < .02 and sky["lit"] > 200, sky)
 
 def check_b317_tabplate(br):
     """Build 317. "They got a smidge smaller so let's ensure they are still a
