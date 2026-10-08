@@ -1621,61 +1621,9 @@
   #daily-lock-tip.is-above::before{ bottom:-9px; left:calc(var(--caret, 50%) - 9px); width:18px; height:9px; clip-path:polygon(0 0, 100% 0, 50% 100%); }
   #daily-lock-tip.is-above::after{ bottom:-7.4px; left:calc(var(--caret, 50%) - 7.6px); width:15.2px; height:8.4px; clip-path:polygon(0 0, 100% 0, 50% 100%); }
   [data-reduce-motion="true"] #daily-lock-tip{ transition:none; transform:none; }
-  #contextual-info-popup.is-solid{ background:#1E242C; -webkit-backdrop-filter:none; backdrop-filter:none; border-color:rgba(255,255,255,.16); box-shadow:0 10px 28px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.1); }
-  #contextual-info-popup{
-    position:fixed; z-index:220; max-width:15rem;
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); color:#F3F5F7; padding:.75rem .9rem; border-radius:12px;
-    border:1px solid rgba(255,255,255,.11);
-    will-change:backdrop-filter; backdrop-filter:blur(14px) saturate(1.8); -webkit-backdrop-filter:blur(14px) saturate(1.8);
-    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
-    /* transform:translateY(4px) removed \u2014 confirmed directly as the
-       real cause of a measured 4px gap between the line and this
-       popup's own edge: the line's position is calculated once,
-       immediately, against wherever this popup sits at that exact
-       instant, but the popup itself was still at its pre-animation
-       translateY(4px) resting spot when that happened, then slid up
-       4px to translateY(0) afterward while the line stayed fixed in
-       place \u2014 connected to where the popup used to be, not where it
-       actually ended up. The opacity fade alone still gives this a
-       soft appearance, without moving the box the line depends on
-       staying still. */
-    opacity:0; transition:opacity .2s ease;
-    pointer-events:none;
-  }
-  #contextual-info-popup.contextual-info-show{ opacity:1; }
-  /* a followed box, its line and its ring, moved as one (showContextualInfo
-     follow): a fixed box the size of the screen, so its children's fixed
-     positions (top or bottom, left) mean what they always did, carried by
-     one compositor transform */
-  #contextual-info-follow{ position:fixed; inset:0; z-index:220; pointer-events:none; will-change:transform; }
-  #contextual-info-line, #contextual-info-line-dot{
-    position:fixed; z-index:219; pointer-events:none;
-    opacity:0; transition:opacity .2s ease;
-  }
-  /* Same three real bugs as the main tour's own line, independently
-     duplicated here since this popup has its own separate
-     implementation \u2014 confirmed directly, not assumed, since fixing
-     the tour's line doesn't touch this one at all. Same fixes: a
-     neutral color pulled from the popup's own base hue instead of
-     the theme-dependent (and, by default, essentially white)
-     --accent, and a mask fading this line to nothing over its first
-     ~16px so the end tucked under the popup's own translucent glass
-     has nothing left to bleed through as a visible seam. */
-  #contextual-info-line{
-    height:3px; background:#4A5058; transform-origin:0 50%; border-radius:2px;
-    box-shadow:0 0 6px rgba(0,0,0,.25);
-    mask-image:linear-gradient(to right, transparent 0, transparent 5px, #000 16px);
-    -webkit-mask-image:linear-gradient(to right, transparent 0, transparent 5px, #000 16px);
-  }
-  #contextual-info-line-dot{
-    width:9px; height:9px; border-radius:999px; background:#4A5058;
-    box-shadow:0 0 6px rgba(0,0,0,.25);
-  }
-  #contextual-info-line.contextual-info-show, #contextual-info-line-dot.contextual-info-show{ opacity:1; }
-  /* Round a tiny secret flare: a ring, so the flare itself still shows
-     through it (build 313). */
-  #contextual-info-line-dot.is-ring{ background:transparent; border:2px solid #6A717B; box-shadow:0 0 6px rgba(0,0,0,.35), inset 0 0 4px rgba(0,0,0,.25); }
-  .contextual-info-text{ font-size:.85rem; line-height:1.4; margin:0; color:#F3F5F7; }
+  /* (#contextual-info-popup and its pointer line and ring are gone - build 317,
+     round three: Home's taps answer in one caption under the planet system,
+     homeCaptionShow. Nothing else used them.) */
 
   #welcomebonus-banner{
     /* Same inset as every other fixed top element. It also sits a banner's
@@ -12118,12 +12066,87 @@
   .cosmic-badge-tappable:focus{ outline:none; }
   .cosmic-badge-tappable:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; }
   /* A tapped rank bubble's light (flareBubbleTold): its own colour inside
-     the glass, above the emblem and under nothing. */
+     the glass, above the emblem and under nothing. ROUND THREE (build 317):
+     one light per bubble, reused, so a second tap carries on from where
+     the first has got to instead of cutting it off; and the core is a
+     warm bloom rather than a white-hot dot, which at full strength in a
+     46px bubble read as the bubble flashing. */
   .cosmic-icon-badge .cosmic-badge-told{
     position:absolute; inset:0; border-radius:50%; pointer-events:none; z-index:3; opacity:0;
-    background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.75) 0 14%, color-mix(in srgb, var(--rank-color, #FFFFFF) 70%, transparent) 38%, transparent 72%);
+    background:radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--rank-color, #FFFFFF) 35%, rgba(255,255,255,.62)) 0 12%, color-mix(in srgb, var(--rank-color, #FFFFFF) 66%, transparent) 40%, transparent 72%);
   }
   .cosmic-icon-badge .cosmic-badge-told.is-still{ opacity:.6; }
+  /* A bubble you hold also presses and lets a ring of its colour go
+     (homeBubblePress, homeBubbleHalo). The press is the individual
+     `scale` property, so it adds to the float (`transform`) and the
+     centring (`translate`); the shared :active shrink is off on the
+     bubbles, where it only ever ran with the float switched off. */
+  .cosmic-hero-wrap > .cosmic-icon-badge.cosmic-badge-tappable:active{ transform:none; }
+  .cosmic-bubble-halo{
+    position:absolute; aspect-ratio:1; border-radius:50%; translate:-50% -50%; pointer-events:none; opacity:0;
+    border:1.5px solid color-mix(in srgb, var(--rank-color, #FFFFFF) 70%, #FFFFFF);
+    box-shadow:0 0 10px 1px color-mix(in srgb, var(--rank-color, #FFFFFF) 55%, transparent);
+  }
+  /* A LOCKED THING SHAKES ITS HEAD (homeLockedNudge): a locked rank
+     bubble and a secret flare not found yet answer alike - a short damped
+     shake and a dip in the light. The dip is a dark disc inside the glass,
+     not the bubble's own opacity: see-through glass would show a secret
+     flare under it sharp, beside its own blurred image. */
+  .cosmic-icon-badge .cosmic-badge-dim{
+    position:absolute; inset:0; border-radius:50%; pointer-events:none; z-index:3; opacity:0;
+    background:radial-gradient(circle at 50% 45%, rgba(6,8,12,.55), rgba(6,8,12,.78) 70%);
+  }
+  .cosmic-icon-badge .cosmic-badge-dim.is-still{ opacity:.5; }
+  .cosmic-flare-dot.is-dim-still{ opacity:.45; }
+  /* A FOUND SECRET FLARE ANSWERS IN ITS OWN COLOUR (secretFlareTold): it
+     swells, a ring of its colour goes out and four sparks fly off it.
+     Children of the flare, so they ride its orbit. */
+  .cosmic-flare-dot > .cof-told{ inset:0; overflow:visible; }
+  .cof-told > b{ position:absolute; left:50%; top:50%; border-radius:50%; pointer-events:none; opacity:0; translate:-50% -50%; }
+  .cof-told > .cof-told-ring{ width:100%; height:100%; border:1.5px solid color-mix(in srgb, var(--fc) 80%, #fff);
+    box-shadow:0 0 6px color-mix(in srgb, var(--fc) 70%, transparent); box-sizing:border-box; }
+  .cof-told > .cof-told-spark{ width:34%; height:34%; background:radial-gradient(circle, #FFFFFF 0 30%, var(--fc) 62%, transparent 100%); }
+  .cof-told.is-still > .cof-told-ring{ opacity:.7; transform:scale(1.9); }
+
+  /* ---- HOME'S CAPTION (build 317, round three) ----
+     What a tap on Home says, in one place: centred under the planet
+     system, above the greeting - no box, no pointer, no ring round the
+     thing tapped. Each answer is its own item, placed absolutely by
+     homeCaptionPlace() (measured: the lowest thing the system draws, and
+     the greeting), so it never moves the layout; a new answer crossfades
+     over the last. Where the gap is too small for it, the greeting (and
+     if need be NOVA and the tagline) fade out under it while it shows. */
+  .home-caption{ position:absolute; left:0; top:0; width:0; height:0; z-index:2; pointer-events:none; }
+  .hc-item{
+    position:absolute; box-sizing:border-box; text-align:center; pointer-events:none; margin:0;
+    opacity:0; transform:translateY(5px);
+    transition:opacity .24s ease, transform .34s cubic-bezier(.2,.7,.3,1);
+  }
+  .hc-item.is-in{ opacity:1; transform:none; }
+  .hc-item.is-out{ opacity:0; transform:translateY(-3px); transition:opacity .2s ease, transform .22s ease; }
+  .hc-name{
+    display:block; font-family:var(--sans); font-size:.7rem; font-weight:700; letter-spacing:.13em;
+    text-transform:uppercase; line-height:1.3; color:var(--hc, #FFFFFF); margin:0 0 .28rem;
+  }
+  .hc-state{ color:rgba(236,240,245,.5); font-weight:600; }
+  .hc-state::before{ content:"\00B7"; margin:0 .5em; color:rgba(236,240,245,.35); }
+  .hc-text{ display:block; font-size:.86rem; line-height:1.38; color:rgba(236,240,245,.86); text-wrap:balance; }
+  .hc-s{ display:inline-block; }
+  .hc-item.is-inline .hc-name{ display:inline; margin:0 .6em 0 0; }
+  .hc-item.is-inline .hc-text{ display:inline; }
+  .hc-item.is-clamped .hc-text{ display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:var(--hc-lines, 2); overflow:hidden; }
+  .hc-item.is-unfound .hc-name, .hc-item.is-locked .hc-name{ color:rgba(222,229,238,.82); }
+  [data-reduce-motion="true"] .hc-item{ transform:none !important; }
+  @media (prefers-reduced-motion:reduce){ .hc-item{ transform:none !important; } }
+  .panel.home.screen-home-actual > .homegreeting, .panel.home.screen-home-actual > .hometitle-wrap{ transition:opacity .25s ease; }
+  .panel.home.screen-home-actual.hc-over-greeting > .homegreeting,
+  .panel.home.screen-home-actual.hc-over-title > .homegreeting,
+  .panel.home.screen-home-actual.hc-over-title > .hometitle-wrap{ opacity:0; }
+  @media (min-width:40rem) and (min-height:60rem),
+         (min-width:64rem) and (min-height:46rem){
+    .hc-name{ font-size:.8rem; }
+    .hc-text{ font-size:1.02rem; }
+  }
   /* TAPPING THE PLANET (planetTapFx): overlays over the sphere (centre
      180,150 and radius 52 in the 0 -12 360 342 viewBox), a halo off its
      rim and the two rings' outlines. Transform and opacity only. */
@@ -14427,6 +14450,35 @@
     100%{ transform:translate(var(--fx), var(--fy)) rotate(var(--fr)) scale(.8); opacity:0; }
   }
   @keyframes rk-nova-x{ 0%{ transform:scale(.6); opacity:.25; } 6%{ transform:scale(1.05); opacity:.9; } 35%{ transform:scale(.85); opacity:.6; } 100%{ transform:scale(.6); opacity:.25; } }
+  /* THE BUBBLE'S SUPERNOVA SWELLS, IT DOES NOT GO OFF (build 317, round
+     three). The burst above reaches its peak in 7% of 3.2s, and recorded
+     into a 46px flip-book it is one frame - measured on Home, +5.6 levels
+     of brightness in a single frame every three seconds, a locked grey
+     bubble blinking: "some of the flare seem to be flashing". The bubbles'
+     recordings (rk-record-host - Home, the Profile card, the road map's
+     chips) get the same explosion drawn out: it builds over a third of
+     the loop and lets go evenly. The Rank tab's big emblem keeps the
+     bang. ORBIT_MOTION_REV renames the sheet, so a device records it once. */
+  @media (prefers-reduced-motion:no-preference){
+    .rk-record-host .rank-emblem-svg.rk-k-titan .rk-pulse{ animation:rk-nova-core-soft 3.2s cubic-bezier(.45,0,.55,1) infinite; }
+    .rk-record-host .rank-emblem-svg.rk-k-titan .rk-flare{ animation:rk-nova-flare-soft 3.2s cubic-bezier(.45,0,.55,1) infinite; }
+    .rk-record-host .rank-emblem-svg.rk-k-titan .rk-breathe{ animation:rk-nova-halo-soft 3.2s cubic-bezier(.45,0,.55,1) infinite; }
+    .rk-record-host .rank-emblem-svg.rk-k-titan .rk-shock{ animation:rk-nova-shock-soft 3.2s cubic-bezier(.4,.2,.5,1) infinite; }
+    .rk-record-host .rank-emblem-svg.rk-k-titan .rk-nova-x{ animation:rk-nova-x-soft 3.2s cubic-bezier(.45,0,.55,1) infinite; }
+    .rk-record-host .rank-emblem-svg.rk-k-titan .rk-nova-frag{ animation:rk-nova-frag-soft 3.2s cubic-bezier(.4,.2,.5,1) infinite; }
+  }
+  @keyframes rk-nova-core-soft{ 0%{ transform:scale(.85); opacity:.85; } 34%{ transform:scale(1.32); opacity:1; } 100%{ transform:scale(.85); opacity:.85; } }
+  @keyframes rk-nova-flare-soft{ 0%{ transform:scale(.72); opacity:.4; } 36%{ transform:scale(1.18, 1.12); opacity:1; } 100%{ transform:scale(.72); opacity:.4; } }
+  @keyframes rk-nova-halo-soft{ 0%{ transform:scale(.9); opacity:.5; } 38%{ transform:scale(1.12); opacity:1; } 100%{ transform:scale(.9); opacity:.5; } }
+  @keyframes rk-nova-shock-soft{ 0%{ transform:scale(.6); opacity:0; } 30%{ transform:scale(.8); opacity:.75; } 100%{ transform:scale(1.2); opacity:0; } }
+  @keyframes rk-nova-x-soft{ 0%{ transform:scale(.6); opacity:.25; } 34%{ transform:scale(.98); opacity:.8; } 100%{ transform:scale(.6); opacity:.25; } }
+  @keyframes rk-nova-frag-soft{
+    0%{ transform:translate(0px, 0px) rotate(0deg) scale(.45); opacity:0; }
+    22%{ transform:translate(calc(var(--fx) * .3), calc(var(--fy) * .3)) rotate(calc(var(--fr) * .2)) scale(1); opacity:.9; }
+    52%{ opacity:.8; }
+    82%{ transform:translate(var(--fx), var(--fy)) rotate(var(--fr)) scale(.8); opacity:0; }
+    100%{ transform:translate(var(--fx), var(--fy)) rotate(var(--fr)) scale(.8); opacity:0; }
+  }
   .rankmap-stop.is-locked .rankmap-node{ background:#0C0F14; border-color:rgba(255,255,255,.14); box-shadow:none; }
   .rankmap-stop.is-locked .rankmap-node > svg{ filter:grayscale(1) brightness(.7); opacity:.45; }
   .rankmap-stop.is-next .rankmap-node{ border-style:dashed; }
@@ -61358,7 +61410,12 @@ function homeRankEmblemReused(tier){
      old screen; the flag did not, so three of the seven bubbles came back
      EMPTY until a new one was laid over them - "the flares don't get
      filled in for about a second or two". */
-  if(had){ had.remove(); had.classList.remove("rk-under-anim"); return had; }
+  if(had){
+    had.remove(); had.classList.remove("rk-under-anim");
+    /* a crossfade still under way when the last Home went (build 317) */
+    try{ had.getAnimations().forEach(a => { if(a.__sheetFade) a.cancel(); }); }catch(e){}
+    return had;
+  }
   const em = homeRankEmblem(tier);
   homeRankEmblemCache[tier] = em;
   return em;
@@ -61504,10 +61561,14 @@ async function orbitAnimSheetFromBlob(blob, px){
    opened. The per-instance gradient ids ("rk12-...") come out of the hash
    for the same reason. */
 const orbitAnimDrawings = new Map();
+/* A rank whose RECORDED motion changed without its drawing changing
+   (build 317: Supernova's swell, rk-nova-*-soft) - a new name for its
+   sheet, so a device that cached the old one records it again, once. */
+const ORBIT_MOTION_REV = { titan: "m2" };
 function orbitAnimDrawing(tier){
   if(!orbitAnimDrawings.has(tier)){
     const svg = homeRankEmblem(tier);
-    const id = tier + "-" + hashOf(new XMLSerializer().serializeToString(svg).replace(/\brk\d+/g, "rk"));
+    const id = tier + "-" + hashOf(new XMLSerializer().serializeToString(svg).replace(/\brk\d+/g, "rk")) + (ORBIT_MOTION_REV[tier] ? "-" + ORBIT_MOTION_REV[tier] : "");
     orbitAnimDrawings.set(tier, { svg, id, tier });
   }
   return orbitAnimDrawings.get(tier);
@@ -61741,7 +61802,14 @@ function syncLoopClock(root){
    newly lit rank measures again. */
 const orbitSheetGeom = new Map();
 function orbitGeomKey(badge, tier){ return tier + "|" + (badge.classList.contains("cosmic-badge-lit") ? 1 : 0) + "|" + innerWidth + "x" + innerHeight + "|" + (window.devicePixelRatio || 1); }
-function attachOrbitSheet(badge, svg, sp, g){
+/* `fade` (build 317, round three): a sheet that arrives while the still
+   emblem is already on screen crossfades in over half a second. Cut in,
+   the sheet's frame and the still drawing differ by up to 12 levels of
+   brightness (the still pose is every part at rest, the frame is mid-
+   breath) - a one-frame pop in each bubble on the first Home of a
+   session, which is one of the flashes reported. A sheet put on before
+   the first paint (startOrbitEmblemAnimsKnown) has nothing to fade from. */
+function attachOrbitSheet(badge, svg, sp, g, fade){
   const wrap = document.createElement("div");
   wrap.className = "cosmic-rank-anim";
   wrap.setAttribute("aria-hidden", "true");
@@ -61758,6 +61826,17 @@ function attachOrbitSheet(badge, svg, sp, g){
   frame.appendChild(img);
   wrap.appendChild(frame);
   svg.after(wrap);
+  if(fade && !ringMotionOff()){
+    try{
+      const op = Number(g.opacity);
+      const to = isFinite(op) ? op : 1;
+      wrap.animate([{ opacity: 0 }, { opacity: to }], { duration: 520, easing: "ease-in-out" });
+      const out = svg.animate([{ opacity: to }, { opacity: 0 }], { duration: 520, easing: "ease-in-out", fill: "forwards" });
+      out.__sheetFade = true;
+      out.finished.then(() => { if(wrap.isConnected) svg.classList.add("rk-under-anim"); out.cancel(); }, () => {});
+      return;
+    }catch(e){}
+  }
   svg.classList.add("rk-under-anim");
 }
 /* Synchronous, no layout: only bubbles whose sheet is recorded this
@@ -61801,7 +61880,7 @@ function startOrbitEmblemAnims(root, readyOnly){
       const cs = getComputedStyle(svg);
       const g = { px, cellCss: sp.px / scale / S, filter: cs.filter, opacity: cs.opacity };
       orbitSheetGeom.set(orbitGeomKey(badge, tier), g);
-      attachOrbitSheet(badge, svg, sp, g);
+      attachOrbitSheet(badge, svg, sp, g, true);
       syncLoopClock(badge.querySelector(".cosmic-rank-anim"));
     }
   })();
@@ -62868,11 +62947,17 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
        Home only (useTierIcons), not Welcome, where tapping it before
        an account even exists yet wouldn't make much sense. */
     sphere.style.cursor = "pointer";
-    sphere.addEventListener("click", (e) => {
-      e.stopPropagation();
-      /* and the planet answers the touch (build 317, planetTapFx) */
+    /* and the planet answers the touch (build 317, planetTapFx), on the
+       touch itself; the caption says where you stand, and tapped again
+       while it is up, what is next (round three - the "....." box went
+       with the other boxes) */
+    homeTapBind(sphere, (e) => {
       try{ planetTapFx(wrap, e); }catch(err){}
-      showContextualInfo(sphere, "..... ", { aimEdge: true });
+      try{
+        const again = homeCaptionState.key === "planet" && !!document.querySelector("#stage .home-caption > .hc-item.is-in");
+        homeCaptionState.planetN = again ? homeCaptionState.planetN + 1 : 0;
+        homeCaptionShow(homePanelOf(wrap), homeTapCopyPlanet(homeCaptionState.planetN), "planet");
+      }catch(err){}
     });
   }
   svg.appendChild(sphere);
@@ -63032,19 +63117,9 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   /* [ring radius, degrees clockwise from the top], in the 0 -12 360 342
      viewBox the planet is drawn in (centre 180,150; rings 108 and 152). */
   const FLARE_SPOT = { red: [HOME_OUTER_R, 337], orange: [HOME_OUTER_R, 128], yellow: [108, 236], violet: [108, 32], white: [108, 141] };
-  /* Something to say when a flare is tapped. A found one names itself
-     and what it brought; a missing one only hints. */
-  const flareSays = (key, state) => {
-    const nm = MYSTERY_NAME[key];
-    if(state === "found"){
-      if(VOID_FLARES.indexOf(key) >= 0) return nm + " — found. One of the three that made Void.";
-      if(key === "core") return nm + " — found. The planet's own light. It woke Genesis.";
-      return nm + " — found. It brought " + (AVATAR_DISPLAY_NAME[FLARE_CHARACTER[key]] || "") + " out of the dark.";
-    }
-    if(state === "hunting") return "The next secret flare. It is out there now, hidden in one of your tests.";
-    if(state === "next") return "The next secret flare. It is not out there yet.";
-    return "A secret flare, still missing.";
-  };
+  /* What a tapped flare says is homeTapCopyFlare's (build 317, round
+     three): a found one its name and a line about it, a missing one a
+     hint that gives nothing away. */
   const makeFlare = (key) => {
     const state = (typeof store !== "undefined") ? flareHuntState(key) : "missing";
     const el = document.createElement("span");
@@ -63068,13 +63143,13 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
       el.setAttribute("role", "button");
       el.setAttribute("tabindex", "0");
       el.setAttribute("aria-label", state === "found" ? MYSTERY_NAME[key] + ", a secret flare you have found" : "A secret flare");
-      const say = (e) => {
-        if(e) e.stopPropagation();
-        showContextualInfo(el, flareSays(key, state), { follow: true, ring: true,
-          refind: () => document.querySelector('.panel.home .cosmic-hero-wrap [data-flare="' + key + '"]') });
-      };
-      el.addEventListener("click", say);
-      el.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); say(); } });
+      /* A found flare answers in its own colour; one not found yet
+         shakes its head like everything else still locked (build 317,
+         round three). The words go to the caption under the planet. */
+      homeTapBind(el, () => {
+        if(state === "found") secretFlareTold(el); else homeLockedNudge(el, false);
+        try{ homeCaptionShow(homePanelOf(el), homeTapCopyFlare(key), "flare:" + key); }catch(err){}
+      });
     }
     return el;
   };
@@ -63293,34 +63368,18 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
       badge.classList.add("cosmic-badge-tappable");
       badge.setAttribute("role", "button");
       badge.setAttribute("tabindex", "0");
-      const flareName = ACCENT_DISPLAY_NAME[pos.tier];
-      const rankName = RANK_DISPLAY_NAME[pos.tier];
-      /* THE SAME TAP AS A SECRET FLARE (build 317). "I like what happens
-         when you click the secret flares. Can the large flares do the
-         same?" So it is the same call - a box that follows the bubble
-         ({ follow }), the ring round it in place of the dot ({ ring },
-         sized to the bubble), found again if Home is rebuilt under it
-         ({ refind }) - and the bubble answers the tap with a short light
-         of its own colour inside the glass (flareBubbleTold). It never
-         opened anything; it still opens nothing. The flare and its rank
-         share a name now, so the text names the flare and says what
-         lights it. */
-      const showFlareInfo = () => {
-        flareBubbleTold(badge);
-        let text;
-        if(achieved){
-          text = flareName + " flare. Lit since you reached " + rankName + " rank.";
-        } else {
-          const parts = tierShortfall(TIER_UNLOCKS[pos.tier]);
-          text = flareName + " flare. " + (parts.length
-            ? "Reach " + rankName + " rank to light it: " + parts.join(", ") + "."
-            : rankName + " rank is ready to reach.");
-        }
-        showContextualInfo(badge, text, { follow: true, ring: true, ringFit: true,
-          refind: () => document.querySelector('.panel.home .cosmic-hero-wrap .cosmic-badge-rank[data-rank-tier="' + pos.tier + '"]') });
-      };
-      badge.addEventListener("click", showFlareInfo);
-      badge.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); showFlareInfo(); } });
+      /* THE BUBBLE ANSWERS, THE CAPTION SAYS (build 317, round three).
+         A rank you hold lights in its glass, presses and lets a ring of
+         its colour go; one you have not reached shakes its head like a
+         secret flare not yet found, and never lights. The words - what
+         the flare is and when it was lit, or what lighting it takes and
+         what is left - go to the caption under the planet; nothing
+         follows the bubble or rings it. It still opens nothing. */
+      homeTapBind(badge, () => {
+        if(achieved){ flareBubbleTold(badge); homeBubblePress(badge); homeBubbleHalo(badge); }
+        else homeLockedNudge(badge, true);
+        try{ homeCaptionShow(homePanelOf(badge), homeTapCopyRank(pos.tier), "rank:" + pos.tier); }catch(err){}
+      });
     }
     wrap.appendChild(badge);
   });
@@ -71837,7 +71896,7 @@ function maybeShowPenalVersionNote(tries){
   /* never on top of anything else: a tour, a loading screen, a reward
      pop-up still being tapped through, What's New, a cutscene */
   const busy = whatsNewHolds() || !!document.querySelector("#tour-overlay, #splashscreen, #genprofile-overlay, .invite-overlay, .rs-spot, .rs-fly, " +
-       "#intro-pop, .bc-scene, #contextual-info-popup, .installguide-overlay, #void-cutscene, #badge-cutscene, " +
+       "#intro-pop, .bc-scene, .installguide-overlay, #void-cutscene, #badge-cutscene, " +
        "#supernova-cutscene, #vroom-cutscene, #resume-offer, .friend-moment");
   if(busy) penalNoteBusyAt = Date.now();
   /* and a beat after whatever it waited for, never straight on its heels */
@@ -74708,30 +74767,492 @@ const LEVEL_CONFETTI = {
    tabindex=-1 keep it out of the accessibility tree and tab order. */
 
 
-/* A RANK BUBBLE ANSWERS A TAP (build 317) - a short light of its own
-   colour inside the glass, swelling from the middle and fading: the
-   bubble's version of the secret flare's lit look. A child, so the
-   bubble's clip keeps it inside; transform and opacity only. Under
-   Reduce motion it is a still glow for the same moment. */
+/* ---- HOME'S TAPS, ROUND THREE (build 317): THE THING ANSWERS, AND THE
+   WORDS GO UNDER THE PLANET ----
+   Madison: "I like the clicking flare effects. When you click it does an
+   effect and it's great ... Make them all smooth, some of the flare seem
+   to be flashing ... the non unlocked ones do nothing. Let's do this,
+   maybe all the locked stuff does the same effect, like a tiny shake or
+   something? ... those pops take away from the interactiveness. Could
+   the pops with the words be moved ... above the 'good evening' but also
+   below the ring and centered? So maybe now it doesn't get circled when
+   clicking them, the effect would tell you that you clicked it ... longer
+   ones cause more room?"
+   - No box follows anything any more, nothing points, nothing is ringed:
+     the box, its line, its ring and the compositor ride that carried them
+     (showContextualInfo, contextualFollowPath) are gone. A tap answers in
+     ONE caption under the planet system (homeCaptionShow), and the thing
+     tapped answers with its own effect.
+   - A rank you hold: the light in its glass, a press and a ring of its
+     colour leaving it. A secret flare you have found: a swell, a ring of
+     its colour and four sparks (secretFlareTold). ANYTHING LOCKED - a rank
+     not reached, a secret flare not found - answers the same way: a short
+     damped shake and a dip in its light (homeLockedNudge), never the held
+     light. The planet keeps its effect exactly (planetTapFx).
+   - The effect lands on the touch itself (pointerdown, homeTapBind); a
+     click that follows the same touch is ignored, and a click with no
+     touch before it (a keyboard, a script) still answers.
+   - Rapid taps chain: every effect starts from wherever the last one on
+     that thing has got to (opacity, scale, the shake's offset), and the
+     ones that leave something behind (a ring, sparks, a ripple) run side
+     by side, a few at most. Nothing restarts from zero, so nothing jumps.
+   - Transform and opacity only (`scale` and `translate` are the
+     individual properties, which add to the float and the centring), no
+     filters, nothing that moves the layout. Reduce motion: no shake, no
+     press, no sparks - a still light, a still dip, a still ring - and the
+     caption, which fades without moving. */
+
+/* What each rank's flare IS: its emblem, said in a line (RANK_LORE has the
+   long version on the Rank tab). */
+const HOME_FLARE_MEANING = {
+  rookie: "A nebula, where every star begins.",
+  ranger: "A protostar: a young star, still taking shape.",
+  veteran: "A sun that makes its own light.",
+  vanguard: "A binary: two stars that keep each other steady.",
+  adept: "A spiral galaxy, billions of stars turning as one.",
+  elite: "A quasar, bright enough to be seen across the universe.",
+  titan: "A star outshining its whole galaxy. The top of the climb."
+};
+/* And each secret flare's, after its name (MYSTERY_NAME says why each is
+   called what it is). */
+const HOME_SECRET_LINE = {
+  red: "Light stretched red as it races away.",
+  orange: "Matter spiralling inward, burning as it falls.",
+  yellow: "The light left behind when a star goes out.",
+  violet: "The half-shadow at the edge of an eclipse.",
+  white: "The edge that nothing comes back from.",
+  core: "The light at the heart of the planet."
+};
+function homeJoin(parts){
+  return parts.length < 2 ? (parts[0] || "") : parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
+}
+/* A rank's flare: held, what it is and when it was earned; not yet, what
+   reaching it takes and what is left. */
+function homeTapCopyRank(tier){
+  const rank = RANK_DISPLAY_NAME[tier] || tier, flare = ACCENT_DISPLAY_NAME[tier] || rank;
+  if(tierColorUnlocked(tier)){
+    return { kind: "held", name: flare + " flare", state: "Lit", color: flareColorOf(tier),
+      parts: [HOME_FLARE_MEANING[tier] || "", "Lit when you reached " + rank + " rank."] };
+  }
+  const rule = TIER_UNLOCKS[tier] || {};
+  const parts = tierShortfall(rule);
+  const need = "Reach level " + rule.level + " and earn " + rule.badges + " " + (rule.badges === 1 ? "badge" : "badges") + " to light it.";
+  return { kind: "locked", name: flare + " flare", state: "Locked", color: "",
+    parts: parts.length ? [need, homeJoin(parts) + " to go."] : [rank + " rank is ready to reach."] };
+}
+/* A secret flare: found, its name and a line about it; not found, a hint
+   that gives nothing away - no name, no colour, nothing the hunt does not
+   already say (a hint card that has named it unlocks its character line). */
+function homeTapCopyFlare(key){
+  const f = (store && store.mysteryColorsFound) || {};
+  const st = flareHuntState(key);
+  if(st === "found"){
+    let tail;
+    if(VOID_FLARES.indexOf(key) >= 0){
+      const have = VOID_FLARES.filter(k => f[k]).length;
+      tail = have >= VOID_FLARES.length ? "One of the three that made Void."
+        : "One of three. " + (VOID_FLARES.length - have === 1 ? "One more to find." : "Two more to find.");
+    } else if(key === "core"){
+      tail = "It woke Genesis.";
+    } else {
+      tail = "It brought " + (AVATAR_DISPLAY_NAME[FLARE_CHARACTER[key]] || "its character") + " out of the dark.";
+    }
+    return { kind: "found", name: MYSTERY_NAME[key], state: "Secret flare", color: MYSTERY_COLOR[key],
+      parts: [HOME_SECRET_LINE[key] || "", tail] };
+  }
+  let parts;
+  if(st === "hunting") parts = ["Out there now, hiding in one of your tests.", "Keep your eyes open."];
+  else if(st === "next"){
+    let left = 99;
+    try{ left = mysteryLevelGate(key) - levelOf(store); }catch(e){}
+    parts = ["Not out yet.", left <= 3 ? "A few more levels and it starts hiding in your tests."
+      : "It starts hiding in your tests further up the levels."];
+  } else parts = ["Still hidden.", "Its turn comes once the one before it is found."];
+  const ch = FLARE_CHARACTER[key];
+  if(ch && Array.isArray(store.flareHintsShown) && store.flareHintsShown.indexOf(ch) >= 0){
+    parts[parts.length - 1] += " Find it to unlock " + (AVATAR_DISPLAY_NAME[ch] || ch) + ".";
+  }
+  return { kind: "unfound", name: "Secret flare", state: "Not found", color: "", parts };
+}
+/* The planet: where you stand, then (tapped again) what is next. */
+function homeTapCopyPlanet(n){
+  const rk = rankOf(store), lvl = levelOf(store), b = badgeCountOf(store);
+  if(n % 2 === 1){
+    const next = TIER_ORDER_FULL.find(t => !tierColorUnlocked(t));
+    let parts;
+    if(next){
+      const left = tierShortfall(TIER_UNLOCKS[next]);
+      parts = ["Next: " + RANK_DISPLAY_NAME[next] + " rank.", left.length ? homeJoin(left) + " to go." : "It is ready to reach."];
+    } else {
+      parts = homeRingTier() === "eclipse" ? ["Every flare is lit,", "the secret ones too."] : ["Every rank flare is lit."];
+    }
+    return { kind: "planet", name: "Your system", state: "", color: "#FFC98A", parts };
+  }
+  const keys = homeFlareKeys(), f = store.mysteryColorsFound || {};
+  const lit = TIER_ORDER_FULL.filter(t => tierColorUnlocked(t)).length;
+  const found = keys.filter(k => f[k]).length;
+  return { kind: "planet", name: "Your system", state: "", color: "#FFC98A",
+    parts: [(rk ? RANK_DISPLAY_NAME[rk] + " rank" : "No rank yet") + ", level " + lvl + ", " + b + " " + (b === 1 ? "badge" : "badges") + ".",
+      lit + " of " + TIER_ORDER_FULL.length + " rank flares lit, " + found + " of " + keys.length + " secret flares found."] };
+}
+
+/* ---- THE CAPTION ----
+   Placed, never laid out: each answer is an absolutely placed item in
+   the Home panel, so showing, changing or hiding one cannot move the
+   greeting, the tagline or Start Studying by a pixel. Where it goes is
+   measured when it is shown (and again on a resize): the floor is the
+   lowest thing the planet system draws within the caption's width (the
+   outer ring and a flare on it, any bubble with room for its float), the
+   ceiling the greeting's top. It is tried three ways, in order:
+     - "stack": the name over the words, centred in that gap;
+     - "inline": the name leading the words in one run, for a short gap;
+     - covering: where neither fits (a small phone, a laptop window, a
+       phone on its side), the greeting fades out under it while it shows
+       ("hc-over-greeting"), or the greeting, NOVA and the tagline
+       ("hc-over-title"), never Start Studying. The words are clamped
+       only if even that is too short. */
+const HOME_CAPTION_GAP = 6;
+function homeCaptionPlace(panel, el){
+  const R = e => e ? e.getBoundingClientRect() : null;
+  const shown = e => !!e && getComputedStyle(e).display !== "none" && e.getBoundingClientRect().height > 0;
+  const P = panel.getBoundingClientRect();
+  const hero = panel.querySelector(":scope > .cosmic-hero-wrap");
+  const H = R(hero) || P;
+  const greet = panel.querySelector(":scope > .homegreeting");
+  const tw = panel.querySelector(":scope > .hometitle-wrap");
+  const btn = panel.querySelector(":scope > #nextbtn");
+  const G = shown(greet) ? R(greet).top : null;
+  const T = shown(tw) ? R(tw).top : null;
+  const B = btn ? R(btn).top : P.bottom - 8;
+  /* centred on the planet; as wide as the hero, never narrower than a
+     phone's column nor wider than reads well */
+  const cx = H.left + H.width / 2;
+  const room = Math.max(120, Math.min(cx - P.left, P.right - cx) * 2 - 16);
+  const wide = Math.min(room, Math.max(H.width * 1.04, 300), 26 * 16);
+  /* From the geometry, not from where things are this instant: the rings
+     from their radius in the planet's viewBox (0 -12 360 342 - a turning
+     ring layer's box is a rotated square, far bigger than its circle),
+     a bubble from its layout box (the float and a press are transforms)
+     plus the float's reach. So every answer lands on the same line. */
+  const floorIn = (w) => {
+    let fl = H.top + H.height * .5;
+    if(hero){
+      const main = hero.querySelector(":scope > svg.cosmic-hero-main") || hero.querySelector("svg");
+      const SR = main ? main.getBoundingClientRect() : H, u = SR.width / 360;
+      let ringR = 0;
+      hero.querySelectorAll(".cosmic-orbit-ring[r]").forEach(c => { ringR = Math.max(ringR, Number(c.getAttribute("r")) || 0); });
+      /* a flare riding the outer ring hangs half its size below it */
+      const dot = hero.querySelector(".cosmic-hero-orbitlayer .cosmic-flare-dot");
+      if(ringR) fl = Math.max(fl, SR.top + (150 + ringR + 12) * u + (dot ? dot.offsetWidth / 2 : 0));
+      const ht = H.top + hero.clientTop;
+      hero.querySelectorAll(":scope > .cosmic-icon-badge").forEach(b => {
+        const half = b.offsetWidth / 2, x = H.left + hero.clientLeft + b.offsetLeft;
+        if(x + half > cx - w / 2 && x - half < cx + w / 2) fl = Math.max(fl, ht + b.offsetTop + b.offsetHeight * .53 + 8);
+      });
+    }
+    return fl;
+  };
+  const tryMode = (mode, w, top0, bottom0) => {
+    el.classList.toggle("is-inline", mode === "inline");
+    el.classList.remove("is-clamped");
+    el.style.width = w + "px";
+    const h = el.offsetHeight;
+    return { h, fits: h + 2 * HOME_CAPTION_GAP <= bottom0 - top0 };
+  };
+  const put = (w, top) => {
+    el.style.left = (cx - P.left - panel.clientLeft - w / 2) + "px";
+    el.style.top = (top - P.top - panel.clientTop) + "px";
+  };
+  const fl = floorIn(wide);
+  const ceil = G !== null ? G : T !== null ? T : B;
+  for(const mode of ["stack", "inline"]){
+    const t = tryMode(mode, wide, fl, ceil);
+    if(t.fits){ put(wide, fl + (ceil - fl - t.h) / 2); return mode; }
+  }
+  /* covering: over the greeting alone if that is room enough, else over
+     the greeting and the title block, always clear of the button */
+  const spans = [];
+  if(G !== null && T !== null) spans.push(["over-greeting", T]);
+  spans.push(["over-title", B]);
+  for(const [mode, bottom] of spans){
+    const t = tryMode("stack", wide, fl, bottom);
+    if(t.fits){ put(wide, fl + (bottom - fl - t.h) / 2); return mode; }
+  }
+  /* nothing fits: the words take the lines there are */
+  el.classList.remove("is-inline");
+  el.style.width = wide + "px";
+  const nameH = (el.querySelector(".hc-name") || el).offsetHeight;
+  const lh = parseFloat(getComputedStyle(el.querySelector(".hc-text") || el).lineHeight) || 18;
+  el.style.setProperty("--hc-lines", String(Math.max(1, Math.floor((B - fl - 2 * HOME_CAPTION_GAP - nameH) / lh))));
+  el.classList.add("is-clamped");
+  put(wide, fl + HOME_CAPTION_GAP);
+  return "over-title";
+}
+function homeCaptionRetire(el){
+  if(!el || el.classList.contains("is-out")) return;
+  el.classList.remove("is-in");
+  el.classList.add("is-out");
+  setTimeout(() => el.remove(), 260);
+}
+function homeCaptionCover(panel, mode){
+  panel.classList.toggle("hc-over-greeting", mode === "over-greeting");
+  panel.classList.toggle("hc-over-title", mode === "over-title");
+}
+function homeCaptionHide(panel){
+  if(!panel) return;
+  panel.querySelectorAll(":scope > .home-caption > .hc-item").forEach(homeCaptionRetire);
+  homeCaptionCover(panel, "");
+  homeCaptionState.key = null;
+}
+const homeCaptionState = { key: null, planetN: 0, timer: 0 };
+function homeCaptionShow(panel, item, key){
+  if(!panel || !panel.isConnected || !item) return null;
+  item.text = (item.parts || [item.text || ""]).filter(Boolean).join(" ");
+  let box = panel.querySelector(":scope > .home-caption");
+  if(!box){
+    box = document.createElement("div");
+    box.className = "home-caption";
+    box.setAttribute("role", "status");
+    box.setAttribute("aria-live", "polite");
+    const hero = panel.querySelector(":scope > .cosmic-hero-wrap");
+    if(hero) hero.after(box); else panel.prepend(box);
+  }
+  const live = box.querySelector(":scope > .hc-item:not(.is-out)");
+  const same = live && live.dataset.key === key && live.dataset.text === item.text;
+  if(!same){
+    const el = document.createElement("p");
+    el.className = "hc-item is-" + item.kind;
+    el.dataset.key = key; el.dataset.text = item.text;
+    if(item.color) el.style.setProperty("--hc", item.color);
+    const nm = document.createElement("span");
+    nm.className = "hc-name"; nm.textContent = item.name;
+    if(item.state){ const st = document.createElement("span"); st.className = "hc-state"; st.textContent = item.state; nm.appendChild(st); }
+    /* each sentence keeps to a line of its own where it fits, so the
+       words break between thoughts rather than in the middle of one */
+    const tx = document.createElement("span");
+    tx.className = "hc-text";
+    (item.parts || [item.text]).filter(Boolean).forEach((t, k) => {
+      if(k) tx.append(" ");
+      const sp = document.createElement("span"); sp.className = "hc-s"; sp.textContent = t; tx.appendChild(sp);
+    });
+    el.append(nm, " ", tx);
+    if(live) homeCaptionRetire(live);
+    box.appendChild(el);
+    homeCaptionCover(panel, homeCaptionPlace(panel, el));
+    /* placing it measured it, so its first look is already computed and
+       the fade-in runs from this very frame - the words arrive with the
+       touch, not a frame after it */
+    el.classList.add("is-in");
+  }
+  homeCaptionState.key = key;
+  clearTimeout(homeCaptionState.timer);
+  const ms = Math.min(7000, 3400 + item.text.length * 32);
+  homeCaptionState.timer = setTimeout(() => { if(panel.isConnected) homeCaptionHide(panel); }, ms);
+  return box.querySelector(":scope > .hc-item:not(.is-out)");
+}
+/* a rotation or a resized window: put a caption that is up back in its gap */
+try{ window.addEventListener("resize", () => {
+  const el = document.querySelector("#stage .panel.home > .home-caption > .hc-item:not(.is-out)");
+  if(el){ const panel = el.closest(".panel.home"); homeCaptionCover(panel, homeCaptionPlace(panel, el)); }
+}, { passive: true }); }catch(e){}
+/* The tap itself: on the touch, with the click that follows it ignored -
+   a click with no touch before it (a keyboard, a script) still answers. */
+function homeTapBind(el, run){
+  let downAt = -1e9;
+  el.addEventListener("pointerdown", (e) => {
+    if(e.isPrimary === false || (e.pointerType === "mouse" && e.button !== 0)) return;
+    downAt = performance.now();
+    run(e);
+  });
+  el.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if(performance.now() - downAt < 1000) return;
+    run(e);
+  });
+  el.addEventListener("keydown", (e) => {
+    if(e.key === "Enter" || e.key === " "){ e.preventDefault(); downAt = -1e9; run(null); }
+  });
+}
+function homePanelOf(el){ return el && el.closest ? el.closest(".panel.home.screen-home-actual") : null; }
+
+/* ---- THE EFFECTS ---- */
+/* where an animation of ours has got to, read off the element itself */
+function homeFxNow(el, prop, dflt){
+  try{ const v = parseFloat(getComputedStyle(el)[prop]); return isFinite(v) ? v : dflt; }catch(e){ return dflt; }
+}
+function homeFxCancel(el, tag){
+  try{ el.getAnimations().forEach(a => { if(a[tag]) a.cancel(); }); }catch(e){}
+}
+/* A RANK BUBBLE YOU HOLD (build 317): a light of its own colour swelling
+   from the middle of the glass and fading. Round three: it rises over a
+   quarter of a second instead of 0 to full in two frames (an easing on
+   the whole effect front-loads everything - measured 0 -> .96 in 67ms,
+   which is the flash), its core is a bloom, and a second tap carries on
+   from the light the first has left rather than starting over. */
 function flareBubbleTold(badge){
   if(!badge) return;
-  badge.querySelectorAll(".cosmic-badge-told").forEach(x => x.remove());
-  const i = document.createElement("i");
-  i.className = "cosmic-badge-told";
-  i.setAttribute("aria-hidden", "true");
-  badge.appendChild(i);
-  /* gone when its light has played (read off the animation, so a page
-     that is paused or slowed keeps it until then), or after a still
-     moment under Reduce motion */
-  let an = null;
-  if(!ringMotionOff()){
-    try{
-      an = i.animate([{ opacity: 0, transform: "scale(.55)" }, { opacity: 1, transform: "scale(1)", offset: .22 }, { opacity: 0, transform: "scale(1.15)" }],
-        { duration: 900, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" });
-    }catch(e){ an = null; }
+  let i = badge.querySelector(":scope > .cosmic-badge-told");
+  if(!i){
+    i = document.createElement("i");
+    i.className = "cosmic-badge-told";
+    i.setAttribute("aria-hidden", "true");
+    badge.appendChild(i);
   }
-  if(an && an.finished) an.finished.then(() => i.remove(), () => {});
-  else{ i.classList.add("is-still"); setTimeout(() => i.remove(), 900); }
+  if(ringMotionOff()){
+    i.classList.add("is-still");
+    clearTimeout(i.__still);
+    i.__still = setTimeout(() => i.classList.remove("is-still"), 900);
+    return;
+  }
+  i.classList.remove("is-still");
+  const op = homeFxNow(i, "opacity", 0), sc = homeFxNow(i, "scale", .6);
+  homeFxCancel(i, "__told");
+  try{
+    const an = i.animate([
+      { opacity: op, scale: String(sc), easing: "cubic-bezier(.22,.61,.36,1)" },
+      { opacity: .9, scale: "1", offset: .26, easing: "cubic-bezier(.45,.05,.55,.95)" },
+      { opacity: 0, scale: "1.12" }
+    ], { duration: 1150 });
+    an.__told = true;
+  }catch(e){}
+}
+/* the press: in, then a small spring, from wherever a press already is */
+function homeBubblePress(badge){
+  if(!badge || ringMotionOff()) return;
+  const sc = homeFxNow(badge, "scale", 1);
+  homeFxCancel(badge, "__press");
+  try{
+    const an = badge.animate([
+      { scale: String(sc), easing: "cubic-bezier(.3,.6,.4,1)" },
+      { scale: ".9", offset: .2, easing: "cubic-bezier(.45,0,.55,1)" },
+      { scale: "1.05", offset: .55, easing: "cubic-bezier(.45,0,.55,1)" },
+      { scale: "1" }
+    ], { duration: 560 });
+    an.__press = true;
+  }catch(e){}
+}
+/* a ring of its colour leaving it - the bubble's version of the halo off
+   the planet's rim; a few at most at once */
+function homeBubbleHalo(badge){
+  const hero = badge && badge.parentElement;
+  if(!hero || ringMotionOff()) return;
+  const live = hero.querySelectorAll(":scope > .cosmic-bubble-halo");
+  if(live.length >= 3) live[0].remove();
+  const r = document.createElement("i");
+  r.className = "cosmic-bubble-halo";
+  r.setAttribute("aria-hidden", "true");
+  r.style.left = badge.style.left; r.style.top = badge.style.top;
+  r.style.width = badge.offsetWidth + "px";
+  r.style.setProperty("--rank-color", badge.style.getPropertyValue("--rank-color") || "#FFFFFF");
+  /* where the float has the bubble right now */
+  let fy = 0;
+  try{ fy = new DOMMatrixReadOnly(getComputedStyle(badge).transform).m42 || 0; }catch(e){}
+  hero.insertBefore(r, badge);
+  try{
+    const an = r.animate([
+      { opacity: .85, transform: "translateY(" + fy + "px) scale(1)", easing: "cubic-bezier(.2,.7,.3,1)" },
+      { opacity: 0, transform: "translateY(" + fy + "px) scale(1.75)" }
+    ], { duration: 760 });
+    an.finished.then(() => r.remove(), () => r.remove());
+  }catch(e){ r.remove(); }
+}
+/* LOCKED: the same short, damped shake for a rank not reached and a
+   secret flare not found, and a dip in its light. Offsets in px along the
+   element's own x, on the individual `translate` (both are centred with
+   translate:-50% -50%). A second tap picks the shake up where it is. */
+const HOME_LOCK_SHAKE = [0, -4, 3.5, -2.6, 1.6, -.7, 0], HOME_LOCK_SHAKE_MS = 320;
+function homeShakeAt(an){
+  const pts = an.__shake || HOME_LOCK_SHAKE;
+  const p = Math.max(0, Math.min(1, (Number(an.currentTime) || 0) / HOME_LOCK_SHAKE_MS));
+  const f = p * (pts.length - 1), k = Math.floor(f);
+  return k >= pts.length - 1 ? pts[pts.length - 1] : pts[k] + (pts[k + 1] - pts[k]) * (f - k);
+}
+function homeLockedNudge(el, isBubble){
+  if(!el) return;
+  const still = ringMotionOff();
+  if(isBubble){
+    let d = el.querySelector(":scope > .cosmic-badge-dim");
+    if(!d){ d = document.createElement("i"); d.className = "cosmic-badge-dim"; d.setAttribute("aria-hidden", "true"); el.appendChild(d); }
+    if(still){
+      d.classList.add("is-still"); clearTimeout(d.__still);
+      d.__still = setTimeout(() => d.classList.remove("is-still"), 700);
+    } else {
+      const op = homeFxNow(d, "opacity", 0);
+      homeFxCancel(d, "__dim");
+      try{ d.animate([{ opacity: op, easing: "cubic-bezier(.3,.6,.4,1)" }, { opacity: .55, offset: .3, easing: "ease-in-out" }, { opacity: 0 }], { duration: 420 }).__dim = true; }catch(e){}
+    }
+  } else if(still){
+    el.classList.add("is-dim-still"); clearTimeout(el.__still);
+    el.__still = setTimeout(() => el.classList.remove("is-dim-still"), 700);
+  } else {
+    const op = homeFxNow(el, "opacity", 1);
+    homeFxCancel(el, "__dim");
+    try{ el.animate([{ opacity: op, easing: "cubic-bezier(.3,.6,.4,1)" }, { opacity: .45, offset: .3, easing: "ease-in-out" }, { opacity: 1 }], { duration: 420 }).__dim = true; }catch(e){}
+  }
+  if(still) return;
+  let from = 0;
+  try{ el.getAnimations().forEach(a => { if(a.__shake){ from = homeShakeAt(a); a.cancel(); } }); }catch(e){}
+  const pts = [from].concat(HOME_LOCK_SHAKE.slice(1));
+  try{
+    const an = el.animate(pts.map((x, k) => ({ translate: "calc(-50% + " + x.toFixed(2) + "px) -50%", offset: k / (pts.length - 1) })),
+      { duration: HOME_LOCK_SHAKE_MS, easing: "linear" });
+    an.__shake = pts;
+  }catch(e){}
+}
+/* A SECRET FLARE YOU HAVE FOUND answers in its own colour: it swells,
+   a ring of its colour goes out and four sparks fly off - children of the
+   flare, so they ride its orbit with it. */
+function secretFlareTold(dot){
+  if(!dot) return;
+  let fx = dot.querySelector(":scope > .cof-told");
+  if(!fx){
+    fx = document.createElement("i");
+    fx.className = "cof-told";
+    fx.setAttribute("aria-hidden", "true");
+    dot.appendChild(fx);
+  }
+  if(ringMotionOff()){
+    if(!fx.querySelector(".cof-told-ring")){ const b = document.createElement("b"); b.className = "cof-told-ring"; fx.appendChild(b); }
+    fx.classList.add("is-still"); clearTimeout(fx.__still);
+    fx.__still = setTimeout(() => { fx.classList.remove("is-still"); fx.innerHTML = ""; }, 700);
+    return;
+  }
+  fx.classList.remove("is-still");
+  const sc = homeFxNow(dot, "scale", 1);
+  homeFxCancel(dot, "__swell");
+  try{
+    dot.animate([
+      { scale: String(sc), easing: "cubic-bezier(.25,.7,.35,1)" },
+      { scale: "1.6", offset: .28, easing: "cubic-bezier(.45,0,.55,1)" },
+      { scale: "1" }
+    ], { duration: 640 }).__swell = true;
+  }catch(e){}
+  /* a ring and a burst of sparks, side by side with any still going */
+  const old = fx.querySelectorAll(":scope > b");
+  for(let k = 0; k < old.length - 9; k++) old[k].remove();
+  const w = dot.offsetWidth || 12;
+  const ring = document.createElement("b");
+  ring.className = "cof-told-ring";
+  fx.appendChild(ring);
+  try{
+    ring.animate([{ opacity: .95, transform: "scale(1)", easing: "cubic-bezier(.2,.7,.3,1)" }, { opacity: 0, transform: "scale(3.8)" }], { duration: 700 })
+      .finished.then(() => ring.remove(), () => ring.remove());
+  }catch(e){ ring.remove(); }
+  const a0 = Math.random() * 90;
+  for(let k = 0; k < 4; k++){
+    const sp = document.createElement("b");
+    sp.className = "cof-told-spark";
+    fx.appendChild(sp);
+    const a = (a0 + k * 90 + (k % 2 ? 14 : -10)) * Math.PI / 180, d = w * (k % 2 ? 2.3 : 2.9);
+    const dx = (Math.cos(a) * d).toFixed(1), dy = (Math.sin(a) * d).toFixed(1);
+    try{
+      sp.animate([
+        { opacity: 0, transform: "translate(0px, 0px) scale(.6)", easing: "cubic-bezier(.2,.7,.3,1)" },
+        { opacity: 1, transform: "translate(" + (dx * .35).toFixed(1) + "px, " + (dy * .35).toFixed(1) + "px) scale(1)", offset: .2, easing: "cubic-bezier(.3,.6,.4,1)" },
+        { opacity: 0, transform: "translate(" + dx + "px, " + dy + "px) scale(.3)" }
+      ], { duration: 640, delay: k * 18 }).finished.then(() => sp.remove(), () => sp.remove());
+    }catch(e){ sp.remove(); }
+  }
 }
 /* TAPPING THE PLANET (build 317). "I also think the same could go for
    the large planet, improve what happens when you click." It kept its
@@ -74739,7 +75260,12 @@ function flareBubbleTold(badge){
    darkens), a ripple of light runs out across it from where the finger
    landed, a halo leaves its rim, the rings brighten one after the other
    going outward, and the two rings of secret flares surge forward and
-   ease back.
+   ease back. Round three ("she loves it") keeps every piece exactly and
+   only changes what a QUICK SECOND TAP does: each part used to be
+   cancelled and started again, so a ripple half-way out vanished; now
+   the ripple and the halo each have a few copies that run side by side,
+   and the press and the rings carry on from where they are. The "....."
+   box is gone with the other boxes - the caption says where you stand.
    - Every piece is an overlay - a clipped disc over the sphere, a halo,
      two ring outlines - in one .cosmic-tapfx box added to the hero the
      first time it is tapped, just before the rank bubbles, so it sits
@@ -74752,6 +75278,7 @@ function flareBubbleTold(badge){
    - Reduce motion: no ripple and no surge; the press, the halo and the
      rings show still for a moment. Nothing waits for it and it waits
      for nothing - it is the answer to a tap. */
+const PLANET_TAP_COPIES = 3;
 function planetTapFx(hero, ev){
   if(!hero) return;
   let fx = hero.querySelector(":scope > .cosmic-tapfx");
@@ -74759,19 +75286,32 @@ function planetTapFx(hero, ev){
     fx = document.createElement("div");
     fx.className = "cosmic-tapfx";
     fx.setAttribute("aria-hidden", "true");
-    fx.innerHTML = '<div class="tfx-planet"><i class="tfx-press"></i><i class="tfx-ripple"></i></div>' +
-      '<i class="tfx-rim"></i><i class="tfx-ring is-in"></i><i class="tfx-ring is-out"></i>';
+    fx.innerHTML = '<div class="tfx-planet"><i class="tfx-press"></i>' + '<i class="tfx-ripple"></i>'.repeat(PLANET_TAP_COPIES) + '</div>' +
+      '<i class="tfx-rim"></i>'.repeat(PLANET_TAP_COPIES) + '<i class="tfx-ring is-in"></i><i class="tfx-ring is-out"></i>';
     hero.insertBefore(fx, hero.querySelector(":scope > .cosmic-icon-badge"));
   }
   /* the outer ring's real radius (Home's is HOME_OUTER_R) */
   const outer = hero.querySelector(".cosmic-orbit-ring[r]:not([r='108'])");
   const R = outer ? Number(outer.getAttribute("r")) || HOME_OUTER_R : HOME_OUTER_R;
   fx.style.setProperty("--tfx-outer", (2 * R / 360 * 100).toFixed(3) + "%");
+  /* the next copy of a part that leaves something behind: an idle one,
+     else the one that has been going longest */
+  const nextOf = (sel) => {
+    const all = [...fx.querySelectorAll(sel)];
+    let pick = all.find(e => !e.getAnimations().length);
+    if(!pick){
+      pick = all.reduce((a, b) => ((Number(a.getAnimations()[0]?.currentTime) || 0) >= (Number(b.getAnimations()[0]?.currentTime) || 0) ? a : b));
+      pick.getAnimations().forEach(a => a.cancel());
+    }
+    return pick;
+  };
   const parts = {
-    press: fx.querySelector(".tfx-press"), ripple: fx.querySelector(".tfx-ripple"), rim: fx.querySelector(".tfx-rim"),
+    press: fx.querySelector(".tfx-press"), ripple: nextOf(".tfx-ripple"), rim: nextOf(".tfx-rim"),
     rin: fx.querySelector(".tfx-ring.is-in"), rout: fx.querySelector(".tfx-ring.is-out")
   };
-  Object.values(parts).forEach(el => el.getAnimations().forEach(a => a.cancel()));
+  /* the press and the rings carry on from where a tap before left them */
+  const from = {};
+  ["press", "rin", "rout"].forEach(k => { from[k] = homeFxNow(parts[k], "opacity", 0); parts[k].getAnimations().forEach(a => a.cancel()); });
   /* where the finger landed, on the sphere */
   const disc = fx.querySelector(".tfx-planet").getBoundingClientRect();
   let ox = 50, oy = 50;
@@ -74789,13 +75329,13 @@ function planetTapFx(hero, ev){
   }
   fx.classList.remove("is-still");
   const A = (el, kf, o) => { try{ el.animate(kf, Object.assign({ fill: "backwards" }, o)); }catch(e){} };
-  A(parts.press, [{ opacity: 0 }, { opacity: 1, offset: .2 }, { opacity: 0 }], { duration: 520, easing: "ease-out" });
+  A(parts.press, [{ opacity: from.press }, { opacity: 1, offset: .2 }, { opacity: 0 }], { duration: 520, easing: "ease-out" });
   A(parts.ripple, [{ opacity: .95, transform: "translate(-50%, -50%) scale(.06)" }, { opacity: 0, transform: "translate(-50%, -50%) scale(1)" }],
     { duration: 1100, easing: "cubic-bezier(.15,.6,.3,1)" });
   A(parts.rim, [{ opacity: 0, transform: "translate(-50%, -50%) scale(1)" }, { opacity: .9, offset: .15 }, { opacity: 0, transform: "translate(-50%, -50%) scale(1.42)" }],
     { duration: 1000, easing: "ease-out" });
-  A(parts.rin, [{ opacity: 0 }, { opacity: 1, offset: .3 }, { opacity: 0 }], { duration: 900, delay: 140, easing: "ease-in-out" });
-  A(parts.rout, [{ opacity: 0 }, { opacity: 1, offset: .3 }, { opacity: 0 }], { duration: 900, delay: 300, easing: "ease-in-out" });
+  A(parts.rin, [{ opacity: from.rin }, { opacity: 1, offset: .3 }, { opacity: 0 }], { duration: 900, delay: from.rin > .05 ? 0 : 140, easing: "ease-in-out" });
+  A(parts.rout, [{ opacity: from.rout }, { opacity: 1, offset: .3 }, { opacity: 0 }], { duration: 900, delay: from.rout > .05 ? 0 : 300, easing: "ease-in-out" });
   /* the surge: forward fast, then given back slowly, from wherever an
      earlier surge has got to */
   hero.querySelectorAll(":scope > .cosmic-hero-orbitlayer").forEach(layer => {
@@ -74812,246 +75352,6 @@ function planetTapFx(hero, ev){
       an.__tfxSurge = true;
     }catch(e){}
   });
-}
-
-/* THE BOX RIDES WITH WHAT IT POINTS AT (build 317, round two). "The
-   things pop up when clicking the flares they slightly shake." A flare
-   turns on the compositor (its orbit's spin) and a rank bubble floats
-   there; the box used to be moved from a requestAnimationFrame loop that
-   MEASURED the target every frame and wrote the line's left/top - so on
-   any frame the main thread did not get to (a phone drops them all the
-   time) the box stood still while the flare went on, and the next frame
-   caught it up with a jump. Measured frame-stepped with two frames in
-   four missed: 1px jumps (check_b317_followglide); after, 0.01-0.07px.
-   Now the box, its line and its ring are one group, and that group is
-   given an animation of its own: the target's path over the box's life,
-   read once when it opens by stepping the target's own animations through
-   it (contextualFollowPath - the same maths the compositor uses, because
-   it IS those animations) and played back as translate3d keyframes on the
-   same timeline from the same moment. The two then move together on the
-   compositor, frame for frame, whatever the main thread is doing; no
-   layout property changes after the box is placed, nothing is rounded,
-   and the box keeps the side it opened on for its whole life (it is
-   placed once, already clear of where the target will go). */
-const CONTEXTUAL_FOLLOW_MS = 4650, CONTEXTUAL_FOLLOW_STEP = 150;
-function contextualFollowPath(el, ms){
-  const moving = [];
-  for(let n = el; n && n !== document.body; n = n.parentElement){
-    let list = [];
-    try{ list = n.getAnimations(); }catch(e){}
-    list.forEach(an => {
-      if(an.playState !== "running" && an.playState !== "paused") return;
-      let moves = false;
-      try{ moves = an.effect.getKeyframes().some(k => ["transform", "rotate", "translate", "scale"].some(pr => k[pr] !== undefined)); }catch(e){}
-      if(moves) moving.push(an);
-    });
-  }
-  if(!moving.length) return null;
-  const centre = () => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
-  const saved = moving.map(an => ({ an, st: an.startTime, ct: Number(an.currentTime) || 0, rate: an.playbackRate || 1, running: an.playState === "running" }));
-  const c0 = centre(), out = [];
-  try{
-    for(let t = 0; t <= ms; t += CONTEXTUAL_FOLLOW_STEP){
-      saved.forEach(sv => { sv.an.currentTime = sv.ct + t * sv.rate; });
-      const c = centre();
-      out.push([c[0] - c0[0], c[1] - c0[1]]);
-    }
-  }catch(e){ return null; }
-  finally{
-    /* put every animation back exactly where it was: a running one by
-       its start time, so it stays tied to the timeline */
-    saved.forEach(sv => { try{ if(sv.running && sv.st !== null) sv.an.startTime = sv.st; else sv.an.currentTime = sv.ct; }catch(e){} });
-  }
-  return out;
-}
-/* A small contextual info popup that appears right next to whatever
-   element it's explaining, instead of a generic toast at the bottom
-   of the screen — for exactly the situations (tapping a Flare, tapping
-   a ladder tier) where the message is ABOUT one specific element on
-   screen, so it should visibly belong to that element rather than
-   floating disconnected at the bottom. Shares the same Liquid Glass
-   styling, positioning logic (centered on the target, clamped to the
-   viewport, auto-flipping above/below), and thin-triangle arrow as
-   the tour tooltip, since all three are the same underlying idea:
-   information anchored to a specific point on screen.
-   - `follow` (build 313, reworked 317): the box rides with a moving
-     target - see contextualFollowPath above. `refind` finds the same
-     target again if the screen is rebuilt under it.
-   - `ring` draws a ring round the target in place of the dot, which
-     would otherwise sit on the very flare being explained, and the line
-     stops at the ring; `ringFit` sizes it round something big.
-   - `aimEdge` (build 317): the line ends on the target's top or bottom
-     edge - whichever faces the box - not at its centre. "Clicking the
-     planet, the line pointing at goes to the center, do it from the
-     bottom or top edge." */
-function showContextualInfo(targetEl, message, opts){
-  opts = opts || {};
-  if(showContextualInfo._raf){ cancelAnimationFrame(showContextualInfo._raf); showContextualInfo._raf = 0; }
-  if(showContextualInfo._follow){ try{ showContextualInfo._follow.cancel(); }catch(e){} showContextualInfo._follow = null; }
-  ["contextual-info-popup", "contextual-info-line", "contextual-info-line-dot", "contextual-info-follow"].forEach(id => {
-    const e = document.getElementById(id);
-    if(e) e.remove();
-  });
-  if(!targetEl) return;
-  const rect = targetEl.getBoundingClientRect();
-  const path = opts.follow ? contextualFollowPath(targetEl, CONTEXTUAL_FOLLOW_MS) : null;
-  /* how far the target will travel, so the box can be placed clear of
-     the screen's edges for the whole of its life */
-  const ext = { x0: 0, x1: 0, y0: 0, y1: 0 };
-  (path || []).forEach(([x, y]) => { ext.x0 = Math.min(ext.x0, x); ext.x1 = Math.max(ext.x1, x); ext.y0 = Math.min(ext.y0, y); ext.y1 = Math.max(ext.y1, y); });
-
-  const popup = document.createElement("div");
-  popup.id = "contextual-info-popup";
-  const line = document.createElement("div");
-  line.id = "contextual-info-line";
-  const lineDot = document.createElement("div");
-  lineDot.id = "contextual-info-line-dot";
-  /* a followed box, its line and its ring move as one group */
-  let host = document.body, group = null;
-  if(path){
-    group = document.createElement("div");
-    group.id = "contextual-info-follow";
-    document.body.appendChild(group);
-    host = group;
-  }
-  host.append(line, lineDot);
-  const text = document.createElement("p");
-  text.className = "contextual-info-text";
-  text.textContent = message;
-  popup.append(text);
-  host.appendChild(popup);
-
-  const targetCenterX = rect.left + rect.width / 2;
-  const targetCenterY = rect.top + rect.height / 2;
-  const margin = 12;
-  /* ---- UNDER THE THING YOU TAPPED ----
-     "The placement of that pop up is bad, it needs to be under the one
-     you clicked."
-     It flipped above the target whenever it thought it would not fit
-     below, and it thought that far too often: the height was a guessed
-     90px and the floor was another 90px up from the bottom of the
-     screen, so a tile anywhere in the lower third of a phone got its
-     answer ABOVE it - over the tile, or over the one before it.
-     Measured instead. The popup is already in the document, so its
-     real height is there to read, and the only reserve that belongs at
-     the bottom is the tab bar's own footprint. Above is still the
-     fallback, because off the bottom of the screen is worse than
-     above - it is just no longer the usual case. */
-  const realHeight = popup.getBoundingClientRect().height || 90;
-  /* The bar's REAL top, not a guessed 84px: with a home indicator the
-     bar's footprint is ~123px, so a badge in the case's last row got its
-     answer drawn over Home and Profile. */
-  const tabBar = document.querySelector(".bottomtabs:not([hidden])");
-  const barBox = tabBar ? tabBar.getBoundingClientRect() : null;
-  const floorY = barBox && barBox.height ? Math.min(window.innerHeight - 12, barBox.top - 8) : window.innerHeight - 12;
-  const above = rect.bottom + 14 + realHeight + ext.y1 > floorY;
-  if(above){
-    popup.style.top = "auto";
-    popup.style.bottom = (window.innerHeight - rect.top + 14) + "px";
-  } else {
-    popup.style.bottom = "auto";
-    popup.style.top = (rect.bottom + 14) + "px";
-  }
-  popup.style.left = "0px";
-  popup.style.visibility = "hidden";
-  const naturalWidth = popup.getBoundingClientRect().width;
-  let popupLeft = targetCenterX - naturalWidth / 2;
-  const lo = margin - ext.x0, hi = window.innerWidth - naturalWidth - margin - ext.x1;
-  popupLeft = lo <= hi ? Math.max(lo, Math.min(popupLeft, hi))
-    : Math.max(margin, Math.min(popupLeft, window.innerWidth - naturalWidth - margin));
-  popup.style.left = popupLeft + "px";
-  popup.style.visibility = "visible";
-
-  /* Same line-connector redesign as the main tour tooltip, and for
-     the same reason — this is the popup specifically named as broken
-     (used for things like tapping the Home orbit sphere), sharing the
-     exact same arrow mechanism that was the root problem there too. */
-  const pRect = popup.getBoundingClientRect();
-  const aimX = targetCenterX;
-  const aimY = opts.aimEdge ? (above ? rect.top : rect.bottom) : targetCenterY;
-  const lineStartY = above ? pRect.bottom - 6 : pRect.top + 6;
-  /* a followed box's line leaves from the nearest point of its edge */
-  const lineStartX = (path || opts.aimEdge) ? Math.max(pRect.left + 18, Math.min(aimX, pRect.right - 18)) : pRect.left + pRect.width / 2;
-  let ringD = 0;
-  if(opts.ring){
-    const tw = Math.max(rect.width, rect.height);
-    /* ringFit: round the whole of something big (a rank bubble), not a
-       tiny-flare-sized ring on top of it */
-    ringD = opts.ringFit ? tw + 10 : Math.max(16, Math.min(28, tw + 9));
-  }
-  const dx = aimX - lineStartX;
-  const dy = aimY - lineStartY;
-  /* in ring mode the line stops at the ring, not on the flare */
-  const dist = Math.max(0, Math.sqrt(dx * dx + dy * dy) - ringD / 2);
-  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-  line.style.left = lineStartX + "px";
-  /* Same coordinate fix as the main tour's own line, and the same
-     real cause: this line rotates around its own vertical center
-     (transform-origin:0 50%), but style.top was being set to
-     lineStartY directly — the element's TOP edge, not its center.
-     For this 3px-tall line that's a measured 1.5px gap between the
-     intended start point and where it actually began. */
-  line.style.top = (lineStartY - 1.5) + "px";
-  line.style.width = dist + "px";
-  line.style.transform = "rotate(" + angle + "deg)";
-  if(opts.ring){
-    lineDot.classList.add("is-ring");
-    lineDot.style.width = lineDot.style.height = ringD + "px";
-    lineDot.style.left = (aimX - ringD / 2) + "px";
-    lineDot.style.top = (aimY - ringD / 2) + "px";
-  } else {
-    lineDot.style.left = (aimX - 4.5) + "px";
-    lineDot.style.top = (aimY - 4.5) + "px";
-  }
-
-  /* the ride: the group plays the target's own path back from here */
-  const ride = (fromX, fromY, pth, ms) => {
-    if(showContextualInfo._follow){ try{ showContextualInfo._follow.cancel(); }catch(e){} }
-    showContextualInfo._follow = null;
-    if(!group || !pth || pth.length < 2) return;
-    try{
-      showContextualInfo._follow = group.animate(pth.map(([x, y]) => ({ transform: "translate3d(" + (fromX + x) + "px, " + (fromY + y) + "px, 0)" })),
-        { duration: (pth.length - 1) * CONTEXTUAL_FOLLOW_STEP, easing: "linear", fill: "forwards" });
-    }catch(e){}
-  };
-  if(path) ride(0, 0, path);
-  requestAnimationFrame(() => { popup.classList.add("contextual-info-show"); line.classList.add("contextual-info-show"); lineDot.classList.add("contextual-info-show"); });
-  const removeAll = () => { popup.remove(); line.remove(); lineDot.remove(); if(group) group.remove(); };
-  /* It lives on <body>, so a screen change does not take it: tapping a
-     Home flare and then a tab left "Supernova rank - 56 more levels"
-     and its pointer line over the Profile screen for the rest of the
-     3.2s. Same rule as the info bubbles: it goes when the thing it
-     points at leaves the page. */
-  if(showContextualInfo._mo) showContextualInfo._mo.disconnect();
-  let current = targetEl;
-  const orphanWatch = showContextualInfo._mo = new MutationObserver(() => {
-    if(current.isConnected && popup.isConnected) return;
-    /* a followed target whose screen was rebuilt is found again, and the
-       ride picks up from it for the rest of the box's life */
-    if(opts.follow && opts.refind && popup.isConnected){
-      const again = opts.refind();
-      if(again){
-        current = again;
-        if(group){
-          const r2 = again.getBoundingClientRect();
-          const done = showContextualInfo._follow ? (Number(showContextualInfo._follow.currentTime) || 0) : 0;
-          const rest = contextualFollowPath(again, Math.max(CONTEXTUAL_FOLLOW_STEP, CONTEXTUAL_FOLLOW_MS - done));
-          ride(r2.left + r2.width / 2 - targetCenterX, r2.top + r2.height / 2 - targetCenterY, rest || [[0, 0], [0, 0]]);
-        }
-        return;
-      }
-    }
-    orphanWatch.disconnect();
-    removeAll();
-  });
-  orphanWatch.observe(stage, { childList: true });
-  clearTimeout(showContextualInfo._t);
-  showContextualInfo._t = setTimeout(() => {
-    popup.classList.remove("contextual-info-show");
-    line.classList.remove("contextual-info-show");
-    lineDot.classList.remove("contextual-info-show");
-    setTimeout(removeAll, 250);
-  }, opts.follow ? 4200 : 3200);
 }
 
 function showToast(msg, tone){
