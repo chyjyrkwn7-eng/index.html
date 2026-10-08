@@ -64148,11 +64148,10 @@ function cosmicScarArt(){
    hard edge or the box it is drawn in. Seeded, like the smoke. */
 let snDustCache = null;
 /* SUPERNOVA'S ART, DRAWN AHEAD (cut3): the scar (cosmicScarArt, ~60-140ms
-   the first time in a session) and the blast's dust (snDustURL, ~25ms).
-   Called where a dropped frame cannot be seen - as Supernova's results
-   screen is built, and as the scene is built, before its first frame -
-   so neither lands in the middle of the scene. Both are cached, so a
-   second call is free. */
+   the first time in a session) and the blast's dust (snDustURL, ~25-35ms).
+   Called as the scene is built, before its first frame, where a dropped
+   frame cannot be seen - so neither lands in the middle of the scene.
+   Both are cached, so a second call is free. */
 function warmSupernovaArt(){
   try{ cosmicScarArt(); }catch(e){}
   try{ snDustURL(); }catch(e){}
@@ -67103,9 +67102,13 @@ function playRankUpScene(tierKey, opts, spec){
      art (cosmicScarArt, ~60-140ms the first time in a session) and the
      blast's dust (snDustURL, ~25ms) are drawn here, while nothing of the
      scene is on screen yet - the dust used to be drawn at the swell, a
-     dropped frame or two with the planet shaking. Supernova's results
-     screen warms both as it is built (summarize), so on the usual way in
-     this finds them drawn already. */
+     dropped frame or two with the planet shaking. Measured (cut3): ~200ms
+     here in all, before the dark comes up; on the results screen that is
+     the end of a held beat with only transform and opacity animations
+     running (the compositor's, which a busy main thread does not stop),
+     on Home a cleared stage. Drawing it as the results screen is built
+     instead was measured too, and added ~150ms between the last answer
+     and the results - a delay someone would feel, for nothing. */
   if(spec.times.swell) warmSupernovaArt();
   /* Home's own builder, with store.supernovaAchieved held at `sn` for the
      length of the build and the save it makes held back (nothing is
@@ -85364,9 +85367,6 @@ function summarize(){
   if(supernovaJustUnlocked){
     store.pendingSupernovaCutscene = true;
     saveStore();
-    /* the scene's art, drawn now - inside the task that builds this
-       screen - rather than as the scene starts (warmSupernovaArt) */
-    warmSupernovaArt();
   } else {
     /* Every other tier gets the shorter version of the same idea \u2014
        if more than one was reached in a single session (a big enough
