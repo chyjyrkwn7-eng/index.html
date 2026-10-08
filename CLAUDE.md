@@ -13154,6 +13154,52 @@ well as on landing. The grab is unchanged.
   went red for the right build. It reads the REAL 100% now: transparent
   text under `linear-gradient(105deg, <g1> ...)`.
 
+**No beam on the UFO's box until the saucer fires it, and the beam is blue
+(build 317, round 5).** *"before the ufo lands on it, the box already has
+the beam there, I've mentioned this a few times but fix that, the beam
+shouldn't be there till the ufo uses the beam, could the beam be blue btw?"*
+- **The "beam" was the box's own lit look.** Round 3 put every 100% box in
+  its effect's colours from its first frame, and for the UFO that is a
+  bright green rim, a green wash poured down from the top edge and a green
+  inner glow (`.hfx-tint`) - the beam's light, on the box from the card's
+  landing, 4s before the saucer fired. (Round 1's `HFX_TINT.ufo.on` 2800
+  had kept it dark till the beam - *"the edge lights up before the alien
+  doesn't beam"* - and round 3's fix for gold-first boxes took it out.) The
+  box's inner beam, rings and searchlights were already right.
+- Now the UFO's box is in its colours but **UNLIT** - rim at 22% (the
+  default's gold rim is faint too), no wash, no inner glow; the 100% and the
+  bars keep the green, which is colour, not light - from its first frame
+  (`hfxUfoUnlit`, put on as the results card, the unlock card's miniature
+  and a live Customize stage are built, never with reduce motion), and
+  **lit by the beam**: `hfxUfoLight` runs WAAPI on the card's own
+  `border-color`, `--hfx-wash` and its `.hfx-tint`, on the effect's clock,
+  up over 0.25s from 3.92s (2.8s in a small box's 7s UFO). Its LAST
+  keyframe is offset 1, said outright - left implicit, the final keyframe
+  is the underlying value, which is the class's unlit look, and the box
+  drifted back to dark after lighting. At the end the class comes off as
+  the animations are cancelled, so the settled box is the lit one it
+  always was; a replay starts from lit and dims with the dark (the
+  implicit FIRST keyframe).
+- **The tractor beam is blue** - `HFX_UFO_BEAM`, one line, `"green"` the
+  other value (`HFX_UFO_BEAMS`): the beam sprite (saucer's and box's), its
+  rings, the glow under the hull and its strike flare on the box. The
+  UFO's lights, scan, lock, ghost and the box's colours stay green.
+  Compared in the real effect at the same seeded moments: a green beam in
+  a green box reads as more of the box's own glow; a blue one reads as a
+  beam, there only while the saucer is.
+- Checked frame by frame on the recorder's clock (phone, tablet, a
+  two-unit box, the unlock card's miniature, a Customize stage): the box's
+  rim, glow, inner beam and a column of light down it all come on at or
+  after the frame the beam reaches the box (3.89-3.96s; 2.6-2.9s in the
+  stage); on 7ee6c51 the glow is on from its first frame.
+  `check_b317_hundobox` holds it on the pixels (the rim, outside the box's
+  own dim, at under 45% of its lit green; no column of light in the box's
+  top band; nothing of the effect showing in the box but its dim) at
+  1.6/2.6/3.6s on a phone, a tablet and a two-unit box, and the miniature
+  and the stage on their computed styles; all fail on 7ee6c51. The
+  first-frame check for the UFO now asks for the green 100% and bar exactly
+  as settled with the rim unlit, and reads the settled box at 6.5s.
+
 **The UFO is 2.5s longer (build 317, round 4), by ADDING to it, not by
 slowing it.** *"Could the UFO hundo effect last another 2-3 seconds somehow?
 It's so cool I want it to be longer."* 8.6s became 11.1s

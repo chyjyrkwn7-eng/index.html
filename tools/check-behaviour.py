@@ -14463,8 +14463,9 @@ def check_b317_hundobox(br):
               __run100('Identity Crimes');
               for(let i = 0; i < 300 && !window.__fxAt && !window.__celAt; i++) await wait(50);
               /* past every effect's old moment for its colours (the UFO's was 2.8s) */
-              /* (the UFO's box lights with its beam at 3.92s: settled after that) */
-              await wait(fx === 'ufo' ? 4700 : 3400); mo.disconnect();
+              /* (the UFO's box lights with its beam at 3.92s: settled well after
+                 that, with room for a loaded machine starting it late) */
+              await wait(fx === 'ufo' ? 6500 : 3400); mo.disconnect();
               const g = document.querySelector('.rs-screen .rs-grade'); if(!g) return null;
               const p = g.querySelector('.rs-pct'), sg = p.querySelector('.rs-pct-sign');
               const R = e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
