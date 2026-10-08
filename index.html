@@ -11643,11 +11643,17 @@
   .sn-fx > :not(.sn-debris){ left:50%; top:50%; translate:-50% -50%; border-radius:50%; opacity:0; }
   .sn-fx .sn-heat{ width:100%; height:100%;
     background:radial-gradient(circle, #FFFFFF 0 18%, #FFF1D2 34%, rgba(255,196,120,.82) 50%, rgba(255,120,60,.32) 63%, rgba(255,90,40,0) 74%); }
-  #supernova-cutscene.sn-swell .sn-heat{ animation:sn-heat var(--sn-swell, 1.8s) cubic-bezier(.5,0,.8,.3) both; }
-  @keyframes sn-heat{ 0%{ opacity:0; transform:scale(.6); } 45%{ opacity:.4; transform:scale(.95); } 80%{ opacity:.78; transform:scale(1.12); } 100%{ opacity:1; transform:scale(1.32); } }
+  /* ONE animation for the heat, the swell and the blow-out after it (the
+     last 450ms): a second animation swapped in by sn-detonate left the
+     first one's fill in force, and the planet stayed white-hot over the
+     scar. --sn-swell is the swell; the blow-out is its last fifth. */
+  #supernova-cutscene.sn-swell .sn-heat{ animation:sn-heat calc(var(--sn-swell, 1800ms) * 1.25) linear both; }
+  @keyframes sn-heat{
+    0%{ opacity:0; transform:scale(.6); animation-timing-function:cubic-bezier(.5,0,.8,.3); }
+    80%{ opacity:1; transform:scale(1.32); animation-timing-function:ease-out; }
+    100%{ opacity:0; transform:scale(2.2); }
+  }
   #supernova-cutscene.sn-swell .rank-spin{ scale:1.14; transition:scale var(--sn-swell, 1.8s) cubic-bezier(.55,0,.85,.35); }
-  #supernova-cutscene.sn-detonate .sn-heat{ animation:sn-heat-out .45s ease-out both; }
-  @keyframes sn-heat-out{ from{ opacity:1; transform:scale(1.32); } to{ opacity:0; transform:scale(2.2); } }
   .sn-fx .sn-shock{ width:100%; height:100%; box-sizing:border-box; border:3px solid rgba(255,248,236,.95);
     box-shadow:0 0 22px 6px rgba(255,176,96,.55), inset 0 0 14px 2px rgba(255,206,150,.45); }
   .sn-fx .sn-shock.is-2{ border:9px solid rgba(255,122,52,.42); box-shadow:0 0 30px 10px rgba(255,92,32,.25); }
@@ -11655,7 +11661,7 @@
   #supernova-cutscene.sn-detonate .sn-shock.is-2{ animation-duration:1.7s; animation-delay:.12s; }
   @keyframes sn-shock{ 0%{ opacity:1; transform:scale(.9); } 70%{ opacity:.55; } 100%{ opacity:0; transform:scale(11); } }
   .sn-fx .sn-dust{ width:270%; height:270%;
-    background:radial-gradient(circle, rgba(24,11,8,0) 0 16%, rgba(40,18,11,.78) 30%, rgba(30,14,9,.6) 44%, rgba(20,9,6,.28) 56%, rgba(20,9,6,0) 68%);
+    background:radial-gradient(circle, rgba(46,17,8,0) 0 16%, rgba(62,22,9,.84) 30%, rgba(46,17,8,.66) 44%, rgba(30,11,6,.32) 56%, rgba(30,11,6,0) 68%);
     -webkit-mask-image:var(--smoke, none); mask-image:var(--smoke, none); -webkit-mask-size:100% 100%; mask-size:100% 100%; }
   #supernova-cutscene.sn-detonate .sn-dust{ animation:sn-dust 3.2s cubic-bezier(.2,.6,.3,1) .35s both; }
   @keyframes sn-dust{ 0%{ opacity:0; transform:scale(.45) rotate(0deg); } 22%{ opacity:.95; transform:scale(1) rotate(12deg); } 100%{ opacity:0; transform:scale(1.9) rotate(44deg); } }

@@ -13501,7 +13501,7 @@ def check_b317_supernova(br):
     check("layered right after the plasma with no z-index, so the tap box and the bubbles paint over it",
           r0.get("afterPlasma") and r0.get("z") == "auto" and r0.get("scarred"), (r0.get("afterPlasma"), r0.get("z")))
     tap = pg.evaluate("""() => { const h = document.querySelector('.panel.home .cosmic-hero-wrap');
-      const s = h.querySelector('.cosmic-hero-main circle[r="52"]'); const r = s.getBoundingClientRect();
+      const s = h.querySelector('.cosmic-hero-main circle[fill^="url(#cosmicSphereGrad"]'); const r = s.getBoundingClientRect();
       s.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: r.left + r.width * .7, clientY: r.top + r.height * .7 }));
       const kids = [...h.children], fx = h.querySelector(':scope > .cosmic-tapfx'), sc = h.querySelector(':scope > .cosmic-scar');
       return { fx: !!fx, order: fx && sc ? kids.indexOf(fx) > kids.indexOf(sc) : null, z: fx ? getComputedStyle(fx).zIndex : null }; }""")
