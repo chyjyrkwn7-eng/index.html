@@ -13460,10 +13460,17 @@ CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeou
 
 
 CUTSPIN_SEEK = """(t) => { const M = window.__t0s = window.__t0s || new WeakMap();
+  const first = !window.__seekOn; window.__seekOn = true;
   document.getAnimations().forEach(an => {
     /* the rings' slow spins start on a shared wall clock: from 0 here, so
-       every run crosses the same flares over the same bubbles (7s in: many crossings) */
-    if(!M.has(an)) M.set(an, { at: t, from: /orbit/.test(an.animationName || '') ? 7000 : (an.currentTime || 0), done: false });
+       every run crosses the same flares over the same bubbles (7s in: many crossings).
+       A FINITE animation that starts after the first frame starts from 0:
+       its own currentTime when first seen is REAL time since it began (the
+       document timeline is not on the page clock), which under load put the
+       whirl's end up to a third of a second early (the second evolution
+       round's 5.4s slowing measured 4.87s). */
+    let fin = true; try{ fin = an.effect.getComputedTiming().iterations !== Infinity; }catch(e){}
+    if(!M.has(an)) M.set(an, { at: t, from: /orbit/.test(an.animationName || '') ? 7000 : (!first && fin ? 0 : (an.currentTime || 0)), done: false });
     const s = M.get(an); if(s.done) return;
     const want = s.from + (t - s.at) * 1000;
     let end = Infinity; try{ end = an.effect.getComputedTiming().endTime; }catch(e){}
