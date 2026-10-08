@@ -13192,6 +13192,19 @@ an iPhone. Over the same passes UFO ran 22-30 fps across 8.6s, World Tree
 39-55 across 5.6s, Fireworks 11-19 and the bare screen 17-27 across 7s:
 the first seconds are the results reveal's own busiest, and UFO's window
 runs longest past them. Nothing was changed for it.
+Re-checked after the b316-work merge, by trace and by three more
+interleaved passes (CPU 4x, 440x956). Trace over each effect's window:
+2 backdrop-filtered elements for UFO and Fireworks (the chat pair), 6 for
+Bubbles (plus its 4 heroes); main-thread frames UFO 499 in 8.6s, Bubbles
+361 and Fireworks 174 in 7s; Fireworks' extra is the canvas (`Commit`
+1.59s against UFO's 0.54s, `FireAnimationFrame` 0.68s), and the bare
+screen with every effect layer hidden drew only 226 frames in the same
+7s - the reveal itself. Passes, frames in the window, live / chat hidden:
+Fireworks 256, 263, 227 / 314, 240, 311; Bubbles 225, 226, 318 / 235, 185,
+226; UFO 352, 436, 395 / 398, 295, 338. The ranges overlap on every
+effect, so taking the only backdrop-filtered elements away does not
+clearly help, and the results cards have no live backdrop to swap for a
+static look. Nothing kept.
 
 **Bubbles** - no giant bubble from the number any more (`hfxCarry` is gone).
 `hfxBubblesGlass`: a few far small bubbles (sprites), **Liquid Glass heroes -
