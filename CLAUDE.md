@@ -15680,7 +15680,31 @@ disagree with it.
       plain at the blast and during the sweep; the scene's planet the
       same set of top-level layers as Home's Supernova build, every
       revealed one showing by the title; 33-37.5s. `check_b317_cutend`
-      runs to 40s (Supernova's title is up at ~29s).
+      runs to 40s (Supernova's title is up at ~29s). The Home-size check
+      in `check_b317_cutspin` skips the flare while its slot is `.is-attn`
+      (it breathes in scale there, by design).
+    - **TWO HARNESS FAULTS IN THE FRAME-STEPPER (`CUTSPIN_SEEK`, and the
+      recorder's copy), both found because the slowing measured short.**
+      (1) A finite animation that appears mid-run was started from its own
+      `currentTime` when first seen - but the document timeline is REAL
+      time, not the page clock, so that was the real time the harness took
+      to get round to it: up to a third of a second under load, the 5.4s
+      slowing measuring 4.87s. It starts from 0 now (infinite loops, and
+      everything present at the first seek, keep theirs - Home syncs its
+      loops to the wall clock). (2) Then the whirl never finished:
+      `(17.9 - 5.3) * 1000` is 12599.999..., which parked it a hair short
+      of its end, PAUSED, and `finish()` on an animation paused at its end
+      leaves it paused - its `finished` never resolved and the scene ran
+      on its 2.5s fallback. The seek is rounded to the microsecond, and if
+      `finish()` leaves it unfinished, `play(); finish()`. **A frame-stepped
+      timing that comes out wrong by a fixed amount is worth suspecting in
+      the stepper before the scene.**
+    - **Seams (an add-on, same round)**: `rk-nova-shock-soft` and
+      `rk-nova-frag-soft` (the Supernova emblem's recorded bubble) were
+      invisible at both ends but did not END where they began; their last
+      frame is their first now - the way back is taken at opacity 0 (the
+      shock's last 2%, the fragments' from 82%) - and check-loops reports
+      0 seams.
   - **The lag and the "placed off" flares.** The second round took the
     bubbles' `backdrop-filter` blur off inside a scene (re-sampled every
     frame while they move); the third round put it back, because the
