@@ -11797,6 +11797,40 @@ def check_b313_fx(br):
               waves: [...L.querySelectorAll('.hfx-uw-wave')].map(w => new DOMMatrixReadOnly(getComputedStyle(w).transform).m41),
               caus: [...L.querySelectorAll('.hfx-uw-caus')].map(e => getComputedStyle(e).backgroundImage.slice(0, 26)),
               alphas, rays: L.querySelectorAll('.hfx-uw-ray').length, bubbles: L.querySelectorAll('.hfx-uw-bub').length }; };
+          /* round 5: the screen under the water, every 100ms - which cards
+             move, where the surface is, whether the character is holding its
+             breath - and every bubble as it goes in */
+          const uw = fx === 'underwater' ? { rows: [], bubs: [] } : null;
+          let uwIv = null, uwMo = null;
+          if(uw){
+            const L0 = document.querySelector('.hfx-layer.hfx-underwater');
+            if(L0){ uwMo = new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if(!n.classList || !n.classList.contains('hfx-uw-bub')) return;
+              const wob = n.getAnimations().find(a => /wob/.test(a.animationName || '')), tm = wob ? wob.effect.getTiming() : {};
+              uw.bubs.push({ ps: parseFloat(n.style.getPropertyValue('--ps')), from: n.dataset.from || '', wp: tm.duration || null, dir: tm.direction || null, it: tm.iterations || 0 }); })));
+              uwMo.observe(L0, { childList: true, subtree: true }); }
+            uwIv = setInterval(() => { const sea = document.querySelector('.hfx-layer.hfx-underwater .hfx-uw-sea'), av = document.querySelector('.rs-screen .results-level-avatar');
+              const aq = av && av.getBoundingClientRect();
+              uw.rows.push({ t: Math.round(since()), top: sea ? Math.round(sea.getBoundingClientRect().top) : null,
+                cards: [...document.querySelectorAll('.rs-screen > *')].filter(e => !e.classList.contains('hfx-layer') && e.offsetWidth).map(e => { const q = e.getBoundingClientRect(), cs = getComputedStyle(e);
+                  return [Math.round(q.top + q.height / 2), cs.translate !== 'none' || cs.rotate !== 'none' ? 1 : 0]; }),
+                av: aq ? [Math.round(aq.top + aq.height / 2), av.classList.contains('char-hold') ? 1 : 0, av.classList.contains('char-gasp') ? 1 : 0] : null }); }, 100);
+          }
+          /* round 5: the light in the water - every big repeating layer in it,
+             read off its own image: the sharpest step in it (per screen px),
+             how bright it gets on screen, and where its light is */
+          const uwLight = async () => { const L = document.querySelector('.hfx-layer.hfx-underwater'); if(!L) return null; const res = [];
+            for(const e of L.querySelectorAll('.hfx-uw-ocean *')){
+              const cs = getComputedStyle(e), m = /url\("([^"]+)"\)/.exec(cs.backgroundImage || '');
+              if(!m || /no-repeat/.test(cs.backgroundRepeat) || e.offsetWidth < innerWidth * .3 || e.offsetHeight < 100) continue;
+              const im = new Image(); im.src = m[1]; try{ await im.decode(); }catch(err){ continue; }
+              const W = im.naturalWidth, H = im.naturalHeight, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+              const x = cv.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, W, H).data, sc = (parseFloat(cs.backgroundSize) || W) / W;
+              let step = 0, peak = 0, top = 0, bot = 0;
+              for(let yy = 0; yy < H; yy++) for(let xx = 0; xx < W; xx++){ const a = d[(yy * W + xx) * 4 + 3]; if(a > peak) peak = a;
+                if(xx + 1 < W) step = Math.max(step, Math.abs(a - d[(yy * W + xx + 1) * 4 + 3])); if(yy + 1 < H) step = Math.max(step, Math.abs(a - d[((yy + 1) * W + xx) * 4 + 3]));
+                if(yy < H / 3) top += a; else if(yy >= H * 2 / 3) bot += a; }
+              res.push({ cls: String(e.className).split(' ')[0], step: Math.round(step / Math.max(sc, .01)), peak: Math.round(peak * parseFloat(cs.opacity) / 2.55) / 100, topHeavy: top > bot * 2 }); }
+            return res; };
           if(fx === 'underwater'){ await until(300); out.uwEarly = uwLook(); }
           if(fx === 'fireworks'){
             await until(420);
@@ -11820,6 +11854,7 @@ def check_b313_fx(br):
             out.uwRest = uwLook();
             await wait(250);
             out.uwRest2 = uwLook();
+            out.uwLight = await uwLight();
           }
           if(fx === 'blackhole'){
             const xp = document.querySelector('.rs-screen > .rs-xp');
@@ -11894,6 +11929,11 @@ def check_b313_fx(br):
           out.cutAt = lastLive ? lastLive.t : null;
           out.cutFull = lastLive ? lastLive.full : null;
           await until(T + 1300);
+          if(uw){ clearInterval(uwIv); if(uwMo) uwMo.disconnect(); out.uw = uw;
+            const kids = [...document.querySelectorAll('.rs-screen > *')].filter(e => e.offsetWidth), av = document.querySelector('.rs-screen .results-level-avatar');
+            out.uwAfter = { cards: kids.map(e => { const cs = getComputedStyle(e); return cs.translate + '/' + cs.rotate; }),
+              anims: kids.reduce((n, e) => n + e.getAnimations().filter(a => a.constructor === Animation && a.playState !== 'finished').length, 0),
+              av: av ? [av.classList.contains('char-hold'), av.classList.contains('char-gasp')] : null, stand: document.querySelectorAll('.rs-screen .cx-uw, .rs-screen .hfx-uw-breath, .rs-screen .hfx-uw-fling').length }; }
           out.after = document.querySelectorAll('.hfx-layer, .hfx-box.is-grade, .hfx-pane').length;
           out.borderAfter = getComputedStyle(g).borderTopColor; out.fillAfter = fill();
           /* the 100% itself in the effect's ramp (build 317 round 3: the real
@@ -11935,9 +11975,43 @@ def check_b313_fx(br):
             check("underwater: a real surface - two wave layers, sliding opposite ways",
                   len(wa) == 2 and len(wb) == 2 and dv[0] * dv[1] < 0 and all(abs(x) > .5 for x in dv), {"t0": wa, "t1": wb})
             al = w.get("alphas") or []
-            check("underwater: computed caustics in two drifting layers, a depth tint that deepens to the floor, light rays and bubbles",
-                  len(w.get("caus") or []) == 2 and all(c.startswith('url("data:image/png') for c in w["caus"]) and len(al) >= 3 and al[-1] > al[0]
-                  and w.get("rays", 0) >= 3 and w.get("bubbles", 0) >= 3, {k: w.get(k) for k in ("caus", "alphas", "rays", "bubbles")})
+            check("underwater: a depth tint that deepens to the floor, light rays and bubbles",
+                  len(al) >= 3 and al[-1] > al[0] and w.get("rays", 0) >= 3 and w.get("bubbles", 0) >= 3, {k: w.get(k) for k in ("alphas", "rays", "bubbles")})
+            # round 5: "The screenshot of the water does not look good ... maybe
+            # it's those white lines, maybe it needs lol water bubbles? Maybe the
+            # screen when under water doesn't do anything? Maybe the character
+            # should have the holding breath animation when going under?"
+            # Every check below fails on f1b1fea (round 4).
+            li = r.get("uwLight") or []
+            check("underwater round 5: NO WHITE LINE MESH - the light in the water is soft patches: two layers, no sharp step anywhere in them (<= 40 alpha levels a px; the web had lines), faint (<= .35 on screen) and brightest near the surface",
+                  len(li) >= 2 and all(x["step"] <= 40 and x["peak"] <= .35 and x["topHeavy"] for x in li), li)
+            uwd = r.get("uw") or {}
+            bubs = uwd.get("bubs") or []
+            src = {k: sum(1 for b in bubs if b["from"] == k) for k in ("vent", "box", "deep", "rush")}
+            sz = sorted(b["ps"] for b in bubs if b["ps"] == b["ps"])
+            check("underwater round 5: BUBBLES, plenty - 40+ on a phone, from 5px or less to 14px or more, in streams from the floor (20+), off the box (4+), strays from the deep, and a last rush as it drains (12+)",
+                  len(bubs) >= 40 and sz and sz[0] <= 5 and sz[-1] >= 14 and src["vent"] >= 20 and src["box"] >= 4 and src["deep"] >= 3 and src["rush"] >= 12,
+                  {"n": len(bubs), "sizes": sz[:1] + sz[-1:], "from": src})
+            sm = [b["wp"] for b in bubs if b["ps"] <= 6 and b["wp"]]
+            bg = [b["wp"] for b in bubs if b["ps"] >= 12 and b["wp"]]
+            check("underwater round 5: every bubble wobbles side to side as it rises (an alternating animation of its own beside the rise, several swings), a small one quicker than a big one",
+                  bubs and all(b["dir"] == "alternate" and b["it"] >= 2 for b in bubs) and sm and bg and sum(sm) / len(sm) < sum(bg) / len(bg) * .7,
+                  {"noWobble": sum(1 for b in bubs if b["dir"] != "alternate"), "small": round(sum(sm) / len(sm)) if sm else None, "big": round(sum(bg) / len(bg)) if bg else None})
+            rows = uwd.get("rows") or []
+            pre = [x for x in rows if x["t"] < 4900 and x["top"] is not None]
+            dry = [(x["t"], c[0], x["top"]) for x in pre for c in x["cards"] if c[1] and c[0] < x["top"] - 30]
+            wet = [x["t"] for x in pre for c in x["cards"] if c[1] and c[0] > x["top"]]
+            ua = r.get("uwAfter") or {}
+            check("underwater round 5: THE SCREEN IS UNDER IT - cards sway while the water is over them, and none that the water has not reached moves",
+                  len(wet) >= 10 and not dry, {"wetSamples": len(wet), "dryMoving": dry[:4]})
+            check("underwater round 5: and once it has drained every card is back exactly where it was - no translate, no rotate, no script animation left",
+                  ua.get("cards") and all(c == "none/none" for c in ua["cards"]) and ua.get("anims") == 0, ua)
+            under = [x for x in rows if x.get("av") and x["top"] is not None and 1500 < x["t"] < 4900 and x["av"][0] > x["top"] + 30]
+            check("underwater round 5: THE CHARACTER HOLDS ITS BREATH while the water is over it (char-hold at every look from 1.5s to the drain)",
+                  len(under) >= 10 and all(x["av"][1] for x in under), {"under": len(under), "holding": sum(1 for x in under if x["av"][1])})
+            check("underwater round 5: and when the water leaves it, a gasp - then nothing left of either (no class, no stand-in, no bubble)",
+                  any(x.get("av") and x["av"][2] and x["t"] >= 4900 for x in rows) and ua.get("av") == [False, False] and ua.get("stand") == 0,
+                  {"gasp": [x["t"] for x in rows if x.get("av") and x["av"][2]][:3], "after": ua.get("av"), "stand": ua.get("stand")})
         if fx == "fireworks":
             ea, la, ba = r.get("early") or {}, r.get("late") or {}, r.get("boxAt") or {}
             check("fireworks: it starts AT the 100% box - the first shell is climbing out of its top edge, nothing lit anywhere else",
