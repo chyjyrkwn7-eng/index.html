@@ -3130,7 +3130,9 @@ def check_b242(br):
         /* build 282: the medal is the Rank tab's gold ring; the count is
            still struck into the middle of it */
         medal: (document.querySelector('.badges-head .statring .statring-num') || {}).textContent || '',
-        lid: !!document.querySelector('.badge-case .badge-case-lid .badge-case-plate'),
+        /* REVISED IN 317 (badge2): the name is on the case's SIDE, the
+           front wall, not on the lid ("it should be on the side") */
+        lid: !!document.querySelector('.badge-case .badge-case-lid') && !!document.querySelector('.badge-case .badge-case-front .nova-case-sideplate'),
         clasps: document.querySelectorAll('.badge-case .badge-case-front span').length,
         earned: String(badgesEarnedList().length) };
       /* 6. an earned badge: no printed grain, and a shadow in its slot */
@@ -3208,7 +3210,7 @@ def check_b242(br):
     # The number is the app's own earned count, not a literal: it was "6"
     # until the 279 bands made the same fixture worth 7 badges.
     # AND IN 282: the medal became the Rank tab's ring, number inside.
-    check("the Badges tab heads with its count in a ring, no meter, and sits in a case with a lid and two clasps",
+    check("the Badges tab heads with its count in a ring, no meter, and sits in a case with a lid, its name on its side, and two clasps",
           bt.get("strip") == 0 and bt.get("segs") == 0 and bt.get("medal") == bt.get("earned") and bt.get("medal") not in ("", "0") and bt.get("lid") and bt.get("clasps") == 2, bt)
     ba = r.get("badgeArt") or {}
     check("an earned badge has no printed grain and throws a shadow into its slot",
@@ -13141,7 +13143,8 @@ def check_b317_pfcard(br):
       store.seenUnlocks.badges = units.slice(0, Math.max(0, n - fresh));
       showProfile('profile'); await wait(900);
       const B = s => { const e = document.querySelector('.profile-hero ' + s); if(!e) return null; const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
-      out.kick = B('.pf-case-head > .pf-kick'); out.num = B('.pf-case-num'); out.nums = B('.pf-xpnums'); out.xn = B('.pf-xpnums .xpnums'); out.tot = B('.pf-xp-total');
+      /* REVISED IN 317 (badge2): the case's name is its side plate, not a heading over the tray */
+      out.kick = B('.pf-case-front .nova-case-sideplate'); out.num = B('.pf-case-num'); out.nums = B('.pf-xpnums'); out.xn = B('.pf-xpnums .xpnums'); out.tot = B('.pf-xp-total');
       out.tasks = [...document.querySelectorAll('.profile-hero .pf-task')].map(t => { const a = t.querySelector('.pf-task-label').getBoundingClientRect(), v = t.querySelector('.pf-task-val').getBoundingClientRect();
         const lab = t.querySelector('.pf-task-label');
         /* the label's TEXT, not its box: squeezed, the box was 28px and the words ran out of it into the count */
@@ -13158,8 +13161,8 @@ def check_b317_pfcard(br):
         ctx.close()
         check(f"squeeze, {dev}: nothing threw", not r.get("threw"), r.get("threw"))
         k, n_ = r.get("kick"), r.get("num")
-        check(f"squeeze, {dev}: 'Badge case' and its count have a gap, and the count is one line",
-              bool(k and n_) and (n_["l"] - k["r"] >= 4 or n_["t"] >= k["b"] - 0.5) and n_["b"] - n_["t"] <= 26, [k, n_])
+        check(f"squeeze, {dev}: the count is one line, and 'Badge case' is on the case's side, below it",
+              bool(k and n_) and k["t"] >= n_["b"] and n_["b"] - n_["t"] <= 26, [k, n_])
         nm, xn, tot = r.get("nums"), r.get("xn"), r.get("tot")
         check(f"squeeze, {dev}: the total XP sits at the right, wrapped or not",
               bool(nm and tot) and abs(tot["r"] - nm["r"]) <= 1.5 and (tot["t"] >= xn["b"] - 0.5 or tot["l"] >= xn["r"]), [nm, xn, tot])
