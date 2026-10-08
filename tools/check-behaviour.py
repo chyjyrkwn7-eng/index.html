@@ -13149,29 +13149,57 @@ def check_b317_volume(br):
     """Build 317. "It appears in profile some characters have a nice 3d look
     but some don't, fix that as well." Every surface a character paints with
     its headGrad light gets a shade layer and a light layer straight on top
-    of it, the same shape, so each piece reads round rather than flat - and
-    it is done with fills, never an SVG filter. Written against build 316,
-    where only the characters that drew their own highlight had one."""
-    print("\n317. every character's surfaces are lit round, with no filter")
+    of it, the same shape - and it is done with fills, never an SVG filter.
+    Written against build 316, where only the characters that drew their own
+    highlight had one.
+    REVISED IN THE 317 FIX: "Characters' heads are now not showing correctly
+    connected to the body." The layers lit each piece on its own
+    (objectBoundingBox), so a head was a ball on top of a body. They are one
+    light for the whole figure now (lightFigure): every shade layer, and
+    every light layer, is the SAME field in the drawing's units - its
+    gradientTransform carried through the transforms above the shape lands
+    on one matrix. That line fails on b6cd249 for every lit character.
+    Drawn through buildAvatarCharSVG, which is where the light is laid on
+    (after the head's own scale), not drawAvatarCharSVG."""
+    print("\n317. every character's surfaces are lit, by one light for the whole figure, with no filter")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""() => {
-      const out = { chars: 0, lit: 0, bare: [], filtered: [], threw: null };
+      const out = { chars: 0, lit: 0, bare: [], filtered: [], split: [], threw: null };
       try {
+        /* a gradient's field in the drawing's own units: the transforms
+           above the element, then the gradient's own, then its geometry
+           (objectBoundingBox - the per-piece light - has none: null) */
+        const fieldOf = (svg, el) => {
+          const id = ((el.getAttribute('fill') || '').match(/^url\\(#([^)]+)\\)$/) || [])[1];
+          const g = id && svg.querySelector('[id="' + id + '"]');
+          if(!g || g.getAttribute('gradientUnits') !== 'userSpaceOnUse') return null;
+          let m = new DOMMatrix();
+          const chain = []; for(let e = el; e && e !== svg; e = e.parentNode) chain.unshift(e);
+          chain.forEach(e => { const l = e.transform && e.transform.baseVal; if(l) for(let i = 0; i < l.numberOfItems; i++){ const t = l.getItem(i).matrix; m = m.multiply(new DOMMatrix([t.a, t.b, t.c, t.d, t.e, t.f])); } });
+          const gl = g.gradientTransform.baseVal; for(let i = 0; i < gl.numberOfItems; i++){ const t = gl.getItem(i).matrix; m = m.multiply(new DOMMatrix([t.a, t.b, t.c, t.d, t.e, t.f])); }
+          const r = parseFloat(g.getAttribute('r')) || 0;
+          m = m.translate(parseFloat(g.getAttribute('cx')) || 0, parseFloat(g.getAttribute('cy')) || 0).scale(r, r);
+          return [m.a, m.b, m.c, m.d, m.e, m.f];
+        };
+        const one = list => list.length > 0 && list.every(f => f && f.every((v, i) => Math.abs(v - list[0][i]) < 1e-3));
         AVATAR_CHARACTERS.filter(c => !c.retired).forEach(c => {
-          const s = drawAvatarCharSVG(c.id); if(!s) return;
+          const s = buildAvatarCharSVG(c.id); if(!s) return;
           out.chars++;
           const uid = s.getAttribute('data-cx-uid');
           const head = [...s.querySelectorAll('path, ellipse, circle, rect, polygon')]
-            .filter(n => (n.getAttribute('fill') || '').startsWith('url(#' + uid + '-head') && !n.closest('.cx-bg'));
+            .filter(n => (n.getAttribute('fill') || '').startsWith('url(#' + uid + '-head') && !n.closest('.cx-bg, .cx-sp'));
           let ok = head.length > 0 || ['voidwalker', 'genesis', 'zenith'].includes(c.id);
+          const shades = [], glosses = [];
           head.forEach(n => {
             const a = n.nextElementSibling, b = a && a.nextElementSibling;
             const same = x => x && x.nodeName === n.nodeName && ['d', 'cx', 'cy', 'rx', 'ry', 'r', 'points', 'transform']
               .every(k => x.getAttribute(k) === n.getAttribute(k));
-            if(!(same(a) && same(b) && /-vshade\\)$/.test(a.getAttribute('fill')) && /-vgloss\\)$/.test(b.getAttribute('fill')))) ok = false;
+            if(!(same(a) && same(b) && /-vshade\\d*\\)$/.test(a.getAttribute('fill')) && /-vgloss\\d*\\)$/.test(b.getAttribute('fill')))){ ok = false; return; }
+            shades.push(fieldOf(s, a)); glosses.push(fieldOf(s, b));
           });
           if(ok && head.length) out.lit++;
           if(!ok) out.bare.push(c.id);
+          else if(head.length && !(one(shades) && one(glosses))) out.split.push(c.id);
           if(s.querySelector('[filter]')) out.filtered.push(c.id);
         });
       } catch(e) { out.threw = String(e); }
@@ -13181,9 +13209,83 @@ def check_b317_volume(br):
           r["chars"] >= 25 and not r["bare"], [r["chars"], r["lit"], r["bare"]])
     check("the flat ones included: Detective, Sheriff, Hive, Zeus, Timekeeper, Masked One",
           r["lit"] >= 25, r["lit"])
+    check("one light for the whole figure: every shade layer is the same field in the drawing's units, and every light layer",
+          r["lit"] >= 25 and not r["split"], r["split"])
     check("no SVG filter inside any drawing", not r["filtered"], r["filtered"])
     check("nothing threw", not r["threw"], r["threw"])
     ctx.close()
+
+
+def check_b317_neck(br):
+    """The 317 fix. "Characters' heads are now not showing correctly
+    connected to the body of the character, the bodies don't look attached,
+    they don't seem connected or blended." The volume light (check_b317_volume)
+    lit every piece as its own ball, so along every neck the head's shaded
+    lower edge sat straight against the body's own highlight. Measured as
+    the STEP THE LIGHT ADDS ACROSS THE NECK: each character at 10px a unit,
+    scenery and halo hidden, every headGrad surface painted one grey (so the
+    number does not depend on the paint under the light), rendered with its
+    light layers and without them. D = the difference. In every column where
+    the head's lowest pixel sits over the body, D is read 3-6px above that
+    edge and 3-6px below it, and the step is the median |above - below|.
+    On b6cd249 it is 21-60 levels on 22 of the 25 characters with a neck
+    (median 39); one light for the whole figure makes it 0-5."""
+    import io as _io
+    import statistics as _st
+    from PIL import Image as _Im
+    print("\n317 fix. the light adds no step across the neck: heads and bodies are one figure")
+    ctx, pg = booted(br, 600, 600, seed=USED_ACCOUNT, dpr=1)
+    pg.evaluate(B314_TRANSPARENT)
+    ids = pg.evaluate("()=>AVATAR_CHARACTERS.filter(c => !c.retired).map(c => c.id)")
+    S = 340
+
+    def shot(mode):
+        pg.evaluate("""(mode) => { const s = window.__nk;
+          s.querySelectorAll('*').forEach(n => { if(n.style) n.style.visibility = ''; });
+          s.querySelectorAll('[data-nkvol]').forEach(n => n.style.display = mode === 'novol' ? 'none' : '');
+          if(mode === 'head' || mode === 'body'){
+            s.querySelectorAll('*').forEach(n => n.style && (n.style.visibility = 'hidden'));
+            s.querySelectorAll(mode === 'head' ? '.cx-head' : '.cx-body').forEach(h => { h.style.visibility = 'visible'; h.querySelectorAll('*').forEach(n => n.style && (n.style.visibility = 'visible')); });
+          } }""", mode)
+        return _Im.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": S, "height": S}, omit_background=True))).convert("RGBA")
+
+    steps, bad = {}, {}
+    for cid in ids:
+        pg.evaluate("""([cid, S]) => { document.getElementById('nkhost')?.remove();
+          const host = document.createElement('div'); host.id = 'nkhost'; host.style.cssText = 'position:fixed;left:0;top:0;width:' + S + 'px;height:' + S + 'px;z-index:99999';
+          const s = buildAvatarCharSVG(cid);
+          s.style.cssText = 'width:' + S + 'px;height:' + S + 'px;display:block;-webkit-mask-image:none;mask-image:none;filter:none';
+          host.appendChild(s); document.body.appendChild(host);
+          document.querySelectorAll('body > *:not(#nkhost)').forEach(e => { if(e.style) e.style.visibility = 'hidden'; });
+          s.querySelectorAll('.cx-bg').forEach(n => n.remove());
+          s.querySelectorAll('circle').forEach(n => { if(/url\\(#(aura|halo)-/.test(n.getAttribute('fill') || '')) n.remove(); });
+          s.querySelectorAll('[fill*="-vshade"], [fill*="-vgloss"]').forEach(n => n.setAttribute('data-nkvol', '1'));
+          const uid = s.getAttribute('data-cx-uid');
+          s.querySelectorAll('path, ellipse, circle, rect, polygon').forEach(n => { if((n.getAttribute('fill') || '').startsWith('url(#' + uid + '-head')) n.setAttribute('fill', '#808080'); });
+          window.__nk = s; }""", [cid, S])
+        head = shot("head").getchannel("A").load()
+        body = shot("body").getchannel("A").load()
+        lit = shot("vol").convert("L").load()
+        flat = shot("novol").convert("L").load()
+        cols = []
+        for x in range(0, S, 2):
+            yb = next((y for y in range(S - 1, -1, -1) if head[x, y] > 200), None)
+            if yb is None or yb + 8 >= S or yb - 8 < 0:
+                continue
+            if not all(body[x, yb + k] > 200 for k in (3, 4, 5, 6)) or not all(head[x, yb - k] > 200 for k in (3, 4, 5, 6)):
+                continue
+            above = _st.mean(lit[x, yb - k] - flat[x, yb - k] for k in (3, 4, 5, 6))
+            below = _st.mean(lit[x, yb + k] - flat[x, yb + k] for k in (3, 4, 5, 6))
+            cols.append(abs(above - below))
+        if len(cols) >= 12:
+            steps[cid] = round(_st.median(cols), 1)
+            if steps[cid] > 10:
+                bad[cid] = steps[cid]
+    ctx.close()
+    check("a neck measured on most characters (%d)" % len(steps), len(steps) >= 20, sorted(steps))
+    check("no character's light steps more than 10 levels across its neck", not bad, bad)
+    check("and the set's median step is under 3 levels", steps and _st.median(steps.values()) < 3,
+          _st.median(steps.values()) if steps else None)
 
 
 CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -15480,6 +15582,7 @@ def main():
             check_b316_tiles(br)
             check_b317_daily(br)
             check_b317_volume(br)
+            check_b317_neck(br)
             check_b317_cutspin(br)
             check_b317_specials(br)
             check_b317_challenge_specials(br)
