@@ -19129,20 +19129,26 @@
   .profile-hero.has-cover .profile-hero-avatar svg.avatarchar-svg{ clip-path:circle(50% at 50% 50%); }
   /* THE PORTRAIT POPS OUT OF ITS PLATE (plateBreakout): the disc is cut
      inside the drawing now, so the drawing itself is not clipped, nothing
-     round it hides overflow, and it hangs out over the plate in the tab's
-     wider window - 39/34 of the plate, 2.5 units each side, 5 over the
-     top, the bottom where it was - with the usual mask in that box's
-     percentages (the bust fades over the same stretch). */
+     round it hides overflow, and it hangs out over the plate in its own
+     window, AVATAR_PLATE_VIEWBOX "-4 -6 48 48" - 48/34 of the plate, 7
+     units each side and 9 over the top, so the shared 34 units (every
+     head) land exactly on the plate. The tab's 39-unit window was not
+     enough: the Hive's bees and the Ronin's slash flew out of it and
+     were cut at its edge. A mask clips to the element's box, so the box
+     has to hold everything that pops. The mask is the usual one in this
+     box's percentages: a 1.5-unit feather at the top and sides (nothing
+     reaches it), the bust full to 26.8, .45 at 32.24, gone at 37. The
+     svg takes no taps: the plate's own box is the target, as it was. */
   .rank-avatar.has-plate{ position:relative; overflow:visible; }
   .profile-hero .profile-hero-avatar .rank-avatar.has-plate > svg.avatarchar-svg.cx-plate,
   .rank-avatar.has-plate > svg.avatarchar-svg.cx-plate,
   .rank-avatar.has-plate > .char-flip-play.cx-plate{
-    position:absolute; left:-7.3529%; top:-14.7059%; width:114.7059%; height:114.7059%; margin:0; clip-path:none; }
+    position:absolute; left:-20.5882%; top:-26.4706%; width:141.1765%; height:141.1765%; margin:0; clip-path:none; pointer-events:none; }
   .rank-avatar.has-plate > svg.avatarchar-svg.cx-plate{
-    -webkit-mask-image:linear-gradient(to bottom, transparent 0%, #000 4.103%, #000 73.846%, rgba(0,0,0,.45) 87.795%, transparent 100%),
-                       linear-gradient(to right, transparent 0%, #000 4.103%, #000 95.897%, transparent 100%);
-            mask-image:linear-gradient(to bottom, transparent 0%, #000 4.103%, #000 73.846%, rgba(0,0,0,.45) 87.795%, transparent 100%),
-                       linear-gradient(to right, transparent 0%, #000 4.103%, #000 95.897%, transparent 100%); }
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0%, #000 3.125%, #000 68.333%, rgba(0,0,0,.45) 79.667%, transparent 89.583%),
+                       linear-gradient(to right, transparent 0%, #000 3.125%, #000 96.875%, transparent 100%);
+            mask-image:linear-gradient(to bottom, transparent 0%, #000 3.125%, #000 68.333%, rgba(0,0,0,.45) 79.667%, transparent 89.583%),
+                       linear-gradient(to right, transparent 0%, #000 3.125%, #000 96.875%, transparent 100%); }
   .profile-hero.has-cover .profile-ranklineup{ margin-top:.55rem; }
   .profile-hero.has-cover .profile-ranklineup.is-unranked{ text-align:center; }
   @media (min-width:40rem){
@@ -40665,11 +40671,13 @@ const AVATAR_WIDE_VIEWBOX = "0.5 -2 39 39";
        the scenery's fade gave it.
    Each piece is wrapped in a fresh <g> that carries the clip, so a part
    that animates its own transform (the bob) moves inside a still clip.
-   The window is the tab's (AVATAR_WIDE_VIEWBOX) and the drawing is hung
-   out over the plate by CSS (.rank-avatar.has-plate), so the shared 34
-   units - every head - land exactly where they did. A flip-book of a
+   The window is its own (AVATAR_PLATE_VIEWBOX, 7 units round the sides
+   and 9 over the top - the bees and the slash fly that far) and the
+   drawing is hung out over the plate by CSS (.rank-avatar.has-plate), so
+   the shared 34 units - every head - land exactly where they did. A flip-book of a
    plate records the same thing ("<id>~plate"). */
 const PLATE_POP_Y = 28.5;
+const AVATAR_PLATE_VIEWBOX = "-4 -6 48 48";
 function plateBreakout(svg){
   if(!svg || svg.classList.contains("cx-plate")) return svg;
   const NS = "http://www.w3.org/2000/svg";
@@ -40686,13 +40694,54 @@ function plateBreakout(svg){
     "A17 17 0 0 1 " + (20 - half).toFixed(3) + " " + PLATE_POP_Y + "H-10Z" }));
   defs.append(disc, pop);
   const wrap = (node, id) => { const g = mk("g", { "clip-path": "url(#" + id + ")", class: "cx-plate-" + (id === popId ? "pop" : "disc") }); node.replaceWith(g); g.appendChild(node); return g; };
+  /* The disc as seen from INSIDE the figure. A special's layers sit in
+     the art-scale wrapper (AVATAR_ART_SCALE, a transform attribute), and a
+     userSpaceOnUse clip is read in the space of the element carrying it -
+     so the circle is handed the inverse of every transform above it, and
+     the disc lands exactly where the scenery's does. Only attributes are
+     read: a CSS bob on an ancestor (half a unit) moves the clip with it. */
+  const discFor = (() => {
+    const made = new Map();
+    return node => {
+      let m = new DOMMatrix();
+      const chain = [];
+      for(let e = node.parentNode; e && e !== svg; e = e.parentNode) chain.unshift(e);
+      chain.forEach(e => {
+        const list = e.transform && e.transform.baseVal;
+        if(list) for(let i = 0; i < list.numberOfItems; i++){
+          const x = list.getItem(i).matrix;
+          m = m.multiply(new DOMMatrix([x.a, x.b, x.c, x.d, x.e, x.f]));
+        }
+      });
+      if(m.isIdentity) return discId;
+      const inv = m.inverse(), key = [inv.a, inv.b, inv.c, inv.d, inv.e, inv.f].map(v => +v.toFixed(5)).join(" ");
+      if(!made.has(key)){
+        const id = discId + made.size;
+        const cp = mk("clipPath", { id, clipPathUnits: "userSpaceOnUse" });
+        cp.appendChild(mk("circle", { cx: "20", cy: "20", r: "17", transform: "matrix(" + key + ")" }));
+        defs.appendChild(cp);
+        made.set(key, id);
+      }
+      return made.get(key);
+    };
+  })();
   [...svg.children].forEach(k => {
     if(k === defs) return;
     const sky = k.tagName.toLowerCase() === "circle" || k.classList.contains("cx-bg") || k.classList.contains("cx-sp-back") || k.classList.contains("cx-sp-front");
     if(!sky){
-      /* the figure's own sky-like parts (a code rain masked by the
-         scenery's fade) stay on the disc too */
-      k.querySelectorAll('[mask*="-bgm)"]').forEach(m => { if(!m.getAttribute("clip-path")) m.setAttribute("clip-path", "url(#" + discId + ")"); });
+      /* THE FIGURE'S OWN SKY STAYS ON THE DISC. Light is not a prop: a
+         special's back and front layers (motes, rings, Umbra's veil - a
+         circle of night r 20), anything that washes the whole frame
+         (Zeus's flash, a 37-unit square; the Hacker's r 18 glitch), and
+         a code rain masked by the scenery's fade. Left in the figure,
+         each painted a square or a ring of light out over the rim. */
+      const own = [...k.querySelectorAll('.cx-sp-back, .cx-sp-front, [mask*="-bgm)"], rect, circle')].filter(n => {
+        const t = n.tagName.toLowerCase();
+        if(t === "rect") return Number(n.getAttribute("width")) >= 34 && Number(n.getAttribute("height")) >= 34;
+        if(t === "circle") return Number(n.getAttribute("r")) >= 17 && !n.closest(".cx-sp-back, .cx-sp-front");
+        return true;
+      });
+      own.filter(n => !own.some(o => o !== n && o.contains(n))).forEach(n => wrap(n, discFor(n)));
     }
     const g = wrap(k, sky ? discId : popId);
     if(k.classList.contains("cx-bg")){
@@ -40708,7 +40757,7 @@ function plateBreakout(svg){
       });
     }
   });
-  svg.setAttribute("viewBox", AVATAR_WIDE_VIEWBOX);
+  svg.setAttribute("viewBox", AVATAR_PLATE_VIEWBOX);
   svg.classList.add("cx-plate");
   return svg;
 }

@@ -13815,20 +13815,35 @@ def check_b317_plate(br):
     the Clown's bells, the Wizard's staff orb and Umbra's moon at its rim.
     The portrait now pops out of its plate: the figure may paint past the
     disc (over the rim), the scenery stays on it.
-    Measured as paint, not as boxes - a bounding box ignores a clip and a
-    mask, so it reads "past the disc" on the clipped build too. Each plate
-    is shot with the scenery hidden (the figure alone), once as shown and
-    once FREE - every clip, mask and overflow round the drawing lifted -
-    at four moments of the idle loop (paused, so nothing else moves, the
-    glow filter off). What the free shot paints that the shown one does
-    not, above the line where the disc still cuts the bust, is figure the
-    plate cut off. And with the figure hidden instead, nothing of the
-    scenery may paint outside the disc. Written against e877af7, where
-    the brim, the bells, the orb and the moon all lose paint at the rim."""
+    Measured as PAINT, not as boxes - a bounding box ignores a clip and a
+    mask, so it reads "past the disc" on the clipped build too. At four
+    paused moments of the idle loop and every 400ms through the
+    character's special, each plate is shot with the scenery hidden (the
+    figure alone): as shown, FREE (every clip, mask and overflow round the
+    drawing lifted, the figure's own disc-bound light kept), and with the
+    figure hidden as well. Then:
+      - at least seven of the nine reach past the disc in the FREE shot
+        (the drawing itself, at some moment of its loop or its special),
+        and every one that does paints that OVER the rim as shown - so the
+        figure's painted box extends past the disc. The Timekeeper and the
+        Solar never leave the disc at the shared head size (their clock
+        ring and crown sit inside r 17); what read as cut on them was the
+        old 4.7% edge feather, and the next line holds them to being whole;
+      - nothing the free shot paints is missing from the shown one above
+        y 26.5 of the shared window, where the bust's own fade begins -
+        below it the disc still cuts the bust, on purpose;
+      - the scenery, and the light of a special (its layers, Zeus's flash,
+        Umbra's veil), paint nothing outside the disc.
+    Written against e877af7, where the whole drawing was clipped to the
+    disc: no figure reaches past it (0 px on all nine), and the Wizard's
+    orb, the Marksman's rifle, the Clown's bells, the Hive's bees and every
+    special that leaves the frame lose paint at the rim. PLATE_DEBUG=<dir>
+    saves the five shots of any moment that loses paint or leaks light."""
     import io as _io
-    from PIL import Image, ImageChops
-    print("\n317. the portrait pops out of its plate: no figure lost at the rim, the scenery on the disc")
+    from PIL import Image, ImageChops, ImageDraw
+    print("\n317. the portrait pops out of its plate: the figure over the rim, the scenery on the disc")
     NINE = ["ronin", "clown", "hive", "wizard", "umbra", "zeus", "marksman", "timekeeper", "solar"]
+    ALL = NINE + ["ninja", "grizzly"]
     PREP = """async ([ch, where]) => { const wait = ms => new Promise(r => setTimeout(r, ms));
       try{ charSpecialTiming.first = [1e9, 1e9]; charSpecialTiming.gap = [1e9, 1e9]; }catch(e){}
       document.querySelectorAll('.invite-sheet, .sheet-backdrop, .person-card').forEach(n => n.remove());
@@ -13841,81 +13856,101 @@ def check_b317_plate(br):
       document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot, .daily-alert, #pushing-update').forEach(x => x.remove());
       if(!plate) return null;
       plate.scrollIntoView({ block: 'center' }); await wait(200);
-      document.getAnimations().forEach(a => { try{ a.pause(); }catch(e){} });
       const ra = plate.querySelector('.rank-avatar'); if(ra) ra.style.filter = 'none';
       const svg = plate.querySelector('svg.avatarchar-svg');
-      const sky = k => k.tagName.toLowerCase() === 'circle' || k.classList.contains('cx-bg') || k.classList.contains('cx-sp-back') || k.classList.contains('cx-sp-front') || k.classList.contains('cx-plate-disc');
-      const L = window.__pl = { svg, plate, fig: [], sky: [], clips: [] };
-      [...svg.children].forEach(k => { if(k.tagName.toLowerCase() === 'defs') return; (sky(k) ? L.sky : L.fig).push(k); });
-      L.clips = [...svg.querySelectorAll('.cx-plate-pop, .cx-plate-disc')];
-      L.at = t => document.getAnimations().forEach(a => { try{ if(L.svg.contains(a.effect && a.effect.target)) a.currentTime = t; }catch(e){} });
+      if(!svg) return null;
+      const top = k => k.tagName.toLowerCase() === 'circle' || k.classList.contains('cx-bg') || k.classList.contains('cx-sp-back') || k.classList.contains('cx-sp-front') || k.classList.contains('cx-plate-disc');
+      const L = window.__pl = { svg, plate, fig: [], sky: [] };
+      [...svg.children].forEach(k => { if(k.tagName.toLowerCase() === 'defs') return; (top(k) ? L.sky : L.fig).push(k); });
+      /* the figure's own light, put on the disc inside it (none on e877af7) */
+      L.light = [...svg.querySelectorAll('.cx-plate-disc')].filter(g => !L.sky.includes(g));
+      L.show = list => { [['fig', L.fig], ['sky', L.sky], ['light', L.light]].forEach(([n, ks]) => ks.forEach(k => k.style.visibility = list.includes(n) ? '' : 'hidden')); };
       L.free = on => {
-        [L.svg, ...(() => { const up = []; for(let e = L.svg.parentElement; e && e !== L.plate.parentElement; e = e.parentElement) up.push(e); return up; })()].forEach(e => {
-          e.style.overflow = on ? 'visible' : ''; });
+        for(let e = L.svg; e && e !== L.plate.parentElement; e = e.parentElement) e.style.overflow = on ? 'visible' : '';
         L.svg.style.clipPath = on ? 'none' : ''; L.svg.style.webkitMaskImage = on ? 'none' : ''; L.svg.style.maskImage = on ? 'none' : '';
-        L.clips.forEach(g => { if(on){ g.dataset.cp = g.getAttribute('clip-path'); g.removeAttribute('clip-path'); } else if(g.dataset.cp){ g.setAttribute('clip-path', g.dataset.cp); } });
+        svg.querySelectorAll('.cx-plate-pop').forEach(g => { if(on){ g.dataset.cp = g.getAttribute('clip-path'); g.removeAttribute('clip-path'); } else if(g.dataset.cp){ g.setAttribute('clip-path', g.dataset.cp); } });
       };
+      L.at = t => document.getAnimations().forEach(a => { try{ a.pause(); if(L.plate.contains(a.effect && a.effect.target)) a.currentTime = t; }catch(e){} });
+      /* the special's own end-of-run timer is disarmed (it checks this
+         token), or it would take .char-special off half-way through */
+      L.special = () => { plate.classList.remove('char-special'); const ok = playCharSpecial(plate); plate.__charSpecial = { held: true }; return ok ? charSpecialMsFor(svg) : 0; };
+      L.at(0);
       const b = plate.getBoundingClientRect();
       return { cx: b.left + b.width / 2, cy: b.top + b.height / 2, r: b.width / 2 }; }"""
-    def shot(pg, d):
-        x0, y0 = int(d["cx"] - d["r"] - 40), int(d["cy"] - d["r"] - 40)
-        side = int(2 * d["r"] + 80)
-        png = pg.screenshot(clip={"x": max(0, x0), "y": max(0, y0), "width": side, "height": side})
-        return Image.open(_io.BytesIO(png)).convert("RGB"), max(0, x0), max(0, y0)
-    def count(a, b, d, ox, oy, keep):
-        diff = ImageChops.difference(a, b).convert("L").point(lambda v: 255 if v > 24 else 0)
-        px = diff.load(); n = 0
-        for yy in range(diff.size[1]):
-            for xx in range(diff.size[0]):
-                if px[xx, yy] and keep(ox + xx + .5, oy + yy + .5):
-                    n += 1
-        return n
     for (w, h, dev, places) in ((440, 956, "17 Pro Max", ("hero", "card")), (834, 1194, "iPad Pro 11", ("hero",))):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         res = {}
         for where in places:
-            for ch in NINE + ["ninja", "grizzly"]:
+            for ch in ALL:
                 d = pg.evaluate(PREP, [ch, where])
                 if not d:
                     res[(where, ch)] = None; continue
+                x0, y0 = max(0, int(d["cx"] - d["r"] - 40)), max(0, int(d["cy"] - d["r"] - 40))
+                side = int(2 * d["r"] + 80)
+                clip = {"x": x0, "y": y0, "width": side, "height": side}
                 # the bust is still cut by the disc below y = 28.5 of the
-                # shared 3..37 window, and from y = 26.8 down it fades out
-                # on purpose (the mask lifted in the free shot); above
-                # that nothing may be lost
-                cut = d["cy"] - d["r"] + (26.5 - 3) / 34 * 2 * d["r"]
-                above = lambda x, y: y < cut
-                outdisc = lambda x, y: ((x - d["cx"]) ** 2 + (y - d["cy"]) ** 2) ** .5 > d["r"] + 1.5
-                lost = 0
+                # shared 3..37 window, and fades from 26.8 down on purpose
+                cut = d["cy"] - d["r"] + (26.5 - 3) / 34 * 2 * d["r"] - y0
+                cx, cy, rr = d["cx"] - x0, d["cy"] - y0, d["r"] + 1.5
+                above = Image.new("L", (side, side), 0)
+                ImageDraw.Draw(above).rectangle([0, 0, side, max(0, cut)], fill=255)
+                outd = Image.new("L", (side, side), 255)
+                ImageDraw.Draw(outd).ellipse([cx - rr, cy - rr, cx + rr, cy + rr], fill=0)
+                out_above = ImageChops.multiply(outd, above)
+                def shot():
+                    return Image.open(_io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+                def count(a, b, region):
+                    diff = ImageChops.difference(a, b).convert("L").point(lambda v: 255 if v > 24 else 0)
+                    return ImageChops.multiply(diff, region).histogram()[255]
+                r = {"lost": 0, "figOut": 0, "freeOut": 0, "skyOut": 0, "lightOut": 0, "moments": 0}
+                def moment(t):
+                    pg.evaluate("(t) => __pl.at(t)", t)
+                    pg.evaluate("() => __pl.show([])"); none = shot()
+                    pg.evaluate("() => __pl.show(['fig', 'light'])"); a = shot()
+                    pg.evaluate("() => __pl.free(true)"); f = shot(); pg.evaluate("() => __pl.free(false)")
+                    pg.evaluate("() => __pl.show(['fig'])"); nolight = shot()
+                    pg.evaluate("() => __pl.show(['sky'])"); s = shot()
+                    pg.evaluate("() => __pl.show(['fig', 'sky', 'light'])")
+                    if os.environ.get("PLATE_DEBUG") and (count(a, f, above) > 6 or count(a, nolight, outd) > 3):
+                        strip = Image.new("RGB", (side * 5, side))
+                        for i, im in enumerate((none, a, f, nolight, s)): strip.paste(im, (i * side, 0))
+                        strip.save(os.path.join(os.environ["PLATE_DEBUG"], "%s-%s-%s-%d.png" % (dev.replace(" ", ""), where, ch, t)))
+                    r["lost"] = max(r["lost"], count(a, f, above))
+                    r["figOut"] = max(r["figOut"], count(none, nolight, out_above))
+                    pg.evaluate("() => { __pl.show(['fig']); __pl.free(true); }"); fnl = shot()
+                    pg.evaluate("() => { __pl.free(false); __pl.show(['fig', 'sky', 'light']); }")
+                    r["freeOut"] = max(r["freeOut"], count(none, fnl, out_above))
+                    r["lightOut"] = max(r["lightOut"], count(a, nolight, outd))
+                    r["skyOut"] = max(r["skyOut"], count(none, s, outd))
+                    r["moments"] += 1
                 for t in (0, 1500, 3000, 4500):
-                    pg.evaluate("(t) => { __pl.at(t); __pl.sky.forEach(k => k.style.visibility = 'hidden'); }", t)
-                    a, ox, oy = shot(pg, d)
-                    pg.evaluate("() => __pl.free(true)")
-                    f, _, _ = shot(pg, d)
-                    pg.evaluate("() => { __pl.free(false); __pl.sky.forEach(k => k.style.visibility = ''); }")
-                    lost = max(lost, count(a, f, d, ox, oy, above))
-                pg.evaluate("() => __pl.at(0)")
-                a, ox, oy = shot(pg, d)
-                pg.evaluate("() => __pl.fig.forEach(k => k.style.visibility = 'hidden')")
-                b, _, _ = shot(pg, d)
-                pg.evaluate("() => __pl.fig.forEach(k => k.style.visibility = '')")
-                # what the figure alone paints outside the disc, for the record
-                pg.evaluate("() => __pl.sky.forEach(k => k.style.visibility = 'hidden')")
-                c, _, _ = shot(pg, d)
-                pg.evaluate("() => __pl.sky.forEach(k => k.style.visibility = '')")
-                res[(where, ch)] = {"lost": lost, "skyOut": count(a, c, d, ox, oy, outdisc), "figOut": count(a, b, d, ox, oy, outdisc)}
+                    moment(t)
+                ms = pg.evaluate("() => __pl.special()")
+                for t in range(200, ms or 0, 400):
+                    moment(t)
+                pg.evaluate("() => { __pl.plate.classList.remove('char-special'); __pl.at(0); }")
+                res[(where, ch)] = r
         ctx.close()
         for where in places:
             label = "the Profile plate" if where == "hero" else "the person card"
-            allc = NINE + ["ninja", "grizzly"]
-            check(f"{dev}, {label}: no character loses any of its figure at the rim above the bust line (px lost, worst of four moments)",
-                  all(res[(where, ch)] is not None and res[(where, ch)]["lost"] <= 6 for ch in allc),
-                  {ch: res[(where, ch)] and res[(where, ch)]["lost"] for ch in allc})
-            check(f"{dev}, {label}: some of the nine paint over the rim at rest (px past the disc)",
-                  sum(1 for ch in NINE if res[(where, ch)] and res[(where, ch)]["figOut"] >= 6) >= 3,
-                  {ch: res[(where, ch)] and res[(where, ch)]["figOut"] for ch in NINE})
-            check(f"{dev}, {label}: and no character's scenery paints past the disc",
-                  all(res[(where, ch)] is not None and res[(where, ch)]["skyOut"] <= 3 for ch in allc),
-                  {ch: res[(where, ch)] and res[(where, ch)]["skyOut"] for ch in allc})
+            g = lambda ch, k: res[(where, ch)] and res[(where, ch)][k]
+            # what the drawing itself reaches past the disc, free of every
+            # clip: those must show it over the rim; the rest are shown whole
+            reach = [ch for ch in NINE if res[(where, ch)] and res[(where, ch)]["freeOut"] >= 6]
+            check(f"{dev}, {label}: most of the nine reach past the disc (px of the free drawing outside it, worst moment)",
+                  len(reach) >= 7, {ch: g(ch, "freeOut") for ch in ALL})
+            check(f"{dev}, {label}: ...and every one that does paints it OVER the rim, as shown (px past the disc)",
+                  all(res[(where, ch)]["figOut"] >= max(6, res[(where, ch)]["freeOut"] - 6) for ch in reach),
+                  {ch: g(ch, "figOut") for ch in ALL})
+            check(f"{dev}, {label}: no character loses any of its figure at the rim above the bust line (px lost)",
+                  all(res[(where, ch)] is not None and res[(where, ch)]["lost"] <= 6 for ch in ALL),
+                  {ch: g(ch, "lost") for ch in ALL})
+            check(f"{dev}, {label}: and the scenery stays on the disc",
+                  all(res[(where, ch)] is not None and res[(where, ch)]["skyOut"] <= 3 for ch in ALL),
+                  {ch: g(ch, "skyOut") for ch in ALL})
+            check(f"{dev}, {label}: ...and so does a special's light (its layers, Zeus's flash, Umbra's veil)",
+                  all(res[(where, ch)] is not None and res[(where, ch)]["lightOut"] <= 3 for ch in ALL),
+                  {ch: g(ch, "lightOut") for ch in ALL})
 
 
 def check_b317_xpcap(br):
