@@ -15414,6 +15414,54 @@ def check_b317_focusring(br):
           (qt.get("quiet") or {}).get("ring") is False and tab.get("fv") is True and tab.get("ring") is True and tab.get("quiet") == 0, [qt, tab])
 
 
+def check_b317_roadmap_chips(br):
+    """Build 317. "How it shows the unlock stuff, that long individual thing
+    it's in, those can be adjusted, they don't need to [go] from left all
+    the way to the right, on the tablets or larger devices they just need to
+    fit to what's there, it makes the rank road map boxes look bad." Every
+    road-map card on an iPad Pro 11, an iPad Pro 12.9 and a laptop window:
+    no chip wider than 60% of the card's content box (each was 100%), all of
+    them inside it, no label cut short, and the order Theme, Flare, then the
+    character or banner. The phone keeps its full-width rows (a half-phone
+    column IS a chip's width) - checked so it stays that way. The wide
+    checks fail on b6cd249; the phone and order checks pass on both."""
+    print("\n317m. the road map's unlock chips fit their content from a tablet up")
+    for (w, h, dev, wide) in ((440, 956, "17 Pro Max", False), (834, 1194, "iPad Pro 11", True),
+                              (1024, 1366, "iPad Pro 12.9", True), (1512, 852, "MacBook Pro 14 window", True)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate("() => " + _seed_gold_js())
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store)); saveStore();
+          document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
+          showRanksScreen('ranks'); await wait(1200);
+          const out = [];
+          document.querySelectorAll('.rankmap-stop .rankmap-card').forEach(c => {
+            const cs = getComputedStyle(c), cr = c.getBoundingClientRect();
+            const left = cr.left + parseFloat(cs.borderLeftWidth) + parseFloat(cs.paddingLeft);
+            const right = cr.right - parseFloat(cs.borderRightWidth) - parseFloat(cs.paddingRight);
+            const chips = [...c.querySelectorAll('.rankmap-gift')].map(g => { const b = g.getBoundingClientRect(), l = g.querySelector('.rankmap-giftlabel');
+              return { t: (l || g).textContent.trim(), w: b.width, l: b.left, r: b.right, cut: l ? l.scrollWidth > l.clientWidth + 1 : false }; });
+            out.push({ rank: (c.querySelector('.rankmap-name') || {}).textContent, inner: right - left, left, right, chips });
+          });
+          return out; }""")
+        ctx.close()
+        cards = [c for c in r if c["chips"]]
+        maxfrac = max((ch["w"] / c["inner"] for c in cards for ch in c["chips"]), default=1)
+        order_ok = all([ch["t"] for ch in c["chips"]][:2] == ["Theme", "Flare"] and len(c["chips"]) >= 2 for c in cards)
+        inside = all(ch["l"] >= c["left"] - 1 and ch["r"] <= c["right"] + 1 for c in cards for ch in c["chips"])
+        cut = [(c["rank"], ch["t"]) for c in cards for ch in c["chips"] if ch["cut"]]
+        tag = "%s (%dpx)" % (dev, w)
+        check(f"{tag}: {len(cards)} cards measured", len(cards) >= 7, len(cards))
+        if wide:
+            check(f"{tag}: every unlock chip fits its content - none wider than 60% of the card (it was 100%)",
+                  maxfrac <= 0.6, round(maxfrac, 3))
+        else:
+            check(f"{tag}: the phone keeps its full-width rows", maxfrac >= 0.97, round(maxfrac, 3))
+        check(f"{tag}: Theme, Flare, then the character or banner, on every card", order_ok,
+              [[ch["t"] for ch in c["chips"]] for c in cards][:3])
+        check(f"{tag}: every chip inside its card, no label cut short", inside and not cut, cut)
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -15594,6 +15642,7 @@ def main():
             check_b317_supernova(br)
             check_b317_flow(br)
             check_b317_focusring(br)
+            check_b317_roadmap_chips(br)
         finally:
             br.close()
     SERVER.shutdown()
