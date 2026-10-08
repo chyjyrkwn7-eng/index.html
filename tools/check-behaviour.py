@@ -11571,9 +11571,13 @@ FX_RUN = """const wait = ms => new Promise(r => setTimeout(r, ms));
 # of the other two starts from the box by design (the hole darkens the
 # whole screen as it opens, the water floods up from the bottom), so each
 # has checks of its own instead.
-FX_EARLY = {"worldtree": .35, "bubbles": .55}
-FX_LATE = {"worldtree": 2.4, "bubbles": 3.4}
-FX_ALL = ["fireworks", "blackhole", "underwater", "worldtree", "bubbles", "ufo"]
+# The World Tree left the ladder in build 317, round 4 ("The world tree is
+# not the answer"): Underwater holds its rung, and a stored "worldtree" is
+# read as Underwater (checked in check_b313_fx's mapping block), so the
+# tree is not played here any more.
+FX_EARLY = {"bubbles": .55}
+FX_LATE = {"bubbles": 3.4}
+FX_ALL = ["fireworks", "blackhole", "underwater", "bubbles", "ufo"]
 
 
 def fx_spread(pg, fx):
@@ -11654,14 +11658,15 @@ def check_b313_fx(br):
       const ba = document.querySelector('.banner-opt .banner-opt-art');
       out.banner = ba ? [ba.offsetWidth, ba.offsetHeight] : null;
       showCustomize('fx'); await wait(400);
-      document.querySelector('.hfx-opt[data-fx="worldtree"]')?.click(); await wait(200);
+      const rung100 = HUNDO_FX[2].id; out.rung100 = rung100;
+      document.querySelector('.hfx-opt[data-fx="' + rung100 + '"]')?.click(); await wait(200);
       out.picked = store.hundoFx;
       /* build 314: a first tap only picks it ("if it's not selected and you
          tap it, that's selecting") - no card */
       out.firstTapCard = document.querySelectorAll('.unlock-card').length;
-      out.firstTapSel = !!document.querySelector('.hfx-opt[data-fx="worldtree"].selected');
+      out.firstTapSel = !!document.querySelector('.hfx-opt[data-fx="' + rung100 + '"].selected');
       /* and a tap on the picked one shows it: the card, with the effect playing on a results screen in miniature */
-      document.querySelector('.hfx-opt[data-fx="worldtree"]')?.click(); await wait(200);
+      document.querySelector('.hfx-opt[data-fx="' + rung100 + '"]')?.click(); await wait(200);
       out.tapCard = !!document.querySelector('.unlock-card-fx .hfx-mock');
       await wait(1600);
       out.tapLive = document.querySelectorAll('.unlock-card-fx .hfx-mock .hfx-layer, .unlock-card-fx .hfx-mock .hfx-box').length;
@@ -11684,7 +11689,7 @@ def check_b313_fx(br):
       t50?.click(); await wait(200);
       out.oldRepick = store.hundoFx;
       document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
-      store.hundoFx = 'worldtree'; saveStore();   /* as the tap above left it, for the read-back below */
+      store.hundoFx = rung100; saveStore();   /* as the tap above left it, for the read-back below */
       return out; }""")
     r0 = r
     mid = r.get("mid") or []
@@ -11703,24 +11708,56 @@ def check_b313_fx(br):
     check("the effect tiles are the banner tiles' size and shape (round 3: \"slightly too big\")",
           abs(tl[0] - bn[0]) <= 2 and abs(tl[1] - bn[1]) <= 3, {"tile": r.get("tile"), "banner": r.get("banner")})
     check("build 314: tapping a held one that is not picked PICKS it and opens nothing (like a character or a banner)",
-          r.get("firstTapCard") == 0 and r.get("firstTapSel") and r.get("picked") == "worldtree", {k: r.get(k) for k in ("firstTapCard", "firstTapSel", "picked")})
+          r.get("firstTapCard") == 0 and r.get("firstTapSel") and r.get("picked") == IDS[2], {k: r.get(k) for k in ("firstTapCard", "firstTapSel", "picked")})
     check("tapping the picked one opens its card, held, with the effect playing on a results screen in miniature",
           r.get("tapCard") and r.get("tapLive", 0) >= 1 and r.get("tapHeld"), {k: r.get(k) for k in ("tapCard", "tapLive", "tapHeld")})
     check("tapping a held one picks it; a locked one opens its card (its count) and picks nothing",
-          r.get("picked") == "worldtree" and "350" in r.get("cardText", "") and r.get("stillPicked") == "worldtree",
+          r.get("picked") == IDS[2] and "350" in r.get("cardText", "") and r.get("stillPicked") == IDS[2],
           {k: r.get(k) for k in ("picked", "cardText", "stillPicked")})
     check("build 314: the card has no Preview button (\"The preview button also can be removed\") - the miniature results screen is the preview",
           not r.get("preview") and "Preview" not in r.get("cardText", ""), {k: r.get(k) for k in ("preview",)})
     r = pg.evaluate("""() => { const got = JSON.parse(JSON.stringify(store)); delete got.hundoFx;
       store.hundoFx = 'confetti'; loadStore(); const kept = store.hundoFx;
       applyLoadedData(got); const def = store.hundoFx;
-      applyLoadedData(Object.assign(JSON.parse(JSON.stringify(store)), { hundoFx: 'worldtree' })); const cloud = store.hundoFx;
+      applyLoadedData(Object.assign(JSON.parse(JSON.stringify(store)), { hundoFx: HUNDO_FX[2].id })); const cloud = store.hundoFx;
       store.lifetime.perfectTests = 10; store.hundoFx = 'bubbles';
       const fallback = typeof hundoFxInUse === 'function' ? hundoFxInUse() : null;
       return { kept, def, cloud, fallback }; }""")
     check("the pick is saved and read back at boot; a cloud copy without it is Confetti; one with it keeps it",
-          r.get("kept") == "worldtree" and r.get("def") == "confetti" and r.get("cloud") == "worldtree", r)
+          r.get("kept") == IDS[2] and r.get("def") == "confetti" and r.get("cloud") == IDS[2], r)
     check("a pick that is not held here falls back to Confetti", r.get("fallback") == "confetti", r)
+    # build 317, round 4: Underwater replaces the World Tree at 100. Live
+    # build 313 ships the tree, so an account that picked it, was shown its
+    # pop-up or looked at its tile must come through as Underwater - never
+    # a missing effect, never the same pop-up twice. Fails on 7ee6c51.
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const got = JSON.parse(JSON.stringify(store)); const seen = JSON.parse(JSON.stringify(ensureSeenUnlocks()));
+      got.lifetime.perfectTests = 600; got.hundoFx = 'worldtree';
+      got.unlocksShown = { chars: [], banners: ['hundos100'], fx: ['fireworks', 'worldtree'] };
+      seen.fx = ['fireworks', 'worldtree']; got.seenUnlocks = seen;
+      applyLoadedData(got);
+      const out = { rung: (HUNDO_FX.find(d => d.need === 100) || {}).id, pick: store.hundoFx, inUse: hundoFxInUse(),
+        shown: (store.unlocksShown || {}).fx, seen: (store.seenUnlocks || {}).fx, owed: pendingHomeUnlocks().fx,
+        def: (hundoFxDef('worldtree') || {}).id || null };
+      /* a merge from an old device bringing the old id back in */
+      store.unlocksShown.fx = ['fireworks', 'worldtree']; out.owedAfterMerge = pendingHomeUnlocks().fx;
+      showCustomize('fx'); await wait(400);
+      out.selected = [...document.querySelectorAll('.hfx-opt.selected')].map(b => b.dataset.fx);
+      document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+      return out; }""")
+    check("round 4: the 100-hundo rung is Underwater", r.get("rung") == "underwater", r.get("rung"))
+    check("round 4: a saved World Tree pick (live build 313) loads as Underwater, plays Underwater and is the tile picked in Customize",
+          r.get("pick") == "underwater" and r.get("inUse") == "underwater" and r.get("selected") == ["underwater"] and r.get("def") == "underwater",
+          {k: r.get(k) for k in ("pick", "inUse", "selected", "def")})
+    check("round 4: a World Tree pop-up already shown counts for Underwater (no repeat), its tile already seen too - on load and after a merge brings the old id back",
+          "underwater" in (r.get("shown") or []) and "worldtree" not in (r.get("shown") or []) and "underwater" in (r.get("seen") or [])
+          and "underwater" not in (r.get("owed") or []) and "underwater" not in (r.get("owedAfterMerge") or []) and "worldtree" not in (r.get("owed") or []),
+          {k: r.get(k) for k in ("shown", "seen", "owed", "owedAfterMerge")})
+    ctx.close()
+    # and a 100% with the old id stored plays Underwater on the results screen
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("async () => { store.lifetime.perfectTests = 600; store.hundoFx = 'worldtree'; saveStore(); " + FX_RUN + " return { id: window.__fxId || null }; }")
+    check("round 4: a 100% with \"worldtree\" stored plays Underwater", r.get("id") == "underwater", r)
     ctx.close()
     check("round 4: a saved pick of the retired Black Hole plays Confetti, and Customize shows Confetti picked, not nothing",
           r0.get("oldInUse") == "confetti" and r0.get("oldSel") == ["confetti"], {k: r0.get(k) for k in ("oldInUse", "oldSel")})
@@ -11753,6 +11790,17 @@ def check_b313_fx(br):
             for(let yy = 0; yy < cv.height; yy += 3) for(let xx = 0; xx < cv.width; xx += 3){ if(d[(yy * cv.width + xx) * 4 + 3] > 60){ n++;
               const X = cr.left + xx * sx, Y = cr.top + yy * sy; if(X < x0) x0 = X; if(X > x1) x1 = X; if(Y < y0) y0 = Y; if(Y > y1) y1 = Y; } }
             return { n, x0: Math.round(x0), x1: Math.round(x1), y0: Math.round(y0), y1: Math.round(y1) }; };
+          /* build 317, round 4: the water - where it is, and what it is made of */
+          const uwLook = () => { const L = document.querySelector('.hfx-layer.hfx-underwater'); if(!L) return null;
+            const sea = L.querySelector('.hfx-uw-sea'), oc = L.querySelector('.hfx-uw-ocean'), body = L.querySelector('.hfx-uw-body');
+            const R = e => { if(!e) return null; const q = e.getBoundingClientRect(); return [Math.round(q.left), Math.round(q.top), Math.round(q.right), Math.round(q.bottom)]; };
+            const bg = body ? getComputedStyle(body).backgroundImage : '';
+            const alphas = (bg.match(/rgba\([^)]*\)/g) || []).map(c => parseFloat(c.split(',')[3]));
+            return { sea: R(sea), vw: innerWidth, vh: innerHeight, pos: oc ? getComputedStyle(oc).position : null,
+              waves: [...L.querySelectorAll('.hfx-uw-wave')].map(w => new DOMMatrixReadOnly(getComputedStyle(w).transform).m41),
+              caus: [...L.querySelectorAll('.hfx-uw-caus')].map(e => getComputedStyle(e).backgroundImage.slice(0, 26)),
+              alphas, rays: L.querySelectorAll('.hfx-uw-ray').length, bubbles: L.querySelectorAll('.hfx-uw-bub').length }; };
+          if(fx === 'underwater'){ await until(300); out.uwEarly = uwLook(); }
           if(fx === 'fireworks'){
             await until(420);
             const gr = g.getBoundingClientRect();
@@ -11765,17 +11813,16 @@ def check_b313_fx(br):
           out.box = box ? box.querySelectorAll('*').length : 0;
           const fill = () => { const f = document.querySelector('.rs-screen .unit-breakdown-fill.is-gold'); return f ? getComputedStyle(f).backgroundImage : null; };
           out.border = getComputedStyle(g).borderTopColor; out.fill = fill();
-          if(fx === 'worldtree'){
-            await until(1200);
-            const lay = document.querySelector('.hfx-layer.hfx-worldtree');
-            out.bits = lay ? lay.querySelectorAll('.hfx-bl-p').length : 0;
-            out.flash = lay ? lay.querySelectorAll('.stardust-flash, .stardust-ring').length : 0;
-            out.wood = document.querySelectorAll('.hfx-seg, .hfx-pane, .hfx-tree').length;
-          }
           if(fx === 'underwater'){
             await until(2600);
             const sea = document.querySelector('.hfx-uw-sea'), sr = sea && sea.getBoundingClientRect(), gr = g.getBoundingClientRect();
             out.flooded = !!sr && sr.top <= gr.top && sr.bottom >= gr.bottom;
+            /* round 4: the water at rest - the page has scrolled to its foot -
+               and what it is made of */
+            await until(2900);
+            out.uwRest = uwLook();
+            await wait(250);
+            out.uwRest2 = uwLook();
           }
           if(fx === 'blackhole'){
             const xp = document.querySelector('.rs-screen > .rs-xp');
@@ -11875,12 +11922,25 @@ def check_b313_fx(br):
         gold = "rgb(217, 169, 58)"
         check("%s: the box's progress bar takes the effect's colours too, and keeps them after" % fx,
               r.get("fill") and gold not in r["fill"] and tv[2] and r.get("fillAfter") == "linear-gradient(90deg, %s, %s)" % (rgb(tv[2]), rgb(tv[1])), {"during": r.get("fill"), "after": r.get("fillAfter")})
-        if fx == "worldtree":
-            # build 317: "The tree one looks terrible, fix that ... the alien
-            # one is cool because it takes the default one and makes it the
-            # alien theme" - the default's burst, in petals and leaves
-            check("worldtree: the default's burst in blossom - its flash and rings, petals and leaves thrown out of the number, and no drawn tree",
-                  r.get("bits", 0) >= 40 and r.get("flash", 0) >= 3 and r.get("wood", 1) == 0, {k: r.get(k) for k in ("bits", "flash", "wood")})
+        if fx == "underwater":
+            # build 317, round 4: "the water that's on screen looks terrible,
+            # and it doesn't start from the very bottom"
+            e, w, w2 = r.get("uwEarly") or {}, r.get("uwRest") or {}, r.get("uwRest2") or {}
+            es, ws = e.get("sea") or [0, 0, 0, 0], w.get("sea") or [9, 0, 0, 0]
+            check("underwater: it rises from the VERY bottom - at 0.3s its surface is in the bottom fifth of the screen and the water reaches the bottom edge",
+                  e and es[1] >= e["vh"] * .8 and es[3] >= e["vh"] - 1, {"sea": es, "vh": e.get("vh")})
+            check("underwater: the water is the SCREEN's (fixed, 100lvh) - with the page scrolled to its foot it still reaches the bottom edge, edge to edge",
+                  w.get("pos") == "fixed" and ws[3] >= w.get("vh", 9e9) - 1 and ws[0] <= 0 and ws[2] >= w.get("vw", 9e9), {"sea": ws, "pos": w.get("pos"), "vw": w.get("vw"), "vh": w.get("vh")})
+            check("underwater: its surface stays in view near the top while the screen is under it (not off the top)",
+                  w and w["vh"] * .03 <= ws[1] <= w["vh"] * .2, {"surface": ws[1], "vh": w.get("vh")})
+            wa, wb = w.get("waves") or [], w2.get("waves") or []
+            dv = [b - a for a, b in zip(wa, wb)]
+            check("underwater: a real surface - two wave layers, sliding opposite ways",
+                  len(wa) == 2 and len(wb) == 2 and dv[0] * dv[1] < 0 and all(abs(x) > .5 for x in dv), {"t0": wa, "t1": wb})
+            al = w.get("alphas") or []
+            check("underwater: computed caustics in two drifting layers, a depth tint that deepens to the floor, light rays and bubbles",
+                  len(w.get("caus") or []) == 2 and all(c.startswith('url("data:image/png') for c in w["caus"]) and len(al) >= 3 and al[-1] > al[0]
+                  and w.get("rays", 0) >= 3 and w.get("bubbles", 0) >= 3, {k: w.get(k) for k in ("caus", "alphas", "rays", "bubbles")})
         if fx == "fireworks":
             ea, la, ba = r.get("early") or {}, r.get("late") or {}, r.get("boxAt") or {}
             check("fireworks: it starts AT the 100% box - the first shell is climbing out of its top edge, nothing lit anywhere else",
@@ -12577,7 +12637,7 @@ def check_b314_unlocks(br):
       out.secondCards = cards(); out.secondLive = !!document.querySelector('.unlock-card-fx .hfx-mock');
       document.querySelectorAll('.invite-overlay').forEach(o => o.remove()); await wait(100);
       /* a hold on one that is not picked: its card, and the pick stays */
-      const t = tile('worldtree'), rc = t.getBoundingClientRect(), x = rc.left + rc.width / 2, y = rc.top + rc.height / 3;
+      const t = tile(HUNDO_FX[2].id), rc = t.getBoundingClientRect(), x = rc.left + rc.width / 2, y = rc.top + rc.height / 3;
       const ev = (type) => t.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0, isPrimary: true }));
       ev('pointerdown'); await wait(UNIT_HOLD_MS + 200); ev('pointerup'); t.click(); await wait(300);
       out.holdCards = cards(); out.holdPick = store.hundoFx;
@@ -13832,8 +13892,24 @@ def check_b317_supernova(br):
     pg.evaluate("() => { store.supernovaAchieved = false; store.mysteryColorsFound = {red:true, orange:true}; saveStore(); try{ localStorage.removeItem('class26e.ringtier.seen'); }catch(e){} theme.accent = 'elite'; applyTheme(); showHome(); }")
     pg.wait_for_timeout(1200)
     pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+    # cut3: every call for the Supernova art, whether it was drawn already
+    # and whether the scene was on screen at the time
+    pg.evaluate("""() => { window.__artLog = []; window.__artBefore = [cosmicScarCache !== null, typeof snDustCache === 'undefined' ? null : snDustCache !== null];
+      const wrap = (n, drawn) => { const f = window[n]; if(typeof f !== 'function') return;
+        window[n] = function(){ const o = document.getElementById('supernova-cutscene');
+          window.__artLog.push([n, drawn(), !!(o && o.classList.contains('supernova-visible'))]); return f.apply(this, arguments); }; };
+      wrap('cosmicScarArt', () => cosmicScarCache !== null); wrap('snDustURL', () => snDustCache !== null); }""")
     pg.evaluate("() => playSupernovaCutscene({ from: 'elite', onDone(){ window.__snDone = Date.now(); } })")
     marks, at_det, at_set, at_top, at_sweep, at_settled, t0 = {}, None, None, None, None, None, pg.evaluate("() => Date.now()")
+    # cut3: per frame, the ring debris seen on either planet, and any second
+    # set (the sweep's own shards) seen beside it
+    DEBRIS = """() => { const o = document.getElementById('supernova-cutscene'); if(!o) return null;
+      const vis = el => { let op = 1; for(let e = el; e && e !== o; e = e.parentElement){ const c = getComputedStyle(e);
+        if(c.display === 'none' || c.visibility === 'hidden') return 0; op *= +c.opacity; } return op; };
+      const n = s => [...o.querySelectorAll(s)].filter(e => vis(e) > .05).length;
+      return { c: o.className, before: n('.rank-before .csc-ringfrag'), after: n('.rank-after .csc-ringfrag'),
+        extra: n('.rank-after .sn-sweep > :not(.is-ember)') }; }"""
+    deb = []
     RINGS = """() => { const o = document.getElementById('supernova-cutscene');
       const rings = [...o.querySelectorAll('.rank-after .cosmic-orbit-ring')];
       return rings.map(r => getComputedStyle(r).stroke); }"""
@@ -13843,12 +13919,14 @@ def check_b317_supernova(br):
         pg.evaluate(CUTSPIN_SEEK, t)
         pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
         pg.evaluate(CUTSPIN_SEEK, t)
-        c = pg.evaluate("() => { const o = document.getElementById('supernova-cutscene'); return o ? o.className : null; }")
+        dq = pg.evaluate(DEBRIS)
+        c = dq and dq["c"]
         if c is None:
             if marks: marks.setdefault("gone", i); break
             continue
+        deb.append((i, dq))
         for k in ("is-cutspin", "is-cutlight", "is-cutrest", "sn-swell", "supernova-burst", "sn-detonate", "is-swapped", "sn-scarred",
-                  "sn-settled", "sn-rings", "supernova-settle", "rank-outro"):
+                  "sn-swept", "sn-settled", "sn-rings", "supernova-settle", "rank-outro"):
             if k in c.split() and k not in marks:
                 marks[k] = i
         if "is-cutlight" in c.split() and at_top is None:
@@ -13867,12 +13945,14 @@ def check_b317_supernova(br):
             # the fragments, ~0.3s after the system starts settling: out on
             # the rings, in the after-planet's own units (the hero is 360 wide,
             # the planet's centre at 180,150 in a 0 -12 360 342 box)
+            # cut3: the fragments ARE Home's ring debris, thrown out (and
+            # still flying - a finite animation of their own on them)
             at_sweep = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene');
               const h = o.querySelector('.rank-after .cosmic-hero-wrap'); if(!h) return null;
               const r = h.getBoundingClientRect(), u = r.width / 360, cx = r.left + r.width / 2, cy = r.top + r.height * 162 / 342;
-              const orbs = [...o.querySelectorAll('.rank-after .sn-sweep > .sn-orb')];
-              const vis = orbs.filter(e => +getComputedStyle(e).opacity > .5);
-              return { orbs: orbs.length, vis: vis.length, run: orbs.filter(e => e.getAnimations().some(a => a.playState === 'running' || a.playState === 'paused')).length,
+              const orbs = [...o.querySelectorAll('.rank-after .csc-ringfrag')];
+              const vis = orbs.filter(e => getComputedStyle(e).visibility !== 'hidden' && +getComputedStyle(e).opacity > .5);
+              return { orbs: orbs.length, vis: vis.length, run: orbs.filter(e => e.getAnimations().some(a => a.effect.getComputedTiming().iterations !== Infinity)).length,
                 d: vis.map(e => { const q = e.getBoundingClientRect(); return +(Math.hypot(q.left + q.width / 2 - cx, q.top + q.height / 2 - cy) / u).toFixed(1); }) }; }""")
             at_sweep["rings"] = pg.evaluate(RINGS)
         if "supernova-settle" in c.split() and at_set is None and i - marks["supernova-settle"] >= 45:
@@ -13887,12 +13967,20 @@ def check_b317_supernova(br):
               finally{ store.supernovaAchieved = had; window.saveStore = save; }
               const scene = h ? [...h.children].filter(e => !/^(rank-|sn-)/.test(e.getAttribute('class') || '')) : [];
               const rev = h ? [...h.querySelectorAll(':scope > [data-sn-reveal]')] : [];
-              return { scar: sc ? +getComputedStyle(sc).opacity : null,
+              /* cut3: the debris and the passing light, as Home has them */
+              const hn = (() => { const had2 = store.supernovaAchieved, save2 = window.saveStore;
+                try{ store.supernovaAchieved = true; window.saveStore = () => {}; const hh = buildCosmicHero(true, 'titan');
+                  return [hh.querySelectorAll('.csc-ringfrag').length, hh.querySelectorAll('.csc-pass').length]; }
+                finally{ store.supernovaAchieved = had2; window.saveStore = save2; } })();
+              const pass = h ? [...h.querySelectorAll('.csc-pass')] : [];
+              return { scar: sc ? +getComputedStyle(sc).opacity : null, homeDebris: hn[0], homePass: hn[1],
+                pass: pass.length, passOn: pass.filter(e => getComputedStyle(e).display !== 'none' && !/opacity\(0\)/.test(getComputedStyle(e).filter)).length,
                 orange: rings.length && rings.every(r => r.classList.contains('cosmic-orbit-ring-supernova')),
                 stroke: rings[0] ? getComputedStyle(rings[0]).stroke : null,
                 /* (the bubbles are moved into the scene's own carrier) */
                 home: home.filter(k => !/cosmic-icon-badge/.test(k)), scene: scene.map(key).filter(k => !/cosmic-icon-badge/.test(k)), revealed: rev.length, shown: rev.filter(e => +getComputedStyle(e).opacity > .95).length }; }""")
     end = pg.evaluate("() => [window.__snDone || null, store.supernovaAchieved, (() => { try{ return localStorage.getItem('class26e.ringtier.seen'); }catch(e){ return 'x'; } })()]")
+    art = pg.evaluate("() => ({ log: window.__artLog, before: window.__artBefore, after: [cosmicScarCache !== null, typeof snDustCache === 'undefined' ? null : snDustCache !== null] })")
     ctx.close()
     order = ["is-cutrest", "sn-swell", "sn-detonate", "is-swapped", "sn-scarred", "supernova-settle", "rank-outro"]
     seq = [marks.get(k) for k in order]
@@ -13919,7 +14007,7 @@ def check_b317_supernova(br):
     check("after the blast the system transforms, in order: the scar, the system settling into its new look, THEN the rings change colour, then the title",
           all(v is not None for v in seq2) and seq2 == sorted(seq2) and len(set(seq2)) == 5 and (seq2[3] - seq2[0]) >= 120, seq2)
     near = [d for d in (at_sweep or {}).get("d", []) if 92 <= d <= 158]
-    check("black fragments sweep out of the planet and ride the rings round, in orbit (most of them on a ring, moving)",
+    check("black fragments sweep out of the planet and ride the rings round, in orbit (most of them on a ring, still settling)",
           bool(at_sweep) and at_sweep["orbs"] >= 16 and at_sweep["vis"] >= 12 and at_sweep["run"] >= 12 and len(near) >= .75 * at_sweep["vis"],
           at_sweep and (at_sweep["orbs"], at_sweep["vis"], at_sweep["run"], len(near)))
     plain_ring = lambda strokes: bool(strokes) and all("255, 255, 255" in x for x in strokes)
@@ -13929,6 +14017,30 @@ def check_b317_supernova(br):
     check("it ends on HOME'S OWN Supernova planet: everything Home's build has, the scene's has - what it adds over a plain planet brought in beat by beat, all of it showing by the title",
           bool(at_set) and at_set["home"] and sorted(at_set["home"]) == sorted(at_set["scene"]) and at_set["revealed"] >= 1 and at_set["shown"] == at_set["revealed"],
           at_set and (at_set["revealed"], at_set["shown"], sorted(set(at_set["home"]) ^ set(at_set["scene"]))))
+    # CUT3, with the planet round's debris on Home's rings (fails on
+    # 748ddc9, where the debris was on the planet from the swap - before the
+    # scar, before the sweep - and the sweep's own 28 shards rode the rings
+    # beside it: two sets). Nothing of the Supernova state shows before its
+    # beat, and the end is Home's look with ONE set of debris.
+    cut = marks.get("sn-swept") or marks.get("sn-settled") or 10 ** 6
+    early = [(i, d["after"]) for i, d in deb if i < cut and d["after"]] + [(i, d["before"]) for i, d in deb if d["before"]]
+    two = [(i, d["after"], d["extra"]) for i, d in deb if d["after"] and d["extra"]]
+    hd = (at_set or {}).get("homeDebris") or 0
+    final = [d for i, d in deb if marks.get("supernova-settle") and marks["supernova-settle"] + 45 <= i < (marks.get("rank-outro") or 10 ** 6)]
+    check("the ring debris: none seen before the blast, nor after it until the sweep throws it out - and exactly one set at the end, Home's own",
+          hd > 0 and marks.get("sn-swept") is not None and not early and not two and bool(final)
+          and all(d["after"] == hd and d["extra"] == 0 for d in final),
+          (hd, marks.get("sn-swept"), early[:2], two[:2], final[:1]))
+    check("and the end is Home's in the rest of it too: the light that passes the scar is live, all of it",
+          bool(at_set) and at_set["pass"] == at_set["homePass"] and at_set["passOn"] == at_set["pass"],
+          at_set and (at_set["homePass"], at_set["pass"], at_set["passOn"]))
+    # the scar's first draw (~60-140ms) and the dust's (~25ms) land before
+    # the scene's first frame, never inside it (748ddc9 drew the dust at the
+    # swell, with the planet shaking)
+    drew = [x for x in art["log"] if not x[1]]
+    check("the Supernova art is drawn before the scene is on screen - never in the middle of it",
+          art["before"] == [False, False] and art["after"] == [True, True] and bool(drew) and not any(x[2] for x in drew),
+          (art["before"], art["after"], drew))
     total = (marks.get("gone") or 0) / 30
     check("longer: ~33-37.5s from the first frame to the hand-over (it was ~25s)", 33 <= total <= 37.5, round(total, 1))
     check("it ends with Supernova reached and the ring tier seen as 'supernova' (Home will not draw the rings on again)",
@@ -16684,13 +16796,15 @@ def check_b317_flow(br):
         # (A "the bar is at its end at the pop" width check was tried and
         # dropped: it passed on e877af7 too, so it measured nothing.)
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
-    r = pg.evaluate(B317_FLOW_RUN, {"fx": "worldtree", "badge": True, "av": "lunar", "caseMs": 3500})
-    tail = pg.evaluate("() => HUNDO_FX_TAIL_AT.worldtree")
+    # the 100-hundo rung's effect (the World Tree until build 317 round 4, Underwater since)
+    fx100 = pg.evaluate("() => HUNDO_FX[2].id")
+    r = pg.evaluate(B317_FLOW_RUN, {"fx": fx100, "badge": True, "av": "lunar", "caseMs": 3500})
+    tail = pg.evaluate("(id) => HUNDO_FX_TAIL_AT[id]", fx100)
     ctx.close()
     ev = r.get("ev") or {}
     check("nothing threw (a 100% that earns a badge)", not r.get("threw"), r.get("threw"))
     g2 = (ev.get("case") or 0) - (ev.get("hfx") or 0)
-    check("the World Tree plays to its tail before the badge case takes the screen (>= tail - 0.5s)",
+    check("the 100-hundo effect (%s) plays to its tail before the badge case takes the screen (>= tail - 0.5s)" % fx100,
           ev.get("hfx") is not None and ev.get("case") is not None and g2 >= tail - 500, [ev.get("hfx"), ev.get("case"), g2, tail])
     check("the 100%'s character special does not play under the badge case - it closes the reveal instead",
           ev.get("special") is not None and not r.get("specialCovered") and ev["special"] >= (ev.get("caseEnd") or 0),
