@@ -6590,8 +6590,21 @@ results screen cannot count one twice. `seedVroomTop3()` backfills once
 from Firestore (`vrTop3RetroDone`). It is separate from
 `seedVroomHistory`, which everyone has already run.
 
-**Profile → Stats** has a Virtual Room section: Matches played,
-First-place finishes and Top-3 finishes, each with its explanation.
+~~**Profile → Stats** has a Virtual Room section: Matches played,
+First-place finishes and Top-3 finishes, each with its explanation.~~
+**REMOVED IN THE 317 FIX.** *"Remove the virtual room stats from the stats
+tab. I don't think there will be enough usage to care to track it."* The
+section, its three `STAT_MEANINGS` lines and its `.stat-grid-three` CSS
+are gone; Stats is the four totals and the four study-time cards (8 cards,
+two grids). ONLY THE DISPLAY WENT: `vrMatches`, `vrWins`, `vrTop3`,
+`vrTop3Rooms` are still counted by `recordVroomOutcome`, still defaulted in
+`applyLoadedData`, still synced and merged, and still read by what is built
+on them (the Clown's `vrwins5`, the Arena and Champion banners, the 25
+matches challenge). No tour step pointed at the section (the Profile tour
+points at the Stats tab button). Gates: check-statsbadges ("eight of them,
+in two sections - no Virtual Room cards") and `check_b236` ("Stats shows no
+Virtual Room cards any more"), both failing on b6cd249; check-vroom still
+asserts the counting.
 
 **The results character** reacts on the XP box's own avatar
 (`.results-level-avatar`, live until the grade lands). The one on the
@@ -14910,6 +14923,83 @@ disagree with it.
     silhouette note describes. Scenery and non-`headGrad` fills are left
     alone, so nobody's own gloss is doubled. `check_b317_volume` asserts
     the layers on every character and no `filter` attribute anywhere.
+    **SUPERSEDED IN THE 317 FIX - ONE LIGHT FOR THE WHOLE FIGURE
+    (`lightFigure()`, called at the end of `buildAvatarCharSVGFresh`).**
+    *"Characters' heads are now not showing correctly connected to the
+    body of the character, the bodies don't look attached, they don't
+    seem connected or blended."* The per-piece light above WAS the cause:
+    lit as its own ball, a head's lower edge sat in its own shade (~.31
+    black) straight against the body's own highlight (~.25 white, its
+    upper-left is right under the chin) - a dark-to-light step along
+    every neck, ears lit as separate balls on a face, a hood's rim against
+    its shoulders. It is the exact bug `headGrad`'s comment warns about
+    ("each piece ... its OWN small bounding box ... separate pieces stuck
+    together"), one layer up. Ruled out by measurement, not argument: the
+    Profile plate with only the two layers lifted off is the pre-volume
+    plate to the pixel, so the plate breakout, the tab's wide window and
+    the flip-book's fade (all in drawing units) were never it.
+    - **Every lit surface samples ONE field** (`userSpaceOnUse`): the
+      shade over the box of every lit shape together, the light over the
+      box of the head's lit shapes - the same 44%/36%/72% and 34%/24%/62%
+      geometry and the same stops, applied to the figure instead of the
+      piece. One field means one value either side of any seam, so the
+      neck, an ear, a hat band cannot step; the head keeps its highlight
+      up on the left and the figure falls into shade at its outer edges.
+    - **It is laid on AFTER `AVATAR_HEAD_SCALE` and `AVATAR_ART_SCALE`**,
+      never inside `done()`: a field drawn in the raw drawing is scaled
+      with the head and not with the shoulders. Each shape's gradient
+      carries the inverse of the transform attributes above it (read off
+      `transform.baseVal`, so it works detached), so all of them land on
+      one field in the drawing's own units, Zeus's turned shapes included.
+    - **The boxes come from the shapes' own numbers** (`figureShapeBox`,
+      `figurePathBox`: points and control points - a curve never leaves
+      the hull of its handles), NOT `getBBox()`, which needs the drawing
+      in the page and forces a layout per character built (the badge
+      viewBox note's ~80ms for sixteen, on a throttled phone).
+    - Still fills only, no filter, still only `headGrad` surfaces. A
+      drawing made with `drawAvatarCharSVG` alone has no light now; every
+      place in the app goes through `buildAvatarCharSVG`.
+    - **Gates:** `check_b317_volume` adds "one light for the whole
+      figure" (every shade layer's field, carried through the transforms
+      above it, is one matrix; every light layer's too) - fails on
+      b6cd249 for all 27 lit characters. `check_b317_neck` measures the
+      step the light adds ACROSS THE NECK: each character at 10px a unit,
+      scenery hidden, every `headGrad` surface painted one grey (so the
+      number does not depend on the paint), with and without the light;
+      in every column where the head's lowest pixel sits over the body,
+      the light's effect 3-6px above the edge against 3-6px below. On
+      b6cd249: over 10 levels on 23 of the 26 necks (11-60, median 39);
+      now 0-5, median 0. Painting the surfaces grey matters: on their own colours
+      the same field darkens white hair over a dark robe by 26 levels
+      and the robe by 4, which reads as a step that is not one.
+  - **A SECRET'S SILHOUETTE HAS ITS HEAD FITTED (317 fix,
+    `SIL_HEAD_FIT`).** *"Genesis looks great, Umbra is kinda bugged and
+    too big, and Horizon is nearly perfect but also too big. They are cut
+    off."* (Her screenshot was most likely the LIVE app, build 313, where
+    Umbra's flames were still blacked into a hood half again as tall -
+    build 314's SIL_LIGHT fixed that. What was left on b6cd249 was still
+    measurably wrong, so it was fixed anyway.) A cut-out is a black shape
+    with a light outline, so every unit of it reads, where the drawing's
+    hood fades into a dark scene and Horizon's locks fade out at the tips:
+    Umbra's hood rose to y 5.2 of the 3..37 tile (0.6 under the top
+    feather - Void and Genesis top out at 8.9 and 9.0) and stood 18%
+    taller than the four's median head; Horizon's crown spanned
+    6.7..33.2. `charSilhouetteSVG` now scales the SILHOUETTE's `.cx-head`
+    about the foot of the head before the outline copy is made (so both
+    copies, and the "~sil" flip-book, carry it) - Umbra .86 about (20,
+    31.2), Horizon .92 about (20, 30.4): Umbra tops out at 8.8, Horizon at
+    9.9 and 7.8..32.2 wide. The worn flares are in the head and move with
+    it. **The drawing you unlock is untouched** - it passes the head rules
+    as it is; only the cut-out was all edge. Silhouettes appear in
+    Customize, the unlock-detail card (a 7.6rem circle, already inside
+    it) and the Home hint card's ghost; never at sign-up (starters only)
+    or on a board (a classmate's character is drawn as itself). Gate:
+    `check_b317_silhouettes` - every cut-out 2 units under its tile's top
+    feather, inside the sides above the shoulders, its head within 12% of
+    the four's median height, and in Customize on both reference devices
+    no outline pixel in the top 9% of a tile. Fails four times on
+    b6cd249 (Umbra 5.2; 27.9 against a median of 23.6; 7.4% and 6.2% from
+    the top on the phone and the iPad).
   - **The Profile tab's character: bigger, with its colour behind it, and
     NOT circled.** *"They got a smidge smaller ... ensure you can see their
     backgrounds ... and ensure they still get animations on the tab."* A
@@ -14964,13 +15054,18 @@ disagree with it.
       it. I like it but could be better."*) The line under the bar already
       says where the XP goes, so this one no longer does. Still no badge
       count (316), and away from a wall the row still has no note.
-    - **THE FLARE LEADS THE UNLOCK TILES, THEN THE THEME.** *"the flare and
-      the theme unlock box thing in profile should swap ... your call."*
-      Kept after looking at both: the flare is the rank's own mark (what
-      reaching it lights on Home), and the theme's flat disc between the
-      two ringed pieces balances the row. The road map's chips still read
-      Theme, Flare (`buildRankGifts`) - not changed
-      here.
+    - ~~THE FLARE LEADS THE UNLOCK TILES, THEN THE THEME~~ - **REVERSED
+      IN THE 317 FIX: THEME, FLARE IN THE MIDDLE, THEN THE CHARACTER OR
+      BANNER.** *"In the rank profile challenge rewards, switch the flare
+      and theme spot again, preferred the flare one in the middle."*
+      `buildRankRewardTiles` (the Next rank card's tiles - its only
+      caller) now matches the road map's chips (`buildRankGifts`), which
+      were always Theme, Flare, character, banner. The rank-up REWARD CARD
+      gets the same order on its own branch; it is not this function.
+      Nothing in the CSS keys on the tiles' order (only on a fourth tile,
+      `:has(> .pf-rw:nth-child(4))`). Gates: `check_b317_pfcard` ("its
+      theme, then its flare in the middle, then the rest") and check-curve
+      ("its theme, then its flare"), both failing on b6cd249.
     - `check_b317_pfcard` holds all five on both reference devices and
       fails 8 of 10 against 74cc518 (the two that pass are "nothing threw"
       and the dot clearing, which guards what was kept).

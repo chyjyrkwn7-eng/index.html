@@ -2733,8 +2733,12 @@ def check_b236(br):
     check("a podium only from four people; top three counts once, and never in a room of three",
           v.get("places") == [1, 1, 3, 3] and v.get("small") == 0 and v.get("big") == 1, r["vr"])
     st = r["stats"] if isinstance(r["stats"], list) else []
-    check("Stats has a Virtual Room section with first places and top threes",
-          "First-place finishes" in st and "Top-3 finishes" in st, st)
+    # REVISED IN THE 317 FIX: "Remove the virtual room stats from the stats
+    # tab. I don't think there will be enough usage to care to track it."
+    # The section is gone; the podium above still counts (the data stays).
+    # Fails on b6cd249, which still shows all three cards.
+    check("Stats shows no Virtual Room cards any more (the counts above are still kept)",
+          bool(st) and not any(x in st for x in ("Matches played", "First-place finishes", "Top-3 finishes")), st)
     ctx.close()
 
 
@@ -13092,8 +13096,11 @@ def check_b317_pfcard(br):
               [(r.get("xpMid") or {}).get("over"), (r.get("xpTop") or {}).get("over"), r.get("topLevel")])
         check(f"{dev}: the Next rank card heads its rows 'Rank challenges', above them",
               any(k.lower() == "rank challenges" for k in r.get("kicks", [])) and r.get("kickBeforeTasks"), [r.get("kicks"), r.get("kickBeforeTasks")])
-        check(f"{dev}: what the rank unlocks leads with its flare, then its theme",
-              (r.get("tiles") or [])[:2] == ["flare", "theme"], r.get("tiles"))
+        # REVISED IN THE 317 FIX: "switch the flare and theme spot again,
+        # preferred the flare one in the middle" - theme, flare, then the
+        # character or banner (the road map's order). Fails on b6cd249.
+        check(f"{dev}: what the rank unlocks is its theme, then its flare in the middle, then the rest",
+              (r.get("tiles") or [])[:2] == ["theme", "flare"] and all(t == "other" for t in (r.get("tiles") or [])[2:]), r.get("tiles"))
         tt = r.get("topText") or ""
         check(f"{dev}: at Supernova the card says max rank, still under 'Rank challenges', and that none are left",
               r.get("top") == "titan" and "is-top" in (r.get("topCls") or "") and r.get("topTasks") == 0
@@ -13149,29 +13156,57 @@ def check_b317_volume(br):
     """Build 317. "It appears in profile some characters have a nice 3d look
     but some don't, fix that as well." Every surface a character paints with
     its headGrad light gets a shade layer and a light layer straight on top
-    of it, the same shape, so each piece reads round rather than flat - and
-    it is done with fills, never an SVG filter. Written against build 316,
-    where only the characters that drew their own highlight had one."""
-    print("\n317. every character's surfaces are lit round, with no filter")
+    of it, the same shape - and it is done with fills, never an SVG filter.
+    Written against build 316, where only the characters that drew their own
+    highlight had one.
+    REVISED IN THE 317 FIX: "Characters' heads are now not showing correctly
+    connected to the body." The layers lit each piece on its own
+    (objectBoundingBox), so a head was a ball on top of a body. They are one
+    light for the whole figure now (lightFigure): every shade layer, and
+    every light layer, is the SAME field in the drawing's units - its
+    gradientTransform carried through the transforms above the shape lands
+    on one matrix. That line fails on b6cd249 for every lit character.
+    Drawn through buildAvatarCharSVG, which is where the light is laid on
+    (after the head's own scale), not drawAvatarCharSVG."""
+    print("\n317. every character's surfaces are lit, by one light for the whole figure, with no filter")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""() => {
-      const out = { chars: 0, lit: 0, bare: [], filtered: [], threw: null };
+      const out = { chars: 0, lit: 0, bare: [], filtered: [], split: [], threw: null };
       try {
+        /* a gradient's field in the drawing's own units: the transforms
+           above the element, then the gradient's own, then its geometry
+           (objectBoundingBox - the per-piece light - has none: null) */
+        const fieldOf = (svg, el) => {
+          const id = ((el.getAttribute('fill') || '').match(/^url\\(#([^)]+)\\)$/) || [])[1];
+          const g = id && svg.querySelector('[id="' + id + '"]');
+          if(!g || g.getAttribute('gradientUnits') !== 'userSpaceOnUse') return null;
+          let m = new DOMMatrix();
+          const chain = []; for(let e = el; e && e !== svg; e = e.parentNode) chain.unshift(e);
+          chain.forEach(e => { const l = e.transform && e.transform.baseVal; if(l) for(let i = 0; i < l.numberOfItems; i++){ const t = l.getItem(i).matrix; m = m.multiply(new DOMMatrix([t.a, t.b, t.c, t.d, t.e, t.f])); } });
+          const gl = g.gradientTransform.baseVal; for(let i = 0; i < gl.numberOfItems; i++){ const t = gl.getItem(i).matrix; m = m.multiply(new DOMMatrix([t.a, t.b, t.c, t.d, t.e, t.f])); }
+          const r = parseFloat(g.getAttribute('r')) || 0;
+          m = m.translate(parseFloat(g.getAttribute('cx')) || 0, parseFloat(g.getAttribute('cy')) || 0).scale(r, r);
+          return [m.a, m.b, m.c, m.d, m.e, m.f];
+        };
+        const one = list => list.length > 0 && list.every(f => f && f.every((v, i) => Math.abs(v - list[0][i]) < 1e-3));
         AVATAR_CHARACTERS.filter(c => !c.retired).forEach(c => {
-          const s = drawAvatarCharSVG(c.id); if(!s) return;
+          const s = buildAvatarCharSVG(c.id); if(!s) return;
           out.chars++;
           const uid = s.getAttribute('data-cx-uid');
           const head = [...s.querySelectorAll('path, ellipse, circle, rect, polygon')]
-            .filter(n => (n.getAttribute('fill') || '').startsWith('url(#' + uid + '-head') && !n.closest('.cx-bg'));
+            .filter(n => (n.getAttribute('fill') || '').startsWith('url(#' + uid + '-head') && !n.closest('.cx-bg, .cx-sp'));
           let ok = head.length > 0 || ['voidwalker', 'genesis', 'zenith'].includes(c.id);
+          const shades = [], glosses = [];
           head.forEach(n => {
             const a = n.nextElementSibling, b = a && a.nextElementSibling;
             const same = x => x && x.nodeName === n.nodeName && ['d', 'cx', 'cy', 'rx', 'ry', 'r', 'points', 'transform']
               .every(k => x.getAttribute(k) === n.getAttribute(k));
-            if(!(same(a) && same(b) && /-vshade\\)$/.test(a.getAttribute('fill')) && /-vgloss\\)$/.test(b.getAttribute('fill')))) ok = false;
+            if(!(same(a) && same(b) && /-vshade\\d*\\)$/.test(a.getAttribute('fill')) && /-vgloss\\d*\\)$/.test(b.getAttribute('fill')))){ ok = false; return; }
+            shades.push(fieldOf(s, a)); glosses.push(fieldOf(s, b));
           });
           if(ok && head.length) out.lit++;
           if(!ok) out.bare.push(c.id);
+          else if(head.length && !(one(shades) && one(glosses))) out.split.push(c.id);
           if(s.querySelector('[filter]')) out.filtered.push(c.id);
         });
       } catch(e) { out.threw = String(e); }
@@ -13181,9 +13216,183 @@ def check_b317_volume(br):
           r["chars"] >= 25 and not r["bare"], [r["chars"], r["lit"], r["bare"]])
     check("the flat ones included: Detective, Sheriff, Hive, Zeus, Timekeeper, Masked One",
           r["lit"] >= 25, r["lit"])
+    check("one light for the whole figure: every shade layer is the same field in the drawing's units, and every light layer",
+          r["lit"] >= 25 and not r["split"], r["split"])
     check("no SVG filter inside any drawing", not r["filtered"], r["filtered"])
     check("nothing threw", not r["threw"], r["threw"])
     ctx.close()
+
+
+def check_b317_neck(br):
+    """The 317 fix. "Characters' heads are now not showing correctly
+    connected to the body of the character, the bodies don't look attached,
+    they don't seem connected or blended." The volume light (check_b317_volume)
+    lit every piece as its own ball, so along every neck the head's shaded
+    lower edge sat straight against the body's own highlight. Measured as
+    the STEP THE LIGHT ADDS ACROSS THE NECK: each character at 10px a unit,
+    scenery and halo hidden, every headGrad surface painted one grey (so the
+    number does not depend on the paint under the light), rendered with its
+    light layers and without them. D = the difference. In every column where
+    the head's lowest pixel sits over the body, D is read 3-6px above that
+    edge and 3-6px below it, and the step is the median |above - below|.
+    On b6cd249 it is over 10 levels on 23 of the 26 characters with a neck
+    (11-60, median 39; the other three have no lit surface at the neck);
+    one light for the whole figure makes it 0-5."""
+    import io as _io
+    import statistics as _st
+    from PIL import Image as _Im
+    print("\n317 fix. the light adds no step across the neck: heads and bodies are one figure")
+    ctx, pg = booted(br, 600, 600, seed=USED_ACCOUNT, dpr=1)
+    pg.evaluate(B314_TRANSPARENT)
+    ids = pg.evaluate("()=>AVATAR_CHARACTERS.filter(c => !c.retired).map(c => c.id)")
+    S = 340
+
+    def shot(mode):
+        pg.evaluate("""(mode) => { const s = window.__nk;
+          s.querySelectorAll('*').forEach(n => { if(n.style) n.style.visibility = ''; });
+          s.querySelectorAll('[data-nkvol]').forEach(n => n.style.display = mode === 'novol' ? 'none' : '');
+          if(mode === 'head' || mode === 'body'){
+            s.querySelectorAll('*').forEach(n => n.style && (n.style.visibility = 'hidden'));
+            s.querySelectorAll(mode === 'head' ? '.cx-head' : '.cx-body').forEach(h => { h.style.visibility = 'visible'; h.querySelectorAll('*').forEach(n => n.style && (n.style.visibility = 'visible')); });
+          } }""", mode)
+        return _Im.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": S, "height": S}, omit_background=True))).convert("RGBA")
+
+    steps, bad = {}, {}
+    for cid in ids:
+        pg.evaluate("""([cid, S]) => { document.getElementById('nkhost')?.remove();
+          const host = document.createElement('div'); host.id = 'nkhost'; host.style.cssText = 'position:fixed;left:0;top:0;width:' + S + 'px;height:' + S + 'px;z-index:99999';
+          const s = buildAvatarCharSVG(cid);
+          s.style.cssText = 'width:' + S + 'px;height:' + S + 'px;display:block;-webkit-mask-image:none;mask-image:none;filter:none';
+          host.appendChild(s); document.body.appendChild(host);
+          document.querySelectorAll('body > *:not(#nkhost)').forEach(e => { if(e.style) e.style.visibility = 'hidden'; });
+          s.querySelectorAll('.cx-bg').forEach(n => n.remove());
+          s.querySelectorAll('circle').forEach(n => { if(/url\\(#(aura|halo)-/.test(n.getAttribute('fill') || '')) n.remove(); });
+          s.querySelectorAll('[fill*="-vshade"], [fill*="-vgloss"]').forEach(n => n.setAttribute('data-nkvol', '1'));
+          const uid = s.getAttribute('data-cx-uid');
+          s.querySelectorAll('path, ellipse, circle, rect, polygon').forEach(n => { if((n.getAttribute('fill') || '').startsWith('url(#' + uid + '-head')) n.setAttribute('fill', '#808080'); });
+          window.__nk = s; }""", [cid, S])
+        head = shot("head").getchannel("A").load()
+        body = shot("body").getchannel("A").load()
+        lit = shot("vol").convert("L").load()
+        flat = shot("novol").convert("L").load()
+        cols = []
+        for x in range(0, S, 2):
+            yb = next((y for y in range(S - 1, -1, -1) if head[x, y] > 200), None)
+            if yb is None or yb + 8 >= S or yb - 8 < 0:
+                continue
+            if not all(body[x, yb + k] > 200 for k in (3, 4, 5, 6)) or not all(head[x, yb - k] > 200 for k in (3, 4, 5, 6)):
+                continue
+            above = _st.mean(lit[x, yb - k] - flat[x, yb - k] for k in (3, 4, 5, 6))
+            below = _st.mean(lit[x, yb + k] - flat[x, yb + k] for k in (3, 4, 5, 6))
+            cols.append(abs(above - below))
+        if len(cols) >= 12:
+            steps[cid] = round(_st.median(cols), 1)
+            if steps[cid] > 10:
+                bad[cid] = steps[cid]
+    ctx.close()
+    check("a neck measured on most characters (%d)" % len(steps), len(steps) >= 20, sorted(steps))
+    check("no character's light steps more than 10 levels across its neck", not bad, bad)
+    check("and the set's median step is under 3 levels", steps and _st.median(steps.values()) < 3,
+          _st.median(steps.values()) if steps else None)
+
+
+def check_b317_silhouettes(br):
+    """The 317 fix, Customize -> Secrets: "Genesis looks great, Umbra is
+    kinda bugged and too big, and Horizon is nearly perfect but also too
+    big. They are cut off." A locked secret is a black cut-out with a light
+    outline, so every unit of its shape reads: Umbra's hood rose to y 5.2 of
+    the 3..37 tile (0.6 under the top feather; Void and Genesis top out at
+    8.9 and 9.0) and stood 18% taller than the four's median head. Each
+    cut-out (charSilhouetteSVG, figure only, 10px a unit) must:
+      - stay clear of its tile's top - 2 units under the 1.6-unit feather
+        (y 6.6) - and inside its sides above the shoulders;
+      - have a head (ink of .cx-head, outline included) within 12% of the
+        four's median height.
+    Then as drawn in Customize on both reference devices (flip-book or
+    live), no outline pixel of any silhouette sits in the top 9% of its
+    tile. Fails on b6cd249 for Umbra on every line."""
+    import io as _io
+    import statistics as _st
+    from PIL import Image as _Im
+    print("\n317 fix. the secrets' silhouettes: the set's size, clear of the top of their tiles")
+    SECRETS = ["voidwalker", "umbra", "singularity", "genesis"]
+    ctx, pg = booted(br, 600, 600, seed=USED_ACCOUNT, dpr=1)
+    pg.evaluate(B314_TRANSPARENT)
+
+    def ink(cid, head, thr):
+        pg.evaluate("""([cid, head]) => { document.getElementById('silh')?.remove();
+          const host = document.createElement('div'); host.id = 'silh'; host.style.cssText = 'position:fixed;left:0;top:0;width:540px;height:540px;z-index:99999';
+          const s = charSilhouetteSVG(cid);
+          s.setAttribute('viewBox', '-7 -7 54 54');
+          s.style.cssText = 'position:absolute;left:0;top:0;width:540px;height:540px;overflow:visible;-webkit-mask-image:none;mask-image:none;filter:none';
+          host.appendChild(s); document.body.appendChild(host);
+          document.querySelectorAll('body > *:not(#silh)').forEach(e => { if(e.style) e.style.visibility = 'hidden'; });
+          if(head){
+            s.querySelectorAll('*').forEach(n => n.style && (n.style.visibility = 'hidden'));
+            s.querySelectorAll('.cx-head').forEach(h => { h.style.visibility = 'visible'; h.querySelectorAll('*').forEach(n => n.style && (n.style.visibility = 'visible')); });
+          } }""", [cid, head])
+        A = _Im.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 540, "height": 540}, omit_background=True))).convert("RGBA").getchannel("A")
+        M = A.point(lambda v: 255 if v > thr else 0)
+        bb = M.getbbox()
+        if not bb:
+            return None
+        upper = M.crop((0, 0, 540, int((28 + 7) * 10))).getbbox()
+        return {"y0": bb[1] / 10 - 7, "y1": bb[3] / 10 - 7, "h": (bb[3] - bb[1]) / 10,
+                "ux0": upper[0] / 10 - 7 if upper else None, "ux1": upper[2] / 10 - 7 if upper else None}
+
+    whole = {c: ink(c, False, 80) for c in SECRETS}
+    heads = {c: ink(c, True, 110) for c in SECRETS}
+    ctx.close()
+    high = {c: round(v["y0"], 1) for c, v in whole.items() if not v or v["y0"] < 6.6}
+    check("every secret's cut-out stays 2 units under its tile's top feather (y >= 6.6)", not high,
+          {c: round(v["y0"], 1) for c, v in whole.items() if v})
+    sides = {c: (v["ux0"], v["ux1"]) for c, v in whole.items() if not v or v["ux0"] is None or v["ux0"] < 4.6 or v["ux1"] > 35.4}
+    check("and inside the sides of its tile above the shoulders", not sides,
+          {c: (round(v["ux0"], 1), round(v["ux1"], 1)) for c, v in whole.items() if v and v["ux0"] is not None})
+    med = _st.median(v["h"] for v in heads.values() if v)
+    off = {c: (round(100 * (v["h"] / med - 1)) if v else None) for c, v in heads.items() if not v or abs(v["h"] / med - 1) > 0.12}
+    check("every secret's head is the set's size: within 12%% of the four's median height (%.1f units)" % med, not off,
+          {c: round(v["h"], 1) for c, v in heads.items() if v})
+
+    # As drawn in Customize, nothing found: no outline in the top 9% of a tile.
+    for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+        pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.mysteryColorsFound = {}; document.querySelectorAll('.app-banner, #pushing-update, #intro-pop, .daily-alert').forEach(n => n.remove());
+          showCustomize('character'); await wait(800);
+          document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot').forEach(x => x.remove());
+          const s = document.querySelector('.avatarchar-option.is-silhouette');
+          if(s) s.scrollIntoView({ block: 'center', behavior: 'instant' }); }""")
+        for _ in range(60):
+            n = pg.evaluate("() => [...document.querySelectorAll('.avatarchar-option.is-silhouette')].map(o => !!o.querySelector('.char-flip-play img') || !o.classList.contains('char-flip'))")
+            if n and all(n):
+                break
+            pg.wait_for_timeout(500)
+        pg.wait_for_timeout(400)
+        tiles = pg.evaluate("""() => [...document.querySelectorAll('.avatarchar-option.is-silhouette')].map(o => {
+          const b = o.getBoundingClientRect(); return { id: (o.title || ''), box: [b.left, b.top, b.width, b.height],
+            flip: !!o.querySelector('.char-flip-play img') }; })""")
+        shot = _Im.open(_io.BytesIO(pg.screenshot())).convert("RGB")
+        ctx.close()
+        tops = {}
+        for t in tiles:
+            x, y, tw, th = t["box"]
+            crop = shot.crop((int(x * dpr), int(y * dpr), int((x + tw) * dpr), int((y + th) * dpr)))
+            W, H = crop.size
+            px = crop.load()
+            top = None
+            for yy in range(0, int(H * .5)):
+                for xx in range(int(W * .08), int(W * .92)):
+                    r_, g_, b_ = px[xx, yy]
+                    if (r_ + g_ + b_) / 3 >= 110 and max(r_, g_, b_) - min(r_, g_, b_) <= 24:
+                        top = yy / H
+                        break
+                if top is not None:
+                    break
+            tops[t["id"]] = round(top, 3) if top is not None else None
+        bad = {k: v for k, v in tops.items() if v is None or v < 0.09}
+        check(f"{dev}: Customize shows the four secrets as silhouettes", len(tiles) == 4, [t["id"] for t in tiles])
+        check(f"{dev}: no silhouette's outline is in the top 9% of its tile (cut off at the top)", len(tiles) == 4 and not bad, tops)
 
 
 CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -16108,6 +16317,8 @@ def main():
             check_b316_tiles(br)
             check_b317_daily(br)
             check_b317_volume(br)
+            check_b317_neck(br)
+            check_b317_silhouettes(br)
             check_b317_cutspin(br)
             check_b317_evolve(br)
             check_b317_specials(br)

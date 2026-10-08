@@ -771,8 +771,10 @@ def main():
                   and blue(t[1]["now"]) and blue(t[1]["need"]) and t[1]["tick"] == "✓", t)
             # REVISED IN 317, round two: "the flare and the theme unlock box
             # thing in profile should swap" - the rank's own flare first.
-            check("what Bronze unlocks is shown as tiles: its flare, then its theme",
-                  pf["tiles"][:2] == ["Flare", "Theme"], pf["tiles"])
+            # REVISED AGAIN IN THE 317 FIX: "switch the flare and theme spot
+            # again, preferred the flare one in the middle" - theme, flare.
+            check("what Bronze unlocks is shown as tiles: its theme, then its flare in the middle",
+                  pf["tiles"][:2] == ["Theme", "Flare"], pf["tiles"])
             p49 = w["profile49"]
             t49 = p49["tasks"]
             # "talks about you being level 49 but it's asking for level 40"

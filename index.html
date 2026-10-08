@@ -10332,8 +10332,8 @@
   }
   .stat-lab{ display:block; font-size:.78rem; color:var(--soft); margin-top:.3rem; }
   /* ---------- test history and the Stats tab (build 311) ---------- */
-  .stat-grid.stat-grid-three{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
-  .stat-grid-three .stat-num{ font-size:1.45rem; }
+  /* (.stat-grid-three was the Virtual Room section's grid, gone in the
+     317 fix) */
   .thx-ring{ position:relative; display:inline-grid; place-items:center; width:2.9rem; height:2.9rem; flex:0 0 auto; }
   .thx-ring svg{ position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); overflow:visible; }
   .thx-ring-track{ fill:none; stroke:rgba(255,255,255,.1); stroke-width:3.4; }
@@ -40380,10 +40380,34 @@ function silGreyPaint(svg, v){
   }
   return silGreyOf(v) || v;
 }
+/* A CUT-OUT IS ALL EDGE, SO ITS HEAD IS FITTED (317 fix). "Genesis looks
+   great, Umbra is kinda bugged and too big, and Horizon is nearly perfect
+   but also too big. They are cut off." Drawn, Umbra's hood is a dark
+   violet point that fades into a dark scene, and Horizon's locks fade out
+   towards their tips; as a black shape with a light outline, every unit
+   of both reads. Measured as cut-outs, Umbra's hood rose to y 5.2 of the
+   3..37 tile - 0.6 under the top feather, 3.7 above Void and Genesis
+   (8.9, 9.0) and 18% taller than the four's median head - and Horizon's
+   crown spanned 6.7..33.2, the whole tile bar the feather. So the
+   SILHOUETTE's head (only - the drawing you unlock is untouched) comes
+   down onto its own shoulders, about the foot of the head, the way
+   AVATAR_HEAD_SCALE fits a drawing: [k, x, y] in the drawing's own units.
+   Umbra's point now tops out at ~8.7, level with Void's and Genesis's;
+   Horizon's crown at ~9.7, 7.8..32.2 wide. check_b317_silhouettes holds
+   every secret's cut-out to the four's median head height and clear of
+   its tile's top, in Customize on both reference devices. */
+const SIL_HEAD_FIT = { umbra: [.86, 20, 31.2], singularity: [.92, 20, 30.4] };
 function charSilhouetteSVG(id){
   const svg = buildAvatarCharSVGSafe(id);
   svg.classList.add("char-sil-svg");
   svg.setAttribute("data-char", id + "~sil");
+  const fit = SIL_HEAD_FIT[id];
+  if(fit) svg.querySelectorAll(".cx-head").forEach(h => {
+    const w = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    w.setAttribute("transform", "translate(" + fit[1] + " " + fit[2] + ") scale(" + fit[0] + ") translate(" + (-fit[1]) + " " + (-fit[2]) + ")");
+    while(h.firstChild) w.appendChild(h.firstChild);
+    h.appendChild(w);
+  });
   /* the scenery and the halo are left out; so is the light */
   svg.querySelectorAll(".cx-bg").forEach(n => n.remove());
   [...svg.querySelectorAll("circle")].forEach(n => { if(/url\(#(aura|halo)-/.test(n.getAttribute("fill") || "")) n.remove(); });
@@ -40611,7 +40635,7 @@ function buildAvatarCharSVGFresh(charId){
     head.appendChild(w);
   }
   const k = AVATAR_ART_SCALE[charId];
-  if(!svg || !k) return svg;
+  if(!svg || !k) return lightFigure(svg);
   const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
   g.setAttribute("transform", "translate(20 37) scale(" + k + ") translate(-20 -37)");
   Array.from(svg.childNodes).forEach(n => {
@@ -40622,6 +40646,180 @@ function buildAvatarCharSVGFresh(charId){
     g.appendChild(n);
   });
   svg.appendChild(g);
+  return lightFigure(svg);
+}
+
+/* ---- ONE LIGHT FOR THE WHOLE FIGURE (build 317 fix) ----
+   "Characters' heads are now not showing correctly connected to the body
+   of the character, the bodies don't look attached, they don't seem
+   connected or blended." The volume light this build added (giveVolume,
+   for "some characters have a nice 3d look but some don't") lit EVERY
+   PIECE ON ITS OWN: two copies of each headGrad shape with
+   objectBoundingBox gradients, so a hood, a face, an ear and a coat were
+   each shaded as a separate ball. Where the head meets the body that put
+   the head's own shadow (its lower edge, ~.31 black) straight against the
+   body's own highlight (its upper-left, ~.25 white): a dark-to-light step
+   along every neck (on the characters' own colours, up to 81 levels and
+   32 for the median character), which is exactly a head stuck on top of
+   a body. It is the bug headGrad's own comment describes - "each
+   piece gets its OWN independently-computed shading based on its OWN
+   small bounding box ... separate pieces stuck together" - brought back
+   one layer up. (Measured, not guessed: the plate with the two layers
+   lifted off is the pre-volume plate to the pixel, breakout and all.)
+   Now every lit surface samples ONE field, the way headGrad's light does
+   (userSpaceOnUse), drawn over the whole figure as if it were a single
+   sculpted bust:
+   - the shade: edges falling into shade across the box of every lit
+     shape together (the same 44% / 36% / 72% and the same stops the
+     per-piece version used, applied to the figure instead of the piece);
+   - the light: the same soft pool, over the box of the HEAD's lit
+     shapes, so the head still carries its highlight up on the left.
+   One field means the value on either side of any seam is the same
+   value, so nothing can step at the neck, an ear or a hat band. It is
+   laid on HERE, after AVATAR_HEAD_SCALE and AVATAR_ART_SCALE, because a
+   field drawn in the raw drawing would be scaled with the head and not
+   with the shoulders - every shape's gradient carries the inverse of the
+   transforms above it, so all of them meet in the drawing's own units.
+   The boxes come from the shapes' own geometry (points and control
+   points: a curve never leaves the hull of its handles), not getBBox(),
+   which would force a layout of the page for every character built.
+   Still plain fills - no filter, the one SVG feature that has bitten this
+   app on iOS - and still only headGrad surfaces, so the Alien's own gloss
+   is not doubled. check_b317_neck holds the neck; check_b317_volume the
+   layers. */
+const FIGURE_SHADE_STOPS = [["0%", "#000", "0"], ["58%", "#000", "0"], ["100%", "#000", ".42"]];
+const FIGURE_GLOSS_STOPS = [["0%", "#fff", ".30"], ["45%", "#fff", ".08"], ["100%", "#fff", "0"]];
+/* [x0, y0, x1, y1] round a shape in its own units, or null */
+function figureShapeBox(n){
+  const t = n.tagName.toLowerCase(), a = k => parseFloat(n.getAttribute(k)) || 0;
+  if(t === "circle"){ const r = a("r"); return [a("cx") - r, a("cy") - r, a("cx") + r, a("cy") + r]; }
+  if(t === "ellipse"){ const rx = a("rx"), ry = a("ry"); return [a("cx") - rx, a("cy") - ry, a("cx") + rx, a("cy") + ry]; }
+  if(t === "rect") return [a("x"), a("y"), a("x") + a("width"), a("y") + a("height")];
+  if(t === "polygon"){
+    const v = (n.getAttribute("points") || "").trim().split(/[\s,]+/).map(Number);
+    if(v.length < 4 || v.some(isNaN)) return null;
+    const b = [Infinity, Infinity, -Infinity, -Infinity];
+    for(let i = 0; i + 1 < v.length; i += 2){ b[0] = Math.min(b[0], v[i]); b[1] = Math.min(b[1], v[i + 1]); b[2] = Math.max(b[2], v[i]); b[3] = Math.max(b[3], v[i + 1]); }
+    return b;
+  }
+  if(t === "path") return figurePathBox(n.getAttribute("d"));
+  return null;
+}
+function figurePathBox(d){
+  const tok = String(d || "").match(/[a-zA-Z]|[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:[eE][-+]?\d+)?/g) || [];
+  const b = [Infinity, Infinity, -Infinity, -Infinity];
+  const add = (x, y) => { if(x < b[0]) b[0] = x; if(y < b[1]) b[1] = y; if(x > b[2]) b[2] = x; if(y > b[3]) b[3] = y; };
+  const isCmd = s => /^[a-zA-Z]$/.test(s);
+  let i = 0, cmd = "", x = 0, y = 0, sx = 0, sy = 0;
+  const num = () => (i < tok.length && !isCmd(tok[i])) ? parseFloat(tok[i++]) : NaN;
+  while(i < tok.length){
+    if(isCmd(tok[i])) cmd = tok[i++];
+    else if(!cmd) return null;
+    const C = cmd.toUpperCase(), ox = cmd !== C ? x : 0, oy = cmd !== C ? y : 0;
+    if(C === "Z"){ x = sx; y = sy; cmd = ""; continue; }
+    if(C === "M" || C === "L" || C === "T"){
+      x = ox + num(); y = oy + num(); add(x, y);
+      if(C === "M"){ sx = x; sy = y; cmd = cmd === "m" ? "l" : "L"; }
+    } else if(C === "H"){ x = ox + num(); add(x, y); }
+    else if(C === "V"){ y = oy + num(); add(x, y); }
+    else if(C === "Q" || C === "S"){ add(ox + num(), oy + num()); x = ox + num(); y = oy + num(); add(x, y); }
+    else if(C === "C"){ add(ox + num(), oy + num()); add(ox + num(), oy + num()); x = ox + num(); y = oy + num(); add(x, y); }
+    else if(C === "A"){
+      /* an arc stays within twice its radius of both of its ends */
+      const rx = Math.abs(num()), ry = Math.abs(num()); num(); num(); num();
+      const ex = ox + num(), ey = oy + num();
+      const R = Math.max(rx, ry, Math.hypot(ex - x, ey - y) / 2);
+      add(Math.max(x, ex) - 2 * R, Math.max(y, ey) - 2 * R); add(Math.min(x, ex) + 2 * R, Math.min(y, ey) + 2 * R);
+      x = ex; y = ey; add(x, y);
+    } else return null;
+    if(isNaN(x) || isNaN(y)) return null;
+  }
+  return b[0] <= b[2] && b[1] <= b[3] ? b : null;
+}
+function lightFigure(svg){
+  if(!svg) return svg;
+  try{
+    const uid = svg.getAttribute("data-cx-uid");
+    if(!uid) return svg;
+    const NS = "http://www.w3.org/2000/svg";
+    const lit = new RegExp("^url\\(#" + uid.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "-head\\d+\\)$");
+    const shapes = [...svg.querySelectorAll("path, ellipse, circle, rect, polygon")]
+      .filter(n => lit.test(n.getAttribute("fill") || "") && !n.closest(".cx-bg, .cx-sp, defs, clipPath, mask, pattern"));
+    if(!shapes.length) return svg;
+    let defs = svg.querySelector(":scope > defs");
+    if(!defs){ defs = document.createElementNS(NS, "defs"); svg.insertBefore(defs, svg.firstChild); }
+    /* a shape's own units -> the drawing's, through every transform
+       attribute on the way down (the head's size, the art scale, a turned
+       ellipse); the attributes only, so it works on a detached drawing */
+    const toSvg = n => {
+      let m = new DOMMatrix();
+      const chain = [];
+      for(let e = n; e && e !== svg; e = e.parentNode) chain.unshift(e);
+      chain.forEach(e => {
+        const list = e.transform && e.transform.baseVal;
+        if(list) for(let j = 0; j < list.numberOfItems; j++){
+          const t = list.getItem(j).matrix;
+          m = m.multiply(new DOMMatrix([t.a, t.b, t.c, t.d, t.e, t.f]));
+        }
+      });
+      return m;
+    };
+    /* a part hidden until a state shows it does not shape the light */
+    const shown = n => { for(let e = n; e && e !== svg; e = e.parentNode) if(e.getAttribute && e.getAttribute("opacity") === "0") return false; return true; };
+    const info = shapes.map(n => ({ n, m: toSvg(n), box: figureShapeBox(n) }));
+    const union = list => {
+      let b = null;
+      list.forEach(s => {
+        if(!s.box || !shown(s.n)) return;
+        [[s.box[0], s.box[1]], [s.box[2], s.box[1]], [s.box[0], s.box[3]], [s.box[2], s.box[3]]].forEach(([px, py]) => {
+          const p = new DOMPoint(px, py).matrixTransform(s.m);
+          if(!b) b = [p.x, p.y, p.x, p.y];
+          else { b[0] = Math.min(b[0], p.x); b[1] = Math.min(b[1], p.y); b[2] = Math.max(b[2], p.x); b[3] = Math.max(b[3], p.y); }
+        });
+      });
+      return b && b[2] - b[0] > .5 && b[3] - b[1] > .5 ? { x: b[0], y: b[1], w: b[2] - b[0], h: b[3] - b[1] } : null;
+    };
+    const F = union(info);
+    if(!F) return svg;
+    const H = union(info.filter(s => s.n.closest(".cx-head"))) || F;
+    const field = {
+      shade: { cx: F.x + .44 * F.w, cy: F.y + .36 * F.h, rx: .72 * F.w, ry: .72 * F.h, stops: FIGURE_SHADE_STOPS },
+      gloss: { cx: H.x + .34 * H.w, cy: H.y + .24 * H.h, rx: .62 * H.w, ry: .62 * H.h, stops: FIGURE_GLOSS_STOPS }
+    };
+    const made = new Map(), count = { shade: 0, gloss: 0 };
+    const paint = (name, m) => {
+      const inv = m.inverse();
+      const key = name + "|" + [inv.a, inv.b, inv.c, inv.d, inv.e, inv.f].map(v => v.toFixed(5)).join(" ");
+      if(made.has(key)) return made.get(key);
+      const f = field[name], id = uid + "-v" + name + (count[name]++ || "");
+      const t = inv.translate(f.cx, f.cy).scale(f.rx, f.ry);
+      const g = document.createElementNS(NS, "radialGradient");
+      g.setAttribute("id", id); g.setAttribute("gradientUnits", "userSpaceOnUse");
+      g.setAttribute("cx", "0"); g.setAttribute("cy", "0"); g.setAttribute("r", "1");
+      g.setAttribute("gradientTransform", "matrix(" + [t.a, t.b, t.c, t.d, t.e, t.f].map(v => +v.toFixed(5)).join(" ") + ")");
+      f.stops.forEach(([o, c, op]) => {
+        const s = document.createElementNS(NS, "stop");
+        s.setAttribute("offset", o); s.setAttribute("stop-color", c); s.setAttribute("stop-opacity", op);
+        g.appendChild(s);
+      });
+      defs.appendChild(g);
+      made.set(key, "url(#" + id + ")");
+      return made.get(key);
+    };
+    info.forEach(({ n, m }) => {
+      const layer = fill => {
+        const c = n.cloneNode(false);
+        c.removeAttribute("id");
+        ["stroke", "stroke-width", "stroke-linecap", "stroke-linejoin"].forEach(k => c.removeAttribute(k));
+        c.style.removeProperty("fill");
+        c.setAttribute("fill", fill);
+        c.setAttribute("pointer-events", "none");
+        return c;
+      };
+      const s = layer(paint("shade", m)), g = layer(paint("gloss", m));
+      n.after(s); s.after(g);
+    });
+  }catch(e){}
   return svg;
 }
 
@@ -41398,7 +41596,8 @@ function drawAvatarCharSVG(charId){
     if(fig) Array.from(fig.children).forEach(n => {
       if(n.nodeName === "circle" && /url\(#(aura|halo)-/.test(n.getAttribute("fill") || "")) svg.insertBefore(n, fig);
     });
-    if(fig) giveVolume(fig);
+    /* (the figure's light is laid on in buildAvatarCharSVGFresh, once
+       the head and the art have their final size - see lightFigure) */
     if(fig) charSpecialParts(fig);
     return svg;
   }
@@ -41443,51 +41642,8 @@ function drawAvatarCharSVG(charId){
     if(back.childNodes.length) svg.insertBefore(back, fig);
     if(front.childNodes.length) svg.appendChild(front);
   }
-  /* EVERY SURFACE IS ROUND (build 317). "In profile some characters have
-     a nice 3d look but some don't, fix that as well." The ones that did
-     (Alien, Ghost, the Bear, the fishbowl) carry their own highlight in
-     the drawing; the rest were one headGrad light field across the
-     whole figure, which shades the SET but leaves each piece - a face,
-     a hat crown, a coat - reading as one flat colour. The avatarDepth
-     filter cannot help: it works in CSS pixels off the svg's alpha, and
-     every character has a scene behind it now, so the alpha is solid
-     and there is no edge for it to light.
-     So every surface painted with headGrad gets two copies of itself
-     laid straight on top of it (features drawn later stay above):
-     edges falling into shade, and a soft light upper-left. Both are
-     objectBoundingBox gradients, so each piece is lit across its OWN
-     shape at any size, and they are plain fills - no filter, the one
-     SVG feature that has bitten this app on iOS. The scenery and
-     anything not drawn with headGrad (glows, eyes, flat accents) are
-     left alone, which is what keeps the Alien's own gloss from being
-     doubled into plastic. */
-  function giveVolume(root){
-    const head = new RegExp("^url\\(#" + uid.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "-head\\d+\\)$");
-    const shapes = [...root.querySelectorAll("path, ellipse, circle, rect, polygon")]
-      .filter(n => head.test(n.getAttribute("fill") || "") && !n.closest(".cx-bg"));
-    if(!shapes.length) return;
-    const grad = (id, cx, cy, r, stops) => {
-      const g = mk("radialGradient", { id, cx, cy, r });
-      stops.forEach(([o, c, op]) => g.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
-      defs.appendChild(g);
-      return "url(#" + id + ")";
-    };
-    const shade = grad(uid + "-vshade", "44%", "36%", "72%", [["0%", "#000", "0"], ["58%", "#000", "0"], ["100%", "#000", ".42"]]);
-    const gloss = grad(uid + "-vgloss", "34%", "24%", "62%", [["0%", "#fff", ".30"], ["45%", "#fff", ".08"], ["100%", "#fff", "0"]]);
-    shapes.forEach(n => {
-      const layer = fill => {
-        const c = n.cloneNode(false);
-        c.removeAttribute("id");
-        ["stroke", "stroke-width", "stroke-linecap", "stroke-linejoin"].forEach(a => c.removeAttribute(a));
-        c.style.removeProperty("fill");
-        c.setAttribute("fill", fill);
-        c.setAttribute("pointer-events", "none");
-        return c;
-      };
-      const s = layer(shade), g = layer(gloss);
-      n.after(s); s.after(g);
-    });
-  }
+  /* (EVERY SURFACE IS ROUND, build 317: the volume light that used to be
+     giveVolume() here is lightFigure(), after buildAvatarCharSVGFresh.) */
   /* A soft, separate glossy highlight blob over the upper-left of the
      head, on top of the base gradient rather than replacing it \u2014
      this is the actual technique behind the "glossy 3D icon" look
@@ -96257,12 +96413,15 @@ function buildRankRewardTiles(key){
     row.appendChild(t);
     return t;
   };
-  /* THE FLARE FIRST (build 317, round two): "I feel like the flare and
-     the theme unlock box thing in profile should swap". The flare is the
-     rank's own mark - what reaching it lights on Home - so it leads, and
-     the theme's flat disc sits between the two ringed pieces. */
-  tile(buildFlareBubble(key, { lit: true, bounce: true }), "Flare", "is-flare");
+  /* THEME, FLARE, THEN WHAT ELSE IT HANDS OVER (317 fix). Round two put
+     the flare first ("the flare and the theme unlock box thing in profile
+     should swap ... your call"); it came back: "In the rank profile
+     challenge rewards, switch the flare and theme spot again, preferred
+     the flare one in the middle." So the flare sits between the theme's
+     flat disc and the character or banner - the same order the road
+     map's chips have always used (buildRankGifts). */
   tile(buildThemeDot(key), "Theme", "is-theme");
+  tile(buildFlareBubble(key, { lit: true, bounce: true }), "Flare", "is-flare");
   const ch = AVATAR_CHARACTERS.find(c => c.unlock === key && !c.retired);
   if(ch){
     const holder = document.createElement("span");
@@ -97193,9 +97352,7 @@ function showProfile(defaultTab){
     "Correct answers": "How many of those you got right first time. There is no second chance on a question, so this never counts a retry.",
     "Tests finished": "Drills and exams you played to the end. The daily question is not a test.",
     "Hundos": "Units you have finished with every question right. A run covering three units can earn three, and the daily question earns none.",
-    "Matches played": "Virtual Room matches you finished - races, Tug of War and Battle.",
-    "First-place finishes": "Races you won outright, and team matches your side won. It needs at least one other person in the room.",
-    "Top-3 finishes": "Races where you finished first, second or third - in a room of four or more. With fewer than four there is no podium, so only a win counts, as a first place.",
+    /* (the three Virtual Room cards came off in the 317 fix - see below) */
     "All-time best answer streak": "Your longest run of correct answers ever. It carries over from test to test, so a streak can start in one test and keep going in the next. The daily question never counts either way."
   };
   const statWhyBox = document.createElement("p");
@@ -97371,22 +97528,14 @@ function showProfile(defaultTab){
   studyTimeSect.appendChild(grid);
   statsTab.appendChild(studyTimeSect);
 
-  /* ---- VIRTUAL ROOM (build 236) ----
-     "Add a section for virtual room ... like top 3 finishes, and first
-     place finishes." Top three counts only in a room of four or more -
-     see VROOM_PODIUM_MIN - which the card's explanation says. */
-  const vrSect = document.createElement("div");
-  vrSect.className = "points-progress-sect";
-  const vrHead = document.createElement("p");
-  vrHead.className = "slab"; vrHead.textContent = "Virtual Room";
-  vrSect.appendChild(vrHead);
-  const vrGrid = document.createElement("div");
-  vrGrid.className = "stat-grid stat-grid-three";
-  [["Matches played", String(store.vrMatches || 0)],
-   ["First-place finishes", String(store.vrWins || 0)],
-   ["Top-3 finishes", String(store.vrTop3 || 0)]].forEach(([label, val]) => vrGrid.appendChild(makeStatCard(label, val)));
-  vrSect.appendChild(vrGrid);
-  statsTab.appendChild(vrSect);
+  /* NO VIRTUAL ROOM SECTION (317 fix). Build 236 added one - matches,
+     first places, top threes - and it came off: "Remove the virtual room
+     stats from the stats tab. I don't think there will be enough usage
+     to care to track it." Only the display went. The Virtual Room still
+     counts store.vrMatches / vrWins / vrTop3 (recordVroomOutcome), they
+     still sync and still default in applyLoadedData, and the challenges
+     and banners built on them (vrwins5, the Arena, the Champion) still
+     read them. */
   statsTab.appendChild(statWhyBox);
 
 
