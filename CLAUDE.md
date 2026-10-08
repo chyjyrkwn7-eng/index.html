@@ -46,8 +46,9 @@ disagreed, the repo won and the difference is called out.
   rather than mounting screens. Use it for anything Madison will look at.
 - `tools/record-hundo.py OUTDIR` — an MP4 of each hundo effect on a real
   100% results screen, on a clock it owns (not virtual time, which froze
-  frames), with the settled box, and a freeze/jump count per clip. See
-  **Hundo effects**.
+  frames), with the grade box cropped at three moments (`-first`, the
+  first frame it is half shown; `-mid`, well into the effect; and the
+  settled box), and a freeze/jump count per clip. See **Hundo effects**.
 - `tools/record-cutscenes.py` — the animations, **as animations**: GIFs of
   the badge unlock, the badge queue, all seven rank cutscenes, the
   Supernova cutscene, the Void cutscene, and a real full-unit 100% run from the last question
@@ -13124,7 +13125,14 @@ well as on landing. The grab is unchanged.
   showing before the saucer's foot is at the box's top edge (2.60-2.92s,
   every 20ms); the saucer's foot 0-10px into the box hovering, landed and
   lifting off; the box's beam ending within 4px of the box's bottom; both
-  gone at 6.25s. All of these fail on 1888b11.
+  gone at 6.25s. The searchlight, box-beam, foot and box-bottom checks all
+  fail on 1888b11 (70 failures across the section there, every effect's
+  first-frame and words checks included); "no beam before 2.55s" and "gone
+  at 6.25s" held there too - guards, not the bug.
+- `check_b313_fx`'s "and KEEPS them once the effect has finished" read the
+  overlaid copy's opacity (`.hfx-tintnum`), which round 3 deleted, so it
+  went red for the right build. It reads the REAL 100% now: transparent
+  text under `linear-gradient(105deg, <g1> ...)`.
 
 **"Looks laggy" was the RECORDING, not the effect.** Measured in the
 recording's own configuration: the page drew 139 frames in 7s, while the CDP
@@ -13157,7 +13165,8 @@ requestAnimationFrame and smooth `scrollTo` read a clock it advances
 exactly 1/30s a frame, every CSS/Web animation and transition is paused and
 seeked to it, and each capture waits for two real frames. 0 freezes, 0
 jumps on all five; it prints the count for every clip, so check it rather
-than assume it.
+than assume it. (Round 3's re-record: 0/0 on the five in the ladder; Black
+Hole and Underwater, which are not, show 1 jump each.)
 
 **Measured in the page as well** (rAF intervals and long tasks from the
 effect's start, 440x956, CPU 4x, three interleaved passes of 1888b11 and

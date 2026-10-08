@@ -14,8 +14,10 @@ clock this script advances exactly 1/30s per frame, and every CSS/Web
 animation and transition is paused and seeked to it. Each capture waits
 for two real frames first, so it is always a fresh one. Every clip is then
 checked for frozen-between-moving frames and jumps, and the count printed.
-Also writes box-<fx>-WxH.png, the settled grade box, and f-<fx>-NN.jpg,
-one frame a second. Needs ffmpeg from imageio_ffmpeg."""
+Also writes box-<fx>-WxH.png, the settled grade box, box-<fx>-WxH-first.png
+(the first frame the box is half shown) and box-<fx>-WxH-mid.png (MID[fx]
+seconds into the effect), cropped out of the clip's own frames, and
+f-<fx>-NN.jpg, one frame a second. Needs ffmpeg from imageio_ffmpeg."""
 import importlib.util, sys, os, json
 OUT = os.path.abspath(sys.argv[1])
 FXS = (sys.argv[2] if len(sys.argv) > 2 else "confetti,fireworks,worldtree,bubbles,ufo").split(",")
