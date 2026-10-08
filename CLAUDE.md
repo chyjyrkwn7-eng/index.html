@@ -15116,7 +15116,10 @@ disagree with it.
     images - the burn (static) and the ember (its own layer, pulsing on
     opacity). The smooth fields are sampled on a half-resolution grid and
     interpolated; only the crust's fine noise is read per pixel, inside
-    the burn. It runs once per launch, when Home is first built.
+    the burn. It runs once per launch, when the first scarred hero is
+    built, and only for an account with Supernova: measured at a floor of
+    ~25-35ms over ten runs (unthrottled and at 4x CPU) in the sandbox,
+    which was busy, so the minimum is the number to trust.
   - **Layering, without touching the planet's DOM.** The scar goes right
     after `.cosmic-plasma` with NO z-index, so the tap box
     (`.cosmic-tapfx`, inserted before the bubbles) and the bubbles paint
