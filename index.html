@@ -1621,61 +1621,9 @@
   #daily-lock-tip.is-above::before{ bottom:-9px; left:calc(var(--caret, 50%) - 9px); width:18px; height:9px; clip-path:polygon(0 0, 100% 0, 50% 100%); }
   #daily-lock-tip.is-above::after{ bottom:-7.4px; left:calc(var(--caret, 50%) - 7.6px); width:15.2px; height:8.4px; clip-path:polygon(0 0, 100% 0, 50% 100%); }
   [data-reduce-motion="true"] #daily-lock-tip{ transition:none; transform:none; }
-  #contextual-info-popup.is-solid{ background:#1E242C; -webkit-backdrop-filter:none; backdrop-filter:none; border-color:rgba(255,255,255,.16); box-shadow:0 10px 28px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.1); }
-  #contextual-info-popup{
-    position:fixed; z-index:220; max-width:15rem;
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); color:#F3F5F7; padding:.75rem .9rem; border-radius:12px;
-    border:1px solid rgba(255,255,255,.11);
-    will-change:backdrop-filter; backdrop-filter:blur(14px) saturate(1.8); -webkit-backdrop-filter:blur(14px) saturate(1.8);
-    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
-    /* transform:translateY(4px) removed \u2014 confirmed directly as the
-       real cause of a measured 4px gap between the line and this
-       popup's own edge: the line's position is calculated once,
-       immediately, against wherever this popup sits at that exact
-       instant, but the popup itself was still at its pre-animation
-       translateY(4px) resting spot when that happened, then slid up
-       4px to translateY(0) afterward while the line stayed fixed in
-       place \u2014 connected to where the popup used to be, not where it
-       actually ended up. The opacity fade alone still gives this a
-       soft appearance, without moving the box the line depends on
-       staying still. */
-    opacity:0; transition:opacity .2s ease;
-    pointer-events:none;
-  }
-  #contextual-info-popup.contextual-info-show{ opacity:1; }
-  /* a followed box, its line and its ring, moved as one (showContextualInfo
-     follow): a fixed box the size of the screen, so its children's fixed
-     positions (top or bottom, left) mean what they always did, carried by
-     one compositor transform */
-  #contextual-info-follow{ position:fixed; inset:0; z-index:220; pointer-events:none; will-change:transform; }
-  #contextual-info-line, #contextual-info-line-dot{
-    position:fixed; z-index:219; pointer-events:none;
-    opacity:0; transition:opacity .2s ease;
-  }
-  /* Same three real bugs as the main tour's own line, independently
-     duplicated here since this popup has its own separate
-     implementation \u2014 confirmed directly, not assumed, since fixing
-     the tour's line doesn't touch this one at all. Same fixes: a
-     neutral color pulled from the popup's own base hue instead of
-     the theme-dependent (and, by default, essentially white)
-     --accent, and a mask fading this line to nothing over its first
-     ~16px so the end tucked under the popup's own translucent glass
-     has nothing left to bleed through as a visible seam. */
-  #contextual-info-line{
-    height:3px; background:#4A5058; transform-origin:0 50%; border-radius:2px;
-    box-shadow:0 0 6px rgba(0,0,0,.25);
-    mask-image:linear-gradient(to right, transparent 0, transparent 5px, #000 16px);
-    -webkit-mask-image:linear-gradient(to right, transparent 0, transparent 5px, #000 16px);
-  }
-  #contextual-info-line-dot{
-    width:9px; height:9px; border-radius:999px; background:#4A5058;
-    box-shadow:0 0 6px rgba(0,0,0,.25);
-  }
-  #contextual-info-line.contextual-info-show, #contextual-info-line-dot.contextual-info-show{ opacity:1; }
-  /* Round a tiny secret flare: a ring, so the flare itself still shows
-     through it (build 313). */
-  #contextual-info-line-dot.is-ring{ background:transparent; border:2px solid #6A717B; box-shadow:0 0 6px rgba(0,0,0,.35), inset 0 0 4px rgba(0,0,0,.25); }
-  .contextual-info-text{ font-size:.85rem; line-height:1.4; margin:0; color:#F3F5F7; }
+  /* (#contextual-info-popup and its pointer line and ring are gone - build 317,
+     round three: Home's taps answer in one caption under the planet system,
+     homeCaptionShow. Nothing else used them.) */
 
   #welcomebonus-banner{
     /* Same inset as every other fixed top element. It also sits a banner's
@@ -3199,6 +3147,10 @@
   [data-reduce-motion="true"] .foot > .floatbtn.qnext.is-rising{ animation:none; }
   .next.ghost:active{ background:rgba(128,128,128,.15); opacity:1; }
   .next:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  /* a focus the SCREEN gave, not the keyboard: no ring until a key is
+     pressed (focusQuietly, build 317 - the "weird outline thing around the
+     button" on the results). Any element, so the UA's own ring goes too. */
+  .is-quietfocus:focus-visible{ outline:none !important; }
   .next[hidden]{ display:none; }
   .next:disabled{ opacity:.35; cursor:default; }
   /* The daily question's Submit answer before a choice is picked: the
@@ -9475,17 +9427,20 @@
     66%{ transform:scale(.98, 1.02); } 90%{ opacity:1; transform:scale(1.06); } 100%{ opacity:0; transform:scale(1.3); } }
   .hfx-ufo-search{ position:absolute; left:calc(50% - var(--uw) * .09); top:62%; width:calc(var(--uw) * .18); height:var(--slh, calc(var(--uw) * 2.8)); transform-origin:50% 0;
     background:linear-gradient(180deg, rgba(210,255,222,.42), rgba(210,255,222,.1) 60%, rgba(210,255,222,0)); clip-path:polygon(42% 0, 58% 0, 100% 100%, 0 100%);
-    opacity:0; animation:hfx-ufo-search 7s linear both; }
+    opacity:0; animation:hfx-ufo-search 9.5s linear both; }
   /* SHOT OUT OF THE HULL AND TAKEN BACK IN (build 317, round 3): "the
      UFO's projection is shown before it's shot out of the UFO". The
      searchlights used to fade up already at full length - two cones from
      the saucer to the bottom of the screen before anything had fired. Now
      each grows out of the underside, sweeps, and is drawn back in before
-     the tractor beam fires at 37%, so the only light that ever reaches the
-     box is the beam, and it is seen leaving the hull. */
-  @keyframes hfx-ufo-search{ 0%, 14.3%{ opacity:0; transform:rotate(var(--s0)) scaleY(0); animation-timing-function:cubic-bezier(.3,.6,.4,1); } 14.6%{ opacity:1; }
-    18.5%{ transform:rotate(var(--s0)) scaleY(1); } 24%{ transform:rotate(var(--s1)) scaleY(1); } 30%{ transform:rotate(var(--s0)) scaleY(1); opacity:.9; animation-timing-function:cubic-bezier(.5,0,.75,.4); }
-    34.4%{ transform:rotate(calc(var(--s1) * .3)) scaleY(0); opacity:.6; } 34.6%, 100%{ opacity:0; transform:rotate(calc(var(--s1) * .3)) scaleY(0); } }
+     the tractor beam fires, so the only light that ever reaches the box is
+     the beam, and it is seen leaving the hull. On the long timeline (round
+     4, 9.5s): on at 1.0s as it comes in, sweeping while it circles, back in
+     by 3.35s - the beam fires at 3.69s. */
+  @keyframes hfx-ufo-search{ 0%, 10.53%{ opacity:0; transform:rotate(var(--s0)) scaleY(0); animation-timing-function:cubic-bezier(.3,.6,.4,1); } 10.84%{ opacity:1; }
+    13.68%{ transform:rotate(var(--s0)) scaleY(1); } 18.42%{ transform:rotate(var(--s1)) scaleY(1); } 23.16%{ transform:rotate(var(--s0)) scaleY(1); }
+    27.89%{ transform:rotate(var(--s1)) scaleY(1); } 32.11%{ transform:rotate(var(--s0)) scaleY(1); opacity:.9; animation-timing-function:cubic-bezier(.5,0,.75,.4); }
+    35.26%{ transform:rotate(calc(var(--s1) * .3)) scaleY(0); opacity:.6; } 35.47%, 100%{ opacity:0; transform:rotate(calc(var(--s1) * .3)) scaleY(0); } }
 
   /* ===== round 3: the results screen in miniature ===== */
   .hfx-mock{ position:relative; display:flex; flex-direction:column; gap:.38rem; width:100%; aspect-ratio:4 / 5; padding:.6rem .55rem .55rem; box-sizing:border-box;
@@ -9538,16 +9493,20 @@
     animation:hfx-bub-halo 2.2s cubic-bezier(.15,.7,.3,1) var(--t) both; }
   @keyframes hfx-bub-halo{ 0%{ transform:scale(.25); opacity:0; } 10%{ opacity:.95; } 100%{ transform:scale(1.15); opacity:0; } }
 
-  /* UFO. One 7s timeline shared by the saucer's path, its rocking and
-     settle, its beam and its lights, so they cannot drift apart. */
-  .hfx-ufo-dim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-dim 8.4s linear both; }
-  @keyframes hfx-ufo-dim{ 0%{ opacity:0; } 7.2%{ opacity:.93; } 14.5%{ opacity:.93; } 23.6%{ opacity:.55; } 67%{ opacity:.55; } 100%{ opacity:0; } }
+  /* UFO. One timeline shared by the saucer's path, its rocking and
+     settle, its beam and its lights, so they cannot drift apart: 7s in a
+     small box (.is-mini, Customize and the unlock card) and 9.5s on the
+     results screen (round 4, the -l keyframes below). */
+  /* dark until it has circled (2.9s), lifting to .55 as it comes down to
+     the box, and gone by 10.9s, inside the 11.1s total */
+  .hfx-ufo-dim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-dim 10.9s linear both; }
+  @keyframes hfx-ufo-dim{ 0%{ opacity:0; } 5.5%{ opacity:.93; } 26.61%{ opacity:.93; } 33.94%{ opacity:.55; } 70%{ opacity:.55; } 100%{ opacity:0; } }
   /* the box goes dark with the screen, lifts with it to the screen's .55,
      and is LIT BY THE BEAM (build 317, round 3): the last of its dark goes
-     as the beam strikes (2.84s) and floods down it, not 0.8s before the
-     beam arrives, when it lit up on its own */
-  .hfx-ufo-boxdim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-boxdim 3.05s linear both; }
-  @keyframes hfx-ufo-boxdim{ 0%{ opacity:0; } 19.3%{ opacity:.93; } 38.7%{ opacity:.93; } 54%{ opacity:.55; } 93%{ opacity:.55; animation-timing-function:ease-out; } 100%{ opacity:0; } }
+     as the beam strikes (3.94s on the long timeline) and floods down it,
+     not before the beam arrives, when it lit up on its own */
+  .hfx-ufo-boxdim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-boxdim 4.15s linear both; }
+  @keyframes hfx-ufo-boxdim{ 0%{ opacity:0; } 14.22%{ opacity:.93; } 69.88%{ opacity:.93; } 89.16%{ opacity:.55; } 94.82%{ opacity:.55; animation-timing-function:ease-out; } 100%{ opacity:0; } }
   /* (not .hfx-ufo: the effect's own layers are named hfx-<id>) */
   .hfx-saucer{ position:absolute; width:0; height:0; opacity:0; animation:hfx-ufo-path 7s linear both; }
   @keyframes hfx-ufo-path{
@@ -9562,8 +9521,49 @@
     86.5%{ transform:translate(0, -72px) scale(1); animation-timing-function:cubic-bezier(.55,0,1,.5); }
     90.7%{ transform:translate(var(--ox), var(--oy)) scale(.2); opacity:1; }
     91.6%, 100%{ transform:translate(var(--ox), var(--oy)) scale(.2); opacity:0; } }
+  /* THE LONG UFO (build 317, round 4): "Could the UFO hundo effect last
+     another 2-3 seconds somehow? It's so cool I want it to be longer." 2.5s
+     added by adding to it, not by slowing it: it circles the screen once
+     before it comes down (+1.1s; the circle itself is script - hfxUfoArrival
+     - since a loop is no shape for keyframes), its beam sweeps across the
+     box before it lands (+0.9s), and it charges before it goes, then goes
+     with a boom (+0.5s). Everything from the landing to the lift-off - the
+     scan, the lock, the grab - is the old timeline moved 2s later, untouched.
+     Seconds, for the script's side: arrives 3.7, beam 3.69-3.935, sweep
+     4.2-5.1, lands 6.1, grab 7.38, lifted 8.0, charge 8.0-8.5, exit
+     8.55-8.85, gone 8.91. During the arrival the path holds the hover point
+     and the script's `translate`/`scale` carry it. */
+  .hfx-saucer:not(.is-mini){ animation-name:hfx-ufo-path-l; animation-duration:9.5s; }
+  @keyframes hfx-ufo-path-l{
+    0%{ transform:translate(0, var(--hov)) scale(1); opacity:0; }
+    10.53%{ opacity:0; } 11.79%{ opacity:1; }
+    44.21%{ transform:translate(0, var(--hov)) scale(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
+    47.05%{ transform:translate(calc(var(--swa) * -1), var(--hov)) scale(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
+    50.84%{ transform:translate(var(--swa), var(--hov)) scale(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
+    53.68%{ transform:translate(0, var(--hov)) scale(1); }
+    56.84%{ transform:translate(0, var(--hov)) scale(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
+    64.21%{ transform:translate(0, 0) scale(1); }
+    77.89%{ transform:translate(0, 0) scale(1); animation-timing-function:cubic-bezier(.45,0,.4,1); }
+    84.21%{ transform:translate(0, -70px) scale(1); animation-timing-function:ease-in-out; }
+    86.84%{ transform:translate(0, -66px) scale(1); animation-timing-function:ease-in-out; }
+    89.47%{ transform:translate(0, -72px) scale(1); }
+    90%{ transform:translate(0, -72px) scale(1); animation-timing-function:cubic-bezier(.55,0,1,.5); }
+    93.16%{ transform:translate(var(--ox), var(--oy)) scale(.2); opacity:1; }
+    93.79%, 100%{ transform:translate(var(--ox), var(--oy)) scale(.2); opacity:0; } }
   .hfx-ufo-bob{ position:absolute; left:calc(var(--uw) / -2); top:calc(var(--uh) * -1); width:var(--uw); height:var(--uh); transform-origin:50% 100%;
     animation:hfx-ufo-bob 7s linear both; }
+  /* banked by the script while it circles; then the old settle, a sway
+     each way with the sweep, the landing, and a shudder as it charges */
+  .hfx-saucer:not(.is-mini) .hfx-ufo-bob{ animation-name:hfx-ufo-bob-l; animation-duration:9.5s; }
+  @keyframes hfx-ufo-bob-l{ 0%, 38.95%{ transform:rotate(0deg); } 41.05%{ transform:rotate(2.5deg); } 43.26%{ transform:translateY(-3px) rotate(-1.5deg); }
+    44.21%{ transform:translateY(-2px) rotate(0deg); } 45.58%{ transform:translateY(-2px) rotate(-6deg); } 47.05%{ transform:translateY(-2px) rotate(1deg); }
+    48.95%{ transform:translateY(-2px) rotate(6deg); } 50.84%{ transform:translateY(-2px) rotate(-1deg); } 52.21%{ transform:translateY(-2px) rotate(-4deg); }
+    53.68%{ transform:translateY(-1px) rotate(0deg); } 56.84%{ transform:translateY(0) rotate(0deg); }
+    64.21%{ transform:translateY(0) scale(1, 1); } 65.63%{ transform:translateY(2px) scale(1.05, .9); } 67.47%{ transform:translateY(-6px) scale(.98, 1.03); }
+    69.32%{ transform:translateY(0) scale(1, 1); } 72.63%{ transform:translateY(-2px); } 75.58%{ transform:translateY(0); } 77.89%{ transform:rotate(0deg); }
+    84.21%{ transform:rotate(-4deg); } 85.05%{ transform:rotate(-2.4deg); } 85.89%{ transform:rotate(-5.2deg); } 86.74%{ transform:rotate(-2.6deg); }
+    87.58%{ transform:rotate(-5.6deg); } 88.42%{ transform:rotate(-2.2deg); } 89.47%, 90%{ transform:rotate(-4deg); }
+    93.16%, 100%{ transform:rotate(14deg) scale(1.35, .7); } }
   @keyframes hfx-ufo-bob{ 0%, 14.3%{ transform:rotate(-8deg); } 22%{ transform:rotate(6deg); } 30%{ transform:rotate(-4deg); } 37.1%{ transform:rotate(2deg); }
     43%{ transform:translateY(-3px) rotate(-1.5deg); } 48.6%{ transform:translateY(0) rotate(0deg); }
     58.6%{ transform:translateY(0) scale(1, 1); } 60.5%{ transform:translateY(2px) scale(1.05, .9); } 63%{ transform:translateY(-6px) scale(.98, 1.03); }
@@ -9572,6 +9572,7 @@
   .hfx-ufo-body, .hfx-ufo-lights{ position:absolute; inset:0; background:center / 100% 100% no-repeat; }
   .hfx-ufo-lights{ animation:hfx-chase .45s ease-in-out 1s 13 alternate both; }
   .hfx-ufo-lights.is-odd{ animation-name:hfx-chase-b; }
+  .hfx-saucer:not(.is-mini) .hfx-ufo-lights{ animation-iteration-count:19; }
   @keyframes hfx-chase{ from{ opacity:.12; } to{ opacity:1; } }
   @keyframes hfx-chase-b{ from{ opacity:1; } to{ opacity:.12; } }
   .hfx-ufo-glow{ position:absolute; left:15%; right:15%; bottom:-14%; height:50%; border-radius:50%;
@@ -9582,16 +9583,29 @@
     40.5%{ transform:scaleY(1); opacity:1; } 48.6%{ transform:scaleY(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
     58.6%{ transform:scaleY(var(--bl, 1)); } 77.1%{ transform:scaleY(var(--bl, 1)); animation-timing-function:cubic-bezier(.45,0,.4,1); }
     85.7%{ transform:scaleY(var(--bk, 1)); opacity:1; animation-timing-function:ease-in; } 87.5%, 100%{ transform:scaleY(0); opacity:0; } }
+  .hfx-saucer:not(.is-mini) > .hfx-ufo-beam{ animation-name:hfx-ufo-beam-l; animation-duration:9.5s; }
+  @keyframes hfx-ufo-beam-l{ 0%, 38.84%{ transform:scaleY(0); opacity:0; animation-timing-function:cubic-bezier(.3,.6,.4,1); } 39.14%{ opacity:1; }
+    41.42%{ transform:scaleY(1); opacity:1; } 56.84%{ transform:scaleY(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
+    64.21%{ transform:scaleY(var(--bl, 1)); } 77.89%{ transform:scaleY(var(--bl, 1)); animation-timing-function:cubic-bezier(.45,0,.4,1); }
+    84.21%{ transform:scaleY(var(--bk, 1)); opacity:1; animation-timing-function:ease-in; } 85.53%, 100%{ transform:scaleY(0); opacity:0; } }
   .hfx-ufo-ring{ position:absolute; left:calc(var(--rw) / -2); width:var(--rw); height:calc(var(--rw) * .3); top:calc(var(--rw) * -.15);
     background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-ring .75s ease-in var(--t) both; }
   @keyframes hfx-ufo-ring{ 0%{ transform:translateY(calc(var(--uh) * -.2)) scale(.5); opacity:0; } 20%{ opacity:1; } 100%{ transform:translateY(var(--fall)) scale(1.15); opacity:0; } }
   .hfx-ufo-dust{ position:absolute; width:60px; height:30px; margin:-15px 0 0 -30px; border-radius:50%;
-    background:radial-gradient(closest-side, rgba(200,255,215,.6), rgba(200,255,215,0)); opacity:0; animation:hfx-ufo-dust 1.3s ease-out 4.1s both; }
+    background:radial-gradient(closest-side, rgba(200,255,215,.6), rgba(200,255,215,0)); opacity:0; animation:hfx-ufo-dust 1.3s ease-out 6.1s both; }
   @keyframes hfx-ufo-dust{ 0%{ transform:translate(0, 0) scale(.3); opacity:0; } 15%{ opacity:1; } 100%{ transform:translate(var(--dx), -12px) scale(1.5); opacity:0; } }
   .hfx-ufo-inbeam{ position:absolute; top:0; width:var(--iw); height:var(--ih); margin-left:calc(var(--iw) / -2); transform-origin:50% 0;
-    background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-inbeam 7s linear both; }
-  @keyframes hfx-ufo-inbeam{ 0%, 40.4%{ transform:scaleY(0); opacity:0; animation-timing-function:cubic-bezier(.3,.6,.4,1); } 40.6%{ opacity:.55; }
-    44%{ transform:scaleY(1); opacity:.5; } 58%{ opacity:.5; } 61%{ opacity:.72; } 84%{ transform:scaleY(1); opacity:.72; animation-timing-function:ease-in; } 87.5%, 100%{ transform:scaleY(0); opacity:0; } }
+    background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-inbeam 9.5s linear both; }
+  /* on the 9.5s timeline; across the box and back with the saucer's sweep
+     (the same moments and easing as hfx-ufo-path-l, so the two beams are
+     one) */
+  @keyframes hfx-ufo-inbeam{ 0%, 41.35%{ transform:translateX(0) scaleY(0); opacity:0; animation-timing-function:cubic-bezier(.3,.6,.4,1); } 41.49%{ opacity:.55; }
+    44%{ transform:translateX(0) scaleY(1); opacity:.5; }
+    44.21%{ transform:translateX(0) scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
+    47.05%{ transform:translateX(calc(var(--swa) * -1)) scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
+    50.84%{ transform:translateX(var(--swa)) scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
+    53.68%{ transform:translateX(0) scaleY(1); } 63.79%{ opacity:.5; } 66%{ opacity:.72; }
+    82.95%{ transform:translateX(0) scaleY(1); opacity:.72; animation-timing-function:ease-in; } 85.53%, 100%{ transform:translateX(0) scaleY(0); opacity:0; } }
   .hfx-ufo-landglow{ position:absolute; inset:0; border-radius:inherit; opacity:0;
     box-shadow:inset 0 0 0 1.5px rgba(150,255,175,.8), inset 0 0 30px rgba(107,255,143,.35);
     animation:hfx-ufo-landglow 2.4s ease-out var(--t) both; }
@@ -9617,6 +9631,22 @@
   @keyframes hfx-ufo-ghost{ 0%{ opacity:0; transform:translate(0, 0) scale(1); } 10%{ opacity:.95; }
     40%{ transform:translate(calc(var(--ux) * .62), calc(var(--up) * .3)) scale(.72); }
     75%{ opacity:.9; } 100%{ opacity:0; transform:translate(var(--ux), var(--up)) scale(.14, .24); } }
+  /* round 4: it gathers itself before it goes - a light swelling under
+     the hull as it shudders - then breaks away with a boom: a ring of
+     light thrown out flat from where it was, and the screen lit by it */
+  .hfx-ufo-charge{ position:absolute; left:4%; right:4%; bottom:-34%; height:84%; border-radius:50%; opacity:0;
+    background:radial-gradient(closest-side, rgba(240,255,244,.95), rgba(160,255,185,.62) 34%, rgba(107,255,143,0));
+    animation:hfx-ufo-charge .55s cubic-bezier(.4,0,.7,.6) var(--t) both; }
+  @keyframes hfx-ufo-charge{ 0%{ opacity:0; transform:scale(.3); } 30%{ opacity:.65; transform:scale(.62); } 52%{ opacity:.45; transform:scale(.56); }
+    82%{ opacity:1; transform:scale(1.05); } 100%{ opacity:1; transform:scale(1.22); } }
+  .hfx-ufo-boom{ position:absolute; width:180px; height:180px; margin:-90px 0 0 -90px; border-radius:50%; opacity:0;
+    border:3px solid rgba(225,255,232,.95); box-shadow:0 0 22px rgba(150,255,175,.75), inset 0 0 20px rgba(150,255,175,.55);
+    animation:hfx-ufo-boom .75s cubic-bezier(.15,.6,.3,1) var(--t) both; }
+  @keyframes hfx-ufo-boom{ 0%{ opacity:0; transform:scale(.12, .05); } 10%{ opacity:1; } 100%{ opacity:0; transform:scale(2.8, 1.05); } }
+  .hfx-ufo-flash{ position:absolute; inset:0; opacity:0;
+    background:radial-gradient(circle at var(--fx) var(--fy), rgba(232,255,238,.6), rgba(150,255,175,.2) 26%, rgba(107,255,143,0) 62%);
+    animation:hfx-ufo-flash .55s ease-out var(--t) both; }
+  @keyframes hfx-ufo-flash{ 0%{ opacity:0; } 14%{ opacity:1; } 100%{ opacity:0; } }
   .hfx-ufo-warp{ position:absolute; width:120px; height:120px; margin:-60px 0 0 -60px; border-radius:50%; opacity:0;
     background:radial-gradient(closest-side, #FFFFFF, rgba(190,255,205,.85) 18%, rgba(107,255,143,.22) 48%, rgba(107,255,143,0));
     animation:hfx-ufo-warp .42s ease-out var(--t) both; }
@@ -10302,8 +10332,8 @@
   }
   .stat-lab{ display:block; font-size:.78rem; color:var(--soft); margin-top:.3rem; }
   /* ---------- test history and the Stats tab (build 311) ---------- */
-  .stat-grid.stat-grid-three{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
-  .stat-grid-three .stat-num{ font-size:1.45rem; }
+  /* (.stat-grid-three was the Virtual Room section's grid, gone in the
+     317 fix) */
   .thx-ring{ position:relative; display:inline-grid; place-items:center; width:2.9rem; height:2.9rem; flex:0 0 auto; }
   .thx-ring svg{ position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); overflow:visible; }
   .thx-ring-track{ fill:none; stroke:rgba(255,255,255,.1); stroke-width:3.4; }
@@ -11456,7 +11486,10 @@
   #supernova-cutscene.supernova-burst .supernova-stage .cosmic-icon-badge{ opacity:0; }
   .supernova-flash{
     position:absolute; inset:0; border-radius:50%; pointer-events:none;
-    background:radial-gradient(circle, #FFFFFF 0%, var(--theme-c1) 25%, var(--theme-c2) 45%, transparent 70%);
+    /* more stops than colours, eased, so the long soft edge has no bands */
+    background:radial-gradient(circle, #FFFFFF 0%, color-mix(in srgb, var(--theme-c1) 55%, #FFFFFF) 12%, var(--theme-c1) 25%,
+      color-mix(in srgb, var(--theme-c1) 50%, var(--theme-c2)) 35%, var(--theme-c2) 45%, color-mix(in srgb, var(--theme-c2) 62%, transparent) 54%,
+      color-mix(in srgb, var(--theme-c2) 30%, transparent) 61%, color-mix(in srgb, var(--theme-c2) 9%, transparent) 67%, transparent 72%);
     transform:scale(0); opacity:0;
   }
   #supernova-cutscene.supernova-burst .supernova-flash{
@@ -11533,35 +11566,66 @@
      as on Home (build 313's "under the glass") - a blur that costs no
      more per frame here than Home's own moving bubbles. */
   .tier-cutscene .rank-orbit, .tier-cutscene .rank-orbit-slot{ will-change:transform; }
-  /* The light from the middle at the top speed: a lit copy over the dark
-     bubble, its clip opening from a point to past its halo. */
-  .rank-orbit-slot > .rank-litwipe{ position:absolute; left:0; top:0; z-index:1; pointer-events:none;
-    clip-path:circle(0% at 50% 50%); opacity:.85;
-    transition:clip-path var(--cutlight-ms, .14s) cubic-bezier(.2,.7,.3,1), opacity var(--cutlight-ms, .14s) linear; }
-  .rank-orbit-slot > .rank-litwipe.is-open{ clip-path:circle(160% at 50% 50%); opacity:1; }
-  /* THE FLARE IGNITES (build 317, rounds three to five): "the pulse
-     coming off the new flare mid spin is not the best." One clean
-     ignition, about a second, on that bubble while it whirls: a crisp
-     bloom out of its core (::before) that peaks fast and settles back IN
-     PLACE, a soft halo (> i) that rises with it and decays, ONE shockwave
-     ring in the rank colour (::after), and the bubble itself swelling a
-     touch and settling (.is-flaring). Nothing is flung off it. Expo-out
-     curves throughout: quick to peak, long smooth decay. Transform and
-     opacity only, no filter. */
-  .rank-litpop{ position:absolute; inset:0; z-index:3; pointer-events:none; border-radius:50%; }
-  .rank-litpop::before, .rank-litpop::after, .rank-litpop > i{ content:""; position:absolute; inset:0; border-radius:50%; opacity:0; }
-  .rank-litpop::before{ background:radial-gradient(circle, #fff 0 16%, color-mix(in srgb, var(--ignite, #fff) 40%, #fff) 30%, color-mix(in srgb, var(--ignite, #fff) 75%, transparent) 50%, transparent 70%);
-    animation:rank-litpop-core 1s cubic-bezier(.16,1,.3,1) both; }
-  .rank-litpop > i{ inset:-90%; background:radial-gradient(circle, color-mix(in srgb, var(--ignite, #fff) 55%, transparent) 0%, color-mix(in srgb, var(--ignite, #fff) 18%, transparent) 40%, transparent 68%);
-    animation:rank-litpop-glow 1.1s cubic-bezier(.16,1,.3,1) both; }
-  .rank-litpop::after{ border:2.5px solid color-mix(in srgb, var(--ignite, #fff) 72%, #fff);
-    box-shadow:0 0 10px 2px color-mix(in srgb, var(--ignite, #fff) 65%, transparent), inset 0 0 6px color-mix(in srgb, var(--ignite, #fff) 45%, transparent);
-    animation:rank-litpop-ring .8s cubic-bezier(.16,1,.3,1) both; }
-  .rank-orbit-slot.is-flaring > .cosmic-icon-badge{ animation:rank-flare-swell 1s cubic-bezier(.16,1,.3,1) both; }
-  @keyframes rank-litpop-core{ 0%{ opacity:0; transform:scale(.35); } 9%{ opacity:1; transform:scale(1.3); } 30%{ opacity:.85; transform:scale(1.22); } 100%{ opacity:0; transform:scale(1); } }
-  @keyframes rank-litpop-glow{ 0%{ opacity:0; transform:scale(.7); } 12%{ opacity:.9; transform:scale(1); } 100%{ opacity:0; transform:scale(1.05); } }
-  @keyframes rank-litpop-ring{ 0%{ opacity:0; transform:scale(.85); } 7%{ opacity:1; transform:scale(1.05); } 100%{ opacity:0; transform:scale(2.6); } }
-  @keyframes rank-flare-swell{ 0%{ scale:1; } 10%{ scale:1.14; } 100%{ scale:1; } }
+  /* ---- THE EVOLUTION (build 317, the evolution round) ----
+     Madison: "You know how in Pokemon when someone evolves there is that
+     super cool evolution animation ... make them spin really really fast
+     so all the colors start morphing ... Almost like cars at night when
+     they go fast, like the glow trail ... the blue color (or whatever one
+     is unlocking) gets brighter and brighter during this phase as if it's
+     evolving during the spin ... And then a small flash of the color..
+     like bang (think small supernova). Then it slows down slowly". The
+     beats are in playRankUpScene; these are its pieces, transform and
+     opacity only, no filter:
+     - .rank-attn / .rank-attn-ring: the attention on the new flare as the
+       scene opens - a soft glow under the bubble and a halo ring over it,
+       in a hint of the rank's colour, breathing with it. The same pair is
+       the charge-up's light on the flare before the flash, and, still,
+       the mark on it in the Reduce-motion scene.
+     - .rank-trail: the light trails. Each is a ring the size of a bubble
+       orbit - a conic gradient of the bubbles' own colours, masked to a
+       soft band where they ride - inside the turning carrier, so it turns
+       with them; its opacity follows the whirl's own speed curve.
+     - .rank-bang: the mini-supernova at the new flare at the top speed;
+       .is-big, the flare going off as the big flash starts from it.
+     - .rank-aura: the planet's light breathing faster before the flash. */
+  .rank-attn, .rank-attn-ring{ position:absolute; border-radius:50%; pointer-events:none; opacity:0; }
+  .rank-attn{ inset:-60%; z-index:0;
+    background:radial-gradient(circle, color-mix(in srgb, var(--attn, #fff) 50%, #fff) 0 16%, color-mix(in srgb, var(--attn, #fff) 48%, transparent) 32%,
+      color-mix(in srgb, var(--attn, #fff) 18%, transparent) 50%, color-mix(in srgb, var(--attn, #fff) 6%, transparent) 60%, transparent 70%); }
+  .rank-attn-ring{ inset:-16%; z-index:2;
+    background:radial-gradient(circle, transparent 0 58%, color-mix(in srgb, var(--attn, #fff) 30%, transparent) 62%, color-mix(in srgb, var(--attn, #fff) 55%, #fff) 66%,
+      color-mix(in srgb, var(--attn, #fff) 45%, transparent) 70%, transparent 76%); }
+  .rank-orbit-slot.is-attn{ z-index:2; }
+  .rank-attn.is-still{ opacity:.7; }
+  .rank-attn-ring.is-still{ opacity:.85; }
+  .rank-trail{ position:absolute; left:50%; top:47.368%; aspect-ratio:1; translate:-50% -50%; border-radius:50%;
+    pointer-events:none; opacity:0; z-index:0; }
+  .rank-bang{ position:absolute; pointer-events:none; z-index:3; aspect-ratio:1; translate:-50% -50%; }
+  .rank-bang > i{ position:absolute; inset:0; border-radius:50%; opacity:0; }
+  .rank-bang > .rb-core{ background:radial-gradient(circle, #fff 0 10%, color-mix(in srgb, var(--bc, #fff) 40%, #fff) 22%,
+    color-mix(in srgb, var(--bc, #fff) 85%, transparent) 38%, color-mix(in srgb, var(--bc, #fff) 34%, transparent) 52%,
+    color-mix(in srgb, var(--bc, #fff) 10%, transparent) 62%, transparent 70%);
+    animation:rb-core .95s cubic-bezier(.16,1,.3,1) both; }
+  .rank-bang > .rb-ring{ background:radial-gradient(circle, transparent 0 52%, color-mix(in srgb, var(--bc, #fff) 22%, transparent) 57%,
+    color-mix(in srgb, var(--bc, #fff) 45%, #fff) 63%, color-mix(in srgb, var(--bc, #fff) 50%, transparent) 67%, transparent 74%);
+    animation:rb-ring 1.15s cubic-bezier(.1,.75,.3,1) both; }
+  .rank-bang > .rb-glow{ inset:-260%; background:radial-gradient(circle, color-mix(in srgb, var(--bc, #fff) 42%, transparent) 0,
+    color-mix(in srgb, var(--bc, #fff) 18%, transparent) 24%, color-mix(in srgb, var(--bc, #fff) 6%, transparent) 42%, transparent 62%);
+    animation:rb-glow 1.3s cubic-bezier(.2,.8,.3,1) both; }
+  .rank-bang.is-big > .rb-core{ animation-duration:1.3s; }
+  .rank-bang.is-big > .rb-ring{ animation-name:rb-ring-big; animation-duration:1.4s; }
+  @keyframes rb-core{ 0%{ opacity:0; transform:scale(.2); } 7%{ opacity:1; transform:scale(1.15); } 30%{ opacity:.85; transform:scale(1.35); } 100%{ opacity:0; transform:scale(1.7); } }
+  @keyframes rb-ring{ 0%{ opacity:1; transform:scale(.3); } 100%{ opacity:0; transform:scale(3.6); } }
+  @keyframes rb-ring-big{ 0%{ opacity:1; transform:scale(.3); } 100%{ opacity:0; transform:scale(7); } }
+  @keyframes rb-glow{ 0%{ opacity:0; } 9%{ opacity:1; } 100%{ opacity:0; } }
+  .rank-gather{ position:absolute; pointer-events:none; z-index:3; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0;
+    background:radial-gradient(circle, transparent 0 50%, color-mix(in srgb, var(--bc, #fff) 25%, transparent) 56%, color-mix(in srgb, var(--bc, #fff) 50%, #fff) 63%,
+      color-mix(in srgb, var(--bc, #fff) 45%, transparent) 68%, transparent 75%); }
+  .rank-aura{ position:absolute; pointer-events:none; z-index:0; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0;
+    background:radial-gradient(circle, color-mix(in srgb, var(--bc, #fff) 55%, transparent) 0 16%, color-mix(in srgb, var(--bc, #fff) 30%, transparent) 30%,
+      color-mix(in srgb, var(--bc, #fff) 13%, transparent) 46%, color-mix(in srgb, var(--bc, #fff) 4%, transparent) 58%, transparent 68%); }
+  /* the camera comes back out as the whirl slows */
+  #supernova-cutscene.tier-cutscene .supernova-stage.rank-zoomback{ transform:scale(1.15); transition:transform var(--zb-ms, 4.4s) cubic-bezier(.4,0,.3,1); }
   /* NO POOL OF COLOUR LEFT BEHIND (build 317, round five). The slot's
      breathing pool (::before, above) flooded in with the light and stayed
      through the whole slow-down as a halo - the ignition lasting two and
@@ -11663,17 +11727,28 @@
     100%{ opacity:0; transform:scale(2.2); }
   }
   #supernova-cutscene.sn-swell .rank-spin{ scale:1.14; transition:scale var(--sn-swell, 1.8s) cubic-bezier(.55,0,.85,.35); }
-  .sn-fx .sn-shock{ width:100%; height:100%; box-sizing:border-box; border:3px solid rgba(255,248,236,.95);
-    box-shadow:0 0 22px 6px rgba(255,176,96,.55), inset 0 0 14px 2px rgba(255,206,150,.45); }
-  .sn-fx .sn-shock.is-2{ border:9px solid rgba(255,122,52,.42); box-shadow:0 0 30px 10px rgba(255,92,32,.25); }
+  /* SOFT EDGES (build 317, the evolution round): "the edges of the
+     explosion part look really rough and weird and bad". The shock rings
+     were 3px and 9px BORDERS with blurred box-shadows, scaled 11x: a hard
+     band with stepped, blocky edges (a blurred shadow is drawn in tiles,
+     and at 11x the tiles show). They are soft radial-gradient rings now,
+     drawn at 8x the planet and scaled from .18 to 1.5 - never far past
+     their own size - with no border and no shadow. The dust was the
+     planet's 128px smoke stretched past 5x as a mask; it has a texture of
+     its own (snDustURL, soft at every edge by construction), drawn at its
+     final size and only ever scaled DOWN. */
+  .sn-fx .sn-shock{ width:800%; height:800%;
+    background:radial-gradient(circle, transparent 0 56%, rgba(255,226,190,.05) 61%, rgba(255,236,214,.3) 65%, rgba(255,248,236,.9) 68.5%,
+      rgba(255,214,160,.42) 70.5%, rgba(255,170,100,.1) 72.5%, transparent 75%); }
+  .sn-fx .sn-shock.is-2{
+    background:radial-gradient(circle, transparent 0 46%, rgba(255,120,48,.03) 54%, rgba(255,124,52,.12) 60%, rgba(255,116,46,.26) 65%,
+      rgba(255,112,44,.3) 67.5%, rgba(255,100,38,.2) 70.5%, rgba(255,92,32,.08) 74%, rgba(255,90,30,.02) 77%, transparent 80%); }
   #supernova-cutscene.sn-detonate .sn-shock{ animation:sn-shock 1.15s cubic-bezier(.1,.72,.25,1) both; }
   #supernova-cutscene.sn-detonate .sn-shock.is-2{ animation-duration:1.7s; animation-delay:.12s; }
-  @keyframes sn-shock{ 0%{ opacity:1; transform:scale(.9); } 70%{ opacity:.55; } 100%{ opacity:0; transform:scale(11); } }
-  .sn-fx .sn-dust{ width:270%; height:270%;
-    background:radial-gradient(circle, rgba(46,17,8,0) 0 16%, rgba(62,22,9,.84) 30%, rgba(46,17,8,.66) 44%, rgba(30,11,6,.32) 56%, rgba(30,11,6,0) 68%);
-    -webkit-mask-image:var(--smoke, none); mask-image:var(--smoke, none); -webkit-mask-size:100% 100%; mask-size:100% 100%; }
+  @keyframes sn-shock{ 0%{ opacity:1; transform:scale(.18); } 70%{ opacity:.55; } 100%{ opacity:0; transform:scale(1.5); } }
+  .sn-fx .sn-dust{ width:520%; height:520%; background:var(--dust, none) center / 100% 100% no-repeat; }
   #supernova-cutscene.sn-detonate .sn-dust{ animation:sn-dust 3.2s cubic-bezier(.2,.6,.3,1) .35s both; }
-  @keyframes sn-dust{ 0%{ opacity:0; transform:scale(.45) rotate(0deg); } 22%{ opacity:.95; transform:scale(1) rotate(12deg); } 100%{ opacity:0; transform:scale(1.9) rotate(44deg); } }
+  @keyframes sn-dust{ 0%{ opacity:0; transform:scale(.24) rotate(0deg); } 22%{ opacity:.95; transform:scale(.52) rotate(12deg); } 100%{ opacity:0; transform:scale(1) rotate(44deg); } }
   .sn-debris{ inset:0; }
   .sn-debris > i{ left:50%; top:50%; width:var(--s); aspect-ratio:1; margin:calc(var(--s) * -.5) 0 0 calc(var(--s) * -.5); opacity:0; }
   .sn-bit.is-shard::before, .sn-bit.is-shard::after{ content:""; position:absolute; }
@@ -12295,12 +12370,100 @@
   .cosmic-badge-tappable:focus{ outline:none; }
   .cosmic-badge-tappable:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; }
   /* A tapped rank bubble's light (flareBubbleTold): its own colour inside
-     the glass, above the emblem and under nothing. */
+     the glass, above the emblem and under nothing. ROUND THREE (build 317):
+     one light per bubble, reused, so a second tap carries on from where
+     the first has got to instead of cutting it off; and the core is a
+     warm bloom rather than a white-hot dot, which at full strength in a
+     46px bubble read as the bubble flashing. */
   .cosmic-icon-badge .cosmic-badge-told{
     position:absolute; inset:0; border-radius:50%; pointer-events:none; z-index:3; opacity:0;
-    background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.75) 0 14%, color-mix(in srgb, var(--rank-color, #FFFFFF) 70%, transparent) 38%, transparent 72%);
+    background:radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--rank-color, #FFFFFF) 35%, rgba(255,255,255,.62)) 0 12%, color-mix(in srgb, var(--rank-color, #FFFFFF) 66%, transparent) 40%, transparent 72%);
   }
   .cosmic-icon-badge .cosmic-badge-told.is-still{ opacity:.6; }
+  /* A bubble you hold also presses and lets a ring of its colour go
+     (homeBubblePress, homeBubbleHalo). The press is the individual
+     `scale` property, so it adds to the float (`transform`) and the
+     centring (`translate`); the shared :active shrink is off on the
+     bubbles, where it only ever ran with the float switched off. */
+  .cosmic-hero-wrap > .cosmic-icon-badge.cosmic-badge-tappable:active{ transform:none; }
+  .cosmic-bubble-halo{
+    position:absolute; aspect-ratio:1; border-radius:50%; translate:-50% -50%; pointer-events:none; opacity:0;
+    border:1.5px solid color-mix(in srgb, var(--rank-color, #FFFFFF) 70%, #FFFFFF);
+    box-shadow:0 0 10px 1px color-mix(in srgb, var(--rank-color, #FFFFFF) 55%, transparent);
+  }
+  /* A LOCKED THING SHAKES ITS HEAD (homeLockedNudge): a locked rank
+     bubble and a secret flare not found yet answer alike - a short damped
+     shake and a dip in the light. The dip is a dark disc inside the glass,
+     not the bubble's own opacity: see-through glass would show a secret
+     flare under it sharp, beside its own blurred image. */
+  .cosmic-icon-badge .cosmic-badge-dim{
+    position:absolute; inset:0; border-radius:50%; pointer-events:none; z-index:3; opacity:0;
+    background:radial-gradient(circle at 50% 45%, rgba(6,8,12,.55), rgba(6,8,12,.78) 70%);
+  }
+  .cosmic-icon-badge .cosmic-badge-dim.is-still{ opacity:.32; }
+  .cosmic-flare-dot.is-dim-still{ opacity:.45; }
+  /* A FOUND SECRET FLARE ANSWERS IN ITS OWN COLOUR (secretFlareTold): it
+     swells, a ring of its colour goes out and four sparks fly off it.
+     Children of the flare, so they ride its orbit. */
+  .cosmic-flare-dot > .cof-told{ inset:0; overflow:visible; }
+  .cof-told > b{ position:absolute; left:50%; top:50%; border-radius:50%; pointer-events:none; opacity:0; translate:-50% -50%; }
+  .cof-told > .cof-told-ring{ width:100%; height:100%; border:1.5px solid color-mix(in srgb, var(--fc) 80%, #fff);
+    box-shadow:0 0 6px color-mix(in srgb, var(--fc) 70%, transparent); box-sizing:border-box; }
+  .cof-told > .cof-told-spark{ width:34%; height:34%; background:radial-gradient(circle, #FFFFFF 0 30%, var(--fc) 62%, transparent 100%); }
+  .cof-told.is-still > .cof-told-ring{ opacity:.7; transform:scale(1.9); }
+
+  /* ---- HOME'S CAPTION (build 317, round three) ----
+     What a tap on Home says, in one place: centred under the planet
+     system, above the greeting - no box, no pointer, no ring round the
+     thing tapped. Each answer is its own item, placed absolutely by
+     homeCaptionPlace() (measured: the lowest thing the system draws, and
+     the greeting), so it never moves the layout; a new answer crossfades
+     over the last. Where the gap is too small for it, the greeting (and
+     if need be NOVA and the tagline) fade out under it while it shows. */
+  .home-caption{ position:absolute; left:0; top:0; width:0; height:0; z-index:2; pointer-events:none; }
+  .hc-item{
+    position:absolute; box-sizing:border-box; text-align:center; pointer-events:none; margin:0;
+    opacity:0; transform:translateY(5px);
+    transition:opacity .24s ease, transform .34s cubic-bezier(.2,.7,.3,1);
+  }
+  .hc-item.is-in{ opacity:1; transform:none; }
+  /* a FADE-THROUGH, not a crossfade: two answers at half strength in one
+     place read as a jumble (seen on the recording of rapid taps), so the
+     leaving one goes in 120ms and the arriving one starts a beat later */
+  .hc-item.is-after{ transition-delay:.09s; }
+  .hc-item.is-out{ opacity:0; transform:translateY(-3px); transition:opacity .12s ease, transform .16s ease; transition-delay:0s; }
+  .hc-name{
+    display:block; font-family:var(--sans); font-size:.7rem; font-weight:700; letter-spacing:.13em;
+    text-transform:uppercase; line-height:1.3; color:var(--hc, #FFFFFF); margin:0 0 .22rem;
+  }
+  .hc-state{ color:rgba(236,240,245,.5); font-weight:600; }
+  .hc-state::before{ content:"\00B7"; margin:0 .5em; color:rgba(236,240,245,.35); }
+  .hc-text{ display:block; font-size:.86rem; line-height:1.34; color:rgba(236,240,245,.86); text-wrap:balance; }
+  .hc-s{ display:inline-block; }
+  .hc-item.is-inline .hc-name{ display:inline; margin:0 .6em 0 0; }
+  .hc-item.is-inline .hc-text{ display:inline; }
+  .hc-item.is-clamped{ display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:var(--hc-lines, 2); overflow:hidden; line-height:1.38; }
+  .hc-item.is-clamped .hc-s{ display:inline; }
+  .hc-item.is-beside.is-right{ text-align:left; }
+  .hc-item.is-beside.is-left{ text-align:right; }
+  .hc-item.is-unfound .hc-name, .hc-item.is-locked .hc-name{ color:rgba(222,229,238,.82); }
+  [data-reduce-motion="true"] .hc-item{ transform:none !important; }
+  @media (prefers-reduced-motion:reduce){ .hc-item{ transform:none !important; } }
+  .panel.home.screen-home-actual > .homegreeting, .panel.home.screen-home-actual > .hometitle-wrap{ transition:opacity .25s ease; }
+  .panel.home.screen-home-actual.hc-over-greeting > .homegreeting,
+  .panel.home.screen-home-actual.hc-over-title > .homegreeting,
+  .panel.home.screen-home-actual.hc-over-title > .hometitle-wrap{ opacity:0; }
+  @media (min-width:40rem) and (min-height:60rem),
+         (min-width:64rem) and (min-height:46rem){
+    .hc-name{ font-size:.8rem; }
+    .hc-text{ font-size:1.02rem; }
+  }
+  /* the smallest screens (a 4-inch phone, an SE in a Safari tab, any phone
+     on its side) take a step down, so the longest answer still fits whole */
+  @media (max-width:21rem), (max-height:36rem){
+    .hc-name{ font-size:.64rem; margin-bottom:.18rem; }
+    .hc-text{ font-size:.79rem; line-height:1.32; }
+  }
   /* TAPPING THE PLANET (planetTapFx): overlays over the sphere (centre
      180,150 and radius 52 in the 0 -12 360 342 viewBox), a halo off its
      rim and the two rings' outlines. Transform and opacity only. */
@@ -14604,6 +14767,35 @@
     100%{ transform:translate(var(--fx), var(--fy)) rotate(var(--fr)) scale(.8); opacity:0; }
   }
   @keyframes rk-nova-x{ 0%{ transform:scale(.6); opacity:.25; } 6%{ transform:scale(1.05); opacity:.9; } 35%{ transform:scale(.85); opacity:.6; } 100%{ transform:scale(.6); opacity:.25; } }
+  /* THE BUBBLE'S SUPERNOVA SWELLS, IT DOES NOT GO OFF (build 317, round
+     three). The burst above reaches its peak in 7% of 3.2s, and recorded
+     into a 46px flip-book it is one frame - measured on Home, +5.6 levels
+     of brightness in a single frame every three seconds, a locked grey
+     bubble blinking: "some of the flare seem to be flashing". The bubbles'
+     recordings (rk-record-host - Home, the Profile card, the road map's
+     chips) get the same explosion drawn out: it builds over a third of
+     the loop and lets go evenly. The Rank tab's big emblem keeps the
+     bang. ORBIT_MOTION_REV renames the sheet, so a device records it once. */
+  @media (prefers-reduced-motion:no-preference){
+    .rk-record-host .rank-emblem-svg.rk-k-titan .rk-pulse{ animation:rk-nova-core-soft 3.2s cubic-bezier(.45,0,.55,1) infinite; }
+    .rk-record-host .rank-emblem-svg.rk-k-titan .rk-flare{ animation:rk-nova-flare-soft 3.2s cubic-bezier(.45,0,.55,1) infinite; }
+    .rk-record-host .rank-emblem-svg.rk-k-titan .rk-breathe{ animation:rk-nova-halo-soft 3.2s cubic-bezier(.45,0,.55,1) infinite; }
+    .rk-record-host .rank-emblem-svg.rk-k-titan .rk-shock{ animation:rk-nova-shock-soft 3.2s cubic-bezier(.4,.2,.5,1) infinite; }
+    .rk-record-host .rank-emblem-svg.rk-k-titan .rk-nova-x{ animation:rk-nova-x-soft 3.2s cubic-bezier(.45,0,.55,1) infinite; }
+    .rk-record-host .rank-emblem-svg.rk-k-titan .rk-nova-frag{ animation:rk-nova-frag-soft 3.2s cubic-bezier(.4,.2,.5,1) infinite; }
+  }
+  @keyframes rk-nova-core-soft{ 0%{ transform:scale(.85); opacity:.85; } 34%{ transform:scale(1.32); opacity:1; } 100%{ transform:scale(.85); opacity:.85; } }
+  @keyframes rk-nova-flare-soft{ 0%{ transform:scale(.72); opacity:.4; } 36%{ transform:scale(1.18, 1.12); opacity:1; } 100%{ transform:scale(.72); opacity:.4; } }
+  @keyframes rk-nova-halo-soft{ 0%{ transform:scale(.9); opacity:.5; } 38%{ transform:scale(1.12); opacity:1; } 100%{ transform:scale(.9); opacity:.5; } }
+  @keyframes rk-nova-shock-soft{ 0%{ transform:scale(.6); opacity:0; } 30%{ transform:scale(.8); opacity:.75; } 100%{ transform:scale(1.2); opacity:0; } }
+  @keyframes rk-nova-x-soft{ 0%{ transform:scale(.6); opacity:.25; } 34%{ transform:scale(.98); opacity:.8; } 100%{ transform:scale(.6); opacity:.25; } }
+  @keyframes rk-nova-frag-soft{
+    0%{ transform:translate(0px, 0px) rotate(0deg) scale(.45); opacity:0; }
+    22%{ transform:translate(calc(var(--fx) * .3), calc(var(--fy) * .3)) rotate(calc(var(--fr) * .2)) scale(1); opacity:.9; }
+    52%{ opacity:.8; }
+    82%{ transform:translate(var(--fx), var(--fy)) rotate(var(--fr)) scale(.8); opacity:0; }
+    100%{ transform:translate(var(--fx), var(--fy)) rotate(var(--fr)) scale(.8); opacity:0; }
+  }
   .rankmap-stop.is-locked .rankmap-node{ background:#0C0F14; border-color:rgba(255,255,255,.14); box-shadow:none; }
   .rankmap-stop.is-locked .rankmap-node > svg{ filter:grayscale(1) brightness(.7); opacity:.45; }
   .rankmap-stop.is-next .rankmap-node{ border-style:dashed; }
@@ -14924,6 +15116,22 @@
     .rankmap-name{ font-size:1.45rem; }
     .rankmap-req{ font-size:.8rem; }
     .rankmap-gift{ font-size:.68rem; }
+  }
+  /* FIT TO WHAT'S THERE, FROM A TABLET UP (build 317). "That long
+     individual thing it's in ... they don't need to go from left all the
+     way to the right, on the tablets or larger devices they just need to
+     fit to what's there, it makes the rank road map boxes look bad." A
+     full-width row was right for half a phone (a 116px column, where a
+     chip IS the column) and wrong for a 280-340px card, where "Theme" sat
+     at the start of a 281px pill. From 40rem the chips are two columns,
+     each as wide as its widest chip and no wider: Theme and Flare side by
+     side, the character and the banner under them - the order the card
+     always had. Each chip still fills its column, so the icons in a column
+     share one line and the words one start (builds 311 and 316), and
+     every card starts its chips at the left edge, under "Unlocks", on
+     either side of the road. The rank's lore card keeps its own grid. */
+  @media (min-width:40rem){
+    .rankmap-card .rankmap-gifts{ grid-template-columns:repeat(2, max-content); justify-content:start; }
   }
   /* ---- THE RANK-UP, SHOWN ON PROFILE (build 317) ----
      See playRankUpProfileScene. Everything here is a new rule on the
@@ -24758,6 +24966,14 @@
   }
   .rs-reward-art > svg{ width:4rem; height:4rem; display:block; }
   .rs-reward-art .rs-themedot{ width:3.2rem; height:3.2rem; font-size:1.9rem; }
+  /* the flare tile (build 317): the rank's lit bubble, Profile's tile art,
+     floating about its own centre as it does there */
+  .rs-reward-art .flare-solo.cosmic-icon-badge.cosmic-badge-rank{ width:3.1rem; height:3.1rem; }
+  .rs-unlock-art .flare-solo.cosmic-icon-badge.cosmic-badge-rank{ width:2.3rem; height:2.3rem; }
+  @media (prefers-reduced-motion:no-preference){
+    .rs-reward-art .flare-solo.cosmic-icon-badge-0{ animation:pf-float 6s ease-in-out infinite; }
+  }
+  .rs-unlock-art .flare-solo.cosmic-icon-badge-0{ animation:none; }
   /* The theme as its moving swatch (build 317, themeUnlockItem): the
      swatch box is only a frame here, the dot is the size the old ball
      was in each place, and it keeps the ring and glow in the theme's
@@ -40324,10 +40540,34 @@ function silGreyPaint(svg, v){
   }
   return silGreyOf(v) || v;
 }
+/* A CUT-OUT IS ALL EDGE, SO ITS HEAD IS FITTED (317 fix). "Genesis looks
+   great, Umbra is kinda bugged and too big, and Horizon is nearly perfect
+   but also too big. They are cut off." Drawn, Umbra's hood is a dark
+   violet point that fades into a dark scene, and Horizon's locks fade out
+   towards their tips; as a black shape with a light outline, every unit
+   of both reads. Measured as cut-outs, Umbra's hood rose to y 5.2 of the
+   3..37 tile - 0.6 under the top feather, 3.7 above Void and Genesis
+   (8.9, 9.0) and 18% taller than the four's median head - and Horizon's
+   crown spanned 6.7..33.2, the whole tile bar the feather. So the
+   SILHOUETTE's head (only - the drawing you unlock is untouched) comes
+   down onto its own shoulders, about the foot of the head, the way
+   AVATAR_HEAD_SCALE fits a drawing: [k, x, y] in the drawing's own units.
+   Umbra's point now tops out at ~8.7, level with Void's and Genesis's;
+   Horizon's crown at ~9.7, 7.8..32.2 wide. check_b317_silhouettes holds
+   every secret's cut-out to the four's median head height and clear of
+   its tile's top, in Customize on both reference devices. */
+const SIL_HEAD_FIT = { umbra: [.86, 20, 31.2], singularity: [.92, 20, 30.4] };
 function charSilhouetteSVG(id){
   const svg = buildAvatarCharSVGSafe(id);
   svg.classList.add("char-sil-svg");
   svg.setAttribute("data-char", id + "~sil");
+  const fit = SIL_HEAD_FIT[id];
+  if(fit) svg.querySelectorAll(".cx-head").forEach(h => {
+    const w = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    w.setAttribute("transform", "translate(" + fit[1] + " " + fit[2] + ") scale(" + fit[0] + ") translate(" + (-fit[1]) + " " + (-fit[2]) + ")");
+    while(h.firstChild) w.appendChild(h.firstChild);
+    h.appendChild(w);
+  });
   /* the scenery and the halo are left out; so is the light */
   svg.querySelectorAll(".cx-bg").forEach(n => n.remove());
   [...svg.querySelectorAll("circle")].forEach(n => { if(/url\(#(aura|halo)-/.test(n.getAttribute("fill") || "")) n.remove(); });
@@ -40555,7 +40795,7 @@ function buildAvatarCharSVGFresh(charId){
     head.appendChild(w);
   }
   const k = AVATAR_ART_SCALE[charId];
-  if(!svg || !k) return svg;
+  if(!svg || !k) return lightFigure(svg);
   const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
   g.setAttribute("transform", "translate(20 37) scale(" + k + ") translate(-20 -37)");
   Array.from(svg.childNodes).forEach(n => {
@@ -40566,6 +40806,180 @@ function buildAvatarCharSVGFresh(charId){
     g.appendChild(n);
   });
   svg.appendChild(g);
+  return lightFigure(svg);
+}
+
+/* ---- ONE LIGHT FOR THE WHOLE FIGURE (build 317 fix) ----
+   "Characters' heads are now not showing correctly connected to the body
+   of the character, the bodies don't look attached, they don't seem
+   connected or blended." The volume light this build added (giveVolume,
+   for "some characters have a nice 3d look but some don't") lit EVERY
+   PIECE ON ITS OWN: two copies of each headGrad shape with
+   objectBoundingBox gradients, so a hood, a face, an ear and a coat were
+   each shaded as a separate ball. Where the head meets the body that put
+   the head's own shadow (its lower edge, ~.31 black) straight against the
+   body's own highlight (its upper-left, ~.25 white): a dark-to-light step
+   along every neck (on the characters' own colours, up to 81 levels and
+   32 for the median character), which is exactly a head stuck on top of
+   a body. It is the bug headGrad's own comment describes - "each
+   piece gets its OWN independently-computed shading based on its OWN
+   small bounding box ... separate pieces stuck together" - brought back
+   one layer up. (Measured, not guessed: the plate with the two layers
+   lifted off is the pre-volume plate to the pixel, breakout and all.)
+   Now every lit surface samples ONE field, the way headGrad's light does
+   (userSpaceOnUse), drawn over the whole figure as if it were a single
+   sculpted bust:
+   - the shade: edges falling into shade across the box of every lit
+     shape together (the same 44% / 36% / 72% and the same stops the
+     per-piece version used, applied to the figure instead of the piece);
+   - the light: the same soft pool, over the box of the HEAD's lit
+     shapes, so the head still carries its highlight up on the left.
+   One field means the value on either side of any seam is the same
+   value, so nothing can step at the neck, an ear or a hat band. It is
+   laid on HERE, after AVATAR_HEAD_SCALE and AVATAR_ART_SCALE, because a
+   field drawn in the raw drawing would be scaled with the head and not
+   with the shoulders - every shape's gradient carries the inverse of the
+   transforms above it, so all of them meet in the drawing's own units.
+   The boxes come from the shapes' own geometry (points and control
+   points: a curve never leaves the hull of its handles), not getBBox(),
+   which would force a layout of the page for every character built.
+   Still plain fills - no filter, the one SVG feature that has bitten this
+   app on iOS - and still only headGrad surfaces, so the Alien's own gloss
+   is not doubled. check_b317_neck holds the neck; check_b317_volume the
+   layers. */
+const FIGURE_SHADE_STOPS = [["0%", "#000", "0"], ["58%", "#000", "0"], ["100%", "#000", ".42"]];
+const FIGURE_GLOSS_STOPS = [["0%", "#fff", ".30"], ["45%", "#fff", ".08"], ["100%", "#fff", "0"]];
+/* [x0, y0, x1, y1] round a shape in its own units, or null */
+function figureShapeBox(n){
+  const t = n.tagName.toLowerCase(), a = k => parseFloat(n.getAttribute(k)) || 0;
+  if(t === "circle"){ const r = a("r"); return [a("cx") - r, a("cy") - r, a("cx") + r, a("cy") + r]; }
+  if(t === "ellipse"){ const rx = a("rx"), ry = a("ry"); return [a("cx") - rx, a("cy") - ry, a("cx") + rx, a("cy") + ry]; }
+  if(t === "rect") return [a("x"), a("y"), a("x") + a("width"), a("y") + a("height")];
+  if(t === "polygon"){
+    const v = (n.getAttribute("points") || "").trim().split(/[\s,]+/).map(Number);
+    if(v.length < 4 || v.some(isNaN)) return null;
+    const b = [Infinity, Infinity, -Infinity, -Infinity];
+    for(let i = 0; i + 1 < v.length; i += 2){ b[0] = Math.min(b[0], v[i]); b[1] = Math.min(b[1], v[i + 1]); b[2] = Math.max(b[2], v[i]); b[3] = Math.max(b[3], v[i + 1]); }
+    return b;
+  }
+  if(t === "path") return figurePathBox(n.getAttribute("d"));
+  return null;
+}
+function figurePathBox(d){
+  const tok = String(d || "").match(/[a-zA-Z]|[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:[eE][-+]?\d+)?/g) || [];
+  const b = [Infinity, Infinity, -Infinity, -Infinity];
+  const add = (x, y) => { if(x < b[0]) b[0] = x; if(y < b[1]) b[1] = y; if(x > b[2]) b[2] = x; if(y > b[3]) b[3] = y; };
+  const isCmd = s => /^[a-zA-Z]$/.test(s);
+  let i = 0, cmd = "", x = 0, y = 0, sx = 0, sy = 0;
+  const num = () => (i < tok.length && !isCmd(tok[i])) ? parseFloat(tok[i++]) : NaN;
+  while(i < tok.length){
+    if(isCmd(tok[i])) cmd = tok[i++];
+    else if(!cmd) return null;
+    const C = cmd.toUpperCase(), ox = cmd !== C ? x : 0, oy = cmd !== C ? y : 0;
+    if(C === "Z"){ x = sx; y = sy; cmd = ""; continue; }
+    if(C === "M" || C === "L" || C === "T"){
+      x = ox + num(); y = oy + num(); add(x, y);
+      if(C === "M"){ sx = x; sy = y; cmd = cmd === "m" ? "l" : "L"; }
+    } else if(C === "H"){ x = ox + num(); add(x, y); }
+    else if(C === "V"){ y = oy + num(); add(x, y); }
+    else if(C === "Q" || C === "S"){ add(ox + num(), oy + num()); x = ox + num(); y = oy + num(); add(x, y); }
+    else if(C === "C"){ add(ox + num(), oy + num()); add(ox + num(), oy + num()); x = ox + num(); y = oy + num(); add(x, y); }
+    else if(C === "A"){
+      /* an arc stays within twice its radius of both of its ends */
+      const rx = Math.abs(num()), ry = Math.abs(num()); num(); num(); num();
+      const ex = ox + num(), ey = oy + num();
+      const R = Math.max(rx, ry, Math.hypot(ex - x, ey - y) / 2);
+      add(Math.max(x, ex) - 2 * R, Math.max(y, ey) - 2 * R); add(Math.min(x, ex) + 2 * R, Math.min(y, ey) + 2 * R);
+      x = ex; y = ey; add(x, y);
+    } else return null;
+    if(isNaN(x) || isNaN(y)) return null;
+  }
+  return b[0] <= b[2] && b[1] <= b[3] ? b : null;
+}
+function lightFigure(svg){
+  if(!svg) return svg;
+  try{
+    const uid = svg.getAttribute("data-cx-uid");
+    if(!uid) return svg;
+    const NS = "http://www.w3.org/2000/svg";
+    const lit = new RegExp("^url\\(#" + uid.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "-head\\d+\\)$");
+    const shapes = [...svg.querySelectorAll("path, ellipse, circle, rect, polygon")]
+      .filter(n => lit.test(n.getAttribute("fill") || "") && !n.closest(".cx-bg, .cx-sp, defs, clipPath, mask, pattern"));
+    if(!shapes.length) return svg;
+    let defs = svg.querySelector(":scope > defs");
+    if(!defs){ defs = document.createElementNS(NS, "defs"); svg.insertBefore(defs, svg.firstChild); }
+    /* a shape's own units -> the drawing's, through every transform
+       attribute on the way down (the head's size, the art scale, a turned
+       ellipse); the attributes only, so it works on a detached drawing */
+    const toSvg = n => {
+      let m = new DOMMatrix();
+      const chain = [];
+      for(let e = n; e && e !== svg; e = e.parentNode) chain.unshift(e);
+      chain.forEach(e => {
+        const list = e.transform && e.transform.baseVal;
+        if(list) for(let j = 0; j < list.numberOfItems; j++){
+          const t = list.getItem(j).matrix;
+          m = m.multiply(new DOMMatrix([t.a, t.b, t.c, t.d, t.e, t.f]));
+        }
+      });
+      return m;
+    };
+    /* a part hidden until a state shows it does not shape the light */
+    const shown = n => { for(let e = n; e && e !== svg; e = e.parentNode) if(e.getAttribute && e.getAttribute("opacity") === "0") return false; return true; };
+    const info = shapes.map(n => ({ n, m: toSvg(n), box: figureShapeBox(n) }));
+    const union = list => {
+      let b = null;
+      list.forEach(s => {
+        if(!s.box || !shown(s.n)) return;
+        [[s.box[0], s.box[1]], [s.box[2], s.box[1]], [s.box[0], s.box[3]], [s.box[2], s.box[3]]].forEach(([px, py]) => {
+          const p = new DOMPoint(px, py).matrixTransform(s.m);
+          if(!b) b = [p.x, p.y, p.x, p.y];
+          else { b[0] = Math.min(b[0], p.x); b[1] = Math.min(b[1], p.y); b[2] = Math.max(b[2], p.x); b[3] = Math.max(b[3], p.y); }
+        });
+      });
+      return b && b[2] - b[0] > .5 && b[3] - b[1] > .5 ? { x: b[0], y: b[1], w: b[2] - b[0], h: b[3] - b[1] } : null;
+    };
+    const F = union(info);
+    if(!F) return svg;
+    const H = union(info.filter(s => s.n.closest(".cx-head"))) || F;
+    const field = {
+      shade: { cx: F.x + .44 * F.w, cy: F.y + .36 * F.h, rx: .72 * F.w, ry: .72 * F.h, stops: FIGURE_SHADE_STOPS },
+      gloss: { cx: H.x + .34 * H.w, cy: H.y + .24 * H.h, rx: .62 * H.w, ry: .62 * H.h, stops: FIGURE_GLOSS_STOPS }
+    };
+    const made = new Map(), count = { shade: 0, gloss: 0 };
+    const paint = (name, m) => {
+      const inv = m.inverse();
+      const key = name + "|" + [inv.a, inv.b, inv.c, inv.d, inv.e, inv.f].map(v => v.toFixed(5)).join(" ");
+      if(made.has(key)) return made.get(key);
+      const f = field[name], id = uid + "-v" + name + (count[name]++ || "");
+      const t = inv.translate(f.cx, f.cy).scale(f.rx, f.ry);
+      const g = document.createElementNS(NS, "radialGradient");
+      g.setAttribute("id", id); g.setAttribute("gradientUnits", "userSpaceOnUse");
+      g.setAttribute("cx", "0"); g.setAttribute("cy", "0"); g.setAttribute("r", "1");
+      g.setAttribute("gradientTransform", "matrix(" + [t.a, t.b, t.c, t.d, t.e, t.f].map(v => +v.toFixed(5)).join(" ") + ")");
+      f.stops.forEach(([o, c, op]) => {
+        const s = document.createElementNS(NS, "stop");
+        s.setAttribute("offset", o); s.setAttribute("stop-color", c); s.setAttribute("stop-opacity", op);
+        g.appendChild(s);
+      });
+      defs.appendChild(g);
+      made.set(key, "url(#" + id + ")");
+      return made.get(key);
+    };
+    info.forEach(({ n, m }) => {
+      const layer = fill => {
+        const c = n.cloneNode(false);
+        c.removeAttribute("id");
+        ["stroke", "stroke-width", "stroke-linecap", "stroke-linejoin"].forEach(k => c.removeAttribute(k));
+        c.style.removeProperty("fill");
+        c.setAttribute("fill", fill);
+        c.setAttribute("pointer-events", "none");
+        return c;
+      };
+      const s = layer(paint("shade", m)), g = layer(paint("gloss", m));
+      n.after(s); s.after(g);
+    });
+  }catch(e){}
   return svg;
 }
 
@@ -41342,7 +41756,8 @@ function drawAvatarCharSVG(charId){
     if(fig) Array.from(fig.children).forEach(n => {
       if(n.nodeName === "circle" && /url\(#(aura|halo)-/.test(n.getAttribute("fill") || "")) svg.insertBefore(n, fig);
     });
-    if(fig) giveVolume(fig);
+    /* (the figure's light is laid on in buildAvatarCharSVGFresh, once
+       the head and the art have their final size - see lightFigure) */
     if(fig) charSpecialParts(fig);
     return svg;
   }
@@ -41387,51 +41802,8 @@ function drawAvatarCharSVG(charId){
     if(back.childNodes.length) svg.insertBefore(back, fig);
     if(front.childNodes.length) svg.appendChild(front);
   }
-  /* EVERY SURFACE IS ROUND (build 317). "In profile some characters have
-     a nice 3d look but some don't, fix that as well." The ones that did
-     (Alien, Ghost, the Bear, the fishbowl) carry their own highlight in
-     the drawing; the rest were one headGrad light field across the
-     whole figure, which shades the SET but leaves each piece - a face,
-     a hat crown, a coat - reading as one flat colour. The avatarDepth
-     filter cannot help: it works in CSS pixels off the svg's alpha, and
-     every character has a scene behind it now, so the alpha is solid
-     and there is no edge for it to light.
-     So every surface painted with headGrad gets two copies of itself
-     laid straight on top of it (features drawn later stay above):
-     edges falling into shade, and a soft light upper-left. Both are
-     objectBoundingBox gradients, so each piece is lit across its OWN
-     shape at any size, and they are plain fills - no filter, the one
-     SVG feature that has bitten this app on iOS. The scenery and
-     anything not drawn with headGrad (glows, eyes, flat accents) are
-     left alone, which is what keeps the Alien's own gloss from being
-     doubled into plastic. */
-  function giveVolume(root){
-    const head = new RegExp("^url\\(#" + uid.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "-head\\d+\\)$");
-    const shapes = [...root.querySelectorAll("path, ellipse, circle, rect, polygon")]
-      .filter(n => head.test(n.getAttribute("fill") || "") && !n.closest(".cx-bg"));
-    if(!shapes.length) return;
-    const grad = (id, cx, cy, r, stops) => {
-      const g = mk("radialGradient", { id, cx, cy, r });
-      stops.forEach(([o, c, op]) => g.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
-      defs.appendChild(g);
-      return "url(#" + id + ")";
-    };
-    const shade = grad(uid + "-vshade", "44%", "36%", "72%", [["0%", "#000", "0"], ["58%", "#000", "0"], ["100%", "#000", ".42"]]);
-    const gloss = grad(uid + "-vgloss", "34%", "24%", "62%", [["0%", "#fff", ".30"], ["45%", "#fff", ".08"], ["100%", "#fff", "0"]]);
-    shapes.forEach(n => {
-      const layer = fill => {
-        const c = n.cloneNode(false);
-        c.removeAttribute("id");
-        ["stroke", "stroke-width", "stroke-linecap", "stroke-linejoin"].forEach(a => c.removeAttribute(a));
-        c.style.removeProperty("fill");
-        c.setAttribute("fill", fill);
-        c.setAttribute("pointer-events", "none");
-        return c;
-      };
-      const s = layer(shade), g = layer(gloss);
-      n.after(s); s.after(g);
-    });
-  }
+  /* (EVERY SURFACE IS ROUND, build 317: the volume light that used to be
+     giveVolume() here is lightFigure(), after buildAvatarCharSVGFresh.) */
   /* A soft, separate glossy highlight blob over the upper-left of the
      head, on top of the base gradient rather than replacing it \u2014
      this is the actual technique behind the "glossy 3D icon" look
@@ -59297,6 +59669,35 @@ function renderPausedScreen(){
    all mount through here: the same .is-pause panel, the same stacked
    equal-width buttons, the same group centred on the screen - so going
    from Pause to its confirmation and back moves nothing but the words. */
+/* ---- A FOCUS RING IS FOR THE KEYBOARD (build 317) ----
+   "There's a weird outline thing around the button there, I've seen this
+   before." It was `.next:focus-visible` - 2px of the accent, 2px out -
+   on the button a screen focuses for itself as it lands (the results'
+   first button, the review's, the daily's Exit, a question's Next, the
+   Pause panel's Resume). iOS never focuses a button on a tap, so when the
+   script does, WebKit has no pointer to blame and draws the keyboard's
+   ring; Chromium hides it after a real tap and draws it after none. The
+   focus stays (Enter and a screen reader start from it), but unless the
+   last thing somebody did was press a key, it is a QUIET focus: no ring
+   (`.is-quietfocus`) until the first key, which takes the class off every
+   element so a keyboard user sees exactly where they are. */
+var lastInputKeyboard = false;
+function focusQuietly(el){
+  if(!el || !el.focus) return;
+  try{
+    if(!lastInputKeyboard){
+      el.classList.add("is-quietfocus");
+      el.addEventListener("blur", () => el.classList.remove("is-quietfocus"), { once: true });
+    }
+    el.focus({ preventScroll: true });
+  }catch(e){}
+}
+document.addEventListener("keydown", e => {
+  if(e.key === "Shift" || e.key === "Control" || e.key === "Alt" || e.key === "Meta" || e.key === "CapsLock") return;
+  lastInputKeyboard = true;
+  document.querySelectorAll(".is-quietfocus").forEach(el => el.classList.remove("is-quietfocus"));
+}, true);
+["pointerdown", "touchstart", "mousedown"].forEach(t => document.addEventListener(t, () => { lastInputKeyboard = false; }, { capture: true, passive: true }));
 function mountPausePanel(panel, children, focusBtn){
   panel.classList.add("is-pause");
   const stack = document.createElement("div");
@@ -59306,7 +59707,7 @@ function mountPausePanel(panel, children, focusBtn){
   stage.replaceChildren(panel);
   toTop();
   centerPauseStack(panel, stack);
-  if(focusBtn) focusBtn.focus({ preventScroll: true });
+  if(focusBtn) focusQuietly(focusBtn);
 }
 
 /* THE BUTTONS ON ONE LINE, ON THE SCREEN'S MIDDLE (build 297). The panel
@@ -59539,7 +59940,7 @@ function confirmLeaveTeamMatch(){
   card.append(t, b, row);
   wrap.appendChild(card);
   document.body.appendChild(wrap);
-  try{ stay.focus({ preventScroll: true }); }catch(e){}
+  focusQuietly(stay);
 }
 
 /* Rebuilding the waiting screen is the only way back from that
@@ -61847,7 +62248,12 @@ function homeRankEmblemReused(tier){
      old screen; the flag did not, so three of the seven bubbles came back
      EMPTY until a new one was laid over them - "the flares don't get
      filled in for about a second or two". */
-  if(had){ had.remove(); had.classList.remove("rk-under-anim"); return had; }
+  if(had){
+    had.remove(); had.classList.remove("rk-under-anim");
+    /* a crossfade still under way when the last Home went (build 317) */
+    try{ had.getAnimations().forEach(a => { if(a.__sheetFade) a.cancel(); }); }catch(e){}
+    return had;
+  }
   const em = homeRankEmblem(tier);
   homeRankEmblemCache[tier] = em;
   return em;
@@ -61993,10 +62399,14 @@ async function orbitAnimSheetFromBlob(blob, px){
    opened. The per-instance gradient ids ("rk12-...") come out of the hash
    for the same reason. */
 const orbitAnimDrawings = new Map();
+/* A rank whose RECORDED motion changed without its drawing changing
+   (build 317: Supernova's swell, rk-nova-*-soft) - a new name for its
+   sheet, so a device that cached the old one records it again, once. */
+const ORBIT_MOTION_REV = { titan: "m2" };
 function orbitAnimDrawing(tier){
   if(!orbitAnimDrawings.has(tier)){
     const svg = homeRankEmblem(tier);
-    const id = tier + "-" + hashOf(new XMLSerializer().serializeToString(svg).replace(/\brk\d+/g, "rk"));
+    const id = tier + "-" + hashOf(new XMLSerializer().serializeToString(svg).replace(/\brk\d+/g, "rk")) + (ORBIT_MOTION_REV[tier] ? "-" + ORBIT_MOTION_REV[tier] : "");
     orbitAnimDrawings.set(tier, { svg, id, tier });
   }
   return orbitAnimDrawings.get(tier);
@@ -62230,7 +62640,14 @@ function syncLoopClock(root){
    newly lit rank measures again. */
 const orbitSheetGeom = new Map();
 function orbitGeomKey(badge, tier){ return tier + "|" + (badge.classList.contains("cosmic-badge-lit") ? 1 : 0) + "|" + innerWidth + "x" + innerHeight + "|" + (window.devicePixelRatio || 1); }
-function attachOrbitSheet(badge, svg, sp, g){
+/* `fade` (build 317, round three): a sheet that arrives while the still
+   emblem is already on screen crossfades in over half a second. Cut in,
+   the sheet's frame and the still drawing differ by up to 12 levels of
+   brightness (the still pose is every part at rest, the frame is mid-
+   breath) - a one-frame pop in each bubble on the first Home of a
+   session, which is one of the flashes reported. A sheet put on before
+   the first paint (startOrbitEmblemAnimsKnown) has nothing to fade from. */
+function attachOrbitSheet(badge, svg, sp, g, fade){
   const wrap = document.createElement("div");
   wrap.className = "cosmic-rank-anim";
   wrap.setAttribute("aria-hidden", "true");
@@ -62247,6 +62664,17 @@ function attachOrbitSheet(badge, svg, sp, g){
   frame.appendChild(img);
   wrap.appendChild(frame);
   svg.after(wrap);
+  if(fade && !ringMotionOff()){
+    try{
+      const op = Number(g.opacity);
+      const to = isFinite(op) ? op : 1;
+      wrap.animate([{ opacity: 0 }, { opacity: to }], { duration: 520, easing: "ease-in-out" });
+      const out = svg.animate([{ opacity: to }, { opacity: 0 }], { duration: 520, easing: "ease-in-out", fill: "forwards" });
+      out.__sheetFade = true;
+      out.finished.then(() => { if(wrap.isConnected) svg.classList.add("rk-under-anim"); out.cancel(); }, () => {});
+      return;
+    }catch(e){}
+  }
   svg.classList.add("rk-under-anim");
 }
 /* Synchronous, no layout: only bubbles whose sheet is recorded this
@@ -62290,7 +62718,7 @@ function startOrbitEmblemAnims(root, readyOnly){
       const cs = getComputedStyle(svg);
       const g = { px, cellCss: sp.px / scale / S, filter: cs.filter, opacity: cs.opacity };
       orbitSheetGeom.set(orbitGeomKey(badge, tier), g);
-      attachOrbitSheet(badge, svg, sp, g);
+      attachOrbitSheet(badge, svg, sp, g, true);
       syncLoopClock(badge.querySelector(".cosmic-rank-anim"));
     }
   })();
@@ -63033,6 +63461,47 @@ function cosmicScarURLs(){
   }catch(e){ cosmicScarCache = false; }
   return cosmicScarCache;
 }
+/* THE SUPERNOVA'S DUST (build 317, the evolution round): a ring of burnt
+   smoke, drawn once at 256px with its soft edges baked in - zero alpha at
+   the middle and at every side of the square - so it can never show a
+   hard edge or the box it is drawn in. Seeded, like the smoke. */
+let snDustCache = null;
+function snDustURL(){
+  if(snDustCache !== null) return snDustCache;
+  snDustCache = "";
+  try{
+    const N = 256, c = document.createElement("canvas");
+    c.width = N; c.height = N;
+    const g = c.getContext("2d");
+    if(!g) return snDustCache;
+    let seed = 4711;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const G = 32, grid = [];
+    for(let i = 0; i < G * G; i++) grid.push(rnd());
+    const at = (x, y) => grid[((y % G + G) % G) * G + ((x % G + G) % G)];
+    const sm = t => t * t * (3 - 2 * t);
+    const noise = (x, y) => {
+      const x0 = Math.floor(x), y0 = Math.floor(y), fx = sm(x - x0), fy = sm(y - y0);
+      const a = at(x0, y0), b = at(x0 + 1, y0), c2 = at(x0, y0 + 1), d = at(x0 + 1, y0 + 1);
+      return a + (b - a) * fx + (c2 - a) * fy + (a - b - c2 + d) * fx * fy;
+    };
+    const img = g.createImageData(N, N);
+    for(let y = 0; y < N; y++) for(let x = 0; x < N; x++){
+      const u = (x + .5) / N - .5, v = (y + .5) / N - .5, r = Math.sqrt(u * u + v * v) * 2;
+      /* a ring: rising from the middle, densest at .55, gone by .96 */
+      const ring = sm(Math.max(0, Math.min(1, (r - .1) / .4))) * (1 - sm(Math.max(0, Math.min(1, (r - .55) / .41))));
+      let n = 0, amp = .55, f = 6 / N;
+      for(let o = 0; o < 4; o++){ n += amp * noise(x * f * (1 << o) + 3, y * f * (1 << o) + 7); amp *= .5; }
+      const a = ring * sm(Math.max(0, Math.min(1, (n - .26) / .5)));
+      const k = (y * N + x) * 4;
+      img.data[k] = 58 + Math.round(30 * n); img.data[k + 1] = 22 + Math.round(12 * n); img.data[k + 2] = 10;
+      img.data[k + 3] = Math.round(a * .9 * 255);
+    }
+    g.putImageData(img, 0, 0);
+    snDustCache = c.toDataURL("image/png");
+  }catch(e){ snDustCache = ""; }
+  return snDustCache;
+}
 let cosmicDepthSeq = 0;
 /* Home's outer orbit (build 313): the outer rank bubbles sit on it by
    their centres and the outer secret flares ride it. 140, not the drawn
@@ -63483,11 +63952,17 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
        Home only (useTierIcons), not Welcome, where tapping it before
        an account even exists yet wouldn't make much sense. */
     sphere.style.cursor = "pointer";
-    sphere.addEventListener("click", (e) => {
-      e.stopPropagation();
-      /* and the planet answers the touch (build 317, planetTapFx) */
+    /* and the planet answers the touch (build 317, planetTapFx), on the
+       touch itself; the caption says where you stand, and tapped again
+       while it is up, what is next (round three - the "....." box went
+       with the other boxes) */
+    homeTapBind(sphere, (e) => {
       try{ planetTapFx(wrap, e); }catch(err){}
-      showContextualInfo(sphere, "..... ", { aimEdge: true });
+      try{
+        const again = homeCaptionState.key === "planet" && !!document.querySelector("#stage .home-caption > .hc-item.is-in");
+        homeCaptionState.planetN = again ? homeCaptionState.planetN + 1 : 0;
+        homeCaptionShow(homePanelOf(wrap), homeTapCopyPlanet(homeCaptionState.planetN), "planet");
+      }catch(err){}
     });
   }
   svg.appendChild(sphere);
@@ -63647,19 +64122,9 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   /* [ring radius, degrees clockwise from the top], in the 0 -12 360 342
      viewBox the planet is drawn in (centre 180,150; rings 108 and 152). */
   const FLARE_SPOT = { red: [HOME_OUTER_R, 337], orange: [HOME_OUTER_R, 128], yellow: [108, 236], violet: [108, 32], white: [108, 141] };
-  /* Something to say when a flare is tapped. A found one names itself
-     and what it brought; a missing one only hints. */
-  const flareSays = (key, state) => {
-    const nm = MYSTERY_NAME[key];
-    if(state === "found"){
-      if(VOID_FLARES.indexOf(key) >= 0) return nm + " — found. One of the three that made Void.";
-      if(key === "core") return nm + " — found. The planet's own light. It woke Genesis.";
-      return nm + " — found. It brought " + (AVATAR_DISPLAY_NAME[FLARE_CHARACTER[key]] || "") + " out of the dark.";
-    }
-    if(state === "hunting") return "The next secret flare. It is out there now, hidden in one of your tests.";
-    if(state === "next") return "The next secret flare. It is not out there yet.";
-    return "A secret flare, still missing.";
-  };
+  /* What a tapped flare says is homeTapCopyFlare's (build 317, round
+     three): a found one its name and a line about it, a missing one a
+     hint that gives nothing away. */
   const makeFlare = (key) => {
     const state = (typeof store !== "undefined") ? flareHuntState(key) : "missing";
     const el = document.createElement("span");
@@ -63683,13 +64148,13 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
       el.setAttribute("role", "button");
       el.setAttribute("tabindex", "0");
       el.setAttribute("aria-label", state === "found" ? MYSTERY_NAME[key] + ", a secret flare you have found" : "A secret flare");
-      const say = (e) => {
-        if(e) e.stopPropagation();
-        showContextualInfo(el, flareSays(key, state), { follow: true, ring: true,
-          refind: () => document.querySelector('.panel.home .cosmic-hero-wrap [data-flare="' + key + '"]') });
-      };
-      el.addEventListener("click", say);
-      el.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); say(); } });
+      /* A found flare answers in its own colour; one not found yet
+         shakes its head like everything else still locked (build 317,
+         round three). The words go to the caption under the planet. */
+      homeTapBind(el, () => {
+        if(state === "found") secretFlareTold(el); else homeLockedNudge(el, false);
+        try{ homeCaptionShow(homePanelOf(el), homeTapCopyFlare(key), "flare:" + key); }catch(err){}
+      });
     }
     return el;
   };
@@ -63912,34 +64377,18 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
       badge.classList.add("cosmic-badge-tappable");
       badge.setAttribute("role", "button");
       badge.setAttribute("tabindex", "0");
-      const flareName = ACCENT_DISPLAY_NAME[pos.tier];
-      const rankName = RANK_DISPLAY_NAME[pos.tier];
-      /* THE SAME TAP AS A SECRET FLARE (build 317). "I like what happens
-         when you click the secret flares. Can the large flares do the
-         same?" So it is the same call - a box that follows the bubble
-         ({ follow }), the ring round it in place of the dot ({ ring },
-         sized to the bubble), found again if Home is rebuilt under it
-         ({ refind }) - and the bubble answers the tap with a short light
-         of its own colour inside the glass (flareBubbleTold). It never
-         opened anything; it still opens nothing. The flare and its rank
-         share a name now, so the text names the flare and says what
-         lights it. */
-      const showFlareInfo = () => {
-        flareBubbleTold(badge);
-        let text;
-        if(achieved){
-          text = flareName + " flare. Lit since you reached " + rankName + " rank.";
-        } else {
-          const parts = tierShortfall(TIER_UNLOCKS[pos.tier]);
-          text = flareName + " flare. " + (parts.length
-            ? "Reach " + rankName + " rank to light it: " + parts.join(", ") + "."
-            : rankName + " rank is ready to reach.");
-        }
-        showContextualInfo(badge, text, { follow: true, ring: true, ringFit: true,
-          refind: () => document.querySelector('.panel.home .cosmic-hero-wrap .cosmic-badge-rank[data-rank-tier="' + pos.tier + '"]') });
-      };
-      badge.addEventListener("click", showFlareInfo);
-      badge.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); showFlareInfo(); } });
+      /* THE BUBBLE ANSWERS, THE CAPTION SAYS (build 317, round three).
+         A rank you hold lights in its glass, presses and lets a ring of
+         its colour go; one you have not reached shakes its head like a
+         secret flare not yet found, and never lights. The words - what
+         the flare is and when it was lit, or what lighting it takes and
+         what is left - go to the caption under the planet; nothing
+         follows the bubble or rings it. It still opens nothing. */
+      homeTapBind(badge, () => {
+        if(achieved){ flareBubbleTold(badge); homeBubblePress(badge); homeBubbleHalo(badge); }
+        else homeLockedNudge(badge, true);
+        try{ homeCaptionShow(homePanelOf(badge), homeTapCopyRank(pos.tier), "rank:" + pos.tier); }catch(err){}
+      });
     }
     wrap.appendChild(badge);
   });
@@ -65474,10 +65923,19 @@ function rankTierBadge(hero, tierKey){
    the whole orbit is one compositor layer. */
 const RANK_ORBIT_MS = 30000;
 /* The whirl at the unlock beat (build 317): whole turns, so every bubble
-   comes to rest exactly where the slow orbit would have it. */
-const RANK_CUTSPIN_TURNS = 10;
-/* build 317, second round: faster and faster for 4.5s, lit at the top
-   speed, slowing for 2s, still for half a second, then the flash */
+   comes to rest exactly where the slow orbit would have it.
+   THE EVOLUTION (build 317, the evolution round): "make them spin really
+   really fast so all the colors start morphing ... Then it slows down
+   slowly". 18 turns, 5.6s faster and faster to a top speed of ~1300
+   degrees a second where the bubbles are only light trails, the
+   mini-supernova at the top, then 4.4s slowing, still a blur at first.
+   A rank then charges up for RANK_WINDUP_MS before the flash; Supernova
+   holds still for RANK_CUTSPIN_PAUSE_MS and swells (its own climax). */
+const RANK_CUTSPIN_TURNS = 18;
+const RANK_CUTSPIN_ACCEL_MS = 5600, RANK_CUTSPIN_DECEL_MS = 4400, RANK_CUTSPIN_PAUSE_MS = 500, RANK_WINDUP_MS = 1700;
+/* the attention on the new flare as the scene opens: from RANK_ATTN_AT,
+   for RANK_ATTN_MS, before the whirl */
+const RANK_ATTN_AT = 1300, RANK_ATTN_MS = 4000;
 /* round five: the planet rises this long after the dark comes up.
    THE END, ONCE (build 317, flow round): the words, the planet and the
    tint fade out TOGETHER over RANK_END_MS, and then the scene hands over -
@@ -65487,7 +65945,6 @@ const RANK_CUTSPIN_TURNS = 10;
    of about four seconds (RANK_STILL_*). */
 const RANK_ARRIVE_MS = 320, RANK_END_MS = 950, RANK_TITLE_TAP_MS = 700;
 const RANK_STILL_TITLE_MS = 300, RANK_STILL_END_AT = 3200, RANK_STILL_END_MS = 500;
-const RANK_CUTSPIN_ACCEL_MS = 4500, RANK_CUTSPIN_DECEL_MS = 2000, RANK_CUTSPIN_PAUSE_MS = 500, RANK_CUTLIGHT_MS = 140, RANK_CUTLIGHT_LEAD_MS = 120, RANK_CUTFLARE_MS = 1150;
 function rankOrbitFlares(hero){
   if(!hero) return null;
   const orbit = document.createElement("div");
@@ -65594,6 +66051,105 @@ function homeFlareFrac(){
     return f > 0 && f < 1 ? f : null;
   }catch(e){ if(panel) panel.remove(); return null; }
 }
+/* THE LIGHT TRAILS (build 317, the evolution round) - see "THE EVOLUTION"
+   in the CSS and in playRankUpScene. Built into a hero's turning carrier
+   (.rank-orbit, which is the hero's own box), so each ring of light turns
+   with the bubbles it streaks from. For each of the two orbits:
+   - a SHORT layer: every bubble a comet - its own colour, bright at the
+     bubble and fading over ~70 degrees behind it (the spin is clockwise);
+   - a LONG layer: every bubble's colour stretched to the next, a whole
+     ring of the colours - what the eye keeps at the top speed.
+   And for the new flare's orbit, three layers of its own: its arc in its
+   NEW colour, the same arc in its OLD pale light (the two are flicked
+   back and forth, Pokemon's evolve), and a whole ring of the new colour
+   that takes over at the top. Conic gradients masked to soft bands (a
+   core and a wider glow); built once, then only opacity moves. Returns
+   { short, long, col, old, ring } (arrays / elements), or null. */
+function buildRankTrails(hero, orbit, tierKey){
+  if(!hero || !orbit) return null;
+  try{
+    const slot0 = orbit.querySelector(".rank-orbit-slot");
+    const W = hero.clientWidth || hero.getBoundingClientRect().width;
+    if(!slot0 || !W) return null;
+    /* the bubble's size in the planet's own units (the viewBox is 360 wide) */
+    const D = slot0.offsetWidth / W * 360, B = D * .42;
+    const N = TIER_ORDER_FULL.length, k = TIER_ORDER_FULL.indexOf(tierKey);
+    const PALE = "222,230,244";
+    const rgbOf = c => badgeHexRgb(c).join(",");
+    const ringOf = i => (i % 2 === 0) ? HOME_OUTER_R : 108;
+    const items = TIER_ORDER_FULL.map((t, i) => ({ i, a: i * 360 / N, R: ringOf(i),
+      rgb: i < k ? rgbOf(flareColorOf(t)) : PALE }));
+    /* the gradient round the ring: at each angle every bubble's trail
+       weighs in - its own colour, bright at the bubble and fading behind
+       it, tapering to nothing at its end - and the colours BLEND where
+       trails meet, so the ring morphs from one colour into the next
+       instead of switching. `white` lifts every colour towards white (the
+       hot core line of a streak). */
+    const stops = (list, L, head, aMax, floor, rgbOver, white, tap) => {
+      tap = tap || .18;
+      const out = [];
+      for(let th = 0; th <= 360; th += 3){
+        let keep = 1, sw = 0, sr = 0, sg = 0, sb = 0;
+        list.forEach(it => {
+          const behind = ((it.a - th) % 360 + 360) % 360, ahead = ((th - it.a) % 360 + 360) % 360;
+          let al = 0;
+          if(behind <= L){
+            const t = behind / L;
+            al = (floor + (1 - floor) * Math.pow(1 - t, 1.5)) * Math.min(1, (1 - t) / tap);
+          }
+          if(ahead <= head) al = Math.max(al, Math.pow(1 - ahead / head, 1.5));
+          if(al <= 0) return;
+          const c = (rgbOver || it.rgb).split(",").map(Number);
+          keep *= 1 - al; sw += al; sr += c[0] * al; sg += c[1] * al; sb += c[2] * al;
+        });
+        const A = 1 - keep;
+        let r = sw ? sr / sw : 222, g = sw ? sg / sw : 230, bl = sw ? sb / sw : 244;
+        if(white){ r += (255 - r) * white; g += (255 - g) * white; bl += (255 - bl) * white; }
+        out.push("rgba(" + Math.round(r) + "," + Math.round(g) + "," + Math.round(bl) + "," + (A * aMax).toFixed(3) + ") " + th + "deg");
+      }
+      return out.join(", ");
+    };
+    /* a ring of light: `hot` is the narrow white core line of a streak;
+       otherwise a band the bubble's width with a wide faint glow round it */
+    const layer = (R, grad, wide, cls, hot) => {
+      const el = document.createElement("i");
+      el.className = "rank-trail " + cls;
+      el.setAttribute("aria-hidden", "true");
+      const b = B * wide, E = R + b * 2.6;
+      const pc = v => Math.max(0, v / E * 100).toFixed(2) + "%";
+      el.style.width = (2 * E / 360 * 100).toFixed(3) + "%";
+      el.style.background = "conic-gradient(from 0deg, " + grad + ")";
+      const band = (half, a) => "radial-gradient(circle closest-side, transparent " + pc(R - half) + ", rgba(0,0,0," + a + ") " + pc(R - half * .3) +
+        ", rgba(0,0,0," + a + ") " + pc(R + half * .3) + ", transparent " + pc(R + half) + ")";
+      el.style.webkitMaskImage = el.style.maskImage = hot ? band(b * .32, 1)
+        : band(b, 1) + ", radial-gradient(circle closest-side, transparent " + pc(R - b * 2.5) + ", rgba(0,0,0,.36) " + pc(R) + ", transparent " + pc(R + b * 2.5) + ")";
+      /* in build order, under the bubbles: the base trails, then the new
+         colour's layers over them */
+      orbit.insertBefore(el, slot0);
+      return el;
+    };
+    const out = { short: [], long: [] };
+    [108, HOME_OUTER_R].forEach(R => {
+      const on = items.filter(it => it.R === R);
+      if(!on.length) return;
+      out.short.push(layer(R, stops(on, 75, 7, .9, 0), 1, "is-short"));
+      out.short.push(layer(R, stops(on, 60, 5, .95, 0, null, .6), 1, "is-short is-hot", true));
+      /* long enough to reach well past the bubble behind, with a high
+         floor: at the top speed the ring is unbroken light */
+      out.long.push(layer(R, stops(on, 360 / on.length * 1.32, 22, .8, .5, null, 0, .28), 1.1, "is-long"));
+      out.long.push(layer(R, stops(on, 360 / on.length * 1.32, 16, .85, .45, null, .55, .28), 1.1, "is-long is-hot", true));
+    });
+    const me = items[k];
+    if(me){
+      const col = rgbOf(flareColorOf(tierKey));
+      out.old = layer(me.R, stops([me], 120, 7, .95, 0, PALE, .3), 1, "is-old");
+      out.col = layer(me.R, stops([me], 125, 8, 1, 0, col, .15), 1.05, "is-new");
+      out.ring = layer(me.R, stops([me], 360, 16, 1, .55, col, .2, .05), 1.3, "is-newring");
+    }
+    return out;
+  }catch(e){ return null; }
+}
+
 function playRankUpScene(tierKey, opts, spec){
   opts = opts || {};
   const inline = !!opts.onDone;
@@ -65738,8 +66294,19 @@ function playRankUpScene(tierKey, opts, spec){
   if(still){
     overlay.classList.add("rank-still", "is-igniting", "is-swapped");
     overlay.dataset.accent = tierKey;
-    /* (the new planet's own flare is lit already - syncSceneFlares) */
+    /* (the new planet's own flare is lit already - syncSceneFlares), and
+       marked, still, as the one the scene is about */
     setNewTheme();
+    try{
+      const nb = rankTierBadge(heroAfter, tierKey), ns = nb && nb.closest(".rank-orbit-slot");
+      if(ns){
+        ns.style.setProperty("--attn", flareColorOf(tierKey)); ns.classList.add("is-attn");
+        const g = document.createElement("i"), r = document.createElement("i");
+        g.className = "rank-attn is-still"; r.className = "rank-attn-ring is-still";
+        g.setAttribute("aria-hidden", "true"); r.setAttribute("aria-hidden", "true");
+        ns.insertBefore(g, nb); ns.appendChild(r);
+      }
+    }catch(e){}
     if(spec.times.swell){
       overlay.classList.add("sn-scarred");
       if(heroAfter) heroAfter.querySelectorAll(".cosmic-orbit-ring").forEach(c => c.classList.add("cosmic-orbit-ring-supernova"));
@@ -65760,67 +66327,208 @@ function playRankUpScene(tierKey, opts, spec){
     overlay.classList.add("supernova-visible");
     at(RANK_ARRIVE_MS, () => stageWrap.classList.add("is-arrive"));
   }));
-  at(T.zoom, () => stageWrap.classList.add("supernova-zoom"));
-  /* THE EMPHASIS, SPUN UP (build 317, second round). Madison: "everything
-     is normal, > spins and spins> (you can tell it's not lit up while
-     spinning ... but then when it's gets so fast that's when the color
-     change light up affect happens, and then it slows down and you see
-     the lit up flare. When it comes to a stop. There's a half second
-     pause, the flash and then the planet changes colour and so on."
-     So: every bubble on BOTH planets whirls round its ring, ACCELERATING
-     the whole way for RANK_CUTSPIN_ACCEL_MS (t squared) - the flare still
-     dark - and at the top speed the flare ignites, its light flooding out
-     from the middle in RANK_CUTLIGHT_MS; then it DECELERATES (the mirror
-     curve, so the speed is continuous through the peak) for
-     RANK_CUTSPIN_DECEL_MS and stops exactly where the slow orbit has it
-     (whole turns). Half a second of stillness, then the flash, the colour
-     change and the rest - all of which are timed off the moment the spin
-     STOPS, not off the clock, so the pause is a pause on a slow phone too.
-     COMPOSITOR ONLY: the whirl is a Web Animation of `transform` on the
-     two ring carriers and a counter-turn on each slot, all started on one
-     timeline instant so nothing drifts; the slow orbit (`rotate`) runs on
+  /* ---- THE EVOLUTION (build 317, the evolution round) ----
+     Madison: "You know how in Pokemon when someone evolves there is that
+     super cool evolution animation on the screen of them going back and
+     forth and then hitting the evolve? ... cool and suspenseful and
+     exciting." The middle of every rank-up, before the flash:
+     1. ATTENTION (RANK_ATTN_AT, RANK_ATTN_MS): the camera pushes in a
+        little toward the new flare and eases back; the flare breathes
+        larger and smaller in a glow of its colour-to-be and makes one
+        graceful loop out of its slot and back - "this is the one", with
+        everything else still in view.
+     2. THE WHIRL: every bubble on both planets whirls round its ring,
+        faster and faster for ACC (t squared) until they are only light:
+        the bubbles and the secret flares fade into light trails
+        (buildRankTrails) whose opacity follows the speed - comets first,
+        then whole rings of the bubbles' colours. The new flare's colour
+        takes over its ring, brighter and brighter, flicked back and forth
+        with its old pale light three times, ever closer together.
+     3. THE BANG at the top speed: a mini-supernova at the new flare - a
+        burst, a ring and a glow in its colour - and it is lit from here.
+     4. SLOWING for DEC (the mirror curve, so the speed is continuous at
+        the top), still a blur at first, the new colour bright and then
+        dimming as the trails resolve back into bubbles; the camera comes
+        back out to the normal view. Whole turns, so every bubble stops
+        exactly where the slow orbit has it.
+     5. THE CHARGE (a rank; Supernova swells instead): the system pulses
+        faster and faster, the flare's light and an aura round the planet
+        rising, for RANK_WINDUP_MS.
+     6. THE FLASH starts AT the new flare - the flare goes off - and
+        floods the screen; the planet changes colour under it; the theme
+        settles; the title a beat later.
+     Everything after the spin is timed off the spin's own end (`finished`),
+     not the clock, so a slow phone keeps every beat. Compositor only: Web
+     Animations of transform and opacity, the whirl's all on one timeline
+     instant so nothing drifts; the slow orbit (`rotate`) runs on
      underneath, untouched, so the start and the end cannot jump. */
   const ACC = spec.times.accel || RANK_CUTSPIN_ACCEL_MS, DEC = spec.times.decel || RANK_CUTSPIN_DECEL_MS;
   const TURNS = RANK_CUTSPIN_TURNS * 360;
   /* equal speed at the peak: A / ACC == B / DEC, A + B == TURNS */
   const PEAK_DEG = TURNS * ACC / (ACC + DEC), PEAK_AT = ACC / (ACC + DEC);
-  overlay.style.setProperty("--cutlight-ms", RANK_CUTLIGHT_MS + "ms");
-  let litWipe = null, spins = [], burstArmed = false;
+  const newColor = flareColorOf(tierKey);
+  let spins = [], burstArmed = false;
+  const newBadge = () => rankTierBadge(heroBefore, tierKey);
+  /* an element's centre, in the overlay's own pixels */
+  const centreOf = el => { const r = el.getBoundingClientRect(), o = overlay.getBoundingClientRect();
+    return { x: r.left + r.width / 2 - o.left, y: r.top + r.height / 2 - o.top, w: r.width }; };
   const lightFully = () => {
-    const b0 = rankTierBadge(heroBefore, tierKey);
+    const b0 = newBadge();
     if(b0){
-      b0.style.setProperty("--tier-glow", flareColorOf(tierKey));
+      b0.style.setProperty("--tier-glow", newColor);
       b0.classList.add("cosmic-badge-lit");
       if(FLARE_NOIR[tierKey]) b0.classList.add("cosmic-badge-noir");
     }
-    if(litWipe){ litWipe.remove(); litWipe = null; }
     overlay.classList.add("is-cutlit");
   };
-  /* the peak: the flare ignites from its middle */
-  const ignitePeak = () => {
+  /* the glow under the new flare and the halo ring over it (attention,
+     and the charge before the flash) */
+  const flareLight = (cls) => {
+    const b0 = newBadge(), slot = b0 && b0.closest(".rank-orbit-slot");
+    if(!slot) return null;
+    slot.style.setProperty("--attn", newColor);
+    slot.classList.add("is-attn");
+    const glow = document.createElement("i"), ring = document.createElement("i");
+    glow.className = "rank-attn " + (cls || ""); ring.className = "rank-attn-ring " + (cls || "");
+    glow.setAttribute("aria-hidden", "true"); ring.setAttribute("aria-hidden", "true");
+    slot.insertBefore(glow, b0); slot.appendChild(ring);
+    return { slot, glow, ring, badge: b0 };
+  };
+  /* 1. ATTENTION */
+  const attention = () => {
+    const fl = flareLight("is-attention");
+    if(!fl) return;
+    const D = RANK_ATTN_MS;
+    try{
+      const f = centreOf(fl.badge), o = overlay.getBoundingClientRect(), sr = stageWrap.getBoundingClientRect();
+      /* the camera: toward the flare - held where it is under a 1.22x
+         zoom, then brought a third of the way to the middle - and back */
+      const ox = sr.left + sr.width / 2 - o.left, oy = sr.top + sr.height / 2 - o.top, S = 1.22;
+      const tx = (f.x - ox) * (1 - S) + (o.width / 2 - f.x) * .33, ty = (f.y - oy) * (1 - S) + (o.height * .45 - f.y) * .33;
+      const at_ = tx.toFixed(1) + "px " + ty.toFixed(1) + "px";
+      stageWrap.animate([
+        { offset: 0, translate: "0px 0px", scale: "1", easing: "cubic-bezier(.45,0,.25,1)" },
+        { offset: .3, translate: at_, scale: String(S) },
+        { offset: .74, translate: at_, scale: String(S), easing: "cubic-bezier(.45,0,.3,1)" },
+        { offset: 1, translate: "0px 0px", scale: "1" }], { duration: D, fill: "none" });
+      /* the flare: two breaths, one loop out of its slot - away from the
+         planet, round, and home - and a last breath. The slot's own
+         transform (it carries the glow with it); the carrier's turn and
+         the slot's counter-turn cancel, so the loop is drawn upright. */
+      const pl = planetBox();
+      let ux = f.x - pl.cx, uy = f.y - pl.cy;
+      const n = Math.hypot(ux, uy) || 1; ux /= n; uy /= n;
+      const vx = -uy, vy = ux, R = (fl.badge.offsetWidth || 40) * .7;
+      const kf = [
+        { offset: 0, transform: "translate(0px, 0px) scale(1)", easing: "ease-in-out" },
+        { offset: .1, transform: "translate(0px, 0px) scale(1)", easing: "ease-in-out" },
+        { offset: .18, transform: "translate(0px, 0px) scale(1.32)", easing: "ease-in-out" },
+        { offset: .26, transform: "translate(0px, 0px) scale(1)", easing: "ease-in-out" },
+        { offset: .34, transform: "translate(0px, 0px) scale(1.36)", easing: "ease-in-out" },
+        { offset: .42, transform: "translate(0px, 0px) scale(1.08)" }];
+      const LOOP = 16;
+      for(let k = 1; k <= LOOP; k++){
+        const th = k / LOOP * 2 * Math.PI;
+        const x = R * (ux * (1 - Math.cos(th)) + vx * Math.sin(th)), y = R * (uy * (1 - Math.cos(th)) + vy * Math.sin(th));
+        const sc = 1.08 + .3 * Math.sin(th / 2);
+        kf.push({ offset: +(.42 + .34 * k / LOOP).toFixed(4), transform: "translate(" + x.toFixed(1) + "px, " + y.toFixed(1) + "px) scale(" + sc.toFixed(3) + ")" });
+      }
+      kf[kf.length - 1].easing = "ease-in-out";
+      kf.push({ offset: .84, transform: "translate(0px, 0px) scale(1.3)", easing: "ease-in-out" });
+      kf.push({ offset: .93, transform: "translate(0px, 0px) scale(1)" });
+      kf.push({ offset: 1, transform: "translate(0px, 0px) scale(1)" });
+      fl.slot.animate(kf, { duration: D, fill: "none" });
+      const glowKf = peak => [
+        { offset: 0, opacity: 0, transform: "scale(.6)" }, { offset: .1, opacity: .5 * peak, transform: "scale(.9)" },
+        { offset: .18, opacity: peak, transform: "scale(1.15)" }, { offset: .26, opacity: .55 * peak, transform: "scale(.95)" },
+        { offset: .34, opacity: peak, transform: "scale(1.2)" }, { offset: .42, opacity: .75 * peak, transform: "scale(1)" },
+        { offset: .76, opacity: .8 * peak, transform: "scale(1.05)" }, { offset: .84, opacity: peak, transform: "scale(1.2)" },
+        { offset: .93, opacity: .3 * peak, transform: "scale(1)" }, { offset: 1, opacity: 0, transform: "scale(.9)" }];
+      fl.glow.animate(glowKf(1), { duration: D, easing: "ease-in-out", fill: "none" });
+      fl.ring.animate(glowKf(.9), { duration: D, easing: "ease-in-out", fill: "none" });
+    }catch(e){}
+    setTimeout(() => { fl.glow.remove(); fl.ring.remove(); fl.slot.classList.remove("is-attn"); }, D + 50);
+  };
+  /* 3. THE BANG at the top speed */
+  const bangAt = (el, cls, size, life) => {
+    try{
+      const c = centreOf(el);
+      const b = document.createElement("div");
+      b.className = "rank-bang " + (cls || "");
+      b.setAttribute("aria-hidden", "true");
+      b.style.setProperty("--bc", newColor);
+      Object.assign(b.style, { left: c.x.toFixed(1) + "px", top: c.y.toFixed(1) + "px", width: (c.w * size).toFixed(1) + "px" });
+      b.innerHTML = '<i class="rb-glow"></i><i class="rb-core"></i><i class="rb-ring"></i>';
+      overlay.appendChild(b);
+      setTimeout(() => b.remove(), life);
+      return b;
+    }catch(e){ return null; }
+  };
+  const bang = () => {
     if(overlay.classList.contains("is-cutlight")) return;
     overlay.classList.add("is-cutlight");
-    const b0 = rankTierBadge(heroBefore, tierKey);
-    const slot = b0 && b0.closest(".rank-orbit-slot");
-    if(slot){ slot.style.setProperty("--ignite", flareColorOf(tierKey)); slot.classList.add("is-igniting"); }
-    if(b0 && slot && !theme.reduceMotion){
-      litWipe = b0.cloneNode(true);
-      litWipe.classList.add("rank-litwipe", "cosmic-badge-lit");
-      litWipe.classList.remove("cosmic-badge-newly-lit");
-      if(FLARE_NOIR[tierKey]) litWipe.classList.add("cosmic-badge-noir");
-      litWipe.style.setProperty("--tier-glow", flareColorOf(tierKey));
-      litWipe.setAttribute("aria-hidden", "true");
-      slot.appendChild(litWipe);
-      void litWipe.offsetWidth;
-      litWipe.classList.add("is-open");
-      const pop = document.createElement("span");
-      pop.className = "rank-litpop"; pop.setAttribute("aria-hidden", "true");
-      pop.appendChild(document.createElement("i"));
-      slot.appendChild(pop);
-      slot.classList.add("is-flaring");
-      setTimeout(() => { pop.remove(); slot.classList.remove("is-flaring"); }, RANK_CUTFLARE_MS);
-      setTimeout(lightFully, RANK_CUTLIGHT_MS + 40);
-    } else lightFully();
+    const b0 = newBadge(), slot = b0 && b0.closest(".rank-orbit-slot");
+    if(slot) slot.classList.add("is-igniting");
+    lightFully();
+    if(b0) bangAt(b0, "", 3.4, 1700);
+    /* 4. the camera comes back out as it slows */
+    stageWrap.style.setProperty("--zb-ms", DEC + "ms");
+    stageWrap.classList.add("rank-zoomback");
+  };
+  /* 5. THE CHARGE before the flash (a rank): pulses ever faster - the
+     whole system, the flare's light, and an aura round the planet */
+  const windUp = (D) => {
+    if(!(D > 0) || !spin.animate) return;
+    try{
+      const periods = [];
+      let used = 0, per = 520;
+      while(used + per <= D){ periods.push(per); used += per; per = Math.max(130, per * .8); }
+      const kS = [{ offset: 0, scale: "1" }], kG = [{ offset: 0, opacity: 0, transform: "scale(.8)" }], kA = [{ offset: 0, opacity: 0 }];
+      let acc = 0;
+      periods.forEach((p, i) => {
+        const s = periods.length > 1 ? i / (periods.length - 1) : 1;
+        const up = (acc + p * .45) / D, dn = (acc + p) / D;
+        kS.push({ offset: up, scale: (1.028 + .042 * s).toFixed(3), easing: "ease-in-out" }, { offset: dn, scale: (1 + .016 * s).toFixed(3), easing: "ease-in-out" });
+        kG.push({ offset: up, opacity: +(.5 + .5 * s).toFixed(3), transform: "scale(" + (1.05 + .3 * s).toFixed(3) + ")", easing: "ease-in-out" },
+                { offset: dn, opacity: +(.25 + .35 * s).toFixed(3), transform: "scale(1)", easing: "ease-in-out" });
+        kA.push({ offset: up, opacity: +(.3 + .6 * s).toFixed(3), easing: "ease-in-out" }, { offset: dn, opacity: +(.15 + .5 * s).toFixed(3), easing: "ease-in-out" });
+        acc += p;
+      });
+      kS.push({ offset: 1, scale: "1.06" }); kG.push({ offset: 1, opacity: 1, transform: "scale(1.35)" }); kA.push({ offset: 1, opacity: 1 });
+      spin.animate(kS, { duration: D, fill: "forwards" });
+      /* rings of light that collapse INTO the flare on every pulse - the
+         energy gathering before it goes */
+      const b0 = newBadge();
+      if(b0){
+        const c = centreOf(b0), g = document.createElement("div");
+        g.className = "rank-gather"; g.setAttribute("aria-hidden", "true");
+        g.style.setProperty("--bc", newColor);
+        Object.assign(g.style, { left: c.x.toFixed(1) + "px", top: c.y.toFixed(1) + "px", width: (c.w * 2.2).toFixed(1) + "px" });
+        overlay.appendChild(g);
+        const kR = [{ offset: 0, opacity: 0, transform: "scale(3.4)" }];
+        let a2 = 0;
+        periods.forEach((p, i) => {
+          const s = periods.length > 1 ? i / (periods.length - 1) : 1;
+          kR.push({ offset: +((a2 + p * .05) / D).toFixed(4), opacity: 0, transform: "scale(3.4)", easing: "cubic-bezier(.5,0,.9,.6)" },
+                  { offset: +((a2 + p * .8) / D).toFixed(4), opacity: +(.45 + .5 * s).toFixed(3), transform: "scale(1)", easing: "ease-out" },
+                  { offset: +((a2 + p * .98) / D).toFixed(4), opacity: 0, transform: "scale(.8)" });
+          a2 += p;
+        });
+        kR.push({ offset: 1, opacity: 0, transform: "scale(.8)" });
+        g.animate(kR, { duration: D, fill: "forwards" });
+        setTimeout(() => g.remove(), D + 100);
+      }
+      const fl = flareLight("is-charge");
+      if(fl){ fl.glow.animate(kG, { duration: D, fill: "forwards" }); fl.ring.animate(kG, { duration: D, fill: "forwards" }); }
+      const pl = planetBox();
+      const aura = document.createElement("div");
+      aura.className = "rank-aura"; aura.setAttribute("aria-hidden", "true");
+      aura.style.setProperty("--bc", newColor);
+      Object.assign(aura.style, { left: pl.cx.toFixed(1) + "px", top: pl.cy.toFixed(1) + "px", width: (pl.d * 3.4).toFixed(1) + "px" });
+      overlay.insertBefore(aura, stageWrap);
+      aura.animate(kA, { duration: D, fill: "forwards" });
+      setTimeout(() => { aura.remove(); if(fl){ fl.glow.remove(); fl.ring.remove(); } }, D + 900);
+    }catch(e){}
   };
   /* After the spin has STOPPED: the half-second, the flash, and the rest,
      each at its old distance from the flash. */
@@ -65829,23 +66537,34 @@ function playRankUpScene(tierKey, opts, spec){
     burstArmed = true;
     lightFully();
     overlay.classList.add("is-cutrest");
-    const p0 = (spec.times.pause == null ? RANK_CUTSPIN_PAUSE_MS : spec.times.pause);
     /* SUPERNOVA SWELLS FIRST (build 317): the planet heats and shakes for
-       SW before it goes; every beat after it moves back by the same. */
+       SW after a half-second's stillness, and goes. A rank charges up for
+       RANK_WINDUP_MS instead (5). Every beat after moves back by the same. */
     const SW = spec.times.swell || 0;
+    const p0 = spec.times.pause != null ? spec.times.pause : (SW ? RANK_CUTSPIN_PAUSE_MS : RANK_WINDUP_MS);
     const b = p0 + SW;
     if(SW) at(p0, snSwell);
+    else windUp(p0);
     at(b, () => {
-      /* THE FLASH IS A CIRCLE FROM THE PLANET (build 317). It was the
-         whole overlay with border-radius:50% - a tall ellipse, so its
-         first frames were a teal capsule under the planet. Now a square
-         as big as the longer side, centred on the planet's middle, so it
-         grows as a disc out of the planet and its keyframes (to 5.5x)
-         still flood every corner. */
+      /* THE FLASH IS A CIRCLE (build 317), a square box with a radial
+         fill - it was the whole overlay with border-radius:50%, a tall
+         ellipse. FROM THE NEW FLARE (the evolution round): "it needs to be
+         made so it looks like the flash of the color originated from the
+         new flare as if it exploded". A rank's flash starts at a point on
+         the flare and the flare goes off with it (a big .rank-bang);
+         Supernova's is the planet's own detonation, from its middle. The
+         box is big enough from there for its keyframes (to 2.6x at the
+         peak) to flood the far corner. */
       try{
-        const pl = planetBox(), o = overlay.getBoundingClientRect();
-        const sz = Math.max(o.width, o.height);
-        Object.assign(flash.style, { inset: "auto", left: (pl.cx - sz / 2) + "px", top: (pl.cy - sz / 2) + "px", width: sz + "px", height: sz + "px" });
+        const o = overlay.getBoundingClientRect();
+        let cx, cy;
+        const b0 = newBadge();
+        if(SW || !b0){ const pl = planetBox(); cx = pl.cx; cy = pl.cy; }
+        else { const c = centreOf(b0); cx = c.x; cy = c.y; bangAt(b0, "is-big", 4.2, 2000); }
+        const far = Math.max(Math.hypot(cx, cy), Math.hypot(o.width - cx, cy), Math.hypot(cx, o.height - cy), Math.hypot(o.width - cx, o.height - cy));
+        const sz = Math.max(o.width, o.height, far * 1.5);
+        Object.assign(flash.style, { inset: "auto", left: (cx - sz / 2) + "px", top: (cy - sz / 2) + "px", width: sz + "px", height: sz + "px" });
+        flash.dataset.originX = cx.toFixed(1); flash.dataset.originY = cy.toFixed(1);
       }catch(e){}
       overlay.classList.add("supernova-burst");
       if(SW) snDetonate();
@@ -65886,8 +66605,8 @@ function playRankUpScene(tierKey, opts, spec){
       snFx = document.createElement("div");
       snFx.className = "sn-fx"; snFx.setAttribute("aria-hidden", "true");
       Object.assign(snFx.style, { left: (pl.cx - pl.d / 2) + "px", top: (pl.cy - pl.d / 2) + "px", width: pl.d + "px", height: pl.d + "px" });
-      const smoke = cosmicSmokeURL();
-      if(smoke) snFx.style.setProperty("--smoke", "url(" + smoke + ")");
+      const dust = snDustURL();
+      if(dust) snFx.style.setProperty("--dust", "url(" + dust + ")");
       let bits = "";
       /* black shards with ember rims, and ember sparks that fly further:
          spread round the whole circle with a jitter, seeded so every
@@ -65936,8 +66655,11 @@ function playRankUpScene(tierKey, opts, spec){
       try{ stageWrap.animate(fr, { duration: 700, easing: "linear", fill: "none" }); }catch(e){}
     }
   };
+  /* 1. attention, then 2. the whirl (and the camera into it) */
+  at(RANK_ATTN_AT, attention);
   at(T.ignite, () => {
     overlay.classList.add("is-igniting", "is-cutspin");
+    stageWrap.classList.add("supernova-zoom");
     const b1 = rankTierBadge(heroAfter, tierKey);
     if(b1){ b1.style.setProperty("--tier-glow", flareColorOf(tierKey)); b1.classList.add("cosmic-badge-lit"); if(FLARE_NOIR[tierKey]) b1.classList.add("cosmic-badge-noir"); }
     /* The new planet's flare is simply lit - Home's look (build 317,
@@ -65966,15 +66688,53 @@ function playRankUpScene(tierKey, opts, spec){
     [heroBefore, heroAfter].forEach(h => {
       if(h) h.querySelectorAll(":scope > .cosmic-hero-orbitlayer").forEach(l => spins.push(l.animate(rkf, opts2)));
     });
-    /* one instant for every layer, so the carriers and their slots can
-       never drift apart by a frame */
+    /* 2. THE LIGHT: the trails, the bubbles and the secret flares fading
+       into them, and the new colour's takeover - each an opacity curve on
+       the whirl's own clock. vh(u) is the speed as a share of the top
+       speed at progress u (it rises straight to the top at PEAK_AT and
+       falls straight after), so every curve is a function of SPEED. */
+    try{
+      const P = PEAK_AT, ss = (a, b2, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b2 - a))); return t * t * (3 - 2 * t); };
+      const vh = u => u < P ? u / P : (1 - u) / (1 - P);
+      /* the flicks: the new colour gives way to the old pale light three
+         times, each closer to the top than the last */
+      const FLICKS = [.6, .77, .89], fl = u => u > P ? 0 : FLICKS.reduce((m, c) => Math.max(m, Math.exp(-Math.pow((u / P - c) / .014, 2))), 0);
+      const curve = (f, n) => {
+        const k = [], pts = new Set();
+        for(let i = 0; i <= n; i++) pts.add(+(i / n).toFixed(5));
+        pts.add(+P.toFixed(5));
+        FLICKS.forEach(c => [-.03, -.012, 0, .012, .03].forEach(d => pts.add(+((c + d) * P).toFixed(5))));
+        [...pts].filter(u => u >= 0 && u <= 1).sort((x, y) => x - y).forEach(u => k.push({ offset: u, opacity: +Math.max(0, Math.min(1, f(u))).toFixed(3) }));
+        return k;
+      };
+      const fadeIn = (el, f, n) => { if(el) spins.push(el.animate(curve(f, n || 60), opts2)); };
+      const tr = buildRankTrails(heroBefore, orbitBefore, tierKey);
+      if(tr){
+        tr.short.forEach(el => fadeIn(el, u => ss(.16, .5, vh(u)) * (1 - .88 * ss(.66, .98, vh(u)))));
+        tr.long.forEach(el => fadeIn(el, u => ss(.56, .93, vh(u))));
+        /* the new colour: rising through the whole speeding-up, brightest
+           at the top, still bright as it slows and then dimming as the
+           trails resolve - and dipping at each flick */
+        const base = u => u <= P ? ss(.22, .98, u / P) : 1 - ss(.22, .95, (u - P) / (1 - P));
+        fadeIn(tr.col, u => base(u) * (1 - .9 * fl(u)), 240);
+        fadeIn(tr.old, u => Math.max(u <= P ? ss(.12, .4, u / P) * (1 - ss(.45, .97, u / P)) : 0, fl(u)), 240);
+        fadeIn(tr.ring, u => u <= P ? .85 * ss(.55, 1, u / P) * (1 - .7 * fl(u)) : 1 - ss(.12, .9, (u - P) / (1 - P)), 240);
+      }
+      /* the bubbles and the secret flares melt into the light at speed */
+      if(orbitBefore) orbitBefore.querySelectorAll(":scope > .rank-orbit-slot").forEach(sl => fadeIn(sl, u => 1 - .94 * ss(.5, .86, vh(u))));
+      /* the secret flares go a beat earlier and further than the glass
+         over them, so one is never seen sharper than the bubble it is
+         under (round four's rule, at speed) */
+      if(heroBefore) heroBefore.querySelectorAll(":scope > .cosmic-hero-orbitlayer").forEach(l => fadeIn(l, u => 1 - .96 * ss(.45, .84, vh(u))));
+    }catch(e){}
+    /* one instant for every layer, so the carriers, their slots and the
+       light can never drift apart by a frame */
     const t0 = document.timeline.currentTime;
     spins.forEach(an => { an.startTime = t0; });
     const lead = spins[0];
     if(lead){
-      /* a beat before the very top, so the snap and its pop land while
-         the whirl is still at full speed */
-      setTimeout(ignitePeak, Math.max(0, ACC - RANK_CUTLIGHT_LEAD_MS));
+      /* 3. the bang, at the top speed */
+      setTimeout(bang, ACC);
       lead.finished.then(afterRest, afterRest);
     }
   });
@@ -65994,8 +66754,12 @@ function playTierCutscene(tierKey, opts){
        after are timed off the spin's own end, these are the nominal).
        Flow round: the title holds 600ms longer and the end is ONE fade of
        everything (RANK_END_MS) - the planet no longer sits alone after
-       the words - so the scene is ~1s shorter than it was. */
-    times: { zoom: 1200, ignite: 3000, burst: 10000, settle: 11500, outro: 15600 },
+       the words - so the scene is ~1s shorter than it was.
+       The evolution round: attention on the new flare from 1.3s, the
+       whirl from 5.3s (5.6s up, the bang, 4.4s down), the charge, the
+       flash from the flare at ~17s, the title 2.5s after it and the one
+       ending 4s after that - ~25s to the reward card. */
+    times: { ignite: RANK_ATTN_AT + RANK_ATTN_MS, burst: 17000, settle: 19500, outro: 23500 },
     onFinish: () => { store.pendingTierCutscene = null; saveStore(); }
   });
 }
@@ -66289,8 +67053,9 @@ function playSupernovaCutscene(opts){
        CLIMAX - 1.8s of the planet swelling and shaking (swell), the
        detonation at ~12.4s, the dust clearing on the scar and the rings
        turning orange, the title 3s after the blast, and the one ending
-       (RANK_END_MS) 4.9s after that. ~22s in all. */
-    times: { zoom: 1400, ignite: 3600, swell: 1800, burst: 12400, settle: 15400, outro: 20300 },
+       (RANK_END_MS) 4.9s after that. The evolution round puts the same
+       attention and whirl as every rank in front of it: ~27s in all. */
+    times: { ignite: RANK_ATTN_AT + RANK_ATTN_MS, swell: 1800, burst: 17600, settle: 20600, outro: 25500 },
     onFinish: () => {
       store.pendingSupernovaCutscene = false; store.supernovaAchieved = true; saveStore();
       /* the scene has shown the rings turning orange, so Home does not
@@ -68411,7 +69176,7 @@ function confirmLeaveChat(code, onLeave){
   inner.append(card, stay);
   wrap.appendChild(inner);
   host.appendChild(wrap);
-  try{ stay.focus({ preventScroll: true }); }catch(e){}
+  focusQuietly(stay);
 }
 
 function leaveChatRoom(quiet){
@@ -72662,7 +73427,7 @@ function maybeShowPenalVersionNote(tries){
   /* never on top of anything else: a tour, a loading screen, a reward
      pop-up still being tapped through, What's New, a cutscene */
   const busy = whatsNewHolds() || !!document.querySelector("#tour-overlay, #splashscreen, #genprofile-overlay, .invite-overlay, .rs-spot, .rs-fly, " +
-       "#intro-pop, .bc-scene, #contextual-info-popup, .installguide-overlay, #void-cutscene, #badge-cutscene, " +
+       "#intro-pop, .bc-scene, .installguide-overlay, #void-cutscene, #badge-cutscene, " +
        "#supernova-cutscene, #vroom-cutscene, #resume-offer, .friend-moment");
   if(busy) penalNoteBusyAt = Date.now();
   /* and a beat after whatever it waited for, never straight on its heels */
@@ -74781,7 +75546,7 @@ function render(){
   }
 
   stage.replaceChildren(...(dailyTitleBlock ? [dailyTitleBlock, panel, foot] : [panel, foot]));
-  if(!next.hidden) next.focus({ preventScroll: true });
+  if(!next.hidden) focusQuietly(next);
   if(isDaily) panel.classList.add("is-dailyq");
 }
 
@@ -75533,30 +76298,564 @@ const LEVEL_CONFETTI = {
    tabindex=-1 keep it out of the accessibility tree and tab order. */
 
 
-/* A RANK BUBBLE ANSWERS A TAP (build 317) - a short light of its own
-   colour inside the glass, swelling from the middle and fading: the
-   bubble's version of the secret flare's lit look. A child, so the
-   bubble's clip keeps it inside; transform and opacity only. Under
-   Reduce motion it is a still glow for the same moment. */
+/* ---- HOME'S TAPS, ROUND THREE (build 317): THE THING ANSWERS, AND THE
+   WORDS GO UNDER THE PLANET ----
+   Madison: "I like the clicking flare effects. When you click it does an
+   effect and it's great ... Make them all smooth, some of the flare seem
+   to be flashing ... the non unlocked ones do nothing. Let's do this,
+   maybe all the locked stuff does the same effect, like a tiny shake or
+   something? ... those pops take away from the interactiveness. Could
+   the pops with the words be moved ... above the 'good evening' but also
+   below the ring and centered? So maybe now it doesn't get circled when
+   clicking them, the effect would tell you that you clicked it ... longer
+   ones cause more room?"
+   - No box follows anything any more, nothing points, nothing is ringed:
+     the box, its line, its ring and the compositor ride that carried them
+     (showContextualInfo, contextualFollowPath) are gone. A tap answers in
+     ONE caption under the planet system (homeCaptionShow), and the thing
+     tapped answers with its own effect.
+   - A rank you hold: the light in its glass, a press and a ring of its
+     colour leaving it. A secret flare you have found: a swell, a ring of
+     its colour and four sparks (secretFlareTold). ANYTHING LOCKED - a rank
+     not reached, a secret flare not found - answers the same way: a short
+     damped shake and a dip in its light (homeLockedNudge), never the held
+     light. The planet keeps its effect exactly (planetTapFx).
+   - The effect lands on the touch itself (pointerdown, homeTapBind); a
+     click that follows the same touch is ignored, and a click with no
+     touch before it (a keyboard, a script) still answers.
+   - Rapid taps chain: every effect starts from wherever the last one on
+     that thing has got to (opacity, scale, the shake's offset), and the
+     ones that leave something behind (a ring, sparks, a ripple) run side
+     by side, a few at most. Nothing restarts from zero, so nothing jumps.
+   - Transform and opacity only (`scale` and `translate` are the
+     individual properties, which add to the float and the centring), no
+     filters, nothing that moves the layout. Reduce motion: no shake, no
+     press, no sparks - a still light, a still dip, a still ring - and the
+     caption, which fades without moving. */
+
+/* What each rank's flare IS: its emblem, said in a line (RANK_LORE has the
+   long version on the Rank tab). */
+const HOME_FLARE_MEANING = {
+  rookie: "A nebula, where every star begins.",
+  ranger: "A protostar: a young star, still taking shape.",
+  veteran: "A sun that makes its own light.",
+  vanguard: "A binary: two stars that keep each other steady.",
+  adept: "A spiral galaxy, billions of stars turning as one.",
+  elite: "A quasar, bright enough to be seen across the universe.",
+  titan: "A star outshining its whole galaxy. The top of the climb."
+};
+/* And each secret flare's, after its name (MYSTERY_NAME says why each is
+   called what it is). */
+const HOME_SECRET_LINE = {
+  red: "Light stretched red as it races away.",
+  orange: "Matter spiralling inward, burning as it falls.",
+  yellow: "The light left behind when a star goes out.",
+  violet: "The half-shadow at the edge of an eclipse.",
+  white: "The edge that nothing comes back from.",
+  core: "The light at the heart of the planet."
+};
+function homeJoin(parts){
+  return parts.length < 2 ? (parts[0] || "") : parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
+}
+/* A rank's flare: held, what it is and when it was earned; not yet, what
+   reaching it takes and what is left. */
+function homeTapCopyRank(tier){
+  const rank = RANK_DISPLAY_NAME[tier] || tier, flare = ACCENT_DISPLAY_NAME[tier] || rank;
+  if(tierColorUnlocked(tier)){
+    return { kind: "held", name: flare + " flare", state: "Lit", color: flareColorOf(tier),
+      parts: [HOME_FLARE_MEANING[tier] || "", "Lit when you reached " + rank + " rank."] };
+  }
+  const rule = TIER_UNLOCKS[tier] || {};
+  const parts = tierShortfall(rule);
+  const need = "Reach level " + rule.level + " and earn " + rule.badges + " " + (rule.badges === 1 ? "badge" : "badges") + " to light it.";
+  return { kind: "locked", name: flare + " flare", state: "Locked", color: "",
+    parts: parts.length ? [need, homeJoin(parts) + " to go."] : [rank + " rank is ready to reach."] };
+}
+/* A secret flare: found, its name and a line about it; not found, a hint
+   that gives nothing away - no name, no colour, nothing the hunt does not
+   already say (a hint card that has named it unlocks its character line). */
+function homeTapCopyFlare(key){
+  const f = (store && store.mysteryColorsFound) || {};
+  const st = flareHuntState(key);
+  if(st === "found"){
+    let tail;
+    if(VOID_FLARES.indexOf(key) >= 0){
+      const have = VOID_FLARES.filter(k => f[k]).length;
+      tail = have >= VOID_FLARES.length ? "One of the three that made Void."
+        : "One of three. " + (VOID_FLARES.length - have === 1 ? "One more to find." : "Two more to find.");
+    } else if(key === "core"){
+      tail = "It woke Genesis.";
+    } else {
+      tail = "It brought " + (AVATAR_DISPLAY_NAME[FLARE_CHARACTER[key]] || "its character") + " out of the dark.";
+    }
+    return { kind: "found", name: MYSTERY_NAME[key], state: "Secret flare", color: MYSTERY_COLOR[key],
+      parts: [HOME_SECRET_LINE[key] || "", tail] };
+  }
+  let parts;
+  if(st === "hunting") parts = ["Out there now, hiding in one of your tests.", "Keep your eyes open."];
+  else if(st === "next"){
+    let left = 99;
+    try{ left = mysteryLevelGate(key) - levelOf(store); }catch(e){}
+    parts = ["Not out yet.", left <= 3 ? "A few more levels and it starts hiding in your tests."
+      : "It starts hiding in your tests further up the levels."];
+  } else parts = ["Still hidden.", "Its turn comes once the one before it is found."];
+  const ch = FLARE_CHARACTER[key];
+  if(ch && Array.isArray(store.flareHintsShown) && store.flareHintsShown.indexOf(ch) >= 0){
+    parts[parts.length - 1] += " Find it to unlock " + (AVATAR_DISPLAY_NAME[ch] || ch) + ".";
+  }
+  return { kind: "unfound", name: "Secret flare", state: "Not found", color: "", parts };
+}
+/* The planet: where you stand, then (tapped again) what is next. */
+function homeTapCopyPlanet(n){
+  const rk = rankOf(store), lvl = levelOf(store), b = badgeCountOf(store);
+  if(n % 2 === 1){
+    const next = TIER_ORDER_FULL.find(t => !tierColorUnlocked(t));
+    let parts;
+    if(next){
+      const left = tierShortfall(TIER_UNLOCKS[next]);
+      parts = ["Next: " + RANK_DISPLAY_NAME[next] + " rank.", left.length ? homeJoin(left) + " to go." : "It is ready to reach."];
+    } else {
+      parts = homeRingTier() === "eclipse" ? ["Every flare is lit,", "the secret ones too."] : ["Every rank flare is lit."];
+    }
+    return { kind: "planet", name: "Your system", state: "", color: "#FFC98A", parts };
+  }
+  const keys = homeFlareKeys(), f = store.mysteryColorsFound || {};
+  const lit = TIER_ORDER_FULL.filter(t => tierColorUnlocked(t)).length;
+  const found = keys.filter(k => f[k]).length;
+  return { kind: "planet", name: "Your system", state: "", color: "#FFC98A",
+    parts: [(rk ? RANK_DISPLAY_NAME[rk] + " rank" : "No rank yet") + ", level " + lvl + ", " + b + " " + (b === 1 ? "badge" : "badges") + ".",
+      lit + " of " + TIER_ORDER_FULL.length + " rank flares lit, " + found + " of " + keys.length + " secret flares found."] };
+}
+
+/* ---- THE CAPTION ----
+   Placed, never laid out: each answer is an absolutely placed item in
+   the Home panel, so showing, changing or hiding one cannot move the
+   greeting, the tagline or Start Studying by a pixel. Where it goes is
+   measured when it is shown (and again on a resize): the floor is the
+   lowest thing the planet system draws within the caption's width (the
+   outer ring and a flare on it, any bubble with room for its float), the
+   ceiling the greeting's top. It is tried three ways, in order:
+     - "stack": the name over the words, centred in that gap;
+     - "inline": the name leading the words in one run, for a short gap;
+     - covering: where neither fits (a small phone, a laptop window, a
+       phone on its side), the greeting fades out under it while it shows
+       ("hc-over-greeting"), or the greeting, NOVA and the tagline
+       ("hc-over-title"), never Start Studying. The words are clamped
+       only if even that is too short. */
+const HOME_CAPTION_GAP = 5;
+function homeCaptionPlace(panel, el){
+  const R = e => e ? e.getBoundingClientRect() : null;
+  const shown = e => !!e && getComputedStyle(e).display !== "none" && e.getBoundingClientRect().height > 0;
+  const P = panel.getBoundingClientRect();
+  const hero = panel.querySelector(":scope > .cosmic-hero-wrap");
+  const H = R(hero) || P;
+  const greet = panel.querySelector(":scope > .homegreeting");
+  const tw = panel.querySelector(":scope > .hometitle-wrap");
+  const btn = panel.querySelector(":scope > #nextbtn");
+  const G = shown(greet) ? R(greet).top : null;
+  const T = shown(tw) ? R(tw).top : null;
+  const B = btn ? R(btn).top : P.bottom - 8;
+  /* centred on the planet; as wide as the hero, never narrower than a
+     phone's column nor wider than reads well */
+  const cx = H.left + H.width / 2;
+  const room = Math.max(120, Math.min(cx - P.left, P.right - cx) * 2 - 16);
+  const wide = Math.min(room, Math.max(H.width * 1.04, 300), 26 * 16);
+  /* From the geometry, not from where things are this instant: the rings
+     from their radius in the planet's viewBox (0 -12 360 342 - a turning
+     ring layer's box is a rotated square, far bigger than its circle),
+     a bubble from its layout box (the float and a press are transforms)
+     plus the float's reach. So every answer lands on the same line. */
+  const floorIn = (w) => {
+    let fl = H.top + H.height * .5;
+    if(hero){
+      const main = hero.querySelector(":scope > svg.cosmic-hero-main") || hero.querySelector("svg");
+      const SR = main ? main.getBoundingClientRect() : H, u = SR.width / 360;
+      let ringR = 0;
+      hero.querySelectorAll(".cosmic-orbit-ring[r]").forEach(c => { ringR = Math.max(ringR, Number(c.getAttribute("r")) || 0); });
+      /* a flare riding the outer ring hangs half its size below it */
+      const dot = hero.querySelector(".cosmic-hero-orbitlayer .cosmic-flare-dot");
+      if(ringR) fl = Math.max(fl, SR.top + (150 + ringR + 12) * u + (dot ? dot.offsetWidth / 2 : 0));
+      const ht = H.top + hero.clientTop;
+      hero.querySelectorAll(":scope > .cosmic-icon-badge").forEach(b => {
+        const half = b.offsetWidth / 2, x = H.left + hero.clientLeft + b.offsetLeft;
+        if(x + half > cx - w / 2 && x - half < cx + w / 2) fl = Math.max(fl, ht + b.offsetTop + b.offsetHeight * .53 + 8);
+      });
+    }
+    return fl;
+  };
+  const tryMode = (mode, w, top0, bottom0) => {
+    el.classList.toggle("is-inline", mode === "inline");
+    el.classList.remove("is-clamped", "is-beside", "is-right", "is-left");
+    el.style.width = w + "px";
+    const h = el.offsetHeight;
+    return { h, fits: h + 2 * HOME_CAPTION_GAP <= bottom0 - top0 };
+  };
+  const put = (w, top) => {
+    el.style.left = (cx - P.left - panel.clientLeft - w / 2) + "px";
+    el.style.top = (top - P.top - panel.clientTop) + "px";
+  };
+  const fl = floorIn(wide);
+  const ceil = G !== null ? G : T !== null ? T : B;
+  for(const mode of ["stack", "inline"]){
+    const t = tryMode(mode, wide, fl, ceil);
+    if(t.fits){ put(wide, fl + (ceil - fl - t.h) / 2); return mode; }
+  }
+  /* covering: over the greeting alone if that is room enough, else over
+     the greeting and the title block, always clear of the button */
+  const spans = [];
+  if(G !== null && T !== null) spans.push(["over-greeting", T]);
+  spans.push(["over-title", B]);
+  for(const [mode, bottom] of spans){
+    const t = tryMode("stack", wide, fl, bottom);
+    if(t.fits){ put(wide, fl + (bottom - fl - t.h) / 2); return mode; }
+  }
+  /* a phone on its side or a 4-inch phone: one run across the column */
+  const full = Math.max(wide, room);
+  const tf = tryMode("inline", full, fl, B);
+  if(tf.fits){ put(full, fl + (B - fl - tf.h) / 2); return "over-title"; }
+  /* No room under the system at all (a 54px planet on a phone held
+     sideways, a 4-inch phone): beside it, where the column leaves the
+     screen empty, in the largest free stretch of its own side - clear of
+     everything there (the centred button reaches past a small planet, the
+     chat button, the daily question, the version, the tab bar) - centred
+     on the planet as far as that allows. */
+  const OB = [];
+  const ob = (e, ink) => {
+    if(!shown(e)) return;
+    let r = R(e);
+    if(ink){ try{ const rg = document.createRange(); rg.selectNodeContents(e); r = rg.getBoundingClientRect(); }catch(err){} }
+    if(r.width && r.height) OB.push(r);
+  };
+  ob(greet, true); ob(tw, true); ob(btn);
+  ["#chatdock-btn", ".daily-question-fab", ".homeversion", ".bottomtabs:not([hidden])"].forEach(q => ob(document.querySelector(q)));
+  const cy = H.top + H.height / 2, vh = window.innerHeight || P.bottom;
+  const spanAt = (x0, x1) => {
+    let a = Math.max(0, P.top) + 4, b = vh - 4;
+    for(const r of OB){
+      if(r.right <= x0 || r.left >= x1) continue;
+      if(r.bottom <= cy) a = Math.max(a, r.bottom + 6);
+      else if(r.top >= cy) b = Math.min(b, r.top - 6);
+      else return null;
+    }
+    return b > a ? [a, b] : null;
+  };
+  const cands = [];
+  const bR = btn ? R(btn) : null;
+  const side = (name, x0, x1) => {
+    if(x1 - x0 >= 10 * 16) cands.push([name, x0, x1]);
+    /* the same side short of a button that reaches past the planet */
+    if(bR && bR.right > x0 && bR.left < x1){
+      if(name === "right" && x1 - (bR.right + 10) >= 10 * 16) cands.push([name, bR.right + 10, x1]);
+      if(name === "left" && (bR.left - 10) - x0 >= 10 * 16) cands.push([name, x0, bR.left - 10]);
+    }
+  };
+  side("right", H.right + 14, P.right - 12);
+  side("left", P.left + 12, H.left - 14);
+  let best = null;
+  for(const [name, x0, x1] of cands){
+    const w = Math.min(x1 - x0, 20 * 16);
+    const sp = spanAt(name === "right" ? x0 : x1 - w, name === "right" ? x0 + w : x1);
+    if(!sp) continue;
+    const t = tryMode("stack", w, 0, 1e5);
+    if(t.h <= sp[1] - sp[0]){
+      el.classList.add("is-beside", "is-" + name);
+      el.style.left = ((name === "right" ? x0 : x1 - w) - P.left - panel.clientLeft) + "px";
+      const top = Math.max(sp[0], Math.min(cy - t.h / 2, sp[1] - t.h));
+      el.style.top = (top - P.top - panel.clientTop) + "px";
+      return "beside";
+    }
+    if(!best || sp[1] - sp[0] > best.room) best = { name, x0, x1, w, sp, room: sp[1] - sp[0] };
+  }
+  /* and if nothing is big enough, the words take the lines there are, in
+     the roomiest free space found - under the system or beside it */
+  const under = B - fl - 2 * HOME_CAPTION_GAP;
+  tryMode("inline", best && best.room > under ? best.w : full, 0, 1e5);
+  const lh = parseFloat(getComputedStyle(el).lineHeight) || 18;
+  if(best && best.room > under){
+    el.style.setProperty("--hc-lines", String(Math.max(1, Math.floor(best.room / lh))));
+    el.classList.add("is-clamped", "is-beside", "is-" + best.name);
+    el.style.left = ((best.name === "right" ? best.x0 : best.x1 - best.w) - P.left - panel.clientLeft) + "px";
+    const h = el.offsetHeight;
+    el.style.top = (Math.max(best.sp[0], Math.min(cy - h / 2, best.sp[1] - h)) - P.top - panel.clientTop) + "px";
+    return "beside";
+  }
+  el.style.setProperty("--hc-lines", String(Math.max(1, Math.floor(under / lh))));
+  el.classList.add("is-clamped");
+  put(full, fl + HOME_CAPTION_GAP);
+  return "over-title";
+}
+function homeCaptionRetire(el){
+  if(!el || el.classList.contains("is-out")) return;
+  el.classList.remove("is-in");
+  el.classList.add("is-out");
+  setTimeout(() => el.remove(), 200);
+}
+function homeCaptionCover(panel, mode){
+  panel.classList.toggle("hc-over-greeting", mode === "over-greeting");
+  panel.classList.toggle("hc-over-title", mode === "over-title");
+}
+function homeCaptionHide(panel){
+  if(!panel) return;
+  panel.querySelectorAll(":scope > .home-caption > .hc-item").forEach(homeCaptionRetire);
+  homeCaptionCover(panel, "");
+  homeCaptionState.key = null;
+}
+const homeCaptionState = { key: null, planetN: 0, timer: 0 };
+function homeCaptionShow(panel, item, key){
+  if(!panel || !panel.isConnected || !item) return null;
+  item.text = (item.parts || [item.text || ""]).filter(Boolean).join(" ");
+  let box = panel.querySelector(":scope > .home-caption");
+  if(!box){
+    box = document.createElement("div");
+    box.className = "home-caption";
+    box.setAttribute("role", "status");
+    box.setAttribute("aria-live", "polite");
+    const hero = panel.querySelector(":scope > .cosmic-hero-wrap");
+    if(hero) hero.after(box); else panel.prepend(box);
+  }
+  const live = box.querySelector(":scope > .hc-item:not(.is-out)");
+  const same = live && live.dataset.key === key && live.dataset.text === item.text;
+  if(!same){
+    const el = document.createElement("p");
+    el.className = "hc-item is-" + item.kind;
+    el.dataset.key = key; el.dataset.text = item.text;
+    if(item.color) el.style.setProperty("--hc", item.color);
+    const nm = document.createElement("span");
+    nm.className = "hc-name"; nm.textContent = item.name;
+    if(item.state){ const st = document.createElement("span"); st.className = "hc-state"; st.textContent = item.state; nm.appendChild(st); }
+    /* each sentence keeps to a line of its own where it fits, so the
+       words break between thoughts rather than in the middle of one */
+    const tx = document.createElement("span");
+    tx.className = "hc-text";
+    (item.parts || [item.text]).filter(Boolean).forEach((t, k) => {
+      if(k) tx.append(" ");
+      const sp = document.createElement("span"); sp.className = "hc-s"; sp.textContent = t; tx.appendChild(sp);
+    });
+    el.append(nm, " ", tx);
+    /* what a run of taps has faded stays faded until the caption goes, so
+       a short answer after a long one does not bring the greeting back
+       for a moment and take it away again */
+    const was = live ? (panel.classList.contains("hc-over-title") ? 2 : panel.classList.contains("hc-over-greeting") ? 1 : 0) : 0;
+    if(live){ homeCaptionRetire(live); el.classList.add("is-after"); }
+    box.appendChild(el);
+    const mode = homeCaptionPlace(panel, el);
+    const need = mode === "over-title" ? 2 : mode === "over-greeting" ? 1 : 0;
+    /* (an answer beside the planet covers nothing, whatever came before) */
+    homeCaptionCover(panel, ["", "over-greeting", "over-title"][mode === "beside" ? 0 : Math.max(was, need)]);
+    /* placing it measured it, so its first look is already computed and
+       the fade-in runs from this very frame - the words arrive with the
+       touch, not a frame after it */
+    el.classList.add("is-in");
+  }
+  homeCaptionState.key = key;
+  clearTimeout(homeCaptionState.timer);
+  const ms = Math.min(7000, 3400 + item.text.length * 32);
+  homeCaptionState.timer = setTimeout(() => { if(panel.isConnected) homeCaptionHide(panel); }, ms);
+  return box.querySelector(":scope > .hc-item:not(.is-out)");
+}
+/* a rotation or a resized window: put a caption that is up back in its gap */
+try{ window.addEventListener("resize", () => {
+  const el = document.querySelector("#stage .panel.home > .home-caption > .hc-item:not(.is-out)");
+  if(el){ const panel = el.closest(".panel.home"); homeCaptionCover(panel, homeCaptionPlace(panel, el)); }
+}, { passive: true }); }catch(e){}
+/* The tap itself: on the touch, with the click that follows it ignored -
+   a click with no touch before it (a keyboard, a script) still answers. */
+function homeTapBind(el, run){
+  let downAt = -1e9;
+  el.addEventListener("pointerdown", (e) => {
+    if(e.isPrimary === false || (e.pointerType === "mouse" && e.button !== 0)) return;
+    downAt = performance.now();
+    run(e);
+  });
+  el.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if(performance.now() - downAt < 1000) return;
+    run(e);
+  });
+  el.addEventListener("keydown", (e) => {
+    if(e.key === "Enter" || e.key === " "){ e.preventDefault(); downAt = -1e9; run(null); }
+  });
+}
+function homePanelOf(el){ return el && el.closest ? el.closest(".panel.home.screen-home-actual") : null; }
+
+/* ---- THE EFFECTS ---- */
+/* where an animation of ours has got to, read off the element itself */
+function homeFxNow(el, prop, dflt){
+  try{ const v = parseFloat(getComputedStyle(el)[prop]); return isFinite(v) ? v : dflt; }catch(e){ return dflt; }
+}
+function homeFxCancel(el, tag){
+  try{ el.getAnimations().forEach(a => { if(a[tag]) a.cancel(); }); }catch(e){}
+}
+/* A RANK BUBBLE YOU HOLD (build 317): a light of its own colour swelling
+   from the middle of the glass and fading. Round three: it rises over a
+   quarter of a second instead of 0 to full in two frames (an easing on
+   the whole effect front-loads everything - measured 0 -> .96 in 67ms,
+   which is the flash), its core is a bloom, and a second tap carries on
+   from the light the first has left rather than starting over. */
 function flareBubbleTold(badge){
   if(!badge) return;
-  badge.querySelectorAll(".cosmic-badge-told").forEach(x => x.remove());
-  const i = document.createElement("i");
-  i.className = "cosmic-badge-told";
-  i.setAttribute("aria-hidden", "true");
-  badge.appendChild(i);
-  /* gone when its light has played (read off the animation, so a page
-     that is paused or slowed keeps it until then), or after a still
-     moment under Reduce motion */
-  let an = null;
-  if(!ringMotionOff()){
-    try{
-      an = i.animate([{ opacity: 0, transform: "scale(.55)" }, { opacity: 1, transform: "scale(1)", offset: .22 }, { opacity: 0, transform: "scale(1.15)" }],
-        { duration: 900, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" });
-    }catch(e){ an = null; }
+  let i = badge.querySelector(":scope > .cosmic-badge-told");
+  if(!i){
+    i = document.createElement("i");
+    i.className = "cosmic-badge-told";
+    i.setAttribute("aria-hidden", "true");
+    badge.appendChild(i);
   }
-  if(an && an.finished) an.finished.then(() => i.remove(), () => {});
-  else{ i.classList.add("is-still"); setTimeout(() => i.remove(), 900); }
+  if(ringMotionOff()){
+    i.classList.add("is-still");
+    clearTimeout(i.__still);
+    i.__still = setTimeout(() => i.classList.remove("is-still"), 900);
+    return;
+  }
+  i.classList.remove("is-still");
+  const op = homeFxNow(i, "opacity", 0), sc = homeFxNow(i, "scale", .6);
+  homeFxCancel(i, "__told");
+  try{
+    const an = i.animate([
+      { opacity: op, scale: String(sc), easing: "cubic-bezier(.22,.61,.36,1)" },
+      { opacity: .9, scale: "1", offset: .26, easing: "cubic-bezier(.45,.05,.55,.95)" },
+      { opacity: 0, scale: "1.12" }
+    ], { duration: 1150 });
+    an.__told = true;
+  }catch(e){}
+}
+/* the press: in, then a small spring, from wherever a press already is */
+function homeBubblePress(badge){
+  if(!badge || ringMotionOff()) return;
+  const sc = homeFxNow(badge, "scale", 1);
+  homeFxCancel(badge, "__press");
+  try{
+    const an = badge.animate([
+      { scale: String(sc), easing: "cubic-bezier(.3,.6,.4,1)" },
+      { scale: ".9", offset: .2, easing: "cubic-bezier(.45,0,.55,1)" },
+      { scale: "1.05", offset: .55, easing: "cubic-bezier(.45,0,.55,1)" },
+      { scale: "1" }
+    ], { duration: 560 });
+    an.__press = true;
+  }catch(e){}
+}
+/* a ring of its colour leaving it - the bubble's version of the halo off
+   the planet's rim; a few at most at once */
+function homeBubbleHalo(badge){
+  const hero = badge && badge.parentElement;
+  if(!hero || ringMotionOff()) return;
+  const live = hero.querySelectorAll(":scope > .cosmic-bubble-halo");
+  if(live.length >= 3) live[0].remove();
+  const r = document.createElement("i");
+  r.className = "cosmic-bubble-halo";
+  r.setAttribute("aria-hidden", "true");
+  r.style.left = badge.style.left; r.style.top = badge.style.top;
+  r.style.width = badge.offsetWidth + "px";
+  r.style.setProperty("--rank-color", badge.style.getPropertyValue("--rank-color") || "#FFFFFF");
+  /* where the float has the bubble right now */
+  let fy = 0;
+  try{ fy = new DOMMatrixReadOnly(getComputedStyle(badge).transform).m42 || 0; }catch(e){}
+  hero.insertBefore(r, badge);
+  try{
+    const an = r.animate([
+      { opacity: .85, transform: "translateY(" + fy + "px) scale(1)", easing: "cubic-bezier(.2,.7,.3,1)" },
+      { opacity: 0, transform: "translateY(" + fy + "px) scale(1.75)" }
+    ], { duration: 760 });
+    an.finished.then(() => r.remove(), () => r.remove());
+  }catch(e){ r.remove(); }
+}
+/* LOCKED: the same short, damped shake for a rank not reached and a
+   secret flare not found, and a dip in its light. Offsets in px along the
+   element's own x, on the individual `translate` (both are centred with
+   translate:-50% -50%). A second tap picks the shake up where it is. */
+const HOME_LOCK_SHAKE = [0, -4, 3.5, -2.6, 1.6, -.7, 0], HOME_LOCK_SHAKE_MS = 320;
+function homeShakeAt(an){
+  const pts = an.__shake || HOME_LOCK_SHAKE;
+  const p = Math.max(0, Math.min(1, (Number(an.currentTime) || 0) / HOME_LOCK_SHAKE_MS));
+  const f = p * (pts.length - 1), k = Math.floor(f);
+  return k >= pts.length - 1 ? pts[pts.length - 1] : pts[k] + (pts[k + 1] - pts[k]) * (f - k);
+}
+function homeLockedNudge(el, isBubble){
+  if(!el) return;
+  const still = ringMotionOff();
+  if(isBubble){
+    let d = el.querySelector(":scope > .cosmic-badge-dim");
+    if(!d){ d = document.createElement("i"); d.className = "cosmic-badge-dim"; d.setAttribute("aria-hidden", "true"); el.appendChild(d); }
+    if(still){
+      d.classList.add("is-still"); clearTimeout(d.__still);
+      d.__still = setTimeout(() => d.classList.remove("is-still"), 700);
+    } else {
+      const op = homeFxNow(d, "opacity", 0);
+      homeFxCancel(d, "__dim");
+      try{ d.animate([{ opacity: op, easing: "cubic-bezier(.45,0,.55,1)" }, { opacity: .32, offset: .36, easing: "cubic-bezier(.45,0,.55,1)" }, { opacity: 0 }], { duration: 460 }).__dim = true; }catch(e){}
+    }
+  } else if(still){
+    el.classList.add("is-dim-still"); clearTimeout(el.__still);
+    el.__still = setTimeout(() => el.classList.remove("is-dim-still"), 700);
+  } else {
+    const op = homeFxNow(el, "opacity", 1);
+    homeFxCancel(el, "__dim");
+    try{ el.animate([{ opacity: op, easing: "cubic-bezier(.45,0,.55,1)" }, { opacity: .55, offset: .36, easing: "cubic-bezier(.45,0,.55,1)" }, { opacity: 1 }], { duration: 460 }).__dim = true; }catch(e){}
+  }
+  if(still) return;
+  let from = 0;
+  try{ el.getAnimations().forEach(a => { if(a.__shake){ from = homeShakeAt(a); a.cancel(); } }); }catch(e){}
+  const pts = [from].concat(HOME_LOCK_SHAKE.slice(1));
+  try{
+    const an = el.animate(pts.map((x, k) => ({ translate: "calc(-50% + " + x.toFixed(2) + "px) -50%", offset: k / (pts.length - 1) })),
+      { duration: HOME_LOCK_SHAKE_MS, easing: "linear" });
+    an.__shake = pts;
+  }catch(e){}
+}
+/* A SECRET FLARE YOU HAVE FOUND answers in its own colour: it swells,
+   a ring of its colour goes out and four sparks fly off - children of the
+   flare, so they ride its orbit with it. */
+function secretFlareTold(dot){
+  if(!dot) return;
+  let fx = dot.querySelector(":scope > .cof-told");
+  if(!fx){
+    fx = document.createElement("i");
+    fx.className = "cof-told";
+    fx.setAttribute("aria-hidden", "true");
+    dot.appendChild(fx);
+  }
+  if(ringMotionOff()){
+    if(!fx.querySelector(".cof-told-ring")){ const b = document.createElement("b"); b.className = "cof-told-ring"; fx.appendChild(b); }
+    fx.classList.add("is-still"); clearTimeout(fx.__still);
+    fx.__still = setTimeout(() => { fx.classList.remove("is-still"); fx.innerHTML = ""; }, 700);
+    return;
+  }
+  fx.classList.remove("is-still");
+  const sc = homeFxNow(dot, "scale", 1);
+  homeFxCancel(dot, "__swell");
+  try{
+    dot.animate([
+      { scale: String(sc), easing: "cubic-bezier(.25,.7,.35,1)" },
+      { scale: "1.6", offset: .28, easing: "cubic-bezier(.45,0,.55,1)" },
+      { scale: "1" }
+    ], { duration: 640 }).__swell = true;
+  }catch(e){}
+  /* a ring and a burst of sparks, side by side with any still going */
+  const old = fx.querySelectorAll(":scope > b");
+  for(let k = 0; k < old.length - 9; k++) old[k].remove();
+  const w = dot.offsetWidth || 12;
+  const ring = document.createElement("b");
+  ring.className = "cof-told-ring";
+  fx.appendChild(ring);
+  try{
+    ring.animate([{ opacity: .95, transform: "scale(1)", easing: "cubic-bezier(.2,.7,.3,1)" }, { opacity: 0, transform: "scale(3.8)" }], { duration: 700 })
+      .finished.then(() => ring.remove(), () => ring.remove());
+  }catch(e){ ring.remove(); }
+  const a0 = Math.random() * 90;
+  for(let k = 0; k < 4; k++){
+    const sp = document.createElement("b");
+    sp.className = "cof-told-spark";
+    fx.appendChild(sp);
+    const a = (a0 + k * 90 + (k % 2 ? 14 : -10)) * Math.PI / 180, d = w * (k % 2 ? 2.3 : 2.9);
+    const dx = (Math.cos(a) * d).toFixed(1), dy = (Math.sin(a) * d).toFixed(1);
+    try{
+      sp.animate([
+        { opacity: 0, transform: "translate(0px, 0px) scale(.6)", easing: "cubic-bezier(.2,.7,.3,1)" },
+        { opacity: 1, transform: "translate(" + (dx * .35).toFixed(1) + "px, " + (dy * .35).toFixed(1) + "px) scale(1)", offset: .2, easing: "cubic-bezier(.3,.6,.4,1)" },
+        { opacity: 0, transform: "translate(" + dx + "px, " + dy + "px) scale(.3)" }
+      ], { duration: 640, delay: k * 18 }).finished.then(() => sp.remove(), () => sp.remove());
+    }catch(e){ sp.remove(); }
+  }
 }
 /* TAPPING THE PLANET (build 317). "I also think the same could go for
    the large planet, improve what happens when you click." It kept its
@@ -75564,7 +76863,12 @@ function flareBubbleTold(badge){
    darkens), a ripple of light runs out across it from where the finger
    landed, a halo leaves its rim, the rings brighten one after the other
    going outward, and the two rings of secret flares surge forward and
-   ease back.
+   ease back. Round three ("she loves it") keeps every piece exactly and
+   only changes what a QUICK SECOND TAP does: each part used to be
+   cancelled and started again, so a ripple half-way out vanished; now
+   the ripple and the halo each have a few copies that run side by side,
+   and the press and the rings carry on from where they are. The "....."
+   box is gone with the other boxes - the caption says where you stand.
    - Every piece is an overlay - a clipped disc over the sphere, a halo,
      two ring outlines - in one .cosmic-tapfx box added to the hero the
      first time it is tapped, just before the rank bubbles, so it sits
@@ -75577,6 +76881,7 @@ function flareBubbleTold(badge){
    - Reduce motion: no ripple and no surge; the press, the halo and the
      rings show still for a moment. Nothing waits for it and it waits
      for nothing - it is the answer to a tap. */
+const PLANET_TAP_COPIES = 3;
 function planetTapFx(hero, ev){
   if(!hero) return;
   let fx = hero.querySelector(":scope > .cosmic-tapfx");
@@ -75584,19 +76889,32 @@ function planetTapFx(hero, ev){
     fx = document.createElement("div");
     fx.className = "cosmic-tapfx";
     fx.setAttribute("aria-hidden", "true");
-    fx.innerHTML = '<div class="tfx-planet"><i class="tfx-press"></i><i class="tfx-ripple"></i></div>' +
-      '<i class="tfx-rim"></i><i class="tfx-ring is-in"></i><i class="tfx-ring is-out"></i>';
+    fx.innerHTML = '<div class="tfx-planet"><i class="tfx-press"></i>' + '<i class="tfx-ripple"></i>'.repeat(PLANET_TAP_COPIES) + '</div>' +
+      '<i class="tfx-rim"></i>'.repeat(PLANET_TAP_COPIES) + '<i class="tfx-ring is-in"></i><i class="tfx-ring is-out"></i>';
     hero.insertBefore(fx, hero.querySelector(":scope > .cosmic-icon-badge"));
   }
   /* the outer ring's real radius (Home's is HOME_OUTER_R) */
   const outer = hero.querySelector(".cosmic-orbit-ring[r]:not([r='108'])");
   const R = outer ? Number(outer.getAttribute("r")) || HOME_OUTER_R : HOME_OUTER_R;
   fx.style.setProperty("--tfx-outer", (2 * R / 360 * 100).toFixed(3) + "%");
+  /* the next copy of a part that leaves something behind: an idle one,
+     else the one that has been going longest */
+  const nextOf = (sel) => {
+    const all = [...fx.querySelectorAll(sel)];
+    let pick = all.find(e => !e.getAnimations().length);
+    if(!pick){
+      pick = all.reduce((a, b) => ((Number(a.getAnimations()[0]?.currentTime) || 0) >= (Number(b.getAnimations()[0]?.currentTime) || 0) ? a : b));
+      pick.getAnimations().forEach(a => a.cancel());
+    }
+    return pick;
+  };
   const parts = {
-    press: fx.querySelector(".tfx-press"), ripple: fx.querySelector(".tfx-ripple"), rim: fx.querySelector(".tfx-rim"),
+    press: fx.querySelector(".tfx-press"), ripple: nextOf(".tfx-ripple"), rim: nextOf(".tfx-rim"),
     rin: fx.querySelector(".tfx-ring.is-in"), rout: fx.querySelector(".tfx-ring.is-out")
   };
-  Object.values(parts).forEach(el => el.getAnimations().forEach(a => a.cancel()));
+  /* the press and the rings carry on from where a tap before left them */
+  const from = {};
+  ["press", "rin", "rout"].forEach(k => { from[k] = homeFxNow(parts[k], "opacity", 0); parts[k].getAnimations().forEach(a => a.cancel()); });
   /* where the finger landed, on the sphere */
   const disc = fx.querySelector(".tfx-planet").getBoundingClientRect();
   let ox = 50, oy = 50;
@@ -75614,13 +76932,13 @@ function planetTapFx(hero, ev){
   }
   fx.classList.remove("is-still");
   const A = (el, kf, o) => { try{ el.animate(kf, Object.assign({ fill: "backwards" }, o)); }catch(e){} };
-  A(parts.press, [{ opacity: 0 }, { opacity: 1, offset: .2 }, { opacity: 0 }], { duration: 520, easing: "ease-out" });
+  A(parts.press, [{ opacity: from.press }, { opacity: 1, offset: .2 }, { opacity: 0 }], { duration: 520, easing: "ease-out" });
   A(parts.ripple, [{ opacity: .95, transform: "translate(-50%, -50%) scale(.06)" }, { opacity: 0, transform: "translate(-50%, -50%) scale(1)" }],
     { duration: 1100, easing: "cubic-bezier(.15,.6,.3,1)" });
   A(parts.rim, [{ opacity: 0, transform: "translate(-50%, -50%) scale(1)" }, { opacity: .9, offset: .15 }, { opacity: 0, transform: "translate(-50%, -50%) scale(1.42)" }],
     { duration: 1000, easing: "ease-out" });
-  A(parts.rin, [{ opacity: 0 }, { opacity: 1, offset: .3 }, { opacity: 0 }], { duration: 900, delay: 140, easing: "ease-in-out" });
-  A(parts.rout, [{ opacity: 0 }, { opacity: 1, offset: .3 }, { opacity: 0 }], { duration: 900, delay: 300, easing: "ease-in-out" });
+  A(parts.rin, [{ opacity: from.rin }, { opacity: 1, offset: .3 }, { opacity: 0 }], { duration: 900, delay: from.rin > .05 ? 0 : 140, easing: "ease-in-out" });
+  A(parts.rout, [{ opacity: from.rout }, { opacity: 1, offset: .3 }, { opacity: 0 }], { duration: 900, delay: from.rout > .05 ? 0 : 300, easing: "ease-in-out" });
   /* the surge: forward fast, then given back slowly, from wherever an
      earlier surge has got to */
   hero.querySelectorAll(":scope > .cosmic-hero-orbitlayer").forEach(layer => {
@@ -75637,246 +76955,6 @@ function planetTapFx(hero, ev){
       an.__tfxSurge = true;
     }catch(e){}
   });
-}
-
-/* THE BOX RIDES WITH WHAT IT POINTS AT (build 317, round two). "The
-   things pop up when clicking the flares they slightly shake." A flare
-   turns on the compositor (its orbit's spin) and a rank bubble floats
-   there; the box used to be moved from a requestAnimationFrame loop that
-   MEASURED the target every frame and wrote the line's left/top - so on
-   any frame the main thread did not get to (a phone drops them all the
-   time) the box stood still while the flare went on, and the next frame
-   caught it up with a jump. Measured frame-stepped with two frames in
-   four missed: 1px jumps (check_b317_followglide); after, 0.01-0.07px.
-   Now the box, its line and its ring are one group, and that group is
-   given an animation of its own: the target's path over the box's life,
-   read once when it opens by stepping the target's own animations through
-   it (contextualFollowPath - the same maths the compositor uses, because
-   it IS those animations) and played back as translate3d keyframes on the
-   same timeline from the same moment. The two then move together on the
-   compositor, frame for frame, whatever the main thread is doing; no
-   layout property changes after the box is placed, nothing is rounded,
-   and the box keeps the side it opened on for its whole life (it is
-   placed once, already clear of where the target will go). */
-const CONTEXTUAL_FOLLOW_MS = 4650, CONTEXTUAL_FOLLOW_STEP = 150;
-function contextualFollowPath(el, ms){
-  const moving = [];
-  for(let n = el; n && n !== document.body; n = n.parentElement){
-    let list = [];
-    try{ list = n.getAnimations(); }catch(e){}
-    list.forEach(an => {
-      if(an.playState !== "running" && an.playState !== "paused") return;
-      let moves = false;
-      try{ moves = an.effect.getKeyframes().some(k => ["transform", "rotate", "translate", "scale"].some(pr => k[pr] !== undefined)); }catch(e){}
-      if(moves) moving.push(an);
-    });
-  }
-  if(!moving.length) return null;
-  const centre = () => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
-  const saved = moving.map(an => ({ an, st: an.startTime, ct: Number(an.currentTime) || 0, rate: an.playbackRate || 1, running: an.playState === "running" }));
-  const c0 = centre(), out = [];
-  try{
-    for(let t = 0; t <= ms; t += CONTEXTUAL_FOLLOW_STEP){
-      saved.forEach(sv => { sv.an.currentTime = sv.ct + t * sv.rate; });
-      const c = centre();
-      out.push([c[0] - c0[0], c[1] - c0[1]]);
-    }
-  }catch(e){ return null; }
-  finally{
-    /* put every animation back exactly where it was: a running one by
-       its start time, so it stays tied to the timeline */
-    saved.forEach(sv => { try{ if(sv.running && sv.st !== null) sv.an.startTime = sv.st; else sv.an.currentTime = sv.ct; }catch(e){} });
-  }
-  return out;
-}
-/* A small contextual info popup that appears right next to whatever
-   element it's explaining, instead of a generic toast at the bottom
-   of the screen — for exactly the situations (tapping a Flare, tapping
-   a ladder tier) where the message is ABOUT one specific element on
-   screen, so it should visibly belong to that element rather than
-   floating disconnected at the bottom. Shares the same Liquid Glass
-   styling, positioning logic (centered on the target, clamped to the
-   viewport, auto-flipping above/below), and thin-triangle arrow as
-   the tour tooltip, since all three are the same underlying idea:
-   information anchored to a specific point on screen.
-   - `follow` (build 313, reworked 317): the box rides with a moving
-     target - see contextualFollowPath above. `refind` finds the same
-     target again if the screen is rebuilt under it.
-   - `ring` draws a ring round the target in place of the dot, which
-     would otherwise sit on the very flare being explained, and the line
-     stops at the ring; `ringFit` sizes it round something big.
-   - `aimEdge` (build 317): the line ends on the target's top or bottom
-     edge - whichever faces the box - not at its centre. "Clicking the
-     planet, the line pointing at goes to the center, do it from the
-     bottom or top edge." */
-function showContextualInfo(targetEl, message, opts){
-  opts = opts || {};
-  if(showContextualInfo._raf){ cancelAnimationFrame(showContextualInfo._raf); showContextualInfo._raf = 0; }
-  if(showContextualInfo._follow){ try{ showContextualInfo._follow.cancel(); }catch(e){} showContextualInfo._follow = null; }
-  ["contextual-info-popup", "contextual-info-line", "contextual-info-line-dot", "contextual-info-follow"].forEach(id => {
-    const e = document.getElementById(id);
-    if(e) e.remove();
-  });
-  if(!targetEl) return;
-  const rect = targetEl.getBoundingClientRect();
-  const path = opts.follow ? contextualFollowPath(targetEl, CONTEXTUAL_FOLLOW_MS) : null;
-  /* how far the target will travel, so the box can be placed clear of
-     the screen's edges for the whole of its life */
-  const ext = { x0: 0, x1: 0, y0: 0, y1: 0 };
-  (path || []).forEach(([x, y]) => { ext.x0 = Math.min(ext.x0, x); ext.x1 = Math.max(ext.x1, x); ext.y0 = Math.min(ext.y0, y); ext.y1 = Math.max(ext.y1, y); });
-
-  const popup = document.createElement("div");
-  popup.id = "contextual-info-popup";
-  const line = document.createElement("div");
-  line.id = "contextual-info-line";
-  const lineDot = document.createElement("div");
-  lineDot.id = "contextual-info-line-dot";
-  /* a followed box, its line and its ring move as one group */
-  let host = document.body, group = null;
-  if(path){
-    group = document.createElement("div");
-    group.id = "contextual-info-follow";
-    document.body.appendChild(group);
-    host = group;
-  }
-  host.append(line, lineDot);
-  const text = document.createElement("p");
-  text.className = "contextual-info-text";
-  text.textContent = message;
-  popup.append(text);
-  host.appendChild(popup);
-
-  const targetCenterX = rect.left + rect.width / 2;
-  const targetCenterY = rect.top + rect.height / 2;
-  const margin = 12;
-  /* ---- UNDER THE THING YOU TAPPED ----
-     "The placement of that pop up is bad, it needs to be under the one
-     you clicked."
-     It flipped above the target whenever it thought it would not fit
-     below, and it thought that far too often: the height was a guessed
-     90px and the floor was another 90px up from the bottom of the
-     screen, so a tile anywhere in the lower third of a phone got its
-     answer ABOVE it - over the tile, or over the one before it.
-     Measured instead. The popup is already in the document, so its
-     real height is there to read, and the only reserve that belongs at
-     the bottom is the tab bar's own footprint. Above is still the
-     fallback, because off the bottom of the screen is worse than
-     above - it is just no longer the usual case. */
-  const realHeight = popup.getBoundingClientRect().height || 90;
-  /* The bar's REAL top, not a guessed 84px: with a home indicator the
-     bar's footprint is ~123px, so a badge in the case's last row got its
-     answer drawn over Home and Profile. */
-  const tabBar = document.querySelector(".bottomtabs:not([hidden])");
-  const barBox = tabBar ? tabBar.getBoundingClientRect() : null;
-  const floorY = barBox && barBox.height ? Math.min(window.innerHeight - 12, barBox.top - 8) : window.innerHeight - 12;
-  const above = rect.bottom + 14 + realHeight + ext.y1 > floorY;
-  if(above){
-    popup.style.top = "auto";
-    popup.style.bottom = (window.innerHeight - rect.top + 14) + "px";
-  } else {
-    popup.style.bottom = "auto";
-    popup.style.top = (rect.bottom + 14) + "px";
-  }
-  popup.style.left = "0px";
-  popup.style.visibility = "hidden";
-  const naturalWidth = popup.getBoundingClientRect().width;
-  let popupLeft = targetCenterX - naturalWidth / 2;
-  const lo = margin - ext.x0, hi = window.innerWidth - naturalWidth - margin - ext.x1;
-  popupLeft = lo <= hi ? Math.max(lo, Math.min(popupLeft, hi))
-    : Math.max(margin, Math.min(popupLeft, window.innerWidth - naturalWidth - margin));
-  popup.style.left = popupLeft + "px";
-  popup.style.visibility = "visible";
-
-  /* Same line-connector redesign as the main tour tooltip, and for
-     the same reason — this is the popup specifically named as broken
-     (used for things like tapping the Home orbit sphere), sharing the
-     exact same arrow mechanism that was the root problem there too. */
-  const pRect = popup.getBoundingClientRect();
-  const aimX = targetCenterX;
-  const aimY = opts.aimEdge ? (above ? rect.top : rect.bottom) : targetCenterY;
-  const lineStartY = above ? pRect.bottom - 6 : pRect.top + 6;
-  /* a followed box's line leaves from the nearest point of its edge */
-  const lineStartX = (path || opts.aimEdge) ? Math.max(pRect.left + 18, Math.min(aimX, pRect.right - 18)) : pRect.left + pRect.width / 2;
-  let ringD = 0;
-  if(opts.ring){
-    const tw = Math.max(rect.width, rect.height);
-    /* ringFit: round the whole of something big (a rank bubble), not a
-       tiny-flare-sized ring on top of it */
-    ringD = opts.ringFit ? tw + 10 : Math.max(16, Math.min(28, tw + 9));
-  }
-  const dx = aimX - lineStartX;
-  const dy = aimY - lineStartY;
-  /* in ring mode the line stops at the ring, not on the flare */
-  const dist = Math.max(0, Math.sqrt(dx * dx + dy * dy) - ringD / 2);
-  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-  line.style.left = lineStartX + "px";
-  /* Same coordinate fix as the main tour's own line, and the same
-     real cause: this line rotates around its own vertical center
-     (transform-origin:0 50%), but style.top was being set to
-     lineStartY directly — the element's TOP edge, not its center.
-     For this 3px-tall line that's a measured 1.5px gap between the
-     intended start point and where it actually began. */
-  line.style.top = (lineStartY - 1.5) + "px";
-  line.style.width = dist + "px";
-  line.style.transform = "rotate(" + angle + "deg)";
-  if(opts.ring){
-    lineDot.classList.add("is-ring");
-    lineDot.style.width = lineDot.style.height = ringD + "px";
-    lineDot.style.left = (aimX - ringD / 2) + "px";
-    lineDot.style.top = (aimY - ringD / 2) + "px";
-  } else {
-    lineDot.style.left = (aimX - 4.5) + "px";
-    lineDot.style.top = (aimY - 4.5) + "px";
-  }
-
-  /* the ride: the group plays the target's own path back from here */
-  const ride = (fromX, fromY, pth, ms) => {
-    if(showContextualInfo._follow){ try{ showContextualInfo._follow.cancel(); }catch(e){} }
-    showContextualInfo._follow = null;
-    if(!group || !pth || pth.length < 2) return;
-    try{
-      showContextualInfo._follow = group.animate(pth.map(([x, y]) => ({ transform: "translate3d(" + (fromX + x) + "px, " + (fromY + y) + "px, 0)" })),
-        { duration: (pth.length - 1) * CONTEXTUAL_FOLLOW_STEP, easing: "linear", fill: "forwards" });
-    }catch(e){}
-  };
-  if(path) ride(0, 0, path);
-  requestAnimationFrame(() => { popup.classList.add("contextual-info-show"); line.classList.add("contextual-info-show"); lineDot.classList.add("contextual-info-show"); });
-  const removeAll = () => { popup.remove(); line.remove(); lineDot.remove(); if(group) group.remove(); };
-  /* It lives on <body>, so a screen change does not take it: tapping a
-     Home flare and then a tab left "Supernova rank - 56 more levels"
-     and its pointer line over the Profile screen for the rest of the
-     3.2s. Same rule as the info bubbles: it goes when the thing it
-     points at leaves the page. */
-  if(showContextualInfo._mo) showContextualInfo._mo.disconnect();
-  let current = targetEl;
-  const orphanWatch = showContextualInfo._mo = new MutationObserver(() => {
-    if(current.isConnected && popup.isConnected) return;
-    /* a followed target whose screen was rebuilt is found again, and the
-       ride picks up from it for the rest of the box's life */
-    if(opts.follow && opts.refind && popup.isConnected){
-      const again = opts.refind();
-      if(again){
-        current = again;
-        if(group){
-          const r2 = again.getBoundingClientRect();
-          const done = showContextualInfo._follow ? (Number(showContextualInfo._follow.currentTime) || 0) : 0;
-          const rest = contextualFollowPath(again, Math.max(CONTEXTUAL_FOLLOW_STEP, CONTEXTUAL_FOLLOW_MS - done));
-          ride(r2.left + r2.width / 2 - targetCenterX, r2.top + r2.height / 2 - targetCenterY, rest || [[0, 0], [0, 0]]);
-        }
-        return;
-      }
-    }
-    orphanWatch.disconnect();
-    removeAll();
-  });
-  orphanWatch.observe(stage, { childList: true });
-  clearTimeout(showContextualInfo._t);
-  showContextualInfo._t = setTimeout(() => {
-    popup.classList.remove("contextual-info-show");
-    line.classList.remove("contextual-info-show");
-    lineDot.classList.remove("contextual-info-show");
-    setTimeout(removeAll, 250);
-  }, opts.follow ? 4200 : 3200);
 }
 
 function showToast(msg, tone){
@@ -76927,11 +78005,19 @@ function celebrate(palette, origin){
 const HUNDO_FX_TAIL_MS = 1200;
 /* When each effect's layers are removed: every piece has faded out by
    then. The box-only play (Customize, the unlock card) runs shorter. */
-const HUNDO_FX_TOTAL = { fireworks: 7000, blackhole: 5600, underwater: 7400, worldtree: 5600, bubbles: 7000, ufo: 8600 };
+/* The UFO is 11.1s (8.6s until build 317 round 4: "Could the UFO hundo
+   effect last another 2-3 seconds somehow? It's so cool I want it to be
+   longer") - see hfxUfoArrival and the hfx-ufo-*-l keyframes. */
+const HUNDO_FX_TOTAL = { fireworks: 7000, blackhole: 5600, underwater: 7400, worldtree: 5600, bubbles: 7000, ufo: 11100 };
 const HUNDO_FX_BOX_TOTAL = { confetti: 3000, fireworks: 3600, blackhole: 3600, underwater: 4800, worldtree: 3600, bubbles: 4600, ufo: 7400 };
 /* When the last tail starts, for the gate: everything is still on
-   screen and part-way faded between this and the total. */
-const HUNDO_FX_TAIL_AT = { fireworks: 5000, blackhole: 4000, underwater: 5900, worldtree: 4100, bubbles: 5300, ufo: 7000 };
+   screen and part-way faded between this and the total. (The results
+   flow's first scene waits for it too.) Bubbles' was 5.3s, which is after
+   its last bubble has gone: paused and seeked, ~25 pieces are fading at
+   4.6s, 6 at 5.0s and none from 5.2s (the same on 336c444) - so its gate
+   passed only when the machine was slow enough to start the effect late.
+   4.6s is where its last pieces go. */
+const HUNDO_FX_TAIL_AT = { fireworks: 5000, blackhole: 4000, underwater: 5900, worldtree: 4100, bubbles: 4600, ufo: 9500 };
 /* THE BOX'S COLOURS WHILE EACH ONE PLAYS (build 313): "Would be pretty
    cool if the themes matches the box, cause if the just stays yellow it
    would get kinda boring." Border, wash and the numerals' gradient;
@@ -77859,7 +78945,8 @@ function hfxBlackHole(scr, bx, c){
    own path over the last fraction of a second, batched into one stroke
    per colour, alpha and width, with a pre-drawn glow for its head, all
    added ("lighter") so where sparks cross they burn white. The canvas
-   backing is capped at 2x. Nothing in it outlives the layer: the loop
+   backing is capped at 1.5x (round 4, measured - see hfxFwSky). Nothing in
+   it outlives the layer: the loop
    ends at the effect's total, or when it is stopped. */
 const HFX_FW_COL = { m: [255, 92, 214], c: [92, 227, 255], g: [255, 211, 140], w: [255, 246, 236], v: [178, 146, 255] };
 const HFX_FW_TOT = 7, HFX_FW_BOX_TOT = 3.6;
@@ -77944,7 +79031,17 @@ function hfxFwShow(kk){
 function hfxFwSky(parent, c, S, W, H, end, floor){
   const cv = document.createElement("canvas");
   cv.className = "hfx-fw-sky";
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  /* BACKED AT 1.5x, NOT 2x (build 317, round 4). The sky is redrawn and
+     sent to the compositor every frame, and that send is the one cost
+     Fireworks has over every other effect - measured at 3x, 4x CPU: the
+     canvas's commit was 9-12ms of main-thread CPU in a 16-22ms frame. At
+     1.5x it is 44% fewer pixels (660x1041 on a 17 Pro Max against
+     880x1388): 6.7-8.9ms a commit, 14.9-18.2ms a frame. Everything on it
+     is a soft glow or a trail a pixel or two wide, so it looks the same:
+     the same seeded show at the same moments differs by 0.05-0.18 of a
+     level on average, 0.01% of pixels by more than 30. Do not raise it
+     without measuring again. */
+  const dpr = Math.min(1.5, window.devicePixelRatio || 1);
   /* ONLY AS TALL AS THE SKY (build 317). Nothing is drawn below `floor`
      (the box's top edge) - it used to be erased there every frame - so
      the canvas stops at it: on a phone that is a third fewer pixels to
@@ -78150,7 +79247,8 @@ function hfxBubblesOnCards(scr, c){
 function hfxUfoOnCards(scr, c){
   const S = c.scene, k = c.frame ? .55 : 1;
   if(!S) return;
-  const on = 2.85, off = 6.0;
+  /* while the beam is on (round 4's long timeline: 3.95s to 8.0s) */
+  const on = 3.95, off = 8.0;
   S.warp.forEach((el, i) => {
     const rc = S.at(el); if(!rc) return;
     if(rc.bottom > c.br.top + 4) return;
@@ -78288,16 +79386,18 @@ function hfxUfo(scr, bx, c){
   if(scr){
     if(!c.noDim) hfxMk(scr, "i", "hfx-ufo-dim");
     /* the stars it leaves behind are the tail: each twinkles out between
-       7.4s and 8.3s, after the saucer has gone, as the dark lifts */
+       9.9s and 10.8s, after the saucer has gone, as the dark lifts */
     for(let i = 0; i < (small ? 14 : 20); i++){
       const t = .45 + hfxR(0, 1.1);
-      hfxPiece(scr, "hfx-glint is-ufo", hfxGlintURL(), hfxR(.04, .96) * c.vw, hfxR(.03, .97) * c.vh, hfxR(8, 18), { "--t": t, "--d": 7.4 + hfxR(0, .9) - t });
+      hfxPiece(scr, "hfx-glint is-ufo", hfxGlintURL(), hfxR(.04, .96) * c.vw, hfxR(.03, .97) * c.vh, hfxR(8, 18), { "--t": t, "--d": 9.9 + hfxR(0, .9) - t });
     }
     const w = c.frame ? c.vw * .42 : small ? 168 : 230, h = w * .62;
     const hov = -Math.round(Math.min(120, Math.max(60, r.top * .25)));
     const exit = { x: (Math.random() < .5 ? -1 : 1) * c.vw * .9, y: -L.y - 160 };
+    /* how far its beam sweeps either way across the box (round 4) */
+    const swa = hfxUfoSwa(c);
     const u = hfxMk(scr, "span", "hfx-saucer", { left: L.x + "px", top: L.y + "px", "--sx": (hfxR(-.3, .3) * c.vw) + "px", "--sy": (-L.y - h - 20) + "px",
-      "--hov": hov + "px", "--ox": exit.x + "px", "--oy": exit.y + "px", "--uw": w + "px", "--uh": h + "px" });
+      "--hov": hov + "px", "--ox": exit.x + "px", "--oy": exit.y + "px", "--uw": w + "px", "--uh": h + "px", "--swa": swa + "px" });
     /* THE BEAM IS FIRED, THEN IT RIDES WITH THE HULL (build 317, round 3):
        "the UFO's projection is shown before it's shot out of the UFO and
        it doesn't hit the bottom of the box". It grows out of the underside
@@ -78311,7 +79411,7 @@ function hfxUfo(scr, bx, c){
       "--bl": ((h * .2 + 4) / bh).toFixed(3), "--bk": ((74 + h * .2) / bh).toFixed(3) });
     beam.style.backgroundImage = hfxBeamURL();
     for(let k = 0; k < 3; k++){
-      hfxMk(u, "i", "hfx-ufo-ring", { "--rw": (w * .5) + "px", "--fall": (-hov) + "px", "--t": 2.88 + k * .22 }).style.backgroundImage = hfxBeamRingURL();
+      hfxMk(u, "i", "hfx-ufo-ring", { "--rw": (w * .5) + "px", "--fall": (-hov) + "px", "--t": 3.98 + k * .22 }).style.backgroundImage = hfxBeamRingURL();
     }
     const bob = hfxMk(u, "i", "hfx-ufo-bob");
     /* searchlights sweeping the dark as it comes down (round 3) */
@@ -78320,9 +79420,14 @@ function hfxUfo(scr, bx, c){
     [-1, 1].forEach(s => hfxMk(bob, "i", "hfx-ufo-search", { "--s0": (s * 34) + "deg", "--s1": (-s * 22) + "deg", "--slh": Math.round(-hov + h * .38) + "px" }));
     hfxUfoOnCards(scr, c);
     hfxMk(bob, "i", "hfx-ufo-glow");
+    /* it gathers itself before it goes (round 4): under the hull, so the
+       hull is drawn over it */
+    hfxMk(bob, "i", "hfx-ufo-charge", { "--t": 8.0 });
     hfxMk(bob, "i", "hfx-ufo-body").style.backgroundImage = hfxUfoURL();
     hfxMk(bob, "i", "hfx-ufo-lights").style.backgroundImage = hfxUfoLightsURL(false);
     hfxMk(bob, "i", "hfx-ufo-lights is-odd").style.backgroundImage = hfxUfoLightsURL(true);
+    /* round once over the screen before it comes down to the box */
+    hfxUfoArrival(c, u, bob, L, hov, w);
     /* dust where the feet touch the box */
     [-1, 1].forEach(s => hfxMk(scr, "i", "hfx-ufo-dust", { left: (L.x + s * w * .32) + "px", top: L.y + "px", "--dx": (s * 26) + "px" }));
     /* on the way out it takes the score with it (build 314): the copy
@@ -78330,21 +79435,27 @@ function hfxUfo(scr, bx, c){
        box's top edge; the one in the box (below) carries it up to there
        on the same path, so the two meet at the edge without a seam */
     hfxUfoAbduct(scr, c, r.left, r.top, h);
-    /* and it goes in a warp: a flash where it was, then the streak */
-    hfxMk(scr, "i", "hfx-ufo-warp", { left: L.x + "px", top: (L.y - 72 - h * .45) + "px", "--t": 6.04 });
+    /* and it goes in a warp: a flash where it was, then the streak - and
+       (round 4) a boom: a ring of light thrown out flat from where it
+       broke away, and the screen lit by it */
+    const ex = { x: L.x, y: L.y - 72 - h * .45 };
+    hfxMk(scr, "i", "hfx-ufo-flash", { "--fx": ex.x + "px", "--fy": ex.y + "px", "--t": 8.55 });
+    hfxMk(scr, "i", "hfx-ufo-boom", { left: ex.x + "px", top: ex.y + "px", "--t": 8.55 });
+    hfxMk(scr, "i", "hfx-ufo-warp", { left: ex.x + "px", top: ex.y + "px", "--t": 8.54 });
     const ang = Math.atan2(exit.y + 70, exit.x) * 180 / Math.PI;
-    const tr = hfxMk(scr, "span", "hfx-mt", { left: L.x + "px", top: (L.y - 72 - h * .45) + "px", "--ra": ang.toFixed(1) + "deg" });
-    const run = hfxMk(tr, "i", "hfx-mt-run is-big hfx-ufo-trail", { "--ml": "300px", "--dist": (Math.hypot(exit.x, exit.y + 70) + 240) + "px", "--t": 6.12, "--d": .42 });
+    const tr = hfxMk(scr, "span", "hfx-mt", { left: ex.x + "px", top: ex.y + "px", "--ra": ang.toFixed(1) + "deg" });
+    const run = hfxMk(tr, "i", "hfx-mt-run is-big hfx-ufo-trail", { "--ml": "300px", "--dist": (Math.hypot(exit.x, exit.y + 70) + 240) + "px", "--t": 8.62, "--d": .42 });
     run.style.backgroundImage = hfxMeteorURL("#9DFFB4");
   }
   if(bx){
     const cx = c.bw / 2;
     if(!c.boxOnly){
       if(!c.noDim) hfxMk(bx, "i", "hfx-ufo-boxdim");
-      hfxMk(bx, "i", "hfx-ufo-inbeam", { left: cx + "px", "--ih": c.bh + "px", "--iw": Math.min(c.bw * .8, c.p.w * 1.6) + "px" }).style.backgroundImage = hfxBeamURL();
+      hfxMk(bx, "i", "hfx-ufo-inbeam", { left: cx + "px", "--ih": c.bh + "px", "--iw": Math.min(c.bw * .8, c.p.w * 1.6) + "px",
+        "--swa": hfxUfoSwa(c) + "px" }).style.backgroundImage = hfxBeamURL();
       /* the box flares as the beam strikes it, and again as it lands */
-      hfxMk(bx, "i", "hfx-ufo-landglow is-hit", { "--t": 2.84 });
-      hfxMk(bx, "i", "hfx-ufo-landglow", { "--t": 4.1 });
+      hfxMk(bx, "i", "hfx-ufo-landglow is-hit", { "--t": 3.94 });
+      hfxMk(bx, "i", "hfx-ufo-landglow", { "--t": 6.1 });
     } else {
       /* in a small box: it comes down into the box, hovers over the
          number with its beam on it, and goes */
@@ -78359,19 +79470,21 @@ function hfxUfo(scr, bx, c){
       hfxMk(bob, "i", "hfx-ufo-lights is-odd").style.backgroundImage = hfxUfoLightsURL(true);
     }
     /* THE SCAN (build 314): a bar of its light sweeps the number one way
-       and back, lighting it as it passes, and the brackets lock on */
-    const pad = Math.round(c.p.h * .3);
+       and back, lighting it as it passes, and the brackets lock on. On the
+       results screen it all comes 2s later (round 4: the circle and the
+       sweep come first) - the same beats in the same order. */
+    const pad = Math.round(c.p.h * .3), sh = c.boxOnly ? 0 : 2;
     hfxMk(bx, "i", "hfx-ufo-scanbar", { left: (c.p.x - 6) + "px", top: (c.p.y - pad) + "px", height: (c.p.h + pad * 2) + "px",
-      "--sw": (c.p.w + 12) + "px", "--t": 4.3 });
-    hfxLitText(bx, c, { mode: "sweep", color: "#F0FFF2", glow: "#6BFF8F", dl: 4.3, dur: .62 });
+      "--sw": (c.p.w + 12) + "px", "--t": 4.3 + sh });
+    hfxLitText(bx, c, { mode: "sweep", color: "#F0FFF2", glow: "#6BFF8F", dl: 4.3 + sh, dur: .62 });
     hfxMk(bx, "i", "hfx-ufo-lock", { left: (c.p.x - 9) + "px", top: (c.p.y - pad - 2) + "px", width: (c.p.w + 18) + "px", height: (c.p.h + pad * 2 + 4) + "px",
-      "--lk": (c.mini ? 7 : 12) + "px", "--t": 4.95 });
+      "--lk": (c.mini ? 7 : 12) + "px", "--t": 4.95 + sh });
     if(!c.boxOnly){
       /* the score up the beam, from the number to the box's top edge */
       hfxUfoAbduct(bx, c, 0, 0, (c.frame ? c.vw * .42 : c.vw < 600 ? 168 : 230) * .62);
       /* where its feet stood, glowing as it goes */
       const w = c.frame ? c.vw * .42 : c.vw < 600 ? 168 : 230;
-      hfxMk(bx, "i", "hfx-ufo-marks", { left: (cx - w * .36) + "px", width: (w * .72) + "px", "--t": 5.4 });
+      hfxMk(bx, "i", "hfx-ufo-marks", { left: (cx - w * .36) + "px", width: (w * .72) + "px", "--t": 7.4 });
     }
   }
 }
@@ -78385,13 +79498,69 @@ function hfxUfoAbduct(parent, c, ox, oy, uh){
   /* up the beam to the saucer's underside, over the middle of the box */
   const up = -(c.p.y + c.p.h / 2) - 70 - uh * .12, ux = c.bw / 2 - (c.p.x + c.p.w / 2);
   const g = hfxMk(parent, "span", "hfx-ufo-ghost", { left: (ox + c.p.x) + "px", top: (oy + c.p.y) + "px", width: c.p.w + "px", height: c.p.h + "px",
-    "--up": Math.round(up) + "px", "--ux": Math.round(ux) + "px", "--t": 5.38 });
+    "--up": Math.round(up) + "px", "--ux": Math.round(ux) + "px", "--t": 7.38 });
   /* children, not textContent, as hfxLitText does: a grade drawn as a
      number and a smaller % span keeps its shape in the copy */
   c.pct.childNodes.forEach(n => g.appendChild(n.cloneNode(true)));
   g.style.fontFamily = cs.fontFamily; g.style.fontSize = cs.fontSize; g.style.fontWeight = cs.fontWeight;
   g.style.letterSpacing = cs.letterSpacing; g.style.lineHeight = cs.lineHeight;
   return g;
+}
+
+/* How far the beam sweeps either way across the box before it lands
+   (round 4): a third of the way to each edge on a phone's box, capped on a
+   tablet's wide one so the saucer does not race (one value, so the
+   saucer's beam and the box's own move as one). */
+function hfxUfoSwa(c){ return Math.round(Math.min((c.bw || 0) * .3, 150)); }
+/* THE CIRCLE (build 317, round 4). It comes in from one side, goes round
+   the screen once - smaller on the far side of the circle, bigger on the
+   near side - and comes down to where it hovers over the box, banking into
+   every turn. One smooth path, sampled into keyframes on the saucer's own
+   `translate` and `scale` - which compose with its path's `transform`,
+   holding the hover point meanwhile, so the hand-over at 3.7s is exact -
+   with one speed curve over the whole of it (in fast, cruising, slowing
+   to a stop), so nothing jerks where the parts of the path meet. The bank
+   is the bob's `rotate`, read off the same path. 1.0s to 3.7s. */
+function hfxUfoArrival(c, u, bob, L, hov, w){
+  const T0 = 1, T1 = 3.7, D = T1 - T0, side = Math.random() < .5 ? 1 : -1;
+  const ry = Math.max(12, Math.min(70, L.y * .12)), rx = Math.min(c.vw * .27, 230), cy = -L.y * .52;
+  const Fy = cy - ry, ex = side > 0 ? -(L.x + w * .75) : (c.vw - L.x + w * .75);
+  const P = [];
+  /* in: a curve from off the side that meets the circle along it */
+  for(let i = 0; i <= 40; i++){ const a = i / 40, b = 1 - a;
+    P.push([b * b * ex + 2 * b * a * ex * .35, b * b * (Fy - 30) + (2 * b * a + a * a) * Fy, .45 + .1 * a]); }
+  /* round once */
+  for(let i = 1; i <= 120; i++){ const th = i / 120 * Math.PI * 2;
+    P.push([side * rx * Math.sin(th), cy - ry * Math.cos(th), .55 + .1 * (1 - Math.cos(th))]); }
+  /* and down, leaving the circle along it */
+  const q = [[0, Fy], [side * rx * .6, Fy], [side * rx * .45, hov - (hov - Fy) * .35], [0, hov]];
+  for(let i = 1; i <= 60; i++){ const a = i / 60, b = 1 - a, k = [b * b * b, 3 * b * b * a, 3 * b * a * a, a * a * a];
+    P.push([k[0] * q[0][0] + k[1] * q[1][0] + k[2] * q[2][0] + k[3] * q[3][0],
+            k[0] * q[0][1] + k[1] * q[1][1] + k[2] * q[2][1] + k[3] * q[3][1], .55 + .45 * a * a * (3 - 2 * a)]); }
+  const len = [0];
+  for(let i = 1; i < P.length; i++) len.push(len[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+  /* the speed: in at 1.5x the cruise, settling to it, and to a stop over the last 0.85s */
+  const shape = t => t < .45 ? 1 + .25 * (1 + Math.cos(Math.PI * t / .45)) : t > D - .85 ? .5 * (1 + Math.cos(Math.PI * (t - D + .85) / .85)) : 1;
+  const dt = .001, cum = [0];
+  for(let t = dt; t <= D + 1e-9; t += dt) cum.push(cum[cum.length - 1] + shape(t - dt / 2) * dt);
+  const k = len[len.length - 1] / cum[cum.length - 1];
+  const at = t => { const sArc = k * cum[Math.min(cum.length - 1, Math.max(0, Math.round(t / dt)))];
+    let j = 1; while(j < len.length - 1 && len[j] < sArc) j++;
+    const f = Math.max(0, Math.min(1, (sArc - len[j - 1]) / ((len[j] - len[j - 1]) || 1)));
+    return [0, 1, 2].map(m => P[j - 1][m] + (P[j][m] - P[j - 1][m]) * f); };
+  const N = 81, path = [], bank = [];
+  path.push({ offset: 0, translate: ex + "px " + (Fy - 30 - .45 * hov) + "px", scale: ".45" });
+  bank.push({ offset: 0, rotate: "0deg" });
+  for(let i = 0; i < N; i++){
+    const t = D * i / (N - 1), o = (T0 + t) / T1, p = at(t);
+    const a = at(Math.max(0, t - .04)), b = at(Math.min(D, t + .04));
+    const vx = (b[0] - a[0]) / (Math.min(D, t + .04) - Math.max(0, t - .04));
+    const last = i === N - 1;
+    path.push({ offset: o, translate: last ? "0px 0px" : p[0].toFixed(1) + "px " + (p[1] - p[2] * hov).toFixed(1) + "px", scale: last ? "1" : p[2].toFixed(3) });
+    bank.push({ offset: o, rotate: last ? "0deg" : Math.max(-11, Math.min(11, vx / (k || 1) * 9)).toFixed(2) + "deg" });
+  }
+  hfxAnim(c, u, path, { duration: T1 * 1000, easing: "linear" });
+  hfxAnim(c, bob, bank, { duration: T1 * 1000, easing: "linear" });
 }
 
 /* A small nova for the box-only play (Customize, the unlock card):
@@ -80675,7 +81844,9 @@ function rsUnlockItems(run){
       need: rule.label || "",
       color: RANK_COLOR[c] || ACCENT_SWATCH[c], art: () => buildRankEmblemSVG(c) });
   });
-  tiers.forEach(c => { if(ACCENT_SWATCH[c]) items.push(themeUnlockItem(c)); });
+  /* each rank's theme, then its flare (build 317: the flare is an unlock
+     too - "the pop up should just show the flare") */
+  tiers.forEach(c => { if(ACCENT_SWATCH[c]) items.push(themeUnlockItem(c)); items.push(flareUnlockItem(c)); });
   /* A rank's own character and banner sit with its theme, ahead of any
      challenge's: together they are the one rank-reward pop-up. */
   const chars = run.characters.map(characterUnlockItem);
@@ -80806,6 +81977,25 @@ function themeUnlockItem(c){
       d.dataset.accent = c;
       return d; } };
 }
+/* THE FLARE A RANK LIGHTS, AS AN UNLOCK (build 317, the evolution round).
+   Madison: "Rank up pop decision, should it include the flare? Because on
+   the profile thing, it includes it ... I feel like the pop up should
+   just show the flare, I mean the road map has it and under the rank
+   challenges in profile it has it, so it would make the most sense." The
+   rank's own bubble, lit - Profile's tile art (buildFlareBubble) - on the
+   reward card between the theme and the character or banner, and as a
+   row in the results' Unlocked list. Nothing to record as shown: a flare
+   is lit by the rank itself. */
+function flareUnlockItem(c){
+  return { kind: "rankflare", rankReward: c, kicker: "Flare lit", name: ACCENT_DISPLAY_NAME[c] || RANK_DISPLAY_NAME[c] || c,
+    sub: "Lit on your planet on Home", need: "Reach " + (RANK_DISPLAY_NAME[c] || c) + " rank",
+    color: flareColorOf(c),
+    art: () => {
+      const b = buildFlareBubble(c, { lit: true, bounce: true });
+      /* its emblem's recorded motion, once it is on screen */
+      setTimeout(() => { try{ if(b.isConnected) startOrbitEmblemAnims(b.parentElement, true); }catch(e){} }, 120);
+      return b; } };
+}
 /* THE CHARACTER ARRIVES CELEBRATING (build 317): "the character also
    doesn't animate, fix that". Its idle loop is a blink every few seconds
    - right for a board of forty faces, nothing at all on a reward card. So
@@ -80838,16 +82028,23 @@ function groupRankRewards(raw){
   TIER_ORDER_FULL.forEach(r => {
     const g = byRank[r];
     if(!g) return;
-    if(rankJustReachedOnHome === r && ACCENT_SWATCH[r]) g.unshift(themeUnlockItem(r));
+    if(rankJustReachedOnHome === r){
+      g.unshift(flareUnlockItem(r));
+      if(ACCENT_SWATCH[r]) g.unshift(themeUnlockItem(r));
+    }
     out.push(g.length > 1 ? rankRewardsItem(r, g) : g[0]);
   });
   rankJustReachedOnHome = null;
   return out.concat(rest);
 }
 function isRankRewardItem(it){
-  return !!it && (it.kind === "theme" || ((it.kind === "character" || it.kind === "banner") && !!it.rankReward));
+  return !!it && (it.kind === "theme" || it.kind === "rankflare" || ((it.kind === "character" || it.kind === "banner") && !!it.rankReward));
 }
+/* The card's order: Theme, Flare, then the character and the banner -
+   "Madison wants the flare in the middle" (the evolution round). */
+const RANK_REWARD_ORDER = { theme: 0, rankflare: 1, character: 2, banner: 3 };
 function rankRewardsItem(rank, parts){
+  parts = parts.slice().sort((a, b) => (RANK_REWARD_ORDER[a.kind] == null ? 9 : RANK_REWARD_ORDER[a.kind]) - (RANK_REWARD_ORDER[b.kind] == null ? 9 : RANK_REWARD_ORDER[b.kind]));
   const chars = parts.filter(p => p.kind === "character").map(p => p.character);
   const banners = parts.filter(p => p.kind === "banner").map(p => p.banner);
   const hasTheme = parts.some(p => p.kind === "theme");
@@ -80873,7 +82070,7 @@ function rankRewardsItem(rank, parts){
         if(p.kind === "character") rsCharCelebrate(a, 1700 + i * 320);
         const k = document.createElement("span");
         k.className = "rs-reward-kind";
-        k.textContent = p.kind === "theme" ? "Theme" : p.kind === "character" ? "Character" : "Banner";
+        k.textContent = p.kind === "theme" ? "Theme" : p.kind === "rankflare" ? "Flare" : p.kind === "character" ? "Character" : "Banner";
         const n = document.createElement("b");
         n.className = "rs-reward-name"; n.textContent = p.name;
         tile.append(a, k, n);
@@ -81994,7 +83191,7 @@ function showRunRewards(run, hooks, opts){
     resultsShownAt = Date.now();
     if(actions){
       const first = actions.querySelector("button");
-      if(first) first.focus({ preventScroll: true });
+      if(first) focusQuietly(first);
       hooks.tour();
     }
     if(hooks.onDone) hooks.onDone(slot);
@@ -82338,7 +83535,7 @@ function showRunReview(run, hooks){
   stage.replaceChildren(panel);
   toTop(true);
   const first = actions.querySelector("button");
-  if(first) first.focus({ preventScroll: true });
+  if(first) focusQuietly(first);
 }
 
 /* Kept for anything still holding a reference to it: the results
@@ -82939,7 +84136,7 @@ function summarize(){
          Submit answer was - the button does not move when you answer. */
       toTop();
       const exitBtn = document.getElementById("dailyq-exitbtn");
-      if(exitBtn) exitBtn.focus({ preventScroll: true });
+      if(exitBtn) focusQuietly(exitBtn);
       /* The card is the answer, so it must not sit behind the pill: on a
          phone a long question leaves it under the button, half read.
          Bring its bottom edge up to just above the pill. */
@@ -95601,12 +96798,15 @@ function buildRankRewardTiles(key){
     row.appendChild(t);
     return t;
   };
-  /* THE FLARE FIRST (build 317, round two): "I feel like the flare and
-     the theme unlock box thing in profile should swap". The flare is the
-     rank's own mark - what reaching it lights on Home - so it leads, and
-     the theme's flat disc sits between the two ringed pieces. */
-  tile(buildFlareBubble(key, { lit: true, bounce: true }), "Flare", "is-flare");
+  /* THEME, FLARE, THEN WHAT ELSE IT HANDS OVER (317 fix). Round two put
+     the flare first ("the flare and the theme unlock box thing in profile
+     should swap ... your call"); it came back: "In the rank profile
+     challenge rewards, switch the flare and theme spot again, preferred
+     the flare one in the middle." So the flare sits between the theme's
+     flat disc and the character or banner - the same order the road
+     map's chips have always used (buildRankGifts). */
   tile(buildThemeDot(key), "Theme", "is-theme");
+  tile(buildFlareBubble(key, { lit: true, bounce: true }), "Flare", "is-flare");
   const ch = AVATAR_CHARACTERS.find(c => c.unlock === key && !c.retired);
   if(ch){
     const holder = document.createElement("span");
@@ -96547,9 +97747,7 @@ function showProfile(defaultTab){
     "Correct answers": "How many of those you got right first time. There is no second chance on a question, so this never counts a retry.",
     "Tests finished": "Drills and exams you played to the end. The daily question is not a test.",
     "Hundos": "Units you have finished with every question right. A run covering three units can earn three, and the daily question earns none.",
-    "Matches played": "Virtual Room matches you finished - races, Tug of War and Battle.",
-    "First-place finishes": "Races you won outright, and team matches your side won. It needs at least one other person in the room.",
-    "Top-3 finishes": "Races where you finished first, second or third - in a room of four or more. With fewer than four there is no podium, so only a win counts, as a first place.",
+    /* (the three Virtual Room cards came off in the 317 fix - see below) */
     "All-time best answer streak": "Your longest run of correct answers ever. It carries over from test to test, so a streak can start in one test and keep going in the next. The daily question never counts either way."
   };
   const statWhyBox = document.createElement("p");
@@ -96725,22 +97923,14 @@ function showProfile(defaultTab){
   studyTimeSect.appendChild(grid);
   statsTab.appendChild(studyTimeSect);
 
-  /* ---- VIRTUAL ROOM (build 236) ----
-     "Add a section for virtual room ... like top 3 finishes, and first
-     place finishes." Top three counts only in a room of four or more -
-     see VROOM_PODIUM_MIN - which the card's explanation says. */
-  const vrSect = document.createElement("div");
-  vrSect.className = "points-progress-sect";
-  const vrHead = document.createElement("p");
-  vrHead.className = "slab"; vrHead.textContent = "Virtual Room";
-  vrSect.appendChild(vrHead);
-  const vrGrid = document.createElement("div");
-  vrGrid.className = "stat-grid stat-grid-three";
-  [["Matches played", String(store.vrMatches || 0)],
-   ["First-place finishes", String(store.vrWins || 0)],
-   ["Top-3 finishes", String(store.vrTop3 || 0)]].forEach(([label, val]) => vrGrid.appendChild(makeStatCard(label, val)));
-  vrSect.appendChild(vrGrid);
-  statsTab.appendChild(vrSect);
+  /* NO VIRTUAL ROOM SECTION (317 fix). Build 236 added one - matches,
+     first places, top threes - and it came off: "Remove the virtual room
+     stats from the stats tab. I don't think there will be enough usage
+     to care to track it." Only the display went. The Virtual Room still
+     counts store.vrMatches / vrWins / vrTop3 (recordVroomOutcome), they
+     still sync and still default in applyLoadedData, and the challenges
+     and banners built on them (vrwins5, the Arena, the Champion) still
+     read them. */
   statsTab.appendChild(statWhyBox);
 
 

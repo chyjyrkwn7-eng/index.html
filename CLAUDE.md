@@ -6602,8 +6602,21 @@ results screen cannot count one twice. `seedVroomTop3()` backfills once
 from Firestore (`vrTop3RetroDone`). It is separate from
 `seedVroomHistory`, which everyone has already run.
 
-**Profile → Stats** has a Virtual Room section: Matches played,
-First-place finishes and Top-3 finishes, each with its explanation.
+~~**Profile → Stats** has a Virtual Room section: Matches played,
+First-place finishes and Top-3 finishes, each with its explanation.~~
+**REMOVED IN THE 317 FIX.** *"Remove the virtual room stats from the stats
+tab. I don't think there will be enough usage to care to track it."* The
+section, its three `STAT_MEANINGS` lines and its `.stat-grid-three` CSS
+are gone; Stats is the four totals and the four study-time cards (8 cards,
+two grids). ONLY THE DISPLAY WENT: `vrMatches`, `vrWins`, `vrTop3`,
+`vrTop3Rooms` are still counted by `recordVroomOutcome`, still defaulted in
+`applyLoadedData`, still synced and merged, and still read by what is built
+on them (the Clown's `vrwins5`, the Arena and Champion banners, the 25
+matches challenge). No tour step pointed at the section (the Profile tour
+points at the Stats tab button). Gates: check-statsbadges ("eight of them,
+in two sections - no Virtual Room cards") and `check_b236` ("Stats shows no
+Virtual Room cards any more"), both failing on b6cd249; check-vroom still
+asserts the counting.
 
 **The results character** reacts on the XP box's own avatar
 (`.results-level-avatar`, live until the grade lands). The one on the
@@ -12088,7 +12101,9 @@ text box won't show up."*
   skipped while it is behind the planet, where the planet takes the tap -
   correct).
 
-**The tooltip follows the flare.** *"Ensure that it properly and smoothly
+**The tooltip followed the flare** (REPLACED in build 317, round three:
+no tooltip follows anything now - a tap answers in Home's caption, see
+"HOME'S TAPS, ROUND THREE"). *"Ensure that it properly and smoothly
 follows the selected flare while the text box is open with the arrow like
 thing being placed in it correctly."* (Build 317 replaced the per-frame
 measuring below with a compositor ride - see "Home's taps" - because it
@@ -13045,7 +13060,7 @@ step below the Tree, Bubbles and the UFO.
   and a trail is the spark's own path over the last fraction of a second;
   trails are batched into one stroke per colour, alpha and width, heads are
   one pre-drawn glow each (`hfxFwHeads`), all added (`lighter`) so crossings
-  burn white. Backing capped at 2x. The loop ends at the effect's total, or
+  burn white. Backing capped at 1.5x (round 4, below). The loop ends at the effect's total, or
   is stopped (`hfxOnEnd`), drawing on through a stop's fade. The dim, the
   light each burst throws (`.hfx-fw-glow`) and the box's pieces are plain
   layers.
@@ -13121,7 +13136,9 @@ was sized from the hull's bottom. Now: the saucer's beam is
 `-hov + .2*hull + 4` long, so its foot is 4px inside the box's top edge, and
 it is rescaled with the hull's own easing as it lands (`--bl`) and lifts off
 (`--bk`) so the foot never leaves that edge; the box's beam starts only as
-the saucer's arrives (40.4% of 7s) and runs the box's full height. Measured
+the saucer's arrives (40.4% of 7s; on round 4's long timeline every
+moment from here to the lift-off is later - see below) and runs the box's
+full height. Measured
 (440x956): foot at box top +5px hovering, landed and lifting; box beam 626 to
 815 against a box 625 to 813. The box flares as the beam strikes (2.84s) as
 well as on landing. The grab is unchanged.
@@ -13152,6 +13169,63 @@ well as on landing. The grab is unchanged.
   overlaid copy's opacity (`.hfx-tintnum`), which round 3 deleted, so it
   went red for the right build. It reads the REAL 100% now: transparent
   text under `linear-gradient(105deg, <g1> ...)`.
+
+**The UFO is 2.5s longer (build 317, round 4), by ADDING to it, not by
+slowing it.** *"Could the UFO hundo effect last another 2-3 seconds somehow?
+It's so cool I want it to be longer."* 8.6s became 11.1s
+(`HUNDO_FX_TOTAL.ufo`; its tail, `HUNDO_FX_TAIL_AT.ufo`, 7s to 9.5s):
+- **It circles the screen once before it comes down (+1.1s).** It comes in
+  from one side along the top, goes round a flat circle over the upper
+  half (smaller on the far side, bigger on the near side, banking into the
+  turns), and comes down to its hover point. A loop is no shape for
+  keyframes, so `hfxUfoArrival` samples one smooth path (in, round, down)
+  into WAAPI keyframes on the saucer's `translate` and `scale` - individual
+  properties, which compose OUTSIDE its CSS `transform`; the path's
+  keyframes hold the hover point meanwhile, so the script's offset is
+  `A - scale*hov` and the hand-over at 3.7s is exact whatever frame each
+  started on. One speed curve over the whole path (in at 1.5x the cruise,
+  cruising, to a stop over the last 0.85s), so nothing jerks where the
+  parts meet. The bank is the bob's `rotate`, read off the same path's
+  velocity.
+- **Its beam sweeps across the box before it lands (+0.9s, 4.2-5.1s):** out
+  to one side, across to the other and back, the saucer swaying with it.
+  The box's own beam moves as ONE with the saucer's - the same moments,
+  easing and distance (`hfxUfoSwa(c)`, a third of the way to each edge,
+  capped at 150px so a tablet's wide box does not make it race).
+- **It charges, then goes with a boom (+0.5s, 8.0-8.55s):** lifted, it dips,
+  shudders and a light swells under the hull (`.hfx-ufo-charge`), then it
+  breaks away: a flash lighting the screen round it (`.hfx-ufo-flash`), a
+  ring of light thrown out flat (`.hfx-ufo-boom`), then the old warp and
+  streak.
+- **The grab is untouched**: the landing, the scan, the lock, the score
+  going up the beam and the lift-off are the old timeline moved 2s later
+  (6.1s down, 7.38s the grab), the same durations and curves.
+- The small box's saucer (`.is-mini`: Customize, the unlock card) keeps
+  the 7s timeline - the long one is `-l` keyframes on
+  `.hfx-saucer:not(.is-mini)`, and the box's shared beats take a 2s shift
+  only on the results screen (`sh` in `hfxUfo`). The dims, the searchlights,
+  the box's beam and the dust are results-screen only, so they changed in
+  place.
+- **The flow waits for all of it by itself**: the first scene after a 100%
+  waits for `HUNDO_FX_TAIL_AT[id]`, so the badge case came at 9.5s into a
+  real UFO run (it would have covered the departure at the old 7s).
+- `check_b317_hundobox` reads the page's own total to pick the timeline for
+  the round 3 beam checks, and adds: 10.6-11.6s long; one full circle
+  (>= 300 degrees round, both sides, above the box) between 1.4s and 2.95s;
+  the sweep reaching 15% of the box's width each side with the two beams
+  within 4px of each other and the foot on the box's top edge; the charge,
+  flash and boom at 8.4s/8.62s and the saucer gone by 8.95s; the ghost's
+  0.6s on its own curve; and a real flow run with a badge whose case comes
+  >= 9s after the effect. `record-hundo.py` records it for 11.7s.
+- **A gate run under heavy load can start the whole effect seconds late**,
+  and the layer still comes off at `HUNDO_FX_TOTAL` from the CALL
+  (`setTimeout(end, total)` in `playHundoFx`), so its tail is cut. Seen
+  once in round 4 (load 21 on 4 cores): `check_b313_fx` read the UFO's
+  saucer still at its entry point 6.7s in and fully shown at 11.07s - every
+  part of it 3s+ behind, CSS and script alike - while the same build passed
+  that section twice at lower load. The margin is the same as before round
+  4 (the saucer gone 2.2s before the layer comes off). If it ever matters
+  on a device, start the end timer from the first frame, not the call.
 
 **"Looks laggy" was the RECORDING, not the effect.** Measured in the
 recording's own configuration: the page drew 139 frames in 7s, while the CDP
@@ -13234,6 +13308,39 @@ effect, so taking the only backdrop-filtered elements away does not
 clearly help, and the results cards have no live backdrop to swap for a
 static look. Nothing kept.
 
+**What Fireworks does cost is its canvas, and it is backed at 1.5x now
+(build 317, round 4).** Measured at 3x (the 17 Pro Max) and 4x CPU, with
+`Commit`'s CPU time (`tdur`) per frame, not wall-clock frames: this sandbox
+has 4 cores at load 8-15 from other sessions, and the same build's frame
+count in a 7s window moved 65-243 between passes, while CPU per frame held
+within ~15%. Hiding the sky canvas alone cut the window's commit from
+2.8s to 0.39s, so the canvas IS the cost: every frame it is redrawn, and
+the whole bitmap is copied for the compositor - 9-12ms of main-thread CPU
+a frame at 880x1388, of a 16-22ms frame. At 1.5x (660x1041, 44% fewer
+pixels) the commit is 6.7-8.9ms and the frame 14.9-18.2ms: lower in every
+one of 8 interleaved pairs across two sets (medians -20% to -32% commit,
+-10% to -17% frame). The copy has a fixed part too, which is why 44%
+fewer pixels is not 44% less time. Wall-clock frames stayed inside the noise (5 passes:
+205, 179, 163, 232, 225 before; 187, 182, 195, 240, 294 after). It looks
+the same, checked rather than assumed: the SAME show (Math.random seeded
+after the recorder's clock is installed, so both builds draw identical
+sparks) at the same moments, 1.3/2.2/3.5/5.0s, differs from 2x by
+0.05-0.18 of a level on average at 3x, 0.001-0.013% of pixels by more than
+30, and the region of largest difference, zoomed, is the same picture; at
+2x (an iPad), 0.11-0.28 and 0.1%. Tried and NOT kept: skipping the
+redraw while the sky is empty (only ~6% of the window, nothing
+measurable). Already right, so left: the sparks' heads are pre-drawn
+sprites (`hfxFwHeads`), there is no `shadowBlur` and no per-spark
+gradient, trails are one stroke per colour/alpha/width, and the canvas
+stops at the box's top edge. Particle counts were not cut: that changes
+the look. `check_b317_hundobox` asserts the 1.5x backing at 3x, and that
+the sky is still drawing; it fails on d5808b3 (2.00x).
+**Bubbles, the same check:** nothing obvious. Its main thread is ~11-12ms
+a frame (no canvas; commit ~1ms); its 4 glass heroes are ~3ms of the
+software compositor's ~9-10ms a frame (hidden: ~6.6ms) - the refraction
+IS the effect, and a software compositor's backdrop blur is not an
+iPhone's. Left alone.
+
 **Bubbles** - no giant bubble from the number any more (`hfxCarry` is gone).
 `hfxBubblesGlass`: a few far small bubbles (sprites), **Liquid Glass heroes -
 4 on a phone, 6 on a tablet (6 and 9 until build 317, cut for frame time) - with a real `backdrop-filter` (`.hfx-glass`,
@@ -13290,9 +13397,15 @@ on every effect at 320/440/834, the default and every tile; it fails on
   fade over at least `HUNDO_FX_TAIL_MS` (1.2s); layers come off only at
   `HUNDO_FX_TOTAL[id]`; a scene going up or the screen changing FADES them
   (`hfxFadeOut`), never a cut. `HUNDO_FX_TAIL_AT` is where each tail starts,
-  for the gate. The UFO's tail is the stars it leaves behind, twinkling out
-  between 7.4s and 8.3s as the dark lifts (it used to have an empty last
-  second, which the gate caught once the timings moved).
+  for the gate - and the results flow's first scene waits for it, so it
+  has to be TRUE: measure it paused and seeked, never trust it. Bubbles'
+  said 5.3s while its last bubble was gone by 5.2s (~25 pieces fading at
+  4.6s, 6 at 5.0s, none from 5.2s, the same on 336c444), so its gate
+  passed only on runs slow enough to start the effect late (3 of the 6 in
+  round 4 failed); it is 4.6s now. The UFO's tail is the stars it leaves behind, twinkling out
+  between 9.9s and 10.8s as the dark lifts (7.4-8.3s before round 4; it
+  used to have an empty last second, which the gate caught once the
+  timings moved).
 - **Every picture is a sprite: drawn once as svg, cached, then RASTERISED
   ONCE to a PNG blob** (`hfxSprite` / `hfxRasterise`, run by `hfxWarm(id)` as
   the results screen opens and as Customize settles).
@@ -14534,9 +14647,10 @@ disagree with it.
     slot is one size now (`--gift-slot` on `.rankmap-gifts`, which also
     sets the chip's height, so the two cannot drift); icons keep their own
     sizes, centred in it. **Size the icon inside the slot, never the slot
-    by kind of chip.** The chips still run the card's full inner width.
-    The chip gate measured boxes only, which is how this passed; the
-    number that catches it is where each label's text starts.
+    by kind of chip.** The chips ran the card's full inner width until
+    build 317 (below: from 40rem they fit their content). The chip gate
+    measured boxes only, which is how this passed; the number that catches
+    it is where each label's text starts.
   - **THE PICKED CHARACTER WEARS A RING, NOT A BOX** ("maybe it could just
     be a circle?"). Every character is drawn for a round frame, so a
     rounded square round it read as a box round a round thing.
@@ -14825,6 +14939,83 @@ disagree with it.
     silhouette note describes. Scenery and non-`headGrad` fills are left
     alone, so nobody's own gloss is doubled. `check_b317_volume` asserts
     the layers on every character and no `filter` attribute anywhere.
+    **SUPERSEDED IN THE 317 FIX - ONE LIGHT FOR THE WHOLE FIGURE
+    (`lightFigure()`, called at the end of `buildAvatarCharSVGFresh`).**
+    *"Characters' heads are now not showing correctly connected to the
+    body of the character, the bodies don't look attached, they don't
+    seem connected or blended."* The per-piece light above WAS the cause:
+    lit as its own ball, a head's lower edge sat in its own shade (~.31
+    black) straight against the body's own highlight (~.25 white, its
+    upper-left is right under the chin) - a dark-to-light step along
+    every neck, ears lit as separate balls on a face, a hood's rim against
+    its shoulders. It is the exact bug `headGrad`'s comment warns about
+    ("each piece ... its OWN small bounding box ... separate pieces stuck
+    together"), one layer up. Ruled out by measurement, not argument: the
+    Profile plate with only the two layers lifted off is the pre-volume
+    plate to the pixel, so the plate breakout, the tab's wide window and
+    the flip-book's fade (all in drawing units) were never it.
+    - **Every lit surface samples ONE field** (`userSpaceOnUse`): the
+      shade over the box of every lit shape together, the light over the
+      box of the head's lit shapes - the same 44%/36%/72% and 34%/24%/62%
+      geometry and the same stops, applied to the figure instead of the
+      piece. One field means one value either side of any seam, so the
+      neck, an ear, a hat band cannot step; the head keeps its highlight
+      up on the left and the figure falls into shade at its outer edges.
+    - **It is laid on AFTER `AVATAR_HEAD_SCALE` and `AVATAR_ART_SCALE`**,
+      never inside `done()`: a field drawn in the raw drawing is scaled
+      with the head and not with the shoulders. Each shape's gradient
+      carries the inverse of the transform attributes above it (read off
+      `transform.baseVal`, so it works detached), so all of them land on
+      one field in the drawing's own units, Zeus's turned shapes included.
+    - **The boxes come from the shapes' own numbers** (`figureShapeBox`,
+      `figurePathBox`: points and control points - a curve never leaves
+      the hull of its handles), NOT `getBBox()`, which needs the drawing
+      in the page and forces a layout per character built (the badge
+      viewBox note's ~80ms for sixteen, on a throttled phone).
+    - Still fills only, no filter, still only `headGrad` surfaces. A
+      drawing made with `drawAvatarCharSVG` alone has no light now; every
+      place in the app goes through `buildAvatarCharSVG`.
+    - **Gates:** `check_b317_volume` adds "one light for the whole
+      figure" (every shade layer's field, carried through the transforms
+      above it, is one matrix; every light layer's too) - fails on
+      b6cd249 for all 27 lit characters. `check_b317_neck` measures the
+      step the light adds ACROSS THE NECK: each character at 10px a unit,
+      scenery hidden, every `headGrad` surface painted one grey (so the
+      number does not depend on the paint), with and without the light;
+      in every column where the head's lowest pixel sits over the body,
+      the light's effect 3-6px above the edge against 3-6px below. On
+      b6cd249: over 10 levels on 23 of the 26 necks (11-60, median 39);
+      now 0-5, median 0. Painting the surfaces grey matters: on their own colours
+      the same field darkens white hair over a dark robe by 26 levels
+      and the robe by 4, which reads as a step that is not one.
+  - **A SECRET'S SILHOUETTE HAS ITS HEAD FITTED (317 fix,
+    `SIL_HEAD_FIT`).** *"Genesis looks great, Umbra is kinda bugged and
+    too big, and Horizon is nearly perfect but also too big. They are cut
+    off."* (Her screenshot was most likely the LIVE app, build 313, where
+    Umbra's flames were still blacked into a hood half again as tall -
+    build 314's SIL_LIGHT fixed that. What was left on b6cd249 was still
+    measurably wrong, so it was fixed anyway.) A cut-out is a black shape
+    with a light outline, so every unit of it reads, where the drawing's
+    hood fades into a dark scene and Horizon's locks fade out at the tips:
+    Umbra's hood rose to y 5.2 of the 3..37 tile (0.6 under the top
+    feather - Void and Genesis top out at 8.9 and 9.0) and stood 18%
+    taller than the four's median head; Horizon's crown spanned
+    6.7..33.2. `charSilhouetteSVG` now scales the SILHOUETTE's `.cx-head`
+    about the foot of the head before the outline copy is made (so both
+    copies, and the "~sil" flip-book, carry it) - Umbra .86 about (20,
+    31.2), Horizon .92 about (20, 30.4): Umbra tops out at 8.8, Horizon at
+    9.9 and 7.8..32.2 wide. The worn flares are in the head and move with
+    it. **The drawing you unlock is untouched** - it passes the head rules
+    as it is; only the cut-out was all edge. Silhouettes appear in
+    Customize, the unlock-detail card (a 7.6rem circle, already inside
+    it) and the Home hint card's ghost; never at sign-up (starters only)
+    or on a board (a classmate's character is drawn as itself). Gate:
+    `check_b317_silhouettes` - every cut-out 2 units under its tile's top
+    feather, inside the sides above the shoulders, its head within 12% of
+    the four's median height, and in Customize on both reference devices
+    no outline pixel in the top 9% of a tile. Fails four times on
+    b6cd249 (Umbra 5.2; 27.9 against a median of 23.6; 7.4% and 6.2% from
+    the top on the phone and the iPad).
   - **The Profile tab's character: bigger, with its colour behind it, and
     NOT circled.** *"They got a smidge smaller ... ensure you can see their
     backgrounds ... and ensure they still get animations on the tab."* A
@@ -14879,13 +15070,18 @@ disagree with it.
       it. I like it but could be better."*) The line under the bar already
       says where the XP goes, so this one no longer does. Still no badge
       count (316), and away from a wall the row still has no note.
-    - **THE FLARE LEADS THE UNLOCK TILES, THEN THE THEME.** *"the flare and
-      the theme unlock box thing in profile should swap ... your call."*
-      Kept after looking at both: the flare is the rank's own mark (what
-      reaching it lights on Home), and the theme's flat disc between the
-      two ringed pieces balances the row. The road map's chips still read
-      Theme, Flare (`buildRankGifts`) - not changed
-      here.
+    - ~~THE FLARE LEADS THE UNLOCK TILES, THEN THE THEME~~ - **REVERSED
+      IN THE 317 FIX: THEME, FLARE IN THE MIDDLE, THEN THE CHARACTER OR
+      BANNER.** *"In the rank profile challenge rewards, switch the flare
+      and theme spot again, preferred the flare one in the middle."*
+      `buildRankRewardTiles` (the Next rank card's tiles - its only
+      caller) now matches the road map's chips (`buildRankGifts`), which
+      were always Theme, Flare, character, banner. The rank-up REWARD CARD
+      gets the same order on its own branch; it is not this function.
+      Nothing in the CSS keys on the tiles' order (only on a fourth tile,
+      `:has(> .pf-rw:nth-child(4))`). Gates: `check_b317_pfcard` ("its
+      theme, then its flare in the middle, then the rest") and check-curve
+      ("its theme, then its flare"), both failing on b6cd249.
     - `check_b317_pfcard` holds all five on both reference devices and
       fails 8 of 10 against 74cc518 (the two that pass are "nothing threw"
       and the dot clearing, which guards what was kept).
@@ -15301,6 +15497,115 @@ disagree with it.
       swell, shake or flash; the orbits are held. Under the system's
       setting alone the fades are kept, short (.35s); the app's own
       switch turns every transition off as it always did.
+  - **THE EVOLUTION ROUND (supersedes the light-from-the-middle and the
+    one-second ignition above).** Madison: *"You know how in Pokemon when
+    someone evolves there is that super cool evolution animation on the
+    screen of them going back and forth and then hitting the evolve? ...
+    make them spin really really fast so all the colors start morphing
+    ... Almost like cars at night when they go fast, like the glow trail
+    ... the blue color (or whatever one is unlocking) gets brighter and
+    brighter during this phase as if it's evolving during the spin ...
+    then a small flash of the color.. like bang (think small supernova).
+    Then it slows down slowly ... then the massive flash of the color ...
+    it needs to be made so it looks like the flash of the color originated
+    from the new flare as if it exploded"* - and *"If the cutscene needs to
+    be longer to make it cooler then do it. THAT GOES FOR ANY CUTSCENE IN
+    THE APP, longer is better."* The middle of every rank-up, in order
+    (playRankUpScene, "THE EVOLUTION"):
+    1. **Attention** (`RANK_ATTN_AT` 1.3s, `RANK_ATTN_MS` 4s): the camera
+       (`translate` + `scale` on the stage, a Web Animation that composes
+       with the classes' `transform`) pushes 1.22x toward the new flare,
+       holding it in place and bringing it a third of the way to the
+       middle, and eases back; the flare's SLOT breathes twice, makes one
+       loop out of its slot - away from the planet, round, home - and a
+       last breath, inside a glow and a halo ring of its colour-to-be
+       (`.rank-attn` / `.rank-attn-ring`). The slot's own `transform` is
+       free before the whirl, and the carrier's turn and the slot's
+       counter-turn cancel, so the loop is drawn upright and the glow
+       rides with it.
+    2. **The whirl**: 18 whole turns (`RANK_CUTSPIN_TURNS`), 5.6s faster
+       and faster, 4.4s slower - ~1300 degrees a second at the top. The
+       camera zooms in with it (`supernova-zoom` at the start) and back
+       out as it slows (`rank-zoomback`, the slowing's own length).
+    3. **The light trails** (`buildRankTrails`): conic-gradient rings of
+       the bubbles' own colours, masked to a soft band where they ride (a
+       core and a wide faint glow), built INTO the turning carrier so they
+       turn with it. Per orbit a SHORT layer (comets, ~75 degrees) and a
+       LONG one (each colour reaching past the bubble behind, a high floor:
+       at the top it is unbroken light), each with a narrow white-hot core
+       line. Colours are weight-BLENDED where trails meet (a straight
+       switch read as blocks), every tail tapers to nothing, and the long
+       layers' leading edges are soft (a 4-degree head was a radial cut
+       line). Every opacity is a function of SPEED - vh(u), the share of
+       the top speed at progress u - sampled into Web Animation keyframes
+       on the whirl's own clock, one startTime for everything: the comets
+       from ~a fifth of the top speed, the rings from ~three fifths, the
+       bubbles fading to .06 and the secret flares to .04 (always at least
+       as far as the glass over them - round four's rule, at speed).
+    4. **The new colour takes over its ring**: its own three layers - its
+       arc in the new colour, the same arc in its OLD pale light, and a
+       whole ring of the new colour - rising through the speeding-up, the
+       new colour flicked back to the old light three times, ever closer
+       together (`FLICKS` .6 / .77 / .89 of the way to the top: Pokemon's
+       evolve), brightest at the top, still bright as it slows and dimming
+       as the trails resolve back into bubbles.
+    5. **The bang** at the top speed (`bang()`, at ACC): `.rank-bang` - a
+       core, a ring and a glow in the rank's colour - at the new flare's
+       position on screen at that moment; the flare is lit from here
+       (`is-cutlight`, `is-cutlit`, the badge `cosmic-badge-lit`).
+    6. **The charge** (a rank; Supernova swells instead):
+       `RANK_WINDUP_MS` (1.7s) of pulses ever faster - the whole system's
+       `scale`, the flare's light, an aura round the planet
+       (`.rank-aura`), and rings of light collapsing INTO the flare on
+       every pulse (`.rank-gather`).
+    7. **The flash from the flare**: a rank's flash box is centred on the
+       new flare (`flash.dataset.originX/Y`), sized so its peak still
+       floods the far corner from there, and the flare goes off with it
+       (`.rank-bang.is-big`). Supernova's flash is the planet's own
+       detonation, from its middle, as before. The title comes 2.5s after
+       the flash ("after that settles the theme is there, slight delay").
+    Times: a rank `{ ignite 5300, burst 17000, settle 19500, outro 23500 }`
+    - ~25.2s to the reward card; Supernova `{ ignite 5300, swell 1800,
+    burst 17600, settle 20600, outro 25500 }` - ~27s. The tap at the title,
+    the one ending, the secret flares under the glass and the
+    Reduce-motion still scene stay; the still scene marks the new flare
+    with a still `.rank-attn` (the attention, without the motion).
+    - **The reward card shows the flare** (*"I feel like the pop up should
+      just show the flare, I mean the road map has it and under the rank
+      challenges in profile it has it"*): `flareUnlockItem(rank)`, kind
+      `rankflare`, a rank reward (`isRankRewardItem`) whose art is
+      Profile's tile art (`buildFlareBubble(key, { lit, bounce })`), in
+      the results' Unlocked list after the theme and on the card in the
+      order Theme, Flare, then the character and the banner
+      (`RANK_REWARD_ORDER`, sorted in `rankRewardsItem`). Home's card for
+      a rank reached on Home gets it too (`groupRankRewards`). Profile's
+      own tiles (Flare, Theme today) are another branch's.
+    - **Supernova's blast, soft at every edge** (*"the edges of the
+      explosion part look really rough and weird and bad"*). Frame-stepped
+      at 3x and layers hidden one at a time, the blocks round the planet
+      were the shock rings: 3px and 9px BORDERS with blurred box-shadows
+      scaled 11x - a blurred shadow is drawn in tiles, and at 11x the tiles
+      show. They are radial-gradient rings now, no border and no shadow,
+      drawn at 8x the planet and scaled .18 to 1.5. The dust was the
+      planet's 128px smoke stretched past 5x as a mask: it has its own
+      256px texture (`snDustURL`), zero alpha at its middle and at every
+      edge of its square, drawn at its final size and only ever scaled
+      down. The flash's gradient has eased intermediate stops (no bands).
+      **A big upscale of anything with a hard edge or a shadow is how a
+      blast gets rough; draw it big and scale it down.**
+    - **Gates**: `check_b317_evolve` (frame-stepped: the attention - the
+      glow, the loop, the camera in and back; trails none at the start and
+      rings at the top with the bubbles gone; the new colour rising, at
+      least two flicks; the bang within two frames of the top and within
+      .6 bubble of the flare; the charge; the flash's centre on the flare,
+      30px+ from the planet's middle; 22-26.5s; the card's Theme, Flare
+      order and lit flare tile; Supernova's rings without border or shadow
+      and its dust its own image) fails on b6cd249. `check_b317_cutspin`
+      now asserts the bang (one core, ring and glow, no pool) in place of
+      the light-wipe and the one-second pop, ~5.6s up and ~4.4s down with
+      a ~1.7s charge, the flash at ~frame 510, and under the glass "or
+      never sharper than it" at speed; `check_b317_supernova` expects
+      24-29.5s.
   - **The lag and the "placed off" flares.** The second round took the
     bubbles' `backdrop-filter` blur off inside a scene (re-sampled every
     frame while they move); the third round put it back, because the
@@ -15667,12 +15972,18 @@ disagree with it.
   ANSWERS THE TOUCH (build 317).** *"I like what happens when you click the
   secret flares. Can the large flares do the same? I also think the same
   could go for the large planet, improve what happens when you click."*
-  - **What a secret flare does** (and still does, untouched):
+  **REPLACED BY ROUND THREE (below): there is no box, no pointer line, no
+  ring and no follow any more** - `showContextualInfo`,
+  `contextualFollowPath`, `ringFit`, `aimEdge`, `refind` and
+  `check_b317_followglide` are gone. What follows in this bullet is the
+  history of rounds one and two; the planet's touch (`planetTapFx`) and the
+  bubble's light (`flareBubbleTold`, reworked) are the parts that survive.
+  - **What a secret flare did** (REPLACED - round three):
     `showContextualInfo(dot, flareSays(...), { follow, ring, refind })` - a
     box that follows the turning dot, a ring round it in place of the grey
     dot, found again if Home is rebuilt, open 4.2s; pressing it moves
     nothing.
-  - **A rank bubble now makes the same call**, with `ringFit` (new: the
+  - **A rank bubble made the same call** (REPLACED - round three), with `ringFit` (new: the
     ring is the bubble's own width + 10px, not the 16-28px a tiny flare
     gets), and answers in the glass with `flareBubbleTold()`: a light of
     its own colour (`--rank-color`) swelling from the middle and fading,
@@ -15707,14 +16018,15 @@ disagree with it.
     (which takes the tap itself) or the daily alert.
   - The bubble's light is removed when its animation finishes, not on a
     timer, so a slowed or seeked page keeps it until it has played.
-  - **Gate: `check_b317_hometaps`** - real clicks at the live positions on
+  - **Gate (round one, rewritten in round three): `check_b317_hometaps`** - real clicks at the live positions on
     both reference devices: a held and a locked bubble (words, ring sized
     to the bubble, following, the light), a secret flare unchanged, the
     planet ("....." kept, five overlay animations, both flare rings
     surging, no filter, no layout shift, one box after four taps, at most
     one surge per ring), and Reduce motion (still and visible, nothing
     moving). Fails 1888b11.
-  - **The box rides with the flare, on the compositor (round two).**
+  - **The box rode with the flare, on the compositor (round two - REPLACED:
+    there is no box to ride).**
     *"The things pop up when clicking the flares they slightly shake."*
     The follow was a requestAnimationFrame loop that MEASURED the target
     each frame and wrote the line's left/top and a rounded translate. The
@@ -15741,7 +16053,7 @@ disagree with it.
     / iPad Pro 11); from a floating bubble 0.36/0.35px before (a slow
     bob, under the bar, so only the flare case fails before) and
     0.023/0.068px after.
-  - **The planet's pointer ends on its rim** (`aimEdge`): *"clicking the
+  - **The planet's pointer ended on its rim** (REPLACED - no pointer) (`aimEdge`): *"clicking the
     planet, the line pointing at goes to the center, do it from the
     bottom or top edge."* The line runs to the sphere's bottom edge when
     the box is below it and its top edge when above. The tap effect
@@ -15822,6 +16134,205 @@ disagree with it.
     the whole walk, with the person acting on that clock. A screenshot
     harness on a loaded box takes 0.5-1s a shot, so stills lag their
     stage; the poll's times are the measurement.
+- **HOME'S TAPS, ROUND THREE (build 317): ONE CAPTION UNDER THE PLANET,
+  AND EVERY TAP ITS OWN ANSWER.** Madison: *"I like the clicking flare
+  effects. When you click it does an effect and it's great ... Make them
+  all smooth, some of the flare seem to be flashing idk why. Ensure the
+  locked ones (not yet unlocked) [don't do that] yet. Make the secret flare
+  do a tiny effect ... the non unlocked ones do nothing ... maybe all the
+  locked stuff does the same effect, like a tiny shake ... those pops take
+  away from the interactiveness. Could the pops with the words be moved ...
+  above the 'good evening' but also below the ring and centered? So maybe
+  now it doesn't get circled when clicking them, the effect would tell you
+  that you clicked it ... longer ones cause more room?"*
+  - **The words: one caption** (`homeCaptionShow`, `homeCaptionPlace`), an
+    absolutely placed `<p class="hc-item">` in Home's panel (inside
+    `.home-caption`, `role=status`), so showing, changing or hiding it can
+    never move the greeting, NOVA, the tagline or Start Studying (measured:
+    their boxes identical before, during and after, on all 74
+    combinations). A kicker (the name in the thing's colour, then a quiet
+    state: Lit / Locked / Secret flare / Not found) over one or two
+    sentences, each sentence an inline-block (`.hc-s`) so lines break
+    between thoughts, not in the middle of one. A new answer replaces the
+    last as a FADE-THROUGH (the old one `.is-out` goes in 120ms, the new
+    one `.is-after` starts 90ms later - a plain crossfade put two answers
+    at half strength in one place, a jumble on the recording of rapid
+    taps), the same answer tapped again only keeps it up, and it goes
+    after `3.4s + 32ms a character` (at most 7s) of no taps.
+  - **Where it goes, measured at every show and on resize.** The floor is
+    the planet system's lowest point under the caption's width, FROM THE
+    GEOMETRY: the outer ring by its radius in the 0 -12 360 342 viewBox
+    (a turning ring layer's box is a rotated square, far bigger than its
+    circle), plus half a secret flare, and every bubble by its layout box
+    plus the float's 8px - never the bubbles' current float, which put
+    successive answers 1-3px apart. Then, in order: centred in the gap
+    under the system, stacked; the same in one run (`is-inline`); over the
+    greeting (`hc-over-greeting` fades it out while the caption is up);
+    over the greeting and the title block (`hc-over-title`); one run
+    across the column; BESIDE the planet in the largest free stretch of
+    its own side (`is-beside`, landscape phones - every fixed control and
+    the centred button counted as obstacles); clamped only as the last
+    resort. Cover levels are sticky within a run of taps (a short answer
+    after a long one does not bring the greeting back for a moment). The
+    type steps down on the smallest screens (`max-width:21rem`,
+    `max-height:36rem`) and up with Home's tablet block.
+    **What that means per device** (`scratchpad/r317taps/capfit.py`, the
+    whole matrix, six answers each, the longest a locked Supernova: 74
+    combinations, 0 overlaps, nothing moved). Stacked in the gap with
+    nothing fading - Madison's two (17 Pro Max installed, iPad Pro 11
+    installed and in Safari), the 85%-zoom Pro Max, iPad Air, 12.9/13
+    upright, iPad 10.2 and mini (6th) installed, Android tablet upright, a
+    1440p display. The greeting fades under it - the 17 Pro Max in Safari,
+    a 14/15/16 or 13 mini installed (longer answers), the iPad minis and
+    10.2 in Safari, MacBook Pro 14/16 and FHD windows, most iPads on their
+    side. The greeting AND NOVA/tagline fade under it - SE 2nd/3rd, a 13
+    mini or 14/15/16 in Safari, Android phone, short laptop windows
+    (1366x638, MacBook Air, 1280x670), iPads on their side in Safari, an
+    Android tablet on its side. Beside the planet - every phone on its side
+    (a Pro Max on its side puts the shorter answers in one run under the
+    planet). Clamped only on an SE 1st gen in a Safari tab and on its side
+    (the device this file already says does not fit Home).
+  - **The copy** (`homeTapCopyRank` / `Flare` / `Planet`, tables
+    `HOME_FLARE_MEANING`, `HOME_SECRET_LINE`): a held rank "Gold flare -
+    Lit / A sun that makes its own light. Lit when you reached Gold rank."
+    (there is no reach date on `store`, so "when" is the rank, never a
+    date); a locked rank "Sapphire flare - Locked / Reach level 60 and earn
+    9 badges to light it. 20 more levels and 4 more badges to go."; a found
+    secret flare its name and a line (Void's three say how many of the
+    three are still to find until all are, then "One of the three that
+    made Void."); one not found "Secret flare - Not found" and a hint from
+    its hunt state (hunting / next - "a few more levels" within 3 of its
+    level - / missing), never its name or colour, plus "Find it to unlock
+    X." only once a hint card has named it; the planet "Your system" and
+    where you stand (rank, level, badges, rank flares lit, secret flares
+    found OF THOSE SHOWN - 3, 5 or 6, so the count gives nothing away),
+    tapped again while it is up "Next: <rank> rank. <what is left> to go."
+  - **The answers**: a held rank lights in its glass (`flareBubbleTold`),
+    presses (`homeBubblePress`, the individual `scale`, which adds to the
+    float) and lets a ring of its colour go (`homeBubbleHalo`, a sibling at
+    the bubble's place and current float). A locked rank and a secret flare
+    not found answer ALIKE (`homeLockedNudge`): a 320ms damped shake on the
+    individual `translate` (both are centred with `-50% -50%`, which the
+    keyframes keep) and a dip - a dark disc inside the glass, never the
+    bubble's own opacity, which would show a secret flare under it sharp.
+    A found secret flare (`secretFlareTold`) swells, lets a ring of its
+    colour go and throws four sparks - children of the flare, so they ride
+    its orbit. The planet keeps `planetTapFx` exactly; only a quick second
+    tap changed (below). The shared `:active` shrink is off on the bubbles.
+  - **On the touch, chained, smooth.** `homeTapBind`: the effect and the
+    words land on `pointerdown`; the click from the same touch is ignored,
+    and a click with no touch before it (keyboard, a script, the rank-up
+    gate's `.click()`) still answers. Every effect starts from where the
+    last one on that thing has got to (opacity, `scale`, the shake's
+    offset - `homeShakeAt` reads our own keyframes), and what a tap leaves
+    behind (halo, ring, sparks, the planet's ripple and rim halo - three
+    copies each) runs side by side, so nothing restarts from zero. All
+    transform/opacity, no filters.
+  - **THE FLASHING, FOUND BY STEPPING FRAMES.** Every animation paused and
+    set from a 30fps clock, each bubble's brightness read off the screen
+    frame after frame (`check_b317_noflash`; the probes are
+    `scratchpad/r317taps/flash.py` and `attach.py`):
+    - the tap light went 0 -> .96 in 67ms: the WAAPI `easing` OPTION eases
+      the whole effect, so a peak at 22% arrives in two frames - +17 levels
+      in one frame. **Put easing on the keyframes, not the options, for
+      anything with an early peak.** Now a quarter-second bloom (<= 4.9);
+    - the box, its line and its ring slid over NEIGHBOURING bubbles (-58 on
+      Silver, 22-33 on Platinum) - gone with the box;
+    - the locked bubbles lit up with the held light - they never light now
+      (the first cut of the dip was itself a dark flash, -22.8 in a frame;
+      it is .32 over 460ms);
+    - Supernova's recorded burst peaked in one 46px flip-book frame every
+      three seconds, in a locked grey bubble (+5.6). The bubbles'
+      recordings (`.rk-record-host`: Home, the Profile card, the road
+      map's chips) now play `rk-nova-*-soft`, built over a third of the
+      loop (<= 1.8); the Rank tab's big emblem keeps the bang.
+      `ORBIT_MOTION_REV` renames titan's sheet so a device records it
+      again, once - **a recorded motion change with no drawing change
+      needs a new sheet name, or the cache keeps the old one forever**;
+    - a sheet that arrives after the still emblem is on screen (the first
+      Home of a session) cut in up to 12-13 levels off the still drawing;
+      it crossfades in over 520ms now (`attachOrbitSheet(..., fade)`; a
+      reused emblem cancels a fade that was under way). A sheet put on
+      before the first paint (`startOrbitEmblemAnimsKnown`) never fades.
+  - **Gates** (all fail on 336c444): `check_b317_hometaps` (rewritten:
+    every target type answers in the caption between the system and the
+    greeting, centred, with no box/line/ring; held lights/presses/haloes
+    and does not shake; locked shakes/dips and never lights; found
+    sparkles; unfound hints without its name; the planet keeps its touch
+    and surge and then says what is next with the first ripple still
+    running; the words on the pointerdown; a second tap carries the light
+    on; fade-through; fade-out; no layout shift; Reduce motion still and
+    visible), `check_b317_caption_fit` (320x568, 375x667, 440x956, 440x846
+    in Safari, 834x1194: inside the screen, off the system, the button, the
+    chat button, the daily question, the version and the tab bar, off the
+    greeting and title unless they have faded, nothing moved) and
+    `check_b317_noflash` (the tapped light <= 7 a frame, every other bubble
+    <= 3.5 while three things are tapped, Supernova <= 3.5 over two bursts,
+    a late sheet <= 3.5 a frame where the cut was 12+). The older sections
+    that read the box (audit A's "goes with Home", 91's names, 93's
+    under-the-glass tap, the rank-up lock's "a flare still answers") read
+    the caption now; 91's "marker stays on the flare" is gone with the
+    marker.
+  - **Recorded frame-stepped**: `scratchpad/r317taps/rectaps.py` (the
+    caption's own timer runs in real time, so the recorder takes it over
+    and hides the caption on the virtual clock; `element.animate()` is
+    patched to freeze each new animation at the virtual moment it is made).
+- **A FOCUS RING IS FOR THE KEYBOARD (build 317).** *"There's a weird
+  outline thing around the button there, I've seen this before, I'm not
+  sure why I'm seeing that but fix it"* - her iPhone, a failed run's
+  results, a thin light ring 2-4px outside "Continue to review (4
+  missed)" and nowhere else. It was `.next:focus-visible` (2px of the
+  accent, `outline-offset:2px`) on the button the SCREEN focuses for
+  itself as it lands. iOS never focuses a button on a tap, so when a
+  script does, WebKit has no pointer to blame and draws the keyboard's
+  ring; Chromium does the same when nothing was pointed at, which is how
+  it reproduces here (script clicks only) - and hides it after a real
+  tap, which is why every earlier screenshot pass looked clean. Seven places
+  did it: the results' first button (Continue to review, or Re-run on a
+  100%), the review's Retake, a question's Next (`.floatbtn`, an inset
+  ring), the Pause panel's Resume, the daily's Exit, the leave-a-match
+  sheet's Keep playing and the leave-chat sheet's Cancel.
+  - **`focusQuietly(el)` is the only way a screen focuses a control now.**
+    The focus stays - Enter and a screen reader start from it - but unless
+    the last input was a key (`lastInputKeyboard`, set by any non-modifier
+    keydown and cleared by any pointerdown/touchstart/mousedown, all in
+    capture), the element carries `.is-quietfocus`, and
+    `.is-quietfocus:focus-visible{ outline:none !important }` takes any
+    ring off it, the UA's included. The first key press takes the class
+    off every element, so a keyboard user sees exactly where they are; a
+    blur takes it off too. Text fields are still focused plainly - a caret
+    and the keyboard are the point there.
+  - **Gate: `check_b317_focusring`** - on both reference devices, each of
+    the six has the focus and no ring after script-only input; after a key
+    press the results' first button HAS its ring; after a real tap it is
+    quiet and the first Tab rings the next control. All six ring checks
+    fail on b6cd249 on both devices; the key-press check passes on both
+    builds (it guards the keyboard, not the fix).
+- **THE ROAD MAP'S UNLOCK CHIPS FIT THEIR CONTENT FROM A TABLET UP (build
+  317).** *"How it shows the unlock stuff, that long individual thing it's
+  in, those can be adjusted, they don't need to [go] from left all the way
+  to the right, on the tablets or larger devices they just need to fit to
+  what's there, it makes the rank road map boxes look bad."* Build 311 made
+  every chip a full-width row so the icons and words would line up; on a
+  half-phone column (116px inside the card) that IS a chip's width, and on
+  a 280-340px tablet or laptop card it was "Theme" at the start of a 281px
+  pill. From 40rem, `.rankmap-card .rankmap-gifts` is
+  `repeat(2, max-content)`: two columns, each as wide as its widest chip,
+  Theme and Flare side by side and the character and banner under them -
+  the order the card always had. Each chip still fills its column, so a
+  column's icons share one line and its words one start (311/316 hold), and
+  every card's chips start at its left edge under "Unlocks", on either side
+  of the road. Under 40rem nothing changed. The rank's lore card
+  (`.ranklore-card`) keeps its own two-column grid. Measured: the widest
+  chip is 36% of the card on an iPad Pro 11 and 32% on a 12.9 and a laptop
+  (100% before), and no label is cut at 640px (a card 212px inside, the
+  narrowest this reaches), 700px, an iPad mini (744) or a phone on its side
+  (932x430).
+  - **Gate: `check_b317_roadmap_chips`** - iPad Pro 11, 12.9 and a
+    MacBook Pro 14 window: no chip over 60% of its card (fails on b6cd249,
+    1.0), every chip inside its card, no label cut short, Theme then Flare
+    first on every card; the iPhone 17 Pro Max keeps full-width rows
+    (passes on both, a guard).
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h
