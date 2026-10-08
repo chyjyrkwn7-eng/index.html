@@ -11903,8 +11903,10 @@ def check_b313_fx(br):
             # build 317, round 3 reverses this: "It looks like all the hundo
             # effect boxes start as the gold default, fix that" - the box is
             # in the UFO's green from its first frame, before the beam
-            check("ufo: the box is in the UFO's colours before the beam reaches it - never gold first (build 317)",
-                  r.get("beforeBeam") == "rgb(107, 255, 143)", r.get("beforeBeam"))
+            # round 5: in the UFO's colours but UNLIT until the beam (a faint
+            # green rim, as the default's is faint gold) - never gold first
+            check("ufo: the box is in the UFO's colours before the beam reaches it, unlit - never gold first (build 317)",
+                  bool(re.match(r"(rgba\(107, 255, 143, 0\.2\d*\)|.*/ 0\.2\d*\))$", r.get("beforeBeam") or "")), r.get("beforeBeam"))
             ld = r.get("landed") or {}
             check("ufo: it lands ON the 100% box - its feet on the box's top edge, over its middle",
                   ld and abs(ld.get("feet", 99)) <= 8 and abs(ld.get("cx", 99)) <= 30, ld)
@@ -14846,6 +14848,17 @@ def check_b317_challenge_specials(br):
     ctx.close()
 # A 100% results screen made directly (check-results' own recipe): every
 # answer right first time, then summarize() - no test to sit through.
+# The same over several units at once (the box with a row per unit).
+RUN100M = """window.__run100m = (units) => {
+    cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = units.slice(); cfg.size = 0;
+    order = QUESTIONS.map((q, i) => i).filter(i => units.indexOf((QUESTIONS[i].topic || '').trim()) >= 0);
+    runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null; isMissedRetake = false;
+    practiceTestMinutes = null; inVirtualRoom = false; attempts = {}; picked = {}; timedOutSet = {};
+    try{ firstPick = {}; }catch(e){}
+    order.forEach(qi => { const oo = optionOrder(qi); attempts[qi] = 1; picked[qi] = oo.indexOf(QUESTIONS[qi].answer); });
+    runStartTime = Date.now() - 42000; testInProgress = true; pos = order.length - 1;
+    summarize();
+  };"""
 RUN100 = """window.__run100 = (unit) => {
     cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [unit]; cfg.size = 0;
     order = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === unit);
@@ -14918,7 +14931,9 @@ def check_b317_hundobox(br):
               __run100('Identity Crimes');
               for(let i = 0; i < 300 && !window.__fxAt && !window.__celAt; i++) await wait(50);
               /* past every effect's old moment for its colours (the UFO's was 2.8s) */
-              await wait(3400); mo.disconnect();
+              /* (the UFO's box lights with its beam at 3.92s: settled well after
+                 that, with room for a loaded machine starting it late) */
+              await wait(fx === 'ufo' ? 6500 : 3400); mo.disconnect();
               const g = document.querySelector('.rs-screen .rs-grade'); if(!g) return null;
               const p = g.querySelector('.rs-pct'), sg = p.querySelector('.rs-pct-sign');
               const R = e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
@@ -14962,6 +14977,15 @@ def check_b317_hundobox(br):
             same = lambda a: a and all(a.get(k) == se.get(k) for k in ("border", "num", "bar"))
             if fx == "confetti":
                 check("%s: the default is gold from its first frame" % tag, fi and fi.get("border") == GOLD_BORDER and same(fi) and same(pa), {"first": fi, "painted": pa, "settled": se})
+            elif fx == "ufo":
+                # round 5: the UFO's box is in its colours from the first frame
+                # (the 100% and the bar exactly as settled, never gold) but its
+                # rim is UNLIT - the beam's light comes with the beam
+                unlit = lambda a: bool(a) and bool(re.match(r"(rgba\(107, 255, 143, 0\.2\d*\)|.*/ 0\.2\d*\))$", a.get("border") or ""))
+                same2 = lambda a: a and all(a.get(k) == se.get(k) for k in ("num", "bar"))
+                check("%s: in its colours from the FIRST frame - the 100%% and the bar exactly as settled, never the gold default - with its rim unlit until the beam (%s)" % (tag, (fi or {}).get("border")),
+                      fi and pa and unlit(fi) and unlit(pa) and same2(fi) and same2(pa) and pa.get("shown", 0) > 0 and se.get("border") == "rgb(107, 255, 143)"
+                      and f.get("tinted") and "217, 169, 58" not in (fi.get("bar") or ""), {"first": fi, "painted": pa, "settled": se})
             else:
                 check("%s: in its colours from the FIRST frame - as the card lands and on the first painted frame it shows at all - border, 100%%, bar exactly as settled, never the gold default first" % tag,
                       fi and pa and fi.get("border") != GOLD_BORDER and same(fi) and same(pa) and pa.get("shown", 0) > 0
@@ -15094,6 +15118,108 @@ def check_b317_hundobox(br):
               and (not g8["body"] or g8["body"]["o"] < .02),
               {"charge": c8["charge"] and round(c8["charge"]["o"], 2), "flash": f8["flash"] and round(f8["flash"]["o"], 2), "boom": f8["boom"] and round(f8["boom"]["o"], 2),
                "gone": g8["body"] and round(g8["body"]["o"], 2)})
+    # --- NO BEAM ON THE BOX UNTIL THE SAUCER FIRES IT (round 5): "before
+    # the ufo lands on it, the box already has the beam there, I've
+    # mentioned this a few times but fix that, the beam shouldn't be there
+    # till the ufo uses the beam". The box's rim, wash and inner glow were
+    # the beam's light from the card's first frame (round 3 put every box
+    # in its colours at once). Read off the PIXELS of the box at moments
+    # before the beam fires - every UFO animation, the card's own included,
+    # paused and seeked - against the same box once the beam is on it: the
+    # rim (outside the box's own dim, so nothing else darkens it) and a
+    # beam-wide column down the middle of the box's lower half. On a phone,
+    # a tablet, and a phone with a two-unit box.
+    from PIL import Image as _Img
+    def _green(im):
+        px = im.load(); W, H = im.size
+        def gsum(pts):
+            v = [max(0, px[x, y][1] - max(px[x, y][0], px[x, y][2])) for x, y in pts]
+            return sum(v) / max(1, len(v))
+        m = 26
+        # the 1px rim itself (2 device px at dpr 2, with its antialiasing):
+        # the box's own dim covers everything inside it
+        ring = [(x, y) for x in range(m, W - m) for y in list(range(0, 3)) + list(range(H - 3, H))] + \
+               [(x, y) for y in range(m, H - m) for x in list(range(0, 3)) + list(range(W - 3, W))]
+        # a beam enters at the top: the band under the top edge, its middle
+        # against its right (the GRADE label is on the left)
+        # (the column by brightness, not green: the beam is blue - round 5)
+        band = lambda f0, f1: [(x, y) for x in range(int(W * f0), int(W * f1)) for y in range(int(H * .03), int(H * .2))]
+        lum = lambda pts: sum(.3 * px[x, y][0] + .59 * px[x, y][1] + .11 * px[x, y][2] for x, y in pts) / max(1, len(pts))
+        return {"ring": round(gsum(ring), 1), "col": round(lum(band(.43, .57)) - lum(band(.76, .9)), 1)}
+    for label, w, h, multi in (("iPhone 17 Pro Max", 440, 956, False), ("iPad Pro 11\"", 834, 1194, False), ("iPhone 17 Pro Max, two units", 440, 956, True)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=2)
+        pg.evaluate("() => { " + RUN100 + RUN100M + " }")
+        info = pg.evaluate("""async (multi) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.lifetime.perfectTests = 600; if(!HUNDO_FX.some(d => d.id === 'ufo')) HUNDO_FX[1].id = 'ufo';
+          store.hundoFx = 'ufo'; theme.reduceMotion = false; theme.muteBanners = true; saveStore();
+          window.__fxAt = 0; const real = playHundoFx; window.playHundoFx = function(a, b){ window.__fxAt = performance.now(); return real(a, b); };
+          showHome(); await wait(200);
+          if(multi){ const n = {}; QUESTIONS.forEach(q => { const t = (q.topic || '').trim(); n[t] = (n[t] || 0) + 1; });
+            const two = Object.keys(n).sort((a, b) => n[a] - n[b]).slice(0, 2); __run100m(two); }
+          else __run100('Identity Crimes');
+          for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(50);
+          if(!window.__fxAt) return null;
+          await wait(500);
+          const g = document.querySelector('.rs-screen .rs-grade');
+          g.scrollIntoView({ block: 'center', behavior: 'instant' });
+          return { long: HUNDO_FX_TOTAL.ufo > 9000, rows: g.querySelectorAll('.rs-byunit .unit-breakdown-name').length }; }""", multi)
+        if not info:
+            check("%s, ufo: a real 100%% played the UFO" % label, False, info)
+            ctx.close(); continue
+        pre = (1.6, 2.6, 3.6) if info["long"] else (1.3, 1.9, 2.5)
+        lit = 5.2 if info["long"] else 3.3
+        shots = {}
+        for t in pre + (lit,):
+            dom = pg.evaluate("""(t) => { const g = document.querySelector('.rs-screen .rs-grade');
+              document.getAnimations().forEach(a => { const e = a.effect && a.effect.target; if(!e) return;
+                const mine = e.closest && e.closest('.hfx-layer.hfx-ufo, .hfx-box.hfx-ufo') || ((e === g || e.parentElement === g) && !(a instanceof CSSAnimation));
+                if(mine){ try{ a.pause(); a.currentTime = t * 1000; }catch(x){} } });
+              const r = g.getBoundingClientRect(), cs = getComputedStyle(g), tn = g.querySelector(':scope > .hfx-tint');
+              const bx = g.querySelector('.hfx-box.hfx-ufo');
+              /* (the lit sweep's copy of the number sits in a window off to its
+                 side until the scan, clipped to nothing: not counted) */
+              const lit = bx ? [...bx.querySelectorAll('*')].filter(e => !e.closest('.hfx-lit')).filter(e => { let o = 1; for(let x = e; x && x !== g; x = x.parentElement) o *= +getComputedStyle(x).opacity; return o > .02; })
+                .map(e => String(e.className).split(' ')[0]).filter(n => n !== 'hfx-ufo-boxdim') : ['no box layer'];
+              return { rect: [r.left, r.top, r.width, r.height], border: cs.borderTopColor, wash: cs.getPropertyValue('--hfx-wash').trim(), glow: tn ? +getComputedStyle(tn).opacity : null, shown: [...new Set(lit)] }; }""", t)
+            pg.wait_for_timeout(80)
+            x, y, ww, hh = dom["rect"]
+            im = _Img.open(io.BytesIO(pg.screenshot(clip={"x": x, "y": y, "width": ww, "height": hh}))).convert("RGB")
+            shots[t] = (dom, _green(im))
+        ctx.close()
+        L = shots[lit][1]
+        tag = "%s, ufo" % label
+        bad = [(t, shots[t][1], shots[t][0]["border"], shots[t][0]["glow"], shots[t][0]["shown"]) for t in pre
+               if shots[t][1]["ring"] > max(4, L["ring"] * .45) or shots[t][1]["col"] > 2 or (shots[t][0]["glow"] or 0) > .05 or shots[t][0]["shown"]]
+        check("%s: NO BEAM ON THE BOX before the saucer fires (%s) - its rim unlit (green under %.0f%% of its lit %.1f), no inner glow, no column of light down it, nothing of the effect showing in it but its dim - and the light comes on with the beam%s" % (
+                  tag, "/".join("%.1fs" % t for t in pre), 45, L["ring"], " (%d unit rows)" % info["rows"] if multi else ""),
+              not bad and L["ring"] >= 12 and L["col"] >= 3 and (multi is False or info["rows"] >= 2),
+              {"bad": bad, "lit": L, "rows": info["rows"], "pre": {t: shots[t][1] for t in pre}})
+    # ...and the same in the unlock card's miniature (the whole effect in a
+    # small results screen) and a live Customize stage (the small box's own
+    # 7s UFO): the box's rim and glow are unlit until its beam fires
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    mk = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); theme.reduceMotion = false;
+      const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:10px;top:10px;width:300px;z-index:9999;'; document.body.appendChild(host);
+      const m = buildHundoFxMock('ufo', { delay: 0 }); host.appendChild(m);
+      const st = buildHundoFxStage('ufo', { live: true, big: true, delay: 0 }); const h2 = document.createElement('div'); h2.style.cssText = 'position:fixed;left:10px;top:420px;width:300px;z-index:9999;'; h2.appendChild(st); document.body.appendChild(h2);
+      const first = { mock: getComputedStyle(m.querySelector('.rs-grade')).borderTopColor, stage: getComputedStyle(st).borderTopColor };
+      for(let i = 0; i < 60 && !(m.querySelector('.hfx-ufo-inbeam') && st.querySelector('.hfx-saucer.is-mini')); i++) await wait(100);
+      const mg = m.querySelector('.rs-grade');
+      const look = (card, t, layerSel) => { document.getAnimations().forEach(a => { const e = a.effect && a.effect.target; if(!e) return;
+          if((e.closest && e.closest(layerSel)) || ((e === card || e.parentElement === card) && !(a instanceof CSSAnimation))){ try{ a.pause(); a.currentTime = t * 1000; }catch(x){} } });
+        const tn = card.querySelector(':scope > .hfx-tint'); return { t, border: getComputedStyle(card).borderTopColor, glow: tn ? +getComputedStyle(tn).opacity : null }; };
+      const out = { first, mock: [], stage: [] };
+      for(const t of [1.5, 3.0, 3.8, 5.2]) out.mock.push(look(mg, t, '.hfx-mock .hfx-layer.hfx-ufo, .hfx-mock .hfx-box.hfx-ufo'));
+      for(const t of [1.0, 2.0, 2.7, 3.6]) out.stage.push(look(st, t, '.hfx-stage .hfx-box.hfx-ufo'));
+      return out; }""")
+    ctx.close()
+    def alpha(c):   # rgba(), or a colour caught mid-animation: oklab(... / a), color(srgb ... / a)
+        m = re.match(r"rgba\([^)]*,\s*([\d.]+)\)", c or "") or re.search(r"/\s*([\d.]+)\)", c or "")
+        return float(m.group(1)) if m else 1.0
+    okm = mk and all(alpha(x["border"]) <= .3 and (x["glow"] or 0) < .05 for x in mk["mock"][:3]) and alpha(mk["mock"][3]["border"]) > .9 and (mk["mock"][3]["glow"] or 0) > .9
+    oks = mk and all(alpha(x["border"]) <= .3 and (x["glow"] or 0) < .05 for x in mk["stage"][:3]) and alpha(mk["stage"][3]["border"]) > .9 and (mk["stage"][3]["glow"] or 0) > .9
+    check("ufo: the unlock card's miniature and a live Customize stage - their boxes unlit until the beam fires (from the first frame), lit once it has",
+          okm and oks and alpha(mk["first"]["mock"]) <= .3 and alpha(mk["first"]["stage"]) <= .3, mk)
     # and the results flow waits for all of it: the first scene comes after
     # the saucer has gone (8.91s), not 2.3s in, nor at the old 7s tail
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
