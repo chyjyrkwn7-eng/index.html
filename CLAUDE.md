@@ -15845,7 +15845,65 @@ disagree with it.
       invisible at both ends but did not END where they began; their last
       frame is their first now - the way back is taken at opacity 0 (the
       shock's last 2%, the fragments' from 82%) - and check-loops reports
-      0 seams.
+      0 seams. (Their check-loops allow-list entries, which two branches
+      had each added, are gone - cut3.)
+  - **SUPERNOVA WITH THE PLANET ROUND'S DEBRIS (cut3).** The planet round's
+    `decorateSupernovaHero` (which `attachCosmicScar` now is) puts 20
+    shards of debris INSIDE the two orbit layers (`.csc-ringfrag`) and the
+    light that passes the scar (`.csc-pass`) into the hero. The scene's
+    reveal only ever held back TOP-LEVEL children the plain build lacks,
+    so - proved frame by frame on 748ddc9 - the debris was on the new
+    planet from the swap (b+0.9s, before the scar, before the sweep), the
+    sweep's own 28 shards then rode the rings beside it (48 pieces at
+    once: two sets), and the passing light never showed (`.tier-cutscene`
+    hides `.csc-pass` without `.csc-live`), so the end was not Home's look.
+    - **The sweep throws Home's own debris out.** No second set: `snSweep`
+      takes every `.csc-ringfrag` in the after-planet, reads its resting
+      place off the layout (offsets plus its own `translate`, converted
+      from % - neither a turning layer nor the stage's scale changes
+      them), and flies it there on its `translate` and `scale` (Web
+      Animations, composed from its own values, ending exactly on them):
+      out of the planet's middle in a spiral, a 6% overshoot, settling,
+      the turn easing to nothing so it lands at rest in its layer. A hot
+      glow (`.sn-hot`, a child under its shard) cools as it lands. Its own
+      tumble (`rotate`) runs straight through. Eight embers that are not
+      debris fly further and burn out. Until the sweep (`sn-swept`) the
+      debris is `visibility:hidden` - not opacity, which a piece may
+      animate itself. **Nothing depends on how a piece is drawn, which
+      layer carries it, or where Genesis is** - the next planet round is
+      changing all three.
+    - **The passing light**: `.csc-live` goes on the after-planet with the
+      scar (`sn-scarred`), every `.csc-pass` held at `filter:opacity(0)` -
+      their own opacity is animated, which a transition cannot fade - and
+      eased up with the rings (`sn-rings`). The scene ends with all of it
+      live, as Home has it.
+    - **The before-planet is never Supernova's** (`quietBuild(false)`), so a
+      replayed scene starts from the planet before the scar.
+    - **The art is drawn before the first frame.** `warmSupernovaArt()`
+      (the scar, `cosmicScarArt`, ~62ms here; the dust, `snDustURL`,
+      ~25-35ms - which used to be drawn AT THE SWELL, mid-scene, with the
+      planet shaking) runs as the scene is built, ~200ms in all before the
+      dark comes up. Measured at that moment on the results screen: the
+      end of a held beat, with only transform and opacity animations
+      running (the compositor's; a busy main thread does not stop them);
+      on Home, a cleared stage. Drawing it as the results screen is built
+      was tried and measured too: +150ms between the last answer and the
+      results, a delay someone would feel. Taken out.
+    - Beats: scar b+1.3s (and `.csc-live`), the sweep b+1.8s, settled
+      b+4.4s, rings b+5.4s, the title b+7.4s - `{ burst 22000, settle
+      29400, outro 34300 }`, ~36s.
+    - **Gate** (`check_b317_supernova`, fail on 748ddc9): every frame, no
+      debris seen on either planet before `sn-swept`, never the debris
+      and a second set at once, and from the title exactly as many
+      pieces showing as Home's own Supernova build has, none extra; the
+      passing light all live at the end, as many as Home's; and every
+      first (uncached) draw of the scar and the dust made before
+      `supernova-visible`. The sweep check now reads the debris itself
+      (still in flight, most of it 92-158 units out).
+    - `check_b317_planet`'s tap on the disc expected the literal "Your
+      system" and went red at the merge with the caption round, which
+      names the planet "Your flares" - the label rule again. It reads the
+      name off the app now (`homeTapCopyPlanet(0).name`).
   - **The lag and the "placed off" flares.** The second round took the
     bubbles' `backdrop-filter` blur off inside a scene (re-sampled every
     frame while they move); the third round put it back, because the
@@ -16185,7 +16243,9 @@ disagree with it.
       in right after the plasma), so the bubbles exist to be lit.
     - Held still and dark under Reduce motion; hidden in the rank
       cutscene unless the hero carries `.csc-live` (that scene is another
-      round's; see "ONE CALL").
+      round's; see "ONE CALL"). The Supernova scene now adds it, with the
+      scar, and fades the light up with the rings - see "SUPERNOVA WITH
+      THE PLANET ROUND'S DEBRIS (cut3)".
   - **Merged with b316-work at 7ee6c51** (rings2's caption round): taps on
     Home answer in the caption under the planet, so the gate reads the
     answer there; and b316-work as merged failed check-loops on cut2's two
