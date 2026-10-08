@@ -15004,6 +15004,48 @@ disagree with it.
     same flares) and asserts, every frame 90-300, under AND whole glass;
     and that the flash lasts ~1s with the big flash still at ~frame 300.
     Both fail on 68531d9.
+  - **ROUND FIVE - nothing stray, nothing left glowing, a tint of the new
+    rank (03cd1d7, 7bf6876).** Each held by `check_b317_cutspin`
+    (frame-stepped) and failing on the build before it:
+    - *"There's like a flare floating across the screen?"* The outro
+      eased the stage from 1.15x to .92x while it faded (a system
+      drifting), and the scene bridge carried a round pool of the rank
+      colour over the results - a blurred flare floating there until the
+      card came. The outro holds the stage still (within 1px) and a rank
+      scene opens its bridge plain (`openSceneBridge(c, { plain: true })`).
+    - *"The flash coming off the flare shooting away when the words come
+      up ... the big glow should fade out."* Two things were on the NEW
+      planet's flare at the title: the slot's breathing pool of colour
+      (`.rank-orbit-slot.is-igniting::before`) and a one-off
+      `cosmic-badge-newly-lit` pop 700ms after the swap, which fired just
+      as the words came up. Both are gone: from the title on it is a
+      plain lit flare, Home's look.
+    - *"The pulse coming off the new flare mid spin is not the best."*
+      One ignition of ~1s (`.rank-litpop`): a bloom out of the core that
+      peaks in ~90ms and settles IN PLACE, one halo (`> i`), ONE
+      shockwave ring in the rank colour (`::after`, 2.5px, scale .85 to
+      2.6 over .8s), the bubble swelling 1.14x and settling - expo-out
+      curves, nothing flung off. The pool behind the slot is
+      `content:none` in the scene: it used to stay through the whole 2s
+      slow-down as a halo, so the "second of flash" was two and a half.
+    - *"Give a very little tint of the new background ... keep it pretty
+      dark."* `.rank-tint`, behind everything, carries the new rank's
+      `--theme-c1/2/3` (its own `data-accent`) at about a fifth of Home's
+      strength, easing in over 2.4s from `supernova-settle` and carried
+      through the outro. Measured on a 17 Pro Max: the dark goes from
+      (5,3,8) to at most ~(12,31,37).
+    - **The polish pass.** The planet rises out of the dark
+      `RANK_ARRIVE_MS` (320ms) after the dark starts coming up, not in the
+      same frame (a ghost of it sat over the results for a few frames);
+      and the end goes to dark FIRST - `rank-fadeout`, `RANK_FADEOUT_MS`
+      (850) before the end, fades the planet and the tint out over the
+      dark, and only then does the dark give way to the dim over the
+      results, so no ghost of the planet sits over the 100% box. Every
+      approved beat keeps its time (the flash is still at ~frame 300 on
+      the gate's clock).
+    - The bridge check's window is 25s, not 20: under load the whirl's
+      `finished` can resolve late (the fallback fires at 12s), and a run
+      that was green alone went red beside a second gate run.
   - **The lag and the "placed off" flares.** The second round took the
     bubbles' `backdrop-filter` blur off inside a scene (re-sampled every
     frame while they move); the third round put it back, because the
