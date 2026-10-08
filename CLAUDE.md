@@ -15929,6 +15929,14 @@ disagree with it.
     (`homeUnlockBlocked`, `CHAR_SPECIAL_COVERS`); `ringDrawHeld` names
     `.sf-scene` (it named `.xs-scene`, which three of the old scenes had).
     Muted banners play nothing, as before.
+  - **The old Home Void cutscene is gone from every path.**
+    `playVoidCutscene` (Home, for a `pendingVoidCutscene` stored before
+    build 215 - nothing has queued one since) plays `playVoidFlareScene`
+    and then Home and Void's card as it always did, and refuses to start a
+    second while one is up (a second `showHome()` inside the ~29s scene
+    stacked two old ones on b6cd249). Its `#void-cutscene` CSS is unused;
+    the busy-checks that still name `#void-cutscene` are harmless (Home has
+    returned early while the scene plays, so none of them can run).
   - **Gate: `check_b317_sflare`** - stepped on the page clock with every
     animation seeked (`SF_SEEK`), all six scenes: the character's own live
     drawing twice, loops running in real time; a silhouette first (lit copy
@@ -15939,8 +15947,12 @@ disagree with it.
     parts; 4s+ longer than b6cd249 (the first two 60%); the Home queue held
     throughout; under Reduce motion a 3.8-5.5s still scene lit from the
     first frame, and the quiet results path playing it once; the flow on a
-    real run (summarize, the real scene, the cards logged). 46 assertions
-    fail on b6cd249; the 9 that pass there are the guards (queue, flow).
+    real run (summarize, the real scene, the cards logged); the figure
+    turns flat (no 3D over the drawing) and Horizon's ground reaches the
+    bottom of the screen (both fail on 141b640); the Home path plays the
+    new Void scene once (fails on b6cd249). 46+ assertions fail on
+    b6cd249; the ones that pass there are the guards (queue, flow,
+    hand-over).
     check_b312_flares, check_b313_flares, check-unlocks (third flare) and
     record-cutscenes moved to the new structure. **Pre-existing, not this
     stream's:** check_b313_flares_glass's "a tap on a bubble with a flare
