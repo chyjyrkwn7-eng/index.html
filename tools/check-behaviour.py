@@ -10962,12 +10962,16 @@ def check_b314_chars(br):
       const tiles = [...document.querySelectorAll('.badge-tile.is-locked')];
       out.lockedTiles = tiles.length;
       out.tileLeaks = tiles.map((t, i) => leaks(t.querySelector('svg'), units.filter(x => !unitBadgeEarned(x))[i] || u)).filter(l => l.length).length;
-      out.tileForm = tiles.filter(t => t.querySelectorAll('svg path').length > 12).length;
+      /* REVISED IN 317 (badge2): the token is a struck render now - one
+         grey image.badge-raster with no data-enamel - or, with no canvas,
+         the vector drawing's many paths */
+      const form = sv => !!sv && (sv.querySelectorAll('path').length > 12 || !!sv.querySelector('image.badge-raster:not([data-enamel])'));
+      out.tileForm = tiles.filter(t => form(t.querySelector('svg'))).length;
       out.tileGlowNeutral = tiles.every(t => spread(getComputedStyle(t.querySelector('.badge-tile-art')).getPropertyValue('--badge-glow').trim()) < 10);
       showUnlockDetail(badgeDetail(u)); await wait(400);
       const card = document.querySelector('.unlock-card-badge .unlock-card-art');
       out.cardLeaks = card ? leaks(card.querySelector('svg'), u) : ['missing'];
-      out.cardForm = card ? card.querySelectorAll('svg path').length > 12 : false;
+      out.cardForm = card ? form(card.querySelector('svg')) : false;
       out.cardGlow = card ? spread(getComputedStyle(card).getPropertyValue('--badge-glow').trim()) : 999;
       document.querySelectorAll('.invite-overlay').forEach(n => n.remove());
       /* an earned one keeps its colour */
