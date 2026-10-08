@@ -15854,6 +15854,7 @@ def main():
             check_b317_daily(br)
             check_b317_volume(br)
             check_b317_cutspin(br)
+            check_b317_evolve(br)
             check_b317_specials(br)
             check_b317_challenge_specials(br)
             check_b317_hundobox(br)
