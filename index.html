@@ -14833,14 +14833,19 @@
   @keyframes rk-nova-core-soft{ 0%{ transform:scale(.85); opacity:.85; } 34%{ transform:scale(1.32); opacity:1; } 100%{ transform:scale(.85); opacity:.85; } }
   @keyframes rk-nova-flare-soft{ 0%{ transform:scale(.72); opacity:.4; } 36%{ transform:scale(1.18, 1.12); opacity:1; } 100%{ transform:scale(.72); opacity:.4; } }
   @keyframes rk-nova-halo-soft{ 0%{ transform:scale(.9); opacity:.5; } 38%{ transform:scale(1.12); opacity:1; } 100%{ transform:scale(.9); opacity:.5; } }
-  @keyframes rk-nova-shock-soft{ 0%{ transform:scale(.6); opacity:0; } 30%{ transform:scale(.8); opacity:.75; } 100%{ transform:scale(1.2); opacity:0; } }
+  /* SEAMLESS (the second evolution round): the shockwave and the
+     fragments are invisible at both ends, and their LAST frame is now their
+     FIRST - the way back to the start is taken at opacity 0 (shock: the
+     last 2%; fragments: from 82%) - so a recorded flip-book loops with no
+     jump and check-loops sees start == end. */
+  @keyframes rk-nova-shock-soft{ 0%{ transform:scale(.6); opacity:0; } 30%{ transform:scale(.8); opacity:.75; } 98%{ transform:scale(1.2); opacity:0; } 100%{ transform:scale(.6); opacity:0; } }
   @keyframes rk-nova-x-soft{ 0%{ transform:scale(.6); opacity:.25; } 34%{ transform:scale(.98); opacity:.8; } 100%{ transform:scale(.6); opacity:.25; } }
   @keyframes rk-nova-frag-soft{
     0%{ transform:translate(0px, 0px) rotate(0deg) scale(.45); opacity:0; }
     22%{ transform:translate(calc(var(--fx) * .3), calc(var(--fy) * .3)) rotate(calc(var(--fr) * .2)) scale(1); opacity:.9; }
     52%{ opacity:.8; }
     82%{ transform:translate(var(--fx), var(--fy)) rotate(var(--fr)) scale(.8); opacity:0; }
-    100%{ transform:translate(var(--fx), var(--fy)) rotate(var(--fr)) scale(.8); opacity:0; }
+    100%{ transform:translate(0px, 0px) rotate(0deg) scale(.45); opacity:0; }
   }
   .rankmap-stop.is-locked .rankmap-node{ background:#0C0F14; border-color:rgba(255,255,255,.14); box-shadow:none; }
   .rankmap-stop.is-locked .rankmap-node > svg{ filter:grayscale(1) brightness(.7); opacity:.45; }
