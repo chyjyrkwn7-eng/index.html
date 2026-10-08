@@ -51643,7 +51643,8 @@ setTimeout(() => {
    "grey" (build 314) the badge's FORM with nothing of its colour - see
    below. opts.slot === false draws the token alone, no slot (the badge
    case cutscene's coin, which brings its own shadow); same frame, so a
-   token laid over a slot lands on it to the pixel. */
+   token laid over a slot lands on it to the pixel. opts.fine adds the
+   rim's spun finish, for a badge drawn big (the token, a badge's card). */
 function buildUnitBadgeSVG(unitName, earned, opts){
   opts = opts || {};
   const NS = "http://www.w3.org/2000/svg";
@@ -51827,6 +51828,18 @@ function buildUnitBadgeSVG(unitName, earned, opts){
   ring(.7, lit(uid + "-cr", [[0, "#FFFFFF", .95], [.5, "#FFFFFF", .42], [1, "#FFFFFF", .12]]), tok);
   ring(G.metal, radial(uid + "-sp", [[0, "#FFFFFF", .7], [.45, "#FFFFFF", .22], [1, "#FFFFFF", 0]],
     X0 + .22 * (X1 - X0), Y0 + .16 * (Y1 - Y0), .42 * (X1 - X0)), tok);
+  /* SPUN, WHERE IT CAN BE SEEN (opts.fine): the rim turned on a lathe -
+     fine rings round the shape's own centre, a few levels each way. Only
+     on a badge drawn big (the cutscene's token, a badge's own card): at
+     the case's sizes rings this fine would beat against the pixels, and
+     straight grain across the colour was "printed stripes" (build 242). */
+  if(opts.fine){
+    const spun = document.createElementNS(NS, "radialGradient");
+    spun.setAttribute("id", uid + "-spun"); spun.setAttribute("gradientUnits", "userSpaceOnUse");
+    spun.setAttribute("cx", String(cx)); spun.setAttribute("cy", String(cy)); spun.setAttribute("r", ".8");
+    spun.setAttribute("spreadMethod", "repeat");
+    ring(G.metal, stopsInto(spun, [[0, "#FFFFFF", .045], [.5, "#000000", .04], [1, "#FFFFFF", .045]]), tok);
+  }
 
   /* THE GLISTEN LIVES INSIDE THE BADGE, masked to its silhouette - "the
      reflection that hits your brief case across all the badges, I can
@@ -79159,7 +79172,7 @@ function buildBadgeCoin(unitName){
   const pic = (cls, src) => { const i = mk(cls, "img"); i.alt = ""; i.decoding = "sync"; i.draggable = false; i.src = src; return i; };
   const coin = mk("bc-coin"), sway = mk("bc-sway"), spin = mk("bc-spin");
   const sil = badgeSilhouetteURL(unitName);
-  const faceSrc = badgeImageURL(buildUnitBadgeSVG(unitName, true, { slot: false }));
+  const faceSrc = badgeImageURL(buildUnitBadgeSVG(unitName, true, { slot: false, fine: true }));
   const edgeSrc = badgeEdgeURL(unitName);
   const face = side => {
     const f = mk("bc-face " + side);
@@ -80623,7 +80636,7 @@ function rsUnlockItems(run){
     items.push({ kind: "badge", unit: u, kicker: "Badge earned", name: u + " badge",
       sub: retro ? "Earned under the new badge requirements"
                  : "+" + MASTERY_BONUS.toLocaleString() + " XP mastery bonus",
-      color: "#D8E2EC", art: () => buildUnitBadgeSVG(u, true) });
+      color: "#D8E2EC", art: () => buildUnitBadgeSVG(u, true, { fine: true }) });
   });
   const tiers = run.colors.slice().sort((a, b) => TIER_ORDER_FULL.indexOf(a) - TIER_ORDER_FULL.indexOf(b));
   tiers.forEach(c => {
@@ -92886,7 +92899,7 @@ function showUnlockDetail(o){
        and a plain white light behind it rather than the unit's */
     if(o.unlocked){ try{ const bt = badgeThemeFor(o.id); if(bt && bt.p) art.style.setProperty("--badge-glow", bt.p); }catch(e){} }
     else art.style.setProperty("--badge-glow", "#8E9196");
-    try{ art.appendChild(buildUnitBadgeSVG(o.id, o.unlocked ? true : "grey")); }catch(e){}
+    try{ art.appendChild(buildUnitBadgeSVG(o.id, o.unlocked ? true : "grey", { fine: true })); }catch(e){}
   } else if(o.kind === "fx"){
     /* the whole effect, on a results screen in miniature (round 3) */
     art.appendChild(buildHundoFxMock(o.id, { delay: 380 }));
