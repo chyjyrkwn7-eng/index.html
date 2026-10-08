@@ -12070,7 +12070,9 @@ text box won't show up."*
 
 **The tooltip follows the flare.** *"Ensure that it properly and smoothly
 follows the selected flare while the text box is open with the arrow like
-thing being placed in it correctly."* `showContextualInfo(target, text,
+thing being placed in it correctly."* (Build 317 replaced the per-frame
+measuring below with a compositor ride - see "Home's taps" - because it
+shook whenever the main thread missed a frame.) `showContextualInfo(target, text,
 { follow, ring, refind })`: every frame it re-reads the target's box and
 moves the popup with a `translate` (no reflow), keeps the side it opened
 on (no flipping above/below as the ring turns), and re-aims the line from
@@ -14608,16 +14610,31 @@ disagree with it.
     fills its box is now centred by CSS (`left/top:50%` + negative
     margins) in `charFlipAttach()`; scaled drawings keep the measured
     path. An SVG has no offsetLeft, so layout offsets were not an option.
-  - **`AVATAR_VIEWBOX`: a wider window for the characters that reach
-    the edge** (Ronin, Clown, Hive, Wizard, Umbra, Zeus, Marksman,
-    Timekeeper, Solar). Everyone else keeps "3 3 34 34". Each override is
-    square, centred on x = 20 and ends at y = 37, so the bust is cut on
-    the same line and the character is only a few percent smaller.
-    Measured, not guessed: leaf-shape boxes through their transforms,
-    scenery and the halo left out (the bottom running to 40 is the bust
-    and is meant to be cut). Hacker, Orion and Genesis measure far past
-    the edge only because of animated pieces that start off-frame - they
-    look whole and were left alone.
+  - **THE TAB LOOKS THROUGH A WIDER WINDOW - FOR EVERYONE (supersedes
+    `AVATAR_VIEWBOX`).** Nine characters reach the 3 3 34 34 window's edge
+    (Ronin, Clown, Hive, Wizard, Umbra, Zeus, Marksman, Timekeeper, Solar)
+    and read as cut off in the tab, which has no border of its own. The
+    first fix gave those nine a wider viewBox EACH, everywhere - and a
+    wider window is a smaller drawing: 3-13% under everyone else (the
+    Clown's 39 units against 34), build 314's "all characters the same
+    size" undone and check_b272 / check_b314_sizes red (earned median
+    18.8, Solar 29% narrower). **A per-character window is a per-character
+    size; never fix an edge that way.** Now every drawing is 3 3 34 34,
+    and only the tab's Profile icon looks through `AVATAR_WIDE_VIEWBOX`
+    ("0.5 -2 39 39", the union the nine need, centred on x = 20, ending at
+    37) for EVERY character: `syncBottomTabAvatar()` sets it and
+    `.cx-wide`, the drawing is 39/34 of the icon and hangs 2.5 units out
+    each side and 5 over the top (`overflow:visible` on that icon), so the
+    shared 34 units land on the icon to the pixel and only the edges gain
+    room; its mask is the usual one in the wider box's percentages. The
+    flip-book records the same window as `"<id>~wide"` (`charAnimDrawing`)
+    and its `.char-flip-play` takes the svg's CSS box, and
+    `recordCharSheet` now bakes the feather and the bust fade in the
+    drawing's own units, so any window fades at the same y. The Profile
+    screen's plate is unchanged: the disc crops every character, the nine
+    included, as it did before 829f68a ("the drawing is clipped to the
+    disc, which is what turns a bust into a portrait"). Gate: the
+    wide-window block in `check_b317_tabplate`, failing on 1888b11.
   - **Every character's surfaces are lit round (`giveVolume()`, called
     from `done()`).** *"In profile some characters have a nice 3d look but
     some don't, fix that as well."* The 3D-looking ones (Alien, Ghost,
@@ -14639,7 +14656,7 @@ disagree with it.
     NOT circled.** *"They got a smidge smaller ... ensure you can see their
     backgrounds ... and ensure they still get animations on the tab."* A
     bare 28px drawing on the bar's glass lost its scene and read small once
-    the wide characters had their `AVATAR_VIEWBOX` room. A lit disc with a
+    the wide characters had their room (now the tab's `AVATAR_WIDE_VIEWBOX`). A lit disc with a
     ring was built first and turned down on sight: *"the character is
     circled in, let's not do that."* So it is a soft radial pool of the
     character's own colour (`--char-glow`, set in `syncBottomTabAvatar()`)
@@ -14693,6 +14710,25 @@ disagree with it.
     - `check_b317_pfcard` holds all five on both reference devices and
       fails 8 of 10 against 74cc518 (the two that pass are "nothing threw"
       and the dot clearing, which guards what was kept).
+    - **THE SAME CARD, SQUEEZED (317 touch-up).** Fine on both reference
+      devices and broken below them, which is why nobody saw it: on a 375
+      phone with NEW up "BADGE CASE3 of 16" touched (2px), and at level 80
+      the total XP wrapped and dropped to the LEFT, reading as a second
+      line of the same numbers; on a 320 one "3 / of / 16" stood three
+      lines tall and a challenge label got 28px beside its count, so
+      "Reach level 40" ran into "33 / 40"; and four unlock tiles (a rank
+      that hands over a banner) cut "Theme"/"Oracle" to "Th..." on every
+      phone up to 402px. Now: `.pf-xp-total{margin-left:auto}` (right,
+      wrapped or not); the case head wraps as two whole halves with a gap,
+      the count right; four tiles are two by two up to 26rem (only
+      `:has(> .pf-rw:nth-child(4))`, so three stay a row); under 22rem a
+      challenge's count drops under its label and the tile type steps
+      down. **The label check reads `scrollWidth`, not the box**: the old
+      label's BOX ended clear of the count - it was the words that ran out
+      of it, so a rect comparison passed the broken build. The squeeze
+      block at the end of `check_b317_pfcard` fails 11 times on 1888b11.
+      This machine's DejaVu is wider than SF, so an SE with NEW wraps the
+      case head here and probably not on the phone; either is correct.
   - **The grade card's fractions are white both sides** (`.rs-grade
     .rs-frac-of{opacity:1}`). Its unit bar was never broken: it fills red
     ~350ms after the card lands, and the screenshot that showed it empty
@@ -14837,6 +14873,22 @@ disagree with it.
     over the question and the card arrives on Home; it runs on a page of
     its own, because the shared page's earlier sections leave it in a
     state Home will not mount over.
+  - **Two leftovers of the move to Submit (317 touch-up).** The off pill
+    was `rgba(245,246,247,.22)` - and it is FIXED over a page that
+    scrolls, so on an SE the choice under it printed straight through
+    ("Submit answer" over "performing an act of sexual ..."). It is
+    `#44474B` now, that same 22% white flattened onto `#12161B`: identical
+    on an empty background, opaque over text. And Enter did nothing on a
+    laptop, since the document's Enter handler only knew `#nextbtn`, which
+    the daily always hides - under a hint saying "Press Enter to
+    continue". Enter now presses the daily's own pill (Submit once a
+    choice is picked, then Exit); a disabled Submit is left alone.
+    `check_b317_daily`'s keyboard block fails 3 of 5 on 1888b11.
+    A third: scrolling the result card up clear of the pill takes an SE
+    past back-to-top's 320px, so the button came up over the card's
+    corner (22x30px; the card is not tappable, so its "never on the last
+    control" rule let it). `.dailyq-outro` is in that rule's selector now;
+    the SE check beside the keyboard block fails on 1888b11.
   - Gates that answer the daily question click the choice and then
     `#dailyq-submitbtn`; `check_b317_daily` holds all of the above and
     fails 10 of 12 against build 316. Its banner regex is the banner's
@@ -15310,6 +15362,38 @@ disagree with it.
     surging, no filter, no layout shift, one box after four taps, at most
     one surge per ring), and Reduce motion (still and visible, nothing
     moving). Fails 1888b11.
+  - **The box rides with the flare, on the compositor (round two).**
+    *"The things pop up when clicking the flares they slightly shake."*
+    The follow was a requestAnimationFrame loop that MEASURED the target
+    each frame and wrote the line's left/top and a rounded translate. The
+    flare moves on the compositor (the orbit's spin, a bubble's float), so
+    on any frame the main thread missed the box stood still while the
+    flare went on, then jumped to catch up. Now the box, its line and its
+    ring are one group (`#contextual-info-follow`, fixed, the size of the
+    screen, so the children's fixed positions mean what they always did),
+    and `contextualFollowPath()` reads the target's path over the box's
+    life ONCE, by stepping the target's own animations (every ancestor
+    animation that moves it, the surge included) through 4.65s in 150ms
+    steps and measuring, then puts every one back (running ones by their
+    start time, so they stay on the timeline). The group plays that path
+    as translate3d keyframes from the same moment, so box and flare move
+    together on the compositor frame for frame. No layout property is
+    written after placement, nothing is rounded, and the box is placed
+    once already clear of the screen edges for the whole path, so it
+    never flips side. `refind` re-reads the path from the new target if
+    Home is rebuilt underneath. Nothing moving (Reduce motion) means no
+    path and a still box. **Measured** (`check_b317_followglide`,
+    frame-stepped, the page's frame callbacks run on two frames in four):
+    worst frame-to-frame change of the box's offset from an inner-ring
+    flare 1.02px on e877af7 (17 Pro Max), 0.012/0.033px after (17 Pro Max
+    / iPad Pro 11); from a floating bubble 0.36/0.35px before (a slow
+    bob, under the bar, so only the flare case fails before) and
+    0.023/0.068px after.
+  - **The planet's pointer ends on its rim** (`aimEdge`): *"clicking the
+    planet, the line pointing at goes to the center, do it from the
+    bottom or top edge."* The line runs to the sphere's bottom edge when
+    the box is below it and its top edge when above. The tap effect
+    itself is unchanged (*"The effect when clicking it is cool."*).
   - Recorded frame-stepped: the popups' 3.2/4.2s timers run in real time,
     so the recorder clears `showContextualInfo._t` and closes them on the
     virtual clock, and `element.animate()` is patched to freeze each new

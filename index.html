@@ -1643,6 +1643,11 @@
     pointer-events:none;
   }
   #contextual-info-popup.contextual-info-show{ opacity:1; }
+  /* a followed box, its line and its ring, moved as one (showContextualInfo
+     follow): a fixed box the size of the screen, so its children's fixed
+     positions (top or bottom, left) mean what they always did, carried by
+     one compositor transform */
+  #contextual-info-follow{ position:fixed; inset:0; z-index:220; pointer-events:none; will-change:transform; }
   #contextual-info-line, #contextual-info-line-dot{
     position:fixed; z-index:219; pointer-events:none;
     opacity:0; transition:opacity .2s ease;
@@ -3197,9 +3202,14 @@
   .next[hidden]{ display:none; }
   .next:disabled{ opacity:.35; cursor:default; }
   /* The daily question's Submit answer before a choice is picked: the
-     pill's own 3D shadows otherwise keep it reading as live. */
+     pill's own 3D shadows otherwise keep it reading as live. OPAQUE
+     (build 317 touch-up): it is fixed over a page that scrolls under it,
+     and at 22% white the choice under it read straight through - "Submit
+     answer" printed over "performing an act of ..." on an SE. #44474B is
+     that 22% white over the app's own #12161B, so it looks the same with
+     nothing behind it. */
   .foot > .floatbtn.qnext.dailyq-btn:disabled{
-    opacity:1; background-color:rgba(245,246,247,.22); background-image:none; color:rgba(255,255,255,.55);
+    opacity:1; background-color:#44474B; background-image:none; color:rgba(255,255,255,.55);
     box-shadow:0 0 0 1px rgba(255,255,255,.14) inset;
   }
   /* build 308: a reset with nothing to reset - looks off, still explains
@@ -8275,7 +8285,7 @@
      "They got a smidge smaller so let's ensure they are still a nice size
      AND let's ensure you can see their backgrounds." A bare 28px drawing
      on the bar's glass lost its scene and its own light, and read small
-     once the wide characters got their AVATAR_VIEWBOX room. A lit disc
+     once the tab got its wider window (AVATAR_WIDE_VIEWBOX). A lit disc
      with a ring was tried first and turned down - "the character is
      circled in, let's not do that" - so it is a soft pool of the
      character's own colour instead, fading to nothing with no edge.
@@ -8289,6 +8299,22 @@
       color-mix(in srgb, var(--char-glow, var(--accent)) 18%, transparent) 55%, transparent 100%);
   }
   .bottomtabs.has-options-tab #bottomtab-profile > .bottomtab-icon-avatar{ width:1.92rem; height:1.92rem; margin:-.27rem 0 -.05rem; }
+  /* THE WIDE WINDOW (AVATAR_WIDE_VIEWBOX "0.5 -2 39 39" against everyone's
+     3 3 34 34): the drawing - and its flip-book, the same box - is 39/34
+     of the icon and hangs 2.5 units out each side and 5 over the top, so
+     the 34 shared units land exactly on the icon and only the edges gain
+     room; the bottom is unchanged. Its mask is the usual one in the
+     wider box's percentages: a 1.6-unit feather at the top and sides,
+     the bust full to 26.8, .45 at 32.24, gone at 37. */
+  #bottomtab-profile > .bottomtab-icon-avatar{ overflow:visible; }
+  #bottomtab-profile > .bottomtab-icon-avatar > svg.avatarchar-svg.cx-wide,
+  #bottomtab-profile > .bottomtab-icon-avatar > .char-flip-play.cx-wide{
+    position:absolute; left:-7.3529%; top:-14.7059%; width:114.7059%; height:114.7059%; margin:0; }
+  #bottomtab-profile > .bottomtab-icon-avatar > svg.avatarchar-svg.cx-wide{
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0%, #000 4.103%, #000 73.846%, rgba(0,0,0,.45) 87.795%, transparent 100%),
+                       linear-gradient(to right, transparent 0%, #000 4.103%, #000 95.897%, transparent 100%);
+            mask-image:linear-gradient(to bottom, transparent 0%, #000 4.103%, #000 73.846%, rgba(0,0,0,.45) 87.795%, transparent 100%),
+                       linear-gradient(to right, transparent 0%, #000 4.103%, #000 95.897%, transparent 100%); }
   @media (min-width:40rem){
     .bottomtabs:not(.has-options-tab) #bottomtab-profile > .bottomtab-icon-avatar{ width:2.64rem; height:2.64rem; margin:-.34rem 0 -.1rem; }
   }
@@ -20317,6 +20343,36 @@
     .pf-swatch.swatch{ width:3.1rem; height:3.1rem; }
     .pf-swatch.swatch .dot{ width:2.7rem; height:2.7rem; }
     .pf-strip.badge-strip{ grid-template-columns:repeat(16, minmax(0, 1fr)); }
+  }
+  /* SQUEEZE CASES (build 317 touch-up), measured at 375 and 320:
+     - the total XP wraps under the numbers once the two do not fit (a
+       6-digit total, level 80, any 320px phone); it keeps to the RIGHT
+       there, where it sits on one row, instead of dropping to the left
+       as a second line of the same blue numbers;
+     - the case's head always has a gap, and its two halves never wrap
+       inside themselves: "BADGE CASE3 of 16" touched on a 375 phone with
+       NEW up, and on a 320 one "3 / of / 16" stood three lines tall. If
+       they do not fit side by side the count takes its own row, right;
+     - on a 320 phone a challenge row's label had 28px beside its count,
+       so "Reach level 40" ran into "33 / 40"; there the count goes under
+       the label, over its bar;
+     - four unlock tiles (a rank that hands over a banner) left each label
+       34-38px on a 375-402 phone and 22px on a 320 one: "Th...", "Or...",
+       "F...". Up to 26rem the four sit two by two instead, ~100px each.
+       Three tiles are fine down to 375; on a 320 phone the type comes down
+       a step and the side padding goes, so "Theme" is whole. */
+  .pf-xp-total{ margin-left:auto; }
+  .pf-case-head{ flex-wrap:wrap; gap:.3rem .6rem; }
+  .pf-case-head > .pf-kick, .pf-case-num{ white-space:nowrap; }
+  .pf-case-count{ margin-left:auto; }
+  @media (max-width:26rem){
+    .pf-rewards:has(> .pf-rw:nth-child(4)){ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width:22rem){
+    .pf-task{ grid-template-columns:1.45rem minmax(0, 1fr); }
+    .pf-task-val, .pf-bar, .pf-task-note{ grid-column:2; }
+    .pf-rw{ padding-left:.05rem; padding-right:.05rem; }
+    .pf-rw-lab{ font-size:.68rem; }
   }
   .profile-xp-total{ font-size:.8rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; }
   /* ---- THREE RINGS, ONE SIZE (build 302) ----
@@ -40531,35 +40587,33 @@ const CHAR_SPECIAL_DRAW = {
   }
 };
 
-/* ROOM AT THE EDGES FOR THE ONES THAT REACH THEM (build 317). Every
-   character is drawn on a 40-unit square and shown through the same
-   34-unit window, 3 to 37 - and a few reach that window's edge or past it:
-   the Ronin's hat brim and scarf, the Clown's bells, the Hive's bees, the
-   Wizard's staff, Umbra's moon, Zeus's crown, the Marksman's scope ring,
-   the Timekeeper's halo and Solar's rays. In a frame with no border of its
-   own - the Profile tab - those read as cut off: "One of the ones I've
-   mentioned that gets cut off around the edges. Ensure all characters are
-   properly displayed". Each of these gets a wider window, still centred on
-   x = 20 and still ending at 37 so the bust is cut at the same line; the
-   drawing comes out a few percent smaller, nothing else moves. The flip-
-   books are cut from the same drawing, so they follow. */
-const AVATAR_VIEWBOX = {
-  ronin:      "1.5 0 37 37",
-  clown:      "0.5 -2 39 39",
-  hive:       "1.5 0 37 37",
-  wizard:     "1 -1 38 38",
-  umbra:      "1 -1 38 38",
-  zeus:       "1.5 0 37 37",
-  marksman:   "1 -1 38 38",
-  timekeeper: "1.5 0 37 37",
-  solar:      "1 -1 38 38"
-};
+/* ROOM AT THE EDGES, IN THE TAB (build 317, reworked). Every character is
+   drawn on a 40-unit square and shown through the same 34-unit window, 3
+   to 37 - and a few reach that window's edge or past it: the Ronin's hat
+   brim and scarf, the Clown's bells, the Hive's bees, the Wizard's staff,
+   Umbra's moon, Zeus's crown, the Marksman's scope ring, the Timekeeper's
+   halo and Solar's rays. In a frame with no border of its own - the
+   Profile tab in the bottom bar - those read as cut off ("Ensure all
+   characters are properly displayed").
+   The first fix gave those nine a wider viewBox each, which drew them
+   3-13% SMALLER than everyone else (the Clown's 39-unit window against
+   34) - build 314's "ensure all the characters are the same size" undone,
+   and check_b272 / check_b314_sizes red. So the window stays 3 3 34 34
+   for every character everywhere, and the TAB alone looks through a wider
+   one: AVATAR_WIDE_VIEWBOX, the union of what the nine need (still centred
+   on x = 20, still ending at 37 so the bust is cut on the same line), for
+   EVERY character, with the drawing made bigger by the same 39/34 and
+   pulled up and out over the icon's own box (.cx-wide) - so the 34 units
+   everyone shares land exactly where they did and only the edges gain
+   room. The tab's flip-book records the same wide window ("<id>~wide",
+   see charAnimDrawing). */
+const AVATAR_WIDE_VIEWBOX = "0.5 -2 39 39";
 function drawAvatarCharSVG(charId){
   const svgNS = "http://www.w3.org/2000/svg";
   const def = AVATAR_CHARACTERS.find(c => c.id === charId);
   if(!def) return null;
   const svg = document.createElementNS(svgNS, "svg");
-  svg.setAttribute("viewBox", AVATAR_VIEWBOX[charId] || "3 3 34 34");
+  svg.setAttribute("viewBox", "3 3 34 34");
   svg.setAttribute("class", "avatarchar-svg");
   svg.setAttribute("aria-hidden", "true");
   const mk = (tag, attrs) => {
@@ -45487,6 +45541,8 @@ function syncBottomTabAvatar(){
     const want = RETIRED_CHARACTER_TO[store.avatarChar] || store.avatarChar;
     if(tabIcon.dataset.char === want && tabIcon.querySelector(":scope > svg.avatarchar-svg")) return;
     const svg = buildAvatarCharSVG(store.avatarChar);
+    /* the tab's wider window, for everyone - see AVATAR_WIDE_VIEWBOX */
+    if(svg){ svg.setAttribute("viewBox", AVATAR_WIDE_VIEWBOX); svg.classList.add("cx-wide"); }
     /* Alive in the tab bar too (build 304): "your character needs to
        have its animations displayed as well." */
     if(svg){ tabIcon.replaceChildren(svg); tabIcon.dataset.char = want;
@@ -61767,8 +61823,12 @@ function charAnimDrawing(charId){
        secret character plays as a flip-book too, drawn without the depth
        shading, as it is on the page */
     const sil = /~sil$/.test(charId);
+    /* "<id>~wide" is the tab's wider window (AVATAR_WIDE_VIEWBOX) */
+    const wide = /~wide$/.test(charId);
     const svg = sil ? charSilhouetteSVG(charId.replace(/~sil$/, ""))
-      : /~pick$/.test(charId) ? pickerCharSVG(charId.replace(/~pick$/, "")) : buildAvatarCharSVGSafe(charId);
+      : /~pick$/.test(charId) ? pickerCharSVG(charId.replace(/~pick$/, ""))
+      : buildAvatarCharSVGSafe(charId.replace(/~wide$/, ""));
+    if(wide) svg.setAttribute("viewBox", AVATAR_WIDE_VIEWBOX);
     const uid = svg.getAttribute("data-cx-uid") || "\u0000";
     const id = charId.replace(/~/g, "_") + "-" + hashOf(new XMLSerializer().serializeToString(svg).split(uid).join("u"));
     charAnimDrawings.set(charId, { svg, id, depth: !sil });
@@ -62001,7 +62061,13 @@ async function recordCharSheet(drawing, px){
         const lg = document.createElementNS(svgNS, "linearGradient");
         lg.setAttribute("id", "cxfadeg"); lg.setAttribute("x1", "0"); lg.setAttribute("y1", "0"); lg.setAttribute("x2", "0"); lg.setAttribute("y2", "1");
         /* build 314: the top and the sides feather too, as in the CSS */
-        [["0", "#000000"], [".047", "#FFFFFF"], [".7", "#FFFFFF"], [".86", "#737373"], ["1", "#000000"]].forEach(([o, c]) => {
+        /* in the drawing's own units, so a wider window (the tab's, see
+           AVATAR_WIDE_VIEWBOX) feathers at ITS edges and fades the bust
+           over the same stretch: 1.6 units in from the top, full to
+           26.8, .45 at 32.24, gone at 37. For 3 3 34 34 these are the
+           CSS mask's .047 / .7 / .86 exactly. */
+        const at = y => String(Math.max(0, Math.min(1, (y - vb[1]) / vb[3])));
+        [["0", "#000000"], [at(vb[1] + 1.6), "#FFFFFF"], [at(26.8), "#FFFFFF"], [at(32.24), "#737373"], [at(37), "#000000"]].forEach(([o, c]) => {
           const st = document.createElementNS(svgNS, "stop"); st.setAttribute("offset", o); st.setAttribute("stop-color", c); lg.appendChild(st);
         });
         const mk = document.createElementNS(svgNS, "mask");
@@ -62019,7 +62085,7 @@ async function recordCharSheet(drawing, px){
           [["0", a0], ["1", a1]].forEach(([o, op]) => { const st = document.createElementNS(svgNS, "stop"); st.setAttribute("offset", o); st.setAttribute("stop-color", "#000000"); st.setAttribute("stop-opacity", String(op)); hg.appendChild(st); });
           defs.appendChild(hg);
           const sr = document.createElementNS(svgNS, "rect");
-          const sw = vb[2] * 0.047;
+          const sw = 1.6;
           sr.setAttribute("x", k ? vb[0] + vb[2] - sw : vb[0]); sr.setAttribute("y", vb[1]); sr.setAttribute("width", sw); sr.setAttribute("height", vb[3]);
           sr.setAttribute("fill", "url(#" + id + ")");
           mk.appendChild(sr);
@@ -62164,8 +62230,10 @@ function charFlipAttach(el){
   const layoutW = svg.clientWidth || parseFloat(getComputedStyle(svg).width) || 0;
   if(!layoutW) return null;
   if(layoutW > CHAR_FLIP_MAX_CSS) return false;
-  const charId = charIdOfSvg(el, svg);
-  if(!charId) return false;
+  const wide = svg.classList.contains("cx-wide");
+  const charId0 = charIdOfSvg(el, svg);
+  if(!charId0) return false;
+  const charId = wide ? charId0 + "~wide" : charId0;
   const scale = Math.min(window.devicePixelRatio || 1, 2);
   /* THE DRAWING'S OWN SCALE IS BAKED INTO THE SHEET (build 314). "In the
      leaderboard, all the characters are still slightly shaking." The
@@ -62224,7 +62292,12 @@ function charFlipAttach(el){
     svg.style.transform = prevT;
     const S = sr.width > 0 ? sr.width / layoutW : 1;
     const inset = (layoutW - cellCss) / 2;
-    if(ownScale){
+    if(wide){
+      /* the tab's wide drawing hangs over its icon by CSS (.cx-wide); the
+         sheet takes exactly the same box, so no reading can catch it
+         half-way through the bar coming back */
+      play.classList.add("cx-wide");
+    } else if(ownScale){
       /* centred on the drawing as it is SHOWN, on whole device pixels */
       const shown = svg.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
       const snap = v => Math.round(v * dpr) / dpr;
@@ -62779,7 +62852,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
       e.stopPropagation();
       /* and the planet answers the touch (build 317, planetTapFx) */
       try{ planetTapFx(wrap, e); }catch(err){}
-      showContextualInfo(sphere, "..... ");
+      showContextualInfo(sphere, "..... ", { aimEdge: true });
     });
   }
   svg.appendChild(sphere);
@@ -74721,27 +74794,91 @@ function planetTapFx(hero, ev){
   });
 }
 
+/* THE BOX RIDES WITH WHAT IT POINTS AT (build 317, round two). "The
+   things pop up when clicking the flares they slightly shake." A flare
+   turns on the compositor (its orbit's spin) and a rank bubble floats
+   there; the box used to be moved from a requestAnimationFrame loop that
+   MEASURED the target every frame and wrote the line's left/top - so on
+   any frame the main thread did not get to (a phone drops them all the
+   time) the box stood still while the flare went on, and the next frame
+   caught it up with a jump. Measured frame-stepped with two frames in
+   four missed: 1px jumps (check_b317_followglide); after, 0.01-0.07px.
+   Now the box, its line and its ring are one group, and that group is
+   given an animation of its own: the target's path over the box's life,
+   read once when it opens by stepping the target's own animations through
+   it (contextualFollowPath - the same maths the compositor uses, because
+   it IS those animations) and played back as translate3d keyframes on the
+   same timeline from the same moment. The two then move together on the
+   compositor, frame for frame, whatever the main thread is doing; no
+   layout property changes after the box is placed, nothing is rounded,
+   and the box keeps the side it opened on for its whole life (it is
+   placed once, already clear of where the target will go). */
+const CONTEXTUAL_FOLLOW_MS = 4650, CONTEXTUAL_FOLLOW_STEP = 150;
+function contextualFollowPath(el, ms){
+  const moving = [];
+  for(let n = el; n && n !== document.body; n = n.parentElement){
+    let list = [];
+    try{ list = n.getAnimations(); }catch(e){}
+    list.forEach(an => {
+      if(an.playState !== "running" && an.playState !== "paused") return;
+      let moves = false;
+      try{ moves = an.effect.getKeyframes().some(k => ["transform", "rotate", "translate", "scale"].some(pr => k[pr] !== undefined)); }catch(e){}
+      if(moves) moving.push(an);
+    });
+  }
+  if(!moving.length) return null;
+  const centre = () => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+  const saved = moving.map(an => ({ an, st: an.startTime, ct: Number(an.currentTime) || 0, rate: an.playbackRate || 1, running: an.playState === "running" }));
+  const c0 = centre(), out = [];
+  try{
+    for(let t = 0; t <= ms; t += CONTEXTUAL_FOLLOW_STEP){
+      saved.forEach(sv => { sv.an.currentTime = sv.ct + t * sv.rate; });
+      const c = centre();
+      out.push([c[0] - c0[0], c[1] - c0[1]]);
+    }
+  }catch(e){ return null; }
+  finally{
+    /* put every animation back exactly where it was: a running one by
+       its start time, so it stays tied to the timeline */
+    saved.forEach(sv => { try{ if(sv.running && sv.st !== null) sv.an.startTime = sv.st; else sv.an.currentTime = sv.ct; }catch(e){} });
+  }
+  return out;
+}
 /* A small contextual info popup that appears right next to whatever
    element it's explaining, instead of a generic toast at the bottom
-   of the screen \u2014 for exactly the situations (tapping a Flare, tapping
+   of the screen — for exactly the situations (tapping a Flare, tapping
    a ladder tier) where the message is ABOUT one specific element on
    screen, so it should visibly belong to that element rather than
    floating disconnected at the bottom. Shares the same Liquid Glass
    styling, positioning logic (centered on the target, clamped to the
    viewport, auto-flipping above/below), and thin-triangle arrow as
    the tour tooltip, since all three are the same underlying idea:
-   information anchored to a specific point on screen. */
+   information anchored to a specific point on screen.
+   - `follow` (build 313, reworked 317): the box rides with a moving
+     target - see contextualFollowPath above. `refind` finds the same
+     target again if the screen is rebuilt under it.
+   - `ring` draws a ring round the target in place of the dot, which
+     would otherwise sit on the very flare being explained, and the line
+     stops at the ring; `ringFit` sizes it round something big.
+   - `aimEdge` (build 317): the line ends on the target's top or bottom
+     edge - whichever faces the box - not at its centre. "Clicking the
+     planet, the line pointing at goes to the center, do it from the
+     bottom or top edge." */
 function showContextualInfo(targetEl, message, opts){
   opts = opts || {};
   if(showContextualInfo._raf){ cancelAnimationFrame(showContextualInfo._raf); showContextualInfo._raf = 0; }
-  const existing = document.getElementById("contextual-info-popup");
-  if(existing) existing.remove();
-  const existingLine = document.getElementById("contextual-info-line");
-  if(existingLine) existingLine.remove();
-  const existingDot = document.getElementById("contextual-info-line-dot");
-  if(existingDot) existingDot.remove();
+  if(showContextualInfo._follow){ try{ showContextualInfo._follow.cancel(); }catch(e){} showContextualInfo._follow = null; }
+  ["contextual-info-popup", "contextual-info-line", "contextual-info-line-dot", "contextual-info-follow"].forEach(id => {
+    const e = document.getElementById(id);
+    if(e) e.remove();
+  });
   if(!targetEl) return;
   const rect = targetEl.getBoundingClientRect();
+  const path = opts.follow ? contextualFollowPath(targetEl, CONTEXTUAL_FOLLOW_MS) : null;
+  /* how far the target will travel, so the box can be placed clear of
+     the screen's edges for the whole of its life */
+  const ext = { x0: 0, x1: 0, y0: 0, y1: 0 };
+  (path || []).forEach(([x, y]) => { ext.x0 = Math.min(ext.x0, x); ext.x1 = Math.max(ext.x1, x); ext.y0 = Math.min(ext.y0, y); ext.y1 = Math.max(ext.y1, y); });
 
   const popup = document.createElement("div");
   popup.id = "contextual-info-popup";
@@ -74749,12 +74886,20 @@ function showContextualInfo(targetEl, message, opts){
   line.id = "contextual-info-line";
   const lineDot = document.createElement("div");
   lineDot.id = "contextual-info-line-dot";
-  document.body.append(line, lineDot);
+  /* a followed box, its line and its ring move as one group */
+  let host = document.body, group = null;
+  if(path){
+    group = document.createElement("div");
+    group.id = "contextual-info-follow";
+    document.body.appendChild(group);
+    host = group;
+  }
+  host.append(line, lineDot);
   const text = document.createElement("p");
   text.className = "contextual-info-text";
   text.textContent = message;
   popup.append(text);
-  document.body.appendChild(popup);
+  host.appendChild(popup);
 
   const targetCenterX = rect.left + rect.width / 2;
   const targetCenterY = rect.top + rect.height / 2;
@@ -74779,7 +74924,7 @@ function showContextualInfo(targetEl, message, opts){
   const tabBar = document.querySelector(".bottomtabs:not([hidden])");
   const barBox = tabBar ? tabBar.getBoundingClientRect() : null;
   const floorY = barBox && barBox.height ? Math.min(window.innerHeight - 12, barBox.top - 8) : window.innerHeight - 12;
-  const above = rect.bottom + 14 + realHeight > floorY;
+  const above = rect.bottom + 14 + realHeight + ext.y1 > floorY;
   if(above){
     popup.style.top = "auto";
     popup.style.bottom = (window.innerHeight - rect.top + 14) + "px";
@@ -74791,107 +74936,93 @@ function showContextualInfo(targetEl, message, opts){
   popup.style.visibility = "hidden";
   const naturalWidth = popup.getBoundingClientRect().width;
   let popupLeft = targetCenterX - naturalWidth / 2;
-  popupLeft = Math.max(margin, Math.min(popupLeft, window.innerWidth - naturalWidth - margin));
+  const lo = margin - ext.x0, hi = window.innerWidth - naturalWidth - margin - ext.x1;
+  popupLeft = lo <= hi ? Math.max(lo, Math.min(popupLeft, hi))
+    : Math.max(margin, Math.min(popupLeft, window.innerWidth - naturalWidth - margin));
   popup.style.left = popupLeft + "px";
   popup.style.visibility = "visible";
 
   /* Same line-connector redesign as the main tour tooltip, and for
-     the same reason \u2014 this is the popup specifically named as broken
+     the same reason — this is the popup specifically named as broken
      (used for things like tapping the Home orbit sphere), sharing the
      exact same arrow mechanism that was the root problem there too. */
   const pRect = popup.getBoundingClientRect();
+  const aimX = targetCenterX;
+  const aimY = opts.aimEdge ? (above ? rect.top : rect.bottom) : targetCenterY;
   const lineStartY = above ? pRect.bottom - 6 : pRect.top + 6;
-  const lineStartX = pRect.left + pRect.width / 2;
-  const dx = targetCenterX - lineStartX;
-  const dy = targetCenterY - lineStartY;
-  const dist = Math.sqrt(dx * dx + dy * dy);
+  /* a followed box's line leaves from the nearest point of its edge */
+  const lineStartX = (path || opts.aimEdge) ? Math.max(pRect.left + 18, Math.min(aimX, pRect.right - 18)) : pRect.left + pRect.width / 2;
+  let ringD = 0;
+  if(opts.ring){
+    const tw = Math.max(rect.width, rect.height);
+    /* ringFit: round the whole of something big (a rank bubble), not a
+       tiny-flare-sized ring on top of it */
+    ringD = opts.ringFit ? tw + 10 : Math.max(16, Math.min(28, tw + 9));
+  }
+  const dx = aimX - lineStartX;
+  const dy = aimY - lineStartY;
+  /* in ring mode the line stops at the ring, not on the flare */
+  const dist = Math.max(0, Math.sqrt(dx * dx + dy * dy) - ringD / 2);
   const angle = Math.atan2(dy, dx) * (180 / Math.PI);
   line.style.left = lineStartX + "px";
   /* Same coordinate fix as the main tour's own line, and the same
      real cause: this line rotates around its own vertical center
      (transform-origin:0 50%), but style.top was being set to
-     lineStartY directly \u2014 the element's TOP edge, not its center.
+     lineStartY directly — the element's TOP edge, not its center.
      For this 3px-tall line that's a measured 1.5px gap between the
      intended start point and where it actually began. */
   line.style.top = (lineStartY - 1.5) + "px";
   line.style.width = dist + "px";
   line.style.transform = "rotate(" + angle + "deg)";
-  lineDot.style.left = (targetCenterX - 4.5) + "px";
-  lineDot.style.top = (targetCenterY - 4.5) + "px";
-
-  /* ---- IT FOLLOWS WHAT IT POINTS AT (build 313) ----
-     "If the text box does show up, ensure that it properly and smoothly
-     follows the selected flare while the text box is open with the arrow
-     like thing being placed in it correctly." A secret flare is on a ring
-     that turns, so the box was placed once and the flare left it behind.
-     With `follow`, every frame re-reads where the target is and moves the
-     box with it (a translate, so nothing reflows), keeps the side it
-     opened on (no flipping above and below as it goes round), and re-aims
-     the line from the nearest point of the box's edge to the target's
-     centre. `ring` draws a ring round the target in place of the dot,
-     which would otherwise sit on top of the very flare being explained.
-     If the screen is rebuilt under it, `refind` finds the same flare in
-     the new one rather than closing. */
   if(opts.ring){
     lineDot.classList.add("is-ring");
-    const tw = Math.max(rect.width, rect.height);
-    /* ringFit: round the whole of something big (a rank bubble), not a
-       tiny-flare-sized ring on top of it */
-    const d = opts.ringFit ? tw + 10 : Math.max(16, Math.min(28, tw + 9));
-    lineDot.style.width = lineDot.style.height = d + "px";
-    lineDot.style.left = (targetCenterX - d / 2) + "px";
-    lineDot.style.top = (targetCenterY - d / 2) + "px";
+    lineDot.style.width = lineDot.style.height = ringD + "px";
+    lineDot.style.left = (aimX - ringD / 2) + "px";
+    lineDot.style.top = (aimY - ringD / 2) + "px";
+  } else {
+    lineDot.style.left = (aimX - 4.5) + "px";
+    lineDot.style.top = (aimY - 4.5) + "px";
   }
-  if(opts.follow){
-    const baseLeft = popupLeft;
-    const baseTop = pRect.top;
-    let tgt = targetEl;
-    const aim = () => {
-      if(!popup.isConnected){ showContextualInfo._raf = 0; return; }
-      if(!tgt.isConnected && opts.refind){ const again = opts.refind(); if(again) tgt = again; }
-      if(tgt.isConnected){
-        const r = tgt.getBoundingClientRect();
-        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-        const w = pRect.width, h = pRect.height;
-        let left = Math.max(margin, Math.min(cx - w / 2, window.innerWidth - w - margin));
-        let top = above ? r.top - 14 - h : r.bottom + 14;
-        top = Math.max(margin, Math.min(top, window.innerHeight - h - margin));
-        popup.style.translate = (left - baseLeft).toFixed(1) + "px " + (top - baseTop).toFixed(1) + "px";
-        const sy = above ? top + h - 6 : top + 6;
-        const sx = Math.max(left + 18, Math.min(cx, left + w - 18));
-        const ddx = cx - sx, ddy = cy - sy;
-        line.style.left = sx + "px";
-        line.style.top = (sy - 1.5) + "px";
-        /* in ring mode the line stops at the ring, not on the flare */
-        const ringR = opts.ring ? (parseFloat(lineDot.style.width) || 18) / 2 : 0;
-        line.style.width = Math.max(0, Math.sqrt(ddx * ddx + ddy * ddy) - ringR) + "px";
-        line.style.transform = "rotate(" + (Math.atan2(ddy, ddx) * 180 / Math.PI) + "deg)";
-        if(opts.ring){
-          const d = parseFloat(lineDot.style.width) || 18;
-          lineDot.style.left = (cx - d / 2) + "px";
-          lineDot.style.top = (cy - d / 2) + "px";
-        } else {
-          lineDot.style.left = (cx - 4.5) + "px";
-          lineDot.style.top = (cy - 4.5) + "px";
-        }
-      }
-      showContextualInfo._raf = requestAnimationFrame(aim);
-    };
-    aim();
-  }
+
+  /* the ride: the group plays the target's own path back from here */
+  const ride = (fromX, fromY, pth, ms) => {
+    if(showContextualInfo._follow){ try{ showContextualInfo._follow.cancel(); }catch(e){} }
+    showContextualInfo._follow = null;
+    if(!group || !pth || pth.length < 2) return;
+    try{
+      showContextualInfo._follow = group.animate(pth.map(([x, y]) => ({ transform: "translate3d(" + (fromX + x) + "px, " + (fromY + y) + "px, 0)" })),
+        { duration: (pth.length - 1) * CONTEXTUAL_FOLLOW_STEP, easing: "linear", fill: "forwards" });
+    }catch(e){}
+  };
+  if(path) ride(0, 0, path);
   requestAnimationFrame(() => { popup.classList.add("contextual-info-show"); line.classList.add("contextual-info-show"); lineDot.classList.add("contextual-info-show"); });
+  const removeAll = () => { popup.remove(); line.remove(); lineDot.remove(); if(group) group.remove(); };
   /* It lives on <body>, so a screen change does not take it: tapping a
      Home flare and then a tab left "Supernova rank - 56 more levels"
      and its pointer line over the Profile screen for the rest of the
      3.2s. Same rule as the info bubbles: it goes when the thing it
      points at leaves the page. */
   if(showContextualInfo._mo) showContextualInfo._mo.disconnect();
+  let current = targetEl;
   const orphanWatch = showContextualInfo._mo = new MutationObserver(() => {
-    if(targetEl.isConnected && popup.isConnected) return;
-    /* a followed flare whose screen was rebuilt is found again by aim() */
-    if(opts.follow && opts.refind && popup.isConnected && opts.refind()) return;
+    if(current.isConnected && popup.isConnected) return;
+    /* a followed target whose screen was rebuilt is found again, and the
+       ride picks up from it for the rest of the box's life */
+    if(opts.follow && opts.refind && popup.isConnected){
+      const again = opts.refind();
+      if(again){
+        current = again;
+        if(group){
+          const r2 = again.getBoundingClientRect();
+          const done = showContextualInfo._follow ? (Number(showContextualInfo._follow.currentTime) || 0) : 0;
+          const rest = contextualFollowPath(again, Math.max(CONTEXTUAL_FOLLOW_STEP, CONTEXTUAL_FOLLOW_MS - done));
+          ride(r2.left + r2.width / 2 - targetCenterX, r2.top + r2.height / 2 - targetCenterY, rest || [[0, 0], [0, 0]]);
+        }
+        return;
+      }
+    }
     orphanWatch.disconnect();
-    popup.remove(); line.remove(); lineDot.remove();
+    removeAll();
   });
   orphanWatch.observe(stage, { childList: true });
   clearTimeout(showContextualInfo._t);
@@ -74899,7 +75030,7 @@ function showContextualInfo(targetEl, message, opts){
     popup.classList.remove("contextual-info-show");
     line.classList.remove("contextual-info-show");
     lineDot.classList.remove("contextual-info-show");
-    setTimeout(() => { popup.remove(); line.remove(); lineDot.remove(); }, 250);
+    setTimeout(removeAll, 250);
   }, opts.follow ? 4200 : 3200);
 }
 
@@ -97706,7 +97837,12 @@ if(backToTopBtn){
      rather than padded, because extra room at the bottom would make
      every screen that fits exactly start to scroll. */
   const BACKTOTOP_END_ZONE = 260;
-  const TAPPABLE = 'button, a[href], [role="button"], input, select, textarea, label, summary, .is-tappable, [tabindex]:not([tabindex="-1"])';
+  /* `.dailyq-outro` is not tappable but is the same case (build 317
+     touch-up): the answered daily scrolls its result card up to sit just
+     over the pill, which on an SE or a 320 phone is past 320px - so the
+     button came up over the card's corner (22x30px). The card is the
+     answer; the button steps aside for it. */
+  const TAPPABLE = 'button, a[href], [role="button"], input, select, textarea, label, summary, .is-tappable, [tabindex]:not([tabindex="-1"]), .dailyq-outro';
   const backToTopBlocked = () => {
     const left = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
     if(left > BACKTOTOP_END_ZONE) return false;
@@ -98714,7 +98850,14 @@ document.addEventListener("keydown", (e) => {
     /* Not a results button that has not landed yet - the same hole as
        the tap, from a keyboard. */
     if(next && next.closest(".rs-land:not(.rs-in):not(.rs-in-now)")) return;
-    if(next && !next.hidden && !next.disabled){ e.preventDefault(); next.click(); }
+    if(next && !next.hidden && !next.disabled){ e.preventDefault(); next.click(); return; }
+    /* THE DAILY QUESTION'S OWN PILL (build 317 touch-up). #nextbtn is
+       always hidden there, so Enter did nothing at all on a laptop while
+       the hint under the question said "Press Enter to continue": a key
+       picks, Enter submits, and once answered Enter is Exit. A pick
+       still needs a choice first - a disabled Submit is left alone. */
+    const dq = document.getElementById("dailyq-submitbtn") || document.getElementById("dailyq-exitbtn");
+    if(dq && stage.contains(dq) && !dq.disabled){ e.preventDefault(); dq.click(); }
   }
 });
 
