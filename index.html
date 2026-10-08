@@ -1643,6 +1643,11 @@
     pointer-events:none;
   }
   #contextual-info-popup.contextual-info-show{ opacity:1; }
+  /* a followed box, its line and its ring, moved as one (showContextualInfo
+     follow): a fixed box the size of the screen, so its children's fixed
+     positions (top or bottom, left) mean what they always did, carried by
+     one compositor transform */
+  #contextual-info-follow{ position:fixed; inset:0; z-index:220; pointer-events:none; will-change:transform; }
   #contextual-info-line, #contextual-info-line-dot{
     position:fixed; z-index:219; pointer-events:none;
     opacity:0; transition:opacity .2s ease;
@@ -3197,9 +3202,14 @@
   .next[hidden]{ display:none; }
   .next:disabled{ opacity:.35; cursor:default; }
   /* The daily question's Submit answer before a choice is picked: the
-     pill's own 3D shadows otherwise keep it reading as live. */
+     pill's own 3D shadows otherwise keep it reading as live. OPAQUE
+     (build 317 touch-up): it is fixed over a page that scrolls under it,
+     and at 22% white the choice under it read straight through - "Submit
+     answer" printed over "performing an act of ..." on an SE. #44474B is
+     that 22% white over the app's own #12161B, so it looks the same with
+     nothing behind it. */
   .foot > .floatbtn.qnext.dailyq-btn:disabled{
-    opacity:1; background-color:rgba(245,246,247,.22); background-image:none; color:rgba(255,255,255,.55);
+    opacity:1; background-color:#44474B; background-image:none; color:rgba(255,255,255,.55);
     box-shadow:0 0 0 1px rgba(255,255,255,.14) inset;
   }
   /* build 308: a reset with nothing to reset - looks off, still explains
@@ -8275,7 +8285,7 @@
      "They got a smidge smaller so let's ensure they are still a nice size
      AND let's ensure you can see their backgrounds." A bare 28px drawing
      on the bar's glass lost its scene and its own light, and read small
-     once the wide characters got their AVATAR_VIEWBOX room. A lit disc
+     once the tab got its wider window (AVATAR_WIDE_VIEWBOX). A lit disc
      with a ring was tried first and turned down - "the character is
      circled in, let's not do that" - so it is a soft pool of the
      character's own colour instead, fading to nothing with no edge.
@@ -8289,6 +8299,22 @@
       color-mix(in srgb, var(--char-glow, var(--accent)) 18%, transparent) 55%, transparent 100%);
   }
   .bottomtabs.has-options-tab #bottomtab-profile > .bottomtab-icon-avatar{ width:1.92rem; height:1.92rem; margin:-.27rem 0 -.05rem; }
+  /* THE WIDE WINDOW (AVATAR_WIDE_VIEWBOX "0.5 -2 39 39" against everyone's
+     3 3 34 34): the drawing - and its flip-book, the same box - is 39/34
+     of the icon and hangs 2.5 units out each side and 5 over the top, so
+     the 34 shared units land exactly on the icon and only the edges gain
+     room; the bottom is unchanged. Its mask is the usual one in the
+     wider box's percentages: a 1.6-unit feather at the top and sides,
+     the bust full to 26.8, .45 at 32.24, gone at 37. */
+  #bottomtab-profile > .bottomtab-icon-avatar{ overflow:visible; }
+  #bottomtab-profile > .bottomtab-icon-avatar > svg.avatarchar-svg.cx-wide,
+  #bottomtab-profile > .bottomtab-icon-avatar > .char-flip-play.cx-wide{
+    position:absolute; left:-7.3529%; top:-14.7059%; width:114.7059%; height:114.7059%; margin:0; }
+  #bottomtab-profile > .bottomtab-icon-avatar > svg.avatarchar-svg.cx-wide{
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0%, #000 4.103%, #000 73.846%, rgba(0,0,0,.45) 87.795%, transparent 100%),
+                       linear-gradient(to right, transparent 0%, #000 4.103%, #000 95.897%, transparent 100%);
+            mask-image:linear-gradient(to bottom, transparent 0%, #000 4.103%, #000 73.846%, rgba(0,0,0,.45) 87.795%, transparent 100%),
+                       linear-gradient(to right, transparent 0%, #000 4.103%, #000 95.897%, transparent 100%); }
   @media (min-width:40rem){
     .bottomtabs:not(.has-options-tab) #bottomtab-profile > .bottomtab-icon-avatar{ width:2.64rem; height:2.64rem; margin:-.34rem 0 -.1rem; }
   }
@@ -9347,28 +9373,11 @@
 
   /* A LINE DRAWN ALONG THE SCREEN'S OWN CARDS (hfxGrowLine): each straight
      piece turned to its heading once and drawn out from its start. */
-  .hfx-seg{ position:absolute; display:block; transform-origin:0 50%; border-radius:var(--sh); transform:rotate(var(--sa)) scaleX(0);
-    animation:hfx-seg var(--gd) linear var(--gt) both; }
-  @keyframes hfx-seg{ from{ transform:rotate(var(--sa)) scaleX(0); } to{ transform:rotate(var(--sa)) scaleX(1); } }
-  .hfx-seg.is-wood{ background:linear-gradient(180deg, #24160F, #6B4A30 30%, #A7774B 50%, #4A3020 78%, #20130C); }
-  .hfx-seg.is-root{ background:linear-gradient(180deg, #2A1A10, #9A6A40 50%, #2A1A10); }
   /* ===== round 3: the world tree round the glass ===== */
   /* a card as a pane of glass: opaque enough to hide the sharp tree
      behind it, holding a softened copy of that tree, frosted and lit at
      the rim. Under the card's own content (the card isolates). */
-  .rs-card.hfx-glassed{ isolation:isolate; }
-  .hfx-pane{ position:absolute; inset:0; z-index:-1; border-radius:inherit; overflow:hidden; clip-path:inset(0 round 18px); pointer-events:none;
-    background:linear-gradient(180deg, rgba(30,26,38,.96), rgba(18,20,27,.97)); opacity:0; animation:hfx-pane var(--tot) linear both; }
-  .hfx-mock .hfx-pane{ clip-path:inset(0 round 10px); }
-  .hfx-pane.is-grade{ background:linear-gradient(180deg, color-mix(in srgb, var(--hfx-b, #7CD69A) 16%, rgba(22,24,31,.97)), rgba(18,20,27,.97) 62%); }
-  @keyframes hfx-pane{ 0%{ opacity:0; } 5%{ opacity:1; } 78%{ opacity:1; } 94%, 100%{ opacity:0; } }
-  .hfx-pane-frost{ position:absolute; inset:0; border-radius:inherit;
-    background:linear-gradient(155deg, rgba(255,255,255,.13), rgba(255,255,255,.03) 34%, rgba(255,255,255,0) 60%, rgba(255,255,255,.05)),
-      radial-gradient(120% 80% at 50% 120%, rgba(255,255,255,.05), rgba(255,255,255,0) 60%);
-    box-shadow:inset 0 1.5px 0 rgba(255,255,255,.5), inset 0 0 0 1px rgba(255,255,255,.16), inset 0 -1px 0 rgba(255,255,255,.1), inset 0 0 28px rgba(255,255,255,.07), inset 6px 0 14px -10px rgba(255,255,255,.35), inset -6px 0 14px -10px rgba(255,255,255,.25); }
-  .hfx-seg.is-trunk{ background:linear-gradient(180deg, #1E120B, #5C3E28 26%, #A8784C 48%, #6E4A30 70%, #1A0F09); }
   /* vines on the glass: living green, with a lit edge */
-  .hfx-seg.is-vine{ background:linear-gradient(180deg, #1F5E2C, #4FAE55 40%, #A7E07A 55%, #2F7A3A 80%, #164A22); border-radius:999px; }
 
   /* ===== round 3: underwater ===== */
   .hfx-uw-sea{ position:absolute; left:0; top:0; width:100%; height:var(--vh); overflow:hidden; transform:translateY(var(--vh));
@@ -9492,9 +9501,8 @@
   .hfx-mock .rs-grade.hfx-tinted .rs-grade-frac{ color:var(--hfx-t, var(--hfx-g1)); }
   /* the miniature's box the way the real one is (build 317): its label in
      the effect's colour, and its gold number giving way to the copy */
-  .hfx-mock .rs-grade .hfx-mk-kicker, .hfx-mock .rs-grade .rs-pct{ transition:color var(--hfx-ease, 1s) ease, text-shadow var(--hfx-ease, 1s) ease; }
+  .hfx-mock .rs-grade .hfx-mk-kicker{ transition:color var(--hfx-ease, 1s) ease; }
   .hfx-mock .rs-grade.hfx-tinted .hfx-mk-kicker{ color:color-mix(in srgb, var(--hfx-t, var(--hfx-g1)) 80%, transparent); }
-  .hfx-mock .rs-grade.hfx-tinted:has(> .hfx-tintnum) .rs-pct{ color:transparent; text-shadow:none; }
   .hfx-mock > .rs-actions{ display:flex; gap:.35rem; margin-top:auto; }
   /* `inherit` is not a family inside the `font` shorthand, so the whole
      declaration was dropped and these drew in the browser's own button
@@ -9637,73 +9645,40 @@
      than sitting under it: a gold fringe round every glyph, and a gold
      glow behind a magenta 100%. Only when the copy is there (:has), so a
      box with no copy keeps a number. The copy carries the glow instead. */
-  .rs-screen .rs-grade.is-perfect .rs-pct.pct.perfect{ transition:color var(--hfx-ease, 1s) ease, text-shadow var(--hfx-ease, 1s) ease; }
-  .rs-screen .rs-grade.is-perfect.hfx-tinted:has(> .hfx-tintnum) .rs-pct.pct.perfect{ color:transparent; text-shadow:none; }
+  /* it goes once the copy is fully in, so the two never dip together */
+  .rs-screen .rs-grade.is-perfect .rs-pct.pct.perfect, .hfx-mock .rs-grade .rs-pct, .hfx-stage .hfx-stage-pct{ transition:opacity .4s ease; }
+  .rs-screen .rs-grade.is-perfect.hfx-tinted:has(> .hfx-tintnum) .rs-pct.pct.perfect,
+  .hfx-stage.hfx-tinted:has(> .hfx-tintnum) .hfx-stage-pct,
+  .hfx-mock .rs-grade.hfx-tinted:has(> .hfx-tintnum) .rs-pct{ opacity:0; transition:opacity .4s ease var(--hfx-ease, 1s); }
   .hfx-tint{ position:absolute; inset:0; border-radius:inherit; opacity:0;
     box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--hfx-b) 55%, transparent), inset 0 0 30px color-mix(in srgb, var(--hfx-b) 26%, transparent);
     transition:opacity var(--hfx-ease, 1s) ease; }
   .hfx-tintnum{ position:absolute; display:block; white-space:nowrap; opacity:0; transition:opacity var(--hfx-ease, 1s) ease;
     text-shadow:none; filter:drop-shadow(0 0 12px color-mix(in srgb, var(--hfx-b) 40%, transparent)); }
-  /* the small % is an inline-block, which background-clip:text does not
-     reach into: it takes the gradient's last stop, the colour it sits by */
-  .hfx-tintnum .rs-pct-sign{ color:var(--hfx-g3, var(--hfx-g1)); }
   .hfx-tinted .hfx-tint, .hfx-tinted .hfx-tintnum{ opacity:1; }
   .hfx-tintnum{ color:transparent;
     background:linear-gradient(105deg, var(--hfx-g1), var(--hfx-g2) 55%, var(--hfx-g3, var(--hfx-g1)));
     -webkit-background-clip:text; background-clip:text; }
-  /* World Tree. Each branch is a box rotated about the tip it grows
-     from and scaled up out of it, tapered by its clip, with a vein of
-     light that flares as it grows - a pulse running up the wood. The
-     whole tree fades as one at the end. */
-  .hfx-tree{ position:absolute; inset:0; animation:hfx-tree-out var(--tot) linear both; }
-  @keyframes hfx-tree-out{ 0%, 72%{ opacity:1; } 93%, 100%{ opacity:0; } }
-  .hfx-tree.is-inner{ animation:none; }
-  .hfx-ground{ position:absolute; width:var(--gw); height:44px; margin:-22px 0 0 calc(var(--gw) / -2); border-radius:50%; opacity:0;
-    background:radial-gradient(closest-side, rgba(255,214,150,.55), rgba(255,160,190,.18) 60%, rgba(255,160,190,0));
-    animation:hfx-ground 6.8s ease both; }
-  @keyframes hfx-ground{ 0%{ opacity:0; transform:scaleX(.3); } 10%{ opacity:1; transform:scaleX(1); } 75%{ opacity:.8; } 100%{ opacity:0; transform:scaleX(1); } }
-  .hfx-tree-halo{ position:absolute; width:var(--hs); height:var(--hs); margin:calc(var(--hs) / -2) 0 0 calc(var(--hs) / -2); border-radius:50%; opacity:0;
-    background:radial-gradient(closest-side, rgba(255,214,140,.3), rgba(255,140,190,.14) 45%, rgba(255,140,190,0));
-    animation:hfx-halo 7.6s ease-in-out .9s both; }
-  @keyframes hfx-halo{ 0%{ opacity:0; transform:scale(.4); } 30%{ opacity:1; transform:scale(1); } 70%{ opacity:.8; } 100%{ opacity:0; transform:scale(1.05); } }
-  .hfx-branch{ position:absolute; display:block; transform-origin:50% calc(100% - var(--ol)); background-size:100% 100%; background-repeat:no-repeat;
-    transform:rotate(var(--a)) scaleY(0); animation:hfx-grow var(--gd) cubic-bezier(.3,.55,.45,1) var(--gt) both; }
-  .hfx-branch.is-pulse::after{ content:""; position:absolute; top:0; bottom:0; opacity:.6;
-    left:38%; right:38%; background:linear-gradient(180deg, #FFF3C8, #FFC27A 60%, rgba(255,170,120,.3));
-    animation:hfx-sap 1s ease-out calc(var(--gt) + var(--gd) * .35) both; }
-  @keyframes hfx-sap{ 0%{ opacity:.2; } 35%{ opacity:1; } 100%{ opacity:.5; } }
-  @keyframes hfx-grow{ from{ transform:rotate(var(--a)) scaleY(0); } to{ transform:rotate(var(--a)) scaleY(1); } }
-  .hfx-leaf2{ width:var(--ps); height:calc(var(--ps) * .55); margin:calc(var(--ps) * -.275) 0 0 0; transform-origin:0 50%; opacity:1;
-    background-size:100% 100%; transform:rotate(var(--lr)) scale(0); animation:hfx-leaf2 .5s cubic-bezier(.2,1.4,.4,1) var(--bt) both; }
-  @keyframes hfx-leaf2{ from{ transform:rotate(var(--lr)) scale(0); } to{ transform:rotate(var(--lr)) scale(1); } }
   /* a blossom BUDS - a small closed knot of colour - and then OPENS */
-  .hfx-bloom2{ animation:hfx-bloom2 1.15s cubic-bezier(.25,.9,.3,1) var(--bt) both; }
   @keyframes hfx-bloom2{ 0%{ transform:scale(.05) rotate(var(--r0)); opacity:0; } 12%{ transform:scale(.15) rotate(var(--r0)); opacity:1; } 38%{ transform:scale(.19) rotate(var(--r0)); } 78%{ transform:scale(1.08) rotate(4deg); } 100%{ transform:scale(1) rotate(0deg); opacity:1; } }
-  .hfx-firefly{ animation:hfx-ff-wander var(--d) ease-in-out var(--t) both, hfx-ff-blink var(--d) linear var(--t) both; }
-  @keyframes hfx-ff-wander{ 0%{ transform:translate(0, 0); } 33%{ transform:translate(var(--x1), var(--y1)); } 66%{ transform:translate(var(--x2), var(--y2)); } 100%{ transform:translate(var(--x3), var(--y3)); } }
-  @keyframes hfx-ff-blink{ 0%{ opacity:0; } 10%{ opacity:.9; } 22%{ opacity:.35; } 34%{ opacity:1; } 48%{ opacity:.4; } 62%{ opacity:.95; } 76%{ opacity:.45; } 88%{ opacity:.8; } 100%{ opacity:0; } }
-  /* petals in the wind: all one way, in gusts, turning over */
-  .hfx-petal2{ animation:hfx-wind var(--d) linear var(--t) both; }
-  @keyframes hfx-wind{ 0%{ transform:translate(0, 0) rotate(0deg); opacity:0; animation-timing-function:ease-out; } 8%{ opacity:1; }
-    30%{ transform:translate(calc(var(--w) * .42), calc(var(--f) * .22)) rotate(140deg); animation-timing-function:ease-in-out; }
-    55%{ transform:translate(calc(var(--w) * .58), calc(var(--f) * .5)) rotate(210deg); }
-    78%{ transform:translate(calc(var(--w) * .9), calc(var(--f) * .74)) rotate(320deg); opacity:.95; }
-    100%{ transform:translate(var(--w), var(--f)) rotate(400deg); opacity:0; } }
-  /* a vine revealed by a wipe: window and picture slide opposite ways */
-  .hfx-wipe{ position:absolute; overflow:hidden; }
-  .hfx-wipe-in{ position:absolute; inset:0; background:center / 100% 100% no-repeat; }
-  .hfx-wipe.is-up{ animation:hfx-wipe-up var(--d) cubic-bezier(.4,.1,.5,1) var(--t) both; }
-  .hfx-wipe.is-up > .hfx-wipe-in{ animation:hfx-wipe-up-in var(--d) cubic-bezier(.4,.1,.5,1) var(--t) both; }
-  .hfx-wipe.is-right{ animation:hfx-wipe-r var(--d) cubic-bezier(.4,.1,.5,1) var(--t) both; }
-  .hfx-wipe.is-right > .hfx-wipe-in{ animation:hfx-wipe-r-in var(--d) cubic-bezier(.4,.1,.5,1) var(--t) both; }
-  .hfx-wipe.is-left{ animation:hfx-wipe-l var(--d) cubic-bezier(.4,.1,.5,1) var(--t) both; }
-  .hfx-wipe.is-left > .hfx-wipe-in{ animation:hfx-wipe-l-in var(--d) cubic-bezier(.4,.1,.5,1) var(--t) both; }
-  @keyframes hfx-wipe-up{ from{ transform:translateY(100%); } to{ transform:translateY(0); } }
-  @keyframes hfx-wipe-up-in{ from{ transform:translateY(-100%); } to{ transform:translateY(0); } }
-  @keyframes hfx-wipe-r{ from{ transform:translateX(-100%); } to{ transform:translateX(0); } }
-  @keyframes hfx-wipe-r-in{ from{ transform:translateX(100%); } to{ transform:translateX(0); } }
-  @keyframes hfx-wipe-l{ from{ transform:translateX(100%); } to{ transform:translateX(0); } }
-  @keyframes hfx-wipe-l-in{ from{ transform:translateX(-100%); } to{ transform:translateX(0); } }
+  /* the World Tree's burst (build 317, hfxWorldTree): out like the
+     default's stardust, then a long fall - the outer piece travels, the
+     inner one flutters. Opacity holds to 70% and fades over the last 30%
+     (0.9-1.1s) while it still falls. */
+  .hfx-bl-p{ position:absolute; width:var(--ps); height:var(--ps); margin:calc(var(--ps) / -2) 0 0 calc(var(--ps) / -2); opacity:0;
+    animation:hfx-bl-fly var(--d) linear var(--dl) both; }
+  @keyframes hfx-bl-fly{
+    0%{ transform:translate(0, 0) scale(.3); opacity:0; animation-timing-function:cubic-bezier(.12,.75,.3,1); }
+    6%{ opacity:1; }
+    22%{ transform:translate(var(--dx), var(--dy)) scale(1); animation-timing-function:cubic-bezier(.35,0,.65,1); }
+    70%{ opacity:1; }
+    100%{ transform:translate(calc(var(--dx) + var(--wx)), calc(var(--dy) + var(--fall))) scale(.92); opacity:0; } }
+  .hfx-bl-i{ position:absolute; inset:0; background:center / contain no-repeat;
+    animation:hfx-bl-flutter var(--fd) ease-in-out var(--dl) var(--fn) alternate both; }
+  @keyframes hfx-bl-flutter{ from{ transform:rotate(var(--r0)) scaleX(1); } to{ transform:rotate(var(--r1)) scaleX(.3); } }
+  .hfx-bl-box{ position:absolute; inset:0; }
+  .hfx-bl-cluster{ opacity:0; animation:hfx-bloom2 1.15s cubic-bezier(.25,.9,.3,1) var(--bt) both, hfx-bl-shed 4.6s linear both; }
+  @keyframes hfx-bl-shed{ 0%, 70%{ opacity:1; } 100%{ opacity:0; } }
 
   /* The small 100% box each effect is shown off in (Customize, the unlock
      card, the results pop-up). A grid, so the number is laid out where
@@ -9731,9 +9706,6 @@
     background:linear-gradient(105deg, var(--hfx-g1), var(--hfx-g2) 55%, var(--hfx-g3, var(--hfx-g1)));
     -webkit-background-clip:text; background-clip:text;
     filter:drop-shadow(0 0 10px color-mix(in srgb, var(--hfx-b) 45%, transparent)); }
-  /* the small % is an inline-block, and background-clip:text does not
-     reach into one - it gets the same gradient of its own */
-  .hfx-stage.is-poster.hfx-tinted .hfx-stage-pct .rs-pct-sign{ color:transparent; background:inherit; -webkit-background-clip:text; background-clip:text; }
   /* (the Preview's own layers went with previewHundoFx in build 314) */
 
   /* ---------- level-up / personal-best callouts ---------- */
@@ -18984,7 +18956,7 @@
   /* an effect's whole play inside a pop-up: the pop-up is its screen */
   .rs-spot > .hfx-layer.is-inset{ position:absolute; z-index:0; }
   .rs-spot > .rs-spot-card{ position:relative; z-index:1; }
-  .rs-spot > .hfx-layer.is-inset:not(.hfx-worldtree){ z-index:2; }
+  .rs-spot > .hfx-layer.is-inset{ z-index:2; }
   .rs-spot-art.is-fx{ width:min(15rem, 70vw); height:auto; filter:none; }
   .rs-spot-art.is-fx .hfx-stage{ box-shadow:0 10px 40px rgba(0,0,0,.5), 0 0 28px color-mix(in srgb, var(--spot-color) 30%, transparent); }
   .rs-unlock-fx .rs-unlock-art{ filter:none; }
@@ -20414,6 +20386,36 @@
     .pf-swatch.swatch{ width:3.1rem; height:3.1rem; }
     .pf-swatch.swatch .dot{ width:2.7rem; height:2.7rem; }
     .pf-strip.badge-strip{ grid-template-columns:repeat(16, minmax(0, 1fr)); }
+  }
+  /* SQUEEZE CASES (build 317 touch-up), measured at 375 and 320:
+     - the total XP wraps under the numbers once the two do not fit (a
+       6-digit total, level 80, any 320px phone); it keeps to the RIGHT
+       there, where it sits on one row, instead of dropping to the left
+       as a second line of the same blue numbers;
+     - the case's head always has a gap, and its two halves never wrap
+       inside themselves: "BADGE CASE3 of 16" touched on a 375 phone with
+       NEW up, and on a 320 one "3 / of / 16" stood three lines tall. If
+       they do not fit side by side the count takes its own row, right;
+     - on a 320 phone a challenge row's label had 28px beside its count,
+       so "Reach level 40" ran into "33 / 40"; there the count goes under
+       the label, over its bar;
+     - four unlock tiles (a rank that hands over a banner) left each label
+       34-38px on a 375-402 phone and 22px on a 320 one: "Th...", "Or...",
+       "F...". Up to 26rem the four sit two by two instead, ~100px each.
+       Three tiles are fine down to 375; on a 320 phone the type comes down
+       a step and the side padding goes, so "Theme" is whole. */
+  .pf-xp-total{ margin-left:auto; }
+  .pf-case-head{ flex-wrap:wrap; gap:.3rem .6rem; }
+  .pf-case-head > .pf-kick, .pf-case-num{ white-space:nowrap; }
+  .pf-case-count{ margin-left:auto; }
+  @media (max-width:26rem){
+    .pf-rewards:has(> .pf-rw:nth-child(4)){ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width:22rem){
+    .pf-task{ grid-template-columns:1.45rem minmax(0, 1fr); }
+    .pf-task-val, .pf-bar, .pf-task-note{ grid-column:2; }
+    .pf-rw{ padding-left:.05rem; padding-right:.05rem; }
+    .pf-rw-lab{ font-size:.68rem; }
   }
   .profile-xp-total{ font-size:.8rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; }
   /* ---- THREE RINGS, ONE SIZE (build 302) ----
@@ -24175,9 +24177,19 @@
     font-family:var(--sans); font-weight:800; letter-spacing:-.045em;
     font-variant-numeric:lining-nums tabular-nums; font-feature-settings:"lnum" 1, "tnum" 1;
   }
+  /* ONE PIECE OF TYPE (build 317): "the percentage sign, it looks like a
+     solid color, ensure that and the number (the hundo) look like it goes
+     together, the color should go into that". The % is INLINE, not an
+     inline-block: background-clip:text on the number paints through its
+     in-flow inline text, and stops at an inline-block - which is why every
+     gradient 100% had a % in one flat colour of its own. Raised the same
+     as before by a taller line (vertical-align:top, and .4em more line
+     than the number's .95, so .2em of half-leading over the glyph where
+     the inline-block had a .2em margin), and at full strength: a quieter %
+     read as a separate mark. */
   .rs-pct-sign{
-    display:inline-block; font-size:.42em; font-weight:700; letter-spacing:0;
-    vertical-align:top; margin:.2em 0 0 .12em; opacity:.82;
+    display:inline; font-size:.42em; font-weight:700; letter-spacing:0;
+    vertical-align:top; line-height:1.35; margin-left:.12em;
   }
   .rs-screen .rs-pct.pct.retake-badge{ font-size:3.4rem; }
   .rs-grade-side{ min-width:0; }
@@ -24866,6 +24878,15 @@
   .rs-screen .rs-grade.is-perfect .rs-pct.pct.perfect{
     color:#F6D58E; text-shadow:0 0 18px rgba(246,213,142,.32); animation:none;
   }
+  /* the gold as a ramp across the whole "100%" (build 317), light to
+     deep, the way every effect's is - so the % is the end of the same
+     gold rather than a flat chip of it. The glow moves to a drop-shadow:
+     a text-shadow would paint over a clipped background. */
+  .rs-screen .rs-grade.is-perfect .rs-pct.pct.perfect, .hfx-mock .rs-pct, .hfx-stage-pct{
+    color:transparent; text-shadow:none;
+    background:linear-gradient(105deg, #FFEBC2, #F6D58E 52%, #E3AC4C);
+    -webkit-background-clip:text; background-clip:text;
+    filter:drop-shadow(0 0 12px rgba(246,213,142,.3)); }
   /* Its bars gold, and gold wherever a unit was aced. */
   .rs-byunit .unit-breakdown-fill.is-gold{ background:linear-gradient(90deg, var(--hfx-fa), var(--hfx-fb)); box-shadow:0 0 10px color-mix(in srgb, var(--hfx-fb) 30%, transparent); }
   /* A retake: no score, only whether anything is left. Every card's
@@ -40610,35 +40631,33 @@ const CHAR_SPECIAL_DRAW = {
   }
 };
 
-/* ROOM AT THE EDGES FOR THE ONES THAT REACH THEM (build 317). Every
-   character is drawn on a 40-unit square and shown through the same
-   34-unit window, 3 to 37 - and a few reach that window's edge or past it:
-   the Ronin's hat brim and scarf, the Clown's bells, the Hive's bees, the
-   Wizard's staff, Umbra's moon, Zeus's crown, the Marksman's scope ring,
-   the Timekeeper's halo and Solar's rays. In a frame with no border of its
-   own - the Profile tab - those read as cut off: "One of the ones I've
-   mentioned that gets cut off around the edges. Ensure all characters are
-   properly displayed". Each of these gets a wider window, still centred on
-   x = 20 and still ending at 37 so the bust is cut at the same line; the
-   drawing comes out a few percent smaller, nothing else moves. The flip-
-   books are cut from the same drawing, so they follow. */
-const AVATAR_VIEWBOX = {
-  ronin:      "1.5 0 37 37",
-  clown:      "0.5 -2 39 39",
-  hive:       "1.5 0 37 37",
-  wizard:     "1 -1 38 38",
-  umbra:      "1 -1 38 38",
-  zeus:       "1.5 0 37 37",
-  marksman:   "1 -1 38 38",
-  timekeeper: "1.5 0 37 37",
-  solar:      "1 -1 38 38"
-};
+/* ROOM AT THE EDGES, IN THE TAB (build 317, reworked). Every character is
+   drawn on a 40-unit square and shown through the same 34-unit window, 3
+   to 37 - and a few reach that window's edge or past it: the Ronin's hat
+   brim and scarf, the Clown's bells, the Hive's bees, the Wizard's staff,
+   Umbra's moon, Zeus's crown, the Marksman's scope ring, the Timekeeper's
+   halo and Solar's rays. In a frame with no border of its own - the
+   Profile tab in the bottom bar - those read as cut off ("Ensure all
+   characters are properly displayed").
+   The first fix gave those nine a wider viewBox each, which drew them
+   3-13% SMALLER than everyone else (the Clown's 39-unit window against
+   34) - build 314's "ensure all the characters are the same size" undone,
+   and check_b272 / check_b314_sizes red. So the window stays 3 3 34 34
+   for every character everywhere, and the TAB alone looks through a wider
+   one: AVATAR_WIDE_VIEWBOX, the union of what the nine need (still centred
+   on x = 20, still ending at 37 so the bust is cut on the same line), for
+   EVERY character, with the drawing made bigger by the same 39/34 and
+   pulled up and out over the icon's own box (.cx-wide) - so the 34 units
+   everyone shares land exactly where they did and only the edges gain
+   room. The tab's flip-book records the same wide window ("<id>~wide",
+   see charAnimDrawing). */
+const AVATAR_WIDE_VIEWBOX = "0.5 -2 39 39";
 function drawAvatarCharSVG(charId){
   const svgNS = "http://www.w3.org/2000/svg";
   const def = AVATAR_CHARACTERS.find(c => c.id === charId);
   if(!def) return null;
   const svg = document.createElementNS(svgNS, "svg");
-  svg.setAttribute("viewBox", AVATAR_VIEWBOX[charId] || "3 3 34 34");
+  svg.setAttribute("viewBox", "3 3 34 34");
   svg.setAttribute("class", "avatarchar-svg");
   svg.setAttribute("aria-hidden", "true");
   const mk = (tag, attrs) => {
@@ -45566,6 +45585,8 @@ function syncBottomTabAvatar(){
     const want = RETIRED_CHARACTER_TO[store.avatarChar] || store.avatarChar;
     if(tabIcon.dataset.char === want && tabIcon.querySelector(":scope > svg.avatarchar-svg")) return;
     const svg = buildAvatarCharSVG(store.avatarChar);
+    /* the tab's wider window, for everyone - see AVATAR_WIDE_VIEWBOX */
+    if(svg){ svg.setAttribute("viewBox", AVATAR_WIDE_VIEWBOX); svg.classList.add("cx-wide"); }
     /* Alive in the tab bar too (build 304): "your character needs to
        have its animations displayed as well." */
     if(svg){ tabIcon.replaceChildren(svg); tabIcon.dataset.char = want;
@@ -61846,8 +61867,12 @@ function charAnimDrawing(charId){
        secret character plays as a flip-book too, drawn without the depth
        shading, as it is on the page */
     const sil = /~sil$/.test(charId);
+    /* "<id>~wide" is the tab's wider window (AVATAR_WIDE_VIEWBOX) */
+    const wide = /~wide$/.test(charId);
     const svg = sil ? charSilhouetteSVG(charId.replace(/~sil$/, ""))
-      : /~pick$/.test(charId) ? pickerCharSVG(charId.replace(/~pick$/, "")) : buildAvatarCharSVGSafe(charId);
+      : /~pick$/.test(charId) ? pickerCharSVG(charId.replace(/~pick$/, ""))
+      : buildAvatarCharSVGSafe(charId.replace(/~wide$/, ""));
+    if(wide) svg.setAttribute("viewBox", AVATAR_WIDE_VIEWBOX);
     const uid = svg.getAttribute("data-cx-uid") || "\u0000";
     const id = charId.replace(/~/g, "_") + "-" + hashOf(new XMLSerializer().serializeToString(svg).split(uid).join("u"));
     charAnimDrawings.set(charId, { svg, id, depth: !sil });
@@ -62080,7 +62105,13 @@ async function recordCharSheet(drawing, px){
         const lg = document.createElementNS(svgNS, "linearGradient");
         lg.setAttribute("id", "cxfadeg"); lg.setAttribute("x1", "0"); lg.setAttribute("y1", "0"); lg.setAttribute("x2", "0"); lg.setAttribute("y2", "1");
         /* build 314: the top and the sides feather too, as in the CSS */
-        [["0", "#000000"], [".047", "#FFFFFF"], [".7", "#FFFFFF"], [".86", "#737373"], ["1", "#000000"]].forEach(([o, c]) => {
+        /* in the drawing's own units, so a wider window (the tab's, see
+           AVATAR_WIDE_VIEWBOX) feathers at ITS edges and fades the bust
+           over the same stretch: 1.6 units in from the top, full to
+           26.8, .45 at 32.24, gone at 37. For 3 3 34 34 these are the
+           CSS mask's .047 / .7 / .86 exactly. */
+        const at = y => String(Math.max(0, Math.min(1, (y - vb[1]) / vb[3])));
+        [["0", "#000000"], [at(vb[1] + 1.6), "#FFFFFF"], [at(26.8), "#FFFFFF"], [at(32.24), "#737373"], [at(37), "#000000"]].forEach(([o, c]) => {
           const st = document.createElementNS(svgNS, "stop"); st.setAttribute("offset", o); st.setAttribute("stop-color", c); lg.appendChild(st);
         });
         const mk = document.createElementNS(svgNS, "mask");
@@ -62098,7 +62129,7 @@ async function recordCharSheet(drawing, px){
           [["0", a0], ["1", a1]].forEach(([o, op]) => { const st = document.createElementNS(svgNS, "stop"); st.setAttribute("offset", o); st.setAttribute("stop-color", "#000000"); st.setAttribute("stop-opacity", String(op)); hg.appendChild(st); });
           defs.appendChild(hg);
           const sr = document.createElementNS(svgNS, "rect");
-          const sw = vb[2] * 0.047;
+          const sw = 1.6;
           sr.setAttribute("x", k ? vb[0] + vb[2] - sw : vb[0]); sr.setAttribute("y", vb[1]); sr.setAttribute("width", sw); sr.setAttribute("height", vb[3]);
           sr.setAttribute("fill", "url(#" + id + ")");
           mk.appendChild(sr);
@@ -62243,8 +62274,10 @@ function charFlipAttach(el){
   const layoutW = svg.clientWidth || parseFloat(getComputedStyle(svg).width) || 0;
   if(!layoutW) return null;
   if(layoutW > CHAR_FLIP_MAX_CSS) return false;
-  const charId = charIdOfSvg(el, svg);
-  if(!charId) return false;
+  const wide = svg.classList.contains("cx-wide");
+  const charId0 = charIdOfSvg(el, svg);
+  if(!charId0) return false;
+  const charId = wide ? charId0 + "~wide" : charId0;
   const scale = Math.min(window.devicePixelRatio || 1, 2);
   /* THE DRAWING'S OWN SCALE IS BAKED INTO THE SHEET (build 314). "In the
      leaderboard, all the characters are still slightly shaking." The
@@ -62303,7 +62336,12 @@ function charFlipAttach(el){
     svg.style.transform = prevT;
     const S = sr.width > 0 ? sr.width / layoutW : 1;
     const inset = (layoutW - cellCss) / 2;
-    if(ownScale){
+    if(wide){
+      /* the tab's wide drawing hangs over its icon by CSS (.cx-wide); the
+         sheet takes exactly the same box, so no reading can catch it
+         half-way through the bar coming back */
+      play.classList.add("cx-wide");
+    } else if(ownScale){
       /* centred on the drawing as it is SHOWN, on whole device pixels */
       const shown = svg.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
       const snap = v => Math.round(v * dpr) / dpr;
@@ -62858,7 +62896,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
       e.stopPropagation();
       /* and the planet answers the touch (build 317, planetTapFx) */
       try{ planetTapFx(wrap, e); }catch(err){}
-      showContextualInfo(sphere, "..... ");
+      showContextualInfo(sphere, "..... ", { aimEdge: true });
     });
   }
   svg.appendChild(sphere);
@@ -74814,27 +74852,91 @@ function planetTapFx(hero, ev){
   });
 }
 
+/* THE BOX RIDES WITH WHAT IT POINTS AT (build 317, round two). "The
+   things pop up when clicking the flares they slightly shake." A flare
+   turns on the compositor (its orbit's spin) and a rank bubble floats
+   there; the box used to be moved from a requestAnimationFrame loop that
+   MEASURED the target every frame and wrote the line's left/top - so on
+   any frame the main thread did not get to (a phone drops them all the
+   time) the box stood still while the flare went on, and the next frame
+   caught it up with a jump. Measured frame-stepped with two frames in
+   four missed: 1px jumps (check_b317_followglide); after, 0.01-0.07px.
+   Now the box, its line and its ring are one group, and that group is
+   given an animation of its own: the target's path over the box's life,
+   read once when it opens by stepping the target's own animations through
+   it (contextualFollowPath - the same maths the compositor uses, because
+   it IS those animations) and played back as translate3d keyframes on the
+   same timeline from the same moment. The two then move together on the
+   compositor, frame for frame, whatever the main thread is doing; no
+   layout property changes after the box is placed, nothing is rounded,
+   and the box keeps the side it opened on for its whole life (it is
+   placed once, already clear of where the target will go). */
+const CONTEXTUAL_FOLLOW_MS = 4650, CONTEXTUAL_FOLLOW_STEP = 150;
+function contextualFollowPath(el, ms){
+  const moving = [];
+  for(let n = el; n && n !== document.body; n = n.parentElement){
+    let list = [];
+    try{ list = n.getAnimations(); }catch(e){}
+    list.forEach(an => {
+      if(an.playState !== "running" && an.playState !== "paused") return;
+      let moves = false;
+      try{ moves = an.effect.getKeyframes().some(k => ["transform", "rotate", "translate", "scale"].some(pr => k[pr] !== undefined)); }catch(e){}
+      if(moves) moving.push(an);
+    });
+  }
+  if(!moving.length) return null;
+  const centre = () => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+  const saved = moving.map(an => ({ an, st: an.startTime, ct: Number(an.currentTime) || 0, rate: an.playbackRate || 1, running: an.playState === "running" }));
+  const c0 = centre(), out = [];
+  try{
+    for(let t = 0; t <= ms; t += CONTEXTUAL_FOLLOW_STEP){
+      saved.forEach(sv => { sv.an.currentTime = sv.ct + t * sv.rate; });
+      const c = centre();
+      out.push([c[0] - c0[0], c[1] - c0[1]]);
+    }
+  }catch(e){ return null; }
+  finally{
+    /* put every animation back exactly where it was: a running one by
+       its start time, so it stays tied to the timeline */
+    saved.forEach(sv => { try{ if(sv.running && sv.st !== null) sv.an.startTime = sv.st; else sv.an.currentTime = sv.ct; }catch(e){} });
+  }
+  return out;
+}
 /* A small contextual info popup that appears right next to whatever
    element it's explaining, instead of a generic toast at the bottom
-   of the screen \u2014 for exactly the situations (tapping a Flare, tapping
+   of the screen — for exactly the situations (tapping a Flare, tapping
    a ladder tier) where the message is ABOUT one specific element on
    screen, so it should visibly belong to that element rather than
    floating disconnected at the bottom. Shares the same Liquid Glass
    styling, positioning logic (centered on the target, clamped to the
    viewport, auto-flipping above/below), and thin-triangle arrow as
    the tour tooltip, since all three are the same underlying idea:
-   information anchored to a specific point on screen. */
+   information anchored to a specific point on screen.
+   - `follow` (build 313, reworked 317): the box rides with a moving
+     target - see contextualFollowPath above. `refind` finds the same
+     target again if the screen is rebuilt under it.
+   - `ring` draws a ring round the target in place of the dot, which
+     would otherwise sit on the very flare being explained, and the line
+     stops at the ring; `ringFit` sizes it round something big.
+   - `aimEdge` (build 317): the line ends on the target's top or bottom
+     edge - whichever faces the box - not at its centre. "Clicking the
+     planet, the line pointing at goes to the center, do it from the
+     bottom or top edge." */
 function showContextualInfo(targetEl, message, opts){
   opts = opts || {};
   if(showContextualInfo._raf){ cancelAnimationFrame(showContextualInfo._raf); showContextualInfo._raf = 0; }
-  const existing = document.getElementById("contextual-info-popup");
-  if(existing) existing.remove();
-  const existingLine = document.getElementById("contextual-info-line");
-  if(existingLine) existingLine.remove();
-  const existingDot = document.getElementById("contextual-info-line-dot");
-  if(existingDot) existingDot.remove();
+  if(showContextualInfo._follow){ try{ showContextualInfo._follow.cancel(); }catch(e){} showContextualInfo._follow = null; }
+  ["contextual-info-popup", "contextual-info-line", "contextual-info-line-dot", "contextual-info-follow"].forEach(id => {
+    const e = document.getElementById(id);
+    if(e) e.remove();
+  });
   if(!targetEl) return;
   const rect = targetEl.getBoundingClientRect();
+  const path = opts.follow ? contextualFollowPath(targetEl, CONTEXTUAL_FOLLOW_MS) : null;
+  /* how far the target will travel, so the box can be placed clear of
+     the screen's edges for the whole of its life */
+  const ext = { x0: 0, x1: 0, y0: 0, y1: 0 };
+  (path || []).forEach(([x, y]) => { ext.x0 = Math.min(ext.x0, x); ext.x1 = Math.max(ext.x1, x); ext.y0 = Math.min(ext.y0, y); ext.y1 = Math.max(ext.y1, y); });
 
   const popup = document.createElement("div");
   popup.id = "contextual-info-popup";
@@ -74842,12 +74944,20 @@ function showContextualInfo(targetEl, message, opts){
   line.id = "contextual-info-line";
   const lineDot = document.createElement("div");
   lineDot.id = "contextual-info-line-dot";
-  document.body.append(line, lineDot);
+  /* a followed box, its line and its ring move as one group */
+  let host = document.body, group = null;
+  if(path){
+    group = document.createElement("div");
+    group.id = "contextual-info-follow";
+    document.body.appendChild(group);
+    host = group;
+  }
+  host.append(line, lineDot);
   const text = document.createElement("p");
   text.className = "contextual-info-text";
   text.textContent = message;
   popup.append(text);
-  document.body.appendChild(popup);
+  host.appendChild(popup);
 
   const targetCenterX = rect.left + rect.width / 2;
   const targetCenterY = rect.top + rect.height / 2;
@@ -74872,7 +74982,7 @@ function showContextualInfo(targetEl, message, opts){
   const tabBar = document.querySelector(".bottomtabs:not([hidden])");
   const barBox = tabBar ? tabBar.getBoundingClientRect() : null;
   const floorY = barBox && barBox.height ? Math.min(window.innerHeight - 12, barBox.top - 8) : window.innerHeight - 12;
-  const above = rect.bottom + 14 + realHeight > floorY;
+  const above = rect.bottom + 14 + realHeight + ext.y1 > floorY;
   if(above){
     popup.style.top = "auto";
     popup.style.bottom = (window.innerHeight - rect.top + 14) + "px";
@@ -74884,107 +74994,93 @@ function showContextualInfo(targetEl, message, opts){
   popup.style.visibility = "hidden";
   const naturalWidth = popup.getBoundingClientRect().width;
   let popupLeft = targetCenterX - naturalWidth / 2;
-  popupLeft = Math.max(margin, Math.min(popupLeft, window.innerWidth - naturalWidth - margin));
+  const lo = margin - ext.x0, hi = window.innerWidth - naturalWidth - margin - ext.x1;
+  popupLeft = lo <= hi ? Math.max(lo, Math.min(popupLeft, hi))
+    : Math.max(margin, Math.min(popupLeft, window.innerWidth - naturalWidth - margin));
   popup.style.left = popupLeft + "px";
   popup.style.visibility = "visible";
 
   /* Same line-connector redesign as the main tour tooltip, and for
-     the same reason \u2014 this is the popup specifically named as broken
+     the same reason — this is the popup specifically named as broken
      (used for things like tapping the Home orbit sphere), sharing the
      exact same arrow mechanism that was the root problem there too. */
   const pRect = popup.getBoundingClientRect();
+  const aimX = targetCenterX;
+  const aimY = opts.aimEdge ? (above ? rect.top : rect.bottom) : targetCenterY;
   const lineStartY = above ? pRect.bottom - 6 : pRect.top + 6;
-  const lineStartX = pRect.left + pRect.width / 2;
-  const dx = targetCenterX - lineStartX;
-  const dy = targetCenterY - lineStartY;
-  const dist = Math.sqrt(dx * dx + dy * dy);
+  /* a followed box's line leaves from the nearest point of its edge */
+  const lineStartX = (path || opts.aimEdge) ? Math.max(pRect.left + 18, Math.min(aimX, pRect.right - 18)) : pRect.left + pRect.width / 2;
+  let ringD = 0;
+  if(opts.ring){
+    const tw = Math.max(rect.width, rect.height);
+    /* ringFit: round the whole of something big (a rank bubble), not a
+       tiny-flare-sized ring on top of it */
+    ringD = opts.ringFit ? tw + 10 : Math.max(16, Math.min(28, tw + 9));
+  }
+  const dx = aimX - lineStartX;
+  const dy = aimY - lineStartY;
+  /* in ring mode the line stops at the ring, not on the flare */
+  const dist = Math.max(0, Math.sqrt(dx * dx + dy * dy) - ringD / 2);
   const angle = Math.atan2(dy, dx) * (180 / Math.PI);
   line.style.left = lineStartX + "px";
   /* Same coordinate fix as the main tour's own line, and the same
      real cause: this line rotates around its own vertical center
      (transform-origin:0 50%), but style.top was being set to
-     lineStartY directly \u2014 the element's TOP edge, not its center.
+     lineStartY directly — the element's TOP edge, not its center.
      For this 3px-tall line that's a measured 1.5px gap between the
      intended start point and where it actually began. */
   line.style.top = (lineStartY - 1.5) + "px";
   line.style.width = dist + "px";
   line.style.transform = "rotate(" + angle + "deg)";
-  lineDot.style.left = (targetCenterX - 4.5) + "px";
-  lineDot.style.top = (targetCenterY - 4.5) + "px";
-
-  /* ---- IT FOLLOWS WHAT IT POINTS AT (build 313) ----
-     "If the text box does show up, ensure that it properly and smoothly
-     follows the selected flare while the text box is open with the arrow
-     like thing being placed in it correctly." A secret flare is on a ring
-     that turns, so the box was placed once and the flare left it behind.
-     With `follow`, every frame re-reads where the target is and moves the
-     box with it (a translate, so nothing reflows), keeps the side it
-     opened on (no flipping above and below as it goes round), and re-aims
-     the line from the nearest point of the box's edge to the target's
-     centre. `ring` draws a ring round the target in place of the dot,
-     which would otherwise sit on top of the very flare being explained.
-     If the screen is rebuilt under it, `refind` finds the same flare in
-     the new one rather than closing. */
   if(opts.ring){
     lineDot.classList.add("is-ring");
-    const tw = Math.max(rect.width, rect.height);
-    /* ringFit: round the whole of something big (a rank bubble), not a
-       tiny-flare-sized ring on top of it */
-    const d = opts.ringFit ? tw + 10 : Math.max(16, Math.min(28, tw + 9));
-    lineDot.style.width = lineDot.style.height = d + "px";
-    lineDot.style.left = (targetCenterX - d / 2) + "px";
-    lineDot.style.top = (targetCenterY - d / 2) + "px";
+    lineDot.style.width = lineDot.style.height = ringD + "px";
+    lineDot.style.left = (aimX - ringD / 2) + "px";
+    lineDot.style.top = (aimY - ringD / 2) + "px";
+  } else {
+    lineDot.style.left = (aimX - 4.5) + "px";
+    lineDot.style.top = (aimY - 4.5) + "px";
   }
-  if(opts.follow){
-    const baseLeft = popupLeft;
-    const baseTop = pRect.top;
-    let tgt = targetEl;
-    const aim = () => {
-      if(!popup.isConnected){ showContextualInfo._raf = 0; return; }
-      if(!tgt.isConnected && opts.refind){ const again = opts.refind(); if(again) tgt = again; }
-      if(tgt.isConnected){
-        const r = tgt.getBoundingClientRect();
-        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-        const w = pRect.width, h = pRect.height;
-        let left = Math.max(margin, Math.min(cx - w / 2, window.innerWidth - w - margin));
-        let top = above ? r.top - 14 - h : r.bottom + 14;
-        top = Math.max(margin, Math.min(top, window.innerHeight - h - margin));
-        popup.style.translate = (left - baseLeft).toFixed(1) + "px " + (top - baseTop).toFixed(1) + "px";
-        const sy = above ? top + h - 6 : top + 6;
-        const sx = Math.max(left + 18, Math.min(cx, left + w - 18));
-        const ddx = cx - sx, ddy = cy - sy;
-        line.style.left = sx + "px";
-        line.style.top = (sy - 1.5) + "px";
-        /* in ring mode the line stops at the ring, not on the flare */
-        const ringR = opts.ring ? (parseFloat(lineDot.style.width) || 18) / 2 : 0;
-        line.style.width = Math.max(0, Math.sqrt(ddx * ddx + ddy * ddy) - ringR) + "px";
-        line.style.transform = "rotate(" + (Math.atan2(ddy, ddx) * 180 / Math.PI) + "deg)";
-        if(opts.ring){
-          const d = parseFloat(lineDot.style.width) || 18;
-          lineDot.style.left = (cx - d / 2) + "px";
-          lineDot.style.top = (cy - d / 2) + "px";
-        } else {
-          lineDot.style.left = (cx - 4.5) + "px";
-          lineDot.style.top = (cy - 4.5) + "px";
-        }
-      }
-      showContextualInfo._raf = requestAnimationFrame(aim);
-    };
-    aim();
-  }
+
+  /* the ride: the group plays the target's own path back from here */
+  const ride = (fromX, fromY, pth, ms) => {
+    if(showContextualInfo._follow){ try{ showContextualInfo._follow.cancel(); }catch(e){} }
+    showContextualInfo._follow = null;
+    if(!group || !pth || pth.length < 2) return;
+    try{
+      showContextualInfo._follow = group.animate(pth.map(([x, y]) => ({ transform: "translate3d(" + (fromX + x) + "px, " + (fromY + y) + "px, 0)" })),
+        { duration: (pth.length - 1) * CONTEXTUAL_FOLLOW_STEP, easing: "linear", fill: "forwards" });
+    }catch(e){}
+  };
+  if(path) ride(0, 0, path);
   requestAnimationFrame(() => { popup.classList.add("contextual-info-show"); line.classList.add("contextual-info-show"); lineDot.classList.add("contextual-info-show"); });
+  const removeAll = () => { popup.remove(); line.remove(); lineDot.remove(); if(group) group.remove(); };
   /* It lives on <body>, so a screen change does not take it: tapping a
      Home flare and then a tab left "Supernova rank - 56 more levels"
      and its pointer line over the Profile screen for the rest of the
      3.2s. Same rule as the info bubbles: it goes when the thing it
      points at leaves the page. */
   if(showContextualInfo._mo) showContextualInfo._mo.disconnect();
+  let current = targetEl;
   const orphanWatch = showContextualInfo._mo = new MutationObserver(() => {
-    if(targetEl.isConnected && popup.isConnected) return;
-    /* a followed flare whose screen was rebuilt is found again by aim() */
-    if(opts.follow && opts.refind && popup.isConnected && opts.refind()) return;
+    if(current.isConnected && popup.isConnected) return;
+    /* a followed target whose screen was rebuilt is found again, and the
+       ride picks up from it for the rest of the box's life */
+    if(opts.follow && opts.refind && popup.isConnected){
+      const again = opts.refind();
+      if(again){
+        current = again;
+        if(group){
+          const r2 = again.getBoundingClientRect();
+          const done = showContextualInfo._follow ? (Number(showContextualInfo._follow.currentTime) || 0) : 0;
+          const rest = contextualFollowPath(again, Math.max(CONTEXTUAL_FOLLOW_STEP, CONTEXTUAL_FOLLOW_MS - done));
+          ride(r2.left + r2.width / 2 - targetCenterX, r2.top + r2.height / 2 - targetCenterY, rest || [[0, 0], [0, 0]]);
+        }
+        return;
+      }
+    }
     orphanWatch.disconnect();
-    popup.remove(); line.remove(); lineDot.remove();
+    removeAll();
   });
   orphanWatch.observe(stage, { childList: true });
   clearTimeout(showContextualInfo._t);
@@ -74992,7 +75088,7 @@ function showContextualInfo(targetEl, message, opts){
     popup.classList.remove("contextual-info-show");
     line.classList.remove("contextual-info-show");
     lineDot.classList.remove("contextual-info-show");
-    setTimeout(() => { popup.remove(); line.remove(); lineDot.remove(); }, 250);
+    setTimeout(removeAll, 250);
   }, opts.follow ? 4200 : 3200);
 }
 
@@ -76044,11 +76140,11 @@ function celebrate(palette, origin){
 const HUNDO_FX_TAIL_MS = 1200;
 /* When each effect's layers are removed: every piece has faded out by
    then. The box-only play (Customize, the unlock card) runs shorter. */
-const HUNDO_FX_TOTAL = { fireworks: 7000, blackhole: 5600, underwater: 7400, worldtree: 8800, bubbles: 7000, ufo: 8600 };
-const HUNDO_FX_BOX_TOTAL = { confetti: 3000, fireworks: 3600, blackhole: 3600, underwater: 4800, worldtree: 6400, bubbles: 4600, ufo: 7400 };
+const HUNDO_FX_TOTAL = { fireworks: 7000, blackhole: 5600, underwater: 7400, worldtree: 5600, bubbles: 7000, ufo: 8600 };
+const HUNDO_FX_BOX_TOTAL = { confetti: 3000, fireworks: 3600, blackhole: 3600, underwater: 4800, worldtree: 3600, bubbles: 4600, ufo: 7400 };
 /* When the last tail starts, for the gate: everything is still on
    screen and part-way faded between this and the total. */
-const HUNDO_FX_TAIL_AT = { fireworks: 5000, blackhole: 4000, underwater: 5900, worldtree: 6600, bubbles: 5300, ufo: 7000 };
+const HUNDO_FX_TAIL_AT = { fireworks: 5000, blackhole: 4000, underwater: 5900, worldtree: 4100, bubbles: 5300, ufo: 7000 };
 /* THE BOX'S COLOURS WHILE EACH ONE PLAYS (build 313): "Would be pretty
    cool if the themes matches the box, cause if the just stays yellow it
    would get kinda boring." Border, wash and the numerals' gradient;
@@ -76389,7 +76485,7 @@ function hfxWarm(id){
   const urls = [];
   try{
     if(id === "bubbles"){ [190, 280, 320, 150, 45, 230].forEach(h => { urls.push(hfxBubbleURL(h), hfxFilmURL(h), hfxFilmURL(h + 150)); }); urls.push(hfxHeroShellURL(), hfxRingURL()); }
-    else if(id === "worldtree"){ [0, 1, 2, 3].forEach(i => urls.push(hfxBlossomURL(i))); urls.push(hfxLeafURL(), hfxFireflyURL(), hfxBranchURL(.5), hfxBranchURL(.64)); HFX_BLOOM.forEach(cl => urls.push(hfxPetalURL(cl))); }
+    else if(id === "worldtree"){ [0, 1, 2].forEach(i => urls.push(hfxBlossomURL(i))); urls.push(hfxLeafURL()); HFX_BLOOM.forEach(cl => urls.push(hfxPetalURL(cl))); }
     else if(id === "fireworks"){ hfxFwHeads(); urls.push(hfxGlintURL()); }
     else if(id === "blackhole"){ urls.push(hfxDiscURL(), hfxSwirlURL(), hfxStreakURL(), hfxGlintURL()); }
     else if(id === "underwater"){ urls.push(hfxCausticURL(0), hfxCausticURL(1), hfxSurfaceURL(), hfxMantaURL(), hfxDropURL(), hfxGlintURL()); [0, 1, 2].forEach(k => urls.push(hfxFishURL(k), hfxKelpURL(k), hfxBubbleURL([190, 170, 210][k], true))); }
@@ -76476,427 +76572,6 @@ function hfxAnim(c, el, frames, o){
   try{ const a = el.animate(frames, o); (c.anims || (c.anims = [])).push(a); return a; }catch(e){ return null; }
 }
 function hfxOnEnd(c, fn){ (c.cleanup || (c.cleanup = [])).push(fn); }
-/* when each point of a polyline is reached, drawn at `speed` px/s */
-function hfxLineTimes(pts, t0, speed){
-  const out = [t0]; let t = t0;
-  for(let i = 1; i < pts.length; i++){ t += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]) / speed; out.push(t); }
-  return out;
-}
-/* The parts of a polyline that are NOT inside any of `rects`: runs of
-   it, each with where it starts (d0, px from the start) and the fraction
-   of the whole it starts and ends at (f0, f1), found by walking it in
-   3px steps. */
-/* MEETS THE EDGE EXACTLY (build 314): "ensure it meets the edges of stuff
-   perfectly". A run used to start and stop at the first 3px step on the
-   far side of a card's edge, so the wood stopped up to 3px short of the
-   glass - a sliver of nothing between the trunk and the card it passes
-   behind. The crossing is now found to a hundredth of a pixel (halving
-   the last step), and each run says which of its ends is cut by an edge
-   (cut0 / cut1) so the line drawn there ends square on it. */
-function hfxClipOut(pts, rects){
-  const inside = (x, y) => rects.some(q => x > q.left && x < q.right && y > q.top && y < q.bottom);
-  const edge = (x0, y0, x1, y1, from) => { let lo = 0, hi = 1;
-    for(let i = 0; i < 14; i++){ const m = (lo + hi) / 2; if(inside(x0 + (x1 - x0) * m, y0 + (y1 - y0) * m) === from) lo = m; else hi = m; }
-    return (lo + hi) / 2; };
-  let total = 0;
-  for(let i = 1; i < pts.length; i++) total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
-  const runs = []; let cur = null, d = 0;
-  const close = (p, dd, cut) => { if(cur){ cur.pts.push(p); cur.f1 = dd / (total || 1); cur.cut1 = !!cut; if(cur.pts.length > 1) runs.push(cur); cur = null; } };
-  if(!inside(pts[0][0], pts[0][1])) cur = { pts: [pts[0]], d0: 0, f0: 0, cut0: false };
-  for(let i = 1; i < pts.length; i++){
-    const a = pts[i - 1], b = pts[i], len = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(len / 3));
-    for(let k = 1; k <= n; k++){
-      const tp = (k - 1) / n, t = k / n, x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t, inn = inside(x, y);
-      if(inn === !cur) continue;
-      /* the exact crossing between the last step and this one */
-      const px = a[0] + (b[0] - a[0]) * tp, py = a[1] + (b[1] - a[1]) * tp;
-      const m = edge(px, py, x, y, !inn), ex = px + (x - px) * m, ey = py + (y - py) * m, dd = d + len * (tp + (t - tp) * m);
-      /* which way that edge runs: a card's top or bottom ("h") or a side ("v") */
-      const ix = inn ? x : px, iy = inn ? y : py;
-      const q = rects.find(r => ix > r.left && ix < r.right && iy > r.top && iy < r.bottom);
-      const way = q ? (Math.min(Math.abs(ex - q.left), Math.abs(ex - q.right)) < Math.min(Math.abs(ey - q.top), Math.abs(ey - q.bottom)) ? "v" : "h") : "h";
-      if(inn){ if(cur) cur.way1 = way; close([ex, ey], dd, true); }
-      else cur = { pts: [[ex, ey]], d0: dd, f0: dd / (total || 1), cut0: true, way0: way };
-    }
-    d += len;
-    if(cur && i < pts.length - 1) cur.pts.push(b);
-  }
-  close(pts[pts.length - 1], total, false);
-  return runs;
-}
-/* a smooth curve through `pts` (Catmull-Rom), `n` points per span */
-function hfxSmooth(pts, n){
-  if(pts.length < 3) return pts.slice();
-  const out = [pts[0]];
-  for(let i = 0; i < pts.length - 1; i++){
-    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
-    for(let k = 1; k <= n; k++){
-      const t = k / n, t2 = t * t, t3 = t2 * t;
-      const f = (a, b, cc, d) => .5 * ((2 * b) + (-a + cc) * t + (2 * a - 5 * b + 4 * cc - d) * t2 + (-a + 3 * b - 3 * cc + d) * t3);
-      out.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]);
-    }
-  }
-  return out;
-}
-/* a tendril's curl: from (x, y) heading `a`, turning `dir` and tightening */
-function hfxCurl(x, y, a, r0, turns, dir){
-  const pts = [[x, y]], n = Math.round(turns * 10);
-  let cx = x, cy = y, ang = a;
-  for(let i = 1; i <= n; i++){
-    const r = r0 * (1 - i / (n + 2));
-    ang += dir * (Math.PI * 2 * turns / n);
-    cx += Math.cos(ang) * r * .62; cy += Math.sin(ang) * r * .62;
-    pts.push([cx, cy]);
-  }
-  return pts;
-}
-/* GROWS A LINE ALONG A POLYLINE: one box per straight piece, turned to
-   its heading once and drawn out from its start (scaleX - a transform),
-   each piece starting as the one before it finishes, at `speed` px/s.
-   Returns when each point was reached, for whatever follows the tip.
-   o.th (thickness, or [start, end] to taper), o.cls, o.vars; o.flat0 /
-   o.flat1 end the line square at its start / end and not a hair past it
-   (build 314: where it meets a card's edge), cut along that edge - o.way0 /
-   o.way1 "h" for a card's top or bottom, "v" for a side - so a branch
-   that crosses it at a slant ends flush on it, both corners on the line. */
-function hfxGrowLine(parent, pts, t0, speed, o){
-  o = o || {};
-  const times = [t0];
-  let t = t0, total = 0;
-  for(let i = 1; i < pts.length; i++) total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
-  let run = 0;
-  /* the first and last pieces that are drawn at all (a piece under half
-     a pixel is skipped, and must not leave its neighbour unsquared) */
-  let iFirst = 0, iLast = 0;
-  for(let i = 1; i < pts.length; i++) if(Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]) >= .5){ if(!iFirst) iFirst = i; iLast = i; }
-  for(let i = 1; i < pts.length; i++){
-    const a = pts[i - 1], b = pts[i], len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    if(len < .5){ times.push(t); continue; }
-    const f0 = run / (total || 1); run += len;
-    const th = Array.isArray(o.th) ? o.th[0] + (o.th[1] - o.th[0]) * f0 : (o.th || 3);
-    const d = len / speed;
-    const first = i === iFirst, last = i === iLast;
-    const ang = Math.atan2(b[1] - a[1], b[0] - a[0]), ux = Math.cos(ang), uy = Math.sin(ang);
-    /* the slope of an edge's line across the piece, along its length per
-       px across it: -cot for a horizontal edge, tan for a vertical one */
-    const slope = way => { const m = way === "v" ? Math.tan(ang) : -1 / Math.tan(ang); return Math.max(-3, Math.min(3, isFinite(m) ? m : 0)); };
-    const cut0 = first && o.flat0, cut1 = last && o.flat1;
-    const m0 = cut0 ? slope(o.way0) : 0, m1 = cut1 ? slope(o.way1) : 0;
-    /* and half a pixel past the edge, under the card's own border: the
-       layout is measured in whole pixels (the offset chain) and a card
-       can sit half a pixel off that, which left a hairline of nothing */
-    const e0 = Math.abs(m0) * th / 2 + (cut0 ? .6 : 0), e1 = Math.abs(m1) * th / 2 + (cut1 ? .6 : 0);
-    const tail = cut1 ? e1 : o.flat1 ? Math.min(th * .6, total - run) : th * .6;
-    const W = e0 + len + tail;
-    const seg = hfxMk(parent, "i", "hfx-seg " + (o.cls || ""), Object.assign({ left: (a[0] - ux * e0) + "px", top: (a[1] - uy * e0 - th / 2) + "px", width: W + "px", height: th + "px",
-      "--sa": (ang * 180 / Math.PI).toFixed(2) + "deg", "--gt": t, "--gd": d, "--sh": th / 2 + "px" }, o.vars || {}));
-    if(cut0 || cut1){
-      const r = th / 2 + "px";
-      seg.style.borderRadius = (cut0 ? "0 " : r + " ") + (cut1 ? "0 0 " : r + " " + r + " ") + (cut0 ? "0" : r);
-      /* y = 0 is the side at v = -th/2, y = th the side at v = +th/2 */
-      const x0 = v => cut0 ? e0 - .6 + v * m0 : 0, x1 = v => cut1 ? e0 + len + .6 + v * m1 : W;
-      const f = v => v.toFixed(2) + "px";
-      const poly = "polygon(" + f(x0(-th / 2)) + " 0, " + f(x1(-th / 2)) + " 0, " + f(x1(th / 2)) + " " + f(th) + ", " + f(x0(th / 2)) + " " + f(th) + ")";
-      seg.style.clipPath = poly; seg.style.webkitClipPath = poly;
-    }
-    t += d; times.push(t);
-  }
-  return times;
-}
-
-/* ATTACHED WHEN THEY ARE DUE, NOT ALL AT ONCE. The World Tree on the
-   results screen is ~400 pieces, and putting every one into the page in
-   the first frame - each with its own style and animation to set up - was
-   a third of a second's stall at 4x CPU, then each of them ticking for
-   seconds before it had anything to show. Each direct child of `roots`
-   whose first piece starts after `lead` seconds is taken out and put back
-   a beat before it is due, with every start time inside it moved earlier
-   by exactly that much - so nothing moves on the clock, it simply does not
-   exist until it is needed. */
-const HFX_DELAY_VARS = ["--gt", "--bt", "--t"];
-function hfxStagger(roots, lead){
-  lead = lead == null ? .5 : lead;
-  const startOf = el => { let m = Infinity;
-    [el].concat([...el.querySelectorAll("*")]).forEach(e => HFX_DELAY_VARS.forEach(k => { const v = parseFloat(e.style.getPropertyValue(k)); if(v === v) m = Math.min(m, v); }));
-    return m; };
-  roots.forEach(root => {
-    [...root.children].forEach(ch => {
-      const t = startOf(ch);
-      if(!(t > lead + .1) || t === Infinity) return;
-      const shift = Math.max(0, t - lead);
-      [ch].concat([...ch.querySelectorAll("*")]).forEach(e => HFX_DELAY_VARS.forEach(k => {
-        const v = parseFloat(e.style.getPropertyValue(k)); if(v === v) e.style.setProperty(k, (Math.round((v - shift) * 1000) / 1000) + "s"); }));
-      const mark = document.createComment("");
-      root.replaceChild(mark, ch);
-      setTimeout(() => { if(mark.parentNode) mark.parentNode.replaceChild(ch, mark); }, shift * 1000);
-    });
-  });
-}
-
-/* One run of vine as a picture: the stem through `pts` (local px), a
-   leaf every ~15px on alternate sides, a small flower now and then. */
-function hfxVineArtURL(pts, w, h, k){
-  return hfxSprite("va" + (++hfxSeq), () => {
-    const f = v => v.toFixed(1);
-    let d = "M" + f(pts[0][0]) + " " + f(pts[0][1]);
-    for(let i = 1; i < pts.length; i++){ const a = pts[i - 1], b = pts[i]; d += " Q" + f(a[0]) + " " + f(a[1]) + " " + f((a[0] + b[0]) / 2) + " " + f((a[1] + b[1]) / 2); }
-    d += " L" + f(pts[pts.length - 1][0]) + " " + f(pts[pts.length - 1][1]);
-    let leaves = "", flowers = "", acc = 0, n = 0, nf = 0;
-    const ls = 7 * k + 1.5;
-    for(let i = 1; i < pts.length; i++){
-      const a = pts[i - 1], b = pts[i], len = Math.hypot(b[0] - a[0], b[1] - a[1]), ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
-      acc += len;
-      while(acc >= 15 * k + 4){
-        acc -= 15 * k + 4; n++;
-        const t = Math.max(0, 1 - acc / (len || 1)), x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t, side = n % 2 ? 1 : -1;
-        const la = ang + side * .9, lx = x + Math.cos(la) * ls * .55, ly = y + Math.sin(la) * ls * .55;
-        leaves += '<ellipse cx="' + f(lx) + '" cy="' + f(ly) + '" rx="' + f(ls) + '" ry="' + f(ls * .42) + '" transform="rotate(' + (la * 180 / Math.PI).toFixed(0) + ' ' + f(lx) + ' ' + f(ly) + ')" fill="url(#lf)"/>' +
-          '<path d="M' + f(x) + ' ' + f(y) + ' L' + f(lx + Math.cos(la) * ls * .7) + ' ' + f(ly + Math.sin(la) * ls * .7) + '" stroke="#E6FFD0" stroke-opacity=".45" stroke-width=".7"/>';
-        if(n % 6 === 4 && nf < 3){ nf++; flowers += hfxFlowerPath(+(x - side * 3).toFixed(1), +(y).toFixed(1), .9 * k + .25, HFX_BLOOM[n % HFX_BLOOM.length]); }
-      }
-    }
-    return 'viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '"><defs><linearGradient id="lf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D4FAA8"/><stop offset=".55" stop-color="#58BE66"/><stop offset="1" stop-color="#257A43"/></linearGradient></defs>' +
-      '<path d="' + d + '" fill="none" stroke="#1E5A2C" stroke-width="' + f(3.6 * k + 1) + '" stroke-linecap="round" stroke-linejoin="round"/>' +
-      '<path d="' + d + '" fill="none" stroke="#8FD877" stroke-width="' + f(1.4 * k + .4) + '" stroke-linecap="round" stroke-linejoin="round" stroke-opacity=".9"/>' + leaves + flowers + '</svg>';
-  }, Math.min(1400, Math.max(w, h) * 2.5));
-}
-/* ============ WORLD TREE, ROUND THE GLASS ============
-   "The tree one is not good, maybe wrap it around the stuff, treat the
-   boxes like actual Liquid Glass." The cards become panes of glass and
-   the tree grows BEHIND and AROUND them:
-   - BEHIND: the trunk rising from under the 100% box, two great limbs
-     spreading out past the XP card's sides, a crown in blossom over the
-     header, roots spreading under the buttons - drawn only where no card
-     or button covers it (see below).
-   - THROUGH THE GLASS: each card gets a pane - opaque, frosted, lit at
-     its rim - holding a soft drawing of whatever of the tree is behind
-     it, uncovered as the trunk climbs through. So the trunk is seen
-     through the box and the XP card as a blur, sharp again in the gaps
-     between them. The softness is drawn in (layered faint strokes,
-     blots for blossom), never a live filter.
-   - IN FRONT (the effect's screen layer): vines gripping the glass
-     edges, climbing them and curling round the corners into tendrils,
-     leaves and blossom on the glass, fireflies and petals.
-   Every piece is laid out once from the rects and only drawn out
-   (scaleX / scale) and faded. The panes go when the tree has faded. */
-function hfxTreeGlass(scr, c, L){
-  const small = c.vw < 600, mini = !!c.frame, G = L.grade, X = L.xp;
-  const k = mini ? .55 : 1, tot = HUNDO_FX_TOTAL.worldtree / 1000;
-  const cx = G.left + G.width / 2;
-  /* THE TREE "BEHIND" THE CARDS IS DRAWN ONLY WHERE NO CARD IS. It was
-     a real layer under the screen's content, and that cost a third of
-     the frame rate: every animated piece under static text makes the
-     browser layer or repaint whatever overlaps it. So it is in the
-     effect's own layer like everything else, cut away wherever a card
-     or a button would hide it (hfxClipOut) - the part a card covers is
-     the softened copy in that card's pane, so the eye reads one tree
-     passing behind the glass. */
-  const gB = hfxMk(scr, "span", "hfx-tree", { "--tot": tot });
-  const occl = L.cards.concat(L.buttons || []);
-
-  /* ---- the tree behind, as a list of things to draw, so it can be
-     drawn twice: sharp behind, softened in each pane it passes ---- */
-  const ops = [];
-  const line = (pts, t0, sp, th, cls) => { ops.push({ kind: "line", pts, t0, sp, th, cls }); return hfxLineTimes(pts, t0, sp); };
-  const sprite = (cls, url, x, y, s, vars) => ops.push({ kind: "sprite", cls, url, x, y, s, vars });
-  const wob = (pts, amp) => pts.map((p, i) => i === 0 || i === pts.length - 1 ? p : [p[0] + Math.sin(i * 2.1) * amp, p[1]]);
-  /* the trunk: from low behind the box up to the top of the XP card */
-  const baseY = G.top + G.height * .72, topY = X.top + X.height * .18;
-  const trunkPts = hfxSmooth(wob([[cx, baseY], [cx - 6 * k, (baseY + G.top) / 2], [cx + 4 * k, G.top - 8], [cx - 5 * k, X.bottom - X.height * .25],
-    [cx + 3 * k, X.top + X.height * .45], [cx, topY]], 3 * k), 2);
-  const trunkT = line(trunkPts, .25, 300 * k + 60, [small ? 22 : 28, small ? 13 : 17].map(v => v * k), "is-wood is-trunk");
-  const tTop = trunkT[trunkT.length - 1];
-  const at = (pts, times, y) => { let best = 0, bd = Infinity; pts.forEach((p, i) => { const d = Math.abs(p[1] - y); if(d < bd){ bd = d; best = i; } }); return { p: pts[best], t: times[best] }; };
-  /* two great limbs: out of the trunk behind the XP card, out past its
-     sides into the margins, and up them */
-  const mx = Math.max(10, X.left * .5);
-  const limbs = [-1, 1].map(s => {
-    const j = at(trunkPts, trunkT, X.top + X.height * .55);
-    const edge = s < 0 ? X.left : X.right, out = s < 0 ? mx : c.vw - mx;
-    const pts = hfxSmooth([j.p, [cx + s * X.width * .22, X.top + X.height * .42], [edge - s * 26 * k, X.top + X.height * .3],
-      [out, X.top + X.height * .18], [out + s * 2, X.top - 10 * k], [out - s * 10 * k, Math.max(8, X.top - 70 * k)]], 3);
-    const times = line(pts, j.t, 240 * k + 40, [12 * k, 5 * k], "is-wood");
-    return { pts, times, s };
-  });
-  /* roots: from the trunk's foot, out under the box and round the buttons */
-  const B = L.buttons;
-  const roots = [-1, 1].map(s => {
-    const btn = B.length ? (s < 0 ? B[0] : B[B.length - 1]) : null;
-    const pts = [[cx, baseY], [cx + s * G.width * .2, G.bottom - 6 * k], [cx + s * G.width * .42, G.bottom + 10 * k]];
-    if(btn){ const ox = s < 0 ? btn.left - 6 * k : btn.right + 6 * k; pts.push([ox, btn.top + btn.height * .45], [ox + s * 4 * k, btn.bottom + 12 * k], [ox + s * 22 * k, btn.bottom + 30 * k]); }
-    else pts.push([cx + s * G.width * .48, G.bottom + 50 * k]);
-    const sm = hfxSmooth(pts, 2);
-    return { pts: sm, times: line(sm, .45, 220 * k + 40, [9 * k, 2.5 * k], "is-root"), s };
-  });
-  /* along the limbs: blossom clusters and leaves (behind) */
-  limbs.forEach((lb, li) => lb.pts.forEach((p, i) => {
-    if(i < 3 || i === lb.pts.length - 1) return;
-    if(i % 3 === 0) sprite("hfx-bloom2", hfxBlossomURL((i + li) % 4), p[0], p[1], (small ? 30 : 38) * k, { "--bt": lb.times[i] + .25, "--r0": "-50deg" });
-    else if(i % 3 === 1){ const q = lb.pts[i + 1] || p, a = Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI;
-      sprite("hfx-leaf2", hfxLeafURL(), p[0], p[1], (small ? 17 : 21) * k, { "--lr": (a + (i % 2 ? -70 : 70) - 90).toFixed(0) + "deg", "--bt": lb.times[i] + .05 }); }
-  }));
-  /* drawn sharp, everywhere but under a card or a button */
-  const covered = (x, y) => occl.some(q => x > q.left + 2 && x < q.right - 2 && y > q.top + 2 && y < q.bottom - 2);
-  ops.forEach(o => {
-    if(o.kind === "line") hfxClipOut(o.pts, occl).forEach(run => {
-      const f = d => o.th[0] + (o.th[1] - o.th[0]) * d;
-      hfxGrowLine(gB, run.pts, o.t0 + run.d0 / o.sp, o.sp, { th: [f(run.f0), f(run.f1)], cls: o.cls, flat0: run.cut0, flat1: run.cut1, way0: run.way0, way1: run.way1 });
-    });
-    else if(!covered(o.x, o.y)) hfxPiece(gB, o.cls, o.url, o.x, o.y, o.s, o.vars);
-  });
-  /* the crown: over the header, the tree's top, in full blossom */
-  const room = Math.max(54 * k, X.top - 6);
-  /* from the XP card's top edge, square on it (build 314) - it used to
-     root 18% of the way down the card, so its first length of wood was
-     drawn over the card's own text */
-  const crown = hfxTree(gB, cx, X.top, { maxD: 3, len: Math.min(room * .52 + X.height * .1, (small ? 96 : 124) * k), th: (small ? 13 : 17) * k, wide: 1.75, inner: true, flatBase: true,
-    trunkDur: .5, t0: tTop - .35, bloom: (small ? 21 : 27) * k, palette: c.palette, tot });
-  limbs.forEach(lb => {
-    const tip = lb.pts[lb.pts.length - 1];
-    hfxTree(gB, tip[0], tip[1] + 2, { maxD: 2, len: Math.min(room * .45, (small ? 50 : 64) * k), th: 6 * k, wide: 1.4, trunkDur: .35, t0: lb.times[lb.times.length - 1] - .1,
-      bloom: (small ? 17 : 21) * k, palette: c.palette, tot });
-  });
-  hfxMk(gB, "i", "hfx-tree-halo", { left: cx + "px", top: Math.max(c.vh * .1, topY - room * .5) + "px", "--hs": (Math.min(c.vw * 1.3, c.vh * .8)) + "px" });
-
-  /* THE HEADER OVER THE CROWN (build 314): the crown fills the space over
-     the XP card, and that is where the screen's title is - its blossom
-     was drawn over "Test results" and the units line. The header is
-     lifted over the effect's layer while it plays, so the crown grows
-     behind the words, the way the trunk passes behind the cards. */
-  [L.head && L.head.el, !c.frame && document.querySelector(".wrap > .top")].forEach(hd => {
-    if(!hd) return;
-    hd.classList.add("hfx-over");
-    hfxOnEnd(c, fade => setTimeout(() => hd.classList.remove("hfx-over"), fade ? 650 : 0));
-  });
-  /* ---- the glass: a pane in every card, holding the tree behind it softened ---- */
-  L.cards.forEach(r => {
-    const card = r.el;
-    if(!card || card.querySelector(":scope > .hfx-pane")) return;
-    const pane = document.createElement("span");
-    pane.className = "hfx-pane" + (card === c.box ? " is-grade" : "");
-    pane.setAttribute("aria-hidden", "true");
-    /* the glass forms where the tree is about to be: the box's at once,
-       each card above it a beat before the trunk reaches it */
-    const pd = card === c.box ? 0 : Math.max(0, at(trunkPts, trunkT, r.bottom).t - .3);
-    pane.style.setProperty("--tot", (tot - pd).toFixed(2) + "s");
-    pane.style.animationDelay = pd.toFixed(2) + "s";
-    /* WHAT IS SEEN THROUGH THE GLASS IS ONE PICTURE. Drawn as softened
-       copies of every growing branch, leaf and blossom, the panes cost a
-       fifth of the frame rate: animated pieces inside a rounded clip,
-       inside a card. Each pane now holds one drawing of the tree behind
-       it - the wood as soft layered strokes, the blossom as soft blots,
-       no filter - uncovered upward by a wipe as the trunk climbs through. */
-    const ox = r.left + card.clientLeft, oy = r.top + card.clientTop, pw = card.clientWidth, ph = card.clientHeight;
-    let tIn = Infinity, tOut = 0, svg = "";
-    const fx = v => v.toFixed(1);
-    ops.forEach(op => {
-      if(op.kind === "line"){
-        const tm = hfxLineTimes(op.pts, op.t0, op.sp);
-        let hit = false;
-        op.pts.forEach((p, i) => { if(p[0] > ox - 30 && p[0] < ox + pw + 30 && p[1] > oy - 30 && p[1] < oy + ph + 30){ hit = true; tIn = Math.min(tIn, tm[i]); tOut = Math.max(tOut, tm[i]); } });
-        if(!hit) return;
-        const d = "M" + op.pts.map(p => fx(p[0] - ox) + " " + fx(p[1] - oy)).join(" L");
-        const th = (op.th[0] + op.th[1]) / 2;
-        [[2.6, .08], [1.8, .14], [1.3, .22], [1, .34]].forEach(([m, a]) => { svg += '<path d="' + d + '" fill="none" stroke="' + (op.cls.indexOf("root") >= 0 ? "#B07A4C" : "#B88A5C") + '" stroke-opacity="' + a + '" stroke-width="' + fx(th * m) + '" stroke-linecap="round" stroke-linejoin="round"/>'; });
-      } else if(op.x > ox - op.s && op.x < ox + pw + op.s && op.y > oy - op.s && op.y < oy + ph + op.s){
-        svg += '<circle cx="' + fx(op.x - ox) + '" cy="' + fx(op.y - oy) + '" r="' + fx(op.s * .5) + '" fill="url(#b' + (op.cls.indexOf("leaf") >= 0 ? "l" : "p") + ')"/>';
-      }
-    });
-    if(svg){
-      const url = hfxSprite("pane" + (++hfxSeq), () => 'viewBox="0 0 ' + pw + ' ' + ph + '" width="' + pw + '" height="' + ph + '"><defs>' +
-        '<radialGradient id="bp"><stop offset="0" stop-color="#FFC4DC" stop-opacity=".55"/><stop offset="1" stop-color="#FFC4DC" stop-opacity="0"/></radialGradient>' +
-        '<radialGradient id="bl"><stop offset="0" stop-color="#8FDB8A" stop-opacity=".45"/><stop offset="1" stop-color="#8FDB8A" stop-opacity="0"/></radialGradient></defs>' + svg + '</svg>', Math.min(900, Math.max(pw, ph) * 1.5));
-      hfxWipe(pane, 0, 0, pw, ph, url, "up", Math.max(0, tIn - .05), Math.max(.4, tOut - tIn + .2)).classList.add("hfx-pane-art");
-    }
-    hfxMk(pane, "i", "hfx-pane-frost");
-    card.classList.add("hfx-glassed");
-    card.insertBefore(pane, card.firstChild);
-    hfxOnEnd(c, fade => { if(fade) hfxFadeOut(pane); else pane.remove(); setTimeout(() => { if(!card.querySelector(":scope > .hfx-pane")) card.classList.remove("hfx-glassed"); }, fade ? 700 : 0); });
-  });
-
-  /* ---- in front: vines gripping the glass, curling at the corners ---- */
-  if(!scr){ hfxStagger([gB]); return; }
-  const gF = hfxMk(scr, "span", "hfx-tree", { "--tot": tot });
-  /* A VINE IS ONE PICTURE, REVEALED BY A WIPE. Drawn as a chain of
-     growing pieces with a leaf on every other joint, the vines alone were
-     ~200 animated elements; each run of vine is now one drawing - stem,
-     leaves and small flowers - uncovered along its way by a window that
-     slides (hfxWipe), so it is two elements whatever its length. */
-  const vine = (pts, t0, sp, dir, bloomEnd) => {
-    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, len = 0;
-    pts.forEach((p, i) => { x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1]); if(i) len += Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]); });
-    const pad = 11 * k + 3; x0 -= pad; y0 -= pad; x1 += pad; y1 += pad;
-    const w = Math.ceil(x1 - x0), h = Math.ceil(y1 - y0);
-    const url = hfxVineArtURL(pts.map(p => [p[0] - x0, p[1] - y0]), w, h, k);
-    const d = len / sp;
-    hfxWipe(gF, x0, y0, w, h, url, dir, t0, d);
-    if(bloomEnd){ const e = pts[pts.length - 1]; hfxPiece(gF, "hfx-bloom2", hfxBlossomURL(bloomEnd % 4), e[0], e[1], (small ? 26 : 32) * k, { "--bt": t0 + d - .05, "--r0": "-60deg" }); }
-    return t0 + d;
-  };
-  const vsp = 160 * k + 30;
-  /* up each side of a card (one wipe), then over the top corner and into a curl (another) */
-  const climb = (r, s, t0, frac, bloom) => {
-    const x = s < 0 ? r.left + 1 : r.right - 1, rad = 16 * k;
-    const yb = r.bottom - rad, yt = r.top + rad;
-    const yStop = yb - (yb - yt) * frac;
-    const up = [];
-    const n = Math.max(3, Math.round((yb - yStop) / (26 * k)));
-    for(let i = 0; i <= n; i++){ const y = yb - (yb - yStop) * i / n; up.push([x + Math.sin(i * 1.9) * 2.2 * k, y]); }
-    if(frac < 1){
-      const e = up[up.length - 1];
-      hfxCurl(e[0], e[1], -Math.PI / 2, 13 * k, 1.1, s).slice(1).forEach(p => up.push(p));
-      return vine(up, t0, vsp, "up", bloom);
-    }
-    const t1 = vine(up, t0, vsp, "up", 0);
-    const top = [up[up.length - 1]];
-    const ccx = s < 0 ? r.left + rad : r.right - rad;
-    for(let i = 1; i <= 4; i++){ const a = s < 0 ? Math.PI + (Math.PI / 2) * i / 4 : -(Math.PI / 2) * i / 4; top.push([ccx + Math.cos(a) * (rad - 1), yt + Math.sin(a) * (rad - 1)]); }
-    const e = top[top.length - 1];
-    top.push([e[0] - s * 18 * k, r.top + 1]);
-    hfxCurl(e[0] - s * 18 * k, r.top + 1, s < 0 ? 0 : Math.PI, 15 * k, 1.15, s < 0 ? -1 : 1).slice(1).forEach(p => top.push(p));
-    return vine(top, t1 - .05, vsp, s < 0 ? "right" : "left", bloom);
-  };
-  const tL = limbs[0].times, tR = limbs[1].times;
-  climb(X, -1, tL[Math.min(4, tL.length - 1)], 1, 2);
-  climb(X, 1, tR[Math.min(4, tR.length - 1)] + .05, 1, 3);
-  /* the box: along its bottom edge from the roots (one wipe), then round
-     the corner and up its side into a curl (another) */
-  [-1, 1].forEach(s => {
-    const ex = s < 0 ? G.left + 16 * k : G.right - 16 * k, run = [[cx + s * 6 * k, G.bottom - 1]];
-    for(let i = 1; i <= 4; i++) run.push([cx + (ex - cx) * i / 4, G.bottom - 1 + Math.sin(i * 2) * 1.6 * k]);
-    const t1 = vine(run, .7, vsp, s < 0 ? "left" : "right", 0);
-    const side = [run[run.length - 1]];
-    for(let i = 1; i <= 3; i++){ const a = Math.PI / 2 - s * (Math.PI / 2) * i / 3; side.push([ex + Math.cos(a) * 15 * k, G.bottom - 16 * k + Math.sin(a) * 15 * k]); }
-    const e = side[side.length - 1];
-    for(let i = 1; i <= 3; i++) side.push([e[0] + Math.sin(i * 1.7) * 1.8 * k, e[1] - G.height * .14 * i]);
-    const f = side[side.length - 1];
-    hfxCurl(f[0], f[1], -Math.PI / 2, 12 * k, 1.1, s).slice(1).forEach(p => side.push(p));
-    vine(side, t1 - .05, vsp, "up", s < 0 ? 1 : 0);
-  });
-  /* the cards between: a tendril at each side */
-  L.cards.forEach(r => {
-    if(r.el === c.box || r.el === X.el) return;
-    if(r.top < X.bottom - 2 || r.bottom > G.top + 2) return;
-    climb(r, -1, 1.1, .55, 0); climb(r, 1, 1.2, .55, 0);
-  });
-  /* blossom on the glass's corners */
-  [[X.left + 3, X.bottom - 3], [X.right - 3, X.bottom - 3], [G.left + 3, G.top + 3], [G.right - 3, G.top + 3]].forEach((p, i) =>
-    hfxPiece(gF, "hfx-bloom2", hfxBlossomURL(i % 4), p[0], p[1], (small ? 30 : 38) * k, { "--bt": 1.4 + i * .18, "--r0": "-45deg" }));
-  /* fireflies among the crown and the margins, petals off the crown */
-  const fl = hfxFireflyURL(), tips = crown.tips;
-  for(let i = 0; i < (mini ? 5 : small ? 11 : 15); i++){
-    const tp = tips[(i * 3) % tips.length] || { x: cx, y: topY }, j = () => hfxR(-70, 70) * k;
-    hfxPiece(scr, "hfx-firefly", fl, i % 3 ? tp.x : hfxR(.05, .95) * c.vw, i % 3 ? tp.y : hfxR(X.top, G.bottom), hfxR(16, 26) * k,
-      { "--x1": j() + "px", "--y1": j() + "px", "--x2": j() + "px", "--y2": j() + "px", "--x3": j() + "px", "--y3": (j() - 30 * k) + "px", "--t": tTop + .2 + hfxR(0, 1.6), "--d": hfxR(3.2, 4) });
-  }
-  const wind = Math.random() < .5 ? -1 : 1, cols = c.palette || HFX_BLOOM;
-  tips.forEach((tp, i) => {
-    if(i % 2) return;
-    hfxPiece(scr, "hfx-petal2", hfxPetalURL(cols[i % cols.length]), tp.x, tp.y, hfxR(10, 15) * k, { "--w": (wind * hfxR(.25, .55) * c.vw) + "px", "--f": (hfxR(.35, .6) * c.vh) + "px",
-      "--t": tp.t + hfxR(.5, 1.8), "--d": hfxR(3, 3.8) });
-  });
-  hfxStagger([gF, scr, gB]);
-}
 
 /* ============ BUBBLES, LIQUID GLASS ============
    "The bubbles could be so much cooler, ensure that behind the bubbles
@@ -76940,7 +76615,9 @@ function hfxBubblesGlass(scr, c){
     hfxBB(scr, Object.assign({ kind: "small", x: s.x, y: s.y, sz: hfxR(8, 18), d: hfxR(2.6, 3.6), dl: .25 + (i / 16) * 2.4, h: hues[i % hues.length] }, route(a, far(s, a, hfxR(.4, .85)), Math.random() < .5 ? 1 : -1)));
   }
   /* the heroes: glass, spread over the upper half-circle */
-  const nH = small ? 6 : 9, pops = [];
+  /* four heroes on a phone, six on a tablet (build 317: nine and six cost a
+     filtered layer each, and the glass is the one costly thing here) */
+  const nH = small ? 4 : 6, pops = [];
   for(let i = 0; i < nH; i++){
     const s = src(), a = -Math.PI + Math.PI * (i + .5) / nH + hfxR(-.16, .16);
     const sz = (small ? hfxR(76, 116) : hfxR(104, 160)) * (c.frame ? .48 : 1);
@@ -77019,164 +76696,82 @@ function hfxLeafURL(){
 function hfxPetalURL(col){
   return hfxSprite("pt" + col, () => 'viewBox="0 0 20 14"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="' + col + '"/></linearGradient></defs><path d="M1 7 Q6 0 19 3 Q13 12 1 7 Z" fill="url(#g)"/></svg>', 64);
 }
-function hfxFireflyURL(){
-  return hfxSprite("ff", () => 'viewBox="-20 -20 40 40"><defs><radialGradient id="g"><stop offset="0" stop-color="#FFFBD0"/><stop offset=".25" stop-color="#E8FF8A" stop-opacity=".85"/><stop offset="1" stop-color="#C8FF5A" stop-opacity="0"/></radialGradient></defs><circle r="20" fill="url(#g)"/></svg>', 80);
-}
-/* A vine as one image, w x h, climbing up (dir "up") or running along
-   (dir "along"), leaves alternating sides. */
-function hfxVineURL(dir, w, h, mini){
-  w = Math.round(w); h = Math.round(h);
-  return hfxSprite("vn" + dir + w + "x" + h + (mini ? "m" : ""), () => {
-    const L = dir === "up" ? h : w, mid = (dir === "up" ? w : h) / 2, amp = mini ? 1.6 : 2.6, step = mini ? 13 : 20, lw = mini ? 2 : 2.8;
-    const pt = (u, v) => dir === "up" ? (mid + v).toFixed(1) + " " + (h - u).toFixed(1) : u.toFixed(1) + " " + (mid + v).toFixed(1);
-    let d = "M" + pt(0, 0);
-    for(let u = step; u <= L; u += step) d += " Q" + pt(u - step / 2, (u / step) % 2 ? amp * 2 : -amp * 2) + " " + pt(u, 0);
-    let leaves = "";
-    const ls = mini ? 5 : 8;
-    for(let u = step, k = 0; u < L - 4; u += step, k++){
-      const side = k % 2 ? 1 : -1, xy = pt(u, side * ls * .6).split(" ");
-      const rot = (dir === "up" ? -90 : 0) + side * 40;
-      leaves += '<ellipse cx="' + xy[0] + '" cy="' + xy[1] + '" rx="' + ls + '" ry="' + (ls * .45).toFixed(1) + '" transform="rotate(' + rot + ' ' + xy[0] + ' ' + xy[1] + ')" fill="url(#lf)"/>';
-    }
-    return 'viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '"><defs><linearGradient id="lf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C4F59A"/><stop offset="1" stop-color="#2F8A4E"/></linearGradient></defs>' +
-      '<path d="' + d + '" fill="none" stroke="#5FBF6E" stroke-width="' + lw + '" stroke-linecap="round"/>' + leaves + '</svg>';
-  }, Math.min(1024, Math.max(w, h) * 3));
-}
-/* A piece revealed by a wipe: a window and its contents slide opposite
-   ways, so the picture holds still while the edge crosses it. */
-function hfxWipe(parent, x, y, w, h, url, dir, t, d){
-  const win = hfxMk(parent, "span", "hfx-wipe is-" + dir, { left: x + "px", top: y + "px", width: w + "px", height: h + "px", "--t": t, "--d": d });
-  hfxMk(win, "i", "hfx-wipe-in").style.backgroundImage = url;
-  return win;
-}
-/* A BRANCH IS A PICTURE, NOT A CLIP. Each one was a gradient cut to a
-   taper by clip-path, plus a ::after for its highlight: the World Tree
-   on the results screen is 120 of them, and a clipped element that
-   animates is a layer AND a mask - at 4x CPU it held the tree to ~45fps
-   with frames of a third of a second. Now the taper, the wood and the
-   highlight are one sprite (two, by how much the branch narrows),
-   stretched to the branch; only the sap-carrying limbs keep a ::after,
-   for the pulse. */
-function hfxBranchURL(rr){
-  const k = rr < .57 ? 50 : 64, l = (100 - k) / 2, r = 100 - l, hl = l + k * .42, hr = l + k * .58;
-  return hfxSprite("branch" + k, () => 'viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="w" x1="0" x2="1">' +
-    '<stop offset="0" stop-color="#24160F"/><stop offset=".3" stop-color="#4E3323"/><stop offset=".52" stop-color="#8A6040"/><stop offset=".8" stop-color="#3A2619"/><stop offset="1" stop-color="#20130C"/></linearGradient>' +
-    '<linearGradient id="h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFDEA0" stop-opacity=".45"/><stop offset="1" stop-color="#FFAA78" stop-opacity=".12"/></linearGradient></defs>' +
-    '<polygon points="' + l + ',0 ' + r + ',0 100,100 0,100" fill="url(#w)"/><polygon points="' + hl + ',0 ' + hr + ',0 58,100 42,100" fill="url(#h)"/></svg>', 128);
-}
-function hfxTree(parent, ox, oy, o){
-  /* a tree inside another tree's group is faded by that group: a second
-     opacity animation round it is a second surface for nothing */
-  const group = hfxMk(parent, "span", "hfx-tree" + (parent.classList && parent.classList.contains("hfx-tree") ? " is-inner" : ""), { "--tot": o.tot || 8.8 });
-  const segs = [], tips = [], joints = [];
-  (function grow(x, y, a, len, th, depth, t){
-    const dur = depth === 0 ? o.trunkDur : Math.max(.24, .42 - depth * .04);
-    const last = depth >= o.maxD;
-    const childTh = Math.max(1.6, th * .64);
-    const top = last ? Math.max(1.2, th * .5) : childTh;
-    let ex, ey, ea = a;
-    /* the trunk and the first limbs bend once on the way up */
-    if(depth <= 1 && len > 30){
-      const bend = hfxR(.1, .2) * (Math.random() < .5 ? -1 : 1), mid = (th + top) / 2;
-      const a1 = a + bend, a2 = a - bend * .8;
-      const mx = x + len / 2 * Math.sin(a1), my = y - len / 2 * Math.cos(a1);
-      segs.push({ x, y, a: a1, len: len / 2, th, top: mid, t, dur: dur / 2, depth });
-      ex = mx + len / 2 * Math.sin(a2); ey = my - len / 2 * Math.cos(a2);
-      segs.push({ x: mx, y: my, a: a2, len: len / 2, th: mid, top, t: t + dur / 2, dur: dur / 2, depth });
-      ea = a2;
-    } else {
-      ex = x + len * Math.sin(a); ey = y - len * Math.cos(a);
-      segs.push({ x, y, a, len, th, top, t, dur, depth });
-    }
-    if(last){ tips.push({ x: ex, y: ey, t: t + dur, a: ea }); return; }
-    if(depth >= 1) joints.push({ x: ex, y: ey, t: t + dur, a: ea, depth });
-    const n = depth === 0 ? 3 : (Math.random() < (depth === 1 ? .4 : .12) ? 3 : 2);
-    for(let k = 0; k < n; k++){
-      const side = n === 2 ? (k ? 1 : -1) : (k - 1);
-      const spread = side * (depth <= 1 ? hfxR(.42, .66) * (o.wide || 1) : hfxR(.32, .56)) + hfxR(-.12, .12);
-      grow(ex, ey, (ea + spread) * (depth < 2 ? .9 : 1), len * hfxR(.68, .82), childTh, depth + 1, t + dur * .9);
-    }
-  })(ox, oy, 0, o.len, o.th, 0, o.t0);
-  segs.forEach(s => {
-    /* a flat base sits ON an edge: no overlap below it (build 314) */
-    const lap = s.depth === 0 && o.flatBase && s.y === oy ? 0 : s.top * .6;
-    const rr = Math.min(1, s.top / s.th);
-    const el = hfxMk(group, "i", "hfx-branch" + (s.depth === 0 ? " is-trunk" : "") + (s.depth <= 2 && o.pulse ? " is-pulse" : ""), {
-      left: (s.x - s.th / 2) + "px", top: (s.y - s.len) + "px", width: s.th + "px", height: (s.len + lap) + "px",
-      "--a": (s.a * 180 / Math.PI).toFixed(1) + "deg", "--gt": s.t, "--gd": s.dur, "--ol": lap + "px" });
-    el.style.backgroundImage = hfxBranchURL(rr);
-  });
-  const leaf = hfxLeafURL();
-  joints.forEach((j, i) => {
-    if(i % 2 === 0) hfxPiece(group, "hfx-leaf2", leaf, j.x, j.y, o.bloom * 1.05, { "--lr": ((j.a * 180 / Math.PI) - 90 + (i % 2 ? 50 : -130)).toFixed(0) + "deg", "--bt": j.t + .05 });
-    /* the inner crown flowers too, a beat after the tips */
-    if(o.inner && j.depth >= 2) hfxPiece(group, "hfx-bloom2", hfxBlossomURL((i + 2) % 4), j.x, j.y, o.bloom * hfxR(1.6, 2.1), { "--bt": j.t + hfxR(.5, .9), "--r0": "-50deg" });
-  });
-  tips.forEach((tp, i) => hfxPiece(group, "hfx-bloom2", hfxBlossomURL(i % 4), tp.x, tp.y, o.bloom * hfxR(2.3, 2.9), { "--bt": tp.t + hfxR(0, .18), "--r0": hfxR(-70, -30).toFixed(0) + "deg" }));
-  return { group, tips };
+/* THE WORLD TREE IS CONFETTI IN BLOSSOM (build 317). "The tree one looks
+   terrible, fix that. The default one is the confetti, but the alien one
+   is cool because it takes the default one and makes it the alien
+   theme." So no drawn tree: it is the default's burst - the flash and the
+   shockwave out of the 100%, everything thrown out from the number - in
+   the tree's own things: blossom petals and leaves, which do what paper
+   does and stardust does not, CATCH THE AIR. Each one bursts out (the
+   outer element, translate), then hangs and drifts down in a long fall,
+   turning over as it goes (the inner one, a flutter - rotate and scaleX,
+   alternate, a finite count). Three clusters of blossom open on the
+   box's top edge as the burst leaves it, the one nod to a tree, and shed
+   a second, gentler fall of petals. Fifty-odd sprites, transform and
+   opacity only, and every one ends fading while it still falls. */
+const HFX_TREE_T = { fall0: .12, wave2: 1.0 };
+function hfxTreeBit(parent, url, x, y, sz, o){
+  const el = hfxMk(parent, "i", "hfx-bl-p", { left: x + "px", top: y + "px", "--ps": sz + "px",
+    "--dx": o.dx + "px", "--dy": o.dy + "px", "--wx": o.wx + "px", "--fall": o.fall + "px", "--dl": o.dl, "--d": o.d });
+  const inner = hfxMk(el, "i", "hfx-bl-i", { "--r0": o.r0 + "deg", "--r1": o.r1 + "deg", "--fd": o.fd, "--dl": o.dl, "--fn": o.fn });
+  inner.style.backgroundImage = url;
+  return el;
 }
 function hfxWorldTree(scr, bx, c){
   const cols = c.palette || HFX_BLOOM;
-  const lay = scr ? c.scene : null;
-  if(scr && lay) hfxTreeGlass(scr, c, lay);
-  else if(scr){
-    const small = c.vw < 600;
-    const ox = c.br.left + c.br.width / 2, oy = c.br.top + 2;
-    const len = Math.max(70, Math.min(oy * .27, c.vh * .2));
-    hfxMk(scr, "i", "hfx-ground", { left: ox + "px", top: c.br.top + "px", "--gw": (c.br.width * .9) + "px" });
-    hfxMk(scr, "i", "hfx-tree-halo", { left: ox + "px", top: Math.max(c.vh * .2, oy - len * 2.2) + "px", "--hs": (Math.min(c.vw * 1.3, c.vh * .9)) + "px" });
-    const t = hfxTree(scr, ox, oy, { maxD: 4, len, th: Math.max(18, Math.min(44, c.vw * .075)), wide: 1.3, pulse: true, inner: true,
-      trunkDur: .8, t0: .05, bloom: small ? 19 : 24, palette: c.palette, tot: HUNDO_FX_TOTAL.worldtree / 1000 });
-    /* fireflies come out among the blossom */
-    const fl = hfxFireflyURL();
-    for(let i = 0; i < (small ? 9 : 12); i++){
-      const tp = t.tips[(i * 3) % t.tips.length], j = () => hfxR(-60, 60);
-      hfxPiece(scr, "hfx-firefly", fl, tp.x, tp.y, hfxR(16, 26), { "--x1": j() + "px", "--y1": j() + "px", "--x2": j() + "px", "--y2": j() + "px", "--x3": j() + "px", "--y3": (j() - 30) + "px",
-        "--t": 2.2 + hfxR(0, 1.4), "--d": hfxR(3.4, 4.2) });
+  const small = c.vw < 600, mini = !!c.frame || c.mini, k = mini ? .55 : 1;
+  const petal = i => hfxPetalURL(cols[i % cols.length]), leaf = hfxLeafURL();
+  if(scr){
+    const ox = c.pc.x, oy = c.pc.y, reach = Math.min(c.vw, c.vh) * (small ? .62 : .5);
+    /* the default's flash and its two rings, in blossom and leaf */
+    const flash = hfxMk(scr, "span", "stardust-flash hfx-bl-flash", { left: ox + "px", top: oy + "px", "--c0": "#FFB3D1" });
+    hfxMk(scr, "span", "stardust-ring", { left: ox + "px", top: oy + "px", "--c0": "#FF8FBF" });
+    hfxMk(scr, "span", "stardust-ring is-late", { left: ox + "px", top: oy + "px", "--c0": "#7CD69A" });
+    [flash].forEach(f => f.setAttribute("aria-hidden", "true"));
+    /* the burst: petals and leaves thrown out of the number, then falling */
+    /* thrown up and out like a fountain - more of the circle above the
+       number than below it, so the fall has somewhere to come down from */
+    const N = small ? 56 : 72;
+    for(let i = 0; i < N; i++){
+      const isLeaf = i % 3 === 2;
+      const a = -Math.PI / 2 + ((i / N) - .5) * Math.PI * 1.7 + hfxR(-.18, .18), d = reach * hfxR(.4, 1);
+      const dx = Math.cos(a) * d, dy = Math.sin(a) * d * (Math.sin(a) < 0 ? 1.5 : .7) - hfxR(20, 70);
+      const fall = hfxR(.3, .55) * c.vh, d0 = hfxR(3, 3.7);
+      hfxTreeBit(scr, isLeaf ? leaf : petal(i), ox, oy, (isLeaf ? hfxR(22, 32) : hfxR(17, 26)) * k, {
+        dx, dy, wx: hfxR(-.08, .08) * c.vw + dx * .25, fall, dl: HFX_TREE_T.fall0 + hfxR(0, .2), d: d0,
+        r0: hfxR(-60, 60), r1: hfxR(120, 260) * (Math.random() < .5 ? -1 : 1), fd: hfxR(.6, .95), fn: 5 });
     }
-    /* petals blowing off in the wind, all one way, in gusts */
-    const wind = Math.random() < .5 ? -1 : 1;
-    t.tips.forEach((tp, i) => {
-      if(i % 2) return;
-      hfxPiece(scr, "hfx-petal2", hfxPetalURL(cols[i % cols.length]), tp.x, tp.y, hfxR(10, 15), { "--w": (wind * hfxR(.25, .55) * c.vw) + "px", "--f": (hfxR(.3, .55) * c.vh) + "px",
-        "--t": tp.t + hfxR(.6, 2), "--d": hfxR(3, 3.8) });
+    /* a few of the default's sparks, pale gold and pink, for the light */
+    for(let i = 0; i < (small ? 8 : 10); i++){
+      const a = (i / 10) * Math.PI * 2 + hfxR(-.3, .3), d = reach * hfxR(.4, .8);
+      const p = hfxMk(scr, "span", "stardust-p is-spark", { left: ox + "px", top: oy + "px", "--dx": (Math.cos(a) * d) + "px", "--dy": (Math.sin(a) * d * .8) + "px",
+        "--s": hfxR(9, 14) + "px", "--c": i % 2 ? "#FFE1EE" : "#FFD27A" });
+      p.style.animationDelay = hfxR(.05, .25).toFixed(2) + "s"; p.style.animationDuration = hfxR(1.4, 2.1).toFixed(2) + "s";
+    }
+    /* blossom opening along the box's top edge, shedding a second fall */
+    const top = c.br.top, L = c.br.left, W = c.br.width;
+    [[.1, -40], [.5, -20], [.9, -55]].forEach(([f, r0], j) => {
+      const x = L + W * f, y = top + 2, bs = (small ? 62 : 76) * k;
+      hfxPiece(scr, "hfx-bl-cluster", hfxBlossomURL(j), x, y, bs, { "--bt": .25 + j * .12, "--r0": r0 + "deg" });
+      for(let i = 0; i < (small ? 5 : 7); i++){
+        hfxTreeBit(scr, petal(i + j), x + hfxR(-14, 14), y + hfxR(-8, 6), hfxR(15, 21) * k, {
+          dx: hfxR(-30, 30), dy: hfxR(-34, -10), wx: hfxR(-.12, .12) * c.vw, fall: hfxR(.2, .34) * c.vh,
+          dl: HFX_TREE_T.wave2 + j * .15 + i * .14, d: hfxR(2.6, 3.1), r0: hfxR(-40, 40), r1: hfxR(150, 260) * (i % 2 ? -1 : 1), fd: hfxR(.7, 1), fn: 3 });
+      }
     });
   }
   if(bx){
-    const tot = (c.boxOnly ? HUNDO_FX_BOX_TOTAL.worldtree : HUNDO_FX_TOTAL.worldtree) / 1000;
-    const g = hfxMk(bx, "span", "hfx-tree", { "--tot": tot });
-    /* on the results screen the vines are on the glass outside it
-       (hfxTreeGlass); inside, only the number lighting and the petals */
-    if(c.scene){
-      hfxLitText(bx, c, { mode: "flash", color: "#FFF4E6", glow: "#FF8FBF", dl: 1.8, dur: 2.6 });
-      for(let i = 0; i < 6; i++) hfxPiece(g, "hfx-petal2", hfxPetalURL(cols[i % cols.length]), hfxR(.1, .9) * c.bw, hfxR(0, .2) * c.bh, 10,
-        { "--w": (hfxR(.1, .3) * c.bw) + "px", "--f": (c.bh * hfxR(.7, 1)) + "px", "--t": 2.2 + i * .25, "--d": hfxR(2.2, 2.8) });
-      return;
-    }
-    const ins = c.mini ? 4 : 6, vw2 = c.mini ? 12 : 18, midX = c.bw / 2;
-    const upH = c.bh - ins * 2, acW = midX - ins - 2;
-    const up = hfxVineURL("up", vw2, upH, c.mini), along = hfxVineURL("along", acW, vw2, c.mini);
-    const tU = .2, dU = c.mini ? .7 : .95, dA = c.mini ? .55 : .75;
-    hfxWipe(g, ins - vw2 / 2, ins, vw2, upH, up, "up", tU, dU);
-    hfxWipe(g, c.bw - ins - vw2 / 2, ins, vw2, upH, up, "up", tU + .05, dU);
-    hfxWipe(g, ins + 2, ins - vw2 / 2, acW, vw2, along, "right", tU + dU, dA);
-    hfxWipe(g, midX, ins - vw2 / 2, acW, vw2, along, "left", tU + dU + .05, dA).classList.add("is-flip");
-    const tEnd = tU + dU + dA;
-    const bs = c.mini ? 26 : 40;
-    hfxPiece(g, "hfx-bloom2", hfxBlossomURL(0), midX, ins + 1, bs * 1.25, { "--bt": tEnd, "--r0": "-40deg" });
-    hfxPiece(g, "hfx-bloom2", hfxBlossomURL(1), ins + 2, c.bh - ins - 2, bs * .8, { "--bt": tU, "--r0": "-60deg" });
-    hfxPiece(g, "hfx-bloom2", hfxBlossomURL(1), c.bw - ins - 2, c.bh - ins - 2, bs * .8, { "--bt": tU + .05, "--r0": "-50deg" });
-    hfxPiece(g, "hfx-bloom2", hfxBlossomURL(2), ins + 3, ins + 3, bs * .9, { "--bt": tU + dU - .1, "--r0": "-45deg" });
-    hfxPiece(g, "hfx-bloom2", hfxBlossomURL(2), c.bw - ins - 3, ins + 3, bs * .9, { "--bt": tU + dU - .05, "--r0": "-55deg" });
-    hfxPiece(g, "hfx-bloom2", hfxBlossomURL(3), c.p.x + c.p.w * .96, c.p.y + c.p.h * .12, bs * .75, { "--bt": tEnd + .25, "--r0": "-35deg" });
-    hfxLitText(bx, c, { mode: "flash", color: "#FFF4E6", glow: "#FF8FBF", dl: tEnd + .1, dur: 2.6 });
-    for(let i = 0; i < (c.mini ? 4 : 7); i++){
-      hfxPiece(g, "hfx-petal2", hfxPetalURL(cols[i % cols.length]), hfxR(.1, .9) * c.bw, hfxR(0, .2) * c.bh, c.mini ? 7 : 10,
-        { "--w": (hfxR(.1, .3) * c.bw) + "px", "--f": (c.bh * hfxR(.7, 1)) + "px", "--t": tEnd + .2 + i * .22, "--d": hfxR(2.2, 2.8) });
-    }
-    if(c.boxOnly){
-      /* the tree itself, small, beside the number */
-      hfxTree(g, c.bw * .82, c.bh + 2, { maxD: 3, len: c.bh * .34, th: 5, trunkDur: .45, t0: .2, bloom: 6, palette: c.palette, tot });
+    /* in the box: the number lit in blossom, and a few petals drifting
+       across it; in a small box (Customize, the unlock card) the burst
+       itself, out of the number */
+    hfxLitText(bx, c, { mode: "flash", color: "#FFF4E6", glow: "#FF8FBF", dl: c.boxOnly ? .15 : .1, dur: 2.2 });
+    const g = hfxMk(bx, "span", "hfx-bl-box");
+    const n = c.boxOnly ? (c.mini ? 12 : 16) : 7, ox = c.p.x + c.p.w / 2, oy = c.p.y + c.p.h / 2;
+    for(let i = 0; i < n; i++){
+      const a = (i / n) * Math.PI * 2 + hfxR(-.3, .3), d = Math.min(c.bw, c.bh * 2) * hfxR(.18, .42);
+      hfxTreeBit(g, i % 3 === 2 ? leaf : petal(i), ox, oy, (c.mini ? 8 : 11) * (i % 3 === 2 ? 1.3 : 1), {
+        dx: Math.cos(a) * d, dy: Math.sin(a) * d * .55, wx: hfxR(-10, 10), fall: c.bh * hfxR(.35, .6),
+        dl: .1 + hfxR(0, .2), d: hfxR(2.2, 2.8), r0: hfxR(-50, 50), r1: hfxR(140, 240) * (i % 2 ? -1 : 1), fd: hfxR(.6, .9), fn: 3 });
     }
   }
 }
@@ -77559,6 +77154,11 @@ function hfxFwSky(parent, c, S, W, H, end, floor){
   const cv = document.createElement("canvas");
   cv.className = "hfx-fw-sky";
   const dpr = Math.min(2, window.devicePixelRatio || 1);
+  /* ONLY AS TALL AS THE SKY (build 317). Nothing is drawn below `floor`
+     (the box's top edge) - it used to be erased there every frame - so
+     the canvas stops at it: on a phone that is a third fewer pixels to
+     clear, composite and send each frame. */
+  if(floor != null && floor > 0 && floor < H) H = Math.ceil(floor);
   cv.width = Math.max(1, Math.round(W * dpr)); cv.height = Math.max(1, Math.round(H * dpr));
   cv.style.width = W + "px"; cv.style.height = H + "px";
   parent.appendChild(cv);
@@ -77567,7 +77167,7 @@ function hfxFwSky(parent, c, S, W, H, end, floor){
   const heads = hfxFwHeads(), P = S.P, at = S.at, LV = [[.35, .22], [.62, .45], [.92, .8]];
   const css = {}; Object.keys(HFX_FW_COL).forEach(k => { const q = HFX_FW_COL[k]; css[k] = "rgb(" + q[0] + "," + q[1] + "," + q[2] + ")"; });
   let t0 = performance.now(), raf = 0, stopAt = end, dead = false;
-  const FADE = 10, cut = floor != null && floor < H ? (() => {
+  const FADE = 10, cut = floor != null && floor <= H ? (() => {
     const gr = g.createLinearGradient(0, floor - FADE, 0, floor);
     gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,1)");
     return gr; })() : null;
@@ -77620,7 +77220,7 @@ function hfxFwSky(parent, c, S, W, H, end, floor){
     if(cut){
       g.globalCompositeOperation = "destination-out";
       g.fillStyle = cut; g.fillRect(0, floor - FADE, W, FADE);
-      g.fillStyle = "#000"; g.fillRect(0, floor, W, H - floor);
+      if(floor < H){ g.fillStyle = "#000"; g.fillRect(0, floor, W, H - floor); }
     }
   };
   const frame = () => {
@@ -78262,31 +77862,17 @@ function hundoFxPosterSVG(id){
     for(let i = 0; i < 20; i++){ const x = rnd() * 160, y = 40 + rnd() * 20; if(Math.abs(x - 80) < 30 && y < 44) continue;
       body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(.35 + rnd() * .5) + '" fill="' + (i % 2 ? "#FFB3EE" : "#B3F3FF") + '" opacity="' + F(.4 + rnd() * .4) + '"/>'; }
   } else if(id === "worldtree"){
-    rg("h", [[0, "#FFD27A", 0.3], [1, "#FFD27A", 0]]);
-    body += glow(80, 30, 40, "h");
-    /* vines along the top and bottom edges, curling in at the corners */
-    const vine = (y, dir) => {
-      let d = "M-4 " + y, leaves = "";
-      for(let x = -4; x < 164; x += 12){
-        const yy = y + (x / 12 % 2 ? 2.2 : -2.2) * dir;
-        d += " Q" + F(x + 6) + " " + F(yy) + " " + F(x + 12) + " " + y;
-        const lx = x + 6, ly = yy, a = (x / 12 % 2 ? 30 : -30) * dir + (dir > 0 ? 180 : 0);
-        leaves += '<ellipse cx="' + F(lx) + '" cy="' + F(ly) + '" rx="2.6" ry="1.1" fill="' + (x / 12 % 3 ? "#5FBF6A" : "#8FDB7A") + '" transform="rotate(' + a + ' ' + F(lx) + ' ' + F(ly) + ')"/>';
-      }
-      return '<path d="' + d + '" stroke="#4E8A43" stroke-width="1.3" fill="none"/>' + leaves;
-    };
-    body += vine(3.4, 1) + vine(56.6, -1);
-    /* blossom on them, thicker at the corners */
-    const bloom = (x, y, r, c) => { let p = ""; for(let k = 0; k < 5; k++){ const a = k / 5 * Math.PI * 2; p += '<circle cx="' + F(x + Math.cos(a) * r * .55) + '" cy="' + F(y + Math.sin(a) * r * .55) + '" r="' + F(r * .55) + '" fill="' + c + '"/>'; }
-      return p + '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(r * .32) + '" fill="#FFF3C4"/>'; };
-    [[6, 6, 3.4], [16, 2.5, 2.4], [30, 4.5, 2], [130, 3, 2.2], [146, 5.5, 2.8], [156, 2, 2.2], [8, 55, 2.6], [24, 57, 2], [138, 56, 2.2], [154, 53, 3.2]].forEach((b, i) => { body += bloom(b[0], b[1], b[2], HFX_BLOOM[i % HFX_BLOOM.length]); });
-    /* the tree to the right of the number, in full blossom */
-    body += '<path d="M128 58 Q127 46 129 38 M129 44 Q122 38 118 30 M129 40 Q136 33 140 26 M129 38 Q130 28 128 20 M118 30 Q115 26 113 21 M140 26 Q143 22 146 18" stroke="#6B4A35" stroke-width="2" stroke-linecap="round" fill="none"/>' +
-            '<path d="M128 58 Q127 46 129 38" stroke="#C89A6A" stroke-width=".6" stroke-linecap="round" fill="none" opacity=".6"/>';
-    [[113, 20, 3.6], [118, 27, 3], [128, 18, 4], [134, 22, 3.2], [146, 17, 3.6], [140, 25, 2.8], [123, 22, 2.6], [151, 23, 2.4], [109, 26, 2.4]].forEach((b, i) => { body += bloom(b[0], b[1], b[2], HFX_BLOOM[(i + 1) % HFX_BLOOM.length]); });
-    for(let i = 0; i < 8; i++){ const x = 20 + rnd() * 120, y = 12 + rnd() * 38; if(Math.abs(x - 80) < 28 && Math.abs(y - 30) < 10) continue;
-      body += '<ellipse cx="' + F(x) + '" cy="' + F(y) + '" rx="1.2" ry=".7" fill="#FFB3D1" opacity=".8" transform="rotate(' + F(rnd() * 180) + ' ' + F(x) + ' ' + F(y) + ')"/>'; }
-    [[44, 16], [100, 46], [60, 48]].forEach(p => { body += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="2.4" fill="#FFF3A0" opacity=".25"/><circle cx="' + p[0] + '" cy="' + p[1] + '" r=".8" fill="#FFF8C8"/>'; });
+    /* build 317: the default's burst in blossom - petals and leaves
+       thrown out of the number and drifting down, no tree */
+    rg("h", [[0, "#FFE1EE", 0.55], [0.4, "#FF8FBF", 0.22], [1, "#FF8FBF", 0]]);
+    body += glow(80, 30, 44, "h");
+    const petal = (x, y, s, rot, c) => '<path d="M' + F(x - s) + ' ' + F(y) + ' Q' + F(x - s * .4) + ' ' + F(y - s * .7) + ' ' + F(x + s) + ' ' + F(y - s * .4) + ' Q' + F(x + s * .3) + ' ' + F(y + s * .6) + ' ' + F(x - s) + ' ' + F(y) + 'Z" fill="' + c + '" transform="rotate(' + F(rot) + ' ' + F(x) + ' ' + F(y) + ')"/>';
+    const leaf = (x, y, s, rot) => '<path d="M' + F(x - s) + ' ' + F(y) + ' Q' + F(x) + ' ' + F(y - s * .6) + ' ' + F(x + s) + ' ' + F(y) + ' Q' + F(x) + ' ' + F(y + s * .6) + ' ' + F(x - s) + ' ' + F(y) + 'Z" fill="' + (rot % 2 > 1 ? "#5FBF6A" : "#8FDB7A") + '" transform="rotate(' + F(rot) + ' ' + F(x) + ' ' + F(y) + ')"/>';
+    for(let i = 0; i < 40; i++){
+      const a = rnd() * Math.PI * 2, r = 26 + rnd() * 54, x = 80 + Math.cos(a) * r * 1.15, y = 30 + Math.sin(a) * r * .55 + rnd() * 6;
+      if(Math.abs(x - 80) < 27 && Math.abs(y - 30) < 10) continue;
+      body += i % 3 === 2 ? leaf(x, y, 2.2 + rnd(), rnd() * 180) : petal(x, y, 1.6 + rnd() * .9, rnd() * 360, HFX_BLOOM[i % HFX_BLOOM.length]);
+    }
   } else if(id === "bubbles"){
     rg("b", [[0, "#9FE8FF", 0], [0.62, "#9FE8FF", 0.04], [0.8, "#C79BFF", 0.4], [0.92, "#FFB3D1", 0.8], [1, "#FFFFFF", 0.25]]);
     rg("w", [[0, "#9FE8FF", 0.28], [1, "#9FE8FF", 0]]);
@@ -78366,10 +77952,13 @@ function buildHundoFxStill(id){
     for(let k = 0; k < 2; k++) for(let j = 0; j < 22; j++){ const r = 2 + j * .95, th = k * Math.PI + r * .2; arms += '<circle cx="' + (24 + Math.cos(th) * r).toFixed(1) + '" cy="' + (24 + Math.sin(th) * r).toFixed(1) + '" r="' + (j % 3 ? .9 : 1.4) + '" fill="' + (j % 2 ? "#9FB4FF" : "#FF8FD8") + '"/>'; }
     body = '<defs><radialGradient id="' + g + 'g"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#B49CFF" stop-opacity=".5"/><stop offset="1" stop-color="#B49CFF" stop-opacity="0"/></radialGradient></defs><circle cx="24" cy="24" r="12" fill="url(#' + g + 'g)"/>' + arms;
   } else if(id === "worldtree"){
-    const br = '<path d="M24 47 L24 30 M24 34 L15 24 M24 32 L33 21 M24 30 L23 16 M15 24 L10 17 M15 24 L17 15 M33 21 L39 14 M33 21 L31 12 M23 16 L19 9 M23 16 L28 8" stroke="#6B4A35" stroke-linecap="round" fill="none"/>';
-    body = '<defs><radialGradient id="' + g + 'h" cx="50%" cy="40%" r="50%"><stop offset="0" stop-color="#FFD27A" stop-opacity=".35"/><stop offset="1" stop-color="#FFD27A" stop-opacity="0"/></radialGradient></defs><circle cx="24" cy="20" r="20" fill="url(#' + g + 'h)"/>' +
-      br.replace('stroke="#6B4A35"', 'stroke="#6B4A35" stroke-width="3.2"') + br.replace('stroke="#6B4A35"', 'stroke="#C89A6A" stroke-width="1" stroke-opacity=".6"') +
-      [[10, 17], [17, 15], [39, 14], [31, 12], [19, 9], [28, 8], [24, 5]].map((p, i) => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3" fill="' + HFX_BLOOM[i % HFX_BLOOM.length] + '"/><circle cx="' + p[0] + '" cy="' + p[1] + '" r="1" fill="#FFF3C4"/>').join("");
+    /* the burst in blossom, still (build 317: no tree) */
+    let bits = "";
+    for(let i = 0; i < 14; i++){ const a = i / 14 * Math.PI * 2, r = 12 + (i % 3) * 5, x = 24 + Math.cos(a) * r, y = 24 + Math.sin(a) * r * .85;
+      bits += i % 3 === 2 ? '<ellipse cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" rx="3" ry="1.3" fill="#7CD69A" transform="rotate(' + (i * 47) + ' ' + x.toFixed(1) + ' ' + y.toFixed(1) + ')"/>'
+        : '<ellipse cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" rx="2.4" ry="1.5" fill="' + HFX_BLOOM[i % HFX_BLOOM.length] + '" transform="rotate(' + (i * 61) + ' ' + x.toFixed(1) + ' ' + y.toFixed(1) + ')"/>'; }
+    body = '<defs><radialGradient id="' + g + 'h" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="#FFB3D1" stop-opacity=".8"/><stop offset="1" stop-color="#FFB3D1" stop-opacity="0"/></radialGradient></defs><circle cx="24" cy="24" r="10" fill="url(#' + g + 'h)"/>' +
+      '<circle cx="24" cy="24" r="16" fill="none" stroke="#FF8FBF" stroke-opacity=".45" stroke-width="1"/>' + bits;
   } else {
     /* confetti: celebrate()'s nova - a burst and its motes */
     const cols = ["#FFD37A", "#F5804D", "#C23B7A", "#FFFFFF"];
@@ -80147,7 +79736,7 @@ function hundoFxUnlockItem(id){
     sub: "Plays when you score 100%", need: hundoFxNeedText(d), color: d.color,
     art: () => buildHundoFxStill(id),
     liveArt: () => buildHundoFxStage(id, { live: true, big: true, delay: 1500,
-      showcase: top ? (st => { const spot = st.closest(".rs-spot"); return spot ? { parent: spot, before: id === "worldtree" ? spot.querySelector(".rs-spot-card") : null } : null; }) : null }) };
+      showcase: top ? (st => { const spot = st.closest(".rs-spot"); return spot ? { parent: spot, before: null } : null; }) : null }) };
 }
 
 /* ---- ONE POP-UP FOR EVERYTHING A RANK HANDS OVER (build 308) ----
@@ -98297,7 +97886,12 @@ if(backToTopBtn){
      rather than padded, because extra room at the bottom would make
      every screen that fits exactly start to scroll. */
   const BACKTOTOP_END_ZONE = 260;
-  const TAPPABLE = 'button, a[href], [role="button"], input, select, textarea, label, summary, .is-tappable, [tabindex]:not([tabindex="-1"])';
+  /* `.dailyq-outro` is not tappable but is the same case (build 317
+     touch-up): the answered daily scrolls its result card up to sit just
+     over the pill, which on an SE or a 320 phone is past 320px - so the
+     button came up over the card's corner (22x30px). The card is the
+     answer; the button steps aside for it. */
+  const TAPPABLE = 'button, a[href], [role="button"], input, select, textarea, label, summary, .is-tappable, [tabindex]:not([tabindex="-1"]), .dailyq-outro';
   const backToTopBlocked = () => {
     const left = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
     if(left > BACKTOTOP_END_ZONE) return false;
@@ -99305,7 +98899,14 @@ document.addEventListener("keydown", (e) => {
     /* Not a results button that has not landed yet - the same hole as
        the tap, from a keyboard. */
     if(next && next.closest(".rs-land:not(.rs-in):not(.rs-in-now)")) return;
-    if(next && !next.hidden && !next.disabled){ e.preventDefault(); next.click(); }
+    if(next && !next.hidden && !next.disabled){ e.preventDefault(); next.click(); return; }
+    /* THE DAILY QUESTION'S OWN PILL (build 317 touch-up). #nextbtn is
+       always hidden there, so Enter did nothing at all on a laptop while
+       the hint under the question said "Press Enter to continue": a key
+       picks, Enter submits, and once answered Enter is Exit. A pick
+       still needs a choice first - a disabled Submit is left alone. */
+    const dq = document.getElementById("dailyq-submitbtn") || document.getElementById("dailyq-exitbtn");
+    if(dq && stage.contains(dq) && !dq.disabled){ e.preventDefault(); dq.click(); }
   }
 });
 
