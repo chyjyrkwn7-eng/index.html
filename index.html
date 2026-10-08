@@ -9360,12 +9360,11 @@
      brightest, it drew a straight edge under the crest all the way across */
   .hfx-uw-sheen{ position:absolute; left:0; right:0; top:0; height:24%; background:linear-gradient(180deg, rgba(210,250,255,0), rgba(210,250,255,.16) 28%, rgba(210,250,255,0)); }
   /* round 5: the light under the surface is soft patches, not a web of
-     lines - two strips drifting opposite ways, breathing */
+     lines - two strips drifting opposite ways, through each other */
   .hfx-uw-light{ position:absolute; top:0; background-repeat:repeat-x; background-position:0 0; opacity:.42;
-    animation:hfx-uw-light var(--d) linear both, hfx-uw-light-o 3.1s ease-in-out infinite alternate; }
-  .hfx-uw-light.is-b{ opacity:.32; animation-duration:var(--d), 4.3s; }
+    animation:hfx-uw-light var(--d) linear both; }
+  .hfx-uw-light.is-b{ opacity:.32; }
   @keyframes hfx-uw-light{ from{ transform:translateX(0); } to{ transform:translateX(var(--lx)); } }
-  @keyframes hfx-uw-light-o{ from{ scale:1 1; } to{ scale:1.05 1.12; } }
   .hfx-uw-ray{ position:absolute; top:-2px; width:var(--rw); height:var(--rh); margin-left:calc(var(--rw) / -2); transform-origin:50% 0;
     background:center top / 100% 100% no-repeat; opacity:0; transform:rotate(var(--ra)); animation:hfx-uw-ray var(--d) ease-in-out var(--t) both; }
   @keyframes hfx-uw-ray{ 0%{ opacity:0; transform:rotate(var(--ra)); } 20%{ opacity:.95; } 50%{ opacity:.6; transform:rotate(calc(var(--ra) - 3deg)); }
@@ -79849,7 +79848,8 @@ function hfxSea(parent, o){
   hfxMk(body, "i", "hfx-uw-sheen");
   [0, 1].forEach(j => {
     const tw = (j ? 440 : 330) * k, th = tw * .625;
-    const l = hfxMk(body, "i", "hfx-uw-light" + (j ? " is-b" : ""), { left: (-tw) + "px", width: (o.W + tw * 2) + "px", height: th + "px",
+    /* only as wide as its drift needs: these are the biggest layers here */
+    const l = hfxMk(body, "i", "hfx-uw-light" + (j ? " is-b" : ""), { left: (-tw * .5) + "px", width: (o.W + tw) + "px", height: th + "px",
       "--lx": ((j ? 1 : -1) * tw * .5) + "px", "--d": o.total + .2 });
     l.style.backgroundImage = hfxUwLightURL(j);
     l.style.backgroundSize = tw + "px " + th + "px";
@@ -79874,7 +79874,7 @@ function hfxSea(parent, o){
   let made = 0;
   const size = (lo, hi, bias) => (lo + (hi - lo) * Math.pow(Math.random(), bias)) * kk;
   const bubble = (x, y, sz, at, fast, from) => {
-    const s = sz / kk, v = (fast ? 1.6 : 1) * (200 + s * 14) * kk, dist = Math.max(16 * kk, y), d = Math.max(.45, dist / v);
+    const s = sz / kk, v = (fast ? 1.5 : 1) * (290 + s * 16) * kk, dist = Math.max(16 * kk, y), d = Math.max(.45, dist / v);
     const wp = .2 + s * .034, wx = (1.1 + s * .3) * kk, big = s >= 12;
     made++;
     due(at, off => {
@@ -79939,7 +79939,7 @@ function hfxSea(parent, o){
   };
   return { ocean, sea, body, bodyH, lineAt, clock, made: () => made };
 }
-/* THE SCREEN UNDER THE WATER (round 5). Watched ~12 times a second
+/* THE SCREEN UNDER THE WATER (round 5). Watched 10 times a second
    against the waterline (the css curves, on the water's own clock): a card
    sways from the moment the surface passes its middle until the water
    leaves it again, and the results character holds its breath while it is
@@ -79999,7 +79999,7 @@ function hfxUwScreen(c, S, page, k, tot){
       else if(hold.on && hold.under && cy < line - 2) hold.release();
     }
   };
-  const iv = setInterval(tick, 80);
+  const iv = setInterval(tick, 100);
   let quitted = false;
   const quit = fade => {
     if(quitted) return;
@@ -80127,6 +80127,9 @@ function hfxUwHold(av){
     H.timers.forEach(clearTimeout); H.timers = [];
     av.classList.remove("char-hold");
     av.classList.add("char-gasp");
+    /* out of the water, a bubble still rising off it is gone - it would be
+       floating in air */
+    av.querySelectorAll(":scope > .hfx-uw-breath").forEach(n => n.remove());
     /* the shake flicks the water off */
     const ar = av.getBoundingClientRect(), s = (ar.width || 70) / 70;
     [-158, -24, -118, -64].forEach((deg, i) => {
@@ -80161,8 +80164,8 @@ function hfxUnderwater(scr, bx, c){
     const lvl = Math.round(Math.max(c.vh * (mini ? .1 : .085), mini ? 14 : 40));
     const due = hfxDue(c);
     const S = hfxSea(scr, { W: c.vw, H: c.vh, lvl, k, t, total: tot, box, due,
-      n: { rays: mini ? 3 : small ? 4 : 6, motes: mini ? 3 : small ? 6 : 10, vents: mini ? 2 : small ? 4 : 5, gap: mini ? [.55, .9] : [.22, .4],
-        scatter: mini ? 3 : small ? 10 : 14, boxGap: mini ? [.7, 1.1] : [.32, .6], rush: mini ? 8 : small ? 22 : 30 } });
+      n: { rays: mini ? 3 : small ? 4 : 6, motes: mini ? 3 : small ? 6 : 10, vents: mini ? 2 : small ? 3 : 4, gap: mini ? [.55, .9] : [.3, .5],
+        scatter: mini ? 3 : small ? 7 : 9, boxGap: mini ? [.7, 1.1] : [.4, .65], rush: mini ? 8 : small ? 15 : 20 } });
     const body = S.body, bodyH = S.bodyH;
     /* a school of fish across, above the box, and a manta behind them */
     const dir = Math.random() < .5 ? 1 : -1, y0 = Math.max(60 * k, box.top - lvl - c.vh * hfxR(.12, .22));
