@@ -13889,8 +13889,24 @@ def check_b317_supernova(br):
     pg.evaluate("() => { store.supernovaAchieved = false; store.mysteryColorsFound = {red:true, orange:true}; saveStore(); try{ localStorage.removeItem('class26e.ringtier.seen'); }catch(e){} theme.accent = 'elite'; applyTheme(); showHome(); }")
     pg.wait_for_timeout(1200)
     pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+    # cut3: every call for the Supernova art, whether it was drawn already
+    # and whether the scene was on screen at the time
+    pg.evaluate("""() => { window.__artLog = []; window.__artBefore = [cosmicScarCache !== null, typeof snDustCache === 'undefined' ? null : snDustCache !== null];
+      const wrap = (n, drawn) => { const f = window[n]; if(typeof f !== 'function') return;
+        window[n] = function(){ const o = document.getElementById('supernova-cutscene');
+          window.__artLog.push([n, drawn(), !!(o && o.classList.contains('supernova-visible'))]); return f.apply(this, arguments); }; };
+      wrap('cosmicScarArt', () => cosmicScarCache !== null); wrap('snDustURL', () => snDustCache !== null); }""")
     pg.evaluate("() => playSupernovaCutscene({ from: 'elite', onDone(){ window.__snDone = Date.now(); } })")
     marks, at_det, at_set, at_top, at_sweep, at_settled, t0 = {}, None, None, None, None, None, pg.evaluate("() => Date.now()")
+    # cut3: per frame, the ring debris seen on either planet, and any second
+    # set (the sweep's own shards) seen beside it
+    DEBRIS = """() => { const o = document.getElementById('supernova-cutscene'); if(!o) return null;
+      const vis = el => { let op = 1; for(let e = el; e && e !== o; e = e.parentElement){ const c = getComputedStyle(e);
+        if(c.display === 'none' || c.visibility === 'hidden') return 0; op *= +c.opacity; } return op; };
+      const n = s => [...o.querySelectorAll(s)].filter(e => vis(e) > .05).length;
+      return { c: o.className, before: n('.rank-before .csc-ringfrag'), after: n('.rank-after .csc-ringfrag'),
+        extra: n('.rank-after .sn-sweep > :not(.is-ember)') }; }"""
+    deb = []
     RINGS = """() => { const o = document.getElementById('supernova-cutscene');
       const rings = [...o.querySelectorAll('.rank-after .cosmic-orbit-ring')];
       return rings.map(r => getComputedStyle(r).stroke); }"""
@@ -13900,12 +13916,14 @@ def check_b317_supernova(br):
         pg.evaluate(CUTSPIN_SEEK, t)
         pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
         pg.evaluate(CUTSPIN_SEEK, t)
-        c = pg.evaluate("() => { const o = document.getElementById('supernova-cutscene'); return o ? o.className : null; }")
+        dq = pg.evaluate(DEBRIS)
+        c = dq and dq["c"]
         if c is None:
             if marks: marks.setdefault("gone", i); break
             continue
+        deb.append((i, dq))
         for k in ("is-cutspin", "is-cutlight", "is-cutrest", "sn-swell", "supernova-burst", "sn-detonate", "is-swapped", "sn-scarred",
-                  "sn-settled", "sn-rings", "supernova-settle", "rank-outro"):
+                  "sn-swept", "sn-settled", "sn-rings", "supernova-settle", "rank-outro"):
             if k in c.split() and k not in marks:
                 marks[k] = i
         if "is-cutlight" in c.split() and at_top is None:
@@ -13924,12 +13942,14 @@ def check_b317_supernova(br):
             # the fragments, ~0.3s after the system starts settling: out on
             # the rings, in the after-planet's own units (the hero is 360 wide,
             # the planet's centre at 180,150 in a 0 -12 360 342 box)
+            # cut3: the fragments ARE Home's ring debris, thrown out (and
+            # still flying - a finite animation of their own on them)
             at_sweep = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene');
               const h = o.querySelector('.rank-after .cosmic-hero-wrap'); if(!h) return null;
               const r = h.getBoundingClientRect(), u = r.width / 360, cx = r.left + r.width / 2, cy = r.top + r.height * 162 / 342;
-              const orbs = [...o.querySelectorAll('.rank-after .sn-sweep > .sn-orb')];
-              const vis = orbs.filter(e => +getComputedStyle(e).opacity > .5);
-              return { orbs: orbs.length, vis: vis.length, run: orbs.filter(e => e.getAnimations().some(a => a.playState === 'running' || a.playState === 'paused')).length,
+              const orbs = [...o.querySelectorAll('.rank-after .csc-ringfrag')];
+              const vis = orbs.filter(e => getComputedStyle(e).visibility !== 'hidden' && +getComputedStyle(e).opacity > .5);
+              return { orbs: orbs.length, vis: vis.length, run: orbs.filter(e => e.getAnimations().some(a => a.effect.getComputedTiming().iterations !== Infinity)).length,
                 d: vis.map(e => { const q = e.getBoundingClientRect(); return +(Math.hypot(q.left + q.width / 2 - cx, q.top + q.height / 2 - cy) / u).toFixed(1); }) }; }""")
             at_sweep["rings"] = pg.evaluate(RINGS)
         if "supernova-settle" in c.split() and at_set is None and i - marks["supernova-settle"] >= 45:
@@ -13944,12 +13964,20 @@ def check_b317_supernova(br):
               finally{ store.supernovaAchieved = had; window.saveStore = save; }
               const scene = h ? [...h.children].filter(e => !/^(rank-|sn-)/.test(e.getAttribute('class') || '')) : [];
               const rev = h ? [...h.querySelectorAll(':scope > [data-sn-reveal]')] : [];
-              return { scar: sc ? +getComputedStyle(sc).opacity : null,
+              /* cut3: the debris and the passing light, as Home has them */
+              const hn = (() => { const had2 = store.supernovaAchieved, save2 = window.saveStore;
+                try{ store.supernovaAchieved = true; window.saveStore = () => {}; const hh = buildCosmicHero(true, 'titan');
+                  return [hh.querySelectorAll('.csc-ringfrag').length, hh.querySelectorAll('.csc-pass').length]; }
+                finally{ store.supernovaAchieved = had2; window.saveStore = save2; } })();
+              const pass = h ? [...h.querySelectorAll('.csc-pass')] : [];
+              return { scar: sc ? +getComputedStyle(sc).opacity : null, homeDebris: hn[0], homePass: hn[1],
+                pass: pass.length, passOn: pass.filter(e => getComputedStyle(e).display !== 'none' && !/opacity\(0\)/.test(getComputedStyle(e).filter)).length,
                 orange: rings.length && rings.every(r => r.classList.contains('cosmic-orbit-ring-supernova')),
                 stroke: rings[0] ? getComputedStyle(rings[0]).stroke : null,
                 /* (the bubbles are moved into the scene's own carrier) */
                 home: home.filter(k => !/cosmic-icon-badge/.test(k)), scene: scene.map(key).filter(k => !/cosmic-icon-badge/.test(k)), revealed: rev.length, shown: rev.filter(e => +getComputedStyle(e).opacity > .95).length }; }""")
     end = pg.evaluate("() => [window.__snDone || null, store.supernovaAchieved, (() => { try{ return localStorage.getItem('class26e.ringtier.seen'); }catch(e){ return 'x'; } })()]")
+    art = pg.evaluate("() => ({ log: window.__artLog, before: window.__artBefore, after: [cosmicScarCache !== null, typeof snDustCache === 'undefined' ? null : snDustCache !== null] })")
     ctx.close()
     order = ["is-cutrest", "sn-swell", "sn-detonate", "is-swapped", "sn-scarred", "supernova-settle", "rank-outro"]
     seq = [marks.get(k) for k in order]
@@ -13976,7 +14004,7 @@ def check_b317_supernova(br):
     check("after the blast the system transforms, in order: the scar, the system settling into its new look, THEN the rings change colour, then the title",
           all(v is not None for v in seq2) and seq2 == sorted(seq2) and len(set(seq2)) == 5 and (seq2[3] - seq2[0]) >= 120, seq2)
     near = [d for d in (at_sweep or {}).get("d", []) if 92 <= d <= 158]
-    check("black fragments sweep out of the planet and ride the rings round, in orbit (most of them on a ring, moving)",
+    check("black fragments sweep out of the planet and ride the rings round, in orbit (most of them on a ring, still settling)",
           bool(at_sweep) and at_sweep["orbs"] >= 16 and at_sweep["vis"] >= 12 and at_sweep["run"] >= 12 and len(near) >= .75 * at_sweep["vis"],
           at_sweep and (at_sweep["orbs"], at_sweep["vis"], at_sweep["run"], len(near)))
     plain_ring = lambda strokes: bool(strokes) and all("255, 255, 255" in x for x in strokes)
@@ -13986,6 +14014,30 @@ def check_b317_supernova(br):
     check("it ends on HOME'S OWN Supernova planet: everything Home's build has, the scene's has - what it adds over a plain planet brought in beat by beat, all of it showing by the title",
           bool(at_set) and at_set["home"] and sorted(at_set["home"]) == sorted(at_set["scene"]) and at_set["revealed"] >= 1 and at_set["shown"] == at_set["revealed"],
           at_set and (at_set["revealed"], at_set["shown"], sorted(set(at_set["home"]) ^ set(at_set["scene"]))))
+    # CUT3, with the planet round's debris on Home's rings (fails on
+    # 748ddc9, where the debris was on the planet from the swap - before the
+    # scar, before the sweep - and the sweep's own 28 shards rode the rings
+    # beside it: two sets). Nothing of the Supernova state shows before its
+    # beat, and the end is Home's look with ONE set of debris.
+    cut = marks.get("sn-swept") or marks.get("sn-settled") or 10 ** 6
+    early = [(i, d["after"]) for i, d in deb if i < cut and d["after"]] + [(i, d["before"]) for i, d in deb if d["before"]]
+    two = [(i, d["after"], d["extra"]) for i, d in deb if d["after"] and d["extra"]]
+    hd = (at_set or {}).get("homeDebris") or 0
+    final = [d for i, d in deb if marks.get("supernova-settle") and marks["supernova-settle"] + 45 <= i < (marks.get("rank-outro") or 10 ** 6)]
+    check("the ring debris: none seen before the blast, nor after it until the sweep throws it out - and exactly one set at the end, Home's own",
+          hd > 0 and marks.get("sn-swept") is not None and not early and not two and bool(final)
+          and all(d["after"] == hd and d["extra"] == 0 for d in final),
+          (hd, marks.get("sn-swept"), early[:2], two[:2], final[:1]))
+    check("and the end is Home's in the rest of it too: the light that passes the scar is live, all of it",
+          bool(at_set) and at_set["pass"] == at_set["homePass"] and at_set["passOn"] == at_set["pass"],
+          at_set and (at_set["homePass"], at_set["pass"], at_set["passOn"]))
+    # the scar's first draw (~60-140ms) and the dust's (~25ms) land before
+    # the scene's first frame, never inside it (748ddc9 drew the dust at the
+    # swell, with the planet shaking)
+    drew = [x for x in art["log"] if not x[1]]
+    check("the Supernova art is drawn before the scene is on screen - never in the middle of it",
+          art["before"] == [False, False] and art["after"] == [True, True] and bool(drew) and not any(x[2] for x in drew),
+          (art["before"], art["after"], drew))
     total = (marks.get("gone") or 0) / 30
     check("longer: ~33-37.5s from the first frame to the hand-over (it was ~25s)", 33 <= total <= 37.5, round(total, 1))
     check("it ends with Supernova reached and the ring tier seen as 'supernova' (Home will not draw the rings on again)",
@@ -14213,8 +14265,11 @@ def check_b317_planet(br):
     taps = []
     if front: taps.append(("front", "Worldheart", tap_at(front[len(front) // 2][0])))
     if off_behind: taps.append(("behind, round the limb", "Worldheart", tap_at(off_behind[len(off_behind) // 2][0])))
-    if behind: taps.append(("behind, on the disc: the planet", "Your system" if pg.evaluate("() => typeof homeCaptionShow === 'function'") else ".....",
-                            tap_at(behind[len(behind) // 2][0])))
+    # the planet's own caption name, read off the app (b317-rings2 renamed
+    # it "Your flares"; a literal here went stale the day it merged)
+    planet_says = pg.evaluate("""() => { try{ if(typeof homeTapCopyPlanet === 'function') return homeTapCopyPlanet(0).name; }catch(e){}
+      return typeof homeCaptionShow === 'function' ? 'Your system' : '.....'; }""")
+    if behind: taps.append(("behind, on the disc: the planet", planet_says, tap_at(behind[len(behind) // 2][0])))
     check("taps: in front it answers; behind, round the limb, it answers; on the disc the planet answers",
           len(taps) == 3 and all(want in got for _, want, got in taps), [(w, got[:24]) for w, _, got in taps])
     ctx.close()
@@ -15092,7 +15147,7 @@ def check_b317_hundobox(br):
           const body = document.querySelector('.hfx-saucer:not(.is-mini) .hfx-ufo-body');
           const search = [...document.querySelectorAll('.hfx-ufo-search')];
           const gh = document.querySelector('.hfx-ufo-ghost'), ghs = gh && getComputedStyle(gh);
-          const out = { long, A, B, total: HUNDO_FX_TOTAL.ufo, tail: HUNDO_FX_TAIL_AT.ufo, has: !!(beam && inb), nsearch: search.length, samples: [],
+          const out = { long, A, B, total: HUNDO_FX_TOTAL.ufo, tail: HUNDO_FX_TAIL_AT.ufo, has: !!beam, nsearch: search.length, samples: [],
             ghosts: document.querySelectorAll('.hfx-ufo-ghost').length,
             ghost: ghs ? { dur: ghs.animationDuration, ease: ghs.animationTimingFunction, name: ghs.animationName } : null };
           if(!out.has) return out;
@@ -15129,18 +15184,18 @@ def check_b317_hundobox(br):
         check("%s: and they never reach the box - the beam is the only light that touches it - and are gone before it fires" % tag,
               all(q["o"] < .02 or q["b"] <= x["box"]["t"] + 1 for x in pre for q in x["search"]) and all(q["o"] < .02 for q in S[last]["search"]),
               [(x["t"], round(q["b"]), round(x["box"]["t"]), round(q["o"], 2)) for x in pre for q in x["search"] if q["o"] >= .02 and q["b"] > x["box"]["t"] + 1])
+        # round 6: ONE beam - "when it gets there it's not matching up
+        # perfectly". No second beam of the box's own anywhere in its life,
+        # and the saucer's runs on through the box's top edge to its floor.
         fire = [x for x in u["samples"] if 2.6 + A - .001 <= x["t"] <= 2.92 + A + .001]
-        check("%s: the box's beam shows only once the saucer's has reached the box's top edge" % tag,
-              all(not shown(x["inb"]) or x["beam"]["b"] >= x["box"]["t"] - 1 for x in fire) and any(shown(x["inb"]) for x in fire),
-              [(x["t"], round(x["beam"]["b"]), round(x["box"]["t"]), round(x["inb"]["o"], 2), round(x["inb"]["h"])) for x in fire])
+        check("%s: one beam - no second beam of the box's own, at any moment from firing to lift-off" % tag,
+              not any(shown(x["inb"]) for x in u["samples"]) and any(shown(x["beam"]) for x in fire),
+              [(x["t"], x["inb"]) for x in u["samples"] if shown(x["inb"])][:6])
         hv, ld, lf, gn = at(3.3 + (1.9 if u["long"] else 0)), at(4.7 + B), at(5.8 + B), at(6.25 + B)
-        feet = {x["t"]: round(x["beam"]["b"] - x["box"]["t"], 1) for x in (hv, ld, lf)}
-        check("%s: the saucer's beam meets the box's top edge (0-10px into it) hovering, landed and lifting off" % tag,
-              all(0 <= v <= 10 for v in feet.values()) and all(shown(x["beam"]) for x in (hv, ld, lf)), feet)
-        check("%s: the box's beam runs down to the box's bottom edge (within 4px)" % tag,
-              shown(hv["inb"]) and abs(hv["inb"]["b"] - hv["box"]["b"]) <= 4 and hv["inb"]["t"] <= hv["box"]["t"] + 2,
-              {"t": hv["t"], "inbeam": [round(hv["inb"]["t"]), round(hv["inb"]["b"])], "box": [round(hv["box"]["t"]), round(hv["box"]["b"])]})
-        check("%s: both beams are gone once it has lifted off (%.2fs), and the grab is still there (its two halves)" % (tag, gn["t"]),
+        feet = {x["t"]: [round(x["beam"]["t"] - x["box"]["t"], 1), round(x["beam"]["b"] - (x["box"]["b"] - 3), 1)] for x in (hv, ld, lf)}
+        check("%s: the saucer's beam runs on through the box's top edge to its floor (within 4px of 3px off it) hovering, landed and lifting off" % tag,
+              all(v[0] < -2 and abs(v[1]) <= 4 for v in feet.values()) and all(shown(x["beam"]) for x in (hv, ld, lf)), feet)
+        check("%s: the beam is gone once it has lifted off (%.2fs), and the grab is still there (its two halves)" % (tag, gn["t"]),
               not shown(gn["beam"]) and not shown(gn["inb"]) and u.get("ghosts") == 2, [gn["beam"], gn["inb"], u.get("ghosts")])
         gh = u.get("ghost") or {}
         check("%s: the grab itself is untouched - the 100%% goes up the beam in the same 0.6s on the same curve" % tag,
@@ -15166,12 +15221,12 @@ def check_b317_hundobox(br):
               {"n": len(orb), "deg": round(sweep_deg), "x": [round(min(xs or [0])), round(max(xs or [0]))], "yMax": round(max(ys or [0])), "boxTop": round(orb[0]["box"]["t"]) if orb else None})
         sw = [S[t] for t in (4.2, 4.33, 4.47, 4.56, 4.65, 4.74, 4.83, 4.96, 5.1)]
         dx = [round(x["beam"]["cx"] - x["box"]["cx"]) for x in sw]
-        gap = [round(abs(x["inb"]["cx"] - x["beam"]["cx"]), 1) for x in sw]
+        foot = [round(x["beam"]["b"] - (x["box"]["b"] - 3), 1) for x in sw]
         bw = sw[0]["box"]["w"]
-        check("%s: before it lands its beam sweeps across the box and back - out to both sides of it - with the box's beam moving as one with it, its foot on the box's top edge" % tag,
-              min(dx) <= -bw * .15 and max(dx) >= bw * .15 and abs(dx[0]) <= 2 and abs(dx[-1]) <= 2 and max(gap) <= 4
-              and all(shown(x["beam"]) and shown(x["inb"]) and 0 <= x["beam"]["b"] - x["box"]["t"] <= 10 for x in sw),
-              {"beamX": dx, "inbeamGap": gap, "boxW": round(bw)})
+        check("%s: before it lands its beam sweeps across the box and back - out to both sides of it - one beam, its foot on the box's floor all the way" % tag,
+              min(dx) <= -bw * .15 and max(dx) >= bw * .15 and abs(dx[0]) <= 2 and abs(dx[-1]) <= 2
+              and all(shown(x["beam"]) and not shown(x["inb"]) and abs(f) <= 4 for x, f in zip(sw, foot)),
+              {"beamX": dx, "foot": foot, "boxW": round(bw)})
         c8, f8, g8 = S[8.4], S[8.62], S[8.95]
         check("%s: it gathers itself before it goes (a light swelling under the hull at 8.4s), then breaks away with a boom - a flash and a ring thrown out - and is gone by 8.95s" % tag,
               bool(c8["charge"]) and c8["charge"]["o"] > .5 and bool(f8["flash"]) and f8["flash"]["o"] > .3 and bool(f8["boom"]) and f8["boom"]["o"] > .3
@@ -15213,6 +15268,9 @@ def check_b317_hundobox(br):
           store.lifetime.perfectTests = 600; if(!HUNDO_FX.some(d => d.id === 'ufo')) HUNDO_FX[1].id = 'ufo';
           store.hundoFx = 'ufo'; theme.reduceMotion = false; theme.muteBanners = true; saveStore();
           window.__fxAt = 0; const real = playHundoFx; window.playHundoFx = function(a, b){ window.__fxAt = performance.now(); return real(a, b); };
+          /* its layers stay up while it is paused and read, however long the
+             screenshots take (the total only times their removal) */
+          HUNDO_FX_TOTAL.ufo = Math.max(HUNDO_FX_TOTAL.ufo, 60000);
           showHome(); await wait(200);
           if(multi){ const n = {}; QUESTIONS.forEach(q => { const t = (q.topic || '').trim(); n[t] = (n[t] || 0) + 1; });
             const two = Object.keys(n).sort((a, b) => n[a] - n[b]).slice(0, 2); __run100m(two); }
@@ -15254,6 +15312,107 @@ def check_b317_hundobox(br):
                   tag, "/".join("%.1fs" % t for t in pre), 45, L["ring"], " (%d unit rows)" % info["rows"] if multi else ""),
               not bad and L["ring"] >= 12 and L["col"] >= 3 and (multi is False or info["rows"] >= 2),
               {"bad": bad, "lit": L, "rows": info["rows"], "pre": {t: shots[t][1] for t in pre}})
+    # --- ONE BEAM, ARRIVING AS ONE (round 6): "the ray beam is still being
+    # shown in the box before it even gets there and when it gets there it's
+    # not matching up perfectly". Two beams met at the box's edge: the
+    # saucer's ended there wide and faint, the box's own began there narrow
+    # and bright, and fanned out at once the moment it appeared. Read off the
+    # pixels, every UFO animation paused and seeked:
+    #  - from just before it fires to when its head reaches the box's floor
+    #    (every 1/30s), the box below the beam's head is exactly as dark as
+    #    it was before it fired - no light ahead of the head;
+    #  - hovering, sweeping and lifting off, the beam just above the box's
+    #    top edge and just below it is one beam: the same centre, the same
+    #    width, and no step in brightness.
+    def _rows(im, ref, y0, y1):
+        # the beam's own light on each row - the frame with the beam less the
+        # same frame with every beam hidden, so the box's rim, its label and
+        # a twinkling star cancel out: its two edges (the outermost pixels
+        # it lights by more than 6 levels) and its peak
+        px, p0 = im.load(), ref.load(); W = im.size[0]
+        lum = lambda q, x, y: .3 * q[x, y][0] + .59 * q[x, y][1] + .11 * q[x, y][2]
+        l = r = pk = 0.0; n = 0
+        for y in range(y0, y1):
+            d = [lum(px, x, y) - lum(p0, x, y) for x in range(W)]
+            on = [x for x in range(W) if d[x] > 6]
+            if len(on) < 4: continue
+            l += on[0]; r += on[-1]; pk += max(d[x] for x in on); n += 1
+        return {"cx": (l + r) / 2 / n, "w": (r - l) / n, "peak": pk / n} if n else None
+    for label, w, h, multi in (("iPhone 17 Pro Max", 440, 956, False), ("iPad Pro 11\"", 834, 1194, False), ("iPhone 17 Pro Max, two units", 440, 956, True)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=2)
+        pg.evaluate("() => { " + RUN100 + RUN100M + " }")
+        info = pg.evaluate("""async (multi) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.lifetime.perfectTests = 600; if(!HUNDO_FX.some(d => d.id === 'ufo')) HUNDO_FX[1].id = 'ufo';
+          store.hundoFx = 'ufo'; theme.reduceMotion = false; theme.muteBanners = true; saveStore();
+          window.__fxAt = 0; const real = playHundoFx; window.playHundoFx = function(a, b){ window.__fxAt = performance.now(); return real(a, b); };
+          /* its layers stay up while it is paused and read, however long the
+             screenshots take (the total only times their removal) */
+          HUNDO_FX_TOTAL.ufo = Math.max(HUNDO_FX_TOTAL.ufo, 60000);
+          showHome(); await wait(200);
+          if(multi){ const n = {}; QUESTIONS.forEach(q => { const t = (q.topic || '').trim(); n[t] = (n[t] || 0) + 1; });
+            __run100m(Object.keys(n).sort((a, b) => n[a] - n[b]).slice(0, 2)); }
+          else __run100('Identity Crimes');
+          for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(50);
+          if(!window.__fxAt) return null;
+          await wait(500);
+          document.querySelector('.rs-screen .rs-grade').scrollIntoView({ block: 'center', behavior: 'instant' });
+          return { long: getComputedStyle(document.querySelector('.hfx-saucer:not(.is-mini)')).animationDuration === '9.5s' }; }""", multi)
+        if not info or not info["long"]:
+            check("%s, ufo: a real 100%% played the long UFO" % label, False, info); ctx.close(); continue
+        SEEK = """(t) => { const g = document.querySelector('.rs-screen .rs-grade');
+          document.getAnimations().forEach(a => { const e = a.effect && a.effect.target; if(!e) return;
+            const mine = e.closest && e.closest('.hfx-layer.hfx-ufo, .hfx-box.hfx-ufo') || ((e === g || e.parentElement === g) && !(a instanceof CSSAnimation));
+            if(mine){ try{ a.pause(); a.currentTime = t * 1000; }catch(x){} } });
+          const r = g.getBoundingClientRect(), bm = document.querySelector('.hfx-saucer:not(.is-mini) > .hfx-ufo-beam');
+          let o = 1; for(let e = bm; e && e !== document.body; e = e.parentElement) o *= +getComputedStyle(e).opacity;
+          const b = bm ? bm.getBoundingClientRect() : null;
+          return { box: [r.left, r.top, r.right, r.bottom], beam: b && o > .02 && b.height > 1 ? [b.left, b.top, b.right, b.bottom] : null }; }"""
+        frames = []
+        base = None
+        # (from 3.72s: the box's own dim settles at .55 at 3.7s)
+        for k in range(0, 18):
+            t = round(3.72 + k / 30, 3)
+            d = pg.evaluate(SEEK, t); pg.wait_for_timeout(40)
+            x0, y0, x1, y1 = d["box"]
+            im = _Img.open(io.BytesIO(pg.screenshot(clip={"x": x0, "y": y0, "width": x1 - x0, "height": y1 - y0}))).convert("L")
+            if base is None:
+                base = im; continue
+            head = d["beam"][3] if d["beam"] else y0 - 999
+            if d["beam"]: bx0, bx1 = d["beam"][0], d["beam"][2]
+            else: bx0, bx1 = x0 + (x1 - x0) * .3, x0 + (x1 - x0) * .7
+            ya, yb = int(max(4, head - y0 + 6) * 2), int((y1 - y0 - 4) * 2)
+            xa, xb = int(max(0, bx0 - x0) * 2), int(min(x1 - x0, bx1 - x0) * 2)
+            if yb - ya < 4 or xb - xa < 4:
+                frames.append((t, None)); continue
+            p1, p0 = im.load(), base.load()
+            ex = [p1[x, y] - p0[x, y] for y in range(ya, yb, 2) for x in range(xa, xb, 2)]
+            frames.append((t, round(sum(ex) / len(ex), 2)))
+        ahead = [f for f in frames if f[1] is not None and f[1] > 2.5]
+        check("%s, ufo: no light in the box ahead of the beam's head - from 3.75s to its floor (every 1/30s) the box below the head is as dark as before it fired%s" % (label, " (two units)" if multi else ""),
+              not ahead and sum(1 for f in frames if f[1] is not None) >= 3, {"ahead": ahead, "frames": frames})
+        seams = []
+        for t in (4.3, 4.4, 4.47, 4.83, 5.2, 5.3):
+            d = pg.evaluate(SEEK, t); pg.wait_for_timeout(40)
+            x0, y0, x1, y1 = d["box"]
+            if not d["beam"]:
+                seams.append((t, "no beam")); continue
+            clip = {"x": x0, "y": y0 - 16, "width": x1 - x0, "height": 32}
+            im = _Img.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+            pg.evaluate("() => document.querySelectorAll('.hfx-ufo-beam, .hfx-ufo-inbeam').forEach(e => e.style.visibility = 'hidden')")
+            pg.wait_for_timeout(40)
+            ref = _Img.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+            pg.evaluate("() => document.querySelectorAll('.hfx-ufo-beam, .hfx-ufo-inbeam').forEach(e => e.style.visibility = '')")
+            # 4-10px above the edge, 3-6px below it (over the box's top, under
+            # its GRADE label)
+            up, dn = _rows(im, ref, 2 * 6, 2 * 12), _rows(im, ref, 2 * 19, 2 * 22)
+            if not up or not dn:
+                seams.append((t, "unseen", up, dn)); continue
+            dxp, dwp, rat = abs(up["cx"] - dn["cx"]) / 2, abs(up["w"] - dn["w"]) / 2, dn["peak"] / max(1, up["peak"])
+            if dxp > 3 or dwp > 6 or not (.4 <= rat <= 2.5):
+                seams.append((t, round(dxp, 1), round(dwp, 1), round(rat, 2), {k: round(v, 1) for k, v in up.items()}, {k: round(v, 1) for k, v in dn.items()}))
+        ctx.close()
+        check("%s, ufo: one beam across the box's edge - the same centre (within 3px), width (within 6px) and brightness just above it and just below it, hovering and sweeping%s" % (label, " (two units)" if multi else ""),
+              not seams, seams)
     # ...and the same in the unlock card's miniature (the whole effect in a
     # small results screen) and a live Customize stage (the small box's own
     # 7s UFO): the box's rim and glow are unlit until its beam fires
@@ -15263,7 +15422,7 @@ def check_b317_hundobox(br):
       const m = buildHundoFxMock('ufo', { delay: 0 }); host.appendChild(m);
       const st = buildHundoFxStage('ufo', { live: true, big: true, delay: 0 }); const h2 = document.createElement('div'); h2.style.cssText = 'position:fixed;left:10px;top:420px;width:300px;z-index:9999;'; h2.appendChild(st); document.body.appendChild(h2);
       const first = { mock: getComputedStyle(m.querySelector('.rs-grade')).borderTopColor, stage: getComputedStyle(st).borderTopColor };
-      for(let i = 0; i < 60 && !(m.querySelector('.hfx-ufo-inbeam') && st.querySelector('.hfx-saucer.is-mini')); i++) await wait(100);
+      for(let i = 0; i < 60 && !(m.querySelector('.hfx-box.hfx-ufo') && st.querySelector('.hfx-saucer.is-mini')); i++) await wait(100);
       const mg = m.querySelector('.rs-grade');
       const look = (card, t, layerSel) => { document.getAnimations().forEach(a => { const e = a.effect && a.effect.target; if(!e) return;
           if((e.closest && e.closest(layerSel)) || ((e === card || e.parentElement === card) && !(a instanceof CSSAnimation))){ try{ a.pause(); a.currentTime = t * 1000; }catch(x){} } });

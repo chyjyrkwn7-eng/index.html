@@ -9199,6 +9199,10 @@
      layers are removed only after it. */
   .hfx-out{ opacity:0 !important; transition:opacity .6s ease !important; }
   .rs-card.hfx-over{ z-index:61; }
+  /* the UFO's own layer over the lifted box (round 6): the saucer and its
+     one beam, so the beam can cross the box's edge as one piece of light
+     (its z-index is set from the effect's layer, two above it) */
+  .confetti-layer.hfx-layer.hfx-ufo-top{ background:none; }
   .rs-head.hfx-over{ position:relative; z-index:61; text-shadow:0 1px 6px rgba(8,10,14,.85); }
   .hfx-mock > .rs-head.hfx-over{ z-index:3; }
   .wrap > .top.hfx-over{ z-index:61; }
@@ -9579,8 +9583,10 @@
      and is LIT BY THE BEAM (build 317, round 3): the last of its dark goes
      as the beam strikes (3.94s on the long timeline) and floods down it,
      not before the beam arrives, when it lit up on its own */
-  .hfx-ufo-boxdim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-boxdim 4.15s linear both; }
-  @keyframes hfx-ufo-boxdim{ 0%{ opacity:0; } 14.22%{ opacity:.93; } 69.88%{ opacity:.93; } 89.16%{ opacity:.55; } 94.82%{ opacity:.55; animation-timing-function:ease-out; } 100%{ opacity:0; } }
+  /* (round 6: dark until the beam's head reaches the box's floor, 4.18s;
+     the beam goes down through a dark box, then the box lights) */
+  .hfx-ufo-boxdim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-boxdim 4.4s linear both; }
+  @keyframes hfx-ufo-boxdim{ 0%{ opacity:0; } 13.41%{ opacity:.93; } 65.91%{ opacity:.93; } 84.09%{ opacity:.55; } 95%{ opacity:.55; animation-timing-function:ease-out; } 100%{ opacity:0; } }
   /* (not .hfx-ufo: the effect's own layers are named hfx-<id>) */
   .hfx-saucer{ position:absolute; width:0; height:0; opacity:0; animation:hfx-ufo-path 7s linear both; }
   @keyframes hfx-ufo-path{
@@ -9658,8 +9664,12 @@
     58.6%{ transform:scaleY(var(--bl, 1)); } 77.1%{ transform:scaleY(var(--bl, 1)); animation-timing-function:cubic-bezier(.45,0,.4,1); }
     85.7%{ transform:scaleY(var(--bk, 1)); opacity:1; animation-timing-function:ease-in; } 87.5%, 100%{ transform:scaleY(0); opacity:0; } }
   .hfx-saucer:not(.is-mini) > .hfx-ufo-beam{ animation-name:hfx-ufo-beam-l; animation-duration:9.5s; }
-  @keyframes hfx-ufo-beam-l{ 0%, 38.84%{ transform:scaleY(0); opacity:0; animation-timing-function:cubic-bezier(.3,.6,.4,1); } 39.14%{ opacity:1; }
-    41.42%{ transform:scaleY(1); opacity:1; } 56.84%{ transform:scaleY(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
+  /* ONE BEAM, hull to the box's floor (round 6): fired at 3.69s, its head
+     crosses the box's top edge at 3.83s (--bt) and reaches the box's floor
+     at 4.18s, at about the speed it came down at */
+  @keyframes hfx-ufo-beam-l{ 0%, 38.84%{ transform:scaleY(0); opacity:0; animation-timing-function:linear; } 39.14%{ opacity:1; }
+    40.32%{ transform:scaleY(var(--bt, 1)); animation-timing-function:cubic-bezier(.3,.5,.5,1); }
+    44%{ transform:scaleY(1); opacity:1; } 56.84%{ transform:scaleY(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
     64.21%{ transform:scaleY(var(--bl, 1)); } 77.89%{ transform:scaleY(var(--bl, 1)); animation-timing-function:cubic-bezier(.45,0,.4,1); }
     84.21%{ transform:scaleY(var(--bk, 1)); opacity:1; animation-timing-function:ease-in; } 85.53%, 100%{ transform:scaleY(0); opacity:0; } }
   .hfx-ufo-ring{ position:absolute; left:calc(var(--rw) / -2); width:var(--rw); height:calc(var(--rw) * .3); top:calc(var(--rw) * -.15);
@@ -9668,18 +9678,8 @@
   .hfx-ufo-dust{ position:absolute; width:60px; height:30px; margin:-15px 0 0 -30px; border-radius:50%;
     background:radial-gradient(closest-side, rgba(200,255,215,.6), rgba(200,255,215,0)); opacity:0; animation:hfx-ufo-dust 1.3s ease-out 6.1s both; }
   @keyframes hfx-ufo-dust{ 0%{ transform:translate(0, 0) scale(.3); opacity:0; } 15%{ opacity:1; } 100%{ transform:translate(var(--dx), -12px) scale(1.5); opacity:0; } }
-  .hfx-ufo-inbeam{ position:absolute; top:0; width:var(--iw); height:var(--ih); margin-left:calc(var(--iw) / -2); transform-origin:50% 0;
-    background:center / 100% 100% no-repeat; opacity:0; animation:hfx-ufo-inbeam 9.5s linear both; }
-  /* on the 9.5s timeline; across the box and back with the saucer's sweep
-     (the same moments and easing as hfx-ufo-path-l, so the two beams are
-     one) */
-  @keyframes hfx-ufo-inbeam{ 0%, 41.35%{ transform:translateX(0) scaleY(0); opacity:0; animation-timing-function:cubic-bezier(.3,.6,.4,1); } 41.49%{ opacity:.55; }
-    44%{ transform:translateX(0) scaleY(1); opacity:.5; }
-    44.21%{ transform:translateX(0) scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
-    47.05%{ transform:translateX(calc(var(--swa) * -1)) scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
-    50.84%{ transform:translateX(var(--swa)) scaleY(1); animation-timing-function:cubic-bezier(.45,0,.55,1); }
-    53.68%{ transform:translateX(0) scaleY(1); } 63.79%{ opacity:.5; } 66%{ opacity:.72; }
-    82.95%{ transform:translateX(0) scaleY(1); opacity:.72; animation-timing-function:ease-in; } 85.53%, 100%{ transform:translateX(0) scaleY(0); opacity:0; } }
+  /* (the box's own beam, .hfx-ufo-inbeam, is gone - round 6: the saucer's
+     beam reaches the box's floor itself; see hfxUfo) */
   .hfx-ufo-landglow{ position:absolute; inset:0; border-radius:inherit; opacity:0;
     box-shadow:inset 0 0 0 1.5px rgba(150,255,175,.8), inset 0 0 30px rgba(107,255,143,.35);
     animation:hfx-ufo-landglow 2.4s ease-out var(--t) both; }
@@ -11967,9 +11967,10 @@
      playRankUpScene); whatever that build adds over a plain one is marked
      data-sn-reveal and held back, then brought in beat by beat:
      - sn-scarred: the scar comes up through the dust, hot, and cools;
-     - .sn-sweep: black fragments with ember rims spiral out of the planet
-       to the two rings and ride them round, fading as Home's own look
-       takes over under them;
+     - sn-swept: the debris Home carries on the rings for Supernova is
+       thrown out of the planet and settles into its places in orbit (cut3:
+       the real pieces, not a second set - see snSweep), a few embers
+       (.sn-sweep > .sn-orb.is-ember) flying further and burning out;
      - sn-settled: the rest of the Supernova build ("new") settles in;
      - sn-rings: only now do the rings turn - plain until here, whichever
        tier they are (an !important over the top tier's inline pattern
@@ -11984,6 +11985,23 @@
   #supernova-cutscene:not(.sn-rings) .rank-after .cosmic-orbit-ring{ stroke:rgba(255,255,255,.16) !important; stroke-width:1; filter:none; }
   .tier-cutscene .rank-after .cosmic-ring-glowsvg{ transition:opacity 2.4s ease; }
   #supernova-cutscene:not(.sn-rings) .rank-after .cosmic-ring-glowsvg{ opacity:0; }
+  /* CUT3: what Home's Supernova build puts INSIDE its layers is held back
+     too, by class rather than by data-sn-reveal, and without depending on
+     how any of it is drawn:
+     - the debris on the rings (.csc-ringfrag) is out of sight until the
+       sweep throws it out (sn-swept) - visibility, so nothing the piece
+       does with its own opacity can show it early;
+     - .sn-hot is the heat a piece flies out in, under its shard, cooling
+       as it lands;
+     - the light that passes the scar (.csc-pass) is displayed from
+       sn-scarred (.csc-live on the planet) at filter:opacity(0) - its own
+       opacity is animated, which a transition cannot fade - and comes up
+       with the rings (sn-rings). */
+  #supernova-cutscene:not(.sn-swept) .rank-after .csc-ringfrag{ visibility:hidden; }
+  .csc-ringfrag > .sn-hot{ position:absolute; inset:-130%; border-radius:50%; z-index:-1; pointer-events:none; opacity:0;
+    background:radial-gradient(circle, rgba(255,214,150,.9) 0, rgba(255,132,52,.48) 26%, rgba(255,86,26,.12) 48%, rgba(255,86,26,0) 64%); }
+  .tier-cutscene .rank-after .csc-pass{ transition:filter 2s ease; }
+  #supernova-cutscene:not(.sn-rings) .rank-after .csc-pass{ filter:opacity(0); }
   .sn-sweep{ position:absolute; inset:0; pointer-events:none; z-index:2; }
   .sn-sweep > .sn-orb{ position:absolute; left:50%; top:47.368%; width:var(--s); aspect-ratio:1;
     margin:calc(var(--s) * -.5) 0 0 calc(var(--s) * -.5); opacity:0; }
@@ -11993,6 +12011,8 @@
     clip-path:polygon(50% 0, 100% 38%, 78% 100%, 12% 82%, 0 30%); }
   .sn-orb:nth-child(3n+2)::after{ clip-path:polygon(20% 0, 100% 22%, 70% 100%, 0 68%); }
   .sn-orb:nth-child(3n)::after{ clip-path:polygon(0 18%, 62% 0, 100% 60%, 38% 100%); }
+  .sn-orb.is-ember::after{ display:none; }
+  .sn-orb.is-ember::before{ inset:-60%; background:radial-gradient(circle, rgba(255,226,170,.95) 0, rgba(255,140,58,.55) 30%, rgba(255,86,26,0) 66%); }
   .sn-ringglint{ position:absolute; left:50%; top:47.368%; aspect-ratio:1; translate:-50% -50%; border-radius:50%;
     pointer-events:none; opacity:0; z-index:2; }
   /* SUPERNOVA'S SPIN IS ITS OWN: the planet heats with the speed
@@ -64233,6 +64253,15 @@ function cosmicScarArt(){
    the middle and at every side of the square - so it can never show a
    hard edge or the box it is drawn in. Seeded, like the smoke. */
 let snDustCache = null;
+/* SUPERNOVA'S ART, DRAWN AHEAD (cut3): the scar (cosmicScarArt, ~60-140ms
+   the first time in a session) and the blast's dust (snDustURL, ~25-35ms).
+   Called as the scene is built, before its first frame, where a dropped
+   frame cannot be seen - so neither lands in the middle of the scene.
+   Both are cached, so a second call is free. */
+function warmSupernovaArt(){
+  try{ cosmicScarArt(); }catch(e){}
+  try{ snDustURL(); }catch(e){}
+}
 function snDustURL(){
   if(snDustCache !== null) return snDustCache;
   snDustCache = "";
@@ -67175,9 +67204,31 @@ function playRankUpScene(tierKey, opts, spec){
   const before = document.createElement("div");
   before.className = "rank-before";
   let heroBefore = null, heroAfter = null;
-  /* THE PLANET YOU HAD: your own theme, and this rank's flare still dark. */
+  /* THE SCAR'S FIRST DRAW, BEFORE THE FIRST FRAME (cut3). The Supernova
+     art (cosmicScarArt, ~60-140ms the first time in a session) and the
+     blast's dust (snDustURL, ~25ms) are drawn here, while nothing of the
+     scene is on screen yet - the dust used to be drawn at the swell, a
+     dropped frame or two with the planet shaking. Measured (cut3): ~200ms
+     here in all, before the dark comes up; on the results screen that is
+     the end of a held beat with only transform and opacity animations
+     running (the compositor's, which a busy main thread does not stop),
+     on Home a cleared stage. Drawing it as the results screen is built
+     instead was measured too, and added ~150ms between the last answer
+     and the results - a delay someone would feel, for nothing. */
+  if(spec.times.swell) warmSupernovaArt();
+  /* Home's own builder, with store.supernovaAchieved held at `sn` for the
+     length of the build and the save it makes held back (nothing is
+     recorded early). */
+  const quietBuild = (sn, accentKey) => {
+    const had = store.supernovaAchieved, save = window.saveStore;
+    try{ store.supernovaAchieved = sn; window.saveStore = () => {}; return buildCosmicHero(true, accentKey); }
+    finally{ store.supernovaAchieved = had; window.saveStore = save; }
+  };
+  /* THE PLANET YOU HAD: your own theme, and this rank's flare still dark.
+     Never Supernova's (cut3): a replayed Supernova scene starts from the
+     planet before it, not from one already scarred and carrying debris. */
   try{
-    heroBefore = buildCosmicHero(true);
+    heroBefore = spec.times.swell ? quietBuild(false) : buildCosmicHero(true);
     syncSceneFlares(heroBefore, tierKey, false);
     before.appendChild(heroBefore);
   }catch(e){}
@@ -67198,17 +67249,15 @@ function playRankUpScene(tierKey, opts, spec){
      ends on. Everything that build adds over a plain one, top-level, is
      marked and revealed beat by beat after the blast (data-sn-reveal):
      the scar as the dust clears, the rest as the system settles; the rings
-     stay plain until the last beat. */
-  const quietBuild = (sn) => {
-    const had = store.supernovaAchieved, save = window.saveStore;
-    try{ store.supernovaAchieved = sn; window.saveStore = () => {}; return buildCosmicHero(true, tierKey); }
-    finally{ store.supernovaAchieved = had; window.saveStore = save; }
-  };
+     stay plain until the last beat. What the build puts INSIDE its layers
+     is held back by CSS instead (cut3): the debris on the rings until the
+     sweep throws it out (sn-swept), the light that passes the scar
+     (.csc-pass, live from sn-scarred as .csc-live) until sn-rings. */
   try{
     if(spec.times.swell){
-      heroAfter = quietBuild(true);
+      heroAfter = quietBuild(true, tierKey);
       const keyOf = el => el.tagName + ":" + String(el.getAttribute("class") || "").split(/\s+/).filter(c => /^cosmic-/.test(c)).sort().join(" ");
-      const plain = new Set([...quietBuild(false).children].map(keyOf));
+      const plain = new Set([...quietBuild(false, tierKey).children].map(keyOf));
       /* (a ring layer of its own - the top ring tier - is not hidden: the
          rings are there throughout, held plain in CSS until sn-rings) */
       [...heroAfter.children].forEach(el => {
@@ -67330,7 +67379,10 @@ function playRankUpScene(tierKey, opts, spec){
         ns.insertBefore(g, nb); ns.appendChild(r);
       }
     }catch(e){}
-    if(spec.times.swell) overlay.classList.add("sn-scarred", "sn-settled", "sn-rings");
+    if(spec.times.swell){
+      overlay.classList.add("sn-scarred", "sn-swept", "sn-settled", "sn-rings");
+      if(heroAfter) heroAfter.classList.add("csc-live");
+    }
     requestAnimationFrame(() => requestAnimationFrame(() => {
       overlay.classList.add("supernova-visible");
       stageWrap.classList.add("is-arrive");
@@ -67577,10 +67629,10 @@ function playRankUpScene(tierKey, opts, spec){
        look settles in under them; and only THEN do the rings change
        colour, a glint running round each. */
     if(SW){
-      at(b + 1300, () => overlay.classList.add("sn-scarred"));
-      at(b + 2000, snSweep);
-      at(b + 4300, () => overlay.classList.add("sn-settled"));
-      at(b + 4900, () => { overlay.classList.add("sn-rings"); snRingGlint(); });
+      at(b + 1300, () => { overlay.classList.add("sn-scarred"); if(heroAfter) heroAfter.classList.add("csc-live"); });
+      at(b + 1800, snSweep);
+      at(b + 4400, () => overlay.classList.add("sn-settled"));
+      at(b + 5400, () => { overlay.classList.add("sn-rings"); snRingGlint(); });
     }
     at(b + (T.settle - T.burst), () => overlay.classList.add("supernova-settle"));
     /* the show is unskippable up to the title; once it is up, a tap ends it */
@@ -67643,36 +67695,84 @@ function playRankUpScene(tierKey, opts, spec){
       try{ before.animate(fr, { duration: sw, easing: "linear", fill: "none" }); }catch(e){}
     }
   };
-  /* black fragments out of the planet, spiralling out to the two rings
-     and settling into scattered orbits along them; they hand over to
-     Home's own look as it settles (sn-settled) */
+  /* THE DEBRIS IS THROWN OUT, AND SETTLES INTO ORBIT (cut3). The planet
+     you are getting is Home's own Supernova build, so whatever Home puts on
+     the rings for Supernova (.csc-ringfrag, the planet round's debris) is
+     already in it - held out of sight (CSS) until now. The sweep throws
+     THOSE pieces out: each spirals from the planet's middle to its own
+     place on its ring, overshoots a little and settles there, hot as it
+     flies and cooling as it lands - so the scene ends on Home's look with
+     one set of debris, seen settling into orbit ("some of the fragments
+     could be going around the rings like in an orbit like the other stuff
+     but scattered slightly"). A handful of embers that are not debris fly
+     further and burn out. Nothing here depends on how a piece is drawn or
+     which layer carries it: its place is read off the layout (offsets,
+     which a turning layer and the stage's scale leave alone) and the
+     flight is its `translate` and `scale` (composed onto its own), so its
+     own tumble carries on through it. */
   const snSweep = () => {
     if(!heroAfter) return;
+    overlay.classList.add("sn-swept");
+    const D = 3400, DONE = [];
     try{
+      const W = heroAfter.clientWidth || 300, H = heroAfter.clientHeight || W * 342 / 360;
+      const cx = W / 2, cy = H * 162 / 342, u = W / 360;
+      const at0 = el => { let x = 0, y = 0, e = el;
+        while(e && e !== heroAfter){ x += e.offsetLeft; y += e.offsetTop; e = e.offsetParent; }
+        return e === heroAfter ? [x, y] : null; };
+      const px = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+      const eo = (x, k) => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), k || 3);
+      const ss = (a, b2, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b2 - a))); return t * t * (3 - 2 * t); };
+      let sd = 1717;
+      const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+      [...heroAfter.querySelectorAll(".csc-ringfrag")].forEach((el, i) => {
+        const o = at0(el);
+        if(!o) return;
+        const cs = getComputedStyle(el);
+        /* its own translate (the debris centres itself with -50% -50%: a
+           percentage of its own box), in pixels */
+        const tr = (cs.translate && cs.translate !== "none") ? cs.translate.split(/\s+/) : [];
+        const len = (v, size) => v == null ? 0 : /%$/.test(v) ? px(v) / 100 * size : px(v);
+        const bx = len(tr[0], el.offsetWidth), by = len(tr[1], el.offsetHeight);
+        const sc0 = (cs.scale && cs.scale !== "none") ? px(cs.scale.split(/\s+/)[0]) || 1 : 1;
+        /* its resting centre, from the planet's middle */
+        const ex = o[0] + el.offsetWidth / 2 + bx - cx, ey = o[1] + el.offsetHeight / 2 + by - cy;
+        const R = Math.hypot(ex, ey), th = Math.atan2(ey, ex), sw = (200 + rnd() * 130) * Math.PI / 180;
+        const kT = [], kS = [], N = 24;
+        for(let k = 0; k <= N; k++){
+          const f = k / N;
+          const r = 1.06 * eo(f / .62) - .06 * ss(.62, .92, f);
+          const a = th - sw * (1 - eo(f, 2.6));
+          const dx = R * r * Math.cos(a) - ex, dy = R * r * Math.sin(a) - ey;
+          kT.push({ offset: f, translate: (bx + dx).toFixed(2) + "px " + (by + dy).toFixed(2) + "px" });
+          kS.push({ offset: f, scale: String(+(sc0 * (f < .3 ? .35 + .95 * eo(f / .3, 2) : 1.3 - .3 * ss(.3, .85, f))).toFixed(3)), opacity: f === 0 ? 0 : Math.min(1, f / .05) });
+        }
+        const hot = document.createElement("i");
+        hot.className = "sn-hot"; hot.setAttribute("aria-hidden", "true");
+        el.appendChild(hot);
+        const opt = { duration: D, delay: i * 30, fill: "backwards" };
+        try{
+          el.animate(kT, opt); el.animate(kS, opt);
+          hot.animate([{ opacity: 0 }, { opacity: 1, offset: .06 }, { opacity: .85, offset: .5 }, { opacity: 0, offset: .95 }, { opacity: 0 }], { duration: D, delay: i * 30, fill: "both" });
+        }catch(e){}
+        DONE.push(hot);
+      });
+      /* the embers that are not debris: further out, and gone */
       const layer = document.createElement("div");
       layer.className = "sn-sweep"; layer.setAttribute("aria-hidden", "true");
       heroAfter.insertBefore(layer, heroAfter.querySelector(":scope > .rank-orbit"));
-      const W = heroAfter.clientWidth || 300;
-      let sd = 1717;
-      const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
-      const D = 3600, N = 28;
-      for(let i = 0; i < N; i++){
-        const ring = i % 2 ? 108 : HOME_OUTER_R;
-        const R = (ring + (rnd() - .5) * 12) / 360 * W, a0 = rnd() * 360, sw = 210 + rnd() * 140, sp = (rnd() - .5) * 720;
-        const sz = 1.9 + rnd() * 1.9;
-        const o = document.createElement("i");
-        o.className = "sn-orb";
-        o.style.setProperty("--s", sz.toFixed(2) + "%");
-        layer.appendChild(o);
-        const k = (f, r, sc, op, easing) => ({ offset: f, opacity: op, easing: easing || "linear",
-          transform: "rotate(" + (a0 + sw * Math.min(1, f / .65) + (f > .65 ? (f - .65) / .35 * 18 : 0)).toFixed(1) + "deg) translateX(" + (R * r).toFixed(1) + "px) rotate(" + (sp * f).toFixed(1) + "deg) scale(" + sc + ")" });
-        try{
-          o.animate([k(0, 0, .3, 0, "cubic-bezier(.2,.6,.3,1)"), k(.08, .2, .6, 1, "cubic-bezier(.25,.6,.3,1)"), k(.35, .78, .95, 1, "cubic-bezier(.3,.5,.3,1)"),
-            k(.65, 1, 1, 1), k(.82, 1, 1, .55), k(1, 1, 1, 0)], { duration: D, delay: i * 22, fill: "both" });
-        }catch(e){}
+      for(let i = 0; i < 8; i++){
+        const R = (150 + rnd() * 50) * u, a0 = rnd() * 360, sw = 160 + rnd() * 120;
+        const e = document.createElement("i");
+        e.className = "sn-orb is-ember";
+        e.style.setProperty("--s", (1.4 + rnd() * 1.2).toFixed(2) + "%");
+        layer.appendChild(e);
+        const k = (f, r, op) => ({ offset: f, opacity: op, transform: "rotate(" + (a0 + sw * eo(f, 2.4)).toFixed(1) + "deg) translateX(" + (R * r).toFixed(1) + "px)" });
+        try{ e.animate([k(0, 0, 0), k(.08, .25, 1), k(.4, .8, .9), k(.75, 1, 0), k(1, 1, 0)], { duration: D * .8, delay: 60 + i * 70, fill: "both", easing: "cubic-bezier(.2,.6,.3,1)" }); }catch(err){}
       }
-      setTimeout(() => layer.remove(), D + 900);
+      DONE.push(layer);
     }catch(e){}
+    setTimeout(() => DONE.forEach(n => n.remove()), D + 1400);
   };
   /* a glint running round each ring as it takes its new colour */
   const snRingGlint = () => {
@@ -68060,9 +68160,11 @@ function playSupernovaCutscene(opts){
        light - and after the blast a held beat where the system TRANSFORMS
        (the scar, the fragments sweeping out onto the rings, Home's
        Supernova look settling, and only then the rings' colour): the
-       title 7s after the blast, ~35s in all. */
+       title 7s after the blast, ~35s in all. Cut3: the debris thrown out
+       and settling (b+1.8s), the system settled at b+4.4s, the rings at
+       b+5.4s, the title at b+7.4s - ~36s. */
     times: { ignite: RANK_ATTN_AT + RANK_ATTN_MS, accel: 8200, decel: 6200, turns: 28, swell: 1800,
-      burst: 22000, settle: 29000, outro: 33900 },
+      burst: 22000, settle: 29400, outro: 34300 },
     onFinish: () => {
       store.pendingSupernovaCutscene = false; store.supernovaAchieved = true; saveStore();
       /* the scene has shown the rings turning orange, so Home does not
@@ -80803,7 +80905,7 @@ const HFX_UFO_BEAM = "blue";
 function hfxUfoBeam(){ return HFX_UFO_BEAMS[HFX_UFO_BEAM] || HFX_UFO_BEAMS.green; }
 function hfxBeamURL(){
   const b = hfxUfoBeam();
-  return hfxSprite("beam-" + HFX_UFO_BEAM, () => 'viewBox="0 0 100 200"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + b.hi + '" stop-opacity=".75"/><stop offset=".35" stop-color="' + b.c + '" stop-opacity=".38"/><stop offset="1" stop-color="' + b.c + '" stop-opacity=".1"/></linearGradient>' +
+  return hfxSprite("beam-" + HFX_UFO_BEAM, () => 'viewBox="0 0 100 200"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + b.hi + '" stop-opacity=".75"/><stop offset=".35" stop-color="' + b.c + '" stop-opacity=".4"/><stop offset="1" stop-color="' + b.c + '" stop-opacity=".2"/></linearGradient>' +
     '<linearGradient id="c" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>' +
     '<path d="M38 0 L62 0 L100 200 L0 200 Z" fill="url(#b)"/><path d="M45 0 L55 0 L70 200 L30 200 Z" fill="url(#c)"/></svg>', 400);
 }
@@ -80827,20 +80929,36 @@ function hfxUfo(scr, bx, c){
     const exit = { x: (Math.random() < .5 ? -1 : 1) * c.vw * .9, y: -L.y - 160 };
     /* how far its beam sweeps either way across the box (round 4) */
     const swa = hfxUfoSwa(c);
-    const u = hfxMk(scr, "span", "hfx-saucer", { left: L.x + "px", top: L.y + "px", "--sx": (hfxR(-.3, .3) * c.vw) + "px", "--sy": (-L.y - h - 20) + "px",
+    /* THE SAUCER FLIES OVER THE BOX (round 6): "the ray beam is still being
+       shown in the box before it even gets there and when it gets there
+       it's not matching up perfectly". The beam was two: the saucer's,
+       under the box (the box is lifted over the effect's screen layer, so
+       its number is never dimmed), and the box's own, inside it - a second
+       copy of the beam that started over again at the box's edge, narrow
+       and bright where the first ended wide and faint (63px against 138px
+       on a phone), and fanned out at once the moment it appeared, so the
+       box lit with a beam that had not reached it yet. Now the saucer and
+       its ONE beam are in a layer of their own just over the box, and the
+       beam runs on from the hull through the box's edge to its floor:
+       nothing can disagree at the edge because nothing meets there. */
+    const top = document.createElement("div");
+    top.setAttribute("aria-hidden", "true");
+    const u = hfxMk(top, "span", "hfx-saucer", { left: L.x + "px", top: L.y + "px", "--sx": (hfxR(-.3, .3) * c.vw) + "px", "--sy": (-L.y - h - 20) + "px",
       "--hov": hov + "px", "--ox": exit.x + "px", "--oy": exit.y + "px", "--uw": w + "px", "--uh": h + "px", "--swa": swa + "px",
       "--bmg": hfxUfoBeam().glow, "--bmd": hfxUfoBeam().deep });
     /* THE BEAM IS FIRED, THEN IT RIDES WITH THE HULL (build 317, round 3):
        "the UFO's projection is shown before it's shot out of the UFO and
        it doesn't hit the bottom of the box". It grows out of the underside
-       (its top is .2 of the hull up inside it) and its foot is ALWAYS 4px
-       inside the box's top edge: hovering, landed (--bl) and lifting off
-       (--bk), each a scale of the one hovering length. The box's own beam
-       (.hfx-ufo-inbeam) takes it from that edge to the box's bottom edge,
-       and only starts once this one has arrived. */
-    const bh = -hov + h * .2 + 4;
-    const beam = hfxMk(u, "i", "hfx-ufo-beam", { "--bh": bh + "px", "--bw": (w * .82) + "px",
-      "--bl": ((h * .2 + 4) / bh).toFixed(3), "--bk": ((74 + h * .2) / bh).toFixed(3) });
+       (its top is .2 of the hull up inside it), and since round 6 it runs
+       on through the box's top edge to the box's floor, hovering, landed
+       (--bl) and lifting off (--bk), each a scale of the one hovering
+       length - one beam, no second one in the box. */
+    /* (round 6) its length is from inside the hull to 3px off the box's
+       floor; --bt is where its head crosses the box's top edge, --bl and
+       --bk the same floor seen from the landed and the lifted hull */
+    const floor = Math.max(8, (c.bh || 0) - 3), bh = -hov + h * .2 + floor;
+    const beam = hfxMk(u, "i", "hfx-ufo-beam", { "--bh": bh + "px", "--bw": (w * .82) + "px", "--bt": ((-hov + h * .2 + 1) / bh).toFixed(4),
+      "--bl": ((h * .2 + floor) / bh).toFixed(4), "--bk": ((70 + h * .2 + floor) / bh).toFixed(4) });
     beam.style.backgroundImage = hfxBeamURL();
     for(let k = 0; k < 3; k++){
       hfxMk(u, "i", "hfx-ufo-ring", { "--rw": (w * .5) + "px", "--fall": (-hov) + "px", "--t": 3.98 + k * .22 }).style.backgroundImage = hfxBeamRingURL();
@@ -80878,6 +80996,7 @@ function hfxUfo(scr, bx, c){
     const tr = hfxMk(scr, "span", "hfx-mt", { left: ex.x + "px", top: ex.y + "px", "--ra": ang.toFixed(1) + "deg" });
     const run = hfxMk(tr, "i", "hfx-mt-run is-big hfx-ufo-trail", { "--ml": "300px", "--dist": (Math.hypot(exit.x, exit.y + 70) + 240) + "px", "--t": 8.62, "--d": .42 });
     run.style.backgroundImage = hfxMeteorURL("#9DFFB4");
+    hfxUfoTopLayer(c, scr, top, bx);
   }
   if(bx){
     const cx = c.bw / 2;
@@ -80885,10 +81004,8 @@ function hfxUfo(scr, bx, c){
     hfxUfoLight(c);
     if(!c.boxOnly){
       if(!c.noDim) hfxMk(bx, "i", "hfx-ufo-boxdim");
-      hfxMk(bx, "i", "hfx-ufo-inbeam", { left: cx + "px", "--ih": c.bh + "px", "--iw": Math.min(c.bw * .8, c.p.w * 1.6) + "px",
-        "--swa": hfxUfoSwa(c) + "px" }).style.backgroundImage = hfxBeamURL();
-      /* the box flares as the beam strikes it, and again as it lands */
-      hfxMk(bx, "i", "hfx-ufo-landglow is-hit", { "--t": 3.94, "--bmg": hfxUfoBeam().glow, "--bmd": hfxUfoBeam().deep });
+      /* the box flares as the beam reaches its floor, and again as it lands */
+      hfxMk(bx, "i", "hfx-ufo-landglow is-hit", { "--t": 4.18, "--bmg": hfxUfoBeam().glow, "--bmd": hfxUfoBeam().deep });
       hfxMk(bx, "i", "hfx-ufo-landglow", { "--t": 6.1 });
     } else {
       /* in a small box: it comes down into the box, hovers over the
@@ -80966,7 +81083,9 @@ function hfxUfoUnlit(card){
 function hfxUfoLight(c){
   const card = c.box;
   if(!card || !card.animate) return;
-  const D = c.boxOnly ? 7 : 9.5, at = c.boxOnly ? 2.8 : 3.92, dur = .25;
+  /* (round 6: on the results screen, as the beam's head reaches the box's
+     floor - before that the only light in the box is the beam itself) */
+  const D = c.boxOnly ? 7 : 9.5, at = c.boxOnly ? 2.8 : 4.18, dur = .25;
   const had = card.classList.contains("hfx-ufo-unlit");
   card.classList.add("hfx-ufo-unlit");
   const u = getComputedStyle(card), ub = u.borderColor, uw = u.getPropertyValue("--hfx-wash").trim();
@@ -80982,6 +81101,34 @@ function hfxUfoLight(c){
   const t = card.querySelector(":scope > .hfx-tint");
   if(t) hfxAnim(c, t, k({ opacity: 0 }, { opacity: 1 }), o);
   hfxOnEnd(c, () => card.classList.remove("hfx-ufo-unlit"));
+}
+/* The UFO's own layer, over the box (round 6): a twin of the effect's
+   screen layer - the same place, size and colours, two above it - put in
+   beside it once the screen layer is in the document, and taken away with
+   it (faded when it is faded). And ONE CLOCK for everything the UFO is
+   made of: once its animations have started, every one still running -
+   this layer's, the screen layer's, the box's and the script's - is set to
+   the earliest start among them, so a layer that began a frame late on
+   some device cannot run a frame behind the rest. (Paused ones, as a
+   recorder or a gate holds them, are left alone.) */
+function hfxUfoTopLayer(c, scr, top, bx){
+  queueMicrotask(() => {
+    if(!scr.isConnected || !scr.parentNode){ return; }
+    top.className = scr.className + " hfx-ufo-top";
+    top.style.cssText = scr.style.cssText;
+    const z = parseInt(getComputedStyle(scr).zIndex, 10);
+    top.style.zIndex = String((isFinite(z) ? z : 60) + 2);
+    scr.parentNode.insertBefore(top, scr.nextSibling);
+    const all = () => [top, scr, bx].filter(Boolean).reduce((a, el) => a.concat(el.getAnimations ? el.getAnimations({ subtree: true }) : []), []).concat(c.anims || []);
+    const list = all();
+    Promise.all(list.map(a => a.ready.catch(() => null))).then(() => {
+      const run = all().filter(a => a.playState === "running" && a.startTime != null);
+      if(run.length < 2) return;
+      const t0 = Math.min(...run.map(a => a.startTime));
+      run.forEach(a => { if(a.startTime !== t0){ try{ a.startTime = t0; }catch(e){} } });
+    });
+  });
+  hfxOnEnd(c, fade => { if(fade) hfxFadeOut(top); else top.remove(); });
 }
 /* THE CIRCLE (build 317, round 4). It comes in from one side, goes round
    the screen once - smaller on the far side of the circle, bigger on the
