@@ -56200,14 +56200,25 @@ function playCharSpecial(el){
    full-screen dim) and the hundo's own one was cut a second in by the
    badge case. Anything here covers the screen; the scheduler skips a
    tick while one is up, and an asked-for special waits for it to go. */
-var CHAR_SPECIAL_COVERS = ".bc-scene, #supernova-cutscene, #badge-cutscene, #void-cutscene, #vroom-cutscene, .rs-spot, .fl-scene, .ff-scene, #teststart-overlay, #tour-overlay";
-function charSpecialCovered(){
-  try{ return !!document.querySelector(CHAR_SPECIAL_COVERS); }catch(e){ return false; }
+var CHAR_SPECIAL_COVERS = ".bc-scene, #supernova-cutscene, #badge-cutscene, #void-cutscene, #vroom-cutscene, .rs-spot, .fl-scene, .ff-scene, .scene-bridge, #teststart-overlay, #tour-overlay, #genprofile-overlay, #splashscreen, #intro-pop, .invite-overlay";
+/* Covered for THIS character: any of those up that it is not itself
+   inside (the person card is an .invite-overlay, and its own character is
+   one of the prominent ones), or the results reveal still running round
+   it - a special begun in the gap between two pop-ups is under the next
+   one a second later, so the results character waits for the reveal to
+   end (finish() then plays the hundo's special itself). */
+function charSpecialCovered(el){
+  try{
+    if(el && el.closest && el.closest(".rs-rewards:not(.rs-done)")) return true;
+    const covers = document.querySelectorAll(CHAR_SPECIAL_COVERS);
+    for(let i = 0; i < covers.length; i++){ if(!el || !covers[i].contains(el)) return true; }
+    return false;
+  }catch(e){ return false; }
 }
 function charSpecialFire(el, delay, tries){
   setTimeout(() => {
     if(!el || !el.isConnected) return;
-    if(charSpecialCovered()){ if((tries || 0) < 60) charSpecialFire(el, 600, (tries || 0) + 1); return; }
+    if(charSpecialCovered(el)){ if((tries || 0) < 60) charSpecialFire(el, 600, (tries || 0) + 1); return; }
     if(Date.now() < charSpecialBusyUntil) return;
     if(playCharSpecial(el)) el.dataset.spNext = String(Date.now() + charSpecialMsFor(el.querySelector("svg.avatarchar-svg")) + charSpecialRand(charSpecialTiming.gap));
   }, delay || 0);
@@ -56233,8 +56244,9 @@ function charSpecialTick(){
   if(!els.length){ if(++charSpecialIdle < 6) charSpecialTimer = setTimeout(charSpecialTick, 1000); else charSpecialLastTick = 0; return; }
   charSpecialIdle = 0;
   charSpecialTimer = setTimeout(charSpecialTick, 1000);
-  if(document.hidden || document.documentElement.dataset.reduceMotion === "true" || now < charSpecialBusyUntil || charSpecialCovered()) return;
+  if(document.hidden || document.documentElement.dataset.reduceMotion === "true" || now < charSpecialBusyUntil) return;
   const due = els.filter(el => {
+    if(charSpecialCovered(el)) return false;
     if(!charHasSpecial(el)) return false;
     if(!el.dataset.spNext) el.dataset.spNext = String(now + charSpecialRand(charSpecialTiming.first));
     return +el.dataset.spNext <= now && !el.classList.contains("char-special");

@@ -14601,6 +14601,43 @@ def check_b317_flow(br):
     ctx.close()
     check("Home locks to the Profile tab within ~1.2s when no card is due (not after the 2.2s card timer)",
           lk.get("lock") is True and lk.get("owed") is False and lk.get("ms", 9999) <= 1900, lk)
+    # The idle scheduler under a cutscene: nothing while one is up, the
+    # special as soon as it goes - and a person card's own character, which
+    # lives INSIDE an overlay, still gets its moment.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("() => " + _seed_gold_js())
+    sp = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+      store.rankMapSeen = null; store.avatarChar = 'lunar'; saveStore();
+      document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
+      charSpecialTiming = { first: [300, 600], gap: [300, 600] };
+      showProfile(); await wait(700);
+      const hero = document.querySelector('.profile-hero-avatar');
+      let cover = null; out.under = 0; out.clear = 0;
+      const mo = new MutationObserver(() => { if(hero.classList.contains('char-special')){ if(cover && cover.isConnected) out.under++; else out.clear++; } });
+      mo.observe(hero, { attributes: true, attributeFilter: ['class'] });
+      cover = document.createElement('div'); cover.id = 'supernova-cutscene'; document.body.appendChild(cover);
+      delete hero.dataset.spNext; charSpecialWake();
+      await wait(4500);
+      cover.remove();
+      for(let i = 0; i < 80 && !out.clear; i++) await wait(100);
+      mo.disconnect();
+      /* the person card: its character is inside the overlay */
+      await wait(3500);
+      openPersonSheet({ pub: 'PUB-TEST-1', firstName: 'Kim', avatarChar: 'lunar', level: 44, badges: 5, hundos: 60, xp: 50000 });
+      await wait(300);
+      const pc = document.querySelector('.invite-overlay .person-card-art');
+      out.card = !!pc; out.cardSpecial = false;
+      if(pc){ const m2 = new MutationObserver(() => { if(pc.classList.contains('char-special')) out.cardSpecial = true; });
+        m2.observe(pc, { attributes: true, attributeFilter: ['class'] }); charSpecialWake();
+        for(let i = 0; i < 80 && !out.cardSpecial; i++) await wait(100); m2.disconnect(); }
+      } catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    ctx.close()
+    check("the idle special never plays under a cutscene, and plays once it has gone",
+          not sp.get("threw") and sp.get("under") == 0 and (sp.get("clear") or 0) >= 1, sp)
+    check("a person card's own character (inside its overlay) still plays its special",
+          sp.get("card") is True and sp.get("cardSpecial") is True, sp)
 
 
 def main():

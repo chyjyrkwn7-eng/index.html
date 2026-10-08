@@ -15348,14 +15348,22 @@ disagree with it.
     `openSceneBridge` up (72% black) for the pop-up it expects; a badge case
     that is the LAST unlock has nothing to claim it, so the buttons sat
     under it for ~1.4s. The actions step and `finish()` drop it.
-  - **The character's special played under scenes.** The idle scheduler
-    counted the results card as on screen under a rank cutscene's dim, and
-    the hundo's asked-for special (2.6s after the reaction) was cut by the
-    badge case a second in. `charSpecialCovered()` (`CHAR_SPECIAL_COVERS`:
-    the case, the cutscenes, a pop-up, the flare scenes, LOADING, a tour):
-    the scheduler skips a tick and `charSpecialFire` waits. On a run with
-    unlocks the hundo special is the reveal's last beat, fired from
-    `finish()` once the buttons are in.
+  - **The character's special played under scenes** - "no character
+    special while any cutscene, overlay or reward card is up". The idle
+    scheduler counted the results card as on screen under the badge case,
+    the rank cutscene and a reward card (it is: under their dim), and the
+    hundo's own special (2.6s after the reaction) was cut by the badge case
+    a second in. `charSpecialCovered(el)`: anything in `CHAR_SPECIAL_COVERS`
+    (the case, every cutscene, a pop-up, the flare scenes, the scene bridge,
+    LOADING, a tour, What's New, the generating overlay, a sheet) that the
+    character is NOT itself inside - the person card is an `.invite-overlay`
+    and its character is one of the prominent ones - or, for the results
+    character, the reveal still running (`.rs-rewards:not(.rs-done)`: a
+    special begun in the gap between two pop-ups is under the next one a
+    second later). The scheduler passes over a covered character and
+    `charSpecialFire` waits for it to clear. On a run with unlocks the
+    hundo special is the reveal's last beat, fired from `finish()` 0.7s
+    after the buttons are in.
   - **Home sat unlocked ~2.7s after Main menu before the rank-up lock.**
     `showHome()` always arms the card queue's 2.2s timer and
     `rankUpLockWaits()` waited on the timer whether or not a card was due -
@@ -15365,15 +15373,26 @@ disagree with it.
     plays its rank cutscene on Home (the builds 217-218 rule), and the rank-up
     Profile scene's ~20s is its own design.
   - **Gate: `check_b317_flow`** - the one-level pop >= 1.9s on both
-    devices, the World Tree to its tail before the case, the special never
-    under the case and after it, no live bridge when the buttons land, the
-    lock within 1.9s with nothing owed. All six fail on e877af7.
-  - **Timelines, stills and the frame-stepped MP4** are in
-    `scratchpad/r317flow/` of that session (`flow.py` drives every scenario
-    and writes a timeline per device; `record_flow.py` is
-    `tools/record-hundo.py`'s clock over the whole walk). A screenshot
-    harness on a loaded box takes 0.5-1s a shot, so its stills lag their
-    stage; the timeline times are the measurement.
+    devices, the World Tree to its tail before the case, the hundo special
+    never under the case and after it, no live bridge when the buttons land,
+    the lock within 1.9s with nothing owed, the idle special never under a
+    cutscene and played once it goes. All seven fail on e877af7; the eighth
+    (a person card's own character still plays its special) guards the
+    inside-the-overlay exception and passes on both. `FX_RUN` (the gates'
+    real 100%) now waits 12s for the effect, not 6: a run that climbs a
+    level lands its grade 0.8s later than it did, and check_b314_unlocks'
+    Fireworks and Bubbles sections ran out of budget on a loaded box.
+  - **How it was measured, for next time**: a 40ms poll in the page
+    records every stage turning on and off (each card landing, the pop,
+    the effect's layer, the case, the cutscene, each pop-up and its kind,
+    the bridge, the buttons, the lock, the call, LOADING, the map, the
+    arrival, each special), while a scripted person reads each pop-up for
+    3s and taps it, taps Main menu 1.5s after the buttons and Profile 2.2s
+    after the call. The MP4 is `tools/record-hundo.py`'s clock (every
+    timer, rAF and animation on a clock advanced 1/30s a frame) run over
+    the whole walk, with the person acting on that clock. A screenshot
+    harness on a loaded box takes 0.5-1s a shot, so stills lag their
+    stage; the poll's times are the measurement.
 - **STUDY TIME IS TIME SPENT STUDYING (build 314).** It was "now minus
   when the run started", so a run left open with the phone locked banked
   every hour on the day it ended: live tests of 117h and 50h, days of 68h
