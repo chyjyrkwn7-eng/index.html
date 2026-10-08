@@ -15867,9 +15867,16 @@ disagree with it.
     first beat the figure shows), so every idle loop and later the special
     run in step across the wipe's edge, and nothing invisible repaints
     through the build-up. In the dark it BREATHES (`.sf-breath`, the
-    `scale` property, alternate) and TURNS towards you (`.sf-figmove`:
-    `rotate:y -13deg` -> 6 -> 0 under the figure's perspective, with a
-    rise and a settle - three separate properties, three transitions).
+    `scale` property, alternate) and TURNS towards you (`.sf-figmove`, a
+    flat turn: the body narrowed as if turned 13deg away, opening out
+    through 6 to facing you, with a drift, a lean, a rise and a settle -
+    `scale` x/y, `translate`, `rotate`, three transitions). **Never
+    `rotate:y`**: it was, under a perspective, and a 3D transform on any
+    ancestor makes Chromium raster the drawing's CLIPPED parts coarse -
+    Umbra's brow moon was a blurred block for the whole silhouette while
+    everything round it stayed sharp (found frame by frame on the
+    recording; real time showed the same). At 13deg the keystone a real
+    turn adds is a few per cent.
   - **Its own special turns the light on.** `F.special()` puts
     `char-special` on both copies for `CHAR_SPECIAL_MS[ch]`; the reveal is
     timed to the special's own flash (Void's white at 3.12s, Umbra's

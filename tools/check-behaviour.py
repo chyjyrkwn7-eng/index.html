@@ -15362,7 +15362,15 @@ SF_FACTS = r"""() => { const f = document.querySelector('.sf-fig'); if(!f) retur
   const dark = body.filter(n => Math.max.apply(null, rgb(getComputedStyle(n).fill)) <= 24).length;
   const keys = sil ? [...sil.querySelectorAll('.sf-key')].filter(k => +getComputedStyle(k).opacity > .5).length : 0;
   const outside = [...document.querySelectorAll('.sf-scene *')].filter(e => !e.closest('.cosmic-hero-wrap'));
-  return { silChar: sil && sil.getAttribute('data-char'), realChar: real && real.getAttribute('data-char'),
+  /* 3D on any box between the scene and the drawing (Chromium rasters the
+     drawing's clipped parts coarse under one) */
+  const flat3d = []; for(let e = sil && sil.parentElement; e && !e.classList.contains('sf-scene'); e = e.parentElement){
+    const cs = getComputedStyle(e);
+    const r3 = cs.rotate !== 'none' && !/^-?[\d.]+(e-?\d+)?deg$/.test(cs.rotate.trim());
+    if(cs.perspective !== 'none' || r3 || /3d/.test(cs.transform) || cs.transformStyle === 'preserve-3d') flat3d.push(e.className); }
+  const below = document.querySelector('.sfh-below');
+  return { silChar: sil && sil.getAttribute('data-char'), realChar: real && real.getAttribute('data-char'), turn3d: flat3d,
+    ground: below ? Math.round(below.getBoundingClientRect().bottom - innerHeight) : null,
     silLive: !!(sil && sil.closest('.char-live')), realLive: !!(real && real.closest('.char-live')),
     silAnims: sil ? sil.getAnimations({ subtree: true }).length : 0, realAnims: real ? real.getAnimations({ subtree: true }).length : 0,
     body: body.length, dark, keys,
@@ -15604,6 +15612,10 @@ def check_b317_sflare(br):
               and lit["mean"] >= max(35, 1.6 * (sil.get("mean") or 99)), [lst.get("realVis"), lst.get("silVis"), sil.get("mean"), lit.get("mean")])
         check(name + ": no filter on the drawings or on anything of the scene's own",
               sf.get("svgFilter") == ["none", "none"] and sf.get("filtered") == 0, [sf.get("svgFilter"), sf.get("filtered")])
+        check(name + ": the figure turns flat - no 3D transform over the drawing (it rastered Umbra's brow moon as a blurred block)",
+              sf.get("turn3d") == [] and lf.get("turn3d") == [], [sf.get("turn3d"), lf.get("turn3d")])
+        if c == "white":
+            check(name + ": the ground under the horizon reaches the bottom of the screen", (lf.get("ground") is not None and lf["ground"] >= 0), lf.get("ground"))
     for c in ("red", "yellow", "violet", "white", "core"):
         r = _sf_still_run(br, c)
         a2, a6 = r.get("at02") or {}, r.get("at06") or {}

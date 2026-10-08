@@ -25599,7 +25599,7 @@
   .sf-litpop::after{ border:2.5px solid color-mix(in srgb, var(--ignite, #fff) 72%, #fff); animation:rank-litpop-ring .95s cubic-bezier(.16,1,.3,1) both; }
 
   /* ---- THE FIGURE (sfFigure) ---- */
-  .sf-fig{ left:50%; top:50%; width:90cqw; aspect-ratio:1; translate:-50% -50%; perspective:900px; z-index:2;
+  .sf-fig{ left:50%; top:50%; width:90cqw; aspect-ratio:1; translate:-50% -50%; z-index:2;
     opacity:0; transition:opacity 1.6s ease; }
   .sf-fig.is-keys{ opacity:1; }
   .sf-backlight{ position:absolute; inset:-16%; border-radius:50%; pointer-events:none; opacity:0; scale:.8;
@@ -25608,10 +25608,17 @@
   .sf-fig.is-emerging .sf-backlight{ opacity:.4; scale:.95; }
   .sf-fig.is-catch .sf-backlight{ opacity:.62; scale:1; transition:opacity 1.6s ease, scale 2s ease; }
   .sf-fig.is-revealing .sf-backlight{ opacity:.74; scale:1.12; transition:opacity 1.2s ease, scale 2.6s cubic-bezier(.2,.8,.2,1); }
-  .sf-figmove{ position:absolute; inset:0; transform-origin:50% 62%; rotate:y -13deg; translate:0 4%; scale:.93;
+  /* THE TURN IS FLAT: the body narrowed as if turned away (cos 13deg),
+     drifting to its far side with a breath of a lean, and opening to face
+     you - all 2D. It was rotate:y under a perspective, and a 3D transform
+     on any ancestor makes Chromium raster the drawing's clipped parts
+     coarse: Umbra's brow moon came out a blurred block for the whole
+     silhouette while the rest stayed sharp. At 13 degrees the keystone a
+     real turn adds is a few per cent; nobody misses it. */
+  .sf-figmove{ position:absolute; inset:0; transform-origin:50% 62%; rotate:-1.1deg; translate:-2% 4%; scale:.905 .93;
     transition:rotate 7s cubic-bezier(.4,0,.3,1), translate 7s cubic-bezier(.4,0,.3,1), scale 7s cubic-bezier(.4,0,.3,1); }
-  .sf-fig.is-emerging .sf-figmove{ rotate:y 6deg; translate:0 1.5%; scale:.975; }
-  .sf-fig.is-revealing .sf-figmove{ rotate:y 0deg; translate:0 0; scale:1.035;
+  .sf-fig.is-emerging .sf-figmove{ rotate:.5deg; translate:.9% 1.5%; scale:.97 .975; }
+  .sf-fig.is-revealing .sf-figmove{ rotate:0deg; translate:0 0; scale:1.035;
     transition:rotate 2.6s cubic-bezier(.2,.8,.2,1), translate 2.6s cubic-bezier(.2,.8,.2,1), scale 2.2s cubic-bezier(.2,.8,.2,1); }
   .sf-fig.is-revealed .sf-figmove{ scale:1; transition:rotate 2.6s cubic-bezier(.2,.8,.2,1), translate 2.6s cubic-bezier(.2,.8,.2,1), scale 3.2s cubic-bezier(.3,.6,.3,1); }
   .sf-breath{ position:absolute; inset:0; transform-origin:50% 80%; }
@@ -25831,7 +25838,9 @@
     background:linear-gradient(90deg, transparent, rgba(127,200,255,.35) 25%, rgba(221,244,255,.85) 44%, #fff 50%, rgba(221,244,255,.85) 56%, rgba(127,200,255,.35) 75%, transparent); }
   .sf-flat .sfh-line{ scale:1 1; opacity:.75; transition:scale 1.5s cubic-bezier(.3,0,.2,1) .7s, opacity .6s ease .7s; }
   .sf-dawn .sfh-line{ opacity:1; }
-  .sfh-below{ left:50%; top:75%; width:260cqw; height:80cqw; translate:-50% 0; z-index:3; opacity:0;
+  /* the ground: from the line to the bottom of the SCREEN, whatever the
+     stage's size (80cqw stopped 100px short on a phone, a lit strip under it) */
+  .sfh-below{ left:50%; top:75%; width:max(260cqw, 110vw); height:100vh; height:100lvh; translate:-50% 0; z-index:3; opacity:0;
     background:linear-gradient(180deg, rgba(3,2,9,0), #030209 2.4cqw); transition:opacity .8s ease .8s; }
   .sf-flat .sfh-below, .sf-horizon.sf-final .sfh-below{ opacity:1; }
   .sfh-dawn{ left:50%; top:76%; width:190cqw; height:96cqw; translate:-50% -50%; border-radius:50%; opacity:0; scale:1 0; z-index:1;
@@ -79276,8 +79285,10 @@ function sfLitSVG(ch){
 /* The figure, as the scene plays it:
      .sf-fig         where it stands (and, for Horizon, its rise)
        .sf-backlight   the flare's light behind it
-       .sf-figmove     the slow turn towards you and the settle (rotate y,
-                       translate, scale - three properties, one each)
+       .sf-figmove     the slow turn towards you and the settle - flat: a
+                       narrowed body opening out, a drift and a lean
+                       (scale x/y, translate, rotate - one property each;
+                       never rotate:y, see the CSS)
          .sf-breath    breathing (the `scale` property, alternate)
            .sf-figbody
              .sf-sil.char-live        the black shape (sfSilhouetteSVG)
