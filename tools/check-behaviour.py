@@ -13439,6 +13439,140 @@ def check_b317_cutspin(br):
     ctx.close()
     check("on Home a rank's reward card goes before a badge cutscene from the same run",
           order["cardsWait"] is False and not order["badgeFirst"] and order["badgeAfter"], order)
+def check_b317_supernova(br):
+    """Build 317. "Ensure when reaching supernova rank, the cutscene is sick
+    and the planet looks different ... a burn/scorch mark and it would stay
+    there permanently, even when any other theme is set ... the actual
+    supernova would happen and it would be permanent like a scar after the
+    explosion and then the effects coming off it in the main menu could be
+    pulsing black fragments ... if you change the theme, it would still be
+    there."
+    - Home, once store.supernovaAchieved: the scar (.cosmic-scar) on the
+      planet under three different accents, absent without it; drawn art,
+      fragments that loop (infinite, running, moving), right after the
+      plasma with no z-index so the tap box and the bubbles still paint
+      over it; still under Reduce motion with the scar kept.
+    - An account that already had Supernova gets it on Home at once, with
+      no cutscene replayed.
+    - The Supernova cutscene (frame-stepped): swell, detonation (shockwave,
+      debris), the scar revealed and the rings turned orange, then the
+      title - in that order - ~23s in all; it marks the ring tier seen as
+      "supernova" so Home does not draw the rings on again.
+    Written against 1888b11, which has none of it."""
+    print("\n317s. the Supernova scar, and the Supernova cutscene goes off")
+    import json as _json
+    acct = _json.loads(USED_ACCOUNT)
+    acct["supernovaAchieved"] = True
+    seed_sn = _json.dumps(acct).replace("'", "\\'")
+    HOME = """(a) => { if(a !== undefined){ theme.accent = a; applyTheme(); saveTheme(); } showHome();
+      document.querySelectorAll('.rs-spot,.daily-alert,#tour-overlay,.update-banner,.toast').forEach(n => n.remove()); }"""
+    PROBE = """() => { const h = document.querySelector('.panel.home .cosmic-hero-wrap'); if(!h) return { hero: false };
+      const sc = h.querySelector(':scope > .cosmic-scar');
+      if(!sc) return { hero: true, scar: false, accent: document.documentElement.dataset.accent || '' };
+      const kids = [...h.children];
+      const fr = [...sc.querySelectorAll('.csc-frag')];
+      const an = fr.map(f => f.getAnimations()[0]).filter(Boolean);
+      return { hero: true, scar: true, accent: document.documentElement.dataset.accent || '',
+        art: getComputedStyle(sc).getPropertyValue('--scar-burn').indexOf('data:image') >= 0,
+        frags: fr.length, loops: an.filter(a => a.effect.getComputedTiming().iterations === Infinity && a.playState === 'running').length,
+        afterPlasma: kids.indexOf(sc) === kids.indexOf(h.querySelector(':scope > .cosmic-plasma')) + 1,
+        z: getComputedStyle(sc).zIndex, scarred: h.classList.contains('is-scarred'),
+        op: Math.min(...fr.map(f => +getComputedStyle(f).opacity)) }; }"""
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("() => { store.supernovaAchieved = false; saveStore(); }")
+    pg.evaluate(HOME, "titan"); pg.wait_for_timeout(1200)
+    plain = pg.evaluate(PROBE)
+    pg.evaluate("() => { store.supernovaAchieved = true; saveStore(); try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); }catch(e){} }")
+    rows = []
+    for acc in ("titan", "adept", None):
+        pg.evaluate(HOME, acc); pg.wait_for_timeout(1500)
+        rows.append(pg.evaluate(PROBE))
+    check("no scar on a planet that has not reached Supernova", plain.get("hero") and not plain.get("scar"), plain)
+    check("the scar is on Home's planet once Supernova is reached, under three accents",
+          len(rows) == 3 and all(r.get("scar") and r.get("art") for r in rows) and len({r["accent"] for r in rows}) == 3,
+          [(r.get("accent"), r.get("scar"), r.get("art")) for r in rows])
+    r0 = rows[0]
+    check("its fragments loop - infinite and running", r0.get("frags", 0) >= 6 and r0.get("loops") == r0.get("frags"),
+          (r0.get("frags"), r0.get("loops")))
+    # the fragments move: the same fragment, a second apart
+    mv = pg.evaluate("""async () => { const f = document.querySelector('.panel.home .cosmic-scar .csc-frag');
+      const a = getComputedStyle(f).transform; await new Promise(r => setTimeout(r, 900)); return [a, getComputedStyle(f).transform]; }""")
+    check("and drift (a fragment's transform moves)", mv[0] != mv[1], mv)
+    check("layered right after the plasma with no z-index, so the tap box and the bubbles paint over it",
+          r0.get("afterPlasma") and r0.get("z") == "auto" and r0.get("scarred"), (r0.get("afterPlasma"), r0.get("z")))
+    tap = pg.evaluate("""() => { const h = document.querySelector('.panel.home .cosmic-hero-wrap');
+      const s = h.querySelector('.cosmic-hero-main circle[r="52"]'); const r = s.getBoundingClientRect();
+      s.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: r.left + r.width * .7, clientY: r.top + r.height * .7 }));
+      const kids = [...h.children], fx = h.querySelector(':scope > .cosmic-tapfx'), sc = h.querySelector(':scope > .cosmic-scar');
+      return { fx: !!fx, order: fx && sc ? kids.indexOf(fx) > kids.indexOf(sc) : null, z: fx ? getComputedStyle(fx).zIndex : null }; }""")
+    check("tapping the planet: its tap box sits on top of the scar", tap["fx"] and tap["order"] and tap["z"] == "auto", tap)
+    pg.evaluate("() => { theme.reduceMotion = true; applyTheme(); saveTheme(); }")
+    pg.evaluate(HOME); pg.wait_for_timeout(1200)
+    rm = pg.evaluate(PROBE)
+    check("Reduce motion: the scar stays and the fragments are still (and visible)",
+          rm.get("scar") and rm.get("loops") == 0 and rm.get("op", 0) > .5, (rm.get("scar"), rm.get("loops"), rm.get("op")))
+    ctx.close()
+
+    # an account that already had Supernova: the scar on the first Home, no cutscene
+    ctx, pg = booted(br, 834, 1194, seed=seed_sn)
+    pg.evaluate("() => { if(!document.querySelector('.panel.home')) showHome(); }")
+    pg.wait_for_timeout(1500)
+    ex = pg.evaluate("""() => ({ scar: !!document.querySelector('.panel.home .cosmic-hero-wrap > .cosmic-scar'),
+      scene: !!document.getElementById('supernova-cutscene'), pending: !!store.pendingSupernovaCutscene }) """)
+    check("an account that already had Supernova has the scar on Home straight away, and no cutscene replays",
+          ex["scar"] and not ex["scene"] and not ex["pending"], ex)
+    ctx.close()
+
+    # the cutscene, frame-stepped on the page clock
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("() => { store.supernovaAchieved = false; store.mysteryColorsFound = {red:true, orange:true}; saveStore(); try{ localStorage.removeItem('class26e.ringtier.seen'); }catch(e){} theme.accent = 'elite'; applyTheme(); showHome(); }")
+    pg.wait_for_timeout(1200)
+    pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+    pg.evaluate("() => playSupernovaCutscene({ from: 'elite', onDone(){ window.__snDone = Date.now(); } })")
+    marks, at_det, at_set, t0 = {}, None, None, pg.evaluate("() => Date.now()")
+    t = 0.0
+    for i in range(1, 30 * 28):
+        t_ = t; t = i / 30
+        pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
+        pg.evaluate(CUTSPIN_SEEK, t)
+        c = pg.evaluate("() => { const o = document.getElementById('supernova-cutscene'); return o ? o.className : null; }")
+        if c is None:
+            if marks: marks.setdefault("gone", i); break
+            continue
+        for k in ("is-cutspin", "is-cutrest", "sn-swell", "supernova-burst", "sn-detonate", "is-swapped", "sn-scarred", "supernova-settle", "rank-outro"):
+            if k in c.split() and k not in marks:
+                marks[k] = i
+        if "sn-detonate" in c.split() and at_det is None and i - marks["sn-detonate"] >= 6:
+            at_det = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene');
+              const an = el => el ? el.getAnimations().length : 0;
+              return { shock: [...o.querySelectorAll('.sn-shock')].filter(e => an(e)).length,
+                bits: [...o.querySelectorAll('.sn-bit')].filter(e => an(e)).length,
+                shards: o.querySelectorAll('.sn-bit.is-shard').length, dust: an(o.querySelector('.sn-dust')) }; }""")
+        if "supernova-settle" in c.split() and at_set is None and i - marks["supernova-settle"] >= 45:
+            at_set = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene');
+              const sc = o.querySelector('.rank-after .cosmic-scar');
+              const rings = [...o.querySelectorAll('.rank-after .cosmic-orbit-ring')];
+              return { scar: sc ? +getComputedStyle(sc).opacity : null,
+                orange: rings.length && rings.every(r => r.classList.contains('cosmic-orbit-ring-supernova')),
+                stroke: rings[0] ? getComputedStyle(rings[0]).stroke : null }; }""")
+    end = pg.evaluate("() => [window.__snDone || null, store.supernovaAchieved, (() => { try{ return localStorage.getItem('class26e.ringtier.seen'); }catch(e){ return 'x'; } })()]")
+    ctx.close()
+    order = ["is-cutrest", "sn-swell", "sn-detonate", "is-swapped", "sn-scarred", "supernova-settle", "rank-outro"]
+    seq = [marks.get(k) for k in order]
+    check("the Supernova cutscene: whirl, swell, detonation, the swap, the scar, then the title - in order",
+          all(v is not None for v in seq) and seq == sorted(seq) and marks.get("supernova-burst") == marks.get("sn-detonate"), marks)
+    sw = (marks.get("sn-detonate") or 0) - (marks.get("sn-swell") or 0)
+    check("it swells for ~1.8s before it goes", 45 <= sw <= 64, sw)
+    check("the detonation throws a shockwave and debris (black shards with sparks) and raises dust",
+          bool(at_det) and at_det["shock"] >= 1 and at_det["bits"] >= 16 and at_det["shards"] >= 10 and at_det["dust"] >= 1, at_det)
+    check("by the title the new planet is scarred and its rings are orange",
+          bool(at_set) and (at_set["scar"] or 0) > .95 and at_set["orange"], at_set)
+    total = (marks.get("gone") or 0) / 30
+    check("about the old length - ~21-25s from the first frame to the hand-back", 20 <= total <= 25.5, round(total, 1))
+    check("it ends with Supernova reached and the ring tier seen as 'supernova' (Home will not draw the rings on again)",
+          end[1] is True and end[2] == "supernova", end)
+
+
 SPECIAL_CHARS = ["lunar", "solar", "tempest", "frost", "oracle", "inferno",
                  "umbra", "singularity", "genesis", "voidwalker",
                  "astral", "celestial", "zenith"]
@@ -14805,6 +14939,7 @@ def main():
             check_b317_hometaps(br)
             check_b317_followglide(br)
             check_b317_rankup(br)
+            check_b317_supernova(br)
         finally:
             br.close()
     SERVER.shutdown()

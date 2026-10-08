@@ -117,6 +117,16 @@ KNOWN = {
     "char-emote-spin": "a 100's gold rays: a 30deg repeating conic, so 30deg lands on the same picture",
     # Build 314: the ultimates a smidge calmer, Celestial redrawn.
     "cx-zb4-dust": "Zenith's stardust, softer - each mote fades to nothing at both ends",
+    # Build 317: loops with a cubic-bezier() curve were never read (its own
+    # commas split the shorthand); found once top_level() split it right.
+    # Each was checked by hand: invisible at both ends of its cycle.
+    "bl-out": "a ring that grows and fades to nothing at both ends",
+    "bn-fly": "a mote flung out, invisible at both ends",
+    "bn-shock": "a shockwave that fades to nothing at both ends",
+    "rk-nova-frag": "a Supernova emblem fragment flung out, invisible at both ends",
+    "rk-nova-shock": "the Supernova emblem's shockwave, invisible at both ends",
+    "xp-glide": "a band of light from off one end of the lit bar to off the other, resting between",
+    "csc-drift": "a Supernova scar fragment drifting off the burn - fades to nothing at both ends",
 }
 s = open(SRC, encoding="utf-8").read()
 kf = {}
@@ -126,8 +136,20 @@ for m in re.finditer(r"@keyframes\s+([\w-]+)\s*\{", s):
         depth += {"{": 1, "}": -1}.get(s[j], 0); j += 1
     kf.setdefault(m.group(1), s[i:j - 1])
 loops = set()
+def top_level(v):
+    """Split a shorthand on its top-level commas only: a cubic-bezier()'s
+    own commas used to cut a layer in two, and a loop with an eased curve
+    went unread."""
+    out, depth, cur = [], 0, ""
+    for ch in v:
+        depth += {"(": 1, ")": -1}.get(ch, 0)
+        if ch == "," and depth == 0:
+            out.append(cur); cur = ""
+        else:
+            cur += ch
+    return out + [cur]
 for m in re.finditer(r"animation(?:-name)?\s*:\s*([^;}{]+)", s):
-    for part in m.group(1).split(","):
+    for part in top_level(m.group(1)):
         if "infinite" in part and "alternate" not in part:
             loops.update(t for t in part.split() if t in kf)
 def ends(body):

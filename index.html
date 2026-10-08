@@ -11057,6 +11057,77 @@
     100%{ transform:rotate(-360deg) translate(-4%, 3%) scale(1.1); }
   }
   [data-reduce-motion="true"] .cosmic-plasma .cosmic-smoke{ animation:none; }
+  /* ---- THE SUPERNOVA SCAR (build 317) ----
+     "the actual supernova would happen and it would be permanent like a
+     scar after the explosion and then the effects coming off it in the
+     main menu could be pulsing black fragments ... if you change the
+     theme, it would still be there." Once store.supernovaAchieved, every
+     hero (buildCosmicHero -> buildCosmicScar) carries a burn across the
+     lower right of the planet's face: a scorched halo, black burn with
+     ember edges, three glowing fissures, a heat shimmer off the limb, and
+     black shards with ember rims pulsing and drifting off it on a
+     seamless loop. Its colours are its own - black and ember - so it is
+     the same scar on every theme and accent.
+     - The box is the sphere's own square (centre 180,150, radius 52 in the
+       0 -12 360 342 viewBox), like .cosmic-plasma. NO z-index, and it sits
+       right after the plasma in the hero: the planet's tap box
+       (.cosmic-tapfx, added before the rank bubbles) and the bubbles paint
+       over it, as they paint over the planet. The plasma (z-index 1) would
+       wash its light pools over the burn, so a scarred hero (.is-scarred)
+       masks the plasma out where the burn is - a CSS gradient mask, not a
+       filter.
+     - Transform and opacity only, no filter (SVG filters are what break on
+       real iOS). The fragments' drift fades to nothing at both ends, so
+       the loop has no seam; the pulses alternate.
+     - Reduce motion: the scar stays, and every fragment holds still a
+       third of the way along its path (its base transform). */
+  .cosmic-scar{ position:absolute; left:50%; top:47.368%; width:28.889%; aspect-ratio:1; translate:-50% -50%; pointer-events:none; }
+  .cosmic-scar i{ position:absolute; display:block; pointer-events:none; }
+  .csc-disc{ position:absolute; inset:0; border-radius:50%; overflow:hidden; clip-path:circle(50% at 50% 50%); }
+  /* the burn and its ember are drawn once on a canvas (cosmicScarURLs):
+     the scorched halo and black burn, static; the ember rim, crust and
+     fissures over it, pulsing. Without a canvas, a soft dark burn. */
+  .csc-burn, .csc-ember{ inset:0; background-size:100% 100%; background-repeat:no-repeat; }
+  .csc-burn{ background-image:var(--scar-burn, radial-gradient(ellipse 28% 19% at 65% 63%, #070304 0 50%, rgba(16,6,4,.5) 75%, transparent 100%)); }
+  .csc-ember{ background-image:var(--scar-ember, none); animation:csc-ember 4.8s ease-in-out infinite alternate; }
+  /* the fresh burn, still hot: unseen on Home; the cutscene cools it */
+  .csc-glow{ left:30%; top:38%; width:68%; height:50%; rotate:-24deg; opacity:0;
+    background:radial-gradient(ellipse 50% 50% at 48% 50%, rgba(255,226,170,.95) 0, rgba(255,140,60,.7) 38%, rgba(255,80,24,0) 74%); }
+  /* the heat shimmer off the limb, outside the planet */
+  .csc-heat{ left:84%; top:70%; width:62%; height:44%; translate:-50% -50%; border-radius:50%;
+    background:radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255,128,52,.17) 0, rgba(255,92,30,.07) 50%, rgba(255,92,30,0) 72%);
+    animation:csc-heat 2.6s ease-in-out infinite alternate; }
+  .csc-heat.is-2{ left:70%; top:86%; width:46%; height:34%; animation-duration:3.3s; animation-delay:-1.4s; }
+  /* the fragments: a black shard with an ember rim (::after) in a pulsing
+     ember glow (::before), drifting off the scar and fading at both ends */
+  .csc-frags{ position:absolute; inset:0; }
+  .cosmic-scar .csc-frag{ left:var(--x); top:var(--y); width:var(--s); aspect-ratio:1;
+    margin:calc(var(--s) * -.5) 0 0 calc(var(--s) * -.5);
+    opacity:.9; transform:translate(calc(var(--dx) * .32), calc(var(--dy) * .32)) rotate(calc(var(--r) * .32));
+    animation:csc-drift var(--t) cubic-bezier(.3,.1,.5,1) var(--d) infinite; }
+  .csc-frag::before, .csc-frag::after{ content:""; position:absolute; }
+  .csc-frag::before{ inset:-110%; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,140,58,.78) 0, rgba(255,86,26,.3) 34%, rgba(255,86,26,0) 64%);
+    animation:csc-pulse 1.7s ease-in-out var(--d) infinite alternate; }
+  .csc-frag::after{ inset:0; background:linear-gradient(135deg, #FFC27A 0 9%, #FF6A26 17%, #3A120A 31%, #0A0405 58%, #020102 100%);
+    clip-path:polygon(50% 0, 100% 38%, 78% 100%, 12% 82%, 0 30%); }
+  .csc-frag:nth-child(3n+2)::after{ clip-path:polygon(20% 0, 100% 22%, 70% 100%, 0 68%); }
+  .csc-frag:nth-child(3n)::after{ clip-path:polygon(0 18%, 62% 0, 100% 60%, 38% 100%); }
+  @keyframes csc-drift{
+    0%{ opacity:0; transform:translate(0, 0) rotate(0deg) scale(.55); }
+    14%{ opacity:1; transform:translate(calc(var(--dx) * .1), calc(var(--dy) * .1)) rotate(calc(var(--r) * .12)) scale(1); }
+    68%{ opacity:.85; }
+    100%{ opacity:0; transform:translate(var(--dx), var(--dy)) rotate(var(--r)) scale(.6); }
+  }
+  @keyframes csc-pulse{ from{ opacity:.3; transform:scale(.8); } to{ opacity:1; transform:scale(1.15); } }
+  @keyframes csc-ember{ from{ opacity:.72; } to{ opacity:1; } }
+  @keyframes csc-heat{ from{ opacity:.55; transform:scale(1, .94) skewX(-4deg) translateY(2%); } to{ opacity:1; transform:scale(1.08, 1.02) skewX(4deg) translateY(-4%); } }
+  /* the plasma's light never washes over the burn */
+  .cosmic-hero-wrap.is-scarred > .cosmic-plasma{
+    -webkit-mask-image:radial-gradient(ellipse 34% 28% at 65% 63%, transparent 0 55%, #000 100%);
+    mask-image:radial-gradient(ellipse 34% 28% at 65% 63%, transparent 0 55%, #000 100%); }
+  @media (prefers-reduced-motion:reduce){ .cosmic-scar, .cosmic-scar *, .cosmic-scar *::before{ animation:none !important; } }
+  [data-reduce-motion="true"] .cosmic-scar *, [data-reduce-motion="true"] .cosmic-scar *::before{ animation:none !important; }
   /* ---- DEPTH ON HOME'S PLANET SYSTEM (build 304) ----
      One light, from the upper left, everywhere. The planet: a terminator
      - the night side - falling away to the lower right, a thin bright
@@ -11548,6 +11619,68 @@
   #supernova-cutscene.tier-cutscene.rank-fadeout :is(.supernova-stage, .rank-tint){ opacity:0; transition:opacity .8s ease; }
   .tier-cutscene .supernova-stage, .tier-cutscene .supernova-kicker, .tier-cutscene .supernova-title, .tier-cutscene .supernova-subtitle{ z-index:1; }
   .tier-cutscene .supernova-flash{ z-index:2; }
+  /* ---- THE SUPERNOVA GOES OFF (build 317) ----
+     "the actual supernova would happen and it would be permanent like a
+     scar after the explosion". Supernova's own climax, after the approved
+     whirl / light / stop / half-second (playRankUpScene, spec.times.swell):
+     - sn-swell (1.8s): the planet swells (.rank-spin, `scale`) and heats
+       white from its core (.sn-heat) with a tremor that grows (a Web
+       Animation of `translate` on .rank-before).
+     - sn-detonate: the white-hot flash out of the planet (the shared
+       .supernova-flash), two shockwave rings racing out (.sn-shock), the
+       stage shaken, black shards with ember rims and ember sparks flung
+       out (.sn-bit), and a ring of dust (.sn-dust, the planet's smoke
+       texture as its mask) that blooms and clears.
+     - sn-scarred: the new planet is revealed through the dust SCARRED -
+       the scar Home will carry from now on (attachCosmicScar), fading in
+       hot (.csc-glow) and cooling - and its rings turn orange (the real
+       .cosmic-orbit-ring-supernova class, eased in).
+     Everything is on .sn-fx, a box laid over the planet in overlay
+     pixels, above the flash (z 3) so the black reads against the white.
+     Transform and opacity only, no filter. */
+  .sn-fx{ position:absolute; pointer-events:none; z-index:3; }
+  .sn-fx > *, .sn-debris > i{ position:absolute; pointer-events:none; }
+  .sn-fx > :not(.sn-debris){ left:50%; top:50%; translate:-50% -50%; border-radius:50%; opacity:0; }
+  .sn-fx .sn-heat{ width:100%; height:100%;
+    background:radial-gradient(circle, #FFFFFF 0 18%, #FFF1D2 34%, rgba(255,196,120,.82) 50%, rgba(255,120,60,.32) 63%, rgba(255,90,40,0) 74%); }
+  #supernova-cutscene.sn-swell .sn-heat{ animation:sn-heat var(--sn-swell, 1.8s) cubic-bezier(.5,0,.8,.3) both; }
+  @keyframes sn-heat{ 0%{ opacity:0; transform:scale(.6); } 45%{ opacity:.4; transform:scale(.95); } 80%{ opacity:.78; transform:scale(1.12); } 100%{ opacity:1; transform:scale(1.32); } }
+  #supernova-cutscene.sn-swell .rank-spin{ scale:1.14; transition:scale var(--sn-swell, 1.8s) cubic-bezier(.55,0,.85,.35); }
+  #supernova-cutscene.sn-detonate .sn-heat{ animation:sn-heat-out .45s ease-out both; }
+  @keyframes sn-heat-out{ from{ opacity:1; transform:scale(1.32); } to{ opacity:0; transform:scale(2.2); } }
+  .sn-fx .sn-shock{ width:100%; height:100%; box-sizing:border-box; border:3px solid rgba(255,248,236,.95);
+    box-shadow:0 0 22px 6px rgba(255,176,96,.55), inset 0 0 14px 2px rgba(255,206,150,.45); }
+  .sn-fx .sn-shock.is-2{ border:9px solid rgba(255,122,52,.42); box-shadow:0 0 30px 10px rgba(255,92,32,.25); }
+  #supernova-cutscene.sn-detonate .sn-shock{ animation:sn-shock 1.15s cubic-bezier(.1,.72,.25,1) both; }
+  #supernova-cutscene.sn-detonate .sn-shock.is-2{ animation-duration:1.7s; animation-delay:.12s; }
+  @keyframes sn-shock{ 0%{ opacity:1; transform:scale(.9); } 70%{ opacity:.55; } 100%{ opacity:0; transform:scale(11); } }
+  .sn-fx .sn-dust{ width:270%; height:270%;
+    background:radial-gradient(circle, rgba(24,11,8,0) 0 16%, rgba(40,18,11,.78) 30%, rgba(30,14,9,.6) 44%, rgba(20,9,6,.28) 56%, rgba(20,9,6,0) 68%);
+    -webkit-mask-image:var(--smoke, none); mask-image:var(--smoke, none); -webkit-mask-size:100% 100%; mask-size:100% 100%; }
+  #supernova-cutscene.sn-detonate .sn-dust{ animation:sn-dust 3.2s cubic-bezier(.2,.6,.3,1) .35s both; }
+  @keyframes sn-dust{ 0%{ opacity:0; transform:scale(.45) rotate(0deg); } 22%{ opacity:.95; transform:scale(1) rotate(12deg); } 100%{ opacity:0; transform:scale(1.9) rotate(44deg); } }
+  .sn-debris{ inset:0; }
+  .sn-debris > i{ left:50%; top:50%; width:var(--s); aspect-ratio:1; margin:calc(var(--s) * -.5) 0 0 calc(var(--s) * -.5); opacity:0; }
+  .sn-bit.is-shard::before, .sn-bit.is-shard::after{ content:""; position:absolute; }
+  .sn-bit.is-shard::before{ inset:-90%; border-radius:50%; background:radial-gradient(circle, rgba(255,140,58,.7) 0, rgba(255,86,26,.25) 36%, rgba(255,86,26,0) 64%); }
+  .sn-bit.is-shard::after{ inset:0; background:linear-gradient(135deg, #FFD08A 0 8%, #FF6A26 17%, #3A120A 31%, #0A0405 58%, #020102 100%);
+    clip-path:polygon(50% 0, 100% 38%, 78% 100%, 12% 82%, 0 30%); }
+  .sn-bit.is-shard:nth-child(3n+2)::after{ clip-path:polygon(20% 0, 100% 22%, 70% 100%, 0 68%); }
+  .sn-bit.is-shard:nth-child(3n)::after{ clip-path:polygon(0 18%, 62% 0, 100% 60%, 38% 100%); }
+  .sn-bit.is-spark{ border-radius:50%; background:radial-gradient(circle, #FFF8E0 0 18%, #FFB060 42%, rgba(255,90,30,0) 70%); }
+  #supernova-cutscene.sn-detonate .sn-bit{ animation:sn-bit var(--t) cubic-bezier(.08,.72,.2,1) var(--dl, 0s) both; }
+  @keyframes sn-bit{
+    0%{ opacity:0; transform:rotate(var(--a)) translateX(0) rotate(0deg) scale(.5); }
+    5%{ opacity:1; }
+    60%{ opacity:.9; }
+    100%{ opacity:0; transform:rotate(var(--a)) translateX(var(--tx)) rotate(var(--sp)) scale(1); }
+  }
+  /* the scar comes up through the dust, hot, and cools */
+  .tier-cutscene .rank-after .cosmic-scar{ opacity:0; transition:opacity 2s ease; }
+  #supernova-cutscene.sn-scarred .rank-after .cosmic-scar{ opacity:1; }
+  #supernova-cutscene.sn-scarred .rank-after .csc-glow{ animation:csc-cool 4.2s cubic-bezier(.3,.6,.4,1) both; }
+  @keyframes csc-cool{ from{ opacity:.95; } to{ opacity:0; } }
+  .tier-cutscene .rank-after .cosmic-orbit-ring{ transition:stroke 2.4s ease, stroke-width 2.4s ease, filter 2.4s ease; }
   /* The end: no words, the dark stays, every flare in view. */
   #supernova-cutscene.tier-cutscene.rank-outro .supernova-title,
   #supernova-cutscene.tier-cutscene.rank-outro .supernova-subtitle,
@@ -62448,6 +62581,115 @@ function cosmicSmokeURL(){
   }catch(e){ cosmicSmokeCache = ""; }
   return cosmicSmokeCache;
 }
+/* THE SCAR, DRAWN ONCE (build 317). Gradients alone made the burn a
+   cluster of overlapping circles and its fissures three straight lines
+   meeting at a point - a clock face. Drawn on a canvas instead, seeded so
+   it is the same scar every launch, in the sphere's own box (the disc is
+   the circle of radius .5 about the middle; the burn is a tilted blob at
+   .65 .63 whose edge is pushed in and out by fractal noise):
+   - burn: the scorched halo and the black burn, alpha only where they
+     are. Static.
+   - ember: the glowing rim along the burn's edge (patchy, hottest where
+     the noise says), crust specks glowing inside the burn, and three
+     jagged fissures with branches running out across the face. It pulses
+     (opacity) on its own layer.
+   Pixels, not an SVG filter - the same choice as cosmicSmokeURL. */
+let cosmicScarCache = null;
+function cosmicScarURLs(){
+  if(cosmicScarCache !== null) return cosmicScarCache;
+  cosmicScarCache = false;
+  try{
+    const N = 320;
+    const mk = () => { const c = document.createElement("canvas"); c.width = N; c.height = N; return c; };
+    const cb = mk(), ce = mk(), gb = cb.getContext("2d"), ge = ce.getContext("2d");
+    if(!gb || !ge) return cosmicScarCache;
+    let seed = 9001;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const G = 32, grid = [];
+    for(let i = 0; i < G * G; i++) grid.push(rnd());
+    const at = (x, y) => grid[((y % G + G) % G) * G + ((x % G + G) % G)];
+    const sm = t => t * t * (3 - 2 * t);
+    const cl = t => t < 0 ? 0 : t > 1 ? 1 : t;
+    const noise = (x, y) => {
+      const x0 = Math.floor(x), y0 = Math.floor(y), fx = sm(x - x0), fy = sm(y - y0);
+      const a = at(x0, y0), b = at(x0 + 1, y0), c = at(x0, y0 + 1), d = at(x0 + 1, y0 + 1);
+      return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+    };
+    const fbm = (x, y, oct) => { let v = 0, amp = .5, f = 1; for(let o = 0; o < oct; o++){ v += amp * noise(x * f, y * f); amp *= .5; f *= 2; } return v / (1 - Math.pow(.5, oct)); };
+    const CX = .65, CY = .63, A = .285, B = .19, ROT = 24 * Math.PI / 180, cr = Math.cos(ROT), sr = Math.sin(ROT);
+    /* the burn's distance field: < 1 inside, the edge pushed about by noise */
+    const field = (u, v) => {
+      const dx = u - CX, dy = v - CY;
+      const x = dx * cr - dy * sr, y = dx * sr + dy * cr;
+      const d = Math.sqrt((x / A) * (x / A) + (y / B) * (y / B));
+      return d - .55 * (fbm(u * 6 + 11, v * 6 + 3, 4) - .5) - .22 * (fbm(u * 15 + 5, v * 15 + 9, 3) - .5);
+    };
+    const ib = gb.createImageData(N, N), ie = ge.createImageData(N, N);
+    for(let y = 0; y < N; y++) for(let x = 0; x < N; x++){
+      const u = (x + .5) / N, v = (y + .5) / N;
+      const rr = Math.sqrt((u - .5) * (u - .5) + (v - .5) * (v - .5));
+      const disc = cl((.5 - rr) * N);
+      if(disc <= 0) continue;
+      const f = field(u, v), n = fbm(u * 9 + 3, v * 9 + 7, 3);
+      const k = (y * N + x) * 4;
+      /* scorched halo, then the burn over it */
+      const halo = .62 * (1 - sm(cl((f - 1) / 1.05))) * (.72 + .28 * n);
+      const burn = sm(cl((1.04 - f) / .1));
+      const a = Math.max(halo, burn);
+      const t = burn / (a || 1);
+      ib.data[k] = Math.round(22 * (1 - t) + (6 + 10 * n) * t);
+      ib.data[k + 1] = Math.round(9 * (1 - t) + (3 + 4 * n) * t);
+      ib.data[k + 2] = Math.round(5 * (1 - t) + 3 * t);
+      ib.data[k + 3] = Math.round(a * disc * 255);
+      /* the ember: a patchy rim, a soft glow beyond it, crust specks inside */
+      const rim = Math.exp(-Math.pow((f - .99) / .075, 2)) * (.35 + .65 * sm(cl((n - .3) / .5)));
+      const glow = .32 * Math.exp(-Math.pow((f - 1.1) / .2, 2));
+      const crust = f < .82 ? sm(cl((fbm(u * 26 + 1, v * 26 + 4, 3) - .64) / .14)) * .7 * (1 - sm(cl((f - .6) / .22))) : 0;
+      const e = Math.min(1, rim + glow + crust);
+      const hot = cl(rim * 1.2 + crust * .6);
+      ie.data[k] = 255;
+      ie.data[k + 1] = Math.round(78 + 132 * hot);
+      ie.data[k + 2] = Math.round(22 + 98 * hot * hot);
+      ie.data[k + 3] = Math.round(e * disc * 255);
+    }
+    gb.putImageData(ib, 0, 0);
+    ge.putImageData(ie, 0, 0);
+    /* three fissures out of the burn's edge across the face, each a jagged
+       walk with a branch, tapering, with a canvas glow (rasterised once) */
+    const edgePoint = ang => { let r = .05; while(r < .6){ const u = CX + r * Math.cos(ang), v = CY + r * Math.sin(ang); if(field(u, v) >= .96) return [u, v]; r += .004; } return [CX, CY]; };
+    const crack = (ang, len, w0) => {
+      let [u, v] = edgePoint(ang), a = ang;
+      const pts = [[u, v]];
+      const steps = 9;
+      for(let s = 0; s < steps; s++){ a += (rnd() - .5) * .9; u += Math.cos(a) * len / steps; v += Math.sin(a) * len / steps; pts.push([u, v]); }
+      return { pts, w0 };
+    };
+    const draw = ({ pts, w0 }) => {
+      for(let s = 1; s < pts.length; s++){
+        const t = s / pts.length;
+        ge.beginPath(); ge.moveTo(pts[s - 1][0] * N, pts[s - 1][1] * N); ge.lineTo(pts[s][0] * N, pts[s][1] * N);
+        ge.lineWidth = Math.max(.6, w0 * (1 - t * .85)); ge.strokeStyle = "rgba(255," + Math.round(196 - 90 * t) + "," + Math.round(120 - 80 * t) + "," + (.95 - .55 * t).toFixed(2) + ")";
+        ge.stroke();
+      }
+    };
+    ge.save();
+    ge.beginPath(); ge.arc(N / 2, N / 2, N / 2 - .5, 0, Math.PI * 2); ge.clip();
+    ge.lineCap = "round"; ge.lineJoin = "round";
+    ge.shadowColor = "rgba(255,110,40,.9)"; ge.shadowBlur = 5;
+    [[Math.PI * 1.08, .3, 3.2], [Math.PI * 1.36, .22, 2.6], [Math.PI * .86, .17, 2.2]].forEach(([ang, len, w]) => {
+      const c = crack(ang, len, w);
+      draw(c);
+      const mid = c.pts[Math.floor(c.pts.length / 2)];
+      let a = ang + (rnd() < .5 ? -.8 : .8), u = mid[0], v = mid[1];
+      const br = [[u, v]];
+      for(let s = 0; s < 4; s++){ a += (rnd() - .5) * .8; u += Math.cos(a) * len * .09; v += Math.sin(a) * len * .09; br.push([u, v]); }
+      draw({ pts: br, w0: w * .55 });
+    });
+    ge.restore();
+    cosmicScarCache = { burn: cb.toDataURL("image/png"), ember: ce.toDataURL("image/png") };
+  }catch(e){ cosmicScarCache = false; }
+  return cosmicScarCache;
+}
 let cosmicDepthSeq = 0;
 /* Home's outer orbit (build 313): the outer rank bubbles sit on it by
    their centres and the outer secret flares ride it. 140, not the drawn
@@ -63173,6 +63415,10 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     });
   }
   wrap.appendChild(plasma);
+  /* THE SUPERNOVA SCAR (build 317), permanent once reached, on every
+     theme: right after the plasma, so everything that already paints over
+     the planet (the sixth flare, the tap box, the bubbles) still does. */
+  if(typeof store !== "undefined" && store && store.supernovaAchieved) attachCosmicScar(wrap);
   /* above the plasma, so the sixth flare crosses in front of the planet */
   if(coreFlare) wrap.appendChild(coreFlare);
   /* The planet's own shadow and edge light (build 304) came off in build
@@ -63391,6 +63637,51 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   });
 
   return wrap;
+}
+
+/* THE SUPERNOVA SCAR (build 317) - see the CSS block of the same name.
+   Its fragments, from one table, in the sphere's own box: where each
+   leaves the burn (x, y %), its size (% of the sphere), the way it drifts
+   (degrees, 0 = right, clockwise) and how far (% of the sphere), its
+   tumble, its period and its place in the loop. Uneven on purpose, so
+   eight never read as a pattern; every one stays inside the inner ring. */
+const SCAR_FRAGS = [
+  [84, 57, 10, -15, 30, 160, 8.2, 0], [86, 69, 8, 20, 33, -210, 9.6, -3.1],
+  [77, 78, 9.5, 55, 27, 190, 7.4, -5.6], [65, 83, 7.5, 85, 25, -150, 10.4, -1.7],
+  [88, 61, 7, 4, 34, 240, 11.2, -7.9], [72, 73, 9, 40, 31, -180, 8.8, -4.3],
+  [80, 49, 7.5, -36, 27, 200, 9.9, -6.8], [57, 80, 7, 100, 23, -230, 7.9, -2.6]
+];
+function buildCosmicScar(){
+  const sc = document.createElement("div");
+  sc.className = "cosmic-scar";
+  sc.setAttribute("aria-hidden", "true");
+  const frags = SCAR_FRAGS.map(([x, y, s, a, dist, r, t, d]) => {
+    const rad = a * Math.PI / 180;
+    /* the drift in the fragment's own size, since a translate's % is */
+    const dx = dist * Math.cos(rad) / s * 100, dy = dist * Math.sin(rad) / s * 100;
+    return '<i class="csc-frag" style="--x:' + x + '%;--y:' + y + '%;--s:' + s + '%;--dx:' + dx.toFixed(1) + '%;--dy:' + dy.toFixed(1) +
+      '%;--r:' + r + 'deg;--t:' + t + 's;--d:' + d + 's"></i>';
+  }).join("");
+  const art = cosmicScarURLs();
+  if(art){ sc.style.setProperty("--scar-burn", "url(" + art.burn + ")"); sc.style.setProperty("--scar-ember", "url(" + art.ember + ")"); }
+  sc.innerHTML = '<div class="csc-disc"><i class="csc-burn"></i><i class="csc-ember"></i>' +
+    '<i class="csc-glow"></i></div>' +
+    '<i class="csc-heat"></i><i class="csc-heat is-2"></i><div class="csc-frags">' + frags + '</div>';
+  return sc;
+}
+/* Into a built hero, once, right after the plasma - see buildCosmicHero.
+   The planet's DOM is otherwise untouched; the hero only gains
+   .is-scarred, which masks the plasma's light off the burn. */
+function attachCosmicScar(hero){
+  if(!hero) return null;
+  const had = hero.querySelector(":scope > .cosmic-scar");
+  if(had) return had;
+  const sc = buildCosmicScar();
+  const plasma = hero.querySelector(":scope > .cosmic-plasma");
+  hero.insertBefore(sc, plasma ? plasma.nextSibling :
+    hero.querySelector(":scope > .cosmic-core-orbit, :scope > .cosmic-tapfx, :scope > .cosmic-icon-badge, :scope > .rank-orbit"));
+  hero.classList.add("is-scarred");
+  return sc;
 }
 
 function showWelcome(){
@@ -64998,6 +65289,10 @@ function playRankUpScene(tierKey, opts, spec){
     after.appendChild(heroAfter);
   }catch(e){}
   document.documentElement.dataset.accent = realAccent;
+  /* SUPERNOVA'S PLANET IS SCARRED (build 317): the scar Home carries from
+     now on is on the new planet from the start, hidden until the dust of
+     the blast clears (sn-scarred). */
+  if(spec.times.swell && heroAfter) attachCosmicScar(heroAfter);
   const orbitBefore = rankOrbitFlares(heroBefore);
   const orbitAfter = rankOrbitFlares(heroAfter);
   stageWrap.append(spin, after);
@@ -65145,7 +65440,12 @@ function playRankUpScene(tierKey, opts, spec){
     burstArmed = true;
     lightFully();
     overlay.classList.add("is-cutrest");
-    const b = (spec.times.pause == null ? RANK_CUTSPIN_PAUSE_MS : spec.times.pause);
+    const p0 = (spec.times.pause == null ? RANK_CUTSPIN_PAUSE_MS : spec.times.pause);
+    /* SUPERNOVA SWELLS FIRST (build 317): the planet heats and shakes for
+       SW before it goes; every beat after it moves back by the same. */
+    const SW = spec.times.swell || 0;
+    const b = p0 + SW;
+    if(SW) at(p0, snSwell);
     at(b, () => {
       /* THE FLASH IS A CIRCLE FROM THE PLANET (build 317). It was the
          whole overlay with border-radius:50% - a tall ellipse, so its
@@ -65154,13 +65454,12 @@ function playRankUpScene(tierKey, opts, spec){
          grows as a disc out of the planet and its keyframes (to 5.5x)
          still flood every corner. */
       try{
-        const m = (heroBefore && heroBefore.querySelector(".cosmic-hero-main")) || stageWrap;
-        const r = m.getBoundingClientRect(), o = overlay.getBoundingClientRect();
-        const cx = r.left + r.width / 2 - o.left, cy = r.top + r.height * (m === stageWrap ? .5 : 162 / 342) - o.top;
+        const pl = planetBox(), o = overlay.getBoundingClientRect();
         const sz = Math.max(o.width, o.height);
-        Object.assign(flash.style, { inset: "auto", left: (cx - sz / 2) + "px", top: (cy - sz / 2) + "px", width: sz + "px", height: sz + "px" });
+        Object.assign(flash.style, { inset: "auto", left: (pl.cx - sz / 2) + "px", top: (pl.cy - sz / 2) + "px", width: sz + "px", height: sz + "px" });
       }catch(e){}
       overlay.classList.add("supernova-burst");
+      if(SW) snDetonate();
     });
     /* Under the peak of the flash (35% of its 2.6s). */
     at(b + 850, () => {
@@ -65168,10 +65467,85 @@ function playRankUpScene(tierKey, opts, spec){
       overlay.dataset.accent = tierKey;
       setNewTheme();
     });
+    /* the dust clears on the scar, and the rings turn orange */
+    if(SW) at(b + 1300, () => {
+      overlay.classList.add("sn-scarred");
+      if(heroAfter) heroAfter.querySelectorAll(".cosmic-orbit-ring").forEach(c => c.classList.add("cosmic-orbit-ring-supernova"));
+    });
     at(b + (T.settle - T.burst), () => overlay.classList.add("supernova-settle"));
     at(b + (T.outro - T.burst), () => { outro = true; overlay.classList.add("rank-outro"); });
     at(b + (T.outro - T.burst) + T.hold - RANK_FADEOUT_MS, () => overlay.classList.add("rank-fadeout"));
     at(b + (T.outro - T.burst) + T.hold, finish);
+  };
+  /* The planet's centre and size in the overlay's pixels, as drawn now. */
+  const planetBox = () => {
+    const m = (heroBefore && heroBefore.querySelector(".cosmic-hero-main")) || stageWrap;
+    const r = m.getBoundingClientRect(), o = overlay.getBoundingClientRect();
+    const own = m !== stageWrap;
+    return { cx: r.left + r.width / 2 - o.left, cy: r.top + r.height * (own ? 162 / 342 : .5) - o.top, d: r.width * (own ? 104 / 360 : .3) };
+  };
+  /* THE SUPERNOVA'S OWN LAYERS (build 317) - see "THE SUPERNOVA GOES OFF"
+     in the CSS. Laid over the planet once it has stopped (the zoom is
+     long over by then, and the swell scales about the planet's centre,
+     so the box stays true). */
+  let snFx = null;
+  const snSwell = () => {
+    const sw = spec.times.swell;
+    overlay.style.setProperty("--sn-swell", sw + "ms");
+    try{
+      const pl = planetBox();
+      snFx = document.createElement("div");
+      snFx.className = "sn-fx"; snFx.setAttribute("aria-hidden", "true");
+      Object.assign(snFx.style, { left: (pl.cx - pl.d / 2) + "px", top: (pl.cy - pl.d / 2) + "px", width: pl.d + "px", height: pl.d + "px" });
+      const smoke = cosmicSmokeURL();
+      if(smoke) snFx.style.setProperty("--smoke", "url(" + smoke + ")");
+      let bits = "";
+      /* black shards with ember rims, and ember sparks that fly further:
+         spread round the whole circle with a jitter, seeded so every
+         Supernova is the same explosion */
+      let sd = 4242;
+      const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+      for(let i = 0; i < 26; i++){
+        const spark = i % 5 === 1 || i % 5 === 3;
+        const a = (i / 26) * 360 + (rnd() - .5) * 24;
+        const s = spark ? 5 + rnd() * 4 : 9 + rnd() * 9;
+        const dist = spark ? 2.4 + rnd() * 2.6 : 1.3 + rnd() * 2.2;
+        bits += '<i class="sn-bit ' + (spark ? "is-spark" : "is-shard") + '" style="--a:' + a.toFixed(1) + 'deg;--s:' + s.toFixed(1) +
+          '%;--tx:' + (dist / s * 1e4).toFixed(0) + '%;--sp:' + ((rnd() - .5) * 900).toFixed(0) + 'deg;--t:' + (1.5 + rnd() * 1.2).toFixed(2) +
+          's;--dl:' + (rnd() * .08).toFixed(3) + 's"></i>';
+      }
+      snFx.innerHTML = '<i class="sn-dust"></i><i class="sn-heat"></i><i class="sn-shock"></i><i class="sn-shock is-2"></i><div class="sn-debris">' + bits + '</div>';
+      overlay.appendChild(snFx);
+      /* the swell about the planet's own centre */
+      const sr = spin.getBoundingClientRect(), o = overlay.getBoundingClientRect();
+      if(sr.width && sr.height) spin.style.transformOrigin = ((pl.cx + o.left - sr.left) / sr.width * 100).toFixed(2) + "% " + ((pl.cy + o.top - sr.top) / sr.height * 100).toFixed(2) + "%";
+    }catch(e){}
+    overlay.classList.add("sn-swell");
+    /* the tremor: a shake that grows the whole way to the blast */
+    if(!theme.reduceMotion && before.animate){
+      const fr = [], N = 28;
+      let sd = 77;
+      const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647 - .5; };
+      for(let i = 0; i <= N; i++){
+        const amp = i === 0 || i === N ? 0 : .3 + 3.4 * Math.pow(i / N, 2);
+        fr.push({ translate: (rnd() * 2 * amp).toFixed(2) + "px " + (rnd() * 2 * amp).toFixed(2) + "px" });
+      }
+      try{ before.animate(fr, { duration: sw, easing: "linear", fill: "none" }); }catch(e){}
+    }
+  };
+  const snDetonate = () => {
+    overlay.classList.add("sn-detonate");
+    /* the screen kicks and settles */
+    if(!theme.reduceMotion && stageWrap.animate){
+      const fr = [], N = 14;
+      let sd = 31;
+      const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647 - .5; };
+      for(let i = 0; i <= N; i++){
+        const amp = i === N ? 0 : 9 * Math.pow(1 - i / N, 1.6);
+        fr.push({ translate: (rnd() * 2 * amp).toFixed(2) + "px " + (rnd() * 2 * amp).toFixed(2) + "px" });
+      }
+      try{ stageWrap.animate(fr, { duration: 700, easing: "linear", fill: "none" }); }catch(e){}
+    }
   };
   at(T.ignite, () => {
     overlay.classList.add("is-igniting", "is-cutspin");
@@ -65521,8 +65895,17 @@ function playSupernovaCutscene(opts){
   return playRankUpScene("titan", opts, {
     title: "SUPERNOVA",
     subtitle: inline ? rankCutFromTo(opts.from, "titan") + " · every rank, reached" : "Every rank, reached.",
-    times: { zoom: 1400, ignite: 3600, burst: 10600, settle: 12200, outro: 17200, hold: 3200 },
-    onFinish: () => { store.pendingSupernovaCutscene = false; store.supernovaAchieved = true; saveStore(); }
+    /* build 317: the same whirl as every rank, then SUPERNOVA'S OWN
+       CLIMAX - 1.8s of the planet swelling and shaking (swell), the
+       detonation at ~12.4s, the dust clearing on the scar and the rings
+       turning orange, the title 3s after the blast. ~22.7s in all. */
+    times: { zoom: 1400, ignite: 3600, swell: 1800, burst: 12400, settle: 15400, outro: 19700, hold: 3000 },
+    onFinish: () => {
+      store.pendingSupernovaCutscene = false; store.supernovaAchieved = true; saveStore();
+      /* the scene has shown the rings turning orange, so Home does not
+         draw them on again (playRingDraw) */
+      markRingTierSeen("supernova");
+    }
   });
 }
 
