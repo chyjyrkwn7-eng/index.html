@@ -11794,7 +11794,7 @@
   .sn-sweep > .sn-orb{ position:absolute; left:50%; top:47.368%; width:var(--s); aspect-ratio:1;
     margin:calc(var(--s) * -.5) 0 0 calc(var(--s) * -.5); opacity:0; }
   .sn-orb::before, .sn-orb::after{ content:""; position:absolute; }
-  .sn-orb::before{ inset:-100%; border-radius:50%; background:radial-gradient(circle, rgba(255,140,58,.72) 0, rgba(255,86,26,.26) 36%, rgba(255,86,26,0) 64%); }
+  .sn-orb::before{ inset:-85%; border-radius:50%; background:radial-gradient(circle, rgba(255,140,58,.66) 0, rgba(255,86,26,.22) 36%, rgba(255,86,26,0) 64%); }
   .sn-orb::after{ inset:0; background:linear-gradient(135deg, #FFC27A 0 9%, #FF6A26 17%, #3A120A 31%, #0A0405 58%, #020102 100%);
     clip-path:polygon(50% 0, 100% 38%, 78% 100%, 12% 82%, 0 30%); }
   .sn-orb:nth-child(3n+2)::after{ clip-path:polygon(20% 0, 100% 22%, 70% 100%, 0 68%); }
@@ -66054,9 +66054,17 @@ function buildRankTrails(hero, orbit, tierKey, withVoid){
       out.long.push(layer(R, stops(on, 360 / on.length * 1.32, 22, .8, .5, null, 0, .28), 1.1, "is-long"));
       out.long.push(layer(R, stops(on, 360 / on.length * 1.32, 16, .85, .45, null, .55, .28), 1.1, "is-long is-hot", true));
     });
+    const me = items[k];
+    if(me){
+      const col = rgbOf(flareColorOf(tierKey));
+      out.old = layer(me.R, stops([me], 120, 7, .95, 0, PALE, .3), 1, "is-old");
+      out.col = layer(me.R, stops([me], 125, 8, 1, 0, col, .15), 1.05, "is-new");
+      out.ring = layer(me.R, stops([me], 360, 16, 1, .55, col, .2, .05), 1.3, "is-newring");
+    }
     /* SUPERNOVA'S DARK STREAKS (the second evolution round): black
        through the light, each with an ember edge - the black it will
-       throw out, already in the whirl. Over the long rings. */
+       throw out, already in the whirl. Over everything, the new colour's
+       ring included, so they cut through its red too. */
     if(withVoid){
       out.void = [];
       [108, HOME_OUTER_R].forEach((R, ri) => {
@@ -66067,22 +66075,15 @@ function buildRankTrails(hero, orbit, tierKey, withVoid){
           let a = 0, ember = 0;
           [[20, 70], [118, 40], [196, 80], [290, 50]].forEach(([at, len]) => {
             const a0 = (at + ri * 47) % 360, d = ((a0 - th) % 360 + 360) % 360;
-            if(d <= len){ const t = d / len; a = Math.max(a, Math.sin(Math.PI * Math.min(1, t * 1.15)) * .9); }
+            if(d <= len){ const t = d / len; a = Math.max(a, Math.sin(Math.PI * Math.min(1, t * 1.15)) * .95); }
             const ah = ((th - a0) % 360 + 360) % 360;
             if(ah <= 6) ember = Math.max(ember, 1 - ah / 6);
           });
           const r = Math.round(10 + 245 * ember), g = Math.round(4 + 120 * ember), bl = Math.round(6 + 40 * ember);
           pts.push("rgba(" + r + "," + g + "," + bl + "," + Math.max(a, ember * .9).toFixed(3) + ") " + th + "deg");
         }
-        out.void.push(layer(R, pts.join(", "), .75, "is-void"));
+        out.void.push(layer(R, pts.join(", "), .95, "is-void"));
       });
-    }
-    const me = items[k];
-    if(me){
-      const col = rgbOf(flareColorOf(tierKey));
-      out.old = layer(me.R, stops([me], 120, 7, .95, 0, PALE, .3), 1, "is-old");
-      out.col = layer(me.R, stops([me], 125, 8, 1, 0, col, .15), 1.05, "is-new");
-      out.ring = layer(me.R, stops([me], 360, 16, 1, .55, col, .2, .05), 1.3, "is-newring");
     }
     return out;
   }catch(e){ return null; }
@@ -66590,11 +66591,11 @@ function playRankUpScene(tierKey, opts, spec){
       const W = heroAfter.clientWidth || 300;
       let sd = 1717;
       const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
-      const D = 3600, N = 22;
+      const D = 3600, N = 28;
       for(let i = 0; i < N; i++){
         const ring = i % 2 ? 108 : HOME_OUTER_R;
         const R = (ring + (rnd() - .5) * 12) / 360 * W, a0 = rnd() * 360, sw = 210 + rnd() * 140, sp = (rnd() - .5) * 720;
-        const sz = 2.6 + rnd() * 2.4;
+        const sz = 1.9 + rnd() * 1.9;
         const o = document.createElement("i");
         o.className = "sn-orb";
         o.style.setProperty("--s", sz.toFixed(2) + "%");
@@ -66603,7 +66604,7 @@ function playRankUpScene(tierKey, opts, spec){
           transform: "rotate(" + (a0 + sw * Math.min(1, f / .65) + (f > .65 ? (f - .65) / .35 * 18 : 0)).toFixed(1) + "deg) translateX(" + (R * r).toFixed(1) + "px) rotate(" + (sp * f).toFixed(1) + "deg) scale(" + sc + ")" });
         try{
           o.animate([k(0, 0, .3, 0, "cubic-bezier(.2,.6,.3,1)"), k(.08, .2, .6, 1, "cubic-bezier(.25,.6,.3,1)"), k(.35, .78, .95, 1, "cubic-bezier(.3,.5,.3,1)"),
-            k(.65, 1, 1, 1), k(.82, 1, 1, .55), k(1, 1, 1, 0)], { duration: D, delay: i * 25, fill: "both" });
+            k(.65, 1, 1, 1), k(.82, 1, 1, .55), k(1, 1, 1, 0)], { duration: D, delay: i * 22, fill: "both" });
         }catch(e){}
       }
       setTimeout(() => layer.remove(), D + 900);

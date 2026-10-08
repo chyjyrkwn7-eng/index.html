@@ -267,7 +267,7 @@ def rank_cutscene(key):
         rec.start(); pg.wait_for_timeout(400)
         pg.evaluate("(k)=>{store.pendingTierCutscene=k; playTierCutscene(k)}",
                     key)
-        pg.wait_for_timeout(19500)   # build 317: ~18.3s - whirl 3-9.5s, flash ~10s, name, end
+        pg.wait_for_timeout(29500)   # build 317, second evolution round: whirl 5.3-17.9s, flash ~19.6s, ends ~28s
     return body
 
 
@@ -278,7 +278,7 @@ def supernova(pg, rec):
     rec.start(); pg.wait_for_timeout(400)
     pg.evaluate("()=>{store.pendingSupernovaCutscene=true;"
                 "playSupernovaCutscene()}")
-    pg.wait_for_timeout(22500)       # build 317: whirl 3.6-10.1s, flash ~10.6s, ends ~21.5s
+    pg.wait_for_timeout(37000)       # build 317, second evolution round: whirl 5.3-19.7s, blast ~22s, title ~29s, ends ~35.5s
 
 
 def void_cutscene(pg, rec):

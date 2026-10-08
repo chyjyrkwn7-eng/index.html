@@ -13530,14 +13530,16 @@ def check_b317_cutspin(br):
         check("%s: dark while it speeds up - neither lit nor lighting before the top speed" % label,
               len(pre) >= 3 and not any(x["lit"] or (x["wipeR"] or 0) > 0 for x in pre), len(pre))
         acc = (ev["lightAt"] or 0) - (ev["spinAt"] or 0)
-        check("%s: the speeding-up lasts ~5.6s (4.5s or more)" % label,
-              ev["spinAt"] is not None and ev["lightAt"] is not None and acc >= 4500, round(acc))
+        # the second evolution round: 7.2s up and 5.4s down (5.6s and 4.4s
+        # on 7ee6c51) - "drag that out a couple 2-3 seconds longer"
+        check("%s: the speeding-up lasts ~7.2s (6.5s or more)" % label,
+              ev["spinAt"] is not None and ev["lightAt"] is not None and acc >= 6500, round(acc))
         check("%s: fully lit while it slows, before it stops" % label,
               ev["litAt"] is not None and ev["restAt"] is not None and ev["lightAt"] <= ev["litAt"] <= ev["restAt"] + 60, ev)
         dec = (ev["restAt"] or 0) - (ev["lightAt"] or 0)
         pause = (ev["burstAt"] or 0) - (ev["restAt"] or 0)
-        check("%s: it slows slowly (~4.4s), then charges up (~1.7s) before the flash" % label,
-              dec >= 3500 and 1200 <= pause <= 2800, (round(dec), round(pause)))
+        check("%s: it slows slowly (~5.4s), then pulses in place (~1.7s) before the flash" % label,
+              dec >= 4800 and 1200 <= pause <= 2800, (round(dec), round(pause)))
         sec = ev.get("secret") or {}
         check("%s: the secret flares are in the scene, under the glass bubbles, seen through them" % label,
               sec.get("dots", 0) >= 3 and sec.get("under") and sec.get("glass") not in (None, "none"), sec)
@@ -13551,7 +13553,7 @@ def check_b317_cutspin(br):
 
     # Round four: "some moments the secret flares don't go behind the large
     # flares". Frame-stepped (page clock + every animation seeked to it, so
-    # load cannot skip a frame) through the whole whirl, frames 90-300: at
+    # load cannot skip a frame) through the whole whirl, frames 150-560: at
     # every frame where a secret flare's centre lies on a big bubble, the
     # bubble must be above it in paint order AND its glass whole (nothing
     # between the hero and the bubble below full opacity) - a translucent
@@ -13564,13 +13566,13 @@ def check_b317_cutspin(br):
         pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
         pg.evaluate("()=>playTierCutscene('vanguard', {from:'veteran', onDone(){}})")
         t, n, bad, pops, burst_at, igs = 0.0, 0, [], [], None, []
-        for i in range(1, 540):
+        for i in range(1, 620):
             t0 = t; t = i / 30
             pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000)))
             pg.evaluate(CUTSPIN_SEEK, t)
             if i < 150:
                 continue
-            if i > 470:
+            if i > 560:
                 if burst_at is None and pg.evaluate("() => !!document.querySelector('#supernova-cutscene.supernova-burst')"): burst_at = i
                 continue
             ph = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene'); if(!o) return [false, false, null];
@@ -13589,8 +13591,8 @@ def check_b317_cutspin(br):
         ctx.close()
         check("%s: every frame of the whirl, a secret flare on a big bubble is UNDER its glass (and never sharper than it)" % label,
               n >= 10 and not bad, (n, len(bad), bad[:2]))
-        check("%s: the mini-bang goes off for about a second at the top speed, and the big flash comes on time (~17s)" % label,
-              25 <= len(pops) <= 60 and burst_at is not None and 495 <= burst_at <= 525 and pops[-1] < burst_at,
+        check("%s: the mini-bang goes off for about a second at the top speed, and the big flash comes on time (~19.6s)" % label,
+              25 <= len(pops) <= 60 and burst_at is not None and 575 <= burst_at <= 605 and pops[-1] < burst_at,
               (len(pops), pops[:1], burst_at))
         # Round five: "the pulse coming off the new flare mid spin is not the
         # best". One ignition: a bloom, one halo and ONE shockwave ring on
@@ -13614,7 +13616,7 @@ def check_b317_cutspin(br):
     pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
     pg.evaluate("()=>playTierCutscene('vanguard', {from:'veteran', onDone(){}})")
     t, boxes, pools, titles = 0.0, [], [], []
-    # up to 33s: the scene ends near 25s, and a loaded machine can resolve
+    # up to 33s: the scene ends near 28s, and a loaded machine can resolve
     # the whirl's `finished` late (the fallback fires 2.5s after the whirl)
     # - the loop stops as soon as the bridge has come and gone
     for i in range(1, 1000):
@@ -13721,7 +13723,12 @@ def check_b317_supernova(br):
       debris), the scar revealed and the rings turned orange, then the
       title - in that order - ~23s in all; it marks the ring tier seen as
       "supernova" so Home does not draw the rings on again.
-    Written against 1888b11, which has none of it."""
+    Written against 1888b11, which has none of it.
+    The second evolution round, against 7ee6c51: Supernova's own whirl
+    (longer, the planet heating, dark streaks in the light, a dark ring in
+    its bang), and after the blast the transformation - the scar, the
+    fragments sweeping out onto the rings, the system settling, and only
+    then the rings' colour - ending on Home's own Supernova build; ~35s."""
     print("\n317s. the Supernova scar, and the Supernova cutscene goes off")
     import json as _json
     acct = _json.loads(USED_ACCOUNT)
@@ -13792,32 +13799,65 @@ def check_b317_supernova(br):
     pg.wait_for_timeout(1200)
     pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
     pg.evaluate("() => playSupernovaCutscene({ from: 'elite', onDone(){ window.__snDone = Date.now(); } })")
-    marks, at_det, at_set, t0 = {}, None, None, pg.evaluate("() => Date.now()")
+    marks, at_det, at_set, at_top, at_sweep, at_settled, t0 = {}, None, None, None, None, None, pg.evaluate("() => Date.now()")
+    RINGS = """() => { const o = document.getElementById('supernova-cutscene');
+      const rings = [...o.querySelectorAll('.rank-after .cosmic-orbit-ring')];
+      return rings.map(r => getComputedStyle(r).stroke); }"""
     t = 0.0
-    for i in range(1, 30 * 28):
+    for i in range(1, 30 * 40):
         t_ = t; t = i / 30
+        pg.evaluate(CUTSPIN_SEEK, t)
         pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
         pg.evaluate(CUTSPIN_SEEK, t)
         c = pg.evaluate("() => { const o = document.getElementById('supernova-cutscene'); return o ? o.className : null; }")
         if c is None:
             if marks: marks.setdefault("gone", i); break
             continue
-        for k in ("is-cutspin", "is-cutrest", "sn-swell", "supernova-burst", "sn-detonate", "is-swapped", "sn-scarred", "supernova-settle", "rank-outro"):
+        for k in ("is-cutspin", "is-cutlight", "is-cutrest", "sn-swell", "supernova-burst", "sn-detonate", "is-swapped", "sn-scarred",
+                  "sn-settled", "sn-rings", "supernova-settle", "rank-outro"):
             if k in c.split() and k not in marks:
                 marks[k] = i
+        if "is-cutlight" in c.split() and at_top is None:
+            at_top = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene');
+              const op = s => { const e = [...o.querySelectorAll(s)]; return e.length ? Math.max(...e.map(x => +getComputedStyle(x).opacity)) : null; };
+              return { heat: op('.rank-before .sn-spinheat'), void: op('.rank-before .rank-trail.is-void'), voids: o.querySelectorAll('.rank-before .rank-trail.is-void').length,
+                rb: [...(o.querySelector('.rank-bang') || { children: [] }).children].map(e => e.className).sort().join(',') }; }""")
         if "sn-detonate" in c.split() and at_det is None and i - marks["sn-detonate"] >= 6:
             at_det = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene');
               const an = el => el ? el.getAnimations().length : 0;
               return { shock: [...o.querySelectorAll('.sn-shock')].filter(e => an(e)).length,
                 bits: [...o.querySelectorAll('.sn-bit')].filter(e => an(e)).length,
                 shards: o.querySelectorAll('.sn-bit.is-shard').length, dust: an(o.querySelector('.sn-dust')) }; }""")
+            at_det["rings"] = pg.evaluate(RINGS)
+        if "sn-settled" in c.split() and at_sweep is None and i - marks["sn-settled"] >= 9:
+            # the fragments, ~0.3s after the system starts settling: out on
+            # the rings, in the after-planet's own units (the hero is 360 wide,
+            # the planet's centre at 180,150 in a 0 -12 360 342 box)
+            at_sweep = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene');
+              const h = o.querySelector('.rank-after .cosmic-hero-wrap'); if(!h) return null;
+              const r = h.getBoundingClientRect(), u = r.width / 360, cx = r.left + r.width / 2, cy = r.top + r.height * 162 / 342;
+              const orbs = [...o.querySelectorAll('.rank-after .sn-sweep > .sn-orb')];
+              const vis = orbs.filter(e => +getComputedStyle(e).opacity > .5);
+              return { orbs: orbs.length, vis: vis.length, run: orbs.filter(e => e.getAnimations().some(a => a.playState === 'running' || a.playState === 'paused')).length,
+                d: vis.map(e => { const q = e.getBoundingClientRect(); return +(Math.hypot(q.left + q.width / 2 - cx, q.top + q.height / 2 - cy) / u).toFixed(1); }) }; }""")
+            at_sweep["rings"] = pg.evaluate(RINGS)
         if "supernova-settle" in c.split() and at_set is None and i - marks["supernova-settle"] >= 45:
             at_set = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene');
+              const h = o.querySelector('.rank-after .cosmic-hero-wrap');
               const sc = o.querySelector('.rank-after .cosmic-scar');
               const rings = [...o.querySelectorAll('.rank-after .cosmic-orbit-ring')];
+              /* Home's own Supernova planet, built here the way Home builds it */
+              const key = el => el.tagName + ':' + String(el.getAttribute('class') || '').split(/\\s+/).filter(c => /^cosmic-/.test(c)).sort().join(' ');
+              const had = store.supernovaAchieved, save = window.saveStore; let home = [];
+              try{ store.supernovaAchieved = true; window.saveStore = () => {}; home = [...buildCosmicHero(true, 'titan').children].map(key); }
+              finally{ store.supernovaAchieved = had; window.saveStore = save; }
+              const scene = h ? [...h.children].filter(e => !/^(rank-|sn-)/.test(e.getAttribute('class') || '')) : [];
+              const rev = h ? [...h.querySelectorAll(':scope > [data-sn-reveal]')] : [];
               return { scar: sc ? +getComputedStyle(sc).opacity : null,
                 orange: rings.length && rings.every(r => r.classList.contains('cosmic-orbit-ring-supernova')),
-                stroke: rings[0] ? getComputedStyle(rings[0]).stroke : null }; }""")
+                stroke: rings[0] ? getComputedStyle(rings[0]).stroke : null,
+                /* (the bubbles are moved into the scene's own carrier) */
+                home: home.filter(k => !/cosmic-icon-badge/.test(k)), scene: scene.map(key).filter(k => !/cosmic-icon-badge/.test(k)), revealed: rev.length, shown: rev.filter(e => +getComputedStyle(e).opacity > .95).length }; }""")
     end = pg.evaluate("() => [window.__snDone || null, store.supernovaAchieved, (() => { try{ return localStorage.getItem('class26e.ringtier.seen'); }catch(e){ return 'x'; } })()]")
     ctx.close()
     order = ["is-cutrest", "sn-swell", "sn-detonate", "is-swapped", "sn-scarred", "supernova-settle", "rank-outro"]
@@ -13829,9 +13869,34 @@ def check_b317_supernova(br):
     check("the detonation throws a shockwave and debris (black shards with sparks) and raises dust",
           bool(at_det) and at_det["shock"] >= 1 and at_det["bits"] >= 16 and at_det["shards"] >= 10 and at_det["dust"] >= 1, at_det)
     check("by the title the new planet is scarred and its rings are orange",
-          bool(at_set) and (at_set["scar"] or 0) > .95 and at_set["orange"], at_set)
+          bool(at_set) and (at_set["scar"] or 0) > .95 and at_set["orange"] and "245, 128, 77" in (at_set["stroke"] or ""), at_set and (at_set["scar"], at_set["orange"], at_set["stroke"]))
+    # THE SECOND EVOLUTION ROUND: "needs to be longer, something during the
+    # supernova cutscene needs to be different ... after the flash at the
+    # end, something happens and then the planet system looks different and
+    # then that's when the rings change color? Maybe some of the fragments
+    # could be going around the rings like in an orbit". Each fails on
+    # 7ee6c51.
+    up = (marks.get("is-cutlight") or 0) - (marks.get("is-cutspin") or 0)
+    down = (marks.get("is-cutrest") or 0) - (marks.get("is-cutlight") or 0)
+    check("its own whirl, longer than a rank's: ~8.2s up (7.8s+) and ~6.2s down (5.8s+)", up >= 234 and down >= 174, (up, down))
+    check("and its own light: the planet heats with the speed, dark streaks with ember edges run through the trails, and its bang throws a dark ring",
+          bool(at_top) and (at_top["heat"] or 0) > .6 and at_top["voids"] >= 2 and (at_top["void"] or 0) > .5 and "rb-void" in at_top["rb"], at_top)
+    seq2 = [marks.get(k) for k in ("sn-detonate", "sn-scarred", "sn-settled", "sn-rings", "supernova-settle")]
+    check("after the blast the system transforms, in order: the scar, the system settling into its new look, THEN the rings change colour, then the title",
+          all(v is not None for v in seq2) and seq2 == sorted(seq2) and len(set(seq2)) == 5 and (seq2[3] - seq2[0]) >= 120, seq2)
+    near = [d for d in (at_sweep or {}).get("d", []) if 92 <= d <= 158]
+    check("black fragments sweep out of the planet and ride the rings round, in orbit (most of them on a ring, moving)",
+          bool(at_sweep) and at_sweep["orbs"] >= 16 and at_sweep["vis"] >= 12 and at_sweep["run"] >= 12 and len(near) >= .75 * at_sweep["vis"],
+          at_sweep and (at_sweep["orbs"], at_sweep["vis"], at_sweep["run"], len(near)))
+    plain_ring = lambda strokes: bool(strokes) and all("255, 255, 255" in x for x in strokes)
+    check("the rings stay plain through the blast and the sweep, and only turn once the system has settled",
+          bool(at_det and at_sweep) and plain_ring(at_det["rings"]) and plain_ring(at_sweep["rings"]),
+          (at_det and at_det["rings"], at_sweep and at_sweep["rings"]))
+    check("it ends on HOME'S OWN Supernova planet: everything Home's build has, the scene's has - what it adds over a plain planet brought in beat by beat, all of it showing by the title",
+          bool(at_set) and at_set["home"] and sorted(at_set["home"]) == sorted(at_set["scene"]) and at_set["revealed"] >= 1 and at_set["shown"] == at_set["revealed"],
+          at_set and (at_set["revealed"], at_set["shown"], sorted(set(at_set["home"]) ^ set(at_set["scene"]))))
     total = (marks.get("gone") or 0) / 30
-    check("about the length it should be - ~24-29s from the first frame to the hand-back (the evolution round put the attention and the whirl in front)", 24 <= total <= 29.5, round(total, 1))
+    check("longer: ~33-37.5s from the first frame to the hand-over (it was ~25s)", 33 <= total <= 37.5, round(total, 1))
     check("it ends with Supernova reached and the ring tier seen as 'supernova' (Home will not draw the rings on again)",
           end[1] is True and end[2] == "supernova", end)
 
@@ -13868,7 +13933,8 @@ def check_b317_cutend(br):
              "playTierCutscene(t, { from: f, onDone(){ window.__cutDone = performance.now(); } })"
         pg.evaluate("([t, f]) => { window.__cutDone = null; window.__cutT0 = performance.now(); " + fn + "; }", [tier, frm])
         rows, t, settle_at, tapped, early = [], 0.0, None, None, None
-        for i in range(1, 30 * 30):
+        # up to 40s: Supernova's title is up at ~29s (the second evolution round)
+        for i in range(1, 30 * 40):
             t_ = t; t = i / 30
             pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
             pg.evaluate(CUTSPIN_SEEK, t)
@@ -13990,6 +14056,10 @@ EVOLVE_ST = """([tier]) => { const o = document.getElementById('supernova-cutsce
   return { c: o.className.split(' '), flare: rect(nb), mid: [ob.width / 2, ob.height / 2],
     planet: mr ? [mr.left + mr.width / 2 - ob.left, mr.top + mr.height * 162 / 342 - ob.top] : null,
     attn: !!o.querySelector('.rank-attn.is-attention'), slotShift: slotM.length === 6 ? Math.hypot(slotM[4], slotM[5]) : 0,
+    slotS: slotM.length === 6 ? Math.hypot(slotM[0], slotM[1]) : 1, attnC: ns ? getComputedStyle(ns).getPropertyValue('--attn').trim() : null,
+    newC: flareColorOf(tier), aglow: op('.rank-before .rank-attn.is-afterglow'), charge: op('.rank-attn.is-charge'), aura: op('.rank-aura'),
+    planetRel: (nb && mr) ? (() => { const r = nb.getBoundingClientRect();
+      return Math.hypot(r.left + r.width / 2 - mr.left - mr.width / 2, r.top + r.height / 2 - mr.top - mr.height * 162 / 342) / mr.width; })() : null,
     stageT: st.translate, long: op('.rank-before .rank-trail.is-long'), neu: op('.rank-before .rank-trail.is-new'),
     ring: op('.rank-before .rank-trail.is-newring'), old: op('.rank-before .rank-trail.is-old'),
     slotOp: other ? +getComputedStyle(other).opacity : null,
@@ -14052,8 +14122,15 @@ def check_b317_evolve(br):
     - the reward card with a Flare tile, in the order Theme, Flare, ...;
     - Supernova's blast with soft edges: no border, no blurred shadow on
       its rings, its dust an image of its own (not the stretched smoke).
-    Written against b6cd249, where all of these fail."""
-    print("\n317v. the evolution: attention, light trails, the new colour, the bang, the charge, the flash from the flare")
+    Written against b6cd249, where all of these fail.
+    THE SECOND EVOLUTION ROUND re-asserts five of the beats, against
+    7ee6c51 where each fails: the attention is IN PLACE (no loop out of the
+    slot, no camera) and in the flare's OLD pale light, breathing for the
+    whole opening; the whirl ~2.6s longer (7.2s up, 5.4s down); the new
+    colour BUILDS with no flicks back; slowing, the new flare bright at
+    first and dimmer the slower it goes; at the stop a pulse in place (the
+    system still, nothing gathering) and then the flash; ~27-28s in all."""
+    print("\n317v. the evolution: attention in place, light trails, the build, the bang, bright-to-dim, the pulse at the stop, the flash from the flare")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate("() => { store.supernovaAchieved = false; saveStore(); theme.accent = 'veteran'; applyTheme(); showHome(); document.querySelectorAll('.rs-spot,.daily-alert,#tour-overlay,.update-banner,.toast').forEach(n => n.remove()); }")
     pg.wait_for_timeout(900)
@@ -14082,48 +14159,89 @@ def check_b317_evolve(br):
         return math.hypot(st["flare"][0] - st["mid"][0], st["flare"][1] - st["mid"][1]) if st and st["flare"] else None
     pre = [st for i, st in rows if st and spin_at and 36 <= i < spin_at]
     attn = [st for st in pre if st["attn"]]
-    bw = (pre[0]["flare"][2] if pre and pre[0]["flare"] else 40) or 40
     after = [st for i, st in rows if st and spin_at and spin_at + 3 <= i <= spin_at + 30]
-    check("attention: as the scene opens the new flare is singled out - its glow on, and it loops out of its slot and back",
-          len(attn) >= 60 and max([st["slotShift"] for st in attn] or [0]) > .4 * bw and bool(after) and not any(st["attn"] for st in after),
-          (len(attn), round(max([st["slotShift"] for st in attn] or [0]), 1), round(bw, 1)))
-    d_mid = [dmid(st) for i, st in rows if st and spin_at and 70 <= i <= 125]
-    d_after = dmid(at(spin_at - 1)) if spin_at else None
+
+    def hexrgb(c):
+        c = (c or "").strip()
+        if c.startswith("#") and len(c) == 7:
+            return [int(c[k:k + 2], 16) for k in (1, 3, 5)]
+        m_ = re.match(r"rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)", c)
+        return [float(v) for v in m_.groups()] if m_ else None
+
+    def swells(vals, over):
+        """local peaks above `over` in a run of scale values"""
+        return [k for k in range(1, len(vals) - 1) if vals[k] > over and vals[k] >= vals[k - 1] and vals[k] > vals[k + 1]]
+    # The second evolution round: "I like how the flare pulses before the
+    # spin, I don't like the movement though so don't do the movement ...
+    # The pulse at the beginning should not show the color, it should flash
+    # and pulse in its position ... keep the pulsing part and stuff in its
+    # place so it's still a long enough cut scene". Fails on 7ee6c51 (the
+    # glow was the new colour, the flare looped out of its slot, the camera
+    # pushed in).
+    cols = [hexrgb(st["attnC"]) for st in attn]
+    nc = hexrgb(attn[0]["newC"]) if attn else None
+    sw_a = swells([st["slotS"] for st in attn], 1.15)
+    check("attention: the new flare flashes and breathes for the whole opening (4+ swells over ~4s) in its OLD pale light, not the new colour",
+          len(attn) >= 100 and len(sw_a) >= 4 and all(c and min(c) >= 200 for c in cols) and nc is not None and all(c != nc for c in cols)
+          and bool(after) and not any(st["attn"] for st in after),
+          (len(attn), len(sw_a), attn and attn[0]["attnC"], attn and attn[0]["newC"]))
+    rel = [st["planetRel"] for st in attn if st["planetRel"] is not None]
     moved = [st["stageT"] for st in attn if st["stageT"] not in ("none", "0px", "0px 0px")]
-    check("attention: the camera pushes in toward it and eases back before the whirl",
-          bool(d_mid) and d_after is not None and min(d_mid) < .9 * d_after and len(moved) >= 30
-          and (at(spin_at + 2) or {}).get("stageT") in ("none", "0px", "0px 0px"),
-          (d_mid and round(min(d_mid)), d_after and round(d_after), len(moved)))
+    check("attention: in place - the flare never leaves its slot and the camera never moves",
+          len(rel) >= 100 and max(st["slotShift"] for st in attn) <= 1 and not moved and (max(rel) - min(rel)) <= .02,
+          (round(max([st["slotShift"] for st in attn] or [0]), 1), len(moved), rel and round(max(rel) - min(rel), 4)))
     s0 = at((spin_at or 0) + 1)
     sl = at(light_at) if light_at else None
     check("the light trails: none as the whirl starts, the bubbles solid; at the top speed rings of light, the bubbles all but gone",
           bool(s0 and sl) and (s0["long"] or 0) < .05 and (s0["slotOp"] or 0) > .95 and (sl["long"] or 0) > .85 and (sl["slotOp"] or 1) < .15,
           s0 and sl and ((s0["long"], s0["slotOp"]), (sl["long"], sl["slotOp"])))
     acc = (light_at - spin_at) if (spin_at and light_at) else 0
+    dec = (rest_at - light_at) if (rest_at and light_at) else 0
+    # "The spinning part, drag that out a couple 2-3 seconds longer ... Make
+    # the slowdown phase a smidge longer." Fails on 7ee6c51 (5.6s and 4.4s).
+    check("the whirl is ~2.6s longer: ~7.2s speeding up (6.5s+) and ~5.4s slowing (4.8s+)",
+          acc >= 195 and dec >= 144, (acc, dec))
     rv = lambda f: (at(spin_at + int(acc * f)) or {}).get("ring") or 0
     check("the new colour takes over its ring - brighter and brighter through the speeding-up",
           acc > 100 and rv(.4) < rv(.75) < rv(.97) and rv(.97) > .7, acc and (round(rv(.4), 2), round(rv(.75), 2), round(rv(.97), 2)))
-    neu = [(i, st["neu"] or 0, st["old"] or 0) for i, st in rows if st and spin_at and light_at and spin_at < i < light_at]
-    dips = [k for k in range(1, len(neu) - 1) if neu[k][1] < neu[k - 1][1] - .02 and neu[k][1] <= neu[k + 1][1] and neu[k][2] > .5]
-    check("back and forth: at least two flicks from the new colour to the old light before the top",
-          len(dips) >= 2, [neu[k][0] for k in dips])
+    # "Make the color flash a slight build up, like that unlock one gets
+    # brighter and brighter and then the pop." No flicks back: the new
+    # colour only ever climbs to the bang. Fails on 7ee6c51 (three flicks).
+    neu = [st["neu"] or 0 for i, st in rows if st and spin_at and light_at and spin_at < i <= light_at]
+    drops = [k for k in range(1, len(neu)) if neu[k] < neu[k - 1] - .02]
+    check("the new colour builds steadily - from nothing to full at the top, never flicked back, and then the pop",
+          len(neu) >= 60 and neu[0] < .1 and neu[-1] > .9 and not drops, (len(neu), neu and round(neu[0], 2), neu and round(neu[-1], 2), drops[:3]))
     bang_at = next((i for i, st in rows if st and st["bang"]), None)
     bst = at(bang_at) if bang_at else None
     check("the mini-bang: at the top speed, AT the new flare",
           bool(bst and bst["flare"]) and light_at is not None and abs(bang_at - light_at) <= 2
           and math.hypot(bst["bang"][0] - bst["flare"][0], bst["bang"][1] - bst["flare"][1]) <= .6 * bst["flare"][2],
           bst and (bang_at, light_at, [round(v) for v in bst["bang"][:2]], [round(v) for v in bst["flare"][:2]]))
+    # "When it gets to a stop/starts slowing down, the unlocked flare needs
+    # to be bright as if it just went through a change, and then the more it
+    # slows down, the dimmer it gets". Fails on 7ee6c51 (no after-glow).
+    ag = [st["aglow"] for i, st in rows if st and light_at and rest_at and light_at + 3 <= i < rest_at - 2]
+    ag_ok = len(ag) >= 100 and ag[0] is not None and all(v is not None for v in ag)
+    check("slowing: the new flare is at its brightest as it starts to slow, and dims the slower it goes",
+          ag_ok and ag[0] > .85 and ag[-1] < .35 and all(ag[k] <= ag[k - 1] + .02 for k in range(1, len(ag))),
+          (len(ag), ag and ag[0], ag and ag[-1]))
+    # "when the spinning completely stops, it does the pulse (don't make it
+    # move just the pulse here) and then the flash". Fails on 7ee6c51 (the
+    # whole system pulsed in scale, a ring gathering in).
     win = [st for i, st in rows if st and rest_at and burst_at and rest_at < i < burst_at]
-    scales = {st["spinScale"] for st in win if st["spinScale"] not in (None, "none")}
-    check("the charge before the flash: the system pulses, light gathering into the flare",
-          len(scales) >= 6 and any(st["gather"] for st in win) and max([float(v.split()[0]) for v in scales] or [1]) > 1.03,
-          (len(win), len(scales), any(st["gather"] for st in win)))
+    scales = {st["spinScale"] for st in win if st["spinScale"] not in (None, "none", "1")}
+    sw_c = swells([st["slotS"] for st in win], 1.08)
+    ch = [st["charge"] or 0 for st in win]
+    check("at the stop, the pulse in place: the new flare breathes (3+ swells, brighter as it goes) - the system does not move - then the flash",
+          len(win) >= 40 and len(sw_c) >= 3 and not scales and not any(st["gather"] for st in win)
+          and max(st["slotShift"] for st in win) <= 1 and bool(ch) and max(ch[len(ch) // 2:]) > max(ch[:len(ch) // 3]),
+          (len(win), len(sw_c), sorted(scales)[:3], any(st["gather"] for st in win)))
     fb = at(burst_at) if burst_at else None
     check("the big flash starts AT the new flare (it goes off), not at the planet's middle",
           bool(fb and fb["flash"] and fb["flare"] and fb["planet"]) and math.hypot(fb["flash"][0] - fb["flare"][0], fb["flash"][1] - fb["flare"][1]) <= 6
           and math.hypot(fb["flash"][0] - fb["planet"][0], fb["flash"][1] - fb["planet"][1]) >= 30 and fb["big"] is not None,
           fb and ([round(v) for v in fb["flash"]], fb["flare"] and [round(v) for v in fb["flare"][:2]], fb["planet"] and [round(v) for v in fb["planet"]]))
-    check("longer, and it earns it: ~22-26s from the first frame to the hand-over", total is not None and 22 <= total <= 26.5, total)
+    check("long enough for all of it: ~26.5-29.5s from the first frame to the hand-over", total is not None and 26.5 <= total <= 29.5, total)
 
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     card = pg.evaluate(EVOLVE_CARD)
