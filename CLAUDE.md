@@ -15285,6 +15285,115 @@ disagree with it.
       swell, shake or flash; the orbits are held. Under the system's
       setting alone the fades are kept, short (.35s); the app's own
       switch turns every transition off as it always did.
+  - **THE EVOLUTION ROUND (supersedes the light-from-the-middle and the
+    one-second ignition above).** Madison: *"You know how in Pokemon when
+    someone evolves there is that super cool evolution animation on the
+    screen of them going back and forth and then hitting the evolve? ...
+    make them spin really really fast so all the colors start morphing
+    ... Almost like cars at night when they go fast, like the glow trail
+    ... the blue color (or whatever one is unlocking) gets brighter and
+    brighter during this phase as if it's evolving during the spin ...
+    then a small flash of the color.. like bang (think small supernova).
+    Then it slows down slowly ... then the massive flash of the color ...
+    it needs to be made so it looks like the flash of the color originated
+    from the new flare as if it exploded"* - and *"If the cutscene needs to
+    be longer to make it cooler then do it. THAT GOES FOR ANY CUTSCENE IN
+    THE APP, longer is better."* The middle of every rank-up, in order
+    (playRankUpScene, "THE EVOLUTION"):
+    1. **Attention** (`RANK_ATTN_AT` 1.3s, `RANK_ATTN_MS` 4s): the camera
+       (`translate` + `scale` on the stage, a Web Animation that composes
+       with the classes' `transform`) pushes 1.22x toward the new flare,
+       holding it in place and bringing it a third of the way to the
+       middle, and eases back; the flare's SLOT breathes twice, makes one
+       loop out of its slot - away from the planet, round, home - and a
+       last breath, inside a glow and a halo ring of its colour-to-be
+       (`.rank-attn` / `.rank-attn-ring`). The slot's own `transform` is
+       free before the whirl, and the carrier's turn and the slot's
+       counter-turn cancel, so the loop is drawn upright and the glow
+       rides with it.
+    2. **The whirl**: 18 whole turns (`RANK_CUTSPIN_TURNS`), 5.6s faster
+       and faster, 4.4s slower - ~1300 degrees a second at the top. The
+       camera zooms in with it (`supernova-zoom` at the start) and back
+       out as it slows (`rank-zoomback`, the slowing's own length).
+    3. **The light trails** (`buildRankTrails`): conic-gradient rings of
+       the bubbles' own colours, masked to a soft band where they ride (a
+       core and a wide faint glow), built INTO the turning carrier so they
+       turn with it. Per orbit a SHORT layer (comets, ~75 degrees) and a
+       LONG one (each colour reaching past the bubble behind, a high floor:
+       at the top it is unbroken light), each with a narrow white-hot core
+       line. Colours are weight-BLENDED where trails meet (a straight
+       switch read as blocks), every tail tapers to nothing, and the long
+       layers' leading edges are soft (a 4-degree head was a radial cut
+       line). Every opacity is a function of SPEED - vh(u), the share of
+       the top speed at progress u - sampled into Web Animation keyframes
+       on the whirl's own clock, one startTime for everything: the comets
+       from ~a fifth of the top speed, the rings from ~three fifths, the
+       bubbles fading to .06 and the secret flares to .04 (always at least
+       as far as the glass over them - round four's rule, at speed).
+    4. **The new colour takes over its ring**: its own three layers - its
+       arc in the new colour, the same arc in its OLD pale light, and a
+       whole ring of the new colour - rising through the speeding-up, the
+       new colour flicked back to the old light three times, ever closer
+       together (`FLICKS` .6 / .77 / .89 of the way to the top: Pokemon's
+       evolve), brightest at the top, still bright as it slows and dimming
+       as the trails resolve back into bubbles.
+    5. **The bang** at the top speed (`bang()`, at ACC): `.rank-bang` - a
+       core, a ring and a glow in the rank's colour - at the new flare's
+       position on screen at that moment; the flare is lit from here
+       (`is-cutlight`, `is-cutlit`, the badge `cosmic-badge-lit`).
+    6. **The charge** (a rank; Supernova swells instead):
+       `RANK_WINDUP_MS` (1.7s) of pulses ever faster - the whole system's
+       `scale`, the flare's light, an aura round the planet
+       (`.rank-aura`), and rings of light collapsing INTO the flare on
+       every pulse (`.rank-gather`).
+    7. **The flash from the flare**: a rank's flash box is centred on the
+       new flare (`flash.dataset.originX/Y`), sized so its peak still
+       floods the far corner from there, and the flare goes off with it
+       (`.rank-bang.is-big`). Supernova's flash is the planet's own
+       detonation, from its middle, as before. The title comes 2.5s after
+       the flash ("after that settles the theme is there, slight delay").
+    Times: a rank `{ ignite 5300, burst 17000, settle 19500, outro 23500 }`
+    - ~25.2s to the reward card; Supernova `{ ignite 5300, swell 1800,
+    burst 17600, settle 20600, outro 25500 }` - ~27s. The tap at the title,
+    the one ending, the secret flares under the glass and the
+    Reduce-motion still scene stay; the still scene marks the new flare
+    with a still `.rank-attn` (the attention, without the motion).
+    - **The reward card shows the flare** (*"I feel like the pop up should
+      just show the flare, I mean the road map has it and under the rank
+      challenges in profile it has it"*): `flareUnlockItem(rank)`, kind
+      `rankflare`, a rank reward (`isRankRewardItem`) whose art is
+      Profile's tile art (`buildFlareBubble(key, { lit, bounce })`), in
+      the results' Unlocked list after the theme and on the card in the
+      order Theme, Flare, then the character and the banner
+      (`RANK_REWARD_ORDER`, sorted in `rankRewardsItem`). Home's card for
+      a rank reached on Home gets it too (`groupRankRewards`). Profile's
+      own tiles (Flare, Theme today) are another branch's.
+    - **Supernova's blast, soft at every edge** (*"the edges of the
+      explosion part look really rough and weird and bad"*). Frame-stepped
+      at 3x and layers hidden one at a time, the blocks round the planet
+      were the shock rings: 3px and 9px BORDERS with blurred box-shadows
+      scaled 11x - a blurred shadow is drawn in tiles, and at 11x the tiles
+      show. They are radial-gradient rings now, no border and no shadow,
+      drawn at 8x the planet and scaled .18 to 1.5. The dust was the
+      planet's 128px smoke stretched past 5x as a mask: it has its own
+      256px texture (`snDustURL`), zero alpha at its middle and at every
+      edge of its square, drawn at its final size and only ever scaled
+      down. The flash's gradient has eased intermediate stops (no bands).
+      **A big upscale of anything with a hard edge or a shadow is how a
+      blast gets rough; draw it big and scale it down.**
+    - **Gates**: `check_b317_evolve` (frame-stepped: the attention - the
+      glow, the loop, the camera in and back; trails none at the start and
+      rings at the top with the bubbles gone; the new colour rising, at
+      least two flicks; the bang within two frames of the top and within
+      .6 bubble of the flare; the charge; the flash's centre on the flare,
+      30px+ from the planet's middle; 22-26.5s; the card's Theme, Flare
+      order and lit flare tile; Supernova's rings without border or shadow
+      and its dust its own image) fails on b6cd249. `check_b317_cutspin`
+      now asserts the bang (one core, ring and glow, no pool) in place of
+      the light-wipe and the one-second pop, ~5.6s up and ~4.4s down with
+      a ~1.7s charge, the flash at ~frame 510, and under the glass "or
+      never sharper than it" at speed; `check_b317_supernova` expects
+      24-29.5s.
   - **The lag and the "placed off" flares.** The second round took the
     bubbles' `backdrop-filter` blur off inside a scene (re-sampled every
     frame while they move); the third round put it back, because the

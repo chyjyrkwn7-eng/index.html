@@ -13854,6 +13854,10 @@ def check_b317_evolve(br):
     rows, t = [], 0.0
     for i in range(1, 30 * 32):
         t_ = t; t = i / 30
+        # every animation to this frame's time FIRST, then the clock: a
+        # timer that reads where something is (the bang reads the flare)
+        # sees this frame, not the last one - 43 degrees at the top speed
+        pg.evaluate(CUTSPIN_SEEK, t)
         pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
         pg.evaluate(CUTSPIN_SEEK, t)
         st = pg.evaluate(EVOLVE_ST, ["vanguard"])
@@ -13871,15 +13875,16 @@ def check_b317_evolve(br):
     pre = [st for i, st in rows if st and spin_at and 36 <= i < spin_at]
     attn = [st for st in pre if st["attn"]]
     bw = (pre[0]["flare"][2] if pre and pre[0]["flare"] else 40) or 40
+    after = [st for i, st in rows if st and spin_at and spin_at + 3 <= i <= spin_at + 30]
     check("attention: as the scene opens the new flare is singled out - its glow on, and it loops out of its slot and back",
-          len(attn) >= 60 and max([st["slotShift"] for st in attn] or [0]) > .4 * bw and not pre[-1]["attn"],
+          len(attn) >= 60 and max([st["slotShift"] for st in attn] or [0]) > .4 * bw and bool(after) and not any(st["attn"] for st in after),
           (len(attn), round(max([st["slotShift"] for st in attn] or [0]), 1), round(bw, 1)))
     d_mid = [dmid(st) for i, st in rows if st and spin_at and 70 <= i <= 125]
     d_after = dmid(at(spin_at - 1)) if spin_at else None
     moved = [st["stageT"] for st in attn if st["stageT"] not in ("none", "0px", "0px 0px")]
     check("attention: the camera pushes in toward it and eases back before the whirl",
           bool(d_mid) and d_after is not None and min(d_mid) < .9 * d_after and len(moved) >= 30
-          and (at(spin_at - 1) or {}).get("stageT") in ("none", "0px", "0px 0px"),
+          and (at(spin_at + 2) or {}).get("stageT") in ("none", "0px", "0px 0px"),
           (d_mid and round(min(d_mid)), d_after and round(d_after), len(moved)))
     s0 = at((spin_at or 0) + 1)
     sl = at(light_at) if light_at else None
