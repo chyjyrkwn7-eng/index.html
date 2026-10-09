@@ -16503,9 +16503,12 @@ def check_b317_hometaps(br):
               FF.get("kind") == "is-found" and FF.get("name") == "Redshift" and FF.get("state") == "Secret flare"
               and FF.get("text") == "Light stretched red as it races away." and ((FF.get("title") or {}).get("dist") if (FF.get("title") or {}).get("dist") is not None else 99) <= 10
               and FF.get("press", 0) >= 1 and FF.get("sparks", 0) >= 3 and FF.get("shake") == 0, FF)
-        check(dev + ": an unfound secret flare says only that it has not been found (no name, no colour) - and shakes like every locked thing, no sparkle",
+        # build 318: yellow is the NEXT flare here (two of Void's found), so
+        # its words are the rumour of its level; any other unfound one says
+        # only "not found" (check_b318_flares)
+        check(dev + ": an unfound secret flare has no name and no colour (the next one a rumour of its level) - and shakes like every locked thing, no sparkle",
               UF.get("kind") == "is-unfound" and UF.get("name") == "Secret flare" and UF.get("state") == "Not found"
-              and UF.get("text") == "Secret flare has not been found." and ((UF.get("title") or {}).get("chroma") or 99) <= 24
+              and (UF.get("text") or "").startswith("They say this one") and ((UF.get("title") or {}).get("chroma") or 99) <= 24
               and UF.get("shake", 0) >= 1 and UF.get("dim") and UF.get("sparks") == 0 and UF.get("press") == 0, UF)
         check(dev + ": the planet keeps its touch (press, ripple, halo, rings, both flare rings surge, no filter) and counts your flares under \"Your flares\" in the theme's colour",
               PL.get("kind") == "is-planet" and PL.get("name") == "Your flares" and PL.get("text") == "3 of 7 rank flares lit, 2 of 3 secret flares found."
@@ -17295,11 +17298,16 @@ def _sf_home_run(br):
     _sf_clock(pg)
     out = pg.evaluate("""() => { document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.rs-spot,.daily-alert').forEach(n => n.remove());
         window.__spots = [];
-        window.playUnlockSpotlight = (it, n, of, release) => { window.__spots.push(it.kind + ':' + (it.character || '')); return { skip(){}, stop(){} }; };
-        store.pendingVoidCutscene = true; saveStore(); showHome(); showHome();
-        return { scenes: document.querySelectorAll('.sf-scene.sf-void').length, old: document.querySelectorAll('#void-cutscene').length,
-                 voidLive: !!document.querySelector('.sf-void .sf-fig .sf-real svg[data-char="voidwalker"]') }; }""")
-    pg.clock.run_for(31000)
+        window.playUnlockSpotlight = (it, n, of, release) => { window.__spots.push(it.kind + ':' + (it.character || '')); setTimeout(release, 20); return { skip(){}, stop(){} }; };
+        store.pendingVoidCutscene = true; saveStore(); showHome(); showHome(); return {}; }""")
+    # build 318: the stored flag is an owed find - Home's queue plays it a
+    # beat after Home settles, not in place of Home
+    pg.clock.run_for(3000)
+    pg.evaluate("() => showHome()")
+    pg.clock.run_for(2600)
+    out.update(pg.evaluate("""() => ({ scenes: document.querySelectorAll('.sf-scene.sf-void').length, old: document.querySelectorAll('#void-cutscene').length,
+                 voidLive: !!document.querySelector('.sf-void .sf-fig .sf-real svg[data-char="voidwalker"]') })"""))
+    pg.clock.run_for(36000)
     out.update(pg.evaluate("""() => ({ after: document.querySelectorAll('.sf-scene, #void-cutscene').length, flag: store.pendingVoidCutscene,
         home: ((document.querySelector('#stage [data-screen]') || { dataset: {} }).dataset.screen) || null, spots: window.__spots.slice() })"""))
     ctx.close()
@@ -17386,10 +17394,12 @@ def check_b317_sflare(br):
       - the Home unlock queue is held for the whole scene;
       - Reduce motion: a still scene of 3.8-5.5s, lit from the first frame,
         titled by 0.6s, no special - and a quiet results screen plays it;
-      - the flow is unchanged: the first two flares' scene then its card;
-        a character flare's card, its scene, then the character's card.
-      - the Home path (a pendingVoidCutscene stored before build 215,
-        playVoidCutscene) plays the rebuilt Void scene too, once.
+      - the flow: the scene, then the flare's card (and, build 318, a
+        character flare's character card after those - it was the card,
+        the scene, the character until then);
+      - the Home path (a pendingVoidCutscene stored before build 215 -
+        since build 318 an owed find Home's queue plays) plays the rebuilt
+        Void scene too, once.
     On b6cd249 every silhouette/lit, duration, filter and Reduce motion
     assertion fails (no live copies, a figure that faded up in colour, a
     filtered drawing, 18-19s scenes, nothing at all under Reduce motion);
@@ -17445,8 +17455,8 @@ def check_b317_sflare(br):
     r = _sf_home_run(br)
     check("the Home path (a pendingVoidCutscene stored before build 215) plays the rebuilt Void scene, once - never the old cutscene",
           r.get("scenes") == 1 and r.get("old") == 0 and r.get("voidLive") is True, r)
-    check("and hands over as it always did: the flag cleared, Home, then Void's card",
-          r.get("after") == 0 and r.get("flag") is False and r.get("home") == "home" and "character:voidwalker" in (r.get("spots") or []), r)
+    check("and hands over to Home's cards: the flag cleared, Home, the flare's card then Void's (build 318)",
+          r.get("after") == 0 and r.get("flag") is False and r.get("home") == "home" and (r.get("spots") or [])[:2] == ["flare:", "character:voidwalker"], r)
     for c in ("red", "yellow", "violet"):
         r = _sf_flow_run(br, c)
         log = r.get("log") or []
@@ -17459,14 +17469,466 @@ def check_b317_sflare(br):
         else:
             ch = SF_CHAR[c]
             card, chc = at("spot:flare:" + c), at("spot:character:" + ch)
-            ok = None not in (sc, dn, card, chc) and card < sc < dn < chc
-        check("the flow, %s: %s" % (c, "its scene, then its card" if c == "red" else "its card, its scene, then the character's card"), ok, log)
+            # build 318: the rank-up's order for every find - "cutscene,
+            # flare, and then character"
+            ok = None not in (sc, dn, card, chc) and sc < dn < card < chc
+        check("the flow, %s: %s" % (c, "its scene, then its card" if c == "red" else "its scene, its card, then the character's card"), ok, log)
     r = _sf_flow_run(br, "violet", rm=True)
     log = r.get("log") or []
     check("Reduce motion: a quiet results screen plays the flare's still scene (once), and not again on the way back from the review",
           "scene:violet" in log and "overlay:still" in log and "scene-done" in log and not any(e.startswith("scene:") for e in (r.get("again") or [])),
           [log, r.get("again")])
 
+
+# --------------------------------------------------------------------------
+# BUILD 318: THE SECRET FLARES - WHERE A FIND PLAYS, THE NEXT ONE'S RUMOUR,
+# AND THE UMBRA OPENING.
+# --------------------------------------------------------------------------
+# A seed that survives a reload: the real relaunch an "app closed half-way
+# through the results" needs (booted()'s seed is written on every load).
+B318_ONCE = ("try{ if(!sessionStorage.getItem('b318seeded')){ sessionStorage.setItem('b318seeded','1');"
+             "localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
+             "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
+             "localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.daily.seen','x');"
+             "localStorage.setItem('class26e.drill.v1', '%s'); } }catch(e){}")
+
+# Every scene and card logged, in order; the scenes are quick stand-ins
+# (the order is under test here, not the scenes - check_b317_sflare plays
+# those), the cards real or stand-ins as asked.
+B318_LOG = """(a) => {
+  const log = window.__fl = window.__fl || [];
+  ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour'].forEach(k => store[k] = true);
+  theme.muteBanners = false; theme.reduceMotion = false; applyTheme();
+  const quick = (tag, done) => { log.push(tag); const o = document.createElement('div'); o.className = 'ff-scene sf-scene b318-stub'; document.body.appendChild(o);
+    if(!a.hold) setTimeout(() => { o.remove(); log.push('scene-done'); done && done(); }, 400); return { skip(){}, stop(){ o.remove(); } }; };
+  window.playFlareFoundScene = (c, all, done) => quick('scene:' + c, done);
+  window.playVoidFlareScene = (done) => quick('scene:yellow', done);
+  window.playBadgeCaseScene = (units, done) => { log.push('badge'); setTimeout(done, 30); return {}; };
+  window.playTierCutscene = (k, o) => { log.push('rank:' + k); setTimeout(() => o && o.onDone && o.onDone(), 30); return {}; };
+  window.playSupernovaCutscene = (o) => { log.push('rank:titan'); setTimeout(() => o && o.onDone && o.onDone(), 30); return {}; };
+  if(!a.realCards){
+    window.playUnlockSpotlight = (it, n, of, release) => {
+      log.push('spot:' + it.kind + ':' + (it.character || it.flare || it.banner || it.hint || it.rank || ''));
+      if(it.kind === 'flare' && typeof markFlareFind === 'function') markFlareFind(it.flare, 2);
+      if(it.kind === 'character'){ markUnlocksShown([it.character], []); if(typeof flareFindCharacterSeen === 'function') flareFindCharacterSeen(it.character); }
+      if(it.kind === 'banner') markUnlocksShown([], [it.banner]);
+      if(it.kind === 'hint') markFlareHintShown(it.hint);
+      setTimeout(release, 30); return { skip(){}, stop(){} }; };
+  }
+  return true; }"""
+
+# A real drill of Identity Crimes, all right, that found flare `c` - and,
+# with a.extra, a badge and a rank-up on the same run.
+B318_RUN = """(a) => {
+  const o = MYSTERY_ORDER; store.mysteryColorsFound = {}; o.forEach(k => store.mysteryColorsFound[k] = false);
+  o.slice(0, o.indexOf(a.c)).forEach(k => store.mysteryColorsFound[k] = true);
+  store.flareHintsShown = ['umbra', 'singularity', 'genesis'];
+  const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); saveStore();
+  if(a.extra){
+    const realRR = showRunRewards;
+    window.showRunRewards = (run, hooks, opts) => { run.badges = ['Identity Crimes']; run.retroBadges = [];
+      run.colors = [TIER_ORDER_FULL[1]]; window.showRunRewards = realRR; return realRR(run, hooks, opts); };
+  }
+  const t = 'Identity Crimes';
+  cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t];
+  order = QUESTIONS.map((q,i) => [q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
+  runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null;
+  attempts = {}; picked = {}; timedOutSet = {};
+  order.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+  mysteryColorThisRun = a.c; mysteryFoundThisSession = false; foundMysteryFlare(null);
+  window.__owedAtFind = JSON.parse(localStorage.getItem('class26e.flarefinds.owed') || 'null');
+  if(a.home){ showHome(); return true; }
+  summarize();
+  return true; }"""
+
+B318_OWED = "() => JSON.parse(localStorage.getItem('class26e.flarefinds.owed') || 'null')"
+
+
+def _b318_page(br, w=440, h=956):
+    ctx = br.new_context(viewport={"width": w, "height": h})
+    ctx.add_init_script(B318_ONCE % USED_ACCOUNT)
+    pg = open_page(ctx)
+    pg.goto(URL)
+    pg.wait_for_timeout(2600)
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub(); document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.rs-spot,.daily-alert').forEach(n => n.remove());}")
+    return ctx, pg
+
+
+def _b318_run_until(pg, done_js, limit=400, settle=12):
+    n = 0
+    for _ in range(limit):
+        pg.clock.run_for(250)
+        if pg.evaluate(done_js):
+            n += 1
+            if n > settle:
+                return True
+        else:
+            n = 0
+    return False
+
+
+def _b318_order(br, c, extra=False):
+    ctx, pg = _b318_page(br)
+    _sf_clock(pg)
+    pg.evaluate(B318_LOG, {})
+    pg.evaluate(B318_RUN, {"c": c, "extra": extra})
+    _b318_run_until(pg, "() => !!document.querySelector('.rs-rewards.rs-done') && !document.querySelector('.sf-scene, .rs-spot')")
+    out = {"log": pg.evaluate("() => window.__fl.slice()"), "owedAtFind": pg.evaluate("() => window.__owedAtFind"), "owedAfter": pg.evaluate(B318_OWED)}
+    ctx.close()
+    return out
+
+
+def _b318_interrupted(br, c):
+    """The results start playing the find, and the app is closed while its
+    scene is up. The next launch's Home owes it; a launch after that owes
+    nothing. On real time: a page clock does not survive a reload."""
+    ctx, pg = _b318_page(br)
+    # the scene never ends: the app is closed while it plays
+    pg.evaluate(B318_LOG, {"hold": True})
+    pg.evaluate(B318_RUN, {"c": c})
+    for _ in range(120):
+        pg.wait_for_timeout(100)
+        if pg.evaluate("() => window.__fl.some(e => e.startsWith('scene:'))"):
+            break
+    out = {"before": pg.evaluate("() => window.__fl.slice()"), "owedAtClose": pg.evaluate(B318_OWED)}
+    home_js = """()=>{document.getElementById('splashscreen')?.remove(); __stub(); document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert').forEach(n => n.remove());
+        window.forceHideBottomTabs = false; showHome(); }"""
+    pg.reload()
+    pg.wait_for_timeout(2600)
+    out["atRelaunch"] = pg.evaluate("() => ({ owed: " + B318_OWED[6:] + ", scene: !!document.querySelector('.sf-scene'), spots: document.querySelectorAll('.rs-spot').length, splash: !!document.getElementById('splashscreen') })")
+    pg.evaluate("() => { window.__fl = []; }")
+    pg.evaluate(B318_LOG, {})
+    pg.evaluate(home_js)
+    for _ in range(80):
+        pg.wait_for_timeout(250)
+        if pg.evaluate("() => window.__fl.length > 0 && !document.querySelector('.sf-scene, .rs-spot') && !homeUnlockPlaying"):
+            pg.wait_for_timeout(1500)
+            break
+    out["home"] = pg.evaluate("() => window.__fl.slice()")
+    out["owedAfter"] = pg.evaluate(B318_OWED)
+    pg.reload()
+    pg.wait_for_timeout(2600)
+    pg.evaluate("() => { window.__fl = []; }")
+    pg.evaluate(B318_LOG, {})
+    pg.evaluate(home_js)
+    pg.wait_for_timeout(5000)
+    out["again"] = pg.evaluate("() => window.__fl.slice()")
+    ctx.close()
+    return out
+
+
+def _b318_charonly(br):
+    """Closed between the flare's card and the character's: the next Home
+    owes the character's card alone - no scene, no flare card again."""
+    ctx, pg = _b318_page(br)
+    pg.evaluate(B318_LOG, {})
+    out = pg.evaluate("""() => { const o = MYSTERY_ORDER; store.mysteryColorsFound = {}; o.forEach(k => store.mysteryColorsFound[k] = false);
+      o.slice(0, 4).forEach(k => store.mysteryColorsFound[k] = true); store.flareHintsShown = ['umbra', 'singularity', 'genesis'];
+      const p = pendingHomeUnlocks(); markUnlocksShown(p.chars, p.banners, p.fx);
+      const u = ensureUnlocksShown(); u.chars = u.chars.filter(x => x !== 'umbra'); u.banners = u.banners.filter(x => x !== 'flare_umbra'); saveStore();
+      if(typeof oweFlareFind !== 'function') return { owed: null };
+      oweFlareFind('violet', false); markFlareFind('violet', 1); markFlareFind('violet', 2);
+      return { owed: JSON.parse(localStorage.getItem('class26e.flarefinds.owed') || 'null') }; }""")
+    pg.evaluate("() => { window.forceHideBottomTabs = false; showHome(); }")
+    for _ in range(60):
+        pg.wait_for_timeout(250)
+        if pg.evaluate("() => window.__fl.length > 0 && !document.querySelector('.rs-spot') && !homeUnlockPlaying"):
+            break
+    out["home"] = pg.evaluate("() => window.__fl.slice()")
+    out["owedAfter"] = pg.evaluate(B318_OWED)
+    ctx.close()
+    return out
+
+
+def _b318_void_home(br):
+    """B4: a pendingVoidCutscene stored on an account (the old Home path),
+    with the real cards: never two up at once, and Void's banner is
+    announced."""
+    ctx, pg = _b318_page(br)
+    _sf_clock(pg)
+    pg.evaluate(B318_LOG, {"realCards": True})
+    pg.evaluate("""() => { const o = MYSTERY_ORDER; store.mysteryColorsFound = {}; o.forEach(k => store.mysteryColorsFound[k] = false);
+      VOID_FLARES.forEach(k => store.mysteryColorsFound[k] = true); store.flareHintsShown = ['umbra', 'singularity', 'genesis'];
+      const u = ensureUnlocksShown(); u.chars = u.chars.filter(x => x !== 'voidwalker'); u.banners = u.banners.filter(x => x !== 'flare_void');
+      const p = pendingHomeUnlocks(); markUnlocksShown(p.chars.filter(x => x !== 'voidwalker'), p.banners.filter(x => x !== 'flare_void'), p.fx);
+      store.pendingVoidCutscene = true; saveStore(); window.forceHideBottomTabs = false; showHome(); }""")
+    most, names, seen = 0, [], set()
+    for _ in range(320):
+        pg.clock.run_for(250)
+        r = pg.evaluate("() => [...document.querySelectorAll('.rs-spot')].map(s => (s.className.match(/rs-spot-(\\w+)/) || [])[1] + ':' + ((s.querySelector('.rs-spot-name') || {}).textContent || ''))")
+        most = max(most, len(r))
+        for x in r:
+            if x not in seen:
+                seen.add(x); names.append(x)
+    out = {"most": most, "cards": names, "log": pg.evaluate("() => window.__fl.slice()"),
+           "flag": pg.evaluate("() => store.pendingVoidCutscene"), "bannerShown": pg.evaluate("() => unlockWasShown('banners', 'flare_void')")}
+    ctx.close()
+    return out
+
+
+def _b318_hints(br):
+    """The "out there" cards (no level) and the Home tap captions."""
+    ctx, pg = _b318_page(br)
+    out = {}
+    out["cards"] = pg.evaluate("""() => { const o = MYSTERY_ORDER;
+      const set = upto => { store.mysteryColorsFound = {}; o.forEach(k => store.mysteryColorsFound[k] = false); o.slice(0, o.indexOf(upto) + 1).forEach(k => store.mysteryColorsFound[k] = true); };
+      const r = {}; [['umbra', 'yellow'], ['singularity', 'violet'], ['genesis', 'white']].forEach(([ch, upto]) => { set(upto); const it = flareHintItem(ch); r[ch] = it.name + ' | ' + it.sub; });
+      return r; }""")
+    # Void's hunt, two found: the third is the next one; then Void held: violet next, white not
+    out["caps"] = pg.evaluate("""() => { const o = MYSTERY_ORDER; const set = upto => { store.mysteryColorsFound = {}; o.forEach(k => store.mysteryColorsFound[k] = false); o.slice(0, o.indexOf(upto) + 1).forEach(k => store.mysteryColorsFound[k] = true); };
+      const words = c => (c.parts || []).join(' ');
+      store.flareLevels = { yellow: 48, violet: 60, white: 71, core: 79 };
+      set('orange'); const lv = levelOf(store);
+      const y = homeTapCopyFlare('yellow');
+      set('yellow'); const v = homeTapCopyFlare('violet'), w = homeTapCopyFlare('white');
+      set('red'); const or = homeTapCopyFlare('orange'), ye = homeTapCopyFlare('yellow');
+      return { level: lv, gates: { yellow: mysteryLevelGate('yellow'), violet: mysteryLevelGate('violet') },
+        yellow: [y.name, y.state, y.color, words(y)], violet: [v.name, v.state, v.color, words(v)], white: [w.name, w.state, words(w)],
+        orangeNext: words(or), yellowNotNext: words(ye) }; }""")
+    # the caption on Home, tapped for real
+    pg.evaluate("""() => { const o = MYSTERY_ORDER; store.mysteryColorsFound = {}; o.forEach(k => store.mysteryColorsFound[k] = false);
+      VOID_FLARES.forEach(k => store.mysteryColorsFound[k] = true); store.flareHintsShown = ['umbra', 'singularity', 'genesis'];
+      const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); saveStore(); window.forceHideBottomTabs = false; showHome(); }""")
+    pg.wait_for_timeout(2500)
+    tap = """async (k) => { const el = document.querySelector('.screen-home-actual .cosmic-flare-dot[data-flare="' + k + '"]'); if(!el) return null;
+      el.click(); await new Promise(r => setTimeout(r, 350));
+      const it = document.querySelector('.home-caption > .hc-item:not(.is-out)'); return it ? it.textContent : ''; }"""
+    out["tapViolet"] = pg.evaluate(tap, "violet")
+    pg.wait_for_timeout(500)
+    out["tapWhite"] = pg.evaluate(tap, "white")
+    ctx.close()
+    return out
+
+
+B318_ORBIT_JS = r"""() => {
+  /* every flare riding a scene's orbit: is any of it clipped by its own
+     plane's clip-path edge (other than the 50% cut), or off the screen? */
+  const planes = [...document.querySelectorAll('.sf-scene .sf-orbit')];
+  const out = { planes: planes.length, orbs: 0, clipped: [], offscreen: [] };
+  const vw = innerWidth;
+  planes.forEach(pl => {
+    const cs = getComputedStyle(pl);
+    if(+cs.opacity < .5) return;
+    const m = /inset\(([^)]*)\)/.exec(cs.clipPath || '');
+    const W = pl.offsetWidth, H = pl.offsetHeight;
+    const px = (v, base) => v.endsWith('%') ? parseFloat(v) / 100 * base : parseFloat(v);
+    let ins = [0, 0, 0, 0];
+    if(m){ const p = m[1].trim().split(/\s+/); while(p.length < 4) p.push(p[p.length === 3 ? 1 : p.length === 2 ? 0 : 0]);
+      ins = [px(p[0], H), px(p[1], W), px(p[2], H), px(p[3], W)]; }
+    const front = pl.classList.contains('is-front');
+    /* the plane's transform to the screen: its box's centre, then rotate/scaleY (and the scale property) */
+    const r = pl.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const sq = parseFloat(cs.getPropertyValue('--sq')) || .3, tilt = (parseFloat(cs.getPropertyValue('--tilt')) || 0) * Math.PI / 180;
+    const sc = cs.scale && cs.scale !== 'none' ? parseFloat(cs.scale) : 1;
+    const toLocal = (x, y) => { let dx = (x - cx) / sc, dy = (y - cy) / sc;
+      const c = Math.cos(-tilt), s = Math.sin(-tilt); const rx = dx * c - dy * s, ry = dx * s + dy * c;
+      return [rx + W / 2, ry / sq + H / 2]; };
+    pl.querySelectorAll('.xs-orb').forEach(o => {
+      const b = o.getBoundingClientRect(); if(!b.width) return;
+      out.orbs++;
+      const core = b.width * .35;  /* the lit core and inner bloom */
+      const ox = b.left + b.width / 2, oy = b.top + b.height / 2;
+      const pts = [[ox - core, oy - core], [ox + core, oy - core], [ox - core, oy + core], [ox + core, oy + core]].map(p => toLocal(p[0], p[1]));
+      const lx = Math.min(...pts.map(p => p[0])), hx = Math.max(...pts.map(p => p[0])), ly = Math.min(...pts.map(p => p[1])), hy = Math.max(...pts.map(p => p[1]));
+      const c = toLocal(ox, oy);
+      /* only the half this plane draws: its centre on this side of the 50% line */
+      const mine = front ? c[1] >= H / 2 : c[1] <= H / 2;
+      if(mine){
+        const cut = [];
+        if(!front && ly < ins[0] - .5) cut.push('top');
+        if(front && hy > H - ins[2] + .5) cut.push('bottom');
+        if(lx < ins[3] - .5) cut.push('left');
+        if(hx > W - ins[1] + .5) cut.push('right');
+        if(cut.length) out.clipped.push((front ? 'front:' : 'back:') + cut.join('+'));
+      }
+      if(ox - core < 0 || ox + core > vw) out.offscreen.push(Math.round(ox));
+    });
+  });
+  return out;
+}"""
+
+
+B318_UMBRA = """() => { const st = document.querySelector('.sf-umbra .sf-stage'); if(!st) return null;
+  const S = st.getBoundingClientRect(), cx = S.left + S.width / 2, cy = S.top + S.height / 2;
+  const at = sel => { const e = document.querySelector('.sf-umbra ' + sel); if(!e) return null; const r = e.getBoundingClientRect();
+    return { dx: Math.round((r.left + r.width / 2 - cx) / S.width * 1000) / 10, dy: Math.round((r.top + r.height / 2 - cy) / S.width * 1000) / 10,
+             w: Math.round(r.width / S.width * 1000) / 10, o: +getComputedStyle(e).opacity }; };
+  return { cls: document.querySelector('.sf-umbra').className, flare: at('.sfu-flare'), sun: at('.sfu-moon'), moon: at('.sfu-occult'),
+           comet: !!document.querySelector('.sf-umbra .sf-comet') }; }"""
+
+
+def _b318_umbra(br):
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(SF_FIX, "violet")
+    pg.evaluate("() => { showHome(); }"); pg.wait_for_timeout(500)
+    _sf_clock(pg)
+    pg.evaluate("() => { document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.rs-spot,.daily-alert').forEach(n => n.remove()); window.__h = playFlareFoundScene('violet', false, () => {}); }")
+    t, samples = 0.0, {}
+    for want in (1.2, 3.2, 6.0, 9.6):
+        while t < want - 1e-6:
+            t0 = t; t = round(t + .1, 3)
+            pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000))); pg.evaluate(SF_SEEK, t)
+        samples[str(want)] = pg.evaluate(B318_UMBRA)
+    ctx.close()
+    return samples
+
+
+def _b318_orbits(br, w, h, c):
+    """Every flare on a scene's ring, sampled through a whole lap: none cut
+    by its own plane's edge (bar the 50% line the halves meet on), none off
+    the screen."""
+    ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+    pg.evaluate(SF_FIX, c)
+    pg.evaluate("() => { const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); saveStore(); showHome(); }"); pg.wait_for_timeout(500)
+    _sf_clock(pg)
+    pg.evaluate("(c) => { document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.rs-spot,.daily-alert').forEach(n => n.remove()); playFlareFoundScene(c, c === 'yellow', () => {}); }", c)
+    t = 0.0
+    def go(to):
+        nonlocal t
+        while t < to - 1e-6:
+            t0 = t; t = round(t + .1, 3)
+            pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000))); pg.evaluate(SF_SEEK, t)
+    while t < 40 and not pg.evaluate("() => !!document.querySelector('.sf-scene.sf-orbits')"):
+        go(t + .5)
+    go(t + .4)
+    res = {"samples": 0, "orbs": 0, "clipped": {}, "offscreen": 0, "span": 0.0}
+    t_first = t
+    for _ in range(60):
+        if not pg.evaluate("() => !!document.querySelector('.sf-scene:not(.sf-end)')"):
+            break
+        r = pg.evaluate(B318_ORBIT_JS)
+        res["samples"] += 1; res["orbs"] += r["orbs"]; res["most"] = max(res.get("most", 0), r["orbs"])
+        for k in r["clipped"]:
+            res["clipped"][k] = res["clipped"].get(k, 0) + 1
+        res["offscreen"] += len(r["offscreen"])
+        res["span"] = round(t - t_first, 2)
+        go(t + .15)
+    # N flares evenly round an 11s lap: 11/N seconds puts a flare at every
+    # point of the ring
+    res["perRing"] = res.get("most", 0) // 2
+    res["lapNeeded"] = round(11 / max(1, res["perRing"]), 2)
+    ctx.close()
+    return res
+
+
+def check_b318_flares(br):
+    """Build 318, Madison on the secret flares:
+      - "the cutscene is happening from the main menu and so are the popups.
+        Those need to happen from the result screen. It'd be like the rank
+        up one, so cutscene first, then the pop up that you found it ...
+        cutscene, flare, and then character";
+      - "The popup for the next flare should not mention what level it
+        appears at";
+      - "for the character you are closest to only ... it should give a hint
+        ... 'they say these are seen in tests when level blah blah' ... if
+        you haven't unlocked void then the others wouldn't give the hint";
+      - "Umbra cutscene ... at the very beginning the flare goes to the moon
+        but that's kinda confusing ... when all the secret flares float
+        around umbra, when they get to the front they are cutoff".
+    On a real run, every find plays on its results in the rank-up's order
+    (scene, the flare's card, the character, its banner), after the badge
+    and the rank; what is owed is written at the find and gone once seen; a
+    find cut short by the app closing plays on the next Home, once; the old
+    stored Void flag plays one card at a time with Void's banner (B4); the
+    cards never name a level; only the next flare's caption hints, at its
+    real level; Umbra's flare lights in place and is eclipsed; no ring
+    flare is clipped or off the screen. Written against 219bfea, where the
+    order, the owed record, the relaunch, B4, Genesis's card, the captions,
+    the Umbra opening and the rings all fail."""
+    print("\n318f. the secret flares: their moment on the results, owed until seen, the next one's rumour, Umbra's eclipse and rings")
+    for c in ("red", "yellow", "violet", "white", "core"):
+        r = _b318_order(br, c)
+        log = r.get("log") or []
+        ch = {"yellow": "voidwalker", "violet": "umbra", "white": "singularity", "core": "genesis"}.get(c)
+        def at(x):
+            return next((i for i, e in enumerate(log) if e == x), None)
+        sc, fc = at("scene:" + c), at("spot:flare:" + c)
+        seq = [sc, fc] + ([at("spot:character:" + ch)] if ch else [])
+        check("%s: on its results, the scene, then the flare's card%s - each once" % (c, ", then " + ch + "'s card" if ch else ""),
+              None not in seq and seq == sorted(seq) and log.count("scene:" + c) == 1 and log.count("spot:flare:" + c) == 1, log)
+        check("%s: owed from the moment it is found, and nothing owed once its results are done" % c,
+              isinstance(r.get("owedAtFind"), list) and any(o.get("c") == c and o.get("s") == 0 for o in r["owedAtFind"]) and r.get("owedAfter") is None,
+              [r.get("owedAtFind"), r.get("owedAfter")])
+    r = _b318_order(br, "violet", extra=True)
+    log = r.get("log") or []
+    idx = lambda p: next((i for i, e in enumerate(log) if e.startswith(p)), None)
+    order = [idx("badge"), idx("rank:"), idx("spot:rankrewards") if idx("spot:rankrewards") is not None else idx("spot:theme"),
+             idx("scene:violet"), idx("spot:flare:violet"), idx("spot:character:umbra")]
+    check("with a badge and a rank-up on the same run: the badge, the rank, its reward card, then the flare's scene, card and character",
+          None not in order and order == sorted(order), log)
+    r = _b318_interrupted(br, "violet")
+    home = r.get("home") or []
+    hi = lambda x: home.index(x) if x in home else None
+    seq = [hi("scene:violet"), hi("spot:flare:violet"), hi("spot:character:umbra")]
+    check("closed while its scene played: still owed (the scene not yet seen)",
+          any(o.get("c") == "violet" and o.get("s") == 0 for o in (r.get("owedAtClose") or [])), [r.get("before"), r.get("owedAtClose")])
+    check("the next launch's Home plays it - the scene, the flare's card, then Umbra's - each once",
+          None not in seq and seq == sorted(seq) and home.count("scene:violet") == 1 and home.count("spot:flare:violet") == 1, home)
+    check("and then nothing is owed, and a launch after that plays nothing again",
+          r.get("owedAfter") is None and not any(e.startswith("scene:") or e.startswith("spot:flare") for e in (r.get("again") or [])),
+          [r.get("owedAfter"), r.get("again")])
+    r = _b318_charonly(br)
+    check("closed between the flare's card and the character's: the find stays owed for the character alone, and Home plays just that",
+          [o.get("s") for o in (r.get("owed") or [])] == [2] and (r.get("home") or [])[:1] == ["spot:character:umbra"]
+          and not any(e.startswith("scene:") or e.startswith("spot:flare") for e in (r.get("home") or [])) and r.get("owedAfter") is None, r)
+    r = _b318_void_home(br)
+    check("B4: a stored Void flag plays its scene once and then one card at a time - never two stacked",
+          r.get("log", []).count("scene:yellow") == 1 and r.get("most") == 1 and r.get("flag") is False, r)
+    check("B4: the flare's card, then Void's, then Void's banner is announced",
+          [x.split(":")[0] for x in r.get("cards", [])][:3] == ["flare", "character", "banner"] and r.get("bannerShown") is True, r.get("cards"))
+    r = _b318_hints(br)
+    cards = r.get("cards") or {}
+    check("the 'is out there' cards never name a level (Umbra, Horizon, Genesis)",
+          len(cards) == 3 and not any(re.search(r"\blevel\b|\d", v, re.I) for v in cards.values()), cards)
+    cp = r.get("caps") or {}
+    y, v, w = cp.get("yellow") or [], cp.get("violet") or [], cp.get("white") or []
+    lv = cp.get("level") or 0
+    g = cp.get("gates") or {}
+    want_y = ("They say this one has been seen in tests at your level." if lv >= (g.get("yellow") or 999)
+              else "They say this one is seen in tests from level %s." % g.get("yellow"))
+    want_v = ("They say this one has been seen in tests at your level." if lv >= (g.get("violet") or 999)
+              else "They say this one is seen in tests from level %s." % g.get("violet"))
+    check("the next flare's caption is a rumour of its real level - no name, no colour", y[:3] == ["Secret flare", "Not found", ""] and y[3:] == [want_y], [lv, g, y])
+    check("with Void held, the fourth (the next) gets the rumour and the fifth only 'not found'",
+          v[3:] == [want_v] and w[2:] == ["Secret flare has not been found."], [v, w])
+    check("in Void's hunt only the next one hints (orange, one found); a later one says only 'not found'",
+          (cp.get("orangeNext") or "").startswith("They say this one") and cp.get("yellowNotNext") == "Secret flare has not been found.", cp)
+    check("tapped on Home: the next flare's caption carries the rumour, another unfound one does not",
+          "They say this one" in (r.get("tapViolet") or "") and "has not been found" in (r.get("tapWhite") or "") and "They say" not in (r.get("tapWhite") or ""),
+          [r.get("tapViolet"), r.get("tapWhite")])
+    s = _b318_umbra(br)
+    a, b, c3, d = s.get("1.2") or {}, s.get("3.2") or {}, s.get("6.0") or {}, s.get("9.6") or {}
+    fl = (a.get("flare") or {})
+    check("Umbra opens on its flare lit in the middle of the dark - no flare flying in from a corner to the moon",
+          fl.get("o", 0) > .5 and abs(fl.get("dx", 99)) <= 1 and abs(fl.get("dy", 99)) <= 1 and not a.get("comet"), a)
+    check("the flare swells into the sun (the flare gone into it, the sun at full size, still alone)",
+          (b.get("sun") or {}).get("o", 0) > .9 and (b.get("sun") or {}).get("w", 0) >= 44 and (b.get("flare") or {}).get("o", 1) < .2
+          and (b.get("moon") or {}).get("o", 1) < .05, b)
+    check("a dark moon slides in across it: part-way at 6s, the sun eclipsed by totality",
+          (c3.get("moon") or {}).get("o", 0) > .9 and 3 < (c3.get("moon") or {}).get("dx", 0) < 40
+          and abs((d.get("moon") or {}).get("dx", 99)) <= .5 and (d.get("moon") or {}).get("w", 0) >= (d.get("sun") or {}).get("w", 99), [c3.get("moon"), d.get("moon"), d.get("sun")])
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        for c in ("yellow", "violet", "white", "core"):
+            r = _b318_orbits(br, w, h, c)
+            check("%s, %s's ring: through a whole lap no flare is cut at its plane's edge or off the screen" % (dev, SF_CHAR[c]),
+                  r["samples"] >= 15 and r["span"] >= r["lapNeeded"] and r["orbs"] > 0 and not r["clipped"] and r["offscreen"] == 0, r)
+    # the Virtual Room's leaderboard waits for a find's scene like any other
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    vr = pg.evaluate("""() => { const o = document.createElement('div'); o.className = 'ff-scene sf-scene sf-umbra'; document.body.appendChild(o);
+      const r = !!document.querySelector(VROOM_SCENE_SELECTOR); o.remove(); return r; }""")
+    # a run the app lost and is resumed takes its find to its own results
+    rs = pg.evaluate("""() => { const o = MYSTERY_ORDER; store.mysteryColorsFound = {}; o.forEach(k => store.mysteryColorsFound[k] = false);
+      o.slice(0, 3).forEach(k => store.mysteryColorsFound[k] = true); saveStore();
+      const t = 'Identity Crimes'; cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t];
+      const idx = QUESTIONS.map((q,i) => [q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
+      beginRun(idx, null, null); mysteryColorThisRun = 'violet'; foundMysteryFlare(null); saveRunSession();
+      const s = readRunSession(); resumeRunSession(s);
+      return { session: s ? s.flareFound : null, found: mysteryFoundThisSession, color: mysteryColorThisRun }; }""")
+    ctx.close()
+    check("the Virtual Room's leaderboard waits for a secret flare's scene (VROOM_SCENE_SELECTOR)", vr is True, vr)
+    check("a resumed run keeps the flare found before the app lost it, for its own results",
+          rs.get("session") == "violet" and rs.get("found") is True and rs.get("color") == "violet", rs)
 
 # --------------------------------------------------------------------------
 # BUILD 317, BADGE ROUND - the briefcase and the token.
@@ -18290,6 +18752,7 @@ def main():
             check_b317_planet(br)
             check_b317_flow(br)
             check_b317_sflare(br)
+            check_b318_flares(br)
             check_b317_badgecase(br)
             check_b317_badge2(br)
             check_b317_focusring(br)
