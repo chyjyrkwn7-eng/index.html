@@ -18237,4 +18237,11 @@ reaction was the weakest in the set (below).
   no two specials alike; no reaction prop is translucent overlapping
   discs; nothing on the Ninja's hood paints outside it (436px on
   219bfea, 0 now); a real 12/12 drill as the Ninja on the iPhone lands
-  `rx-ninja` and then `char-special`. Fails on 219bfea (5 checks).
+  `rx-ninja` and then `char-special`; no special lays a flat fill over
+  the whole drawing. Fails on 219bfea (7 checks).
+- **A special's frame-wide light or dark is a ROUND gradient, never a
+  flat fill over the box.** The results character's svg is a square
+  inside a round frame, so Umbra's and Void's "lights go out" (a flat
+  disc of r 20) and Zeus's flash (a 37-unit rect) showed as hard squares
+  in the circle on a 100. They are r 17-17.5 discs, solid to ~72%, gone
+  by the edge.

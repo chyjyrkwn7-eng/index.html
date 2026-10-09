@@ -27,7 +27,7 @@ NJ_LOBES = [(11.6, 26.6, 4.2), (14.8, 19.4, 4.4), (20.4, 16.2, 4.7), (26, 19.2, 
 NJ_SMOKE = (pivot(20, 23.2, 13.6)
             + puff([(x + .5, y + 1.15, r) for x, y, r in NJ_LOBES], "#727C8C")
             + puff(NJ_LOBES, "#C5CCD6")
-            + puff([(x - .7, y - .9, r * .62) for x, y, r in NJ_LOBES if y < 24], "#D9DEE5"))
+            + puff([(x - .4, y - .75, r * .8) for x, y, r in NJ_LOBES], "#DCE1E8"))
 NJ_WISP = lambda x, y, k: pivot(x, y, 2.4 * k) + puff([(x - .9 * k, y + .3 * k, 1.1 * k), (x + .2 * k, y - .4 * k, 1.4 * k), (x + 1.2 * k, y + .4 * k, 1 * k)], "#C5CCD6")
 NJ_LEAVES = pivot(20, 22, 13) + "".join(ell(x, y, 1.05, .45, c, rot=r) for x, y, c, r in [
     (8.6, 16.4, "#E0453F", -30), (12.4, 9.6, "#FF8A5B", 40), (27.4, 9.2, "#E0453F", -50), (31.6, 16, "#FF8A5B", 20),
@@ -45,8 +45,8 @@ R("ninja", "perfect", [
     P("p-flash", "", (.5, EASE_OUT, {0: "opacity:0; transform:scale(.2) rotate(0deg)", 25: "opacity:1; transform:scale(1) rotate(20deg)",
                                      100: "opacity:0; transform:scale(1.45) rotate(45deg)"}), at=.26),
     P("p-smoke", "", (1.9, EASE_OUT, {0: "opacity:0; transform:scale(.25)", 13: "opacity:1; transform:scale(.95)",
-                                      40: "opacity:1; transform:translateY(-.3px) scale(1.05)",
-                                      58: "opacity:.35; transform:translateY(-1.2px) scale(1.12)",
+                                      38: "opacity:1; transform:translateY(-.3px) scale(1.05)",
+                                      50: "opacity:.2; transform:translateY(-1px) scale(1.12)",
                                       100: "opacity:0; transform:translateY(-2px) scale(1.16)"}), at=.28),
     P("p-w1", "", (1.2, EASE_OUT, {0: "opacity:0; transform:none", 15: "opacity:1", 100: "opacity:0; transform:translate(-2.6px,-2.4px) scale(1.35)"}), at=.42),
     P("p-w2", "", (1.2, EASE_OUT, {0: "opacity:0; transform:none", 15: "opacity:1", 100: "opacity:0; transform:translate(2.6px,-2.6px) scale(1.35)"}), at=.46),

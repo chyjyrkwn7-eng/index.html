@@ -15132,6 +15132,12 @@ def check_b318_celebrations(br):
         row.rxSig = [...new Set(rx.map(a => cls(a.effect.target) + ':' + a.animationName.split('rx-' + id + '-').join('')))].sort().join(',');
         const parts = [...svg.querySelectorAll('.cx-sp')];
         row.parts = parts.length; row.hidden = parts.every(g => g.getAttribute('opacity') === '0');
+        /* a flat fill over the whole 34-unit box shows as a SQUARE inside the
+           results screen's round frame (Zeus's flash, Umbra's and Void's dark) */
+        row.square = [...svg.querySelectorAll('.cx-sp rect, .cx-sp circle, .cx-sp-zsflash, .cx-sp-zs rect')].filter(e => {
+          const b = e.getBBox(), f = e.getAttribute('fill') || '';
+          return b.width >= 32 && b.height >= 32 && b.x <= 4 && b.y <= 4 && !/^url\(/.test(f) && f !== 'none';
+        }).length;
         row.has = typeof charHasSpecial === 'function' && charHasSpecial(av);
         const def = AVATAR_CHARACTERS.find(c => c.id === id);
         row.ms = (typeof CHAR_SPECIAL_MS === 'object') ? (CHAR_SPECIAL_MS[id] || CHAR_SPECIAL_MS[def.kind] || 0) : 0;
@@ -15196,6 +15202,8 @@ def check_b318_celebrations(br):
             spsig.setdefault(x["spSig"], []).append(x["id"])
     check("and no two specials are the same pieces moving the same way", all(len(v) == 1 for v in spsig.values()),
           [v for v in spsig.values() if len(v) > 1])
+    check("no special lays a flat fill over the whole drawing (a square inside the round frame)", all(x["square"] == 0 for x in rows),
+          [(x["id"], x["square"]) for x in rows if x["square"]])
     check("no reaction prop is a heap of translucent overlapping discs (each overlap a darker lens)", r["lens"] == [], r["lens"][:8])
 
     # the Ninja's hood: what is drawn on it stays inside its outline
