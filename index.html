@@ -80170,28 +80170,30 @@ function hfxWorldTree(scr, bx, c){
      over the screen. What is left of that light is soft, out-of-focus
      patches (hfxUwLightURL): blurred ovals of different sizes and
      strengths, faint, brightest just under the surface and gone a third of
-     the way down, in two layers drifting opposite ways so they merge and
-     part. One svg each, rasterised like every sprite - there is no tile to
-     compute any more, so nothing to slice.
+     the way down, in two layers - one still, one drifting through it (round
+     6) - with the motes drawn in among them. One svg each, rasterised like
+     every sprite - there is no tile to compute any more, so nothing to
+     slice.
    - BUBBLES, PLENTY (round 5), each one a bubble - a bright rim, a lit
      highlight - from ~3px to ~22px. They rise in STREAMS from vents in the
      floor and from the top of the 100% box, with strays from the deep;
-     each speeds up a little as it goes and wobbles side to side as it
-     rises, a small one quick and tight, a big one slower and wider and
-     squashing as it goes (the rise and the wobble are two animations on
-     one element, `translate` and `transform`). At the surface a small one
-     pops and a big one flattens out. As the water drains, a last rush of
-     them goes up.
+     each wobbles side to side as it rises, a fine stream quick and tight,
+     a coarse chain or a big stray slower and wider and squashing. Since
+     round 6 they ride in GROUPS - a stream is one element, its bubbles
+     plain children that never move on their own (see "BUBBLES, IN
+     GROUPS"). At the surface a bigger one pops or flattens out. As the
+     water drains, a last rush of them goes up, in a handful of clusters.
    - THE SCREEN IS UNDER IT (round 5, hfxUwScreen). Each card starts to sway
      the moment the surface passes its middle - a dip as the water takes
-     it, then a slow drift and roll - and settles back to exactly where it
+     it, then a slow drift and bob - and settles back to exactly where it
      was as the water leaves it. The surface line is a thin lens
      (.hfx-uw-lens: a small backdrop blur and brightening, a strip a few
      dozen pixels tall - the one blur this effect has) so what is behind
      the line goes soft and bright as the line passes over it.
    - THE CHARACTER HOLDS ITS BREATH (round 5, hfxUwHold).
-   - LIGHT RAYS fanning down from the surface, swaying; motes drifting in
-     the light; the school of fish and the manta from the first build.
+   - LIGHT RAYS down from the surface (still since round 6, leaning in
+     their picture rather than rotated); the school of fish (one layer since
+     round 6) and the manta from the first build.
    Transform and opacity only, plus that one thin lens; every picture drawn
    once and rasterised; no svg filters; pieces go in when they are due and
    come out when they are done. */
@@ -80248,7 +80250,8 @@ function hfxUwLightURL(seed){
     const rnd = bnRand(613 + seed * 29), P = 320, H = 200, F = v => v.toFixed(1);
     let blobs = "", motes = "";
     /* specks in the light, drifting with it (round 6: the motes) */
-    for(let i = 0; i < 7; i++) motes += '<circle cx="' + F(rnd() * P) + '" cy="' + F(10 + rnd() * H * .8) + '" r="' + F(.7 + rnd() * .9) + '" fill="#F2FFFF" fill-opacity="' + (.5 + rnd() * .4).toFixed(2) + '"/>';
+    /* soft specks, no edge: the light has none anywhere */
+    for(let i = 0; i < 7; i++) motes += '<circle cx="' + F(rnd() * P) + '" cy="' + F(10 + rnd() * H * .8) + '" r="' + F(4 + rnd() * 2) + '" fill="url(#mo)"/>';
     for(let i = 0; i < 15; i++){
       const x = rnd() * P, y = 8 + Math.pow(rnd(), 1.6) * H * .6, rx = 16 + rnd() * 36, ry = rx * (.38 + rnd() * .34), a = Math.round(rnd() * 50 - 25), o = (.35 + rnd() * .6).toFixed(2);
       [-P, 0, P].forEach(dx => {
@@ -80257,7 +80260,7 @@ function hfxUwLightURL(seed){
         blobs += '<ellipse cx="' + F(X) + '" cy="' + F(y) + '" rx="' + F(rx) + '" ry="' + F(ry) + '" transform="rotate(' + a + ' ' + F(X) + ' ' + F(y) + ')" fill="url(#b)" fill-opacity="' + o + '"/>';
       });
     }
-    return 'viewBox="0 0 ' + P + ' ' + H + '"><defs><radialGradient id="b"><stop offset="0" stop-color="#F2FFFF" stop-opacity=".9"/><stop offset=".45" stop-color="#C8F7FF" stop-opacity=".42"/><stop offset="1" stop-color="#C8F7FF" stop-opacity="0"/></radialGradient>' +
+    return 'viewBox="0 0 ' + P + ' ' + H + '"><defs><radialGradient id="mo"><stop offset="0" stop-color="#F2FFFF" stop-opacity=".4"/><stop offset="1" stop-color="#F2FFFF" stop-opacity="0"/></radialGradient><radialGradient id="b"><stop offset="0" stop-color="#F2FFFF" stop-opacity=".9"/><stop offset=".45" stop-color="#C8F7FF" stop-opacity=".42"/><stop offset="1" stop-color="#C8F7FF" stop-opacity="0"/></radialGradient>' +
       '<linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".3" stop-color="#fff" stop-opacity=".65"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
       '<mask id="m"><rect width="' + P + '" height="' + H + '" fill="url(#f)"/></mask></defs><g mask="url(#m)">' + blobs + '</g>' + motes + '</svg>';
   }, 320);
@@ -80316,8 +80319,8 @@ function hfxBezier(x1, y1, x2, y2){
 /* The sea, built into `parent`: the rising body with its surface, its
    light and what lives in it. `o`: W, H (the ocean's size), lvl (the
    surface's rest, px from the top), k (scale), t (rise, riseD, drain,
-   drainD in s), n (counts: rays, motes, vents, gap [s between a vent's
-   bubbles], scatter, boxGap, rush), box (the 100% box at rest, in ocean
+   drainD in s), n (counts: rays, vents, gap [s between a vent's
+   bubbles], scatter, boxGap, rush [clusters]), box (the 100% box at rest, in ocean
    px, or null), total (s). Returns the body (so callers can add to it),
    where the waterline is at any moment (lineAt), and the water's own
    clock. */
@@ -80524,7 +80527,7 @@ function hfxSea(parent, o){
    sways from the moment the surface passes its middle until the water
    leaves it again, and the results character holds its breath while it is
    under. The sway is a script-made animation on the card's own `translate`
-   and `rotate` - the transform its landing holds is never touched - that
+   - the transform its landing holds is never touched - that
    starts from nothing (a dip as the water takes it, then the drift easing
    in), and ends with a settle from wherever it is to exactly nothing. */
 function hfxUwScreen(c, S, page, k, tot){

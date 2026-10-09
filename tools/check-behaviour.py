@@ -11871,7 +11871,7 @@ def check_b313_fx(br):
             if(L0){ uwMo = new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if(!n.classList) return;
               [...(n.classList.contains('hfx-uw-bub') ? [n] : []), ...n.querySelectorAll('.hfx-uw-bub')].forEach(b => {
                 let wob = null;
-                for(let e = b; e && e !== L0 && !wob; e = e.parentElement) wob = e.getAnimations().find(a => /wob/.test(a.animationName || ''));
+                for(let e = b; e && e !== L0 && !wob; e = e.parentElement) wob = e.getAnimations().find(a => /wob/.test(a.animationName || a.id || ''));
                 const tm = wob ? wob.effect.getTiming() : {};
                 uw.bubs.push({ ps: parseFloat(b.style.getPropertyValue('--ps')), from: b.dataset.from || '', wp: tm.duration || null, dir: tm.direction || null, it: tm.iterations || 0 }); }); })));
               uwMo.observe(L0, { childList: true, subtree: true }); }

@@ -13608,6 +13608,55 @@ breath animation when going under?"* All four, answered:
   out of `FX_ALL`; the Customize, tile-hold and flow gates name the 100
   rung by `HUNDO_FX[2]`.
 
+**UNDERWATER, ROUND 6: THE SAME WATER FOR LESS (build 317).** *"I don't want
+laggy bubbles? How old/slow of a phone would effect them are we talking
+about"*. Round 5 drew ~15-25% fewer frames than the UFO at 4x CPU. Nothing
+visible was taken out; what changed is how it is drawn, each step measured.
+- **Measure per THREAD, not by frames alone.** On this shared box the
+  frame count moves 30% run to run with other agents' load, so piece-by-
+  piece attribution by frames was noise. `scratchpad/.../trace2.py` traces
+  the 7s and sums each thread's CPU (`ThreadControllerImpl::RunTask` tdur)
+  between two `performance.mark`s; the display compositor's time PER FRAME
+  and the page's own thread's total are what separate the pieces. The UFO
+  runs ~6.3ms a frame of compositor and ~3.7s of main thread.
+- **What it cost, found that way:** css keyframes reading custom
+  properties (`rotate(var(--ra))`, `translate(0, var(--up))`) - the rays
+  alone cost as much main-thread time as the rest of the water; every one
+  of them is a Web Animation with plain values now. A ROTATED layer (the
+  cards' roll, ~2ms a frame; the rays' lean) goes through the slow path, so
+  the cards bob without rolling and the rays lean in their picture, upright
+  and still. A layer moving between pixels is filtered: the sway and the
+  drifting light step on whole device pixels (~15 a second for the sway,
+  two device px a step for the light) - a few px over seconds, nothing to
+  see as stepping. One light strip drifts and the other holds still.
+- **Bubbles in groups.** A stream from a vent is ONE element (a fine
+  stream and a coarse chain per vent), its bubbles plain children at their
+  places in it - each bubble's own sway baked into where it sits, the
+  chain zigzagging - so ~95 bubbles are ~20 moving things, not ~70. The box
+  fizzes in three columns, the deep strays are big singletons that
+  squash, the drain rush is a handful of clusters. A bubble is cut off by
+  the water's edge as it reaches the surface and a pop (8px and up) goes
+  off there, placed by the group's own numbers (`swing`, `hfxUwEaseInv`).
+  Cutting a long stream into short pieces (less to redraw per piece) was
+  tried and measured no cheaper - more pieces is more going in and out of
+  the page - so a stream is one piece. The fish school is one layer; the
+  motes are drawn into the light strip.
+- **Cost now.** Five interleaved passes on a quiet box (load ~1), 7s at 4x CPU,
+  440x956 dpr 3: frames 403-410 against the UFO's 403-411 and round 5's
+  341-389; frames over 25ms 11-19 against the UFO's 5-10 and round 5's
+  32-67; compositor 8.3-8.8ms a frame against 6.3-6.6 and round 5's
+  11-13. Layers mid-effect 82-92 against the UFO's 98 (round 5 ~120). So
+  it is level with the UFO on frames (both at the 60fps ceiling), still a
+  little dearer per frame, and holds up worse when the box is loaded. What
+  is left over the UFO is the cards' sway (~0.7ms a frame), the lens (~0.5)
+  and the bubbles' main-thread time (each group and pop going in); taking
+  any of those further means visibly less of the thing.
+- **Gates** (`check_b313_fx`): the round 5 assertions hold, read through
+  the groups (every bubble counted inside what went in; its wobble is the
+  one on it or on the group it rides in), and round 6 adds: at rest 30+
+  bubbles in sight carried by at most a third as many moving things and
+  no more than 16 - fails on 0562411, where every bubble is its own.
+
 **The % is the end of the number's ramp, on every 100% (build 317, round
 2).** *"the percentage sign, it looks like a solid color, ensure that and the
 number (the hundo) look like it goes together, the color should go into
