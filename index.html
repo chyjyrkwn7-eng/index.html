@@ -47781,6 +47781,26 @@ function generatePublicId(){
   return out;
 }
 
+/* ---- A ROW KEYED BY A SYNC CODE IS NOT A ROW (build 318) ----
+   Every build since the publicId migration writes its row under a
+   twelve-character public id and only ever DELETES a code-keyed one
+   (migrateLeaderboardKey, retireLeaderboardEntry). But a phone still
+   running a copy from before it keeps writing under its sync code, and
+   that copy never updates and never follows a merge note - so Z showed
+   twice on every board, once as his real account and once as his old
+   phone's row, and deleting that row server-side achieved nothing: the
+   old phone wrote it straight back. So every READ of `leaderboard`
+   skips such a document. The test is the sync code's exact shape -
+   XXXX-XXXX, upper case, dash in the middle, which is all
+   generateSyncCode has ever produced (build 97 on) - and a public id is
+   twelve lower-case characters with no dash, so it can never match.
+   Deliberately not "any dash": test fixtures and anything else that is
+   not a code must not vanish from the board. Writing is untouched. */
+const LEGACY_BOARD_ID_RE = /^[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+function isLegacyBoardId(id){
+  return typeof id === "string" && LEGACY_BOARD_ID_RE.test(id);
+}
+
 /* Minted on demand rather than at sign-up only, for the same reason the
    sync code is: an account that predates this has none, and every one of
    them needs one the first time it publishes anything. */
@@ -47857,7 +47877,11 @@ let leaderboardRowsFromServer = false;
    `leaderboard` collection goes through this, so the rule cannot be
    honoured on one screen and missed on another. */
 function mergeBoardSnapshot(current, next, snap){
-  const have = Array.isArray(current) ? current : [];
+  /* A code-keyed row never reaches the board, whichever side it came
+     in on - including rows held from before this build. */
+  const keep = e => !(e && isLegacyBoardId(e.pub));
+  const have = (Array.isArray(current) ? current : []).filter(keep);
+  next = (Array.isArray(next) ? next : []).filter(keep);
   if(!have.length) return next;
   const served = !(snap && snap.metadata && snap.metadata.fromCache);
   if(served) return next.length ? next : have;
@@ -90054,6 +90078,7 @@ function fetchBoardForInvites(force){
       boardFetchedAt = Date.now();
       const next = [];
       snap.forEach(doc => {
+        if(isLegacyBoardId(doc.id)) return;
         const e = Object.assign({ pub: doc.id }, doc.data());
         e.rawWeekPoints = e.weekPoints; e.weekPoints = weekPointsOfEntry(e);
         next.push(e);
@@ -92141,6 +92166,7 @@ function openInviteFriendsSheet(roomCode){
         overlay.__unsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
           const next = [];
           snap.forEach(doc => {
+            if(isLegacyBoardId(doc.id)) return;
             const e = Object.assign({ pub: doc.id }, doc.data());
             e.rawWeekPoints = e.weekPoints; e.weekPoints = weekPointsOfEntry(e);
             next.push(e);
@@ -95816,7 +95842,7 @@ function renderLeaderboardList(list){
   try{
     leaderboardLiveUnsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
       const entries = [];
-      snap.forEach(doc => entries.push(doc.data()));
+      snap.forEach(doc => { if(!isLegacyBoardId(doc.id)) entries.push(doc.data()); });
       renderLeaderboardRows(rows, entries);
     }, { onError: showError });
   } catch(e){
@@ -97718,6 +97744,7 @@ function attachFriendsBoardListener(){
     friendsLiveUnsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
       const next = [];
       snap.forEach(doc => {
+        if(isLegacyBoardId(doc.id)) return;
         const e = Object.assign({ pub: doc.id }, doc.data());
         e.rawWeekPoints = e.weekPoints; e.weekPoints = weekPointsOfEntry(e);
         next.push(e);
@@ -101039,6 +101066,7 @@ function showRankings(defaultBoard){
            field called `code` holding something that is no longer the
            sync code is exactly how the next person reintroduces this. */
         snap.forEach(doc => {
+          if(isLegacyBoardId(doc.id)) return;
           const e = Object.assign({ pub: doc.id }, doc.data());
           /* Expire a stale week here rather than at every read site -
              the board sorts on e[board.field], so the field itself has
