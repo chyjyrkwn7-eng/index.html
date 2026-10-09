@@ -11805,7 +11805,12 @@ def check_b313_fx(br):
             return { sea: R(sea), vw: innerWidth, vh: innerHeight, pos: oc ? getComputedStyle(oc).position : null,
               waves: [...L.querySelectorAll('.hfx-uw-wave')].map(w => new DOMMatrixReadOnly(getComputedStyle(w).transform).m41),
               caus: [...L.querySelectorAll('.hfx-uw-caus')].map(e => getComputedStyle(e).backgroundImage.slice(0, 26)),
-              alphas, rays: L.querySelectorAll('.hfx-uw-ray').length, bubbles: L.querySelectorAll('.hfx-uw-bub').length }; };
+              alphas, rays: L.querySelectorAll('.hfx-uw-ray').length, bubbles: L.querySelectorAll('.hfx-uw-bub').length,
+              /* round 6: the bubbles in sight, and how many moving things carry them */
+              grouped: (() => { const bq = body ? body.getBoundingClientRect() : null; if(!bq) return null; const carriers = new Set(); let seen = 0;
+                L.querySelectorAll('.hfx-uw-bub').forEach(b => { const q = b.getBoundingClientRect(); if(q.bottom <= Math.max(0, bq.top) || q.top >= Math.min(innerHeight, bq.bottom)) return; seen++;
+                  for(let e = b; e && e !== L; e = e.parentElement) if(e.getAnimations().some(a => a.playState === 'running')){ carriers.add(e); break; } });
+                return { seen, carriers: carriers.size }; })() }; };
           /* round 5: the screen under the water, every 100ms - which cards
              move, where the surface is, whether the character is holding its
              breath - and every bubble as it goes in */
@@ -11813,9 +11818,15 @@ def check_b313_fx(br):
           let uwIv = null, uwMo = null;
           if(uw){
             const L0 = document.querySelector('.hfx-layer.hfx-underwater');
-            if(L0){ uwMo = new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if(!n.classList || !n.classList.contains('hfx-uw-bub')) return;
-              const wob = n.getAnimations().find(a => /wob/.test(a.animationName || '')), tm = wob ? wob.effect.getTiming() : {};
-              uw.bubs.push({ ps: parseFloat(n.style.getPropertyValue('--ps')), from: n.dataset.from || '', wp: tm.duration || null, dir: tm.direction || null, it: tm.iterations || 0 }); })));
+            /* round 6: a bubble may ride in a group (a stream is one element),
+               so every bubble in what went in counts, and its wobble is the
+               one on it or on the nearest thing it rides in */
+            if(L0){ uwMo = new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if(!n.classList) return;
+              [...(n.classList.contains('hfx-uw-bub') ? [n] : []), ...n.querySelectorAll('.hfx-uw-bub')].forEach(b => {
+                let wob = null;
+                for(let e = b; e && e !== L0 && !wob; e = e.parentElement) wob = e.getAnimations().find(a => /wob/.test(a.animationName || ''));
+                const tm = wob ? wob.effect.getTiming() : {};
+                uw.bubs.push({ ps: parseFloat(b.style.getPropertyValue('--ps')), from: b.dataset.from || '', wp: tm.duration || null, dir: tm.direction || null, it: tm.iterations || 0 }); }); })));
               uwMo.observe(L0, { childList: true, subtree: true }); }
             uwIv = setInterval(() => { const sea = document.querySelector('.hfx-layer.hfx-underwater .hfx-uw-sea'), av = document.querySelector('.rs-screen .results-level-avatar');
               const aq = av && av.getBoundingClientRect();
@@ -12003,7 +12014,10 @@ def check_b313_fx(br):
                   {"n": len(bubs), "sizes": sz[:1] + sz[-1:], "from": src})
             sm = [b["wp"] for b in bubs if b["ps"] <= 6 and b["wp"]]
             bg = [b["wp"] for b in bubs if b["ps"] >= 12 and b["wp"]]
-            check("underwater round 5: every bubble wobbles side to side as it rises (an alternating animation of its own beside the rise, several swings), a small one quicker than a big one",
+            gr = w.get("grouped") or {}
+            check("underwater round 6: BUBBLES THAT DO NOT LAG - at rest 30+ bubbles in sight, carried by at most a third as many moving things (a stream is one element, not one per bubble) and no more than 16",
+                  gr.get("seen", 0) >= 30 and 0 < gr.get("carriers", 99) <= min(16, gr["seen"] / 3), gr)
+            check("underwater round 5: every bubble wobbles side to side as it rises (an alternating animation on it or on the stream it rides in, several swings), a small one quicker than a big one",
                   bubs and all(b["dir"] == "alternate" and b["it"] >= 2 for b in bubs) and sm and bg and sum(sm) / len(sm) < sum(bg) / len(bg) * .7,
                   {"noWobble": sum(1 for b in bubs if b["dir"] != "alternate"), "small": round(sum(sm) / len(sm)) if sm else None, "big": round(sum(bg) / len(bg)) if bg else None})
             rows = uwd.get("rows") or []

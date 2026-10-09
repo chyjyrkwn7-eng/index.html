@@ -9361,30 +9361,28 @@
   .hfx-uw-sheen{ position:absolute; left:0; right:0; top:0; height:24%; background:linear-gradient(180deg, rgba(210,250,255,0), rgba(210,250,255,.16) 28%, rgba(210,250,255,0)); }
   /* round 5: the light under the surface is soft patches, not a web of
      lines - two strips drifting opposite ways, through each other */
-  .hfx-uw-light{ position:absolute; top:0; background-repeat:repeat-x; background-position:0 0; opacity:.42;
-    animation:hfx-uw-light var(--d) linear both; }
+  /* stepped at ~20 a second (round 6): a soft patch moving ~20px a second
+     moves a px a step, and the strips are the widest layers in the water,
+     redrawn whole every time they move */
+  .hfx-uw-light{ position:absolute; top:0; background-repeat:repeat-x; background-position:0 0; opacity:.42; }
   .hfx-uw-light.is-b{ opacity:.32; }
-  @keyframes hfx-uw-light{ from{ transform:translateX(0); } to{ transform:translateX(var(--lx)); } }
-  .hfx-uw-ray{ position:absolute; top:-2px; width:var(--rw); height:var(--rh); margin-left:calc(var(--rw) / -2); transform-origin:50% 0;
-    background:center top / 100% 100% no-repeat; opacity:0; transform:rotate(var(--ra)); animation:hfx-uw-ray var(--d) ease-in-out var(--t) both; }
-  @keyframes hfx-uw-ray{ 0%{ opacity:0; transform:rotate(var(--ra)); } 20%{ opacity:.95; } 50%{ opacity:.6; transform:rotate(calc(var(--ra) - 3deg)); }
-    80%{ opacity:.9; transform:rotate(calc(var(--ra) + 1deg)); } 100%{ opacity:0; transform:rotate(var(--ra)); } }
-  .hfx-uw-mote{ animation:hfx-uw-mote var(--d) ease-in-out var(--t) both; }
-  @keyframes hfx-uw-mote{ 0%{ opacity:0; transform:translate(0, 0); } 20%{ opacity:.8; } 80%{ opacity:.6; } 100%{ opacity:0; transform:translate(var(--mx), var(--my)); } }
-  /* A BUBBLE (round 5): the rise is `translate`, speeding up a little; the
-     wobble is `transform`, side to side, its own length - a small bubble
-     quick and tight, a big one slower, wider and squashing; at the surface
-     a small one pops and a big one flattens out (`scale`, from the moment
-     the rise ends) */
-  .hfx-uw-bub{ animation:hfx-uw-up var(--d) cubic-bezier(.38,.22,.78,.72) var(--t) both, hfx-uw-wob var(--wp) ease-in-out var(--t) var(--wn) alternate both,
-    hfx-uw-pop .2s ease-out calc(var(--t) + var(--d)) forwards; }
-  .hfx-uw-bub.is-big{ animation:hfx-uw-up var(--d) cubic-bezier(.38,.22,.78,.72) var(--t) both, hfx-uw-wob-big var(--wp) ease-in-out var(--t) var(--wn) alternate both,
-    hfx-uw-flat .34s ease-out calc(var(--t) + var(--d)) forwards; }
-  @keyframes hfx-uw-up{ 0%{ translate:0 0; opacity:0; } 7%{ opacity:var(--o, .95); } 100%{ translate:0 var(--up); opacity:var(--o, .95); } }
-  @keyframes hfx-uw-wob{ from{ transform:translateX(calc(var(--wx) * -1)); } to{ transform:translateX(var(--wx)); } }
-  @keyframes hfx-uw-wob-big{ from{ transform:translateX(calc(var(--wx) * -1)) scale(1.07, .93); } to{ transform:translateX(var(--wx)) scale(.94, 1.06); } }
-  @keyframes hfx-uw-pop{ from{ scale:1; opacity:var(--o, .95); } to{ scale:1.7; opacity:0; } }
-  @keyframes hfx-uw-flat{ 0%{ scale:1; opacity:var(--o, .95); } 45%{ scale:1.4 .55; opacity:.8; } 100%{ scale:1.75 .28; opacity:0; } }
+  .hfx-uw-ray{ position:absolute; top:-2px; height:var(--rh);
+    background:center top / 100% 100% no-repeat; }
+  /* BUBBLES IN GROUPS (round 6, see hfxSea): a group is one element - the
+     rise is its `translate` (linear for a stream, speeding up a little for
+     a stray or the rush), the wobble its `transform`, side to side, its own
+     length (a fine stream quick and tight, a coarse chain or a big stray
+     slower and wider, a big one squashing) - both Web Animations. Its bubbles are plain children
+     that never move on their own, so a whole stream is one layer. At the
+     surface each one pops (a small one) or flattens out (a big one): a
+     short-lived piece of its own, over the body's clipped edge. */
+  .hfx-uw-grp{ position:absolute; width:0; height:0; pointer-events:none; opacity:0; }
+  .hfx-uw-bub{ position:absolute; width:var(--ps); height:var(--ps); margin:calc(var(--ps) / -2) 0 0 calc(var(--ps) / -2); background:center / contain no-repeat; }
+  .hfx-uw-pops{ position:absolute; left:0; top:0; width:0; height:0; }
+  .hfx-uw-popfx{ animation:hfx-uw-popfx .22s ease-out var(--t) both; }
+  .hfx-uw-popfx.is-big{ animation:hfx-uw-flat .34s ease-out var(--t) both; }
+  @keyframes hfx-uw-popfx{ 0%{ opacity:0; transform:scale(1); } 12%{ opacity:.9; } 100%{ opacity:0; transform:scale(1.7); } }
+  @keyframes hfx-uw-flat{ 0%{ opacity:0; transform:scale(1); } 10%{ opacity:.95; } 45%{ opacity:.8; transform:scale(1.4, .55); } 100%{ opacity:0; transform:scale(1.75, .28); } }
   /* the lens under the crest (round 5, hfxUwLensURL): the front sheet's own
      water, a strip ~20px tall following the crest - what is behind the
      line goes soft and bright as it passes. The one blur in this effect,
@@ -9401,6 +9399,12 @@
   @keyframes hfx-uw-wave{ from{ transform:translateX(0); } to{ transform:translateX(calc(var(--p) * -1)); } }
   @keyframes hfx-uw-wave-back{ from{ transform:translateX(calc(var(--p) * -1)); } to{ transform:translateX(0); } }
   .hfx-uw-fish, .hfx-uw-manta{ left:0; top:0; }
+  /* round 6: the school is one layer - each fish holds its place in it
+     and the school moves */
+  .hfx-uw-school{ position:absolute; left:0; top:0; width:0; height:0; animation:hfx-uw-swim .9s ease-in-out 8 alternate; }
+  @keyframes hfx-uw-swim{ from{ transform:translateY(-4px); } to{ transform:translateY(4px); } }
+  .hfx-uw-fishk{ position:absolute; width:var(--ps); height:var(--ps); margin:calc(var(--ps) / -2) 0 0 calc(var(--ps) / -2); background:center / contain no-repeat; }
+
   .hfx-uw-drop{ animation:hfx-uw-drop var(--d) cubic-bezier(.55,0,.8,.6) var(--t) both; }
   @keyframes hfx-uw-drop{ 0%{ opacity:0; transform:translateY(0) scaleY(.6); } 14%{ opacity:1; transform:translateY(2px) scaleY(1); } 100%{ opacity:0; transform:translateY(var(--fall)) scaleY(1.35); } }
   .hfx-uw-ring{ position:absolute; width:var(--rs); height:calc(var(--rs) * .34); margin:calc(var(--rs) * -.17) 0 0 calc(var(--rs) / -2); border-radius:50%;
@@ -79844,7 +79848,7 @@ function hfxWarm(id){
     else if(id === "worldtree"){ [0, 1, 2].forEach(i => urls.push(hfxBlossomURL(i))); urls.push(hfxLeafURL()); HFX_BLOOM.forEach(cl => urls.push(hfxPetalURL(cl))); }
     else if(id === "fireworks"){ hfxFwHeads(); urls.push(hfxGlintURL()); }
     else if(id === "blackhole"){ urls.push(hfxDiscURL(), hfxSwirlURL(), hfxStreakURL(), hfxGlintURL()); }
-    else if(id === "underwater"){ urls.push(hfxWaveURL(0), hfxWaveURL(1), hfxUwLensURL(), hfxUwLightURL(0), hfxUwLightURL(1), hfxRayURL(), hfxUwBubbleURL(), hfxMoteURL(), hfxMantaURL(), hfxDropURL(), hfxGlintURL()); [0, 1, 2].forEach(k => urls.push(hfxFishURL(k))); }
+    else if(id === "underwater"){ urls.push(hfxWaveURL(0), hfxWaveURL(1), hfxUwLensURL(), hfxUwLightURL(0), hfxUwLightURL(1), hfxRayURL(), hfxUwBubbleURL(), hfxMantaURL(), hfxDropURL(), hfxGlintURL()); [0, 1, 2].forEach(k => urls.push(hfxFishURL(k))); }
   }catch(e){}
   /* every sprite made so far, this effect's included, to a bitmap */
   Object.keys(hfxSprites).forEach(k => hfxRasterise(hfxSprites[k]));
@@ -80238,7 +80242,9 @@ function hfxUwLensURL(){
 function hfxUwLightURL(seed){
   return hfxSprite("uwlight" + seed, () => {
     const rnd = bnRand(613 + seed * 29), P = 320, H = 200, F = v => v.toFixed(1);
-    let blobs = "";
+    let blobs = "", motes = "";
+    /* specks in the light, drifting with it (round 6: the motes) */
+    for(let i = 0; i < 7; i++) motes += '<circle cx="' + F(rnd() * P) + '" cy="' + F(10 + rnd() * H * .8) + '" r="' + F(.7 + rnd() * .9) + '" fill="#F2FFFF" fill-opacity="' + (.5 + rnd() * .4).toFixed(2) + '"/>';
     for(let i = 0; i < 15; i++){
       const x = rnd() * P, y = 8 + Math.pow(rnd(), 1.6) * H * .6, rx = 16 + rnd() * 36, ry = rx * (.38 + rnd() * .34), a = Math.round(rnd() * 50 - 25), o = (.35 + rnd() * .6).toFixed(2);
       [-P, 0, P].forEach(dx => {
@@ -80249,16 +80255,22 @@ function hfxUwLightURL(seed){
     }
     return 'viewBox="0 0 ' + P + ' ' + H + '"><defs><radialGradient id="b"><stop offset="0" stop-color="#F2FFFF" stop-opacity=".9"/><stop offset=".45" stop-color="#C8F7FF" stop-opacity=".42"/><stop offset="1" stop-color="#C8F7FF" stop-opacity="0"/></radialGradient>' +
       '<linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".3" stop-color="#fff" stop-opacity=".65"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
-      '<mask id="m"><rect width="' + P + '" height="' + H + '" fill="url(#f)"/></mask></defs><g mask="url(#m)">' + blobs + '</g></svg>';
+      '<mask id="m"><rect width="' + P + '" height="' + H + '" fill="url(#f)"/></mask></defs><g mask="url(#m)">' + blobs + '</g>' + motes + '</svg>';
   }, 320);
 }
 /* a shaft of light from the surface: soft-edged (three nested wedges),
    bright at the top and gone by its foot */
+/* drawn LEANING (round 6): the lean used to be a rotate on the element,
+   and a rotated layer is drawn through the slow path every frame it is on
+   screen with anything moving; leaning in the picture, it is an upright
+   box. The foot is HFX_UW_RAY_LEAN units left of the top over 400. */
+const HFX_UW_RAY_LEAN = 92;
 function hfxRayURL(){
-  return hfxSprite("uwray", () => 'viewBox="0 0 60 400"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E6FFFF" stop-opacity=".55"/>' +
+  const L = HFX_UW_RAY_LEAN, f = (x, y) => (x - L * y / 400).toFixed(1) + " " + y;
+  return hfxSprite("uwray2", () => 'viewBox="' + (-L) + ' 0 ' + (60 + L) + ' 400"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E6FFFF" stop-opacity=".55"/>' +
     '<stop offset=".35" stop-color="#BFF4FF" stop-opacity=".22"/><stop offset="1" stop-color="#9FE8FF" stop-opacity="0"/></linearGradient></defs>' +
-    '<path d="M18 0 L42 0 L60 400 L0 400 Z" fill="url(#g)" opacity=".35"/><path d="M22 0 L38 0 L50 400 L10 400 Z" fill="url(#g)" opacity=".5"/>' +
-    '<path d="M26 0 L34 0 L40 400 L20 400 Z" fill="url(#g)" opacity=".6"/></svg>', 400);
+    '<path d="M' + f(18, 0) + ' L' + f(42, 0) + ' L' + f(60, 400) + ' L' + f(0, 400) + ' Z" fill="url(#g)" opacity=".35"/><path d="M' + f(22, 0) + ' L' + f(38, 0) + ' L' + f(50, 400) + ' L' + f(10, 400) + ' Z" fill="url(#g)" opacity=".5"/>' +
+    '<path d="M' + f(26, 0) + ' L' + f(34, 0) + ' L' + f(40, 400) + ' L' + f(20, 400) + ' Z" fill="url(#g)" opacity=".6"/></svg>', 400);
 }
 /* a bubble in water: clear, a bright rim (brightest underneath, where a
    real one gathers the light), a lit highlight, a dimmer one opposite */
@@ -80269,9 +80281,6 @@ function hfxUwBubbleURL(){
     '<circle cx="20" cy="20" r="19.5" fill="url(#g)"/><circle cx="20" cy="20" r="18.6" fill="none" stroke="url(#r)" stroke-width="1.6"/>' +
     '<ellipse cx="13.5" cy="12.5" rx="4.8" ry="2.7" fill="#fff" fill-opacity=".92" transform="rotate(-38 13.5 12.5)"/>' +
     '<path d="M27 30 Q31 27 32 22" stroke="#fff" stroke-opacity=".45" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>', 96);
-}
-function hfxMoteURL(){
-  return hfxSprite("uwmote", () => 'viewBox="0 0 20 20"><defs><radialGradient id="g"><stop offset="0" stop-color="#F2FFFF" stop-opacity=".9"/><stop offset="1" stop-color="#BFF4FF" stop-opacity="0"/></radialGradient></defs><circle cx="10" cy="10" r="10" fill="url(#g)"/></svg>', 32);
 }
 function hfxFishURL(k){
   const body = ["#9FD8E6", "#C6EEF6", "#7FC2D6"][k % 3];
@@ -80331,62 +80340,144 @@ function hfxSea(parent, o){
   /* light: the sheen just under the surface, the soft patches in two
      layers drifting opposite ways, and the rays */
   hfxMk(body, "i", "hfx-uw-sheen");
+  /* THE MOVING PIECES ARE SCRIPT ANIMATIONS WITH THEIR NUMBERS WRITTEN IN
+     (round 6). As css keyframes reading custom properties (rotate(var(--ra)),
+     translate(0, var(--up))) the rays and the bubbles cost the page's own
+     thread ~2s in the 7s at 4x - measured, the rays alone as much as the
+     rest of the water together. Each is a Web Animation instead, with
+     plain values, and runs off that thread. */
+  const run = (el, frames, op) => { try{ return el.animate(frames, op); }catch(e){ return null; } };
+  /* a length on a whole device pixel */
+  const dpr = window.devicePixelRatio || 1, px = v => (Math.round(v * dpr) / dpr).toFixed(3) + "px";
   [0, 1].forEach(j => {
     const tw = (j ? 440 : 330) * k, th = tw * .625;
     /* only as wide as its drift needs: these are the biggest layers here */
-    const l = hfxMk(body, "i", "hfx-uw-light" + (j ? " is-b" : ""), { left: (-tw * .5) + "px", width: (o.W + tw) + "px", height: th + "px",
-      "--lx": ((j ? 1 : -1) * tw * .5) + "px", "--d": o.total + .2 });
+    const l = hfxMk(body, "i", "hfx-uw-light" + (j ? " is-b" : ""), { left: (-tw * .5) + "px", width: (o.W + tw) + "px", height: th + "px" });
     l.style.backgroundImage = hfxUwLightURL(j);
     l.style.backgroundSize = tw + "px " + th + "px";
+    /* stepped two device pixels at a time (~40 a second, a pixel apart on
+       a phone): these strips are the widest layers in the water, drawn
+       again whole every time they move, and between pixels, filtered */
+    const ls = Math.round(tw * .5 * dpr / 2), lx = (j ? 1 : -1) * ls * 2 / dpr;
+    /* one strip drifts, the other holds still (round 6): the patches still
+       pass through each other, at half the cost */
+    if(j) run(l, [{ transform: "translateX(0px)" }, { transform: "translateX(" + lx.toFixed(3) + "px)" }], { duration: (o.total + .2) * 1000, easing: "steps(" + ls + ")", fill: "both" });
   });
   for(let i = 0; i < N.rays; i++){
     const x = o.W * (.06 + (i + .5) / N.rays * .9) + hfxR(-14, 14) * k;
-    hfxMk(body, "i", "hfx-uw-ray", { left: x + "px", "--rw": hfxR(46, 110) * k + "px", "--rh": bodyH * hfxR(.6, .92) + "px",
-      "--ra": hfxR(8, 18).toFixed(1) + "deg", "--t": t.rise + t.riseD * .7 + i * .1, "--d": t.drain - t.rise - t.riseD * .7 + .25 - i * .1 }).style.backgroundImage = hfxRayURL();
+    /* STILL, upright, leaning in its picture (round 6). Rays that faded,
+       swung and leaned were four big layers drawn again every frame - a
+       millisecond a frame at 4x between them; still, they are part of the
+       water's own picture and cost nothing once drawn. They come and go
+       with the water. */
+    const rw = Math.round(hfxR(46, 110) * k), lean = rw * HFX_UW_RAY_LEAN / 60;
+    const el = hfxMk(body, "i", "hfx-uw-ray", { left: Math.round(x - rw / 2 - lean) + "px", width: Math.round(rw + lean) + "px", "--rh": Math.round(bodyH * hfxR(.6, .92)) + "px" });
+    el.style.backgroundImage = hfxRayURL(); el.style.opacity = hfxR(.6, .85).toFixed(2);
   }
-  /* motes drifting in the light */
+  /* motes drifting in the light: drawn into the light strips (round 6),
+     so they drift with it and cost nothing of their own - as a layer of
+     their own they spanned the whole water and redrew all of it every
+     frame */
   const due = o.due || ((at, fn) => fn(0));
-  /* a piece that has played is taken out - one less layer */
-  const gone = el => { el.addEventListener("animationend", e => { if(e.target === el) el.remove(); }); return el; };
-  for(let i = 0; i < N.motes; i++){
-    const at = t.rise + t.riseD * .6 + hfxR(0, .8), x = hfxR(.04, .96) * o.W, y = hfxR(.08, .9) * bodyH, sz = hfxR(3, 6) * k, mx = hfxR(-18, 18) * k, my = hfxR(-26, -6) * k;
-    due(at, off => gone(hfxPiece(body, "hfx-uw-mote", hfxMoteURL(), x, y, sz, { "--mx": mx + "px", "--my": my + "px", "--t": at - off, "--d": t.drain - t.rise - t.riseD * .6 + .1 - Math.max(0, off - at) })));
-  }
-  /* BUBBLES. One bubble from (x, y) - y in the body, from its top - up to
-     the surface: a bigger one rises faster, every one speeds up a little
-     as it goes (the css curve), and wobbles - a small one quick and tight,
-     a big one slower, wider and squashing. Taken out when it has popped. */
+  /* BUBBLES, IN GROUPS (round 6). "I don't want laggy bubbles?" Round 5
+     gave every bubble its own element and two running animations - ~70 of
+     them, ~50 compositing layers at once, and they were the biggest single
+     cost of the effect (taking them out gave back more frames than
+     anything else measured). Now the same bubbles ride in GROUPS: a
+     stream from a vent is ONE element rising at one speed and wobbling as
+     one, and its bubbles are plain children at fixed places in it -
+     painted into the group's layer once, never touched again. Each
+     bubble's own sway is baked into where it sits (the chain zigzags), so
+     the stream reads as a swaying chain, the way a real one does. A vent
+     sends two: a fine stream of small bubbles, quick and tight, and a
+     coarser chain of bigger ones, slower and wider. The box fizzes in
+     three columns; the strays from the deep are big ones on their own,
+     squashing as they wobble; the last rush is a handful of clusters.
+     Each bubble is cut off by the water's own edge the moment it reaches
+     the surface (the body clips), and a pop goes off there - a short-lived
+     piece of its own, placed by the same numbers that move its group. */
   let made = 0;
   const size = (lo, hi, bias) => (lo + (hi - lo) * Math.pow(Math.random(), bias)) * kk;
-  const bubble = (x, y, sz, at, fast, from) => {
-    const s = sz / kk, v = (fast ? 1.5 : 1) * (290 + s * 16) * kk, dist = Math.max(16 * kk, y), d = Math.max(.45, dist / v);
-    const wp = .2 + s * .034, wx = (1.1 + s * .3) * kk, big = s >= 12;
-    made++;
+  const bubURL = hfxUwBubbleURL();
+  /* the eased groups (the strays and the rush speed up a little as they
+     go): the css curve, and its inverse - when a bubble reaches a height */
+  const easeY = hfxBezier(.38, .22, .78, .72);
+  const hfxUwEaseInv = p => { let lo = 0, hi = 1; for(let i = 0; i < 24; i++){ const m = (lo + hi) / 2; if(easeY(m) < p) lo = m; else hi = m; } return (lo + hi) / 2; };
+  /* the pops ride in the sea (which does not clip) just over the body's
+     top edge, under the surface sheets */
+  const pops = hfxMk(sea, "span", "hfx-uw-pops");
+  /* where a group's alternating wobble has it at time u (s) into it:
+     ease-in-out swings between -wx and +wx, starting at -wx */
+  const swing = (u, wp, wx) => { const n = Math.floor(u / wp), f = u / wp - n, e = (1 - Math.cos(Math.PI * f)) / 2; return n % 2 ? wx - 2 * wx * e : -wx + 2 * wx * e; };
+  const pop = (x, sz, tt, big) => due(tt, off => {
+    const el = hfxPiece(pops, "hfx-uw-popfx" + (big ? " is-big" : ""), bubURL, x, 0, sz, { "--t": tt - off });
+    el.addEventListener("animationend", () => el.remove());
+  });
+  /* a group from (x, y) in the body: `list` is [{dx, dy, sz, from}], dy
+     below the group's origin; it rises at v px/s from `at` until its last
+     bubble is through the surface, wobbling (wp s a swing, wx px) */
+  const group = (x, y, list, at, v, wp, wx, cls, ease) => {
+    if(!list.length) return;
+    const far = Math.max.apply(null, list.map(b => b.dy + b.sz)), dist = y + far, d = dist / v;
+    made += list.length;
     due(at, off => {
-      const el = hfxPiece(body, "hfx-uw-bub" + (big ? " is-big" : ""), hfxUwBubbleURL(), x, y, sz, { "--up": (-dist) + "px", "--wx": wx.toFixed(2) + "px",
-        "--wp": wp.toFixed(3) + "s", "--wn": String(Math.max(2, Math.ceil((d + .4) / wp))), "--o": (big ? .95 : .7 + Math.random() * .3).toFixed(2), "--t": at - off, "--d": d });
-      el.dataset.from = from || "vent";
-      el.addEventListener("animationend", e => { if(e.target === el && /^hfx-uw-(pop|flat)$/.test(e.animationName)) el.remove(); });
+      const g = hfxMk(body, "span", "hfx-uw-grp" + (cls ? " " + cls : ""), { left: x + "px", top: y + "px" });
+      const dl = (at - off) * 1000, big = / is-big/.test(" " + (cls || "")), sq = (a, b) => big ? " scale(" + a + ")" : "";
+      const up = run(g, [{ translate: "0px 0px", opacity: 0 }, { opacity: 1, offset: Math.min(.4, .15 / d) }, { translate: "0px " + (-dist).toFixed(1) + "px", opacity: 1 }],
+        { duration: d * 1000, delay: dl, fill: "both", easing: ease ? "cubic-bezier(.38,.22,.78,.72)" : "linear" });
+      const wob = run(g, [{ transform: "translateX(" + (-wx).toFixed(2) + "px)" + sq("1.07, .93") }, { transform: "translateX(" + wx.toFixed(2) + "px)" + sq(".94, 1.06") }],
+        { duration: wp * 1000, delay: dl, iterations: Math.max(2, Math.ceil(d / wp) + 1), direction: "alternate", easing: "ease-in-out", fill: "both" });
+      if(wob) wob.id = "hfx-uw-wob";
+      if(up) up.onfinish = () => g.remove();
+      list.forEach(b => {
+        const e = hfxMk(g, "i", "hfx-uw-bub", { left: b.dx.toFixed(1) + "px", top: b.dy.toFixed(1) + "px", "--ps": b.sz.toFixed(1) + "px" });
+        e.style.backgroundImage = bubURL; e.style.opacity = b.o; e.dataset.from = b.from;
+      });
+    });
+    /* each bubble's pop, where and when it meets the surface (a linear
+       rise; an eased one is solved for the same moment) */
+    list.forEach(b => {
+      const p = (y + b.dy) / dist, u = (ease ? hfxUwEaseInv(p) : p) * d, tt = at + u;
+      /* a bubble under 8px just goes at the edge - a pop is an element of
+         its own going in and out, and the small ones are most of them */
+      if(tt < o.total - .25 && b.sz >= 8 * kk) pop(x + b.dx + swing(u, wp, wx), b.sz, tt, b.sz / kk >= 12);
     });
   };
-  /* streams from vents in the floor, now and then a quick pair */
-  const s0 = t.rise + t.riseD * .45, s1 = t.drain - .45;
-  for(let v = 0; v < N.vents; v++){
-    const vx = o.W * ((v + .5) / N.vents) + hfxR(-.3, .3) * o.W / N.vents;
-    for(let at = s0 + hfxR(0, .4); at < s1; at += hfxR(N.gap[0], N.gap[1])){
-      bubble(vx + hfxR(-5, 5) * kk, bodyH + 4, size(3.5, 15, 1.7), at);
-      if(Math.random() < .22){ at += hfxR(.06, .12); bubble(vx + hfxR(-5, 5) * kk, bodyH + 4, size(3, 7, 1.5), at); }
+  const chain = (n0, n1, v, lo, hi, bias, from, amp, gm) => {
+    /* bubbles leaving the vent from n0 to n1 (s), each at its own moment:
+       the chain zigzags as it goes (each bubble's own sway, baked in) */
+    const list = [], lam = hfxR(70, 120) * kk, ph = hfxR(0, 6.28);
+    for(let at = n0 + hfxR(0, .3); at < n1; at += hfxR(from === "box" ? N.boxGap[0] : N.gap[0], from === "box" ? N.boxGap[1] : N.gap[1]) * gm){
+      const dy = (at - n0) * v, sz = size(lo, hi, bias);
+      list.push({ dx: amp * Math.sin(2 * Math.PI * dy / lam + ph) + hfxR(-1.5, 1.5) * kk, dy, sz, o: (.72 + Math.random() * .28).toFixed(2), from });
     }
+    return list;
+  };
+  /* streams from vents in the floor: a fine one and a coarse one each */
+  const s0 = t.rise + t.riseD * .45, s1 = t.drain - .45;
+  for(let vi = 0; vi < N.vents; vi++){
+    const vx = o.W * ((vi + .5) / N.vents) + hfxR(-.3, .3) * o.W / N.vents, v = hfxR(330, 400) * kk;
+    group(vx, bodyH + 4, chain(s0, s1, v, 3, 7, 1.4, "vent", 3 * kk, .8), s0, v, hfxR(.26, .34), 2.2 * kk, "is-fine");
+    group(vx + hfxR(-6, 6) * kk, bodyH + 4, chain(s0 + .2, s1, v * 1.12, 8, 15, 1.2, "vent", 5 * kk, 1.6), s0 + .2, v * 1.12, hfxR(.55, .7), 4.2 * kk, "is-coarse");
   }
-  /* strays from the deep, the biggest among them */
-  for(let i = 0; i < N.scatter; i++) bubble(hfxR(.04, .96) * o.W, bodyH * hfxR(.55, 1), size(6, 24, 1.1), hfxR(s0, s1 - .4), false, "deep");
-  /* off the top of the 100% box, once the water is over it */
+  /* strays from the deep, big and on their own, speeding up a little */
+  for(let i = 0; i < N.scatter; i++){
+    const sz = size(12, 24, 1.1), y = bodyH * hfxR(.55, 1), v = (300 + sz / kk * 14) * kk, s = sz / kk;
+    group(hfxR(.04, .96) * o.W, y, [{ dx: 0, dy: 0, sz, o: ".95", from: "deep" }], hfxR(s0, s1 - .4), v, .2 + s * .034, (1.1 + s * .3) * kk, "is-big is-ease", true);
+  }
+  /* the box fizzes, in three columns, once the water is over it */
   if(o.box && N.boxGap){
-    const by = Math.max(24 * kk, o.box.top - o.lvl + 6 * kk);
-    for(let at = t.rise + t.riseD * .75; at < s1; at += hfxR(N.boxGap[0], N.boxGap[1])) bubble(o.box.left + o.box.width * hfxR(.1, .9), by, size(3, 12, 1.6), at, false, "box");
+    const by = Math.max(24 * kk, o.box.top - o.lvl + 6 * kk), b0 = t.rise + t.riseD * .75;
+    [.2, .5, .8].forEach(f => { const v = hfxR(300, 360) * kk;
+      group(o.box.left + o.box.width * (f + hfxR(-.08, .08)), by, chain(b0, s1, v, 3, 11, 1.6, "box", 2.5 * kk, 1.1), b0, v, hfxR(.3, .42), 2.4 * kk, "is-fine"); });
   }
-  /* and as the water drains, a last rush of them */
-  for(let i = 0; i < N.rush; i++) bubble(hfxR(.03, .97) * o.W, bodyH * hfxR(.4, 1), size(4, 22, 1.3), t.drain - .65 + hfxR(0, .75), true, "rush");
+  /* and as the water drains, a last rush: a handful of clusters, fast */
+  for(let gi = 0; gi < N.rush; gi++){
+    const list = [], n = 4 + (gi % 2);
+    for(let j = 0; j < n; j++) list.push({ dx: hfxR(-40, 40) * kk, dy: hfxR(0, 160) * kk, sz: size(4, 20, 1.3), o: (.8 + Math.random() * .2).toFixed(2), from: "rush" });
+    const v = hfxR(480, 560) * kk;
+    group(o.W * ((gi + .5) / N.rush) + hfxR(-20, 20) * kk, bodyH * hfxR(.45, .9), list, t.drain - .65 + hfxR(0, .7), v, hfxR(.4, .55), 3.4 * kk, "is-ease", true);
+  }
   /* the surface: a back sheet and the lit front crest, sliding opposite
      ways - the interference is the water moving */
   const surf = hfxMk(sea, "span", "hfx-uw-surface");
@@ -80424,7 +80515,7 @@ function hfxSea(parent, o){
   };
   return { ocean, sea, body, bodyH, lineAt, clock, made: () => made };
 }
-/* THE SCREEN UNDER THE WATER (round 5). Watched 10 times a second
+/* THE SCREEN UNDER THE WATER (round 5). Watched ~7 times a second
    against the waterline (the css curves, on the water's own clock): a card
    sways from the moment the surface passes its middle until the water
    leaves it again, and the results character holds its breath while it is
@@ -80447,24 +80538,33 @@ function hfxUwScreen(c, S, page, k, tot){
   if(!recs.length && !hold) return;
   const t0 = performance.now();
   const now = () => { const s = S.clock(); return s == null ? (performance.now() - t0) / 1000 : s; };
+  /* THE SWAY IS A DRIFT AND A BOB, ON WHOLE DEVICE PIXELS, ~15 TIMES A
+     SECOND (round 6). Measured, the sway was the costliest thing in the
+     effect after the bubbles: a card that moves is drawn again whole every
+     frame, a ROTATED one through the slow path (the roll alone was ~2ms a
+     frame at 4x), and one between pixels filtered. So no roll; each
+     position is rounded to a device pixel and held until the next (a
+     card moves a few px over seconds - a pixel a step at most, nothing to
+     see as stepping); between steps nothing about it changes. */
+  const dpr = window.devicePixelRatio || 1, px = v => (Math.round(v * dpr) / dpr).toFixed(3) + "px";
   const sway = (r, s) => {
-    const span = Math.max(1.2, tot - s + .5), n = Math.ceil(span / .2), P = hfxR(2.7, 3.5), p1 = hfxR(0, 6.28), p2 = hfxR(0, 6.28);
-    const ax = hfxR(1.6, 2.6) * k * (r.i % 2 ? 1 : -1), ay = hfxR(2, 3.2) * k, rr = hfxR(.2, .36) * (r.i % 2 ? -1 : 1), dip = 3.2 * k, fr = [];
+    const span = Math.max(1.2, tot - s + .5), n = Math.ceil(span * 15), P = hfxR(2.7, 3.5), p1 = hfxR(0, 6.28), p2 = hfxR(0, 6.28);
+    const ax = hfxR(1.6, 2.6) * k * (r.i % 2 ? 1 : -1), ay = hfxR(2, 3.2) * k, dip = 3.2 * k, fr = [];
     for(let j = 0; j <= n; j++){
       const tt = j / n * span, e = Math.min(1, tt / 1.1), env = e * e * (3 - 2 * e);
       const kink = tt < .7 ? dip * Math.sin(Math.PI * tt / .7) : 0;
-      const x = env * ax * Math.sin(2 * Math.PI * tt / P + p1), y = kink + env * ay * Math.sin(2 * Math.PI * tt / (P * 1.27) + p2), ro = env * rr * Math.sin(2 * Math.PI * tt / (P * 1.13) + p1);
-      fr.push({ translate: x.toFixed(2) + "px " + y.toFixed(2) + "px", rotate: ro.toFixed(3) + "deg" });
+      const x = env * ax * Math.sin(2 * Math.PI * tt / P + p1), y = kink + env * ay * Math.sin(2 * Math.PI * tt / (P * 1.27) + p2);
+      fr.push({ translate: px(x) + " " + px(y), easing: "steps(1, end)" });
     }
     try{ r.a = r.el.animate(fr, { duration: span * 1000, easing: "linear" }); r.a.id = "hfx-uw-sway"; }catch(e){ r.a = null; }
   };
   const settle = r => {
     if(!r.a) return;
-    let tr = "0px 0px", ro = "0deg";
-    try{ const cs = getComputedStyle(r.el); if(cs.translate && cs.translate !== "none") tr = cs.translate; if(cs.rotate && cs.rotate !== "none") ro = cs.rotate; }catch(e){}
+    let tr = "0px 0px";
+    try{ const cs = getComputedStyle(r.el); if(cs.translate && cs.translate !== "none") tr = cs.translate; }catch(e){}
     try{ r.a.cancel(); }catch(e){}
     r.a = null;
-    try{ r.s = r.el.animate([{ translate: tr, rotate: ro }, { translate: "0px 0px", rotate: "0deg" }], { duration: 650, easing: "cubic-bezier(.3,.6,.35,1)" }); r.s.id = "hfx-uw-settle"; }catch(e){ r.s = null; }
+    try{ r.s = r.el.animate([{ translate: tr }, { translate: "0px 0px" }], { duration: 650, easing: "cubic-bezier(.3,.6,.35,1)" }); r.s.id = "hfx-uw-settle"; }catch(e){ r.s = null; }
   };
   const tick = () => {
     const s = now();
@@ -80479,12 +80579,12 @@ function hfxUwScreen(c, S, page, k, tot){
     if(hold && !hold.done){
       const q = hold.el.getBoundingClientRect(), cy = q.top + q.height / 2;
       /* the breath is taken a beat before the water arrives */
-      if(!hold.on && q.height && cy > top + S.lineAt(s + .25)) hold.start();
+      if(!hold.on && q.height && cy > top + S.lineAt(s + .3)) hold.start();
       if(hold.on && cy > line + 2) hold.under = true;
       else if(hold.on && hold.under && cy < line - 2) hold.release();
     }
   };
-  const iv = setInterval(tick, 100);
+  const iv = setInterval(tick, 150);
   let quitted = false;
   const quit = fade => {
     if(quitted) return;
@@ -80649,22 +80749,34 @@ function hfxUnderwater(scr, bx, c){
     const lvl = Math.round(Math.max(c.vh * (mini ? .1 : .085), mini ? 14 : 40));
     const due = hfxDue(c);
     const S = hfxSea(scr, { W: c.vw, H: c.vh, lvl, k, t, total: tot, box, due,
-      n: { rays: mini ? 3 : small ? 4 : 6, motes: mini ? 3 : small ? 6 : 10, vents: mini ? 2 : small ? 3 : 4, gap: mini ? [.55, .9] : [.3, .5],
-        scatter: mini ? 3 : small ? 7 : 9, boxGap: mini ? [.7, 1.1] : [.4, .65], rush: mini ? 8 : small ? 15 : 20 } });
+      n: { rays: mini ? 3 : small ? 4 : 6, vents: mini ? 2 : small ? 3 : 4, gap: mini ? [.55, .9] : [.3, .5],
+        scatter: mini ? 3 : small ? 7 : 9, boxGap: mini ? [.7, 1.1] : [.4, .65], rush: mini ? 2 : small ? 4 : 5 } });
     const body = S.body, bodyH = S.bodyH;
     /* a school of fish across, above the box, and a manta behind them */
     const dir = Math.random() < .5 ? 1 : -1, y0 = Math.max(60 * k, box.top - lvl - c.vh * hfxR(.12, .22));
+    /* ONE layer for the whole school (round 6): it swims across as one,
+       bobbing; each fish keeps its own place in it, the ones further back
+       behind by how much they lagged */
+    const fat = U.rise + U.riseD + .15, fl = dir > 0 ? -1 : 1, sp = (c.vw + 120) / 3, fish = [];
+    let back = 0;
     for(let i = 0; i < (mini ? 5 : small ? 8 : 12); i++){
-      const s = hfxR(26, 40) * k, dy = hfxR(-40, 40) * k, lag = i * .07 + hfxR(0, .12), at = U.rise + U.riseD + .15 + lag;
-      const xs = dir > 0 ? -60 : c.vw + 60, xe = dir > 0 ? c.vw + 60 : -60, fl = dir > 0 ? -1 : 1;
-      due(at, off => { const f = hfxPiece(body, "hfx-uw-fish", hfxFishURL(i % 3), 0, 0, s, {}); const a = hfxAnim(c, f, [
-        { transform: "translate(" + xs + "px," + (y0 + dy + 40) + "px) scaleX(" + fl + ")", opacity: 0 },
-        { transform: "translate(" + (xs + (xe - xs) * .15) + "px," + (y0 + dy + 20) + "px) scaleX(" + fl + ")", opacity: 1, offset: .12 },
-        { transform: "translate(" + (xs + (xe - xs) * .5) + "px," + (y0 + dy - 10) + "px) scaleX(" + fl + ")", opacity: 1, offset: .5 },
-        { transform: "translate(" + (xs + (xe - xs) * .85) + "px," + (y0 + dy + 14) + "px) scaleX(" + fl + ")", opacity: 1, offset: .88 },
-        { transform: "translate(" + xe + "px," + (y0 + dy + 4) + "px) scaleX(" + fl + ")", opacity: 0 }
-      ], { duration: 3000, delay: Math.max(0, at - off) * 1000, fill: "both", easing: "ease-in-out" }); if(a) a.onfinish = () => f.remove(); });
+      const lag = i * .07 + hfxR(0, .12);
+      back = Math.max(back, lag * sp);
+      fish.push({ s: hfxR(26, 40) * k, dx: -dir * lag * sp, dy: hfxR(-40, 40) * k });
     }
+    const xs = dir > 0 ? -60 : c.vw + 60, xe = (dir > 0 ? c.vw + 60 : -60) + dir * back;
+    due(fat, off => {
+      const sc = hfxMk(body, "span", "hfx-uw-school");
+      fish.forEach((f, i) => { const e = hfxMk(sc, "i", "hfx-uw-fishk", { left: f.dx + "px", top: f.dy + "px", "--ps": f.s + "px" }); e.style.backgroundImage = hfxFishURL(i % 3); e.style.transform = "scaleX(" + fl + ")"; });
+      const a = hfxAnim(c, sc, [
+        { translate: xs + "px " + (y0 + 40) + "px" },
+        { translate: (xs + (xe - xs) * .15) + "px " + (y0 + 20) + "px", offset: .12 },
+        { translate: (xs + (xe - xs) * .5) + "px " + (y0 - 10) + "px", offset: .5 },
+        { translate: (xs + (xe - xs) * .85) + "px " + (y0 + 14) + "px", offset: .88 },
+        { translate: xe + "px " + (y0 + 4) + "px" }
+      ], { duration: 3000 + back / sp * 1000, delay: Math.max(0, fat - off) * 1000, fill: "both", easing: "ease-in-out" });
+      if(a) a.onfinish = () => sc.remove();
+    });
     const mw = (mini ? 120 : small ? 190 : 260);
     const my = Math.max(bodyH * .1, box.top - lvl - c.vh * .3), mat = U.rise + U.riseD + .05;
     due(mat, off => hfxAnim(c, hfxPiece(body, "hfx-uw-manta", hfxMantaURL(), 0, 0, mw, {}), [
@@ -80688,7 +80800,7 @@ function hfxUnderwater(scr, bx, c){
       /* the box floods on its own: the same water, the box its screen */
       const bt = { rise: .1, riseD: .8, drain: 3.3, drainD: .8 };
       hfxSea(bx, { W: c.bw, H: c.bh, lvl: Math.round(c.bh * .16), k: c.mini ? .4 : .55, t: bt, total: HUNDO_FX_BOX_TOTAL.underwater / 1000, box: null, cls: "is-box", due: hfxDue(c),
-        n: { rays: 2, motes: c.mini ? 2 : 4, vents: 2, gap: c.mini ? [.6, 1] : [.4, .7], scatter: c.mini ? 2 : 4, boxGap: null, rush: c.mini ? 4 : 8 } });
+        n: { rays: 2, vents: 2, gap: c.mini ? [.6, 1] : [.4, .7], scatter: c.mini ? 2 : 4, boxGap: null, rush: c.mini ? 1 : 2 } });
       for(let i = 0; i < 3; i++){
         const f = hfxPiece(bx, "hfx-uw-fish is-box", hfxFishURL(i), 0, 0, (c.mini ? 14 : 22), {});
         hfxAnim(c, f, [{ transform: "translate(" + (c.bw + 20) + "px," + (c.bh * (.32 + i * .16)) + "px) scaleX(1)", opacity: 0 }, { transform: "translate(" + (c.bw * .5) + "px," + (c.bh * (.3 + i * .18)) + "px) scaleX(1)", opacity: 1, offset: .5 },
