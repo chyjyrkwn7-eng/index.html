@@ -3449,7 +3449,7 @@ def check_b244(br):
 # app's PENAL_TEST_SRCS is checked AGAINST, not read back from it.
 PENAL_SLIDES_SRCS = sorted([
     249, 213, 24, 121, 200, 262, 344, 128, 159, 61, 95, 183, 109, 117, 150,
-    158, 250, 304, 65, 70, 97, 178, 319, 236, 318, 346, 22, 209, 3, 204, 253,
+    158, 203, 250, 304, 65, 70, 97, 178, 319, 236, 318, 346, 22, 209, 3, 204, 253,
     290, 343, 321, 322, 324, 28, 41, 66, 68, 76, 141, 207, 323, 255, 83, 90,
     100, 222, 299, 88, 230, 297, 338, 114,
     348, 349, 350])  # #213, #128 and #183 again - the deck has each on two slides
@@ -7227,7 +7227,7 @@ def check_b298(br):
     check("the whole Penal Code unit is exactly the study guide's 340 questions - no repeat in it",
           r["n"] == 340 and sorted(r["srcs"]) == guide and not ({347, 348, 349, 350} & set(r["srcs"])) and r["size"] == 340, (r["n"], len(r["srcs"]), r["size"]))
     check("the slides 55-124 version is the deck's 58, #213, #128 and #183 twice each, and every other one is in the whole unit too",
-          r["version"] == len(PENAL_SLIDES_SRCS) == 58 and r["twice"] == {"213": 2, "128": 2, "183": 2} and r["versionIn"] and r["repeatsOnlyHere"],
+          r["version"] == len(PENAL_SLIDES_SRCS) == 59 and r["twice"] == {"213": 2, "128": 2, "183": 2} and r["versionIn"] and r["repeatsOnlyHere"],
           (r["version"], r["twice"], r["versionIn"], r["repeatsOnlyHere"]))
     check("the repeats have their own identity, sit at the end of the bank (no other question moves), and are never a daily question",
           r["keysUnique"] and r["repeatLast"] and not r["dailyRepeat"], r)
@@ -7568,7 +7568,7 @@ def check_b300(br):
     check("Penal Code: a whole-unit run is 340 and counts as the full unit (its hundo still lands)",
           r.get("whole") == 340 and r.get("full") is True and r.get("covered") == ["Penal Code"], (r.get("whole"), r.get("full"), r.get("covered")))
     check("Penal Code: the slides 55-124 version has its 58, the three repeats included and the old #84 one not",
-          r.get("test") == 58 and r.get("testRepeats") == [348, 349, 350], (r.get("test"), r.get("testRepeats")))
+          r.get("test") == 59 and r.get("testRepeats") == [348, 349, 350], (r.get("test"), r.get("testRepeats")))
     ctx.close()
 
 

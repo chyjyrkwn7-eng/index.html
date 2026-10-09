@@ -45129,14 +45129,16 @@ function flaggedIndexes(){
    rememberConfig(), and dropped whenever the unit is deselected. A
    hundo still needs the whole unit (isFullUnitRun counts against the
    whole bank), so the short version is a shortened run like any other. */
-const PENAL_TEST_SRCS = [249, 213, 24, 121, 200, 262, 344, 128, 159, 61, 95, 183, 109, 117, 349, 150, 158, 250, 304,
+const PENAL_TEST_SRCS = [249, 213, 24, 121, 200, 262, 344, 128, 159, 61, 95, 183, 109, 117, 349, 150, 158, 203, 250, 304,
   65, 70, 97, 178, 350, 348, 319, 236, 318, 346, 22, 209, 3, 204, 253, 290, 343, 321, 322,
   324, 28, 41, 66, 68, 76, 141, 207, 323, 255, 83, 90, 100, 222, 299, 88, 230, 297, 338, 114];
 /* ---- SLIDES 55-124 NOW (build 313) ----
    "We had our test today and now she provided us with the next slides
    from the penal code pptx on what the next test will be over. It is
    slides 55 through 124 ... do the swap." Read off the same deck's
-   speaker notes: 58 questions on 21 slides, all already in the bank
+   speaker notes: 59 questions on 21 slides, all already in the bank
+   (hotfix 313b: #203, unborn child, slide 88 - the deck prints it
+   with no number, so the by-number read had skipped it)
    (55 different questions - #213, #128 and #183 each appear twice, so
    like #84 before them each second appearance is its own version-only
    copy, srcs 348-350). Every deck answer was checked against the bank's;
@@ -68200,7 +68202,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-06-313";
+const APP_BUILD = "2026-10-09-313b";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
