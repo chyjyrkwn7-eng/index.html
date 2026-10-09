@@ -9633,6 +9633,7 @@ def check_b314h_lead2(br):
       showProfile('profile'); await wait(500);
       const pills = [...document.querySelectorAll('.profile-classcard:not(.profile-friendcard) .profile-classcard-count')].map(e => e.textContent);
       out.pills = pills;
+      out.cardText = (document.querySelector('.profile-classcard:not(.profile-friendcard)') || {}).textContent || '';
       out.testsLeft = typeof testsRemaining === 'function' ? testsRemaining() : null;
       out.exams = typeof isExamDay === 'function' ? CALENDAR_DATA.filter(isExamDay).map(e => e.date) : [];
       const j8 = CALENDAR_DATA.find(e => e.date === '2027-07-08'); out.j8 = j8 ? j8.text : null;
@@ -9643,8 +9644,11 @@ def check_b314h_lead2(br):
     check("tests left counts every numbered test, the three level finals and the state test (not PT finals)",
           isinstance(r.get("testsLeft"), int) and "2027-07-08" in ex and "2027-01-19" in ex and "2027-06-10" in ex and "2027-06-21" in ex
           and "2027-01-11" not in ex and "2027-06-09" not in ex and len(ex) >= 16, {"n": len(ex), "testsLeft": r.get("testsLeft")})
-    check("the class card shows tests left beside class days left",
-          any("class day" in p for p in r.get("pills") or []) and any(p.endswith("test left") or p.endswith("tests left") for p in r.get("pills") or []), r.get("pills"))
+    # REVISED IN 318: "Remove the amount of tests left as well" - the class
+    # days pill stays, the tests-left pill is gone (fails on 219bfea).
+    check("the class card shows class days left and no tests-left count",
+          any("class day" in p for p in r.get("pills") or []) and not any("test left" in p or "tests left" in p for p in r.get("pills") or [])
+          and "tests left" not in (r.get("cardText") or "") and "test left" not in (r.get("cardText") or ""), (r.get("pills"), r.get("cardText")))
     check("July 8th is the State test and says Last day", r.get("j8") and "State Test" in r["j8"] and "Last Day" in r["j8"], r.get("j8"))
     # the last day, both views
     r2 = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
@@ -18105,6 +18109,153 @@ def check_b317_roadmap_chips(br):
         check(f"{tag}: every chip inside its card, no label cut short", inside and not cut, cut)
 
 
+def check_b318f_flashswipe(br):
+    """Build 318: a flashcard swipe that STARTS ON THE QUESTION'S WORDS
+    moves the card, with real touch input. .fc-text scrolls a long
+    question, which makes it a scroll container, and touch-action only
+    carries down to the nearest one - so .fc-mover's pan-y stopped at its
+    edge and the browser took a horizontal drag on the text as a pan
+    (pointercancel; the card never moved). Swipes on the card's padding
+    always worked, which is how it hid. Also: an overflowing question
+    still scrolls up and down under a vertical drag. The swipe-on-text
+    checks fail on 219bfea."""
+    print("\n318f-a. flashcards: a touch swipe that starts on the question's text moves the card")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True)
+        cdp = ctx.new_cdp_session(pg)
+        pg.evaluate("""()=>{ document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+          cfg.mode='review'; cfg.flashcards=true; showFlashcards(['Professionalism and Ethics'],'all',{}); }""")
+        pg.wait_for_selector(".fc-card", timeout=20000); pg.wait_for_timeout(900)
+        for direction in ("left", "right"):
+            # each direction from a known card: a cancelled drag on the
+            # old build can leave the page anywhere
+            pg.evaluate("""async (d)=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
+              if(typeof fc === 'undefined' || !fc || !document.querySelector('.fc-card')){
+                cfg.mode='review'; cfg.flashcards=true; showFlashcards(['Professionalism and Ethics'],'all',{}); await wait(900); }
+              const want = d === 'right' ? 1 : 0; if(fc.pos !== want){ fc.pos = want; renderFlashcard(0); await wait(600); }
+              window.__fcev = []; if(!window.__fcl){ window.__fcl = 1;
+              ['pointercancel','pointerdown'].forEach(t => document.addEventListener(t, e => (window.__fcev = window.__fcev || []).push(t), true)); } }""", direction)
+            box = pg.evaluate("""()=>{ const t = document.querySelector('.fc-mover .fc-front .fc-text'); if(!t) return null;
+              const r = t.getBoundingClientRect(); const range = document.createRange(); range.selectNodeContents(t);
+              const g = range.getClientRects()[0]; const x = g.left + Math.min(g.width, r.width) / 2, y = g.top + g.height / 2;
+              const hit = document.elementFromPoint(x, y);
+              return { x, y, onText: !!(hit && hit.closest('.fc-text')), pos: fc.pos }; }""")
+            if not box:
+                check(f"{dev}: a flashcard is up", False); break
+            x0, y0 = box["x"], box["y"]
+            dx = -w * 0.55 if direction == "left" else w * 0.55
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x0, "y": y0}]})
+            for i in range(1, 13):
+                cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x0 + dx * i / 12, "y": y0 + 2}]})
+                time.sleep(0.016)
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+            pg.wait_for_timeout(900)
+            after = pg.evaluate("()=>({ pos: (typeof fc !== 'undefined' && fc) ? fc.pos : null, ev: window.__fcev || [], url: location.href })")
+            want = box["pos"] + (1 if direction == "left" else -1)
+            check(f"{dev}: a swipe {direction} that starts on the question's text is not cancelled and moves the deck ({box['pos']} -> {want})",
+                  box["onText"] and "pointercancel" not in after["ev"] and after["pos"] == want, (box, after))
+        # an overflowing question still scrolls vertically under a finger
+        # (a fresh page if the old build's swipe right went Back in history)
+        if pg.evaluate("()=>typeof cfg === 'undefined'"):
+            ctx.close()
+            ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True)
+            cdp = ctx.new_cdp_session(pg)
+        r = pg.evaluate("""async ()=>{ if(typeof fc === 'undefined' || !fc || !document.querySelector('.fc-card')){
+            cfg.mode='review'; cfg.flashcards=true; showFlashcards(['Professionalism and Ethics'],'all',{}); await new Promise(r => setTimeout(r, 900)); }
+          const t = document.querySelector('.fc-mover .fc-front .fc-text');
+          t.style.maxHeight = '90px'; t.textContent = Array(40).fill('A long question that runs on.').join(' '); t.scrollTop = 0;
+          const r = t.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height - 12, over: t.scrollHeight - t.clientHeight }; }""")
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": r["x"], "y": r["y"]}]})
+        for i in range(1, 11):
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": r["x"], "y": r["y"] - 60 * i / 10}]})
+            time.sleep(0.016)
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+        pg.wait_for_timeout(500)
+        st = pg.evaluate("()=>({ top: document.querySelector('.fc-mover .fc-front .fc-text').scrollTop, ta: getComputedStyle(document.querySelector('.fc-mover .fc-front .fc-text')).touchAction })")
+        check(f"{dev}: a question that overflows still scrolls under a vertical drag", r["over"] > 40 and st["top"] > 10, (r, st))
+        ctx.close()
+
+
+def check_b318f_seeresults(br):
+    """Build 318: a tap on "See results" while it is still rising always
+    registers. The button rises .62s from below the screen, fast at first,
+    and a click lands where the finger LIFTS: a finger down on its lower
+    half for an ordinary 150ms tap lifted below a button that had moved on,
+    and the tap was lost. Made deterministic with the rise's own Web
+    Animation: paused part-way up, the finger goes down near the button's
+    bottom edge, the rise finishes under it (the point is then off the
+    button), and the finger lifts. Also: a tap on a settled button still
+    advances exactly one question. The rising-tap check fails on 219bfea."""
+    print("\n318f-b. a tap on the rising See results button always registers")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True)
+        cdp = ctx.new_cdp_session(pg)
+
+        def tap(x, y, hold=0.08, between=None):
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x, "y": y}]})
+            time.sleep(hold / 2)
+            if between: pg.evaluate(between)
+            time.sleep(hold / 2)
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+
+        def answer_right():
+            c = pg.evaluate("""()=>{ const r = correctSlot(order[pos]); const b = document.querySelector('.qpanel .choice[data-index="'+r+'"]').getBoundingClientRect();
+              return [b.left + b.width / 2, b.top + b.height / 2]; }""")
+            tap(c[0], c[1], 0.04)
+
+        pg.evaluate("""()=>{ document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); theme.autoAdvance = false;
+          setInterval(()=>[...document.body.children].forEach(n=>{ if(getComputedStyle(n).position==='fixed' && /challenge complete|character unlocked/i.test(n.textContent||'')) n.remove(); }), 40);
+          cfg.mode='drill'; cfg.units=['Identity Crimes']; cfg.versions={}; cfg.source='all'; cfg.size=0; cfg.timer='off'; cfg.flashcards=false;
+          beginRun(freshOrder(QUESTIONS.map((q,i)=>i).filter(i=>QUESTIONS[i].topic==='Identity Crimes')), null); }""")
+        pg.wait_for_selector(".qpanel .choice", timeout=25000); pg.wait_for_timeout(500)
+        # a settled Next question: one tap, one question
+        answer_right()
+        pg.wait_for_timeout(1700)
+        b = pg.evaluate("()=>{ const r = document.getElementById('nextbtn').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, pos]; }")
+        tap(b[0], b[1])
+        pg.wait_for_timeout(1400)
+        p1 = pg.evaluate("()=>pos")
+        check(f"{dev}: a tap on a settled Next question moves exactly one question", p1 == b[2] + 1, (b[2], p1))
+        # through to the last question, quickly
+        pg.evaluate("()=>{ theme.reduceMotion = true; applyTheme(); }")
+        for _ in range(40):
+            if pg.evaluate("()=>pos===order.length-1"): break
+            p = pg.evaluate("()=>pos")
+            pg.evaluate("""()=>{ const r=correctSlot(order[pos]); document.querySelector('.qpanel .choice[data-index="'+r+'"]').click(); }""")
+            pg.wait_for_timeout(60)
+            pg.evaluate("()=>{ const b=document.getElementById('nextbtn'); if(b && !b.hidden) b.click(); }")
+            for _ in range(60):
+                pg.wait_for_timeout(30)
+                if pg.evaluate("()=>pos") != p: break
+        pg.evaluate("()=>{ theme.reduceMotion = false; applyTheme(); }")
+        pg.wait_for_timeout(400)
+        answer_right()
+        pg.wait_for_selector("#nextbtn.is-rising", timeout=5000)
+        st = pg.evaluate("""()=>{ const b = document.getElementById('nextbtn');
+          const a = b.getAnimations().find(x => x.animationName === 'qnext-rise');
+          if(!a) return null;
+          const end = a.effect.getComputedTiming().endTime;
+          a.pause(); a.currentTime = end; const fin = b.getBoundingClientRect();
+          let t = end, r = fin;
+          while(t > 0){ t -= 5; a.currentTime = t; r = b.getBoundingClientRect(); if(r.top - fin.top >= 26) break; }
+          window.__nbAnim = a;
+          const x = r.left + r.width / 2, y = Math.min(r.bottom, innerHeight) - 6;
+          return { text: b.textContent, x, y, lift: Math.round(r.top - fin.top), visible: r.top < innerHeight - 20,
+                   onBtnNow: document.elementFromPoint(x, y) === b || b.contains(document.elementFromPoint(x, y)),
+                   finBottom: fin.bottom }; }""")
+        if not st:
+            check(f"{dev}: the See results button rises", False); ctx.close(); continue
+        # finger down on the button's lower edge; the rise finishes under it; finger up
+        tap(st["x"], st["y"], 0.16, between="()=>{ window.__nbAnim.finish(); }")
+        pg.wait_for_timeout(1600)
+        r = pg.evaluate("""([x, y])=>{ const b = document.getElementById('nextbtn');
+          return { results: !!document.querySelector('.rs-screen, .rs-rewards'), pos, len: order.length }; }""", [st["x"], st["y"]])
+        check(f"{dev}: the test is exercised - a visible 'See results' under the finger that rises {st['lift']}px off it before the finger lifts",
+              "See results" in st["text"] and st["visible"] and st["onBtnNow"] and st["y"] > st["finBottom"], st)
+        check(f"{dev}: and that tap opens the results", r["results"], r)
+        ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -18294,6 +18445,8 @@ def main():
             check_b317_badge2(br)
             check_b317_focusring(br)
             check_b317_roadmap_chips(br)
+            check_b318f_flashswipe(br)
+            check_b318f_seeresults(br)
         finally:
             br.close()
     SERVER.shutdown()

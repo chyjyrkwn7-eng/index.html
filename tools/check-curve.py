@@ -766,8 +766,11 @@ def main():
             # in the colour, the goal plain, met or not.
             # REVISED IN 317: "Grey on left, gold on right, both gold if met,
             # and if it goes over, just the same gold" - the XP bar's rule.
-            check("a task's count is grey and its goal in its colour; met, both are in its colour; a met one has a tick",
-                  len(t) == 2 and grey(t[0]["now"]) and gold(t[0]["need"]) and t[0]["tick"] == ""
+            # REVISED IN 318: "the number on the left can match actually,
+            # don't make it grey" - both numbers in the row's colour, met or
+            # not (fails on 219bfea, where the unmet count is grey).
+            check("a task's count and its goal are both in its colour, met or not (never a grey count); a met one has a tick",
+                  len(t) == 2 and gold(t[0]["now"]) and t[0]["now"] == t[0]["need"] and t[0]["tick"] == ""
                   and blue(t[1]["now"]) and blue(t[1]["need"]) and t[1]["tick"] == "✓", t)
             # REVISED IN 317, round two: "the flare and the theme unlock box
             # thing in profile should swap" - the rank's own flare first.
