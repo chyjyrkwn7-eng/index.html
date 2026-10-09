@@ -14175,11 +14175,21 @@ every unit, and through the real Begin button:
 
 ### The Penal Code's short version moves with the next test (build 313)
 
+**Build 318: #203 was missing from it, and why.** The deck prints #203
+(unborn child, slide 88) with NO question number, and the 313 list was
+read off the notes BY NUMBER, so the one unnumbered question was skipped.
+A classmate caught it. Every slide 55-124 was then re-matched by question
+TEXT against the bank (scratchpad pc318/audit.py): #203 was the only one
+short, and all 59 answers agree with the deck's highlight (or, where the
+deck highlights all four - #250 - the study guide's). Match by text, never
+by number, the next time a slide range changes.
+
 "Now she provided us with the next slides from the penal code pptx on
 what the next test will be over. It is slides 55 through 124." The short
 version is that set now; 0-85 is gone from the app.
 
-- **58 questions on 21 slides**, 55 different ones: #213, #128 and #183
+- **59 questions on 21 slides** (58 until build 318 - see below), 56
+  different ones: #213, #128 and #183
   each sit on two slides. Each second copy is a `versionOnly` question
   with `repeatOf` (src 348 -> 213, 349 -> 128, 350 -> 183), appended at
   the END of `QUESTIONS` so no index moves. The whole unit stays the

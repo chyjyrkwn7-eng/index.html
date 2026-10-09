@@ -50560,20 +50560,26 @@ function flaggedIndexes(){
    rememberConfig(), and dropped whenever the unit is deselected. A
    hundo still needs the whole unit (isFullUnitRun counts against the
    whole bank), so the short version is a shortened run like any other. */
-const PENAL_TEST_SRCS = [249, 213, 24, 121, 200, 262, 344, 128, 159, 61, 95, 183, 109, 117, 349, 150, 158, 250, 304,
+const PENAL_TEST_SRCS = [249, 213, 24, 121, 200, 262, 344, 128, 159, 61, 95, 183, 109, 117, 349, 150, 158, 203, 250, 304,
   65, 70, 97, 178, 350, 348, 319, 236, 318, 346, 22, 209, 3, 204, 253, 290, 343, 321, 322,
   324, 28, 41, 66, 68, 76, 141, 207, 323, 255, 83, 90, 100, 222, 299, 88, 230, 297, 338, 114];
 /* ---- SLIDES 55-124 NOW (build 313) ----
    "We had our test today and now she provided us with the next slides
    from the penal code pptx on what the next test will be over. It is
    slides 55 through 124 ... do the swap." Read off the same deck's
-   speaker notes: 58 questions on 21 slides, all already in the bank
+   speaker notes: 59 questions on 21 slides, all already in the bank
    (55 different questions - #213, #128 and #183 each appear twice, so
    like #84 before them each second appearance is its own version-only
    copy, srcs 348-350). Every deck answer was checked against the bank's;
    where the deck marks it in bold rather than yellow (slides 58, 77, 95,
    97, 99, 123) the bold one agrees too. The 0-85 list above is history;
-   #84's copy (347) stays in the bank so its history survives. */
+   #84's copy (347) stays in the bank so its history survives.
+   BUILD 318: #203 (who cannot be charged with murder of an unborn
+   child, slide 88) was missing - the deck prints that one question with
+   NO NUMBER, so reading the notes by question number skipped it. Found
+   by a classmate; every slide 55-124 was then re-matched by question
+   TEXT, not number, and #203 was the only one short. Its answer (D, the
+   ancestor) is what both the deck and the study guide highlight. */
 /* Keyed by unit name. `label` is what the pop-up calls the short
    version and `desc` is its one line; the whole unit is always the
    other choice. `tag` is the line on the unit's own card saying the
@@ -98682,7 +98688,7 @@ function showCalendar(){
    looks pixel-for-pixel like it does mid-test, not an approximation.
    Drill-only, reached from the Options sheet's now-unlocked toggle. */
 /* `versions` is the unit-selection screen's cfg.versions: reviewing the
-   Penal Code's slides 55-124 shows those 58 and nothing else. */
+   Penal Code's slides 55-124 shows those 59 and nothing else. */
 function showAnswerReview(units, source, versions, opts){
   const allFlagged = !!(opts && opts.allFlagged);
   setActiveNav(null);
