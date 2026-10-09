@@ -6378,6 +6378,16 @@
     body:has(#vroom-race-cut) .roomchat-fab-label{ display:none; }
     body:has(#vroom-race-cut) .roomchat-fab-count{ position:absolute; top:-4px; right:-4px; }
   }
+  /* ONE CHAT BUTTON ON THE RACE LEADERBOARD (build 318). "Leaderboard
+     has two chat buttons." Over the leaderboard cutscene the Room chat
+     button turns into a circle (above) beside the dock's circle, both
+     with the same speech bubble - two identical buttons side by side,
+     the one thing build 194 ruled out. While the cutscene is up the
+     room's chat is the chat that matters (build 240 asked for it there),
+     so it takes the dock's own corner and the dock's button steps out
+     until the cutscene goes; DMs still arrive as banners meanwhile. */
+  body:has(#vroom-race-cut):has(#roomchat-fab) .chatdock-btn{ visibility:hidden; pointer-events:none; }
+  body:has(#vroom-race-cut) .roomchat-fab{ right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem)) !important; }
   .roomchat-sheet{ display:flex; flex-direction:column; max-height:min(80vh, 44rem); }
   .roomchat-sheet .vroom-chat{ margin:0 0 .6rem; }
   .roomchat-sheet .vroom-chat-list{ max-height:min(52vh, 26rem); }
@@ -78534,6 +78544,18 @@ function orbitBoostStep(ts){
   if(s.u < .003 && s.w < .003 || ringMotionOff()){
     s.u = 0; s.w = 0;
     orbitBoostApply(1);
+    /* What the frames above add up is close; what the ring actually shows
+       is exact. Read it off the spin itself against the same clock
+       syncLoopClock sets it from, so the next Home lands on this pose. */
+    const ref = s.anims.find(a => a.animationName === "cosmic-orbit-spin" && a.effect && a.effect.target && a.effect.target.isConnected);
+    if(ref){
+      try{
+        let lag = 0; const tl = document.timeline && document.timeline.currentTime;
+        if(typeof tl === "number") lag = Math.max(0, performance.now() - tl);
+        const ct = Number(ref.currentTime), ahead = ct - (Date.now() - LOOP_EPOCH - lag);
+        if(isFinite(ahead)) orbitAdvanceMs = ahead;
+      }catch(e){}
+    }
     s.anims = [];
     return;
   }
