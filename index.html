@@ -6385,6 +6385,16 @@
     body:has(#vroom-race-cut) .roomchat-fab-label{ display:none; }
     body:has(#vroom-race-cut) .roomchat-fab-count{ position:absolute; top:-4px; right:-4px; }
   }
+  /* ONE CHAT BUTTON ON THE RACE LEADERBOARD (build 318). "Leaderboard
+     has two chat buttons." Over the leaderboard cutscene the Room chat
+     button turns into a circle (above) beside the dock's circle, both
+     with the same speech bubble - two identical buttons side by side,
+     the one thing build 194 ruled out. While the cutscene is up the
+     room's chat is the chat that matters (build 240 asked for it there),
+     so it takes the dock's own corner and the dock's button steps out
+     until the cutscene goes; DMs still arrive as banners meanwhile. */
+  body:has(#vroom-race-cut):has(#roomchat-fab) .chatdock-btn{ visibility:hidden; pointer-events:none; }
+  body:has(#vroom-race-cut) .roomchat-fab{ right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem)) !important; }
   .roomchat-sheet{ display:flex; flex-direction:column; max-height:min(80vh, 44rem); }
   .roomchat-sheet .vroom-chat{ margin:0 0 .6rem; }
   .roomchat-sheet .vroom-chat-list{ max-height:min(52vh, 26rem); }
@@ -10991,12 +11001,23 @@
      covers the gap without slowing down or changing anything else. */
   @media (prefers-reduced-motion:no-preference){
     .cosmic-hero-svg{ animation:cosmic-hero-settle .22s ease-out both; }
+    /* WHAT IS DRAWN ON THE PLANET ARRIVES WITH IT (build 318). The scar,
+       the soot on the rings and the plasma are HTML laid over the svgs,
+       so they had no settle of their own: frame-stepped, every Home
+       arrival of a Supernova account showed the crack (and the plasma's
+       disc and the soot) for ~100ms with no planet or rings under it.
+       Same length, same curve, same start as the svgs' settle. No 100%
+       keyframe, so each ends on its own opacity (the plasma's .55) rather
+       than 1, and `backwards`, so nothing is held once it has run - the
+       rank cutscene's own opacity for the scar is untouched. */
+    .cosmic-hero-wrap > :is(.cosmic-scar, .csc-ringsoot, .cosmic-plasma){ animation:cosmic-hero-settle-in .22s ease-out backwards; }
   }
   @keyframes cosmic-hero-settle{
     0%{ opacity:0; }
     45%{ opacity:0; }
     100%{ opacity:1; }
   }
+  @keyframes cosmic-hero-settle-in{ 0%, 45%{ opacity:0; } }
   /* Explicit iPad request: the Home sphere reads too small on a tablet
      screen relative to how much room is actually there — the base rule
      above caps it at 23rem/46vh everywhere, phone included, so it never
@@ -13940,9 +13961,23 @@
      Both are covered by the global [data-reduce-motion="true"] *
      {animation:none} rule near the top of this file, so the Reduce
      motion toggle switches them off without either being named. */
+  /* THE BUTTON WEARS THE RANK'S OWN COLOUR (build 318). "The daily
+     question pulse, it doesn't look like it's color matching. Supernova
+     it should pulse and load red ... Ensure each rank its theme matched."
+     Every ring, glow and flare on it was --theme-c1, which in a rank's
+     triad is the WARM HIGHLIGHT beside the rank colour, not the rank
+     colour: Supernova's is #FFE66B, a yellow, Amethyst's a pale gold,
+     Iron's a cream. --rank-accent is the rank's own colour, lifted for a
+     dark screen, set by every rank theme and by nothing else - so a rank
+     theme pulses, charges and flares in its rank's colour (Supernova
+     #FF3B30), and the default, which has no rank, keeps the gold it
+     always had. The orb that leaves it for the banner is the same mark,
+     so it carries the same colour. One variable; nothing below names a
+     colour of its own. */
+  .daily-question-fab, .daily-orb{ --dq-c:var(--rank-accent, var(--theme-c1)); }
   .daily-question-fab.is-ready::after{
     content:""; position:absolute; inset:-3px; border-radius:999px;
-    border:1.5px solid var(--theme-c1); opacity:0; pointer-events:none;
+    border:1.5px solid var(--dq-c); opacity:0; pointer-events:none;
     animation:daily-ready 3.6s ease-out infinite;
   }
   @keyframes daily-ready{
@@ -13958,10 +13993,10 @@
       box-shadow:0 4px 14px rgba(0,0,0,.3);
     }
     50%{
-      border-color:var(--theme-c1); color:var(--theme-c1);
+      border-color:var(--dq-c); color:var(--dq-c);
       box-shadow:0 4px 14px rgba(0,0,0,.3),
-                 0 0 0 5px color-mix(in srgb, var(--theme-c1) 16%, transparent),
-                 0 0 26px color-mix(in srgb, var(--theme-c1) 55%, transparent);
+                 0 0 0 5px color-mix(in srgb, var(--dq-c) 16%, transparent),
+                 0 0 26px color-mix(in srgb, var(--dq-c) 55%, transparent);
     }
   }
   /* A reset is news whether or not the button itself is animating, so
@@ -13998,7 +14033,7 @@
   .dq-charge-track, .dq-charge-half, .dq-charge-burst, .dq-charge-bloom{ position:absolute; pointer-events:none; }
   .dq-charge-track{
     inset:0; border-radius:50%; box-sizing:border-box;
-    border:var(--dq-w) solid color-mix(in srgb, var(--theme-c1) 22%, transparent);
+    border:var(--dq-w) solid color-mix(in srgb, var(--dq-c) 22%, transparent);
     opacity:0;
   }
   .dq-charge-half{ top:0; width:50%; height:100%; overflow:hidden; }
@@ -14006,7 +14041,7 @@
   .dq-charge-l{ left:0; }
   .dq-charge-arc{
     position:absolute; top:0; width:100%; height:100%; box-sizing:border-box;
-    border:var(--dq-w) solid var(--theme-c1);
+    border:var(--dq-w) solid var(--dq-c);
   }
   /* The right-hand clip shows the ring's LEFT half rotated into it, and
      the left-hand clip the right half: each starts hidden behind its own
@@ -14034,9 +14069,9 @@
   }
   .dq-charge-burst{
     inset:0; border-radius:50%; box-sizing:border-box;
-    border:2px solid var(--theme-c1);
-    box-shadow:0 0 14px color-mix(in srgb, var(--theme-c1) 70%, transparent),
-               inset 0 0 10px color-mix(in srgb, var(--theme-c1) 45%, transparent);
+    border:2px solid var(--dq-c);
+    box-shadow:0 0 14px color-mix(in srgb, var(--dq-c) 70%, transparent),
+               inset 0 0 10px color-mix(in srgb, var(--dq-c) 45%, transparent);
     opacity:0; transform:scale(1);
   }
   .daily-question-fab.is-charging .dq-charge-burst{
@@ -14044,8 +14079,8 @@
   }
   .dq-charge-bloom{
     inset:-30%; border-radius:50%;
-    background:radial-gradient(circle, color-mix(in srgb, var(--theme-c1) 55%, transparent) 0%,
-      color-mix(in srgb, var(--theme-c1) 18%, transparent) 42%, transparent 68%);
+    background:radial-gradient(circle, color-mix(in srgb, var(--dq-c) 55%, transparent) 0%,
+      color-mix(in srgb, var(--dq-c) 18%, transparent) 42%, transparent 68%);
     opacity:0; transform:scale(.6);
   }
   .daily-question-fab.is-charging .dq-charge-bloom{
@@ -14067,16 +14102,16 @@
      and shadow only. */
   .dq-charge-flash, .dq-charge-burst2{ position:absolute; pointer-events:none; inset:0; border-radius:50%; box-sizing:border-box; opacity:0; }
   .dq-charge-flash{
-    border:calc(var(--dq-w) + 1.5px) solid var(--theme-c1);
-    box-shadow:0 0 18px color-mix(in srgb, var(--theme-c1) 80%, transparent),
-               inset 0 0 12px color-mix(in srgb, var(--theme-c1) 55%, transparent);
+    border:calc(var(--dq-w) + 1.5px) solid var(--dq-c);
+    box-shadow:0 0 18px color-mix(in srgb, var(--dq-c) 80%, transparent),
+               inset 0 0 12px color-mix(in srgb, var(--dq-c) 55%, transparent);
   }
   .daily-question-fab.is-charging .dq-charge-flash{
     animation:dq-flash .55s cubic-bezier(.2,.8,.3,1) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s)) both;
   }
   .dq-charge-burst2{
-    border:1.5px solid var(--theme-c1);
-    box-shadow:0 0 10px color-mix(in srgb, var(--theme-c1) 55%, transparent);
+    border:1.5px solid var(--dq-c);
+    box-shadow:0 0 10px color-mix(in srgb, var(--dq-c) 55%, transparent);
   }
   .daily-question-fab.is-charging .dq-charge-burst2{
     animation:dq-burst2 calc(var(--dq-burst, .7s) + .25s) cubic-bezier(.15,.7,.3,1) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s) + .2s) both;
@@ -14086,7 +14121,7 @@
   }
   @keyframes dq-build{
     from{ filter:none; }
-    to{ filter:drop-shadow(0 0 6px color-mix(in srgb, var(--theme-c1) 75%, transparent)); }
+    to{ filter:drop-shadow(0 0 6px color-mix(in srgb, var(--dq-c) 75%, transparent)); }
   }
   @keyframes dq-flash{
     0%{ opacity:0; transform:scale(.96); }
@@ -14107,7 +14142,11 @@
     animation:dq-sealed var(--dq-hold, .5s) ease-out calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s)) both,
               dq-fade-out .4s ease-in calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s) + .12s) forwards;
   }
-  @keyframes dq-sealed{ from{ filter:brightness(1); } 40%{ filter:brightness(1.7) drop-shadow(0 0 4px var(--theme-c1)); } to{ filter:brightness(1.35) drop-shadow(0 0 3px var(--theme-c1)); } }
+  /* No brightness() in the seal (build 318): x1.7 clipped every channel
+     towards white, so the closed ring went pale yellow on Bronze, cyan on
+     Sapphire and pink-white on Amethyst - off its own colour for the half
+     second it is most looked at. It lights by its glow alone now. */
+  @keyframes dq-sealed{ from{ filter:drop-shadow(0 0 0 transparent); } 40%{ filter:drop-shadow(0 0 6px var(--dq-c)) drop-shadow(0 0 2px var(--dq-c)); } to{ filter:drop-shadow(0 0 4px var(--dq-c)) drop-shadow(0 0 1px var(--dq-c)); } }
   /* The quiet ready ring steps aside while the meter is on the button. */
   .daily-question-fab.is-charging.is-ready::after{ animation:none; opacity:0; }
   @keyframes dq-sweep{ from{ transform:rotate(0deg); } to{ transform:rotate(180deg); } }
@@ -14126,9 +14165,9 @@
   @keyframes dq-drain{ from{ opacity:1; } to{ opacity:.32; } }
   @keyframes dq-flare{
     0%{ opacity:.32; transform:scale(1); color:inherit; }
-    18%{ opacity:1; transform:scale(1.42); color:var(--theme-c1); }
-    38%{ opacity:1; transform:scale(1.02); color:var(--theme-c1); }
-    56%{ opacity:1; transform:scale(1.26); color:var(--theme-c1); }
+    18%{ opacity:1; transform:scale(1.42); color:var(--dq-c); }
+    38%{ opacity:1; transform:scale(1.02); color:var(--dq-c); }
+    56%{ opacity:1; transform:scale(1.26); color:var(--dq-c); }
     100%{ opacity:1; transform:scale(1); color:inherit; }
   }
   /* ---- THE ORB: THE BANNER LEAVING THE BUTTON ----
@@ -14150,10 +14189,10 @@
     position:absolute; left:-1.1rem; top:-1.1rem; width:2.2rem; height:2.2rem;
     border-radius:50%; display:grid; place-items:center; will-change:transform, opacity;
     font-weight:800; font-size:1.1rem; line-height:1; color:#F3F5F7;
-    background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--theme-c1) 55%, rgba(26,31,38,.9)), rgba(26,31,38,.92) 70%);
-    border:1px solid color-mix(in srgb, var(--theme-c1) 70%, rgba(255,255,255,.3));
-    box-shadow:0 0 0 3px color-mix(in srgb, var(--theme-c1) 18%, transparent),
-               0 0 22px color-mix(in srgb, var(--theme-c1) 65%, transparent);
+    background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--dq-c) 55%, rgba(26,31,38,.9)), rgba(26,31,38,.92) 70%);
+    border:1px solid color-mix(in srgb, var(--dq-c) 70%, rgba(255,255,255,.3));
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--dq-c) 18%, transparent),
+               0 0 22px color-mix(in srgb, var(--dq-c) 65%, transparent);
   }
   /* Genuinely bigger on a tablet-width screen, not just repositioned \u2014
      per explicit report that it renders "way too small" on an iPad.
@@ -63425,6 +63464,10 @@ function orbitAnimKeyframes(cellCss, cols, n){
    where the clock says. Stagger offsets (negative delays) are kept;
    one-shot entrances are left alone. Reduce motion has no loops to set. */
 const LOOP_EPOCH = Date.UTC(2026, 0, 1);
+/* How far the Home rings (and the scar veils timed to them) are ahead of
+   LOOP_EPOCH's clock, from planet taps - see orbitBoostKick (build 318). */
+let orbitAdvanceMs = 0;
+const ORBIT_PHASE_ANIMS = { "cosmic-orbit-spin": 1, "cof-scarpass": 1 };
 let homeShownBefore = false;
 function syncLoopClock(root){
   if(!root || !root.getAnimations) return;
@@ -63443,7 +63486,10 @@ function syncLoopClock(root){
     try{
       const t = a.effect && a.effect.getTiming();
       if(!t || t.iterations !== Infinity || !(Number(t.duration) > 0)) return;
-      a.currentTime = wall;
+      /* the rings, and the veils timed to them, are ahead of the wall
+         clock by whatever planet taps have gained them (build 318) */
+      const ahead = ORBIT_PHASE_ANIMS[a.animationName] ? orbitAdvanceMs : 0;
+      a.currentTime = wall + ahead;
     }catch(e){}
   });
 }
@@ -78387,10 +78433,9 @@ function secretFlareTold(dot){
      first time it is tapped, just before the rank bubbles, so it sits
      over the sphere and anything drawn on it, under the bubbles. The
      planet's own DOM is not touched.
-   - Transform and opacity only, no filters. The surge is the orbit
-     layers' individual `rotate` (their spin is on `transform`, so the
-     two add): a few degrees forward fast, then given back slowly over
-     nine seconds, so the flares end up on the shared loop clock again.
+   - Transform and opacity only, no filters. The rings speeding up is
+     orbitBoostKick (build 318, below): the spin itself runs faster for
+     a moment, never a rotation laid on top of it.
    - Reduce motion: no ripple and no surge; the press, the halo and the
      rings show still for a moment. Nothing waits for it and it waits
      for nothing - it is the answer to a tap. */
@@ -78452,22 +78497,96 @@ function planetTapFx(hero, ev){
     { duration: 1000, easing: "ease-out" });
   A(parts.rin, [{ opacity: from.rin }, { opacity: 1, offset: .3 }, { opacity: 0 }], { duration: 900, delay: from.rin > .05 ? 0 : 140, easing: "ease-in-out" });
   A(parts.rout, [{ opacity: from.rout }, { opacity: 1, offset: .3 }, { opacity: 0 }], { duration: 900, delay: from.rout > .05 ? 0 : 300, easing: "ease-in-out" });
-  /* the surge: forward fast, then given back slowly, from wherever an
-     earlier surge has got to */
+  /* the rings speed up (build 318, orbitBoost) */
+  orbitBoostKick(hero);
+}
+/* A TAP SPEEDS THE RINGS UP, AND SPAMMING IT KEEPS THEM GOING (build 318).
+   "Tapping it speeds it up that's sick, keep it like that, ensure that
+   happens for every theme set too ... if I spam the big planet make it so
+   that it just does it over and over again seamlessly with that tiny
+   speed up thing."
+   Build 317's surge was a Web Animation of each ring's `rotate`: a few
+   degrees forward, then given back to 0 over nine seconds. Spammed, every
+   tap restarted it from where it was, so ten taps piled up ~50 degrees
+   (100 on the inner ring) that were then given back - the rings ran
+   BACKWARDS for seconds afterwards - and each restart was a jolt.
+   Now nothing is added on top of the spin: the spin itself runs faster.
+   One velocity for both rings, in multiples of their own speed (so the
+   inner ring stays quicker), driven per frame while it is above zero:
+     - a tap moves the drive `u` most of the way to the cap (ORBIT_BOOST.
+       kick of what is left - every tap counts, none can run away);
+     - the speed `w` eases towards `u` (tauW), so the speed-up itself is
+       eased, never a jump;
+     - `u` decays (tauU), so the rings slow back to their own pace from
+       wherever they are.
+   The speed is the playbackRate of the rings' own cosmic-orbit-spin and
+   of the scar veils that are timed to them (cof-scarpass), set together,
+   so the veils stay on their flares. Setting playbackRate keeps
+   currentTime, so the position is continuous by construction - no phase
+   to snap back to. What the rings gained is kept in orbitAdvanceMs and
+   syncLoopClock adds it, so a Home that comes back puts them where they
+   were left rather than back on the bare wall clock. The motion is still
+   the compositor's; only the rate is set from script, and only while a
+   boost is running (about two seconds after the last tap).
+   Reduce motion: the rings are still, nothing to speed up. */
+const ORBIT_BOOST = { cap: 6, kick: .62, tauU: .42, tauW: .12 };
+const orbitBoost = { u: 0, w: 0, raf: 0, last: 0, anims: [] };
+function orbitPhaseAnims(hero){
+  const out = [];
+  if(!hero) return out;
   hero.querySelectorAll(":scope > .cosmic-hero-orbitlayer").forEach(layer => {
-    const inner = layer.classList.contains("cosmic-hero-orbitlayer-inner");
-    let cur = 0;
-    layer.getAnimations().forEach(a => { if(a.__tfxSurge){ cur = parseFloat(getComputedStyle(layer).rotate) || 0; a.cancel(); } });
-    const X = inner ? 10 : 5;
-    try{
-      const an = layer.animate([
-        { rotate: cur + "deg", easing: "cubic-bezier(.25,.7,.35,1)" },
-        { rotate: (cur + X) + "deg", offset: .13, easing: "cubic-bezier(.45,0,.55,1)" },
-        { rotate: "0deg" }
-      ], { duration: 9000, fill: "none" });
-      an.__tfxSurge = true;
-    }catch(e){}
+    let list = [];
+    try{ list = layer.getAnimations({ subtree: true }); }catch(e){ try{ list = layer.getAnimations(); }catch(e2){} }
+    list.forEach(a => { if(ORBIT_PHASE_ANIMS[a.animationName]) out.push(a); });
   });
+  return out;
+}
+function orbitBoostApply(rate){
+  orbitBoost.anims.forEach(a => {
+    try{ const t = a.effect && a.effect.target; if(t && t.isConnected && a.playbackRate !== rate) a.playbackRate = rate; }catch(e){}
+  });
+}
+function orbitBoostKick(hero){
+  if(ringMotionOff()) return;
+  const B = ORBIT_BOOST, s = orbitBoost;
+  const now = orbitPhaseAnims(hero);
+  if(now.length){
+    /* anything from an earlier Home that is still sped up goes back to its pace */
+    s.anims.forEach(a => { if(now.indexOf(a) < 0){ try{ a.playbackRate = 1; }catch(e){} } });
+    s.anims = now;
+  }
+  s.u += (B.cap - s.u) * B.kick;
+  if(!s.raf){ s.last = 0; s.raf = requestAnimationFrame(orbitBoostStep); }
+}
+function orbitBoostStep(ts){
+  const B = ORBIT_BOOST, s = orbitBoost;
+  s.raf = 0;
+  const dt = s.last ? Math.min(.1, Math.max(0, (ts - s.last) / 1000)) : 0;
+  s.last = ts;
+  /* what the rings gained since the last frame, at the rate they ran at */
+  orbitAdvanceMs += s.w * dt * 1000;
+  s.u *= Math.exp(-dt / B.tauU);
+  s.w += (s.u - s.w) * (1 - Math.exp(-dt / B.tauW));
+  if(s.u < .003 && s.w < .003 || ringMotionOff()){
+    s.u = 0; s.w = 0;
+    orbitBoostApply(1);
+    /* What the frames above add up is close; what the ring actually shows
+       is exact. Read it off the spin itself against the same clock
+       syncLoopClock sets it from, so the next Home lands on this pose. */
+    const ref = s.anims.find(a => a.animationName === "cosmic-orbit-spin" && a.effect && a.effect.target && a.effect.target.isConnected);
+    if(ref){
+      try{
+        let lag = 0; const tl = document.timeline && document.timeline.currentTime;
+        if(typeof tl === "number") lag = Math.max(0, performance.now() - tl);
+        const ct = Number(ref.currentTime), ahead = ct - (Date.now() - LOOP_EPOCH - lag);
+        if(isFinite(ahead)) orbitAdvanceMs = ahead;
+      }catch(e){}
+    }
+    s.anims = [];
+    return;
+  }
+  orbitBoostApply(1 + s.w);
+  s.raf = requestAnimationFrame(orbitBoostStep);
 }
 
 function showToast(msg, tone){

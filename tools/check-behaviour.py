@@ -16445,7 +16445,8 @@ def check_b317_hometaps(br):
         pg.wait_for_timeout(700)
         PL = _hometap(pg, "planet")
         PL.update(pg.evaluate("""() => { const fx = document.querySelector('.screen-home-actual .cosmic-tapfx'); const kids = fx ? [...fx.querySelectorAll('*')] : [];
-          const surge = [...document.querySelectorAll('.screen-home-actual .cosmic-hero-orbitlayer')].map(l => l.getAnimations().filter(a => !(window.CSSAnimation && a instanceof CSSAnimation) && a.effect.getKeyframes().some(k => k.rotate !== undefined)).length);
+          /* the rings speed up: since build 318 their own spin runs faster (playbackRate), nothing is laid on top */
+          const surge = [...document.querySelectorAll('.screen-home-actual .cosmic-hero-orbitlayer')].map(l => l.getAnimations().filter(a => a.animationName === 'cosmic-orbit-spin' && a.playbackRate > 1.05).length);
           return { fxMoving: kids.reduce((n, k) => n + k.getAnimations().length, 0), fxFiltered: kids.filter(k => { const f = getComputedStyle(k).filter; return f && f !== 'none'; }).length, surge }; }"""))
         pg.wait_for_timeout(250)
         PL2 = _hometap(pg, "planet", 120)
@@ -16553,7 +16554,7 @@ def check_b317_hometaps(br):
         RF = _hometap(pg, "flare:red")
         RP = _hometap(pg, "planet")
         RP.update(pg.evaluate("""() => { const fx = document.querySelector('.screen-home-actual .cosmic-tapfx');
-          return { still: !!(fx && fx.classList.contains('is-still')), surge: [...document.querySelectorAll('.screen-home-actual .cosmic-hero-orbitlayer')].map(l => l.getAnimations().filter(a => !(window.CSSAnimation && a instanceof CSSAnimation)).length) }; }"""))
+          return { still: !!(fx && fx.classList.contains('is-still')), surge: [...document.querySelectorAll('.screen-home-actual .cosmic-hero-orbitlayer')].map(l => l.getAnimations().filter(a => !(window.CSSAnimation && a instanceof CSSAnimation) || a.playbackRate !== 1).length) }; }"""))
         pg.evaluate("() => { theme.reduceMotion = false; delete document.documentElement.dataset.reduceMotion; }")
         check(dev + ": Reduce motion: a locked rank dips, still, with its caption - no shake",
               RL.get("shake") == 0 and RL.get("dim") and RL.get("light") == 0 and "Reach level 60" in (RL.get("text") or ""), RL)
@@ -18256,6 +18257,286 @@ def check_b318f_seeresults(br):
         ctx.close()
 
 
+# --------------------------------------------------------------------------
+# Build 318 (b318d): the planet tap's speed-up, the scar arriving with the
+# planet, the daily button in the rank's colour, one chat button.
+
+B318_STATE = """async (kind) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  store.supernovaAchieved = false; store.pendingSupernovaCutscene = false; store.pendingTierCutscene = null;
+  store.mysteryColorsFound = { red: true, orange: true, yellow: false, violet: false, white: false, core: false };
+  theme.accent = 'ink';
+  if(kind.startsWith('accent:')) theme.accent = kind.slice(7);
+  if(kind === 'orange' || kind === 'eclipse'){ store.supernovaAchieved = true; store.mysteryColorsFound = {};
+    MYSTERY_ORDER.forEach(k => store.mysteryColorsFound[k] = kind === 'eclipse' || k !== 'core'); theme.accent = 'titan'; }
+  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); }catch(e){}
+  try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); homeUnlockPlaying = false; }catch(e){}
+  applyTheme(); showHome(); scrollTo(0, 0); await wait(900);
+  document.querySelectorAll('.rs-spot, .daily-alert, #tour-overlay, .update-banner, .toast').forEach(x => x.remove());
+  return { ring: homeRingTier(), accent: document.documentElement.dataset.accent || 'ink', sn: !!store.supernovaAchieved }; }"""
+
+# Ten taps on the planet in two seconds, every frame each ring's angle (its
+# spin's transform plus any `rotate` laid on it), then Home built again.
+B318_SPAM = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  const H = () => document.querySelector('.screen-home-actual .cosmic-hero-wrap');
+  let L = [...H().querySelectorAll(':scope > .cosmic-hero-orbitlayer')];
+  const sph = H().querySelector('.cosmic-hero-main circle[style*="cursor"]');
+  const ang = l => { const cs = getComputedStyle(l); let a = 0; const m = cs.transform.match(/matrix\\(([^)]*)\\)/);
+    if(m){ const v = m[1].split(',').map(Number); a = Math.atan2(v[1], v[0]) * 180 / Math.PI; }
+    const r = parseFloat(cs.rotate); if(isFinite(r)) a += r; return a; };
+  const frames = []; let stop = false;
+  const rec = (ts) => { frames.push([ts, ...L.map(ang)]); if(!stop) requestAnimationFrame(rec); };
+  requestAnimationFrame(rec);
+  await wait(500);
+  for(let i = 0; i < 10; i++){
+    const r = sph.getBoundingClientRect();
+    sph.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, isPrimary: true, pointerType: 'touch',
+      clientX: r.left + r.width * (.35 + .03 * i), clientY: r.top + r.height * (.6 - .02 * i) }));
+    await wait(200);
+  }
+  await wait(7000); stop = true; await wait(40);
+  const spinRates = L.map(l => l.getAnimations().filter(a => a.animationName === 'cosmic-orbit-spin').map(a => a.playbackRate));
+  /* built again: the rings carry on from where they are, not from the bare clock */
+  const before = L.map(ang), t0 = performance.now();
+  showHome(); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  L = [...H().querySelectorAll(':scope > .cosmic-hero-orbitlayer')];
+  const after = L.map(ang), dt = performance.now() - t0;
+  return { frames, spinRates, before, after, dt, lap: [120, 52] }; }"""
+
+
+def _b318_rates(res):
+    fr, laps = res["frames"], res["lap"]
+    out = []
+    for k in range(2):
+        base = 360 / laps[k] / 1000
+        rates, steps = [], []
+        for i in range(1, len(fr)):
+            dt = fr[i][0] - fr[i - 1][0]
+            if dt <= 0:
+                continue
+            d = (fr[i][k + 1] - fr[i - 1][k + 1] + 180) % 360 - 180
+            rates.append((fr[i][0], d / dt / base, dt))
+            steps.append(abs(d) * 16.667 / dt)
+        jerk = max(abs(rates[i][1] - rates[i - 1][1]) / max(1, rates[i][2] / 16.667) for i in range(1, len(rates)))
+        tail = [r for t, r, _ in rates if t > fr[-1][0] - 1200]
+        out.append({"minRate": round(min(r for _, r, _ in rates), 2), "maxRate": round(max(r for _, r, _ in rates), 2),
+                    "jerk60": round(jerk, 2), "maxStep60": round(max(steps), 3), "tail": [round(min(tail), 2), round(max(tail), 2)],
+                    "frames": len(rates)})
+    return out
+
+
+def check_b318_planet(br):
+    """Build 318. "Tapping it speeds it up that's sick, keep it like that,
+    ensure that happens for every theme set too ... if I spam the big planet
+    make it so that it just does it over and over again seamlessly with that
+    tiny speed up thing." Ten taps in two seconds on the 17 Pro Max, under
+    the default, Gold and Supernova themes, the Supernova orange rings and
+    the all-secret-flares black rings; every frame each ring's angle:
+    - it speeds up (well past its own pace) and is capped (it cannot run
+      away however fast the taps come);
+    - it never runs slower than its own pace, let alone backwards;
+    - the speed changes smoothly frame to frame (no tap is a jolt);
+    - it is back at its own pace a few seconds after the last tap, with the
+      spin's playbackRate back to 1;
+    - built again (Home re-entered), each ring carries on where it was.
+    And under Reduce motion a tap leaves the rings' rate alone.
+    Fails on 219bfea: each tap restarted a rotate surge from where it was,
+    ten of them piled up ~50 degrees that were given back - the rings ran
+    backwards (-0.86x on the outer ring) - and each restart jumped the
+    speed by ~4x in one frame."""
+    print("\n318p. planet taps: the rings speed up, smoothly, capped, never backwards, on every theme")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(HOMETAP_PREP, {})
+    for kind in ("default", "accent:veteran", "accent:titan", "orange", "eclipse"):
+        st = pg.evaluate(B318_STATE, kind)
+        pg.wait_for_timeout(1500)
+        res = pg.evaluate(B318_SPAM)
+        rr = _b318_rates(res)
+        lab = "%s (rings %s)" % (st.get("accent"), st.get("ring") or "plain")
+        print("    %s: outer %s, inner %s" % (lab, rr[0], rr[1]))
+        check(lab + ": ten fast taps speed both rings up (over 2.5x their pace) and cap it (under 7.5x)",
+              all(2.5 <= r["maxRate"] <= 7.5 for r in rr), rr)
+        check(lab + ": the rings never run slower than their own pace, let alone backwards",
+              all(r["minRate"] >= .95 for r in rr), rr)
+        check(lab + ": the speed changes smoothly frame to frame (under 1.2x of pace per 60fps frame)",
+              all(r["jerk60"] <= 1.2 for r in rr), rr)
+        check(lab + ": back at their own pace a few seconds after the last tap, the spin's rate back to 1",
+              all(.9 <= r["tail"][0] and r["tail"][1] <= 1.1 for r in rr)
+              and all(x == 1 for xs in res["spinRates"] for x in xs) and all(len(xs) == 1 for xs in res["spinRates"]),
+              [rr, res["spinRates"]])
+        # In seconds of each ring's own lap. Re-entering Home with no taps
+        # at all lands within ~0.6s here (the sandbox's frame lag); a build
+        # that forgot what the taps gained lands 8-17s behind.
+        jumps = []
+        for k in range(2):
+            d = (res["after"][k] - res["before"][k] + 180) % 360 - 180
+            jumps.append(round((d - res["dt"] * 360 / res["lap"][k] / 1000) / (360 / res["lap"][k]), 2))
+        check(lab + ": Home built again, each ring carries on where it was (within 1s of its lap)",
+              all(abs(j) <= 1.0 for j in jumps), jumps)
+    # Reduce motion: nothing to speed up
+    pg.evaluate(HOMETAP_PREP, {"rm": True})
+    rm = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const sph = document.querySelector('.screen-home-actual .cosmic-hero-main circle[style*="cursor"]');
+      const r = sph.getBoundingClientRect();
+      for(let i = 0; i < 3; i++){ sph.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, isPrimary: true, pointerType: 'touch', clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 })); await wait(150); }
+      await wait(300);
+      return [...document.querySelectorAll('.screen-home-actual .cosmic-hero-orbitlayer')].map(l => l.getAnimations().map(a => [a.animationName || 'waapi', a.playbackRate])); }""")
+    pg.evaluate("() => { theme.reduceMotion = false; delete document.documentElement.dataset.reduceMotion; }")
+    check("Reduce motion: a planet tap leaves the rings alone", all(all(x[1] == 1 and x[0] != 'waapi' for x in l) for l in rm), rm)
+    ctx.close()
+
+
+B318_STEP = """async () => {
+  showHome(); scrollTo(0, 0);
+  const anims = document.getAnimations(); const base = new Map();
+  anims.forEach(a => { base.set(a, a.currentTime || 0); a.pause(); });
+  window.__b318a = anims; window.__b318b = base;
+  document.querySelectorAll('.rs-spot, .daily-alert, #tour-overlay, .update-banner, .toast').forEach(x => x.remove());
+  return anims.length; }"""
+B318_AT = """(k) => { const t = k * 1000 / 60; window.__b318a.forEach(a => { try{ a.currentTime = window.__b318b.get(a) + t; }catch(e){} });
+  const H = document.querySelector('.screen-home-actual .cosmic-hero-wrap');
+  const eff = e => { let o = 1; for(let x = e; x && x !== document.body; x = x.parentElement) o *= +getComputedStyle(x).opacity; return +o.toFixed(3); };
+  const q = s => { const e = H.querySelector(s); return e ? eff(e) : null; };
+  return { planet: q(':scope > svg.cosmic-hero-main'), scar: q(':scope > .cosmic-scar'), soot: q(':scope > .csc-ringsoot'),
+    plasma: q(':scope > .cosmic-plasma'), ret: H.classList.contains('is-return') }; }"""
+
+
+def check_b318_scar(br):
+    """Build 318, B2: "on every Home arrival for a Supernova account,
+    .cosmic-scar shows about 0.2s before the planet". The first ten frames
+    of a Home arrival, every animation paused and stepped 1/60s at a time,
+    on a first visit and a return: the scar, the soot on the rings and the
+    plasma are never more visible than the planet under them (the plasma
+    never above its own .55 of it), and the scar ends at full opacity.
+    Fails on 219bfea, where frames 0-5 have the planet at 0 and the scar,
+    the soot at 1 and the plasma at .55."""
+    print("\n318s. the scar, the soot and the plasma arrive with the planet (frame-stepped)")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(HOMETAP_PREP, {})
+    pg.evaluate(B318_STATE, "orange")
+    for visit in ("return", "first"):
+        if visit == "first":
+            pg.evaluate("() => { homeShownBefore = false; }")
+        pg.evaluate("() => showRankings()")
+        pg.wait_for_timeout(400)
+        pg.evaluate(B318_STEP)
+        rows = [pg.evaluate(B318_AT, k) for k in range(10)]
+        end = pg.evaluate(B318_AT, 30)
+        pg.evaluate("() => window.__b318a.forEach(a => { try{ a.play(); }catch(e){} })")
+        bad = [(k, r) for k, r in enumerate(rows)
+               if r["scar"] is None or r["scar"] > r["planet"] + .02 or (r["soot"] or 0) > r["planet"] + .02 or (r["plasma"] or 0) > .55 * r["planet"] + .02]
+        check("%s visit: in none of the first ten frames is the scar, the soot or the plasma ahead of the planet" % visit,
+              not bad and rows[0]["planet"] < .05, bad[:3] or rows[0])
+        check("%s visit: half a second in, the planet and the scar are fully there" % visit,
+              end["planet"] >= .99 and end["scar"] >= .99 and abs(end["plasma"] - .55) < .02, end)
+    ctx.close()
+
+
+B318_DAILY = """async (acc) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  theme.accent = acc; applyTheme(); store.dailyQuestionDate = null; showHome(); await wait(400);
+  document.querySelectorAll('.rs-spot, .daily-alert, #tour-overlay, .update-banner, .toast, .daily-orb').forEach(x => x.remove());
+  const b = document.querySelector('.daily-question-fab'); b.classList.add('is-ready');
+  b.querySelector('.dq-charge')?.remove(); playDailyRecharge(b, () => {}); await wait(50);
+  b.getAnimations({ subtree: true }).forEach(a => { a.pause(); a.currentTime = 350 + 4100 + 200; });
+  const rgb = (v) => { v = String(v || '').trim(); let m;
+    if((m = v.match(/^#([0-9a-f]{6})$/i))) return [0, 2, 4].map(i => parseInt(m[1].substr(i, 2), 16));
+    if((m = v.match(/color\\(srgb\\s+([\\d.e-]+)\\s+([\\d.e-]+)\\s+([\\d.e-]+)/))) return [m[1], m[2], m[3]].map(x => Math.round(parseFloat(x) * 255));
+    if((m = v.match(/rgba?\\(\\s*([\\d.]+)[ ,]+([\\d.]+)[ ,]+([\\d.]+)/))) return [m[1], m[2], m[3]].map(x => Math.round(parseFloat(x)));
+    return null; };
+  const root = getComputedStyle(document.documentElement);
+  const want = rgb(root.getPropertyValue('--rank-accent')) || rgb(root.getPropertyValue('--theme-c1'));
+  const got = {
+    ready: rgb(getComputedStyle(b, '::after').borderTopColor),
+    arc: rgb(getComputedStyle(b.querySelector('.dq-charge-r .dq-charge-arc')).borderTopColor),
+    burst: rgb(getComputedStyle(b.querySelector('.dq-charge-burst')).borderTopColor),
+    flash: rgb(getComputedStyle(b.querySelector('.dq-charge-flash')).borderTopColor) };
+  const seal = getComputedStyle(b.querySelector('.dq-charge-half')).filter;
+  const orb = document.createElement('div'); orb.className = 'daily-orb'; orb.innerHTML = '<div class="daily-orb-core">?</div>'; document.body.appendChild(orb);
+  const ob = rgb(getComputedStyle(orb.firstChild).borderTopColor); orb.remove();
+  const dist = (g) => g && want ? Math.max(...g.map((x, i) => Math.abs(x - want[i]))) : 999;
+  return { acc, name: acc === 'ink' ? 'Default' : RANK_DISPLAY_NAME[acc], want, worst: Math.max(...Object.values(got).map(dist)), got, seal,
+    orbOff: ob && want ? ob.map((x, i) => Math.abs(x - want[i])) : null, rankAccent: root.getPropertyValue('--rank-accent').trim() }; }"""
+
+
+def check_b318_daily(br):
+    """Build 318. "The daily question pulse, it doesn't look like it's color
+    matching. Supernova it should pulse and load red and stuff, so do that.
+    Ensure each rank its theme matched." Under the default and all seven
+    rank themes, on both reference devices: the ready ring, the charge's arc,
+    its burst and its flash are the rank's own colour (--rank-accent; the
+    default's gold where there is no rank), Supernova's is red, the closed
+    ring lights by glow alone (no brightness() washing it towards white),
+    and the orb that leaves the button leans to the same colour. Fails on
+    219bfea, where every one of them is --theme-c1 - Supernova's #FFE66B
+    yellow - and the seal is brightness(1.7)."""
+    print("\n318d. the daily question button in the rank's own colour")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate(HOMETAP_PREP, {})
+        rows = [pg.evaluate(B318_DAILY, a) for a in ("ink", "rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan")]
+        for r in rows:
+            check("%s: %s - the ready ring, the charge, its burst and flash are %s" % (dev, r["name"], r["want"]),
+                  r["worst"] <= 2 and "brightness" not in (r["seal"] or "") and r["orbOff"] is not None and max(r["orbOff"]) <= 90, r)
+        sn = rows[-1]
+        check(dev + ": Supernova's button is red", sn["want"] and sn["want"][0] > 200 and sn["want"][1] < 90 and sn["want"][2] < 90, sn["want"])
+        ctx.close()
+
+
+B318_CHATS = """() => { const vis = e => { if(!e.isConnected || e.closest('[hidden]')) return false; const r = e.getBoundingClientRect(); if(!r.width || !r.height) return false;
+    for(let x = e; x; x = x.parentElement){ const cs = getComputedStyle(x); if(cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < .05) return false; }
+    return r.right > 0 && r.bottom > 0 && r.left < innerWidth && r.top < innerHeight; };
+  return [...document.querySelectorAll('button, [role=button]')].filter(b => b.querySelector('path[d^="M20.5 11.3"]') && vis(b))
+    .map(b => { const r = b.getBoundingClientRect(); return [b.id || b.className, Math.round(r.left), Math.round(r.top), Math.round(r.width), (b.textContent || '').trim().slice(0, 12)]; }); }"""
+
+
+def check_b318_one_chat(br):
+    """Build 318. "Leaderboard has two chat buttons." Found on the race
+    leaderboard: over the leaderboard cutscene the Room chat button turns
+    into a circle with the dock's own speech bubble and sits beside the
+    dock's circle - two identical buttons. On both reference devices, a
+    visible button carrying the chat glyph is counted on Home, every Profile
+    tab, Settings, every Leaderboard board (and the Leaderboard entered
+    again), the race leaderboard, and Home after it: exactly one each time,
+    and on the race leaderboard it is the room's, in the dock's corner.
+    Fails on 219bfea (two on the race leaderboard)."""
+    print("\n318c. one chat button on every screen that carries one, the race leaderboard included")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate("() => document.querySelectorAll('.rs-spot, .daily-alert, #tour-overlay, .update-banner, .toast').forEach(x => x.remove())")
+        seen = {}
+        def at(label, js, wait=500):
+            pg.evaluate("() => { " + js + " }")
+            pg.wait_for_timeout(wait)
+            pg.evaluate("() => document.querySelectorAll('.rs-spot, .daily-alert, #tour-overlay, .toast').forEach(x => x.remove())")
+            seen[label] = pg.evaluate(B318_CHATS)
+        at("Home", "showHome();")
+        for t in ("profile", "stats", "badges", "ranks"):
+            at("Profile " + t, "showProfile('%s');" % t)
+        at("Settings", "showAppearance();")
+        at("Leaderboard", "showRankings();")
+        nb = pg.evaluate("() => document.querySelectorAll('.screen-rankings .navsegment .iconbtn').length")
+        for i in range(nb):
+            at("Leaderboard board %d" % (i + 1), "document.querySelectorAll('.screen-rankings .navsegment .iconbtn')[%d].click();" % i, 400)
+        at("Leaderboard again", "showHome(); showRankings();")
+        # the race leaderboard: a room's results with its chat, then the cutscene
+        at("race results", """const host = document.createElement('section'); host.className = 'panel rs-screen'; host.dataset.screen = 'results';
+          const chat = document.createElement('div'); chat.className = 'vroom-chat'; chat.textContent = 'room chat'; host.appendChild(chat);
+          stage.replaceChildren(host); mountRoomChatFab();""")
+        at("race leaderboard", """vroomMyKey = 'me';
+          playVroomRaceCutscene([{ key: 'me', xp: 275, p: { username: 'Madison', avatarChar: 'ninja', finished: true, joinedAt: 1 } },
+            { key: 'b', xp: 255, p: { username: 'Alex', avatarChar: 'bear', finished: true, joinedAt: 2 } }]);""", 900)
+        dock = pg.evaluate("() => { const d = document.getElementById('chatdock-btn').getBoundingClientRect(); return [Math.round(d.right), Math.round(d.top + d.height / 2)]; }")
+        race = seen["race leaderboard"]
+        at("Home after the race", "document.getElementById('vroom-race-cut')?.remove(); showHome();")
+        bad = {k: v for k, v in seen.items() if len(v) != 1 and k != "race results"}
+        check(dev + ": exactly one chat button on each of %d screens and boards" % (len(seen) - 1), not bad, bad or "")
+        ok_room = (len(race) == 1 and race[0][0] == "roomchat-fab"
+                   and abs(race[0][1] + race[0][3] - dock[0]) <= 2)
+        check(dev + ": on the race leaderboard it is the room's chat, in the dock's own corner", ok_room, [race, dock])
+        check(dev + ": the room's results screen keeps its labelled Room chat beside the dock (two different controls)",
+              len(seen["race results"]) == 2 and any(x[4].startswith("Room chat") for x in seen["race results"]), seen["race results"])
+        ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -18447,6 +18728,10 @@ def main():
             check_b317_roadmap_chips(br)
             check_b318f_flashswipe(br)
             check_b318f_seeresults(br)
+            check_b318_planet(br)
+            check_b318_scar(br)
+            check_b318_daily(br)
+            check_b318_one_chat(br)
         finally:
             br.close()
     SERVER.shutdown()

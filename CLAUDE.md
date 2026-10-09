@@ -18235,3 +18235,75 @@ case's side.
   Animation, finger down near the bottom edge, rise finished under it,
   finger up: results must open - fails on 219bfea; a settled tap still
   moves exactly one question).
+### Build 318 (b318d) - planet taps that keep going, the scar with the planet, the daily button's colour, one chat button
+
+**A planet tap speeds the rings' OWN spin up; nothing is laid on top of
+it** (`orbitBoostKick` / `orbitBoostStep`, beside `planetTapFx`). *"If I
+spam the big planet make it so that it just does it over and over again
+seamlessly with that tiny speed up thing."* Build 317's surge was a Web
+Animation of each ring's `rotate`, forward a few degrees and given back
+to 0 over nine seconds; spammed, ten restarts piled up ~50/100 degrees
+that were then given back, so the rings ran BACKWARDS (-0.86x) for
+seconds, and every restart jumped the speed ~4x in one frame. Now:
+- one velocity `w` (in multiples of each ring's own pace, so the inner
+  ring stays quicker) eases towards a drive `u` (`tauW` .12s); a tap moves
+  `u` 62% of the way to the cap (6) - every tap counts, none can run away;
+  `u` decays (`tauU` .42s). One tap is ~3.3x at its peak and gains ~1.5
+  lap-seconds (~5 degrees outer, ~11 inner - what 317's tap gave);
+- `w` is applied as the `playbackRate` of the rings' `cosmic-orbit-spin`
+  AND of the scar veils timed to them (`cof-scarpass`) -
+  `ORBIT_PHASE_ANIMS`. Setting playbackRate keeps currentTime, so the
+  position is continuous by construction. The loop runs only while a
+  boost is above zero (~2s after the last tap);
+- **nothing is given back.** What the rings gained is `orbitAdvanceMs`,
+  and `syncLoopClock` adds it to those two animations only, so a Home
+  built again puts the rings where they were left. It is READ OFF the
+  spin when a boost ends (its currentTime against syncLoopClock's own
+  clock), not only summed per frame: the sum ran 0.2-1.3s of lap short
+  under a busy main thread, which re-entry showed as the rings stepping
+  back 4-9 degrees. (A give-back is what
+  makes a sustained spin run backwards; there is no give-back fast enough
+  to be invisible and slow enough not to.)
+- Reduce motion: no spin, nothing to speed up. Taps on flares, bubbles
+  and secret flares under the glass are untouched (paint order).
+Measured, 10 taps in 2s, every frame, five themes (default, Gold,
+Supernova, the orange rings, the black rings): never below 1.0x, peak
+~4.9x, per-frame speed change <=0.83x (66ms frames), max per-frame angle
+step 0.25 degrees outer / 0.57 inner at 60fps, back to 1.0x after.
+Gate: `check_b318_planet` (fails on 219bfea); `check_b317_hometaps` now
+reads the spin's playbackRate rather than a rotate animation.
+
+**The scar, the soot and the plasma settle with the planet** (B2).
+`.cosmic-hero-svg` fades in over its first ~100ms (`cosmic-hero-settle`)
+on every arrival; the HTML laid over it (`.cosmic-scar`, `.csc-ringsoot`,
+`.cosmic-plasma`) had no settle, so a Supernova account saw the crack
+float on nothing for ~100ms every time Home came up. They take
+`cosmic-hero-settle-in` - same length and curve, NO 100% keyframe (each
+ends on its own opacity: the plasma's .55) and `backwards` fill (nothing
+held afterwards, so the rank cutscene's own opacity on the scar is
+untouched). The flares, bubbles and debris on the orbit layers still do
+NOT fade on a return (build 314, "the rings do not blink") - the debris
+rides with the flares. Gate: `check_b318_scar`, frame-stepped.
+
+**The daily button is the rank's own colour, `--dq-c`.** Every ring,
+glow and flare on it (and the orb that leaves it) used `--theme-c1`,
+which in a rank's triad is the warm HIGHLIGHT next to the rank colour -
+Supernova's is yellow. `--dq-c: var(--rank-accent, var(--theme-c1))`:
+the rank colour where a rank theme is set, the default's gold where not.
+The seal (`dq-sealed`) lost its `brightness(1.7)`, which clipped every
+colour towards white (Bronze went yellow, Sapphire cyan). Gate:
+`check_b318_daily`. `.daily-question-fab.is-fresh` is styled but nothing
+adds the class any more (the recharge replaced it).
+
+**One chat button on the race leaderboard.** *"Leaderboard has two chat
+buttons."* The main Leaderboard tab always had one; it was the Virtual
+Room's leaderboard cutscene, where the Room chat button becomes a circle
+(phone CSS, so it clears "RACE RESULTS") with the dock's own glyph, right
+beside the dock's circle. While `#vroom-race-cut` is up and a
+`#roomchat-fab` exists, the dock's button is hidden and the room's takes
+its corner (CSS only, by `:has`). The room's results screen keeps both -
+there the room's is a labelled "Room chat" pill, a different control,
+which build 194 allows. Gate: `check_b318_one_chat` counts visible
+buttons carrying the chat glyph on Home, four Profile tabs, Settings,
+every Leaderboard board and re-entry, the race leaderboard and Home after
+it (fails on 219bfea: two on the race leaderboard).
