@@ -15421,8 +15421,11 @@
      kind a screen recording draws - glides onto the rank line on Profile,
      presses it (the line answers as a real press does, and a ring in the
      new rank's colour goes out from the touch), and a note says what is
-     happening. Above the input layer, and touches nothing itself. */
-  .ru-tap{ position:fixed; z-index:2147483001; left:0; top:0; width:0; height:0; pointer-events:none; }
+     happening. Over Profile and the tab bar but UNDER the loading screen
+     (410), so the screen comes up over it rather than the note sitting on
+     the loading screen; it touches nothing itself (the input layer above
+     it takes every touch). */
+  .ru-tap{ position:fixed; z-index:405; left:0; top:0; width:0; height:0; pointer-events:none; }
   .ru-tap > i{ position:absolute; left:0; top:0; border-radius:50%; }
   .ru-tap-finger{ width:2.6rem; height:2.6rem; margin:-1.3rem 0 0 -1.3rem; background:rgba(255,255,255,.2);
     border:2px solid rgba(255,255,255,.85); box-shadow:0 2px 12px rgba(0,0,0,.45), inset 0 0 8px rgba(255,255,255,.25);
@@ -15437,7 +15440,7 @@
   .ru-tap.is-press .ru-tap-ripple{ animation:ru-tap-ripple .75s cubic-bezier(.15,.7,.3,1) both; }
   @keyframes ru-tap-ripple{ 0%{ opacity:.95; transform:scale(.5); } 100%{ opacity:0; transform:scale(2.6); } }
   .pf-standing.ru-pressed{ opacity:.82; transform:scale(.985); transition:opacity .12s ease, transform .12s ease; }
-  .ru-tap-note{ position:fixed; z-index:2147483001; pointer-events:none; white-space:nowrap;
+  .ru-tap-note{ position:fixed; z-index:405; pointer-events:none; white-space:nowrap;
     padding:.45rem .85rem; border-radius:999px; font-size:.8rem; font-weight:700; letter-spacing:.01em; color:rgba(255,255,255,.94);
     background:rgba(12,14,20,.86); border:1px solid color-mix(in srgb, var(--ru-color, #fff) 45%, transparent);
     box-shadow:0 6px 20px rgba(0,0,0,.4);

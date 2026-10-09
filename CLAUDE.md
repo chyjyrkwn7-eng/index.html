@@ -15641,8 +15641,9 @@ disagree with it.
   FADES.** *"when clicking the profile button, it needs to be like normal,
   then the cutscene will need to click the rank button but it will do it
   for you"*. Profile is up as on any other day for `RANKUP_TAP_AT` (1.2s),
-  then `rankUpSceneTap()`: a touch marker (`.ru-tap`, fixed on `<body>`,
-  above `.ru-blocker`) glides onto the rank emblem on `.pf-standing`,
+  then `rankUpSceneTap()`: a touch marker (`.ru-tap`, fixed on `<body>`
+  at z 405 - over the tab bar, UNDER the loading screen's 410, so the
+  screen comes up over the note instead of the note sitting on it) glides onto the rank emblem on `.pf-standing`,
   presses (`.pf-standing.ru-pressed`, a ring in the new rank's colour),
   "Opening your rank..." (`.ru-tap-note`) under the line - then LOADING.
   `rankUpTapClear()` takes the pieces off from the loading screen and from

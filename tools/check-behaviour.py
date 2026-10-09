@@ -16875,6 +16875,9 @@ def check_b317_rankup(br):
               out.tap = { onLine: !!(sr && pr.left >= sr.left && pr.left <= sr.right && pr.top >= sr.top && pr.top <= sr.bottom),
                 pressed: !!(st && st.classList.contains('ru-pressed')), note: nt ? nt.textContent : null,
                 profile: !!document.querySelector('.screen-profile'), loadingYet: !!ov }; }
+            const nt2 = document.querySelector('.ru-tap-note');
+            if(ov && nt2 && out.noteUnder !== false){ const q = nt2.getBoundingClientRect(); const top = document.elementsFromPoint(q.left + q.width / 2, q.top + q.height / 2).filter(e => !e.classList.contains('ru-blocker'))[0];
+              out.noteUnder = !!(top && ov.contains(top)); }
             if(ov && !at.loading){ at.loading = Math.round(performance.now() - t0); out.loadText = (ov.textContent || '').trim(); }
             if(document.querySelector('.screen-ranks .rankmap') && !at.map) at.map = Math.round(performance.now() - t0);
             if(at.map && !tried && performance.now() - t0 > at.map + 1500){
@@ -16951,7 +16954,8 @@ def check_b317_rankup(br):
         # old screen was at 1 in every frame until it was removed)
         check(f"{dev}: the loading screen fades out into the road map (no cut)",
               len([v for v in fd if .05 < v < .95]) >= 1 and bool(fd) and fd[-1] < .5, (len(fd), fd[:14]))
-        check(f"{dev}: and nothing of the tap is left behind", r.get("tapLeft") is False, r.get("tapLeft"))
+        check(f"{dev}: and nothing of the tap is left behind - the loading screen comes up OVER its note", r.get("tapLeft") is False and r.get("noteUnder") is True,
+              [r.get("tapLeft"), r.get("noteUnder")])
         check(f"{dev}: about three seconds later, the road map", 2500 <= (at.get("map") or 0) - (at.get("loading") or 0) <= 4500,
               [at.get("loading"), at.get("map")])
         mh = r.get("mapHeld") or {}
