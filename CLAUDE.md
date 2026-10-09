@@ -18189,3 +18189,52 @@ fails a 1.25-unit opening (worst 5%, the old cross 10%); and the coin at
 rest gains no outline from its slices (47 changed pixels against 1299).
 `check_b242` and the Profile squeeze check now read the name off the
 case's side.
+
+### Build 318 - every character's 100 is a celebration; the Ninja redrawn
+
+*"Idk if it's just the ninja character or if it's all, but the Hundo
+result screen, I don't like the ninja things it gets a hundred ... each
+character should use its unique cool celebration"* and *"ninja character
+looks a smidge rough around the edges."*
+
+**What a 100 is on the results character:** its own reaction from the
+table (`tools/reactions-table.py`, ~2s), then its special
+(`CHAR_SPECIAL_DRAW`, `charSpecialFire(av, 2600)` in the results
+reaction). Nothing was shared: every character already had its own
+reaction. But the five starters had NO special, so their 100 stopped
+after the reaction while the other 25 put on a show; and the Ninja's
+reaction was the weakest in the set (below).
+- **The five starters have specials now** (`Object.assign(CHAR_SPECIAL_DRAW,
+  ...)` after the table, keyframes in the `STARTER SPECIALS (build 318)`
+  CSS block, lengths in `CHAR_SPECIAL_MS`): Ninja - a katana rises at
+  the shoulder, a glint runs up it, one red-white cut sweeps under the
+  mask, leaves fly; Ghost - three little ghosts circle its shoulders
+  (`spOrbit`), then a BOO bubble; Wizard - a magic circle draws itself
+  behind him (`sp-draw` on `pathLength=100` paths) and turns, runes
+  light, the orb charges and the circle flares; Grizzly - a salmon leaps
+  from a splash and he catches it; Alien - a saucer swoops in and beams
+  a cow up. Like every special they also fire now and then on the
+  Profile card and Customize.
+- **The Ninja's 100 is a smoke bomb**: a ray burst at the chest, one
+  cloud, the ninja gone inside it and back on top of it, wisps and its
+  own scene's leaves thrown out, a glint off the band's plate.
+- **`puff()` puts the opacity on the GROUP, never on each disc.** Eleven
+  discs each at .5 opacity printed a darker lens at every overlap - that
+  is what read as "the ninja things", a heap of grey bubbles. Same flaw,
+  fixed by the same change, in Wizard/Solar/Inferno fail props and the
+  breath puffs.
+- **The Ninja's drawing:** the hood was a seven-cornered polygon, the
+  pale wrap band painted PAST the hood's outline on both sides, the
+  headband was a bar floating on the forehead with its tails a gap away,
+  and the eye slit a hard hexagon. Now one curved hood, the band and its
+  light clipped to the hood (`clip-path`, static) so they end exactly on
+  its edge, a knot where the band meets the edge with the tails out of
+  it, a rounded slit. Same parts and classes, same head size (97 passes).
+- Gate: `check_b318_celebrations` - every live character runs its own
+  reaction keyframes AND has a special (cx-sp at opacity 0, 4+ finite
+  animations under `.char-special`, 1.5-4.5s in `CHAR_SPECIAL_MS`, 3+
+  shapes showing part-way); no two celebrations (reaction + special) and
+  no two specials alike; no reaction prop is translucent overlapping
+  discs; nothing on the Ninja's hood paints outside it (436px on
+  219bfea, 0 now); a real 12/12 drill as the Ninja on the iPhone lands
+  `rx-ninja` and then `char-special`. Fails on 219bfea (5 checks).
