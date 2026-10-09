@@ -17500,7 +17500,10 @@ B318_LOG = """(a) => {
   ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour'].forEach(k => store[k] = true);
   theme.muteBanners = false; theme.reduceMotion = false; applyTheme();
   const quick = (tag, done) => { log.push(tag); const o = document.createElement('div'); o.className = 'ff-scene sf-scene b318-stub'; document.body.appendChild(o);
-    if(!a.hold) setTimeout(() => { o.remove(); log.push('scene-done'); done && done(); }, 400); return { skip(){}, stop(){ o.remove(); } }; };
+    /* and, as a real scene does, it leaves its bridge behind for the card
+       it expects next (openSceneBridge) - which is what brings Home's
+       queue in 380ms after it, the timing B4 stacked on */
+    if(!a.hold) setTimeout(() => { o.remove(); log.push('scene-done'); try{ openSceneBridge('#8B5CF6'); }catch(e){} done && done(); }, 400); return { skip(){}, stop(){ o.remove(); } }; };
   window.playFlareFoundScene = (c, all, done) => quick('scene:' + c, done);
   window.playVoidFlareScene = (done) => quick('scene:yellow', done);
   window.playBadgeCaseScene = (units, done) => { log.push('badge'); setTimeout(done, 30); return {}; };
