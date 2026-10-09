@@ -5293,11 +5293,18 @@ def check_b267(br):
     r = pg.evaluate("""async ()=>{ const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
       try{
       document.documentElement.classList.remove('is-reloading'); const pu = document.getElementById('pushing-update'); if(pu) pu.remove();
+      /* REVISED IN 317 (planet2): Void's three ride the OUTER ring now and
+         the inner ring carries Umbra's, Horizon's and Genesis's - which
+         only show once Void is held (homeFlareKeys). An account without
+         Void has an empty inner ring by design, so look with Void held:
+         the ring still has to carry a dot to be seen turning faster. */
+      const keepF = store.mysteryColorsFound; store.mysteryColorsFound = { red: true, orange: true, yellow: true };
       showHome(); await wait(900);
       const dur = el => el ? parseFloat(getComputedStyle(el).animationDuration.split(',').pop()) : 0;
       out.orbit = { outer: dur(document.querySelector('.cosmic-hero-orbitlayer:not(.cosmic-hero-orbitlayer-inner)')),
                     inner: dur(document.querySelector('.cosmic-hero-orbitlayer-inner')),
                     innerDots: document.querySelectorAll('.cosmic-hero-orbitlayer-inner .cosmic-orbit-dot').length };
+      store.mysteryColorsFound = keepF;
       showVirtualRoomChoice(); await wait(300);
       out.icons = [...document.querySelectorAll('.vrc-modecard .modeicon')].map(i => { const q = i.querySelector('.modeiconpath'); const k = q ? getComputedStyle(q).stroke : ''; return !!k && k !== 'none' && k !== 'rgb(0, 0, 0)' && k !== 'rgb(255, 255, 255)'; })
       out.iconsOld = [...document.querySelectorAll('.vrc-card-icon')].map(i => getComputedStyle(i).backgroundImage.indexOf('gradient') >= 0
@@ -6642,12 +6649,23 @@ def check_b289(br):
         /* Build 315: the three blocks are the standing block, the Next
            rank card and the badge case. Build 316: the standing block is
            no box any more (it reads as part of the profile), so the family
-           is the two boxes - and the rank line runs the same width */
+           is the two boxes - and the rank line runs the same width.
+           REVISED IN 317 (the badge round, "keeping that briefcase feel app
+           wide"): the case is the briefcase, small and shut, and a case
+           sitting on the card casts a SHADOW - black, under it. "No glow"
+           still means what build 289 meant (the rank plate's coloured
+           glow): the rank line and the Next rank card carry no shadow at
+           all, and anything the case casts is pure black - no colour, no
+           light. The radius rule stands ("without ruining the
+           cohesiveness"): the case keeps the card's corner. */
         const bl = ['.pf-standing', '.pf-goal', '.pf-case'].map(q => document.querySelector('.profile-hero ' + q));
         if(bl.every(Boolean)){
           const cs = bl.map(b => getComputedStyle(b)), rs = bl.map(b => b.getBoundingClientRect());
+          const black = s => s === 'none' || (s.match(/(?:rgba?|color)\\([^)]*\\)/g) || ['?']).every(c => {
+            const n = (c.match(/-?[\\d.]+/g) || []).map(Number); return n.length >= 3 && n[0] === 0 && n[1] === 0 && n[2] === 0; });
           out.box = { radius: cs[1].borderTopLeftRadius === cs[2].borderTopLeftRadius,
-            width: rs.every(q => Math.abs(q.width - rs[0].width) < 1), shadow: cs.every(c => c.boxShadow === 'none'),
+            width: rs.every(q => Math.abs(q.width - rs[0].width) < 1),
+            shadow: cs[0].boxShadow === 'none' && cs[1].boxShadow === 'none' && black(cs[2].boxShadow),
             unboxed: cs[0].backgroundImage === 'none' && parseFloat(cs[0].borderTopWidth) === 0,
             wm: !document.querySelector('.profile-hero .profile-rankplate-wm') };
         }
@@ -7172,6 +7190,17 @@ def check_b298(br):
             /* one animation on one image since build 300 (two clocks drifted) */
             out.running = wraps.every(wr => { const im = wr.querySelector('img');
               const a = [...wr.querySelectorAll('*')].flatMap(e => e.getAnimations()); return !!im && a.length === 1 && a.every(x => x.playState === 'running'); });
+            /* REVISED IN 317 (Home taps, round three): a sheet that arrives
+               with the still emblem already on screen crossfades in over
+               520ms (attachOrbitSheet's `fade`) and the still drawing is
+               hidden when that fade ENDS - the cut-in was a 12-level pop
+               on the first Home of a session. The last sheet is usually
+               still mid-fade the moment the count above is met, so let
+               the fades finish (bounded) before asking. A still drawing
+               that stays visible after its fade is still a failure. */
+            const fades = wraps.flatMap(wr => wr.previousElementSibling.getAnimations().filter(a => a.__sheetFade));
+            await Promise.race([Promise.all(fades.map(a => a.finished.catch(() => {}))), wait(3000)]);
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
             out.svgHidden = wraps.every(wr => getComputedStyle(wr.previousElementSibling).visibility === 'hidden');
             out.aligned = wraps.every(wr => { const a = wr.getBoundingClientRect(), b = wr.parentElement.getBoundingClientRect();
               return Math.abs(a.left - b.left) < 1.5 && Math.abs(a.width - b.width) < 3; });
@@ -7953,10 +7982,20 @@ def check_b302(br):
           out.sapSym = !!sap.querySelector('.rk-spin.rk-sym2');
           out.platSpiral = !!plat.querySelector('.rk-spin.rk-sym4');
           out.silverSoft = !!sil.querySelector('.rk-twinkle.rk-soft');
-          /* build 313: the 4th and 5th only show once Void is held - look with it held */
-          const keepF = store.mysteryColorsFound; store.mysteryColorsFound = { red: true, orange: true, yellow: true };
+          /* build 313: the 4th and 5th only show once Void is held - look with it held.
+             REVISED IN 317 (planet2): "three and three" - Void's three on
+             the OUTER ring, Umbra's, Horizon's and Genesis's on the INNER.
+             With only Void held the inner ring has two (the sixth shows
+             once the fifth is found), so look with every flare held and
+             ask for the shape: three on each ring, Void's all outside. */
+          const keepF = store.mysteryColorsFound; store.mysteryColorsFound = {};
+          MYSTERY_ORDER.forEach(k => store.mysteryColorsFound[k] = true);
           showHome(); await wait(400);
-          out.innerDots = document.querySelectorAll('.cosmic-hero-orbitlayer-inner .cosmic-orbit-dot').length;
+          const fk = sel => [...document.querySelectorAll(sel + ' .cosmic-orbit-dot')].map(d => d.dataset.flare);
+          const innerKeys = fk('.cosmic-hero-orbitlayer-inner'), outerKeys = fk('.cosmic-hero-orbitlayer:not(.cosmic-hero-orbitlayer-inner)');
+          out.innerDots = innerKeys.length;
+          out.flareRings = { inner: innerKeys, outer: outerKeys,
+                             voidOutside: VOID_FLARES.every(k => outerKeys.includes(k)) && !innerKeys.some(k => VOID_FLARES.includes(k)) };
           store.mysteryColorsFound = keepF;
           /* 8. the road map is slower */
           showRanksScreen('ranks'); await wait(300);
@@ -7998,7 +8037,9 @@ def check_b302(br):
         check(f"{dev}: back on Home, no flare bubble is empty", r.get("bubbles", 0) >= 7 and r.get("blank") == 0, [r.get("bubbles"), r.get("blank")])
         check(f"{dev}: Sapphire turns on a half-turn loop, Platinum has its spiral, Silver's star glints",
               r.get("sapSym") and r.get("platSpiral") and r.get("silverSoft"), [r.get("sapSym"), r.get("platSpiral"), r.get("silverSoft")])
-        check(f"{dev}: three orbit dots on the inner ring", r.get("innerDots") == 3, r.get("innerDots"))
+        fr = r.get("flareRings") or {}
+        check(f"{dev}: with every flare held, three orbit dots on each ring, Void's three on the outer (planet2)",
+              r.get("innerDots") == 3 and len(fr.get("outer") or []) == 3 and fr.get("voidOutside") is True, fr)
         check(f"{dev}: the road map fills over 2.4s", (r.get("roadDur") or "").startswith("2.4s"), r.get("roadDur"))
         check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
         ctx.close()
@@ -12786,21 +12827,40 @@ def check_b314_unlocks(br):
          page's timers and its animations drift apart by a few hundred ms */
       for(let i = 0; i < 40 && !document.querySelector('.hfx-saucer'); i++) await wait(50);
       const sa = document.querySelector('.hfx-saucer').getAnimations()[0];
-      const until = async ms => { for(let i = 0; i < 400 && (sa.currentTime || 0) < ms; i++) await wait(16); };
+      /* bounded at ~16s, not 6.4: the beats now run to 9s (below) */
+      const until = async ms => { for(let i = 0; i < 1000 && (sa.currentTime || 0) < ms; i++) await wait(16); };
       const op = el => { if(!el) return -1; let o = 1; for(let e = el; e && e !== document.body; e = e.parentElement) o *= parseFloat(getComputedStyle(e).opacity); return o; };
-      await until(4650); out.scan = op(document.querySelector('.rs-grade .hfx-ufo-scanbar'));
-      await until(5450); out.lock = op(document.querySelector('.rs-grade .hfx-ufo-lock'));
-      await until(5820);
-      const gs = [...document.querySelectorAll('.hfx-ufo-ghost')], g = document.querySelector('.rs-grade'), gr = g.getBoundingClientRect();
+      /* REVISED IN 317 (hundo rounds 4-6): "On the results screen it all
+         comes 2s later (the circle and the sweep come first) - the same
+         beats in the same order", and the saucer flies in a layer of its
+         own over the box. The fixed 4.65-6.5s here were build 314's
+         timeline, so they sampled the dark before the scan. Each beat is
+         now sampled at the same point in ITS OWN animation that the old
+         times hit (delay + fraction of duration, read off the element),
+         so a retimed effect moves the samples with it. */
+      const at = (el, f) => { const a = el && el.getAnimations()[0]; if(!a) return 1e9; const t = a.effect.getTiming(); return t.delay + f * t.duration; };
+      const scanEl = document.querySelector('.rs-grade .hfx-ufo-scanbar'), lockEl = document.querySelector('.rs-grade .hfx-ufo-lock');
+      const warpEl = document.querySelector('.hfx-ufo-warp'), marksEl = document.querySelector('.rs-grade .hfx-ufo-marks');
+      const gs = [...document.querySelectorAll('.hfx-ufo-ghost')], g = document.querySelector('.rs-grade');
+      out.at = { scan: at(scanEl, .28), lock: at(lockEl, .56), ghost: at(gs[0], .73), warp: at(warpEl, .2), marks: at(marksEl, .38), gone: at(warpEl, 1.2) };
+      await until(out.at.scan); out.scan = op(scanEl);
+      await until(out.at.lock); out.lock = op(lockEl);
+      await until(out.at.ghost);
+      const gr = g.getBoundingClientRect();
       out.ghosts = gs.length;
       out.ghostUp = gs.map(e => { const r = e.getBoundingClientRect(); return Math.round(r.top + r.height / 2 - gr.top); });
-      await until(6120); out.warp = op(document.querySelector('.hfx-ufo-warp'));
-      await until(6500); out.marks = op(document.querySelector('.rs-grade .hfx-ufo-marks'));
+      /* the marks are down before it goes now (7.4s, the warp 8.54s): read
+         them at their own peak, and still glowing once it has gone */
+      const beats = [['warp', out.at.warp, () => out.warp = op(warpEl)], ['marks', out.at.marks, () => out.marks = op(marksEl)]].sort((a, b) => a[1] - b[1]);
+      for(const b of beats){ await until(b[1]); b[2](); }
+      await until(out.at.gone);
       const u = document.querySelector('.hfx-saucer'); out.saucerGone = u ? op(u) : 0;
+      out.marksAfter = op(marksEl);
       return out; }""")
     check("UFO: once down, a bar of its light SCANS the 100%%, and brackets lock on round it", r.get("scan", -1) > .5 and r.get("lock", -1) > .5, r)
     check("UFO: on the way out it takes the score up the beam - a copy of the 100%% rising above the box's top edge", r.get("ghosts") == 2 and min(r.get("ghostUp") or [99]) < -10, r)
-    check("UFO: and goes in a warp, leaving its landing marks glowing on the box", r.get("warp", -1) > .3 and r.get("marks", -1) > .3 and r.get("saucerGone", 1) < .05, r)
+    check("UFO: and goes in a warp, leaving its landing marks glowing on the box", r.get("warp", -1) > .3 and r.get("marks", -1) > .3 and r.get("saucerGone", 1) < .05
+          and r.get("marksAfter", -1) > .1, r)
     ctx.close()
 
     # --- Fireworks: nothing of the show is drawn below the 100% box's top
