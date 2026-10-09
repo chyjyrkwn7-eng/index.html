@@ -1680,8 +1680,9 @@ for the future and took nothing back.
 
 > **Build 314 - read "Build 314 - FINAL DECISIONS" near the end first.**
 > Levels are banded by rank and your badges cap the band
-> (`badgeWallLevel`, `levelStateFor`); the XP curve is build 313's,
-> unchanged.
+> (`badgeWallLevel`, `levelStateFor`). The XP curve is build 313's
+> through level 60 and **eased past it in build 318** - read "Build 318
+> (b318g) - the XP curve fitted to the class" at the end first.
 > The badge bands did NOT change - cheaper ones were proposed and
 > rejected ("DONT change the badge requirement").
 
@@ -4199,7 +4200,10 @@ missed real bugs that a thirty-second check caught.
    against the previous curve, that levels 1-25 are byte-identical,
    that all the badges there are lands on the cap, that no rank asks
    for more badges than there are units, and that the end-of-test rows
-   say what a run could actually do. Required on anything touching
+   say what a run could actually do. Section 4 holds build 318's curve
+   (1-60 identical to 313, every level past it cheaper, the totals, no
+   step over 8.35% bar the x2 into 26) and 4b serves a copy with
+   `LEVEL_CAP = 100` to prove January is that one constant. Required on anything touching
    `BADGE_THRESHOLD_BANDS`, the curve constants, `TIER_UNLOCKS`,
    `MASTERY_BONUS` or the question bank's sizes. Fails with 11 red on
    build 189.
@@ -14696,7 +14700,9 @@ Madison changed course three times in one evening; this is where it
 landed, and the sections after this one are history wherever they
 disagree with it.
 
-- **The XP curve is unchanged** - exactly build 313's. The re-fit
+- **The XP curve is unchanged** - exactly build 313's. *(Superseded in
+  build 318: 1-60 still are, everything past 60 is cheaper - see the
+  b318g section at the end.)* The re-fit
   ("level 71 about 140,000, level 80 about 200,000") was built and then
   rejected: *"140000 xp is all that's needed to reach level 80? That
   doesn't even sound right."* Measured on the real class the same day,
@@ -18234,8 +18240,8 @@ case's side.
 - **"It took 50k XP to get level 80" is the curve, not a bug.** The figure
   is the Profile bar at the cap, "41,551 / 48,022 XP": XP since 80 against
   what an 81st level would cost (`topInto/topSpan`, build 317). The curve
-  is still build 313's, by Madison's own decision in 314 (the 197k re-fit
-  was rejected): 79->80 costs 44,321, level 80 is 598,449 in all (21:
+  was build 313's when this was written (superseded the same round by
+  b318g: 79->80 is 13,492 and 80 is 348,388 now): 79->80 cost 44,321, level 80 598,449 in all (21:
   9,912 · 30: 22,924 · 45: 58,046 · 50: 75,181 · 60: 138,980 · 70:
   281,237). The screenshot fixture carried 640,000 XP.
 - **A swipe may start on a flashcard's words.** `.fc-text` is
@@ -18332,3 +18338,46 @@ which build 194 allows. Gate: `check_b318_one_chat` counts visible
 buttons carrying the chat glyph on Home, four Profile tabs, Settings,
 every Leaderboard board and re-entry, the race leaderboard and Home after
 it (fails on 219bfea: two on the race leaderboard).
+
+### Build 318 (b318g) - the XP curve fitted to the class
+
+*"Most people don't have 50000 xp yet.. we need to find the average user
+and make the xp curve based on them ... maybe the xp total should only be
+changed after level 60 so people aren't affected? ... do the math"*
+
+- **Levels 1-60 are build 313's to the point; past 60 each level costs
+  `LEVEL_EASE_STEP` (0.2%) x (level - `LEVEL_EASE_FROM`) more than the one
+  before** - 61 +0.2%, 80 +4%, 100 +8% (`Math.min` with 8.35% is a guard).
+  60: 138,980 · 70: 232,168 · **80: 348,388** (was 598,449) · 90: 524,870 ·
+  **100: 849,877**. The dearest level anywhere is 100 at 44,048, under what
+  79->80 cost before (44,321). `levelGrowthAt()` is the only place it lives;
+  `firestore-admin.py level_of` mirrors it and check-curve section 9 holds
+  the two together. `legacyLevelOfPoints` stays build 313's (rank floor).
+- **Why 60, measured (one read-only pass, Oct 9, 57 onboarded accounts):**
+  the highest level anyone held was 56 (108,670 XP), so nobody moved, and
+  every level past 60 is cheaper than before, so somebody crossing 60 on
+  the old build before updating can only gain. The 32 active accounts
+  (>= 2,000 XP, >= 2 days of 5+ minutes, studied since Oct 2, duplicate
+  sign-ups out): median 22,843 XP, ~1,000-1,400 XP a calendar day (last
+  12 days ~630), 0 badges; p90 ~75,000 at ~4,500 a day. Badge work runs
+  at ~25,000 XP per badge-equivalent across the class.
+- **What it was fitted to**: at ~25k XP a badge the 14th badge lands on
+  level 80, so Supernova's two halves arrive together for an average
+  player (313 had them at level 73, 250k short). Projected at the class's
+  pace: the median ~55 by Dec 17, ~61 by Jan 25, ~80 at the course end
+  (Jul 8); the top 10% reach 80 in early December and 100 in spring.
+  "Supernova's level by the end of the current content" for the AVERAGE
+  player is not reachable without lowering levels below 60, which would
+  lift most of the class - said to Madison rather than built.
+- **JANUARY IS ONE CONSTANT: `LEVEL_CAP = 100`.** 81-100 are already on
+  the curve; nothing below 81 moves (check-curve 4b serves a copy with
+  only that line changed). The two new ranks are a separate edit to
+  `TIER_UNLOCKS`/`TIER_ORDER_FULL`. Until the cap moves nobody can HOLD
+  81-100, so `LEVEL_EASE_STEP` can still be re-tuned before January
+  without moving anyone - re-measure the class first. After January,
+  treat every level up to the cap as frozen like 1-60 are now.
+- **Re-fitting later**, the method: read each onboarded account
+  once (`studyLog` = minutes per day, `weekPoints`/`prevWeekPoints` = XP
+  per week), take the highest level held, freeze through it, and make
+  every level above it cheaper - that is the only direction that cannot
+  take a level off anybody.
