@@ -25,7 +25,7 @@ The two that matter most are the two that cannot be argued with:
   badge line actually reaches.
 
 Build 318 re-fitted the curve to the measured class (1-60 untouched,
-everything past 60 cheaper, 348,388 to level 80, 849,877 to 100);
+everything past 60 cheaper, 348,388 to level 80, 699,712 to 100);
 sections 4 and 4b hold it and fail on 219bfea:
 
     python3 tools/check-curve.py --against /path/to/219bfea/index.html
@@ -332,8 +332,8 @@ def main():
         dearer = [L for L in range(61, 81) if per[L] >= old_per[L]]
         check("every level from 61 to 80 is cheaper than build 313 charged", not dearer,
               [(L, per[L], old_per[L]) for L in dearer[:3]])
-        WANT = {60: 138980, 70: 232168, 80: 348388, 90: 524870, 100: 849877}
-        check("the totals: level 60 138,980, 70 232,168, 80 348,388, 90 524,870, 100 849,877",
+        WANT = {60: 138980, 70: 232168, 80: 348388, 90: 502896, 100: 699712}
+        check("the totals: level 60 138,980, 70 232,168, 80 348,388, 90 502,896, 100 699,712",
               all(tot[L] == v for L, v in WANT.items()) and costs["toCap"] == 348388,
               {L: tot[L] for L in WANT})
         # SMOOTH, NO SUDDEN STEPS. The x2 into 26 is build 313's and stays:
@@ -370,8 +370,8 @@ def main():
                    top: { level: top.level, atCap: top.atCap }, below: below.level,
                    at80: levelProgress(xpForLevel(80) + 1).atCap, lv: ps.map(p => levelFromPoints(p)) }; }""", samples)
         jpg.close()
-        check("with the cap at 100: level 100 is 849,877 in all and the cap is there",
-              jan["cap"] == 100 and jan["to100"] == 849877 and jan["top"] == {"level": 100, "atCap": True} and jan["below"] == 99,
+        check("with the cap at 100: level 100 is 699,712 in all and the cap is there",
+              jan["cap"] == 100 and jan["to100"] == 699712 and jan["top"] == {"level": 100, "atCap": True} and jan["below"] == 99,
               {k: jan[k] for k in ("cap", "to100", "top", "below")})
         check("...level 80 is an ordinary level then, and nothing at or below it moves",
               jan["to80"] == 348388 and not jan["at80"]

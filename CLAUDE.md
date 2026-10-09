@@ -18348,8 +18348,8 @@ changed after level 60 so people aren't affected? ... do the math"*
 - **Levels 1-60 are build 313's to the point; past 60 each level costs
   `LEVEL_EASE_STEP` (0.2%) x (level - `LEVEL_EASE_FROM`) more than the one
   before** - 61 +0.2%, 80 +4%, 100 +8% (`Math.min` with 8.35% is a guard).
-  60: 138,980 · 70: 232,168 · **80: 348,388** (was 598,449) · 90: 524,870 ·
-  **100: 849,877**. The dearest level anywhere is 100 at 44,048, under what
+  60: 138,980 · 70: 232,168 · **80: 348,388** (was 598,449) · 90: 502,896 ·
+  **100: 699,712** (past 80 a flat 2.45% a level, `LEVEL_TOP_GROWTH` - Madison: "850k for level 100 is crazy tho. What about like 700?"). The dearest level anywhere is 100 at 21,894, under what
   79->80 cost before (44,321). `levelGrowthAt()` is the only place it lives;
   `firestore-admin.py level_of` mirrors it and check-curve section 9 holds
   the two together. `legacyLevelOfPoints` stays build 313's (rank floor).

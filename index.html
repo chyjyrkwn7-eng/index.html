@@ -51421,7 +51421,7 @@ const LEVEL_LATE_GROWTH = 1.0199;
 /* A guard rather than a working value - the curve tops out at 77,649 a
    level, so this never binds. It exists so a future change to the
    growth rate cannot quietly produce a level nobody can afford. */
-const LEVEL_COST_TOP = 150000;   /* a guard; build 318's curve tops out at 44,048 (level 100) */
+const LEVEL_COST_TOP = 150000;   /* a guard; build 318's curve tops out at 21,894 (level 100) */
 /* JANUARY: THIS IS THE ONE CONSTANT TO CHANGE (build 318). Set it to 100
    and levels 81-100 open on the curve already defined below
    (LEVEL_EASE_FROM / LEVEL_EASE_STEP) - nothing under 81 moves, nothing
@@ -51539,8 +51539,8 @@ const LEVEL_STEEP_GROWTH = 1.0835;   /* build 213: ~600,000 in all to level 80 (
    more than the one before: 61 is +0.2%, 80 +4%, 100 +8%, and the 8.35%
    tail of 46-60 never comes back (Math.min is a guard).
      level 60  138,980 (8,914)   level 80  348,388 (13,492)
-     level 70  232,168 (9,943)   level 90  524,870 (22,186)
-                                 level 100 849,877 (44,048)
+     level 70  232,168 (9,943)   level 90  502,896 (past 80: 2.45% a
+                                 level 100 699,712  level, see below)
    Was 598,449 to level 80, with 80 alone 44,321; no level now costs more
    than that. At the class's measured ~25,000 XP per badge, the 14th badge
    (Supernova's) lands on level 80. Every level above 60 is cheaper than
@@ -51550,8 +51550,18 @@ const LEVEL_STEEP_GROWTH = 1.0835;   /* build 213: ~600,000 in all to level 80 (
    January without moving anyone. */
 const LEVEL_EASE_FROM = 60;
 const LEVEL_EASE_STEP = 0.002;
+/* ---- 81-100: A FLAT 2.45% A LEVEL (build 318, Madison's pick) ----
+   "850k for level 100 is crazy tho. What about like 700? Class ends in
+   July." Past 80 every level costs 2.45% more than the one before:
+   85 421,974 · 90 502,896 · 95 595,356 · 100 699,712 (100 alone 21,894).
+   At the class's measured pace the top 10% reach 100 around March and
+   the top quarter around June, before the class ends in July. Nobody can
+   hold these levels until LEVEL_CAP goes to 100, so nothing moves. */
+const LEVEL_TOP_FROM = 80;
+const LEVEL_TOP_GROWTH = 1.0245;
 function levelGrowthAt(lvl){
   if(lvl <= LEVEL_FREEZE_THROUGH) return LEVEL_GROWTH;
+  if(lvl > LEVEL_TOP_FROM) return LEVEL_TOP_GROWTH;
   if(lvl > LEVEL_EASE_FROM) return Math.min(LEVEL_STEEP_GROWTH, 1 + LEVEL_EASE_STEP * (lvl - LEVEL_EASE_FROM));
   if(lvl > LEVEL_STEEP_FROM) return LEVEL_STEEP_GROWTH;
   /* The one-off step into the first level past the freeze. A multiplier
