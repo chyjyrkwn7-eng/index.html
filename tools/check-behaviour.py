@@ -12827,21 +12827,40 @@ def check_b314_unlocks(br):
          page's timers and its animations drift apart by a few hundred ms */
       for(let i = 0; i < 40 && !document.querySelector('.hfx-saucer'); i++) await wait(50);
       const sa = document.querySelector('.hfx-saucer').getAnimations()[0];
-      const until = async ms => { for(let i = 0; i < 400 && (sa.currentTime || 0) < ms; i++) await wait(16); };
+      /* bounded at ~16s, not 6.4: the beats now run to 9s (below) */
+      const until = async ms => { for(let i = 0; i < 1000 && (sa.currentTime || 0) < ms; i++) await wait(16); };
       const op = el => { if(!el) return -1; let o = 1; for(let e = el; e && e !== document.body; e = e.parentElement) o *= parseFloat(getComputedStyle(e).opacity); return o; };
-      await until(4650); out.scan = op(document.querySelector('.rs-grade .hfx-ufo-scanbar'));
-      await until(5450); out.lock = op(document.querySelector('.rs-grade .hfx-ufo-lock'));
-      await until(5820);
-      const gs = [...document.querySelectorAll('.hfx-ufo-ghost')], g = document.querySelector('.rs-grade'), gr = g.getBoundingClientRect();
+      /* REVISED IN 317 (hundo rounds 4-6): "On the results screen it all
+         comes 2s later (the circle and the sweep come first) - the same
+         beats in the same order", and the saucer flies in a layer of its
+         own over the box. The fixed 4.65-6.5s here were build 314's
+         timeline, so they sampled the dark before the scan. Each beat is
+         now sampled at the same point in ITS OWN animation that the old
+         times hit (delay + fraction of duration, read off the element),
+         so a retimed effect moves the samples with it. */
+      const at = (el, f) => { const a = el && el.getAnimations()[0]; if(!a) return 1e9; const t = a.effect.getTiming(); return t.delay + f * t.duration; };
+      const scanEl = document.querySelector('.rs-grade .hfx-ufo-scanbar'), lockEl = document.querySelector('.rs-grade .hfx-ufo-lock');
+      const warpEl = document.querySelector('.hfx-ufo-warp'), marksEl = document.querySelector('.rs-grade .hfx-ufo-marks');
+      const gs = [...document.querySelectorAll('.hfx-ufo-ghost')], g = document.querySelector('.rs-grade');
+      out.at = { scan: at(scanEl, .28), lock: at(lockEl, .56), ghost: at(gs[0], .73), warp: at(warpEl, .2), marks: at(marksEl, .38), gone: at(warpEl, 1.2) };
+      await until(out.at.scan); out.scan = op(scanEl);
+      await until(out.at.lock); out.lock = op(lockEl);
+      await until(out.at.ghost);
+      const gr = g.getBoundingClientRect();
       out.ghosts = gs.length;
       out.ghostUp = gs.map(e => { const r = e.getBoundingClientRect(); return Math.round(r.top + r.height / 2 - gr.top); });
-      await until(6120); out.warp = op(document.querySelector('.hfx-ufo-warp'));
-      await until(6500); out.marks = op(document.querySelector('.rs-grade .hfx-ufo-marks'));
+      /* the marks are down before it goes now (7.4s, the warp 8.54s): read
+         them at their own peak, and still glowing once it has gone */
+      const beats = [['warp', out.at.warp, () => out.warp = op(warpEl)], ['marks', out.at.marks, () => out.marks = op(marksEl)]].sort((a, b) => a[1] - b[1]);
+      for(const b of beats){ await until(b[1]); b[2](); }
+      await until(out.at.gone);
       const u = document.querySelector('.hfx-saucer'); out.saucerGone = u ? op(u) : 0;
+      out.marksAfter = op(marksEl);
       return out; }""")
     check("UFO: once down, a bar of its light SCANS the 100%%, and brackets lock on round it", r.get("scan", -1) > .5 and r.get("lock", -1) > .5, r)
     check("UFO: on the way out it takes the score up the beam - a copy of the 100%% rising above the box's top edge", r.get("ghosts") == 2 and min(r.get("ghostUp") or [99]) < -10, r)
-    check("UFO: and goes in a warp, leaving its landing marks glowing on the box", r.get("warp", -1) > .3 and r.get("marks", -1) > .3 and r.get("saucerGone", 1) < .05, r)
+    check("UFO: and goes in a warp, leaving its landing marks glowing on the box", r.get("warp", -1) > .3 and r.get("marks", -1) > .3 and r.get("saucerGone", 1) < .05
+          and r.get("marksAfter", -1) > .1, r)
     ctx.close()
 
     # --- Fireworks: nothing of the show is drawn below the 100% box's top
