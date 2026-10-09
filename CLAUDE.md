@@ -2755,6 +2755,21 @@ Everything in this section postdates build 94 and was undocumented until
   which brings its publicId with it, so the id this device was
   publishing under is the one left stranded. Retiring by the code would
   delete nothing.
+- **A CODE-KEYED ROW IS IGNORED ON READ (build 318).** Z showed twice:
+  his real row, and one keyed by his old sync code that a phone still on
+  a pre-Sep-24 copy keeps writing. That copy never updates and never
+  follows a merge note, so `migrateLeaderboardKey()` never runs there.
+  Every read of `leaderboard` (the five `snap.forEach`s, plus
+  `mergeBoardSnapshot` for rows already in memory) skips a document
+  whose id passes `isLegacyBoardId()`: exactly `XXXX-XXXX`, upper case,
+  which no public id can match. Boards, Friends, Find me, the person
+  card, invites and the weekly settle all read those rows, so none of
+  them can see one. Writes are untouched. **Deleting such a row on the
+  server is pointless while a stale copy is still writing it** — it was
+  deleted on Oct 2 and the old phone wrote it straight back. It is
+  harmless now; it
+  stops only when that phone updates or is put away. Gate:
+  `check_b318h_legacy_rows` (fails on 219bfea, 14 checks).
 
 ### Friends
 

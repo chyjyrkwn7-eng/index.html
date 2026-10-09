@@ -18537,6 +18537,146 @@ def check_b318_one_chat(br):
         ctx.close()
 
 
+B318H_JS = r"""async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const clear = () => document.querySelectorAll('.rs-spot, .daily-alert, #tour-overlay, .update-banner, .toast, .invite-overlay').forEach(x => x.remove());
+  clear();
+  const ME = 'me0000000001', ZPUB = 'zq7kp3m9xw2a';
+  /* A made-up code in the sync-code shape: what Z's pre-Sep-24 phone
+     keys its row by. Not anybody's real code. */
+  const LEGACY = 'ZQ7K-P3M9';
+  const wk = weekKeyNow(), old = Date.now() - 3 * 86400000;
+  const keep = { pub: store.publicId, name: store.firstName, char: store.avatarChar, fin: store.friendsIn, opt: store.leaderboardOptIn, code: syncCode };
+  store.publicId = ME; store.leaderboardOptIn = true; syncCode = syncCode || 'TEST-CODE'; store.friendsIn = [];
+  const docs = [
+    { id: ZPUB,   d: { firstName: 'Z', avatarChar: 'ninja', level: 41, badges: 9, hundos: 30, correct: 3000, week: wk, weekPoints: 800, facc: [ME], lastModified: old } },
+    { id: LEGACY, d: { firstName: 'Z', avatarChar: 'zeus',  level: 33, badges: 6, hundos: 20, correct: 2000, week: wk, weekPoints: 700, facc: [ME], lastModified: old } },
+    { id: 'ab3cd4ef5gh6', d: { firstName: 'Alex',  avatarChar: 'bear',    level: 20, badges: 3, hundos: 10, correct: 900, week: wk, weekPoints: 300, lastModified: old } },
+    { id: 'jk7mn8pq9rs2', d: { firstName: 'Riley', avatarChar: 'grizzly', level: 12, badges: 1, hundos: 4,  correct: 400, week: wk, weekPoints: 150, lastModified: old } },
+    { id: 'tu3vw4xy5za6', d: { firstName: 'Sam',   avatarChar: 'zeus',    level: 28, badges: 5, hundos: 15, correct: 1500, week: wk, weekPoints: 500, lastModified: old } }
+  ];
+  const snap = () => ({ metadata: { fromCache: false }, size: docs.length, empty: false,
+    forEach: f => docs.forEach(r => f({ id: r.id, data: () => Object.assign({}, r.d) })) });
+  let cbs = [];
+  const real = fbDb, realOSR = onSnapshotResilient;
+  onSnapshotResilient = (ref, onNext) => (ref && ref.onSnapshot) ? ref.onSnapshot(onNext, () => {}) : (() => {});
+  fbDb = { collection: n => n !== 'leaderboard' ? real.collection(n) : ({ doc: id => real.collection(n).doc(id),
+    get: () => Promise.resolve(snap()),
+    onSnapshot: cb => { cbs.push(cb); return () => { cbs = cbs.filter(c => c !== cb); }; } }) };
+  const feed = async () => { cbs.slice().forEach(cb => cb(snap())); await wait(350); };
+  const zOf = rows => (rows || []).filter(e => e && e.firstName === 'Z').map(e => ({ pub: e.pub, level: e.level }));
+  /* every Z on the list, tapped: what level does the card it opens say? */
+  const cardsFor = async rowSel => {
+    const out = [];
+    const n = [...document.querySelectorAll(rowSel)].filter(r => r.textContent.trim().length).length;
+    for(let i = 0; i < n; i++){
+      const row = [...document.querySelectorAll(rowSel)][i];
+      row.click(); await wait(250);
+      const lv = document.querySelector('.invite-overlay .person-card .person-card-level');
+      out.push(lv ? lv.textContent.trim() : null);
+      document.querySelectorAll('.invite-overlay').forEach(x => x.remove()); await wait(80);
+    }
+    return out;
+  };
+  const out = {};
+
+  /* 1. the one-shot fetch that feeds invites, friend requests and the weekly settle */
+  leaderboardRows = []; boardFetchInFlight = false;
+  fetchBoardForInvites(true); await wait(300);
+  out.fetch = zOf(leaderboardRows);
+
+  /* 2. the three boards, live */
+  showHome(); await wait(200); clear(); cbs = []; leaderboardRows = [];
+  showRankings('week'); await wait(150); await feed(); clear();
+  out.boards = [];
+  const tabs = document.querySelectorAll('.screen-rankings .navsegment .iconbtn').length;
+  for(let i = 0; i < tabs; i++){
+    document.querySelectorAll('.screen-rankings .navsegment .iconbtn')[i].click(); await wait(250); clear();
+    const sel = '.screen-rankings .rank-row:not(.rank-row-skel)';
+    const zRows = [...document.querySelectorAll(sel)].filter(r => (r.querySelector('.rank-name') || {}).textContent === 'Z');
+    zRows.forEach((r, k) => r.setAttribute('data-ztest', '1'));
+    out.boards.push({ tab: document.querySelectorAll('.screen-rankings .navsegment .iconbtn')[i].textContent.trim(),
+      z: zRows.length, cards: await cardsFor('.screen-rankings .rank-row[data-ztest="1"]') });
+  }
+  out.boardRows = zOf(leaderboardRows);
+
+  /* 3. Find me, on Z's own (current) phone: one Z on the board, and it is his */
+  showHome(); await wait(200); clear(); cbs = [];
+  store.publicId = ZPUB; store.firstName = 'Z'; store.avatarChar = 'ninja';
+  leaderboardRows = []; showRankings('overall'); await wait(150); await feed(); clear();
+  document.querySelector('.screen-rankings .rank-me-btn').click(); await wait(400);
+  const zr = [...document.querySelectorAll('.screen-rankings .rank-row:not(.rank-row-skel)')].filter(r => (r.querySelector('.rank-name') || {}).textContent === 'Z');
+  out.findMe = { z: zr.length, mine: zr.filter(r => r.dataset.me === '1').length,
+    flashed: !!document.querySelector('.screen-rankings .rank-row[data-me="1"].rank-flash') };
+  store.publicId = ME; store.firstName = keep.name; store.avatarChar = keep.char;
+
+  /* 4. Friends: both Z rows have accepted me */
+  showHome(); await wait(200); clear(); cbs = []; leaderboardRows = [];
+  showFriends(); await wait(150); await feed(); await wait(200); clear();
+  out.friendIds = friendPublicIds().slice().sort();
+  const fz = [...document.querySelectorAll('.screen-friends .friend-row')].filter(r => (r.querySelector('.friend-row-name') || {}).textContent === 'Z');
+  fz.forEach(r => r.setAttribute('data-ztest', '1'));
+  out.friends = { z: fz.length, cards: await cardsFor('.screen-friends .friend-row[data-ztest="1"]') };
+
+  /* 5. the lobby's invite sheet, which opens its own listener */
+  showHome(); await wait(200); clear(); cbs = []; leaderboardRows = [];
+  openInviteFriendsSheet('TESTROOM'); await wait(150); await feed();
+  out.invite = [...document.querySelectorAll('.invite-overlay .invite-list .friend-row-name')].filter(n => n.textContent === 'Z').length;
+  clear();
+
+  /* 6. a legacy row already held in memory from before this build does not survive a cached merge */
+  leaderboardRows = [{ pub: LEGACY, firstName: 'Z', level: 33 }, { pub: ZPUB, firstName: 'Z', level: 41 }];
+  out.merged = zOf(mergeBoardSnapshot(leaderboardRows, [{ pub: ZPUB, firstName: 'Z', level: 41 }], { metadata: { fromCache: true } }));
+
+  /* 7. the helper: never a public id, always a sync code */
+  out.helper = typeof isLegacyBoardId !== 'function' ? null : {
+    pubHit: Array.from({ length: 5000 }, generatePublicId).filter(isLegacyBoardId).length,
+    codeMiss: Array.from({ length: 500 }, generateSyncCode).filter(c => !isLegacyBoardId(c)).length };
+
+  fbDb = real; onSnapshotResilient = realOSR;
+  store.publicId = keep.pub; store.friendsIn = keep.fin; store.leaderboardOptIn = keep.opt; syncCode = keep.code;
+  showHome();
+  return out;
+}"""
+
+
+def check_b318h_legacy_rows(br):
+    """Build 318h. Z showed twice on the leaderboard: his real row, keyed by
+    a public id, and a row keyed by his OLD SYNC CODE that a phone still on
+    a pre-Sep-24 copy keeps writing back. Every read of `leaderboard` now
+    skips a document whose id is a sync code. Fed through the same
+    leaderboard stub as the board checks above, a snapshot holding Z's
+    public-id row (level 41), his code-keyed row (level 33, a different
+    character so the board's name-and-character dedup cannot hide it) and
+    three others: Z appears exactly once, as level 41, on the invite fetch,
+    every board, his card from every board, Find me on his own phone, the
+    Friends list and its card, and the lobby's invite sheet. Fails on
+    219bfea (two of him everywhere)."""
+    print("\n318h. a row keyed by a sync code never reaches a board, Friends, Find me or a card")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate(B318H_JS)
+    real = [{"pub": "zq7kp3m9xw2a", "level": 41}]
+    check("the one-shot board fetch (invites, requests, weekly settle) holds Z once, his real row",
+          r["fetch"] == real, r["fetch"])
+    boards = r["boards"]
+    check("there are three boards", len(boards) == 3, [b["tab"] for b in boards])
+    for b in boards:
+        check("%s: Z appears exactly once" % b["tab"], b["z"] == 1, b["z"])
+        check("%s: tapping Z opens the level-41 card" % b["tab"], b["cards"] == ["Level 41"], b["cards"])
+    check("the rankings listener's rows hold Z once", r["boardRows"] == real, r["boardRows"])
+    fm = r["findMe"]
+    check("Find me on Z's phone: one Z on the board, it is his own row, and it flashes",
+          fm["z"] == 1 and fm["mine"] == 1 and fm["flashed"], fm)
+    check("Friends: the code-keyed row is not a friend", r["friendIds"] == ["zq7kp3m9xw2a"], r["friendIds"])
+    check("Friends list: Z once, and his card says level 41",
+          r["friends"]["z"] == 1 and r["friends"]["cards"] == ["Level 41"], r["friends"])
+    check("the lobby's invite sheet lists Z once", r["invite"] == 1, r["invite"])
+    check("a legacy row already in memory does not survive a cached snapshot", r["merged"] == real, r["merged"])
+    check("isLegacyBoardId matches 0 of 5000 minted public ids and all 500 minted sync codes",
+          r["helper"] == {"pubHit": 0, "codeMiss": 0}, r["helper"])
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -18732,6 +18872,7 @@ def main():
             check_b318_scar(br)
             check_b318_daily(br)
             check_b318_one_chat(br)
+            check_b318h_legacy_rows(br)
         finally:
             br.close()
     SERVER.shutdown()
