@@ -932,11 +932,12 @@ def _js_round(x):
     return int(math.floor(x + 0.5))
 
 
-def _curve_level(points, step, late, steep_from=None, steep=None):
+def _curve_level(points, step, late, steep_from=None, steep=None, ease_from=None, ease_step=None):
     p = max(0, float(points or 0))
     lvl, need, spent = 1, 300, 0
     def growth(l):
         if l <= 25: return 1.05
+        if ease_from is not None and l > ease_from: return min(steep, 1 + ease_step * (l - ease_from))
         if steep_from is not None and l > steep_from: return steep
         if l == 26: return step
         return late
@@ -953,9 +954,10 @@ LEVEL_CAP = 80
 
 def level_of(points):
     """levelProgress() in index.html, step for step - keep the two in step.
-    Build 314 kept the live curve (the re-fit was not shipped), so this is
-    the same curve as legacy_level_of_points."""
-    return _curve_level(points, 2.0, 1.0199, 45, 1.0835)
+    Build 318: build 313's curve through level 60, then each level costs
+    0.2% x (level - 60) more than the one before (LEVEL_EASE_FROM /
+    LEVEL_EASE_STEP) - 348,388 to level 80."""
+    return _curve_level(points, 2.0, 1.0199, 45, 1.0835, 60, 0.002)
 
 
 def legacy_level_of_points(points):

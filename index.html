@@ -51343,8 +51343,14 @@ const LEVEL_LATE_GROWTH = 1.0199;
 /* A guard rather than a working value - the curve tops out at 77,649 a
    level, so this never binds. It exists so a future change to the
    growth rate cannot quietly produce a level nobody can afford. */
-const LEVEL_COST_TOP = 150000;   /* a guard; the curve tops out at 41,971 */
-/* BACK TO 80. It went to 100 for one build on an explicit request and
+const LEVEL_COST_TOP = 150000;   /* a guard; build 318's curve tops out at 44,048 (level 100) */
+/* JANUARY: THIS IS THE ONE CONSTANT TO CHANGE (build 318). Set it to 100
+   and levels 81-100 open on the curve already defined below
+   (LEVEL_EASE_FROM / LEVEL_EASE_STEP) - nothing under 81 moves, nothing
+   else in the curve needs touching, and XP banked past 80 turns into
+   levels on the next launch. The two new ranks go into TIER_UNLOCKS and
+   TIER_ORDER_FULL the same day; that is a separate decision.
+   BACK TO 80. It went to 100 for one build on an explicit request and
    came back the same night on another: 100 is being held for when the
    extra units land alongside a rank above Supernova. "Down the line,
    the plan is to add an even better rank than supernova, like
@@ -51440,12 +51446,35 @@ const LEVEL_CAP = 80;
    THIS ENDS "ALL SIXTEEN BADGES LAND ON THE CAP", on purpose - the top
    ranks now ask for study past what their badges pay, which is the
    complaint being answered (high levels, few badges). */
-/* Build 313's steep tail past 45 - LIVE, and still the curve in 314
-   (the one-rate re-fit above was not shipped). */
+/* Build 313's steep tail past 45 - still levels 46-60 (build 318 eases
+   everything past 60, below). */
 const LEVEL_STEEP_FROM = 45;
 const LEVEL_STEEP_GROWTH = 1.0835;   /* build 213: ~600,000 in all to level 80 (was 1.0601, ~375,000) - the new XP types pay a lot more */
+/* ---- PAST 60 THE CLIMB EASES, FITTED TO THE CLASS (build 318) ------
+   "Most people don't have 50000 xp yet.. we need to find the average
+   user and make the xp curve based on them ... maybe the xp total should
+   only be changed after level 60 so people aren't affected?"
+   Measured on the real class on Oct 9 (32 active accounts): median 22,843
+   XP after 18 days, ~1,000-1,400 XP a day; the top account 108,670 XP,
+   level 56 - so NOBODY is above 60 and levels 1-60 are left exactly as
+   build 313 charges them. Past 60 every level costs 0.2% x (level - 60)
+   more than the one before: 61 is +0.2%, 80 +4%, 100 +8%, and the 8.35%
+   tail of 46-60 never comes back (Math.min is a guard).
+     level 60  138,980 (8,914)   level 80  348,388 (13,492)
+     level 70  232,168 (9,943)   level 90  524,870 (22,186)
+                                 level 100 849,877 (44,048)
+   Was 598,449 to level 80, with 80 alone 44,321; no level now costs more
+   than that. At the class's measured ~25,000 XP per badge, the 14th badge
+   (Supernova's) lands on level 80. Every level above 60 is cheaper than
+   it was, so no XP total reads a lower level (check-curve section 4).
+   Levels 81-100 are defined now so 1-80 never move again; nobody can hold
+   them until LEVEL_CAP goes to 100, so they can still be re-tuned before
+   January without moving anyone. */
+const LEVEL_EASE_FROM = 60;
+const LEVEL_EASE_STEP = 0.002;
 function levelGrowthAt(lvl){
   if(lvl <= LEVEL_FREEZE_THROUGH) return LEVEL_GROWTH;
+  if(lvl > LEVEL_EASE_FROM) return Math.min(LEVEL_STEEP_GROWTH, 1 + LEVEL_EASE_STEP * (lvl - LEVEL_EASE_FROM));
   if(lvl > LEVEL_STEEP_FROM) return LEVEL_STEEP_GROWTH;
   /* The one-off step into the first level past the freeze. A multiplier
      on the level before it rather than a flat cost, so it cannot drift
@@ -51495,7 +51524,10 @@ function levelProgress(points){
 }
 function levelFromPoints(points){ return levelProgress(points).level; }
 /* THE OLD CURVE - build 313's, step for step (x2.0 into 26, +1.99% to
-   45, +8.35% past it) - kept for ONE job: the grandfather floor. An
+   45, +8.35% past it, no easing past 60) - kept for ONE job: the rank
+   floor (legacyRankFloorOf). Build 318's curve is the same through 60 and
+   cheaper past it, so this never reads HIGHER than levelFromPoints. */
+/* (history) kept for ONE job: the grandfather floor. An
    account's floor is the level it held on THIS curve, never the new one.
    "By giving us at the top more levels, we are already under the badge
    count needed to rank up, by leveling us up even more, the discrepancy
