@@ -20604,6 +20604,10 @@
   .badge-strip-cell svg{ width:100%; height:100%; display:block; overflow:visible; }
   .badge-strip-cell:not(.is-earned){ opacity:.55; }
   .badge-strip-cell.is-earned svg{ filter:drop-shadow(0 0 5px color-mix(in srgb, var(--badge-glow, #fff) 55%, transparent)); }
+  /* the Profile case's strip: the tab's glow at its own size (build 318) */
+  .pf-strip.badge-strip .badge-strip-cell.is-earned svg{
+    filter:drop-shadow(0 0 2px color-mix(in srgb, var(--badge-glow, #fff) 60%, transparent))
+           drop-shadow(0 0 6px color-mix(in srgb, var(--badge-glow, #fff) 34%, transparent)); }
   .badges-head .badges-count-num{ color:var(--ink); }
   .badges-head-strip{ margin-top:.2rem; }
 
@@ -21393,8 +21397,13 @@
   .badge-tile-art svg{ width:100%; height:100%; display:block; position:relative; }
   /* An earned badge catches light off its own enamel and nothing else.
      A cast shadow would put it back on top of the tray. */
+  /* A SMIDGE OF GLOW (build 318): "all the badges need a smidge of glow
+     there and in the actual badge tab". Its own colour, close in and then
+     a wider breath of it - a CSS drop-shadow on a still element, so it is
+     rasterised once (never an SVG filter, never on anything animated). */
   .badge-tile.is-earned .badge-tile-art svg{
-    filter:drop-shadow(0 0 6px rgba(255,255,255,.10));
+    filter:drop-shadow(0 0 3px color-mix(in srgb, var(--badge-glow, #fff) 55%, transparent))
+           drop-shadow(0 0 10px color-mix(in srgb, var(--badge-glow, #fff) 30%, transparent));
   }
   /* ---- AN EARNED BADGE LIGHTS ITS OWN RECESS ----
      "I also haven't seen many people on that page, make it better
@@ -25883,16 +25892,16 @@
   .bc-floor{ left:-9%; right:-9%; top:-3%; bottom:-30%; transform:translateZ(-1px); border-radius:50%;
     background:radial-gradient(closest-side, rgba(0,0,0,.66), rgba(0,0,0,.36) 58%, rgba(0,0,0,0)); }
   /* the base's top: the trim round the opening, and the lining in it */
-  .bc-tray{ inset:0; transform:translateZ(var(--d)); border-radius:1.05rem; box-shadow:0 0 0 1px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.08); }
+  .bc-tray{ inset:0; transform:translateZ(var(--d)); border-radius:var(--case-r); box-shadow:0 0 0 1px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.08); }
   .bc-lining{ position:absolute; inset:.5rem; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); grid-template-rows:repeat(4, minmax(0,1fr));
-    gap:.25rem; padding:.5rem; border-radius:.75rem; }
+    gap:.25rem; padding:.5rem; border-radius:var(--case-r-in); }
   .bc-slot{ display:flex; align-items:center; justify-content:center; position:relative; min-width:0; min-height:0; }
   .bc-slot svg{ position:relative; z-index:1; width:100%; height:100%; display:block; }
   .bc-hinge{ position:absolute; top:-.3rem; width:12%; height:.6rem; z-index:2; }
   .bc-hinge-l{ left:15%; } .bc-hinge-r{ right:15%; }
   /* the front wall, hanging from the tray's near edge to the table */
   .bc-front{ left:0; right:0; top:100%; height:var(--d); transform-origin:50% 0; transform:translateZ(var(--d)) rotateX(-90deg);
-    transform-style:preserve-3d; border-radius:0 0 .85rem .85rem; }
+    transform-style:preserve-3d; border-radius:0 0 var(--case-r) var(--case-r); }
   .bc-latch{ position:absolute; top:7%; width:13%; height:44%; transform:translateZ(1.5px); transform-style:preserve-3d; }
   .bc-latch-l{ left:15%; } .bc-latch-r{ right:15%; }
   /* the hasp reaches up over the seam onto the lid's front, and flips out
@@ -25903,7 +25912,7 @@
   /* the handle, folded down in front of the case */
   .bc-handle{ left:33%; right:33%; top:100%; height:calc(var(--d) * .5); transform:translateY(calc(var(--d) * .32)) translateZ(calc(var(--d) * .22)); }
   /* the light inside, seen through the gap as the lid lifts */
-  .bc-spill{ inset:6% 5%; transform:translateZ(calc(var(--d) + 2px)); border-radius:1rem; opacity:0; transition:opacity .5s ease; pointer-events:none;
+  .bc-spill{ inset:6% 5%; transform:translateZ(calc(var(--d) + 2px)); border-radius:var(--case-r-in); opacity:0; transition:opacity .5s ease; pointer-events:none;
     background:radial-gradient(60% 55% at 50% 22%, color-mix(in srgb, var(--badge-col) 60%, #fff) 0%, color-mix(in srgb, var(--badge-col) 32%, transparent) 46%, transparent 74%); }
   .bc-crack .bc-spill{ opacity:.95; }
   .bc-open .bc-spill{ opacity:0; transition:opacity 1.2s ease .5s; }
@@ -25915,11 +25924,11 @@
   .bc-crack .bc-lid{ transform:translateZ(var(--d)) rotateX(10deg); transition:transform .6s cubic-bezier(.3,1.6,.5,1); }
   .bc-open .bc-lid{ transform:translateZ(var(--d)) rotateX(112deg); }
   .bc-lid > *{ position:absolute; backface-visibility:hidden; -webkit-backface-visibility:hidden; }
-  .bc-lid-in{ inset:0; transform:rotateX(180deg); border-radius:1.05rem; box-shadow:0 0 0 1px rgba(0,0,0,.6); }
-  .bc-lid-pad{ position:absolute; inset:.5rem; border-radius:.8rem; display:flex; align-items:flex-start; justify-content:center; padding-top:10%; }
-  .bc-lid-pad::after{ content:""; position:absolute; inset:5px; border-radius:.6rem; border:1px dashed var(--case-stitch); pointer-events:none; }
-  .bc-lid-out{ inset:0; transform:translateZ(var(--dl)); border-radius:1.05rem; display:flex; align-items:center; justify-content:center; }
-  .bc-lid-front{ left:0; right:0; top:100%; height:var(--dl); transform-origin:50% 0; transform:translateZ(var(--dl)) rotateX(-90deg); border-radius:0 0 .85rem .85rem; }
+  .bc-lid-in{ inset:0; transform:rotateX(180deg); border-radius:var(--case-r); box-shadow:0 0 0 1px rgba(0,0,0,.6); }
+  .bc-lid-pad{ position:absolute; inset:.5rem; border-radius:var(--case-r-in); display:flex; align-items:flex-start; justify-content:center; padding-top:10%; }
+  .bc-lid-pad::after{ content:""; position:absolute; inset:5px; border-radius:calc(var(--case-r-in) * .6); border:1px dashed var(--case-stitch); pointer-events:none; }
+  .bc-lid-out{ inset:0; transform:translateZ(var(--dl)); border-radius:var(--case-r); display:flex; align-items:center; justify-content:center; }
+  .bc-lid-front{ left:0; right:0; top:100%; height:var(--dl); transform-origin:50% 0; transform:translateZ(var(--dl)) rotateX(-90deg); border-radius:0 0 var(--case-r) var(--case-r); }
   /* a small knock as the badge seats */
   .bc-case.bc-open.bc-thud{ animation:bc-thud .42s cubic-bezier(.3,0,.3,1); }
   @keyframes bc-thud{ 0%{ transform:translateY(var(--open-y)) rotateX(21deg) scale(var(--open-s)); }
@@ -26773,6 +26782,19 @@
       repeating-linear-gradient(-45deg, rgba(0,0,0,.5) 0 1px, rgba(255,255,255,.07) 1px 2px, rgba(0,0,0,0) 2px 1.3rem),
       radial-gradient(110% 90% at 50% 0%, #343B44 0%, #20252C 56%, #121418 100%);
     --case-stitch:rgba(206,214,224,.24);
+    /* THE CASE IS SQUARE (build 318): "the corners of the case don't look
+       good, you can see where it disconnects on the top and bottom". The
+       tray and the lid were rounded 1.05rem in plan and their walls hung
+       straight down from them, so at every corner the wall's square end
+       stuck out past the tray's curve - a notch of background at all four
+       corners of the open case. A box's walls can only meet a top that is
+       square where they meet it, so the case is square (a hair of radius
+       so the corner is not a pixel point), and each wall's ends carry an
+       aluminium corner guard, the way a hard case is finished. One radius
+       for every case, at every size. */
+    --case-r:.2rem; --case-r-in:.32rem;
+    /* a corner guard: a rounded aluminium edge seen side-on */
+    --case-guard:linear-gradient(90deg, #4A535D 0%, #A9B4BF 22%, #EEF2F6 48%, #B9C2CB 70%, #5E6A76 100%);
   }
   .nova-case-shell{ background-color:#1D2228; background-image:var(--case-shell-bg); background-size:var(--case-shell-size); }
   /* a shell panel with the aluminium trim round its edge */
@@ -26810,82 +26832,109 @@
   .nova-case-handle::before, .nova-case-handle::after{ content:""; position:absolute; top:-45%; width:12%; height:80%; border-radius:.2rem;
     background-color:#A3AEBA; background-image:var(--case-metal); box-shadow:0 0 0 1px rgba(0,0,0,.55); }
   .nova-case-handle::before{ left:8%; } .nova-case-handle::after{ right:8%; }
+  /* a wall of the case (its front, the lid's front): an aluminium guard on
+     each end, where it meets the tray's square corner (build 318) */
+  .nova-case-wall::before, .nova-case-wall::after{ content:""; position:absolute; top:0; bottom:0; width:var(--case-guard-w, 5%); min-width:6px;
+    background-color:#A3AEBA; background-image:var(--case-guard); pointer-events:none; z-index:1;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 0 rgba(0,0,0,.4), 0 0 0 1px rgba(0,0,0,.45); }
+  .nova-case-wall::before{ left:0; border-radius:0 0 .12rem var(--case-r); }
+  .nova-case-wall::after{ right:0; border-radius:0 0 .12rem var(--case-r); transform:scaleX(-1); }
 
-  /* ---- the Badges tab: the case standing open ---- */
+  /* ---- the Badges tab: the case standing open ----
+     THE CUTSCENE'S SQUARE BRIEFCASE, DRAWN FLAT (build 318): "The cutscene
+     has a square brief case which is great. All the other ones are
+     different shapes. Needs to be fixed." This was a rounded tray with the
+     lid tucked INSIDE its shell - a different object. It is now the open
+     case exactly as the cutscene leaves it, part for part, top to bottom:
+     the lid standing behind (a trimmed shell framing its quilted lining,
+     leaning towards you on its hinges), the hinges, the tray (a trimmed
+     shell round the lining the badges sit in), the front wall with its
+     corner guards, two latches and the name plate, and the handle under
+     it. Square corners (--case-r) all round. The root holds no paint of
+     its own: each part is its own piece of the case. */
   .badges-tab .badge-case.nova-case{
-    position:relative; margin:.8rem 0 1.3rem; padding:.6rem .6rem 0; border-radius:1.6rem; border:3px solid transparent;
-    background-color:#1D2228; background-image:var(--case-shell-bg), var(--case-trim);
-    background-size:var(--case-shell-size), 100% 100%;
-    background-origin:padding-box, padding-box, padding-box, border-box; background-clip:padding-box, padding-box, padding-box, border-box;
-    box-shadow:0 26px 54px rgba(0,0,0,.62), 0 0 0 1px rgba(0,0,0,.6);
+    position:relative; margin:.8rem 0 1.9rem; padding:0; border:0; border-radius:0;
+    background:none; box-shadow:none;
   }
-  .badges-tab .badge-case.nova-case::before{ inset:6px; border-radius:1.25rem; border:1px dashed var(--case-stitch); z-index:0; }
-  /* the lid, open behind the tray: its quilted lining towards you, leaning
-     a little towards you on its hinges, the plate on it */
+  .badges-tab .badge-case.nova-case::before{ content:none; }
   .badges-tab .badge-case.nova-case .badge-case-lid{
-    position:relative; z-index:1; height:4.6rem; margin:0 .5rem; border-radius:1.15rem 1.15rem .35rem .35rem;
-    display:flex; align-items:center; justify-content:center;
-    background-color:#15181C; background-image:var(--case-lid-bg);
-    box-shadow:inset 0 0 0 1px rgba(0,0,0,.6), inset 0 0 26px rgba(0,0,0,.55), inset 0 3px 0 rgba(255,255,255,.06);
-    transform:perspective(42rem) rotateX(-14deg); transform-origin:50% 100%;
+    position:relative; z-index:1; height:4.6rem; margin:0; padding:0; border-radius:var(--case-r);
+    display:block; box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 10px 22px rgba(0,0,0,.45);
+    transform:perspective(42rem) rotateX(-12deg); transform-origin:50% 100%;
   }
-  /* the lid's own edge along its top, shell and trim */
-  .badges-tab .badge-case.nova-case .badge-case-lid::before{ content:""; position:absolute; left:-3px; right:-3px; top:-3px; height:.7rem;
-    border-radius:1.2rem 1.2rem 0 0; background-image:var(--case-shell-bg); background-size:var(--case-shell-size);
-    box-shadow:0 0 0 1px rgba(0,0,0,.55), inset 0 2px 0 #8B97A4, inset 0 3px 0 rgba(0,0,0,.4); }
-  .badges-tab .badge-case.nova-case .badge-case-plate{ position:relative; }
-  .badges-tab .badge-case.nova-case .badge-case-hinge{ position:absolute; z-index:3; top:calc(.6rem + 4.6rem - .34rem); width:2.4rem; height:.68rem; }
-  .badges-tab .badge-case.nova-case .badge-case-hinge.is-l{ left:17%; } .badges-tab .badge-case.nova-case .badge-case-hinge.is-r{ right:17%; }
-  /* the tray: the lining, in its aluminium rim */
+  .badges-tab .badge-case.nova-case .badge-case-lid::before{ content:none; }
+  .badges-tab .badge-case.nova-case .badge-case-pad{ position:absolute; inset:.45rem; border-radius:var(--case-r-in); }
+  .badges-tab .badge-case.nova-case .badge-case-pad::after{ content:""; position:absolute; inset:4px; border-radius:calc(var(--case-r-in) * .6);
+    border:1px dashed var(--case-stitch); pointer-events:none; }
+  .badges-tab .badge-case.nova-case .badge-case-hinge{ position:absolute; z-index:3; top:calc(4.6rem - .3rem); width:12%; height:.6rem; }
+  .badges-tab .badge-case.nova-case .badge-case-hinge.is-l{ left:15%; } .badges-tab .badge-case.nova-case .badge-case-hinge.is-r{ right:15%; }
+  /* the tray: the case's top, its aluminium edge, the lining inset in it */
+  .badges-tab .badge-case.nova-case .badge-case-tray{ position:relative; z-index:1; padding:.5rem; border-radius:var(--case-r);
+    box-shadow:0 0 0 1px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.08); }
   .badges-tab .badge-case.nova-case .badge-grid{
-    position:relative; z-index:1; margin-top:0; padding-top:1.4rem; border-radius:1.05rem; border:3px solid transparent;
+    position:relative; z-index:1; margin:0; padding-top:1.3rem; border-radius:var(--case-r-in); border:2px solid transparent;
     background-color:#111418; background-image:var(--case-lining-bg), var(--case-trim);
     background-origin:padding-box, border-box; background-clip:padding-box, border-box;
     box-shadow:inset 0 3px 12px rgba(0,0,0,.78), inset 0 0 0 1px rgba(0,0,0,.65), 0 0 0 1px rgba(0,0,0,.6);
   }
   .badges-tab .badge-case.nova-case .badge-grid::before, .badges-tab .badge-case.nova-case .badge-grid::after{ content:none; }
-  /* the front: the case's near wall, with the two latches */
+  /* the front wall, hanging from the tray's near edge: square where it
+     meets the tray, its corner guards, the latches and the plate */
   .badges-tab .badge-case.nova-case .badge-case-front{
-    position:relative; left:auto; right:auto; bottom:auto; z-index:1; display:flex; justify-content:space-between; align-items:flex-start;
-    height:1.6rem; margin:.45rem -.6rem 0; padding:0 18%; border-radius:0 0 1.45rem 1.45rem;
-    background-image:linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,0) 40%), var(--case-shell-bg); background-size:100% 100%, var(--case-shell-size);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+    position:relative; left:auto; right:auto; bottom:auto; z-index:2; display:flex; justify-content:space-between; align-items:center;
+    height:1.7rem; margin:0; padding:0 15%; border-radius:0 0 var(--case-r) var(--case-r);
+    --case-guard-w:3.2%;
+    background-image:linear-gradient(180deg, rgba(0,0,0,.42), rgba(0,0,0,0) 45%, rgba(0,0,0,.18)), var(--case-shell-bg); background-size:100% 100%, var(--case-shell-size);
+    box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 18px 34px rgba(0,0,0,.55);
   }
-  .badges-tab .badge-case.nova-case .badge-case-front span{ position:relative; width:2.6rem; height:1.05rem; margin-top:-.35rem;
+  .badges-tab .badge-case.nova-case .badge-case-front span{ position:relative; width:2.6rem; height:1.05rem; margin-top:-.6rem; align-self:flex-start;
     border-radius:.26rem; background-color:#A3AEBA; background-image:var(--case-metal);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.8), inset 0 -1px 0 rgba(0,0,0,.35), 0 0 0 1px rgba(0,0,0,.55), 0 2px 5px rgba(0,0,0,.55); }
-  /* the handle, folded down in front */
-  .badges-tab .badge-case.nova-case .badge-case-handle{ position:absolute; left:34%; right:34%; bottom:-.95rem; height:.78rem; z-index:2; }
+  /* the handle, folded down under the front */
+  .badges-tab .badge-case.nova-case .badge-case-handle{ position:absolute; left:34%; right:34%; bottom:-.75rem; height:.7rem; z-index:1; }
   @media (max-width:40rem){
-    .badges-tab .badge-case.nova-case{ padding:.45rem .4rem 0; border-radius:1.35rem; }
-    .badges-tab .badge-case.nova-case .badge-case-lid{ height:3.9rem; margin:0 .35rem; }
-    .badges-tab .badge-case.nova-case .badge-case-hinge{ top:calc(.45rem + 3.9rem - .32rem); }
+    .badges-tab .badge-case.nova-case .badge-case-lid{ height:3.6rem; }
+    .badges-tab .badge-case.nova-case .badge-case-hinge{ top:calc(3.6rem - .28rem); }
+    .badges-tab .badge-case.nova-case .badge-case-tray{ padding:.4rem; }
     .badges-tab .badge-case.nova-case .badge-grid{ padding-left:.25rem; padding-right:.25rem; }
-    .badges-tab .badge-case.nova-case .badge-case-front{ margin-left:-.4rem; margin-right:-.4rem; padding:0 15%; }
+    .badges-tab .badge-case.nova-case .badge-case-front{ padding:0 13%; height:1.55rem; }
+    .badges-tab .badge-case.nova-case .badge-case-front span{ width:2.2rem; height:.95rem; margin-top:-.52rem; }
   }
 
-  /* ---- the Profile card: the same case, small, shut round its tray ----
-     Its corner stays the Next rank card's 1.1rem: the two sit one above
-     the other and are one family (check_b289) - the briefcase look is
-     the leather, trim, stitching, latches and handle, not a rounder
-     corner. Its shadow is a cast one, black, never a glow. */
+  /* ---- the Profile card: the same case, small ----
+     THE SQUARE BRIEFCASE HERE TOO (build 318): "the badge case placard is
+     glitched" and the case was "a different shape". It was a rounded
+     panel with a stitched line, and its latches, plate and handle were
+     pinned ACROSS its bottom border - the plate half on the shell, the
+     handle's two mounts poking up round it. Now it is the cutscene's case
+     seen from above, small: the tray (square, its aluminium edge, the
+     lining with the strip of badges, the count on its rim), and hanging
+     from its near edge the front wall - corner guards, two latches, the
+     plate in the middle of it - with the handle under the wall, its
+     mounts tucked behind it. It keeps a gradient and a tinted edge
+     (check_b316_tiles) and its shadow is black (check_b289); its corner
+     is the case's own now, not the Next rank card's (check_b289 revised). */
   .pf-case.nova-case{
-    position:relative; padding:.8rem .85rem 1.05rem; border-radius:1.1rem; border:2px solid rgba(174,187,203,.24);
+    position:relative; padding:.6rem .65rem .65rem; margin-bottom:1.65rem; border-radius:var(--case-r); border:2px solid rgba(174,187,203,.24);
     background-color:#1D2228; background-image:var(--case-shell-bg), var(--case-trim);
     background-size:var(--case-shell-size), 100% 100%;
     background-origin:padding-box, padding-box, padding-box, border-box; background-clip:padding-box, padding-box, padding-box, border-box;
-    box-shadow:0 14px 30px -12px rgba(0,0,0,.7), 0 0 0 1px rgba(0,0,0,.55);
+    box-shadow:0 0 0 1px rgba(0,0,0,.55);
   }
-  .pf-case.nova-case::before{ content:""; position:absolute; inset:5px; border-radius:.9rem; border:1px dashed var(--case-stitch); pointer-events:none; }
-  .pf-case.nova-case .pf-case-head{ z-index:1; justify-content:flex-end; margin-bottom:.5rem; }
-  .pf-case.nova-case .pf-strip.badge-strip{ position:relative; padding:.4rem .45rem; border-radius:.7rem; border:2px solid transparent;
+  .pf-case.nova-case::before{ content:none; }
+  .pf-case.nova-case .pf-case-head{ z-index:1; justify-content:flex-end; margin-bottom:.45rem; }
+  .pf-case.nova-case .pf-strip.badge-strip{ position:relative; padding:.4rem .45rem; border-radius:var(--case-r-in); border:2px solid transparent;
     background-color:#111418; background-image:var(--case-lining-bg), var(--case-trim);
     background-origin:padding-box, border-box; background-clip:padding-box, border-box;
     box-shadow:inset 0 2px 8px rgba(0,0,0,.78), inset 0 0 0 1px rgba(0,0,0,.65), 0 0 0 1px rgba(0,0,0,.6); }
-  .pf-case-front{ position:absolute; left:20%; right:20%; bottom:-.32rem; display:flex; justify-content:space-between; pointer-events:none; z-index:1; }
-  .pf-case-front .nova-case-latch{ position:relative; width:1.7rem; height:.62rem; }
+  /* the front wall: from the tray's near edge (outside its 2px border), as wide as the case */
+  .pf-case-front{ position:absolute; left:-2px; right:-2px; top:calc(100% + 2px); height:1.25rem; display:flex; justify-content:space-between; align-items:center;
+    padding:0 14%; z-index:2; border-radius:0 0 var(--case-r) var(--case-r); --case-guard-w:4%;
+    background-image:linear-gradient(180deg, rgba(0,0,0,.42), rgba(0,0,0,0) 45%, rgba(0,0,0,.18)), var(--case-shell-bg); background-size:100% 100%, var(--case-shell-size);
+    box-shadow:0 0 0 1px rgba(0,0,0,.55), 0 12px 22px -6px rgba(0,0,0,.7); }
+  .pf-case-front .nova-case-latch{ position:relative; width:1.7rem; height:.62rem; align-self:flex-start; margin-top:-.32rem; }
   .pf-case-front .nova-case-latch::after{ top:40%; height:22%; }
-  .pf-case-handle{ position:absolute; left:39%; right:39%; bottom:-.84rem; height:.5rem; z-index:1; pointer-events:none; }
+  .pf-case-handle{ position:absolute; left:38%; right:38%; top:calc(100% + 2px + 1.25rem - .2rem); height:.6rem; z-index:1; pointer-events:none; }
 
   /* ---- the case's name, on its side (build 317, badge2) ----
      One plate on the front wall of every case, between the latches: a
@@ -26901,8 +26950,7 @@
   .bc-sideplate{ position:absolute; left:50%; top:8%; transform-origin:50% 0;
     transform:translateX(-50%) translateZ(2px) rotateX(42deg);
     font-size:calc(var(--cw) * .03); padding:calc(var(--cw) * .013) calc(var(--cw) * .036); }
-  .badges-tab .badge-case.nova-case .badge-case-front .badge-case-sideplate{ align-self:flex-start; margin-top:.22rem; }
-  .pf-case-front{ align-items:center; z-index:2; }   /* over the handle's mounts */
+  .badges-tab .badge-case.nova-case .badge-case-front .badge-case-sideplate{ align-self:center; margin-top:0; }
   .pf-case-front .pf-case-sideplate{ font-size:.42rem; padding:.16rem .5rem; letter-spacing:.22em; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
@@ -52499,9 +52547,37 @@ const BADGE_STRIKE = {
   sliver: 1.5,          /* no enamel thinner than twice this */
   geoW: 288, geoBlur: 2,
   ceilLo: .2, ceilHi: .62, edge0: -.02, edgeW: .16, ceilTilt: .12, ceilA: .5, ceilB: .9,
-  boxA: .35, boxB: .7, box: 1.5, wall: .035, wallTilt: .06
+  boxA: .35, boxB: .7, box: 1.5, wall: .035, wallTilt: .06,
+  /* supersampling (build 318): samples per token unit wanted, and the most per pixel */
+  ssK: 3.4, ssMin: 2, ssMax: 3,
+  /* THE ENAMEL IS COLOURED METAL (build 318): "the colored part doesn't
+     look like a nice metal". It was the unit colour times a diffuse
+     shade, flat as paint. Now it reflects like the silver does, tinted:
+     its face is domed a little more than the rim (enDome) and its tilt
+     towards the light is read through a polished ramp (enRamp: bright,
+     a dark band, picking up off the floor), under a thinner clear coat.
+     enDiff keeps a little of the flat colour so the dark band stays the
+     unit's colour and never goes black. */
+  enDome: .02, enTilt: .45, enMetal: 1.1, enDiff: .25, coatK: .6,
+  enRamp: [1.6, 1.25, .9, .62, .5, .52, .66]
 };
 const BADGE_STRIKE_PX = 92;      /* CSS px a badge is taken to show at until it is measured */
+/* ...and on this device, the Badges tab's own tile (.badge-tile-art's
+   max-width: 5.4rem, 6.6rem from 40rem), so the idle warm-up renders the
+   size the tab will ask for and opening it renders nothing (build 318:
+   supersampled renders cost ~4x, and the iPad's 212px tiles missed the
+   92px warm-up by more than the cache's 8%). */
+let badgeDefaultPxMemo = null;
+function badgeDefaultPx(){
+  const m = badgeDefaultPxMemo;
+  if(m && m.w === innerWidth) return m.px;
+  try{
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const wide = !!(window.matchMedia && window.matchMedia("(min-width:40rem)").matches);
+    badgeDefaultPxMemo = { w: innerWidth, px: (wide ? 6.6 : 5.4) * rem };
+    return badgeDefaultPxMemo.px;
+  }catch(e){ return BADGE_STRIKE_PX; }
+}
 function badgeDpr(){ return Math.min(3, Math.max(1, window.devicePixelRatio || 1)); }
 /* Rendered at the size it is shown at, to 4 device pixels: a render
    scaled down by the browser turns a polished edge's one-pixel highlight
@@ -52652,7 +52728,12 @@ function badgeStrikeGeometry(shape){
       gy[i] = (F[y < W - 1 ? i + W : i] - F[y > 0 ? i - W : i]) * .5 * k; }
     return [gx, gy]; };
   const [Ox, Oy] = grad(Os), [Ex, Ey] = grad(Es);
-  return (BADGE_STRIKE_GEOM[d] = { O, E, Ox, Oy, Ex, Ey, vx, vy, vw, cx, cy, S, W });
+  /* The SMOOTHED fields carry the heights and the edges too (build 318),
+     not only the normals: drawn from the raw ones, the enamel's seam
+     followed the field's own sub-pixel ripple, and on the coin - its
+     render ~4.6x finer than these fields - that ripple was a wavy dark
+     line round every plate. */
+  return (BADGE_STRIKE_GEOM[d] = { O: Os, E: Es, Ox, Oy, Ex, Ey, vx, vy, vw, cx, cy, S, W });
 }
 /* The profile and its slope, as tables. */
 let BADGE_PROF = null, BADGE_DPROF = null;
@@ -52704,16 +52785,47 @@ function badgeLightTables(){
   for(let i = 0; i <= 4096; i++){ const c = i / 4096; ENC[i] = Math.round(255 * (c <= .0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - .055)); }
   return (BADGE_LIGHT = { E, SP, SPE, DIF, FR, l, TO_LIN, ENC });
 }
-/* One token, W device pixels across its frame, as a canvas. */
-function renderBadgeStrike(unitName, grey, W){
-  const P = BADGE_STRIKE, G = BADGE_GEOM, PN = BADGE_PROF_N;
+/* One token, W device pixels across its frame, as a canvas.
+   SUPERSAMPLED (build 318): "where the color meets the silver part is
+   rough and not smooth, the edges of the badge aren't smooth". The
+   fields were clean; the SAMPLING was not. The enamel's wall is ~1.3
+   units wide - under three device pixels on a case-sized badge - and its
+   light turns over across it, so one sample per pixel landed on the lit
+   or the dark side of it at random along the seam: a dashed, stepped
+   line. Same for the rim's crest highlight. Each pixel now averages
+   SS x SS samples (at least 2, and enough for ~3.4 samples per token
+   unit: 3 on the Profile strip, 2 on the tab, in the case and on the
+   coin - whose steep outer wall still stepped along a diagonal at one
+   sample a pixel), in linear light.
+   The light tables are read BILINEARLY too: nearest-neighbour reads of
+   the specular tables printed the 256-step grid onto a smooth face as
+   mottling, which showed the moment the enamel became reflective.
+   Buffers are reused (badgeStrikeBuffers): allocating ~9 arrays a render
+   was most of the cost. ~30ms a case-sized badge here, ~120ms the coin. */
+const BADGE_STRIKE_BUF = { n: 0 };
+function badgeStrikeBuffers(N){
+  const B = BADGE_STRIKE_BUF;
+  if(B.n < N){
+    const n = Math.max(N, 1 << 16);
+    B.n = n;
+    ["H", "NX", "NY", "A", "AE", "WD", "AR", "AG", "AB"].forEach(k => { B[k] = new Float32Array(n); });
+  }
+  return B;
+}
+function renderBadgeStrike(unitName, grey, Wout, ssForce){
+  const P = BADGE_STRIKE, G = BADGE_GEOM;
   const g = badgeStrikeGeometry(badgeShapeFor(unitName));
   badgeProfileTables();
-  const PROF = BADGE_PROF, DPROF = BADGE_DPROF;
+  const PROF = BADGE_PROF, DPROF = BADGE_DPROF, PN = BADGE_PROF_N;
+  const k1 = Wout / g.vw * g.S;
+  const SS = ssForce || Math.max(P.ssMin, Math.min(P.ssMax, Math.ceil(P.ssK / k1 - .05)));
+  const W = Wout * SS;
   const KEY = G.key, IN = G.inner + G.edge, RC = (KEY - IN) / 2, RH = (KEY + IN) / 2;
   const pxPerF = W / g.vw, k = pxPerF * g.S, GW = g.W, GM = GW - 1, sc = GW / W;
   const N = W * W;
-  const H = new Float32Array(N), NX = new Float32Array(N), NY = new Float32Array(N), A = new Float32Array(N), AE = new Float32Array(N), WD = new Float32Array(N);
+  const BF = badgeStrikeBuffers(N);
+  const H = BF.H, NX = BF.NX, NY = BF.NY, A = BF.A, AE = BF.AE, WD = BF.WD;
+  A.fill(0, 0, N); AE.fill(0, 0, N); H.fill(0, 0, N); WD.fill(0, 0, N);
   const GO = g.O, GE = g.E, GOx = g.Ox, GOy = g.Oy, GEx = g.Ex, GEy = g.Ey;
   const pcx = (g.cx - g.vx) * pxPerF, pcy = (g.cy - g.vy) * pxPerF;
   for(let y = 0; y < W; y++){
@@ -52726,7 +52838,6 @@ function renderBadgeStrike(unitName, grey, W){
       const w00 = (1 - ax) * (1 - ay), w01 = ax * (1 - ay), w10 = (1 - ax) * ay, w11 = ax * ay;
       const o = GO[i00] * w00 + GO[i01] * w01 + GO[i10] * w10 + GO[i11] * w11;
       const i = y * W + x;
-      /* the silhouette, antialiased from the distance at THIS size */
       let a = .5 - (o - KEY) * k; a = a >= 1 ? 1 : a <= 0 ? 0 : a;
       A[i] = a;
       if(a <= 0) continue;
@@ -52760,7 +52871,8 @@ function renderBadgeStrike(unitName, grey, W){
         }
       }
       H[i] = h;
-      const sx = hx * P.relief - (x - pcx) / k * P.dome, sy = hy * P.relief - (y - pcy) / k * P.dome;
+      const dome = e < 0 ? P.enDome : P.dome;
+      const sx = hx * P.relief - (x - pcx) / k * dome, sy = hy * P.relief - (y - pcy) / k * dome;
       const nl = 1 / Math.sqrt(sx * sx + sy * sy + 1);
       NX[i] = -sx * nl; NY[i] = -sy * nl;
     }
@@ -52768,12 +52880,12 @@ function renderBadgeStrike(unitName, grey, W){
   const Lt = badgeLightTables(), LN = BADGE_LIGHT_N, LN1 = LN - 1, EE = Lt.E, ENC = Lt.ENC;
   const en = badgeHexRgb(grey ? "#6B6E73" : badgeThemeFor(unitName).p).map(c => Lt.TO_LIN[Math.max(0, Math.min(255, Math.round(c)))]);
   const tint = grey ? [1, 1, 1] : [.92, .955, 1];
-  const cv = document.createElement("canvas"); cv.width = W; cv.height = W;
-  const ctx = cv.getContext("2d");
-  const img = ctx.createImageData(W, W), od = img.data;
   const l = Lt.l, ll = Math.sqrt(l[0] * l[0] + l[1] * l[1]);
   const ldx = l[0] / ll, ldy = l[1] / ll, rise = l[2] / ll;
-  const Zp = P.relief * k, shStep = Math.max(1, .5 * k), shN = 8;
+  const Zp = P.relief * k, shStep = Math.max(1, .5 * k), shN = Math.ceil(4 * k / shStep);
+  const RAMP = P.enRamp, RL = RAMP.length - 1, EM = P.enMetal, ED = P.enDiff, CK = P.coatK, SPT = Lt.SP, SPE = Lt.SPE, DIF = Lt.DIF, FR = Lt.FR;
+  /* premultiplied linear light per sample, averaged SS x SS below */
+  const AR = BF.AR, AG = BF.AG, AB = BF.AB; AR.fill(0, 0, N); AG.fill(0, 0, N); AB.fill(0, 0, N);
   for(let y = 0; y < W; y++){
     for(let x = 0; x < W; x++){
       const i = y * W + x, aS = A[i];
@@ -52781,19 +52893,18 @@ function renderBadgeStrike(unitName, grey, W){
       const fx = (NX[i] + 1) * .5 * LN1, fy = (NY[i] + 1) * .5 * LN1;
       const ix = fx | 0, iy = fy | 0, ax = fx - ix, ay = fy - iy;
       const li = ix + iy * LN, li1 = li + (ix < LN1 ? 1 : 0), li2 = li + (iy < LN1 ? LN : 0), li3 = li2 + (ix < LN1 ? 1 : 0);
-      const ev = (EE[li] * (1 - ax) + EE[li1] * ax) * (1 - ay) + (EE[li2] * (1 - ax) + EE[li3] * ax) * ay;
-      const sp = Lt.SP[li], h0 = H[i];
-      /* metal: what it reflects, darker toward the foot of a wall */
+      const w0 = (1 - ax) * (1 - ay), w1 = ax * (1 - ay), w2 = (1 - ax) * ay, w3 = ax * ay;
+      const ev = EE[li] * w0 + EE[li1] * w1 + EE[li2] * w2 + EE[li3] * w3;
+      const sp = SPT[li] * w0 + SPT[li1] * w1 + SPT[li2] * w2 + SPT[li3] * w3, h0 = H[i];
       const occ = h0 < .5 ? .25 + .75 * (h0 / .5) : 1;
       const mm = ev * .95 * (1 - P.wallAO + P.wallAO * occ);
       const mr = mm * tint[0] + sp, mg = mm * tint[1] + sp, mb = mm * tint[2] + sp;
       const aE = AE[i];
       let er = 0, eg = 0, eb = 0;
       if(aE > 0){
-        let shade = .6 + .4 * Lt.DIF[li];
+        let shade = 1;
         const wd = WD[i] > 0 ? WD[i] : 0;
         shade *= 1 - P.ao * Math.exp(-wd / P.aoL);
-        /* the walls stand between the enamel and the light */
         let oc = 0; const hz = h0 * Zp;
         for(let t = 1; t <= shN; t++){
           const qx = (x - ldx * shStep * t + .5) | 0, qy = (y - ldy * shStep * t + .5) | 0;
@@ -52802,17 +52913,33 @@ function renderBadgeStrike(unitName, grey, W){
           if(over > 0){ const q = over / (.3 * Zp); if(q > oc) oc = q > 1 ? 1 : q; }
         }
         shade *= 1 - .55 * oc;
-        const cc = (P.coat + .6 * Lt.FR[li]) * ev + .45 * Lt.SPE[li];
-        er = en[0] * shade + cc; eg = en[1] * shade + cc; eb = en[2] * shade + cc;
+        /* coloured metal: the face's tilt towards the light, through a
+           polished ramp (bright, falling to a dark band, picking up off
+           the floor) - smooth, because the dome is */
+        let tt = .5 - (NX[i] * ldx + NY[i] * ldy) / (2 * P.enTilt); tt = tt < 0 ? 0 : tt > 1 ? 1 : tt;
+        const rq = tt * RL, r0 = rq | 0, r1 = r0 < RL ? r0 + 1 : r0, rf = rq - r0, rs = rf * rf * (3 - 2 * rf);
+        const dif = (.6 + .4 * (DIF[li] * w0 + DIF[li1] * w1 + DIF[li2] * w2 + DIF[li3] * w3)) * ED + (RAMP[r0] * (1 - rs) + RAMP[r1] * rs) * EM;
+        const cc = ((P.coat + .6 * (FR[li] * w0 + FR[li1] * w1 + FR[li2] * w2 + FR[li3] * w3)) * ev + .45 * (SPE[li] * w0 + SPE[li1] * w1 + SPE[li2] * w2 + SPE[li3] * w3)) * CK;
+        er = en[0] * dif * shade + cc; eg = en[1] * dif * shade + cc; eb = en[2] * dif * shade + cc;
       }
       const cM = aS - aE;
-      const R = (mr * cM + er * aE) / aS, Gc = (mg * cM + eg * aE) / aS, B = (mb * cM + eb * aE) / aS;
-      const j = i * 4;
-      od[j] = ENC[R <= 0 ? 0 : R >= 1 ? 4096 : (R * 4096) | 0];
-      od[j + 1] = ENC[Gc <= 0 ? 0 : Gc >= 1 ? 4096 : (Gc * 4096) | 0];
-      od[j + 2] = ENC[B <= 0 ? 0 : B >= 1 ? 4096 : (B * 4096) | 0];
-      od[j + 3] = (255 * aS + .5) | 0;
+      AR[i] = mr * cM + er * aE; AG[i] = mg * cM + eg * aE; AB[i] = mb * cM + eb * aE;
     }
+  }
+  const cv = document.createElement("canvas"); cv.width = Wout; cv.height = Wout;
+  const ctx = cv.getContext("2d");
+  const img = ctx.createImageData(Wout, Wout), od = img.data;
+  const inv = 1 / (SS * SS);
+  for(let y = 0; y < Wout; y++) for(let x = 0; x < Wout; x++){
+    let r = 0, gg = 0, b = 0, a = 0;
+    for(let v = 0; v < SS; v++){ const row = (y * SS + v) * W + x * SS;
+      for(let u = 0; u < SS; u++){ const q = row + u; r += AR[q]; gg += AG[q]; b += AB[q]; a += A[q]; } }
+    if(a <= 0) continue;
+    const R = r / a, Gc = gg / a, B = b / a, j = (y * Wout + x) * 4;
+    od[j] = ENC[R <= 0 ? 0 : R >= 1 ? 4096 : (R * 4096) | 0];
+    od[j + 1] = ENC[Gc <= 0 ? 0 : Gc >= 1 ? 4096 : (Gc * 4096) | 0];
+    od[j + 2] = ENC[B <= 0 ? 0 : B >= 1 ? 4096 : (B * 4096) | 0];
+    od[j + 3] = (255 * a * inv + .5) | 0;
   }
   ctx.putImageData(img, 0, 0);
   return cv;
@@ -52822,19 +52949,58 @@ function renderBadgeStrike(unitName, grey, W){
    no canvas. */
 const BADGE_STRIKE_CACHE = {};
 let badgeStrikeBroken = false;
-function badgeStrikeURL(unitName, grey, W){
+/* A DRAFT FIRST, THE FINISH IN IDLE TIME (build 318). A supersampled
+   render costs ~4x a plain one, and the first one a session makes runs
+   before the engine has compiled the loop - measured here, 0.5s for one
+   badge as the Home badge cutscene began, which held its own timers back
+   by that much. So anything built synchronously (a tab, a case, a
+   cutscene) gets a one-sample-a-pixel draft at once - what every badge
+   was before this build - and the supersampled finish replaces it a
+   moment later, one badge per idle slice (badgeStrikeFinish). Asked for
+   without `draft`, the finish is rendered there and then. */
+function badgeStrikeEntry(unitName, grey, W, draft){
   if(badgeStrikeBroken) return null;
   const key = String(unitName) + (grey ? "|g" : "|c");
   const list = BADGE_STRIKE_CACHE[key] || (BADGE_STRIKE_CACHE[key] = []);
   let best = null;
-  list.forEach(e => { if(e.W >= W && e.W <= W * 1.08 && (!best || e.W < best.W)) best = e; });
-  if(best) return best.url;
+  list.forEach(e => { if(e.W >= W && e.W <= W * 1.08 && (draft || !e.draft) && (!best || (best.draft && !e.draft) || (best.draft === e.draft && e.W < best.W))) best = e; });
+  if(best) return best;
   try{
-    const url = renderBadgeStrike(unitName, grey, W).toDataURL("image/png");
+    const url = renderBadgeStrike(unitName, grey, W, draft ? 1 : 0).toDataURL("image/png");
     if(!/^data:image\/png/.test(url)) throw new Error("no png");
-    list.push({ W, url });
-    return url;
+    const e = { W, url, draft: !!draft };
+    list.push(e);
+    return e;
   }catch(e){ badgeStrikeBroken = true; return null; }
+}
+function badgeStrikeURL(unitName, grey, W){
+  const e = badgeStrikeEntry(unitName, grey, W, false);
+  return e ? e.url : null;
+}
+const BADGE_STRIKE_DRAFTS = new Set();
+let badgeStrikeFinishing = 0;
+function badgeStrikeFinish(im){
+  BADGE_STRIKE_DRAFTS.add(im);
+  if(badgeStrikeFinishing) return;
+  const ric = f => (typeof window.requestIdleCallback === "function") ? window.requestIdleCallback(f, { timeout: 700 }) : setTimeout(f, 60);
+  const step = () => {
+    badgeStrikeFinishing = 0;
+    const im = BADGE_STRIKE_DRAFTS.values().next().value;
+    if(!im) return;
+    BADGE_STRIKE_DRAFTS.delete(im);
+    const st = im.__strike;
+    if(st && st.draft && im.isConnected){
+      const e = badgeStrikeEntry(st.unit, st.grey, st.W, false);
+      if(e){
+        /* every image showing that draft takes the finish */
+        [im, ...BADGE_STRIKE_DRAFTS].forEach(o => { const t = o.__strike;
+          if(t && t.draft && t.unit === st.unit && t.grey === st.grey && t.W === st.W){ o.setAttribute("href", e.url); t.draft = false; BADGE_STRIKE_DRAFTS.delete(o); } });
+      }
+    }
+    if(BADGE_STRIKE_DRAFTS.size){ badgeStrikeFinishing = 1; ric(step); }
+  };
+  badgeStrikeFinishing = 1;
+  ric(step);
 }
 /* A token shown at a size it was not rendered for is re-rendered once it
    is on screen and measured - batched, a few milliseconds a frame. */
@@ -52859,24 +53025,25 @@ function badgeStrikeUpgrade(){
   const t0 = performance.now();
   todo.forEach(([im, need]) => {
     if(performance.now() - t0 > 12){ BADGE_STRIKE_WATCH.add(im); return; }
-    const st = im.__strike, url = badgeStrikeURL(st.unit, st.grey, need);
-    if(url){ im.setAttribute("href", url); st.W = need; }
+    const st = im.__strike, e = badgeStrikeEntry(st.unit, st.grey, need, true);
+    if(e){ im.setAttribute("href", e.url); st.W = need; st.draft = e.draft; if(e.draft) badgeStrikeFinish(im); }
   });
   if(BADGE_STRIKE_WATCH.size) badgeStrikeRaf = requestAnimationFrame(badgeStrikeUpgrade);
 }
 /* The token as an <image> for buildUnitBadgeSVG, or null. */
 function badgeStrikeImage(unitName, grey, opts){
-  const W = badgeStrikeSize((opts.px || BADGE_STRIKE_PX) * badgeDpr());
-  const url = badgeStrikeURL(unitName, grey, W);
-  if(!url) return null;
+  const W = badgeStrikeSize((opts.px || badgeDefaultPx()) * badgeDpr());
+  const e = badgeStrikeEntry(unitName, grey, W, true);
+  if(!e) return null;
   const im = document.createElementNS("http://www.w3.org/2000/svg", "image");
   im.setAttribute("class", "badge-raster");
-  im.setAttribute("href", url);
+  im.setAttribute("href", e.url);
   im.setAttribute("preserveAspectRatio", "none");
   /* what the enamel was rendered in (none for grey: no unit colour
      reaches a badge not yet earned) */
   if(!grey) im.setAttribute("data-enamel", String(badgeThemeFor(unitName).p));
-  im.__strike = { unit: unitName, grey, W, tries: 0 };
+  im.__strike = { unit: unitName, grey, W, tries: 0, draft: e.draft };
+  if(e.draft) badgeStrikeFinish(im);
   if(!opts.px) badgeStrikeWatch(im);
   return im;
 }
@@ -52888,7 +53055,7 @@ function warmBadgeStrikes(){
   try{
     if(badgeStrikeBroken) return;
     const units = unitsInTeachingOrder();
-    const W = badgeStrikeSize(BADGE_STRIKE_PX * badgeDpr());
+    const W = badgeStrikeSize(badgeDefaultPx() * badgeDpr());
     const jobs = [];
     units.forEach(u => jobs.push(() => badgeStrikeGeometry(badgeShapeFor(u))));
     units.forEach(u => jobs.push(() => badgeStrikeURL(u, !unitBadgeEarned(u), W)));
@@ -73433,9 +73600,16 @@ function playQueuedBadgeCutscenes(){
   slot.appendChild(buildUnitBadgeSVG(unit, false));
   stageWrap.appendChild(slot);
 
+  /* RENDERED AT THE STAGE'S OWN SIZE (build 318), the .badge-cutscene-stage
+     sum. Measured on screen instead, it was measured mid-entrance at
+     scale(1.5) and drawn a third too big, then shrunk - which samples the
+     keyline into a dotted ring - and it cost a second render as the
+     scene began. */
   const art = document.createElement("div");
   art.className = "badge-cutscene-art";
-  art.appendChild(buildUnitBadgeSVG(unit, true));
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const wideStage = !!(window.matchMedia && window.matchMedia("(min-width:40rem)").matches);
+  art.appendChild(buildUnitBadgeSVG(unit, true, { px: wideStage ? 16 * rem : Math.min(13 * rem, innerWidth * .46) }));
   stageWrap.appendChild(art);
 
   /* The ring is the seat flaring as the badge lands. It is a separate
@@ -82699,6 +82873,35 @@ function badgeCoinFaceURL(unitName){
   return badgeStrikeURL(unitName, false, badgeStrikeSize(css * badgeDpr())) ||
     badgeImageURL(buildUnitBadgeSVG(unitName, true, { slot: false, fine: true, vector: true }));
 }
+/* A SEATED BADGE IS RENDERED FOR THE OPEN CASE (build 318). The slots
+   used to take the default size and be re-measured on screen - under 3D,
+   while the case was still shut and tilted - so the open case drew a
+   ~276px render into a ~200px hole. A browser shrinking an image by a
+   quarter samples it, and the badge's one-pixel keyline and highlight
+   came out as a dotted ring: "they look good but they look a smidge
+   rough". This is the --cw sum the CSS does (.bc-scene), the tray's and
+   the lining's insets, and the open camera's --open-s, so a seated
+   badge is rendered at the size the open case shows it. */
+function badgeCaseSlotPx(){
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const wide = !!(window.matchMedia && window.matchMedia("(min-width:40rem)").matches);
+  const cw = wide ? Math.min(innerWidth * .62, 29 * rem, innerHeight * .44) : Math.min(innerWidth * .8, 22.5 * rem, innerHeight * .44);
+  const inset = 8 + 2.75 * rem;            /* two 2px borders a side, .5rem inset, .5rem padding, three .25rem gaps */
+  const cell = Math.min(cw - inset, cw * .94 - inset) / 4;
+  return Math.max(24, cell * .9);
+}
+/* The coin's face is the biggest render there is (~120ms, supersampled),
+   so a results screen that is going to play the case renders it - and
+   the case's seated badges - in idle time while its own reveal runs,
+   rather than as the scene starts. */
+function warmBadgeCoinFaces(units){
+  try{
+    const ric = f => (typeof window.requestIdleCallback === "function") ? window.requestIdleCallback(f, { timeout: 1500 }) : setTimeout(f, 200);
+    (units || []).slice(0, 4).forEach(u => ric(() => { try{ badgeCoinFaceURL(u); }catch(e){} }));
+    const W = badgeStrikeSize(badgeCaseSlotPx() * badgeDpr());
+    unitsInTeachingOrder().filter(u => unitBadgeEarned(u)).forEach(u => ric(() => { try{ badgeStrikeURL(u, false, W); }catch(e){} }));
+  }catch(e){}
+}
 /* The token: .bc-coin (its pop in) > .bc-sway (its sway at rest, its tilt
    into the tray) > .bc-spin (its turns) > the back face, the edge, the
    front face. Every one keeps its children in 3D. The faces and the
@@ -82792,7 +82995,7 @@ function buildBadgeCase3D(all, held){
   const stage = mk("bc-stage");
   const kase = mk("bc-case nova-case");
   const floor = mk("bc-floor");
-  const front = mk("bc-front nova-case-shell");
+  const front = mk("bc-front nova-case-shell nova-case-wall");
   ["l", "r"].forEach(side => {
     const latch = mk("bc-latch bc-latch-" + side + " nova-case-latch", "span");
     latch.appendChild(mk("bc-hasp nova-case-hasp", "i"));
@@ -82808,9 +83011,10 @@ function buildBadgeCase3D(all, held){
   const tray = mk("bc-tray nova-case-shell nova-case-trimmed");
   const lining = mk("bc-lining nova-case-lining");
   const slots = {};
+  const px = badgeCaseSlotPx();
   all.forEach(u => {
     const s = mk("bc-slot" + (held(u) ? " is-held" : ""));
-    s.appendChild(buildUnitBadgeSVG(u, held(u)));
+    s.appendChild(buildUnitBadgeSVG(u, held(u), { px }));
     lining.appendChild(s);
     slots[u] = s;
   });
@@ -82824,7 +83028,7 @@ function buildBadgeCase3D(all, held){
   const lidOut = mk("bc-lid-out nova-case-shell nova-case-trimmed");
   const plate = mk("bc-plate nova-case-plate", "span"); plate.textContent = "Nova · Class 26E";
   lidOut.appendChild(plate);
-  const lidFront = mk("bc-lid-front nova-case-shell");
+  const lidFront = mk("bc-lid-front nova-case-shell nova-case-wall");
   lid.append(lidIn, lidOut, lidFront);
   kase.append(floor, front, handle, tray, spill, lid);
   stage.appendChild(kase);
@@ -82918,7 +83122,7 @@ function playBadgeCaseScene(units, done, retro, opts){
     }catch(e){}
   };
   const seatQuiet = u => {
-    slots[u].replaceChildren(buildUnitBadgeSVG(u, true));
+    slots[u].replaceChildren(buildUnitBadgeSVG(u, true, { px: badgeCaseSlotPx() }));
     slots[u].classList.add("is-held", "is-new");
   };
 
@@ -83002,7 +83206,7 @@ function playBadgeCaseScene(units, done, retro, opts){
       { duration: BC_T.flyMs, easing: "cubic-bezier(.45,0,.4,1)", fill: "forwards" }));
   };
   const seat = (u, i) => {
-    slots[u].replaceChildren(buildUnitBadgeSVG(u, true));
+    slots[u].replaceChildren(buildUnitBadgeSVG(u, true, { px: badgeCaseSlotPx() }));
     const ring = mk("bc-seatring");
     slots[u].appendChild(ring);
     slots[u].classList.add("is-held", "is-new");
@@ -86045,6 +86249,7 @@ function showRunRewards(run, hooks, opts){
       if(it.kind === "badge" && typeof playBadgeCaseScene === "function"){
         if(!caseDone){
           caseDone = true;
+          warmBadgeCoinFaces(run.badges);
           seq.add(nextGap(), (instant, release) => playBadgeCaseScene(run.badges.slice(), release, run.retroBadges), true);
           afterScene = true;
         }
@@ -99863,7 +100068,7 @@ function buildProfileCase(have, total){
      in, two latches on its front edge and the handle under it. */
   box.classList.add("nova-case", "nova-case-shell");
   const latches = document.createElement("span");
-  latches.className = "pf-case-front"; latches.setAttribute("aria-hidden", "true");
+  latches.className = "pf-case-front nova-case-shell nova-case-wall"; latches.setAttribute("aria-hidden", "true");
   ["l", "r"].forEach(() => { const c = document.createElement("i"); c.className = "nova-case-latch"; latches.appendChild(c); });
   /* its name on its side, between the latches - the same plate as the
      cutscene's case and the Badges tab's (build 317, badge2) */
@@ -101397,13 +101602,25 @@ function buildBadgesTab(){
      aluminium rim, the front with its two latches, and the handle folded
      down in front - every part in the shared .nova-case-* materials. Still
      exactly two clasps in the front (check_b242). */
+  /* ---- THE CUTSCENE'S SQUARE BRIEFCASE (build 318) ---- "All the other
+     ones are different shapes." Each part is its own piece now, as in the
+     cutscene's open case: the lid (a trimmed shell framing its quilted
+     pad), the tray (a trimmed shell round the lining), the front wall
+     with its corner guards. The root is only the case's footprint. */
   const kase = document.createElement("div");
-  kase.className = "badge-case nova-case nova-case-shell";
+  kase.className = "badge-case nova-case";
   const lid = document.createElement("div");
-  lid.className = "badge-case-lid nova-case-lid";
+  lid.className = "badge-case-lid nova-case-shell nova-case-trimmed";
+  lid.setAttribute("aria-hidden", "true");
+  const pad = document.createElement("div");
+  pad.className = "badge-case-pad nova-case-lid";
+  lid.appendChild(pad);
   grid.classList.add("nova-case-lining");
+  const tray = document.createElement("div");
+  tray.className = "badge-case-tray nova-case-shell nova-case-trimmed";
+  tray.appendChild(grid);
   const front = document.createElement("div");
-  front.className = "badge-case-front nova-case-shell";
+  front.className = "badge-case-front nova-case-shell nova-case-wall";
   front.setAttribute("aria-hidden", "true");
   ["l", "r"].forEach(() => { const c = document.createElement("span"); c.className = "nova-case-latch"; front.appendChild(c); });
   /* its name on its side, between the clasps (build 317, badge2) */
@@ -101412,7 +101629,7 @@ function buildBadgesTab(){
   const handle = document.createElement("span");
   handle.className = "badge-case-handle nova-case-handle";
   handle.setAttribute("aria-hidden", "true");
-  kase.append(lid, ...hinges, grid, front, handle);
+  kase.append(lid, ...hinges, tray, front, handle);
   tab.appendChild(kase);
 
   /* Same reason the XP bar waits: this panel is built while another

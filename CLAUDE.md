@@ -18381,3 +18381,106 @@ changed after level 60 so people aren't affected? ... do the math"*
   per week), take the highest level held, freeze through it, and make
   every level above it cheaper - that is the only direction that cannot
   take a level off anybody.
+
+### Build 318, badges round - sampled, not stepped; enamel that is metal; one square case
+
+Madison: *"where the color meets the silver part is rough and not smooth,
+the edges of the badge aren't smooth ... the corners of the case don't
+look good, you can see where it disconnects on the top and bottom ... the
+badge case placard is glitched ... all the badges need a smidge of glow
+... The cutscene has a square brief case which is great. All the other
+ones are different shapes ... the colored part doesn't look like a nice
+metal."*
+
+**THE ROUGHNESS WAS SAMPLING, NOT GEOMETRY.** The distance fields were
+clean. The enamel's wall is ~1.3 units wide (under 3 device pixels on a
+case-sized badge) and its light turns over across it, so ONE sample per
+pixel landed on the lit or the dark side at random along the seam: a
+dashed, stepped dark line. The rim's crest highlight did the same, and on
+the coin the outer wall stepped along every diagonal. `renderBadgeStrike`
+now averages SS x SS samples per pixel in linear light (`ssMin` 2, up to
+`ssMax` 3, enough for `ssK` ~3.4 samples per token unit: 3 on the Profile
+strip, 2 elsewhere). Two more causes, each visible only once the first
+was gone:
+- the light tables were read NEAREST-neighbour; on a reflective face the
+  256-step grid printed as mottling. They are read bilinearly;
+- the heights and edges came from the RAW fields (only the normals were
+  smoothed), and on the coin - rendered ~4.6x finer than the 288px fields
+  - the field's own sub-pixel ripple drew a wavy seam round every plate.
+  The smoothed fields carry everything now.
+Cost, measured here: ~20ms a case-sized badge, ~10ms a Profile one,
+~110ms the coin (was ~40). Nine buffers are reused across renders
+(`badgeStrikeBuffers`) - allocating them per render was most of the first
+version's ~1s coin. The coin's face and the open case's badges are
+rendered in idle time while the results screen reveals
+(`warmBadgeCoinFaces`), not as the scene starts.
+- **A draft first, the finish in idle time.** Anything built
+  synchronously (`badgeStrikeImage`: a tab, a case, a cutscene) gets a
+  one-sample-a-pixel draft at once - what every badge was before - and
+  the supersampled finish swaps in a moment later, one badge per idle
+  slice (`badgeStrikeEntry(.., draft)`, `badgeStrikeFinish`,
+  `BADGE_STRIKE_DRAFTS`). The first render of a session runs before the
+  engine has compiled the loop: ~0.5s here for one badge as the Home
+  badge cutscene began. `badgeStrikeURL` (the coin, the warm-ups) still
+  renders the finish there and then. **A check that reads badge pixels
+  waits for `BADGE_STRIKE_DRAFTS.size === 0`** (b317_badgecase and
+  b317_badge2 do now).
+- **The default and warm-up size is the tab's tile** (`badgeDefaultPx`:
+  5.4rem, 6.6rem from 40rem), so the warm-up renders what the tab asks
+  for; the iPad's 212px tiles missed the old 92px warm-up by more than the
+  cache's 8%. The Home badge cutscene's art is given its stage's size
+  (`min(13rem, 46vw)`, 16rem wide): measured on screen it was caught
+  mid-entrance at scale(1.5).
+- `check_cutscene`'s "the second follows it" is a ~0.5s budget on real
+  time and fails on 219bfea too when the machine is loaded (load average
+  ~15 here: failed 1 of 3 runs against 219bfea).
+
+**A SEATED BADGE IS RENDERED FOR THE OPEN CASE (`badgeCaseSlotPx`).** The
+case's slots took the default size and were re-measured under 3D while
+the case was shut and tilted, so the open case drew a ~276px render into
+a ~194px hole. A browser shrinking an image by a quarter SAMPLES it, and
+the keyline came out a dotted ring. The size is now the CSS's own --cw
+sum times `--open-s`. (Headless Chromium still stipples the open case a
+little: that is its compositor resampling the 3D layer, and it shows
+the same with the badge drawn flat. Flattened, the badges are clean.)
+
+**THE ENAMEL IS COLOURED METAL** (`enDome`, `enTilt`, `enRamp`, `enMetal`,
+`enDiff`, `coatK` in `BADGE_STRIKE`). It was the unit colour times a
+diffuse shade, flat as paint. Its face is domed a little more than the
+rim and its tilt towards the light is read through a polished ramp
+(bright top-left, a dark band, picking up off the floor) - smooth,
+because the dome is - with a little of the flat colour kept so the dark
+band stays the unit's colour. No streak, no motif: the light is the
+dome's. Same colour family per unit, same shapes.
+
+**ONE SQUARE CASE (`--case-r` .2rem, `--case-r-in` .32rem).** The 3D case's
+tray and lid were rounded 1.05rem in plan and its walls hung straight
+down from them, so each wall's square end stuck out past the tray's
+curve: a notch at all four corners. A box's walls can only meet a top
+that is square where they meet it. Every wall (`.nova-case-wall`: the
+cutscene's front and lid front, the tab's front, the Profile's front)
+carries an aluminium corner guard on each end (`--case-guard`, two
+pseudo-elements, so the clasps stay the only spans in a front).
+- **The Badges tab** is the cutscene's open case drawn flat, part for
+  part: the lid (a trimmed shell framing its quilted `.badge-case-pad`),
+  the hinges, the tray (`.badge-case-tray`, a trimmed shell round the
+  lining), the front wall, the handle. The root `.badge-case` holds no
+  paint; it is the footprint.
+- **The Profile case** is the same case from above, small: the tray (the
+  button: square, gradient, tinted edge, black shadow) with the count on
+  its rim, and the front wall hung OUTSIDE its border with the guards,
+  latches and plate, the handle under the wall with its mounts behind
+  it. The placard was "glitched" because the latches, plate and handle
+  were all pinned ACROSS the tray's bottom border, the handle's two
+  mounts poking up round the plate. `check_b289`'s "the case keeps the
+  Next rank card's corner" is revised: it keeps the briefcase's.
+
+**A SMIDGE OF GLOW.** An earned badge on the tab and on the Profile strip
+has two CSS drop-shadows in its own colour (`--badge-glow`), a close one
+and a wider breath. Still elements, so rasterised once; never an SVG
+filter.
+
+**Gates.** `check_b318_badges` (fails on 219bfea): renders sampled
+against a 4x reference, enamel that changes across its face, the case's
+corners and parts, the Profile wall and plate, the glow, and the seated
+badges' render size.
