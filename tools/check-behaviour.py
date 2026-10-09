@@ -17696,6 +17696,7 @@ def check_b317_badgecase(br):
             pg.evaluate("""([u, e]) => { document.getElementById('b317-edge')?.remove(); const h = document.createElement('div'); h.id = 'b317-edge';
               h.style.cssText = 'position:fixed;left:0;top:0;width:300px;height:300px;z-index:99999;background:#171A1F';
               const s = buildUnitBadgeSVG(u, e === 'true'); s.style.cssText = 'width:300px;height:300px;display:block'; h.appendChild(s); document.body.appendChild(h); }""", [u, earned])
+            pg.wait_for_function("() => typeof BADGE_STRIKE_DRAFTS === 'undefined' || BADGE_STRIKE_DRAFTS.size === 0", timeout=30000)  # 318: the finish, not the draft
             shots.append(_I.open(io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 300, "height": 300}))).convert("L"))
         tok = _C.difference(shots[0], shots[1]).point(lambda p: 255 if p > 14 else 0)
         bb = tok.getbbox()
@@ -17965,6 +17966,7 @@ def check_b317_badge2(br):
         out.push({ u, col: n % 4, row: (n / 4) | 0, vb, c: sh.c, S, cuts: sh.cuts, p: String(badgeThemeFor(u).p) }); });
       document.body.appendChild(host); return out; }""", BIG)
     pg.wait_for_timeout(1500)
+    pg.wait_for_function("() => typeof BADGE_STRIKE_DRAFTS === 'undefined' || BADGE_STRIKE_DRAFTS.size === 0", timeout=30000)  # 318: the finish, not the draft
     shot = _I.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 4 * BIG, "height": 4 * BIG}))).convert("RGB")
     ctx.close()
     D = 3
@@ -18087,8 +18089,9 @@ def check_b318_badges(br):
         sits wholly inside it, and the handle's mounts start behind it;
       - glow: every earned badge on the tab and the strip has a drop-shadow
         in its own colour;
-      - the cutscene's seated badges are rendered at the open case's size,
-        not shrunk from a bigger render."""
+      - the cutscene's seated badges are rendered at the open case's size
+        (within 5%), not shrunk from a bigger render (219bfea: 6-11% over,
+        rendered for the shut case)."""
     print("\n318b. badges sampled not stepped, enamel that is metal, one square case, the Profile placard, a smidge of glow")
     ctx, pg = booted(br, 400, 400, seed=USED_ACCOUNT, dpr=1)
     SAMPLE = r"""async ([W, R, units]) => { const out = {};
@@ -18114,7 +18117,7 @@ def check_b318_badges(br):
           for(let v = -r; v <= r && ok; v++) for(let w = -r; w <= r; w++) if(!ch[(y + v) * W + x + w]){ ok = 0; break; }
           if(ok){ const j = (y * W + x) * 4; lum.push(L(a[j], a[j + 1], a[j + 2])); } }
         lum.sort((p, q) => p - q);
-        out[u] = { p99: Math.round(errs[Math.floor(errs.length * .99)]),
+        out[u] = { p95: Math.round(errs[Math.floor(errs.length * .95)]), mean: +(errs.reduce((p, q) => p + q, 0) / errs.length).toFixed(2),
                    range: lum.length > 50 ? Math.round(lum[Math.floor(lum.length * .95)] - lum[Math.floor(lum.length * .05)]) : null };
       }
       return out; }"""
@@ -18124,9 +18127,11 @@ def check_b318_badges(br):
     for W in (84, 192):
         sam[W] = pg.evaluate(SAMPLE, [W, 4, SAMPLE_UNITS])
     ctx.close()
-    worst = {W: max(v["p99"] for v in sam[W].values()) for W in sam}
-    check("sampled, not stepped: at the Profile's and the case's sizes no badge's edge or seam is off its 4x reference by more than 40 levels (p99)",
-          all(w <= SAMPLE_P99_MAX for w in worst.values()), {W: {u[:12]: v["p99"] for u, v in sam[W].items()} for W in sam})
+    # measured on 219bfea: p95 43-56 at 84px, mean 4.7-5.4 at 192px; here 16-22 and 2.5-3.1
+    p95_84 = max(v["p95"] for v in sam[84].values())
+    mean_192 = max(v["mean"] for v in sam[192].values())
+    check("sampled, not stepped: against a 4x reference no badge's edges and seams are off by more than p95 30 levels at the Profile's size, or a mean of 4 at the case's",
+          p95_84 <= 30 and mean_192 <= 4.0, {W: {u[:12]: [v["p95"], v["mean"]] for u, v in sam[W].items()} for W in sam})
     rng = sorted(v["range"] for v in sam[192].values() if v["range"] is not None)
     check("the enamel is metal: across a plate's interior its light changes (median p5-p95 over 40 levels, was flat paint)",
           len(rng) >= 4 and rng[len(rng) // 2] >= 40, {u[:12]: v["range"] for u, v in sam[192].items()})
@@ -18206,10 +18211,10 @@ def check_b318_badges(br):
         check(f"{dev}: the cutscene's case is square where its walls meet it, and both walls carry corner guards (the disconnect at the corners)",
               bool(cut) and all(v is not None and v <= SQ for v in cut["r"].values()) and cut["guards"] and cut["frontTopR"] == 0, cut and {k: cut[k] for k in ("r", "guards", "frontTopR")})
         check(f"{dev}: the cutscene's seated badges are rendered at the size the open case shows them (not shrunk from a bigger render)",
-              bool(cut) and len(cut["sizes"]) >= 3 and all(0.9 * s["shown"] <= s["nat"] <= 1.15 * s["shown"] for s in cut["sizes"]), cut and cut["sizes"])
+              bool(cut) and len(cut["sizes"]) >= 3 and all(0.95 * s["shown"] <= s["nat"] <= 1.05 * s["shown"] for s in cut["sizes"]), cut and cut["sizes"])
         ok_tab = bool(tab) and tab["rootR"] == 0 and tab["rootBg"] == "none" and all(tab[k] is not None and tab[k] <= SQ for k in ("lidR", "trayR", "frontR")) \
             and tab["frontTopR"] == 0 and tab["guards"] and all(tab[k] for k in ("lid", "tray", "front")) \
-            and abs(tab["lid"]["l"] - tab["tray"]["l"]) <= 6 and abs(tab["tray"]["l"] - tab["front"]["l"]) <= 1.5 and abs(tab["tray"]["r"] - tab["front"]["r"]) <= 1.5 \
+            and abs(tab["lid"]["l"] - tab["tray"]["l"]) <= 0.015 * (tab["tray"]["r"] - tab["tray"]["l"]) + 1 and abs(tab["tray"]["l"] - tab["front"]["l"]) <= 1.5 and abs(tab["tray"]["r"] - tab["front"]["r"]) <= 1.5 \
             and tab["lid"]["b"] <= tab["tray"]["t"] + 2 and tab["front"]["t"] >= tab["tray"]["b"] - 1.5
         check(f"{dev}: the Badges tab is the cutscene's square case - lid, tray and front as one box, square corners, guarded walls, no rounded shell round it",
               ok_tab, tab and {k: tab[k] for k in ("rootR", "lidR", "trayR", "frontR", "frontTopR", "guards", "lid", "tray", "front")})
@@ -18221,9 +18226,6 @@ def check_b318_badges(br):
         check(f"{dev}: every earned badge glows in its own colour, on the Badges tab and in the Profile case",
               bool(tab and pf) and len(tab["glows"]) >= 8 and all(tab["glows"]) and len(pf["glows"]) >= 8 and all(pf["glows"]),
               [tab and tab["glows"][:4], pf and pf["glows"][:4]])
-
-
-SAMPLE_P99_MAX = 40
 
 
 def check_b317_roadmap_chips(br):

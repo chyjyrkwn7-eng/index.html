@@ -18222,6 +18222,26 @@ Cost, measured here: ~20ms a case-sized badge, ~10ms a Profile one,
 version's ~1s coin. The coin's face and the open case's badges are
 rendered in idle time while the results screen reveals
 (`warmBadgeCoinFaces`), not as the scene starts.
+- **A draft first, the finish in idle time.** Anything built
+  synchronously (`badgeStrikeImage`: a tab, a case, a cutscene) gets a
+  one-sample-a-pixel draft at once - what every badge was before - and
+  the supersampled finish swaps in a moment later, one badge per idle
+  slice (`badgeStrikeEntry(.., draft)`, `badgeStrikeFinish`,
+  `BADGE_STRIKE_DRAFTS`). The first render of a session runs before the
+  engine has compiled the loop: ~0.5s here for one badge as the Home
+  badge cutscene began. `badgeStrikeURL` (the coin, the warm-ups) still
+  renders the finish there and then. **A check that reads badge pixels
+  waits for `BADGE_STRIKE_DRAFTS.size === 0`** (b317_badgecase and
+  b317_badge2 do now).
+- **The default and warm-up size is the tab's tile** (`badgeDefaultPx`:
+  5.4rem, 6.6rem from 40rem), so the warm-up renders what the tab asks
+  for; the iPad's 212px tiles missed the old 92px warm-up by more than the
+  cache's 8%. The Home badge cutscene's art is given its stage's size
+  (`min(13rem, 46vw)`, 16rem wide): measured on screen it was caught
+  mid-entrance at scale(1.5).
+- `check_cutscene`'s "the second follows it" is a ~0.5s budget on real
+  time and fails on 219bfea too when the machine is loaded (load average
+  ~15 here: failed 1 of 3 runs against 219bfea).
 
 **A SEATED BADGE IS RENDERED FOR THE OPEN CASE (`badgeCaseSlotPx`).** The
 case's slots took the default size and were re-measured under 3D while

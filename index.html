@@ -26841,7 +26841,7 @@
   .badges-tab .badge-case.nova-case .badge-case-front{
     position:relative; left:auto; right:auto; bottom:auto; z-index:2; display:flex; justify-content:space-between; align-items:center;
     height:1.7rem; margin:0; padding:0 15%; border-radius:0 0 var(--case-r) var(--case-r);
-    --case-guard-w:4.5%;
+    --case-guard-w:3.2%;
     background-image:linear-gradient(180deg, rgba(0,0,0,.42), rgba(0,0,0,0) 45%, rgba(0,0,0,.18)), var(--case-shell-bg); background-size:100% 100%, var(--case-shell-size);
     box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 18px 34px rgba(0,0,0,.55);
   }
@@ -52458,6 +52458,22 @@ const BADGE_STRIKE = {
   enRamp: [1.6, 1.25, .9, .62, .5, .52, .66]
 };
 const BADGE_STRIKE_PX = 92;      /* CSS px a badge is taken to show at until it is measured */
+/* ...and on this device, the Badges tab's own tile (.badge-tile-art's
+   max-width: 5.4rem, 6.6rem from 40rem), so the idle warm-up renders the
+   size the tab will ask for and opening it renders nothing (build 318:
+   supersampled renders cost ~4x, and the iPad's 212px tiles missed the
+   92px warm-up by more than the cache's 8%). */
+let badgeDefaultPxMemo = null;
+function badgeDefaultPx(){
+  const m = badgeDefaultPxMemo;
+  if(m && m.w === innerWidth) return m.px;
+  try{
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const wide = !!(window.matchMedia && window.matchMedia("(min-width:40rem)").matches);
+    badgeDefaultPxMemo = { w: innerWidth, px: (wide ? 6.6 : 5.4) * rem };
+    return badgeDefaultPxMemo.px;
+  }catch(e){ return BADGE_STRIKE_PX; }
+}
 function badgeDpr(){ return Math.min(3, Math.max(1, window.devicePixelRatio || 1)); }
 /* Rendered at the size it is shown at, to 4 device pixels: a render
    scaled down by the browser turns a polished edge's one-pixel highlight
@@ -52692,13 +52708,13 @@ function badgeStrikeBuffers(N){
   }
   return B;
 }
-function renderBadgeStrike(unitName, grey, Wout){
+function renderBadgeStrike(unitName, grey, Wout, ssForce){
   const P = BADGE_STRIKE, G = BADGE_GEOM;
   const g = badgeStrikeGeometry(badgeShapeFor(unitName));
   badgeProfileTables();
   const PROF = BADGE_PROF, DPROF = BADGE_DPROF, PN = BADGE_PROF_N;
   const k1 = Wout / g.vw * g.S;
-  const SS = Math.max(P.ssMin, Math.min(P.ssMax, Math.ceil(P.ssK / k1 - .05)));
+  const SS = ssForce || Math.max(P.ssMin, Math.min(P.ssMax, Math.ceil(P.ssK / k1 - .05)));
   const W = Wout * SS;
   const KEY = G.key, IN = G.inner + G.edge, RC = (KEY - IN) / 2, RH = (KEY + IN) / 2;
   const pxPerF = W / g.vw, k = pxPerF * g.S, GW = g.W, GM = GW - 1, sc = GW / W;
@@ -52829,19 +52845,58 @@ function renderBadgeStrike(unitName, grey, Wout){
    no canvas. */
 const BADGE_STRIKE_CACHE = {};
 let badgeStrikeBroken = false;
-function badgeStrikeURL(unitName, grey, W){
+/* A DRAFT FIRST, THE FINISH IN IDLE TIME (build 318). A supersampled
+   render costs ~4x a plain one, and the first one a session makes runs
+   before the engine has compiled the loop - measured here, 0.5s for one
+   badge as the Home badge cutscene began, which held its own timers back
+   by that much. So anything built synchronously (a tab, a case, a
+   cutscene) gets a one-sample-a-pixel draft at once - what every badge
+   was before this build - and the supersampled finish replaces it a
+   moment later, one badge per idle slice (badgeStrikeFinish). Asked for
+   without `draft`, the finish is rendered there and then. */
+function badgeStrikeEntry(unitName, grey, W, draft){
   if(badgeStrikeBroken) return null;
   const key = String(unitName) + (grey ? "|g" : "|c");
   const list = BADGE_STRIKE_CACHE[key] || (BADGE_STRIKE_CACHE[key] = []);
   let best = null;
-  list.forEach(e => { if(e.W >= W && e.W <= W * 1.08 && (!best || e.W < best.W)) best = e; });
-  if(best) return best.url;
+  list.forEach(e => { if(e.W >= W && e.W <= W * 1.08 && (draft || !e.draft) && (!best || (best.draft && !e.draft) || (best.draft === e.draft && e.W < best.W))) best = e; });
+  if(best) return best;
   try{
-    const url = renderBadgeStrike(unitName, grey, W).toDataURL("image/png");
+    const url = renderBadgeStrike(unitName, grey, W, draft ? 1 : 0).toDataURL("image/png");
     if(!/^data:image\/png/.test(url)) throw new Error("no png");
-    list.push({ W, url });
-    return url;
+    const e = { W, url, draft: !!draft };
+    list.push(e);
+    return e;
   }catch(e){ badgeStrikeBroken = true; return null; }
+}
+function badgeStrikeURL(unitName, grey, W){
+  const e = badgeStrikeEntry(unitName, grey, W, false);
+  return e ? e.url : null;
+}
+const BADGE_STRIKE_DRAFTS = new Set();
+let badgeStrikeFinishing = 0;
+function badgeStrikeFinish(im){
+  BADGE_STRIKE_DRAFTS.add(im);
+  if(badgeStrikeFinishing) return;
+  const ric = f => (typeof window.requestIdleCallback === "function") ? window.requestIdleCallback(f, { timeout: 700 }) : setTimeout(f, 60);
+  const step = () => {
+    badgeStrikeFinishing = 0;
+    const im = BADGE_STRIKE_DRAFTS.values().next().value;
+    if(!im) return;
+    BADGE_STRIKE_DRAFTS.delete(im);
+    const st = im.__strike;
+    if(st && st.draft && im.isConnected){
+      const e = badgeStrikeEntry(st.unit, st.grey, st.W, false);
+      if(e){
+        /* every image showing that draft takes the finish */
+        [im, ...BADGE_STRIKE_DRAFTS].forEach(o => { const t = o.__strike;
+          if(t && t.draft && t.unit === st.unit && t.grey === st.grey && t.W === st.W){ o.setAttribute("href", e.url); t.draft = false; BADGE_STRIKE_DRAFTS.delete(o); } });
+      }
+    }
+    if(BADGE_STRIKE_DRAFTS.size){ badgeStrikeFinishing = 1; ric(step); }
+  };
+  badgeStrikeFinishing = 1;
+  ric(step);
 }
 /* A token shown at a size it was not rendered for is re-rendered once it
    is on screen and measured - batched, a few milliseconds a frame. */
@@ -52866,24 +52921,25 @@ function badgeStrikeUpgrade(){
   const t0 = performance.now();
   todo.forEach(([im, need]) => {
     if(performance.now() - t0 > 12){ BADGE_STRIKE_WATCH.add(im); return; }
-    const st = im.__strike, url = badgeStrikeURL(st.unit, st.grey, need);
-    if(url){ im.setAttribute("href", url); st.W = need; }
+    const st = im.__strike, e = badgeStrikeEntry(st.unit, st.grey, need, true);
+    if(e){ im.setAttribute("href", e.url); st.W = need; st.draft = e.draft; if(e.draft) badgeStrikeFinish(im); }
   });
   if(BADGE_STRIKE_WATCH.size) badgeStrikeRaf = requestAnimationFrame(badgeStrikeUpgrade);
 }
 /* The token as an <image> for buildUnitBadgeSVG, or null. */
 function badgeStrikeImage(unitName, grey, opts){
-  const W = badgeStrikeSize((opts.px || BADGE_STRIKE_PX) * badgeDpr());
-  const url = badgeStrikeURL(unitName, grey, W);
-  if(!url) return null;
+  const W = badgeStrikeSize((opts.px || badgeDefaultPx()) * badgeDpr());
+  const e = badgeStrikeEntry(unitName, grey, W, true);
+  if(!e) return null;
   const im = document.createElementNS("http://www.w3.org/2000/svg", "image");
   im.setAttribute("class", "badge-raster");
-  im.setAttribute("href", url);
+  im.setAttribute("href", e.url);
   im.setAttribute("preserveAspectRatio", "none");
   /* what the enamel was rendered in (none for grey: no unit colour
      reaches a badge not yet earned) */
   if(!grey) im.setAttribute("data-enamel", String(badgeThemeFor(unitName).p));
-  im.__strike = { unit: unitName, grey, W, tries: 0 };
+  im.__strike = { unit: unitName, grey, W, tries: 0, draft: e.draft };
+  if(e.draft) badgeStrikeFinish(im);
   if(!opts.px) badgeStrikeWatch(im);
   return im;
 }
@@ -52895,7 +52951,7 @@ function warmBadgeStrikes(){
   try{
     if(badgeStrikeBroken) return;
     const units = unitsInTeachingOrder();
-    const W = badgeStrikeSize(BADGE_STRIKE_PX * badgeDpr());
+    const W = badgeStrikeSize(badgeDefaultPx() * badgeDpr());
     const jobs = [];
     units.forEach(u => jobs.push(() => badgeStrikeGeometry(badgeShapeFor(u))));
     units.forEach(u => jobs.push(() => badgeStrikeURL(u, !unitBadgeEarned(u), W)));
@@ -73439,9 +73495,16 @@ function playQueuedBadgeCutscenes(){
   slot.appendChild(buildUnitBadgeSVG(unit, false));
   stageWrap.appendChild(slot);
 
+  /* RENDERED AT THE STAGE'S OWN SIZE (build 318), the .badge-cutscene-stage
+     sum. Measured on screen instead, it was measured mid-entrance at
+     scale(1.5) and drawn a third too big, then shrunk - which samples the
+     keyline into a dotted ring - and it cost a second render as the
+     scene began. */
   const art = document.createElement("div");
   art.className = "badge-cutscene-art";
-  art.appendChild(buildUnitBadgeSVG(unit, true));
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const wideStage = !!(window.matchMedia && window.matchMedia("(min-width:40rem)").matches);
+  art.appendChild(buildUnitBadgeSVG(unit, true, { px: wideStage ? 16 * rem : Math.min(13 * rem, innerWidth * .46) }));
   stageWrap.appendChild(art);
 
   /* The ring is the seat flaring as the badge lands. It is a separate
