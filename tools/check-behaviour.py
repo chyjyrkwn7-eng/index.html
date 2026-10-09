@@ -4185,14 +4185,20 @@ def check_audit_a(br):
       showHome(); await new Promise(r => setTimeout(r, 1200));
       document.querySelectorAll('.app-banner').forEach(e => e.remove());
       const dots = [...document.querySelectorAll('.panel.home .cosmic-orbit-dot.cosmic-badge-tappable')];
-      const hits = dots.map(d => { const r = d.getBoundingClientRect(); const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      /* the dots orbit UNDER the glass bubbles (build 313), so a dot that
+         happens to be passing under one at this instant is rightly the
+         bubble's to tap: only the dots in the open are asked */
+      const open = dots.filter(d => { const r = d.getBoundingClientRect();
+        const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return !(el && el.closest && el.closest('.cosmic-icon-badge') && !d.contains(el)); });
+      const hits = open.map(d => { const r = d.getBoundingClientRect(); const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
         return [[15, 0], [-15, 0], [0, 15], [0, -15]].some(([dx, dy]) => document.elementFromPoint(cx + dx, cy + dy) === d); });
       const paint = dots.map(d => getComputedStyle(d).stroke);
-      return { n: dots.length, hits: hits.filter(Boolean).length, paint };
+      return { n: dots.length, open: open.length, hits: hits.filter(Boolean).length, paint };
     }""")
     # build 313: only the first three show until Void is held (this account
     # has found none), and each is an HTML flare with a 44px tap disc
-    check("the secret-flare dots take a tap 15px from their centre", r["n"] == 3 and r["hits"] == 3, r)
+    check("the secret-flare dots take a tap 15px from their centre", r["n"] == 3 and r["open"] >= 1 and r["hits"] == r["open"], r)
     check("and paint nothing new doing it", all(("0, 0, 0, 0" in x) or x in ("none", "transparent") for x in r["paint"]), r["paint"])
     ctx.close()
 
