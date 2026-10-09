@@ -2776,8 +2776,15 @@
   .fc-back .fc-tag{ color:var(--right); }
   .fc-face .flagbtn.fc-star{ width:2.6rem; height:2.6rem; border-radius:50%; flex:none; margin-left:auto; }
   .fc-face .flagbtn.fc-star .flagicon{ width:1.6rem; height:1.6rem; }
+  /* A SWIPE MAY START ON THE WORDS (build 318). .fc-text scrolls a long
+     question, which makes it a scroll container - and touch-action only
+     carries down to the nearest one, so .fc-mover's pan-y stopped at
+     its edge and a horizontal drag starting on the text was handed to
+     the browser as a pan: pointercancel, the card never moved. pan-y
+     here too keeps the horizontal drag ours and still lets an
+     overflowing question scroll up and down. */
   .fc-text{
-    margin:auto 0; padding:.5rem 0; max-height:100%; overflow-y:auto;
+    margin:auto 0; padding:.5rem 0; max-height:100%; overflow-y:auto; touch-action:pan-y;
     font-family:var(--sans); font-size:clamp(1.3rem, 5.2vw, 1.95rem); line-height:1.33; font-weight:500;
     color:var(--ink); letter-spacing:-.005em;
   }
@@ -19828,10 +19835,6 @@
   /* the two countdowns, side by side; they wrap under the title on a
      narrow phone rather than squeezing it (build 314) */
   .profile-classcard-counts{ display:flex; flex-wrap:wrap; gap:.4rem; justify-content:flex-end; align-items:center; }
-  /* amber, the calendar's own test-day colour */
-  .profile-classcard:not(.profile-friendcard) .profile-classcard-count.profile-classcard-tests{
-    color:#F7CF8C; background:rgba(245,181,77,.12); border-color:rgba(245,181,77,.34);
-  }
   .profile-classcard-counts > [hidden]{ display:none; }
   /* Label in a fixed column, body beside it, so Today and Next line up
      down the left edge whatever length their text runs to. */
@@ -20879,13 +20882,13 @@
   .pf-task-label{ font-size:.98rem; font-weight:800; color:var(--ink); min-width:0; }
   /* your count in the colour, the goal plain (build 316, the mockup's) */
   .pf-task-val{ font-size:.95rem; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; color:rgba(255,255,255,.55); }
-  /* WHAT YOU HAVE GREY, THE GOAL IN THE ROW'S COLOUR, BOTH IN IT ONCE
-     MET OR PAST (build 317): "Grey on left, gold on right, both gold if
-     met, and if it goes over, just the same gold" - the badge row's gold
-     and the level row's blue, the XP bar's own rule. */
-  .pf-task-val .pf-now, .pf-task-val .pf-sep{ font-weight:800; color:rgba(255,255,255,.55); }
-  .pf-task-val .pf-need{ font-weight:800; color:color-mix(in srgb, var(--tc) 85%, #fff); }
-  .pf-task.is-met .pf-task-val .pf-now{ color:color-mix(in srgb, var(--tc) 85%, #fff); }
+  /* BOTH NUMBERS IN THE ROW'S COLOUR, ALWAYS (build 318): "the number on
+     the left can match actually, don't make it grey". It was grey until
+     met (build 317's "Grey on left, gold on right"); now what you have
+     and the goal are the same blue on the level row and the same gold on
+     the badge row, met or not. Only the slash stays quiet. */
+  .pf-task-val .pf-sep{ font-weight:800; color:rgba(255,255,255,.55); }
+  .pf-task-val .pf-now, .pf-task-val .pf-need{ font-weight:800; color:color-mix(in srgb, var(--tc) 85%, #fff); }
   .pf-bar{ grid-column:2 / 4; display:block; height:.42rem; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; }
   .pf-bar > i{ display:block; height:100%; width:var(--w); border-radius:inherit;
     background:linear-gradient(90deg, color-mix(in srgb, var(--tc) 78%, #000), var(--tc));
@@ -62482,10 +62485,8 @@ const RELEASE_NOTES = [
         { icon: buildStarIcon, color: "#FF9EC8", title: "Rare Moves", body: "Every earned character now has a rare move of its own. Keep an eye on yours." }
       ]},
       { label: "Ranks, Levels & Badges", items: [
-        { icon: buildRocketIcon, color: "#FFD84D", title: "Rank-Ups, Reimagined", body: "Ranking up plays a new cutscene: your flares spin faster and faster, the new one lights up, and your whole system takes on its colour. Reaching Supernova is a cutscene of its own, and it leaves its mark on your Home screen." },
         { icon: buildLadderIcon, color: "#E8B84A", title: "Rank Challenges", body: "Every rank has two challenges, a level and a number of badges, and completing both ranks you up. If your XP gets ahead, your level waits until you complete the next rank's challenges. None of that XP is lost: it turns into levels the moment you rank up. Nobody loses a rank." },
-        { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Stats, Profile And The Road Map", body: "Profile shows your rank, level and XP together, the next rank as a checklist, and your badge case, each one tap away. Every rank you have reached glows on the road map, and the Stats page is clearer." },
-        { icon: buildStarIcon, color: "#B8C4D6", title: "New Badges, One Case", body: "All sixteen badges are redrawn, and your briefcase looks the same everywhere: on Profile, on the Badges tab and in the cutscene when you earn one." }
+        { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Stats, Profile And The Road Map", body: "Profile shows your rank, level and XP together, the next rank as a checklist, and your badge case, each one tap away. Every rank you have reached glows on the road map, and the Stats page is clearer." }
       ]},
       { label: "Results", items: [
         { icon: buildTrophyIcon, color: "#4ADE80", title: "Results, Overhauled", body: "Your rewards first, revealed one at a time, with your character reacting to the score, then the full review." }
@@ -72442,23 +72443,19 @@ function showIntroPopup(){
       card.appendChild(note);
     }
   }catch(e){}
-  /* BUILD 317 adds three rows to Madison's list: the rank-up cutscenes,
-     Home's taps and the badges. Her rows keep her order. The rank-ups
-     row is about the cutscene only - "Ranks and levels box in the what's
-     new stuff does not need to be there" (build 314) still stands. */
+  /* BUILD 317 added three rows to Madison's list: the rank-up cutscenes,
+     Home's taps and the badges. Her rows keep her order. BUILD 318 took
+     two of them back off: "remove the rank ups reimagined, the new badges
+     and case thing" - the rank-up and badge rows are gone here and from
+     RELEASE_NOTES[0], and "Ranks and levels box in the what's new stuff
+     does not need to be there" (build 314) still stands. */
   [
-    ["M12 2.6 19.4 10H15v5H9v-5H4.6L12 2.6ZM6 17h12v1.8H6V17Zm0 3.2h12V22H6v-1.8Z",
-     "#E8B84A", "Rank-ups, reimagined",
-     "A new cutscene when you rank up, and one of its own when you reach Supernova."],
     ["M12 2.5l1.9 5.9 5.9 1.9-5.9 1.9-1.9 5.9-1.9-5.9-5.9-1.9 5.9-1.9L12 2.5Zm6.5 12.5.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z",
      "#FFD84D", "Hundo effects",
      "Earn new screen effects as your hundos climb: Fireworks, Underwater, Bubbles and a UFO. Pick yours in Customize."],
     ["M10.5 6.5a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM19 3.2a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2Z",
      "#7FC8FF", "A Home you can tap",
      "Tap the flares and the planet on Home to see what each one is."],
-    ["M12 2l8 3v6.2c0 5-3.4 9.1-8 10.8-4.6-1.7-8-5.8-8-10.8V5l8-3Zm0 5.2-1.5 3.1-3.4.5 2.5 2.4-.6 3.4 3-1.6 3 1.6-.6-3.4 2.5-2.4-3.4-.5L12 7.2Z",
-     "#B8C4D6", "New badges and case",
-     "All sixteen badges redrawn, in one briefcase everywhere."],
     ["M6 2h8.5L20 7.5V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 1.8V8h4.2L14 3.8ZM7.5 11v1.6h9V11h-9Zm0 3.4V16h9v-1.6h-9Zm0 3.4v1.6h6v-1.6h-6Z",
      "#FF7A59", "Penal Code: slides 55\u2013124",
      "Penal Code has a second version with only the questions from slides 55\u2013124. Pick it when you choose the unit."],
@@ -77013,7 +77010,36 @@ function render(){
     swipeIcon.append(chev1, chev2);
     next.appendChild(swipeIcon);
   }
-  next.addEventListener("click", advanceWithSlide);
+  /* A TAP THAT STARTS ON THE BUTTON COUNTS, EVEN IF IT RISES OUT FROM
+     UNDER THE FINGER (build 318). It rises for .62s, fast at first, and a
+     click is only delivered where the finger LIFTS: a finger that landed
+     on its lower half and stayed down for a normal 150ms tap came up
+     below a button that had moved on, so "See results" ignored a tap on
+     a button plainly on screen. So a press on the button that lifts as a
+     tap (no drag, not cancelled) somewhere it no longer covers is taken
+     here instead. When it still covers the spot, its own click follows
+     as usual, and `tapTook` keeps the two from ever both firing. */
+  let tapDown = null, tapTook = false;
+  next.addEventListener("pointerdown", e => {
+    if(e.button > 0) return;
+    tapDown = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    const up = ev => {
+      if(ev.pointerId !== tapDown?.id) return;
+      document.removeEventListener("pointerup", up, true);
+      document.removeEventListener("pointercancel", up, true);
+      const d = tapDown; tapDown = null;
+      if(ev.type !== "pointerup" || !next.isConnected || next.hidden) return;
+      if(Math.hypot(ev.clientX - d.x, ev.clientY - d.y) > 12) return;
+      const r = next.getBoundingClientRect();
+      if(ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom) return;
+      tapTook = true;
+      setTimeout(() => { tapTook = false; }, 500);
+      advanceWithSlide();
+    };
+    document.addEventListener("pointerup", up, true);
+    document.addEventListener("pointercancel", up, true);
+  });
+  next.addEventListener("click", () => { if(tapTook){ tapTook = false; return; } advanceWithSlide(); });
   foot.appendChild(next);
   /* THE DAILY QUESTION'S BUTTON NEVER MOVES (build 317): "ensure the
      buttons on the bottom of that screen stay in the same place so they
@@ -99999,17 +100025,13 @@ function showProfile(defaultTab){
   /* Off by choice, not by accident: a countdown to graduation is either
      the best thing on the screen or the worst, depending on the week. */
   classCount.hidden = theme.showClassDaysLeft === false;
-  /* AND THE TESTS LEFT BESIDE IT (build 314) - every numbered test, the
-     finals and the state test still ahead (testsRemaining). Same pill,
-     same switch: it is the same kind of countdown. */
-  const testsLeftNow = testsRemaining();
-  const testCount = document.createElement("span");
-  testCount.className = "profile-classcard-count profile-classcard-tests";
-  testCount.textContent = testsLeftNow + (testsLeftNow === 1 ? " test left" : " tests left");
-  testCount.hidden = theme.showClassDaysLeft === false;
+  /* NO TESTS-LEFT PILL (build 318): "Remove the amount of tests left as
+     well." Build 314 put one beside the class days; the class days pill
+     stays on its own. testsRemaining() is kept - the calendar marks the
+     same exam days it counted. */
   const counts = document.createElement("span");
   counts.className = "profile-classcard-counts";
-  counts.append(classCount, testCount);
+  counts.append(classCount);
   classHead.append(classTitle, counts);
   classSect.appendChild(classHead);
 

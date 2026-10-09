@@ -18189,3 +18189,49 @@ fails a 1.25-unit opening (worst 5%, the old cross 10%); and the coin at
 rest gains no outline from its slices (47 changed pixels against 1299).
 `check_b242` and the Profile squeeze check now read the name off the
 case's side.
+
+### Build 318 (builder f) - What's New, the challenge rows, the curve question, two touch bugs
+
+- **What's New lost two rows**: *"remove the rank ups reimagined, the new
+  badges and case thing"*. Gone from `showIntroPopup()` ("Rank-ups,
+  reimagined", "New badges and case") and from `RELEASE_NOTES[0]`
+  ("Rank-Ups, Reimagined", "New Badges, One Case"). Eight rows now: fits a
+  17 Pro Max (card 83-901 of 956) and an iPad Pro 11; with the "Your level
+  was adjusted" note the phone overlay scrolls (1161 of 956) and Got it is
+  reachable.
+- **A challenge row's two numbers are both its colour** (`.pf-now` and
+  `.pf-need`, `--tc` at 85%), met or not: *"the number on the left can
+  match actually, don't make it grey"*. Only the slash is quiet. This
+  reverses 317's "grey on left"; check-curve asserts it.
+- **No tests-left pill on the class card**: *"Remove the amount of tests
+  left as well."* `testsRemaining()` stays (the calendar marks the days it
+  counted). Section 104 now asserts the pill is absent.
+- **"It took 50k XP to get level 80" is the curve, not a bug.** The figure
+  is the Profile bar at the cap, "41,551 / 48,022 XP": XP since 80 against
+  what an 81st level would cost (`topInto/topSpan`, build 317). The curve
+  is still build 313's, by Madison's own decision in 314 (the 197k re-fit
+  was rejected): 79->80 costs 44,321, level 80 is 598,449 in all (21:
+  9,912 · 30: 22,924 · 45: 58,046 · 50: 75,181 · 60: 138,980 · 70:
+  281,237). The screenshot fixture carried 640,000 XP.
+- **A swipe may start on a flashcard's words.** `.fc-text` is
+  `overflow-y:auto`, so it is a scroll container, and touch-action only
+  carries down to the nearest one: `.fc-mover`'s `pan-y` stopped at its
+  edge and a horizontal drag on the text was a browser pan (pointercancel;
+  in Chromium a swipe right even went Back in history). `.fc-text` carries
+  `touch-action:pan-y` itself. Any new scrolling box inside the card needs
+  the same, or swipes starting on it die.
+- **A tap on the rising Next / See results always counts.** A click lands
+  where the finger LIFTS; the button rises .62s, fast at first, so a finger
+  down on its lower half for an ordinary 150ms tap lifted below it and the
+  tap was lost (reproduced: lower-edge taps 1.02-1.10s after answering, held
+  180ms, all missed). `render()` now takes a press on `#nextbtn` that lifts
+  as a tap (under 12px, not cancelled) off the button's current box;
+  `tapTook` swallows the native click if one also arrives. Taps that start
+  BEFORE the button is on screen (the first .78s it is below the fold at
+  opacity 0) still do nothing, by design.
+- **Gates.** check-behaviour `318f-a` (swipe on the text both ways, both
+  reference devices; an overflowing question still scrolls - fail on
+  219bfea) and `318f-b` (the rise paused part-way with its own Web
+  Animation, finger down near the bottom edge, rise finished under it,
+  finger up: results must open - fails on 219bfea; a settled tap still
+  moves exactly one question).
