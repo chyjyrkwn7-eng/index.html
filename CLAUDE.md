@@ -15637,6 +15637,68 @@ disagree with it.
     does). Fixtures that put a held rank past a NUMBER `rankMapSeen` and
     then go to Home or Profile now meet the lock or the scene; the shared
     `USED_ACCOUNT` leaves `rankMapSeen` null, so it does not.
+- **BUILD 318: THE APP TAPS THE RANK LINE FOR YOU; THE LOADING SCREEN
+  FADES.** *"when clicking the profile button, it needs to be like normal,
+  then the cutscene will need to click the rank button but it will do it
+  for you"*. Profile is up as on any other day for `RANKUP_TAP_AT` (1.2s),
+  then `rankUpSceneTap()`: a touch marker (`.ru-tap`, fixed on `<body>`,
+  above `.ru-blocker`) glides onto the rank emblem on `.pf-standing`,
+  presses (`.pf-standing.ru-pressed`, a ring in the new rank's colour),
+  "Opening your rank..." (`.ru-tap-note`) under the line - then LOADING.
+  `rankUpTapClear()` takes the pieces off from the loading screen and from
+  `rankUpSceneEnd()`. Reduce motion: marker and note held, no glide.
+  - **The loading screen never faded out**: its `ru-fade-in` fill (`both`)
+    outranked `.is-leaving{opacity:0}`, so it cut to the map 440ms later.
+    The way out is an animation of its own (`ru-fade-out`) and the screen
+    is removed on its `animationend` (1.6s fallback), not a timer - the map
+    lays out under it in the same frames, and a timer could take it away
+    before its first faded frame on a busy phone.
+  - `check_b317_rankup` asserts the tap (on the line, pressed, the note,
+    Profile up, no loading yet), loading a beat after it, the fade sampled
+    every frame (3+ partial frames) and nothing of the tap left behind.
+- **BUILD 318: HOME'S PROFILE TAB.** *"the yellow ring pulses over onto
+  the main button, I almost feel like the profile button is not centered
+  perfectly between the home button and the leaderboard button"*.
+  - `.ru-call::before` rippled out to 1.22x with a 14px glow, over the
+    Home tab's pill and past the bar. It breathes inside the tab now
+    (.9x-1x of a box 2px in, a 5px glow).
+  - Measured, Profile's icon WAS off: tabs are as wide as their labels
+    and "Leaderboard" is the widest, so it sat 77.6px from Home and 98.9px
+    from Leaderboard on a 17 Pro Max (99.3 / 125.6 on every tablet and
+    laptop width). `centreProfileTab()` (beside the bubble code) nudges it
+    by relative `left` - its rect, taps, bubble and drag go with it, no
+    reflow - from the bar as laid out, on the row's and the tabs'
+    ResizeObserver. Equal to 0.02px from 320px to 1512px. Equal-width
+    columns were measured and rejected: the bar would grow ~40px and no
+    longer fit a 375/393px phone.
+- **BUILD 318: THE CHARGE AND THE RELEASE ON THE NEW FLARE.** *"Before the
+  spin the flare pulses with the white thing ... it's also not centered
+  ... Same thing for the after the spin one"*. The light was white (the
+  old pale look) and sat still on the SLOT while the bubble floats inside
+  it (`cosmic-float-a/b/c`, up to 8px): 6.6-7.5px off the flare at 3x.
+  `flareFx()` in `playRankUpScene` puts two layers on the slot (`.rank-chg`:
+  a corona of the rank's colour under the glass, thin rings over it), each
+  given a copy of the bubble's own float animation on the same clock
+  (`followFloat`), so they are centred within 0.1px in every frame. Before
+  the spin six rings close IN, sooner each time, the flare takes each with
+  a small swell and the corona grows (charging); after it rings spread
+  OUT at each breath of the wind-up and the corona settles brighter into
+  the flash (releasing); the after-glow while it slows is the same
+  corona. This replaces the second evolution round's "pale light, not the
+  colour" - asked against in this round. `check_b317_evolve` asserts the
+  rank colour, the centring (every frame, 1px), rings closing in and
+  spreading out. **Anything laid on a Home bubble that must stay on it
+  has to ride its float** - or sit inside it.
+- **BUILD 318: ONE DIM ACROSS THE SCENE BRIDGE.** The bridge's .72 faded
+  out OVER the card's own .72 (a 9-level dip on a phone for a frame, then
+  easing back), and a bridged card's dim had `transition:none`, so it went
+  in one frame when the card left. `claimSceneBridge(host)`: the card takes
+  the dim in the same frame and the bridge's own dim goes at once; a pool
+  of colour, if the bridge has one, is moved INTO the card under it
+  (`.is-handed`) and swells away there. `.rs-spot.is-bridged.is-leaving`
+  fades like any card. Shared by every pop-up, so the secret flare
+  character cards get it too. `check_b318_bridge` measures the luminance
+  of a band the card never covers, frame by frame, for both bridges.
 - **THE RANK-UP CUTSCENE WHIRLS, AND ITS FLARE LIGHTS FROM THE MIDDLE
   (build 317).** Madison: *"the planet lights up instantly, all the
   planets need to spin on their axis ring thing in a circle, during this
