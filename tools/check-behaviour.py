@@ -7154,8 +7154,9 @@ def check_b297(br):
             const s = st && st.getBoundingClientRect();
             const bs = [...document.querySelectorAll('.pausepanel .actions button')].map(b => b.getBoundingClientRect());
             out.pause = s ? { off: Math.round(Math.abs((s.top + s.height / 2) - innerHeight / 2)),
-              stacked: bs.length === 2 && bs[1].top > bs[0].bottom - 1,
-              sameWidth: bs.length === 2 && Math.abs(bs[0].width - bs[1].width) < 1,
+              /* two buttons, or three since build 319 (Save and exit) */
+              stacked: bs.length >= 2 && bs.every((b, i) => i === 0 || b.top > bs[i - 1].bottom - 1),
+              sameWidth: bs.length >= 2 && bs.every(b => Math.abs(b.width - bs[0].width) < 1),
               centred: bs.every(b => Math.abs((b.left + b.width / 2) - innerWidth / 2) < 2) } : null;
             /* the exit confirmation puts its buttons exactly where Pause's were */
             /* UNROUNDED, within half a pixel (build 308). Both screens centre
@@ -7165,10 +7166,13 @@ def check_b297(br):
                whole pixels and still fails. */
             const at = () => [...document.querySelectorAll('.pausepanel .actions button')].map(b => { const q = b.getBoundingClientRect(); return [+q.left.toFixed(2), +q.top.toFixed(2), +q.width.toFixed(2)]; });
             const before = at();
-            [...document.querySelectorAll('.pausepanel button')].find(b => /Exit/.test(b.textContent)).click(); await wait(800);
+            /* Exit test, Quit test since build 319 - the last button */
+            [...document.querySelectorAll('.pausepanel .actions button')].pop().click(); await wait(800);
             const conf = at();
+            /* the confirmation's buttons on Pause's first ones (it has two, Pause
+               has three where Save and exit is offered) */
             out.confirm = { title: (document.querySelector('.pausepanel .qnum') || {}).textContent, before, conf,
-              same: before.length === conf.length && before.every((p, i) => p.every((v, j) => Math.abs(v - conf[i][j]) < 0.5)) };
+              same: conf.length >= 2 && conf.every((p, i) => before[i] && p.every((v, j) => Math.abs(v - before[i][j]) < 0.5)) };
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
         if r.get("threw"):
@@ -7179,7 +7183,7 @@ def check_b297(br):
               pz.get("stacked") and pz.get("sameWidth") and pz.get("centred") and pz.get("off", 99) <= 6, pz)
         cf = r.get("confirm") or {}
         check("%dx%d: the exit confirmation's buttons sit exactly where Pause's do" % (w, h),
-              cf.get("same") is True and "Exit" in str(cf.get("title")), cf)
+              cf.get("same") is True and str(cf.get("title")).endswith("?"), cf)
         ctx.close()
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));

@@ -2674,6 +2674,25 @@
   .resume-sub{ margin:0 0 1.2rem; font-size:.92rem; line-height:1.45; color:var(--soft); }
   .resume-actions{ display:flex; flex-direction:column; gap:.6rem; }
   .resume-actions .next{ width:100%; }
+  /* What the saved test is (build 319): mode, units, how far through, on
+     one inset block, so the two choices under it are about something you
+     can see. The bar is a transform, never a width (the smooth-bars rule). */
+  .resume-facts{
+    margin:.2rem 0 1rem; padding:.85rem 1rem .8rem; border-radius:16px; text-align:left;
+    background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.08);
+  }
+  .resume-mode{ margin:0 0 .15rem; font-size:.72rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); }
+  .resume-units{ margin:0 0 .7rem; font-size:1rem; font-weight:700; line-height:1.3; color:var(--ink); overflow-wrap:break-word; }
+  .resume-bar{ position:relative; height:6px; border-radius:999px; overflow:hidden; clip-path:inset(0 round 999px); background:rgba(255,255,255,.1); }
+  .resume-bar-fill{ position:absolute; inset:0; transform-origin:left center; border-radius:inherit; background:var(--accent); }
+  .resume-where{ margin:.5rem 0 0; font-size:.86rem; font-weight:600; color:var(--soft); font-variant-numeric:tabular-nums; }
+  .resume-clock{ margin:.15rem 0 0; font-size:.8rem; color:var(--soft); font-variant-numeric:tabular-nums; }
+  .resume-card.is-confirm .resume-sub{ margin-bottom:1.35rem; }
+  @media (min-width:40rem){
+    .resume-card{ width:min(27rem, 100%); padding:1.8rem 1.7rem 1.5rem; }
+    .resume-title{ font-size:1.35rem; }
+    .resume-units{ font-size:1.1rem; }
+  }
   /* ---- FLASHCARDS (build 303) - see showFlashcards() ---- */
   .wrap:has(.fc-screen) #count{ display:none; }
   .wrap:has(.fc-screen) .meter{ margin-bottom:1.1rem; }
@@ -39850,47 +39869,167 @@ const testModeLabelEl = document.getElementById("testmodelabel");
    older than RUN_SESSION_MAX_AGE_MS. */
 const RUN_SESSION_KEY = "class26e.runsession.v1";
 const RUN_SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+/* ---- SAVE A TEST FOR LATER (build 319) ----------------------------------
+   "Let's add the ability to pause a test and come back somehow ... when
+   hitting start studying, it would give a popup of the test you left and
+   saved asking if you want to rejoin or if you want to a new one ... You
+   can't save two or more at the same time ... This function won't be
+   available for review or virtual room of course."
+   It is the same slot as the interrupted run above, with `saved: true`:
+   - Pause has three buttons: Resume, Save and exit, Quit test. Save and
+     exit writes the session marked saved and goes to Home, which is
+     ordinary - no offer on Home, and Home's unlock cards are NOT held
+     (an interrupted run holds them; a saved one could sit for days).
+   - Start Studying (startStudying) offers whatever is in the slot: Resume
+     test, or Start a new test, which asks once and then deletes it.
+   - One slot, so one saved test. Only a Drill or Exam run started from
+     the unit picker (or its retake) owns the slot (`runSaveSlot`); the
+     daily question and a Virtual Room never write to it, never clear it,
+     and never show Save and exit.
+   - A saved test does not expire. An interrupted one still does (24h),
+     and turning its offer down ("Not now") keeps it as a saved test.
+   - It must finish exactly as if it had never been put away. Everything
+     the results read is in the session; the study log is credited for
+     the first half at the save and only for the rest at the end
+     (`studyPriorMs`); what the first half unlocked is announced once,
+     on Home, because the session's "as the run began" snapshots are
+     moved to the moment it was saved.
+   - Across an update the questions are found again by their KEYS. If one
+     is gone or its choices changed, the saved test cannot be put back as
+     it was: it is dropped and Start Studying says so, once
+     (SAVED_TEST_DROPPED_KEY). */
+const SAVED_TEST_DROPPED_KEY = "class26e.savedtest.dropped";
+let runSaveSlot = false;
+let runStudyPriorMs = 0;
 function runSessionSavable(){
-  return testInProgress && order.length > 0 && runLabel !== "Daily question" &&
+  return runSaveSlot && testInProgress && order.length > 0 && runLabel !== "Daily question" &&
          !inVirtualRoom && !vroomCode && !raceTimed && (runMode === "drill" || runMode === "exam");
 }
-function saveRunSession(){
+/* `asSaved === true` only from Save and exit / Not now - the function is
+   also an event listener, and an event object must not count as yes. */
+function saveRunSession(asSaved){
   try{
-    if(!runSessionSavable()){ return; }
-    if(pos >= order.length) return;
+    if(!runSessionSavable()){ return false; }
+    if(pos >= order.length) return false;
+    const saved = asSaved === true;
     const now = Date.now();
     const at = paused && pauseStartedAt ? pauseStartedAt : now;
+    /* the question on screen has been timed since it opened; that time
+       is part of the run (qClockStop() books it at the end otherwise) */
+    const qt = Object.assign({}, qTimeMs);
+    if(qClockQi != null) qt[qClockQi] = (qt[qClockQi] || 0) + Math.max(0, at - qClockAt);
+    const qkeys = {};
+    order.concat(lastRunPool, originalTestPool).forEach(i => { if(typeof i === "number" && KEYS[i] != null) qkeys[i] = KEYS[i]; });
+    let lockedNow = runStartLocked, bannersNow = runStartBanners;
+    if(saved){
+      try{ lockedNow = lockedCharacterSet(); bannersNow = earnedBannerSet(); }catch(e){}
+    }
     const s = {
-      v: 1, at: now, build: APP_BUILD,
+      v: 1, at: now, build: APP_BUILD, saved: saved, savedAt: saved ? now : null, qkeys,
+      studyPriorMs: runStudyPriorMs || 0,
+      flarePlan: (mysteryAppearsAtPos >= 0 && mysteryColorThisRun && !mysteryFoundThisSession)
+        ? { at: mysteryAppearsAtPos, color: mysteryColorThisRun, left: mysteryLeftFrac } : null,
       cfg: { mode: cfg.mode, units: cfg.units.slice(), versions: Object.assign({}, cfg.versions || {}),
              source: cfg.source, size: cfg.size, timer: cfg.timer, timerMinutes: cfg.timerMinutes,
              recall: cfg.recall, shuffle: cfg.shuffle },
       order: order.slice(), pos, attempts, picked, firstPick, layout, timedOutSet,
       runLabel, runMode, isMissedRetake, practiceTestMinutes, runTrackable, runExamFeedback,
-      runLiveStreak, qTimeMs, cleared, lastWrong, hinted, revealed,
+      runLiveStreak, qTimeMs: qt, cleared, lastWrong, hinted, revealed,
       elapsedMs: runStartTime ? Math.max(0, at - runStartTime) : 0,
       timerLeftMs: (timerDeadline && (cfg.timer === "down" || practiceTestMinutes != null)) ? Math.max(0, timerDeadline - at) : null,
-      runStartLocked: runStartLocked ? Array.from(runStartLocked) : null,
-      runStartBanners: runStartBanners ? Array.from(runStartBanners) : null,
+      runStartLocked: lockedNow ? Array.from(lockedNow) : null,
+      runStartBanners: bannersNow ? Array.from(bannersNow) : null,
       runStartHundos: typeof runStartHundos === "number" ? runStartHundos : null,
       lastRunPool: lastRunPool.slice(), lastRunLabel, originalTestPool: originalTestPool.slice(), originalTestLabel,
       /* a secret flare found in it, for its own results (build 318) */
       flareFound: mysteryFoundThisSession ? mysteryColorThisRun : null, flareAll: !!flareCompletedVoidThisSession
     };
     localStorage.setItem(RUN_SESSION_KEY, JSON.stringify(s));
-  }catch(e){}
+    return true;
+  }catch(e){ return false; }
 }
 function clearRunSession(){ try{ localStorage.removeItem(RUN_SESSION_KEY); }catch(e){} }
+/* A saved test that could not survive an update: dropped, and said once. */
+function dropSavedTest(){
+  clearRunSession();
+  try{ localStorage.setItem(SAVED_TEST_DROPPED_KEY, "1"); }catch(e){}
+}
+function takeSavedTestDropped(){
+  try{
+    if(!localStorage.getItem(SAVED_TEST_DROPPED_KEY)) return false;
+    localStorage.removeItem(SAVED_TEST_DROPPED_KEY);
+    return true;
+  }catch(e){ return false; }
+}
+/* The session's questions as THIS build numbers them. Every question it
+   names is looked up by its KEY (the identity its history is stored
+   under); a question that is gone, or whose number of choices changed so
+   the saved choice order no longer fits, cannot be put back as it was.
+   Returns the session renumbered, or null. A session from before build
+   319 has no keys and is checked by index alone, as it always was. */
+function remapRunSession(s){
+  const valid = i => typeof i === "number" && !!QUESTIONS[i];
+  const fits = (lay, qi) => !lay || (Array.isArray(lay) && lay.length === (QUESTIONS[qi].choices || []).length &&
+    lay.slice().sort((a, b) => a - b).every((v, k) => v === k));
+  if(!s.qkeys || typeof s.qkeys !== "object"){
+    return s.order.every(valid) ? s : null;
+  }
+  const byKey = new Map();
+  KEYS.forEach((k, i) => { if(!byKey.has(k)) byKey.set(k, i); });
+  const map = {};
+  for(const old of Object.keys(s.qkeys)){
+    const now = byKey.get(s.qkeys[old]);
+    if(now == null) return null;
+    map[old] = now;
+  }
+  const to = i => map[i] != null ? map[i] : (s.qkeys[i] == null && valid(i) ? i : null);
+  const order = s.order.map(to);
+  if(order.some(i => i == null)) return null;
+  const listOf = a => Array.isArray(a) ? a.map(to).filter(i => i != null) : null;
+  const objOf = o => { const out = {}; Object.keys(o || {}).forEach(k => { const n = to(Number(k)); if(n != null) out[n] = o[k]; }); return out; };
+  const out = Object.assign({}, s, {
+    order, lastRunPool: listOf(s.lastRunPool), originalTestPool: listOf(s.originalTestPool),
+    attempts: objOf(s.attempts), picked: objOf(s.picked), firstPick: objOf(s.firstPick),
+    layout: objOf(s.layout), timedOutSet: objOf(s.timedOutSet), qTimeMs: objOf(s.qTimeMs)
+  });
+  if(!order.every(qi => fits(out.layout[qi], qi))) return null;
+  /* the units it was built from must still be units */
+  const units = (s.cfg && s.cfg.units) || [];
+  if(units.length){
+    const all = topicsIn(QUESTIONS);
+    if(units.some(u => all.indexOf(u) < 0)) return null;
+  }
+  return out;
+}
 function readRunSession(){
   try{
     const raw = localStorage.getItem(RUN_SESSION_KEY);
     if(!raw) return null;
     const s = JSON.parse(raw);
     if(!s || s.v !== 1 || !Array.isArray(s.order) || !s.order.length) return null;
-    if(Date.now() - (s.at || 0) > RUN_SESSION_MAX_AGE_MS){ clearRunSession(); return null; }
-    if(s.order.some(i => typeof i !== "number" || !QUESTIONS[i])){ clearRunSession(); return null; }
-    return s;
+    if(!s.saved && Date.now() - (s.at || 0) > RUN_SESSION_MAX_AGE_MS){ clearRunSession(); return null; }
+    const m = remapRunSession(s);
+    if(!m){ if(s.saved) dropSavedTest(); else clearRunSession(); return null; }
+    return m;
   }catch(e){ return null; }
+}
+/* An interrupted run that was turned down for now becomes a saved test:
+   it stops holding Home's cards and waits for Start Studying. */
+function markRunSessionSaved(){
+  try{
+    const raw = localStorage.getItem(RUN_SESSION_KEY);
+    if(!raw) return;
+    const s = JSON.parse(raw);
+    if(!s || s.saved) return;
+    s.saved = true; s.savedAt = Date.now();
+    try{ s.runStartLocked = Array.from(lockedCharacterSet()); s.runStartBanners = Array.from(earnedBannerSet()); }catch(e){}
+    if(!s.qkeys){
+      const qkeys = {};
+      (s.order || []).concat(s.lastRunPool || [], s.originalTestPool || []).forEach(i => { if(typeof i === "number" && KEYS[i] != null) qkeys[i] = KEYS[i]; });
+      s.qkeys = qkeys;
+    }
+    localStorage.setItem(RUN_SESSION_KEY, JSON.stringify(s));
+  }catch(e){}
 }
 function resumeRunSession(s){
   ["mode", "units", "versions", "source", "size", "timer", "timerMinutes", "recall", "shuffle"].forEach(k => {
@@ -39899,6 +40038,10 @@ function resumeRunSession(s){
   clearTimeout(choicePressTimer); choicePressTimer = null; choiceFx = null; nextRisenFor = null;
   order = s.order.slice();
   testInProgress = true;
+  runSaveSlot = true;
+  /* the part of the run the study log was already credited with at Save
+     and exit (build 319) - flushStudyTime() leaves it out at the end */
+  runStudyPriorMs = Math.max(0, Number(s.studyPriorMs) || 0);
   lastRunPool = (s.lastRunPool || s.order).slice(); lastRunLabel = s.lastRunLabel || null;
   originalTestPool = (s.originalTestPool || s.order).slice(); originalTestLabel = s.originalTestLabel || null;
   practiceTestMinutes = s.practiceTestMinutes == null ? null : s.practiceTestMinutes;
@@ -39913,6 +40056,18 @@ function resumeRunSession(s){
   const owedFind = s.flareFound ? flareFindOwed(s.flareFound) : null;
   if(owedFind && !(owedFind.s >= 1)){
     mysteryColorThisRun = s.flareFound; mysteryFoundThisSession = true; flareCompletedVoidThisSession = !!s.flareAll;
+  }
+  /* A secret flare this run was going to show further on still shows
+     there (build 319): put away and brought back, the run is the same
+     run. Only while that colour is still the one being looked for. */
+  const plan = s.flarePlan;
+  if(!s.flareFound && plan && typeof plan.at === "number" && plan.at >= (s.pos | 0) && plan.at < s.order.length){
+    try{
+      if(nextNeededMysteryColor() === plan.color){
+        mysteryColorThisRun = plan.color; mysteryAppearsAtPos = plan.at;
+        if(typeof plan.left === "number") mysteryLeftFrac = plan.left;
+      }
+    }catch(e){}
   }
   attempts = s.attempts || {}; picked = s.picked || {}; firstPick = s.firstPick || {};
   layout = s.layout || {}; timedOutSet = s.timedOutSet || {};
@@ -39959,13 +40114,16 @@ function resumeRunSession(s){
 let resumeOfferShown = false;
 function scheduleResumeOffer(){
   if(resumeOfferShown || testInProgress) return;
-  if(!readRunSession()) return;
+  const s = readRunSession();
+  /* a SAVED test waits for Start Studying (build 319); only a run the app
+     lost is offered on Home */
+  if(!s || s.saved) return;
   resumeOfferShown = true;
   setTimeout(() => showResumeOffer(0), 1500);
 }
 function showResumeOffer(tries){
   const s = readRunSession();
-  if(!s || testInProgress) return;
+  if(!s || s.saved || testInProgress) return;
   if(!stage.querySelector('[data-screen="home"]')) return;
   /* After a splash, a loading overlay or a tour - never on top of one. */
   if(document.getElementById("splashscreen") || document.getElementById("genprofile-overlay") ||
@@ -39973,33 +40131,160 @@ function showResumeOffer(tries){
     if(tries < 30) setTimeout(() => showResumeOffer(tries + 1), 800);
     return;
   }
+  showRunOffer(s, "home");
+}
+/* What the test in the slot is, in the words the Pause screen uses. */
+function runOfferFacts(s){
+  const c = s.cfg || {};
+  const all = topicsIn(QUESTIONS);
+  const us = c.units || [];
+  const names = us.map(u => (c.versions && c.versions[u] === "test" && UNIT_TEST_VERSIONS[u]) ? UNIT_TEST_VERSIONS[u].label : u);
+  const units = (us.length === 0 || us.length === all.length) ? "All units"
+    : names.length <= 2 ? names.join(" · ") : names.length + " units";
+  const mode = s.runMode === "exam" ? "Exam" : (s.isMissedRetake ? "Retake" : "Drill");
+  const n = s.order.length, at = Math.min((s.pos | 0) + 1, n);
+  return { mode, units: units + (c.source === "flagged" ? " (starred questions)" : ""),
+    where: "Question " + at + " of " + n, frac: n ? (s.pos | 0) / n : 0,
+    clock: s.timerLeftMs != null ? formatClock(s.timerLeftMs) + " left on the timer" : "" };
+}
+/* THE ONE POP-UP FOR THE TEST IN THE SLOT (builds 304, 319).
+   via "home": a run the app lost, offered once on Home - Resume test, or
+   Not now, which keeps it as a saved test for Start Studying.
+   via "start": Start Studying with a test in the slot - Resume test, or
+   Start a new test, which asks once and then deletes it. A tap outside
+   closes it and leaves everything as it was. */
+function showRunOffer(s, via){
   document.getElementById("resume-offer")?.remove();
   const wrap = document.createElement("div");
   wrap.id = "resume-offer"; wrap.className = "resume-offer";
   wrap.setAttribute("role", "dialog"); wrap.setAttribute("aria-modal", "true");
+  wrap.setAttribute("aria-labelledby", "resume-title");
   const card = document.createElement("div"); card.className = "resume-card";
-  const h = document.createElement("p"); h.className = "resume-title"; h.textContent = "Your test was interrupted";
-  const units = (s.cfg && s.cfg.units && s.cfg.units.length)
-    ? (s.cfg.units.length === 1 ? s.cfg.units[0] : s.cfg.units.length + " units") : "All units";
-  const mode = s.runMode === "exam" ? "Exam" : (s.isMissedRetake ? "Retake" : "Drill");
+  wrap.appendChild(card);
+  const close = () => {
+    if(!wrap.isConnected) return;
+    wrap.classList.remove("show");
+    setTimeout(() => wrap.remove(), 220);
+  };
+  const btn = (text, cls, id, fn) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = cls; b.textContent = text;
+    if(id) b.id = id;
+    b.addEventListener("click", fn);
+    return b;
+  };
+  const resume = () => { close(); const fresh = readRunSession(); if(fresh) resumeRunSession(fresh); };
+  const offer = () => {
+    const f = runOfferFacts(s);
+    const h = document.createElement("p"); h.className = "resume-title"; h.id = "resume-title";
+    h.textContent = s.saved ? "You have a saved test" : "Your test was interrupted";
+    const facts = document.createElement("div"); facts.className = "resume-facts";
+    const mode = document.createElement("p"); mode.className = "resume-mode"; mode.textContent = f.mode;
+    const units = document.createElement("p"); units.className = "resume-units"; units.textContent = f.units;
+    const bar = document.createElement("div"); bar.className = "resume-bar";
+    const fill = document.createElement("span"); fill.className = "resume-bar-fill";
+    fill.style.transform = "scaleX(" + Math.max(0, Math.min(1, f.frac)).toFixed(3) + ")";
+    bar.appendChild(fill);
+    const where = document.createElement("p"); where.className = "resume-where"; where.textContent = f.where;
+    facts.append(mode, units, bar, where);
+    if(f.clock){ const ck = document.createElement("p"); ck.className = "resume-clock"; ck.textContent = f.clock; facts.appendChild(ck); }
+    const sub = document.createElement("p"); sub.className = "resume-sub";
+    sub.textContent = via === "start" ? "Pick up where you left off, or start a new test." : "Pick up where you left off?";
+    const actions = document.createElement("div"); actions.className = "resume-actions";
+    const go = btn("Resume test", "next", "resume-go", resume);
+    const other = via === "start"
+      ? btn("Start a new test", "next ghost", "resume-new", confirmNew)
+      : btn("Not now", "next ghost", "resume-later", () => {
+          markRunSessionSaved(); close();
+          /* Anything that run had earned was held for its results; kept
+             for later, Home announces it now (build 319). */
+          setTimeout(() => { try{ homeUnlocksAfterSync(); }catch(e){} }, 400);
+        });
+    actions.append(go, other);
+    card.replaceChildren(h, facts, sub, actions);
+    card.classList.remove("is-confirm");
+    focusQuietly(go);
+  };
+  const confirmNew = () => {
+    const h = document.createElement("p"); h.className = "resume-title"; h.id = "resume-title";
+    h.textContent = "Start a new test?";
+    const sub = document.createElement("p"); sub.className = "resume-sub";
+    sub.textContent = "Your saved test will be deleted. You will not be able to resume it.";
+    const actions = document.createElement("div"); actions.className = "resume-actions";
+    const keep = btn("Keep saved test", "next", "resume-keep", offer);
+    const del = btn("Delete and start new", "next danger", "resume-delete", () => {
+      clearRunSession(); close(); showModeSelect();
+    });
+    actions.append(keep, del);
+    card.replaceChildren(h, sub, actions);
+    card.classList.add("is-confirm");
+    focusQuietly(keep);
+  };
+  offer();
+  if(via === "start"){
+    wrap.addEventListener("click", e => { if(e.target === wrap) close(); });
+    wrap.addEventListener("keydown", e => { if(e.key === "Escape"){ e.stopPropagation(); close(); } });
+  }
+  document.body.appendChild(wrap);
+  requestAnimationFrame(() => wrap.classList.add("show"));
+}
+/* The saved test could not come through an update: said once, plainly,
+   on the way to picking a new test. */
+function showSavedTestDropped(){
+  document.getElementById("resume-offer")?.remove();
+  const wrap = document.createElement("div");
+  wrap.id = "resume-offer"; wrap.className = "resume-offer";
+  wrap.setAttribute("role", "dialog"); wrap.setAttribute("aria-modal", "true");
+  const card = document.createElement("div"); card.className = "resume-card is-confirm";
+  const h = document.createElement("p"); h.className = "resume-title"; h.textContent = "Saved test removed";
   const sub = document.createElement("p"); sub.className = "resume-sub";
-  sub.textContent = mode + " · " + units + " · question " + (Math.min(s.pos + 1, s.order.length)) + " of " + s.order.length + ". Pick up where you left off?";
+  sub.textContent = "The app was updated and the questions in your saved test changed, so it could not be restored.";
   const actions = document.createElement("div"); actions.className = "resume-actions";
-  const go = document.createElement("button"); go.type = "button"; go.className = "next"; go.textContent = "Continue test"; go.id = "resume-go";
-  const no = document.createElement("button"); no.type = "button"; no.className = "next ghost"; no.textContent = "No thanks";
-  const close = () => { wrap.classList.remove("show"); setTimeout(() => wrap.remove(), 220); };
-  go.addEventListener("click", () => { close(); const fresh = readRunSession(); if(fresh) resumeRunSession(fresh); });
-  no.addEventListener("click", () => {
-    clearRunSession(); close();
-    /* Anything that run had earned was held for its results; with the run
-       gone, Home announces it instead. */
-    setTimeout(() => { try{ homeUnlocksAfterSync(); }catch(e){} }, 400);
-  });
-  actions.append(go, no);
+  const ok = document.createElement("button"); ok.type = "button"; ok.className = "next"; ok.id = "resume-dropped-ok";
+  ok.textContent = "Continue";
+  ok.addEventListener("click", () => { wrap.classList.remove("show"); setTimeout(() => wrap.remove(), 220); showModeSelect(); });
+  actions.appendChild(ok);
   card.append(h, sub, actions);
   wrap.appendChild(card);
   document.body.appendChild(wrap);
   requestAnimationFrame(() => wrap.classList.add("show"));
+  focusQuietly(ok);
+}
+/* Home's Start Studying. A test in the slot is offered first. */
+function startStudying(){
+  const s = readRunSession();
+  if(s){ showRunOffer(s, "start"); return; }
+  if(takeSavedTestDropped()){ showSavedTestDropped(); return; }
+  showModeSelect();
+}
+/* Pause's Save and exit (build 319). The clock stopped at the pause, so
+   the save is measured there; the study log takes the first half now. */
+function saveAndExitTest(){
+  if(!runSessionSavable()) return;
+  clearTimeout(countdownHandle);
+  if(!paused){
+    paused = true; pauseStartedAt = Date.now();
+    stopTimer(); stopQuestionTimer();
+  }
+  const prior = runStudyPriorMs || 0;
+  const elapsed = runStartTime ? Math.max(0, pauseStartedAt - runStartTime) : 0;
+  runStudyPriorMs = elapsed;
+  if(!saveRunSession(true) || !(readRunSession() || {}).saved){
+    runStudyPriorMs = prior;
+    showToast("This test could not be saved on this device.");
+    return;
+  }
+  cancelPauseTiming();
+  stopTimer();
+  stopQuestionTimer();
+  qClockStop();
+  /* credits what the study log has not had yet (runStudyPriorMs is what
+     it HAD before this save), then the slot remembers the new total */
+  runStudyPriorMs = prior;
+  flushStudyTime();
+  runStudyPriorMs = 0;
+  timerlineEl.hidden = true;
+  testInProgress = false; runSaveSlot = false;
+  showHome();
 }
 document.addEventListener("visibilitychange", () => { if(document.visibilityState === "hidden") saveRunSession(); });
 window.addEventListener("pagehide", saveRunSession);
@@ -60495,7 +60780,11 @@ function flushStudyTime(){
   if(studyActiveAt != null && now - studyActiveAt > STUDY_IDLE_MS) idle += now - studyActiveAt - STUDY_IDLE_MS;
   runStartTime = null;
   studyActiveAt = null; studyIdleMs = 0;
-  addStudyTime(Math.max(0, ms - idle));
+  /* a saved test's first part was credited when it was saved (build 319);
+     the run's elapsed time below still covers all of it */
+  const prior = typeof runStudyPriorMs === "number" ? runStudyPriorMs : 0;
+  runStudyPriorMs = 0;
+  addStudyTime(Math.max(0, ms - idle - prior));
   return ms;
 }
 
@@ -61100,9 +61389,25 @@ function renderPausedScreen(){
      that flow \u2014 "Exit test" was never accurate for it to begin with
      (it was never a test), and this is the one place that word
      actually showed up during it. */
-  menuBtn.textContent = (runLabel === "Daily question") ? "Exit Daily Question" : "Exit test";
+  /* QUIT, NOT EXIT (build 319): with Save and exit beside it, "exit" no
+     longer says which one throws the run away. */
+  menuBtn.textContent = (runLabel === "Daily question") ? "Exit Daily Question" : "Quit test";
+  menuBtn.id = "pause-quit";
   menuBtn.addEventListener("click", confirmExitTest);
-  actions.append(resumeBtn, menuBtn);
+  /* SAVE AND EXIT (build 319) - "when you pause a test, it could just say
+     save progress somehow". Three buttons, one column: Resume, Save and
+     exit, Quit test. Only where a run can be put away: a Drill or Exam,
+     never the daily question or a Virtual Room (runSessionSavable). */
+  if(runSessionSavable()){
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button"; saveBtn.className = "next ghost"; saveBtn.id = "pause-save";
+    saveBtn.textContent = "Save and exit";
+    saveBtn.addEventListener("click", saveAndExitTest);
+    actions.append(resumeBtn, saveBtn, menuBtn);
+    panel.classList.add("has-save");
+  } else {
+    actions.append(resumeBtn, menuBtn);
+  }
   mountPausePanel(panel, [h, info, p, actions], resumeBtn);
 }
 
@@ -61171,10 +61476,23 @@ function centerPauseStack(panel, stack){
     const r = stack.getBoundingClientRect(), pr = panel.getBoundingClientRect();
     const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    const line = vh / 2 + 1.75 * rem;
+    let line = vh / 2 + 1.75 * rem;
+    /* A THIRD BUTTON (build 319: Save and exit) makes the group a button
+       taller, so the line rises by half a button for the Pause panel AND
+       for its Quit confirmation (both carry .has-save): the group stays on
+       the middle and Keep going still lands exactly on Resume. */
+    if(actions && panel.classList.contains("has-save")){
+      const bs = actions.querySelectorAll("button");
+      if(bs.length > 1) line -= (bs[1].getBoundingClientRect().top - bs[0].getBoundingClientRect().top) / 2;
+    }
+    /* On a device pixel, and the SAME device pixel on every screen that
+       shares the line: rounding the move instead left the buttons up to a
+       pixel apart between Pause and its confirmation. */
+    const dpr = window.devicePixelRatio || 1;
+    line = Math.round(line * dpr) / dpr;
     let dy = actions ? line - actions.getBoundingClientRect().top : vh / 2 - (r.top + r.height / 2);
     dy = Math.max(dy, pr.top + 8 - r.top);
-    stack.style.transform = Math.abs(dy) >= 1 ? "translateY(" + Math.round(dy) + "px)" : "";
+    stack.style.transform = Math.abs(dy) >= 0.01 ? "translateY(" + dy.toFixed(2) + "px)" : "";
   };
   requestAnimationFrame(place);
   setTimeout(place, 450);
@@ -61422,15 +61740,19 @@ function confirmExitTest(){
 
   const panel = document.createElement("section");
   panel.className = "panel pausepanel";
+  /* on Pause's line when Pause had three buttons - see centerPauseStack */
+  if(runSessionSavable()) panel.classList.add("has-save");
   const h = document.createElement("p");
   h.className = "qnum";
   /* Same "test" \u2192 daily-question-aware language as the pause screen
      itself, for the same reason. */
   const isDailyExit = runLabel === "Daily question";
-  h.textContent = isDailyExit ? "Exit Daily Question?" : "Exit this test?";
+  h.textContent = isDailyExit ? "Exit Daily Question?" : "Quit this test?";
   const p = document.createElement("p");
   p.className = "qtext";
-  p.textContent = "Your progress on this run will be lost.";
+  p.textContent = runSessionSavable()
+    ? "Your progress on this test will be lost. Use Save and exit to finish it later."
+    : "Your progress on this test will be lost.";
   const actions = document.createElement("div");
   actions.className = "actions";
   const stayBtn = document.createElement("button");
@@ -61448,7 +61770,8 @@ function confirmExitTest(){
   });
   const leaveBtn = document.createElement("button");
   leaveBtn.type = "button"; leaveBtn.className = "next ghost";
-  leaveBtn.textContent = isDailyExit ? "Exit Daily Question" : "Exit test";
+  leaveBtn.textContent = isDailyExit ? "Exit Daily Question" : "Quit test";
+  leaveBtn.id = "quit-confirm";
   leaveBtn.addEventListener("click", () => {
     cancelPauseTiming();
     stopTimer();
@@ -63173,6 +63496,8 @@ const RELEASE_NOTES = [
         { icon: buildPlanetIcon, color: "#7FC8FF", title: "A Home You Can Tap", body: "Tap a flare or the planet and it reacts, with a line saying what it is. Flares you have not unlocked yet give a small shake." }
       ]},
       { label: "Studying", items: [
+        /* build 319 - "This be added to the what's new screen" */
+        { icon: buildPauseIcon, color: "#4ADE80", title: "Save A Test For Later", body: "Pause a Drill or Exam and tap Save and exit. The next time you tap Start Studying, you can resume it exactly where you left off or start a new test. One test can be saved at a time. Not available in Review, flashcards, the daily question or a Virtual Room." },
         { icon: buildChecklistIcon, color: "#4DD0E1", title: "Flashcards", body: "Review has a Flashcards option for any unit: tap a card to flip it, swipe to move on, and starred questions come with you." },
         { icon: buildSwipeIcon, color: "#F5804D", title: "A Better Test", body: "Answer feedback is quicker, a small swipe bounces back until you mean it, the Next button arrives at a steadier pace, and Review and Flashcards get their own short loading screen." },
         { icon: buildClipboardIcon, color: "#5CA8FF", title: "A Simpler Start Sheet", body: "The question bank is all questions by default, with one switch for starred questions only, and the slider tells you when it is already at the most it can be." },
@@ -73185,7 +73510,12 @@ function showIntroPopup(){
      and case thing" - the rank-up and badge rows are gone here and from
      RELEASE_NOTES[0], and "Ranks and levels box in the what's new stuff
      does not need to be there" (build 314) still stands. */
+  /* BUILD 319: "This be added to the what's new screen" - saving a test
+     for later, first, as the newest thing on the card. */
   [
+    ["M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-3.4 6.2h2.3v7.6H8.6V8.2Zm4.5 0h2.3v7.6h-2.3V8.2Z",
+     "#4ADE80", "Save a test for later",
+     "Pause a test and tap Save and exit. Start Studying offers it back when you return."],
     ["M12 2.5l1.9 5.9 5.9 1.9-5.9 1.9-1.9 5.9-1.9-5.9-5.9-1.9 5.9-1.9L12 2.5Zm6.5 12.5.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z",
      "#FFD84D", "Hundo effects",
      "Earn new screen effects as your hundos climb: Fireworks, Underwater, Bubbles and a UFO. Pick yours in Customize."],
@@ -73615,8 +73945,12 @@ function showHome(){
   /* A run that was going when Home was asked for has been left on
      purpose (Exit test, Leave to main menu): it is not one to offer back.
      At launch nothing is in progress yet, so a saved session survives. */
-  if(testInProgress) clearRunSession();
+  /* Only a run that owns the save slot (build 319) - leaving a daily
+     question or a Virtual Room must not take a saved test with it. Save
+     and exit has already let go of the run before it gets here. */
+  if(testInProgress && runSaveSlot) clearRunSession();
   testInProgress = false;
+  runSaveSlot = false;
   stopTimer(); stopQuestionTimer();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
@@ -73704,7 +74038,8 @@ function showHome(){
      here after trying it live. */
   startBtn.type = "button"; startBtn.className = "next playbtn"; startBtn.id = "nextbtn";
   startBtn.textContent = "Start Studying";
-  startBtn.addEventListener("click", showModeSelect);
+  /* a saved test is offered first (build 319) - see startStudying() */
+  startBtn.addEventListener("click", startStudying);
   panel.appendChild(startBtn);
 
   /* Home screen daily question, redesigned per explicit request \u2014 a
@@ -76990,7 +77325,6 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
   catch(e){ runStartLocked = null; runStartBanners = null; }
   runStartHundos = hundosOf(store);
   rememberOpeners(indexes);
-  clearRunSession();
   order = indexes.slice();
   testInProgress = true;
   lastRunPool = indexes.slice();
@@ -77022,6 +77356,14 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
   raceQuestionDeadline = null; raceRevealUntil = null; raceRevealQi = null;
   runLabel = label || null;
   runMode = cfg.mode;
+  /* WHICH RUNS OWN THE ONE SAVE SLOT (build 319): a Drill or an Exam. A
+     daily question or a Virtual Room never writes to it and never clears
+     it, so a saved test waits through either. A run that owns it starts
+     with it empty - Start Studying has already asked about anything in it. */
+  runStudyPriorMs = 0;
+  runSaveSlot = runLabel !== "Daily question" && !inVirtualRoom && !vroomCode && !raceTimed &&
+                (runMode === "drill" || runMode === "exam");
+  if(runSaveSlot) clearRunSession();
   /* The actual fix for the daily question never awarding points at
      all \u2014 runTrackable's own condition required runLabel to be null,
      which excludes every labeled run (retakes, re-runs) from
@@ -85753,7 +86095,9 @@ function homeUnlockBlocked(){
     document.querySelector(".chatdock.is-open") ||
     /* A run waiting to be resumed (build 304) holds anything it earned
        for its own results; if it is turned down, the queue plays then. */
-    document.getElementById("resume-offer") || !!readRunSession() ||
+    /* A SAVED test (build 319) holds nothing: its first part's unlocks
+       were moved to Home when it was saved, and it can wait for days. */
+    document.getElementById("resume-offer") || (() => { const s = readRunSession(); return !!s && !s.saved; })() ||
     ((store.pendingBadgeUnlocks || []).length && !rankRewardsFirstOnHome()) || whatsNewHolds());
 }
 /* A RANK'S OWN POP-UP BEFORE ANYTHING ELSE (build 317): "Assuming you
@@ -86992,7 +87336,10 @@ function resultsScreenUp(){
 }
 
 function summarize(){
-  clearRunSession();
+  /* only a run that owns the save slot empties it (build 319): a daily
+     question or a Virtual Room finishing leaves a saved test alone */
+  if(runSaveSlot) clearRunSession();
+  runSaveSlot = false;
   /* Settle what counts as already seen before anything can be earned
      (build 299) - a no-op once the record exists. */
   try{ if(store.onboardingComplete) ensureSeenUnlocks(); }catch(e){}
