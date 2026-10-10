@@ -386,7 +386,10 @@ def main():
         quoted = pg.evaluate("""()=>{
           const tab = buildBadgesTab();
           const blurb = tab.querySelector('.badges-blurb');
-          const progs = [...tab.querySelectorAll('.badge-tile-prog')].map(n => n.textContent);
+          /* REVISED IN 319: nothing is written in the case any more (the
+             tab printed "5/15" under every slot); a badge's count is on its
+             card, from badgeDetail */
+          const progs = unitsInTeachingOrder().map(u => { const d = badgeDetail(u); return d.have + '/' + d.need; });
           return { blurb: blurb ? blurb.textContent : null, progs };}""")
         check("the badge case's blurb does not name a single number",
               quoted["blurb"] and "35 hundos" not in quoted["blurb"], quoted["blurb"])
@@ -483,7 +486,7 @@ def main():
             /* Build 213: the celebration is on the RESULTS SCREEN now, as a
                badge row in its "Unlocked" card, not a queue for Home. */
             const shown = () => [...document.querySelectorAll('#stage .rs-unlock-badge .unlockbanner-name')]
-              .map(e => e.textContent.replace(/ badge$/, ''));
+              .map(e => e.textContent.replace(/ badge$/i, ''));   /* "... Badge" since 319 */
             const first = { queued: shown(), tier: store.pendingTierCutscene,
                             left: store.retroBadgePending.slice(), xp: store.lifetime.points - xp0 };
             store.pendingBadgeUnlocks = []; store.pendingTierCutscene = null;

@@ -229,7 +229,8 @@ def main():
               .map(q => q.getBoundingClientRect())
               .filter(q => q.bottom <= top && q.right > r.left && q.left < r.right)
               .reduce((m, q) => Math.max(m, q.bottom), -1e9);
-            return { x:r.left, y:top, width:r.width, height:r.height, above }; };
+            return { x:r.left, y:top, width:r.width, height:r.height, above,
+                     pool: getComputedStyle(a, '::before').content }; };
           /* earnedBox FIRST: box() scrolls, and the locked slot is the
              one screenshotted afterwards, so it has to be the last one
              scrolled to or its numbers describe a page that has moved. */
@@ -240,7 +241,13 @@ def main():
         check("sixteen tiles", tiles["n"] == 16, tiles["n"])
         check("an earned tile carries its unit's own colour",
               bool((tiles["glow"] or "").strip()), tiles["glow"])
-        if tiles["lockedBox"]:
+        if tiles["lockedBox"] and tiles["lockedBox"].get("pool") == "none":
+            # REVISED IN 319: the Badges tab is the cutscene's open case, four
+            # by four, and its slots carry no shade pool of their own (the hole
+            # is drawn in the badge) - so there is nothing to be cut off, and a
+            # window above a slot now reads the slot above it.
+            check("the slot's shade is not cut off at its top edge (no pool behind a slot in the open case)", True)
+        elif tiles["lockedBox"]:
             b = tiles["lockedBox"]
             """Sample a strip spanning the slot's top edge - a few pixels
             of tile above it and a few of shade below. A fade that has
