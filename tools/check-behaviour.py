@@ -19191,7 +19191,11 @@ B318_SPAM = """async () => { const wait = ms => new Promise(r => setTimeout(r, m
     if(m){ const v = m[1].split(',').map(Number); a = Math.atan2(v[1], v[0]) * 180 / Math.PI; }
     const r = parseFloat(cs.rotate); if(isFinite(r)) a += r; return a; };
   const frames = []; let stop = false;
-  const rec = (ts) => { frames.push([ts, ...L.map(ang)]); if(!stop) requestAnimationFrame(rec); };
+  /* nothing after stop, and nothing from a layer that has left the page:
+     under load a last frame could land after showHome() below had
+     replaced the rings, read the detached layer as 0deg and look like
+     the rings snapping backwards (build 318 gate run) */
+  const rec = (ts) => { if(stop || !L.every(l => l.isConnected)) return; frames.push([ts, ...L.map(ang)]); requestAnimationFrame(rec); };
   requestAnimationFrame(rec);
   await wait(500);
   for(let i = 0; i < 10; i++){
