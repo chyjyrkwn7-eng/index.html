@@ -16842,6 +16842,16 @@
       margin-top:calc(.55rem + env(safe-area-inset-top, 0px));
     }
   }
+  /* ...and a short, wide screen - a phone held sideways - starts the test's
+     rows higher (y 63 on a 956x440 Pro Max) than Pause's 52px pill ends
+     (y 70), with or without an inset. Measured, not guessed: this extra
+     .55rem lands the clock 4px clear of Pause there. */
+  @media (min-width:40rem) and (max-height:36rem){
+    [data-layout="modern"] .wrap:has(#pausebtn:not([hidden])) .timerline,
+    [data-layout="modern"] .wrap:has(.pausepanel) .timerline{
+      margin-top:calc(1.1rem + env(safe-area-inset-top, 0px));
+    }
+  }
   /* The hidden-choices reveal (build 240): a centred block, not a
      small button under a status line. */
   .recall-reveal{
