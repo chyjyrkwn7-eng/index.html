@@ -19174,6 +19174,11 @@ rank up cutscene."* One block after `buildRanksTab()` (all `var`).
 
 ### Build 319 (b319g) - badges beside the level, the case shut, the Class tab
 
+> **Partly undone by b319h, below.** The Class tab, the Friends and Class 26E
+> boxes leaving Profile, Profile dropping presence and the case's materials
+> are superseded; the badge count beside the level and the shut case's
+> idea stand.
+
 - **The Profile card's top line is "Rank · Level N · N badges".** The count
   is `.pf-badgecount`, in the level's own type, and a tap on it opens the
   Badges page while a tap anywhere else on `.pf-standing` still opens the
@@ -19211,3 +19216,48 @@ rank up cutscene."* One block after `buildRanksTab()` (all `var`).
   counts who is online (`PRESENCE_SCREENS` is `.screen-friends`).
 - **Gate: `check_b319g_layout`** (both reference devices and a 320px
   phone). Fails on bc2986d.
+
+### Build 319 (b319h) - Profile / Calendar / Stats, Friends back, the Leaderboard back, a calm case
+
+Madison sent g's Class tab back: "Remove the friends tab and put that
+back. The calendar tab makes sense ... the three tabs should be profile,
+calendar, and stats". And of the shut case: "the brief case sticks out.
+Your eyes shouldn't gravitate to one thing on any screen".
+
+- **Profile's tabs are Profile, Calendar, Stats** (`PROFILE_TABS`, one
+  `profileTabDefs` entry each). The Calendar tab is `.profile-cal-tab
+  .screen-calendar`, built the first time it is shown
+  (`buildCalendarPane`). `showCalendar()`, `showProfile("calendar")` and
+  the aliases `cal`/`schedule`/`class` land on it, Profile lit. The
+  Profile swipe skips `.cal-viewseg`; Month / List swipes only along its
+  own switcher (`attachTabSwipe` `{ zone }` / `{ skip }`, kept from g).
+- **The Calendar tab says each thing once.** The Class 26E box keeps the
+  days left and **Next**; its **Today** line is gone, because the day
+  card under the month opens on today and says it. The grid opens on the
+  first month before the course and the LAST month after it (it used to
+  fall back to August).
+- **Friends is back as in bc2986d**: the Friends box under the card
+  (pending line, `has-pending` button), `showFriends()` its own screen with
+  "Back to Profile", Profile attaching presence again
+  (`PRESENCE_SCREENS` includes `.screen-profile`), the chat/invite copy
+  "Profile › Friends".
+- **The bottom tab is Leaderboard with the trophy**, `showRankings()` its
+  own screen with the board switcher as before and its own tour.
+  `showClass(which, {board})` survives only as an alias (boards / Friends /
+  calendar) so nothing that learned it opens a dead screen; it has no
+  screen of its own. `.sub-seg` is the underline switcher (was
+  `.class-subseg`), used by Month / List.
+- **The case strip is drawn in the card's surface, not the case's
+  materials**: the Next rank box's width, 1.1rem corners, .8rem gap and
+  160-degree light in the case's neutral silver (`--case-tint`), the
+  handle standing in the gap, the seam a groove, latches and plate in dull
+  metal, no corner guards, no white hairlines, no drop shadow; the count is
+  set like "See every rank". The `.nova-case-*` materials are untouched
+  (cutscene, Badges page). Measured (check_b319h_layout prints it): on a
+  17 Pro Max the strip's hardware peaks at ~12 (relative luminance x100)
+  against the card's ~75, and its sharpest step and its outline are under
+  the Next rank box's. Any change to it has to keep those three true.
+- **Gate: `check_b319h_layout`** (replaces `check_b319g_layout`), both
+  reference devices and a 320px phone, the calendar in seven states of the
+  course. Fails on f6e0be8.
+

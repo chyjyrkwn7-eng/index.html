@@ -295,8 +295,8 @@ VISIBLE = """()=>{
 def check_navigation(br):
     print("\n3. a back link lands on a screen with something on it")
     ctx, pg = booted(br, TABLET[1], TABLET[2], seed=USED_ACCOUNT)
-    # The calendar had its own "Back to Profile" until build 319; it is a
-    # tab of Class now, with no back link (check_b319g_layout holds it).
+    # The calendar had its own "Back to Profile" until build 319; it is
+    # Profile's Calendar tab now, with no back link (check_b319h_layout).
     for label, show in [("test review -> Back to Profile", "()=>showTestReviewList()")]:
         pg.evaluate(show)
         pg.wait_for_timeout(300)
@@ -2923,10 +2923,9 @@ def check_b239(br):
       chatRoomCode = null;
       return out; }""")
     check("Friends keeps its presence listener after it mounts", r.get("afterFriends") is True, r)
-    # Build 319 reversed this: Profile's Friends box (the online count) moved
-    # to Class > Friends, so Profile shows no presence and lets it go - a
-    # listener kept for nothing is reads spent for nothing.
-    check("and Profile lets it go (it shows no presence since build 319)", r.get("afterProfile") is False, r)
+    # (Builder g's build 319 had Profile let it go; builder h put the Friends
+    # box, and its online count, back on Profile, so it keeps it again.)
+    check("and Profile keeps it too", r.get("afterProfile") is True, r)
     check("and leaving for Home lets it go", r.get("afterHome") is False, r)
     check("a chat with only somebody else in it does not say 'Just you'",
           "Just you" not in str(r.get("otherOnly")) and "Just you" in str(r.get("meOnly")), r)
@@ -9699,7 +9698,7 @@ def check_b314h_lead2(br):
       out.opened = act ? act.textContent : null; out.key = rankingsBoardKey;
       const sl = document.querySelector('.screen-rankings .navsegment .seg-slider');
       out.sliderOn = !!(sl && act && Math.abs(sl.getBoundingClientRect().left - act.getBoundingClientRect().left) < 2);
-      /* the class card - on Class > Calendar since build 319 */
+      /* the class card - on Profile > Calendar since build 319 */
       showCalendar(); await wait(500);
       const pills = [...document.querySelectorAll('.profile-classcard:not(.profile-friendcard) .profile-classcard-count')].map(e => e.textContent);
       out.pills = pills;
@@ -9739,8 +9738,8 @@ def check_b314h_lead2(br):
     cdp = ctx.new_cdp_session(pg)
     pg.evaluate("() => { window.scrollTo(0, 0); }")
     before = pg.evaluate("() => document.querySelector('.screen-calendar .navsegment .iconbtn.active').textContent")
-    # Build 319: the calendar is a tab of Class, and the screen's swipe
-    # moves Class's tabs; Month / List swipes ALONG its own switcher.
+    # Build 319: the calendar is Profile's Calendar tab, and the screen's
+    # swipe moves Profile's tabs; Month / List swipes ALONG its own switcher.
     sy = pg.evaluate("() => { const r = document.querySelector('.screen-calendar .navsegment').getBoundingClientRect(); return [r.left, r.top + r.height / 2, r.width]; }")
     _swipe(cdp, sy[0] + sy[2] * 0.9, sy[1], -sy[2] * 0.7, 0, steps=8)
     pg.wait_for_timeout(500)
@@ -9986,11 +9985,9 @@ def check_b310(br):
       out.past50 = cols[3].indexOf('streak-lv4') >= 0 && cols[7].indexOf('streak-lv8') >= 0;
       showRunStreakBanner(25); await wait(2600); out.streakStill = !!document.querySelector('.streak-pop');
       await wait(900); out.streakGone = !document.querySelector('.streak-pop');
-      /* the Profile tab stays lit on every screen reached from Profile.
-         Build 319: Friends and the calendar are tabs of Class now, so it is
-         Class that stays lit on them (and only Class). */
-      const lit = k => k === 'testreview' ? !!document.querySelector('#bottomtab-profile.active')
-        : !!document.querySelector('#bottomtab-rewards.active') && !document.querySelector('#bottomtab-profile.active');
+      /* the Profile tab stays lit on every screen reached from Profile
+         (build 319, h: Friends and the calendar are Profile's again) */
+      const lit = k => !!document.querySelector('#bottomtab-profile.active') && !document.querySelector('#bottomtab-rewards.active');
       out.lit = {};
       for(const [k, f] of [['friends', () => showFriends()], ['calendar', () => showCalendar && showCalendar()], ['testreview', () => showTestReviewList && showTestReviewList()]]){
         try{ f(); }catch(e){ out.lit[k] = 'threw ' + e.message; continue; }
@@ -10053,7 +10050,7 @@ def check_b310(br):
     check("the streak pop has eight different colours, one per tier, across the wheel", r["streakDistinct"] == 8 and r["hueSpan"] >= 180, r)
     check("streaks past 50 get their own tiers (75 is the 4th, 350 the 8th)", r["past50"], r)
     check("the streak pop is still up at 2.6s and gone by 3.5s", r["streakStill"] and r["streakGone"], r)
-    check("Test review keeps Profile lit; Friends and Calendar keep Class lit (build 319)", all(v is True for v in r["lit"].values()), r["lit"])
+    check("the Profile tab stays lit on Friends, Calendar and Test review", all(v is True for v in r["lit"].values()), r["lit"])
     sl = r.get("slide") or {}
     check("the leaderboard's top tabs have a sliding indicator", r["slider"], r)
     check("the indicator glides between tabs rather than jumping", bool(sl) and sl["x0"] != sl["end"] and sl["mid"] != sl["end"] and "transform" in sl["tr"], sl)
@@ -20538,165 +20535,366 @@ B319G_CLASS = """async () => {
 }"""
 
 
-B319G_BASE_HERO = (1256, 1469)
+# (check_b319g_layout was replaced by check_b319h_layout in the same build:
+# the Class tab it held to came back out, and its card checks moved over.)
 
 
-def check_b319g_layout(br):
-    """Build 319 (builder g). Madison: the open badge case on the Profile
-    card "takes away from the badge tab and it makes the profile box
-    unnecessarily long. I think no case there would be best ... at the top
-    where it says level and xp rank at the top should mention like '8
-    badges' or whatever there too. Similar to how it says your current
-    level." And "maybe the friends and class related stuff should be in its
-    own tab". So: the badge count sits beside the level in the same type
-    and opens the Badges page; the open case is gone and the front of the
-    shut case (its latches, hasps, handle and plate) is a slim row that
-    opens it; the card is much shorter than on bc2986d; the bottom tab
-    reads Class and every label fits a 320px phone; Class has three tabs
-    (the boards, Friends, the calendar), read off the page; a swipe moves
-    exactly one tab, and a swipe along the board switcher moves only the
-    board; every old way to the boards, friends and calendar lands on the
-    right tab with something on it; Profile holds neither the Class 26E
-    box nor the Friends box. Fails on bc2986d, which has none of it."""
-    print("\n319g. Profile: badges beside the level, the case shut; the Class tab")
-    # The Profile card's height on bc2986d with this fixture (seven badges),
-    # measured at each size with the build that had the open case and the
-    # two boxes under it. The card has to come in well under it.
-    BASE_HERO = {440: B319G_BASE_HERO[0], 834: B319G_BASE_HERO[1]}
+# ---- build 319, builder h ----------------------------------------------
+# The Profile card's case strip, measured off the screen at the device's
+# own pixel ratio. Luminance is relative luminance x100 (sRGB linearised).
+#   peak       - the 99.5th percentile, so one anti-aliased pixel is not it
+#   local      - the 99th percentile of the step between neighbouring
+#                pixels: what the eye reads as a hard edge or a hot spot
+#   edge       - the strip's outline against the card just outside it:
+#                the brightest of its rim against the card's median there
+B319H_RECTS = """(hideText) => {
+  document.querySelectorAll('#tour-overlay, #tour-tooltip, .daily-alert, .toast, .rs-spot').forEach(x => x.remove());
+  document.querySelectorAll('.bottomtabs, #__statusbar, .chatdock, .wrap > .top').forEach(e => e.style.visibility = 'hidden');
+  const kase = document.querySelector('.screen-profile .profile-hero .pf-case');
+  if(!kase) return null;
+  kase.scrollIntoView({ block: 'center', behavior: 'instant' });
+  kase.querySelectorAll('*').forEach(e => { if(hideText) e.style.setProperty('color', 'transparent', 'important'); else e.style.removeProperty('color'); });
+  const R = el => { const r = el.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; };
+  const body = kase.querySelector('.pf-ccase') || kase;
+  const box = R(body);
+  const h = kase.querySelector('.nova-case-handle');
+  const hr = h ? R(h) : box;
+  const goal = document.querySelector('.screen-profile .profile-hero .pf-goal');
+  return { box, strip: [Math.min(box[0], hr[0]), Math.min(box[1], hr[1]), Math.max(box[2], hr[2]), Math.max(box[3], hr[3])],
+           hero: R(document.querySelector('.screen-profile .profile-hero')), goal: goal ? R(goal) : null,
+           radius: parseFloat(getComputedStyle(body).borderTopLeftRadius) || 0,
+           goalRadius: goal ? parseFloat(getComputedStyle(goal).borderTopLeftRadius) || 0 : 0,
+           dpr: devicePixelRatio };
+}"""
+
+
+def b319h_case_metrics(pg):
+    """Peak luminance, local contrast and edge contrast of the Profile
+    card's case strip, against the Next rank box and the rest of the card."""
+    from PIL import Image
+    def lum_img(png):
+        im = Image.open(io.BytesIO(png)).convert("RGB")
+        lut = [(((v / 255) / 12.92) if v / 255 <= 0.04045 else (((v / 255) + 0.055) / 1.055) ** 2.4) for v in range(256)]
+        px = im.load()
+        w, h = im.size
+        L = [[0.0] * w for _ in range(h)]
+        for y in range(h):
+            row = L[y]
+            for x in range(w):
+                r, g, b = px[x, y]
+                row[x] = 100 * (0.2126 * lut[r] + 0.7152 * lut[g] + 0.0722 * lut[b])
+        return L, w, h
+    def pct(vals, q):
+        if not vals: return 0.0
+        vals = sorted(vals); return vals[min(len(vals) - 1, int(q * (len(vals) - 1)))]
+    out = {}
+    for hide in (True, False):
+        r = pg.evaluate(B319H_RECTS, hide)
+        if not r: return None
+        pg.wait_for_timeout(250)
+        L, W, H = lum_img(pg.screenshot())
+        d = r["dpr"]
+        def region(rect, pad=0, excl=None):
+            x0, y0, x1, y1 = [int(round(v * d)) for v in rect]
+            x0, y0 = max(0, x0 + pad), max(0, y0 + pad); x1, y1 = min(W, x1 - pad), min(H, y1 - pad)
+            ex = [int(round(v * d)) for v in excl] if excl else None
+            pts = []
+            for y in range(y0, y1):
+                for x in range(x0, x1):
+                    if ex and ex[0] <= x < ex[2] and ex[1] <= y < ex[3]: continue
+                    pts.append((x, y))
+            return pts
+        def peak(pts): return round(pct([L[y][x] for (x, y) in pts], 0.995), 1)
+        def local(pts):
+            st = []
+            for (x, y) in pts[::2]:
+                if x + 1 < W: st.append(abs(L[y][x + 1] - L[y][x]))
+                if y + 1 < H: st.append(abs(L[y + 1][x] - L[y][x]))
+            return round(pct(st, 0.99), 2)
+        def edge(rect):
+            x0, y0, x1, y1 = [int(round(v * d)) for v in rect]
+            rim, outside = [], []
+            band = max(2, int(d * 1.5))
+            for x in range(x0 + int(12 * d), x1 - int(12 * d), 2):
+                for y in (y0, y1 - 1):
+                    for k in range(-band, band + 1):
+                        if 0 <= y + k < H: rim.append(L[y + k][x])
+                for y in (y0 - int(6 * d), y1 + int(6 * d)):
+                    if 0 <= y < H: outside.append(L[y][x])
+            for y in range(y0 + int(12 * d), y1 - int(12 * d), 2):
+                for x in (x0, x1 - 1):
+                    for k in range(-band, band + 1):
+                        if 0 <= x + k < W: rim.append(L[y][x + k])
+                for x in (x0 - int(6 * d), x1 + int(6 * d)):
+                    if 0 <= x < W: outside.append(L[y][x])
+            return round(pct(rim, 0.99) - pct(outside, 0.5), 2)
+        hero = r["hero"]
+        visible = [hero[0], max(hero[1], 0), hero[2], min(hero[3], H / d)]
+        tag = "hw" if hide else "all"
+        sp = region(r["strip"])
+        out[tag] = {"strip_peak": peak(sp), "strip_local": local(sp), "strip_edge": edge(r["box"]),
+                    "goal_peak": peak(region(r["goal"])) if r["goal"] else None,
+                    "goal_local": local(region(r["goal"])) if r["goal"] else None,
+                    "goal_edge": edge(r["goal"]) if r["goal"] else None,
+                    "card_peak": peak(region(visible, excl=r["strip"]))}
+        out["rects"] = r
+    pg.evaluate("() => document.querySelectorAll('.screen-profile .pf-case *').forEach(e => e.style.removeProperty('color'))")
+    return out
+
+
+B319H_TABS = """() => {
+  const panel = document.querySelector('#stage > .screen-profile');
+  const seg = panel && panel.querySelector(':scope > .navsegment');
+  const tabs = seg ? [...seg.querySelectorAll(':scope > .iconbtn')] : [];
+  const kids = panel ? [...panel.children].filter(c => c !== seg && c.tagName === 'DIV') : [];
+  const shown = kids.filter(k => !k.hidden);
+  const s = shown[0] || null;
+  return { labels: tabs.map(b => b.textContent.trim()), active: tabs.findIndex(b => b.classList.contains('active')),
+           visible: shown.length,
+           holds: s ? (s.querySelector('.profile-hero') ? 'profile' : s.querySelector('.cal-grid') ? 'calendar'
+                       : s.classList.contains('profile-stats-tab') ? 'stats' : null) : null,
+           calView: (document.querySelector('.screen-profile .cal-viewseg .iconbtn.active') || {}).textContent || null,
+           litOther: [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id) };
+}"""
+
+# Today, and what the Calendar tab says about it, read off the page.
+B319H_CAL = """async (iso) => {
+  if(iso){
+    const RealDate = window.__RealDate || Date; window.__RealDate = RealDate;
+    const off = new RealDate(iso + 'T10:00:00').getTime() - RealDate.now();
+    window.Date = class extends RealDate { constructor(...a){ if(a.length) super(...a); else super(RealDate.now() + off); }
+                                           static now(){ return RealDate.now() + off; } };
+  }
+  calendarView = 'month';
+  showProfile('calendar'); await new Promise(r => setTimeout(r, 700));
+  document.querySelectorAll('#tour-overlay, #tour-tooltip, .daily-alert, .toast, .rs-spot').forEach(x => x.remove());
+  const tab = document.querySelector('.screen-profile .profile-cal-tab');
+  if(!tab || tab.hidden) return { tab: false };
+  const card = tab.querySelector('.profile-classcard');
+  const day = tab.querySelector('.cal-daycard');
+  const k = todayCalendarKey(), today = todaysClassEntry(), next = nextClassEntry();
+  const todayWhen = formatCalendarDate(k);
+  const cardText = card ? card.textContent.replace(/\s+/g, ' ') : '';
+  const R = el => { if(!el || !el.getClientRects().length) return null; const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.right), Math.round(r.bottom)]; };
+  /* every place on the tab that says what today is */
+  const todayMarks = [...tab.querySelectorAll('.cal-today-badge, .profile-classday.is-today')].filter(e => e.getClientRects().length);
+  return { tab: true, key: k, todayEntry: today ? today.text : null,
+           card: !!card, head: !!(card && card.querySelector('.profile-classcard-title')), daysLeft: (card && card.querySelector('.profile-classcard-count') || {}).textContent || null,
+           wantLeft: classDaysRemaining(),
+           rows: card ? [...card.querySelectorAll('.profile-classday-label')].map(e => e.textContent.trim()) : [],
+           nextText: (card && card.querySelector('.profile-classday-what') || {}).textContent || null,
+           wantNext: next ? next.text : 'No class days left',
+           cardSaysToday: /no class today/i.test(cardText) || (!!today && cardText.indexOf(today.text) >= 0 && (!next || next.text !== today.text)) || cardText.indexOf(todayWhen) >= 0,
+           todayMarks: todayMarks.length, dayText: day ? day.textContent.replace(/\s+/g, ' ').trim() : null,
+           month: (tab.querySelector('.cal-grid-month') || {}).textContent || null,
+           grid: !!tab.querySelector('.cal-grid .cal-cell'),
+           order: [card, tab.querySelector('.cal-viewseg'), tab.querySelector('.cal-grid')].map(e => e ? Math.round(e.getBoundingClientRect().top) : null),
+           cardBox: R(card), dayBox: R(day), gridBox: R(tab.querySelector('.cal-monthview')) };
+}"""
+
+
+def check_b319h_layout(br):
+    """Build 319 (builder h). Madison: "Remove the friends tab and put that
+    back. The calendar tab makes sense ... I like how there is that
+    information at the top, but some of it is redundant ... So the three
+    tabs should be profile, calendar, and stats right?" And of the shut
+    case on the Profile card: "the brief case sticks out. Your eyes
+    shouldn't gravitate to one thing on any screen". So: Profile's tabs
+    are Profile, Calendar, Stats (read off the page) and a swipe moves one;
+    the Calendar tab has the Class 26E box over the month and says what
+    today is once, in every state of the course; the Friends box is back
+    on Profile and opens Friends; the bottom tab reads Leaderboard with the
+    trophy and its screen is the boards again; every old way in lands; the
+    case strip opens Badges and is neither the brightest nor the
+    highest-contrast thing on the card. Fails on f6e0be8 (the Class tab)."""
+    print("\n319h. Profile: Profile / Calendar / Stats, Friends back, the Leaderboard, a calm case")
     for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2), (320, 568, "320px phone", 2)):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True, dpr=dpr)
         cdp = ctx.new_cdp_session(pg)
-        for n in (7, 1, 0):
-            pg.evaluate(B319G_SEED, n)
-            r = pg.evaluate(B319G_PROFILE)
-            word = "badge" if r["want"] == 1 else "badges"
-            check("%s, %d badge(s): the count beside the level matches the account" % (dev, n),
-                  r["badges"] == "%d %s" % (r["want"], word) and r["want"] == n, [r["badges"], r["want"]])
-            if n == 7:
-                same_row = bool(r["levelBox"] and r["badgesBox"]) and abs((r["levelBox"][1] + r["levelBox"][3] / 2) - (r["badgesBox"][1] + r["badgesBox"][3] / 2)) <= 3
-                check("%s: the badge count is on the level's line, in the level's own type" % dev,
-                      same_row and r["levelStyle"] == r["badgesStyle"], [r["levelBox"], r["badgesBox"], r["levelStyle"], r["badgesStyle"]])
-                check("%s: the rank / level / badges line is one line, inside the card" % dev,
-                      r["lineRows"] == 1 and r["lineFits"], [r["lineRows"], r["lineFits"]])
-                parts = r["caseParts"] or {}
-                okparts = (parts.get("latches") == 2 and parts.get("hasps") == 2 and parts.get("handle")
-                           and parts.get("shell", 0) >= 2 and parts.get("arrow") and re.search(r"badge case", parts.get("plate") or "", re.I))
-                check("%s: the Profile case is the shut case's front - latches, hasps, handle, plate, an arrow" % dev,
-                      r["closed"] and bool(okparts) and ("%d of %d badges" % (r["want"], r["total"])) in (r["caseText"] or ""),
-                      [r["closed"], parts, r["caseText"]])
-                ch = r["caseBox"][3] if r["caseBox"] else 0
-                lim = (64, 84) if w < 600 else (64, 96)
-                check("%s: the shut case is a slim row (%d-%dpx), full width" % (dev, lim[0], lim[1]),
-                      lim[0] <= ch <= lim[1] and r["caseBox"][2] >= r["hero"][2] - 80, [r["caseBox"], r["hero"]])
-                check("%s: no open case on the Profile card" % dev, r["openCase"] == 0, r["openCase"])
-                check("%s: Profile holds neither the Class 26E box nor the Friends box" % dev,
-                      r["classBox"] == 0 and r["friendBox"] == 0 and r["calLine"] == 0, [r["classBox"], r["friendBox"], r["calLine"]])
-                if w in BASE_HERO:
-                    check("%s: the card is much shorter than on bc2986d (%dpx there)" % (dev, BASE_HERO[w]),
-                          r["hero"] and r["hero"][3] <= BASE_HERO[w] - 120, [r["hero"], BASE_HERO[w]])
-                t1 = pg.evaluate(B319G_TAP, ".pf-badgecount")
-                check("%s: a tap on the badge count opens the Badges page" % dev, t1.get("hit") and t1.get("badges"), t1)
-                t2 = pg.evaluate(B319G_TAP, ".pf-case-closed")
-                check("%s: a tap on the shut case opens the Badges page" % dev, t2.get("hit") and t2.get("badges"), t2)
-                t3 = pg.evaluate(B319G_TAP, ".pf-level")
-                check("%s: a tap on the level still opens the Rank screen" % dev, t3.get("hit") and t3.get("rank"), t3)
-        # the longest line there is: the top rank, the top level, every badge
-        pg.evaluate(B319G_SEED, 16)
-        pg.evaluate("()=>{ store.lifetime.points = xpForLevel(80) + 1000; store.points = store.lifetime.points; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store)); }")
-        r = pg.evaluate(B319G_PROFILE)
-        check("%s: even '%s' stays one line inside the card" % (dev, " ".join([r["level"] or "", r["badges"] or ""])),
-              r["lineRows"] == 1 and r["lineFits"] and r["badges"] == "16 badges", [r["lineRows"], r["lineFits"], r["level"], r["badges"]])
-        # ---- the bottom bar ----
-        pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(500)
-        bar = pg.evaluate("""() => {
-          const bar = document.getElementById('bottomtabs'); const br = bar.getBoundingClientRect();
-          const labs = [...bar.querySelectorAll('.bottomtabs-navrow .bottomtab')].filter(t => t.getClientRects().length).map(t => {
-            const l = t.querySelector('.bottomtab-label'); const r = l.getBoundingClientRect(); const tr = t.getBoundingClientRect();
-            return { id: t.id, text: l.textContent.trim(), shown: getComputedStyle(l).display !== 'none',
-                     clipped: l.scrollWidth > l.clientWidth + 1 || r.left < tr.left - 1 || r.right > tr.right + 1,
-                     l: r.left, r: r.right }; });
-          const overlap = labs.filter(a => a.shown).some((a, i, arr) => arr.some((b, j) => j !== i && b.shown && a.l < b.r - 1 && b.l < a.r - 1));
-          return { labs, overlap, inside: br.left >= -1 && br.right <= innerWidth + 1,
-                   icon: (bar.querySelector('#bottomtab-rewards .bottomtab-icon svg path') || { getAttribute: () => '' }).getAttribute('d') };
-        }""")
-        cls = [l for l in bar["labs"] if l["id"] == "bottomtab-rewards"]
-        check("%s: the bottom tab reads Class, with a new icon" % dev,
-              bool(cls) and cls[0]["text"] == "Class" and not bar["icon"].startswith("M7 4h10v5"), [cls, bar["icon"][:30]])
-        check("%s: no bottom tab label is clipped or overlaps another, and the bar is on screen" % dev,
-              not any(l["clipped"] for l in bar["labs"] if l["shown"]) and not bar["overlap"] and bar["inside"], bar)
-        # ---- the Class screen ----
-        pg.evaluate("()=>{ document.getElementById('bottomtab-rewards').click(); }"); pg.wait_for_timeout(700)
-        c = pg.evaluate(B319G_CLASS)
-        # read off the page: three tabs, whose panes hold the boards, the
-        # friends and the calendar in that order
-        holds = []
-        for i in range(len(c["labels"])):
-            pg.evaluate("i => document.querySelectorAll('#stage > .panel > .navsegment > .iconbtn')[i].click()", i)
-            pg.wait_for_timeout(350)
-            holds.append(pg.evaluate(B319G_CLASS))
-        shape = [("boards" if x["holds"] and x["holds"]["boards"] else "friends" if x["holds"] and x["holds"]["friends"]
-                  else "calendar" if x["holds"] and x["holds"]["calendar"] else None) for x in holds]
-        check("%s: the Class tab opens a screen of three tabs on the first" % dev,
-              "screen-class" in (c["cls"] or "") and len(c["labels"]) == 3 and c["active"] == 0 and c["visible"] == 1 and c["lit"], c)
-        check("%s: the three tabs are the boards, Friends and the calendar, in that order" % dev,
-              shape == ["boards", "friends", "calendar"] and [l.split()[0].lower()[:4] for l in c["labels"]] == ["rank", "frie", "cale"],
-              [c["labels"], shape])
-        check("%s: the calendar tab carries the Class 26E box above the calendar" % dev,
-              bool(holds and holds[-1]["holds"] and holds[-1]["holds"]["classCard"]), holds[-1]["holds"] if holds else None)
-        check("%s: Class stays lit on every one of its tabs, and nothing else is" % dev,
-              all(x["lit"] and x["litOther"] == ["bottomtab-rewards"] for x in holds), [x["litOther"] for x in holds])
-        # the second switcher (the boards) is quieter than Class's own
-        sub = pg.evaluate("""() => { document.querySelectorAll('#stage > .panel > .navsegment > .iconbtn')[0].click();
-          const top = document.querySelector('#stage > .panel > .navsegment'), inner = document.querySelector('#stage .rank-boardseg');
-          if(!top || !inner) return null;
-          const a = top.querySelector('.iconbtn'), b = inner.querySelector('.iconbtn');
-          const bg = getComputedStyle(inner).backgroundColor;
-          return { topFont: parseFloat(getComputedStyle(a).fontSize), innerFont: parseFloat(getComputedStyle(b).fontSize),
-                   innerBg: bg, topH: top.getBoundingClientRect().height, innerH: inner.getBoundingClientRect().height,
-                   boards: inner.querySelectorAll('.iconbtn').length, n: RANKING_BOARDS.length }; }""")
-        check("%s: the board switcher sits inside Rankings, smaller and without a pill" % dev,
-              sub and sub["boards"] == sub["n"] and sub["innerFont"] <= sub["topFont"] + .5
-              and sub["innerBg"] in ("rgba(0, 0, 0, 0)", "transparent") and sub["innerH"] < sub["topH"] + 4, sub)
         try:
-            # ---- swipe: exactly one tab, both ways; along the boards, the board ----
-            pg.evaluate("()=>{ try{ showClass('rankings'); }catch(e){ showRankings(); } }"); pg.wait_for_timeout(500)
+            pg.evaluate(B319G_SEED, 7)
+            # ---- the Profile card: still g's count and shut case ----
+            r = pg.evaluate(B319G_PROFILE)
+            check("%s: the badge count beside the level matches the account" % dev, r["badges"] == "7 badges", r["badges"])
+            check("%s: the rank / level / badges line is one line, inside the card" % dev, r["lineRows"] == 1 and r["lineFits"], [r["lineRows"], r["lineFits"]])
+            parts = r["caseParts"] or {}
+            check("%s: the case strip is still the shut case - latches, hasps, handle, plate, count, arrow" % dev,
+                  r["closed"] and parts.get("latches") == 2 and parts.get("hasps") == 2 and parts.get("handle") and parts.get("arrow")
+                  and re.search(r"badge case", parts.get("plate") or "", re.I) and ("7 of %d badges" % r["total"]) in (r["caseText"] or ""),
+                  [r["closed"], parts, r["caseText"]])
+            check("%s: no open case on the Profile card" % dev, r["openCase"] == 0, r["openCase"])
+            t2 = pg.evaluate(B319G_TAP, ".pf-case-closed")
+            check("%s: a tap on the case strip opens the Badges page" % dev, t2.get("hit") and t2.get("badges"), t2)
+            t3 = pg.evaluate(B319G_TAP, ".pf-level")
+            check("%s: a tap on the level still opens the Rank screen" % dev, t3.get("hit") and t3.get("rank"), t3)
+            # ---- the strip sits in the card: geometry ----
+            pg.evaluate("() => { showProfile('profile'); }"); pg.wait_for_timeout(900)
+            if w != 320:
+                m = b319h_case_metrics(pg)
+                rc = (m or {}).get("rects") or {}
+                bx, gl = rc.get("box"), rc.get("goal")
+                check("%s: the case strip is the Next rank box's width and corner radius" % dev,
+                      bool(bx and gl) and abs(bx[0] - gl[0]) <= 1 and abs(bx[2] - gl[2]) <= 1 and abs(rc["radius"] - rc["goalRadius"]) <= 1,
+                      [bx, gl, rc.get("radius"), rc.get("goalRadius")])
+                gap = (bx[1] - gl[3]) if (bx and gl) else None
+                check("%s: ...and the box's own gap above it (.8rem)" % dev, gap is not None and abs(gap - 12.8) <= 1.5, gap)
+                hw, al = (m or {}).get("hw") or {}, (m or {}).get("all") or {}
+                print("     %s case strip: %s" % (dev, json.dumps({"hardware": hw, "with text": al})))
+                check("%s: the strip's metal is not the brightest thing on the card (peak %s against the card's %s)" % (dev, hw.get("strip_peak"), al.get("card_peak")),
+                      bool(hw and al) and hw["strip_peak"] < al["card_peak"] * 0.6, [hw.get("strip_peak"), al.get("card_peak")])
+                check("%s: with its words, still not the brightest (peak %s against %s)" % (dev, al.get("strip_peak"), al.get("card_peak")),
+                      bool(al) and al["strip_peak"] < al["card_peak"], [al.get("strip_peak"), al.get("card_peak")])
+                check("%s: and not the highest-contrast: its sharpest step is under the Next rank box's (%s < %s)" % (dev, al.get("strip_local"), al.get("goal_local")),
+                      bool(al) and al["strip_local"] < al["goal_local"], [al.get("strip_local"), al.get("goal_local")])
+                check("%s: its outline is no harder than the Next rank box's (%s <= %s)" % (dev, hw.get("strip_edge"), hw.get("goal_edge")),
+                      bool(hw) and hw["strip_edge"] <= hw["goal_edge"] + 0.5, [hw.get("strip_edge"), hw.get("goal_edge")])
+            # ---- the Friends box is back on Profile ----
+            fr = pg.evaluate("""async () => {
+              showProfile('profile'); await new Promise(r => setTimeout(r, 600));
+              document.querySelectorAll('#tour-overlay, #tour-tooltip, .daily-alert, .toast, .rs-spot').forEach(x => x.remove());
+              const hero = document.querySelector('.screen-profile .profile-hero');
+              const box = document.querySelector('.screen-profile .profile-friendcard');
+              const out = { box: !!box, below: !!(box && hero && box.getBoundingClientRect().top >= hero.getBoundingClientRect().bottom),
+                            title: box ? (box.querySelector('.profile-classcard-title') || {}).textContent : null,
+                            sameWidth: !!(box && hero) && Math.abs(box.getBoundingClientRect().left - hero.getBoundingClientRect().left) <= 1
+                                       && Math.abs(box.getBoundingClientRect().right - hero.getBoundingClientRect().right) <= 1,
+                            presence: typeof presenceUnsub !== 'undefined' && !!presenceUnsub };
+              const btn = box && box.querySelector('button');
+              if(btn) btn.click();
+              await new Promise(r => setTimeout(r, 500));
+              const fs = document.querySelector('#stage > .screen-friends');
+              out.friends = !!fs; out.back = !!(fs && fs.querySelector('.back-link'));
+              out.litF = [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id);
+              if(fs && fs.querySelector('.back-link')) fs.querySelector('.back-link').click();
+              await new Promise(r => setTimeout(r, 500));
+              out.backTo = !!document.querySelector('#stage > .screen-profile .profile-hero:not([hidden])') && !!document.querySelector('#stage .profile-friendcard');
+              /* a friend request waiting says so on the box */
+              const real = window.incomingFriendRequests;
+              window.incomingFriendRequests = () => [{ pub: 'zz-test', firstName: 'Test' }];
+              showProfile('profile'); await new Promise(r => setTimeout(r, 500));
+              const b2 = document.querySelector('.screen-profile .profile-friendcard');
+              out.pending = b2 ? ((b2.querySelector('.profile-friendcard-pending') || {}).textContent || null) : null;
+              out.pendingBtn = !!(b2 && b2.querySelector('.has-pending'));
+              window.incomingFriendRequests = real;
+              const src = renderFriendChatList.toString() + openChatInviteSheet.toString() + openInviteFriendsSheet.toString();
+              out.chatCopy = (src.split('Profile \\\\u203a Friends').length - 1) === 3 && src.indexOf('Class \\\\u203a') < 0;
+              return out; }""")
+            check("%s: the Friends box is back on Profile, under the card, the card's width" % dev,
+                  fr["box"] and fr["below"] and fr["sameWidth"] and (fr["title"] or "").strip() == "Friends", fr)
+            check("%s: Profile counts who is online again (presence attached)" % dev, fr["presence"], fr["presence"])
+            check("%s: Manage friends opens the Friends screen with its back link, Profile lit, and back lands on Profile" % dev,
+                  fr["friends"] and fr["back"] and fr["litF"] == ["bottomtab-profile"] and fr["backTo"], fr)
+            check("%s: a friend request waiting is said on the Friends box" % dev,
+                  bool(fr["pending"]) and "waiting" in fr["pending"] and fr["pendingBtn"], [fr["pending"], fr["pendingBtn"]])
+            check("%s: chat and invite copy point to Profile \u203a Friends again" % dev, fr["chatCopy"], fr["chatCopy"])
+            # ---- Profile's tabs, read off the page ----
+            pg.evaluate("() => { showProfile('profile'); }"); pg.wait_for_timeout(600)
+            t = pg.evaluate(B319H_TABS)
+            holds = []
+            for i in range(len(t["labels"])):
+                pg.evaluate("i => document.querySelectorAll('#stage > .screen-profile > .navsegment > .iconbtn')[i].click()", i)
+                pg.wait_for_timeout(400)
+                holds.append(pg.evaluate(B319H_TABS)["holds"])
+            check("%s: Profile has three tabs - Profile, Calendar, Stats - holding the card, the calendar and the stats" % dev,
+                  [l.lower() for l in t["labels"]] == ["profile", "calendar", "stats"] and holds == ["profile", "calendar", "stats"] and t["active"] == 0,
+                  [t["labels"], holds])
+            # ---- swipe: one tab at a time; along Month / List, the view ----
+            pg.evaluate("() => { showProfile('profile'); window.scrollTo(0, 0); }"); pg.wait_for_timeout(600)
             order = []
             for dx in (-1, -1, -1, 1, 1):
-                _swipe(cdp, w * (0.75 if dx < 0 else 0.25), h * 0.6, dx * w * 0.5, 18)
+                _swipe(cdp, w * (0.75 if dx < 0 else 0.25), h * 0.55, dx * w * 0.5, 18)
                 pg.wait_for_timeout(450)
-                order.append(pg.evaluate(B319G_CLASS)["active"])
-            check("%s: a swipe moves exactly one Class tab, both ways, and stops at the ends" % dev,
-                  order == [1, 2, 2, 1, 0], order)
-            pg.evaluate("()=>{ try{ showClass('rankings', { board: 'overall' }); }catch(e){ showRankings('overall'); } }"); pg.wait_for_timeout(500)
-            sb = pg.evaluate("() => { const e = document.querySelector('#stage .rank-boardseg') || document.querySelector('#stage .navsegment'); const r = e.getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }")
-            before = pg.evaluate(B319G_CLASS)
-            _swipe(cdp, sb[0] + sb[2] * 0.85, sb[1] + sb[3] / 2, -sb[2] * 0.6, 0)
+                order.append(pg.evaluate(B319H_TABS)["active"])
+            check("%s: a swipe moves exactly one Profile tab, both ways, and stops at the ends" % dev, order == [1, 2, 2, 1, 0], order)
+            pg.evaluate("() => { showProfile('calendar'); window.scrollTo(0, 0); }"); pg.wait_for_timeout(700)
+            sb = pg.evaluate("() => { const e = document.querySelector('.screen-profile .cal-viewseg'); const r = e.getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }")
+            _swipe(cdp, sb[0] + sb[2] * 0.9, sb[1] + sb[3] / 2, -sb[2] * 0.8, 0)
             pg.wait_for_timeout(450)
-            after = pg.evaluate(B319G_CLASS)
-            check("%s: a swipe along the board switcher changes the board and not the Class tab" % dev,
-                  after["active"] == 0 and before["board"] != after["board"] and after["board"], [before["board"], after["board"], after["active"]])
+            a1 = pg.evaluate(B319H_TABS)
+            check("%s: a swipe along Month / List changes the view and not the Profile tab" % dev,
+                  a1["active"] == 1 and a1["calView"] == "List", [a1["active"], a1["calView"]])
+            # ---- the Calendar tab, in every state of the course ----
+            states = [("a weekend", "2026-10-10"), ("a class day", "2026-10-13"), ("a test day", "2026-10-12"),
+                      ("the first day", "2026-08-24"), ("the last day", "2027-07-08"), ("after the academy", "2027-08-02"),
+                      ("before the academy", "2026-08-03")] if w == 440 else [("today", None)]
+            for (label, iso) in states:
+                c = pg.evaluate(B319H_CAL, iso)
+                ok = (c.get("tab") and c["card"] and c["head"] and c["grid"] and c["rows"] == ["Next"]
+                      and c["nextText"] == c["wantNext"] and str(c["wantLeft"]) in (c["daysLeft"] or "")
+                      and not c["cardSaysToday"] and c["todayMarks"] <= 1
+                      and c["order"][0] is not None and c["order"][0] < c["order"][1] < c["order"][2])
+                if iso and iso <= "2027-07-08" and iso >= "2026-08-24":
+                    ok = ok and c["todayMarks"] == 1
+                if iso == "2027-08-02":
+                    ok = ok and c["wantLeft"] == 0 and c["month"] == "July 2027" and c["todayMarks"] == 0
+                if iso == "2026-08-03":
+                    ok = ok and c["month"] == "August 2026"
+                if iso == "2027-07-08":
+                    ok = ok and c["wantLeft"] == 1 and "Last day" in (c["dayText"] or "")
+                check("%s, %s%s: the Class 26E box (days left, Next) over the month, and today said once" % (dev, label, " (%s)" % iso if iso else ""),
+                      bool(ok), {k: c.get(k) for k in ("rows", "nextText", "wantNext", "daysLeft", "wantLeft", "cardSaysToday", "todayMarks", "month", "dayText", "order")})
+            pg.evaluate("() => { if(window.__RealDate) window.Date = window.__RealDate; }")
+            c = pg.evaluate(B319H_CAL, None)
+            if w != 320:
+                # one composition: the box, the month and the day card share the Profile card's column
+                pg.evaluate("() => { showProfile('profile'); }"); pg.wait_for_timeout(500)
+                hero = pg.evaluate("() => { const r = document.querySelector('.screen-profile .profile-hero').getBoundingClientRect(); return [Math.round(r.left), Math.round(r.right)]; }")
+                c = pg.evaluate(B319H_CAL, None)
+                cols = [c["cardBox"], c["dayBox"]]
+                check("%s: the Calendar tab's box and day card line up with the Profile card's edges" % dev,
+                      all(b and abs(b[0] - hero[0]) <= 1 and abs(b[2] - hero[1]) <= 1 for b in cols), [hero, cols])
+            # ---- the bottom tab: Leaderboard and the trophy, fitting ----
+            pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(500)
+            bar = pg.evaluate("""() => {
+              const bar = document.getElementById('bottomtabs');
+              const labs = [...bar.querySelectorAll('.bottomtabs-navrow .bottomtab')].filter(t => t.getClientRects().length).map(t => {
+                const l = t.querySelector('.bottomtab-label'); const r = l.getBoundingClientRect(); const tr = t.getBoundingClientRect();
+                return { id: t.id, text: l.textContent.trim(), shown: getComputedStyle(l).display !== 'none',
+                         clipped: l.scrollWidth > l.clientWidth + 1 || r.left < tr.left - 1 || r.right > tr.right + 1, l: r.left, r: r.right }; });
+              const overlap = labs.filter(a => a.shown).some((a, i, arr) => arr.some((b, j) => j !== i && b.shown && a.l < b.r - 1 && b.l < a.r - 1));
+              const br = bar.getBoundingClientRect();
+              return { labs, overlap, inside: br.left >= -1 && br.right <= innerWidth + 1,
+                       icon: (bar.querySelector('#bottomtab-rewards .bottomtab-icon svg path') || { getAttribute: () => '' }).getAttribute('d') }; }""")
+            lb = [l for l in bar["labs"] if l["id"] == "bottomtab-rewards"]
+            check("%s: the bottom tab reads Leaderboard, with the trophy" % dev,
+                  bool(lb) and lb[0]["text"] == "Leaderboard" and bar["icon"].startswith("M7 4h10v5"), [lb, bar["icon"][:30]])
+            check("%s: no bottom tab label is clipped or overlaps another, and the bar is on screen" % dev,
+                  not any(l["clipped"] for l in bar["labs"] if l["shown"]) and not bar["overlap"] and bar["inside"], bar)
+            pg.evaluate("()=>{ document.getElementById('bottomtab-rewards').click(); }"); pg.wait_for_timeout(700)
+            lbs = pg.evaluate("""() => { const p = document.querySelector('#stage > .panel'); const seg = p && p.querySelector(':scope > .navsegment');
+              return { cls: p ? p.className : null, title: (document.getElementById('count') || {}).textContent,
+                       segCls: seg ? seg.className : null, segBg: seg ? getComputedStyle(seg).backgroundColor : null,
+                       boards: seg ? seg.querySelectorAll('.iconbtn').length : 0, n: RANKING_BOARDS.length, nested: !!document.querySelector('#stage .screen-class, #stage .class-pane') }; }""")
+            check("%s: the Leaderboard is the boards on their own screen, the switcher in its own glass pill" % dev,
+                  "screen-rankings" in (lbs["cls"] or "") and lbs["title"] == "Leaderboard" and not lbs["nested"] and lbs["boards"] == lbs["n"]
+                  and "sub-seg" not in (lbs["segCls"] or "") and lbs["segBg"] not in ("rgba(0, 0, 0, 0)", "transparent", None), lbs)
             # ---- every old way in ----
-            ways = [("showRankings()", 0, None), ("showRankings('hundos')", 0, "hundos"), ("showRankings('level')", 0, "overall"),
-                    ("showRankings(new MouseEvent('click'))", 0, "overall"), ("showLeaderboard()", 0, None),
-                    ("showFriends()", 1, None), ("showCalendar()", 2, None),
-                    ("showClass('leaderboard')", 0, None), ("showClass('week')", 0, "week"), ("showClass('friends')", 1, None),
-                    ("showClass('calendar')", 2, None), ("showClass(new MouseEvent('click'))", 0, None),
-                    ("document.getElementById('bottomtab-rewards').click()", 0, "overall")]
+            ways = [("showRankings()", "board", "overall"), ("showRankings('hundos')", "board", "hundos"), ("showRankings('level')", "board", "overall"),
+                    ("showRankings(new MouseEvent('click'))", "board", "overall"), ("showLeaderboard()", "board", "overall"),
+                    ("showClass()", "board", "overall"), ("showClass('rankings')", "board", "overall"), ("showClass('week')", "board", "week"),
+                    ("showClass('rankings', { board: 'hundos' })", "board", "hundos"), ("showClass(new MouseEvent('click'))", "board", "overall"),
+                    ("showFriends()", "friends", None), ("showClass('friends')", "friends", None),
+                    ("showCalendar()", "calendar", None), ("showClass('calendar')", "calendar", None), ("showProfile('calendar')", "calendar", None),
+                    ("showProfile('schedule')", "calendar", None), ("showProfile(new MouseEvent('click'))", "profile", None),
+                    ("document.getElementById('bottomtab-rewards').click()", "board", "overall")]
             bad = []
             for (js, want, board) in ways:
                 pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(250)
-                pg.evaluate("js => { try{ (0, eval)(js); }catch(e){} }", js); pg.wait_for_timeout(500)
-                x = pg.evaluate(B319G_CLASS)
-                bk = pg.evaluate("() => { const a = document.querySelector('#stage .rank-boardseg .iconbtn.active'); if(!a) return null; const i = [...a.parentNode.querySelectorAll('.iconbtn')].indexOf(a); return (RANKING_BOARDS[i] || {}).key || null; }")
-                ok = (x["cls"] and "screen-class" in x["cls"] and x["active"] == want and x["visible"] == 1
-                      and x["shownH"] > 120 and x["lit"] and (board is None or bk == board))
-                if not ok:
-                    bad.append([js, x["active"], bk, x["shownH"], x["cls"]])
-            check("%s: every old way to the boards, friends and the calendar lands on the right Class tab" % dev, not bad, bad)
+                pg.evaluate("js => { try{ (0, eval)(js); }catch(e){ window.__err = String(e); } }", js); pg.wait_for_timeout(550)
+                x = pg.evaluate("""() => { const p = document.querySelector('#stage > .panel'); const cls = p ? p.className : '';
+                  const a = document.querySelector('#stage .screen-rankings .navsegment .iconbtn.active');
+                  const i = a ? [...a.parentNode.querySelectorAll('.iconbtn')].indexOf(a) : -1;
+                  const tab = document.querySelector('#stage > .screen-profile > .navsegment .iconbtn.active');
+                  return { cls, board: i >= 0 ? (RANKING_BOARDS[i] || {}).key : null, ptab: tab ? tab.textContent.trim().toLowerCase() : null,
+                           h: p ? Math.round(p.getBoundingClientRect().height) : 0,
+                           lit: [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id) }; }""")
+                if want == "board": ok = "screen-rankings" in x["cls"] and x["board"] == board and x["lit"] == ["bottomtab-rewards"]
+                elif want == "friends": ok = "screen-friends" in x["cls"] and x["lit"] == ["bottomtab-profile"]
+                else: ok = "screen-profile" in x["cls"] and x["ptab"] == want and x["lit"] == ["bottomtab-profile"]
+                if not (ok and x["h"] > 120): bad.append([js, x])
+            check("%s: every old way to the boards, Friends and the calendar lands on the right screen and tab, the right bottom tab lit" % dev, not bad, bad)
         except Exception as e:
-            # an older build lets a sideways drag go to the browser, which
-            # can leave the page altogether - that is a failure, not a crash
-            check("%s: the swipe and the old ways in could be driven at all" % dev, False, str(e)[:160])
+            check("%s: the Profile tabs, Friends, the Leaderboard and the old ways in could be driven at all" % dev, False, str(e)[:200])
         ctx.close()
 
 
@@ -20908,7 +21106,7 @@ def main():
             check_b319_penal346(br)
             check_b319_badges(br)
             check_b319f_casespace(br)
-            check_b319g_layout(br)
+            check_b319h_layout(br)
         finally:
             br.close()
     SERVER.shutdown()

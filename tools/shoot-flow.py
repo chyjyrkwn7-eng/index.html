@@ -337,27 +337,16 @@ def main():
                 # kept saving the new board under the old board's name -
                 # a screenshot that gets reported as a bug on the screen
                 # it is not of.
-                # Build 319: the tab is Class, and the boards are its Rankings
-                # tab - their own switcher sits inside .screen-rankings.
                 board_names = page.evaluate(
-                    """()=>[...document.querySelectorAll('.screen-rankings .navsegment .iconbtn')]"""
+                    """()=>[...document.querySelectorAll('.panel .navsegment .iconbtn')]"""
                     """.map(b=>b.textContent.toLowerCase().replace(/[^a-z0-9]+/g,'-'))""")
                 for i, name in enumerate(board_names):
-                    page.evaluate("""(n)=>{const b=[...document.querySelectorAll('.screen-rankings .navsegment .iconbtn')][n];
+                    page.evaluate("""(n)=>{const b=[...document.querySelectorAll('.profiletabs .iconbtn')][n];
                       if(b) b.click();}""", i)
                     page.wait_for_timeout(700)
                     shot(page, 24 + i * 0.1, "leaderboard-" + name, bar_ok=True)
-                # ...and Class's other two tabs, names read off the screen
-                class_tabs = page.evaluate(
-                    """()=>[...document.querySelectorAll('.screen-class > .navsegment > .iconbtn')]"""
-                    """.map(b=>b.textContent.toLowerCase().replace(/[^a-z0-9]+/g,'-'))""")
-                for i, name in enumerate(class_tabs[1:], start=1):
-                    page.evaluate("""(n)=>{const b=document.querySelectorAll('.screen-class > .navsegment > .iconbtn')[n];
-                      if(b) b.click();}""", i)
-                    page.wait_for_timeout(700)
-                    shot(page, 24.5 + i * 0.1, "class-" + name, bar_ok=True)
 
-                # the four Profile tabs
+                # the Profile tabs
                 page.evaluate("()=>document.getElementById('bottomtab-profile').click()")
                 page.wait_for_timeout(900)
                 # Whole numbers per tab, halves for a scrolled view. The
@@ -370,12 +359,17 @@ def main():
                 # and index 2 the other way round. A mislabelled
                 # screenshot is worse than a missing one - it gets
                 # reported as a bug on the screen it is not of.
-                for i, name in enumerate(["profile", "stats", "badges", "rank"]):
-                    page.evaluate("""(n)=>{const b=[...document.querySelectorAll('.profiletabs .iconbtn')][n];
+                # Build 319 (h): read off the page - Profile, Calendar, Stats
+                # now, and a list typed here goes stale the next time they move.
+                tab_names = page.evaluate(
+                    """()=>[...document.querySelectorAll('.screen-profile > .profiletabs .iconbtn')]"""
+                    """.map(b=>b.textContent.toLowerCase().replace(/[^a-z0-9]+/g,'-'))""")
+                for i, name in enumerate(tab_names):
+                    page.evaluate("""(n)=>{const b=[...document.querySelectorAll('.screen-profile > .profiletabs .iconbtn')][n];
                       if(b) b.click();}""", i)
                     page.wait_for_timeout(800)
                     shot(page, 25 + i, "profile-" + name, bar_ok=True)
-                    if name in ("badges", "rank"):
+                    if name in ("profile", "calendar"):
                         page.evaluate("()=>window.scrollTo(0, document.documentElement.scrollHeight)")
                         page.wait_for_timeout(450)
                         shot(page, 25 + i + 0.5, "profile-" + name + "-scrolled", bar_ok=True)
