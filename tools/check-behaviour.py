@@ -1413,6 +1413,10 @@ def check_b313_shuffle(br):
     check("the Victims of Crime question reads exactly as the study guide has it, identity unchanged",
           r["victimKeep"] is True and r["victim"] and r["victim"][2] == "event.", r["victim"])
     kc = pg.evaluate("()=>QUESTIONS.map((q, i) => i).filter(i => Array.isArray(QUESTIONS[i].keyChoices) && QUESTIONS[i].keyChoices.join('|') !== QUESTIONS[i].choices.join('|')).map(i => QUESTIONS[i].topic.trim().slice(0, 12) + ' ' + QUESTIONS[i].src)")
+    # BUILD 319: Penal Code #346's "Manslaughter. 1" -> "Manslaughter." was
+    # asked for by name in the 319 list, so it is the one allowed repair
+    # (check_b319_penal346 holds it to that one choice and its identity).
+    kc = [k for k in kc if k != "Penal Code 346"]
     check("no question's choices are reworded from the study guide (no keyChoices that differ)", kc == [], kc)
     ctx.close()
 
@@ -19846,6 +19850,44 @@ def check_b319_daily(br):
         ctx.close()
 
 
+def check_b319_penal346(br):
+    """Build 319. Penal Code #346, choice D, read "Manslaughter. 1" - a
+    slide's page number that came in with the text. It reads
+    "Manslaughter." now, and NOTHING ELSE about the bank moves: its KEYS
+    entry is kept by `keyChoices` (the original four choices), so every
+    question's identity - all of KEYS - is byte-identical to 8aded7f's, as
+    are every question's text, choices (bar this one) and answer. The
+    8aded7f page is loaded beside this one and both are asked. Fails on
+    8aded7f (choice D still has the "1")."""
+    import subprocess as _sp
+    print("\n319e. Penal Code #346: the page number off choice D, identity kept")
+    try:
+        old = _sp.run(["git", "-C", ROOT, "show", "8aded7f:index.html"], capture_output=True, check=True).stdout.decode("utf-8")
+    except Exception as e:
+        check("8aded7f is in this repo to compare against", False, str(e)[:120]); return
+    Q = """() => ({ keys: KEYS.slice(), bank: QUESTIONS.map(q => [q.topic, q.src, q.q, (q.choices || []).join('\\u0001'), q.answer]),
+      p346: QUESTIONS.map((q, i) => [q, i]).filter(([q]) => q.topic === 'Penal Code' && q.src === 346).map(([q, i]) => ({ i, key: KEYS[i], choices: q.choices, answer: q.answer })) })"""
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    now = pg.evaluate(Q)
+    ctx.close()
+    ob = INSET_RE.sub(lambda m: "0px", old).replace("let fbDb = null;", "let fbDb = null;" + FIRESTORE_STUB, 1)
+    ctx = br.new_context(viewport={"width": 440, "height": 956})
+    pg = ctx.new_page()
+    pg.route("**/index.html", lambda r: r.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=ob))
+    pg.route("**/version.json*", lambda r: r.fulfill(status=200, headers={"content-type": "application/json"}, body='{"build":"x","frameId":"","note":""}'))
+    pg.goto(URL); pg.wait_for_timeout(2600)
+    was = pg.evaluate(Q)
+    ctx.close()
+    p = now["p346"]
+    check("Penal Code #346 choice D reads \"Manslaughter.\", the rest of it as it was",
+          len(p) == 1 and p[0]["choices"] == ["Criminally negligent homicide", "Murder.", "Capital murder.", "Manslaughter."] and p[0]["answer"] == 0, p)
+    check("its KEYS entry is byte-identical to 8aded7f's (Penal Code|346|243n1v)",
+          len(p) == 1 and p[0]["key"] == "Penal Code|346|243n1v" and was["p346"] and was["p346"][0]["key"] == p[0]["key"], [p and p[0]["key"], was["p346"] and was["p346"][0]["key"]])
+    check("all of KEYS is byte-identical to 8aded7f's", now["keys"] == was["keys"], [len(now["keys"]), len(was["keys"])])
+    diff = [i for i, (a, b) in enumerate(zip(now["bank"], was["bank"])) if a != b]
+    check("no other question's text, choices or answer moved", len(now["bank"]) == len(was["bank"]) and diff == ([p[0]["i"]] if p else []), diff[:6])
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -20050,6 +20092,7 @@ def main():
             check_b319_daily(br)
             check_b319_horizon(br)
             check_b319_levelnote(br)
+            check_b319_penal346(br)
         finally:
             br.close()
     SERVER.shutdown()

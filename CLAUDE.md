@@ -18771,5 +18771,13 @@ reaction was the weakest in the set (below).
   counts toward them right away. The old copy opened with "to keep leveling
   up, you now need the badges", which read as "badges to level up at all".
   Gate: `check_b319_levelnote` (0, 1 and 4 badges; nobody under the cap).
-- Penal Code #346, choice D: `"Manslaughter."` (a slide's page number "1"
-  had come in with it). Choice text is not identity; topic/src untouched.
+- **Penal Code #346, choice D: `"Manslaughter."`** (a slide's page number
+  "1" had come in with it), asked for by name in the 319 list - the one
+  exception to the 6 Oct "exactly like the study guides" rule above, which
+  had reverted this very repair. **Choice text IS part of identity**: KEYS
+  hashes `keyText || q` plus `keyChoices || choices`, so the question
+  carries `keyChoices` with the original four and its key stays
+  `Penal Code|346|243n1v`. `check_b319_penal346` loads 8aded7f beside the
+  build and wants all 898 KEYS byte-identical and no other question
+  changed; `check_b313_shuffle`'s "no keyChoices that differ" allows
+  exactly this one.
