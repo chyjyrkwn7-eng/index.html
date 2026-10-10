@@ -19718,6 +19718,125 @@ def check_b318h_legacy_rows(br):
     ctx.close()
 
 
+def check_b319f_casespace(br):
+    """Build 319 (b319f). Madison, on the Badges screen: "can we make it so
+    when you open the tab the case opens, would be a cool interactive
+    feature. On the badge tab, the top of the case is really close to that
+    box and it's a bit wider ... the spacing and that connection/transition
+    ... could be better." Written against bc2986d, where it fails:
+      - the case is SHUT on the first frame (lid folded down over the tray,
+        rotateX -180: m22 ~ -1; bc2986d's lid stands at -8 from the start),
+        the lid's transform changes frame to frame, and by 1.6s it stands
+        open behind the tray with the shut face gone;
+      - a slot pressed while the case is opening (the lid over the tray, the
+        case still coming down) opens THAT badge's card, and the lid is up;
+      - closing the card does not shut and replay it; the screen built again
+        over itself does not either; opened again from Profile, it does;
+      - Reduce motion: open on the first frame, nothing animating;
+      - the head and the case are one column on both reference devices: the
+        lid's top edge within 2px of the head's edges each side (bc2986d:
+        6px on the phone, 117px on the iPad), and 16-40px of air between
+        the head and the lid (bc2986d: 9px on the phone)."""
+    print("\n319f. the Badges screen: the case opens as the screen opens; the head and the case one column")
+    SEED = """(rm) => { const units = unitsInTeachingOrder(); store.unitPerfects = {};
+      units.forEach((u, i) => store.unitPerfects[u] = (i % 3 !== 2) ? badgeThresholdFor(u) : Math.floor(badgeThresholdFor(u) / 3));
+      store.seenUnlocks = store.seenUnlocks || { chars: [], banners: [], themes: [], badges: [] }; store.seenUnlocks.badges = units.slice();
+      store.pendingBadgeUnlocks = []; theme.muteBanners = true; theme.reduceMotion = rm; applyTheme();
+      document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert,.update-banner').forEach(n => n.remove()); }"""
+    LID = """() => { const k = document.querySelector('.badges-tab .ncase'); if(!k) return null;
+      const lid = k.querySelector('.ncase-lid'), tray = k.querySelector('.ncase-tray');
+      const m = getComputedStyle(lid).transform; const v = m.startsWith('matrix3d(') ? m.slice(9, -1).split(',').map(Number) : null;
+      const lb = lid.getBoundingClientRect(), tb = tray.getBoundingClientRect();
+      return { m22: v ? +v[5].toFixed(3) : (m === 'none' ? 1 : null), tf: m.slice(0, 48), shut: k.classList.contains('is-shut'),
+               face: !!k.querySelector('.ncase-lid-out'), anims: lid.getAnimations().length + k.getAnimations().length,
+               lidMid: (lb.top + lb.bottom) / 2, trayTop: tb.top, trayBot: tb.bottom, lidBot: lb.bottom }; }"""
+    # 1. shut at first paint, moving, open by 1.6s
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(SEED, False)
+    pg.evaluate("() => showProfile('profile')"); pg.wait_for_timeout(1200)
+    clk = _Stepper(pg)
+    pg.evaluate("() => showRanksScreen('badges')")
+    clk.step(1 / 30)
+    first = pg.evaluate(LID)
+    seen = []
+    while clk.t < 1.6:
+        clk.step(1 / 30)
+        r = pg.evaluate(LID)
+        seen.append(r["m22"] if r else None)
+    end = pg.evaluate(LID)
+    distinct = len(set(x for x in seen if x is not None))
+    check("the case is shut on the first frame: the lid folded down over the tray (m22 ~ -1, its middle over the tray)",
+          bool(first) and first["m22"] is not None and first["m22"] < -0.9 and first["trayTop"] < first["lidMid"] < first["trayBot"],
+          first and {k: first[k] for k in ("m22", "shut", "face", "lidMid", "trayTop", "trayBot")})
+    check("the lid's transform changes over time as it opens (>= 8 distinct steps in 1.6s)", distinct >= 8, "%d distinct" % distinct)
+    check("by 1.6s it stands open behind the tray (m22 > .98, above the tray), the shut face gone, nothing left animating",
+          bool(end) and end["m22"] is not None and end["m22"] > 0.98 and end["lidBot"] <= end["trayTop"] + 2 and not end["shut"] and not end["face"] and end["anims"] == 0,
+          end and {k: end[k] for k in ("m22", "shut", "face", "anims", "lidBot", "trayTop")})
+    # 2. closing the card, and the screen built again over itself, do not replay it
+    again = pg.evaluate("""() => { const t = document.querySelector('.badges-tab .ncase-cell.is-earned'); t.click();
+      const sh = document.querySelector('.invite-overlay'); const c = sh && sh.querySelector('.person-sheet-close'); if(c) c.click();
+      const k = document.querySelector('.badges-tab .ncase');
+      const a = { card: !!sh, shut: k.classList.contains('is-shut'), anims: k.querySelector('.ncase-lid').getAnimations().length };
+      showRanksScreen('badges'); const k2 = document.querySelector('.badges-tab .ncase');
+      a.rebuiltShut = k2.classList.contains('is-shut'); return a; }""")
+    clk.step(1 / 30)
+    again["rebuiltShut2"] = pg.evaluate(LID)["shut"]
+    pg.evaluate("() => showProfile('profile')"); clk.step(0.5)
+    pg.evaluate("() => showRanksScreen('badges')"); clk.step(1 / 30)
+    reopen = pg.evaluate(LID)
+    check("closing a badge's card does not shut the case again; the screen built over itself does not replay it; opened again from Profile, it does",
+          again["card"] and not again["shut"] and again["anims"] == 0 and not again["rebuiltShut"] and not again["rebuiltShut2"]
+          and bool(reopen) and reopen["m22"] is not None and reopen["m22"] < -0.9, [again, reopen and reopen["m22"]])
+    ctx.close()
+    # 3. a slot pressed mid-opening opens its card, and the lid is up at once
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(SEED, False)
+    clk = _Stepper(pg)
+    pg.evaluate("() => showRanksScreen('badges')")
+    while clk.t < 0.42:
+        clk.step(1 / 30)
+    mid = pg.evaluate(LID)
+    tgt = pg.evaluate("""() => { const cells = [...document.querySelectorAll('.badges-tab .ncase-cell')];
+      const i = cells.findIndex(c => c.classList.contains('is-earned')); const b = cells[i].getBoundingClientRect();
+      return { i, label: cells[i].getAttribute('aria-label'), x: b.left + b.width / 2, y: b.top + b.height / 2 }; }""")
+    pg.mouse.click(tgt["x"], tgt["y"])
+    clk.step(1 / 30)
+    after = pg.evaluate("""(i) => { const sh = document.querySelector('.invite-overlay');
+      return { name: sh ? (sh.querySelector('.unlock-card-name') || {}).textContent || '' : null }; }""", tgt["i"])
+    after.update({k: v for k, v in pg.evaluate(LID).items() if k in ("m22", "shut", "face", "anims")})
+    unit = tgt["label"].split(" Badge,")[0]
+    check("a found slot pressed while the case is opening opens that badge's card, and the lid is up at once",
+          bool(mid) and (mid["shut"] or mid["anims"] > 0 or (mid["m22"] or 1) < 0.9) and after["name"] == unit + " Badge"
+          and after["m22"] is not None and after["m22"] > 0.98 and not after["face"] and after["anims"] == 0,
+          [mid and mid["m22"], unit, after])
+    ctx.close()
+    # 4. Reduce motion: open on the first frame
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(SEED, True)
+    clk = _Stepper(pg)
+    pg.evaluate("() => showRanksScreen('badges')")
+    rm0 = pg.evaluate(LID)
+    clk.step(1 / 30)
+    rm1 = pg.evaluate(LID)
+    ctx.close()
+    check("Reduce motion: the case is open on the first frame, nothing animating",
+          all(r and r["m22"] is not None and r["m22"] > 0.98 and not r["shut"] and not r["face"] and r["anims"] == 0 for r in (rm0, rm1)),
+          [rm0 and rm0["m22"], rm1 and rm1["m22"]])
+    # 5. one column, both reference devices
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate(SEED, True)
+        pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(700)
+        g = pg.evaluate("""() => { const hd = document.querySelector('.badges-tab .badges-head').getBoundingClientRect();
+          const l = document.querySelector('.badges-tab .ncase-lid').getBoundingClientRect();
+          const t = document.querySelector('.badges-tab .ncase-tray').getBoundingClientRect();
+          return { gap: +(l.top - hd.bottom).toFixed(1), dl: +(l.left - hd.left).toFixed(1), dr: +(l.right - hd.right).toFixed(1),
+                   headW: +hd.width.toFixed(1), lidTopW: +l.width.toFixed(1), trayW: +t.width.toFixed(1) }; }""")
+        ctx.close()
+        check(f"{dev}: the head and the lid's top edge line up (within 2px each side)", abs(g["dl"]) <= 2 and abs(g["dr"]) <= 2, g)
+        check(f"{dev}: the case has room under the head (16-40px from the head to the lid's top)", 16 <= g["gap"] <= 40, g)
+
+
 def check_b319_badges(br):
     """Build 319, badges round. Madison: "The badge case cutscene, when the
     case opened, the inside of the case was shining purpose, seems like the
@@ -20390,6 +20509,7 @@ def main():
             check_b319_levelnote(br)
             check_b319_penal346(br)
             check_b319_badges(br)
+            check_b319f_casespace(br)
         finally:
             br.close()
     SERVER.shutdown()

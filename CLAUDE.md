@@ -18988,3 +18988,53 @@ account. **Gate: `check_b319_shine`** - on the 17 Pro Max at 3x, three
 themes: the shine region with the scar against the same frame with it
 hidden, dulled under 80% (51 against 88) with 3%+ of it dark seams (20%,
 clean 0%). Fails on 8aded7f (88 against 88, 0%).
+
+### Build 319 (b319f) - the case opens with the Badges screen; the head and the case one column
+
+Madison: *"when you open the tab the case opens, would be a cool interactive
+feature ... the top of the case is really close to that box and it's a bit
+wider ... the spacing and that connection/transition ... could be better."*
+
+- **The case opens as the screen opens** (`shutBadgeCase`,
+  `openBadgeCaseLid`, `finishBadgeCaseOpen`, `CASE_OPEN`). The tab's own
+  `buildOpenBadgeCase` case, built shut (`.is-shut`: the lid folded down over
+  the tray at `rotateX(-180deg)`, its outside up - `.ncase-lid-out`, the
+  cutscene's shell, trim and Nova plate, `scaleY(-1)` inside the lid so it
+  reads upright, 10% taller so it covers the `.88` tray). `runFill` opens it:
+  110ms hold, the cutscene's crack curve to -166, the cutscene's swing curve
+  to -8; 1.1s, glints done by ~1.35s. WAAPI, transform/opacity only (the
+  lid's z-index and face swap at the computed edge-on moment, where neither
+  shows).
+- **Shut, it sits right under the head**: the whole case starts lifted by the
+  standing lid's height and comes down as the lid rises. Shut in place it was
+  at the bottom of a phone, behind the tab bar, under 300px of nothing. The
+  fall is sampled (20 keyframes) and clamped so the rising lid's top never
+  passes where it comes to rest (unclamped it rose 28px into the head).
+- **Never blocks a tap**: the lid has `pointer-events:none`; a `pointerdown`
+  anywhere on the case finishes everything at once, and the pressed slot is
+  remembered - the case has just moved under the finger, so the click may
+  land elsewhere, and that slot's card is opened instead (`check_b319f`
+  fails without the redirect).
+- **When it plays**: every new opening of the screen, after the settle
+  window. Not with Reduce motion / `prefers-reduced-motion`
+  (`resultsMotionOff`), not when the screen is built again over itself
+  (`buildBadgesTab({ still })`), not on closing a badge's card (an overlay;
+  the screen is never rebuilt). No light in the case.
+- **Glints**: one soft band per found badge, inside a 46% circle (inside the
+  badge's face for every shape), peak white .42, a diagonal wave from the
+  edge-on moment, 360ms first to last.
+- **One column**: `--badges-col` (25.85rem / 32rem from 40rem, capped at
+  100%) is the head's width AND the width of the leaning lid's top edge
+  (1.034 of the case: perspective 340cqw, rotateX(-8deg), lid .8 tall); the
+  case is the column / 1.034. `--badges-gap` (1.5rem / 2rem) of air from the
+  head to the lid's top. Was 9px and 6px overhang each side on the phone, a
+  746px head over a 496px case on the iPad. A connected "label plate" was
+  rejected: the lid moves, and the case already carries its plate on the
+  front wall.
+
+**Gate: `check_b319f_casespace`** (fails 8 of 10 on bc2986d): shut on the
+first frame (m22 ~ -1, over the tray), >= 8 distinct lid transforms, open by
+1.6s with nothing left animating; no replay on closing a card or a rebuild,
+a replay from Profile; a mid-opening press opens that badge's card with the
+lid up; Reduce motion open on frame one; head/lid edges within 2px and a
+16-40px gap on both reference devices (24 / 32 now).
