@@ -14193,6 +14193,12 @@ every unit, and through the real Begin button:
   had a wrong answer reading just "writ of" (now "writ of mandamus") and
   Fitness src 11 listed "20-25%" twice (the second is now "55-60%"); both
   repaired with `keyChoices`, so nobody's history on them moved.
+  (The 6 Oct revert undid the Victims of Crime repair; build 319 put it
+  back, checked against the study guide Madison photographed - B ends
+  "...between them and the event.", C is the "deny or minimize" line, D
+  is All of the Above and the answer - with `keyChoices` holding the
+  imported choices. Every key in KEYS was compared before and after:
+  identical. Fitness src 11 is staying as the guide prints it.)
 - `check_b313_shuffle` (section 97) holds all of it and fails on 312.
 
 ### The Penal Code's short version moves with the next test (build 313)

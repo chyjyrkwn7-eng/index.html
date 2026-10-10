@@ -37034,11 +37034,20 @@ const QUESTIONS = [
     src: 5,
     q: "Which of the following is an aspect or element of effective victim intervention and response",
     ref: "(Victims of Crime, Section 20.4)",
-    choices: [
+    /* the choices as first imported (one cut in half, "All of the Above"
+       glued onto the last): the question's identity stays this, so
+       nobody's history moves. Rejoined to match the study guide. */
+    keyChoices: [
       "Assure victims that their reactions are natural and understandable.",
       "Recognize “frozen fright” or the victim's complete dissociation between them and the",
       "event.",
       "Victims may “deny or minimize” the impact of the assault or crime they've been subjected to. All of the Above",
+    ],
+    choices: [
+      "Assure victims that their reactions are natural and understandable.",
+      "Recognize “frozen fright” or the victim's complete dissociation between them and the event.",
+      "Victims may “deny or minimize” the impact of the assault or crime they've been subjected to.",
+      "All of the Above",
     ],
     answer: 3
   },
