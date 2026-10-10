@@ -475,6 +475,8 @@ def main():
             store.unitPerfects = {'Identity Crimes': 25, 'Penal Code': 4, 'TCOLE Rules': 21};
             store.lifetime.points = xpForLevel(30) + 50;
             store.pendingBadgeUnlocks = []; store.pendingTierCutscene = null; store.pendingSupernovaCutscene = false;
+            /* an onboarded account never counted for rank-ups (build 319) */
+            store.onboardingComplete = true; store.rankUpShown = null;
             store.badgeBandsVersion = 0; store.retroBadgePending = [];
             grantRetroBadgesOnce();
             const listed = store.retroBadgePending.slice();

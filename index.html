@@ -87065,11 +87065,6 @@ function summarize(){
   /* Settle what counts as already seen before anything can be earned
      (build 299) - a no-op once the record exists. */
   try{ if(store.onboardingComplete) ensureSeenUnlocks(); }catch(e){}
-  /* Rank-ups are counted from here on (build 319): an account never
-     counted is seeded with the rank it holds BEFORE this run, so a rank
-     this run reaches is owed on Profile and nothing older is. */
-  try{ if(store.onboardingComplete) rankUpSeed(); }catch(e){}
-  const ruPointsBefore = Number(store.lifetime && store.lifetime.points) || 0;
   /* THE END OF A RUN IS THE MOMENT THE BOARD IS WORTH UPDATING, and the
      only one. Everything in between is a number nobody is looking at -
      see the note on pushLeaderboardRow. Deferred here would still land
@@ -87144,6 +87139,13 @@ function summarize(){
         .concat(mergeBadges).filter((u, i, a) => a.indexOf(u) === i) : [];
   retroHideBadges = retroBadges.length ? new Set(retroBadges) : null;
   if(mergeHeld) mergeHidePoints = mergeHeld.points;
+  /* Rank-ups are counted from here on (build 319): an account never
+     counted is seeded with the rank it holds BEFORE this run - after the
+     handed-out badges and a merge's level are hidden, so a rank they tip
+     is this run's, owed on Profile, and nothing older is. */
+  try{ if(store.onboardingComplete) rankUpSeed(); }catch(e){}
+  const ruPointsBefore = mergeHeld ? Math.min(Number(store.lifetime.points) || 0, Number(mergeHeld.points) || 0)
+    : (Number(store.lifetime && store.lifetime.points) || 0);
   ensureUnlocksShown();
   const lockedBefore = lockedCharacterSet();
   if(mergeHeld) mergeHeld.chars.forEach(id => lockedBefore.add(id));

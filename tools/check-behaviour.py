@@ -2662,7 +2662,11 @@ def check_b236(br):
       const out = {};
       const T = async (k, f) => { try{ out[k] = await f(); }catch(e){ out[k] = 'THREW ' + e.message; } };
       const wait = ms => new Promise(r => setTimeout(r, ms));
-      const u = topicsIn(QUESTIONS); u.slice(2, 8).forEach(n => store.unitPerfects[n] = 999); levelOf = () => 40;
+      const u = topicsIn(QUESTIONS); u.slice(2, 8).forEach(n => store.unitPerfects[n] = 999);
+      /* 44, not 40 (build 319): at no progress to the next rank there is no
+         light at all ("It should be AT 0"), so the light is asked for where
+         there is some */
+      levelOf = () => 44;
       store.rankMapSeen = 2; showProfile('ranks'); await wait(2200);
       await T('chips', () => ({ prev: document.querySelectorAll('.rankmap-bannerprev').length,
                                 chips: document.querySelectorAll('.rankmap-gift.is-banner').length }));
@@ -17135,7 +17139,7 @@ B319_RU_WALK = """async (a) => {
     const hk = document.querySelector('.rankhero-kicker.ru-kick');
     if(hk && !out.hero){ at('heroturn'); out.hero = { kick: hk.textContent, name: (document.querySelector('.rankhero-name') || {}).textContent }; }
     if(document.querySelector('.ru-curtain.is-on')) at('curtain');
-    if(out.at.curtain && document.querySelector('.screen-profile')) at('back');
+    if((out.at.curtain || out.at.ph_return || out.at.ph_back) && document.querySelector('.screen-profile')) at('back');
     if(document.querySelector('.pf-goal.ru-flip-out')) at('flipout');
     if(document.querySelector('.pf-goal.ru-goal-in')) at('goalin');
     const lv = document.querySelector('.screen-profile .pf-standing .pf-level');
@@ -17429,7 +17433,7 @@ def check_b317_flow(br):
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate("() => " + _seed_gold_js())
     lk = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
-      store.rankFloor = 0; store.rankMapFx244 = true; store.rankMapSeen = 1; store.pendingTierCutscene = null; store.savedCodeSaved = true;
+      store.rankFloor = 0; store.rankMapFx244 = true; store.rankMapSeen = 1; store.rankUpShown = 2; store.pendingTierCutscene = null; store.savedCodeSaved = true;
       const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); saveStore();
       document.querySelectorAll('.app-banner, #pushing-update, #intro-pop').forEach(n => n.remove());
       showModeSelect && showModeSelect(); await wait(400);

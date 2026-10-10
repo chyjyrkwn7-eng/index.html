@@ -12,7 +12,8 @@ Every check here was written against a build where it failed:
      (Open a unit's details twice, leave the screen with the second up.)
   2. The daily question books the XP its card prints (DAILY_XP). It said
      "+200 XP" and booked 100.
-  3. A rank reached on the daily question is told on Home, in order: no
+  3. A rank reached on the daily question is told on Profile's road map
+     (build 319; it was Home, in order): no
      "Character unlocked" / "Theme unlocked" pills stacked over the
      question; the rank character is left for Home's queue.
   4. Review mode's sheet counts the bank it will list (Flagged since 284, not the
@@ -140,7 +141,7 @@ with sync_playwright() as pw:
     ck("and it is DAILY_XP", got["booked"] == got["daily"], got)
     ctx.close()
 
-    print("3. a rank reached on the daily question is told on Home, in order")
+    print("3. a rank reached on the daily question is told on Profile's road map (build 319)")
     ctx, pg = page(br)
     pg.evaluate("""()=>{ const units=topicsIn(QUESTIONS).slice(0,3); store.unitPerfects={}; units.forEach(u=>store.unitPerfects[u]=badgeThresholdFor(u));
       let p=0; while(levelProgress(p).level<TIER_UNLOCKS.ranger.level) p+=10; store.lifetime.points=p-50; store.points=store.lifetime.points;
