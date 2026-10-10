@@ -10693,7 +10693,9 @@ mid-test are held for that test's results screen. A run abandoned by iOS
 never reached it, so the Home queue announced the unlock at the next launch,
 out of nowhere. `homeUnlockBlocked()` now also waits while `#resume-offer`
 is up or a saved session exists; No thanks hands back to
-`homeUnlocksAfterSync`.
+`homeUnlocksAfterSync`. **Superseded in part by build 319** (next
+section): "No thanks" is now "Not now", which keeps the run as the saved
+test, and only an unsaved (interrupted) session holds Home's cards.
 
 **Ronin is 500.** `RONIN_TEST_SIZE = 500` and a new
 `store.bigTest500Passed`; `bigTest450Passed` is still read, so nobody who
@@ -10852,6 +10854,63 @@ Starred and Review to Learn on request, and five older checks asserted the
 old words (and one counted the start sheet's hidden option toggles). They
 now accept either wording or count only visible toggles - the shape, not the
 string, as **A GATE THAT NAMES A LABEL GOES STALE** says.
+
+### Build 319 - save a test for later
+
+*"Let's add the ability to pause a test and come back somehow ... when
+hitting start studying, it would give a popup of the test you left and
+saved asking if you want to rejoin or if you want to a new one ... You
+can't save two or more at the same time ... won't be available for review
+or virtual room."* Built on the 304 run session, not beside it: ONE slot,
+`class26e.runsession.v1` (device-local, never `store`), with `saved:true`.
+
+- **Pause is Resume / Save and exit / Quit test** (Exit test became Quit
+  test; its confirmation is "Quit this test?"). Save and exit only where
+  `runSessionSavable()`, which now also needs `runSaveSlot`: set in
+  `beginRun()` for a Drill or Exam that is not the daily question, a
+  Virtual Room or a race, and in `resumeRunSession()`. **Only a run that
+  owns the slot may clear it** - `beginRun`, `summarize` and `showHome`
+  all used to clear it unconditionally, so a daily question or a Virtual
+  Room would have wiped a saved test.
+- **Home after Save and exit is ordinary.** `scheduleResumeOffer` skips a
+  saved session and `homeUnlockBlocked` only waits for an UNSAVED one. So
+  nothing is announced twice, the save moves the session's
+  `runStartLocked`/`runStartBanners` to "now": what the first part earned
+  plays on Home, and the results diff no longer sees it as new.
+- **Start Studying is `startStudying()`**: a session in the slot opens
+  `showRunOffer(s, "start")` (Resume test / Start a new test -> "Start a
+  new test?" -> Keep saved test / Delete and start new); a tap outside
+  closes it. The 304 Home offer is `showRunOffer(s, "home")` with Resume
+  test / Not now (`markRunSessionSaved`). A saved test never expires; an
+  interrupted one still does at 24h.
+- **Finishing must equal never pausing.** The save also carries the
+  question's own clock up to the pause, the secret flare the run was going
+  to show further on (`flarePlan`), and `studyPriorMs`: Save and exit
+  credits the study log with the first part (`flushStudyTime`), and on the
+  resumed run `flushStudyTime` leaves `runStudyPriorMs` out. Without it the
+  first part is credited twice (the run's elapsed time covers both parts).
+- **Across an update** the session's questions are found by their KEYS
+  (`qkeys`, `remapRunSession`): renumbered questions come back exactly; a
+  question gone, a choice count changed (the saved choice order no longer
+  fits) or a unit gone drops a SAVED test and sets
+  `class26e.savedtest.dropped`, which Start Studying says once ("Saved test
+  removed").
+- **Pause with three buttons**: `centerPauseStack` raises the line by half
+  a button pitch for `.has-save` panels (Pause and its Quit confirmation),
+  and puts the line on a device pixel instead of rounding the move - the
+  confirmation's buttons now land exactly on Pause's first two (they were
+  up to 0.8px apart).
+- What's New (7.7, not yet live): "Save a test for later" is the first row
+  of the card (nine rows fit a 17 Pro Max: card 32-924 of 956) and the
+  first item under Studying in `RELEASE_NOTES[0]`.
+- **Gate: `tools/check-savetest.py`** (its own tool, so the five builders'
+  check-behaviour lists do not collide; `ONLY_FN=` works). Pause menu on
+  both reference devices; save, relaunch, Start Studying, resume, finish
+  against an unpaused twin run (XP lines, account deltas, hundo, study log
+  once); count-down clock; discard; one slot; Review/flashcards/Virtual
+  Room/daily; the update cases; the interrupted offer. 36 failures on
+  8aded7f. check-behaviour 65 (`check_b297`) reads the pause stack's shape
+  (2 or 3 buttons, the last one quits) instead of the word Exit.
 
 ### Build 304 - banners and the ultimate unlock
 
