@@ -14834,6 +14834,14 @@ EVOLVE_CARD = """async () => { const wait = ms => new Promise(r => setTimeout(r,
   order.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
   summarize();
   for(let i = 0; i < 400 && !document.querySelector('.rs-rewards.rs-done'); i++) await wait(100);
+  /* build 319: the reward cards left the results screen for Profile's
+     road map, so the card is caught where it now plays - Profile opened
+     with the rank-up owed walks to the map and plays it there */
+  out.onResults = !!out.card;
+  if(!out.card){
+    showProfile();
+    for(let i = 0; i < 900 && !out.card; i++) await wait(100);
+  }
   out.rank = rankOf(store);
   return out; }"""
 
@@ -15049,6 +15057,9 @@ def check_b317_evolve(br):
     check("the rank-up reward card shows the flare: Theme, then Flare, then the rest - the lit bubble as its tile",
           cd.get("kind") == "rankrewards" and cd.get("parts", [])[:2] == ["theme", "rankflare"] and cd.get("labels", [])[:2] == ["Theme", "Flare"] and cd.get("flareTile"),
           (card.get("rank"), cd))
+    # build 319: the card plays on Profile's road map, not on the results
+    check("the rank-up reward card plays on Profile's road map, not on the results screen (build 319)",
+          bool(cd) and card.get("onResults") is False, (card.get("onResults"), bool(cd)))
 
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate("() => { store.supernovaAchieved = false; saveStore(); theme.accent = 'elite'; applyTheme(); showHome(); }")
