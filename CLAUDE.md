@@ -14184,6 +14184,20 @@ short, and all 59 answers agree with the deck's highlight (or, where the
 deck highlights all four - #250 - the study guide's). Match by text, never
 by number, the next time a slide range changes.
 
+**Build 318 whole-bank audit (b318q).** Only Penal Code (guide + deck)
+and US/TX (9-15-26 guide) have sources in hand; the other 14 units
+arrived complete in the 18 Sep upload and no source for them exists in
+the session, uploads or git. Penal 340/340 and US/TX 77/77 match by
+text with every answer agreeing (US/TX #61 excepted, Madison's call).
+Deck question numbers are often PowerPoint AUTO-NUMBERING
+(`buAutoNum startAt=...`), not text - parse those, or a question goes
+missing as #203 did. Open items for Madison, none changed: ASS #31 vs
+#55 (same question, different answers); TCOLE bank[87]/[88] are
+byte-identical and share one KEY; deck slide 577 (street-gang "child"
+age) is in no guide or version; US/TX #15/#28/#42/#43/#66 wording
+differs from the 9-15-26 guide. Full report: scratchpad
+bank-audit-318.md.
+
 "Now she provided us with the next slides from the penal code pptx on
 what the next test will be over. It is slides 55 through 124." The short
 version is that set now; 0-85 is gone from the app.
