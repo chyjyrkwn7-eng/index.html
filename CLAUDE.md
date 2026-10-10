@@ -15605,6 +15605,9 @@ disagree with it.
     of 10") - Home also carries the "Four More You Have to Go and Earn"
     copy, which contains the bare phrase.
 - **A RANK-UP IS A CUTSCENE ON PROFILE, AND HOME WAITS FOR IT (build 317).**
+  **(SUPERSEDED by build 319's "THE RANK-UP LIVES ON PROFILE'S ROAD MAP" at
+  the end of this file: the Home lock and the loading screen stand; the
+  owed record, the tap, the map's hooks and the way back are new.)**
   *"When you rank up, the next time you open the Profile tab it should be a
   cool thing ... technically a cutscene ... the Profile tab in the bottom
   tab bar starts pulsing/ringing, and you can't use anything else except
@@ -15685,7 +15688,8 @@ disagree with it.
     does). Fixtures that put a held rank past a NUMBER `rankMapSeen` and
     then go to Home or Profile now meet the lock or the scene; the shared
     `USED_ACCOUNT` leaves `rankMapSeen` null, so it does not.
-- **BUILD 318: THE APP TAPS THE RANK LINE FOR YOU; THE LOADING SCREEN
+- **BUILD 318: THE APP TAPS THE RANK LINE FOR YOU (GONE IN 319 - "It does
+  the white curser thing to the rank button, I don't like that"); THE LOADING SCREEN
   FADES.** *"when clicking the profile button, it needs to be like normal,
   then the cutscene will need to click the rank button but it will do it
   for you"*. Profile is up as on any other day for `RANKUP_TAP_AT` (1.2s),
@@ -18724,3 +18728,113 @@ reaction was the weakest in the set (below).
   disc of r 20) and Zeus's flash (a 37-unit rect) showed as hard squares
   in the circle on a 100. They are r 17-17.5 discs, solid to ~72%, gone
   by the edge.
+
+
+### Build 319 - the rank-up lives on Profile's road map
+
+Madison, on 318's: *"lots of improvement needed here, the effort seems
+minimal. It does the white curser thing ... whatever the last challenge
+completed one, show the progress bar of it fulfill, animate the checkbox
+... it doesn't follow the progress bar, it skips ahead ... the progress bar
+is already coming out of it. It should be AT 0 ... it needs to go under it
+and center for the unlock part ... the current rank card doesn't shake or
+fade ... it doesn't zoom out ... to show what the next rank is and it's
+rewards ... the screen should slowly fade out and back into it ... the
+challenge box should do a better animation ... if you have left over xp
+this is where it would show it loading/leveling up"*, and *"at the test
+result screen it does all the rank reward popups ... those popups should
+happen in the road map when that cutscene happens. This would include the
+rank up cutscene."* One block after `buildRanksTab()` (all `var`).
+
+- **NOTHING OF A RANK-UP PLAYS ON THE RESULTS OR ON HOME.** summarize() no
+  longer sets `pendingTierCutscene`/`pendingSupernovaCutscene`; an older
+  build's flag (a synced doc) is turned into an owed rank-up by
+  `rankUpAbsorbPending()` (showHome/Profile/Rank/Settings, and every owed
+  check). The results show one row, `rankWaitItem` (kind `rankwait`, "Rank
+  up / Gold rank / Waiting for you on Profile"), no pop-up; the rank's
+  theme, flare, character and banner rows and cards are gone from there
+  (`rankUpHolds(rank)`), and Home's queue holds the rank's character and
+  banner back too (pendingHomeUnlocks). The results card's rank is the
+  last one SHOWN (`rankUpShownRank`) and its level uses the badges the
+  rank-up went in with (`store.rankUpFrom.b`), so XP saved behind the old
+  gate stays saved there. Home's flares keep the owed rank's flare dark
+  (buildCosmicHero) until its cutscene has lit it; afterwards Home shows it
+  newly lit. The Home lock (Profile tab rings, Start Studying etc. refused)
+  is 317's, unchanged.
+- **WHAT IS OWED IS ONE NUMBER: `store.rankUpShown`** - how many ranks
+  have had their rank-up shown (a count: 0 = none). Owed = the rank held
+  is past it (`rankUpOwed()` -> `{fromIdx, toIdx}`). NULL for every
+  existing account on the update, which owes nothing until summarize()
+  seeds it (`rankUpSeed`, at the top, before the run can award anything)
+  from the rank held then - nobody is walked through an old rank. A new
+  sign-up starts at 0 (the store literal), a reset sets 0, merges take the
+  max (mergeSameAccount). Fixtures that do not run a test (USED_ACCOUNT)
+  stay null and never meet the lock or the scene. `store.rankUpFrom`
+  (`{r, b, p}`: the rank shown, badges and XP before the first owed
+  rank-up) is written by summarize() and cleared when it is shown.
+  `rankUpMarkShown(toIdx)` also moves `rankMapSeen` and sets
+  `rankMapFx244`, so the map's own show never repeats it.
+- **The journey** (`armRankUpProfileScene` from showProfile, or
+  `armRankUpMapScene` from showRanksScreen when Profile was skipped):
+  1. Profile AS IT WAS: `rankOfStandIn` (the old rank) and
+     `levelStateStandIn` (levelStateFor's stand-in: the level the old
+     badges allowed) for that one build. `rankUpPatchGoal` puts each
+     challenge the rank-up met back where it stood (`.pf-task[data-kind]`).
+  2. `rankUpSceneTick`: no cursor. The card glides into view, each such
+     row's bar fills (`.sbar`), its count runs up, its box pops with a
+     drawn tick (`.ru-checkmark`), "2 of 2 done", "Rank challenges
+     complete", the card turns green-edged.
+  3. LOADING RANK UP ADJUSTMENTS (2.6s), the map built under it.
+  4. `rankUpMapShow` -> `rankUpArrive` per new rank: the camera follows the
+     light (`rankUpFollowY`, 42% down the screen) from where the road stood
+     (`rankMapProg`, `ruP0`) - never jumping to the target - along a
+     `.ru-rideline` that runs to the next circle's CENTRE, under it (the
+     node is drawn over the light; its disc turns to glass, `.ru-under`,
+     and its middle lights, `.ru-core`). Then shake, and the map's own
+     unlock (is-celebrating). The road on from the last new rank is held
+     at nothing (`data-ru-climb`; no stub, no light - and in general no
+     stub or light at 0 progress any more).
+  5. `rankUpCutscene`: the existing playTierCutscene/playSupernovaCutscene,
+     inline, once, for the highest new rank (two at once: one cutscene,
+     Platinum's, "Silver -> Platinum"). Its visuals are not this block's.
+  6. `rankUpCards`: each new rank's ONE reward card (Theme, Flare,
+     character, banner - `rankRewardParts`, build 308's single card),
+     one rank at a time, "1 of 2". The input layer lets taps through to
+     `.rs-spot`/`#supernova-cutscene` only (`rankUpAllowTaps`). Muted:
+     recorded shown, not played (the cutscene still plays, 217's rule).
+  7. `rankUpClimbNext`: only if there is progress to the next rank.
+  8. `rankUpHeroUpNext`: back at the top the card draws back
+     (`.ru-zoomout`), "Up next" rises under it (`buildRankUpNext`: the rank
+     after, its level and badges, its unlock chips), then the card shakes
+     (`.ru-cardshake`), fades (`.ru-dissolve`) and turns over to the new
+     rank ("Rank up", the rings fill again).
+  9. `rankUpSceneBack`: a slow fade (`.ru-curtain`), MARKED here, Profile
+     built; `rankUpProfileReturn`: the completed card is shown again,
+     flips away (`.ru-flip-out`), the next rank's card flips in and its
+     head, rows (bars filling) and tiles come in one at a time
+     (`.ru-goal-pre`/`.ru-goal-in`, `--ru-d`); then `rankUpStandingClimb`
+     climbs the XP bar through the saved levels, the level challenge
+     counting with it. Then the layer comes off and the character's
+     special plays.
+- **Never stuck, nothing twice.** A watchdog per phase
+  (`rankUpSceneWatch`); what has played is kept on the DEVICE in
+  `class26e.rankup.prog` (`{to, cut, cards}`), so an app closed after the
+  cutscene plays the rest without it. Reduce motion (app or OS,
+  `ruStill`): the same steps, still, ~11s plus the still cutscene.
+- Copy: "Rank challenges complete", "Up next", "Saved XP · climbing to
+  level N", "Waiting for you on Profile".
+- **Gate: `check_b319_rankup`** (replaces check_b317_rankup; fails on
+  8aded7f): a real 100% that tips Gold by its badge, both reference
+  devices - no cutscene or rank card on the results, the waiting row,
+  Level 49 held there; Home locked with Gold's flare dark; Profile as it
+  was; no cursor; the tick; the light ending on the circle's centre under
+  it (within 2px); nothing out of Gold at 0; shake, unlock, then the
+  cutscene inline on the map; the card on the map and tappable; Up next
+  (Platinum) while the card still says Silver; shake, dissolve, "Rank
+  up"; curtain, flip-out, goal-in; Level 49 -> 53 one level at a time;
+  marked, nothing left; Home free with the flare lit; once only. Plus two
+  at once, Reduce motion, a reload after the cutscene, the watchdog, and
+  the Rank screen opened directly. The cutscene is stood in for there (it
+  is check_b317_evolve's). check_b308_unlocks, check_b318_flares,
+  check-curve 7 and check-studyflow 3 now assert the rank is NOT played on
+  the results / Home.

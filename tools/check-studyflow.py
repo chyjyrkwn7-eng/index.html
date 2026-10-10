@@ -153,10 +153,17 @@ with sync_playwright() as pw:
     ck("no unlock pills over the daily question for what the rank hands over", st["pills"] == 0, st)
     ck("the rank's character is left for Home, not marked shown", not st["lunarShown"], st)
     pg.evaluate("()=>document.getElementById('dailyq-exitbtn').click()")
-    saw_cut = wait_for(pg, "()=>!!document.getElementById('supernova-cutscene')", 6000)
-    ck("Exit plays the rank cutscene on Home", saw_cut)
-    lunar = wait_for(pg, "()=>{ const s=document.querySelector('.rs-spot.is-rankreward'); return !!(s && /Lunar/.test(s.textContent)) && !document.getElementById('supernova-cutscene'); }", 40000)
-    ck("then the rank's character arrives on Home, as a Rank reward", lunar)
+    # Build 319: the rank-up is told on Profile's road map, not on Home -
+    # Home locks to the Profile tab, and the cutscene and Lunar's card play
+    # on the map once Profile is opened.
+    locked = wait_for(pg, "()=>document.body.classList.contains('rankup-lock')", 12000)
+    st2 = pg.evaluate("()=>({cut:!!document.getElementById('supernova-cutscene'), spot:!!document.querySelector('.rs-spot'), lunarShown:unlockWasShown('chars','lunar')})")
+    ck("Exit goes to Home, which locks to Profile - no cutscene and no card there", locked and not st2["cut"] and not st2["spot"] and not st2["lunarShown"], [locked, st2])
+    pg.evaluate("()=>document.getElementById('bottomtab-profile').click()")
+    saw_cut = wait_for(pg, "()=>!!document.getElementById('supernova-cutscene') && !!document.querySelector('.screen-ranks')", 30000)
+    ck("Profile plays the rank cutscene, on the road map", saw_cut)
+    lunar = wait_for(pg, "()=>{ const s=document.querySelector('.rs-spot.is-rankreward'); return !!(s && /Lunar/.test(s.textContent)) && !document.getElementById('supernova-cutscene') && !!document.querySelector('.screen-ranks'); }", 45000)
+    ck("then the rank's character arrives there, as a Rank reward", lunar)
     ctx.close()
 
     print("4. Review counts the bank it will list")

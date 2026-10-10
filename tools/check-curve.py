@@ -484,12 +484,14 @@ def main():
                badge row in its "Unlocked" card, not a queue for Home. */
             const shown = () => [...document.querySelectorAll('#stage .rs-unlock-badge .unlockbanner-name')]
               .map(e => e.textContent.replace(/ badge$/, ''));
-            const first = { queued: shown(), tier: store.pendingTierCutscene,
+            const first = { queued: shown(), tier: (()=>{ const o = (typeof rankUpOwed === 'function') ? rankUpOwed() : null; return o ? TIER_ORDER_FULL[o.toIdx] : (store.pendingTierCutscene || null); })(),
                             left: store.retroBadgePending.slice(), xp: store.lifetime.points - xp0 };
+            /* build 319: the rank-up is owed on Profile (rankUpOwed) until it is shown there */
             store.pendingBadgeUnlocks = []; store.pendingTierCutscene = null;
+            { const o = (typeof rankUpOwed === 'function') ? rankUpOwed() : null; if(o) rankUpMarkShown(o.toIdx); }
             grantRetroBadgesOnce();                   // a relaunch must not list them again
             finish('Victims of Crime', 5);
-            const second = { queued: shown(), tier: store.pendingTierCutscene };
+            const second = { queued: shown(), tier: (()=>{ const o = (typeof rankUpOwed === 'function') ? rankUpOwed() : null; return o ? TIER_ORDER_FULL[o.toIdx] : (store.pendingTierCutscene || null); })() };
             /* A brand-new account is current at sign-up: nothing handed out. */
             store.badgeBandsVersion = 2; store.retroBadgePending = [];
             store.unitPerfects = {'Identity Crimes': 20};
@@ -518,7 +520,7 @@ def main():
                   sorted(retro["listed"]) == ['Identity Crimes', 'Penal Code', 'TCOLE Rules'], retro["listed"])
             check("the next test celebrates each of them",
                   sorted(retro["first"]["queued"]) == sorted(retro["listed"]), retro["first"])
-            check("and plays the rank-up they cause", retro["first"]["tier"] == "ranger", retro["first"]["tier"])
+            check("and owes the rank-up they cause, on Profile (build 319)", retro["first"]["tier"] == "ranger", retro["first"]["tier"])
             # 50 for its answers plus build 213's speed bonus - and never
             # the 1,000 a badge pays when a run earns one.
             check("with no mastery bonus for them - the slice pays only its answers and speed",
