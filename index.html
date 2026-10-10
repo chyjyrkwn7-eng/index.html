@@ -16749,6 +16749,18 @@
          once it is corner-pinned. */
       transform:none;
     }
+    /* THE TIMER CLEARS IT BY THE SAME INSET (build 319). Pause above
+       moves down by the whole top inset; the test's own rows do not -
+       .wrap's padding already absorbs a tablet's inset - so on an
+       installed iPad (24px) the timer line came up under Pause's bottom
+       edge, half its clock hidden, and, paused, under the chat button
+       that takes Pause's place, over the PAUSED chip. The line drops by
+       exactly what Pause dropped: zero in a browser and on a laptop,
+       where nothing moves. */
+    [data-layout="modern"] .wrap:has(#pausebtn:not([hidden])) .timerline,
+    [data-layout="modern"] .wrap:has(.pausepanel) .timerline{
+      margin-top:calc(.55rem + env(safe-area-inset-top, 0px));
+    }
   }
   /* The hidden-choices reveal (build 240): a centred block, not a
      small button under a status line. */

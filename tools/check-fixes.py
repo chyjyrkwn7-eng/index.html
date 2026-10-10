@@ -540,6 +540,36 @@ def main():
                             if not r["mode"]:
                                 fails.append(f"{tag}: test history row {i} does not say its mode")
 
+                        # THE TIMER CLEARS PAUSE AND THE CHAT BUTTON (build
+                        # 319). Pause is pinned at the top inset + 1.1rem on a
+                        # tablet and the test's rows did not move with it, so
+                        # on an installed iPad the clock sat half under Pause
+                        # and, paused, the PAUSED chip under the chat button
+                        # that takes Pause's place. Only the installed insets
+                        # show it, which is why this lives here.
+                        tm = pg.evaluate("""async ()=>{
+                          const wait=ms=>new Promise(r=>setTimeout(r,ms));
+                          const ids=QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()==='Identity Crimes');
+                          cfg.mode='drill'; cfg.units=['Identity Crimes']; cfg.versions={}; cfg.source='all'; cfg.size=0; cfg.timer='down'; cfg.flashcards=false;
+                          beginRun(freshOrder(ids), null, 10);
+                          for(let t=0;t<120 && !document.querySelector('.qpanel .choice');t++) await wait(60);
+                          await wait(500);
+                          const R=s=>{const e=document.querySelector(s); if(!e) return null; const q=e.getBoundingClientRect(); return q.width?q:null;};
+                          const hit=(a,b)=>a&&b&&a.left<b.right-1&&b.left<a.right-1&&a.top<b.bottom-1&&b.top<a.bottom-1;
+                          const un={clock:R('.timerline .tmain'),pause:R('#pausebtn:not([hidden])'),dock:R('#chatdock-btn')};
+                          const o={running:!!un.clock, unPause:hit(un.clock,un.pause), unDock:hit(un.clock,un.dock)};
+                          pauseRun(); await wait(700);
+                          const pa={clock:R('.timerline .tmain'),chip:R('.timerline .tpaused'),dock:R('#chatdock-btn')};
+                          o.paChip=hit(pa.chip,pa.dock); o.paClock=hit(pa.clock,pa.dock);
+                          try{ document.getElementById('pause-quit').click(); await wait(400); document.getElementById('quit-confirm').click(); await wait(600); }catch(e){}
+                          return o;}""")
+                        if not tm["running"]:
+                            fails.append(f"{tag}: a timed drill did not show its clock")
+                        if tm["unPause"]: fails.append(f"{tag}: the test clock sits under Pause")
+                        if tm["unDock"]: fails.append(f"{tag}: the test clock sits under the chat button")
+                        if tm["paChip"]: fails.append(f"{tag}: paused, the PAUSED chip sits under the chat button")
+                        if tm["paClock"]: fails.append(f"{tag}: paused, the clock sits under the chat button")
+
                         misc = pg.evaluate("""()=>{showReleaseHistory();
                           const back=!!document.querySelector('.panel .back-link');
                           return {back};}""")
