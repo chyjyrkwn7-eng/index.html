@@ -5664,7 +5664,26 @@ def check_b272(br):
       try {
       const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:0;top:0;width:340px;height:340px'; document.body.appendChild(host);
       const headW = id => { host.replaceChildren(); const sv = buildAvatarCharSVG(id); sv.style.cssText = 'width:340px;height:340px;display:block'; host.appendChild(sv);
-        const h = sv.querySelector('.cx-head'); return h ? +(h.getBoundingClientRect().width / 10).toFixed(1) : 99; };
+        const h = sv.querySelector('.cx-head'); if(!h) return 99;
+        /* What is DRAWN: a shape inside a clip-path group counts only as far
+           as the clip reaches (build 318's Ninja wraps its headband round
+           the hood and clips it there - the band's geometry runs past the
+           hood, the pixels do not). */
+        let l = Infinity, r = -Infinity;
+        h.querySelectorAll('path,polygon,rect,circle,ellipse,line,polyline').forEach(e => {
+          let b = e.getBoundingClientRect(); if(!b.width) return;
+          const cg = e.closest('[clip-path]');
+          if(cg && h.contains(cg)){ const id = (cg.getAttribute('clip-path').match(/#([^)"']+)/) || [])[1];
+            const cp = id && sv.querySelector('[id="' + id + '"]');
+            /* a clipPath is never rendered, so it has no screen box: take its
+               user-space box through the clipped group's own transform */
+            const m = cg.getScreenCTM();
+            if(cp && m){ const c = [...cp.children].map(x => x.getBBox()).filter(x => x.width)
+                .map(x => ({ left: m.a * x.x + m.e, right: m.a * (x.x + x.width) + m.e }));
+              if(c.length){ const cl = Math.min(...c.map(x => x.left)), cr = Math.max(...c.map(x => x.right));
+                b = { left: Math.max(b.left, cl), right: Math.min(b.right, cr) }; } } }
+          l = Math.min(l, b.left); r = Math.max(r, b.right); });
+        return +((r - l) / 10).toFixed(1); };
       const starters = ['ninja', 'ghost', 'wizard', 'grizzly', 'alien'];
       out.starters = Object.fromEntries(starters.map(id => [id, headW(id)]));
       const earned = ['zeus', 'hacker', 'umbra', 'lunar', 'solar', 'tempest', 'frost', 'oracle', 'timekeeper', 'singularity'].map(headW).sort((a, b) => a - b);
