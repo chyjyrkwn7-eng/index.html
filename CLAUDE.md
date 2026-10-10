@@ -15121,8 +15121,9 @@ disagree with it.
     `.pf-xpnums`), not on the rank line; it took the place of "N XP to
     level X". `fitProfileIdLine()` still runs and is now a no-op there.
   - **Challenge rows: count grey, goal in the row's colour, both in it
-    once met** - badge gold, level blue. The badge row shows the real
-    count, so it can read 4 / 3; the level row still stops at its goal
+    once met** - badge gold, level blue. ~~The badge row shows the real
+    count, so it can read 4 / 3~~ **(reversed in build 319: every count
+    stops at its goal - see below)**; the level row still stops at its goal
     (316: "talks about you being level 49 but it's asking for level 40").
   - **Copy:** the goal card always says "Next rank" (never "Your first
     rank"); the top says "Max rank". The wall line under the bar is plain
@@ -18847,3 +18848,12 @@ rank up cutscene."* One block after `buildRanksTab()` (all `var`).
   summarize(), not at its top: a rank the handed-out badges or a merge
   tip is that run's, and seeding before they were hidden lost it
   (check-curve 7 caught it).
+- **EVERY CHALLENGE COUNT STOPS AT ITS GOAL (build 319).** Madison's
+  screenshot: with 7 badges a Silver challenge read "Earn 3 badges 7 / 3".
+  `buildProfileTask` now shows `min(now, need)` for every kind (badges,
+  level, anything added later) - "3 / 3", bar full, ticked, and the
+  aria-label says "3 of 3" - reversing build 317's "4 / 3" for badges. The
+  rank-up's tick (`rankUpTickRow`) counts up to the goal and never past
+  it. Gate: the cap section of `check_b319_rankup` (both reference
+  devices, plus a rank-up whose badge row is already over: no count past
+  its goal in any 40ms sample of the journey); fails on 8aded7f.

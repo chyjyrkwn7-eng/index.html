@@ -17021,9 +17021,12 @@ B319_RU_SEED = """(a) => {
   store.unitPerfects[t] = badgeThresholdFor(t) - 1;
   store.rankFloor = 0; store.levelFloor = 0;
   store.lifetime.points = xpForLevel(a.two ? 52 : 53) + 500;
+  /* a.over: Bronze shown and held, four badges against Silver's three, and
+     the run's XP takes the level to Silver's 30 - its badge row is over */
+  if(a.over) store.lifetime.points = xpForLevel(30) - 300;
   if(a.two){ /* hold Silver: Gold's level not shown yet means the account is shown up to Silver */ }
   store.rankMapFx244 = true; store.rankMapSeen = 1; store.rankMapProg = { i: 1, p: .5 };
-  store.rankUpShown = 2; store.rankUpFrom = null;
+  store.rankUpShown = a.over ? 1 : 2; store.rankUpFrom = null;
   ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour'].forEach(k => store[k] = true);
   store.lateHundos = 999; store.retroBadgePending = []; store.mergeHold = null; store.savedCodeSaved = true; store.pendingTierCutscene = null;
   theme.muteBanners = false; theme.reduceMotion = !!a.rm; applyTheme && applyTheme();
@@ -17101,6 +17104,9 @@ B319_RU_WALK = """async (a) => {
     const s = rankUpScene; const ph = s ? s.phase : '-';
     if(!(('ph_' + ph) in out.at)) at('ph_' + ph);
     if(document.querySelector('.ru-tap, .ru-tap-note')) out.seen.tap = true;
+    /* no challenge count ever past its goal, at rest or while it fills */
+    document.querySelectorAll('.pf-task').forEach(r => { const n = Number((r.querySelector('.pf-now') || {}).textContent), d = Number((r.querySelector('.pf-need') || {}).textContent);
+      if(n > d && !out.over) out.over = [r.dataset.kind, n, d]; });
     const g = document.querySelector('.screen-profile .pf-goal');
     if(ph === 'profile' && g && !rows0){ rows0 = [...g.querySelectorAll('.pf-task')].map(r => ({ k: r.dataset.kind, met: r.classList.contains('is-met'), now: (r.querySelector('.pf-now') || {}).textContent }));
       out.p0 = { rank: (document.querySelector('.pf-standing .pf-rankname') || {}).textContent, level: (document.querySelector('.pf-standing .pf-level') || {}).textContent,
@@ -17263,6 +17269,46 @@ def check_b319_rankup(br):
           [ca, [(c.get("name"), c.get("foot")) for c in cards]])
     af = wk.get("after") or {}
     check("two at once: ends on Platinum, Sapphire next, both shown", af.get("rank") == "Platinum" and af.get("next") == "Sapphire" and af.get("shown") == 4, af)
+    ctx.close()
+
+    # EVERY CHALLENGE COUNT STOPS AT ITS GOAL (Madison's screenshot: "Earn 3
+    # badges  7 / 3"). A plain Profile first - Bronze held with seven badges,
+    # Silver's challenges - then a rank-up whose challenge ticks with a badge
+    # row already over: never past the goal, at rest or while it fills.
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        cp = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          const U = topicsIn(QUESTIONS); store.unitPerfects = {};
+          U.slice(0, 7).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+          store.rankFloor = 0; store.levelFloor = 0; store.lifetime.points = xpForLevel(25) + 10;
+          store.rankUpShown = null; saveStore();
+          showProfile(); await wait(1600);
+          const g = document.querySelector('.pf-goal');
+          const rows = [...(g ? g.querySelectorAll('.pf-task') : [])].map(r => ({ k: r.dataset.kind || (/badge/i.test(r.textContent) ? 'badges' : 'level'),
+            now: (r.querySelector('.pf-now') || {}).textContent, need: (r.querySelector('.pf-need') || {}).textContent,
+            met: r.classList.contains('is-met'), tick: (r.querySelector('.pf-check') || {}).textContent,
+            w: parseFloat(getComputedStyle(r.querySelector('.pf-bar > i')).width) / parseFloat(getComputedStyle(r.querySelector('.pf-bar')).width),
+            aria: r.getAttribute('aria-label') }));
+          /* any challenge kind, the same cap */
+          const x = buildProfileTask({ kind: 'other', label: 'Something', now: 9, need: 4, met: true }, '#6FC2FF', null);
+          return { rank: rankOf(store), badges: badgeCountOf(store), next: g ? (g.querySelector('.pf-goal-name') || {}).textContent : null, rows,
+                   other: (x.querySelector('.pf-now') || {}).textContent + '/' + (x.querySelector('.pf-need') || {}).textContent }; }""")
+        bd = next((r for r in cp.get("rows", []) if r["k"] == "badges"), {})
+        check(f"{dev}: with 7 badges, Silver's 'Earn 3 badges' reads 3 / 3 - full bar, ticked - not 7 / 3",
+              cp.get("next") == "Silver" and cp.get("badges") == 7 and bd.get("now") == "3" and bd.get("need") == "3" and bd.get("met")
+              and bd.get("tick") == "\u2713" and abs((bd.get("w") or 0) - 1) < .02 and "3 of 3" in (bd.get("aria") or ""), cp)
+        check(f"{dev}: every challenge row, and any kind of challenge, stops at its goal",
+              all(int(r["now"]) <= int(r["need"]) for r in cp.get("rows", [])) and cp.get("other") == "4/4", [cp.get("rows"), cp.get("other")])
+        ctx.close()
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    s1 = pg.evaluate(B319_RU_SEED, {"over": True})
+    r = pg.evaluate(B319_RU_RUN, {})
+    wk = pg.evaluate(B319_RU_WALK, {"top": "ranger", "cutMs": 300, "cardMs": 400})
+    p0 = wk.get("p0") or {}
+    check("a rank-up with a challenge already over: Bronze to Silver by level, its badge row 3 / 3 from the start, the level row ticks, nothing ever past its goal",
+          not wk.get("threw") and r.get("owed") == {"fromIdx": 0, "toIdx": 1} and wk.get("tickRows") == 1
+          and any(x.get("k") == "badges" and x.get("now") == "3" for x in (p0.get("rows") or [])) and not wk.get("over")
+          and (wk.get("after") or {}).get("rank") == "Silver", [s1, r.get("owed"), p0.get("rows"), wk.get("tickRows"), wk.get("over"), (wk.get("after") or {}).get("rank")])
     ctx.close()
 
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)

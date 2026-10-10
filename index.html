@@ -100559,11 +100559,13 @@ function buildProfileTask(c, color, noteText){
   lab.className = "pf-task-label"; lab.textContent = c.label;
   const val = document.createElement("span");
   val.className = "pf-task-val";
-  /* A BADGE COUNT PAST ITS GOAL SAYS SO (build 317): "Ensure the
-     challenge for badge would show you are over if you are too" - 4 / 3.
-     The level row still stops at its goal: "talks about you being level
-     49 but it's asking for level 40" (build 316) was asked against. */
-  const shownNow = c.kind === "badges" ? c.now : Math.min(c.now, c.need);
+  /* EVERY COUNT STOPS AT ITS GOAL (build 319, reversing build 317's "4 /
+     3" for badges): a Silver challenge read "Earn 3 badges 7 / 3" on an
+     account with seven. A challenge is met or not; met, it reads "3 / 3"
+     with the bar full and the tick on - the level row already stopped at
+     its goal (build 316: "talks about you being level 49 but it's asking
+     for level 40"). Any challenge kind added later gets the same cap. */
+  const shownNow = Math.min(Number(c.now) || 0, Number(c.need) || 0);
   const now = document.createElement("b"); now.className = "pf-now"; now.textContent = String(shownNow);
   const sep = document.createElement("span"); sep.className = "pf-sep"; sep.textContent = " / ";
   const need = document.createElement("b"); need.className = "pf-need"; need.textContent = String(c.need);
@@ -103757,13 +103759,14 @@ async function rankUpTickRow(t, still){
     await new Promise(res => {
       const step = () => {
         const k = Math.min(1, (performance.now() - t0) / dur), e = 1 - Math.pow(1 - k, 3);
-        shown(Math.round(t.from + (Math.min(t.to, t.need) - t.from) * e));
+        shown(Math.min(t.need, Math.round(t.from + (Math.min(t.to, t.need) - t.from) * e)));
         if(k < 1 && row.isConnected) requestAnimationFrame(step); else res();
       };
       requestAnimationFrame(step);
     });
   } else if(i){ setBarFill(i, 100); }
-  if(now) now.textContent = String(t.kind === "badges" ? t.to : t.need);
+  /* never past the goal (build 319): "3 / 3", not "7 / 3" */
+  if(now) now.textContent = String(t.need);
   row.classList.remove("ru-filling");
   row.classList.add("is-met", "ru-ticked");
   if(ck){
