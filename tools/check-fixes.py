@@ -30,8 +30,10 @@ SEED = load("SEED", r'SEED = """(.*?)"""')
 DEVICES = eval("[" + load("DEVICES", r'DEVICES = \[(.*?)\n\]') + "]")
 CHROME_H = eval(load("CHROME_H", r'CHROME_H = (\{.*?\})'))
 
+SRC = os.path.join(ROOT, "index.html")
+
 def patched(insets):
-    src = io.open(os.path.join(ROOT, "index.html"), encoding="utf-8").read()
+    src = io.open(SRC, encoding="utf-8").read()
     t, r, b, l = insets
     v = {"top": f"{t}px", "right": f"{r}px", "bottom": f"{b}px", "left": f"{l}px"}
     return INSET_RE.sub(lambda m: v[m.group(1)], src)
@@ -115,7 +117,11 @@ def main():
     # wait to find out one device is wrong.
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", help="substring of the device label")
+    ap.add_argument("--against", help="an older index.html to run the checks on")
     args = ap.parse_args()
+    if args.against:
+        global SRC
+        SRC = os.path.abspath(args.against)
     devices = DEVICES
     if args.only:
         devices = [d for d in devices if args.only.lower() in d[0].lower()]
@@ -254,6 +260,34 @@ def main():
                             for k, what in (("gapFab", "daily-question circle"), ("gapVer", "version label")):
                                 if hf[k] is not None and 0 <= hf[k] < 12:
                                     fails.append(f"{tag}: Start Studying clears the {what} by only {hf[k]}px")
+
+                        # 9c. THE READY RING CLEARS THE TAB BAR (build 319):
+                        # "The yellow pulse just barely touches the button
+                        # tab." Not the button - the ring that pulses out of
+                        # it (::after, inset -3px, up to scale 1.35), sampled
+                        # across its whole keyframe run. Wherever the circle
+                        # shares a column with the bar, the ring at its
+                        # largest must stay 4px clear of the bar's top. On
+                        # 8aded7f it ran 1-1.4px into it on every phone.
+                        rg = pg.evaluate("""()=>{showHome();
+                          const fab=document.querySelector('.daily-question-fab');
+                          const bar=document.querySelector('.bottomtabs');
+                          if(!fab||!bar||bar.hidden) return null;
+                          fab.classList.remove('is-done'); fab.classList.add('is-ready');
+                          const f=fab.getBoundingClientRect(), b=bar.getBoundingClientRect();
+                          if(f.right<=b.left||f.left>=b.right||f.top>=b.bottom) return null;
+                          const an=document.getAnimations().find(a=>a.effect&&a.effect.target===fab&&a.effect.pseudoElement==='::after');
+                          if(!an) return {noRing:true};
+                          an.pause(); const d=an.effect.getTiming().duration; let low=f.bottom;
+                          for(let i=0;i<=120;i++){ an.currentTime=d*i/120;
+                            const cs=getComputedStyle(fab,'::after'); if(+cs.opacity<=0.01) continue;
+                            const k=cs.transform==='none'?1:new DOMMatrix(cs.transform).a;
+                            low=Math.max(low, f.top+f.height/2+(f.height/2+3)*k); }
+                          an.play(); return {gap:Math.round((b.top-low)*10)/10};}""")
+                        if rg and rg.get("noRing"):
+                            fails.append(f"{tag}: the daily-question circle has no ready ring to measure")
+                        elif rg and rg["gap"] < 4:
+                            fails.append(f"{tag}: the daily-question ring comes within {rg['gap']}px of the tab bar (touching it at <=0)")
 
                         # 9b. The daily question's "not yet" answer opens BESIDE
                         # the "?" (build 309): "we've been over this before and

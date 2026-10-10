@@ -1413,6 +1413,10 @@ def check_b313_shuffle(br):
     check("the Victims of Crime question reads exactly as the study guide has it, identity unchanged",
           r["victimKeep"] is True and r["victim"] and r["victim"][2] == "event.", r["victim"])
     kc = pg.evaluate("()=>QUESTIONS.map((q, i) => i).filter(i => Array.isArray(QUESTIONS[i].keyChoices) && QUESTIONS[i].keyChoices.join('|') !== QUESTIONS[i].choices.join('|')).map(i => QUESTIONS[i].topic.trim().slice(0, 12) + ' ' + QUESTIONS[i].src)")
+    # BUILD 319: Penal Code #346's "Manslaughter. 1" -> "Manslaughter." was
+    # asked for by name in the 319 list, so it is the one allowed repair
+    # (check_b319_penal346 holds it to that one choice and its identity).
+    kc = [k for k in kc if k != "Penal Code 346"]
     check("no question's choices are reworded from the study guide (no keyChoices that differ)", kc == [], kc)
     ctx.close()
 
@@ -19665,6 +19669,225 @@ def check_b318_bridge(br):
               (round(page, 1), round(out[0], 1), round(max(out), 1), round(max(steps), 1), len([d for d in steps if d > .5])))
 
 
+B319_HZ = """async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const host = document.createElement('div');
+  host.style.cssText = 'position:fixed;left:0;top:0;width:400px;height:400px;z-index:99999';
+  document.body.appendChild(host);
+  const views = {
+    drawing: () => buildAvatarCharSVGSafe('singularity'),
+    picker: () => pickerCharSVG('singularity'),
+    cutout: () => charSilhouetteSVG('singularity'),
+    sceneLit: () => sfLitSVG('singularity'),
+    sceneDark: () => sfSilhouetteSVG('singularity')
+  };
+  const C = e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+  const out = {};
+  for(const [name, mkv] of Object.entries(views)){
+    host.innerHTML = '';
+    const svg = mkv(); svg.style.cssText = 'width:400px;height:400px'; host.appendChild(svg);
+    await wait(30);
+    const scope = svg.querySelector('.char-sil-body, .sf-silbody') || svg;
+    const worn = scope.querySelector('.cx-fx-sgstar circle[r="0.64"]');
+    const sp = scope.querySelector('.cx-sp circle[r="0.84"]');
+    const mask = [...scope.querySelectorAll('.cx-head path')].find(p => /^M20 11\.6 Q26\.4/.test(p.getAttribute('d') || ''));
+    if(!worn || !sp){ out[name] = null; continue; }
+    const u = svg.getBoundingClientRect().width / 40;
+    const a = C(worn), b = C(sp), m = mask ? mask.getBoundingClientRect() : null;
+    out[name] = { off: Math.round(Math.hypot(a[0] - b[0], a[1] - b[1]) / u * 100) / 100,
+                  /* where the special's flare sits down the mask, 0 = its top, 1 = its chin */
+                  down: m ? Math.round((b[1] - m.top) / m.height * 100) / 100 : null,
+                  wornDown: m ? Math.round((a[1] - m.top) / m.height * 100) / 100 : null };
+  }
+  host.remove();
+  return out; }"""
+
+
+def check_b319_horizon(br):
+    """Build 319. "Horizon ... his secret flare when pop up for him came by
+    was not on forehead where it should be, it was like in his hair." His
+    special (the flare slipping its socket, drifting round and being pulled
+    back in) was laid over the whole drawing at the brow's RAW (20, 15),
+    but the head is fitted afterwards (AVATAR_HEAD_SCALE, and SIL_HEAD_FIT
+    on a cut-out), so the hole and the flare sat 1.6 units above the worn
+    flare, on the mask's top edge, in the hair. In every way Horizon is
+    built - the drawing (board, Profile, tab bar, cards), the picker, the
+    locked cut-out, and both copies in his flare scene - the special's flare
+    must start on the worn flare (within .25 units) and sit in the mask's
+    upper half, below its top. Then live on Profile, playing the special.
+    Fails on 8aded7f (off 1.5-1.7 units, at the mask's top edge)."""
+    print("\n319c. Horizon's flare stays on his brow")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate(B319_HZ)
+    for name, v in r.items():
+        check("Horizon %s: the special's flare starts on the worn one, on the brow" % name,
+              v is not None and v["off"] <= .25 and v["down"] is not None and .12 <= v["down"] <= .45, v)
+    live = pg.evaluate("""async () => { store.avatarChar = 'singularity'; showProfile('profile');
+      await new Promise(r => setTimeout(r, 900));
+      const plate = document.querySelector('.profile-hero-avatar'); if(!plate) return null;
+      const host = plate.querySelector('svg.avatarchar-svg') ? plate : null; if(!host) return null;
+      playCharSpecial(plate);
+      await new Promise(r => setTimeout(r, 120));
+      const svg = plate.querySelector('svg.avatarchar-svg');
+      const worn = svg.querySelector('.cx-fx-sgstar circle[fill="#FFFFFF"]');
+      const sp = [...svg.querySelectorAll('.cx-sp circle[fill="#FFFFFF"]')].pop();
+      const hole = svg.querySelector('.cx-sp circle[fill="#060918"]');
+      if(!worn || !sp || !hole) return { missing: [!!worn, !!sp, !!hole] };
+      plate.getAnimations({ subtree: true }).forEach(a => a.pause());
+      const C = e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+      const u = svg.getBoundingClientRect().width / 40, a = C(worn), h = C(hole);
+      return { special: plate.classList.contains('char-special'), hole: Math.round(Math.hypot(a[0] - h[0], a[1] - h[1]) / u * 100) / 100 }; }""")
+    check("Horizon on Profile: the special's hole opens on the worn flare", live is not None and live.get("special") and live.get("hole") is not None and live["hole"] <= .25, live)
+    ctx.close()
+
+
+B319_NOTE = """async ([lvl, nb]) => {
+  const units = topicsIn(QUESTIONS);
+  store.unitPerfects = {}; units.slice(0, nb).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+  store.levelFloor = 0; store.rankFloor = 0;
+  store.lifetime.points = xpForLevel(lvl) + 10;
+  document.getElementById('intro-pop')?.remove();
+  showIntroPopup();
+  await new Promise(r => setTimeout(r, 150));
+  const n = document.querySelector('#intro-pop .intro-gate-note');
+  const s = levelStateFor(store);
+  const r = n ? n.getBoundingClientRect() : null;
+  const out = { text: n ? [...n.querySelectorAll('.intro-gate-body')].map(p => p.textContent) : null, title: n ? (n.querySelector('.intro-gate-title') || {}).textContent : null,
+    level: s.level, curve: s.curveLevel, held: rankOf(store) ? RANK_DISPLAY_NAME[rankOf(store)] : null,
+    gate: s.gateKey ? RANK_DISPLAY_NAME[s.gateKey] : null, need: s.badgesToPass,
+    inView: r ? r.left >= 0 && r.right <= innerWidth : null };
+  document.getElementById('intro-pop')?.remove();
+  return out; }"""
+
+
+def check_b319_levelnote(br):
+    """Build 319. "Your level was adjusted description. At the beginning it
+    says 'you now need the badges to keep leveling up' but that's confusing,
+    it just sounds like you need the badges to level up at all. The part at
+    the end where it starts talking about earn more badge to reach bronze
+    and it turns back into levels and stuff, that's bad too." For each case
+    the note can appear in - no badges (no rank yet), a rank with several
+    badges to go, a rank with one to go - the note must say, in plain
+    words: levels unlock one rank at a time; the top level for the rank
+    held (or before the first rank), from the old level to the new one; the
+    XP is kept and still counts; how many badges reach which rank; the
+    next levels unlock then. None of "to keep leveling up", "turns back
+    into levels", "rank system". Nobody under the cap gets the note. Fails
+    on 8aded7f, whose note opens with "to keep leveling up"."""
+    print("\n319d. the 'Your level was adjusted' note, plainly")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        for (lvl, nb, rank, top, gate, n) in ((35, 0, None, 29, "Bronze", 1), (52, 1, "Bronze", 39, "Silver", 2), (55, 4, "Silver", 49, "Gold", 1)):
+            r = pg.evaluate(B319_NOTE, [lvl, nb])
+            t = " ".join(r["text"] or [])
+            where = ("the top level for " + rank) if rank else "the top level before your first rank"
+            want = ["Levels now unlock one rank at a time.",
+                    "Level %d is %s, so your level went from %d to %d." % (top, where, lvl, top),
+                    "You kept all of your XP, and it still counts.",
+                    "Earn %d%s %s to reach %s." % (n, " more" if nb else "", "badge" if n == 1 else "badges", gate),
+                    "The next levels unlock then"]
+            bad = [x for x in ("keep leveling up", "turns back into levels", "rank system", "wall", "band") if x in t]
+            miss = [x for x in want if x not in t]
+            check("%s: level %d, %d badge(s): the note says it plainly" % (dev, lvl, nb),
+                  r["title"] == "Your level was adjusted" and not miss and not bad and r["level"] == top and r["inView"],
+                  {"missing": miss, "bad": bad, "text": r["text"], "state": [r["level"], r["curve"], r["held"], r["gate"], r["need"]]})
+        r = pg.evaluate(B319_NOTE, [25, 0])
+        check("%s: nobody under the cap gets the note" % dev, r["text"] is None, r)
+        ctx.close()
+
+
+B319_HIT = """async (t) => {
+  /* this period already seen, so Home does not start a charge of its own
+     that would replace the one measured here */
+  markDailySeen(dailyPeriodKey()); store.dailyQuestionDate = null;
+  showHome(); await new Promise(r => setTimeout(r, 500));
+  document.querySelectorAll('.daily-alert, .toast, #tour-overlay, #tour-tooltip, .rs-spot, #intro-pop').forEach(n => n.remove());
+  const b = document.querySelector('.daily-question-fab'); b.classList.remove('is-done');
+  playDailyRecharge(b, () => {});
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  b.getAnimations({ subtree: true }).forEach(a => { a.pause(); a.currentTime = t; });
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const f = b.getBoundingClientRect(), bar = document.querySelector('.bottomtabs').getBoundingClientRect();
+  const w2 = document.querySelector('.dq-charge-burst').getBoundingClientRect();
+  /* where the outer ring and the bar overlap */
+  const x0 = Math.max(bar.left, w2.left), x1 = Math.min(bar.right, w2.right), y0 = Math.max(bar.top, w2.top), y1 = Math.min(bar.bottom, w2.bottom);
+  const R = q => [q.left, q.top, q.right, q.bottom].map(Math.round);
+  return { box: x1 > x0 + 4 && y1 > y0 + 4 ? [x0, y0, x1 - x0, y1 - y0] : null, z: getComputedStyle(b).zIndex,
+           fab: R(f), bar: R(bar), ring: R(w2), n: b.getAnimations({ subtree: true }).length }; }"""
+
+
+def check_b319_daily(br):
+    """Build 319. "The daily question loading circle, at the bottom it looks
+    like it's cut off halfway and doesn't connect, fix that." When the
+    meter closes, two rings of light leave it (x2.3 and x3.1); the button
+    sat under the tab bar (z 150 against 200), so each ring's lower half
+    slid under the bar's glass and the circle came out open at the bottom
+    (on the iPad, its left side). At 5.1s - both rings out, the outer one
+    over the bar - the part of the bar the ring crosses must show the ring:
+    compared with the same frame with the charge hidden, at least 15% of
+    that part changes by more than 40 levels (measured 23-24% here; on
+    8aded7f 1.8% on the phone, where the glass blurs it to nothing, and
+    8.6% on the iPad, where only the pill's rounded corner lets it show)."""
+    import io as _io
+    from PIL import Image as _Im, ImageChops as _Ch
+    print("\n319b. the daily charge's rings are whole over the tab bar")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate(B319_HIT, 5100)
+        if not r["box"]:
+            check(dev + ": the charge's outer ring reaches the tab bar (to measure)", False, r)
+            ctx.close(); continue
+        x, y, bw, bh = r["box"]
+        clip = {"x": x, "y": y, "width": bw, "height": bh}
+        a = _Im.open(_io.BytesIO(pg.screenshot(clip=clip))).convert("L")
+        pg.evaluate("() => { document.querySelector('.dq-charge').style.visibility = 'hidden'; }")
+        pg.wait_for_timeout(80)
+        b = _Im.open(_io.BytesIO(pg.screenshot(clip=clip))).convert("L")
+        d = _Ch.difference(a, b)
+        lit = sum(1 for v in d.getdata() if v > 40) / float(d.width * d.height)
+        check("%s: the ring that leaves the closed meter is drawn over the tab bar, not under it" % dev, lit >= .15,
+              {"lit": round(lit, 4), "box": [round(v) for v in r["box"]], "z": r["z"]})
+        ctx.close()
+
+
+def check_b319_penal346(br):
+    """Build 319. Penal Code #346, choice D, read "Manslaughter. 1" - a
+    slide's page number that came in with the text. It reads
+    "Manslaughter." now, and NOTHING ELSE about the bank moves: its KEYS
+    entry is kept by `keyChoices` (the original four choices), so every
+    question's identity - all of KEYS - is byte-identical to 8aded7f's, as
+    are every question's text, choices (bar this one) and answer. The
+    8aded7f page is loaded beside this one and both are asked. Fails on
+    8aded7f (choice D still has the "1")."""
+    import subprocess as _sp
+    print("\n319e. Penal Code #346: the page number off choice D, identity kept")
+    try:
+        old = _sp.run(["git", "-C", ROOT, "show", "8aded7f:index.html"], capture_output=True, check=True).stdout.decode("utf-8")
+    except Exception as e:
+        check("8aded7f is in this repo to compare against", False, str(e)[:120]); return
+    Q = """() => ({ keys: KEYS.slice(), bank: QUESTIONS.map(q => [q.topic, q.src, q.q, (q.choices || []).join('\\u0001'), q.answer]),
+      p346: QUESTIONS.map((q, i) => [q, i]).filter(([q]) => q.topic === 'Penal Code' && q.src === 346).map(([q, i]) => ({ i, key: KEYS[i], choices: q.choices, answer: q.answer })) })"""
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    now = pg.evaluate(Q)
+    ctx.close()
+    ob = INSET_RE.sub(lambda m: "0px", old).replace("let fbDb = null;", "let fbDb = null;" + FIRESTORE_STUB, 1)
+    ctx = br.new_context(viewport={"width": 440, "height": 956})
+    pg = ctx.new_page()
+    pg.route("**/index.html", lambda r: r.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=ob))
+    pg.route("**/version.json*", lambda r: r.fulfill(status=200, headers={"content-type": "application/json"}, body='{"build":"x","frameId":"","note":""}'))
+    pg.goto(URL); pg.wait_for_timeout(2600)
+    was = pg.evaluate(Q)
+    ctx.close()
+    p = now["p346"]
+    check("Penal Code #346 choice D reads \"Manslaughter.\", the rest of it as it was",
+          len(p) == 1 and p[0]["choices"] == ["Criminally negligent homicide", "Murder.", "Capital murder.", "Manslaughter."] and p[0]["answer"] == 0, p)
+    check("its KEYS entry is byte-identical to 8aded7f's (Penal Code|346|243n1v)",
+          len(p) == 1 and p[0]["key"] == "Penal Code|346|243n1v" and was["p346"] and was["p346"][0]["key"] == p[0]["key"], [p and p[0]["key"], was["p346"] and was["p346"][0]["key"]])
+    check("all of KEYS is byte-identical to 8aded7f's", now["keys"] == was["keys"], [len(now["keys"]), len(was["keys"])])
+    diff = [i for i, (a, b) in enumerate(zip(now["bank"], was["bank"])) if a != b]
+    check("no other question's text, choices or answer moved", len(now["bank"]) == len(was["bank"]) and diff == ([p[0]["i"]] if p else []), diff[:6])
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -19866,6 +20089,10 @@ def main():
             check_b318h_legacy_rows(br)
             check_b318_vroom_badge_case(br)
             check_b318_bridge(br)
+            check_b319_daily(br)
+            check_b319_horizon(br)
+            check_b319_levelnote(br)
+            check_b319_penal346(br)
         finally:
             br.close()
     SERVER.shutdown()

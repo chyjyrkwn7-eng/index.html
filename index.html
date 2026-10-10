@@ -13945,7 +13945,14 @@
        modes: the bar is a centred pill, so on a wide phone it reaches
        far enough across to meet the circle's column. 6.3rem is the
        slight drop that was actually asked for and still clears it. */
-    position:fixed; bottom:calc(env(safe-area-inset-bottom, 0px) + 6.3rem);
+    /* UP 0.5rem (build 319): "The yellow pulse just barely touches the
+       button tab ... the button could be lifted up ever so slightly." The
+       button cleared the bar by 12px, but its ready ring (inset -3px,
+       scale 1.35) reaches 13.6px below it, so at its widest the ring ran
+       1-1.4px into the bar on every phone. 6.8rem leaves it ~6.6px clear.
+       Start Studying sits beside the circle, not above it, on every phone
+       that shares its row, so it does not move. Gate: check-fixes 9c. */
+    position:fixed; bottom:calc(env(safe-area-inset-bottom, 0px) + 6.8rem);
     right:max(1.8rem, calc(50% - 22rem + 1.8rem)); z-index:150;
     /* 2.6rem is 41.6px - under the 44px minimum tap target, on a control
        that sits alone in a corner with nothing to aim at but itself. The
@@ -14162,6 +14169,17 @@
      Sapphire and pink-white on Amethyst - off its own colour for the half
      second it is most looked at. It lights by its glow alone now. */
   @keyframes dq-sealed{ from{ filter:drop-shadow(0 0 0 transparent); } 40%{ filter:drop-shadow(0 0 6px var(--dq-c)) drop-shadow(0 0 2px var(--dq-c)); } to{ filter:drop-shadow(0 0 4px var(--dq-c)) drop-shadow(0 0 1px var(--dq-c)); } }
+  /* THE HIT IS DRAWN OVER THE TAB BAR (build 319): "The daily question
+     loading circle, at the bottom it looks like it's cut off halfway and
+     doesn't connect." The ring that leaves the closed meter (.dq-charge-
+     burst, x2.3) and the wider one behind it (x3.1) reach 40-100px past
+     the button, and the button sat at z-index 150 under the tab bar's 200
+     - so each ring's lower half slid under the bar's glass and the circle
+     came out open at the bottom (the iPad's left side, the same way).
+     While it charges the button stands above the bar; every part of the
+     charge is pointer-events:none and the button's own box never meets
+     the bar, so nothing on the bar stops taking taps. check_b319_daily. */
+  .daily-question-fab.is-charging{ z-index:201; }
   /* The quiet ready ring steps aside while the meter is on the button. */
   .daily-question-fab.is-charging.is-ready::after{ animation:none; opacity:0; }
   @keyframes dq-sweep{ from{ transform:rotate(0deg); } to{ transform:rotate(180deg); } }
@@ -20664,6 +20682,7 @@
     border:1px solid rgba(143,193,255,.38); }
   .intro-gate-title{ margin:0 0 .3rem; font-weight:700; font-size:.95rem; color:#CFE6FF; }
   .intro-gate-body{ margin:0; font-size:.84rem; line-height:1.45; color:var(--ink); opacity:.9; }
+  .intro-gate-body + .intro-gate-body{ margin-top:.45rem; }
   .is-banked .xpbar-fill::after{ background:linear-gradient(90deg, rgba(214,236,255,.05), rgba(214,236,255,.42));
     animation-duration:2.6s; }
   .xpbar-track.is-banked{ box-shadow:inset 0 1px 2px rgba(0,0,0,.5), 0 0 0 1px rgba(143,193,255,.42), 0 0 12px rgba(61,139,255,.32); }
@@ -34948,8 +34967,12 @@ const QUESTIONS = [
       "Criminally negligent homicide",
       "Murder.",
       "Capital murder.",
-      "Manslaughter. 1",
+      "Manslaughter.",
     ],
+    /* build 319: "Manslaughter. 1" carried a slide's page number. The
+       choices as first stored stay its identity (KEYS), so nobody's
+       history for this question moves. */
+    keyChoices: ["Criminally negligent homicide", "Murder.", "Capital murder.", "Manslaughter. 1"],
     answer: 0
   },
 
@@ -41825,23 +41848,25 @@ const CHAR_SPECIAL_DRAW = {
      drifts round it with a tail of light, and is pulled back in through an
      event horizon that closes over it. */
   singularity(T){
+    /* the brow, in the drawing's own units: on T.head, so it follows
+       the head's fit (build 319) - see charSpecialParts */
     const F = [20, 15];
     spAura(T, "#7FC8FF", 3.0, .5);
-    T.add(T.front, "circle", { cx: F[0], cy: F[1], r: 1.75, fill: "#060918", stroke: "#7FC8FF", "stroke-width": ".16" },
+    T.add(T.head, "circle", { cx: F[0], cy: F[1], r: 1.75, fill: "#060918", stroke: "#7FC8FF", "stroke-width": ".16" },
       "sp-fadein .2s ease-out .3s both, sp-fadeout .25s ease-in 2.35s forwards");
     [[.1, .45], [.05, .7], [0, 1]].forEach(([lag, k]) => {
-      const d = T.g(T.front, "sp-hzdrift 2.0s cubic-bezier(.45,.05,.55,.95) " + (.3 + lag).toFixed(2) + "s both");
+      const d = T.g(T.head, "sp-hzdrift 2.0s cubic-bezier(.45,.05,.55,.95) " + (.3 + lag).toFixed(2) + "s both");
       d.appendChild(T.pivot(F[0], F[1], 4.8));
       const s = T.g(d, "sp-fadein .15s linear " + (.3 + lag).toFixed(2) + "s both, sp-fadeout .2s ease-in " + (2.2 + lag).toFixed(2) + "s forwards");
       const dim = T.mk("g", { opacity: String(k) });
       s.appendChild(dim);
       spFlare(T, dim, F[0], F[1], "#7FC8FF", "#DDF4FF", (k < 1 ? .7 * k + .3 : 1) * 1.35);
     });
-    T.add(T.front, "ellipse", { cx: F[0], cy: F[1], rx: 4.2, ry: 1.5, fill: "none", stroke: "#BFE6FF", "stroke-width": ".3" }, "sp-collapse .55s ease-in 1.95s both");
-    spFlash(T, T.front, F[0], F[1], 6, "#BFE6FF", "#7FC8FF", 2.35, .6, .9);
-    spRing(T, T.front, F[0], F[1], 1.6, "#DDF4FF", ".3", 2.35, .7, 5);
-    spRing(T, T.front, F[0], F[1], 1.6, "#7FC8FF", ".45", 2.5, .6, 3.6);
-    spSparks(T, T.front, F[0], F[1], 10, 10, ["#FFFFFF", "#BFE6FF", "#7FC8FF"], 2.38, .75);
+    T.add(T.head, "ellipse", { cx: F[0], cy: F[1], rx: 4.2, ry: 1.5, fill: "none", stroke: "#BFE6FF", "stroke-width": ".3" }, "sp-collapse .55s ease-in 1.95s both");
+    spFlash(T, T.head, F[0], F[1], 6, "#BFE6FF", "#7FC8FF", 2.35, .6, .9);
+    spRing(T, T.head, F[0], F[1], 1.6, "#DDF4FF", ".3", 2.35, .7, 5);
+    spRing(T, T.head, F[0], F[1], 1.6, "#7FC8FF", ".45", 2.5, .6, 3.6);
+    spSparks(T, T.head, F[0], F[1], 10, 10, ["#FFFFFF", "#BFE6FF", "#7FC8FF"], 2.38, .75);
   },
   /* GENESIS - the world's heart rises out of its chest, goes round the
      planet twice like a moon, and dives into it: the planet flashes rose. */
@@ -42550,9 +42575,26 @@ function drawAvatarCharSVG(charId){
     if(!draw) return;
     const back = mk("g", { class: "cx-sp cx-sp-back cx-sp-" + charId, opacity: "0" });
     const front = mk("g", { class: "cx-sp cx-sp-front cx-sp-" + charId, opacity: "0" });
+    /* ON THE HEAD (build 319): "his secret flare ... was not on forehead
+       where it should be, it was like in his hair." `front` is laid over
+       the whole drawing, but the head is fitted afterwards - AVATAR_HEAD_SCALE
+       in every view, SIL_HEAD_FIT on a cut-out - so a part drawn at the
+       brow's raw (20, 15) landed 1.6 units above Horizon's real brow, at
+       the mask's top edge, in his hair. A part that belongs to the face
+       goes in `T.head`, the last thing inside .cx-head, so whatever fits
+       the head (and whatever moves it while alive) carries it too. */
+    const headOf = fig.querySelector(".cx-head");
+    let onHead = null;
     let seq = 0;
     const T = {
       mk, sparkle, pivot, back, front,
+      get head(){
+        if(!onHead){
+          onHead = mk("g", { class: "cx-sp cx-sp-head cx-sp-" + charId, opacity: "0" });
+          (headOf || front).appendChild(onHead);
+        }
+        return onHead;
+      },
       anim(e, a, vars){
         e.setAttribute("class", ((e.getAttribute("class") || "") + " cx-spa").trim());
         let st = "--a:" + a;
@@ -69814,8 +69856,12 @@ function showDailyTip(full, compact, opts){
       const ok = (x, y) => x >= 8 && y >= 8 && x + tw <= vw - 8 && y + th <= vh - 8 && !hits(x, y);
       const lx = fr.left - gap - tw;
       const over = blockers().filter(r => lx < r.right && lx + tw > r.left);
-      const lo = Math.max(-1e9, ...over.filter(r => r.bottom <= cy).map(r => r.bottom + 6));
-      const hi = Math.min(1e9, ...over.filter(r => r.top >= cy).map(r => r.top - 6));
+      /* above or below the "?" by its MIDDLE (build 319): with the "?"
+         lifted, Start Studying's foot reaches past the "?"'s centre on a
+         Pro Max, and asked by edges it was neither above nor below - the
+         band forgot it and the bubble went up over the button instead */
+      const lo = Math.max(-1e9, ...over.filter(r => r.top + r.height / 2 <= cy).map(r => r.bottom + 6));
+      const hi = Math.min(1e9, ...over.filter(r => r.top + r.height / 2 > cy).map(r => r.top - 6));
       const band = Math.min(Math.max(cy - th / 2, lo), hi - th);
       for(const y of [cy - th / 2, band, fr.bottom - th, fr.top]) if(ok(lx, y)) return { x: lx, y, side: "left" };
       /* above: over the "?", or pushed to the screen's edge - which clears
@@ -73133,6 +73179,28 @@ function introRow(glyph, color, title, body){
   return row;
 }
 
+/* "YOUR LEVEL WAS ADJUSTED", in two short paragraphs (build 319): what
+   changed and what it did to your level, then what happens to your XP and
+   what opens the next levels. `s` is levelStateFor(store) for somebody the
+   cap moved down (s.held && s.saved > 0). The rank named for the top level
+   is the one you hold, when that cap is your rank's own; a level floor (an
+   admin's gift) can put the cap elsewhere, and then it is "for now". */
+function levelGateNoteText(s){
+  let held = null;
+  try{ held = rankOf(store); }catch(e){}
+  const ownCap = badgeWallLevel(held && TIER_UNLOCKS[held] ? Number(TIER_UNLOCKS[held].badges) || 0 : 0);
+  const where = s.wall !== ownCap ? "Level " + s.level + " is the highest you can be for now"
+    : held ? "Level " + s.level + " is the top level for " + (RANK_DISPLAY_NAME[held] || held)
+    : "Level " + s.level + " is the top level before your first rank";
+  const first = "Levels now unlock one rank at a time. " + where + ", so your level went from " +
+    s.curveLevel + " to " + s.level + ".";
+  const n = Math.max(1, Number(s.badgesToPass) || 1);
+  const gate = s.gateKey ? RANK_DISPLAY_NAME[s.gateKey] || s.gateKey : "";
+  const earn = "Earn " + n + (Number(s.badges) > 0 ? " more" : "") + (n === 1 ? " badge" : " badges") +
+    (gate ? " to reach " + gate : "") + ".";
+  return [first, "You kept all of your XP, and it still counts. " + earn +
+    " The next levels unlock then, and your XP counts toward them right away."];
+}
 function showIntroPopup(){
   if(document.getElementById("intro-pop")) return;
   const el = document.createElement("div");
@@ -73167,24 +73235,21 @@ function showIntroPopup(){
       /* what HAPPENED, not the idea behind it (build 314): "your level
          now follows your rank" was the purpose of the change */
       h.textContent = "Your level was adjusted";
+      /* REWRITTEN (build 319): "At the beginning it says 'you now need the
+         badges to keep leveling up' but that's confusing, it just sounds
+         like you need the badges to level up at all. The part at the end
+         ... earn more badge to reach bronze and it turns back into levels
+         ... is confusing." Said plainly now, in the order it happened:
+         levels open rank by rank; the top level for your rank, and where
+         you were; the XP is kept and still counts; which badges reach the
+         next rank, and that the levels come with them. levelGateNoteText
+         is the whole of it, so the gate can read every case. */
+      const lines = levelGateNoteText(ls);
       const b = document.createElement("p");
-      b.className = "intro-gate-body";
-      const rc = rankChallengesOf();
-      /* WHAT HAPPENED, not what "stays" (build 314): "people above their
-         next rank's level went back to the gate's allowed level and have
-         extra xp". */
-      const bc = badgeChallengeOf(rc);
-      /* WHAT CHANGED, THEN WHAT IT DID TO YOU (build 314): "needs to explain
-         the ranking system has been updated, you must now meet the rank
-         requirements in order to keep leveling up". */
-      const have = bc ? bc.have : 0;
-      const left = bc ? bc.left : 0;
-      b.textContent = "The rank system has been updated: to keep leveling up, you now need the badges your next rank requires. " +
-        "You were level " + ls.curveLevel + ", so your level moved back to " + ls.level + ", the highest you can be " +
-        (have > 0 ? "with " + have + (have === 1 ? " badge" : " badges") : "without any badges yet") + ". " +
-        "You didn't lose any XP: earn " + (left > 0 ? left + (have > 0 ? " more" : "") + (left === 1 ? " badge" : " badges") : "the badges") +
-        (rc ? " to reach " + rc.name : "") + " and it turns back into levels.";
-      note.append(h, b);
+      b.className = "intro-gate-body"; b.textContent = lines[0];
+      const b2 = document.createElement("p");
+      b2.className = "intro-gate-body"; b2.textContent = lines[1];
+      note.append(h, b, b2);
       card.appendChild(note);
     }
   }catch(e){}

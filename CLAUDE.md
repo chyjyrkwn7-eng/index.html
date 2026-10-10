@@ -18730,3 +18730,60 @@ reaction was the weakest in the set (below).
   disc of r 20) and Zeus's flash (a 37-unit rect) showed as hard squares
   in the circle on a 100. They are r 17-17.5 discs, solid to ~72%, gone
   by the edge.
+
+### Build 319 (b319e) - the daily button's row, its charge, Horizon's brow, the level note
+
+- **The daily "?" is 6.8rem off the bottom on a phone (was 6.3).** *"The
+  yellow pulse just barely touches the button tab."* The button cleared
+  the bar by 12px, but its ready ring (`::after`, inset -3px, up to
+  x1.35) reaches 13.6px past it, so at its widest it ran 1-1.4px into the
+  bar on every phone. Lifted 8px it clears by 6.6-7px on all fourteen
+  phone combinations; Start Studying does not move (it sits beside the
+  "?", not over it). **Measure the ring, not the button**: check-fixes 9c
+  samples the ring across its keyframes where it is visible and wants 4px.
+  check-fixes takes `--against` now.
+- **The "done" bubble's band asks above/below by a blocker's MIDDLE.**
+  With the "?" lifted, Start Studying's foot passed the "?"'s centre line
+  on a Pro Max, so by edges it was neither above nor below it, the band
+  between it and the bar forgot it, and the bubble went up over the
+  button (check-fixes 9b: 39px off).
+- **The charge stands above the tab bar while it plays**
+  (`.daily-question-fab.is-charging{z-index:201}`). *"The daily question
+  loading circle, at the bottom it looks like it's cut off halfway and
+  doesn't connect."* The meter itself was whole; the two rings that leave
+  it (x2.3, x3.1) slid under the bar's glass (150 under 200), so they came
+  out open at the bottom (on the iPad, the left side). Everything in the
+  charge is pointer-events:none and the button never meets the bar, so
+  nothing on the bar loses taps. Gate: `check_b319_daily` (pixel diff over
+  the bar at 5.1s).
+- **A special's parts that belong to the FACE go in `T.head`.** `T.front`
+  lies over the whole drawing, but the head is fitted afterwards
+  (`AVATAR_HEAD_SCALE` everywhere, `SIL_HEAD_FIT` on a cut-out), so
+  Horizon's special drew the hole and the flare at the brow's raw (20, 15)
+  - 1.6-1.9 units above his real brow, on the mask's top edge: *"his
+  secret flare ... was not on forehead where it should be, it was like in
+  his hair."* `T.head` is a `cx-sp` group appended last inside `.cx-head`,
+  so every fit and every head motion carries it. Gate: `check_b319_horizon`
+  (drawing, picker, cut-out, both scene copies, live on Profile).
+  **Genesis and Void still anchor on raw coordinates**: Genesis's dive
+  lands ~1.2 units under its planet's centre (head x1.1 about y 31.5), Void
+  ~0.6 under its face. Not reported; move their face parts to `T.head` if
+  they are.
+- **"Your level was adjusted" is `levelGateNoteText(s)`**, two short
+  paragraphs: levels now unlock one rank at a time; level N is the top
+  level for <held rank> (or "before your first rank"), so your level went
+  from A to N; you kept all of your XP and it still counts; earn K (more)
+  badges to reach <next rank>; the next levels unlock then and your XP
+  counts toward them right away. The old copy opened with "to keep leveling
+  up, you now need the badges", which read as "badges to level up at all".
+  Gate: `check_b319_levelnote` (0, 1 and 4 badges; nobody under the cap).
+- **Penal Code #346, choice D: `"Manslaughter."`** (a slide's page number
+  "1" had come in with it), asked for by name in the 319 list - the one
+  exception to the 6 Oct "exactly like the study guides" rule above, which
+  had reverted this very repair. **Choice text IS part of identity**: KEYS
+  hashes `keyText || q` plus `keyChoices || choices`, so the question
+  carries `keyChoices` with the original four and its key stays
+  `Penal Code|346|243n1v`. `check_b319_penal346` loads 8aded7f beside the
+  build and wants all 898 KEYS byte-identical and no other question
+  changed; `check_b313_shuffle`'s "no keyChoices that differ" allows
+  exactly this one.
