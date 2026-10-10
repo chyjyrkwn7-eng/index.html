@@ -13277,7 +13277,8 @@ def check_b316_tiles(br):
           const bn = document.querySelector('.pf-rw.is-banner .bnr');
           out.bnStill = bn ? bn.classList.contains('is-still') : null;
           out.bnAnims = bn ? bn.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length : 0;
-          const cs = getComputedStyle(document.querySelector('.pf-case'));
+          /* build 319 (h): the strip's own surface, .pf-ccase */
+          const cs = getComputedStyle(document.querySelector('.pf-case .pf-ccase') || document.querySelector('.pf-case'));
           out.caseBg = cs.backgroundImage;
           const m = cs.borderTopColor.match(/[\\d.]+/g) || [];
           out.caseBorderAlpha = m.length >= 4 ? Number(m[3]) : 1;
@@ -13297,11 +13298,12 @@ def check_b316_tiles(br):
               and abs(b[2] - c0[2]) <= 2, [r.get("next"), b, c0])
         check(f"{dev}: and it moves", r.get("bnStill") is False and r.get("bnAnims", 0) > 0, [r.get("bnStill"), r.get("bnAnims")])
         ch = r.get("caseBorderChan") or [255, 255, 255]
-        # REVISED IN 319: the Profile's case is the shut case's front, in the
-        # case's own grained shell - no tinted card round it any more.
-        check(f"{dev}: the badge case is the shut case in its own shell, with no card round it",
-              r.get("caseBg") in ("none", "") and r.get("caseBorderW", 1) == 0
-              and "gradient" in (r.get("frontBg") or "") and "url(" in (r.get("frontBg") or ""), [r.get("caseBg", "")[:40], r.get("caseBorderW"), (r.get("frontBg") or "")[:70]])
+        # REVISED IN 319 (b319g), AND BACK IN 319 (b319h): g drew the shut
+        # case in its own grained shell; it "sticks out", so the strip is the
+        # Next rank card's flow again - a diagonal light and a tinted edge.
+        check(f"{dev}: the badge case has the Next rank card's flow - a diagonal light and a tinted edge, not a flat box",
+              "gradient" in (r.get("caseBg") or "") and r.get("caseBorderAlpha", 0) >= 0.2
+              and not all(abs(x - 1) < 0.01 or abs(x - 255) < 1 for x in ch), [r.get("caseBg", "")[:70], r.get("caseBorderAlpha"), ch])
         check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
         ctx.close()
 
@@ -13409,10 +13411,10 @@ def check_b317_pfcard(br):
         # not the move, revert that location at the bottom."
         check(f"{dev}: the badge case is at the bottom of the card, after the Next rank card", r.get("caseLast") is True, r.get("caseLast"))
         g, rem = r.get("gaps"), r.get("rem") or 16
-        # REVISED IN 319: the shut case is not a box, and its handle stands
-        # on its lid, so it sits 1.1rem under the Next rank card.
-        check(f"{dev}: ...with the card's usual gaps (1.05rem under the bar, 1.1rem above the shut case)",
-              bool(g) and abs(g[0] - 1.05 * rem) <= 1.5 and abs(g[1] - 1.1 * rem) <= 1.5, [g, rem])
+        # REVISED IN 319 (g: 1.1rem), BACK IN 319 (h): the strip is part of
+        # the card, so it takes the boxes' own .8rem; its handle stands in it.
+        check(f"{dev}: ...with the card's usual gaps (1.05rem under the bar, .8rem between the boxes)",
+              bool(g) and abs(g[0] - 1.05 * rem) <= 1.5 and abs(g[1] - 0.8 * rem) <= 1.5, [g, rem])
         # REVISED IN THE 317 TOUCH-UP: no grey. This level's XP, what it
         # asks and the total are one blue - mid level (not over) and at
         # level 80 (over).
@@ -18628,8 +18630,13 @@ def check_b317_badgecase(br):
               bool(cut) and all(x.get("root") and x.get("latches", 0) >= 2 and x.get("handle") for x in (cut, tab, pf))
               and cut.get("lining") and tab.get("lining") and not pf.get("lining"),
               {"cut": cut and {k: cut[k] for k in ("root", "latches")}, "tab": {k: tab.get(k) for k in ("root", "latches")}, "pf": {k: pf.get(k) for k in ("root", "latches")}})
-        check(f"{dev}: ...in the same materials: one lining, one metal for the latches, one handle, one grained leather",
-              cut.get("lining") == tab.get("lining") and same("latch") and same("handle") and same("leather") and all(x.get("grain") for x in (cut, tab, pf)),
+        # REVISED IN 319 (h): the cutscene and the Badges tab are one case in
+        # one set of materials; the Profile card's shut strip is drawn in the
+        # card's own surface ("the brief case sticks out"), so it is held to
+        # check_b319h_layout's measurements instead of to these.
+        same = lambda k: cut and cut.get(k) and cut.get(k) == tab.get(k)
+        check(f"{dev}: ...in the same materials: one lining, one metal for the latches, one handle, one grained leather (cutscene and Badges tab)",
+              cut.get("lining") == tab.get("lining") and same("latch") and same("handle") and same("leather") and all(x.get("grain") for x in (cut, tab)),
               {"lining": [x and (x.get("lining") or "")[:48] for x in (cut, tab, pf)], "leather": [x and (x.get("leather") or "")[:40] for x in (cut, tab, pf)]})
         check(f"{dev}: a badge in the case still opens its card when tapped", r.get("tapCard") is True and not r.get("threw"), r.get("threw") or r.get("tapCard"))
         ctx.close()
@@ -18898,8 +18905,11 @@ def check_b317_badge2(br):
         check(f"{dev}: ...and so does the Profile card's - its name on its side, no heading over the tray",
               # build 319: the Profile case is shut and has no head row at all
               good(pf) and pfHead in (False, None), {"plate": pf, "head says it": pfHead})
-        check(f"{dev}: ...one plate: the same metal and lettering on both",
-              bool(tab and pf) and tab["bg"] == pf["bg"] and tab["font"].split(" ")[0] == pf["font"].split(" ")[0], [tab and tab["bg"], pf and pf["bg"]])
+        # REVISED IN 319 (h): one lettering on both; the Profile strip's plate
+        # is in the card's own dull surface, not the open case's bright metal
+        # ("the brief case sticks out") - see check_b319h_layout.
+        check(f"{dev}: ...one plate: the same lettering on both, the Profile's in the card's own dull surface",
+              bool(tab and pf) and tab["font"].split(" ")[0] == pf["font"].split(" ")[0] and tab["bg"] != pf["bg"], [tab and tab["bg"], pf and pf["bg"]])
         # every badge on the tab: struck at its own device pixels (after the measure)
         pg.wait_for_timeout(1200)
         res = pg.evaluate("""(dpr) => { const out = [];
@@ -19182,13 +19192,15 @@ def check_b318_badges(br):
             and tab["lid"]["b"] <= tab["tray"]["t"] + 2 and tab["front"]["t"] >= tab["tray"]["b"] - 1.5
         check(f"{dev}: the Badges tab is the cutscene's square case - lid, tray and front as one box, square corners, guarded walls, no rounded shell round it",
               ok_tab, tab and {k: tab[k] for k in ("rootR", "lidR", "trayR", "frontR", "frontTopR", "guards", "lid", "tray", "front")})
-        # REVISED IN 319: the Profile's case is the same square case SHUT -
-        # its front with guarded ends, the plate wholly on it, and the handle
-        # standing on the lid above it rather than hanging below the front.
-        ok_pf = bool(pf) and pf["radius"] <= SQ and pf["guards"] \
+        # REVISED IN 319: the Profile's case is the same case SHUT - the plate
+        # wholly on its front, the handle standing on the lid. AND IN 319 (h):
+        # it is drawn in the card's surface, so its corners are the Next rank
+        # box's (1.1rem), not the open case's square ones, and the handle
+        # stands in the gap above, on its top edge.
+        ok_pf = bool(pf) and abs(pf["radius"] - 17.6) <= 1 \
             and pf["plate"]["l"] >= pf["front"]["l"] and pf["plate"]["r"] <= pf["front"]["r"] and pf["plate"]["t"] >= pf["front"]["t"] - 0.5 and pf["plate"]["b"] <= pf["front"]["b"] + 0.5 \
-            and pf["handle"]["b"] <= pf["front"]["t"] and pf["handle"]["t"] >= pf["caseB"]["t"] - 0.5
-        check(f"{dev}: the Profile case is the same square case, shut - guarded front, the plate wholly on it, the handle standing on the lid",
+            and pf["handle"]["b"] <= pf["front"]["t"] and abs(pf["handle"]["b"] - pf["caseB"]["t"]) <= 1
+        check(f"{dev}: the Profile case is the same case, shut - the card's corners, the plate wholly on its front, the handle standing on the lid",
               ok_pf, pf and {k: pf[k] for k in ("radius", "guards", "caseB", "front", "plate", "handle")})
         # REVISED IN 319: the Profile's case is shut, so it shows no badges
         check(f"{dev}: every earned badge glows in its own colour on the Badges tab (the Profile case is shut and shows none)",
