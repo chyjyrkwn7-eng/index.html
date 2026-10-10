@@ -14724,9 +14724,18 @@ EVOLVE_ST = """([tier]) => { const o = document.getElementById('supernova-cutsce
   const slotM = ns ? (getComputedStyle(ns).transform.match(/matrix\(([^)]*)\)/) || [, ''])[1].split(',').map(Number) : [];
   return { c: o.className.split(' '), flare: rect(nb), mid: [ob.width / 2, ob.height / 2],
     planet: mr ? [mr.left + mr.width / 2 - ob.left, mr.top + mr.height * 162 / 342 - ob.top] : null,
-    attn: !!o.querySelector('.rank-attn.is-attention'), slotShift: slotM.length === 6 ? Math.hypot(slotM[4], slotM[5]) : 0,
-    slotS: slotM.length === 6 ? Math.hypot(slotM[0], slotM[1]) : 1, attnC: ns ? getComputedStyle(ns).getPropertyValue('--attn').trim() : null,
-    newC: flareColorOf(tier), aglow: op('.rank-before .rank-attn.is-afterglow'), charge: op('.rank-attn.is-charge'), aura: op('.rank-aura'),
+    attn: !!o.querySelector('.rank-chg.is-attention, .rank-attn.is-attention'), slotShift: slotM.length === 6 ? Math.hypot(slotM[4], slotM[5]) : 0,
+    slotS: slotM.length === 6 ? Math.hypot(slotM[0], slotM[1]) : 1,
+    attnC: ns ? (getComputedStyle(ns).getPropertyValue('--chg').trim() || getComputedStyle(ns).getPropertyValue('--attn').trim()) : null,
+    newC: flareColorOf(tier), aglow: op('.rank-before .rank-chg.is-afterglow .rank-chg-corona, .rank-before .rank-attn.is-afterglow'),
+    charge: op('.rank-chg.is-charge .rank-chg-corona, .rank-attn.is-charge'), aura: op('.rank-aura'),
+    /* build 318: the light on the new flare, against the flare's own centre
+       (the bubble floats inside its slot), and how wide its rings are */
+    lightOff: (nb && ns) ? (() => { const b = nb.getBoundingClientRect(), bx = b.left + b.width / 2, by = b.top + b.height / 2; let m = null;
+      ns.querySelectorAll('.rank-chg > i, .rank-attn, .rank-attn-ring').forEach(e => { if(+getComputedStyle(e).opacity < .05) return;
+        const r = e.getBoundingClientRect(); const d = Math.hypot(r.left + r.width / 2 - bx, r.top + r.height / 2 - by); m = Math.max(m || 0, d); }); return m; })() : null,
+    ringW: (nb && ns) ? (() => { const bw = nb.getBoundingClientRect().width; let w = null;
+      ns.querySelectorAll('.rank-chg-ring').forEach(e => { if(+getComputedStyle(e).opacity < .3) return; w = Math.max(w || 0, e.getBoundingClientRect().width / bw); }); return w; })() : null,
     planetRel: (nb && mr) ? (() => { const r = nb.getBoundingClientRect();
       return Math.hypot(r.left + r.width / 2 - mr.left - mr.width / 2, r.top + r.height / 2 - mr.top - mr.height * 162 / 342) / mr.width; })() : null,
     stageT: st.translate, long: op('.rank-before .rank-trail.is-long'), neu: op('.rank-before .rank-trail.is-new'),
@@ -14850,10 +14859,23 @@ def check_b317_evolve(br):
     cols = [hexrgb(st["attnC"]) for st in attn]
     nc = hexrgb(attn[0]["newC"]) if attn else None
     sw_a = swells([st["slotS"] for st in attn], 1.15)
-    check("attention: the new flare flashes and breathes for the whole opening (4+ swells over ~4s) in its OLD pale light, not the new colour",
-          len(attn) >= 100 and len(sw_a) >= 4 and all(c and min(c) >= 200 for c in cols) and nc is not None and all(c != nc for c in cols)
+    # Build 318: "Before the spin the flare pulses with the white thing, idk
+    # how I feel about that ... it's also not centered". The charge is in
+    # the RANK'S colour now (not the old pale white), and every layer of it
+    # sits on the flare's own centre in every frame - the bubble floats in
+    # its slot, and the light used to sit still on the slot, 5-8px off at
+    # 3x. Rings close IN on the flare before the spin. Fails on 219bfea.
+    check("attention: the new flare charges up for the whole opening (4+ swells over ~4s) in the rank's own colour, not white",
+          len(attn) >= 100 and len(sw_a) >= 4 and nc is not None and all(c == nc for c in cols)
           and bool(after) and not any(st["attn"] for st in after),
           (len(attn), len(sw_a), attn and attn[0]["attnC"], attn and attn[0]["newC"]))
+    offs = [st["lightOff"] for i, st in rows if st and st.get("lightOff") is not None]
+    check("the light on the flare is centred on it in every frame, before and after the spin (within 1px)",
+          len(offs) >= 150 and max(offs) <= 1, (len(offs), offs and round(max(offs), 2)))
+    rw_a = [st["ringW"] for st in attn]
+    closing = sum(1 for k in range(1, len(rw_a)) if rw_a[k] is not None and rw_a[k - 1] is not None and rw_a[k] < rw_a[k - 1] - .01)
+    check("attention: thin rings close in on the flare, one after another, faster and faster",
+          closing >= 12, closing)
     rel = [st["planetRel"] for st in attn if st["planetRel"] is not None]
     moved = [st["stageT"] for st in attn if st["stageT"] not in ("none", "0px", "0px 0px")]
     check("attention: in place - the flare never leaves its slot and the camera never moves",
@@ -14905,6 +14927,9 @@ def check_b317_evolve(br):
           len(win) >= 40 and len(sw_c) >= 3 and not scales and not any(st["gather"] for st in win)
           and max(st["slotShift"] for st in win) <= 1 and bool(ch) and max(ch[len(ch) // 2:]) > max(ch[:len(ch) // 3]),
           (len(win), len(sw_c), sorted(scales)[:3], any(st["gather"] for st in win)))
+    rw_c = [st["ringW"] for st in win]
+    opening = sum(1 for k in range(1, len(rw_c)) if rw_c[k] is not None and rw_c[k - 1] is not None and rw_c[k] > rw_c[k - 1] + .01)
+    check("after the spin the charge is released: rings spread out from the flare (build 318)", opening >= 6, opening)
     fb = at(burst_at) if burst_at else None
     check("the big flash starts AT the new flare (it goes off), not at the planet's middle",
           bool(fb and fb["flash"] and fb["flare"] and fb["planet"]) and math.hypot(fb["flash"][0] - fb["flare"][0], fb["flash"][1] - fb["flare"][1]) <= 6
@@ -17030,8 +17055,24 @@ def check_b317_rankup(br):
           mo.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
           const at = {};
           let tried = false;
-          for(let i = 0; i < 260; i++){
+          /* the loading screen's way out, every frame (rAF) */
+          out.fade = [];
+          (function fr(){ const ov = document.getElementById('teststart-overlay');
+            if(ov && ov.classList.contains('is-leaving')) out.fade.push(+(+getComputedStyle(ov).opacity).toFixed(3));
+            if(!out.fadeDone) requestAnimationFrame(fr); })();
+          for(let i = 0; i < 520; i++){
             const ov = document.getElementById('teststart-overlay');
+            /* build 318: the app taps the rank line on Profile for you */
+            const tp = document.querySelector('.ru-tap.is-press');
+            if(tp && !at.tap){ at.tap = Math.round(performance.now() - t0);
+              const st = document.querySelector('.screen-profile .pf-standing'), sr = st && st.getBoundingClientRect(), pr = tp.getBoundingClientRect();
+              const nt = document.querySelector('.ru-tap-note');
+              out.tap = { onLine: !!(sr && pr.left >= sr.left && pr.left <= sr.right && pr.top >= sr.top && pr.top <= sr.bottom),
+                pressed: !!(st && st.classList.contains('ru-pressed')), note: nt ? nt.textContent : null,
+                profile: !!document.querySelector('.screen-profile'), loadingYet: !!ov }; }
+            const nt2 = document.querySelector('.ru-tap-note');
+            if(ov && nt2 && out.noteUnder !== false){ const q = nt2.getBoundingClientRect(); const top = document.elementsFromPoint(q.left + q.width / 2, q.top + q.height / 2).filter(e => !e.classList.contains('ru-blocker'))[0];
+              out.noteUnder = !!(top && ov.contains(top)); }
             if(ov && !at.loading){ at.loading = Math.round(performance.now() - t0); out.loadText = (ov.textContent || '').trim(); }
             if(document.querySelector('.screen-ranks .rankmap') && !at.map) at.map = Math.round(performance.now() - t0);
             if(at.map && !tried && performance.now() - t0 > at.map + 1500){
@@ -17046,8 +17087,10 @@ def check_b317_rankup(br):
             if(at.back && !scene() && !document.querySelector('.ru-blocker')){ at.done = Math.round(performance.now() - t0); break; }
             await wait(100);
           }
+          out.fadeDone = true;
           mo.disconnect();
           out.at = at; out.cls = seenCls;
+          out.tapLeft = !!document.querySelector('.ru-tap, .ru-tap-note');
           out.after = { rank: (document.querySelector('.pf-standing .pf-rankname') || {}).textContent || null,
             next: (document.querySelector('.pf-goal .pf-goal-name') || {}).textContent || null,
             seen: store.rankMapSeen, held: TIER_ORDER_FULL.indexOf(rankOf(store)), blocker: !!document.querySelector('.ru-blocker'),
@@ -17087,8 +17130,27 @@ def check_b317_rankup(br):
         check(f"{dev}: a tap on the card lands on the input layer and goes nowhere",
               p0.get("topIsBlocker") is True and p0.get("stayed") is True, [p0.get("topIsBlocker"), p0.get("stayed")])
         at = r.get("at") or {}
-        check(f"{dev}: after a second, LOADING RANK UP ADJUSTMENTS",
-              800 <= (at.get("loading") or 0) <= 2500 and r.get("loadText", "").endswith("LOADING RANK UP ADJUSTMENTS"), [at.get("loading"), r.get("loadText")])
+        # Build 318: "when clicking the profile button, it needs to be like
+        # normal, then the cutscene will need to click the rank button but it
+        # will do it for you". Profile as normal first, then a touch marker
+        # presses the rank line ("Opening your rank..."), then the loading
+        # screen - and that screen FADES out (it cut straight to the map:
+        # its fade-in's fill held it opaque). Both fail on 219bfea.
+        tp = r.get("tap") or {}
+        check(f"{dev}: Profile first, then the app taps the rank line for you - on the line, pressed, 'Opening your rank...'",
+              900 <= (at.get("tap") or 0) <= 6000 and tp.get("onLine") and tp.get("pressed") and tp.get("profile") and not tp.get("loadingYet")
+              and (tp.get("note") or "").startswith("Opening your rank"), [at.get("tap"), tp])
+        check(f"{dev}: then LOADING RANK UP ADJUSTMENTS, a beat after the tap",
+              bool(at.get("tap")) and 500 <= (at.get("loading") or 0) - at["tap"] <= 1500 and r.get("loadText", "").endswith("LOADING RANK UP ADJUSTMENTS"),
+              [at.get("tap"), at.get("loading"), r.get("loadText")])
+        fd = r.get("fade") or []
+        # (every frame while it leaves; a loaded machine gives few frames, so
+        # the bar is a partly-faded frame and a last frame mostly gone - the
+        # old screen was at 1 in every frame until it was removed)
+        check(f"{dev}: the loading screen fades out into the road map (no cut)",
+              len([v for v in fd if .05 < v < .95]) >= 1 and bool(fd) and fd[-1] < .5, (len(fd), fd[:14]))
+        check(f"{dev}: and nothing of the tap is left behind - the loading screen comes up OVER its note", r.get("tapLeft") is False and r.get("noteUnder") is True,
+              [r.get("tapLeft"), r.get("noteUnder")])
         check(f"{dev}: about three seconds later, the road map", 2500 <= (at.get("map") or 0) - (at.get("loading") or 0) <= 4500,
               [at.get("loading"), at.get("map")])
         mh = r.get("mapHeld") or {}
@@ -19517,6 +19579,59 @@ def check_b318_vroom_badge_case(br):
     ctx.close()
 
 
+def check_b318_bridge(br):
+    """Build 318 (B1/B5 from the review pack). A cutscene hands its dim to
+    the reward card through the scene bridge (openSceneBridge /
+    claimSceneBridge). Two faults, both measured as the luminance of a
+    band the card never covers, frame by frame on the page clock:
+    - the hand-over DOUBLED the dim: the bridge's .72 faded out over the
+      card's own .72, ~92% dark for a frame and easing back (a 9-level dip
+      on a 17 Pro Max);
+    - a bridged card's dim did not fade on the way out (transition:none):
+      .72 to nothing in one frame.
+    Both for a rank scene's plain bridge and a secret flare's bridge with
+    a pool of colour (the character cards). Fails on 219bfea."""
+    print("\n318b. the scene bridge hands its dim to the card without doubling it, and the card's dim fades out")
+    from PIL import Image, ImageStat
+    import io as _io
+    cases = (("a rank's reward card (plain bridge)", "'#E6B84A', { plain: true }", "rankRewardsItem('veteran', [themeUnlockItem('veteran')])"),
+             ("a secret flare's character card (bridge with a pool)", "'#7B5CFF'", "characterUnlockItem('umbra')"))
+    for label, bridge, item in cases:
+        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+        pg.evaluate("()=>{ document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); showHome(); }")
+        pg.wait_for_timeout(1500)
+        pg.evaluate("()=>document.querySelectorAll('.rs-spot,.scene-bridge,.daily-alert,#tour-overlay,.update-banner,.toast').forEach(n=>n.remove())")
+        pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+
+        def lum():
+            png = pg.screenshot(clip={"x": 20, "y": 90, "width": 400, "height": 60})
+            return ImageStat.Stat(Image.open(_io.BytesIO(png)).convert("L")).mean[0]
+        page = lum()
+        pg.evaluate("()=>{ openSceneBridge(%s); }" % bridge)
+        seq, t, bridged = [], 0.0, None
+        for i in range(1, 130):
+            t0 = t; t = i / 30
+            if i == 10:
+                bridged = pg.evaluate("()=>{ window.__sp = playUnlockSpotlight(%s, 1, 1, ()=>{}); const s = document.querySelector('.rs-spot'); return !!(s && s.classList.contains('is-bridged')); }" % item)
+            if i == 80:
+                pg.evaluate("()=>window.__sp.skip()")
+            pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000)))
+            pg.evaluate(CUTSPIN_SEEK, t)
+            seq.append(lum())
+        ctx.close()
+        dim = seq[7]
+        claim = seq[8:45]
+        check("%s: claimed by the card, the dim never doubles (no frame >2 levels darker than the bridge, no step >1.5)" % label,
+              bridged and min(claim) >= dim - 2 and max(abs(b - a) for a, b in zip(claim, claim[1:])) <= 1.5,
+              (bridged, round(dim, 1), round(min(claim), 1), round(max(abs(b - a) for a, b in zip(claim, claim[1:])), 2)))
+        out = seq[78:120]
+        total = max(out) - out[0]
+        steps = [b - a for a, b in zip(out, out[1:])]
+        check("%s: and when the card goes its dim fades back to the screen over 6+ frames, no single frame more than 40%% of it" % label,
+              total > 15 and max(steps) <= .4 * total and len([d for d in steps if d > .5]) >= 6,
+              (round(page, 1), round(out[0], 1), round(max(out), 1), round(max(steps), 1), len([d for d in steps if d > .5])))
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -19717,6 +19832,7 @@ def main():
             check_b318_one_chat(br)
             check_b318h_legacy_rows(br)
             check_b318_vroom_badge_case(br)
+            check_b318_bridge(br)
         finally:
             br.close()
     SERVER.shutdown()

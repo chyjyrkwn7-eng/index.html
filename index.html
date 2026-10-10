@@ -11822,6 +11822,21 @@
   .rank-orbit-slot.is-attn{ z-index:2; }
   .rank-attn.is-still{ opacity:.7; }
   .rank-attn-ring.is-still{ opacity:.85; }
+  /* THE CHARGE AND THE RELEASE (build 318) - see flareFx in
+     playRankUpScene. Two layers on the new flare's slot, each riding the
+     bubble's own float so they stay on its centre: a corona of the rank's
+     colour under the glass (no white core - "the white thing" was the
+     note), and thin rings over it that close in before the spin and
+     spread out after it. */
+  .rank-chg{ position:absolute; inset:0; pointer-events:none; }
+  .rank-chg-under{ z-index:0; }
+  .rank-chg-over{ z-index:2; }
+  .rank-chg > i{ position:absolute; border-radius:50%; opacity:0; will-change:transform, opacity; }
+  .rank-chg-corona{ inset:-85%;
+    background:radial-gradient(circle, color-mix(in srgb, var(--chg, #fff) 85%, #fff) 0 9%, color-mix(in srgb, var(--chg, #fff) 70%, transparent) 20%,
+      color-mix(in srgb, var(--chg, #fff) 34%, transparent) 33%, color-mix(in srgb, var(--chg, #fff) 12%, transparent) 47%, transparent 64%); }
+  .rank-chg-ring{ inset:-9%; border:1.5px solid color-mix(in srgb, var(--chg, #fff) 72%, #fff);
+    box-shadow:0 0 7px 1px color-mix(in srgb, var(--chg, #fff) 55%, transparent), inset 0 0 5px color-mix(in srgb, var(--chg, #fff) 40%, transparent); }
   .rank-trail{ position:absolute; left:50%; top:47.368%; aspect-ratio:1; translate:-50% -50%; border-radius:50%;
     pointer-events:none; opacity:0; z-index:0; }
   .rank-bang{ position:absolute; pointer-events:none; z-index:3; aspect-ratio:1; translate:-50% -50%; }
@@ -15411,17 +15426,24 @@
      bar's own rules are untouched. */
   /* Home, locked: the Profile tab rings in the new rank's colour - a
      pill outline breathing out from the tab, and the character bobbing. */
+  /* INSIDE ITS OWN TAB (build 318): "the yellow ring pulses over onto the
+     main button". It rippled OUT to 1.22x with a 14px glow - over the
+     Home tab's pill beside it and past the bar's top edge. It breathes
+     INSIDE the tab now (.9x to 1x of a box 2px in from the tab's edge) and
+     its glow is 5px, so at its widest the light ends ~3px outside the tab:
+     clear of the bar's edge and of the next tab's pill (the Profile tab
+     sits 13px+ from Home's now - centreProfileTab). */
   #bottomtab-profile.ru-call::before{
-    content:""; position:absolute; inset:1px; border-radius:999px; pointer-events:none; z-index:-1;
+    content:""; position:absolute; inset:2px; border-radius:999px; pointer-events:none; z-index:-1;
     border:2px solid var(--ru-color, var(--accent));
-    box-shadow:0 0 14px color-mix(in srgb, var(--ru-color, var(--accent)) 65%, transparent),
-      inset 0 0 10px color-mix(in srgb, var(--ru-color, var(--accent)) 35%, transparent);
+    box-shadow:0 0 5px color-mix(in srgb, var(--ru-color, var(--accent)) 60%, transparent),
+      inset 0 0 9px color-mix(in srgb, var(--ru-color, var(--accent)) 38%, transparent);
     animation:ru-tab-ring 1.7s ease-out infinite;
   }
   #bottomtab-profile.ru-call .bottomtab-icon{ animation:ru-tab-bob 1.7s ease-in-out infinite; }
   #bottomtab-profile.ru-call .bottomtab-label{ color:color-mix(in srgb, var(--ru-color, var(--accent)) 55%, #fff); }
   /* a ripple: invisible at both ends, so each new ring fades in rather than popping on (check-loops) */
-  @keyframes ru-tab-ring{ 0%{ transform:scale(.92); opacity:0; } 12%{ opacity:1; } 65%{ opacity:.15; } 100%{ transform:scale(1.22); opacity:0; } }
+  @keyframes ru-tab-ring{ 0%{ transform:scale(.9); opacity:0; } 14%{ opacity:1; } 65%{ opacity:.2; } 100%{ transform:scale(1); opacity:0; } }
   @keyframes ru-tab-bob{ 0%, 44%, 100%{ transform:scale(1); } 14%{ transform:scale(1.16); } 28%{ transform:scale(.97); } }
   /* Reduce motion: a ring that stays lit instead of one that rings. The
      in-app rule is `*`, which never matches a pseudo-element. */
@@ -15431,9 +15453,48 @@
   .ru-blocker{ position:fixed; inset:0; z-index:2147483000; background:transparent; touch-action:none; -webkit-tap-highlight-color:rgba(0,0,0,0); }
   /* The loading screen is LOADING TEST's own, a touch above the tab bar
      and the chat button, and it fades in and out rather than cutting. */
-  #teststart-overlay.ru-loading{ z-index:410; animation:ru-fade-in .35s ease both; transition:opacity .42s ease; }
-  #teststart-overlay.ru-loading.is-leaving{ opacity:0; }
+  /* It FADES OUT too (build 318): the fade-in's fill (`both`) held the
+     screen at full opacity over the leaving rule's opacity:0 - an
+     animation outranks a plain declaration - so it cut straight to the
+     road map 440ms later. The way out is an animation of its own. */
+  /* (the fade-in fills BACKWARDS only: once it has played it holds
+     nothing, so nothing of it can sit over the fade-out even where the
+     finished fade-in outlives the name change) */
+  #teststart-overlay.ru-loading{ z-index:410; animation:ru-fade-in .35s ease backwards; }
+  #teststart-overlay.ru-loading.is-leaving{ animation:ru-fade-out .42s ease both; pointer-events:none; }
   @keyframes ru-fade-in{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes ru-fade-out{ from{ opacity:1; } to{ opacity:0; } }
+  /* THE APP TAPS IT FOR YOU (build 318): "when clicking the profile
+     button, it needs to be like normal, then the cutscene will need to
+     click the rank button but it will do it for you". A touch marker - the
+     kind a screen recording draws - glides onto the rank line on Profile,
+     presses it (the line answers as a real press does, and a ring in the
+     new rank's colour goes out from the touch), and a note says what is
+     happening. Over Profile and the tab bar but UNDER the loading screen
+     (410), so the screen comes up over it rather than the note sitting on
+     the loading screen; it touches nothing itself (the input layer above
+     it takes every touch). */
+  .ru-tap{ position:fixed; z-index:405; left:0; top:0; width:0; height:0; pointer-events:none; }
+  .ru-tap > i{ position:absolute; left:0; top:0; border-radius:50%; }
+  .ru-tap-finger{ width:2.6rem; height:2.6rem; margin:-1.3rem 0 0 -1.3rem; background:rgba(255,255,255,.2);
+    border:2px solid rgba(255,255,255,.85); box-shadow:0 2px 12px rgba(0,0,0,.45), inset 0 0 8px rgba(255,255,255,.25);
+    opacity:0; transform:translate(2.6rem, 4.2rem) scale(1.08);
+    transition:opacity .3s ease, transform .62s cubic-bezier(.3,.75,.25,1); }
+  .ru-tap.is-in .ru-tap-finger{ opacity:1; transform:none; }
+  .ru-tap.is-press .ru-tap-finger{ transform:scale(.8); background:rgba(255,255,255,.34); transition:opacity .3s ease, transform .14s ease-out, background .14s ease-out; }
+  .ru-tap.is-out .ru-tap-finger{ opacity:0; transform:scale(1.15); transition:opacity .3s ease, transform .3s ease-out; }
+  .ru-tap-ripple{ width:2.6rem; height:2.6rem; margin:-1.3rem 0 0 -1.3rem; opacity:0;
+    border:2px solid color-mix(in srgb, var(--ru-color, #fff) 75%, #fff);
+    box-shadow:0 0 10px color-mix(in srgb, var(--ru-color, #fff) 60%, transparent); }
+  .ru-tap.is-press .ru-tap-ripple{ animation:ru-tap-ripple .75s cubic-bezier(.15,.7,.3,1) both; }
+  @keyframes ru-tap-ripple{ 0%{ opacity:.95; transform:scale(.5); } 100%{ opacity:0; transform:scale(2.6); } }
+  .pf-standing.ru-pressed{ opacity:.82; transform:scale(.985); transition:opacity .12s ease, transform .12s ease; }
+  .ru-tap-note{ position:fixed; z-index:405; pointer-events:none; white-space:nowrap;
+    padding:.45rem .85rem; border-radius:999px; font-size:.8rem; font-weight:700; letter-spacing:.01em; color:rgba(255,255,255,.94);
+    background:rgba(12,14,20,.86); border:1px solid color-mix(in srgb, var(--ru-color, #fff) 45%, transparent);
+    box-shadow:0 6px 20px rgba(0,0,0,.4);
+    opacity:0; transform:translate(-50%, 6px); transition:opacity .3s ease, transform .35s cubic-bezier(.2,.8,.2,1); }
+  .ru-tap-note.is-in{ opacity:1; transform:translate(-50%, 0); }
   /* The zoom scales the map past its own edges; nothing may scroll sideways. */
   html.ru-scene, html.ru-scene body{ overflow-x:clip; }
   html.ru-scene .rankmap{ transition:transform .8s cubic-bezier(.3,.7,.2,1); will-change:transform; }
@@ -25051,6 +25112,10 @@
      is already there, so it starts full rather than fading in again, and
      the card rises out of the light the scene left almost at once. */
   .rs-spot.is-bridged{ background:rgba(6,8,12,.72); transition:none; }
+  /* ...and it leaves the way it would have faded: a bridged card's dim
+     used to stay at .72 to its last frame (transition:none) and vanish
+     in one (build 318) */
+  .rs-spot.is-bridged.is-leaving{ background:rgba(6,8,12,0); transition:background .3s ease; }
   .rs-spot.is-bridged.is-up .rs-spot-card{ animation-delay:.1s; }
   .scene-bridge{
     position:fixed; inset:0; z-index:319; pointer-events:none;
@@ -25068,6 +25133,11 @@
   /* Claimed: the pop-up's own dim is under it now, so only the pool of
      light has anything left to do - it swells into the card and goes. */
   .scene-bridge.is-claimed{ opacity:0; transform:scale(1.25); transition:opacity .65s ease, transform .65s ease-out; }
+  /* handed to the pop-up (claimSceneBridge): its dim is the pop-up's now,
+     so it is the pool alone, inside the pop-up, under the card */
+  .rs-spot > .scene-bridge.is-handed{ position:absolute; z-index:auto;
+    background:radial-gradient(circle at 50% 46%, color-mix(in srgb, var(--bridge-color, #6FC2FF) 30%, transparent) 0%,
+      color-mix(in srgb, var(--bridge-color, #6FC2FF) 10%, transparent) 28%, transparent 56%); }
   [data-reduce-motion="true"] .scene-bridge{ display:none; }
   .rs-spot-card{
     position:relative; width:min(22rem, 100%); overflow:hidden;
@@ -67964,8 +68034,6 @@ const RANK_ORBIT_MS = 30000;
    turns, 7.2s up and 5.4s down (2.6s longer), the same top speed. */
 const RANK_CUTSPIN_TURNS = 22;
 const RANK_CUTSPIN_ACCEL_MS = 7200, RANK_CUTSPIN_DECEL_MS = 5400, RANK_CUTSPIN_PAUSE_MS = 500, RANK_WINDUP_MS = 1700;
-/* the new flare's light in its OLD look - a white flash, no colour yet */
-const RANK_ATTN_PALE = "#EAF0F8";
 /* the attention on the new flare as the scene opens: from RANK_ATTN_AT,
    for RANK_ATTN_MS, before the whirl */
 const RANK_ATTN_AT = 1300, RANK_ATTN_MS = 4000;
@@ -68478,55 +68546,95 @@ function playRankUpScene(tierKey, opts, spec){
     }
     overlay.classList.add("is-cutlit");
   };
-  /* the glow under the new flare and the halo ring over it, in `color`
-     (attention in its old pale light; the after-glow and the pulse at the
-     stop in the new colour) */
-  const flareLight = (cls, color) => {
-    const b0 = newBadge(), slot = b0 && b0.closest(".rank-orbit-slot");
-    if(!slot) return null;
-    slot.style.setProperty("--attn", color || newColor);
-    slot.classList.add("is-attn");
-    const glow = document.createElement("i"), ring = document.createElement("i");
-    glow.className = "rank-attn " + (cls || ""); ring.className = "rank-attn-ring " + (cls || "");
-    glow.setAttribute("aria-hidden", "true"); ring.setAttribute("aria-hidden", "true");
-    slot.insertBefore(glow, b0); slot.appendChild(ring);
-    return { slot, glow, ring, badge: b0 };
-  };
-  /* A PULSE IN PLACE: the slot breathes (scale only - it never moves) and
-     its light flashes with it. `beats` are [offset, scale, light] peaks
-     over D; between them it settles back to 1 and a low glow. */
-  const pulseInPlace = (fl, D, beats, endScale, endLight) => {
-    const kS = [{ offset: 0, transform: "scale(1)", easing: "ease-in-out" }], kG = [{ offset: 0, opacity: 0, transform: "scale(.8)", easing: "ease-in-out" }];
-    beats.forEach(([o, sc, li], i) => {
-      const nx = i + 1 < beats.length ? beats[i + 1][0] : 1;
-      const dn = +(o + (nx - o) * .55).toFixed(4);
-      kS.push({ offset: o, transform: "scale(" + sc + ")", easing: "ease-in-out" }, { offset: dn, transform: "scale(1)", easing: "ease-in-out" });
-      kG.push({ offset: o, opacity: li, transform: "scale(" + (1 + (sc - 1) * 1.4).toFixed(3) + ")", easing: "ease-in-out" },
-              { offset: dn, opacity: +(li * .32).toFixed(3), transform: "scale(.95)", easing: "ease-in-out" });
-    });
-    kS.push({ offset: 1, transform: "scale(" + (endScale || 1) + ")" });
-    kG.push({ offset: 1, opacity: endLight == null ? 0 : endLight, transform: "scale(" + (endLight ? 1.3 : .9) + ")" });
-    const fill = endLight ? "forwards" : "none";
+  /* THE CHARGE AND THE RELEASE (build 318): "Before the spin the flare
+     pulses with the white thing ... it's also not centered ... Same thing
+     for the after the spin one, those could be better." Two faults: the
+     light was a white flash, and it was off the flare - the bubble FLOATS
+     (cosmic-float-a/b/c, up to 8px) inside its slot and the light sat
+     still on the slot, so it was 5-8px off the flare at 3x. The light is
+     now two layers in the RANK'S colour (a soft corona under the glass,
+     thin rings over it), each riding a copy of the bubble's own float on
+     the same clock (`followFloat`), so they are centred on the flare in
+     every frame. Before the spin the rings CONTRACT into the flare, faster
+     and faster, and the corona swells - charging up; after it the rings
+     RELEASE outward and the corona settles - then the flash. Transform and
+     opacity only. */
+  const chgColor = FLARE_NOIR[tierKey] ? (ACCENT_SWATCH[tierKey] || newColor) : newColor;
+  const followFloat = (el, badge) => {
     try{
-      fl.slot.animate(kS, { duration: D, fill });
-      fl.glow.animate(kG, { duration: D, fill });
-      fl.ring.animate(kG, { duration: D, fill });
+      const fa = badge.getAnimations().find(a => /float/.test(a.animationName || ""));
+      if(!fa || !el.animate) return;
+      const an = el.animate(fa.effect.getKeyframes(), fa.effect.getTiming());
+      if(fa.playState === "running" && fa.startTime != null) an.startTime = fa.startTime;
+      else { an.currentTime = fa.currentTime; if(fa.playState === "paused") an.pause(); }
     }catch(e){}
   };
-  /* 1. ATTENTION - IN PLACE (the second evolution round): "I like how the
-     flare pulses before the spin, I don't like the movement though so
-     don't do the movement ... The pulse at the beginning should not show
-     the color, it should flash and pulse in its position ... keep the
-     pulsing part and stuff in its place so it's still a long enough cut
-     scene." No camera and no loop: the new flare breathes and flashes
-     where it is, in its old pale light, for the whole RANK_ATTN_MS - five
-     breaths, the third and the last the brightest. */
+  const flareFx = (cls, nRings) => {
+    const b0 = newBadge(), slot = b0 && b0.closest(".rank-orbit-slot");
+    if(!slot) return null;
+    slot.style.setProperty("--chg", chgColor);
+    slot.classList.add("is-attn");
+    const under = document.createElement("i"), over = document.createElement("i");
+    under.className = "rank-chg rank-chg-under " + cls; over.className = "rank-chg rank-chg-over " + cls;
+    under.setAttribute("aria-hidden", "true"); over.setAttribute("aria-hidden", "true");
+    const corona = document.createElement("i");
+    corona.className = "rank-chg-corona";
+    under.appendChild(corona);
+    const rings = [];
+    for(let i = 0; i < (nRings || 0); i++){ const r = document.createElement("i"); r.className = "rank-chg-ring"; over.appendChild(r); rings.push(r); }
+    slot.insertBefore(under, b0); slot.appendChild(over);
+    followFloat(under, b0); followFloat(over, b0);
+    return { slot, badge: b0, under, over, corona, rings,
+      remove(){ under.remove(); over.remove(); if(!slot.querySelector(".rank-chg")) slot.classList.remove("is-attn"); } };
+  };
+  /* the bubble takes each ring as it lands: a small swell in place (scale
+     only - it never moves), settling back between; `kicks` are
+     [offset, scale] over D */
+  const kickSlot = (slot, D, kicks, endScale) => {
+    const k = [{ offset: 0, transform: "scale(1)" }];
+    kicks.forEach(([o, sc], i) => {
+      const nx = i + 1 < kicks.length ? kicks[i + 1][0] : 1;
+      k.push({ offset: o, transform: "scale(" + sc + ")", easing: "cubic-bezier(.2,.7,.3,1)" },
+             { offset: +(o + (nx - o) * .6).toFixed(4), transform: "scale(1)", easing: "ease-in-out" });
+    });
+    k.push({ offset: 1, transform: "scale(" + (endScale || 1) + ")" });
+    try{ slot.animate(k, { duration: D, fill: endScale ? "forwards" : "none" }); }catch(e){}
+  };
+  /* 1. ATTENTION - THE CHARGE: five rings close in on the flare, each
+     sooner than the last, and the flare takes each one with a small swell;
+     the corona under it grows with every ring. At the end it lets the
+     charge go into the whirl (the corona eases off as the spin starts). */
+  const RANK_CHG_IN = [.2, .4, .56, .69, .8, .89];
   const attention = () => {
-    const fl = flareLight("is-attention", RANK_ATTN_PALE);
-    if(!fl) return;
     const D = RANK_ATTN_MS;
-    pulseInPlace(fl, D, [[.1, 1.26, .8], [.27, 1.3, .9], [.45, 1.36, 1], [.63, 1.3, .9], [.82, 1.38, 1]]);
-    setTimeout(() => { fl.glow.remove(); fl.ring.remove(); fl.slot.classList.remove("is-attn"); }, D + 50);
+    const fx = flareFx("is-attention", RANK_CHG_IN.length);
+    if(!fx) return;
+    try{
+      fx.rings.forEach((r, i) => {
+        /* each ring closes in over ~0.6-0.4s, faint while it is wide and
+           bright only as it reaches the flare, so at most two are in the
+           air at once and each one reads as moving IN */
+        const land = RANK_CHG_IN[i], len = Math.max(.1, .16 - i * .012), st = Math.max(0, land - len);
+        r.animate([
+          { offset: 0, opacity: 0, transform: "scale(2.7)" },
+          { offset: st, opacity: 0, transform: "scale(2.7)", easing: "cubic-bezier(.45,0,.9,.55)" },
+          { offset: +(st + (land - st) * .55).toFixed(4), opacity: +(.28 + .05 * i).toFixed(3), transform: "scale(1.9)", easing: "cubic-bezier(.3,0,.9,.7)" },
+          { offset: land, opacity: 1, transform: "scale(1)", easing: "ease-out" },
+          { offset: Math.min(1, +(land + .04).toFixed(4)), opacity: 0, transform: "scale(.88)" },
+          { offset: 1, opacity: 0, transform: "scale(.88)" }], { duration: D, fill: "none" });
+      });
+      const kC = [{ offset: 0, opacity: 0, transform: "scale(.5)" }, { offset: .1, opacity: .25, transform: "scale(.62)", easing: "ease-in-out" }];
+      RANK_CHG_IN.forEach((land, i) => {
+        const lv = (i + 1) / RANK_CHG_IN.length;
+        kC.push({ offset: land, opacity: +(.5 + .5 * lv).toFixed(3), transform: "scale(" + (.75 + .4 * lv).toFixed(3) + ")", easing: "ease-out" });
+        const nx = i + 1 < RANK_CHG_IN.length ? RANK_CHG_IN[i + 1] : .96;
+        kC.push({ offset: +(land + (nx - land) * .6).toFixed(4), opacity: +(.36 + .5 * lv).toFixed(3), transform: "scale(" + (.7 + .36 * lv).toFixed(3) + ")", easing: "ease-in-out" });
+      });
+      kC.push({ offset: .96, opacity: .9, transform: "scale(1.08)", easing: "ease-in" }, { offset: 1, opacity: 0, transform: "scale(1.22)" });
+      fx.corona.animate(kC, { duration: D, fill: "none" });
+      kickSlot(fx.slot, D, RANK_CHG_IN.map((o, i) => [o, (1.15 + .012 * i).toFixed(3)]));
+    }catch(e){}
+    setTimeout(() => fx.remove(), D + 50);
   };
   /* 3. THE BANG at the top speed */
   const bangAt = (el, cls, size, life) => {
@@ -68562,11 +68670,11 @@ function playRankUpScene(tierKey, opts, spec){
        goes (its after-glow, on the slowing's own clock) */
     stageWrap.style.setProperty("--zb-ms", DEC + "ms");
     stageWrap.classList.add("rank-zoomback");
-    afterglow = flareLight("is-afterglow", newColor);
+    afterglow = flareFx("is-afterglow", 0);
     if(afterglow){
       const kA = [{ offset: 0, opacity: 1, transform: "scale(1.35)" }, { offset: .35, opacity: .85, transform: "scale(1.22)" },
                   { offset: .7, opacity: .48, transform: "scale(1.08)" }, { offset: 1, opacity: .16, transform: "scale(1)" }];
-      try{ afterglow.glow.animate(kA, { duration: DEC, easing: "ease-out", fill: "forwards" }); afterglow.ring.animate(kA, { duration: DEC, easing: "ease-out", fill: "forwards" }); }catch(e){}
+      try{ afterglow.corona.animate(kA, { duration: DEC, easing: "ease-out", fill: "forwards" }); }catch(e){}
     }
   };
   /* 5. AT THE STOP, THE PULSE (a rank; Supernova swells instead): "when
@@ -68578,14 +68686,36 @@ function playRankUpScene(tierKey, opts, spec){
   const windUp = (D) => {
     if(!(D > 0)) return;
     try{
-      if(afterglow){ afterglow.glow.remove(); afterglow.ring.remove(); afterglow = null; }
+      if(afterglow){ afterglow.remove(); afterglow = null; }
       /* [start, length] of each breath, each shorter than the last */
       const beats = [];
       let used = 0, per = 520;
       while(used + per <= D * .96){ beats.push([used, per]); used += per; per = Math.max(180, per * .8); }
       const nB = Math.max(1, beats.length - 1);
-      const fl = flareLight("is-charge", newColor);
-      if(fl) pulseInPlace(fl, D, beats.map(([st, p], i) => [+((st + p * .45) / D).toFixed(4), (1.12 + .16 * i / nB).toFixed(3), +(.6 + .4 * i / nB).toFixed(3)]), 1.2, 1);
+      /* THE RELEASE (build 318): at each breath a ring leaves the flare and
+         spreads out, and the corona under it settles a little brighter each
+         time - from the after-glow's last level, so nothing jumps - into
+         the flash. */
+      const fl = flareFx("is-charge", beats.length);
+      if(fl){
+        const peaks = beats.map(([st, p]) => +((st + p * .45) / D).toFixed(4));
+        kickSlot(fl.slot, D, peaks.map((o, i) => [o, (1.12 + .16 * i / nB).toFixed(3)]), 1.2);
+        fl.rings.forEach((r, i) => {
+          const o = peaks[i], end = Math.min(1, +(o + 620 / D).toFixed(4));
+          const kR = [{ offset: 0, opacity: 0, transform: "scale(1)" }];
+          if(o > 0) kR.push({ offset: Math.max(0, +(o - .02).toFixed(4)), opacity: 0, transform: "scale(1)" });
+          kR.push({ offset: o, opacity: +(.7 + .25 * i / nB).toFixed(3), transform: "scale(1.05)", easing: "cubic-bezier(.15,.7,.3,1)" },
+                  { offset: end, opacity: 0, transform: "scale(" + (2.4 + .3 * i / nB).toFixed(2) + ")" });
+          if(end < 1) kR.push({ offset: 1, opacity: 0, transform: "scale(2.4)" });
+          try{ r.animate(kR, { duration: D, fill: "none" }); }catch(e){}
+        });
+        const kC = [{ offset: 0, opacity: .16, transform: "scale(1)" }];
+        peaks.forEach((o, i) => { const lv = i / nB, nx = i + 1 < peaks.length ? peaks[i + 1] : 1;
+          kC.push({ offset: o, opacity: +(.6 + .4 * lv).toFixed(3), transform: "scale(" + (1.15 + .2 * lv).toFixed(3) + ")", easing: "ease-in-out" },
+                  { offset: +(o + (nx - o) * .55).toFixed(4), opacity: +(.4 + .45 * lv).toFixed(3), transform: "scale(" + (1.02 + .15 * lv).toFixed(3) + ")", easing: "ease-in-out" }); });
+        kC.push({ offset: 1, opacity: 1, transform: "scale(1.3)" });
+        try{ fl.corona.animate(kC.filter((k, i, arr) => i === 0 || k.offset > arr[i - 1].offset), { duration: D, fill: "forwards" }); }catch(e){}
+      }
       const pl = planetBox();
       const aura = document.createElement("div");
       aura.className = "rank-aura"; aura.setAttribute("aria-hidden", "true");
@@ -68596,7 +68726,7 @@ function playRankUpScene(tierKey, opts, spec){
       beats.forEach(([st, p], i) => { const s2 = i / nB; kA.push({ offset: +((st + p * .45) / D).toFixed(4), opacity: +(.35 + .6 * s2).toFixed(3), easing: "ease-in-out" }, { offset: +((st + p * .95) / D).toFixed(4), opacity: +(.15 + .45 * s2).toFixed(3), easing: "ease-in-out" }); });
       kA.push({ offset: 1, opacity: 1 });
       aura.animate(kA.filter((k, i, arr) => i === 0 || k.offset > arr[i - 1].offset), { duration: D, fill: "forwards" });
-      setTimeout(() => { aura.remove(); if(fl){ fl.glow.remove(); fl.ring.remove(); } }, D + 900);
+      setTimeout(() => { aura.remove(); if(fl) fl.remove(); }, D + 900);
     }catch(e){}
   };
   /* After the spin has STOPPED: the half-second, the flash, and the rest,
@@ -85818,16 +85948,32 @@ function dropSceneBridge(now){
   b.classList.add("is-off");
   setTimeout(() => b.remove(), 600);
 }
-/* The pop-up takes the dim over. Its own background is already at full
-   strength by the next frame, so the bridge can go a beat later with
-   nothing showing through. */
-function claimSceneBridge(){
+/* The pop-up takes the dim over. ONE DIM, HANDED OVER IN ONE FRAME
+   (build 318): the bridge used to fade out over .65s ON TOP of the
+   pop-up's own dim, which is already at full strength - two .72 dims
+   stacked, ~92% dark for a frame and then easing back. Now the pop-up
+   (`host`, appended in this same task, so the same frame) takes the dim
+   and the bridge's own dim goes at once; only its pool of colour, if it
+   has one, carries on - moved INTO the pop-up, under the card, so it sits
+   over the dim exactly as it did and swells away from there. The pop-up
+   is never left with nothing under it: it is in the document before the
+   next frame paints. */
+function claimSceneBridge(host){
   if(!sceneBridge) return false;
   const b = sceneBridge;
   sceneBridge = null;
   if(sceneBridgeTimer){ clearTimeout(sceneBridgeTimer); sceneBridgeTimer = null; }
-  b.classList.add("is-claimed");
-  setTimeout(() => b.remove(), 700);
+  if(host && !b.classList.contains("is-plain")){
+    b.classList.add("is-handed");
+    host.insertBefore(b, host.firstChild);
+    requestAnimationFrame(() => requestAnimationFrame(() => b.classList.add("is-claimed")));
+    setTimeout(() => b.remove(), 800);
+  } else if(host){
+    b.remove();
+  } else {
+    b.classList.add("is-claimed");
+    setTimeout(() => b.remove(), 700);
+  }
   return true;
 }
 function sceneBridgeOpen(){ return !!sceneBridge; }
@@ -85913,7 +86059,7 @@ function playUnlockSpotlight(item, n, of, release){
   spot.style.setProperty("--spot-color", look.c);
   spot.style.setProperty("--spot-color2", look.c2);
   if(look.g) spot.style.setProperty("--spot-ground", look.g);
-  if(claimSceneBridge()) spot.classList.add("is-bridged");
+  if(claimSceneBridge(spot)) spot.classList.add("is-bridged");
   spot.setAttribute("role", "status");
   const card = document.createElement("div");
   card.className = "rs-spot-card";
@@ -103249,8 +103395,84 @@ function playRankUpProfileScene(scene, panel){
   scene.oldGoal = panel.querySelector(".pf-goal");
   /* generous: a slow phone, several ranks at once */
   rankUpSceneWatch(scene, 24000 + 11000 * Math.max(1, scene.count));
-  setTimeout(() => rankUpSceneLoading(scene), theme.reduceMotion ? 700 : 1000);
+  /* Profile as on any other day for a moment, then the app taps the rank
+     line for you, and that opens the loading screen (build 318) */
+  setTimeout(() => rankUpSceneTap(scene), theme.reduceMotion ? RANKUP_TAP_STILL_AT : RANKUP_TAP_AT);
   return true;
+}
+
+/* ---- 2b. THE APP TAPS THE RANK LINE FOR YOU (build 318) ----
+   Madison: "when clicking the profile button, it needs to be like normal,
+   then the cutscene will need to click the rank button but it will do it
+   for you". The Profile screen stays up as it normally is; a touch marker
+   glides onto the rank line (the button that opens the road map on any
+   other day), presses it - the line dims and gives a little, a ring of
+   the new rank's colour goes out from the touch - and "Opening your
+   rank..." appears under it. Then the loading screen. Every piece is
+   fixed on <body> and goes with the scene (rankUpTapClear, from the
+   loading screen and from rankUpSceneEnd). Reduce motion: no glide and no
+   ring - the marker and the note, held, then on. */
+var RANKUP_TAP_AT = 1200, RANKUP_TAP_STILL_AT = 600, RANKUP_TAP_GLIDE_MS = 680, RANKUP_TAP_HOLD_MS = 900, RANKUP_TAP_STILL_MS = 900;
+var RANKUP_TAP_NOTE = "Opening your rank\u2026";
+function rankUpTapClear(scene){
+  (scene.tapEls || []).forEach(n => { try{ n.remove(); }catch(e){} });
+  scene.tapEls = [];
+  document.querySelectorAll(".pf-standing.ru-pressed").forEach(n => n.classList.remove("ru-pressed"));
+}
+function rankUpSceneTap(scene){
+  if(rankUpScene !== scene) return;
+  /* something else took the screen: stand down, unplayed */
+  if(!scene.panel || !scene.panel.isConnected){ rankUpSceneEnd(scene, false); return; }
+  scene.phase = "tap";
+  const target = scene.panel.querySelector(".pf-standing");
+  if(!target){ rankUpSceneLoading(scene); return; }
+  const still = !!theme.reduceMotion;
+  let r = target.getBoundingClientRect();
+  /* the line is near the top of Profile; if it is out of view, bring it in */
+  if(r.top < 0 || r.bottom > window.innerHeight - 140){
+    try{ window.scrollTo({ top: Math.max(0, window.scrollY + r.top - window.innerHeight * .3), behavior: "instant" }); }catch(e){}
+    r = target.getBoundingClientRect();
+  }
+  /* the touch lands on the rank's emblem (it carries the new dot), or the
+     middle of the line's first row */
+  const emb = target.querySelector(".pf-emb"), line = target.querySelector(".pf-idline") || target;
+  const er = (emb || line).getBoundingClientRect();
+  const x = er.left + er.width / 2, y = er.top + er.height / 2;
+  const color = (() => { try{ return rankRoadColor(scene.to); }catch(e){ return RANK_COLOR[scene.to] || "#fff"; } })();
+  const tap = document.createElement("div");
+  tap.className = "ru-tap"; tap.setAttribute("aria-hidden", "true");
+  tap.style.left = x.toFixed(1) + "px"; tap.style.top = y.toFixed(1) + "px";
+  tap.style.setProperty("--ru-color", color);
+  const finger = document.createElement("i"); finger.className = "ru-tap-finger";
+  const ripple = document.createElement("i"); ripple.className = "ru-tap-ripple";
+  tap.append(ripple, finger);
+  const note = document.createElement("div");
+  note.className = "ru-tap-note"; note.setAttribute("role", "status");
+  note.textContent = RANKUP_TAP_NOTE;
+  note.style.setProperty("--ru-color", color);
+  const vw = document.documentElement.clientWidth || window.innerWidth;
+  note.style.left = Math.max(100, Math.min(vw - 100, x)).toFixed(1) + "px";
+  note.style.top = (r.bottom + 12).toFixed(1) + "px";
+  document.body.append(tap, note);
+  scene.tapEls = [tap, note];
+  const later = (ms, fn) => setTimeout(() => { if(rankUpScene === scene && scene.phase === "tap") fn(); }, ms);
+  void tap.offsetWidth;
+  if(still){
+    tap.classList.add("is-in", "is-press");
+    target.classList.add("ru-pressed");
+    note.classList.add("is-in");
+    later(RANKUP_TAP_STILL_MS, () => rankUpSceneLoading(scene));
+    return;
+  }
+  requestAnimationFrame(() => tap.classList.add("is-in"));
+  later(RANKUP_TAP_GLIDE_MS, () => {
+    tap.classList.add("is-press");
+    target.classList.add("ru-pressed");
+    note.classList.add("is-in");
+  });
+  later(RANKUP_TAP_GLIDE_MS + 200, () => { tap.classList.remove("is-press"); target.classList.remove("ru-pressed"); });
+  later(RANKUP_TAP_GLIDE_MS + 520, () => tap.classList.add("is-out"));
+  later(RANKUP_TAP_GLIDE_MS + RANKUP_TAP_HOLD_MS, () => rankUpSceneLoading(scene));
 }
 
 /* ---- 3. LOADING RANK UP ADJUSTMENTS ---- */
@@ -103264,6 +103486,8 @@ function rankUpSceneLoading(scene){
   overlay.classList.add("ru-loading");
   document.body.appendChild(overlay);
   scene.overlay = overlay;
+  /* the tap's marker and note go under the loading screen as it comes up */
+  setTimeout(() => rankUpTapClear(scene), theme.reduceMotion ? 0 : 380);
   if(typeof syncChatDock === "function") syncChatDock();
   const t0 = Date.now();
   let mounted = false;
@@ -103275,7 +103499,15 @@ function rankUpSceneLoading(scene){
     if(!mounted && el >= total - 250){ mounted = true; rankUpSceneMap(scene); }
     if(el >= total){
       overlay.classList.add("is-leaving");
-      setTimeout(() => { overlay.remove(); }, theme.reduceMotion ? 0 : 440);
+      /* gone when its fade has PLAYED (build 318), not on a 440ms timer:
+         the map is laid out under it in these same frames, and on a busy
+         phone the fade's first frame can come late enough that a timer
+         took the screen away before it had faded at all - the cut it was
+         reported as. A fallback in case the animation never runs. */
+      if(theme.reduceMotion){ overlay.remove(); return; }
+      const gone = () => { clearTimeout(fb); overlay.remove(); };
+      const fb = setTimeout(gone, 1600);
+      overlay.addEventListener("animationend", e => { if(e.target === overlay && e.animationName === "ru-fade-out") gone(); });
       return;
     }
     setTimeout(tick, 100);
@@ -103475,6 +103707,7 @@ function rankUpSceneEnd(scene, played){
   rankOfStandIn = undefined;
   scene.wantsMap = false;
   rankUpBlockInput(false);
+  rankUpTapClear(scene);
   document.documentElement.classList.remove("ru-scene");
   if(scene.overlay && scene.overlay.isConnected) scene.overlay.remove();
   document.querySelectorAll(".rankmap.ru-zoom").forEach(m => m.classList.remove("ru-zoom"));
@@ -103991,8 +104224,30 @@ function applyGlassRefraction(el, mapImgId){
       clearTimeout(slider._lensT); slider._lensT = setTimeout(() => slider.classList.remove("is-moving"), 560);
     }
   }
-  window.addEventListener("resize", () => slideBubbleToActiveTab(true));
-  try{ new ResizeObserver(() => slideBubbleToActiveTab(true)).observe(navrow); }catch(e){}
+  /* PROFILE CENTRED BETWEEN HOME AND LEADERBOARD (build 318). "I almost
+     feel like the profile button is not centered perfectly between the
+     home button and the leaderboard button." It was not: the tabs are as
+     wide as their labels, and "Leaderboard" is the widest, so Profile's
+     icon sat 77.6px from Home's and 98.9px from Leaderboard's on a 17 Pro
+     Max (99.3 / 125.6 on an iPad). Profile is nudged sideways (relative
+     `left`, so its rect, its taps, the glass bubble and the drag all go
+     with it, and nothing reflows) by half the difference, measured from
+     the bar as laid out - whatever the labels, widths or merged Start
+     pill. Only re-measured when the row or a tab changes size. */
+  const pfTab = document.getElementById("bottomtab-profile");
+  const pfNeighbours = [document.getElementById("bottomtab-home"), document.getElementById("bottomtab-rewards")];
+  function centreProfileTab(){
+    if(!pfTab || !pfNeighbours[0] || !pfNeighbours[1]) return;
+    const mid = el => { const r = el.getBoundingClientRect(); return r.width ? r.left + r.width / 2 : null; };
+    const h = mid(pfNeighbours[0]), l = mid(pfNeighbours[1]), p0 = mid(pfTab);
+    if(h == null || l == null || p0 == null) return;
+    const p = p0 - (parseFloat(pfTab.style.left) || 0);
+    const d = (h + l) / 2 - p;
+    pfTab.style.left = Math.abs(d) < .25 ? "" : d.toFixed(2) + "px";
+  }
+  const onBarResize = () => { centreProfileTab(); slideBubbleToActiveTab(true); };
+  window.addEventListener("resize", onBarResize);
+  try{ const ro = new ResizeObserver(onBarResize); ro.observe(navrow); [pfTab].concat(pfNeighbours).forEach(t => t && ro.observe(t)); }catch(e){}
 
   /* Real drag-to-switch on the tab bar itself, not just a swipe
      anywhere on the page \u2014 press on the bar and the glass bubble
