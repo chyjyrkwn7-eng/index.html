@@ -15411,7 +15411,10 @@
      screen at full opacity over the leaving rule's opacity:0 - an
      animation outranks a plain declaration - so it cut straight to the
      road map 440ms later. The way out is an animation of its own. */
-  #teststart-overlay.ru-loading{ z-index:410; animation:ru-fade-in .35s ease both; }
+  /* (the fade-in fills BACKWARDS only: once it has played it holds
+     nothing, so nothing of it can sit over the fade-out even where the
+     finished fade-in outlives the name change) */
+  #teststart-overlay.ru-loading{ z-index:410; animation:ru-fade-in .35s ease backwards; }
   #teststart-overlay.ru-loading.is-leaving{ animation:ru-fade-out .42s ease both; pointer-events:none; }
   @keyframes ru-fade-in{ from{ opacity:0; } to{ opacity:1; } }
   @keyframes ru-fade-out{ from{ opacity:1; } to{ opacity:0; } }

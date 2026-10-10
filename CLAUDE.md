@@ -15650,8 +15650,11 @@ disagree with it.
   `rankUpSceneEnd()`. Reduce motion: marker and note held, no glide.
   - **The loading screen never faded out**: its `ru-fade-in` fill (`both`)
     outranked `.is-leaving{opacity:0}`, so it cut to the map 440ms later.
-    The way out is an animation of its own (`ru-fade-out`) and the screen
-    is removed on its `animationend` (1.6s fallback), not a timer - the map
+    The way out is an animation of its own (`ru-fade-out`), the fade-in
+    fills `backwards` only (a finished fade-in that outlives the name
+    change - it does under a recorder's seeked clock - then holds nothing
+    over the fade-out), and the screen is removed on its `animationend`
+    (1.6s fallback), not a timer - the map
     lays out under it in the same frames, and a timer could take it away
     before its first faded frame on a busy phone.
   - `check_b317_rankup` asserts the tap (on the line, pressed, the note,
