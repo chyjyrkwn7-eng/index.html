@@ -1,3 +1,4 @@
+import math
 # The table read by gen-reactions.py (exec'd there, so P, R, the drawing
 # helpers and the building blocks are in scope). One block per character,
 # four bands each: perfect, great, pass, fail. Coordinates are the
@@ -7,27 +8,63 @@
 
 # ============================================================== STARTERS ===
 
-# ---- NINJA: vanishes in smoke, a shuriken whirls in ------------------------
+# ---- NINJA: a smoke bomb - gone, and back --------------------------------
+# Build 318: "I don't like the ninja things it gets a hundred." The smoke
+# was eleven pale discs each at half opacity, so every overlap printed a
+# darker lens and the cloud read as a heap of grey bubbles; then a small
+# shuriken parked in the corner. Now: a flash at the chest, ONE cloud (its
+# lobes opaque, faded as a group, so it has a single outline) with a lit
+# top and a shadowed underside, wisps and the scene's own leaves thrown
+# out of it, the ninja gone inside it and back on top of it, and a glint
+# off the plate on the band. The blade is its special, 2.6s later.
 SHURIKEN = (lambda cx, cy, r: path(
     "M%s %s L%s %s L%s %s L%s %s L%s %s L%s %s L%s %s L%s %sZ" % (
         f2(cx), f2(cy - r), f2(cx + r * .28), f2(cy - r * .28), f2(cx + r), f2(cy), f2(cx + r * .28), f2(cy + r * .28),
         f2(cx), f2(cy + r), f2(cx - r * .28), f2(cy + r * .28), f2(cx - r), f2(cy), f2(cx - r * .28), f2(cy - r * .28)),
     fill="#DCE2EA", stroke="#58616F", sw=.28) + circ(cx, cy, r * .2, "#262B33"))
+NJ_LOBES = [(11.6, 26.6, 4.2), (14.8, 19.4, 4.4), (20.4, 16.2, 4.7), (26, 19.2, 4.4), (28.6, 26.2, 4.2),
+            (24.6, 30.4, 4.3), (15.8, 30.6, 4.3), (20, 23.8, 6.6)]
+NJ_SMOKE = (pivot(20, 23.2, 13.6)
+            + puff([(x + .5, y + 1.15, r) for x, y, r in NJ_LOBES], "#727C8C")
+            + puff(NJ_LOBES, "#C5CCD6")
+            + puff([(x - .4, y - .75, r * .8) for x, y, r in NJ_LOBES], "#DCE1E8"))
+NJ_WISP = lambda x, y, k: pivot(x, y, 2.4 * k) + puff([(x - .9 * k, y + .3 * k, 1.1 * k), (x + .2 * k, y - .4 * k, 1.4 * k), (x + 1.2 * k, y + .4 * k, 1 * k)], "#C5CCD6")
+NJ_LEAVES = pivot(20, 22, 13) + "".join(ell(x, y, 1.05, .45, c, rot=r) for x, y, c, r in [
+    (8.6, 16.4, "#E0453F", -30), (12.4, 9.6, "#FF8A5B", 40), (27.4, 9.2, "#E0453F", -50), (31.6, 16, "#FF8A5B", 20),
+    (7.8, 24.6, "#FF8A5B", 70), (32.4, 23.8, "#E0453F", -70)])
+# the bang: eight tapered rays of uneven length round a white core
+NJ_RAYS = "".join(path("M%s %s L%s %s L%s %sZ" % (
+    f2(20 + math.cos(a + .09) * 2.4), f2(24 + math.sin(a + .09) * 2.4), f2(20 + math.cos(a) * L), f2(24 + math.sin(a) * L),
+    f2(20 + math.cos(a - .09) * 2.4), f2(24 + math.sin(a - .09) * 2.4)), fill="#FFF6E6", op=.9)
+    for a, L in [(i * math.pi / 4 + .2, 7.6 if i % 2 else 5.6) for i in range(8)])
 R("ninja", "perfect", [
-    P("p-smoke", "", (1.4, EASE_OUT, {10: "opacity:.95; transform:scale(.7)", 45: "opacity:.7; transform:scale(1.15)",
-                                      80: "opacity:0; transform:scale(1.35)"}), at=.15),
-    P("fig", "", (2.0, EASE_IO, {14: "transform:scale(.96); opacity:1", 22: "transform:scale(.86); opacity:0",
-                                 46: "transform:translateY(-1px) scale(.9); opacity:0", 56: "transform:translateY(-2.2px) scale(1.06); opacity:1",
-                                 68: "transform:translateY(.4px) scale(.99)", 80: "transform:none"}), at=.1),
-    P("p-star", "opacity:1", (1.9, EASE_OUT, {0: "opacity:0; transform:translate(-21px,16px) rotate(-1080deg)",
-                                              40: "opacity:0; transform:translate(-21px,16px) rotate(-1080deg)",
-                                              44: "opacity:1; transform:translate(-19px,14.5px) rotate(-1000deg)"}), turn=(1.1, 1), at=.1),
+    P("fig", "", (2.0, EASE_IO, {6: "transform:translateY(.6px) scale(.95)", 15: "transform:translateY(.6px) scale(.93); opacity:1",
+                                 19: "transform:scale(.9); opacity:0", 50: "transform:translateY(-1.6px) scale(.9); opacity:0",
+                                 57: "transform:translateY(-2.4px) scale(1.06); opacity:1", 68: "transform:translateY(.4px) scale(.98)",
+                                 80: "transform:none"}), at=.05),
+    P("p-flash", "", (.5, EASE_OUT, {0: "opacity:0; transform:scale(.2) rotate(0deg)", 25: "opacity:1; transform:scale(1) rotate(20deg)",
+                                     100: "opacity:0; transform:scale(1.45) rotate(45deg)"}), at=.26),
+    P("p-smoke", "", (1.9, EASE_OUT, {0: "opacity:0; transform:scale(.25)", 13: "opacity:1; transform:scale(.95)",
+                                      38: "opacity:1; transform:translateY(-.3px) scale(1.05)",
+                                      50: "opacity:.2; transform:translateY(-1px) scale(1.12)",
+                                      100: "opacity:0; transform:translateY(-2px) scale(1.16)"}), at=.28),
+    P("p-w1", "", (1.2, EASE_OUT, {0: "opacity:0; transform:none", 15: "opacity:1", 100: "opacity:0; transform:translate(-2.6px,-2.4px) scale(1.35)"}), at=.42),
+    P("p-w2", "", (1.2, EASE_OUT, {0: "opacity:0; transform:none", 15: "opacity:1", 100: "opacity:0; transform:translate(2.6px,-2.6px) scale(1.35)"}), at=.46),
+    P("p-w3", "", (1.2, EASE_OUT, {0: "opacity:0; transform:none", 15: "opacity:1", 100: "opacity:0; transform:translate(-2.6px,1.2px) scale(1.3)"}), at=.5),
+    P("p-w4", "", (1.2, EASE_OUT, {0: "opacity:0; transform:none", 15: "opacity:1", 100: "opacity:0; transform:translate(2.6px,1.4px) scale(1.3)"}), at=.44),
+    P("p-leaves", "", (1.5, EASE_OUT, {0: "opacity:0; transform:scale(.4) rotate(-40deg)", 16: "opacity:1",
+                                       75: "opacity:.9", 100: "opacity:0; transform:scale(1.14) rotate(22deg)"}), at=.3),
+    P("p-glint", "", (.7, EASE_OUT, {0: "opacity:0; transform:scale(.1) rotate(0deg)", 35: "opacity:1; transform:scale(1.2) rotate(45deg)",
+                                     100: "opacity:0; transform:scale(.4) rotate(90deg)"}), at=1.32),
     P("fx-tail1", "", raw=["cx-flutter .42s ease-in-out infinite"]),
     P("fx-tail2", "", raw=["cx-flutter-b .42s ease-in-out -.2s infinite"]),
-] + joy(1.15), props=[
-    ("smoke", 1, pivot(20, 29, 16) + puff([(11.4, 29.4, 3.4), (28.6, 29.2, 3.4), (14, 21.6, 3.4), (26, 21, 3.3), (20, 31.4, 3), (20, 15.4, 3.4),
-                                           (16.4, 26.6, 3.6), (23.8, 26.8, 3.6), (12.4, 14.6, 2.4), (27.8, 14, 2.4), (20, 22.6, 4.2)], "#D5DBE3", .5)),
-    ("star", 1, SHURIKEN(31.2, 9.4, 2.6))])
+] + joy(1.2), props=[
+    ("leaves", 0, NJ_LEAVES),
+    ("flash", 1, pivot(20, 24, 8.5) + NJ_RAYS + circ(20, 24, 3.4, "#FFE7C7", .55) + circ(20, 24, 2.1, "#FFFFFF")),
+    ("smoke", 1, NJ_SMOKE),
+    ("w1", 1, NJ_WISP(10.2, 13.6, 1)), ("w2", 1, NJ_WISP(29.8, 13.2, 1)),
+    ("w3", 1, NJ_WISP(8.4, 30.4, .9)), ("w4", 1, NJ_WISP(31.6, 30.6, .9)),
+    ("glint", 1, pivot(20, 14.35, 2.4) + star4(20, 14.35, 2.4, "#FFFFFF"))])
 R("ninja", "great", [
     P("p-star2", "opacity:1", (.8, SPRING, {0: "opacity:0; transform:scale(0) rotate(-200deg)"}), turn=(.8, 1), at=.25),
     P("head", "transform:rotate(-2deg)", (1.0, EASE_OUT, {40: "transform:translateY(-.6px) rotate(-4deg)"})),

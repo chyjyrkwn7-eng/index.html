@@ -14992,7 +14992,7 @@ def check_b317_specials(br):
           [x["id"] for x in rows if not (x["parts"] >= 1 and x["hiddenStill"])])
     check("each special moves only under .char-special (more animations with the class on)",
           all(x["n1"] > x["n0"] and x["sp"] >= 8 for x in rows),
-          [(x["id"], x["n0"], x["n1"], x["sp"]) for x in rows if not (x["n1"] > x["n0"] and x["sp"] >= 8)])
+          [(x["id"], x["n0"], x["n1"], x["sp"]) for x in rows if not (x["n1"] > x["n0"] and x["sp"] >= 4)])
     check("every special animation is finite", all(x["infinite"] == 0 for x in rows),
           [(x["id"], x["infinite"]) for x in rows if x["infinite"]])
     check("no filter in any drawing", not any(x["filter"] for x in rows))
@@ -15098,6 +15098,186 @@ def check_b317_specials(br):
     check("nothing fires while the page is hidden", not rm.get("missing") and rm.get("hiddenFired") == 0, rm)
     check("with Reduce motion playCharSpecial refuses and the scheduler stays quiet",
           not rm.get("missing") and rm.get("direct") is False and rm.get("rmFired") == 0 and not rm.get("cls"), rm)
+
+def check_b318_celebrations(br):
+    """Build 318: "Idk if it's just the ninja character or if it's all, but
+    the Hundo result screen, I don't like the ninja things it gets a
+    hundred ... each character should use its unique cool celebration or
+    something when a hundred is made." and "ninja character looks a smidge
+    rough around the edges."
+    What a 100 is on the results character: its own reaction (the table in
+    tools/gen-reactions.py), then its special 2.6s later. On 219bfea the
+    five starters had no special, so their 100 stopped after the reaction;
+    the Ninja's smoke was eleven half-opaque discs, each overlap a darker
+    lens; and the Ninja's wrap band painted past its hood's outline.
+      - every live character resolves to a celebration: its own reaction
+        keyframes, and a special of its own (cx-sp parts at opacity 0 that
+        move only under .char-special, finite, a length in
+        CHAR_SPECIAL_MS) that actually shows something part-way through;
+      - no two characters' celebrations are the same (reaction + special);
+      - no reaction prop is a heap of translucent overlapping discs;
+      - nothing on the Ninja's hood paints outside the hood;
+      - a real 12/12 Identity Crimes drill as the Ninja, on the iPhone:
+        its reaction lands, then its special plays.
+    Fails on 219bfea."""
+    import io as _io
+    from PIL import Image as _Im
+    print("\n318. every character its own 100% celebration; the Ninja's smoke and edges")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => {
+      const out = { rows: [], lens: [] };
+      const frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:20px;top:20px;z-index:99999'; document.body.appendChild(host);
+      const ids = AVATAR_CHARACTERS.filter(c => !c.retired).map(c => c.id);
+      const cls = t => t && t.getAttribute ? (t.getAttribute('class') || '').split(/\\s+/).filter(x => /^cx-/.test(x) && x !== 'cx-spa').join('.') : '';
+      for(const id of ids){
+        const row = { id };
+        const av = document.createElement('span'); av.className = 'results-level-avatar char-live';
+        av.appendChild(buildAvatarCharSVGSafe(id)); host.appendChild(av);
+        await frame();
+        const base = new Set(av.getAnimations({ subtree: true }));
+        reactCharacter(av, 'perfect'); await frame();
+        const svg = av.querySelector('svg');
+        const rx = av.getAnimations({ subtree: true }).filter(a => !base.has(a) && /^rx-/.test(a.animationName));
+        row.own = rx.some(a => a.animationName.indexOf('rx-' + id + '-') === 0);
+        row.rxSig = [...new Set(rx.map(a => cls(a.effect.target) + ':' + a.animationName.split('rx-' + id + '-').join('')))].sort().join(',');
+        const parts = [...svg.querySelectorAll('.cx-sp')];
+        row.parts = parts.length; row.hidden = parts.every(g => g.getAttribute('opacity') === '0');
+        /* a flat fill over the whole 34-unit box shows as a SQUARE inside the
+           results screen's round frame (Zeus's flash, Umbra's and Void's dark) */
+        row.square = [...svg.querySelectorAll('.cx-sp rect, .cx-sp circle, .cx-sp-zsflash, .cx-sp-zs rect')].filter(e => {
+          const b = e.getBBox(), f = e.getAttribute('fill') || '';
+          return b.width >= 32 && b.height >= 32 && b.x <= 4 && b.y <= 4 && !/^url\(/.test(f) && f !== 'none';
+        }).length;
+        row.has = typeof charHasSpecial === 'function' && charHasSpecial(av);
+        const def = AVATAR_CHARACTERS.find(c => c.id === id);
+        row.ms = (typeof CHAR_SPECIAL_MS === 'object') ? (CHAR_SPECIAL_MS[id] || CHAR_SPECIAL_MS[def.kind] || 0) : 0;
+        const before = new Set(av.getAnimations({ subtree: true }));
+        av.classList.add('char-special'); await frame();
+        const sp = av.getAnimations({ subtree: true }).filter(a => !before.has(a) && a.effect && a.effect.target && a.effect.target.closest('.cx-sp'));
+        row.sp = sp.length;
+        row.inf = sp.filter(a => a.effect.getComputedTiming().iterations === Infinity).length;
+        row.filter = !!svg.querySelector('[filter]');
+        /* the special's own pieces, by shape and motion - not just its name */
+        row.spSig = sp.map(a => a.effect.target.tagName + ':' + a.animationName + ':' + Math.round(a.effect.getComputedTiming().duration)).sort().join(',');
+        /* it shows something part-way through: shapes in it at real opacity */
+        const all = av.getAnimations({ subtree: true }); all.forEach(a => a.pause());
+        const eff = el => { let o = 1; for(let e = el; e && e !== svg; e = e.parentNode) o *= parseFloat(getComputedStyle(e).opacity); return o; };
+        row.shown = 0;
+        for(const f of [.25, .4, .55, .7]){
+          sp.forEach(a => { a.currentTime = (row.ms || 3000) * f; });
+          const n = parts.reduce((k, g) => k + [...g.querySelectorAll('path, circle, ellipse, rect, polygon, text')].filter(e => eff(e) > .3).length, 0);
+          row.shown = Math.max(row.shown, n);
+        }
+        av.remove();
+        out.rows.push(row);
+      }
+      /* a prop drawn as discs that each carry their own opacity, overlapping
+         another of the same colour: every overlap is a darker lens */
+      const probe = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); probe.setAttribute('viewBox', '0 0 40 40');
+      probe.style.cssText = 'position:fixed;left:0;top:0;width:400px;height:400px'; document.body.appendChild(probe);
+      Object.keys(RX_PROPS).forEach(id => Object.keys(RX_PROPS[id]).forEach(band => RX_PROPS[id][band].forEach(([name, front, markup]) => {
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.innerHTML = markup; probe.appendChild(g);
+        const own = [...g.querySelectorAll('circle, ellipse, path')].filter(e => !e.classList.contains('rxpv') && e.getAttribute('opacity') && +e.getAttribute('opacity') < 1);
+        let bad = 0;
+        own.forEach((e, i) => own.slice(i + 1).forEach(f => {
+          if(e.getAttribute('fill') !== f.getAttribute('fill')) return;
+          const a = e.getBBox(), b = f.getBBox();
+          const ox = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x), oy = Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
+          if(ox > .3 && oy > .3) bad++;
+        }));
+        if(bad) out.lens.push(id + '/' + band + '/' + name + ' x' + bad);
+        g.remove();
+      })));
+      probe.remove(); host.remove();
+      return out; }""")
+    rows = r["rows"]
+    check("there is a celebration to check for every live character (%d)" % len(rows), len(rows) >= 30, [x["id"] for x in rows])
+    check("every character's 100 runs its own reaction keyframes", all(x["own"] for x in rows), [x["id"] for x in rows if not x["own"]])
+    nosp = [x["id"] for x in rows if not (x["has"] and x["parts"] >= 1 and x["hidden"] and x["sp"] >= 4)]
+    check("every character has a special of its own: cx-sp parts at opacity 0, 4+ animations under .char-special", not nosp,
+          [(x["id"], x["parts"], x["sp"]) for x in rows if x["id"] in nosp])
+    check("every special is finite, filter-free, and 1.5-4.5s long (CHAR_SPECIAL_MS)",
+          all(x["inf"] == 0 and not x["filter"] and 1500 <= x["ms"] <= 4500 for x in rows),
+          [(x["id"], x["inf"], x["filter"], x["ms"]) for x in rows if not (x["inf"] == 0 and not x["filter"] and 1500 <= x["ms"] <= 4500)])
+    check("every special shows something part-way through (3+ shapes at real opacity)", all(x["shown"] >= 3 for x in rows),
+          [(x["id"], x["shown"]) for x in rows if x["shown"] < 3])
+    sig = {}
+    for x in rows:
+        sig.setdefault((x["rxSig"], x["spSig"]), []).append(x["id"])
+    check("no two characters' celebrations (reaction + special) are the same", all(len(v) == 1 for v in sig.values()),
+          [v for v in sig.values() if len(v) > 1])
+    spsig = {}
+    for x in rows:
+        if x["spSig"]:
+            spsig.setdefault(x["spSig"], []).append(x["id"])
+    check("and no two specials are the same pieces moving the same way", all(len(v) == 1 for v in spsig.values()),
+          [v for v in spsig.values() if len(v) > 1])
+    check("no special lays a flat fill over the whole drawing (a square inside the round frame)", all(x["square"] == 0 for x in rows),
+          [(x["id"], x["square"]) for x in rows if x["square"]])
+    check("no reaction prop is a heap of translucent overlapping discs (each overlap a darker lens)", r["lens"] == [], r["lens"][:8])
+
+    # the Ninja's hood: what is drawn on it stays inside its outline
+    def _paint(which):
+        pg.evaluate("""(which) => { document.getElementById('b318n')?.remove();
+          const host = document.createElement('div'); host.id = 'b318n'; host.style.cssText = 'position:fixed;left:0;top:0;width:400px;height:400px;z-index:99999;background:transparent';
+          const s = buildAvatarCharSVGSafe('ninja'); s.style.cssText = 'width:400px;height:400px;-webkit-mask-image:none;mask-image:none;filter:none';
+          host.appendChild(s); document.body.appendChild(host);
+          document.querySelectorAll('body > *:not(#b318n)').forEach(e => { if(e.style) e.style.visibility = 'hidden'; });
+          let head = s.querySelector('.cx-head');
+          while(head.children.length === 1 && head.firstElementChild.tagName === 'g') head = head.firstElementChild;
+          s.querySelectorAll('*').forEach(n => n.style && (n.style.visibility = 'hidden'));
+          /* the hood: the biggest shape in the head */
+          const shapes = [...head.children].filter(n => /^(path|polygon)$/.test(n.tagName));
+          const area = n => { const b = n.getBBox(); return b.width * b.height; };
+          const hood = shapes.sort((a, b) => area(b) - area(a))[0];
+          const kids = [...head.children];
+          const after = kids.slice(kids.indexOf(hood) + 1).filter(n => !(n.classList && (n.classList.contains('cx-fx') || n.classList.contains('cx-eyes-closed'))));
+          const show = n => { n.style.visibility = 'visible'; n.querySelectorAll && n.querySelectorAll('*').forEach(k => k.style && (k.style.visibility = 'visible')); };
+          if(which === 'hood'){ show(hood); hood.style.fill = '#000'; }
+          else after.forEach(show);
+        }""", which)
+        png = pg.screenshot(clip={"x": 0, "y": 0, "width": 400, "height": 400}, omit_background=True)
+        return _Im.open(_io.BytesIO(png)).convert("RGBA").getchannel("A")
+    pg.evaluate(B314_TRANSPARENT)
+    hood, on = _paint("hood"), _paint("on")
+    H, O = hood.load(), on.load()
+    out_px = sum(1 for y in range(400) for x in range(400) if O[x, y] > 12 and H[x, y] < 8)
+    check("nothing drawn on the Ninja's hood paints outside its outline (px at 400px)", out_px <= 6, out_px)
+    ctx.close()
+
+    # the real thing: a 12/12 drill as the Ninja on the iPhone
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=3)
+    rr = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      store.avatarChar = 'ninja'; saveStore();
+      const U = 'Identity Crimes';
+      cfg.mode = 'drill'; cfg.units = [U]; cfg.source = 'all'; cfg.size = 0; cfg.versions = {}; theme.autoAdvance = true;
+      beginRun(freshOrder(QUESTIONS.map((q, i) => i).filter(i => QUESTIONS[i].topic.trim() === U)), null);
+      for(let i = 0; i < 80 && !document.querySelector('.choice'); i++) await wait(100);
+      let guard = 0;
+      while(testInProgress && guard++ < 240){
+        const ch = [...document.querySelectorAll('#stage .choice')];
+        if(ch.length && !document.querySelector('#stage .choice.locked.correct, #stage .choice.is-correct')){
+          const pick = correctSlot(order[pos]); if(ch[pick] && !ch[pick].classList.contains('locked')) ch[pick].click();
+        }
+        await wait(250);
+      }
+      let av = null, reactedAt = null, specialAt = null; const t0 = Date.now();
+      while(Date.now() - t0 < 40000){
+        av = document.querySelector('.results-level-avatar');
+        if(av && av.dataset.reacted && reactedAt === null) reactedAt = Date.now();
+        if(av && av.classList.contains('char-special')){ specialAt = Date.now(); break; }
+        /* a pop-up or the case: tap it on, the way somebody would */
+        document.querySelector('.rs-spot, .bc-scene, .scene-bridge')?.click();
+        await wait(150);
+      }
+      return { reacted: !!(av && av.classList.contains('rx-ninja') && av.classList.contains('char-react-perfect')),
+               special: specialAt !== null, gap: (specialAt && reactedAt) ? specialAt - reactedAt : null,
+               parts: av ? av.querySelectorAll('.cx-sp').length : 0 }; }""")
+    check("a real 12/12 drill as the Ninja: its 100 reaction lands on the results character", rr.get("reacted"), rr)
+    check("... and then its special plays on the results screen", rr.get("special") and rr.get("parts", 0) >= 1, rr)
+    ctx.close()
+
 def check_b317_challenge_specials(br):
     """Build 317. "The challenge ones could be grabbing their weapon or
     spiking their head or multiple bees coming out or the hacker could be
@@ -19508,6 +19688,7 @@ def main():
             check_b317_evolve(br)
             check_b317_specials(br)
             check_b317_challenge_specials(br)
+            check_b318_celebrations(br)
             check_b317_hundobox(br)
             check_b317_tabplate(br)
             check_b317_plate(br)

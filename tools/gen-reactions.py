@@ -172,7 +172,12 @@ def heart(cx, cy, s, fill, op=1):
 
 
 def puff(parts, fill, op=1):
-    return "".join(circ(x, y, r, fill, op) for x, y, r in parts)
+    """Overlapping discs as ONE shape: each disc is opaque and the opacity
+    goes on the group, so an overlap is never a darker lens (build 318 -
+    each disc carrying its own opacity is what made the Ninja's smoke a
+    heap of grey bubbles)."""
+    body = "".join(circ(x, y, r, fill) for x, y, r in parts)
+    return body if op == 1 else '<g opacity="%s">%s</g>' % (f2(op), body)
 
 
 def bolt(x, y, k, fill, stroke, sw=.3, flip=False):
