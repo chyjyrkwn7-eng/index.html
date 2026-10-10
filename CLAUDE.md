@@ -18837,4 +18837,13 @@ rank up cutscene."* One block after `buildRanksTab()` (all `var`).
   the Rank screen opened directly. The cutscene is stood in for there (it
   is check_b317_evolve's). check_b308_unlocks, check_b318_flares,
   check-curve 7 and check-studyflow 3 now assert the rank is NOT played on
-  the results / Home.
+  the results / Home. check_b317_flow's lock fixture sets `rankUpShown`
+  (the lock follows the count now, not `rankMapSeen`), and check_b236's
+  "light where you are" fixture has some progress (level 44), since at
+  none there is no light by design. A fixture that wants the lock or the
+  journey sets `store.rankUpShown` below the rank it holds; one that does
+  not leaves it null.
+- **The seed sits after `retroHideBadges`/`mergeHidePoints` are set** in
+  summarize(), not at its top: a rank the handed-out badges or a merge
+  tip is that run's, and seeding before they were hidden lost it
+  (check-curve 7 caught it).
