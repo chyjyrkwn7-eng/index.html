@@ -24,8 +24,9 @@ The two that matter most are the two that cannot be argued with:
   bank can actually produce, and the level it asks for must be one the
   badge line actually reaches.
 
-Build 318 re-fitted the curve to the measured class (1-60 untouched,
-everything past 60 cheaper, 348,388 to level 80, 699,712 to 100);
+Build 318 re-fitted the curve to the measured class (1-50 untouched,
+everything past 50 cheaper, 217,910 to level 80, 409,117 to 100 - the top
+quarter at 100 by May, the middle of the class ~93 by Jul 8);
 sections 4 and 4b hold it and fail on 219bfea:
 
     python3 tools/check-curve.py --against /path/to/219bfea/index.html
@@ -202,15 +203,16 @@ def main():
             if(b < a){ n++; if(!worst) worst = { p, was: a, now: b }; }
             if(typeof legacyLevelOfPoints === 'function' && legacyLevelOfPoints(p) !== a) n313++;
           }
-          /* BUILD 318: 1-60 are build 313's to the point, so every XP total
-             short of the new level 61 (147,912; 148,638 on 313) reads the
-             same level, one at a time */
-          for(let p = 0; p <= 147911; p += 1){
+          /* BUILD 318: 1-50 are build 313's to the point, so every XP total
+             short of the new level 51 (79,182; 79,512 on 313) reads the
+             same level, one at a time. Past 50 levels only come sooner, and
+             nobody shows above 49 (the badge wall), so no shown level moves. */
+          for(let p = 0; p <= 79181; p += 1){
             if(oldLevel(p) !== levelFromPoints(p)){ frozenDiff = p; break; }
           }
           return { n, worst, frozenDiff, n313 };}""")
         check("no XP total from 0 to 600,000 (past 313's 598,449 for 80) reads a lower level than on build 313", drop["n"] == 0, drop["worst"])
-        check("levels 1-60 are byte-identical (every XP total to 147,911)",
+        check("levels 1-50 are byte-identical (every XP total to 79,181)",
               drop["frozenDiff"] is None, drop["frozenDiff"])
         check("legacyLevelOfPoints is build 313's curve, step for step", drop["n313"] == 0, drop["n313"])
 
@@ -322,19 +324,21 @@ def main():
               two60 / 6000.0 < 7, "%.1f days" % (two60 / 6000.0))
         check("level 21 still costs about 10,000 (early levels stay quick)", 8000 <= costs["to21"] <= 10500, costs["to21"])
         check("the cap is still 80 until January", costs["cap"] == 80, costs["cap"])
-        # BUILD 318: "find the average user and make the xp curve based on
-        # them ... maybe the xp total should only be changed after level 60
-        # so people aren't affected". Nobody held more than level 56 (108,670
-        # XP) on Oct 9, so 1-60 are build 313's to the point, and every level
-        # past 60 is cheaper than it was - so no XP total can read lower.
-        same = [L for L in range(2, 61) if per[L] != old_per[L]]
-        check("levels 1-60 cost exactly what build 313 charges, level by level", not same, same[:5])
-        dearer = [L for L in range(61, 81) if per[L] >= old_per[L]]
-        check("every level from 61 to 80 is cheaper than build 313 charged", not dearer,
+        # BUILD 318: "I want top 25 percent to reach level 100 by May. I'd
+        # want most people at or very close to 100 by July 8th." Measured on
+        # the class on Oct 10, that is ~410,000 XP at level 100 - which the
+        # 8.35% tail of 46-60 cannot reach (40 levels at level 60's cost
+        # alone come to ~495,000), so the easing starts at 50. Nobody SHOWS
+        # above 49 (the badge wall), and every level past 50 is cheaper
+        # than it was - so no XP total can read lower.
+        same = [L for L in range(2, 51) if per[L] != old_per[L]]
+        check("levels 1-50 cost exactly what build 313 charges, level by level", not same, same[:5])
+        dearer = [L for L in range(51, 81) if per[L] >= old_per[L]]
+        check("every level from 51 to 80 is cheaper than build 313 charged", not dearer,
               [(L, per[L], old_per[L]) for L in dearer[:3]])
-        WANT = {60: 138980, 70: 232168, 80: 348388, 90: 502896, 100: 699712}
-        check("the totals: level 60 138,980, 70 232,168, 80 348,388, 90 502,896, 100 699,712",
-              all(tot[L] == v for L, v in WANT.items()) and costs["toCap"] == 348388,
+        WANT = {50: 75181, 60: 116042, 70: 161659, 80: 217910, 90: 294417, 100: 409117}
+        check("the totals: level 50 75,181, 60 116,042, 70 161,659, 80 217,910, 90 294,417, 100 409,117",
+              all(tot[L] == v for L, v in WANT.items()) and costs["toCap"] == 217910,
               {L: tot[L] for L in WANT})
         # SMOOTH, NO SUDDEN STEPS. The x2 into 26 is build 313's and stays:
         # taking it out means cheaper levels from 26, which lifts most of the
@@ -343,8 +347,8 @@ def main():
         check("no level costs less than the one before it (2 to 100)", not falls, falls[:5])
         steps = [(L, round(per[L] / per[L - 1], 4)) for L in range(3, 101) if L != 26 and per[L] > round(per[L - 1] * 1.0835) + 1]
         check("no level is more than 8.35% dearer than the one before, give or take rounding (except the kept x2 into 26)", not steps, steps[:5])
-        past60 = max(per[L] / per[L - 1] for L in range(61, 101))
-        check("past 60 no level is more than 8% dearer than the one before", past60 <= 1.0801, round(past60, 4))
+        past50 = max(per[L] / per[L - 1] for L in range(51, 101))
+        check("past 50 no level is more than 5% dearer than the one before", past50 <= 1.0501, round(past50, 4))
         check("no level up to 100 costs more than level 80 did on build 313 (44,321)",
               max(per[2:101]) <= 44321, max(per[2:101]))
         check("and a level still costs more the higher you are",
@@ -356,7 +360,7 @@ def main():
         html = open(os.path.join(SERVE, "index.html"), encoding="utf-8").read()
         jan_html = html.replace("const LEVEL_CAP = 80;", "const LEVEL_CAP = 100;", 1)
         check("the copy has exactly one LEVEL_CAP to change", jan_html != html and html.count("const LEVEL_CAP = ") == 1)
-        samples = list(range(0, 348388 + 2000, 97))
+        samples = list(range(0, 217910 + 2000, 97))
         lv80 = pg.evaluate("(ps)=> ps.map(p => levelFromPoints(p))", samples)
         jpg = ctx.new_page()
         jpg.route("**/jan.html", lambda route: route.fulfill(status=200, content_type="text/html", body=jan_html))
@@ -370,11 +374,11 @@ def main():
                    top: { level: top.level, atCap: top.atCap }, below: below.level,
                    at80: levelProgress(xpForLevel(80) + 1).atCap, lv: ps.map(p => levelFromPoints(p)) }; }""", samples)
         jpg.close()
-        check("with the cap at 100: level 100 is 699,712 in all and the cap is there",
-              jan["cap"] == 100 and jan["to100"] == 699712 and jan["top"] == {"level": 100, "atCap": True} and jan["below"] == 99,
+        check("with the cap at 100: level 100 is 409,117 in all and the cap is there",
+              jan["cap"] == 100 and jan["to100"] == 409117 and jan["top"] == {"level": 100, "atCap": True} and jan["below"] == 99,
               {k: jan[k] for k in ("cap", "to100", "top", "below")})
         check("...level 80 is an ordinary level then, and nothing at or below it moves",
-              jan["to80"] == 348388 and not jan["at80"]
+              jan["to80"] == 217910 and not jan["at80"]
               and all(a == b for a, b in zip(lv80, jan["lv"]) if a < 80), (jan["to80"], jan["at80"]))
         check("...and the page still runs", not jerrs, jerrs[:2])
 

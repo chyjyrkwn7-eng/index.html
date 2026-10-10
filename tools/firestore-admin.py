@@ -954,10 +954,10 @@ LEVEL_CAP = 80
 
 def level_of(points):
     """levelProgress() in index.html, step for step - keep the two in step.
-    Build 318: build 313's curve through level 60, then each level costs
-    0.2% x (level - 60) more than the one before (LEVEL_EASE_FROM /
-    LEVEL_EASE_STEP) - 348,388 to level 80."""
-    return _curve_level(points, 2.0, 1.0199, 45, 1.0835, 60, 0.002)
+    Build 318: build 313's curve through level 50, then each level costs
+    0.1% x (level - 50) more than the one before (LEVEL_EASE_FROM /
+    LEVEL_EASE_STEP) - 217,910 to level 80, 409,117 to 100."""
+    return _curve_level(points, 2.0, 1.0199, 45, 1.0835, 50, 0.001)
 
 
 def legacy_level_of_points(points):

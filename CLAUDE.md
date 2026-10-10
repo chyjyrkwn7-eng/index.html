@@ -18348,14 +18348,25 @@ it (fails on 219bfea: two on the race leaderboard).
 and make the xp curve based on them ... maybe the xp total should only be
 changed after level 60 so people aren't affected? ... do the math"*
 
-- **Levels 1-60 are build 313's to the point; past 60 each level costs
-  `LEVEL_EASE_STEP` (0.2%) x (level - `LEVEL_EASE_FROM`) more than the one
-  before** - 61 +0.2%, 80 +4%, 100 +8% (`Math.min` with 8.35% is a guard).
-  60: 138,980 · 70: 232,168 · **80: 348,388** (was 598,449) · 90: 502,896 ·
-  **100: 699,712** (past 80 a flat 2.45% a level, `LEVEL_TOP_GROWTH` - Madison: "850k for level 100 is crazy tho. What about like 700?"). The dearest level anywhere is 100 at 21,894, under what
-  79->80 cost before (44,321). `levelGrowthAt()` is the only place it lives;
-  `firestore-admin.py level_of` mirrors it and check-curve section 9 holds
-  the two together. `legacyLevelOfPoints` stays build 313's (rank floor).
+- **SUPERSEDED the same day (Oct 10) - the curve now eases from 50.**
+  Madison: *"I want top 25 percent to reach level 100 by May. I'd want most
+  people at or very close to 100 by July 8th."* Measured on the class
+  (33 people with 2,000+ XP and 2+ study days; pace = mean of pace since
+  Sep 22 and pace over the last 12 days), the top quarter hold ~410k XP on
+  May 1 and the middle person ~327k on Jul 8. With 1-60 frozen that cannot
+  be met: 40 levels at no less than level 60's 8,914 is already ~495k. So
+  **1-50 are build 313's to the point and past 50 each level costs
+  `LEVEL_EASE_STEP` (0.1%) x (level - `LEVEL_EASE_FROM` = 50) more than the
+  one before.** 60: 116,042 · 70: 161,659 · **80: 217,910** · 90: 294,417 ·
+  **100: 409,117** (100 alone 14,006). `LEVEL_TOP_*` is gone.
+  Nobody SHOWS above 49 (badge wall), so no shown level moved - checked on
+  all 57 live accounts; two just bank more saved levels.
+  Projected (central pace): top quarter at 100 Apr 4 (Apr 20 on the slower
+  12-day pace); on Jul 8 the middle person ~93, 14 of 33 at 100, 16 within
+  5. The bottom ~40% study far less (p25 ~430 XP/day) and land ~61-73 - no
+  curve reaches them without the top finishing by Christmas. **Re-fit
+  81-100 in January** with real pace data; nobody can hold them until
+  `LEVEL_CAP` is 100, so it moves nobody. Scripts: scratchpad `curve319/`.
 - **Why 60, measured (one read-only pass, Oct 9, 57 onboarded accounts):**
   the highest level anyone held was 56 (108,670 XP), so nobody moved, and
   every level past 60 is cheaper than before, so somebody crossing 60 on
