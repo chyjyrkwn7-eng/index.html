@@ -14767,6 +14767,15 @@ EVOLVE_ST = """([tier]) => { const o = document.getElementById('supernova-cutsce
       ns.querySelectorAll('.rank-chg-ring').forEach(e => { if(+getComputedStyle(e).opacity < .3) return; w = Math.max(w || 0, e.getBoundingClientRect().width / bw); }); return w; })() : null,
     planetRel: (nb && mr) ? (() => { const r = nb.getBoundingClientRect();
       return Math.hypot(r.left + r.width / 2 - mr.left - mr.width / 2, r.top + r.height / 2 - mr.top - mr.height * 162 / 342) / mr.width; })() : null,
+    /* build 319: the after-glow as SEEN (its own opacity times every
+       ancestor's up to the overlay - the slot used to sit at .06 under it),
+       its white-hot core, the release, and the carrier's turn */
+    aglowEff: (() => { const c = o.querySelector('.rank-before .rank-chg.is-afterglow .rank-chg-corona'); if(!c) return null;
+      let v = 1; for(let e = c; e && e !== o; e = e.parentElement) v *= +getComputedStyle(e).opacity; return v; })(),
+    ahot: op('.rank-before .rank-chg.is-afterglow .rank-chg-hot'), rel: op('.rank-before .rank-chg.is-release .rank-chg-corona'),
+    orbA: (() => { const ob2 = o.querySelector('.rank-before .rank-orbit'); if(!ob2) return null;
+      const mm = getComputedStyle(ob2).transform.match(/matrix\(([^)]*)\)/); if(!mm) return 0;
+      const v = mm[1].split(',').map(Number); return Math.atan2(v[1], v[0]) * 180 / Math.PI; })(),
     stageT: st.translate, long: op('.rank-before .rank-trail.is-long'), neu: op('.rank-before .rank-trail.is-new'),
     ring: op('.rank-before .rank-trail.is-newring'), old: op('.rank-before .rank-trail.is-old'),
     slotOp: other ? +getComputedStyle(other).opacity : null,
@@ -14836,7 +14845,12 @@ def check_b317_evolve(br):
     whole opening; the whirl ~2.6s longer (7.2s up, 5.4s down); the new
     colour BUILDS with no flicks back; slowing, the new flare bright at
     first and dimmer the slower it goes; at the stop a pulse in place (the
-    system still, nothing gathering) and then the flash; ~27-28s in all."""
+    system still, nothing gathering) and then the flash; ~27-28s in all.
+    BUILD 319, against 8aded7f where each fails: the charge is PALE again
+    (near-white, not the rank's colour), TIMED - the last ring lands as the
+    whirl starts, the charge is released in that frame and the whirl moves
+    at once (it leaves with a push) - and the after-glow while it slows is
+    bright as SEEN and cools: a white-hot core fading into the colour."""
     print("\n317v. the evolution: attention in place, light trails, the build, the bang, bright-to-dim, the pulse at the stop, the flash from the flare")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate("() => { store.supernovaAchieved = false; saveStore(); theme.accent = 'veteran'; applyTheme(); showHome(); document.querySelectorAll('.rs-spot,.daily-alert,#tour-overlay,.update-banner,.toast').forEach(n => n.remove()); }")
@@ -14894,10 +14908,30 @@ def check_b317_evolve(br):
     # sits on the flare's own centre in every frame - the bubble floats in
     # its slot, and the light used to sit still on the slot, 5-8px off at
     # 3x. Rings close IN on the flare before the spin. Fails on 219bfea.
-    check("attention: the new flare charges up for the whole opening (4+ swells over ~4s) in the rank's own colour, not white",
-          len(attn) >= 100 and len(sw_a) >= 4 and nc is not None and all(c == nc for c in cols)
+    # Build 319 supersedes the colour: "The charge up for the flare needs
+    # to be pale, and it needs to be timed. It needs that feeling like oh
+    # that flare just made it spin." Pale - near-white, every channel 215+
+    # and within 30 of each other - and not the rank's colour. Fails on
+    # 8aded7f (#5EEAD4, Platinum's teal).
+    pale = lambda c: c is not None and min(c) >= 215 and max(c) - min(c) <= 30
+    check("attention: the new flare charges up for the whole opening (4+ swells over ~4s) in PALE light, not the rank's colour",
+          len(attn) >= 100 and len(sw_a) >= 4 and nc is not None and all(pale(c) and c != nc for c in cols)
           and bool(after) and not any(st["attn"] for st in after),
           (len(attn), len(sw_a), attn and attn[0]["attnC"], attn and attn[0]["newC"]))
+    # "timed ... that flare just made it spin": the last ring is ON the
+    # flare in the frame before the whirl starts, the charge is let go (a
+    # pale flash on the flare) in the whirl's first frame, and the whirl
+    # is visibly moving within a tenth of a second - it leaves with a push,
+    # not from a standstill. Fails on 8aded7f (the last ring landed 0.44s
+    # early and the corona had gone; no release; t-squared: under 1 degree
+    # in the first 0.1s).
+    s_pp, s_pre, s_on = at((spin_at or 0) - 2), at((spin_at or 0) - 1), at(spin_at or 0)
+    s3 = at((spin_at or 0) + 3)
+    a3 = abs((s3 or {}).get("orbA") or 0)
+    check("timed: the last pale ring is still closing on the flare in the last frame before the whirl, the charge is released in the whirl's first frame, and the whirl moves at once (5+ degrees in 0.1s)",
+          bool(s_pp and s_pre and s_on and s3) and s_pre["ringW"] is not None and s_pp["ringW"] is not None
+          and s_pre["ringW"] <= 1.6 and s_pp["ringW"] > s_pre["ringW"] and (s_on["rel"] or 0) > .9 and a3 >= 5,
+          s_pre and s_on and (s_pp and s_pp["ringW"], s_pre["ringW"], s_on["rel"], round(a3, 2)))
     offs = [st["lightOff"] for i, st in rows if st and st.get("lightOff") is not None]
     check("the light on the flare is centred on it in every frame, before and after the spin (within 1px)",
           len(offs) >= 150 and max(offs) <= 1, (len(offs), offs and round(max(offs), 2)))
@@ -14945,6 +14979,23 @@ def check_b317_evolve(br):
     check("slowing: the new flare is at its brightest as it starts to slow, and dims the slower it goes",
           ag_ok and ag[0] > .85 and ag[-1] < .35 and all(ag[k] <= ag[k - 1] + .02 for k in range(1, len(ag))),
           (len(ag), ag and ag[0], ag and ag[-1]))
+    # Build 319: "The glow after the flash during the spin of the flare is
+    # not good enough, needs to be bright and slowly cool down". Measured
+    # as SEEN (times every ancestor's opacity): over .85 as it starts to
+    # slow and still over .6 two fifths of the way through - and it cools:
+    # a white-hot core that starts full and only fades, gone before the
+    # stop. Fails on 8aded7f (the slot held it at .06 as it started to
+    # slow, and there was no hot core).
+    ae = [st["aglowEff"] for i, st in rows if st and light_at and rest_at and light_at + 3 <= i < rest_at - 2]
+    ae40 = ae[int(len(ae) * .4)] if ae else None
+    check("slowing: the after-glow is BRIGHT as seen (.85+ at the start, .6+ two fifths in) and cools slowly",
+          len(ae) >= 100 and all(v is not None for v in ae) and ae[0] > .85 and ae40 > .6 and ae[-1] < .45,
+          (len(ae), ae and ae[0] is not None and round(ae[0], 3), ae40 is not None and round(ae40, 3), ae and ae[-1] is not None and round(ae[-1], 3)))
+    hot = [st["ahot"] for i, st in rows if st and light_at and rest_at and light_at + 3 <= i < rest_at - 2]
+    check("slowing: a white-hot core on the flare cools into its colour - full at first, only ever fading, gone before the stop",
+          len(hot) >= 100 and all(v is not None for v in hot) and hot[0] > .85 and hot[-1] < .05
+          and all(hot[k] <= hot[k - 1] + .01 for k in range(1, len(hot))),
+          (len(hot), hot and hot[0], hot and hot[-1]))
     # "when the spinning completely stops, it does the pulse (don't make it
     # move just the pulse here) and then the flash". Fails on 7ee6c51 (the
     # whole system pulsed in scale, a ring gathering in).
@@ -19342,6 +19393,60 @@ def check_b318_scar(br):
     ctx.close()
 
 
+
+def check_b319_shine(br):
+    """Build 319. "The supernova permanent effect, the big shining mark on
+    the sphere, could that change somehow because of the damage?" The
+    planet's shine (its specular highlight, up and to the left) came through
+    the blast clean. On a Supernova planet it carries damage of its own now
+    - a crater, fractures across it, soot and ejecta - drawn in the scar's
+    art, so it arrives and fades with the scar. Measured off the screen at
+    3x on the 17 Pro Max, on three themes: the shine region (a disc round
+    the highlight, a quarter of the sphere's radius) with the scar shown,
+    against the same frame with the scar hidden and the plasma unmasked -
+    dulled to under 80% of its brightness, with real dark structure in it
+    (3%+ of it under 40, against under 1% clean). And nothing new is warm.
+    Fails on 8aded7f, where the scar never reaches the shine."""
+    from PIL import Image
+    print("\n319s. the Supernova planet's shine carries the blast's damage")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=3)
+    pg.evaluate(HOMETAP_PREP, {})
+    for acc in ("titan", "ink", "adept"):
+        pg.evaluate(B318_STATE, "orange")
+        pg.evaluate("""async (a) => { theme.accent = a; applyTheme(); showHome(); await new Promise(r => setTimeout(r, 900));
+          document.querySelectorAll('.rs-spot,.daily-alert,#tour-overlay,.update-banner,.toast').forEach(x => x.remove());
+          document.getAnimations().forEach(an => { try{ an.pause(); an.currentTime = 0; }catch(e){} }); }""", acc)
+        pg.wait_for_timeout(200)
+        box = pg.evaluate("""() => { const h = document.querySelector('.panel.home .cosmic-hero-wrap');
+          const c = h && h.querySelector('.cosmic-hero-main circle[fill^="url(#cosmicSphereGrad"]'); if(!c) return null;
+          const r = c.getBoundingClientRect(), R = r.width / 2, cx = r.left + R + (163 - 180) / 52 * R, cy = r.top + R + (132 - 150) / 52 * R;
+          return { cx, cy, rr: R * .25, scar: !!h.querySelector(':scope > .cosmic-scar') }; }""")
+        if not box:
+            check("%s: the planet is on Home" % acc, False, box)
+            continue
+        clip = {"x": box["cx"] - box["rr"], "y": box["cy"] - box["rr"], "width": 2 * box["rr"], "height": 2 * box["rr"]}
+        def shot():
+            im = Image.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+            W, H = im.size
+            px = im.load()
+            lum, dark, warm, n = 0.0, 0, 0, 0
+            for y in range(H):
+                for x in range(W):
+                    if (x - W / 2) ** 2 + (y - H / 2) ** 2 > (W / 2) ** 2:
+                        continue
+                    r, g, b = px[x, y]
+                    l = .2126 * r + .7152 * g + .0722 * b
+                    lum += l; n += 1; dark += l < 40
+            return lum / max(1, n), dark / max(1, n)
+        lA, dA = shot()
+        pg.evaluate("""() => { const h = document.querySelector('.panel.home .cosmic-hero-wrap');
+          h.querySelector(':scope > .cosmic-scar').style.visibility = 'hidden'; h.classList.remove('is-scarred'); }""")
+        pg.wait_for_timeout(100)
+        lB, dB = shot()
+        check("%s: the shine is damaged - dulled (%.0f against %.0f clean, under 80%%) with dark structure in it (%.1f%% under 40, clean %.1f%%)" % (acc, lA, lB, dA * 100, dB * 100),
+              box["scar"] and lA <= .8 * lB and dA >= .03 and dB < .01, (round(lA, 1), round(lB, 1), round(dA, 4), round(dB, 4)))
+    ctx.close()
+
 B318_DAILY = """async (acc) => { const wait = ms => new Promise(r => setTimeout(r, ms));
   theme.accent = acc; applyTheme(); store.dailyQuestionDate = null; showHome(); await wait(400);
   document.querySelectorAll('.rs-spot, .daily-alert, #tour-overlay, .update-banner, .toast, .daily-orb').forEach(x => x.remove());
@@ -19861,6 +19966,7 @@ def main():
             check_b318f_seeresults(br)
             check_b318_planet(br)
             check_b318_scar(br)
+            check_b319_shine(br)
             check_b318_daily(br)
             check_b318_one_chat(br)
             check_b318h_legacy_rows(br)
