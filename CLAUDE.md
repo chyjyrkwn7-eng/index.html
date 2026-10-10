@@ -6943,8 +6943,10 @@ are the gates; both were run against 239/240 and fail there.
 - **A hundo gets the character's own win move** on the results XP box
   (`char-react-perfect` + `char-react-win`); 90+ a hop and a nod, a pass
   a nod, a fail a slump.
-- **Secret flare order on the results**: the flare's pop-in first, then
-  a 1.8s beat, then the flare scene, then the character card.
+- **Secret flare order on the results**: ~~the flare's pop-in first, then
+  a 1.8s beat, then the flare scene, then the character card~~ - since
+  build 318 the scene, then the flare's card, then the character (see
+  "Build 318 - the secret flares").
 - **The rank-up cutscene (`playRankUpScene`) starts from what you HAVE**:
   your current theme's sphere, the new rank's flare unlit; zoom in,
   spin (longer now), flash, and only behind the flash does the scene swap
@@ -12294,7 +12296,8 @@ four would be untrue. Celestial already needed level 80 (Ascension), so
 Worldheart's 78-80 adds nothing to it; Astral now needs level 78+.
 
 **Home says Worldheart is out there** once Horizon is held
-(`pendingFlareHints` - "genesis"), naming the flare and its level. 
+(`pendingFlareHints` - "genesis"), naming the flare - and, since build
+318, never its level. 
 
 **Gates.** check-behaviour 91 (`check_b313_flares`, 33 checks, every one
 fails on 312). Revised to the new decisions: audit_a R7 (three flares
@@ -18484,3 +18487,93 @@ filter.
 against a 4x reference, enamel that changes across its face, the case's
 corners and parts, the Profile wall and plate, the glow, and the seated
 badges' render size.
+
+### Build 318 - the secret flares: their moment on the results, owed until seen, the next one's rumour, Umbra's eclipse
+
+Madison: *"the cutscene is happening from the main menu and so are the
+popups. Those need to happen from the result screen ... cutscene first,
+then the pop up that you found it ... cutscene, flare, and then
+character"*; *"The popup for the next flare should not mention what level
+it appears at"*; *"for the character you are closest to only ... 'they say
+these are seen in tests when level blah blah' ... if you haven't unlocked
+void then the others wouldn't give the hint"*; *"Umbra cutscene ... at the
+very beginning the flare goes to the moon but that's kinda confusing ...
+when all the secret flares float around umbra, when they get to the front
+they are cutoff"*.
+
+- **Where a find plays.** In the code the results screen already played
+  the scenes - the pack recordings had played them over Home, which is
+  what she saw. What was really wrong: the 3rd-6th went card, scene,
+  character (build 241), and a find was LOST whenever its results never
+  ran (Exit test, the app closed, a resumed run - `mysteryFoundThisSession`
+  was reset on resume) apart from the character's card on Home.
+- **Order on a results screen**: the hundo effect, the badge case, the
+  rank-up and its reward card, the other cards, then the find LAST: its
+  scene, the "Secret flare found" card, the character it completes, that
+  character's banner. One builder for the find's cards
+  (`flareFoundItem`, `flareFindCharacter`, `flareCharacterItem`) serves
+  the results and Home.
+- **Owed until seen** (`oweFlareFind` / `markFlareFind` /
+  `flareFindsOwed`, localStorage `class26e.flarefinds.owed`, entries
+  `{c, all, s}`): written the moment the flare is tapped; `s` 1 once its
+  scene has played, 2 once its card has been up `SPOT_SEEN_MS` (in
+  `playUnlockSpotlight`'s markSeen, like every other card) while the
+  character it completes is still to be announced; the entry goes when
+  that character's card is seen (`flareFindCharacterSeen`), or at once
+  muted / after Reduce motion's still scene (stage 3). A flare character
+  is never in Home's ordinary list (`HOME_UNLOCK_SKIP`), so without this a
+  results screen cut between the two cards lost the character's card. Device-local on
+  purpose, like the run session: on `store` it would sync and a second
+  device would play the scene too. Entries for a flare the account does
+  not hold are ignored (a reset, another account linked). Whatever is
+  owed plays on the next Home through `playHomeUnlocks`, after the other
+  cards and before the "out there" hint: a `flare-scene` pseudo-item,
+  then the flare's card, then its character and banner (held back from
+  the ordinary list so they follow it). A resumed run carries
+  `flareFound` in its session and announces the find on its own results.
+- **B4 / `pendingVoidCutscene`**: `playVoidCutscene` is deleted. showHome
+  turns the stored flag into an owed Void find; the queue plays it one
+  card at a time and announces Void's banner. **One Home queue at a
+  time**: `playHomeUnlocks` waits while another is running
+  (`homeUnlockActiveAt`, taken as over after 35s quiet) - a second
+  showHome() used to start a second queue in the 320ms gap after a
+  scene, which stacked the card.
+- **The Virtual Room** goes through the same results sequence;
+  `VROOM_SCENE_SELECTOR` now names `.sf-scene` so the leaderboard never
+  rolls over a find.
+- **The "is out there" cards name no level** (Genesis's said "from level
+  78"). **The next flare's caption on Home is the one hint**
+  (`homeTapCopyFlare`, flareHuntState "next"/"hunting"): "They say this
+  one is seen in tests from level N." at the account's own drawn level
+  (`mysteryLevelGate`), or "...has been seen in tests at your level." once
+  reached. Every other unfound flare still says only "Secret flare has
+  not been found."; no name, no colour for any unfound one.
+- **Umbra's opening**: no flare flying from a corner to touch a lit moon.
+  Penumbra lights in the middle of the dark (`.sfu-flare`, `sf-flarein`),
+  ignites, and swells into a violet SUN (`.sfu-moon.sfu-sun`, no craters;
+  `sf-touch`); a dark moon (`.sfu-occult`, a body outside the sun's disc,
+  seen against its glow) slides across it from 3.7s and the sun dims as
+  it is swallowed ("The moon swallows its light"). Beads, the diamond,
+  totality and everything after are unchanged and keep their times.
+- **The ring flares were cut in two ways** (all four ring scenes):
+  `.sf-orbit`'s clip was `inset(50% 0 0 0)` in the plane's unsquashed box,
+  and a flare sits ON the box's edge at the front, back and ends -
+  counter-squashed to ~5x its height in plane units - so the near flare
+  was cut in half at the plane's bottom edge (the far one at its top,
+  the end ones down the middle). Only the 50% line is a real cut now;
+  the other edges stand off (`inset(50% -15% -60% -15%)`). And on a phone
+  the ring (124% of the stage, 513px on a 440px screen) ran off both
+  sides; it is `min(124%, 100vw - 9cqw - 1rem)` now (iPad unchanged).
+- **Gate: `check_b318_flares`** (check-behaviour), all against 219bfea:
+  the order on a real run for red/yellow/violet/white/core and with a
+  badge and a rank-up; owed at the find, nothing owed after; a real
+  relaunch mid-scene plays scene/card/character on Home once and nothing
+  on the launch after; B4 (most cards up at once = 1, Void's banner
+  shown); no level in the hint cards; the captions; Umbra's opening
+  geometry; every ring flare through a lap on both reference devices
+  (`B318_ORBIT_JS`: each flare's core mapped into its plane's own box
+  against the clip, and against the screen); the Virtual Room selector;
+  a resumed run keeping its find. check_b317_sflare's flow and Home-path
+  assertions and check_b317_hometaps' unfound-caption assertion moved to
+  the new decisions.
+

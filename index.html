@@ -26168,13 +26168,24 @@
   .sf-fig.is-revealing .sf-wipe{ transform:translateY(-20%); transition:transform 1.7s cubic-bezier(.45,.05,.3,1); }
   .sf-fig.is-revealing .sf-wipe-in{ transform:translateY(25%); transition:transform 1.7s cubic-bezier(.45,.05,.3,1); }
   /* the flares found, going round it on a tilted ring (tiltedOrbit) */
-  .sf-orbit.is-back{ z-index:1; clip-path:inset(0 0 50% 0); }
-  .sf-orbit.is-front{ z-index:3; clip-path:inset(50% 0 0 0); }
+  /* THE HALVES REACH PAST THE PLANE (build 318). "when all the secret
+     flares float around umbra, when they get to the front they are
+     cutoff". The clip is in the plane's own, unsquashed box - and a flare
+     sits ON its edge at the front and the back, counter-squashed to many
+     times its height there, so inset(50% 0 0 0) cut the near flare in
+     half at the plane's bottom edge (and the far one at its top). Only
+     the 50% line is a real cut; the other three edges stand well off. */
+  .sf-orbit.is-back{ z-index:1; clip-path:inset(-60% -15% 50% -15%); }
+  .sf-orbit.is-front{ z-index:3; clip-path:inset(50% -15% -60% -15%); }
   .sf-orbit .xs-oback{ width:7.5cqw; height:7.5cqw; }
   /* round the shoulders, not the head (the specials' rule: at head height
      the near half crosses the face) */
-  .sf-orbit:is(.sfv-ring, .sfu-ring){ top:66%; width:124%; }
-  .sf-orbit.sfh-orbit{ top:62%; width:124%; }
+  /* ...and never wider than the screen: 124% of the stage is 513px on a
+     440px phone, so the flares at either end of the ring went off its
+     edges (build 318). A phone's ring is the screen less a flare and a
+     margin; a tablet's is untouched. */
+  .sf-orbit:is(.sfv-ring, .sfu-ring){ top:66%; width:min(124%, calc(100vw - 9cqw - 1rem)); }
+  .sf-orbit.sfh-orbit{ top:62%; width:min(124%, calc(100vw - 9cqw - 1rem)); }
   .sf-orbit.sfg-orbit.is-back{ z-index:-1; }
   .sf-scene.sf-orbits .sf-orbit, .sf-scene.sf-final .sf-orbit{ opacity:1; scale:1; }
   /* riders on a tilted orbit (tiltedOrbit) */
@@ -26256,24 +26267,35 @@
   .sf-void.sf-final :is(.sfv-sys, .sfv-comet){ display:none; }
 
   /* ---- UMBRA ---- */
+  /* (build 318) Penumbra lights in the middle of the dark (.sfu-flare),
+     swells into a violet sun (.sfu-sun - its own light, no craters) with
+     its glow, and a dark moon (.sfu-occult) slides in across it: the sun
+     dims as it is swallowed. Transforms and opacity only. */
   .sfu-moonglow{ left:50%; top:50%; width:84cqw; aspect-ratio:1; translate:-50% -50%; border-radius:50%;
     background:radial-gradient(closest-side, rgba(196,181,253,.42), rgba(139,92,246,.16) 50%, transparent);
-    transition:opacity 5s ease; }
+    opacity:0; transition:opacity 1.8s ease; }
+  .sf-touch .sfu-moonglow{ opacity:1; }
   .sfu-moon{ left:50%; top:50%; width:46cqw; aspect-ratio:1; translate:-50% -50%; border-radius:50%; overflow:hidden;
-    background:radial-gradient(circle at 38% 34%, #F6F2FF, #CFC2FF 36%, #8F72DA 76%, #573A9E 100%); }
-  .sfu-craters{ position:absolute; inset:0; border-radius:50%;
-    background:radial-gradient(circle at 30% 60%, rgba(70,40,130,.28) 0 9%, transparent 10%), radial-gradient(circle at 62% 30%, rgba(70,40,130,.22) 0 7%, transparent 8%),
-      radial-gradient(circle at 68% 68%, rgba(70,40,130,.2) 0 12%, transparent 13%), radial-gradient(circle at 46% 44%, rgba(70,40,130,.14) 0 5%, transparent 6%); }
-  .sfu-limb{ position:absolute; inset:0; border-radius:50%; opacity:0; transition:opacity 1.4s ease;
-    background:radial-gradient(circle at 26% 24%, rgba(139,92,246,.7), rgba(139,92,246,.25) 30%, transparent 55%); }
-  .sf-touch .sfu-limb{ opacity:1; }
-  .sfu-shadow{ position:absolute; inset:-2%; border-radius:50%; background:radial-gradient(circle at 46% 46%, #0A0714, #030207 70%); translate:122% 0; }
-  .sf-eclipse .sfu-shadow{ translate:0 0; transition:translate 5.3s cubic-bezier(.42,0,.35,1); }
-  .sf-eclipse .sfu-moonglow{ opacity:.12; }
+    background:radial-gradient(circle at 50% 50%, #FFFFFF, #F1EBFF 30%, #CDBDFF 62%, #9C80F0 88%, #7A5AD8 100%);
+    opacity:0; scale:.26; transition:opacity .55s ease, scale 1.7s cubic-bezier(.2,.8,.2,1); }
+  .sf-touch .sfu-moon{ opacity:1; scale:1; }
+  /* the sun's limb a touch darker than its middle, as a sun's is */
+  .sfu-sunflare{ position:absolute; inset:0; border-radius:50%;
+    background:radial-gradient(circle, transparent 52%, rgba(91,56,170,.22) 86%, rgba(70,40,140,.34) 100%); }
+  .sfu-flare{ left:50%; top:50%; width:12cqw; aspect-ratio:1; translate:-50% -50%; z-index:4; opacity:0; scale:.4;
+    transition:opacity .9s ease, scale 1.1s cubic-bezier(.2,1.2,.3,1); }
+  .sfu-flare > svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .sf-flarein .sfu-flare{ opacity:1; scale:1; }
+  .sf-touch .sfu-flare{ opacity:0; scale:2.4; transition:opacity 1.3s ease, scale 1.7s cubic-bezier(.2,.8,.2,1); }
+  /* the moon: a body of its own, seen against the sun's glow as it comes */
+  .sfu-occult{ left:50%; top:50%; width:46.4cqw; aspect-ratio:1; translate:-50% -50%; border-radius:50%;
+    background:radial-gradient(circle at 42% 40%, #0E0A1A, #06040C 62%, #040309 100%);
+    box-shadow:inset 0 0 0 .3cqw rgba(150,128,220,.14);
+    opacity:0; transform:translateX(68cqw); }
+  .sf-eclipse .sfu-occult{ opacity:1; transform:none; transition:opacity .9s ease, transform 5.3s cubic-bezier(.42,0,.35,1); }
+  .sf-eclipse .sfu-moonglow{ opacity:.12; transition:opacity 5s ease; }
   .sf-eclipse .sf-stars{ opacity:1; }
-  .sfu-touch{ left:calc(50% - 16.3cqw); top:calc(50% - 16.3cqw); width:12cqw; aspect-ratio:1; translate:-50% -50%; }
-  .sfu-comet{ --tail:-36deg; transform:translate(-62cqw, 70cqw) scale(1.6); transition:transform 1.15s cubic-bezier(.4,0,.2,1), opacity .3s ease; }
-  .sfu-comet.is-go{ opacity:1; transform:translate(-16.3cqw, -16.3cqw) scale(1); }
+  .sfu-touch{ left:50%; top:50%; width:16cqw; aspect-ratio:1; translate:-50% -50%; }
   .sfu-beads{ left:50%; top:50%; width:0; height:0; }
   .sfu-beads > i{ position:absolute; left:0; top:0; width:2.4cqw; height:2.4cqw; margin:-1.2cqw; border-radius:50%; translate:var(--x) var(--y); opacity:0;
     background:radial-gradient(circle, #fff 0 25%, rgba(237,228,255,.75) 45%, transparent 70%); }
@@ -26299,7 +26321,10 @@
   .sf-total .sfu-corona, .sf-umbra.sf-final .sfu-corona{ opacity:1; scale:1; }
   .sf-lamp .sfu-corona{ opacity:.16; transition:opacity .6s ease; }
   .sf-thirdc .sfu-corona{ opacity:1; scale:1.07; transition:opacity 1.1s ease, scale 2.4s cubic-bezier(.2,.8,.2,1); }
-  .sf-umbra.sf-final .sfu-shadow{ translate:0 0; }
+  .sf-umbra.sf-final .sfu-occult{ opacity:1; transform:none; }
+  .sf-umbra.sf-final .sfu-moon{ opacity:1; scale:1; }
+  /* the still scene (Reduce motion) is the end state at once: no swell */
+  .sf-still :is(.sfu-moon, .sfu-moonglow, .sfu-occult, .sfu-flare){ transition:none !important; }
   .sf-umbra.sf-final .sfu-moonglow{ opacity:.12; }
   .sfu-phases{ left:50%; top:50%; width:0; height:0; animation:xs-turn 54s linear infinite; z-index:3; }
   .sfu-phase{ position:absolute; left:0; top:0; width:0; height:0; }
@@ -39731,7 +39756,9 @@ function saveRunSession(){
       runStartLocked: runStartLocked ? Array.from(runStartLocked) : null,
       runStartBanners: runStartBanners ? Array.from(runStartBanners) : null,
       runStartHundos: typeof runStartHundos === "number" ? runStartHundos : null,
-      lastRunPool: lastRunPool.slice(), lastRunLabel, originalTestPool: originalTestPool.slice(), originalTestLabel
+      lastRunPool: lastRunPool.slice(), lastRunLabel, originalTestPool: originalTestPool.slice(), originalTestLabel,
+      /* a secret flare found in it, for its own results (build 318) */
+      flareFound: mysteryFoundThisSession ? mysteryColorThisRun : null, flareAll: !!flareCompletedVoidThisSession
     };
     localStorage.setItem(RUN_SESSION_KEY, JSON.stringify(s));
   }catch(e){}
@@ -39763,6 +39790,13 @@ function resumeRunSession(s){
   pendingXpFly = 0;
   mysteryFoundThisSession = false; flareCompletedVoidThisSession = false;
   mysteryAppearsAtPos = -1; mysteryColorThisRun = null; shadesAppearsAtPos = -1;
+  /* A FLARE FOUND BEFORE THE APP LOST THE RUN is announced on the run's
+     own results (build 318), not on Home: Home holds its queue while a
+     run waits to be resumed, so the find is still owed here. */
+  const owedFind = s.flareFound ? flareFindOwed(s.flareFound) : null;
+  if(owedFind && !(owedFind.s >= 1)){
+    mysteryColorThisRun = s.flareFound; mysteryFoundThisSession = true; flareCompletedVoidThisSession = !!s.flareAll;
+  }
   attempts = s.attempts || {}; picked = s.picked || {}; firstPick = s.firstPick || {};
   layout = s.layout || {}; timedOutSet = s.timedOutSet || {};
   runExamFeedback = !!s.runExamFeedback; examFeedbackNext = false;
@@ -61998,6 +62032,65 @@ function placeMysterySpark(btn, frac){
   });
 }
 
+/* ---- A FIND IS OWED UNTIL IT HAS BEEN SEEN (build 318) ----
+   Madison: "the cutscene is happening from the main menu and so are the
+   popups. Those need to happen from the result screen ... someone might
+   find one, finish a test, and then not get on the app for a little while
+   and not get the cutscene immediately and then get confused next time
+   they see it." A find plays on the results screen of the test it was
+   found in: its scene, then the "Secret flare found" card, then the
+   character it completes (and that character's banner).
+   What is still owed is written down the moment the flare is tapped, so a
+   find is never silently lost: the app closed half-way through the
+   results, a run left with Exit test, a resumed run turned down - the next
+   Home plays whatever is left, in the same order, before its other cards.
+   One entry per flare: { c, all, s } - s 0 the scene is owed, 1 the scene
+   was seen and the flare's card is owed, 2 only the character's card is
+   owed; the entry goes once the last of them has been seen (or, muted or
+   under Reduce motion, once nothing more will be shown - stage 3).
+   ON THIS DEVICE (localStorage, never `store`), like the run session: the
+   find happened here and plays here. On `store` it would sync, and a
+   second device would play a scene the first is already playing. A
+   flare this account no longer holds (a reset, a different account linked
+   here) is dropped unread. The character and its banner are not in here:
+   they are store.unlocksShown's, as every other card is. */
+const FLARE_OWED_KEY = "class26e.flarefinds.owed";
+function flareFindsOwed(){
+  let a = [];
+  try{ a = JSON.parse(localStorage.getItem(FLARE_OWED_KEY) || "[]"); }catch(e){ a = []; }
+  if(!Array.isArray(a)) return [];
+  const f = (store && store.mysteryColorsFound) || {};
+  return a.filter(o => o && MYSTERY_ORDER.indexOf(o.c) >= 0 && f[o.c]);
+}
+function writeFlareFindsOwed(a){
+  try{ if(a.length) localStorage.setItem(FLARE_OWED_KEY, JSON.stringify(a)); else localStorage.removeItem(FLARE_OWED_KEY); }catch(e){}
+}
+function oweFlareFind(c, all){
+  const a = flareFindsOwed().filter(o => o.c !== c);
+  a.push({ c, all: !!all, s: 0 });
+  writeFlareFindsOwed(a);
+}
+/* stage 1: its scene has been seen; 2: its card too (the entry goes
+   unless the character it completes is still to be announced); 3: done */
+function markFlareFind(c, stage){
+  const a = flareFindsOwed();
+  const o = a.find(x => x.c === c);
+  if(!o) return;
+  if(stage === 2){
+    const ch = flareFindCharacter(o.c, o.all);
+    if(ch && !isLockedCharacter(ch) && !unlockWasShown("chars", ch)){ if(o.s < 2){ o.s = 2; writeFlareFindsOwed(a); } return; }
+  }
+  if(stage >= 2) writeFlareFindsOwed(a.filter(x => x !== o));
+  else if(o.s < stage){ o.s = stage; writeFlareFindsOwed(a); }
+}
+/* a find's character seen: nothing of that find is owed any more */
+function flareFindCharacterSeen(ch){
+  const a = flareFindsOwed();
+  const left = a.filter(o => flareFindCharacter(o.c, o.all) !== ch);
+  if(left.length !== a.length) writeFlareFindsOwed(left);
+}
+function flareFindOwed(c){ return flareFindsOwed().find(o => o.c === c) || null; }
+
 function foundMysteryFlare(btn){
   if(mysteryFoundThisSession || !mysteryColorThisRun) return;
   const color = mysteryColorThisRun;
@@ -62010,6 +62103,8 @@ function foundMysteryFlare(btn){
      characters. */
   const all = !hadVoid && voidFlaresAllFound();
   flareCompletedVoidThisSession = all;
+  /* owed until its results (or, failing those, Home) have played it */
+  oweFlareFind(color, all);
   armFlareCatchup();
   /* The character is a real unlock, so it is recorded on `store` the
      same moment the third flare is - isLockedCharacter reads the
@@ -68605,43 +68700,10 @@ function playTierCutscene(tierKey, opts){
   });
 }
 
-/* THE VOID CUTSCENE ON HOME - a path kept for one stored flag.
-   Since build 215 nothing queues it: the third flare's scene plays on the
-   results screen, straight after the flare lands (playFlareFoundScene).
-   `pendingVoidCutscene` is still loaded from a stored document, so an
-   account that found its third flare before then and never came back to
-   Home would land here. Build 317 rebuilt every secret flare scene (see
-   THE SECRET FLARE SCENES), and this one plays that same Void scene
-   rather than the old 8.6s one - three orbs falling into a flash and a
-   still Void raised out of it, the "still character with the body"
-   Madison asked to go - so no path in the app still shows it. What
-   follows is unchanged: Home, then Void's card out of the scene's light.
-   (The #void-cutscene CSS is unused since.) */
-function playVoidCutscene(onDone){
-  /* the scene is ~29s now: a second showHome() inside it (a sync, a
-     re-render) must not stack a second one on top */
-  if(document.querySelector(".sf-scene.sf-void")) return null;
-  return playVoidFlareScene(() => {
-    store.pendingVoidCutscene = false;
-    saveStore();
-    /* From the results screen it hands straight back there - the
-       Void unlock is already in its "Unlocked" card. */
-    if(onDone){ onDone(); return; }
-    showHome();
-    /* The card AFTER the cutscene, not instead of it - it is what says
-       where to go and do something about it, which a cutscene cannot.
-       Build 268: the same centre card every other unlock gets, straight
-       out of the cutscene's light (see openSceneBridge). */
-    if(theme.muteBanners){ markUnlocksShown(["voidwalker"], []); return; }
-    setTimeout(() => {
-      try{
-        const it = characterUnlockItem("voidwalker");
-        it.flyToProfile = true;
-        playUnlockSpotlight(it, 1, 1, () => {});
-      }catch(e){ dropSceneBridge(false); showCharacterUnlockBanner("voidwalker"); }
-    }, 380);
-  });
-}
+/* THE VOID CUTSCENE ON HOME (playVoidCutscene) is gone (build 318): a
+   `pendingVoidCutscene` still loaded from a stored document is turned into
+   an owed find by showHome(), which Home's queue plays like any other -
+   see oweFlareFind. (The #void-cutscene CSS has been unused since 317.) */
 
 /* The banner announcing the level-up itself, shown right after
    landing back on Home following the cutscene \\u2014 the icon, the
@@ -73134,10 +73196,16 @@ function showHome(){
      finished test passes through, and the week can only be observed to
      have rolled over by something that runs on an ordinary launch. */
   settleWeeklyWinQueued();
+  /* A Void find stored before build 215 (pendingVoidCutscene) is owed
+     like any other find now (build 318): Home's queue plays the scene,
+     then the flare's card, then Void's - one card at a time. It used to
+     take over Home here (playVoidCutscene), and then its own Void card
+     and Home's queue both came up 380ms after the scene: two cards
+     stacked, and Void's banner never announced. */
   if(store.pendingVoidCutscene){
-    stage.replaceChildren();
-    playVoidCutscene();
-    return;
+    store.pendingVoidCutscene = false;
+    if(voidFlaresAllFound() && !flareFindOwed("yellow")) oweFlareFind("yellow", true);
+    saveStore();
   }
   if(store.pendingSupernovaCutscene || store.pendingTierCutscene){
     /* Clear whatever is still mounted before handing over. A rank-up is
@@ -78197,7 +78265,7 @@ function homeTapCopyRank(tier){
     parts: parts.length ? [need, homeJoin(parts) + " to go."] : [rank + " rank is ready to reach."] };
 }
 /* A secret flare: found, its name and a line about it; not found, only
-   that - no name, no colour, no hint. */
+   that - no name, no colour - except the one you are hunting. */
 function homeTapCopyFlare(key){
   const st = flareHuntState(key);
   /* ROUND FOUR (build 317): "this would shorten them and make them
@@ -78206,6 +78274,22 @@ function homeTapCopyFlare(key){
   if(st === "found"){
     return { kind: "found", name: MYSTERY_NAME[key], state: "Secret flare", color: MYSTERY_COLOR[key],
       parts: [HOME_SECRET_LINE[key] || ""] };
+  }
+  /* THE NEXT ONE GETS A RUMOUR (build 318). "for the character you are
+     closest to only ... when clicking that flare, it should give a hint in
+     the flare information about when it's available but make it, something
+     like 'they say these are seen in tests when level blah blah' ... if
+     you haven't unlocked void then the others wouldn't give the hint".
+     Only the flare the hunt is looking for next (flareHuntState: "next",
+     or "hunting" once its level has come), at this account's own drawn
+     level (mysteryLevelGate). Still no name and no colour. */
+  if(st === "next" || st === "hunting"){
+    let lvl = null;
+    try{ lvl = mysteryLevelGate(key); }catch(e){}
+    if(lvl != null){
+      return { kind: "unfound", name: "Secret flare", state: "Not found", color: "", hint: true,
+        parts: [st === "hunting" ? "They say this one has been seen in tests at your level." : "They say this one is seen in tests from level " + lvl + "."] };
+    }
   }
   return { kind: "unfound", name: "Secret flare", state: "Not found", color: "", parts: ["Secret flare has not been found."] };
 }
@@ -83712,14 +83796,24 @@ function playVoidFlareScene(done){
    its flare flickers like a failing lamp, catches, pulses twice) brings
    third contact: the diamond on the far side, the light back, Umbra in
    full with the eclipse behind its head and the moon's phases round it. */
+/* THE OPENING, REDRAWN (build 318). "at the very beginning the flare goes
+   to the moon but that's kinda confusing". It flew in from the corner to
+   touch a lit moon's edge, and then a shadow crept over the moon - two
+   objects meeting, and then a third thing happening to one of them. Now
+   there is one light and one shadow: Penumbra lights up in the middle of
+   the dark and swells into a violet sun (its own light - no craters, so
+   nobody reads it as a moon); a dark moon slides in across it and the
+   sun dims as it is swallowed, and THAT is the eclipse. Everything from
+   the beads on is as it was. */
 function playUmbraFlareScene(done){
   const S = sfScene("umbra", "violet", "umbra", done);
   const st = S.stage;
   sfEl("sfu-moonglow", st);
-  const moon = sfEl("sfu-moon", st);
-  sfEl("sfu-craters", moon);
-  sfEl("sfu-limb", moon);
-  sfEl("sfu-shadow", moon);
+  const sun = sfEl("sfu-moon sfu-sun", st);
+  sfEl("sfu-sunflare", sun);
+  /* the moon: a body of its own, outside the sun's disc, so it is seen
+     coming against the sun's glow and is still there over the corona */
+  sfEl("sfu-occult", st);
   const cor = sfEl("sfu-corona", st);
   sfEl("sfu-rays", cor); sfEl("sfu-rays is-2", cor);
   const beads = sfEl("sfu-beads", st);
@@ -83730,8 +83824,9 @@ function playUmbraFlareScene(done){
   });
   sfEl("sfu-diamond", st);
   sfEl("sfu-diamond is-third", st);
-  const comet = sfEl("sf-comet sfu-comet", st);
-  comet.appendChild(buildFlareOrb(MYSTERY_COLOR.violet, "sfuc"));
+  /* Penumbra itself, where it will become the sun */
+  const flare = sfEl("sfu-flare", st);
+  flare.appendChild(buildFlareOrb(MYSTERY_COLOR.violet, "sfuc"));
   const F = sfFigure(S, "umbra");
   st.appendChild(F.el);
   /* the moon's phases, circling it once it is out: crescent to full and back */
@@ -83751,15 +83846,16 @@ function playUmbraFlareScene(done){
     S.stillEnd("FROM THE SHADOW", who.toUpperCase(), "Two more are still out there.");
     return S.handle;
   }
-  S.later(800, () => comet.classList.add("is-go"));
-  S.later(1950, () => {
-    comet.classList.add("is-done");
-    S.overlay.classList.add("sf-touch");
+  /* the flare lights in the dark, ignites, and swells into the sun */
+  S.step(700, "sf-flarein");
+  S.later(1500, () => {
     sfIgnite(sfEl("sfu-touch", st), MYSTERY_COLOR.violet);
     S.say("SECRET FLARE FOUND", MYSTERY_NAME.violet, "The fourth secret flare");
   });
+  S.step(1950, "sf-touch");
+  /* the moon comes in across it */
   S.step(3700, "sf-eclipse");
-  S.later(4300, () => S.say("FIRST CONTACT", "The moon goes dark", ""));
+  S.later(4300, () => S.say("FIRST CONTACT", "The moon swallows its light", ""));
   S.step(8300, "sf-beads");
   S.step(9100, "sf-total");
   S.later(9300, () => S.say("TOTALITY", "", ""));
@@ -84686,6 +84782,36 @@ function characterChallenge(id){
    the test result screen, and slight delay, and then the other unlock
    pop ups come on relevant to the rank up, and then the badge ones, and
    so on". */
+/* A SECRET FLARE FOUND, as a card - one builder for the results screen
+   and for a find Home plays because its results never did (build 318).
+   The fourth, fifth and sixth are named, so the card says WHICH flare it
+   was (build 313: "when clicking the secret flare, ensure it mentions
+   which flare you found"); the first three count to Void. */
+function flareFoundItem(c, all){
+  const ord = ["", "first", "second", "third", "fourth", "fifth"];
+  let name = MYSTERY_NAME[c], sub;
+  if(FLARE_CHARACTER[c]){
+    const nthAll = MYSTERY_ORDER.indexOf(c) + 1;
+    sub = c === "core" ? "The sixth and last secret flare"
+      : c === "white" ? "The " + ord[nthAll] + " secret flare \u2014 one more waits on the rings"
+      : "The " + ord[nthAll] + " secret flare";
+  } else {
+    const nth = VOID_FLARES.filter(k => (store.mysteryColorsFound || {})[k]).length;
+    name = MYSTERY_NAME[c] + " \u2014 " + nth + " of " + VOID_FLARES.length;
+    sub = all ? "The last of the three in the sky" : "Keep an eye out for the next one";
+  }
+  return { kind: "flare", flare: c, kicker: "Secret flare found", name, sub,
+    color: MYSTERY_COLOR[c], art: () => buildFlareOrb(MYSTERY_COLOR[c], "ul") };
+}
+/* the character a find completes, if it completes one */
+function flareFindCharacter(c, all){ return FLARE_CHARACTER[c] || (all ? "voidwalker" : null); }
+function flareCharacterItem(ch){
+  return { kind: "character", character: ch, feat: true, secret: true, kicker: "Character unlocked",
+    name: AVATAR_DISPLAY_NAME[ch] || ch,
+    sub: "Yours to pick in Customize", need: characterChallenge(ch), color: avatarGlowColor(ch),
+    art: () => buildAvatarCharSVGSafe(ch) };
+}
+
 function rsUnlockItems(run){
   const items = [];
   /* THE BADGE FIRST (build 308): "I would also think the badge cutscene
@@ -84731,36 +84857,15 @@ function rsUnlockItems(run){
   /* A secret flare found this run is the LAST unlock, always. Its scene
      plays FIRST and its banner after - "the cutscenes need to come
      before the pop up". */
-  if(run.flare && FLARE_CHARACTER[run.flare]){
-    /* The fourth, fifth or sixth: each hands over a character of its own.
-       Named, so the card says WHICH flare it was (build 313: "when
-       clicking the secret flare, ensure it mentions which flare you
-       found"), then the character, then its banner. */
-    const ch = FLARE_CHARACTER[run.flare];
-    const nthAll = MYSTERY_ORDER.indexOf(run.flare) + 1;
-    items.push({ kind: "flare", flare: run.flare, kicker: "Secret flare found",
-      name: MYSTERY_NAME[run.flare],
-      sub: run.flare === "core" ? "The sixth and last secret flare"
-        : run.flare === "white" ? "The " + ["", "first", "second", "third", "fourth", "fifth"][nthAll] + " secret flare — one more waits on the rings"
-        : "The " + ["", "first", "second", "third", "fourth", "fifth"][nthAll] + " secret flare",
-      color: MYSTERY_COLOR[run.flare], art: () => buildFlareOrb(MYSTERY_COLOR[run.flare], "ul") });
-    items.push({ kind: "character", character: ch, feat: true, secret: true, kicker: "Character unlocked",
-      name: AVATAR_DISPLAY_NAME[ch] || ch,
-      sub: "Yours to pick in Customize", need: characterChallenge(ch), color: avatarGlowColor(ch),
-      art: () => buildAvatarCharSVGSafe(ch) });
-    const bi = flareBannerItem(ch); if(bi) items.push(bi);
-  } else if(run.flare){
-    const nth = VOID_FLARES.filter(k => (store.mysteryColorsFound || {})[k]).length;
-    items.push({ kind: "flare", flare: run.flare, kicker: "Secret flare found",
-      name: MYSTERY_NAME[run.flare] + " — " + nth + " of " + VOID_FLARES.length,
-      sub: run.flareAll ? "The last of the three in the sky" : "Keep an eye out for the next one",
-      color: MYSTERY_COLOR[run.flare], art: () => buildFlareOrb(MYSTERY_COLOR[run.flare], "ul") });
-    if(run.flareAll){
-      items.push({ kind: "character", character: "voidwalker", feat: true, secret: true, kicker: "Character unlocked",
-        name: AVATAR_DISPLAY_NAME.voidwalker || "Void",
-        sub: "Yours to pick in Customize", need: characterChallenge("voidwalker"), color: avatarGlowColor("voidwalker"),
-        art: () => buildAvatarCharSVGSafe("voidwalker") });
-      const bi = flareBannerItem("voidwalker"); if(bi) items.push(bi);
+  /* Its scene plays first, then this card, then the character it
+     completes and that character's banner (build 318 - see
+     oweFlareFind). */
+  if(run.flare){
+    items.push(flareFoundItem(run.flare, run.flareAll));
+    const ch = flareFindCharacter(run.flare, run.flareAll);
+    if(ch){
+      items.push(flareCharacterItem(ch));
+      const bi = flareBannerItem(ch); if(bi) items.push(bi);
     }
   }
   /* a flare banner earned some other way (a cloud copy landing mid-run) */
@@ -85165,7 +85270,7 @@ function attachNewDot(el, kind, id){
 }
 function pendingHomeUnlocks(){
   /* Held until the next finished test, which announces them itself. */
-  if(store.mergeHold) return { chars: [], banners: [], hints: [], fx: [] };
+  if(store.mergeHold) return { chars: [], banners: [], hints: [], fx: [], finds: [] };
   /* THE COUNTERS FIRST (build 291). "The app gave me a pop for the
      character I unlocked (koi) ... after closing it out and opening
      again, that's when the other one came." The Koi reads the study log
@@ -85183,7 +85288,10 @@ function pendingHomeUnlocks(){
   /* hundo effects held and never announced, lowest first (build 313) */
   let fx = [];
   try{ fx = earnedHundoFx().filter(id => (u.fx || []).indexOf(id) < 0); }catch(e){}
-  return { chars, banners, hints, fx };
+  /* a secret flare found and not yet seen through (build 318) */
+  let finds = [];
+  try{ finds = flareFindsOwed(); }catch(e){}
+  return { chars, banners, hints, fx, finds };
 }
 /* THE NEXT SECRET, ANNOUNCED (build 312): "Ensure when you go back to
    main menu, you get a banner pop up that says the you can now unlock
@@ -85213,12 +85321,15 @@ function markFlareHintShown(id){
 function flareHintItem(ch){
   const flare = CHARACTER_FLARE[ch] || "violet";
   const who = AVATAR_DISPLAY_NAME[ch] || ch;
-  /* the flare by name, and where to look (build 313) */
+  /* the flare by name, and where to look (build 313) - never WHEN (build
+     318: "The popup for the next flare should not mention what level it
+     appears at"; Genesis's said "from level 78"). The one hint at a level
+     is the next flare's own caption on Home (homeTapCopyFlare). */
   return { kind: "hint", hint: ch, kicker: "A new secret", name: who + " is out there",
     sub: ch === "umbra"
       ? "A fourth flare, " + MYSTERY_NAME.violet + ", is hiding in your tests. Find it to unlock " + who + "."
       : ch === "genesis"
-      ? "The last flare, " + MYSTERY_NAME.core + ", can turn up in your tests from level " + FLARE_WINDOWS.core[0] + ". Find it to unlock " + who + "."
+      ? "The last flare, " + MYSTERY_NAME.core + ", is hiding in your tests. Find it to unlock " + who + "."
       : "A fifth flare, " + MYSTERY_NAME.white + ", is hiding in your tests. Find it to unlock " + who + ".",
     /* the flare is not found yet, so it is shown without its colour
        (build 314 - FLARE_UNFOUND_TINT) */
@@ -85236,7 +85347,7 @@ function flareHintItem(ch){
       return f;
     } };
 }
-function homeUnlocksOwed(p){ return !!(p && (p.chars.length || p.banners.length || (p.hints || []).length || (p.fx || []).length)); }
+function homeUnlocksOwed(p){ return !!(p && (p.chars.length || p.banners.length || (p.hints || []).length || (p.fx || []).length || (p.finds || []).length)); }
 /* Anything that already owns the screen. The Home unlocks wait for all
    of it - a badge cutscene queued from the same run goes first. */
 function homeUnlockBlocked(){
@@ -85272,7 +85383,7 @@ function rankRewardsFirstOnHome(){
 const HOME_UNLOCK_DELAY_MS = 2200;
 let homeUnlockTimer = null;
 /* True from the first card of a Home queue to the last. */
-let homeUnlockPlaying = false;
+let homeUnlockPlaying = false, homeUnlockActiveAt = 0;
 function homeUnlocksAfterSync(){
   if(homeUnlockPlaying || homeUnlockTimer) return;
   try{
@@ -85288,6 +85399,16 @@ function scheduleHomeUnlocks(ms){
 function playHomeUnlocks(tries){
   homeUnlockTimer = null;
   if(!stage.querySelector('[data-screen="home"]')) return;
+  /* ONE QUEUE AT A TIME (build 318). A second showHome() while a queue
+     plays (a sync, a re-render) armed a second one, which started in any
+     gap where nothing was on screen - and a find's scene leaves a 320ms
+     gap before its card, so the card came up twice, stacked. A queue
+     that has gone quiet for longer than any scene or card lasts is
+     taken as over. */
+  if(homeUnlockPlaying && Date.now() - homeUnlockActiveAt < 35000){
+    if((tries || 0) < 60) homeUnlockTimer = setTimeout(() => playHomeUnlocks((tries || 0) + 1), 1000);
+    return;
+  }
   const p = pendingHomeUnlocks();
   if(!homeUnlocksOwed(p)) return;
   if(homeUnlockBlocked()){
@@ -85299,17 +85420,34 @@ function playHomeUnlocks(tries){
   }
   /* Muted: recorded as shown and never played, the same as the badge
      queue, so unmuting weeks later does not ambush anybody. */
-  if(theme.muteBanners){ markUnlocksShown(p.chars, p.banners, p.fx); p.hints.forEach(markFlareHintShown); return; }
-  const items = groupRankRewards(p.chars.map(characterUnlockItem)
-    .concat(p.banners.map(bannerUnlockItem).filter(Boolean)));
+  if(theme.muteBanners){ markUnlocksShown(p.chars, p.banners, p.fx); p.hints.forEach(markFlareHintShown); (p.finds || []).forEach(o => markFlareFind(o.c, 3)); return; }
+  /* A FIND ITS RESULTS NEVER PLAYED (build 318): its character and banner
+     wait for it, so they come in the results' order - the scene, the
+     flare's card, the character, its banner. */
+  const finds = p.finds || [];
+  const findChar = o => flareFindCharacter(o.c, o.all);
+  const findBanner = o => { const ch = findChar(o); const b = ch ? BANNERS.find(x => x.flareChar === ch) : null; return b ? b.id : null; };
+  const heldBack = { chars: finds.map(findChar).filter(Boolean), banners: finds.map(findBanner).filter(Boolean) };
+  const items = groupRankRewards(p.chars.filter(id => heldBack.chars.indexOf(id) < 0).map(characterUnlockItem)
+    .concat(p.banners.filter(id => heldBack.banners.indexOf(id) < 0).map(bannerUnlockItem).filter(Boolean)));
   /* hundo effects after the things you wear, lowest first */
   (p.fx || []).forEach(id => { const it = hundoFxUnlockItem(id); if(it) items.push(it); });
   items.forEach(it => { it.flyToProfile = true; });
+  /* the find last of what was earned, as the results have it */
+  finds.forEach(o => {
+    if(!(o.s >= 1)) items.push({ kind: "flare-scene", flare: o.c, all: o.all });
+    if(!(o.s >= 2)) items.push(flareFoundItem(o.c, o.all));
+    const ch = findChar(o), bid = findBanner(o);
+    /* (a flare's character is never in p.chars - HOME_UNLOCK_SKIP: its
+       results announce it - so it is asked for here) */
+    if(ch && !isLockedCharacter(ch) && !unlockWasShown("chars", ch)){ const it = flareCharacterItem(ch); it.flyToProfile = true; items.push(it); }
+    if(bid && p.banners.indexOf(bid) >= 0){ const it = bannerUnlockItem(bid); if(it){ it.flyToProfile = true; items.push(it); } }
+  });
   /* The next secret goes last, after anything you now hold - and it does
      not fly to Profile, because nothing new is in there yet. */
   p.hints.forEach(h => items.push(flareHintItem(h)));
   let i = 0;
-  homeUnlockPlaying = true;
+  homeUnlockPlaying = true; homeUnlockActiveAt = Date.now();
   const next = () => {
     /* ONE SITTING (build 291). Anything that became unlocked while the
        queue was playing - the cloud copy of the account landing a moment
@@ -85327,8 +85465,16 @@ function playHomeUnlocks(tries){
     }
     /* Left Home mid-queue: the rest wait for the next visit, unshown. */
     if(!stage.querySelector('[data-screen="home"]')){ homeUnlockPlaying = false; return; }
+    homeUnlockActiveAt = Date.now();
     const it = items[i++];
-    playUnlockSpotlight(it, i, items.length, () => setTimeout(next, 260));
+    /* a find's scene, then straight into its card out of the scene's light */
+    if(it.kind === "flare-scene"){
+      if(typeof playFlareFoundScene !== "function"){ markFlareFind(it.flare, 1); next(); return; }
+      playFlareFoundScene(it.flare, it.all, () => { markFlareFind(it.flare, 1); setTimeout(next, 320); });
+      return;
+    }
+    const cards = items.filter(x => x.kind !== "flare-scene");
+    playUnlockSpotlight(it, cards.indexOf(it) + 1, cards.length, () => setTimeout(next, 260));
   };
   next();
 }
@@ -85488,11 +85634,13 @@ function playUnlockSpotlight(item, n, of, release){
   const markSeen = () => {
     if(seenMarked) return;
     seenMarked = true;
-    if(item.kind === "character" && item.character) markUnlocksShown([item.character], []);
+    if(item.kind === "character" && item.character){ markUnlocksShown([item.character], []); if(typeof flareFindCharacterSeen === "function") flareFindCharacterSeen(item.character); }
     if(item.kind === "banner" && item.banner) markUnlocksShown([], [item.banner]);
     if(item.kind === "rankrewards") markUnlocksShown(item.chars || [], item.banners || []);
     if(item.kind === "hint" && item.hint) markFlareHintShown(item.hint);
     if(item.kind === "fx" && item.fx) markUnlocksShown([], [], [item.fx]);
+    /* a secret flare's card: the last of the find that was owed (build 318) */
+    if(item.kind === "flare" && item.flare && typeof markFlareFind === "function") markFlareFind(item.flare, 2);
   };
   const spot = document.createElement("div");
   /* THE KIND CLASS WAS A COLLISION (build 241). A banner's pop-up was
@@ -86127,9 +86275,13 @@ function showRunRewards(run, hooks, opts){
     /* Both stills in the order the full flow plays them (merge of the
        badge and secret-flare rounds): the badge case first, then the
        flare's scene once the case has gone - never both at once. */
+    /* Reduce motion plays no pop-ups, so the still scene is the whole of
+       the find: once it has played nothing is owed (build 318). Muted,
+       nothing plays and nothing is owed either. */
     const rmFlare = () => {
+      if(!(opts && opts.instant) && run.flare && theme.muteBanners) markFlareFind(run.flare, 3);
       if(!(opts && opts.instant) && run.flare && !theme.muteBanners && typeof playFlareFoundScene === "function"
-         && panel.isConnected && !document.querySelector(".sf-scene")) playFlareFoundScene(run.flare, run.flareAll, () => {});
+         && panel.isConnected && !document.querySelector(".sf-scene")) playFlareFoundScene(run.flare, run.flareAll, () => markFlareFind(run.flare, 3));
     };
     if(!(opts && opts.instant) && run.badges && run.badges.length && typeof playBadgeCaseScene === "function"){
       setTimeout(() => { if(panel.isConnected) playBadgeCaseScene(run.badges.slice(), () => setTimeout(rmFlare, 300), run.retroBadges, { alive: () => panel.isConnected }); }, 400);
@@ -86266,25 +86418,28 @@ function showRunRewards(run, hooks, opts){
         seq.add(160, instant => rsLand(unlockRows[n], instant));
         return;
       }
-      /* A flare's own cutscene BEFORE its banner: the small one for the
-         first two, the Void one for the third. */
-      /* THE THIRD, FOURTH AND FIFTH GO THE OTHER WAY ROUND (build 241):
-         "ensure the 3rd 4th 5th flare pop in unlocks comes before the
-         cutscene on that one. And then give a delay to the cutscene, and
-         then after is the character you got pop up." A flare that hands
-         over a character announces itself first, the scene plays a beat
-         later, and the character's own card is the next item after it. */
-      const givesChar = it.kind === "flare" && !!(FLARE_CHARACTER[it.flare] || run.flareAll);
-      if(givesChar && typeof playFlareFoundScene === "function" && !theme.muteBanners){
+      /* A SECRET FLARE: ITS SCENE, THEN ITS CARD, THEN THE CHARACTER
+         (build 318). "It'd be like the rank up one, so cutscene first,
+         then the pop up that you found it. If it's one of the ones where
+         you are getting a character ... cutscene, flare, and then
+         character? That's probably the move." Build 241 had the 3rd-6th
+         the other way round (the card, the scene, the character); every
+         find is the rank-up's order now. The character's card is the next
+         item (rsUnlockItems puts it straight after), its banner after
+         that. Each step crosses the find off what is owed (oweFlareFind),
+         so a results screen cut short leaves the rest for Home. */
+      if(it.kind === "flare"){
+        if(theme.muteBanners){
+          seq.add(420, instant => { markFlareFind(it.flare, 3); rsLand(unlockRows[n], instant); });
+          return;
+        }
+        if(typeof playFlareFoundScene === "function"){
+          seq.add(nextGap(), (instant, release) => playFlareFoundScene(it.flare, run.flareAll, () => { markFlareFind(it.flare, 1); release(); }), true);
+          afterScene = true;
+        }
         seq.add(nextGap(), (instant, release) => playUnlockSpotlight(it, bannerIdx.indexOf(it) + 1, bannerIdx.length, release), true);
-        seq.add(1800, (instant, release) => playFlareFoundScene(it.flare, run.flareAll, release), true);
-        seq.add(120, instant => rsLand(unlockRows[n], instant));
-        afterScene = true;
+        seq.add(200, instant => rsLand(unlockRows[n], instant));
         return;
-      }
-      if(it.kind === "flare" && typeof playFlareFoundScene === "function" && !theme.muteBanners){
-        seq.add(nextGap(), (instant, release) => playFlareFoundScene(it.flare, run.flareAll, release), true);
-        afterScene = true;
       }
       if(!theme.muteBanners){
         seq.add(nextGap(), (instant, release) => playUnlockSpotlight(it, bannerIdx.indexOf(it) + 1, bannerIdx.length, release), true);
@@ -95192,8 +95347,10 @@ const VROOM_READ_AFTER_REVEAL_MS = 8000;       /* the last reveal done -> the cu
 const VROOM_REVEAL_WAIT_MS = 75000;            /* the longest anyone ELSE's reveal is waited for (45s until build 279) */
 const VROOM_OWN_REVEAL_CAP_MS = 150000;        /* and this device's own, only if it has stalled */
 /* Anything that owns the screen while results land: a rank-up (it plays
-   in #supernova-cutscene too), the badge case, Void, a spotlight. */
-const VROOM_SCENE_SELECTOR = "#supernova-cutscene, #badge-cutscene, #void-cutscene, .rs-spot";
+   in #supernova-cutscene too), the badge case, Void, a spotlight - and a
+   secret flare's scene (build 318: a find plays on the room's results as
+   on any other, and the leaderboard must not roll over it). */
+const VROOM_SCENE_SELECTOR = "#supernova-cutscene, #badge-cutscene, #void-cutscene, .rs-spot, .sf-scene";
 
 /* A pill pinned to the bottom of the screen, so it is seen from wherever
    you have scrolled to - "you'd be to see it from where you are on the
