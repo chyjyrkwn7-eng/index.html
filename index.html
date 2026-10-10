@@ -20086,6 +20086,28 @@
     .profile-classday-what{ font-size:.95rem; }
     .profile-classcard-btn{ font-size:.92rem; }
   }
+  /* ---- CLASS (build 319) - see showClass ----
+     Two switchers can be stacked on one tab (Class's own, then the boards
+     or Month / List), and two glass pills one over the other read as
+     clutter. So the second one is words with a sliding underline in the
+     theme's colours: plainly part of the tab you are on, and plainly
+     smaller than the switcher above it. The underline is the shared slider
+     (attachSegSlider) with its pill look taken off. */
+  .navsegment.profiletabs.class-subseg{ background:none; border:0; border-radius:0; box-shadow:none;
+    -webkit-backdrop-filter:none; backdrop-filter:none; will-change:auto;
+    padding:0; gap:.2rem 1.4rem; margin:.15rem auto 1.05rem; }
+  .navsegment.profiletabs.class-subseg .iconbtn{ padding:.5rem .15rem .6rem; font-size:.8rem; border-radius:0;
+    background:none; box-shadow:none; color:rgba(255,255,255,.55); }
+  .navsegment.profiletabs.class-subseg .iconbtn.active{ background:none; box-shadow:none; color:#fff; }
+  .class-subseg > .seg-slider{ background:none !important; box-shadow:none !important; border:0 !important; border-radius:0 !important; }
+  .class-subseg > .seg-slider::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:2px; border-radius:2px;
+    background:linear-gradient(90deg, var(--theme-c1), var(--theme-c2)); }
+  .class-tabs .iconbtn.has-new{ position:relative; }
+  .class-tabs .iconbtn.has-new > .new-dot{ top:.15rem; right:.1rem; width:8px; height:8px; }
+  .class-pane-calendar > .profile-classcard{ margin:0 0 1.3rem; }
+  @media (min-width:40rem){
+    .navsegment.profiletabs.class-subseg{ gap:.2rem 1.8rem; }
+  }
   /* Customize: the name and its Change button on one line. */
   .customize-namerow{
     display:flex; align-items:center; justify-content:flex-start; gap:.7rem;
@@ -21199,6 +21221,55 @@
   .pf-case-new-word{ font-size:.66rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--new-dot); }
   .pf-case-new > .new-dot{ position:relative; top:auto; right:auto; }
   .pf-case-new + .pf-case-arrow{ margin-left:.3rem; }
+  /* ---- THE CASE, SHUT (build 319) - see buildProfileCase ----
+     The button is the case's front and nothing else: no card round it.
+     Top to bottom: the handle standing on the lid, the lid's front, the
+     seam, the base's front with the plate and the count; the latches hang
+     across the seam. Every material is the case's own (.nova-case-*). */
+  /* the badge count beside the level (buildProfileStanding): its own
+     taller hit area, pulled back out so the line does not move */
+  .pf-badgecount{ padding:.6rem 0; margin:-.6rem 0; }
+  .pf-standing .pf-idline{ flex-wrap:nowrap; }
+  .pf-standing .pf-idline .pf-emb{ width:1.6em; height:1.6em; }
+  @media (max-width:22rem){ .pf-standing .pf-idline{ margin-left:-.85rem; margin-right:-.85rem; } }
+  .pf-case.pf-case-closed{ margin:1.1rem 0 0; padding:0; border:0; border-radius:var(--case-r, .2rem); background:none; }
+  .pf-case.pf-case-closed:active{ filter:none; }
+  .pf-standing + .pf-case.pf-case-closed, .pf-goal + .pf-case.pf-case-closed{ margin-top:1.1rem; }
+  .pf-ccase{ position:relative; display:block; box-sizing:border-box; width:100%; padding-top:.5rem;
+    transition:transform .14s ease, filter .14s ease; transform-origin:50% 60%; }
+  .pf-case-closed:active .pf-ccase{ transform:scale(.985); filter:brightness(1.12); }
+  .pf-ccase-handle.nova-case-handle{ position:absolute; z-index:0; top:0; left:50%; width:30%; max-width:8.5rem; height:.42rem; transform:translateX(-50%); }
+  /* its mounts go DOWN into the lid here, not up into the case as when it hangs */
+  .pf-ccase-handle.nova-case-handle::before, .pf-ccase-handle.nova-case-handle::after{ top:60%; height:110%; }
+  .pf-ccase-lid{ position:relative; z-index:1; display:block; height:.85rem; border-radius:var(--case-r) var(--case-r) 0 0; --case-guard-w:3.2%;
+    background-image:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0) 45%, rgba(0,0,0,.32)), var(--case-shell-bg);
+    background-size:100% 100%, var(--case-shell-size);
+    box-shadow:0 0 0 1px rgba(0,0,0,.62), inset 0 1px 0 rgba(255,255,255,.14); }
+  .pf-ccase-lid.nova-case-wall::before{ border-radius:var(--case-r) 0 0 0; }
+  .pf-ccase-lid.nova-case-wall::after{ border-radius:var(--case-r) 0 0 0; }
+  .pf-ccase-front{ position:relative; z-index:1; display:flex; align-items:center; justify-content:center; box-sizing:border-box;
+    min-height:3.3rem; margin-top:1px; padding:.4rem 3.6rem .45rem; border-radius:0 0 var(--case-r) var(--case-r); --case-guard-w:3.2%;
+    background-image:linear-gradient(180deg, rgba(0,0,0,.38), rgba(0,0,0,0) 32%, rgba(255,255,255,.03) 70%, rgba(0,0,0,.22)), var(--case-shell-bg);
+    background-size:100% 100%, var(--case-shell-size);
+    box-shadow:0 0 0 1px rgba(0,0,0,.62), inset 0 1px 0 rgba(255,255,255,.07), 0 6px 14px rgba(0,0,0,.42); }
+  .pf-ccase-mid{ display:flex; flex-direction:column; align-items:center; gap:.28rem; min-width:0; }
+  .pf-ccase .nova-case-sideplate{ font-size:.5rem; padding:.2rem .62rem; }
+  .pf-case-closed .pf-case-count{ margin-left:0; font-size:.92rem; font-weight:800; color:rgba(255,255,255,.9);
+    text-shadow:0 1px 0 rgba(0,0,0,.65); white-space:nowrap; }
+  .pf-case-closed .pf-case-arrow{ color:rgba(255,255,255,.78); font-size:1.35em; margin-left:.4rem; }
+  /* a latch, shut: the hasp over the lid, the catch plate below the seam */
+  .pf-ccase-latch{ position:absolute; z-index:2; top:.82rem; left:clamp(1rem, 7%, 3.2rem); width:1.85rem;
+    display:flex; flex-direction:column; align-items:center; pointer-events:none; }
+  .pf-ccase-latch.is-r{ left:auto; right:clamp(1rem, 7%, 3.2rem); }
+  .pf-ccase-hasp.nova-case-hasp{ width:58%; height:.62rem; }
+  .pf-ccase-catch.nova-case-latch{ position:relative; width:100%; height:1.15rem; margin-top:-1px; }
+  @media (min-width:40rem){
+    .pf-ccase-front{ min-height:3.6rem; padding-left:4.4rem; padding-right:4.4rem; }
+    .pf-ccase-latch{ width:2.1rem; }
+    .pf-ccase .nova-case-sideplate{ font-size:.54rem; }
+    .pf-case-closed .pf-case-count{ font-size:1rem; }
+  }
+  [data-reduce-motion="true"] .pf-ccase{ transition:none; }
   .pf-strip.badge-strip{ display:grid; grid-template-columns:repeat(8, minmax(0, 1fr)); gap:.35rem; }
   .pf-strip.badge-strip .badge-strip-cell{ width:auto; height:auto; aspect-ratio:1; display:block; margin:0; }
   .pf-strip.badge-strip .badge-strip-cell svg{ display:block; width:100%; height:100%; }
@@ -27623,7 +27694,7 @@
       </button>
       <button type="button" class="bottomtab" id="bottomtab-rewards" data-dest="rewards">
         <span class="bottomtab-icon"></span>
-        <span class="bottomtab-label">Leaderboard</span>
+        <span class="bottomtab-label">Class</span>
       </button>
       <button type="button" class="bottomtab" id="bottomtab-settings" data-dest="settings">
         <span class="bottomtab-icon"></span>
@@ -48896,7 +48967,7 @@ function attachPresence(){
   try{ presenceObs.observe(stage, { childList: true }); }catch(e){ presenceObs = null; }
 }
 let presenceObs = null;
-const PRESENCE_SCREENS = ".screen-friends, .screen-profile";
+const PRESENCE_SCREENS = ".screen-friends";
 function detachPresence(){
   if(presenceUnsub){ try{ presenceUnsub(); }catch(e){} presenceUnsub = null; }
   if(presenceTick){ clearInterval(presenceTick); presenceTick = null; }
@@ -67942,7 +68013,7 @@ const PROFILE_TIPS_289 = [
   { target: ".profile-hero .pf-goal", align: "left", vplacement: "above",
     text: "The rank challenges for your next rank, ticked off as you get there, and what it unlocks. Tap to see every rank." },
   { target: ".profile-hero .pf-case", align: "left", vplacement: "above",
-    text: "Your badges \u2014 one per unit, earned with enough hundos (100% on the whole unit) in it. Tap to open your badge case and see how close each one is." }
+    text: "Your badge case. One badge per unit, earned with enough hundos (100% on the whole unit) in it. Tap to open it and see how close each one is." }
 ];
 
 function startSimpleTour(steps, onComplete, _waitedMs){
@@ -68206,7 +68277,7 @@ function startMainMenuTour(){
     { target: "#bottomtab-home", align: "left", vplacement: "above",
       text: "Home always brings you back here, no matter where you are in the app." },
     { target: "#bottomtab-rewards", align: "left", vplacement: "above",
-      text: "Leaderboard is the class boards \u2014 this week, overall and hundos, updating live. Search for anyone, or tap Find me." },
+      text: "Class holds the class rankings, your friends and the class calendar. The rankings update live." },
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
       text: "Profile is you: your rank, level and badges, Customize for your name, character, banner and colour, and your stats." },
     { target: "#bottomtab-settings", align: "right", vplacement: "above",
@@ -72805,7 +72876,7 @@ function renderFriendChatList(){
   intro.className = "chatdock-note";
   intro.textContent = pubs.length
     ? "A chat with each of your friends. Messages clear after a day."
-    : "Your friends appear here, each with their own chat. Add friends from Profile \u203a Friends.";
+    : "Your friends appear here, each with their own chat. Add friends from Class \u203a Friends.";
   chatTabBody.appendChild(intro);
   if(!pubs.length){
     const go = document.createElement("button");
@@ -73673,7 +73744,7 @@ function openChatInviteSheet(){
   if(!people.length){
     const none = document.createElement("p");
     none.className = "friend-hint";
-    none.textContent = "No friends yet \u2014 add someone from Profile \u203a Friends first.";
+    none.textContent = "No friends yet \u2014 add someone from Class \u203a Friends first.";
     body.appendChild(none);
   } else {
     const list = document.createElement("div");
@@ -80226,7 +80297,7 @@ function showAddToHomeNotice(){
    measures the other (topNoticeOffset skips the bar it is positioning),
    so the second parks below the first. */
 const NOTICE_OBSTRUCTIONS = [".wrap > .top", ".wrap > .count", ".back-link",
-                             ".panel > .navsegment", ".welcome-build",
+                             ".panel > .navsegment", ".class-pane > .navsegment", ".welcome-build",
                              ".vroom-chat-alert",
                              ];
 
@@ -93640,7 +93711,7 @@ function openInviteFriendsSheet(roomCode){
         ? "Loading your friends\u2026"
         : store.leaderboardOptIn === false
           ? "Turn on class sharing in Settings to use friends."
-          : "No friends yet \u2014 add someone from Profile \u203a Friends first.";
+          : "No friends yet \u2014 add someone from Class \u203a Friends first.";
       body.appendChild(none);
       return;
     }
@@ -98040,44 +98111,10 @@ function renderLeaderboardRows(rows, entries){
   });
 }
 
+/* The old standalone board ("ranked by correct answers") is retired: its
+   name now opens the class rankings like every other way in (build 319). */
 function showLeaderboard(){
-  setActiveNav(null);
-  countEl.textContent = "Leaderboard";
-
-  const panel = document.createElement("section");
-  panel.className = "panel screen-leaderboard";
-
-  const title = document.createElement("h1");
-  title.className = "cal-title"; title.textContent = "Leaderboard";
-  panel.appendChild(title);
-
-  const sub = document.createElement("p");
-  sub.className = "cal-sub";
-  sub.textContent = "Everyone sharing their progress, ranked by correct answers.";
-  panel.appendChild(sub);
-
-  const list = document.createElement("div");
-  list.className = "cal-list";
-  panel.appendChild(list);
-
-  renderLeaderboardList(list);
-
-  /* Done button moved to the bottom, per explicit request — this screen
-     was the only one of Settings/Profile/Rewards/Leaderboard still using
-     a top back-link instead of the bottom settings-done-bar every other
-     one of these already uses. Still returns to Settings (not Home),
-     same as the link it replaces — only its position changed, not
-     where it goes, since Leaderboard is reached FROM Settings rather
-     than from the bottom tab bar the way Profile/Rewards are. */
-  /* No Done button. It returned to Settings, and the bottom tab bar -
-     which is visible on this screen - has a Settings tab that does the
-     same thing. Answer Review keeps its own button by contrast: that
-     one says "Finished" and goes to the test Setup screen, which no tab
-     reaches, so it is not redundancy. The end-of-test summary keeps
-     its exit too, since summarize() force-hides the tab bar. */
-
-  stage.replaceChildren(panel);
-  toTop();
+  return showClass("rankings");
 }
 
 /* ---------- Customize ---------------------------------------------------
@@ -99303,8 +99340,9 @@ function attachFriendsBoardListener(){
       /* Only redraw while Friends is actually the screen on stage -
          a listener that outlives its screen must not rebuild over
          whatever replaced it. */
-      const el = stage && stage.firstElementChild;
-      if(!(el && el.classList && el.classList.contains("screen-friends"))) return;
+      /* the Friends tab of Class, showing (build 319) */
+      const el = stage && stage.querySelector(":scope > .screen-class > .class-pane-friends");
+      if(!el || el.hidden || el.dataset.built !== "1") return;
       /* NEVER UNDER SOMEBODY'S FINGERS. A rebuild while the code field
          is focused or part-typed throws the input away along with what
          they had entered. */
@@ -99330,7 +99368,16 @@ function attachFriendsBoardListener(){
    until something else caused a redraw. */
 let refreshPresenceViews = function(){};
 
+/* Friends is the Friends tab of Class now (build 319). Asked for while
+   that tab is showing, the tab redraws in place - that is how a request
+   accepted, a code sent or a presence change repaints it; asked for from
+   anywhere else, Class opens on it. */
 function showFriends(){
+  const pane = stage.querySelector(":scope > .screen-class > .class-pane-friends");
+  if(pane && !pane.hidden && pane.dataset.built === "1"){ renderFriendsPane(pane); return; }
+  showClass("friends");
+}
+function renderFriendsPane(panel){
   attachPresence();
   /* Repaint when presence lands, because the listener attaches after
      this screen is already drawn and its first snapshot is what puts
@@ -99341,6 +99388,7 @@ function showFriends(){
      load-bearing rather than defensive. */
   refreshPresenceViews = () => {
     if(!document.querySelector(".friend-sect")) return;
+    if(panel.hidden || !panel.isConnected) return;
     const el = document.activeElement;
     if(el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
     if(document.querySelector(".invite-overlay .person-card")) return;
@@ -99352,25 +99400,12 @@ function showFriends(){
     if(friendsViewSignature() === friendsShownSignature) return;
     showFriends();
   };
-  window.forceHideBottomTabs = false;
-  setActiveNav("profile");
-  countEl.textContent = "Friends";
-  updateHeaderTitle();
   if(!leaderboardRows || !leaderboardRows.length) attachFriendsBoardListener();
   friendsShownSignature = friendsViewSignature();
 
-  const panel = document.createElement("section");
-  panel.className = "panel screen-friends";
-
-  const back = document.createElement("button");
-  back.type = "button"; back.className = "back-link";
-  fillBackLabel(back, "Profile");
-  back.addEventListener("click", () => showProfile("profile"));
-  panel.appendChild(back);
-
-  const title = document.createElement("p");
-  title.className = "cal-title"; title.textContent = "Friends";
-  panel.appendChild(title);
+  /* No back link and no title: the Class tab's own switcher says where
+     this is. Redrawn in place, so it starts empty. */
+  panel.replaceChildren();
 
   const rows = rowsByPublicId();
 
@@ -99673,32 +99708,83 @@ function showFriends(){
     ])));
     panel.appendChild(os);
   }
-
-  stage.replaceChildren(panel);
-  toTop();
 }
 
+/* THE CLASS 26E BOX - "add a box below the top box and make it dedicated
+   to the class calendar and class days remaining, maybe you could show
+   what's on the schedule for today and the next class day". It says what
+   today is, what the next class day is and how many are left. It sat under
+   the Profile card until build 319 and heads Class > Calendar now, which
+   is why it has no "View class calendar" button any more: the calendar is
+   right under it. */
+function buildClassCard(){
+  const classSect = document.createElement("div");
+  classSect.className = "profile-classcard";
+
+  const classHead = document.createElement("div");
+  classHead.className = "profile-classcard-head";
+  const classTitle = document.createElement("p");
+  classTitle.className = "profile-classcard-title";
+  classTitle.textContent = "Class 26E";
+  const daysLeftNow = classDaysRemaining();
+  const classCount = document.createElement("span");
+  classCount.className = "profile-classcard-count";
+  classCount.textContent = daysLeftNow + (daysLeftNow === 1 ? " class day left" : " class days left");
+  /* Off by choice, not by accident: a countdown to graduation is either
+     the best thing on the screen or the worst, depending on the week. */
+  classCount.hidden = theme.showClassDaysLeft === false;
+  /* NO TESTS-LEFT PILL (build 318): "Remove the amount of tests left as
+     well." Build 314 put one beside the class days; the class days pill
+     stays on its own. testsRemaining() is kept - the calendar marks the
+     same exam days it counted. */
+  const counts = document.createElement("span");
+  counts.className = "profile-classcard-counts";
+  counts.append(classCount);
+  classHead.append(classTitle, counts);
+  classSect.appendChild(classHead);
+
+  /* Today, then next. One builder, because the only thing that differs is
+     the label and which entry it reads. */
+  function classDayRow(label, entry, isToday){
+    const row = document.createElement("div");
+    row.className = "profile-classday" + (isToday ? " is-today" : "");
+    const lab = document.createElement("span");
+    lab.className = "profile-classday-label";
+    lab.textContent = label;
+    const body = document.createElement("span");
+    body.className = "profile-classday-body";
+    if(entry){
+      const when = document.createElement("span");
+      when.className = "profile-classday-when";
+      when.textContent = formatCalendarDate(entry.date);
+      const what = document.createElement("span");
+      what.className = "profile-classday-what" + (entry.holiday ? " is-holiday" : "");
+      what.textContent = entry.text;
+      body.append(when, what);
+    } else {
+      const what = document.createElement("span");
+      what.className = "profile-classday-what is-none";
+      /* Two genuinely different "nothing" cases: no class today is an
+         ordinary Saturday, no class ever again is the course being over. */
+      what.textContent = isToday ? "No class today" : "No class days left";
+      body.appendChild(what);
+    }
+    row.append(lab, body);
+    return row;
+  }
+  classSect.appendChild(classDayRow("Today", todaysClassEntry(), true));
+  classSect.appendChild(classDayRow("Next", nextClassEntry(), false));
+  return classSect;
+}
+/* The class calendar is the Calendar tab of Class now (build 319). */
 function showCalendar(){
-  setActiveNav(null);
-  countEl.textContent = "Calendar";
-
-  const panel = document.createElement("section");
-  panel.className = "panel screen-calendar";
-
-  panel.appendChild(buildBackLink("Back to Profile", () => showProfile()));
-
-  const title = document.createElement("h1");
-  title.className = "cal-title"; title.textContent = "Class Calendar";
-  panel.appendChild(title);
-
-  /* The days-remaining line deliberately removed from here \u2014 per
-     explicit request, that number should only ever surface through
-     its own dedicated button in Profile, not live permanently on
-     this screen too. */
-  const sub = document.createElement("p");
-  sub.className = "cal-sub";
-  sub.textContent = "The course calendar \u2014 every class day, start to finish.";
-  panel.appendChild(sub);
+  return showClass("calendar");
+}
+/* The Calendar tab: the Class 26E box that used to sit on Profile (today,
+   the next class day, the days left), then the calendar as it was. No back
+   link and no title - the Class switcher above says where this is. */
+function buildCalendarPane(panel){
+  panel.appendChild(buildClassCard());
 
   /* The same .navsegment/.iconbtn switcher the tabbed screens use, per
      the shared-pattern convention - not a third kind of toggle. */
@@ -99710,7 +99796,7 @@ function showCalendar(){
      present in the DOM, reports two buttons 61px and 43px wide, and
      draws nothing. .profiletabs is what carries display:flex,
      width:fit-content and the centring. */
-  seg.className = "navsegment profiletabs";
+  seg.className = "navsegment profiletabs cal-viewseg class-subseg";
   const monthTabBtn = document.createElement("button");
   monthTabBtn.type = "button"; monthTabBtn.className = "iconbtn"; monthTabBtn.textContent = "Month";
   const listTabBtn = document.createElement("button");
@@ -100229,16 +100315,14 @@ function showCalendar(){
      to the leaderboard" - the same contained gesture the Leaderboard's
      boards use (attachTabSwipe), and the switcher's bubble slides with
      it because it follows the active button (attachSegSlider). */
-  attachTabSwipe(panel, ["month", "list"], () => calendarView, selectCalendarView);
+  /* along the Month / List switcher only (build 319) - see buildRankingsPane */
+  attachTabSwipe(panel, ["month", "list"], () => calendarView, selectCalendarView, { zone: seg });
 
   render("");
   searchInput.addEventListener("input", () => render(searchInput.value));
   renderGrid();
   renderDayCard();
   selectCalendarView(calendarView);
-
-  stage.replaceChildren(panel);
-  toTop();
 }
 
 /* The dedicated answer-review screen, per explicit request \u2014 reuses
@@ -101079,7 +101163,19 @@ function buildProfileStanding(prog, rankNow){
   lv.className = "pf-level"; lv.textContent = "Level " + prog.level;
   const tot = document.createElement("span");
   tot.className = "pf-xp-total"; tot.textContent = prog.total.toLocaleString() + " total XP";
-  line.append(lv);
+  /* THE BADGE COUNT BESIDE THE LEVEL (build 319): "at the top where it
+     says level and xp rank at the top should mention like '8 badges' or
+     whatever there too. Similar to how it says your current level." The
+     same type as the level, after the same dot, so the two read as one
+     pair. A tap on it opens the Badges page; a tap anywhere else on this
+     block still opens the Rank screen (see the click handler below). It
+     is a span, not a button: a button inside this button is invalid and
+     check-curve holds the block to no nested controls. */
+  const nBadges = badgeCountOf(store);
+  const bc = document.createElement("span");
+  bc.className = "pf-badgecount";
+  bc.textContent = nBadges + (nBadges === 1 ? " badge" : " badges");
+  line.append(lv, sep("c"), bc);
   box.appendChild(line);
   const xp = document.createElement("span");
   xp.className = "pf-xp";
@@ -101120,8 +101216,12 @@ function buildProfileStanding(prog, rankNow){
   }
   box.appendChild(xp);
   box.setAttribute("aria-label", (rankNow ? RANK_DISPLAY_NAME[rankNow] + " rank, " : "No rank yet, ") +
-    "level " + prog.level + ", " + prog.total.toLocaleString() + " total XP. " + (noteText || "") + " Open the Rank screen.");
-  box.addEventListener("click", () => showRanksScreen("ranks"));
+    "level " + prog.level + ", " + bc.textContent + ", " + prog.total.toLocaleString() + " total XP. " + (noteText || "") + " Open the Rank screen.");
+  box.addEventListener("click", e => {
+    const t = e && e.target;
+    if(t && t.closest && t.closest(".pf-badgecount")) return showRanksScreen("badges");
+    showRanksScreen("ranks");
+  });
   return box;
 }
 /* THE PROFILE BAR AFTER XP WAS EARNED INTO A FULL BAR (build 317). The
@@ -101179,6 +101279,18 @@ function profileXpEarnedSince(box){
 function fitProfileIdLine(root){
   (root || document).querySelectorAll(".pf-idline").forEach(line => {
     line.classList.remove("is-two-rows");
+    /* ONE LINE, ALWAYS (build 319): "Rank · Level N · N badges" never
+       wraps (.pf-idline is nowrap); if it is wider than the card it comes
+       down in size, a half pixel at a time, rather than breaking. Measured:
+       "Supernova · Level 80 · 16 badges" is ~330px at the Pro Max's size
+       against 312px of card, and ~290px against 224px on a 320px phone. */
+    line.style.fontSize = "";
+    if(line.getClientRects().length){
+      let fs = parseFloat(getComputedStyle(line).fontSize) || 15;
+      for(let i = 0; i < 16 && line.scrollWidth > line.clientWidth + 1 && fs > 10; i++){
+        fs -= .5; line.style.fontSize = fs + "px";
+      }
+    }
     const first = line.firstElementChild, tot = line.querySelector(".pf-xp-total");
     if(!first || !tot || !line.getClientRects().length) return;
     if(tot.getBoundingClientRect().top > first.getBoundingClientRect().top + 4) line.classList.add("is-two-rows");
@@ -101336,67 +101448,64 @@ function buildProfileGoal(prog){
   box.addEventListener("click", () => showRanksScreen("ranks"));
   return box;
 }
+/* ---- THE CASE, SHUT (build 319) ----
+   "the badge case on the Profile card takes away from the badge tab and it
+   makes the profile box unnecessarily long. I think no case there would be
+   best" - but the Badges page is still opened from here, and only "if it's
+   easy to tell it opens up the case". So the open case came off and the
+   FRONT of the same case, shut, took its place: one slim row in the case's
+   own shell, trim, corner guards, latches with their hasps over the lid's
+   seam, the handle on top and the BADGE CASE plate - the parts and classes
+   buildOpenBadgeCase and the cutscene's case are drawn from, not a second
+   style - with the count and an arrow on its face. The count is how many
+   you have of how many there are. The new-badge dot keeps its place against
+   the arrow (build 317). A tap opens the Badges page, where the case opens. */
 function buildProfileCase(have, total){
   const box = document.createElement("button");
   box.type = "button";
-  box.className = "pf-case";
-  const head = document.createElement("span");
-  head.className = "pf-case-head";
-  /* THE NEW-BADGE DOT SITS BESIDE THE ARROW (build 317, round two). On
-     the arrow it hid it ("you can't see the arrow"); after the words
-     "Badge case" it sat in a row of gold badges and "blends in with the
-     badges now and it doesn't look like a notification thing, should be
-     near the arrow still somehow". So the count and its arrow are two
-     spans, and a new badge puts the word "New" and the dot between them,
-     right up against the arrow: a notification that says where to tap. */
-  const n = document.createElement("span");
-  n.className = "pf-case-count";
-  const num = document.createElement("span");
-  num.className = "pf-case-num"; num.textContent = have + " of " + total;
-  const arrow = document.createElement("span");
-  arrow.className = "pf-case-arrow"; arrow.setAttribute("aria-hidden", "true"); arrow.textContent = "›";
+  box.className = "pf-case pf-case-closed";
+  const mk = (cls, tag) => { const e = document.createElement(tag || "span"); e.className = cls; return e; };
+  const kase = mk("pf-ccase nova-case");
+  kase.setAttribute("aria-hidden", "true");
+  const handle = mk("pf-ccase-handle pf-case-handle nova-case-handle");
+  const lid = mk("pf-ccase-lid nova-case-shell nova-case-wall");
+  const front = mk("pf-ccase-front pf-case-front nova-case-shell nova-case-wall");
+  /* a latch: its hasp hooked over the lid, the plate with its catch on the
+     front - the cutscene's latch (bc-latch / bc-hasp), seen shut */
+  const latch = side => {
+    const l = mk("pf-ccase-latch is-" + side);
+    l.append(mk("nova-case-hasp pf-ccase-hasp", "i"), mk("nova-case-latch pf-ccase-catch", "i"));
+    return l;
+  };
+  const mid = mk("pf-ccase-mid");
+  const n = mk("pf-case-count");
+  const num = mk("pf-case-num");
+  num.textContent = have + " of " + total + " badges";
+  const arrow = mk("pf-case-arrow");
+  arrow.textContent = "\u203a";
   n.append(num, arrow);
-  /* No "Badge case" heading over the tray any more (build 317, badge2):
-     the name is on the case's side, the plate between the latches, the
-     same as the cutscene's case and the Badges tab's. */
-  head.append(n);
-  box.appendChild(head);
-  /* THE CUTSCENE'S CASE, SMALL (build 319): "the profile makes it
-     elongated". It was a wide strip of sixteen in a shut shell; it is the
-     same open case as the cutscene's and the Badges tab's now, from the
-     one builder, at the Profile's size. A badge not found is its empty
-     slot. */
-  try{
-    box.appendChild(buildOpenBadgeCase("profile", unit => {
-      const has = unitBadgeEarned(unit);
-      const cell = document.createElement("span");
-      cell.className = "badge-strip-cell ncase-cell" + (has ? " is-earned" : "");
-      if(has){ try{ const bt = badgeThemeFor(unit); if(bt && bt.p) cell.style.setProperty("--badge-glow", bt.p); }catch(e){} }
-      try{ cell.appendChild(buildUnitBadgeSVG(unit, has)); }catch(e){}
-      if(has) cell.title = unit + " Badge";
-      return cell;
-    }));
-  }catch(e){}
+  mid.append(buildCaseSidePlate("pf-case-sideplate"), n);
+  front.append(mid);
+  kase.append(handle, lid, front, latch("l"), latch("r"));
+  box.appendChild(kase);
   let fresh = 0;
   try{ fresh = badgeNewCount(); }catch(e){}
   if(fresh){
     box.classList.add("has-new");
-    const tag = document.createElement("span");
-    tag.className = "pf-case-new";
-    const word = document.createElement("span");
-    word.className = "pf-case-new-word"; word.textContent = "New";
+    const tag = mk("pf-case-new");
+    const word = mk("pf-case-new-word");
+    word.textContent = "New";
     tag.append(word, buildNewDot());
     n.insertBefore(tag, arrow);
   }
-  box.setAttribute("aria-label", "Badge case, " + have + " of " + total + " found" + (fresh ? ", " + fresh + " new" : "") + ". Open the badge case.");
+  box.setAttribute("aria-label", "Badge case, " + have + " of " + total + " badges found" + (fresh ? ", " + fresh + " new" : "") + ". Open the badge case.");
   box.addEventListener("click", () => showRanksScreen("badges"));
   return box;
 }
 
 function showProfile(defaultTab){
-  /* The Profile card counts how many friends are online, so it needs
-     presence too - and like Friends it detaches on the next screen. */
-  attachPresence();
+  /* No presence here since build 319: the Friends box that counted who is
+     online moved to Class > Friends, which attaches it itself. */
   refreshPresenceViews = function(){};
   /* Validated, not just defaulted, and that is the whole of a real bug:
      showProfile was passed STRAIGHT to addEventListener and to
@@ -101693,88 +101802,6 @@ function showProfile(defaultTab){
   heroTop.append(heroAvatar, heroId);
   heroSect.appendChild(heroTop);
 
-  /* The class gets a box of its own below the card, not one line inside
-     it - "add a box below the top box and make it dedicated to the class
-     calendar and class days remaining, maybe you could show what's on the
-     schedule for today and the next class day". So it says what today is,
-     what the next class day is, how many are left, and carries the two
-     buttons. .profile-classline stays as a class name so the Profile
-     tour's step still has something to point at. */
-  const classSect = document.createElement("div");
-  classSect.className = "profile-classcard";
-
-  const classHead = document.createElement("div");
-  classHead.className = "profile-classcard-head";
-  const classTitle = document.createElement("p");
-  classTitle.className = "profile-classcard-title";
-  classTitle.textContent = "Class 26E";
-  const daysLeftNow = classDaysRemaining();
-  const classCount = document.createElement("span");
-  classCount.className = "profile-classcard-count";
-  classCount.textContent = daysLeftNow + (daysLeftNow === 1 ? " class day left" : " class days left");
-  /* Off by choice, not by accident: a countdown to graduation is either
-     the best thing on the screen or the worst, depending on the week. */
-  classCount.hidden = theme.showClassDaysLeft === false;
-  /* NO TESTS-LEFT PILL (build 318): "Remove the amount of tests left as
-     well." Build 314 put one beside the class days; the class days pill
-     stays on its own. testsRemaining() is kept - the calendar marks the
-     same exam days it counted. */
-  const counts = document.createElement("span");
-  counts.className = "profile-classcard-counts";
-  counts.append(classCount);
-  classHead.append(classTitle, counts);
-  classSect.appendChild(classHead);
-
-  /* Today, then next. One builder, because the only thing that differs is
-     the label and which entry it reads. */
-  function classDayRow(label, entry, isToday){
-    const row = document.createElement("div");
-    row.className = "profile-classday" + (isToday ? " is-today" : "");
-    const lab = document.createElement("span");
-    lab.className = "profile-classday-label";
-    lab.textContent = label;
-    const body = document.createElement("span");
-    body.className = "profile-classday-body";
-    if(entry){
-      const when = document.createElement("span");
-      when.className = "profile-classday-when";
-      when.textContent = formatCalendarDate(entry.date);
-      const what = document.createElement("span");
-      what.className = "profile-classday-what" + (entry.holiday ? " is-holiday" : "");
-      what.textContent = entry.text;
-      body.append(when, what);
-    } else {
-      const what = document.createElement("span");
-      what.className = "profile-classday-what is-none";
-      /* Two genuinely different "nothing" cases: no class today is an
-         ordinary Saturday, no class ever again is the course being over. */
-      what.textContent = isToday ? "No class today" : "No class days left";
-      body.appendChild(what);
-    }
-    row.append(lab, body);
-    return row;
-  }
-  classSect.appendChild(classDayRow("Today", todaysClassEntry(), true));
-  classSect.appendChild(classDayRow("Next", nextClassEntry(), false));
-
-  /* One button, full width. The Class days remaining button that used to
-     sit beside it said the same thing the count in this card's own header
-     already says, so it was a control whose only job was to repeat the
-     line above it. The count itself stays, and Settings can switch it off
-     for anybody who would rather not watch it tick down. */
-  const classBtns = document.createElement("div");
-  classBtns.className = "profile-classcard-btns";
-
-  const classLine = document.createElement("button");
-  classLine.type = "button";
-  /* ghost, which on this surface renders as the black pill rather than
-     the pale one - asked for as "make the button black". */
-  classLine.className = "next ghost profile-classcard-btn profile-classline";
-  classLine.textContent = "View class calendar";
-  classLine.addEventListener("click", showCalendar);
-  classBtns.appendChild(classLine);
-
-  classSect.appendChild(classBtns);
 
   /* ---- WHERE YOU STAND, WHAT IS NEXT, WHAT YOU HOLD (build 315) ----
      See buildProfileStanding. */
@@ -101791,90 +101818,11 @@ function showProfile(defaultTab){
      its new-badge dot still against the arrow. */
   heroSect.appendChild(buildProfileGoal(prog));
   heroSect.appendChild(buildProfileCase(badgeCount, totalUnitsForBadges));
-  /* The class no longer rides at the foot of the identity card. It was
-     one line there because it was one line of content; now that it is
-     today's schedule, the next class day and a count, it is its own box
-     directly below - which is also what gave the card above the room to
-     grow. */
+  /* THE CLASS AND FRIENDS BOXES MOVED TO THE CLASS TAB (build 319): the
+     Class 26E box is at the top of Class > Calendar (buildClassCard) and
+     Friends is Class > Friends. Profile is the card about you. */
   identityTab.appendChild(heroSect);
-  identityTab.appendChild(classSect);
 
-  /* FRIENDS IS ITS OWN CARD NOW. It was a second button inside the
-     Class 26E box, beside View class calendar - which made "who you
-     know" read as a fact about the course, and buried the one place
-     on this screen where somebody else can be waiting on you.
-     Reported as wanting to be its own thing, and it earns that: it is
-     the only card here with live state in it.
-     Built as a card rather than a button so it can SAY something
-     before you tap it - how many friends, how many are on right now,
-     how many are waiting on an answer. A row that only says "Friends"
-     is a button wearing a card's clothes. */
-  /* .profile-classcard, not a surface of its own: this sits directly
-     under the Class 26E card and the two are a pair of destinations, so
-     they share the card, the header row, the serif title and the
-     coloured figure in the corner. A second card an inch away in a
-     different shape reads as a mistake, and it did - the first pass
-     gave this one a small uppercase label beside the class card's
-     serif heading. */
-  const friendSect = document.createElement("div");
-  friendSect.className = "profile-classcard profile-friendcard";
-
-  const fHead = document.createElement("div");
-  fHead.className = "profile-classcard-head";
-  const fTitle = document.createElement("p");
-  fTitle.className = "profile-classcard-title";
-  fTitle.textContent = "Friends";
-  const friendIds = friendPublicIds();
-  const pendingN = incomingFriendRequests().length;
-  const onlineN = (leaderboardRows || [])
-    .filter(e => friendIds.indexOf(e.pub) >= 0 && isOnline(e)).length;
-  const fCount = document.createElement("span");
-  fCount.className = "profile-classcard-count";
-  /* Worded, like "178 class days left" opposite it, rather than a bare
-     numeral. A lone "1" in the corner of a card says nothing about
-     what it counts. */
-  fCount.textContent = friendIds.length
-    ? friendIds.length + (friendIds.length === 1 ? " friend" : " friends")
-    : "none yet";
-  fHead.append(fTitle, fCount);
-  friendSect.appendChild(fHead);
-
-  const fLine = document.createElement("p");
-  fLine.className = "profile-friendcard-line";
-  if(!friendIds.length){
-    fLine.textContent = "Nobody yet \u2014 swap codes with a classmate.";
-  } else if(onlineN){
-    fLine.textContent = onlineN + (onlineN === 1 ? " is online now" : " are online now");
-    fLine.classList.add("is-online");
-  } else {
-    fLine.textContent = "Nobody online right now.";
-  }
-  friendSect.appendChild(fLine);
-
-  /* The count of people waiting rides up here rather than on the
-     button's label, because a request nobody is told about is a
-     request nobody answers - and inside the old button it was a
-     middle dot and a number on a line already carrying a word. */
-  if(pendingN){
-    const fPend = document.createElement("p");
-    fPend.className = "profile-friendcard-pending";
-    fPend.textContent = pendingN === 1
-      ? "1 friend request waiting" : pendingN + " friend requests waiting";
-    friendSect.appendChild(fPend);
-  }
-
-  const fBtns = document.createElement("div");
-  fBtns.className = "profile-classcard-btns";
-  const friendsLine = document.createElement("button");
-  friendsLine.type = "button";
-  friendsLine.className = "next ghost profile-classcard-btn profile-classline";
-  friendsLine.textContent = pendingN ? "Open friends" : "Manage friends";
-  if(pendingN) friendsLine.classList.add("has-pending");
-  friendsLine.addEventListener("click", showFriends);
-  fBtns.appendChild(friendsLine);
-  friendSect.appendChild(fBtns);
-
-  identityTab.appendChild(friendSect);
 
   /* Kicked off when the Profile tab is actually SHOWN, not when it is
      built - showProfile("stats") builds this panel hidden, and a bar
@@ -102134,20 +102082,8 @@ function showProfile(defaultTab){
          at the button that opens the screen those controls live on,
          which is the thing somebody on THIS screen needs to know. */
       ...PROFILE_TIPS_289,
-      /* .profile-classline, NOT .cal-profile-row. This step pointed at
-         .cal-profile-row, which on THIS screen does not exist - it is
-         the Settings class for the Share / Add to Home Screen pair. The
-         calendar row on Profile has been .profile-classline since it
-         moved back inside the identity card. renderStep() skips a step
-         whose target is missing (`if(!el){ advance(); return; }`), so
-         this tooltip has simply never appeared, in silence. A tour step
-         is only as good as its selector, and nothing in the app fails
-         loudly when one rots. */
-      { target: ".profile-classline", align: "left", vplacement: "below",
-        /* The row stopped counting down the days when it was asked to
-           just open the calendar; this line went on describing the
-           counter for a while after that. */
-        text: "Opens the full course calendar \u2014 every class day, and every question you have starred on it." },
+      /* NO CALENDAR STEP (build 319): the class calendar left Profile for
+         the Class tab, where it is a tab of its own (Class > Calendar). */
       /* This used to target ".points-progress-sect" and talk about stars
          — leftover copy from a stars/points summary box that lived
          here before it was removed as a duplicate of Rewards' own
@@ -102250,7 +102186,11 @@ function attachSegSlider(seg, activeSel){
   try{ new ResizeObserver(() => place(false)).observe(seg); }catch(e){}
   requestAnimationFrame(() => place(false));
 }
-function attachTabSwipe(panel, order, getCurrent, select){
+/* opts.zone: only a touch that STARTS inside this element counts (a
+   switcher of its own inside a tab, build 319). opts.skip: a touch that
+   starts inside anything matching this is left alone (that switcher's). */
+function attachTabSwipe(panel, order, getCurrent, select, opts){
+  opts = opts || {};
   /* Listen across the whole screen area, not just the panel. A panel is
      only as tall as its own content, and on a tablet most of the screen
      is the empty space UNDERNEATH it - which is exactly where a thumb
@@ -102264,12 +102204,24 @@ function attachTabSwipe(panel, order, getCurrent, select){
      to climb and silently fell back to the panel itself - which is the
      narrow surface this is meant to stop relying on. */
   const surface = document.querySelector(".wrap") || panel;
+  /* AND THE EMPTY SCREEN UNDER IT (build 319). .wrap is only as tall as
+     what is on it, so under a short tab - Friends on an iPad, a board of a
+     few people - a thumb landed on <html> and nothing happened. The
+     listeners sit on the document and take a touch that starts inside
+     .wrap or on the bare page below it; anything else (the tab bar, the
+     chat dock, a sheet) is not theirs. */
+  const host = document;
+  const onSurface = tg => !!tg && (tg === document.documentElement || tg === document.body || surface.contains(tg));
   let startX = null, startY = null, locked = false;
   const onStart = (e) => {
     const t = e.touches[0];
+    const tg = e.target;
+    if(!onSurface(tg) || (opts.zone && !(tg && opts.zone.contains(tg))) || (opts.skip && tg && tg.closest && tg.closest(opts.skip))){
+      startX = null; startY = null; locked = false; return;
+    }
     startX = t.clientX; startY = t.clientY; locked = false;
   };
-  surface.addEventListener("touchstart", onStart, { passive: true });
+  host.addEventListener("touchstart", onStart, { passive: true });
   /* The actual reason this swipe reportedly never fired on a real
      device: with no touchmove handling at all, a real (never perfectly
      horizontal) swipe over a tab whose content is tall enough to
@@ -102286,7 +102238,7 @@ function attachTabSwipe(panel, order, getCurrent, select){
     if(!locked && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) locked = true;
     if(locked) e.preventDefault();
   };
-  surface.addEventListener("touchmove", onMove, { passive: false });
+  host.addEventListener("touchmove", onMove, { passive: false });
   const onEnd = (e) => {
     if(startX === null) return;
     const t = e.changedTouches[0];
@@ -102297,7 +102249,7 @@ function attachTabSwipe(panel, order, getCurrent, select){
     const next = dx < 0 ? i + 1 : i - 1;
     if(i !== -1 && next >= 0 && next < order.length) select(order[next]);
   };
-  surface.addEventListener("touchend", onEnd);
+  host.addEventListener("touchend", onEnd);
 
   /* .wrap outlives the screen inside it, so these have to come off when
      the panel goes - otherwise every screen after this one inherits this
@@ -102306,9 +102258,9 @@ function attachTabSwipe(panel, order, getCurrent, select){
   const obs = new MutationObserver(() => {
     if(panel.isConnected) return;
     obs.disconnect();
-    surface.removeEventListener("touchstart", onStart);
-    surface.removeEventListener("touchmove", onMove);
-    surface.removeEventListener("touchend", onEnd);
+    host.removeEventListener("touchstart", onStart);
+    host.removeEventListener("touchmove", onMove);
+    host.removeEventListener("touchend", onEnd);
   });
   obs.observe(stage, { childList: true, subtree: true });
 }
@@ -102332,10 +102284,136 @@ let rankingsBoardKey = "overall";
    board still gets that board, and switching boards on the screen works
    as before. */
 const RANKINGS_DEFAULT_BOARD = "overall";
-function showRankings(defaultBoard){
+/* ---- THE CLASS TAB (build 319) ----
+   "maybe the friends and class related stuff should be in its own tab".
+   The bottom tab that said Leaderboard says Class and opens this: the same
+   top switcher as Profile (.navsegment.profiletabs, the sliding slider, a
+   thumb swipe between tabs) over three tabs -
+     Rankings  the Leaderboard's boards, exactly as they were
+     Friends   what the Friends screen held (Profile's Friends box led there)
+     Calendar  Profile's Class 26E box, then the class calendar
+   Each tab is built the first time it is shown, not all three up front:
+   the boards draw a row of characters each and the calendar every class
+   day, and a tab nobody opens should cost nothing. The panes keep the
+   class names their screens had (.screen-rankings, .screen-friends,
+   .screen-calendar), so everything that finds them still does. Every old
+   way in lands here: showRankings(board), showFriends(), showCalendar(),
+   showLeaderboard(), and any name below. */
+const CLASS_TABS = ["rankings", "friends", "calendar"];
+const CLASS_TAB_LABELS = { rankings: "Rankings", friends: "Friends", calendar: "Calendar" };
+const CLASS_TAB_ALIASES = { leaderboard: "rankings", leaderboards: "rankings", rewards: "rankings", boards: "rankings",
+  board: "rankings", friend: "friends", class: "calendar", schedule: "calendar", cal: "calendar" };
+let classTabKey = "rankings";
+function showClass(which, opts){
+  opts = opts || {};
+  /* Validated, not just defaulted: a screen function handed straight to
+     addEventListener receives a MouseEvent (see showProfile). */
+  let tab = typeof which === "string" ? (CLASS_TAB_ALIASES[which] || which) : null;
+  let board = typeof opts.board === "string" ? opts.board : null;
+  /* a board's own name is a way in too ("week", "overall", "hundos", the
+     old "level") */
+  if(typeof which === "string" && (which === "level" || RANKING_BOARDS.some(b => b.key === which))){ tab = "rankings"; board = which; }
+  if(CLASS_TABS.indexOf(tab) === -1) tab = "rankings";
   setActiveNav(null);
-  countEl.textContent = "Leaderboard";
-  rankingsBoardKey = defaultBoard || RANKINGS_DEFAULT_BOARD;
+  countEl.textContent = "Class";
+
+  const panel = document.createElement("section");
+  panel.className = "panel screen-class";
+  const seg = document.createElement("div");
+  seg.className = "navsegment profiletabs class-tabs";
+  seg.setAttribute("role", "tablist");
+  const btns = {}, panes = {}, built = {};
+  const SCREEN_CLASS = { rankings: "screen-rankings", friends: "screen-friends", calendar: "screen-calendar" };
+  CLASS_TABS.forEach(k => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "iconbtn class-tab-" + k;
+    btn.setAttribute("role", "tab");
+    btn.textContent = CLASS_TAB_LABELS[k];
+    btn.addEventListener("click", () => selectClassTab(k));
+    btns[k] = btn;
+    seg.appendChild(btn);
+    const pane = document.createElement("div");
+    pane.className = "class-pane class-pane-" + k + " " + SCREEN_CLASS[k];
+    pane.setAttribute("role", "tabpanel");
+    pane.hidden = true;
+    panes[k] = pane;
+  });
+  /* A friend request waiting is the one thing on these tabs with somebody
+     on the other end of it, so the Friends tab carries the app's own
+     new-dot while one is (Profile's Friends box said so before 319). */
+  try{
+    if(incomingFriendRequests().length){
+      btns.friends.classList.add("has-new");
+      btns.friends.appendChild(buildNewDot());
+      btns.friends.setAttribute("aria-label", "Friends - a request is waiting");
+    }
+  }catch(e){}
+  panel.appendChild(seg);
+  CLASS_TABS.forEach(k => panel.appendChild(panes[k]));
+  attachSegSlider(seg, ".iconbtn.active");
+
+  function buildPane(k){
+    if(built[k]) return;
+    built[k] = true;
+    panes[k].dataset.built = "1";
+    if(k === "rankings") buildRankingsPane(panes[k], board);
+    else if(k === "friends") renderFriendsPane(panes[k]);
+    else buildCalendarPane(panes[k]);
+  }
+  function selectClassTab(k, quiet){
+    if(CLASS_TABS.indexOf(k) === -1) return;
+    classTabKey = k;
+    panel.dataset.tab = k;
+    buildPane(k);
+    CLASS_TABS.forEach(x => {
+      panes[x].hidden = x !== k;
+      btns[x].classList.toggle("active", x === k);
+      btns[x].setAttribute("aria-selected", x === k ? "true" : "false");
+    });
+    if(quiet) return;
+    beginSettle(320);
+    toTop();
+    maybeTour(k);
+  }
+  /* The whole screen swipes between these three; a swipe that starts ON a
+     tab's own switcher (the boards, Month / List) is that switcher's. */
+  attachTabSwipe(panel, CLASS_TABS, () => classTabKey, k => selectClassTab(k), { skip: ".class-subseg" });
+
+  /* The Rewards tour's flag (seenRewardsTour), on the screen that holds
+     the boards now. Its first step names the three tabs. */
+  function maybeTour(k){
+    if(k !== "rankings" || store.seenRewardsTour) return;
+    store.seenRewardsTour = true;
+    saveStore();
+    startSimpleTour([
+      { target: ".screen-class .class-tabs", align: "left", vplacement: "below",
+        text: "Class has three tabs: the rankings, your friends and the class calendar. Tap one, or swipe across the screen." },
+      { target: ".screen-rankings .rank-boardseg", align: "left", vplacement: "below",
+        text: "This Week is XP since Monday. Overall is your rank. Hundos is units finished at 100%." },
+      { target: ".rank-search", align: "left", vplacement: "below",
+        text: "Search for anyone in 26E by username." },
+      { target: ".rank-me-btn", align: "right", vplacement: "below",
+        text: "Find me jumps to your own row and flashes it. Everybody's numbers here update live \u2014 there is nothing to refresh." }
+    ]);
+  }
+
+  selectClassTab(tab, true);
+  stage.replaceChildren(panel);
+  toTop();
+  maybeTour(tab);
+}
+
+/* The Leaderboard is the Rankings tab of Class now (build 319). Every
+   caller that asks for it, by board name or none, lands there. */
+function showRankings(defaultBoard){
+  return showClass("rankings", { board: typeof defaultBoard === "string" ? defaultBoard : null });
+}
+/* The boards, built into `panel` - the Rankings pane of the Class screen.
+   Everything below is the Leaderboard as it was; only the screen around
+   it moved (see showClass). */
+function buildRankingsPane(panel, defaultBoard){
+  rankingsBoardKey = (typeof defaultBoard === "string" && defaultBoard) || RANKINGS_DEFAULT_BOARD;
   /* "level" is still accepted as a name, so a link or a stored key from
      before the board was replaced lands on the first board rather than
      throwing - the same courtesy the Profile tabs already extend to
@@ -102346,11 +102424,12 @@ function showRankings(defaultBoard){
   if(rankingsBoardKey === "level") rankingsBoardKey = "overall";
   if(!RANKING_BOARDS.some(b => b.key === rankingsBoardKey)) rankingsBoardKey = RANKINGS_DEFAULT_BOARD;
 
-  const panel = document.createElement("section");
-  panel.className = "panel screen-rankings";
-
+  /* The board switcher is the SECOND switcher on this screen, under
+     Class's own Rankings / Friends / Calendar, so it is drawn quieter:
+     words with a sliding underline, not a second glass pill (build 319,
+     .class-subseg). */
   const seg = document.createElement("div");
-  seg.className = "navsegment profiletabs";
+  seg.className = "navsegment profiletabs rank-boardseg class-subseg";
   const tabBtns = {};
   RANKING_BOARDS.forEach(b => {
     const btn = document.createElement("button");
@@ -102652,7 +102731,10 @@ function showRankings(defaultBoard){
 
   /* The same contained tab swipe the old Rewards tab had, now shared -
      see attachTabSwipe. */
-  attachTabSwipe(panel, RANKING_BOARDS.map(b => b.key), () => rankingsBoardKey, selectBoard);
+  /* Only a swipe ALONG the board switcher changes the board now (build
+     319): a swipe anywhere else on the screen changes Class's own tab, so
+     one swipe moves exactly one switcher. */
+  attachTabSwipe(panel, RANKING_BOARDS.map(b => b.key), () => rankingsBoardKey, selectBoard, { zone: seg });
 
   /* Detach the snapshot when this screen goes, not just when Rankings is
      opened again. Without this, walking Rankings -> Home -> Rankings
@@ -102671,25 +102753,8 @@ function showRankings(defaultBoard){
     obs.observe(stage, { childList: true });
   })();
 
-  stage.replaceChildren(panel);
-  toTop();
-
-  /* The Rewards tour's flag, on the screen that replaced Rewards. It
-     was left set but never read once Rewards became Rankings, so the
-     one screen in the app whose whole job is comparison shipped with
-     no explanation of what the three boards actually rank. */
-  if(!store.seenRewardsTour){
-    store.seenRewardsTour = true;
-    saveStore();
-    startSimpleTour([
-      { target: ".screen-rankings .navsegment", align: "left", vplacement: "below",
-        text: "This Week is XP since Monday. Overall is your rank. Hundos is units finished at 100%." },
-      { target: ".rank-search", align: "left", vplacement: "below",
-        text: "Search for anyone in 26E by username." },
-      { target: ".rank-me-btn", align: "right", vplacement: "below",
-        text: "Find me jumps to your own row and flashes it. Everybody's numbers here update live \u2014 there is nothing to refresh." }
-    ]);
-  }
+  /* The Rewards tour (seenRewardsTour) runs from showClass, once the
+     Class screen is up, so its first step can point at Class's tabs. */
   /* After the tour, never under it - maybeShowWeekCongrats waits. */
   setTimeout(() => maybeShowWeekCongrats(panel, () => entries), 700);
 }
@@ -104660,7 +104725,11 @@ function applyGlassRefraction(el, mapImgId){
   const svgNS = "http://www.w3.org/2000/svg";
   const iconPaths = {
     home: "M4 11l8-7 8 7M6 9.5V20h12V9.5",
-    rewards: "M7 4h10v5a5 5 0 01-10 0zM7 5H4a3 3 0 003 5.5M17 5h3a3 3 0 01-3 5.5M12 14v3M8.5 20.5h7l-.8-3H9.3z",
+    /* CLASS (build 319): two people, one in front of the other - the
+       classmates on the boards, your friends, the class's calendar. A
+       trophy said Leaderboard, which is one tab of three now. The id and
+       the dest stay "rewards" (see syncActive). */
+    rewards: "M9.5 11.5a3.4 3.4 0 100-6.8 3.4 3.4 0 000 6.8zM3.5 20c0-3.4 2.7-6.1 6-6.1s6 2.7 6 6.1M15.6 4.9a3.4 3.4 0 010 6.4M17.6 14.3c1.8.8 2.9 2.9 2.9 5.7",
     profile: "M12 12a4 4 0 100-8 4 4 0 000 8zM5 20c0-3.9 3.1-7 7-7s7 3.1 7 7",
     /* A MEDAL (build 270): "I also don't know if I like the rank icon on
        the bottom tab that much either." The shield-and-chevrons read as
@@ -104764,7 +104833,7 @@ function applyGlassRefraction(el, mapImgId){
         if(!testInProgress && stage.querySelector(".screen-home-actual")) return;
         confirmMainMenu();
       }
-      else if(dest === "rewards") showRankings();
+      else if(dest === "rewards") showClass();
       else if(dest === "profile") showProfile();
       else if(dest === "settings") showAppearance();
     };
@@ -104862,7 +104931,9 @@ function applyGlassRefraction(el, mapImgId){
        ID stays bottomtab-rewards deliberately - renaming it would touch
        the tour targets, the points-fly destination and every selector
        in the harnesses for a label change nobody can see. */
-    const onRewards = !!document.querySelector(".screen-rankings, .screen-rewards");
+    /* .screen-class since build 319: the tab is Class, and all three of
+       its tabs (Rankings, Friends, Calendar) keep it lit. */
+    const onRewards = !!document.querySelector(".screen-class, .screen-rankings, .screen-rewards");
     const onSettings = !!document.querySelector(".screen-settings");
     const onHome = !!document.querySelector(".homeversion-btn");
     /* The rank road map and the badge case are opened from the Profile
@@ -104873,7 +104944,9 @@ function applyGlassRefraction(el, mapImgId){
        bottom tab still shows me as within that tab." Friends, Customize,
        the calendar and the test review screens are all reached from the
        Profile card and lit nothing; the bug report is Settings' own. */
-    const onProfileSub = !!document.querySelector(".screen-friends, .screen-customize, .screen-calendar, .screen-testreview");
+    /* Friends and the calendar left Profile for Class in build 319, and
+       light Class through .screen-class above. */
+    const onProfileSub = !!document.querySelector(".screen-customize, .screen-testreview");
     const onSettingsSub = !!document.querySelector(".screen-bugreport");
     bar.querySelector("#bottomtab-profile").classList.toggle("active", onProfile || onRanks || onProfileSub);
     bar.querySelector("#bottomtab-rewards").classList.toggle("active", onRewards);
@@ -104970,7 +105043,7 @@ function applyGlassRefraction(el, mapImgId){
   let tabDragActive = false;
   let tabDragMoved = false;
   let tabDragPointerId = null;
-  const tabDests = { "bottomtab-home": () => confirmMainMenu(), "bottomtab-rewards": () => showRankings(),
+  const tabDests = { "bottomtab-home": () => confirmMainMenu(), "bottomtab-rewards": () => showClass(),
     "bottomtab-profile": () => showProfile(), "bottomtab-settings": () => showAppearance() };
   function tabAtPoint(clientX){
     const tabs = [...navrow.querySelectorAll(".bottomtab")];
