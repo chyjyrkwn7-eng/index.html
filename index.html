@@ -27053,7 +27053,7 @@
   /* the front wall, hanging from the tray's near edge */
   .nova-case.ncase > .ncase-front{
     position:relative; left:auto; right:auto; top:auto; bottom:auto; z-index:2; box-sizing:border-box;
-    display:flex; justify-content:space-between; align-items:flex-start; width:100%; height:5cqw; margin:0; padding:0 15%;
+    display:flex; justify-content:space-between; align-items:flex-start; width:100%; height:6cqw; margin:0; padding:0 15%;
     border-radius:0 0 var(--case-r) var(--case-r); --case-guard-w:3.4%; pointer-events:none;
     background-image:linear-gradient(180deg, rgba(0,0,0,.42), rgba(0,0,0,0) 45%, rgba(0,0,0,.18)), var(--case-shell-bg); background-size:100% 100%, var(--case-shell-size);
     box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 4cqw 8cqw rgba(0,0,0,.55);
@@ -27061,8 +27061,9 @@
   .nova-case.ncase > .ncase-front .ncase-latch{ position:relative; flex:none; width:13%; height:3.4cqw; margin:-1.3cqw 0 0; align-self:flex-start;
     border-radius:.8cqw; background-color:#A3AEBA; background-image:var(--case-metal);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.8), inset 0 -1px 0 rgba(0,0,0,.35), 0 0 0 1px rgba(0,0,0,.55), 0 .6cqw 1.4cqw rgba(0,0,0,.55); }
-  .nova-case.ncase > .ncase-front .nova-case-sideplate{ align-self:flex-start; margin:.9cqw 0 0;
-    font-size:2.9cqw; padding:1.1cqw 3.6cqw; letter-spacing:.24em; line-height:1.2; }
+  /* the plate wholly on the wall (check_b318_badges: "the badge case placard is glitched") */
+  .nova-case.ncase > .ncase-front .nova-case-sideplate{ align-self:flex-start; margin:.45cqw 0 0;
+    font-size:2.9cqw; padding:.85cqw 3.4cqw; letter-spacing:.24em; line-height:1.2; }
   .nova-case.ncase > .ncase-handle{ position:relative; left:auto; right:auto; top:auto; bottom:auto; z-index:1; display:block;
     width:33%; height:5.6cqw; margin:3cqw auto 0; pointer-events:none; }
   /* the tab's case: as wide as the cutscene's on a phone, a little more on a tablet */
@@ -27073,8 +27074,15 @@
   .badges-tab .nova-case.ncase .ncase-cell:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:1px; border-radius:.4rem; }
   /* the Profile's: the same case, small, under its count */
   .pf-case .nova-case.ncase{ --ncase-w:min(100%, 13rem); }
-  @media (min-width:40rem){ .pf-case .nova-case.ncase{ --ncase-w:min(100%, 15rem); } }
+  @media (min-width:40rem){ .pf-case .nova-case.ncase{ --ncase-w:min(100%, 17rem); } }
   .pf-case .nova-case.ncase .badge-strip-cell:not(.is-earned){ opacity:1; }
+  /* The glow, kept low inside the case (build 319): a strong halo round the
+     whole slot lifts the badge OUT of its hole, the opposite of "sitting
+     inside of the missing spot". Still its own colour, still a smidge. */
+  .nova-case.ncase .ncase-cell.is-earned svg{
+    filter:drop-shadow(0 0 1.5px color-mix(in srgb, var(--badge-glow, #fff) 45%, transparent))
+           drop-shadow(0 0 6px color-mix(in srgb, var(--badge-glow, #fff) 20%, transparent)); }
+  .nova-case.ncase .ncase-cell.is-earned .badge-tile-art::after{ opacity:.55; }
 
   /* ---- the case's name, on its side (build 317, badge2) ----
      One plate on the front wall of every case, between the latches: a

@@ -18579,6 +18579,78 @@ against a 4x reference, enamel that changes across its face, the case's
 corners and parts, the Profile wall and plate, the glow, and the seated
 badges' render size.
 
+### Build 319, badges round - one open case, found not unlocked, a soft seam, seated, nothing shown until found
+
+Madison: *"when the case opened, the inside of the case was shining purpose,
+seems like the timing was wrong on the glow ... Within the badge case it has
+the word mastered under it, that shouldn't be right there, that should say
+that when you click the badge for details and you did master it. The title of
+the badge should say badge at the end though ... where the color meets the
+silver looks rough ... it's still missing that look like it's sitting inside
+of the missing spot, AND the ones you don't have should not be there ... the
+top of the case looks weird. I see the hinges but then yeah it cuts off ...
+the badge cutscene shows a great case, and then the profile makes it
+elongated and the badge tab makes it different too ... it should be 'found'
+badge instead of unlocked badge."*
+
+> **Supersedes** build 314's grey badge (a badge not yet earned "seen, not
+> shown") and build 318's tab and Profile case geometry.
+
+- **ONE OPEN CASE (`buildOpenBadgeCase(kind, cellFor)`, `.ncase`).** The
+  Badges tab and the Profile draw the cutscene's case as it stands at the end
+  of the scene, flat, part for part and in its measured proportions: the lid
+  standing behind (`aspect-ratio 1/.8`, leaning a little towards you so its
+  top is wider, as the cutscene's is), hinges on the seam, the tray
+  (`1/.88`) with sixteen slots four by four, the front wall (guards, two
+  latches, the plate), the handle. Every size is in `cqw`: the root is its own
+  container, so the two places are one drawing at two widths (`--ncase-w`:
+  25rem/31rem on the tab, 13rem/17rem on the Profile). **Only the lid may
+  carry a 3D transform**: a badge under one is resampled by the compositor
+  (build 318). The parts keep their old class names (`badge-case-*` on the
+  tab, `pf-case-front`/`pf-strip`/`badge-strip-cell` on the Profile), so the
+  older gates still find them; the old 242/244/318 rules for those names are
+  overridden by `.nova-case.ncase ...`, not edited.
+- **Nothing is written in the case.** The tab's slots carry no name and no
+  "Mastered"/"5/15"; the name is an `.sr-only` span and the slot's
+  `aria-label`. A tap opens the badge's card: "Mastered" there (the shared
+  card says "Unlocked" for everything else), or "5 of 15".
+- **A BADGE NOT FOUND IS ITS EMPTY SLOT, everywhere** - the tab, the
+  Profile, its card (`buildUnitBadgeSVG(u, false)`), the results' progress
+  box (3rem there so the outline reads). Build 314's `"grey"` token is no
+  longer drawn anywhere; the option still exists in the builder.
+- **Titles end in "Badge"** (`badgeTitle(unit)`): the card, the cutscene,
+  the results' rows, the reduced-motion banner. **Badges are found**: BADGE
+  FOUND in both cutscenes, "Badge found" on the results (and the results'
+  card is headed "Found" when it holds only badges), "7 badges found" on the
+  tab. What earns a badge is unchanged.
+- **THE SEAM (`wallMax`, `eOff` in `BADGE_STRIKE`).** The rough edge was a
+  black hairline with a white one beside it round every plate: the wall's foot
+  was near vertical (`pow(.., .55)` has infinite slope at the foot), so its
+  normal reflected the studio's dark horizon, and a ring of bare metal floor
+  sat between the wall and the colour. The inner wall now leans at most
+  `wallMax` (.22) and the colour runs up to where the wall meets its level
+  (`eOff` .5 units). The outer rim is untouched.
+- **SEATED.** `BADGE_GEOM.gap` 1.7 -> 2.6 and `lip` 1.2 -> 1.5, so the hole
+  shows round a badge; the far wall is lit (`-wall` ramp up to `#46525F`);
+  and the hole's edge throws a shade on the badge's top-left edge in three
+  masked steps (`BADGE_SEAT_SHADE`, `.badge-seat-shade` rects - masks, not
+  filters). The glow in the case is lower (`.ncase-cell.is-earned svg`): a
+  strong halo round the slot lifted the badge out of it.
+- **THE CASE'S LIGHT (`.bc-spill`) IS THE LIGHT THROUGH THE CRACK.** It sat
+  at the tray's far edge (under the lid, never seen through the crack) and
+  held at .95 for .5s after the lid began to swing, then took 1.2s to go: the
+  opening lid uncovered a tray washed in the badge's colour. It is centred at
+  the near edge now and fades in .3s as the lid starts to open.
+
+**Gates.** `check_b319_badges` (fails on 8aded7f): the seam metric (every
+metal-to-colour step on every badge, rows and columns, at 264px: 8aded7f's
+worst 10th percentile .27, now >= .88), gap and seat shade, no token for a
+badge not found on the tab / Profile / card / results, nothing written in
+the case, Mastered and "... Badge" on the cards, found not earned, the tab's
+and the Profile's case the same open case in the same proportions (lid >= .6
+of the tray; four by four), and the spill >= .5 through the crack and <= .05
+.5s after the lid opens.
+
 ### Build 318 - the secret flares: their moment on the results, owed until seen, the next one's rumour, Umbra's eclipse
 
 Madison: *"the cutscene is happening from the main menu and so are the

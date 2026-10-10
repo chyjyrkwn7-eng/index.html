@@ -386,7 +386,10 @@ def main():
         quoted = pg.evaluate("""()=>{
           const tab = buildBadgesTab();
           const blurb = tab.querySelector('.badges-blurb');
-          const progs = [...tab.querySelectorAll('.badge-tile-prog')].map(n => n.textContent);
+          /* REVISED IN 319: nothing is written in the case any more (the
+             tab printed "5/15" under every slot); a badge's count is on its
+             card, from badgeDetail */
+          const progs = unitsInTeachingOrder().map(u => { const d = badgeDetail(u); return d.have + '/' + d.need; });
           return { blurb: blurb ? blurb.textContent : null, progs };}""")
         check("the badge case's blurb does not name a single number",
               quoted["blurb"] and "35 hundos" not in quoted["blurb"], quoted["blurb"])

@@ -2141,7 +2141,7 @@ def check_b232(br):
                          bar: !!document.querySelector('.rankhero-fill, .rankhero-track'),
                          chips: !!document.querySelector('.rankhero-chip') }));
       showProfile('badges');
-      T('case', () => { const bg = getComputedStyle(document.querySelector('.badges-tab .badge-grid')).backgroundImage;
+      T('case', () => { const bg = getComputedStyle(document.querySelector('.badges-tab .ncase-lining, .badges-tab .badge-grid')).backgroundImage;
         const cols = [...bg.matchAll(/rgb\\((\\d+), (\\d+), (\\d+)\\)/g)].map(m => [+m[1], +m[2], +m[3]]);
         return cols.map(c => c[2] - c[0]); });
       cfg.mode = 'drill'; const u = topicsIn(QUESTIONS)[0]; store.unitPerfects[u] = 999; showSetup();
@@ -6705,7 +6705,12 @@ def check_b289(br):
           const caseR = getComputedStyle(document.documentElement).getPropertyValue('--case-r').trim();
           const probe = document.createElement('div'); probe.style.borderTopLeftRadius = caseR; document.body.appendChild(probe);
           const caseRpx = getComputedStyle(probe).borderTopLeftRadius; probe.remove();
-          out.box = { radius: !!caseR && cs[2].borderTopLeftRadius === caseRpx && parseFloat(caseRpx) <= 4,
+          /* REVISED IN 319: the Profile card HOLDS the case now (the
+             cutscene's open case, buildOpenBadgeCase), so the square corner
+             is the case's tray, inside the card. */
+          const tray = bl[2].querySelector('.ncase-tray');
+          const caseCs = tray ? getComputedStyle(tray) : cs[2];
+          out.box = { radius: !!caseR && caseCs.borderTopLeftRadius === caseRpx && parseFloat(caseRpx) <= 4,
             width: rs.every(q => Math.abs(q.width - rs[0].width) < 1),
             shadow: cs[0].boxShadow === 'none' && cs[1].boxShadow === 'none' && black(cs[2].boxShadow),
             unboxed: cs[0].backgroundImage === 'none' && parseFloat(cs[0].borderTopWidth) === 0,
@@ -11070,9 +11075,12 @@ def check_b314_chars(br):
     check("every Silver colour is neutral (no channel more than 8 levels off another)", bad == {}, bad)
     check("the seven rank colours stay apart", r["close"] == [], r["close"])
     check("an unearned badge in the case shows no unit colour", r["lockedTiles"] > 0 and r["tileLeaks"] == 0, (r["tileLeaks"], r["lockedTiles"]))
-    check("an unearned badge in the case shows its form, not an empty hole", r["tileForm"] == r["lockedTiles"], (r["tileForm"], r["lockedTiles"]))
+    # REVISED IN 319: "the ones you don't have should not be there, you
+    # should not be able to see them" - a badge not found is its empty
+    # hole again, in the case and on its card (build 314's grey form is gone)
+    check("an unearned badge in the case is its empty hole, not its form (319)", r["lockedTiles"] > 0 and r["tileForm"] == 0, (r["tileForm"], r["lockedTiles"]))
     check("an unearned tile's light is no colour", r["tileGlowNeutral"] is True)
-    check("an unearned badge's card shows its form and no unit colour", r["cardLeaks"] == [] and r["cardForm"] is True, (r["cardLeaks"], r["cardForm"]))
+    check("an unearned badge's card shows its empty slot and no unit colour (319)", r["cardLeaks"] == [] and r["cardForm"] is False, (r["cardLeaks"], r["cardForm"]))
     check("and its card's light is no colour", r["cardGlow"] < 10, r["cardGlow"])
     check("an earned badge keeps its own colour", r["earnedColour"] is True)
     ctx.close()
@@ -18684,7 +18692,8 @@ def check_b317_badge2(br):
         # every badge on the tab: struck at its own device pixels (after the measure)
         pg.wait_for_timeout(1200)
         res = pg.evaluate("""(dpr) => { const out = [];
-          return Promise.all([...document.querySelectorAll('.badges-tab .badge-tile svg.badge-art')].map(sv => new Promise(done => {
+          /* REVISED IN 319: only a found badge has a token; a slot not found is empty */
+          return Promise.all([...document.querySelectorAll('.badges-tab .badge-tile.is-earned svg.badge-art')].map(sv => new Promise(done => {
             const im = sv.querySelector('image.badge-raster'); if(!im){ out.push({ raster: false }); return done(); }
             const need = sv.getBoundingClientRect().width * dpr, i = new Image();
             i.onload = () => { out.push({ raster: true, nat: i.naturalWidth, need: Math.round(need) }); done(); };
@@ -18692,7 +18701,7 @@ def check_b317_badge2(br):
             i.src = im.getAttribute('href'); }))).then(() => out); }""", dpr)
         bad = [r for r in res if not r["raster"] or not (r["need"] * 0.97 <= r["nat"] <= r["need"] * 1.12)]
         check(f"{dev}: every badge on the Badges tab is struck at the size it is shown (no image scaled up or crushed)",
-              len(res) == 16 and not bad, {"tiles": len(res), "off": bad[:4]})
+              len(res) == 8 and not bad, {"tiles": len(res), "off": bad[:4]})
         ctx.close()
     # ---- 3. one casting, no slivers: all sixteen, big, at 3x ----
     ctx, pg = booted(br, 1240, 1240, seed=USED_ACCOUNT, dpr=3)
@@ -18903,7 +18912,10 @@ def check_b318_badges(br):
           const glows = [...c.querySelectorAll('.badge-strip-cell.is-earned svg')].map(s => { const fl = getComputedStyle(s).filter;
             const rgb = (fl.match(/rgba?\\(([^)]*)\\)/) || [, ''])[1].split(',').map(Number);
             return /drop-shadow/.test(fl) && !(rgb[0] === 255 && rgb[1] === 255 && rgb[2] === 255); });
-          return { radius: px(getComputedStyle(c).borderTopLeftRadius), caseB: B(c), front: B(f), plate: B(p), handle: B(hd),
+          /* REVISED IN 319: the card holds the open case; its square corner
+             and the edge the front hangs from are the case's tray */
+          const tr = c.querySelector('.ncase-tray') || c;
+          return { radius: px(getComputedStyle(tr).borderTopLeftRadius), caseB: B(tr), front: B(f), plate: B(p), handle: B(hd),
                    guards: a.content !== 'none' && b.content !== 'none', glows }; }""")
         pg.evaluate("() => showRanksScreen('badges')")
         pg.wait_for_timeout(1800)
@@ -19588,6 +19600,172 @@ def check_b318h_legacy_rows(br):
     ctx.close()
 
 
+def check_b319_badges(br):
+    """Build 319, badges round. Madison: "The badge case cutscene, when the
+    case opened, the inside of the case was shining purpose, seems like the
+    timing was wrong on the glow ... Within the badge case it has the word
+    mastered under it, that shouldn't be right there, that should say that
+    when you click the badge for details and you did master it. The title of
+    the badge should say badge at the end though ... where the color meets
+    the silver looks rough. Also, it's still missing that look like it's
+    sitting inside of the missing spot, AND the ones you don't have should
+    not be there ... On the result screen if you don't have it, it should
+    not be there to see, just the outline ... the top of the case looks
+    weird ... the badge cutscene shows a great case, and then the profile
+    makes it elongated and the badge tab makes it different too ... it
+    should be 'found' badge instead of unlocked badge." Written against
+    8aded7f, where every check here fails:
+      - the seam: across every metal-to-colour edge of every badge (rows and
+        columns of a 264px render), the darkest pixel of the step against
+        the darker side; 8aded7f's black hairline put the worst badge's 10th
+        percentile at .27 (most .6-.7); one soft step keeps all of them >=.8;
+      - seated: the hole is wider than the token by >= 2.4 units and the
+        hole's shade lies on a seated badge's top-left edge (3 steps);
+      - not shown until found: on the Badges tab, the Profile, a badge's card
+        and the results' progress box, a badge not found draws no token
+        (8aded7f drew it grey on the tab and the card);
+      - words: nothing written in the case ("Mastered" was under every
+        badge), "Mastered" on a found badge's card (it said "Unlocked"),
+        titles end in "Badge", and badges are found (the cutscene, the
+        results row, the tab's head);
+      - one case: the tab's and the Profile's are the same open case - lid,
+        tray, front wall, handle, sixteen slots four by four - in the same
+        proportions, with the lid standing as tall as the cutscene's (at
+        least .6 of the tray's width; the tab's was a 3.6rem strip and the
+        Profile's a strip of sixteen, eight across);
+      - the glow: the light in the case shows through the crack and is gone
+        .5s after the lid starts to swing (it was at .95 there, and washed
+        the opened tray in the badge's colour)."""
+    print("\n319c. badges: a soft seam, seated in the hole, not shown until found, Mastered on the card, one open case, the crack's light")
+    ctx, pg = booted(br, 400, 400, seed=USED_ACCOUNT, dpr=1)
+    seam = pg.evaluate(r"""(W) => { const out = {};
+      const L = (d, j) => .299 * d[j] + .587 * d[j + 1] + .114 * d[j + 2];
+      for(const u of unitsInTeachingOrder()){
+        const d = renderBadgeStrike(u, false, W).getContext('2d').getImageData(0, 0, W, W).data;
+        const cls = new Int8Array(W * W), lum = new Float32Array(W * W);
+        for(let i = 0; i < W * W; i++){ const j = i * 4; lum[i] = L(d, j);
+          const mx = Math.max(d[j], d[j+1], d[j+2]), mn = Math.min(d[j], d[j+1], d[j+2]);
+          cls[i] = d[j+3] < 250 ? 0 : (mx - mn) > 45 ? 2 : (mx - mn) < 14 && lum[i] > 110 ? 1 : 3; }
+        const r = [];
+        const scan = get => { for(let a = 0; a < W; a++){ let m = -1;
+          for(let b = 0; b < W; b++){ const i = get(a, b), c = cls[i];
+            if(c === 1){ m = b; continue; }
+            if(c === 2 && m >= 0 && b - m <= 5){ let lo = 999; for(let t = m; t <= b; t++) lo = Math.min(lo, lum[get(a, t)]);
+              r.push(lo / Math.min(lum[get(a, m)], lum[i])); m = -1; }
+            if(c === 0) m = -1; } } };
+        scan((a, b) => a * W + b); scan((a, b) => a * W + (W - 1 - b)); scan((a, b) => b * W + a); scan((a, b) => (W - 1 - b) * W + a);
+        r.sort((p, q) => p - q);
+        if(r.length >= 40) out[u] = +r[Math.floor(r.length * .1)].toFixed(2);
+      }
+      return out; }""", 264)
+    seat = pg.evaluate("""() => { const u = unitsInTeachingOrder()[0];
+      const s = buildUnitBadgeSVG(u, true, { px: 90 });
+      return { gap: BADGE_GEOM.gap, shades: s.querySelectorAll('.badge-seat-shade').length }; }""")
+    ctx.close()
+    worst = min(seam.values()) if seam else 0
+    check("the seam: where the colour meets the silver is one soft step on every badge (no dark hairline: 10th-percentile step >= .8 of the darker side)",
+          len(seam) >= 14 and worst >= 0.8, {k[:14]: v for k, v in sorted(seam.items(), key=lambda kv: kv[1])[:5]})
+    check("seated: the hole is wider than the badge (gap >= 2.4) and its shade lies on the badge's top-left edge",
+          seat["gap"] >= 2.4 and seat["shades"] >= 3, seat)
+
+    SEED = """() => { const units = unitsInTeachingOrder(); store.unitPerfects = {};
+      units.forEach((u, i) => store.unitPerfects[u] = (i % 3 !== 2) ? badgeThresholdFor(u) : Math.floor(badgeThresholdFor(u) / 3));
+      store.seenUnlocks = store.seenUnlocks || { chars: [], banners: [], themes: [], badges: [] }; store.seenUnlocks.badges = units.slice();
+      store.pendingBadgeUnlocks = []; theme.muteBanners = true; theme.reduceMotion = false; applyTheme();
+      document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert').forEach(n => n.remove()); }"""
+    CASE = """(root) => { const k = document.querySelector(root); if(!k) return null;
+      const B = e => { if(!e) return null; const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, w: b.width, h: b.height }; };
+      const q = s => k.querySelector(s);
+      const lid = q('.ncase-lid, .badge-case-lid'), tray = q('.ncase-tray, .badge-case-tray, .pf-strip') ;
+      const front = q('.ncase-front, .badge-case-front, .pf-case-front'), handle = q('.ncase-handle, .badge-case-handle, .pf-case-handle');
+      const cells = [...k.querySelectorAll('.ncase-cell, .badge-tile, .badge-strip-cell')];
+      const xs = new Set(cells.map(c => Math.round(c.getBoundingClientRect().left))), ys = new Set(cells.map(c => Math.round(c.getBoundingClientRect().top)));
+      const lb = B(lid), tb = B(tray);
+      return { parts: !!(lid && tray && front && handle), cells: cells.length, cols: xs.size, rows: ys.size,
+               lidRatio: lb && tb ? +(lb.h / tb.w).toFixed(3) : 0, trayRatio: tb ? +(tb.h / tb.w).toFixed(3) : 0,
+               lidAbove: !!(lb && tb && lb.b <= tb.t + 2 && lb.t >= 0 - 2000),
+               text: [...k.querySelectorAll('*')].filter(e => !e.closest('.sr-only, .nova-case-plate, .new-dot') && e.childNodes.length && [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()))
+                 .map(e => e.textContent.trim()).filter(Boolean),
+               tokensUnfound: cells.filter(c => !c.classList.contains('is-earned')).filter(c => c.querySelector('.badge-token, image.badge-raster')).length,
+               tokensFound: cells.filter(c => c.classList.contains('is-earned')).filter(c => c.querySelector('.badge-token, image.badge-raster')).length,
+               found: cells.filter(c => c.classList.contains('is-earned')).length }; }"""
+    for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 1), (834, 1194, "iPad Pro 11", 1)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+        pg.evaluate(SEED)
+        pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1500)
+        tab = pg.evaluate(CASE, ".badges-tab .badge-case")
+        head = pg.evaluate("() => (document.querySelector('.badges-head-title') || {}).textContent || ''")
+        cards = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          for(const [k, earned] of [['found', true], ['not', false]]){
+            const t = [...document.querySelectorAll('.badges-tab .badge-tile')].find(x => x.classList.contains('is-earned') === earned);
+            if(!t){ out[k] = null; continue; }
+            t.click(); await wait(500);
+            const sh = document.querySelector('.invite-overlay');
+            out[k] = sh ? { name: (sh.querySelector('.unlock-card-name') || {}).textContent || '', count: (sh.querySelector('.unlock-card-count') || {}).textContent || '',
+                            token: !!sh.querySelector('.unlock-card-art .badge-token, .unlock-card-art image.badge-raster, .unlock-card-artwrap .badge-token, .unlock-card-artwrap image.badge-raster') } : null;
+            if(sh) sh.remove(); await wait(200); }
+          return out; }""")
+        pg.evaluate("() => showProfile('profile')"); pg.wait_for_timeout(1500)
+        pf = pg.evaluate(CASE, ".profile-hero .pf-case .ncase") or pg.evaluate(CASE, ".profile-hero .pf-case")
+        res = pg.evaluate("""async () => { const units = unitsInTeachingOrder(); const t = units[2];
+          store.unitPerfects[t] = Math.max(0, badgeThresholdFor(t) - 4);
+          cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t];
+          order = QUESTIONS.map((q,i) => [q,i]).filter(([q]) => (q.topic||'').trim() === t).map(([,i]) => i);
+          runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null;
+          attempts = {}; picked = {}; timedOutSet = {};
+          order.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+          summarize(); await new Promise(r => setTimeout(r, 2500));
+          const a = document.querySelector('.rs-badges .badgeprogress-art');
+          const item = rsUnlockItems({ badges: [units[0]], retroBadges: [], colors: [], characters: [], banners: [], units: [] })[0] || {};
+          return { box: !!a, slot: !!(a && a.querySelector('svg')), token: !!(a && a.querySelector('.badge-token, image.badge-raster')),
+                   name: (document.querySelector('.rs-badges .badgeprogress-name') || {}).textContent || '', kicker: item.kicker || '', itemName: item.name || '' }; }""")
+        ctx.close()
+        ok_tab = bool(tab) and tab["parts"] and tab["cells"] == 16 and tab["cols"] == 4 and tab["rows"] == 4 and tab["lidRatio"] >= 0.6 and tab["lidAbove"]
+        ok_pf = bool(pf) and pf["parts"] and pf["cells"] == 16 and pf["cols"] == 4 and pf["rows"] == 4 and pf["lidRatio"] >= 0.6
+        same = bool(tab and pf) and abs(tab["trayRatio"] - pf["trayRatio"]) <= 0.02 and abs(tab["lidRatio"] - pf["lidRatio"]) <= 0.03
+        check(f"{dev}: the Badges tab is the cutscene's open case - lid standing (>= .6 of the tray), hinges, tray of sixteen four by four, front, handle",
+              ok_tab, tab and {k: tab[k] for k in ("parts", "cells", "cols", "rows", "lidRatio", "trayRatio")})
+        check(f"{dev}: the Profile's case is the same open case, four by four, not a strip",
+              ok_pf, pf and {k: pf[k] for k in ("parts", "cells", "cols", "rows", "lidRatio", "trayRatio")})
+        check(f"{dev}: the tab's and the Profile's case have the same proportions (one case, two sizes)",
+              same, [tab and (tab["lidRatio"], tab["trayRatio"]), pf and (pf["lidRatio"], pf["trayRatio"])])
+        check(f"{dev}: a badge not found is only its empty slot - on the tab, the Profile, its card and the results",
+              bool(tab and pf and cards.get("not") and res) and tab["tokensUnfound"] == 0 and pf["tokensUnfound"] == 0 and tab["tokensFound"] == tab["found"] >= 8
+              and not cards["not"]["token"] and res["slot"] and not res["token"],
+              [tab and tab["tokensUnfound"], pf and pf["tokensUnfound"], cards.get("not"), res])
+        check(f"{dev}: nothing is written in the case (no 'Mastered' under the badges)",
+              bool(tab and pf) and not tab["text"] and not pf["text"], [tab and tab["text"][:4], pf and pf["text"][:4]])
+        check(f"{dev}: a found badge's card says Mastered, and every title ends in 'Badge'",
+              bool(cards.get("found") and cards.get("not")) and cards["found"]["count"] == "Mastered" and cards["found"]["name"].endswith(" Badge")
+              and cards["not"]["name"].endswith(" Badge") and res["name"].endswith(" Badge") and res["itemName"].endswith(" Badge"), [cards, res["name"], res["itemName"]])
+        check(f"{dev}: badges are found, not earned or unlocked (the tab's head, the results' row)",
+              "found" in head and "earned" not in head and res["kicker"] == "Badge found", [head, res["kicker"]])
+    # the cutscene: its words, and the light in the case
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("""() => { unitsInTeachingOrder().forEach((u, i) => store.unitPerfects[u] = i < 5 ? badgeThresholdFor(u) : 0);
+      store.unitPerfects['Identity Crimes'] = badgeThresholdFor('Identity Crimes');
+      store.pendingBadgeUnlocks = []; theme.muteBanners = false; theme.reduceMotion = false; applyTheme();
+      document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert').forEach(n => n.remove()); }""")
+    T = pg.evaluate("() => ({ crack: BC_T.crack, open: BC_T.open })")
+    clk = _Stepper(pg)
+    pg.evaluate("() => { playBadgeCaseScene(['Identity Crimes'], () => {}); }")
+    SP = "() => { const e = document.querySelector('.bc-spill'); return e ? +parseFloat(getComputedStyle(e).opacity).toFixed(3) : null; }"
+    while clk.t < (T["crack"] + 400) / 1000:
+        clk.step(1 / 30)
+    at_crack = pg.evaluate(SP)
+    while clk.t < (T["open"] + 500) / 1000:
+        clk.step(1 / 30)
+    opened = pg.evaluate(SP)
+    while clk.t < 14.0:
+        clk.step(1 / 30)
+    words = pg.evaluate("() => [...document.querySelectorAll('.bc-scene .bc-kicker, .bc-scene .bc-name')].map(e => e.textContent)")
+    ctx.close()
+    check("the cutscene: the light shows through the crack, and is gone .5s after the lid starts to open (no coloured wash over the open tray)",
+          at_crack is not None and at_crack >= 0.5 and opened is not None and opened <= 0.05, {"crack+.4s": at_crack, "open+.5s": opened})
+    check("the cutscene says BADGE FOUND and names it '... Badge'",
+          any(w == "BADGE FOUND" for w in words) and any(w.endswith(" Badge") for w in words) and not any("EARNED" in w for w in words), words)
+
+
 def check_b318_vroom_badge_case(br):
     """Build 318 (integration). The Virtual Room holds its leaderboard while
     a scene owns the screen, named by VROOM_SCENE_SELECTOR. A results
@@ -19866,6 +20044,7 @@ def main():
             check_b318h_legacy_rows(br)
             check_b318_vroom_badge_case(br)
             check_b318_bridge(br)
+            check_b319_badges(br)
         finally:
             br.close()
     SERVER.shutdown()
