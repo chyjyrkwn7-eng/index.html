@@ -15788,6 +15788,9 @@ disagree with it.
     ResizeObserver. Equal to 0.02px from 320px to 1512px. Equal-width
     columns were measured and rejected: the bar would grow ~40px and no
     longer fit a 375/393px phone.
+- **(Build 319 changed the charge's colour back to PALE and timed it to
+  the spin, and rebuilt the after-glow - see "Build 319 (b319b)" at the
+  end of this file. The float-following below stands.)**
 - **BUILD 318: THE CHARGE AND THE RELEASE ON THE NEW FLARE.** *"Before the
   spin the flare pulses with the white thing ... it's also not centered
   ... Same thing for the after the spin one"*. The light was white (the
@@ -16639,6 +16642,8 @@ disagree with it.
     at one time** (`common.py` FREEZE) is how before and after were made
     comparable; the two builds' Genesis laps differ (14s and 16s), so pick
     a time when it is behind in both (12s) for a close-up of the scar.
+- **(Build 319 added damage to the planet's SHINE on a Supernova planet -
+  `scarShineWound`; see "Build 319 (b319b)" at the end of this file.)**
 - **PLANET2: GENESIS ON THE RINGS, THE SCAR BURNT OUT, THE RINGS BLACK
   (build 317, b317-planet2).** *"I'm not a fan of the genesis secret flare
   at all, could it be on the rings like the others as well? But let's make
@@ -18846,3 +18851,68 @@ reaction was the weakest in the set (below).
   build and wants all 898 KEYS byte-identical and no other question
   changed; `check_b313_shuffle`'s "no keyChoices that differ" allows
   exactly this one.
+
+### Build 319 (b319b) - a pale charge that starts the spin, an after-glow that cools, the shine broken by the blast
+
+**The charge before the whirl is PALE again, and TIMED to the spin**
+(supersedes build 318's "in the rank's colour"). Madison: *"The charge up
+for the flare needs to be pale, and it needs to be timed. It needs that
+feeling like oh that flare just made it spin."*
+- `RANK_CHG_PALE` (#EEF3FA) for the charge and its release; `flareFx(cls,
+  nRings, color)` sets `--chg` on its own layers (and the slot). The
+  after-glow and the pulse at the stop keep the rank's colour.
+- Nine rings now (`RANK_CHG_IN`), the LAST landing at offset 1 = T.ignite;
+  the bubble squeezes to .88 over the last ~250ms. The charge's animations
+  `fill:forwards` and `release()` - called first thing in the T.ignite
+  callback - cancels them and takes the layers off in the same frame, so
+  the release is on the whirl's first frame however the timers land. Its
+  fallback is `release(true)` at D+600. Cancel matters: the squeeze's
+  forwards fill on the slot's `transform` would come back the moment the
+  whirl's own transform animation ended.
+- The release: a pale flash in the bubble, two waves (`.rank-chg-wave`,
+  gradient rings drawn at FULL size and scaled up from the last ring's
+  1.18 bubbles - never a border scaled up), and the bubble springing out of
+  the squeeze on the `scale` property (composes with the whirl's turn).
+- **The whirl leaves with a push**: `RANK_CUTSPIN_KICK` (.14 of the top
+  speed) at its first frame instead of t-squared from a standstill (17
+  degrees in the first 0.1s, was 0.9). The speeding-up is
+  `a u + (1 - a) u^2`, a = 2K/(1+K), as `ACC_EASE`; `PEAK_DEG` is rescaled
+  so the speed stays continuous at the peak; `vh(u)` starts at KICK. Same
+  times, same turns, ~6% lower top speed.
+- **The after-glow was there all along and nobody saw it**: it lived in the
+  new flare's SLOT, and the whirl faded that slot to .06 - so for the first
+  ~2s of the slowing it showed at 6%. The new flare's BUBBLE melts now
+  (the other slots still fade whole). The after-glow: a wider corona of the
+  rank's colour holding full for the first third and easing to .3 by the
+  stop (the pulse at the stop now starts from .3), and a white-hot core
+  over the glass (`.rank-chg-hot`) fading out in the first ~2/3 - white,
+  to the colour, to dim: "bright and slowly cool down".
+- **Gate** (`check_b317_evolve`, four new assertions, all fail on 8aded7f):
+  the charge pale (every channel 215+, within 30) and not the rank colour;
+  the last ring still closing in the frame before the whirl, the release in
+  the whirl's first frame, 5+ degrees turned in 0.1s; the after-glow as
+  SEEN (times every ancestor's opacity) .85+ at the start and .6+ two
+  fifths in; the hot core full, only fading, gone before the stop.
+  `EVOLVE_ST` gained `aglowEff`, `ahot`, `rel`, `orbA`.
+
+**The Supernova planet's shine carries the blast's damage.** *"The
+supernova permanent effect, the big shining mark on the sphere, could that
+change somehow because of the damage?"* The planet's specular highlight
+(up and to the left) came through the explosion clean. `scarShineWound()`
+paints a shattered patch over it in the scar's burn canvas: plates with
+dark seams (Voronoi, thinning and breaking off at the edge), each seam's
+lip lit or shadowed by the planet's light, soot over the plates, a few
+chipped to char, a ragged scorch past them; and it cuts the plasma's mask
+half off it. Same palette as the scar (no warm colour, no new ember -
+planet2's "black charring" stands, and `check_b317_planet`'s "ember only
+in the crater" holds), its own seed, the sphere's foreshortening. It is
+part of the scar's art, so it arrives with the planet (`check_b318_scar`)
+and fades in at the Supernova scene's `sn-scarred` beat like the crack.
+A crater with fractures running out of it was tried first and read as a
+black spider on the highlight. Cost: one region of ~50k pixels, the two
+nearest seeds from a 5x5 cell lookup; ~14ms warm on the loaded sandbox
+(the rest of the art 40-60 there), once per launch for a Supernova
+account. **Gate: `check_b319_shine`** - on the 17 Pro Max at 3x, three
+themes: the shine region with the scar against the same frame with it
+hidden, dulled under 80% (51 against 88) with 3%+ of it dark seams (20%,
+clean 0%). Fails on 8aded7f (88 against 88, 0%).

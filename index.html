@@ -11856,6 +11856,21 @@
       color-mix(in srgb, var(--chg, #fff) 34%, transparent) 33%, color-mix(in srgb, var(--chg, #fff) 12%, transparent) 47%, transparent 64%); }
   .rank-chg-ring{ inset:-9%; border:1.5px solid color-mix(in srgb, var(--chg, #fff) 72%, #fff);
     box-shadow:0 0 7px 1px color-mix(in srgb, var(--chg, #fff) 55%, transparent), inset 0 0 5px color-mix(in srgb, var(--chg, #fff) 40%, transparent); }
+  /* BUILD 319: the charge is PALE (--chg is RANK_CHG_PALE for the charge
+     and its release; the after-glow and the pulse at the stop keep the
+     rank's colour). The release's two waves are soft gradient rings drawn
+     at their FULL size and scaled up to it from the bubble's - never a
+     border or a shadow scaled up (how a blast gets rough). The after-glow
+     is wider than the charge's corona and has a white-hot core over the
+     glass that cools into the colour. */
+  .rank-chg-wave{ inset:-170%;
+    background:radial-gradient(circle, transparent 0 60%, color-mix(in srgb, var(--chg, #fff) 25%, transparent) 63.5%,
+      color-mix(in srgb, var(--chg, #fff) 70%, #fff) 66.5%, color-mix(in srgb, var(--chg, #fff) 32%, transparent) 69.5%, transparent 73%); }
+  .rank-chg-wave.is-2{ inset:-260%; }
+  .rank-chg.is-afterglow .rank-chg-corona{ inset:-115%; }
+  .rank-chg-hot{ inset:-55%;
+    background:radial-gradient(circle, #fff 0 13%, color-mix(in srgb, var(--chg, #fff) 30%, #fff) 24%, color-mix(in srgb, var(--chg, #fff) 72%, transparent) 37%,
+      color-mix(in srgb, var(--chg, #fff) 26%, transparent) 52%, color-mix(in srgb, var(--chg, #fff) 8%, transparent) 61%, transparent 68%); }
   .rank-trail{ position:absolute; left:50%; top:47.368%; aspect-ratio:1; translate:-50% -50%; border-radius:50%;
     pointer-events:none; opacity:0; z-index:0; }
   .rank-bang{ position:absolute; pointer-events:none; z-index:3; aspect-ratio:1; translate:-50% -50%; }
@@ -65532,6 +65547,122 @@ function scarMaskFill(Msk, d){
    (drawImage - nothing is encoded as a PNG). What it costs is measured in
    CLAUDE.md (build 317, the planet round). */
 let cosmicScarCache = null;
+/* THE SHINE, DAMAGED (build 319). Madison: "The supernova permanent
+   effect, the big shining mark on the sphere, could that change somehow
+   because of the damage?" The planet's specular shine (its highlight, up
+   and to the left, where the light hits) came through the blast untouched
+   - the brightest, cleanest thing on a planet that had just exploded. It
+   takes a hit of its own now, in the scar's char, painted onto the burn
+   canvas after the crack's passes (one small region, ~50k pixels):
+   - the shine is SHATTERED: broken into plates (a jittered Voronoi, the
+     two nearest seeds found in the 5x5 cells round each pixel) with dark
+     seams between them - widest at the middle, thinning out and breaking
+     off towards the edge, only some reaching it - each seam's lip lit
+     grey where its plate faces the light and shadowed where it does not;
+   - soot over every plate, mottled and a little different on each, and a
+     few plates near the middle chipped out to char;
+   - a ragged scorch past the plates, so the broken patch sits in a burn
+     rather than on a clean shine.
+   A first try - a crater with fractures running out of it - read as a
+   black spider sitting on the highlight; plates read as the shine itself
+   broken. Its own seed (the crack's seeded geometry is untouched), the
+   sphere's own foreshortening at that point (u towards the limb is
+   divided by the surface's tilt), the scar's palette (char, scorched
+   brown, a dull grey sheen - nothing warm and no ember: planet2, "needs
+   to be black charring"), and the plasma's light pools kept half off it
+   through the art's mask, as they are kept off the crack. */
+const SCAR_SHINE = { x: -.33, y: -.35, r: .36 };
+function scarShineWound(g, N, gM, MQ){
+  let seed = 9173;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const S = N / 2, IX = SCAR_SHINE.x, IY = SCAR_SHINE.y, RW = SCAR_SHINE.r, IZ = Math.sqrt(1 - IX * IX - IY * IY);
+  const ca = IX / Math.hypot(IX, IY), sa = IY / Math.hypot(IX, IY);
+  /* the light, in the local frame (u towards the limb, v across) */
+  const L2 = Math.hypot(.55, .62), Lx = -.55 / L2, Ly = -.62 / L2, Lu = Lx * ca + Ly * sa, Lv = -Lx * sa + Ly * ca;
+  /* a small value noise for the ragged edge and the warp */
+  const G = 16, gr = new Float32Array(G * G); for(let i = 0; i < G * G; i++) gr[i] = rnd();
+  const sm = t => t * t * (3 - 2 * t);
+  const nz = (x, y) => { const x0 = Math.floor(x), y0 = Math.floor(y), fx = sm(x - x0), fy = sm(y - y0);
+    const i0 = ((x0 % G) + G) % G, j0 = ((y0 % G) + G) % G, i1 = (i0 + 1) % G, j1 = (j0 + 1) % G;
+    const A = gr[j0 * G + i0], B = gr[j0 * G + i1], C = gr[j1 * G + i0], D = gr[j1 * G + i1];
+    return A + (B - A) * fx + (C - A) * fy + (A - B - C + D) * fx * fy; };
+  /* the plates: a jittered grid of seeds in the local frame, each with its
+     own soot, a few near the middle chipped out */
+  const SD = [], CELL = .1, GS = 6, GW = 2 * GS + 1, CI = new Int16Array(GW * GW).fill(-1);
+  for(let j = -GS; j <= GS; j++) for(let i = -GS; i <= GS; i++){
+    const x = (i + .5 + (rnd() - .5) * .8) * CELL, y = (j + .5 + (rnd() - .5) * .8) * CELL, d = Math.hypot(x, y);
+    const st = .26 + .32 * rnd(), chip = rnd() < .25;
+    if(d > RW * 1.35) continue;
+    CI[(j + GS) * GW + i + GS] = SD.length;
+    SD.push([x, y, st, d < RW * .4 && chip ? 1 : 0]);
+  }
+  const x0 = Math.max(0, Math.floor((IX - RW * 1.6 + 1) * S)), x1 = Math.min(N, Math.ceil((IX + RW * 1.6 + 1) * S));
+  const y0 = Math.max(0, Math.floor((IY - RW * 1.6 + 1) * S)), y1 = Math.min(N, Math.ceil((IY + RW * 1.6 + 1) * S));
+  const W = x1 - x0, H = y1 - y0;
+  if(W <= 0 || H <= 0) return;
+  const tc = document.createElement("canvas"); tc.width = W; tc.height = H;
+  const tg = tc.getContext("2d"); if(!tg) return;
+  const im = tg.createImageData(W, H), dd = im.data, px1 = 1 / S;
+  for(let py = 0; py < H; py++) for(let pxx = 0; pxx < W; pxx++){
+    const x = (x0 + pxx + .5) / S - 1, y = (y0 + py + .5) / S - 1;
+    if(x * x + y * y >= .995) continue;
+    const dx = x - IX, dy = y - IY;
+    let u = (dx * ca + dy * sa) / IZ, v = -dx * sa + dy * ca;
+    const r = Math.hypot(u, v);
+    /* the reach: ragged, fading out to nothing */
+    const th = Math.atan2(v, u), edge = RW * (.78 + .44 * nz(Math.cos(th) * 1.6 + 7, Math.sin(th) * 1.6 + 3.1));
+    const fall = 1 - sm(Math.min(1, Math.max(0, (r - edge * .55) / (edge * .45))));
+    /* a scorch past the plates, so the broken patch sits IN a burn rather
+       than on a clean shine */
+    const halo = .44 * (1 - sm(Math.min(1, Math.max(0, (r - edge * .3) / (edge * .95))))) * (.7 + .6 * nz(u * 14 + 21, v * 14 + 6));
+    if(fall <= 0 && halo <= .004) continue;
+    const o = (py * W + pxx) * 4;
+    const haloOnly = () => { dd[o] = 22; dd[o + 1] = 15; dd[o + 2] = 12; dd[o + 3] = Math.round(Math.min(.5, halo) * 255); };
+    if(fall <= 0){ haloOnly(); continue; }
+    /* warp the plates a little, so the seams are not straight */
+    const wu = u + (nz(u * 22 + 3, v * 22 + 9) - .5) * .02, wv = v + (nz(u * 22 + 13, v * 22 + 1) - .5) * .02;
+    /* the two nearest seeds, from the 5x5 cells round this one */
+    let a1 = -1, a2 = -1, d1 = 1e9, d2 = 1e9;
+    const ci = Math.floor(wu / CELL), cj = Math.floor(wv / CELL);
+    for(let j = cj - 2; j <= cj + 2; j++){ if(j < -GS || j > GS) continue;
+      for(let i = ci - 2; i <= ci + 2; i++){ if(i < -GS || i > GS) continue;
+        const k = CI[(j + GS) * GW + i + GS]; if(k < 0) continue;
+        const ex = wu - SD[k][0], ey = wv - SD[k][1], q = ex * ex + ey * ey;
+        if(q < d1){ d2 = d1; a2 = a1; d1 = q; a1 = k; } else if(q < d2){ d2 = q; a2 = k; } } }
+    if(a2 < 0){ haloOnly(); continue; }
+    const A = SD[a1], B = SD[a2], bx = B[0] - A[0], by = B[1] - A[1], bl = Math.hypot(bx, by) || 1;
+    const e = (d2 - d1) / (2 * bl);                       /* distance to the seam */
+    const wid = (.0035 + .0085 * Math.max(0, 1 - r / RW)) * (.75 + .5 * nz(u * 9 + 1, v * 9 + 4));
+    /* seams thin out and break off towards the edge - only some reach it */
+    const sk = ((a1 * 7919 + a2 * 104729) ^ (a2 * 7919 + a1 * 104729)) % 1000 / 1000;
+    const reach = 1 - sm(Math.min(1, Math.max(0, (r / RW - (.42 + .5 * sk)) / .18)));
+    const crack = 1 - sm(Math.min(1, Math.max(0, (e - wid * .5) / (px1 * 1.2))));
+    /* the seam's lip: lit where this plate's edge faces the light */
+    const facing = (bx * Lu + by * Lv) / bl, lipBand = 1 - sm(Math.min(1, Math.max(0, (e - wid * .5) / (wid * 1.1 + px1))));
+    let R = 0, Gc = 0, Bc = 0, al = 0;
+    const over = (r2, g2, b2, a2v) => { if(a2v <= 0) return; const t = al + a2v * (1 - al);
+      R = (R * al * (1 - a2v) + r2 * a2v) / t; Gc = (Gc * al * (1 - a2v) + g2 * a2v) / t; Bc = (Bc * al * (1 - a2v) + b2 * a2v) / t; al = t; };
+    /* soot over the plate, mottled; a chipped plate is char */
+    const mott = .75 + .5 * nz(u * 30 + 5, v * 30 + 2);
+    over(22, 15, 12, Math.min(.5, halo));
+    if(A[3]) over(16, 12, 11, .82 * fall);
+    else over(30 + 22 * nz(u * 12, v * 12), 20, 15, Math.min(.85, A[2] * mott * (.55 + .6 * Math.max(0, 1 - r / RW))) * fall);
+    if(facing > .15) over(176, 171, 165, .26 * facing * (lipBand - crack) * reach * fall);
+    else if(facing < -.15) over(10, 8, 8, .35 * -facing * (lipBand - crack) * reach * fall);
+    over(12, 10, 10, .93 * crack * reach * Math.pow(fall, 1.2));
+    dd[o] = R; dd[o + 1] = Gc; dd[o + 2] = Bc; dd[o + 3] = Math.round(al * 255);
+  }
+  tg.putImageData(im, 0, 0);
+  g.save(); g.beginPath(); g.arc(S, S, S - .5, 0, Math.PI * 2); g.clip(); g.drawImage(tc, x0, y0); g.restore();
+  /* the plasma's light pools stay half off it */
+  if(gM){
+    const m = MQ / 2, mx = (IX + 1) * m, my = (IY + 1) * m, mr = RW * m;
+    gM.save(); gM.globalCompositeOperation = "destination-out";
+    const mg = gM.createRadialGradient(mx, my, 0, mx, my, mr);
+    mg.addColorStop(0, "rgba(0,0,0,.6)"); mg.addColorStop(.6, "rgba(0,0,0,.35)"); mg.addColorStop(1, "rgba(0,0,0,0)");
+    gM.fillStyle = mg; gM.fillRect(0, 0, MQ, MQ); gM.restore();
+  }
+}
 function cosmicScarArt(){
   if(cosmicScarCache !== null) return cosmicScarCache;
   cosmicScarCache = false;
@@ -65727,8 +65858,11 @@ function cosmicScarArt(){
       const iM = gM.createImageData(MQ, MQ);
       scarMaskFill(P.Msk, iM.data);
       gM.putImageData(iM, 0, 0);
-      mask = cM.toDataURL("image/png");
     }
+    /* the shine takes its own damage (build 319): on the burn, and half
+       off the plasma's mask */
+    try{ scarShineWound(gB, N, gM, MQ); }catch(e){}
+    if(gM) mask = cM.toDataURL("image/png");
     /* the fragments rise from the crack and the rupture: out from the
        planet's middle and a little up, uneven so ten never read as a
        pattern - [x %, y %, size %, direction (deg, 0 = right, clockwise),
@@ -68425,6 +68559,14 @@ const RANK_CUTSPIN_ACCEL_MS = 7200, RANK_CUTSPIN_DECEL_MS = 5400, RANK_CUTSPIN_P
 /* the attention on the new flare as the scene opens: from RANK_ATTN_AT,
    for RANK_ATTN_MS, before the whirl */
 const RANK_ATTN_AT = 1300, RANK_ATTN_MS = 4000;
+/* BUILD 319: THE CHARGE IS PALE AND IT STARTS THE SPIN. "The charge up
+   for the flare needs to be pale, and it needs to be timed. It needs that
+   feeling like oh that flare just made it spin." The charge-up light is
+   RANK_CHG_PALE (no colour until the whirl); its last ring lands on the
+   frame the whirl starts, where the charge is released, and the whirl
+   leaves with RANK_CUTSPIN_KICK of its top speed already in it (a push
+   you can see) rather than from a standstill. */
+const RANK_CHG_PALE = "#EEF3FA", RANK_CUTSPIN_KICK = .14;
 /* round five: the planet rises this long after the dark comes up.
    THE END, ONCE (build 317, flow round): the words, the planet and the
    tint fade out TOGETHER over RANK_END_MS, and then the scene hands over -
@@ -68917,8 +69059,14 @@ function playRankUpScene(tierKey, opts, spec){
      underneath, untouched, so the start and the end cannot jump. */
   const ACC = spec.times.accel || RANK_CUTSPIN_ACCEL_MS, DEC = spec.times.decel || RANK_CUTSPIN_DECEL_MS;
   const TURNS = (spec.times.turns || RANK_CUTSPIN_TURNS) * 360;
-  /* equal speed at the peak: A / ACC == B / DEC, A + B == TURNS */
-  const PEAK_DEG = TURNS * ACC / (ACC + DEC), PEAK_AT = ACC / (ACC + DEC);
+  /* equal speed at the peak, the speeding-up starting from KICK of it
+     (build 319: the charge's release pushes it off): A = (1 + KICK) v ACC / 2,
+     B = v DEC / 2, A + B == TURNS. The speeding-up is the quadratic
+     a u + (1 - a) u^2 (a = 2 KICK / (1 + KICK)) as a cubic Bezier; with no
+     kick it is t-squared, as it was. */
+  const KICK = RANK_CUTSPIN_KICK, KA = 2 * KICK / (1 + KICK);
+  const PEAK_DEG = TURNS * (1 + KICK) * ACC / ((1 + KICK) * ACC + DEC), PEAK_AT = ACC / (ACC + DEC);
+  const ACC_EASE = "cubic-bezier(.333," + (KA / 3).toFixed(4) + ",.667," + ((KA + 1) / 3).toFixed(4) + ")";
   const newColor = flareColorOf(tierKey);
   let spins = [], burstArmed = false;
   const newBadge = () => rankTierBadge(heroBefore, tierKey);
@@ -68957,13 +69105,15 @@ function playRankUpScene(tierKey, opts, spec){
       else { an.currentTime = fa.currentTime; if(fa.playState === "paused") an.pause(); }
     }catch(e){}
   };
-  const flareFx = (cls, nRings) => {
+  const flareFx = (cls, nRings, color) => {
     const b0 = newBadge(), slot = b0 && b0.closest(".rank-orbit-slot");
     if(!slot) return null;
-    slot.style.setProperty("--chg", chgColor);
+    const c = color || chgColor;
+    slot.style.setProperty("--chg", c);
     slot.classList.add("is-attn");
     const under = document.createElement("i"), over = document.createElement("i");
     under.className = "rank-chg rank-chg-under " + cls; over.className = "rank-chg rank-chg-over " + cls;
+    under.style.setProperty("--chg", c); over.style.setProperty("--chg", c);
     under.setAttribute("aria-hidden", "true"); over.setAttribute("aria-hidden", "true");
     const corona = document.createElement("i");
     corona.className = "rank-chg-corona";
@@ -68986,43 +69136,91 @@ function playRankUpScene(tierKey, opts, spec){
              { offset: +(o + (nx - o) * .6).toFixed(4), transform: "scale(1)", easing: "ease-in-out" });
     });
     k.push({ offset: 1, transform: "scale(" + (endScale || 1) + ")" });
-    try{ slot.animate(k, { duration: D, fill: endScale ? "forwards" : "none" }); }catch(e){}
+    try{ return slot.animate(k, { duration: D, fill: endScale ? "forwards" : "none" }); }catch(e){ return null; }
   };
-  /* 1. ATTENTION - THE CHARGE: five rings close in on the flare, each
-     sooner than the last, and the flare takes each one with a small swell;
-     the corona under it grows with every ring. At the end it lets the
-     charge go into the whirl (the corona eases off as the spin starts). */
-  const RANK_CHG_IN = [.2, .4, .56, .69, .8, .89];
+  /* 1. ATTENTION - THE CHARGE (build 319: pale, and timed to the spin).
+     "The charge up for the flare needs to be pale, and it needs to be
+     timed. It needs that feeling like oh that flare just made it spin."
+     Nine rings of pale light close in on the flare, each sooner than the
+     last; the flare takes each with a small swell and the corona under it
+     grows. The LAST ring lands as the whirl starts (offset 1 is
+     T.ignite): the flare draws in for the last ~300ms (a squeeze), and
+     everything holds its last frame (fill forwards) until release() takes
+     it off in the same frame and lets the charge go - so the spin starts
+     ON the release, wherever the timers land. */
+  const RANK_CHG_IN = [.2, .39, .54, .66, .76, .84, .905, .955, 1];
+  let charge = null;
   const attention = () => {
     const D = RANK_ATTN_MS;
-    const fx = flareFx("is-attention", RANK_CHG_IN.length);
+    const fx = flareFx("is-attention", RANK_CHG_IN.length, RANK_CHG_PALE);
     if(!fx) return;
+    charge = fx;
+    fx.anims = [];
     try{
       fx.rings.forEach((r, i) => {
         /* each ring closes in over ~0.6-0.4s, faint while it is wide and
            bright only as it reaches the flare, so at most two are in the
            air at once and each one reads as moving IN */
         const land = RANK_CHG_IN[i], len = Math.max(.1, .16 - i * .012), st = Math.max(0, land - len);
-        r.animate([
+        const k = [
           { offset: 0, opacity: 0, transform: "scale(2.7)" },
           { offset: st, opacity: 0, transform: "scale(2.7)", easing: "cubic-bezier(.45,0,.9,.55)" },
           { offset: +(st + (land - st) * .55).toFixed(4), opacity: +(.28 + .05 * i).toFixed(3), transform: "scale(1.9)", easing: "cubic-bezier(.3,0,.9,.7)" },
-          { offset: land, opacity: 1, transform: "scale(1)", easing: "ease-out" },
-          { offset: Math.min(1, +(land + .04).toFixed(4)), opacity: 0, transform: "scale(.88)" },
-          { offset: 1, opacity: 0, transform: "scale(.88)" }], { duration: D, fill: "none" });
+          { offset: land, opacity: 1, transform: "scale(1)", easing: "ease-out" }];
+        if(land < 1) k.push({ offset: Math.min(1, +(land + .04).toFixed(4)), opacity: 0, transform: "scale(.88)" }, { offset: 1, opacity: 0, transform: "scale(.88)" });
+        fx.anims.push(r.animate(k, { duration: D, fill: "forwards" }));
       });
       const kC = [{ offset: 0, opacity: 0, transform: "scale(.5)" }, { offset: .1, opacity: .25, transform: "scale(.62)", easing: "ease-in-out" }];
       RANK_CHG_IN.forEach((land, i) => {
         const lv = (i + 1) / RANK_CHG_IN.length;
-        kC.push({ offset: land, opacity: +(.5 + .5 * lv).toFixed(3), transform: "scale(" + (.75 + .4 * lv).toFixed(3) + ")", easing: "ease-out" });
-        const nx = i + 1 < RANK_CHG_IN.length ? RANK_CHG_IN[i + 1] : .96;
-        kC.push({ offset: +(land + (nx - land) * .6).toFixed(4), opacity: +(.36 + .5 * lv).toFixed(3), transform: "scale(" + (.7 + .36 * lv).toFixed(3) + ")", easing: "ease-in-out" });
+        kC.push({ offset: land, opacity: +(.45 + .55 * lv).toFixed(3), transform: "scale(" + (.75 + .4 * lv).toFixed(3) + ")", easing: "ease-out" });
+        if(land < 1){
+          const nx = RANK_CHG_IN[i + 1];
+          kC.push({ offset: +(land + (nx - land) * .6).toFixed(4), opacity: +(.32 + .5 * lv).toFixed(3), transform: "scale(" + (.7 + .36 * lv).toFixed(3) + ")", easing: "ease-in-out" });
+        }
       });
-      kC.push({ offset: .96, opacity: .9, transform: "scale(1.08)", easing: "ease-in" }, { offset: 1, opacity: 0, transform: "scale(1.22)" });
-      fx.corona.animate(kC, { duration: D, fill: "none" });
-      kickSlot(fx.slot, D, RANK_CHG_IN.map((o, i) => [o, (1.15 + .012 * i).toFixed(3)]));
+      fx.anims.push(fx.corona.animate(kC, { duration: D, fill: "forwards" }));
+      /* the swells, then the squeeze into the last ring */
+      const sq = RANK_CHG_IN.slice(0, -3).map((o, i) => [o, (1.13 + .012 * i).toFixed(3)]);
+      fx.slotAnim = kickSlot(fx.slot, D, sq, .88);
+      if(fx.slotAnim) fx.anims.push(fx.slotAnim);
     }catch(e){}
-    setTimeout(() => fx.remove(), D + 50);
+    /* a fallback only: release() takes it off on the whirl's first frame */
+    setTimeout(() => { if(charge === fx) release(true); }, D + 600);
+  };
+  /* THE RELEASE (build 319), on the whirl's first frame: the charge goes
+     off the flare - a bright pale flash in the bubble, two rings racing out
+     past the system, the bubble springing out of its squeeze - and the
+     whirl leaves with a push already in it (RANK_CUTSPIN_KICK), so it
+     reads as the flare setting the planet's flares turning. */
+  const release = (late) => {
+    const fx = charge;
+    if(!fx) return;
+    charge = null;
+    (fx.anims || []).forEach(an => { try{ an.cancel(); }catch(e){} });
+    fx.remove();
+    if(late) return;
+    const rl = flareFx("is-release", 0, RANK_CHG_PALE);
+    if(!rl) return;
+    try{
+      rl.corona.animate([{ opacity: 1, transform: "scale(1.15)" }, { offset: .14, opacity: 1, transform: "scale(1.5)", easing: "cubic-bezier(.2,.6,.3,1)" },
+        { opacity: 0, transform: "scale(1.75)" }], { duration: 950, easing: "ease-out", fill: "both" });
+      /* each wave starts the size of the last ring (1.18 bubbles across;
+         drawn 4.4 and 6.2 bubbles wide, the ring at .665 of that) and
+         spreads to its drawn size */
+      [[".4", 720, 0, 1], [".29", 1080, 60, .8]].forEach(([s0, d, dl, o0], i) => {
+        const w = document.createElement("i");
+        w.className = "rank-chg-wave" + (i ? " is-2" : "");
+        rl.over.appendChild(w);
+        w.animate([{ opacity: o0, transform: "scale(" + s0 + ")" }, { offset: .55, opacity: o0 * .45 }, { opacity: 0, transform: "scale(1)" }],
+          { duration: d, delay: dl, easing: "cubic-bezier(.1,.7,.3,1)", fill: "both" });
+      });
+      /* the bubble springs out of the squeeze: the `scale` property, which
+         composes with the whirl's turn on the slot's `transform` */
+      rl.slot.animate([{ scale: ".88" }, { offset: .14, scale: "1.3", easing: "cubic-bezier(.2,.7,.3,1)" }, { scale: "1" }],
+        { duration: 700, fill: "none" });
+    }catch(e){}
+    setTimeout(() => rl.remove(), 1200);
   };
   /* 3. THE BANG at the top speed */
   const bangAt = (el, cls, size, life) => {
@@ -69058,11 +69256,31 @@ function playRankUpScene(tierKey, opts, spec){
        goes (its after-glow, on the slowing's own clock) */
     stageWrap.style.setProperty("--zb-ms", DEC + "ms");
     stageWrap.classList.add("rank-zoomback");
+    /* BUILD 319: "The glow after the flash during the spin of the flare is
+       not good enough, needs to be bright and slowly cool down". It was
+       there, but inside the slot while the slot sat at .06 (the bubble
+       melting into the light), so the first two seconds of it were never
+       seen; the bubble melts on its own now. And it COOLS like something
+       hot: a white-hot core over the glass that goes in the first ~2/3 of
+       the slowing (white to the rank's colour), and the corona of the
+       rank's colour under it holding full for the first third and easing
+       down to .3 by the stop - where the pulse at the stop picks it up. */
     afterglow = flareFx("is-afterglow", 0);
     if(afterglow){
-      const kA = [{ offset: 0, opacity: 1, transform: "scale(1.35)" }, { offset: .35, opacity: .85, transform: "scale(1.22)" },
-                  { offset: .7, opacity: .48, transform: "scale(1.08)" }, { offset: 1, opacity: .16, transform: "scale(1)" }];
-      try{ afterglow.corona.animate(kA, { duration: DEC, easing: "ease-out", fill: "forwards" }); }catch(e){}
+      const hot = document.createElement("i");
+      hot.className = "rank-chg-hot";
+      afterglow.over.appendChild(hot);
+      afterglow.hot = hot;
+      const kA = [{ offset: 0, opacity: 1, transform: "scale(1.5)" }, { offset: .32, opacity: 1, transform: "scale(1.36)", easing: "ease-in-out" },
+                  { offset: .62, opacity: .76, transform: "scale(1.2)", easing: "ease-in-out" }, { offset: .85, opacity: .48, transform: "scale(1.09)", easing: "ease-in-out" },
+                  { offset: 1, opacity: .3, transform: "scale(1.03)" }];
+      const kH = [{ offset: 0, opacity: 1, transform: "scale(1.3)" }, { offset: .16, opacity: .95, transform: "scale(1.2)", easing: "ease-in-out" },
+                  { offset: .42, opacity: .5, transform: "scale(1.06)", easing: "ease-in-out" }, { offset: .68, opacity: .1, transform: "scale(1)", easing: "ease-in" },
+                  { offset: .8, opacity: 0, transform: "scale(1)" }, { offset: 1, opacity: 0, transform: "scale(1)" }];
+      try{
+        afterglow.corona.animate(kA, { duration: DEC, fill: "forwards" });
+        hot.animate(kH, { duration: DEC, fill: "forwards" });
+      }catch(e){}
     }
   };
   /* 5. AT THE STOP, THE PULSE (a rank; Supernova swells instead): "when
@@ -69097,7 +69315,7 @@ function playRankUpScene(tierKey, opts, spec){
           if(end < 1) kR.push({ offset: 1, opacity: 0, transform: "scale(2.4)" });
           try{ r.animate(kR, { duration: D, fill: "none" }); }catch(e){}
         });
-        const kC = [{ offset: 0, opacity: .16, transform: "scale(1)" }];
+        const kC = [{ offset: 0, opacity: .3, transform: "scale(1.03)" }];
         peaks.forEach((o, i) => { const lv = i / nB, nx = i + 1 < peaks.length ? peaks[i + 1] : 1;
           kC.push({ offset: o, opacity: +(.6 + .4 * lv).toFixed(3), transform: "scale(" + (1.15 + .2 * lv).toFixed(3) + ")", easing: "ease-in-out" },
                   { offset: +(o + (nx - o) * .55).toFixed(4), opacity: +(.4 + .45 * lv).toFixed(3), transform: "scale(" + (1.02 + .15 * lv).toFixed(3) + ")", easing: "ease-in-out" }); });
@@ -69352,6 +69570,8 @@ function playRankUpScene(tierKey, opts, spec){
   /* 1. attention, then 2. the whirl (and the camera into it) */
   at(RANK_ATTN_AT, attention);
   at(T.ignite, () => {
+    /* the charge lets go on the whirl's first frame (build 319) */
+    release();
     overlay.classList.add("is-igniting", "is-cutspin");
     stageWrap.classList.add("supernova-zoom");
     const b1 = rankTierBadge(heroAfter, tierKey);
@@ -69362,7 +69582,7 @@ function playRankUpScene(tierKey, opts, spec){
        celebration pop (that pop fired just as the title came up and read
        as light shooting off the flare). */
     const kf = sign => [
-      { transform: "rotate(0deg)", easing: "cubic-bezier(.333,0,.667,.333)" },
+      { transform: "rotate(0deg)", easing: ACC_EASE },
       { transform: "rotate(" + (sign * PEAK_DEG).toFixed(2) + "deg)", offset: PEAK_AT, easing: "cubic-bezier(.333,.667,.667,1)" },
       { transform: "rotate(" + (sign * TURNS) + "deg)" }];
     const opts2 = { duration: ACC + DEC, fill: "none" };
@@ -69376,7 +69596,7 @@ function playRankUpScene(tierKey, opts, spec){
        their own slow `transform` spin carries on underneath untouched and
        they stop, on whole turns, where they would have been. */
     const rkf = [
-      { rotate: "0deg", easing: "cubic-bezier(.333,0,.667,.333)" },
+      { rotate: "0deg", easing: ACC_EASE },
       { rotate: PEAK_DEG.toFixed(2) + "deg", offset: PEAK_AT, easing: "cubic-bezier(.333,.667,.667,1)" },
       { rotate: TURNS + "deg" }];
     [heroBefore, heroAfter].forEach(h => {
@@ -69385,11 +69605,12 @@ function playRankUpScene(tierKey, opts, spec){
     /* 2. THE LIGHT: the trails, the bubbles and the secret flares fading
        into them, and the new colour's takeover - each an opacity curve on
        the whirl's own clock. vh(u) is the speed as a share of the top
-       speed at progress u (it rises straight to the top at PEAK_AT and
-       falls straight after), so every curve is a function of SPEED. */
+       speed at progress u (it rises straight from KICK to the top at
+       PEAK_AT and falls straight after), so every curve is a function of
+       SPEED. */
     try{
       const P = PEAK_AT, ss = (a, b2, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b2 - a))); return t * t * (3 - 2 * t); };
-      const vh = u => u < P ? u / P : (1 - u) / (1 - P);
+      const vh = u => u < P ? KICK + (1 - KICK) * u / P : (1 - u) / (1 - P);
       const curve = (f, n) => {
         const k = [], pts = new Set();
         for(let i = 0; i <= n; i++) pts.add(+(i / n).toFixed(5));
@@ -69417,9 +69638,13 @@ function playRankUpScene(tierKey, opts, spec){
       }
       /* the bubbles and the secret flares melt into the light at speed;
          the new flare's own bubble comes back a little sooner as it
-         slows, lit and glowing */
+         slows, lit and glowing. Build 319: on the new flare it is the
+         BUBBLE that melts, not its slot - the slot also carries the light
+         on it (flareFx), and the after-glow sat at the slot's .06 for the
+         first two seconds of the slowing, unseen ("the glow after the
+         flash during the spin of the flare is not good enough"). */
       const nb0 = newBadge(), ns0 = nb0 && nb0.closest(".rank-orbit-slot");
-      if(orbitBefore) orbitBefore.querySelectorAll(":scope > .rank-orbit-slot").forEach(sl => fadeIn(sl, sl === ns0
+      if(orbitBefore) orbitBefore.querySelectorAll(":scope > .rank-orbit-slot").forEach(sl => fadeIn(sl === ns0 ? nb0 : sl, sl === ns0
         ? (u => u <= P ? 1 - .94 * ss(.5, .86, vh(u)) : 1 - .94 * ss(.62, .94, vh(u)))
         : (u => 1 - .94 * ss(.5, .86, vh(u)))));
       /* SUPERNOVA'S SPIN IS ITS OWN (the second evolution round): the
