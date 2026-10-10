@@ -52794,10 +52794,13 @@ const BADGE_GEOM = {
   metal: 4.5,   /* the silver's outer edge, outside the outline */
   inner: 4.4,   /* how far the silver runs inside it */
   edge: 2.0,    /* the plate's dark edge, inside the silver */
-  gap: 1.7,     /* the slot's clearance round a seated token */
-  lip: 1.2,     /* the lining's lit edge round the hole */
+  gap: 2.6,     /* the slot's clearance round a seated token (1.7 to build 318: too narrow to read as a hole) */
+  lip: 1.5,     /* the lining's lit edge round the hole */
   wall: 2.8     /* an empty hole's wall, inside its lip */
 };
+/* The hole's shade on a seated badge's top-left edge (build 319): how far
+   past the gap each step reaches, in token units, and its opacity. */
+const BADGE_SEAT_SHADE = [[.6, .26], [1.5, .2], [2.6, .14]];
 /* Polished silver: a ramp with the bright-dark-bright of a reflected
    room in it (the contrast is what reads as metal and not grey paint),
    and the grey badge's own neutral version - no blue in it. */
@@ -52918,6 +52921,14 @@ const BADGE_STRIKE = {
   dome: .006,           /* the face's gentle dome (slope per token unit) */
   ao: .4, aoL: 1, wallAO: .55, coat: .09,
   sliver: 1.5,          /* no enamel thinner than twice this */
+  /* WHERE THE COLOUR MEETS THE SILVER (build 319): "where the color meets
+     the silver looks rough". The wall's foot was near vertical, so its
+     normal reflected the studio's dark horizon: a black hairline with a
+     white one beside it, under a pixel each, round every plate. The wall
+     now leans at most wallMax, and the colour runs up to where the wall
+     meets its level (eOff, in token units) instead of a ring of bare
+     metal floor - one soft step from silver to colour. */
+  wallMax: .22, eOff: .5,
   geoW: 288, geoBlur: 2,
   ceilLo: .2, ceilHi: .62, edge0: -.02, edgeW: .16, ceilTilt: .12, ceilA: .5, ceilB: .9,
   boxA: .35, boxB: .7, box: 1.5, wall: .035, wallTilt: .06,
@@ -53215,8 +53226,10 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce){
       A[i] = a;
       if(a <= 0) continue;
       const e = GE[i00] * w00 + GE[i01] * w01 + GE[i10] * w10 + GE[i11] * w11;
-      let ae = .5 - e * k; ae = ae >= 1 ? 1 : ae <= 0 ? 0 : ae;
-      AE[i] = ae; WD[i] = -e;
+      /* the colour runs up to where the wall meets its level (build 319) */
+      const eF = e - P.eOff;
+      let ae = .5 - eF * k; ae = ae >= 1 ? 1 : ae <= 0 ? 0 : ae;
+      AE[i] = ae; WD[i] = -eF;
       let h, hx = 0, hy = 0;
       const tin = e <= 0 ? 1 : e >= RH ? 0 : 1 - e / RH;
       const hin = e <= 0 ? 0 : PROF[(tin * PN) | 0];
@@ -53226,18 +53239,21 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce){
         h = hin;
         if(e > 0 && e < RH){ const dp = -DPROF[(tin * PN) | 0] / RH;
           hx = dp * (GEx[i00] * w00 + GEx[i01] * w01 + GEx[i10] * w10 + GEx[i11] * w11);
-          hy = dp * (GEy[i00] * w00 + GEy[i01] * w01 + GEy[i10] * w10 + GEy[i11] * w11); }
+          hy = dp * (GEy[i00] * w00 + GEy[i01] * w01 + GEy[i10] * w10 + GEy[i11] * w11);
+          /* the wall down to the colour leans at most wallMax (build 319) */
+          const sm = Math.sqrt(hx * hx + hy * hy) * P.relief;
+          if(sm > P.wallMax){ const q = P.wallMax / sm; hx *= q; hy *= q; } }
       } else {
         h = hout;
         if(tout > 0 && tout < 1){ const dp = DPROF[(tout * PN) | 0] / RH;
           hx = dp * (GOx[i00] * w00 + GOx[i01] * w01 + GOx[i10] * w10 + GOx[i11] * w11);
           hy = dp * (GOy[i00] * w00 + GOy[i01] * w01 + GOy[i10] * w10 + GOy[i11] * w11); }
       }
-      if(e < .5){
-        const m = P.enamel + P.menis * Math.exp((e < 0 ? e : 0) / P.menisL);
+      if(eF < .5){
+        const m = P.enamel + P.menis * Math.exp((eF < 0 ? eF : 0) / P.menisL);
         if(m > h){
           h = m;
-          if(e < 0){ const dm = P.menis / P.menisL * Math.exp(e / P.menisL);
+          if(eF < 0){ const dm = P.menis / P.menisL * Math.exp(eF / P.menisL);
             hx = dm * (GEx[i00] * w00 + GEx[i01] * w01 + GEx[i10] * w10 + GEx[i11] * w11);
             hy = dm * (GEy[i00] * w00 + GEy[i01] * w01 + GEy[i10] * w10 + GEy[i11] * w11); }
           else { hx = 0; hy = 0; }
@@ -53550,8 +53566,10 @@ function buildUnitBadgeSVG(unitName, earned, opts){
      the lining seen in shadow. */
   if(opts.slot !== false){
     const hole = G.key + G.gap;
-    solid(hole + G.lip, lit(uid + "-lip", [[0, "#000000", .34], [.5, "#7D8896", .10], [1, "#D2E2F6", .30]]), root);
-    solid(hole, lit(uid + "-wall", [[0, "#06080B"], [.55, "#10151C"], [1, "#29323D"]]), root);
+    /* the far wall lit and the lip's catch-light brighter (build 319), so
+       the hole reads as a hole round a seated badge too */
+    solid(hole + G.lip, lit(uid + "-lip", [[0, "#000000", .38], [.5, "#7D8896", .10], [1, "#D2E2F6", .46]]), root);
+    solid(hole, lit(uid + "-wall", [[0, "#040507"], [.5, "#0E1218"], [.8, "#27303A"], [1, "#46525F"]]), root);
     if(!earned){
       /* The floor, with the overhang's shade along its top-left edge in
          three soft steps. */
@@ -53659,6 +53677,36 @@ function buildUnitBadgeSVG(unitName, earned, opts){
   }
   }
 
+  /* SEATED, NOT LAID ON (build 319): "it's still missing that look like
+     it's sitting inside of the missing spot". A badge set into a hole is
+     LOWER than the lining round it, so the hole's edge throws a shade onto
+     the badge's own top-left edge, where the light comes from. Three soft
+     steps: each is the badge's silhouette less the hole moved down and
+     right, painted black at low opacity - masks, no filter. */
+  if(opts.slot !== false && earned === true){
+    const hole = G.key + G.gap;
+    BADGE_SEAT_SHADE.forEach(([d, a], k) => {
+      const m = document.createElementNS(NS, "mask");
+      m.setAttribute("id", uid + "-seat" + k);
+      m.setAttribute("maskUnits", "userSpaceOnUse");
+      m.setAttribute("x", "-80"); m.setAttribute("y", "-80");
+      m.setAttribute("width", "260"); m.setAttribute("height", "260");
+      const w = document.createElementNS(NS, "path");
+      w.setAttribute("d", outline); w.setAttribute("fill", "#FFFFFF"); w.setAttribute("stroke", "#FFFFFF");
+      w.setAttribute("stroke-width", String(2 * G.key)); w.setAttribute("stroke-linejoin", "round");
+      const b = document.createElementNS(NS, "path");
+      b.setAttribute("d", outline); b.setAttribute("fill", "#000000"); b.setAttribute("stroke", "#000000");
+      b.setAttribute("stroke-width", String(2 * hole)); b.setAttribute("stroke-linejoin", "round");
+      b.setAttribute("transform", "translate(" + (.6 * (G.gap + d)).toFixed(2) + " " + (.8 * (G.gap + d)).toFixed(2) + ")");
+      m.append(w, b); defs.appendChild(m);
+      const r = document.createElementNS(NS, "rect");
+      r.setAttribute("x", "-80"); r.setAttribute("y", "-80"); r.setAttribute("width", "260"); r.setAttribute("height", "260");
+      r.setAttribute("fill", "#000000"); r.setAttribute("opacity", String(a));
+      r.setAttribute("mask", "url(#" + uid + "-seat" + k + ")");
+      r.setAttribute("class", "badge-seat-shade");
+      root.appendChild(r);
+    });
+  }
   /* THE GLISTEN LIVES INSIDE THE BADGE, masked to its silhouette - "the
      reflection that hits your brief case across all the badges, I can
      tell it's not only happening to the badges but in the square hit box
