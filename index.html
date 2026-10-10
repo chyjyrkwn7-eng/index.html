@@ -95349,8 +95349,10 @@ const VROOM_OWN_REVEAL_CAP_MS = 150000;        /* and this device's own, only if
 /* Anything that owns the screen while results land: a rank-up (it plays
    in #supernova-cutscene too), the badge case, Void, a spotlight - and a
    secret flare's scene (build 318: a find plays on the room's results as
-   on any other, and the leaderboard must not roll over it). */
-const VROOM_SCENE_SELECTOR = "#supernova-cutscene, #badge-cutscene, #void-cutscene, .rs-spot, .sf-scene";
+   on any other, and the leaderboard must not roll over it). The badge
+   case on a results screen is .bc-scene, not #badge-cutscene (that one
+   is Home's queue), so it is named here too (build 318). */
+const VROOM_SCENE_SELECTOR = "#supernova-cutscene, #badge-cutscene, #void-cutscene, .rs-spot, .sf-scene, .bc-scene";
 
 /* A pill pinned to the bottom of the screen, so it is seen from wherever
    you have scrolled to - "you'd be to see it from where you are on the

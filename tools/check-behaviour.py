@@ -19313,6 +19313,30 @@ def check_b318h_legacy_rows(br):
     ctx.close()
 
 
+def check_b318_vroom_badge_case(br):
+    """Build 318 (integration). The Virtual Room holds its leaderboard while
+    a scene owns the screen, named by VROOM_SCENE_SELECTOR. A results
+    screen's badge case is .bc-scene, which that list never named (it had
+    #badge-cutscene, Home's queue), so the room could roll its leaderboard
+    over a badge being placed in the case. Mounts the real badge case scene
+    and asserts the selector sees it. Fails on 219bfea."""
+    print("\n318. the Virtual Room leaderboard waits for a badge case on its results")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""() => {
+      const unit = (typeof unitsInTeachingOrder === "function") ? unitsInTeachingOrder()[0] : null;
+      const before = !!document.querySelector(VROOM_SCENE_SELECTOR);
+      const t = theme.muteBanners; theme.muteBanners = false;
+      playBadgeCaseScene([unit], () => {}, [], {});
+      theme.muteBanners = t;
+      const scene = !!document.querySelector(".bc-scene");
+      return { unit, before, scene, seen: !!document.querySelector(VROOM_SCENE_SELECTOR) };
+    }""")
+    check("the badge case scene mounts", r["scene"] and r["unit"], r)
+    check("nothing counted as a scene before it", not r["before"], r)
+    check("VROOM_SCENE_SELECTOR sees the badge case", r["seen"], r)
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -19511,6 +19535,7 @@ def main():
             check_b318_daily(br)
             check_b318_one_chat(br)
             check_b318h_legacy_rows(br)
+            check_b318_vroom_badge_case(br)
         finally:
             br.close()
     SERVER.shutdown()
