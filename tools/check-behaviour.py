@@ -1410,13 +1410,18 @@ def check_b313_shuffle(br):
     # all, so the four choice repairs (US/TX 23, Fitness 11, Victims of
     # Crime 5, Penal 346) were undone. What is asserted now is the rule:
     # no question shows choices other than the ones it was stored under.
+    # BUILD 319: Madison photographed the study guide's Victims of Crime #5
+    # - B ends "...between them and the event.", C is the "deny or
+    # minimize" line, D is All of the Above. The import had split B and
+    # glued D onto C; it is rejoined to the guide, identity kept.
     check("the Victims of Crime question reads exactly as the study guide has it, identity unchanged",
-          r["victimKeep"] is True and r["victim"] and r["victim"][2] == "event.", r["victim"])
+          r["victimKeep"] is True and r["victim"] and len(r["victim"]) == 4
+          and r["victim"][1].endswith("between them and the event.") and r["victim"][3] == "All of the Above", r["victim"])
     kc = pg.evaluate("()=>QUESTIONS.map((q, i) => i).filter(i => Array.isArray(QUESTIONS[i].keyChoices) && QUESTIONS[i].keyChoices.join('|') !== QUESTIONS[i].choices.join('|')).map(i => QUESTIONS[i].topic.trim().slice(0, 12) + ' ' + QUESTIONS[i].src)")
     # BUILD 319: Penal Code #346's "Manslaughter. 1" -> "Manslaughter." was
     # asked for by name in the 319 list, so it is the one allowed repair
     # (check_b319_penal346 holds it to that one choice and its identity).
-    kc = [k for k in kc if k != "Penal Code 346"]
+    kc = [k for k in kc if k not in ("Penal Code 346", "Victims of C 5")]
     check("no question's choices are reworded from the study guide (no keyChoices that differ)", kc == [], kc)
     ctx.close()
 
@@ -19885,7 +19890,10 @@ def check_b319_penal346(br):
           len(p) == 1 and p[0]["key"] == "Penal Code|346|243n1v" and was["p346"] and was["p346"][0]["key"] == p[0]["key"], [p and p[0]["key"], was["p346"] and was["p346"][0]["key"]])
     check("all of KEYS is byte-identical to 8aded7f's", now["keys"] == was["keys"], [len(now["keys"]), len(was["keys"])])
     diff = [i for i, (a, b) in enumerate(zip(now["bank"], was["bank"])) if a != b]
-    check("no other question's text, choices or answer moved", len(now["bank"]) == len(was["bank"]) and diff == ([p[0]["i"]] if p else []), diff[:6])
+    # Victims of Crime #5 was also rejoined to the study guide in 319 (its
+    # own check is check_b313_shuffle); it is the only other allowed change.
+    vi = next((i for i, b in enumerate(now["bank"]) if b[0] == "Victims of Crime" and b[1] == 5), -1)
+    check("no other question's text, choices or answer moved", len(now["bank"]) == len(was["bank"]) and diff == sorted(([p[0]["i"]] if p else []) + [vi]), diff[:6])
 
 
 def main():
