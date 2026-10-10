@@ -486,7 +486,7 @@ def main():
             /* Build 213: the celebration is on the RESULTS SCREEN now, as a
                badge row in its "Unlocked" card, not a queue for Home. */
             const shown = () => [...document.querySelectorAll('#stage .rs-unlock-badge .unlockbanner-name')]
-              .map(e => e.textContent.replace(/ badge$/, ''));
+              .map(e => e.textContent.replace(/ badge$/i, ''));   /* "... Badge" since 319 */
             const first = { queued: shown(), tier: store.pendingTierCutscene,
                             left: store.retroBadgePending.slice(), xp: store.lifetime.points - xp0 };
             store.pendingBadgeUnlocks = []; store.pendingTierCutscene = null;
