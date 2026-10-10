@@ -73,15 +73,17 @@ SCENARIOS = [
     {"key": "settings", "flag": "seenSettingsTour", "source": "showAppearance",
      "setup": "showAppearance()", "note": "one step per section"},
     {"key": "profile", "flag": "seenProfileTour", "source": "showProfile",
-     "setup": "showProfile('profile')", "note": "Customize, rank, badges, calendar, Stats"},
+     "setup": "showProfile('profile')", "note": "Customize, rank, next rank, badge case, Stats"},
     # Build 289: the same three tips on their own, for everybody who had
     # already seen the Profile tour - armed by the tourRev 3 re-arm, which
     # is what the setup does by hand.
     {"key": "profiletips", "flag": None, "source": "PROFILE_TIPS_289",
      "setup": "store.seenProfileTour = true; store.profileTips289 = true; showProfile('profile')",
      "note": "Customize, rank box, badge box"},
-    {"key": "rankings", "flag": "seenRewardsTour", "source": "showRankings",
-     "setup": "showRankings()", "note": "the three boards, search, Find me"},
+    # Build 319: the boards are the Rankings tab of Class, and the tour runs
+    # from showClass once that screen is up (its first step names the tabs).
+    {"key": "rankings", "flag": "seenRewardsTour", "source": "showClass",
+     "setup": "showRankings()", "note": "Class's tabs, the three boards, search, Find me"},
     # build 279: the one-time "hold a unit" tip, on the first unit tapped.
     # Gated by a localStorage key, not a store flag, so the setup clears it
     # and taps the first card itself.

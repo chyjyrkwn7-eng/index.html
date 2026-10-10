@@ -295,8 +295,9 @@ VISIBLE = """()=>{
 def check_navigation(br):
     print("\n3. a back link lands on a screen with something on it")
     ctx, pg = booted(br, TABLET[1], TABLET[2], seed=USED_ACCOUNT)
-    for label, show in [("test review -> Back to Profile", "()=>showTestReviewList()"),
-                        ("calendar -> Back to Profile", "()=>showCalendar()")]:
+    # The calendar had its own "Back to Profile" until build 319; it is a
+    # tab of Class now, with no back link (check_b319g_layout holds it).
+    for label, show in [("test review -> Back to Profile", "()=>showTestReviewList()")]:
         pg.evaluate(show)
         pg.wait_for_timeout(300)
         if not pg.query_selector(".back-link"):
@@ -2922,7 +2923,10 @@ def check_b239(br):
       chatRoomCode = null;
       return out; }""")
     check("Friends keeps its presence listener after it mounts", r.get("afterFriends") is True, r)
-    check("and Profile keeps it too", r.get("afterProfile") is True, r)
+    # Build 319 reversed this: Profile's Friends box (the online count) moved
+    # to Class > Friends, so Profile shows no presence and lets it go - a
+    # listener kept for nothing is reads spent for nothing.
+    check("and Profile lets it go (it shows no presence since build 319)", r.get("afterProfile") is False, r)
     check("and leaving for Home lets it go", r.get("afterHome") is False, r)
     check("a chat with only somebody else in it does not say 'Just you'",
           "Just you" not in str(r.get("otherOnly")) and "Just you" in str(r.get("meOnly")), r)
@@ -2961,6 +2965,7 @@ def check_b241(br):
       out.badgeCells = document.querySelectorAll('.profile-hero .badge-meter-seg').length;
       out.caseCells = document.querySelectorAll('.profile-hero .pf-case .badge-strip-cell').length;
       out.caseEarned = document.querySelectorAll('.profile-hero .pf-case .badge-strip-cell.is-earned').length;
+      out.caseNum = (document.querySelector('.profile-hero .pf-case .pf-case-num') || {}).textContent || null;
       out.units = units.length;
       const fill = document.querySelector('.pf-standing .pf-bar i, .profile-rankplate-fill');
       out.fillBg = fill ? getComputedStyle(fill).backgroundImage : '';
@@ -2982,9 +2987,11 @@ def check_b241(br):
     # REVERSED AGAIN IN 315: Madison picked the Profile mock-up with the
     # badge case as a strip ("the mini badge case is nice"): every slot,
     # the earned ones filled - and still no meter.
-    check("Profile: the level said once, and the badges their own block - the case as a strip, no meter",
+    # REVERSED AGAIN IN 319: "no case there would be best" - the open case
+    # came off; the shut case's front says the count (check_b319g_layout).
+    check("Profile: the level said once, and the badges their own block - the shut case with its count, no meter",
           isinstance(r, dict) and r.get("plates") == 1 and r.get("badgeCells") == 0
-          and r.get("caseCells") == r.get("units") and r.get("caseEarned") == 6, r)
+          and r.get("caseCells") == 0 and r.get("caseNum") == "6 of %d badges" % r.get("units"), r)
     def hexrgb(h):
         h = h.lstrip("#"); return "rgb(%d, %d, %d)" % (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
     # REVISED IN 267: there is no rank bar on the plate any more.
@@ -3219,8 +3226,10 @@ def check_b242(br):
     # AND BACK IN 315, by choice: the Profile mock-up Madison picked has
     # the badge case as a strip - "the mini badge case is nice". Still no
     # meter, and the count beside it.
-    check("Profile shows the count and the badge case as a strip, with no meter",
-          p.get("strip") == p.get("units") and p.get("segs") == 0 and re.match(r"^\d+ of \d+", p.get("count", "")), p)
+    # AND OFF AGAIN IN 319: "no case there would be best". The shut case's
+    # front carries the count; no badges on the card, still no meter.
+    check("Profile shows the count on the shut case, no badges and no meter",
+          p.get("strip") == 0 and p.get("segs") == 0 and re.match(r"^\d+ of \d+ badges", p.get("count", "")), p)
     rb = r.get("rankBox") or {}
     # REVERSED IN 243: "the profile box got worse somehow ... it was so
     # good before" - back to the 241 plate: one bar and "Gold · 35%".
@@ -5143,9 +5152,12 @@ def check_b258(br):
     # AND IN 315: the count beside the badge case's strip - which is badge
     # art, by choice ("the mini badge case is nice") - with no ring; the
     # closest unit is the Next rank card's badge task, not the case's.
-    check("the badge case says its count over the strip of earned badges - no ring, no unit, no hundos",
-          r.get("badgeSvgs", 0) >= 1 and r.get("badgeMedal") == 0 and "hundo" not in r.get("badgeText", "")
-          and "of 16" in r.get("badgeText", "") and not r.get("plateBar"), r)
+    # AND IN 319: the case on the card is shut ("no case there would be
+    # best"), so no badge art on it - the count on its front, still no ring,
+    # no unit, no hundos.
+    check("the badge case says its count on its shut front - no badges, no ring, no unit, no hundos",
+          r.get("badgeSvgs", 0) == 0 and r.get("badgeMedal") == 0 and "hundo" not in r.get("badgeText", "")
+          and "of 16 badges" in r.get("badgeText", "") and not r.get("plateBar"), r)
     # REVERSED IN 259: "No no no, the profile change is bad there. I don't
     # like the bronze all the way through." The level is blue again and
     # the default cover is the theme, with no rank on it.
@@ -9687,8 +9699,8 @@ def check_b314h_lead2(br):
       out.opened = act ? act.textContent : null; out.key = rankingsBoardKey;
       const sl = document.querySelector('.screen-rankings .navsegment .seg-slider');
       out.sliderOn = !!(sl && act && Math.abs(sl.getBoundingClientRect().left - act.getBoundingClientRect().left) < 2);
-      /* the class card */
-      showProfile('profile'); await wait(500);
+      /* the class card - on Class > Calendar since build 319 */
+      showCalendar(); await wait(500);
       const pills = [...document.querySelectorAll('.profile-classcard:not(.profile-friendcard) .profile-classcard-count')].map(e => e.textContent);
       out.pills = pills;
       out.cardText = (document.querySelector('.profile-classcard:not(.profile-friendcard)') || {}).textContent || '';
@@ -9727,10 +9739,13 @@ def check_b314h_lead2(br):
     cdp = ctx.new_cdp_session(pg)
     pg.evaluate("() => { window.scrollTo(0, 0); }")
     before = pg.evaluate("() => document.querySelector('.screen-calendar .navsegment .iconbtn.active').textContent")
-    _swipe(cdp, 330, 600, -220, 0, steps=8)
+    # Build 319: the calendar is a tab of Class, and the screen's swipe
+    # moves Class's tabs; Month / List swipes ALONG its own switcher.
+    sy = pg.evaluate("() => { const r = document.querySelector('.screen-calendar .navsegment').getBoundingClientRect(); return [r.left, r.top + r.height / 2, r.width]; }")
+    _swipe(cdp, sy[0] + sy[2] * 0.9, sy[1], -sy[2] * 0.7, 0, steps=8)
     pg.wait_for_timeout(500)
     after = pg.evaluate("() => ({ act: document.querySelector('.screen-calendar .navsegment .iconbtn.active').textContent, list: !document.querySelector('.cal-listview').hidden })")
-    _swipe(cdp, 110, 600, 220, 0, steps=8)
+    _swipe(cdp, sy[0] + sy[2] * 0.1, sy[1], sy[2] * 0.7, 0, steps=8)
     pg.wait_for_timeout(500)
     back = pg.evaluate("() => document.querySelector('.screen-calendar .navsegment .iconbtn.active').textContent")
     check("a swipe left goes Month to List, and right comes back", before == "Month" and after["act"] == "List" and after["list"] and back == "Month",
@@ -9971,12 +9986,15 @@ def check_b310(br):
       out.past50 = cols[3].indexOf('streak-lv4') >= 0 && cols[7].indexOf('streak-lv8') >= 0;
       showRunStreakBanner(25); await wait(2600); out.streakStill = !!document.querySelector('.streak-pop');
       await wait(900); out.streakGone = !document.querySelector('.streak-pop');
-      /* the Profile tab stays lit on every screen reached from Profile */
-      const lit = () => !!document.querySelector('#bottomtab-profile.active');
+      /* the Profile tab stays lit on every screen reached from Profile.
+         Build 319: Friends and the calendar are tabs of Class now, so it is
+         Class that stays lit on them (and only Class). */
+      const lit = k => k === 'testreview' ? !!document.querySelector('#bottomtab-profile.active')
+        : !!document.querySelector('#bottomtab-rewards.active') && !document.querySelector('#bottomtab-profile.active');
       out.lit = {};
       for(const [k, f] of [['friends', () => showFriends()], ['calendar', () => showCalendar && showCalendar()], ['testreview', () => showTestReviewList && showTestReviewList()]]){
         try{ f(); }catch(e){ out.lit[k] = 'threw ' + e.message; continue; }
-        await wait(500); out.lit[k] = lit();
+        await wait(500); out.lit[k] = lit(k);
       }
       /* the top tabs slide: a slider, and it moves on its own transition */
       showRankings('level'); await wait(700);
@@ -10035,7 +10053,7 @@ def check_b310(br):
     check("the streak pop has eight different colours, one per tier, across the wheel", r["streakDistinct"] == 8 and r["hueSpan"] >= 180, r)
     check("streaks past 50 get their own tiers (75 is the 4th, 350 the 8th)", r["past50"], r)
     check("the streak pop is still up at 2.6s and gone by 3.5s", r["streakStill"] and r["streakGone"], r)
-    check("the Profile tab stays lit on Friends, Calendar and Test review", all(v is True for v in r["lit"].values()), r["lit"])
+    check("Test review keeps Profile lit; Friends and Calendar keep Class lit (build 319)", all(v is True for v in r["lit"].values()), r["lit"])
     sl = r.get("slide") or {}
     check("the leaderboard's top tabs have a sliding indicator", r["slider"], r)
     check("the indicator glides between tabs rather than jumping", bool(sl) and sl["x0"] != sl["end"] and sl["mid"] != sl["end"] and "transform" in sl["tr"], sl)
@@ -13267,6 +13285,10 @@ def check_b316_tiles(br):
           const m = cs.borderTopColor.match(/[\\d.]+/g) || [];
           out.caseBorderAlpha = m.length >= 4 ? Number(m[3]) : 1;
           out.caseBorderChan = m.slice(0, 3).map(Number);
+          /* build 319: the case on the card is the shut case itself */
+          out.caseBorderW = parseFloat(cs.borderTopWidth) || 0;
+          const fr = document.querySelector('.pf-case .pf-ccase-front');
+          out.frontBg = fr ? getComputedStyle(fr).backgroundImage : '';
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
         circ = [r.get(k) for k in ("theme", "flare", "char")]
@@ -13278,9 +13300,11 @@ def check_b316_tiles(br):
               and abs(b[2] - c0[2]) <= 2, [r.get("next"), b, c0])
         check(f"{dev}: and it moves", r.get("bnStill") is False and r.get("bnAnims", 0) > 0, [r.get("bnStill"), r.get("bnAnims")])
         ch = r.get("caseBorderChan") or [255, 255, 255]
-        check(f"{dev}: the badge case has the Next rank card's flow - a diagonal light and a tinted edge, not a flat box",
-              "gradient" in (r.get("caseBg") or "") and r.get("caseBorderAlpha", 0) >= 0.2
-              and not all(abs(x - 1) < 0.01 or abs(x - 255) < 1 for x in ch), [r.get("caseBg", "")[:70], r.get("caseBorderAlpha"), ch])
+        # REVISED IN 319: the Profile's case is the shut case's front, in the
+        # case's own grained shell - no tinted card round it any more.
+        check(f"{dev}: the badge case is the shut case in its own shell, with no card round it",
+              r.get("caseBg") in ("none", "") and r.get("caseBorderW", 1) == 0
+              and "gradient" in (r.get("frontBg") or "") and "url(" in (r.get("frontBg") or ""), [r.get("caseBg", "")[:40], r.get("caseBorderW"), (r.get("frontBg") or "")[:70]])
         check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
         ctx.close()
 
@@ -13377,8 +13401,10 @@ def check_b317_pfcard(br):
         adj = bool(d and a) and d["r"] <= a["l"] + 0.5 and a["l"] - d["r"] <= 12 \
             and min(d["b"], a["b"]) - max(d["t"], a["t"]) >= (d["b"] - d["t"]) * 0.5
         check(f"{dev}: the new-badge dot sits right beside the case's arrow, not over it", adj, [d, a])
-        check(f"{dev}: ...on the head row, clear of the badge strip and not in the 'Badge case' label",
-              bool(d and sp) and d["b"] <= sp["t"] and not r.get("inKick"), [d, sp, r.get("inKick")])
+        # REVISED IN 319: no strip on the card any more - the dot is on the
+        # shut case's front, in the count's row, never in the plate.
+        check(f"{dev}: ...on the count's row on the case's front, not in the 'Badge case' plate",
+              bool(d) and sp is None and not r.get("inKick"), [d, sp, r.get("inKick")])
         check(f"{dev}: ...with the word New beside it", (r.get("newWord") or "").strip() == "New", r.get("newWord"))
         check(f"{dev}: ...and it goes once the new badge is seen", r.get("dotAfter") is False and r.get("newAfter") is False,
               [r.get("dotAfter"), r.get("newAfter")])
@@ -13386,8 +13412,10 @@ def check_b317_pfcard(br):
         # not the move, revert that location at the bottom."
         check(f"{dev}: the badge case is at the bottom of the card, after the Next rank card", r.get("caseLast") is True, r.get("caseLast"))
         g, rem = r.get("gaps"), r.get("rem") or 16
-        check(f"{dev}: ...with the card's usual gaps (1.05rem under the bar, .8rem between the boxes)",
-              bool(g) and abs(g[0] - 1.05 * rem) <= 1.5 and abs(g[1] - 0.8 * rem) <= 1.5, [g, rem])
+        # REVISED IN 319: the shut case is not a box, and its handle stands
+        # on its lid, so it sits 1.1rem under the Next rank card.
+        check(f"{dev}: ...with the card's usual gaps (1.05rem under the bar, 1.1rem above the shut case)",
+              bool(g) and abs(g[0] - 1.05 * rem) <= 1.5 and abs(g[1] - 1.1 * rem) <= 1.5, [g, rem])
         # REVISED IN THE 317 TOUCH-UP: no grey. This level's XP, what it
         # asks and the total are one blue - mid level (not over) and at
         # level 80 (over).
@@ -13447,8 +13475,9 @@ def check_b317_pfcard(br):
         ctx.close()
         check(f"squeeze, {dev}: nothing threw", not r.get("threw"), r.get("threw"))
         k, n_ = r.get("kick"), r.get("num")
-        check(f"squeeze, {dev}: the count is one line, and 'Badge case' is on the case's side, below it",
-              bool(k and n_) and k["t"] >= n_["b"] and n_["b"] - n_["t"] <= 26, [k, n_])
+        # REVISED IN 319: on the shut case's front the plate heads the count
+        check(f"squeeze, {dev}: the count is one line, and 'Badge case' is on the case's front, above it",
+              bool(k and n_) and k["b"] <= n_["t"] and n_["b"] - n_["t"] <= 26, [k, n_])
         nm, xn, tot = r.get("nums"), r.get("xn"), r.get("tot")
         check(f"squeeze, {dev}: the total XP sits at the right, wrapped or not",
               bool(nm and tot) and abs(tot["r"] - nm["r"]) <= 1.5 and (tot["t"] >= xn["b"] - 0.5 or tot["l"] >= xn["r"]), [nm, xn, tot])
@@ -18595,11 +18624,15 @@ def check_b317_badgecase(br):
           return out; }""", MAT)
         tab, pf = r.get("tab") or {}, r.get("pf") or {}
         same = lambda k: cut and cut.get(k) and cut.get(k) == tab.get(k) == pf.get(k)
-        check(f"{dev}: the cutscene, the Badges tab and the Profile card are one case - the same parts (lining, two latches, handle) in each",
-              bool(cut) and all(x.get("root") and x.get("lining") and x.get("latches", 0) >= 2 and x.get("handle") for x in (cut, tab, pf)),
+        # REVISED IN 319: the Profile card's case is SHUT ("no case there would
+        # be best"), so it shows no lining - the same latches, handle and
+        # leather, the inside only on the open two.
+        check(f"{dev}: the cutscene, the Badges tab and the Profile card are one case - the same parts (lining when open, two latches, handle) in each",
+              bool(cut) and all(x.get("root") and x.get("latches", 0) >= 2 and x.get("handle") for x in (cut, tab, pf))
+              and cut.get("lining") and tab.get("lining") and not pf.get("lining"),
               {"cut": cut and {k: cut[k] for k in ("root", "latches")}, "tab": {k: tab.get(k) for k in ("root", "latches")}, "pf": {k: pf.get(k) for k in ("root", "latches")}})
         check(f"{dev}: ...in the same materials: one lining, one metal for the latches, one handle, one grained leather",
-              same("lining") and same("latch") and same("handle") and same("leather") and all(x.get("grain") for x in (cut, tab, pf)),
+              cut.get("lining") == tab.get("lining") and same("latch") and same("handle") and same("leather") and all(x.get("grain") for x in (cut, tab, pf)),
               {"lining": [x and (x.get("lining") or "")[:48] for x in (cut, tab, pf)], "leather": [x and (x.get("leather") or "")[:40] for x in (cut, tab, pf)]})
         check(f"{dev}: a badge in the case still opens its card when tapped", r.get("tapCard") is True and not r.get("threw"), r.get("threw") or r.get("tapCard"))
         ctx.close()
@@ -18866,7 +18899,8 @@ def check_b317_badge2(br):
         check(f"{dev}: the Badges tab's case has the same plate on its side, and nothing on its lid",
               good(tab) and tabLid is False, {"plate": tab, "lid says it": tabLid})
         check(f"{dev}: ...and so does the Profile card's - its name on its side, no heading over the tray",
-              good(pf) and pfHead is False, {"plate": pf, "head says it": pfHead})
+              # build 319: the Profile case is shut and has no head row at all
+              good(pf) and pfHead in (False, None), {"plate": pf, "head says it": pfHead})
         check(f"{dev}: ...one plate: the same metal and lettering on both",
               bool(tab and pf) and tab["bg"] == pf["bg"] and tab["font"].split(" ")[0] == pf["font"].split(" ")[0], [tab and tab["bg"], pf and pf["bg"]])
         # every badge on the tab: struck at its own device pixels (after the measure)
@@ -19151,13 +19185,17 @@ def check_b318_badges(br):
             and tab["lid"]["b"] <= tab["tray"]["t"] + 2 and tab["front"]["t"] >= tab["tray"]["b"] - 1.5
         check(f"{dev}: the Badges tab is the cutscene's square case - lid, tray and front as one box, square corners, guarded walls, no rounded shell round it",
               ok_tab, tab and {k: tab[k] for k in ("rootR", "lidR", "trayR", "frontR", "frontTopR", "guards", "lid", "tray", "front")})
-        ok_pf = bool(pf) and pf["radius"] <= SQ and pf["guards"] and pf["front"]["t"] >= pf["caseB"]["b"] - 0.5 \
+        # REVISED IN 319: the Profile's case is the same square case SHUT -
+        # its front with guarded ends, the plate wholly on it, and the handle
+        # standing on the lid above it rather than hanging below the front.
+        ok_pf = bool(pf) and pf["radius"] <= SQ and pf["guards"] \
             and pf["plate"]["l"] >= pf["front"]["l"] and pf["plate"]["r"] <= pf["front"]["r"] and pf["plate"]["t"] >= pf["front"]["t"] - 0.5 and pf["plate"]["b"] <= pf["front"]["b"] + 0.5 \
-            and pf["handle"]["t"] - 0.45 * pf["handle"]["h"] >= pf["front"]["t"] and pf["handle"]["b"] > pf["front"]["b"] + 2
-        check(f"{dev}: the Profile case is the same square case - its front wall hangs below the tray, the plate wholly on it, the handle's mounts behind it",
+            and pf["handle"]["b"] <= pf["front"]["t"] and pf["handle"]["t"] >= pf["caseB"]["t"] - 0.5
+        check(f"{dev}: the Profile case is the same square case, shut - guarded front, the plate wholly on it, the handle standing on the lid",
               ok_pf, pf and {k: pf[k] for k in ("radius", "guards", "caseB", "front", "plate", "handle")})
-        check(f"{dev}: every earned badge glows in its own colour, on the Badges tab and in the Profile case",
-              bool(tab and pf) and len(tab["glows"]) >= 8 and all(tab["glows"]) and len(pf["glows"]) >= 8 and all(pf["glows"]),
+        # REVISED IN 319: the Profile's case is shut, so it shows no badges
+        check(f"{dev}: every earned badge glows in its own colour on the Badges tab (the Profile case is shut and shows none)",
+              bool(tab and pf) and len(tab["glows"]) >= 8 and all(tab["glows"]) and len(pf["glows"]) == 0,
               [tab and tab["glows"][:4], pf and pf["glows"][:4]])
 
 
@@ -20060,6 +20098,9 @@ def check_b319_badges(br):
           return out; }""")
         pg.evaluate("() => showProfile('profile')"); pg.wait_for_timeout(1500)
         pf = pg.evaluate(CASE, ".profile-hero .pf-case .ncase") or pg.evaluate(CASE, ".profile-hero .pf-case")
+        pg_shut = pg.evaluate("""() => { const k = document.querySelector('.profile-hero .pf-case'); if(!k) return null;
+          return { front: !!k.querySelector('.pf-case-front'), handle: !!k.querySelector('.nova-case-handle'),
+                   tray: !!k.querySelector('.ncase-tray, .ncase-lining, .nova-case-lining') }; }""")
         res = pg.evaluate("""async () => { const units = unitsInTeachingOrder(); const t = units[2];
           store.unitPerfects[t] = Math.max(0, badgeThresholdFor(t) - 4);
           cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t];
@@ -20074,20 +20115,22 @@ def check_b319_badges(br):
                    name: (document.querySelector('.rs-badges .badgeprogress-name') || {}).textContent || '', kicker: item.kicker || '', itemName: item.name || '' }; }""")
         ctx.close()
         ok_tab = bool(tab) and tab["parts"] and tab["cells"] == 16 and tab["cols"] == 4 and tab["rows"] == 4 and tab["lidRatio"] >= 0.6 and tab["lidAbove"]
-        ok_pf = bool(pf) and pf["parts"] and pf["cells"] == 16 and pf["cols"] == 4 and pf["rows"] == 4 and pf["lidRatio"] >= 0.6
-        same = bool(tab and pf) and abs(tab["trayRatio"] - pf["trayRatio"]) <= 0.02 and abs(tab["lidRatio"] - pf["lidRatio"]) <= 0.03
+        # REVISED IN 319 (b319g): "no case there would be best" - the Profile
+        # shows the same case SHUT: its front and handle, no tray, no slots.
+        pfShut = pg_shut
+        ok_pf = bool(pf) and pf["cells"] == 0 and bool(pfShut) and pfShut["front"] and pfShut["handle"] and not pfShut["tray"]
         check(f"{dev}: the Badges tab is the cutscene's open case - lid standing (>= .6 of the tray), hinges, tray of sixteen four by four, front, handle",
               ok_tab, tab and {k: tab[k] for k in ("parts", "cells", "cols", "rows", "lidRatio", "trayRatio")})
-        check(f"{dev}: the Profile's case is the same open case, four by four, not a strip",
-              ok_pf, pf and {k: pf[k] for k in ("parts", "cells", "cols", "rows", "lidRatio", "trayRatio")})
-        check(f"{dev}: the tab's and the Profile's case have the same proportions (one case, two sizes)",
-              same, [tab and (tab["lidRatio"], tab["trayRatio"]), pf and (pf["lidRatio"], pf["trayRatio"])])
+        check(f"{dev}: the Profile's case is the same case, shut - its front and handle, no slots (build 319)",
+              ok_pf, [pf and pf["cells"], pfShut])
         check(f"{dev}: a badge not found is only its empty slot - on the tab, the Profile, its card and the results",
               bool(tab and pf and cards.get("not") and res) and tab["tokensUnfound"] == 0 and pf["tokensUnfound"] == 0 and tab["tokensFound"] == tab["found"] >= 8
               and not cards["not"]["token"] and res["slot"] and not res["token"],
               [tab and tab["tokensUnfound"], pf and pf["tokensUnfound"], cards.get("not"), res])
-        check(f"{dev}: nothing is written in the case (no 'Mastered' under the badges)",
-              bool(tab and pf) and not tab["text"] and not pf["text"], [tab and tab["text"][:4], pf and pf["text"][:4]])
+        # the shut case's front carries its count and nothing else (build 319)
+        pf_extra = [t for t in (pf["text"] if pf else []) if not re.match(r"^(\d+ of \d+ badges|\u203a|New|\d+ of \d+ badges(New)?\u203a)$", t)]
+        check(f"{dev}: nothing is written in the case (no 'Mastered' under the badges); the shut one says only its count",
+              bool(tab and pf) and not tab["text"] and not pf_extra, [tab and tab["text"][:4], pf and pf["text"][:4]])
         check(f"{dev}: a found badge's card says Mastered, and every title ends in 'Badge'",
               bool(cards.get("found") and cards.get("not")) and cards["found"]["count"] == "Mastered" and cards["found"]["name"].endswith(" Badge")
               and cards["not"]["name"].endswith(" Badge") and res["name"].endswith(" Badge") and res["itemName"].endswith(" Badge"), [cards, res["name"], res["itemName"]])
@@ -20418,6 +20461,245 @@ def check_b319_penal346(br):
     check("no other question's text, choices or answer moved", len(now["bank"]) == len(was["bank"]) and diff == sorted(([p[0]["i"]] if p else []) + [vi]), diff[:6])
 
 
+B319G_SEED = """(n) => {
+  const units = unitsInTeachingOrder();
+  store.unitPerfects = {};
+  units.slice(0, n).forEach(u => { store.unitPerfects[u] = badgeThresholdFor(u); });
+  /* the rank these badges hold has been shown, so no rank-up scene plays */
+  try{ store.rankMapSeen = Math.max(-1, TIER_ORDER_FULL.indexOf(rankOf(store))); }catch(e){}
+  store.seenRewardsTour = true; store.seenProfileTour = true; store.profileTips289 = false;
+  try{ persistLocally(); }catch(e){}
+  document.querySelectorAll('#tour-overlay, #tour-tooltip, .daily-alert, .toast, .invite-overlay').forEach(x => x.remove());
+}"""
+
+B319G_PROFILE = """async () => {
+  showProfile('profile'); await new Promise(r => setTimeout(r, 700));
+  document.querySelectorAll('#tour-overlay, #tour-tooltip, .daily-alert, .toast').forEach(x => x.remove());
+  const R = el => { if(!el) return null; const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)]; };
+  const hero = document.querySelector('.screen-profile .profile-hero');
+  const lv = document.querySelector('.screen-profile .pf-standing .pf-level');
+  const bc = document.querySelector('.screen-profile .pf-standing .pf-badgecount');
+  const kase = document.querySelector('.screen-profile .profile-hero .pf-case');
+  const cs = el => { if(!el) return null; const c = getComputedStyle(el); return [c.fontSize, c.fontWeight, c.color, c.fontFamily].join('|'); };
+  return {
+    want: badgeCountOf(store), total: topicsIn(QUESTIONS).length,
+    hero: R(hero), level: lv && lv.textContent, levelBox: R(lv), levelStyle: cs(lv),
+    badges: bc && bc.textContent, badgesBox: R(bc), badgesStyle: cs(bc),
+    lineRows: (() => { const l = document.querySelector('.screen-profile .pf-idline'); if(!l) return null;
+      return new Set([...l.children].filter(c => c.getClientRects().length).map(c => Math.round(c.getBoundingClientRect().top + c.getBoundingClientRect().height / 2) >> 3)).size; })(),
+    lineFits: (() => { const l = document.querySelector('.screen-profile .pf-idline'); if(!l) return null; const r = l.getBoundingClientRect();
+      return [...l.children].every(c => { const q = c.getBoundingClientRect(); return !c.getClientRects().length || (q.left >= r.left - 1 && q.right <= r.right + 1); }); })(),
+    closed: !!(kase && kase.classList.contains('pf-case-closed')), caseBox: R(kase),
+    caseText: kase ? kase.textContent.replace(/\\s+/g, ' ').trim() : null,
+    caseParts: kase ? { latches: kase.querySelectorAll('.nova-case-latch').length, hasps: kase.querySelectorAll('.nova-case-hasp').length,
+      plate: (kase.querySelector('.nova-case-sideplate') || {}).textContent || null, handle: !!kase.querySelector('.nova-case-handle'),
+      shell: kase.querySelectorAll('.nova-case-shell').length, arrow: !!kase.querySelector('.pf-case-arrow') } : null,
+    openCase: document.querySelectorAll('.screen-profile .ncase, .screen-profile .ncase-lining, .screen-profile .badge-strip-cell, .screen-profile .ncase-cell').length,
+    classBox: document.querySelectorAll('.screen-profile .profile-classcard:not(.profile-friendcard)').length,
+    friendBox: document.querySelectorAll('.screen-profile .profile-friendcard').length,
+    calLine: document.querySelectorAll('.screen-profile .profile-classline').length };
+}"""
+
+# where a tap at the middle of `sel` (inside the Profile card) lands
+B319G_TAP = """async (sel) => {
+  showProfile('profile'); await new Promise(r => setTimeout(r, 600));
+  document.querySelectorAll('#tour-overlay, #tour-tooltip, .daily-alert, .toast').forEach(x => x.remove());
+  const t = document.querySelector('.screen-profile ' + sel);
+  if(!t) return { hit: false };
+  t.scrollIntoView({ block: 'center', behavior: 'instant' });
+  await new Promise(r => requestAnimationFrame(r));
+  const r = t.getBoundingClientRect();
+  const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+  const hit = !!(el && (el === t || t.contains(el) || (el.closest && el.closest('.pf-standing, .pf-case') && el.closest('.pf-standing, .pf-case').contains(t))));
+  if(el) el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+  await new Promise(r => setTimeout(r, 450));
+  return { hit, badges: !!document.querySelector('#stage .badges-tab'), rank: !!document.querySelector('#stage .screen-ranks') && !document.querySelector('#stage .badges-tab'),
+           title: (document.getElementById('count') || {}).textContent || null };
+}"""
+
+B319G_CLASS = """async () => {
+  const R = el => { if(!el) return null; const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)]; };
+  const panel = document.querySelector('#stage > .panel');
+  const seg = panel && panel.querySelector(':scope > .navsegment');
+  const tabs = seg ? [...seg.querySelectorAll(':scope > .iconbtn')] : [];
+  const panes = panel ? [...panel.querySelectorAll(':scope > [role=tabpanel], :scope > .class-pane')] : [];
+  const vis = panes.filter(p => !p.hidden);
+  const active = tabs.find(b => b.classList.contains('active'));
+  const shown = vis[0] || null;
+  return { cls: panel ? panel.className : null, labels: tabs.map(b => b.childNodes[0] ? b.childNodes[0].textContent.trim() : b.textContent.trim()),
+           active: active ? tabs.indexOf(active) : -1, panes: panes.length, visible: vis.length,
+           holds: shown ? { boards: !!shown.querySelector('.rank-rows'), friends: !!shown.querySelector('.friend-sect'),
+                            calendar: !!shown.querySelector('.cal-grid'), classCard: !!shown.querySelector('.profile-classcard') } : null,
+           shownH: shown ? Math.round(shown.getBoundingClientRect().height) : 0,
+           board: (document.querySelector('#stage .rank-boardseg .iconbtn.active') || {}).textContent || null,
+           lit: !!(document.getElementById('bottomtab-rewards') || { classList: { contains: () => false } }).classList.contains('active'),
+           litOther: [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id),
+           segBox: R(seg) };
+}"""
+
+
+B319G_BASE_HERO = (1256, 1469)
+
+
+def check_b319g_layout(br):
+    """Build 319 (builder g). Madison: the open badge case on the Profile
+    card "takes away from the badge tab and it makes the profile box
+    unnecessarily long. I think no case there would be best ... at the top
+    where it says level and xp rank at the top should mention like '8
+    badges' or whatever there too. Similar to how it says your current
+    level." And "maybe the friends and class related stuff should be in its
+    own tab". So: the badge count sits beside the level in the same type
+    and opens the Badges page; the open case is gone and the front of the
+    shut case (its latches, hasps, handle and plate) is a slim row that
+    opens it; the card is much shorter than on bc2986d; the bottom tab
+    reads Class and every label fits a 320px phone; Class has three tabs
+    (the boards, Friends, the calendar), read off the page; a swipe moves
+    exactly one tab, and a swipe along the board switcher moves only the
+    board; every old way to the boards, friends and calendar lands on the
+    right tab with something on it; Profile holds neither the Class 26E
+    box nor the Friends box. Fails on bc2986d, which has none of it."""
+    print("\n319g. Profile: badges beside the level, the case shut; the Class tab")
+    # The Profile card's height on bc2986d with this fixture (seven badges),
+    # measured at each size with the build that had the open case and the
+    # two boxes under it. The card has to come in well under it.
+    BASE_HERO = {440: B319G_BASE_HERO[0], 834: B319G_BASE_HERO[1]}
+    for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2), (320, 568, "320px phone", 2)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True, dpr=dpr)
+        cdp = ctx.new_cdp_session(pg)
+        for n in (7, 1, 0):
+            pg.evaluate(B319G_SEED, n)
+            r = pg.evaluate(B319G_PROFILE)
+            word = "badge" if r["want"] == 1 else "badges"
+            check("%s, %d badge(s): the count beside the level matches the account" % (dev, n),
+                  r["badges"] == "%d %s" % (r["want"], word) and r["want"] == n, [r["badges"], r["want"]])
+            if n == 7:
+                same_row = bool(r["levelBox"] and r["badgesBox"]) and abs((r["levelBox"][1] + r["levelBox"][3] / 2) - (r["badgesBox"][1] + r["badgesBox"][3] / 2)) <= 3
+                check("%s: the badge count is on the level's line, in the level's own type" % dev,
+                      same_row and r["levelStyle"] == r["badgesStyle"], [r["levelBox"], r["badgesBox"], r["levelStyle"], r["badgesStyle"]])
+                check("%s: the rank / level / badges line is one line, inside the card" % dev,
+                      r["lineRows"] == 1 and r["lineFits"], [r["lineRows"], r["lineFits"]])
+                parts = r["caseParts"] or {}
+                okparts = (parts.get("latches") == 2 and parts.get("hasps") == 2 and parts.get("handle")
+                           and parts.get("shell", 0) >= 2 and parts.get("arrow") and re.search(r"badge case", parts.get("plate") or "", re.I))
+                check("%s: the Profile case is the shut case's front - latches, hasps, handle, plate, an arrow" % dev,
+                      r["closed"] and bool(okparts) and ("%d of %d badges" % (r["want"], r["total"])) in (r["caseText"] or ""),
+                      [r["closed"], parts, r["caseText"]])
+                ch = r["caseBox"][3] if r["caseBox"] else 0
+                lim = (64, 84) if w < 600 else (64, 96)
+                check("%s: the shut case is a slim row (%d-%dpx), full width" % (dev, lim[0], lim[1]),
+                      lim[0] <= ch <= lim[1] and r["caseBox"][2] >= r["hero"][2] - 80, [r["caseBox"], r["hero"]])
+                check("%s: no open case on the Profile card" % dev, r["openCase"] == 0, r["openCase"])
+                check("%s: Profile holds neither the Class 26E box nor the Friends box" % dev,
+                      r["classBox"] == 0 and r["friendBox"] == 0 and r["calLine"] == 0, [r["classBox"], r["friendBox"], r["calLine"]])
+                if w in BASE_HERO:
+                    check("%s: the card is much shorter than on bc2986d (%dpx there)" % (dev, BASE_HERO[w]),
+                          r["hero"] and r["hero"][3] <= BASE_HERO[w] - 120, [r["hero"], BASE_HERO[w]])
+                t1 = pg.evaluate(B319G_TAP, ".pf-badgecount")
+                check("%s: a tap on the badge count opens the Badges page" % dev, t1.get("hit") and t1.get("badges"), t1)
+                t2 = pg.evaluate(B319G_TAP, ".pf-case-closed")
+                check("%s: a tap on the shut case opens the Badges page" % dev, t2.get("hit") and t2.get("badges"), t2)
+                t3 = pg.evaluate(B319G_TAP, ".pf-level")
+                check("%s: a tap on the level still opens the Rank screen" % dev, t3.get("hit") and t3.get("rank"), t3)
+        # the longest line there is: the top rank, the top level, every badge
+        pg.evaluate(B319G_SEED, 16)
+        pg.evaluate("()=>{ store.lifetime.points = xpForLevel(80) + 1000; store.points = store.lifetime.points; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store)); }")
+        r = pg.evaluate(B319G_PROFILE)
+        check("%s: even '%s' stays one line inside the card" % (dev, " ".join([r["level"] or "", r["badges"] or ""])),
+              r["lineRows"] == 1 and r["lineFits"] and r["badges"] == "16 badges", [r["lineRows"], r["lineFits"], r["level"], r["badges"]])
+        # ---- the bottom bar ----
+        pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(500)
+        bar = pg.evaluate("""() => {
+          const bar = document.getElementById('bottomtabs'); const br = bar.getBoundingClientRect();
+          const labs = [...bar.querySelectorAll('.bottomtabs-navrow .bottomtab')].filter(t => t.getClientRects().length).map(t => {
+            const l = t.querySelector('.bottomtab-label'); const r = l.getBoundingClientRect(); const tr = t.getBoundingClientRect();
+            return { id: t.id, text: l.textContent.trim(), shown: getComputedStyle(l).display !== 'none',
+                     clipped: l.scrollWidth > l.clientWidth + 1 || r.left < tr.left - 1 || r.right > tr.right + 1,
+                     l: r.left, r: r.right }; });
+          const overlap = labs.filter(a => a.shown).some((a, i, arr) => arr.some((b, j) => j !== i && b.shown && a.l < b.r - 1 && b.l < a.r - 1));
+          return { labs, overlap, inside: br.left >= -1 && br.right <= innerWidth + 1,
+                   icon: (bar.querySelector('#bottomtab-rewards .bottomtab-icon svg path') || { getAttribute: () => '' }).getAttribute('d') };
+        }""")
+        cls = [l for l in bar["labs"] if l["id"] == "bottomtab-rewards"]
+        check("%s: the bottom tab reads Class, with a new icon" % dev,
+              bool(cls) and cls[0]["text"] == "Class" and not bar["icon"].startswith("M7 4h10v5"), [cls, bar["icon"][:30]])
+        check("%s: no bottom tab label is clipped or overlaps another, and the bar is on screen" % dev,
+              not any(l["clipped"] for l in bar["labs"] if l["shown"]) and not bar["overlap"] and bar["inside"], bar)
+        # ---- the Class screen ----
+        pg.evaluate("()=>{ document.getElementById('bottomtab-rewards').click(); }"); pg.wait_for_timeout(700)
+        c = pg.evaluate(B319G_CLASS)
+        # read off the page: three tabs, whose panes hold the boards, the
+        # friends and the calendar in that order
+        holds = []
+        for i in range(len(c["labels"])):
+            pg.evaluate("i => document.querySelectorAll('#stage > .panel > .navsegment > .iconbtn')[i].click()", i)
+            pg.wait_for_timeout(350)
+            holds.append(pg.evaluate(B319G_CLASS))
+        shape = [("boards" if x["holds"] and x["holds"]["boards"] else "friends" if x["holds"] and x["holds"]["friends"]
+                  else "calendar" if x["holds"] and x["holds"]["calendar"] else None) for x in holds]
+        check("%s: the Class tab opens a screen of three tabs on the first" % dev,
+              "screen-class" in (c["cls"] or "") and len(c["labels"]) == 3 and c["active"] == 0 and c["visible"] == 1 and c["lit"], c)
+        check("%s: the three tabs are the boards, Friends and the calendar, in that order" % dev,
+              shape == ["boards", "friends", "calendar"] and [l.split()[0].lower()[:4] for l in c["labels"]] == ["rank", "frie", "cale"],
+              [c["labels"], shape])
+        check("%s: the calendar tab carries the Class 26E box above the calendar" % dev,
+              bool(holds and holds[-1]["holds"] and holds[-1]["holds"]["classCard"]), holds[-1]["holds"] if holds else None)
+        check("%s: Class stays lit on every one of its tabs, and nothing else is" % dev,
+              all(x["lit"] and x["litOther"] == ["bottomtab-rewards"] for x in holds), [x["litOther"] for x in holds])
+        # the second switcher (the boards) is quieter than Class's own
+        sub = pg.evaluate("""() => { document.querySelectorAll('#stage > .panel > .navsegment > .iconbtn')[0].click();
+          const top = document.querySelector('#stage > .panel > .navsegment'), inner = document.querySelector('#stage .rank-boardseg');
+          if(!top || !inner) return null;
+          const a = top.querySelector('.iconbtn'), b = inner.querySelector('.iconbtn');
+          const bg = getComputedStyle(inner).backgroundColor;
+          return { topFont: parseFloat(getComputedStyle(a).fontSize), innerFont: parseFloat(getComputedStyle(b).fontSize),
+                   innerBg: bg, topH: top.getBoundingClientRect().height, innerH: inner.getBoundingClientRect().height,
+                   boards: inner.querySelectorAll('.iconbtn').length, n: RANKING_BOARDS.length }; }""")
+        check("%s: the board switcher sits inside Rankings, smaller and without a pill" % dev,
+              sub and sub["boards"] == sub["n"] and sub["innerFont"] <= sub["topFont"] + .5
+              and sub["innerBg"] in ("rgba(0, 0, 0, 0)", "transparent") and sub["innerH"] < sub["topH"] + 4, sub)
+        try:
+            # ---- swipe: exactly one tab, both ways; along the boards, the board ----
+            pg.evaluate("()=>{ try{ showClass('rankings'); }catch(e){ showRankings(); } }"); pg.wait_for_timeout(500)
+            order = []
+            for dx in (-1, -1, -1, 1, 1):
+                _swipe(cdp, w * (0.75 if dx < 0 else 0.25), h * 0.6, dx * w * 0.5, 18)
+                pg.wait_for_timeout(450)
+                order.append(pg.evaluate(B319G_CLASS)["active"])
+            check("%s: a swipe moves exactly one Class tab, both ways, and stops at the ends" % dev,
+                  order == [1, 2, 2, 1, 0], order)
+            pg.evaluate("()=>{ try{ showClass('rankings', { board: 'overall' }); }catch(e){ showRankings('overall'); } }"); pg.wait_for_timeout(500)
+            sb = pg.evaluate("() => { const e = document.querySelector('#stage .rank-boardseg') || document.querySelector('#stage .navsegment'); const r = e.getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }")
+            before = pg.evaluate(B319G_CLASS)
+            _swipe(cdp, sb[0] + sb[2] * 0.85, sb[1] + sb[3] / 2, -sb[2] * 0.6, 0)
+            pg.wait_for_timeout(450)
+            after = pg.evaluate(B319G_CLASS)
+            check("%s: a swipe along the board switcher changes the board and not the Class tab" % dev,
+                  after["active"] == 0 and before["board"] != after["board"] and after["board"], [before["board"], after["board"], after["active"]])
+            # ---- every old way in ----
+            ways = [("showRankings()", 0, None), ("showRankings('hundos')", 0, "hundos"), ("showRankings('level')", 0, "overall"),
+                    ("showRankings(new MouseEvent('click'))", 0, "overall"), ("showLeaderboard()", 0, None),
+                    ("showFriends()", 1, None), ("showCalendar()", 2, None),
+                    ("showClass('leaderboard')", 0, None), ("showClass('week')", 0, "week"), ("showClass('friends')", 1, None),
+                    ("showClass('calendar')", 2, None), ("showClass(new MouseEvent('click'))", 0, None),
+                    ("document.getElementById('bottomtab-rewards').click()", 0, "overall")]
+            bad = []
+            for (js, want, board) in ways:
+                pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(250)
+                pg.evaluate("js => { try{ (0, eval)(js); }catch(e){} }", js); pg.wait_for_timeout(500)
+                x = pg.evaluate(B319G_CLASS)
+                bk = pg.evaluate("() => { const a = document.querySelector('#stage .rank-boardseg .iconbtn.active'); if(!a) return null; const i = [...a.parentNode.querySelectorAll('.iconbtn')].indexOf(a); return (RANKING_BOARDS[i] || {}).key || null; }")
+                ok = (x["cls"] and "screen-class" in x["cls"] and x["active"] == want and x["visible"] == 1
+                      and x["shownH"] > 120 and x["lit"] and (board is None or bk == board))
+                if not ok:
+                    bad.append([js, x["active"], bk, x["shownH"], x["cls"]])
+            check("%s: every old way to the boards, friends and the calendar lands on the right Class tab" % dev, not bad, bad)
+        except Exception as e:
+            # an older build lets a sideways drag go to the browser, which
+            # can leave the page altogether - that is a failure, not a crash
+            check("%s: the swipe and the old ways in could be driven at all" % dev, False, str(e)[:160])
+        ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -20626,6 +20908,7 @@ def main():
             check_b319_penal346(br)
             check_b319_badges(br)
             check_b319f_casespace(br)
+            check_b319g_layout(br)
         finally:
             br.close()
     SERVER.shutdown()

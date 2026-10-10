@@ -2784,8 +2784,8 @@ Everything in this section postdates build 94 and was undocumented until
   fetched by every client on every snapshot and there are forty of
   them. Your row says who you have asked and who you have accepted;
   nobody writes to anybody else's.
-- **Friends is its own card on Profile**, not a button in the Class 26E
-  box — see **Conventions**.
+- **Friends is the Friends tab of Class (build 319)**, not a card on
+  Profile any more - see **Build 319 (b319g)** at the end of this file.
 - **The friends screen leads with people, not admin** — also
   **Conventions**.
 - **ONLINE MEANS THE APP IS OPEN, and for a while it meant something
@@ -19171,3 +19171,43 @@ rank up cutscene."* One block after `buildRanksTab()` (all `var`).
   it. Gate: the cap section of `check_b319_rankup` (both reference
   devices, plus a rank-up whose badge row is already over: no count past
   its goal in any 40ms sample of the journey); fails on 8aded7f.
+
+### Build 319 (b319g) - badges beside the level, the case shut, the Class tab
+
+- **The Profile card's top line is "Rank · Level N · N badges".** The count
+  is `.pf-badgecount`, in the level's own type, and a tap on it opens the
+  Badges page while a tap anywhere else on `.pf-standing` still opens the
+  Rank screen. It is a SPAN inside that button on purpose: a button in a
+  button is invalid, and check-curve holds the blocks to no nested controls.
+- **No open case on Profile.** `buildProfileCase` draws the FRONT of the
+  shut case (`.pf-case.pf-case-closed`): the handle on the lid, the lid's
+  front, the seam, latches with their hasps over it, the BADGE CASE plate
+  (`buildCaseSidePlate`) and "N of 16 badges ›". All from the shared
+  `.nova-case-*` materials; never a second style. ~74px on a phone. The
+  open case stays in the cutscene and on the Badges page.
+- **The bottom tab is Class** (id and dest still `bottomtab-rewards` /
+  `rewards`), icon two people. `showClass(tab, {board})` is ONE screen
+  with three tabs - Rankings, Friends, Calendar - each built the first
+  time it is shown. The panes keep `.screen-rankings`, `.screen-friends`,
+  `.screen-calendar`, so selectors that found the old screens still find
+  them. `showRankings(board)`, `showFriends()`, `showCalendar()` and
+  `showLeaderboard()` all land on their tab; `CLASS_TAB_ALIASES` and the
+  board keys resolve too. `showFriends()` while Friends is showing redraws
+  that pane in place - that is how accept, send and presence repaint it.
+  The Class 26E box (`buildClassCard`) heads the Calendar tab.
+- **One swipe moves one switcher.** The screen swipes between Class's
+  tabs; a swipe that STARTS on a tab's own switcher (the boards, Month /
+  List - `.class-subseg`) moves only that switcher. `attachTabSwipe` takes
+  `{ zone }` / `{ skip }` for this.
+  Its listeners sit on the document now and also take a touch that
+  starts on the bare page under a short tab (`<html>`/`<body>`): `.wrap`
+  is only as tall as its content, so on an iPad a swipe under Friends hit
+  nothing - and in Chromium went to the browser as a back gesture.
+- **A second switcher on a tab is words with an underline**
+  (`.class-subseg`), never a second glass pill; the shared slider is
+  restyled to the underline with `!important` because `attachSegSlider`
+  copies the active button's look inline.
+- Presence is attached by the Friends tab only now; Profile no longer
+  counts who is online (`PRESENCE_SCREENS` is `.screen-friends`).
+- **Gate: `check_b319g_layout`** (both reference devices and a 320px
+  phone). Fails on bc2986d.

@@ -337,14 +337,25 @@ def main():
                 # kept saving the new board under the old board's name -
                 # a screenshot that gets reported as a bug on the screen
                 # it is not of.
+                # Build 319: the tab is Class, and the boards are its Rankings
+                # tab - their own switcher sits inside .screen-rankings.
                 board_names = page.evaluate(
-                    """()=>[...document.querySelectorAll('.panel .navsegment .iconbtn')]"""
+                    """()=>[...document.querySelectorAll('.screen-rankings .navsegment .iconbtn')]"""
                     """.map(b=>b.textContent.toLowerCase().replace(/[^a-z0-9]+/g,'-'))""")
                 for i, name in enumerate(board_names):
-                    page.evaluate("""(n)=>{const b=[...document.querySelectorAll('.profiletabs .iconbtn')][n];
+                    page.evaluate("""(n)=>{const b=[...document.querySelectorAll('.screen-rankings .navsegment .iconbtn')][n];
                       if(b) b.click();}""", i)
                     page.wait_for_timeout(700)
                     shot(page, 24 + i * 0.1, "leaderboard-" + name, bar_ok=True)
+                # ...and Class's other two tabs, names read off the screen
+                class_tabs = page.evaluate(
+                    """()=>[...document.querySelectorAll('.screen-class > .navsegment > .iconbtn')]"""
+                    """.map(b=>b.textContent.toLowerCase().replace(/[^a-z0-9]+/g,'-'))""")
+                for i, name in enumerate(class_tabs[1:], start=1):
+                    page.evaluate("""(n)=>{const b=document.querySelectorAll('.screen-class > .navsegment > .iconbtn')[n];
+                      if(b) b.click();}""", i)
+                    page.wait_for_timeout(700)
+                    shot(page, 24.5 + i * 0.1, "class-" + name, bar_ok=True)
 
                 # the four Profile tabs
                 page.evaluate("()=>document.getElementById('bottomtab-profile').click()")
