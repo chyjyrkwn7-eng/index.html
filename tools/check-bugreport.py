@@ -23,7 +23,11 @@ INSET={"top":"59px","bottom":"34px","left":"0px","right":"0px"}
 HOOK='''
   window.__wrote = null;
   window.__fake=function(){ fbDb={collection:function(n){return{doc:function(i){return{
-    set:function(v){ window.__wrote={coll:n,id:i,data:v}; return Promise.resolve(); },
+    /* The account's own saves (progress, its __floor, the rankings row)
+       go through this same stub and can land after the report - build 318
+       saves once more after Send - so they are not what the report wrote. */
+    set:function(v){ if(n==="progress"||n==="leaderboard") return Promise.resolve();
+      window.__wrote={coll:n,id:i,data:v}; return Promise.resolve(); },
     get:function(){return Promise.resolve({exists:false});},
     delete:function(){return Promise.resolve();}};}};} };
     onSnapshotResilient=function(r,o){ setTimeout(function(){o({forEach:function(){}});},20); return function(){}; };
