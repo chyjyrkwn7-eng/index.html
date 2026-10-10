@@ -60453,7 +60453,7 @@ function addStudyTime(ms){
 /* A FUNCTION, NOT CONSTS: applyLoadedData runs during boot, above this
    point in the file, and a const read before its line is a TDZ throw
    that would take the whole load down with it. */
-function studyLogCaps(){ return { leakUntil: "2026-10-07", oldDayMax: 6 * 3600 * 1000, dayMax: 16 * 3600 * 1000 }; }
+function studyLogCaps(){ return { leakUntil: "2026-10-10", oldDayMax: 6 * 3600 * 1000, dayMax: 16 * 3600 * 1000 }; }
 function normalizeStudyLog(log){
   if(!log || typeof log !== "object") return log;
   const c = studyLogCaps();
@@ -79350,7 +79350,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-07-317";
+const APP_BUILD = "2026-10-10-318";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
