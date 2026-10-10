@@ -429,9 +429,19 @@ def check_cutscene(br):
         # gate red. Same principle as reading labels off the page
         # instead of quoting them: a gate must not carry its own copy
         # of a number the app owns.
-        pg.wait_for_timeout(pg.evaluate("()=>BADGE_CUTSCENE_MS") + 150)
-        second = pg.evaluate("""()=>{const o=document.getElementById('badge-cutscene');
-          return o ? (o.querySelector('.badge-cutscene-name')||{}).textContent : null;}""")
+        # POLL FOR THE SECOND, TOO (build 318): one sample at BADGE_CUTSCENE_MS
+        # after a fixed 1500ms wait raced the first scene's own start, and
+        # under load caught the FIRST badge still up. Waiting for the second
+        # within one cutscene's length plus 2.5s still fails a queue that
+        # stalls or never plays it.
+        second = None
+        budget = pg.evaluate("()=>BADGE_CUTSCENE_MS") + 2500
+        t_end = time.time() + budget / 1000.0
+        while time.time() < t_end:
+            second = pg.evaluate("""()=>{const o=document.getElementById('badge-cutscene');
+              return o ? (o.querySelector('.badge-cutscene-name')||{}).textContent : null;}""")
+            if second and "TCOLE Rules" in second: break
+            pg.wait_for_timeout(100)
         # NAMES THE UNIT, DOES NOT QUOTE THE WHOLE LINE. This asserted the
         # literal "TCOLE Rules" and went red the moment the cutscene started
         # calling a badge by its name ("TCOLE Rules badge") - the fifth time
