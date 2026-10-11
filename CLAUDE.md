@@ -19261,3 +19261,84 @@ Your eyes shouldn't gravitate to one thing on any screen".
   reference devices and a 320px phone, the calendar in seven states of the
   course. Fails on f6e0be8.
 
+
+### Build 320 (b320h) - a grey card, one XP line on a phone, tabs centred by their letters, Save and exit, the daily ring
+
+- **No banner, no colour on the Profile card.** *"if a banner is not set
+  then it matches the color of your rank ... Just keep it grey with the
+  space themed thing, if a banner is set then the box would match it."*
+  `.profile-hero.has-cover.has-tint` defaulted `--hero-t1/--hero-t2` to the
+  theme's c2/c3 - with a rank's theme set, that IS the rank's colour. The
+  defaults are two neutral greys now (#9EA4AD / #6B717A, the graphite
+  cover's metal); a worn banner still sets them inline (`bannerTintOf`).
+- **One label under the bar on a phone.** Under 40rem the line under the
+  Profile bar is `"x / y XP" + .pf-xp-to` ("to Level N", soft grey, both
+  numbers still the one XP blue - 317's decision), centred, and
+  `.pf-xp-total` is hidden: the total is on Stats now, a full-width
+  "Total XP" card heading At a glance (`.stat-card-wide`). 40rem and up is
+  unchanged (total right). At a wall `pfXpToText` is empty and the gold
+  note speaks. The rank-up's stand-in and climb call `syncPfXpTo` (one
+  line each in `rankUpStandingAt` / `rankUpStandingClimb`), and
+  `.ru-climbing` hides it while "Saved XP · climbing" stands in.
+- **A tab's label is centred by its letters (`text-box`).** *"the top tab
+  button is not centered ... slightly more space on the bottom."* The
+  label sat in its line box, whose descent is empty for "Profile",
+  "Stats", "Overall" - so the letters rode high (0.6px in Chromium, more
+  with SF's metrics; Month / List 1.4px, it had .5/.6rem padding). Under
+  `@supports (text-box: trim-both cap alphabetic)` the `.navsegment.
+  profiletabs .iconbtn` line is trimmed to cap height and baseline and
+  `(1lh - 1cap)/2` goes back on each side as padding, so every pill keeps
+  its height to the pixel. `--tab-py` is each variant's own vertical
+  padding - **a new switcher variant that sets padding must set
+  `--tab-py` too** (the @supports rule's padding is `!important`). Flex
+  buttons (`.chatdock-tab`, `.rs-tab`) carry their words in a `.tab-label`
+  span, trimmed the same way. Browsers without `text-box` are unchanged.
+- **Save and exit is grey glass** (`#pause-save`, an inset hairline, no
+  border so nothing moves); Quit is the black ghost it was.
+- **Resume test loads like a new test.** `resumeRunWithLoading(s)` puts
+  the test chrome up and runs `showCountdown(3, then)` (LOADING TEST, its
+  bar); only when the bar is full does `resumeRunSession` run, so the run
+  clock, a count-down and the question clock start after it. During the
+  bar nothing is live (`testInProgress` false, no `timerHandle`), and the
+  slot is untouched, so a phone closed there loses nothing.
+- **The slot is mirrored into IndexedDB** (`IDB_RUN_KEY`,
+  `mirrorRunSession` on every write and clear, `restoreRunSessionFromMirror`
+  at boot when localStorage has none) - the same defence the store and
+  the code have against iOS clearing an installed app's localStorage.
+  A reset (`wipeLocalProgressAndSettings`) now clears the slot too: a test
+  saved by the old account is not offered to the new one.
+- **The daily ring is one SVG circle and it is always on the button**
+  (`.dq-ring`, `buildDailyRing`, `setDailyRing`). The charge's two CSS
+  half-borders tapered to a point where a side was taken off, and the two
+  tapers met at 12 and 6 o'clock (the notch / pinch / seam Madison saw);
+  the flash was a second, thicker ring at another size. Now: a stroke 5 of
+  100, square ends, dash = progress; whole is drawn undashed (`.is-full`),
+  so there is no join; the flash is the same circle (`.dq-ring-flash`).
+  Answered: `dailyRingFraction()` - the share of the time from the last
+  5pm to the next (two real 5pms, so DST days are still 0-1), in the
+  theme's `--dq-c`, moved by `dailyRingTick` once a minute on the minute
+  (no animation in between). Ready: whole, and the pulse (`::after`) now
+  starts AT the ring (inset -6px, x1 -> x1.22, the same reach as before).
+  A reset: `playDailyRecharge(btn, then, fromP)` - a CSS animation
+  (`dq-ring-fill`, linear) from empty for a new question met on arriving
+  (a full cycle, the old 4.1s), or from where the waiting ring stood when
+  Home is up at 5pm (a negative delay into the same animation, the rest
+  taking at least .7s); `animationend` closes it and launches, as the
+  old sweep's did. It cannot pass whole (offset 0 is the circle's length).
+  Reduce motion: no fill, it is simply whole.
+- Checks moved: `check_b245_daily_announce`'s sampler reads the ring's
+  progress (`arcL` = progress x 180, so its thresholds stand);
+  `check_b318_daily` reads the ring's and flash's stroke and the seal on
+  `.dq-ring`; `check-savetest` waits 8s (was 4s) for the question after
+  Resume test, the bar being 2.5s.
+- **Gate: `check_b320h_fixes`** - the grey card under two rank themes and
+  the banner's colours with one; the phone's two rows / two pieces at 440
+  and on a 375px phone with a six-figure total, taps to Badges and the
+  road map, the tablet's total, Stats' total; every switcher (Profile,
+  Month / List, Leaderboard, chat, room review) within 0.5px on both
+  reference devices; Save and exit lighter than Quit; a saved test through
+  a reload, a cold start and a wiped slot; LOADING TEST on Resume with
+  nothing live under it and the count-down intact; the ring never past
+  whole from empty and from .97; the waiting ring at .25 at 11pm and .375
+  three hours on (faked clock); the whole ring even at 12 and 6 o'clock
+  at 3x. Fails on a73c681.

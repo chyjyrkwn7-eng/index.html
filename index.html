@@ -10351,7 +10351,7 @@
      genuinely overflowing the screen by 86px at the original size,
      not just looking a little tight. Re-verified after this change
      that it now fits with room to spare. */
-  .profiletabs .iconbtn{ padding:.55rem .8rem; font-size:.82rem; }
+  .profiletabs .iconbtn{ padding:.55rem .8rem; font-size:.82rem; --tab-py:.55rem; }
   /* After .profiletabs .iconbtn's own declaration, not beside
      .navsegment.profiletabs where it reads better: a media query carries
      no extra specificity, so placed earlier it lost to this rule on
@@ -10368,7 +10368,7 @@
      so this is the established shape here, not a new idea. */
   @media (max-width:24rem){
     .navsegment.profiletabs{ flex-wrap:wrap; justify-content:center; gap:.15rem; }
-    .profiletabs .iconbtn{ padding:.5rem .7rem; font-size:.78rem; flex:0 0 auto; }
+    .profiletabs .iconbtn{ padding:.5rem .7rem; font-size:.78rem; flex:0 0 auto; --tab-py:.5rem; }
   }
   .iconbtn{
     background:none; border:none; border-radius:999px;
@@ -10428,6 +10428,7 @@
 
   /* ---------- profile / appearance screens ---------- */
   .stat-grid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:.75rem; margin-bottom:1.5rem; }
+  .stat-grid > .stat-card-wide{ grid-column:1 / -1; }
   @media (max-width:26rem){ .stat-grid{ grid-template-columns:1fr 1fr; } }
   @media (min-width:40rem){ .stat-grid{ grid-template-columns:repeat(3, 1fr); } }
   @media (min-width:40rem){ .stat-grid-four{ grid-template-columns:repeat(4, minmax(0, 1fr)); } }
@@ -13998,7 +13999,10 @@
     will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
     box-shadow:0 4px 14px rgba(0,0,0,.3); cursor:pointer;
   }
-  .daily-question-fab.is-done{ opacity:.4; color:var(--soft); cursor:default; }
+  /* Answered (build 320): the glass and the "?" dim, not the whole
+     button - the ring on it is the time to the next question, in the
+     theme's colour, and it is meant to be seen (.dq-ring). */
+  .daily-question-fab.is-done{ color:var(--soft); cursor:default; background:rgba(26,31,38,.3); border-color:rgba(255,255,255,.08); }
   /* Two states, per explicit request: a quiet "this is here and you have
      not done it" and a louder "it just reset in front of you".
 
@@ -14031,16 +14035,21 @@
      so it carries the same colour. One variable; nothing below names a
      colour of its own. */
   .daily-question-fab, .daily-orb{ --dq-c:var(--rank-accent, var(--theme-c1)); }
+  /* THE PULSE LEAVES THE RING (build 320): with the ring always on the
+     button, the pulse starts AT it (inset -6px, scale 1) and widens out,
+     rather than growing from inside the button through it. It reaches
+     as far as it used to (x1.22 of the ring is x1.35 of the old start),
+     so it still clears the tab bar (check-fixes 9c). */
   .daily-question-fab.is-ready::after{
-    content:""; position:absolute; inset:-3px; border-radius:999px;
+    content:""; position:absolute; inset:-6px; border-radius:999px;
     border:1.5px solid var(--dq-c); opacity:0; pointer-events:none;
     animation:daily-ready 3.6s ease-out infinite;
   }
   @keyframes daily-ready{
-    0%{ transform:scale(.9); opacity:0; }
-    12%{ opacity:.5; }
-    55%{ transform:scale(1.35); opacity:0; }
-    100%{ transform:scale(1.35); opacity:0; }
+    0%{ transform:scale(1); opacity:0; }
+    10%{ transform:scale(1.02); opacity:.55; }
+    55%{ transform:scale(1.22); opacity:0; }
+    100%{ transform:scale(1.22); opacity:0; }
   }
   .daily-question-fab.is-fresh{ animation:daily-fresh 1.2s ease-in-out 5; }
   @keyframes daily-fresh{
@@ -14086,43 +14095,63 @@
     position:absolute; inset:-6px; border-radius:50%; pointer-events:none;
     --dq-w:3px;
   }
-  .dq-charge-track, .dq-charge-half, .dq-charge-burst, .dq-charge-bloom{ position:absolute; pointer-events:none; }
-  .dq-charge-track{
-    inset:0; border-radius:50%; box-sizing:border-box;
-    border:var(--dq-w) solid color-mix(in srgb, var(--dq-c) 22%, transparent);
-    opacity:0;
+  .dq-charge-burst, .dq-charge-bloom{ position:absolute; pointer-events:none; }
+  /* ---- THE RING IS ONE SVG CIRCLE, AND IT IS ALWAYS THERE (build 320) ----
+     "The top and bottom edge of the daily button still has a weird thing
+     there ... the exact top and bottom part of the circle, the outline is
+     messed up. ... the loading bar goes all the way but it overlaps and
+     then the flow messes up." The charge was two half-rings, each a CSS
+     border with one side taken off and rotated behind a half-width clip:
+     where a border loses a side its ends taper to a point, and the two
+     tapers met at exactly 12 and 6 o'clock - a notch at the top while it
+     filled, a pinch at the bottom at half way, and a seam at both when it
+     closed; and the flash at the hit was a second, thicker ring at a
+     different size laid over it. Now the ring is a single stroked circle
+     (.dq-ring): square ends, a dash as long as the progress, nothing to
+     meet; when it is whole it is drawn with no dash at all (.is-full), so
+     there is no join anywhere; and the flash is the same circle again,
+     the same radius and width, lit and let go.
+     "let's make it so it actually slowly progresses for the next
+     question ... the bar would do a full cycle when it's ready and do the
+     pulse thing, I think this would make your current theme that's set
+     stand out more." So the ring is on the button all the time, in the
+     theme's colour (--dq-c): answered, it shows how much of the time to
+     the next question has gone (dailyRingFraction - from the last 5pm to
+     the next, moved on once a minute by dailyRingTick, no animation
+     running in between); ready, it is whole and the pulse runs from it;
+     at a reset it fills to whole (playDailyRecharge) and goes off.
+     Stroke 5 of 100: 3.3px on a phone, 4.3px on a tablet. */
+  .dq-ring{ position:absolute; inset:-6px; pointer-events:none; --dq-p:0; }
+  .dq-ring svg{ display:block; width:100%; height:100%; overflow:visible; }
+  .dq-ring circle{ fill:none; stroke-width:5; }
+  .dq-ring-track{ stroke:color-mix(in srgb, var(--dq-c) 24%, transparent); }
+  .dq-ring-prog{
+    stroke:var(--dq-c);
+    stroke-dasharray:298.4513 298.4513;
+    stroke-dashoffset:calc(298.4513px * (1 - var(--dq-p)));
+    transition:stroke-dashoffset .9s cubic-bezier(.3,.7,.3,1);
   }
-  .dq-charge-half{ top:0; width:50%; height:100%; overflow:hidden; }
-  .dq-charge-r{ left:50%; }
-  .dq-charge-l{ left:0; }
-  .dq-charge-arc{
-    position:absolute; top:0; width:100%; height:100%; box-sizing:border-box;
-    border:var(--dq-w) solid var(--dq-c);
+  .dq-ring.is-full .dq-ring-prog{ stroke-dasharray:none; }
+  .daily-question-fab.is-charging .dq-ring:not(.is-full) .dq-ring-prog{
+    transition:none;
+    animation:dq-ring-fill var(--dq-ring-dur, 4.1s) linear calc(var(--dq-delay, .35s) - var(--dq-ring-skip, 0s)) both;
   }
-  /* The right-hand clip shows the ring's LEFT half rotated into it, and
-     the left-hand clip the right half: each starts hidden behind its own
-     clip and sweeps in from 12 o'clock and 6 o'clock in turn. */
-  .dq-charge-r .dq-charge-arc{
-    left:-100%; border-right:0; border-radius:999px 0 0 999px;
-    transform-origin:100% 50%; transform:rotate(0deg);
+  @keyframes dq-ring-fill{ from{ stroke-dashoffset:298.4513; } to{ stroke-dashoffset:0; } }
+  .dq-ring.is-full .dq-ring-track{ visibility:hidden; }
+  [data-reduce-motion="true"] .dq-ring-prog{ transition:none; }
+  .dq-ring-flash{ stroke:var(--dq-c); opacity:0; transform-box:fill-box; transform-origin:50% 50%; }
+  .daily-question-fab.is-charging .dq-ring-flash{
+    animation:dq-flash .55s cubic-bezier(.2,.8,.3,1) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s)) both;
   }
-  .dq-charge-l .dq-charge-arc{
-    left:100%; border-left:0; border-radius:0 999px 999px 0;
-    transform-origin:0% 50%; transform:rotate(0deg);
+  /* closed, it lights by its glow (see dq-sealed) for the hold, then the
+     glow goes with the hit; the ring itself stays */
+  .daily-question-fab.is-charging .dq-ring{
+    animation:dq-sealed var(--dq-hold, .5s) ease-out calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s)) both,
+              dq-unseal .5s ease-in calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s) + .12s) forwards;
   }
-  .daily-question-fab.is-charging .dq-charge-track{
-    animation:dq-fade-in .3s ease-out var(--dq-delay, .35s) both, dq-fade-out .45s ease-in calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s) + .15s) forwards;
-  }
-  .daily-question-fab.is-charging .dq-charge-r .dq-charge-arc{
-    animation:dq-sweep calc(var(--dq-fill, 1.6s) / 2) linear var(--dq-delay, .35s) both;
-  }
-  .daily-question-fab.is-charging .dq-charge-l .dq-charge-arc{
-    animation:dq-sweep calc(var(--dq-fill, 1.6s) / 2) linear calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) / 2) both;
-  }
-  /* Once the ring closes, the whole meter lets go with the burst. */
-  .daily-question-fab.is-charging .dq-charge-half{
-    animation:dq-fade-out .4s ease-in calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s) + .12s) forwards;
-  }
+  @keyframes dq-unseal{ from{ filter:drop-shadow(0 0 4px var(--dq-c)) drop-shadow(0 0 1px var(--dq-c)); } to{ filter:drop-shadow(0 0 0 transparent); } }
+  /* Answered: the "?" and the glass step back, the ring does not. */
+  .daily-question-fab.is-done .dq-glyph{ opacity:.42; }
   .dq-charge-burst{
     inset:0; border-radius:50%; box-sizing:border-box;
     border:2px solid var(--dq-c);
@@ -14156,15 +14185,7 @@
      close so the hit has something building up to it. Still children
      with pointer-events:none, still once each, still transform, opacity
      and shadow only. */
-  .dq-charge-flash, .dq-charge-burst2{ position:absolute; pointer-events:none; inset:0; border-radius:50%; box-sizing:border-box; opacity:0; }
-  .dq-charge-flash{
-    border:calc(var(--dq-w) + 1.5px) solid var(--dq-c);
-    box-shadow:0 0 18px color-mix(in srgb, var(--dq-c) 80%, transparent),
-               inset 0 0 12px color-mix(in srgb, var(--dq-c) 55%, transparent);
-  }
-  .daily-question-fab.is-charging .dq-charge-flash{
-    animation:dq-flash .55s cubic-bezier(.2,.8,.3,1) calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s)) both;
-  }
+  .dq-charge-burst2{ position:absolute; pointer-events:none; inset:0; border-radius:50%; box-sizing:border-box; opacity:0; }
   .dq-charge-burst2{
     border:1.5px solid var(--dq-c);
     box-shadow:0 0 10px color-mix(in srgb, var(--dq-c) 55%, transparent);
@@ -14179,9 +14200,12 @@
     from{ filter:none; }
     to{ filter:drop-shadow(0 0 6px color-mix(in srgb, var(--dq-c) 75%, transparent)); }
   }
+  /* The flash is the ring's own circle (build 320): it lights where the
+     ring is, then widens only as it fades - never a second ring at
+     another size over the first. */
   @keyframes dq-flash{
-    0%{ opacity:0; transform:scale(.96); }
-    18%{ opacity:1; transform:scale(1.06); }
+    0%{ opacity:0; transform:scale(1); }
+    18%{ opacity:1; transform:scale(1); }
     100%{ opacity:0; transform:scale(1.14); }
   }
   @keyframes dq-burst2{
@@ -14194,10 +14218,6 @@
      same frame and the ring began fading 120ms later, so the closed ring
      was never actually on screen. It now holds closed for --dq-hold,
      brightening to full as it seals, and only then goes off. */
-  .daily-question-fab.is-charging .dq-charge-half{
-    animation:dq-sealed var(--dq-hold, .5s) ease-out calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s)) both,
-              dq-fade-out .4s ease-in calc(var(--dq-delay, .35s) + var(--dq-fill, 1.6s) + var(--dq-hold, .5s) + .12s) forwards;
-  }
   /* No brightness() in the seal (build 318): x1.7 clipped every channel
      towards white, so the closed ring went pale yellow on Bronze, cyan on
      Sapphire and pink-white on Amethyst - off its own colour for the half
@@ -14216,7 +14236,6 @@
   .daily-question-fab.is-charging{ z-index:201; }
   /* The quiet ready ring steps aside while the meter is on the button. */
   .daily-question-fab.is-charging.is-ready::after{ animation:none; opacity:0; }
-  @keyframes dq-sweep{ from{ transform:rotate(0deg); } to{ transform:rotate(180deg); } }
   @keyframes dq-fade-in{ from{ opacity:0; } to{ opacity:1; } }
   @keyframes dq-fade-out{ from{ opacity:1; } to{ opacity:0; } }
   @keyframes dq-burst{
@@ -16739,6 +16758,33 @@
     background:transparent !important; background-image:none !important; box-shadow:none !important; border-color:transparent !important;
   }
   [data-reduce-motion="true"] .has-seg-slider > .seg-slider{ transition:none; }
+  /* ---- A TAB'S LABEL ON ITS PILL'S MIDDLE (build 320) ----
+     "If you look carefully, while in the profile tab ... the top tab button
+     is not centered ... there slightly more space on the bottom then the
+     top. ... ensure it's fixed anywhere else itd need it too, such as the
+     leaderboard top tabs." The label was centred by its LINE BOX, which
+     holds the font's ascent above the baseline and its descent below -
+     and a label with no descenders ("Profile", "Stats", "Overall") puts
+     nothing in that descent, so its letters sat high in the pill (1px at
+     the phone's size, more in the system font's metrics). Measured by the
+     letters instead: the line is trimmed to the capital height and the
+     baseline (text-box), so it is the letters themselves that sit on the
+     middle, in any font, and the trimmed space is given back as padding
+     ((1lh - 1cap) / 2 on each side) so every pill keeps its height to the
+     pixel. --tab-py is each switcher's own vertical padding. A switcher
+     whose button is a flex box (the chat sheet, the results' Missed /
+     Entire test) carries its words in a .tab-label span, which is trimmed
+     the same way and centred by the flex box. Browsers without text-box
+     keep the old line-box centring - nothing moves for them.
+     Gate: check_b320h_fixes (every switcher, within 0.5px). */
+  @supports (text-box: trim-both cap alphabetic){
+    .navsegment.profiletabs .iconbtn{
+      text-box:trim-both cap alphabetic;
+      padding-top:calc(var(--tab-py, .55rem) + (1lh - 1cap) / 2) !important;
+      padding-bottom:calc(var(--tab-py, .55rem) + (1lh - 1cap) / 2) !important;
+    }
+    .chatdock-tab > .tab-label, .rs-tab > .tab-label{ display:inline-block; text-box:trim-both cap alphabetic; }
+  }
   [data-layout="modern"] .navsegment .iconbtn{ color:rgba(255,255,255,.65); }
   @media (hover:hover){ [data-layout="modern"] .navsegment .iconbtn:not(.active):hover{ color:#fff; } }
   [data-layout="modern"] .navsegment .iconbtn.active{
@@ -16940,6 +16986,23 @@
       0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 22px -6px rgba(0,0,0,.55);
   }
   [data-layout="modern"] .next.danger:active{ background-color:#6E1717; opacity:1; }
+  /* ---- SAVE AND EXIT IS GREY GLASS (build 320) ----
+     "The save and quit button is black, should it be black or should it
+     be a different color? Like grey?" Save and exit and Quit test were the
+     same black ghost, one under the other, so the button that keeps your
+     test looked exactly like the one that throws it away. Save and exit
+     is the app's secondary glass now - a lit grey pane, the tab
+     switchers' own white-on-dark recipe, a hairline drawn INSIDE (a
+     border would make it 2px taller than the buttons beside it and move
+     Quit) - between Resume's white and Quit's black. Quit is unchanged. */
+  [data-layout="modern"] .pausepanel .next.ghost#pause-save{
+    background-color:rgba(255,255,255,.14);
+    background-image:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.02) 60%);
+    color:#fff;
+    will-change:backdrop-filter; backdrop-filter:blur(14px) saturate(1.6); -webkit-backdrop-filter:blur(14px) saturate(1.6);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.24), inset 0 0 0 1px rgba(255,255,255,.12), 0 4px 12px rgba(0,0,0,.28);
+  }
+  [data-layout="modern"] .pausepanel .next.ghost#pause-save:active{ background-color:rgba(255,255,255,.2); }
   /* Back links were plain text with no button treatment at all \u2014 the
      same black-glass pill as the ghost button, just smaller, so it
      reads as a real tappable control instead of a caption. */
@@ -19932,9 +19995,17 @@
      card reads as one piece with the strip above it. The default banner
      is the theme, so its card takes the theme's c2/c3. Static: nothing
      here animates, the cover already does. */
+  /* NO BANNER, NO COLOUR (build 320): "if a banner is not set then it
+     matches the color of your rank, it shouldn't do that though, makes it
+     confusing. Just keep it grey with the space themed thing, if a banner
+     is set then the box would match it then." The default used to be the
+     theme's c2/c3 - and with a rank's theme set, that IS the rank's
+     colour. Without a banner the card takes two neutral greys, the same
+     quiet metal as the default (graphite, starfield) cover above it; a
+     worn banner still sets --hero-t1/--hero-t2 inline (bannerTintOf). */
   .profile-hero.has-cover.has-tint{
-    --hero-t1: var(--theme-c2, #8a7cff);
-    --hero-t2: var(--theme-c3, #46b4ff);
+    --hero-t1: #9EA4AD;
+    --hero-t2: #6B717A;
     background:
       radial-gradient(120% 70% at 12% 0%, color-mix(in srgb, var(--hero-t1) 30%, transparent), transparent 70%),
       radial-gradient(120% 70% at 88% 6%, color-mix(in srgb, var(--hero-t2) 26%, transparent), transparent 72%),
@@ -20171,7 +20242,7 @@
   .navsegment.profiletabs.sub-seg{ background:none; border:0; border-radius:0; box-shadow:none;
     -webkit-backdrop-filter:none; backdrop-filter:none; will-change:auto;
     padding:0; gap:.2rem 1.4rem; margin:.15rem auto 1.05rem; }
-  .navsegment.profiletabs.sub-seg .iconbtn{ padding:.5rem .15rem .6rem; font-size:.8rem; border-radius:0;
+  .navsegment.profiletabs.sub-seg .iconbtn{ padding:.55rem .15rem; --tab-py:.55rem; font-size:.8rem; border-radius:0;
     background:none; box-shadow:none; color:rgba(255,255,255,.55); }
   .navsegment.profiletabs.sub-seg .iconbtn.active{ background:none; box-shadow:none; color:#fff; }
   .sub-seg > .seg-slider{ background:none !important; box-shadow:none !important; border:0 !important; border-radius:0 !important; }
@@ -21149,6 +21220,18 @@
     .pf-emb{ width:1.45rem; height:1.45rem; }
     .pf-xpnums{ font-size:.78rem; }
     .pf-xp-next{ font-size:.72rem; }
+  }
+  /* THE PHONE'S ONE LABEL (build 320) - see buildProfileStanding. Under
+     40rem: "1,480 / 1,842 XP to Level 26", centred like the line above
+     it, the two numbers in the one XP blue (317: "the same blue for
+     both") and "to Level N" in the soft grey, and no total (it is on Stats). From 40rem up nothing changes: the
+     two numbers left, the total right. */
+  .pf-xp-to{ display:none; }
+  @media (max-width:39.99rem){
+    .pf-standing .pf-xpnums{ justify-content:center; flex-wrap:nowrap; gap:.3em; }
+    .pf-standing .pf-xp-total{ display:none; }
+    .pf-standing .pf-xp-to:not(:empty){ display:inline; white-space:nowrap; color:var(--soft); font-weight:700; }
+    .pf-standing.ru-climbing .pf-xp-to{ display:none; }
   }
   .pf-xp-note{ display:block; margin-top:.35rem; font-size:.8rem; line-height:1.35; color:rgba(255,255,255,.62); }
   .pf-xp-note.is-wall{ color:#E8C770; }
@@ -22983,11 +23066,11 @@
     }
   }
   .profiletabs:has(.iconbtn:nth-child(5)) .iconbtn{
-    padding:.55rem .42rem; font-size:.7rem; letter-spacing:0;
+    padding:.55rem .42rem; font-size:.7rem; letter-spacing:0; --tab-py:.55rem;
   }
   @media (min-width:40rem){
     .profiletabs:has(.iconbtn:nth-child(5)) .iconbtn{
-      padding:.55rem 1rem; font-size:.86rem;
+      padding:.55rem 1rem; font-size:.86rem; --tab-py:.55rem;
     }
   }
 
@@ -40221,11 +40304,50 @@ function saveRunSession(asSaved){
       /* a secret flare found in it, for its own results (build 318) */
       flareFound: mysteryFoundThisSession ? mysteryColorThisRun : null, flareAll: !!flareCompletedVoidThisSession
     };
-    localStorage.setItem(RUN_SESSION_KEY, JSON.stringify(s));
+    const raw = JSON.stringify(s);
+    localStorage.setItem(RUN_SESSION_KEY, raw);
+    mirrorRunSession(raw);
     return true;
   }catch(e){ return false; }
 }
-function clearRunSession(){ try{ localStorage.removeItem(RUN_SESSION_KEY); }catch(e){} }
+function clearRunSession(){ try{ localStorage.removeItem(RUN_SESSION_KEY); }catch(e){} mirrorRunSession(null); }
+/* THE SLOT IS MIRRORED LIKE THE PROGRESS IS (build 320): "Ensure this
+   saved function works even if you exit out of the app and stuff." The
+   slot is localStorage, which survives closing the app, a reload and a
+   cold start from the splash (check_b320h_fixes) - but iOS can clear an
+   installed app's localStorage on its own, which is why the progress
+   store and the sync code are mirrored into IndexedDB. Every write and
+   every clear of the slot goes to the same mirror, so the two never
+   disagree, and a launch that finds the slot empty while the mirror
+   still holds one puts it back (restoreRunSessionFromMirror, at boot).
+   Best effort and never awaited; called before the mirror's helpers are
+   defined only at a moment nothing is in the slot, hence the try. */
+function mirrorRunSession(raw){
+  try{
+    idbOpen().then(db => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      if(raw) tx.objectStore(IDB_STORE).put(String(raw), IDB_RUN_KEY);
+      else tx.objectStore(IDB_STORE).delete(IDB_RUN_KEY);
+    }).catch(() => {});
+  }catch(e){}
+}
+function restoreRunSessionFromMirror(){
+  try{
+    if(localStorage.getItem(RUN_SESSION_KEY)) return Promise.resolve(false);
+  }catch(e){ return Promise.resolve(false); }
+  return idbOpen().then(db => new Promise(resolve => {
+    const req = db.transaction(IDB_STORE, "readonly").objectStore(IDB_STORE).get(IDB_RUN_KEY);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => resolve(null);
+  })).then(raw => {
+    if(!raw) return false;
+    try{
+      if(localStorage.getItem(RUN_SESSION_KEY)) return false;
+      localStorage.setItem(RUN_SESSION_KEY, String(raw));
+      return true;
+    }catch(e){ return false; }
+  }).catch(() => false);
+}
 /* A saved test that could not survive an update: dropped, and said once. */
 function dropSavedTest(){
   clearRunSession();
@@ -40305,7 +40427,9 @@ function markRunSessionSaved(){
       (s.order || []).concat(s.lastRunPool || [], s.originalTestPool || []).forEach(i => { if(typeof i === "number" && KEYS[i] != null) qkeys[i] = KEYS[i]; });
       s.qkeys = qkeys;
     }
-    localStorage.setItem(RUN_SESSION_KEY, JSON.stringify(s));
+    const out = JSON.stringify(s);
+    localStorage.setItem(RUN_SESSION_KEY, out);
+    mirrorRunSession(out);
   }catch(e){}
 }
 function resumeRunSession(s){
@@ -40388,6 +40512,29 @@ function resumeRunSession(s){
   }
   saveRunSession();
 }
+/* RESUME TEST LOADS LIKE A NEW TEST (build 320): "if you hit resume test,
+   put the loading test progress bar after too, this would make it seem
+   legit and give you a second to prepare and it would let you get ready
+   if you had it on a timer." The same LOADING TEST screen and bar a new
+   test opens with (showCountdown), and only when the bar is full is the
+   run put back (resumeRunSession) - so the run's clock, a count-down
+   timer and the question's own clock all start AFTER it, exactly where
+   they stopped. While it loads nothing of the run is live: the slot still
+   holds the saved test as it was (a phone closed during the bar loses
+   nothing), and the test's chrome is up the way beginRun puts it up, so
+   the tab bar and the menu buttons are off it. */
+function resumeRunWithLoading(s){
+  ["mode", "units", "versions", "source", "size", "timer", "timerMinutes", "recall", "shuffle"].forEach(k => {
+    if(s.cfg && s.cfg[k] !== undefined) cfg[k] = s.cfg[k];
+  });
+  appearanceBtn.hidden = true; homeBtn.hidden = true; profileBtn.hidden = true;
+  meterEl.hidden = true; restartEl.hidden = true; hintEl.hidden = true; raceBarEl.hidden = true;
+  showCountdown(3, () => {
+    const fresh = readRunSession();
+    if(fresh) resumeRunSession(fresh);
+    else showHome();
+  });
+}
 let resumeOfferShown = false;
 function scheduleResumeOffer(){
   if(resumeOfferShown || testInProgress) return;
@@ -40449,7 +40596,7 @@ function showRunOffer(s, via){
     b.addEventListener("click", fn);
     return b;
   };
-  const resume = () => { close(); const fresh = readRunSession(); if(fresh) resumeRunSession(fresh); };
+  const resume = () => { close(); const fresh = readRunSession(); if(fresh) resumeRunWithLoading(fresh); };
   const offer = () => {
     const f = runOfferFacts(s);
     const h = document.createElement("p"); h.className = "resume-title"; h.id = "resume-title";
@@ -49754,6 +49901,9 @@ function clearSyncCode(disable){
    Does not touch the sync code or cloud record itself; callers handle
    that differently depending on which side of the reset they're on. */
 function wipeLocalProgressAndSettings(){
+  /* a reset is a new account: a test saved by the old one goes with it
+     (build 320) */
+  clearRunSession();
   store.stats = {};
   store.opts = null;
   store.units = null;
@@ -51319,6 +51469,7 @@ const IDB_NAME = "class26e-drill-backup";
 const IDB_STORE = "kv";
 const IDB_KEY = "store";
 const IDB_CODE_KEY = "synccode";
+const IDB_RUN_KEY = "runsession";   /* the saved test's mirror (build 320) */
 
 function idbOpen(){
   return new Promise((resolve, reject) => {
@@ -70534,37 +70685,114 @@ const DAILY_CHARGE = {
 function dailyMotionOff(){
   try { return resultsMotionOff(); } catch(e){ return !!theme.reduceMotion; }
 }
-function playDailyRecharge(btn, then){
+/* ---- THE RING: TIME TO THE NEXT QUESTION (build 320) ----
+   See .dq-ring. The fraction of the current period gone: 0 at the 5pm
+   that opened it, 1 at the next. Measured from the two real 5pms around
+   now (not "24h"), so a daylight-saving day is still 0 to 1. */
+const DQ_RING_CIRC = 298.4513;   /* 2 x pi x 47.5, the circle's length in its own units */
+function dailyRingFraction(now){
+  const t = now == null ? Date.now() : now;
+  const d = new Date(t);
+  const last = new Date(d); last.setHours(17, 0, 0, 0);
+  if(d.getHours() < 17) last.setDate(last.getDate() - 1);
+  const next = new Date(last); next.setDate(next.getDate() + 1);
+  const span = next.getTime() - last.getTime();
+  return span > 0 ? Math.max(0, Math.min(1, (t - last.getTime()) / span)) : 0;
+}
+function buildDailyRing(){
+  const ring = document.createElement("span");
+  ring.className = "dq-ring";
+  ring.setAttribute("aria-hidden", "true");
+  ring.innerHTML = '<svg viewBox="0 0 100 100" focusable="false">' +
+    '<circle class="dq-ring-track" cx="50" cy="50" r="47.5"></circle>' +
+    '<circle class="dq-ring-prog" cx="50" cy="50" r="47.5" transform="rotate(-90 50 50)"></circle>' +
+    '<circle class="dq-ring-flash" cx="50" cy="50" r="47.5"></circle></svg>';
+  return ring;
+}
+/* Puts the ring at `p` (0-1, never past 1). Whole is drawn undashed. */
+function setDailyRing(btn, p){
+  const ring = btn && btn.querySelector(".dq-ring");
+  if(!ring) return;
+  const v = Math.max(0, Math.min(1, Number(p) || 0));
+  ring.style.setProperty("--dq-p", v.toFixed(5));
+  ring.classList.toggle("is-full", v >= 1);
+  ring.dataset.p = v.toFixed(4);
+}
+/* What the ring should show now: whole while the question is waiting to be
+   answered, the period's progress once it has been. */
+function dailyRingTarget(btn){
+  return btn && btn.classList.contains("is-done") ? dailyRingFraction() : 1;
+}
+/* Once a minute, on the minute, while a "?" is on screen - and nothing in
+   between: the ring has no animation of its own, only a short transition
+   when its value moves (none with reduced motion). */
+let dailyRingTimer = null;
+function dailyRingTick(){
+  clearTimeout(dailyRingTimer); dailyRingTimer = null;
+  const btn = document.querySelector(".daily-question-fab");
+  if(!btn || !btn.isConnected) return;
+  /* past 5pm and not yet announced (the reset runs 1.5s after it), the
+     waiting ring stays at whole rather than dropping to the new period's
+     empty - the announcement fills it from there */
+  if(btn.classList.contains("is-done") && !btn.classList.contains("is-charging")){
+    let rolled = false;
+    try{ rolled = store.dailyQuestionDate !== dailyPeriodKey(); }catch(e){}
+    setDailyRing(btn, rolled ? Math.max(Number((btn.querySelector(".dq-ring") || {}).dataset && btn.querySelector(".dq-ring").dataset.p) || 0, .9999) : dailyRingFraction());
+  }
+  dailyRingTimer = setTimeout(dailyRingTick, 60000 - (Date.now() % 60000) + 50);
+}
+/* `fromP` - where the fill starts: 0 for a new question met on arriving at
+   Home (a full cycle), or where the waiting ring already stood when the
+   reset happens with Home up. It always ends exactly whole. */
+function playDailyRecharge(btn, then, fromP){
   const old = btn.querySelector(".dq-charge");
   if(old) old.remove();
+  if(!btn.querySelector(".dq-ring")) btn.insertBefore(buildDailyRing(), btn.firstChild);
+  const dqRing = btn.querySelector(".dq-ring");
+  const from = Math.max(0, Math.min(1, Number(fromP) || 0));
+  /* a full cycle takes the whole fill; the rest of one takes its share,
+     never under .7s, so the close is still seen */
+  const fill = from > 0 ? Math.max(700, Math.round(DAILY_CHARGE.fill * (1 - from))) : DAILY_CHARGE.fill;
   const ring = document.createElement("span");
   ring.className = "dq-charge";
   ring.setAttribute("aria-hidden", "true");
-  ring.innerHTML = "<span class=\"dq-charge-track\"></span>" +
-    "<span class=\"dq-charge-half dq-charge-r\"><span class=\"dq-charge-arc\"></span></span>" +
-    "<span class=\"dq-charge-half dq-charge-l\"><span class=\"dq-charge-arc\"></span></span>" +
-    "<span class=\"dq-charge-bloom\"></span><span class=\"dq-charge-burst\"></span>" +
-    "<span class=\"dq-charge-burst2\"></span><span class=\"dq-charge-flash\"></span>";
+  ring.innerHTML = "<span class=\"dq-charge-bloom\"></span><span class=\"dq-charge-burst\"></span>" +
+    "<span class=\"dq-charge-burst2\"></span>";
   btn.style.setProperty("--dq-delay", DAILY_CHARGE.delay + "ms");
-  btn.style.setProperty("--dq-fill", DAILY_CHARGE.fill + "ms");
+  btn.style.setProperty("--dq-fill", fill + "ms");
   btn.style.setProperty("--dq-burst", DAILY_CHARGE.burst + "ms");
   btn.style.setProperty("--dq-hold", DAILY_CHARGE.hold + "ms");
   btn.appendChild(ring);
   btn.classList.remove("is-charging");
+  /* the fill: the dash grows to the whole circle and stops there (offset
+     0 is the circle's own length - it cannot go past). A CSS animation,
+     linear, timed like the old sweep; a ring that already stood part way
+     starts the same animation that far in (a negative delay), stretched
+     so that what is left takes `fill`. */
+  dqRing.classList.remove("is-full");
+  dqRing.style.setProperty("--dq-p", from.toFixed(5));
+  const ringDur = from > 0 ? Math.round(fill / (1 - from)) : fill;
+  btn.style.setProperty("--dq-ring-dur", ringDur + "ms");
+  btn.style.setProperty("--dq-ring-skip", Math.round(ringDur * from) + "ms");
+  const prog = dqRing.querySelector(".dq-ring-prog");
   void btn.offsetWidth;
   btn.classList.add("is-charging");
   /* THE ORB LEAVES WHEN THE RING HAS CLOSED, NOT WHEN A TIMER SAYS IT
-     SHOULD HAVE (build 246). The ring is a CSS animation, and it starts
-     when the button is first painted - which on a busy device (Home's own
-     entrance, a slow phone) is a few hundred ms after this runs. Timed
-     from here, the orb left a ring still two-thirds closed; the gate
-     caught it at 2.2s against a ring closing at 2.6s. So the launch
-     hangs off the second half's animationend, with the old schedule
-     kept only as a late fallback, and the ring is tidied away after the
-     burst it actually played rather than on the clock. */
-  const goesOff = DAILY_CHARGE.delay + DAILY_CHARGE.fill + DAILY_CHARGE.hold;
-  let launched = false;
-  const tidy = () => { btn.classList.remove("is-charging"); ring.remove(); };
+     SHOULD HAVE (build 246). The ring starts when the button is first
+     painted - which on a busy device (Home's own entrance, a slow phone)
+     is a few hundred ms after this runs. So the launch hangs off the
+     fill's own end, with the old schedule kept only as a late fallback,
+     and the burst is tidied away after it actually played rather than on
+     the clock. The ring is whole from the fill's end on - undashed, so
+     there is no join in it - and stays whole for the ready pulse. */
+  const goesOff = DAILY_CHARGE.delay + fill + DAILY_CHARGE.hold;
+  let launched = false, closed = false;
+  const close = () => {
+    if(closed) return;
+    closed = true;
+    setDailyRing(btn, 1);
+  };
+  const tidy = () => { close(); btn.classList.remove("is-charging"); ring.remove(); };
   const launch = () => {
     if(launched) return;
     launched = true;
@@ -70572,9 +70800,10 @@ function playDailyRecharge(btn, then){
     if(!document.body.contains(btn)) return;
     then();
   };
-  const lastArc = ring.querySelector(".dq-charge-l .dq-charge-arc");
-  if(lastArc) lastArc.addEventListener("animationend", e => {
-    if(e.animationName === "dq-sweep") setTimeout(launch, DAILY_CHARGE.hold + DAILY_CHARGE.launch);
+  if(prog) prog.addEventListener("animationend", e => {
+    if(e.animationName !== "dq-ring-fill") return;
+    close();
+    setTimeout(launch, DAILY_CHARGE.hold + DAILY_CHARGE.launch);
   });
   setTimeout(launch, goesOff + DAILY_CHARGE.launch + 1500);
   setTimeout(() => { if(!launched) tidy(); }, goesOff + DAILY_CHARGE.launch + 3000);
@@ -70647,6 +70876,11 @@ function emergeDailyAlert(el, from, settled){
    Home already on screen. Both should look the same. */
 function announceDailyReset(btn){
   if(!btn) return;
+  /* where the ring stood: a waiting ring (answered) goes on from where it
+     was; a question still unanswered from the last period, or one met on
+     arriving at Home, fills a whole cycle (build 320) */
+  const ringNow = btn.querySelector(".dq-ring");
+  const ringFrom = btn.classList.contains("is-done") && ringNow ? Math.min(.9999, Number(ringNow.dataset.p) || 0) : 0;
   btn.classList.remove("is-done");
   btn.classList.add("is-ready");
   btn.title = "Today's daily question \u2014 one quick question, no retakes.";
@@ -70672,8 +70906,8 @@ function announceDailyReset(btn){
     if(tip){ if(motion) tip.classList.add("is-fresh"); return; }
     showDailyAlert("It's out. One question, no retakes.", { live: true, from: motion ? btn : null, onTap: tap });
   };
-  if(dailyMotionOff()){ announce(false); return; }
-  playDailyRecharge(btn, () => announce(true));
+  if(dailyMotionOff()){ setDailyRing(btn, 1); announce(false); return; }
+  playDailyRecharge(btn, () => announce(true), ringFrom);
 }
 
 /* THE DAILY QUESTION ANSWERS BESIDE ITS BUTTON (build 309) - both
@@ -72560,7 +72794,10 @@ function startChatDock(){
   const mkTab = (tab, label, countId) => {
     const b = document.createElement("button");
     b.type = "button"; b.className = "chatdock-tab"; b.dataset.tab = tab;
-    b.textContent = label;
+    /* the label in its own span, so it can be centred by its letters
+       (build 320, .tab-label) */
+    const l = document.createElement("span"); l.className = "tab-label"; l.textContent = label;
+    b.appendChild(l);
     const c = document.createElement("span");
     c.className = "chatdock-tabcount"; c.id = countId; c.hidden = true;
     b.appendChild(c);
@@ -72572,7 +72809,7 @@ function startChatDock(){
   notifTabBtn.type = "button"; notifTabBtn.className = "chatdock-tab"; notifTabBtn.dataset.tab = "notifs";
   /* "Inbox", not "Notifications" - asked for by name. It holds things
      waiting on you to answer, which is what an inbox is. */
-  notifTabBtn.textContent = "Inbox";
+  { const l = document.createElement("span"); l.className = "tab-label"; l.textContent = "Inbox"; notifTabBtn.appendChild(l); }
   const notifCount = document.createElement("span");
   notifCount.className = "chatdock-tabcount"; notifCount.id = "chatdock-notifcount";
   notifCount.hidden = true;
@@ -74679,6 +74916,9 @@ function showHome(){
   const dailyGlyph = document.createElement("span");
   dailyGlyph.className = "dq-glyph"; dailyGlyph.textContent = "?";
   dailyBtn.appendChild(dailyGlyph);
+  /* the ring: whole while the question waits, the time to the next one
+     once it is answered (build 320, .dq-ring) */
+  dailyBtn.insertBefore(buildDailyRing(), dailyGlyph);
   dailyBtn.title = doneToday
     ? "Daily question \u2014 " + (store.dailyQuestionCorrect ? "correct today" : "done for today") + ". Resets at 5pm."
     : "Today's daily question \u2014 one quick question, no retakes.";
@@ -74709,9 +74949,13 @@ function showHome(){
        the alert and then have this screen's own mount immediately remove
        it. A timeout puts it after the mount. */
     if(seenBefore && seenBefore !== dailyPeriod){
+      /* about to fill a whole cycle: it starts empty, not whole and then
+         emptied a frame later */
+      if(!dailyMotionOff()) setDailyRing(dailyBtn, 0);
+      else setDailyRing(dailyBtn, 1);
       setTimeout(() => announceDailyReset(dailyBtn), 0);
-    }
-  }
+    } else setDailyRing(dailyBtn, 1);
+  } else setDailyRing(dailyBtn, dailyRingFraction());
   markDailySeen(dailyPeriod);
 
   clearTimeout(dailyResetTimer);
@@ -74764,6 +75008,7 @@ function showHome(){
   maybeShowIntro();
   stage.replaceChildren(panel);
   stage.appendChild(dailyBtn);
+  dailyRingTick();
   /* the orbit's emblems, recorded once Home has settled (build 298); any
      already recorded this session play from the first frame (build 300) */
   /* Sheets already recorded are only an <img> each, so they go on in the
@@ -78097,7 +78342,7 @@ function showStudyLoading(text, then){
   studyLoadingHandle = setInterval(tick, 100);
 }
 
-function showCountdown(n){
+function showCountdown(n, then){
   pauseBtn.hidden = true;
   timerlineEl.hidden = true;
 
@@ -78146,7 +78391,8 @@ function showCountdown(n){
       clearInterval(countdownHandle);
       overlay.remove();
       if(typeof syncChatDock === "function") syncChatDock();
-      startRunNow();
+      /* a resumed test is put back here instead (build 320) */
+      (typeof then === "function" ? then : startRunNow)();
     }
   }
   tick();
@@ -96753,7 +96999,7 @@ function buildRoomReviewTabs(run){
     /* "Missed questions" broke onto two lines in its half of the switch
        on every phone (build 315): a phone says "Missed", with its count,
        and a tablet says it in full. */
-    const l = document.createElement("span"); l.textContent = d.label;
+    const l = document.createElement("span"); l.className = "tab-label"; l.textContent = d.label;
     if(d.more){ const m = document.createElement("span"); m.className = "rs-tab-more"; m.textContent = d.more; l.appendChild(m); }
     const c = document.createElement("span"); c.className = "rs-tab-count"; c.textContent = rsNum(d.count);
     b.append(l, c);
@@ -101330,6 +101576,16 @@ function profileXpNote(prog){
    the left, what is left to the next level on the right. At a badge wall
    the right side gives way to the gold line saying what opens the next
    levels. Still one button to the road map, with no chrome of its own. */
+function pfXpToText(prog){
+  if(!prog || prog.atCap || prog.stopped || prog.held) return "";
+  return "to Level " + ((Number(prog.level) || 0) + 1);
+}
+/* The rank-up's stand-in and climb redraw the level under the bar; the
+   phone's "to Level N" follows them (build 320). */
+function syncPfXpTo(standing, prog){
+  const to = standing && standing.querySelector(".pf-xp-to");
+  if(to) to.textContent = pfXpToText(prog);
+}
 function buildProfileStanding(prog, rankNow){
   const box = document.createElement("button");
   box.type = "button";
@@ -101403,6 +101659,20 @@ function buildProfileStanding(prog, rankNow){
      it". It takes the place "N XP to level X" had; the two numbers on
      the left already say how far into the level you are. */
   nums.appendChild(tot);
+  /* ONE LABEL UNDER THE BAR ON A PHONE (build 320): "the profile box at
+     the top specifically around the xp bar has become a little much ...
+     it's mostly the iPhone where it seems crowded and confusing." On a
+     phone the line under the bar is one plain sentence - "1,480 / 1,842
+     XP to Level 26" - and the running total moves to Stats (the Total XP
+     card), so the card says each thing once: who you are on the line
+     above, how far into this level and what it leads to under the bar.
+     A tablet keeps the total in the corner as before (CSS picks). At a
+     wall there is no next level to name: the gold note says what opens
+     it. */
+  const to = document.createElement("span");
+  to.className = "pf-xp-to";
+  to.textContent = pfXpToText(prog);
+  nums.insertBefore(to, tot);
   xp.append(trackWrap, nums);
   if(wall && noteText){
     const note = document.createElement("span");
@@ -102165,6 +102435,7 @@ function showProfile(defaultTab){
     "Questions answered": "Every question you have answered anywhere \u2014 drills, exams, the daily question and the Virtual Room.",
     "Correct answers": "How many of those you got right first time. There is no second chance on a question, so this never counts a retry.",
     "Tests finished": "Drills and exams you played to the end. The daily question is not a test.",
+    "Total XP": "Every XP you have earned on this account, from every test and the daily question. Your level is worked out from it.",
     "Hundos": "Units you have finished with every question right. A run covering three units can earn three, and the daily question earns none.",
     /* (the three Virtual Room cards came off in the 317 fix - see below) */
     "All-time best answer streak": "Your longest run of correct answers ever. It carries over from test to test, so a streak can start in one test and keep going in the next. The daily question never counts either way."
@@ -102258,6 +102529,15 @@ function showProfile(defaultTab){
   glanceSect.appendChild(hero);
   const lifeGrid = document.createElement("div");
   lifeGrid.className = "stat-grid stat-grid-four";
+  /* THE TOTAL XP LIVES HERE (build 320): it came off the Profile card on a
+     phone, where the line under the bar now says only how far into this
+     level you are. One card across the grid, first, so it reads as the
+     headline number of your record rather than a fifth tile. */
+  {
+    const totCard = makeStatCard("Total XP", Math.round(Number(levelStateFor(store).total) || 0).toLocaleString());
+    totCard.classList.add("stat-card-wide", "stx-totalxp");
+    lifeGrid.appendChild(totCard);
+  }
   [["Questions answered", answered.toLocaleString()],
    ["Tests finished", testsCompleted.toLocaleString()],
    ["Hundos", String(store.lifetime.perfectTests)],
@@ -102465,11 +102745,22 @@ function attachSegSlider(seg, activeSel){
       styled = true;
       seg.classList.add("has-seg-slider");
     }
-    const nx = ar.left - sr.left - seg.clientLeft, ny = ar.top - sr.top - seg.clientTop;
+    /* IN LAYOUT PIXELS, NOT SCREEN PIXELS (build 320). A switcher placed
+       while something above it was still scaling in (the chat sheet opens
+       from .96) read every rect at .96 and kept it: measured on an iPad,
+       the chat's pill was 34.55px against its 36px tab, at the tab's top -
+       1.45px more room under the label than over it. The rects are divided
+       by the switcher's own on-screen scale, and while that scale is not 1
+       it measures again a moment later. */
+    let sx = sr.width / (seg.offsetWidth || sr.width), sy = sr.height / (seg.offsetHeight || sr.height);
+    const scaled = Math.abs(sx - 1) > .004 || Math.abs(sy - 1) > .004;
+    if(!scaled){ sx = 1; sy = 1; place.again = 0; }
+    else if((place.again = (place.again || 0) + 1) <= 12) setTimeout(() => place(false), 180);
+    const nx = (ar.left - sr.left) / sx - seg.clientLeft, ny = (ar.top - sr.top) / sy - seg.clientTop;
     const fromX = x, fromW = w;
-    x = nx; w = ar.width;
+    x = nx; w = ar.width / sx;
     sl.style.transition = "none";
-    sl.style.top = ny + "px"; sl.style.height = ar.height + "px"; sl.style.width = w + "px";
+    sl.style.top = ny + "px"; sl.style.height = (ar.height / sy) + "px"; sl.style.width = w + "px";
     const moving = animate && fromX != null && fromW && sl.classList.contains("ready") && (fromX !== nx || fromW !== w);
     sl.style.transform = moving ? "translateX(" + fromX + "px) scaleX(" + (fromW / w).toFixed(4) + ")" : "translateX(" + nx + "px)";
     void sl.offsetWidth;
@@ -105241,6 +105532,7 @@ function rankUpStandingAt(standing, s){
         track = standing.querySelector(".pf-xpbar"), nums = standing.querySelector(".pf-xpnums .xpnums"),
         note = standing.querySelector(".pf-xp-note");
   if(lv) lv.textContent = "Level " + s.level;
+  syncPfXpTo(standing, s);
   if(fill) fill.dataset.target = String(Math.round(bar.fraction * 1000) / 10);
   if(nums) nums.replaceWith(buildXpNumbers(bar.into, bar.span, bar.over));
   if(track) track.classList.toggle("is-banked", !!bar.over);
@@ -105288,6 +105580,7 @@ async function rankUpStandingClimb(standing, from, to, row){
   setBarFill(fill, Math.round(bar.fraction * 1000) / 10);
   const cl = numsHost && numsHost.querySelector(".ru-climbnote");
   if(cl) cl.replaceWith(buildXpNumbers(bar.into, bar.span, bar.over));
+  syncPfXpTo(standing, to);
   await rankUpWait(950);
   if(track && bar.over) track.classList.add("is-banked");
   standing.classList.remove("ru-climbing");
@@ -106723,6 +107016,10 @@ if(syncCode && !adoptedLaunchCode){
     attachLiveListener(syncCode);
   });
 }
+
+/* A saved test the slot lost and the mirror kept comes back (build 320) -
+   see mirrorRunSession. */
+restoreRunSessionFromMirror();
 
 /* localStorage came back empty — check the IndexedDB mirror in the
    background and quietly recover if it still has a copy. Only refreshes
