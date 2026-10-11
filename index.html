@@ -26449,6 +26449,10 @@
   .bc-face-art, .bc-edge{ position:absolute; inset:0; width:100%; height:100%; display:block; user-select:none; -webkit-user-select:none; }
   .bc-face.is-front{ transform:translateZ(calc(var(--thick) / 2)); }
   .bc-face.is-back{ transform:translateZ(calc(var(--thick) / -2)) rotateY(180deg) scaleX(-1); }
+  /* the real back is drawn as seen from behind, so it is not flipped again;
+     its light's mask (the front's silhouette) is */
+  .bc-face.is-back.is-real{ transform:translateZ(calc(var(--thick) / -2)) rotateY(180deg); }
+  .bc-face.is-back.is-real .bc-spec{ transform:scaleX(-1); }
   /* each slice a hair smaller than the face (build 317, badge2): twenty
      silhouettes exactly behind it stacked their half-covered edge
      pixels into one hard, stepped outline round the face - the "rough
@@ -85412,9 +85416,21 @@ function buildBadgeCoin(unitName){
   const sil = badgeSilhouetteURL(unitName);
   const faceSrc = badgeCoinFaceURL(unitName);
   const edgeSrc = badgeEdgeURL(unitName);
+  /* ITS REAL BACK (build 320, from b320g's badge in your hand): brushed
+     metal in a polished rim with the unit's name, its outline the front's
+     mirror - where it used to show the front again. At the coin's own
+     device pixels, capped as the hand's is. */
+  let backSrc = null;
+  try{
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const wide = !!(window.matchMedia && window.matchMedia("(min-width:40rem)").matches);
+    const css = wide ? Math.min(innerWidth * .36, 15.5 * rem, innerHeight * .34) : Math.min(innerWidth * .52, 14 * rem, innerHeight * .34);
+    if(typeof badgeBackFaceURL === "function") backSrc = badgeBackFaceURL(unitName, Math.min(864, badgeStrikeSize(css * badgeDpr())));
+  }catch(e){ backSrc = null; }
   const face = side => {
-    const f = mk("bc-face " + side);
-    f.appendChild(pic("bc-face-art", faceSrc));
+    const real = side === "is-back" && !!backSrc;
+    const f = mk("bc-face " + side + (real ? " is-real" : ""));
+    f.appendChild(pic("bc-face-art", real ? backSrc : faceSrc));
     const sp = mk("bc-spec");
     sp.style.setProperty("-webkit-mask-image", sil);
     sp.style.setProperty("mask-image", sil);
