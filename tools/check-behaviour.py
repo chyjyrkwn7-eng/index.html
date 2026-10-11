@@ -19274,8 +19274,10 @@ def check_b317_badge2(br):
       if(!p) return { found: false, inLid };
       const r = p.getBoundingClientRect(), x = (r.left + r.right) / 2, y = (r.top + r.bottom) / 2;
       const hit = document.elementFromPoint(x, y);
+      const wall = p.closest('.bc-front'), wr = wall ? wall.getBoundingClientRect() : null;
       return { found: true, inLid, hit: !!(hit && hit.closest('.nova-case-sideplate')), hitIs: hit ? hit.className : null,
-        squash: +(r.height / (p.offsetHeight || 1)).toFixed(2), text: p.textContent.trim() }; }"""
+        squash: +(r.height / (p.offsetHeight || 1)).toFixed(2), wall: wr ? +(wr.height / (wall.offsetHeight || 1)).toFixed(2) : null,
+        text: p.textContent.trim() }; }"""
     for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2)):
         # ---- 1. the cutscene: the name on the side, closed to fully open ----
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
@@ -19314,8 +19316,16 @@ def check_b317_badge2(br):
             while clk.t < t:
                 clk.step(1 / 30)
             seen[t] = pg.evaluate(PLATE)
-        ok = all(v.get("found") and v.get("hit") and not v.get("inLid") and v.get("squash", 0) >= 0.55 and v.get("text", "").lower() == "badge case" for v in seen.values())
-        check(f"{dev}: 'Badge case' is on the case's side - shut, unlatched, opening and fully open: readable, nothing over it, never in the lid",
+        # REVISED IN 320: "In the open position, the bottom tag says badge case
+        # but it's like facing me". The plate lies FLAT on the wall now
+        # (foreshortened exactly as the wall is, where 317 leaned it out to
+        # stay unsquashed), it is the case's name ("Level 1 Badge Case"), and
+        # the name is also debossed in the open lid on purpose - so neither
+        # "unsquashed" nor "never in the lid" holds any more. What stays: on
+        # the side at every moment from shut to fully open, nothing over it.
+        ok = all(v.get("found") and v.get("hit") and v.get("wall") and abs(v.get("squash", 0) - v["wall"]) <= 0.08 * max(.2, v["wall"])
+                 and v.get("text", "").lower() == "level 1 badge case" for v in seen.values())
+        check(f"{dev}: 'Level 1 Badge Case' is on the case's side - shut, unlatched, opening and fully open: nothing over it, lying flat on the wall (build 320)",
               ok, seen)
         ctx.close()
         # ---- 2. the Badges tab and the Profile card: the same plate on the same side ----
@@ -19341,7 +19351,8 @@ def check_b317_badge2(br):
         pg.wait_for_timeout(1500)
         tab = pg.evaluate(SIDE, ".badge-case .badge-case-front .nova-case-sideplate")
         tabLid = pg.evaluate("() => { const l = document.querySelector('.badge-case .badge-case-lid'); return l ? /badge case/i.test(l.textContent) : null; }")
-        good = lambda v: bool(v) and v["text"].lower() == "badge case" and v["hit"]
+        # the case's name since build 320
+        good = lambda v: bool(v) and v["text"].lower() == "level 1 badge case" and v["hit"]
         check(f"{dev}: the Badges tab's case has the same plate on its side, and nothing on its lid",
               good(tab) and tabLid is False, {"plate": tab, "lid says it": tabLid})
         check(f"{dev}: ...and so does the Profile card's - its name on its side, no heading over the tray",
@@ -19613,6 +19624,10 @@ def check_b318_badges(br):
           const g = e => !!e && getComputedStyle(e, '::before').content !== 'none' && getComputedStyle(e, '::after').content !== 'none';
           out.guards = g(fr) && g(lf);
           out.frontTopR = fr ? px(getComputedStyle(fr).borderTopLeftRadius) : null;
+          /* build 320: every corner of the tray and the lid capped in metal */
+          out.caps = ['.bc-tray', '.bc-lid-in', '.bc-lid-out'].map(s => { const e = document.querySelector(s); if(!e) return 0;
+            const r = px(getComputedStyle(e).borderTopLeftRadius);
+            return [...e.querySelectorAll(':scope > .bc-cap')].filter(c => c.offsetWidth >= 2 * r).length; });
           /* the seated badges: their render against the size the open case draws them */
           const sizes = [];
           for(const s of [...document.querySelectorAll('.bc-slot.is-held svg')].slice(0, 4)){
@@ -19624,8 +19639,13 @@ def check_b318_badges(br):
           return out; }""", dpr)
         ctx.close()
         SQ = 4.0
-        check(f"{dev}: the cutscene's case is square where its walls meet it, and both walls carry corner guards (the disconnect at the corners)",
-              bool(cut) and all(v is not None and v <= SQ for v in cut["r"].values()) and cut["guards"] and cut["frontTopR"] == 0, cut and {k: cut[k] for k in ("r", "guards", "frontTopR")})
+        # REVISED IN 320: "the corners look bad" - asked for again, and this
+        # time answered with rounded corners CAPPED IN METAL: the tray's and
+        # the lid's corners are rounded, and each corner is covered by a cap
+        # at least twice the radius, so the wall can never be seen standing
+        # proud of a curve (318's disconnect). The walls keep their guards.
+        check(f"{dev}: the cutscene's case corners are capped in metal (four caps on the tray, the lid's inside and its top), and both walls carry corner guards",
+              bool(cut) and cut.get("caps") == [4, 4, 4] and cut["guards"] and cut["frontTopR"] == 0, cut and {k: cut.get(k) for k in ("r", "caps", "guards", "frontTopR")})
         check(f"{dev}: the cutscene's seated badges are rendered at the size the open case shows them (not shrunk from a bigger render)",
               bool(cut) and len(cut["sizes"]) >= 3 and all(0.95 * s["shown"] <= s["nat"] <= 1.05 * s["shown"] for s in cut["sizes"]), cut and cut["sizes"])
         ok_tab = bool(tab) and tab["rootR"] == 0 and tab["rootBg"] == "none" and all(tab[k] is not None and tab[k] <= SQ for k in ("lidR", "trayR", "frontR")) \
@@ -23092,6 +23112,283 @@ def check_b320b_reactions(br):
         ctx.close()
 
 
+# _SEEK, plus the recorders' rule for a CSS animation whose name has left
+# animation-name: cancel it. Without that, an animation this harness has
+# paused and finished outlives its class (Chromium keeps a script-touched
+# CSSAnimation), so a control that slides out, back and out again under
+# the fake clock is held by the stale one - which the page never does.
+_SEEK320 = """(t) => { const M = window.__t0s = window.__t0s || new WeakMap();
+  document.getAnimations().forEach(an => {
+    if(!M.has(an)) M.set(an, { at: t, from: an.currentTime || 0, done: false });
+    const s = M.get(an); if(s.gone) return;
+    if(an.animationName && an.effect && an.effect.target){ try{
+      const cs = getComputedStyle(an.effect.target, an.effect.pseudoElement || null);
+      if(cs.animationName.split(',').map(x => x.trim()).indexOf(an.animationName) < 0){ s.gone = true; an.cancel(); return; }
+    }catch(e){} }
+    if(s.done) return;
+    const want = s.from + (t - s.at) * 1000;
+    let end = Infinity; try{ end = an.effect.getComputedTiming().endTime; }catch(e){}
+    if(want >= end && isFinite(end)){ s.done = true; try{ an.finish(); }catch(e){} return; }
+    if(an.playState !== 'paused') an.pause();
+    try{ an.currentTime = want; }catch(e){} }); }"""
+
+
+class _Stepper320(_Stepper):
+    def step(self, dt):
+        t0 = self.t
+        self.t += dt
+        self.pg.clock.run_for(max(1, int(round(self.t * 1000)) - int(round(t0 * 1000))))
+        self.pg.evaluate(_SEEK320, self.t)
+
+
+def check_b320c_case(br):
+    """Build 320 (b320c). Madison: "no more xp bonus for getting a badge ...
+    It's no longer a thing" / "I can see the chat button in it ... you
+    shouldn't be able to chat at all during any type of cutscene, and you
+    shouldn't receive any chat notifications or invite or friend
+    notifications during a cutscene either" / "before the badge entered the
+    case it's not glowing" / "it should say something about found 5 of 16
+    missing badges" / "This badge case is gonna be called level 1 badge
+    case" / "the case the second it starts opening should start glowing THE
+    COLORS of the badges that are in it" / "The badge phases through the top
+    thing when it opens" / "I'm gonna be adding more units to level 1".
+    Written against a73c681, where every check below fails:
+      - computeRunXp paid a badge line (1,000 a badge) and the scene said
+        "+1,000 XP";
+      - no scene turned focus on: the chat button and the tab bar stayed in
+        frame and a toast, a chat ping and a notice raised during the scene
+        landed on top of it;
+      - nothing lit the token: no aura;
+      - the caption read "6 of 16 in the case" and the case said "Badge case";
+      - the light out of the crack was one colour, the new badge's;
+      - the token waited where the lid swings up through it;
+      - the case was a fixed 4 x 4: a seventeenth unit fell out of the tray.
+    On the fake clock, so load cannot move a frame."""
+    print("\n320c. the badge case: no XP for a badge, cutscene focus, the glow, the caption, Level 1 Badge Case, the colours, the lid, the slots")
+    from PIL import Image as _I
+    import colorsys
+    # five held badges in five clearly different colours, none of them the
+    # new badge's purple: green, gold, blue, red, pink
+    HELD = ["Fitness, Wellness, and Stress Management", "Professionalism and Ethics", "Professional Policing",
+            "US and Texas Constitution and Rights", "Victims of Crime"]
+    NEW = "Identity Crimes"
+    SEED = """([held, nu]) => { store.unitPerfects = {}; held.forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+      store.unitPerfects[nu] = badgeThresholdFor(nu); store.pendingBadgeUnlocks = []; store.retroBadgePending = [];
+      theme.muteBanners = false; theme.reduceMotion = false; applyTheme(); saveStore();
+      document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert,#toast,.vroom-chat-alert').forEach(n => n.remove());
+      showHome(); }"""
+    UI = """() => { const r = s => { const e = document.querySelector(s); if(!e) return null; const b = e.getBoundingClientRect();
+        const cs = getComputedStyle(e); return { top: b.top, bottom: b.bottom, left: b.left, right: b.right, pe: cs.pointerEvents, vis: cs.visibility }; };
+      return { focus: document.body.classList.contains('cutscene-focus'), chat: r('.chatdock-btn'), tabs: r('.bottomtabs'), vh: innerHeight,
+        toast: !!document.querySelector('#toast'), ping: !!document.querySelector('.vroom-chat-alert.is-ping'), alert: !!document.querySelector('#dailyalert'),
+        toastText: (document.querySelector('#toast') || {}).textContent || '' }; }"""
+    out_of_view = lambda u: (u["chat"] is None or u["chat"]["bottom"] <= 0 or u["chat"]["vis"] == "hidden") and \
+        (u["tabs"] is None or u["tabs"]["top"] >= u["vh"] or u["tabs"]["vis"] == "hidden")
+    in_view = lambda u: bool(u["chat"]) and u["chat"]["top"] >= 0 and u["chat"]["bottom"] <= u["vh"] and \
+        bool(u["tabs"]) and u["tabs"]["bottom"] <= u["vh"] + 1
+    untappable = lambda u: (u["chat"] is None or u["chat"]["pe"] == "none") and (u["tabs"] is None or u["tabs"]["pe"] == "none")
+
+    # 1. no XP for a badge, anywhere it was said
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    xp = pg.evaluate("""() => { const base = { good: 12, answered: 12, elapsedMs: 60000, okList: Array(12).fill(true), hundos: 1, wholeUnits: 1 };
+      const a = computeRunXp(base), b = computeRunXp(Object.assign({}, base, { badgesPaid: ['Identity Crimes', 'Penal Code'] }));
+      let item = null; try{ item = rsUnlockItems({ colors: [], badges: ['Identity Crimes'], retroBadges: [], characters: [], banners: [], fx: [], justBeatSpeed: null, units: [], flare: null }).find(i => i.kind === 'badge'); }catch(e){}
+      return { a: a.total, b: b.total, lines: b.lines.filter(l => l.badge || l.key === 'badge').map(l => l.label + ' ' + l.value),
+               sub: item ? item.sub : null, mastery: typeof MASTERY_BONUS !== 'undefined' ? MASTERY_BONUS : null }; }""")
+    check("a badge pays no XP: no badge line in the XP box, and a run that finds two badges totals the same as one that finds none",
+          not xp["lines"] and xp["a"] == xp["b"] and xp["mastery"] is None, xp)
+    check("the results' badge card says nothing about XP", xp["sub"] is not None and "XP" not in xp["sub"], xp["sub"])
+    ctx.close()
+
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate(SEED, [HELD, NEW])
+        pg.wait_for_timeout(700)
+        pg.evaluate("() => { document.querySelectorAll('.app-banner,.daily-alert,#toast').forEach(n => n.remove()); }")
+        before = pg.evaluate(UI)
+        clk = _Stepper320(pg)
+        T = pg.evaluate("() => (typeof BC_T === 'object' ? BC_T : {})")
+        crack, opn, fly = T.get("crack", 8450) / 1000, T.get("open", 8950) / 1000, T.get("fly", 11700) / 1000
+        pg.evaluate("([nu]) => { window.__bcDone = false; playBadgeCaseScene([nu], () => { window.__bcDone = true; }); }", [NEW])
+        while clk.t < 2.0:
+            clk.step(1 / 30)
+        during = pg.evaluate(UI)
+        check(f"{dev}: during the badge scene the chat button and the tab bar are out of frame and take no tap (both were up before it)",
+              in_view(before) and during["focus"] and out_of_view(during) and untappable(during), {"before": before, "during": during})
+        # 2. notifications raised during the scene are held
+        pg.evaluate("""() => { showToast('b320c toast'); showChatPreview('Ada', 'b320c ping', () => {});
+          try{ showDailyAlert('b320c alert'); }catch(e){} }""")
+        clk.step(0.5)
+        held = pg.evaluate(UI)
+        intro_sub = pg.evaluate("() => (document.querySelector('.bc-intro .bc-sub') || {}).textContent || ''")
+        check(f"{dev}: a toast, a chat ping and a notice raised during the scene are held, not shown over it; the badge's own line has no XP",
+              not held["toast"] and not held["ping"] and not held["alert"] and intro_sub and "XP" not in intro_sub,
+              {"toast": held["toast"], "ping": held["ping"], "alert": held["alert"], "intro": intro_sub})
+        # 3. the colours out of the crack: one per badge already in the case
+        while clk.t < crack + 0.4:
+            clk.step(1 / 30)
+        reg = pg.evaluate("""() => { const t = document.querySelector('.bc-tray'), f = document.querySelector('.bc-front');
+          if(!t || !f) return null; const a = t.getBoundingClientRect(), b = f.getBoundingClientRect();
+          return [a.left - a.width * .1, b.top - a.height * .45, a.right + a.width * .1, b.top + b.height * .4]; }""")
+        cols = pg.evaluate("(us) => us.map(u => (badgeThemeFor(u) || {}).p)", HELD)
+        hues_found = []
+        if reg:
+            im = _I.open(io.BytesIO(pg.screenshot())).convert("RGB")
+            x0, y0, x1, y1 = [int(round(v)) for v in reg]
+            crop = im.crop((max(0, x0), max(0, y0), min(im.width, x1), min(im.height, y1)))
+            px = list(crop.getdata())
+            def hue(c):
+                hh, ss, vv = colorsys.rgb_to_hsv(*[v / 255 for v in c])
+                return hh * 360, ss, vv
+            sat = [hue(p) for p in px]
+            for c in cols:
+                ch = hue(tuple(int(c[i:i + 2], 16) for i in (1, 3, 5)))[0]
+                n = sum(1 for (hh, ss, vv) in sat if ss > .3 and vv > .28 and min(abs(hh - ch), 360 - abs(hh - ch)) < 14)
+                if n >= 0.004 * len(px):
+                    hues_found.append(c)
+        check(f"{dev}: as the lid cracks, light leaks out in the colours of the badges already in the case (at least 3 of the 5 seen)",
+              len(hues_found) >= 3, {"found": hues_found, "of": cols})
+        # 4. the token never inside the lid's area while it opens; it glows before it lands
+        LID = """() => { const fl = document.querySelector('.bc-flyer .bc-face.is-front') || document.querySelector('.bc-flyer');
+          const boxes = ['.bc-lid-in', '.bc-lid-out', '.bc-lid-front'].map(s => document.querySelector(s)).filter(Boolean).map(e => e.getBoundingClientRect());
+          if(!fl || !boxes.length) return null; const f = fl.getBoundingClientRect();
+          let worst = 0; boxes.forEach(b => { const ix = Math.min(f.right, b.right) - Math.max(f.left, b.left), iy = Math.min(f.bottom, b.bottom) - Math.max(f.top, b.top);
+            if(ix > 0 && iy > 0) worst = Math.max(worst, ix * iy / Math.max(1, f.width * f.height)); });
+          return { worst: Math.round(worst * 1000) / 1000, flyer: [f.left, f.top, f.right, f.bottom].map(Math.round) }; }"""
+        worst = {"worst": 0}
+        while clk.t < opn + 2.6:
+            clk.step(1 / 30)
+            r = pg.evaluate(LID)
+            if r and r["worst"] > worst["worst"]:
+                worst = dict(r, t=round(clk.t, 2))
+        check(f"{dev}: the token is never inside the lid's area from the crack until the lid has stopped",
+              worst["worst"] <= 0.01, worst)
+        while clk.t < fly - 0.3:
+            clk.step(1 / 15)
+        glow = pg.evaluate("""() => { const a = document.querySelector('.bc-flyer .bc-aura'), fl = document.querySelector('.bc-flyer');
+          if(!fl) return null; const b = fl.getBoundingClientRect(); let op = 0;
+          if(a){ op = 1; for(let e = a; e && e !== document.body; e = e.parentElement) op *= parseFloat(getComputedStyle(e).opacity); }
+          return { op: Math.round(op * 100) / 100, box: [b.left, b.top, b.right, b.bottom] }; }""")
+        tint = None
+        if glow:
+            im = _I.open(io.BytesIO(pg.screenshot())).convert("RGB")
+            l, t_, r_, b_ = glow["box"]
+            cw = r_ - l
+            ring = im.crop((int(l - cw * .12), int(t_ + cw * .3), int(l - cw * .01), int(b_ - cw * .3)))
+            ref = im.crop((2, int(t_ + cw * .3), 16, int(b_ - cw * .3)))
+            pur = lambda c: (c.getpixel((0, 0)) and None)
+            import statistics
+            def purple(cr):
+                d = list(cr.getdata())
+                return statistics.mean((p[0] + p[2]) / 2 - p[1] for p in d) if d else 0
+            tint = {"ring": round(purple(ring), 1), "backdrop": round(purple(ref), 1)}
+        check(f"{dev}: the badge glows in its own colour before it lands - its light is on and tints the dark round it",
+              bool(glow) and glow["op"] >= 0.9 and tint and tint["ring"] - tint["backdrop"] >= 5, {"glow": glow, "tint": tint})
+        # 5. the caption and the case's name
+        while clk.t < fly + 1.6:
+            clk.step(1 / 15)
+        words = pg.evaluate("""() => ({ kick: (document.querySelector('.bc-words .bc-kicker') || {}).textContent || '',
+          sub: (document.querySelector('.bc-words .bc-sub') || {}).textContent || '',
+          plate: (document.querySelector('.bc-front .nova-case-sideplate') || {}).textContent || '',
+          lid: (document.querySelector('.bc-lid-label') || {}).textContent || '' })""")
+        check(f"{dev}: the caption says 'Found 6 of 16 missing badges' under 'LEVEL 1 BADGE CASE', and the case says Level 1 Badge Case on its plate and in its lid",
+              re.match(r"^Found 6 of 16 missing badges$", words["sub"]) is not None and words["kick"].upper() == "LEVEL 1 BADGE CASE"
+              and words["plate"] == "Level 1 Badge Case" and words["lid"] == "Level 1 Badge Case", words)
+        # 6. the end: focus off, the controls back, the held items shown
+        while clk.t < 40 and not pg.evaluate("() => window.__bcDone"):
+            clk.step(0.25)
+        for _ in range(12):
+            clk.step(0.1)
+        after = pg.evaluate(UI)
+        check(f"{dev}: when the scene ends the chat button and the tab bar slide back, and what was held is shown",
+              not after["focus"] and in_view(after) and after["ping"] and after["toast"] and "b320c" in after["toastText"],
+              {"after": {k: after[k] for k in ("focus", "toast", "ping", "alert")}, "chat": after["chat"], "tabs": after["tabs"]})
+        ctx.close()
+
+    # 7. every other cutscene turns focus on, and nesting under a journey's own hold works
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(SEED, [HELD, NEW]); pg.wait_for_timeout(600)
+    clk = _Stepper320(pg)
+    SCENES = [("a secret flare scene", "() => { window.__sd = false; playVoidFlareScene(() => { window.__sd = true; }); }", ".sf-scene"),
+              ("a rank cutscene outside the rank-up journey", "() => { window.__sd = false; playTierCutscene('vanguard'); }", "#supernova-cutscene"),
+              ("the Supernova cutscene", "() => { window.__sd = false; playSupernovaCutscene(); }", "#supernova-cutscene")]
+    for (label, js, sel) in SCENES:
+        try:
+            pg.evaluate(js)
+        except Exception as e:
+            check(f"focus during {label}", False, str(e)[:160]); continue
+        for _ in range(45):
+            clk.step(1 / 30)
+        mid = pg.evaluate(UI)
+        up = pg.evaluate("(s) => !!document.querySelector(s)", sel)
+        k = 0
+        while k < 400 and pg.evaluate("(s) => !!document.querySelector(s)", sel):
+            clk.step(0.2); k += 1
+        for _ in range(10):
+            clk.step(0.1)
+        end = pg.evaluate(UI)
+        check(f"{label}: focus is on while it plays (chat button and tab bar out of frame) and off once it has gone",
+              up and mid["focus"] and out_of_view(mid) and not end["focus"], {"up": up, "mid": mid["focus"], "end": end["focus"], "chat": mid["chat"], "tabs": mid["tabs"]})
+        pg.evaluate("() => { document.querySelectorAll('.sf-scene, #supernova-cutscene').forEach(n => n.remove()); }")
+    # microtasks only: the page's clock is paused here, so no setTimeout
+    nest = pg.evaluate("""async () => { const tick = () => Promise.resolve().then(() => Promise.resolve());
+      setCutsceneFocus(true); const el = document.createElement('div'); el.id = 'vroom-cutscene'; document.body.appendChild(el);
+      await tick(); el.remove(); await tick(); const b = document.body.classList.contains('cutscene-focus');
+      setCutsceneFocus(false); await tick(); const c = document.body.classList.contains('cutscene-focus');
+      const el2 = document.createElement('div'); el2.id = 'vroom-cutscene'; document.body.appendChild(el2); await tick();
+      const a = document.body.classList.contains('cutscene-focus'); el2.remove(); await tick();
+      return { a, b, c, d: document.body.classList.contains('cutscene-focus') }; }""")
+    check("a scene inside a journey that holds focus itself: the scene ending leaves the journey's hold on; the journey's end takes it off",
+          nest == {"a": True, "b": True, "c": False, "d": False}, nest)
+    ctx.close()
+
+    # 8. the name, across the app; the slots follow the unit list (a fake 17th unit)
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate(SEED, [HELD, NEW]); pg.wait_for_timeout(500)
+        names = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
+          theme.reduceMotion = true; applyTheme(); showRanksScreen('badges'); await wait(900);
+          const head = (document.querySelector('.badges-tab .badges-head') || {}).textContent || '';
+          const tplate = (document.querySelector('.badges-tab .nova-case-sideplate') || {}).textContent || '';
+          showProfile('profile'); await wait(900);
+          const pplate = (document.querySelector('.pf-case .nova-case-sideplate') || {}).textContent || '';
+          let kick = ''; try{ kick = badgeDetail('Identity Crimes').kicker; }catch(e){}
+          return { head, tplate, pplate, kick }; }""")
+        check(f"{dev}: 'Level 1 Badge Case' heads the Badges screen and is on its case, on the Profile card's case and on a badge's card",
+              "Level 1 Badge Case" in names["head"] and names["tplate"] == "Level 1 Badge Case" and names["pplate"] == "Level 1 Badge Case"
+              and names["kick"] == "Level 1 Badge Case", names)
+        slots = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          QUESTIONS.push({ topic: 'Zz Fake Unit', q: 'b320c fake', choices: ['a', 'b'], answer: 0, src: 'zz1' });
+          try{ topicsInBankCache = null; }catch(e){} try{ unitTeachOrderCache = null; }catch(e){} try{ UNIT_SIZE_CACHE = null; }catch(e){}
+          const n = unitsInTeachingOrder().length;
+          /* a slot counts if it is inside the tray, the same size as the
+             others (within 6%), and clear of every other slot */
+          /* in layout terms (offsets, not the projected 3D boxes, where
+             perspective makes far rows smaller) */
+          const rect = (e, root) => { let x = 0, y = 0; for(let n = e; n && n !== root; n = n.offsetParent){ x += n.offsetLeft; y += n.offsetTop; }
+            return { left: x, top: y, right: x + e.offsetWidth, bottom: y + e.offsetHeight, width: e.offsetWidth, height: e.offsetHeight }; };
+          const inside = (cells, box) => { const b = { left: 0, top: 0, right: box.clientWidth + 2, bottom: box.clientHeight + 2 };
+            const hs = cells.map(c => rect(c, box));
+            const med = k => hs.map(r => r[k]).sort((x, y) => x - y)[Math.floor(hs.length / 2)] || 0;
+            const mw = med('width'), mh = med('height');
+            const lap = (r, i) => hs.some((q, j) => j !== i && Math.min(r.right, q.right) - Math.max(r.left, q.left) > 1 && Math.min(r.bottom, q.bottom) - Math.max(r.top, q.top) > 1);
+            return hs.filter((r, i) => r.left >= b.left - 1 && r.right <= b.right + 1 && r.top >= b.top - 1 && r.bottom <= b.bottom + 1
+              && Math.abs(r.width - mw) <= mw * .06 && Math.abs(r.height - mh) <= mh * .06 && !lap(r, i)).length; };
+          showRanksScreen('badges'); await wait(900);
+          const tcells = [...document.querySelectorAll('.badges-tab .ncase-cell')], tl = document.querySelector('.badges-tab .ncase-lining');
+          const tab = { n: tcells.length, inside: tl ? inside(tcells, tl) : 0 };
+          showHome(); await wait(400);
+          theme.reduceMotion = true; playBadgeCaseScene(['Identity Crimes'], () => {}); await wait(300);
+          const scells = [...document.querySelectorAll('.bc-scene .bc-slot')], sl = document.querySelector('.bc-scene .bc-lining');
+          const cut = { n: scells.length, inside: sl ? inside(scells, sl) : 0 };
+          document.querySelectorAll('.bc-scene').forEach(e => e.remove());
+          return { units: n, tab, cut }; }""")
+        check(f"{dev}: with a seventeenth unit the case has seventeen slots, every one inside its tray, on the Badges screen and in the cutscene",
+              slots["units"] == 17 and slots["tab"] == {"n": 17, "inside": 17} and slots["cut"] == {"n": 17, "inside": 17}, slots)
+        ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -23308,6 +23605,7 @@ def main():
             check_b320g_inspect(br)
             check_b320h_fixes(br)
             check_b320b_reactions(br)
+            check_b320c_case(br)
         finally:
             br.close()
     SERVER.shutdown()

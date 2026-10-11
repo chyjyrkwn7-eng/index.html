@@ -297,7 +297,7 @@ with sync_playwright() as pw:
                      " btns:[...document.querySelectorAll('#stage .actions button')].map(b=>b.textContent),"
                      " unlocked: document.querySelectorAll('#stage .rs-unlocked .rs-unlock').length})")
     lines2 = [l["t"] for l in pg.evaluate("()=>__lands.slice()") if l["kind"] == "line"]
-    ck("the XP lines drop in one at a time (correct answers, hundo, badge)",
+    ck("the XP lines drop in one at a time (correct answers, hundo, speed)",
        len(lines2) >= 3 and all(b - a > 150 for a, b in zip(lines2, lines2[1:])), lines2)
     # BUILD 215: a badge's moment is its case, at the unlock - "move that
     # cutscene to when it hits the unlock thing" - and no banner besides.
@@ -321,7 +321,7 @@ with sync_playwright() as pw:
         streaks: L({good:37, answered:38, elapsedMs:38*20000, okList:ok(12).concat([false], ok(25)), hundos:0, wholeUnits:1}),
         multi: computeRunXp({good:40, answered:40, elapsedMs:40*20000, okList:ok(40), hundos:4, wholeUnits:4}).lines.slice(-1)[0],
         retake: L({retake:true, good:3, answered:3, elapsedMs:5000, okList:ok(3)}),
-        badge: MASTERY_BONUS
+        badge: typeof MASTERY_BONUS === 'number' ? MASTERY_BONUS : null
       }; }""")
     if not xr:
         ck("computeRunXp exists", False)
@@ -341,7 +341,9 @@ with sync_playwright() as pw:
           .lines.find(l=>l.key==='streak').sub""")
         ck("and it lists the tiers it reached, 10 x2 and 25", sub == "10 \u00d72 \u00b7 25 in a row", sub)
         bl = pg.evaluate("()=>computeRunXp({good:12, answered:12, elapsedMs:60000, okList:Array(12).fill(true), hundos:0, wholeUnits:1, badgesPaid:['A','B','C']}).lines.filter(l=>l.badge)")
-        ck("three badges are one line worth three", len(bl) == 1 and bl[0]["value"] == 3000 and "\u00d73" in bl[0]["label"], bl)
+        # REVERSED IN 320: "no more xp bonus for getting a badge ... remove it
+        # from the xp box". Three badges are no line at all.
+        ck("a run that finds three badges has no badge line in the XP box (build 320)", len(bl) == 0, bl)
         pb = pg.evaluate("()=>computeRunXp({good:12, answered:12, elapsedMs:60000, okList:Array(12).fill(true), hundos:0, wholeUnits:1, timePRs:[{unit:'A',text:'A 1:00'}], scorePRs:[{unit:'A',text:'A 100%'},{unit:'B',text:'B 90%'}]}).lines.filter(l=>l.key.startsWith('pb'))")
         ck("personal bests are one line worth all three", len(pb) == 1 and pb[0]["value"] == pg.evaluate("()=>PB_TIME_BONUS + 2*PB_SCORE_BONUS"), pb)
         ck("a multi-unit run ends on its multiplier, x1.3 for four units",
@@ -349,7 +351,7 @@ with sync_playwright() as pw:
         ck("a retake earns its right answers and nothing else", [r[0] for r in xr["retake"]] == ["correct"] and xr["retake"][0][2] == 30, xr["retake"])
         # The two Game XP lines (difficulty beaten, lives left) went with
         # Game mode in build 283.
-        ck("a badge is worth 1,000", xr["badge"] == 1000, xr["badge"])
+        ck("a badge is worth no XP of its own (build 320; it was 1,000)", xr["badge"] is None, xr["badge"])
     # "a lost game still gets a results screen" lived here until Game
     # mode was retired in build 283 (retired/game-mode.md).
     wait_done(pg)

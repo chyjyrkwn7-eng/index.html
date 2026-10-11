@@ -19868,3 +19868,87 @@ over and it's back to their normal hundo thing for the character."*
   opacity they had before. Then a real 12/12 drill per effect (Wizard,
   Ghost, Ninja, Clown, Alien): the reaction starts within 0.3s of the
   effect, ends, and the special plays after it. Fails on a73c681.
+
+### Build 320 (b320c) - no XP for a badge, cutscene focus, the Level 1 Badge Case
+
+Madison: *"no more xp bonus for getting a badge ... It's no longer a thing"*,
+*"you shouldn't be able to chat at all during any type of cutscene, and you
+shouldn't receive any chat notifications or invite or friend notifications
+during a cutscene either. Pure focus on the cutscenes"*, and a long list on
+the badge case: glow before it lands, "found 5 of 16 missing badges", "level
+1 badge case", clips, corners, the lid's inside, a soft lining, the tag
+"facing me", the badge phasing through the lid, the badges' own colours
+leaking out, the spin-to-case transition.
+
+- **NO XP FOR A BADGE.** `MASTERY_BONUS` is gone; `computeRunXp` still takes
+  `badgesPaid` and pays nothing for it. The results' badge card and the
+  cutscene say "Unit mastered". check-curve's badge line no longer adds the
+  lump (each badge used to bring 1,000 XP, so the badge line now arrives at
+  each count a little lower - printed by check-curve, not asserted; the level
+  curve and `TIER_UNLOCKS` are untouched).
+- **CUTSCENE FOCUS FOLLOWS THE SCENES THEMSELVES.** `syncSceneFocus()` (just
+  under `setCutsceneFocus`) watches `<body>`'s children: while any of
+  `CUTSCENE_SCENE_SEL` is there (the badge case, the secret flares, the
+  rank/Supernova scene, the legacy Home badge scene, the Virtual Room winner
+  and Tug of War scenes, the race board until it has finished counting, a
+  full-page hundo effect) ONE counted hold is on. So every exit (skip, tap,
+  the screen replaced, an error) releases it by construction and a new scene
+  type only needs its selector added. The rank-up journey's own
+  `setCutsceneFocus` calls nest over it.
+- **What focus does**: `body.cutscene-focus` slides the chat button up out of
+  frame and the tab bar and the room's chat button down out of it (the CSS
+  `translate` property in an animation, so `transform` centring and
+  transitions are untouched), no taps, any open chat panel hidden, and any
+  banner already up hidden. On release `body.cutscene-return` slides them
+  back (620ms). Reduce motion: hidden, not slid.
+- **What is held**: `holdForCutscene(key, fn)` at the top of `showToast`,
+  `showDailyAlert`, `showChatPreview`, the room chat's
+  `announceChatMessage`, `showLobbyInviteBanner`, `checkFriendRequests`,
+  `checkChatInvites`, `checkSaveCodeReminder`, `celebrateNewFriend`; the
+  chat dot (`syncChatDockDot`) and the update notices (`noticeAllowedHere`)
+  wait too. Released after the controls are back, one per key, toasts one
+  after another; each re-runs its own function, so its own rules still apply.
+  `cutsceneFocusDepth` and the hook list are `var` because toasts can be
+  raised before that line runs.
+- **ONE TABLE OF CASES: `BADGE_CASES`** (`badgeCaseOf`, `badgeCaseUnits`,
+  `badgeCaseName`, `badgeCaseGrid`). Level 1 has `units: null` = every unit no
+  other case claims, so units Madison adds land in it with no other change;
+  Level 2 is one more entry with a `units` list. The grid is as square as the
+  count allows (16: 4x4, 17-20: 5x4, 21-25: 5x5), set as `--case-cols/rows`;
+  the cutscene's tray depth (`--ch` on `.bc-stage`) and the Badges screen's
+  tray and lid aspect follow it (4x4 is the old .94 / .88 / .8 exactly).
+  `badgeCaseSlotPx` uses the grid. The name is on the plate of every case,
+  in the cutscene's open lid, the cutscene's caption, the Badges screen's
+  head (`.badges-casename`) and as a badge card's kicker.
+- **The badge-found scene**: the token carries its own glow (`.bc-aura`) from
+  the moment it appears until it lands, so the slot lighting up continues it.
+  The background is one glow in the badge's colour that travels from the
+  token down to the case and widens on the lift's 1.8s curve, with the rays
+  fading over the same stretch, a slower rise for the case (2s) and a faint
+  grain (`.bc-dither`) against banding. The token now WAITS AT THE TOP of the
+  screen (beside the case on a phone held sideways) and the open case sits
+  lower (`--open-y` .15 of its width), so the lid never swings through it;
+  it only comes down once the lid has stopped. Light out of the crack is one
+  pool per badge already in the case, in its own colour (`bcLeakLayers`, on
+  `.bc-spill` inside and on the flat `.bc-leak` over the seam); every badge in
+  the case then lights in its own colour (`--slot-col`, `.bc-lit`) one after
+  another and settles to a steady glow. An empty case leaks a faint neutral
+  light. Caption: kicker "LEVEL 1 BADGE CASE", the badge, "Found N of M
+  missing badges" ("All M badges found. The case is full.").
+- **The case**: rounded corners capped in metal (`.bc-cap` on every corner of
+  the tray, the lid's top and the lid's inside; the walls' end guards in the
+  same metal), clips on the lid's top over each latch (`.bc-clip`), the lid's
+  inside a leather frame with an aluminium bead round a velvet cushion
+  quilted in three bands, stitched twice, the name debossed in it
+  (`.bc-lid-label`); the lining and the cushion are velvet (`--case-velvet`,
+  a 64px noise tile at 32px - an image, never a filter; neutral grey for
+  check_b232). The side plate lies FLAT on the front wall (it leaned out 42deg
+  since 317, which open read as "facing me").
+- **Gate: `check_b320c_case`** (fails on a73c681; uses `_Stepper320`, whose
+  seek cancels a CSS animation whose name has left `animation-name`, as the
+  recorders' does - check-behaviour's `_SEEK` keeps a stale one and a control
+  that slides out, back and out again was held by it). Revised for this
+  round: check_b317_badge2's side plate (flat on the wall, the new name, the
+  name now also in the lid on purpose), its tab/Profile plate text,
+  check-results' badge XP lines (no line; no MASTERY_BONUS), check-curve's
+  badge line (no lump).
