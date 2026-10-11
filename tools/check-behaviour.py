@@ -17232,6 +17232,8 @@ B319_RU_WALK = """async (a) => {
     if(document.querySelector('.pf-task.ru-ticked')){ at('tick'); tickRows = Math.max(tickRows, document.querySelectorAll('.screen-profile .pf-goal.ru-focus .pf-task.ru-ticked').length);
       const gg = document.querySelector('.pf-goal.ru-complete'); if(gg) out.subDone = (gg.querySelector('.pf-goal-sub') || {}).textContent; }
     if(document.getElementById('teststart-overlay')) at('loading');
+    /* build 320: no loading screen - Profile leans into the dark */
+    if(document.querySelector('.screen-profile.ru-dive') || (document.querySelector('.ru-curtain.is-on') && document.querySelector('.screen-profile') && !out.at.map)) at('dive');
     if(document.querySelector('.screen-ranks .rankmap')) at('map');
     const line = document.querySelector('.ru-rideline'), tip = document.querySelector('.ru-ridetip:not(.is-progress)');
     if(line){ at('ride'); const m = /scaleY\\(([\\d.]+)\\)/.exec(line.style.transform || ''); if(m) rideMax = Math.max(rideMax, +m[1]); }
@@ -17255,14 +17257,15 @@ B319_RU_WALK = """async (a) => {
     if(sp && !sp.dataset.t){ sp.dataset.t = 1; at('card'); out.cards.push({ cls: [...sp.classList].join(' '), name: (sp.querySelector('.rs-spot-name') || {}).textContent, onMap: !!document.querySelector('.screen-ranks'),
       foot: (sp.querySelector('.rs-spot-foot') || {}).textContent });
       setTimeout(() => { const r = sp.getBoundingClientRect(); const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); out.cardHit = e ? (sp.contains(e) ? 'card' : e.className) : null; sp.click(); cardsTapped++; }, a.cardMs || 900); }
-    const up = document.querySelector('.ru-upnext.is-in');
-    if(up && !out.upnext){ at('upnext'); out.upnext = { name: (up.querySelector('.ru-upnext-name') || {}).textContent, kick: (up.querySelector('.ru-upnext-kick') || {}).textContent,
-      gifts: up.querySelectorAll('.rankmap-gift').length, heroName: (document.querySelector('.rankhero-name') || {}).textContent, zoom: !!document.querySelector('.rankhero.ru-zoomout') }; }
-    if(document.querySelector('.rankhero.ru-cardshake')) at('cardshake');
-    if(document.querySelector('.rankhero.ru-dissolve')) at('dissolve');
-    const hk = document.querySelector('.rankhero-kicker.ru-kick');
-    if(hk && !out.hero){ at('heroturn'); out.hero = { kick: hk.textContent, name: (document.querySelector('.rankhero-name') || {}).textContent }; }
-    if(document.querySelector('.ru-curtain.is-on')) at('curtain');
+    /* build 320: Up next is the road map's own next box, popped */
+    const up = document.querySelector('.rankmap-stop.ru-nextpop');
+    if(up && !out.upnext){ at('upnext'); out.upnext = { name: (up.querySelector('.rankmap-name') || {}).textContent, state: (up.querySelector('.rankmap-state') || {}).textContent,
+      gifts: up.querySelectorAll('.rankmap-gift').length, heroName: (document.querySelector('.rankhero-name') || {}).textContent }; }
+    if(document.querySelector('.ru-upnext')) at('upnextcard');
+    if(document.querySelector('.rankhero.ru-turn-out')) at('turnout');
+    const ht = document.querySelector('.rankhero.ru-turn-in') || (rankUpScene && rankUpScene.heroTurned ? document.querySelector('.screen-ranks .rankhero') : null);
+    if(ht && !out.hero){ at('heroturn'); out.hero = { kick: (ht.querySelector('.rankhero-kicker') || {}).textContent, name: (ht.querySelector('.rankhero-name') || {}).textContent }; }
+    if(document.querySelector('.ru-curtain.is-on') && out.at.heroturn) at('curtain');
     if((out.at.curtain || out.at.ph_return || out.at.ph_back) && document.querySelector('.screen-profile')) at('back');
     if(document.querySelector('.pf-goal.ru-flip-out')) at('flipout');
     if(document.querySelector('.pf-goal.ru-goal-in')) at('goalin');
@@ -17334,9 +17337,10 @@ def check_b319_rankup(br):
         check(f"{dev}: Profile opens as it was - Silver, Level 49, Gold's badges 4 / 5 unticked, input held",
               p0.get("rank") == "Silver" and p0.get("level") == "Level 49" and p0.get("next") == "Gold" and p0.get("blocker")
               and rows.get("badges", {}).get("met") is False and rows.get("badges", {}).get("now") == "4" and rows.get("level", {}).get("met") is True, p0)
-        check(f"{dev}: no cursor - the badge challenge fills and ticks ('2 of 2 done'), then the loading screen",
+        # build 320 moves the loading screen to its new decision (none - see check_b320d_rankup)
+        check(f"{dev}: no cursor - the badge challenge fills and ticks ('2 of 2 done'), then into the road map (no loading screen since 320)",
               not wk.get("seen", {}).get("tap") and wk.get("tickRows") == 1 and (wk.get("subDone") or "").startswith("2 of 2")
-              and 0 < at.get("tick", -1) < at.get("loading", -1) < at.get("map", -1), [wk.get("seen"), wk.get("tickRows"), wk.get("subDone"), at])
+              and 0 < at.get("tick", -1) < at.get("dive", -1) < at.get("map", -1) and "loading" not in at, [wk.get("seen"), wk.get("tickRows"), wk.get("subDone"), at])
         te = wk.get("tipEnd") or {}
         check(f"{dev}: the road runs on to the circle's CENTRE, under it (the circle drawn over the light)",
               wk.get("rideMax", 0) >= .999 and isinstance(te, dict) and te.get("dx", 99) <= 2 and te.get("dy", 99) <= 2 and te.get("under") and te.get("nodeOver"),
@@ -17354,11 +17358,12 @@ def check_b319_rankup(br):
               len(cards) == 1 and "rs-spot-rankrewards" in cards[0].get("cls", "") and cards[0].get("onMap") and wk.get("cardHit") == "card"
               and at.get("cutscene", 0) < at.get("card", -1), [cards, wk.get("cardHit")])
         un = wk.get("upnext") or {}
-        check(f"{dev}: the card at the top zooms out and 'Up next' shows Platinum and what it unlocks, while it still says Silver",
-              un.get("kick") == "Up next" and un.get("name") == "Platinum" and (un.get("gifts") or 0) >= 3 and un.get("heroName") == "Silver" and un.get("zoom"), un)
+        # build 320: Up next is the road map's own box (no card under the hero), and the card turns over with no "Rank up"
+        check(f"{dev}: 'Up next' is the road map's own Platinum box, with what it unlocks, while the card at the top still says Silver",
+              un.get("state") == "Up next" and un.get("name") == "Platinum" and (un.get("gifts") or 0) >= 3 and un.get("heroName") == "Silver" and "upnextcard" not in at, [un, at.get("upnextcard")])
         hr = wk.get("hero") or {}
-        check(f"{dev}: then it shakes, fades and turns over to Gold ('Rank up')",
-              at.get("upnext", 0) < at.get("cardshake", -1) < at.get("dissolve", -1) <= at.get("heroturn", -1) and hr == {"kick": "Rank up", "name": "Gold"}, [at, hr])
+        check(f"{dev}: then the card turns over to Gold ('Your rank', no 'Rank up')",
+              at.get("upnext", 0) < at.get("turnout", -1) <= at.get("heroturn", -1) and hr == {"kick": "Your rank", "name": "Gold"}, [at, hr])
         check(f"{dev}: a slow fade back to Profile; the completed card folds away and Platinum's comes in",
               at.get("heroturn", 0) < at.get("curtain", -1) < at.get("back", -1) < at.get("flipout", -1) < at.get("goalin", -1), at)
         af = wk.get("after") or {}
@@ -17436,7 +17441,7 @@ def check_b319_rankup(br):
     wk = pg.evaluate(B319_RU_WALK, {"top": "veteran", "cutMs": 300, "cardMs": 400})
     at = wk.get("at") or {}
     check("reduce motion: the same steps, still - no ride, no shake - shown and back on Gold, under 20s",
-          not wk.get("threw") and at.get("loading") and at.get("map") and at.get("cutscene") and at.get("card") and at.get("upnext") and at.get("done")
+          not wk.get("threw") and at.get("dive") and at.get("map") and at.get("cutscene") and at.get("card") and at.get("upnext") and at.get("done")
           and not at.get("ride") and not at.get("shake") and (wk.get("after") or {}).get("rank") == "Gold" and at.get("done", 99999) - at.get("ph_profile", 0) < 20000, at)
     ctx.close()
 
@@ -17480,6 +17485,356 @@ def check_b319_rankup(br):
           not wk.get("threw") and (wk.get("at") or {}).get("ride") and len(wk.get("cutArgs") or []) == 1 and len(wk.get("cards") or []) == 1
           and (wk.get("after") or {}).get("shown") == 3, [wk.get("threw"), wk.get("at"), wk.get("after")])
     ctx.close()
+
+
+# --------------------------------------------------------------------------
+# Build 320 (b320d): the rank-up journey, as Madison asked for it.
+B320D_WALK = """async (a) => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const out = { at: {}, cutArgs: [], cards: [], taps: { tried: 0, reached: [] }, focusGap: [], rankUpText: null, fills: [], cam: [],
+                profile: [], tabAnims: [] };
+  try{
+  const T0 = performance.now(), now = () => Math.round(performance.now() - T0), at = k => { if(!(k in out.at)) out.at[k] = now(); };
+  const fp = (s) => typeof s === 'function';
+  /* ---- the cutscene, real, wrapped only to measure the hand-off into it ---- */
+  const realTier = window.playTierCutscene, realSn = window.playSupernovaCutscene;
+  const handed = (key, opts, call) => {
+    const g = opts && opts.handoff, gr = g && g.isConnected ? g.getBoundingClientRect() : null;
+    const v = document.querySelector('.ru-veil');
+    out.veilBefore = v ? +getComputedStyle(v).opacity : null;
+    out.veilAnim = v ? v.getAnimations().map(an => ({ end: Math.round(an.effect.getComputedTiming().endTime), to: (an.effect.getKeyframes().slice(-1)[0] || {}).opacity })) : null;
+    out.cutArgs.push({ key, from: opts && opts.from, inline: !!(opts && opts.onDone), handoff: !!g, onMap: !!document.querySelector('.screen-ranks .rankmap') });
+    at('cutscene');
+    const ret = call();
+    const ov = document.getElementById('supernova-cutscene');
+    const b = g && g.isConnected ? g.closest('.cosmic-icon-badge') : null;
+    const br = b ? b.getBoundingClientRect() : null;
+    const c = r => r ? { x: Math.round((r.left + r.width / 2) * 10) / 10, y: Math.round((r.top + r.height / 2) * 10) / 10, w: Math.round(r.width * 10) / 10 } : null;
+    out.hand = { ghost: c(gr), bubble: c(br), tier: b ? b.dataset.rankTier : null, inScene: !!(b && ov && ov.contains(b)), ovOpacity: ov ? +getComputedStyle(ov).opacity : null,
+                 hiddenRest: ov ? ([...ov.querySelectorAll(".rank-before .rank-orbit > .rank-orbit-slot:not(.ru-hand-slot)")].every(x => +getComputedStyle(x).opacity < .05) && !!ov.querySelector(".rank-before .ru-hand-veil") && +getComputedStyle(ov.querySelector(".rank-before .ru-hand-veil")).opacity > .99) : null };
+    /* the map's veil and hidden circle go in the same task as the scene comes up */
+    queueMicrotask(() => { out.hand.veilAfter = !!document.querySelector('.ru-veil'); });
+    if(ov){
+      const sw = ov.querySelector('.supernova-stage');
+      setTimeout(() => { out.zoomTr = sw.getAnimations().filter(an => an.transitionProperty === 'transform').map(an => Math.round(an.effect.getTiming().duration)); out.zoomTo = sw.style.transform; }, 1400);
+      const sc = () => { try{ return Math.round(new DOMMatrix(getComputedStyle(sw).transform).a * 1000) / 1000; }catch(e){ return null; } };
+      out.zoom = [sc()];
+      setTimeout(() => out.zoom.push(sc()), 1400); setTimeout(() => out.zoom.push(sc()), 3400);
+      const mo = new MutationObserver(() => { const k = ov.classList, t = performance.now();
+        if(k.contains('is-cutrest') && !out.rest) out.rest = t;
+        if(k.contains('supernova-burst') && !out.burst){ out.burst = t; out.breaths = ov.querySelectorAll('.rank-chg.is-charge .rank-chg-ring').length; } });
+      mo.observe(ov, { attributes: true, attributeFilter: ['class'] });
+      /* the title is up: end it as a tap would, so the gate does not sit through the outro */
+      const iv = setInterval(() => { if(!ov.isConnected){ clearInterval(iv); return; } if(ov.classList.contains('supernova-settle')){ clearInterval(iv); setTimeout(() => ov.click(), 900); } }, 100);
+    }
+    return ret;
+  };
+  window.playTierCutscene = (k, o) => handed(k, o, () => realTier(k, o));
+  window.playSupernovaCutscene = o => handed('titan', o, () => realSn(o));
+  if(!document.querySelector('[data-screen="home"]')) showHome();
+  for(let i = 0; i < 80 && !document.body.classList.contains('rankup-lock'); i++){
+    const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click();
+    await wait(150);
+  }
+  /* ---- Home, locked: the Profile tab does not ring or jump ---- */
+  const tab = document.getElementById('bottomtab-profile');
+  const tabMoves = () => tab.getAnimations({ subtree: true }).map(x => x.animationName || (x.effect && x.effect.getKeyframes ? Object.keys(x.effect.getKeyframes()[0] || {}).filter(z => ['offset','easing','composite','computedOffset'].indexOf(z) < 0).join('+') : '?'))
+    .filter(n => !/^rk-sheet|^color$|^cx-|^ch-|^av-/.test(n));
+  await wait(1800);
+  out.lock = document.body.classList.contains('rankup-lock');
+  out.lockTab = { moves: tabMoves(), ring: (() => { const cs = getComputedStyle(tab, '::before'); return cs.content !== 'none' && cs.borderStyle !== 'none' && parseFloat(cs.borderWidth) > 0; })() };
+  /* a refused tap (Leaderboard) says so, and still no ring or jump */
+  const lb = document.querySelector('.bottomtab[data-dest="leaderboard"], #bottomtab-leaderboard'); if(lb) lb.click();
+  await wait(200); out.lockTab.refused = tabMoves();
+  await wait(900);
+  /* ---- the journey ---- */
+  const T1 = performance.now();
+  tab.click();
+  let seenScene = false, curtainOff = false;
+  const cmo = new MutationObserver(ms => ms.forEach(m => {
+    const el = m.target;
+    /* THE FIRST VISIBLE FRAME OF THE MAP: the curtain starts to lift */
+    if(el.classList && el.classList.contains('ru-curtain') && !el.classList.contains('is-on') && rankUpScene && rankUpScene.mapOpenAt && !out.first){
+      const tip = document.querySelector('.ru-ridetip'), s = rankUpScene;
+      const road = tip ? tip.parentElement.querySelector(':scope > .rankmap-road') : null;
+      const below = tip ? tip.parentElement.nextElementSibling : null, node = below && below.querySelector('.rankmap-node');
+      const dot = tip ? tip.querySelector('i').getBoundingClientRect() : null;
+      const n = node ? node.offsetHeight : 0, H = road ? road.offsetHeight : 0, rt = road ? road.getBoundingClientRect().top : 0;
+      const want = rt + n / 2 + 9 + a.dot * (H - n - 18);
+      out.first = { scroll: Math.round(window.scrollY), p0: s.p0, tipOn: tip ? tip.classList.contains('is-on') : false,
+        dy: dot ? Math.round(Math.abs(dot.top + dot.height / 2 - want) * 10) / 10 : null,
+        dotY: dot ? Math.round((dot.top + dot.height / 2) * 10) / 10 : null, want: Math.round(want * 10) / 10,
+        cam: dot ? Math.round(Math.abs(window.scrollY - rankUpFollowY(dot.top + dot.height / 2 + window.scrollY))) : null,
+        moving: [...document.querySelectorAll('.screen-ranks .rankmap-roadfill, .screen-ranks .rankmap-roadtip')].filter(e => e.getAnimations().length).length,
+        loading: !!document.getElementById('teststart-overlay') };
+      at('mapvisible');
+    }
+  }));
+  cmo.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  /* every frame: the camera on the map, and the XP bar on Profile */
+  let rafOn = true;
+  const xpVis = () => { const f = document.querySelector('.screen-profile .pf-standing .pf-xpbar .xpbar-fill'), t = f && f.parentElement; if(!f || !t) return null;
+    const fr = f.getBoundingClientRect(), tr = t.getBoundingClientRect(); return tr.width ? Math.round((fr.right - tr.left) / tr.width * 1000) / 1000 : null; };
+  const frame = () => { if(!rafOn) return;
+    const s = rankUpScene, ph = s ? s.phase : '-';
+    if(out.first && (ph === 'road') && document.querySelector('.screen-ranks')) out.cam.push(Math.round(window.scrollY));
+    if(out.at.back && document.querySelector('.screen-profile')){
+      const lv = document.querySelector('.screen-profile .pf-standing .pf-level'), row = document.querySelector('.screen-profile .pf-goal .pf-task[data-kind="level"]');
+      out.profile.push({ t: now(), x: xpVis(), lv: lv ? parseInt(lv.textContent.replace(/\\D+/g, ''), 10) : null,
+        row: row ? +((row.querySelector('.pf-now') || {}).textContent) : null, need: row ? +((row.querySelector('.pf-need') || {}).textContent) : null,
+        flip: !!document.querySelector('.pf-goal.ru-flip-out'), climbing: !!document.querySelector('.pf-standing.ru-climbing') });
+    }
+    requestAnimationFrame(frame); };
+  requestAnimationFrame(frame);
+  /* tap everything that is on screen: nothing may reach it */
+  const tryTaps = (label) => {
+    const sel = '.bottomtab, .chatdock-btn, .back-link, .rankmap-node, .rankhero, .rankmap-card, .screen-profile button, .pf-standing, .pf-goal, .profile-hero-avatar, .pf-case, .profile-classline';
+    const els = [...document.querySelectorAll(sel)].filter(el => { const r = el.getBoundingClientRect(); return r.width > 4 && r.height > 4 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth; }).slice(0, 30);
+    const open = rankUpScene && rankUpScene.taps;
+    els.forEach(el => {
+      out.taps.tried++;
+      const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+      const hit = document.elementFromPoint(x, y);
+      let reached = false; const mark = () => { reached = true; };
+      ['click', 'pointerdown', 'touchstart'].forEach(t => el.addEventListener(t, mark, true));
+      try{ el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, clientX: x, clientY: y })); }catch(e){}
+      try{ const t0 = new Touch({ identifier: 7, target: el, clientX: x, clientY: y }); el.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, cancelable: true, touches: [t0], targetTouches: [t0], changedTouches: [t0] })); }catch(e){}
+      el.click();
+      ['click', 'pointerdown', 'touchstart'].forEach(t => el.removeEventListener(t, mark, true));
+      /* a real tap lands on what is on top there: the scene's own layer,
+         its cutscene or its card - never the page's control */
+      const land = hit && el.contains(hit) && !(open && hit.closest('.rs-spot, #supernova-cutscene'));
+      if(reached || land) out.taps.reached.push([label, el.className.baseVal != null ? el.className.baseVal : el.className, reached, land]);
+    });
+    /* and a thumb swipe across the screen */
+    try{
+      const snap = () => ({ el: stage.firstElementChild, ptab: (document.querySelector('.screen-profile .profiletabs .is-active, .screen-profile .profiletabs [aria-selected="true"]') || {}).textContent || null });
+      const s0 = snap(); const mk = (x) => new Touch({ identifier: 9, target: stage.firstElementChild || stage, clientX: x, clientY: innerHeight * .5 });
+      const sw = (t, x) => (stage.firstElementChild || stage).dispatchEvent(new TouchEvent(t, { bubbles: true, cancelable: true, touches: t === 'touchend' ? [] : [mk(x)], changedTouches: [mk(x)] }));
+      sw('touchstart', innerWidth * .85); sw('touchmove', innerWidth * .5); sw('touchmove', innerWidth * .15); sw('touchend', innerWidth * .15);
+      out.taps.swipes = (out.taps.swipes || 0) + 1; out.taps.swipeMoved = out.taps.swipeMoved || [];
+      setTimeout(() => { const s1 = snap(); if(!rankUpScene) return;
+        const own = s1.el && /screen-ranks|screen-profile/.test(s1.el.className || '');
+        if(!own || (s1.el === s0.el && s1.ptab !== s0.ptab)) out.taps.swipeMoved.push(label); }, 300); }catch(e){}
+  };
+  let lastTap = 0, ph0 = null;
+  for(let i = 0; i < 4000; i++){
+    const s = rankUpScene, ph = s ? s.phase : '-';
+    if(s) seenScene = true;
+    if(ph !== ph0){ at('ph_' + ph); ph0 = ph; }
+    if(s && !cutsceneFocusActive()) out.focusGap.push(ph);
+    if(document.getElementById('teststart-overlay')) at('loading');
+    if(document.querySelector('.ru-upnext')) at('upnextcard');
+    const hero = document.querySelector('.screen-ranks .rankhero');
+    if(hero && /rank\\s*up/i.test(hero.textContent) && !out.rankUpText) out.rankUpText = hero.textContent.trim().slice(0, 80);
+    if(hero && document.querySelector('.screen-ranks .rankmap') && !out.heroBefore && s && s.phase === 'road'){
+      const v = [...hero.querySelectorAll('.rankhero-ringval')].map(x => x.textContent);
+      out.heroBefore = { name: (hero.querySelector('.rankhero-name') || {}).textContent, level: v[0], badges: v[1], head: (hero.querySelector('.rankhero-gaugehead') || {}).textContent }; }
+    if(document.querySelector('.pf-task.ru-ticked')) at('tick');
+    if(document.querySelector('.screen-profile.ru-dive')) at('dive');
+    if(document.querySelector('.screen-ranks .rankmap')) at('map');
+    if(document.querySelector('.ru-ridetip.is-at')) at('arrive');
+    if(document.querySelector('.rankmap-stop.is-celebrating')) at('unlock');
+    if(document.querySelector('.ru-ghost')){ at('ghost'); const v = document.querySelector('.ru-veil'); if(v){ const o = +getComputedStyle(v).opacity; out.veilMax = Math.max(out.veilMax || 0, o); if(o < .05) out.veilLow = true; } }
+    const sp = document.querySelector('.rs-spot.is-up');
+    if(sp && !sp.dataset.t){ sp.dataset.t = 1; at('card'); out.cards.push({ name: (sp.querySelector('.rs-spot-name') || {}).textContent, onMap: !!document.querySelector('.screen-ranks') });
+      setTimeout(() => sp.click(), a.cardMs || 900); }
+    const np = document.querySelector('.rankmap-stop.ru-nextpop');
+    if(np && !out.upnext){ at('upnext'); const c = np.querySelector('.rankmap-card').getBoundingClientRect();
+      out.upnext = { name: (np.querySelector('.rankmap-name') || {}).textContent, state: (np.querySelector('.rankmap-state') || {}).textContent,
+        fx: !!np.querySelector('.ru-nextfx'), mid: Math.round((c.top + c.height / 2) / innerHeight * 100) / 100, scroll: Math.round(window.scrollY),
+        heroName: (document.querySelector('.rankhero-name') || {}).textContent }; }
+    if(out.at.upnext && !out.at.top0 && window.scrollY <= 1 && rankUpScene && rankUpScene.phase !== 'upnext') at('top0');
+    if(document.querySelector('.rankhero.ru-turn-out')) at('turnout');
+    if(document.querySelector('.rankhero.ru-turn-in') && !out.heroAfter){ at('turnin');
+      setTimeout(() => { const h = document.querySelector('.screen-ranks .rankhero'); if(!h) return; const v = [...h.querySelectorAll('.rankhero-ringval')];
+        out.heroAfter = { name: (h.querySelector('.rankhero-name') || {}).textContent, kick: (h.querySelector('.rankhero-kicker') || {}).textContent,
+          level: v[0] && v[0].textContent, levelTo: v[0] && v[0].dataset.count, badges: v[1] && v[1].textContent, head: (h.querySelector('.rankhero-gaugehead') || {}).textContent }; }, 2800); }
+    if(document.querySelector('.ru-curtain.is-on') && (out.at.turnin || out.at.ph_hero)) at('curtain');
+    if(out.at.map && (out.at.curtain || out.at.ph_back || out.at.ph_return) && document.querySelector('.screen-profile')) at('back');
+    if(document.querySelector('.pf-goal.ru-flip-out')) at('flipout');
+    if(document.querySelector('.pf-standing.ru-climbing')) at('climb');
+    if(s && performance.now() - lastTap > 900 && ['profile', 'tick', 'road', 'after', 'upnext', 'top', 'hero', 'return', 'cards'].indexOf(ph) >= 0){ lastTap = performance.now(); tryTaps(ph); }
+    if(seenScene && !s){ at('done'); break; }
+    await wait(40);
+  }
+  rafOn = false; cmo.disconnect();
+  out.focusAfter = cutsceneFocusActive();
+  out.climb = (rankUpScene || {}).climb || window.__lastClimb || null;
+  out.flash = out.rest && out.burst ? Math.round(out.burst - out.rest) : null;
+  out.cap = a.cap;
+  window.playTierCutscene = realTier; window.playSupernovaCutscene = realSn;
+  out.after = { rank: (document.querySelector('.pf-standing .pf-rankname') || {}).textContent, level: (document.querySelector('.pf-standing .pf-level') || {}).textContent,
+                shown: store.rankUpShown, blocker: !!document.querySelector('.ru-blocker'), veil: !!document.querySelector('.ru-veil, .ru-ghost') };
+  /* ---- after: the Profile tab, tapped, does not ring or jump ---- */
+  const watch = []; let on = true;
+  (function w(){ if(!on) return; watch.push(...tabMoves()); requestAnimationFrame(w); })();
+  tab.click(); await wait(1500);
+  showHome(); await wait(2600);
+  tab.click(); await wait(1500);
+  on = false;
+  out.tabAfter = [...new Set(watch)];
+  out.homeAfter = document.body.classList.contains('rankup-lock');
+  }catch(e){ out.threw = String(e && e.stack || e); }
+  return out; }"""
+
+
+def check_b320d_rankup(br):
+    """Build 320 (b320d). Madison: "When going from the profile to road up in
+    the cutscene, we can get rid of the loading screen ... The cutscene on
+    the roadmap, it should continue from the point where the dot is if you
+    were to check it from the moment before you ranked up. Here's the caveat,
+    let's not ever put the dot too close to the next one. Let's give the
+    badges a lot more weight ... the loading sequence starts from the
+    beginning, but really it's just going through them all until it catches
+    up to where you are ... the road map flare could slowly zoom out and then
+    everything else diseases and then it's perfectly goes into the planet
+    system ... the flare flash part into the big flash happens way too fast";
+    "after the unlock pop up is done, the road map would then slowly scroll
+    down automatically to the up next on the road map, and then that boxes
+    color would pop ... and then it slides back to the top, the current rank
+    card changes ... it says rank up there or something at the top ... that
+    new circle would show you are level 40 ... The challenge box is like
+    glowing green and the color of the rank, that's ugly ... verify the
+    buttons on the page don't work ... the bottom tab should not be visible
+    ... the xp bar loads again, which it shouldn't ... the challenge thing
+    will flip first, AND then ... the xp bar ... slowly"; and "When you click
+    the profile tab after the rank up part, the character gets a yellow
+    circling and starts jumping?? Fix that." The real cutscene plays here
+    (only its end is tapped, as a person can). Written against a73c681,
+    where: the loading screen plays, the map opens at the top and glides
+    down, rankRoadFracOf does not exist, there is no hand-off, the pulse into
+    the flash is 1.7s, Up next is a card under the hero that says "Rank up",
+    the hero shows the real level, focus is never on, Profile's XP bar fills
+    from empty, the climb is 0.7s a level, and the tab rings and bobs."""
+    print("\n320d. the rank-up journey: no loading screen, the map where the light was, badges first, the flare into the planet, the paced flash, Up next on the road, nothing tappable, the slow climb, no ring on the tab")
+    # The formula, and the ordinary road map with it.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    f = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+      const F = rankRoadFracOf, G = TIER_UNLOCKS.veteran, S = TIER_UNLOCKS.ranger;
+      out.near = RANK_ROAD_NEAR;
+      /* the last badge 34 hundos of 35 away, the level met: not at the circle */
+      out.lastBadge = F({ held: 'ranger', level: G.level + 9, levelExact: G.level + 9, badges: G.badges - 1, partials: .999 });
+      /* every badge, one XP of the level short */
+      out.lastXp = F({ held: 'ranger', level: G.level - 1, levelExact: G.level - .0001, badges: G.badges, partials: 0 });
+      out.reached = F({ held: 'ranger', level: G.level, levelExact: G.level, badges: G.badges, partials: 0 });
+      /* the same share of each requirement: badges move the light three times as far */
+      const midL = S.level + (G.level - S.level) / 2, midB = S.badges + (G.badges - S.badges) / 2;
+      out.halfBadges = F({ held: 'ranger', level: S.level, levelExact: S.level, badges: midB, partials: 0 });
+      out.halfLevels = F({ held: 'ranger', level: midL, levelExact: midL, badges: S.badges, partials: 0 });
+      /* the ordinary road map draws its light there */
+      const U = topicsIn(QUESTIONS), t = 'Identity Crimes';
+      store.unitPerfects = {}; U.filter(x => x !== t).slice(0, 4).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+      store.unitPerfects[t] = badgeThresholdFor(t) - 1; store.rankFloor = 0; store.levelFloor = 0;
+      store.lifetime.points = xpForLevel(53) + 500; store.rankUpShown = null; store.rankMapFx244 = true; store.rankMapSeen = 99; store.rankMapProg = null;
+      saveStore(); out.now = rankRoadProgress(); out.rank = rankOf(store);
+      showRanksScreen('ranks'); await wait(7000);
+      const tip = document.querySelector('.rankmap-roadtip'); const st = tip && tip.closest('.rankmap-stop');
+      const node = st && st.nextElementSibling && st.nextElementSibling.querySelector('.rankmap-node');
+      const dot = tip && tip.querySelector('.rankmap-roadtip-dot');
+      if(tip && node && dot){ const d = dot.getBoundingClientRect(), nr = node.getBoundingClientRect(), H = tip.offsetHeight, n = node.offsetHeight;
+        out.mapAt = +tip.dataset.tipAt; out.gap = Math.round((nr.top - (d.top + d.height / 2)) * 10) / 10; out.stretch = Math.round((H - n - 18) * 10) / 10; }
+      }catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    ctx.close()
+    check("the light's formula: the last badge 34/35 away with the level met stays out of the last fifth (<= 0.8), and so does every badge with 1 XP of level to go",
+          not f.get("threw") and f.get("near") == 0.8 and 0 < (f.get("lastBadge") or 9) <= 0.8 and 0 < (f.get("lastXp") or 9) <= 0.8 and f.get("reached") == 1, f)
+    check("badges carry much more weight: half the badges moves the light 3x as far as half the levels",
+          (f.get("halfBadges") or 0) >= 2.9 * (f.get("halfLevels") or 1) and (f.get("halfLevels") or 0) > 0, [f.get("halfBadges"), f.get("halfLevels")])
+    check("the ordinary road map draws its light at the same number, and at least a fifth of the stretch clear of the next circle",
+          abs((f.get("mapAt") or -1) - round(f.get("now") or -9, 3)) < .002 and (f.get("gap") or 0) >= .2 * (f.get("stretch") or 999) - 1,
+          [f.get("now"), f.get("mapAt"), f.get("gap"), f.get("stretch")])
+
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        s0 = pg.evaluate(B319_RU_SEED, {})
+        pre = pg.evaluate("() => ({ dot: typeof rankRoadProgress === 'function' ? rankRoadProgress() : rankStepProgress().pct, cap: levelOf(store) })")
+        r = pg.evaluate(B319_RU_RUN, {})
+        wk = pg.evaluate(B320D_WALK, {"dot": pre["dot"], "cap": pre["cap"], "cardMs": 900})
+        ctx.close()
+        at = wk.get("at") or {}
+        check(f"{dev}: the walk: nothing threw", not wk.get("threw") and not r.get("threw") and s0.get("rank") == "ranger", [wk.get("threw"), r.get("threw"), s0])
+        check(f"{dev}: Home locked, and the Profile tab neither rings nor jumps (no ring, no running move), even on a refused tap",
+              wk.get("lock") is True and (wk.get("lockTab") or {}).get("ring") is False and not (wk.get("lockTab") or {}).get("moves") and not (wk.get("lockTab") or {}).get("refused"),
+              wk.get("lockTab"))
+        check(f"{dev}: no loading screen - Profile ticks, leans into the dark, and the road map comes up out of it",
+              "loading" not in at and 0 < at.get("tick", -1) < at.get("dive", -1) < at.get("map", -1) <= at.get("mapvisible", -1) and at.get("mapvisible", 99999) - at.get("dive", 0) < 4000, at)
+        fi = wk.get("first") or {}
+        check(f"{dev}: the map's first visible frame has the light on the pixel it stood on before the rank-up (within 2px), the camera on it, nothing filling in",
+              abs((fi.get("p0") or -1) - pre["dot"]) < .002 and fi.get("tipOn") and (fi.get("dy") if fi.get("dy") is not None else 99) <= 2
+              and (fi.get("cam") if fi.get("cam") is not None else 99) <= 2 and fi.get("moving") == 0 and not fi.get("loading"), [pre["dot"], fi])
+        cam = wk.get("cam") or []
+        check(f"{dev}: no replay of the earlier ranks - the camera never goes back up the road while the light runs on (sampled every frame)",
+              len(cam) > 20 and min(cam) >= (fi.get("scroll") or 0) - 2 and all(b >= a_ - 2 for a_, b in zip(cam, cam[1:])), [len(cam), cam[:3], min(cam) if cam else None, fi.get("scroll")])
+        hd = wk.get("hand") or {}
+        gh, bu = hd.get("ghost") or {}, hd.get("bubble") or {}
+        cont = (abs(gh.get("x", 0) - bu.get("x", 99)) <= 2 and abs(gh.get("y", 0) - bu.get("y", 99)) <= 2 and abs(gh.get("w", 0) - bu.get("w", 99)) <= max(2, .04 * (gh.get("w") or 0))) if gh and bu else False
+        check(f"{dev}: the flare is lifted off the map and draws back while the map dissolves to the cutscene's dark, then IS the new flare in the planet system - same centre and size across the cut (within 2px)",
+              at.get("unlock", 0) < at.get("ghost", -1) < at.get("cutscene", -1) and (wk.get("veilBefore") or 0) >= .99 and wk.get("veilLow") and hd.get("inScene") and hd.get("tier") == "veteran"
+              and cont and hd.get("veilAfter") is False and hd.get("ovOpacity") == 1 and hd.get("hiddenRest"), [at.get("ghost"), at.get("cutscene"), wk.get("veilBefore"), wk.get("veilAnim"), hd])
+        z = wk.get("zoom") or []
+        # (the headless iPad renders the zoomed planet at a few frames a second,
+        # so the pull back is read as the transition the scene starts - its
+        # target and length - and where the stage ends, not as frame samples)
+        check(f"{dev}: ...and the planet system pulls back round it into the scene's own framing",
+              len(z) == 3 and z[0] > 1.3 and wk.get("zoomTo") == "translate(0px, 0px) scale(1)" and any(d >= 2500 for d in (wk.get("zoomTr") or [])) or
+              (len(z) == 3 and z[0] > 1.3 and z[0] > z[1] > z[2] and abs(z[2] - 1) < .02), [z, wk.get("zoomTo"), wk.get("zoomTr")])
+        check(f"{dev}: the pulse into the big flash builds for 2.8s+ with 5+ breaths (was 1.7s and 4)",
+              (wk.get("flash") or 0) >= 2800 and (wk.get("breaths") or 0) >= 5, [wk.get("flash"), wk.get("breaths")])
+        un = wk.get("upnext") or {}
+        check(f"{dev}: Up next is the road map's own Platinum box: the map scrolls down to it (centred), it pops in its colour, and the map slides back to the top before the card turns",
+              "upnextcard" not in at and un.get("name") == "Platinum" and un.get("state") == "Up next" and un.get("fx") and .3 <= (un.get("mid") or 0) <= .7 and (un.get("scroll") or 0) > 200
+              and at.get("card", 0) < at.get("upnext", -1) < at.get("top0", -1) <= at.get("turnout", -1) < at.get("turnin", -1), [un, at])
+        hb, ha = wk.get("heroBefore") or {}, wk.get("heroAfter") or {}
+        check(f"{dev}: the card at the top shows the rank as it WAS (Silver, Level {pre['cap']}, 4 badges, to reach Gold) and never says 'Rank up'",
+              hb.get("name") == "Silver" and hb.get("level") == str(pre["cap"]) and hb.get("badges") == "4" and "Gold" in (hb.get("head") or "") and wk.get("rankUpText") is None,
+              [hb, wk.get("rankUpText")])
+        check(f"{dev}: it turns over to Gold showing the next level ({pre['cap'] + 1}), not the cut-off and not the saved levels ahead of Profile; 'Your rank'",
+              ha.get("name") == "Gold" and ha.get("kick") == "Your rank" and ha.get("levelTo") == str(pre["cap"] + 1) and ha.get("badges") == "5" and "Platinum" in (ha.get("head") or ""), ha)
+        tp = wk.get("taps") or {}
+        check(f"{dev}: nothing on the page can be tapped or swiped during the journey ({(wk.get('taps') or {}).get('tried')} taps tried, every phase)",
+              (tp.get("tried") or 0) > 60 and not tp.get("reached") and not tp.get("swipeMoved") and (tp.get("swipes") or 0) > 5, tp)
+        check(f"{dev}: cutscene focus is on the whole way and off after it",
+              not wk.get("focusGap") and wk.get("focusAfter") is False, [wk.get("focusGap")[:5] if wk.get("focusGap") else None, wk.get("focusAfter")])
+        pf = wk.get("profile") or []
+        first_change = next((p["t"] for p in pf if p["lv"] is not None and p["lv"] != pre["cap"]), None)
+        pre_climb = [p for p in pf if first_change is None or p["t"] < first_change]
+        lvls = [p["lv"] for p in pf if p["lv"] is not None]
+        last53 = next((p["t"] for p in pf if p["lv"] == lvls[-1]), None) if lvls else None
+        check(f"{dev}: back on Profile the XP bar does not load again - it is where it stands from the first frame",
+              len(pre_climb) > 10 and all((p["x"] or 0) >= .97 for p in pre_climb if p["x"] is not None), [len(pre_climb), [p["x"] for p in pre_climb][:8]])
+        check(f"{dev}: the challenge box flips first, THEN the saved XP climbs",
+              at.get("flipout") is not None and first_change is not None and at["flipout"] < first_change, [at.get("flipout"), first_change])
+        sync = all(p["row"] == min(p["lv"], p["need"]) for p in pf if p["lv"] is not None and p["row"] is not None and p["need"] and p["t"] >= (first_change or 0))
+        dur = (last53 or 0) - (first_change or 0)
+        check(f"{dev}: the climb is slow ({dur}ms from level {pre['cap'] + 1} to {lvls[-1] if lvls else None}, 1.4s+ a level) and the level challenge counts in the same frame as the level",
+              lvls and lvls[-1] == 53 and dur >= 1400 * (53 - pre["cap"] - 1) and sync and (wk.get("after") or {}).get("level") == "Level 53", [dur, sorted(set(lvls)), sync, wk.get("after")])
+        check(f"{dev}: after it, the Profile tab tapped (on Profile and from Home) never rings or jumps, and nothing of the scene is left",
+              not wk.get("tabAfter") and wk.get("homeAfter") is False and not (wk.get("after") or {}).get("blocker") and not (wk.get("after") or {}).get("veil"),
+              [wk.get("tabAfter"), wk.get("homeAfter"), wk.get("after")])
+
+    # The challenge box is calm: no green, no halo of the rank's colour.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(B319_RU_SEED, {})
+    pg.evaluate(B319_RU_RUN, {})
+    cb = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      window.playTierCutscene = (k, o) => { setTimeout(() => o.onDone(), 100); return {}; };
+      showHome(); await wait(1500); document.getElementById('bottomtab-profile').click();
+      let g = null; for(let i = 0; i < 200 && !(g = document.querySelector('.pf-goal.ru-complete')); i++) await wait(40);
+      await wait(900);
+      const out = {}; for(const [k, el] of [['complete', g]]){ if(!el){ out[k] = null; continue; } const cs = getComputedStyle(el);
+        out[k] = { shadow: cs.boxShadow, border: cs.borderTopColor, kick: getComputedStyle(el.querySelector('.pf-tasks-kick') || el).color }; }
+      if(rankUpScene) rankUpSceneWatch(rankUpScene, 10);
+      return out; }""")
+    ctx.close()
+    c = (cb or {}).get("complete") or {}
+    import re as _re
+    def _rgbs(s):
+        return [tuple(float(v) for v in m) for m in _re.findall(r"rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)", s or "")]
+    greenish = any(g_ > r_ + 40 and g_ > b_ + 20 for (r_, g_, b_) in _rgbs(c.get("shadow")) + _rgbs(c.get("border")) + _rgbs(c.get("kick")))
+    check("the completed challenge box is calm: no green anywhere on it, and no coloured halo (only a soft dark shadow)",
+          bool(c) and not greenish and all(not (r_ > 60 or g_ > 60 or b_ > 60) for (r_, g_, b_) in _rgbs(c.get("shadow"))), c)
 
 
 # --------------------------------------------------------------------------
@@ -21099,6 +21454,7 @@ def main():
             check_b317_caption_fit(br)
             check_b317_noflash(br)
             check_b319_rankup(br)
+            check_b320d_rankup(br)
             check_b317_supernova(br)
             check_b317_planet(br)
             check_b317_flow(br)

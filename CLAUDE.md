@@ -19261,3 +19261,104 @@ Your eyes shouldn't gravitate to one thing on any screen".
   reference devices and a 320px phone, the calendar in seven states of the
   course. Fails on f6e0be8.
 
+
+### Build 320 (b320d) - the rank-up journey as Madison asked for it
+
+Madison, on 319's journey: no loading screen; the road map opens where the
+light was; badges weigh more and the light never sits at the next circle;
+the road map's flare draws back into the planet system; the pulse into the
+big flash is too fast; Up next is the road map's own box; the card at the
+top just turns over (no "Rank up"), showing the level after the old cut-off;
+the challenge box's green/rank glow is ugly; nothing tappable and no bars
+during it; on Profile the XP bar must not load again, the box flips first
+and THEN the saved XP climbs slowly; and the Profile tab's "yellow circling"
+and "jumping". All in the block after `buildRanksTab()` unless noted.
+
+- **THE ROAD'S LIGHT IS BADGES FIRST: `rankRoadFracOf` / `rankRoadProgress()`**
+  (next to `rankStepProgress`, which is unchanged and still feeds the
+  reward cards' bar). For the stretch from the rank held to the next:
+  B = badges since the rank held + HALF the closest units' hundo progress
+  towards each missing badge (`RANK_ROAD_PART_W`), over the badges the next
+  rank adds; L = levels since the rank held with the XP into the current
+  one, over the levels it adds; light = `RANK_ROAD_NEAR` (0.8) x (0.75 B +
+  0.25 L), and 1 only when the rank is reached. "Too close" = the last
+  fifth of a stretch: nothing short of reaching the rank puts the light
+  there. The ordinary map (`buildRanksTab`'s `heroStepPct`), the journey's
+  first frame and `rankUpClimbNext` all read it; `rankUpDotToRide` turns it
+  into the ride's span on the same pixel `placeRoadTip` uses.
+- **WHERE THE LIGHT STOOD BEFORE THE RUN is `store.rankUpFrom.d`**, written by
+  summarize() (`ruDotBefore`, taken beside `perfectsBefore`, before the run
+  records anything) through `rankUpNoteFrom`. Optional: `applyLoadedData`
+  keeps it when it is a number; an older record falls back to
+  `store.rankMapProg` on that stretch (`rankUpStartDot`, clamped to 0.8).
+- **No loading screen.** `rankUpSceneToMap`: Profile leans into the
+  completed box (`.screen-profile.ru-dive`) under the curtain; the map is
+  built under it with every fill already in place (`html.ru-scene` turns
+  the road's transitions off), the first stretch's light laid on its old
+  pixel and the page jumped to it (`rankUpMapFirstFrame`, the camera's 42%
+  rule), then it comes up out of the dark settling from 1.045
+  (`rankUpMapOpen`, `.ru-mapin`). No glide from the top, nothing filling in.
+- **The card at the top is built AS IT WAS** by `buildRankHero(held,
+  level, badges)` (out of `buildRanksTab`): Silver, the cap level, the old
+  badges, "To reach Gold". `rankUpHeroTurn` turns it on its vertical axis
+  (`.ru-turn-out` / `.ru-turn-in`, a light crossing it) to a fresh
+  `buildRankHero` for the new rank, rings refilling and counting.
+  **Its level is the cut-off + 1 when there is saved XP, else the real
+  level** (`rankUpHeroLevel`) - Madison: "if a rank cutoff level is 39,
+  that new circle would show you are level 40"; the rest is climbed on
+  Profile. No "Rank up" anywhere.
+- **The flare into the planet system.** `rankUpHandOut`: a copy of the new
+  rank's circle (`.rankmap-stop.ru-ghost`, fixed) draws back to 0.84 over
+  `RU_HAND_MS` while `.ru-veil` (#050308, the cutscene's own dark) covers
+  the map. The copy goes to the cutscene as `opts.handoff`;
+  `rankCutHandoff` (beside `playRankUpScene`, one call after
+  `rankOrbitCentre`) puts the stage at the scale and offset that lays the
+  new flare's bubble exactly under it (centre and size measured, same JS
+  task, so no frame between), moves the copy INTO the bubble, covers the
+  rest of the planet (`.ru-hand-veil`, inside the hero under its orbit;
+  the other bubbles at 0) and pulls back to the stage's own framing over
+  `RU_HAND_ZOOM_MS` as the system comes up. It replaces only the scene's
+  arrival; everything after is the scene's own. Without a handoff (or
+  Reduce motion) the scene is untouched.
+- **The pulse into the big flash: `RANK_WINDUP_MS` 1700 -> 3000**, breaths
+  from `RANK_WINDUP_BEAT0_MS` 640ms (was 520) quickening by
+  `RANK_WINDUP_BEAT_K` .86 (was .8) to no less than 230ms (was 180),
+  filling `RANK_WINDUP_FILL` 84% (was 96%) so the last ~0.5s is one rising
+  swell. Timing constants only; Supernova's pause and swell are untouched.
+- **Up next** (`rankUpUpNext`): after the cards (and the climb on, if any)
+  the map glides down (2.2s+) to the next rank's own box, which pops
+  (`.ru-nextpop`, `.ru-nextfx`: lift, a wash of its colour from below, its
+  edge lighting, a band of light across, the chip answering - the unlock's
+  rings/sparks/ribbon are the circle's, this is the box's), and the map
+  glides back to the top. The old `.ru-upnext` card is gone.
+- **The challenge box is calm**: `.ru-focus`/`.ru-complete` are a pale mix
+  of the rank's colour on the edge and a soft dark shadow; no green, no halo.
+- **Focus and input.** `rankUpNewScene` calls `setCutsceneFocus(true)`
+  (`scene.focus`), `rankUpSceneEnd` - every way out - calls it off once.
+  The input layer (`.ru-blocker` + window capture) is unchanged.
+- **Back on Profile**: `PF_XP_SEEN_KEY` is set before `showProfile()` (no
+  "earned since" knock), the XP bar is laid at once at the cap
+  (`xf`, transition none), the completed box flips, THEN
+  `rankUpStandingClimb` climbs: one rAF-driven run from the bar's place to
+  the end, `RANKUP_CLIMB_LEVEL_MS` 2600ms a level (no less than 1500, no
+  more than 15s in all), sine-eased in and out; level, bar and the level
+  challenge's count are set in the same frame.
+- **The Profile tab no longer rings or bobs** (`.ru-call::before` and the
+  bob are gone; the label keeps the rank's colour, the yellow dot stays),
+  and a refused tap no longer pulses it - that loop (Gold's yellow) was
+  the "yellow circling and starts jumping".
+- **Gate: `check_b320d_rankup`** (fails on a73c681): the formula and the
+  ordinary map; per reference device a real 100% and the whole journey
+  with the REAL cutscene - no loading screen; the first visible map frame
+  (taken on the curtain's lift) has the light within 2px of
+  `placeRoadTip`'s pixel for the pre-run dot and the camera on it, no fill
+  moving, and every-frame camera samples never going back up; the
+  hand-off continuous (centre and size within 2px) with the veil gone and
+  the rest hidden; the stage pulling back to 1; rest->burst >= 2.8s with 5+
+  breaths; Up next centred, popped, then the top, then the turn; the card
+  as it was, then Gold at cap+1, never "Rank up"; 60+ taps and swipes in
+  every phase reaching nothing; focus on throughout and off after; the XP
+  bar never below full before the climb, flip before the first level
+  change, 1.4s+ a level, the challenge in step; the tab never ringing or
+  jumping (Home locked, refused tap, after). `check_b319_rankup` moved to
+  the new decisions (no loading screen, Up next on the map, "Your rank").
