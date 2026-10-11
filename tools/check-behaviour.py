@@ -21060,7 +21060,8 @@ def check_b320b_reactions(br):
         Clown, UFO the Alien) - the reaction starts within 0.3s of the
         effect, draws its parts (the Ninja holds its breath), ends, and the
         character's special plays after it.
-    Fails on a73c681 (no reaction at all)."""
+    Fails on a73c681 (no reaction at all). B320B_FX=ufo,... runs some
+    effects; B320B_MATRIX_ONLY=1 skips the real drills."""
     print("\n320b. the results character reacts to the hundo effect while it plays, and only while it plays")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     for fx in (os.environ.get("B320B_FX") or "confetti,fireworks,underwater,bubbles,ufo").split(","):
