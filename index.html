@@ -1648,7 +1648,7 @@
     background:
       radial-gradient(120% 60% at 18% 100%, rgba(123,92,224,.36), transparent 62%),
       radial-gradient(90% 50% at 90% 0%, rgba(79,160,255,.16), transparent 60%),
-      linear-gradient(180deg, rgba(5,7,16,.975), rgba(8,8,22,.98) 55%, rgba(14,10,34,.985)); }
+      linear-gradient(180deg, #05070F, #080816 55%, #0E0A22); }
   .nt-sky i{ position:absolute; width:3px; height:3px; border-radius:50%; background:#fff; opacity:.6;
     animation:nv-twinkle 3.4s ease-in-out infinite; }
   .nt-top{ display:flex; align-items:center; justify-content:space-between; gap:1rem; min-height:44px; flex:0 0 auto; }
@@ -1721,15 +1721,18 @@
     transition:opacity .35s ease, transform .5s cubic-bezier(.25,1.3,.4,1); pointer-events:none; }
   .nt-prop.is-in{ opacity:1; transform:none; }
   .nt-prop.is-out{ opacity:0; transform:translateY(-8px) scale(.98); transition:opacity .25s ease, transform .3s ease; }
+  .nt-hello{ margin:0; font-family:var(--serif); font-size:3rem; font-weight:800; letter-spacing:.06em; line-height:1.1;
+    background:linear-gradient(90deg, #FFD37A, #F5804D 55%, #C23B7A); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .nt-cap{ margin:0; font-size:.74rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:rgba(243,245,247,.62); }
   .nt-row{ display:flex; flex-wrap:wrap; justify-content:center; gap:.55rem; max-width:24rem; }
   .nt-row > *{ animation:nt-popin .5s cubic-bezier(.25,1.5,.4,1) both; animation-delay:calc(var(--i, 0) * 70ms); }
   @keyframes nt-popin{ from{ opacity:0; transform:scale(.4); } to{ opacity:1; transform:none; } }
   .nt-slot{ width:3.1rem; height:3.1rem; display:block; }
   .nt-slot svg{ width:100%; height:100%; display:block; }
-  .nt-emblem{ display:flex; flex-direction:column; align-items:center; gap:.25rem; width:3.2rem; }
-  .nt-emblem svg{ width:2.7rem; height:2.7rem; }
-  .nt-emblem span{ font-size:.62rem; font-weight:700; color:rgba(243,245,247,.75); }
+  .nt-emblem{ display:flex; flex-direction:column; align-items:center; gap:.25rem; width:2.95rem; }
+  .nt-emblem svg{ width:2.5rem; height:2.5rem; }
+  .nt-emblem span{ font-size:.56rem; font-weight:700; color:rgba(243,245,247,.75); white-space:nowrap; }
+  .nt-row:has(.nt-emblem){ gap:.35rem; max-width:26rem; }
   .nt-flare{ position:relative; width:2.9rem; height:2.9rem; display:block; }
   .nt-flare .cosmic-icon-badge{ position:absolute !important; inset:0 !important; width:100% !important; height:100% !important; margin:0 !important; transform:none !important; }
   .nt-mode{ display:flex; flex-direction:column; align-items:center; gap:.4rem; width:5.2rem; padding:.7rem .3rem;
@@ -1784,7 +1787,7 @@
   @media (min-width:40rem){
     .nova-talk{ padding-left:calc(env(safe-area-inset-left, 0px) + 2rem); padding-right:calc(env(safe-area-inset-right, 0px) + 2rem); }
     .nt-talk{ grid-template-columns:auto 1fr; grid-template-rows:1fr auto; grid-template-areas:"nova bubble" "nova hint"; column-gap:1.4rem; }
-    .nt-nova{ width:17rem; margin-left:-1rem; align-self:end; }
+    .nt-nova{ width:20rem; margin-left:-1rem; align-self:end; }
     .nt-bubble{ align-self:end; margin:0 0 .6rem; max-width:34rem; padding:1.25rem 1.5rem 1.3rem; border-radius:26px; transform-origin:0 70%; }
     .nt-bubble::after{ left:-10px; bottom:3.2rem; border-right:none; border-bottom:none;
       border-left:1px solid rgba(255,255,255,.16); border-bottom:1px solid rgba(255,255,255,.16); border-bottom-left-radius:4px; border-bottom-right-radius:0; }
@@ -1796,12 +1799,17 @@
     .nt-card{ padding:.9rem 1.1rem; }
     .nt-card .intro-row-title{ font-size:1.02rem; }
     .nt-card .intro-row-body{ font-size:.9rem; }
-    .nt-slot{ width:4.4rem; height:4.4rem; }
-    .nt-emblem{ width:4.4rem; } .nt-emblem svg{ width:3.8rem; height:3.8rem; } .nt-emblem span{ font-size:.74rem; }
-    .nt-flare{ width:4rem; height:4rem; }
-    .nt-row{ max-width:36rem; gap:.8rem; }
-    .nt-cap{ font-size:.86rem; }
-    .nt-mode{ width:7rem; } .nt-mode span{ font-size:.92rem; }
+    .nt-slot{ width:5.6rem; height:5.6rem; }
+    .nt-emblem{ width:5.4rem; } .nt-emblem svg{ width:4.8rem; height:4.8rem; } .nt-emblem span{ font-size:.86rem; }
+    .nt-flare{ width:5.4rem; height:5.4rem; }
+    .nt-row{ max-width:42rem; gap:1rem; }
+    .nt-row:has(.nt-emblem){ max-width:44rem; gap:.9rem; }
+    .nt-cap{ font-size:1rem; }
+    .nt-mode{ width:9rem; padding:1.1rem .4rem; } .nt-mode svg{ width:2.6rem; height:2.6rem; } .nt-mode span{ font-size:1.1rem; }
+    .nt-wreck{ width:min(26rem, 70%); }
+    .nt-xp{ width:min(28rem, 80%); } .nt-xp-row{ font-size:1rem; } .nt-xp-bar{ height:14px; border-radius:8px; }
+    .nt-prop{ gap:1.2rem; }
+    .nt-hello{ font-size:4.4rem; }
   }
   /* A phone on its side: Nova smaller, so the bubble keeps its room. */
   @media (max-height:34rem) and (min-width:34rem){
@@ -69025,7 +69033,8 @@ function novaIntroLines(){
   try{ units = topicsIn(QUESTIONS).length || units; }catch(e){}
   return [
     { gesture: "wave", text: "Hello, " + name + "! I’m Nova. I made this app, and I’ll be your instructor.",
-      enter: ctx => novaProp(ctx, null) },
+      enter: ctx => { const t = document.createElement("p"); t.className = "nt-hello"; t.textContent = "Nova";
+        novaProp(ctx, novaStack(t, novaCap("App maker \u00B7 Instructor"))); } },
     { text: "Before we start, I need your help. Not long ago I was flying past a planet much like the one on your Home screen, and it cracked apart.",
       enter: ctx => novaProp(ctx, buildNovaWreck()) },
     { gesture: "raise", text: "The blast wrecked my ship and scattered everything I had across this system: my badges and my flares." },
