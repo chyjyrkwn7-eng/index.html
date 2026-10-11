@@ -21261,6 +21261,42 @@ def check_b320h_fixes(br):
     check("the count-down picks up where it was: %s ms off when the question is back (the loading took none of it)" % (lost,),
           lost is not None and -50 <= lost <= 400, (left0, r["left"]))
     ctx.close()
+    # Linking to ANOTHER account takes the saved test with the old one (slot
+    # and mirror); signing back in to the account it belongs to keeps it.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("() => { store.publicId = store.publicId || 'pub-b320h-mine'; saveStore(); }")
+    pg.evaluate(B320H_RUN, {"answer": 1})
+    pg.evaluate("() => document.getElementById('pause-save').click()")
+    pg.wait_for_timeout(900)
+    lk = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const K = 'class26e.runsession.v1';
+      const idbGet = () => new Promise(res => { const r = indexedDB.open('class26e-drill-backup', 1);
+        r.onsuccess = () => { try{ const g = r.result.transaction('kv', 'readonly').objectStore('kv').get('runsession'); g.onsuccess = () => res(g.result ? 'held' : null); g.onerror = () => res('err'); }catch(e){ res(null); } };
+        r.onerror = () => res('err'); });
+      const out = { before: !!localStorage.getItem(K), idbBefore: await idbGet() };
+      /* the same account signing back in (a device that lost its code) */
+      if(typeof savedTestLeavesWithAccount === 'function') savedTestLeavesWithAccount(null, 'MINE-0001');
+      await wait(300);
+      out.sameKept = !!localStorage.getItem(K);
+      /* another account, through Settings' Link this device */
+      fbDb = { collection: n => ({ doc: id => ({
+        get: () => Promise.resolve({ exists: true, metadata: { fromCache: false }, data: () => ({ firstName: 'Other', publicId: 'pub-b320h-other',
+          onboardingComplete: true, lastModified: Date.now(), lifetime: { points: 10, answered: 1, correct: 1 } }) }),
+        set: () => Promise.resolve(), update: () => Promise.resolve(), delete: () => Promise.resolve() }) }) };
+      window.confirm = () => true;
+      syncCode = null; syncOff = true;
+      showAppearance(); await wait(700);
+      const enter = [...document.querySelectorAll('button')].find(b => /^Enter a code$/.test(b.textContent.trim()));
+      if(!enter){ out.noForm = true; return out; }
+      enter.click(); await wait(250);
+      const inp = document.querySelector('.sync-enter-wrap input'); inp.value = 'ABCD-EFGH';
+      [...document.querySelectorAll('button')].find(b => /Link this device/.test(b.textContent)).click();
+      await wait(1500);
+      out.pub = store.publicId; out.after = !!localStorage.getItem(K); out.idbAfter = await idbGet();
+      return out; }""")
+    check("signing back in to the account the saved test belongs to keeps it", lk.get("before") and lk.get("sameKept"), lk)
+    check("linking this device to another account clears the saved test - the slot and its IndexedDB copy",
+          lk.get("before") and lk.get("pub") == "pub-b320h-other" and lk.get("after") is False and lk.get("idbAfter") is None, lk)
+    ctx.close()
     # ---- 5: the daily ring -------------------------------------------------
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     ring = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
