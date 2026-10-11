@@ -20944,7 +20944,14 @@ B320B_MATRIX = r"""async ([fx, at]) => {
   const startedIn = performance.now() - t0;
   /* the breath-hold starts on the water's line in the app (hfxUwScreen);
      here it is started by hand, and its cheeks given time to come in */
-  if(fx === 'underwater'){ R.forEach(r => r && r.hold && r.hold.start()); await wait(1000); }
+  if(fx === 'underwater'){
+    R.forEach(r => r && r.hold && r.hold.start());
+    /* the cheeks come in on a transition: on a loaded machine give it up
+       to 4s to have landed everywhere */
+    const shown = () => avs.every(av => [...av.querySelectorAll('.cx-hx-cheeks ellipse, .cx-hx-fishbub circle, .cx-uw')].filter(n => eff(n) > .25).length >= 2);
+    await wait(700);
+    for(let i = 0; i < 33 && !shown(); i++) await wait(100);
+  }
   /* every reaction at the same moment of itself */
   R.forEach(r => r && r.anims.forEach(a => { try{ a.pause(); a.currentTime = at * 1000; }catch(e){} }));
   await wait(120);
