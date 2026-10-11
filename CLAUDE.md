@@ -19363,6 +19363,88 @@ and "jumping". All in the block after `buildRanksTab()` unless noted.
   jumping (Home locked, refused tap, after). `check_b319_rankup` moved to
   the new decisions (no loading screen, Up next on the map, "Your rank").
 
+### Build 320 (b320a) - the results in order: the grade counted in, then the XP, then the unlocks
+
+Madison: *"you get a grade, you see how that adds up, you get awards ...
+when the result screen comes, grade box first, but the progress bar and
+grade number will go up as the questions right bar goes up ... it could
+be red at the beginning ... at the end of each unit bar or at the very end
+it could go slower so the anticipation/suspense for the 100 is real"*;
+*"the purple unlock box won't show up till all unlocks and cutscenes there
+are done"*; *"when the number goes up it needs to be after that bar
+effect"*; *"the result stuff does not need to include any rank up stuff"*.
+All in `showRunRewards()` and `buildResultsLevelBlock()`; the constants
+and the plan sit just above `showRunRewards()`.
+
+- **THE ORDER IS THE DOM ORDER AND THE TIMELINE**: head, grade card, XP
+  card, (badge boxes, off), Unlocked card, buttons. The grade is no longer
+  last; `finishVirtualRoomTest` still inserts the room's waiting card
+  before `.rs-xp`, i.e. between the grade and the XP now.
+- **THE GRADE IS COUNTED IN** (`countIt`: animated, not a retake, some
+  answers). The card lands as `.is-counting` with no tone class, "0%"
+  and "0 / N"; `rsGradeCountPlan()` gives each unit's bar its own slot,
+  one after another (the last one longest, easing out hardest - 1-(1-t)^3.2
+  - which is the suspense: a 100 sits on 99 for most of a second); the
+  number is the floor of the right answers the bars have reached and
+  never the real grade - the frame the last bar is home the count stops
+  and `landGrade()` puts the real number, the tone class, the stamps
+  (`.rs-stamps` hidden while counting: "3 to review" gives it away) and
+  the pop (`rs-pct-land`, `.rs-graded`). Colour: `rsToneAt()` for the
+  number and each bar (red, amber, the pass green from `PASS_MARK`),
+  and the card by three stacked washes (`.rs-grade-tone > i`, the fail
+  and pass washes exactly the landed card's own) crossfaded by opacity
+  (`rsToneWeights`), so the card never repaints. Gold is only ever the
+  landing's. A bar home takes its own verdict class (`unitHome`). A 0%:
+  red throughout and ~1s. A tap during the count finishes it and lands
+  the grade (one step, as 305's tap rule says) - the XP card waits for
+  the next tap.
+- **A 100's effect plays once BOTH bars have run**: the grade's bars and
+  its landing, then the XP box adding up and its bar filling, then
+  `RS_FX_AFTER_XP_MS` (650) and the effect - so the results character on
+  the XP card is on screen to react to it (`hfxCharReact`, b320b) and
+  nothing lands under it until its tail (`HUNDO_FX_TAIL_AT`), which the
+  first unlock (or the box, or the buttons) waits for as well as
+  `RS_UNLOCK_GAP_MS`. The tint (`hfxTintGrade`, the UFO's unlit) goes on
+  as the grade lands, not at build.
+- **The character reacts as the XP card lands**, not the grade: it lives
+  on the XP card, which is no longer on screen when the grade lands.
+- **THE XP BAR: slower, and the number after it.** `runFill` fills over
+  1.0-2.3s (`fillMsFor`, `cubic-bezier(.45,.05,.22,1)`), lands with its
+  effect - the pop (`onFilled("pop")` -> `.is-charged`) or, into a full
+  bar, the knock (`xpBarBump`, `onFilled("bump")`) - and only then,
+  `XP_COUNT_BEAT_MS` (420) later, does "into / span XP" count from where
+  the run started (`startInto`: the old figure, 0 after a level-up,
+  `fromInto()` at a wall or 80). At max level the bar knocks and then
+  the number runs; XP that reaches the cap this run fills, knocks, then
+  counts. `wrap.fillMs` is the whole of it, which the reveal waits on.
+  `showVirtualRoomResults()` uses the same block.
+- **THE UNLOCKS, THEN THE BOX.** `RS_UNLOCK_GAP_MS` (1900) after the XP
+  has settled, every scene and pop-up plays (badge case, flare scene and
+  card, rank-reward card, character/banner/effect cards) as held steps;
+  the Unlocked card lands only after the last (dropping a scene's bridge
+  as it does), then its rows 380ms apart. Reduce motion keeps the order:
+  everything still and at once except the Unlocked card, held until the
+  still badge / flare scene has gone (`boxNow`, with a 30s backstop).
+- **No "Rank up" on the results at all**: `rankWaitItem` and its row are
+  gone; the rank's rewards still wait for Profile (`rankUpHolds`), and
+  the rank-up journey is untouched.
+- **The badge progress box is off**: `RS_BADGE_PROGRESS_BOX = false`. Set
+  it to true to bring it back, after the XP card; nothing else changes.
+- **The daily question** keeps its outro, in the same order: the verdict
+  lands, the XP line `.9s` later, the next line `1.45s`; Home's unlock
+  cards wait `RS_UNLOCK_GAP_MS` after the XP has flown into Profile (was
+  250ms).
+- **Gate: `check_b320a_results`** (check-behaviour): order, no grade
+  before its bars, bars one at a time, red then warmer, the effect after
+  the bars, the XP number after the bar's pop or knock (room, a full wall,
+  level 80, a wall reached this run), the pause before the unlocks, the
+  box absent while anything plays then down with its rows one by one, no
+  Rank up, no badge box, Back to results replays nothing, Reduce motion,
+  a Virtual Room race, the daily question, and a 100% on the iPad. Fails
+  on a73c681. Moved to the new decisions: check-results section 1 (the
+  grade lands first), check_b319_rankup (no rank row), check_b305_resultstap
+  (a tap during the count lands the grade).
+
 ### Build 320 (b320e) - the planet cracks rank by rank, the crack forms in the rank-up, the blast remembered, Home's planet whole on its first frame
 
 **One crack, growing from Gold to Supernova** (`CRACK_RANK_STAGE`,
