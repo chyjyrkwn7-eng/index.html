@@ -103631,7 +103631,9 @@ function finishBadgeCaseOpen(kase){
    transforms and opacities only: rotateY on the spinner, the floor
    shadow's width, the light crossing each face.
    SPIN OR RUB - the rule. Every drag on the badge turns it with the
-   finger (a badge's width of drag is BINSPECT.degPerW degrees) until it
+   finger, once it is past a little slack (BINSPECT.slack of the badge's
+   width, so a rub's first short strokes do not rock it; a badge's width
+   of drag is BINSPECT.degPerW degrees) until it
    shows it is a rub: two turn-backs, each stroke between rubMin px and
    rubMax of the badge's width and done within rubStrokeMs, all of it
    inside the badge (rubReach of its width from the middle). From then on
@@ -103646,7 +103648,7 @@ function finishBadgeCaseOpen(kase){
 const BINSPECT = {
   open: 900, close: 640, fade: 200,
   tilt: 58, drop: .93, persp: 900, sink: .9,
-  degPerW: 200, maxSpin: 2400, tau: .85, settleAt: 70, springK: 60, springC: 12.4,
+  degPerW: 200, slack: .15, maxSpin: 2400, tau: .85, settleAt: 70, springK: 60, springC: 12.4,
   rubMax: .75, rubMin: 8, rubTurn: 8, rubStrokeMs: 450, rubReach: .62, rubPerStage: 4,
   edges: 16
 };
@@ -103994,7 +103996,7 @@ function openBadgeInspect(unit, tile){
       /* a grab stops it dead */
       om = 0; if(raf){ cancelAnimationFrame(raf); raf = 0; }
       mode = "drag";
-      gest = { id: e.pointerId, kind: "pending", lx: p.x, t0: now, samples: [{ t: now, x: p.x }], lastMove: now,
+      gest = { id: e.pointerId, kind: "pending", lx: p.x, x0: p.x, turning: false, t0: now, samples: [{ t: now, x: p.x }], lastMove: now,
                cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width, inside: true,
                anchor: p, ext: p, extT: now, strokes: [] };
       hit.classList.add("is-grabbed");
@@ -104027,7 +104029,11 @@ function openBadgeInspect(unit, tile){
           mode = "settle"; target = Math.round(th / 180) * 180; kick();
           g.strokes.forEach(() => cleanStroke());
         } else {
-          th += (p.x - g.lx) * B.degPerW / g.w;
+          /* a little slack before it turns, so the short strokes a rub
+             starts with do not rock it; past it, it follows the finger */
+          const dx0 = p.x - g.x0, slack = B.slack * g.w;
+          if(!g.turning && Math.abs(dx0) > slack){ g.turning = true; g.lx = g.x0 + (dx0 > 0 ? slack : -slack); }
+          if(g.turning) th += (p.x - g.lx) * B.degPerW / g.w;
           g.samples.push({ t: now, x: p.x });
           while(g.samples.length > 2 && now - g.samples[0].t > 90) g.samples.shift();
           g.lastMove = now;

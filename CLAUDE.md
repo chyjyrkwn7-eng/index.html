@@ -19261,3 +19261,95 @@ Your eyes shouldn't gravitate to one thing on any screen".
   reference devices and a 320px phone, the calendar in seven states of the
   course. Fails on f6e0be8.
 
+
+### Build 320 (b320g) - a badge in your hand, dirt in five stages, rubbing it clean, the new-badge dot
+
+Madison: *"when you go to badge case and click a badge, it won't be a tab
+... the badge will be pulled from the case and then float on screen but the
+screen will then face the other direction ... You can now grab the badge to
+spin it ... if you swipe fast it spins fast, if you grab it during the spin
+it will stop spinning ... you would need to occasionally clean your badges
+by rubbing your finger over them ... There could be like 5 phases. They get
+dirtier by the week so by week 3-4 they'd be their dirtiest."*
+
+- **A tap on a slot opens `openBadgeInspect(unit, tile)`, never the unlock
+  card.** A found badge lifts out of its slot (the slot is swapped for its
+  empty drawing, `.ncase-cell.is-lifted`) and flies to the middle, big and
+  head on; the CASE (`.ncase`, the only thing that turns) tips away
+  (`rotateX`, `BINSPECT.tilt`) and sinks to the foot of the screen
+  (`BINSPECT.drop` is where its middle lands, a share of the height); the
+  head, the back link and the title fade out so nothing sits behind the
+  words. The words float under the badge (title, Mastered, the requirement,
+  the bar and count, the dirt hint, the care line, Close). A badge not found
+  floats as its empty slot with its progress. Close, a tap off the badge
+  and words, or Escape reverses it all; a screen change tears it down at
+  once (a `childList` observer on `#stage`). Reduce motion: a fade, no
+  swing. Holds `setCutsceneFocus` once, and lets it go once, every exit.
+  `badgeInspectNow.state()` is there for the gates and the recorder.
+- **The coin is the cutscene's construction** (front face, 16 edge slices,
+  back face, all images) **with its own back** (`badgeBackFaceURL`): brushed
+  metal in a polished rim, the unit's name engraved. Its OUTLINE is the
+  front's mirrored (the back of a shape is its mirror image, or the edge
+  would not line up as it turns); its LETTERS are not. The back face is
+  `rotateY(180deg)` with no `scaleX(-1)`. (The cutscene's coin, builder C's,
+  still shows its front mirrored on its back.)
+- **Nothing is rendered in the tap.** A face at the inspect size is a few
+  hundred ms on a phone: the lift starts on the very image the slot showed,
+  the big face is rendered 60ms later while the lift (compositor
+  animations) carries on, and the finish and each cleaner stage's face are
+  rendered only after half a second with nothing touched or turning. The
+  face is capped at 864 device pixels.
+- **Spin**: requestAnimationFrame, transforms and opacities only. A drag of
+  the badge's width is `degPerW` degrees; let go, it spins at the finger's
+  speed over the last 90ms (none if the finger had stopped), decays with
+  `tau`, and below `settleAt` springs round to face you or show its back,
+  whichever is nearer where it would have stopped. A press stops it dead.
+- **SPIN OR RUB, the rule.** Every drag turns the badge until it shows it is
+  a rub: two turn-backs, each stroke between `rubMin` px and `rubMax` of the
+  badge's width and done within `rubStrokeMs`, all inside the badge
+  (`rubReach`). From then on it does not turn (it eases back to face you)
+  and every stroke counts; each `rubPerStage` (4) strokes clean ONE stage,
+  with a sparkle and a cross-fade to the cleaner face. One long stroke, or
+  strokes wider than `rubMax`, is a spin and can never clean; a rub never
+  flings.
+- **DIRT IS TIME.** `store.badgeCleanedAt = { unit: ms }`. The stage is the
+  whole weeks since (`badgeDirtAt`): 0 clean, 1 light, 2 dull, 3 grimy, 4
+  from four weeks on. Cleaning to stage s sets the time to now minus s
+  weeks (`setBadgeDirtStage`, `saveStore`), so nothing else is stored.
+  `applyLoadedData` keeps this device's map when a copy has none (an older
+  build's document cannot make every badge spotless) and
+  `ensureBadgeCleanedAt` stamps every found badge with no time as clean
+  NOW - an account updating in, and a badge found on an older build.
+  `summarize()` stamps a badge found in the run. The merge keeps each
+  badge's newest time (`maxMap`). A reset clears it.
+- **Dirt is drawn by the renderer**, `renderBadgeStrike(.., dirt)` (the
+  `BADGE_DIRT` table): the metal's specular and reflection flattened and a
+  little warmer, the enamel's clear coat dulled and a tenth darker, a soft
+  smudge field (`badgeSmudge`, the same per badge) that greys what is under
+  it, grime at the foot of every wall. Never another colour (the gate
+  holds the hue within 12 degrees). The strike cache is keyed by stage.
+  **`buildUnitBadgeSVG(u, true, opts)` draws a found badge at its real
+  stage unless `opts.dirt` (0-4) says otherwise** - so the cutscene's case
+  shows each badge's dirt with no change of its own, and a new badge is
+  spotless anyway. The case's glow fades with the stage
+  (`.badge-tile-art[data-dirt]`).
+- **A tap lands on the slot it is over.** The seat shade (build 319) is a
+  260-unit masked rect, hit-tested by its geometry: with the svg's overflow
+  visible it lay over the neighbouring slots, and a tap on one badge opened
+  the one beside it. The case's svgs are `pointer-events:none`.
+- **The new-badge dot** (build 299) is unchanged and agrees in all three
+  places (the slot, the Profile case's "New", the Profile tab): opening the
+  badge clears all three, saved.
+- **`_Stepper` in check-behaviour puts the page in the year 58000** (Python's
+  `pause_at` reads a number as SECONDS). Anything that reads the clock to
+  draw a badge sees every badge at its dirtiest under it; `_StepperS` pauses
+  at the real time.
+- **Gate: `check_b320g_inspect`** (both reference devices): the dot and a
+  real tap, the floating view and its words, the case turning and coming
+  back, the empty slot, spin speed and the grab, the back not a mirror,
+  stages from time, start clean, the merge, the render's shine and hue,
+  rubbing stage by stage, a spin never cleaning, Reduce motion. Fails on
+  a73c681. **Moved to the new decision:** the checks that tapped a badge and
+  expected the unlock card (`check_audit_a`'s "never covers the tab bar",
+  `check_b281_badge_card`, `check_b317_badgecase`'s tap, `check_b319_badges`'
+  cards, `check_b319f_casespace`'s card) now expect the floating view.
