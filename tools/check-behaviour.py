@@ -11723,7 +11723,9 @@ FX_RUN = """const wait = ms => new Promise(r => setTimeout(r, ms));
   /* 12s, not 6 (build 317 flow): a run that climbs a level now pops the
      bar when its second fill is done (2.05s, it was 1.25s), so the grade -
      and the effect with it - lands 0.8s later than this budget assumed */
-  for(let i = 0; i < 120 && !window.__fxAt && !window.__celAt; i++) await wait(100);
+  /* (build 320: the effect waits for the grade's count AND the XP box -
+     up to ~20s on a loaded machine) */
+  for(let i = 0; i < 450 && !window.__fxAt && !window.__celAt; i++) await wait(100);
 """
 
 
@@ -15658,7 +15660,7 @@ def check_b317_hundobox(br):
               window.celebrate = function(a, b){ window.__celAt = performance.now(); return rc(a, b); };
               showHome(); await wait(200);
               __run100('Identity Crimes');
-              for(let i = 0; i < 300 && !window.__fxAt && !window.__celAt; i++) await wait(50);
+              for(let i = 0; i < 900 && !window.__fxAt && !window.__celAt; i++) await wait(50);
               /* past every effect's old moment for its colours (the UFO's was 2.8s) */
               /* (the UFO's box lights with its beam at 3.92s: settled well after
                  that, with room for a loaded machine starting it late) */
@@ -15756,7 +15758,7 @@ def check_b317_hundobox(br):
           store.hundoFx = 'ufo'; theme.reduceMotion = false; theme.muteBanners = true; saveStore();
           window.__fxAt = 0; const real = playHundoFx; window.playHundoFx = function(a, b){ window.__fxAt = performance.now(); return real(a, b); };
           showHome(); await wait(200); __run100('Identity Crimes');
-          for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(50);
+          for(let i = 0; i < 900 && !window.__fxAt; i++) await wait(50);
           if(!window.__fxAt) return null;
           await wait(400);
           const long = HUNDO_FX_TOTAL.ufo > 9000, A = long ? 1.1 : 0, B = long ? 2 : 0;
@@ -15898,7 +15900,7 @@ def check_b317_hundobox(br):
           if(multi){ const n = {}; QUESTIONS.forEach(q => { const t = (q.topic || '').trim(); n[t] = (n[t] || 0) + 1; });
             const two = Object.keys(n).sort((a, b) => n[a] - n[b]).slice(0, 2); __run100m(two); }
           else __run100('Identity Crimes');
-          for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(50);
+          for(let i = 0; i < 900 && !window.__fxAt; i++) await wait(50);
           if(!window.__fxAt) return null;
           await wait(500);
           const g = document.querySelector('.rs-screen .rs-grade');
@@ -15975,7 +15977,7 @@ def check_b317_hundobox(br):
           if(multi){ const n = {}; QUESTIONS.forEach(q => { const t = (q.topic || '').trim(); n[t] = (n[t] || 0) + 1; });
             __run100m(Object.keys(n).sort((a, b) => n[a] - n[b]).slice(0, 2)); }
           else __run100('Identity Crimes');
-          for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(50);
+          for(let i = 0; i < 900 && !window.__fxAt; i++) await wait(50);
           if(!window.__fxAt) return null;
           await wait(500);
           /* BUILD 320: the XP card comes after the grade, on the effect's
@@ -16093,7 +16095,7 @@ def check_b317_hundobox(br):
       store.lifetime.perfectTests = 600; store.hundoFx = 'fireworks'; theme.reduceMotion = false; theme.muteBanners = true; saveStore();
       window.__fxAt = 0; const real = playHundoFx; window.playHundoFx = function(a, b){ window.__fxAt = performance.now(); return real(a, b); };
       showHome(); await wait(200); __run100('Identity Crimes');
-      for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(50);
+      for(let i = 0; i < 900 && !window.__fxAt; i++) await wait(50);
       await wait(1800);
       const cv = document.querySelector('.hfx-layer.hfx-fireworks canvas.hfx-fw-sky'), g = document.querySelector('.rs-screen .rs-grade');
       if(!cv || !g) return null;
@@ -21174,6 +21176,12 @@ def check_b320a_results(br):
     check("A: the 100's effect starts after the bars are home and the grade has landed",
           t_fx is not None and tA["t_bars"] is not None and tA["t_graded"] is not None and t_fx >= max(tA["t_bars"], tA["t_graded"]),
           (tA["t_bars"], tA["t_graded"], t_fx))
+    # ...and after the XP box has added up and its bar has run (the
+    # character on it is on screen to react to the effect - b320b)
+    at_fx = [x for x in s if x["t"] >= (t_fx or 10 ** 9)][:1]
+    xp_last = max([b["t"] for a, b in zip(s, s[1:]) if b["xNum"] != a["xNum"] and b["t"] < (t_fx or 10 ** 9)] or [0])
+    check("A: the effect waits for the XP box too - landed, its bar charged, its number at rest",
+          bool(at_fx) and at_fx[0]["xIn"] and at_fx[0]["charged"] and t_fx - xp_last >= 300, (xp_last, t_fx, at_fx[:1] and {k: at_fx[0][k] for k in ("xIn", "charged", "xNum")}))
     rows = []
     last = 0
     for x in s:

@@ -88726,8 +88726,8 @@ const RS_BADGE_PROGRESS_BOX = false;
 /* From the XP box settling to the first cutscene or pop-up: "you can't
    even react to the grade". */
 const RS_UNLOCK_GAP_MS = 1900;
-/* From the grade landing to its hundo effect: the number's pop (.62s) first. */
-const RS_FX_AFTER_LAND_MS = 650;
+/* From the XP box settling to a 100's hundo effect: a beat. */
+const RS_FX_AFTER_XP_MS = 650;
 /* The grade's colour as it climbs: the app's red short of a pass, warming
    through amber, the pass green from PASS_MARK. Gold is the landing's -
    a 100 is only ever shown once it has landed. */
@@ -89323,9 +89323,7 @@ function showRunRewards(run, hooks, opts){
       setTimeout(() => panel.classList.remove("rs-shake"), 420);
     }
     if(!countIt) setTimeout(() => fillBars(".rs-byunit .unit-breakdown-fill[data-to]"), instant ? 0 : 350);
-    /* after the number's pop has settled: an effect that reads the
-       number's box (its lit text, its rings) must not measure it mid-pop */
-    setTimeout(celebrateGrade, instant ? 0 : RS_FX_AFTER_LAND_MS);
+    /* (a 100's effect is not played here: it waits for the XP box, below) */
   };
 
   if(quiet){
@@ -89399,12 +89397,12 @@ function showRunRewards(run, hooks, opts){
   } else {
     seq.add(380, instant => { rsLand(grade, instant); landGrade(instant); });
   }
-  /* ---- HOW IT ADDS UP: THE XP BOX, after the grade has been taken in -
-     and after a 100's effect, which has the screen until its tail
-     (HUNDO_FX_TAIL_AT, where its last pieces start fading). ---- */
+  /* ---- HOW IT ADDS UP: THE XP BOX, after the grade has been taken in ---- */
   const fxId = (run.isPerfect && !run.retake && run.total > 0) ? hundoFxInUse() : null;
-  const fxTail = fxId ? RS_FX_AFTER_LAND_MS + ((typeof HUNDO_FX_TAIL_AT === "object" && HUNDO_FX_TAIL_AT[fxId]) || 1500) : 0;
-  seq.add(Math.max(countIt ? 1250 : 700, fxTail), instant => rsLand(xp, instant));
+  /* how long a 100's effect has the screen before anything else may come:
+     its tail (HUNDO_FX_TAIL_AT, where its last pieces start fading) */
+  const fxTail = fxId ? ((typeof HUNDO_FX_TAIL_AT === "object" && HUNDO_FX_TAIL_AT[fxId]) || 1500) : 0;
+  seq.add(countIt ? 1250 : 700, instant => rsLand(xp, instant));
   lineEls.forEach(l => seq.add(380, instant => rsLand(l, instant)));
   seq.add(750, instant => { rsLand(totalRow, instant); countUp(instant); });
   /* THE BAR, SLOWER, AND ITS NUMBER AFTER IT (build 320): "the xp when it
@@ -89421,6 +89419,14 @@ function showRunRewards(run, hooks, opts){
     levelBlock.runFill();
   });
   seq.add(levelBlock.fillMs || 2600, () => { moving = null; xp.classList.remove("is-charging"); xp.classList.add("is-charged"); });
+  /* ---- A 100's HUNDO EFFECT, ONCE BOTH BARS HAVE RUN (build 320) ----
+     "the loading bar is going while the Hundo effect happens. Let the bar
+     run and then the effect." The grade's bars are home and its number
+     has landed; the XP box has added up and its bar has filled; THEN the
+     effect - with the results character on the XP box on screen to react
+     to it (hfxCharReact, b320b), and nothing landing under it until its
+     tail. A tap brings it on at once, as a tap brings any card. */
+  if(fxId) seq.add(RS_FX_AFTER_XP_MS, () => celebrateGrade());
   boxes.forEach(b => {
     seq.add(420, instant => {
       rsLand(b, instant);
@@ -89437,7 +89443,8 @@ function showRunRewards(run, hooks, opts){
        react to the grade") - and the Unlocked box lands after the last,
        its rows one at a time. */
     let first = true, afterScene = false;
-    const nextGap = () => { const g = first ? RS_UNLOCK_GAP_MS : afterScene ? 320 : 1200; first = false; afterScene = false; return g; };
+    /* the first waits out a 100's effect (its tail) as well as the pause */
+    const nextGap = () => { const g = first ? Math.max(RS_UNLOCK_GAP_MS, fxTail + 400) : afterScene ? 320 : 1200; first = false; afterScene = false; return g; };
     let rewardsDone = false, caseDone = false;
     const rewardParts = unlockItems.filter(isRankRewardItem);
     const bannerIdx = unlockItems.filter(it => it.kind !== "badge" && !isRankRewardItem(it));
@@ -89486,11 +89493,11 @@ function showRunRewards(run, hooks, opts){
     });
     /* The box, once nothing is left to play. A scene's bridge (its light,
        left up for a pop-up that is not coming) goes as the box lands. */
-    seq.add(first ? 1200 : afterScene ? 420 : 650, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(unlocked, instant); });
+    seq.add(first ? Math.max(1200, fxTail) : afterScene ? 420 : 650, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(unlocked, instant); });
     unlockRows.forEach((row, n) => seq.add(n ? 380 : 560, instant => { rsLand(row, instant); if(onRow[n]) onRow[n](); }));
   }
   /* THE BUTTONS DO NOT ARRIVE UNDER A SCENE'S DIM (build 317). */
-  if(actions) seq.add(unlocked ? 650 : 620, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(actions, instant); });
+  if(actions) seq.add(unlocked ? 650 : Math.max(620, fxTail), instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(actions, instant); });
   seq.add(0, () => { resultsSeq = null; if(sceneBridgeOpen()) dropSceneBridge(false); finish(); });
 
   /* A TAP SPEEDS UP THE BOX ON SCREEN, NOT THE WHOLE SHOW (build 305):

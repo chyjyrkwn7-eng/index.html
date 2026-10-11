@@ -19297,11 +19297,14 @@ and the plan sit just above `showRunRewards()`.
   red throughout and ~1s. A tap during the count finishes it and lands
   the grade (one step, as 305's tap rule says) - the XP card waits for
   the next tap.
-- **A 100's effect plays after the grade lands**, `RS_FX_AFTER_LAND_MS`
-  (650) - after the number's pop, because an effect measures the number's
-  box. The tint (`hfxTintGrade`, the UFO's unlit) goes on at the landing
-  for a counted card, not at build. The XP card waits for the effect's
-  tail (`HUNDO_FX_TAIL_AT`), as the unlocks used to.
+- **A 100's effect plays once BOTH bars have run**: the grade's bars and
+  its landing, then the XP box adding up and its bar filling, then
+  `RS_FX_AFTER_XP_MS` (650) and the effect - so the results character on
+  the XP card is on screen to react to it (`hfxCharReact`, b320b) and
+  nothing lands under it until its tail (`HUNDO_FX_TAIL_AT`), which the
+  first unlock (or the box, or the buttons) waits for as well as
+  `RS_UNLOCK_GAP_MS`. The tint (`hfxTintGrade`, the UFO's unlit) goes on
+  as the grade lands, not at build.
 - **The character reacts as the XP card lands**, not the grade: it lives
   on the XP card, which is no longer on screen when the grade lands.
 - **THE XP BAR: slower, and the number after it.** `runFill` fills over
