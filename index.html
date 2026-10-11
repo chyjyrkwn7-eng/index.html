@@ -73342,6 +73342,30 @@ let chatDockKbSync = null;
   apply();
 })();
 
+/* ---- CUTSCENE FOCUS (build 320) ----
+   "you shouldn't be able to chat at all during any type of cutscene, and
+   you shouldn't receive any chat notifications or invite or friend
+   notifications during a cutscene either. Pure focus on the cutscenes."
+   One switch for every cutscene, counted so nested scenes (a badge scene
+   inside a results run, the rank-up journey's own cutscene) cannot turn
+   it off early. While it is on, body.cutscene-focus hides the chat button
+   and the tab bar, and anything that would interrupt is held; when the
+   last scene ends, the held items are released (cutsceneFocusRelease
+   hooks) and the controls slide back so it is clear the scene is over. */
+let cutsceneFocusDepth = 0;
+const cutsceneFocusReleaseHooks = [];
+function setCutsceneFocus(on){
+  const was = cutsceneFocusDepth > 0;
+  cutsceneFocusDepth = Math.max(0, cutsceneFocusDepth + (on ? 1 : -1));
+  const now = cutsceneFocusDepth > 0;
+  try{ document.body.classList.toggle("cutscene-focus", now); }catch(e){}
+  if(was && !now){
+    cutsceneFocusReleaseHooks.slice().forEach(f => { try{ f(); }catch(e){} });
+  }
+}
+function cutsceneFocusActive(){ return cutsceneFocusDepth > 0; }
+function onCutsceneFocusRelease(fn){ if(typeof fn === "function") cutsceneFocusReleaseHooks.push(fn); }
+
 function syncChatDock(){
   if(!chatDock) return;
   const show = !!(typeof store !== "undefined" && store && store.onboardingComplete);
