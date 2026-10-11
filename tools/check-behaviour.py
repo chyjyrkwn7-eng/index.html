@@ -4170,17 +4170,21 @@ def check_audit_a(br):
       const tiles = [...document.querySelectorAll('#stage .badge-tile')]; const t = tiles[tiles.length - 1];
       window.scrollBy({ top: t.getBoundingClientRect().bottom - (bar.top - 73), behavior: 'instant' }); await wait(300);
       const tr = t.getBoundingClientRect();
-      t.click(); await wait(700);
+      t.click(); await wait(1300);
       /* Build 281 answers a badge tap with the unlock card rather than
          the info bubble this was written for; the card still has to land
-         clear of the bar, whichever badge was tapped. */
-      const p = document.querySelector('.unlock-card-badge') || document.getElementById('contextual-info-popup');
+         clear of the bar, whichever badge was tapped. MOVED IN 320 (b320g):
+         a tap opens the badge in your hand (openBadgeInspect), whose words
+         float under it - clear of the bar, or the bar is out of the way. */
+      const p = document.querySelector('.binspect-words') || document.querySelector('.unlock-card-badge') || document.getElementById('contextual-info-popup');
       const pr = p ? p.getBoundingClientRect() : null;
+      const barEl = document.querySelector('.bottomtabs');
       return { tile: [Math.round(tr.top), Math.round(tr.bottom)], barTop: Math.round(bar.top),
-        popup: pr ? [Math.round(pr.top), Math.round(pr.bottom)] : null };
+        barHidden: !!(barEl && +getComputedStyle(barEl).opacity < .05 && getComputedStyle(barEl).pointerEvents === 'none'),
+        popup: pr ? [Math.round(pr.top), Math.round(pr.bottom)] : null, vh: innerHeight };
     }""")
     check("what a badge near the bottom opens never covers the tab bar",
-          r["popup"] is not None and r["popup"][1] <= r["barTop"], r)
+          r["popup"] is not None and r["popup"][1] <= r["vh"] and (r["popup"][1] <= r["barTop"] or r["barHidden"]), r)
     ctx.close()
 
     # ---- round two ----
@@ -6177,19 +6181,21 @@ def check_b281_badge_card(br):
       showProfile('badges'); await wait(1200);
       const tile = [...document.querySelectorAll('.badge-tile')].find(t => t.querySelector('.badge-tile-name').textContent === u);
       tile.click(); await wait(1400);
-      const c = document.querySelector('.unlock-card');
+      /* MOVED IN 320 (b320g): the badge in your hand, its empty slot and
+         progress floating, in place of the unlock card */
+      const c = document.querySelector('.binspect');
       out.card = !!c; out.kind = c ? c.className : '';
-      out.art = !!(c && c.querySelector('.unlock-card-art svg'));
+      out.art = !!(c && c.querySelector('.binspect-slot svg'));
       out.fill = c ? getComputedStyle(c.querySelector('.unlock-card-fill')).backgroundImage : '';
       out.count = c ? (c.querySelector('.unlock-card-count') || {}).textContent || '' : '';
       out.need = String(badgeThresholdFor(u));
       out.bubble = !!document.getElementById('contextual-info-popup');
       }catch(e){ out.threw = String(e); }
       return out; }""")
-    check("a badge opens the unlock card, not the info bubble",
-          r.get("card") is True and "unlock-card-badge" in r.get("kind", "") and r.get("art") is True and r.get("bubble") is False, r)
-    check("the card's bar is the green one and counts hundos of what the badge needs",
-          "47, 191, 113" in r.get("fill", "") and r.get("count", "").endswith(" of " + r.get("need", "?")), r)
+    check("a badge opens the floating view (build 320), not the info bubble",
+          r.get("card") is True and "is-empty" in r.get("kind", "") and r.get("art") is True and r.get("bubble") is False, r)
+    check("the view's bar is the green one and counts hundos of what the badge needs",
+          "47, 191, 113" in r.get("fill", "") and re.search(r" of " + r.get("need", "?") + r" hundos?$", r.get("count", "")) is not None, r)
     ctx.close()
 
 
@@ -18622,7 +18628,9 @@ def check_b317_badgecase(br):
           out.tab = mat(document.querySelector('.badges-tab .badge-case'));
           /* tap-to-view still works through the case */
           const tile = document.querySelector('.badges-tab .badge-tile'); if(tile){ tile.click(); await wait(500); }
-          out.tapCard = !!document.querySelector('.unlock-card-badge .unlock-card-art svg');
+          /* MOVED IN 320 (b320g): the badge in your hand, not its card */
+          out.tapCard = !!document.querySelector('.binspect .binspect-float img, .binspect .binspect-slot svg');
+          if(typeof badgeInspectNow !== 'undefined' && badgeInspectNow) badgeInspectNow.teardown();
           document.querySelectorAll('.invite-overlay, .unlock-detail, .unlockdetail-overlay').forEach(n => n.remove());
           showProfile('profile'); await wait(900);
           out.pf = mat(document.querySelector('.profile-hero .pf-case'));
@@ -18645,7 +18653,7 @@ def check_b317_badgecase(br):
         check(f"{dev}: ...in the same materials: one lining, one metal for the latches, one handle, one grained leather (cutscene and Badges tab)",
               cut.get("lining") == tab.get("lining") and same("latch") and same("handle") and same("leather") and all(x.get("grain") for x in (cut, tab)),
               {"lining": [x and (x.get("lining") or "")[:48] for x in (cut, tab, pf)], "leather": [x and (x.get("leather") or "")[:40] for x in (cut, tab, pf)]})
-        check(f"{dev}: a badge in the case still opens its card when tapped", r.get("tapCard") is True and not r.get("threw"), r.get("threw") or r.get("tapCard"))
+        check(f"{dev}: a badge in the case still opens when tapped (in your hand since build 320)", r.get("tapCard") is True and not r.get("threw"), r.get("threw") or r.get("tapCard"))
         ctx.close()
     # 4. clean edges, every badge: no light copy of the outline drawn off it,
     #    and nothing light just outside a token's top-left edge
@@ -19963,8 +19971,9 @@ def check_b319f_casespace(br):
           bool(end) and end["m22"] is not None and end["m22"] > 0.98 and end["lidBot"] <= end["trayTop"] + 2 and not end["shut"] and not end["face"] and end["anims"] == 0,
           end and {k: end[k] for k in ("m22", "shut", "face", "anims", "lidBot", "trayTop")})
     # 2. closing the card, and the screen built again over itself, do not replay it
+    # MOVED IN 320 (b320g): a tap opens the badge in your hand; closed at once
     again = pg.evaluate("""() => { const t = document.querySelector('.badges-tab .ncase-cell.is-earned'); t.click();
-      const sh = document.querySelector('.invite-overlay'); const c = sh && sh.querySelector('.person-sheet-close'); if(c) c.click();
+      const sh = document.querySelector('.binspect'); if(sh && badgeInspectNow) badgeInspectNow.teardown();
       const k = document.querySelector('.badges-tab .ncase');
       const a = { card: !!sh, shut: k.classList.contains('is-shut'), anims: k.querySelector('.ncase-lid').getAnimations().length };
       showRanksScreen('badges'); const k2 = document.querySelector('.badges-tab .ncase');
@@ -19991,8 +20000,11 @@ def check_b319f_casespace(br):
       return { i, label: cells[i].getAttribute('aria-label'), x: b.left + b.width / 2, y: b.top + b.height / 2 }; }""")
     pg.mouse.click(tgt["x"], tgt["y"])
     clk.step(1 / 30)
-    after = pg.evaluate("""(i) => { const sh = document.querySelector('.invite-overlay');
-      return { name: sh ? (sh.querySelector('.unlock-card-name') || {}).textContent || '' : null }; }""", tgt["i"])
+    # MOVED IN 320 (b320g): it opens in your hand; read, then put back so the
+    # case's own animations can be counted
+    after = pg.evaluate("""(i) => { const sh = document.querySelector('.binspect');
+      const r = { name: sh ? (sh.querySelector('.binspect-name') || {}).textContent || '' : null };
+      if(sh && badgeInspectNow) badgeInspectNow.teardown(); return r; }""", tgt["i"])
     after.update({k: v for k, v in pg.evaluate(LID).items() if k in ("m22", "shut", "face", "anims")})
     unit = tgt["label"].split(" Badge,")[0]
     check("a found slot pressed while the case is opening opens that badge's card, and the lid is up at once",
@@ -20127,10 +20139,12 @@ def check_b319_badges(br):
             const t = [...document.querySelectorAll('.badges-tab .badge-tile')].find(x => x.classList.contains('is-earned') === earned);
             if(!t){ out[k] = null; continue; }
             t.click(); await wait(500);
-            const sh = document.querySelector('.invite-overlay');
-            out[k] = sh ? { name: (sh.querySelector('.unlock-card-name') || {}).textContent || '', count: (sh.querySelector('.unlock-card-count') || {}).textContent || '',
-                            token: !!sh.querySelector('.unlock-card-art .badge-token, .unlock-card-art image.badge-raster, .unlock-card-artwrap .badge-token, .unlock-card-artwrap image.badge-raster') } : null;
-            if(sh) sh.remove(); await wait(200); }
+            /* MOVED IN 320 (b320g): the badge in your hand; "Mastered" is its state line */
+            const sh = document.querySelector('.binspect');
+            out[k] = sh ? { name: (sh.querySelector('.binspect-name') || {}).textContent || '',
+                            count: (sh.querySelector('.binspect-state') || sh.querySelector('.binspect-count') || {}).textContent || '',
+                            token: !!sh.querySelector('.binspect-slot .badge-token, .binspect-slot image.badge-raster') } : null;
+            if(sh && badgeInspectNow) badgeInspectNow.teardown(); await wait(200); }
           return out; }""")
         pg.evaluate("() => showProfile('profile')"); pg.wait_for_timeout(1500)
         pf = pg.evaluate(CASE, ".profile-hero .pf-case .ncase") or pg.evaluate(CASE, ".profile-hero .pf-case")
@@ -21212,6 +21226,375 @@ def check_b320c_case(br):
         check(f"{dev}: with a seventeenth unit the case has seventeen slots, every one inside its tray, on the Badges screen and in the cutscene",
               slots["units"] == 17 and slots["tab"] == {"n": 17, "inside": 17} and slots["cut"] == {"n": 17, "inside": 17}, slots)
         ctx.close()
+class _StepperS(_Stepper):
+    """_Stepper, paused at the page's real time. Python's pause_at reads a
+    NUMBER as seconds; _Stepper hands it milliseconds, which puts the page
+    in the year 58000 - harmless until build 320, where a badge's dirt is
+    the time since it was cleaned."""
+    def __init__(self, pg):
+        self.pg, self.t = pg, 0.0
+        pg.clock.install()
+        pg.clock.pause_at((pg.evaluate("() => Date.now()") + 1500) / 1000.0)
+
+
+def check_b320g_inspect(br):
+    """Build 320 (b320g), the Badges screen. Madison: "In the badge tab, I'm
+    assuming the new ones would have a yellow dot and would go away once
+    clicked on?" and "when you go to badge case and click a badge, it won't
+    be a tab ... the badge will be pulled from the case and then float on
+    screen but the screen will then face the other direction ... the words
+    that the tab from before will be floating underneath it ... You can now
+    grab the badge to spin it ... if you swipe fast it spins fast, if you
+    grab it during the spin it will stop spinning ... you would need to
+    occasionally clean your badges by rubbing your finger over them multiple
+    times ... There could be like 5 phases. They get dirtier by the week so
+    by week 3-4 they'd be their dirtiest ... the dirtier they are, they would
+    go through the other less dirty phases ... In the badge description it
+    would mention the need to clean old badges. If you click a badge, it
+    would give a hint like this badge is dirty try cleaning it?"
+    Written against a73c681, where every check here fails (no inspect view,
+    no dirt). On both reference devices:
+      - a new badge's yellow dot on its slot, on the Profile case and on the
+        Profile tab; a real tap on that slot opens THAT badge (the seat
+        shade of the slot beside it used to take the tap) and clears all
+        three, saved;
+      - the tap opens the floating view, not the unlock card: the case turns
+        away (rotateX) and sinks, the badge comes up out of its slot to the
+        middle, the words float under it (title "... Badge", Mastered, the
+        requirement, the count, the cleaning line), and Close puts the badge
+        back in its slot and the case flat;
+      - a badge not found floats as its empty slot with its progress;
+      - the spin follows the drag (a fast drag spins over 2.5x a slow one),
+        and a press mid-spin stops it dead;
+      - the back is its own face (brushed metal, the name), not a mirror:
+        turned round it reads the right way (net m11 > 0) and differs from
+        the front mirrored;
+      - the stage from the clean time (0, 1, 2, 3, 4+ weeks); the render
+        loses its shine stage by stage and keeps its colour;
+      - an account updating in starts every found badge clean, and a copy
+        without the field does not wipe this device's; the merge keeps each
+        badge's newest time;
+      - rubbing cleans one stage per BINSPECT.rubPerStage strokes, with a
+        sparkle, saved; the hint says to rub it, then that it is clean; it
+        does not turn the badge;
+      - a fling and a wide wiggle never clean;
+      - Reduce motion: no swing, a fade."""
+    print("\n320g. the Badges screen: the new-badge dot, a badge in your hand, spin, dirt and cleaning")
+    SEED = """(o) => { const units = unitsInTeachingOrder(); store.unitPerfects = {};
+      units.forEach((u, i) => store.unitPerfects[u] = (i % 3 !== 2) ? badgeThresholdFor(u) : Math.floor(badgeThresholdFor(u) / 3));
+      store.seenUnlocks = store.seenUnlocks || { chars: [], banners: [], themes: [], badges: [] }; store.seenUnlocks.badges = units.slice();
+      if(o.fresh){ store.seenUnlocks.badges = units.filter(u => u !== units[0]);
+        /* nothing else new, so the Profile tab's dot is the badge's alone */
+        const held = unlockedIdsNow(); ['chars', 'banners', 'themes', 'fx'].forEach(k => { store.seenUnlocks[k] = (held[k] || []).slice(); }); }
+      const W = (typeof BADGE_DIRT_WEEK_MS === 'number') ? BADGE_DIRT_WEEK_MS : 604800000, now = Date.now();
+      store.badgeCleanedAt = {}; units.forEach((u, i) => { store.badgeCleanedAt[u] = now - (o.dirt != null ? o.dirt : 0) * W - 3600e3; });
+      store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
+      store.pendingBadgeUnlocks = []; theme.muteBanners = true; theme.reduceMotion = !!o.rm; applyTheme();
+      document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert,.update-banner').forEach(n => n.remove()); }"""
+    TILE = """(i) => { const c = [...document.querySelectorAll('.badges-tab .ncase-cell')][i]; c.scrollIntoView({ block: 'center', behavior: 'instant' });
+      const b = c.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, label: c.getAttribute('aria-label') }; }"""
+    STATE = "() => (typeof badgeInspectNow !== 'undefined' && badgeInspectNow) ? badgeInspectNow.state() : null"
+    VIEW = """() => { const ov = document.querySelector('.binspect'); const k = document.querySelector('.badges-tab .ncase');
+      const B = e => { if(!e) return null; const r = e.getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom, w: r.width, h: r.height }; };
+      const m = k ? getComputedStyle(k).transform : 'none'; const v = m.startsWith('matrix3d(') ? m.slice(9, -1).split(',').map(Number) : null;
+      const q = s => ov && ov.querySelector(s);
+      return { ov: !!ov, cls: ov ? ov.className : '', card: !!document.querySelector('.invite-overlay, .unlock-card'),
+               float: B(q('.binspect-float')), words: B(q('.binspect-words')), vw: innerWidth, vh: innerHeight,
+               name: (q('.binspect-name') || {}).textContent || '', state: (q('.binspect-state') || {}).textContent || '',
+               desc: (q('.binspect-desc') || {}).textContent || '', count: (q('.binspect-count') || {}).textContent || '',
+               dirt: q('.binspect-dirt') && !q('.binspect-dirt').hidden ? q('.binspect-dirt').textContent : '',
+               care: (q('.binspect-care') || {}).textContent || '',
+               caseM22: v ? +v[5].toFixed(3) : (m === 'none' ? 1 : null), caseB: B(k),
+               slot: !!q('.binspect-slot svg'), token: !!q('.binspect-slot image.badge-raster, .binspect-slot .badge-token'),
+               focus: typeof cutsceneFocusActive === 'function' ? cutsceneFocusActive() : null,
+               lifted: document.querySelectorAll('.badges-tab .ncase-cell.is-lifted').length }; }"""
+
+    def open_at(pg, clk, i, secs=1.3):
+        t = pg.evaluate(TILE, i)
+        clk.step(1 / 30)
+        pg.mouse.click(t["x"], t["y"])
+        n = int(secs * 30)
+        for _ in range(n):
+            clk.step(1 / 30)
+        return t
+
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        # ---- 1. the dot, and a real tap on a slot opening that slot's badge ----
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate(SEED, {"fresh": True})
+        pg.evaluate("() => showProfile('profile')"); pg.wait_for_timeout(900)
+        before = pg.evaluate("""() => { try{ syncProfileTabDot(); }catch(e){}
+          return { only: (() => { try{ return newCountOf(['chars', 'banners', 'themes', 'fx']) === 0 && !rankIsNew() && badgeNewCount() === 1; }catch(e){ return null; } })(), pf: !!document.querySelector('.profile-hero .pf-case .pf-case-new .new-dot, .pf-case .new-dot'),
+                   tab: !!(document.getElementById('bottomtab-profile') || {classList:{contains(){return false;}}}).classList.contains('has-new') }; }""")
+        pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1800)
+        clk = _StepperS(pg)
+        dots = pg.evaluate("""() => [...document.querySelectorAll('.badges-tab .ncase-cell')].map((c, i) => c.querySelector('.new-dot') ? i : -1).filter(i => i >= 0)""")
+        # every slot's middle (and a point a third of the way out) is that slot: a
+        # seated badge's 260-unit seat-shade rect used to lie over its neighbours
+        wrong = pg.evaluate("""() => { const cells = [...document.querySelectorAll('.badges-tab .ncase-cell')]; const bad = [];
+          cells.forEach((c, i) => { c.scrollIntoView({ block: 'center', behavior: 'instant' }); const b = c.getBoundingClientRect();
+            [[.5, .5], [.2, .5], [.8, .5], [.5, .2], [.5, .8]].forEach(([fx, fy]) => { const e = document.elementFromPoint(b.left + b.width * fx, b.top + b.height * fy);
+              const hit = e && e.closest('.ncase-cell'); if(hit !== c) bad.push([i, fx, fy, hit ? cells.indexOf(hit) : null]); }); });
+          window.scrollTo({ top: 0, behavior: 'instant' }); return bad; }""")
+        check(f"{dev}: a tap anywhere on a slot lands on that slot, not the one beside it", wrong == [], wrong[:6])
+        t = open_at(pg, clk, 0)
+        opened = pg.evaluate("() => (typeof badgeInspectNow !== 'undefined' && badgeInspectNow) ? badgeInspectNow.unit : ((document.querySelector('.unlock-card-name') || {}).textContent || null)")
+        mid = pg.evaluate(VIEW)
+        after = pg.evaluate("""() => ({ tile: document.querySelectorAll('.badges-tab .ncase-cell .new-dot').length,
+            saved: store.seenUnlocks.badges.indexOf(unitsInTeachingOrder()[0]) >= 0,
+            saveRaw: (() => { try{ return JSON.parse(localStorage.getItem('class26e.drill.v1')).seenUnlocks.badges.indexOf(unitsInTeachingOrder()[0]) >= 0; }catch(e){ return false; } })(),
+            tab: document.getElementById('bottomtab-profile') ? document.getElementById('bottomtab-profile').classList.contains('has-new') : null })""")
+        u0 = pg.evaluate("() => unitsInTeachingOrder()[0]")
+        check(f"{dev}: a new badge has the yellow dot on its slot only, on the Profile case and on the Profile tab",
+              dots == [0] and before["pf"] and before["tab"] and before["only"], [dots, before])
+        check(f"{dev}: a tap on the new badge's slot opens that badge, and clears the dot on the slot, the case and the tab (saved)",
+              opened == u0 and after["tile"] == 0 and after["saved"] and after["saveRaw"] and after["tab"] is False, [t["label"], opened, after])
+        # ---- 2. the floating view, not the card ----
+        found_ok = (mid["ov"] and not mid["card"] and "is-found" in mid["cls"] and mid["float"] and mid["words"]
+                    and mid["words"]["t"] >= mid["float"]["b"] - 2 and abs((mid["float"]["l"] + mid["float"]["r"]) / 2 - mid["vw"] / 2) <= 3
+                    and abs((mid["words"]["l"] + mid["words"]["r"]) / 2 - mid["vw"] / 2) <= 3 and mid["float"]["w"] >= min(mid["vw"], mid["vh"]) * .36)
+        check(f"{dev}: a found badge opens the floating view, not the unlock card: the badge big and centred, the words under it",
+              found_ok, {k: mid[k] for k in ("ov", "card", "cls", "float", "words")})
+        check(f"{dev}: the words: '... Badge', Mastered, the requirement, the count, and that badges lose their shine",
+              mid["name"] == u0 + " Badge" and mid["state"].lower() == "mastered" and "hundo" in mid["desc"]
+              and re.match(r"^\d+ of \d+ hundos?$", mid["count"] or "") and "shine" in mid["care"].lower() and "clean" in mid["care"].lower(),
+              {k: mid[k] for k in ("name", "state", "desc", "count", "care")})
+        check(f"{dev}: the view turned: the case tipped away (rotateX, m22 < .7) and sank, the slot left empty, the tab bar's focus held",
+              mid["caseM22"] is not None and mid["caseM22"] < .7 and mid["caseB"]["t"] > mid["vh"] * .55 and mid["lifted"] == 1 and mid["focus"] is True,
+              {k: mid[k] for k in ("caseM22", "caseB", "lifted", "focus")})
+        # mid-swing: the case is part way round and the badge on its way
+        pg.evaluate("() => (typeof badgeInspectNow !== 'undefined' && badgeInspectNow) && badgeInspectNow.close()")
+        part = None
+        for k in range(30):
+            clk.step(1 / 30)
+            if k == 8:
+                part = pg.evaluate(VIEW)
+        shut = pg.evaluate(VIEW)
+        back_in = pg.evaluate("""() => { const c = [...document.querySelectorAll('.badges-tab .ncase-cell')][0];
+          return { raster: !!c.querySelector('image.badge-raster'), lifted: c.classList.contains('is-lifted') }; }""")
+        check(f"{dev}: Close turns it all back: the case part way round on the way, then flat, the badge in its slot, the focus let go",
+              part and part["caseM22"] is not None and .7 < part["caseM22"] < .995 and not shut["ov"] and shut["caseM22"] == 1
+              and back_in["raster"] and not back_in["lifted"] and shut["focus"] is False,
+              [part and part["caseM22"], shut["caseM22"], shut["ov"], back_in, shut["focus"]])
+        # a badge not found: the empty slot and its progress
+        empty_i = pg.evaluate("() => [...document.querySelectorAll('.badges-tab .ncase-cell')].findIndex(c => !c.classList.contains('is-earned'))")
+        open_at(pg, clk, empty_i)
+        em = pg.evaluate(VIEW)
+        check(f"{dev}: a badge not found floats as its empty slot (no token) with its progress, no Mastered, no dirt",
+              em["ov"] and not em["card"] and "is-empty" in em["cls"] and em["slot"] and not em["token"] and not em["state"]
+              and re.match(r"^\d+ of \d+ hundos?$", em["count"] or "") and not em["dirt"], {k: em[k] for k in ("cls", "slot", "token", "state", "count", "dirt")})
+        pg.evaluate("() => (typeof badgeInspectNow !== 'undefined' && badgeInspectNow) && badgeInspectNow.teardown()")
+        ctx.close()
+
+    # ---- 3. spin: the drag's speed, a grab stops it; the back face ----
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(SEED, {})
+    pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1800)
+    clk = _StepperS(pg)
+    open_at(pg, clk, 0)
+    has = pg.evaluate(STATE) is not None
+    spin = {}
+    if has:
+        x, y, wd = pg.evaluate("() => { const r = document.querySelector('.binspect-float').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.width]; }")
+
+        def drag(per, n=5):
+            pg.mouse.move(x - wd * .3, y)
+            pg.mouse.down()
+            for k in range(n):
+                pg.mouse.move(x - wd * .3 + (k + 1) * wd * per, y)
+                clk.step(1 / 30)
+            pg.mouse.up()
+            return pg.evaluate(STATE)
+
+        def rest():
+            for _ in range(240):
+                clk.step(1 / 30)
+                s = pg.evaluate(STATE)
+                if s["mode"] == "idle":
+                    return s
+            return pg.evaluate(STATE)
+        spin["slow"] = drag(.025)["omega"]
+        spin["restSlow"] = rest()["theta"]
+        spin["fast"] = drag(.11)["omega"]
+        for _ in range(6):
+            clk.step(1 / 30)
+        spin["before"] = pg.evaluate(STATE)
+        pg.mouse.move(x, y)
+        pg.mouse.down()
+        clk.step(1 / 30)
+        g1 = pg.evaluate(STATE)
+        for _ in range(9):
+            clk.step(1 / 30)
+        g2 = pg.evaluate(STATE)
+        pg.mouse.up()
+        spin["grab"] = [g1["omega"], round(g1["theta"], 2), round(g2["theta"], 2)]
+        spin["restAfter"] = rest()["theta"]
+        spin["cleaned"] = pg.evaluate(STATE)["rubStrokes"]
+    check("the spin follows the drag: a fast drag spins it over 2.5x a slow one, the same way",
+          has and spin["slow"] > 0 and spin["fast"] > 2.5 * spin["slow"], spin)
+    check("a press mid-spin stops it dead (no speed, no turn while held), and let go it comes to rest facing you or showing its back",
+          has and abs(spin["before"]["omega"]) > 200 and spin["grab"][0] == 0 and abs(spin["grab"][1] - spin["grab"][2]) < .5
+          and abs(spin["restAfter"] / 180 - round(spin["restAfter"] / 180)) < .01 and abs(spin["restSlow"] / 180 - round(spin["restSlow"] / 180)) < .01, spin)
+    back = pg.evaluate("""async () => { const sp = document.querySelector('.binspect-spin'); if(!sp) return null;
+      sp.style.transform = 'rotateY(180deg)';
+      const bf = sp.querySelector('.binspect-face.is-back'), ff = sp.querySelector('.binspect-face.is-front');
+      const net = new DOMMatrix(getComputedStyle(sp).transform).multiply(new DOMMatrix(getComputedStyle(bf).transform));
+      const bi = bf.querySelector('img'), fi = ff.querySelector('img.is-current') || ff.querySelector('img');
+      const load = src => new Promise(r => { const im = new Image(); im.onload = () => r(im); im.onerror = () => r(null); im.src = src; });
+      const a = await load(bi.src), b = await load(fi.src); if(!a || !b) return { m11: net.m11, same: bi.src === fi.src };
+      const N = 96, px = (im, flip) => { const c = document.createElement('canvas'); c.width = c.height = N; const g = c.getContext('2d');
+        if(flip){ g.translate(N, 0); g.scale(-1, 1); } g.drawImage(im, 0, 0, N, N); return g.getImageData(0, 0, N, N).data; };
+      const A = px(a, false), Bm = px(b, true); let d = 0, n = 0;
+      for(let i = 0; i < A.length; i += 4){ if(A[i + 3] > 200 && Bm[i + 3] > 200){ d += Math.abs(A[i] - Bm[i]) + Math.abs(A[i + 1] - Bm[i + 1]) + Math.abs(A[i + 2] - Bm[i + 2]); n++; } }
+      return { m11: +net.m11.toFixed(3), same: bi.src === fi.src, diff: n ? +(d / n / 3).toFixed(1) : 0, face: bi.dataset.face }; }""")
+    check("turned round, the badge shows its own back - not a mirror: it reads the right way (net m11 > 0) and differs from the front mirrored",
+          bool(back) and back["m11"] > .9 and not back["same"] and back.get("diff", 0) > 20 and back.get("face") == "back", back)
+    pg.evaluate("() => (typeof badgeInspectNow !== 'undefined' && badgeInspectNow) && badgeInspectNow.teardown()")
+    ctx.close()
+
+    # ---- 4. stages, start clean, merge, the look ----
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(SEED, {})
+    data = pg.evaluate("""() => { const out = {}; try{
+      const W = BADGE_DIRT_WEEK_MS, now = Date.now();
+      out.stages = [0, 1, 2, 3, 4, 7].map(k => badgeDirtAt(now - k * W - 3600e3, now));
+      const units = unitsInTeachingOrder(), u = units[0];
+      store.badgeCleanedAt[u] = now - 2 * W - 60e3; out.live = badgeDirtStage(u);
+      /* an account updating in: a copy with no times at all */
+      const doc = JSON.parse(JSON.stringify(store)); delete doc.badgeCleanedAt;
+      store.badgeCleanedAt = null; applyLoadedData(doc);
+      const found = units.filter(unitBadgeEarned);
+      out.seeded = found.every(x => typeof store.badgeCleanedAt[x] === 'number' && Math.abs(store.badgeCleanedAt[x] - Date.now()) < 5000);
+      out.seededStage = found.map(x => badgeDirtStage(x));
+      out.notFound = units.filter(x => !unitBadgeEarned(x)).some(x => x in store.badgeCleanedAt);
+      /* a copy from an older build does not wipe this device's */
+      store.badgeCleanedAt[u] = now - 3 * W; const doc2 = JSON.parse(JSON.stringify(store)); delete doc2.badgeCleanedAt;
+      applyLoadedData(doc2); out.kept = store.badgeCleanedAt[u] === now - 3 * W;
+      /* the merge: newest per badge */
+      const a = JSON.parse(JSON.stringify(store)), b = JSON.parse(JSON.stringify(store));
+      a.badgeCleanedAt = { [units[0]]: 1000, [units[1]]: 5000 }; b.badgeCleanedAt = { [units[0]]: 3000, [units[1]]: 2000, [units[3]]: 700 };
+      mergeSameAccount(a, b); out.merged = [a.badgeCleanedAt[units[0]], a.badgeCleanedAt[units[1]], a.badgeCleanedAt[units[3]]];
+      const c = JSON.parse(JSON.stringify(store)), d2 = JSON.parse(JSON.stringify(store));
+      c.badgeCleanedAt = { [units[0]]: 4000 }; delete d2.badgeCleanedAt; mergeSameAccount(c, d2); out.mergedKeep = c.badgeCleanedAt[units[0]];
+      /* the look: shine down stage by stage, the colour kept */
+      const L = [], H = [];
+      for(let s = 0; s <= 4; s++){
+        const px = renderBadgeStrike(u, false, 160, 1, s).getContext('2d').getImageData(0, 0, 160, 160).data;
+        const lum = [], hs = [];
+        for(let i = 0; i < px.length; i += 4){ if(px[i + 3] < 250) continue; const r = px[i], g = px[i + 1], bl = px[i + 2];
+          lum.push(.299 * r + .587 * g + .114 * bl);
+          const mx = Math.max(r, g, bl), mn = Math.min(r, g, bl);
+          if(mx - mn > 45){ let hh = mx === r ? (g - bl) / (mx - mn) : mx === g ? 2 + (bl - r) / (mx - mn) : 4 + (r - g) / (mx - mn); hs.push(((hh * 60) + 360) % 360); } }
+        lum.sort((p, q) => p - q); L.push(Math.round(lum[Math.floor(lum.length * .97)]));
+        hs.sort((p, q) => p - q); H.push(Math.round(hs[Math.floor(hs.length / 2)] || 0));
+      }
+      out.p97 = L; out.hue = H;
+      }catch(e){ out.threw = String(e); } return out; }""")
+    ctx.close()
+    check("the stage is the whole weeks since the badge was cleaned: 0, 1, 2, 3, then 4 from four weeks on",
+          data.get("stages") == [0, 1, 2, 3, 4, 4] and data.get("live") == 2, data.get("stages", data))
+    check("an account updating in starts every found badge clean (now), and a copy without the field keeps this device's",
+          data.get("seeded") is True and set(data.get("seededStage") or [1]) == {0} and data.get("notFound") is False and data.get("kept") is True,
+          {k: data.get(k) for k in ("seeded", "seededStage", "notFound", "kept", "threw")})
+    check("the merge keeps each badge's newest clean time, and a copy without the field changes nothing",
+          data.get("merged") == [3000, 5000, 700] and data.get("mergedKeep") == 4000, [data.get("merged"), data.get("mergedKeep")])
+    p97, hue = data.get("p97") or [0], data.get("hue") or [0]
+    check("the render loses its shine stage by stage (brightest highlights fall at every step) and keeps its colour (hue within 12 degrees)",
+          len(p97) == 5 and all(p97[i] > p97[i + 1] for i in range(4)) and p97[0] - p97[4] >= 25
+          and max(min(abs(x - hue[0]), 360 - abs(x - hue[0])) for x in hue) <= 12, [p97, hue])
+
+    # ---- 5. rubbing cleans; a spin never does ----
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(SEED, {"dirt": 6})
+    pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1800)
+    clk = _StepperS(pg)
+    open_at(pg, clk, 0)
+    rub = {"ok": pg.evaluate(STATE) is not None}
+    if rub["ok"]:
+        x, y, wd = pg.evaluate("() => { const r = document.querySelector('.binspect-float').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.width]; }")
+        per = pg.evaluate("() => BINSPECT.rubPerStage")
+        rub["start"] = pg.evaluate(STATE)["stage"]
+        rub["hint0"] = pg.evaluate(VIEW)["dirt"]
+        # a fling, and a wiggle wider than a rub
+        pg.mouse.move(x - wd * .3, y); pg.mouse.down()
+        for k in range(4):
+            pg.mouse.move(x - wd * .3 + (k + 1) * wd * .16, y); clk.step(1 / 30)
+        pg.mouse.up()
+        for _ in range(90):
+            clk.step(1 / 30)
+        pg.mouse.move(x - wd * .45, y); pg.mouse.down()
+        for k in range(8):
+            pg.mouse.move(x + (wd * .45 if k % 2 == 0 else -wd * .45), y); clk.step(1 / 15)
+        pg.mouse.up()
+        for _ in range(150):
+            clk.step(1 / 30)
+        sp = pg.evaluate(STATE)
+        rub["afterSpin"] = [sp["stage"], sp["rubStrokes"], round(sp["theta"])]
+        # a rub: short strokes back and forth over the badge's middle
+        pg.mouse.move(x, y); pg.mouse.down()
+        seen, thetas, sparks = [], [], 0
+        pos = 0
+        for k in range(per * 5 * 3 + 6):
+            pos = (k % 6) if (k % 6) < 3 else 6 - (k % 6)
+            pg.mouse.move(x - wd * .08 + pos * wd * .055, y + (k % 2))
+            clk.step(1 / 60)
+            s = pg.evaluate(STATE)
+            if seen and s["stage"] != seen[-1]:
+                rub.setdefault("at", []).append([s["stage"], s["rubStrokes"]])
+            seen.append(s["stage"]); thetas.append(s["theta"])
+            sparks = max(sparks, pg.evaluate("() => document.querySelectorAll('.binspect-spark').length"))
+            if k == per * 3 + 2:
+                rub["mid"] = [s["stage"], s["rubStrokes"], pg.evaluate("(u) => Math.round((Date.now() - store.badgeCleanedAt[u]) / BADGE_DIRT_WEEK_MS * 100) / 100", pg.evaluate("() => badgeInspectNow.unit")),
+                              pg.evaluate("() => { try{ return JSON.parse(localStorage.getItem('class26e.drill.v1')).badgeCleanedAt[badgeInspectNow.unit]; }catch(e){ return null; } }") == pg.evaluate("() => store.badgeCleanedAt[badgeInspectNow.unit]")]
+        pg.mouse.up()
+        for _ in range(40):
+            clk.step(1 / 30)
+        end = pg.evaluate(STATE)
+        rub["seen"] = sorted(set(seen), reverse=True)
+        rub["steps"] = [i for i in range(1, len(seen)) if seen[i] != seen[i - 1]]
+        # turned only towards its front (the nearest whole turn), never past it
+        ref = round(thetas[-1] / 360) * 360
+        lo, hi = min(thetas[0], ref) - 10, max(thetas[0], ref) + 10
+        rub["maxTurn"] = round(max(max(lo - t, t - hi, 0) for t in thetas), 1)
+        rub["endFront"] = abs(thetas[-1] - ref) < 1
+        rub["sparks"] = sparks
+        rub["end"] = [end["stage"], end["rubStrokes"]]
+        rub["hint1"] = pg.evaluate(VIEW)["dirt"]
+        rub["perStage"] = per
+        pg.evaluate("() => (typeof badgeInspectNow !== 'undefined' && badgeInspectNow) && badgeInspectNow.close()")
+        for _ in range(30):
+            clk.step(1 / 30)
+        rub["tile"] = pg.evaluate("() => [...document.querySelectorAll('.badges-tab .ncase-cell')][0].querySelector('.badge-tile-art').dataset.dirt")
+        rub["stored"] = pg.evaluate("() => badgeDirtStage(unitsInTeachingOrder()[0])")
+    check("a fling and a wide wiggle never clean: still the dirtiest, no rub strokes counted, and it did turn",
+          rub["ok"] and rub["start"] == 4 and rub["afterSpin"][0] == 4 and rub["afterSpin"][1] == 0 and abs(rub["afterSpin"][2]) >= 90, rub.get("afterSpin"))
+    check("rubbing goes through every stage, one at a time, one stage per BINSPECT.rubPerStage strokes, with a sparkle, and is saved",
+          rub["ok"] and rub["seen"] == [4, 3, 2, 1, 0] and rub["end"][0] == 0
+          and rub.get("at") == [[3, rub["perStage"]], [2, 2 * rub["perStage"]], [1, 3 * rub["perStage"]], [0, 4 * rub["perStage"]]]
+          and abs(rub["mid"][2] - rub["mid"][0]) < .05 and rub["mid"][3] is True and rub["sparks"] >= 4 and rub["stored"] == 0 and rub["tile"] == "0", rub)
+    check("a rub never spins the badge: it only comes round to show its front (no further than that, give or take 10 degrees)",
+          rub["ok"] and rub["maxTurn"] <= 0 and rub.get("endFront") is True, [rub.get("maxTurn"), rub.get("endFront")])
+    check("the hint: 'This badge is dirty. Rub it to clean it.' while it is dirty, and it says it is clean after",
+          rub["ok"] and rub["hint0"] == "This badge is dirty. Rub it to clean it." and "clean" in (rub["hint1"] or "").lower() and "dirty" not in (rub["hint1"] or "").lower(),
+          [rub.get("hint0"), rub.get("hint1")])
+    ctx.close()
+
+    # ---- 6. Reduce motion: a fade, no swing ----
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(SEED, {"rm": True})
+    pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1800)
+    clk = _StepperS(pg)
+    t = pg.evaluate(TILE, 0)
+    pg.mouse.click(t["x"], t["y"])
+    rm = []
+    for k in range(12):
+        clk.step(1 / 30)
+        v = pg.evaluate(VIEW)
+        rm.append((v["ov"], v["caseM22"], pg.evaluate("() => { const o = document.querySelector('.binspect'); return o ? +getComputedStyle(o).opacity : null; }")))
+    ctx.close()
+    check("Reduce motion: the view fades in (opacity rising) and the case never turns",
+          all(r[0] for r in rm) and all(r[1] == 1 for r in rm) and rm[0][2] is not None and rm[0][2] < .6 and rm[-1][2] == 1,
+          rm[:3] + rm[-1:])
 
 
 def main():
@@ -21424,6 +21807,7 @@ def main():
             check_b319f_casespace(br)
             check_b319h_layout(br)
             check_b320c_case(br)
+            check_b320g_inspect(br)
         finally:
             br.close()
     SERVER.shutdown()
