@@ -21940,6 +21940,195 @@ def check_b320h_fixes(br):
     ctx.close()
 
 
+B320B_SAMPLE = {"confetti": 1.7, "fireworks": 1.6, "underwater": 2.6, "bubbles": 3.45, "ufo": 5.0}
+B320B_MATRIX = r"""async ([fx, at]) => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  document.querySelectorAll('#b320b').forEach(n => n.remove());
+  document.querySelectorAll('#pushing-update, #intro-pop, .update-banner').forEach(n => n.remove());
+  const host = document.createElement('div'); host.id = 'b320b';
+  host.style.cssText = 'position:fixed;left:0;top:0;width:440px;display:grid;grid-template-columns:repeat(6,1fr);gap:6px;z-index:99999;background:#141824';
+  document.body.appendChild(host);
+  const ids = RX_CHARS.slice();
+  const avs = ids.map(id => { const av = document.createElement('span'); av.className = 'results-level-avatar char-live'; av.appendChild(buildAvatarCharSVGSafe(id)); host.appendChild(av); reactCharacter(av, 'perfect'); return av; });
+  /* the hundo's own move has landed on every one of them first */
+  const busy = () => avs.some(av => av.getAnimations({ subtree: true }).some(a => { const t = a.effect && a.effect.getComputedTiming(); return t && t.iterations !== Infinity && a.playState === 'running'; }));
+  await wait(1500);
+  for(let i = 0; i < 80 && busy(); i++) await wait(100);
+  const eff = el => { let o = 1, e = el; while(e && e.tagName && e.tagName.toLowerCase() !== 'svg'){ const cs = getComputedStyle(e); if(cs.visibility === 'hidden' || cs.display === 'none') return 0; o *= parseFloat(cs.opacity); e = e.parentNode; } return o; };
+  const leaves = root => [...root.querySelectorAll('path, circle, ellipse, rect, polygon')].filter(n => !n.closest('defs, clipPath'));
+  /* a part whose opacity breathes on a loop of its own has no one value to compare */
+  const loops = e => e.getAnimations().some(a => a.effect && a.effect.getComputedTiming().iterations === Infinity);
+  const pose = av => { const s = av.querySelector('svg'); const q = sel => { const e = s.querySelector(sel); return e ? (loops(e) ? 'loop' : +parseFloat(getComputedStyle(e).opacity).toFixed(2)) : null; };
+    return { eyes: q('.cx-eyes'), shut: q('.cx-eyes-closed'), mouth: q('.cx-mouth') }; };
+  const before = avs.map(pose);
+  const t0 = performance.now();
+  if(typeof hfxCharReact !== 'function') return { missing: true };
+  const R = avs.map(av => hfxCharReact(av, fx, {}));
+  const startedIn = performance.now() - t0;
+  /* the breath-hold starts on the water's line in the app (hfxUwScreen);
+     here it is started by hand, and its cheeks given time to come in */
+  if(fx === 'underwater'){
+    R.forEach(r => r && r.hold && r.hold.start());
+    /* the cheeks come in on a transition: on a loaded machine give it up
+       to 4s to have landed everywhere */
+    const shown = () => avs.every(av => [...av.querySelectorAll('.cx-hx-cheeks ellipse, .cx-hx-fishbub circle, .cx-uw')].filter(n => eff(n) > .25).length >= 2);
+    await wait(700);
+    for(let i = 0; i < 33 && !shown(); i++) await wait(100);
+  }
+  /* every reaction at the same moment of itself */
+  R.forEach(r => r && r.anims.forEach(a => { try{ a.pause(); a.currentTime = at * 1000; }catch(e){} }));
+  await wait(120);
+  const out = avs.map((av, i) => {
+    const svg = av.querySelector('svg'), sr = svg.getBoundingClientRect(), u = sr.width / 34;
+    const head = svg.querySelector('.cx-head');
+    /* the face box: every shape of the head that is showing, without any
+       of the reaction's parts, specials, props or the eyes */
+    let fb = null;
+    leaves(head).forEach(n => {
+      if(n.closest('.cx-hx, .cx-sp, .cx-rx, .cx-uw, .cx-eyes, .cx-eyes-closed, .cx-mouth')) return;
+      if(eff(n) < .15) return;
+      const r = n.getBoundingClientRect(); if(!r.width && !r.height) return;
+      fb = fb ? [Math.min(fb[0], r.left), Math.min(fb[1], r.top), Math.max(fb[2], r.right), Math.max(fb[3], r.bottom)] : [r.left, r.top, r.right, r.bottom];
+    });
+    const shut = [...svg.querySelectorAll('.cx-eyes-closed path')].map(p => p.getBoundingClientRect()).filter(r => r.width).map(r => [r.left + r.width / 2, r.top + r.height / 2, r.width / 2]);
+    const hx = svg.querySelector('.cx-hx');
+    const parts = [];
+    if(hx) leaves(hx).forEach(n => { if(eff(n) > .25){ const r = n.getBoundingClientRect(); if(r.width || r.height) parts.push({ r: [r.left, r.top, r.right, r.bottom], a: (n.closest('[data-hx]') || {}).getAttribute ? n.closest('[data-hx]').getAttribute('data-hx') : null }); } });
+    /* the breath-hold's own stand-ins count as the reaction too */
+    leaves(svg).forEach(n => { if(n.closest('.cx-uw') && eff(n) > .25){ const r = n.getBoundingClientRect(); parts.push({ r: [r.left, r.top, r.right, r.bottom], a: 'uw' }); } });
+    const tol = 1.2 * u;
+    /* a piece that has landed ON the head stands on it: its foot inside */
+    const outside = fb ? parts.filter(p => p.r[0] < fb[0] - tol || p.r[2] > fb[2] + tol || p.r[3] > fb[3] + tol || (p.a === 'top' ? p.r[3] < fb[1] - tol : p.r[1] < fb[1] - tol)).length : parts.length;
+    /* anything drawn for an eye sits on that eye */
+    const groups = {};
+    parts.forEach(p => { if(p.a && /^eye\d$/.test(p.a)){ const g = groups[p.a] = groups[p.a] || [1e9, 1e9, -1e9, -1e9]; g[0] = Math.min(g[0], p.r[0]); g[1] = Math.min(g[1], p.r[1]); g[2] = Math.max(g[2], p.r[2]); g[3] = Math.max(g[3], p.r[3]); } });
+    let eyeOff = 0;
+    if(shut.length) Object.values(groups).forEach(g => { const cx = (g[0] + g[2]) / 2, cy = (g[1] + g[3]) / 2;
+      const d = Math.min(...shut.map(s => Math.hypot(cx - s[0], cy - s[1]) - Math.max(1.6 * u, s[2] * 1.2))); eyeOff = Math.max(eyeOff, d / u); });
+    /* a helmet's breath leaves above its eyes, never inside the visor */
+    const F = (typeof hfxFaceOf === 'function') ? hfxFaceOf(svg) : null;
+    let inHelmet = 0;
+    if(F && F.helmet && shut.length){ const ey = Math.min(...shut.map(s => s[1])); av.querySelectorAll(':scope > .hfx-uw-breath').forEach(b => { if(av.getBoundingClientRect().top + parseFloat(b.style.top) > ey - .5 * u) inHelmet++; }); }
+    return { id: ids[i], on: !!R[i], cls: av.classList.contains('hfx-rx') && av.classList.contains('hfx-rx-' + fx), n: parts.length, outside, eyeOff: +eyeOff.toFixed(2), inHelmet,
+      hold: fx === 'underwater' ? (av.classList.contains('char-hold') || av.classList.contains('char-bubbly')) : null };
+  });
+  /* resume, and let every reaction run out on its own clock */
+  R.forEach(r => r && r.anims.forEach(a => { try{ a.play(); }catch(e){} }));
+  const total = (typeof HFX_RX_TOTAL === 'object' ? HFX_RX_TOTAL[fx] : 8) || 8;
+  await wait(total * 1000 + startedIn - (performance.now() - t0) + 700);
+  const after = avs.map((av, i) => { const svg = av.querySelector('svg'); const p = pose(av);
+    const left = svg.querySelectorAll('.cx-hx').length + [...svg.querySelectorAll('.cx-uw')].filter(n => getComputedStyle(n).visibility !== 'hidden').length + av.querySelectorAll(':scope > .hfx-uw-breath, :scope > .hfx-uw-fling').length;
+    const running = svg.getAnimations({ subtree: true }).filter(a => a.id === 'hfx-rx').length + av.getAnimations().filter(a => a.id === 'hfx-rx').length;
+    const b = before[i];
+    const same = ['eyes', 'shut', 'mouth'].every(k => {
+      if(b[k] === null || b[k] === 'loop' || p[k] === 'loop') return b[k] === p[k];
+      return Math.abs(b[k] - p[k]) <= .03; });
+    return { id: ids[i], left, running, cls: av.className.match(/hfx-rx|char-hold|char-gasp|char-bubbly/g) || [], back: av.classList.contains('char-react-perfect') && av.classList.contains('rx-' + ids[i]) && same, before: b, now: p };
+  });
+  host.remove();
+  return { startedIn: Math.round(startedIn), out, after };
+}"""
+B320B_RUN = r"""async ([fx, ch]) => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  document.querySelectorAll('#pushing-update, #intro-pop, .update-banner').forEach(n => n.remove());
+  store.avatarChar = ch; store.hundoFx = fx; store.lifetime.perfectTests = 420;
+  const t = 'Identity Crimes'; store.unitPerfects = store.unitPerfects || {}; store.unitPerfects[t] = 0;
+  ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour'].forEach(k => store[k] = true);
+  store.lateHundos = 999; store.retroBadgePending = []; store.pendingTierCutscene = null; theme.muteBanners = false; theme.reduceMotion = false;
+  try{ seedBannerCounters(); seedChallenges289(); }catch(e){}
+  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){}
+  store.pendingBadgeUnlocks = []; saveStore();
+  cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t];
+  order = QUESTIONS.map((q, i) => [q, i]).filter(([q]) => (q.topic || '').trim() === t).map(([, i]) => i);
+  runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null; isMissedRetake = false; practiceTestMinutes = null; inVirtualRoom = false;
+  attempts = {}; picked = {}; timedOutSet = {};
+  order.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+  runStartTime = Date.now() - 42000; testInProgress = true; pos = order.length - 1;
+  summarize();
+  const T0 = performance.now(), now = () => (performance.now() - T0) / 1000;
+  let fxAt = null, rxOn = null, rxOff = null, seenHx = 0, hold = false, specialAfter = null;
+  while(now() < 40){
+    const av = document.querySelector('.rs-screen .results-level-avatar');
+    const fxUp = !!document.querySelector('.hfx-layer, .stardust-layer');
+    if(fxUp && fxAt === null) fxAt = now();
+    if(av){
+      const on = av.classList.contains('hfx-rx');
+      if(on && rxOn === null) rxOn = now();
+      if(on){ const hx = av.querySelector('.cx-hx'); if(hx) seenHx = Math.max(seenHx, hx.querySelectorAll('*').length); if(av.classList.contains('char-hold') || av.classList.contains('char-bubbly')) hold = true; }
+      if(rxOn !== null && !on && rxOff === null) rxOff = now();
+      if(rxOff !== null && av.classList.contains('char-special')){ specialAfter = now() - rxOff; break; }
+      if(rxOff !== null && now() - rxOff > 6) break;
+    }
+    document.querySelector('.rs-spot.is-up')?.click();
+    await wait(60);
+  }
+  const av = document.querySelector('.rs-screen .results-level-avatar');
+  return { fxAt, rxOn, rxOff, seenHx, hold, specialAfter, leftover: av ? av.querySelectorAll('.cx-hx').length : null,
+           rx: av ? (av.className.match(/rx-[a-z]+|char-react-perfect/g) || []) : null };
+}"""
+
+
+def check_b320b_reactions(br):
+    """Build 320 (b320b). "the characters face/effect should be affected by
+    chosen hundo effect DURING THE effect. So like during the underwater
+    one when a character goes underwater, they should hold their breath,
+    the alien like they put on glasses to protect their eyes) but then it
+    goes away when the effect is over and it's back to their normal hundo
+    thing for the character."
+      - every live character, every effect (hfxCharReact, at one moment of
+        each: Confetti 1.7s, Fireworks 1.6s, Underwater 2.6s, Bubbles
+        3.45s, UFO 5.0s): a reaction is drawn (2+ parts showing), every
+        part of it inside the character's own head (its showing shapes,
+        +1.2 units), every part drawn for an eye on that eye (its closed
+        eye's centre), and a helmet's breath bubbles leave above its eyes;
+      - when it is over: nothing of it is left, no reaction animation is
+        running, the classes are off, and the character is back in its
+        hundo pose exactly (its eyes, closed eyes and mouth at the opacity
+        they had before);
+      - wired to the effect: a real 12/12 drill with each effect (Confetti
+        the Wizard, Fireworks the Ghost, Underwater the Ninja, Bubbles the
+        Clown, UFO the Alien) - the reaction starts within 0.3s of the
+        effect, draws its parts (the Ninja holds its breath), ends, and the
+        character's special plays after it.
+    Fails on a73c681 (no reaction at all). B320B_FX=ufo,... runs some
+    effects; B320B_MATRIX_ONLY=1 skips the real drills."""
+    print("\n320b. the results character reacts to the hundo effect while it plays, and only while it plays")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    for fx in (os.environ.get("B320B_FX") or "confetti,fireworks,underwater,bubbles,ufo").split(","):
+        r = pg.evaluate(B320B_MATRIX, [fx, B320B_SAMPLE[fx]])
+        if r.get("missing"):
+            check("%s: there is a reaction to play (hfxCharReact)" % fx, False, "missing")
+            continue
+        out, after = r["out"], r["after"]
+        bad = [o["id"] for o in out if not (o["on"] and o["cls"] and o["n"] >= 2)]
+        check("%s: every character (%d) reacts while it plays - its parts drawn and showing" % (fx, len(out)), not bad, bad or r["startedIn"])
+        off = [(o["id"], o["outside"]) for o in out if o["outside"]]
+        check("%s: every part of every reaction is on the character's own head" % fx, not off, off)
+        eye = [(o["id"], o["eyeOff"]) for o in out if o["eyeOff"] > 0]
+        check("%s: what is drawn for an eye sits on that eye, for every character" % fx, not eye, eye)
+        if fx == "underwater":
+            nh = [o["id"] for o in out if not o["hold"]]
+            check("underwater: every character holds its breath (the Koi, at home, blows bubbles)", not nh, nh)
+            ih = [(o["id"], o["inHelmet"]) for o in out if o["inHelmet"]]
+            check("underwater: no breath bubble starts inside a helmet", not ih, ih)
+        left = [(a["id"], a["left"], a["running"], a["cls"]) for a in after if a["left"] or a["running"] or a["cls"]]
+        check("%s: when it is over nothing of the reaction is left on any character" % fx, not left, left)
+        nb = [(a["id"], a["before"], a["now"]) for a in after if not a["back"]]
+        check("%s: ... and every character is back in its own hundo pose, exactly" % fx, not nb, nb)
+    ctx.close()
+    if os.environ.get("B320B_MATRIX_ONLY"): return
+    for fx, ch in (("confetti", "wizard"), ("fireworks", "ghost"), ("underwater", "ninja"), ("bubbles", "clown"), ("ufo", "alien")):
+        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=1)
+        r = pg.evaluate(B320B_RUN, [fx, ch])
+        ok = r["fxAt"] is not None and r["rxOn"] is not None and abs(r["rxOn"] - r["fxAt"]) <= .3 and r["seenHx"] >= 3
+        if fx == "underwater":
+            ok = ok and r["hold"]
+        check("a real 12/12 drill with %s as the %s: the character reacts as the effect starts, while it plays" % (fx, ch.title()), ok, r)
+        check("... it ends, nothing is left, and the %s's special plays after it" % ch.title(),
+              r["rxOff"] is not None and r["leftover"] == 0 and r["specialAfter"] is not None and "char-react-perfect" in (r["rx"] or []), r)
+        ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -22152,6 +22341,7 @@ def main():
             check_b320e_cracks(br)
             check_b320g_inspect(br)
             check_b320h_fixes(br)
+            check_b320b_reactions(br)
         finally:
             br.close()
     SERVER.shutdown()

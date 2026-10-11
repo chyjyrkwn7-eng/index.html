@@ -19543,3 +19543,75 @@ dirtier by the week so by week 3-4 they'd be their dirtiest."*
   whole from empty and from .97; the waiting ring at .25 at 11pm and .375
   three hours on (faked clock); the whole ring even at 12 and 6 o'clock
   at 3x. Fails on a73c681.
+
+### Build 320 (b320b) - the character reacts to the hundo effect while it plays
+
+*"The ninja effect when scoring a hundo is like a smoke thing, is that only
+for the ninja?"* and *"the characters face/effect should be affected by
+chosen hundo effect DURING THE effect ... underwater ... hold their breath,
+the alien like they put on glasses ... then it goes away when the effect is
+over and it's back to their normal hundo thing for the character."*
+
+- **The smoke is the Ninja's own.** It is its 100 in
+  `tools/reactions-table.py` (`R("ninja", "perfect")`: `NJ_SMOKE`, four
+  `NJ_WISP`s). No other character's 100 has a smoke prop (the grey puffs in
+  the table are all fail bands: Wizard, Bear, Zeus, Solar, Tempest,
+  Inferno), and what every character shares on a 100 is the soft light
+  behind it (`.char-emote-back`). Left as it is.
+- **One switch: `hfxCharReact(av, id, o)`**, called by `playHundoFx()` on
+  the results character (`hfxResultsAvatar(box)`: the `.results-level-avatar`
+  on the 100% card's `.rs-screen`) whenever an effect plays there, Confetti
+  included (its `celebrate()` branch). It runs from whenever the effect is
+  started, so moving the effect's start moves the reaction with it; nothing
+  else needs calling. It ends with the effect (`hfxOnEnd`: a stop fades it
+  over 0.3s) or on its own clock (`HFX_RX_TOTAL`). Not in Customize, the
+  pop-ups or the miniature (no character there), and not with motion off:
+  no effect plays then (playHundoFx), so no reaction either.
+- **While it is on**: `hfx-rx hfx-rx-<id>` on the element holding the
+  drawing (`charSpecialCovered` treats it like the breath-hold, so the
+  character's special waits and plays AFTER - that is "back to their normal
+  hundo thing"), and a `.cx-hx` group drawn into the group that holds the
+  eyes, so `AVATAR_HEAD_SCALE` and every head motion carry it.
+- **Where on the face: `hfxFaceOf(svg)`**, read once per character and
+  cached: the eyes from the drawing's own closed eyes (`closedEyes()`
+  `[cx, cy, halfWidth]`, parsed from the paths), the mouth's box, a nose
+  between them, and the top of the head - the first point down the face's
+  centre column inside one of the head's own shapes (`isPointInFill`, so a
+  hat or a crown counts). `HFX_FACE_FIX` where a drawing has no eyes to read
+  (the Koi's bowl, Void) or needs its own: `helmet` (Orion, Horizon, Genesis,
+  Astral, Zenith: breath leaves from the TOP, never inside the visor),
+  `fish` (the Koi does not hold its breath - it blows bubbles), `alien`
+  (shades cut to its almond eyes, tilted with them). `hfxWarm` reads the
+  face a moment after the results mount, so the effect's first frame does
+  not pay for it.
+- **The five** (all transform/opacity, the Web Animations API on their own
+  parts, no filter):
+  - Confetti: a happy squint (^ ^) with a blush; one piece flutters down,
+    lands on the head, slides off as it ends (3.4s).
+  - Fireworks: a flinch at the first bang (1.0s), then the eyes come open
+    wide - the character's own eyes, copied, one group per eye - with each
+    burst's colour as a star in them and a wash of it on the face, at
+    `HFX_RX_FW_BURSTS` (the shells' launch plus climb), out by 6.3s.
+  - Underwater: the breath-hold (`hfxUwHold`, build 317) plus puffed red
+    cheeks (`.cx-hx-cheeks`, on `char-hold`), still on the water's own line.
+  - Bubbles: a soap bubble drifts across, the eyes follow it, it lands on
+    the nose, the eyes cross, it pops, a blink (out by 4.9s).
+  - UFO: mirrored goggles in the beam's colours slide down over the eyes as
+    the dark comes (0.65s), the beam (4.0s) and the warp (8.55s) glint across
+    them, pushed back up and gone at 9.35-10.15s.
+- **The character's own eyes are faded under ours by an animation on their
+  `opacity` with IMPLICIT end keyframes** (`R.cover`): it outranks the
+  reaction's css keyframes only while it runs, and both ends are the
+  underlying value, so the pose it comes back to is exactly the hundo's.
+  Never hide them with a class: that is a snap.
+- **Per-keyframe easing.** `easing` in the options of `el.animate()` bends
+  the WHOLE timeline; a fade-in/hold/fade-out written that way came in
+  three seconds late. Put it on the keyframes.
+- **Gate: `check_b320b_reactions`** - every live character, every effect, at
+  one moment of each: 2+ parts showing, every part inside the character's
+  own head (its showing shapes, +1.2 units), every part drawn for an eye on
+  that eye, a helmet's breath above its eyes; after: nothing left, no
+  reaction animation running, the pose's eyes/closed eyes/mouth at the
+  opacity they had before. Then a real 12/12 drill per effect (Wizard,
+  Ghost, Ninja, Clown, Alien): the reaction starts within 0.3s of the
+  effect, ends, and the special plays after it. Fails on a73c681.
