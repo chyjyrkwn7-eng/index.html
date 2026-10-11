@@ -19293,6 +19293,11 @@ Your eyes shouldn't gravitate to one thing on any screen".
   `--tab-py` too** (the @supports rule's padding is `!important`). Flex
   buttons (`.chatdock-tab`, `.rs-tab`) carry their words in a `.tab-label`
   span, trimmed the same way. Browsers without `text-box` are unchanged.
+  **`attachSegSlider` measures in layout pixels**: it divides the rects by
+  the switcher's on-screen scale and measures again while that is not 1 -
+  the chat sheet opens from .96, and a pill placed then stayed 1.45px
+  short of its tab on an iPad, at the tab's top (the same "more space
+  under it" in another place).
 - **Save and exit is grey glass** (`#pause-save`, an inset hairline, no
   border so nothing moves); Quit is the black ghost it was.
 - **Resume test loads like a new test.** `resumeRunWithLoading(s)` puts
@@ -19324,7 +19329,10 @@ Your eyes shouldn't gravitate to one thing on any screen".
   (a full cycle, the old 4.1s), or from where the waiting ring stood when
   Home is up at 5pm (a negative delay into the same animation, the rest
   taking at least .7s); `animationend` closes it and launches, as the
-  old sweep's did. It cannot pass whole (offset 0 is the circle's length).
+  old sweep's did. Between 5pm and the announcement (1.5s later) the
+  minute tick holds a waiting ring at whole instead of dropping it to
+  the new period's empty, and the announcement fills from where the ring
+  stood (`dataset.p`). It cannot pass whole (offset 0 is the circle's length).
   Reduce motion: no fill, it is simply whole.
 - Checks moved: `check_b245_daily_announce`'s sampler reads the ring's
   progress (`arcL` = progress x 180, so its thresholds stand);
