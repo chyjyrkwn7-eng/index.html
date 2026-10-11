@@ -19304,8 +19304,9 @@ dirtier by the week so by week 3-4 they'd be their dirtiest."*
   speed over the last 90ms (none if the finger had stopped), decays with
   `tau`, and below `settleAt` springs round to face you or show its back,
   whichever is nearer where it would have stopped. A press stops it dead.
-- **SPIN OR RUB, the rule.** Every drag turns the badge until it shows it is
-  a rub: two turn-backs, each stroke between `rubMin` px and `rubMax` of the
+- **SPIN OR RUB, the rule.** Every drag turns the badge, once past a little
+  slack (`slack`, .15 of its width, so a rub's first short strokes do not
+  rock it), until it shows it is a rub: two turn-backs, each stroke between `rubMin` px and `rubMax` of the
   badge's width and done within `rubStrokeMs`, all inside the badge
   (`rubReach`). From then on it does not turn (it eases back to face you)
   and every stroke counts; each `rubPerStage` (4) strokes clean ONE stage,
