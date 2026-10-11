@@ -1711,8 +1711,8 @@
     display:flex; align-items:center; gap:.4rem; }
   .nt-hint.is-on{ opacity:1; }
   .nt-hint::before{ content:""; width:.55rem; height:.55rem; border-radius:50%; background:rgba(255,210,122,.85);
-    box-shadow:0 0 0 0 rgba(255,210,122,.6); animation:nt-tap 1.6s ease-out infinite; }
-  @keyframes nt-tap{ 0%{ box-shadow:0 0 0 0 rgba(255,210,122,.55); } 100%{ box-shadow:0 0 0 .7rem rgba(255,210,122,0); } }
+    animation:nt-tap 1.6s ease-in-out infinite; }
+  @keyframes nt-tap{ 0%, 100%{ opacity:1; transform:none; } 50%{ opacity:.35; transform:scale(.7); } }
   .nt-hint.is-gone{ visibility:hidden; }
 
   /* the stage: what he is talking about */

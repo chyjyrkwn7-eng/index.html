@@ -283,6 +283,17 @@ def main():
                 shot(page, 8.5, "generating-profile")
                 page.wait_for_selector("#genprofile-overlay", state="detached", timeout=25000)
                 page.wait_for_timeout(1200)
+                # Build 320: Nova introduces himself before the tooltips.
+                # Shoot him once, then tap him through.
+                page.wait_for_timeout(1800)
+                shot(page, 8.8, "nova-intro", bar_ok=True)
+                for _ in range(60):
+                    if not page.evaluate("()=>!!document.getElementById('nova-intro')"): break
+                    page.evaluate("()=>{ const el = document.getElementById('nova-intro'); if(!el.__nova) return;"
+                                  " if(el.__nova.index === el.__nova.count - 1 && !el.__nova.typing) el.querySelector('.nt-go').click();"
+                                  " else el.__nova.advance(); }")
+                    page.wait_for_timeout(120)
+                page.wait_for_timeout(1200)
                 shot(page, 9, "home-with-tour", bar_ok=True)
                 for _ in range(16):                            # click the tour through
                     if not page.evaluate("()=>!!document.getElementById('tour-next')"): break

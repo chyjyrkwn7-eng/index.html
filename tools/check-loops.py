@@ -20,6 +20,7 @@ KNOWN = {
     "bnr-holo": "shifted by whole periods of a 300% background",
     "bnr-sheen": "a sweep from off one edge to off the other",
     "cosmic-orbit-spin": "a full turn",
+    "nv-mote": "stardust on Nova's coat: rises and fades to nothing at both ends (build 320)",
     "bn-beam": "a spotlight on a pendulum - played alternate, so it swings back instead of jumping",
     "bn-sweep": "a band of light from off one edge to off the other, invisible at both ends",
     "cx-embers": "an ember that rises and fades to nothing at both ends",

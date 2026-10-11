@@ -19261,3 +19261,64 @@ Your eyes shouldn't gravitate to one thing on any screen".
   reference devices and a 320px phone, the calendar in seven states of the
   course. Fails on f6e0be8.
 
+
+### Build 320 (b320f) - Nova, the narrator: the introduction, his tooltips, a narrated What's New
+
+Madison: *"the badges and ranks are missing a storyline ... a random character
+that looks like one of the ultimates and secrets flares but mix pop up and
+talk ... give him professor/instructor vibes ... His name will be Nova of
+course ... For newcomers ... Hello I am Nova, the app maker, I lost my
+badges ... For existing he will meet you and say your name ... At the end he
+will talk about speaking again."*
+
+- **Nova is drawn by `buildNovaSVG({ crop })`, and he is not a character.**
+  He is not in `AVATAR_CHARACTERS`, so no picker, board, count or ultimate
+  ("every character") can ever include him. viewBox `0 0 48 56` (a bust);
+  `crop: "head"` is the tooltip face. Parts: `.nv-back` (halo, nebula,
+  corona, stars), `.nv-fig` > `.nv-body` (white lab coat, starry hem, midnight
+  shirt with a constellation, gold planet pin, pens), `.nv-neck` (collar, gold
+  bow tie), `.nv-head` > `.nv-head-art` (the drawing's own transform is on the
+  INNER group, so a CSS transform on `.nv-head` never replaces it), eyes,
+  round gold glasses, white moustache and beard, `.nv-mouth-shut` /
+  `.nv-mouth-open`, `.nv-hand`. Life is CSS only (transform/opacity, no
+  filter): breathe, sway, blink, hair, corona, twinkles; `.is-talking` opens
+  the mouth in an uneven beat; `.g-wave` / `.g-raise` / `.g-nod` gestures.
+- **`novaTalk(o)` is the one dialogue** (`.nova-talk`): dark sky, dots for
+  progress, a quiet Skip, the stage (what he is talking about), his bubble
+  and him at the foot of the screen (beside him from 40rem). `novaType()`
+  types a line WITHOUT changing what it says: the untyped part is a
+  transparent span, so the bubble is final-size from frame one and
+  textContent/innerText always read the whole line (gates rely on this). A
+  tap finishes the line, the next moves on; Space/Enter/right arrow too,
+  Escape = Skip. The last line ends on a button. `el.__nova` exposes
+  `advance / skip / close / index / count / typing` for tools.
+- **New accounts:** `pendingMainMenuTour` -> `playNovaIntro(startMainMenuTour)`
+  (`#nova-intro`, `novaIntroLines()`): hello, the shipwreck (a planet like
+  the one on Home cracked apart beside his ship; badges and flares scattered),
+  badges (one per unit, hundos), flares (dark on Home, lit by ranks, secret
+  ones in tests), ranks Bronze..Supernova, XP and levels, Drill/Exam/Review,
+  "I'll show you around". Skip goes straight to the tooltips. Sign-up still
+  marks What's New seen, so he does not come back until the next INTRO_REV.
+  `#nova-intro` is in every list that waits on What's New (`whatsNewHolds`,
+  `noticeAllowedHere`, the save-code/friend/invite checks, CHAR_SPECIAL_COVERS,
+  RANKUP_BLOCKERS).
+- **Tooltips are his:** `startSimpleTour` puts his face (`.tour-nova`) and
+  name in `#tour-tooltip.has-nova` and types each step at 72 cps; Next always
+  advances, a tap on the bubble finishes the line. Ids unchanged.
+- **What's New (INTRO_REV 4, version 7.8 = builds 319 + 320)** is
+  `showIntroPopup()` -> `novaTalk` with id `intro-pop`: greeting by
+  username, rank and level, "it appears you have found N of my lost badges"
+  (a card with your character, rank, level and "N of 16 badges found"), the
+  shipwreck, then `WHATS_NEW_320` - each item a line he says and a row
+  (`introRow`) added to the card as he says it. "Your level was adjusted" is
+  his too: the same `levelGateNoteText` sentences, and the blue
+  `.intro-gate-note` row. Skip puts every row up and goes to his last line
+  ("I'll speak with you again..."). The old 7.7 card is gone; "Save A Test
+  For Later" moved from RELEASE_NOTES 7.7 to 7.8.
+- **Gate `check_b320f_nova`** (fails on a73c681): intro before any tooltip,
+  tap-to-finish then advance, the story's words, every tooltip in his bubble,
+  not again after onboarding; What's New with username, Gold and "found 3 of
+  my lost badges", rows built, once only; reduce motion; both Skips; not in
+  Customize. Moved to the new decision: check-chat's What's New section
+  (7.8, narrated, Skip then measure) and `check_b319_levelnote` (Skip, and
+  Nova's lines carry the note's facts).
