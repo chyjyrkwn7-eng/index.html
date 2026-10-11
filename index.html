@@ -15733,8 +15733,6 @@
   .pf-level.ru-lvpop{ display:inline-block; animation:ru-lvpop .5s cubic-bezier(.2,1.5,.4,1) both; }
   @keyframes ru-lvpop{ 0%{ transform:scale(1); } 45%{ transform:scale(1.2); color:#BFE3FF; } 100%{ transform:scale(1); } }
   .xpnums.ru-climbnote{ color:#8FC1FF; font-weight:800; }
-  /* the results' row for a rank-up that waits on Profile */
-  .rs-unlock-rankwait .rs-unlock-art svg{ width:100%; height:100%; }
   .ranktrack{
     display:flex; flex-wrap:wrap; justify-content:center;
     --rank-gap:.6rem; gap:var(--rank-gap); margin:0 0 1.6rem;
@@ -26061,6 +26059,31 @@
     border-color:rgba(232,104,124,.28);
     background:linear-gradient(180deg, rgba(200,60,84,.16), var(--rs-card) 62%);
   }
+  /* ---- THE GRADE, COUNTED IN (build 320) ----
+     While the bars fill the card carries no verdict: three washes - the
+     fail red, an amber, the pass green, each exactly the landed card's
+     own recipe - crossfade by opacity alone as the number climbs
+     (rsToneWeights), so the card never repaints. They sit under the
+     content (z-index -1 inside the isolated card) and fade as the real
+     tone goes on beneath them. The stamps ("3 to review", "Passed") wait
+     too: they would give the grade away. */
+  .rs-screen .rs-card.rs-grade.is-counting{ border-color:rgba(255,255,255,.07); }
+  .rs-grade:has(> .rs-grade-tone){ isolation:isolate; }
+  .rs-grade-tone{ position:absolute; inset:-1px; border-radius:inherit; pointer-events:none; z-index:-1; transition:opacity .6s ease; }
+  .rs-grade-tone > i{ position:absolute; inset:0; border-radius:inherit; opacity:0; will-change:opacity;
+    border:1px solid var(--tb); background:linear-gradient(180deg, var(--tw), transparent 62%); }
+  .rs-grade-tone > i.is-red{ --tw:rgba(200,60,84,.16); --tb:rgba(232,104,124,.28); }
+  .rs-grade-tone > i.is-amber{ --tw:rgba(214,140,46,.16); --tb:rgba(240,176,92,.28); }
+  .rs-grade-tone > i.is-green{ --tw:rgba(46,170,106,.16); --tb:rgba(92,214,146,.26); }
+  .rs-grade.rs-graded > .rs-grade-tone{ opacity:0; }
+  .rs-grade .rs-stamps{ transition:opacity .45s ease .3s; }
+  .rs-grade.is-counting .rs-stamps{ opacity:0; transition:none; }
+  /* the empty card comes down like any card; the slam is the grade's */
+  .rs-grade.is-counting.rs-land.rs-in{ animation:rs-bang .46s cubic-bezier(.2,1.25,.35,1) both; }
+  .rs-screen .rs-card.rs-grade.rs-graded .rs-pct.pct, .rs-screen .rs-card.rs-grade.rs-graded .rs-pct.pct.perfect{ animation:rs-pct-land .62s cubic-bezier(.2,1.4,.35,1) both; transform-origin:20% 60%; }
+  @keyframes rs-pct-land{ 0%{ transform:scale(1.34); } 50%{ transform:scale(.96); } 75%{ transform:scale(1.02); } 100%{ transform:none; } }
+  .rs-grade.rs-graded::after{ animation:rs-impact 1s ease-out both; }
+  .rs-byunit .unit-breakdown-fill.is-counting{ box-shadow:none; }
   /* The hundo box on the XP card's own recipe - the XP card's wash is
      .13 at the top edge and fades by 60%, and its border is .2 - so gold
      at the same weight rather than louder: "the gold looks like the tint
@@ -26357,6 +26380,14 @@
   .dailyq-outro-next{ margin:.6rem 0 0; font-size:1.02rem; font-weight:600; color:rgba(255,255,255,.88); text-wrap:balance; }
   .dailyq-outro-streak{ margin:.55rem 0 0; font-size:.8rem; color:#D9A441; font-weight:700; }
   [data-reduce-motion="true"] .dailyq-outro{ animation:none; }
+  /* THE SAME ORDER AS A TEST'S RESULTS (build 320): the verdict, then what
+     it was worth, then what comes next - a beat apart, so the XP is read
+     as the answer's reward rather than all at once. The unlocks wait for
+     Home, after the XP has flown in (RS_UNLOCK_GAP_MS). */
+  .dailyq-outro-xp{ animation:dq-line-in .45s ease .9s both; }
+  .dailyq-outro-next{ animation:dq-line-in .45s ease 1.45s both; }
+  @keyframes dq-line-in{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+  @media (prefers-reduced-motion:reduce){ .dailyq-outro-xp, .dailyq-outro-next{ animation:none; } }
   @media (min-width:40rem){ .dailyq-outro-head{ font-size:2.3rem; } .dailyq-outro-next{ font-size:1.12rem; } }
 
   /* ---- XP IS BLUE WHEREVER IT FLIES ---- */
@@ -27077,6 +27108,9 @@
        (build 315) - its own put its text 1.6px off the cards below. */
     margin-top:.9rem; margin-bottom:.85rem;
   }
+  /* Between the grade and the XP card since build 320 (the grade is the
+     first card now): an ordinary gap there, like every other card's. */
+  .rs-screen .rs-card.rs-grade + .rs-card.vroom-waitcard{ margin-top:0; }
   .vroom-wait-line{ margin:0; display:flex; align-items:center; gap:.55rem; font-size:var(--rs-label, .9rem); font-weight:700; line-height:1.3; color:var(--ink); }
   .vroom-wait-text{ flex:1 1 auto; min-width:0; text-wrap:balance; }
   /* "3 / 4" in the screen's figures, not the mono (build 315) */
@@ -76117,7 +76151,9 @@ function showHome(){
        just handed over (build 268): the bridge it left is holding the
        dim for this card. */
     scheduleHomeUnlocks(sceneBridgeOpen() ? 380
-      : Math.max(HOME_UNLOCK_DELAY_MS, dailyXpFlyEndsAt - Date.now() + 250));
+      /* after the daily question's XP has landed in Profile, the same
+         pause a results screen leaves before its unlocks (build 320) */
+      : Math.max(HOME_UNLOCK_DELAY_MS, dailyXpFlyEndsAt - Date.now() + RS_UNLOCK_GAP_MS));
     try{ scheduleResumeOffer(); }catch(e){}
   }
 }
@@ -85721,51 +85757,36 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   const fromInto = () => Math.max(0, Math.min(barAfter.into, (pointsAfter - gained) - xpForLevel(after.level)));
   /* THE BLOCKED BUMP (build 317): XP that ran into a full bar. The fill
      lands at the end, the bar knocks against it (xpBarBump), and only
-     then does the number run on to the overflow, both halves blue. One
-     that was full before the run knocks as soon as the XP arrives. */
+     then does the number run on to the overflow. One that was full
+     before the run knocks as soon as the XP arrives. */
   const bumps = gained > 0 && barAfter.over && !resultsMotionOff();
-  const countUp = () => {
-    if(!barAfter.capped) return setLine(after);
-    const from = fromInto();
-    if(from >= barAfter.into || resultsMotionOff()) return setLine(after);
-    if(bumps){
-      /* up to the full mark with the fill, knock, then the overflow */
-      const full = Math.max(from, Math.min(barAfter.span, barAfter.into));
-      const lead = from >= barAfter.span ? 120 : 900;
-      const run = (a, z, ms, over, then) => {
-        const t0 = performance.now();
-        const tick = () => {
-          if(finished) return;
-          const k = Math.min(1, (performance.now() - t0) / ms), e = 1 - Math.pow(1 - k, 3);
-          setLine(after, Math.round(a + (z - a) * e), over);
-          if(k < 1) requestAnimationFrame(tick); else if(then) then();
-        };
-        setLine(after, a, over);
-        requestAnimationFrame(tick);
-      };
-      run(from, full, lead, from >= barAfter.span, null);
-      setTimeout(() => {
-        if(finished) return;
-        xpBarBump(trackWrap, () => {
-          if(finished) return;
-          run(full, barAfter.into, Math.min(900, 380 + gained / 6), true, null);
-        });
-      }, lead);
-      return;
-    }
-    const t0 = performance.now(), dur = Math.min(1600, 600 + gained / 4);
+  /* THE NUMBER AFTER THE BAR (build 320): "when it goes to the bar,
+     that's cool, but when the number goes up it needs to be after that
+     bar effect ... if you gain xp and then max in the same result screen,
+     ensure the effect hits there and then goes to the number, like there
+     should be a slight delay". Every bar now fills first - more slowly
+     than it did ("too fast and could be more suspenseful") - lands with
+     its effect (the pop, or at a full bar the knock), and only then, a
+     beat later, does the "into / span XP" number run up to where the run
+     ended. The line holds where the run started until then. */
+  const startInto = barAfter.capped ? fromInto() : levelsUp ? 0 : Math.min(barAfter.into, levelBarOf(before).into);
+  const countMs = Math.min(1500, 750 + Math.max(0, barAfter.into - startInto) / 3);
+  const countUp = then => {
+    const to = barAfter.into, from = startInto;
+    if(to <= from || resultsMotionOff()){ setLine(after); if(then) then(); return; }
+    const t0 = performance.now();
     const tick = now => {
       if(finished) return;
-      const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
-      setLine(after, Math.round(from + (after.into - from) * e));
+      const k = Math.min(1, (now - t0) / countMs), e = 1 - Math.pow(1 - k, 3);
+      setLine(after, Math.round(from + (to - from) * e));
       if(k < 1) requestAnimationFrame(tick);
+      else if(then) then();
     };
     setLine(after, from);
     requestAnimationFrame(tick);
   };
   if(levelsUp) setLine(before);
-  else if(barAfter.capped) setLine(after, fromInto());
-  else setLine(after);
+  else setLine(after, startInto);
 
   wrap.append(head, trackWrap, line);
   /* NOTHING UNDER THE NUMBERS (build 314): the badge challenge and the
@@ -85782,23 +85803,25 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
      through each banked level"), quicker per level the more there are,
      and the tag says how many. One level is exactly as before. */
   const steps = levelsUp ? after.level - before.level : 0;
-  const stepMs = steps <= 1 ? 900 : Math.max(220, Math.min(700, Math.round(2600 / steps)));
-  if(steps > 1){
-    lvl.dataset.jump = String(steps);
-    wrap.fillMs = 300 + steps * (stepMs + 90) + 900;
-  }
-  /* the results reveal's pop waits for the knock (build 317) */
-  if(bumps){
-    const base = wrap.fillMs || (levelsUp ? 2050 : 1250);
-    wrap.fillMs = base + XP_BUMP_MS + (levelsUp || barBefore.fraction < 1 ? 0 : -500) + 200;
-  }
+  const stepMs = steps <= 1 ? 900 : Math.max(240, Math.min(700, Math.round(2800 / steps)));
+  if(steps > 1) lvl.dataset.jump = String(steps);
+  /* The fill's own pace (build 320): slow away, slow in, longer the
+     further it goes. */
+  const XP_EASE = "cubic-bezier(.45,.05,.22,1)";
+  /* (a bar with nowhere to go - full already, or no XP - lands at once) */
+  const fillMsFor = d => d <= .002 ? 260 : Math.round(1000 + 1300 * Math.min(1, d / .6));
+  const target = Math.round(barAfter.fraction * 1000) / 10;
+  const firstMs = levelsUp ? (steps > 1 ? stepMs : Math.round(800 + 600 * Math.min(1, (1 - barBefore.fraction) / .6)))
+    : fillMsFor(barAfter.fraction - barBefore.fraction);
+  const lastMs = levelsUp ? fillMsFor(barAfter.fraction) : 0;
+  /* the landing: the knock at a full bar (+170 to its settle), else the
+     pop; then the beat; then the count */
+  const XP_COUNT_BEAT_MS = 420;
+  const afterLand = (bumps ? 170 : 0) + XP_COUNT_BEAT_MS + ((barAfter.into > startInto && !resultsMotionOff()) ? countMs : 0);
+  /* Read by the results reveal: from runFill to the number at rest. */
+  wrap.fillMs = 60 + (levelsUp ? steps * (Math.max(firstMs, 0) + 90) + lastMs : firstMs) + afterLand + 200;
   wrap.bumps = bumps;
-  /* Read by the results reveal to time the pop (build 317): a one-level
-     climb is two fills, ~2s. It used to ask the block for .is-levelup
-     while the sequence was being BUILT - a class the climb only adds
-     half-way through its own fill - so the answer was always no, and
-     the pop and the grade came in at 1.25s, with the bar still on its
-     second fill. */
+  /* Read by the results reveal to time the pop (build 317). */
   wrap.levelsUp = levelsUp;
 
   /* Kicked off by the caller once the block is actually on screen, for
@@ -85816,15 +85839,38 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
     if(levelsUp) wrap.classList.add("is-levelup");
     bank();
   };
+  const later = (ms, fn) => setTimeout(() => { if(!finished) fn(); }, ms);
+  const fillTo = (pct, ms, then) => {
+    fill.style.transition = "transform " + ms + "ms " + XP_EASE;
+    setBarFill(fill, pct);
+    later(ms, then);
+  };
+  /* The fill is home: its effect, a beat, then the number. */
+  const landed = () => {
+    bank();
+    if(bumps){
+      if(wrap.onFilled) wrap.onFilled("bump");
+      xpBarBump(trackWrap, () => later(XP_COUNT_BEAT_MS, () => countUp(null)));
+    } else {
+      if(wrap.onFilled) wrap.onFilled("pop");
+      later(XP_COUNT_BEAT_MS, () => {
+        countUp(null);
+        /* the new level's number lights blue for a second, then settles */
+        if(levelsUp){
+          const xn = line.querySelector(".xpnums");
+          if(xn && !xn.classList.contains("is-over")){
+            xn.classList.add("is-flash");
+            setTimeout(() => { const x2 = line.querySelector(".xpnums"); if(x2) x2.classList.remove("is-flash"); }, 1100);
+          }
+        }
+      });
+    }
+  };
   wrap.runFill = function(){
+    if(resultsMotionOff()){ wrap.setFinal(); if(wrap.onFilled) wrap.onFilled("still"); return; }
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      const target = Math.round(barAfter.fraction * 1000) / 10;
-      if(!levelsUp){
-        setBarFill(fill, target);
-        if(barAfter.over) setTimeout(bank, 900);
-        countUp();
-        return;
-      }
+      if(finished) return;
+      if(!levelsUp){ fillTo(target, firstMs, landed); return; }
       /* ONE STEP AT A TIME, each fill to the end of its level, a reset to
          empty with the transition off for one committed frame (or the
          browser coalesces the two writes and the bar simply jumps), and
@@ -85833,17 +85879,9 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
          transitionend never fires, and the old guard against two
          wrap-overs firing ("the level up bar when leveling up loads a
          second time when the second box hits") is then structural. */
-      const prev = fill.style.transition;
       let lv = before.level;
-      const fillOut = () => {
-        if(finished) return;
-        fill.style.transition = prev || "";
-        if(steps > 1) fill.style.transitionDuration = stepMs + "ms";
-        setBarFill(fill, 100);
-        setTimeout(wrapOver, steps > 1 ? stepMs + 60 : 1100);
-      };
+      const fillOut = () => fillTo(100, firstMs, wrapOver);
       const wrapOver = () => {
-        if(finished) return;
         lv += 1;
         lvl.textContent = "Level " + lv;
         wrap.classList.add("is-levelup");
@@ -85854,19 +85892,9 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
           if(finished) return;
           /* mid-climb, the line says where it is going rather than
              holding the banked figure it started from */
-          if(lv < after.level){ line.textContent = "Climbing to level " + after.level; requestAnimationFrame(fillOut); return; }
-          countUp();
-          /* the new level's number lights blue for a second, then settles */
-          const xn = line.querySelector(".xpnums");
-          if(xn && !xn.classList.contains("is-over")){
-            xn.classList.add("is-flash");
-            setTimeout(() => { const x2 = line.querySelector(".xpnums"); if(x2) x2.classList.remove("is-flash"); }, 1100);
-          }
-          fill.style.transition = prev || "";
-          requestAnimationFrame(() => {
-            setBarFill(fill, target);
-            if(barAfter.over) setTimeout(bank, 900);
-          });
+          if(lv < after.level){ line.textContent = "Climbing to level " + after.level; later(30, fillOut); return; }
+          setLine(after, startInto);
+          requestAnimationFrame(() => { if(!finished) fillTo(target, lastMs, landed); });
         });
       };
       fillOut();
@@ -87865,13 +87893,12 @@ function rsUnlockItems(run){
                  : "+" + MASTERY_BONUS.toLocaleString() + " XP mastery bonus",
       color: "#D8E2EC", art: () => buildUnitBadgeSVG(u, true, { fine: true }) });
   });
-  /* A RANK-UP IS NOT TOLD HERE ANY MORE (build 319): no cutscene and no
-     reward card - "those popups should happen in the road map when that
-     cutscene happens". One quiet row says it is waiting on Profile, for
-     as long as it is (a Re-run straight from here still shows it). The
-     rank's theme, flare, character and banner wait with it. */
-  const owedRank = (() => { const o = rankUpOwed(); return o ? TIER_ORDER_FULL[o.toIdx] : null; })();
-  if(owedRank) items.push(rankWaitItem(owedRank));
+  /* A RANK-UP IS NOT TOLD HERE AT ALL (build 320): no cutscene, no reward
+     card (319) and now no row either - "the result stuff does not need to
+     include any rank up stuff or show that you ranked up. You technically
+     have not ranked up until you see the road map cut scene and finished
+     it." The rank's theme, flare, character and banner wait for Profile
+     (rankUpHolds, below). */
   /* A rank's own character and banner sit with its theme, ahead of any
      challenge's: together they are the one rank-reward pop-up. */
   const chars = run.characters.map(characterUnlockItem);
@@ -87907,13 +87934,8 @@ function rsUnlockItems(run){
   return items;
 }
 
-/* The row a rank-up leaves on the results while it waits on Profile
-   (build 319). Never a pop-up: it lands like any other row. */
-function rankWaitItem(rank){
-  return { kind: "rankwait", rank, kicker: "Rank up", name: (RANK_DISPLAY_NAME[rank] || rank) + " rank",
-    sub: "Waiting for you on Profile", detail: "Waiting for you on Profile",
-    color: RANK_COLOR[rank] || "#9FACBA", art: () => buildRankEmblemSVG(rank) };
-}
+/* (Build 319's "Rank up / Waiting for you on Profile" row, rankWaitItem,
+   is gone - build 320.) */
 /* ONE BUILDER PER KIND OF UNLOCK, so the results screen and the Home
    queue (build 235) cannot announce the same thing two ways. A
    character or banner a RANK hands over carries rankReward, which puts
@@ -88888,6 +88910,67 @@ function rsPair(el, have, of){
   return el;
 }
 
+/* ---- THE RESULTS IN ORDER: GRADE, XP, UNLOCKS (build 320) ----
+   Madison: "you get a grade, you see how that adds up, you get awards".
+   The grade comes first and is COUNTED IN - its unit bars fill one at a
+   time and the number climbs with them, red at 0 and warming as it goes,
+   slowing at the end of each bar and most of all at the very end - then
+   the grade lands (its pop, the hundo effect). Then the XP box. Then,
+   after a real pause, the cutscenes and pop-ups, and only once every one
+   of them is over does the Unlocked box go down, its rows one by one. */
+/* The badge progress box, taken off (build 320): "it's kinda redundant
+   and not needed, the profile tab shows all this clearly now". Set this
+   to true to bring it back - it lands after the XP box. */
+const RS_BADGE_PROGRESS_BOX = false;
+/* From the XP box settling to the first cutscene or pop-up: "you can't
+   even react to the grade". */
+const RS_UNLOCK_GAP_MS = 1900;
+/* From the XP box settling to a 100's hundo effect: a beat. */
+const RS_FX_AFTER_XP_MS = 650;
+/* The grade's colour as it climbs: the app's red short of a pass, warming
+   through amber, the pass green from PASS_MARK. Gold is the landing's -
+   a 100 is only ever shown once it has landed. */
+const RS_TONE_STOPS = [[0, [227, 112, 124]], [40, [238, 146, 92]], [58, [236, 190, 88]], [PASS_MARK, [79, 190, 140]], [100, [79, 190, 140]]];
+function rsToneAt(p){
+  p = Math.max(0, Math.min(100, Number(p) || 0));
+  let i = 0;
+  while(i < RS_TONE_STOPS.length - 2 && p > RS_TONE_STOPS[i + 1][0]) i++;
+  const [a, ca] = RS_TONE_STOPS[i], [b, cb] = RS_TONE_STOPS[i + 1];
+  const k = b > a ? Math.max(0, Math.min(1, (p - a) / (b - a))) : 1;
+  return "rgb(" + ca.map((v, j) => Math.round(v + (cb[j] - v) * k)).join(",") + ")";
+}
+/* The three washes' opacities at p - stacked layers crossfaded, so the
+   card's colour moves by opacity alone (no repaint of the card). */
+function rsToneWeights(p){
+  const cl = v => Math.max(0, Math.min(1, v));
+  const g = cl((p - 50) / (PASS_MARK - 50));
+  const a = cl(p / 40) * (1 - g);
+  return [cl(1 - a - g), a, g];
+}
+/* How long each unit's bar takes. A bar runs longer the further it goes,
+   the last one longest - its slow finish is the suspense - and several
+   units share a budget so a long run is never tedious. Nothing right is
+   a short beat: red the whole way, no build-up for nothing. */
+function rsGradeCountPlan(units, good){
+  const n = units.length;
+  const fr = u => u.total ? u.right / u.total : 0;
+  const ms = units.map((u, i) => {
+    const f = fr(u);
+    if(i === n - 1) return Math.round(1200 + 1700 * f + 900 * f * f * f);
+    return Math.round(500 + 1100 * f);
+  });
+  if(n > 1){
+    const lead = ms.slice(0, -1).reduce((s, v) => s + v, 0), budget = n > 4 ? 3000 : 2200;
+    if(lead > budget) for(let i = 0; i < n - 1; i++) ms[i] = Math.max(220, Math.round(ms[i] * budget / lead));
+  }
+  if(!good) for(let i = 0; i < n; i++) ms[i] = Math.min(ms[i], Math.round(900 / n));
+  const gap = n > 1 ? (n > 4 ? 120 : 220) : 0;
+  const starts = [];
+  let t = 0;
+  ms.forEach((m, i) => { starts.push(t); t += m + (i < n - 1 ? gap : 0); });
+  return { ms, starts, totalMs: t };
+}
+
 function showRunRewards(run, hooks, opts){
   endResultsReveal();
   /* the 100%'s effect parses its pictures while the screen lands (build 313) */
@@ -88980,7 +89063,6 @@ function showRunRewards(run, hooks, opts){
     badgesBefore: ruGate(run.badgesBefore), badgesAfter: ruGate(run.badgesAfter) });
   levelBlock.classList.add("rs-levelblock", "rs-land");
   xp.appendChild(levelBlock);
-  panel.appendChild(xp);
 
   /* ---- EVERYTHING ELSE THE RUN MOVED ---- */
   const boxes = [];
@@ -88994,7 +89076,7 @@ function showRunRewards(run, hooks, opts){
   /* A badge EARNED this run gets no progress box: the unlock says it, and
      the case plays there - "when you earn a badge it's kind of redundant,
      so you can remove the first box". Units still filling keep theirs. */
-  run.progUnits.filter(u => run.badges.indexOf(u) < 0).forEach(u => {
+  (RS_BADGE_PROGRESS_BOX ? run.progUnits : []).filter(u => run.badges.indexOf(u) < 0).forEach(u => {
     const need = badgeThresholdFor(u);
     const have = Math.min(need, unitPerfectCount(u));
     const earned = have >= need;
@@ -89043,23 +89125,38 @@ function showRunRewards(run, hooks, opts){
   /* No Game box: the difficulty it unlocked says all of it, in Unlocked,
      with the unit(s) that unlocked it - "we can remove the green box
      that's talk about that completely". */
-  boxes.forEach(b => panel.appendChild(b));
 
-  /* ---- THE GRADE, LAST ---- or, for a lost game, the game over card.
+  /* ---- THE GRADE, FIRST (build 320; it was last) ---- or, for a lost game, the game over card.
      Tinted by how it went: green for a pass, red for short of it, gold
      for a 100. The "9 of 12" stays white: the big number already
      carries the colour, and a second coloured figure beside it made the
      card read louder without saying anything more. */
   const grade = document.createElement("div");
+  const unitBars = [];
+  let gradeParts = null;
   const gradeTone = run.retake ? (run.missed.length ? "is-retake-left" : "is-retake-clear")
     : run.isPerfect ? "is-perfect" : run.pct >= PASS_MARK ? "is-pass" : "is-fail";
-  grade.className = "rs-card rs-grade rs-land score " + gradeTone;
+  /* COUNTED IN (build 320): the card comes down with no grade on it and
+     takes its tone only when the count lands - a gold box would say 100
+     before the number did. Not a retake (no score), not a run with no
+     answers, and never with the reveal skipped. */
+  const countIt = !quiet && !run.retake && run.total > 0;
+  grade.className = "rs-card rs-grade rs-land score " + (countIt ? "is-counting" : gradeTone);
+  let toneLayers = null;
+  if(countIt){
+    const tl = document.createElement("span");
+    tl.className = "rs-grade-tone"; tl.setAttribute("aria-hidden", "true");
+    toneLayers = ["is-red", "is-amber", "is-green"].map(c => { const s = document.createElement("i"); s.className = c; tl.appendChild(s); return s; });
+    toneLayers[0].style.opacity = "1";
+    grade.appendChild(tl);
+  }
   /* A 100 IS IN ITS EFFECT'S COLOURS BEFORE IT IS EVER SEEN (build 317):
      "It looks like all the hundo effect boxes start as the gold default,
      fix that." The colours used to go on when the effect started, after
      the card had landed in gold - and the UFO's only when its beam came
      down. Now they are on the card as it is built. */
-  if(run.isPerfect && !run.retake){ try{ hfxTintGrade(grade, hundoFxInUse()); if(!quiet && hundoFxInUse() === "ufo") hfxUfoUnlit(grade); }catch(e){} }
+  /* (Counted in, the colours go on as the grade lands instead - build 320.) */
+  if(run.isPerfect && !run.retake && !countIt){ try{ hfxTintGrade(grade, hundoFxInUse()); if(!quiet && hundoFxInUse() === "ufo") hfxUfoUnlit(grade); }catch(e){} }
   /* YOUR CHARACTER REACTS TO THE GRADE (build 235), on the XP box's own
      character - "don't put the character on the grade card, it's perfect
      being just on the xp box" (build 236). It reacts when the grade card
@@ -89092,15 +89189,18 @@ function showRunRewards(run, hooks, opts){
          Void's flares spinning. 90 and up is a hop and a nod, a pass a
          nod, and short of it a slump. */
     };
+    /* THE XP BOX COMES AFTER THE GRADE NOW (build 320), so the character
+       on it reacts to the grade as the box lands - before, it would have
+       reacted out of sight. */
     if(opts && opts.instant) setTimeout(react, 0);
     else {
       const mo = new MutationObserver(() => {
-        if(grade.classList.contains("rs-in") || grade.classList.contains("rs-in-now")){
+        if(xp.classList.contains("rs-in") || xp.classList.contains("rs-in-now")){
           mo.disconnect();
           setTimeout(react, 380);
         }
       });
-      mo.observe(grade, { attributes: true, attributeFilter: ["class"] });
+      mo.observe(xp, { attributes: true, attributeFilter: ["class"] });
     }
   }
   if(run.retake){
@@ -89123,13 +89223,16 @@ function showRunRewards(run, hooks, opts){
     const gRow = document.createElement("div");
     gRow.className = "rs-grade-row";
     const pctEl = document.createElement("span");
-    pctEl.className = "rs-pct pct " + (run.isPerfect ? "perfect" : run.pct >= PASS_MARK ? "made" : "short");
-    gradePctMarkup(pctEl, run.pct);
+    const pctTone = "rs-pct pct " + (run.isPerfect ? "perfect" : run.pct >= PASS_MARK ? "made" : "short");
+    pctEl.className = countIt ? "rs-pct pct is-count" : pctTone;
+    gradePctMarkup(pctEl, countIt ? 0 : run.pct);
+    if(countIt) pctEl.style.color = rsToneAt(0);
     const gSide = document.createElement("div");
     gSide.className = "rs-grade-side";
     const frac = document.createElement("p");
     frac.className = "rs-grade-frac";
-    rsPair(frac, run.good, run.total);
+    rsPair(frac, countIt ? 0 : run.good, run.total);
+    gradeParts = { pctEl, pctTone, frac };
     const fracSub = document.createElement("p");
     fracSub.className = "rs-grade-sub slabel";
     fracSub.textContent = run.total === 0 ? "Time ran out before you answered any questions."
@@ -89177,16 +89280,20 @@ function showRunRewards(run, hooks, opts){
         const top = document.createElement("div");
         top.className = "unit-breakdown-top";
         const a = document.createElement("span"); a.className = "unit-breakdown-name"; a.textContent = nm;
-        const b = document.createElement("span"); b.className = "unit-breakdown-score"; rsPair(b, right, st.total);
+        const b = document.createElement("span"); b.className = "unit-breakdown-score"; rsPair(b, countIt ? 0 : right, st.total);
         top.append(a, b);
         const track = document.createElement("div"); track.className = "unit-breakdown-track";
         /* A unit's bar is its OWN verdict: gold at 100, green at a pass,
            red short of one - "if you don't pass the test, the bar needs to
            be red too". */
         const fill = document.createElement("div");
-        fill.className = "unit-breakdown-fill" + (up === 100 ? " full is-gold" : up < PASS_MARK ? " low" : "");
+        const fillTone = "unit-breakdown-fill" + (up === 100 ? " full is-gold" : up < PASS_MARK ? " low" : "");
+        /* counted in, a bar takes its verdict's colour as it finishes (320) */
+        fill.className = countIt ? "unit-breakdown-fill is-counting" : fillTone;
+        if(countIt) fill.style.background = rsToneAt(0);
         setBarFill(fill, 0);
         fill.dataset.to = up + "%";
+        unitBars.push({ fill, score: b, right, total: st.total, up, tone: fillTone });
         track.appendChild(fill);
         row.append(top, track);
         wrap.appendChild(row);
@@ -89194,7 +89301,11 @@ function showRunRewards(run, hooks, opts){
       grade.appendChild(wrap);
     }
   }
+  /* The grade, then how it adds up (the XP box), then the badge boxes when
+     they are switched on (build 320). */
   panel.appendChild(grade);
+  panel.appendChild(xp);
+  boxes.forEach(b => panel.appendChild(b));
 
   /* ---- WHAT IT UNLOCKED ----
      The card lands, and then each unlock comes through centre screen
@@ -89313,8 +89424,116 @@ function showRunRewards(run, hooks, opts){
     }
   };
 
+  /* ---- THE GRADE, COUNTED IN (build 320) ----
+     "the progress bar and grade number will go up as the questions right
+     bar goes up. If it's a single unit, it would do just the one. If it's
+     multiple units, it would do each unit bar one at a time ... it could
+     be red at the beginning because it would start off as a zero and then
+     it makes its way up ... at the end of each unit bar or at the very end
+     it could go slower so the anticipation/suspense for the 100 is real".
+     Each bar fills in turn (rsGradeCountPlan), easing out - the last one
+     most - and the number and the fraction count with the right answers
+     the bars have reached. The number never shows more than has been
+     counted, so the real grade - and above all a 100 - is only ever on
+     the card once the last bar is home. The card's colour moves by three
+     washes crossfading (rsToneWeights); the number's and each bar's
+     colour by rsToneAt. A tap finishes the count and lands the grade. */
+  const gc = { done: !countIt, raf: 0 };
+  const plan = countIt ? rsGradeCountPlan(unitBars, run.good) : null;
+  const setTone = p => {
+    if(toneLayers) rsToneWeights(p).forEach((w, i) => { toneLayers[i].style.opacity = w.toFixed(3); });
+    if(gradeParts) gradeParts.pctEl.style.color = rsToneAt(p);
+  };
+  const paintUnit = (u, p) => {
+    setBarFill(u.fill, Math.round(u.up * p * 10) / 10);
+    const r = Math.min(u.right, Math.floor(u.right * p + 1e-6));
+    if(u.shown !== r){ u.shown = r; rsPair(u.score, r, u.total); }
+    const tp = Math.floor(u.up * p);
+    if(u.toneP !== tp){ u.toneP = tp; u.fill.style.background = rsToneAt(tp); }
+  };
+  /* a bar home takes its own verdict's colour - gold, green or red */
+  const unitHome = u => {
+    if(u.home) return;
+    u.home = true;
+    paintUnit(u, 1);
+    u.fill.style.background = "";
+    u.fill.className = u.tone + " sbar is-home";
+  };
+  let shownPct = -1, shownGood = -1;
+  const paintCount = el => {
+    let sofar = 0;
+    unitBars.forEach((u, i) => {
+      const t = (el - plan.starts[i]) / Math.max(1, plan.ms[i]);
+      const last = i === unitBars.length - 1;
+      const p = t <= 0 ? 0 : t >= 1 ? 1 : 1 - Math.pow(1 - t, last ? 3.2 : 2.4);
+      if(t >= 1) unitHome(u);
+      else if(t > 0){ u.running = true; paintUnit(u, p); }
+      sofar += u.right * p;
+    });
+    const pc = Math.min(run.pct, Math.floor(sofar / run.total * 100 + 1e-6));
+    if(pc !== shownPct){ shownPct = pc; gradePctMarkup(gradeParts.pctEl, pc); setTone(pc); }
+    const g = Math.min(run.good, Math.floor(sofar + 1e-6));
+    if(g !== shownGood){ shownGood = g; rsPair(gradeParts.frac, g, run.total); }
+  };
+  gc.start = () => {
+    if(gc.done) return;
+    unitBars.forEach(u => { u.fill.style.transition = "none"; });
+    grade.classList.add("is-running");
+    const t0 = performance.now();
+    const tick = now => {
+      if(gc.done) return;
+      if(!panel.isConnected){ gc.done = true; return; }
+      const el = now - t0;
+      /* the bars home, the number held where it is: the real grade is
+         the landing's to show, never a frame before it */
+      if(el >= plan.totalMs){ gc.finish(); return; }
+      paintCount(el);
+      gc.raf = requestAnimationFrame(tick);
+    };
+    gc.raf = requestAnimationFrame(tick);
+  };
+  gc.finish = () => {
+    if(gc.done) return;
+    gc.done = true;
+    if(gc.raf) cancelAnimationFrame(gc.raf);
+    unitBars.forEach(u => { u.fill.style.transition = "none"; unitHome(u); });
+  };
+  /* THE GRADE LANDS: the real number and its tone, the pop, the stamps,
+     the shake - and on a 100, its hundo effect, AFTER the bars ("Let the
+     bar run and then the effect"). */
+  const landGrade = instant => {
+    gc.finish();
+    if(countIt && gradeParts){
+      grade.classList.remove("is-counting", "is-running");
+      grade.classList.add(gradeTone, "rs-graded");
+      const pe = gradeParts.pctEl;
+      pe.className = gradeParts.pctTone; pe.style.color = "";
+      gradePctMarkup(pe, run.pct);
+      rsPair(gradeParts.frac, run.good, run.total);
+      unitBars.forEach(u => rsPair(u.score, u.right, u.total));
+      /* a 100 in its effect's colours from the moment it lands (the UFO's
+         unlit until its beam strikes) */
+      if(run.isPerfect){ try{ hfxTintGrade(grade, hundoFxInUse()); if(!instant && hundoFxInUse() === "ufo") hfxUfoUnlit(grade); }catch(e){} }
+      const tl = grade.querySelector(".rs-grade-tone");
+      if(tl) setTimeout(() => tl.remove(), instant ? 0 : 650);
+    }
+    if(!instant){
+      panel.classList.add("rs-shake");
+      setTimeout(() => panel.classList.remove("rs-shake"), 420);
+    }
+    if(!countIt) setTimeout(() => fillBars(".rs-byunit .unit-breakdown-fill[data-to]"), instant ? 0 : 350);
+    /* (a 100's effect is not played here: it waits for the XP box, below) */
+  };
+
   if(quiet){
-    [head, xp, ...lineEls, totalRow, levelBlock, ...boxes, grade, unlocked, ...unlockRows, actions].forEach(el => rsLand(el, true));
+    /* THE SAME ORDER, STILL (build 320): the grade, the XP, any scene, and
+       the Unlocked box only once the scenes are over. */
+    const holdBox = !!unlocked && !(opts && opts.instant) && !theme.muteBanners &&
+      ((run.badges && run.badges.length && typeof playBadgeCaseScene === "function") || (run.flare && typeof playFlareFoundScene === "function"));
+    [head, grade, xp, ...lineEls, totalRow, levelBlock, ...boxes, ...(holdBox ? [] : [unlocked, ...unlockRows]), actions].forEach(el => rsLand(el, true));
+    let boxDown = !holdBox;
+    const boxNow = () => { if(boxDown || !panel.isConnected) return; boxDown = true; [unlocked, ...unlockRows].forEach(el => rsLand(el, true)); };
+    if(holdBox) setTimeout(boxNow, 30000);
     /* THE BOX IN ITS EFFECT'S COLOURS, STILL (build 314). With reduce
        motion (or coming back from the review) the reveal is skipped and
        with it the effect - and so the colours, which the notes promised
@@ -89351,7 +89570,8 @@ function showRunRewards(run, hooks, opts){
     const rmFlare = () => {
       if(!(opts && opts.instant) && run.flare && theme.muteBanners) markFlareFind(run.flare, 3);
       if(!(opts && opts.instant) && run.flare && !theme.muteBanners && typeof playFlareFoundScene === "function"
-         && panel.isConnected && !document.querySelector(".sf-scene")) playFlareFoundScene(run.flare, run.flareAll, () => markFlareFind(run.flare, 3));
+         && panel.isConnected && !document.querySelector(".sf-scene")) playFlareFoundScene(run.flare, run.flareAll, () => { markFlareFind(run.flare, 3); boxNow(); });
+      else boxNow();
     };
     if(!(opts && opts.instant) && run.badges && run.badges.length && typeof playBadgeCaseScene === "function"){
       setTimeout(() => { if(panel.isConnected) playBadgeCaseScene(run.badges.slice(), () => setTimeout(rmFlare, 300), run.retroBadges, { alive: () => panel.isConnected }); }, 400);
@@ -89364,144 +89584,119 @@ function showRunRewards(run, hooks, opts){
   const alive = () => panel.isConnected;
   const seq = makeRevealSequence(alive);
   resultsSeq = seq;
+  /* What a tap finishes besides the panel's own animations: the grade's
+     count, the XP bar's fill and its number (build 320). */
+  let moving = null;
   seq.add(120, instant => rsLand(head, instant));
-  seq.add(260, instant => rsLand(xp, instant));
-  lineEls.forEach(l => seq.add(340, instant => rsLand(l, instant)));
+  if(countIt){
+    seq.add(380, instant => rsLand(grade, instant));
+    /* a beat on the empty card, then the bars */
+    seq.add(650, instant => { if(instant) gc.finish(); else { moving = () => gc.finish(); gc.start(); } });
+    seq.add(plan.totalMs + 160, instant => { moving = null; landGrade(instant); });
+  } else {
+    seq.add(380, instant => { rsLand(grade, instant); landGrade(instant); });
+  }
+  /* ---- HOW IT ADDS UP: THE XP BOX, after the grade has been taken in ---- */
+  const fxId = (run.isPerfect && !run.retake && run.total > 0) ? hundoFxInUse() : null;
+  /* how long a 100's effect has the screen before anything else may come:
+     its tail (HUNDO_FX_TAIL_AT, where its last pieces start fading) */
+  const fxTail = fxId ? ((typeof HUNDO_FX_TAIL_AT === "object" && HUNDO_FX_TAIL_AT[fxId]) || 1500) : 0;
+  seq.add(countIt ? 1250 : 700, instant => rsLand(xp, instant));
+  lineEls.forEach(l => seq.add(380, instant => rsLand(l, instant)));
   seq.add(750, instant => { rsLand(totalRow, instant); countUp(instant); });
-  seq.add(650, instant => {
+  /* THE BAR, SLOWER, AND ITS NUMBER AFTER IT (build 320): "the xp when it
+     goes to the xp bar is too fast and could be more suspenseful ... when
+     the number goes up it needs to be after that bar effect". The block
+     runs its own fill, its pop or its knock at a full bar, and only then
+     its count (buildResultsLevelBlock); onFilled ends the charging. */
+  levelBlock.onFilled = kind => { xp.classList.remove("is-charging"); if(kind !== "bump") xp.classList.add("is-charged"); };
+  seq.add(700, instant => {
     rsLand(levelBlock, true);
+    if(instant || !levelBlock.runFill){ if(levelBlock.setFinal) levelBlock.setFinal(); xp.classList.add("is-charged"); return; }
     xp.classList.add("is-charging");
-    if(instant){ if(levelBlock.setFinal) levelBlock.setFinal(); }
-    else if(levelBlock.runFill) levelBlock.runFill();
+    moving = () => { if(levelBlock.setFinal) levelBlock.setFinal(); xp.classList.remove("is-charging"); xp.classList.add("is-charged"); };
+    levelBlock.runFill();
   });
-  /* The pop lands when the bar has finished, not part-way through a
-     level-up's second fill (build 302): a wrap is two fills, ~1.9s. */
-  seq.add(levelBlock.fillMs ? levelBlock.fillMs : levelBlock.levelsUp ? 2050 : 1250, () => { xp.classList.remove("is-charging"); xp.classList.add("is-charged"); });
+  seq.add(levelBlock.fillMs || 2600, () => { moving = null; xp.classList.remove("is-charging"); xp.classList.add("is-charged"); });
+  /* ---- A 100's HUNDO EFFECT, ONCE BOTH BARS HAVE RUN (build 320) ----
+     "the loading bar is going while the Hundo effect happens. Let the bar
+     run and then the effect." The grade's bars are home and its number
+     has landed; the XP box has added up and its bar has filled; THEN the
+     effect - with the results character on the XP box on screen to react
+     to it (hfxCharReact, b320b), and nothing landing under it until its
+     tail. A tap brings it on at once, as a tap brings any card. */
+  if(fxId) seq.add(RS_FX_AFTER_XP_MS, () => celebrateGrade());
   boxes.forEach(b => {
     seq.add(420, instant => {
       rsLand(b, instant);
       if(badgeBoxes.indexOf(b) >= 0) setTimeout(() => b.querySelectorAll(".badgeprogress-fill[data-to]").forEach(f => { setBarFill(f, f.dataset.to); }), instant ? 0 : 260);
     });
   });
-  seq.add(boxes.length ? 520 : 380, instant => {
-    rsLand(grade, instant);
-    if(!instant){
-      panel.classList.add("rs-shake");
-      setTimeout(() => panel.classList.remove("rs-shake"), 420);
-    }
-    setTimeout(() => fillBars(".rs-byunit .unit-breakdown-fill[data-to]"), instant ? 0 : 350);
-    setTimeout(celebrateGrade, instant ? 0 : 180);
-  });
   if(unlocked){
-    /* A BEAT BEFORE THE UNLOCKS, and a longer one between them - "right
-       after the grade it goes straight to the pop ups, there should be a
-       slight delay to make it feel legit", and "when it goes to the next
-       unlock pop up there is also like zero delay". */
-    /* 1300 then 1200 (build 308): "the pause between that first cutscene
-       in unlocks is now a little too long, I thought it broke". It was
-       1700 to the box and 3000 more to a rank's scene - nearly five
-       seconds of a still screen. */
-    seq.add(1300, instant => rsLand(unlocked, instant));
-    let caseDone = false, rewardsDone = false;
+    /* ---- THE UNLOCKS, AND ONLY THEN THE BOX (build 320) ----
+       "when the unlocks start/the cutscenes start, the purple box should
+       not be put down before any of it, that box will be put down/show up
+       once all the pop ups and cutscenes are done ... and then they will
+       be put down in a cool way one by one". So every scene and pop-up
+       plays first - after a real pause (RS_UNLOCK_GAP_MS: "you can't even
+       react to the grade") - and the Unlocked box lands after the last,
+       its rows one at a time. */
+    let first = true, afterScene = false;
+    /* the first waits out a 100's effect (its tail) as well as the pause */
+    const nextGap = () => { const g = first ? Math.max(RS_UNLOCK_GAP_MS, fxTail + 400) : afterScene ? 320 : 1200; first = false; afterScene = false; return g; };
+    let rewardsDone = false, caseDone = false;
     const rewardParts = unlockItems.filter(isRankRewardItem);
-    const bannerIdx = unlockItems.filter(it => it.kind !== "rankwait" && it.kind !== "badge" && !isRankRewardItem(it));
-    let gap = 1200;
-    /* Straight out of a scene the next card comes almost at once (build
-       268): the scene has left its light behind (openSceneBridge) and a
-       full second of that before the card read as a stall. */
-    let afterScene = false;
-    /* THE 100%'S EFFECT PLAYS OUT BEFORE THE FIRST SCENE (build 317).
-       The effect starts 180ms after the grade lands, the Unlocked card
-       1300ms after it, and the first scene or pop-up 1200ms after that -
-       so a badge case or a rank cutscene came up 2.3s into a World Tree
-       (5.6s) or a UFO (8.6s), and its dim faded the effect out half-way:
-       "an unrelated unlock ... covers the end of one". The first thing
-       that takes the screen now waits for the effect's tail
-       (HUNDO_FX_TAIL_AT, where its last pieces start fading) - measured
-       from the Unlocked card, which is what that step's delay counts
-       from. Confetti is over by then anyway. A tap still brings it on at
-       once, as a tap brings on any card (the delay is a plain step, not
-       a hold). */
-    const fxId = (run.isPerfect && !run.retake && run.total > 0) ? hundoFxInUse() : null;
-    let fxHold = (fxId && typeof HUNDO_FX_TAIL_AT === "object" && HUNDO_FX_TAIL_AT[fxId]) ? 180 + HUNDO_FX_TAIL_AT[fxId] - 1300 : 0;
-    const firstHeld = g => { if(fxHold > g) g = fxHold; fxHold = 0; return g; };
-    const nextGap = () => { const g = afterScene ? 320 : gap; afterScene = false; return firstHeld(g); };
+    const bannerIdx = unlockItems.filter(it => it.kind !== "badge" && !isRankRewardItem(it));
+    const onRow = {};
     unlockItems.forEach((it, n) => {
-      /* A RANK-UP WAITING ON PROFILE (build 319): its row lands, with a
-         beat to be read, and nothing plays - the cutscene and the rank's
-         rewards are on the road map now. */
-      if(it.kind === "rankwait"){
-        seq.add(firstHeld(afterScene ? 500 : 900), instant => { rsLand(unlockRows[n], instant); if(!instant) unlockRows[n].classList.add("is-waiting"); });
-        afterScene = false;
-        return;
-      }
       /* Everything a rank handed over before (a rank already shown whose
-         character or banner was never announced): one card, then a row each. */
+         character or banner was never announced): one card. */
       if(isRankRewardItem(it)){
-        if(!rewardsDone){
-          rewardsDone = true;
-          const top = it.rankReward;
-          if(!theme.muteBanners){
-            const card = rewardParts.length > 1 ? rankRewardsItem(top, rewardParts) : it;
-            seq.add(nextGap(), (instant, release) => playUnlockSpotlight(card, 1, 1, release), true);
-          } else {
-            markUnlocksShown(rewardParts.filter(p => p.kind === "character").map(p => p.character),
-                             rewardParts.filter(p => p.kind === "banner").map(p => p.banner));
-          }
+        if(rewardsDone) return;
+        rewardsDone = true;
+        if(!theme.muteBanners){
+          const card = rewardParts.length > 1 ? rankRewardsItem(it.rankReward, rewardParts) : it;
+          seq.add(nextGap(), (instant, release) => playUnlockSpotlight(card, 1, 1, release), true);
+        } else {
+          markUnlocksShown(rewardParts.filter(p => p.kind === "character").map(p => p.character),
+                           rewardParts.filter(p => p.kind === "banner").map(p => p.banner));
         }
-        seq.add(160, instant => rsLand(unlockRows[n], instant));
         return;
       }
-      /* A BADGE'S MOMENT IS THE CASE, at its unlock - "move that cutscene
-         to when it hits the unlock thing". It stands in for the badge's
-         banner, and plays once for every badge the run earned, each one
-         flying to its slot in turn. */
-      if(it.kind === "badge" && typeof playBadgeCaseScene === "function"){
-        if(!caseDone){
-          caseDone = true;
-          warmBadgeCoinFaces(run.badges);
-          seq.add(nextGap(), (instant, release) => playBadgeCaseScene(run.badges.slice(), release, run.retroBadges), true);
-          afterScene = true;
-        }
-        seq.add(160, instant => rsLand(unlockRows[n], instant));
+      /* A BADGE'S MOMENT IS THE CASE - once for every badge the run earned,
+         each flying to its slot in turn. */
+      if(it.kind === "badge"){
+        if(caseDone || typeof playBadgeCaseScene !== "function") return;
+        caseDone = true;
+        warmBadgeCoinFaces(run.badges);
+        seq.add(nextGap(), (instant, release) => playBadgeCaseScene(run.badges.slice(), release, run.retroBadges), true);
+        afterScene = true;
         return;
       }
       /* A SECRET FLARE: ITS SCENE, THEN ITS CARD, THEN THE CHARACTER
-         (build 318). "It'd be like the rank up one, so cutscene first,
-         then the pop up that you found it. If it's one of the ones where
-         you are getting a character ... cutscene, flare, and then
-         character? That's probably the move." Build 241 had the 3rd-6th
-         the other way round (the card, the scene, the character); every
-         find is the rank-up's order now. The character's card is the next
-         item (rsUnlockItems puts it straight after), its banner after
-         that. Each step crosses the find off what is owed (oweFlareFind),
-         so a results screen cut short leaves the rest for Home. */
+         (build 318). Each step crosses the find off what is owed
+         (oweFlareFind), so a results screen cut short leaves the rest for
+         Home. Muted, its row says it and nothing is owed. */
       if(it.kind === "flare"){
-        if(theme.muteBanners){
-          seq.add(420, instant => { markFlareFind(it.flare, 3); rsLand(unlockRows[n], instant); });
-          return;
-        }
+        if(theme.muteBanners){ onRow[n] = () => markFlareFind(it.flare, 3); return; }
         if(typeof playFlareFoundScene === "function"){
           seq.add(nextGap(), (instant, release) => playFlareFoundScene(it.flare, run.flareAll, () => { markFlareFind(it.flare, 1); release(); }), true);
           afterScene = true;
         }
         seq.add(nextGap(), (instant, release) => playUnlockSpotlight(it, bannerIdx.indexOf(it) + 1, bannerIdx.length, release), true);
-        seq.add(200, instant => rsLand(unlockRows[n], instant));
         return;
       }
       if(!theme.muteBanners){
         seq.add(nextGap(), (instant, release) => playUnlockSpotlight(it, bannerIdx.indexOf(it) + 1, bannerIdx.length, release), true);
       }
-      seq.add(theme.muteBanners ? 420 : 200, instant => rsLand(unlockRows[n], instant));
     });
+    /* The box, once nothing is left to play. A scene's bridge (its light,
+       left up for a pop-up that is not coming) goes as the box lands. */
+    seq.add(first ? Math.max(1200, fxTail) : afterScene ? 420 : 650, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(unlocked, instant); });
+    unlockRows.forEach((row, n) => seq.add(n ? 380 : 560, instant => { rsLand(row, instant); if(onRow[n]) onRow[n](); }));
   }
-  /* THE BUTTONS DO NOT ARRIVE UNDER A SCENE'S DIM (build 317). A scene
-     leaves its bridge up for the pop-up it expects next (openSceneBridge)
-     and only lets go after SCENE_BRIDGE_WAIT_MS. When the last scene is
-     the last unlock - a badge case on its own - nothing claims it, so
-     Re-run and Main menu landed under 72% black and sat there ~1.4s
-     before it faded. It goes as the buttons come in. */
-  if(actions) seq.add(unlocked ? 450 : 620, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(actions, instant); });
+  /* THE BUTTONS DO NOT ARRIVE UNDER A SCENE'S DIM (build 317). */
+  if(actions) seq.add(unlocked ? 650 : Math.max(620, fxTail), instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(actions, instant); });
   seq.add(0, () => { resultsSeq = null; if(sceneBridgeOpen()) dropSceneBridge(false); finish(); });
 
   /* A TAP SPEEDS UP THE BOX ON SCREEN, NOT THE WHOLE SHOW (build 305):
@@ -89514,6 +89709,7 @@ function showRunRewards(run, hooks, opts){
   panel.addEventListener("click", e => {
     if(e.target.closest("button")) return;
     if(resultsSeq !== seq || seq.isHeld()) return;
+    if(moving){ const f = moving; moving = null; try{ f(); }catch(err){} }
     rsFinishMoving(panel);
     seq.next();
   });
