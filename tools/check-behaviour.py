@@ -543,9 +543,12 @@ def check_ranks(br):
     ptabs = pg.evaluate("""()=>({
       rendered: [...document.querySelectorAll('.profiletabs .iconbtn')].map(b=>b.textContent),
       swipe: PROFILE_TABS.slice(), bottom: !!document.querySelector('#bottomtab-ranks')})""")
-    check("Profile is two tabs, Profile first, and swipes in the same order",
-          len(ptabs["rendered"]) == 2 and ptabs["rendered"][:1] == ["Profile"] and
-          len(ptabs["swipe"]) == 2, ptabs)
+    # BUILD 319: three tabs - "the three tabs should be profile,
+    # calendar, and stats" - read off the page; the swipe order is the
+    # buttons' order.
+    check("Profile is three tabs, Profile first, and swipes in the same order",
+          len(ptabs["rendered"]) == 3 and ptabs["rendered"][:1] == ["Profile"] and
+          [t.lower() for t in ptabs["rendered"]] == [t.lower() for t in ptabs["swipe"]], ptabs)
     # Build 284 took the Progress tab back off the bar: "let's remove the
     # progress tab and put them within profile" - the rank and badge rows
     # on the Profile card open it (check_b284).
@@ -6734,7 +6737,11 @@ def check_b289(br):
              is the case's tray, inside the card. */
           const tray = bl[2].querySelector('.ncase-tray');
           const caseCs = tray ? getComputedStyle(tray) : cs[2];
-          out.box = { radius: !!caseR && caseCs.borderTopLeftRadius === caseRpx && parseFloat(caseRpx) <= 4,
+          /* REVISED AGAIN IN 319 (b319h): "the brief case sticks out ...
+             it should all feel smooth when you look down it." The shut
+             case on the card is drawn in the card's own surface, so its
+             corner is the Next rank box's, not the briefcase's square. */
+          out.box = { radius: !tray && cs[2].borderTopLeftRadius === cs[1].borderTopLeftRadius && parseFloat(cs[1].borderTopLeftRadius) > 4,
             width: rs.every(q => Math.abs(q.width - rs[0].width) < 1),
             shadow: cs[0].boxShadow === 'none' && cs[1].boxShadow === 'none' && black(cs[2].boxShadow),
             unboxed: cs[0].backgroundImage === 'none' && parseFloat(cs[0].borderTopWidth) === 0,
@@ -6764,7 +6771,7 @@ def check_b289(br):
           r.get("congrats") == 3 and r.get("congratsAgain") is False, r)
     check("tourRev 3 arms the three Profile tips, starting with Customize",
           r.get("tourRev") == 3 and "Customize" in str(r.get("tip")), r.get("tip"))
-    check("the rank line is no box; the next rank and the badge case are one family: same width, no glow, no watermark - and the case has the briefcase's square corner (318)",
+    check("the rank line is no box; the next rank and the badge case are one family: same width, no glow, no watermark - and the case strip takes the Next rank box's corner (319h)",
           isinstance(r.get("box"), dict) and all(r["box"].values()), r.get("box"))
     check("Customize is a little bigger", r.get("edit", 0) > 13, r.get("edit"))
     ctx.close()

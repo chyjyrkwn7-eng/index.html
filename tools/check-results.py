@@ -450,7 +450,11 @@ with sync_playwright() as pw:
     # trigger a rank up.")
     order = pg.evaluate("""()=>rsUnlockItems({ colors:['vanguard'], badges:['Identity Crimes'], retroBadges:[],
       characters:['robot'], justBeatSpeed:null, units:[], flare:null }).map(i=>i.kind)""")
-    ck("unlocks run badge, rank, then what the rank handed over", order[:3] == ["badge", "rank", "theme"] and "character" in order[3:], order)
+    # BUILD 319: the rank and what it hands over play on Profile's road
+    # map, not here ("those popups should happen in the road map") - the
+    # results keep the badge first and any other unlock after it.
+    ck("unlocks run the badge first, then the rest; the rank and its rewards are not on the results (build 319)",
+       order[:1] == ["badge"] and "character" in order[1:] and not any(k in ("rank", "theme", "rankflare", "rankrewards") for k in order), order)
     # A run that missed one: the badge line, the avatar, the chip.
     pg.evaluate("([u])=>{ store.unitPerfects = store.unitPerfects || {}; store.unitPerfects[u] = 3; __run(u,0,'drill'); }", [UNIT])
     wait_done(pg)
