@@ -27400,6 +27400,112 @@
     filter:drop-shadow(0 0 1.5px color-mix(in srgb, var(--badge-glow, #fff) 45%, transparent))
            drop-shadow(0 0 6px color-mix(in srgb, var(--badge-glow, #fff) 20%, transparent)); }
   .nova-case.ncase .ncase-cell.is-earned .badge-tile-art::after{ opacity:.55; }
+  /* ---- DIRT ON THE CASE (build 320, b320g) ---- a badge's glow fades with
+     its shine: clean, light, dull, grimy, dirtiest. The colour stays. */
+  .nova-case.ncase .ncase-cell.is-earned .badge-tile-art[data-dirt="1"] svg{
+    filter:drop-shadow(0 0 1.5px color-mix(in srgb, var(--badge-glow, #fff) 36%, transparent))
+           drop-shadow(0 0 6px color-mix(in srgb, var(--badge-glow, #fff) 15%, transparent)); }
+  .nova-case.ncase .ncase-cell.is-earned .badge-tile-art[data-dirt="2"] svg{
+    filter:drop-shadow(0 0 1.5px color-mix(in srgb, var(--badge-glow, #fff) 26%, transparent))
+           drop-shadow(0 0 6px color-mix(in srgb, var(--badge-glow, #fff) 10%, transparent)); }
+  .nova-case.ncase .ncase-cell.is-earned .badge-tile-art[data-dirt="3"] svg{
+    filter:drop-shadow(0 0 1.5px color-mix(in srgb, var(--badge-glow, #fff) 16%, transparent)); }
+  .nova-case.ncase .ncase-cell.is-earned .badge-tile-art[data-dirt="4"] svg{ filter:none; }
+  .nova-case.ncase .ncase-cell.is-earned .badge-tile-art[data-dirt="2"]::after{ opacity:.35; }
+  .nova-case.ncase .ncase-cell.is-earned .badge-tile-art[data-dirt="3"]::after{ opacity:.2; }
+  .nova-case.ncase .ncase-cell.is-earned .badge-tile-art[data-dirt="4"]::after{ opacity:0; }
+  /* A TAP LANDS ON THE SLOT IT IS OVER (build 320, b320g). A seated badge's
+     seat shade is a 260-unit rect under a mask (build 319), and a masked
+     shape is hit-tested by its geometry, not its mask: with the svg's
+     overflow visible, a badge's rect lay over its neighbours, and a tap on
+     one badge opened the one beside it. The cell's own box takes the tap. */
+  .nova-case.ncase .ncase-cell svg{ pointer-events:none; }
+  /* the slot it was lifted out of: empty, no light in it */
+  .nova-case.ncase .ncase-cell.is-lifted .badge-tile-art svg{ filter:none; }
+  .nova-case.ncase .ncase-cell.is-lifted .badge-tile-art::after{ opacity:0; }
+
+  /* ---- A BADGE IN YOUR HAND (build 320, b320g) - openBadgeInspect ---- */
+  .binspect{
+    --bi:min(72vw, 40vh, 21rem);
+    position:fixed; inset:0; z-index:420; overflow-y:auto; overscroll-behavior:contain;
+    -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  }
+  @media (min-width:40rem){ .binspect{ --bi:min(40vw, 34vh, 23rem); } }
+  body.binspect-open .bottomtabs, body.binspect-open #backtotop{ opacity:0; pointer-events:none; transition:opacity .25s ease; }
+  .binspect-dim{
+    position:fixed; inset:0;
+    background:
+      radial-gradient(circle at 50% 34%, color-mix(in srgb, var(--badge-col, #9FACBA) 20%, transparent) 0, transparent 44%),
+      linear-gradient(180deg, rgba(5,7,11,.95) 0%, rgba(5,7,11,.9) 60%, rgba(5,7,11,.5) 100%);
+  }
+  .binspect-stage{
+    position:relative; box-sizing:border-box; min-height:100%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.6rem;
+    padding:calc(env(safe-area-inset-top, 0px) + 1.4rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 1.6rem);
+  }
+  .binspect-float{ position:relative; flex:none; width:var(--bi); height:var(--bi); transform-origin:50% 50%; will-change:transform; }
+  .binspect-glow{
+    position:absolute; inset:-32%; border-radius:50%; pointer-events:none; opacity:var(--glow-k, 1); transition:opacity .6s ease;
+    background:radial-gradient(circle, color-mix(in srgb, var(--badge-col, #9FACBA) 30%, transparent) 0, transparent 62%);
+  }
+  .binspect-shadow{
+    position:absolute; left:16%; right:16%; bottom:-12%; height:8%; border-radius:50%; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 50%, rgba(0,0,0,.6), rgba(0,0,0,0) 70%);
+  }
+  .binspect-persp{ position:absolute; inset:0; perspective:calc(var(--bi) * 3.2); }
+  .binspect-coin, .binspect-spin{ position:absolute; inset:0; transform-style:preserve-3d; }
+  .binspect-spin{ --thick:calc(var(--bi) * .07); will-change:transform; }
+  .binspect-face, .binspect-edge{ position:absolute; inset:0; }
+  .binspect-face{ backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+  .binspect-face.is-front{ transform:translateZ(calc(var(--thick) / 2)); }
+  /* the back faces you when the badge is turned round: its own drawing,
+     never the front's mirrored */
+  .binspect-face.is-back{ transform:translateZ(calc(var(--thick) / -2)) rotateY(180deg); }
+  .binspect-art, .binspect-edge{ position:absolute; inset:0; width:100%; height:100%; display:block; pointer-events:none;
+    -webkit-user-drag:none; -webkit-user-select:none; user-select:none; }
+  .binspect-face.is-front .binspect-art{ opacity:0; }
+  .binspect-face.is-front .binspect-art.is-current, .binspect-face.is-front .binspect-art.is-coming{ opacity:1; }
+  .binspect-face.is-front .binspect-art.is-coming{ z-index:1; }
+  .binspect-edge{ transform:translateZ(calc((var(--k) - .5) * var(--thick) * .96)) scale(.988); }
+  .binspect-spec{ position:absolute; inset:0; overflow:hidden; pointer-events:none;
+    -webkit-mask-size:100% 100%; mask-size:100% 100%; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; }
+  .binspect-face.is-back .binspect-spec{ transform:scaleX(-1); }
+  .binspect-spec i{ position:absolute; top:-25%; bottom:-25%; left:32%; width:36%; opacity:0;
+    background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.16) 28%, rgba(255,255,255,.58) 50%, rgba(255,255,255,.16) 72%, rgba(255,255,255,0) 100%); }
+  .binspect-hit{ position:absolute; inset:-4%; z-index:3; border-radius:50%; touch-action:none; cursor:grab; }
+  .binspect-hit.is-grabbed{ cursor:grabbing; }
+  .binspect-sparks{ position:absolute; inset:0; z-index:4; pointer-events:none; }
+  .binspect-spark{
+    position:absolute; width:13%; height:13%; margin:-6.5% 0 0 -6.5%; opacity:0;
+    clip-path:polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+    background:radial-gradient(circle, #FFFFFF 0 22%, #FFF2C2 46%, rgba(255,226,140,.0) 74%);
+  }
+  .binspect-slot{ position:absolute; inset:0; }
+  .binspect-slot svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .binspect-words{ position:relative; width:min(22rem, 100%); text-align:center; }
+  .binspect-words .unlock-card-name{ margin-bottom:.15rem; }
+  .binspect-state{ margin:0 0 .55rem; font-size:.8rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#7CF0A8; }
+  .binspect-words .unlock-card-desc{ margin-bottom:.75rem; }
+  .binspect.is-found .unlock-card-fill{ background:linear-gradient(90deg, #2FBF71, #7CF0A8); }
+  .binspect-words .unlock-card-fill.sbar{ transition:none; }
+  .binspect-dirt{
+    margin:.9rem auto 0; max-width:19rem; padding:.55rem .85rem; border-radius:.8rem;
+    font-size:.88rem; font-weight:700; line-height:1.35; color:#F6E3A0;
+    background:rgba(255,212,59,.09); border:1px solid rgba(255,212,59,.3);
+  }
+  .binspect-dirt.is-clean{ color:#9FF2C0; background:rgba(47,191,113,.1); border-color:rgba(124,240,168,.32); }
+  .binspect-care, .binspect-tip{ margin:.6rem auto 0; max-width:19rem; font-size:.78rem; font-weight:600; line-height:1.4; color:rgba(243,245,247,.6); }
+  .binspect-dirt, .binspect-care, .binspect-words .unlock-card-desc{ text-wrap:balance; }
+  .binspect-tip{ margin-top:.25rem; }
+  .binspect-close{ margin-top:1.1rem; }
+  /* a short phone (an SE): a smaller badge, so the words and Close fit */
+  @media (max-height:46rem) and (orientation:portrait){ .binspect{ --bi:min(62vw, 32vh, 21rem); } .binspect-stage{ gap:1.1rem; } }
+  /* a phone on its side: the words beside the badge */
+  @media (orientation:landscape) and (max-height:32rem){
+    .binspect{ --bi:min(60vh, 40vw, 17rem); }
+    .binspect-stage{ flex-direction:row; gap:2rem; }
+    .binspect-words{ width:min(20rem, 46vw); }
+  }
 
   /* ---- the case's name, on its side (build 317, badge2) ----
      One plate on the front wall of every case, between the latches: a
@@ -48010,7 +48116,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
               dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, bestTestStreak: 0,
-              weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
+              weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
               fullTestsSeeded: false, practiceExamPerfect: false, banner: "", hundoFx: "confetti", starfallKept: false, creditsApplied: [],
@@ -48241,6 +48347,13 @@ function applyLoadedData(got){
      without it is still a whole record, and ensureSeenUnlocks() starts it
      empty - so nothing written before this build re-seeds. */
   if(store.seenUnlocks && Array.isArray(got.seenUnlocks.fx)) store.seenUnlocks.fx = hundoFxIds(got.seenUnlocks.fx);
+  /* Build 320 (b320g): when each found badge was last clean. A copy that
+     has none (an older build's) keeps this device's, so it cannot make
+     every badge spotless again; an account that has never had one starts
+     every badge it holds clean as of now - nobody opens the app to a case
+     of filthy badges. */
+  store.badgeCleanedAt = badgeCleanMap(got.badgeCleanedAt) || badgeCleanMap(store.badgeCleanedAt) || {};
+  try{ ensureBadgeCleanedAt(false); }catch(e){}
   store.unlocksShown = (got.unlocksShown && Array.isArray(got.unlocksShown.chars) && Array.isArray(got.unlocksShown.banners))
     ? { chars: got.unlocksShown.chars.filter(x => typeof x === "string"),
         banners: got.unlocksShown.banners.filter(x => typeof x === "string"),
@@ -49826,6 +49939,7 @@ function wipeLocalProgressAndSettings(){
   store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.retakenQuestions = 0; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
   store.unlocksShown = { chars: [], banners: [], fx: [] };
   store.seenUnlocks = null;
+  store.badgeCleanedAt = {};
   store.unitRuns = {};
   store.vrMatches = 0; store.vrWins = 0; store.vrCounted = []; store.vrRetroDone = true;
   store.lateHundos = 0; store.lateHundosSeed312 = true; store.flareHintsShown = [];
@@ -51297,6 +51411,9 @@ function mergeSameAccount(dst, src){
         if(a.some(x => b.indexOf(x) < 0)) res.otherHadLess = true;
       }
     } else if(okSeen(dst.seenUnlocks)) res.otherHadLess = true; }
+  /* when each badge was last clean (build 320, b320g): the newer time,
+     badge by badge - cleaned on either device is cleaned */
+  if(dst.badgeCleanedAt || src.badgeCleanedAt) maxMap("badgeCleanedAt");
   ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved",
    "starfallKept", "onboardingComplete", "fullTestsSeeded", "koiRevoked295"].forEach(k => orInto(dst, k, src[k]));
   if(src.mysteryColorsFound && typeof src.mysteryColorsFound === "object") orMap("mysteryColorsFound");
@@ -53552,6 +53669,92 @@ setTimeout(() => {
    The slot, the token's shadow in it and the glisten stay vector; the
    token is an <image> of the render, in the same frame. If a canvas is
    not available the vector token below is drawn instead. */
+/* ---- BADGES LOSE THEIR SHINE (build 320, b320g) ----
+   Madison: "Pokemon had this feature, you would need to occasionally clean
+   your badges by rubbing your finger over them multiple times, and it would
+   bring the shine back to them ... Brand new badges come in as shiny as can
+   be, but the older the badge/the last time a badge was cleaned, is the
+   less shiny, glossy/glowy it is ... There could be like 5 phases. They get
+   dirtier by the week so by week 3-4 they'd be their dirtiest."
+   store.badgeCleanedAt = { unit: ms } is when each found badge was last
+   clean. Each whole week since then is one stage: 0 clean, 1 light, 2 dull,
+   3 grimy, 4 (four weeks or more) dirtiest. Cleaning part of the way sets
+   the time back by the stages still left (setBadgeDirtStage), so the time
+   IS the stage and nothing else is stored. A badge not found has no stage. */
+const BADGE_DIRT_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const BADGE_DIRT_MAX = 4;
+const BADGE_DIRT_NAMES = ["Clean", "Light", "Dull", "Grimy", "Dirtiest"];
+/* The look, per unit of stage / 4 (renderBadgeStrike). Dull and smudged,
+   with grime in the recesses - and never another colour: the enamel only
+   loses its clear coat and a tenth of its light. */
+const BADGE_DIRT = {
+  gloss: .8, glossSm: .2,       /* the metal's specular taken off, more under a smudge */
+  flat: .42, flatTo: .055,      /* its reflection flattened towards a dull grey (linear) */
+  tarnish: [1, .95, .86],       /* ...and a little warmer: tarnish, at the dirtiest */
+  coat: .8, coatSm: .2,         /* the enamel's clear coat dulled */
+  dim: .16,                     /* the enamel a touch darker */
+  grime: .8, grimeE: .62,       /* grime settled at the foot of every wall */
+  recM: 1.3, recE: 1.5,         /* ...how far it reaches up the wall and into the colour, token units */
+  gc: [.012, .009, .006],       /* its colour, linear: a dark brown-grey */
+  film: .42, filmE: .26,        /* a smudge: a film that greys what is under it */
+  fc: [.075, .064, .05]         /* the film's colour, linear */
+};
+function badgeHash2(seed, a, b){
+  let n = (Math.imul(a, 374761393) + Math.imul(b, 668265263) + Math.imul(seed, -2048144777)) | 0;
+  n = Math.imul(n ^ (n >>> 13), 1274126177);
+  return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+}
+function badgeValueNoise(seed, x, y){
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = badgeHash2(seed, xi, yi), b = badgeHash2(seed, xi + 1, yi), c = badgeHash2(seed, xi, yi + 1), d = badgeHash2(seed, xi + 1, yi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+/* Where a badge is smudged, 0-1: soft patches about a fifth of a badge
+   across, the same on every render of that badge. */
+function badgeSmudge(seed, x, y){
+  const n = .62 * badgeValueNoise(seed, x / 15 + 7.3, y / 15 + 2.1) + .38 * badgeValueNoise(seed ^ 0x5bd1e995, x / 6.5 + 31.7, y / 6.5 + 17.9);
+  const t = (n - .4) / .36;
+  return t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+}
+function badgeCleanMap(v){
+  if(!v || typeof v !== "object" || Array.isArray(v)) return null;
+  const o = {};
+  Object.keys(v).forEach(k => { const t = Number(v[k]); if(isFinite(t) && t > 0) o[k] = t; });
+  return o;
+}
+/* Every found badge with no time yet is clean as of now: an account
+   updating in, and a badge found on a device running an older build. */
+function ensureBadgeCleanedAt(persist){
+  let m = store.badgeCleanedAt;
+  if(!m || typeof m !== "object" || Array.isArray(m)) m = store.badgeCleanedAt = {};
+  let added = false;
+  const now = Date.now();
+  try{ unitsInTeachingOrder().forEach(u => { if(typeof m[u] !== "number" && unitBadgeEarned(u)){ m[u] = now; added = true; } }); }catch(e){}
+  if(added && persist){ try{ persistLocally(); }catch(e){} }
+  return m;
+}
+function badgeDirtAt(cleanedAt, now){
+  if(typeof cleanedAt !== "number" || !isFinite(cleanedAt)) return 0;
+  const w = Math.floor(((typeof now === "number" ? now : Date.now()) - cleanedAt) / BADGE_DIRT_WEEK_MS);
+  return w <= 0 ? 0 : w >= BADGE_DIRT_MAX ? BADGE_DIRT_MAX : w;
+}
+function badgeDirtStage(unit, now){
+  if(!unitBadgeEarned(unit)) return 0;
+  const m = store.badgeCleanedAt;
+  let t = m && typeof m === "object" ? m[unit] : undefined;
+  if(typeof t !== "number") t = ensureBadgeCleanedAt(true)[unit];
+  return badgeDirtAt(t, now);
+}
+/* Cleaned to `stage` just now: the clean time goes back by that many
+   weeks, so the badge reads that stage for the week to come. Saved and
+   synced; the merge keeps each badge's newest time. */
+function setBadgeDirtStage(unit, stage){
+  const m = ensureBadgeCleanedAt(false);
+  m[unit] = Date.now() - Math.max(0, Math.min(BADGE_DIRT_MAX, stage | 0)) * BADGE_DIRT_WEEK_MS;
+  saveStore();
+}
+
 const BADGE_STRIKE = {
   relief: 2.6,          /* the rim's height, in token units */
   enamel: .38,          /* the enamel's level, as a share of it */
@@ -53838,8 +54041,12 @@ function badgeStrikeBuffers(N){
   }
   return B;
 }
-function renderBadgeStrike(unitName, grey, Wout, ssForce){
+function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
   const P = BADGE_STRIKE, G = BADGE_GEOM;
+  /* DIRT (build 320, b320g): 0 clean to 4 dirtiest, 0 for a grey token.
+     See BADGE_DIRT for what each part of the look does. */
+  const DT = grey ? 0 : Math.max(0, Math.min(BADGE_DIRT_MAX, dirt | 0)) / BADGE_DIRT_MAX, DK = BADGE_DIRT;
+  const dSeed = DT > 0 ? (parseInt(hashOf(String(unitName)), 36) >>> 0) : 0;
   const g = badgeStrikeGeometry(badgeShapeFor(unitName));
   badgeProfileTables();
   const PROF = BADGE_PROF, DPROF = BADGE_DPROF, PN = BADGE_PROF_N;
@@ -53926,10 +54133,29 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce){
       const li = ix + iy * LN, li1 = li + (ix < LN1 ? 1 : 0), li2 = li + (iy < LN1 ? LN : 0), li3 = li2 + (ix < LN1 ? 1 : 0);
       const w0 = (1 - ax) * (1 - ay), w1 = ax * (1 - ay), w2 = (1 - ax) * ay, w3 = ax * ay;
       const ev = EE[li] * w0 + EE[li1] * w1 + EE[li2] * w2 + EE[li3] * w3;
-      const sp = SPT[li] * w0 + SPT[li1] * w1 + SPT[li2] * w2 + SPT[li3] * w3, h0 = H[i];
+      let sp = SPT[li] * w0 + SPT[li1] * w1 + SPT[li2] * w2 + SPT[li3] * w3;
+      const h0 = H[i];
       const occ = h0 < .5 ? .25 + .75 * (h0 / .5) : 1;
-      const mm = ev * .95 * (1 - P.wallAO + P.wallAO * occ);
-      const mr = mm * tint[0] + sp, mg = mm * tint[1] + sp, mb = mm * tint[2] + sp;
+      let mm = ev * .95 * (1 - P.wallAO + P.wallAO * occ);
+      /* dirt: a smudged film (sm, a soft noise field in token units) that
+         takes the gloss off, flatter metal, and grime settled at the foot
+         of every wall (rM on the metal side, rE on the colour's) */
+      let sm = 0, rM = 0, rE = 0;
+      if(DT > 0){
+        sm = badgeSmudge(dSeed, (x - pcx) / k, (y - pcy) / k);
+        const wd0 = WD[i];
+        rM = wd0 < 0 ? Math.exp(wd0 / DK.recM) : 1;
+        rE = wd0 > 0 ? Math.exp(-wd0 / DK.recE) : 1;
+        sp *= 1 - DT * (DK.gloss + DK.glossSm * sm);
+        mm = mm * (1 - DK.flat * DT) + DK.flatTo * DT;
+      }
+      let mr = mm * tint[0] + sp, mg = mm * tint[1] + sp, mb = mm * tint[2] + sp;
+      if(DT > 0){
+        const T = DK.tarnish, gq = DK.grime * DT * rM, fq = DK.film * DT * sm;
+        mr *= 1 + (T[0] - 1) * DT; mg *= 1 + (T[1] - 1) * DT; mb *= 1 + (T[2] - 1) * DT;
+        mr = mr * (1 - fq) + DK.fc[0] * fq; mg = mg * (1 - fq) + DK.fc[1] * fq; mb = mb * (1 - fq) + DK.fc[2] * fq;
+        mr = mr * (1 - gq) + DK.gc[0] * gq; mg = mg * (1 - gq) + DK.gc[1] * gq; mb = mb * (1 - gq) + DK.gc[2] * gq;
+      }
       const aE = AE[i];
       let er = 0, eg = 0, eb = 0;
       if(aE > 0){
@@ -53950,8 +54176,15 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce){
         let tt = .5 - (NX[i] * ldx + NY[i] * ldy) / (2 * P.enTilt); tt = tt < 0 ? 0 : tt > 1 ? 1 : tt;
         const rq = tt * RL, r0 = rq | 0, r1 = r0 < RL ? r0 + 1 : r0, rf = rq - r0, rs = rf * rf * (3 - 2 * rf);
         const dif = (.6 + .4 * (DIF[li] * w0 + DIF[li1] * w1 + DIF[li2] * w2 + DIF[li3] * w3)) * ED + (RAMP[r0] * (1 - rs) + RAMP[r1] * rs) * EM;
-        const cc = ((P.coat + .6 * (FR[li] * w0 + FR[li1] * w1 + FR[li2] * w2 + FR[li3] * w3)) * ev + .45 * (SPE[li] * w0 + SPE[li1] * w1 + SPE[li2] * w2 + SPE[li3] * w3)) * CK;
-        er = en[0] * dif * shade + cc; eg = en[1] * dif * shade + cc; eb = en[2] * dif * shade + cc;
+        let cc = ((P.coat + .6 * (FR[li] * w0 + FR[li1] * w1 + FR[li2] * w2 + FR[li3] * w3)) * ev + .45 * (SPE[li] * w0 + SPE[li1] * w1 + SPE[li2] * w2 + SPE[li3] * w3)) * CK;
+        let dd = dif;
+        if(DT > 0){ cc *= 1 - DT * (DK.coat + DK.coatSm * sm); dd *= 1 - DK.dim * DT; }
+        er = en[0] * dd * shade + cc; eg = en[1] * dd * shade + cc; eb = en[2] * dd * shade + cc;
+        if(DT > 0){
+          const gq = DK.grimeE * DT * rE, fq = DK.filmE * DT * sm;
+          er = er * (1 - fq) + DK.fc[0] * fq; eg = eg * (1 - fq) + DK.fc[1] * fq; eb = eb * (1 - fq) + DK.fc[2] * fq;
+          er = er * (1 - gq) + DK.gc[0] * gq; eg = eg * (1 - gq) + DK.gc[1] * gq; eb = eb * (1 - gq) + DK.gc[2] * gq;
+        }
       }
       const cM = aS - aE;
       AR[i] = mr * cM + er * aE; AG[i] = mg * cM + eg * aE; AB[i] = mb * cM + eb * aE;
@@ -53989,23 +54222,24 @@ let badgeStrikeBroken = false;
    was before this build - and the supersampled finish replaces it a
    moment later, one badge per idle slice (badgeStrikeFinish). Asked for
    without `draft`, the finish is rendered there and then. */
-function badgeStrikeEntry(unitName, grey, W, draft){
+function badgeStrikeEntry(unitName, grey, W, draft, dirt){
   if(badgeStrikeBroken) return null;
-  const key = String(unitName) + (grey ? "|g" : "|c");
+  const dz = grey ? 0 : Math.max(0, Math.min(BADGE_DIRT_MAX, dirt | 0));
+  const key = String(unitName) + (grey ? "|g" : "|c") + (dz ? "|d" + dz : "");
   const list = BADGE_STRIKE_CACHE[key] || (BADGE_STRIKE_CACHE[key] = []);
   let best = null;
   list.forEach(e => { if(e.W >= W && e.W <= W * 1.08 && (draft || !e.draft) && (!best || (best.draft && !e.draft) || (best.draft === e.draft && e.W < best.W))) best = e; });
   if(best) return best;
   try{
-    const url = renderBadgeStrike(unitName, grey, W, draft ? 1 : 0).toDataURL("image/png");
+    const url = renderBadgeStrike(unitName, grey, W, draft ? 1 : 0, dz).toDataURL("image/png");
     if(!/^data:image\/png/.test(url)) throw new Error("no png");
     const e = { W, url, draft: !!draft };
     list.push(e);
     return e;
   }catch(e){ badgeStrikeBroken = true; return null; }
 }
-function badgeStrikeURL(unitName, grey, W){
-  const e = badgeStrikeEntry(unitName, grey, W, false);
+function badgeStrikeURL(unitName, grey, W, dirt){
+  const e = badgeStrikeEntry(unitName, grey, W, false, dirt);
   return e ? e.url : null;
 }
 const BADGE_STRIKE_DRAFTS = new Set();
@@ -54021,11 +54255,11 @@ function badgeStrikeFinish(im){
     BADGE_STRIKE_DRAFTS.delete(im);
     const st = im.__strike;
     if(st && st.draft && im.isConnected){
-      const e = badgeStrikeEntry(st.unit, st.grey, st.W, false);
+      const e = badgeStrikeEntry(st.unit, st.grey, st.W, false, st.dirt);
       if(e){
         /* every image showing that draft takes the finish */
         [im, ...BADGE_STRIKE_DRAFTS].forEach(o => { const t = o.__strike;
-          if(t && t.draft && t.unit === st.unit && t.grey === st.grey && t.W === st.W){ o.setAttribute("href", e.url); t.draft = false; BADGE_STRIKE_DRAFTS.delete(o); } });
+          if(t && t.draft && t.unit === st.unit && t.grey === st.grey && t.W === st.W && (t.dirt | 0) === (st.dirt | 0)){ o.setAttribute("href", e.url); t.draft = false; BADGE_STRIKE_DRAFTS.delete(o); } });
       }
     }
     if(BADGE_STRIKE_DRAFTS.size){ badgeStrikeFinishing = 1; ric(step); }
@@ -54056,7 +54290,7 @@ function badgeStrikeUpgrade(){
   const t0 = performance.now();
   todo.forEach(([im, need]) => {
     if(performance.now() - t0 > 12){ BADGE_STRIKE_WATCH.add(im); return; }
-    const st = im.__strike, e = badgeStrikeEntry(st.unit, st.grey, need, true);
+    const st = im.__strike, e = badgeStrikeEntry(st.unit, st.grey, need, true, st.dirt);
     if(e){ im.setAttribute("href", e.url); st.W = need; st.draft = e.draft; if(e.draft) badgeStrikeFinish(im); }
   });
   if(BADGE_STRIKE_WATCH.size) badgeStrikeRaf = requestAnimationFrame(badgeStrikeUpgrade);
@@ -54064,7 +54298,8 @@ function badgeStrikeUpgrade(){
 /* The token as an <image> for buildUnitBadgeSVG, or null. */
 function badgeStrikeImage(unitName, grey, opts){
   const W = badgeStrikeSize((opts.px || badgeDefaultPx()) * badgeDpr());
-  const e = badgeStrikeEntry(unitName, grey, W, true);
+  const dirt = grey ? 0 : (opts.dirt | 0);
+  const e = badgeStrikeEntry(unitName, grey, W, true, dirt);
   if(!e) return null;
   const im = document.createElementNS("http://www.w3.org/2000/svg", "image");
   im.setAttribute("class", "badge-raster");
@@ -54073,7 +54308,9 @@ function badgeStrikeImage(unitName, grey, opts){
   /* what the enamel was rendered in (none for grey: no unit colour
      reaches a badge not yet earned) */
   if(!grey) im.setAttribute("data-enamel", String(badgeThemeFor(unitName).p));
-  im.__strike = { unit: unitName, grey, W, tries: 0, draft: e.draft };
+  /* how dirty it was drawn (build 320, b320g): 0 clean to 4 */
+  im.setAttribute("data-dirt", String(dirt));
+  im.__strike = { unit: unitName, grey, W, tries: 0, draft: e.draft, dirt };
   if(e.draft) badgeStrikeFinish(im);
   if(!opts.px) badgeStrikeWatch(im);
   return im;
@@ -54089,7 +54326,7 @@ function warmBadgeStrikes(){
     const W = badgeStrikeSize(badgeDefaultPx() * badgeDpr());
     const jobs = [];
     units.forEach(u => jobs.push(() => badgeStrikeGeometry(badgeShapeFor(u))));
-    units.forEach(u => jobs.push(() => badgeStrikeURL(u, !unitBadgeEarned(u), W)));
+    units.forEach(u => jobs.push(() => badgeStrikeURL(u, !unitBadgeEarned(u), W, badgeDirtStage(u))));
     const ric = f => (typeof window.requestIdleCallback === "function") ? window.requestIdleCallback(f, { timeout: 3000 }) : setTimeout(() => f(null), 60);
     const step = dl => {
       let n = 0;
@@ -54109,6 +54346,13 @@ setTimeout(warmBadgeStrikes, 5000);
    rim's spun finish, for a badge drawn big (the token, a badge's card). */
 function buildUnitBadgeSVG(unitName, earned, opts){
   opts = opts || {};
+  /* DIRT (build 320, b320g): opts.dirt (0-4) draws a found badge at that
+     stage; left out, a found badge is drawn as dirty as it really is
+     (badgeDirtStage), so every place a badge appears shows its shine. */
+  if(earned === true && typeof opts.dirt !== "number"){
+    let d = 0; try{ d = badgeDirtStage(unitName); }catch(e){}
+    opts = Object.assign({}, opts, { dirt: d });
+  }
   const NS = "http://www.w3.org/2000/svg";
   const shape = badgeShapeFor(unitName);
   /* A BADGE NOT YET EARNED IS SEEN, NOT SHOWN (build 314). "The badges
@@ -84868,7 +85112,7 @@ function warmBadgeCoinFaces(units){
     const ric = f => (typeof window.requestIdleCallback === "function") ? window.requestIdleCallback(f, { timeout: 1500 }) : setTimeout(f, 200);
     (units || []).slice(0, 4).forEach(u => ric(() => { try{ badgeCoinFaceURL(u); }catch(e){} }));
     const W = badgeStrikeSize(badgeCaseSlotPx() * badgeDpr());
-    unitsInTeachingOrder().filter(u => unitBadgeEarned(u)).forEach(u => ric(() => { try{ badgeStrikeURL(u, false, W); }catch(e){} }));
+    unitsInTeachingOrder().filter(u => unitBadgeEarned(u)).forEach(u => ric(() => { try{ badgeStrikeURL(u, false, W, badgeDirtStage(u)); }catch(e){} }));
   }catch(e){}
 }
 /* The token: .bc-coin (its pop in) > .bc-sway (its sway at rest, its tilt
@@ -88809,6 +89053,8 @@ function summarize(){
        units aced in a row - see BANNERS - so nothing sets the flag any
        more; anybody who ever had it keeps the banner through it.) */
     badgesEarnedThisRun = badgesEarnedList().filter(u => !badgesBefore.has(u));
+    /* a badge comes in spotless (build 320, b320g) */
+    try{ const m = ensureBadgeCleanedAt(false); badgesEarnedThisRun.forEach(u => { m[u] = Date.now(); }); }catch(e){}
     if(retroBadges.length || mergeHeld){
       /* Celebrated now, so never again. */
       store.retroBadgePending = [];
@@ -103666,7 +103912,8 @@ function buildBadgesTab(opts){
   /* "No two look alike" came off: it is a claim about the drawing
      rather than anything you can act on, and it is the first thing on
      a screen whose job is to say what a badge costs. */
-  blurb.textContent = "Master a unit to find its badge. Tap a slot to see how close you are.";
+  /* build 320 (b320g): badges lose their shine, and are cleaned by hand */
+  blurb.textContent = "Master a unit to find its badge. Tap a slot to see it up close. Badges lose their shine over time. Rub one to clean it.";
   head.appendChild(blurb);
   tab.appendChild(head);
 
@@ -103694,7 +103941,10 @@ function buildBadgesTab(opts){
       const bt = badgeThemeFor(unit);
       if(bt && bt.p) art.style.setProperty("--badge-glow", has ? bt.p : "#8E9196");
     } catch(e){}
-    art.appendChild(buildUnitBadgeSVG(unit, has));
+    /* how dirty it is (build 320, b320g): its glow fades with its shine */
+    const dirt = has ? badgeDirtStage(unit) : 0;
+    if(has) art.dataset.dirt = String(dirt);
+    art.appendChild(buildUnitBadgeSVG(unit, has, has ? { dirt } : undefined));
     tile.appendChild(art);
     const name = document.createElement("span");
     name.className = "badge-tile-name sr-only";
@@ -103702,7 +103952,8 @@ function buildBadgesTab(opts){
     tile.appendChild(name);
     /* a badge you have not looked at since it was found (build 299) */
     const clearNew = has ? attachNewDot(art, "badges", unit) : () => {};
-    tile.addEventListener("click", () => { clearNew(); finishBadgeCaseOpen(kase); showUnlockDetail(badgeDetail(unit)); });
+    /* build 320 (b320g): the badge in your hand, not the unlock card */
+    tile.addEventListener("click", () => { clearNew(); finishBadgeCaseOpen(kase); openBadgeInspect(unit, tile); });
     return tile;
   });
   tab.appendChild(kase);
@@ -103878,6 +104129,647 @@ function finishBadgeCaseOpen(kase){
   const face = kase.querySelector(".ncase-lid-out");
   if(face) face.remove();
   kase.classList.remove("is-shut");
+}
+
+/* ---- A BADGE IN YOUR HAND (build 320, b320g) ----
+   Madison: "when you go to badge case and click a badge, it won't be a tab
+   ... the badge will be pulled from the case and then float on screen but
+   the screen will then face the other direction as if you are facing the
+   other way? Like imagine you are standing up and having to look down to
+   see the badge case, now when you click the badge it will pop and then
+   when you look at it you will be looking head on ... the words that the
+   tab from before will be floating underneath it ... You can now grab the
+   badge to spin it. The way it spins will be how you move it, if you swipe
+   fast it spins fast, if you grab it during the spin it will stop
+   spinning. Needs to be super smooth and super interactive."
+   A tap on a slot no longer opens the unlock card. A found badge lifts
+   out of its slot (the slot is left empty behind it) and flies to the
+   middle of the screen, big and head on, while the screen under it -
+   the case, the head - tips away and drops (#stage and #count turn about
+   the middle of the screen in perspective): the view lifts from looking
+   down into the case to looking straight ahead. The card's words float
+   under the badge. A badge not found yet floats as its empty slot with
+   its progress. Close, a tap off the badge and the words, or Escape puts
+   it all back the same way in reverse. Reduce motion: a fade, no swing.
+   THE COIN is the cutscene's construction (front face, edge slices, back
+   face, each an image) with its own back: brushed metal with the unit's
+   name engraved (badgeBackFaceURL), its outline mirrored as the back of
+   any shape is, its letters not. Spun with requestAnimationFrame, writing
+   transforms and opacities only: rotateY on the spinner, the floor
+   shadow's width, the light crossing each face.
+   SPIN OR RUB - the rule. Every drag on the badge turns it with the
+   finger, once it is past a little slack (BINSPECT.slack of the badge's
+   width, so a rub's first short strokes do not rock it; a badge's width
+   of drag is BINSPECT.degPerW degrees) until it
+   shows it is a rub: two turn-backs, each stroke between rubMin px and
+   rubMax of the badge's width and done within rubStrokeMs, all of it
+   inside the badge (rubReach of its width from the middle). From then on
+   the drag no longer turns it - it eases round to show its front, where
+   the dirt is - and every
+   stroke counts; every rubPerStage strokes clean it one stage. Anything
+   else is a spin: one long stroke, or strokes longer than rubMax, can
+   never clean, and a rub never flings. Letting go spins it at the
+   finger's speed over the last 90ms (none if the finger had stopped),
+   slowing with time constant tau, then easing round to face you or show
+   its back, whichever is nearer where it would have stopped. A press
+   while it turns stops it dead. */
+const BINSPECT = {
+  open: 900, close: 640, fade: 200,
+  tilt: 58, drop: .93, persp: 900, sink: .9,
+  degPerW: 200, slack: .15, maxSpin: 2400, tau: .85, settleAt: 70, springK: 60, springC: 12.4,
+  rubMax: .75, rubMin: 8, rubTurn: 8, rubStrokeMs: 450, rubReach: .62, rubPerStage: 4,
+  edges: 16
+};
+const BADGE_BACK_CACHE = {};
+/* The back of a badge: brushed metal inside a polished rim, the unit's
+   name engraved across it. Its outline is the front's MIRRORED (the back
+   of a shape is its mirror image, so the edge lines up as it turns); the
+   letters are not. Rendered once per badge and size. */
+function badgeBackFaceURL(unitName, W){
+  const key = unitName + "|" + W;
+  if(BADGE_BACK_CACHE[key]) return BADGE_BACK_CACHE[key];
+  const shape = badgeShapeFor(unitName), d = shape.d, G = BADGE_GEOM, S = G.scale, cx = shape.c[0], cy = shape.c[1];
+  const vb = badgeViewBoxFor(d).split(/\s+/).map(Number), f = W / vb[2];
+  const b = badgeBBoxFor(d) || { x: 6, y: 6, w: 88, h: 88 };
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = W;
+  const g = cv.getContext("2d");
+  const path = new Path2D(d);
+  const toToken = () => { g.setTransform(-f, 0, 0, f, W + vb[0] * f, -vb[1] * f); g.translate(cx, cy); g.scale(S, S); g.translate(-cx, -cy); };
+  const lit = (stops) => { const gr = g.createLinearGradient(b.x - G.key, b.y - G.key, b.x + b.w + G.key, b.y + b.h + G.key); stops.forEach(([o, c]) => gr.addColorStop(o, c)); return gr; };
+  const band = (r, paint) => { g.fillStyle = g.strokeStyle = paint; g.lineJoin = "round"; g.lineWidth = 2 * r; g.fill(path); g.stroke(path); };
+  const RIM = [[0, "#F2F5F8"], [.2, "#D2D9E1"], [.45, "#A3AEBA"], [.62, "#737F8C"], [.8, "#B9C2CC"], [1, "#7C8794"]];
+  toToken();
+  band(G.key, "#14171C");
+  band(G.key - 1.3, lit(RIM));
+  /* the field: brushed, inside the rim with a fine groove round it */
+  g.save();
+  g.clip(path);
+  g.fillStyle = lit([[0, "#C9CFD6"], [.5, "#A9B1BA"], [1, "#858D97"]]);
+  g.fillRect(b.x - 10, b.y - 10, b.w + 20, b.h + 20);
+  g.save();
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  let seed = (parseInt(hashOf(String(unitName)), 36) >>> 0) || 7;
+  const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+  const lines = Math.round(W * 1.4);
+  for(let i = 0; i < lines; i++){
+    const y = rnd() * W, x = rnd() * W * 1.2 - W * .1, len = W * (.15 + rnd() * .6);
+    g.fillStyle = rnd() < .5 ? "rgba(255,255,255," + (.03 + rnd() * .07).toFixed(3) + ")" : "rgba(0,0,0," + (.03 + rnd() * .06).toFixed(3) + ")";
+    g.fillRect(x, y, len, Math.max(1, W / 700));
+  }
+  const dome = g.createRadialGradient(W * .38, W * .3, 0, W * .38, W * .3, W * .6);
+  dome.addColorStop(0, "rgba(255,255,255,.22)"); dome.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = dome; g.fillRect(0, 0, W, W);
+  g.restore();
+  toToken();
+  g.lineJoin = "round";
+  g.strokeStyle = "rgba(20,24,30,.7)"; g.lineWidth = 2 * (G.inner + .7); g.stroke(path);
+  g.strokeStyle = lit(RIM); g.lineWidth = 2 * G.inner; g.stroke(path);
+  g.restore();
+  /* the rim's form: lit at the top-left, turned away at the bottom-right */
+  toToken();
+  g.strokeStyle = lit([[0, "rgba(255,255,255,.45)"], [.45, "rgba(255,255,255,0)"], [.6, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,.4)"]]);
+  g.lineWidth = 2 * (G.key - 1.3); g.lineJoin = "round"; g.stroke(path);
+  /* the name, engraved: a cut lit on its lower lip */
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  const px = W - ((cx - vb[0]) * f), py = (cy - vb[1]) * f;
+  const maxW = Math.max(W * .2, (b.w * S - 2 * G.inner - 6) * f * .78);
+  const words = String(unitName).toUpperCase().split(/\s+/);
+  const family = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+  let fs = W * .085, rows = [];
+  for(; fs > W * .034; fs *= .92){
+    g.font = "700 " + fs.toFixed(1) + "px " + family;
+    rows = []; let cur = "";
+    words.forEach(w => { const t = cur ? cur + " " + w : w; if(g.measureText(t).width <= maxW || !cur) cur = t; else { rows.push(cur); cur = w; } });
+    if(cur) rows.push(cur);
+    if(rows.length <= 3 && rows.every(r => g.measureText(r).width <= maxW)) break;
+  }
+  const lh = fs * 1.16, small = Math.max(W * .03, fs * .55);
+  const total = rows.length * lh + small * 1.9;
+  let y = py - total / 2 + lh * .78;
+  g.textAlign = "center"; g.textBaseline = "alphabetic";
+  const cut = (txt, yy, font) => {
+    g.font = font;
+    g.fillStyle = "rgba(255,255,255,.55)"; g.fillText(txt, px, yy + Math.max(1, fs * .06));
+    g.fillStyle = "rgba(34,39,46,.88)"; g.fillText(txt, px, yy);
+  };
+  rows.forEach(r => { cut(r, y, "700 " + fs.toFixed(1) + "px " + family); y += lh; });
+  g.fillStyle = "rgba(34,39,46,.5)"; g.fillRect(px - fs * 1.1, y - lh * .45, fs * 2.2, Math.max(1, fs * .06));
+  cut("CLASS 26E", y + small * .55, "700 " + small.toFixed(1) + "px " + family);
+  const url = cv.toDataURL("image/png");
+  BADGE_BACK_CACHE[key] = url;
+  return url;
+}
+/* What is open now, for the gates and the recorder. */
+let badgeInspectNow = null;
+function openBadgeInspect(unit, tile){
+  if(badgeInspectNow) return badgeInspectNow;
+  const B = BINSPECT;
+  const found = unitBadgeEarned(unit);
+  const still = resultsMotionOff();
+  const det = badgeDetail(unit);
+  const mk = (cls, tag) => { const e = document.createElement(tag || "div"); if(cls) e.className = cls; return e; };
+  const ov = mk("binspect" + (found ? " is-found" : " is-empty") + (still ? " is-still" : ""));
+  ov.setAttribute("role", "dialog");
+  ov.setAttribute("aria-modal", "true");
+  ov.setAttribute("aria-label", det.name);
+  try{ const bt = badgeThemeFor(unit); ov.style.setProperty("--badge-col", found && bt && bt.p ? bt.p : "#8E9196"); }catch(e){}
+  const dim = mk("binspect-dim");
+  const stageEl = mk("binspect-stage");
+  const float = mk("binspect-float");
+  const glow = mk("binspect-glow");
+  const shadow = mk("binspect-shadow");
+  const persp = mk("binspect-persp");
+  float.append(glow, shadow, persp);
+  let dirt = found ? badgeDirtStage(unit) : 0;
+  const dirt0 = dirt;
+  /* the front face at each stage: its url, and whether it is the finish */
+  const ready = {}, isFinal = {};
+  const dpr = badgeDpr();
+  let spin = null, frontA = null, frontB = null, frontSpec = null, backSpec = null, hit = null, sparks = null;
+  /* sized by CSS (--bi); measured once it is in the document */
+  document.body.appendChild(ov);
+  ov.append(dim, stageEl);
+  stageEl.appendChild(float);
+  const size = Math.max(60, float.getBoundingClientRect().width || 280);
+  /* rendered at the size it is shown, up to 864 device pixels: a face
+     costs ~W*W samples, and past that a phone pays for pixels it barely
+     shows */
+  const W = Math.min(864, badgeStrikeSize(size * dpr));
+  const faceEntry = (s, draft) => badgeStrikeEntry(unit, false, W, draft, s);
+  /* a face already rendered, without rendering one */
+  const peekFace = s => { let best = null;
+    (BADGE_STRIKE_CACHE[String(unit) + "|c" + (s ? "|d" + s : "")] || []).forEach(e => {
+      if(e.W >= W * .9 && (!best || (best.draft && !e.draft) || (best.draft === e.draft && e.W < best.W))) best = e; });
+    return best; };
+  if(found){
+    const coin = mk("binspect-coin");
+    spin = mk("binspect-spin");
+    const back = mk("binspect-face is-back");
+    const backImg = mk("binspect-art", "img"); backImg.alt = ""; backImg.draggable = false; backImg.decoding = "sync";
+    try{ backImg.src = badgeBackFaceURL(unit, W); }catch(e){}
+    backImg.dataset.face = "back";
+    backSpec = mk("binspect-spec"); backSpec.appendChild(mk("", "i"));
+    back.append(backImg, backSpec);
+    spin.appendChild(back);
+    let edgeSrc = null; try{ edgeSrc = badgeEdgeURL(unit); }catch(e){}
+    for(let i = 0; i < B.edges && edgeSrc; i++){
+      const e = mk("binspect-edge", "img"); e.alt = ""; e.draggable = false; e.src = edgeSrc;
+      e.style.setProperty("--k", (i / (B.edges - 1)).toFixed(3));
+      spin.appendChild(e);
+    }
+    const front = mk("binspect-face is-front");
+    frontA = mk("binspect-art is-current", "img"); frontA.alt = ""; frontA.draggable = false; frontA.decoding = "sync";
+    frontB = mk("binspect-art", "img"); frontB.alt = ""; frontB.draggable = false; frontB.decoding = "sync";
+    /* NOTHING RENDERED IN THE TAP. A face this size is a few hundred ms
+       on a phone, so the badge lifts out showing the very image it had in
+       its slot (it starts at that size) and the big face takes its place a
+       moment later (ensureFace), while the lift - compositor animations -
+       carries on regardless. */
+    const e0 = peekFace(dirt);
+    const inSlot = tile && tile.querySelector("image.badge-raster");
+    frontA.src = e0 ? e0.url : (inSlot && inSlot.getAttribute("href")) || badgeImageURL(buildUnitBadgeSVG(unit, true, { slot: false, fine: true, vector: true }));
+    frontA.dataset.face = "front"; frontA.dataset.dirt = String(dirt);
+    if(e0){ ready[dirt] = e0.url; isFinal[dirt] = !e0.draft; }
+    frontSpec = mk("binspect-spec"); frontSpec.appendChild(mk("", "i"));
+    front.append(frontA, frontB, frontSpec);
+    spin.appendChild(front);
+    try{
+      const sil = badgeSilhouetteURL(unit);
+      [frontSpec, backSpec].forEach(s => { s.style.setProperty("-webkit-mask-image", sil); s.style.setProperty("mask-image", sil); });
+    }catch(e){}
+    coin.appendChild(spin);
+    persp.appendChild(coin);
+    sparks = mk("binspect-sparks");
+    hit = mk("binspect-hit");
+    hit.setAttribute("aria-hidden", "true");
+    float.append(sparks, hit);
+  } else {
+    const slot = mk("binspect-slot");
+    try{ slot.appendChild(buildUnitBadgeSVG(unit, false)); }catch(e){}
+    persp.appendChild(slot);
+  }
+  /* ---- the words, under it ---- */
+  const words = mk("binspect-words");
+  const kicker = mk("unlock-card-kicker binspect-kicker", "p"); kicker.textContent = det.kicker || "Unit badge";
+  const nm = mk("unlock-card-name binspect-name", "h2"); nm.textContent = det.name;
+  words.append(kicker, nm);
+  if(found){
+    const st = mk("binspect-state", "p"); st.textContent = "Mastered";
+    words.appendChild(st);
+  }
+  const desc = mk("unlock-card-desc binspect-desc", "p"); desc.textContent = det.desc;
+  words.appendChild(desc);
+  const bar = mk("unlock-card-bar binspect-bar");
+  const fill = mk("unlock-card-fill binspect-fill", "span");
+  bar.appendChild(fill);
+  words.appendChild(bar);
+  setBarFill(fill, found ? 100 : Math.max(2, Math.min(100, Math.round((det.have / det.need) * 1000) / 10)));
+  const count = mk("unlock-card-count binspect-count" + (found ? " is-done" : ""), "p");
+  count.textContent = det.have.toLocaleString() + " of " + det.need.toLocaleString() + " hundo" + (det.need === 1 ? "" : "s");
+  words.appendChild(count);
+  let hint = null;
+  if(found){
+    hint = mk("binspect-dirt", "p");
+    hint.setAttribute("aria-live", "polite");
+    words.appendChild(hint);
+    const care = mk("binspect-care", "p");
+    care.textContent = "Badges lose their shine over time and need cleaning now and then.";
+    const tip = mk("binspect-tip", "p");
+    tip.textContent = "Swipe the badge to spin it.";
+    words.append(care, tip);
+  }
+  const closeBtn = mk("next ghost binspect-close", "button");
+  closeBtn.type = "button"; closeBtn.textContent = "Close";
+  words.appendChild(closeBtn);
+  stageEl.appendChild(words);
+  const setHint = (cleaned) => {
+    if(!hint) return;
+    hint.classList.toggle("is-clean", dirt === 0);
+    hint.hidden = dirt === 0 && !cleaned;
+    hint.textContent = dirt === 0 ? "Clean. It shines like new." : "This badge is dirty. Rub it to clean it.";
+    ov.dataset.dirt = String(dirt);
+  };
+  setHint(false);
+  /* ---- the light, the shadow, the glow: all from the angle ---- */
+  let th = 0, om = 0, mode = "idle", target = 0, raf = 0, lastT = 0;
+  const wrap = a => { a = ((a % 360) + 360) % 360; return a > 180 ? a - 360 : a; };
+  const shineK = () => 1 - .72 * dirt / BADGE_DIRT_MAX;
+  const apply = () => {
+    if(!spin) return;
+    spin.style.transform = "rotateY(" + th.toFixed(2) + "deg)";
+    const c = Math.cos(th * Math.PI / 180);
+    shadow.style.transform = "scaleX(" + (.22 + .78 * Math.abs(c)).toFixed(3) + ")";
+    const lightOf = r => { const x = r * Math.PI / 180; return { o: Math.pow(Math.max(0, Math.cos(x)), 10), x: Math.sin(x) * 190 }; };
+    const fr = lightOf(wrap(th + 14)), bk = lightOf(wrap(th + 14 - 180)), k = shineK();
+    const fi = frontSpec.firstChild, bi = backSpec.firstChild;
+    fi.style.opacity = (fr.o * k).toFixed(3); fi.style.transform = "translateX(" + (-fr.x).toFixed(1) + "%) rotate(16deg)";
+    bi.style.opacity = (bk.o * .8).toFixed(3); bi.style.transform = "translateX(" + bk.x.toFixed(1) + "%) rotate(16deg)";
+  };
+  const restOf = (a, w) => { const p = a + w * B.tau; return Math.round(p / 180) * 180; };
+  const tick = now => {
+    raf = 0;
+    const dt = Math.min(.05, Math.max(0, (now - lastT) / 1000)); lastT = now;
+    if(mode === "coast"){
+      th += om * dt; om *= Math.exp(-dt / B.tau);
+      if(Math.abs(om) < B.settleAt){ mode = "settle"; target = restOf(th, om); }
+    } else if(mode === "settle"){
+      const a = -B.springK * (th - target) - B.springC * om;
+      om += a * dt; th += om * dt;
+      if(Math.abs(th - target) < .08 && Math.abs(om) < .6){ th = target; om = 0; mode = "idle"; }
+    }
+    apply();
+    if(mode === "coast" || mode === "settle") raf = requestAnimationFrame(tick);
+    else idleWork();
+  };
+  const kick = () => { if(!raf){ lastT = performance.now(); raf = requestAnimationFrame(tick); } };
+  /* ---- the faces, rendered while it is still ----
+     The face showing (a draft at once, ensureFace), then its finish, then
+     each cleaner stage's draft and finish - one at a time, only after
+     half a second with nothing touched or turning, so a render never
+     lands in a spin or a rub. */
+  let idleTimer = 0;
+  /* Two images take turns: the new face comes up over the old one, so
+     there is never a frame with nothing decoded in it. */
+  let swapAnim = null;
+  const swapFace = (url, s, ms) => {
+    if(!frontA || !url) return;
+    const cur = frontA.classList.contains("is-current") ? frontA : frontB, nxt = cur === frontA ? frontB : frontA;
+    if(swapAnim){ try{ swapAnim.finish(); }catch(e){} }
+    nxt.src = url; nxt.dataset.face = "front"; nxt.dataset.dirt = String(s);
+    nxt.classList.add("is-coming");
+    const done = () => { nxt.classList.add("is-current"); nxt.classList.remove("is-coming"); cur.classList.remove("is-current"); delete cur.dataset.face; swapAnim = null; };
+    try{
+      const a = swapAnim = nxt.animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: "ease-out" });
+      a.finished.then(done, done);
+    }catch(e){ done(); }
+  };
+  const curFace = () => frontA && (frontA.classList.contains("is-current") ? frontA : frontB);
+  const showFace = s => { const c = curFace(); if(c && c.dataset.dirt === String(s) && ready[s] && c.getAttribute("src") !== ready[s]) swapFace(ready[s], s, 140); };
+  const ensureFace = s => {
+    if(!found || ready[s]) return ready[s];
+    try{ const e = faceEntry(s, true); if(e){ ready[s] = e.url; isFinal[s] = !e.draft; } }catch(err){}
+    showFace(s);
+    return ready[s];
+  };
+  const idleWork = () => {
+    if(!found || closed || idleTimer) return;
+    idleTimer = setTimeout(() => {
+      idleTimer = 0;
+      if(closed || closing) return;
+      if(mode !== "idle" || gest || opening){ idleWork(); return; }
+      let job = null;
+      if(!isFinal[dirt]) job = () => { const e = faceEntry(dirt, false); if(e){ ready[dirt] = e.url; isFinal[dirt] = true; showFace(dirt); } };
+      for(let s = dirt - 1; s >= 0 && !job; s--){
+        if(!ready[s]) job = () => ensureFace(s);
+        else if(!isFinal[s]) job = () => { const e = faceEntry(s, false); if(e){ ready[s] = e.url; isFinal[s] = true; showFace(s); } };
+      }
+      if(!job) return;
+      try{ job(); }catch(e){}
+      idleWork();
+    }, 500);
+  };
+  /* ---- spin or rub (see the note above BINSPECT) ---- */
+  let gest = null, rubStrokes = 0, opening = !still, closed = false;
+  const pt = e => ({ x: e.clientX, y: e.clientY });
+  const cleanStroke = () => {
+    if(dirt <= 0) return;
+    rubStrokes++;
+    polish();
+    if(rubStrokes % B.rubPerStage === 0) cleanOne();
+  };
+  const polish = () => {
+    if(!frontSpec) return;
+    try{ frontSpec.animate([{ opacity: 1 }, { opacity: 1.35, offset: .3 }, { opacity: 1 }], { duration: 240 }); }catch(e){}
+  };
+  const cleanOne = () => {
+    dirt = Math.max(0, dirt - 1);
+    try{ setBadgeDirtStage(unit, dirt); }catch(e){}
+    const url = ready[dirt] || ensureFace(dirt);
+    if(url) swapFace(url, dirt, 380);
+    ov.style.setProperty("--glow-k", String(1 - .16 * dirt));
+    sparkle();
+    setHint(true);
+  };
+  const sparkle = () => {
+    if(!sparks) return;
+    const n = 8;
+    for(let i = 0; i < n; i++){
+      const s = mk("binspect-spark", "i");
+      const a = (i / n) * Math.PI * 2 + (i % 2 ? .4 : 0), r = (i % 2 ? .22 : .34);
+      s.style.left = (50 + Math.cos(a) * r * 100).toFixed(1) + "%";
+      s.style.top = (50 + Math.sin(a) * r * 100).toFixed(1) + "%";
+      sparks.appendChild(s);
+      try{
+        const an = s.animate([
+          { opacity: 0, transform: "scale(.2) rotate(0deg)" },
+          { opacity: 1, transform: "scale(1) rotate(45deg)", offset: .35 },
+          { opacity: 0, transform: "scale(.3) rotate(90deg)" }
+        ], { duration: 640, delay: i * 45, easing: "cubic-bezier(.2,.7,.3,1)", fill: "backwards" });
+        an.finished.then(() => s.remove()).catch(() => s.remove());
+      }catch(e){ s.remove(); }
+    }
+    /* and the light runs once across the face */
+    try{
+      const fi = frontSpec.firstChild;
+      fi.animate([{ opacity: 0, transform: "translateX(-190%) rotate(16deg)" }, { opacity: .9, offset: .4 }, { opacity: 0, transform: "translateX(190%) rotate(16deg)" }],
+        { duration: 700, easing: "cubic-bezier(.3,0,.2,1)" });
+    }catch(e){}
+  };
+  if(hit){
+    hit.addEventListener("pointerdown", e => {
+      if(closed || closing || gest || (e.button && e.button !== 0)) return;
+      e.preventDefault();
+      try{ hit.setPointerCapture(e.pointerId); }catch(err){}
+      const r = float.getBoundingClientRect(), now = performance.now(), p = pt(e);
+      /* a grab stops it dead */
+      om = 0; if(raf){ cancelAnimationFrame(raf); raf = 0; }
+      mode = "drag";
+      gest = { id: e.pointerId, kind: "pending", lx: p.x, x0: p.x, turning: false, t0: now, samples: [{ t: now, x: p.x }], lastMove: now,
+               cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width, inside: true,
+               anchor: p, ext: p, extT: now, strokes: [] };
+      hit.classList.add("is-grabbed");
+    });
+    hit.addEventListener("pointermove", e => {
+      const g = gest;
+      if(!g || e.pointerId !== g.id) return;
+      const p = pt(e), now = performance.now();
+      if(Math.hypot(p.x - g.cx, p.y - g.cy) > B.rubReach * g.w) g.inside = false;
+      /* the rub tracker: a stroke ends where the finger turns back */
+      const ax = g.ext.x - g.anchor.x, ay = g.ext.y - g.anchor.y, al = Math.hypot(ax, ay);
+      if(al < B.rubMin){ g.ext = p; g.extT = now; }
+      else {
+        const along = ((p.x - g.anchor.x) * ax + (p.y - g.anchor.y) * ay) / al;
+        if(along >= al){ g.ext = p; g.extT = now; }
+        else if(al - along >= B.rubTurn){
+          g.strokes.push({ len: al, ms: g.extT - (g.strokeT0 || g.t0) });
+          g.strokeT0 = g.extT;
+          g.anchor = g.ext; g.ext = p; g.extT = now;
+          if(g.kind === "rub") cleanStroke();
+        }
+      }
+      if(g.kind !== "rub"){
+        const lenOK = s => s.len <= B.rubMax * g.w && s.ms <= B.rubStrokeMs;
+        if(g.kind === "pending" && (g.strokes.some(s => !lenOK(s)) || al > B.rubMax * g.w)) g.kind = "spin";
+        if(g.kind === "pending" && g.inside && g.strokes.length >= 2 && g.strokes.every(lenOK)){
+          /* it is a rub: it stops turning and comes round to show its FACE
+             (the dirt is on the front; rubbing its back turns it over) */
+          g.kind = "rub";
+          hit.classList.add("is-rubbing");
+          mode = "settle"; target = Math.round(th / 360) * 360; kick();
+          g.strokes.forEach(() => cleanStroke());
+        } else {
+          /* a little slack before it turns, so the short strokes a rub
+             starts with do not rock it; past it, it follows the finger */
+          const dx0 = p.x - g.x0, slack = B.slack * g.w;
+          if(!g.turning && Math.abs(dx0) > slack){ g.turning = true; g.lx = g.x0 + (dx0 > 0 ? slack : -slack); }
+          if(g.turning) th += (p.x - g.lx) * B.degPerW / g.w;
+          g.samples.push({ t: now, x: p.x });
+          while(g.samples.length > 2 && now - g.samples[0].t > 90) g.samples.shift();
+          g.lastMove = now;
+          if(!raf){ raf = requestAnimationFrame(t => { raf = 0; apply(); }); }
+        }
+      }
+      g.lx = p.x;
+    });
+    const release = e => {
+      const g = gest;
+      if(!g || e.pointerId !== g.id) return;
+      gest = null;
+      hit.classList.remove("is-grabbed", "is-rubbing");
+      const now = performance.now();
+      if(g.kind === "rub"){
+        const al = Math.hypot(g.ext.x - g.anchor.x, g.ext.y - g.anchor.y);
+        if(al >= B.rubMin * 1.5) cleanStroke();
+        if(mode !== "settle"){ mode = "settle"; target = Math.round(th / 360) * 360; }
+        kick();
+        return;
+      }
+      let v = 0;
+      const s = g.samples;
+      if(s.length >= 2 && now - g.lastMove < 80){
+        const a = s[0], z = s[s.length - 1];
+        if(z.t > a.t) v = (z.x - a.x) / (z.t - a.t);
+      }
+      om = Math.max(-B.maxSpin, Math.min(B.maxSpin, v * 1000 * B.degPerW / g.w));
+      if(Math.abs(om) >= B.settleAt) mode = "coast";
+      else { mode = "settle"; target = restOf(th, om); }
+      kick();
+    };
+    hit.addEventListener("pointerup", release);
+    hit.addEventListener("pointercancel", release);
+    hit.addEventListener("lostpointercapture", release);
+  }
+  /* ---- the view turns ---- */
+  /* THE CASE is the world that turns: it tips away and sinks to the foot
+     of the screen, still there below the badge you are holding. Everything
+     else on the screen (the head, the back link, the title) fades out, so
+     nothing sits behind the words. */
+  const shown = e => !!(e && !e.hidden && e.getClientRects().length);
+  const caseEl = tile && tile.closest(".ncase");
+  const world = (caseEl ? [caseEl] : [document.getElementById("stage")]).filter(shown);
+  const faders = (caseEl ? [document.getElementById("count")].concat([...document.querySelectorAll("#stage .back-link, #stage .badges-head")]) : [document.getElementById("count")]).filter(shown);
+  const worldDy = new Map();
+  world.forEach(el => { const r = el.getBoundingClientRect(); worldDy.set(el, Math.round(innerHeight * B.drop - (r.top + r.height / 2))); });
+  const anims = [];
+  const art = tile && tile.querySelector(".badge-tile-art");
+  const slotSvg = art && art.querySelector("svg.badge-art");
+  const slotRect = (slotSvg || tile || float).getBoundingClientRect();
+  const scroll0 = window.scrollY || 0;
+  let emptySlot = null;
+  const lift = () => {
+    if(!found || !art || !slotSvg) return;
+    try{ emptySlot = buildUnitBadgeSVG(unit, false); art.replaceChild(emptySlot, slotSvg); tile.classList.add("is-lifted"); }catch(e){}
+  };
+  const putBack = () => {
+    if(!emptySlot || !emptySlot.parentNode) return;
+    let svg = slotSvg;
+    if(dirt !== dirt0){ try{ svg = buildUnitBadgeSVG(unit, true); }catch(e){} }
+    try{ art.replaceChild(svg, emptySlot); }catch(e){}
+    art.dataset.dirt = String(dirt);
+    tile.classList.remove("is-lifted");
+    emptySlot = null;
+  };
+  const fromSlot = () => {
+    const f = float.getBoundingClientRect(), dy = (window.scrollY || 0) - scroll0;
+    const sx = slotRect.left + slotRect.width / 2, sy = slotRect.top - dy + slotRect.height / 2;
+    const k = slotRect.width / Math.max(1, f.width);
+    return { x: sx - (f.left + f.width / 2), y: sy - (f.top + f.height / 2), k };
+  };
+  const worldTo = el => "translateY(" + (worldDy.get(el) || 0) + "px) perspective(" + B.persp + "px) rotateX(" + B.tilt + "deg) scale(" + B.sink + ")";
+  const worldFrom = "translateY(0px) perspective(" + B.persp + "px) rotateX(0deg) scale(1)";
+  const turnWorld = (open, ms, delay) => {
+    world.forEach(el => {
+      try{
+        anims.push(el.animate(open ? [{ transform: worldFrom }, { transform: worldTo(el) }] : [{ transform: worldTo(el) }, { transform: worldFrom }],
+          { duration: ms, delay: delay || 0, easing: "cubic-bezier(.45,0,.2,1)", fill: "both" }));
+      }catch(e){}
+    });
+    faders.forEach(el => {
+      try{
+        anims.push(el.animate(open ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: 1 }],
+          { duration: open ? ms * .6 : ms * .7, delay: (delay || 0) + (open ? 0 : ms * .3), easing: "ease-out", fill: "both" }));
+      }catch(e){}
+    });
+  };
+  /* ---- closing, and every way out ---- */
+  let focusDone = false;
+  const teardown = () => {
+    if(closed && !ov.isConnected) return;
+    closed = true;
+    if(raf){ cancelAnimationFrame(raf); raf = 0; }
+    if(idleTimer){ clearTimeout(idleTimer); idleTimer = 0; }
+    anims.forEach(a => { try{ a.cancel(); }catch(e){} });
+    putBack();
+    ov.remove();
+    obs.disconnect();
+    document.removeEventListener("keydown", onKey, true);
+    document.body.classList.remove("binspect-open");
+    if(!focusDone){ focusDone = true; setCutsceneFocus(false); }
+    if(badgeInspectNow === ctl) badgeInspectNow = null;
+  };
+  let closing = false;
+  const close = () => {
+    if(closing || closed) return;
+    /* asked to close mid-way in: land the way in first */
+    if(opening){ try{ document.getAnimations().forEach(a => { const t = a.effect && a.effect.target; if(t && (ov.contains(t) || world.indexOf(t) >= 0 || faders.indexOf(t) >= 0)) a.finish(); }); }catch(e){} opening = false; }
+    closing = true;
+    gest = null;
+    if(raf){ cancelAnimationFrame(raf); raf = 0; }
+    if(still){
+      try{ ov.animate([{ opacity: 1 }, { opacity: 0 }], { duration: B.fade, fill: "forwards" }).finished.then(teardown, teardown); }catch(e){ teardown(); }
+      return;
+    }
+    const C = B.close;
+    try{
+      words.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(12px)" }], { duration: 160, fill: "forwards" });
+      dim.animate([{ opacity: 1 }, { opacity: 0 }], { duration: C - 150, delay: 150, easing: "ease-in", fill: "forwards" });
+      anims.forEach(a => { try{ a.cancel(); }catch(e){} });
+      anims.length = 0;
+      turnWorld(false, C - 40, 0);
+      let end;
+      if(found){
+        /* face up again before it drops in */
+        const t = Math.round(th / 360) * 360;
+        spin.animate([{ transform: "rotateY(" + th.toFixed(1) + "deg)" }, { transform: "rotateY(" + t + "deg)" }], { duration: 300, easing: "ease-out", fill: "forwards" });
+        const s = fromSlot();
+        end = float.animate([
+          { transform: "none" },
+          { transform: "translate(" + (s.x * .55).toFixed(1) + "px," + (s.y * .45).toFixed(1) + "px) scale(" + (1 + (s.k - 1) * .45).toFixed(3) + ") rotateX(-16deg)", offset: .55 },
+          { transform: "translate(" + s.x.toFixed(1) + "px," + s.y.toFixed(1) + "px) scale(" + s.k.toFixed(3) + ")" }
+        ], { duration: C - 80, delay: 80, easing: "cubic-bezier(.5,0,.35,1)", fill: "forwards" });
+      } else {
+        end = float.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.7)" }], { duration: C - 120, fill: "forwards" });
+      }
+      end.finished.then(teardown, teardown);
+    }catch(e){ teardown(); }
+  };
+  const onKey = e => { if(e.key === "Escape"){ e.preventDefault(); close(); } };
+  document.addEventListener("keydown", onKey, true);
+  closeBtn.addEventListener("click", close);
+  /* a tap off the badge and the words closes it; a drag that strays off
+     the badge does not */
+  let downOff = null;
+  ov.addEventListener("pointerdown", e => {
+    const t = e.target;
+    downOff = (t === ov || t === dim || t === stageEl) ? { x: e.clientX, y: e.clientY } : null;
+  });
+  ov.addEventListener("click", e => {
+    const t = e.target;
+    if(downOff && (t === ov || t === dim || t === stageEl) && Math.hypot(e.clientX - downOff.x, e.clientY - downOff.y) < 12) close();
+    downOff = null;
+  });
+  /* a screen change takes it with it, at once */
+  const stageNode = document.getElementById("stage");
+  const firstNow = stageNode ? stageNode.firstElementChild : null;
+  const obs = new MutationObserver(() => { if(stageNode.firstElementChild !== firstNow) teardown(); });
+  try{ if(stageNode) obs.observe(stageNode, { childList: true }); }catch(e){}
+  const ctl = {
+    unit, found, el: ov, close, teardown,
+    state: () => ({ theta: th, omega: om, mode, stage: dirt, rubStrokes, gesture: gest ? gest.kind : null, closing, closed }),
+    size: () => float.getBoundingClientRect().width
+  };
+  badgeInspectNow = ctl;
+  /* ---- in ---- */
+  document.body.classList.add("binspect-open");
+  setCutsceneFocus(true);
+  ov.style.setProperty("--glow-k", String(1 - .16 * dirt));
+  apply();
+  if(still){
+    lift();
+    try{ ov.animate([{ opacity: 0 }, { opacity: 1 }], { duration: B.fade, fill: "backwards" }); }catch(e){}
+    opening = false;
+    idleWork();
+  } else {
+    const O = B.open;
+    try{
+      dim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 600, easing: "ease-out", fill: "backwards" });
+      turnWorld(true, O - 80, 80);
+      words.animate([{ opacity: 0, transform: "translateY(16px)" }, { opacity: 1, transform: "none" }],
+        { duration: 380, delay: O - 380, easing: "cubic-bezier(.2,.8,.3,1)", fill: "backwards" });
+      let a;
+      if(found){
+        lift();
+        const s = fromSlot();
+        /* out of the slot and up towards you, tipping as it comes, then
+           round to face you in the middle of the screen */
+        a = float.animate([
+          { transform: "translate(" + s.x.toFixed(1) + "px," + s.y.toFixed(1) + "px) scale(" + s.k.toFixed(3) + ")" },
+          { transform: "translate(" + s.x.toFixed(1) + "px," + (s.y - 10).toFixed(1) + "px) scale(" + (s.k * 1.14).toFixed(3) + ") rotateX(-22deg)", offset: .16 },
+          { transform: "translate(" + (s.x * .4).toFixed(1) + "px," + (s.y * .38).toFixed(1) + "px) scale(" + (1 + (s.k - 1) * .35).toFixed(3) + ") rotateX(-14deg)", offset: .55 },
+          { transform: "none" }
+        ], { duration: O, easing: "cubic-bezier(.3,.7,.2,1)", fill: "backwards" });
+        glow.animate([{ opacity: 0 }, { opacity: 0, offset: .4 }, { opacity: 1 - .16 * dirt }], { duration: O, fill: "backwards" });
+      } else {
+        a = float.animate([{ opacity: 0, transform: "scale(.72) translateY(24px)" }, { opacity: 1, transform: "none" }],
+          { duration: 520, delay: 260, easing: "cubic-bezier(.2,.8,.3,1)", fill: "backwards" });
+      }
+      a.finished.then(() => { opening = false; idleWork(); }, () => { opening = false; });
+    }catch(e){ opening = false; lift(); }
+  }
+  /* the big face, a moment after the lift has started */
+  if(found) setTimeout(() => { if(!closed) ensureFace(dirt); }, 60);
+  try{ closeBtn.focus({ preventScroll: true }); }catch(e){}
+  return ctl;
 }
 
 /* The Ranks tab. It replaces two tabs - the Mastery Ladder and
