@@ -421,8 +421,11 @@ def main():
               order.forEach(qi => { attempts[qi] = 1;
                 picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
               summarize();
-              return [...document.querySelectorAll('.badgeprogress-row')]
-                .map(r => (r.querySelector('.badgeprogress-line')||{}).textContent);
+              /* BUILD 320: the badge progress box is off by default
+                 (RS_BADGE_PROGRESS_BOX) - what it would show is the run's
+                 progUnits, still worked out; nothing is on the screen. */
+              window.__boxes = (window.__boxes || 0) + document.querySelectorAll('.badgeprogress-row').length;
+              return (lastRunResult.progUnits || []).map(u => u + ': ' + unitPerfectCount(u) + ' / ' + badgeThresholdFor(u) + ' to go');
             };
             /* A whole unit sat, with one question missed: no hundo, so
                since build 211 no row either. */
@@ -435,10 +438,10 @@ def main():
               order.forEach((qi, k) => { attempts[qi] = k === 0 ? 2 : 1;
                 picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
               summarize();
-              return [...document.querySelectorAll('.badgeprogress-row')].length;
+              return (lastRunResult.progUnits || []).length;
             })();
             return { slice: run([big], true), full: run([small], false),
-                     two: run([small, big], false), missed, big, small };
+                     two: run([small, big], false), missed, big, small, boxes: window.__boxes || 0 };
           } catch(e){ return { threw: String(e) }; }}""")
         if rows.get("threw"):
             check("the results screen carries a row per unit", False, rows["threw"])
@@ -446,6 +449,7 @@ def main():
             """A three-unit run reporting on one unit was the whole
             complaint. The count is the check; the wording is not."""
             check("a two-unit run reports on both", len(rows["two"]) == 2, rows["two"])
+            check("and the results screen shows no badge progress box (build 320: off)", rows.get("boxes") == 0, rows.get("boxes"))
             check("a full-unit run counts towards the badge",
                   len(rows["full"]) == 1 and "to go" in (rows["full"][0] or ""), rows["full"])
             """A 10-question slice of a 340-question unit can never earn

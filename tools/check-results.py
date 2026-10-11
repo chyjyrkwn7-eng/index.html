@@ -358,12 +358,18 @@ with sync_playwright() as pw:
     pg.evaluate("""([u])=>{ theme.reduceMotion=true; applyTheme && applyTheme();
       store.unitPerfects={}; store.unitPerfects[u]=badgeThresholdFor(u)-1; __maxSpots=0; saveStore(); }""", [UNIT])
     pg.evaluate("([u])=>__run(u,0,'drill')", [UNIT]); pg.wait_for_timeout(200)
+    # BUILD 320: the same ORDER, still - the Unlocked box waits for the
+    # badge's still scene to go ("that box will be put down/show up once
+    # all the pop ups and cutscenes are done"); everything else is down.
     rm = pg.evaluate("""()=>({ done: !!document.querySelector('.rs-rewards.rs-done'),
-      hidden: [...document.querySelectorAll('#stage .rs-land')].filter(e=>+getComputedStyle(e).opacity<.5).length,
+      hidden: [...document.querySelectorAll('#stage .rs-land')].filter(e=>!e.closest('.rs-unlocked') && +getComputedStyle(e).opacity<.5).length,
       spots: document.querySelectorAll('.rs-spot').length })""")
-    ck("every card is already down", rm["done"] and rm["hidden"] == 0, rm)
+    ck("every card is already down but the Unlocked box (it waits for the still scene)", rm["done"] and rm["hidden"] == 0, rm)
     pg.wait_for_timeout(1500)
     ck("and no banner plays", pg.evaluate("()=>__maxSpots") == 0)
+    pg.wait_for_timeout(6000)
+    ck("and the Unlocked box is down once the still scene has gone",
+       pg.evaluate("()=>{ const u=document.querySelector('#stage .rs-unlocked'); return !!u && +getComputedStyle(u).opacity > .9 && !document.querySelector('.bc-scene'); }"))
     pg.evaluate("()=>{ theme.reduceMotion=false; applyTheme && applyTheme(); }")
 
     print("5. build 214: the header, the labels, a retake, the room's score")
@@ -464,13 +470,17 @@ with sync_playwright() as pw:
     got = pg.evaluate("""()=>{ const lb=document.getElementById('testscopelabel').getBoundingClientRect();
       const m=document.querySelector('.rs-mode').getBoundingClientRect();
       const line=document.querySelector('.rs-badges .badgeprogress-line');
+      const boxes=document.querySelectorAll('#stage .rs-badges').length;
       return { dx:Math.round(m.left-lb.left), gap:Math.round(m.top-lb.bottom),
-               line: line?line.textContent:null,
+               line: line?line.textContent:null, boxes,
                avatar: !!document.querySelector('.results-level-avatar svg'),
                rank: !!document.querySelector('.results-level-rank') }; }""")
     ck("the mode chip lines up under Test results", abs(got["dx"]) <= 2 and 0 <= got["gap"] <= 14, got)
     ck("your avatar and rank ride on the level bar", got["avatar"] and got["rank"], got)
-    ck("the badge line says what is left, not 'N of M'", bool(got["line"]) and " of " not in got["line"] and "more to go" in got["line"], got["line"])
+    # BUILD 320: the badge progress box is off ("it's kinda redundant and
+    # not needed, the profile tab shows all this clearly now") - the line
+    # it carried ("+1 hundo · N more to go") is gone with it.
+    ck("no badge progress box on the results (build 320)", got["boxes"] == 0 and not got["line"], got)
     # A nova, not confetti.
     cel = pg.evaluate("()=>{ celebrate(); const r={ confetti:document.querySelectorAll('.confetti-piece').length, dust:document.querySelectorAll('.stardust-p').length }; document.querySelectorAll('.confetti-layer').forEach(l=>l.remove()); return r; }")
     ck("the celebration is stardust, not confetti", cel["confetti"] == 0 and cel["dust"] > 10, cel)
@@ -557,7 +567,9 @@ with sync_playwright() as pw:
     p9.evaluate("()=>{ theme.reduceMotion = true; }")
     p9.evaluate("""()=>{ store.unitPerfects = { 'Racial Profiling': badgeThresholdFor('Racial Profiling') - 1, 'Identity Crimes': 2 }; saveStore();
       __run9(['Identity Crimes', 'Racial Profiling', 'Victims of Crime'], 0, 'drill'); }""")
-    p9.wait_for_timeout(500)
+    # build 320: the Unlocked box waits for the badge's still scene
+    p9.wait_for_function("()=>{ const u=document.querySelector('#stage .rs-unlocked'); return !u || u.classList.contains('rs-in-now'); }", timeout=15000)
+    p9.wait_for_timeout(300)
     audit(p9, "#stage .rs-screen", "a three-unit 100% that earns a badge")
     p9.evaluate("([u])=>__run9([u], 1, 'exam')", [UNIT]); p9.wait_for_timeout(400)
     audit(p9, "#stage .rs-screen", "an exam")

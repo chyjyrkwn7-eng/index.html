@@ -10349,7 +10349,10 @@ def check_b312_results(br):
       out.filling = await run();
       return out; }""")
     check("a hundo on a unit whose badge you already hold shows no badge box", r.get("held") == 0, r)
-    check("and one still filling up keeps its badge progress box", r.get("filling", 0) >= 1, r)
+    # BUILD 320 REVERSED THIS: no badge progress box at all now - "it's
+    # kinda redundant and not needed, the profile tab shows all this
+    # clearly now" (RS_BADGE_PROGRESS_BOX brings it back).
+    check("and one still filling up shows none either (build 320: the box is off)", r.get("filling", 1) == 0, r)
     ctx.close()
 
 
@@ -12101,6 +12104,7 @@ def check_b313_fx(br):
           out.screenUp = !!document.querySelector('.rs-screen') && g.isConnected;
           out.tintVars = ['--hfx-b', '--hfx-g1', '--hfx-g2'].map(k => g.style.getPropertyValue(k).trim());
           if(sampler){ clearInterval(sampler); out.still = still; out.cardAnims = scripted; }
+          out.tail = tail;
           return out; }""", fx)
         yellow = "rgba(242, 211, 138, 0.2)"
         check("%s: a 100%% plays it, on the screen and in the box" % fx, r.get("id") == fx and r.get("screen", 0) > 3 and r.get("box", 0) > 2, r)
@@ -12178,10 +12182,19 @@ def check_b313_fx(br):
             check("fireworks: it starts AT the 100% box - the first shell is climbing out of its top edge, nothing lit anywhere else",
                   ea.get("n", 0) > 4 and ba and ea["x0"] >= ba["l"] - 12 and ea["x1"] <= ba["r"] + 12 and ea["y1"] <= ba["t"] + 8 and ea["y0"] >= ba["t"] - 260, {"lit": ea, "box": ba})
             check("fireworks: and spreads out - by the finale the sky above the box is lit across most of the screen",
-                  la.get("n", 0) > 400 and la["x1"] - la["x0"] >= 440 * .7 and la["y0"] < (r.get("boxLate") or {}).get("t", 0) - 300, {"lit": la, "box": r.get("boxLate")})
+                  # BUILD 320: the grade is the FIRST card now, so the box sits
+                  # near the top and the sky above it is short - "most of the
+                  # screen above it" is the sky reaching the top of the screen
+                  # (within 300px of the box was the old, low box's measure).
+                  la.get("n", 0) > 400 and la["x1"] - la["x0"] >= 440 * .7
+                  and la["y0"] < max(0, (r.get("boxLate") or {}).get("t", 0) - 300) + 40, {"lit": la, "box": r.get("boxLate")})
             check("fireworks: the screen dims a little behind the sky - and only a little", r.get("dimMid") is not None and .3 <= r["dimMid"] <= .6, r.get("dimMid"))
             st = r.get("still") or []
-            later = [c for t, c in st if t >= 400]
+            # BUILD 320: the XP card comes down at the effect's tail (it is
+            # the next card, after the grade) - the screen holds still until
+            # then; a card landing on the fade is the reveal going on, not the
+            # screen moving.
+            later = [c for t, c in st if 400 <= t < (r.get("tail") or 10 ** 9)]
             check("fireworks: the screen itself does not move - every card where it was, every 200ms from 0.4s (the grade card has landed) to the end (round 4: \"not a fan of that giddy one\")",
                   len(later) >= 20 and len(set(later)) == 1 and r.get("cardAnims") == 0, {"samples": len(later), "distinct": len(set(later)), "cardAnims": r.get("cardAnims"), "first": later[:1], "odd": [c for c in set(later) if later and c != later[0]][:2]})
         if fx == "underwater":
@@ -12191,8 +12204,10 @@ def check_b313_fx(br):
             sc = [float(v) for v in (pl.get("scale") or "1").split()]
             ty = (pl.get("translate") or "0px 0px").replace("px", "").split()
             check("blackhole: the hole opens at the box", r.get("atBox") is not None and r["atBox"] <= 4, r.get("atBox"))
-            check("blackhole: the XP card is pulled in towards it - moved down to the box and squeezed",
-                  len(ty) == 2 and float(ty[1]) > 60 and min(sc) < .8, pl)
+            # BUILD 320: the XP card is BELOW the grade now, so towards the box
+            # is up: pulled either way by more than 60px, and squeezed.
+            check("blackhole: the XP card is pulled in towards it - moved to the box and squeezed",
+                  len(ty) == 2 and abs(float(ty[1])) > 60 and min(sc) < .8, pl)
             check("blackhole: and springs back to exactly where it was", bk.get("scale") in ("none", "1", "1 1") and bk.get("translate") in ("none", "0px", "0px 0px"), bk)
         if fx == "ufo":
             # build 317, round 3 reverses this: "It looks like all the hundo
@@ -12206,6 +12221,13 @@ def check_b313_fx(br):
             check("ufo: it lands ON the 100% box - its feet on the box's top edge, over its middle",
                   ld and abs(ld.get("feet", 99)) <= 8 and abs(ld.get("cx", 99)) <= 30, ld)
         elif fx in FX_EARLY:
+            # BUILD 320: the XP card comes AFTER the grade now, so when the
+            # effect has played the reveal is still filling the XP bar and
+            # counting - and a number that moves between the two shots is
+            # read as a piece of the effect far from the box. Measure the
+            # replay on a screen that has finished moving.
+            pg.wait_for_function("()=>!!document.querySelector('.rs-rewards.rs-done')", timeout=60000)
+            pg.wait_for_timeout(800)
             sp = fx_spread(pg, fx)
             check("%s: it starts AT the 100%% box - its first visible pieces are on the box" % fx, sp and sp["early"]["n"] >= 150 and sp["early"]["inside"] >= .85, sp)
             # an absolute area far from the box, not a share: the box's own
@@ -15627,10 +15649,19 @@ def check_b317_hundobox(br):
                 text: { kicker: txt(':scope > .rs-kicker'), frac: txt('.rs-grade-frac'), of: txt('.rs-grade-frac .rs-frac-of'), sub: txt('.rs-grade-sub'),
                   unit: txt('.rs-byunit .unit-breakdown-name'), count: txt('.rs-byunit .rs-frac-of'), countAll: [...g.querySelectorAll('.rs-byunit *')].filter(e => /\\d/.test(e.textContent) && !e.children.length).map(e => cs(e).color) } };
               const dim = document.querySelector('.hfx-layer > .hfx-fw-dim, .hfx-layer > .hfx-ufo-dim, .hfx-layer > .hfx-bh-dim');
+              /* BUILD 320: the grade is the first card, so with the effect up
+                 the page can be too short to scroll at all - a spacer under
+                 the screen gives it somewhere to go (it is the dim being
+                 pinned that is under test, not the page's length) */
+              let spacer = null;
+              if(dim && document.documentElement.scrollHeight - innerHeight < 100 && scrollY < 90){
+                spacer = document.createElement('div'); spacer.style.height = '600px';
+                document.querySelector('#stage .rs-screen').appendChild(spacer); }
               if(dim){ const y0 = scrollY; const dy = y0 > 90 ? -90 : 90;
                 window.scrollTo({ top: y0 + dy, behavior: 'instant' }); await wait(60);
                 const b = dim.getBoundingClientRect(); out.dim = { moved: scrollY - y0, rect: [b.left, b.top, b.right, b.bottom], vw: innerWidth, vh: innerHeight };
                 window.scrollTo({ top: y0, behavior: 'instant' }); }
+              if(spacer) spacer.remove();
               return out; }""", fx)
         # the default gold and the Customize tiles, the same rule
         d = pg.evaluate("""() => { const cs = e => getComputedStyle(e); const out = {};
@@ -15922,6 +15953,12 @@ def check_b317_hundobox(br):
           for(let i = 0; i < 300 && !window.__fxAt; i++) await wait(50);
           if(!window.__fxAt) return null;
           await wait(500);
+          /* BUILD 320: the XP card comes after the grade, on the effect's
+             tail - in REAL time, while this reads the paused beam frame by
+             frame. On a two-unit page long enough to scroll, its landing
+             scrolled the page between a shot and its reference. The reveal
+             is held for the reading (pause() keeps the time left). */
+          try{ resultsSeq && resultsSeq.pause(); }catch(e){}
           document.querySelector('.rs-screen .rs-grade').scrollIntoView({ block: 'center', behavior: 'instant' });
           return { long: getComputedStyle(document.querySelector('.hfx-saucer:not(.is-mini)')).animationDuration === '9.5s' }; }""", multi)
         if not info or not info["long"]:
@@ -20153,9 +20190,12 @@ def check_b319_badges(br):
               ok_tab, tab and {k: tab[k] for k in ("parts", "cells", "cols", "rows", "lidRatio", "trayRatio")})
         check(f"{dev}: the Profile's case is the same case, shut - its front and handle, no slots (build 319)",
               ok_pf, [pf and pf["cells"], pfShut])
-        check(f"{dev}: a badge not found is only its empty slot - on the tab, the Profile, its card and the results",
+        # BUILD 320: the results have no badge progress box any more
+        # (RS_BADGE_PROGRESS_BOX off: "the profile tab shows all this clearly
+        # now"), so the results' half of this is that there is none.
+        check(f"{dev}: a badge not found is only its empty slot - on the tab, the Profile and its card; the results show no badge box (320)",
               bool(tab and pf and cards.get("not") and res) and tab["tokensUnfound"] == 0 and pf["tokensUnfound"] == 0 and tab["tokensFound"] == tab["found"] >= 8
-              and not cards["not"]["token"] and res["slot"] and not res["token"],
+              and not cards["not"]["token"] and not res["box"],
               [tab and tab["tokensUnfound"], pf and pf["tokensUnfound"], cards.get("not"), res])
         # the shut case's front carries its count and nothing else (build 319)
         pf_extra = [t for t in (pf["text"] if pf else []) if not re.match(r"^(\d+ of \d+ badges|\u203a|New|\d+ of \d+ badges(New)?\u203a)$", t)]
@@ -20163,7 +20203,7 @@ def check_b319_badges(br):
               bool(tab and pf) and not tab["text"] and not pf_extra, [tab and tab["text"][:4], pf and pf["text"][:4]])
         check(f"{dev}: a found badge's card says Mastered, and every title ends in 'Badge'",
               bool(cards.get("found") and cards.get("not")) and cards["found"]["count"] == "Mastered" and cards["found"]["name"].endswith(" Badge")
-              and cards["not"]["name"].endswith(" Badge") and res["name"].endswith(" Badge") and res["itemName"].endswith(" Badge"), [cards, res["name"], res["itemName"]])
+              and cards["not"]["name"].endswith(" Badge") and res["itemName"].endswith(" Badge"), [cards, res["itemName"]])
         check(f"{dev}: badges are found, not earned or unlocked (the tab's head, the results' row)",
               "found" in head and "earned" not in head and res["kicker"] == "Badge found", [head, res["kicker"]])
     # the cutscene: its words, and the light in the case
