@@ -20334,14 +20334,19 @@ B319_NOTE = """async ([lvl, nb]) => {
   store.lifetime.points = xpForLevel(lvl) + 10;
   document.getElementById('intro-pop')?.remove();
   showIntroPopup();
+  /* build 320: What's New is narrated, and the note is his - Skip puts it
+     on the card at once, and his lines carry the same words */
+  document.querySelector('#intro-pop .nt-skip')?.click();
   await new Promise(r => setTimeout(r, 150));
   const n = document.querySelector('#intro-pop .intro-gate-note');
+  let spoken = '';
+  try{ spoken = whatsNewLines(whatsNewState()).map(l => l.text).join(' '); }catch(e){}
   const s = levelStateFor(store);
   const r = n ? n.getBoundingClientRect() : null;
   const out = { text: n ? [...n.querySelectorAll('.intro-gate-body')].map(p => p.textContent) : null, title: n ? (n.querySelector('.intro-gate-title') || {}).textContent : null,
     level: s.level, curve: s.curveLevel, held: rankOf(store) ? RANK_DISPLAY_NAME[rankOf(store)] : null,
     gate: s.gateKey ? RANK_DISPLAY_NAME[s.gateKey] : null, need: s.badgesToPass,
-    inView: r ? r.left >= 0 && r.right <= innerWidth : null };
+    inView: r ? r.left >= 0 && r.right <= innerWidth : null, spoken };
   document.getElementById('intro-pop')?.remove();
   return out; }"""
 
@@ -20374,6 +20379,8 @@ def check_b319_levelnote(br):
                     "The next levels unlock then"]
             bad = [x for x in ("keep leveling up", "turns back into levels", "rank system", "wall", "band") if x in t]
             miss = [x for x in want if x not in t]
+            # build 320: Nova says the note, its facts exactly
+            miss += ["(spoken) " + x for x in want if x not in (r.get("spoken") or "")]
             check("%s: level %d, %d badge(s): the note says it plainly" % (dev, lvl, nb),
                   r["title"] == "Your level was adjusted" and not miss and not bad and r["level"] == top and r["inView"],
                   {"missing": miss, "bad": bad, "text": r["text"], "state": [r["level"], r["curve"], r["held"], r["gate"], r["need"]]})
@@ -20917,6 +20924,202 @@ def check_b319h_layout(br):
         ctx.close()
 
 
+
+B320F_NEW = """async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const out = { order: [], introLines: [], tap: null, tourSteps: 0, tourNova: 0, tourWho: [], err: null };
+  try{
+    localStorage.removeItem('class26e.intro.seen');
+    store.onboardingComplete = false; store.tourRev = 0; pendingMainMenuTour = true; showHome();
+    /* which appears first: Nova's introduction or a tooltip */
+    for(let i = 0; i < 60; i++){
+      await wait(100);
+      const n = !!document.getElementById('nova-intro'), t = !!document.getElementById('tour-tooltip');
+      if(n && out.order.indexOf('nova') < 0) out.order.push('nova');
+      if(t && out.order.indexOf('tour') < 0) out.order.push('tour');
+      if(n) break;
+    }
+    const el = document.getElementById('nova-intro');
+    if(!el){ out.err = 'no intro'; return out; }
+    const nv = el.__nova;
+    await wait(900);
+    /* tap-to-advance: the first tap finishes the line, the second moves on */
+    const idx0 = nv.index, typing0 = nv.typing;
+    const rest0 = (el.querySelector('.nt-text .nv-rest') || {}).textContent || '';
+    el.querySelector('.nt-stage').click(); await wait(60);
+    const idx1 = nv.index, rest1 = (el.querySelector('.nt-text .nv-rest') || {}).textContent || '';
+    const full = el.querySelector('.nt-text').textContent;
+    el.querySelector('.nt-stage').click(); await wait(60);
+    out.tap = { idx0, typing0, restBefore: rest0.length, idx1, restAfter: rest1.length, idx2: nv.index, full };
+    out.hasNova = !!el.querySelector('.nt-nova svg.nova-svg');
+    out.dots = el.querySelectorAll('.nt-progress i').length;
+    out.skip = !!el.querySelector('.nt-skip');
+    const bb = el.querySelector('.nt-bubble').getBoundingClientRect(), nb = el.querySelector('.nt-nova').getBoundingClientRect();
+    out.inView = bb.left >= 0 && bb.right <= innerWidth && bb.top >= 0 && bb.bottom <= innerHeight && nb.left > -40 && nb.top < innerHeight - 80;
+    out.introLines.push(out.tap.full);
+    for(let i = 0; i < 40 && document.getElementById('nova-intro'); i++){
+      const t = el.querySelector('.nt-text').textContent;
+      if(out.introLines[out.introLines.length - 1] !== t) out.introLines.push(t);
+      if(nv.typing){ el.querySelector('.nt-stage').click(); await wait(40); continue; }
+      const go = el.querySelector('.nt-go');
+      if(go && getComputedStyle(go).display !== 'none'){ out.goLabel = go.textContent; go.click(); break; }
+      el.querySelector('.nt-stage').click(); await wait(60);
+    }
+    for(let i = 0; i < 30 && !document.getElementById('tour-tooltip'); i++) await wait(100);
+    out.introGone = !document.getElementById('nova-intro');
+    /* the tooltips, in his bubble */
+    for(let i = 0; i < 16; i++){
+      const tt = document.getElementById('tour-tooltip');
+      if(!tt){ break; }
+      out.tourSteps++;
+      if(tt.classList.contains('has-nova') && tt.querySelector('.tour-nova svg.nova-svg')) out.tourNova++;
+      out.tourWho.push((tt.querySelector('.tour-who') || {}).textContent || '');
+      document.getElementById('tour-next').click(); await wait(500);
+    }
+    out.onboarded = !!store.onboardingComplete;
+    /* and not again: Home, Profile, Home, a while on Home */
+    showProfile('profile'); await wait(400); showHome(); await wait(3600);
+    out.again = !!document.getElementById('nova-intro') || !!document.getElementById('intro-pop');
+  }catch(e){ out.err = String(e); }
+  return out;
+}"""
+
+B320F_NEWS = """async ([reduce]) => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const out = { lines: [], err: null };
+  try{
+    const U = topicsIn(QUESTIONS); out.units = U.length;
+    store.unitPerfects = {}; U.slice(0, 3).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+    /* Gold held from the old ladder (rankFloor 3), three badges */
+    store.levelFloor = 0; store.rankFloor = 3; store.lifetime.points = xpForLevel(49) + 300;
+    theme.reduceMotion = !!reduce; applyTheme(); saveStore();
+    out.rank = RANK_DISPLAY_NAME[rankOf(store)]; out.badges = badgeCountOf(store); out.level = levelOf(store);
+    localStorage.removeItem('class26e.intro.seen');
+    showHome();
+    for(let i = 0; i < 50 && !document.getElementById('intro-pop'); i++) await wait(100);
+    const el = document.getElementById('intro-pop');
+    if(!el || !el.__nova){ out.err = 'no narrated What\\'s New'; return out; }
+    const nv = el.__nova;
+    await wait(reduce ? 100 : 900);
+    out.firstTyping = nv.typing;
+    out.firstRest = ((el.querySelector('.nt-text .nv-rest') || {}).textContent || '').length;
+    out.count = nv.count;
+    const idx0 = nv.index;
+    el.querySelector('.nt-stage').click(); await wait(60);
+    out.oneTapMoved = nv.index - idx0;
+    out.lines.push(el.querySelector('.nt-text').textContent);
+    for(let i = 0; i < 60; i++){
+      const t = el.querySelector('.nt-text').textContent;
+      if(out.lines[out.lines.length - 1] !== t) out.lines.push(t);
+      if(nv.index === nv.count - 1 && !nv.typing) break;
+      el.querySelector('.nt-stage').click(); await wait(40);
+    }
+    out.rows = el.querySelectorAll('.nt-list .nt-card').length;
+    out.me = (el.querySelector('.nt-me') || {}).textContent || '';
+    const go = el.querySelector('.nt-go');
+    out.go = go ? getComputedStyle(go).display !== 'none' : false;
+    go && go.click(); await wait(600);
+    out.closed = !document.getElementById('intro-pop');
+    out.seen = Number(localStorage.getItem('class26e.intro.seen')) >= INTRO_REV;
+    showHome(); await wait(3400);
+    out.again = !!document.getElementById('intro-pop');
+  }catch(e){ out.err = String(e); }
+  theme.reduceMotion = false; applyTheme();
+  return out;
+}"""
+
+B320F_SKIP = """async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const out = {};
+  try{
+    localStorage.removeItem('class26e.intro.seen'); showHome();
+    for(let i = 0; i < 50 && !document.getElementById('intro-pop'); i++) await wait(100);
+    const el = document.getElementById('intro-pop');
+    await wait(900);
+    el.querySelector('.nt-skip').click(); await wait(200);
+    out.atEnd = el.__nova.index === el.__nova.count - 1;
+    out.rows = el.querySelectorAll('.nt-list .nt-card').length;
+    out.want = WHATS_NEW_320.length;
+    out.open = !!document.getElementById('intro-pop');
+    el.querySelector('.nt-go').click(); await wait(500);
+    /* the introduction's Skip goes straight to the tooltips */
+    store.onboardingComplete = false; store.tourRev = 0; pendingMainMenuTour = true; showHome();
+    for(let i = 0; i < 40 && !document.getElementById('nova-intro'); i++) await wait(100);
+    const ni = document.getElementById('nova-intro');
+    out.intro = !!ni;
+    if(ni){ await wait(800); ni.querySelector('.nt-skip').click(); }
+    for(let i = 0; i < 30 && !document.getElementById('tour-tooltip'); i++) await wait(100);
+    out.tourAfterSkip = !!document.getElementById('tour-tooltip') && !document.getElementById('nova-intro');
+    /* Customize never offers him */
+    document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot').forEach(x => x.remove());
+    out.inChars = AVATAR_CHARACTERS.some(c => /nova/i.test(c.id) || /nova/i.test(c.kind || ''));
+    showCustomize('character'); await wait(900);
+    out.inPicker = !!document.querySelector('#stage .nova-svg') || [...document.querySelectorAll('#stage [data-char]')].some(n => /nova/i.test(n.dataset.char));
+    out.pickerHasChars = document.querySelectorAll('#stage svg.avatarchar-svg').length;
+  }catch(e){ out.err = String(e); }
+  return out;
+}"""
+
+
+def check_b320f_nova(br):
+    """Build 320 (builder f). Nova, the narrator: "If you are signing up it
+    would be before the tool tips ... After signing up you won't hear from
+    the character again until more what's new stuff comes along ... For the
+    now (mostly everyone) existing accounts, it would be narrating the
+    what's new stuff ... he will meet you and say your name ... talk about
+    your rank ... 'it appears you have found 3 of my lost badges'".
+    A new account: Nova's introduction comes before any tooltip, tells the
+    story (made the app, lost badges and flares, ranks, XP, tests), a tap
+    finishes a line and the next moves on, the tooltips that follow are in
+    his bubble, and he does not come back. An existing account with 3
+    badges at Gold: the narrated What's New, once, with the username, the
+    rank by name and the badge count in his words, every row on the card,
+    Skip that keeps the news, reduce motion with no typing, and never in
+    Customize. Fails on a73c681 (no Nova at all)."""
+    print("\n320f. Nova: the introduction, his tooltips, the narrated What's New")
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate(B320F_NEW)
+        lines = " ".join(r.get("introLines") or [])
+        check("%s new account: Nova's introduction comes before any tooltip" % dev, r.get("order") == ["nova"] and r.get("hasNova"), {k: r.get(k) for k in ("order", "hasNova", "err")})
+        check("%s his bubble and Nova are on screen, with Skip and the progress dots" % dev, r.get("inView") and r.get("skip") and (r.get("dots") or 0) >= 6, {k: r.get(k) for k in ("inView", "skip", "dots")})
+        t = r.get("tap") or {}
+        check("%s a tap finishes the line, the next tap moves on" % dev,
+              t.get("typing0") and t.get("restBefore", 0) > 0 and t.get("idx1") == t.get("idx0") and t.get("restAfter") == 0 and t.get("idx2") == t.get("idx0", 0) + 1, t)
+        need = ["Nova", "made this app", "badge", "flare", "Supernova", "XP", "level", "Drill", "Exam", "Review", "Madison"]
+        miss = [x for x in need if x not in lines]
+        check("%s he introduces himself and the story: badges, flares, ranks, levels, tests" % dev, not miss and r.get("goLabel"), {"missing": miss, "go": r.get("goLabel")})
+        check("%s the tooltips follow in his bubble, every one" % dev,
+              r.get("introGone") and r.get("tourSteps", 0) >= 6 and r.get("tourNova") == r.get("tourSteps") and all(x == "Nova" for x in r.get("tourWho") or [""]),
+              {k: r.get(k) for k in ("introGone", "tourSteps", "tourNova", "tourWho")})
+        check("%s after onboarding he does not appear again" % dev, r.get("onboarded") and not r.get("again"), {k: r.get(k) for k in ("onboarded", "again", "err")})
+        ctx.close()
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate(B320F_NEWS, [False])
+        txt = " ".join(r.get("lines") or [])
+        check("%s existing account: the narrated What's New opens on Home" % dev, not r.get("err") and r.get("firstTyping"), {k: r.get(k) for k in ("err", "firstTyping")})
+        check("%s he greets them by username, names the rank and the badges found" % dev,
+              "Madison" in txt and "I’m Nova" in txt and (r.get("rank") or "?") in txt and "found 3 of my lost badges" in txt and r.get("rank") == "Gold" and r.get("badges") == 3,
+              {"rank": r.get("rank"), "badges": r.get("badges"), "head": (r.get("lines") or [])[:4]})
+        check("%s the card is built as he talks, and ends on Got it" % dev,
+              (r.get("rows") or 0) >= 9 and "3 of %s badges found" % r.get("units") in (r.get("me") or "") and r.get("go") and "speak with you again" in txt,
+              {k: r.get(k) for k in ("rows", "me", "go")})
+        check("%s once: marked seen and not shown again" % dev, r.get("closed") and r.get("seen") and not r.get("again"), {k: r.get(k) for k in ("closed", "seen", "again")})
+        ctx.close()
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate(B320F_NEWS, [True])
+    check("reduce motion: every line is there at once, and one tap moves on", not r.get("err") and not r.get("firstTyping") and r.get("firstRest") == 0 and r.get("oneTapMoved") == 1,
+          {k: r.get(k) for k in ("err", "firstTyping", "firstRest", "oneTapMoved")})
+    ctx.close()
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate(B320F_SKIP)
+    check("Skip on What's New keeps the news: every row on the card, his last line", r.get("open") and r.get("atEnd") and r.get("rows") == r.get("want") and r.get("want", 0) > 0, r)
+    check("Skip on the introduction goes straight to the tooltips", r.get("intro") and r.get("tourAfterSkip"), r)
+    check("Nova is not a character: not in the list, not in Customize", r.get("inChars") is False and r.get("inPicker") is False and (r.get("pickerHasChars") or 0) > 0, r)
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -21126,6 +21329,7 @@ def main():
             check_b319_badges(br)
             check_b319f_casespace(br)
             check_b319h_layout(br)
+            check_b320f_nova(br)
         finally:
             br.close()
     SERVER.shutdown()

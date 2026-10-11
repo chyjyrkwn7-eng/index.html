@@ -1570,6 +1570,297 @@
     #tour-next{ font-size:1.02rem; padding:.6rem 1.4rem; }
   }
 
+  /* ---- NOVA, THE NARRATOR (build 320) ----
+     "have a random character that looks like one of the ultimates and
+     secrets flares but mix pop up and talk ... give him professor/
+     instructor vibes as well. Like glasses/lab coat maybe?" He is drawn by
+     buildNovaSVG() and is NOT a character anybody can wear: he is not in
+     AVATAR_CHARACTERS, so no picker, board or count can ever offer him.
+     Every part that moves is a transform or an opacity on its own group,
+     no filter anywhere (the one SVG feature that has bitten this app on
+     iOS), and the global reduce-motion rule stills all of it. */
+  .nova-svg{ display:block; width:100%; height:100%; overflow:visible; }
+  .nova-svg .nv-fig{ transform-origin:24px 56px; animation:nv-breathe 4.2s ease-in-out infinite alternate; }
+  .nova-svg .nv-head{ transform-origin:24px 30px; animation:nv-sway 7.4s ease-in-out infinite alternate; }
+  .nova-svg .nv-eyes{ transform-origin:24px 19.4px; animation:nv-blink 5.6s ease-in-out infinite; }
+  .nova-svg .nv-corona{ transform-origin:24px 19px; animation:nv-corona 5s ease-in-out infinite alternate; }
+  .nova-svg .nv-neb1{ animation:nv-glow 6.4s ease-in-out infinite alternate; }
+  .nova-svg .nv-neb2{ animation:nv-glow 7.6s ease-in-out -3s infinite alternate; }
+  .nova-svg .nv-twinkle{ transform-box:fill-box; transform-origin:center; animation:nv-twinkle 3.2s ease-in-out infinite; }
+  .nova-svg .nv-tw1{ animation-delay:-1.1s; animation-duration:2.7s; }
+  .nova-svg .nv-tw2{ animation-delay:-2.2s; animation-duration:3.7s; }
+  .nova-svg .nv-cstar{ animation:nv-glow 2.6s ease-in-out infinite alternate; }
+  .nova-svg .nv-mote{ transform-box:fill-box; transform-origin:center; animation:nv-mote 5.4s ease-in-out infinite; }
+  .nova-svg .nv-glint{ transform-box:fill-box; transform-origin:center; animation:nv-glint 6.8s ease-in-out infinite; }
+  .nova-svg .nv-hair-back{ transform-origin:24px 18px; animation:nv-hair 5.2s ease-in-out infinite alternate; }
+  .nova-svg .nv-mouth-open{ transform-origin:24px 25.4px; }
+  .nova-svg .nv-brows{ transition:transform .25s ease; }
+  .nova-svg .nv-hand{ transform-origin:37.4px 56px; }
+  .nova-svg .nv-handstar{ transform-box:fill-box; transform-origin:center; }
+  /* TALKING: the mouth opens and closes in an uneven beat while a line
+     types, and closes at every pause - the shut smile is the resting face */
+  .is-talking .nova-svg .nv-mouth-shut{ opacity:0; }
+  .is-talking .nova-svg .nv-mouth-open{ opacity:1; animation:nv-talk .52s linear infinite; }
+  .is-talking .nova-svg .nv-brows{ transform:translateY(-.28px); }
+  /* GESTURES, one at a time, a couple of seconds each */
+  .g-wave .nova-svg .nv-hand{ opacity:1; animation:nv-wave 2s cubic-bezier(.3,.7,.3,1) both; }
+  .g-raise .nova-svg .nv-hand{ opacity:1; animation:nv-raise 2.2s cubic-bezier(.3,.7,.3,1) both; }
+  .g-raise .nova-svg .nv-handstar, .g-wave .nova-svg .nv-handstar{ animation:nv-handstar 2.2s ease-out both; }
+  .g-nod .nova-svg .nv-head{ animation:nv-nod 1.3s ease-in-out both; }
+  .g-wave .nova-svg .nv-head, .g-raise .nova-svg .nv-head{ animation:nv-tilt 2.1s ease-in-out both; }
+  @keyframes nv-breathe{ from{ transform:none; } to{ transform:translateY(-.32px) scale(1.006, 1.012); } }
+  @keyframes nv-sway{ from{ transform:rotate(-1.1deg); } to{ transform:rotate(1.3deg) translateY(-.15px); } }
+  @keyframes nv-blink{ 0%, 92%, 97%, 100%{ transform:none; } 94.5%{ transform:scaleY(.08); } }
+  @keyframes nv-corona{ from{ opacity:.65; transform:scale(.97); } to{ opacity:1; transform:scale(1.04); } }
+  @keyframes nv-glow{ from{ opacity:.55; } to{ opacity:1; } }
+  @keyframes nv-twinkle{ 0%, 100%{ opacity:.9; transform:scale(1); } 50%{ opacity:.25; transform:scale(.55); } }
+  @keyframes nv-mote{ 0%{ opacity:0; transform:translateY(0); } 25%{ opacity:.9; } 100%{ opacity:0; transform:translateY(-3.2px); } }
+  @keyframes nv-glint{ 0%, 80%, 100%{ opacity:0; transform:scale(.3) rotate(0deg); } 86%{ opacity:1; transform:scale(1.2) rotate(45deg); } 92%{ opacity:0; transform:scale(.4) rotate(90deg); } }
+  @keyframes nv-hair{ from{ transform:none; } to{ transform:scale(1.025, 1.035) translateY(-.1px); } }
+  @keyframes nv-talk{ 0%{ transform:scaleY(.35); } 18%{ transform:scaleY(1); } 34%{ transform:scaleY(.55); } 52%{ transform:scaleY(.95); } 70%{ transform:scaleY(.3); } 86%{ transform:scaleY(.8); } 100%{ transform:scaleY(.35); } }
+  @keyframes nv-wave{
+    0%{ transform:translateY(12px) rotate(12deg); } 22%{ transform:translateY(0) rotate(-8deg); }
+    38%{ transform:rotate(8deg); } 54%{ transform:rotate(-7deg); } 70%{ transform:rotate(5deg); }
+    84%{ transform:translateY(0) rotate(0deg); } 100%{ transform:translateY(13px) rotate(6deg); } }
+  @keyframes nv-raise{ 0%{ transform:translateY(12px) rotate(10deg); } 24%, 78%{ transform:translateY(0) rotate(-3deg); } 50%{ transform:translateY(-.4px) rotate(2deg); } 100%{ transform:translateY(13px) rotate(8deg); } }
+  @keyframes nv-handstar{ 0%, 18%{ opacity:0; transform:scale(.2); } 30%{ opacity:1; transform:scale(1.25) rotate(45deg); } 60%{ opacity:.9; transform:scale(1) rotate(90deg); } 80%, 100%{ opacity:0; transform:scale(.3) rotate(140deg); } }
+  @keyframes nv-nod{ 0%, 100%{ transform:none; } 35%{ transform:translateY(.5px) rotate(1.5deg); } 65%{ transform:translateY(-.1px); } }
+  @keyframes nv-tilt{ 0%, 100%{ transform:none; } 30%, 70%{ transform:rotate(-2.4deg); } }
+
+  /* ---- THE DIALOGUE: Nova on screen, his words in a bubble ----
+     One shape for the new-account introduction (#nova-intro) and the
+     narrated What's New (#intro-pop). A dark sky over the app, Nova at
+     the foot of the screen, his bubble above him (beside him from 40rem),
+     whatever he is talking about in the space above that. Tap anywhere to
+     finish the line, again for the next; Skip in the corner. */
+  .nova-talk{
+    position:fixed; inset:0; z-index:360; display:flex; flex-direction:column;
+    padding-top:calc(env(safe-area-inset-top, 0px) + .6rem);
+    padding-left:calc(env(safe-area-inset-left, 0px) + 1rem);
+    padding-right:calc(env(safe-area-inset-right, 0px) + 1rem);
+    color:#F3F5F7; cursor:pointer; user-select:none; -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent; overflow:hidden;
+    opacity:0; transition:opacity .38s ease;
+  }
+  .nova-talk.show{ opacity:1; }
+  .nova-talk.leaving{ opacity:0; transition:opacity .34s ease; pointer-events:none; }
+  .nt-sky{ position:absolute; inset:0; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(120% 60% at 18% 100%, rgba(123,92,224,.36), transparent 62%),
+      radial-gradient(90% 50% at 90% 0%, rgba(79,160,255,.16), transparent 60%),
+      linear-gradient(180deg, rgba(5,7,16,.975), rgba(8,8,22,.98) 55%, rgba(14,10,34,.985)); }
+  .nt-sky i{ position:absolute; width:3px; height:3px; border-radius:50%; background:#fff; opacity:.6;
+    animation:nv-twinkle 3.4s ease-in-out infinite; }
+  .nt-top{ display:flex; align-items:center; justify-content:space-between; gap:1rem; min-height:44px; flex:0 0 auto; }
+  .nt-progress{ display:flex; gap:5px; align-items:center; flex-wrap:wrap; max-width:70%; }
+  .nt-progress i{ width:6px; height:6px; border-radius:3px; background:rgba(255,255,255,.22); transition:width .3s ease, background .3s ease; }
+  .nt-progress i.is-done{ background:rgba(255,255,255,.5); }
+  .nt-progress i.is-now{ width:18px; background:#FFD27A; }
+  .nt-skip{ appearance:none; border:none; background:none; color:rgba(243,245,247,.55); font:inherit; font-size:.86rem;
+    font-weight:600; letter-spacing:.02em; padding:.7rem .2rem .7rem 1rem; min-height:44px; cursor:pointer; }
+  .nt-skip:hover{ color:rgba(243,245,247,.85); }
+  .nt-stage{ flex:1 1 auto; min-height:0; position:relative; display:flex; flex-direction:column; }
+  .nt-talk{ flex:0 0 auto; position:relative; display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto;
+    grid-template-areas:"bubble bubble" "nova hint"; align-items:end; column-gap:.5rem; }
+  .nt-bubble{ grid-area:bubble; position:relative; margin:0 0 .9rem; padding:.95rem 1.1rem 1rem;
+    border-radius:22px; background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.02) 50%, rgba(0,0,0,.12)), rgba(22,26,44,.9);
+    border:1px solid rgba(255,255,255,.16);
+    box-shadow:0 14px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.14), 0 0 0 1px rgba(183,155,255,.06);
+    transform-origin:18% 100%; opacity:0; transform:translateY(8px) scale(.94);
+    transition:opacity .3s ease, transform .42s cubic-bezier(.25,1.4,.4,1); }
+  .nt-bubble.is-up{ opacity:1; transform:none; }
+  .nt-bubble.bump{ animation:nt-bump .32s cubic-bezier(.3,1.5,.5,1); }
+  @keyframes nt-bump{ 0%{ transform:scale(.975); } 100%{ transform:none; } }
+  /* the tail, pointing down at him */
+  .nt-bubble::after{ content:""; position:absolute; left:3.2rem; bottom:-9px; width:18px; height:18px;
+    background:rgba(27,30,50,.96); border-right:1px solid rgba(255,255,255,.16); border-bottom:1px solid rgba(255,255,255,.16);
+    transform:rotate(45deg); border-bottom-right-radius:4px; }
+  .nt-who{ margin:0 0 .3rem; font-size:.7rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase;
+    color:#FFD27A; display:flex; align-items:center; gap:.35rem; }
+  .nt-who::before{ content:""; width:.7rem; height:.7rem; background:#FFD27A;
+    clip-path:polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+  .nt-text{ margin:0; font-size:1.06rem; line-height:1.48; font-weight:500; color:#F3F5F7; min-height:3em; }
+  .nv-rest{ color:transparent; }
+  .nt-text strong{ color:#FFE3A6; font-weight:700; }
+  /* what is still to come in this line is laid out, never shown */
+  .nt-more{ position:absolute; right:1rem; bottom:.55rem; width:12px; height:8px; opacity:0; transition:opacity .2s ease;
+    background:#FFD27A; clip-path:polygon(0 0, 100% 0, 50% 100%); }
+  .nt-bubble.is-done .nt-more{ opacity:.9; animation:nt-more 1.1s ease-in-out infinite; }
+  .nt-bubble.is-final .nt-more{ display:none; }
+  @keyframes nt-more{ 0%, 100%{ transform:translateY(0); } 50%{ transform:translateY(3px); } }
+  .nt-go{ display:none; width:100%; min-height:48px; margin-top:.95rem; }
+  .nt-bubble.is-final.is-done .nt-go{ display:block; animation:nt-goin .35s cubic-bezier(.25,1.4,.4,1) both; }
+  @keyframes nt-goin{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+  .nt-nova{ grid-area:nova; position:relative; width:13rem; aspect-ratio:48 / 56; margin-left:-.6rem;
+    margin-bottom:calc(-1 * env(safe-area-inset-bottom, 0px) - .2rem); pointer-events:none; }
+  .nt-nova .nova-svg{ position:relative; z-index:1; }
+  /* the entrance: a burst of light, and he is there */
+  .nt-nova.is-arriving .nova-svg{ animation:nt-arrive .9s cubic-bezier(.2,1.25,.35,1) both; transform-origin:50% 90%; }
+  @keyframes nt-arrive{ 0%{ opacity:0; transform:translateY(30px) scale(.55); } 55%{ opacity:1; } 100%{ opacity:1; transform:none; } }
+  .nt-burst{ position:absolute; left:50%; top:36%; width:12rem; height:12rem; margin:-6rem 0 0 -6rem; border-radius:50%;
+    pointer-events:none; opacity:0;
+    background:radial-gradient(circle, rgba(255,246,218,.95) 0%, rgba(255,210,122,.55) 18%, rgba(183,155,255,.28) 42%, transparent 68%); }
+  .nt-nova.is-arriving .nt-burst{ animation:nt-burst .9s ease-out both; }
+  @keyframes nt-burst{ 0%{ opacity:0; transform:scale(.15); } 25%{ opacity:1; } 100%{ opacity:0; transform:scale(1.5); } }
+  .nt-ring{ position:absolute; left:50%; top:36%; width:6rem; height:6rem; margin:-3rem 0 0 -3rem; border-radius:50%;
+    border:2px solid rgba(255,231,168,.85); opacity:0; pointer-events:none; }
+  .nt-nova.is-arriving .nt-ring{ animation:nt-ring .85s cubic-bezier(.2,.7,.3,1) .08s both; }
+  @keyframes nt-ring{ 0%{ opacity:.95; transform:scale(.2); } 100%{ opacity:0; transform:scale(2.6); } }
+  .nt-hint{ grid-area:hint; align-self:end; justify-self:end; margin:0 0 calc(env(safe-area-inset-bottom, 0px) + 1.1rem);
+    font-size:.82rem; font-weight:600; letter-spacing:.03em; color:rgba(243,245,247,.62); opacity:0; transition:opacity .3s ease;
+    display:flex; align-items:center; gap:.4rem; }
+  .nt-hint.is-on{ opacity:1; }
+  .nt-hint::before{ content:""; width:.55rem; height:.55rem; border-radius:50%; background:rgba(255,210,122,.85);
+    box-shadow:0 0 0 0 rgba(255,210,122,.6); animation:nt-tap 1.6s ease-out infinite; }
+  @keyframes nt-tap{ 0%{ box-shadow:0 0 0 0 rgba(255,210,122,.55); } 100%{ box-shadow:0 0 0 .7rem rgba(255,210,122,0); } }
+  .nt-hint.is-gone{ visibility:hidden; }
+
+  /* the stage: what he is talking about */
+  .nt-prop{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:.8rem; text-align:center; opacity:0; transform:translateY(10px) scale(.96);
+    transition:opacity .35s ease, transform .5s cubic-bezier(.25,1.3,.4,1); pointer-events:none; }
+  .nt-prop.is-in{ opacity:1; transform:none; }
+  .nt-prop.is-out{ opacity:0; transform:translateY(-8px) scale(.98); transition:opacity .25s ease, transform .3s ease; }
+  .nt-cap{ margin:0; font-size:.74rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:rgba(243,245,247,.62); }
+  .nt-row{ display:flex; flex-wrap:wrap; justify-content:center; gap:.55rem; max-width:24rem; }
+  .nt-row > *{ animation:nt-popin .5s cubic-bezier(.25,1.5,.4,1) both; animation-delay:calc(var(--i, 0) * 70ms); }
+  @keyframes nt-popin{ from{ opacity:0; transform:scale(.4); } to{ opacity:1; transform:none; } }
+  .nt-slot{ width:3.1rem; height:3.1rem; display:block; }
+  .nt-slot svg{ width:100%; height:100%; display:block; }
+  .nt-emblem{ display:flex; flex-direction:column; align-items:center; gap:.25rem; width:3.2rem; }
+  .nt-emblem svg{ width:2.7rem; height:2.7rem; }
+  .nt-emblem span{ font-size:.62rem; font-weight:700; color:rgba(243,245,247,.75); }
+  .nt-flare{ position:relative; width:2.9rem; height:2.9rem; display:block; }
+  .nt-flare .cosmic-icon-badge{ position:absolute !important; inset:0 !important; width:100% !important; height:100% !important; margin:0 !important; transform:none !important; }
+  .nt-mode{ display:flex; flex-direction:column; align-items:center; gap:.4rem; width:5.2rem; padding:.7rem .3rem;
+    border-radius:16px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); }
+  .nt-mode svg{ width:1.8rem; height:1.8rem; }
+  .nt-mode span{ font-size:.78rem; font-weight:700; }
+  .nt-xp{ width:min(17rem, 80%); }
+  .nt-xp-row{ display:flex; justify-content:space-between; font-size:.8rem; font-weight:700; color:rgba(243,245,247,.8); margin-bottom:.4rem; }
+  .nt-xp-bar{ height:10px; border-radius:6px; background:rgba(255,255,255,.1); overflow:hidden; }
+  .nt-xp-bar i{ display:block; height:100%; width:100%; border-radius:6px; transform-origin:0 50%; transform:scaleX(.08);
+    background:linear-gradient(90deg, #5CA8FF, #8FC1FF); }
+  .nt-prop.is-in .nt-xp-bar i{ animation:nt-xpfill 2.4s cubic-bezier(.4,0,.2,1) .3s both; }
+  @keyframes nt-xpfill{ from{ transform:scaleX(.08); } to{ transform:scaleX(1); } }
+  .nt-wreck{ width:min(15rem, 62%); aspect-ratio:1; }
+  .nt-wreck svg{ width:100%; height:100%; display:block; overflow:visible; }
+
+  /* What's New: the card he builds as he talks */
+  .nt-news{ display:flex; flex-direction:column; min-height:0; flex:1 1 auto; }
+  .nt-head{ text-align:center; margin:.1rem 0 .7rem; flex:0 0 auto; }
+  .nt-eyebrow{ margin:0; font-size:.7rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#FFD27A; padding-left:.14em; }
+  .nt-title{ margin:.15rem 0 0; font-family:var(--serif); font-size:1.5rem; font-weight:800; line-height:1.1; }
+  .nt-list{ flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+    display:flex; flex-direction:column; gap:.5rem; padding:.1rem .1rem 1rem;
+    mask-image:linear-gradient(180deg, #000 calc(100% - 1.2rem), transparent);
+    -webkit-mask-image:linear-gradient(180deg, #000 calc(100% - 1.2rem), transparent); }
+  .nt-card{ flex:0 0 auto; display:flex; gap:.75rem; align-items:flex-start; padding:.7rem .85rem; border-radius:16px;
+    background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.1);
+    animation:nt-cardin .55s cubic-bezier(.25,1.3,.4,1) both; }
+  .nt-card.is-instant{ animation:none; }
+  @keyframes nt-cardin{ from{ opacity:0; transform:translateY(12px) scale(.96); } to{ opacity:1; transform:none; } }
+  .nt-card .intro-row-icon{ flex:0 0 auto; width:1.35rem; height:1.35rem; margin-top:.05rem; }
+  .nt-card .intro-row-title{ margin:0 0 .12rem; font-size:.9rem; font-weight:800; color:#F3F5F7; }
+  .nt-card .intro-row-body{ margin:0; font-size:.8rem; line-height:1.4; color:rgba(243,245,247,.68); }
+  .nt-card.is-now{ border-color:rgba(255,210,122,.5); background:rgba(255,210,122,.08); }
+  .nt-me{ flex:0 0 auto; display:flex; align-items:center; gap:.8rem; padding:.7rem .9rem; border-radius:18px;
+    background:linear-gradient(135deg, color-mix(in srgb, var(--rank-color, #8B939E) 22%, transparent), rgba(255,255,255,.04));
+    border:1px solid color-mix(in srgb, var(--rank-color, #8B939E) 45%, rgba(255,255,255,.1));
+    animation:nt-cardin .55s cubic-bezier(.25,1.3,.4,1) both; }
+  .nt-me-av{ width:3.3rem; height:3.3rem; flex:0 0 auto; }
+  .nt-me-av svg{ width:100%; height:100%; display:block; }
+  .nt-me-name{ margin:0; font-size:1.05rem; font-weight:800; }
+  .nt-me-line{ margin:.15rem 0 0; display:flex; align-items:center; gap:.35rem; font-size:.82rem; font-weight:700; color:rgba(243,245,247,.78); flex-wrap:wrap; }
+  .nt-me-line svg{ width:1.25rem; height:1.25rem; }
+  .nt-me-line b{ color:color-mix(in srgb, var(--rank-color, #8B939E) 60%, #fff); }
+  .nt-me-line .is-hi{ color:#FFE3A6; }
+  .nt-card.intro-gate-note{ display:block; margin:0; padding:.8rem .95rem; border-radius:16px;
+    background:linear-gradient(180deg, rgba(61,139,255,.18), rgba(61,139,255,.07)); border:1px solid rgba(143,193,255,.42); }
+  .nt-card.intro-gate-note .intro-gate-title{ font-size:.9rem; }
+  .nt-card.intro-gate-note .intro-gate-body{ font-size:.8rem; color:#F3F5F7; }
+
+  /* From 40rem: Nova bigger, bottom left, his bubble beside him. */
+  @media (min-width:40rem){
+    .nova-talk{ padding-left:calc(env(safe-area-inset-left, 0px) + 2rem); padding-right:calc(env(safe-area-inset-right, 0px) + 2rem); }
+    .nt-talk{ grid-template-columns:auto 1fr; grid-template-rows:1fr auto; grid-template-areas:"nova bubble" "nova hint"; column-gap:1.4rem; }
+    .nt-nova{ width:17rem; margin-left:-1rem; align-self:end; }
+    .nt-bubble{ align-self:end; margin:0 0 .6rem; max-width:34rem; padding:1.25rem 1.5rem 1.3rem; border-radius:26px; transform-origin:0 70%; }
+    .nt-bubble::after{ left:-10px; bottom:3.2rem; border-right:none; border-bottom:none;
+      border-left:1px solid rgba(255,255,255,.16); border-bottom:1px solid rgba(255,255,255,.16); border-bottom-left-radius:4px; border-bottom-right-radius:0; }
+    .nt-text{ font-size:1.32rem; line-height:1.5; }
+    .nt-who{ font-size:.8rem; }
+    .nt-hint{ justify-self:start; margin-bottom:calc(env(safe-area-inset-bottom, 0px) + 1.6rem); font-size:.92rem; }
+    .nt-news{ width:100%; max-width:36rem; margin:0 auto; }
+    .nt-title{ font-size:2rem; }
+    .nt-card{ padding:.9rem 1.1rem; }
+    .nt-card .intro-row-title{ font-size:1.02rem; }
+    .nt-card .intro-row-body{ font-size:.9rem; }
+    .nt-slot{ width:4.4rem; height:4.4rem; }
+    .nt-emblem{ width:4.4rem; } .nt-emblem svg{ width:3.8rem; height:3.8rem; } .nt-emblem span{ font-size:.74rem; }
+    .nt-flare{ width:4rem; height:4rem; }
+    .nt-row{ max-width:36rem; gap:.8rem; }
+    .nt-cap{ font-size:.86rem; }
+    .nt-mode{ width:7rem; } .nt-mode span{ font-size:.92rem; }
+  }
+  /* A phone on its side: Nova smaller, so the bubble keeps its room. */
+  @media (max-height:34rem) and (min-width:34rem){
+    .nt-nova{ width:8rem; }
+    .nt-text{ font-size:1rem; }
+  }
+  @media (max-height:40rem) and (max-width:34rem){
+    .nt-nova{ width:8.5rem; }
+    .nt-text{ font-size:.98rem; }
+  }
+  [data-reduce-motion="true"] .nt-bubble, [data-reduce-motion="true"] .nt-prop{ transform:none !important; }
+
+  /* ---- NOVA NARRATES THE TOOLTIPS (build 320) ----
+     "the person will be narrating the tool tips". Every tour bubble is
+     his: his face in a small glass circle on its left, his name over the
+     words, and the words typing in. #tour-tooltip, #tour-text and
+     #tour-next keep their ids and their jobs (check-tours walks them); the
+     bubble is laid out at its final size from the first frame, so the
+     placement maths in renderStep() is unchanged. */
+  #tour-tooltip.has-nova{ display:grid; grid-template-columns:auto 1fr; grid-template-areas:"face who" "face text" "face next";
+    column-gap:.7rem; max-width:17.5rem; }
+  #tour-tooltip.has-nova .tour-nova{ grid-area:face; align-self:start; width:2.9rem; height:2.9rem; border-radius:50%; overflow:hidden;
+    background:radial-gradient(circle at 50% 40%, #3A2D7A, #141433 70%); border:1px solid rgba(255,231,168,.45);
+    box-shadow:0 0 0 3px rgba(183,155,255,.12), 0 4px 12px rgba(0,0,0,.35); }
+  #tour-tooltip.has-nova .tour-who{ grid-area:who; margin:0 0 .2rem; font-size:.62rem; font-weight:800; letter-spacing:.16em;
+    text-transform:uppercase; color:#FFD27A; }
+  #tour-tooltip.has-nova #tour-text{ grid-area:text; }
+  #tour-tooltip.has-nova #tour-next{ grid-area:next; justify-self:start; }
+  @media (min-width:40rem){
+    #tour-tooltip.has-nova{ max-width:27rem; column-gap:1rem; }
+    #tour-tooltip.has-nova .tour-nova{ width:3.9rem; height:3.9rem; }
+    #tour-tooltip.has-nova .tour-who{ font-size:.74rem; }
+  }
+
+  /* the wreck: the planet cracks and goes, his ship spins away, his things scatter.
+     The resting state of every part is the aftermath, which is all that
+     reduce motion shows. */
+  .nw .nw-planet{ opacity:0; transform-box:fill-box; transform-origin:center; animation:nw-planet 1.6s ease-in both; }
+  .nw .nw-crack{ animation:nw-crack .55s ease-out both; }
+  .nw .nw-crack1{ animation-delay:.18s; } .nw .nw-crack2{ animation-delay:.34s; } .nw .nw-crack3{ animation-delay:.48s; }
+  .nw .nw-crack0{ animation-delay:.05s; }
+  .nw .nw-shard{ opacity:.85; transform-box:fill-box; transform-origin:center; transform:translate(var(--dx), var(--dy)) rotate(var(--r));
+    animation:nw-shard 2.6s cubic-bezier(.2,.7,.3,1) both; }
+  .nw .nw-flash{ opacity:0; transform-box:fill-box; transform-origin:center; animation:nw-flash 2.1s ease-out both; }
+  .nw .nw-wave{ opacity:0; transform-box:fill-box; transform-origin:center; animation:nw-wave 2.3s ease-out both; }
+  .nw .nw-ship{ transform-box:view-box; transform-origin:24px 69px; transform:translate(-5px, 12px) rotate(-34deg);
+    animation:nw-ship 3s cubic-bezier(.3,.6,.3,1) both; }
+  .nw .nw-engine{ opacity:.25; }
+  .nw .nw-bit{ opacity:.9; transform:translate(var(--dx), var(--dy)); animation:nw-bit 3s cubic-bezier(.2,.8,.3,1) both; animation-delay:var(--d, 0ms); }
+  @keyframes nw-planet{ 0%{ opacity:1; transform:none; } 55%{ opacity:1; transform:translate(.4px, -.3px); } 62%{ transform:translate(-.5px, .4px); }
+    69%{ transform:translate(.5px, .2px); } 76%{ opacity:1; transform:scale(1.04); } 84%, 100%{ opacity:0; transform:scale(1.12); } }
+  @keyframes nw-crack{ from{ stroke-dashoffset:10; } to{ stroke-dashoffset:0; } }
+  @keyframes nw-shard{ 0%, 48%{ opacity:0; transform:none; } 52%{ opacity:1; } 100%{ opacity:.85; transform:translate(var(--dx), var(--dy)) rotate(var(--r)); } }
+  @keyframes nw-flash{ 0%, 56%{ opacity:0; transform:scale(.25); } 64%{ opacity:1; } 100%{ opacity:0; transform:scale(1.7); } }
+  @keyframes nw-wave{ 0%, 60%{ opacity:0; transform:scale(.4); } 64%{ opacity:.9; } 100%{ opacity:0; transform:scale(5.5); } }
+  @keyframes nw-ship{ 0%{ transform:translate(-14px, 4px); } 38%{ transform:translate(0, 0); } 48%{ transform:translate(.5px, -.6px) rotate(3deg); }
+    54%{ transform:translate(-.8px, .6px) rotate(-6deg); } 100%{ transform:translate(-5px, 12px) rotate(-34deg); } }
+  @keyframes nw-bit{ 0%, 50%{ opacity:0; transform:none; } 56%{ opacity:1; } 100%{ opacity:.9; transform:translate(var(--dx), var(--dy)); } }
+
   /* The contextual info popup \u2014 same reverted Liquid Glass recipe as
      the tour tooltip (background back to .55, blur nudged up instead
      of darkening it), and the same line-connector redesign in place
@@ -59134,7 +59425,7 @@ function playCharSpecial(el){
    full-screen dim) and the hundo's own one was cut a second in by the
    badge case. Anything here covers the screen; the scheduler skips a
    tick while one is up, and an asked-for special waits for it to go. */
-var CHAR_SPECIAL_COVERS = ".bc-scene, #supernova-cutscene, #badge-cutscene, #void-cutscene, #vroom-cutscene, .rs-spot, .fl-scene, .ff-scene, .scene-bridge, #teststart-overlay, #tour-overlay, #genprofile-overlay, #splashscreen, #intro-pop, .invite-overlay";
+var CHAR_SPECIAL_COVERS = ".bc-scene, #supernova-cutscene, #badge-cutscene, #void-cutscene, #vroom-cutscene, .rs-spot, .fl-scene, .ff-scene, .scene-bridge, #teststart-overlay, #tour-overlay, #genprofile-overlay, #splashscreen, #intro-pop, #nova-intro, .invite-overlay";
 /* Covered for THIS character: any of those up that it is not itself
    inside (the person card is an .invite-overlay, and its own character is
    one of the prominent ones), or the results reveal still running round
@@ -63854,6 +64145,37 @@ function poolNow(){
    now reads directly from RELEASE_NOTES[0].groups below, so there is
    only one place this content can ever be edited. */
 const RELEASE_NOTES = [
+  /* 7.8 (builds 319 and 320, which ship together). Nova narrates the
+     headline of each of these on What's New (WHATS_NEW_320); this is the
+     full list. "Save A Test For Later" moved here from 7.7, which had
+     already gone out without it. */
+  {
+    version: "7.8",
+    groups: [
+      { label: "Meet Nova", items: [
+        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "The app's maker introduces himself. He lost his badges and his flares when a planet beside his ship cracked apart, and finding them is your job. He narrates What's New and every tip in the app." }
+      ]},
+      { label: "Results", items: [
+        { icon: buildTrophyIcon, color: "#FFD84D", title: "Your Grade First", body: "The results screen opens on your grade, with a moment of suspense, then your XP and rewards." },
+        { icon: buildSparkleIcon, color: "#FF9EC8", title: "Characters React To Your Hundo", body: "Score 100% and your character joins in with your hundo effect." }
+      ]},
+      { label: "Badges", items: [
+        { icon: buildStarIcon, color: "#4ADE80", title: "Badges Are Found", body: "A badge you earn is found, and its moment has the screen to itself: chat and notifications wait until it is over. Badges no longer add XP." },
+        { icon: buildStarIcon, color: "#C9D3DE", title: "Your Badge Case", body: "Every badge you find sits in its own slot in your case. Tap one to inspect it and spin it. Older badges lose their shine; rub one to clean it." }
+      ]},
+      { label: "Ranks", items: [
+        { icon: buildLadderIcon, color: "#E8B84A", title: "Ranking Up, On The Road Map", body: "A rank-up plays out on Profile's road map: your challenges tick off, the road lights up to your new rank, its rewards are handed over there, and any saved XP climbs into levels. Smoother from start to finish." },
+        { icon: buildPlanetIcon, color: "#F5804D", title: "A Planet That Cracks", body: "The planet on Home cracks a little more with every rank you reach." }
+      ]},
+      { label: "Profile", items: [
+        { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Profile, Calendar And Stats", body: "Profile is three tabs: Profile, Calendar and Stats. Your badge count sits beside your level, the badge case opens from the card, and Friends is back under it." }
+      ]},
+      { label: "Studying", items: [
+        { icon: buildPauseIcon, color: "#4ADE80", title: "Save A Test For Later", body: "Pause a Drill or Exam and tap Save and exit. The next time you tap Start Studying, you can resume it exactly where you left off or start a new test. One test can be saved at a time. Not available in Review, flashcards, the daily question or a Virtual Room." },
+        { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "The Daily Question Ring", body: "The daily question button shows its progress as a ring." }
+      ]}
+    ]
+  },
   /* 7.7 (build 314) - "the version becomes 7.7". The What's New card
      says the headline of each group; this is the full list. */
   {
@@ -63866,8 +64188,6 @@ const RELEASE_NOTES = [
         { icon: buildPlanetIcon, color: "#7FC8FF", title: "A Home You Can Tap", body: "Tap a flare or the planet and it reacts, with a line saying what it is. Flares you have not unlocked yet give a small shake." }
       ]},
       { label: "Studying", items: [
-        /* build 319 - "This be added to the what's new screen" */
-        { icon: buildPauseIcon, color: "#4ADE80", title: "Save A Test For Later", body: "Pause a Drill or Exam and tap Save and exit. The next time you tap Start Studying, you can resume it exactly where you left off or start a new test. One test can be saved at a time. Not available in Review, flashcards, the daily question or a Virtual Room." },
         { icon: buildChecklistIcon, color: "#4DD0E1", title: "Flashcards", body: "Review has a Flashcards option for any unit: tap a card to flip it, swipe to move on, and starred questions come with you." },
         { icon: buildSwipeIcon, color: "#F5804D", title: "A Better Test", body: "Answer feedback is quicker, a small swipe bounces back until you mean it, the Next button arrives at a steadier pace, and Review and Flashcards get their own short loading screen." },
         { icon: buildClipboardIcon, color: "#5CA8FF", title: "A Simpler Start Sheet", body: "The question bank is all questions by default, with one switch for starred questions only, and the slider tells you when it is already at the most it can be." },
@@ -68163,6 +68483,580 @@ function showWelcomeCodeEntry(){
    this drifted out of sync with each other). onComplete, if given,
    fires once when the tour finishes, whether that's stepping through
    every step normally or the person navigating away early. */
+/* ---- NOVA, THE NARRATOR (build 320) ---- */
+let novaSvgSeq = 0;
+function buildNovaSVG(opts){
+  opts = opts || {};
+  const NS = "http://www.w3.org/2000/svg";
+  const uid = "nv" + (novaSvgSeq++) + "-" + Math.random().toString(36).slice(2, 7);
+  const f2 = v => +(+v).toFixed(2);
+  const mk = (tag, a) => { const e = document.createElementNS(NS, tag); if(a) for(const k in a) e.setAttribute(k, a[k]); return e; };
+  const svg = mk("svg", { viewBox: opts.crop === "head" ? "8.5 6.5 31 31" : "0 0 48 56", class: "nova-svg", "aria-hidden": "true" });
+  const defs = mk("defs"); svg.appendChild(defs);
+  let gs = 0;
+  const grad = (kind, a, stops) => {
+    const id = uid + "-g" + (gs++);
+    const g = mk(kind, Object.assign({ id, gradientUnits: "userSpaceOnUse" }, a));
+    stops.forEach(([o, c, op]) => g.appendChild(mk("stop", Object.assign({ offset: o, "stop-color": c }, op != null ? { "stop-opacity": op } : {}))));
+    defs.appendChild(g);
+    return "url(#" + id + ")";
+  };
+  const lin = (x1, y1, x2, y2, stops) => grad("linearGradient", { x1, y1, x2, y2 }, stops);
+  const rad = (cx, cy, r, stops, extra) => grad("radialGradient", Object.assign({ cx, cy, r }, extra || {}), stops);
+  const g = (parent, cls, a) => { const e = mk("g", Object.assign(cls ? { class: cls } : {}, a || {})); parent.appendChild(e); return e; };
+  const add = (parent, tag, a) => { const e = mk(tag, a); parent.appendChild(e); return e; };
+  const star4 = (x, y, h, v, fill, op) => mk("path", { d: "M" + x + " " + f2(y - v) + " Q" + f2(x + h * .16) + " " + f2(y - v * .16) + " " + f2(x + h) + " " + y
+    + " Q" + f2(x + h * .16) + " " + f2(y + v * .16) + " " + x + " " + f2(y + v)
+    + " Q" + f2(x - h * .16) + " " + f2(y + v * .16) + " " + f2(x - h) + " " + y
+    + " Q" + f2(x - h * .16) + " " + f2(y - v * .16) + " " + x + " " + f2(y - v) + " Z", fill, opacity: op == null ? 1 : op });
+
+  /* ---------- light behind him ---------- */
+  const back = g(svg, "nv-back");
+  add(back, "circle", { cx: 24, cy: 21, r: 21, fill: rad(24, 21, 21, [["0%", "#B79BFF", ".42"], ["38%", "#7B5CE0", ".2"], ["70%", "#3B2A8C", ".07"], ["100%", "#1A1240", "0"]]) });
+  add(back, "circle", { cx: 24, cy: 19, r: 11, fill: rad(24, 19, 11, [["0%", "#FFE7A8", ".5"], ["55%", "#FFC870", ".14"], ["100%", "#FFC870", "0"]]), class: "nv-corona-glow" });
+  /* the corona: long and short tongues of light, slowly turning */
+  const cor = g(back, "nv-corona");
+  for(let i = 0; i < 12; i++){
+    const a = Math.PI + (i + .5) * Math.PI / 12, L = i % 2 ? 11.2 : 13.8, w = i % 2 ? .55 : .85;
+    const x0 = 24 + Math.cos(a) * 8.4, y0 = 19 + Math.sin(a) * 8.4, x1 = 24 + Math.cos(a) * L, y1 = 19 + Math.sin(a) * L;
+    const nx = -Math.sin(a) * w, ny = Math.cos(a) * w;
+    add(cor, "path", { d: "M" + f2(x0 + nx) + " " + f2(y0 + ny) + " Q" + f2((x0 + x1) / 2 + nx * .3) + " " + f2((y0 + y1) / 2 + ny * .3) + " " + f2(x1) + " " + f2(y1)
+      + " Q" + f2((x0 + x1) / 2 - nx * .3) + " " + f2((y0 + y1) / 2 - ny * .3) + " " + f2(x0 - nx) + " " + f2(y0 - ny) + " Z",
+      fill: lin(x0, y0, x1, y1, [["0%", "#FFF8E4", ".75"], ["60%", "#FFE2A0", ".25"], ["100%", "#FFD27A", "0"]]) });
+  }
+  /* nebula: violet on one side, ice-blue on the other (Umbra and Horizon's light) */
+  add(back, "circle", { cx: 15.4, cy: 15.6, r: 9, fill: rad(15.4, 15.6, 9, [["0%", "#A27BFF", ".22"], ["60%", "#7B4FE0", ".08"], ["100%", "#5B2FC0", "0"]]), class: "nv-neb nv-neb1" });
+  add(back, "circle", { cx: 33, cy: 14.4, r: 8.4, fill: rad(33, 14.4, 8.4, [["0%", "#7FD8FF", ".2"], ["60%", "#3F8FE0", ".07"], ["100%", "#2F6FD0", "0"]]), class: "nv-neb nv-neb2" });
+  /* sky */
+  const stars = g(back, "nv-stars");
+  [[5.4, 8.6, .9], [42.2, 6.8, 1.1], [3.6, 27.4, .7], [44.4, 25.8, .8], [9.8, 3.6, .6], [38.6, 37.2, .6]].forEach(([x, y, r], i) => {
+    const s = star4(x, y, r, r * 1.35, i % 2 ? "#FFE7A8" : "#FFFFFF", .85);
+    s.setAttribute("class", "nv-twinkle nv-tw" + (i % 3));
+    stars.appendChild(s);
+  });
+
+  /* ---------- the figure ---------- */
+  const fig = g(svg, "nv-fig");
+  const body = g(fig, "nv-body");
+  /* the coat: white, lit from the upper left */
+  const coat = lin(10, 30, 38, 56, [["0%", "#FFFFFF"], ["45%", "#E9ECF6"], ["100%", "#A9B0CC"]]);
+  const coatSh = lin(0, 34, 0, 56, [["0%", "#C9CDE2"], ["100%", "#8A90B4"]]);
+  /* shoulders and body */
+  add(body, "path", { d: "M5.2 56 Q5 41.4 12.6 36.4 Q16.2 34.2 19.6 33.4 L28.4 33.4 Q31.8 34.2 35.4 36.4 Q43 41.4 42.8 56 Z", fill: coat, stroke: "#5A6088", "stroke-width": ".24" });
+  /* the hem fades into starlight: half scholar, half sky */
+  add(body, "path", { d: "M5.2 56 Q5 41.4 12.6 36.4 Q16.2 34.2 19.6 33.4 L28.4 33.4 Q31.8 34.2 35.4 36.4 Q43 41.4 42.8 56 Z", fill: lin(0, 44, 0, 56, [["0%", "#7B5CE0", "0"], ["100%", "#6A4FD8", ".5"]]) });
+  const dust = g(body, "nv-dust");
+  [[8.6, 53.6, .3], [12.4, 51.2, .22], [10.2, 55, .2], [37.4, 52.4, .26], [40.2, 54.6, .3], [34.2, 54.8, .2], [15.6, 54.4, .18]].forEach(([x, y, r], i) =>
+    add(dust, "circle", { cx: x, cy: y, r, fill: "#FFFFFF", class: "nv-mote", style: "animation-delay:" + (-i * .9).toFixed(1) + "s" }));
+  /* the starry lining showing inside the open coat */
+  const night = lin(24, 33, 24, 56, [["0%", "#25307E"], ["55%", "#141A52"], ["100%", "#0A0D2E"]]);
+  add(body, "path", { d: "M19.4 33.6 L28.6 33.6 L27.4 56 L20.6 56 Z", fill: night });
+  /* the shirt: midnight, a constellation on it */
+  add(body, "path", { d: "M20.6 33.6 L27.4 33.6 L26.2 56 L21.8 56 Z", fill: lin(24, 33, 24, 56, [["0%", "#1E2A6E"], ["100%", "#0D1236"]]) });
+  const cons = g(body, "nv-cons");
+  const cpts = [[22.6, 41.2], [24.8, 43.6], [23.4, 46.8], [25.4, 50.2], [23.6, 53.4]];
+  add(cons, "path", { d: "M" + cpts.map(p => p.join(" ")).join(" L"), fill: "none", stroke: "#AFC4FF", "stroke-width": ".16", opacity: ".55" });
+  cpts.forEach(([x, y], i) => add(cons, "circle", { cx: x, cy: y, r: i === 1 ? .36 : .24, fill: "#FFFFFF", class: "nv-cstar", style: "animation-delay:" + (-i * .7).toFixed(1) + "s" }));
+  /* lapels: notched, folded back to show the lining's stars */
+  [-1, 1].forEach(s => {
+    const X = v => f2(24 + s * (v - 24));
+    add(body, "path", { d: "M" + X(19.4) + " 33.4 L" + X(16.4) + " 37.2 L" + X(18.2) + " 38.4 L" + X(16.8) + " 40 L" + X(21.4) + " 50.6 L" + X(22.2) + " 50.6 L" + X(20.4) + " 33.6 Z",
+      fill: s < 0 ? "#FFFFFF" : coatSh, stroke: "#5A6088", "stroke-width": ".22", "stroke-linejoin": "round" });
+    add(body, "path", { d: "M" + X(16.9) + " 40.2 L" + X(21.2) + " 50.2", fill: "none", stroke: s < 0 ? "#C9CEE6" : "#7D84AA", "stroke-width": ".2" });
+  });
+  /* seams, the pocket and its pens */
+  add(body, "path", { d: "M11.4 44 Q12.2 50 11.8 56 M36.6 44 Q35.8 50 36.2 56", fill: "none", stroke: "#8E95BA", "stroke-width": ".22", opacity: ".7" });
+  add(body, "path", { d: "M29.8 44.2 L35.4 44.2 L35.2 49.4 Q32.6 50 30 49.4 Z", fill: "none", stroke: "#7D84AA", "stroke-width": ".24", "stroke-linejoin": "round" });
+  add(body, "rect", { x: 31, y: 41.2, width: .8, height: 3.6, rx: .3, fill: "#E7B43C" });
+  add(body, "rect", { x: 32.4, y: 41.8, width: .8, height: 3, rx: .3, fill: "#4FD6FF" });
+  add(body, "path", { d: "M29.8 44.2 L35.4 44.2", stroke: "#7D84AA", "stroke-width": ".3" });
+  /* the pin on his lapel: a planet with its ring, in gold */
+  const pin = g(body, "nv-pin");
+  add(pin, "circle", { cx: 17.8, cy: 42.6, r: 1.25, fill: lin(17, 41.4, 18.8, 43.8, [["0%", "#FFE7A0"], ["100%", "#C98A1C"]]), stroke: "#7A5310", "stroke-width": ".14" });
+  add(pin, "ellipse", { cx: 17.8, cy: 42.6, rx: 2.1, ry: .62, fill: "none", stroke: "#FFE19A", "stroke-width": ".26", transform: "rotate(-18 17.8 42.6)" });
+  add(pin, "circle", { cx: 17.4, cy: 42.1, r: .32, fill: "#FFFFFF", opacity: ".85" });
+  /* edge light down his left shoulder */
+  add(body, "path", { d: "M6 50 Q6.6 40.6 13 36.8 Q15.8 35 19 34.2", fill: "none", stroke: "#FFFFFF", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".9" });
+  add(body, "path", { d: "M42 50 Q41.4 40.6 35 36.8", fill: "none", stroke: "#B9A4FF", "stroke-width": ".42", "stroke-linecap": "round", opacity: ".7" });
+
+  /* ---------- the neck, collar and bow tie (the body's, so the head can
+     nod over them) ---------- */
+  const neck = g(fig, "nv-neck");
+  add(neck, "path", { d: "M20.8 26.8 L27.2 26.8 L27.6 33.4 Q24 34.8 20.4 33.4 Z", fill: lin(0, 27, 0, 33.6, [["0%", "#A87E80"], ["100%", "#E2C1B2"]]) });
+  add(neck, "path", { d: "M20.2 31.8 L24 34 L27.8 31.8 L28.1 33.6 L24 35.6 L19.9 33.6 Z", fill: "#F4F6FF", stroke: "#8E95BA", "stroke-width": ".16" });
+  const tie = g(neck, "nv-tie");
+  const gold = lin(20, 33, 28, 37, [["0%", "#FFE7A0"], ["55%", "#F2B63C"], ["100%", "#B27814"]]);
+  add(tie, "path", { d: "M24 34.6 L20.6 33 Q19.8 34.6 20.6 36.2 Z M24 34.6 L27.4 33 Q28.2 34.6 27.4 36.2 Z", fill: gold, stroke: "#7A5310", "stroke-width": ".16", "stroke-linejoin": "round" });
+  add(tie, "rect", { x: 23.1, y: 33.8, width: 1.8, height: 1.6, rx: .5, fill: "#E9A92C", stroke: "#7A5310", "stroke-width": ".16" });
+
+  /* ---------- the head ---------- */
+  /* the nod and the sway move .nv-head; the drawing is placed by the group
+     inside it, so a CSS transform never replaces its attribute */
+  const head = g(g(fig, "nv-head"), "nv-head-art", { transform: "translate(0 2.5) translate(24 20) scale(1.07) translate(-24 -20)" });
+  const skin = rad(21, 16, 13, [["0%", "#FFF3EA"], ["55%", "#F2D6C6"], ["100%", "#C49A92"]]);
+  /* hair, behind: long swept locks rising off the back of the head */
+  const hairBack = rad(24, 17, 12.5, [["0%", "#F2F4FF"], ["55%", "#C8CDF2"], ["82%", "#9AA6E8", ".75"], ["100%", "#7FD8FF", "0"]]);
+  const lock = (bx, by, w, h, lean, sway, fill, op, cls) => {
+    const tx = bx + lean, ty = by - h;
+    return mk("path", { d: "M" + f2(bx - w) + " " + f2(by)
+      + " C" + f2(bx - w + sway) + " " + f2(by - h * .4) + " " + f2(tx - sway * .8 - w * .3) + " " + f2(ty + h * .35) + " " + f2(tx) + " " + f2(ty)
+      + " C" + f2(tx - sway * .5 + w * .5) + " " + f2(ty + h * .4) + " " + f2(bx + w + sway * .8) + " " + f2(by - h * .45) + " " + f2(bx + w) + " " + f2(by) + " Z",
+      fill, opacity: op, class: cls || "" });
+  };
+  const hairB = g(head, "nv-hair-back");
+  /* soft tufts swept back off the temples: a scholar's hair, lit from
+     within at the tips (Horizon's), never spikes */
+  const tufts = [[18.4, 21.4, 2.6, 4.6, -6.8, 1.4], [18.2, 17.6, 2.8, 6.2, -6.2, -1.6], [19.6, 14.4, 2.6, 6.4, -4.2, 1.6], [22.4, 12.8, 2.4, 5.2, -1.6, -1.4]];
+  tufts.forEach(([x, y, w, h, l, s]) => {
+    hairB.appendChild(lock(x, y, w, h, l, s, hairBack, ".95"));
+    hairB.appendChild(lock(f2(48 - x), y, w, h, -l, -s, hairBack, ".95"));
+  });
+  /* ears */
+  [-1, 1].forEach(s => add(head, "ellipse", { cx: f2(24 + s * 7.1), cy: 20.4, rx: 1.15, ry: 1.9, fill: s < 0 ? "#F0D0C0" : "#D9B1A6" }));
+  /* the face */
+  const faceD = "M24 11.8 Q31.1 12 31.2 19.4 Q31 24.2 28 26.8 Q26.1 28.3 24 28.3 Q21.9 28.3 20 26.8 Q17 24.2 16.8 19.4 Q16.9 12 24 11.8 Z";
+  add(head, "path", { d: faceD, fill: skin });
+  /* the side away from the light */
+  add(head, "path", { d: "M27.2 12.6 Q31.1 13.8 31.2 19.4 Q31 24.2 28 26.8 Q26.1 28.3 24 28.3 Q27.4 26 28.4 21.4 Q29.2 16.2 27.2 12.6 Z", fill: "#A9778A", opacity: ".22" });
+  add(head, "path", { d: "M27.4 12.4 Q31.1 13.6 31.2 19.4 Q31 24.2 28 26.8", fill: "none", stroke: "#C7B4FF", "stroke-width": ".34", "stroke-linecap": "round", opacity: ".75" });
+  add(head, "path", { d: "M18.4 15.8 Q21 14.4 24 14.6 Q27 14.4 29.6 15.8 Q27 15.2 24 15.4 Q21 15.2 18.4 15.8 Z", fill: "#9C7C8E", opacity: ".25" });
+  /* cheeks */
+  add(head, "ellipse", { cx: 20.2, cy: 23.4, rx: 1.6, ry: .9, fill: "#F59A9A", opacity: ".22" });
+  add(head, "ellipse", { cx: 27.8, cy: 23.4, rx: 1.6, ry: .9, fill: "#F59A9A", opacity: ".18" });
+  /* nose */
+  add(head, "path", { d: "M24.3 20.6 Q25.4 23 24.6 23.6 Q24 23.9 23.4 23.6", fill: "none", stroke: "#B98479", "stroke-width": ".32", "stroke-linecap": "round" });
+  /* hair, front: a swept fringe, white with starlight in it */
+  const hairFront = lin(0, 18, 0, 6, [["0%", "#C3C9EE"], ["45%", "#F4F6FF"], ["100%", "#FFFFFF"]]);
+  const hf = g(head, "nv-hair");
+  hf.appendChild(mk("path", { d: "M16.6 19.2 Q15.2 13.4 18.4 10.4 Q19 8.2 21.6 8.4 Q23.6 6.6 26 7.8 Q28.8 7.4 30 9.8 Q33.4 12 31.6 19 Q30.4 14.6 27.2 13.4 Q28.6 15.2 28 16.4 Q25.6 13 21.4 13.4 Q22.6 14.4 22.2 15.2 Q19.6 14.2 18 15.8 Q17.2 17.2 16.6 19.2 Z", fill: hairFront, stroke: "#8D93C6", "stroke-width": ".2", "stroke-linejoin": "round" }));
+  hf.appendChild(mk("path", { d: "M18.4 12.6 Q21.6 9.4 26.4 9.6", fill: "none", stroke: "#FFFFFF", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".95" }));
+  hf.appendChild(mk("path", { d: "M27.6 10.6 Q30.6 12 31 15.4", fill: "none", stroke: "#B7A4FF", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".8" }));
+  /* starlight in the hair */
+  const hl = g(head, "nv-hairlight");
+  [[20.4, 10.6, .6], [27.4, 9.4, .5], [30.2, 12.8, .45]].forEach(([x, y, r], i) => { const s = star4(x, y, r, r * 1.3, "#FFFFFF"); s.setAttribute("class", "nv-twinkle nv-tw" + i); hl.appendChild(s); });
+  /* brows: soft silver, they lift as he talks */
+  const brows = g(head, "nv-brows");
+  add(brows, "path", { d: "M19.2 17.1 Q20.8 16 22.6 16.7", fill: "none", stroke: "#CBD0EE", "stroke-width": ".62", "stroke-linecap": "round" });
+  add(brows, "path", { d: "M28.8 17.1 Q27.2 16 25.4 16.7", fill: "none", stroke: "#CBD0EE", "stroke-width": ".62", "stroke-linecap": "round" });
+  /* eyes: kind, dark, with light in them */
+  const eyes = g(head, "nv-eyes");
+  [[20.9, 19.4], [27.1, 19.4]].forEach(([x, y]) => {
+    add(eyes, "ellipse", { cx: x, cy: y, rx: 1.05, ry: 1.2, fill: "#2A2350" });
+    add(eyes, "ellipse", { cx: x, cy: f2(y + .15), rx: .62, ry: .72, fill: "#5B4BC4" });
+    add(eyes, "circle", { cx: f2(x - .32), cy: f2(y - .38), r: .34, fill: "#FFFFFF" });
+    add(eyes, "circle", { cx: f2(x + .36), cy: f2(y + .4), r: .14, fill: "#FFFFFF", opacity: ".8" });
+  });
+  [[20.9, 19.4, -1], [27.1, 19.4, 1]].forEach(([x, y, k]) => add(eyes, "path", { d: "M" + f2(x - 1.35) + " " + f2(y - .25) + " Q" + x + " " + f2(y - 1.75) + " " + f2(x + 1.35) + " " + f2(y - .25), fill: "none", stroke: "#3A2C52", "stroke-width": ".34", "stroke-linecap": "round" }));
+  const shut = g(head, "nv-eyes-shut", { opacity: "0" });
+  [[20.9, 19.6], [27.1, 19.6]].forEach(([x, y]) => add(shut, "path", { d: "M" + f2(x - 1.1) + " " + y + " Q" + x + " " + f2(y + .7) + " " + f2(x + 1.1) + " " + y, fill: "none", stroke: "#3A3060", "stroke-width": ".42", "stroke-linecap": "round" }));
+  /* the glasses: round, gold, a lens of faint light */
+  const gl = g(head, "nv-glasses");
+  const lens = rad(20, 18.4, 3.6, [["0%", "#FFFFFF", ".14"], ["100%", "#9FE6FF", ".1"]]);
+  [[20.9, 19.4], [27.1, 19.4]].forEach(([x, y]) => add(gl, "circle", { cx: x, cy: y, r: 2.55, fill: lens, stroke: gold, "stroke-width": ".42" }));
+  add(gl, "path", { d: "M23.45 19 Q24 18.4 24.55 19", fill: "none", stroke: "#E9B24A", "stroke-width": ".36" });
+  add(gl, "path", { d: "M18.35 19 L17.1 18.6 M29.65 19 L30.9 18.6", fill: "none", stroke: "#E9B24A", "stroke-width": ".32", "stroke-linecap": "round" });
+  /* a glint on the rims (never a sweep across the face) */
+  add(gl, "path", { d: "M18.9 17.9 Q19.6 17.1 20.6 16.95", fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", "stroke-linecap": "round", opacity: ".9" });
+  add(gl, "path", { d: "M25.1 17.9 Q25.8 17.1 26.8 16.95", fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", "stroke-linecap": "round", opacity: ".7" });
+  const glint = star4(29.4, 17.4, .55, .8, "#FFFFFF"); glint.setAttribute("class", "nv-glint"); gl.appendChild(glint);
+  /* a neat white moustache and beard, the mouth between */
+  const beard = g(head, "nv-beard");
+  add(beard, "path", { d: "M20.4 25.4 Q21.8 28.4 24 29 Q26.2 28.4 27.6 25.4 Q26.4 27.3 24 27.5 Q21.6 27.3 20.4 25.4 Z", fill: "#EEF0FA", stroke: "#A7ADD6", "stroke-width": ".16" });
+  const mouth = g(head, "nv-mouth");
+  /* closed: a calm smile */
+  add(mouth, "path", { d: "M22.5 25.6 Q24 26.5 25.5 25.6", fill: "none", stroke: "#8A4C55", "stroke-width": ".36", "stroke-linecap": "round", class: "nv-mouth-shut" });
+  /* open: drawn whole, scaled by the talking loop */
+  const mo = g(mouth, "nv-mouth-open", { opacity: "0" });
+  add(mo, "path", { d: "M22.6 25.4 Q24 25.1 25.4 25.4 Q25.2 27.1 24 27.2 Q22.8 27.1 22.6 25.4 Z", fill: "#5A2434" });
+  add(mo, "path", { d: "M23.2 26.6 Q24 26.1 24.8 26.6 Q24.4 27.05 24 27.05 Q23.6 27.05 23.2 26.6 Z", fill: "#D9727E" });
+  add(beard, "path", { d: "M20.4 24.6 Q22.2 23.4 24 24.4 Q25.8 23.4 27.6 24.6 Q26.2 25.4 24 25 Q21.8 25.4 20.4 24.6 Z", fill: "#F7F8FF", stroke: "#A7ADD6", "stroke-width": ".16" });
+
+  /* ---------- the hand he gestures with ---------- */
+  const hand = g(fig, "nv-hand", { opacity: "0" });
+  add(hand, "path", { d: "M32.6 56 L34.6 45.6 Q35.4 43.6 37.6 43.8 L41 44.6 L40.2 56 Z", fill: coat, stroke: "#5A6088", "stroke-width": ".24", "stroke-linejoin": "round" });
+  add(hand, "path", { d: "M34.4 46.2 L40.8 47", fill: "none", stroke: "#8E95BA", "stroke-width": ".34" });
+  /* an open hand, raised as he explains */
+  const palm = "M35.4 44.8 Q34.9 42.2 35.4 40.4 L35.3 36.6 Q35.3 35.7 36 35.7 Q36.7 35.7 36.7 36.6 L36.8 39.4 L36.9 35.4 Q36.9 34.4 37.65 34.4 Q38.4 34.4 38.4 35.4 L38.4 39.3 L38.6 35.8 Q38.65 34.9 39.35 34.9 Q40.05 34.95 40 35.9 L39.9 39.8 L40.5 37.9 Q40.8 37.1 41.45 37.35 Q42.05 37.65 41.8 38.5 L40.9 42.4 Q40.6 44 39.8 44.8 Z";
+  add(hand, "path", { d: palm, fill: skin, stroke: "#B98479", "stroke-width": ".2", "stroke-linejoin": "round" });
+  add(hand, "path", { d: "M36.8 39.4 L36.8 40.6 M38.4 39.3 L38.4 40.6 M39.9 39.8 L39.85 40.8", fill: "none", stroke: "#C2897E", "stroke-width": ".18", "stroke-linecap": "round" });
+  const tip = star4(38.4, 32.4, 1, 1.4, "#FFF1C8"); tip.setAttribute("class", "nv-handstar"); hand.appendChild(tip);
+
+  return svg;
+}
+
+/* ---- NOVA TALKS (build 320) ----
+   "What I'm imagining in my head is like a character popping up on screen
+   and then chat bubbles ... you will click though the text to get though
+   them." One dialogue for both of the places he speaks at length: the
+   introduction a new account gets before its first tooltips (#nova-intro)
+   and the narrated What's New an existing account gets once per update
+   (#intro-pop, the id the old card had, so everything that already waits
+   on What's New still does).
+
+   - THE WORDS TYPE IN, BUT THE WHOLE LINE IS THERE FROM THE FIRST FRAME.
+     novaType() puts the line in two spans and makes the part not typed
+     yet transparent. So the bubble is its final size before the first
+     letter shows (nothing below it jumps as a line grows), textContent and
+     innerText always read the whole line (every gate that reads a tooltip
+     reads the words, not half of them), and a screen reader is handed the
+     sentence once.
+   - A TAP FINISHES THE LINE; THE NEXT TAP MOVES ON. Anywhere on the
+     screen, or Space / Enter / the right arrow. A gold chevron bounces in
+     the bubble's corner and "Tap to continue" pulses beside him once a
+     line is finished, so it is clear what a tap will do. The last line
+     ends on a real button instead, so the card is never closed by a tap
+     meant for the line.
+   - SKIP is quiet, top right. On the introduction it goes straight to the
+     tooltips; on What's New it skips the talking, not the news: every row
+     goes on the card and he says his last line.
+   - Dots along the top say how far through he is.
+   - Reduce motion (the app's switch or the system's): no typing, no
+     entrance, no gestures - each line is simply there, and a tap moves on. */
+const NOVA_TYPE_CPS = 34;
+const NOVA_TOUR_CPS = 72;
+function novaMotionOff(){
+  try{ return resultsMotionOff(); }catch(e){ return false; }
+}
+function novaType(el, text, cps, hooks){
+  hooks = hooks || {};
+  el.textContent = "";
+  const typed = document.createElement("span"); typed.className = "nv-typed";
+  const rest = document.createElement("span"); rest.className = "nv-rest";
+  el.append(typed, rest);
+  let n = 0, timer = null, done = false;
+  const set = k => { typed.textContent = text.slice(0, k); rest.textContent = text.slice(k); };
+  const finish = () => {
+    if(done) return;
+    done = true; clearTimeout(timer); set(text.length);
+    if(hooks.talk) hooks.talk(false);
+    if(hooks.done) hooks.done();
+  };
+  const step = () => {
+    if(done) return;
+    n = Math.min(text.length, n + 1);
+    set(n);
+    if(n >= text.length){ finish(); return; }
+    const ch = text[n - 1], next = text[n];
+    let d = 1000 / cps, pause = false;
+    if(/[.!?]/.test(ch) && next === " "){ d += 300; pause = true; }
+    else if(/[,;:—]/.test(ch)){ d += 120; pause = true; }
+    if(hooks.talk) hooks.talk(!pause);
+    timer = setTimeout(step, d);
+  };
+  if(!text || cps <= 0 || novaMotionOff()){ set(text.length); done = true; if(hooks.done) hooks.done(); }
+  else { set(0); if(hooks.talk) hooks.talk(true); timer = setTimeout(step, 1000 / cps); }
+  return { finish, cancel(){ done = true; clearTimeout(timer); }, get done(){ return done; } };
+}
+
+/* Nova in his place in the dialogue, with the light he arrives in. */
+function buildNovaFigure(){
+  const w = document.createElement("div");
+  w.className = "nt-nova";
+  const burst = document.createElement("span"); burst.className = "nt-burst";
+  const ring = document.createElement("span"); ring.className = "nt-ring";
+  w.append(burst, ring, buildNovaSVG());
+  return w;
+}
+function novaGesture(fig, kind){
+  if(!fig || !kind || novaMotionOff()) return;
+  fig.classList.remove("g-wave", "g-raise", "g-nod");
+  void fig.offsetWidth;
+  fig.classList.add("g-" + kind);
+  clearTimeout(fig.__gt);
+  fig.__gt = setTimeout(() => fig.classList.remove("g-" + kind), kind === "nod" ? 1400 : 2300);
+}
+
+/* o: { id, news (bool), lines: [{ text, gesture, enter(ctx, instant), final }], finalLabel, onClose(reason) }
+   Returns the overlay; o.onClose runs once, after it has started to fade. */
+function novaTalk(o){
+  const still = novaMotionOff();
+  const el = document.createElement("div");
+  el.id = o.id;
+  el.className = "nova-talk " + (o.news ? "is-news" : "is-intro");
+  el.setAttribute("role", "dialog");
+  el.setAttribute("aria-modal", "true");
+  el.setAttribute("aria-label", o.label || "Nova");
+  const sky = document.createElement("div"); sky.className = "nt-sky";
+  [[8, 12, 0], [22, 30, 1.2], [86, 9, .6], [70, 22, 2], [92, 40, 1.6], [12, 48, 2.6], [48, 6, .9], [60, 38, 2.2]].forEach(([x, y, d]) => {
+    const i = document.createElement("i"); i.style.left = x + "%"; i.style.top = y + "%"; i.style.animationDelay = (-d) + "s"; sky.appendChild(i);
+  });
+  const top = document.createElement("div"); top.className = "nt-top";
+  const prog = document.createElement("div"); prog.className = "nt-progress"; prog.setAttribute("aria-hidden", "true");
+  const skip = document.createElement("button"); skip.type = "button"; skip.className = "nt-skip"; skip.textContent = "Skip";
+  top.append(prog, skip);
+  const stage = document.createElement("div"); stage.className = "nt-stage";
+  const talk = document.createElement("div"); talk.className = "nt-talk";
+  const bubble = document.createElement("div"); bubble.className = "nt-bubble";
+  const who = document.createElement("p"); who.className = "nt-who"; who.textContent = "Nova";
+  const text = document.createElement("p"); text.className = "nt-text"; text.setAttribute("aria-live", "polite");
+  const more = document.createElement("span"); more.className = "nt-more"; more.setAttribute("aria-hidden", "true");
+  const go = document.createElement("button"); go.type = "button"; go.className = "next nt-go intro-go"; go.textContent = o.finalLabel || "Got it";
+  bubble.append(who, text, more, go);
+  const fig = buildNovaFigure();
+  const hint = document.createElement("p"); hint.className = "nt-hint"; hint.textContent = "Tap to continue";
+  talk.append(bubble, fig, hint);
+  el.append(sky, top, stage, talk);
+
+  const lines = o.lines;
+  lines.forEach(() => prog.appendChild(document.createElement("i")));
+  const ctx = { el, stage, fig, bubble };
+  let idx = -1, typer = null, closed = false;
+  const entered = new Set();
+  const enter = (i, instant) => {
+    if(entered.has(i)) return;
+    entered.add(i);
+    try{ if(lines[i].enter) lines[i].enter(ctx, instant); }catch(e){}
+  };
+  function show(i){
+    idx = i;
+    const line = lines[i];
+    [...prog.children].forEach((d, k) => { d.className = k < i ? "is-done" : k === i ? "is-now" : ""; });
+    enter(i, false);
+    bubble.classList.toggle("is-final", !!line.final);
+    bubble.classList.remove("is-done");
+    hint.classList.remove("is-on");
+    hint.classList.toggle("is-gone", !!line.final);
+    if(!still){ bubble.classList.remove("bump"); void bubble.offsetWidth; bubble.classList.add("bump"); }
+    novaGesture(fig, line.gesture);
+    if(typer) typer.cancel();
+    typer = novaType(text, line.text, NOVA_TYPE_CPS, {
+      talk: on => fig.classList.toggle("is-talking", !!on && !still),
+      done: () => {
+        fig.classList.remove("is-talking");
+        bubble.classList.add("is-done");
+        if(!line.final) hint.classList.add("is-on");
+        else setTimeout(() => { try{ go.focus({ preventScroll: true }); }catch(e){} }, 60);
+      }
+    });
+  }
+  function advance(){
+    if(closed || idx < 0) return;
+    if(typer && !typer.done){ typer.finish(); return; }
+    if(idx < lines.length - 1) show(idx + 1);
+  }
+  function close(reason){
+    if(closed) return;
+    closed = true;
+    if(typer) typer.cancel();
+    document.removeEventListener("keydown", onKey, true);
+    el.classList.add("leaving");
+    el.classList.remove("show");
+    setTimeout(() => { if(el.parentNode) el.remove(); }, still ? 0 : 360);
+    if(o.onClose) o.onClose(reason || "done");
+  }
+  /* Skip: the introduction ends; What's New puts every row on the card
+     and goes to its last line. */
+  function skipAll(){
+    if(closed) return;
+    if(!o.news){ close("skip"); return; }
+    for(let i = 0; i < lines.length; i++) enter(i, true);
+    if(idx < lines.length - 1) show(lines.length - 1);
+    else if(typer) typer.finish();
+  }
+  function onKey(e){
+    if(closed || !el.isConnected) return;
+    if(e.key === "Escape"){ e.preventDefault(); skipAll(); }
+    else if((e.key === " " || e.key === "Enter" || e.key === "ArrowRight") && !(e.target && e.target.closest && e.target.closest("button"))){
+      e.preventDefault(); advance();
+    }
+  }
+  el.addEventListener("click", e => {
+    if(e.target.closest(".nt-skip, .nt-go")) return;
+    advance();
+  });
+  skip.addEventListener("click", e => { e.stopPropagation(); skipAll(); });
+  go.addEventListener("click", e => { e.stopPropagation(); close("done"); });
+  document.addEventListener("keydown", onKey, true);
+  el.__nova = { advance, skip: skipAll, close, get index(){ return idx; }, get count(){ return lines.length; },
+                get typing(){ return !!(typer && !typer.done); } };
+
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add("show"));
+  if(still){ show(0); bubble.classList.add("is-up"); }
+  else {
+    fig.classList.add("is-arriving");
+    setTimeout(() => fig.classList.remove("is-arriving"), 1000);
+    setTimeout(() => { if(closed) return; bubble.classList.add("is-up"); if(idx < 0) show(0); }, 620);
+  }
+  return el;
+}
+
+/* ---- what he shows while he talks ---- */
+/* Swap the picture on the stage (the introduction): the old one leaves,
+   the new one comes in. */
+function novaProp(ctx, node){
+  ctx.stage.querySelectorAll(".nt-prop").forEach(p => {
+    p.classList.remove("is-in"); p.classList.add("is-out");
+    setTimeout(() => p.remove(), 320);
+  });
+  if(!node) return;
+  const p = document.createElement("div");
+  p.className = "nt-prop";
+  p.appendChild(node);
+  ctx.stage.appendChild(p);
+  requestAnimationFrame(() => requestAnimationFrame(() => p.classList.add("is-in")));
+}
+function novaCap(text){
+  const c = document.createElement("p"); c.className = "nt-cap"; c.textContent = text; return c;
+}
+function novaFrag(){ return document.createDocumentFragment(); }
+/* the planet that went, and his ship: a few seconds of the story, then
+   what was left (which is also the whole picture with motion off) */
+function buildNovaWreck(){
+  const NS = "http://www.w3.org/2000/svg";
+  const mk = (t, a) => { const e = document.createElementNS(NS, t); for(const k in a) e.setAttribute(k, a[k]); return e; };
+  const id = "nw" + Math.random().toString(36).slice(2, 8);
+  const svg = mk("svg", { viewBox: "0 0 100 100", "aria-hidden": "true", class: "nw" });
+  const defs = mk("defs", {}); svg.appendChild(defs);
+  const pg = mk("radialGradient", { id: id + "p", cx: "40%", cy: "35%", r: "70%" });
+  [["0%", "#FFD37A"], ["50%", "#F5804D"], ["100%", "#C23B7A"]].forEach(([o, c]) => pg.appendChild(mk("stop", { offset: o, "stop-color": c })));
+  const fl = mk("radialGradient", { id: id + "f" });
+  [["0%", "#FFFFFF", "1"], ["35%", "#FFF1C8", ".9"], ["100%", "#FFD27A", "0"]].forEach(([o, c, op]) => fl.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+  defs.append(pg, fl);
+  [[12, 14], [86, 10], [92, 62], [6, 70], [40, 92], [74, 88], [30, 8]].forEach(([x, y], i) =>
+    svg.appendChild(mk("circle", { cx: x, cy: y, r: i % 2 ? .7 : 1, fill: "#FFFFFF", opacity: ".55" })));
+  const P = [62, 40], R = 17;
+  /* the planet, and the cracks that open across it */
+  const planet = mk("g", { class: "nw-planet" });
+  planet.appendChild(mk("circle", { cx: P[0], cy: P[1], r: R, fill: "url(#" + id + "p)" }));
+  planet.appendChild(mk("ellipse", { cx: P[0], cy: P[1], rx: 27, ry: 6, fill: "none", stroke: "#FFE7A8", "stroke-width": "1.2", opacity: ".6", transform: "rotate(-16 " + P[0] + " " + P[1] + ")" }));
+  [["M62 40 L54 30 L49 31", 0], ["M62 40 L71 33 L77 26", 1], ["M62 40 L60 52 L66 57", 2], ["M62 40 L74 45", 3]].forEach(([d, i]) =>
+    planet.appendChild(mk("path", { d, fill: "none", stroke: "#FFF6DA", "stroke-width": "1.3", "stroke-linecap": "round", "stroke-linejoin": "round", pathLength: "10", "stroke-dasharray": "10 10", class: "nw-crack nw-crack" + i })));
+  svg.appendChild(planet);
+  /* its pieces, flung out */
+  [[-1, -1.1, 0], [1.2, -.8, 1], [1.1, .9, 2], [-.9, 1.1, 3], [-1.3, .1, 4], [.2, -1.3, 5]].forEach(([dx, dy, i]) => {
+    const a = Math.atan2(dy, dx), r0 = R * .55;
+    const x = P[0] + Math.cos(a) * r0, y = P[1] + Math.sin(a) * r0;
+    const shard = mk("path", { d: "M" + (x - 3).toFixed(1) + " " + (y - 2).toFixed(1) + " L" + (x + 3.4).toFixed(1) + " " + (y - 1).toFixed(1) + " L" + (x + .6).toFixed(1) + " " + (y + 3.2).toFixed(1) + " Z",
+      fill: i % 2 ? "#F5804D" : "#C23B7A", class: "nw-shard", style: "--dx:" + (dx * 22).toFixed(1) + "px;--dy:" + (dy * 22).toFixed(1) + "px;--r:" + (i % 2 ? 160 : -140) + "deg" });
+    svg.appendChild(shard);
+  });
+  svg.appendChild(mk("circle", { cx: P[0], cy: P[1], r: 30, fill: "url(#" + id + "f)", class: "nw-flash" }));
+  svg.appendChild(mk("circle", { cx: P[0], cy: P[1], r: 10, fill: "none", stroke: "#FFF1C8", "stroke-width": "1.4", class: "nw-wave" }));
+  /* his ship, knocked into a spin, and what fell out of it */
+  const ship = mk("g", { class: "nw-ship" });
+  ship.appendChild(mk("path", { d: "M14 72 Q22 64.5 34 66 Q30 72 14 72 Z", fill: "#E9ECF6", stroke: "#5A6088", "stroke-width": ".6" }));
+  ship.appendChild(mk("path", { d: "M17 70.4 L13 66.6 L19 68.6 Z M18 71.4 L14.6 75 L21 71.6 Z", fill: "#B9A4FF" }));
+  ship.appendChild(mk("circle", { cx: 27.6, cy: 67.8, r: 1.6, fill: "#4FD6FF", stroke: "#2A3A66", "stroke-width": ".4" }));
+  ship.appendChild(mk("circle", { cx: 13, cy: 70.4, r: 1.8, fill: "#FFB36B", opacity: ".8", class: "nw-engine" }));
+  svg.appendChild(ship);
+  [["#FFD84D", -14, -10], ["#5CA8FF", -6, 14], ["#FF5CA8", 10, 12], ["#4ADE80", -18, 4], ["#C583FF", 4, -14], ["#FF7A59", 14, -2]].forEach(([c, dx, dy], i) => {
+    svg.appendChild(mk("circle", { cx: 26, cy: 68, r: i % 2 ? 1.3 : 1.7, fill: c, class: "nw-bit", style: "--dx:" + dx + "px;--dy:" + dy + "px;--d:" + (i * 60) + "ms" }));
+  });
+  const w = document.createElement("div"); w.className = "nt-wreck"; w.appendChild(svg);
+  return w;
+}
+function novaBadgeSlots(n){
+  const row = document.createElement("div"); row.className = "nt-row";
+  let units = [];
+  try{ units = topicsIn(QUESTIONS); }catch(e){}
+  units.slice(0, n).forEach((u, i) => {
+    const s = document.createElement("span"); s.className = "nt-slot"; s.style.setProperty("--i", i);
+    try{ s.appendChild(buildUnitBadgeSVG(u, false)); }catch(e){}
+    row.appendChild(s);
+  });
+  return row;
+}
+function novaFlareRow(){
+  const row = document.createElement("div"); row.className = "nt-row";
+  TIER_ORDER_FULL.forEach((k, i) => {
+    const s = document.createElement("span"); s.className = "nt-flare"; s.style.setProperty("--i", i);
+    try{ s.appendChild(buildFlareBubble(k, {})); }catch(e){}
+    row.appendChild(s);
+  });
+  return row;
+}
+function novaRankRow(){
+  const row = document.createElement("div"); row.className = "nt-row";
+  TIER_ORDER_FULL.forEach((k, i) => {
+    const s = document.createElement("span"); s.className = "nt-emblem"; s.style.setProperty("--i", i);
+    try{ s.appendChild(buildRankEmblemSVG(k)); }catch(e){}
+    const n = document.createElement("span"); n.textContent = RANK_DISPLAY_NAME[k] || k;
+    s.appendChild(n);
+    row.appendChild(s);
+  });
+  return row;
+}
+function novaXpBar(){
+  const w = document.createElement("div"); w.className = "nt-xp";
+  const r = document.createElement("div"); r.className = "nt-xp-row";
+  const a = document.createElement("span"); a.textContent = "Level 1";
+  const b = document.createElement("span"); b.textContent = "Level 2";
+  r.append(a, b);
+  const bar = document.createElement("div"); bar.className = "nt-xp-bar";
+  bar.appendChild(document.createElement("i"));
+  w.append(r, bar);
+  return w;
+}
+function novaModeRow(){
+  const row = document.createElement("div"); row.className = "nt-row";
+  [["drill", "Drill"], ["exam", "Exam"], ["review", "Review"]].forEach(([k, label], i) => {
+    const m = document.createElement("span"); m.className = "nt-mode"; m.style.setProperty("--i", i);
+    try{ m.appendChild(modeIcon(k)); }catch(e){}
+    const l = document.createElement("span"); l.textContent = label;
+    m.appendChild(l);
+    row.appendChild(m);
+  });
+  return row;
+}
+function novaStack(...nodes){
+  const f = novaFrag(); nodes.forEach(n => n && f.appendChild(n)); return f;
+}
+
+/* ---- THE INTRODUCTION: a new account, before its first tooltips ----
+   "If you are signing up it would be before the tool tips and it would just
+   talk about finding the missing badges, finding the missing flares,
+   leveling up, test taking ... Hello I am Nova, the app maker, I lost my
+   badges". The story fits what the app already draws: the planet on Home
+   with the flares round it, ranks that are the life of a star ending in a
+   Supernova, and the planet that cracks as you climb. He was flying past a
+   planet like yours when it cracked apart; the blast took his ship and
+   scattered his badges and his flares across this system - which is why
+   the badge case starts empty and the flares start dark. Plain words, one
+   idea a line. After this he is not seen again until the next What's New
+   (he narrates the tooltips, small, from inside their bubbles). */
+function novaName(){
+  const n = (store && store.firstName ? String(store.firstName) : "").trim();
+  return n || "there";
+}
+function novaIntroLines(){
+  const name = novaName();
+  let units = 16;
+  try{ units = topicsIn(QUESTIONS).length || units; }catch(e){}
+  return [
+    { gesture: "wave", text: "Hello, " + name + "! I’m Nova. I made this app, and I’ll be your instructor.",
+      enter: ctx => novaProp(ctx, null) },
+    { text: "Before we start, I need your help. Not long ago I was flying past a planet much like the one on your Home screen, and it cracked apart.",
+      enter: ctx => novaProp(ctx, buildNovaWreck()) },
+    { gesture: "raise", text: "The blast wrecked my ship and scattered everything I had across this system: my badges and my flares." },
+    { text: "There’s a badge for every unit, " + units + " in all. To find one, master its unit. Each 100% on a whole unit is a hundo, and each badge takes a few.",
+      enter: ctx => novaProp(ctx, novaStack(novaBadgeSlots(8), novaCap("0 of " + units + " badges found"))) },
+    { gesture: "raise", text: "My flares orbit the planet on your Home screen, but they’re dark for now. Every rank you reach lights one up.",
+      enter: ctx => novaProp(ctx, novaStack(novaFlareRow(), novaCap("Flares: not lit yet"))) },
+    { text: "A few of my flares are secret. They turn up during tests, so keep your eyes open." },
+    { text: "The ranks go from Bronze all the way to Supernova. Each one asks for a level and a number of badges.",
+      enter: ctx => novaProp(ctx, novaStack(novaRankRow(), novaCap("Seven ranks"))) },
+    { gesture: "raise", text: "Every question you get right earns XP, and XP raises your level.",
+      enter: ctx => novaProp(ctx, novaXpBar()) },
+    { text: "Tests are how you do all of it. Drill to learn, Exam to test yourself, and Review to go over the material first.",
+      enter: ctx => novaProp(ctx, novaModeRow()) },
+    { gesture: "nod", final: true, text: "Find my badges, light my flares and climb the ranks. I’ll show you around.",
+      enter: ctx => novaProp(ctx, null) }
+  ];
+}
+let novaIntroOn = false;
+function playNovaIntro(then){
+  if(document.getElementById("nova-intro")){ return; }
+  novaIntroOn = true;
+  novaTalk({ id: "nova-intro", label: "Nova introduces himself", lines: novaIntroLines(), finalLabel: "Let’s go",
+    onClose: () => {
+      novaIntroOn = false;
+      try{ popupGapUntil = Date.now() + POPUP_GAP_MS; }catch(e){}
+      /* his tooltips follow on as he leaves */
+      setTimeout(() => { if(typeof then === "function") then(); }, novaMotionOff() ? 0 : 380);
+    } });
+}
+
 /* How long a tour will wait for a loading screen to clear before giving
    up. The longest one in the app is "GENERATING PROFILE" at 10s. */
 const TOUR_OVERLAY_WAIT_MS = 14000;
@@ -68178,11 +69072,11 @@ const PROFILE_TIPS_289 = [
   { target: ".profile-edit-btn", align: "right", vplacement: "below",
     text: "Customize changes your name, your character, your banner and the app\u2019s colour. More of each unlock as you climb the ranks and finish challenges." },
   { target: ".profile-hero .pf-standing", align: "left", vplacement: "below",
-    text: "Your rank and your level. XP fills the bar; your badges decide how high your level can go." },
+    text: "Your rank, your level and how many of my badges you\u2019ve found. XP fills the bar, and your badges decide how high your level can go. Tap the badge count to see them." },
   { target: ".profile-hero .pf-goal", align: "left", vplacement: "above",
-    text: "The rank challenges for your next rank, ticked off as you get there, and what it unlocks. Tap to see every rank." },
+    text: "The challenges for your next rank, ticked off as you go, and what it unlocks. When you rank up, it plays out on the road map. Tap to see every rank." },
   { target: ".profile-hero .pf-case", align: "left", vplacement: "above",
-    text: "Your badge case. One badge per unit, earned with enough hundos (100% on the whole unit) in it. Tap to open it and see how close each one is." }
+    text: "Your badge case, a slot for every unit. Master a unit with enough hundos (100% on the whole unit) to find its badge. Tap to open the case; older badges lose their shine, so rub them clean." }
 ];
 
 function startSimpleTour(steps, onComplete, _waitedMs){
@@ -68224,8 +69118,25 @@ function startSimpleTour(steps, onComplete, _waitedMs){
   text.id = "tour-text";
   const nextBtn = document.createElement("button");
   nextBtn.type = "button"; nextBtn.id = "tour-next";
-  tooltip.append(text, nextBtn);
+  /* NOVA NARRATES EVERY TOOLTIP (build 320): "the person will be
+     narrating the tool tips". His face in a glass circle, his name, and
+     the words typing in quickly (novaType - the whole line is laid out
+     from the first frame, so the measuring below is unchanged). A tap on
+     the bubble finishes the line; Next always moves on. */
+  const face = document.createElement("div");
+  face.className = "tour-nova";
+  face.setAttribute("aria-hidden", "true");
+  try{ face.appendChild(buildNovaSVG({ crop: "head" })); }catch(e){}
+  const who = document.createElement("p");
+  who.className = "tour-who"; who.textContent = "Nova";
+  tooltip.className = "has-nova";
+  tooltip.append(face, who, text, nextBtn);
   document.body.appendChild(tooltip);
+  let tourTyper = null;
+  tooltip.addEventListener("click", e => {
+    if(e.target === nextBtn) return;
+    if(tourTyper) tourTyper.finish();
+  });
 
   let stepIndex = 0;
 
@@ -68264,7 +69175,11 @@ function startSimpleTour(steps, onComplete, _waitedMs){
       return;
     }
     const rect = el.getBoundingClientRect();
-    text.textContent = step.text;
+    if(tourTyper) tourTyper.cancel();
+    tourTyper = novaType(text, step.text, NOVA_TOUR_CPS, {
+      talk: on => face.classList.toggle("is-talking", !!on),
+      done: () => face.classList.remove("is-talking")
+    });
     nextBtn.textContent = stepIndex === steps.length - 1 ? "Got it" : "Next";
     /* Auto-flips to above the target when placing it below would run
        into the bottom tab bar or off the screen entirely \u2014 a target
@@ -68286,7 +69201,7 @@ function startSimpleTour(steps, onComplete, _waitedMs){
       tooltip.style.bottom = "auto";
       tooltip.style.top = (rect.bottom + window.scrollY + 16) + "px";
     }
-    tooltip.className = "tour-align-" + step.align + (above ? " tour-arrow-below" : "");
+    tooltip.className = "has-nova tour-align-" + step.align + (above ? " tour-arrow-below" : "");
     /* Safety clamp against a genuinely tall target (like an always-
        expanded settings section spanning most of the screen): flipping
        "above" only checked that placing it "below" would overflow, but
@@ -68395,6 +69310,7 @@ function startSimpleTour(steps, onComplete, _waitedMs){
   }
 
   function cleanup(){
+    if(tourTyper) tourTyper.cancel();
     overlay.remove();
     tooltip.remove();
     line.remove();
@@ -68444,11 +69360,11 @@ function startMainMenuTour(){
      means a future fix here benefits every tour, not just one. */
   const steps = [
     { target: "#bottomtab-home", align: "left", vplacement: "above",
-      text: "Home always brings you back here, no matter where you are in the app." },
+      text: "Home always brings you back here, wherever you are in the app." },
     { target: "#bottomtab-rewards", align: "left", vplacement: "above",
-      text: "Leaderboard is the class boards \u2014 this week, overall and hundos, updating live. Search for anyone, or tap Find me." },
+      text: "The Leaderboard is the whole class: this week, overall and hundos, updating live. Search for anyone, or tap Find me." },
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
-      text: "Profile is you: your rank, level and badges, Customize for your name, character, banner and colour, the class calendar and your stats." },
+      text: "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks. Calendar and Stats are its other two tabs." },
     { target: "#bottomtab-settings", align: "right", vplacement: "above",
       text: isIOSDevice() && !isStandaloneApp()
         ? "Settings is where the rest of the options live \u2014 including a guide for adding this app to your Home Screen, any time."
@@ -68459,11 +69375,11 @@ function startMainMenuTour(){
        through the tour when it's a natural continuation of the
        screen the person is already looking at. */
     { target: ".daily-question-fab", align: "right", vplacement: "above",
-      text: "This is your daily question \u2014 one a day, one attempt, worth 200 XP. No retakes, so take your time." },
+      text: "Your daily question: one a day, one try, worth " + DAILY_XP + " XP. Its ring shows its progress. No retakes, so take your time." },
     { target: ".cosmic-icon-badge", align: "left", vplacement: "below",
-      text: "Those circles orbiting the sphere are your Flares \u2014 one for each rank. A rank hands you its flare, and tapping one tells you the levels and badges still to go." },
+      text: "These are my flares, one for each rank, still dark. Reach a rank and its flare lights up. Tap one to see what it takes." },
     { target: "#nextbtn", align: "left", vplacement: "above",
-      text: "Good luck \u2014 tap here whenever you are ready to start studying. You will see a few more tips like these as you explore the rest of the app." }
+      text: "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later. I\u2019ll pop up with tips like these as you explore." }
   ];
   startSimpleTour(steps, awardWelcomeBonus);
 }
@@ -73786,7 +74702,7 @@ function checkChatInvites(){
      button, not over the screen, and a count that lags two seconds
      behind is a count somebody stops trusting. Only the BANNER waits. */
   syncChatDockDot();
-  if(introPending || document.getElementById("intro-pop")) return;
+  if(introPending || (document.getElementById("intro-pop") || document.getElementById("nova-intro"))) return;
   if(!invites.length) return;
   const newest = invites[invites.length - 1];
   /* Same two shapes as notificationItems - a mailbox message carries
@@ -74027,7 +74943,10 @@ const INTRO_MAX_TRIES = 20;
    rev 1, and to every device that never saw anything. */
 /* 3 = the 7.7 update (build 314): "put a what's new thing on the main
    menu". */
-const INTRO_REV = 3;
+/* 4 = the 7.8 update (builds 319 and 320, which ship together): What's
+   New narrated by Nova - see showIntroPopup. Every fixture that sets
+   class26e.intro.seen to 9 is still past it. */
+const INTRO_REV = 4;
 function introSeen(){
   try{ return (Number(localStorage.getItem(INTRO_KEY)) || 0) >= INTRO_REV; }
   catch(e){ return true; }
@@ -74082,122 +75001,159 @@ function levelGateNoteText(s){
   return [first, "You kept all of your XP, and it still counts. " + earn +
     " The next levels unlock then, and your XP counts toward them right away."];
 }
+/* ---- WHAT'S NEW, NARRATED (build 320, version 7.8) ----
+   "For the now (mostly everyone) existing accounts, it would be narrating
+   the what's new stuff ... still a similar what's new screen but a
+   different look and feel to it now ... For existing he will meet you and
+   say your name during it (username) talk about your rank and stuff. At
+   the end he will talk about speaking again". So: Nova greets you by your
+   username, introduces himself, says your rank and level and how many of
+   his lost badges you have found, tells the shipwreck in two lines, then
+   goes through what is new - and as he names each thing its row goes onto
+   the card above him, so when he is done the card is the whole list, the
+   way the old What's New card was. He ends by saying he will speak again
+   at the next update.
+   THE ROWS ARE THE STORY'S, NOT A FEATURE LIST. Build 314 took "Ranks and
+   levels" off this card and 318 took the rank-up and badge rows off it;
+   they are back because the storyline makes them his badges and his
+   flares, said in his voice. One short line each.
+   Builds 319 and 320 ship together, so this is both of their news. */
+const WHATS_NEW_320 = [
+  { key: "results", color: "#FFD84D", title: "Results, grade first",
+    glyph: "M12 1.8a7.2 7.2 0 1 0 0 14.4 7.2 7.2 0 0 0 0-14.4Zm0 3.1 1.25 2.6 2.85.4-2.06 2 .48 2.84L12 11.4l-2.52 1.34.48-2.84-2.06-2 2.85-.4L12 4.9ZM7.4 15.4 5.8 22l3.3-1.7 2.1 1.6-.7-4.9a8.7 8.7 0 0 1-3.1-1.6Zm9.2 0a8.7 8.7 0 0 1-3.1 1.6l-.7 4.9 2.1-1.6 3.3 1.7-1.6-6.6Z",
+    body: "Your grade comes first, with a moment of suspense, then your XP and rewards.",
+    say: "Your results start with your grade now. Give it a second; the wait is part of it." },
+  { key: "hundofx", color: "#FF9EC8", title: "Characters react to your hundo",
+    glyph: "M12 2.5l1.9 5.9 5.9 1.9-5.9 1.9-1.9 5.9-1.9-5.9-5.9-1.9 5.9-1.9L12 2.5Zm6.5 12.5.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z",
+    body: "Score 100% and your character reacts to your hundo effect.",
+    say: "Score 100% and your character joins in with your hundo effect." },
+  { key: "found", color: "#4ADE80", title: "Badges are found",
+    glyph: "M12 2 4 5v6c0 5.1 3.4 9.4 8 11 4.6-1.6 8-5.9 8-11V5l-8-3Zm-1.3 13.6-3.6-3.6 1.5-1.5 2.1 2.1 4.8-4.8 1.5 1.5-6.3 6.3Z",
+    body: "A badge you earn is found, and it gets the screen to itself. Badges no longer add XP.",
+    say: "When you find one of my badges, everything else waits while it has its moment. Finding it is the reward, so badges no longer add XP." },
+  { key: "case", color: "#C9D3DE", title: "Your badge case",
+    glyph: "M9 3h6a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3V5a2 2 0 0 1 2-2Zm0 2v1h6V5H9Zm-5 6.2v1.8h16v-1.8H4Z",
+    body: "Every badge you find sits in its slot in your case. Tap one to inspect and spin it. Older badges lose their shine; rub one to clean it.",
+    say: "Every badge you find goes back in its slot in your case. Tap one to inspect it and give it a spin. Older ones lose their shine, so rub them clean." },
+  { key: "rankup", color: "#E8B84A", title: "Ranking up, on the road map",
+    glyph: "M12 3l8 5v3.2l-8-5-8 5V8l8-5Zm0 6.2 8 5v3.2l-8-5-8 5v-3.2l8-5Z",
+    body: "Your rank challenges tick off on Profile, the road map lights up to your new rank, and its rewards are handed over there.",
+    say: "Ranking up now plays out on Profile’s road map. Your challenges tick off and the road lights up to your new rank, in one smooth journey." },
+  { key: "planet", color: "#F5804D", title: "A planet that cracks",
+    glyph: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm-1.2 2.3 1.9 4.2-2.5 2.4 2.9 3.3-1.1 3.7-1.2-.2.9-3.1-3-3.5 2.6-2.5-1.7-3.9 1.4-.4Z",
+    body: "The planet on Home cracks a little more with every rank you reach.",
+    say: "And keep an eye on the planet on your Home screen. It cracks a little more with every rank you reach. I’ve seen that before." },
+  { key: "profile", color: "#5CA8FF", title: "Profile, Calendar and Stats",
+    glyph: "M3 4.5h5.2v4.2H3V4.5Zm6.4 0h5.2v4.2H9.4V4.5Zm6.4 0H21v4.2h-5.2V4.5ZM3 10.2h18V20H3v-9.8Z",
+    body: "Profile is three tabs: Profile, Calendar and Stats. It is cleaner, and Friends is back under your card.",
+    say: "Profile is three tabs now: Profile, Calendar and Stats. It’s cleaner, and Friends is back under your card." },
+  { key: "save", color: "#4ADE80", title: "Save a test for later",
+    glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-3.4 6.2h2.3v7.6H8.6V8.2Zm4.5 0h2.3v7.6h-2.3V8.2Z",
+    body: "Pause a test and tap Save and exit. Start Studying offers it back and loads it right where you left off.",
+    say: "You can save a test for later. Pause it and tap Save and exit, and Start Studying picks it up right where you left off." },
+  { key: "daily", color: "#FFD84D", title: "The daily question ring",
+    glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2.2a7.8 7.8 0 1 1 0 15.6 7.8 7.8 0 0 1 0-15.6Zm-.1 3.1c-1.9 0-3.2 1.1-3.3 2.8h2c.1-.7.6-1.1 1.3-1.1.8 0 1.3.5 1.3 1.1 0 .6-.3.9-1.1 1.4-.9.5-1.3 1.1-1.2 2.1v.5h1.9v-.4c0-.6.2-.9 1-1.3.9-.5 1.5-1.2 1.5-2.3 0-1.7-1.4-2.8-3.4-2.8Zm-.1 8.2a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Z",
+    body: "The daily question button shows its progress as a ring.",
+    say: "The daily question button shows its progress as a ring now." }
+];
+/* You, as he sees you: your character, your name, your rank and level,
+   and how many of his badges you have found. */
+function novaMeCard(st){
+  const c = document.createElement("div");
+  c.className = "nt-me";
+  if(st.rank) c.style.setProperty("--rank-color", RANK_COLOR[st.rank] || "#8B939E");
+  const av = document.createElement("span"); av.className = "nt-me-av";
+  try{ av.appendChild(buildAvatarCharSVGSafe(store.avatarChar || "ninja")); }catch(e){}
+  const t = document.createElement("div");
+  const n = document.createElement("p"); n.className = "nt-me-name"; n.textContent = st.name;
+  const l1 = document.createElement("p"); l1.className = "nt-me-line";
+  if(st.rank){ try{ l1.appendChild(buildRankEmblemSVG(st.rank)); }catch(e){} }
+  const rk = document.createElement("b"); rk.textContent = st.rank ? RANK_DISPLAY_NAME[st.rank] : "No rank yet";
+  l1.append(rk, document.createTextNode("· Level " + st.level));
+  const l2 = document.createElement("p"); l2.className = "nt-me-line nt-me-badges";
+  l2.textContent = st.badges + " of " + st.units + (st.units === 1 ? " badge" : " badges") + " found";
+  t.append(n, l1, l2);
+  c.append(av, t);
+  return c;
+}
+function whatsNewState(){
+  const st = { name: novaName(), rank: null, level: 0, badges: 0, units: 16, note: null };
+  try{ st.rank = rankOf(store); }catch(e){}
+  try{ st.level = levelOf(store); }catch(e){}
+  try{ st.badges = badgeCountOf(store); }catch(e){}
+  try{ st.units = topicsIn(QUESTIONS).length || st.units; }catch(e){}
+  /* "Your level was adjusted" (build 314/319), only for somebody the
+     update actually moved down - its facts exactly as levelGateNoteText
+     words them, said by him */
+  try{ const ls = levelStateFor(store); if(ls.held && ls.saved > 0) st.note = levelGateNoteText(ls); }catch(e){}
+  return st;
+}
+/* The whole script, in order. Exposed so the gate can read every line. */
+function whatsNewLines(st){
+  const name = st.name, first = RANK_DISPLAY_NAME[TIER_ORDER_FULL[0]];
+  let news = null, list = null, me = null;
+  const card = (ctx, row, instant) => {
+    if(!list) return;
+    list.querySelectorAll(".nt-card.is-now").forEach(r => r.classList.remove("is-now"));
+    row.classList.add("nt-card");
+    if(instant) row.classList.add("is-instant"); else row.classList.add("is-now");
+    list.appendChild(row);
+    const to = Math.max(0, row.offsetTop - list.offsetTop - 8);
+    if(to + row.offsetHeight > list.scrollTop + list.clientHeight || to < list.scrollTop){
+      try{ list.scrollTo({ top: Math.min(to, list.scrollHeight), behavior: instant || novaMotionOff() ? "auto" : "smooth" }); }
+      catch(e){ list.scrollTop = to; }
+    }
+  };
+  const lines = [];
+  lines.push({ gesture: "wave", text: "Hello, " + name + ". I’m Nova. I made this app, and I think it’s time we met.",
+    enter: ctx => {
+      news = document.createElement("div"); news.className = "nt-news";
+      const head = document.createElement("div"); head.className = "nt-head";
+      const eb = document.createElement("p"); eb.className = "nt-eyebrow intro-eyebrow"; eb.textContent = "New in version " + RELEASE_NOTES[0].version;
+      const ti = document.createElement("h2"); ti.className = "nt-title intro-title"; ti.textContent = "What’s new";
+      head.append(eb, ti);
+      list = document.createElement("div"); list.className = "nt-list";
+      news.append(head, list);
+      ctx.stage.appendChild(news);
+    } });
+  lines.push({ text: st.rank ? "I see you’re " + RANK_DISPLAY_NAME[st.rank] + " rank, level " + st.level + ". Good work."
+                             : "I see you’re level " + st.level + ", on your way to your first rank, " + first + ".",
+    enter: (ctx, instant) => { me = novaMeCard(st); if(instant) me.style.animation = "none"; if(list) list.appendChild(me); } });
+  lines.push({ gesture: "raise",
+    text: st.badges >= st.units ? "And it appears you have found every one of my lost badges. Remarkable."
+        : st.badges > 1 ? "And it appears you have found " + st.badges + " of my lost badges."
+        : st.badges === 1 ? "And it appears you have found one of my lost badges."
+        : "You haven’t found any of my lost badges yet, but I have a feeling you will.",
+    enter: () => { const b = me && me.querySelector(".nt-me-badges"); if(b) b.classList.add("is-hi"); } });
+  lines.push({ text: "I lost them in a shipwreck. A planet near my ship cracked apart, and the blast scattered my badges and my flares across this system." });
+  lines.push({ gesture: "raise", text: (st.badges > 0 ? "Every one you find comes home. Thank you. " : "Every one you find comes home. ") + "Now, here’s what’s new." });
+  WHATS_NEW_320.forEach(it => lines.push({ text: it.say, gesture: it.key === "planet" ? "nod" : null,
+    enter: (ctx, instant) => card(ctx, introRow(it.glyph, it.color, it.title, it.body), instant) }));
+  if(st.note){
+    lines.push({ gesture: "raise", text: "One more thing, " + name + ": your level was adjusted. " + st.note[0],
+      enter: (ctx, instant) => {
+        const n = document.createElement("div"); n.className = "intro-gate-note";
+        const h = document.createElement("p"); h.className = "intro-gate-title"; h.textContent = "Your level was adjusted";
+        n.appendChild(h);
+        st.note.forEach(t => { const b = document.createElement("p"); b.className = "intro-gate-body"; b.textContent = t; n.appendChild(b); });
+        card(ctx, n, instant);
+      } });
+    lines.push({ text: st.note[1] });
+  }
+  lines.push({ gesture: "nod", final: true,
+    text: "That’s all for now, " + name + ". I’ll speak with you again when there’s more to show you. Good luck." });
+  return lines;
+}
 function showIntroPopup(){
   if(document.getElementById("intro-pop")) return;
-  const el = document.createElement("div");
-  el.className = "intro-pop"; el.id = "intro-pop";
-  const card = document.createElement("div");
-  card.className = "intro-card";
-
-  /* VERSION 7.7 (build 314). The rows are the list asked for, in the
-     order asked: "hundo effect addition, flash card addition, characters
-     refinement and banners addition. Refinements and improvement to test
-     mode. Refinements to the app as a whole. Stats page and profile page
-     improvement, rank road map. Result screen overhaul." Eight things,
-     one line each; the full list is under the version number on Home. */
-  const eyebrow = document.createElement("p");
-  eyebrow.className = "intro-eyebrow"; eyebrow.textContent = "New in version " + RELEASE_NOTES[0].version;
-  const title = document.createElement("h2");
-  title.className = "intro-title"; title.textContent = "What's new";
-  card.append(eyebrow, title);
-  card.classList.add("intro-card-compact");
-  /* YOUR LEVEL, SAID TO YOU (build 314): the band cap can show a lower
-     level than yesterday, so anybody it caps is told exactly what
-     happened before anything else - "they still have the same xp just
-     loaded at the gate". Only when it applies. */
-  try{
-    const ls = levelStateFor(store);
-    if(ls.held && ls.saved > 0){
-      /* only for somebody the update actually moved down */
-      const note = document.createElement("div");
-      note.className = "intro-gate-note";
-      const h = document.createElement("p");
-      h.className = "intro-gate-title";
-      /* what HAPPENED, not the idea behind it (build 314): "your level
-         now follows your rank" was the purpose of the change */
-      h.textContent = "Your level was adjusted";
-      /* REWRITTEN (build 319): "At the beginning it says 'you now need the
-         badges to keep leveling up' but that's confusing, it just sounds
-         like you need the badges to level up at all. The part at the end
-         ... earn more badge to reach bronze and it turns back into levels
-         ... is confusing." Said plainly now, in the order it happened:
-         levels open rank by rank; the top level for your rank, and where
-         you were; the XP is kept and still counts; which badges reach the
-         next rank, and that the levels come with them. levelGateNoteText
-         is the whole of it, so the gate can read every case. */
-      const lines = levelGateNoteText(ls);
-      const b = document.createElement("p");
-      b.className = "intro-gate-body"; b.textContent = lines[0];
-      const b2 = document.createElement("p");
-      b2.className = "intro-gate-body"; b2.textContent = lines[1];
-      note.append(h, b, b2);
-      card.appendChild(note);
-    }
-  }catch(e){}
-  /* BUILD 317 added three rows to Madison's list: the rank-up cutscenes,
-     Home's taps and the badges. Her rows keep her order. BUILD 318 took
-     two of them back off: "remove the rank ups reimagined, the new badges
-     and case thing" - the rank-up and badge rows are gone here and from
-     RELEASE_NOTES[0], and "Ranks and levels box in the what's new stuff
-     does not need to be there" (build 314) still stands. */
-  /* BUILD 319: "This be added to the what's new screen" - saving a test
-     for later, first, as the newest thing on the card. */
-  [
-    ["M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-3.4 6.2h2.3v7.6H8.6V8.2Zm4.5 0h2.3v7.6h-2.3V8.2Z",
-     "#4ADE80", "Save a test for later",
-     "Pause a test and tap Save and exit. Start Studying offers it back when you return."],
-    ["M12 2.5l1.9 5.9 5.9 1.9-5.9 1.9-1.9 5.9-1.9-5.9-5.9-1.9 5.9-1.9L12 2.5Zm6.5 12.5.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z",
-     "#FFD84D", "Hundo effects",
-     "Earn new screen effects as your hundos climb: Fireworks, Underwater, Bubbles and a UFO. Pick yours in Customize."],
-    ["M10.5 6.5a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM19 3.2a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2Z",
-     "#7FC8FF", "A Home you can tap",
-     "Tap the flares and the planet on Home to see what each one is."],
-    ["M6 2h8.5L20 7.5V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 1.8V8h4.2L14 3.8ZM7.5 11v1.6h9V11h-9Zm0 3.4V16h9v-1.6h-9Zm0 3.4v1.6h6v-1.6h-6Z",
-     "#FF7A59", "Penal Code: slides 55\u2013124",
-     "Penal Code has a second version with only the questions from slides 55\u2013124. Pick it when you choose the unit."],
-    ["M8 3h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM3 7h1.8v12.2H17V21H5a2 2 0 0 1-2-2V7Z",
-     "#4DD0E1", "Flashcards",
-     "Review has a new Flashcards option for any unit. Tap a card to flip it, swipe to move on."],
-    ["M12 12a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 2c-4.6 0-8.2 2.3-8.2 5.2V20h16.4v-.8c0-2.9-3.6-5.2-8.2-5.2Z",
-     "#FF2E88", "Characters and banners",
-     "Characters refined, with rare moves of their own, new banners, and new secret flare cutscenes."],
-    /* ICONS THAT SAY THE THING (build 314): "some of the icons are bad
-       there and don't match what's being talked about" - each row's icon
-       is its own subject. Penal Code sits second and "Results,
-       overhauled" is gone, both asked for. */
-    ["M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1Zm1 2v1.6h4V4h-4Zm5.7 6.2-4.9 4.9-2.5-2.5-1.3 1.3 3.8 3.8 6.2-6.2-1.3-1.3Z",
-     "#F5804D", "Better test mode",
-     "Quicker answer feedback, a smoother swipe to the next question, and a simpler start sheet."],
-    ["M4 19.6h16v1.8H4v-1.8Zm1.2-7.2h3v5.6h-3v-5.6Zm5.3-5h3v10.6h-3V7.4Zm5.3 3h3v7.6h-3v-7.6Z",
-     "#5CA8FF", "Stats and Profile",
-     "A clearer Stats page, a fuller test history, and a cleaner Profile."],
-    ["M21.7 6.3a5.6 5.6 0 0 1-7.6 6.3L7.4 19.3a2.2 2.2 0 1 1-3.1-3.1l6.7-6.7A5.6 5.6 0 0 1 17.3 1.9l-3.4 3.4.8 3.4 3.4.8 3.4-3.4c.1.1.1.2.2.2Z",
-     "#C583FF", "Refined everywhere",
-     "Faster tabs, smoother screens, safer syncing, and a long list of fixes from your reports."]
-  ].forEach(([glyph, color, t, b]) => card.appendChild(introRow(glyph, color, t, b)));
-
-  const go = document.createElement("button");
-  go.type = "button"; go.className = "next intro-go";
-  go.textContent = "Got it";
-  go.addEventListener("click", () => closeIntroPopup(el));
-  card.appendChild(go);
-
-  el.appendChild(card);
-  /* On <body>, like every other fixed overlay here - #stage animates,
-     and a transform on an ancestor re-parents a fixed element's
-     containing block. */
-  document.body.appendChild(el);
-  /* And the real button gets a ring underneath, so "the button in the
-     top right" is something you can look at rather than hunt for. */
-  /* 7.3: no ring on the chat button any more - the card is about the
-     whole update now, not "the button in the top right". */
-  requestAnimationFrame(() => el.classList.add("show"));
-
+  const st = whatsNewState();
+  const el = novaTalk({ id: "intro-pop", news: true, label: "What’s new, from Nova", lines: whatsNewLines(st), finalLabel: "Got it",
+    onClose: () => closeIntroPopup(null) });
   /* A screen change takes it with it, and counts as seen: somebody who
      navigated away has decided they are done reading. */
   const onNavigate = new MutationObserver(() => {
     onNavigate.disconnect();
-    closeIntroPopup(el);
+    if(el.__nova) el.__nova.close("nav");
   });
   onNavigate.observe(stage, { childList: true });
 }
@@ -74250,7 +75206,9 @@ let introPending = false;
 const POPUP_GAP_MS = 2000;
 let popupGapUntil = 0;
 function whatsNewHolds(){
-  return introPending || !!document.getElementById("intro-pop") || Date.now() < popupGapUntil;
+  /* Nova's introduction to a new account (#nova-intro) holds everything
+     the way What's New does - it is the same dialogue (build 320). */
+  return introPending || !!document.getElementById("intro-pop") || !!document.getElementById("nova-intro") || Date.now() < popupGapUntil;
 }
 function maybeShowIntro(){
   if(introSeen()){ introPending = false; return; }
@@ -74879,7 +75837,13 @@ function showHome(){
          without this check the tour would still barge in on top of
          whatever screen they've since navigated to, since this timeout
          has no way to know they've left Home. */
-      if(document.querySelector(".homeversion-btn")) startMainMenuTour();
+      /* NOVA FIRST (build 320): "If you are signing up it would be before
+         the tool tips". He introduces himself and the story, then the
+         tooltips run in his bubbles. Not again after this until the next
+         What's New: the account is marked past the current one above. */
+      if(document.querySelector(".homeversion-btn")) playNovaIntro(() => {
+        if(document.querySelector(".homeversion-btn")) startMainMenuTour();
+      });
     }, 400);
   } else {
     /* Not while the sign-up tour is running: that tour is a sequence of
@@ -76634,7 +77598,7 @@ function maybeShowPenalVersionNote(tries){
   /* never on top of anything else: a tour, a loading screen, a reward
      pop-up still being tapped through, What's New, a cutscene */
   const busy = whatsNewHolds() || !!document.querySelector("#tour-overlay, #splashscreen, #genprofile-overlay, .invite-overlay, .rs-spot, .rs-fly, " +
-       "#intro-pop, .bc-scene, .installguide-overlay, #void-cutscene, #badge-cutscene, " +
+       "#intro-pop, #nova-intro, .bc-scene, .installguide-overlay, #void-cutscene, #badge-cutscene, " +
        "#supernova-cutscene, #vroom-cutscene, #resume-offer, .friend-moment");
   if(busy) penalNoteBusyAt = Date.now();
   /* and a beat after whatever it waited for, never straight on its heels */
@@ -77911,7 +78875,7 @@ function showSetup(){
     setTimeout(() => {
       startSimpleTour([
         { target: ".pick", align: "left", vplacement: "below",
-          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 " + badgeRangeText() + " depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
+          text: "Tap a unit to add it to this test. The bar under each one is how close you are to finding its badge \u2014 " + badgeRangeText() + " depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
@@ -80367,7 +81331,7 @@ function noticeAllowedHere(){
   const el = (typeof stage !== "undefined" && stage) ? stage.firstElementChild : null;
   const screen = el && el.dataset ? el.dataset.screen : "";
   if(screen !== "home" && screen !== "welcome") return false;
-  if(document.getElementById("tour-overlay")) return false;
+  if(document.getElementById("tour-overlay") || document.getElementById("nova-intro")) return false;
   if(Date.now() < tourQuietUntil) return false;
   return true;
 }
@@ -81099,7 +82063,7 @@ function forcedUpdateBlocked(){
             document.getElementById("badge-cutscene") ||
             document.getElementById("vroom-cutscene") ||
             document.getElementById("supernova-cutscene") ||
-            document.getElementById("intro-pop"));
+            (document.getElementById("intro-pop") || document.getElementById("nova-intro")));
 }
 
 function startForcedUpdate(){
@@ -88647,7 +89611,7 @@ function summarize(){
       saveStore();
       startSimpleTour([
         { target: ".actions", align: "left", vplacement: "above",
-          text: "Go over what you missed, run the test again, or head back \u2014 your result is saved either way." }
+          text: "Your grade comes first, then your XP and rewards. Down here, go over what you missed, run the test again, or head back. Your result is saved either way." }
       ]);
     }
   };
@@ -91342,7 +92306,7 @@ function showVirtualRoomSetup(editRoom){
         { target: ".pick", align: "left", vplacement: "below",
           /* Badges have not been a flat 35 since build 210: 3 to 20
              hundos by the unit's size (BADGE_THRESHOLD_BANDS). */
-          text: "Tap a unit to add it to this test. The bar under each one is how close you are to its badge \u2014 " + badgeRangeText() + " depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
+          text: "Tap a unit to add it to this test. The bar under each one is how close you are to finding its badge \u2014 " + badgeRangeText() + " depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
@@ -91584,7 +92548,7 @@ function showLobbyInviteBanner(from, code){
 }
 
 function checkLobbyInvites(){
-  if(introPending || document.getElementById("intro-pop")) return;
+  if(introPending || (document.getElementById("intro-pop") || document.getElementById("nova-intro"))) return;
   const live = incomingLobbyInvites().filter(x => !inviteDismissed(x.code));
   if(!live.length) return;
   showLobbyInviteBanner(live[0].from, live[0].code);
@@ -91613,7 +92577,7 @@ function dismissFriendReq(pub){
 
 function checkFriendRequests(){
   if(document.getElementById("friend-request")) return;
-  if(introPending || document.getElementById("intro-pop")) return;
+  if(introPending || (document.getElementById("intro-pop") || document.getElementById("nova-intro"))) return;
   /* The Virtual Room banner has the floor if both are waiting - it is
      time-sensitive and a friend request is not. */
   if(document.getElementById("lobby-invite")) return;
@@ -91713,7 +92677,7 @@ function checkSaveCodeReminder(){
   if(document.getElementById("save-code")) return;
   try{ if(localStorage.getItem(SAVE_CODE_ASKED_KEY)) return; }catch(e){}
   /* The introduction gets the screen to itself, and gets it FIRST. */
-  if(introPending || document.getElementById("intro-pop")) return;
+  if(introPending || (document.getElementById("intro-pop") || document.getElementById("nova-intro"))) return;
   /* Both of the others are somebody else waiting on you; this one can
      wait a launch. Same precedence rule the friend banner already
      follows against the Virtual Room. */
@@ -102399,7 +103363,7 @@ function showProfile(defaultTab){
          is all zeros, which breaks the tour's connector-line positioning
          outright. */
       { target: ".profile-stats-tab-btn", align: "left", vplacement: "below",
-        text: "Tap Stats to see your study time, testing stats, and test review \u2014 all in one place." }
+        text: "Stats has your study time, your testing stats and your test history, all in one place." }
       /* Badges and the rank climb moved to their own Ranks tab in the
          bottom bar in build 219, and the main menu tour points at it. */
 
@@ -104409,7 +105373,7 @@ var RANKUP_SWALLOW = ["pointerdown", "pointerup", "mousedown", "mouseup", "click
 /* what a tap may still reach while the scene holds the screen: its own
    cutscene and its reward cards, which both take a tap */
 var RANKUP_TAPPABLE = ".rs-spot, #supernova-cutscene";
-var RANKUP_BLOCKERS = "#tour-overlay, #splashscreen, #genprofile-overlay, .rs-spot, #badge-cutscene, #supernova-cutscene, #void-cutscene, #intro-pop, .sf-scene";
+var RANKUP_BLOCKERS = "#tour-overlay, #splashscreen, #genprofile-overlay, .rs-spot, #badge-cutscene, #supernova-cutscene, #void-cutscene, #intro-pop, #nova-intro, .sf-scene";
 
 function ruStill(){ try{ return resultsMotionOff(); }catch(e){ return !!(theme && theme.reduceMotion); } }
 function rankUpWait(ms){ return new Promise(r => setTimeout(r, ms)); }
@@ -104537,7 +105501,7 @@ function rankUpLockCardDue(){
 }
 function rankUpLockWaits(){
   try{ if(homeUnlockBlocked() || homeUnlockPlaying || rankUpLockCardDue() || (store.pendingBadgeUnlocks || []).length) return true; }catch(e){ return true; }
-  if(document.querySelector(".rs-fly, .scene-bridge, #teststart-overlay, #intro-pop, #tour-overlay, #splashscreen")) return true;
+  if(document.querySelector(".rs-fly, .scene-bridge, #teststart-overlay, #intro-pop, #nova-intro, #tour-overlay, #splashscreen")) return true;
   return Date.now() < (Number(dailyXpFlyEndsAt) || 0);
 }
 function rankUpLockCheck(){

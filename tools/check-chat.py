@@ -476,32 +476,28 @@ def run_intro(src_dir, label):
             if early:
                 fails.append("the introduction opened immediately, not after a pause")
             pg.wait_for_timeout(1900)
+            # REVISED IN 320: What's New is narrated by Nova ("still a
+            # similar what's new screen but a different look and feel"). He
+            # builds the card row by row as he talks; Skip puts every row on
+            # it at once, which is what is measured here. The list it must
+            # cover is 319's and 320's, in version 7.8, and Nova says it.
+            pg.evaluate("()=>{ const s = document.querySelector('#intro-pop .nt-skip'); if(s) setTimeout(() => s.click(), 900); }")
+            pg.wait_for_timeout(1500)
             out = pg.evaluate("""()=>{
               const el = document.getElementById('intro-pop');
               if(!el) return null;
-              const card = el.querySelector('.intro-card').getBoundingClientRect();
-              const btn = document.getElementById('chatdock-btn');
+              const list = el.querySelector('.nt-list'), bub = el.querySelector('.nt-bubble');
+              if(!list || !bub) return { rows: 0, wide: false, topReachable: false, bottomReachable: false, says78: false, go: false };
+              const lr = list.getBoundingClientRect(), br = bub.getBoundingClientRect();
               const txt = el.innerText.toLowerCase();
               return {rows: el.querySelectorAll('.intro-row').length,
-                      topReachable: card.top >= -1,
-                      bottomReachable: card.bottom <= el.scrollHeight + 1,
-                      /* A POPUP, NOT A TOOLTIP - asked for in those words.
-                         A tour tooltip is ~15rem wide; this is most of the
-                         column. */
-                      wide: card.width > innerWidth * 0.7,
-                      ringed: !!(btn && btn.classList.contains('is-introduced')),
-                      saysChat: txt.indexOf('chat') >= 0,
-                      saysFriends: txt.indexOf('friend') >= 0,
-                      saysPrivate: txt.indexOf('only the people you invite') >= 0,
-                      /* 7.7 (build 314): the list asked for - hundo effects,
-                         flashcards, characters and banners, test mode, the
-                         app as a whole, stats and profile, the rank road
-                         map, the results screen. */
-                      says73: ['hundo effect', 'flashcard', 'character', 'banner', 'test', 'stats', 'profile', 'penal code', 'everywhere'].every(w => txt.indexOf(w) >= 0) && txt.indexOf('7.7') >= 0
-                        && txt.indexOf('results, overhauled') < 0
-                        /* build 314: "Ranks and levels box in the what's new stuff does not need to be there",
-                           and Review is what the mode is called, not Learn */
-                        && txt.indexOf('ranks and levels') < 0 && txt.indexOf('from learn') < 0 && txt.indexOf('at 50') < 0,
+                      topReachable: lr.top >= -1,
+                      /* the list scrolls inside its own box, which ends
+                         above his bubble, and the bubble is on screen */
+                      bottomReachable: lr.bottom <= br.top + 1 && br.bottom <= innerHeight + 1 && list.scrollHeight >= list.clientHeight,
+                      wide: lr.width > innerWidth * 0.7,
+                      says78: ['nova', 'results', 'badge', 'badge case', 'road map', 'planet', 'profile', 'calendar', 'save a test', 'daily question'].every(w => txt.indexOf(w) >= 0)
+                        && txt.indexOf('7.8') >= 0 && txt.indexOf('madison') >= 0,
                       go: !!el.querySelector('.intro-go')};}""")
             if not out:
                 fails.append("the introduction never opened")
@@ -512,13 +508,8 @@ def run_intro(src_dir, label):
                     fails.append("the introduction is tooltip-sized, not a popup")
                 if not (out["topReachable"] and out["bottomReachable"]):
                     fails.append("part of the introduction cannot be scrolled to: %s" % out)
-                # REVISED IN 279: the card is the 7.3 "what's new" now - the
-                # whole update, not the chat button - so it no longer rings
-                # the button or explains chat privacy. What it must cover is
-                # the list asked for: characters, the Virtual Room mode,
-                # chat, holding a unit, the Rank tab, results and fixes.
-                if not out["says73"]:
-                    fails.append("the what's new card is missing one of the things it was asked to say, or is not 7.7")
+                if not out["says78"]:
+                    fails.append("the what's new card is missing one of the things it was asked to say, or is not 7.8")
                 if not out["go"]:
                     fails.append("there is no way to dismiss the introduction")
 
