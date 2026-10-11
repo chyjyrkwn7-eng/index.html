@@ -4543,6 +4543,10 @@ DAILY_SAMPLER = """async (opts)=>{
   const rot = el => { if(!el) return null; const m = getComputedStyle(el).transform;
     if(!m || m === 'none') return 0; const v = m.match(/matrix\\(([^)]+)\\)/); if(!v) return null;
     const p = v[1].split(',').map(Number); return Math.round(Math.atan2(p[1], p[0]) * 180 / Math.PI); };
+  const ringDeg = () => { const f = document.querySelector('.daily-question-fab'); const pr = f && f.querySelector('.dq-ring-prog');
+    if(!pr || !f.classList.contains('is-charging')) return null; const cs = getComputedStyle(pr);
+    if(cs.strokeDasharray === 'none') return 180;
+    const off = parseFloat(cs.strokeDashoffset) || 0; return Math.round(Math.max(0, Math.min(1, 1 - off / 298.4513)) * 180); };
   (function tick(){ if(stop) return;
     /* REVISED IN 309: the announcement is the bubble beside the "?" now
        (#daily-lock-tip.is-live), the top banner only its fallback. */
@@ -4551,7 +4555,10 @@ DAILY_SAMPLER = """async (opts)=>{
     const ar = a ? a.getBoundingClientRect() : null;
     frames.push({ t: performance.now() - t0,
       charging: !!(f && f.classList.contains('is-charging')),
-      arcL: rot(document.querySelector('.dq-charge-l .dq-charge-arc')),
+      /* REVISED IN 320: the ring is one SVG circle (.dq-ring); arcL is
+         its progress in the old left half's degrees (0-180), so the
+         thresholds below read as they did. */
+      arcL: ringDeg(),
       burst: (b => b ? parseFloat(getComputedStyle(b).opacity) : 0)(document.querySelector('.dq-charge-burst')),
       orb: orb ? (b => [b.left + b.width / 2, b.top + b.height / 2])(orb.getBoundingClientRect()) : null,
       op: a ? parseFloat(getComputedStyle(a).opacity) : 0,
@@ -8047,7 +8054,8 @@ def check_b302(br):
           const tot = document.querySelector('.pf-standing .pf-xp-total'), bar = document.querySelector('.pf-standing .profile-xpbar');
           out.total = tot ? tot.textContent : '';
           out.totalOnLine = !!(tot && tot.closest('.pf-idline') && bar && (bar.compareDocumentPosition(tot) & Node.DOCUMENT_POSITION_PRECEDING));
-          out.barNums = (document.querySelector('.pf-standing .pf-xpnums') || {}).textContent || '';
+          /* REVISED IN 320: what is SHOWN under the bar (a phone hides the total) */
+          out.barNums = ((document.querySelector('.pf-standing .pf-xpnums') || {}).innerText || '').replace(/\s+/g, ' ').trim();
           /* 317 touch-up: the numbers and the total are one blue */
           out.xpCols = ['.xpnums-have', '.xpnums-need', '.pf-xp-total'].map(sel => { const e = document.querySelector('.pf-standing ' + sel);
             if(!e) return null; const c = getComputedStyle(e).color, m = c.match(/[\d.]+/g); if(!m) return null;
@@ -8115,9 +8123,14 @@ def check_b302(br):
         # REVISED IN THE 317 TOUCH-UP: "I guess the same blue for both? I
         # guess the total xp should be the same?" - no darker blue, no grey:
         # this level's XP, what it asks and the total are one blue.
-        check(f"{dev}: under the bar, this level's XP and the total XP; the total is not on the rank line",
+        # REVISED IN 320 (b320h): "the profile box ... around the xp bar has
+        # become a little much ... it's mostly the iPhone" - on a phone the
+        # line under the bar is "x / y XP to Level N" and the total is on
+        # Stats; a tablet keeps this level's XP and the total, as above.
+        want_nums = (r"^[0-9,]+ / [0-9,]+ XP to Level \d+$" if w < 640 else r"^[0-9,]+ / [0-9,]+ XP ?[0-9,]+ total XP$")
+        check(f"{dev}: under the bar, this level's XP and " + ("what it leads to (phone)" if w < 640 else "the total XP") + "; the total is not on the rank line",
               r.get("totalOnLine") is False and re.match(r"^[0-9,]+ total XP$", r.get("total") or "")
-              and re.match(r"^[0-9,]+ / [0-9,]+ XP[0-9,]+ total XP$", r.get("barNums") or ""), [r.get("totalOnLine"), r.get("total"), r.get("barNums")])
+              and re.match(want_nums, r.get("barNums") or ""), [r.get("totalOnLine"), r.get("total"), r.get("barNums")])
         xc = r.get("xpCols") or [None, None, None]
         check(f"{dev}: ...all three in one blue, none grey",
               None not in xc and xc[0] == xc[1] == xc[2] and xc[0][2] - xc[0][0] >= 80, xc)
@@ -13470,7 +13483,7 @@ def check_b317_pfcard(br):
       showProfile('profile'); await wait(900);
       const B = s => { const e = document.querySelector('.profile-hero ' + s); if(!e) return null; const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
       /* REVISED IN 317 (badge2): the case's name is its side plate, not a heading over the tray */
-      out.kick = B('.pf-case-front .nova-case-sideplate'); out.num = B('.pf-case-num'); out.nums = B('.pf-xpnums'); out.xn = B('.pf-xpnums .xpnums'); out.tot = B('.pf-xp-total');
+      out.kick = B('.pf-case-front .nova-case-sideplate'); out.num = B('.pf-case-num'); out.nums = B('.pf-xpnums'); out.xn = B('.pf-xpnums .xpnums'); out.tot = B('.pf-xp-total'); out.to = B('.pf-xp-to');
       out.tasks = [...document.querySelectorAll('.profile-hero .pf-task')].map(t => { const a = t.querySelector('.pf-task-label').getBoundingClientRect(), v = t.querySelector('.pf-task-val').getBoundingClientRect();
         const lab = t.querySelector('.pf-task-label');
         /* the label's TEXT, not its box: squeezed, the box was 28px and the words ran out of it into the count */
@@ -13490,9 +13503,15 @@ def check_b317_pfcard(br):
         # REVISED IN 319: on the shut case's front the plate heads the count
         check(f"squeeze, {dev}: the count is one line, and 'Badge case' is on the case's front, above it",
               bool(k and n_) and k["b"] <= n_["t"] and n_["b"] - n_["t"] <= 26, [k, n_])
-        nm, xn, tot = r.get("nums"), r.get("xn"), r.get("tot")
-        check(f"squeeze, {dev}: the total XP sits at the right, wrapped or not",
-              bool(nm and tot) and abs(tot["r"] - nm["r"]) <= 1.5 and (tot["t"] >= xn["b"] - 0.5 or tot["l"] >= xn["r"]), [nm, xn, tot])
+        nm, xn, tot, to = r.get("nums"), r.get("xn"), r.get("tot"), r.get("to")
+        # REVISED IN 320 (b320h): on a phone the total is on Stats and the
+        # line under the bar is one label, "x / y XP to Level N" - so it is
+        # one line, on the card, with "to Level N" beside the numbers (none
+        # at level 80, where there is no next level), and no total shown.
+        check(f"squeeze, {dev}: under the bar one line - the numbers and what they lead to - and no total",
+              bool(nm and xn and tot) and tot["r"] - tot["l"] == 0 and nm["b"] - nm["t"] <= 26
+              and (to is None or to["r"] - to["l"] == 0 or (abs(to["t"] - xn["t"]) <= 2 and to["l"] >= xn["r"] - 0.5 and to["r"] <= nm["r"] + 0.5)),
+              [nm, xn, tot, to])
         check(f"squeeze, {dev}: no challenge row's count runs into its label",
               r.get("tasks") is not None and all(t["clear"] for t in r["tasks"]), r.get("tasks"))
         check(f"squeeze, {dev}: no unlock tile's label is cut short ({r.get('tiles')} tiles)", not r.get("cut"), r.get("cut"))
@@ -19671,10 +19690,11 @@ B318_DAILY = """async (acc) => { const wait = ms => new Promise(r => setTimeout(
   const want = rgb(root.getPropertyValue('--rank-accent')) || rgb(root.getPropertyValue('--theme-c1'));
   const got = {
     ready: rgb(getComputedStyle(b, '::after').borderTopColor),
-    arc: rgb(getComputedStyle(b.querySelector('.dq-charge-r .dq-charge-arc')).borderTopColor),
+    /* REVISED IN 320: the ring and its flash are SVG circles (.dq-ring) */
+    arc: rgb(getComputedStyle(b.querySelector('.dq-ring-prog')).stroke),
     burst: rgb(getComputedStyle(b.querySelector('.dq-charge-burst')).borderTopColor),
-    flash: rgb(getComputedStyle(b.querySelector('.dq-charge-flash')).borderTopColor) };
-  const seal = getComputedStyle(b.querySelector('.dq-charge-half')).filter;
+    flash: rgb(getComputedStyle(b.querySelector('.dq-ring-flash')).stroke) };
+  const seal = getComputedStyle(b.querySelector('.dq-ring')).filter;
   const orb = document.createElement('div'); orb.className = 'daily-orb'; orb.innerHTML = '<div class="daily-orb-core">?</div>'; document.body.appendChild(orb);
   const ob = rgb(getComputedStyle(orb.firstChild).borderTopColor); orb.remove();
   const dist = (g) => g && want ? Math.max(...g.map((x, i) => Math.abs(x - want[i]))) : 999;
@@ -21500,6 +21520,426 @@ def check_b320g_inspect(br):
           rm[:3] + rm[-1:])
 
 
+
+B320H_SEED = """async (o) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  const U = topicsIn(QUESTIONS); store.unitPerfects = {};
+  U.slice(0, o.badges).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+  store.rankFloor = 0; store.levelFloor = 0;
+  store.lifetime.points = xpForLevel(o.level) + Math.round((xpForLevel(o.level + 1) - xpForLevel(o.level)) * .8);
+  store.rankMapFx244 = true; store.rankMapSeen = 9; store.rankUpShown = null; store.savedCodeSaved = true;
+  store.banner = o.banner || '';
+  ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour'].forEach(k => store[k] = true);
+  theme.accent = o.accent || 'ink'; applyTheme(); saveTheme(); saveStore();
+  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){}
+  showProfile('profile'); await wait(900);
+  document.querySelectorAll('.daily-alert, .toast, #daily-lock-tip, #intro-pop, .rs-spot, #tour-overlay, #tour-tooltip, .unlock-pop').forEach(n => n.remove());
+  return [rankOf(store), levelOf(store), badgeCountOf(store), store.lifetime.points]; }"""
+
+B320H_CARD = """() => { const hero = document.querySelector('.profile-hero'); const cs = getComputedStyle(hero);
+  const rgb = v => { v = String(v || '').trim(); let m;
+    if((m = v.match(/^#([0-9a-f]{6})$/i))) return [0, 2, 4].map(i => parseInt(m[1].substr(i, 2), 16));
+    if((m = v.match(/color\\(srgb\\s+([\\d.e-]+)\\s+([\\d.e-]+)\\s+([\\d.e-]+)/))) return [m[1], m[2], m[3]].map(x => Math.round(parseFloat(x) * 255));
+    if((m = v.match(/rgba?\\(\\s*([\\d.]+)[ ,]+([\\d.]+)[ ,]+([\\d.]+)/))) return [m[1], m[2], m[3]].map(x => Math.round(parseFloat(x)));
+    return null; };
+  const cols = (cs.backgroundImage.match(/color\\(srgb[^)]*\\)|rgba?\\([^)]*\\)/g) || []).map(rgb).filter(Boolean)
+    .filter(c => !(c[0] === 0 && c[1] === 0 && c[2] === 0));
+  const root = getComputedStyle(document.documentElement);
+  const rank = rankOf(store);
+  const wants = [rgb(root.getPropertyValue('--theme-c2')), rgb(root.getPropertyValue('--rank-accent')), rank ? rgb(RANK_COLOR[rank]) : null].filter(Boolean);
+  const t1 = rgb(cs.getPropertyValue('--hero-t1')), t2 = rgb(cs.getPropertyValue('--hero-t2'));
+  const chroma = c => Math.max(...c) - Math.min(...c);
+  const near = (a, b) => Math.max(...a.map((x, i) => Math.abs(x - b[i])));
+  const r = hero.getBoundingClientRect();
+  return { t1, t2, maxChroma: Math.max(0, ...cols.map(chroma)), t1Chroma: t1 ? chroma(t1) : null,
+    t1ToRank: t1 ? Math.min(...wants.map(w => near(t1, w))) : null, wants,
+    box: [r.left, r.top, r.width, r.height], banner: store.banner || '', tint: store.banner ? bannerTintOf(store.banner) : null }; }"""
+
+B320H_XP = """() => { const st = document.querySelector('.pf-standing'); const card = document.querySelector('.profile-hero').getBoundingClientRect();
+  const vis = e => { if(!e.getClientRects().length) return false; for(let x = e; x && x !== st; x = x.parentElement){ const c = getComputedStyle(x); if(c.display === 'none' || c.visibility === 'hidden' || +c.opacity < .05) return false; } return true; };
+  const leaves = [...st.querySelectorAll('*')].filter(e => ![...e.children].some(c => (c.textContent || '').trim()) && (e.textContent || '').trim() && (e.textContent || '').trim() !== '·' && vis(e));
+  const rs = leaves.map(e => { const q = e.getBoundingClientRect(); return { t: e.textContent.trim(), l: q.left, r: q.right, top: q.top, b: q.bottom, h: q.height }; });
+  /* rows by vertical overlap; on a row, pieces more than 24px apart are separate */
+  const rows = [];
+  rs.slice().sort((a, b) => a.top - b.top).forEach(x => { const row = rows.find(rw => x.top < rw.b - 4 && x.b > rw.top + 4); if(row){ row.items.push(x); row.top = Math.min(row.top, x.top); row.b = Math.max(row.b, x.b); } else rows.push({ top: x.top, b: x.b, items: [x] }); });
+  let pieces = 0;
+  rows.forEach(rw => { const it = rw.items.sort((a, b) => a.l - b.l); pieces += 1; for(let i = 1; i < it.length; i++) if(it[i].l - it[i - 1].r > 24) pieces += 1; });
+  const total = Math.round(Number(levelStateFor(store).total) || 0).toLocaleString();
+  const label = st.querySelector('.pf-xpnums');
+  const lr = label.getBoundingClientRect(), lh = parseFloat(getComputedStyle(label).lineHeight) || 20;
+  const labelText = rs.filter(x => x.top >= lr.top - 2 && x.b <= lr.bottom + 2).sort((a, b) => a.l - b.l).map(x => x.t).join(' ').replace(/\s+/g, ' ');
+  return { texts: rs.map(x => x.t), rows: rows.length, pieces, totalShown: rs.some(x => x.t.indexOf(total) >= 0),
+    inCard: rs.every(x => x.l >= card.left - 1 && x.r <= card.right + 1) && rs.every(x => x.l >= 0 && x.r <= innerWidth),
+    labelOneLine: lr.height <= lh * 1.5 + 2, label: labelText }; }"""
+
+B320H_TAPS = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const got = [];
+  const real = window.showRanksScreen; window.showRanksScreen = t => { got.push(t); };
+  const c = el => { const q = el.getBoundingClientRect(); return [q.left + q.width / 2, q.top + q.height / 2]; };
+  const out = { badge: c(document.querySelector('.pf-standing .pf-badgecount')), bar: c(document.querySelector('.pf-standing .pf-xpbarwrap')),
+                label: c(document.querySelector('.pf-standing .pf-xpnums')) };
+  window.__b320got = got; window.__b320real = real; return out; }"""
+
+B320H_TABS = """() => {
+  const out = [];
+  const capOf = (el) => {
+    const cs = getComputedStyle(el);
+    const t = document.createElement('span');
+    t.textContent = 'H';
+    t.style.cssText = 'position:absolute;visibility:hidden;display:inline-block;line-height:1;font-family:' + cs.fontFamily +
+      ';font-size:' + cs.fontSize + ';font-weight:' + cs.fontWeight + ';text-box:trim-both cap alphabetic';
+    document.body.appendChild(t);
+    let h = t.getBoundingClientRect().height; t.remove();
+    if(!CSS.supports('text-box', 'trim-both cap alphabetic')){
+      const cv = document.createElement('canvas').getContext('2d');
+      cv.font = cs.fontWeight + ' 1000px ' + cs.fontFamily;
+      h = cv.measureText('H').actualBoundingBoxAscent / 1000 * parseFloat(cs.fontSize);
+    }
+    return h;
+  };
+  document.querySelectorAll('.has-seg-slider').forEach(seg => {
+    if(!seg.getClientRects().length) return;
+    const sl = seg.querySelector(':scope > .seg-slider');
+    const a = [...seg.children].find(c => c !== sl && (c.classList.contains('active') || c.classList.contains('is-on')));
+    if(!a || !a.getClientRects().length) return;
+    let host = a.querySelector('.tab-label') || a;
+    let tmp = null;
+    if(host === a && /flex/.test(getComputedStyle(a).display)){
+      const tn = [...a.childNodes].find(n => n.nodeType === 3 && n.nodeValue.trim());
+      if(tn){ tmp = document.createElement('span'); tmp.style.display = 'inline-block'; a.insertBefore(tmp, tn); tmp.appendChild(tn); host = tmp; }
+    }
+    const probe = document.createElement('span');
+    probe.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline;margin:0;padding:0;border:0';
+    host.appendChild(probe);
+    const base = probe.getBoundingClientRect().top;
+    probe.remove();
+    if(tmp){ const tn = tmp.firstChild; a.insertBefore(tn, tmp); tmp.remove(); }
+    const cap = capOf(host === tmp ? a : host);
+    const under = seg.classList.contains('sub-seg');
+    const pr = (under || !sl) ? a.getBoundingClientRect() : sl.getBoundingClientRect();
+    const capMid = base - cap / 2, pillMid = pr.top + pr.height / 2;
+    out.push({ seg: (seg.className.match(/profiletabs|sub-seg|chatdock-tabs|rs-tabs|cal-viewseg/g) || []).join(' '),
+      label: (a.querySelector('.tab-label') || a).textContent.trim().replace(/\\d+$/, ''),
+      off: +(capMid - pillMid).toFixed(2), pillH: +pr.height.toFixed(2), cap: +cap.toFixed(2) });
+  });
+  return out;
+}"""
+
+B320H_RUN = """async (o) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  const until = async (f, ms) => { const t0 = Date.now(); while(Date.now() - t0 < (ms || 8000)){ try{ if(f()) return true; }catch(e){} await wait(60); } return false; };
+  document.querySelectorAll('#tour-overlay, #tour-tooltip, #intro-pop').forEach(n => n.remove());
+  theme.autoAdvance = false;
+  const UNIT = 'Identity Crimes';
+  cfg.mode = 'drill'; cfg.units = [UNIT]; cfg.versions = {}; cfg.source = 'all'; cfg.size = 0; cfg.flashcards = false;
+  cfg.timer = o.timer || 'up'; cfg.timerMinutes = o.minutes || 5;
+  beginRun(freshOrder(QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === UNIT && inWholeUnit(QUESTIONS[i]))), null);
+  await until(() => document.querySelector('.qpanel .choice') && runStartTime != null, 9000);
+  for(let k = 0; k < (o.answer || 0); k++){
+    const qi = order[pos]; document.querySelector('.qpanel .choice[data-index="' + correctSlot(qi) + '"]').click(); await wait(160);
+    const at = pos; advance(); await until(() => pos === at + 1 && document.querySelector('.qpanel .choice'), 6000); await wait(80);
+  }
+  await wait(o.beforePause || 300);
+  pauseRun(); await wait(700);
+  return { pos, n: order.length }; }"""
+
+B320H_PAUSE = """() => { const s = document.getElementById('pause-save'), q = document.getElementById('pause-quit');
+  const r = e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.width, b.height]; };
+  return s && q ? { save: r(s), quit: r(q), saveBg: getComputedStyle(s).backgroundColor, quitBg: getComputedStyle(q).backgroundColor } : null; }"""
+
+
+def _b320h_lum(img):
+    px = list(img.convert("RGB").getdata()) if not hasattr(img, "get_flattened_data") else list(img.convert("RGB").get_flattened_data())
+    n = max(1, len(px))
+    r = sum(p[0] for p in px) / n; g = sum(p[1] for p in px) / n; b = sum(p[2] for p in px) / n
+    return .2126 * r + .7152 * g + .0722 * b, max(r, g, b) - min(r, g, b)
+
+
+def _b320h_ring_profile(img, cx, cy, r0, r1, n=180):
+    """Luminance round a ring: for each of n angles (0 = 12 o'clock,
+    clockwise) the brightest pixel between radius r0 and r1."""
+    import math
+    im = img.convert("RGB"); px = im.load(); W, H = im.size
+    out = []
+    for k in range(n):
+        a = 2 * math.pi * k / n
+        best = 0
+        steps = max(2, int((r1 - r0) * 4))
+        for j in range(steps + 1):
+            rr = r0 + (r1 - r0) * j / steps
+            x = int(round(cx + rr * math.sin(a))); y = int(round(cy - rr * math.cos(a)))
+            if 0 <= x < W and 0 <= y < H:
+                p = px[x, y]; best = max(best, .2126 * p[0] + .7152 * p[1] + .0722 * p[2])
+        out.append(best)
+    return out
+
+
+def check_b320h_fixes(br):
+    """Build 320 (b320h): Madison's five smaller fixes.
+    1. "if a banner is not set then it matches the color of your rank, it
+       shouldn't do that ... Just keep it grey with the space themed thing,
+       if a banner is set then the box would match it": with a rank's theme
+       and no banner the Profile card's tint is grey (every colour in its
+       background within 30 of neutral, and its tint far from the rank's
+       colour); with a banner it is the banner's.
+    2. "the profile box ... around the xp bar has become a little much ...
+       mostly the iPhone": on a phone the XP area is the rank line and ONE
+       label under the bar ("x / y XP to Level N"), the total gone from the
+       card (it is on Stats), in two rows and two pieces of text (it was
+       three pieces, and three rows where the total wrapped), all on the
+       card; the badge count still opens Badges and the rest the road map.
+       A tablet still shows the total.
+    3. "the top tab button is not centered ... slightly more space on the
+       bottom then the top ... such as the leaderboard top tabs": on every
+       switcher with the sliding pill (Profile, Calendar's Month / List,
+       the Leaderboard, the chat sheet, the room review) the label's
+       capital-height middle is within 0.5px of the pill's.
+    4. Save and exit is not black (grey glass, visibly lighter than Quit,
+       which is unchanged); a saved test survives a reload, a cold start
+       from the splash and the slot being wiped (the IndexedDB mirror puts
+       it back); Resume test shows LOADING TEST first, with no clock
+       running under it, and the count-down picks up where it was.
+    5. The daily ring: never past whole (every frame of a charge, from
+       empty and from part way); answered, it shows the share of the time
+       to the next 5pm that has gone (a faked clock, 11pm = .25, and it
+       moves on); and the whole ring at 3x is even all the way round - no
+       notch or seam at 12 and 6 o'clock.
+    Fails on a73c681."""
+    import io as _io
+    from PIL import Image as _Im
+    print("\n320h. the Profile card's grey and its XP line, centred tabs, Save and exit, the daily ring")
+    # ---- 1 + 2: the card -------------------------------------------------
+    for (w, h, dev, phone) in ((440, 956, "17 Pro Max", True), (834, 1194, "iPad Pro 11", False)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        for acc in ("veteran", "titan"):
+            info = pg.evaluate(B320H_SEED, {"badges": 7, "level": 44, "accent": acc})
+            c = pg.evaluate(B320H_CARD)
+            x, y, bw, bh = c["box"]
+            shot = _Im.open(_io.BytesIO(pg.screenshot(clip={"x": x + 6, "y": y + bh * .45, "width": 18, "height": min(80, bh * .2)})))
+            lum, chroma = _b320h_lum(shot)
+            check("%s, %s theme, no banner: the card is grey, not the rank's colour (tint chroma %s, far from %s by %s; pixels chroma %.0f)"
+                  % (dev, acc, c["t1Chroma"], c["wants"][:1], c["t1ToRank"], chroma),
+                  c["maxChroma"] <= 30 and (c["t1ToRank"] or 0) >= 60 and chroma <= 14,
+                  {k: c[k] for k in ("t1", "t2", "maxChroma", "t1ToRank")})
+        bid = pg.evaluate("() => (Object.keys(BANNER_ART).filter(id => bannerEarned(id) && bannerTintOf(id))[0] || '')")
+        if bid:
+            pg.evaluate(B320H_SEED, {"badges": 7, "level": 44, "accent": "veteran", "banner": bid})
+            c = pg.evaluate(B320H_CARD)
+            tint = c["tint"][0] if c["tint"] else None
+            want = [int(tint[i:i + 2], 16) for i in (1, 3, 5)] if tint and tint.startswith("#") else None
+            check("%s: with a banner (%s) the card still wears the banner's colours" % (dev, bid),
+                  want is not None and c["t1"] is not None and max(abs(a - b) for a, b in zip(c["t1"], want)) <= 2, (c["t1"], tint))
+        else:
+            check("%s: an earned banner to try" % dev, False)
+        # the XP area
+        pg.evaluate(B320H_SEED, {"badges": 7, "level": 44, "accent": "veteran"})
+        pg.wait_for_timeout(400)
+        xp = pg.evaluate(B320H_XP)
+        if phone:
+            check("%s: the XP area reads in two rows and two pieces - the rank line, then one label (%s)" % (dev, xp["label"]),
+                  xp["rows"] == 2 and xp["pieces"] == 2 and xp["labelOneLine"] and re.search(r"XP to Level \d+$", xp["label"]) is not None, xp)
+            check("%s: the total XP is not on the card, and nothing leaves it" % dev, not xp["totalShown"] and xp["inCard"], xp)
+            t = pg.evaluate(B320H_TAPS)
+            for k, want in (("badge", "badges"), ("bar", "ranks"), ("label", "ranks")):
+                pg.mouse.click(t[k][0], t[k][1]); pg.wait_for_timeout(150)
+            got = pg.evaluate("() => { const g = window.__b320got.slice(); window.showRanksScreen = window.__b320real; return g; }")
+            check("%s: the badge count still opens Badges, the bar and the label the road map" % dev, got == ["badges", "ranks", "ranks"], got)
+            # a 6-digit total on a 375px phone
+        else:
+            check("%s: a tablet keeps the total XP under the bar, as before" % dev, xp["totalShown"] and xp["inCard"], xp)
+        st = pg.evaluate("""async () => { showProfile('stats'); await new Promise(r => setTimeout(r, 700));
+          const c = [...document.querySelectorAll('.profile-stats-tab .stat-card')].find(x => /Total XP/.test(x.textContent));
+          return c ? c.querySelector('.stat-num').textContent : null; }""")
+        tot = pg.evaluate("() => Math.round(Number(levelStateFor(store).total) || 0).toLocaleString()")
+        check("%s: Stats shows the total XP (%s)" % (dev, st), st == tot, (st, tot))
+        ctx.close()
+    ctx, pg = booted(br, 375, 667, seed=USED_ACCOUNT)
+    pg.evaluate(B320H_SEED, {"badges": 9, "level": 62, "accent": "veteran"})
+    pg.wait_for_timeout(400)
+    xp = pg.evaluate(B320H_XP)
+    check("375px phone, a six-figure total: still two rows and two pieces, on the card (%s)" % xp["label"],
+          xp["rows"] == 2 and xp["pieces"] == 2 and xp["labelOneLine"] and not xp["totalShown"] and xp["inCard"], xp)
+    ctx.close()
+    # ---- 3: tabs ---------------------------------------------------------
+    # at each device's own pixel ratio: the letters land on device pixels
+    for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+        seen = {}
+        for name, js in (("Profile", "showProfile('profile')"), ("Calendar", "showProfile('calendar')"),
+                         ("Leaderboard", "showRankings()"), ("Chat", "showHome(); openChatDock()"),
+                         ("Room review", "closeChatDock(); showHome(); document.querySelector('.panel').appendChild(buildRoomReviewTabs({missed:[0,1],order:[0,1,2],picked:{},attempts:{},layout:{},firstPick:{},timedOutSet:{},mode:'exam',vroom:true}))")):
+            pg.evaluate("() => { " + js + "; }")
+            pg.wait_for_timeout(900)
+            for r in pg.evaluate(B320H_TABS):
+                key = r["seg"] or "?"
+                if key not in seen or abs(r["off"]) > abs(seen[key]["off"]):
+                    seen[key] = dict(r, at=name)
+        for key, r in sorted(seen.items()):
+            check("%s: %s (%s, '%s') - label middle %+.2fpx from the pill's" % (dev, key, r["at"], r["label"], r["off"]),
+                  abs(r["off"]) <= 0.5, r)
+        check("%s: every switcher measured (Profile, Month / List, chat, room review)" % dev,
+              all(k in seen for k in ("profiletabs", "profiletabs cal-viewseg sub-seg", "chatdock-tabs", "rs-tabs")), sorted(seen))
+        ctx.close()
+    # ---- 4: Save and exit --------------------------------------------------
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(B320H_RUN, {"answer": 2})
+    p = pg.evaluate(B320H_PAUSE)
+    if p:
+        def px(b):
+            return _b320h_lum(_Im.open(_io.BytesIO(pg.screenshot(clip={"x": b[0] + 14, "y": b[1] + b[3] * .3, "width": 16, "height": b[3] * .4}))))
+        sl, sc = px(p["save"]); ql, qc = px(p["quit"])
+        check("Save and exit is grey, not black: %.0f against Quit's %.0f (chroma %.0f)" % (sl, ql, sc),
+              sl >= ql + 18 and sl >= 32 and sc <= 14, p)
+        check("Quit test is unchanged (#0A0A0C)", p["quitBg"] == "rgb(10, 10, 12)", p["quitBg"])
+    else:
+        check("the pause menu has Save and exit", False)
+    pg.evaluate("() => document.getElementById('pause-save').click()")
+    pg.wait_for_timeout(900)
+    saved = pg.evaluate("() => { const s = JSON.parse(localStorage.getItem('class26e.runsession.v1') || 'null'); return s && { saved: s.saved, pos: s.pos }; }")
+    pg.reload(); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
+    after = pg.evaluate("""async () => { startStudying(); await new Promise(r => setTimeout(r, 500));
+      const t = (document.querySelector('#resume-offer .resume-title') || {}).textContent || null;
+      document.getElementById('resume-offer')?.remove(); return { title: t, s: (readRunSession() || {}).pos }; }""")
+    check("a saved test survives a reload (Start Studying offers it)", saved and saved.get("saved") and after["title"] == "You have a saved test" and after["s"] == saved["pos"], (saved, after))
+    state = ctx.storage_state()
+    ctx2 = br.new_context(viewport={"width": 440, "height": 956}, storage_state=state)
+    pg2 = open_page(ctx2)
+    pg2.goto(URL); pg2.wait_for_timeout(1500)
+    cold = pg2.evaluate("() => ({ splash: !!document.getElementById('splashscreen'), s: (readRunSession() || {}).saved || false })")
+    pg2.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub(); showHome(); startStudying();}")
+    pg2.wait_for_timeout(500)
+    cold["title"] = pg2.evaluate("() => (document.querySelector('#resume-offer .resume-title') || {}).textContent || null")
+    check("and a cold start from the splash (a new launch with the same storage)", cold["s"] is True and cold["title"] == "You have a saved test", cold)
+    ctx2.close()
+    pg.evaluate("() => localStorage.removeItem('class26e.runsession.v1')")
+    pg.reload(); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
+    back = pg.evaluate("() => { const s = JSON.parse(localStorage.getItem('class26e.runsession.v1') || 'null'); return s && { saved: s.saved, pos: s.pos }; }")
+    check("and the slot wiped under it (as iOS can): the IndexedDB mirror puts it back", back is not None and back.get("saved") and back.get("pos") == (saved or {}).get("pos"), (saved, back))
+    # Resume test: LOADING TEST first, nothing running under it
+    pg.evaluate("() => { clearRunSession(); showHome(); }")
+    pg.wait_for_timeout(400)
+    pg.evaluate(B320H_RUN, {"answer": 1, "timer": "down", "minutes": 5, "beforePause": 1500})
+    left0 = pg.evaluate("""async () => { document.getElementById('pause-save').click(); await new Promise(r => setTimeout(r, 900));
+      return JSON.parse(localStorage.getItem('class26e.runsession.v1')).timerLeftMs; }""")
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      startStudying(); await wait(500); document.getElementById('resume-go').click();
+      const t0 = Date.now(), frames = [];
+      while(Date.now() - t0 < 4200){
+        const ov = document.getElementById('teststart-overlay');
+        frames.push({ t: Date.now() - t0, ov: !!ov, txt: ov ? ov.textContent : '', q: !!document.querySelector('.qpanel .choice'),
+          timer: timerHandle != null, live: !!testInProgress, start: runStartTime,
+          left: (document.querySelector('.qpanel .choice') && timerDeadline) ? timerDeadline - Date.now() : null });
+        await wait(100);
+      }
+      const atQ = frames.find(f => f.left != null);
+      return { frames, left: atQ ? atQ.left : null }; }""")
+    fr = r["frames"]
+    load = [f for f in fr if f["ov"]]
+    first_q = next((f["t"] for f in fr if f["q"]), None)
+    check("Resume test shows LOADING TEST first (%d samples, %s-%sms), then the question at %sms"
+          % (len(load), load[0]["t"] if load else None, load[-1]["t"] if load else None, first_q),
+          len(load) >= 15 and all("LOADING TEST" in f["txt"] for f in load) and first_q is not None and first_q >= 2300
+          and not any(f["q"] for f in load), [(f["t"], f["ov"], f["q"]) for f in fr[:4]])
+    check("and nothing of the run is live under it: no clock, no question, not in progress",
+          load and all(not f["timer"] and not f["live"] and f["start"] is None for f in load), [f for f in load if f["timer"] or f["live"]][:2])
+    lost = (left0 - r["left"]) if (left0 is not None and r["left"] is not None) else None
+    check("the count-down picks up where it was: %s ms off when the question is back (the loading took none of it)" % (lost,),
+          lost is not None and -50 <= lost <= 400, (left0, r["left"]))
+    ctx.close()
+    # ---- 5: the daily ring -------------------------------------------------
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    ring = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const C = 298.4513; const P = () => { const pr = document.querySelector('.daily-question-fab .dq-ring-prog'); if(!pr) return null;
+        const cs = getComputedStyle(pr); const da = cs.strokeDasharray; const dash = da === 'none' ? C : parseFloat(da);
+        const off = parseFloat(String(cs.strokeDashoffset).replace(/^calc\(/, ''));
+        return { p: da === 'none' ? 1 : 1 - off / C, dash, off: off || 0 }; };
+      const run = async (ms) => { const fr = []; const t0 = performance.now(); while(performance.now() - t0 < ms){ fr.push(P()); await new Promise(r => requestAnimationFrame(r)); } return fr; };
+      if(typeof setDailyRing !== 'function') return { a: [], b: [], full: '' };
+      store.dailyQuestionDate = ''; saveStore(); localStorage.setItem('class26e.daily.seen', '2000-01-01'); showHome();
+      const a = await run(6200);
+      const full = (document.querySelector('.dq-ring') || {}).className || '';
+      /* answered, at 97% of the wait, then the reset arrives with Home up */
+      markDailySeen(dailyPeriodKey()); store.dailyQuestionDate = dailyPeriodKey(); saveStore(); showHome(); await wait(300);
+      clearTimeout(dailyRingTimer);   /* no minute tick moving it under the measurement */
+      const b = document.querySelector('.daily-question-fab'); setDailyRing(b, .97); await wait(1000);
+      const real = window.dailyRingFraction; window.dailyRingFraction = () => .97;
+      announceDailyReset(b); window.dailyRingFraction = real;
+      const bb = await run(2600);
+      return { a, b: bb, full }; }""")
+    def judge(fr):
+        fr = [f for f in fr if f]
+        over = [f for f in fr if f["p"] > 1.0005 or f["off"] < -0.01 or f["dash"] > 298.46]
+        back = [(fr[i - 1]["p"], fr[i]["p"]) for i in range(1, len(fr)) if fr[i]["p"] < fr[i - 1]["p"] - 0.002]
+        return fr, over, back
+    fa, oa, ba = judge(ring["a"])
+    fb, ob, bk = judge(ring["b"])
+    check("the charge from empty never goes past whole and never runs back (%d frames, ends %.3f)" % (len(fa), fa[-1]["p"] if fa else -1),
+          len(fa) > 20 and not oa and len(ba) <= 1 and fa[-1]["p"] >= 0.999 and "is-full" in ring["full"], (oa[:2], ba[:3]))
+    check("from part way (.97, a reset with Home up) it closes to whole and stops there (%d frames)" % len(fb),
+          len(fb) > 5 and not ob and not bk and fb[0]["p"] >= 0.9 and fb[-1]["p"] >= 0.999, (fb[:1], ob[:2], bk[:3]))
+    ctx.close()
+    # the waiting ring on a faked clock: answered, 11pm is a quarter of the way to 5pm
+    ctx = br.new_context(viewport={"width": 440, "height": 956}, timezone_id="America/Los_Angeles")
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');"
+                        "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % USED_ACCOUNT)
+    pg = open_page(ctx)
+    pg.clock.install(time="2026-10-12T23:00:00-07:00")
+    pg.goto(URL); pg.wait_for_timeout(2600)
+    q = """async () => { await new Promise(r => setTimeout(r, 1500)); const pr = document.querySelector('.daily-question-fab .dq-ring-prog'); if(!pr) return null;
+      const cs = getComputedStyle(pr); const b = document.querySelector('.daily-question-fab');
+      const off = parseFloat(String(cs.strokeDashoffset).replace(/^calc\(/, ''));
+      return { p: cs.strokeDasharray === 'none' ? 1 : 1 - off / 298.4513, done: b.classList.contains('is-done'),
+        running: b.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length, hour: new Date().getHours() }; }"""
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub(); markDailySeen(dailyPeriodKey()); store.dailyQuestionDate = dailyPeriodKey(); saveStore(); showHome(); }")
+    w0 = pg.evaluate(q)
+    pg.clock.run_for(3 * 60 * 60 * 1000)
+    w1 = pg.evaluate(q)
+    check("answered at 11pm, the ring shows a quarter of the wait gone (%s), in the theme's colour, nothing animating"
+          % (round(w0["p"], 4) if w0 else None,), w0 is not None and w0["done"] and abs(w0["p"] - .25) <= .01 and w0["running"] == 0, w0)
+    check("three hours on, it has moved on to 3/8 (%s)" % (round(w1["p"], 4) if w1 else None,),
+          w1 is not None and abs(w1["p"] - .375) <= .01, w1)
+    ctx.close()
+    # the whole ring at 3x: even all the way round, the top and bottom too
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=3)
+    pg.evaluate(HOMETAP_PREP, {})
+    for label, setup in (
+        ("closed, before it goes off", """async () => { markDailySeen(dailyPeriodKey()); store.dailyQuestionDate = null; showHome(); await new Promise(r => setTimeout(r, 500));
+            document.querySelectorAll('.daily-alert, .toast, #daily-lock-tip, #tour-overlay, .rs-spot, #intro-pop').forEach(n => n.remove());
+            const b = document.querySelector('.daily-question-fab'); b.classList.remove('is-done'); playDailyRecharge(b, () => {});
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+            b.getAnimations({ subtree: true }).forEach(a => { a.pause(); a.currentTime = 350 + 4100 + 120; });
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); }"""),
+        ("ready, at rest", """async () => { markDailySeen(dailyPeriodKey()); store.dailyQuestionDate = null; showHome(); await new Promise(r => setTimeout(r, 500));
+            document.querySelectorAll('.daily-alert, .toast, #daily-lock-tip, #tour-overlay, .rs-spot, #intro-pop').forEach(n => n.remove());
+            const b = document.querySelector('.daily-question-fab');
+            b.getAnimations({ subtree: true }).forEach(a => { a.pause(); a.currentTime = 0; });
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); }""")):
+        pg.evaluate(setup)
+        if label.startswith("closed"):
+            # the seam Madison saw is where two clipped half-rings met at 12
+            # and 6 o'clock - WebKit composites the two clips with a hairline
+            # there that Chromium does not draw - so the structure is held too:
+            # one stroked circle, drawn undashed once whole, nothing clipped
+            stc = pg.evaluate("""() => { const b = document.querySelector('.daily-question-fab'); const pr = b.querySelector('.dq-ring-prog');
+              return { halves: b.querySelectorAll('.dq-charge-half, .dq-charge-arc').length, circle: !!pr,
+                       undashed: !!pr && getComputedStyle(pr).strokeDasharray === 'none' }; }""")
+            check("the closed ring is one undashed circle - no half-rings, no clips, nothing to meet at 12 and 6", stc["halves"] == 0 and stc["circle"] and stc["undashed"], stc)
+        bx = pg.evaluate("() => { const r = document.querySelector('.daily-question-fab').getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }")
+        m = 12
+        img = _Im.open(_io.BytesIO(pg.screenshot(clip={"x": bx[0] - m, "y": bx[1] - m, "width": bx[2] + 2 * m, "height": bx[3] + 2 * m})))
+        S = img.size[0] / (bx[2] + 2 * m)
+        cx, cy = img.size[0] / 2, img.size[1] / 2
+        R = (bx[2] / 2 + 6) * S
+        prof = _b320h_ring_profile(img, cx, cy, R - 5 * S, R + 0.5 * S)
+        srt = sorted(prof); med = srt[len(srt) // 2]
+        n = len(prof); win = lambda deg: [prof[(int(round(deg / 360.0 * n)) + k) % n] for k in range(-4, 5)]
+        top, bot = win(0), win(180)
+        worst = max(max(abs(v - med) for v in top), max(abs(v - med) for v in bot)) / max(1.0, med)
+        rest = max(abs(v - med) for v in prof) / max(1.0, med)
+        check("3x, %s: the ring is even at 12 and 6 o'clock (worst %.0f%% off its median %.0f; anywhere %.0f%%)" % (label, worst * 100, med, rest * 100),
+              med >= 120 and worst <= .1 and rest <= .15, {"top": [round(v) for v in top], "bottom": [round(v) for v in bot], "med": round(med)})
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -21711,6 +22151,7 @@ def main():
             check_b319h_layout(br)
             check_b320e_cracks(br)
             check_b320g_inspect(br)
+            check_b320h_fixes(br)
         finally:
             br.close()
     SERVER.shutdown()
