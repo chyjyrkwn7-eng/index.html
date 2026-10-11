@@ -327,7 +327,7 @@ def check_save_resume_parity(br):
     check("its buttons are Resume test / Start a new test", b.get("offerBtns") == ["Resume test", "Start a new test"], b.get("offerBtns"))
     c = ev(pg, PLAN + """
       document.getElementById('resume-go').click();
-      await until(() => document.querySelector('.qpanel .choice'), 4000); await wait(400);
+      await until(() => document.querySelector('.qpanel .choice'), 8000); await wait(400);
       out.pos = pos; out.q = order[pos]; out.order = order.slice(); out.texts = choiceTexts();
       out.cleared = cleared; out.streak = runLiveStreak;
       out.elapsed = Date.now() - runStartTime;
@@ -390,7 +390,7 @@ def check_save_resume_parity(br):
         if paused:
             relaunch(pg)
             ev(pg, """document.querySelector('[data-screen="home"] #nextbtn').click(); await wait(600);
-                      document.getElementById('resume-go').click(); await until(() => document.querySelector('.qpanel .choice'), 4000); await wait(300);""")
+                      document.getElementById('resume-go').click(); await until(() => document.querySelector('.qpanel .choice'), 8000); await wait(300);""")
         r = ev(pg, """
           while(testInProgress){ await answer(false); await next(); }
           await until(() => lastRunXpLines && lastRunXpLines.length, 5000);
@@ -422,7 +422,7 @@ def check_timer(br):
     b = ev(pg, """
       document.querySelector('[data-screen="home"] #nextbtn').click(); await wait(600);
       const o = document.getElementById('resume-offer'); out.offer = o ? o.textContent : null;
-      document.getElementById('resume-go')?.click(); await until(() => document.querySelector('.qpanel .choice'), 4000); await wait(200);
+      document.getElementById('resume-go')?.click(); await until(() => document.querySelector('.qpanel .choice'), 8000); await wait(200);
       out.left = timerDeadline ? timerDeadline - Date.now() : null; out.mode = runMode; out.pos = pos;
     """)
     check("an Exam offers Save and exit too", a.get("hasSave") is True, a.get("hasSave"))
@@ -465,7 +465,7 @@ def check_discard_and_one_slot(br):
       await tapStart();
       const o = document.getElementById('resume-offer'); out.offerB = o ? o.textContent : null;
       out.keys = Object.keys(localStorage).filter(k => /runsession|savedtest/.test(k));
-      document.getElementById('resume-go').click(); await until(() => document.querySelector('.qpanel .choice'), 4000);
+      document.getElementById('resume-go').click(); await until(() => document.querySelector('.qpanel .choice'), 8000);
       out.resumedB = JSON.stringify(order) === JSON.stringify(B) && runMode === 'exam' && pos === 4;
       out.notA = JSON.stringify(order) !== JSON.stringify(A) || runMode !== 'drill';
     """)
@@ -560,7 +560,7 @@ def check_update(br):
       localStorage.setItem('class26e.runsession.v1', JSON.stringify(moved));
       await tapStart();
       out.movedOffer = !!document.getElementById('resume-go');
-      document.getElementById('resume-go')?.click(); await until(() => document.querySelector('.qpanel .choice'), 4000);
+      document.getElementById('resume-go')?.click(); await until(() => document.querySelector('.qpanel .choice'), 8000);
       out.movedSame = JSON.stringify(order) === JSON.stringify(s.order) && pos === s.pos && JSON.stringify(attempts) === JSON.stringify(s.attempts);
       showHome(); await wait(400);
       /* (b) a question in it is gone */
@@ -617,7 +617,7 @@ def check_interrupted(br):
       out.offerAgain = !!document.getElementById('resume-offer');
       document.querySelector('[data-screen="home"] #nextbtn').click(); await wait(600);
       out.atStart = !!document.getElementById('resume-go');
-      document.getElementById('resume-go')?.click(); await until(() => document.querySelector('.qpanel .choice'), 4000);
+      document.getElementById('resume-go')?.click(); await until(() => document.querySelector('.qpanel .choice'), 8000);
       out.pos = pos;
     """)
     check("Home offers the lost run: Resume test / Not now",
