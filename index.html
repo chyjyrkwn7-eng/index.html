@@ -9481,6 +9481,15 @@
     100%{ opacity:0; transform:translate(calc(var(--bx) * .3), var(--by)) scale(1.3); } }
   .hfx-uw-fling{ height:calc(var(--ps) * 2); margin-top:calc(var(--ps) * -1); animation:hfx-uw-fling .7s cubic-bezier(.2,.7,.4,1) var(--dl) both; }
   @keyframes hfx-uw-fling{ 0%{ opacity:0; transform:rotate(var(--fa)) translateY(0); } 15%{ opacity:.95; } 100%{ opacity:0; transform:rotate(var(--fa)) translateY(var(--fd)); } }
+  /* ---- THE CHARACTER REACTS TO THE HUNDO EFFECT (build 320) - see hfxCharReact ----
+     Everything else in a reaction is the Web Animations API on its own
+     parts; these are the two that follow the breath-hold's states. */
+  .avatarchar-svg .cx-hx{ pointer-events:none; }
+  .avatarchar-svg .cx-hx-cheeks{ opacity:0; transition:opacity .45s ease; }
+  .char-hold .avatarchar-svg .cx-hx-cheeks{ opacity:1; }
+  .avatarchar-svg .cx-hx-fishbub circle{ opacity:0; transform-box:fill-box; transform-origin:center; }
+  .char-bubbly .avatarchar-svg .cx-hx-fishbub circle{ animation:hfx-fishbub var(--d) ease-in var(--dl) 3 both; }
+  @keyframes hfx-fishbub{ 0%{ opacity:0; transform:translateY(0) scale(.5); } 20%{ opacity:1; } 85%{ opacity:.9; } 100%{ opacity:0; transform:translateY(-8px) scale(1.15); } }
 
   /* ===== round 3: black hole ===== */
   .hfx-bh-dim{ position:absolute; inset:0; background:#030208; opacity:0; animation:hfx-bh-dim 4.7s linear .05s both; }
@@ -59145,6 +59154,8 @@ function charSpecialCovered(el){
   try{
     /* holding its breath under the Underwater hundo (build 317, round 5) */
     if(el && el.classList && (el.classList.contains("char-hold") || el.classList.contains("char-gasp"))) return true;
+    /* ...or reacting to any hundo effect (build 320, hfxCharReact) */
+    if(el && el.classList && el.classList.contains("hfx-rx")) return true;
     if(el && el.closest && el.closest(".rs-rewards:not(.rs-done)")) return true;
     const covers = document.querySelectorAll(CHAR_SPECIAL_COVERS);
     for(let i = 0; i < covers.length; i++){ if(!el || !covers[i].contains(el)) return true; }
@@ -81681,6 +81692,11 @@ function hfxWarm(id){
   }catch(e){}
   /* every sprite made so far, this effect's included, to a bitmap */
   Object.keys(hfxSprites).forEach(k => hfxRasterise(hfxSprites[k]));
+  /* and the results character's face read (build 320, hfxFaceOf), once
+     the screen is up, so the reaction does not pay for it as it starts */
+  setTimeout(() => {
+    try{ const av = hfxResultsAvatar(document.querySelector(".rs-screen .rs-grade")) || document.querySelector(".rs-screen .results-level-avatar"); const sv = av && av.querySelector("svg.avatarchar-svg"); if(sv) hfxFaceOf(sv); }catch(e){}
+  }, 900);
 }
 /* Where a ray from the box's centre at angle `a` leaves the box, and how
    far a ray from (x, y) runs before it leaves the screen. */
@@ -82366,7 +82382,7 @@ function hfxUwScreen(c, S, page, k, tot){
   recs.forEach((r, i) => { r.i = i; r.wet = false; r.a = null; r.s = null; });
   const panel = page && c.box && c.box.closest ? c.box.closest(".rs-screen") : null;
   const av = panel ? panel.querySelector(".results-level-avatar") : null;
-  const hold = av && av.querySelector("svg.avatarchar-svg") ? hfxUwHold(av) : null;
+  const hold = (c.charRx && c.charRx.hold) || (av && av.querySelector("svg.avatarchar-svg") ? hfxUwHold(av) : null);
   if(!recs.length && !hold) return;
   const t0 = performance.now();
   const now = () => { const s = S.clock(); return s == null ? (performance.now() - t0) / 1000 : s; };
@@ -82452,9 +82468,13 @@ function hfxUwScreen(c, S, page, k, tot){
    svg, which nothing else moves. While either state is on, the
    character's special waits (charSpecialCovered). */
 const HFX_UW_KEEP_MOUTH = ".cx-k-dragon, .cx-k-grizzly, .cx-k-robot, .cx-k-masked, .cx-k-wizard, .cx-k-ghost";
-function hfxUwHold(av){
+function hfxUwHold(av, face){
   const svg = av.querySelector("svg.avatarchar-svg"), NS = "http://www.w3.org/2000/svg", F = v => (+v).toFixed(2);
   const mouth = svg.querySelector(".cx-mouth"), keepMouth = !!svg.querySelector(HFX_UW_KEEP_MOUTH);
+  /* (build 320) the face it is drawn with: a helmet's breath leaves from
+     its top, never inside it; the Koi lives in water and holds nothing */
+  if(!face){ try{ face = hfxFaceOf(svg); }catch(e){ face = null; } }
+  const fish = !!(face && face.fish), helmet = !!(face && face.helmet);
   const H = { el: av, on: false, under: false, done: false, made: [], timers: [] };
   /* a copy of a part's drawing, with nothing in it that css would move */
   const copy = (from, cls) => {
@@ -82514,6 +82534,13 @@ function hfxUwHold(av){
   };
   /* where the mouth is, in the avatar's own pixels */
   const mouthAt = ar => {
+    if((helmet || fish) && face && face.host.getScreenCTM){
+      try{
+        const pt = svg.createSVGPoint(); pt.x = face.top[0]; pt.y = face.top[1] - .4;
+        const q = pt.matrixTransform(face.host.getScreenCTM());
+        return { x: q.x - ar.left, y: q.y - ar.top };
+      }catch(e){}
+    }
     const m = mouth && mouth.getBoundingClientRect();
     if(m && m.width > 0) return { x: m.left + m.width / 2 - ar.left, y: m.top + m.height * .4 - ar.top };
     const e = svg.querySelector(".cx-eyes"), er = e && e.getBoundingClientRect();
@@ -82534,6 +82561,7 @@ function hfxUwHold(av){
   H.start = () => {
     if(H.on || H.done) return;
     H.on = true;
+    if(fish){ av.classList.add("char-bubbly"); leaks(hfxR(300, 600)); return; }
     try{ draw(); }catch(e){}
     av.classList.add("char-hold");
     leaks(hfxR(1000, 1400));
@@ -82542,6 +82570,7 @@ function hfxUwHold(av){
     if(!H.on) return;
     H.on = false; H.done = true;
     H.timers.forEach(clearTimeout); H.timers = [];
+    if(fish){ av.classList.remove("char-bubbly"); later(400, H.end); return; }
     av.classList.remove("char-hold");
     av.classList.add("char-gasp");
     /* out of the water, a bubble still rising off it is gone - it would be
@@ -82561,12 +82590,448 @@ function hfxUwHold(av){
   H.end = () => {
     H.on = false; H.done = true;
     H.timers.forEach(clearTimeout); H.timers = [];
-    av.classList.remove("char-hold", "char-gasp");
+    av.classList.remove("char-hold", "char-gasp", "char-bubbly");
     H.made.forEach(n => n.remove()); H.made = [];
     if(mouth) mouth.classList.remove("cx-uw-hid");
     av.querySelectorAll(":scope > .hfx-uw-breath, :scope > .hfx-uw-fling").forEach(n => n.remove());
   };
   return H;
+}
+/* ---- THE CHARACTER REACTS TO THE HUNDO EFFECT (build 320, b320b) ----
+   "the characters face/effect should be affected by chosen hundo effect
+   DURING THE effect. So like during the underwater one when a character
+   goes underwater, they should hold their breath, the alien like they put
+   on glasses to protect their eyes) but then it goes away when the effect
+   is over and it's back to their normal hundo thing for the character."
+   One switch for all five: playHundoFx() calls hfxCharReact() on the
+   results character whenever an effect plays on a results screen, so it
+   runs from whatever moment the effect is started. While it is on, the
+   element holding the drawing carries `hfx-rx hfx-rx-<id>` (the
+   character's special waits - charSpecialCovered) and the drawing has a
+   `.cx-hx` group drawn on its FACE - inside the group that holds the eyes
+   (`hfxFaceOf`), so the head's fit (AVATAR_HEAD_SCALE) and every head
+   motion carry it, at anchors read off each drawing's own closed eyes
+   (the artist's [cx, cy, halfWidth] per eye), its mouth and the top of its
+   head (HFX_FACE_FIX where a drawing has no eyes to read):
+     Confetti    a happy squint (^ ^) with a blush, and one piece of
+                 confetti fluttering down to land on its head and slide off
+     Fireworks   it flinches at the first bang, then its eyes come open,
+                 wide and lit, the colour of each burst reflected in them
+                 and washing across its face
+     Underwater  it holds its breath (hfxUwHold): cheeks puffed and red,
+                 eyes squeezed, mouth shut, a bubble escaping now and then
+                 - out of the top of a helmet, never inside it
+     Bubbles     its eyes follow a bubble across, it lands on its nose,
+                 the eyes cross, it pops, a blink
+     UFO         goggles slide down over its eyes against the light, the
+                 beam glints off them, and they are pushed back up and
+                 gone once the saucer has left
+   Every part eases in as its effect builds and out as it ends; the parts
+   it covers (the eyes, the closed eyes) are faded under it by the Web
+   Animations API on their own `opacity`, which outranks the reaction's
+   css keyframes only while it runs, so when it ends the hundo pose is
+   exactly what it was. Transform and opacity only; no filter. With
+   motion off no effect plays (playHundoFx), so nothing here does either. */
+const HFX_RX_NS = "http://www.w3.org/2000/svg";
+let hfxRxSeq = 0;
+/* Where a drawing's face is not what its closed eyes say. e: eyes [cx, cy,
+   halfWidth]; helmet: breath bubbles leave from the top, not the mouth;
+   fish: the Koi lives in water and does not hold its breath; alien: its
+   own wrap-round shades, cut to its eyes. */
+const HFX_FACE_FIX = {
+  valkyrie: { e: [[15.6, 18.2, 2.3], [24.4, 18.2, 2.3]], top: [20.4, 8.2], nose: [20, 21.4], fish: true },
+  voidwalker: { e: [[17.4, 19.2, 1.6], [22.6, 19.2, 1.6]], nose: [20, 22.6] },
+  alien: { alien: true },
+  astronaut: { helmet: true }, singularity: { helmet: true }, astral: { helmet: true }, zenith: { helmet: true }, genesis: { helmet: true }
+};
+const hfxFaceCache = {};
+function hfxSvgEl(tag, attrs, parent){
+  const e = document.createElementNS(HFX_RX_NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+/* The face, in the units of the group that holds the eyes (`host`). */
+function hfxFaceOf(svg){
+  const id = ((svg.getAttribute("data-char") || "").replace(/~.*$/, ""));
+  const cid = RETIRED_CHARACTER_TO[id] || id;
+  const shut = svg.querySelector(".cx-eyes-closed"), eyes = svg.querySelector(".cx-eyes");
+  const host = (shut || eyes) ? (shut || eyes).parentNode : svg.querySelector(".cx-head");
+  if(!host) return null;
+  const fix = HFX_FACE_FIX[cid] || {};
+  const R2 = v => Math.round(v * 100) / 100;
+  let f = hfxFaceCache[cid];
+  if(!f){
+    f = { e: [], stroke: "#2A1C14", sw: .62 };
+    if(fix.e) f.e = fix.e.map(a => a.slice());
+    else if(shut){
+      const re = /M\s*(-?[\d.]+)[ ,]+(-?[\d.]+)\s*Q\s*(-?[\d.]+)[ ,]+(-?[\d.]+)[ ,]+(-?[\d.]+)[ ,]+(-?[\d.]+)/g;
+      shut.querySelectorAll("path").forEach(p => {
+        const d = p.getAttribute("d") || "";
+        let m;
+        while((m = re.exec(d))){
+          const x0 = +m[1], y0 = +m[2], qy = +m[4], x1 = +m[5], y1 = +m[6], my = (y0 + y1) / 2;
+          f.e.push([R2((x0 + x1) / 2), R2(my + (qy - my) * .3), R2(Math.abs(x1 - x0) / 2)]);
+        }
+        if(p.getAttribute("stroke")){ f.stroke = p.getAttribute("stroke"); f.sw = +(p.getAttribute("stroke-width") || .62); }
+      });
+      f.e.sort((a, b) => a[0] - b[0]);
+    }
+    if(!f.e.length) f.e = [[17, 19, 1.6], [23, 19, 1.6]];
+    const n = f.e.length, mx = f.e.reduce((a, q) => a + q[0], 0) / n, my = f.e.reduce((a, q) => a + q[1], 0) / n;
+    f.mid = [R2(mx), R2(my)];
+    /* which eye each of the open eyes' parts belongs to (read once, here,
+       before anything is drawn: a bounding box after a change costs a
+       layout) */
+    f.kids = eyes ? [...eyes.children].map(n => {
+      let b = null;
+      try{ b = n.getBBox(); }catch(e){}
+      const cx = b ? b.x + b.width / 2 : mx;
+      let k = 0, best = 1e9;
+      f.e.forEach((q, i) => { const d = Math.abs(q[0] - cx); if(d < best){ best = d; k = i; } });
+      return k;
+    }) : [];
+    f.span = n > 1 ? f.e[n - 1][0] - f.e[0][0] : f.e[0][2] * 3.2;
+    /* the mouth, if it is drawn and seen */
+    const mo = svg.querySelector(".cx-mouth");
+    let mb = null;
+    try{ if(mo && mo.parentNode === host){ const b = mo.getBBox(); if(b.width > .2) mb = [R2(b.x + b.width / 2), R2(b.y + b.height / 2), R2(b.width / 2)]; } }catch(e){}
+    f.mouth = mb;
+    f.nose = fix.nose ? fix.nose.slice() : [R2(mx), R2(mb ? my + (mb[1] - my) * .5 : my + Math.max(2.2, f.span * .3))];
+    /* the top of the head over the middle of the face: the first point
+       down the column that is inside one of the head's own shapes (a hat,
+       a hood, a crown: whatever is on top) */
+    let top = fix.top ? fix.top.slice() : null;
+    if(!top){
+      try{
+        const skip = ".cx-sp, .cx-fx, .cx-rx, .cx-hx, .cx-uw, .cx-eyes, .cx-eyes-closed, .cx-mouth, defs, clipPath, mask";
+        const hm = host.getCTM();
+        const shapes = [...host.querySelectorAll("path, circle, ellipse, rect, polygon")].filter(s => {
+          if(s.closest(skip)) return false;
+          const fl = s.getAttribute("fill");
+          if(fl === "none" || s.getAttribute("opacity") === "0") return false;
+          return typeof s.isPointInFill === "function";
+        }).map(s => ({ s, m: s.getCTM().inverse().multiply(hm) }));
+        const pt = svg.createSVGPoint(), x = mx + .5;
+        for(let y = -8; y < my - 1 && !top; y += .35){
+          pt.x = x; pt.y = y;
+          for(let i = 0; i < shapes.length; i++){ if(shapes[i].s.isPointInFill(pt.matrixTransform(shapes[i].m))){ top = [R2(x), R2(y + .2)]; break; } }
+        }
+      }catch(e){ top = null; }
+    }
+    f.top = top || [R2(mx), R2(Math.max(5, my - 7))];
+    hfxFaceCache[cid] = f;
+  }
+  return Object.assign({ id: cid, host, fix, helmet: !!fix.helmet, fish: !!fix.fish, alien: !!fix.alien }, f);
+}
+/* A soft round light of one colour (a gradient, never a filter). */
+function hfxRxGlow(defs, id, col, a){
+  const g = hfxSvgEl("radialGradient", { id }, defs);
+  hfxSvgEl("stop", { offset: "0%", "stop-color": col, "stop-opacity": a }, g);
+  hfxSvgEl("stop", { offset: "55%", "stop-color": col, "stop-opacity": (a * .45).toFixed(2) }, g);
+  hfxSvgEl("stop", { offset: "100%", "stop-color": col, "stop-opacity": "0" }, g);
+  return "url(#" + id + ")";
+}
+/* The character's own open eyes, copied (nothing in the copy is moved by
+   css), one group per eye so each can grow about its own middle. */
+function hfxRxEyeCopies(R, F, parent){
+  const eyes = F.host.querySelector(":scope > .cx-eyes");
+  const out = F.e.map((q, i) => hfxSvgEl("g", { class: "cx-hx-eye", "data-hx": "own" + i }, parent));
+  if(!eyes) return out;
+  [...eyes.children].forEach((n, j) => {
+    const k = Math.min(out.length - 1, F.kids[j] || 0);
+    const m = n.cloneNode(true);
+    [m, ...m.querySelectorAll("*")].forEach(x => { x.removeAttribute("class"); x.removeAttribute("id"); x.removeAttribute("opacity"); x.removeAttribute("style"); });
+    out[k].appendChild(m);
+  });
+  return out;
+}
+function hfxRxMs(s){ return Math.round(s * 1000); }
+const HFX_RX_FW = { m: "#FF5CD6", c: "#5CE3FF", g: "#FFD38C", w: "#FFF6EC" };
+/* When the fireworks burst: each shell's launch plus its climb, in
+   hfxFireworks' own table (the finale's three are within 0.1s). */
+const HFX_RX_FW_BURSTS = [[1.0, "m"], [1.4, "c"], [1.85, "m"], [2.25, "g"], [2.35, "c"], [3.35, "c"], [3.45, "m"]];
+/* how long each reaction lasts (s): the last of it has eased out by then */
+const HFX_RX_TOTAL = { confetti: 3.4, fireworks: 6.3, underwater: 7.4, bubbles: 4.9, ufo: 10.4 };
+const HFX_CHAR_RX = {
+  /* a happy squint and a blush; a piece of confetti lands on its head */
+  confetti(R, F, o){
+    const g = R.g, uid = R.uid, cols = (o.palette && o.palette.length) ? o.palette : ["#FFD37A", "#F5804D", "#C23B7A"];
+    const sq = hfxSvgEl("g", { class: "cx-hx-squint", opacity: "0" }, g);
+    F.e.forEach((q, i) => {
+      const [cx, cy, w0] = q, w = Math.max(.75, Math.min(w0, 2.2));
+      hfxSvgEl("ellipse", { cx: (cx + (i ? .25 : -.25) * w).toFixed(2), cy: (cy + w * .95 + .35).toFixed(2), rx: (w * .62).toFixed(2), ry: (w * .3).toFixed(2), fill: "#FF7FA8", "fill-opacity": ".5" }, sq);
+      hfxSvgEl("path", { "data-hx": "eye" + i, d: "M" + (cx - w).toFixed(2) + " " + (cy + w * .32).toFixed(2) + " Q" + cx.toFixed(2) + " " + (cy - w * .78).toFixed(2) + " " + (cx + w).toFixed(2) + " " + (cy + w * .32).toFixed(2),
+        fill: "none", stroke: F.stroke, "stroke-width": (Math.max(.5, F.sw) * 1.25).toFixed(2), "stroke-linecap": "round" }, sq);
+    });
+    R.fade(sq, .12, .3, 2.75, .45);
+    R.cover(F, .12, .3, 2.75, .45);
+    /* the head lifts a little with it */
+    R.anim(R.svg, [{ translate: "0px 0px" }, { translate: "0px -1.6px", offset: .35 }, { translate: "0px 0px" }], { duration: 700, delay: 120, easing: "ease-out", fill: "none" });
+    /* the piece: flutters down, lands, sits, slides off */
+    const [tx, ty] = F.top, col = cols[1 % cols.length];
+    const pc = hfxSvgEl("g", { class: "cx-hx-piece", "data-hx": "top", opacity: "0" }, g);
+    const tilt = hfxSvgEl("g", {}, pc);
+    hfxSvgEl("rect", { x: "-1.75", y: "-1", width: "3.5", height: "2", rx: ".3", fill: col, stroke: "#000", "stroke-opacity": ".25", "stroke-width": ".18" }, tilt);
+    hfxSvgEl("rect", { x: "-1.75", y: "-1", width: "3.5", height: ".7", rx: ".3", fill: "#FFFFFF", "fill-opacity": ".4" }, tilt);
+    pc.style.transformBox = "view-box";
+    const at = (dx, dy) => "translate(" + (tx + dx).toFixed(2) + "px, " + (ty - .8 + dy).toFixed(2) + "px)";
+    R.anim(pc, [
+      { transform: at(-3.4, -15), opacity: 0 }, { transform: at(-1.2, -11), opacity: 1, offset: .15 },
+      { transform: at(1.6, -7), offset: .38 }, { transform: at(-.9, -3.4), offset: .62 }, { transform: at(.5, -.9), offset: .84 },
+      { transform: at(0, 0), opacity: 1 }], { duration: 1150, delay: 150, easing: "cubic-bezier(.35,.15,.55,1)" });
+    R.anim(tilt, [{ transform: "rotate(-50deg) scaleY(1)" }, { transform: "rotate(30deg) scaleY(.35)", offset: .22 }, { transform: "rotate(-35deg) scaleY(1)", offset: .45 },
+      { transform: "rotate(25deg) scaleY(.45)", offset: .68 }, { transform: "rotate(-24deg) scaleY(1)", offset: .86 }, { transform: "rotate(-16deg) scaleY(1)" }],
+      { duration: 1150, delay: 150, easing: "ease-in-out" });
+    /* it slides off the side as the squint goes */
+    R.anim(pc, [{ transform: at(0, 0), opacity: 1 }, { transform: at(1.4, .2), opacity: 1, offset: .35 }, { transform: at(3.4, 3.2), opacity: 0 }],
+      { duration: 650, delay: 2600, easing: "cubic-bezier(.5,0,.8,.5)", fill: "forwards" });
+    R.anim(tilt, [{ transform: "rotate(-16deg)" }, { transform: "rotate(40deg)" }], { duration: 650, delay: 2600, easing: "ease-in", fill: "forwards" });
+  },
+  /* a flinch at the first bang, then eyes wide, lit by every burst */
+  fireworks(R, F){
+    const g = R.g, defs = hfxSvgEl("defs", {}, g);
+    const wide = hfxSvgEl("g", { class: "cx-hx-wide", opacity: "0" }, g);
+    const copies = hfxRxEyeCopies(R, F, wide);
+    copies.forEach(c => { c.style.transformBox = "fill-box"; c.style.transformOrigin = "center"; });
+    R.fade(wide, 1.08, .22, 5.15, .7);
+    R.cover(F, 1.08, .22, 5.15, .7);
+    copies.forEach(c => R.anim(c, [{ transform: "scale(.6)" }, { transform: "scale(1.24)", offset: .45 }, { transform: "scale(1.12)" }], { duration: 420, delay: 1080, easing: "cubic-bezier(.3,1.4,.5,1)" }));
+    /* the flinch: down and in, then back */
+    R.anim(R.svg, [{ translate: "0px 0px", scale: "1" }, { translate: "0px 1.4px", scale: ".94 .9", offset: .25 }, { translate: "0px -.8px", scale: "1.03", offset: .6 }, { translate: "0px 0px", scale: "1" }],
+      { duration: 600, delay: 960, easing: "ease-out", fill: "none" });
+    /* each burst: its colour in both eyes and a wash of it over the face */
+    const span = Math.max(F.span, 5);
+    const wash = {}, dots = {};
+    Object.keys(HFX_RX_FW).forEach(k => {
+      wash[k] = hfxSvgEl("ellipse", { cx: F.mid[0], cy: (F.mid[1] + .6).toFixed(2), rx: (span * .95).toFixed(2), ry: (span * .7).toFixed(2), fill: hfxRxGlow(defs, R.uid + "w" + k, HFX_RX_FW[k], .55), opacity: "0", "data-hx": "face" }, g);
+      dots[k] = F.e.map((q, i) => {
+        /* a burst caught in the eye: a star of its colour, a white heart */
+        const r = Math.max(.95, Math.min(q[2] * .78, 1.7)), x = q[0] - q[2] * .15, y = q[1] - q[2] * .1;
+        const d = hfxSvgEl("g", { opacity: "0", "data-hx": "eye" + i }, g);
+        const st = hfxSvgEl("g", {}, d);
+        hfxSvgEl("path", { d: "M" + x.toFixed(2) + " " + (y - r).toFixed(2) + " Q" + (x + r * .2).toFixed(2) + " " + (y - r * .2).toFixed(2) + " " + (x + r).toFixed(2) + " " + y.toFixed(2) +
+          " Q" + (x + r * .2).toFixed(2) + " " + (y + r * .2).toFixed(2) + " " + x.toFixed(2) + " " + (y + r).toFixed(2) + " Q" + (x - r * .2).toFixed(2) + " " + (y + r * .2).toFixed(2) + " " + (x - r).toFixed(2) + " " + y.toFixed(2) +
+          " Q" + (x - r * .2).toFixed(2) + " " + (y - r * .2).toFixed(2) + " " + x.toFixed(2) + " " + (y - r).toFixed(2) + " Z", fill: HFX_RX_FW[k] }, st);
+        hfxSvgEl("circle", { cx: x.toFixed(2), cy: y.toFixed(2), r: (r * .3).toFixed(2), fill: "#FFFFFF" }, st);
+        st.style.transformBox = "fill-box"; st.style.transformOrigin = "center";
+        d.__star = st;
+        return d;
+      });
+    });
+    HFX_RX_FW_BURSTS.forEach(([t, k], j) => {
+      const last = j === HFX_RX_FW_BURSTS.length - 1, len = last ? 1.9 : 1.0;
+      R.anim(wash[k], [{ opacity: 0 }, { opacity: last ? .8 : .6, offset: .12 }, { opacity: 0 }], { duration: hfxRxMs(len), delay: hfxRxMs(t), easing: "ease-out", fill: "none" });
+      dots[k].forEach(d => {
+        R.anim(d, [{ opacity: 0 }, { opacity: 1, offset: .08 }, { opacity: .9, offset: .45 }, { opacity: 0 }], { duration: hfxRxMs(len + .3), delay: hfxRxMs(t), fill: "none" });
+        R.anim(d.__star, [{ transform: "scale(.3) rotate(0deg)" }, { transform: "scale(1.15) rotate(25deg)", offset: .14 }, { transform: "scale(.8) rotate(45deg)" }], { duration: hfxRxMs(len + .3), delay: hfxRxMs(t), easing: "ease-out", fill: "none" });
+      });
+    });
+    /* the last of it, white, as the embers come down */
+    const wd = F.e.map((q, i) => { const d = hfxSvgEl("g", { opacity: "0", "data-hx": "eye" + i }, g); hfxSvgEl("circle", { cx: (q[0] - q[2] * .3).toFixed(2), cy: (q[1] - .25).toFixed(2), r: Math.max(.28, Math.min(q[2] * .26, .55)).toFixed(2), fill: "#FFF6EC" }, d); return d; });
+    wd.forEach(d => R.anim(d, [{ opacity: 0 }, { opacity: 1, offset: .2 }, { opacity: 1, offset: .7 }, { opacity: 0 }], { duration: 2400, delay: 3350, fill: "none" }));
+  },
+  /* the breath held under the water (hfxUwHold), its cheeks puffed */
+  underwater(R, F, o){
+    const g = R.g;
+    if(!F.fish){
+      const ck = hfxSvgEl("g", { class: "cx-hx-cheeks" }, g);
+      const n = F.e.length, cy = F.mouth ? F.mouth[1] - .2 : F.nose[1] + .4;
+      const half = Math.max(F.span * .5 + .6, 2.4);
+      [-1, 1].forEach((s, i) => {
+        if(n < 2 && F.span < 4 && i) return;
+        hfxSvgEl("ellipse", { "data-hx": "cheek", cx: (F.mid[0] + s * half).toFixed(2), cy: cy.toFixed(2), rx: Math.max(1.1, Math.min(F.span * .2, 1.9)).toFixed(2), ry: Math.max(.8, Math.min(F.span * .15, 1.4)).toFixed(2), fill: "#FF6F91", "fill-opacity": ".42" }, ck);
+      });
+    } else {
+      /* the Koi is at home in it: bubbles up through its bowl */
+      const bb = hfxSvgEl("g", { class: "cx-hx-fishbub" }, g);
+      [[-2.2, 0], [1.4, .5], [3.2, 1.1], [-.6, 1.6]].forEach(([dx, dl], i) => {
+        const b = hfxSvgEl("circle", { "data-hx": "nose", cx: (F.nose[0] + dx).toFixed(2), cy: (F.nose[1] + 1.4).toFixed(2), r: (.42 + (i % 2) * .22).toFixed(2), fill: "#E8FDFF", "fill-opacity": ".35", stroke: "#FFFFFF", "stroke-width": ".16" }, bb);
+        b.style.setProperty("--d", (1.6 + i * .2) + "s"); b.style.setProperty("--dl", dl + "s");
+      });
+    }
+    R.hold = hfxUwHold(R.av, F);
+    if(!o.sea){
+      R.later(1100, () => R.hold.start());
+      R.later(5600, () => R.hold.release());
+    }
+  },
+  /* its eyes follow a bubble across; it lands on its nose and pops */
+  bubbles(R, F){
+    const g = R.g, defs = hfxSvgEl("defs", {}, g);
+    const wide = hfxSvgEl("g", { class: "cx-hx-wide", opacity: "0" }, g);
+    const copies = hfxRxEyeCopies(R, F, wide);
+    R.fade(wide, .45, .3, 4.0, .55);
+    R.cover(F, .45, .3, 4.0, .55);
+    const [nx, ny] = F.nose, s = Math.max(.85, Math.min(F.span / 9, 1.25)), br = 2.9 * s;
+    /* soap film: clear in the middle, a rainbow round the rim */
+    const fill = hfxSvgEl("radialGradient", { id: R.uid + "b", cx: "50%", cy: "50%", r: "50%" }, defs);
+    [["0%", "#FFFFFF", ".03"], ["68%", "#DDF4FF", ".1"], ["90%", "#C9E9FF", ".32"], ["100%", "#FFFFFF", ".55"]].forEach(([of, c, a]) => hfxSvgEl("stop", { offset: of, "stop-color": c, "stop-opacity": a }, fill));
+    const rim = hfxSvgEl("linearGradient", { id: R.uid + "r", x1: "0", y1: "0", x2: "1", y2: "1" }, defs);
+    /* saturated enough to show on a white face (the Ghost, the Clown) */
+    [["0%", "#F25CC4"], ["35%", "#36B6F0"], ["65%", "#8F6CFF"], ["100%", "#F0B42E"]].forEach(([of, c]) => hfxSvgEl("stop", { offset: of, "stop-color": c }, rim));
+    const bub = hfxSvgEl("g", { class: "cx-hx-bubble", "data-hx": "nose", opacity: "0" }, g);
+    const bi = hfxSvgEl("g", {}, bub);
+    hfxSvgEl("circle", { cx: 0, cy: 0, r: br.toFixed(2), fill: "url(#" + R.uid + "b)", stroke: "url(#" + R.uid + "r)", "stroke-width": (br * .14).toFixed(2), "stroke-opacity": ".95" }, bi);
+    hfxSvgEl("circle", { cx: 0, cy: 0, r: (br * .9).toFixed(2), fill: "none", stroke: "#4A5A80", "stroke-width": (br * .05).toFixed(2), "stroke-opacity": ".35" }, bi);
+    hfxSvgEl("path", { d: "M" + (-br * .62).toFixed(2) + " " + (-br * .12).toFixed(2) + " Q" + (-br * .58).toFixed(2) + " " + (-br * .6).toFixed(2) + " " + (-br * .1).toFixed(2) + " " + (-br * .66).toFixed(2), fill: "none", stroke: "#FFFFFF", "stroke-opacity": ".95", "stroke-width": (br * .16).toFixed(2), "stroke-linecap": "round" }, bi);
+    hfxSvgEl("circle", { cx: (br * .42).toFixed(2), cy: (br * .4).toFixed(2), r: (br * .1).toFixed(2), fill: "#FFFFFF", "fill-opacity": ".8" }, bi);
+    bi.style.transformBox = "fill-box"; bi.style.transformOrigin = "center";
+    /* the path: in from low on one side, up across the face, round, and
+       down onto the nose (it rests a little above it, on the tip) */
+    const side = Math.random() < .5 ? -1 : 1, rest = [nx, ny - br * .55];
+    const P = [[nx + side * 11, ny + 7], [nx + side * 6, ny + 1], [nx - side * 1, F.mid[1] - 3.2], [nx - side * 5.5, F.mid[1] - 1.5], [nx - side * 3, ny - 4.5], [nx + side * .8, ny - 2.4], rest];
+    const T = [0, .16, .36, .55, .72, .86, 1];
+    const pos = q => "translate(" + q[0].toFixed(2) + "px, " + q[1].toFixed(2) + "px)";
+    bub.style.transformBox = "view-box";
+    R.anim(bub, P.map((q, i) => ({ transform: pos(q), opacity: i === 0 ? 0 : 1, offset: T[i], easing: "ease-in-out" })), { duration: 2700, delay: 600 });
+    R.anim(bi, [{ transform: "scale(1, 1)" }, { transform: "scale(1.06, .95)" }, { transform: "scale(.96, 1.05)" }, { transform: "scale(1.04, .97)" }, { transform: "scale(1, 1)" }], { duration: 1400, delay: 600, iterations: 2, easing: "ease-in-out", fill: "none" });
+    /* on the nose: a squash, then it pops */
+    R.anim(bi, [{ transform: "scale(1, 1)" }, { transform: "scale(1.14, .84)", offset: .4 }, { transform: "scale(.95, 1.06)", offset: .75 }, { transform: "scale(1, 1)" }], { duration: 320, delay: 3300, easing: "ease-out", fill: "none" });
+    R.anim(bub, [{ transform: pos(rest), opacity: 1 }, { transform: pos(rest) + " scale(1.35)", opacity: 0 }], { duration: 110, delay: 3600, easing: "ease-out", fill: "forwards" });
+    /* the pop: a ring and a spray */
+    const ring = hfxSvgEl("circle", { cx: rest[0].toFixed(2), cy: rest[1].toFixed(2), r: br.toFixed(2), fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", opacity: "0", "data-hx": "nose" }, g);
+    ring.style.transformBox = "fill-box"; ring.style.transformOrigin = "center";
+    R.anim(ring, [{ transform: "scale(.8)", opacity: .95 }, { transform: "scale(1.9)", opacity: 0 }], { duration: 420, delay: 3600, easing: "ease-out", fill: "both" });
+    for(let i = 0; i < 6; i++){
+      const a = (i / 6) * Math.PI * 2 + .3, d = hfxSvgEl("circle", { cx: rest[0].toFixed(2), cy: rest[1].toFixed(2), r: ".26", fill: "#DFF6FF", opacity: "0" }, g);
+      R.anim(d, [{ transform: "translate(0px, 0px)", opacity: 1 }, { transform: "translate(" + (Math.cos(a) * br * 1.9).toFixed(2) + "px, " + (Math.sin(a) * br * 1.6 + 1).toFixed(2) + "px)", opacity: 0 }],
+        { duration: 460, delay: 3610, easing: "cubic-bezier(.2,.7,.4,1)", fill: "both" });
+    }
+    /* the eyes: they follow it, cross as it lands, blink at the pop */
+    const look = (q, k) => {
+      const e = F.e[k], dx = Math.max(-.7, Math.min(.7, (q[0] - e[0]) * .09)), dy = Math.max(-.55, Math.min(.55, (q[1] - e[1]) * .09));
+      return "translate(" + dx.toFixed(2) + "px, " + dy.toFixed(2) + "px)";
+    };
+    copies.forEach((c, k) => {
+      const e = F.e[k], cross = F.e.length > 1 ? (e[0] < nx ? .55 : -.55) : 0;
+      const fr = P.map((q, i) => ({ transform: look(q, k), offset: (600 + T[i] * 2700) / 4300, easing: "ease-in-out" }));
+      fr.unshift({ transform: "translate(0px, 0px)", offset: 0 });
+      fr.push({ transform: "translate(" + cross + "px, .5px)", offset: 3500 / 4300 }, { transform: "translate(" + cross + "px, .5px)", offset: 3640 / 4300 }, { transform: "translate(0px, 0px)", offset: 1 });
+      fr.sort((a, b) => a.offset - b.offset);
+      R.anim(c, fr, { duration: 4300, delay: 0, easing: "linear" });
+    });
+    const blink = hfxSvgEl("g", {}, wide);
+    copies.forEach(c => blink.appendChild(c));
+    blink.style.transformBox = "fill-box"; blink.style.transformOrigin = "center";
+    R.anim(blink, [{ transform: "scaleY(1)" }, { transform: "scaleY(.12)", offset: .3 }, { transform: "scaleY(.12)", offset: .55 }, { transform: "scaleY(1)" }], { duration: 380, delay: 3600, easing: "ease-in-out", fill: "none" });
+  },
+  /* goggles slide on against the light, and back up once it has gone */
+  ufo(R, F){
+    const g = R.g, defs = hfxSvgEl("defs", {}, g), beam = hfxUfoBeam();
+    const lens = hfxSvgEl("linearGradient", { id: R.uid + "l", x1: "0", y1: "0", x2: "0", y2: "1" }, defs);
+    [["0%", beam.hi, "1"], ["38%", beam.c, ".95"], ["52%", "#0D2236", "1"], ["100%", "#071420", "1"]].forEach(([of, c, a]) => hfxSvgEl("stop", { offset: of, "stop-color": c, "stop-opacity": a }, lens));
+    const gg = hfxSvgEl("g", { class: "cx-hx-goggles", opacity: "0" }, g);
+    const clip = hfxSvgEl("clipPath", { id: R.uid + "c" }, defs);
+    const n = F.e.length;
+    /* the lenses: each eye's own, sized to it (the Alien's cut to its
+       almond eyes and tilted with them) */
+    const L = F.e.map((q, i) => {
+      let rx = Math.max(1.9, Math.min(q[2] * 1.3, 3)), ry = rx * .74, rot = 0;
+      if(n > 1){ const gap = (F.e[1][0] - F.e[0][0]) / 2 - .32; rx = Math.min(rx, gap); ry = Math.min(ry, rx * .82); }
+      if(n === 1 && q[2] > 3){ rx = q[2] * 1.18; ry = Math.max(1.6, q[2] * .42); }
+      if(F.alien){ rx = q[2] * 1.12; ry = q[2] * .66; rot = i ? -14 : 14; }
+      return { x: q[0], y: q[1] + (F.alien ? .3 : 0), rx, ry, rot, i };
+    });
+    const ell = (p, attrs, parent) => hfxSvgEl("ellipse", Object.assign({ cx: p.x.toFixed(2), cy: p.y.toFixed(2), rx: p.rx.toFixed(2), ry: p.ry.toFixed(2), transform: "rotate(" + p.rot + " " + p.x.toFixed(2) + " " + p.y.toFixed(2) + ")" }, attrs), parent);
+    /* the band round the head, behind the lenses */
+    if(n > 1){
+      const a = L[0], b = L[n - 1], y = (a.y + b.y) / 2;
+      hfxSvgEl("path", { d: "M" + (a.x - a.rx - 1.5).toFixed(2) + " " + (y - .2).toFixed(2) + " L" + (a.x - a.rx + .2).toFixed(2) + " " + (y - .2).toFixed(2) + " M" + (b.x + b.rx - .2).toFixed(2) + " " + (y - .2).toFixed(2) + " L" + (b.x + b.rx + 1.5).toFixed(2) + " " + (y - .2).toFixed(2),
+        stroke: "#11181F", "stroke-width": "1.05", "stroke-linecap": "round", fill: "none" }, gg);
+      const bx = (a.x + a.rx * .7 + b.x - b.rx * .7) / 2;
+      hfxSvgEl("path", { d: "M" + (a.x + a.rx * .8).toFixed(2) + " " + (y - a.ry * .35).toFixed(2) + " Q" + bx.toFixed(2) + " " + (y - a.ry * .95).toFixed(2) + " " + (b.x - b.rx * .8).toFixed(2) + " " + (y - b.ry * .35).toFixed(2),
+        stroke: "#11181F", "stroke-width": ".62", fill: "none", "stroke-linecap": "round" }, gg);
+    } else {
+      const a = L[0];
+      hfxSvgEl("path", { d: "M" + (a.x - a.rx - 1.4).toFixed(2) + " " + (a.y - .2).toFixed(2) + " L" + (a.x + a.rx + 1.4).toFixed(2) + " " + (a.y - .2).toFixed(2), stroke: "#11181F", "stroke-width": "1", "stroke-linecap": "round", fill: "none" }, gg);
+    }
+    L.forEach(p => {
+      const lg = hfxSvgEl("g", { "data-hx": "eye" + p.i }, gg);
+      ell(p, { fill: "#11181F" }, lg).setAttribute("rx", (p.rx + .42).toFixed(2));
+      lg.lastChild.setAttribute("ry", (p.ry + .42).toFixed(2));
+      ell(p, { fill: "url(#" + R.uid + "l)" }, lg);
+      ell(p, { fill: "none", stroke: "#B9CCDA", "stroke-width": ".16", "stroke-opacity": ".85" }, lg);
+      ell(p, {}, clip);
+    });
+    /* the light caught on the glass */
+    const shine = hfxSvgEl("g", { "clip-path": "url(#" + R.uid + "c)" }, gg);
+    const x0 = L[0].x - L[0].rx - 1, x1 = L[n - 1].x + L[n - 1].rx + 1, yc = L[0].y;
+    const streak = hfxSvgEl("path", { d: "M-1 " + (yc + 3).toFixed(2) + " L.4 " + (yc + 3).toFixed(2) + " L2.4 " + (yc - 3).toFixed(2) + " L1 " + (yc - 3).toFixed(2) + " Z", fill: "#FFFFFF", "fill-opacity": ".85", opacity: "0" }, shine);
+    [[4.0, .55], [8.55, .5]].forEach(([t, d]) => R.anim(streak, [{ transform: "translateX(" + (x0 - 2).toFixed(2) + "px)", opacity: 1 }, { transform: "translateX(" + x1.toFixed(2) + "px)", opacity: 1 }],
+      { duration: hfxRxMs(d), delay: hfxRxMs(t), easing: "ease-in-out", fill: "none" }));
+    /* on: down from above the head, a small bounce as they seat */
+    gg.style.transformBox = "view-box";
+    R.anim(gg, [{ transform: "translate(0px, -7px)", opacity: 0 }, { transform: "translate(0px, -3px)", opacity: 1, offset: .45 }, { transform: "translate(0px, .45px)", offset: .8 }, { transform: "translate(0px, 0px)", opacity: 1 }],
+      { duration: 520, delay: 650, easing: "ease-out" });
+    R.cover(F, .85, .25, 9.35, .55, true);
+    /* off: pushed back up and gone, as the dark lifts */
+    R.anim(gg, [{ transform: "translate(0px, 0px)", opacity: 1 }, { transform: "translate(0px, -2.6px)", opacity: 1, offset: .45 }, { transform: "translate(0px, -5.5px)", opacity: 0 }],
+      { duration: 800, delay: 9350, easing: "ease-in", fill: "forwards" });
+  }
+};
+/* Starts effect `id`'s reaction on the character in `av` (a
+   .results-level-avatar). o: palette (Confetti's colours), sea (the
+   Underwater hold is driven by the water's own line - hfxUwScreen - not
+   by time). Returns a handle; end(fade) takes it all off. */
+function hfxCharReact(av, id, o){
+  o = o || {};
+  id = hundoFxId(id);
+  const svg = av && av.querySelector("svg.avatarchar-svg");
+  if(!svg || !HFX_CHAR_RX[id]) return null;
+  if(av.__hfxRx) av.__hfxRx.end(false);
+  let F = null;
+  try{ F = hfxFaceOf(svg); }catch(e){ F = null; }
+  if(!F) return null;
+  const R = { av, svg, id, anims: [], timers: [], done: false, uid: (svg.getAttribute("data-cx-uid") || "cx") + "-hx" + (hfxRxSeq++) };
+  R.g = hfxSvgEl("g", { class: "cx-hx cx-hx-" + id }, F.host);
+  R.anim = (el, frames, opts) => { try{ const a = el.animate(frames, Object.assign({ fill: "both" }, opts)); a.id = "hfx-rx"; R.anims.push(a); return a; }catch(e){ return null; } };
+  R.later = (ms, fn) => R.timers.push(setTimeout(fn, ms));
+  /* a part of ours, in over `ind`s at `t`, out over `outd`s at `t2` */
+  R.fade = (el, t, ind, t2, outd) => {
+    const D = t2 + outd - t;
+    const e = "ease-in-out";
+    R.anim(el, [{ opacity: 0, easing: e }, { opacity: 1, offset: ind / D }, { opacity: 1, offset: (t2 - t) / D, easing: e }, { opacity: 0 }], { duration: hfxRxMs(D), delay: hfxRxMs(t) });
+  };
+  /* the character's own eyes faded under ours for the same time; from its
+     own value and back to it (implicit keyframes), so the hundo pose it
+     comes back to is untouched */
+  R.cover = (Fc, t, ind, t2, outd) => {
+    const D = t2 + outd - t;
+    ["cx-eyes", "cx-eyes-closed"].forEach(k => {
+      const el = Fc.host.querySelector(":scope > ." + k);
+      if(el) R.anim(el, [{ offset: 0, easing: "ease-in-out" }, { opacity: 0, offset: ind / D }, { opacity: 0, offset: (t2 - t) / D, easing: "ease-in-out" }, { offset: 1 }], { duration: hfxRxMs(D), delay: hfxRxMs(t), fill: "none" });
+    });
+  };
+  av.classList.add("hfx-rx", "hfx-rx-" + id);
+  av.__hfxRx = R;
+  try{ HFX_CHAR_RX[id](R, F, o); }catch(e){}
+  R.end = fade => {
+    if(R.done) return;
+    R.done = true;
+    R.timers.forEach(clearTimeout); R.timers = [];
+    const off = () => {
+      R.anims.forEach(a => { try{ a.cancel(); }catch(e){} });
+      R.anims = [];
+      if(R.hold) R.hold.end();
+      R.g.remove();
+      av.classList.remove("hfx-rx", "hfx-rx-" + id);
+      if(av.__hfxRx === R) av.__hfxRx = null;
+    };
+    if(fade && R.g.isConnected && R.g.animate){
+      try{ R.g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: "forwards" }); }catch(e){}
+      if(R.hold) R.hold.release();
+      setTimeout(off, 320);
+    } else off();
+  };
+  R.timers.push(setTimeout(() => R.end(false), hfxRxMs(HFX_RX_TOTAL[id] || 6)));
+  return R;
+}
+/* The results character, if `box` (the 100% card) is on a results screen. */
+function hfxResultsAvatar(box){
+  const panel = box && box.closest ? box.closest(".rs-screen") : null;
+  const av = panel ? panel.querySelector(".results-level-avatar") : null;
+  return av && av.querySelector("svg.avatarchar-svg") ? av : null;
 }
 function hfxUnderwater(scr, bx, c){
   const small = c.vw < 600, mini = !!c.frame || c.mini, k = mini ? .55 : 1;
@@ -83597,12 +84062,23 @@ function playHundoFx(id, opts){
     if(id !== "confetti" && opts.box && !opts.boxOnly) hfxApplyTint(id, opts);
     return null;
   }
-  if(id === "confetti" && !opts.boxOnly && !opts.frame){ celebrate(opts.palette, opts.pct || opts.box); return null; }
+  /* THE RESULTS CHARACTER REACTS TO IT (build 320): whenever an effect
+     plays on a results screen, from the moment it starts - hfxCharReact */
+  const rxAv = (!opts.boxOnly && !opts.frame && !opts.preview) ? hfxResultsAvatar(opts.box) : null;
+  if(id === "confetti" && !opts.boxOnly && !opts.frame){
+    celebrate(opts.palette, opts.pct || opts.box);
+    if(rxAv){ try{ hfxCharReact(rxAv, "confetti", { palette: opts.palette }); }catch(e){} }
+    return null;
+  }
   if(id === "confetti" && opts.frame) opts = Object.assign({}, opts, { boxOnly: true, frame: null });
   const c = hfxContext(opts);
   const total = opts.boxOnly ? HUNDO_FX_BOX_TOTAL[id] : HUNDO_FX_TOTAL[id];
   const tint = HFX_TINT[id] || null;
   c.anims = []; c.cleanup = [];
+  if(rxAv){
+    try{ c.charRx = hfxCharReact(rxAv, id, { sea: id === "underwater", palette: opts.palette }); }catch(e){ c.charRx = null; }
+    if(c.charRx) hfxOnEnd(c, fade => c.charRx.end(!!fade));
+  }
   c.scene = opts.boxOnly ? null : hfxLayout(c);
   let scr = null, bx = null;
   if(!opts.boxOnly){
