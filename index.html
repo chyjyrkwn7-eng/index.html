@@ -40439,6 +40439,9 @@ function saveRunSession(asSaved){
     }
     const s = {
       v: 1, at: now, build: APP_BUILD, saved: saved, savedAt: saved ? now : null, qkeys,
+      /* whose test it is: the account's anonymous id (build 320) - see
+         savedTestLeavesWithAccount */
+      pub: (store && store.publicId) || null,
       studyPriorMs: runStudyPriorMs || 0,
       flarePlan: (mysteryAppearsAtPos >= 0 && mysteryColorThisRun && !mysteryFoundThisSession)
         ? { at: mysteryAppearsAtPos, color: mysteryColorThisRun, left: mysteryLeftFrac } : null,
@@ -40483,6 +40486,24 @@ function mirrorRunSession(raw){
       else tx.objectStore(IDB_STORE).delete(IDB_RUN_KEY);
     }).catch(() => {});
   }catch(e){}
+}
+/* A TEST SAVED BY ONE ACCOUNT IS NOT OFFERED TO ANOTHER (build 320).
+   Linking this device to a different code (Settings' Link this device, or
+   signing in with a code) replaces the account on it, the same as a reset
+   does - so the saved test goes with the old one, from the slot and from
+   its IndexedDB mirror. Only on a real switch: signing in to the account
+   the test belongs to, an account following its own move to a new code
+   (followAccountMove), a launch, or the launch URL's recovery leave it. */
+function savedTestLeavesWithAccount(fromCode, toCode){
+  /* called once the new account's store is in: the test knows whose it
+     is (its `pub`), so signing back in to your OWN account - say on a
+     device that lost its code - keeps it. A test from before build 320
+     carries no owner and goes by the code instead. */
+  let s = null;
+  try{ s = JSON.parse(localStorage.getItem(RUN_SESSION_KEY) || "null"); }catch(e){}
+  const now = (store && store.publicId) || null;
+  if(s && s.pub && now){ if(s.pub !== now) clearRunSession(); return; }
+  if(String(fromCode || "") !== String(toCode || "")) clearRunSession();
 }
 function restoreRunSessionFromMirror(){
   try{
@@ -40574,6 +40595,7 @@ function markRunSessionSaved(){
     const s = JSON.parse(raw);
     if(!s || s.saved) return;
     s.saved = true; s.savedAt = Date.now();
+    if(!s.pub) s.pub = (store && store.publicId) || null;
     try{ s.runStartLocked = Array.from(lockedCharacterSet()); s.runStartBanners = Array.from(earnedBannerSet()); }catch(e){}
     if(!s.qkeys){
       const qkeys = {};
@@ -69022,8 +69044,10 @@ function showWelcomeCodeEntry(){
   syncBtn.addEventListener("click", () => {
     if(!verifiedCode) return;
     syncBtn.disabled = true; syncBtn.textContent = "Syncing\u2026";
+    const codeBefore = syncCode;
     adoptFromCloud(verifiedCode, (ok, reason) => {
       if(ok){
+        savedTestLeavesWithAccount(codeBefore, verifiedCode);
         /* Signing in brings the account from another device, where the
            chat explainer has already been read (or will be) - not
            something to meet again on this one as "new in this update". */
@@ -91067,8 +91091,10 @@ function showAppearance(opts){
       const hasLocalProgress = store.lifetime.points > 0 || Object.keys(store.testStats).length > 0;
       if(hasLocalProgress && !window.confirm("This device already has its own progress. Linking will replace it with whatever's saved under that code instead. Continue?")) return;
       linkBtn.disabled = true; linkBtn.textContent = "Linking\u2026";
+      const codeBefore = syncCode;
       adoptFromCloud(code, (ok, reason) => {
         if(ok){
+          savedTestLeavesWithAccount(codeBefore, code);
           setSyncCode(code);
           attachLiveListener(code);
           updateHeaderTitle();

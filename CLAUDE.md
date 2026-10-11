@@ -19500,7 +19500,15 @@ dirtier by the week so by week 3-4 they'd be their dirtiest."*
   at boot when localStorage has none) - the same defence the store and
   the code have against iOS clearing an installed app's localStorage.
   A reset (`wipeLocalProgressAndSettings`) now clears the slot too: a test
-  saved by the old account is not offered to the new one.
+  saved by the old account is not offered to the new one. So does linking
+  to ANOTHER account (Settings' Link this device, the sign-in with a
+  code): `savedTestLeavesWithAccount(codeBefore, code)` runs once the new
+  store is in and clears the slot and its mirror when the test's owner
+  (`pub`, the account's publicId, written into every save) is not the
+  account now on the device - so signing back in to your own account on
+  a device that lost its code keeps it. A save with no owner (before 320)
+  goes by the code. A launch, the launch-URL recovery and
+  `followAccountMove` (your own account changing code) never call it.
 - **The daily ring is one SVG circle and it is always on the button**
   (`.dq-ring`, `buildDailyRing`, `setDailyRing`). The charge's two CSS
   half-borders tapered to a point where a side was taken off, and the two
@@ -19538,7 +19546,9 @@ dirtier by the week so by week 3-4 they'd be their dirtiest."*
   road map, the tablet's total, Stats' total; every switcher (Profile,
   Month / List, Leaderboard, chat, room review) within 0.5px on both
   reference devices; Save and exit lighter than Quit; a saved test through
-  a reload, a cold start and a wiped slot; LOADING TEST on Resume with
+  a reload, a cold start and a wiped slot; kept on signing back in to its
+  own account, cleared (slot and mirror) on linking to another (fails on
+  377dbf2); LOADING TEST on Resume with
   nothing live under it and the count-down intact; the ring never past
   whole from empty and from .97; the waiting ring at .25 at 11pm and .375
   three hours on (faked clock); the whole ring even at 12 and 6 o'clock
