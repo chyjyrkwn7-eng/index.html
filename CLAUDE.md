@@ -19362,3 +19362,98 @@ and "jumping". All in the block after `buildRanksTab()` unless noted.
   change, 1.4s+ a level, the challenge in step; the tab never ringing or
   jumping (Home locked, refused tap, after). `check_b319_rankup` moved to
   the new decisions (no loading screen, Up next on the map, "Your rank").
+
+### Build 320 (b320e) - the planet cracks rank by rank, the crack forms in the rank-up, the blast remembered, Home's planet whole on its first frame
+
+**One crack, growing from Gold to Supernova** (`CRACK_RANK_STAGE`,
+`CRACK_STAGES`, `heroCrackStage`, `cosmicScarArt(stage)`). Madison: *"each
+rank after silver ... start introducing cracks ... At gold it would be super
+small but noticeable, and each rank it would become a bigger and bigger crack
+and then super nova would have the super nova one ... Each rank cracks would
+match the next."*
+- The Supernova scar's own crack network is the source of every stage. Each
+  path of it is RECORDED first (same seeded draws in the same order at every
+  stage, so Supernova's scar did not move) with an ARRIVAL per point: how far
+  along the network from the point of impact. A stage is `{ reach, width,
+  depth, burn, shine }`: the crack is drawn as far as `reach` (narrowing to
+  nothing over `CRACK_TAPER` behind its front), at `width`/`depth` of the
+  full scar's, with `burn` of its scorch and the shine broken out to
+  `shine`. Below Supernova a short stretch through the impact point joins the
+  two arms (`only: "low"`); the crater's own fractures are Supernova's only
+  (`only: "full"`). New geometry draws from its own seed (`rnd2`).
+- Gold .30 / Platinum .62 / Sapphire .96 / Amethyst 1.36 reach; widths .16 /
+  .30 / .48 / .70. **The burn begins at Amethyst** (my call, from "maybe the
+  burn mark shows up at the later rank"): a faint scorch along the widest part
+  (`burn: .32`) and the shine starting to break where the crack has reached it
+  (`shine: .32`); Supernova adds the crater, the full burn and the whole
+  broken shine.
+- **The burn is connected**: a crack now runs from the long arm into the
+  middle of the broken shine (`recC`, the "crack into the shine"), so the
+  crater, the crack and the shine are one dark piece (measured: the largest
+  dark component of the burn canvas holds the impact, the far end of the long
+  arm and the middle of the shine). This is the one change to Supernova's art.
+- **Two more ranks later**: give each a stage in `CRACK_RANK_STAGE` and a row
+  in `CRACK_STAGES` (renumbering those above); the last row is always the full
+  scar. Nothing else counts stages.
+- **What shows where**: `buildCosmicHero` asks `heroCrackStage()` - the full
+  scar once `store.supernovaAchieved`, else the stage of the rank SHOWN
+  (`rankUpShownRank()`), so a crack first appears in its own rank-up. Every
+  planet built by `buildCosmicHero` carries it (Home, Welcome, the Genesis
+  scene, the rank scenes). A rank's crack is `.cosmic-scar.is-crack` (the
+  burn canvas only - no flakes, ember, glints or smoke) in the scar's place,
+  with the art's own mask on the plasma (`decorateCrackHero`).
+  `decorateSupernovaHero` replaces an `is-crack` scar with the full one.
+  `heroCrackStageFor` overrides the stage for the length of a scene's build.
+- Cost: a rank's crack art is drawn once per launch, on the first Home (under
+  the splash), smaller than the full scar's (no crater, soot or lava grids).
+
+**The crack forms after the flash** (`crackFormLayers`, `crackFormArm`,
+`warmCrackForm`). *"after the flash the crack won't instantly be there, it
+would do it when you can see it so you can see the crack(s) form"*. The planet
+you are getting is built carrying the crack you HAD (`opts.from`'s stage); the
+new stage's art is split into `CRACK_FORM_K` (8) canvases by the art's arrival
+map, each exactly what composites OVER the old stage to give the new one, and
+their opacity comes up in arrival order - the crack deepens and runs on from
+where it stopped, a point of light at each front (`.csc-run`; ember-coloured
+for Supernova's burn), chips falling off it (`.csc-chip`), and each layer's glowing twin
+(`.csc-form-glow`: the same stretch as light, cool white for a rank, ember for
+Supernova, softened with a canvas shadow) coming up with it and cooling away -
+the scene's planet is about half Home's size, and a new Gold hairline alone is
+a pixel or less there. At the end the burn
+canvas is the new art itself (`is-formed`). All made before the scene's first
+frame; transform and opacity only. A rank plays it at `b + CRACK_FORM_AT_MS`
+(1500ms after the flash, the flash's wash gone) for `CRACK_FORM_MS` (2000);
+Supernova at its `sn-scarred` beat for `CRACK_FORM_SN_MS` (3000): the burn
+creeps out of the impact along the whole crack and into the shine, and the
+ember, the flakes, the glints and the smoke come up behind it. **No scene
+timing constant was changed.** Reduce motion: the new planet already has its
+new crack. The scar no longer waits on `data-sn-reveal` (it is on screen from
+the swap, carrying the old crack).
+
+**The blast remembered** (`scarAfterEffects`). *"ensure the planet still has
+constant effects ... but now has constant reminding effects of the explosion.
+Ensure fragmented pieces still come out."* Everything the Supernova planet did
+is untouched (flakes, smoke, ember, debris, soot); added: five glints along the
+crack (`.csc-glint`, a short cool streak laid along it, 9.7-17.9s clocks) and
+three faint dark wisps rising off the crater and the shine (`.csc-smoke`).
+Seamless loops (last keyframe = first), nothing under Reduce motion.
+
+**Home's planet is whole on its first frame back** (`heroSettleSkip`). *"when
+the main menu opens, the large planet is black and then you can see it."*
+Every Home arrival faded the planet's svgs in (`cosmic-hero-settle`: nothing
+for ~100ms, then up over ~120ms) - frame-stepped, the sphere was a dark hole in
+its glow for four frames coming back from a test. A Home shown before
+(`.is-return`) now has its settle animations finished before the first frame;
+the first Home of a launch keeps the fade (built under the splash).
+`check_b318_scar`'s return visit moved to this decision (planet and scar at 1
+on frame 0); its first visit is unchanged.
+
+**Gate: `check_b320e_cracks`** (fails on a73c681): no crack below Gold; from
+Gold more pixels every rank and 98%+ of each rank's solid pixels kept at the
+next; Gold under a fifth of Supernova; Supernova one dark piece; Amethyst's
+shine starting to break; flakes and ember only at Supernova; Home's Supernova
+flakes looping and moving with glints and smoke; Silver to Gold and Amethyst to
+Supernova frame-stepped - none of the new crack on the frames after the flash,
+growing from 1s+ after it with a running light and chips, the new art in full
+by the title (Supernova's flakes showing); and a return to Home whole on its
+first frame.

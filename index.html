@@ -11324,6 +11324,44 @@
     100%{ opacity:0; transform:translate(var(--dx), var(--dy)) rotate(var(--r)) scale(.6); }
   }
   @keyframes csc-ember{ from{ opacity:.45; } to{ opacity:1; } }
+  /* THE EXPLOSION, REMEMBERED (build 320, scarAfterEffects): now and then
+     a broken edge along the crack catches the light - a short cool streak
+     laid along the crack - and faint dark smoke rises off the crater and
+     the broken shine. Transform and opacity only; each loop's last frame
+     is its first; nothing under Reduce motion (the scar's rule above). */
+  .csc-glints, .csc-smokes{ position:absolute; inset:0; pointer-events:none; }
+  .cosmic-scar .csc-glint{ left:var(--x); top:var(--y); width:10%; height:2.4%; translate:-50% -50%; rotate:var(--a); opacity:0;
+    background:radial-gradient(ellipse 50% 50% at 50% 50%, rgba(246,248,252,.95) 0, rgba(214,224,238,.5) 38%, rgba(200,212,230,0) 74%);
+    animation:csc-glint var(--t) ease-in-out var(--d) infinite; }
+  .cosmic-scar .csc-glint::after{ content:""; position:absolute; left:50%; top:50%; width:26%; aspect-ratio:1; translate:-50% -50%; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,255,255,.95) 0, rgba(255,255,255,.4) 34%, rgba(255,255,255,0) 70%); }
+  @keyframes csc-glint{
+    0%, 88%{ opacity:0; transform:scaleX(.3); }
+    92%{ opacity:1; transform:scaleX(1); }
+    97%{ opacity:0; transform:scaleX(.6); }
+    100%{ opacity:0; transform:scaleX(.3); }
+  }
+  .cosmic-scar .csc-smoke{ left:var(--x); top:var(--y); width:30%; aspect-ratio:1; translate:-50% -50%; opacity:0; border-radius:50%;
+    background:radial-gradient(circle, rgba(30,26,25,.6) 0, rgba(30,26,25,.28) 38%, rgba(30,26,25,0) 70%);
+    animation:csc-smoke var(--t) cubic-bezier(.3,.2,.6,1) var(--d) infinite; }
+  @keyframes csc-smoke{
+    0%{ opacity:0; transform:translate(0, 0) scale(.35); }
+    18%{ opacity:.5; }
+    70%{ opacity:.16; transform:translate(calc(var(--sx) * 26%), -95%) scale(1.15); }
+    80%{ opacity:0; transform:translate(calc(var(--sx) * 32%), -120%) scale(1.3); }
+    81%{ opacity:0; transform:translate(0, 0) scale(.35); }
+    100%{ opacity:0; transform:translate(0, 0) scale(.35); }
+  }
+  /* THE CRACK FORMING (build 320, crackFormArm): the new stage's layers,
+     the point of light running at each front, the chips that fall */
+  .cosmic-scar canvas.csc-form{ will-change:opacity; }
+  .cosmic-scar .csc-run{ left:0; top:0; width:7%; aspect-ratio:1; translate:-50% -50%; opacity:0; border-radius:50%;
+    background:radial-gradient(circle, #FFFFFF 0, rgba(232,240,252,.85) 22%, rgba(200,216,242,.3) 46%, rgba(200,216,242,0) 70%); }
+  .cosmic-scar .csc-run.is-burn{ width:10%;
+    background:radial-gradient(circle, #FFF1D6 0, rgba(255,170,90,.85) 24%, rgba(255,96,30,.35) 48%, rgba(255,80,20,0) 72%); }
+  .cosmic-scar .csc-chip{ width:3.6%; aspect-ratio:1; margin:-1.8% 0 0 -1.8%; opacity:0;
+    background:linear-gradient(170deg, #040303 0, #121010 50%, #3A3634 75%, #8C8680 100%);
+    clip-path:polygon(38% 0, 62% 14%, 100% 52%, 72% 64%, 58% 100%, 30% 70%, 0 58%, 22% 30%); }
   /* the plasma's light never washes over the rupture, and its smoke
      drifts only partly over the crack - the art's own mask (--scar-mask) */
   .cosmic-hero-wrap.is-scarred > .cosmic-plasma{
@@ -64919,6 +64957,30 @@ const LOOP_EPOCH = Date.UTC(2026, 0, 1);
 let orbitAdvanceMs = 0;
 const ORBIT_PHASE_ANIMS = { "cosmic-orbit-spin": 1, "cof-scarpass": 1 };
 let homeShownBefore = false;
+/* THE PLANET IS THERE ON THE FIRST FRAME BACK (build 320, b320e).
+   Madison, of the recordings: "when the main menu opens, the large planet
+   is black and then you can see it. Ensure the page load properly." Every
+   arrival on Home faded the planet's svgs in (cosmic-hero-settle: nothing
+   for the first ~100ms, then up over ~120ms), and the plasma, the scar and
+   the soot with them - so coming back from a test the sphere was a dark
+   hole in its own glow for four frames, then appeared. That fade was put
+   on (long ago) against the turbulence filter painting late on a first
+   paint; a Home that has been shown before (.is-return) has had its first
+   paint, so - as the rings already did since build 314 - it now arrives
+   whole: the fade is finished before the first frame. The first Home of a
+   launch keeps it (it is built under the splash, and gone by the time the
+   splash lifts). Nothing is drawn or measured: the animations already
+   exist (syncLoopClock has just read them), they are only run to their
+   end. */
+function heroSettleSkip(root){
+  try{
+    const hw = root && root.querySelector(".cosmic-hero-wrap.is-return");
+    if(!hw || !hw.getAnimations) return;
+    hw.getAnimations({ subtree: true }).forEach(a => {
+      if(a.animationName === "cosmic-hero-settle" || a.animationName === "cosmic-hero-settle-in"){ try{ a.finish(); }catch(e){} }
+    });
+  }catch(e){}
+}
 function syncLoopClock(root){
   if(!root || !root.getAnimations) return;
   let anims;
@@ -65703,8 +65765,11 @@ function scarSS(a, b, t){ let k = (t - a) / (b - a); k = k < 0 ? 0 : k > 1 ? 1 :
 function scarPass1(P){
   const N = P.N, BK = P.BK, Q = P.Q, Q1 = P.Q1, FI = P.FI, FR = P.FR, FE = P.FE, FN = P.FN, LV = P.LV, LVN = P.LVN, LVS = P.LVS;
   const cnt = P.cnt, lst = P.lst, SF = P.SF, CX = P.CX, CY = P.CY, C3x = P.C3x, C3y = P.C3y, C3z = P.C3z, SR = P.SR;
-  const NN = P.NN, LV1 = LVN + 1, ss = scarSS;
+  const NN = P.NN, LV1 = LVN + 1, ss = scarSS, CR = P.CR, RHO = P.RHO;
   const Hf = P.Hf = new Float32Array(NN), Cov = P.Cov = new Float32Array(NN), Mat = P.Mat = new Uint8Array(NN);
+  /* (build 320) how far along the crack each pixel is reached from the
+     impact - the forming in a cutscene runs along it */
+  const Ar = P.Ar = new Float32Array(NN);
   const Em = P.Em = new Float32Array(NN), As = P.As = new Float32Array(NN), Dp = P.Dp = new Float32Array(NN), On = P.On = new Uint8Array(NN);
   const rhoC = 2 * Math.sin(P.RHO / 2), PXMIN = 1.5 / N, BPX = N / BK, reach2 = (SR + .06) * (SR + .06);
   /* the buckets the scar touches, nearest the impact first: every branch
@@ -65715,7 +65780,7 @@ function scarPass1(P){
   const order = [];
   for(let by = 0; by < BK; by++) for(let bx = 0; bx < BK; bx++){
     const bcx = (bx + .5) / BK * 2 - 1 - CX, bcy = (by + .5) / BK * 2 - 1 - CY, d2 = bcx * bcx + bcy * bcy;
-    if(cnt[by * BK + bx] === cnt[by * BK + bx + 1] && d2 > reach2) continue;
+    if(cnt[by * BK + bx] === cnt[by * BK + bx + 1] && (!CR || d2 > reach2)) continue;
     order.push(Math.floor(d2 * 1e4) * BK * BK + by * BK + bx);
   }
   order.sort((a, b) => a - b);
@@ -65751,7 +65816,9 @@ function scarPass1(P){
         const n2 = FN[q0] * w00 + FN[q0 + 1] * w10 + FN[q0 + Q1] * w01 + FN[q0 + Q1 + 1] * w11;
         /* the rupture: distance on the sphere, its edge torn by noise */
         const ex = x - C3x, ey = y - C3y, ez = z - C3z;
-        const ch = Math.sqrt(ex * ex + ey * ey + ez * ez) / rhoC;
+        /* (no crater below Supernova: build 320) */
+        const ch = CR ? Math.sqrt(ex * ex + ey * ey + ez * ez) / rhoC : 99;
+        let arv = ch * RHO;
         const qc = ch * (1 + .5 * (edg - .5) + .22 * (n1 - .5));
         let h = 0, em = 0, ash = 0, dp = 0, mat = 0;
         /* (the floor is seen from above, so it is only half hidden - its
@@ -65774,7 +65841,7 @@ function scarPass1(P){
            the limb is longer than it looks), against its local width */
         if(b1 > b0){
           const r = Math.sqrt(r2), rx = r > .001 ? x / r : 0, ry = r > .001 ? y / r : 0, zz = z < .1 ? .1 : z, fs = 1 / (zz * zz) - 1;
-          let bt = 9, bD = 0, bH = 0, bKind = -1, bW = 1;
+          let bt = 9, bD = 0, bH = 0, bKind = -1, bW = 1, bA = 0;
           for(let m = b0; m < b1; m++){
             const o = lst[m];
             const ax = SF[o], ay = SF[o + 1], dx = SF[o + 2] - ax, dy = SF[o + 3] - ay;
@@ -65784,10 +65851,11 @@ function scarPass1(P){
             const d2 = ox * ox + oy * oy + orr * orr * fs;
             const w = SF[o + 4] + t * (SF[o + 5] - SF[o + 4]), we = w > PXMIN ? w : PXMIN;
             const tt2 = d2 / (we * we);
-            if(tt2 < bt){ bt = tt2; bW = w / we; bD = (SF[o + 6] + t * (SF[o + 7] - SF[o + 6])) * bW; bH = (SF[o + 8] + t * (SF[o + 9] - SF[o + 8])) * bW; bKind = SF[o + 11]; }
+            if(tt2 < bt){ bt = tt2; bW = w / we; bD = (SF[o + 6] + t * (SF[o + 7] - SF[o + 6])) * bW; bH = (SF[o + 8] + t * (SF[o + 9] - SF[o + 8])) * bW; bKind = SF[o + 11]; bA = SF[o + 12] + t * (SF[o + 13] - SF[o + 12]); }
           }
           if(bKind >= 0 && bt < 9){
             bt = Math.sqrt(bt);
+            arv = bA;
             const inCr = ss(.55, 1.0, qc);
             const g = bt < 1 ? -bD * Math.pow(1 - bt * bt, .55) : 0;
             const lr = (bt - 1.25) / .42;
@@ -65825,7 +65893,7 @@ function scarPass1(P){
         }
         const cv = cov * (.78 + .44 * n2);
         if(h === 0 && cv < .004 && chr < .004 && em < .004) continue;
-        On[k] = 1; Hf[k] = h; Cov[k] = cv > chr ? cv : chr; Mat[k] = chr >= cv ? mat : 0; Em[k] = em; As[k] = ash; Dp[k] = dp;
+        On[k] = 1; Hf[k] = h; Cov[k] = cv > chr ? cv : chr; Mat[k] = chr >= cv ? mat : 0; Em[k] = em; As[k] = ash; Dp[k] = dp; Ar[k] = arv > 1e-4 ? arv : 1e-4;
       }
     }
   }
@@ -65956,7 +66024,12 @@ let cosmicScarCache = null;
    to be black charring"), and the plasma's light pools kept half off it
    through the art's mask, as they are kept off the crack. */
 const SCAR_SHINE = { x: -.33, y: -.35, r: .36 };
-function scarShineWound(g, N, gM, MQ){
+/* amt (build 320): how far the shattering has spread from its middle (1:
+   all of it - Supernova's; Amethyst's is under half); Ar / arr0: each
+   pixel's arrival along the crack, the patch reached at arr0 (the end of
+   the crack into it) and spreading out from there. */
+function scarShineWound(g, N, gM, MQ, amt, Ar, arr0){
+  const AMT = amt == null ? 1 : amt;
   let seed = 9173;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
   const S = N / 2, IX = SCAR_SHINE.x, IY = SCAR_SHINE.y, RW = SCAR_SHINE.r, IZ = Math.sqrt(1 - IX * IX - IY * IY);
@@ -65995,11 +66068,17 @@ function scarShineWound(g, N, gM, MQ){
     const r = Math.hypot(u, v);
     /* the reach: ragged, fading out to nothing */
     const th = Math.atan2(v, u), edge = RW * (.78 + .44 * nz(Math.cos(th) * 1.6 + 7, Math.sin(th) * 1.6 + 3.1));
-    const fall = 1 - sm(Math.min(1, Math.max(0, (r - edge * .55) / (edge * .45))));
+    let fall = 1 - sm(Math.min(1, Math.max(0, (r - edge * .55) / (edge * .45))));
     /* a scorch past the plates, so the broken patch sits IN a burn rather
        than on a clean shine */
-    const halo = .44 * (1 - sm(Math.min(1, Math.max(0, (r - edge * .3) / (edge * .95))))) * (.7 + .6 * nz(u * 14 + 21, v * 14 + 6));
+    let halo = .44 * (1 - sm(Math.min(1, Math.max(0, (r - edge * .3) / (edge * .95))))) * (.7 + .6 * nz(u * 14 + 21, v * 14 + 6));
+    /* only part-way out from the middle yet (build 320, Amethyst) */
+    if(AMT < 1){
+      fall *= 1 - sm(Math.min(1, Math.max(0, (r / RW - AMT * .8) / .22)));
+      halo *= AMT * (1 - sm(Math.min(1, Math.max(0, (r / RW - AMT * 1.3) / .3))));
+    }
     if(fall <= 0 && halo <= .004) continue;
+    if(Ar){ const gi = (y0 + py) * N + x0 + pxx, e0 = Ar[gi], v0 = (arr0 || 0) + Math.hypot(dx, dy); Ar[gi] = e0 > 0 && e0 < v0 ? e0 : v0; }
     const o = (py * W + pxx) * 4;
     const haloOnly = () => { dd[o] = 22; dd[o + 1] = 15; dd[o + 2] = 12; dd[o + 3] = Math.round(Math.min(.5, halo) * 255); };
     if(fall <= 0){ haloOnly(); continue; }
@@ -66043,15 +66122,85 @@ function scarShineWound(g, N, gM, MQ){
     const m = MQ / 2, mx = (IX + 1) * m, my = (IY + 1) * m, mr = RW * m;
     gM.save(); gM.globalCompositeOperation = "destination-out";
     const mg = gM.createRadialGradient(mx, my, 0, mx, my, mr);
-    mg.addColorStop(0, "rgba(0,0,0,.6)"); mg.addColorStop(.6, "rgba(0,0,0,.35)"); mg.addColorStop(1, "rgba(0,0,0,0)");
+    mg.addColorStop(0, "rgba(0,0,0," + (.6 * AMT).toFixed(3) + ")"); mg.addColorStop(.6, "rgba(0,0,0," + (.35 * AMT).toFixed(3) + ")"); mg.addColorStop(1, "rgba(0,0,0,0)");
     gM.fillStyle = mg; gM.fillRect(0, 0, MQ, MQ); gM.restore();
   }
 }
-function cosmicScarArt(){
-  if(cosmicScarCache !== null) return cosmicScarCache;
-  cosmicScarCache = false;
+/* ---- THE CRACK, RANK BY RANK (build 320, b320e) ----
+   Madison: "Could each rank after silver (so starting the rank up to gold
+   cutscene) start introducing cracks to the planet system? At gold it
+   would be super small but noticeable, and each rank it would become a
+   bigger and bigger crack and then super nova would have the super nova
+   one ... Each rank cracks would match the next ... the burn mark ...
+   seems disconnected from the other crack so ensure it seems to be
+   connected ... Maybe the burn mark shows up at the later rank ... Gets
+   worse as the ranks go up." And: "we are gonna add two more ranks later".
+   - ONE CRACK, GROWING. The Supernova scar's own crack network (the two
+     arms, their branches, and the crack that now runs up into the broken
+     shine) is drawn at every stage; what a stage changes is how FAR along
+     it the crack has run (`reach`, an ARRIVAL distance along the network
+     from the point of impact, in the sphere's units) and how wide and
+     deep it is there (`width`, `depth`, scales of the full scar's).
+     Below Supernova a short stretch through the impact point joins the
+     two arms (the blast blows it out). Widths only grow with the stage
+     and the reach only lengthens, so each stage holds the one before it.
+   - THE BURN BEGINS AT AMETHYST: a faint scorch along the widest part
+     (`burn`, a scale of the full scar's heat) and the shine starting to
+     break where the crack has reached it (`shine`, how far the shattering
+     has spread from the crack's end). Supernova: the crater, the full
+     burn, the shine shattered - ONE dark piece with the crack.
+   - TO ADD A RANK: give it a stage in CRACK_RANK_STAGE and a row in
+     CRACK_STAGES (renumbering those above it); the last row is always the
+     full scar. Nothing else counts stages. */
+const CRACK_RANK_STAGE = { veteran: 1, vanguard: 2, adept: 3, elite: 4, titan: 5 };
+const CRACK_STAGES = [
+  null,
+  { reach: .30, width: .16, depth: .40, burn: 0, shine: 0 },     /* Gold: a hairline through the impact point */
+  { reach: .62, width: .30, depth: .55, burn: 0, shine: 0 },     /* Platinum */
+  { reach: .96, width: .48, depth: .70, burn: 0, shine: 0 },     /* Sapphire */
+  { reach: 1.36, width: .70, depth: .85, burn: .32, shine: .32 }, /* Amethyst: the burn begins */
+  { full: true }                                                  /* Supernova: the blast's own scar */
+];
+const CRACK_TOP = CRACK_STAGES.length - 1;
+/* how far behind the crack's front it narrows to nothing */
+const CRACK_TAPER = .2;
+function crackStageOfRank(k){ const s = CRACK_RANK_STAGE[k]; return s > 0 ? Math.min(CRACK_TOP, s) : 0; }
+/* The stage a hero is built with. A scene sets heroCrackStageFor for the
+   length of a build (the planet you had, the planet you are getting);
+   otherwise the account's: Supernova's full scar once it has gone off,
+   else the rank SHOWN - so a crack first appears in its own rank-up. */
+var heroCrackStageFor;
+function heroCrackStage(){
+  if(heroCrackStageFor !== undefined) return heroCrackStageFor;
   try{
+    if(typeof store === "undefined" || !store) return 0;
+    if(store.supernovaAchieved) return CRACK_TOP;
+    if(!store.onboardingComplete) return 0;
+    return Math.min(CRACK_TOP - 1, crackStageOfRank(rankUpShownRank()));
+  }catch(e){ return 0; }
+}
+const crackArtCache = {};
+/* cosmicScarArt() is the full scar (cached in cosmicScarCache, as it
+   always was); cosmicScarArt(stage) a rank's crack, each cached. */
+function cosmicScarArt(stage){
+  const s = (stage == null || !(stage < CRACK_TOP)) ? CRACK_TOP : Math.max(1, Math.floor(stage));
+  if(s === CRACK_TOP){
+    if(cosmicScarCache !== null) return cosmicScarCache;
+    cosmicScarCache = false;
+    cosmicScarCache = drawScarArt(s) || false;
+    return cosmicScarCache;
+  }
+  if(crackArtCache[s] !== undefined) return crackArtCache[s];
+  crackArtCache[s] = false;
+  crackArtCache[s] = drawScarArt(s) || false;
+  return crackArtCache[s];
+}
+function drawScarArt(stg){
+  let out = false;
+  try{
+    const ST = stg >= CRACK_TOP ? null : CRACK_STAGES[stg], FULL = !ST, REACH = FULL ? Infinity : ST.reach;
     const t0 = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+
     const dpr = (typeof window !== "undefined" && window.devicePixelRatio) || 1;
     /* at least the sphere's own device pixels: 384 for its 360 on a 3x
        phone and its ~330 on an iPad (a multiple of 64, the buckets) */
@@ -66059,7 +66208,7 @@ function cosmicScarArt(){
     const mk = n => { const c = document.createElement("canvas"); c.width = c.height = n; return c; };
     const cB = mk(N), cE = mk(N);
     const gB = cB.getContext("2d"), gE = cE.getContext("2d");
-    if(!gB || !gE) return cosmicScarCache;
+    if(!gB || !gE) return false;
     let seed = 7331;
     const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
     const G = 64, grid = new Float32Array(G * G);
@@ -66087,12 +66236,12 @@ function cosmicScarArt(){
     };
     /* a crack ON the sphere: the great circle from A to B, pushed side to
        side - so it bends with the planet and foreshortens at the limb */
-    const arc = (A, B, n, mAmp, mFreq, ph) => {
-      const pts = [], side = nrm(cross(A, B));
+    const arc = (A, B, n, mAmp, mFreq, ph, R) => {
+      const pts = [], side = nrm(cross(A, B)), rr = R || rnd;
       let wal = 0;
       for(let k = 0; k <= n; k++){
         const f = k / n;
-        wal = wal * .7 + (rnd() - .5) * .5;
+        wal = wal * .7 + (rr() - .5) * .5;
         const P = slerp(A, B, f), push = (Math.sin(f * Math.PI * mFreq + ph) * .7 + wal * .5) * mAmp * Math.sin(f * Math.PI);
         pts.push(nrm([P[0] + side[0] * push, P[1] + side[1] * push, P[2] + side[2] * push]));
       }
@@ -66101,13 +66250,14 @@ function cosmicScarArt(){
     /* the rhythm of a real fracture: each midpoint pushed sideways, and
        again, each time finer and smaller (two levels - a third made steps
        smaller than a pixel) */
-    const jag = (pts, levels, amp) => {
+    const jag = (pts, levels, amp, R) => {
+      const rr = R || rnd;
       let p = pts.map((q, i) => [q[0], q[1], i / (pts.length - 1)]);
       for(let l = 0; l < levels; l++){
         const out = [p[0]];
         for(let k = 1; k < p.length; k++){
           const a = p[k - 1], b = p[k], dx = b[0] - a[0], dy = b[1] - a[1], Ln = Math.sqrt(dx * dx + dy * dy) || 1e-6;
-          const off = (rnd() - .5) * amp * Ln;
+          const off = (rr() - .5) * amp * Ln;
           out.push([(a[0] + b[0]) / 2 - dy / Ln * off, (a[1] + b[1]) / 2 + dx / Ln * off, (a[2] + b[2]) / 2], b);
         }
         p = out; amp *= .7;
@@ -66115,55 +66265,105 @@ function cosmicScarArt(){
       return p;
     };
     /* per segment: ax ay bx by, half-width at each end, depth at each end,
-       heat at each end, lip, kind (0 the arms, 1 a branch, 2 a hairline).
-       The lip field is no longer read - the lips follow the grain, smooth
-       along the crack - but its random draw stays, so the seeded geometry
-       is the same scar. */
-    const SEG = [];
-    const addPath = (p, w0, w1, d0, h0, kind, wPow) => {
-      const W = f => w1 + (w0 - w1) * Math.pow(1 - f, wPow);
-      const D = f => d0 * Math.pow(1 - f, .6);
-      const Hh = f => h0 * Math.pow(1 - f, .9) * (.5 + .5 * Math.exp(-f / .28));
-      for(let k = 1; k < p.length; k++){
-        const a = p[k - 1], b = p[k];
-        SEG.push(a[0], a[1], b[0], b[1], W(a[2]), W(b[2]), D(a[2]), D(b[2]), Hh(a[2]), Hh(b[2]), .55 + .9 * rnd(), kind);
-      }
+       heat at each end, lip, kind (0 the arms, 1 a branch, 2 a hairline),
+       and (build 320) the arrival at each end - how far along the crack
+       from the impact. The lip field is no longer read - the lips follow
+       the grain, smooth along the crack - but its random draw stays, so
+       the seeded geometry is the same scar. */
+    /* EVERY PATH IS RECORDED FIRST, then drawn as far as the stage reaches
+       (build 320): the seeded draws happen in the same order whatever the
+       stage, so every stage is cut from the same crack and Supernova's is
+       the scar it always was. What build 320 adds (the stretch through the
+       impact point, the crack into the shine) draws from a seed of its
+       own, so nothing of the old scar moved. */
+    let seed2 = 52021;
+    const rnd2 = () => { seed2 = (seed2 * 16807) % 2147483647; return seed2 / 2147483647; };
+    const PATHS = [];
+    /* only: "full" for the crater's own fractures, "low" for the stretch the
+       blast blows out; arr0: the arrival at the path's first point */
+    const addPath = (p, w0, w1, d0, h0, kind, wPow, arr0, only, R) => {
+      const rr = R || rnd, lips = [], ar = [arr0];
+      for(let k = 1; k < p.length; k++){ lips.push(.55 + .9 * rr()); ar.push(ar[k - 1] + Math.hypot(p[k][0] - p[k - 1][0], p[k][1] - p[k - 1][1])); }
+      const rec = { p, w0, w1, d0, h0, kind, wPow, ar, lips, only };
+      PATHS.push(rec);
+      return rec;
     };
+    /* the arrival at a fraction of a path (its points carry their fraction) */
+    const arAt = (rec, f) => { for(let k = 0; k < rec.p.length; k++) if(rec.p[k][2] >= f - 1e-9) return rec.ar[k]; return rec.ar[rec.ar.length - 1]; };
     const rimAt = (dx, dy, k) => {
       const kk = dx * C3[0] + dy * C3[1], H = nrm([dx - kk * C3[0], dy - kk * C3[1], -kk * C3[2]]);
       const c = Math.cos(RHO * k), s = Math.sin(RHO * k);
       return nrm([C3[0] * c + H[0] * s, C3[1] * c + H[1] * s, C3[2] * c + H[2] * s]);
     };
     const P2 = pts => pts.map(P => [P[0], P[1]]);
+    const fromImpact = q => Math.hypot(q[0] - CX, q[1] - CY);
     /* the long arm, out of the rupture, under the middle of the face, to the
        far limb; the short arm the other way, over the near limb */
     const mainA = arc(rimAt(-1, .08, .8), onS(-.95, -.08), 30, .06, 1.6, .4);
     const mainB = arc(rimAt(.9, .42, .8), onS(.8, .57), 14, .035, 1, 1.2);
     const jA = jag(P2(mainA), 2, .5), jB = jag(P2(mainB), 2, .5);
-    addPath(jA, .066, .0028, .072, 1, 0, .8);
-    addPath(jB, .052, .0028, .064, .95, 0, .85);
-    const branch = (src, at, side, len, w0, h0) => {
+    const recA = addPath(jA, .066, .0028, .072, 1, 0, .8, fromImpact(jA[0]));
+    const recB = addPath(jB, .052, .0028, .064, .95, 0, .85, fromImpact(jB[0]));
+    recA.main = recB.main = 1;
+    const branch = (src, rec, at, side, len, w0, h0) => {
       const k = Math.round(at * (src.length - 1)), P = src[k], Pn = src[Math.min(src.length - 1, k + 1)];
       const H = nrm([Pn[0] - P[0], Pn[1] - P[1], Pn[2] - P[2]]), Bn = nrm(cross(P, H));
       const dir = nrm([H[0] * .78 + Bn[0] * side, H[1] * .78 + Bn[1] * side, H[2] * .78 + Bn[2] * side]);
       const E = nrm([P[0] + dir[0] * len, P[1] + dir[1] * len, P[2] + dir[2] * len]);
-      addPath(jag(P2(arc(P, E, 8, .05, 1.4, rnd() * 3)), 2, .5), w0, .0022, .02, h0, 1, 1.3);
+      const ph = rnd() * 3;
+      addPath(jag(P2(arc(P, E, 8, .05, 1.4, ph)), 2, .5), w0, .0022, .02, h0, 1, 1.3, arAt(rec, k / (src.length - 1)));
     };
-    branch(mainA, .16, -.55, .3, .012, .35);
-    branch(mainA, .3, .6, .26, .009, .2);
-    branch(mainA, .5, -.5, .22, .007, .06);
-    branch(mainA, .7, .55, .16, .005, 0);
-    branch(mainB, .35, .7, .16, .009, .25);
+    branch(mainA, recA, .16, -.55, .3, .012, .35);
+    branch(mainA, recA, .3, .6, .26, .009, .2);
+    branch(mainA, recA, .5, -.5, .22, .007, .06);
+    branch(mainA, recA, .7, .55, .16, .005, 0);
+    branch(mainB, recB, .35, .7, .16, .009, .25);
     [[.3, .09], [1.1, .14], [1.9, .06], [2.5, .11], [3.4, .08], [4.3, .13], [5.2, .07]].forEach(([az, len]) => {
       const A = rimAt(Math.cos(az), Math.sin(az), .95), j = .25 * (rnd() - .5);
-      addPath(jag(P2(arc(A, rimAt(Math.cos(az + j), Math.sin(az + j), .95 + len / RHO), 5, .04, 1, 0)), 2, .55), .0075, .0018, .014, .5, 2, 1);
+      addPath(jag(P2(arc(A, rimAt(Math.cos(az + j), Math.sin(az + j), .95 + len / RHO), 5, .04, 1, 0)), 2, .55), .0075, .0018, .014, .5, 2, 1, RHO * .95, "full");
     });
     [[.6, 1.0, 1.42], [3.3, .9, 1.55]].forEach(([a0, span, rr]) => {
       const pts = [];
       for(let m = 0; m <= 10; m++){ const az = a0 + span * m / 10; pts.push(rimAt(Math.cos(az), Math.sin(az), rr)); }
-      addPath(jag(P2(pts), 2, .6), .0048, .0016, .008, .12, 2, .3);
+      addPath(jag(P2(pts), 2, .6), .0048, .0016, .008, .12, 2, .3, RHO * rr, "full");
     });
-    const NS = SEG.length / 12, SF = Float32Array.from(SEG);
+    /* (build 320) THE STRETCH THROUGH THE IMPACT POINT, below Supernova:
+       the two arms are one crack until the blast opens the crater there */
+    const seedTo = (Q, w) => {
+      const pts = [];
+      for(let m = 0; m <= 6; m++){ const f = m / 6; pts.push([CX + (Q[0] - CX) * f, CY + (Q[1] - CY) * f]); }
+      addPath(jag(pts, 2, .45, rnd2), w, w, .072, 1, 0, 1, 0, "low", rnd2).main = 1;
+    };
+    seedTo(jA[0], .066); seedTo(jB[0], .052);
+    /* (build 320) THE CRACK INTO THE SHINE: "the burn mark looks great but
+       it seems disconnected from the other crack". From the point of the
+       long arm nearest the shine, up into the middle of the shattered
+       patch - so the shine broke because the crack reached it. */
+    let kc = 0, dc = 9;
+    jA.forEach((q, k) => { const d = Math.hypot(q[0] - SCAR_SHINE.x, q[1] - SCAR_SHINE.y); if(d < dc){ dc = d; kc = k; } });
+    const recC = addPath(jag(P2(arc(onS(jA[kc][0], jA[kc][1]), onS(SCAR_SHINE.x + .02, SCAR_SHINE.y + .03), 10, .05, 1.3, 2.1, rnd2)), 2, .5, rnd2),
+      .017, .008, .036, .4, 1, 1, recA.ar[kc], undefined, rnd2);
+    recC.main = 1;
+    /* ...and the segments, as far as this stage reaches: narrowing to
+       nothing over the last CRACK_TAPER behind the front */
+    const SEGW = 14, SEG = [];
+    const KW = FULL ? 1 : ST.width, KD = FULL ? 1 : ST.depth, KH = FULL ? 1 : ST.burn;
+    const cut = a => FULL ? 1 : Math.pow(Math.max(0, Math.min(1, (REACH - a) / CRACK_TAPER)), .6);
+    PATHS.forEach(rec => {
+      rec.on = !((rec.only === "full" && !FULL) || (rec.only === "low" && FULL)) && rec.ar[0] < REACH;
+      if(!rec.on) return;
+      const { p, w0, w1, d0, h0, kind, wPow, ar } = rec;
+      const W = f => w1 + (w0 - w1) * Math.pow(1 - f, wPow);
+      const D = f => d0 * Math.pow(1 - f, .6);
+      const Hh = f => h0 * Math.pow(1 - f, .9) * (.5 + .5 * Math.exp(-f / .28));
+      for(let k = 1; k < p.length; k++){
+        if(ar[k - 1] >= REACH) break;
+        const a = p[k - 1], b = p[k], ca = cut(ar[k - 1]), cb = cut(ar[k]);
+        SEG.push(a[0], a[1], b[0], b[1], W(a[2]) * KW * ca, W(b[2]) * KW * cb, D(a[2]) * KD * ca, D(b[2]) * KD * cb,
+          Hh(a[2]) * KH * ca, Hh(b[2]) * KH * cb, rec.lips[k - 1], kind, ar[k - 1], ar[k]);
+      }
+    });
+    const NS = SEG.length / SEGW, SF = Float32Array.from(SEG);
     /* every segment into the buckets it can touch, so a pixel tests only its own */
     const BK = 64, cnt = new Int32Array(BK * BK + 1);
     const reachBox = o => {
@@ -66171,10 +66371,10 @@ function cosmicScarArt(){
       return [Math.max(0, Math.floor((Math.min(SF[o], SF[o + 2]) - r + 1) / 2 * BK)), Math.min(BK - 1, Math.floor((Math.max(SF[o], SF[o + 2]) + r + 1) / 2 * BK)),
               Math.max(0, Math.floor((Math.min(SF[o + 1], SF[o + 3]) - r + 1) / 2 * BK)), Math.min(BK - 1, Math.floor((Math.max(SF[o + 1], SF[o + 3]) + r + 1) / 2 * BK))];
     };
-    for(let i = 0; i < NS; i++){ const b = reachBox(i * 12); for(let by = b[2]; by <= b[3]; by++) for(let bx = b[0]; bx <= b[1]; bx++) cnt[by * BK + bx + 1]++; }
+    for(let i = 0; i < NS; i++){ const b = reachBox(i * SEGW); for(let by = b[2]; by <= b[3]; by++) for(let bx = b[0]; bx <= b[1]; bx++) cnt[by * BK + bx + 1]++; }
     for(let i = 0; i < BK * BK; i++) cnt[i + 1] += cnt[i];
     const fill = cnt.slice(0, BK * BK), lst = new Int32Array(cnt[BK * BK]);
-    for(let i = 0; i < NS; i++){ const b = reachBox(i * 12); for(let by = b[2]; by <= b[3]; by++) for(let bx = b[0]; bx <= b[1]; bx++) lst[fill[by * BK + bx]++] = i * 12; }
+    for(let i = 0; i < NS; i++){ const b = reachBox(i * SEGW); for(let by = b[2]; by <= b[3]; by++) for(let bx = b[0]; bx <= b[1]; bx++) lst[fill[by * BK + bx]++] = i * SEGW; }
     /* the smooth fields on coarse grids, and only round the scar */
     const SR = .56;
     /* the buckets a crack passes through, and their neighbours */
@@ -66189,7 +66389,7 @@ function cosmicScarArt(){
        256 angles; the broad unevenness is smooth enough for a grid of an
        eighth of the size) */
     const AT = 256, TR = new Float32Array(AT + 1), TE = new Float32Array(AT + 1);
-    for(let a = 0; a <= AT; a++){
+    for(let a = 0; FULL && a <= AT; a++){
       const az = a / AT * Math.PI * 2, ca = Math.cos(az), sa = Math.sin(az);
       TR[a] = fbm(ca * 3.1 + 20, sa * 3.1 + 7, 3);
       TE[a] = fbm(ca * 2.2 + 31, sa * 2.2 + 17, 4);
@@ -66197,14 +66397,14 @@ function cosmicScarArt(){
     const Q8 = N / 8, Q81 = Q8 + 1, F8 = new Float32Array(Q81 * Q81);
     for(let j = 0; j <= Q8; j++) for(let i = 0; i <= Q8; i++){
       const x = i / Q8 * 2 - 1, y = j / Q8 * 2 - 1, dx = x - CX, dy = y - CY;
-      F8[j * Q81 + i] = dx * dx + dy * dy < (SR + .2) * (SR + .2) ? fbm(x * 2.6 + 11, y * 2.6 + 3, 4) : .5;
+      F8[j * Q81 + i] = FULL && dx * dx + dy * dy < (SR + .2) * (SR + .2) ? fbm(x * 2.6 + 11, y * 2.6 + 3, 4) : .5;
     }
     const Q = N / 4, Q1 = Q + 1, FI = new Float32Array(Q1 * Q1), FR = new Float32Array(Q1 * Q1), FE = new Float32Array(Q1 * Q1), FN = new Float32Array(Q1 * Q1);
     for(let j = 0; j <= Q; j++) for(let i = 0; i <= Q; i++){
       const x = i / Q * 2 - 1, y = j / Q * 2 - 1, q = j * Q1 + i, dx = x - CX, dy = y - CY;
       FI[q] = .5; FE[q] = .5; FR[q] = 0; FN[q] = .5;
       if(x * x + y * y > 1.1) continue;
-      const near = dx * dx + dy * dy < (SR + .12) * (SR + .12);
+      const near = FULL && dx * dx + dy * dy < (SR + .12) * (SR + .12);
       /* the grain wherever a pixel will read it: round the scar, and in
          any bucket a crack passes through */
       const bx = Math.min(BK - 1, Math.max(0, Math.floor((x + 1) / 2 * BK))), by = Math.min(BK - 1, Math.max(0, Math.floor((y + 1) / 2 * BK)));
@@ -66219,12 +66419,12 @@ function cosmicScarArt(){
     }
     /* the rupture's lava, on a grid of its own over the rupture only */
     const LVS = .3, LVN = Math.round(LVS * N / 4), LV1 = LVN + 1, LV = new Float32Array(LV1 * LV1);
-    for(let j = 0; j <= LVN; j++) for(let i = 0; i <= LVN; i++){
+    for(let j = 0; FULL && j <= LVN; j++) for(let i = 0; i <= LVN; i++){
       const x = CX - LVS + 2 * LVS * i / LVN, y = CY - LVS + 2 * LVS * j / LVN;
       LV[j * LV1 + i] = fbm(x * 15 + 12.7, y * 15 + 4.4, 3);
     }
     const P = { N, BK, Q, Q1, FI, FR, FE, FN, LV, LVN, LVS, cnt, lst, SF, CX, CY, C3x: C3[0], C3y: C3[1], C3z: C3[2], RHO, SR,
-      LX, LY, LZ, NN: N * N, MQ: 96, Msk: new Float32Array(96 * 96) };
+      LX, LY, LZ, NN: N * N, MQ: 96, Msk: new Float32Array(96 * 96), CR: FULL ? 1 : 0, SW: SEGW };
     scarPass1(P);
     const iB = gB.createImageData(N, N), iE = gE.createImageData(N, N);
     P.dB = iB.data; P.dE = iE.data;
@@ -66245,7 +66445,8 @@ function cosmicScarArt(){
     }
     /* the shine takes its own damage (build 319): on the burn, and half
        off the plasma's mask */
-    try{ scarShineWound(gB, N, gM, MQ); }catch(e){}
+    const shineAmt = FULL ? 1 : ST.shine;
+    if(shineAmt > 0){ try{ scarShineWound(gB, N, gM, MQ, shineAmt, P.Ar, recC.ar[recC.ar.length - 1]); }catch(e){} }
     if(gM) mask = cM.toDataURL("image/png");
     /* the fragments rise from the crack and the rupture: out from the
        planet's middle and a little up, uneven so ten never read as a
@@ -66261,12 +66462,26 @@ function cosmicScarArt(){
         Math.round(22 + 11 * rnd()), Math.round((i % 2 ? -1 : 1) * (150 + 90 * rnd())), +(7.4 + 4 * rnd()).toFixed(1), -(+(11 * rnd()).toFixed(1))]);
     });
     const t1 = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
-    cosmicScarCache = { n: N, burn: cB, ember: cE, mask, frags,
+    /* the crack as drawn at this stage, path by path, each point with its
+       arrival - what the forming in a cutscene runs its light along */
+    const fronts = [];
+    let arMax = 0;
+    PATHS.forEach(rec => {
+      if(!rec.on) return;
+      const pts = [];
+      for(let k = 0; k < rec.p.length && rec.ar[k] < REACH + CRACK_TAPER * .5; k++) pts.push([rec.p[k][0], rec.p[k][1], rec.ar[k]]);
+      if(pts.length > 1){ fronts.push({ kind: rec.kind, main: rec.main, pts }); arMax = Math.max(arMax, pts[pts.length - 1][2]); }
+    });
+    for(let k = 0; k < P.NN; k++) if(P.Ar[k] > arMax) arMax = P.Ar[k];
+    out = { n: N, stage: stg, burn: cB, ember: FULL ? cE : null, mask, frags,
       /* where the hole is, seen from the planet's middle: degrees clockwise
          from the top - what the rings and the flares passing it key off */
-      angle: Math.atan2(CX, -CY) * 180 / Math.PI, crater: [(CX + 1) * 50, (CY + 1) * 50], ms: t1 - t0 };
-  }catch(e){ cosmicScarCache = false; }
-  return cosmicScarCache;
+      angle: Math.atan2(CX, -CY) * 180 / Math.PI, crater: [(CX + 1) * 50, (CY + 1) * 50], ms: t1 - t0,
+      /* for the forming (build 320): every pixel's arrival along the crack,
+         how far this stage reaches, and the paths */
+      ar: P.Ar, reach: REACH, arMax, fronts };
+  }catch(e){ out = false; }
+  return out;
 }
 /* THE SUPERNOVA'S DUST (build 317, the evolution round): a ring of burnt
    smoke, drawn once at 256px with its soft edges baked in - zero alpha at
@@ -67245,7 +67460,13 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
      paints over the planet (the tap box, the bubbles) still does. Attached
      once the hero is whole (the planet round), so what it lights - the
      flares, the rings, the bubbles near it - is all there to be found. */
-  if(typeof store !== "undefined" && store && store.supernovaAchieved) decorateSupernovaHero(wrap);
+  /* (build 320) and below it, from Gold up, the rank's crack - the same
+     crack, not yet as far or as deep (heroCrackStage, CRACK_STAGES) */
+  {
+    const cst = heroCrackStage();
+    if(cst >= CRACK_TOP) decorateSupernovaHero(wrap);
+    else if(cst > 0) decorateCrackHero(wrap, cst);
+  }
   const uid = "_h" + (buildCosmicHero._n = (buildCosmicHero._n || 0) + 1);
   /* Persisted so a tier already shown as freshly-lit once doesn't
      replay that animation on every subsequent Home visit \u2014 only a
@@ -67284,26 +67505,30 @@ const SCAR_FRAGS = [
   [88, 61, 7, 4, 34, 240, 11.2, -7.9], [72, 73, 9, 40, 31, -180, 8.8, -4.3],
   [80, 49, 7.5, -36, 27, 200, 9.9, -6.8], [57, 80, 7, 100, 23, -230, 7.9, -2.6]
 ];
-function buildCosmicScar(){
+function buildCosmicScar(stage){
+  const full = !(stage < CRACK_TOP);
   const sc = document.createElement("div");
-  sc.className = "cosmic-scar";
+  sc.className = "cosmic-scar" + (full ? "" : " is-crack");
   sc.setAttribute("aria-hidden", "true");
-  const art = cosmicScarArt();
-  const frags = ((art && art.frags) || SCAR_FRAGS).map(([x, y, s, a, dist, r, t, d]) => {
+  sc.dataset.crack = full ? CRACK_TOP : stage;
+  const art = full ? cosmicScarArt() : cosmicScarArt(stage);
+  /* (build 320) a rank's crack is the crack alone: the flakes, the ember,
+     the glints and the smoke are the blast's */
+  const frags = !full ? "" : ((art && art.frags) || SCAR_FRAGS).map(([x, y, s, a, dist, r, t, d]) => {
     const rad = a * Math.PI / 180;
     /* the drift in the fragment's own size, since a translate's % is */
     const dx = dist * Math.cos(rad) / s * 100, dy = dist * Math.sin(rad) / s * 100;
     return '<i class="csc-frag" style="--x:' + x + '%;--y:' + y + '%;--s:' + s + '%;--dx:' + dx.toFixed(1) + '%;--dy:' + dy.toFixed(1) +
       '%;--r:' + r + 'deg;--t:' + t + 's;--d:' + d + 's"></i>';
   }).join("");
-  sc.innerHTML = '<div class="csc-disc"></div><div class="csc-frags">' + frags + '</div>';
+  sc.innerHTML = '<div class="csc-disc"></div>' + (full ? '<div class="csc-frags">' + frags + '</div>' : '');
   const disc = sc.firstChild;
   /* the art, copied onto this hero's own canvases (a canvas is one place
      in the page; drawImage is a GPU copy, nothing re-drawn) */
   let drawn = false;
   if(art){
     try{
-      ["burn", "ember"].forEach(k => {
+      (full ? ["burn", "ember"] : ["burn"]).forEach(k => {
         const c = document.createElement("canvas");
         c.className = "csc-art csc-" + k;
         c.width = c.height = art.n;
@@ -67313,11 +67538,56 @@ function buildCosmicScar(){
       drawn = true;
     }catch(e){ disc.textContent = ""; }
   }
+  if(!full) return drawn ? sc : null;
   if(!drawn) disc.innerHTML = '<i class="csc-burn"></i>';
   const glow = document.createElement("i");
   glow.className = "csc-glow";
   disc.appendChild(glow);
+  try{ scarAfterEffects(sc, art); }catch(e){}
   return sc;
+}
+/* THE EXPLOSION, REMEMBERED (build 320). Madison: "ensure the planet
+   still has constant effects similar to before but now has constant
+   reminding effects of the explosion. Ensure fragmented pieces still come
+   out." Everything the planet did before is untouched (its light pools,
+   the three smokes, the flakes drifting off the scar, the dying ember),
+   and two reminders of the blast are added, both on the scar's own box,
+   transform and opacity only, seamless (each loop's last keyframe is its
+   first), and nothing under Reduce motion:
+   - GLINTS: now and then a broken edge along the crack catches the
+     planet's light - a short cool streak along the crack, a beat long,
+     five of them on clocks that never line up (9.7-17.9s).
+   - SMOKE: faint dark wisps rise off the crater and the broken shine and
+     thin out, three of them, slow. */
+const SCAR_GLINT_AT = [[1, .16, 9.7, -2.1], [1, .42, 13.1, -7.4], [1, .74, 17.9, -11.6], [2, .55, 11.3, -4.8], [3, .5, 15.2, -9.9]];
+function scarAfterEffects(sc, art){
+  if(!sc || sc.querySelector(".csc-glints")) return;
+  const g = document.createElement("div");
+  g.className = "csc-glints";
+  const fr = (art && art.fronts) || [];
+  /* the long arm, the short one, the crack into the shine */
+  const pick = [fr.find(f => f.main && f.pts.length > 30), fr.filter(f => f.main)[1], fr.filter(f => f.main).slice(-1)[0]];
+  SCAR_GLINT_AT.forEach(([which, f, t, d]) => {
+    const p = pick[which - 1];
+    if(!p || p.pts.length < 3) return;
+    const k = Math.max(1, Math.min(p.pts.length - 2, Math.round(f * (p.pts.length - 1))));
+    const a = p.pts[k - 1], b = p.pts[k + 1], q = p.pts[k];
+    const el = document.createElement("i");
+    el.className = "csc-glint";
+    el.style.cssText = "--x:" + ((q[0] + 1) * 50).toFixed(1) + "%;--y:" + ((q[1] + 1) * 50).toFixed(1) + "%;--a:" +
+      (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI).toFixed(0) + "deg;--t:" + t + "s;--d:" + d + "s";
+    g.appendChild(el);
+  });
+  const sm = document.createElement("div");
+  sm.className = "csc-smokes";
+  const cr = (art && art.crater) || [65, 63.5];
+  [[cr[0], cr[1], 7.9, -1.3, 1], [cr[0] - 4, cr[1] - 2, 10.3, -6.2, -1], [(SCAR_SHINE.x + 1) * 50, (SCAR_SHINE.y + 1) * 50, 12.7, -3.9, -1]].forEach(([x, y, t, d, s]) => {
+    const el = document.createElement("i");
+    el.className = "csc-smoke";
+    el.style.cssText = "--x:" + x.toFixed(1) + "%;--y:" + y.toFixed(1) + "%;--t:" + t + "s;--d:" + d + "s;--sx:" + s;
+    sm.appendChild(el);
+  });
+  sc.append(g, sm);
 }
 /* ONE CALL MAKES A PLANET SUPERNOVA'S (build 317, planet round):
    decorateSupernovaHero(hero) puts everything the Supernova state adds
@@ -67333,15 +67603,15 @@ function buildCosmicScar(){
    planet you are getting). Inside .tier-cutscene the passing light
    (.csc-pass) is hidden unless the hero carries .csc-live - add that to
    a scene's planet that should look exactly like Home. Returns the scar.
-   attachCosmicScar is the same call under its first name. */
+   attachCosmicScar is the same call under its first name. A rank's crack
+   already on the hero (build 320) is replaced by the full scar. */
 function decorateSupernovaHero(hero){
   if(!hero) return null;
   let sc = hero.querySelector(":scope > .cosmic-scar");
+  if(sc && sc.classList.contains("is-crack")){ sc.remove(); sc = null; }
   if(!sc){
     sc = buildCosmicScar();
-    const plasma = hero.querySelector(":scope > .cosmic-plasma");
-    hero.insertBefore(sc, plasma ? plasma.nextSibling :
-      hero.querySelector(":scope > .cosmic-tapfx, :scope > .cosmic-icon-badge, :scope > .rank-orbit"));
+    insertCosmicScar(hero, sc);
   }
   const art = cosmicScarArt();
   if(art && art.mask) hero.style.setProperty("--scar-mask", "url(" + art.mask + ")");
@@ -67351,6 +67621,240 @@ function decorateSupernovaHero(hero){
   return sc;
 }
 function attachCosmicScar(hero){ return decorateSupernovaHero(hero); }
+function insertCosmicScar(hero, sc){
+  const plasma = hero.querySelector(":scope > .cosmic-plasma");
+  hero.insertBefore(sc, plasma ? plasma.nextSibling :
+    hero.querySelector(":scope > .cosmic-tapfx, :scope > .cosmic-icon-badge, :scope > .rank-orbit"));
+}
+/* A RANK'S CRACK ON A PLANET (build 320): the crack alone, in the same
+   place in the hero as the scar, with the art's own mask keeping the
+   plasma's light pools off it (as the scar's does). Replaces whatever
+   crack was there. Returns the scar box, or null below Gold. */
+function decorateCrackHero(hero, stage){
+  if(!hero) return null;
+  if(!(stage > 0)) return null;
+  if(stage >= CRACK_TOP) return decorateSupernovaHero(hero);
+  const old = hero.querySelector(":scope > .cosmic-scar");
+  if(old && !old.classList.contains("is-crack")) return old;
+  const sc = buildCosmicScar(stage);
+  if(!sc) return null;
+  if(old) old.replaceWith(sc); else insertCosmicScar(hero, sc);
+  const art = cosmicScarArt(stage);
+  if(art && art.mask) hero.style.setProperty("--scar-mask", "url(" + art.mask + ")");
+  hero.classList.add("is-scarred");
+  return sc;
+}
+/* ---- THE CRACK FORMS ON SCREEN (build 320) ----
+   "after the explosions, (so after the flash) the crack won't instantly be
+   there, it would do it when you can see it so you can see the crack(s)
+   form". The planet you are getting comes up under the flash still
+   carrying the crack you HAD; once the flash has cleared, the new stage
+   grows out of it: the crack runs on from where it stopped (a point of
+   light at each front), small chips break off and fall, and for
+   Supernova the burn creeps out of the impact along the whole crack and
+   into the shine.
+   How, without drawing anything per frame: the new stage's art is split
+   into CRACK_FORM_K layers by how far along the crack each pixel is (the
+   art's arrival map), each layer exactly what has to go OVER the old
+   stage there (alpha (an - ao) / (1 - ao), its colour solved so the two
+   composite to the new art), and the layers' opacity comes up one after
+   another. At the end the burn canvas is the new art itself, which the
+   layers already composite to, so the hand-over cannot be seen. All of it
+   is made before the scene's first frame (crackFormLayers, cached). */
+const CRACK_FORM_K = 8;
+/* the forming's beat in a rank's scene (after the flash), and its length;
+   Supernova's burn takes longer to creep, from sn-scarred */
+const CRACK_FORM_AT_MS = 1500, CRACK_FORM_MS = 2000, CRACK_FORM_SN_MS = 3000;
+const crackFormCache = {};
+function crackFormLayers(from, to){
+  const key = from + ">" + to;
+  if(crackFormCache[key] !== undefined) return crackFormCache[key];
+  crackFormCache[key] = false;
+  try{
+    const A = cosmicScarArt(to), B = from > 0 ? cosmicScarArt(from) : null;
+    if(!A || (from > 0 && !B) || (B && B.n !== A.n)) return false;
+    const N = A.n, K = CRACK_FORM_K, full = to >= CRACK_TOP;
+    const dn = A.burn.getContext("2d").getImageData(0, 0, N, N).data;
+    const dold = B ? B.burn.getContext("2d").getImageData(0, 0, N, N).data : null;
+    const Dp = B ? Math.min(B.reach, B.arMax) : 0, Dn = Math.max(Dp + .05, full ? A.arMax : Math.min(A.reach, A.arMax));
+    /* a rank's: the old crack deepens in the first 15%, the rest is the
+       crack running on; Supernova's: the burn creeps along all of it */
+    const q = full ? Dp / Dn : (Dp > 0 ? .15 : 0);
+    const tmOf = a => a <= Dp ? (Dp > 0 ? q * a / Dp : 0) : Math.min(1, q + (1 - q) * (a - Dp) / (Dn - Dp));
+    const mk = () => { const c = document.createElement("canvas"); c.width = c.height = N; return c; };
+    const cv = [], ims = [];
+    for(let i = 0; i < K; i++){ const c = mk(); cv.push(c); ims.push(c.getContext("2d").createImageData(N, N)); }
+    const Ar = A.ar;
+    for(let k = 0; k < N * N; k++){
+      const k4 = k * 4, an = dn[k4 + 3] / 255, ao = dold ? dold[k4 + 3] / 255 : 0;
+      if(an < .004 && ao < .004) continue;
+      if(dold && Math.abs(an - ao) < .006 && Math.abs(dn[k4] - dold[k4]) + Math.abs(dn[k4 + 1] - dold[k4 + 1]) + Math.abs(dn[k4 + 2] - dold[k4 + 2]) < 6) continue;
+      let ac = ao > .996 ? 1 : Math.max(0, (an - ao) / (1 - ao));
+      if(ac < .004) continue;
+      const i = Math.min(K - 1, Math.floor(tmOf(Ar[k] || 0) * K)), d = ims[i].data;
+      for(let ch = 0; ch < 3; ch++){
+        const pc = dn[k4 + ch] * an - (dold ? dold[k4 + ch] * ao * (1 - ac) : 0);
+        d[k4 + ch] = Math.max(0, Math.min(255, pc / ac));
+      }
+      d[k4 + 3] = Math.round(ac * 255);
+    }
+    cv.forEach((c, i) => c.getContext("2d").putImageData(ims[i], 0, 0));
+    /* THE FRESH CRACK GLOWS, THEN COOLS: in the scene the planet is about
+       half Home's size and a new hairline is a pixel or less, so each
+       layer has a twin - the same stretch as light (cool white for a rank,
+       ember for Supernova's burn), softened with a canvas shadow - that
+       comes up with it and fades, leaving the dark crack behind. */
+    const glows = [], col = full ? [255, 150, 70] : [236, 242, 252];
+    const sil = mk(), sg = sil.getContext("2d");
+    for(let i = 0; i < K; i++){
+      const d = ims[i].data, o = sg.createImageData(N, N), od = o.data;
+      for(let k = 3; k < d.length; k += 4){ if(!d[k]) continue; od[k - 3] = col[0]; od[k - 2] = col[1]; od[k - 1] = col[2]; od[k] = Math.min(255, d[k] * 1.6); }
+      sg.clearRect(0, 0, N, N); sg.putImageData(o, 0, 0);
+      const gc = mk(), gg = gc.getContext("2d");
+      gg.shadowColor = "rgba(" + col.join(",") + ",.95)"; gg.shadowBlur = Math.max(2, N / 80);
+      gg.drawImage(sil, 0, 0); gg.drawImage(sil, 0, 0);
+      glows.push(gc);
+    }
+    /* the fronts the light runs along, and where chips break off: the new
+       stretch of every path (for Supernova, the burn along the whole
+       crack and the arms of it) */
+    const runs = [], chips = [];
+    let cs = 4111;
+    const rnd = () => { cs = (cs * 16807) % 2147483647; return cs / 2147483647; };
+    A.fronts.forEach(f => {
+      if(full ? !f.main : f.kind > 1) return;
+      const pts = f.pts.filter(p => full || p[2] > Dp - .02).map(p => [(p[0] + 1) * 50, (p[1] + 1) * 50, tmOf(p[2])]);
+      if(pts.length < 2 || pts[pts.length - 1][2] - pts[0][2] < .04) return;
+      /* a light on the crack's own fronts; the short branches only chip */
+      if(f.main) runs.push(pts);
+      const n = Math.max(1, Math.round(pts.length / (full ? 26 : 18)));
+      for(let c = 0; c < n; c++){ const p = pts[Math.min(pts.length - 1, Math.floor((c + .3 + .5 * rnd()) / n * pts.length))]; chips.push([p[0], p[1], p[2], rnd(), rnd()]); }
+    });
+    crackFormCache[key] = { N, K, full, layers: cv, glows, runs, chips, from, to };
+  }catch(e){ crackFormCache[key] = false; }
+  return crackFormCache[key];
+}
+/* Before the scene's first frame (the art and the layers are its cost). */
+function warmCrackForm(from, to){
+  try{ if(from > 0) cosmicScarArt(from); cosmicScarArt(to); crackFormLayers(from, to); }catch(e){}
+}
+/* Arms `hero` (built carrying the crack it HAD - stage `from`, or none) to
+   grow `to`. Returns { play(ms), finish() }, or null when there is nothing
+   to form. The hero shows `from` until play(); finish() puts the end
+   state on at once (and play() ends there). */
+function crackFormArm(hero, from, to){
+  if(!hero || !(to > from)) return null;
+  const L = crackFormLayers(from, to);
+  if(!L) return null;
+  let sc = to >= CRACK_TOP ? decorateSupernovaHero(hero) : decorateCrackHero(hero, to);
+  if(!sc) return null;
+  const A = to >= CRACK_TOP ? cosmicScarArt() : cosmicScarArt(to), B = from > 0 ? cosmicScarArt(from) : null;
+  const disc = sc.querySelector(".csc-disc"), burn = disc && disc.querySelector("canvas.csc-burn");
+  if(!burn || !A) return null;
+  const g = burn.getContext("2d");
+  /* the old crack, and over it the layers, all at nothing */
+  g.clearRect(0, 0, L.N, L.N);
+  if(B) g.drawImage(B.burn, 0, 0);
+  const setMask = art => { if(art && art.mask) hero.style.setProperty("--scar-mask", "url(" + art.mask + ")"); };
+  if(B) setMask(B); else { hero.classList.remove("is-scarred"); hero.style.removeProperty("--scar-mask"); }
+  /* layers in arrival order, after the burn and before the ember */
+  let prev = burn;
+  const layers = L.layers.map(src => {
+    const c = document.createElement("canvas");
+    c.className = "csc-art csc-form"; c.width = c.height = L.N;
+    c.getContext("2d").drawImage(src, 0, 0);
+    c.style.opacity = "0";
+    prev.after(c); prev = c;
+    return c;
+  });
+  const glows = L.glows.map(src => {
+    const c = document.createElement("canvas");
+    c.className = "csc-art csc-form csc-form-glow"; c.width = c.height = L.N;
+    c.getContext("2d").drawImage(src, 0, 0);
+    c.style.opacity = "0";
+    prev.after(c); prev = c;
+    return c;
+  });
+  sc.classList.add("is-forming");
+  sc.removeAttribute("data-sn-reveal");
+  let done = false, ended = false;
+  const anims = [];
+  function finish(){
+    if(done) return;
+    done = true;
+    anims.forEach(a => { try{ a.cancel(); }catch(e){} });
+    try{ g.clearRect(0, 0, L.N, L.N); g.drawImage(A.burn, 0, 0); }catch(e){}
+    layers.forEach(c => c.remove());
+    glows.forEach(c => c.remove());
+    sc.querySelectorAll(":scope > .csc-run, :scope > .csc-chip").forEach(e => e.remove());
+    setMask(A); hero.classList.add("is-scarred");
+    sc.classList.remove("is-forming");
+    sc.classList.add("is-formed");
+  }
+  function play(ms){
+    if(ended || done) return;
+    ended = true;
+    if(!sc.animate){ finish(); return; }
+    const K = layers.length, D = ms;
+    /* each layer comes up over a little more than its own slice, so the
+       growth is continuous */
+    layers.forEach((c, i) => {
+      const a = c.animate([{ opacity: 0 }, { opacity: 1 }], { duration: Math.max(120, D / K * 1.6), delay: D * i / K, easing: "ease-out", fill: "both" });
+      anims.push(a);
+      const up = Math.max(120, D / K * 1.6), cool = L.full ? 1400 : 900;
+      try{ anims.push(glows[i].animate([{ opacity: 0 }, { opacity: 1, offset: up / (up + cool) }, { opacity: 0 }],
+        { duration: up + cool, delay: D * i / K, easing: "ease-out", fill: "both" })); }catch(e){}
+    });
+    /* a point of light at each front, running with it */
+    const box = sc.offsetWidth || 100;
+    L.runs.forEach(pts => {
+      const el = document.createElement("i");
+      el.className = "csc-run" + (L.full ? " is-burn" : "");
+      sc.appendChild(el);
+      const t0 = pts[0][2], t1 = pts[pts.length - 1][2];
+      const kf = [];
+      pts.forEach((p, i) => {
+        if(i % 2 && i !== pts.length - 1) return;
+        kf.push({ offset: p[2], transform: "translate(" + (p[0] / 100 * box).toFixed(1) + "px," + (p[1] / 100 * box).toFixed(1) + "px)",
+          opacity: p[2] - t0 < .03 ? .2 : t1 - p[2] < .04 ? .25 : 1 });
+      });
+      const ks = [{ offset: 0, transform: kf[0].transform, opacity: 0 }];
+      kf.forEach(k => { if(k.offset > ks[ks.length - 1].offset) ks.push(k); });
+      if(ks[ks.length - 1].offset < 1) ks.push({ offset: Math.min(1, ks[ks.length - 1].offset + .05), transform: ks[ks.length - 1].transform, opacity: 0 });
+      if(ks[ks.length - 1].offset < 1) ks.push({ offset: 1, transform: ks[ks.length - 1].transform, opacity: 0 });
+      try{ anims.push(el.animate(ks, { duration: D, fill: "both" })); }catch(e){}
+    });
+    /* chips breaking off as the front passes, falling away */
+    L.chips.forEach(([x, y, t, r1, r2]) => {
+      const el = document.createElement("i");
+      el.className = "csc-chip";
+      el.style.left = x.toFixed(2) + "%"; el.style.top = y.toFixed(2) + "%";
+      sc.appendChild(el);
+      const out = Math.atan2(y - 50, x - 50), dx = Math.cos(out) * (60 + 70 * r1), dy = Math.sin(out) * (40 + 40 * r1) + 140 + 120 * r2;
+      try{ anims.push(el.animate([
+        { transform: "translate(0,0) rotate(0deg) scale(.4)", opacity: 0 },
+        { transform: "translate(" + (dx * .12).toFixed(0) + "%," + (dy * .04 - 30).toFixed(0) + "%) rotate(" + (60 + 120 * r2).toFixed(0) + "deg) scale(1)", opacity: 1, offset: .14 },
+        { transform: "translate(" + (dx * .6).toFixed(0) + "%," + (dy * .55).toFixed(0) + "%) rotate(" + (200 + 160 * r1).toFixed(0) + "deg) scale(.85)", opacity: .9, offset: .6 },
+        { transform: "translate(" + dx.toFixed(0) + "%," + dy.toFixed(0) + "%) rotate(" + (320 + 200 * r1).toFixed(0) + "deg) scale(.6)", opacity: 0 }
+      ], { duration: 1100 + 500 * r2, delay: Math.max(0, D * t - 60), easing: "cubic-bezier(.3,.1,.6,1)", fill: "both" })); }catch(e){}
+    });
+    /* Supernova: what the blast leaves comes up as the burn spreads - the
+       ember with the crater, the flakes and the reminders once it is out */
+    if(L.full){
+      const em = disc.querySelector("canvas.csc-ember");
+      if(em) try{ anims.push(em.animate([{ opacity: 0 }, { opacity: 0, offset: .1 }, { opacity: 1 }], { duration: D * .5, fill: "backwards", composite: "replace" })); }catch(e){}
+      sc.querySelectorAll(":scope > .csc-frags, :scope > .csc-glints, :scope > .csc-smokes").forEach(el => {
+        try{ anims.push(el.animate([{ opacity: 0 }, { opacity: 0, offset: .55 }, { opacity: 1 }], { duration: D, fill: "backwards" })); }catch(e){}
+      });
+    }
+    setTimeout(finish, D + 1700);
+  }
+  /* until play(), the blast's leftovers stay down too */
+  if(L.full) sc.querySelectorAll(":scope > .csc-frags, :scope > .csc-glints, :scope > .csc-smokes, .csc-disc > canvas.csc-ember").forEach(el => {
+    try{ anims.push(el.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 1e9 })); }catch(e){}
+  });
+  return { play(ms){ anims.splice(0).forEach(a => { try{ a.cancel(); }catch(e){} }); play(ms); }, finish, layers, scar: sc };
+}
 /* THE DEBRIS ON THE RINGS (build 317, planet round). "Maybe some of the
    fragments could be going around the rings like in an orbit like the
    other stuff but scattered slightly." Black shards of the crust, in loose
@@ -69307,6 +69811,17 @@ function playRankUpScene(tierKey, opts, spec){
      instead was measured too, and added ~150ms between the last answer
      and the results - a delay someone would feel, for nothing. */
   if(spec.times.swell) warmSupernovaArt();
+  /* THE CRACK (build 320): the planet you had carries the crack you had;
+     the planet you are getting comes up under the flash still carrying it,
+     and the new stage forms on it once the flash has cleared (crackFormArm,
+     played at CRACK_FORM_AT_MS after the flash, or at Supernova's
+     sn-scarred). Its art and layers are made here, before the first frame.
+     Reduce motion: the new planet already has its new crack. */
+  const crTo = crackStageOfRank(tierKey);
+  const crFrom = Math.min(crTo, crackStageOfRank(opts.from || TIER_ORDER_FULL[TIER_ORDER_FULL.indexOf(tierKey) - 1]));
+  const crStill = (() => { try{ return ringMotionOff() || !overlay.animate; }catch(e){ return true; } })();
+  if(crTo > crFrom && !crStill) warmCrackForm(crFrom, crTo);
+  let crackForm = null;
   /* Home's own builder, with store.supernovaAchieved held at `sn` for the
      length of the build and the save it makes held back (nothing is
      recorded early). */
@@ -69318,6 +69833,7 @@ function playRankUpScene(tierKey, opts, spec){
   /* THE PLANET YOU HAD: your own theme, and this rank's flare still dark.
      Never Supernova's (cut3): a replayed Supernova scene starts from the
      planet before it, not from one already scarred and carrying debris. */
+  heroCrackStageFor = crFrom;
   try{
     heroBefore = spec.times.swell ? quietBuild(false) : buildCosmicHero(true);
     syncSceneFlares(heroBefore, tierKey, false);
@@ -69346,7 +69862,9 @@ function playRankUpScene(tierKey, opts, spec){
      (.csc-pass, live from sn-scarred as .csc-live) until sn-rings. */
   try{
     if(spec.times.swell){
+      heroCrackStageFor = CRACK_TOP;
       heroAfter = quietBuild(true, tierKey);
+      heroCrackStageFor = crFrom;
       const keyOf = el => el.tagName + ":" + String(el.getAttribute("class") || "").split(/\s+/).filter(c => /^cosmic-/.test(c)).sort().join(" ");
       const plain = new Set([...quietBuild(false, tierKey).children].map(keyOf));
       /* (a ring layer of its own - the top ring tier - is not hidden: the
@@ -69355,10 +69873,13 @@ function playRankUpScene(tierKey, opts, spec){
         if(plain.has(keyOf(el)) || el.classList.contains("cosmic-hero-ringlayer")) return;
         el.dataset.snReveal = el.classList.contains("cosmic-scar") ? "scar" : "new";
       });
-    } else heroAfter = buildCosmicHero(true, tierKey);
+    } else { heroCrackStageFor = crStill ? crTo : crFrom; heroAfter = buildCosmicHero(true, tierKey); }
+    heroCrackStageFor = undefined;
+    if(!crStill) crackForm = crackFormArm(heroAfter, crFrom, crTo);
     syncSceneFlares(heroAfter, tierKey, true);
     after.appendChild(heroAfter);
   }catch(e){}
+  heroCrackStageFor = undefined;
   document.documentElement.dataset.accent = realAccent;
   const orbitBefore = rankOrbitFlares(heroBefore);
   const orbitAfter = rankOrbitFlares(heroAfter);
@@ -69412,6 +69933,7 @@ function playRankUpScene(tierKey, opts, spec){
     if(finished) return;
     finished = true;
     timers.forEach(clearTimeout);
+    if(crackForm) crackForm.finish();
     if(spec.onFinish) spec.onFinish();
     overlay.classList.add("supernova-exit");
     /* Only when a pop-up is coming: inline, the results sequence has the
@@ -69860,11 +70382,13 @@ function playRankUpScene(tierKey, opts, spec){
        look settles in under them; and only THEN do the rings change
        colour, a glint running round each. */
     if(SW){
-      at(b + 1300, () => { overlay.classList.add("sn-scarred"); if(heroAfter) heroAfter.classList.add("csc-live"); });
+      at(b + 1300, () => { overlay.classList.add("sn-scarred"); if(heroAfter) heroAfter.classList.add("csc-live"); if(crackForm) crackForm.play(CRACK_FORM_SN_MS); });
       at(b + 1800, snSweep);
       at(b + 4400, () => overlay.classList.add("sn-settled"));
       at(b + 5400, () => { overlay.classList.add("sn-rings"); snRingGlint(); });
     }
+    /* a rank's new crack forms once the flash has cleared (build 320) */
+    if(!SW && crackForm) at(b + CRACK_FORM_AT_MS, () => crackForm.play(CRACK_FORM_MS));
     at(b + (T.settle - T.burst), () => overlay.classList.add("supernova-settle"));
     /* the show is unskippable up to the title; once it is up, a tap ends it */
     at(b + (T.settle - T.burst) + RANK_TITLE_TAP_MS, () => { titleUp = true; });
@@ -74962,6 +75486,7 @@ function showHome(){
     homeShownBefore = true;
   }
   syncLoopClock(panel);
+  heroSettleSkip(panel);
   setTimeout(() => { if(panel.isConnected) startOrbitEmblemAnims(panel); }, 1600);
   /* THE XP FLIES IN AFTER THE DAILY QUESTION ONLY (build 304). It used
      to fly after every run, from back when the results screen did not

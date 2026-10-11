@@ -19936,8 +19936,14 @@ def check_b318_scar(br):
         pg.evaluate("() => window.__b318a.forEach(a => { try{ a.play(); }catch(e){} })")
         bad = [(k, r) for k, r in enumerate(rows)
                if r["scar"] is None or r["scar"] > r["planet"] + .02 or (r["soot"] or 0) > r["planet"] + .02 or (r["plasma"] or 0) > .55 * r["planet"] + .02]
-        check("%s visit: in none of the first ten frames is the scar, the soot or the plasma ahead of the planet" % visit,
-              not bad and rows[0]["planet"] < .05, bad[:3] or rows[0])
+        # Build 320 (b320e) moved the RETURN visit to Madison's new decision -
+        # "when the main menu opens, the large planet is black and then you
+        # can see it" - a Home shown before arrives whole on its first frame
+        # (heroSettleSkip), scar and all; the first Home of a launch (under
+        # the splash) still settles in, the scar with it.
+        start_ok = rows[0]["planet"] < .05 if visit == "first" else (rows[0]["planet"] >= .99 and (rows[0]["scar"] or 0) >= .99)
+        check("%s visit: in none of the first ten frames is the scar, the soot or the plasma ahead of the planet (%s)" % (visit, "it settles in" if visit == "first" else "all of it there on the first frame"),
+              not bad and start_ok, bad[:3] or rows[0])
         check("%s visit: half a second in, the planet and the scar are fully there" % visit,
               end["planet"] >= .99 and end["scar"] >= .99 and abs(end["plasma"] - .55) < .02, end)
     ctx.close()
@@ -21272,6 +21278,198 @@ def check_b319h_layout(br):
         ctx.close()
 
 
+
+# Build 320 (b320e): the planet cracks rank by rank, the crack forms in the
+# rank-up, the Supernova planet remembers the blast, Home's planet whole on
+# its first frame back.
+B320E_RANK = """async (k) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  const U = topicsIn(QUESTIONS); store.unitPerfects = {};
+  const rule = TIER_UNLOCKS[k] || { level: 1, badges: 0 };
+  U.slice(0, rule.badges).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+  store.lifetime = store.lifetime || {}; store.lifetime.points = xpForLevel(rule.level) + 50;
+  store.rankFloor = 0; store.levelFloor = 0; store.onboardingComplete = true;
+  store.supernovaAchieved = k === 'titan'; store.pendingSupernovaCutscene = false; store.pendingTierCutscene = null;
+  store.rankUpShown = TIER_ORDER_FULL.indexOf(k) + 1; store.rankUpFrom = null; store.rankMapSeen = 9; store.rankMapFx244 = true;
+  store.savedCodeSaved = true; store.pendingBadgeUnlocks = [];
+  try{ localStorage.removeItem('class26e.rankup.prog'); }catch(e){}
+  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); }catch(e){}
+  try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); homeUnlockPlaying = false; }catch(e){}
+  saveStore(); showHome(); scrollTo(0, 0); await wait(700);
+  document.querySelectorAll('.rs-spot,.daily-alert,#tour-overlay,.update-banner,.toast,.scene-bridge').forEach(x => x.remove());
+  const h = document.querySelector('.panel.home .cosmic-hero-wrap'), sc = h && h.querySelector(':scope > .cosmic-scar');
+  const cv = sc && sc.querySelector('canvas.csc-burn');
+  const out = { rank: rankOf(store), scar: !!sc, frags: sc ? sc.querySelectorAll('.csc-frag').length : 0, ember: !!(sc && sc.querySelector('canvas.csc-ember')) };
+  if(!cv) return out;
+  const N = cv.width, d = cv.getContext('2d').getImageData(0, 0, N, N).data, A = new Uint8Array(N * N);
+  let n = 0; for(let k2 = 0; k2 < N * N; k2++){ A[k2] = d[k2 * 4 + 3]; if(A[k2] > 64) n++; }
+  /* each stage against the one before it: of what was solid (alpha > 128),
+     how much is still drawn (alpha > 64) */
+  const P = window.__b320prev;
+  if(P && P.length === A.length){ let was = 0, kept = 0; for(let k2 = 0; k2 < A.length; k2++) if(P[k2] > 128){ was++; if(A[k2] > 64) kept++; } out.was = was; out.kept = kept; }
+  window.__b320prev = A;
+  /* the largest dark piece (alpha > 180, dark), and whether it holds the
+     impact, the far end of the long arm and the middle of the broken shine */
+  const dark = new Uint8Array(N * N);
+  for(let k2 = 0; k2 < N * N; k2++){ const l = (d[k2 * 4] + d[k2 * 4 + 1] + d[k2 * 4 + 2]) / 3; if(d[k2 * 4 + 3] > 180 && l < 60) dark[k2] = 1; }
+  const lab = new Int32Array(N * N).fill(-1); let best = -1, bestN = 0, id = 0;
+  for(let k2 = 0; k2 < N * N; k2++){ if(!dark[k2] || lab[k2] >= 0) continue; let c = 0; const st = [k2]; lab[k2] = id;
+    while(st.length){ const q = st.pop(); c++; const x = q % N, y = (q / N) | 0;
+      for(let dy = -1; dy <= 1; dy++) for(let dx = -1; dx <= 1; dx++){ const xx = x + dx, yy = y + dy; if(xx < 0 || yy < 0 || xx >= N || yy >= N) continue;
+        const r = yy * N + xx; if(dark[r] && lab[r] < 0){ lab[r] = id; st.push(r); } } }
+    if(c > bestN){ bestN = c; best = id; } id++; }
+  const near = (px, py, rr) => { let hit = 0; const cx = px / 100 * N, cy = py / 100 * N, R = rr / 100 * N;
+    for(let y = Math.max(0, cy - R | 0); y < Math.min(N, cy + R); y++) for(let x = Math.max(0, cx - R | 0); x < Math.min(N, cx + R); x++)
+      if((x - cx) * (x - cx) + (y - cy) * (y - cy) <= R * R && lab[y * N + x] === best) hit++; return hit; };
+  let minX = N; for(let k2 = 0; k2 < N * N; k2++) if(lab[k2] === best) minX = Math.min(minX, k2 % N);
+  const sh = (typeof SCAR_SHINE !== 'undefined') ? SCAR_SHINE : { x: -.33, y: -.35 };
+  let shineDark = 0; { const cx = (sh.x + 1) / 2 * N, cy = (sh.y + 1) / 2 * N, R = .14 * N;
+    for(let y = Math.max(0, cy - R | 0); y < Math.min(N, cy + R); y++) for(let x = Math.max(0, cx - R | 0); x < Math.min(N, cx + R); x++) if(dark[y * N + x]) shineDark++; }
+  Object.assign(out, { N, n, piece: bestN, impact: near(65, 63.5, 4), shine: near((sh.x + 1) * 50, (sh.y + 1) * 50, 7), farX: +(minX / N).toFixed(3), shineDark });
+  return out; }"""
+
+
+def check_b320e_cracks(br):
+    """Build 320 (b320e). Madison: "Could each rank after silver (so starting
+    the rank up to gold cutscene) start introducing cracks to the planet
+    system? At gold it would be super small but noticeable, and each rank it
+    would become a bigger and bigger crack and then super nova would have the
+    super nova one ... the burn mark ... seems disconnected from the other
+    crack so ensure it seems to be connected ... after the flash the crack
+    won't instantly be there ... so you can see the crack(s) form ... ensure
+    the planet still has constant effects ... Ensure fragmented pieces still
+    come out." And: "when the main menu opens, the large planet is black and
+    then you can see it."
+    - Home at every rank: no crack at Bronze or Silver; from Gold one, read
+      off the scar's own burn canvas, that GROWS: more of it each rank, and
+      everything solid at a rank still drawn at the next (98%+);
+    - Supernova: the crack, the crater and the broken shine are ONE dark
+      piece - the impact, the far end of the long arm and the middle of the
+      shine all in the largest dark component; Amethyst already has the
+      shine starting to break, less than Supernova;
+    - the rank-up: on the frames just after the flash the new planet shows
+      none of the new crack (Silver to Gold: an empty burn, the forming
+      layers at nothing); later in the scene all of it, the burn canvas
+      the Gold art itself; a light ran along it and chips fell;
+    - Supernova's scene (from Amethyst): after the flash the Amethyst crack
+      and nothing of the blast's; by the title the full scar, its flakes
+      showing and looping;
+    - Home's Supernova planet: the flakes still drift off it (looping and
+      moving), with glints along the crack and smoke off the burn, all
+      running loops;
+    - a return to Home: the planet whole on the first frame (its svg at full
+      opacity, its centre as bright as half a second later).
+    Fails on a73c681: no crack below Supernova, the shine apart from the
+    crack, nothing forms, and Home's planet at 0 on its first frame back."""
+    print("\n320e. the crack grows rank by rank, forms in the rank-up, and Home's planet is there on its first frame")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=2)
+    rows = {}
+    for k in ["rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan"]:
+        rows[k] = pg.evaluate(B320E_RANK, k)
+    print("        " + "; ".join("%s %s" % (k, (r.get("n"), r.get("kept"), r.get("was"))) for k, r in rows.items()))
+    check("no crack below Gold (Bronze, Silver)", not rows["rookie"].get("scar") and not rows["ranger"].get("scar"),
+          (rows["rookie"].get("scar"), rows["ranger"].get("scar")))
+    up = ["veteran", "vanguard", "adept", "elite", "titan"]
+    ns = [rows[k].get("n", 0) for k in up]
+    check("from Gold every rank has a crack on Home, and it grows every rank (pixels drawn)",
+          all(rows[k].get("scar") for k in up) and ns[0] > 150 and all(b > a * 1.15 for a, b in zip(ns, ns[1:])), ns)
+    check("Gold's is small: under a fifth of Supernova's", 150 < ns[0] < ns[-1] * .2, (ns[0], ns[-1]))
+    sup = [(rows[k].get("kept", 0) / max(1, rows[k].get("was", 0))) for k in up[1:]]
+    check("each rank's crack holds the one before it: 98%+ of what was solid is still drawn",
+          all(rows[k].get("was", 0) > 50 for k in up[1:]) and all(x >= .98 for x in sup), [round(x, 3) for x in sup])
+    t = rows["titan"]
+    check("Supernova: the impact, the far end of the crack and the broken shine are ONE dark piece",
+          t.get("impact", 0) > 20 and t.get("shine", 0) > 20 and t.get("farX", 1) < .12,
+          {k: t.get(k) for k in ("piece", "impact", "shine", "farX")})
+    e = rows["elite"]
+    check("the burn begins at Amethyst: its shine already breaking, less than Supernova's",
+          0 < e.get("shineDark", 0) < t.get("shineDark", 0) * .8 and rows["adept"].get("shineDark", 0) == 0,
+          (rows["adept"].get("shineDark"), e.get("shineDark"), t.get("shineDark")))
+    check("only Supernova's has the flakes and the ember", t.get("frags", 0) >= 6 and t.get("ember") and not any(rows[k].get("frags") or rows[k].get("ember") for k in up[:-1]),
+          [(rows[k].get("frags"), rows[k].get("ember")) for k in up])
+    # Home's Supernova planet, alive: flakes, glints, smoke
+    live = pg.evaluate("""async () => { const sc = document.querySelector('.panel.home .cosmic-scar'); if(!sc) return null;
+      const run = s => [...sc.querySelectorAll(s)].filter(e => e.getAnimations().some(a => a.playState === 'running' && a.effect.getComputedTiming().iterations === Infinity)).length;
+      const tf = () => [...sc.querySelectorAll('.csc-frag')].map(e => getComputedStyle(e).transform).join('|');
+      const a = tf(); await new Promise(r => setTimeout(r, 700));
+      return { frags: sc.querySelectorAll('.csc-frag').length, fragsRun: run('.csc-frag'), moved: a !== tf(),
+        glints: sc.querySelectorAll('.csc-glint').length, glintsRun: run('.csc-glint'), smoke: sc.querySelectorAll('.csc-smoke').length, smokeRun: run('.csc-smoke') }; }""")
+    check("Home's Supernova planet: the flakes still come off it (looping, moving), with glints along the crack and smoke off the burn",
+          bool(live) and live["frags"] >= 6 and live["fragsRun"] == live["frags"] and live["moved"] and live["glints"] >= 4 and live["glintsRun"] == live["glints"]
+          and live["smoke"] >= 2 and live["smokeRun"] == live["smoke"], live)
+    ctx.close()
+
+    # the rank-up: Silver to Gold, and Amethyst to Supernova, frame-stepped
+    FORM = """() => { const o = document.getElementById('supernova-cutscene'); if(!o) return null;
+      const h = o.querySelector('.rank-after .cosmic-hero-wrap'), sc = h && h.querySelector(':scope > .cosmic-scar');
+      const eff = el => { let v = 1; for(let x = el; x && x !== o; x = x.parentElement){ const c = getComputedStyle(x); if(c.display === 'none' || c.visibility === 'hidden') return 0; v *= +c.opacity; } return v; };
+      const cnt = c => { if(!c) return 0; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for(let i = 3; i < d.length; i += 4) if(d[i] > 64) n++; return n; };
+      const L = sc ? [...sc.querySelectorAll('canvas.csc-form')] : [];
+      const burn = sc && sc.querySelector('canvas.csc-burn');
+      return { c: o.className, scar: !!sc, base: cnt(burn), layers: L.length, newVis: +L.reduce((s, c) => s + cnt(c) * eff(c), 0).toFixed(0),
+        runs: sc ? [...sc.querySelectorAll('.csc-run')].filter(e => eff(e) > .3).length : 0, chips: sc ? [...sc.querySelectorAll('.csc-chip')].filter(e => eff(e) > .3).length : 0,
+        frags: sc ? [...sc.querySelectorAll('.csc-frag')].filter(e => eff(e) > .3).length : 0, formed: !!(sc && sc.classList.contains('is-formed')) }; }"""
+    for tier, frm in (("veteran", "ranger"), ("titan", "elite")):
+        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+        pg.evaluate(B320E_RANK, frm)
+        ref = pg.evaluate("""(st) => { const a = st >= CRACK_TOP ? cosmicScarArt() : cosmicScarArt(st), b = st - 1 > 0 ? cosmicScarArt(st - 1) : null;
+          const cnt = c => { if(!c) return 0; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for(let i = 3; i < d.length; i += 4) if(d[i] > 64) n++; return n; };
+          return [cnt(b && b.burn), cnt(a && a.burn)]; }""", 1 if tier == "veteran" else 5) if pg.evaluate("() => typeof CRACK_TOP !== 'undefined'") else [0, 0]
+        pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+        fn = "playSupernovaCutscene({ from: '%s', onDone(){} })" % frm if tier == "titan" else "playTierCutscene('%s', { from: '%s', onDone(){} })" % (tier, frm)
+        pg.evaluate("() => { " + fn + "; }")
+        rows, swap, burst, t = [], None, None, 0.0
+        for i in range(1, 30 * 40):
+            t_ = t; t = i / 30
+            pg.evaluate(CUTSPIN_SEEK, t)
+            pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
+            pg.evaluate(CUTSPIN_SEEK, t)
+            c = pg.evaluate("() => { const o = document.getElementById('supernova-cutscene'); return o ? o.className : null; }")
+            if c is None:
+                break
+            if "supernova-burst" in c.split() and burst is None:
+                burst = i
+            if "is-swapped" in c.split() and swap is None:
+                swap = i
+            if swap is not None and (i - swap) % 3 == 0:
+                rows.append((i - swap, pg.evaluate(FORM)))
+            if "rank-outro" in (c or "").split():
+                break
+        ctx.close()
+        name = "Silver to Gold" if tier == "veteran" else "Amethyst to Supernova"
+        first = [r for d, r in rows if d <= 9]
+        late = [r for d, r in rows if r and "supernova-settle" in r["c"].split()]
+        check("%s: on the frames just after the flash the new planet shows none of its new crack (the old one only: %s px)" % (name, ref[0]),
+              bool(first) and all(r and r["newVis"] == 0 and abs(r["base"] - ref[0]) <= ref[0] * .01 + 2 for r in first)
+              and (tier != "titan" or all(r["frags"] == 0 for r in first)),
+              [(r["base"], r["newVis"], r["frags"]) for r in first[:3]])
+        grew = [d + (swap or 0) - (burst or 0) for d, r in rows if r and r["newVis"] > 0]
+        check("%s: it forms when it can be seen - from 1s+ after the flash, growing, a light running along it and chips falling (frames after the flash)" % name,
+              bool(grew) and burst is not None and grew[0] >= 30 and len(grew) >= 8 and any(r["runs"] for d, r in rows if r) and any(r["chips"] for d, r in rows if r),
+              (grew[:1], len(grew), max([r["runs"] for d, r in rows if r] or [0]), max([r["chips"] for d, r in rows if r] or [0])))
+        check("%s: by the title it is all there - the burn canvas is the new stage's art (%s px)" % (name, ref[1]),
+              bool(late) and late[-1]["formed"] and abs(late[-1]["base"] - ref[1]) <= ref[1] * .01 + 2 and ref[1] > ref[0]
+              and (tier != "titan" or late[-1]["frags"] >= 6),
+              late and (late[-1]["base"], late[-1]["formed"], late[-1]["frags"]))
+
+    # Home's planet whole on its first frame back
+    from PIL import Image, ImageStat
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=1)
+    pg.evaluate(B320E_RANK, "veteran")
+    pg.evaluate("() => showRankings()"); pg.wait_for_timeout(400)
+    pg.evaluate(B318_STEP)
+    def centre(k):
+        r = pg.evaluate(B318_AT, k)
+        box = pg.evaluate("""() => { const c = document.querySelector('.screen-home-actual .cosmic-hero-main circle[fill^="url(#cosmicSphereGrad"]').getBoundingClientRect();
+          return { x: c.left + c.width * .3, y: c.top + c.height * .3, width: c.width * .4, height: c.height * .4 }; }""")
+        im = Image.open(io.BytesIO(pg.screenshot(clip=box))).convert("L")
+        return r, ImageStat.Stat(im).mean[0]
+    r0, l0 = centre(0)
+    r1, l1 = centre(30)
+    ctx.close()
+    check("a return to Home: the planet whole on its first frame - full opacity, its centre as bright as half a second later (%.0f against %.0f)" % (l0, l1),
+          r0["ret"] and r0["planet"] >= .99 and (r0["scar"] or 0) >= .99 and l0 >= .9 * l1 and l1 > 40, (r0, round(l0, 1), round(l1, 1)))
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -21482,6 +21680,7 @@ def main():
             check_b319_badges(br)
             check_b319f_casespace(br)
             check_b319h_layout(br)
+            check_b320e_cracks(br)
         finally:
             br.close()
     SERVER.shutdown()
