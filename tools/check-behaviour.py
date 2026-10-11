@@ -21257,7 +21257,11 @@ def check_b320g_inspect(br):
         end = pg.evaluate(STATE)
         rub["seen"] = sorted(set(seen), reverse=True)
         rub["steps"] = [i for i in range(1, len(seen)) if seen[i] != seen[i - 1]]
-        rub["maxTurn"] = round(max(abs(t - round(thetas[0] / 180) * 180) for t in thetas), 1)
+        # turned only towards its front (the nearest whole turn), never past it
+        ref = round(thetas[-1] / 360) * 360
+        lo, hi = min(thetas[0], ref) - 10, max(thetas[0], ref) + 10
+        rub["maxTurn"] = round(max(max(lo - t, t - hi, 0) for t in thetas), 1)
+        rub["endFront"] = abs(thetas[-1] - ref) < 1
         rub["sparks"] = sparks
         rub["end"] = [end["stage"], end["rubStrokes"]]
         rub["hint1"] = pg.evaluate(VIEW)["dirt"]
@@ -21273,7 +21277,8 @@ def check_b320g_inspect(br):
           rub["ok"] and rub["seen"] == [4, 3, 2, 1, 0] and rub["end"][0] == 0
           and rub.get("at") == [[3, rub["perStage"]], [2, 2 * rub["perStage"]], [1, 3 * rub["perStage"]], [0, 4 * rub["perStage"]]]
           and abs(rub["mid"][2] - rub["mid"][0]) < .05 and rub["mid"][3] is True and rub["sparks"] >= 4 and rub["stored"] == 0 and rub["tile"] == "0", rub)
-    check("a rub does not turn the badge (within 10 degrees of facing you throughout)", rub["ok"] and rub["maxTurn"] <= 10, rub.get("maxTurn"))
+    check("a rub never spins the badge: it only comes round to show its front (no further than that, give or take 10 degrees)",
+          rub["ok"] and rub["maxTurn"] <= 0 and rub.get("endFront") is True, [rub.get("maxTurn"), rub.get("endFront")])
     check("the hint: 'This badge is dirty. Rub it to clean it.' while it is dirty, and it says it is clean after",
           rub["ok"] and rub["hint0"] == "This badge is dirty. Rub it to clean it." and "clean" in (rub["hint1"] or "").lower() and "dirty" not in (rub["hint1"] or "").lower(),
           [rub.get("hint0"), rub.get("hint1")])

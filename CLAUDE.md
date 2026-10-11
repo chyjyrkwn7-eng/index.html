@@ -19308,7 +19308,8 @@ dirtier by the week so by week 3-4 they'd be their dirtiest."*
   slack (`slack`, .15 of its width, so a rub's first short strokes do not
   rock it), until it shows it is a rub: two turn-backs, each stroke between `rubMin` px and `rubMax` of the
   badge's width and done within `rubStrokeMs`, all inside the badge
-  (`rubReach`). From then on it does not turn (it eases back to face you)
+  (`rubReach`). From then on it does not turn (it eases round to show its
+  FRONT, where the dirt is - a rub on its back turns it over)
   and every stroke counts; each `rubPerStage` (4) strokes clean ONE stage,
   with a sparkle and a cross-fade to the cleaner face. One long stroke, or
   strokes wider than `rubMax`, is a spin and can never clean; a rub never

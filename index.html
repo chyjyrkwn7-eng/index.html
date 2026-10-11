@@ -103639,7 +103639,8 @@ function finishBadgeCaseOpen(kase){
    shows it is a rub: two turn-backs, each stroke between rubMin px and
    rubMax of the badge's width and done within rubStrokeMs, all of it
    inside the badge (rubReach of its width from the middle). From then on
-   the drag no longer turns it - it eases back to face you - and every
+   the drag no longer turns it - it eases round to show its front, where
+   the dirt is - and every
    stroke counts; every rubPerStage strokes clean it one stage. Anything
    else is a spin: one long stroke, or strokes longer than rubMax, can
    never clean, and a rub never flings. Letting go spins it at the
@@ -104025,10 +104026,11 @@ function openBadgeInspect(unit, tile){
         const lenOK = s => s.len <= B.rubMax * g.w && s.ms <= B.rubStrokeMs;
         if(g.kind === "pending" && (g.strokes.some(s => !lenOK(s)) || al > B.rubMax * g.w)) g.kind = "spin";
         if(g.kind === "pending" && g.inside && g.strokes.length >= 2 && g.strokes.every(lenOK)){
-          /* it is a rub: it stops turning and comes back round to face you */
+          /* it is a rub: it stops turning and comes round to show its FACE
+             (the dirt is on the front; rubbing its back turns it over) */
           g.kind = "rub";
           hit.classList.add("is-rubbing");
-          mode = "settle"; target = Math.round(th / 180) * 180; kick();
+          mode = "settle"; target = Math.round(th / 360) * 360; kick();
           g.strokes.forEach(() => cleanStroke());
         } else {
           /* a little slack before it turns, so the short strokes a rub
@@ -104053,7 +104055,7 @@ function openBadgeInspect(unit, tile){
       if(g.kind === "rub"){
         const al = Math.hypot(g.ext.x - g.anchor.x, g.ext.y - g.anchor.y);
         if(al >= B.rubMin * 1.5) cleanStroke();
-        if(mode !== "settle"){ mode = "settle"; target = Math.round(th / 180) * 180; }
+        if(mode !== "settle"){ mode = "settle"; target = Math.round(th / 360) * 360; }
         kick();
         return;
       }
