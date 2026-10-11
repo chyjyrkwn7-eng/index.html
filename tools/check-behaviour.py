@@ -8793,11 +8793,15 @@ def check_b305_resultstap(br):
         # one tap, one card
         landed = "()=>document.querySelectorAll('.rs-rewards .rs-land.rs-in, .rs-rewards .rs-land.rs-in-now').length"
         total = pg.evaluate("()=>document.querySelectorAll('.rs-rewards .rs-land').length")
-        before = pg.evaluate(landed)
+        graded = "()=>!!document.querySelector('.rs-rewards .rs-grade.rs-graded')"
+        before = pg.evaluate(landed); g0 = pg.evaluate(graded)
         pg.touchscreen.tap(w / 2, h * 0.45); pg.wait_for_timeout(60)
-        after = pg.evaluate(landed)
-        check(dev + ": a tap on the screen brings in the next card, not the rest of them",
-              after == before + 1 and after < total, (before, after, total))
+        after = pg.evaluate(landed); g1 = pg.evaluate(graded)
+        # BUILD 320: the grade is counted in, and a tap while it counts is
+        # "the box on screen" - it finishes the count and lands the grade,
+        # one step, and the XP card waits for the next tap.
+        check(dev + ": a tap on the screen brings in the next card (or lands the grade being counted), not the rest of them",
+              ((after == before + 1) or (after == before and g1 and not g0)) and after < total, (before, after, total, g0, g1))
         for _ in range(150):
             pg.wait_for_timeout(200)
             if pg.evaluate("()=>!!document.querySelector('.rs-rewards.rs-done')"): break
@@ -15588,13 +15592,18 @@ def check_b317_hundobox(br):
               /* the first frame the card is visible: sampled in the same task the
                  class that lands it is set, before anything paints */
               let first = null;
+              /* BUILD 320: the card is COUNTED IN with no grade on it (red,
+                 warming) and takes its colours when the grade lands - so
+                 "its first frame" is the first frame the GRADE is on it:
+                 landed and no longer counting. */
+              const graded = g => !g.classList.contains('is-counting') && (g.classList.contains('rs-in') || g.classList.contains('rs-in-now'));
               const mo = new MutationObserver(() => { const g = document.querySelector('.rs-screen .rs-grade');
-                if(g && !first && (g.classList.contains('rs-in') || g.classList.contains('rs-in-now'))) first = look(g); });
+                if(g && !first && graded(g)) first = look(g); });
               mo.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
               /* and the first frame it is actually PAINTED with any opacity at all */
               let painted = null; const nraf = window.requestAnimationFrame.bind(window);
               const tick = () => { const g = document.querySelector('.rs-screen .rs-grade');
-                if(g && +cs(g).opacity > 0) painted = look(g); else nraf(tick); };
+                if(g && graded(g) && +cs(g).opacity > 0) painted = look(g); else nraf(tick); };
               nraf(tick);
               window.__fxAt = 0; window.__celAt = 0;
               const real = window.__realPlay || (window.__realPlay = playHundoFx), rc = window.__realCel || (window.__realCel = celebrate);
@@ -17183,6 +17192,7 @@ B319_RU_RUN = """async (a) => {
   mo.disconnect();
   out.kinds = [...document.querySelectorAll('.rs-unlocked .rs-unlock')].map(r => [...r.classList].filter(c => c.indexOf('rs-unlock-') === 0).join(''));
   out.waitText = (document.querySelector('.rs-unlock-rankwait') || {}).textContent || null;
+  out.rankUpText = /rank up|waiting for you on profile/i.test((document.querySelector('#stage .rs-screen') || {}).innerText || '');
   out.level = (document.querySelector('.results-level-num') || {}).textContent || null;
   out.rankLine = (document.querySelector('.results-level-rank') || {}).textContent || null;
   out.owed = (typeof rankUpOwed === 'function') ? rankUpOwed() : null;
@@ -17316,9 +17326,13 @@ def check_b319_rankup(br):
         check(f"{dev}: the run: nothing threw", not r.get("threw"), r.get("threw"))
         check(f"{dev}: the results play NO rank cutscene and NO rank reward card",
               r.get("cut") == 0 and not any("rankrewards" in c or "rankreward" in c or "is-rankup" in c for c in r.get("cards", [])), [r.get("cut"), r.get("cards")])
-        check(f"{dev}: one quiet row says the rank waits on Profile, and no theme/flare/character rows",
-              "rs-unlock-rankwait" in r.get("kinds", []) and "Profile" in (r.get("waitText") or "")
-              and not any(k in ("rs-unlock-theme", "rs-unlock-rankflare", "rs-unlock-rank") for k in r.get("kinds", [])), [r.get("kinds"), r.get("waitText")])
+        # BUILD 320 REVERSED THE ROW: "the result stuff does not need to
+        # include any rank up stuff or show that you ranked up. You
+        # technically have not ranked up until you see the road map cut
+        # scene and finished it." No row at all now (b320a).
+        check(f"{dev}: no row for the rank-up on the results (build 320), and no theme/flare/character rows",
+              "rs-unlock-rankwait" not in r.get("kinds", []) and not r.get("waitText") and not r.get("rankUpText")
+              and not any(k in ("rs-unlock-theme", "rs-unlock-rankflare", "rs-unlock-rank") for k in r.get("kinds", [])), [r.get("kinds"), r.get("waitText"), r.get("rankUpText")])
         check(f"{dev}: the results card stays at Silver and the old gate (Level 49) - the saved levels climb on Profile",
               r.get("level") == "Level 49" and (r.get("rankLine") or "").startswith("Silver"), [r.get("level"), r.get("rankLine")])
         check(f"{dev}: the rank-up is owed (Silver shown, Gold held) with where it stood recorded; no old cutscene flags",
@@ -20917,6 +20931,317 @@ def check_b319h_layout(br):
         ctx.close()
 
 
+
+# ---------------------------------------------------------------------------
+# BUILD 320 (b320a): THE RESULTS IN ORDER - grade, XP, unlocks.
+B320A_REC = r"""() => {
+  window.__b320 = { t0: performance.now(), s: [], ev: {} };
+  const R = window.__b320;
+  const vis = f => { if(!f) return null; const w = f.offsetWidth || 1;
+    try{ const m = new DOMMatrixReadOnly(getComputedStyle(f).transform); return Math.max(0, Math.min(100, 100 * (1 + m.m41 / w))); }catch(e){ return null; } };
+  const rgb = c => (String(c).match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+  const landed = e => !!e && (e.classList.contains('rs-in') || e.classList.contains('rs-in-now'));
+  if(R.timer) clearInterval(R.timer);
+  R.timer = setInterval(() => {
+    const t = Math.round(performance.now() - R.t0);
+    const P = document.querySelector('#stage .rs-screen');
+    const g = P && P.querySelector('.rs-grade');
+    const pe = g && g.querySelector('.rs-pct');
+    const x = P && P.querySelector('.rs-xp');
+    const u = P && P.querySelector('.rs-unlocked');
+    const st = g && g.querySelector('.rs-stamps');
+    const num = pe ? parseInt(pe.textContent, 10) : null;
+    R.s.push({ t,
+      gIn: landed(g), gOp: g ? +getComputedStyle(g).opacity : 0,
+      pct: isNaN(num) ? null : num, col: pe ? rgb(getComputedStyle(pe).color) : null,
+      tone: !!(g && /\bis-(pass|fail|perfect)\b/.test(g.className)), graded: !!(g && g.classList.contains('rs-graded')),
+      stamps: st ? +getComputedStyle(st).opacity : null,
+      fills: P ? [...P.querySelectorAll('.rs-byunit .unit-breakdown-fill')].map(f => Math.round(vis(f) * 10) / 10) : [],
+      tos: P ? [...P.querySelectorAll('.rs-byunit .unit-breakdown-fill')].map(f => parseFloat(f.dataset.to) || 0) : [],
+      xIn: landed(x), xFill: x ? vis(x.querySelector('.xpbar-fill')) : null,
+      xNum: x ? ((x.querySelector('.xpnums-have') || {}).textContent || null) : null,
+      charged: !!(x && x.classList.contains('is-charged')),
+      fx: !!document.querySelector('.confetti-layer, .rs-grade .hfx-box'),
+      scene: !!document.querySelector('.bc-scene, .rs-spot, .fl-scene, .sf-scene'),
+      boxOp: u ? +getComputedStyle(u).opacity : null, boxIn: landed(u),
+      rows: P ? [...P.querySelectorAll('.rs-unlocked .rs-unlock')].filter(landed).length : 0,
+      text: P ? (P.innerText || '').replace(/\s+/g, ' ').slice(0, 3000) : '',
+      badgeBox: P ? P.querySelectorAll('.rs-badges').length : 0,
+      done: !!(P && P.classList.contains('rs-done')) });
+  }, 40);
+}"""
+B320A_RUN = r"""(o) => {
+  /* o: { units: [[name, missN]...], mode, vroom, perfects: {unit: n} } */
+  document.querySelectorAll('#pushing-update,#intro-pop').forEach(n => n.remove());
+  if(o.perfects) Object.keys(o.perfects).forEach(u => { store.unitPerfects = store.unitPerfects || {}; store.unitPerfects[u] = o.perfects[u] === 'T-1' ? badgeThresholdFor(u) - 1 : o.perfects[u]; });
+  store.hundoFx = o.fx || 'fireworks'; store.lateHundos = 999; store.retroBadgePending = []; store.mergeHold = null; store.pendingBadgeUnlocks = [];
+  if(o.rankUpShown != null) store.rankUpShown = o.rankUpShown;
+  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){}
+  saveStore();
+  const names = o.units.map(x => x[0]);
+  cfg.mode = o.mode; cfg.source = 'all'; cfg.units = names.slice(); cfg.size = 0;
+  order = QUESTIONS.map((q, i) => i).filter(i => names.indexOf((QUESTIONS[i].topic || '').trim()) >= 0);
+  const missSet = new Set();
+  o.units.forEach(([u, m]) => { const qs = order.filter(i => (QUESTIONS[i].topic || '').trim() === u); qs.slice(qs.length - m).forEach(i => missSet.add(i)); });
+  runTrackable = true; timedOut = false; runMode = o.mode; runLabel = null; isMissedRetake = false; practiceTestMinutes = null;
+  inVirtualRoom = !!o.vroom; try{ if(o.vroom) vroomCode = null; }catch(e){}
+  attempts = {}; picked = {}; timedOutSet = {};
+  try{ firstPick = {}; }catch(e){}
+  order.forEach(qi => { const oo = optionOrder(qi), right = oo.indexOf(QUESTIONS[qi].answer), bad = missSet.has(qi);
+    attempts[qi] = bad ? 2 : 1; picked[qi] = bad ? (right + 1) % oo.length : right;
+    try{ if(bad) firstPick[qi] = (right + 1) % oo.length; }catch(e){} });
+  runStartTime = Date.now() - 30000 * Math.max(1, order.length / 12); testInProgress = true; pos = order.length - 1;
+  __b320.t0 = performance.now(); __b320.s = [];
+  summarize();
+  return { n: order.length, pct: lastRunResult && lastRunResult.pct, good: lastRunResult && lastRunResult.good };
+}"""
+
+
+def _b320a_play(pg, o, limit=90000, tap_spots=True):
+    pg.evaluate(B320A_REC)
+    info = pg.evaluate(B320A_RUN, o)
+    t = 0; spot_at = None
+    while t < limit:
+        pg.wait_for_timeout(250); t += 250
+        st = pg.evaluate("()=>({ done: !!document.querySelector('#stage .rs-rewards.rs-done, #stage .rs-screen.rs-done'), spot: !!document.querySelector('.rs-spot.is-up') })")
+        if tap_spots and st["spot"]:
+            spot_at = spot_at or t
+            if t - spot_at > 3000:
+                pg.evaluate("()=>{ const s = document.querySelector('.rs-spot.is-up'); if(s) s.click(); }"); spot_at = None
+        else:
+            spot_at = None
+        if st["done"]:
+            pg.wait_for_timeout(700); break
+    s = pg.evaluate("()=>{ clearInterval(__b320.timer); return __b320.s; }")
+    return info, s
+
+
+def _b320a_first(s, f, default=None):
+    for x in s:
+        if f(x): return x["t"]
+    return default
+
+
+def _b320a_order(tag, s, info, expect_scenes):
+    """The checks every animated run shares."""
+    fin = info["pct"]
+    # graded = the grade SHOWN with its verdict (a tone on a card nobody
+    # can see yet is not a grade anyone has been given)
+    t_graded = _b320a_first(s, lambda x: x["tone"] and x["gOp"] > .3)
+    t_bars = _b320a_first(s, lambda x: x["fills"] and all(v >= to - .6 for v, to in zip(x["fills"], x["tos"])))
+    t_xin = _b320a_first(s, lambda x: x["xIn"])
+    t_scene = _b320a_first(s, lambda x: x["scene"])
+    t_box = _b320a_first(s, lambda x: x["boxIn"])
+    seen = [x for x in s if x["gOp"] > .3]
+    check(tag + ": the grade comes first, then the XP box (grade landed before the XP box lands)",
+          t_graded is not None and t_xin is not None and t_graded < t_xin, (t_graded, t_xin))
+    early = [x for x in seen if x["pct"] == fin and fin > 0 and (t_bars is None or x["t"] < t_bars)]
+    check(tag + ": the grade's number is never the real grade until its bars are home",
+          bool(seen) and not early, early[:2] or len(seen))
+    pre = [x for x in seen if x["t"] < (t_bars or 10 ** 9) and (x["tone"] or (x["stamps"] or 0) > .05)]
+    check(tag + ": nor its tone or its stamps", not pre, pre[:1])
+    if expect_scenes:
+        check(tag + ": the unlocks come after the XP box", t_scene is not None and t_xin is not None and t_scene > t_xin, (t_xin, t_scene))
+        during = [x for x in s if x["scene"] and (x["boxOp"] or 0) > .05]
+        check(tag + ": the Unlocked box is not down while any cutscene or pop-up is up", not during, during[:1])
+        last_scene = max([x["t"] for x in s if x["scene"]] or [0])
+        check(tag + ": and goes down once they are all over", t_box is not None and t_box >= last_scene, (last_scene, t_box))
+        # the XP settled: its number's last change
+        nums = [(x["t"], x["xNum"]) for x in s if x["xNum"] is not None and (t_scene is None or x["t"] < t_scene)]
+        settle = max([t for (t, v), (t0, v0) in zip(nums[1:], nums) if v != v0] or [t_xin or 0])
+        check(tag + ": a real pause (1.5s or more) between the XP settling and the first unlock",
+              t_scene is not None and t_scene - settle >= 1500, (settle, t_scene))
+    txt = " ".join(x["text"] for x in s[-3:])
+    check(tag + ": nothing on the results says Rank up", "rank up" not in txt.lower(), re.findall(r".{30}rank up.{30}", txt, re.I)[:1])
+    return dict(t_graded=t_graded, t_bars=t_bars, t_xin=t_xin, t_scene=t_scene, t_box=t_box)
+
+
+def check_b320a_results(br):
+    """Build 320 (b320a): the results screen in Madison's order - "you get a
+    grade, you see how that adds up, you get awards". The grade box comes
+    first with no grade on it; its unit bars fill one at a time and the
+    number counts up with them, red at 0 and warming as it climbs; the
+    grade lands (tone, stamps, pop) only when the last bar is home, and a
+    100's effect plays after that, never while the bars run. Then the XP
+    box: its bar fills and only after the bar's effect (the pop, or the
+    knock at a full bar - at a wall, at 80, or reached this run) does the
+    number move. Then a real pause, the cutscenes and pop-ups, and only
+    once every one is over the Unlocked box, its rows one at a time. No
+    "Rank up" anywhere on the results, no badge progress box. The same on
+    a Virtual Room race's results and in the daily question's order;
+    Reduce motion keeps the order, still; Back to results replays nothing.
+    Written against a73c681 (build 319), where the XP box and the badge
+    box came first, the grade last and fully formed, the Unlocked box
+    down before its scenes, and a "Rank up / Waiting for you on Profile"
+    row on the results."""
+    print("\n320a. the results in order: the grade counted in, then the XP, then the unlocks")
+    U1, U2 = "Identity Crimes", None
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    sizes = pg.evaluate("()=>topicsIn(QUESTIONS).map(u=>[u, unitQuestionCount(u)]).sort((a,b)=>a[1]-b[1])")
+    U2 = [u for u, n in sizes if u != U1][0]
+    pg.evaluate("()=>{ store.seenFirstResultsTour = true; theme.muteBanners = false; theme.reduceMotion = false; applyTheme(); saveStore(); }")
+
+    # A. two units at 100%, each one hundo short of its badge: the bars, the
+    # effect, the XP, the badge case, then the box with two rows.
+    info, s = _b320a_play(pg, {"units": [[U1, 0], [U2, 0]], "mode": "drill", "perfects": {U1: "T-1", U2: "T-1"}})
+    tA = _b320a_order("A 2-unit 100%", s, info, True)
+    two = [x for x in s if x["gOp"] > .3 and len(x["fills"]) == 2 and sum(1 for v, to in zip(x["fills"], x["tos"]) if 1 < v < to - 1) > 1]
+    check("A: the unit bars fill one at a time, never two at once", not two and len(s) > 0, two[:1])
+    b2 = _b320a_first(s, lambda x: len(x["fills"]) == 2 and x["fills"][1] > 1)
+    b1 = _b320a_first(s, lambda x: len(x["fills"]) == 2 and x["fills"][0] >= x["tos"][0] - .6)
+    check("A: the second bar starts only once the first is home", b1 is not None and b2 is not None and b2 >= b1, (b1, b2))
+    t_fx = _b320a_first(s, lambda x: x["fx"])
+    check("A: the 100's effect starts after the bars are home and the grade has landed",
+          t_fx is not None and tA["t_bars"] is not None and tA["t_graded"] is not None and t_fx >= max(tA["t_bars"], tA["t_graded"]),
+          (tA["t_bars"], tA["t_graded"], t_fx))
+    rows = []
+    last = 0
+    for x in s:
+        if x["rows"] > last: rows.append(x["t"]); last = x["rows"]
+    check("A: the box's rows go down one by one", len(rows) >= 2 and all(b - a >= 200 for a, b in zip(rows, rows[1:])), rows)
+
+    # B. 42% on one unit: red from 0, a short count, red when it lands.
+    info, s = _b320a_play(pg, {"units": [[U1, 7]], "mode": "drill", "perfects": {U1: 0}})
+    _b320a_order("B 42%", s, info, False)
+    cols = [x for x in s if x["gOp"] > .3 and x["pct"] is not None and not x["tone"]]
+    first = cols[0] if cols else None
+    check("B: the number starts at 0, in red", bool(first) and first["pct"] == 0 and first["col"][0] > first["col"][1] + 40, first)
+    warmer = [x for x in cols if x["col"] and x["col"][1] > (first["col"][1] if first else 999) + 25]
+    check("B: and warms as it climbs", bool(warmer), cols[-1] if cols else None)
+    run_ms = (cols[-1]["t"] - cols[0]["t"]) if cols else 0
+    check("B: a short sequence for a low grade (under 3s of counting)", 0 < run_ms < 3000, run_ms)
+
+    # C. 0%: red the whole way, and quick.
+    info, s = _b320a_play(pg, {"units": [[U1, 99]], "mode": "drill", "perfects": {U1: 0}})
+    cols = [x for x in s if x["gOp"] > .3 and x["pct"] is not None and not x["tone"]]
+    check("C 0%: red the whole way", bool(cols) and all(x["col"][0] > x["col"][1] + 40 for x in cols), cols[-1:] or None)
+    t_c = _b320a_first(s, lambda x: x["tone"]); t_g = _b320a_first(s, lambda x: x["gOp"] > .3)
+    check("C 0%: and no long suspense (graded within 2.2s of the card)", t_c is not None and t_g is not None and t_c - t_g < 2200, (t_g, t_c))
+
+    # D. a two-unit Exam at about 92%, with a rank-up owed: the colour runs
+    # from red to green, the stamps wait, no Rank up row, no badge box.
+    pg.evaluate("()=>{ const r = " + _seed_gold_js() + "; saveStore(); return r; }")
+    info, s = _b320a_play(pg, {"units": [[U1, 1], [U2, 0]], "mode": "exam", "rankUpShown": 0, "perfects": {U1: 0, U2: 0}})
+    held = pg.evaluate("()=>{ const o = rankUpOwed(); return o ? o.toIdx : -1; }")
+    _b320a_order("D Exam", s, info, False)
+    cols = [x for x in s if x["gOp"] > .3 and x["pct"] is not None and not x["tone"]]
+    check("D: the colour moves from red to the pass green as the number climbs",
+          bool(cols) and cols[0]["col"][0] > cols[0]["col"][1] + 40 and any(x["col"][1] > x["col"][0] + 40 for x in cols),
+          [cols[0]["col"], cols[-1]["col"]] if cols else None)
+    check("D: a rank-up is owed (the fixture holds a rank past the one shown)", held >= 1, held)
+    check("D: and no row for it - no Rank up, no 'Waiting for you on Profile'",
+          "waiting for you on profile" not in s[-1]["text"].lower() and "rank up" not in s[-1]["text"].lower(), s[-1]["text"][-200:])
+    check("D: no badge progress box, though a hundo was earned in a unit", max(x["badgeBox"] for x in s) == 0,
+          max(x["badgeBox"] for x in s))
+
+    # E. Back to results from the review: the finished screen, nothing counted again.
+    pg.evaluate("()=>{ const b = document.querySelector('#stage .rs-continue'); if(b) b.click(); }")
+    pg.wait_for_timeout(500)
+    pg.evaluate(B320A_REC)
+    pg.evaluate("()=>{ const b = [...document.querySelectorAll('#stage .actions button')].find(x => /Back to results/.test(x.textContent)); if(b) b.click(); }")
+    pg.wait_for_timeout(1200)
+    s = pg.evaluate("()=>{ clearInterval(__b320.timer); return __b320.s; }")
+    vis = [x for x in s if x["gOp"] > .3]
+    check("E: back from the review the grade is there at once - final, toned, no count",
+          bool(vis) and all(x["pct"] == info["pct"] and x["tone"] for x in vis) and not any(x["scene"] for x in s),
+          vis[0] if vis else len(s))
+
+    # F. the XP number after the bar's effect, asked of the block itself
+    # (every results screen's, the Virtual Room's standings included).
+    xr = pg.evaluate("""async () => {
+      const acct = (pts, nb) => { const units = topicsIn(QUESTIONS);
+        store.lifetime = Object.assign({}, store.lifetime, { points: pts });
+        store.unitPerfects = Object.fromEntries(units.slice(0, nb).map(u => [u, badgeThresholdFor(u)]));
+        store.levelFloor = 0; retroHideBadges = null; mergeHidePoints = null; };
+      const vis = f => { const m = new DOMMatrixReadOnly(getComputedStyle(f).transform); return 100 * (1 + m.m41 / (f.offsetWidth || 1)); };
+      showHome(); await new Promise(r => setTimeout(r, 400));
+      const run = async (earned, pts, nb) => { acct(pts, nb);
+        const b = buildResultsLevelBlock(earned, pts, { badgesBefore: nb, badgesAfter: nb });
+        const host = document.createElement('div'); host.className = 'rs-xp'; host.appendChild(b);
+        document.querySelector('#stage .panel').appendChild(host);
+        const fill = b.querySelector('.xpbar-fill'), tw = b.querySelector('.results-level-trackwrap');
+        const num = () => (b.querySelector('.xpnums-have') || {}).textContent || null;
+        const t0 = performance.now(), out = [];
+        b.runFill();
+        for(let k = 0; k < 260; k++){ await new Promise(r => setTimeout(r, 30));
+          out.push({ t: Math.round(performance.now() - t0), v: Math.round(vis(fill) * 10) / 10, n: num(), bump: Number(tw.dataset.xpbump || 0) + (tw.classList.contains('is-xpbump') ? 1 : 0) }); }
+        host.remove(); return out; };
+      return { room: await run(300, xpForLevel(30) - 2000, 0), full: await run(300, xpForLevel(52) + 200, 4),
+               gain: await run(300, xpForLevel(50) + 150, 4), top: await run(300, xpForLevel(LEVEL_CAP) + 60000, 16) }; }""")
+    def num_first_change(o):
+        n0 = o[0]["n"]
+        return _b320a_first(o, lambda x: x["n"] != n0)
+    o = xr["room"]; end = o[-1]["v"]
+    t_home = _b320a_first(o, lambda x: abs(x["v"] - end) < .5)
+    t_n = num_first_change(o)
+    check("F: a bar with room: the number moves only after the fill is home, a beat later",
+          t_home is not None and t_n is not None and t_n >= t_home + 250, (t_home, t_n))
+    for key, label in (("full", "at a wall, already full (max level)"), ("top", "at level 80"), ("gain", "filled to a wall this run (XP, then max)")):
+        o = xr[key]
+        t_b = _b320a_first(o, lambda x: x["bump"] > 0); t_n = num_first_change(o)
+        t_full = _b320a_first(o, lambda x: x["v"] >= 99.5)
+        check("F %s: the bar's knock first, then the number, a beat later" % label,
+              t_b is not None and t_n is not None and t_n >= t_b + 250 and (t_full is not None and t_b >= t_full - 40), (t_full, t_b, t_n))
+    ctx.close()
+
+    # G. Reduce motion: the same order, still - the box waits for the badge's still scene.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("()=>{ store.seenFirstResultsTour = true; theme.muteBanners = false; theme.reduceMotion = true; applyTheme(); saveStore(); }")
+    pg.evaluate(B320A_REC)
+    pg.evaluate(B320A_RUN, {"units": [[U1, 0]], "mode": "drill", "perfects": {U1: "T-1"}})
+    pg.wait_for_timeout(9000)
+    s2 = pg.evaluate("()=>{ clearInterval(__b320.timer); return __b320.s; }")
+    vis = [x for x in s2 if x["gOp"] > .3]
+    check("G Reduce motion: the grade is final at once", bool(vis) and vis[0]["pct"] == 100 and vis[0]["tone"], vis[:1])
+    during = [x for x in s2 if x["scene"] and (x["boxOp"] or 0) > .05]
+    check("G Reduce motion: the badge's still scene plays with the Unlocked box not yet down",
+          any(x["scene"] for x in s2) and not during, during[:1])
+    check("G Reduce motion: the box is down once it has gone", (s2[-1]["boxOp"] or 0) > .9, s2[-1]["boxOp"])
+    ctx.close()
+
+    # H. a Virtual Room race's results: the same order.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("()=>{ store.seenFirstResultsTour = true; theme.muteBanners = false; theme.reduceMotion = false; applyTheme(); saveStore(); }")
+    info, s = _b320a_play(pg, {"units": [[U1, 2]], "mode": "exam", "vroom": True, "perfects": {U1: 0}}, limit=30000)
+    check("H: the room's results (its own chip)", "virtual room" in (s[-1]["text"] if s else "").lower(), (s[-1]["text"][:80] if s else None))
+    _b320a_order("H Virtual Room", s, info, False)
+    ctx.close()
+
+    # I. the daily question: the verdict first, the XP a beat after; Home's
+    # unlock waits a real pause after the XP has landed in Profile.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      store.dailyQuestionDate = null; store.unlocksShown.fx = (store.unlocksShown.fx || []).filter(x => x !== 'fireworks'); saveStore();
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n => n.remove());
+      out.owed = (pendingHomeUnlocks().fx || []).slice();
+      startDailyQuestion();
+      for(let t = 0; t < 80 && !document.querySelector('.qpanel .choice'); t++) await wait(100);
+      await wait(400);
+      const r = correctSlot(order[pos]);
+      [...document.querySelectorAll('.qpanel .choice')].find(c => +c.dataset.index === r).click(); await wait(200);
+      const sb = document.getElementById('dailyq-submitbtn'); if(sb) sb.click();
+      const op = s => { const e = document.querySelector(s); return e ? +getComputedStyle(e).opacity : null; };
+      await wait(350); out.early = { head: op('.dailyq-outro-head'), xp: op('.dailyq-outro-xp'), outro: op('.dailyq-outro') };
+      await wait(2400); out.late = { head: op('.dailyq-outro-head'), xp: op('.dailyq-outro-xp') };
+      const ex = document.getElementById('dailyq-exitbtn'); if(ex) ex.click();
+      const t0 = Date.now(); await wait(100); out.flyEnds = dailyXpFlyEndsAt - t0;
+      for(let k = 0; k < 120 && !document.querySelector('.rs-spot'); k++) await wait(100);
+      out.spotAt = document.querySelector('.rs-spot') ? Date.now() - t0 : null;
+      return out; }""")
+    check("I daily: the verdict is up before the XP line", (r["early"]["outro"] or 0) > .3 and (r["early"]["xp"] or 0) < .2, r["early"])
+    check("I daily: the XP line follows", (r["late"]["xp"] or 0) > .9, r["late"])
+    check("I daily: Home's unlock card waits at least 1.5s after the XP has flown into Profile",
+          bool(r["owed"]) and r["spotAt"] is not None and r["spotAt"] - r["flyEnds"] >= 1500, r)
+    ctx.close()
+
+    # J. iPad Pro 11: a 100% that earns its badge, in order.
+    ctx, pg = booted(br, 834, 1194, seed=USED_ACCOUNT)
+    pg.evaluate("()=>{ store.seenFirstResultsTour = true; theme.muteBanners = false; theme.reduceMotion = false; applyTheme(); saveStore(); }")
+    info, s = _b320a_play(pg, {"units": [[U1, 0]], "mode": "drill", "perfects": {U1: "T-1"}})
+    _b320a_order("J iPad 100%", s, info, True)
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -21126,6 +21451,7 @@ def main():
             check_b319_badges(br)
             check_b319f_casespace(br)
             check_b319h_layout(br)
+            check_b320a_results(br)
         finally:
             br.close()
     SERVER.shutdown()

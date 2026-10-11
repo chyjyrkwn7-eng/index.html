@@ -10,9 +10,9 @@ button. What is held here is the SHAPE of that, not its words:
 
   1. The rewards screen carries no review - no missed questions, no
      Retake - and says "Test results" where the progress bar was.
-  2. It arrives in order: the XP lines one at a time, the total after
-     them, the grade after every other card. Measured off the moment
-     each card lands, not off the source.
+  2. It arrives in order: the grade first (build 320 - it was last),
+     then the XP lines one at a time, the total after them. Measured off
+     the moment each card lands, not off the source.
   3. The button is not there until everything has landed, and on a
      missed run it goes to a review screen that has the missed
      questions and the Retake / Main menu pair.
@@ -245,9 +245,12 @@ with sync_playwright() as pw:
     lines = t("line")
     ck("the total lands after the lines, with a beat between",
        bool(t("total")) and bool(lines) and t("total")[0] - lines[-1] > 400, (lines, t("total")))
-    others = [l["t"] for l in lands if l["kind"] in ("head", "xp", "line", "total", "level", "box")]
-    ck("the grade lands after everything above it",
-       bool(t("grade")) and bool(others) and t("grade")[0] >= max(others), kinds)
+    # BUILD 320 REVERSED THIS: "grade box first ... you get a grade, you see
+    # how that adds up, you get awards". The grade was the last card down;
+    # it is the first now, ahead of the XP box and everything in it.
+    xp_side = [l["t"] for l in lands if l["kind"] in ("xp", "line", "total", "level", "box")]
+    ck("the grade lands first, before the XP box and its lines (build 320)",
+       bool(t("grade")) and bool(xp_side) and t("grade")[0] < min(xp_side), kinds)
     ck("and the button after the grade",
        bool(t("actions")) and bool(t("grade")) and t("actions")[0] > t("grade")[0], kinds)
     cont = pg.evaluate("()=>{const b=document.querySelector('#stage .rs-continue'); return b? b.textContent: null}")
