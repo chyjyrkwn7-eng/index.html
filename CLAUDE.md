@@ -19262,183 +19262,106 @@ Your eyes shouldn't gravitate to one thing on any screen".
   course. Fails on f6e0be8.
 
 
-### Build 320 (b320c) - no XP for a badge, cutscene focus, the Level 1 Badge Case
+### Build 320 (b320d) - the rank-up journey as Madison asked for it
 
-Madison: *"no more xp bonus for getting a badge ... It's no longer a thing"*,
-*"you shouldn't be able to chat at all during any type of cutscene, and you
-shouldn't receive any chat notifications or invite or friend notifications
-during a cutscene either. Pure focus on the cutscenes"*, and a long list on
-the badge case: glow before it lands, "found 5 of 16 missing badges", "level
-1 badge case", clips, corners, the lid's inside, a soft lining, the tag
-"facing me", the badge phasing through the lid, the badges' own colours
-leaking out, the spin-to-case transition.
+Madison, on 319's journey: no loading screen; the road map opens where the
+light was; badges weigh more and the light never sits at the next circle;
+the road map's flare draws back into the planet system; the pulse into the
+big flash is too fast; Up next is the road map's own box; the card at the
+top just turns over (no "Rank up"), showing the level after the old cut-off;
+the challenge box's green/rank glow is ugly; nothing tappable and no bars
+during it; on Profile the XP bar must not load again, the box flips first
+and THEN the saved XP climbs slowly; and the Profile tab's "yellow circling"
+and "jumping". All in the block after `buildRanksTab()` unless noted.
 
-- **NO XP FOR A BADGE.** `MASTERY_BONUS` is gone; `computeRunXp` still takes
-  `badgesPaid` and pays nothing for it. The results' badge card and the
-  cutscene say "Unit mastered". check-curve's badge line no longer adds the
-  lump (each badge used to bring 1,000 XP, so the badge line now arrives at
-  each count a little lower - printed by check-curve, not asserted; the level
-  curve and `TIER_UNLOCKS` are untouched).
-- **CUTSCENE FOCUS FOLLOWS THE SCENES THEMSELVES.** `syncSceneFocus()` (just
-  under `setCutsceneFocus`) watches `<body>`'s children: while any of
-  `CUTSCENE_SCENE_SEL` is there (the badge case, the secret flares, the
-  rank/Supernova scene, the legacy Home badge scene, the Virtual Room winner
-  and Tug of War scenes, the race board until it has finished counting, a
-  full-page hundo effect) ONE counted hold is on. So every exit (skip, tap,
-  the screen replaced, an error) releases it by construction and a new scene
-  type only needs its selector added. The rank-up journey's own
-  `setCutsceneFocus` calls nest over it.
-- **What focus does**: `body.cutscene-focus` slides the chat button up out of
-  frame and the tab bar and the room's chat button down out of it (the CSS
-  `translate` property in an animation, so `transform` centring and
-  transitions are untouched), no taps, any open chat panel hidden, and any
-  banner already up hidden. On release `body.cutscene-return` slides them
-  back (620ms). Reduce motion: hidden, not slid.
-- **What is held**: `holdForCutscene(key, fn)` at the top of `showToast`,
-  `showDailyAlert`, `showChatPreview`, the room chat's
-  `announceChatMessage`, `showLobbyInviteBanner`, `checkFriendRequests`,
-  `checkChatInvites`, `checkSaveCodeReminder`, `celebrateNewFriend`; the
-  chat dot (`syncChatDockDot`) and the update notices (`noticeAllowedHere`)
-  wait too. Released after the controls are back, one per key, toasts one
-  after another; each re-runs its own function, so its own rules still apply.
-  `cutsceneFocusDepth` and the hook list are `var` because toasts can be
-  raised before that line runs.
-- **ONE TABLE OF CASES: `BADGE_CASES`** (`badgeCaseOf`, `badgeCaseUnits`,
-  `badgeCaseName`, `badgeCaseGrid`). Level 1 has `units: null` = every unit no
-  other case claims, so units Madison adds land in it with no other change;
-  Level 2 is one more entry with a `units` list. The grid is as square as the
-  count allows (16: 4x4, 17-20: 5x4, 21-25: 5x5), set as `--case-cols/rows`;
-  the cutscene's tray depth (`--ch` on `.bc-stage`) and the Badges screen's
-  tray and lid aspect follow it (4x4 is the old .94 / .88 / .8 exactly).
-  `badgeCaseSlotPx` uses the grid. The name is on the plate of every case,
-  in the cutscene's open lid, the cutscene's caption, the Badges screen's
-  head (`.badges-casename`) and as a badge card's kicker.
-- **The badge-found scene**: the token carries its own glow (`.bc-aura`) from
-  the moment it appears until it lands, so the slot lighting up continues it.
-  The background is one glow in the badge's colour that travels from the
-  token down to the case and widens on the lift's 1.8s curve, with the rays
-  fading over the same stretch, a slower rise for the case (2s) and a faint
-  grain (`.bc-dither`) against banding. The token now WAITS AT THE TOP of the
-  screen (beside the case on a phone held sideways) and the open case sits
-  lower (`--open-y` .15 of its width), so the lid never swings through it;
-  it only comes down once the lid has stopped. Light out of the crack is one
-  pool per badge already in the case, in its own colour (`bcLeakLayers`, on
-  `.bc-spill` inside and on the flat `.bc-leak` over the seam); every badge in
-  the case then lights in its own colour (`--slot-col`, `.bc-lit`) one after
-  another and settles to a steady glow. An empty case leaks a faint neutral
-  light. Caption: kicker "LEVEL 1 BADGE CASE", the badge, "Found N of M
-  missing badges" ("All M badges found. The case is full.").
-- **The case**: rounded corners capped in metal (`.bc-cap` on every corner of
-  the tray, the lid's top and the lid's inside; the walls' end guards in the
-  same metal), clips on the lid's top over each latch (`.bc-clip`), the lid's
-  inside a leather frame with an aluminium bead round a velvet cushion
-  quilted in three bands, stitched twice, the name debossed in it
-  (`.bc-lid-label`); the lining and the cushion are velvet (`--case-velvet`,
-  a 64px noise tile at 32px - an image, never a filter; neutral grey for
-  check_b232). The side plate lies FLAT on the front wall (it leaned out 42deg
-  since 317, which open read as "facing me").
-- **Gate: `check_b320c_case`** (fails on a73c681; uses `_Stepper320`, whose
-  seek cancels a CSS animation whose name has left `animation-name`, as the
-  recorders' does - check-behaviour's `_SEEK` keeps a stale one and a control
-  that slides out, back and out again was held by it). Revised for this
-  round: check_b317_badge2's side plate (flat on the wall, the new name, the
-  name now also in the lid on purpose), its tab/Profile plate text,
-  check-results' badge XP lines (no line; no MASTERY_BONUS), check-curve's
-  badge line (no lump).
-
-### Build 320 (b320g) - a badge in your hand, dirt in five stages, rubbing it clean, the new-badge dot
-
-Madison: *"when you go to badge case and click a badge, it won't be a tab
-... the badge will be pulled from the case and then float on screen but the
-screen will then face the other direction ... You can now grab the badge to
-spin it ... if you swipe fast it spins fast, if you grab it during the spin
-it will stop spinning ... you would need to occasionally clean your badges
-by rubbing your finger over them ... There could be like 5 phases. They get
-dirtier by the week so by week 3-4 they'd be their dirtiest."*
-
-- **A tap on a slot opens `openBadgeInspect(unit, tile)`, never the unlock
-  card.** A found badge lifts out of its slot (the slot is swapped for its
-  empty drawing, `.ncase-cell.is-lifted`) and flies to the middle, big and
-  head on; the CASE (`.ncase`, the only thing that turns) tips away
-  (`rotateX`, `BINSPECT.tilt`) and sinks to the foot of the screen
-  (`BINSPECT.drop` is where its middle lands, a share of the height); the
-  head, the back link and the title fade out so nothing sits behind the
-  words. The words float under the badge (title, Mastered, the requirement,
-  the bar and count, the dirt hint, the care line, Close). A badge not found
-  floats as its empty slot with its progress. Close, a tap off the badge
-  and words, or Escape reverses it all; a screen change tears it down at
-  once (a `childList` observer on `#stage`). Reduce motion: a fade, no
-  swing. Holds `setCutsceneFocus` once, and lets it go once, every exit.
-  `badgeInspectNow.state()` is there for the gates and the recorder.
-- **The coin is the cutscene's construction** (front face, 16 edge slices,
-  back face, all images) **with its own back** (`badgeBackFaceURL`): brushed
-  metal in a polished rim, the unit's name engraved. Its OUTLINE is the
-  front's mirrored (the back of a shape is its mirror image, or the edge
-  would not line up as it turns); its LETTERS are not. The back face is
-  `rotateY(180deg)` with no `scaleX(-1)`. (The cutscene's coin, builder C's,
-  still shows its front mirrored on its back.)
-- **Nothing is rendered in the tap.** A face at the inspect size is a few
-  hundred ms on a phone: the lift starts on the very image the slot showed,
-  the big face is rendered 60ms later while the lift (compositor
-  animations) carries on, and the finish and each cleaner stage's face are
-  rendered only after half a second with nothing touched or turning. The
-  face is capped at 864 device pixels.
-- **Spin**: requestAnimationFrame, transforms and opacities only. A drag of
-  the badge's width is `degPerW` degrees; let go, it spins at the finger's
-  speed over the last 90ms (none if the finger had stopped), decays with
-  `tau`, and below `settleAt` springs round to face you or show its back,
-  whichever is nearer where it would have stopped. A press stops it dead.
-- **SPIN OR RUB, the rule.** Every drag turns the badge, once past a little
-  slack (`slack`, .15 of its width, so a rub's first short strokes do not
-  rock it), until it shows it is a rub: two turn-backs, each stroke between `rubMin` px and `rubMax` of the
-  badge's width and done within `rubStrokeMs`, all inside the badge
-  (`rubReach`). From then on it does not turn (it eases round to show its
-  FRONT, where the dirt is - a rub on its back turns it over)
-  and every stroke counts; each `rubPerStage` (4) strokes clean ONE stage,
-  with a sparkle and a cross-fade to the cleaner face. One long stroke, or
-  strokes wider than `rubMax`, is a spin and can never clean; a rub never
-  flings.
-- **DIRT IS TIME.** `store.badgeCleanedAt = { unit: ms }`. The stage is the
-  whole weeks since (`badgeDirtAt`): 0 clean, 1 light, 2 dull, 3 grimy, 4
-  from four weeks on. Cleaning to stage s sets the time to now minus s
-  weeks (`setBadgeDirtStage`, `saveStore`), so nothing else is stored.
-  `applyLoadedData` keeps this device's map when a copy has none (an older
-  build's document cannot make every badge spotless) and
-  `ensureBadgeCleanedAt` stamps every found badge with no time as clean
-  NOW - an account updating in, and a badge found on an older build.
-  `summarize()` stamps a badge found in the run. The merge keeps each
-  badge's newest time (`maxMap`). A reset clears it.
-- **Dirt is drawn by the renderer**, `renderBadgeStrike(.., dirt)` (the
-  `BADGE_DIRT` table): the metal's specular and reflection flattened and a
-  little warmer, the enamel's clear coat dulled and a tenth darker, a soft
-  smudge field (`badgeSmudge`, the same per badge) that greys what is under
-  it, grime at the foot of every wall. Never another colour (the gate
-  holds the hue within 12 degrees). The strike cache is keyed by stage.
-  **`buildUnitBadgeSVG(u, true, opts)` draws a found badge at its real
-  stage unless `opts.dirt` (0-4) says otherwise** - so the cutscene's case
-  shows each badge's dirt with no change of its own, and a new badge is
-  spotless anyway. The case's glow fades with the stage
-  (`.badge-tile-art[data-dirt]`).
-- **A tap lands on the slot it is over.** The seat shade (build 319) is a
-  260-unit masked rect, hit-tested by its geometry: with the svg's overflow
-  visible it lay over the neighbouring slots, and a tap on one badge opened
-  the one beside it. The case's svgs are `pointer-events:none`.
-- **The new-badge dot** (build 299) is unchanged and agrees in all three
-  places (the slot, the Profile case's "New", the Profile tab): opening the
-  badge clears all three, saved.
-- **`_Stepper` in check-behaviour puts the page in the year 58000** (Python's
-  `pause_at` reads a number as SECONDS). Anything that reads the clock to
-  draw a badge sees every badge at its dirtiest under it; `_StepperS` pauses
-  at the real time.
-- **Gate: `check_b320g_inspect`** (both reference devices): the dot and a
-  real tap, the floating view and its words, the case turning and coming
-  back, the empty slot, spin speed and the grab, the back not a mirror,
-  stages from time, start clean, the merge, the render's shine and hue,
-  rubbing stage by stage, a spin never cleaning, Reduce motion. Fails on
-  a73c681. **Moved to the new decision:** the checks that tapped a badge and
-  expected the unlock card (`check_audit_a`'s "never covers the tab bar",
-  `check_b281_badge_card`, `check_b317_badgecase`'s tap, `check_b319_badges`'
-  cards, `check_b319f_casespace`'s card) now expect the floating view.
+- **THE ROAD'S LIGHT IS BADGES FIRST: `rankRoadFracOf` / `rankRoadProgress()`**
+  (next to `rankStepProgress`, which is unchanged and still feeds the
+  reward cards' bar). For the stretch from the rank held to the next:
+  B = badges since the rank held + HALF the closest units' hundo progress
+  towards each missing badge (`RANK_ROAD_PART_W`), over the badges the next
+  rank adds; L = levels since the rank held with the XP into the current
+  one, over the levels it adds; light = `RANK_ROAD_NEAR` (0.8) x (0.75 B +
+  0.25 L), and 1 only when the rank is reached. "Too close" = the last
+  fifth of a stretch: nothing short of reaching the rank puts the light
+  there. The ordinary map (`buildRanksTab`'s `heroStepPct`), the journey's
+  first frame and `rankUpClimbNext` all read it; `rankUpDotToRide` turns it
+  into the ride's span on the same pixel `placeRoadTip` uses.
+- **WHERE THE LIGHT STOOD BEFORE THE RUN is `store.rankUpFrom.d`**, written by
+  summarize() (`ruDotBefore`, taken beside `perfectsBefore`, before the run
+  records anything) through `rankUpNoteFrom`. Optional: `applyLoadedData`
+  keeps it when it is a number; an older record falls back to
+  `store.rankMapProg` on that stretch (`rankUpStartDot`, clamped to 0.8).
+- **No loading screen.** `rankUpSceneToMap`: Profile leans into the
+  completed box (`.screen-profile.ru-dive`) under the curtain; the map is
+  built under it with every fill already in place (`html.ru-scene` turns
+  the road's transitions off), the first stretch's light laid on its old
+  pixel and the page jumped to it (`rankUpMapFirstFrame`, the camera's 42%
+  rule), then it comes up out of the dark settling from 1.045
+  (`rankUpMapOpen`, `.ru-mapin`). No glide from the top, nothing filling in.
+- **The card at the top is built AS IT WAS** by `buildRankHero(held,
+  level, badges)` (out of `buildRanksTab`): Silver, the cap level, the old
+  badges, "To reach Gold". `rankUpHeroTurn` turns it on its vertical axis
+  (`.ru-turn-out` / `.ru-turn-in`, a light crossing it) to a fresh
+  `buildRankHero` for the new rank, rings refilling and counting.
+  **Its level is the cut-off + 1 when there is saved XP, else the real
+  level** (`rankUpHeroLevel`) - Madison: "if a rank cutoff level is 39,
+  that new circle would show you are level 40"; the rest is climbed on
+  Profile. No "Rank up" anywhere.
+- **The flare into the planet system.** `rankUpHandOut`: a copy of the new
+  rank's circle (`.rankmap-stop.ru-ghost`, fixed) draws back to 0.84 over
+  `RU_HAND_MS` while `.ru-veil` (#050308, the cutscene's own dark) covers
+  the map. The copy goes to the cutscene as `opts.handoff`;
+  `rankCutHandoff` (beside `playRankUpScene`, one call after
+  `rankOrbitCentre`) puts the stage at the scale and offset that lays the
+  new flare's bubble exactly under it (centre and size measured, same JS
+  task, so no frame between), moves the copy INTO the bubble, covers the
+  rest of the planet (`.ru-hand-veil`, inside the hero under its orbit;
+  the other bubbles at 0) and pulls back to the stage's own framing over
+  `RU_HAND_ZOOM_MS` as the system comes up. It replaces only the scene's
+  arrival; everything after is the scene's own. Without a handoff (or
+  Reduce motion) the scene is untouched.
+- **The pulse into the big flash: `RANK_WINDUP_MS` 1700 -> 3000**, breaths
+  from `RANK_WINDUP_BEAT0_MS` 640ms (was 520) quickening by
+  `RANK_WINDUP_BEAT_K` .86 (was .8) to no less than 230ms (was 180),
+  filling `RANK_WINDUP_FILL` 84% (was 96%) so the last ~0.5s is one rising
+  swell. Timing constants only; Supernova's pause and swell are untouched.
+- **Up next** (`rankUpUpNext`): after the cards (and the climb on, if any)
+  the map glides down (2.2s+) to the next rank's own box, which pops
+  (`.ru-nextpop`, `.ru-nextfx`: lift, a wash of its colour from below, its
+  edge lighting, a band of light across, the chip answering - the unlock's
+  rings/sparks/ribbon are the circle's, this is the box's), and the map
+  glides back to the top. The old `.ru-upnext` card is gone.
+- **The challenge box is calm**: `.ru-focus`/`.ru-complete` are a pale mix
+  of the rank's colour on the edge and a soft dark shadow; no green, no halo.
+- **Focus and input.** `rankUpNewScene` calls `setCutsceneFocus(true)`
+  (`scene.focus`), `rankUpSceneEnd` - every way out - calls it off once.
+  The input layer (`.ru-blocker` + window capture) is unchanged.
+- **Back on Profile**: `PF_XP_SEEN_KEY` is set before `showProfile()` (no
+  "earned since" knock), the XP bar is laid at once at the cap
+  (`xf`, transition none), the completed box flips, THEN
+  `rankUpStandingClimb` climbs: one rAF-driven run from the bar's place to
+  the end, `RANKUP_CLIMB_LEVEL_MS` 2600ms a level (no less than 1500, no
+  more than 15s in all), sine-eased in and out; level, bar and the level
+  challenge's count are set in the same frame.
+- **The Profile tab no longer rings or bobs** (`.ru-call::before` and the
+  bob are gone; the label keeps the rank's colour, the yellow dot stays),
+  and a refused tap no longer pulses it - that loop (Gold's yellow) was
+  the "yellow circling and starts jumping".
+- **Gate: `check_b320d_rankup`** (fails on a73c681): the formula and the
+  ordinary map; per reference device a real 100% and the whole journey
+  with the REAL cutscene - no loading screen; the first visible map frame
+  (taken on the curtain's lift) has the light within 2px of
+  `placeRoadTip`'s pixel for the pre-run dot and the camera on it, no fill
+  moving, and every-frame camera samples never going back up; the
+  hand-off continuous (centre and size within 2px) with the veil gone and
+  the rest hidden; the stage pulling back to 1; rest->burst >= 2.8s with 5+
+  breaths; Up next centred, popped, then the top, then the turn; the card
+  as it was, then Gold at cap+1, never "Rank up"; 60+ taps and swipes in
+  every phase reaching nothing; focus on throughout and off after; the XP
+  bar never below full before the climb, flip before the first level
+  change, 1.4s+ a level, the challenge in step; the tab never ringing or
+  jumping (Home locked, refused tap, after). `check_b319_rankup` moved to
+  the new decisions (no loading screen, Up next on the map, "Your rank").
 
 ### Build 320 (b320e) - the planet cracks rank by rank, the crack forms in the rank-up, the blast remembered, Home's planet whole on its first frame
 
@@ -19534,3 +19457,356 @@ Supernova frame-stepped - none of the new crack on the frames after the flash,
 growing from 1s+ after it with a running light and chips, the new art in full
 by the title (Supernova's flakes showing); and a return to Home whole on its
 first frame.
+
+### Build 320 (b320g) - a badge in your hand, dirt in five stages, rubbing it clean, the new-badge dot
+
+Madison: *"when you go to badge case and click a badge, it won't be a tab
+... the badge will be pulled from the case and then float on screen but the
+screen will then face the other direction ... You can now grab the badge to
+spin it ... if you swipe fast it spins fast, if you grab it during the spin
+it will stop spinning ... you would need to occasionally clean your badges
+by rubbing your finger over them ... There could be like 5 phases. They get
+dirtier by the week so by week 3-4 they'd be their dirtiest."*
+
+- **A tap on a slot opens `openBadgeInspect(unit, tile)`, never the unlock
+  card.** A found badge lifts out of its slot (the slot is swapped for its
+  empty drawing, `.ncase-cell.is-lifted`) and flies to the middle, big and
+  head on; the CASE (`.ncase`, the only thing that turns) tips away
+  (`rotateX`, `BINSPECT.tilt`) and sinks to the foot of the screen
+  (`BINSPECT.drop` is where its middle lands, a share of the height); the
+  head, the back link and the title fade out so nothing sits behind the
+  words. The words float under the badge (title, Mastered, the requirement,
+  the bar and count, the dirt hint, the care line, Close). A badge not found
+  floats as its empty slot with its progress. Close, a tap off the badge
+  and words, or Escape reverses it all; a screen change tears it down at
+  once (a `childList` observer on `#stage`). Reduce motion: a fade, no
+  swing. Holds `setCutsceneFocus` once, and lets it go once, every exit.
+  `badgeInspectNow.state()` is there for the gates and the recorder.
+- **The coin is the cutscene's construction** (front face, 16 edge slices,
+  back face, all images) **with its own back** (`badgeBackFaceURL`): brushed
+  metal in a polished rim, the unit's name engraved. Its OUTLINE is the
+  front's mirrored (the back of a shape is its mirror image, or the edge
+  would not line up as it turns); its LETTERS are not. The back face is
+  `rotateY(180deg)` with no `scaleX(-1)`. (The cutscene's coin, builder C's,
+  still shows its front mirrored on its back.)
+- **Nothing is rendered in the tap.** A face at the inspect size is a few
+  hundred ms on a phone: the lift starts on the very image the slot showed,
+  the big face is rendered 60ms later while the lift (compositor
+  animations) carries on, and the finish and each cleaner stage's face are
+  rendered only after half a second with nothing touched or turning. The
+  face is capped at 864 device pixels.
+- **Spin**: requestAnimationFrame, transforms and opacities only. A drag of
+  the badge's width is `degPerW` degrees; let go, it spins at the finger's
+  speed over the last 90ms (none if the finger had stopped), decays with
+  `tau`, and below `settleAt` springs round to face you or show its back,
+  whichever is nearer where it would have stopped. A press stops it dead.
+- **SPIN OR RUB, the rule.** Every drag turns the badge, once past a little
+  slack (`slack`, .15 of its width, so a rub's first short strokes do not
+  rock it), until it shows it is a rub: two turn-backs, each stroke between `rubMin` px and `rubMax` of the
+  badge's width and done within `rubStrokeMs`, all inside the badge
+  (`rubReach`). From then on it does not turn (it eases round to show its
+  FRONT, where the dirt is - a rub on its back turns it over)
+  and every stroke counts; each `rubPerStage` (4) strokes clean ONE stage,
+  with a sparkle and a cross-fade to the cleaner face. One long stroke, or
+  strokes wider than `rubMax`, is a spin and can never clean; a rub never
+  flings.
+- **DIRT IS TIME.** `store.badgeCleanedAt = { unit: ms }`. The stage is the
+  whole weeks since (`badgeDirtAt`): 0 clean, 1 light, 2 dull, 3 grimy, 4
+  from four weeks on. Cleaning to stage s sets the time to now minus s
+  weeks (`setBadgeDirtStage`, `saveStore`), so nothing else is stored.
+  `applyLoadedData` keeps this device's map when a copy has none (an older
+  build's document cannot make every badge spotless) and
+  `ensureBadgeCleanedAt` stamps every found badge with no time as clean
+  NOW - an account updating in, and a badge found on an older build.
+  `summarize()` stamps a badge found in the run. The merge keeps each
+  badge's newest time (`maxMap`). A reset clears it.
+- **Dirt is drawn by the renderer**, `renderBadgeStrike(.., dirt)` (the
+  `BADGE_DIRT` table): the metal's specular and reflection flattened and a
+  little warmer, the enamel's clear coat dulled and a tenth darker, a soft
+  smudge field (`badgeSmudge`, the same per badge) that greys what is under
+  it, grime at the foot of every wall. Never another colour (the gate
+  holds the hue within 12 degrees). The strike cache is keyed by stage.
+  **`buildUnitBadgeSVG(u, true, opts)` draws a found badge at its real
+  stage unless `opts.dirt` (0-4) says otherwise** - so the cutscene's case
+  shows each badge's dirt with no change of its own, and a new badge is
+  spotless anyway. The case's glow fades with the stage
+  (`.badge-tile-art[data-dirt]`).
+- **A tap lands on the slot it is over.** The seat shade (build 319) is a
+  260-unit masked rect, hit-tested by its geometry: with the svg's overflow
+  visible it lay over the neighbouring slots, and a tap on one badge opened
+  the one beside it. The case's svgs are `pointer-events:none`.
+- **The new-badge dot** (build 299) is unchanged and agrees in all three
+  places (the slot, the Profile case's "New", the Profile tab): opening the
+  badge clears all three, saved.
+- **`_Stepper` in check-behaviour puts the page in the year 58000** (Python's
+  `pause_at` reads a number as SECONDS). Anything that reads the clock to
+  draw a badge sees every badge at its dirtiest under it; `_StepperS` pauses
+  at the real time.
+- **Gate: `check_b320g_inspect`** (both reference devices): the dot and a
+  real tap, the floating view and its words, the case turning and coming
+  back, the empty slot, spin speed and the grab, the back not a mirror,
+  stages from time, start clean, the merge, the render's shine and hue,
+  rubbing stage by stage, a spin never cleaning, Reduce motion. Fails on
+  a73c681. **Moved to the new decision:** the checks that tapped a badge and
+  expected the unlock card (`check_audit_a`'s "never covers the tab bar",
+  `check_b281_badge_card`, `check_b317_badgecase`'s tap, `check_b319_badges`'
+  cards, `check_b319f_casespace`'s card) now expect the floating view.
+
+### Build 320 (b320h) - a grey card, one XP line on a phone, tabs centred by their letters, Save and exit, the daily ring
+
+- **No banner, no colour on the Profile card.** *"if a banner is not set
+  then it matches the color of your rank ... Just keep it grey with the
+  space themed thing, if a banner is set then the box would match it."*
+  `.profile-hero.has-cover.has-tint` defaulted `--hero-t1/--hero-t2` to the
+  theme's c2/c3 - with a rank's theme set, that IS the rank's colour. The
+  defaults are two neutral greys now (#9EA4AD / #6B717A, the graphite
+  cover's metal); a worn banner still sets them inline (`bannerTintOf`).
+- **One label under the bar on a phone.** Under 40rem the line under the
+  Profile bar is `"x / y XP" + .pf-xp-to` ("to Level N", soft grey, both
+  numbers still the one XP blue - 317's decision), centred, and
+  `.pf-xp-total` is hidden: the total is on Stats now, a full-width
+  "Total XP" card heading At a glance (`.stat-card-wide`). 40rem and up is
+  unchanged (total right). At a wall `pfXpToText` is empty and the gold
+  note speaks. The rank-up's stand-in and climb call `syncPfXpTo` (one
+  line each in `rankUpStandingAt` / `rankUpStandingClimb`), and
+  `.ru-climbing` hides it while "Saved XP · climbing" stands in.
+- **A tab's label is centred by its letters (`text-box`).** *"the top tab
+  button is not centered ... slightly more space on the bottom."* The
+  label sat in its line box, whose descent is empty for "Profile",
+  "Stats", "Overall" - so the letters rode high (0.6px in Chromium, more
+  with SF's metrics; Month / List 1.4px, it had .5/.6rem padding). Under
+  `@supports (text-box: trim-both cap alphabetic)` the `.navsegment.
+  profiletabs .iconbtn` line is trimmed to cap height and baseline and
+  `(1lh - 1cap)/2` goes back on each side as padding, so every pill keeps
+  its height to the pixel. `--tab-py` is each variant's own vertical
+  padding - **a new switcher variant that sets padding must set
+  `--tab-py` too** (the @supports rule's padding is `!important`). Flex
+  buttons (`.chatdock-tab`, `.rs-tab`) carry their words in a `.tab-label`
+  span, trimmed the same way. Browsers without `text-box` are unchanged.
+  **`attachSegSlider` measures in layout pixels**: it divides the rects by
+  the switcher's on-screen scale and measures again while that is not 1 -
+  the chat sheet opens from .96, and a pill placed then stayed 1.45px
+  short of its tab on an iPad, at the tab's top (the same "more space
+  under it" in another place).
+- **Save and exit is grey glass** (`#pause-save`, an inset hairline, no
+  border so nothing moves); Quit is the black ghost it was.
+- **Resume test loads like a new test.** `resumeRunWithLoading(s)` puts
+  the test chrome up and runs `showCountdown(3, then)` (LOADING TEST, its
+  bar); only when the bar is full does `resumeRunSession` run, so the run
+  clock, a count-down and the question clock start after it. During the
+  bar nothing is live (`testInProgress` false, no `timerHandle`), and the
+  slot is untouched, so a phone closed there loses nothing.
+- **The slot is mirrored into IndexedDB** (`IDB_RUN_KEY`,
+  `mirrorRunSession` on every write and clear, `restoreRunSessionFromMirror`
+  at boot when localStorage has none) - the same defence the store and
+  the code have against iOS clearing an installed app's localStorage.
+  A reset (`wipeLocalProgressAndSettings`) now clears the slot too: a test
+  saved by the old account is not offered to the new one. So does linking
+  to ANOTHER account (Settings' Link this device, the sign-in with a
+  code): `savedTestLeavesWithAccount(codeBefore, code)` runs once the new
+  store is in and clears the slot and its mirror when the test's owner
+  (`pub`, the account's publicId, written into every save) is not the
+  account now on the device - so signing back in to your own account on
+  a device that lost its code keeps it. A save with no owner (before 320)
+  goes by the code. A launch, the launch-URL recovery and
+  `followAccountMove` (your own account changing code) never call it.
+- **The daily ring is one SVG circle and it is always on the button**
+  (`.dq-ring`, `buildDailyRing`, `setDailyRing`). The charge's two CSS
+  half-borders tapered to a point where a side was taken off, and the two
+  tapers met at 12 and 6 o'clock (the notch / pinch / seam Madison saw);
+  the flash was a second, thicker ring at another size. Now: a stroke 5 of
+  100, square ends, dash = progress; whole is drawn undashed (`.is-full`),
+  so there is no join; the flash is the same circle (`.dq-ring-flash`).
+  Answered: `dailyRingFraction()` - the share of the time from the last
+  5pm to the next (two real 5pms, so DST days are still 0-1), in the
+  theme's `--dq-c`, moved by `dailyRingTick` once a minute on the minute
+  (no animation in between). Ready: whole, and the pulse (`::after`) now
+  starts AT the ring (inset -6px, x1 -> x1.22, the same reach as before).
+  A reset: `playDailyRecharge(btn, then, fromP)` - a CSS animation
+  (`dq-ring-fill`, linear) from empty for a new question met on arriving
+  (a full cycle, the old 4.1s), or from where the waiting ring stood when
+  Home is up at 5pm (a negative delay into the same animation, the rest
+  taking at least .7s); `animationend` closes it and launches, as the
+  old sweep's did. Between 5pm and the announcement (1.5s later) the
+  minute tick holds a waiting ring at whole instead of dropping it to
+  the new period's empty, and the announcement fills from where the ring
+  stood (`dataset.p`). It cannot pass whole (offset 0 is the circle's length).
+  Reduce motion: no fill, it is simply whole.
+- Checks moved: `check_b245_daily_announce`'s sampler reads the ring's
+  progress (`arcL` = progress x 180, so its thresholds stand);
+  `check_b318_daily` reads the ring's and flash's stroke and the seal on
+  `.dq-ring`; `check-savetest` waits 8s (was 4s) for the question after
+  Resume test, the bar being 2.5s. `check_b302`'s "under the bar" reads
+  what is SHOWN (innerText) and wants "x / y XP to Level N" on a phone,
+  the total on a tablet; `check_b317_pfcard`'s squeeze wants one line,
+  numbers then "to Level N", and no total on every phone (it wanted the
+  total at the right - Madison's 320 words reverse that on a phone).
+- **Gate: `check_b320h_fixes`** - the grey card under two rank themes and
+  the banner's colours with one; the phone's two rows / two pieces at 440
+  and on a 375px phone with a six-figure total, taps to Badges and the
+  road map, the tablet's total, Stats' total; every switcher (Profile,
+  Month / List, Leaderboard, chat, room review) within 0.5px on both
+  reference devices; Save and exit lighter than Quit; a saved test through
+  a reload, a cold start and a wiped slot; kept on signing back in to its
+  own account, cleared (slot and mirror) on linking to another (fails on
+  377dbf2); LOADING TEST on Resume with
+  nothing live under it and the count-down intact; the ring never past
+  whole from empty and from .97; the waiting ring at .25 at 11pm and .375
+  three hours on (faked clock); the whole ring even at 12 and 6 o'clock
+  at 3x. Fails on a73c681.
+
+### Build 320 (b320b) - the character reacts to the hundo effect while it plays
+
+*"The ninja effect when scoring a hundo is like a smoke thing, is that only
+for the ninja?"* and *"the characters face/effect should be affected by
+chosen hundo effect DURING THE effect ... underwater ... hold their breath,
+the alien like they put on glasses ... then it goes away when the effect is
+over and it's back to their normal hundo thing for the character."*
+
+- **The smoke is the Ninja's own.** It is its 100 in
+  `tools/reactions-table.py` (`R("ninja", "perfect")`: `NJ_SMOKE`, four
+  `NJ_WISP`s). No other character's 100 has a smoke prop (the grey puffs in
+  the table are all fail bands: Wizard, Bear, Zeus, Solar, Tempest,
+  Inferno), and what every character shares on a 100 is the soft light
+  behind it (`.char-emote-back`). Left as it is.
+- **One switch: `hfxCharReact(av, id, o)`**, called by `playHundoFx()` on
+  the results character (`hfxResultsAvatar(box)`: the `.results-level-avatar`
+  on the 100% card's `.rs-screen`) whenever an effect plays there, Confetti
+  included (its `celebrate()` branch). It runs from whenever the effect is
+  started, so moving the effect's start moves the reaction with it; nothing
+  else needs calling. It ends with the effect (`hfxOnEnd`: a stop fades it
+  over 0.3s) or on its own clock (`HFX_RX_TOTAL`). Not in Customize, the
+  pop-ups or the miniature (no character there), and not with motion off:
+  no effect plays then (playHundoFx), so no reaction either.
+- **While it is on**: `hfx-rx hfx-rx-<id>` on the element holding the
+  drawing (`charSpecialCovered` treats it like the breath-hold, so the
+  character's special waits and plays AFTER - that is "back to their normal
+  hundo thing"), and a `.cx-hx` group drawn into the group that holds the
+  eyes, so `AVATAR_HEAD_SCALE` and every head motion carry it.
+- **Where on the face: `hfxFaceOf(svg)`**, read once per character and
+  cached: the eyes from the drawing's own closed eyes (`closedEyes()`
+  `[cx, cy, halfWidth]`, parsed from the paths), the mouth's box, a nose
+  between them, and the top of the head - the first point down the face's
+  centre column inside one of the head's own shapes (`isPointInFill`, so a
+  hat or a crown counts). `HFX_FACE_FIX` where a drawing has no eyes to read
+  (the Koi's bowl, Void) or needs its own: `helmet` (Orion, Horizon, Genesis,
+  Astral, Zenith: breath leaves from the TOP, never inside the visor),
+  `fish` (the Koi does not hold its breath - it blows bubbles), `alien`
+  (shades cut to its almond eyes, tilted with them). `hfxWarm` reads the
+  face a moment after the results mount, so the effect's first frame does
+  not pay for it.
+- **The five** (all transform/opacity, the Web Animations API on their own
+  parts, no filter):
+  - Confetti: a happy squint (^ ^) with a blush; one piece flutters down,
+    lands on the head, slides off as it ends (3.4s).
+  - Fireworks: a flinch at the first bang (1.0s), then the eyes come open
+    wide - the character's own eyes, copied, one group per eye - with each
+    burst's colour as a star in them and a wash of it on the face, at
+    `HFX_RX_FW_BURSTS` (the shells' launch plus climb), out by 6.3s.
+  - Underwater: the breath-hold (`hfxUwHold`, build 317) plus puffed red
+    cheeks (`.cx-hx-cheeks`, on `char-hold`), still on the water's own line.
+  - Bubbles: a soap bubble drifts across, the eyes follow it, it lands on
+    the nose, the eyes cross, it pops, a blink (out by 4.9s).
+  - UFO: mirrored goggles in the beam's colours slide down over the eyes as
+    the dark comes (0.65s), the beam (4.0s) and the warp (8.55s) glint across
+    them, pushed back up and gone at 9.35-10.15s.
+- **The character's own eyes are faded under ours by an animation on their
+  `opacity` with IMPLICIT end keyframes** (`R.cover`): it outranks the
+  reaction's css keyframes only while it runs, and both ends are the
+  underlying value, so the pose it comes back to is exactly the hundo's.
+  Never hide them with a class: that is a snap.
+- **Per-keyframe easing.** `easing` in the options of `el.animate()` bends
+  the WHOLE timeline; a fade-in/hold/fade-out written that way came in
+  three seconds late. Put it on the keyframes.
+- **Gate: `check_b320b_reactions`** - every live character, every effect, at
+  one moment of each: 2+ parts showing, every part inside the character's
+  own head (its showing shapes, +1.2 units), every part drawn for an eye on
+  that eye, a helmet's breath above its eyes; after: nothing left, no
+  reaction animation running, the pose's eyes/closed eyes/mouth at the
+  opacity they had before. Then a real 12/12 drill per effect (Wizard,
+  Ghost, Ninja, Clown, Alien): the reaction starts within 0.3s of the
+  effect, ends, and the special plays after it. Fails on a73c681.
+
+### Build 320 (b320c) - no XP for a badge, cutscene focus, the Level 1 Badge Case
+
+Madison: *"no more xp bonus for getting a badge ... It's no longer a thing"*,
+*"you shouldn't be able to chat at all during any type of cutscene, and you
+shouldn't receive any chat notifications or invite or friend notifications
+during a cutscene either. Pure focus on the cutscenes"*, and a long list on
+the badge case: glow before it lands, "found 5 of 16 missing badges", "level
+1 badge case", clips, corners, the lid's inside, a soft lining, the tag
+"facing me", the badge phasing through the lid, the badges' own colours
+leaking out, the spin-to-case transition.
+
+- **NO XP FOR A BADGE.** `MASTERY_BONUS` is gone; `computeRunXp` still takes
+  `badgesPaid` and pays nothing for it. The results' badge card and the
+  cutscene say "Unit mastered". check-curve's badge line no longer adds the
+  lump (each badge used to bring 1,000 XP, so the badge line now arrives at
+  each count a little lower - printed by check-curve, not asserted; the level
+  curve and `TIER_UNLOCKS` are untouched).
+- **CUTSCENE FOCUS FOLLOWS THE SCENES THEMSELVES.** `syncSceneFocus()` (just
+  under `setCutsceneFocus`) watches `<body>`'s children: while any of
+  `CUTSCENE_SCENE_SEL` is there (the badge case, the secret flares, the
+  rank/Supernova scene, the legacy Home badge scene, the Virtual Room winner
+  and Tug of War scenes, the race board until it has finished counting, a
+  full-page hundo effect) ONE counted hold is on. So every exit (skip, tap,
+  the screen replaced, an error) releases it by construction and a new scene
+  type only needs its selector added. The rank-up journey's own
+  `setCutsceneFocus` calls nest over it.
+- **What focus does**: `body.cutscene-focus` slides the chat button up out of
+  frame and the tab bar and the room's chat button down out of it (the CSS
+  `translate` property in an animation, so `transform` centring and
+  transitions are untouched), no taps, any open chat panel hidden, and any
+  banner already up hidden. On release `body.cutscene-return` slides them
+  back (620ms). Reduce motion: hidden, not slid.
+- **What is held**: `holdForCutscene(key, fn)` at the top of `showToast`,
+  `showDailyAlert`, `showChatPreview`, the room chat's
+  `announceChatMessage`, `showLobbyInviteBanner`, `checkFriendRequests`,
+  `checkChatInvites`, `checkSaveCodeReminder`, `celebrateNewFriend`; the
+  chat dot (`syncChatDockDot`) and the update notices (`noticeAllowedHere`)
+  wait too. Released after the controls are back, one per key, toasts one
+  after another; each re-runs its own function, so its own rules still apply.
+  `cutsceneFocusDepth` and the hook list are `var` because toasts can be
+  raised before that line runs.
+- **ONE TABLE OF CASES: `BADGE_CASES`** (`badgeCaseOf`, `badgeCaseUnits`,
+  `badgeCaseName`, `badgeCaseGrid`). Level 1 has `units: null` = every unit no
+  other case claims, so units Madison adds land in it with no other change;
+  Level 2 is one more entry with a `units` list. The grid is as square as the
+  count allows (16: 4x4, 17-20: 5x4, 21-25: 5x5), set as `--case-cols/rows`;
+  the cutscene's tray depth (`--ch` on `.bc-stage`) and the Badges screen's
+  tray and lid aspect follow it (4x4 is the old .94 / .88 / .8 exactly).
+  `badgeCaseSlotPx` uses the grid. The name is on the plate of every case,
+  in the cutscene's open lid, the cutscene's caption, the Badges screen's
+  head (`.badges-casename`) and as a badge card's kicker.
+- **The badge-found scene**: the token carries its own glow (`.bc-aura`) from
+  the moment it appears until it lands, so the slot lighting up continues it.
+  The background is one glow in the badge's colour that travels from the
+  token down to the case and widens on the lift's 1.8s curve, with the rays
+  fading over the same stretch, a slower rise for the case (2s) and a faint
+  grain (`.bc-dither`) against banding. The token now WAITS AT THE TOP of the
+  screen (beside the case on a phone held sideways) and the open case sits
+  lower (`--open-y` .15 of its width), so the lid never swings through it;
+  it only comes down once the lid has stopped. Light out of the crack is one
+  pool per badge already in the case, in its own colour (`bcLeakLayers`, on
+  `.bc-spill` inside and on the flat `.bc-leak` over the seam); every badge in
+  the case then lights in its own colour (`--slot-col`, `.bc-lit`) one after
+  another and settles to a steady glow. An empty case leaks a faint neutral
+  light. Caption: kicker "LEVEL 1 BADGE CASE", the badge, "Found N of M
+  missing badges" ("All M badges found. The case is full.").
+- **The case**: rounded corners capped in metal (`.bc-cap` on every corner of
+  the tray, the lid's top and the lid's inside; the walls' end guards in the
+  same metal), clips on the lid's top over each latch (`.bc-clip`), the lid's
+  inside a leather frame with an aluminium bead round a velvet cushion
+  quilted in three bands, stitched twice, the name debossed in it
+  (`.bc-lid-label`); the lining and the cushion are velvet (`--case-velvet`,
+  a 64px noise tile at 32px - an image, never a filter; neutral grey for
+  check_b232). The side plate lies FLAT on the front wall (it leaned out 42deg
+  since 317, which open read as "facing me").
+- **Gate: `check_b320c_case`** (fails on a73c681; uses `_Stepper320`, whose
+  seek cancels a CSS animation whose name has left `animation-name`, as the
+  recorders' does - check-behaviour's `_SEEK` keeps a stale one and a control
+  that slides out, back and out again was held by it). Revised for this
+  round: check_b317_badge2's side plate (flat on the wall, the new name, the
+  name now also in the lid on purpose), its tab/Profile plate text,
+  check-results' badge XP lines (no line; no MASTERY_BONUS), check-curve's
+  badge line (no lump).

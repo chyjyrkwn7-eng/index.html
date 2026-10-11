@@ -4543,6 +4543,10 @@ DAILY_SAMPLER = """async (opts)=>{
   const rot = el => { if(!el) return null; const m = getComputedStyle(el).transform;
     if(!m || m === 'none') return 0; const v = m.match(/matrix\\(([^)]+)\\)/); if(!v) return null;
     const p = v[1].split(',').map(Number); return Math.round(Math.atan2(p[1], p[0]) * 180 / Math.PI); };
+  const ringDeg = () => { const f = document.querySelector('.daily-question-fab'); const pr = f && f.querySelector('.dq-ring-prog');
+    if(!pr || !f.classList.contains('is-charging')) return null; const cs = getComputedStyle(pr);
+    if(cs.strokeDasharray === 'none') return 180;
+    const off = parseFloat(cs.strokeDashoffset) || 0; return Math.round(Math.max(0, Math.min(1, 1 - off / 298.4513)) * 180); };
   (function tick(){ if(stop) return;
     /* REVISED IN 309: the announcement is the bubble beside the "?" now
        (#daily-lock-tip.is-live), the top banner only its fallback. */
@@ -4551,7 +4555,10 @@ DAILY_SAMPLER = """async (opts)=>{
     const ar = a ? a.getBoundingClientRect() : null;
     frames.push({ t: performance.now() - t0,
       charging: !!(f && f.classList.contains('is-charging')),
-      arcL: rot(document.querySelector('.dq-charge-l .dq-charge-arc')),
+      /* REVISED IN 320: the ring is one SVG circle (.dq-ring); arcL is
+         its progress in the old left half's degrees (0-180), so the
+         thresholds below read as they did. */
+      arcL: ringDeg(),
       burst: (b => b ? parseFloat(getComputedStyle(b).opacity) : 0)(document.querySelector('.dq-charge-burst')),
       orb: orb ? (b => [b.left + b.width / 2, b.top + b.height / 2])(orb.getBoundingClientRect()) : null,
       op: a ? parseFloat(getComputedStyle(a).opacity) : 0,
@@ -8047,7 +8054,8 @@ def check_b302(br):
           const tot = document.querySelector('.pf-standing .pf-xp-total'), bar = document.querySelector('.pf-standing .profile-xpbar');
           out.total = tot ? tot.textContent : '';
           out.totalOnLine = !!(tot && tot.closest('.pf-idline') && bar && (bar.compareDocumentPosition(tot) & Node.DOCUMENT_POSITION_PRECEDING));
-          out.barNums = (document.querySelector('.pf-standing .pf-xpnums') || {}).textContent || '';
+          /* REVISED IN 320: what is SHOWN under the bar (a phone hides the total) */
+          out.barNums = ((document.querySelector('.pf-standing .pf-xpnums') || {}).innerText || '').replace(/\s+/g, ' ').trim();
           /* 317 touch-up: the numbers and the total are one blue */
           out.xpCols = ['.xpnums-have', '.xpnums-need', '.pf-xp-total'].map(sel => { const e = document.querySelector('.pf-standing ' + sel);
             if(!e) return null; const c = getComputedStyle(e).color, m = c.match(/[\d.]+/g); if(!m) return null;
@@ -8115,9 +8123,14 @@ def check_b302(br):
         # REVISED IN THE 317 TOUCH-UP: "I guess the same blue for both? I
         # guess the total xp should be the same?" - no darker blue, no grey:
         # this level's XP, what it asks and the total are one blue.
-        check(f"{dev}: under the bar, this level's XP and the total XP; the total is not on the rank line",
+        # REVISED IN 320 (b320h): "the profile box ... around the xp bar has
+        # become a little much ... it's mostly the iPhone" - on a phone the
+        # line under the bar is "x / y XP to Level N" and the total is on
+        # Stats; a tablet keeps this level's XP and the total, as above.
+        want_nums = (r"^[0-9,]+ / [0-9,]+ XP to Level \d+$" if w < 640 else r"^[0-9,]+ / [0-9,]+ XP ?[0-9,]+ total XP$")
+        check(f"{dev}: under the bar, this level's XP and " + ("what it leads to (phone)" if w < 640 else "the total XP") + "; the total is not on the rank line",
               r.get("totalOnLine") is False and re.match(r"^[0-9,]+ total XP$", r.get("total") or "")
-              and re.match(r"^[0-9,]+ / [0-9,]+ XP[0-9,]+ total XP$", r.get("barNums") or ""), [r.get("totalOnLine"), r.get("total"), r.get("barNums")])
+              and re.match(want_nums, r.get("barNums") or ""), [r.get("totalOnLine"), r.get("total"), r.get("barNums")])
         xc = r.get("xpCols") or [None, None, None]
         check(f"{dev}: ...all three in one blue, none grey",
               None not in xc and xc[0] == xc[1] == xc[2] and xc[0][2] - xc[0][0] >= 80, xc)
@@ -13470,7 +13483,7 @@ def check_b317_pfcard(br):
       showProfile('profile'); await wait(900);
       const B = s => { const e = document.querySelector('.profile-hero ' + s); if(!e) return null; const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
       /* REVISED IN 317 (badge2): the case's name is its side plate, not a heading over the tray */
-      out.kick = B('.pf-case-front .nova-case-sideplate'); out.num = B('.pf-case-num'); out.nums = B('.pf-xpnums'); out.xn = B('.pf-xpnums .xpnums'); out.tot = B('.pf-xp-total');
+      out.kick = B('.pf-case-front .nova-case-sideplate'); out.num = B('.pf-case-num'); out.nums = B('.pf-xpnums'); out.xn = B('.pf-xpnums .xpnums'); out.tot = B('.pf-xp-total'); out.to = B('.pf-xp-to');
       out.tasks = [...document.querySelectorAll('.profile-hero .pf-task')].map(t => { const a = t.querySelector('.pf-task-label').getBoundingClientRect(), v = t.querySelector('.pf-task-val').getBoundingClientRect();
         const lab = t.querySelector('.pf-task-label');
         /* the label's TEXT, not its box: squeezed, the box was 28px and the words ran out of it into the count */
@@ -13490,9 +13503,15 @@ def check_b317_pfcard(br):
         # REVISED IN 319: on the shut case's front the plate heads the count
         check(f"squeeze, {dev}: the count is one line, and 'Badge case' is on the case's front, above it",
               bool(k and n_) and k["b"] <= n_["t"] and n_["b"] - n_["t"] <= 26, [k, n_])
-        nm, xn, tot = r.get("nums"), r.get("xn"), r.get("tot")
-        check(f"squeeze, {dev}: the total XP sits at the right, wrapped or not",
-              bool(nm and tot) and abs(tot["r"] - nm["r"]) <= 1.5 and (tot["t"] >= xn["b"] - 0.5 or tot["l"] >= xn["r"]), [nm, xn, tot])
+        nm, xn, tot, to = r.get("nums"), r.get("xn"), r.get("tot"), r.get("to")
+        # REVISED IN 320 (b320h): on a phone the total is on Stats and the
+        # line under the bar is one label, "x / y XP to Level N" - so it is
+        # one line, on the card, with "to Level N" beside the numbers (none
+        # at level 80, where there is no next level), and no total shown.
+        check(f"squeeze, {dev}: under the bar one line - the numbers and what they lead to - and no total",
+              bool(nm and xn and tot) and tot["r"] - tot["l"] == 0 and nm["b"] - nm["t"] <= 26
+              and (to is None or to["r"] - to["l"] == 0 or (abs(to["t"] - xn["t"]) <= 2 and to["l"] >= xn["r"] - 0.5 and to["r"] <= nm["r"] + 0.5)),
+              [nm, xn, tot, to])
         check(f"squeeze, {dev}: no challenge row's count runs into its label",
               r.get("tasks") is not None and all(t["clear"] for t in r["tasks"]), r.get("tasks"))
         check(f"squeeze, {dev}: no unlock tile's label is cut short ({r.get('tiles')} tiles)", not r.get("cut"), r.get("cut"))
@@ -17238,6 +17257,8 @@ B319_RU_WALK = """async (a) => {
     if(document.querySelector('.pf-task.ru-ticked')){ at('tick'); tickRows = Math.max(tickRows, document.querySelectorAll('.screen-profile .pf-goal.ru-focus .pf-task.ru-ticked').length);
       const gg = document.querySelector('.pf-goal.ru-complete'); if(gg) out.subDone = (gg.querySelector('.pf-goal-sub') || {}).textContent; }
     if(document.getElementById('teststart-overlay')) at('loading');
+    /* build 320: no loading screen - Profile leans into the dark */
+    if(document.querySelector('.screen-profile.ru-dive') || (document.querySelector('.ru-curtain.is-on') && document.querySelector('.screen-profile') && !out.at.map)) at('dive');
     if(document.querySelector('.screen-ranks .rankmap')) at('map');
     const line = document.querySelector('.ru-rideline'), tip = document.querySelector('.ru-ridetip:not(.is-progress)');
     if(line){ at('ride'); const m = /scaleY\\(([\\d.]+)\\)/.exec(line.style.transform || ''); if(m) rideMax = Math.max(rideMax, +m[1]); }
@@ -17261,14 +17282,15 @@ B319_RU_WALK = """async (a) => {
     if(sp && !sp.dataset.t){ sp.dataset.t = 1; at('card'); out.cards.push({ cls: [...sp.classList].join(' '), name: (sp.querySelector('.rs-spot-name') || {}).textContent, onMap: !!document.querySelector('.screen-ranks'),
       foot: (sp.querySelector('.rs-spot-foot') || {}).textContent });
       setTimeout(() => { const r = sp.getBoundingClientRect(); const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); out.cardHit = e ? (sp.contains(e) ? 'card' : e.className) : null; sp.click(); cardsTapped++; }, a.cardMs || 900); }
-    const up = document.querySelector('.ru-upnext.is-in');
-    if(up && !out.upnext){ at('upnext'); out.upnext = { name: (up.querySelector('.ru-upnext-name') || {}).textContent, kick: (up.querySelector('.ru-upnext-kick') || {}).textContent,
-      gifts: up.querySelectorAll('.rankmap-gift').length, heroName: (document.querySelector('.rankhero-name') || {}).textContent, zoom: !!document.querySelector('.rankhero.ru-zoomout') }; }
-    if(document.querySelector('.rankhero.ru-cardshake')) at('cardshake');
-    if(document.querySelector('.rankhero.ru-dissolve')) at('dissolve');
-    const hk = document.querySelector('.rankhero-kicker.ru-kick');
-    if(hk && !out.hero){ at('heroturn'); out.hero = { kick: hk.textContent, name: (document.querySelector('.rankhero-name') || {}).textContent }; }
-    if(document.querySelector('.ru-curtain.is-on')) at('curtain');
+    /* build 320: Up next is the road map's own next box, popped */
+    const up = document.querySelector('.rankmap-stop.ru-nextpop');
+    if(up && !out.upnext){ at('upnext'); out.upnext = { name: (up.querySelector('.rankmap-name') || {}).textContent, state: (up.querySelector('.rankmap-state') || {}).textContent,
+      gifts: up.querySelectorAll('.rankmap-gift').length, heroName: (document.querySelector('.rankhero-name') || {}).textContent }; }
+    if(document.querySelector('.ru-upnext')) at('upnextcard');
+    if(document.querySelector('.rankhero.ru-turn-out')) at('turnout');
+    const ht = document.querySelector('.rankhero.ru-turn-in') || (rankUpScene && rankUpScene.heroTurned ? document.querySelector('.screen-ranks .rankhero') : null);
+    if(ht && !out.hero){ at('heroturn'); out.hero = { kick: (ht.querySelector('.rankhero-kicker') || {}).textContent, name: (ht.querySelector('.rankhero-name') || {}).textContent }; }
+    if(document.querySelector('.ru-curtain.is-on') && out.at.heroturn) at('curtain');
     if((out.at.curtain || out.at.ph_return || out.at.ph_back) && document.querySelector('.screen-profile')) at('back');
     if(document.querySelector('.pf-goal.ru-flip-out')) at('flipout');
     if(document.querySelector('.pf-goal.ru-goal-in')) at('goalin');
@@ -17340,9 +17362,10 @@ def check_b319_rankup(br):
         check(f"{dev}: Profile opens as it was - Silver, Level 49, Gold's badges 4 / 5 unticked, input held",
               p0.get("rank") == "Silver" and p0.get("level") == "Level 49" and p0.get("next") == "Gold" and p0.get("blocker")
               and rows.get("badges", {}).get("met") is False and rows.get("badges", {}).get("now") == "4" and rows.get("level", {}).get("met") is True, p0)
-        check(f"{dev}: no cursor - the badge challenge fills and ticks ('2 of 2 done'), then the loading screen",
+        # build 320 moves the loading screen to its new decision (none - see check_b320d_rankup)
+        check(f"{dev}: no cursor - the badge challenge fills and ticks ('2 of 2 done'), then into the road map (no loading screen since 320)",
               not wk.get("seen", {}).get("tap") and wk.get("tickRows") == 1 and (wk.get("subDone") or "").startswith("2 of 2")
-              and 0 < at.get("tick", -1) < at.get("loading", -1) < at.get("map", -1), [wk.get("seen"), wk.get("tickRows"), wk.get("subDone"), at])
+              and 0 < at.get("tick", -1) < at.get("dive", -1) < at.get("map", -1) and "loading" not in at, [wk.get("seen"), wk.get("tickRows"), wk.get("subDone"), at])
         te = wk.get("tipEnd") or {}
         check(f"{dev}: the road runs on to the circle's CENTRE, under it (the circle drawn over the light)",
               wk.get("rideMax", 0) >= .999 and isinstance(te, dict) and te.get("dx", 99) <= 2 and te.get("dy", 99) <= 2 and te.get("under") and te.get("nodeOver"),
@@ -17360,11 +17383,12 @@ def check_b319_rankup(br):
               len(cards) == 1 and "rs-spot-rankrewards" in cards[0].get("cls", "") and cards[0].get("onMap") and wk.get("cardHit") == "card"
               and at.get("cutscene", 0) < at.get("card", -1), [cards, wk.get("cardHit")])
         un = wk.get("upnext") or {}
-        check(f"{dev}: the card at the top zooms out and 'Up next' shows Platinum and what it unlocks, while it still says Silver",
-              un.get("kick") == "Up next" and un.get("name") == "Platinum" and (un.get("gifts") or 0) >= 3 and un.get("heroName") == "Silver" and un.get("zoom"), un)
+        # build 320: Up next is the road map's own box (no card under the hero), and the card turns over with no "Rank up"
+        check(f"{dev}: 'Up next' is the road map's own Platinum box, with what it unlocks, while the card at the top still says Silver",
+              un.get("state") == "Up next" and un.get("name") == "Platinum" and (un.get("gifts") or 0) >= 3 and un.get("heroName") == "Silver" and "upnextcard" not in at, [un, at.get("upnextcard")])
         hr = wk.get("hero") or {}
-        check(f"{dev}: then it shakes, fades and turns over to Gold ('Rank up')",
-              at.get("upnext", 0) < at.get("cardshake", -1) < at.get("dissolve", -1) <= at.get("heroturn", -1) and hr == {"kick": "Rank up", "name": "Gold"}, [at, hr])
+        check(f"{dev}: then the card turns over to Gold ('Your rank', no 'Rank up')",
+              at.get("upnext", 0) < at.get("turnout", -1) <= at.get("heroturn", -1) and hr == {"kick": "Your rank", "name": "Gold"}, [at, hr])
         check(f"{dev}: a slow fade back to Profile; the completed card folds away and Platinum's comes in",
               at.get("heroturn", 0) < at.get("curtain", -1) < at.get("back", -1) < at.get("flipout", -1) < at.get("goalin", -1), at)
         af = wk.get("after") or {}
@@ -17442,7 +17466,7 @@ def check_b319_rankup(br):
     wk = pg.evaluate(B319_RU_WALK, {"top": "veteran", "cutMs": 300, "cardMs": 400})
     at = wk.get("at") or {}
     check("reduce motion: the same steps, still - no ride, no shake - shown and back on Gold, under 20s",
-          not wk.get("threw") and at.get("loading") and at.get("map") and at.get("cutscene") and at.get("card") and at.get("upnext") and at.get("done")
+          not wk.get("threw") and at.get("dive") and at.get("map") and at.get("cutscene") and at.get("card") and at.get("upnext") and at.get("done")
           and not at.get("ride") and not at.get("shake") and (wk.get("after") or {}).get("rank") == "Gold" and at.get("done", 99999) - at.get("ph_profile", 0) < 20000, at)
     ctx.close()
 
@@ -17486,6 +17510,356 @@ def check_b319_rankup(br):
           not wk.get("threw") and (wk.get("at") or {}).get("ride") and len(wk.get("cutArgs") or []) == 1 and len(wk.get("cards") or []) == 1
           and (wk.get("after") or {}).get("shown") == 3, [wk.get("threw"), wk.get("at"), wk.get("after")])
     ctx.close()
+
+
+# --------------------------------------------------------------------------
+# Build 320 (b320d): the rank-up journey, as Madison asked for it.
+B320D_WALK = """async (a) => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const out = { at: {}, cutArgs: [], cards: [], taps: { tried: 0, reached: [] }, focusGap: [], rankUpText: null, fills: [], cam: [],
+                profile: [], tabAnims: [] };
+  try{
+  const T0 = performance.now(), now = () => Math.round(performance.now() - T0), at = k => { if(!(k in out.at)) out.at[k] = now(); };
+  const fp = (s) => typeof s === 'function';
+  /* ---- the cutscene, real, wrapped only to measure the hand-off into it ---- */
+  const realTier = window.playTierCutscene, realSn = window.playSupernovaCutscene;
+  const handed = (key, opts, call) => {
+    const g = opts && opts.handoff, gr = g && g.isConnected ? g.getBoundingClientRect() : null;
+    const v = document.querySelector('.ru-veil');
+    out.veilBefore = v ? +getComputedStyle(v).opacity : null;
+    out.veilAnim = v ? v.getAnimations().map(an => ({ end: Math.round(an.effect.getComputedTiming().endTime), to: (an.effect.getKeyframes().slice(-1)[0] || {}).opacity })) : null;
+    out.cutArgs.push({ key, from: opts && opts.from, inline: !!(opts && opts.onDone), handoff: !!g, onMap: !!document.querySelector('.screen-ranks .rankmap') });
+    at('cutscene');
+    const ret = call();
+    const ov = document.getElementById('supernova-cutscene');
+    const b = g && g.isConnected ? g.closest('.cosmic-icon-badge') : null;
+    const br = b ? b.getBoundingClientRect() : null;
+    const c = r => r ? { x: Math.round((r.left + r.width / 2) * 10) / 10, y: Math.round((r.top + r.height / 2) * 10) / 10, w: Math.round(r.width * 10) / 10 } : null;
+    out.hand = { ghost: c(gr), bubble: c(br), tier: b ? b.dataset.rankTier : null, inScene: !!(b && ov && ov.contains(b)), ovOpacity: ov ? +getComputedStyle(ov).opacity : null,
+                 hiddenRest: ov ? ([...ov.querySelectorAll(".rank-before .rank-orbit > .rank-orbit-slot:not(.ru-hand-slot)")].every(x => +getComputedStyle(x).opacity < .05) && !!ov.querySelector(".rank-before .ru-hand-veil") && +getComputedStyle(ov.querySelector(".rank-before .ru-hand-veil")).opacity > .99) : null };
+    /* the map's veil and hidden circle go in the same task as the scene comes up */
+    queueMicrotask(() => { out.hand.veilAfter = !!document.querySelector('.ru-veil'); });
+    if(ov){
+      const sw = ov.querySelector('.supernova-stage');
+      setTimeout(() => { out.zoomTr = sw.getAnimations().filter(an => an.transitionProperty === 'transform').map(an => Math.round(an.effect.getTiming().duration)); out.zoomTo = sw.style.transform; }, 1400);
+      const sc = () => { try{ return Math.round(new DOMMatrix(getComputedStyle(sw).transform).a * 1000) / 1000; }catch(e){ return null; } };
+      out.zoom = [sc()];
+      setTimeout(() => out.zoom.push(sc()), 1400); setTimeout(() => out.zoom.push(sc()), 3400);
+      const mo = new MutationObserver(() => { const k = ov.classList, t = performance.now();
+        if(k.contains('is-cutrest') && !out.rest) out.rest = t;
+        if(k.contains('supernova-burst') && !out.burst){ out.burst = t; out.breaths = ov.querySelectorAll('.rank-chg.is-charge .rank-chg-ring').length; } });
+      mo.observe(ov, { attributes: true, attributeFilter: ['class'] });
+      /* the title is up: end it as a tap would, so the gate does not sit through the outro */
+      const iv = setInterval(() => { if(!ov.isConnected){ clearInterval(iv); return; } if(ov.classList.contains('supernova-settle')){ clearInterval(iv); setTimeout(() => ov.click(), 900); } }, 100);
+    }
+    return ret;
+  };
+  window.playTierCutscene = (k, o) => handed(k, o, () => realTier(k, o));
+  window.playSupernovaCutscene = o => handed('titan', o, () => realSn(o));
+  if(!document.querySelector('[data-screen="home"]')) showHome();
+  for(let i = 0; i < 80 && !document.body.classList.contains('rankup-lock'); i++){
+    const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click();
+    await wait(150);
+  }
+  /* ---- Home, locked: the Profile tab does not ring or jump ---- */
+  const tab = document.getElementById('bottomtab-profile');
+  const tabMoves = () => tab.getAnimations({ subtree: true }).map(x => x.animationName || (x.effect && x.effect.getKeyframes ? Object.keys(x.effect.getKeyframes()[0] || {}).filter(z => ['offset','easing','composite','computedOffset'].indexOf(z) < 0).join('+') : '?'))
+    .filter(n => !/^rk-sheet|^color$|^cx-|^ch-|^av-/.test(n));
+  await wait(1800);
+  out.lock = document.body.classList.contains('rankup-lock');
+  out.lockTab = { moves: tabMoves(), ring: (() => { const cs = getComputedStyle(tab, '::before'); return cs.content !== 'none' && cs.borderStyle !== 'none' && parseFloat(cs.borderWidth) > 0; })() };
+  /* a refused tap (Leaderboard) says so, and still no ring or jump */
+  const lb = document.querySelector('.bottomtab[data-dest="leaderboard"], #bottomtab-leaderboard'); if(lb) lb.click();
+  await wait(200); out.lockTab.refused = tabMoves();
+  await wait(900);
+  /* ---- the journey ---- */
+  const T1 = performance.now();
+  tab.click();
+  let seenScene = false, curtainOff = false;
+  const cmo = new MutationObserver(ms => ms.forEach(m => {
+    const el = m.target;
+    /* THE FIRST VISIBLE FRAME OF THE MAP: the curtain starts to lift */
+    if(el.classList && el.classList.contains('ru-curtain') && !el.classList.contains('is-on') && rankUpScene && rankUpScene.mapOpenAt && !out.first){
+      const tip = document.querySelector('.ru-ridetip'), s = rankUpScene;
+      const road = tip ? tip.parentElement.querySelector(':scope > .rankmap-road') : null;
+      const below = tip ? tip.parentElement.nextElementSibling : null, node = below && below.querySelector('.rankmap-node');
+      const dot = tip ? tip.querySelector('i').getBoundingClientRect() : null;
+      const n = node ? node.offsetHeight : 0, H = road ? road.offsetHeight : 0, rt = road ? road.getBoundingClientRect().top : 0;
+      const want = rt + n / 2 + 9 + a.dot * (H - n - 18);
+      out.first = { scroll: Math.round(window.scrollY), p0: s.p0, tipOn: tip ? tip.classList.contains('is-on') : false,
+        dy: dot ? Math.round(Math.abs(dot.top + dot.height / 2 - want) * 10) / 10 : null,
+        dotY: dot ? Math.round((dot.top + dot.height / 2) * 10) / 10 : null, want: Math.round(want * 10) / 10,
+        cam: dot ? Math.round(Math.abs(window.scrollY - rankUpFollowY(dot.top + dot.height / 2 + window.scrollY))) : null,
+        moving: [...document.querySelectorAll('.screen-ranks .rankmap-roadfill, .screen-ranks .rankmap-roadtip')].filter(e => e.getAnimations().length).length,
+        loading: !!document.getElementById('teststart-overlay') };
+      at('mapvisible');
+    }
+  }));
+  cmo.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  /* every frame: the camera on the map, and the XP bar on Profile */
+  let rafOn = true;
+  const xpVis = () => { const f = document.querySelector('.screen-profile .pf-standing .pf-xpbar .xpbar-fill'), t = f && f.parentElement; if(!f || !t) return null;
+    const fr = f.getBoundingClientRect(), tr = t.getBoundingClientRect(); return tr.width ? Math.round((fr.right - tr.left) / tr.width * 1000) / 1000 : null; };
+  const frame = () => { if(!rafOn) return;
+    const s = rankUpScene, ph = s ? s.phase : '-';
+    if(out.first && (ph === 'road') && document.querySelector('.screen-ranks')) out.cam.push(Math.round(window.scrollY));
+    if(out.at.back && document.querySelector('.screen-profile')){
+      const lv = document.querySelector('.screen-profile .pf-standing .pf-level'), row = document.querySelector('.screen-profile .pf-goal .pf-task[data-kind="level"]');
+      out.profile.push({ t: now(), x: xpVis(), lv: lv ? parseInt(lv.textContent.replace(/\\D+/g, ''), 10) : null,
+        row: row ? +((row.querySelector('.pf-now') || {}).textContent) : null, need: row ? +((row.querySelector('.pf-need') || {}).textContent) : null,
+        flip: !!document.querySelector('.pf-goal.ru-flip-out'), climbing: !!document.querySelector('.pf-standing.ru-climbing') });
+    }
+    requestAnimationFrame(frame); };
+  requestAnimationFrame(frame);
+  /* tap everything that is on screen: nothing may reach it */
+  const tryTaps = (label) => {
+    const sel = '.bottomtab, .chatdock-btn, .back-link, .rankmap-node, .rankhero, .rankmap-card, .screen-profile button, .pf-standing, .pf-goal, .profile-hero-avatar, .pf-case, .profile-classline';
+    const els = [...document.querySelectorAll(sel)].filter(el => { const r = el.getBoundingClientRect(); return r.width > 4 && r.height > 4 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth; }).slice(0, 30);
+    const open = rankUpScene && rankUpScene.taps;
+    els.forEach(el => {
+      out.taps.tried++;
+      const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+      const hit = document.elementFromPoint(x, y);
+      let reached = false; const mark = () => { reached = true; };
+      ['click', 'pointerdown', 'touchstart'].forEach(t => el.addEventListener(t, mark, true));
+      try{ el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, clientX: x, clientY: y })); }catch(e){}
+      try{ const t0 = new Touch({ identifier: 7, target: el, clientX: x, clientY: y }); el.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, cancelable: true, touches: [t0], targetTouches: [t0], changedTouches: [t0] })); }catch(e){}
+      el.click();
+      ['click', 'pointerdown', 'touchstart'].forEach(t => el.removeEventListener(t, mark, true));
+      /* a real tap lands on what is on top there: the scene's own layer,
+         its cutscene or its card - never the page's control */
+      const land = hit && el.contains(hit) && !(open && hit.closest('.rs-spot, #supernova-cutscene'));
+      if(reached || land) out.taps.reached.push([label, el.className.baseVal != null ? el.className.baseVal : el.className, reached, land]);
+    });
+    /* and a thumb swipe across the screen */
+    try{
+      const snap = () => ({ el: stage.firstElementChild, ptab: (document.querySelector('.screen-profile .profiletabs .is-active, .screen-profile .profiletabs [aria-selected="true"]') || {}).textContent || null });
+      const s0 = snap(); const mk = (x) => new Touch({ identifier: 9, target: stage.firstElementChild || stage, clientX: x, clientY: innerHeight * .5 });
+      const sw = (t, x) => (stage.firstElementChild || stage).dispatchEvent(new TouchEvent(t, { bubbles: true, cancelable: true, touches: t === 'touchend' ? [] : [mk(x)], changedTouches: [mk(x)] }));
+      sw('touchstart', innerWidth * .85); sw('touchmove', innerWidth * .5); sw('touchmove', innerWidth * .15); sw('touchend', innerWidth * .15);
+      out.taps.swipes = (out.taps.swipes || 0) + 1; out.taps.swipeMoved = out.taps.swipeMoved || [];
+      setTimeout(() => { const s1 = snap(); if(!rankUpScene) return;
+        const own = s1.el && /screen-ranks|screen-profile/.test(s1.el.className || '');
+        if(!own || (s1.el === s0.el && s1.ptab !== s0.ptab)) out.taps.swipeMoved.push(label); }, 300); }catch(e){}
+  };
+  let lastTap = 0, ph0 = null;
+  for(let i = 0; i < 4000; i++){
+    const s = rankUpScene, ph = s ? s.phase : '-';
+    if(s) seenScene = true;
+    if(ph !== ph0){ at('ph_' + ph); ph0 = ph; }
+    if(s && !cutsceneFocusActive()) out.focusGap.push(ph);
+    if(document.getElementById('teststart-overlay')) at('loading');
+    if(document.querySelector('.ru-upnext')) at('upnextcard');
+    const hero = document.querySelector('.screen-ranks .rankhero');
+    if(hero && /rank\\s*up/i.test(hero.textContent) && !out.rankUpText) out.rankUpText = hero.textContent.trim().slice(0, 80);
+    if(hero && document.querySelector('.screen-ranks .rankmap') && !out.heroBefore && s && s.phase === 'road'){
+      const v = [...hero.querySelectorAll('.rankhero-ringval')].map(x => x.textContent);
+      out.heroBefore = { name: (hero.querySelector('.rankhero-name') || {}).textContent, level: v[0], badges: v[1], head: (hero.querySelector('.rankhero-gaugehead') || {}).textContent }; }
+    if(document.querySelector('.pf-task.ru-ticked')) at('tick');
+    if(document.querySelector('.screen-profile.ru-dive')) at('dive');
+    if(document.querySelector('.screen-ranks .rankmap')) at('map');
+    if(document.querySelector('.ru-ridetip.is-at')) at('arrive');
+    if(document.querySelector('.rankmap-stop.is-celebrating')) at('unlock');
+    if(document.querySelector('.ru-ghost')){ at('ghost'); const v = document.querySelector('.ru-veil'); if(v){ const o = +getComputedStyle(v).opacity; out.veilMax = Math.max(out.veilMax || 0, o); if(o < .05) out.veilLow = true; } }
+    const sp = document.querySelector('.rs-spot.is-up');
+    if(sp && !sp.dataset.t){ sp.dataset.t = 1; at('card'); out.cards.push({ name: (sp.querySelector('.rs-spot-name') || {}).textContent, onMap: !!document.querySelector('.screen-ranks') });
+      setTimeout(() => sp.click(), a.cardMs || 900); }
+    const np = document.querySelector('.rankmap-stop.ru-nextpop');
+    if(np && !out.upnext){ at('upnext'); const c = np.querySelector('.rankmap-card').getBoundingClientRect();
+      out.upnext = { name: (np.querySelector('.rankmap-name') || {}).textContent, state: (np.querySelector('.rankmap-state') || {}).textContent,
+        fx: !!np.querySelector('.ru-nextfx'), mid: Math.round((c.top + c.height / 2) / innerHeight * 100) / 100, scroll: Math.round(window.scrollY),
+        heroName: (document.querySelector('.rankhero-name') || {}).textContent }; }
+    if(out.at.upnext && !out.at.top0 && window.scrollY <= 1 && rankUpScene && rankUpScene.phase !== 'upnext') at('top0');
+    if(document.querySelector('.rankhero.ru-turn-out')) at('turnout');
+    if(document.querySelector('.rankhero.ru-turn-in') && !out.heroAfter){ at('turnin');
+      setTimeout(() => { const h = document.querySelector('.screen-ranks .rankhero'); if(!h) return; const v = [...h.querySelectorAll('.rankhero-ringval')];
+        out.heroAfter = { name: (h.querySelector('.rankhero-name') || {}).textContent, kick: (h.querySelector('.rankhero-kicker') || {}).textContent,
+          level: v[0] && v[0].textContent, levelTo: v[0] && v[0].dataset.count, badges: v[1] && v[1].textContent, head: (h.querySelector('.rankhero-gaugehead') || {}).textContent }; }, 2800); }
+    if(document.querySelector('.ru-curtain.is-on') && (out.at.turnin || out.at.ph_hero)) at('curtain');
+    if(out.at.map && (out.at.curtain || out.at.ph_back || out.at.ph_return) && document.querySelector('.screen-profile')) at('back');
+    if(document.querySelector('.pf-goal.ru-flip-out')) at('flipout');
+    if(document.querySelector('.pf-standing.ru-climbing')) at('climb');
+    if(s && performance.now() - lastTap > 900 && ['profile', 'tick', 'road', 'after', 'upnext', 'top', 'hero', 'return', 'cards'].indexOf(ph) >= 0){ lastTap = performance.now(); tryTaps(ph); }
+    if(seenScene && !s){ at('done'); break; }
+    await wait(40);
+  }
+  rafOn = false; cmo.disconnect();
+  out.focusAfter = cutsceneFocusActive();
+  out.climb = (rankUpScene || {}).climb || window.__lastClimb || null;
+  out.flash = out.rest && out.burst ? Math.round(out.burst - out.rest) : null;
+  out.cap = a.cap;
+  window.playTierCutscene = realTier; window.playSupernovaCutscene = realSn;
+  out.after = { rank: (document.querySelector('.pf-standing .pf-rankname') || {}).textContent, level: (document.querySelector('.pf-standing .pf-level') || {}).textContent,
+                shown: store.rankUpShown, blocker: !!document.querySelector('.ru-blocker'), veil: !!document.querySelector('.ru-veil, .ru-ghost') };
+  /* ---- after: the Profile tab, tapped, does not ring or jump ---- */
+  const watch = []; let on = true;
+  (function w(){ if(!on) return; watch.push(...tabMoves()); requestAnimationFrame(w); })();
+  tab.click(); await wait(1500);
+  showHome(); await wait(2600);
+  tab.click(); await wait(1500);
+  on = false;
+  out.tabAfter = [...new Set(watch)];
+  out.homeAfter = document.body.classList.contains('rankup-lock');
+  }catch(e){ out.threw = String(e && e.stack || e); }
+  return out; }"""
+
+
+def check_b320d_rankup(br):
+    """Build 320 (b320d). Madison: "When going from the profile to road up in
+    the cutscene, we can get rid of the loading screen ... The cutscene on
+    the roadmap, it should continue from the point where the dot is if you
+    were to check it from the moment before you ranked up. Here's the caveat,
+    let's not ever put the dot too close to the next one. Let's give the
+    badges a lot more weight ... the loading sequence starts from the
+    beginning, but really it's just going through them all until it catches
+    up to where you are ... the road map flare could slowly zoom out and then
+    everything else diseases and then it's perfectly goes into the planet
+    system ... the flare flash part into the big flash happens way too fast";
+    "after the unlock pop up is done, the road map would then slowly scroll
+    down automatically to the up next on the road map, and then that boxes
+    color would pop ... and then it slides back to the top, the current rank
+    card changes ... it says rank up there or something at the top ... that
+    new circle would show you are level 40 ... The challenge box is like
+    glowing green and the color of the rank, that's ugly ... verify the
+    buttons on the page don't work ... the bottom tab should not be visible
+    ... the xp bar loads again, which it shouldn't ... the challenge thing
+    will flip first, AND then ... the xp bar ... slowly"; and "When you click
+    the profile tab after the rank up part, the character gets a yellow
+    circling and starts jumping?? Fix that." The real cutscene plays here
+    (only its end is tapped, as a person can). Written against a73c681,
+    where: the loading screen plays, the map opens at the top and glides
+    down, rankRoadFracOf does not exist, there is no hand-off, the pulse into
+    the flash is 1.7s, Up next is a card under the hero that says "Rank up",
+    the hero shows the real level, focus is never on, Profile's XP bar fills
+    from empty, the climb is 0.7s a level, and the tab rings and bobs."""
+    print("\n320d. the rank-up journey: no loading screen, the map where the light was, badges first, the flare into the planet, the paced flash, Up next on the road, nothing tappable, the slow climb, no ring on the tab")
+    # The formula, and the ordinary road map with it.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    f = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+      const F = rankRoadFracOf, G = TIER_UNLOCKS.veteran, S = TIER_UNLOCKS.ranger;
+      out.near = RANK_ROAD_NEAR;
+      /* the last badge 34 hundos of 35 away, the level met: not at the circle */
+      out.lastBadge = F({ held: 'ranger', level: G.level + 9, levelExact: G.level + 9, badges: G.badges - 1, partials: .999 });
+      /* every badge, one XP of the level short */
+      out.lastXp = F({ held: 'ranger', level: G.level - 1, levelExact: G.level - .0001, badges: G.badges, partials: 0 });
+      out.reached = F({ held: 'ranger', level: G.level, levelExact: G.level, badges: G.badges, partials: 0 });
+      /* the same share of each requirement: badges move the light three times as far */
+      const midL = S.level + (G.level - S.level) / 2, midB = S.badges + (G.badges - S.badges) / 2;
+      out.halfBadges = F({ held: 'ranger', level: S.level, levelExact: S.level, badges: midB, partials: 0 });
+      out.halfLevels = F({ held: 'ranger', level: midL, levelExact: midL, badges: S.badges, partials: 0 });
+      /* the ordinary road map draws its light there */
+      const U = topicsIn(QUESTIONS), t = 'Identity Crimes';
+      store.unitPerfects = {}; U.filter(x => x !== t).slice(0, 4).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+      store.unitPerfects[t] = badgeThresholdFor(t) - 1; store.rankFloor = 0; store.levelFloor = 0;
+      store.lifetime.points = xpForLevel(53) + 500; store.rankUpShown = null; store.rankMapFx244 = true; store.rankMapSeen = 99; store.rankMapProg = null;
+      saveStore(); out.now = rankRoadProgress(); out.rank = rankOf(store);
+      showRanksScreen('ranks'); await wait(7000);
+      const tip = document.querySelector('.rankmap-roadtip'); const st = tip && tip.closest('.rankmap-stop');
+      const node = st && st.nextElementSibling && st.nextElementSibling.querySelector('.rankmap-node');
+      const dot = tip && tip.querySelector('.rankmap-roadtip-dot');
+      if(tip && node && dot){ const d = dot.getBoundingClientRect(), nr = node.getBoundingClientRect(), H = tip.offsetHeight, n = node.offsetHeight;
+        out.mapAt = +tip.dataset.tipAt; out.gap = Math.round((nr.top - (d.top + d.height / 2)) * 10) / 10; out.stretch = Math.round((H - n - 18) * 10) / 10; }
+      }catch(e){ out.threw = String(e && e.stack || e); }
+      return out; }""")
+    ctx.close()
+    check("the light's formula: the last badge 34/35 away with the level met stays out of the last fifth (<= 0.8), and so does every badge with 1 XP of level to go",
+          not f.get("threw") and f.get("near") == 0.8 and 0 < (f.get("lastBadge") or 9) <= 0.8 and 0 < (f.get("lastXp") or 9) <= 0.8 and f.get("reached") == 1, f)
+    check("badges carry much more weight: half the badges moves the light 3x as far as half the levels",
+          (f.get("halfBadges") or 0) >= 2.9 * (f.get("halfLevels") or 1) and (f.get("halfLevels") or 0) > 0, [f.get("halfBadges"), f.get("halfLevels")])
+    check("the ordinary road map draws its light at the same number, and at least a fifth of the stretch clear of the next circle",
+          abs((f.get("mapAt") or -1) - round(f.get("now") or -9, 3)) < .002 and (f.get("gap") or 0) >= .2 * (f.get("stretch") or 999) - 1,
+          [f.get("now"), f.get("mapAt"), f.get("gap"), f.get("stretch")])
+
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        s0 = pg.evaluate(B319_RU_SEED, {})
+        pre = pg.evaluate("() => ({ dot: typeof rankRoadProgress === 'function' ? rankRoadProgress() : rankStepProgress().pct, cap: levelOf(store) })")
+        r = pg.evaluate(B319_RU_RUN, {})
+        wk = pg.evaluate(B320D_WALK, {"dot": pre["dot"], "cap": pre["cap"], "cardMs": 900})
+        ctx.close()
+        at = wk.get("at") or {}
+        check(f"{dev}: the walk: nothing threw", not wk.get("threw") and not r.get("threw") and s0.get("rank") == "ranger", [wk.get("threw"), r.get("threw"), s0])
+        check(f"{dev}: Home locked, and the Profile tab neither rings nor jumps (no ring, no running move), even on a refused tap",
+              wk.get("lock") is True and (wk.get("lockTab") or {}).get("ring") is False and not (wk.get("lockTab") or {}).get("moves") and not (wk.get("lockTab") or {}).get("refused"),
+              wk.get("lockTab"))
+        check(f"{dev}: no loading screen - Profile ticks, leans into the dark, and the road map comes up out of it",
+              "loading" not in at and 0 < at.get("tick", -1) < at.get("dive", -1) < at.get("map", -1) <= at.get("mapvisible", -1) and at.get("mapvisible", 99999) - at.get("dive", 0) < 4000, at)
+        fi = wk.get("first") or {}
+        check(f"{dev}: the map's first visible frame has the light on the pixel it stood on before the rank-up (within 2px), the camera on it, nothing filling in",
+              abs((fi.get("p0") or -1) - pre["dot"]) < .002 and fi.get("tipOn") and (fi.get("dy") if fi.get("dy") is not None else 99) <= 2
+              and (fi.get("cam") if fi.get("cam") is not None else 99) <= 2 and fi.get("moving") == 0 and not fi.get("loading"), [pre["dot"], fi])
+        cam = wk.get("cam") or []
+        check(f"{dev}: no replay of the earlier ranks - the camera never goes back up the road while the light runs on (sampled every frame)",
+              len(cam) > 20 and min(cam) >= (fi.get("scroll") or 0) - 2 and all(b >= a_ - 2 for a_, b in zip(cam, cam[1:])), [len(cam), cam[:3], min(cam) if cam else None, fi.get("scroll")])
+        hd = wk.get("hand") or {}
+        gh, bu = hd.get("ghost") or {}, hd.get("bubble") or {}
+        cont = (abs(gh.get("x", 0) - bu.get("x", 99)) <= 2 and abs(gh.get("y", 0) - bu.get("y", 99)) <= 2 and abs(gh.get("w", 0) - bu.get("w", 99)) <= max(2, .04 * (gh.get("w") or 0))) if gh and bu else False
+        check(f"{dev}: the flare is lifted off the map and draws back while the map dissolves to the cutscene's dark, then IS the new flare in the planet system - same centre and size across the cut (within 2px)",
+              at.get("unlock", 0) < at.get("ghost", -1) < at.get("cutscene", -1) and (wk.get("veilBefore") or 0) >= .99 and wk.get("veilLow") and hd.get("inScene") and hd.get("tier") == "veteran"
+              and cont and hd.get("veilAfter") is False and hd.get("ovOpacity") == 1 and hd.get("hiddenRest"), [at.get("ghost"), at.get("cutscene"), wk.get("veilBefore"), wk.get("veilAnim"), hd])
+        z = wk.get("zoom") or []
+        # (the headless iPad renders the zoomed planet at a few frames a second,
+        # so the pull back is read as the transition the scene starts - its
+        # target and length - and where the stage ends, not as frame samples)
+        check(f"{dev}: ...and the planet system pulls back round it into the scene's own framing",
+              len(z) == 3 and z[0] > 1.3 and wk.get("zoomTo") == "translate(0px, 0px) scale(1)" and any(d >= 2500 for d in (wk.get("zoomTr") or [])) or
+              (len(z) == 3 and z[0] > 1.3 and z[0] > z[1] > z[2] and abs(z[2] - 1) < .02), [z, wk.get("zoomTo"), wk.get("zoomTr")])
+        check(f"{dev}: the pulse into the big flash builds for 2.8s+ with 5+ breaths (was 1.7s and 4)",
+              (wk.get("flash") or 0) >= 2800 and (wk.get("breaths") or 0) >= 5, [wk.get("flash"), wk.get("breaths")])
+        un = wk.get("upnext") or {}
+        check(f"{dev}: Up next is the road map's own Platinum box: the map scrolls down to it (centred), it pops in its colour, and the map slides back to the top before the card turns",
+              "upnextcard" not in at and un.get("name") == "Platinum" and un.get("state") == "Up next" and un.get("fx") and .3 <= (un.get("mid") or 0) <= .7 and (un.get("scroll") or 0) > 200
+              and at.get("card", 0) < at.get("upnext", -1) < at.get("top0", -1) <= at.get("turnout", -1) < at.get("turnin", -1), [un, at])
+        hb, ha = wk.get("heroBefore") or {}, wk.get("heroAfter") or {}
+        check(f"{dev}: the card at the top shows the rank as it WAS (Silver, Level {pre['cap']}, 4 badges, to reach Gold) and never says 'Rank up'",
+              hb.get("name") == "Silver" and hb.get("level") == str(pre["cap"]) and hb.get("badges") == "4" and "Gold" in (hb.get("head") or "") and wk.get("rankUpText") is None,
+              [hb, wk.get("rankUpText")])
+        check(f"{dev}: it turns over to Gold showing the next level ({pre['cap'] + 1}), not the cut-off and not the saved levels ahead of Profile; 'Your rank'",
+              ha.get("name") == "Gold" and ha.get("kick") == "Your rank" and ha.get("levelTo") == str(pre["cap"] + 1) and ha.get("badges") == "5" and "Platinum" in (ha.get("head") or ""), ha)
+        tp = wk.get("taps") or {}
+        check(f"{dev}: nothing on the page can be tapped or swiped during the journey ({(wk.get('taps') or {}).get('tried')} taps tried, every phase)",
+              (tp.get("tried") or 0) > 60 and not tp.get("reached") and not tp.get("swipeMoved") and (tp.get("swipes") or 0) > 5, tp)
+        check(f"{dev}: cutscene focus is on the whole way and off after it",
+              not wk.get("focusGap") and wk.get("focusAfter") is False, [wk.get("focusGap")[:5] if wk.get("focusGap") else None, wk.get("focusAfter")])
+        pf = wk.get("profile") or []
+        first_change = next((p["t"] for p in pf if p["lv"] is not None and p["lv"] != pre["cap"]), None)
+        pre_climb = [p for p in pf if first_change is None or p["t"] < first_change]
+        lvls = [p["lv"] for p in pf if p["lv"] is not None]
+        last53 = next((p["t"] for p in pf if p["lv"] == lvls[-1]), None) if lvls else None
+        check(f"{dev}: back on Profile the XP bar does not load again - it is where it stands from the first frame",
+              len(pre_climb) > 10 and all((p["x"] or 0) >= .97 for p in pre_climb if p["x"] is not None), [len(pre_climb), [p["x"] for p in pre_climb][:8]])
+        check(f"{dev}: the challenge box flips first, THEN the saved XP climbs",
+              at.get("flipout") is not None and first_change is not None and at["flipout"] < first_change, [at.get("flipout"), first_change])
+        sync = all(p["row"] == min(p["lv"], p["need"]) for p in pf if p["lv"] is not None and p["row"] is not None and p["need"] and p["t"] >= (first_change or 0))
+        dur = (last53 or 0) - (first_change or 0)
+        check(f"{dev}: the climb is slow ({dur}ms from level {pre['cap'] + 1} to {lvls[-1] if lvls else None}, 1.4s+ a level) and the level challenge counts in the same frame as the level",
+              lvls and lvls[-1] == 53 and dur >= 1400 * (53 - pre["cap"] - 1) and sync and (wk.get("after") or {}).get("level") == "Level 53", [dur, sorted(set(lvls)), sync, wk.get("after")])
+        check(f"{dev}: after it, the Profile tab tapped (on Profile and from Home) never rings or jumps, and nothing of the scene is left",
+              not wk.get("tabAfter") and wk.get("homeAfter") is False and not (wk.get("after") or {}).get("blocker") and not (wk.get("after") or {}).get("veil"),
+              [wk.get("tabAfter"), wk.get("homeAfter"), wk.get("after")])
+
+    # The challenge box is calm: no green, no halo of the rank's colour.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(B319_RU_SEED, {})
+    pg.evaluate(B319_RU_RUN, {})
+    cb = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      window.playTierCutscene = (k, o) => { setTimeout(() => o.onDone(), 100); return {}; };
+      showHome(); await wait(1500); document.getElementById('bottomtab-profile').click();
+      let g = null; for(let i = 0; i < 200 && !(g = document.querySelector('.pf-goal.ru-complete')); i++) await wait(40);
+      await wait(900);
+      const out = {}; for(const [k, el] of [['complete', g]]){ if(!el){ out[k] = null; continue; } const cs = getComputedStyle(el);
+        out[k] = { shadow: cs.boxShadow, border: cs.borderTopColor, kick: getComputedStyle(el.querySelector('.pf-tasks-kick') || el).color }; }
+      if(rankUpScene) rankUpSceneWatch(rankUpScene, 10);
+      return out; }""")
+    ctx.close()
+    c = (cb or {}).get("complete") or {}
+    import re as _re
+    def _rgbs(s):
+        return [tuple(float(v) for v in m) for m in _re.findall(r"rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)", s or "")]
+    greenish = any(g_ > r_ + 40 and g_ > b_ + 20 for (r_, g_, b_) in _rgbs(c.get("shadow")) + _rgbs(c.get("border")) + _rgbs(c.get("kick")))
+    check("the completed challenge box is calm: no green anywhere on it, and no coloured halo (only a soft dark shadow)",
+          bool(c) and not greenish and all(not (r_ > 60 or g_ > 60 or b_ > 60) for (r_, g_, b_) in _rgbs(c.get("shadow"))), c)
 
 
 # --------------------------------------------------------------------------
@@ -19691,10 +20065,11 @@ B318_DAILY = """async (acc) => { const wait = ms => new Promise(r => setTimeout(
   const want = rgb(root.getPropertyValue('--rank-accent')) || rgb(root.getPropertyValue('--theme-c1'));
   const got = {
     ready: rgb(getComputedStyle(b, '::after').borderTopColor),
-    arc: rgb(getComputedStyle(b.querySelector('.dq-charge-r .dq-charge-arc')).borderTopColor),
+    /* REVISED IN 320: the ring and its flash are SVG circles (.dq-ring) */
+    arc: rgb(getComputedStyle(b.querySelector('.dq-ring-prog')).stroke),
     burst: rgb(getComputedStyle(b.querySelector('.dq-charge-burst')).borderTopColor),
-    flash: rgb(getComputedStyle(b.querySelector('.dq-charge-flash')).borderTopColor) };
-  const seal = getComputedStyle(b.querySelector('.dq-charge-half')).filter;
+    flash: rgb(getComputedStyle(b.querySelector('.dq-ring-flash')).stroke) };
+  const seal = getComputedStyle(b.querySelector('.dq-ring')).filter;
   const orb = document.createElement('div'); orb.className = 'daily-orb'; orb.innerHTML = '<div class="daily-orb-core">?</div>'; document.body.appendChild(orb);
   const ob = rgb(getComputedStyle(orb.firstChild).borderTopColor); orb.remove();
   const dist = (g) => g && want ? Math.max(...g.map((x, i) => Math.abs(x - want[i]))) : 999;
@@ -20957,281 +21332,198 @@ def check_b319h_layout(br):
         ctx.close()
 
 
-# _SEEK, plus the recorders' rule for a CSS animation whose name has left
-# animation-name: cancel it. Without that, an animation this harness has
-# paused and finished outlives its class (Chromium keeps a script-touched
-# CSSAnimation), so a control that slides out, back and out again under
-# the fake clock is held by the stale one - which the page never does.
-_SEEK320 = """(t) => { const M = window.__t0s = window.__t0s || new WeakMap();
-  document.getAnimations().forEach(an => {
-    if(!M.has(an)) M.set(an, { at: t, from: an.currentTime || 0, done: false });
-    const s = M.get(an); if(s.gone) return;
-    if(an.animationName && an.effect && an.effect.target){ try{
-      const cs = getComputedStyle(an.effect.target, an.effect.pseudoElement || null);
-      if(cs.animationName.split(',').map(x => x.trim()).indexOf(an.animationName) < 0){ s.gone = true; an.cancel(); return; }
-    }catch(e){} }
-    if(s.done) return;
-    const want = s.from + (t - s.at) * 1000;
-    let end = Infinity; try{ end = an.effect.getComputedTiming().endTime; }catch(e){}
-    if(want >= end && isFinite(end)){ s.done = true; try{ an.finish(); }catch(e){} return; }
-    if(an.playState !== 'paused') an.pause();
-    try{ an.currentTime = want; }catch(e){} }); }"""
+
+# Build 320 (b320e): the planet cracks rank by rank, the crack forms in the
+# rank-up, the Supernova planet remembers the blast, Home's planet whole on
+# its first frame back.
+B320E_RANK = """async (k) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  const U = topicsIn(QUESTIONS); store.unitPerfects = {};
+  const rule = TIER_UNLOCKS[k] || { level: 1, badges: 0 };
+  U.slice(0, rule.badges).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+  store.lifetime = store.lifetime || {}; store.lifetime.points = xpForLevel(rule.level) + 50;
+  store.rankFloor = 0; store.levelFloor = 0; store.onboardingComplete = true;
+  store.supernovaAchieved = k === 'titan'; store.pendingSupernovaCutscene = false; store.pendingTierCutscene = null;
+  store.rankUpShown = TIER_ORDER_FULL.indexOf(k) + 1; store.rankUpFrom = null; store.rankMapSeen = 9; store.rankMapFx244 = true;
+  store.savedCodeSaved = true; store.pendingBadgeUnlocks = [];
+  try{ localStorage.removeItem('class26e.rankup.prog'); }catch(e){}
+  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); }catch(e){}
+  try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); homeUnlockPlaying = false; }catch(e){}
+  saveStore(); showHome(); scrollTo(0, 0); await wait(700);
+  document.querySelectorAll('.rs-spot,.daily-alert,#tour-overlay,.update-banner,.toast,.scene-bridge').forEach(x => x.remove());
+  const h = document.querySelector('.panel.home .cosmic-hero-wrap'), sc = h && h.querySelector(':scope > .cosmic-scar');
+  const cv = sc && sc.querySelector('canvas.csc-burn');
+  const out = { rank: rankOf(store), scar: !!sc, frags: sc ? sc.querySelectorAll('.csc-frag').length : 0, ember: !!(sc && sc.querySelector('canvas.csc-ember')) };
+  if(!cv) return out;
+  const N = cv.width, d = cv.getContext('2d').getImageData(0, 0, N, N).data, A = new Uint8Array(N * N);
+  let n = 0; for(let k2 = 0; k2 < N * N; k2++){ A[k2] = d[k2 * 4 + 3]; if(A[k2] > 64) n++; }
+  /* each stage against the one before it: of what was solid (alpha > 128),
+     how much is still drawn (alpha > 64) */
+  const P = window.__b320prev;
+  if(P && P.length === A.length){ let was = 0, kept = 0; for(let k2 = 0; k2 < A.length; k2++) if(P[k2] > 128){ was++; if(A[k2] > 64) kept++; } out.was = was; out.kept = kept; }
+  window.__b320prev = A;
+  /* the largest dark piece (alpha > 180, dark), and whether it holds the
+     impact, the far end of the long arm and the middle of the broken shine */
+  const dark = new Uint8Array(N * N);
+  for(let k2 = 0; k2 < N * N; k2++){ const l = (d[k2 * 4] + d[k2 * 4 + 1] + d[k2 * 4 + 2]) / 3; if(d[k2 * 4 + 3] > 180 && l < 60) dark[k2] = 1; }
+  const lab = new Int32Array(N * N).fill(-1); let best = -1, bestN = 0, id = 0;
+  for(let k2 = 0; k2 < N * N; k2++){ if(!dark[k2] || lab[k2] >= 0) continue; let c = 0; const st = [k2]; lab[k2] = id;
+    while(st.length){ const q = st.pop(); c++; const x = q % N, y = (q / N) | 0;
+      for(let dy = -1; dy <= 1; dy++) for(let dx = -1; dx <= 1; dx++){ const xx = x + dx, yy = y + dy; if(xx < 0 || yy < 0 || xx >= N || yy >= N) continue;
+        const r = yy * N + xx; if(dark[r] && lab[r] < 0){ lab[r] = id; st.push(r); } } }
+    if(c > bestN){ bestN = c; best = id; } id++; }
+  const near = (px, py, rr) => { let hit = 0; const cx = px / 100 * N, cy = py / 100 * N, R = rr / 100 * N;
+    for(let y = Math.max(0, cy - R | 0); y < Math.min(N, cy + R); y++) for(let x = Math.max(0, cx - R | 0); x < Math.min(N, cx + R); x++)
+      if((x - cx) * (x - cx) + (y - cy) * (y - cy) <= R * R && lab[y * N + x] === best) hit++; return hit; };
+  let minX = N; for(let k2 = 0; k2 < N * N; k2++) if(lab[k2] === best) minX = Math.min(minX, k2 % N);
+  const sh = (typeof SCAR_SHINE !== 'undefined') ? SCAR_SHINE : { x: -.33, y: -.35 };
+  let shineDark = 0; { const cx = (sh.x + 1) / 2 * N, cy = (sh.y + 1) / 2 * N, R = .14 * N;
+    for(let y = Math.max(0, cy - R | 0); y < Math.min(N, cy + R); y++) for(let x = Math.max(0, cx - R | 0); x < Math.min(N, cx + R); x++) if(dark[y * N + x]) shineDark++; }
+  Object.assign(out, { N, n, piece: bestN, impact: near(65, 63.5, 4), shine: near((sh.x + 1) * 50, (sh.y + 1) * 50, 7), farX: +(minX / N).toFixed(3), shineDark });
+  return out; }"""
 
 
-class _Stepper320(_Stepper):
-    def step(self, dt):
-        t0 = self.t
-        self.t += dt
-        self.pg.clock.run_for(max(1, int(round(self.t * 1000)) - int(round(t0 * 1000))))
-        self.pg.evaluate(_SEEK320, self.t)
-
-
-def check_b320c_case(br):
-    """Build 320 (b320c). Madison: "no more xp bonus for getting a badge ...
-    It's no longer a thing" / "I can see the chat button in it ... you
-    shouldn't be able to chat at all during any type of cutscene, and you
-    shouldn't receive any chat notifications or invite or friend
-    notifications during a cutscene either" / "before the badge entered the
-    case it's not glowing" / "it should say something about found 5 of 16
-    missing badges" / "This badge case is gonna be called level 1 badge
-    case" / "the case the second it starts opening should start glowing THE
-    COLORS of the badges that are in it" / "The badge phases through the top
-    thing when it opens" / "I'm gonna be adding more units to level 1".
-    Written against a73c681, where every check below fails:
-      - computeRunXp paid a badge line (1,000 a badge) and the scene said
-        "+1,000 XP";
-      - no scene turned focus on: the chat button and the tab bar stayed in
-        frame and a toast, a chat ping and a notice raised during the scene
-        landed on top of it;
-      - nothing lit the token: no aura;
-      - the caption read "6 of 16 in the case" and the case said "Badge case";
-      - the light out of the crack was one colour, the new badge's;
-      - the token waited where the lid swings up through it;
-      - the case was a fixed 4 x 4: a seventeenth unit fell out of the tray.
-    On the fake clock, so load cannot move a frame."""
-    print("\n320c. the badge case: no XP for a badge, cutscene focus, the glow, the caption, Level 1 Badge Case, the colours, the lid, the slots")
-    from PIL import Image as _I
-    import colorsys
-    # five held badges in five clearly different colours, none of them the
-    # new badge's purple: green, gold, blue, red, pink
-    HELD = ["Fitness, Wellness, and Stress Management", "Professionalism and Ethics", "Professional Policing",
-            "US and Texas Constitution and Rights", "Victims of Crime"]
-    NEW = "Identity Crimes"
-    SEED = """([held, nu]) => { store.unitPerfects = {}; held.forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
-      store.unitPerfects[nu] = badgeThresholdFor(nu); store.pendingBadgeUnlocks = []; store.retroBadgePending = [];
-      theme.muteBanners = false; theme.reduceMotion = false; applyTheme(); saveStore();
-      document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert,#toast,.vroom-chat-alert').forEach(n => n.remove());
-      showHome(); }"""
-    UI = """() => { const r = s => { const e = document.querySelector(s); if(!e) return null; const b = e.getBoundingClientRect();
-        const cs = getComputedStyle(e); return { top: b.top, bottom: b.bottom, left: b.left, right: b.right, pe: cs.pointerEvents, vis: cs.visibility }; };
-      return { focus: document.body.classList.contains('cutscene-focus'), chat: r('.chatdock-btn'), tabs: r('.bottomtabs'), vh: innerHeight,
-        toast: !!document.querySelector('#toast'), ping: !!document.querySelector('.vroom-chat-alert.is-ping'), alert: !!document.querySelector('#dailyalert'),
-        toastText: (document.querySelector('#toast') || {}).textContent || '' }; }"""
-    out_of_view = lambda u: (u["chat"] is None or u["chat"]["bottom"] <= 0 or u["chat"]["vis"] == "hidden") and \
-        (u["tabs"] is None or u["tabs"]["top"] >= u["vh"] or u["tabs"]["vis"] == "hidden")
-    in_view = lambda u: bool(u["chat"]) and u["chat"]["top"] >= 0 and u["chat"]["bottom"] <= u["vh"] and \
-        bool(u["tabs"]) and u["tabs"]["bottom"] <= u["vh"] + 1
-    untappable = lambda u: (u["chat"] is None or u["chat"]["pe"] == "none") and (u["tabs"] is None or u["tabs"]["pe"] == "none")
-
-    # 1. no XP for a badge, anywhere it was said
-    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
-    xp = pg.evaluate("""() => { const base = { good: 12, answered: 12, elapsedMs: 60000, okList: Array(12).fill(true), hundos: 1, wholeUnits: 1 };
-      const a = computeRunXp(base), b = computeRunXp(Object.assign({}, base, { badgesPaid: ['Identity Crimes', 'Penal Code'] }));
-      let item = null; try{ item = rsUnlockItems({ colors: [], badges: ['Identity Crimes'], retroBadges: [], characters: [], banners: [], fx: [], justBeatSpeed: null, units: [], flare: null }).find(i => i.kind === 'badge'); }catch(e){}
-      return { a: a.total, b: b.total, lines: b.lines.filter(l => l.badge || l.key === 'badge').map(l => l.label + ' ' + l.value),
-               sub: item ? item.sub : null, mastery: typeof MASTERY_BONUS !== 'undefined' ? MASTERY_BONUS : null }; }""")
-    check("a badge pays no XP: no badge line in the XP box, and a run that finds two badges totals the same as one that finds none",
-          not xp["lines"] and xp["a"] == xp["b"] and xp["mastery"] is None, xp)
-    check("the results' badge card says nothing about XP", xp["sub"] is not None and "XP" not in xp["sub"], xp["sub"])
+def check_b320e_cracks(br):
+    """Build 320 (b320e). Madison: "Could each rank after silver (so starting
+    the rank up to gold cutscene) start introducing cracks to the planet
+    system? At gold it would be super small but noticeable, and each rank it
+    would become a bigger and bigger crack and then super nova would have the
+    super nova one ... the burn mark ... seems disconnected from the other
+    crack so ensure it seems to be connected ... after the flash the crack
+    won't instantly be there ... so you can see the crack(s) form ... ensure
+    the planet still has constant effects ... Ensure fragmented pieces still
+    come out." And: "when the main menu opens, the large planet is black and
+    then you can see it."
+    - Home at every rank: no crack at Bronze or Silver; from Gold one, read
+      off the scar's own burn canvas, that GROWS: more of it each rank, and
+      everything solid at a rank still drawn at the next (98%+);
+    - Supernova: the crack, the crater and the broken shine are ONE dark
+      piece - the impact, the far end of the long arm and the middle of the
+      shine all in the largest dark component; Amethyst already has the
+      shine starting to break, less than Supernova;
+    - the rank-up: on the frames just after the flash the new planet shows
+      none of the new crack (Silver to Gold: an empty burn, the forming
+      layers at nothing); later in the scene all of it, the burn canvas
+      the Gold art itself; a light ran along it and chips fell;
+    - Supernova's scene (from Amethyst): after the flash the Amethyst crack
+      and nothing of the blast's; by the title the full scar, its flakes
+      showing and looping;
+    - Home's Supernova planet: the flakes still drift off it (looping and
+      moving), with glints along the crack and smoke off the burn, all
+      running loops;
+    - a return to Home: the planet whole on the first frame (its svg at full
+      opacity, its centre as bright as half a second later).
+    Fails on a73c681: no crack below Supernova, the shine apart from the
+    crack, nothing forms, and Home's planet at 0 on its first frame back."""
+    print("\n320e. the crack grows rank by rank, forms in the rank-up, and Home's planet is there on its first frame")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=2)
+    rows = {}
+    for k in ["rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan"]:
+        rows[k] = pg.evaluate(B320E_RANK, k)
+    print("        " + "; ".join("%s %s" % (k, (r.get("n"), r.get("kept"), r.get("was"))) for k, r in rows.items()))
+    check("no crack below Gold (Bronze, Silver)", not rows["rookie"].get("scar") and not rows["ranger"].get("scar"),
+          (rows["rookie"].get("scar"), rows["ranger"].get("scar")))
+    up = ["veteran", "vanguard", "adept", "elite", "titan"]
+    ns = [rows[k].get("n", 0) for k in up]
+    check("from Gold every rank has a crack on Home, and it grows every rank (pixels drawn)",
+          all(rows[k].get("scar") for k in up) and ns[0] > 150 and all(b > a * 1.15 for a, b in zip(ns, ns[1:])), ns)
+    check("Gold's is small: under a fifth of Supernova's", 150 < ns[0] < ns[-1] * .2, (ns[0], ns[-1]))
+    sup = [(rows[k].get("kept", 0) / max(1, rows[k].get("was", 0))) for k in up[1:]]
+    check("each rank's crack holds the one before it: 98%+ of what was solid is still drawn",
+          all(rows[k].get("was", 0) > 50 for k in up[1:]) and all(x >= .98 for x in sup), [round(x, 3) for x in sup])
+    t = rows["titan"]
+    check("Supernova: the impact, the far end of the crack and the broken shine are ONE dark piece",
+          t.get("impact", 0) > 20 and t.get("shine", 0) > 20 and t.get("farX", 1) < .12,
+          {k: t.get(k) for k in ("piece", "impact", "shine", "farX")})
+    e = rows["elite"]
+    check("the burn begins at Amethyst: its shine already breaking, less than Supernova's",
+          0 < e.get("shineDark", 0) < t.get("shineDark", 0) * .8 and rows["adept"].get("shineDark", 0) == 0,
+          (rows["adept"].get("shineDark"), e.get("shineDark"), t.get("shineDark")))
+    check("only Supernova's has the flakes and the ember", t.get("frags", 0) >= 6 and t.get("ember") and not any(rows[k].get("frags") or rows[k].get("ember") for k in up[:-1]),
+          [(rows[k].get("frags"), rows[k].get("ember")) for k in up])
+    # Home's Supernova planet, alive: flakes, glints, smoke
+    live = pg.evaluate("""async () => { const sc = document.querySelector('.panel.home .cosmic-scar'); if(!sc) return null;
+      const run = s => [...sc.querySelectorAll(s)].filter(e => e.getAnimations().some(a => a.playState === 'running' && a.effect.getComputedTiming().iterations === Infinity)).length;
+      const tf = () => [...sc.querySelectorAll('.csc-frag')].map(e => getComputedStyle(e).transform).join('|');
+      const a = tf(); await new Promise(r => setTimeout(r, 700));
+      return { frags: sc.querySelectorAll('.csc-frag').length, fragsRun: run('.csc-frag'), moved: a !== tf(),
+        glints: sc.querySelectorAll('.csc-glint').length, glintsRun: run('.csc-glint'), smoke: sc.querySelectorAll('.csc-smoke').length, smokeRun: run('.csc-smoke') }; }""")
+    check("Home's Supernova planet: the flakes still come off it (looping, moving), with glints along the crack and smoke off the burn",
+          bool(live) and live["frags"] >= 6 and live["fragsRun"] == live["frags"] and live["moved"] and live["glints"] >= 4 and live["glintsRun"] == live["glints"]
+          and live["smoke"] >= 2 and live["smokeRun"] == live["smoke"], live)
     ctx.close()
 
-    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
-        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
-        pg.evaluate(SEED, [HELD, NEW])
-        pg.wait_for_timeout(700)
-        pg.evaluate("() => { document.querySelectorAll('.app-banner,.daily-alert,#toast').forEach(n => n.remove()); }")
-        before = pg.evaluate(UI)
-        clk = _Stepper320(pg)
-        T = pg.evaluate("() => (typeof BC_T === 'object' ? BC_T : {})")
-        crack, opn, fly = T.get("crack", 8450) / 1000, T.get("open", 8950) / 1000, T.get("fly", 11700) / 1000
-        pg.evaluate("([nu]) => { window.__bcDone = false; playBadgeCaseScene([nu], () => { window.__bcDone = true; }); }", [NEW])
-        while clk.t < 2.0:
-            clk.step(1 / 30)
-        during = pg.evaluate(UI)
-        check(f"{dev}: during the badge scene the chat button and the tab bar are out of frame and take no tap (both were up before it)",
-              in_view(before) and during["focus"] and out_of_view(during) and untappable(during), {"before": before, "during": during})
-        # 2. notifications raised during the scene are held
-        pg.evaluate("""() => { showToast('b320c toast'); showChatPreview('Ada', 'b320c ping', () => {});
-          try{ showDailyAlert('b320c alert'); }catch(e){} }""")
-        clk.step(0.5)
-        held = pg.evaluate(UI)
-        intro_sub = pg.evaluate("() => (document.querySelector('.bc-intro .bc-sub') || {}).textContent || ''")
-        check(f"{dev}: a toast, a chat ping and a notice raised during the scene are held, not shown over it; the badge's own line has no XP",
-              not held["toast"] and not held["ping"] and not held["alert"] and intro_sub and "XP" not in intro_sub,
-              {"toast": held["toast"], "ping": held["ping"], "alert": held["alert"], "intro": intro_sub})
-        # 3. the colours out of the crack: one per badge already in the case
-        while clk.t < crack + 0.4:
-            clk.step(1 / 30)
-        reg = pg.evaluate("""() => { const t = document.querySelector('.bc-tray'), f = document.querySelector('.bc-front');
-          if(!t || !f) return null; const a = t.getBoundingClientRect(), b = f.getBoundingClientRect();
-          return [a.left - a.width * .1, b.top - a.height * .45, a.right + a.width * .1, b.top + b.height * .4]; }""")
-        cols = pg.evaluate("(us) => us.map(u => (badgeThemeFor(u) || {}).p)", HELD)
-        hues_found = []
-        if reg:
-            im = _I.open(io.BytesIO(pg.screenshot())).convert("RGB")
-            x0, y0, x1, y1 = [int(round(v)) for v in reg]
-            crop = im.crop((max(0, x0), max(0, y0), min(im.width, x1), min(im.height, y1)))
-            px = list(crop.getdata())
-            def hue(c):
-                hh, ss, vv = colorsys.rgb_to_hsv(*[v / 255 for v in c])
-                return hh * 360, ss, vv
-            sat = [hue(p) for p in px]
-            for c in cols:
-                ch = hue(tuple(int(c[i:i + 2], 16) for i in (1, 3, 5)))[0]
-                n = sum(1 for (hh, ss, vv) in sat if ss > .3 and vv > .28 and min(abs(hh - ch), 360 - abs(hh - ch)) < 14)
-                if n >= 0.004 * len(px):
-                    hues_found.append(c)
-        check(f"{dev}: as the lid cracks, light leaks out in the colours of the badges already in the case (at least 3 of the 5 seen)",
-              len(hues_found) >= 3, {"found": hues_found, "of": cols})
-        # 4. the token never inside the lid's area while it opens; it glows before it lands
-        LID = """() => { const fl = document.querySelector('.bc-flyer .bc-face.is-front') || document.querySelector('.bc-flyer');
-          const boxes = ['.bc-lid-in', '.bc-lid-out', '.bc-lid-front'].map(s => document.querySelector(s)).filter(Boolean).map(e => e.getBoundingClientRect());
-          if(!fl || !boxes.length) return null; const f = fl.getBoundingClientRect();
-          let worst = 0; boxes.forEach(b => { const ix = Math.min(f.right, b.right) - Math.max(f.left, b.left), iy = Math.min(f.bottom, b.bottom) - Math.max(f.top, b.top);
-            if(ix > 0 && iy > 0) worst = Math.max(worst, ix * iy / Math.max(1, f.width * f.height)); });
-          return { worst: Math.round(worst * 1000) / 1000, flyer: [f.left, f.top, f.right, f.bottom].map(Math.round) }; }"""
-        worst = {"worst": 0}
-        while clk.t < opn + 2.6:
-            clk.step(1 / 30)
-            r = pg.evaluate(LID)
-            if r and r["worst"] > worst["worst"]:
-                worst = dict(r, t=round(clk.t, 2))
-        check(f"{dev}: the token is never inside the lid's area from the crack until the lid has stopped",
-              worst["worst"] <= 0.01, worst)
-        while clk.t < fly - 0.3:
-            clk.step(1 / 15)
-        glow = pg.evaluate("""() => { const a = document.querySelector('.bc-flyer .bc-aura'), fl = document.querySelector('.bc-flyer');
-          if(!fl) return null; const b = fl.getBoundingClientRect(); let op = 0;
-          if(a){ op = 1; for(let e = a; e && e !== document.body; e = e.parentElement) op *= parseFloat(getComputedStyle(e).opacity); }
-          return { op: Math.round(op * 100) / 100, box: [b.left, b.top, b.right, b.bottom] }; }""")
-        tint = None
-        if glow:
-            im = _I.open(io.BytesIO(pg.screenshot())).convert("RGB")
-            l, t_, r_, b_ = glow["box"]
-            cw = r_ - l
-            ring = im.crop((int(l - cw * .12), int(t_ + cw * .3), int(l - cw * .01), int(b_ - cw * .3)))
-            ref = im.crop((2, int(t_ + cw * .3), 16, int(b_ - cw * .3)))
-            pur = lambda c: (c.getpixel((0, 0)) and None)
-            import statistics
-            def purple(cr):
-                d = list(cr.getdata())
-                return statistics.mean((p[0] + p[2]) / 2 - p[1] for p in d) if d else 0
-            tint = {"ring": round(purple(ring), 1), "backdrop": round(purple(ref), 1)}
-        check(f"{dev}: the badge glows in its own colour before it lands - its light is on and tints the dark round it",
-              bool(glow) and glow["op"] >= 0.9 and tint and tint["ring"] - tint["backdrop"] >= 5, {"glow": glow, "tint": tint})
-        # 5. the caption and the case's name
-        while clk.t < fly + 1.6:
-            clk.step(1 / 15)
-        words = pg.evaluate("""() => ({ kick: (document.querySelector('.bc-words .bc-kicker') || {}).textContent || '',
-          sub: (document.querySelector('.bc-words .bc-sub') || {}).textContent || '',
-          plate: (document.querySelector('.bc-front .nova-case-sideplate') || {}).textContent || '',
-          lid: (document.querySelector('.bc-lid-label') || {}).textContent || '' })""")
-        check(f"{dev}: the caption says 'Found 6 of 16 missing badges' under 'LEVEL 1 BADGE CASE', and the case says Level 1 Badge Case on its plate and in its lid",
-              re.match(r"^Found 6 of 16 missing badges$", words["sub"]) is not None and words["kick"].upper() == "LEVEL 1 BADGE CASE"
-              and words["plate"] == "Level 1 Badge Case" and words["lid"] == "Level 1 Badge Case", words)
-        # 6. the end: focus off, the controls back, the held items shown
-        while clk.t < 40 and not pg.evaluate("() => window.__bcDone"):
-            clk.step(0.25)
-        for _ in range(12):
-            clk.step(0.1)
-        after = pg.evaluate(UI)
-        check(f"{dev}: when the scene ends the chat button and the tab bar slide back, and what was held is shown",
-              not after["focus"] and in_view(after) and after["ping"] and after["toast"] and "b320c" in after["toastText"],
-              {"after": {k: after[k] for k in ("focus", "toast", "ping", "alert")}, "chat": after["chat"], "tabs": after["tabs"]})
+    # the rank-up: Silver to Gold, and Amethyst to Supernova, frame-stepped
+    FORM = """() => { const o = document.getElementById('supernova-cutscene'); if(!o) return null;
+      const h = o.querySelector('.rank-after .cosmic-hero-wrap'), sc = h && h.querySelector(':scope > .cosmic-scar');
+      const eff = el => { let v = 1; for(let x = el; x && x !== o; x = x.parentElement){ const c = getComputedStyle(x); if(c.display === 'none' || c.visibility === 'hidden') return 0; v *= +c.opacity; } return v; };
+      const cnt = c => { if(!c) return 0; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for(let i = 3; i < d.length; i += 4) if(d[i] > 64) n++; return n; };
+      const L = sc ? [...sc.querySelectorAll('canvas.csc-form')] : [];
+      const burn = sc && sc.querySelector('canvas.csc-burn');
+      return { c: o.className, scar: !!sc, base: cnt(burn), layers: L.length, newVis: +L.reduce((s, c) => s + cnt(c) * eff(c), 0).toFixed(0),
+        runs: sc ? [...sc.querySelectorAll('.csc-run')].filter(e => eff(e) > .3).length : 0, chips: sc ? [...sc.querySelectorAll('.csc-chip')].filter(e => eff(e) > .3).length : 0,
+        frags: sc ? [...sc.querySelectorAll('.csc-frag')].filter(e => eff(e) > .3).length : 0, formed: !!(sc && sc.classList.contains('is-formed')) }; }"""
+    for tier, frm in (("veteran", "ranger"), ("titan", "elite")):
+        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+        pg.evaluate(B320E_RANK, frm)
+        ref = pg.evaluate("""(st) => { const a = st >= CRACK_TOP ? cosmicScarArt() : cosmicScarArt(st), b = st - 1 > 0 ? cosmicScarArt(st - 1) : null;
+          const cnt = c => { if(!c) return 0; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for(let i = 3; i < d.length; i += 4) if(d[i] > 64) n++; return n; };
+          return [cnt(b && b.burn), cnt(a && a.burn)]; }""", 1 if tier == "veteran" else 5) if pg.evaluate("() => typeof CRACK_TOP !== 'undefined'") else [0, 0]
+        pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
+        fn = "playSupernovaCutscene({ from: '%s', onDone(){} })" % frm if tier == "titan" else "playTierCutscene('%s', { from: '%s', onDone(){} })" % (tier, frm)
+        pg.evaluate("() => { " + fn + "; }")
+        rows, swap, burst, t = [], None, None, 0.0
+        for i in range(1, 30 * 40):
+            t_ = t; t = i / 30
+            pg.evaluate(CUTSPIN_SEEK, t)
+            pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
+            pg.evaluate(CUTSPIN_SEEK, t)
+            c = pg.evaluate("() => { const o = document.getElementById('supernova-cutscene'); return o ? o.className : null; }")
+            if c is None:
+                break
+            if "supernova-burst" in c.split() and burst is None:
+                burst = i
+            if "is-swapped" in c.split() and swap is None:
+                swap = i
+            if swap is not None and (i - swap) % 3 == 0:
+                rows.append((i - swap, pg.evaluate(FORM)))
+            if "rank-outro" in (c or "").split():
+                break
         ctx.close()
+        name = "Silver to Gold" if tier == "veteran" else "Amethyst to Supernova"
+        first = [r for d, r in rows if d <= 9]
+        late = [r for d, r in rows if r and "supernova-settle" in r["c"].split()]
+        check("%s: on the frames just after the flash the new planet shows none of its new crack (the old one only: %s px)" % (name, ref[0]),
+              bool(first) and all(r and r["newVis"] == 0 and abs(r["base"] - ref[0]) <= ref[0] * .01 + 2 for r in first)
+              and (tier != "titan" or all(r["frags"] == 0 for r in first)),
+              [(r["base"], r["newVis"], r["frags"]) for r in first[:3]])
+        grew = [d + (swap or 0) - (burst or 0) for d, r in rows if r and r["newVis"] > 0]
+        check("%s: it forms when it can be seen - from 1s+ after the flash, growing, a light running along it and chips falling (frames after the flash)" % name,
+              bool(grew) and burst is not None and grew[0] >= 30 and len(grew) >= 8 and any(r["runs"] for d, r in rows if r) and any(r["chips"] for d, r in rows if r),
+              (grew[:1], len(grew), max([r["runs"] for d, r in rows if r] or [0]), max([r["chips"] for d, r in rows if r] or [0])))
+        check("%s: by the title it is all there - the burn canvas is the new stage's art (%s px)" % (name, ref[1]),
+              bool(late) and late[-1]["formed"] and abs(late[-1]["base"] - ref[1]) <= ref[1] * .01 + 2 and ref[1] > ref[0]
+              and (tier != "titan" or late[-1]["frags"] >= 6),
+              late and (late[-1]["base"], late[-1]["formed"], late[-1]["frags"]))
 
-    # 7. every other cutscene turns focus on, and nesting under a journey's own hold works
-    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
-    pg.evaluate(SEED, [HELD, NEW]); pg.wait_for_timeout(600)
-    clk = _Stepper320(pg)
-    SCENES = [("a secret flare scene", "() => { window.__sd = false; playVoidFlareScene(() => { window.__sd = true; }); }", ".sf-scene"),
-              ("a rank cutscene outside the rank-up journey", "() => { window.__sd = false; playTierCutscene('vanguard'); }", "#supernova-cutscene"),
-              ("the Supernova cutscene", "() => { window.__sd = false; playSupernovaCutscene(); }", "#supernova-cutscene")]
-    for (label, js, sel) in SCENES:
-        try:
-            pg.evaluate(js)
-        except Exception as e:
-            check(f"focus during {label}", False, str(e)[:160]); continue
-        for _ in range(45):
-            clk.step(1 / 30)
-        mid = pg.evaluate(UI)
-        up = pg.evaluate("(s) => !!document.querySelector(s)", sel)
-        k = 0
-        while k < 400 and pg.evaluate("(s) => !!document.querySelector(s)", sel):
-            clk.step(0.2); k += 1
-        for _ in range(10):
-            clk.step(0.1)
-        end = pg.evaluate(UI)
-        check(f"{label}: focus is on while it plays (chat button and tab bar out of frame) and off once it has gone",
-              up and mid["focus"] and out_of_view(mid) and not end["focus"], {"up": up, "mid": mid["focus"], "end": end["focus"], "chat": mid["chat"], "tabs": mid["tabs"]})
-        pg.evaluate("() => { document.querySelectorAll('.sf-scene, #supernova-cutscene').forEach(n => n.remove()); }")
-    # microtasks only: the page's clock is paused here, so no setTimeout
-    nest = pg.evaluate("""async () => { const tick = () => Promise.resolve().then(() => Promise.resolve());
-      setCutsceneFocus(true); const el = document.createElement('div'); el.id = 'vroom-cutscene'; document.body.appendChild(el);
-      await tick(); el.remove(); await tick(); const b = document.body.classList.contains('cutscene-focus');
-      setCutsceneFocus(false); await tick(); const c = document.body.classList.contains('cutscene-focus');
-      const el2 = document.createElement('div'); el2.id = 'vroom-cutscene'; document.body.appendChild(el2); await tick();
-      const a = document.body.classList.contains('cutscene-focus'); el2.remove(); await tick();
-      return { a, b, c, d: document.body.classList.contains('cutscene-focus') }; }""")
-    check("a scene inside a journey that holds focus itself: the scene ending leaves the journey's hold on; the journey's end takes it off",
-          nest == {"a": True, "b": True, "c": False, "d": False}, nest)
+    # Home's planet whole on its first frame back
+    from PIL import Image, ImageStat
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=1)
+    pg.evaluate(B320E_RANK, "veteran")
+    pg.evaluate("() => showRankings()"); pg.wait_for_timeout(400)
+    pg.evaluate(B318_STEP)
+    def centre(k):
+        r = pg.evaluate(B318_AT, k)
+        box = pg.evaluate("""() => { const c = document.querySelector('.screen-home-actual .cosmic-hero-main circle[fill^="url(#cosmicSphereGrad"]').getBoundingClientRect();
+          return { x: c.left + c.width * .3, y: c.top + c.height * .3, width: c.width * .4, height: c.height * .4 }; }""")
+        im = Image.open(io.BytesIO(pg.screenshot(clip=box))).convert("L")
+        return r, ImageStat.Stat(im).mean[0]
+    r0, l0 = centre(0)
+    r1, l1 = centre(30)
     ctx.close()
+    check("a return to Home: the planet whole on its first frame - full opacity, its centre as bright as half a second later (%.0f against %.0f)" % (l0, l1),
+          r0["ret"] and r0["planet"] >= .99 and (r0["scar"] or 0) >= .99 and l0 >= .9 * l1 and l1 > 40, (r0, round(l0, 1), round(l1, 1)))
 
-    # 8. the name, across the app; the slots follow the unit list (a fake 17th unit)
-    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
-        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
-        pg.evaluate(SEED, [HELD, NEW]); pg.wait_for_timeout(500)
-        names = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
-          store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
-          theme.reduceMotion = true; applyTheme(); showRanksScreen('badges'); await wait(900);
-          const head = (document.querySelector('.badges-tab .badges-head') || {}).textContent || '';
-          const tplate = (document.querySelector('.badges-tab .nova-case-sideplate') || {}).textContent || '';
-          showProfile('profile'); await wait(900);
-          const pplate = (document.querySelector('.pf-case .nova-case-sideplate') || {}).textContent || '';
-          let kick = ''; try{ kick = badgeDetail('Identity Crimes').kicker; }catch(e){}
-          return { head, tplate, pplate, kick }; }""")
-        check(f"{dev}: 'Level 1 Badge Case' heads the Badges screen and is on its case, on the Profile card's case and on a badge's card",
-              "Level 1 Badge Case" in names["head"] and names["tplate"] == "Level 1 Badge Case" and names["pplate"] == "Level 1 Badge Case"
-              and names["kick"] == "Level 1 Badge Case", names)
-        slots = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
-          QUESTIONS.push({ topic: 'Zz Fake Unit', q: 'b320c fake', choices: ['a', 'b'], answer: 0, src: 'zz1' });
-          try{ topicsInBankCache = null; }catch(e){} try{ unitTeachOrderCache = null; }catch(e){} try{ UNIT_SIZE_CACHE = null; }catch(e){}
-          const n = unitsInTeachingOrder().length;
-          /* a slot counts if it is inside the tray, the same size as the
-             others (within 6%), and clear of every other slot */
-          /* in layout terms (offsets, not the projected 3D boxes, where
-             perspective makes far rows smaller) */
-          const rect = (e, root) => { let x = 0, y = 0; for(let n = e; n && n !== root; n = n.offsetParent){ x += n.offsetLeft; y += n.offsetTop; }
-            return { left: x, top: y, right: x + e.offsetWidth, bottom: y + e.offsetHeight, width: e.offsetWidth, height: e.offsetHeight }; };
-          const inside = (cells, box) => { const b = { left: 0, top: 0, right: box.clientWidth + 2, bottom: box.clientHeight + 2 };
-            const hs = cells.map(c => rect(c, box));
-            const med = k => hs.map(r => r[k]).sort((x, y) => x - y)[Math.floor(hs.length / 2)] || 0;
-            const mw = med('width'), mh = med('height');
-            const lap = (r, i) => hs.some((q, j) => j !== i && Math.min(r.right, q.right) - Math.max(r.left, q.left) > 1 && Math.min(r.bottom, q.bottom) - Math.max(r.top, q.top) > 1);
-            return hs.filter((r, i) => r.left >= b.left - 1 && r.right <= b.right + 1 && r.top >= b.top - 1 && r.bottom <= b.bottom + 1
-              && Math.abs(r.width - mw) <= mw * .06 && Math.abs(r.height - mh) <= mh * .06 && !lap(r, i)).length; };
-          showRanksScreen('badges'); await wait(900);
-          const tcells = [...document.querySelectorAll('.badges-tab .ncase-cell')], tl = document.querySelector('.badges-tab .ncase-lining');
-          const tab = { n: tcells.length, inside: tl ? inside(tcells, tl) : 0 };
-          showHome(); await wait(400);
-          theme.reduceMotion = true; playBadgeCaseScene(['Identity Crimes'], () => {}); await wait(300);
-          const scells = [...document.querySelectorAll('.bc-scene .bc-slot')], sl = document.querySelector('.bc-scene .bc-lining');
-          const cut = { n: scells.length, inside: sl ? inside(scells, sl) : 0 };
-          document.querySelectorAll('.bc-scene').forEach(e => e.remove());
-          return { units: n, tab, cut }; }""")
-        check(f"{dev}: with a seventeenth unit the case has seventeen slots, every one inside its tray, on the Badges screen and in the cutscene",
-              slots["units"] == 17 and slots["tab"] == {"n": 17, "inside": 17} and slots["cut"] == {"n": 17, "inside": 17}, slots)
-        ctx.close()
+
 class _StepperS(_Stepper):
     """_Stepper, paused at the page's real time. Python's pause_at reads a
     NUMBER as seconds; _Stepper hands it milliseconds, which puts the page
@@ -21602,195 +21894,927 @@ def check_b320g_inspect(br):
           all(r[0] for r in rm) and all(r[1] == 1 for r in rm) and rm[0][2] is not None and rm[0][2] < .6 and rm[-1][2] == 1,
           rm[:3] + rm[-1:])
 
-# Build 320 (b320e): the planet cracks rank by rank, the crack forms in the
-# rank-up, the Supernova planet remembers the blast, Home's planet whole on
-# its first frame back.
-B320E_RANK = """async (k) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+
+
+B320H_SEED = """async (o) => { const wait = ms => new Promise(r => setTimeout(r, ms));
   const U = topicsIn(QUESTIONS); store.unitPerfects = {};
-  const rule = TIER_UNLOCKS[k] || { level: 1, badges: 0 };
-  U.slice(0, rule.badges).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
-  store.lifetime = store.lifetime || {}; store.lifetime.points = xpForLevel(rule.level) + 50;
-  store.rankFloor = 0; store.levelFloor = 0; store.onboardingComplete = true;
-  store.supernovaAchieved = k === 'titan'; store.pendingSupernovaCutscene = false; store.pendingTierCutscene = null;
-  store.rankUpShown = TIER_ORDER_FULL.indexOf(k) + 1; store.rankUpFrom = null; store.rankMapSeen = 9; store.rankMapFx244 = true;
-  store.savedCodeSaved = true; store.pendingBadgeUnlocks = [];
-  try{ localStorage.removeItem('class26e.rankup.prog'); }catch(e){}
-  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); }catch(e){}
-  try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); homeUnlockPlaying = false; }catch(e){}
-  saveStore(); showHome(); scrollTo(0, 0); await wait(700);
-  document.querySelectorAll('.rs-spot,.daily-alert,#tour-overlay,.update-banner,.toast,.scene-bridge').forEach(x => x.remove());
-  const h = document.querySelector('.panel.home .cosmic-hero-wrap'), sc = h && h.querySelector(':scope > .cosmic-scar');
-  const cv = sc && sc.querySelector('canvas.csc-burn');
-  const out = { rank: rankOf(store), scar: !!sc, frags: sc ? sc.querySelectorAll('.csc-frag').length : 0, ember: !!(sc && sc.querySelector('canvas.csc-ember')) };
-  if(!cv) return out;
-  const N = cv.width, d = cv.getContext('2d').getImageData(0, 0, N, N).data, A = new Uint8Array(N * N);
-  let n = 0; for(let k2 = 0; k2 < N * N; k2++){ A[k2] = d[k2 * 4 + 3]; if(A[k2] > 64) n++; }
-  /* each stage against the one before it: of what was solid (alpha > 128),
-     how much is still drawn (alpha > 64) */
-  const P = window.__b320prev;
-  if(P && P.length === A.length){ let was = 0, kept = 0; for(let k2 = 0; k2 < A.length; k2++) if(P[k2] > 128){ was++; if(A[k2] > 64) kept++; } out.was = was; out.kept = kept; }
-  window.__b320prev = A;
-  /* the largest dark piece (alpha > 180, dark), and whether it holds the
-     impact, the far end of the long arm and the middle of the broken shine */
-  const dark = new Uint8Array(N * N);
-  for(let k2 = 0; k2 < N * N; k2++){ const l = (d[k2 * 4] + d[k2 * 4 + 1] + d[k2 * 4 + 2]) / 3; if(d[k2 * 4 + 3] > 180 && l < 60) dark[k2] = 1; }
-  const lab = new Int32Array(N * N).fill(-1); let best = -1, bestN = 0, id = 0;
-  for(let k2 = 0; k2 < N * N; k2++){ if(!dark[k2] || lab[k2] >= 0) continue; let c = 0; const st = [k2]; lab[k2] = id;
-    while(st.length){ const q = st.pop(); c++; const x = q % N, y = (q / N) | 0;
-      for(let dy = -1; dy <= 1; dy++) for(let dx = -1; dx <= 1; dx++){ const xx = x + dx, yy = y + dy; if(xx < 0 || yy < 0 || xx >= N || yy >= N) continue;
-        const r = yy * N + xx; if(dark[r] && lab[r] < 0){ lab[r] = id; st.push(r); } } }
-    if(c > bestN){ bestN = c; best = id; } id++; }
-  const near = (px, py, rr) => { let hit = 0; const cx = px / 100 * N, cy = py / 100 * N, R = rr / 100 * N;
-    for(let y = Math.max(0, cy - R | 0); y < Math.min(N, cy + R); y++) for(let x = Math.max(0, cx - R | 0); x < Math.min(N, cx + R); x++)
-      if((x - cx) * (x - cx) + (y - cy) * (y - cy) <= R * R && lab[y * N + x] === best) hit++; return hit; };
-  let minX = N; for(let k2 = 0; k2 < N * N; k2++) if(lab[k2] === best) minX = Math.min(minX, k2 % N);
-  const sh = (typeof SCAR_SHINE !== 'undefined') ? SCAR_SHINE : { x: -.33, y: -.35 };
-  let shineDark = 0; { const cx = (sh.x + 1) / 2 * N, cy = (sh.y + 1) / 2 * N, R = .14 * N;
-    for(let y = Math.max(0, cy - R | 0); y < Math.min(N, cy + R); y++) for(let x = Math.max(0, cx - R | 0); x < Math.min(N, cx + R); x++) if(dark[y * N + x]) shineDark++; }
-  Object.assign(out, { N, n, piece: bestN, impact: near(65, 63.5, 4), shine: near((sh.x + 1) * 50, (sh.y + 1) * 50, 7), farX: +(minX / N).toFixed(3), shineDark });
-  return out; }"""
+  U.slice(0, o.badges).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+  store.rankFloor = 0; store.levelFloor = 0;
+  store.lifetime.points = xpForLevel(o.level) + Math.round((xpForLevel(o.level + 1) - xpForLevel(o.level)) * .8);
+  store.rankMapFx244 = true; store.rankMapSeen = 9; store.rankUpShown = null; store.savedCodeSaved = true;
+  store.banner = o.banner || '';
+  ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour'].forEach(k => store[k] = true);
+  theme.accent = o.accent || 'ink'; applyTheme(); saveTheme(); saveStore();
+  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){}
+  showProfile('profile'); await wait(900);
+  document.querySelectorAll('.daily-alert, .toast, #daily-lock-tip, #intro-pop, .rs-spot, #tour-overlay, #tour-tooltip, .unlock-pop').forEach(n => n.remove());
+  return [rankOf(store), levelOf(store), badgeCountOf(store), store.lifetime.points]; }"""
+
+B320H_CARD = """() => { const hero = document.querySelector('.profile-hero'); const cs = getComputedStyle(hero);
+  const rgb = v => { v = String(v || '').trim(); let m;
+    if((m = v.match(/^#([0-9a-f]{6})$/i))) return [0, 2, 4].map(i => parseInt(m[1].substr(i, 2), 16));
+    if((m = v.match(/color\\(srgb\\s+([\\d.e-]+)\\s+([\\d.e-]+)\\s+([\\d.e-]+)/))) return [m[1], m[2], m[3]].map(x => Math.round(parseFloat(x) * 255));
+    if((m = v.match(/rgba?\\(\\s*([\\d.]+)[ ,]+([\\d.]+)[ ,]+([\\d.]+)/))) return [m[1], m[2], m[3]].map(x => Math.round(parseFloat(x)));
+    return null; };
+  const cols = (cs.backgroundImage.match(/color\\(srgb[^)]*\\)|rgba?\\([^)]*\\)/g) || []).map(rgb).filter(Boolean)
+    .filter(c => !(c[0] === 0 && c[1] === 0 && c[2] === 0));
+  const root = getComputedStyle(document.documentElement);
+  const rank = rankOf(store);
+  const wants = [rgb(root.getPropertyValue('--theme-c2')), rgb(root.getPropertyValue('--rank-accent')), rank ? rgb(RANK_COLOR[rank]) : null].filter(Boolean);
+  const t1 = rgb(cs.getPropertyValue('--hero-t1')), t2 = rgb(cs.getPropertyValue('--hero-t2'));
+  const chroma = c => Math.max(...c) - Math.min(...c);
+  const near = (a, b) => Math.max(...a.map((x, i) => Math.abs(x - b[i])));
+  const r = hero.getBoundingClientRect();
+  return { t1, t2, maxChroma: Math.max(0, ...cols.map(chroma)), t1Chroma: t1 ? chroma(t1) : null,
+    t1ToRank: t1 ? Math.min(...wants.map(w => near(t1, w))) : null, wants,
+    box: [r.left, r.top, r.width, r.height], banner: store.banner || '', tint: store.banner ? bannerTintOf(store.banner) : null }; }"""
+
+B320H_XP = """() => { const st = document.querySelector('.pf-standing'); const card = document.querySelector('.profile-hero').getBoundingClientRect();
+  const vis = e => { if(!e.getClientRects().length) return false; for(let x = e; x && x !== st; x = x.parentElement){ const c = getComputedStyle(x); if(c.display === 'none' || c.visibility === 'hidden' || +c.opacity < .05) return false; } return true; };
+  const leaves = [...st.querySelectorAll('*')].filter(e => ![...e.children].some(c => (c.textContent || '').trim()) && (e.textContent || '').trim() && (e.textContent || '').trim() !== '·' && vis(e));
+  const rs = leaves.map(e => { const q = e.getBoundingClientRect(); return { t: e.textContent.trim(), l: q.left, r: q.right, top: q.top, b: q.bottom, h: q.height }; });
+  /* rows by vertical overlap; on a row, pieces more than 24px apart are separate */
+  const rows = [];
+  rs.slice().sort((a, b) => a.top - b.top).forEach(x => { const row = rows.find(rw => x.top < rw.b - 4 && x.b > rw.top + 4); if(row){ row.items.push(x); row.top = Math.min(row.top, x.top); row.b = Math.max(row.b, x.b); } else rows.push({ top: x.top, b: x.b, items: [x] }); });
+  let pieces = 0;
+  rows.forEach(rw => { const it = rw.items.sort((a, b) => a.l - b.l); pieces += 1; for(let i = 1; i < it.length; i++) if(it[i].l - it[i - 1].r > 24) pieces += 1; });
+  const total = Math.round(Number(levelStateFor(store).total) || 0).toLocaleString();
+  const label = st.querySelector('.pf-xpnums');
+  const lr = label.getBoundingClientRect(), lh = parseFloat(getComputedStyle(label).lineHeight) || 20;
+  const labelText = rs.filter(x => x.top >= lr.top - 2 && x.b <= lr.bottom + 2).sort((a, b) => a.l - b.l).map(x => x.t).join(' ').replace(/\s+/g, ' ');
+  return { texts: rs.map(x => x.t), rows: rows.length, pieces, totalShown: rs.some(x => x.t.indexOf(total) >= 0),
+    inCard: rs.every(x => x.l >= card.left - 1 && x.r <= card.right + 1) && rs.every(x => x.l >= 0 && x.r <= innerWidth),
+    labelOneLine: lr.height <= lh * 1.5 + 2, label: labelText }; }"""
+
+B320H_TAPS = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const got = [];
+  const real = window.showRanksScreen; window.showRanksScreen = t => { got.push(t); };
+  const c = el => { const q = el.getBoundingClientRect(); return [q.left + q.width / 2, q.top + q.height / 2]; };
+  const out = { badge: c(document.querySelector('.pf-standing .pf-badgecount')), bar: c(document.querySelector('.pf-standing .pf-xpbarwrap')),
+                label: c(document.querySelector('.pf-standing .pf-xpnums')) };
+  window.__b320got = got; window.__b320real = real; return out; }"""
+
+B320H_TABS = """() => {
+  const out = [];
+  const capOf = (el) => {
+    const cs = getComputedStyle(el);
+    const t = document.createElement('span');
+    t.textContent = 'H';
+    t.style.cssText = 'position:absolute;visibility:hidden;display:inline-block;line-height:1;font-family:' + cs.fontFamily +
+      ';font-size:' + cs.fontSize + ';font-weight:' + cs.fontWeight + ';text-box:trim-both cap alphabetic';
+    document.body.appendChild(t);
+    let h = t.getBoundingClientRect().height; t.remove();
+    if(!CSS.supports('text-box', 'trim-both cap alphabetic')){
+      const cv = document.createElement('canvas').getContext('2d');
+      cv.font = cs.fontWeight + ' 1000px ' + cs.fontFamily;
+      h = cv.measureText('H').actualBoundingBoxAscent / 1000 * parseFloat(cs.fontSize);
+    }
+    return h;
+  };
+  document.querySelectorAll('.has-seg-slider').forEach(seg => {
+    if(!seg.getClientRects().length) return;
+    const sl = seg.querySelector(':scope > .seg-slider');
+    const a = [...seg.children].find(c => c !== sl && (c.classList.contains('active') || c.classList.contains('is-on')));
+    if(!a || !a.getClientRects().length) return;
+    let host = a.querySelector('.tab-label') || a;
+    let tmp = null;
+    if(host === a && /flex/.test(getComputedStyle(a).display)){
+      const tn = [...a.childNodes].find(n => n.nodeType === 3 && n.nodeValue.trim());
+      if(tn){ tmp = document.createElement('span'); tmp.style.display = 'inline-block'; a.insertBefore(tmp, tn); tmp.appendChild(tn); host = tmp; }
+    }
+    const probe = document.createElement('span');
+    probe.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline;margin:0;padding:0;border:0';
+    host.appendChild(probe);
+    const base = probe.getBoundingClientRect().top;
+    probe.remove();
+    if(tmp){ const tn = tmp.firstChild; a.insertBefore(tn, tmp); tmp.remove(); }
+    const cap = capOf(host === tmp ? a : host);
+    const under = seg.classList.contains('sub-seg');
+    const pr = (under || !sl) ? a.getBoundingClientRect() : sl.getBoundingClientRect();
+    const capMid = base - cap / 2, pillMid = pr.top + pr.height / 2;
+    out.push({ seg: (seg.className.match(/profiletabs|sub-seg|chatdock-tabs|rs-tabs|cal-viewseg/g) || []).join(' '),
+      label: (a.querySelector('.tab-label') || a).textContent.trim().replace(/\\d+$/, ''),
+      off: +(capMid - pillMid).toFixed(2), pillH: +pr.height.toFixed(2), cap: +cap.toFixed(2) });
+  });
+  return out;
+}"""
+
+B320H_RUN = """async (o) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  const until = async (f, ms) => { const t0 = Date.now(); while(Date.now() - t0 < (ms || 8000)){ try{ if(f()) return true; }catch(e){} await wait(60); } return false; };
+  document.querySelectorAll('#tour-overlay, #tour-tooltip, #intro-pop').forEach(n => n.remove());
+  theme.autoAdvance = false;
+  const UNIT = 'Identity Crimes';
+  cfg.mode = 'drill'; cfg.units = [UNIT]; cfg.versions = {}; cfg.source = 'all'; cfg.size = 0; cfg.flashcards = false;
+  cfg.timer = o.timer || 'up'; cfg.timerMinutes = o.minutes || 5;
+  beginRun(freshOrder(QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === UNIT && inWholeUnit(QUESTIONS[i]))), null);
+  await until(() => document.querySelector('.qpanel .choice') && runStartTime != null, 9000);
+  for(let k = 0; k < (o.answer || 0); k++){
+    const qi = order[pos]; document.querySelector('.qpanel .choice[data-index="' + correctSlot(qi) + '"]').click(); await wait(160);
+    const at = pos; advance(); await until(() => pos === at + 1 && document.querySelector('.qpanel .choice'), 6000); await wait(80);
+  }
+  await wait(o.beforePause || 300);
+  pauseRun(); await wait(700);
+  return { pos, n: order.length }; }"""
+
+B320H_PAUSE = """() => { const s = document.getElementById('pause-save'), q = document.getElementById('pause-quit');
+  const r = e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.width, b.height]; };
+  return s && q ? { save: r(s), quit: r(q), saveBg: getComputedStyle(s).backgroundColor, quitBg: getComputedStyle(q).backgroundColor } : null; }"""
 
 
-def check_b320e_cracks(br):
-    """Build 320 (b320e). Madison: "Could each rank after silver (so starting
-    the rank up to gold cutscene) start introducing cracks to the planet
-    system? At gold it would be super small but noticeable, and each rank it
-    would become a bigger and bigger crack and then super nova would have the
-    super nova one ... the burn mark ... seems disconnected from the other
-    crack so ensure it seems to be connected ... after the flash the crack
-    won't instantly be there ... so you can see the crack(s) form ... ensure
-    the planet still has constant effects ... Ensure fragmented pieces still
-    come out." And: "when the main menu opens, the large planet is black and
-    then you can see it."
-    - Home at every rank: no crack at Bronze or Silver; from Gold one, read
-      off the scar's own burn canvas, that GROWS: more of it each rank, and
-      everything solid at a rank still drawn at the next (98%+);
-    - Supernova: the crack, the crater and the broken shine are ONE dark
-      piece - the impact, the far end of the long arm and the middle of the
-      shine all in the largest dark component; Amethyst already has the
-      shine starting to break, less than Supernova;
-    - the rank-up: on the frames just after the flash the new planet shows
-      none of the new crack (Silver to Gold: an empty burn, the forming
-      layers at nothing); later in the scene all of it, the burn canvas
-      the Gold art itself; a light ran along it and chips fell;
-    - Supernova's scene (from Amethyst): after the flash the Amethyst crack
-      and nothing of the blast's; by the title the full scar, its flakes
-      showing and looping;
-    - Home's Supernova planet: the flakes still drift off it (looping and
-      moving), with glints along the crack and smoke off the burn, all
-      running loops;
-    - a return to Home: the planet whole on the first frame (its svg at full
-      opacity, its centre as bright as half a second later).
-    Fails on a73c681: no crack below Supernova, the shine apart from the
-    crack, nothing forms, and Home's planet at 0 on its first frame back."""
-    print("\n320e. the crack grows rank by rank, forms in the rank-up, and Home's planet is there on its first frame")
-    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=2)
-    rows = {}
-    for k in ["rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan"]:
-        rows[k] = pg.evaluate(B320E_RANK, k)
-    print("        " + "; ".join("%s %s" % (k, (r.get("n"), r.get("kept"), r.get("was"))) for k, r in rows.items()))
-    check("no crack below Gold (Bronze, Silver)", not rows["rookie"].get("scar") and not rows["ranger"].get("scar"),
-          (rows["rookie"].get("scar"), rows["ranger"].get("scar")))
-    up = ["veteran", "vanguard", "adept", "elite", "titan"]
-    ns = [rows[k].get("n", 0) for k in up]
-    check("from Gold every rank has a crack on Home, and it grows every rank (pixels drawn)",
-          all(rows[k].get("scar") for k in up) and ns[0] > 150 and all(b > a * 1.15 for a, b in zip(ns, ns[1:])), ns)
-    check("Gold's is small: under a fifth of Supernova's", 150 < ns[0] < ns[-1] * .2, (ns[0], ns[-1]))
-    sup = [(rows[k].get("kept", 0) / max(1, rows[k].get("was", 0))) for k in up[1:]]
-    check("each rank's crack holds the one before it: 98%+ of what was solid is still drawn",
-          all(rows[k].get("was", 0) > 50 for k in up[1:]) and all(x >= .98 for x in sup), [round(x, 3) for x in sup])
-    t = rows["titan"]
-    check("Supernova: the impact, the far end of the crack and the broken shine are ONE dark piece",
-          t.get("impact", 0) > 20 and t.get("shine", 0) > 20 and t.get("farX", 1) < .12,
-          {k: t.get(k) for k in ("piece", "impact", "shine", "farX")})
-    e = rows["elite"]
-    check("the burn begins at Amethyst: its shine already breaking, less than Supernova's",
-          0 < e.get("shineDark", 0) < t.get("shineDark", 0) * .8 and rows["adept"].get("shineDark", 0) == 0,
-          (rows["adept"].get("shineDark"), e.get("shineDark"), t.get("shineDark")))
-    check("only Supernova's has the flakes and the ember", t.get("frags", 0) >= 6 and t.get("ember") and not any(rows[k].get("frags") or rows[k].get("ember") for k in up[:-1]),
-          [(rows[k].get("frags"), rows[k].get("ember")) for k in up])
-    # Home's Supernova planet, alive: flakes, glints, smoke
-    live = pg.evaluate("""async () => { const sc = document.querySelector('.panel.home .cosmic-scar'); if(!sc) return null;
-      const run = s => [...sc.querySelectorAll(s)].filter(e => e.getAnimations().some(a => a.playState === 'running' && a.effect.getComputedTiming().iterations === Infinity)).length;
-      const tf = () => [...sc.querySelectorAll('.csc-frag')].map(e => getComputedStyle(e).transform).join('|');
-      const a = tf(); await new Promise(r => setTimeout(r, 700));
-      return { frags: sc.querySelectorAll('.csc-frag').length, fragsRun: run('.csc-frag'), moved: a !== tf(),
-        glints: sc.querySelectorAll('.csc-glint').length, glintsRun: run('.csc-glint'), smoke: sc.querySelectorAll('.csc-smoke').length, smokeRun: run('.csc-smoke') }; }""")
-    check("Home's Supernova planet: the flakes still come off it (looping, moving), with glints along the crack and smoke off the burn",
-          bool(live) and live["frags"] >= 6 and live["fragsRun"] == live["frags"] and live["moved"] and live["glints"] >= 4 and live["glintsRun"] == live["glints"]
-          and live["smoke"] >= 2 and live["smokeRun"] == live["smoke"], live)
-    ctx.close()
+def _b320h_lum(img):
+    px = list(img.convert("RGB").getdata()) if not hasattr(img, "get_flattened_data") else list(img.convert("RGB").get_flattened_data())
+    n = max(1, len(px))
+    r = sum(p[0] for p in px) / n; g = sum(p[1] for p in px) / n; b = sum(p[2] for p in px) / n
+    return .2126 * r + .7152 * g + .0722 * b, max(r, g, b) - min(r, g, b)
 
-    # the rank-up: Silver to Gold, and Amethyst to Supernova, frame-stepped
-    FORM = """() => { const o = document.getElementById('supernova-cutscene'); if(!o) return null;
-      const h = o.querySelector('.rank-after .cosmic-hero-wrap'), sc = h && h.querySelector(':scope > .cosmic-scar');
-      const eff = el => { let v = 1; for(let x = el; x && x !== o; x = x.parentElement){ const c = getComputedStyle(x); if(c.display === 'none' || c.visibility === 'hidden') return 0; v *= +c.opacity; } return v; };
-      const cnt = c => { if(!c) return 0; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for(let i = 3; i < d.length; i += 4) if(d[i] > 64) n++; return n; };
-      const L = sc ? [...sc.querySelectorAll('canvas.csc-form')] : [];
-      const burn = sc && sc.querySelector('canvas.csc-burn');
-      return { c: o.className, scar: !!sc, base: cnt(burn), layers: L.length, newVis: +L.reduce((s, c) => s + cnt(c) * eff(c), 0).toFixed(0),
-        runs: sc ? [...sc.querySelectorAll('.csc-run')].filter(e => eff(e) > .3).length : 0, chips: sc ? [...sc.querySelectorAll('.csc-chip')].filter(e => eff(e) > .3).length : 0,
-        frags: sc ? [...sc.querySelectorAll('.csc-frag')].filter(e => eff(e) > .3).length : 0, formed: !!(sc && sc.classList.contains('is-formed')) }; }"""
-    for tier, frm in (("veteran", "ranger"), ("titan", "elite")):
-        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
-        pg.evaluate(B320E_RANK, frm)
-        ref = pg.evaluate("""(st) => { const a = st >= CRACK_TOP ? cosmicScarArt() : cosmicScarArt(st), b = st - 1 > 0 ? cosmicScarArt(st - 1) : null;
-          const cnt = c => { if(!c) return 0; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for(let i = 3; i < d.length; i += 4) if(d[i] > 64) n++; return n; };
-          return [cnt(b && b.burn), cnt(a && a.burn)]; }""", 1 if tier == "veteran" else 5) if pg.evaluate("() => typeof CRACK_TOP !== 'undefined'") else [0, 0]
-        pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
-        fn = "playSupernovaCutscene({ from: '%s', onDone(){} })" % frm if tier == "titan" else "playTierCutscene('%s', { from: '%s', onDone(){} })" % (tier, frm)
-        pg.evaluate("() => { " + fn + "; }")
-        rows, swap, burst, t = [], None, None, 0.0
-        for i in range(1, 30 * 40):
-            t_ = t; t = i / 30
-            pg.evaluate(CUTSPIN_SEEK, t)
-            pg.clock.run_for(int(round(t * 1000)) - int(round(t_ * 1000)))
-            pg.evaluate(CUTSPIN_SEEK, t)
-            c = pg.evaluate("() => { const o = document.getElementById('supernova-cutscene'); return o ? o.className : null; }")
-            if c is None:
-                break
-            if "supernova-burst" in c.split() and burst is None:
-                burst = i
-            if "is-swapped" in c.split() and swap is None:
-                swap = i
-            if swap is not None and (i - swap) % 3 == 0:
-                rows.append((i - swap, pg.evaluate(FORM)))
-            if "rank-outro" in (c or "").split():
-                break
+
+def _b320h_ring_profile(img, cx, cy, r0, r1, n=180):
+    """Luminance round a ring: for each of n angles (0 = 12 o'clock,
+    clockwise) the brightest pixel between radius r0 and r1."""
+    import math
+    im = img.convert("RGB"); px = im.load(); W, H = im.size
+    out = []
+    for k in range(n):
+        a = 2 * math.pi * k / n
+        best = 0
+        steps = max(2, int((r1 - r0) * 4))
+        for j in range(steps + 1):
+            rr = r0 + (r1 - r0) * j / steps
+            x = int(round(cx + rr * math.sin(a))); y = int(round(cy - rr * math.cos(a)))
+            if 0 <= x < W and 0 <= y < H:
+                p = px[x, y]; best = max(best, .2126 * p[0] + .7152 * p[1] + .0722 * p[2])
+        out.append(best)
+    return out
+
+
+def check_b320h_fixes(br):
+    """Build 320 (b320h): Madison's five smaller fixes.
+    1. "if a banner is not set then it matches the color of your rank, it
+       shouldn't do that ... Just keep it grey with the space themed thing,
+       if a banner is set then the box would match it": with a rank's theme
+       and no banner the Profile card's tint is grey (every colour in its
+       background within 30 of neutral, and its tint far from the rank's
+       colour); with a banner it is the banner's.
+    2. "the profile box ... around the xp bar has become a little much ...
+       mostly the iPhone": on a phone the XP area is the rank line and ONE
+       label under the bar ("x / y XP to Level N"), the total gone from the
+       card (it is on Stats), in two rows and two pieces of text (it was
+       three pieces, and three rows where the total wrapped), all on the
+       card; the badge count still opens Badges and the rest the road map.
+       A tablet still shows the total.
+    3. "the top tab button is not centered ... slightly more space on the
+       bottom then the top ... such as the leaderboard top tabs": on every
+       switcher with the sliding pill (Profile, Calendar's Month / List,
+       the Leaderboard, the chat sheet, the room review) the label's
+       capital-height middle is within 0.5px of the pill's.
+    4. Save and exit is not black (grey glass, visibly lighter than Quit,
+       which is unchanged); a saved test survives a reload, a cold start
+       from the splash and the slot being wiped (the IndexedDB mirror puts
+       it back); Resume test shows LOADING TEST first, with no clock
+       running under it, and the count-down picks up where it was.
+    5. The daily ring: never past whole (every frame of a charge, from
+       empty and from part way); answered, it shows the share of the time
+       to the next 5pm that has gone (a faked clock, 11pm = .25, and it
+       moves on); and the whole ring at 3x is even all the way round - no
+       notch or seam at 12 and 6 o'clock.
+    Fails on a73c681."""
+    import io as _io
+    from PIL import Image as _Im
+    print("\n320h. the Profile card's grey and its XP line, centred tabs, Save and exit, the daily ring")
+    # ---- 1 + 2: the card -------------------------------------------------
+    for (w, h, dev, phone) in ((440, 956, "17 Pro Max", True), (834, 1194, "iPad Pro 11", False)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        for acc in ("veteran", "titan"):
+            info = pg.evaluate(B320H_SEED, {"badges": 7, "level": 44, "accent": acc})
+            c = pg.evaluate(B320H_CARD)
+            x, y, bw, bh = c["box"]
+            shot = _Im.open(_io.BytesIO(pg.screenshot(clip={"x": x + 6, "y": y + bh * .45, "width": 18, "height": min(80, bh * .2)})))
+            lum, chroma = _b320h_lum(shot)
+            check("%s, %s theme, no banner: the card is grey, not the rank's colour (tint chroma %s, far from %s by %s; pixels chroma %.0f)"
+                  % (dev, acc, c["t1Chroma"], c["wants"][:1], c["t1ToRank"], chroma),
+                  c["maxChroma"] <= 30 and (c["t1ToRank"] or 0) >= 60 and chroma <= 14,
+                  {k: c[k] for k in ("t1", "t2", "maxChroma", "t1ToRank")})
+        bid = pg.evaluate("() => (Object.keys(BANNER_ART).filter(id => bannerEarned(id) && bannerTintOf(id))[0] || '')")
+        if bid:
+            pg.evaluate(B320H_SEED, {"badges": 7, "level": 44, "accent": "veteran", "banner": bid})
+            c = pg.evaluate(B320H_CARD)
+            tint = c["tint"][0] if c["tint"] else None
+            want = [int(tint[i:i + 2], 16) for i in (1, 3, 5)] if tint and tint.startswith("#") else None
+            check("%s: with a banner (%s) the card still wears the banner's colours" % (dev, bid),
+                  want is not None and c["t1"] is not None and max(abs(a - b) for a, b in zip(c["t1"], want)) <= 2, (c["t1"], tint))
+        else:
+            check("%s: an earned banner to try" % dev, False)
+        # the XP area
+        pg.evaluate(B320H_SEED, {"badges": 7, "level": 44, "accent": "veteran"})
+        pg.wait_for_timeout(400)
+        xp = pg.evaluate(B320H_XP)
+        if phone:
+            check("%s: the XP area reads in two rows and two pieces - the rank line, then one label (%s)" % (dev, xp["label"]),
+                  xp["rows"] == 2 and xp["pieces"] == 2 and xp["labelOneLine"] and re.search(r"XP to Level \d+$", xp["label"]) is not None, xp)
+            check("%s: the total XP is not on the card, and nothing leaves it" % dev, not xp["totalShown"] and xp["inCard"], xp)
+            t = pg.evaluate(B320H_TAPS)
+            for k, want in (("badge", "badges"), ("bar", "ranks"), ("label", "ranks")):
+                pg.mouse.click(t[k][0], t[k][1]); pg.wait_for_timeout(150)
+            got = pg.evaluate("() => { const g = window.__b320got.slice(); window.showRanksScreen = window.__b320real; return g; }")
+            check("%s: the badge count still opens Badges, the bar and the label the road map" % dev, got == ["badges", "ranks", "ranks"], got)
+            # a 6-digit total on a 375px phone
+        else:
+            check("%s: a tablet keeps the total XP under the bar, as before" % dev, xp["totalShown"] and xp["inCard"], xp)
+        st = pg.evaluate("""async () => { showProfile('stats'); await new Promise(r => setTimeout(r, 700));
+          const c = [...document.querySelectorAll('.profile-stats-tab .stat-card')].find(x => /Total XP/.test(x.textContent));
+          return c ? c.querySelector('.stat-num').textContent : null; }""")
+        tot = pg.evaluate("() => Math.round(Number(levelStateFor(store).total) || 0).toLocaleString()")
+        check("%s: Stats shows the total XP (%s)" % (dev, st), st == tot, (st, tot))
         ctx.close()
-        name = "Silver to Gold" if tier == "veteran" else "Amethyst to Supernova"
-        first = [r for d, r in rows if d <= 9]
-        late = [r for d, r in rows if r and "supernova-settle" in r["c"].split()]
-        check("%s: on the frames just after the flash the new planet shows none of its new crack (the old one only: %s px)" % (name, ref[0]),
-              bool(first) and all(r and r["newVis"] == 0 and abs(r["base"] - ref[0]) <= ref[0] * .01 + 2 for r in first)
-              and (tier != "titan" or all(r["frags"] == 0 for r in first)),
-              [(r["base"], r["newVis"], r["frags"]) for r in first[:3]])
-        grew = [d + (swap or 0) - (burst or 0) for d, r in rows if r and r["newVis"] > 0]
-        check("%s: it forms when it can be seen - from 1s+ after the flash, growing, a light running along it and chips falling (frames after the flash)" % name,
-              bool(grew) and burst is not None and grew[0] >= 30 and len(grew) >= 8 and any(r["runs"] for d, r in rows if r) and any(r["chips"] for d, r in rows if r),
-              (grew[:1], len(grew), max([r["runs"] for d, r in rows if r] or [0]), max([r["chips"] for d, r in rows if r] or [0])))
-        check("%s: by the title it is all there - the burn canvas is the new stage's art (%s px)" % (name, ref[1]),
-              bool(late) and late[-1]["formed"] and abs(late[-1]["base"] - ref[1]) <= ref[1] * .01 + 2 and ref[1] > ref[0]
-              and (tier != "titan" or late[-1]["frags"] >= 6),
-              late and (late[-1]["base"], late[-1]["formed"], late[-1]["frags"]))
-
-    # Home's planet whole on its first frame back
-    from PIL import Image, ImageStat
-    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=1)
-    pg.evaluate(B320E_RANK, "veteran")
-    pg.evaluate("() => showRankings()"); pg.wait_for_timeout(400)
-    pg.evaluate(B318_STEP)
-    def centre(k):
-        r = pg.evaluate(B318_AT, k)
-        box = pg.evaluate("""() => { const c = document.querySelector('.screen-home-actual .cosmic-hero-main circle[fill^="url(#cosmicSphereGrad"]').getBoundingClientRect();
-          return { x: c.left + c.width * .3, y: c.top + c.height * .3, width: c.width * .4, height: c.height * .4 }; }""")
-        im = Image.open(io.BytesIO(pg.screenshot(clip=box))).convert("L")
-        return r, ImageStat.Stat(im).mean[0]
-    r0, l0 = centre(0)
-    r1, l1 = centre(30)
+    ctx, pg = booted(br, 375, 667, seed=USED_ACCOUNT)
+    pg.evaluate(B320H_SEED, {"badges": 9, "level": 62, "accent": "veteran"})
+    pg.wait_for_timeout(400)
+    xp = pg.evaluate(B320H_XP)
+    check("375px phone, a six-figure total: still two rows and two pieces, on the card (%s)" % xp["label"],
+          xp["rows"] == 2 and xp["pieces"] == 2 and xp["labelOneLine"] and not xp["totalShown"] and xp["inCard"], xp)
     ctx.close()
-    check("a return to Home: the planet whole on its first frame - full opacity, its centre as bright as half a second later (%.0f against %.0f)" % (l0, l1),
-          r0["ret"] and r0["planet"] >= .99 and (r0["scar"] or 0) >= .99 and l0 >= .9 * l1 and l1 > 40, (r0, round(l0, 1), round(l1, 1)))
+    # ---- 3: tabs ---------------------------------------------------------
+    # at each device's own pixel ratio: the letters land on device pixels
+    for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+        seen = {}
+        for name, js in (("Profile", "showProfile('profile')"), ("Calendar", "showProfile('calendar')"),
+                         ("Leaderboard", "showRankings()"), ("Chat", "showHome(); openChatDock()"),
+                         ("Room review", "closeChatDock(); showHome(); document.querySelector('.panel').appendChild(buildRoomReviewTabs({missed:[0,1],order:[0,1,2],picked:{},attempts:{},layout:{},firstPick:{},timedOutSet:{},mode:'exam',vroom:true}))")):
+            pg.evaluate("() => { " + js + "; }")
+            pg.wait_for_timeout(900)
+            for r in pg.evaluate(B320H_TABS):
+                key = r["seg"] or "?"
+                if key not in seen or abs(r["off"]) > abs(seen[key]["off"]):
+                    seen[key] = dict(r, at=name)
+        for key, r in sorted(seen.items()):
+            check("%s: %s (%s, '%s') - label middle %+.2fpx from the pill's" % (dev, key, r["at"], r["label"], r["off"]),
+                  abs(r["off"]) <= 0.5, r)
+        check("%s: every switcher measured (Profile, Month / List, chat, room review)" % dev,
+              all(k in seen for k in ("profiletabs", "profiletabs cal-viewseg sub-seg", "chatdock-tabs", "rs-tabs")), sorted(seen))
+        ctx.close()
+    # ---- 4: Save and exit --------------------------------------------------
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(B320H_RUN, {"answer": 2})
+    p = pg.evaluate(B320H_PAUSE)
+    if p:
+        def px(b):
+            return _b320h_lum(_Im.open(_io.BytesIO(pg.screenshot(clip={"x": b[0] + 14, "y": b[1] + b[3] * .3, "width": 16, "height": b[3] * .4}))))
+        sl, sc = px(p["save"]); ql, qc = px(p["quit"])
+        check("Save and exit is grey, not black: %.0f against Quit's %.0f (chroma %.0f)" % (sl, ql, sc),
+              sl >= ql + 18 and sl >= 32 and sc <= 14, p)
+        check("Quit test is unchanged (#0A0A0C)", p["quitBg"] == "rgb(10, 10, 12)", p["quitBg"])
+    else:
+        check("the pause menu has Save and exit", False)
+    pg.evaluate("() => document.getElementById('pause-save').click()")
+    pg.wait_for_timeout(900)
+    saved = pg.evaluate("() => { const s = JSON.parse(localStorage.getItem('class26e.runsession.v1') || 'null'); return s && { saved: s.saved, pos: s.pos }; }")
+    pg.reload(); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
+    after = pg.evaluate("""async () => { startStudying(); await new Promise(r => setTimeout(r, 500));
+      const t = (document.querySelector('#resume-offer .resume-title') || {}).textContent || null;
+      document.getElementById('resume-offer')?.remove(); return { title: t, s: (readRunSession() || {}).pos }; }""")
+    check("a saved test survives a reload (Start Studying offers it)", saved and saved.get("saved") and after["title"] == "You have a saved test" and after["s"] == saved["pos"], (saved, after))
+    state = ctx.storage_state()
+    ctx2 = br.new_context(viewport={"width": 440, "height": 956}, storage_state=state)
+    pg2 = open_page(ctx2)
+    pg2.goto(URL); pg2.wait_for_timeout(1500)
+    cold = pg2.evaluate("() => ({ splash: !!document.getElementById('splashscreen'), s: (readRunSession() || {}).saved || false })")
+    pg2.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub(); showHome(); startStudying();}")
+    pg2.wait_for_timeout(500)
+    cold["title"] = pg2.evaluate("() => (document.querySelector('#resume-offer .resume-title') || {}).textContent || null")
+    check("and a cold start from the splash (a new launch with the same storage)", cold["s"] is True and cold["title"] == "You have a saved test", cold)
+    ctx2.close()
+    pg.evaluate("() => localStorage.removeItem('class26e.runsession.v1')")
+    pg.reload(); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
+    back = pg.evaluate("() => { const s = JSON.parse(localStorage.getItem('class26e.runsession.v1') || 'null'); return s && { saved: s.saved, pos: s.pos }; }")
+    check("and the slot wiped under it (as iOS can): the IndexedDB mirror puts it back", back is not None and back.get("saved") and back.get("pos") == (saved or {}).get("pos"), (saved, back))
+    # Resume test: LOADING TEST first, nothing running under it
+    pg.evaluate("() => { clearRunSession(); showHome(); }")
+    pg.wait_for_timeout(400)
+    pg.evaluate(B320H_RUN, {"answer": 1, "timer": "down", "minutes": 5, "beforePause": 1500})
+    left0 = pg.evaluate("""async () => { document.getElementById('pause-save').click(); await new Promise(r => setTimeout(r, 900));
+      return JSON.parse(localStorage.getItem('class26e.runsession.v1')).timerLeftMs; }""")
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      startStudying(); await wait(500); document.getElementById('resume-go').click();
+      const t0 = Date.now(), frames = [];
+      while(Date.now() - t0 < 4200){
+        const ov = document.getElementById('teststart-overlay');
+        frames.push({ t: Date.now() - t0, ov: !!ov, txt: ov ? ov.textContent : '', q: !!document.querySelector('.qpanel .choice'),
+          timer: timerHandle != null, live: !!testInProgress, start: runStartTime,
+          left: (document.querySelector('.qpanel .choice') && timerDeadline) ? timerDeadline - Date.now() : null });
+        await wait(100);
+      }
+      const atQ = frames.find(f => f.left != null);
+      return { frames, left: atQ ? atQ.left : null }; }""")
+    fr = r["frames"]
+    load = [f for f in fr if f["ov"]]
+    first_q = next((f["t"] for f in fr if f["q"]), None)
+    check("Resume test shows LOADING TEST first (%d samples, %s-%sms), then the question at %sms"
+          % (len(load), load[0]["t"] if load else None, load[-1]["t"] if load else None, first_q),
+          len(load) >= 15 and all("LOADING TEST" in f["txt"] for f in load) and first_q is not None and first_q >= 2300
+          and not any(f["q"] for f in load), [(f["t"], f["ov"], f["q"]) for f in fr[:4]])
+    check("and nothing of the run is live under it: no clock, no question, not in progress",
+          load and all(not f["timer"] and not f["live"] and f["start"] is None for f in load), [f for f in load if f["timer"] or f["live"]][:2])
+    lost = (left0 - r["left"]) if (left0 is not None and r["left"] is not None) else None
+    check("the count-down picks up where it was: %s ms off when the question is back (the loading took none of it)" % (lost,),
+          lost is not None and -50 <= lost <= 400, (left0, r["left"]))
+    ctx.close()
+    # Linking to ANOTHER account takes the saved test with the old one (slot
+    # and mirror); signing back in to the account it belongs to keeps it.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("() => { store.publicId = store.publicId || 'pub-b320h-mine'; saveStore(); }")
+    pg.evaluate(B320H_RUN, {"answer": 1})
+    pg.evaluate("() => document.getElementById('pause-save').click()")
+    pg.wait_for_timeout(900)
+    lk = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const K = 'class26e.runsession.v1';
+      const idbGet = () => new Promise(res => { const r = indexedDB.open('class26e-drill-backup', 1);
+        r.onsuccess = () => { try{ const g = r.result.transaction('kv', 'readonly').objectStore('kv').get('runsession'); g.onsuccess = () => res(g.result ? 'held' : null); g.onerror = () => res('err'); }catch(e){ res(null); } };
+        r.onerror = () => res('err'); });
+      const out = { before: !!localStorage.getItem(K), idbBefore: await idbGet() };
+      /* the same account signing back in (a device that lost its code) */
+      if(typeof savedTestLeavesWithAccount === 'function') savedTestLeavesWithAccount(null, 'MINE-0001');
+      await wait(300);
+      out.sameKept = !!localStorage.getItem(K);
+      /* another account, through Settings' Link this device */
+      fbDb = { collection: n => ({ doc: id => ({
+        get: () => Promise.resolve({ exists: true, metadata: { fromCache: false }, data: () => ({ firstName: 'Other', publicId: 'pub-b320h-other',
+          onboardingComplete: true, lastModified: Date.now(), lifetime: { points: 10, answered: 1, correct: 1 } }) }),
+        set: () => Promise.resolve(), update: () => Promise.resolve(), delete: () => Promise.resolve() }) }) };
+      window.confirm = () => true;
+      syncCode = null; syncOff = true;
+      showAppearance(); await wait(700);
+      const enter = [...document.querySelectorAll('button')].find(b => /^Enter a code$/.test(b.textContent.trim()));
+      if(!enter){ out.noForm = true; return out; }
+      enter.click(); await wait(250);
+      const inp = document.querySelector('.sync-enter-wrap input'); inp.value = 'ABCD-EFGH';
+      [...document.querySelectorAll('button')].find(b => /Link this device/.test(b.textContent)).click();
+      await wait(1500);
+      out.pub = store.publicId; out.after = !!localStorage.getItem(K); out.idbAfter = await idbGet();
+      return out; }""")
+    check("signing back in to the account the saved test belongs to keeps it", lk.get("before") and lk.get("sameKept"), lk)
+    check("linking this device to another account clears the saved test - the slot and its IndexedDB copy",
+          lk.get("before") and lk.get("pub") == "pub-b320h-other" and lk.get("after") is False and lk.get("idbAfter") is None, lk)
+    ctx.close()
+    # ---- 5: the daily ring -------------------------------------------------
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    ring = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const C = 298.4513; const P = () => { const pr = document.querySelector('.daily-question-fab .dq-ring-prog'); if(!pr) return null;
+        const cs = getComputedStyle(pr); const da = cs.strokeDasharray; const dash = da === 'none' ? C : parseFloat(da);
+        const off = parseFloat(String(cs.strokeDashoffset).replace(/^calc\(/, ''));
+        return { p: da === 'none' ? 1 : 1 - off / C, dash, off: off || 0 }; };
+      const run = async (ms) => { const fr = []; const t0 = performance.now(); while(performance.now() - t0 < ms){ fr.push(P()); await new Promise(r => requestAnimationFrame(r)); } return fr; };
+      if(typeof setDailyRing !== 'function') return { a: [], b: [], full: '' };
+      store.dailyQuestionDate = ''; saveStore(); localStorage.setItem('class26e.daily.seen', '2000-01-01'); showHome();
+      const a = await run(6200);
+      const full = (document.querySelector('.dq-ring') || {}).className || '';
+      /* answered, at 97% of the wait, then the reset arrives with Home up */
+      markDailySeen(dailyPeriodKey()); store.dailyQuestionDate = dailyPeriodKey(); saveStore(); showHome(); await wait(300);
+      clearTimeout(dailyRingTimer);   /* no minute tick moving it under the measurement */
+      const b = document.querySelector('.daily-question-fab'); setDailyRing(b, .97); await wait(1000);
+      const real = window.dailyRingFraction; window.dailyRingFraction = () => .97;
+      announceDailyReset(b); window.dailyRingFraction = real;
+      const bb = await run(2600);
+      return { a, b: bb, full }; }""")
+    def judge(fr):
+        fr = [f for f in fr if f]
+        over = [f for f in fr if f["p"] > 1.0005 or f["off"] < -0.01 or f["dash"] > 298.46]
+        back = [(fr[i - 1]["p"], fr[i]["p"]) for i in range(1, len(fr)) if fr[i]["p"] < fr[i - 1]["p"] - 0.002]
+        return fr, over, back
+    fa, oa, ba = judge(ring["a"])
+    fb, ob, bk = judge(ring["b"])
+    check("the charge from empty never goes past whole and never runs back (%d frames, ends %.3f)" % (len(fa), fa[-1]["p"] if fa else -1),
+          len(fa) > 20 and not oa and len(ba) <= 1 and fa[-1]["p"] >= 0.999 and "is-full" in ring["full"], (oa[:2], ba[:3]))
+    check("from part way (.97, a reset with Home up) it closes to whole and stops there (%d frames)" % len(fb),
+          len(fb) > 5 and not ob and not bk and fb[0]["p"] >= 0.9 and fb[-1]["p"] >= 0.999, (fb[:1], ob[:2], bk[:3]))
+    ctx.close()
+    # the waiting ring on a faked clock: answered, 11pm is a quarter of the way to 5pm
+    ctx = br.new_context(viewport={"width": 440, "height": 956}, timezone_id="America/Los_Angeles")
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');"
+                        "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % USED_ACCOUNT)
+    pg = open_page(ctx)
+    pg.clock.install(time="2026-10-12T23:00:00-07:00")
+    pg.goto(URL); pg.wait_for_timeout(2600)
+    q = """async () => { await new Promise(r => setTimeout(r, 1500)); const pr = document.querySelector('.daily-question-fab .dq-ring-prog'); if(!pr) return null;
+      const cs = getComputedStyle(pr); const b = document.querySelector('.daily-question-fab');
+      const off = parseFloat(String(cs.strokeDashoffset).replace(/^calc\(/, ''));
+      return { p: cs.strokeDasharray === 'none' ? 1 : 1 - off / 298.4513, done: b.classList.contains('is-done'),
+        running: b.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length, hour: new Date().getHours() }; }"""
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub(); markDailySeen(dailyPeriodKey()); store.dailyQuestionDate = dailyPeriodKey(); saveStore(); showHome(); }")
+    w0 = pg.evaluate(q)
+    pg.clock.run_for(3 * 60 * 60 * 1000)
+    w1 = pg.evaluate(q)
+    check("answered at 11pm, the ring shows a quarter of the wait gone (%s), in the theme's colour, nothing animating"
+          % (round(w0["p"], 4) if w0 else None,), w0 is not None and w0["done"] and abs(w0["p"] - .25) <= .01 and w0["running"] == 0, w0)
+    check("three hours on, it has moved on to 3/8 (%s)" % (round(w1["p"], 4) if w1 else None,),
+          w1 is not None and abs(w1["p"] - .375) <= .01, w1)
+    ctx.close()
+    # the whole ring at 3x: even all the way round, the top and bottom too
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=3)
+    pg.evaluate(HOMETAP_PREP, {})
+    for label, setup in (
+        ("closed, before it goes off", """async () => { markDailySeen(dailyPeriodKey()); store.dailyQuestionDate = null; showHome(); await new Promise(r => setTimeout(r, 500));
+            document.querySelectorAll('.daily-alert, .toast, #daily-lock-tip, #tour-overlay, .rs-spot, #intro-pop').forEach(n => n.remove());
+            const b = document.querySelector('.daily-question-fab'); b.classList.remove('is-done'); playDailyRecharge(b, () => {});
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+            b.getAnimations({ subtree: true }).forEach(a => { a.pause(); a.currentTime = 350 + 4100 + 120; });
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); }"""),
+        ("ready, at rest", """async () => { markDailySeen(dailyPeriodKey()); store.dailyQuestionDate = null; showHome(); await new Promise(r => setTimeout(r, 500));
+            document.querySelectorAll('.daily-alert, .toast, #daily-lock-tip, #tour-overlay, .rs-spot, #intro-pop').forEach(n => n.remove());
+            const b = document.querySelector('.daily-question-fab');
+            b.getAnimations({ subtree: true }).forEach(a => { a.pause(); a.currentTime = 0; });
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); }""")):
+        pg.evaluate(setup)
+        if label.startswith("closed"):
+            # the seam Madison saw is where two clipped half-rings met at 12
+            # and 6 o'clock - WebKit composites the two clips with a hairline
+            # there that Chromium does not draw - so the structure is held too:
+            # one stroked circle, drawn undashed once whole, nothing clipped
+            stc = pg.evaluate("""() => { const b = document.querySelector('.daily-question-fab'); const pr = b.querySelector('.dq-ring-prog');
+              return { halves: b.querySelectorAll('.dq-charge-half, .dq-charge-arc').length, circle: !!pr,
+                       undashed: !!pr && getComputedStyle(pr).strokeDasharray === 'none' }; }""")
+            check("the closed ring is one undashed circle - no half-rings, no clips, nothing to meet at 12 and 6", stc["halves"] == 0 and stc["circle"] and stc["undashed"], stc)
+        bx = pg.evaluate("() => { const r = document.querySelector('.daily-question-fab').getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }")
+        m = 12
+        img = _Im.open(_io.BytesIO(pg.screenshot(clip={"x": bx[0] - m, "y": bx[1] - m, "width": bx[2] + 2 * m, "height": bx[3] + 2 * m})))
+        S = img.size[0] / (bx[2] + 2 * m)
+        cx, cy = img.size[0] / 2, img.size[1] / 2
+        R = (bx[2] / 2 + 6) * S
+        prof = _b320h_ring_profile(img, cx, cy, R - 5 * S, R + 0.5 * S)
+        srt = sorted(prof); med = srt[len(srt) // 2]
+        n = len(prof); win = lambda deg: [prof[(int(round(deg / 360.0 * n)) + k) % n] for k in range(-4, 5)]
+        top, bot = win(0), win(180)
+        worst = max(max(abs(v - med) for v in top), max(abs(v - med) for v in bot)) / max(1.0, med)
+        rest = max(abs(v - med) for v in prof) / max(1.0, med)
+        check("3x, %s: the ring is even at 12 and 6 o'clock (worst %.0f%% off its median %.0f; anywhere %.0f%%)" % (label, worst * 100, med, rest * 100),
+              med >= 120 and worst <= .1 and rest <= .15, {"top": [round(v) for v in top], "bottom": [round(v) for v in bot], "med": round(med)})
+    ctx.close()
+
+
+B320B_SAMPLE = {"confetti": 1.7, "fireworks": 1.6, "underwater": 2.6, "bubbles": 3.45, "ufo": 5.0}
+B320B_MATRIX = r"""async ([fx, at]) => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  document.querySelectorAll('#b320b').forEach(n => n.remove());
+  document.querySelectorAll('#pushing-update, #intro-pop, .update-banner').forEach(n => n.remove());
+  const host = document.createElement('div'); host.id = 'b320b';
+  host.style.cssText = 'position:fixed;left:0;top:0;width:440px;display:grid;grid-template-columns:repeat(6,1fr);gap:6px;z-index:99999;background:#141824';
+  document.body.appendChild(host);
+  const ids = RX_CHARS.slice();
+  const avs = ids.map(id => { const av = document.createElement('span'); av.className = 'results-level-avatar char-live'; av.appendChild(buildAvatarCharSVGSafe(id)); host.appendChild(av); reactCharacter(av, 'perfect'); return av; });
+  /* the hundo's own move has landed on every one of them first */
+  const busy = () => avs.some(av => av.getAnimations({ subtree: true }).some(a => { const t = a.effect && a.effect.getComputedTiming(); return t && t.iterations !== Infinity && a.playState === 'running'; }));
+  await wait(1500);
+  for(let i = 0; i < 80 && busy(); i++) await wait(100);
+  const eff = el => { let o = 1, e = el; while(e && e.tagName && e.tagName.toLowerCase() !== 'svg'){ const cs = getComputedStyle(e); if(cs.visibility === 'hidden' || cs.display === 'none') return 0; o *= parseFloat(cs.opacity); e = e.parentNode; } return o; };
+  const leaves = root => [...root.querySelectorAll('path, circle, ellipse, rect, polygon')].filter(n => !n.closest('defs, clipPath'));
+  /* a part whose opacity breathes on a loop of its own has no one value to compare */
+  const loops = e => e.getAnimations().some(a => a.effect && a.effect.getComputedTiming().iterations === Infinity);
+  const pose = av => { const s = av.querySelector('svg'); const q = sel => { const e = s.querySelector(sel); return e ? (loops(e) ? 'loop' : +parseFloat(getComputedStyle(e).opacity).toFixed(2)) : null; };
+    return { eyes: q('.cx-eyes'), shut: q('.cx-eyes-closed'), mouth: q('.cx-mouth') }; };
+  const before = avs.map(pose);
+  const t0 = performance.now();
+  if(typeof hfxCharReact !== 'function') return { missing: true };
+  const R = avs.map(av => hfxCharReact(av, fx, {}));
+  const startedIn = performance.now() - t0;
+  /* the breath-hold starts on the water's line in the app (hfxUwScreen);
+     here it is started by hand, and its cheeks given time to come in */
+  if(fx === 'underwater'){
+    R.forEach(r => r && r.hold && r.hold.start());
+    /* the cheeks come in on a transition: on a loaded machine give it up
+       to 4s to have landed everywhere */
+    const shown = () => avs.every(av => [...av.querySelectorAll('.cx-hx-cheeks ellipse, .cx-hx-fishbub circle, .cx-uw')].filter(n => eff(n) > .25).length >= 2);
+    await wait(700);
+    for(let i = 0; i < 33 && !shown(); i++) await wait(100);
+  }
+  /* every reaction at the same moment of itself */
+  R.forEach(r => r && r.anims.forEach(a => { try{ a.pause(); a.currentTime = at * 1000; }catch(e){} }));
+  await wait(120);
+  const out = avs.map((av, i) => {
+    const svg = av.querySelector('svg'), sr = svg.getBoundingClientRect(), u = sr.width / 34;
+    const head = svg.querySelector('.cx-head');
+    /* the face box: every shape of the head that is showing, without any
+       of the reaction's parts, specials, props or the eyes */
+    let fb = null;
+    leaves(head).forEach(n => {
+      if(n.closest('.cx-hx, .cx-sp, .cx-rx, .cx-uw, .cx-eyes, .cx-eyes-closed, .cx-mouth')) return;
+      if(eff(n) < .15) return;
+      const r = n.getBoundingClientRect(); if(!r.width && !r.height) return;
+      fb = fb ? [Math.min(fb[0], r.left), Math.min(fb[1], r.top), Math.max(fb[2], r.right), Math.max(fb[3], r.bottom)] : [r.left, r.top, r.right, r.bottom];
+    });
+    const shut = [...svg.querySelectorAll('.cx-eyes-closed path')].map(p => p.getBoundingClientRect()).filter(r => r.width).map(r => [r.left + r.width / 2, r.top + r.height / 2, r.width / 2]);
+    const hx = svg.querySelector('.cx-hx');
+    const parts = [];
+    if(hx) leaves(hx).forEach(n => { if(eff(n) > .25){ const r = n.getBoundingClientRect(); if(r.width || r.height) parts.push({ r: [r.left, r.top, r.right, r.bottom], a: (n.closest('[data-hx]') || {}).getAttribute ? n.closest('[data-hx]').getAttribute('data-hx') : null }); } });
+    /* the breath-hold's own stand-ins count as the reaction too */
+    leaves(svg).forEach(n => { if(n.closest('.cx-uw') && eff(n) > .25){ const r = n.getBoundingClientRect(); parts.push({ r: [r.left, r.top, r.right, r.bottom], a: 'uw' }); } });
+    const tol = 1.2 * u;
+    /* a piece that has landed ON the head stands on it: its foot inside */
+    const outside = fb ? parts.filter(p => p.r[0] < fb[0] - tol || p.r[2] > fb[2] + tol || p.r[3] > fb[3] + tol || (p.a === 'top' ? p.r[3] < fb[1] - tol : p.r[1] < fb[1] - tol)).length : parts.length;
+    /* anything drawn for an eye sits on that eye */
+    const groups = {};
+    parts.forEach(p => { if(p.a && /^eye\d$/.test(p.a)){ const g = groups[p.a] = groups[p.a] || [1e9, 1e9, -1e9, -1e9]; g[0] = Math.min(g[0], p.r[0]); g[1] = Math.min(g[1], p.r[1]); g[2] = Math.max(g[2], p.r[2]); g[3] = Math.max(g[3], p.r[3]); } });
+    let eyeOff = 0;
+    if(shut.length) Object.values(groups).forEach(g => { const cx = (g[0] + g[2]) / 2, cy = (g[1] + g[3]) / 2;
+      const d = Math.min(...shut.map(s => Math.hypot(cx - s[0], cy - s[1]) - Math.max(1.6 * u, s[2] * 1.2))); eyeOff = Math.max(eyeOff, d / u); });
+    /* a helmet's breath leaves above its eyes, never inside the visor */
+    const F = (typeof hfxFaceOf === 'function') ? hfxFaceOf(svg) : null;
+    let inHelmet = 0;
+    if(F && F.helmet && shut.length){ const ey = Math.min(...shut.map(s => s[1])); av.querySelectorAll(':scope > .hfx-uw-breath').forEach(b => { if(av.getBoundingClientRect().top + parseFloat(b.style.top) > ey - .5 * u) inHelmet++; }); }
+    return { id: ids[i], on: !!R[i], cls: av.classList.contains('hfx-rx') && av.classList.contains('hfx-rx-' + fx), n: parts.length, outside, eyeOff: +eyeOff.toFixed(2), inHelmet,
+      hold: fx === 'underwater' ? (av.classList.contains('char-hold') || av.classList.contains('char-bubbly')) : null };
+  });
+  /* resume, and let every reaction run out on its own clock */
+  R.forEach(r => r && r.anims.forEach(a => { try{ a.play(); }catch(e){} }));
+  const total = (typeof HFX_RX_TOTAL === 'object' ? HFX_RX_TOTAL[fx] : 8) || 8;
+  await wait(total * 1000 + startedIn - (performance.now() - t0) + 700);
+  const after = avs.map((av, i) => { const svg = av.querySelector('svg'); const p = pose(av);
+    const left = svg.querySelectorAll('.cx-hx').length + [...svg.querySelectorAll('.cx-uw')].filter(n => getComputedStyle(n).visibility !== 'hidden').length + av.querySelectorAll(':scope > .hfx-uw-breath, :scope > .hfx-uw-fling').length;
+    const running = svg.getAnimations({ subtree: true }).filter(a => a.id === 'hfx-rx').length + av.getAnimations().filter(a => a.id === 'hfx-rx').length;
+    const b = before[i];
+    const same = ['eyes', 'shut', 'mouth'].every(k => {
+      if(b[k] === null || b[k] === 'loop' || p[k] === 'loop') return b[k] === p[k];
+      return Math.abs(b[k] - p[k]) <= .03; });
+    return { id: ids[i], left, running, cls: av.className.match(/hfx-rx|char-hold|char-gasp|char-bubbly/g) || [], back: av.classList.contains('char-react-perfect') && av.classList.contains('rx-' + ids[i]) && same, before: b, now: p };
+  });
+  host.remove();
+  return { startedIn: Math.round(startedIn), out, after };
+}"""
+B320B_RUN = r"""async ([fx, ch]) => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  document.querySelectorAll('#pushing-update, #intro-pop, .update-banner').forEach(n => n.remove());
+  store.avatarChar = ch; store.hundoFx = fx; store.lifetime.perfectTests = 420;
+  const t = 'Identity Crimes'; store.unitPerfects = store.unitPerfects || {}; store.unitPerfects[t] = 0;
+  ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour'].forEach(k => store[k] = true);
+  store.lateHundos = 999; store.retroBadgePending = []; store.pendingTierCutscene = null; theme.muteBanners = false; theme.reduceMotion = false;
+  try{ seedBannerCounters(); seedChallenges289(); }catch(e){}
+  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){}
+  store.pendingBadgeUnlocks = []; saveStore();
+  cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [t];
+  order = QUESTIONS.map((q, i) => [q, i]).filter(([q]) => (q.topic || '').trim() === t).map(([, i]) => i);
+  runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null; isMissedRetake = false; practiceTestMinutes = null; inVirtualRoom = false;
+  attempts = {}; picked = {}; timedOutSet = {};
+  order.forEach(qi => { attempts[qi] = 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
+  runStartTime = Date.now() - 42000; testInProgress = true; pos = order.length - 1;
+  summarize();
+  const T0 = performance.now(), now = () => (performance.now() - T0) / 1000;
+  let fxAt = null, rxOn = null, rxOff = null, seenHx = 0, hold = false, specialAfter = null;
+  while(now() < 40){
+    const av = document.querySelector('.rs-screen .results-level-avatar');
+    const fxUp = !!document.querySelector('.hfx-layer, .stardust-layer');
+    if(fxUp && fxAt === null) fxAt = now();
+    if(av){
+      const on = av.classList.contains('hfx-rx');
+      if(on && rxOn === null) rxOn = now();
+      if(on){ const hx = av.querySelector('.cx-hx'); if(hx) seenHx = Math.max(seenHx, hx.querySelectorAll('*').length); if(av.classList.contains('char-hold') || av.classList.contains('char-bubbly')) hold = true; }
+      if(rxOn !== null && !on && rxOff === null) rxOff = now();
+      if(rxOff !== null && av.classList.contains('char-special')){ specialAfter = now() - rxOff; break; }
+      if(rxOff !== null && now() - rxOff > 6) break;
+    }
+    document.querySelector('.rs-spot.is-up')?.click();
+    await wait(60);
+  }
+  const av = document.querySelector('.rs-screen .results-level-avatar');
+  return { fxAt, rxOn, rxOff, seenHx, hold, specialAfter, leftover: av ? av.querySelectorAll('.cx-hx').length : null,
+           rx: av ? (av.className.match(/rx-[a-z]+|char-react-perfect/g) || []) : null };
+}"""
+
+
+def check_b320b_reactions(br):
+    """Build 320 (b320b). "the characters face/effect should be affected by
+    chosen hundo effect DURING THE effect. So like during the underwater
+    one when a character goes underwater, they should hold their breath,
+    the alien like they put on glasses to protect their eyes) but then it
+    goes away when the effect is over and it's back to their normal hundo
+    thing for the character."
+      - every live character, every effect (hfxCharReact, at one moment of
+        each: Confetti 1.7s, Fireworks 1.6s, Underwater 2.6s, Bubbles
+        3.45s, UFO 5.0s): a reaction is drawn (2+ parts showing), every
+        part of it inside the character's own head (its showing shapes,
+        +1.2 units), every part drawn for an eye on that eye (its closed
+        eye's centre), and a helmet's breath bubbles leave above its eyes;
+      - when it is over: nothing of it is left, no reaction animation is
+        running, the classes are off, and the character is back in its
+        hundo pose exactly (its eyes, closed eyes and mouth at the opacity
+        they had before);
+      - wired to the effect: a real 12/12 drill with each effect (Confetti
+        the Wizard, Fireworks the Ghost, Underwater the Ninja, Bubbles the
+        Clown, UFO the Alien) - the reaction starts within 0.3s of the
+        effect, draws its parts (the Ninja holds its breath), ends, and the
+        character's special plays after it.
+    Fails on a73c681 (no reaction at all). B320B_FX=ufo,... runs some
+    effects; B320B_MATRIX_ONLY=1 skips the real drills."""
+    print("\n320b. the results character reacts to the hundo effect while it plays, and only while it plays")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    for fx in (os.environ.get("B320B_FX") or "confetti,fireworks,underwater,bubbles,ufo").split(","):
+        r = pg.evaluate(B320B_MATRIX, [fx, B320B_SAMPLE[fx]])
+        if r.get("missing"):
+            check("%s: there is a reaction to play (hfxCharReact)" % fx, False, "missing")
+            continue
+        out, after = r["out"], r["after"]
+        bad = [o["id"] for o in out if not (o["on"] and o["cls"] and o["n"] >= 2)]
+        check("%s: every character (%d) reacts while it plays - its parts drawn and showing" % (fx, len(out)), not bad, bad or r["startedIn"])
+        off = [(o["id"], o["outside"]) for o in out if o["outside"]]
+        check("%s: every part of every reaction is on the character's own head" % fx, not off, off)
+        eye = [(o["id"], o["eyeOff"]) for o in out if o["eyeOff"] > 0]
+        check("%s: what is drawn for an eye sits on that eye, for every character" % fx, not eye, eye)
+        if fx == "underwater":
+            nh = [o["id"] for o in out if not o["hold"]]
+            check("underwater: every character holds its breath (the Koi, at home, blows bubbles)", not nh, nh)
+            ih = [(o["id"], o["inHelmet"]) for o in out if o["inHelmet"]]
+            check("underwater: no breath bubble starts inside a helmet", not ih, ih)
+        left = [(a["id"], a["left"], a["running"], a["cls"]) for a in after if a["left"] or a["running"] or a["cls"]]
+        check("%s: when it is over nothing of the reaction is left on any character" % fx, not left, left)
+        nb = [(a["id"], a["before"], a["now"]) for a in after if not a["back"]]
+        check("%s: ... and every character is back in its own hundo pose, exactly" % fx, not nb, nb)
+    ctx.close()
+    if os.environ.get("B320B_MATRIX_ONLY"): return
+    for fx, ch in (("confetti", "wizard"), ("fireworks", "ghost"), ("underwater", "ninja"), ("bubbles", "clown"), ("ufo", "alien")):
+        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=1)
+        r = pg.evaluate(B320B_RUN, [fx, ch])
+        ok = r["fxAt"] is not None and r["rxOn"] is not None and abs(r["rxOn"] - r["fxAt"]) <= .3 and r["seenHx"] >= 3
+        if fx == "underwater":
+            ok = ok and r["hold"]
+        check("a real 12/12 drill with %s as the %s: the character reacts as the effect starts, while it plays" % (fx, ch.title()), ok, r)
+        check("... it ends, nothing is left, and the %s's special plays after it" % ch.title(),
+              r["rxOff"] is not None and r["leftover"] == 0 and r["specialAfter"] is not None and "char-react-perfect" in (r["rx"] or []), r)
+        ctx.close()
+
+
+# _SEEK, plus the recorders' rule for a CSS animation whose name has left
+# animation-name: cancel it. Without that, an animation this harness has
+# paused and finished outlives its class (Chromium keeps a script-touched
+# CSSAnimation), so a control that slides out, back and out again under
+# the fake clock is held by the stale one - which the page never does.
+_SEEK320 = """(t) => { const M = window.__t0s = window.__t0s || new WeakMap();
+  document.getAnimations().forEach(an => {
+    if(!M.has(an)) M.set(an, { at: t, from: an.currentTime || 0, done: false });
+    const s = M.get(an); if(s.gone) return;
+    if(an.animationName && an.effect && an.effect.target){ try{
+      const cs = getComputedStyle(an.effect.target, an.effect.pseudoElement || null);
+      if(cs.animationName.split(',').map(x => x.trim()).indexOf(an.animationName) < 0){ s.gone = true; an.cancel(); return; }
+    }catch(e){} }
+    if(s.done) return;
+    const want = s.from + (t - s.at) * 1000;
+    let end = Infinity; try{ end = an.effect.getComputedTiming().endTime; }catch(e){}
+    if(want >= end && isFinite(end)){ s.done = true; try{ an.finish(); }catch(e){} return; }
+    if(an.playState !== 'paused') an.pause();
+    try{ an.currentTime = want; }catch(e){} }); }"""
+
+
+class _Stepper320(_Stepper):
+    def step(self, dt):
+        t0 = self.t
+        self.t += dt
+        self.pg.clock.run_for(max(1, int(round(self.t * 1000)) - int(round(t0 * 1000))))
+        self.pg.evaluate(_SEEK320, self.t)
+
+
+def check_b320c_case(br):
+    """Build 320 (b320c). Madison: "no more xp bonus for getting a badge ...
+    It's no longer a thing" / "I can see the chat button in it ... you
+    shouldn't be able to chat at all during any type of cutscene, and you
+    shouldn't receive any chat notifications or invite or friend
+    notifications during a cutscene either" / "before the badge entered the
+    case it's not glowing" / "it should say something about found 5 of 16
+    missing badges" / "This badge case is gonna be called level 1 badge
+    case" / "the case the second it starts opening should start glowing THE
+    COLORS of the badges that are in it" / "The badge phases through the top
+    thing when it opens" / "I'm gonna be adding more units to level 1".
+    Written against a73c681, where every check below fails:
+      - computeRunXp paid a badge line (1,000 a badge) and the scene said
+        "+1,000 XP";
+      - no scene turned focus on: the chat button and the tab bar stayed in
+        frame and a toast, a chat ping and a notice raised during the scene
+        landed on top of it;
+      - nothing lit the token: no aura;
+      - the caption read "6 of 16 in the case" and the case said "Badge case";
+      - the light out of the crack was one colour, the new badge's;
+      - the token waited where the lid swings up through it;
+      - the case was a fixed 4 x 4: a seventeenth unit fell out of the tray.
+    On the fake clock, so load cannot move a frame."""
+    print("\n320c. the badge case: no XP for a badge, cutscene focus, the glow, the caption, Level 1 Badge Case, the colours, the lid, the slots")
+    from PIL import Image as _I
+    import colorsys
+    # five held badges in five clearly different colours, none of them the
+    # new badge's purple: green, gold, blue, red, pink
+    HELD = ["Fitness, Wellness, and Stress Management", "Professionalism and Ethics", "Professional Policing",
+            "US and Texas Constitution and Rights", "Victims of Crime"]
+    NEW = "Identity Crimes"
+    SEED = """([held, nu]) => { store.unitPerfects = {}; held.forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+      store.unitPerfects[nu] = badgeThresholdFor(nu); store.pendingBadgeUnlocks = []; store.retroBadgePending = [];
+      theme.muteBanners = false; theme.reduceMotion = false; applyTheme(); saveStore();
+      document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert,#toast,.vroom-chat-alert').forEach(n => n.remove());
+      showHome(); }"""
+    UI = """() => { const r = s => { const e = document.querySelector(s); if(!e) return null; const b = e.getBoundingClientRect();
+        const cs = getComputedStyle(e); return { top: b.top, bottom: b.bottom, left: b.left, right: b.right, pe: cs.pointerEvents, vis: cs.visibility }; };
+      return { focus: document.body.classList.contains('cutscene-focus'), chat: r('.chatdock-btn'), tabs: r('.bottomtabs'), vh: innerHeight,
+        toast: !!document.querySelector('#toast'), ping: !!document.querySelector('.vroom-chat-alert.is-ping'), alert: !!document.querySelector('#dailyalert'),
+        toastText: (document.querySelector('#toast') || {}).textContent || '' }; }"""
+    out_of_view = lambda u: (u["chat"] is None or u["chat"]["bottom"] <= 0 or u["chat"]["vis"] == "hidden") and \
+        (u["tabs"] is None or u["tabs"]["top"] >= u["vh"] or u["tabs"]["vis"] == "hidden")
+    in_view = lambda u: bool(u["chat"]) and u["chat"]["top"] >= 0 and u["chat"]["bottom"] <= u["vh"] and \
+        bool(u["tabs"]) and u["tabs"]["bottom"] <= u["vh"] + 1
+    untappable = lambda u: (u["chat"] is None or u["chat"]["pe"] == "none") and (u["tabs"] is None or u["tabs"]["pe"] == "none")
+
+    # 1. no XP for a badge, anywhere it was said
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    xp = pg.evaluate("""() => { const base = { good: 12, answered: 12, elapsedMs: 60000, okList: Array(12).fill(true), hundos: 1, wholeUnits: 1 };
+      const a = computeRunXp(base), b = computeRunXp(Object.assign({}, base, { badgesPaid: ['Identity Crimes', 'Penal Code'] }));
+      let item = null; try{ item = rsUnlockItems({ colors: [], badges: ['Identity Crimes'], retroBadges: [], characters: [], banners: [], fx: [], justBeatSpeed: null, units: [], flare: null }).find(i => i.kind === 'badge'); }catch(e){}
+      return { a: a.total, b: b.total, lines: b.lines.filter(l => l.badge || l.key === 'badge').map(l => l.label + ' ' + l.value),
+               sub: item ? item.sub : null, mastery: typeof MASTERY_BONUS !== 'undefined' ? MASTERY_BONUS : null }; }""")
+    check("a badge pays no XP: no badge line in the XP box, and a run that finds two badges totals the same as one that finds none",
+          not xp["lines"] and xp["a"] == xp["b"] and xp["mastery"] is None, xp)
+    check("the results' badge card says nothing about XP", xp["sub"] is not None and "XP" not in xp["sub"], xp["sub"])
+    ctx.close()
+
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate(SEED, [HELD, NEW])
+        pg.wait_for_timeout(700)
+        pg.evaluate("() => { document.querySelectorAll('.app-banner,.daily-alert,#toast').forEach(n => n.remove()); }")
+        before = pg.evaluate(UI)
+        clk = _Stepper320(pg)
+        T = pg.evaluate("() => (typeof BC_T === 'object' ? BC_T : {})")
+        crack, opn, fly = T.get("crack", 8450) / 1000, T.get("open", 8950) / 1000, T.get("fly", 11700) / 1000
+        pg.evaluate("([nu]) => { window.__bcDone = false; playBadgeCaseScene([nu], () => { window.__bcDone = true; }); }", [NEW])
+        while clk.t < 2.0:
+            clk.step(1 / 30)
+        during = pg.evaluate(UI)
+        check(f"{dev}: during the badge scene the chat button and the tab bar are out of frame and take no tap (both were up before it)",
+              in_view(before) and during["focus"] and out_of_view(during) and untappable(during), {"before": before, "during": during})
+        # 2. notifications raised during the scene are held
+        pg.evaluate("""() => { showToast('b320c toast'); showChatPreview('Ada', 'b320c ping', () => {});
+          try{ showDailyAlert('b320c alert'); }catch(e){} }""")
+        clk.step(0.5)
+        held = pg.evaluate(UI)
+        intro_sub = pg.evaluate("() => (document.querySelector('.bc-intro .bc-sub') || {}).textContent || ''")
+        check(f"{dev}: a toast, a chat ping and a notice raised during the scene are held, not shown over it; the badge's own line has no XP",
+              not held["toast"] and not held["ping"] and not held["alert"] and intro_sub and "XP" not in intro_sub,
+              {"toast": held["toast"], "ping": held["ping"], "alert": held["alert"], "intro": intro_sub})
+        # 3. the colours out of the crack: one per badge already in the case
+        while clk.t < crack + 0.4:
+            clk.step(1 / 30)
+        reg = pg.evaluate("""() => { const t = document.querySelector('.bc-tray'), f = document.querySelector('.bc-front');
+          if(!t || !f) return null; const a = t.getBoundingClientRect(), b = f.getBoundingClientRect();
+          return [a.left - a.width * .1, b.top - a.height * .45, a.right + a.width * .1, b.top + b.height * .4]; }""")
+        cols = pg.evaluate("(us) => us.map(u => (badgeThemeFor(u) || {}).p)", HELD)
+        hues_found = []
+        if reg:
+            im = _I.open(io.BytesIO(pg.screenshot())).convert("RGB")
+            x0, y0, x1, y1 = [int(round(v)) for v in reg]
+            crop = im.crop((max(0, x0), max(0, y0), min(im.width, x1), min(im.height, y1)))
+            px = list(crop.getdata())
+            def hue(c):
+                hh, ss, vv = colorsys.rgb_to_hsv(*[v / 255 for v in c])
+                return hh * 360, ss, vv
+            sat = [hue(p) for p in px]
+            for c in cols:
+                ch = hue(tuple(int(c[i:i + 2], 16) for i in (1, 3, 5)))[0]
+                n = sum(1 for (hh, ss, vv) in sat if ss > .3 and vv > .28 and min(abs(hh - ch), 360 - abs(hh - ch)) < 14)
+                if n >= 0.004 * len(px):
+                    hues_found.append(c)
+        check(f"{dev}: as the lid cracks, light leaks out in the colours of the badges already in the case (at least 3 of the 5 seen)",
+              len(hues_found) >= 3, {"found": hues_found, "of": cols})
+        # 4. the token never inside the lid's area while it opens; it glows before it lands
+        LID = """() => { const fl = document.querySelector('.bc-flyer .bc-face.is-front') || document.querySelector('.bc-flyer');
+          const boxes = ['.bc-lid-in', '.bc-lid-out', '.bc-lid-front'].map(s => document.querySelector(s)).filter(Boolean).map(e => e.getBoundingClientRect());
+          if(!fl || !boxes.length) return null; const f = fl.getBoundingClientRect();
+          let worst = 0; boxes.forEach(b => { const ix = Math.min(f.right, b.right) - Math.max(f.left, b.left), iy = Math.min(f.bottom, b.bottom) - Math.max(f.top, b.top);
+            if(ix > 0 && iy > 0) worst = Math.max(worst, ix * iy / Math.max(1, f.width * f.height)); });
+          return { worst: Math.round(worst * 1000) / 1000, flyer: [f.left, f.top, f.right, f.bottom].map(Math.round) }; }"""
+        worst = {"worst": 0}
+        while clk.t < opn + 2.6:
+            clk.step(1 / 30)
+            r = pg.evaluate(LID)
+            if r and r["worst"] > worst["worst"]:
+                worst = dict(r, t=round(clk.t, 2))
+        check(f"{dev}: the token is never inside the lid's area from the crack until the lid has stopped",
+              worst["worst"] <= 0.01, worst)
+        while clk.t < fly - 0.3:
+            clk.step(1 / 15)
+        glow = pg.evaluate("""() => { const a = document.querySelector('.bc-flyer .bc-aura'), fl = document.querySelector('.bc-flyer');
+          if(!fl) return null; const b = fl.getBoundingClientRect(); let op = 0;
+          if(a){ op = 1; for(let e = a; e && e !== document.body; e = e.parentElement) op *= parseFloat(getComputedStyle(e).opacity); }
+          return { op: Math.round(op * 100) / 100, box: [b.left, b.top, b.right, b.bottom] }; }""")
+        tint = None
+        if glow:
+            im = _I.open(io.BytesIO(pg.screenshot())).convert("RGB")
+            l, t_, r_, b_ = glow["box"]
+            cw = r_ - l
+            ring = im.crop((int(l - cw * .12), int(t_ + cw * .3), int(l - cw * .01), int(b_ - cw * .3)))
+            ref = im.crop((2, int(t_ + cw * .3), 16, int(b_ - cw * .3)))
+            pur = lambda c: (c.getpixel((0, 0)) and None)
+            import statistics
+            def purple(cr):
+                d = list(cr.getdata())
+                return statistics.mean((p[0] + p[2]) / 2 - p[1] for p in d) if d else 0
+            tint = {"ring": round(purple(ring), 1), "backdrop": round(purple(ref), 1)}
+        check(f"{dev}: the badge glows in its own colour before it lands - its light is on and tints the dark round it",
+              bool(glow) and glow["op"] >= 0.9 and tint and tint["ring"] - tint["backdrop"] >= 5, {"glow": glow, "tint": tint})
+        # 5. the caption and the case's name
+        while clk.t < fly + 1.6:
+            clk.step(1 / 15)
+        words = pg.evaluate("""() => ({ kick: (document.querySelector('.bc-words .bc-kicker') || {}).textContent || '',
+          sub: (document.querySelector('.bc-words .bc-sub') || {}).textContent || '',
+          plate: (document.querySelector('.bc-front .nova-case-sideplate') || {}).textContent || '',
+          lid: (document.querySelector('.bc-lid-label') || {}).textContent || '' })""")
+        check(f"{dev}: the caption says 'Found 6 of 16 missing badges' under 'LEVEL 1 BADGE CASE', and the case says Level 1 Badge Case on its plate and in its lid",
+              re.match(r"^Found 6 of 16 missing badges$", words["sub"]) is not None and words["kick"].upper() == "LEVEL 1 BADGE CASE"
+              and words["plate"] == "Level 1 Badge Case" and words["lid"] == "Level 1 Badge Case", words)
+        # 6. the end: focus off, the controls back, the held items shown
+        while clk.t < 40 and not pg.evaluate("() => window.__bcDone"):
+            clk.step(0.25)
+        for _ in range(12):
+            clk.step(0.1)
+        after = pg.evaluate(UI)
+        check(f"{dev}: when the scene ends the chat button and the tab bar slide back, and what was held is shown",
+              not after["focus"] and in_view(after) and after["ping"] and after["toast"] and "b320c" in after["toastText"],
+              {"after": {k: after[k] for k in ("focus", "toast", "ping", "alert")}, "chat": after["chat"], "tabs": after["tabs"]})
+        ctx.close()
+
+    # 7. every other cutscene turns focus on, and nesting under a journey's own hold works
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(SEED, [HELD, NEW]); pg.wait_for_timeout(600)
+    clk = _Stepper320(pg)
+    SCENES = [("a secret flare scene", "() => { window.__sd = false; playVoidFlareScene(() => { window.__sd = true; }); }", ".sf-scene"),
+              ("a rank cutscene outside the rank-up journey", "() => { window.__sd = false; playTierCutscene('vanguard'); }", "#supernova-cutscene"),
+              ("the Supernova cutscene", "() => { window.__sd = false; playSupernovaCutscene(); }", "#supernova-cutscene")]
+    for (label, js, sel) in SCENES:
+        try:
+            pg.evaluate(js)
+        except Exception as e:
+            check(f"focus during {label}", False, str(e)[:160]); continue
+        for _ in range(45):
+            clk.step(1 / 30)
+        mid = pg.evaluate(UI)
+        up = pg.evaluate("(s) => !!document.querySelector(s)", sel)
+        k = 0
+        while k < 400 and pg.evaluate("(s) => !!document.querySelector(s)", sel):
+            clk.step(0.2); k += 1
+        for _ in range(10):
+            clk.step(0.1)
+        end = pg.evaluate(UI)
+        check(f"{label}: focus is on while it plays (chat button and tab bar out of frame) and off once it has gone",
+              up and mid["focus"] and out_of_view(mid) and not end["focus"], {"up": up, "mid": mid["focus"], "end": end["focus"], "chat": mid["chat"], "tabs": mid["tabs"]})
+        pg.evaluate("() => { document.querySelectorAll('.sf-scene, #supernova-cutscene').forEach(n => n.remove()); }")
+    # microtasks only: the page's clock is paused here, so no setTimeout
+    nest = pg.evaluate("""async () => { const tick = () => Promise.resolve().then(() => Promise.resolve());
+      setCutsceneFocus(true); const el = document.createElement('div'); el.id = 'vroom-cutscene'; document.body.appendChild(el);
+      await tick(); el.remove(); await tick(); const b = document.body.classList.contains('cutscene-focus');
+      setCutsceneFocus(false); await tick(); const c = document.body.classList.contains('cutscene-focus');
+      const el2 = document.createElement('div'); el2.id = 'vroom-cutscene'; document.body.appendChild(el2); await tick();
+      const a = document.body.classList.contains('cutscene-focus'); el2.remove(); await tick();
+      return { a, b, c, d: document.body.classList.contains('cutscene-focus') }; }""")
+    check("a scene inside a journey that holds focus itself: the scene ending leaves the journey's hold on; the journey's end takes it off",
+          nest == {"a": True, "b": True, "c": False, "d": False}, nest)
+    ctx.close()
+
+    # 8. the name, across the app; the slots follow the unit list (a fake 17th unit)
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate(SEED, [HELD, NEW]); pg.wait_for_timeout(500)
+        names = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
+          theme.reduceMotion = true; applyTheme(); showRanksScreen('badges'); await wait(900);
+          const head = (document.querySelector('.badges-tab .badges-head') || {}).textContent || '';
+          const tplate = (document.querySelector('.badges-tab .nova-case-sideplate') || {}).textContent || '';
+          showProfile('profile'); await wait(900);
+          const pplate = (document.querySelector('.pf-case .nova-case-sideplate') || {}).textContent || '';
+          let kick = ''; try{ kick = badgeDetail('Identity Crimes').kicker; }catch(e){}
+          return { head, tplate, pplate, kick }; }""")
+        check(f"{dev}: 'Level 1 Badge Case' heads the Badges screen and is on its case, on the Profile card's case and on a badge's card",
+              "Level 1 Badge Case" in names["head"] and names["tplate"] == "Level 1 Badge Case" and names["pplate"] == "Level 1 Badge Case"
+              and names["kick"] == "Level 1 Badge Case", names)
+        slots = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          QUESTIONS.push({ topic: 'Zz Fake Unit', q: 'b320c fake', choices: ['a', 'b'], answer: 0, src: 'zz1' });
+          try{ topicsInBankCache = null; }catch(e){} try{ unitTeachOrderCache = null; }catch(e){} try{ UNIT_SIZE_CACHE = null; }catch(e){}
+          const n = unitsInTeachingOrder().length;
+          /* a slot counts if it is inside the tray, the same size as the
+             others (within 6%), and clear of every other slot */
+          /* in layout terms (offsets, not the projected 3D boxes, where
+             perspective makes far rows smaller) */
+          const rect = (e, root) => { let x = 0, y = 0; for(let n = e; n && n !== root; n = n.offsetParent){ x += n.offsetLeft; y += n.offsetTop; }
+            return { left: x, top: y, right: x + e.offsetWidth, bottom: y + e.offsetHeight, width: e.offsetWidth, height: e.offsetHeight }; };
+          const inside = (cells, box) => { const b = { left: 0, top: 0, right: box.clientWidth + 2, bottom: box.clientHeight + 2 };
+            const hs = cells.map(c => rect(c, box));
+            const med = k => hs.map(r => r[k]).sort((x, y) => x - y)[Math.floor(hs.length / 2)] || 0;
+            const mw = med('width'), mh = med('height');
+            const lap = (r, i) => hs.some((q, j) => j !== i && Math.min(r.right, q.right) - Math.max(r.left, q.left) > 1 && Math.min(r.bottom, q.bottom) - Math.max(r.top, q.top) > 1);
+            return hs.filter((r, i) => r.left >= b.left - 1 && r.right <= b.right + 1 && r.top >= b.top - 1 && r.bottom <= b.bottom + 1
+              && Math.abs(r.width - mw) <= mw * .06 && Math.abs(r.height - mh) <= mh * .06 && !lap(r, i)).length; };
+          showRanksScreen('badges'); await wait(900);
+          const tcells = [...document.querySelectorAll('.badges-tab .ncase-cell')], tl = document.querySelector('.badges-tab .ncase-lining');
+          const tab = { n: tcells.length, inside: tl ? inside(tcells, tl) : 0 };
+          showHome(); await wait(400);
+          theme.reduceMotion = true; playBadgeCaseScene(['Identity Crimes'], () => {}); await wait(300);
+          const scells = [...document.querySelectorAll('.bc-scene .bc-slot')], sl = document.querySelector('.bc-scene .bc-lining');
+          const cut = { n: scells.length, inside: sl ? inside(scells, sl) : 0 };
+          document.querySelectorAll('.bc-scene').forEach(e => e.remove());
+          return { units: n, tab, cut }; }""")
+        check(f"{dev}: with a seventeenth unit the case has seventeen slots, every one inside its tray, on the Badges screen and in the cutscene",
+              slots["units"] == 17 and slots["tab"] == {"n": 17, "inside": 17} and slots["cut"] == {"n": 17, "inside": 17}, slots)
+        ctx.close()
 
 
 def main():
@@ -21975,6 +22999,7 @@ def main():
             check_b317_caption_fit(br)
             check_b317_noflash(br)
             check_b319_rankup(br)
+            check_b320d_rankup(br)
             check_b317_supernova(br)
             check_b317_planet(br)
             check_b317_flow(br)
@@ -22002,9 +23027,11 @@ def main():
             check_b319_badges(br)
             check_b319f_casespace(br)
             check_b319h_layout(br)
-            check_b320c_case(br)
-            check_b320g_inspect(br)
             check_b320e_cracks(br)
+            check_b320g_inspect(br)
+            check_b320h_fixes(br)
+            check_b320b_reactions(br)
+            check_b320c_case(br)
         finally:
             br.close()
     SERVER.shutdown()
