@@ -19314,7 +19314,11 @@ new stage's art is split into `CRACK_FORM_K` (8) canvases by the art's arrival
 map, each exactly what composites OVER the old stage to give the new one, and
 their opacity comes up in arrival order - the crack deepens and runs on from
 where it stopped, a point of light at each front (`.csc-run`; ember-coloured
-for Supernova's burn), chips falling off it (`.csc-chip`). At the end the burn
+for Supernova's burn), chips falling off it (`.csc-chip`), and each layer's glowing twin
+(`.csc-form-glow`: the same stretch as light, cool white for a rank, ember for
+Supernova, softened with a canvas shadow) coming up with it and cooling away -
+the scene's planet is about half Home's size, and a new Gold hairline alone is
+a pixel or less there. At the end the burn
 canvas is the new art itself (`is-formed`). All made before the scene's first
 frame; transform and opacity only. A rank plays it at `b + CRACK_FORM_AT_MS`
 (1500ms after the flash, the flash's wash gone) for `CRACK_FORM_MS` (2000);
