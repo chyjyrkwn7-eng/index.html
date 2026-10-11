@@ -14765,6 +14765,9 @@
     font-size:.64rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
     color:color-mix(in srgb, var(--ring) 70%, #fff);
   }
+  /* the case's name over the Badges count (build 320): one line, even on a 320px phone */
+  .badges-casename{ white-space:nowrap; }
+  @media (max-width:22rem){ .badges-casename{ letter-spacing:.06em; } }
   .rankhero-gaugetarget{ font-size:.86rem; font-weight:700; color:rgba(255,255,255,.85); margin-top:.1rem; white-space:nowrap; }
   .rankhero-gauge.is-met .rankhero-gaugetarget{ color:#7BE0A6; }
   .rankhero.is-top .rankhero-gaugetarget{ display:none; }
@@ -26217,8 +26220,13 @@
      everything here is geometry and motion. Sizes are in the case's own
      width, --cw, so one set of numbers frames a phone and an iPad. */
   .bc-scene{
-    --cw:min(80vw, 22.5rem, 44vh); --ch:calc(var(--cw) * .94); --d:calc(var(--cw) * .15); --dl:calc(var(--cw) * .07);
-    --coin:min(52vw, 14rem, 34vh); --stage-y:58%; --open-y:4%; --open-s:.9;
+    --cw:min(80vw, 22.5rem, 44vh); --d:calc(var(--cw) * .15); --dl:calc(var(--cw) * .07);
+    --coin:min(52vw, 14rem, 34vh); --stage-y:58%; --open-s:.9;
+    /* build 320: the open case sits lower, so the badge can wait above
+       the whole of the lid's swing (it used to hang where the lid passes) */
+    --open-y:calc(var(--cw) * .15);
+    /* the case's corners: a radius in its own width, and the metal caps on them */
+    --bc-r:calc(var(--cw) * .03); --bc-cap:calc(var(--cw) * .085);
     position:fixed; inset:0; z-index:420; overflow:hidden; cursor:pointer;
     padding:env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
     background:rgba(5,7,11,0); transition:background .26s ease, opacity .45s ease;
@@ -26229,44 +26237,88 @@
   .bc-scene.bc-in{ background:rgba(5,7,11,.93); }
   .bc-scene.bc-out{ opacity:0; }
   body.bc-covering #stage{ visibility:hidden; }
+  /* THE BACKGROUND IS ONE LIGHT THAT FOLLOWS THE SUBJECT (build 320): "The
+     transition from when the badge spins and then zooms out with the case,
+     the background thing there is not perfect and it's not smooth." It was
+     a glow pinned at 46% while the badge rose off it and the case shot up
+     through it on an expo curve, with the rays cut in .8s. Now the light is
+     centred on the badge while it spins, and as the camera pulls back it
+     travels down to the case and widens, on the same 1.8s curve as the
+     badge's rise; the rays fade over the same stretch. It is the badge's
+     own main colour (--badge-col, the scene's), and a faint grain over the
+     whole dim (.bc-dither, an image) keeps the dark gradient from banding. */
   .bc-glow{
-    position:absolute; left:50%; top:46%; width:150vmax; height:150vmax; transform:translate(-50%,-50%);
-    background:radial-gradient(circle, color-mix(in srgb, var(--badge-col) 24%, transparent) 0%, transparent 38%);
-    opacity:0; transition:opacity 1s ease .9s; pointer-events:none;
+    position:absolute; left:50%; top:calc(50% - 7vh); width:140vmax; height:140vmax; transform:translate(-50%, -50%) scale(.82);
+    background:radial-gradient(circle, color-mix(in srgb, var(--badge-col) 26%, transparent) 0%, color-mix(in srgb, var(--badge-col) 11%, transparent) 19%, transparent 40%);
+    opacity:0; transition:opacity 1s ease .9s, transform 1.8s cubic-bezier(.45,0,.25,1); pointer-events:none; will-change:transform;
   }
   .bc-in .bc-glow{ opacity:1; }
+  .bc-up .bc-glow{ transform:translate(-50%, calc(-50% + 15vh)) scale(1.12); transition:opacity 1s ease, transform 1.8s cubic-bezier(.45,0,.25,1); }
+  .bc-dither{ position:absolute; inset:0; pointer-events:none; opacity:.14; background-image:var(--case-velvet); background-size:64px 64px; }
   /* The stage holds the camera (its perspective) and the case's fade: an
      opacity on the case itself would flatten it. */
   .bc-stage{
+    /* the tray's depth follows its slots (build 320): four by four is .94
+       of its width, as before; five by four is shallower, and so on */
+    --ch:calc(var(--cw) * .94 * var(--case-rows, 4) / var(--case-cols, 4));
     position:absolute; left:50%; top:var(--stage-y); width:var(--cw); height:var(--ch);
     margin:calc(var(--ch) / -2) 0 0 calc(var(--cw) / -2);
     perspective:1700px; perspective-origin:50% 26%; pointer-events:none;
-    opacity:0; transition:opacity .8s ease;
+    opacity:0; transition:opacity 1.1s ease;
   }
   .bc-up .bc-stage{ opacity:1; }
   /* The camera: shut, from the front and above (the latches and the
      handle); open, risen over it and pulled back to fit the lid. */
   .bc-case{
     position:absolute; inset:0; transform-style:preserve-3d; transform-origin:50% 50%;
-    transform:translateY(58vh) rotateX(52deg) scale(.9);
+    transform:translateY(44vh) rotateX(52deg) scale(.86);
   }
-  .bc-case.bc-rise{ transform:translateY(0) rotateX(52deg) scale(1); transition:transform 1.5s cubic-bezier(.16,1,.3,1); }
+  /* up from below on the camera's curve, not shot up on an expo one */
+  .bc-case.bc-rise{ transform:translateY(0) rotateX(52deg) scale(1); transition:transform 2s cubic-bezier(.3,.72,.28,1); }
   .bc-case.bc-open{ transform:translateY(var(--open-y)) rotateX(21deg) scale(var(--open-s)); transition:transform 2.5s cubic-bezier(.42,0,.2,1); }
   .bc-case > *{ position:absolute; }
   /* its shadow on the table */
   .bc-floor{ left:-9%; right:-9%; top:-3%; bottom:-30%; transform:translateZ(-1px); border-radius:50%;
     background:radial-gradient(closest-side, rgba(0,0,0,.66), rgba(0,0,0,.36) 58%, rgba(0,0,0,0)); }
   /* the base's top: the trim round the opening, and the lining in it */
-  .bc-tray{ inset:0; transform:translateZ(var(--d)); border-radius:var(--case-r); box-shadow:0 0 0 1px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.08); }
-  .bc-lining{ position:absolute; inset:.5rem; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); grid-template-rows:repeat(4, minmax(0,1fr));
-    gap:.25rem; padding:.5rem; border-radius:var(--case-r-in); }
+  .bc-tray{ inset:0; transform:translateZ(var(--d)); border-radius:var(--bc-r); box-shadow:0 0 0 1px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.08); }
+  /* THE SLOTS FOLLOW THE UNIT LIST (build 320): --case-cols / --case-rows
+     come from badgeCaseGrid, so a seventeenth unit is a seventeenth slot */
+  .bc-lining{ position:absolute; inset:.5rem; display:grid; grid-template-columns:repeat(var(--case-cols, 4), minmax(0,1fr)); grid-template-rows:repeat(var(--case-rows, 4), minmax(0,1fr));
+    gap:.25rem; padding:.5rem; border-radius:calc(var(--bc-r) * .8); }
+  /* the foam's stitched seam, just inside its bead */
+  .bc-lining::after{ content:""; position:absolute; inset:calc(var(--cw) * .012); border-radius:calc(var(--bc-r) * .6);
+    border:1px dashed var(--case-stitch); pointer-events:none; }
+  /* ---- THE CORNERS (build 320): "the corners look bad". Every corner of
+     the lid and the base is rounded and capped in metal - a cap on each
+     corner of a top (.bc-cap, in plan) and a guard down each end of a wall
+     (the wall's ::before/::after), in the same metal, so the four corners
+     of the case read as four corner protectors. The caps are drawn, not
+     filtered: a lit diagonal ramp, a bevel and a rivet. */
+  .bc-cap{ position:absolute; width:var(--bc-cap); height:var(--bc-cap); z-index:3; pointer-events:none;
+    background:radial-gradient(circle at 50% 50%, #E8EDF2 0 9%, #59636D 11% 15%, transparent 17%),
+      linear-gradient(135deg, #D9DFE6 0%, #A3ADB8 30%, #6C7782 62%, #8C96A1 82%, #4E5862 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.6), inset 0 -1px 1px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.55), 0 1px 3px rgba(0,0,0,.5); }
+  .bc-cap.is-tl{ left:-2px; top:-2px; border-radius:var(--bc-r) 0 calc(var(--bc-cap) * .5) 0; }
+  .bc-cap.is-tr{ right:-2px; top:-2px; border-radius:0 var(--bc-r) 0 calc(var(--bc-cap) * .5); }
+  .bc-cap.is-bl{ left:-2px; bottom:-2px; border-radius:0 calc(var(--bc-cap) * .5) 0 var(--bc-r); }
+  .bc-cap.is-br{ right:-2px; bottom:-2px; border-radius:calc(var(--bc-cap) * .5) 0 var(--bc-r) 0; }
+  /* the walls' end guards, in the caps' metal and as wide, rounded where
+     the wall meets the table */
+  .bc-case .bc-front.nova-case-wall::before, .bc-case .bc-front.nova-case-wall::after,
+  .bc-case .bc-lid-front.nova-case-wall::before, .bc-case .bc-lid-front.nova-case-wall::after{
+    width:var(--bc-cap); min-width:0;
+    background-image:linear-gradient(90deg, #4E5862 0%, #8C96A1 18%, #C9D0D8 40%, #A3ADB8 58%, #6C7782 82%, #454E57 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.45), inset 0 -1px 0 rgba(0,0,0,.4), 0 0 0 1px rgba(0,0,0,.5); }
+  .bc-case .bc-front.nova-case-wall::before, .bc-case .bc-lid-front.nova-case-wall::before{ left:-1px; border-radius:0 0 calc(var(--bc-cap) * .3) var(--bc-r); }
+  .bc-case .bc-front.nova-case-wall::after, .bc-case .bc-lid-front.nova-case-wall::after{ right:-1px; border-radius:0 0 calc(var(--bc-cap) * .3) var(--bc-r); }
   .bc-slot{ display:flex; align-items:center; justify-content:center; position:relative; min-width:0; min-height:0; }
   .bc-slot svg{ position:relative; z-index:1; width:100%; height:100%; display:block; }
   .bc-hinge{ position:absolute; top:-.3rem; width:12%; height:.6rem; z-index:2; }
   .bc-hinge-l{ left:15%; } .bc-hinge-r{ right:15%; }
   /* the front wall, hanging from the tray's near edge to the table */
   .bc-front{ left:0; right:0; top:100%; height:var(--d); transform-origin:50% 0; transform:translateZ(var(--d)) rotateX(-90deg);
-    transform-style:preserve-3d; border-radius:0 0 var(--case-r) var(--case-r); }
+    transform-style:preserve-3d; border-radius:0 0 var(--bc-r) var(--bc-r); }
   .bc-latch{ position:absolute; top:7%; width:13%; height:44%; transform:translateZ(1.5px); transform-style:preserve-3d; }
   .bc-latch-l{ left:15%; } .bc-latch-r{ right:15%; }
   /* the hasp reaches up over the seam onto the lid's front, and flips out
@@ -26279,8 +26331,14 @@
   /* the light inside, seen through the gap as the lid lifts - from the
      NEAR edge, where the gap is (build 319: it was at the far edge, under
      the lid, and never showed through the crack) */
+  /* THE LIGHT IS THE BADGES' OWN (build 320): "the glow is just matching
+     the color of the badge I unlocked, the case the second it starts
+     opening should start glowing THE COLORS of the badges that are in it".
+     Its background is set by the scene: one soft pool per badge already in
+     the case, in that badge's colour, along the near edge under its own
+     column (bcLeakLayers) - never one colour over the whole tray. */
   .bc-spill{ inset:6% 5%; transform:translateZ(calc(var(--d) + 2px)); border-radius:var(--case-r-in); opacity:0; transition:opacity .5s ease; pointer-events:none;
-    background:radial-gradient(70% 50% at 50% 92%, color-mix(in srgb, var(--badge-col) 60%, #fff) 0%, color-mix(in srgb, var(--badge-col) 32%, transparent) 46%, transparent 74%); }
+    background:radial-gradient(70% 50% at 50% 92%, rgba(214,222,232,.34) 0%, rgba(214,222,232,.12) 46%, transparent 74%); }
   .bc-crack .bc-spill{ opacity:.95; transition:opacity .3s ease; }
   /* GONE BEFORE THE INSIDE IS SEEN (build 319): "when the case opened, the
      inside of the case was shining purple, seems like the timing was wrong
@@ -26300,11 +26358,31 @@
   .bc-crack .bc-lid{ transform:translateZ(var(--d)) rotateX(10deg); transition:transform .6s cubic-bezier(.3,1.6,.5,1); }
   .bc-open .bc-lid{ transform:translateZ(var(--d)) rotateX(112deg); }
   .bc-lid > *{ position:absolute; backface-visibility:hidden; -webkit-backface-visibility:hidden; }
-  .bc-lid-in{ inset:0; transform:rotateX(180deg); border-radius:var(--case-r); box-shadow:0 0 0 1px rgba(0,0,0,.6); }
-  .bc-lid-pad{ position:absolute; inset:.5rem; border-radius:var(--case-r-in); display:flex; align-items:flex-start; justify-content:center; padding-top:10%; }
-  .bc-lid-pad::after{ content:""; position:absolute; inset:5px; border-radius:calc(var(--case-r-in) * .6); border:1px dashed var(--case-stitch); pointer-events:none; }
-  .bc-lid-out{ inset:0; transform:translateZ(var(--dl)); border-radius:var(--case-r); display:flex; align-items:center; justify-content:center; }
-  .bc-lid-front{ left:0; right:0; top:100%; height:var(--dl); transform-origin:50% 0; transform:translateZ(var(--dl)) rotateX(-90deg); border-radius:0 0 var(--case-r) var(--case-r); }
+  /* THE INSIDE OF THE LID (build 320): "the top part when it's opened looks
+     bad and not detailed enough ... the inside of the case is supposed to
+     offer that soft case look". A leather frame (the trimmed shell) with
+     its aluminium bead, the corners capped; inside it a padded cushion in
+     the lining's velvet, quilted in three puffed bands (--case-lid-bg),
+     stitched twice round its edge, with the case's name debossed in the
+     top band. */
+  .bc-lid-in{ inset:0; transform:rotateX(180deg); border-radius:var(--bc-r); box-shadow:0 0 0 1px rgba(0,0,0,.6); }
+  .bc-lid-pad{ position:absolute; inset:calc(var(--cw) * .045); border-radius:calc(var(--bc-r) * .8); display:flex; align-items:flex-start; justify-content:center; padding-top:9%;
+    box-shadow:0 0 0 1.5px rgba(150,158,168,.55), 0 0 0 3px rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.6), inset 0 calc(var(--cw) * .02) calc(var(--cw) * .05) rgba(0,0,0,.6), inset 0 calc(var(--cw) * -.012) calc(var(--cw) * .04) rgba(0,0,0,.45); }
+  .bc-lid-pad::after{ content:""; position:absolute; inset:calc(var(--cw) * .014); border-radius:calc(var(--bc-r) * .6); border:1px dashed var(--case-stitch); pointer-events:none; }
+  .bc-lid-pad::before{ content:""; position:absolute; inset:calc(var(--cw) * .026); border-radius:calc(var(--bc-r) * .5); border:1px dashed rgba(206,214,224,.13); pointer-events:none; }
+  .bc-lid-label{ position:relative; z-index:1; font-family:var(--sans); font-weight:800; text-transform:uppercase; white-space:nowrap;
+    font-size:calc(var(--cw) * .036); letter-spacing:.22em; color:rgba(198,206,216,.34);
+    text-shadow:0 -1px 0 rgba(0,0,0,.75), 0 1px 0 rgba(255,255,255,.08); padding:calc(var(--cw) * .014) calc(var(--cw) * .04);
+    border:1px dashed rgba(206,214,224,.18); border-radius:calc(var(--cw) * .012); }
+  .bc-lid-out{ inset:0; transform:translateZ(var(--dl)); border-radius:var(--bc-r); display:flex; align-items:center; justify-content:center; }
+  /* the clips on top: a keeper over each latch at the lid's front edge,
+     the plate the latch's hasp hooks up into */
+  .bc-clip{ position:absolute; bottom:-2px; width:13%; height:9%; z-index:2; border-radius:calc(var(--cw) * .012) calc(var(--cw) * .012) 0 0;
+    background:linear-gradient(180deg, #E6EBF0 0%, #B6C0CA 35%, #7D8894 70%, #A5AFBA 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.75), 0 0 0 1px rgba(0,0,0,.55), 0 -1px 3px rgba(0,0,0,.45); }
+  .bc-clip::after{ content:""; position:absolute; left:28%; right:28%; top:38%; height:24%; border-radius:999px; background:#161A1F; box-shadow:0 1px 0 rgba(255,255,255,.45); }
+  .bc-clip.is-l{ left:15%; } .bc-clip.is-r{ right:15%; }
+  .bc-lid-front{ left:0; right:0; top:100%; height:var(--dl); transform-origin:50% 0; transform:translateZ(var(--dl)) rotateX(-90deg); border-radius:0 0 var(--bc-r) var(--bc-r); }
   /* a small knock as the badge seats */
   .bc-case.bc-open.bc-thud{ animation:bc-thud .42s cubic-bezier(.3,0,.3,1); }
   @keyframes bc-thud{ 0%{ transform:translateY(var(--open-y)) rotateX(21deg) scale(var(--open-s)); }
@@ -26348,20 +26426,41 @@
   .bc-coin-shadow{ position:absolute; left:16%; right:16%; top:100%; height:15%; margin-top:3%; border-radius:50%; pointer-events:none;
     background:radial-gradient(closest-side, rgba(0,0,0,.6), rgba(0,0,0,.28) 55%, rgba(0,0,0,0)); transition:opacity .6s ease; }
   .bc-flyer.bc-lifted .bc-coin-shadow{ opacity:0; }
+  /* IT GLOWS BEFORE IT LANDS (build 320): "before the badge entered the case
+     it's not glowing, so when it hits the case and does light up, it
+     doesn't really make sense". Its own light comes on as it appears and
+     stays with it through the lift, the wait and the drop, breathing
+     softly; on landing the slot's glow takes over in the same colour, so
+     the light goes into the case with it. A gradient behind the token,
+     never a filter. */
+  .bc-aura{ position:absolute; inset:-26%; border-radius:50%; pointer-events:none; opacity:0;
+    background:radial-gradient(circle closest-side, color-mix(in srgb, var(--badge-col) 62%, transparent) 0%, color-mix(in srgb, var(--badge-col) 30%, transparent) 50%, color-mix(in srgb, var(--badge-col) 9%, transparent) 76%, transparent 100%);
+    transition:opacity .9s ease; }
+  .bc-flyer.bc-show .bc-aura{ opacity:1; animation:bc-aura 2.8s ease-in-out infinite alternate; }
+  @keyframes bc-aura{ from{ transform:scale(.94); } to{ transform:scale(1.06); } }
   /* Light turning behind it while it is the only thing on screen. */
   .bc-rays{
     position:absolute; inset:-55%; border-radius:50%; pointer-events:none; opacity:0;
     background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--badge-col) 26%, transparent) 0deg 7deg, transparent 7deg 22deg);
     -webkit-mask:radial-gradient(circle, #000 18%, transparent 66%); mask:radial-gradient(circle, #000 18%, transparent 66%);
-    transition:opacity .8s ease;
+    transition:opacity 1.6s cubic-bezier(.45,0,.25,1);
   }
-  .bc-flyer.bc-show:not(.bc-lifted) .bc-rays{ opacity:1; animation:bc-rays 14s linear infinite; }
+  .bc-flyer.bc-show .bc-rays{ animation:bc-rays 14s linear infinite; }
+  .bc-flyer.bc-show:not(.bc-lifted) .bc-rays{ opacity:1; }
   @keyframes bc-rays{ to{ transform:rotate(360deg); } }
   /* ---- the seat ---- the slot's own light, a ring of it, a glint */
+  /* each slot's light is its OWN badge's colour (--slot-col, build 320) */
   .bc-slot::before{
-    content:""; position:absolute; inset:-8%; border-radius:50%; pointer-events:none; opacity:0;
-    background:radial-gradient(circle closest-side, color-mix(in srgb, var(--badge-col) 55%, transparent) 0%, transparent 100%);
+    content:""; position:absolute; inset:-20%; border-radius:50%; pointer-events:none; opacity:0;
+    background:radial-gradient(circle closest-side, color-mix(in srgb, var(--slot-col, var(--badge-col)) 62%, transparent) 0%, color-mix(in srgb, var(--slot-col, var(--badge-col)) 22%, transparent) 55%, transparent 100%);
   }
+  /* "the case the second it starts opening should start glowing THE COLORS
+     of the badges that are in it ... and they would fade nicely ... when the
+     case is opened, ensure all the badges are glowing". From the crack every
+     badge already in the case lights in its own colour, one after another
+     (--gd), swells, and settles to a steady glow that stays. */
+  .bc-case.bc-lit .bc-slot.is-held:not(.is-new)::before{ animation:bc-held-glow 3.6s cubic-bezier(.2,.7,.3,1) var(--gd, 0s) both; }
+  @keyframes bc-held-glow{ 0%{ opacity:0; transform:scale(.8); } 16%{ opacity:1; transform:scale(1.42); } 100%{ opacity:.8; transform:none; } }
   .bc-slot.is-new::before{ animation:bc-seat-glow 1.4s ease-out both; }
   .bc-slot.is-new svg{ animation:bc-seat .55s cubic-bezier(.2,1.4,.4,1) both; }
   @keyframes bc-seat{ 0%{ transform:scale(1.07); } 100%{ transform:none; } }
@@ -26378,6 +26477,19 @@
   .badge-shine-band{ opacity:0; }
   .bc-slot.is-new .badge-shine-band{ animation:bc-glint 1.3s cubic-bezier(.3,0,.2,1) .3s both; }
   @keyframes bc-glint{ 0%{ opacity:1; transform:translateX(0); } 100%{ opacity:1; transform:translateX(165px); } }
+  /* THE LIGHT OUT OF THE SEAM (build 320): flat, over the case where the
+     lid meets the base, one soft pool per badge in the case in its colour,
+     under its own column - it blooms as the lid cracks and fades as the
+     lid swings back and the badges' own glows take over. Placed by the
+     scene on the seam it measures (bcPlaceLeak). */
+  .bc-leak{ position:absolute; z-index:2; pointer-events:none; opacity:0; transform:scaleY(.4); transform-origin:50% 100%;
+    -webkit-mask-image:linear-gradient(90deg, transparent 0%, #000 14%, #000 86%, transparent 100%), linear-gradient(0deg, transparent 0%, #000 24%, rgba(0,0,0,.55) 60%, transparent 100%);
+    -webkit-mask-composite:source-in;
+    mask-image:linear-gradient(90deg, transparent 0%, #000 14%, #000 86%, transparent 100%), linear-gradient(0deg, transparent 0%, #000 24%, rgba(0,0,0,.55) 60%, transparent 100%);
+    mask-composite:intersect;
+    transition:opacity .35s ease, transform .6s cubic-bezier(.2,.8,.3,1); }
+  .bc-leak.is-on{ opacity:1; transform:none; }
+  .bc-leak.is-fading{ opacity:0; transform:translateY(-10%) scaleY(1.2); transition:opacity 1.1s cubic-bezier(.4,0,.2,1), transform 1.1s cubic-bezier(.4,0,.2,1); }
   /* ---- the words ---- */
   .bc-intro{
     position:absolute; left:0; right:0; top:calc(50% - 7vh + var(--coin) / 2 + 2.2rem); text-align:center; padding:0 1.2rem;
@@ -26398,8 +26510,9 @@
   /* (the pseudo-elements by name: a * never reaches a ::before, and the
      seated slot's glow is one) */
   .bc-scene.bc-still, .bc-scene.bc-still *, .bc-scene.bc-still *::before, .bc-scene.bc-still *::after{ transition:none !important; animation:none !important; }
-  .bc-scene.bc-still .bc-flyer, .bc-scene.bc-still .bc-spill{ display:none; }
+  .bc-scene.bc-still .bc-flyer, .bc-scene.bc-still .bc-spill, .bc-scene.bc-still .bc-leak{ display:none; }
   .bc-scene.bc-still .bc-slot.is-new::before{ opacity:.6; }
+  .bc-scene.bc-still .bc-slot.is-held::before{ opacity:.8; }
   .bc-scene.bc-still .bc-slot.is-new svg{ filter:none; }
 
   /* ---- THE SECRET FLARE SCENES (build 317) - see sfScene ----
@@ -27176,12 +27289,25 @@
     --case-trim:linear-gradient(160deg, #B7BBC1 0%, #8E9399 14%, #63686F 48%, #7C8188 80%, #4A4F56 100%);
     /* the hardware: polished, with the dark mid-band that says metal */
     --case-metal:linear-gradient(180deg, #F2F5F8 0%, #C3CCD5 30%, #808C99 58%, #A9B4BF 80%, #687480 100%);
-    /* the lining the badges are cut into */
-    --case-lining-bg:radial-gradient(120% 85% at 50% 0%, #262B32 0%, #171A1F 55%, #0C0E11 100%);
-    /* the lid's lining: quilted, the light coming down onto it */
-    --case-lid-bg:repeating-linear-gradient(45deg, rgba(0,0,0,.5) 0 1px, rgba(255,255,255,.07) 1px 2px, rgba(0,0,0,0) 2px 1.3rem),
-      repeating-linear-gradient(-45deg, rgba(0,0,0,.5) 0 1px, rgba(255,255,255,.07) 1px 2px, rgba(0,0,0,0) 2px 1.3rem),
-      radial-gradient(110% 90% at 50% 0%, #343B44 0%, #20252C 56%, #121418 100%);
+    /* VELVET (build 320): "the inside of the case is supposed to offer that
+       soft case look, this case is supposed to give the 'this case is legit
+       and holds valuable items'". A fine pile - a 64px tile of noise, an
+       image, never a filter - over the lining and the lid's cushion, so
+       both read as soft cloth over foam rather than a flat dark panel.
+       Neutral grey (check_b232: no blue in the lining). */
+    --case-velvet:url("data:image/png;base64,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");
+    /* the lining the badges are cut into: velvet, the light falling on it */
+    --case-lining-bg:var(--case-velvet), radial-gradient(120% 85% at 50% 0%, #2A2F36 0%, #191C21 55%, #0D0F12 100%);
+    /* the lid's lining: a velvet cushion quilted in three puffed bands, the
+       light coming down onto it */
+    --case-lid-bg:linear-gradient(180deg, rgba(0,0,0,0) 0 32%, rgba(0,0,0,.5) 33%, rgba(255,255,255,.06) 34%, rgba(0,0,0,0) 35.5%,
+        rgba(0,0,0,0) 65%, rgba(0,0,0,.5) 66%, rgba(255,255,255,.06) 67%, rgba(0,0,0,0) 68.5%),
+      radial-gradient(70% 22% at 50% 18%, rgba(255,255,255,.075), rgba(255,255,255,0) 72%),
+      radial-gradient(70% 22% at 50% 50%, rgba(255,255,255,.06), rgba(255,255,255,0) 72%),
+      radial-gradient(70% 22% at 50% 82%, rgba(255,255,255,.05), rgba(255,255,255,0) 72%),
+      var(--case-velvet),
+      radial-gradient(110% 90% at 50% 0%, #343A42 0%, #21252B 56%, #131519 100%);
+    --case-lid-size:100% 100%, 100% 100%, 100% 100%, 100% 100%, 32px 32px, 100% 100%;
     --case-stitch:rgba(206,214,224,.24);
     /* THE CASE IS SQUARE (build 318): "the corners of the case don't look
        good, you can see where it disconnects on the top and bottom". The
@@ -27203,9 +27329,10 @@
     background-size:var(--case-shell-size), 100% 100%;
     background-origin:padding-box, padding-box, padding-box, border-box; background-clip:padding-box, padding-box, padding-box, border-box; }
   .nova-case-lining{ border:2px solid transparent; background-color:#111418; background-image:var(--case-lining-bg), var(--case-trim);
-    background-origin:padding-box, border-box; background-clip:padding-box, border-box;
+    background-size:32px 32px, 100% 100%, 100% 100%;
+    background-origin:padding-box, padding-box, border-box; background-clip:padding-box, padding-box, border-box;
     box-shadow:inset 0 3px 12px rgba(0,0,0,.78), inset 0 0 0 1px rgba(0,0,0,.65), 0 0 0 1px rgba(0,0,0,.6); }
-  .nova-case-lid{ background-color:#15181C; background-image:var(--case-lid-bg);
+  .nova-case-lid{ background-color:#15181C; background-image:var(--case-lid-bg); background-size:var(--case-lid-size);
     box-shadow:inset 0 0 0 1px rgba(0,0,0,.6), inset 0 0 26px rgba(0,0,0,.55); }
   /* the plate: engraved aluminium - dark letters with a lit lower lip */
   .nova-case-plate{ display:inline-block; padding:.34rem .9rem; border-radius:.3rem; white-space:nowrap;
@@ -27281,7 +27408,7 @@
   .nova-case.ncase .ncase-hinge.is-l{ left:15%; } .nova-case.ncase .ncase-hinge.is-r{ right:15%; }
   .nova-case.ncase .ncase-lining{
     position:absolute; inset:2.4cqw; box-sizing:border-box; margin:0; padding:2.4cqw; z-index:1;
-    display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); grid-template-rows:repeat(4, minmax(0, 1fr)); gap:1.3cqw;
+    display:grid; grid-template-columns:repeat(var(--case-cols, 4), minmax(0, 1fr)); grid-template-rows:repeat(var(--case-rows, 4), minmax(0, 1fr)); gap:1.3cqw;
     border-radius:var(--case-r-in);
   }
   .nova-case.ncase .ncase-lining::before, .nova-case.ncase .ncase-lining::after{ content:none; }
@@ -27363,6 +27490,34 @@
            drop-shadow(0 0 6px color-mix(in srgb, var(--badge-glow, #fff) 20%, transparent)); }
   .nova-case.ncase .ncase-cell.is-earned .badge-tile-art::after{ opacity:.55; }
 
+  /* ---- CUTSCENE FOCUS (build 320, b320c) ----
+     "you shouldn't be able to chat at all during any type of cutscene ...
+     Pure focus on the cutscenes." While a scene has the screen the chat
+     button slides up out of frame, the tab bar (and a room's chat button)
+     slide down out of it, and none of them takes a tap; when it ends they
+     slide back, so the person knows it is over. The `translate` PROPERTY,
+     never `transform`: the bar is centred by transform:translateX(-50%) and
+     the button presses down by transform, and translate composes with both.
+     An animation, not a transition, so nothing these elements already
+     transition is overridden. Anything that would interrupt is held in JS
+     (holdForCutscene); a banner already up when a scene starts is hidden
+     here and comes back with the controls. */
+  @keyframes cs-up-out{ from{ translate:0 0; } to{ translate:0 calc(-100% - 1.5rem - env(safe-area-inset-top, 0px)); } }
+  @keyframes cs-up-in{ from{ translate:0 calc(-100% - 1.5rem - env(safe-area-inset-top, 0px)); } to{ translate:0 0; } }
+  @keyframes cs-down-out{ from{ translate:0 0; } to{ translate:0 calc(100% + 1.5rem + env(safe-area-inset-bottom, 0px)); } }
+  @keyframes cs-down-in{ from{ translate:0 calc(100% + 1.5rem + env(safe-area-inset-bottom, 0px)); } to{ translate:0 0; } }
+  body.cutscene-focus .chatdock-btn{ animation:cs-up-out .5s cubic-bezier(.5,0,.75,0) both; pointer-events:none !important; }
+  body.cutscene-focus .bottomtabs, body.cutscene-focus .roomchat-fab{ animation:cs-down-out .5s cubic-bezier(.5,0,.75,0) both; pointer-events:none !important; }
+  body.cutscene-focus .bottomtabs *, body.cutscene-focus .roomchat-fab *{ pointer-events:none !important; }
+  body.cutscene-return:not(.cutscene-focus) .chatdock-btn{ animation:cs-up-in .62s cubic-bezier(.2,.9,.25,1) both; }
+  body.cutscene-return:not(.cutscene-focus) .bottomtabs, body.cutscene-return:not(.cutscene-focus) .roomchat-fab{ animation:cs-down-in .62s cubic-bezier(.2,.9,.25,1) both; }
+  body.cutscene-focus :is(.daily-alert, .app-banner, .vroom-chat-alert, .toast, .update-banner){ visibility:hidden !important; pointer-events:none !important; }
+  /* an open chat goes out of reach with its button */
+  body.cutscene-focus :is(.chatdock-panel, #roomchat-sheet){ visibility:hidden !important; pointer-events:none !important; }
+  /* Reduce motion: no slide - out of sight and out of reach, and back */
+  [data-reduce-motion="true"] body.cutscene-focus :is(.chatdock-btn, .bottomtabs, .roomchat-fab){ visibility:hidden; }
+  @media (prefers-reduced-motion:reduce){ body.cutscene-focus :is(.chatdock-btn, .bottomtabs, .roomchat-fab){ visibility:hidden; animation:none; } }
+
   /* ---- the case's name, on its side (build 317, badge2) ----
      One plate on the front wall of every case, between the latches: a
      smaller cut of the engraved plate, sized by the wall it is on. */
@@ -27374,9 +27529,14 @@
      plate flat on it shrank to a sliver there. Leaning 42deg it faces
      the camera within ~27deg both shut (52deg) and open. It is on the
      base, so the lid never takes it with it or covers it. */
-  .bc-sideplate{ position:absolute; left:50%; top:8%; transform-origin:50% 0;
-    transform:translateX(-50%) translateZ(2px) rotateX(42deg);
-    font-size:calc(var(--cw) * .03); padding:calc(var(--cw) * .013) calc(var(--cw) * .036); }
+  /* FLAT ON THE WALL (build 320): "In the open position, the bottom tag
+     says badge case but it's like facing me". It leaned out 42deg (317) to
+     stay square to the camera, and open that read as a card stuck out at
+     you rather than a plate fixed to the case. It lies on the wall now,
+     foreshortened with it like everything else on it; the case's name is
+     also debossed in the open lid and said under the case. */
+  .bc-sideplate{ position:absolute; left:50%; top:50%; transform:translate(-50%, -50%) translateZ(1.5px);
+    font-size:calc(var(--cw) * .029); letter-spacing:.14em; padding:calc(var(--cw) * .014) calc(var(--cw) * .03); }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -49310,6 +49470,7 @@ function friendMomentShown(){
 function celebrateNewFriend(pub, tries){
   if(!pub) return;
   if(friendMomentShown()[pub]) return;
+  if(holdForCutscene("friend:" + pub, () => celebrateNewFriend(pub))) return;
   let busy = !!(document.getElementById("splashscreen") || document.getElementById("tour-overlay")
     || document.getElementById("genprofile-overlay") || document.querySelector(".friend-moment")
     || document.querySelector(".rs-spot") || document.getElementById("supernova-cutscene") || whatsNewHolds());
@@ -53019,7 +53180,9 @@ function badgeThresholdFor(name){
    nobody's total is adjusted for badges earned before this existed -
    the XP they already have is treated as having included it. That is
    also what keeps this from moving a single existing level. */
-const MASTERY_BONUS = 1000;   /* build 213: "Badge xp earned needs to be lowered to 1000 xp" */
+/* (MASTERY_BONUS was here - 1,000 XP a badge from build 213. Removed in
+   build 320: "no more xp bonus for getting a badge ... It's no longer a
+   thing." Nothing pays for a badge itself now.) */
 /* WHAT A BADGE IS WORTH IN XP, AND WHY IT IS A FLAT LUMP. Four levels
    at LEVEL_COST_MAX, paid once, the moment a unit is mastered. The
    grinding that earned it pays its own way on top - about three more
@@ -70419,6 +70582,8 @@ function positionDailyAlert(){
    and stay plain sentences. Only the once-a-day announcement asks for
    `live`, and only that one becomes a tappable, flourishing banner. */
 function showDailyAlert(msg, opts){
+  /* a notice banner: held while a cutscene has the screen (build 320) */
+  if(typeof holdForCutscene === "function" && holdForCutscene("dailyalert:" + msg, () => showDailyAlert(msg, opts))) return null;
   const o = opts || {};
   const old = document.getElementById("dailyalert");
   if(old) old.remove();
@@ -71683,6 +71848,7 @@ function previewNewPings(){
   });
 }
 function showChatPreview(who, text, onTap){
+  if(holdForCutscene("chatping", () => showChatPreview(who, text, onTap))) return;
   document.querySelectorAll(".vroom-chat-alert.is-ping").forEach(e => e.remove());
   const bar = document.createElement("div");
   bar.className = "vroom-chat-alert is-ping";
@@ -73352,19 +73518,108 @@ let chatDockKbSync = null;
    and the tab bar, and anything that would interrupt is held; when the
    last scene ends, the held items are released (cutsceneFocusRelease
    hooks) and the controls slide back so it is clear the scene is over. */
-let cutsceneFocusDepth = 0;
-const cutsceneFocusReleaseHooks = [];
+/* `var`: read by showToast and friends, which can run before this line */
+var cutsceneFocusDepth = 0;
+var cutsceneFocusReleaseHooks = [];
 function setCutsceneFocus(on){
   const was = cutsceneFocusDepth > 0;
   cutsceneFocusDepth = Math.max(0, cutsceneFocusDepth + (on ? 1 : -1));
   const now = cutsceneFocusDepth > 0;
   try{ document.body.classList.toggle("cutscene-focus", now); }catch(e){}
+  if(!was && now){ try{ document.body.classList.remove("cutscene-return"); }catch(e){} }
   if(was && !now){
     cutsceneFocusReleaseHooks.slice().forEach(f => { try{ f(); }catch(e){} });
   }
 }
 function cutsceneFocusActive(){ return cutsceneFocusDepth > 0; }
 function onCutsceneFocusRelease(fn){ if(typeof fn === "function") cutsceneFocusReleaseHooks.push(fn); }
+
+/* ---- WHAT FOCUS LOOKS LIKE (build 320, b320c) ----
+   On: the chat button slides up out of frame and the tab bar slides down
+   out of it (body.cutscene-focus, the CSS `translate` property - not
+   `transform` - so the bar's translateX(-50%) centring and the button's
+   own transforms are untouched), and neither takes a tap. Off: both slide
+   back (body.cutscene-return, for as long as the slide lasts), which is
+   how the person knows the scene is over. */
+const CUTSCENE_RETURN_MS = 620;
+let cutsceneReturnTimer = 0;
+onCutsceneFocusRelease(() => {
+  try{
+    document.body.classList.add("cutscene-return");
+    clearTimeout(cutsceneReturnTimer);
+    cutsceneReturnTimer = setTimeout(() => document.body.classList.remove("cutscene-return"), CUTSCENE_RETURN_MS + 60);
+  }catch(e){}
+});
+
+/* ---- HELD UNTIL THE SCENE IS OVER ----
+   "you shouldn't receive any chat notifications or invite or friend
+   notifications during a cutscene either. Pure focus on the cutscenes."
+   Anything that would interrupt asks holdForCutscene() first: while focus
+   is on, the call is kept (one per key - the latest wins, so a chat that
+   sends five messages during a scene announces once) and the caller stops
+   there. When the last scene ends the held calls run again, in order, a
+   beat after the controls have slid back. Each goes through its own
+   function again, so anything that no longer applies (banners muted
+   since, a screen left) still refuses on its own terms, and anything that
+   meets a second scene is simply held again. */
+var cutsceneHeld = [];
+function holdForCutscene(key, fn){
+  if(!cutsceneFocusActive()) return false;
+  for(let i = cutsceneHeld.length - 1; i >= 0; i--) if(cutsceneHeld[i].key === key) cutsceneHeld.splice(i, 1);
+  cutsceneHeld.push({ key: key, fn: fn });
+  return true;
+}
+onCutsceneFocusRelease(() => {
+  const list = cutsceneHeld.splice(0);
+  /* toasts share one slot (showToast replaces the last one), so they go
+     one after another; everything else has a place of its own */
+  let toastAt = 0;
+  list.forEach(h => {
+    const isToast = /^toast:/.test(h.key);
+    const wait = CUTSCENE_RETURN_MS + 120 + (isToast ? toastAt : 0);
+    if(isToast) toastAt += 3600;
+    setTimeout(() => { try{ h.fn(); }catch(e){} }, wait);
+  });
+  /* the dot and the update notices re-read what they would have shown */
+  setTimeout(() => {
+    try{ syncChatDockDot(); }catch(e){}
+    try{ syncNoticeVisibility(); }catch(e){}
+  }, CUTSCENE_RETURN_MS + 60);
+});
+
+/* ---- EVERY CUTSCENE TURNS FOCUS ON BY BEING ON SCREEN ----
+   Rather than a call at each scene's start and at each of its exits (a
+   skip, a tap, the screen changing under it, an error half way), focus
+   follows the scenes themselves: while any of these is on <body>, one
+   counted hold is on, and when the last goes (or starts its fade out, or
+   a race board has finished counting) it comes off. Every exit path of
+   every scene is covered by construction, including scenes added later -
+   the same reason dataset.screen gates the notices. A scene inside the
+   rank-up journey nests under the journey's own hold. */
+const CUTSCENE_SCENE_SEL = ".bc-scene:not(.bc-out), .sf-scene:not(.sf-out), #supernova-cutscene, #badge-cutscene, " +
+  "#vroom-cutscene, #vroom-race-cut:not(.is-done), #void-cutscene, .hfx-layer.is-page";
+const CUTSCENE_SCENE_CLASSED = ".bc-scene, .sf-scene, #vroom-race-cut";
+let sceneFocusHeld = false;
+let sceneClassObs = null;
+function syncSceneFocus(){
+  let on = false;
+  try{
+    on = !!document.body.querySelector(":scope > :is(" + CUTSCENE_SCENE_SEL + ")");
+    /* the scenes that end by a class: watch that class */
+    document.body.querySelectorAll(":scope > :is(" + CUTSCENE_SCENE_CLASSED + ")").forEach(el => {
+      if(el.__csWatched || !sceneClassObs) return;
+      el.__csWatched = true;
+      sceneClassObs.observe(el, { attributes: true, attributeFilter: ["class"] });
+    });
+  }catch(e){}
+  if(on === sceneFocusHeld) return;
+  sceneFocusHeld = on;
+  setCutsceneFocus(on);
+}
+try{
+  sceneClassObs = new MutationObserver(syncSceneFocus);
+  new MutationObserver(syncSceneFocus).observe(document.body, { childList: true });
+}catch(e){}
 
 function syncChatDock(){
   if(!chatDock) return;
@@ -73747,6 +74002,8 @@ function renderNotifications(){
 function syncChatDockDot(){
   const dot = document.getElementById("chatdock-dot");
   if(!dot) return;
+  /* the dot waits for the scene too (build 320): the release re-runs this */
+  if(cutsceneFocusActive()) return;
   const notifs = notificationItems().length;
   let byTab = { friends: 0, groups: 0 };
   try{ byTab = chatUnreadByTab(); }catch(e){}
@@ -73788,6 +74045,7 @@ function checkChatInvites(){
   syncChatDockDot();
   if(introPending || document.getElementById("intro-pop")) return;
   if(!invites.length) return;
+  if(holdForCutscene("chatinvite", () => checkChatInvites())) return;
   const newest = invites[invites.length - 1];
   /* Same two shapes as notificationItems - a mailbox message carries
      its own stamp, a row entry keeps it inside the field addressed to
@@ -80270,6 +80528,8 @@ function orbitBoostStep(ts){
 }
 
 function showToast(msg, tone){
+  /* held while a cutscene has the screen (build 320) */
+  if(typeof holdForCutscene === "function" && holdForCutscene("toast:" + msg, () => showToast(msg, tone))) return;
   const existing = document.getElementById("toast");
   if(existing) existing.remove();
   const toast = document.createElement("div");
@@ -80369,6 +80629,8 @@ function noticeAllowedHere(){
   if(screen !== "home" && screen !== "welcome") return false;
   if(document.getElementById("tour-overlay")) return false;
   if(Date.now() < tourQuietUntil) return false;
+  /* never during a cutscene; the release re-checks (build 320) */
+  if(typeof cutsceneFocusActive === "function" && cutsceneFocusActive()) return false;
   return true;
 }
 
@@ -84248,10 +84510,12 @@ const BC_SPIN_MS = 3400;      /* the first badge's spin up */
 const BC_SPIN_TURNS = 4;
 const BC_EDGE_LAYERS = 20;
 const BC_STILL_MS = 4600;
+/* build 320: the lift is one 1.7s move with the camera's pull-back and the
+   case's rise (2s), so the latches wait for the case to settle */
 const BC_T = {
   coin: 300, intro: 1100, glint: 3800, sway: 4050,
-  lift: 6000, rise: 6150, latchL: 7700, latchR: 8000, crack: 8450, open: 8950,
-  fly: 11700, flyMs: 1150, hold: 3600, next: 4400
+  lift: 6000, liftMs: 1700, rise: 6100, latchL: 8050, latchR: 8350, crack: 8800, open: 9300,
+  fly: 12100, flyMs: 1150, hold: 3600, next: 4400
 };
 /* the open case, by device - the lid's angle on its hinges, the camera's
    tilt, and how far it is pulled back to fit */
@@ -84330,8 +84594,11 @@ function badgeCaseSlotPx(){
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
   const wide = !!(window.matchMedia && window.matchMedia("(min-width:40rem)").matches);
   const cw = wide ? Math.min(innerWidth * .62, 29 * rem, innerHeight * .44) : Math.min(innerWidth * .8, 22.5 * rem, innerHeight * .44);
-  const inset = 8 + 2.75 * rem;            /* two 2px borders a side, .5rem inset, .5rem padding, three .25rem gaps */
-  const cell = Math.min(cw - inset, cw * .94 - inset) / 4;
+  /* the slots follow the unit list (build 320) */
+  const g = badgeCaseGrid(badgeCaseUnits(BADGE_CASES[0]).length);
+  const inset = 8 + 2 * rem + (g.cols - 1) * .25 * rem;   /* two 2px borders a side, .5rem inset, .5rem padding, the gaps */
+  const insetY = 8 + 2 * rem + (g.rows - 1) * .25 * rem;
+  const cell = Math.min((cw - inset) / g.cols, (cw * .94 * g.rows / g.cols - insetY) / g.rows);
   return Math.max(24, cell * .9);
 }
 /* The coin's face is the biggest render there is (~120ms, supersampled),
@@ -84430,59 +84697,101 @@ function bcGlintCoin(flyer, ms){
 function buildCaseSidePlate(extra){
   const b = document.createElement("b");
   b.className = "nova-case-plate nova-case-sideplate" + (extra ? " " + extra : "");
-  b.textContent = "Badge case";
+  /* its name (build 320): "This badge case is gonna be called level 1
+     badge case. Ensure the case says that somehow" */
+  b.textContent = badgeCaseName(BADGE_CASES[0]);
   b.setAttribute("aria-hidden", "true");
   return b;
 }
 function buildBadgeCase3D(all, held){
   const mk = (cls, tag) => { const e = document.createElement(tag || "div"); e.className = cls; return e; };
   const stage = mk("bc-stage");
+  /* the slots, laid out from the unit list (build 320) */
+  applyBadgeCaseGrid(stage, all.length);
   const kase = mk("bc-case nova-case");
   const floor = mk("bc-floor");
+  const caps = el => ["tl", "tr", "bl", "br"].forEach(k => el.appendChild(mk("bc-cap is-" + k, "i")));
   const front = mk("bc-front nova-case-shell nova-case-wall");
   ["l", "r"].forEach(side => {
     const latch = mk("bc-latch bc-latch-" + side + " nova-case-latch", "span");
     latch.appendChild(mk("bc-hasp nova-case-hasp", "i"));
     front.appendChild(latch);
   });
-  /* THE NAME ON ITS SIDE (build 317, badge2): "not sure why when you
-     open the case the word badge case would be under the top, it should
-     be on the side and still be on the side as it opens and fully
-     opens." It is on the front wall between the latches - part of the
-     base, so it never moves with the lid and the lid never covers it. */
+  /* THE NAME ON ITS SIDE (build 317, badge2), FLAT ON IT (build 320). On
+     the front wall between the latches - part of the base, so it never
+     moves with the lid and the lid never covers it - lying on the wall. */
   front.appendChild(buildCaseSidePlate("bc-sideplate"));
   const handle = mk("bc-handle nova-case-handle");
   const tray = mk("bc-tray nova-case-shell nova-case-trimmed");
   const lining = mk("bc-lining nova-case-lining");
   const slots = {};
   const px = badgeCaseSlotPx();
-  all.forEach(u => {
+  all.forEach((u, i) => {
     const s = mk("bc-slot" + (held(u) ? " is-held" : ""));
+    /* its own light, in its own colour (build 320) */
+    try{ const bt = badgeThemeFor(u); if(bt && bt.p) s.style.setProperty("--slot-col", bt.p); }catch(e){}
+    s.dataset.i = String(i);
     s.appendChild(buildUnitBadgeSVG(u, held(u), { px }));
     lining.appendChild(s);
     slots[u] = s;
   });
   tray.appendChild(lining);
   ["l", "r"].forEach(side => tray.appendChild(mk("bc-hinge bc-hinge-" + side + " nova-case-hinge", "span")));
+  caps(tray);
   const spill = mk("bc-spill");
   const lid = mk("bc-lid");
   const lidIn = mk("bc-lid-in nova-case-shell nova-case-trimmed");
   const pad = mk("bc-lid-pad nova-case-lid");
+  /* the case's name, debossed in the cushion: what you read once it is open */
+  const label = mk("bc-lid-label", "span");
+  label.textContent = badgeCaseName(BADGE_CASES[0]);
+  label.setAttribute("aria-hidden", "true");
+  pad.appendChild(label);
   lidIn.appendChild(pad);
+  caps(lidIn);
   const lidOut = mk("bc-lid-out nova-case-shell nova-case-trimmed");
   const plate = mk("bc-plate nova-case-plate", "span"); plate.textContent = "Nova · Class 26E";
   lidOut.appendChild(plate);
+  caps(lidOut);
+  /* the clips on top, over each latch */
+  ["l", "r"].forEach(side => lidOut.appendChild(mk("bc-clip is-" + side, "i")));
   const lidFront = mk("bc-lid-front nova-case-shell nova-case-wall");
   lid.append(lidIn, lidOut, lidFront);
   kase.append(floor, front, handle, tray, spill, lid);
   stage.appendChild(kase);
-  return { stage, kase, slots, lid, lidIn, tray, handle, front };
+  return { stage, kase, slots, lid, lidIn, tray, handle, front, spill, lining };
+}
+/* THE BADGES' OWN LIGHT, AS LAYERS (build 320): one soft pool per badge in
+   the case, in its colour, along an edge, so two, three, six badges give
+   two, three, six colours side by side. `at` is how
+   far down the layer the pools sit (the near edge of the tray, or the
+   seam), `w`/`h` their size. An empty case gives a faint neutral sheen
+   rather than nothing - there is still a lid opening. */
+function bcLeakLayers(all, held, at, w, h, strength){
+  const have = all.filter(held);
+  const pools = [];
+  /* spread evenly in the order they sit in the case, so each colour has a
+     place of its own (two in one column would mix into a third colour) */
+  const ww = Math.min(w, 78 / Math.max(1, have.length) + 6);
+  have.forEach((u, k) => {
+    const bt = badgeThemeFor(u) || {};
+    const col = bt.p || "#C9D3DE";
+    const x = (k + .5) / have.length * 100;
+    w = ww;
+    pools.push("radial-gradient(" + w + "% " + h + "% at " + x.toFixed(1) + "% " + at + "%, color-mix(in srgb, " + col + " " + Math.round(70 * strength) + "%, #fff) 0%, " +
+      "color-mix(in srgb, " + col + " " + Math.round(46 * strength) + "%, transparent) 38%, transparent 100%)");
+  });
+  if(!pools.length) pools.push("radial-gradient(60% " + h + "% at 50% " + at + "%, rgba(214,222,232,.3) 0%, rgba(214,222,232,.1) 45%, transparent 100%)");
+  return pools.join(", ");
 }
 
 function playBadgeCaseScene(units, done, retro, opts){
   if(!units || !units.length || theme.muteBanners){ done(); return null; }
   const still = resultsMotionOff();
-  const all = unitsInTeachingOrder();
+  /* the case these badges belong in, and its slots (build 320) */
+  const caseDef = badgeCaseOf(units[0]);
+  const all = badgeCaseUnits(caseDef);
+  const caseName = badgeCaseName(caseDef);
   const newSet = new Set(units);
   const retroSet = new Set(retro || []);
   const col = ((badgeThemeFor(units[0]) || {}).p) || "#9FACBA";
@@ -84491,14 +84800,25 @@ function playBadgeCaseScene(units, done, retro, opts){
   const overlay = mk("bc-scene" + (still ? " bc-still" : ""));
   overlay.style.setProperty("--badge-col", col);
   overlay.appendChild(mk("bc-glow"));
-  const C = buildBadgeCase3D(all, u => unitBadgeEarned(u) && !newSet.has(u));
+  overlay.appendChild(mk("bc-dither"));
+  const heldBefore = u => unitBadgeEarned(u) && !newSet.has(u);
+  const C = buildBadgeCase3D(all, heldBefore);
   const { stage, kase, slots } = C;
   overlay.appendChild(stage);
+  /* the badges already in it light, one after another, from the crack */
+  let gi = 0;
+  all.forEach(u => { if(heldBefore(u)) slots[u].style.setProperty("--gd", (gi++ * .09).toFixed(2) + "s"); });
+  C.spill.style.background = bcLeakLayers(all, heldBefore, 94, 26, 46, 1);
+  /* the light out of the seam, flat over the case */
+  const leak = mk("bc-leak");
+  leak.style.background = bcLeakLayers(all, heldBefore, 78, 22, 80, 1);
+  overlay.appendChild(leak);
 
   /* The token on its own, first. .bc-flyer moves it about the screen and
      fades it; everything inside keeps it in 3D. */
   const flyer = mk("bc-flyer");
   flyer.appendChild(mk("bc-rays"));
+  flyer.appendChild(mk("bc-aura"));
   flyer.appendChild(mk("bc-coin-shadow"));
   const persp = mk("bc-persp");
   flyer.appendChild(persp);
@@ -84512,9 +84832,9 @@ function playBadgeCaseScene(units, done, retro, opts){
   intro.append(iKick, iName, iSub);
   overlay.appendChild(intro);
 
-  /* And under the case once it is open: where it went. */
+  /* And under the case once it is open: where it went, and in what. */
   const words = mk("bc-words");
-  const kicker = mk("bc-kicker", "p"); kicker.textContent = units.length > 1 ? "BADGES FOUND" : "BADGE FOUND";
+  const kicker = mk("bc-kicker", "p"); kicker.textContent = caseName.toUpperCase();
   const name = mk("bc-name", "p");
   const sub = mk("bc-sub", "p");
   words.append(kicker, name, sub);
@@ -84538,11 +84858,15 @@ function playBadgeCaseScene(units, done, retro, opts){
   overlay.addEventListener("click", finish);
   clearCelebrationsForScene();
 
-  const paid = u => retroSet.has(u) ? "Earned under the new badge requirements"
-    : "Unit mastered · +" + MASTERY_BONUS.toLocaleString() + " XP";
+  /* No XP line any more (build 320): a badge pays nothing of its own. */
+  const paid = u => retroSet.has(u) ? "Earned under the new badge requirements" : "Unit mastered";
+  /* "The thing at the bottom of the cutscene says '5 of 16' in the case but
+     it should say something about found 5 of 16 missing badges" (build 320) */
+  const inCase = all.filter(u => unitBadgeEarned(u)).length;
   const countLine = i => {
-    const have = badgeCountOf(store) - (units.length - 1 - i);
-    return have >= all.length ? "Every unit mastered. The case is full." : have + " of " + all.length + " in the case";
+    const have = inCase - (units.length - 1 - i);
+    return have >= all.length ? "All " + all.length + " badges found. The case is full."
+      : "Found " + have + " of " + all.length + " missing badges";
   };
   /* Where the words go: under the case's lowest part (its handle), clear
      of the bottom edge. */
@@ -84572,7 +84896,7 @@ function playBadgeCaseScene(units, done, retro, opts){
 
   /* ---- REDUCE MOTION: THE STILL SCENE ---- */
   if(still){
-    kase.classList.add("bc-rise", "bc-open", "bc-unlatch", "bc-unlatch2");
+    kase.classList.add("bc-rise", "bc-open", "bc-unlatch", "bc-unlatch2", "bc-lit");
     units.forEach(seatQuiet);
     name.textContent = units.length > 1 ? units.length + " badges found" : badgeTitle(units[0]);
     sub.textContent = units.length > 1 ? units.join(" · ") : countLine(0);
@@ -84592,13 +84916,26 @@ function playBadgeCaseScene(units, done, retro, opts){
   }
 
   /* ---- where the token goes ---- */
-  const vh = () => overlay.getBoundingClientRect().height;
+  const box = () => overlay.getBoundingClientRect();
   const place = (x, y, s) => "translate(" + Math.round(x) + "px, " + Math.round(y) + "px) scale(" + s.toFixed(4) + ")";
-  const SHOW = () => [0, -.07 * vh(), 1];
+  const SHOW = () => [0, -.07 * box().height, 1];
+  /* WAITING ABOVE THE LID'S WHOLE SWING (build 320): "The badge phases
+     through the top thing when it opens." It waited in front of where the
+     open lid stands, so the lid swung up through it. Now it waits at the
+     top of the screen, clear of everything the lid passes through (the
+     open case sits lower to make the room), and only comes down once the
+     lid has stopped. A phone held sideways has no room above, so there it
+     waits beside the case. */
   const HOVER = () => {
-    /* in front of where the open lid stands, a little over half size */
-    const narrow = overlay.getBoundingClientRect().width < 640;
-    return [0, -(narrow ? .215 : .2) * vh(), .5];
+    const o = box();
+    const C0 = Math.max(1, flyer.offsetWidth);
+    const s = .44;
+    if(o.width > o.height * 1.3){
+      const sw = stage.getBoundingClientRect().width;
+      return [-(sw * .5 + C0 * s * .5 + 26), -.02 * o.height, s];
+    }
+    const top = (parseFloat(getComputedStyle(overlay).paddingTop) || 0) + 12;
+    return [0, -o.height / 2 + top + C0 * s / 2, s];
   };
   let pos = SHOW();
   const moveTo = (p, ms, easing) => {
@@ -84621,8 +84958,10 @@ function playBadgeCaseScene(units, done, retro, opts){
     flyer.style.transform = place(p[0], p[1], p[2]);
     void flyer.offsetWidth;
     flyer.classList.add("bc-show");
+    if(p !== SHOW_P) flyer.classList.add("bc-lifted");
     bcSpinCoin(flyer, ms, turns).forEach(a => anims.push(a));
   };
+  let SHOW_P = null;
   const swayOn = () => flyer.classList.add("bc-alive");
 
   /* Into its slot: a short rise, then the drop - one flip on the way and
@@ -84630,16 +84969,16 @@ function playBadgeCaseScene(units, done, retro, opts){
      shares its frame. Then the seat. */
   const flyInto = u => {
     const s = slots[u].querySelector("svg").getBoundingClientRect();
-    const o = overlay.getBoundingClientRect();
+    const o = box();
     const tx = (s.left + s.width / 2) - (o.left + o.width / 2);
     const ty = (s.top + s.height / 2) - (o.top + o.height / 2);
     const ts = s.width / Math.max(1, flyer.offsetWidth);
     flyer.classList.remove("bc-alive");
     const from = pos.slice();
-    const up = [from[0] + (tx - from[0]) * .18, from[1] - 26, from[2] * 1.04];
+    const up = [from[0] + (tx - from[0]) * .18, from[1] - 18, from[2] * 1.04];
     const a = flyer.animate([
       { transform: place(from[0], from[1], from[2]), easing: "cubic-bezier(.2,.6,.35,1)" },
-      { transform: place(up[0], up[1], up[2]), offset: .28, easing: "cubic-bezier(.55,0,.85,.35)" },
+      { transform: place(up[0], up[1], up[2]), offset: .24, easing: "cubic-bezier(.55,0,.85,.35)" },
       { transform: place(tx, ty, ts) }
     ], { duration: BC_T.flyMs, fill: "forwards" });
     anims.push(a); pos = [tx, ty, ts];
@@ -84661,31 +85000,47 @@ function playBadgeCaseScene(units, done, retro, opts){
     placeWords();
     words.classList.add("bc-words-in");
   };
+  /* the seam, measured where the base's front wall meets the lid */
+  const placeLeak = () => {
+    try{
+      const o = box(), t = C.tray.getBoundingClientRect(), f = C.front.getBoundingClientRect();
+      const w = t.width * 1.16, h = Math.max(36, t.height * .42);
+      leak.style.left = Math.round(t.left - o.left - (w - t.width) / 2) + "px";
+      leak.style.width = Math.round(w) + "px";
+      leak.style.top = Math.round(f.top - o.top - h * .78) + "px";
+      leak.style.height = Math.round(h) + "px";
+    }catch(e){}
+  };
 
   void overlay.offsetWidth;
   requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add("bc-in")));
   at(320, () => document.body.classList.add("bc-covering"));
 
-  /* 1. The first badge, alone, spinning up out of the dark, named. */
+  /* 1. The first badge, alone, spinning up out of the dark, named - and
+     lit in its own colour from the start. */
   const first = units[0];
   at(BC_T.coin, () => {
-    showCoin(first, BC_SPIN_TURNS, BC_SPIN_MS, SHOW());
+    SHOW_P = SHOW();
+    showCoin(first, BC_SPIN_TURNS, BC_SPIN_MS, SHOW_P);
     iName.textContent = badgeTitle(first);
     iSub.textContent = paid(first);
   });
   at(BC_T.intro, () => intro.classList.add("is-in"));
   at(BC_T.glint, () => { const g = bcGlintCoin(flyer, 1400); if(g) anims.push(g); });
   at(BC_T.sway, swayOn);
-  /* 2. It rises out of the way; the case comes up under it, shut. */
-  at(BC_T.lift, () => { intro.classList.remove("is-in"); flyer.classList.add("bc-lifted"); moveTo(HOVER(), 1250); });
-  at(BC_T.rise, () => { overlay.classList.add("bc-up"); kase.classList.add("bc-rise"); });
-  /* 3. The latches, one then the other; the lid cracks with the light
-     spilling out of the gap, then swings back on its hinges and STAYS,
-     while the camera rises over the case. */
+  /* 2. The camera pulls back: it rises out of the way, still lit, the
+     light follows down to the case, and the case comes up under it, shut -
+     one move. */
+  at(BC_T.lift, () => { intro.classList.remove("is-in"); flyer.classList.add("bc-lifted"); overlay.classList.add("bc-up"); moveTo(HOVER(), BC_T.liftMs, "cubic-bezier(.45,0,.25,1)"); });
+  at(BC_T.rise, () => kase.classList.add("bc-rise"));
+  /* 3. The latches, one then the other; the lid cracks with the badges'
+     own colours spilling out of the gap, then swings back on its hinges
+     and STAYS, while the camera rises over the case and every badge in it
+     settles to its own glow. */
   at(BC_T.latchL, () => kase.classList.add("bc-unlatch"));
   at(BC_T.latchR, () => kase.classList.add("bc-unlatch2"));
-  at(BC_T.crack, () => kase.classList.add("bc-crack"));
-  at(BC_T.open, () => { kase.classList.remove("bc-crack"); kase.classList.add("bc-open"); });
+  at(BC_T.crack, () => { kase.classList.add("bc-crack", "bc-lit"); placeLeak(); leak.classList.add("is-on"); });
+  at(BC_T.open, () => { kase.classList.remove("bc-crack"); kase.classList.add("bc-open"); leak.classList.add("is-fading"); });
   /* 4. Into its slot - and any more after it, one at a time. */
   let t = BC_T.fly;
   units.forEach((u, i) => {
@@ -85688,12 +86043,11 @@ function computeRunXp(r){
   }
 
   const beforeMult = lines.reduce((s, l) => s + l.value, 0);
-  /* Badges, one line however many (build 309). */
-  {
-    const bp = r.badgesPaid || [];
-    if(bp.length) add("badge", bp.length > 1 ? "Badge bonus \u00d7" + bp.length : badgeTitle(bp[0]),
-      MASTERY_BONUS * bp.length, { badge: true, sub: bp.length > 1 ? bp.join(" \u00b7 ") : "" });
-  }
+  /* NO XP FOR A BADGE (build 320): "no more xp bonus for getting a badge
+     ... remove it from the xp box, remove the xp bonus from getting
+     badges. It's no longer a thing." The badge line (MASTERY_BONUS, 1,000
+     a badge since build 213) is gone; r.badgesPaid is still accepted and
+     pays nothing. The grinding that finds a badge still pays its own way. */
   const m = multiUnitMultiplier(r.wholeUnits || 0);
   if(m > 1){
     add("multi", "Multi-unit ×" + (Math.round(m * 100) / 100), roundTo5(beforeMult * (m - 1)),
@@ -86171,8 +86525,8 @@ function rsUnlockItems(run){
   run.badges.forEach(u => {
     const retro = run.retroBadges.indexOf(u) >= 0;
     items.push({ kind: "badge", unit: u, kicker: "Badge found", name: badgeTitle(u),
-      sub: retro ? "Earned under the new badge requirements"
-                 : "+" + MASTERY_BONUS.toLocaleString() + " XP mastery bonus",
+      /* no XP line: a badge pays nothing of its own (build 320) */
+      sub: retro ? "Earned under the new badge requirements" : "Unit mastered",
       color: "#D8E2EC", art: () => buildUnitBadgeSVG(u, true, { fine: true }) });
   });
   /* A RANK-UP IS NOT TOLD HERE ANY MORE (build 319): no cutscene and no
@@ -88123,7 +88477,6 @@ function summarize(){
   let pointsEarned = 0;
   let perfectBonusEarned = 0;
   let multiTestBonusEarned = 0;   /* retired in build 213; always 0 */
-  let masteryBonusEarned = 0;
   let runWholeUnits = 0;
   let runXp = null;
   let hundosEarned = 0;
@@ -88358,7 +88711,6 @@ function summarize(){
          box". Worked out again rather than subtracted, so the multi-unit
          line is taken over the right base too. */
       lastRunRoomXp = computeRunXp(Object.assign({}, xpArgs, { timePRs: [], scorePRs: [], badgesPaid: [] }));
-      masteryBonusEarned = runXp.lines.filter(l => l.badge).reduce((s2, l) => s2 + l.value, 0);
       awardXp(runXp.total);
       saveStore();
     }
@@ -91568,6 +91920,7 @@ function buildAppBanner(id, kind, message, actionLabel, onAction, onDismiss){
    every other banner here uses, so it cannot land on the screen title. */
 function showLobbyInviteBanner(from, code){
   if(document.getElementById("lobby-invite")) return;
+  if(holdForCutscene("lobbyinvite", () => checkLobbyInvites())) return;
   const el = buildAppBanner("lobby-invite", "vroom",
     (from.firstName || "A classmate") + " invited you to a Virtual Room",
     "Join",
@@ -91613,6 +91966,7 @@ function dismissFriendReq(pub){
 
 function checkFriendRequests(){
   if(document.getElementById("friend-request")) return;
+  if(holdForCutscene("friendreq", () => checkFriendRequests())) return;
   if(introPending || document.getElementById("intro-pop")) return;
   /* The Virtual Room banner has the floor if both are waiting - it is
      time-sensitive and a friend request is not. */
@@ -91711,6 +92065,7 @@ const SAVE_CODE_ASKED_KEY = "class26e.savecode.asked";
 
 function checkSaveCodeReminder(){
   if(document.getElementById("save-code")) return;
+  if(holdForCutscene("savecode", () => checkSaveCodeReminder())) return;
   try{ if(localStorage.getItem(SAVE_CODE_ASKED_KEY)) return; }catch(e){}
   /* The introduction gets the screen to itself, and gets it FIRST. */
   if(introPending || document.getElementById("intro-pop")) return;
@@ -95723,6 +96078,7 @@ function buildVroomChatPanel(container, ctx){
   let alertTimer = null;
   function announceChatMessage(msg, color){
     if(!msg) return;
+    if(holdForCutscene("roomchat:" + (CTX.alertTag || "dm"), () => announceChatMessage(msg, color))) return;
     if(typeof theme === "object" && theme && theme.muteBanners) return;
     /* This chat, muted: the message still arrives and still counts, it
        just does not pop up. */
@@ -98385,13 +98741,54 @@ function bannerDetail(id){
    its badge needs. */
 /* A badge's name, wherever it is written as a title (build 319). */
 function badgeTitle(unit){ return unit + " Badge"; }
+/* ---- THE CASES (build 320) ----
+   "This badge case is gonna be called level 1 badge case ... this case
+   holds 16 badges, when we get more units (which we will) the new case
+   (level 2) and then later on the last one with only a few (level 3) will
+   come out. FYI, I'm gonna be adding more units to level 1 probably
+   tomorrow." So a case is an entry here, and everything that draws one
+   (the cutscene, the Badges screen, the Profile strip) asks this table
+   rather than assuming sixteen. A case with `units: null` holds every
+   unit no other case claims - so a unit added to the bank lands in Level 1
+   with no other change, and Level 2 is one more entry with its list. */
+const BADGE_CASES = [
+  { level: 1, name: "Level 1 Badge Case", units: null }
+];
+function badgeCaseOf(unit){
+  return BADGE_CASES.find(c => Array.isArray(c.units) && c.units.indexOf(unit) >= 0)
+    || BADGE_CASES.find(c => !Array.isArray(c.units)) || BADGE_CASES[0];
+}
+function badgeCaseUnits(kase){
+  const c = kase || BADGE_CASES[0];
+  const all = unitsInTeachingOrder();
+  if(Array.isArray(c.units)) return all.filter(u => c.units.indexOf(u) >= 0);
+  const claimed = new Set();
+  BADGE_CASES.forEach(o => { if(Array.isArray(o.units)) o.units.forEach(u => claimed.add(u)); });
+  return all.filter(u => !claimed.has(u));
+}
+function badgeCaseName(kase){ return (kase || BADGE_CASES[0]).name; }
+/* Its slots, laid out from how many it holds: as square as the count
+   allows, never more columns than rows plus one - 16 is four by four,
+   17 to 20 five by four, 21 to 25 five by five. */
+function badgeCaseGrid(n){
+  const cols = Math.max(1, Math.ceil(Math.sqrt(Math.max(1, n))));
+  return { cols: cols, rows: Math.max(1, Math.ceil(Math.max(1, n) / cols)) };
+}
+function applyBadgeCaseGrid(el, n){
+  const g = badgeCaseGrid(n);
+  el.style.setProperty("--case-cols", String(g.cols));
+  el.style.setProperty("--case-rows", String(g.rows));
+  return g;
+}
 function badgeDetail(unit){
   const need = badgeThresholdFor(unit);
   const has = unitBadgeEarned(unit);
   const done = Math.min(need, (store.unitPerfects && store.unitPerfects[unit]) || 0);
   /* ITS TITLE ENDS IN "Badge" (build 319): "The title of the badge should
      say badge at the end though." */
-  return { kind: "badge", id: unit, kicker: "Unit badge", name: badgeTitle(unit), unlocked: has,
+  /* the case it sits in, as its kicker (build 320): "make it cohesive
+     across the app where it can" */
+  return { kind: "badge", id: unit, kicker: badgeCaseName(badgeCaseOf(unit)), name: badgeTitle(unit), unlocked: has,
     /* AN EARNED BADGE SAYS WHAT IT TOOK (build 311): "On badges you have
        unlocked, when clicking them, ensure it tells you how many hundos you
        got so it'd say the challenge." It said "Earned for mastering the
@@ -101698,7 +102095,7 @@ function buildProfileCase(have, total){
     tag.append(word, buildNewDot());
     n.insertBefore(tag, arrow);
   }
-  box.setAttribute("aria-label", "Badge case, " + have + " of " + total + " badges found" + (fresh ? ", " + fresh + " new" : "") + ". Open the badge case.");
+  box.setAttribute("aria-label", badgeCaseName(BADGE_CASES[0]) + ", " + have + " of " + total + " badges found" + (fresh ? ", " + fresh + " new" : "") + ". Open the badge case.");
   box.addEventListener("click", () => showRanksScreen("badges"));
   return box;
 }
@@ -103013,7 +103410,15 @@ function buildOpenBadgeCase(kind, cellFor){
     tray.appendChild(h);
   });
   const lining = mk((tab ? "badge-case-lining " : "pf-strip badge-strip ") + "ncase-lining nova-case-lining");
-  unitsInTeachingOrder().forEach(u => { const c = cellFor(u); if(c) lining.appendChild(c); });
+  /* THE SLOTS FOLLOW THE UNIT LIST (build 320): "I'm gonna be adding more
+     units to level 1 probably tomorrow. So the case will change slightly."
+     The grid, and the tray's and lid's depth with it, come from how many
+     the case holds - four by four is the old .88 and .8 to the digit. */
+  const held = badgeCaseUnits(BADGE_CASES[0]);
+  const grid = applyBadgeCaseGrid(root, held.length);
+  tray.style.aspectRatio = "1 / " + (.88 * grid.rows / grid.cols).toFixed(4);
+  lid.style.aspectRatio = "1 / " + (.8 * grid.rows / grid.cols).toFixed(4);
+  held.forEach(u => { const c = cellFor(u); if(c) lining.appendChild(c); });
   tray.appendChild(lining);
   const front = mk((tab ? "badge-case-front " : "pf-case-front ") + "ncase-front nova-case-shell nova-case-wall");
   front.setAttribute("aria-hidden", "true");
@@ -103115,8 +103520,9 @@ function buildBadgesTab(opts){
   const headText = document.createElement("div");
   headText.className = "badges-head-text";
   const headLab = document.createElement("span");
-  headLab.className = "rankhero-gaugelab";
-  headLab.textContent = "Badges";
+  headLab.className = "rankhero-gaugelab badges-casename";
+  /* the case's name heads its screen (build 320) */
+  headLab.textContent = badgeCaseName(BADGE_CASES[0]);
   headText.appendChild(headLab);
   const headTitle = document.createElement("p");
   headTitle.className = "badges-head-title";

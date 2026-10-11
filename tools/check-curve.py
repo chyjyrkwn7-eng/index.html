@@ -227,8 +227,10 @@ def main():
              asking whether a rank is reachable. */
           const cost = topicsIn(QUESTIONS).map(u => {
             const need = badgeThresholdFor(u);
+            /* no lump for the badge itself any more (build 320: "no more
+               xp bonus for getting a badge") - the hundos pay their way */
             return need * (unitQuestionCount(u) * POINTS_PER_QUESTION + PERFECT_BONUS)
-                   + MASTERY_BONUS;
+                   + (typeof MASTERY_BONUS === 'number' ? MASTERY_BONUS : 0);
           }).sort((a, b) => a - b);
           const cum = []; let s = 0;
           cost.forEach(c => { s += c; cum.push(s); });
@@ -526,8 +528,8 @@ def main():
             check("the next test celebrates each of them",
                   sorted(retro["first"]["queued"]) == sorted(retro["listed"]), retro["first"])
             check("and owes the rank-up they cause, on Profile (build 319)", retro["first"]["tier"] == "ranger", retro["first"]["tier"])
-            # 50 for its answers plus build 213's speed bonus - and never
-            # the 1,000 a badge pays when a run earns one.
+            # 50 for its answers plus build 213's speed bonus. (A badge pays
+            # nothing of its own since build 320, so this cannot be a bonus.)
             check("with no mastery bonus for them - the slice pays only its answers and speed",
                   50 <= retro["first"]["xp"] < 1000, retro["first"]["xp"])
             check("and never again", not retro["second"]["queued"] and not retro["second"]["tier"]
