@@ -19338,7 +19338,11 @@ Your eyes shouldn't gravitate to one thing on any screen".
   progress (`arcL` = progress x 180, so its thresholds stand);
   `check_b318_daily` reads the ring's and flash's stroke and the seal on
   `.dq-ring`; `check-savetest` waits 8s (was 4s) for the question after
-  Resume test, the bar being 2.5s.
+  Resume test, the bar being 2.5s. `check_b302`'s "under the bar" reads
+  what is SHOWN (innerText) and wants "x / y XP to Level N" on a phone,
+  the total on a tablet; `check_b317_pfcard`'s squeeze wants one line,
+  numbers then "to Level N", and no total on every phone (it wanted the
+  total at the right - Madison's 320 words reverse that on a phone).
 - **Gate: `check_b320h_fixes`** - the grey card under two rank themes and
   the banner's colours with one; the phone's two rows / two pieces at 440
   and on a 375px phone with a six-figure total, taps to Badges and the

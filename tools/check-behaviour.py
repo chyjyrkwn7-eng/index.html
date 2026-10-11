@@ -8048,7 +8048,8 @@ def check_b302(br):
           const tot = document.querySelector('.pf-standing .pf-xp-total'), bar = document.querySelector('.pf-standing .profile-xpbar');
           out.total = tot ? tot.textContent : '';
           out.totalOnLine = !!(tot && tot.closest('.pf-idline') && bar && (bar.compareDocumentPosition(tot) & Node.DOCUMENT_POSITION_PRECEDING));
-          out.barNums = (document.querySelector('.pf-standing .pf-xpnums') || {}).textContent || '';
+          /* REVISED IN 320: what is SHOWN under the bar (a phone hides the total) */
+          out.barNums = ((document.querySelector('.pf-standing .pf-xpnums') || {}).innerText || '').replace(/\s+/g, ' ').trim();
           /* 317 touch-up: the numbers and the total are one blue */
           out.xpCols = ['.xpnums-have', '.xpnums-need', '.pf-xp-total'].map(sel => { const e = document.querySelector('.pf-standing ' + sel);
             if(!e) return null; const c = getComputedStyle(e).color, m = c.match(/[\d.]+/g); if(!m) return null;
@@ -8116,9 +8117,14 @@ def check_b302(br):
         # REVISED IN THE 317 TOUCH-UP: "I guess the same blue for both? I
         # guess the total xp should be the same?" - no darker blue, no grey:
         # this level's XP, what it asks and the total are one blue.
-        check(f"{dev}: under the bar, this level's XP and the total XP; the total is not on the rank line",
+        # REVISED IN 320 (b320h): "the profile box ... around the xp bar has
+        # become a little much ... it's mostly the iPhone" - on a phone the
+        # line under the bar is "x / y XP to Level N" and the total is on
+        # Stats; a tablet keeps this level's XP and the total, as above.
+        want_nums = (r"^[0-9,]+ / [0-9,]+ XP to Level \d+$" if w < 640 else r"^[0-9,]+ / [0-9,]+ XP ?[0-9,]+ total XP$")
+        check(f"{dev}: under the bar, this level's XP and " + ("what it leads to (phone)" if w < 640 else "the total XP") + "; the total is not on the rank line",
               r.get("totalOnLine") is False and re.match(r"^[0-9,]+ total XP$", r.get("total") or "")
-              and re.match(r"^[0-9,]+ / [0-9,]+ XP[0-9,]+ total XP$", r.get("barNums") or ""), [r.get("totalOnLine"), r.get("total"), r.get("barNums")])
+              and re.match(want_nums, r.get("barNums") or ""), [r.get("totalOnLine"), r.get("total"), r.get("barNums")])
         xc = r.get("xpCols") or [None, None, None]
         check(f"{dev}: ...all three in one blue, none grey",
               None not in xc and xc[0] == xc[1] == xc[2] and xc[0][2] - xc[0][0] >= 80, xc)
@@ -13471,7 +13477,7 @@ def check_b317_pfcard(br):
       showProfile('profile'); await wait(900);
       const B = s => { const e = document.querySelector('.profile-hero ' + s); if(!e) return null; const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
       /* REVISED IN 317 (badge2): the case's name is its side plate, not a heading over the tray */
-      out.kick = B('.pf-case-front .nova-case-sideplate'); out.num = B('.pf-case-num'); out.nums = B('.pf-xpnums'); out.xn = B('.pf-xpnums .xpnums'); out.tot = B('.pf-xp-total');
+      out.kick = B('.pf-case-front .nova-case-sideplate'); out.num = B('.pf-case-num'); out.nums = B('.pf-xpnums'); out.xn = B('.pf-xpnums .xpnums'); out.tot = B('.pf-xp-total'); out.to = B('.pf-xp-to');
       out.tasks = [...document.querySelectorAll('.profile-hero .pf-task')].map(t => { const a = t.querySelector('.pf-task-label').getBoundingClientRect(), v = t.querySelector('.pf-task-val').getBoundingClientRect();
         const lab = t.querySelector('.pf-task-label');
         /* the label's TEXT, not its box: squeezed, the box was 28px and the words ran out of it into the count */
@@ -13491,9 +13497,15 @@ def check_b317_pfcard(br):
         # REVISED IN 319: on the shut case's front the plate heads the count
         check(f"squeeze, {dev}: the count is one line, and 'Badge case' is on the case's front, above it",
               bool(k and n_) and k["b"] <= n_["t"] and n_["b"] - n_["t"] <= 26, [k, n_])
-        nm, xn, tot = r.get("nums"), r.get("xn"), r.get("tot")
-        check(f"squeeze, {dev}: the total XP sits at the right, wrapped or not",
-              bool(nm and tot) and abs(tot["r"] - nm["r"]) <= 1.5 and (tot["t"] >= xn["b"] - 0.5 or tot["l"] >= xn["r"]), [nm, xn, tot])
+        nm, xn, tot, to = r.get("nums"), r.get("xn"), r.get("tot"), r.get("to")
+        # REVISED IN 320 (b320h): on a phone the total is on Stats and the
+        # line under the bar is one label, "x / y XP to Level N" - so it is
+        # one line, on the card, with "to Level N" beside the numbers (none
+        # at level 80, where there is no next level), and no total shown.
+        check(f"squeeze, {dev}: under the bar one line - the numbers and what they lead to - and no total",
+              bool(nm and xn and tot) and tot["r"] - tot["l"] == 0 and nm["b"] - nm["t"] <= 26
+              and (to is None or to["r"] - to["l"] == 0 or (abs(to["t"] - xn["t"]) <= 2 and to["l"] >= xn["r"] - 0.5 and to["r"] <= nm["r"] + 0.5)),
+              [nm, xn, tot, to])
         check(f"squeeze, {dev}: no challenge row's count runs into its label",
               r.get("tasks") is not None and all(t["clear"] for t in r["tasks"]), r.get("tasks"))
         check(f"squeeze, {dev}: no unlock tile's label is cut short ({r.get('tiles')} tiles)", not r.get("cut"), r.get("cut"))
