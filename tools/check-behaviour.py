@@ -25220,6 +25220,180 @@ def check_b321f_profile(br):
               bm.get("label") == "Earn 7 badges" and bm.get("shown") == "5 / 7" and bm.get("bar") and bw.get("shown") == "6 / 7" and bw.get("bar"), [bm, bw])
 
 
+B323U_ICON_INK = """async (k)=>{
+  const svg = modeIcon(k); svg.style.cssText='position:fixed;left:0;top:0;width:96px;height:96px';
+  document.body.appendChild(svg);
+  const parts = [...svg.querySelectorAll('path,circle,rect')].map(p => { const cs = getComputedStyle(p);
+    const q = p.cloneNode(); q.removeAttribute('class');
+    q.setAttribute('fill', cs.fill); q.setAttribute('stroke', cs.stroke); q.setAttribute('stroke-width', cs.strokeWidth);
+    q.setAttribute('stroke-linecap', 'round'); q.setAttribute('stroke-linejoin', 'round');
+    return new XMLSerializer().serializeToString(q); });
+  svg.remove();
+  const src = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="96" height="96">' + parts.join('') + '</svg>';
+  const img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(src); await img.decode();
+  const c = document.createElement('canvas'); c.width = 96; c.height = 96; const g = c.getContext('2d'); g.drawImage(img, 0, 0, 96, 96);
+  const d = g.getImageData(0, 0, 96, 96).data; let ink = 0, minx = 96, maxx = 0;
+  for(let i = 0; i < 96 * 96; i++){ const a = d[i * 4 + 3] / 255; ink += a; if(a > .3){ const x = i % 96; minx = Math.min(minx, x); maxx = Math.max(maxx, x); } }
+  return { ink: ink / (96 * 96), w: maxx - minx }; }"""
+
+
+def check_b323u_units(br):
+    """Build 323 (b323u): the unit selection screen and the mode cards.
+    "I think the tiny square box idea needs to go away. Should it go back
+    to being longer rectangles?" and "similar the calendar list, but when
+    you click that is selecting the unit, but it opens (expands) and then
+    details come up": full-width rows, a tap ticks one and opens its short
+    details. "When you hold a unit card and let go, it's not a smooth
+    transition going back to how it was": the release is sampled frame by
+    frame - eased back to full size with no spring past it - and the
+    details card dissolves into the row instead of being swapped for it.
+    "I'm still not a fan of how the review section shows the starred
+    question at the top": Starred is a row like the units, after them.
+    "I love the drill and virtual room. I'm not a fan of the review or
+    exam": Exam and Review carry Drill's two-beat copy at Drill's length,
+    and icons with Drill's presence. Fails on 22bf429 (two-column squares,
+    nothing opens on a tap, the release springs past 1, the card is
+    removed opaque, Starred first, Exam's parenthesis and narrow
+    clipboard, Review's hairline book)."""
+    import time
+    print("\n_b323u. build 323: unit rows that open, a smooth release, Starred as a row, Exam and Review up to Drill")
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True)
+        r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          try{
+          document.querySelectorAll('#pushing-update,#intro-pop').forEach(n => n.remove());
+          store.seenUnitSelectTour = true; store.seenModeSelectTour = true; localStorage.setItem('class26e.unithold.tip', '1');
+          cfg.mode = 'drill'; cfg.units = []; showSetup(); await wait(900);
+          document.querySelectorAll('.picks .pick').forEach(p => p.classList.add('pick-revealed')); await wait(600);
+          const list = document.querySelector('.screen-setup .picks');
+          const rows = () => [...list.querySelectorAll('label.pick')].filter(r => r.querySelector('input[type=checkbox]'));
+          const lw = list.getBoundingClientRect().width;
+          out.rows = rows().map(r => { const b = r.getBoundingClientRect(); return { w: Math.round(b.width), h: Math.round(b.height), l: Math.round(b.left) }; });
+          out.lw = Math.round(lw);
+          /* 2. a tap ticks it and opens its details */
+          const pick = rows().find(r => !/Penal/.test(r.textContent));
+          pick.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(300);
+          const h0 = pick.getBoundingClientRect().height;
+          pick.querySelector('.pname').click(); await wait(80);
+          /* opened, whatever the machine's frame rate: wait for the row's own transitions */
+          await Promise.all(pick.getAnimations({ subtree: true }).map(a => a.finished.catch(() => {}))); await wait(50);
+          const more = pick.querySelector('.pick-more');
+          const btn = pick.querySelector('.pick-more-open');
+          out.tap = { checked: pick.querySelector('input').checked, grew: Math.round(pick.getBoundingClientRect().height - h0),
+            moreH: more ? Math.round(more.getBoundingClientRect().height) : 0, text: more ? more.textContent : '',
+            visible: more ? getComputedStyle(more).visibility : '', btnH: btn ? Math.round(btn.getBoundingClientRect().height) : 0,
+            others: rows().filter(r => r !== pick).every(r => !r.querySelector('.pick-more') || r.querySelector('.pick-more').getBoundingClientRect().height < 1) };
+          /* the Details button opens the full card and does not untick */
+          if(btn){ btn.click(); await wait(700); }
+          out.detailsBtn = { open: !!document.querySelector('.unitdetail'), still: pick.querySelector('input').checked };
+          document.querySelector('.unitdetail-scrim')?.click();
+          for(let i = 0; i < 40 && document.querySelector('.unitdetail'); i++) await wait(50);
+          pick.querySelector('.pname').click(); await wait(500);
+          /* 3-4. press and let go, sampled every frame */
+          const row = rows()[2]; row.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(400);
+          const scaleOf = el => { const m = getComputedStyle(el).transform; if(!m || m === 'none') return 1; const v = m.match(/matrix\\(([^,]+)/); return v ? parseFloat(v[1]) : 1; };
+          /* Frame by frame on the transition's own clock - seeked in 16ms
+             steps - so a slow machine cannot skip the part that springs. */
+          const curve = el => { const tr = el.getAnimations().filter(a => a.transitionProperty === 'transform');
+            if(!tr.length) return [scaleOf(el)];
+            const a = tr[tr.length - 1]; a.pause(); const end = a.effect.getComputedTiming().endTime; const f = [];
+            for(let t = 0; t <= end + 16; t += 16){ a.currentTime = Math.min(t, end); f.push(scaleOf(el)); }
+            a.finish(); return f; };
+          const b = row.getBoundingClientRect(); const at = { bubbles: true, clientX: b.left + b.width * .6, clientY: b.top + b.height / 2, pointerId: 7, pointerType: 'touch', isPrimary: true, button: 0 };
+          const tgt = row.querySelector('.pname');
+          tgt.dispatchEvent(new PointerEvent('pointerdown', at));
+          const down = curve(row); await wait(150);
+          tgt.dispatchEvent(new PointerEvent('pointerup', at));
+          const rel = curve(row);
+          const steps = rel.slice(1).map((v, i) => Math.abs(v - rel[i]));
+          out.short = { pressed: Math.min(...down), max: Math.max(...rel), end: rel[rel.length - 1], back: rel.findIndex((v, i) => i && v < rel[i - 1] - 0.0005),
+                        step: Math.round(Math.max(0, ...steps) * 1e4) / 1e4, n: rel.length };
+          row.querySelector('input').checked = false; row.classList.remove('pick-checked'); await wait(400);
+          /* the long press: the details open; letting go returns the row with no spring */
+          tgt.dispatchEvent(new PointerEvent('pointerdown', at)); await wait(750);
+          out.hold = { open: !!document.querySelector('.unitdetail') };
+          const atHold = curve(row);
+          tgt.dispatchEvent(new PointerEvent('pointerup', at));
+          const rel2 = atHold.concat(curve(row)); await wait(300);
+          out.hold.max = Math.max(...rel2); out.hold.end = scaleOf(row);
+          out.hold.ticked = row.querySelector('input').checked;
+          /* closing: the card fades into the row, and goes once it has */
+          const card = document.querySelector('.unitdetail:not(.is-closing)');
+          /* let it finish opening first, whatever the frame rate */
+          if(card) await Promise.race([Promise.all(card.getAnimations().map(a => a.finished.catch(() => {}))), wait(3000)]);
+          out.close = { fade: 0, to: null, opAtRemove: null, gone: null, opBefore: card ? parseFloat(getComputedStyle(card).opacity) : null, cls: card ? card.className : '',
+            cards: document.querySelectorAll('.unitdetail').length, scrims: document.querySelectorAll('.unitdetail-scrim').length };
+          if(card){ const rm = card.remove.bind(card);
+            card.remove = () => { if(out.close.opAtRemove === null) out.close.opAtRemove = parseFloat(getComputedStyle(card).opacity); rm(); }; }
+          const scrims = document.querySelectorAll('.unitdetail-scrim'); scrims[scrims.length - 1]?.click(); await wait(30);
+          const fade = card ? card.getAnimations().filter(a => a.transitionProperty === 'opacity') : [];
+          out.close.fade = fade.length;
+          if(fade.length){ const kf = fade[fade.length - 1].effect.getKeyframes(); out.close.to = parseFloat(kf[kf.length - 1].opacity); }
+          for(let i = 0; i < 60 && card && card.isConnected; i++) await wait(50);
+          out.close.gone = card ? !card.isConnected : null;
+          /* 5. Review: Starred is a row after the units, not a box on top */
+          store.flagged = {}; const A = topicsIn(QUESTIONS)[0];
+          QUESTIONS.forEach((q, i) => { if((q.topic || '').trim() === A && Object.keys(store.flagged).length < 3) toggleFlag(i); });
+          cfg.mode = 'review'; cfg.units = []; showSetup(); await wait(800);
+          document.querySelectorAll('.picks .pick').forEach(p => p.classList.add('pick-revealed')); await wait(500);
+          const L = document.querySelector('.screen-setup .picks');
+          const star = L.querySelector('.pick-flagged-all');
+          const units = [...L.querySelectorAll('label.pick')];
+          const sb = star ? star.getBoundingClientRect() : null, ub = units[0].getBoundingClientRect(), last = units[units.length - 1];
+          out.star = star ? { first: L.firstElementChild === star, afterUnits: !!(last.compareDocumentPosition(star) & Node.DOCUMENT_POSITION_FOLLOWING),
+            below: sb.top > last.getBoundingClientRect().top, w: Math.round(sb.width), uw: Math.round(ub.width),
+            h: Math.round(sb.height), uh: Math.round(Math.min(...units.map(u => u.getBoundingClientRect().height))),
+            text: star.textContent } : null;
+          /* 6. the mode cards */
+          showModeSelect(); await wait(500);
+          out.cards = [...document.querySelectorAll('.modeselect .modecard')].map(c => ({ mode: c.dataset.mode,
+            shape: ([...c.children].map(k => k.className).join('|') + '/' + [...(c.querySelector('.modecardtitlerow') || { children: [] }).children].map(k => k.getAttribute('class')).join('|')).split(c.dataset.mode).join('X'),
+            desc: (c.querySelector('.modecarddesc') || {}).textContent || '' }));
+          } catch(e){ out.threw = String(e && e.stack || e); }
+          return out; }""")
+        ink = {k: pg.evaluate(B323U_ICON_INK, k) for k in ("drill", "exam", "review", "vroom")}
+        ctx.close()
+        if r.get("threw"):
+            print("   threw:", r["threw"][:500])
+        rows = r.get("rows") or []
+        check("%s every unit is a full-width row, not a small square" % label,
+              len(rows) >= 10 and all(abs(x["w"] - r["lw"]) <= 2 and x["w"] / max(1, x["h"]) > 3 for x in rows)
+              and len(set(x["l"] for x in rows)) == 1, (r.get("lw"), rows[:3]))
+        t = r.get("tap") or {}
+        check("%s a tap ticks the row and opens its details (best, last, done, fastest) with a 44px Details button" % label,
+              t.get("checked") is True and t.get("grew", 0) > 30 and t.get("moreH", 0) > 30 and t.get("visible") == "visible"
+              and all(k in t.get("text", "") for k in ("Best", "Last", "Done", "Fastest")) and t.get("btnH", 0) >= 44
+              and t.get("others") is True, t)
+        check("%s the Details button opens the full card and leaves the row ticked" % label,
+              (r.get("detailsBtn") or {}).get("open") is True and (r.get("detailsBtn") or {}).get("still") is True, r.get("detailsBtn"))
+        sh = r.get("short") or {}
+        check("%s a press sinks the row, and letting go eases it back with no spring past full size" % label,
+              sh.get("pressed", 1) < 0.99 and sh.get("max", 9) <= 1.0005 and abs(sh.get("end", 0) - 1) < 0.0005
+              and sh.get("back") == -1 and sh.get("step", 1) < 0.008 and sh.get("n", 0) >= 10, sh)
+        hd = r.get("hold") or {}
+        check("%s a long press opens the details, and letting go returns the row smoothly, unticked" % label,
+              hd.get("open") is True and hd.get("max", 9) <= 1.0005 and abs(hd.get("end", 0) - 1) < 0.0005 and hd.get("ticked") is False, hd)
+        cl = r.get("close") or {}
+        check("%s the details card fades into the row as it closes, not removed opaque" % label,
+              cl.get("to") == 0 and cl.get("opAtRemove") is not None and cl["opAtRemove"] < 0.1 and cl.get("gone") is True, cl)
+        st = r.get("star") or {}
+        check("%s Review's Starred questions is a row after the units, the units' size, not a box on top" % label,
+              st.get("first") is False and st.get("afterUnits") is True and st.get("below") is True
+              and abs(st.get("w", 0) - st.get("uw", -9)) <= 2 and abs(st.get("h", 0) - st.get("uh", -99)) <= 14
+              and "3 questions" in st.get("text", ""), st)
+        cards = {c["mode"]: c for c in r.get("cards") or []}
+        d = cards.get("drill") or {}
+        ok_shape = all(cards.get(m, {}).get("shape") == d.get("shape") for m in ("exam", "review", "vroom")) and bool(d)
+        beats = lambda s: "(" not in s and re.search(r"\. Best for [^.]+\.$", s) is not None
+        ok_copy = all(beats(cards.get(m, {}).get("desc", "")) and abs(len(cards[m]["desc"]) - len(d["desc"])) <= 0.2 * len(d["desc"])
+                      for m in ("exam", "review")) if d else False
+        dr = ink["drill"]
+        ok_icon = all(ink[m]["ink"] >= 0.95 * dr["ink"] and ink[m]["w"] >= 0.8 * dr["w"] for m in ("exam", "review"))
+        check("%s Exam and Review share Drill's card: same structure, two beats at Drill's length, icons with its presence" % label,
+              ok_shape and ok_copy and ok_icon,
+              {"shape": ok_shape, "copy": [cards.get(m, {}).get("desc") for m in ("drill", "exam", "review")], "ink": ink})
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -25444,6 +25618,7 @@ def main():
             check_b321h(br)
             check_b321d_badges(br)
             check_b321f_profile(br)
+            check_b323u_units(br)
         finally:
             br.close()
     SERVER.shutdown()
