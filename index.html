@@ -4845,6 +4845,35 @@
   .rank-skel-line{ display:block; height:.62rem; width:46%; border-radius:99px; background:rgba(255,255,255,.1); }
   .rank-skel-line.is-short{ width:30%; margin-top:.45rem; background:rgba(255,255,255,.06); }
   @keyframes rank-skel{ 0%, 100%{ opacity:.55; } 50%{ opacity:1; } }
+  /* ---- HIDDEN FROM THE RANKINGS (build 324, buildRankingsOptedOut) ----
+     One glass card, a third of the way down where the boards would be:
+     the rows' own glass, a frosted eye, two lines and the one button. */
+  .screen-rankings.is-optout{ display:flex; flex-direction:column; align-items:center; }
+  .screen-rankings.is-optout::before{ content:""; flex:0 1 auto; height:min(14vh, 9rem); }
+  .lb-optout{
+    width:100%; max-width:26rem; box-sizing:border-box; text-align:center;
+    padding:1.6rem 1.35rem 1.35rem; border-radius:1.4rem;
+    background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.42);
+    border:1px solid rgba(255,255,255,.12);
+    -webkit-backdrop-filter:blur(12px) saturate(1.6); backdrop-filter:blur(12px) saturate(1.6);
+    box-shadow:0 10px 30px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.16), inset 0 -1px 0 rgba(0,0,0,.22);
+  }
+  .lb-optout-icon{
+    display:inline-grid; place-items:center; width:3.4rem; height:3.4rem; border-radius:50%;
+    color:rgba(243,245,247,.82);
+    background:radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.26), rgba(255,255,255,0) 62%), rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.22);
+    box-shadow:inset 0 1px 3px rgba(255,255,255,.12), 0 6px 14px -4px rgba(0,0,0,.5);
+  }
+  .lb-optout-icon svg{ width:1.6rem; height:1.6rem; }
+  .lb-optout-title{ margin:.95rem 0 0; font-family:var(--serif); font-size:1.35rem; font-weight:800; color:var(--ink); }
+  .lb-optout-line{ margin:.5rem auto 0; max-width:21rem; font-size:.92rem; line-height:1.45; color:var(--soft); }
+  .lb-optout .lb-optout-on{ width:100%; min-height:48px; margin:1.3rem 0 0; }
+  @media (min-width:40rem){
+    .lb-optout{ max-width:30rem; padding:2rem 1.8rem 1.6rem; }
+    .lb-optout-title{ font-size:1.55rem; }
+    .lb-optout-line{ font-size:1rem; }
+  }
   .rank-place{ font-family:var(--mono); font-size:.85rem; font-weight:800; color:var(--soft); width:2.2rem; flex-shrink:0; }
   /* position:relative on the WRAP, not the avatar, so the rank emblem
      can hang over the avatar's edge without being clipped by it. */
@@ -4912,6 +4941,49 @@
     background:linear-gradient(180deg, rgba(186,120,66,.15), rgba(186,120,66,.04));
     box-shadow:0 2px 14px rgba(186,120,66,.12), inset 0 1px 0 rgba(255,255,255,.10);
   }
+  /* ---- THE TOP THREE, MORE PRESTIGIOUS (build 324) ----
+     Same tinted glass, same height. The plain ring becomes a METAL one -
+     a gradient in the place's own gold, silver or bronze, light at the
+     top-left and deep at the bottom-right, drawn as a masked ::before over
+     the border (so nothing in the row moves) - and first place's glass
+     catches a warm light in its corner. Your own row keeps its accent ring
+     (.lb-row-me), so it gets no metal over it. */
+  .screen-rankings .rank-row.rank-podium-1, .screen-rankings .rank-row.rank-podium-2, .screen-rankings .rank-row.rank-podium-3{ position:relative; }
+  .screen-rankings .rank-row:is(.rank-podium-1, .rank-podium-2, .rank-podium-3):not(.lb-row-me){ border-color:transparent; }
+  .screen-rankings .rank-row:is(.rank-podium-1, .rank-podium-2, .rank-podium-3):not(.lb-row-me)::before{
+    content:""; position:absolute; inset:-1.5px; border-radius:inherit; padding:1.5px; pointer-events:none;
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  }
+  .screen-rankings .rank-row.rank-podium-1:not(.lb-row-me)::before{ background:linear-gradient(115deg, #FFF0B3 0%, #E9B949 22%, #9C7015 48%, #F2CF6A 72%, #A87A18 100%); }
+  .screen-rankings .rank-row.rank-podium-2:not(.lb-row-me)::before{ background:linear-gradient(115deg, #FFFFFF 0%, #C9CCD0 24%, #7E8288 50%, #E3E5E8 74%, #8D9196 100%); opacity:.85; }
+  .screen-rankings .rank-row.rank-podium-3:not(.lb-row-me)::before{ background:linear-gradient(115deg, #FFD3A6 0%, #C98448 24%, #7C4219 50%, #DFA06A 74%, #8E4E22 100%); opacity:.9; }
+  [data-layout="modern"] .screen-rankings .rank-row.rank-podium-1{
+    background:radial-gradient(90% 160% at 0% 0%, rgba(255,214,110,.20), rgba(255,214,110,0) 58%),
+      linear-gradient(180deg, rgba(214,168,58,.18), rgba(214,168,58,.05));
+    box-shadow:0 3px 18px rgba(214,168,58,.22), 0 0 0 1px rgba(255,214,110,.06), inset 0 1px 0 rgba(255,244,214,.18);
+  }
+  /* the light across first place: a soft band, crossing once every 7s */
+  .lb-podium-sheen{ position:absolute; inset:0; border-radius:inherit; overflow:hidden; pointer-events:none; z-index:0; }
+  .lb-podium-sheen::after{
+    content:""; position:absolute; top:-20%; bottom:-20%; left:0; width:38%;
+    background:linear-gradient(100deg, rgba(255,236,180,0) 0%, rgba(255,236,180,.13) 45%, rgba(255,250,232,.2) 50%, rgba(255,236,180,.13) 55%, rgba(255,236,180,0) 100%);
+    transform:translate3d(-110%, 0, 0) skewX(-14deg); will-change:transform;
+    animation:lb-podium-sheen 7s cubic-bezier(.45,.05,.35,1) infinite; animation-delay:1.2s;
+  }
+  @keyframes lb-podium-sheen{ 0%{ transform:translate3d(-110%, 0, 0) skewX(-14deg); } 26%, 100%{ transform:translate3d(300%, 0, 0) skewX(-14deg); } }
+  [data-reduce-motion="true"] .lb-podium-sheen::after{ animation:none; opacity:0; }
+  @media (prefers-reduced-motion:reduce){ .lb-podium-sheen::after{ animation:none; opacity:0; } }
+  /* the medals, struck: a fine bright edge inside a darker one */
+  .screen-rankings .rank-row .rank-place.lb-rank-medal{ position:relative; }
+  .screen-rankings .rank-row .lb-rank-1{ box-shadow:0 2px 10px rgba(214,160,40,.45), inset 0 0 0 1px rgba(122,85,8,.55), inset 0 0 0 2px rgba(255,246,214,.55), inset 0 1px 0 rgba(255,255,255,.6); }
+  .screen-rankings .rank-row .lb-rank-2{ box-shadow:0 2px 8px rgba(0,0,0,.4), inset 0 0 0 1px rgba(80,84,90,.5), inset 0 0 0 2px rgba(255,255,255,.5), inset 0 1px 0 rgba(255,255,255,.6); }
+  .screen-rankings .rank-row .lb-rank-3{ box-shadow:0 2px 8px rgba(0,0,0,.4), inset 0 0 0 1px rgba(92,48,18,.55), inset 0 0 0 2px rgba(255,214,176,.45), inset 0 1px 0 rgba(255,255,255,.45); }
+  /* the crown, set on first place's medal */
+  .lb-crown{ position:absolute; left:50%; bottom:calc(100% - .1rem); width:1.05rem; height:.7rem; translate:-50% 0; rotate:-8deg;
+    pointer-events:none; filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.55)) drop-shadow(0 0 4px rgba(255,205,90,.45)); }
+  .lb-crown svg{ display:block; width:100%; height:100%; overflow:visible; }
+  @media (min-width:40rem){ .lb-crown{ width:1.25rem; height:.84rem; } }
   /* Your own row keeps its accent ring even on the podium - being
      first should not cost you the ability to find yourself. Stated
      after the podium rules so it wins on source order. */
@@ -22174,6 +22246,18 @@
   /* the flare bubble, out of Home's orbit */
   .flare-solo.cosmic-icon-badge.cosmic-badge-rank{ position:relative; top:auto; left:auto; flex:none; translate:none; }
   .flare-solo.cosmic-icon-badge.cosmic-badge-rank.is-empty{ border-style:dashed; }
+  /* A PERSON'S RANK FLARE (build 324, buildRankMark): Home's lit bubble,
+     sized for a row or a card. Forty of them sit in a list of glass rows,
+     so no backdrop blur of its own (the tinted fill already separates it
+     from the dark row behind) and a halo scaled to a 23-30px coin rather
+     than to Home's 46px one, which would wash over the numbers beside it. */
+  .rank-mark.flare-solo.cosmic-icon-badge.cosmic-badge-rank{ -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .rank-mark.flare-solo.cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit{
+    box-shadow:0 1px 3px rgba(255,255,255,.16) inset, 0 -1px 2px rgba(255,255,255,.08) inset,
+      0 0 6px 0 color-mix(in srgb, var(--flare-tint, var(--rank-color)) 70%, transparent),
+      0 0 14px 2px color-mix(in srgb, var(--flare-tint, var(--rank-color)) 28%, transparent),
+      0 2px 5px rgba(0,0,0,.4);
+  }
   /* the next rank */
   .pf-goal{ margin:.8rem 0 0; padding:1rem 1rem .85rem; border-radius:1.1rem;
     background:linear-gradient(160deg, color-mix(in srgb, var(--nx) 18%, rgba(0,0,0,.3)), rgba(0,0,0,.34) 58%);
@@ -23887,10 +23971,15 @@
   .person-card-rank{
     margin:.15rem 0 0; font-size:1.35rem; font-weight:900;
     letter-spacing:.04em; text-transform:uppercase;
-    /* The rank's own colour is set inline per person; the glow comes
-       off it so it lights rather than just prints. */
-    filter:drop-shadow(0 0 14px color-mix(in srgb, var(--rank-color, #fff) 45%, transparent));
+    /* the flare and the word on one line (build 324) */
+    display:flex; align-items:center; justify-content:center; gap:.55rem;
   }
+  /* The rank's own colour is set inline per person; the glow comes off
+     the WORD so it lights rather than just prints (on the line it would
+     double the flare's own halo). */
+  .person-card-rankword{ filter:drop-shadow(0 0 14px color-mix(in srgb, var(--rank-color, #fff) 45%, transparent)); }
+  .person-card-rank > .person-card-mark{ width:2.1rem; height:2.1rem; }
+  @media (min-width:40rem){ .person-card-rank > .person-card-mark{ width:2.4rem; height:2.4rem; } }
   .person-card-level{
     margin:.15rem 0 0; font-size:.95rem; font-weight:700; color:#AEB7C2;
   }
@@ -24321,6 +24410,8 @@
   .rank-col-rank{ display:flex; flex-direction:column; align-items:center; gap:.1rem; line-height:1; }
   .rank-col-emblem{ width:1.45rem; height:1.45rem; display:block; }
   .rank-col-emblem svg{ width:100%; height:100%; display:block; }
+  /* the rank's flare, in place of the bare emblem (build 324) */
+  .rank-col-rank > .rank-col-flare{ width:1.55rem; height:1.55rem; margin-bottom:.06rem; }
   .rank-col-rankname{ font-size:.66rem; font-weight:800; letter-spacing:.02em; white-space:nowrap; }
   .rank-col-rank.is-none{ color:var(--soft); font-weight:700; }
   /* ---- WHICH NUMBER IS WHICH, AT A GLANCE ----
@@ -24370,6 +24461,7 @@
     .rank-cols{ grid-template-columns:3.3rem 2.2rem 2.8rem; column-gap:.5rem; }
     .rank-col-num{ font-size:.95rem; }
     .rank-col-emblem{ width:1.3rem; height:1.3rem; }
+    .rank-col-rank > .rank-col-flare{ width:1.4rem; height:1.4rem; }
     .rank-col-rankname{ font-size:.6rem; letter-spacing:0; }
     .rank-col-head{ font-size:.54rem; letter-spacing:0; }
   }
@@ -24385,6 +24477,7 @@
     .rank-cols{ grid-template-columns:6.2rem 3.6rem 4.2rem; column-gap:1rem; }
     .rank-col-num{ font-size:1.15rem; }
     .rank-col-emblem{ width:1.75rem; height:1.75rem; }
+    .rank-col-rank > .rank-col-flare{ width:1.7rem; height:1.7rem; }
     .rank-col-rankname{ font-size:.74rem; }
     .rank-col-head{ font-size:.72rem; }
   }
@@ -81326,9 +81419,16 @@ function openPersonSheet(entry){
   if(rk){
     const rankEl = document.createElement("p");
     rankEl.className = "person-card-rank";
-    rankEl.textContent = RANK_DISPLAY_NAME[rk];
     rankEl.style.color = RANK_COLOR[rk];
     rankEl.style.setProperty("--rank-color", RANK_COLOR[rk]);
+    /* THE FLARE AND THE NAME (build 324): "if i view someone's profile it
+       would have the flare and the name" - the same mark as their row on
+       the Overall board (buildRankMark), moving, beside the headline. */
+    try{ rankEl.appendChild(buildRankMark(rk, "person-card-mark")); }catch(e){}
+    const rkWord = document.createElement("span");
+    rkWord.className = "person-card-rankword";
+    rkWord.textContent = RANK_DISPLAY_NAME[rk];
+    rankEl.appendChild(rkWord);
     sheet.appendChild(rankEl);
   }
   const lvlEl = document.createElement("p");
@@ -81445,6 +81545,7 @@ function openPersonSheet(entry){
   overlay.appendChild(sheet);
   overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
   mountSheetOverlay(overlay);
+  startRankMarks(sheet);
 }
 
 function showHome(){
@@ -106284,6 +106385,7 @@ function showWeekCongrats(top, wk){
   mountSheetOverlay(overlay);
 }
 let lbFindMeAt = 0;
+let lbCrownSeq = 0;
 /* ---- BANNERS ON THE BOARD (build 310, NOT SWITCHED ON) ----
    "Banners being displayed in the leaderboard, is there a way to do this
    while still being able to see gold silver and bronze placements? ...
@@ -106371,6 +106473,9 @@ function renderRankingRows(rows, entries, board, opts){
   });
   const keptBanners = new Map();
   rows.querySelectorAll(".rank-row .lb-row-bnr[data-key]").forEach(b => keptBanners.set(b.dataset.key, b));
+  /* each person's rank flare too (build 324), with its flip-book on it */
+  const keptMarks = new Map();
+  rows.querySelectorAll(".rank-row .rank-col-flare[data-mark]").forEach(m => keptMarks.set(m.dataset.mark, m));
   rows.replaceChildren();
   /* LAST WEEK'S TOP THREE, on the This Week board - "make it show last
      week's top 3 there somehow". A small podium above this week's rows:
@@ -106419,6 +106524,26 @@ function renderRankingRows(rows, entries, board, opts){
     const rank = document.createElement("span");
     rank.className = "rank-place";
     renderRankMarker(rank, place);
+    /* THE TOP THREE, MORE PRESTIGIOUS (build 324): "all the boxes in the
+       leaderboard look good, could we slightly improve the looks of the
+       top 3 so it's more prestigious?" The rows keep their tinted glass
+       and their height; what is added is a metal ring in each place's own
+       gold, silver or bronze (CSS, .rank-podium-N::before), a struck edge
+       on the medal, a small crown over first place's medal, and on first
+       place alone a slow light that crosses the glass now and then
+       (.lb-podium-sheen - a transform, so the compositor's, paused off
+       screen with the row and off under Reduce motion). */
+    if(place === 1){
+      const crown = document.createElement("span");
+      crown.className = "lb-crown"; crown.setAttribute("aria-hidden", "true");
+      const cid = "lbcrown-" + (++lbCrownSeq);
+      crown.innerHTML = "<svg viewBox=\"0 0 24 16\"><defs><linearGradient id=\"" + cid + "\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">"
+        + "<stop offset=\"0\" stop-color=\"#FFF1B8\"/><stop offset=\".55\" stop-color=\"#F5C84A\"/><stop offset=\"1\" stop-color=\"#B9851A\"/></linearGradient></defs>"
+        + "<path d=\"M3 13.5 1.6 4.2l5.6 4.1L12 1.5l4.8 6.8 5.6-4.1L21 13.5Z\" fill=\"url(#" + cid + ")\" stroke=\"#7A5508\" stroke-width=\".9\" stroke-linejoin=\"round\"/>"
+        + "<path d=\"M3.4 13.1h17.2\" stroke=\"#FFF6D6\" stroke-width=\".8\" opacity=\".7\"/>"
+        + "<circle cx=\"12\" cy=\"9.6\" r=\"1.25\" fill=\"#FFF8E0\"/></svg>";
+      rank.appendChild(crown);
+    }
 
     if(entry.pub){ row.dataset.pub = entry.pub; row.dataset.av = entry.avatarChar || ""; }
     const keptKey = entry.pub ? entry.pub + "|" + (entry.avatarChar || "") : null;
@@ -106469,7 +106594,7 @@ function renderRankingRows(rows, entries, board, opts){
        on one number and keep their line. */
     let cols = null;
     if(board.key === "overall"){
-      cols = buildOverallCols(entry);
+      cols = buildOverallCols(entry, keptMarks);
     } else {
       stats.textContent = board.unit(val(entry), entry);
     }
@@ -106489,13 +106614,20 @@ function renderRankingRows(rows, entries, board, opts){
       row.classList.add("is-tappable");
       row.setAttribute("role", "button");
       row.tabIndex = 0;
-      row.addEventListener("click", () => openPersonSheet(entry));
+      /* never from a board you are hidden from (build 324) */
+      const open = () => { if(!store.leaderboardOptIn) return showRankings(); openPersonSheet(entry); };
+      row.addEventListener("click", open);
       row.addEventListener("keydown", e => {
-        if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openPersonSheet(entry); }
+        if(e.key === "Enter" || e.key === " "){ e.preventDefault(); open(); }
       });
     }
     row.append(rank, avatarWrap, nameWrap);
     if(cols){ row.classList.add("has-cols"); row.appendChild(cols); }
+    if(place === 1){
+      const sheen = document.createElement("span");
+      sheen.className = "lb-podium-sheen"; sheen.setAttribute("aria-hidden", "true");
+      row.insertBefore(sheen, row.firstChild);
+    }
     /* The banner they wear, when the board is set to show one - see
        LB_ROW_BANNER. Only a real banner: the theme default would put a
        wash on every row and say nothing. Carried over like the
@@ -106523,6 +106655,7 @@ function renderRankingRows(rows, entries, board, opts){
     rows.appendChild(row);
   });
   lbWatchOffscreen(rows);
+  startRankMarks(rows);
 }
 
 /* Forty animated characters in one list is forty svgs repainting every
@@ -106535,7 +106668,12 @@ function lbWatchOffscreen(rows){
   if(rows._lbIo) rows._lbIo.disconnect();
   const io = new IntersectionObserver(list => {
     if(!document.contains(rows)){ io.disconnect(); return; }
-    list.forEach(e => e.target.classList.toggle("is-offscreen", !e.isIntersecting));
+    list.forEach(e => {
+      e.target.classList.toggle("is-offscreen", !e.isIntersecting);
+      /* a rank flare paused off screen comes back on the shared clock
+         (build 324), level with every other flare of its rank */
+      if(e.isIntersecting) e.target.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => { try{ syncLoopClock(a); }catch(x){} });
+    });
   }, { rootMargin: "120px 0px" });
   rows._lbIo = io;
   /* not marked off-screen up front (build 310): the observer's first
@@ -106548,16 +106686,25 @@ function lbWatchOffscreen(rows){
    name, in the rank's own colour), the level and the badge count.
    rankOfStats is the single definition of who holds what, so this can
    never disagree with the Rank tab or the person card. */
-function buildOverallCols(entry){
+function buildOverallCols(entry, keptMarks){
   const cols = document.createElement("span");
   cols.className = "rank-cols";
   const rk = rankOfEntry(entry);
   const rc = document.createElement("span");
   rc.className = "rank-col rank-col-rank";
   if(rk){
-    const em = document.createElement("span");
-    em.className = "rank-col-emblem";
-    try{ em.appendChild(buildRankEmblemSVG(rk)); }catch(e){}
+    /* THE FLARE, MOVING (build 324): "ensure the rank icon on people's
+       tab is animating" - see buildRankMark. Carried over from the row a
+       snapshot just replaced (same person, same rank), like the
+       character, so a classmate's push elsewhere never restarts it. */
+    const mk = entry.pub ? entry.pub + "|" + rk : null;
+    let em = mk && keptMarks ? keptMarks.get(mk) : null;
+    if(em) keptMarks.delete(mk);
+    else {
+      try{ em = buildRankMark(rk, "rank-col-flare"); }
+      catch(e){ em = document.createElement("span"); em.className = "rank-col-flare"; }
+    }
+    if(mk) em.dataset.mark = mk;
     const nm = document.createElement("span");
     nm.className = "rank-col-rankname";
     nm.textContent = RANK_DISPLAY_NAME[rk];
@@ -109664,6 +109811,42 @@ function buildFlareBubble(key, o){
   b.appendChild(homeRankEmblem(key));
   return b;
 }
+/* ---- A PERSON'S RANK IS THEIR FLARE (build 324, builder L) ----
+   "would the app be cohesive if the rank symbol everywhere was just the
+   rank flare? Like if i view someone's profile it would have the flare
+   and the name ... And on the leaderboard it would be the flare and not
+   just what's in the flare?" Yes: wherever the app puts a rank SYMBOL
+   beside a person, it is that rank's flare - Home's lit glass bubble with
+   the emblem moving inside it - and the rank's name stays beside it. One
+   builder, so the Overall board's column and the person card can never
+   draw two different things. The bare emblem stays where it IS the rank
+   rather than a badge of it: the Rank screen's road map, the rank-up
+   journey, the Profile's "To reach" box. Places Madison asked to be words
+   stay words (the Profile line, build 321: "Remove the tiny icon"; no
+   coin on any character, build 241), so this adds no symbol anywhere -
+   it changes what the symbol is.
+   Small and in lists, so: no backdrop blur and a short halo (the CSS on
+   .rank-mark), and its motion is the shared flip-book (startRankMarks),
+   paused with its row when the row is off screen (.is-offscreen). */
+function buildRankMark(key, cls){
+  const b = buildFlareBubble(key, { lit: true });
+  b.classList.add("rank-mark");
+  if(cls) b.classList.add(cls);
+  return b;
+}
+/* Puts each mark's recorded motion on (recording a sheet only for a size
+   not already made this session), and sets any mark already playing to
+   the shared loop clock, so a mark moved into a rebuilt row carries on
+   where it was instead of starting its loop again. */
+function startRankMarks(root){
+  if(!root) return;
+  try{ root.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => syncLoopClock(a)); }catch(e){}
+  if(root._rankMarkRaf) return;
+  root._rankMarkRaf = requestAnimationFrame(() => setTimeout(() => {
+    root._rankMarkRaf = 0;
+    try{ if(root.isConnected) startOrbitEmblemAnims(root); }catch(e){}
+  }, 0));
+}
 /* A theme as its swatch in Customize draws it: the swirl and the sheen
    that sweeps across it ("ensure the theme is the animated look"). */
 function buildThemeDot(key){
@@ -111179,6 +111362,39 @@ function showClass(which, opts){
     : (w === "level" || RANKING_BOARDS.some(b => b.key === w)) ? w : undefined;
   return showRankings(board);
 }
+/* The Leaderboard tab while "Show me in the rankings" is off (build 324):
+   one glass card where the boards would be - what is hidden and why, and
+   the one switch that brings them back, flipped right here rather than a
+   trip into Settings (the same three lines as Settings' own switch). */
+function buildRankingsOptedOut(boardKey){
+  const panel = document.createElement("section");
+  panel.className = "panel screen-rankings is-optout";
+  const card = document.createElement("div");
+  card.className = "lb-optout";
+  const icon = document.createElement("span");
+  icon.className = "lb-optout-icon"; icon.setAttribute("aria-hidden", "true");
+  icon.innerHTML = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\">"
+    + "<path d=\"M2.6 12S6 5.8 12 5.8 21.4 12 21.4 12 18 18.2 12 18.2 2.6 12 2.6 12Z\"/>"
+    + "<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M4.2 19.8 19.8 4.2\"/></svg>";
+  const title = document.createElement("h2");
+  title.className = "lb-optout-title"; title.textContent = "The rankings are hidden";
+  const line = document.createElement("p");
+  line.className = "lb-optout-line";
+  line.textContent = "You\u2019re not in the rankings, so you can\u2019t see them either. Turn it back on to see where you stand.";
+  const on = document.createElement("button");
+  on.type = "button"; on.className = "next lb-optout-on";
+  on.textContent = "Show me in the rankings";
+  on.addEventListener("click", () => {
+    store.leaderboardOptIn = true;
+    store.leaderboardOptInChanged = true;
+    saveStore();
+    showToast("You're on the leaderboard.");
+    showRankings(boardKey);
+  });
+  card.append(icon, title, line, on);
+  panel.appendChild(card);
+  return panel;
+}
 function showRankings(defaultBoard){
   setActiveNav(null);
   countEl.textContent = "Leaderboard";
@@ -111193,6 +111409,24 @@ function showRankings(defaultBoard){
      replaced it rather than on a different one. */
   if(rankingsBoardKey === "level") rankingsBoardKey = "overall";
   if(!RANKING_BOARDS.some(b => b.key === rankingsBoardKey)) rankingsBoardKey = RANKINGS_DEFAULT_BOARD;
+
+  /* ---- HIDDEN FROM THE RANKINGS, SO NO RANKINGS (build 324) ----
+     "The show me in rankings toggle, if I turn it off, I can still see
+     the leaderboard.. fix that. If I have it off then I shouldn't be able
+     to see it." Settings already said so ("With this off, you can't see
+     the rankings either") and nothing enforced it. Every way to the
+     boards comes through here - the bottom tab, showLeaderboard,
+     showClass, a stored or linked board name - so this one gate closes
+     them all, and with no board there is no Find me, no row to open a
+     person card from, no last week's podium and no listener on the
+     collection. One button puts you back in, here, and the boards are
+     drawn at once. */
+  if(!store.leaderboardOptIn){
+    if(rankingsLiveUnsub){ try{ rankingsLiveUnsub(); }catch(e){} rankingsLiveUnsub = null; }
+    stage.replaceChildren(buildRankingsOptedOut(rankingsBoardKey));
+    toTop();
+    return;
+  }
 
   const panel = document.createElement("section");
   panel.className = "panel screen-rankings";
@@ -111309,6 +111543,9 @@ function showRankings(defaultBoard){
   }
 
   function paint(){
+    /* switched off while the board was up (another device's change
+       arriving, say): the board goes, the same way it would on opening */
+    if(!store.leaderboardOptIn){ if(panel.isConnected) showRankings(rankingsBoardKey); return; }
     const board = RANKING_BOARDS.find(b => b.key === rankingsBoardKey);
     blurb.textContent = board.blurb || "";
     const list = liveEntries();
@@ -111349,6 +111586,7 @@ function showRankings(defaultBoard){
      class that is already applied. Only ever your own row - nobody
      else's screen flashes because you looked yourself up. */
   meBtn.addEventListener("click", () => {
+    if(!store.leaderboardOptIn){ showRankings(rankingsBoardKey); return; }
     playSound("lb.findme");
     if(search.value){ search.value = ""; paint(); }
     const mine = rows.querySelector('[data-me="1"]');

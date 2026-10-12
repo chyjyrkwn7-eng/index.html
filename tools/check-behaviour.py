@@ -26325,6 +26325,143 @@ def check_b323u_units(br):
               {"shape": ok_shape, "copy": [cards.get(m, {}).get("desc") for m in ("drill", "exam", "review")], "ink": ink})
 
 
+def check_b324l_board(br):
+    """Build 324 (builder L), the Leaderboard. Madison:
+    - "The show me in rankings toggle, if I turn it off, I can still see
+      the leaderboard.. fix that. If I have it off then I shouldn't be able
+      to see it." With leaderboardOptIn off every way in (the tab's
+      showRankings, showLeaderboard, showClass, a stored board name) shows
+      the hidden card and no board, no Find me and no listener; a row left
+      on screen when it goes off opens no person card; a snapshot arriving
+      then takes the board down; the card's one button puts you back in
+      and the boards are there at once.
+    - "ensure the rank icon on people's tab is animating ... would the app
+      be cohesive if the rank symbol everywhere was just the rank flare?"
+      The Overall board's rank column is the rank's FLARE (Home's lit
+      bubble, .rank-mark) and its flip-book runs; the person card carries
+      the same element beside the rank's name; the Profile card's flares
+      are the same element.
+    - "could we slightly improve the looks of the top 3 so it's more
+      prestigious?" Places 1-3 wear a metal ring (::before gradient), first
+      place a crown and a moving sheen; #4 none of it; no row is taller
+      than it was.
+    Fails on ab75270 (no hidden card, the board shows; a bare emblem in the
+    column; no ring, crown or sheen)."""
+    print("\n324l. the Leaderboard: hidden when you are, the rank flare on rows and cards, a more prestigious top 3")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=2)
+    pg.evaluate(_LB_FAKE)
+    r = pg.evaluate("""async () => { const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
+      try{
+      store.seenRewardsTour = true;
+      const st = () => ({ board: document.querySelectorAll('.screen-rankings .rank-rows .rank-row:not(.rank-row-skel)').length,
+        hidden: !!document.querySelector('.screen-rankings .lb-optout'), findMe: !!document.querySelector('.rank-me-btn'),
+        on: !!document.querySelector('.lb-optout .lb-optout-on'), subs: __cbs.length });
+      /* 1. off: every way in */
+      store.leaderboardOptIn = false;
+      showRankings('overall'); await wait(400); out.tab = st();
+      showLeaderboard(); await wait(300); out.legacy = st();
+      showClass('hundos'); await wait(300); out.cls = st();
+      showRankings('level'); await wait(300); out.stored = st();
+      /* 2. back on, from the card's one button */
+      document.querySelector('.lb-optout .lb-optout-on').click(); await wait(250);
+      out.back = st(); out.optIn = store.leaderboardOptIn;
+      /* 3. switched off under an open board: a row opens nothing, a snapshot takes it down */
+      showRankings('overall'); await wait(700);
+      store.leaderboardOptIn = false;
+      document.querySelector('.screen-rankings .rank-row.lb-place-2')?.click(); await wait(300);
+      out.cardWhileOff = !!document.querySelector('.invite-overlay .person-card');
+      out.afterClick = st();
+      store.leaderboardOptIn = true; showRankings('overall'); await wait(700);
+      store.leaderboardOptIn = false; __push(); await wait(300);
+      out.afterPush = st();
+      store.leaderboardOptIn = true;
+      }catch(e){ out.threw = String(e); }
+      return out; }""")
+    def hid(x):
+        return isinstance(x, dict) and x["board"] == 0 and x["hidden"] and not x["findMe"] and x["on"] and x["subs"] == 0
+    check("opted out: the Leaderboard tab shows the hidden card, no board, no Find me, no listener", hid(r.get("tab")), {k: r.get(k) for k in ("tab", "threw")})
+    check("...and so does every other way in (showLeaderboard, showClass, a stored board name)",
+          hid(r.get("legacy")) and hid(r.get("cls")) and hid(r.get("stored")), {k: r.get(k) for k in ("legacy", "cls", "stored", "threw")})
+    check("its one button turns it back on and the boards are there at once",
+          r.get("optIn") is True and (r.get("back") or {}).get("board", 0) >= 10 and not (r.get("back") or {}).get("hidden"), r.get("back"))
+    check("switched off under an open board: a row opens no person card, the board goes",
+          r.get("cardWhileOff") is False and hid(r.get("afterClick")), {k: r.get(k) for k in ("cardWhileOff", "afterClick")})
+    check("...and a snapshot arriving then takes the board down", (r.get("afterPush") or {}).get("hidden") is True
+          and (r.get("afterPush") or {}).get("board") == 0, r.get("afterPush"))
+
+    # 2. the rank mark on the Overall board is the flare, and it moves
+    pg.evaluate("() => { showRankings('overall'); }")
+    t0 = time.time(); n = 0
+    while time.time() - t0 < 150:
+        n = pg.evaluate("() => document.querySelectorAll('.screen-rankings .rank-row:not(.is-offscreen) .rank-col-flare .cosmic-rank-anim img').length")
+        if n >= 3: break
+        time.sleep(1.5)
+    r2 = pg.evaluate("""async () => { const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
+      const sig = el => el ? [el.tagName, ...['cosmic-icon-badge','cosmic-badge-rank','cosmic-badge-lit','flare-solo','rank-mark'].filter(c => el.classList.contains(c))].join('.') : null;
+      const rows = [...document.querySelectorAll('.screen-rankings .rank-row:not(.rank-row-head):not(.rank-row-skel)')];
+      out.rows = rows.length;
+      out.ranked = rows.filter(r => r.querySelector('.rank-col-rankname')).length;
+      out.flares = rows.filter(r => r.querySelector('.rank-col-rank > .rank-mark .cosmic-rank-emblem')).length;
+      out.bare = document.querySelectorAll('.screen-rankings .rank-col-emblem').length;
+      const imgs = [...document.querySelectorAll('.screen-rankings .rank-row:not(.is-offscreen) .rank-col-flare .cosmic-rank-anim img')];
+      out.playing = imgs.filter(i => i.getAnimations().some(a => a.playState === 'running')).length;
+      const tf = () => imgs.map(i => getComputedStyle(i).transform).join('|');
+      const a = tf(); await wait(1200); out.moved = a !== tf();
+      out.board = sig(document.querySelector('.screen-rankings .rank-col-flare'));
+      /* a snapshot rebuilds the rows: the flare (and its flip-book) is the same node after */
+      const keep = document.querySelector('.screen-rankings .rank-row.lb-place-1 .rank-col-flare'); __push(); await wait(200);
+      out.carried = keep === document.querySelector('.screen-rankings .rank-row.lb-place-1 .rank-col-flare') && !!(keep && keep.querySelector('.cosmic-rank-anim'));
+      /* the person card: the same element, beside the rank's name */
+      document.querySelector('.screen-rankings .rank-row.lb-place-1').click(); await wait(500);
+      const card = document.querySelector('.invite-overlay .person-card-rank');
+      out.card = sig(card && card.querySelector('.rank-mark'));
+      out.cardWord = card ? (card.querySelector('.person-card-rankword') || {}).textContent : null;
+      out.cardWant = RANK_DISPLAY_NAME[rankOfEntry(__rows[0])];
+      document.querySelectorAll('.invite-overlay').forEach(n => n.remove());
+      /* the Profile card's flares are that element too */
+      showProfile('profile'); await wait(900);
+      out.profile = sig(document.querySelector('.profile-hero .flare-solo.cosmic-badge-rank.cosmic-badge-lit'));
+      out.profileRankMark = sig(document.querySelector('.profile-hero .rank-mark'));
+      return out; }""")
+    check("the Overall board's rank column is the rank's flare on every ranked row, no bare emblem",
+          r2["ranked"] >= 10 and r2["flares"] == r2["ranked"] and r2["bare"] == 0, r2)
+    check("...and the flares on screen play their flip-books (running, frames advancing)",
+          n >= 3 and r2["playing"] >= 3 and r2["moved"], dict(n=n, playing=r2["playing"], moved=r2["moved"]))
+    check("...carried over when a snapshot rebuilds the rows, flip-book and all", r2["carried"], r2["carried"])
+    want = "SPAN.cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit.flare-solo"
+    check("the board, the person card and the Profile card show the same element (Home's lit flare)",
+          r2["board"] == want + ".rank-mark" and r2["card"] == want + ".rank-mark"
+          and (r2["profile"] or "").startswith(want), r2)
+    check("the person card keeps the rank's name beside the flare", r2["cardWord"] == r2["cardWant"] and r2["cardWord"], (r2["cardWord"], r2["cardWant"]))
+    ctx.close()
+
+    # 3. the top three
+    for (dn, w, h) in [("phone", 440, 956), ("tablet", 834, 1194)]:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate(_LB_FAKE)
+        out = {}
+        for key in ("week", "overall", "hundos"):
+            pg.evaluate("(k) => { store.seenRewardsTour = true; showRankings(k); }", key)
+            pg.wait_for_timeout(700)
+            out[key] = pg.evaluate("""() => { const q = s => document.querySelector('.screen-rankings .rank-rows ' + s);
+              const ring = r => { if(!r) return null; const b = getComputedStyle(r, '::before'); return b.content !== 'none' && /gradient/.test(b.backgroundImage); };
+              const rows = [1,2,3].map(i => q('.rank-row.lb-place-' + i)), four = [...document.querySelectorAll('.screen-rankings .rank-rows .rank-row:not(.rank-row-head)')][3];
+              const sh = q('.rank-row.lb-place-1 > .lb-podium-sheen');
+              const anim = sh ? sh.getAnimations({ subtree: true }).filter(a => a.animationName === 'lb-podium-sheen').length : 0;
+              const hs = rows.concat([four]).map(r => r ? Math.round(r.getBoundingClientRect().height) : 0);
+              return { rings: rows.map(ring), crown: !!q('.rank-row.lb-place-1 .rank-place .lb-crown'), sheen: anim,
+                four: { ring: ring(four), crown: !!(four && four.querySelector('.lb-crown')), sheen: !!(four && four.querySelector('.lb-podium-sheen')) },
+                crowns: document.querySelectorAll('.screen-rankings .lb-crown').length, hs }; }""")
+        ctx.close()
+        ok = all(v["rings"] == [True, True, True] and v["crown"] and v["sheen"] >= 1 and v["crowns"] == 1 for v in out.values())
+        check("%s: on all three boards places 1-3 wear a metal ring, first place a crown and a moving sheen" % dn, ok, out)
+        check("%s: #4 wears none of it" % dn, all(not v["four"]["ring"] and not v["four"]["crown"] and not v["four"]["sheen"] for v in out.values()), {k: v["four"] for k, v in out.items()})
+        check("%s: the top three are no taller than #4 (the list does not move)" % dn,
+              all(max(v["hs"][:3]) <= v["hs"][3] + 1 for v in out.values()), {k: v["hs"] for k, v in out.items()})
+        check("%s: the flare leaves an Overall row no taller than a This Week row" % dn,
+              out["overall"]["hs"][3] <= out["week"]["hs"][3], {k: v["hs"][3] for k, v in out.items()})
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -26555,6 +26692,7 @@ def main():
             check_b323b_stars(br)
             check_b323s_summary(br)
             check_b323u_units(br)
+            check_b324l_board(br)
         finally:
             br.close()
     SERVER.shutdown()
