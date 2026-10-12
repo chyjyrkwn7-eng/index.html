@@ -20852,3 +20852,47 @@ too and not the grey we have"*. Gated in `check_b323t_tabbar` (fails on
   to light Calendar; check-sound taps Calendar for the slide and opens
   Settings directly; shoot-flow opens Settings with `showAppearance()`. The
   main-menu tour's fourth step points at the Calendar tab.
+
+### Build 323 (b323n) - the Calendar tab, Settings inside Profile, friends on the Friends box, today's dots
+
+Madison: *"Calendar is gonna move to the bottom tab. It's gonna change places
+with the settings bottom tab and then the settings is gonna be within profile
+and will be a top tab, the order would be profile, stats, settings ... the box
+that says manage friends show your current friends and what they are doing
+currently or if they are offline."* And: *"On the calendar, if today's the
+current day, the test dot turns white instead of yellow as shown to be in the
+key."*
+
+- **`showCalendarTab()` is a tab root** (`.panel.screen-calendar.screen-calendar-tab`):
+  `setActiveNav("calendar")`, the header says Calendar, no back link, the same
+  `buildCalendarPane()` (Class 26E box, Month / List, the grid, the day card,
+  Go to today). It must keep `.screen-calendar` - the bar lights Calendar off
+  it (b323t). `showCalendar()`, `showProfile("calendar")` and its aliases, and
+  `showClass("calendar")` all land there.
+- **Profile's tabs are Profile, Stats, Settings** (`PROFILE_TABS`, one
+  `profileTabDefs` entry each). The Settings tab is `.profile-settings-tab
+  .screen-settings`, filled the first time it is SHOWN by
+  `showAppearance({ into })` - one builder, never a second copy. Called with
+  no `into`, `showAppearance(opts)` is `showProfile("settings", opts)`, so every
+  old way in (the save-your-code banner's `{ focus: "sync" }`, the back links,
+  Firebase arriving, a reset re-render) lands on Profile > Settings with
+  Profile lit. The Settings tour and the focus scroll run inside it, after the
+  tab is mounted and visible. The Profile swipe skips the volume slider
+  (`.sliderwrap, input[type=range]`). The Profile tour runs only when Profile
+  opens on its Profile tab.
+- **The Friends box lists friends** (`paintFriendPreview` in `showProfile`):
+  up to `FRIEND_PREVIEW_MAX` (4), on first - character (asleep when off), name,
+  the `ACTIVITY_TEXT` long label in the online green with the friends list's
+  own dot, or "Offline" - then "and N more", then Manage friends (Add friends
+  with none). Built from `leaderboardRows` and the presence document Profile
+  attaches anyway: no read of its own (`fetchBoardForInvites(false)`, Home's
+  15-minute fetch, only when no friend's row is loaded). Presence repaints it
+  through `refreshPresenceViews`, only when what it shows changed. A row opens
+  the person card.
+- **A calendar dot is its key's colour on every day**: the test dot amber and
+  a no-class day's dot pink on today and on a picked day; today's class dot is
+  the accent like the key's. Today keeps its ring and fill.
+- **Gate: `check_b323n_nav`** (fails on 22bf429). Moved, with her words:
+  `check_b319h_layout` (Profile / Stats / Settings; Month / List on the
+  Calendar tab; B319H_CAL reads the Calendar tab root; the calendar's old ways
+  in are held by check_b323n_nav), check-tours' Profile note.
