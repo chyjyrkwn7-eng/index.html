@@ -20629,3 +20629,17 @@ with five subtractions and one change of form.
   spy on `NovaSound.play`: ambience, planet, tab bar, a Settings switch,
   LOADING TEST, wrong, right, star, pause/resume, next, Nova's blips, and last
   week's fanfare replacing the plain sheet sound.
+- **Centred on its shape, out of the case too** (after b321c's
+  `badgeSlotShift`). The badge in your hand (`.binspect-coin`) and the
+  cutscene's coin (`.bc-coin`) carry `--sdx`/`--sdy` and move back by that
+  share of their size with the independent `translate` property (so it
+  composes with `bc-pop`'s transform), and `.binspect-spin`, `.bc-spin` and
+  `.bc-sway` turn about the shape's own middle, so a turn never swings an
+  off-centre shape (the C-ring) aside. The engraved back's words are centred
+  on the visible shape too. The lift out of a slot, the drop back in and the
+  cutscene's flight into its slot aim at the shape's middle in the slot
+  (`slot centre - shift x size`), where the slot's own drawing is moved. The
+  cutscene's coin takes its back warmed in idle (`warmBadgeCoinFaces`,
+  `badgeCoinBackPx`) or the quick draft - never the finish as the scene
+  builds. Gate: check_b321d_badges, all sixteen within 1px front and back
+  (b316-work 8c729e8: the C-ring 34px off at the hand's size).
