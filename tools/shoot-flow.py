@@ -293,7 +293,7 @@ def main():
                 shot(page, 8.8, "nova-intro", bar_ok=True)
                 for _ in range(60):
                     if not page.evaluate("()=>!!document.getElementById('nova-intro')"): break
-                    page.evaluate("()=>{ const el = document.getElementById('nova-intro'); if(!el.__nova) return;"
+                    page.evaluate("()=>{ const el = document.getElementById('nova-intro'); if(!el || !el.__nova) return;"
                                   " if(el.__nova.index === el.__nova.count - 1 && !el.__nova.typing) el.querySelector('.nt-go').click();"
                                   " else el.__nova.advance(); }")
                     page.wait_for_timeout(120)
