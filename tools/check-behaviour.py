@@ -20820,12 +20820,17 @@ B319_NOTE = """async ([lvl, nb]) => {
   const n = document.querySelector('#intro-pop .intro-gate-note');
   let spoken = '';
   try{ spoken = whatsNewLines(whatsNewState()).map(l => l.text).join(' '); }catch(e){}
+  /* build 321: and in the meeting with Nova, where What's New follows his
+     introduction (chained) - the note is said there too */
+  let chained = '';
+  try{ chained = whatsNewLines(whatsNewState(), true).map(l => l.text).join(' '); }catch(e){}
+
   const s = levelStateFor(store);
   const r = n ? n.getBoundingClientRect() : null;
   const out = { text: n ? [...n.querySelectorAll('.intro-gate-body')].map(p => p.textContent) : null, title: n ? (n.querySelector('.intro-gate-title') || {}).textContent : null,
     level: s.level, curve: s.curveLevel, held: rankOf(store) ? RANK_DISPLAY_NAME[rankOf(store)] : null,
     gate: s.gateKey ? RANK_DISPLAY_NAME[s.gateKey] : null, need: s.badgesToPass,
-    inView: r ? r.left >= 0 && r.right <= innerWidth : null, spoken };
+    inView: r ? r.left >= 0 && r.right <= innerWidth : null, spoken, chained };
   document.getElementById('intro-pop')?.remove();
   return out; }"""
 
@@ -20860,6 +20865,8 @@ def check_b319_levelnote(br):
             miss = [x for x in want if x not in t]
             # build 320: Nova says the note, its facts exactly
             miss += ["(spoken) " + x for x in want if x not in (r.get("spoken") or "")]
+            # build 321: and in the meeting's What's New, after his introduction
+            miss += ["(chained) " + x for x in want if "Here’s what’s new" not in (r.get("chained") or "") or x not in (r.get("chained") or "")]
             check("%s: level %d, %d badge(s): the note says it plainly" % (dev, lvl, nb),
                   r["title"] == "Your level was adjusted" and not miss and not bad and r["level"] == top and r["inView"],
                   {"missing": miss, "bad": bad, "text": r["text"], "state": [r["level"], r["curve"], r["held"], r["gate"], r["need"]]})
@@ -21471,6 +21478,9 @@ B320F_NEWS = """async ([reduce]) => {
     store.unitPerfects = {}; U.slice(0, 3).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
     /* Gold held from the old ladder (rankFloor 3), three badges */
     store.levelFloor = 0; store.rankFloor = 3; store.lifetime.points = xpForLevel(49) + 300;
+    /* build 321: an account that has not met Nova meets him first
+       (check_b321g_nova); this is What's New on its own */
+    store.novaMet = 1;
     theme.reduceMotion = !!reduce; applyTheme(); saveStore();
     out.rank = RANK_DISPLAY_NAME[rankOf(store)]; out.badges = badgeCountOf(store); out.level = levelOf(store);
     localStorage.removeItem('class26e.intro.seen');
@@ -21511,6 +21521,7 @@ B320F_SKIP = """async () => {
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const out = {};
   try{
+    store.novaMet = 1; saveStore();   /* What's New on its own (build 321) */
     localStorage.removeItem('class26e.intro.seen'); showHome();
     for(let i = 0; i < 50 && !document.getElementById('intro-pop'); i++) await wait(100);
     const el = document.getElementById('intro-pop');
@@ -21565,7 +21576,9 @@ def check_b320f_nova(br):
         t = r.get("tap") or {}
         check("%s a tap finishes the line, the next tap moves on" % dev,
               t.get("typing0") and t.get("restBefore", 0) > 0 and t.get("idx1") == t.get("idx0") and t.get("restAfter") == 0 and t.get("idx2") == t.get("idx0", 0) + 1, t)
-        need = ["Nova", "made this app", "badge", "flare", "Supernova", "XP", "level", "Drill", "Exam", "Review", "Madison"]
+        # build 321: "he calls himself the app maker, don't do that" - an
+        # explorer and an instructor now (check_b321g_nova holds the rest)
+        need = ["Nova", "explorer", "badge", "flare", "crew", "Supernova", "XP", "level", "Drill", "Exam", "Review", "Madison"]
         miss = [x for x in need if x not in lines]
         check("%s he introduces himself and the story: badges, flares, ranks, levels, tests" % dev, not miss and r.get("goLabel"), {"missing": miss, "go": r.get("goLabel")})
         check("%s the tooltips follow in his bubble, every one" % dev,
@@ -21579,7 +21592,7 @@ def check_b320f_nova(br):
         txt = " ".join(r.get("lines") or [])
         check("%s existing account: the narrated What's New opens on Home" % dev, not r.get("err") and r.get("firstTyping"), {k: r.get(k) for k in ("err", "firstTyping")})
         check("%s he greets them by username, names the rank and the badges found" % dev,
-              "Madison" in txt and "I’m Nova" in txt and (r.get("rank") or "?") in txt and "found 3 of my lost badges" in txt and r.get("rank") == "Gold" and r.get("badges") == 3,
+              "Madison" in txt and "Nova" in txt and (r.get("rank") or "?") in txt and "found 3 of my lost badges" in txt and r.get("rank") == "Gold" and r.get("badges") == 3,
               {"rank": r.get("rank"), "badges": r.get("badges"), "head": (r.get("lines") or [])[:4]})
         check("%s the card is built as he talks, and ends on Got it" % dev,
               (r.get("rows") or 0) >= 9 and "3 of %s badges found" % r.get("units") in (r.get("me") or "") and r.get("go") and "speak with you again" in txt,
@@ -21597,6 +21610,204 @@ def check_b320f_nova(br):
     check("Skip on the introduction goes straight to the tooltips", r.get("intro") and r.get("tourAfterSkip"), r)
     check("Nova is not a character: not in the list, not in Customize", r.get("inChars") is False and r.get("inPicker") is False and (r.get("pickerHasChars") or 0) > 0, r)
     ctx.close()
+
+
+# ---------------------------------------------------------------------------
+# BUILD 321 (b321g): NOVA IS NOT THE APP'S MAKER; EXISTING ACCOUNTS MEET HIM.
+B321G_TALK = """async (id) => {
+  /* click through one Nova dialogue; returns every line it said */
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  for(let i = 0; i < 40 && !document.getElementById(id); i++) await wait(100);
+  const el = document.getElementById(id);
+  if(!el || !el.__nova) return { open: false, lines: [] };
+  const nv = el.__nova, out = { open: true, lines: [], label: el.getAttribute('aria-label') };
+  await wait(700);
+  for(let i = 0; i < 120 && el.isConnected; i++){
+    const t = el.querySelector('.nt-text').textContent;
+    if(out.lines[out.lines.length - 1] !== t) out.lines.push(t);
+    if(nv.typing){ el.querySelector('.nt-stage').click(); await wait(30); continue; }
+    const go = el.querySelector('.nt-go');
+    if(go && getComputedStyle(go).display !== 'none'){
+      out.go = go.textContent;
+      out.stage = (el.querySelector('.nt-stage') || {}).innerText || '';
+      go.click(); break; }
+    el.querySelector('.nt-stage').click(); await wait(40);
+  }
+  return out;
+}"""
+
+B321G_TOUR = """async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  for(let i = 0; i < 40 && !document.getElementById('tour-tooltip'); i++) await wait(100);
+  const out = [];
+  for(let i = 0; i < 20; i++){
+    const tt = document.getElementById('tour-tooltip');
+    if(!tt) break;
+    out.push((document.getElementById('tour-text') || {}).textContent || '');
+    document.getElementById('tour-next').click(); await wait(450);
+  }
+  return out;
+}"""
+
+
+def check_b321g_nova(br):
+    """Build 321 (b321g). Madison: "he calls himself the app maker, don't do
+    that ... Mention how during the ship explosion a lot of characters or
+    people on the ship went missing too and you need to find them ... Mr nova
+    screen when meeting a new player ... should be the one shown to all the
+    existing profiles, but at the end it can go over the ones they have
+    unlocked ... AFTER the nova intro that's when the what's new screen will
+    show up ... still give the tool tips but after the main menu ones ...
+    ensure nova still says good bye and they'll talk again."
+    No line anywhere says he made the app; the story carries the lore (the
+    people aboard went missing; the characters are them, found). An existing
+    account, on its first Home: his introduction (greeted by username, the
+    story, then its rank, level, badges, characters and secret flares), then
+    What's New without a second hello, then the main menu's tooltips and the
+    three new ones and no other tour, then his goodbye - once, recorded on
+    the account (novaMet, merged by the higher) and not again; a second
+    device of an account that has met him gets What's New alone. A new
+    account: unchanged (introduction, the seven main-menu tooltips, the
+    welcome bonus, no What's New, no goodbye), marked met. The wreck is
+    Home's own planet breaking into pieces of itself, a drawn ship and six
+    pods, and Reduce motion shows the aftermath. Fails on 6a387e2."""
+    print("\n321g. Nova: not the maker, the crew is the characters, existing accounts meet him")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""() => { const out = {};
+      try{
+        const txt = [];
+        try{ novaIntroLines({}).forEach(l => txt.push(l.text)); }catch(e){ out.e1 = String(e); }
+        try{ novaIntroLines({ existing: true }).forEach(l => txt.push(l.text)); }catch(e){ out.e2 = String(e); }
+        const st = whatsNewState();
+        try{ whatsNewLines(st).forEach(l => txt.push(l.text)); }catch(e){}
+        try{ whatsNewLines(st, true).forEach(l => txt.push(l.text)); }catch(e){}
+        RELEASE_NOTES[0].groups.forEach(g => g.items.forEach(i => txt.push(i.title + ' ' + i.body)));
+        out.intro = novaIntroLines({}).map(l => l.text);
+        out.all = txt;
+      }catch(e){ out.err = String(e); }
+      return out; }""")
+    allt = " | ".join(r.get("all") or [])
+    bad = re.findall(r".{30}(?:made (?:this|the) app|app[’']?s? maker|app maker|I made|I built).{20}", allt, re.I)
+    check("no line of Nova's, nor the release notes, says he made the app", bool(r.get("all")) and not bad, bad[:3] or r.get("err"))
+    lore = [t for t in (r.get("intro") or []) if re.search(r"missing", t, re.I) and re.search(r"character", t, re.I) and re.search(r"crew", t, re.I) and re.search(r"found", t, re.I)]
+    check("the introduction says the people aboard went missing and the characters are them, found", bool(lore), (r.get("intro") or [])[:5])
+    m = pg.evaluate("""() => { const a = { novaMet: 0 }; try{ mergeSameAccount(a, { novaMet: 1 }); }catch(e){}
+      const b = { novaMet: 1 }; try{ mergeSameAccount(b, {}); }catch(e){}
+      const keep = JSON.parse(JSON.stringify(store)); let def = null;
+      try{ const g = JSON.parse(JSON.stringify(store)); delete g.novaMet; applyLoadedData(g); def = store.novaMet; }catch(e){}
+      try{ applyLoadedData(keep); }catch(e){}
+      return { merged: a.novaMet, kept: b.novaMet, def }; }""")
+    check("met Nova is merged by the higher copy, kept against a copy without it, and defaults to not met", m.get("merged") == 1 and m.get("kept") == 1 and m.get("def") == 0, m)
+    ctx.close()
+
+    # An existing account on its first Home of this build.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("""() => { const U = topicsIn(QUESTIONS); store.unitPerfects = {}; U.slice(0, 3).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+      store.levelFloor = 0; store.rankFloor = 3; store.lifetime.points = xpForLevel(49) + 300;
+      store.mysteryColorsFound = Object.assign({}, store.mysteryColorsFound, { red: true });
+      delete store.novaMet; saveStore(); localStorage.removeItem('class26e.intro.seen');
+      window.__seen = []; new MutationObserver(() => { ['nova-intro', 'intro-pop', 'tour-tooltip'].forEach(id => {
+        const e = document.getElementById(id); if(e && !e.__b321){ e.__b321 = 1; window.__seen.push(id + ':' + (e.getAttribute('aria-label') || '')); } }); })
+        .observe(document.body, { childList: true });
+      showHome(); }""")
+    intro = pg.evaluate(B321G_TALK, "nova-intro")
+    it = " ".join(intro.get("lines") or [])
+    check("existing account: Nova's introduction opens on Home (not What's New first)", intro.get("open") and (pg.evaluate("()=>window.__seen") or [""])[0].startswith("nova-intro"),
+          pg.evaluate("()=>window.__seen"))
+    check("he greets them by username and tells the whole story, the crew included",
+          "Madison" in it and "wrecked my ship" in it and "missing" in it and "Supernova" in it and "Drill" in it, (intro.get("lines") or [])[:4])
+    check("at the end he goes over what they have: rank, level, badges, characters and secret flares found",
+          "Gold" in it and "level 49" in it and "found 3 of my lost badges" in it and "of my missing crew" in it and "one of my secret flares" in it
+          and re.search(r"\d+ of \d+ characters found", intro.get("stage") or "") and "1 of 3 secret flares found" in (intro.get("stage") or ""),
+          {"tail": (intro.get("lines") or [])[-4:], "stage": (intro.get("stage") or "")[:160]})
+    news = pg.evaluate(B321G_TALK, "intro-pop")
+    nt = " ".join(news.get("lines") or [])
+    check("then What's New, narrated, with no second hello, leading into the tips",
+          news.get("open") and "Hello" not in (news.get("lines") or [""])[0] and "version 7.8" in nt and news.get("go") == "Show me",
+          {"head": (news.get("lines") or [])[:2], "go": news.get("go")})
+    tips = pg.evaluate(B321G_TOUR)
+    want = pg.evaluate("()=>{ try{ return mainMenuTourSteps(true).length + NOVA_NEW_TIPS_321.length; }catch(e){ return -1; } }")
+    tj = " | ".join(tips)
+    check("then the main menu's tooltips and the new ones (the planet, the new Profile, the calendar), every one",
+          want > 7 and len(tips) == want and "Home always brings you back" in tj and "planet" in tj and "Calendar tab" in tj and "Profile has been rebuilt" in tj,
+          {"n": len(tips), "want": want, "first": tips[:1], "last": tips[-3:]})
+    bye = pg.evaluate(B321G_TALK, "nova-intro")
+    check("then he says goodbye, and that he'll speak again", bye.get("open") and "speak with you again" in " ".join(bye.get("lines") or []) and "Madison" in " ".join(bye.get("lines") or []),
+          bye.get("lines"))
+    pg.wait_for_timeout(800)
+    after = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const seen0 = window.__seen.length; showProfile('profile'); await wait(500); showHome(); await wait(3600);
+      return { more: window.__seen.slice(seen0), met: store.novaMet, local: Number(localStorage.getItem('class26e.intro.seen')) >= INTRO_REV,
+               tour: !!document.getElementById('tour-tooltip'), welcome: !!document.getElementById('welcomebonus-banner'),
+               seen: window.__seen }; }""")
+    order = [x.split(":")[0] for x in after.get("seen") or []]
+    check("in that order, with no other tour and no welcome bonus", order[:2] == ["nova-intro", "intro-pop"] and order[-1] == "nova-intro" and not after.get("welcome"),
+          after.get("seen"))
+    check("once: recorded on the account and on the device, and nothing on the next Home", after.get("met") == 1 and after.get("local") and not after.get("more") and not after.get("tour"), after)
+    # a second device of the same account: What's New alone
+    r2 = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); localStorage.removeItem('class26e.intro.seen'); window.__seen = [];
+      showProfile('profile'); await wait(300); showHome();
+      for(let i = 0; i < 50 && !document.getElementById('intro-pop') && !document.getElementById('nova-intro'); i++) await wait(100);
+      const out = { intro: !!document.getElementById('nova-intro'), news: !!document.getElementById('intro-pop') };
+      const el = document.getElementById('intro-pop'); if(el && el.__nova){ el.__nova.skip(); await wait(100); out.last = el.querySelector('.nt-text').textContent; }
+      return out; }""")
+    check("a device whose account has met him gets What's New alone, ending on 'I'll speak with you again'", r2.get("news") and not r2.get("intro") and "speak with you again" in (r2.get("last") or ""), r2)
+    ctx.close()
+
+    # Skip on an existing account's introduction skips the story, not the recap.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      delete store.novaMet; saveStore(); localStorage.removeItem('class26e.intro.seen'); showHome();
+      for(let i = 0; i < 50 && !document.getElementById('nova-intro'); i++) await wait(100);
+      const el = document.getElementById('nova-intro'); if(!el) return { open: false };
+      await wait(900); el.querySelector('.nt-skip').click(); await wait(300);
+      return { open: true, text: el.querySelector('.nt-text').textContent, card: !!el.querySelector('.nt-recap'), still: !!document.getElementById('nova-intro') }; }""")
+    check("Skip on an existing account's introduction goes to the recap of what they have", r.get("open") and r.get("still") and r.get("card") and "how you’re doing" in (r.get("text") or ""), r)
+    ctx.close()
+
+    # A new account: as it was.
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate("""() => { localStorage.removeItem('class26e.intro.seen'); window.__seen = [];
+          new MutationObserver(() => { ['nova-intro', 'intro-pop', 'tour-tooltip'].forEach(id => {
+            const e = document.getElementById(id); if(e && !e.__b321){ e.__b321 = 1; window.__seen.push(id); } }); }).observe(document.body, { childList: true });
+          window.__xp0 = store.lifetime.points;
+          store.onboardingComplete = false; store.tourRev = 0; delete store.novaMet; pendingMainMenuTour = true; showHome(); }""")
+        intro = pg.evaluate(B321G_TALK, "nova-intro")
+        tips = pg.evaluate(B321G_TOUR)
+        pg.wait_for_timeout(2600)
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); showHome(); await wait(3500);
+          return { seen: window.__seen, met: store.novaMet, bonus: store.lifetime.points - window.__xp0 }; }""")
+        check("%s new account: the introduction, then the seven main-menu tooltips, then nothing else" % dev,
+              intro.get("open") and intro.get("go") == "Let’s go" and len(tips) == 7 and "pop up with tips" in tips[-1] and r.get("seen") == ["nova-intro", "tour-tooltip"],
+              {"tips": len(tips), "seen": r.get("seen"), "go": intro.get("go")})
+        check("%s ... with the welcome bonus, and marked as having met him" % dev, r.get("bonus") >= 100 and r.get("met") == 1, r)
+        ctx.close()
+
+    # The wreck.
+    for still in (False, True):
+        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async (still) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          theme.reduceMotion = still; applyTheme();
+          const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:0;top:80px;width:420px;height:440px;z-index:999';
+          document.body.appendChild(host);
+          let w = null; try{ w = buildNovaWreck(); }catch(e){ return { err: String(e) }; }
+          host.appendChild(w); await wait(still ? 300 : 7600);
+          const pb = w.querySelector('.nw2-pbox'), ch = [...w.querySelectorAll('.nw2-chunk')];
+          const filt = [...w.querySelectorAll('.nw2-cam > *, .nw2-chunk, .nw2-ship *')].filter(e => getComputedStyle(e).filter !== 'none').length;
+          const moved = ch.filter(c => getComputedStyle(c).transform !== 'none').length;
+          return { hero: !!w.querySelector('.cosmic-hero-wrap') || w.__nw.anims.length > 0, chunks: ch.length, moved, filt,
+                   paint: (pb && pb.style.getPropertyValue('--nw-planet') || '').indexOf('data:image/svg+xml') >= 0,
+                   pbOp: pb ? +getComputedStyle(pb).opacity : 0, ship: !!w.querySelector('.nw2-ship svg circle[cx="56"]'),
+                   pods: w.querySelectorAll('.nw2-pod').length, anims: w.__nw.anims.length,
+                   heroGone: !w.querySelector('.cosmic-hero-wrap') }; }""", still)
+        tag = "Reduce motion" if still else "in motion"
+        if not still:
+            check("the wreck (%s): Home's own planet, broken into %s pieces of its own picture, a drawn ship, six pods; no CSS filter" % (tag, r.get("chunks")),
+                  r.get("paint") and (r.get("chunks") or 0) >= 12 and r.get("ship") and r.get("pods") == 6 and r.get("filt") == 0 and (r.get("anims") or 0) > 40, r)
+        check("the wreck (%s) ends on the aftermath: the planet gone, its pieces apart" % tag,
+              r.get("heroGone") and r.get("pbOp") == 1 and r.get("moved") == r.get("chunks") and (r.get("chunks") or 0) >= 12 and (still is False or r.get("anims") == 0), r)
+        ctx.close()
 
 
 # ---------------------------------------------------------------------------
@@ -23608,6 +23819,7 @@ def main():
             check_b319f_casespace(br)
             check_b319h_layout(br)
             check_b320f_nova(br)
+            check_b321g_nova(br)
             check_b320a_results(br)
             check_b320e_cracks(br)
             check_b320g_inspect(br)

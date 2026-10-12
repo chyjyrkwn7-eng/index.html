@@ -1778,6 +1778,22 @@
   .nt-me-line svg{ width:1.25rem; height:1.25rem; }
   .nt-me-line b{ color:color-mix(in srgb, var(--rank-color, #8B939E) 60%, #fff); }
   .nt-me-line .is-hi{ color:#FFE3A6; }
+  .nt-me-line.is-hi{ color:#FFE3A6; transition:color .4s ease; }
+  /* the end of an existing account's introduction: who you are and what
+     you have found (build 321) */
+  .nt-me.nt-recap{ width:min(22rem, 92%); padding:1rem 1.1rem; gap:1rem; text-align:left; }
+  .nt-me.nt-recap .nt-me-av{ width:4.6rem; height:4.6rem; }
+  .nt-me.nt-recap .nt-me-name{ font-size:1.25rem; }
+  .nt-me.nt-recap .nt-me-line{ font-size:.86rem; }
+  /* his crew: the ones found, and cut-outs of the ones still missing */
+  .nt-crewman.is-lost{ opacity:.85; }
+  @media (min-width:40rem){
+    .nt-me.nt-recap{ width:min(30rem, 92%); padding:1.3rem 1.5rem; }
+    .nt-me.nt-recap .nt-me-av{ width:6.4rem; height:6.4rem; }
+    .nt-me.nt-recap .nt-me-name{ font-size:1.6rem; }
+    .nt-me.nt-recap .nt-me-line{ font-size:1.05rem; }
+    .nt-me.nt-recap .nt-me-line svg{ width:1.6rem; height:1.6rem; }
+  }
   .nt-card.intro-gate-note{ display:block; margin:0; padding:.8rem .95rem; border-radius:16px;
     background:linear-gradient(180deg, rgba(61,139,255,.18), rgba(61,139,255,.07)); border:1px solid rgba(143,193,255,.42); }
   .nt-card.intro-gate-note .intro-gate-title{ font-size:.9rem; }
@@ -1844,30 +1860,64 @@
     #tour-tooltip.has-nova .tour-who{ font-size:.74rem; }
   }
 
-  /* the wreck: the planet cracks and goes, his ship spins away, his things scatter.
-     The resting state of every part is the aftermath, which is all that
-     reduce motion shows. */
-  .nw .nw-planet{ opacity:0; transform-box:fill-box; transform-origin:center; animation:nw-planet 1.6s ease-in both; }
-  .nw .nw-crack{ animation:nw-crack .55s ease-out both; }
-  .nw .nw-crack1{ animation-delay:.18s; } .nw .nw-crack2{ animation-delay:.34s; } .nw .nw-crack3{ animation-delay:.48s; }
-  .nw .nw-crack0{ animation-delay:.05s; }
-  .nw .nw-shard{ opacity:.85; transform-box:fill-box; transform-origin:center; transform:translate(var(--dx), var(--dy)) rotate(var(--r));
-    animation:nw-shard 2.6s cubic-bezier(.2,.7,.3,1) both; }
-  .nw .nw-flash{ opacity:0; transform-box:fill-box; transform-origin:center; animation:nw-flash 2.1s ease-out both; }
-  .nw .nw-wave{ opacity:0; transform-box:fill-box; transform-origin:center; animation:nw-wave 2.3s ease-out both; }
-  .nw .nw-ship{ transform-box:view-box; transform-origin:24px 69px; transform:translate(-5px, 12px) rotate(-34deg);
-    animation:nw-ship 3s cubic-bezier(.3,.6,.3,1) both; }
-  .nw .nw-engine{ opacity:.25; }
-  .nw .nw-bit{ opacity:.9; transform:translate(var(--dx), var(--dy)); animation:nw-bit 3s cubic-bezier(.2,.8,.3,1) both; animation-delay:var(--d, 0ms); }
-  @keyframes nw-planet{ 0%{ opacity:1; transform:none; } 55%{ opacity:1; transform:translate(.4px, -.3px); } 62%{ transform:translate(-.5px, .4px); }
-    69%{ transform:translate(.5px, .2px); } 76%{ opacity:1; transform:scale(1.04); } 84%, 100%{ opacity:0; transform:scale(1.12); } }
-  @keyframes nw-crack{ from{ stroke-dashoffset:10; } to{ stroke-dashoffset:0; } }
-  @keyframes nw-shard{ 0%, 48%{ opacity:0; transform:none; } 52%{ opacity:1; } 100%{ opacity:.85; transform:translate(var(--dx), var(--dy)) rotate(var(--r)); } }
-  @keyframes nw-flash{ 0%, 56%{ opacity:0; transform:scale(.25); } 64%{ opacity:1; } 100%{ opacity:0; transform:scale(1.7); } }
-  @keyframes nw-wave{ 0%, 60%{ opacity:0; transform:scale(.4); } 64%{ opacity:.9; } 100%{ opacity:0; transform:scale(5.5); } }
-  @keyframes nw-ship{ 0%{ transform:translate(-14px, 4px); } 38%{ transform:translate(0, 0); } 48%{ transform:translate(.5px, -.6px) rotate(3deg); }
-    54%{ transform:translate(-.8px, .6px) rotate(-6deg); } 100%{ transform:translate(-5px, 12px) rotate(-34deg); } }
-  @keyframes nw-bit{ 0%, 50%{ opacity:0; transform:none; } 56%{ opacity:1; } 100%{ opacity:.9; transform:translate(var(--dx), var(--dy)); } }
+  /* THE WRECK (build 321) - see buildNovaWreck. The stage is a square
+     camera (as large as the stage's shorter side) inside a box that fills
+     the stage and fades out at its top and bottom edge. Every part rests
+     on the aftermath; Web Animations carry it there. */
+  .nt-wreck.nw2{ position:absolute; inset:0; width:auto; aspect-ratio:auto; overflow:hidden; pointer-events:none; container-type:size;
+    -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 8%, #000 88%, transparent 100%);
+    mask-image:linear-gradient(180deg, transparent 0, #000 8%, #000 88%, transparent 100%); }
+  .nw2-cam{ position:absolute; left:50%; top:50%; width:min(100cqw, 100cqh); aspect-ratio:1; translate:-50% -50%; }
+  @supports not (width:1cqw){ .nw2-cam{ width:min(100%, 26rem); } }
+  .nw2 > i, .nw2-cam > i, .nw2-shipspin > i, .nw2-flames > i, .nw2-pod > i{ position:absolute; display:block; pointer-events:none; }
+  .nw2-star{ width:var(--s); height:var(--s); border-radius:50%; background:#fff; opacity:.55; animation:nv-twinkle 3.4s ease-in-out infinite; }
+  .nw2-herobox{ position:absolute; inset:0; }
+  .nw2 .cosmic-hero-wrap{ position:absolute; max-width:none; margin:0; }
+  .nw2 .cosmic-hero-orbitlayer, .nw2 .cosmic-icon-badge, .nw2 .cosmic-tapfx, .nw2 .rank-orbit,
+  .nw2 .csc-ringfrag, .nw2 .csc-pass{ display:none !important; }
+  .nw2-pbox{ position:absolute; opacity:0; }
+  .nw2-chunk{ position:absolute; inset:0; background-image:var(--nw-planet); background-size:100% 100%; background-repeat:no-repeat; will-change:transform; }
+  .nw2-hot{ position:absolute; inset:0; width:100%; height:100%; display:block; overflow:visible; }
+  .nw2-neb, .nw2-heat, .nw2-core, .nw2-flash, .nw2-wave, .nw2-dust, .nw2-ember, .nw2-puff{ aspect-ratio:1; border-radius:50%; translate:-50% -50%; }
+  .nw2-neb{ opacity:.62;
+    background:radial-gradient(closest-side, color-mix(in srgb, var(--theme-c2, #F5804D) 34%, transparent), color-mix(in srgb, var(--theme-c3, #C23B7A) 18%, transparent) 46%, transparent 100%); }
+  .nw2-heat{ opacity:0; background:radial-gradient(closest-side, rgba(255,214,150,.9) 0 26%, rgba(255,130,60,.55) 42%, rgba(220,60,40,.18) 66%, transparent 100%); }
+  .nw2-core{ opacity:0; background:radial-gradient(closest-side, #FFFFFF 0 18%, #FFF1C8 30%, #FFC266 48%, rgba(245,110,60,.6) 68%, transparent 100%); }
+  .nw2-flash{ opacity:0; background:radial-gradient(closest-side, rgba(255,255,255,.98) 0 12%, rgba(255,240,205,.8) 26%, rgba(255,200,130,.35) 50%, transparent 100%); }
+  .nw2-wave{ opacity:0; background:radial-gradient(closest-side, transparent 0 74%, rgba(255,226,190,.25) 82%, rgba(255,246,228,.95) 91%, rgba(255,190,140,.4) 96%, transparent 100%); }
+  .nw2-wave.is-plane{ background:radial-gradient(closest-side, transparent 0 62%, rgba(255,190,130,.22) 76%, rgba(255,240,215,.95) 90%, rgba(255,150,90,.45) 96%, transparent 100%); }
+  .nw2-spark{ height:.45%; margin-top:-.22%; transform-origin:0 50%; opacity:0; border-radius:2px;
+    background:linear-gradient(90deg, rgba(255,200,120,0), rgba(255,226,170,.9) 60%, #FFFFFF); }
+  .nw2-spark.is-hot{ height:.7%; background:linear-gradient(90deg, rgba(255,120,60,0), rgba(255,170,90,.95) 60%, #FFF5E0); }
+  .nw2-ember{ opacity:0; background:radial-gradient(closest-side, #FFF1C8, #FF9A4A 55%, rgba(255,90,40,0)); }
+  .nw2-ember.is-ship{ background:radial-gradient(closest-side, #FFFFFF, #9FE3FF 55%, rgba(90,124,255,0)); }
+  .nw2-dust{ opacity:.26; background:radial-gradient(closest-side, rgba(120,52,48,.55), rgba(70,30,40,.3) 55%, transparent); }
+  .nw2-dust.is-b{ background:radial-gradient(closest-side, rgba(150,70,110,.45), rgba(70,30,60,.25) 55%, transparent); }
+  .nw2-puff{ opacity:0; background:radial-gradient(closest-side, rgba(70,70,82,.75), rgba(46,46,58,.35) 55%, transparent); }
+  .nw2-ship{ position:absolute; left:0; top:0; will-change:transform; }
+  .nw2-shipspin{ position:absolute; inset:0; }
+  .nw2-shipspin svg{ position:absolute; inset:0; width:100%; height:100%; display:block; overflow:visible; }
+  .nw2-flames{ position:absolute; inset:0; }
+  .nw2 .nw2-flame{ right:96%; width:26%; height:11%; margin-top:-5.5%; border-radius:50% 0 0 50%; transform-origin:100% 50%;
+    background:linear-gradient(90deg, rgba(90,124,255,0), rgba(110,170,255,.55) 40%, #BFF0FF 82%, #FFFFFF);
+    animation:nw2-flame .26s ease-in-out infinite alternate; }
+  @keyframes nw2-flame{ from{ transform:scaleX(.82) scaleY(.9); opacity:.85; } to{ transform:scaleX(1.08); opacity:1; } }
+  .nw2 .nw2-breach{ left:44%; top:62%; width:13%; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0;
+    background:radial-gradient(closest-side, #FFF6DA, #FFB060 35%, rgba(255,80,30,.5) 60%, transparent); animation:nw2-breach .5s ease-in-out infinite alternate; }
+  @keyframes nw2-breach{ from{ scale:.85; } to{ scale:1.12; } }
+  .nw2-run{ animation:nw2-run 1.6s steps(1) infinite; }
+  .nw2-run.is-b{ animation-delay:-.8s; }
+  @keyframes nw2-run{ 0%{ opacity:1; } 50%{ opacity:.15; } }
+  .nw2-shipspin.is-tumbling{ animation:nw2-tumble 26s linear 6.9s infinite; }
+  @keyframes nw2-tumble{ to{ transform:rotate(-360deg); } }
+  .nw2-pod{ position:absolute; aspect-ratio:2; opacity:.95; will-change:transform; }
+  .nw2-pod svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .nw2-pod .nw2-beacon{ left:65%; top:50%; width:80%; aspect-ratio:1; translate:-50% -50%; border-radius:50%;
+    background:radial-gradient(closest-side, color-mix(in srgb, var(--c) 70%, #fff), color-mix(in srgb, var(--c) 40%, transparent) 45%, transparent);
+    animation:nw2-beacon 2.2s ease-in-out infinite; }
+  @keyframes nw2-beacon{ 0%, 100%{ opacity:.25; } 50%{ opacity:.9; } }
+  [data-reduce-motion="true"] .nw2 *, .nw2.is-still *{ animation:none !important; }
+  @media (prefers-reduced-motion:reduce){ .nw2 *{ animation:none !important; } }
 
   /* The contextual info popup \u2014 same reverted Liquid Glass recipe as
      the tour tooltip (background back to .55, blur nudged up instead
@@ -48854,6 +48904,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               pendingBadgeUnlocks: [],
               pendingCharUnlocks: [],
               tourRev: 0,
+              novaMet: 0,      /* build 321: the meeting with Nova - see playNovaMeeting() */
               levelFloor: 0,   /* build 314: no floor for a new account - see badgeWallLevel() */
               rankFloor: 0,    /* build 314: see rankOf() */
               seenSettingsTour: false, seenProfileTour: false, seenRewardsTour: false,
@@ -49287,6 +49338,13 @@ function applyLoadedData(got){
      that changed, exactly once, and TOUR_REV is what stops it from ever
      happening twice. */
   store.tourRev = typeof got.tourRev === "number" ? got.tourRev : 0;
+  /* BUILD 321: the meeting with Nova (playNovaMeeting). Defaults to 0 -
+     NOT met - on purpose, like tourRev: every account from before him is
+     to meet him once ("that should be the one shown to all the existing
+     profiles"). A new account is marked met at sign-up; a merge keeps the
+     higher of two copies (mergeSameAccount), so a copy from an older
+     build, which drops the field, cannot bring him back. */
+  store.novaMet = (typeof got.novaMet === "number" && isFinite(got.novaMet)) ? Math.max(0, Math.floor(got.novaMet)) : 0;
   store.seenSettingsTour = typeof got.seenSettingsTour === "boolean" ? got.seenSettingsTour : store.onboardingComplete;
   store.seenProfileTour = typeof got.seenProfileTour === "boolean" ? got.seenProfileTour : store.onboardingComplete;
   /* Build 289's three Profile tips. Off unless the tourRev re-arm turns
@@ -52062,6 +52120,8 @@ function mergeSameAccount(dst, src){
   /* a rank-up shown on either copy is shown (build 319); a copy from an
      older build carries none and changes nothing */
   if(typeof src.rankUpShown === "number") maxInto(dst, "rankUpShown", src.rankUpShown);
+  /* met Nova on either copy is met (build 321) */
+  if(typeof src.novaMet === "number") maxInto(dst, "novaMet", src.novaMet);
   /* Flags: per question, the later of its last flag and its last unflag
      (build 297 - see setFlag). */
   { const fd = mapOf(dst, "flagged"), ud = mapOf(dst, "unflagged");
@@ -64928,7 +64988,7 @@ function poolNow(){
    now reads directly from RELEASE_NOTES[0].groups below, so there is
    only one place this content can ever be edited. */
 const RELEASE_NOTES = [
-  /* 7.8 (builds 319 and 320, which ship together). Nova narrates the
+  /* 7.8 (builds 319, 320 and 321, which ship together). Nova narrates the
      headline of each of these on What's New (WHATS_NEW_320); this is the
      full list. "Save A Test For Later" moved here from 7.7, which had
      already gone out without it. */
@@ -64936,11 +64996,11 @@ const RELEASE_NOTES = [
     version: "7.8",
     groups: [
       { label: "Meet Nova", items: [
-        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "The app's maker introduces himself. He lost his badges and his flares when a planet beside his ship cracked apart, and finding them is your job. He narrates What's New and every tip in the app." }
+        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. When a planet beside his ship cracked apart, the blast scattered his badges, his flares and his crew across this system. Every character you unlock is one of his missing crew, found. He narrates What's New and every tip in the app." }
       ]},
       { label: "Results", items: [
         { icon: buildTrophyIcon, color: "#FFD84D", title: "Your Grade First", body: "The results screen opens on your grade, counted up as each unit's bar fills, with a moment of suspense at the end. Then your XP, then anything you unlocked." },
-        { icon: buildSparkleIcon, color: "#FF9EC8", title: "Characters React To Your Hundo", body: "Score 100% and your character reacts to your hundo effect while it plays, then goes back to its own celebration." }
+        { icon: buildSparkleIcon, color: "#FF9EC8", title: "Characters Celebrate Your Hundo", body: "Score 100% and your character is thrilled. It reacts to your hundo effect while it plays, then goes back to its own celebration." }
       ]},
       { label: "Badges", items: [
         { icon: buildStarIcon, color: "#4ADE80", title: "Badges Are Found", body: "A badge you earn is found, and its moment has the screen to itself: chat and notifications wait until it is over. Badges no longer add XP." },
@@ -64948,13 +65008,14 @@ const RELEASE_NOTES = [
       ]},
       { label: "Ranks", items: [
         { icon: buildLadderIcon, color: "#E8B84A", title: "Ranking Up, On The Road Map", body: "A rank-up plays out on Profile's road map: your challenges tick off, the road lights up to your new rank, its rewards are handed over there, and any saved XP climbs into levels. Smoother from start to finish." },
-        { icon: buildPlanetIcon, color: "#F5804D", title: "A Planet That Cracks", body: "The planet on Home cracks a little more with every rank you reach." }
+        { icon: buildPlanetIcon, color: "#F5804D", title: "A Planet That Cracks", body: "From Gold up, the planet on Home cracks a little more with every rank you reach, and you see the crack form in the rank-up." },
+        { icon: buildPlanetIcon, color: "#FF7A59", title: "Supernova's Mark", body: "At Supernova the planet on Home keeps the mark of the blast: the scar glints, smoke rises from it, and pieces drift off its rings." }
       ]},
       { label: "Profile", items: [
         { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Profile, Calendar And Stats", body: "Profile is three tabs: Profile, Calendar and Stats. Your badge count sits beside your level, the badge case opens from the card, and Friends is back under it." }
       ]},
       { label: "Studying", items: [
-        { icon: buildPauseIcon, color: "#4ADE80", title: "Save A Test For Later", body: "Pause a Drill or Exam and tap Save and exit. The next time you tap Start Studying, you can resume it exactly where you left off or start a new test. One test can be saved at a time. Not available in Review, flashcards, the daily question or a Virtual Room." },
+        { icon: buildPauseIcon, color: "#4ADE80", title: "Save A Test For Later", body: "Pause a Drill or Exam and tap Save and exit. The next time you tap Start Studying, you can resume it exactly where you left off or start a new test. Resume loads it like a new test, then picks up where you were. One test can be saved at a time. Not available in Review, flashcards, the daily question or a Virtual Room." },
         { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "The Daily Question Ring", body: "After you answer, a ring around the daily question button fills until the next question at 5pm, and fills the rest of the way when it arrives." }
       ]}
     ]
@@ -70099,7 +70160,9 @@ function novaTalk(o){
      and goes to its last line. */
   function skipAll(){
     if(closed) return;
-    if(!o.news){ close("skip"); return; }
+    /* an existing account's introduction skips the story, not the
+       recap of what they have (build 321) */
+    if(!o.news){ if(o.skipTo != null && idx < o.skipTo){ for(let i = 0; i < o.skipTo; i++) entered.add(i); show(o.skipTo); return; } close("skip"); return; }
     for(let i = 0; i < lines.length; i++) enter(i, true);
     if(idx < lines.length - 1) show(lines.length - 1);
     else if(typer) typer.finish();
@@ -70151,51 +70214,325 @@ function novaCap(text){
   const c = document.createElement("p"); c.className = "nt-cap"; c.textContent = text; return c;
 }
 function novaFrag(){ return document.createDocumentFragment(); }
-/* the planet that went, and his ship: a few seconds of the story, then
-   what was left (which is also the whole picture with motion off) */
+/* ---- THE WRECK (build 321) ----
+   "The cutscene where it shows the planet and the planet explosion is ass,
+   there's like random shapes of triangles and a super bad looking ship ..
+   Make it better." So it is the app's OWN planet (buildCosmicHero, the one
+   on Home, rings and glow), the crack that forms on it is Supernova's own
+   (crackFormArm from nothing to the full scar: the light running along it,
+   the chips, the burn), and when it goes it breaks into pieces OF ITSELF -
+   each shard is the same planet picture (its sphere, rasterised once from
+   the hero's own svg, with the scar on it) cut along jagged lines that the
+   neighbouring shard shares, so at the moment of the blast they fit back
+   together exactly. Each shard's broken edges glow and cool. A flash, a
+   fireball, a shockwave in the plane of the rings, sparks, embers and dust
+   that stays as a nebula. His ship (a drawn explorer: hull, fin, canopy,
+   lit portholes, engines) is caught by the wave, its engines die, it
+   tumbles away trailing smoke, and six escape pods - his crew - are flung
+   out in every direction. That is the lore: the people aboard went missing.
+   Everything moves by transform and opacity (Web Animations, no SVG
+   filter is animated); the resting state of every part is the aftermath,
+   which is all Reduce motion shows. Times are ms from the scene's start. */
+const NW = { px: 58, py: 40, pd: 36, crack: 900, crackMs: 2300, boom: 3500, hit: 3880, end: 6900 };
+let nwClipSeq = 0;
+function nwRand(seed){ let s = seed; return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; }
+/* the jagged line from p to q, n segments, ends fixed */
+function nwJag(p, q, n, amp, rnd){
+  const out = [p], dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy) || 1;
+  for(let i = 1; i < n; i++){
+    const t = i / n, o = (rnd() - .5) * 2 * amp;
+    out.push([p[0] + dx * t - dy / L * o, p[1] + dy * t + dx / L * o]);
+  }
+  out.push(q);
+  return out;
+}
+/* The planet broken up: seven wedges, each in two (crust and mantle), and a
+   core in three. Unit coordinates, planet radius .5 about 0,0; every edge
+   two shards share is ONE polyline, used forwards by one and backwards by
+   the other. Each shard: { pts, hot (its broken edges), cx, cy, ring }. */
+function nwShards(){
+  const rnd = nwRand(424242), K = 7, M = 3;
+  const a0 = rnd() * Math.PI * 2;
+  const B = [];
+  for(let i = 0; i < K; i++){
+    const a = a0 + i * 2 * Math.PI / K + (rnd() - .5) * .45;
+    const ri = .17 + rnd() * .07, ro = .64;
+    const ao = a + (rnd() - .5) * .3;
+    B.push(nwJag([Math.cos(a) * ri, Math.sin(a) * ri], [Math.cos(ao) * ro, Math.sin(ao) * ro], 6, .028, rnd));
+  }
+  const inner = [], mid = [];
+  for(let i = 0; i < K; i++){
+    const j = (i + 1) % K;
+    inner.push(nwJag(B[i][0], B[j][0], 3, .02, rnd));
+    mid.push(nwJag(B[i][M], B[j][M], 4, .026, rnd));
+  }
+  const rev = p => p.slice().reverse();
+  const out = [];
+  const piece = (segs, ring) => {
+    const pts = [], hot = [];
+    segs.forEach(([line, isHot]) => { const s = pts.length ? line.slice(1) : line; s.forEach(p => pts.push(p)); if(isHot) hot.push(line); });
+    let cx = 0, cy = 0; pts.forEach(p => { cx += p[0]; cy += p[1]; }); cx /= pts.length; cy /= pts.length;
+    out.push({ pts, hot, cx, cy, ring });
+  };
+  for(let i = 0; i < K; i++){
+    const j = (i + 1) % K;
+    const e0 = B[i][B[i].length - 1], e1 = B[j][B[j].length - 1];
+    let t0 = Math.atan2(e0[1], e0[0]), t1 = Math.atan2(e1[1], e1[0]);
+    while(t1 < t0) t1 += Math.PI * 2;
+    const arc = [];
+    for(let k = 0; k <= 4; k++){ const t = t0 + (t1 - t0) * k / 4; arc.push([Math.cos(t) * .66, Math.sin(t) * .66]); }
+    /* the crust: out along one cut, round the outside, back along the next */
+    piece([[B[i].slice(M), true], [arc, false], [rev(B[j].slice(M)), true], [rev(mid[i]), true]], 2);
+    /* the mantle under it */
+    piece([[B[i].slice(0, M + 1), true], [mid[i], true], [rev(B[j].slice(0, M + 1)), true], [rev(inner[i]), true]], 1);
+  }
+  /* the core, in three, cut from a point near the middle to three of the
+     wedge corners */
+  const c = [(rnd() - .5) * .05, (rnd() - .5) * .05];
+  const cuts = [0, 2, 5].map(i => nwJag(c, B[i][0], 3, .02, rnd));
+  [[0, 2], [2, 5], [5, 7]].forEach(([s, e], n) => {
+    const segs = [[cuts[n], true]];
+    for(let i = s; i < e; i++) segs.push([inner[i % K], true]);
+    segs.push([rev(cuts[(n + 1) % 3]), true]);
+    piece(segs, 0);
+  });
+  return out;
+}
+/* The planet as one picture: the hero's own sphere svg (cropped to the
+   sphere, rasterised by the browser once as an image) under Supernova's
+   burn - what every shard shows. */
+function nwPlanetPaint(hero){
+  const layers = [];
+  try{ const art = cosmicScarArt(); if(art && art.burn) layers.push("url(" + art.burn.toDataURL() + ")"); }catch(e){}
+  try{
+    const main = hero && hero.querySelector(".cosmic-hero-main");
+    if(main){
+      const c = main.cloneNode(true);
+      c.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      c.setAttribute("viewBox", "128 98 104 104");
+      c.setAttribute("width", "208"); c.setAttribute("height", "208");
+      c.removeAttribute("class"); c.removeAttribute("style");
+      layers.push('url("data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(c)) + '")');
+    }
+  }catch(e){}
+  let st = ["#FFD37A", "#F5804D", "#C23B7A"];
+  try{ st = accentToGradientStops(); }catch(e){}
+  layers.push("radial-gradient(circle at 32% 28%, " + st[0] + ", " + st[1] + " 45%, " + st[2] + " 70%, transparent 71%)");
+  return layers.join(",");
+}
+const NW_SHIP_SVG = '<svg viewBox="0 0 160 64" aria-hidden="true">' +
+  '<defs><linearGradient id="nwsH" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F6F8FC"/><stop offset=".42" stop-color="#D3D9E6"/><stop offset=".72" stop-color="#8E97B0"/><stop offset="1" stop-color="#474E6C"/></linearGradient>' +
+  '<linearGradient id="nwsF" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E4E9F2"/><stop offset="1" stop-color="#717A97"/></linearGradient>' +
+  '<linearGradient id="nwsN" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B4BCD0"/><stop offset=".5" stop-color="#6E7792"/><stop offset="1" stop-color="#363C55"/></linearGradient>' +
+  '<linearGradient id="nwsG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#A8ECFF"/><stop offset=".45" stop-color="#3A7CC4"/><stop offset="1" stop-color="#121C44"/></linearGradient>' +
+  '<linearGradient id="nwsS" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#C23B7A"/><stop offset=".5" stop-color="#F5804D"/><stop offset="1" stop-color="#FFD37A"/></linearGradient>' +
+  '<clipPath id="nwsC"><path d="M18 26C30 18 70 15 104 17C128 18 146 26 154 32C146 38 128 44 104 45C70 47 30 44 18 38Q14 32 18 26Z"/></clipPath></defs>' +
+  /* fins behind the hull */
+  '<path d="M46 22L28 4.5Q33 3 39 5L70 20Z" fill="url(#nwsF)" stroke="#262B42" stroke-width=".8" stroke-linejoin="round"/>' +
+  '<path d="M52 43L38 57Q43 58.5 48 56L72 44Z" fill="url(#nwsN)" stroke="#262B42" stroke-width=".8" stroke-linejoin="round"/>' +
+  /* engines */
+  '<rect x="9" y="20" width="32" height="9.5" rx="4.75" fill="url(#nwsN)" stroke="#262B42" stroke-width=".8"/>' +
+  '<rect x="9" y="36.5" width="32" height="9.5" rx="4.75" fill="url(#nwsN)" stroke="#262B42" stroke-width=".8"/>' +
+  '<rect x="6.5" y="21.2" width="5" height="7" rx="1.6" fill="#22273B"/><rect x="6.5" y="37.7" width="5" height="7" rx="1.6" fill="#22273B"/>' +
+  '<rect x="15" y="21" width="20" height="1.4" rx=".7" fill="#FFFFFF" opacity=".45"/><rect x="15" y="37.5" width="20" height="1.4" rx=".7" fill="#FFFFFF" opacity=".45"/>' +
+  /* the hull */
+  '<path d="M18 26C30 18 70 15 104 17C128 18 146 26 154 32C146 38 128 44 104 45C70 47 30 44 18 38Q14 32 18 26Z" fill="url(#nwsH)"/>' +
+  '<g clip-path="url(#nwsC)">' +
+    '<path d="M22 34C60 35.5 104 35.5 156 32.6L156 35C104 38.5 60 38.8 22 37.2Z" fill="url(#nwsS)"/>' +
+    '<path d="M46 14V48M88 14V48M122 14V48" stroke="#2B3048" stroke-width=".55" opacity=".35"/>' +
+    '<path d="M18 40C50 46 104 47 156 34V50H18Z" fill="#1A1E33" opacity=".22"/>' +
+  '</g>' +
+  '<path d="M18 26C30 18 70 15 104 17C128 18 146 26 154 32C146 38 128 44 104 45C70 47 30 44 18 38Q14 32 18 26Z" fill="none" stroke="#252A40" stroke-width=".9"/>' +
+  '<path d="M21 25.4C33 19.2 70 16.6 104 18.4C126 19.4 141 25.4 150 30.6" fill="none" stroke="#FFFFFF" stroke-width=".8" stroke-linecap="round" opacity=".85"/>' +
+  /* the canopy */
+  '<path d="M103 18.2C114 13.6 132 16.4 145 27.4C134 27.6 117 26.6 105 25.4Z" fill="url(#nwsG)" stroke="#1E2440" stroke-width=".8" stroke-linejoin="round"/>' +
+  '<path d="M109 18.4C117 16.4 127 17.6 134 21.6C126 20.2 117 20 110 20.6Z" fill="#FFFFFF" opacity=".75"/>' +
+  /* portholes, lit: people aboard */
+  '<g fill="#FFD27A" opacity=".28"><circle cx="56" cy="28.4" r="3.4"/><circle cx="67" cy="28" r="3.4"/><circle cx="78" cy="27.8" r="3.4"/><circle cx="89" cy="27.8" r="3.4"/></g>' +
+  '<g fill="#FFEFC2" stroke="#353B57" stroke-width=".8"><circle cx="56" cy="28.4" r="2.1"/><circle cx="67" cy="28" r="2.1"/><circle cx="78" cy="27.8" r="2.1"/><circle cx="89" cy="27.8" r="2.1"/></g>' +
+  /* his star on the fin, and the running lights */
+  '<path d="M36 7.6L37.1 10.9 40.4 12 37.1 13.1 36 16.4 34.9 13.1 31.6 12 34.9 10.9Z" fill="#FFD27A"/>' +
+  '<circle class="nw2-run" cx="29.5" cy="5.2" r="1.4" fill="#4ADE80"/><circle class="nw2-run is-b" cx="40" cy="56.6" r="1.4" fill="#FF5C5C"/>' +
+  '</svg>';
+const NW_POD_COLORS = ["#FFD84D", "#5CA8FF", "#FF5CA8", "#4ADE80", "#C583FF", "#FF7A59"];
+function nwPodSVG(c){
+  return '<svg viewBox="0 0 24 12" aria-hidden="true"><path d="M5 1.5H16C20 1.5 22.5 3.6 22.5 6S20 10.5 16 10.5H5C2.5 10.5 1.5 8.6 1.5 6S2.5 1.5 5 1.5Z" fill="#DCE2EE" stroke="#2A3048" stroke-width=".9"/>' +
+    '<path d="M5 2.4H16C18.6 2.4 20.4 3.4 21.2 4.6H3C3.4 3.2 4 2.4 5 2.4Z" fill="#FFFFFF" opacity=".6"/>' +
+    '<ellipse cx="15.5" cy="6" rx="3.4" ry="2.3" fill="' + c + '" stroke="#2A3048" stroke-width=".7"/><circle cx="2" cy="6" r="1.4" fill="' + c + '"/></svg>';
+}
 function buildNovaWreck(){
-  const NS = "http://www.w3.org/2000/svg";
-  const mk = (t, a) => { const e = document.createElementNS(NS, t); for(const k in a) e.setAttribute(k, a[k]); return e; };
-  const id = "nw" + Math.random().toString(36).slice(2, 8);
-  const svg = mk("svg", { viewBox: "0 0 100 100", "aria-hidden": "true", class: "nw" });
-  const defs = mk("defs", {}); svg.appendChild(defs);
-  const pg = mk("radialGradient", { id: id + "p", cx: "40%", cy: "35%", r: "70%" });
-  [["0%", "#FFD37A"], ["50%", "#F5804D"], ["100%", "#C23B7A"]].forEach(([o, c]) => pg.appendChild(mk("stop", { offset: o, "stop-color": c })));
-  const fl = mk("radialGradient", { id: id + "f" });
-  [["0%", "#FFFFFF", "1"], ["35%", "#FFF1C8", ".9"], ["100%", "#FFD27A", "0"]].forEach(([o, c, op]) => fl.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
-  defs.append(pg, fl);
-  [[12, 14], [86, 10], [92, 62], [6, 70], [40, 92], [74, 88], [30, 8]].forEach(([x, y], i) =>
-    svg.appendChild(mk("circle", { cx: x, cy: y, r: i % 2 ? .7 : 1, fill: "#FFFFFF", opacity: ".55" })));
-  const P = [62, 40], R = 17;
-  /* the planet, and the cracks that open across it */
-  const planet = mk("g", { class: "nw-planet" });
-  planet.appendChild(mk("circle", { cx: P[0], cy: P[1], r: R, fill: "url(#" + id + "p)" }));
-  planet.appendChild(mk("ellipse", { cx: P[0], cy: P[1], rx: 27, ry: 6, fill: "none", stroke: "#FFE7A8", "stroke-width": "1.2", opacity: ".6", transform: "rotate(-16 " + P[0] + " " + P[1] + ")" }));
-  [["M62 40 L54 30 L49 31", 0], ["M62 40 L71 33 L77 26", 1], ["M62 40 L60 52 L66 57", 2], ["M62 40 L74 45", 3]].forEach(([d, i]) =>
-    planet.appendChild(mk("path", { d, fill: "none", stroke: "#FFF6DA", "stroke-width": "1.3", "stroke-linecap": "round", "stroke-linejoin": "round", pathLength: "10", "stroke-dasharray": "10 10", class: "nw-crack nw-crack" + i })));
-  svg.appendChild(planet);
-  /* its pieces, flung out */
-  [[-1, -1.1, 0], [1.2, -.8, 1], [1.1, .9, 2], [-.9, 1.1, 3], [-1.3, .1, 4], [.2, -1.3, 5]].forEach(([dx, dy, i]) => {
-    const a = Math.atan2(dy, dx), r0 = R * .55;
-    const x = P[0] + Math.cos(a) * r0, y = P[1] + Math.sin(a) * r0;
-    const shard = mk("path", { d: "M" + (x - 3).toFixed(1) + " " + (y - 2).toFixed(1) + " L" + (x + 3.4).toFixed(1) + " " + (y - 1).toFixed(1) + " L" + (x + .6).toFixed(1) + " " + (y + 3.2).toFixed(1) + " Z",
-      fill: i % 2 ? "#F5804D" : "#C23B7A", class: "nw-shard", style: "--dx:" + (dx * 22).toFixed(1) + "px;--dy:" + (dy * 22).toFixed(1) + "px;--r:" + (i % 2 ? 160 : -140) + "deg" });
-    svg.appendChild(shard);
+  const still = novaMotionOff();
+  const rnd = nwRand(90210);
+  const P = NW, D = P.pd, B = P.boom;
+  const box = document.createElement("div");
+  box.className = "nt-wreck nw2" + (still ? " is-still" : "");
+  const cam = document.createElement("div"); cam.className = "nw2-cam";
+  const el = (cls, css, parent, tag) => { const e = document.createElement(tag || "i"); e.className = cls; if(css) e.style.cssText = css; (parent || cam).appendChild(e); return e; };
+  const at = (x, y, w) => "left:" + x.toFixed(2) + "%;top:" + y.toFixed(2) + "%;width:" + w.toFixed(2) + "%;";
+  const anims = [];
+  /* still: the last frame is the resting style; else the animation, held at both ends */
+  const play = (e, frames, o) => {
+    if(still){ const f = frames[frames.length - 1]; for(const k in f) if(k !== "offset" && k !== "easing") e.style[k] = f[k]; return null; }
+    try{ const a = e.animate(frames, Object.assign({ fill: "both" }, o)); anims.push(a); return a; }catch(err){ return null; }
+  };
+  for(let i = 0; i < 26; i++) el("nw2-star", "left:" + (rnd() * 100).toFixed(1) + "%;top:" + (rnd() * 100).toFixed(1) + "%;--s:" + (1 + rnd() * 1.7).toFixed(1) + "px;animation-delay:" + (-rnd() * 4).toFixed(2) + "s", box);
+  box.appendChild(cam);
+  /* what is left: a nebula where the planet was */
+  const neb = el("nw2-neb", at(P.px, P.py, D * 3.4));
+  play(neb, [{ opacity: 0, transform: "scale(.4)" }, { opacity: .62, transform: "none" }], { duration: 3600, delay: B + 200, easing: "cubic-bezier(.2,.6,.3,1)" });
+
+  /* the planet: Home's own */
+  const hb = el("nw2-herobox", "transform-origin:" + P.px + "% " + P.py + "%", cam, "div");
+  let hero = null;
+  const was = heroCrackStageFor;
+  heroCrackStageFor = 0;
+  try{ hero = buildCosmicHero(false); }catch(e){ hero = null; }
+  heroCrackStageFor = was;
+  const Wc = D * 360 / 104;
+  if(hero){
+    hero.style.cssText = "left:" + (P.px - Wc / 2).toFixed(2) + "%;top:" + (P.py - Wc * 162 / 360).toFixed(2) + "%;width:" + Wc.toFixed(2) + "%";
+    hb.appendChild(hero);
+  }
+  const heat = el("nw2-heat", at(P.px, P.py, D * 1.7));
+  play(heat, [{ opacity: 0, transform: "scale(.7)" }, { opacity: .35, transform: "scale(.85)", offset: .55 }, { opacity: 1, transform: "scale(1.05)", offset: .97 }, { opacity: 0, transform: "scale(1.2)" }],
+    { duration: B + 260 - 1600, delay: 1600, easing: "ease-in" });
+  if(!still){
+    /* it trembles, harder as it goes, and swells into the blast */
+    const sh = [];
+    for(let k = 0; k <= 24; k++){
+      const u = k / 24, a = .08 + .55 * u * u;
+      sh.push({ offset: u, transform: "translate(" + ((rnd() - .5) * 2 * a).toFixed(2) + "%," + ((rnd() - .5) * 2 * a).toFixed(2) + "%) scale(" + (1 + .035 * Math.pow(u, 6)).toFixed(4) + ")" });
+    }
+    play(hb, sh, { duration: B - 2200, delay: 2200, fill: "none" });
+    play(hb, [{ opacity: 1 }, { opacity: 0 }], { duration: 110, delay: B + 30 });
+  } else hb.style.opacity = "0";
+
+  /* the pieces of it */
+  const pb = el("nw2-pbox", at(P.px - D / 2, P.py - D / 2, D) + "height:" + D.toFixed(2) + "%", cam, "div");
+  pb.style.setProperty("--nw-planet", nwPlanetPaint(hero));
+  play(pb, [{ opacity: 0 }, { opacity: 1 }], { duration: 40, delay: B + 10 });
+  const pc = q => ((q + .5) * 100).toFixed(2) + "%";
+  nwShards().forEach((s, i) => {
+    const ch = el("nw2-chunk", "clip-path:polygon(" + s.pts.map(p => pc(p[0]) + " " + pc(p[1])).join(",") + ");transform-origin:" + pc(s.cx) + " " + pc(s.cy), pb, "div");
+    const hot = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    hot.setAttribute("viewBox", "-.5 -.5 1 1"); hot.setAttribute("class", "nw2-hot"); hot.setAttribute("aria-hidden", "true");
+    const d = s.hot.map(l => "M" + l.map(p => p[0].toFixed(4) + " " + p[1].toFixed(4)).join("L")).join("");
+    /* only where the planet was: a cut runs on past its edge */
+    const cid = "nwc" + (++nwClipSeq);
+    hot.innerHTML = '<clipPath id="' + cid + '"><circle r=".497"/></clipPath><g clip-path="url(#' + cid + ')">' +
+      '<path d="' + d + '" fill="none" stroke="#FF7A2E" stroke-width=".05" stroke-linejoin="round" opacity=".55"/>' +
+      '<path d="' + d + '" fill="none" stroke="#FFE7B0" stroke-width=".016" stroke-linejoin="round"/></g>';
+    ch.appendChild(hot);
+    const L = Math.hypot(s.cx, s.cy) || .01;
+    let dx = s.cx / L, dy = s.cy / L;
+    if(s.ring === 0){ const t = Math.atan2(dy, dx) + (rnd() - .5) * .6; dx = Math.cos(t); dy = Math.sin(t); }
+    const dist = s.ring === 2 ? 1.05 + rnd() * .55 : s.ring === 1 ? .55 + rnd() * .4 : .2 + rnd() * .2;
+    const rot = (rnd() < .5 ? -1 : 1) * (s.ring === 2 ? 70 + rnd() * 160 : 30 + rnd() * 90);
+    /* and away from us as they go: smaller, the field reads as debris */
+    const sc = s.ring === 2 ? .5 + rnd() * .3 : s.ring === 1 ? .6 + rnd() * .25 : .7 + rnd() * .2;
+    play(ch, [{ transform: "none" },
+      { transform: "translate(" + (dx * dist * 100).toFixed(1) + "%," + (dy * dist * 100 + 6).toFixed(1) + "%) rotate(" + rot.toFixed(0) + "deg) scale(" + sc.toFixed(2) + ")" }],
+      { duration: 4200 + rnd() * 900, delay: B + 10, easing: "cubic-bezier(.08,.72,.24,1)" });
+    play(ch, [{ opacity: 1 }, { opacity: s.ring === 0 ? .5 : .72 }], { duration: 3000, delay: B + 600 });
+    play(hot, [{ opacity: 1 }, { opacity: .85, offset: .2 }, { opacity: 0 }], { duration: 2600 + rnd() * 800, delay: B + 10, easing: "ease-in" });
   });
-  svg.appendChild(mk("circle", { cx: P[0], cy: P[1], r: 30, fill: "url(#" + id + "f)", class: "nw-flash" }));
-  svg.appendChild(mk("circle", { cx: P[0], cy: P[1], r: 10, fill: "none", stroke: "#FFF1C8", "stroke-width": "1.4", class: "nw-wave" }));
-  /* his ship, knocked into a spin, and what fell out of it */
-  const ship = mk("g", { class: "nw-ship" });
-  ship.appendChild(mk("path", { d: "M14 72 Q22 64.5 34 66 Q30 72 14 72 Z", fill: "#E9ECF6", stroke: "#5A6088", "stroke-width": ".6" }));
-  ship.appendChild(mk("path", { d: "M17 70.4 L13 66.6 L19 68.6 Z M18 71.4 L14.6 75 L21 71.6 Z", fill: "#B9A4FF" }));
-  ship.appendChild(mk("circle", { cx: 27.6, cy: 67.8, r: 1.6, fill: "#4FD6FF", stroke: "#2A3A66", "stroke-width": ".4" }));
-  ship.appendChild(mk("circle", { cx: 13, cy: 70.4, r: 1.8, fill: "#FFB36B", opacity: ".8", class: "nw-engine" }));
-  svg.appendChild(ship);
-  [["#FFD84D", -14, -10], ["#5CA8FF", -6, 14], ["#FF5CA8", 10, 12], ["#4ADE80", -18, 4], ["#C583FF", 4, -14], ["#FF7A59", 14, -2]].forEach(([c, dx, dy], i) => {
-    svg.appendChild(mk("circle", { cx: 26, cy: 68, r: i % 2 ? 1.3 : 1.7, fill: c, class: "nw-bit", style: "--dx:" + dx + "px;--dy:" + dy + "px;--d:" + (i * 60) + "ms" }));
+
+  /* the blast */
+  const core = el("nw2-core", at(P.px, P.py, D * 1.2));
+  play(core, [{ opacity: 0, transform: "scale(.35)" }, { opacity: 1, transform: "scale(.6)", offset: .04 }, { opacity: 0, transform: "scale(2.3)" }],
+    { duration: 1700, delay: B, easing: "cubic-bezier(.1,.6,.3,1)" });
+  const flash = el("nw2-flash", at(P.px, P.py, D * 3.4));
+  play(flash, [{ opacity: 0, transform: "scale(.25)" }, { opacity: 1, transform: "scale(.7)", offset: .07 }, { opacity: 0, transform: "scale(1.35)" }],
+    { duration: 1150, delay: B - 20, easing: "ease-out" });
+  [[1, 4.6, .95, 1900], [0, 3.1, .6, 1400]].forEach(([plane, to, op, ms], k) => {
+    const w = el("nw2-wave" + (plane ? " is-plane" : ""), at(P.px, P.py, D * 1.05));
+    const tf = s => plane ? "rotate(-13deg) scale(" + s + "," + (s * .3).toFixed(3) + ")" : "scale(" + s + ")";
+    play(w, [{ opacity: 0, transform: tf(.85) }, { opacity: op, transform: tf(1.1), offset: .05 }, { opacity: 0, transform: tf(to) }],
+      { duration: ms, delay: B + 20 + k * 60, easing: "cubic-bezier(.15,.7,.3,1)" });
   });
-  const w = document.createElement("div"); w.className = "nt-wreck"; w.appendChild(svg);
-  return w;
+  for(let i = 0; i < 28; i++){
+    const a = rnd() * 360, r0 = D * (.25 + rnd() * .2), r1 = D * (1.2 + rnd() * 1.6), w = 4 + rnd() * 6;
+    const sp = el("nw2-spark" + (i % 3 ? "" : " is-hot"), "left:" + P.px + "%;top:" + P.py + "%;width:" + w.toFixed(1) + "%");
+    const tr = (r, s) => "rotate(" + a.toFixed(0) + "deg) translateX(" + (r / w * 100).toFixed(0) + "%) scaleX(" + s + ")";
+    play(sp, [{ opacity: 0, transform: tr(r0, .2) }, { opacity: 1, transform: tr(r0 + (r1 - r0) * .12, 1), offset: .1 }, { opacity: 0, transform: tr(r1, .4) }],
+      { duration: 900 + rnd() * 700, delay: B + rnd() * 120, easing: "cubic-bezier(.1,.7,.3,1)" });
+  }
+  for(let i = 0; i < 16; i++){
+    const a = rnd() * Math.PI * 2, r = D * (.5 + rnd() * 1.3);
+    const em = el("nw2-ember", at(P.px, P.py, .8 + rnd() * .9));
+    play(em, [{ opacity: 0, transform: "translate(0,0)" }, { opacity: 1, offset: .08 },
+      { opacity: 0, transform: "translate(" + (Math.cos(a) * r * 100 / .9).toFixed(0) + "%," + (Math.sin(a) * r * 100 / .9 + 140).toFixed(0) + "%)" }],
+      { duration: 2600 + rnd() * 1800, delay: B + 80 + rnd() * 400, easing: "cubic-bezier(.15,.6,.4,1)" });
+  }
+  for(let i = 0; i < 9; i++){
+    const a = rnd() * Math.PI * 2, r = D * (.15 + rnd() * .55);
+    const du = el("nw2-dust" + (i % 2 ? " is-b" : ""), at(P.px + Math.cos(a) * r, P.py + Math.sin(a) * r * .8, D * (.9 + rnd() * .8)));
+    play(du, [{ opacity: 0, transform: "scale(.3)" }, { opacity: .7, transform: "scale(.8)", offset: .25 }, { opacity: .26, transform: "scale(1.5)" }],
+      { duration: 4200 + rnd() * 1500, delay: B + 60 + i * 40, easing: "cubic-bezier(.2,.6,.4,1)" });
+  }
+
+  /* his ship: in from the left, caught by the wave, its engines out, and
+     away end over end */
+  const SW = 22, SH = SW * 64 / 160;
+  const ship = el("nw2-ship", "left:" + (-SW / 2) + "%;top:" + (-SH / 2) + "%;width:" + SW + "%;height:" + SH.toFixed(2) + "%", cam, "div");
+  const spin = el("nw2-shipspin", "", ship, "div");
+  const flames = el("nw2-flames", "", spin, "div");
+  el("nw2-flame", "top:" + (24.75 / 64 * 100).toFixed(1) + "%", flames);
+  el("nw2-flame", "top:" + (41.25 / 64 * 100).toFixed(1) + "%;animation-delay:-.13s", flames);
+  spin.insertAdjacentHTML("beforeend", NW_SHIP_SVG);
+  const breach = el("nw2-breach", "", spin);
+  const pos = (x, y, r, s) => "translate(" + (x / SW * 100).toFixed(1) + "%," + (y / SH * 100).toFixed(1) + "%) rotate(" + r + "deg) scale(" + s + ")";
+  const HIT = [31.5, 70.5], END = [13, 87];
+  play(ship, [
+    { offset: 0, transform: pos(-16, 63.5, 7, 1), easing: "cubic-bezier(.25,.6,.4,1)" },
+    { offset: 3400 / P.end, transform: pos(29, 70, -1, 1), easing: "linear" },
+    { offset: P.hit / P.end, transform: pos(HIT[0], HIT[1], -3, 1), easing: "cubic-bezier(.2,.9,.4,1)" },
+    { offset: (P.hit + 90) / P.end, transform: pos(HIT[0] + 1.6, HIT[1] - 1.4, -18, .98), easing: "cubic-bezier(.12,.62,.28,1)" },
+    { offset: 1, transform: pos(END[0], END[1], -575, .42) }
+  ], { duration: P.end });
+  play(flames, [{ opacity: 1 }, { opacity: .2, offset: .4 }, { opacity: .7, offset: .55 }, { opacity: 0 }], { duration: 420, delay: P.hit });
+  play(breach, [{ opacity: 0, transform: "scale(.3)" }, { opacity: 1, transform: "scale(1.2)", offset: .3 }, { opacity: .85, transform: "none" }], { duration: 700, delay: P.hit });
+  if(!still){
+    spin.classList.add("is-tumbling");
+    for(let k = 0; k < 12; k++){
+      const u = k / 11, e = 1 - Math.pow(1 - u, 2.2);
+      const x = HIT[0] + (END[0] - HIT[0]) * e, y = HIT[1] + (END[1] - HIT[1]) * e;
+      const pf = el("nw2-puff", at(x + (rnd() - .5) * 1.5, y + (rnd() - .5) * 1.5, 3.4 * (1 - .45 * e)));
+      play(pf, [{ opacity: 0, transform: "scale(.3)" }, { opacity: .55, transform: "scale(.7)", offset: .15 }, { opacity: 0, transform: "scale(1.9) translateY(-30%)" }],
+        { duration: 1700, delay: P.hit + 80 + u * 2600, easing: "ease-out" });
+    }
+    for(let k = 0; k < 9; k++){
+      const a = rnd() * Math.PI * 2, r = 4 + rnd() * 7;
+      const sp = el("nw2-ember is-ship", at(HIT[0], HIT[1], .7));
+      play(sp, [{ opacity: 1, transform: "translate(0,0)" }, { opacity: 0, transform: "translate(" + (Math.cos(a) * r / .7 * 100).toFixed(0) + "%," + (Math.sin(a) * r / .7 * 100).toFixed(0) + "%)" }],
+        { duration: 700 + rnd() * 500, delay: P.hit, easing: "cubic-bezier(.1,.7,.3,1)" });
+    }
+  }
+  /* his crew, in their pods, flung out every way */
+  NW_POD_COLORS.forEach((c, i) => {
+    const a = (-150 + i * 46 + (rnd() - .5) * 20) * Math.PI / 180, r = 16 + rnd() * 22;
+    const PW = 4.2;
+    const pod = el("nw2-pod", "left:" + (-PW / 2) + "%;top:" + (-PW / 4) + "%;width:" + PW + "%;--c:" + c, cam, "div");
+    pod.innerHTML = nwPodSVG(c) + '<i class="nw2-beacon"></i>';
+    const tf = (x, y, r2, s) => "translate(" + (x / PW * 100).toFixed(0) + "%," + (y / (PW / 2) * 100).toFixed(0) + "%) rotate(" + r2 + "deg) scale(" + s + ")";
+    const ex = Math.min(96, Math.max(4, HIT[0] + Math.cos(a) * r)), ey = Math.min(96, Math.max(8, HIT[1] + Math.sin(a) * r * .8));
+    play(pod, [{ opacity: 0, transform: tf(HIT[0] + 1, HIT[1], 0, .5) }, { opacity: 1, offset: .05 },
+      { opacity: .95, transform: tf(ex, ey, Math.round((rnd() - .5) * 700), .62) }],
+      { duration: 2600 + rnd() * 900, delay: P.hit + 60 + i * 70, easing: "cubic-bezier(.1,.68,.25,1)" });
+  });
+  if(!still){
+    play(cam, [{ transform: "none" }, { transform: "translate(1.2%,-.9%)", offset: .1 }, { transform: "translate(-1%,.8%)", offset: .25 },
+      { transform: "translate(.7%,.5%)", offset: .45 }, { transform: "translate(-.35%,-.3%)", offset: .7 }, { transform: "none" }],
+      { duration: 650, delay: B, fill: "none" });
+    /* the crack forms on it - Supernova's own, from nothing */
+    let arm = null;
+    try{ if(hero) arm = crackFormArm(hero, 0, CRACK_TOP); }catch(e){ arm = null; }
+    setTimeout(() => { try{ if(arm && box.isConnected) arm.play(P.crackMs); }catch(e){} }, P.crack);
+    /* the planet is gone under the flash: stop drawing it */
+    setTimeout(() => { if(hero && hero.parentNode) hero.remove(); }, B + 400);
+  } else if(hero) hero.remove();
+  box.__nw = { anims, still };
+  return box;
 }
 function novaBadgeSlots(n){
   const row = document.createElement("div"); row.className = "nt-row";
@@ -70254,59 +70591,197 @@ function novaStack(...nodes){
   const f = novaFrag(); nodes.forEach(n => n && f.appendChild(n)); return f;
 }
 
-/* ---- THE INTRODUCTION: a new account, before its first tooltips ----
-   "If you are signing up it would be before the tool tips and it would just
-   talk about finding the missing badges, finding the missing flares,
-   leveling up, test taking ... Hello I am Nova, the app maker, I lost my
-   badges". The story fits what the app already draws: the planet on Home
-   with the flares round it, ranks that are the life of a star ending in a
-   Supernova, and the planet that cracks as you climb. He was flying past a
-   planet like yours when it cracked apart; the blast took his ship and
-   scattered his badges and his flares across this system - which is why
-   the badge case starts empty and the flares start dark. Plain words, one
-   idea a line. After this he is not seen again until the next What's New
-   (he narrates the tooltips, small, from inside their bubbles). */
+/* ---- THE INTRODUCTION (build 320, rewritten in 321) ----
+   Build 320: "If you are signing up it would be before the tool tips and it
+   would just talk about finding the missing badges, finding the missing
+   flares, leveling up, test taking". Build 321: "he calls himself the app
+   maker, don't do that" - HE DID NOT MAKE THE APP. He is an explorer and an
+   instructor whose ship was wrecked when a planet beside it cracked apart.
+   And "during the ship explosion a lot of characters or people on the ship
+   went missing too and you need to find them (the characters)": the
+   characters you unlock ARE his missing crew, so a character is FOUND, the
+   same word a badge and a secret flare take.
+   The story fits what the app already draws: the planet on Home with the
+   flares round it, ranks that are the life of a star ending in a
+   Supernova, and the planet that cracks as you climb.
+   Two audiences, one story (o.existing):
+   - a NEW account: the story, then "I'll show you around" and the main
+     menu tooltips (startMainMenuTour), as in build 320;
+   - an account that was here before him ("I almost feel like that should
+     be the one shown to all the existing profiles, but at the end it can go
+     over the ones they have unlocked"): the same story, greeted by
+     username, and at the end what THEY have - rank, level, badges,
+     characters and secret flares found - then What's New, the tooltips and
+     his goodbye (playNovaMeeting). */
 function novaName(){
   const n = (store && store.firstName ? String(store.firstName) : "").trim();
   return n || "there";
 }
-function novaIntroLines(){
-  const name = novaName();
+/* The crew: characters you have found, then a few still missing (their
+   cut-outs), and how many of all of them you have. */
+function novaCrewTally(){
+  try{ const t = customizeTally("character"); return { have: t.have, total: t.total }; }catch(e){ return { have: 0, total: 0 }; }
+}
+function novaCrewRow(){
+  const row = document.createElement("div"); row.className = "nt-row nt-crew";
+  let shown = [];
+  try{ shown = AVATAR_CHARACTERS.filter(c => !(c.retired && store.avatarChar !== c.id) && !(c.legacy && isLockedCharacter(c.id))); }catch(e){}
+  const mine = shown.filter(c => !isLockedCharacter(c.id)), lost = shown.filter(c => isLockedCharacter(c.id));
+  const own = mine.find(c => c.id === store.avatarChar);
+  const found = (own ? [own] : []).concat(mine.filter(c => c !== own)).slice(0, lost.length ? 4 : 8);
+  const pick = found.map(c => [c, true]).concat(lost.slice(0, 8 - found.length).map(c => [c, false]));
+  pick.forEach(([c, have], i) => {
+    const s = document.createElement("span"); s.className = "nt-slot nt-crewman" + (have ? "" : " is-lost"); s.style.setProperty("--i", i);
+    try{ s.appendChild(have ? buildAvatarCharSVGSafe(c.id) : charSilhouetteSVG(c.id)); }catch(e){}
+    row.appendChild(s);
+  });
+  return row;
+}
+function novaFoundLine(st){
+  const b = st.badges >= st.units ? "every one of my lost badges"
+    : st.badges === 1 ? "one of my lost badges" : st.badges + " of my lost badges";
+  const c = st.chars.total && st.chars.have >= st.chars.total ? "all of my missing crew"
+    : st.chars.have === 1 ? "one of my missing crew" : st.chars.have + " of my missing crew";
+  let t = st.badges > 0 ? "And it appears you have found " + b + ", and " + c + "." : "You haven’t found any of my lost badges yet, but you have found " + c + ".";
+  if(st.flares > 0) t += st.flares === 1 ? " You’ve even found one of my secret flares." : " You’ve even found " + st.flares + " of my secret flares.";
+  return t;
+}
+/* Who you are and what you have found, as he sees it (the end of an
+   existing account's introduction). */
+function novaRecapCard(st){
+  const c = novaMeCard(st);
+  c.classList.add("nt-recap");
+  const t = c.lastElementChild;
+  const add = (cls, text) => { const p = document.createElement("p"); p.className = "nt-me-line " + cls; p.textContent = text; t.appendChild(p); return p; };
+  add("nt-me-crew", st.chars.have + " of " + st.chars.total + " characters found");
+  add("nt-me-flares", st.flares + " of " + st.flareTotal + " secret flares found");
+  return c;
+}
+function novaIntroLines(o){
+  o = o || {};
+  const existing = !!o.existing, name = novaName();
   let units = 16;
   try{ units = topicsIn(QUESTIONS).length || units; }catch(e){}
-  return [
-    { gesture: "wave", text: "Hello, " + name + "! I’m Nova. I made this app, and I’ll be your instructor.",
+  const crew = novaCrewTally();
+  const lines = [
+    { gesture: "wave", text: existing
+        ? "Hello, " + name + ". I’m Nova, a space explorer and an instructor. I don’t think we’ve met."
+        : "Hello, " + name + "! I’m Nova, a space explorer and an instructor. I’ll be your guide here.",
       enter: ctx => { const t = document.createElement("p"); t.className = "nt-hello"; t.textContent = "Nova";
-        novaProp(ctx, novaStack(t, novaCap("App maker \u00B7 Instructor"))); } },
-    { text: "Before we start, I need your help. Not long ago I was flying past a planet much like the one on your Home screen, and it cracked apart.",
+        novaProp(ctx, novaStack(t, novaCap("Explorer · Instructor"))); } },
+    { text: "Before we start, I need your help. Not long ago my ship was passing a planet much like the one on your Home screen, and it cracked apart.",
       enter: ctx => novaProp(ctx, buildNovaWreck()) },
-    { gesture: "raise", text: "The blast wrecked my ship and scattered everything I had across this system: my badges and my flares." },
+    { gesture: "raise", text: "The blast wrecked my ship and scattered everything aboard across this system: my badges, my flares and my crew." },
+    { text: "Many of the people aboard went missing. They are the characters in this app. Every character you unlock is one of my crew, found.",
+      enter: ctx => novaProp(ctx, novaStack(novaCrewRow(), novaCap(crew.have + " of " + crew.total + " characters found"))) },
     { text: "There’s a badge for every unit, " + units + " in all. To find one, master its unit. Each 100% on a whole unit is a hundo, and each badge takes a few.",
-      enter: ctx => novaProp(ctx, novaStack(novaBadgeSlots(8), novaCap("0 of " + units + " badges found"))) },
-    { gesture: "raise", text: "My flares orbit the planet on your Home screen, but they’re dark for now. Every rank you reach lights one up.",
-      enter: ctx => novaProp(ctx, novaStack(novaFlareRow(), novaCap("Flares: not lit yet"))) },
+      enter: ctx => novaProp(ctx, novaStack(novaBadgeSlots(8), novaCap((existing ? "Badges" : "0 of " + units + " badges found")))) },
+    { gesture: "raise", text: existing ? "My flares orbit the planet on your Home screen. Every rank you reach lights one up."
+        : "My flares orbit the planet on your Home screen, but they’re dark for now. Every rank you reach lights one up.",
+      enter: ctx => novaProp(ctx, novaStack(novaFlareRow(), novaCap(existing ? "Flares" : "Flares: not lit yet"))) },
     { text: "A few of my flares are secret. They turn up during tests, so keep your eyes open." },
     { text: "The ranks go from Bronze all the way to Supernova. Each one asks for a level and a number of badges.",
       enter: ctx => novaProp(ctx, novaStack(novaRankRow(), novaCap("Seven ranks"))) },
     { gesture: "raise", text: "Every question you get right earns XP, and XP raises your level.",
       enter: ctx => novaProp(ctx, novaXpBar()) },
     { text: "Tests are how you do all of it. Drill to learn, Exam to test yourself, and Review to go over the material first.",
-      enter: ctx => novaProp(ctx, novaModeRow()) },
-    { gesture: "nod", final: true, text: "Find my badges, light my flares and climb the ranks. I’ll show you around.",
-      enter: ctx => novaProp(ctx, null) }
+      enter: ctx => novaProp(ctx, novaModeRow()) }
   ];
+  if(!existing){
+    lines.push({ gesture: "nod", final: true, text: "Find my crew and my badges, light my flares and climb the ranks. I’ll show you around.",
+      enter: ctx => novaProp(ctx, null) });
+    return lines;
+  }
+  /* what this account has, said to them by name */
+  const st = whatsNewState();
+  lines.push({ gesture: "raise", recap: true, text: "Now, " + name + ", let me see how you’re doing.",
+    enter: ctx => novaProp(ctx, novaRecapCard(st)) });
+  lines.push({ text: st.rank ? "You’re " + RANK_DISPLAY_NAME[st.rank] + " rank, level " + st.level + ". Good work."
+                             : "You’re level " + st.level + ", on your way to your first rank, " + RANK_DISPLAY_NAME[TIER_ORDER_FULL[0]] + ".",
+    enter: ctx => { const b = ctx.stage.querySelector(".nt-recap .nt-me-line"); if(b) b.classList.add("is-hi"); } });
+  lines.push({ text: novaFoundLine(st),
+    enter: ctx => ctx.stage.querySelectorAll(".nt-recap .nt-me-badges, .nt-recap .nt-me-crew" + (st.flares > 0 ? ", .nt-recap .nt-me-flares" : "")).forEach(b => b.classList.add("is-hi")) });
+  lines.push({ gesture: "nod", final: true, text: "A few things have changed around here, too. Let me show you what’s new." });
+  return lines;
 }
 let novaIntroOn = false;
-function playNovaIntro(then){
+function playNovaIntro(then, o){
   if(document.getElementById("nova-intro")){ return; }
+  o = o || {};
   novaIntroOn = true;
-  novaTalk({ id: "nova-intro", label: "Nova introduces himself", lines: novaIntroLines(), finalLabel: "Let’s go",
-    onClose: () => {
+  const lines = novaIntroLines(o);
+  const recapAt = lines.findIndex(l => l.recap);
+  /* the art of the crack the wreck forms, made while he says hello */
+  setTimeout(() => { try{ if(!novaMotionOff()) warmCrackForm(0, CRACK_TOP); }catch(e){} }, 900);
+  novaTalk({ id: "nova-intro", label: "Nova introduces himself", lines, finalLabel: o.existing ? "What’s new" : "Let’s go",
+    skipTo: recapAt > 0 ? recapAt : null,
+    onClose: reason => {
       novaIntroOn = false;
-      try{ popupGapUntil = Date.now() + POPUP_GAP_MS; }catch(e){}
-      /* his tooltips follow on as he leaves */
-      setTimeout(() => { if(typeof then === "function") then(); }, novaMotionOff() ? 0 : 380);
+      if(!o.existing){ try{ popupGapUntil = Date.now() + POPUP_GAP_MS; }catch(e){} }
+      /* his tooltips (or, for an existing account, What's New) follow on as he leaves */
+      setTimeout(() => { if(typeof then === "function") then(reason); }, novaMotionOff() ? 0 : 380);
     } });
+}
+
+/* ---- MEETING NOVA: AN ACCOUNT THAT WAS HERE BEFORE HIM (build 321) ----
+   "Mr nova screen when meeting a new player, it's great. I almost feel like
+   that should be the one shown to all the existing profiles ... These
+   existing accounts don't need the tips past the ones you see on the main
+   menu ... still give the tool tips but after the main menu ones ... ensure
+   nova still says good bye and they'll talk again. AFTER the nova intro
+   that's when the what's new screen will show up ... They could get new
+   ones like showing the new stuff like the interactive planet and the new
+   profile stuff and calendar reposition".
+   So, once per ACCOUNT (store.novaMet, synced, merged by the higher), on
+   the first Home of this build where What's New is due: his introduction
+   with the recap of what you have, What's New (chained: no second
+   greeting), the main menu's tooltips plus the new ones
+   (startNovaReturnTour), and his goodbye. The whole meeting holds
+   everything What's New holds (novaMeetOn in whatsNewHolds), and the
+   pop-ups it held get their turn when he has gone. */
+const NOVA_MEET_REV = 1;
+let novaMeetOn = false;
+function novaMeetOwed(){
+  try{ return !!(store && store.onboardingComplete) && (Number(store.novaMet) || 0) < NOVA_MEET_REV; }catch(e){ return false; }
+}
+function markNovaMet(){
+  if((Number(store.novaMet) || 0) >= NOVA_MEET_REV) return;
+  store.novaMet = NOVA_MEET_REV;
+  saveStore();
+}
+function onNovaHome(){ return !!stage.querySelector('[data-screen="home"]'); }
+function playNovaMeeting(){
+  if(novaMeetOn) return;
+  novaMeetOn = true; introPending = true;
+  playNovaIntro(() => {
+    markNovaMet();
+    if(!onNovaHome()){ endNovaMeeting(); return; }
+    showIntroPopup({ chained: true, then: reason => {
+      if(reason === "nav" || !onNovaHome()){ endNovaMeeting(); return; }
+      startNovaReturnTour(() => {
+        if(!onNovaHome()){ endNovaMeeting(); return; }
+        setTimeout(novaGoodbye, novaMotionOff() ? 0 : 300);
+      });
+    } });
+  }, { existing: true });
+}
+function novaGoodbye(){
+  const name = novaName();
+  novaTalk({ id: "nova-intro", label: "Nova says goodbye", finalLabel: "Goodbye",
+    lines: [{ gesture: "wave", final: true,
+      text: "That’s everything for now, " + name + ". Find my crew, find my badges and climb the ranks. I’ll speak with you again when there’s more to show you. Goodbye for now." }],
+    onClose: () => endNovaMeeting() });
+}
+function endNovaMeeting(){
+  if(!novaMeetOn) return;
+  novaMeetOn = false; introPending = false;
+  popupGapUntil = Date.now() + POPUP_GAP_MS;
+  const btn = document.getElementById("chatdock-btn");
+  if(btn) btn.classList.remove("is-introduced");
+  setTimeout(() => {
+    checkLobbyInvites(); checkFriendRequests(); checkChatInvites();
+    checkSaveCodeReminder();
+  }, POPUP_GAP_MS + 60);
 }
 
 /* How long a tour will wait for a loading screen to clear before giving
@@ -70601,16 +71076,11 @@ function startSimpleTour(steps, onComplete, _waitedMs){
   requestAnimationFrame(renderStep);
 }
 
-function startMainMenuTour(){
-  /* Delegates entirely to startSimpleTour() now, rather than keeping
-     a second, separately-maintained copy of the same tooltip
-     positioning logic — that duplication is exactly how this tour
-     ended up with the older, less careful version (a fixed arrow
-     inset instead of real target-centering, no protection against a
-     tooltip rendering above the top of the viewport) while the
-     newer one had already been fixed. One shared implementation
-     means a future fix here benefits every tour, not just one. */
-  const steps = [
+/* The main menu's tooltips. `returning`: an account that was here before
+   Nova (build 321) - its flares are not all dark, and it is not told that
+   more tips will follow, because for it none do. */
+function mainMenuTourSteps(returning){
+  return [
     { target: "#bottomtab-home", align: "left", vplacement: "above",
       text: "Home always brings you back here, wherever you are in the app." },
     { target: "#bottomtab-rewards", align: "left", vplacement: "above",
@@ -70629,11 +71099,40 @@ function startMainMenuTour(){
     { target: ".daily-question-fab", align: "right", vplacement: "above",
       text: "Your daily question: one a day, one try, worth " + DAILY_XP + " XP. After you answer, its ring fills until the next one. No retakes, so take your time." },
     { target: ".cosmic-icon-badge", align: "left", vplacement: "below",
-      text: "These are my flares, one for each rank, still dark. Reach a rank and its flare lights up. Tap one to see what it takes." },
+      text: returning ? "These are my flares, one for each rank. Every rank you reach lights one up. Tap one to see what it takes."
+        : "These are my flares, one for each rank, still dark. Reach a rank and its flare lights up. Tap one to see what it takes." },
     { target: "#nextbtn", align: "left", vplacement: "above",
-      text: "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later. I\u2019ll pop up with tips like these as you explore." }
+      text: returning ? "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later."
+        : "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later. I\u2019ll pop up with tips like these as you explore." }
   ];
-  startSimpleTour(steps, awardWelcomeBonus);
+}
+function startMainMenuTour(){
+  /* Delegates entirely to startSimpleTour() now, rather than keeping
+     a second, separately-maintained copy of the same tooltip
+     positioning logic — that duplication is exactly how this tour
+     ended up with the older, less careful version (a fixed arrow
+     inset instead of real target-centering, no protection against a
+     tooltip rendering above the top of the viewport) while the
+     newer one had already been fixed. One shared implementation
+     means a future fix here benefits every tour, not just one. */
+  startSimpleTour(mainMenuTourSteps(false), awardWelcomeBonus);
+}
+/* What is new since an existing account last looked, said on the screen
+   it is on (build 321): "They could get new ones like showing the new
+   stuff like the interactive planet and the new profile stuff and
+   calendar reposition". After the main menu's own tips, and nothing else. */
+const NOVA_NEW_TIPS_321 = [
+  { target: ".panel.home .cosmic-plasma", align: "left", vplacement: "below",
+    text: "New: the planet answers your touch. Tap it to see where you stand, and keep tapping to spin its rings. It cracks a little more with every rank you reach." },
+  { target: "#bottomtab-profile", align: "left", vplacement: "above",
+    text: "New: Profile has been rebuilt. Your rank, your level and your badges are on one card, your badge case opens from it, and Friends is back underneath." },
+  { target: "#bottomtab-profile", align: "left", vplacement: "above",
+    text: "New: the class calendar has moved. It\u2019s the Calendar tab on Profile now, between Profile and Stats." }
+];
+/* An existing account's tooltips, once, in its meeting with Nova: the main
+   menu's, then what is new. No welcome bonus - that is for a new account. */
+function startNovaReturnTour(onDone){
+  startSimpleTour(mainMenuTourSteps(true).concat(NOVA_NEW_TIPS_321), onDone);
 }
 
 
@@ -76482,7 +76981,11 @@ const INTRO_MAX_TRIES = 20;
 /* 4 = the 7.8 update (builds 319 and 320, which ship together): What's
    New narrated by Nova - see showIntroPopup. Every fixture that sets
    class26e.intro.seen to 9 is still past it. */
-const INTRO_REV = 4;
+/* 5 = 7.8 again (build 321): builds 319, 320 and 321 ship together and 4
+   never went out, but a device that saw 320's What's New is shown this
+   one. The meeting with Nova an existing account gets with it is gated on
+   the ACCOUNT (store.novaMet), so it plays once however many devices. */
+const INTRO_REV = 5;
 function introSeen(){
   try{ return (Number(localStorage.getItem(INTRO_KEY)) || 0) >= INTRO_REV; }
   catch(e){ return true; }
@@ -76557,36 +77060,36 @@ function levelGateNoteText(s){
 const WHATS_NEW_320 = [
   { key: "results", color: "#FFD84D", title: "Results, grade first",
     glyph: "M12 1.8a7.2 7.2 0 1 0 0 14.4 7.2 7.2 0 0 0 0-14.4Zm0 3.1 1.25 2.6 2.85.4-2.06 2 .48 2.84L12 11.4l-2.52 1.34.48-2.84-2.06-2 2.85-.4L12 4.9ZM7.4 15.4 5.8 22l3.3-1.7 2.1 1.6-.7-4.9a8.7 8.7 0 0 1-3.1-1.6Zm9.2 0a8.7 8.7 0 0 1-3.1 1.6l-.7 4.9 2.1-1.6 3.3 1.7-1.6-6.6Z",
-    body: "Your grade comes first, with a moment of suspense, then your XP and rewards.",
-    say: "Your results start with your grade now. Give it a second; the wait is part of it." },
-  { key: "hundofx", color: "#FF9EC8", title: "Characters react to your hundo",
+    body: "Your grade counts up first, red to green as each unit fills. Then your XP, then anything you unlocked.",
+    say: "Your results start with your grade now. It counts up as each unit fills, red to green, and then come your XP and your rewards." },
+  { key: "hundofx", color: "#FF9EC8", title: "Characters celebrate your hundo",
     glyph: "M12 2.5l1.9 5.9 5.9 1.9-5.9 1.9-1.9 5.9-1.9-5.9-5.9-1.9 5.9-1.9L12 2.5Zm6.5 12.5.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z",
-    body: "Score 100% and your character reacts to your hundo effect.",
-    say: "Score 100% and your character joins in with your hundo effect." },
-  { key: "found", color: "#4ADE80", title: "Badges are found",
-    glyph: "M12 2 4 5v6c0 5.1 3.4 9.4 8 11 4.6-1.6 8-5.9 8-11V5l-8-3Zm-1.3 13.6-3.6-3.6 1.5-1.5 2.1 2.1 4.8-4.8 1.5 1.5-6.3 6.3Z",
-    body: "A badge you earn is found, and it gets the screen to itself. Badges no longer add XP.",
-    say: "When you find one of my badges, everything else waits while it has its moment. Finding it is the reward, so badges no longer add XP." },
+    body: "Score 100% and your character is thrilled, and reacts to your hundo effect while it plays.",
+    say: "Score 100% and your character is thrilled. It even reacts to your hundo effect." },
   { key: "case", color: "#C9D3DE", title: "The Level 1 Badge Case",
     glyph: "M9 3h6a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3V5a2 2 0 0 1 2-2Zm0 2v1h6V5H9Zm-5 6.2v1.8h16v-1.8H4Z",
-    body: "Your badges live in the Level 1 Badge Case, with a new lid, lining and clips. Tap a badge and it floats out for a closer look. Spin it with your finger. Badges gather dirt week by week; rub one to clean it.",
-    say: "Every badge you find goes back in its slot in my Level 1 Badge Case. Tap one and it floats out so you can spin it. They get dirty over the weeks, so rub them clean." },
+    body: "A badge you find gets the screen to itself, then goes into your badge case. Tap one to hold it and spin it, and rub it clean when it gets dirty. Badges no longer add XP.",
+    say: "Every badge you find goes into my Level 1 Badge Case. Tap one to hold it and spin it, and rub it clean when it gets dirty." },
   { key: "rankup", color: "#E8B84A", title: "Ranking up, on the road map",
     glyph: "M12 3l8 5v3.2l-8-5-8 5V8l8-5Zm0 6.2 8 5v3.2l-8-5-8 5v-3.2l8-5Z",
-    body: "Your rank challenges tick off on Profile, the road map lights up to your new rank, and its rewards are handed over there.",
-    say: "Ranking up now plays out on Profile’s road map. Your challenges tick off and the road lights up to your new rank, in one smooth journey." },
+    body: "A rank-up plays out on Profile’s road map: your challenges tick off, the road lights up to your new rank, and its rewards are handed over there.",
+    say: "Ranking up now plays out on Profile’s road map. Your challenges tick off and the road lights up to your new rank." },
   { key: "planet", color: "#F5804D", title: "A planet that cracks",
     glyph: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm-1.2 2.3 1.9 4.2-2.5 2.4 2.9 3.3-1.1 3.7-1.2-.2.9-3.1-3-3.5 2.6-2.5-1.7-3.9 1.4-.4Z",
-    body: "The planet on Home cracks a little more with every rank you reach.",
-    say: "And keep an eye on the planet on your Home screen. It cracks a little more with every rank you reach. I’ve seen that before." },
+    body: "From Gold up, the planet on Home cracks a little more with every rank you reach. You see it happen in the rank-up.",
+    say: "Keep an eye on the planet on your Home screen. From Gold up it cracks a little more with every rank. I’ve seen that before." },
+  { key: "supernova", color: "#FF7A59", title: "Supernova’s mark",
+    glyph: "M12 2l1.6 6.1L19.8 6l-4.2 4.6L22 12l-6.4 1.4 4.2 4.6-6.2-2.1L12 22l-1.6-6.1L4.2 18l4.2-4.6L2 12l6.4-1.4L4.2 6l6.2 2.1L12 2Z",
+    body: "At Supernova the planet on Home keeps the mark of the blast: the scar glints, smoke rises from it, and pieces drift off its rings.",
+    say: "Reach Supernova and the planet keeps the mark of the blast for good. The scar glints and smoke rises from it." },
   { key: "profile", color: "#5CA8FF", title: "Profile, Calendar and Stats",
     glyph: "M3 4.5h5.2v4.2H3V4.5Zm6.4 0h5.2v4.2H9.4V4.5Zm6.4 0H21v4.2h-5.2V4.5ZM3 10.2h18V20H3v-9.8Z",
-    body: "Profile is three tabs: Profile, Calendar and Stats. It is cleaner, and Friends is back under your card.",
-    say: "Profile is three tabs now: Profile, Calendar and Stats. It’s cleaner, and Friends is back under your card." },
+    body: "Profile is three tabs: Profile, Calendar and Stats. Your rank, level and badges are on one card, and Friends is back under it.",
+    say: "Profile is three tabs now: Profile, Calendar and Stats. The class calendar lives there, and Friends is back under your card." },
   { key: "save", color: "#4ADE80", title: "Save a test for later",
     glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-3.4 6.2h2.3v7.6H8.6V8.2Zm4.5 0h2.3v7.6h-2.3V8.2Z",
-    body: "Pause a test and tap Save and exit. Start Studying offers it back and loads it right where you left off.",
-    say: "You can save a test for later. Pause it and tap Save and exit, and Start Studying picks it up right where you left off." },
+    body: "Pause a Drill or Exam and tap Save and exit. Start Studying offers it back, and Resume loads it right where you left off.",
+    say: "You can save a test for later. Pause it, tap Save and exit, and Resume picks it up right where you left off." },
   { key: "daily", color: "#FFD84D", title: "The daily question ring",
     glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2.2a7.8 7.8 0 1 1 0 15.6 7.8 7.8 0 0 1 0-15.6Zm-.1 3.1c-1.9 0-3.2 1.1-3.3 2.8h2c.1-.7.6-1.1 1.3-1.1.8 0 1.3.5 1.3 1.1 0 .6-.3.9-1.1 1.4-.9.5-1.3 1.1-1.2 2.1v.5h1.9v-.4c0-.6.2-.9 1-1.3.9-.5 1.5-1.2 1.5-2.3 0-1.7-1.4-2.8-3.4-2.8Zm-.1 8.2a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Z",
     body: "After you answer, a ring around the daily question button fills until the next question at 5pm.",
@@ -76613,7 +77116,10 @@ function novaMeCard(st){
   return c;
 }
 function whatsNewState(){
-  const st = { name: novaName(), rank: null, level: 0, badges: 0, units: 16, note: null };
+  const st = { name: novaName(), rank: null, level: 0, badges: 0, units: 16, note: null,
+               chars: novaCrewTally(), flares: 0, flareTotal: 3 };
+  /* the secret flares as Home's planet counts them (homeTapCopyPlanet) */
+  try{ const f = store.mysteryColorsFound || {}, k = homeFlareKeys(); st.flares = k.filter(x => f[x]).length; st.flareTotal = k.length; }catch(e){}
   try{ st.rank = rankOf(store); }catch(e){}
   try{ st.level = levelOf(store); }catch(e){}
   try{ st.badges = badgeCountOf(store); }catch(e){}
@@ -76625,7 +77131,7 @@ function whatsNewState(){
   return st;
 }
 /* The whole script, in order. Exposed so the gate can read every line. */
-function whatsNewLines(st){
+function whatsNewLines(st, chained){
   const name = st.name, first = RANK_DISPLAY_NAME[TIER_ORDER_FULL[0]];
   let news = null, list = null, me = null;
   const card = (ctx, row, instant) => {
@@ -76641,8 +77147,7 @@ function whatsNewLines(st){
     }
   };
   const lines = [];
-  lines.push({ gesture: "wave", text: "Hello, " + name + ". I’m Nova. I made this app, and I think it’s time we met.",
-    enter: ctx => {
+  const openCard = ctx => {
       news = document.createElement("div"); news.className = "nt-news";
       const head = document.createElement("div"); head.className = "nt-head";
       const eb = document.createElement("p"); eb.className = "nt-eyebrow intro-eyebrow"; eb.textContent = "New in version " + RELEASE_NOTES[0].version;
@@ -76651,7 +77156,14 @@ function whatsNewLines(st){
       list = document.createElement("div"); list.className = "nt-list";
       news.append(head, list);
       ctx.stage.appendChild(news);
-    } });
+    };
+  /* CHAINED (build 321): straight after his introduction, which has just
+     greeted them and gone over what they have - so no second hello, and it
+     ends by leading into the tooltips, not by saying goodbye. */
+  if(chained){
+    lines.push({ gesture: "raise", text: "Here’s what’s new in version " + RELEASE_NOTES[0].version + ".", enter: openCard });
+  } else {
+  lines.push({ gesture: "wave", text: "Hello again, " + name + ". It’s Nova.", enter: openCard });
   lines.push({ text: st.rank ? "I see you’re " + RANK_DISPLAY_NAME[st.rank] + " rank, level " + st.level + ". Good work."
                              : "I see you’re level " + st.level + ", on your way to your first rank, " + first + ".",
     enter: (ctx, instant) => { me = novaMeCard(st); if(instant) me.style.animation = "none"; if(list) list.appendChild(me); } });
@@ -76661,8 +77173,9 @@ function whatsNewLines(st){
         : st.badges === 1 ? "And it appears you have found one of my lost badges."
         : "You haven’t found any of my lost badges yet, but I have a feeling you will.",
     enter: () => { const b = me && me.querySelector(".nt-me-badges"); if(b) b.classList.add("is-hi"); } });
-  lines.push({ text: "I lost them in a shipwreck. A planet near my ship cracked apart, and the blast scattered my badges and my flares across this system." });
-  lines.push({ gesture: "raise", text: (st.badges > 0 ? "Every one you find comes home. Thank you. " : "Every one you find comes home. ") + "Now, here’s what’s new." });
+  lines.push({ text: "Every badge you find comes home, and every character you unlock is one of my missing crew, found." });
+  lines.push({ gesture: "raise", text: (st.badges > 0 ? "Thank you. " : "") + "Now, here’s what’s new." });
+  }
   WHATS_NEW_320.forEach(it => lines.push({ text: it.say, gesture: it.key === "planet" ? "nod" : null,
     enter: (ctx, instant) => card(ctx, introRow(it.glyph, it.color, it.title, it.body), instant) }));
   if(st.note){
@@ -76676,15 +77189,24 @@ function whatsNewLines(st){
       } });
     lines.push({ text: st.note[1] });
   }
-  lines.push({ gesture: "nod", final: true,
-    text: "That’s all for now, " + name + ". I’ll speak with you again when there’s more to show you. Good luck." });
+  lines.push(chained
+    ? { gesture: "nod", final: true, text: "That’s the news. Now let me show you where some of it lives." }
+    : { gesture: "nod", final: true,
+        text: "That’s all for now, " + name + ". I’ll speak with you again when there’s more to show you. Good luck." });
   return lines;
 }
-function showIntroPopup(){
+/* o.chained / o.then (build 321): part of the meeting with Nova - then(reason)
+   runs as it closes ("nav" when a screen change took it). */
+function showIntroPopup(o){
+  o = o || {};
   if(document.getElementById("intro-pop")) return;
   const st = whatsNewState();
-  const el = novaTalk({ id: "intro-pop", news: true, label: "What’s new, from Nova", lines: whatsNewLines(st), finalLabel: "Got it",
-    onClose: () => closeIntroPopup(null) });
+  const el = novaTalk({ id: "intro-pop", news: true, label: "What’s new, from Nova", lines: whatsNewLines(st, !!o.chained),
+    finalLabel: o.chained ? "Show me" : "Got it",
+    onClose: reason => {
+      closeIntroPopup(null, !!o.chained);
+      if(typeof o.then === "function") setTimeout(() => o.then(reason), novaMotionOff() ? 0 : 380);
+    } });
   /* A screen change takes it with it, and counts as seen: somebody who
      navigated away has decided they are done reading. */
   const onNavigate = new MutationObserver(() => {
@@ -76694,8 +77216,10 @@ function showIntroPopup(){
   onNavigate.observe(stage, { childList: true });
 }
 
-function closeIntroPopup(el){
+function closeIntroPopup(el, chained){
   markIntroSeen();
+  /* in the meeting, the holds stay on until he has said goodbye */
+  if(chained && novaMeetOn) return;
   introPending = false;
   popupGapUntil = Date.now() + 260 + POPUP_GAP_MS;
   const btn = document.getElementById("chatdock-btn");
@@ -76744,9 +77268,10 @@ let popupGapUntil = 0;
 function whatsNewHolds(){
   /* Nova's introduction to a new account (#nova-intro) holds everything
      the way What's New does - it is the same dialogue (build 320). */
-  return introPending || !!document.getElementById("intro-pop") || !!document.getElementById("nova-intro") || Date.now() < popupGapUntil;
+  return introPending || novaMeetOn || !!document.getElementById("intro-pop") || !!document.getElementById("nova-intro") || Date.now() < popupGapUntil;
 }
 function maybeShowIntro(){
+  if(novaMeetOn) return;
   if(introSeen()){ introPending = false; return; }
   clearTimeout(introTimer);
   introPending = true;
@@ -76789,7 +77314,9 @@ function maybeShowIntro(){
       setTimeout(() => { checkLobbyInvites(); checkFriendRequests(); checkChatInvites(); checkSaveCodeReminder(); }, 500);
       return;
     }
-    showIntroPopup();
+    /* an account that has not met Nova meets him first (build 321) */
+    if(novaMeetOwed()) playNovaMeeting();
+    else showIntroPopup();
   };
   introTimer = setTimeout(attempt, 2000);
 }
@@ -77368,6 +77895,8 @@ function showHome(){
        onboarding on tourRev 0 and be re-armed on its NEXT launch, which
        is the one person who should never be shown these twice. */
     store.tourRev = TOUR_REV;
+    /* and has met Nova: his introduction is about to play (build 321) */
+    store.novaMet = NOVA_MEET_REV;
     /* Current on badge bands by definition too: every badge this
        account ever gets is earned under them and celebrated at the time. */
     store.badgeBandsVersion = BADGE_BANDS_VERSION;

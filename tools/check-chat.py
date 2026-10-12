@@ -472,10 +472,23 @@ def run_intro(src_dir, label):
             # IT IS NOT UP YET, and that is half the requirement: "give it
             # a 2 or so second delay after the Home Screen hits".
             pg.wait_for_timeout(900)
-            early = pg.evaluate("()=>!!document.getElementById('intro-pop')")
+            early = pg.evaluate("()=>!!document.getElementById('intro-pop') || !!document.getElementById('nova-intro')")
             if early:
                 fails.append("the introduction opened immediately, not after a pause")
             pg.wait_for_timeout(1900)
+            # REVISED IN 321: an account from before Nova MEETS him first -
+            # his introduction (greeted by username), and What's New after
+            # it ("AFTER the nova intro that's when the what's new screen
+            # will show up"). Skip on the introduction goes to the recap of
+            # what you have; Skip again ends it and What's New follows.
+            met = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
+              const el = document.getElementById('nova-intro'); if(!el) return { intro: false };
+              await wait(900); const name = el.innerText.indexOf('Madison') >= 0;
+              el.querySelector('.nt-skip').click(); await wait(200); el.querySelector('.nt-skip').click();
+              for(let i = 0; i < 30 && !document.getElementById('intro-pop'); i++) await wait(100);
+              return { intro: true, name, news: !!document.getElementById('intro-pop') }; }""")
+            if not (met.get("intro") and met.get("name") and met.get("news")):
+                fails.append("an account from before Nova did not meet him (greeted by name) before What's New: %s" % met)
             # REVISED IN 320: What's New is narrated by Nova ("still a
             # similar what's new screen but a different look and feel"). He
             # builds the card row by row as he talks; Skip puts every row on
@@ -497,7 +510,7 @@ def run_intro(src_dir, label):
                       bottomReachable: lr.bottom <= br.top + 1 && br.bottom <= innerHeight + 1 && list.scrollHeight >= list.clientHeight,
                       wide: lr.width > innerWidth * 0.7,
                       says78: ['nova', 'results', 'badge', 'badge case', 'road map', 'planet', 'profile', 'calendar', 'save a test', 'daily question'].every(w => txt.indexOf(w) >= 0)
-                        && txt.indexOf('7.8') >= 0 && txt.indexOf('madison') >= 0,
+                        && txt.indexOf('7.8') >= 0,
                       go: !!el.querySelector('.intro-go')};}""")
             if not out:
                 fails.append("the introduction never opened")
@@ -515,13 +528,19 @@ def run_intro(src_dir, label):
 
             # ONCE, AND ONLY ONCE. A "what's new" card that comes back every
             # launch is the single most irritating thing an update can do.
-            again = pg.evaluate("""()=>{
+            # then his tooltips and his goodbye (build 321), clicked through
+            again = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
               document.querySelector('.intro-go').click();
+              for(let i = 0; i < 30 && !document.getElementById('tour-tooltip'); i++) await wait(100);
+              for(let i = 0; i < 20 && document.getElementById('tour-tooltip'); i++){ document.getElementById('tour-next').click(); await wait(400); }
+              for(let i = 0; i < 30 && !document.getElementById('nova-intro'); i++) await wait(100);
+              const bye = document.getElementById('nova-intro'); if(bye){ await wait(700); bye.querySelector('.nt-skip').click(); }
+              await wait(600);
               return new Promise(r => setTimeout(() => {
                 showHome();
                 setTimeout(() => r({
                   seen: localStorage.getItem('class26e.intro.seen'),
-                  back: !!document.getElementById('intro-pop')}), 2600);
+                  back: !!document.getElementById('intro-pop') || !!document.getElementById('nova-intro')}), 2600);
               }, 400));}""")
             if not again["seen"]:
                 fails.append("dismissing the introduction did not record it")
