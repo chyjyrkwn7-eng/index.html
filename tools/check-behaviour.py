@@ -25278,6 +25278,11 @@ def check_b323u_units(br):
           const lw = list.getBoundingClientRect().width;
           out.rows = rows().map(r => { const b = r.getBoundingClientRect(); return { w: Math.round(b.width), h: Math.round(b.height), l: Math.round(b.left) }; });
           out.lw = Math.round(lw);
+          /* the Penal Code's version line stays under its name, words on the name's edge */
+          const pv = rows().find(r => r.querySelector('.pick-version'));
+          if(pv){ const a = pv.querySelector('.pname').getBoundingClientRect(), rg = document.createRange();
+            rg.selectNodeContents(pv.querySelector('.pick-version')); const t = rg.getBoundingClientRect();
+            out.version = { dx: Math.round(t.left - a.left), below: Math.round(t.top - a.bottom) }; }
           /* 2. a tap ticks it and opens its details */
           const pick = rows().find(r => !/Penal/.test(r.textContent));
           pick.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(300);
@@ -25369,6 +25374,9 @@ def check_b323u_units(br):
         check("%s every unit is a full-width row, not a small square" % label,
               len(rows) >= 10 and all(abs(x["w"] - r["lw"]) <= 2 and x["w"] / max(1, x["h"]) > 3 for x in rows)
               and len(set(x["l"] for x in rows)) == 1, (r.get("lw"), rows[:3]))
+        v = r.get("version") or {}
+        check("%s the Penal Code row's version line sits under its name, on the name's edge" % label,
+              abs(v.get("dx", 99)) <= 1.5 and -2 <= v.get("below", -99) <= 16, v)
         t = r.get("tap") or {}
         check("%s a tap ticks the row and opens its details (best, last, done, fastest) with a 44px Details button" % label,
               t.get("checked") is True and t.get("grew", 0) > 30 and t.get("moreH", 0) > 30 and t.get("visible") == "visible"
