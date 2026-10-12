@@ -23404,6 +23404,49 @@ def check_b321d_badges(br):
           len(bh) == 6 and h99[0] >= 88 and h99[len(h99) // 2] >= 95 and all(v["hp1"] <= -60 for v in bh), back)
     check("the back wears the badge's dirt (a stage 4 back is not a stage 0 one)", len(bh) == 6 and all(v["wears"] for v in bh), [v["wears"] for v in bh])
 
+    # CENTRED (b321d, after b321c's badgeSlotShift): every one of the sixteen,
+    # front and back, in your hand - the C-ring sat ~8px right of the middle
+    # and the trefoil, star and disc a few px high on 6a387e2.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    cen = pg.evaluate(r"""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      const units = unitsInTeachingOrder(); store.unitPerfects = {}; units.forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+      store.badgeCleanedAt = {}; units.forEach(u => store.badgeCleanedAt[u] = Date.now());
+      store.seenUnlocks = store.seenUnlocks || {}; store.seenUnlocks.badges = units.slice(); store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
+      theme.reduceMotion = true; theme.muteBanners = true; applyTheme();
+      document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert,.update-banner').forEach(n => n.remove());
+      showRanksScreen('badges'); await wait(1500);
+      const alphaBox = im => { const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+        const g = c.getContext('2d'); g.drawImage(im, 0, 0); const d = g.getImageData(0, 0, c.width, c.height).data;
+        let x0 = 1e9, x1 = -1, y0 = 1e9, y1 = -1;
+        for(let y = 0; y < c.height; y++) for(let x = 0; x < c.width; x++) if(d[(y * c.width + x) * 4 + 3] > 128){ if(x < x0) x0 = x; if(x > x1) x1 = x; if(y < y0) y0 = y; if(y > y1) y1 = y; }
+        return [(x0 + x1 + 1) / 2 / c.width, (y0 + y1 + 1) / 2 / c.height]; };
+      const cells = [...document.querySelectorAll('.badges-tab .ncase-cell')];
+      for(let i = 0; i < units.length; i++){
+        const u = units[i], tile = cells[i];
+        try{ openBadgeInspect(u, tile); }catch(e){ out[u] = String(e); continue; }
+        await wait(700);
+        const ov = document.querySelector('.binspect'), fl = ov.querySelector('.binspect-float').getBoundingClientRect();
+        const fcx = fl.left + fl.width / 2, fcy = fl.top + fl.height / 2;
+        const fi = ov.querySelector('.binspect-face.is-front img.is-current') || ov.querySelector('.binspect-face.is-front img');
+        await (fi.decode ? fi.decode().catch(() => {}) : 0);
+        const fr = fi.getBoundingClientRect(), fa = alphaBox(fi);
+        const front = [+(fr.left + fa[0] * fr.width - fcx).toFixed(2), +(fr.top + fa[1] * fr.height - fcy).toFixed(2)];
+        const sp = ov.querySelector('.binspect-spin'); sp.style.transform = 'rotateY(180deg)';
+        let backD = null;
+        for(let k = 0; k < 40 && !backD; k++){ const bi = ov.querySelector('.binspect-face.is-back img');
+          if(bi && bi.getAttribute('src')){ await (bi.decode ? bi.decode().catch(() => {}) : 0);
+            const br = bi.getBoundingClientRect(), ba = alphaBox(bi);
+            backD = [+(br.left + ba[0] * br.width - fcx).toFixed(2), +(br.top + ba[1] * br.height - fcy).toFixed(2)]; }
+          else await wait(100); }
+        out[u] = { front, back: backD };
+        badgeInspectNow && badgeInspectNow.teardown(); await wait(150);
+      }
+      return out; }""")
+    ctx.close()
+    off = {u[:18]: v for u, v in cen.items() if not (isinstance(v, dict) and v["back"] and max(abs(x) for x in v["front"] + v["back"]) <= 1)}
+    check("in your hand every one of the sixteen sits on the middle of the screen, front and back (its shape's centre within 1px)",
+          len(cen) == 16 and not off, off or {u[:18]: v for u, v in list(cen.items())[:3]})
+
     # the badge in your hand: its words, the glow and the shine at stage 4
     SEED = """(o) => { const units = unitsInTeachingOrder(); store.unitPerfects = {};
       units.forEach((u, i) => store.unitPerfects[u] = (i % 3 !== 2) ? badgeThresholdFor(u) : Math.floor(badgeThresholdFor(u) / 3));
