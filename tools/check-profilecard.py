@@ -13,7 +13,7 @@ plates and the two code groups have no slack to hide a mistake in.
 """
 import argparse, functools, http.server, os, re, shutil, socket, tempfile, threading, json
 from playwright.sync_api import sync_playwright
-ROOT="/home/user/index.html"
+ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ap=argparse.ArgumentParser()
 ap.add_argument("--against", help="run the same checks against another index.html; they are SUPPOSED to fail there")
 A=ap.parse_args()
