@@ -28080,21 +28080,13 @@
   .binspect-slot{ position:absolute; inset:0; }
   .binspect-slot svg{ width:100%; height:100%; display:block; overflow:visible; }
   .binspect-words{ position:relative; width:min(22rem, 100%); text-align:center; }
-  .binspect-words .unlock-card-name{ margin-bottom:.15rem; }
-  .binspect-state{ margin:0 0 .55rem; font-size:.8rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#7CF0A8; }
-  .binspect-words .unlock-card-desc{ margin-bottom:.75rem; }
-  .binspect.is-found .unlock-card-fill{ background:linear-gradient(90deg, #2FBF71, #7CF0A8); }
-  .binspect-words .unlock-card-fill.sbar{ transition:none; }
-  .binspect-dirt{
-    margin:.9rem auto 0; max-width:19rem; padding:.55rem .85rem; border-radius:.8rem;
-    font-size:.88rem; font-weight:700; line-height:1.35; color:#F6E3A0;
-    background:rgba(255,212,59,.09); border:1px solid rgba(255,212,59,.3);
-  }
-  .binspect-dirt.is-clean{ color:#9FF2C0; background:rgba(47,191,113,.1); border-color:rgba(124,240,168,.32); }
-  .binspect-care, .binspect-tip{ margin:.6rem auto 0; max-width:19rem; font-size:.78rem; font-weight:600; line-height:1.4; color:rgba(243,245,247,.6); }
-  .binspect-dirt, .binspect-care, .binspect-words .unlock-card-desc{ text-wrap:balance; }
-  .binspect-tip{ margin-top:.25rem; }
-  .binspect-close{ margin-top:1.1rem; }
+  /* build 321: the name, one hint while it is dirty, a quiet tip, Close */
+  .binspect-words .unlock-card-name{ margin:0 0 .2rem; text-wrap:balance; }
+  .binspect-count{ margin:.35rem 0 0; font-size:.9rem; font-weight:700; color:rgba(243,245,247,.62); }
+  .binspect-dirt{ margin:.5rem auto 0; font-size:.92rem; font-weight:700; line-height:1.35; color:#F3DE9A; }
+  .binspect-dirt[hidden]{ display:none; }
+  .binspect-tip{ margin:.4rem auto 0; font-size:.76rem; font-weight:600; line-height:1.4; letter-spacing:.02em; color:rgba(243,245,247,.42); }
+  .binspect-close{ margin-top:1.2rem; }
   /* a short phone (an SE): a smaller badge, so the words and Close fit */
   @media (max-height:46rem) and (orientation:portrait){ .binspect{ --bi:min(62vw, 32vh, 21rem); } .binspect-stage{ gap:1.1rem; } }
   /* a phone on its side: the words beside the badge */
@@ -54282,7 +54274,11 @@ const BADGE_GEOM = {
 };
 /* The hole's shade on a seated badge's top-left edge (build 319): how far
    past the gap each step reaches, in token units, and its opacity. */
-const BADGE_SEAT_SHADE = [[.6, .26], [1.5, .2], [2.6, .14]];
+const BADGE_SEAT_SHADE = [[.22, .5], [.6, .26], [1.5, .2], [2.6, .14]];
+/* Build 321 (b321d): the first, crisp step is the lip itself lying over the
+   token's top-left edge by a fraction of a unit - "maybe the 3d look when
+   in it could be better" - the hole's edge is IN FRONT of the badge there,
+   so the badge reads as below the lining, not on it. */
 /* Polished silver: a ramp with the bright-dark-bright of a reflected
    room in it (the contrast is what reads as metal and not grey paint),
    and the grey badge's own neutral version - no blue in it. */
@@ -54933,9 +54929,36 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
   const W_GLOSS = DK.gloss[ST], W_FLAT = DK.flat[ST], W_TARN = DK.tarnish[ST], W_COAT = DK.coat[ST], W_DIM = DK.dim[ST],
         W_GRIME = DK.grime[ST], W_GRIMEE = DK.grimeE[ST], W_FILM = DK.film[ST], W_FILME = DK.filmE[ST],
         W_GRAIN = DK.grain[ST], W_GRAINE = DK.grainE[ST], DU = DK.dust[ST];
+  /* The wear's noise for one row of OUTPUT pixels (the smudge, the grain,
+     the dust): it varies over units, not samples, so reading it per sample
+     was most of a render's cost for nothing. */
+  const WSM = new Float32Array(Wout), WGR = new Float32Array(Wout), WDU = new Float32Array(Wout);
+  let wRow = -1;
+  const kO = k / SS, pcxO = pcx / SS, pcyO = pcy / SS;
+  const wearRow = oy => {
+    wRow = oy;
+    const ty = (oy + .5 - pcyO) / kO;
+    for(let ox = 0; ox < Wout; ox++){
+      const tx = (ox + .5 - pcxO) / kO;
+      WSM[ox] = badgeSmudge(dSeed, tx, ty);
+      /* the grain: ~3 units and a fine ~.9 unit, the fine one only where
+         a pixel is small enough to hold it (gF) - finer than a pixel it
+         is noise the next render size would draw differently */
+      WGR[ox] = (badgeNoiseAt(NT, tx * 1.3 + gOx, ty * 1.3 + gOy) - .5) * 1.4 + (gF > 0 ? gF * (badgeNoiseAt(NT, ty * 4.4 + gOy + 57.1, tx * 4.4 + gOx + 13.3) - .5) * 1.8 : 0);
+      let du = 0;
+      if(DU > 0){
+        /* two readings at odd angles and scales, so no flecks line up on the table's lattice */
+        const dn = .5 * badgeNoiseAt(NT, (.8 * tx - .6 * ty) * 2.3 + gOy + 91.7, (.6 * tx + .8 * ty) * 2.3 + gOx + 44.9)
+                 + .5 * badgeNoiseAt(NT, (.28 * tx + .96 * ty) * 3.7 + gOx + 7.3, (-.96 * tx + .28 * ty) * 3.7 + gOy + 63.1);
+        du = dn > .6 ? DU * (dn >= .78 ? 1 : (dn - .6) / .18) : 0; du *= du > 0 ? (2 - du / DU) * .5 + .25 : 0;
+      }
+      WDU[ox] = du;
+    }
+  };
   /* premultiplied linear light per sample, averaged SS x SS below */
   const AR = BF.AR, AG = BF.AG, AB = BF.AB; AR.fill(0, 0, N); AG.fill(0, 0, N); AB.fill(0, 0, N);
   for(let y = 0; y < W; y++){
+    if(WEAR && ((y / SS) | 0) !== wRow) wearRow((y / SS) | 0);
     for(let x = 0; x < W; x++){
       const i = y * W + x, aS = A[i];
       if(aS <= 0) continue;
@@ -54954,18 +54977,8 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
          wall (rM on the metal side, rE on the colour's) */
       let sm = 0, rM = 0, rE = 0, gr = 0, du = 0;
       if(WEAR){
-        const tx = (x - pcx) / k, ty = (y - pcy) / k;
-        sm = badgeSmudge(dSeed, tx, ty);
-        /* the grain: ~3 units and a fine ~.9 unit, the fine one only where
-           a pixel is small enough to hold it (gF) - finer than a pixel it
-           is noise the next render size would draw differently */
-        gr = (badgeNoiseAt(NT, tx * 1.3 + gOx, ty * 1.3 + gOy) - .5) * 1.4 + gF * (badgeNoiseAt(NT, ty * 4.4 + gOy + 57.1, tx * 4.4 + gOx + 13.3) - .5) * 1.8;
-        if(DU > 0){
-          /* two readings at odd angles and scales, so no flecks line up on the table's lattice */
-          const dn = .5 * badgeNoiseAt(NT, (.8 * tx - .6 * ty) * 2.3 + gOy + 91.7, (.6 * tx + .8 * ty) * 2.3 + gOx + 44.9)
-                   + .5 * badgeNoiseAt(NT, (.28 * tx + .96 * ty) * 3.7 + gOx + 7.3, (-.96 * tx + .28 * ty) * 3.7 + gOy + 63.1);
-          du = dn > .6 ? DU * (dn >= .78 ? 1 : (dn - .6) / .18) : 0; du *= du > 0 ? (2 - du / DU) * .5 + .25 : 0;
-        }
+        /* the noise is read once per output pixel, for the row (wearRow) */
+        const ox = (x / SS) | 0; sm = WSM[ox]; gr = WGR[ox]; du = WDU[ox];
         const wd0 = WD[i];
         rM = wd0 < 0 ? Math.exp(wd0 / DK.recM) : 1;
         rE = wd0 > 0 ? Math.exp(-wd0 / DK.recE) : 1;
@@ -55301,6 +55314,13 @@ function buildUnitBadgeSVG(unitName, earned, opts){
        the gap: "a pin sitting in a case throws a shadow into the hole it
        sits in". (The fill string is the one check_b242 looks for.) */
     solid(G.key, "rgba(0,0,0,.42)", root, { transform: "translate(1 1.25)" });
+    /* ...and where it touches the floor (build 321, b321d): "Ensure when
+       it's sitting in the case it looks like it's sitting in a spot". A
+       tight, dark contact shadow hugging the token all the way round,
+       heavier down and right, so it rests on the floor of the hole rather
+       than hovering over it. */
+    solid(G.key + .75, "rgba(0,0,0,.3)", root, { transform: "translate(.3 .4)", class: "badge-contact" });
+    solid(G.key + .3, "rgba(0,0,0,.34)", root, { transform: "translate(.2 .28)", class: "badge-contact" });
   }
 
   const tok = group(grey ? { opacity: ".7", class: "badge-token" } : { class: "badge-token" }, root);
@@ -87360,9 +87380,21 @@ function badgeImageURL(svg){
    milled coin's edge) read as a LADDER up the side of a turning token,
    the "ridged" look this round was asked to take out. */
 const BADGE_EDGE_CACHE = {};
-function badgeEdgeURL(unitName){
+/* THE SIDE, ROUNDED (build 321, b321d): "ensure the sides are good too.
+   Ensure the sides look good and have a smooth transition." The side was
+   one pale, cool slab - every slice the same light grey - meeting the
+   face's dark outer wall at a hard step. A struck token's edge is rounded
+   over: dark where it turns in to each face (the tone the face's outer
+   wall ends on), lighter across its middle where it faces you, so `tone`
+   (0 at a face to 1 across the middle) picks the slice's light, and the
+   whole edge loses its light and warms with the badge's dirt (`stage`),
+   as its faces do. Still one drawing per tone, cached; never alternating
+   steps (a milled edge read as a ladder, build 317). */
+function badgeEdgeURL(unitName, tone, stage){
   const shape = badgeShapeFor(unitName), d = shape.d;
-  if(BADGE_EDGE_CACHE[d]) return BADGE_EDGE_CACHE[d];
+  const tq = Math.round(Math.max(0, Math.min(1, tone == null ? .6 : tone)) * 4), st = Math.max(0, Math.min(BADGE_DIRT_MAX, stage | 0));
+  const key = tone == null ? d : d + "|" + tq + "|" + st;
+  if(BADGE_EDGE_CACHE[key]) return BADGE_EDGE_CACHE[key];
   const NS = "http://www.w3.org/2000/svg";
   const c = shape.c, G = BADGE_GEOM;
   const b = badgeBBoxFor(d) || { x: 6, y: 6, w: 88, h: 88 };
@@ -87374,10 +87406,18 @@ function badgeEdgeURL(unitName){
   g.setAttribute("id", "e"); g.setAttribute("gradientUnits", "userSpaceOnUse");
   g.setAttribute("x1", "0"); g.setAttribute("y1", String(b.y - G.key));
   g.setAttribute("x2", "0"); g.setAttribute("y2", String(b.y + b.h + G.key));
-  [[0, "#D5DCE3"], [.3, "#A4AFBB"], [.55, "#6E7A87"], [.78, "#515C68"], [1, "#363E48"]].forEach(([o, col]) => {
-    const st = document.createElementNS(NS, "stop");
-    st.setAttribute("offset", String(o)); st.setAttribute("stop-color", col);
-    g.appendChild(st);
+  /* lit along the top, turning away down the bottom; brighter across the
+     middle of the edge (tq 4) than where it meets a face (tq 0) */
+  const lift = [.58, .72, .86, .96, 1.04][tq] * (1 - .085 * st), warm = .06 * st;
+  const tone3 = (v) => { const r = Math.min(255, Math.round(v * lift * (1 + warm * .5))), gg = Math.min(255, Math.round(v * lift * (1 + warm * .15))), bb = Math.min(255, Math.round(v * lift * (1 - warm * .45)));
+    return "#" + [r, gg, bb].map(x => x.toString(16).padStart(2, "0")).join(""); };
+  /* asked for with no tone (the cutscene's coin): build 320's edge, as it was */
+  const stops = tone == null ? [[0, "#D5DCE3"], [.3, "#A4AFBB"], [.55, "#6E7A87"], [.78, "#515C68"], [1, "#363E48"]]
+    : [[0, 214], [.22, 178], [.48, 128], [.72, 92], [1, 60]].map(([o, v]) => [o, tone3(v)]);
+  stops.forEach(([o, col]) => {
+    const stp = document.createElementNS(NS, "stop");
+    stp.setAttribute("offset", String(o)); stp.setAttribute("stop-color", col);
+    g.appendChild(stp);
   });
   defs.appendChild(g); svg.appendChild(defs);
   const p = document.createElementNS(NS, "path");
@@ -87386,7 +87426,7 @@ function badgeEdgeURL(unitName){
   p.setAttribute("fill", "url(#e)"); p.setAttribute("stroke", "url(#e)");
   p.setAttribute("stroke-width", String(2 * G.key)); p.setAttribute("stroke-linejoin", "round");
   svg.appendChild(p);
-  return (BADGE_EDGE_CACHE[d] = badgeImageURL(svg));
+  return (BADGE_EDGE_CACHE[key] = badgeImageURL(svg));
 }
 /* The coin's face: the struck token rendered at the coin's own size in
    device pixels - the size --coin gives it - so no frame of the spin is
@@ -106875,13 +106915,213 @@ const BINSPECT = {
   edges: 16
 };
 const BADGE_BACK_CACHE = {};
-/* The back of a badge: brushed metal inside a polished rim, the unit's
-   name engraved across it. Its outline is the front's MIRRORED (the back
-   of a shape is its mirror image, so the edge lines up as it turns); the
-   letters are not. Rendered once per badge and size. */
-function badgeBackFaceURL(unitName, W){
-  const key = unitName + "|" + W;
-  if(BADGE_BACK_CACHE[key]) return BADGE_BACK_CACHE[key];
+/* THE BACK, STRUCK LIKE THE FRONT (build 321, b321d). Madison: "the
+   backside stamp of the badge is a great idea, needs to look more engraved
+   though and legit, would add to the 3d look ... The backside of the badge
+   looks bad, ensure the entire badge looks great." Build 320's back was a
+   flat 2D drawing - a grey fill, a ruled line, letters printed with a
+   one-pixel offset - beside a front lit as metal. It is now rendered the
+   way the front is (renderBadgeStrike's geometry, profile and studio): the
+   same rim and outer wall, the same bevel down into a recessed field, so
+   the edge reads as one piece as it turns; the field is BRUSHED (a fine
+   grain running across it); and the name is ENGRAVED - a height field cut
+   into the field, its walls lit by their own normals, so each letter's
+   top-left wall is in shadow and its bottom-right wall catches the light,
+   with a cast shadow inside the cut along the side the light comes from
+   and a matte, darker floor. The back wears the badge's stage too (its
+   grain, film and grime; grime settles in the letters). Its outline is the
+   front's MIRRORED (the back of a shape is its mirror image, so the edge
+   lines up as it turns); its letters are not. */
+const BADGE_BACK_RELIEF = { depth: .32, wallU: .42, shadowU: .9, shadowK: .62, floor: .55, floorSp: .25, brush: .13 };
+function badgeBackLayout(unitName, g, Wout){
+  /* the words as a coverage mask at Wout, centred on the shape's middle */
+  const cv = document.createElement("canvas"); cv.width = Wout; cv.height = Wout;
+  const c2 = cv.getContext("2d");
+  const f = Wout / g.vw, G = BADGE_GEOM, S = G.scale;
+  const b = badgeBBoxFor(badgeShapeFor(unitName).d) || { x: 6, y: 6, w: 88, h: 88 };
+  const px = Wout - (g.cx - g.vx) * f, py = (g.cy - g.vy) * f;
+  const maxW = Math.max(Wout * .2, (b.w * S - 2 * (G.inner + G.edge) - 6) * f * .86);
+  const maxH = Math.max(Wout * .2, (b.h * S - 2 * (G.inner + G.edge) - 8) * f * .78);
+  const words = String(unitName).toUpperCase().split(/\s+/);
+  const family = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+  let fs = Wout * .088, rows = [];
+  for(; fs > Wout * .03; fs *= .93){
+    c2.font = "800 " + fs.toFixed(1) + "px " + family;
+    rows = []; let cur = "";
+    words.forEach(w => { const t = cur ? cur + " " + w : w; if(c2.measureText(t).width <= maxW || !cur) cur = t; else { rows.push(cur); cur = w; } });
+    if(cur) rows.push(cur);
+    const tall = rows.length * fs * 1.18 + fs * 1.6;
+    if(rows.length <= 4 && tall <= maxH && rows.every(r => c2.measureText(r).width <= maxW)) break;
+  }
+  const lh = fs * 1.18, small = Math.max(Wout * .03, fs * .56);
+  const total = rows.length * lh + small * 2.1;
+  let y = py - total / 2 + lh * .8;
+  c2.textAlign = "center"; c2.textBaseline = "alphabetic"; c2.fillStyle = "#000";
+  rows.forEach(r => { c2.font = "800 " + fs.toFixed(1) + "px " + family; c2.fillText(r, px, y); y += lh; });
+  c2.fillRect(px - fs * 1.3, y - lh * .5, fs * 2.6, Math.max(1.5, fs * .09));
+  c2.font = "800 " + small.toFixed(1) + "px " + family;
+  try{ c2.letterSpacing = (small * .18).toFixed(1) + "px"; }catch(e){}
+  c2.fillText("CLASS 26E", px, y + small * .62);
+  const d = c2.getImageData(0, 0, Wout, Wout).data, M = new Float32Array(Wout * Wout);
+  for(let i = 0; i < M.length; i++) M[i] = d[i * 4 + 3] / 255;
+  return M;
+}
+function renderBadgeBack(unitName, Wout, ssForce, dirt){
+  const P = BADGE_STRIKE, G = BADGE_GEOM, DK = BADGE_DIRT, R = BADGE_BACK_RELIEF;
+  const ST = Math.max(0, Math.min(BADGE_DIRT_MAX, dirt | 0));
+  const dSeed = (parseInt(hashOf(String(unitName)), 36) >>> 0) || 7;
+  const g = badgeStrikeGeometry(badgeShapeFor(unitName));
+  badgeProfileTables();
+  const PROF = BADGE_PROF, DPROF = BADGE_DPROF, PN = BADGE_PROF_N, PIN = BADGE_PROF_IN, DPIN = BADGE_DPROF_IN;
+  const SS = ssForce || 2, W = Wout * SS;
+  const KEY = G.key, IN = G.inner + G.edge, RC = (KEY - IN) / 2, RH = (KEY + IN) / 2;
+  const pxPerF = W / g.vw, k = pxPerF * g.S, GW = g.W, GM = GW - 1, sc = GW / W;
+  const kOut = k / SS;
+  /* the words: a mask at Wout, softened into a cut with walls (wallU wide) */
+  const M0 = badgeBackLayout(unitName, g, Wout);
+  const wr = Math.max(1, Math.round(R.wallU * kOut * .5));
+  const MB = badgeBoxBlur(badgeBoxBlur(M0, Wout, wr), Wout, wr);
+  const WM = Wout - 1;
+  const mAt = (x, y) => { x = x < 0 ? 0 : x > WM ? WM : x; y = y < 0 ? 0 : y > WM ? WM : y;
+    const xi = x | 0, yi = y | 0, ax = x - xi, ay = y - yi, x1 = xi < WM ? xi + 1 : xi, y1 = yi < WM ? yi + 1 : yi;
+    return MB[yi * Wout + xi] * (1 - ax) * (1 - ay) + MB[yi * Wout + x1] * ax * (1 - ay) + MB[y1 * Wout + xi] * (1 - ax) * ay + MB[y1 * Wout + x1] * ax * ay; };
+  const Lt = badgeLightTables(), LN = BADGE_LIGHT_N, LN1 = LN - 1, EE = Lt.E, SPT = Lt.SP, ENC = Lt.ENC;
+  const l = Lt.l, ll = Math.sqrt(l[0] * l[0] + l[1] * l[1]), ldx = l[0] / ll, ldy = l[1] / ll;
+  const tint = [.92, .955, 1];
+  const GO = g.O, GE = g.O, GOx = g.Ox, GOy = g.Oy;
+  const pcx = W - (g.cx - g.vx) * pxPerF, pcy = (g.cy - g.vy) * pxPerF;
+  const NT = badgeNoiseTable(), gOx = (dSeed & 255) * .71, gOy = ((dSeed >>> 8) & 255) * .43;
+  const W_GLOSS = DK.gloss[ST], W_FLAT = DK.flat[ST], W_TARN = DK.tarnish[ST], W_GRIME = DK.grime[ST], W_FILM = DK.film[ST], W_GRAIN = DK.grain[ST];
+  const shOff = R.shadowU * kOut, depth = R.depth;
+  const N = W * W, BF = badgeStrikeBuffers(N), AR = BF.AR, AG = BF.AG, AB = BF.AB, A = BF.A;
+  AR.fill(0, 0, N); AG.fill(0, 0, N); AB.fill(0, 0, N); A.fill(0, 0, N);
+  /* everything that varies over units, not samples, once per output pixel
+     of the row: the cut (mask, slope, shadow), the smudge, grain, brushing */
+  const RMK = new Float32Array(Wout), RDX = new Float32Array(Wout), RDY = new Float32Array(Wout), RSH = new Float32Array(Wout),
+        RSM = new Float32Array(Wout), RGR = new Float32Array(Wout), RBR = new Float32Array(Wout);
+  let row = -1;
+  const pcxO = pcx / SS, pcyO = pcy / SS;
+  const fillRow = oy => {
+    row = oy;
+    const ty = (oy + .5 - pcyO) / kOut;
+    for(let ox = 0; ox < Wout; ox++){
+      const tx = (ox + .5 - pcxO) / kOut, mk = MB[oy * Wout + ox];
+      RMK[ox] = mk; RDX[ox] = 0; RDY[ox] = 0; RSH[ox] = 0;
+      if(mk > .002){
+        RDX[ox] = -depth * (mAt(ox + 1, oy) - mAt(ox - 1, oy)) * .5 * kOut;
+        RDY[ox] = -depth * (mAt(ox, oy + 1) - mAt(ox, oy - 1)) * .5 * kOut;
+        RSH[ox] = mk * (1 - mAt(ox + ldx * shOff, oy + ldy * shOff));
+      }
+      RSM[ox] = badgeSmudge(dSeed ^ 0x9e3779b9, tx, ty);
+      RGR[ox] = (badgeNoiseAt(NT, tx * 1.3 + gOx, ty * 1.3 + gOy) - .5) * 1.4;
+      RBR[ox] = (badgeNoiseAt(NT, tx * .22 + gOx, ty * 7.5 + gOy) - .5) + .6 * (badgeNoiseAt(NT, tx * .5 + gOy + 40.2, ty * 15 + gOx + 9.7) - .5);
+    }
+  };
+  for(let y = 0; y < W; y++){
+    if(((y / SS) | 0) !== row) fillRow((y / SS) | 0);
+    let fy = (y + .5) * sc - .5; if(fy < 0) fy = 0; if(fy > GM) fy = GM;
+    const iy = fy | 0, ay = fy - iy, iy1 = iy < GM ? iy + 1 : iy;
+    for(let x = 0; x < W; x++){
+      /* the outline mirrored: read the fields at the mirrored column, and
+         turn their x-slopes round */
+      let fx = (W - x - .5) * sc - .5; if(fx < 0) fx = 0; if(fx > GM) fx = GM;
+      const ix = fx | 0, ax = fx - ix, ix1 = ix < GM ? ix + 1 : ix;
+      const i00 = iy * GW + ix, i01 = iy * GW + ix1, i10 = iy1 * GW + ix, i11 = iy1 * GW + ix1;
+      const w00 = (1 - ax) * (1 - ay), w01 = ax * (1 - ay), w10 = (1 - ax) * ay, w11 = ax * ay;
+      const o = GO[i00] * w00 + GO[i01] * w01 + GO[i10] * w10 + GO[i11] * w11;
+      const i = y * W + x;
+      let a = .5 - (o - KEY) * k; a = a >= 1 ? 1 : a <= 0 ? 0 : a;
+      A[i] = a;
+      if(a <= 0) continue;
+      const gx = -(GOx[i00] * w00 + GOx[i01] * w01 + GOx[i10] * w10 + GOx[i11] * w11), gy = GOy[i00] * w00 + GOy[i01] * w01 + GOy[i10] * w10 + GOy[i11] * w11;
+      /* the rim: the same inner bevel (from the field's edge, IN inside the
+         outline) and outer wall as the front */
+      const e = o + IN;
+      const qin = e <= 0 ? 0 : e >= RH ? PN : (e / RH * PN) | 0;
+      let hin = e <= 0 ? P.enamel : PIN[qin], hxi = 0, hyi = 0;
+      if(e > 0 && e < RH){ const dp = DPIN[qin]; hxi = dp * gx; hyi = dp * gy; }
+      const tout = o <= RC ? 0 : (o - RC) / RH;
+      const hout = tout >= 1 ? 0 : PROF[(tout * PN) | 0];
+      let hx, hy, field = false;
+      if(hin <= hout){ hx = hxi; hy = hyi; field = e <= 0; }
+      else { const dp = tout > 0 && tout < 1 ? DPROF[(tout * PN) | 0] / RH : 0; hx = dp * gx; hy = dp * gy; }
+      const tx = (x - pcx) / k, ty = (y - pcy) / k, ox = (x / SS) | 0;
+      let mk = 0, sh = 0;
+      if(field || e < .8){
+        /* the cut: the words' softened mask, its slope, its shadow */
+        mk = RMK[ox];
+        if(mk > .002){ hx += RDX[ox]; hy += RDY[ox]; sh = RSH[ox]; }
+      }
+      const dome = P.dome * 2.5;
+      const sx = hx * P.relief - tx * dome, sy = hy * P.relief - ty * dome;
+      const nl = 1 / Math.sqrt(sx * sx + sy * sy + 1);
+      const NXv = -sx * nl, NYv = -sy * nl;
+      const lx = (NXv + 1) * .5 * LN1, ly = (NYv + 1) * .5 * LN1;
+      const jx = lx | 0, jy = ly | 0, bx = lx - jx, by = ly - jy;
+      const li = jx + jy * LN, li1 = li + (jx < LN1 ? 1 : 0), li2 = li + (jy < LN1 ? LN : 0), li3 = li2 + (jx < LN1 ? 1 : 0);
+      const q0 = (1 - bx) * (1 - by), q1 = bx * (1 - by), q2 = (1 - bx) * by, q3 = bx * by;
+      const ev = EE[li] * q0 + EE[li1] * q1 + EE[li2] * q2 + EE[li3] * q3;
+      let sp = SPT[li] * q0 + SPT[li1] * q1 + SPT[li2] * q2 + SPT[li3] * q3;
+      let mm = ev * .95;
+      /* the field brushed: a grain drawn out across it */
+      const gr = RGR[ox];
+      if(field){
+        const br = RBR[ox];
+        mm *= 1 + R.brush * br * 2; sp *= 1 + .9 * br;
+        /* the field sits below the rim: shaded at its foot */
+        const ao = e > -2.2 ? 1 - .3 * (1 - (-e) / 2.2) : 1; mm *= ao;
+      }
+      /* the cut's floor is matte and darker; its light-side wall throws a shadow into it */
+      if(mk > 0){ mm *= 1 - (1 - R.floor) * mk; sp *= 1 - (1 - R.floorSp) * mk; mm *= 1 - R.shadowK * sh; sp *= 1 - sh; }
+      const sm = RSM[ox];
+      const gl = W_GLOSS + DK.glossSm * sm;
+      sp *= (gl >= .97 ? .03 : 1 - gl) * (1 + 2.2 * W_GRAIN * gr); if(sp < 0) sp = 0;
+      mm = (mm * (1 - W_FLAT) + DK.flatTo * W_FLAT) * (1 + W_GRAIN * gr);
+      let mr = mm * tint[0] + sp, mg = mm * tint[1] + sp, mb = mm * tint[2] + sp;
+      const T = DK.tint, fq = W_FILM * sm, gq = W_GRIME * Math.max(field && e > -1.3 ? Math.exp(-(-e) / DK.recM) : 0, mk * .7);
+      mr *= 1 + (T[0] - 1) * W_TARN; mg *= 1 + (T[1] - 1) * W_TARN; mb *= 1 + (T[2] - 1) * W_TARN;
+      mr = mr * (1 - fq) + DK.fc[0] * fq; mg = mg * (1 - fq) + DK.fc[1] * fq; mb = mb * (1 - fq) + DK.fc[2] * fq;
+      mr = mr * (1 - gq) + DK.gc[0] * gq; mg = mg * (1 - gq) + DK.gc[1] * gq; mb = mb * (1 - gq) + DK.gc[2] * gq;
+      AR[i] = mr * a; AG[i] = mg * a; AB[i] = mb * a;
+    }
+  }
+  const cv = document.createElement("canvas"); cv.width = Wout; cv.height = Wout;
+  const ctx = cv.getContext("2d");
+  const img = ctx.createImageData(Wout, Wout), od = img.data;
+  const inv = 1 / (SS * SS);
+  for(let y = 0; y < Wout; y++) for(let x = 0; x < Wout; x++){
+    let r = 0, gg = 0, b = 0, a = 0;
+    for(let v = 0; v < SS; v++){ const row = (y * SS + v) * W + x * SS;
+      for(let u = 0; u < SS; u++){ const q = row + u; r += AR[q]; gg += AG[q]; b += AB[q]; a += A[q]; } }
+    if(a <= 0) continue;
+    const Rr = r / a, Gc = gg / a, B = b / a, j = (y * Wout + x) * 4;
+    od[j] = ENC[Rr <= 0 ? 0 : Rr >= 1 ? 4096 : (Rr * 4096) | 0];
+    od[j + 1] = ENC[Gc <= 0 ? 0 : Gc >= 1 ? 4096 : (Gc * 4096) | 0];
+    od[j + 2] = ENC[B <= 0 ? 0 : B >= 1 ? 4096 : (B * 4096) | 0];
+    od[j + 3] = (255 * a * inv + .5) | 0;
+  }
+  ctx.putImageData(img, 0, 0);
+  return cv;
+}
+/* The back at a size and stage, cached: a one-sample draft (draft) or the
+   supersampled finish. */
+function badgeBackEntry(unitName, W, dirt, draft){
+  const dz = Math.max(0, Math.min(BADGE_DIRT_MAX, dirt | 0)), key = unitName + "|" + W + "|" + dz;
+  const e = BADGE_BACK_CACHE[key];
+  if(e && (draft || !e.draft)) return e;
+  try{
+    const url = renderBadgeBack(unitName, W, draft ? 1 : 2, dz).toDataURL("image/png");
+    if(!/^data:image\/png/.test(url)) throw new Error("no png");
+    return (BADGE_BACK_CACHE[key] = { url, draft: !!draft });
+  }catch(err){
+    return (BADGE_BACK_CACHE[key] = { url: badgeBackFaceFlatURL(unitName, W), draft: false, flat: true });
+  }
+}
+function badgeBackFaceURL(unitName, W, dirt, draft){
+  return badgeBackEntry(unitName, W, dirt, draft).url;
+}
+/* build 320's back, drawn flat: only if the render above cannot run */
+function badgeBackFaceFlatURL(unitName, W){
   const shape = badgeShapeFor(unitName), d = shape.d, G = BADGE_GEOM, S = G.scale, cx = shape.c[0], cy = shape.c[1];
   const vb = badgeViewBoxFor(d).split(/\s+/).map(Number), f = W / vb[2];
   const b = badgeBBoxFor(d) || { x: 6, y: 6, w: 88, h: 88 };
@@ -106949,9 +107189,7 @@ function badgeBackFaceURL(unitName, W){
   rows.forEach(r => { cut(r, y, "700 " + fs.toFixed(1) + "px " + family); y += lh; });
   g.fillStyle = "rgba(34,39,46,.5)"; g.fillRect(px - fs * 1.1, y - lh * .45, fs * 2.2, Math.max(1, fs * .06));
   cut("CLASS 26E", y + small * .55, "700 " + small.toFixed(1) + "px " + family);
-  const url = cv.toDataURL("image/png");
-  BADGE_BACK_CACHE[key] = url;
-  return url;
+  return cv.toDataURL("image/png");
 }
 /* What is open now, for the gates and the recorder. */
 let badgeInspectNow = null;
@@ -106980,6 +107218,7 @@ function openBadgeInspect(unit, tile){
   const ready = {}, isFinal = {};
   const dpr = badgeDpr();
   let spin = null, frontA = null, frontB = null, frontSpec = null, backSpec = null, hit = null, sparks = null;
+  let backImg = null, backAt = -1, backFinal = false;
   /* sized by CSS (--bi); measured once it is in the document */
   document.body.appendChild(ov);
   ov.append(dim, stageEl);
@@ -106999,16 +107238,23 @@ function openBadgeInspect(unit, tile){
     const coin = mk("binspect-coin");
     spin = mk("binspect-spin");
     const back = mk("binspect-face is-back");
-    const backImg = mk("binspect-art", "img"); backImg.alt = ""; backImg.draggable = false; backImg.decoding = "sync";
-    try{ backImg.src = badgeBackFaceURL(unit, W); }catch(e){}
+    backImg = mk("binspect-art", "img"); backImg.alt = ""; backImg.draggable = false; backImg.decoding = "sync";
+    /* the back is rendered like the front now (build 321) - never in the
+       tap: one already made, or its draft a moment after the lift starts */
+    const b0 = BADGE_BACK_CACHE[unit + "|" + W + "|" + dirt];
+    if(b0){ backImg.src = b0.url; backAt = dirt; backFinal = !b0.draft; }
     backImg.dataset.face = "back";
     backSpec = mk("binspect-spec"); backSpec.appendChild(mk("", "i"));
     back.append(backImg, backSpec);
     spin.appendChild(back);
-    let edgeSrc = null; try{ edgeSrc = badgeEdgeURL(unit); }catch(e){}
-    for(let i = 0; i < B.edges && edgeSrc; i++){
+    /* the side, rounded over (build 321): each slice's light from how far
+       it is from a face */
+    for(let i = 0; i < B.edges; i++){
+      const kk = i / (B.edges - 1);
+      let edgeSrc = null; try{ edgeSrc = badgeEdgeURL(unit, Math.sin(Math.PI * kk), dirt); }catch(e){}
+      if(!edgeSrc) break;
       const e = mk("binspect-edge", "img"); e.alt = ""; e.draggable = false; e.src = edgeSrc;
-      e.style.setProperty("--k", (i / (B.edges - 1)).toFixed(3));
+      e.style.setProperty("--k", kk.toFixed(3));
       spin.appendChild(e);
     }
     const front = mk("binspect-face is-front");
@@ -107043,51 +107289,46 @@ function openBadgeInspect(unit, tile){
     persp.appendChild(slot);
   }
   /* ---- the words, under it ---- */
+  /* THE WORDS, FEW (build 321, b321d). Madison: "THERE IS WAY TOO much
+     going on here. It's not simple ... The word mastered does not need to
+     be on this screen ... The progress bar and the numbers saying how many
+     you needed can go away too. Just makes the screen crowded and takes
+     away from the badge." So: its name; "Rub to clean it." only while it is
+     dirty (nothing at all once it is clean - not even that it is); a quiet
+     "Swipe to spin it."; Close. A badge not found: its name and how far
+     along it is, in one short line. */
   const words = mk("binspect-words");
-  const kicker = mk("unlock-card-kicker binspect-kicker", "p"); kicker.textContent = det.kicker || "Unit badge";
   const nm = mk("unlock-card-name binspect-name", "h2"); nm.textContent = det.name;
-  words.append(kicker, nm);
-  if(found){
-    const st = mk("binspect-state", "p"); st.textContent = "Mastered";
-    words.appendChild(st);
+  words.appendChild(nm);
+  if(!found){
+    const count = mk("binspect-count", "p");
+    count.textContent = det.have.toLocaleString() + " of " + det.need.toLocaleString() + " hundo" + (det.need === 1 ? "" : "s");
+    words.appendChild(count);
   }
-  const desc = mk("unlock-card-desc binspect-desc", "p"); desc.textContent = det.desc;
-  words.appendChild(desc);
-  const bar = mk("unlock-card-bar binspect-bar");
-  const fill = mk("unlock-card-fill binspect-fill", "span");
-  bar.appendChild(fill);
-  words.appendChild(bar);
-  setBarFill(fill, found ? 100 : Math.max(2, Math.min(100, Math.round((det.have / det.need) * 1000) / 10)));
-  const count = mk("unlock-card-count binspect-count" + (found ? " is-done" : ""), "p");
-  count.textContent = det.have.toLocaleString() + " of " + det.need.toLocaleString() + " hundo" + (det.need === 1 ? "" : "s");
-  words.appendChild(count);
   let hint = null;
   if(found){
     hint = mk("binspect-dirt", "p");
     hint.setAttribute("aria-live", "polite");
     words.appendChild(hint);
-    const care = mk("binspect-care", "p");
-    care.textContent = "Badges lose their shine over time and need cleaning now and then.";
     const tip = mk("binspect-tip", "p");
-    tip.textContent = "Swipe the badge to spin it.";
-    words.append(care, tip);
+    tip.textContent = "Swipe to spin it.";
+    words.appendChild(tip);
   }
   const closeBtn = mk("next ghost binspect-close", "button");
   closeBtn.type = "button"; closeBtn.textContent = "Close";
   words.appendChild(closeBtn);
   stageEl.appendChild(words);
-  const setHint = (cleaned) => {
-    if(!hint) return;
-    hint.classList.toggle("is-clean", dirt === 0);
-    hint.hidden = dirt === 0 && !cleaned;
-    hint.textContent = dirt === 0 ? "Clean. It shines like new." : "This badge is dirty. Rub it to clean it.";
+  const setHint = () => {
     ov.dataset.dirt = String(dirt);
+    if(!hint) return;
+    hint.hidden = dirt === 0;
+    hint.textContent = dirt === 0 ? "" : "Rub to clean it.";
   };
-  setHint(false);
+  setHint();
   /* ---- the light, the shadow, the glow: all from the angle ---- */
   let th = 0, om = 0, mode = "idle", target = 0, raf = 0, lastT = 0;
   const wrap = a => { a = ((a % 360) + 360) % 360; return a > 180 ? a - 360 : a; };
-  const shineK = () => 1 - .72 * dirt / BADGE_DIRT_MAX;
+  const shineK = () => BADGE_DIRT.shine[dirt] != null ? BADGE_DIRT.shine[dirt] : 1;
   const apply = () => {
     if(!spin) return;
     spin.style.transform = "rotateY(" + th.toFixed(2) + "deg)";
@@ -107145,6 +107386,15 @@ function openBadgeInspect(unit, tile){
     showFace(s);
     return ready[s];
   };
+  /* the back: a draft (or the finish) at this stage, put up when it changes */
+  const ensureBack = draft => {
+    if(!backImg || closed) return;
+    try{
+      const e = badgeBackEntry(unit, W, dirt, draft);
+      if(backImg.getAttribute("src") !== e.url) backImg.src = e.url;
+      backAt = dirt; backFinal = !e.draft;
+    }catch(err){}
+  };
   const idleWork = () => {
     if(!found || closed || idleTimer) return;
     idleTimer = setTimeout(() => {
@@ -107153,6 +107403,8 @@ function openBadgeInspect(unit, tile){
       if(mode !== "idle" || gest || opening){ idleWork(); return; }
       let job = null;
       if(!isFinal[dirt]) job = () => { const e = faceEntry(dirt, false); if(e){ ready[dirt] = e.url; isFinal[dirt] = true; showFace(dirt); } };
+      /* the back at this stage, its finish (build 321) */
+      if(!job && backImg && (backAt !== dirt || !backFinal)) job = () => ensureBack(false);
       for(let s = dirt - 1; s >= 0 && !job; s--){
         if(!ready[s]) job = () => ensureFace(s);
         else if(!isFinal[s]) job = () => { const e = faceEntry(s, false); if(e){ ready[s] = e.url; isFinal[s] = true; showFace(s); } };
@@ -107180,9 +107432,10 @@ function openBadgeInspect(unit, tile){
     try{ setBadgeDirtStage(unit, dirt); }catch(e){}
     const url = ready[dirt] || ensureFace(dirt);
     if(url) swapFace(url, dirt, 380);
-    ov.style.setProperty("--glow-k", String(1 - .16 * dirt));
+    ov.style.setProperty("--glow-k", String(BADGE_DIRT.glow[dirt]));
     sparkle();
-    setHint(true);
+    setHint();
+    idleWork();
   };
   const sparkle = () => {
     if(!sparks) return;
@@ -107426,7 +107679,7 @@ function openBadgeInspect(unit, tile){
   /* ---- in ---- */
   document.body.classList.add("binspect-open");
   setCutsceneFocus(true);
-  ov.style.setProperty("--glow-k", String(1 - .16 * dirt));
+  ov.style.setProperty("--glow-k", String(BADGE_DIRT.glow[dirt]));
   apply();
   if(still){
     lift();
@@ -107452,7 +107705,7 @@ function openBadgeInspect(unit, tile){
           { transform: "translate(" + (s.x * .4).toFixed(1) + "px," + (s.y * .38).toFixed(1) + "px) scale(" + (1 + (s.k - 1) * .35).toFixed(3) + ") rotateX(-14deg)", offset: .55 },
           { transform: "none" }
         ], { duration: O, easing: "cubic-bezier(.3,.7,.2,1)", fill: "backwards" });
-        glow.animate([{ opacity: 0 }, { opacity: 0, offset: .4 }, { opacity: 1 - .16 * dirt }], { duration: O, fill: "backwards" });
+        glow.animate([{ opacity: 0 }, { opacity: 0, offset: .4 }, { opacity: BADGE_DIRT.glow[dirt] }], { duration: O, fill: "backwards" });
       } else {
         a = float.animate([{ opacity: 0, transform: "scale(.72) translateY(24px)" }, { opacity: 1, transform: "none" }],
           { duration: 520, delay: 260, easing: "cubic-bezier(.2,.8,.3,1)", fill: "backwards" });
@@ -107462,6 +107715,8 @@ function openBadgeInspect(unit, tile){
   }
   /* the big face, a moment after the lift has started */
   if(found) setTimeout(() => { if(!closed) ensureFace(dirt); }, 60);
+  /* ...and its back's draft, a moment after that: one render per frame */
+  if(found) setTimeout(() => { if(!closed && backAt < 0) ensureBack(true); }, 140);
   try{ closeBtn.focus({ preventScroll: true }); }catch(e){}
   return ctl;
 }
