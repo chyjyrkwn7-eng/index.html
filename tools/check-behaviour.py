@@ -13949,8 +13949,10 @@ def check_b317_cutspin(br):
               ev["litAt"] is not None and ev["restAt"] is not None and ev["lightAt"] - 5 <= ev["litAt"] <= ev["restAt"] + 60, ev)  # (5ms: both stamps can land on the same frame, 0.1ms apart either way)
         dec = (ev["restAt"] or 0) - (ev["lightAt"] or 0)
         pause = (ev["burstAt"] or 0) - (ev["restAt"] or 0)
-        check("%s: it slows slowly (~5.4s), then pulses in place (~1.7s) before the flash" % label,
-              dec >= 4800 and 1200 <= pause <= 2800, (round(dec), round(pause)))
+        # build 320 (b320d): "a slower flash run-up" - the pulses before the
+        # flash went from ~1.7s (RANK_WINDUP_MS 1700) to ~3.0s (3000)
+        check("%s: it slows slowly (~5.4s), then pulses in place (~3.0s, build 320) before the flash" % label,
+              dec >= 4800 and 2500 <= pause <= 3600, (round(dec), round(pause)))
         sec = ev.get("secret") or {}
         check("%s: the secret flares are in the scene, under the glass bubbles, seen through them" % label,
               sec.get("dots", 0) >= 3 and sec.get("under") and sec.get("glass") not in (None, "none"), sec)
@@ -13977,7 +13979,7 @@ def check_b317_cutspin(br):
         pg.clock.install(); pg.clock.pause_at(pg.evaluate("() => Date.now()") + 50)
         pg.evaluate("()=>playTierCutscene('vanguard', {from:'veteran', onDone(){}})")
         t, n, bad, pops, burst_at, igs = 0.0, 0, [], [], None, []
-        for i in range(1, 620):
+        for i in range(1, 680):
             t0 = t; t = i / 30
             pg.clock.run_for(int(round(t * 1000)) - int(round(t0 * 1000)))
             pg.evaluate(CUTSPIN_SEEK, t)
@@ -14002,8 +14004,10 @@ def check_b317_cutspin(br):
         ctx.close()
         check("%s: every frame of the whirl, a secret flare on a big bubble is UNDER its glass (and never sharper than it)" % label,
               n >= 10 and not bad, (n, len(bad), bad[:2]))
-        check("%s: the mini-bang goes off for about a second at the top speed, and the big flash comes on time (~19.6s)" % label,
-              25 <= len(pops) <= 60 and burst_at is not None and 575 <= burst_at <= 605 and pops[-1] < burst_at,
+        # build 320 (b320d): the run-up into the flash is 1.3s longer, so
+        # the flash lands ~20.9s (frame ~627) rather than ~19.6s
+        check("%s: the mini-bang goes off for about a second at the top speed, and the big flash comes on time (~20.9s, build 320)" % label,
+              25 <= len(pops) <= 64 and burst_at is not None and 610 <= burst_at <= 645 and pops[-1] < burst_at,
               (len(pops), pops[:1], burst_at))
         # Round five: "the pulse coming off the new flare mid spin is not the
         # best". One ignition: a bloom, one halo and ONE shockwave ring on
