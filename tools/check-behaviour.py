@@ -26325,6 +26325,284 @@ def check_b323u_units(br):
               {"shape": ok_shape, "copy": [cards.get(m, {}).get("desc") for m in ("drill", "exam", "review")], "ink": ink})
 
 
+# Records every Firestore write and every pushToCloud, so a Nova check can
+# assert that none of it touches the server.
+B324N_REC = """() => {
+  window.__fsw = [];
+  /* only what happens INSIDE one of Nova's own functions counts - the app
+     around him (Home's presence, a launch's republish) is not his */
+  window.__novaDepth = 0;
+  const rec = (kind, path) => function(){ if(window.__novaDepth > 0) window.__fsw.push(kind + ' ' + path); return Promise.resolve(); };
+  ['novaBefriend', 'novaSendDM', 'novaTick', 'novaUserSent', 'openNovaChat', 'openNovaCard', 'novaFriendMoment',
+   'novaReplyFor', 'novaRewrite', 'novaArrived'].forEach(n => {
+    const f = window[n]; if(typeof f !== 'function') return;
+    window[n] = function(){ window.__novaDepth++; try{ return f.apply(this, arguments); } finally { window.__novaDepth--; } };
+  });
+  const docRef = (path) => ({
+    set: rec('set', path), update: rec('update', path), delete: rec('delete', path),
+    get: function(){ return Promise.resolve({ exists: false, data: () => ({}), metadata: { fromCache: false } }); },
+    collection: (c) => ({ doc: (d) => docRef(path + '/' + c + '/' + d) })
+  });
+  fbDb = { collection: (c) => ({ doc: (d) => docRef(c + '/' + d), get: () => Promise.resolve({ forEach(){}, docs: [] }) }),
+           runTransaction: function(){ window.__fsw.push('transaction'); return Promise.resolve(); },
+           batch: function(){ return { set: rec('bset', ''), update: rec('bupdate', ''), delete: rec('bdelete', ''), commit: () => Promise.resolve() }; } };
+  window.__push = 0;
+  const push = pushToCloud, save = saveStore;
+  pushToCloud = function(){ if(window.__novaDepth > 0) window.__push++; };
+  saveStore = function(){ if(window.__novaDepth > 0) window.__push++; return save.apply(this, arguments); };
+  return true;
+}"""
+
+
+def check_b324n_nova(br):
+    """Build 324 (b324n). Madison: "maybe Mr nova is a chat notification and
+    will randomly send you messages? ... give him the rank of supernova, and
+    when you click on profile it will pop his stats ... make his banner the
+    supernova one ... if you get a message from him it'd show up like any
+    other message. Anytime someone ranks up, when that entire cutscene is
+    over he will send you a dm saying congrats. When Mr nova introduces
+    himself, throughout that cutscene you will get the added friends
+    notification thing saying y'all are now friends ... He will mention that
+    he is available to challenge now ... a message when new updates are
+    out ... he will randomly give tips. We don't want him to be annoying ...
+    If I message him, he'll say something automated depending on the
+    question but he won't be an ai bot. Or maybe you make him unavailable if
+    he can't chat so it won't let you message him sometimes?"
+    Nova is a local contact: a friend after his introduction (the FRIENDS
+    banner partway through it) and, for an account that met him before,
+    quietly on its first Home with a hello; his chat is a row on the
+    Friends tab with the unread dot and the button's count; his thread is a
+    DM; keyword replies; away blocks the composer; his card is Supernova on
+    the Supernova banner with lore stats, Message and no Add friend; rank
+    congratulations only after the journey ends; a broadcast once, not
+    early, not stale; tips rate-limited; the challenge once; never on the
+    leaderboard or in friendPublicIds; and none of it writes to Firestore.
+    Fails on ab75270."""
+    print("\n324n. Nova is a contact: friends, his chat, his card, his messages")
+    seed = USED_ACCOUNT.replace('"onboardingComplete":true,', '"onboardingComplete":true,"novaMet":1,"publicId":"PUBMADISON01",', 1)
+    ctx, pg = booted(br, 440, 956, seed=seed)
+    pg.evaluate(B324N_REC)
+    has = pg.evaluate("() => typeof novaIsFriend === 'function' && typeof novaSendDM === 'function' && typeof novaContactInfo === 'function'")
+    check("Nova's contact API exists (novaContactInfo, novaSendDM)", has)
+    if not has:
+        ctx.close()
+        return
+    info = pg.evaluate("() => novaContactInfo()")
+    check("novaContactInfo() names him, his character, Supernova and the Supernova banner",
+          info.get("name") == "Nova" and info.get("rank") == "titan" and info.get("banner") == "titan_rank" and info.get("character"), info)
+
+    # An account that met him before this build: friends quietly on its first Home, with a hello.
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      novaAwayForce = false;
+      const before = novaIsFriend();
+      showHome(); await wait(4600);
+      const t = novaThread();
+      return { before, after: novaIsFriend(), thread: t.map(m => m.key + ':' + m.text), unread: novaUnread(),
+               dot: (document.getElementById('chatdock-dot') || {}).textContent, dotHidden: (document.getElementById('chatdock-dot') || {}).hidden,
+               preview: [...document.querySelectorAll('.vroom-chat-alert.is-ping')].map(e => e.textContent).join('|'),
+               store: JSON.stringify(store).indexOf('Hello again') >= 0 }; }""")
+    hello = (r.get("thread") or [""])[0]
+    check("an existing account is not a friend before this build's first Home, and is after it", not r.get("before") and r.get("after"), r)
+    check("...with his hello as an unread DM, the chat button counting it, and a preview banner",
+          hello.startswith("nova:Hello again, Madison") and r.get("unread") and not r.get("dotHidden") and int(r.get("dot") or 0) >= 1
+          and "Nova" in (r.get("preview") or ""), {k: r.get(k) for k in ("thread", "unread", "dot", "preview")})
+    check("his messages live on the device, not on the synced store", not r.get("store"))
+
+    # His row on the Friends tab, unread, and the thread.
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      chatDockTab = 'friends'; openChatDock(); await wait(400);
+      const row = document.querySelector('.chatdock-chatrow.is-nova');
+      const out = { row: !!row, unread: !!(row && row.classList.contains('is-unread')),
+        name: row && row.querySelector('.chatdock-chatrow-name').textContent,
+        sub: row && row.querySelector('.chatdock-chatrow-sub').textContent,
+        tabCount: (document.getElementById('chatdock-friendscount') || {}).textContent,
+        face: !!(row && row.querySelector('.nova-svg')) };
+      row.querySelector('.chatdock-chatrow-open').click(); await wait(700);
+      out.open = chatRoomCode;
+      out.msgs = [...document.querySelectorAll('#chatdock .vroom-chat-msg')].map(e => e.textContent);
+      out.head = (document.querySelector('#chatdock .nova-head') || {}).textContent;
+      out.unreadAfter = novaUnread();
+      out.byTab = chatUnreadByTab();
+      out.plus = !!document.querySelector('#chatdock .vroom-chat-plusbtn');
+      out.friends = friendPublicIds();
+      return out; }""")
+    check("his chat is a row on the Friends tab, with his face, unread, counted on the tab",
+          r.get("row") and r.get("face") and r.get("unread") and r.get("name") == "Nova" and "Hello again" in (r.get("sub") or "") and r.get("tabCount") == "1",
+          {k: r.get(k) for k in ("row", "face", "unread", "name", "sub", "tabCount")})
+    check("opening it shows the thread like any DM and reads it", r.get("open") == "DM-NOVA" and any("Hello again" in m for m in r.get("msgs") or [])
+          and "Nova" in (r.get("head") or "") and not r.get("unreadAfter") and (r.get("byTab") or {}).get("friends") == 0 and not r.get("plus"),
+          {k: r.get(k) for k in ("open", "msgs", "head", "unreadAfter", "byTab", "plus")})
+    check("he is not one of friendPublicIds() (no inbox, invite or friend count is his)", "nova" not in (r.get("friends") or []), r.get("friends"))
+
+    # Keyword replies, typed into the real composer.
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const say = async (txt) => { const inp = document.querySelector('#chatdock .vroom-chat-input'); inp.value = txt;
+        document.querySelector('#chatdock .vroom-chat-send').click(); await wait(3600);
+        const t = novaThread(); return t[t.length - 1]; };
+      const a = await say("what's on the next test?");
+      const b = await say('how do I rank up');
+      const c = await say('want to race in a virtual room');
+      const d = await say('do you like pizza');
+      const shown = [...document.querySelectorAll('#chatdock .vroom-chat-msg')].map(e => e.textContent);
+      return { a: a.key + ':' + a.text, b: b.key + ':' + b.text, c: c.key + ':' + c.text, d: d.key + ':' + d.text,
+               mine: novaThread().filter(m => m.key !== 'nova').map(m => m.text), shown: shown.slice(-2) }; }""")
+    check("keyword replies: the next test points to the Calendar tab", r.get("a", "").startswith("nova:") and "Calendar" in r.get("a", ""), r.get("a"))
+    check("keyword replies: ranks, and the Virtual Room challenge with the Sheriff", "Bronze" in r.get("b", "") and "Supernova" in r.get("b", "")
+          and "Virtual Room" in r.get("c", "") and "Sheriff" in r.get("c", ""), [r.get("b"), r.get("c")])
+    check("anything else gets a polite can't-chat line, and the conversation is on screen", "can’t" in r.get("d", "") and len(r.get("mine") or []) == 4
+          and any("pizza" in x for x in r.get("shown") or []) or any("can’t" in x for x in r.get("shown") or []), r)
+
+    # Away: the composer says so and does not send.
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      novaAwayForce = true; await wait(1300);
+      const inp = document.querySelector('#chatdock .vroom-chat-input');
+      const n0 = novaThread().length;
+      inp.value = 'hello?'; document.querySelector('#chatdock .vroom-chat-send').click();
+      inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await wait(2600);
+      const out = { disabled: inp.disabled, ph: inp.placeholder, status: (document.querySelector('.nova-head-status') || {}).textContent,
+                    sent: novaThread().length - n0, api: novaUserSent({ id: 'x', text: 'hi' }) };
+      novaAwayForce = false; await wait(1300);
+      out.back = !document.querySelector('#chatdock .vroom-chat-input').disabled;
+      return out; }""")
+    check("away: the composer is off and says he is away, and nothing is sent", r.get("disabled") and "away" in (r.get("ph") or "").lower()
+          and "Away" in (r.get("status") or "") and r.get("sent") == 0 and r.get("api") is False, r)
+    check("available again: the composer is back", r.get("back"), r)
+
+    # His card.
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      document.querySelector('#chatdock .nova-head').click(); await wait(500);
+      const c = document.querySelector('.person-card.is-nova');
+      if(!c) return { card: false };
+      const out = { card: true, name: c.querySelector('.person-sheet-name').textContent,
+        rank: (c.querySelector('.person-card-rank') || {}).textContent, banner: !!c.querySelector('.person-card-cover .bnr-titan_rank'),
+        cells: [...c.querySelectorAll('.person-card-cell')].map(e => e.textContent), text: c.innerText,
+        acts: [...c.querySelectorAll('button')].map(b => b.textContent), face: !!c.querySelector('.person-card-art .nova-svg') };
+      [...c.querySelectorAll('button')].find(b => b.textContent === 'Message').click(); await wait(400);
+      out.after = chatRoomCode; out.cardGone = !document.querySelector('.person-card.is-nova');
+      return out; }""")
+    check("his card: Nova, Supernova, on the Supernova banner, with his face", r.get("card") and r.get("name") == "Nova" and r.get("rank") == "Supernova"
+          and r.get("banner") and r.get("face"), {k: r.get(k) for k in ("card", "name", "rank", "banner", "face")})
+    check("...stats that fit the lore (badges recovered, flares lit, crew found), Message and no Add friend",
+          any("Badges recovered" in x for x in r.get("cells") or []) and any("Crew found" in x for x in r.get("cells") or [])
+          and "Message" in (r.get("acts") or []) and not any("friend" in a.lower() for a in r.get("acts") or [])
+          and r.get("after") == "DM-NOVA" and r.get("cardGone"), {k: r.get(k) for k in ("cells", "acts", "after")})
+
+    # Never on the leaderboard.
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      closeChatDock(); try{ showRankings(); }catch(e){} await wait(800);
+      return { rows: [...document.querySelectorAll('#stage .rank-row')].map(e => e.textContent).join('|'),
+               lb: (leaderboardRows || []).some(e => e && (e.pub === 'nova' || e.firstName === 'Nova')) }; }""")
+    check("he never appears on the leaderboard", "Nova" not in (r.get("rows") or "") and not r.get("lb"), (r.get("rows") or "")[:120])
+
+    # Broadcasts: not before their time, once, and never stale.
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      showHome(); await wait(600);
+      const fmt = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+        + 'T' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+      const count = id => novaThread().filter(m => m.text === 'BCAST ' + id).length;
+      NOVA_BROADCASTS.push({ id: 'chk-future', at: fmt(new Date(Date.now() + 3600e3)), text: 'BCAST chk-future' });
+      NOVA_BROADCASTS.push({ id: 'chk-old', at: fmt(new Date(Date.now() - 9 * 86400e3)), text: 'BCAST chk-old' });
+      novaTick(); await wait(100);
+      const early = count('chk-future');
+      NOVA_BROADCASTS.push({ id: 'chk-now', at: fmt(new Date(Date.now() - 3600e3)), text: 'BCAST chk-now' });
+      novaTick(); await wait(100); novaTick(); await wait(100); novaTick();
+      return { early, now: count('chk-now'), old: count('chk-old'), seeded: NOVA_BROADCASTS[0].id,
+               seededText: NOVA_BROADCASTS[0].text }; }""")
+    check("a broadcast is not delivered before its time, nor when it is over a week old", r.get("early") == 0 and r.get("old") == 0, r)
+    check("a broadcast that is due is delivered once, not twice", r.get("now") == 1, r)
+    check("the seeded broadcast says he can be messaged now", "message me" in (r.get("seededText") or ""), r.get("seededText"))
+
+    # The challenge, once; then tips, rate-limited; never in a test.
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const D = 86400e3, now = Date.now();
+      const k = dayKey(new Date()); store.studyLog = Object.assign({}, store.studyLog, { [k]: 600000 });
+      let s = novaState(); s.since = now - 3 * D; s.lastAt = now - 25 * 3600e3; s.spontAt = now - 3 * D; delete (s.sent || {}).challenge; novaSave(s);
+      const kinds = () => novaThread().filter(m => m.kind === 'challenge' || m.kind === 'tip').map(m => m.kind);
+      novaTick(); await wait(50);
+      const c1 = kinds();
+      const chal = (novaThread().filter(m => m.kind === 'challenge')[0] || {}).text;
+      s = novaState(); s.lastAt = now - 25 * 3600e3; novaSave(s);
+      novaTick(); await wait(50);
+      const c2 = kinds();
+      s = novaState(); s.lastAt = now - 25 * 3600e3; s.spontAt = now - 4 * D; novaSave(s);
+      testInProgress = true; novaTick(); await wait(50); testInProgress = false;
+      const inTest = kinds();
+      novaTick(); await wait(50);
+      const c3 = kinds();
+      s = novaState(); s.lastAt = now - 25 * 3600e3; novaSave(s);
+      novaTick(); await wait(50);
+      const c4 = kinds();
+      const tip = (novaThread().filter(m => m.kind === 'tip')[0] || {}).text;
+      return { c1, c2, inTest, c3, c4, chal, tip, pool: NOVA_TIPS.length }; }""")
+    check("the challenge message comes once, and says Virtual Room and the Sheriff", r.get("c1") == ["challenge"] and r.get("c2") == ["challenge"]
+          and "Virtual Room" in (r.get("chal") or "") and "Sheriff" in (r.get("chal") or ""), r)
+    check("a tip waits out its three days and a test, then comes once, and not again the same day",
+          r.get("inTest") == ["challenge"] and r.get("c3") == ["challenge", "tip"] and r.get("c4") == ["challenge", "tip"]
+          and (r.get("tip") or "").startswith("Tip:") and r.get("pool", 0) >= 8, r)
+
+    # Rank-up congratulations: only once the whole journey has ended.
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      showProfile('profile'); await wait(400);
+      let s = novaState(); s.congrats = 1; novaSave(s);
+      store.rankUpShown = 2;
+      const congrats = () => novaThread().filter(m => m.kind === 'rank').map(m => m.text);
+      const scene = { toIdx: 2 };
+      rankUpScene = scene;
+      store.rankUpShown = 3;
+      novaTick(); await wait(100);
+      const during = congrats().length;
+      rankUpSceneEnd(scene, true);
+      await wait(800);
+      const justAfter = congrats().length;
+      await wait(3200);
+      return { during, justAfter, after: congrats() }; }""")
+    check("no congratulations while the rank-up journey is still on", r.get("during") == 0 and r.get("justAfter") == 0, r)
+    check("once it has ended, he congratulates you on that rank (Gold)", len(r.get("after") or []) == 1 and "Gold" in (r.get("after") or [""])[0], r)
+
+    w = pg.evaluate("() => ({ w: window.__fsw.slice(), push: window.__push })")
+    check("none of it wrote to Firestore, saved the store or pushed the progress document", not w.get("w") and not w.get("push"), w)
+    ctx.close()
+
+    # A new account: the friend notification arrives partway through his introduction.
+    ctx, pg = booted(br, 440, 956, seed=seed)
+    pg.evaluate(B324N_REC)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      localStorage.removeItem('class26e.nova');
+      const at = novaIntroLines({}).findIndex(l => l.friend);
+      const total = novaIntroLines({}).length;
+      playNovaIntro(() => {});
+      for(let i = 0; i < 40 && !document.getElementById('nova-intro'); i++) await wait(100);
+      const el = document.getElementById('nova-intro'); const nv = el.__nova;
+      await wait(500);
+      let before = null;
+      for(let i = 0; i < 200 && nv.index < at; i++){ if(nv.index === at - 1 && before === null) before = novaIsFriend(); el.querySelector('.nt-stage').click(); await wait(60); }
+      await wait(700);
+      const note = document.querySelector('.nova-friend-note');
+      const r = note ? note.getBoundingClientRect() : null;
+      const top = el.querySelector('.nt-top').getBoundingClientRect();
+      const out = { at, total, before, idx: nv.index, note: note ? note.textContent : null,
+        visible: !!(note && note.classList.contains('show') && r.height > 20), clearOfTop: !!(r && r.top >= top.bottom - 1),
+        friend: novaIsFriend(), hello: (novaThread()[0] || {}).text,
+        dot: (document.getElementById('chatdock-dot') || {}).textContent,
+        line: el.querySelector('.nt-text').textContent };
+      nv.skip(); await wait(200);
+      const go = el.querySelector('.nt-go'); if(go) go.click(); await wait(900);
+      out.after = !!document.getElementById('nova-intro');
+      out.noteGone = !document.querySelector('.nova-friend-note.show');
+      out.once = novaThread().filter(m => m.kind === 'hello').length;
+      return out; }""")
+    check("his introduction has a line that makes you friends, partway through (not the first or last)",
+          r.get("at", -1) > 1 and r.get("at", 0) < r.get("total", 0) - 1, r)
+    check("...not friends before it; on it the FRIENDS banner says 'You and Nova are now friends', clear of his top row",
+          r.get("before") is False and r.get("friend") and "You and Nova are now friends" in (r.get("note") or "") and r.get("visible") and r.get("clearOfTop"),
+          {k: r.get(k) for k in ("before", "friend", "note", "visible", "clearOfTop", "line")})
+    check("...and his hello is waiting in your chats, once", "friends now" in (r.get("hello") or "") and r.get("dot") == "1" and r.get("once") == 1 and r.get("noteGone"),
+          {k: r.get(k) for k in ("hello", "dot", "once", "noteGone")})
+    w = pg.evaluate("() => ({ w: window.__fsw.slice(), push: window.__push })")
+    check("the introduction's friendship wrote nothing to Firestore", not w.get("w") and not w.get("push"), w)
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -26555,6 +26833,7 @@ def main():
             check_b323b_stars(br)
             check_b323s_summary(br)
             check_b323u_units(br)
+            check_b324n_nova(br)
         finally:
             br.close()
     SERVER.shutdown()
