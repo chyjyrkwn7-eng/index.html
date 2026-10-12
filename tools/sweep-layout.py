@@ -107,7 +107,7 @@ QUICK = {"iPhone 14 / 15 / 16", "iPad Pro 11\"", "iPad mini (6th gen)", "Dell La
 # else that can be called with no arguments belongs here.
 SCREENS = [
     # onboarding, in the order someone actually meets it
-    "showWelcome", "showWelcomeIntro", "showWelcomeNamePrompt",
+    "showWelcome", "showSignUpCheck", "showWelcomeIntro", "showWelcomeNamePrompt",
     "showWelcomeCharacterPrompt", "showWelcomeCodeEntry", "showWelcomeCodeReveal",
     # the everyday screens
     "showHome", "showAppearance", "showProfile", "showRankings",
@@ -126,6 +126,9 @@ SCREENS = [
     # the rest
     "showInstallGuide", "showInstallPlatformPicker", "showResetWarning",
     "showWhatsNew", "showReleaseHistory",
+    # the hidden sound test page (build 322): reached from the console or a
+    # long press on Settings' build line, but it is a screen like any other
+    "showSoundTest",
     "showVirtualRoomChoice", "showVirtualRoomSetup",
     # The end of a run (build 315). It needs a run behind it, which is why
     # it was never here - so RESULTS_STAGE puts a real one through
@@ -137,7 +140,7 @@ SCREENS = [
 
 # Reached only from Welcome, and only before the account exists.
 ONBOARDING_SCREENS = {
-    "showWelcome", "showWhatsNew", "showWelcomeIntro", "showClassSelection",
+    "showWelcome", "showSignUpCheck", "showWhatsNew", "showWelcomeIntro", "showClassSelection",
     "showWelcomeNamePrompt", "showWelcomeCharacterPrompt",
     "showWelcomeCodeEntry", "showWelcomeCodeReveal",
 }

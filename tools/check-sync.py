@@ -1323,6 +1323,324 @@ with sync_playwright() as pw:
     check("where the server holds nothing new, this phone's copy goes up as it is", (r.get("D") or {}).get("ww") == 0, str(r.get("D")))
     ctx.close()
 
+    # ==== BUILD 322: ACCOUNTS ====
+    # "We need to really crack down on the leaderboard accuracy and crack
+    # down on people's progress randomly going away or people somehow
+    # using two accounts. People who are signing up, could we make it
+    # where it asks you to sign in first and then you have to hit I'm new
+    # here sign up or something?" Every check below fails on 6a387e2.
+    FLAGS = ("localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
+             "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
+             "localStorage.setItem('class26e.penal55124.seen','1');")
+    def booted(extra=""):
+        c = br.new_context(viewport={"width": 440, "height": 956})
+        c.add_init_script("try{" + FLAGS + extra + "}catch(e){}")
+        p = page(c); p.goto(URL); p.wait_for_timeout(2600)
+        p.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+        p.wait_for_timeout(300)
+        return c, p
+
+    # ---- 9a. sign in first ----
+    print("\n9a. Welcome leads with Sign in; I'm new here is the second choice")
+    ctx, pg = booted()
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const out = {};
+      const btns = () => [...document.querySelectorAll('[data-screen="welcome"] .cosmic-welcome-actions button')];
+      const b = btns();
+      out.labels = b.map(x => x.textContent);
+      out.primary = !!(b[0] && b[0].classList.contains('playbtn'));
+      out.ghost = !!(b[1] && b[1].classList.contains('ghost'));
+      out.hint = (document.querySelector('.cosmic-welcome-hint') || {}).textContent || '';
+      if(b[0]) b[0].click(); await wait(300);
+      out.firstOpens = document.querySelector('.synccode-entry-panel') ? 'code' : document.querySelector('.releasenotes-panel') ? 'whatsnew' : 'other';
+      showWelcome(); await wait(200);
+      const b2 = btns(); if(b2[1]) b2[1].click(); await wait(300);
+      out.secondOpens = document.querySelector('.signupcheck-panel') ? 'check' : document.querySelector('.releasenotes-panel') ? 'whatsnew'
+                      : document.querySelector('.synccode-entry-panel') ? 'code' : 'other';
+      return out; }""")
+    check("the first, primary button on Welcome is Sign in, and it opens the code screen",
+          r["primary"] and r["labels"] and r["labels"][0].strip().lower() == "sign in" and r["firstOpens"] == "code", str(r))
+    check("the second is I'm new here, and it opens a check, not sign-up",
+          r["ghost"] and len(r["labels"]) > 1 and "new here" in r["labels"][1].lower() and r["secondOpens"] == "check", str(r))
+    ctx.close()
+
+    # ---- 9b. the confirm step ----
+    print("\n9b. sign-up opens with a plain check: used Nova before? sign in instead")
+    ctx, pg = booted()
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const out = {};
+      try{
+        showSignUpCheck(); await wait(300);
+        const p = document.querySelector('.signupcheck-panel');
+        out.text = p ? p.innerText.replace(/\\s+/g, ' ') : '';
+        const si = p && p.querySelector('.signupcheck-signin'), go = p && p.querySelector('.signupcheck-go');
+        out.signin = si ? si.textContent : null; out.go = go ? go.textContent : null;
+        out.goFloor = !!(go && go.classList.contains('playbtn'));
+        si.click(); await wait(300);
+        out.signinOpens = !!document.querySelector('.synccode-entry-panel');
+        showSignUpCheck(); await wait(300);
+        document.querySelector('.signupcheck-go').click(); await wait(400);
+        out.goOpens = !!document.querySelector('.releasenotes-panel');
+        document.querySelector('.releasenotes-panel .back-link').click(); await wait(300);
+        out.backTo = !!document.querySelector('.signupcheck-panel');
+        /* and a device with nothing on it signs up exactly as before */
+        store.firstName = 'Newbie'; store.avatarChar = AVATAR_CHARACTERS[0].id;
+        finishWelcomeStartFresh(); await wait(500);
+        out.minted = !!syncCode && !!document.querySelector('.codereveal-value');
+      }catch(e){ out.err = String(e); }
+      return out; }""")
+    check("it asks whether you have used Nova before, says a second account will not carry progress, and offers both ways",
+          not r.get("err") and "Have you used Nova before" in r.get("text", "") and "second account" in r.get("text", "")
+          and r.get("signin") == "Sign in instead" and r.get("go") == "I’m new, continue" and r.get("goFloor"), str(r))
+    check("Sign in instead opens the code screen; I'm new, continue goes on to sign-up, whose Back returns here",
+          r.get("signinOpens") and r.get("goOpens") and r.get("backTo"), str(r))
+    check("a device with no account on it still signs up as before", bool(r.get("minted")), str(r))
+    ctx.close()
+
+    # ---- 9c. a name already on the board ----
+    print("\n9c. a username already on the board is asked about once, with nothing else said")
+    ctx, pg = booted()
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const out = {};
+      try{
+        leaderboardRows = [{ pub: 'mdgaaaaaaaaa', firstName: 'Mad Dog', level: 31, badges: 6, xp: 12345, hundos: 7, correct: 900 },
+                           { pub: 'smbbbbbbbbbb', firstName: 'Sam', level: 4 }];
+        boardFetchedAt = Date.now();
+        const type = v => { const i = document.querySelector('.onboarding-shortform-panel .searchbox'); i.value = v; i.dispatchEvent(new Event('input')); };
+        const go = () => [...document.querySelectorAll('.onboarding-shortform-panel > .playbtn')].pop();
+        showWelcomeNamePrompt(); await wait(150);
+        type(' MADdog '); go().click(); await wait(250);
+        const card = document.querySelector('.namecheck-card');
+        out.stopped = !document.querySelector('.charselect-panel');
+        out.shown = !!(card && getComputedStyle(card).display !== 'none');
+        out.text = card ? card.innerText.replace(/\\s+/g, ' ') : '';
+        out.btn = go() ? go().textContent : '';
+        out.signIn = !!(card && card.querySelector('.namecheck-signin'));
+        go().click(); await wait(250);
+        out.onAfter = !!document.querySelector('.charselect-panel'); out.name = store.firstName;
+        showWelcomeNamePrompt(); await wait(150);
+        type('Riley'); go().click(); await wait(250);
+        out.newName = !!document.querySelector('.charselect-panel');
+        showWelcomeNamePrompt(); await wait(150);
+        type('mad dog'); go().click(); await wait(250);
+        document.querySelector('.namecheck-signin').click(); await wait(250);
+        out.signInOpens = !!document.querySelector('.synccode-entry-panel');
+      }catch(e){ out.err = String(e); }
+      return out; }""")
+    check("a name already on the board, in any case and spacing, is stopped once with the warning and Sign in",
+          not r.get("err") and r.get("stopped") and r.get("shown") and r.get("signIn")
+          and "Someone named Mad Dog already has an account. If that’s you, sign in with your code." in r.get("text", "")
+          and r.get("btn") == "It’s not me, continue", str(r))
+    check("the warning names the name and nothing else about that account",
+          r.get("shown") and not re.search(r"\d", r.get("text", "")) and "Level" not in r.get("text", ""), r.get("text", ""))
+    check("It's not me, continue goes on; a name nobody has is never stopped; Sign in opens the code screen",
+          r.get("onAfter") and r.get("newName") and r.get("signInOpens"), str(r))
+    ctx.close()
+
+    # ---- 9d. an account still on the device comes before sign-up ----
+    print("\n9d. a device that still holds an account is offered it back, and cannot quietly make a second")
+    MID = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":false,"leaderboardOptIn":true,'
+           '"lastModified":1700000000000,"lifetime":{"points":0,"correct":0}}')
+    # (1) a sign-up closed on the code screen: the code and the name are here, Home never came
+    ctx, pg = booted("localStorage.setItem('class26e.drill.v1','%s');localStorage.setItem('class26e.synccode','NOVA-4401');" % MID)
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const out = {};
+      const b = [...document.querySelectorAll('[data-screen="welcome"] .cosmic-welcome-actions button')];
+      out.labels = b.map(x => x.textContent);
+      try{
+        finishWelcomeStartFresh(); await wait(400);
+        out.afterSilent = { code: syncCode, reveal: !!document.querySelector('.codereveal-value'),
+                            welcome: !!document.querySelector('[data-screen="welcome"]') };
+        const c = document.querySelector('[data-screen="welcome"] .cosmic-welcome-actions .playbtn');
+        if(c) c.click(); await wait(600);
+        out.after = { code: syncCode, home: !!document.querySelector('.panel.home.screen-home-actual'), done: store.onboardingComplete };
+      }catch(e){ out.err = String(e); }
+      return out; }""")
+    check("a sign-up that stopped before Home is offered back: Continue as Madison",
+          r["labels"] and r["labels"][0] == "Continue as Madison", str(r.get("labels")))
+    check("and sign-up cannot make a second account over it without asking: no new code, back to Welcome",
+          not r.get("err") and (r.get("afterSilent") or {}).get("code") == "NOVA-4401" and not (r.get("afterSilent") or {}).get("reveal")
+          and (r.get("afterSilent") or {}).get("welcome"), str(r.get("afterSilent")) + str(r.get("err", "")))
+    check("Continue finishes the sign-up it belongs to: Home, the same code",
+          (r.get("after") or {}).get("code") == "NOVA-4401" and (r.get("after") or {}).get("home") and (r.get("after") or {}).get("done"),
+          str(r.get("after")))
+    ctx.close()
+    # (2) localStorage gone, the mirror kept the code (offline: the boot recovery cannot pull)
+    ctx, pg = booted()
+    pg.evaluate("""async ()=>{ idbSaveCode('NOVA-4402');
+      await new Promise(res => setTimeout(res, 300));
+      await idbOpen().then(db => new Promise(res => { const tx = db.transaction(IDB_STORE, 'readwrite'); tx.objectStore(IDB_STORE).delete(IDB_KEY); tx.oncomplete = res; tx.onerror = res; }));
+      localStorage.removeItem('class26e.drill.v1'); localStorage.removeItem('class26e.synccode'); }""")
+    pg.reload(); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    pg.wait_for_timeout(500)
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const out = {};
+      try{
+        const b = [...document.querySelectorAll('[data-screen="welcome"] .cosmic-welcome-actions button')];
+        out.labels = b.map(x => x.textContent);
+        showSignUpCheck(); await wait(400);
+        out.check = (document.querySelector('.signupcheck-panel') || {}).innerText || '';
+        store.firstName = 'Second'; store.avatarChar = AVATAR_CHARACTERS[0].id;
+        finishWelcomeStartFresh(); await wait(400);
+        out.minted = syncCode; out.mirror = await idbLoadCode();
+        /* the network comes back: Continue puts the account back */
+        __fake([]);
+        __cloud['NOVA-4402'] = { firstName: 'Madison', avatarChar: 'ninja', onboardingComplete: true, leaderboardOptIn: true,
+                                 lastModified: Date.now(), lifetime: { points: 4200, correct: 300 } };
+        showWelcome(); await wait(400);
+        const c = document.querySelector('[data-screen="welcome"] .cosmic-welcome-actions .playbtn');
+        out.label2 = c ? c.textContent : null;
+        if(c) c.click(); await wait(600);
+        out.after = { code: syncCode, home: !!document.querySelector('.panel.home.screen-home-actual'), points: store.lifetime.points, name: store.firstName };
+      }catch(e){ out.err = String(e); }
+      return out; }""")
+    check("the code in the mirror alone is enough: Welcome offers the account first",
+          r.get("labels") and "Continue" in r["labels"][0] and "This device still has" in r.get("check", ""), str([r.get("labels"), r.get("check")]))
+    check("and nothing mints a second account over it", not r.get("err") and not r.get("minted") and r.get("mirror") == "NOVA-4402",
+          str([r.get("minted"), r.get("mirror"), r.get("err")]))
+    check("Continue brings it back under the same code, on Home",
+          (r.get("after") or {}).get("code") == "NOVA-4402" and (r.get("after") or {}).get("home") and (r.get("after") or {}).get("points") == 4200,
+          str(r.get("after")))
+    ctx.close()
+    # (3) the code survived and the store did not; the cloud has the account
+    ctx, pg = booted("localStorage.setItem('class26e.synccode','NOVA-4403');")
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      __fake([]);
+      __cloud['NOVA-4403'] = { firstName: 'Madison', avatarChar: 'ninja', onboardingComplete: true, leaderboardOptIn: true,
+                               lastModified: Date.now(), lifetime: { points: 5000, correct: 400 } };
+      __ready(); await wait(900);
+      return { code: syncCode, home: !!document.querySelector('.panel.home.screen-home-actual'),
+               welcome: !!document.querySelector('[data-screen="welcome"]'), points: store.lifetime.points }; }""")
+    check("a code with no progress beside it, whose account comes down at launch, lands on Home - not on Welcome over it",
+          r["code"] == "NOVA-4403" and r["home"] and not r["welcome"] and r["points"] == 5000, str(r))
+    ctx.close()
+    # (4) the mirror's pull is still out when the device takes another account
+    ctx, pg = booted()
+    pg.evaluate("""async ()=>{ idbSaveCode('NOVA-4404');
+      await new Promise(res => setTimeout(res, 300));
+      await idbOpen().then(db => new Promise(res => { const tx = db.transaction(IDB_STORE, 'readwrite'); tx.objectStore(IDB_STORE).delete(IDB_KEY); tx.oncomplete = res; tx.onerror = res; }));
+      localStorage.removeItem('class26e.drill.v1'); localStorage.removeItem('class26e.synccode'); }""")
+    pg.reload(); pg.wait_for_timeout(2600)
+    pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const other = { firstName: 'Other person', avatarChar: 'ninja', onboardingComplete: true, lastModified: Date.now(),
+                      lifetime: { points: 7777, correct: 500 } };
+      const snap = d => ({ exists: !!d, metadata: { fromCache: false }, data: () => JSON.parse(JSON.stringify(d)) });
+      const ref = (name, id) => ({ get: () => new Promise(res => setTimeout(() => res(snap(name === 'progress' && id === 'NOVA-4404' ? other : null)), 400)),
+                                   set: () => Promise.resolve(), update: () => Promise.resolve(), delete: () => Promise.resolve(),
+                                   onSnapshot: () => () => {} });
+      fbDb = { collection: name => ({ doc: id => ref(name, id), onSnapshot: () => () => {}, get: () => Promise.resolve({ forEach(){} }) }) };
+      __ready();                      /* boot's mirror recovery sends its read */
+      await wait(60);
+      setSyncCode('NOVA-4499');       /* and a sign-in lands while it is out */
+      store.firstName = 'Newbie'; store.lifetime.points = 10;
+      await wait(900);
+      return { code: syncCode, points: store.lifetime.points, name: store.firstName }; }""")
+    check("a recovery read still out when the device takes another account neither switches the code nor pours one account into the other",
+          r["code"] == "NOVA-4499" and r["points"] == 10 and r["name"] == "Newbie", str(r))
+    ctx.close()
+
+    # ---- 9e. the board's numbers are Profile's ----
+    print("\n9e. your row on the board says what Profile says")
+    FLOORED = STORE.replace('"onboardingComplete":true,', '"onboardingComplete":true,"rankFloor":3,"tourRev":99,')
+    ctx, pg = booted("localStorage.setItem('class26e.drill.v1','%s');localStorage.setItem('class26e.synccode','NOVA-4501');" % FLOORED)
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const out = {};
+      try{
+        const pub = publicIdOf();
+        /* what this device last PUBLISHED, before the test it just finished */
+        __fake([{ id: pub, firstName: 'Madison', avatarChar: 'ninja', level: 1, badges: 0, hundos: 2, xp: 100, correct: 10 }]);
+        store.lifetime.points += 777; store.lifetime.correct += 50;
+        const row = buildLeaderboardRow();
+        out.profileRank = rankOf(store) ? RANK_DISPLAY_NAME[rankOf(store)] : null;
+        out.rowRank = (typeof rankOfEntry === 'function') ? (rankOfEntry(row) ? RANK_DISPLAY_NAME[rankOfEntry(row)] : null) : 'n/a';
+        out.rowNums = { level: row.level === levelOf(store), badges: row.badges === badgeCountOf(store), hundos: row.hundos === hundosOf(store),
+                        xp: row.xp === store.lifetime.points, floor: row.rankFloor === store.rankFloor };
+        showRankings('overall'); await wait(600);
+        const me = document.querySelector('[data-me="1"]');
+        out.boardRank = me ? ((me.querySelector('.rank-col-rankname') || {}).textContent || '—') : null;
+        if(me) me.click(); await wait(500);
+        const cells = {};
+        document.querySelectorAll('.person-card-cell').forEach(c => {
+          cells[(c.querySelector('.person-card-cell-label') || {}).textContent] = (c.querySelector('.person-card-cell-value') || {}).textContent; });
+        out.cardRank = (document.querySelector('.person-card-rank') || {}).textContent || null;
+        out.card = cells;
+        out.want = { xp: store.lifetime.points.toLocaleString(), correct: store.lifetime.correct.toLocaleString() };
+      }catch(e){ out.err = String(e); }
+      return out; }""")
+    check("the row carries Profile's rank (its floor included) and the board and your card show it",
+          not r.get("err") and r.get("profileRank") and r.get("rowRank") == r.get("profileRank")
+          and r.get("boardRank") == r.get("profileRank") and r.get("cardRank") == r.get("profileRank")
+          and all((r.get("rowNums") or {}).values()), str(r))
+    check("your own card on the board shows the XP and right answers Profile and Stats do, not the last ones published",
+          (r.get("card") or {}).get("XP") == (r.get("want") or {}).get("xp")
+          and (r.get("card") or {}).get("Correct answers") == (r.get("want") or {}).get("correct"), str([r.get("card"), r.get("want")]))
+    ctx.close()
+
+    # ---- 9f. a stale device cannot take the row backwards ----
+    print("\n9f. a device behind the account cannot publish its older numbers over the row")
+    ctx, pg = booted("localStorage.setItem('class26e.drill.v1','%s');localStorage.setItem('class26e.synccode','NOVA-4601');" % STORE)
+    r = pg.evaluate("""async ()=>{
+      const wait = ms => new Promise(res => setTimeout(res, ms));
+      const clone = o => JSON.parse(JSON.stringify(o));
+      const out = {};
+      try{
+        const S = {}, rows = []; let serverReads = 0;
+        /* the launch's own pull must not do the catching up here: the
+           Firebase retry would drain it the moment fbDb is set */
+        fbReadyDrained = true; fbReadyCallbacks.length = 0;
+        const snapOf = k => ({ exists: k in S, metadata: { fromCache: false }, data: () => clone(S[k]) });
+        const ref = k => ({ _k: k,
+          get: o => { if(o && o.source === 'server' && k.indexOf('progress/') === 0) serverReads++; return Promise.resolve(snapOf(k)); },
+          set: d => { S[k] = clone(d); if(k.indexOf('leaderboard/') === 0) rows.push(clone(d)); return Promise.resolve(); },
+          update: () => Promise.resolve(), delete: () => { delete S[k]; return Promise.resolve(); },
+          onSnapshot: () => () => {} });
+        fbDb = { collection: name => ({ onSnapshot: () => () => {}, doc: id => ref(name + '/' + id) }),
+          runTransaction: async fn => { const w = [];
+            const tx = { get: r => Promise.resolve(snapOf(r._k)), set: (r, d) => { w.push([r, d]); return tx; } };
+            const res = await fn(tx); w.forEach(([r, d]) => r.set(d)); return res; } };
+        const run = async (code, acct, row) => {
+          syncCode = ''; cloudConfirmedFor = '';
+          try{ clearTimeout(cloudPushTimer); cloudPushTimer = null; clearTimeout(confirmRetryTimer); confirmRetryTimer = null; clearTimeout(rowPushTimer); rowPushTimer = null; }catch(e){}
+          store.tally = {}; store.tallyBase = {}; store.publicId = 'rowtest' + code.slice(-4) + 'ab';
+          store.leaderboardOptIn = true; store.lifetime.points = 1200; store.lifetime.correct = 95; store.lastModified = Date.now() - 86400000;
+          persistLocally();
+          const cloud = clone(store); cloud.lifetime.points = acct; cloud.lifetime.correct = 95 + (acct - 1200) / 10; cloud.lastModified = Date.now() - 3600000;
+          S['progress/' + code] = cloud;
+          S['leaderboard/' + store.publicId] = { firstName: 'Madison', xp: row, correct: 95 + (row - 1200) / 10, hundos: 2, level: 9 };
+          rows.length = 0; serverReads = 0;
+          /* this phone read the server at launch, long ago; its listener has gone quiet since */
+          syncCode = code; cloudConfirmedFor = code; floorMergedFor = code; lastPushCode = code; lastCloudPushAt = 0; lastFloorPushAt = 0;
+          try{ accountWriteAt = 0; accountWriteNext = null; accountWriteFails = 0; lastRowSig = null; lastRowUrgentSig = null; confirmRetryMs = 200; }catch(e){}
+          /* and it is put away */
+          publishNow();
+          await wait(4500);
+          return { rows: rows.map(x => x.xp), reads: serverReads, local: store.lifetime.points };
+        };
+        /* A: the other phone played 300 XP into the account and its row */
+        out.A = await run('NOVA-4601', 1500, 1500);
+        /* B: a row ahead of its own account (an old build wrote it): one re-read, then the account's number */
+        out.B = await run('NOVA-4602', 1200, 2000);
+      }catch(e){ out.err = String(e && e.stack || e); }
+      return out; }""")
+    A = r.get("A") or {}
+    check("a phone behind the account never writes its older numbers over the row; it reads the account and the row follows the merge",
+          not r.get("err") and A.get("rows") and min(A["rows"]) >= 1500 and A.get("reads", 0) >= 1 and A.get("local") == 1500,
+          str(r.get("err") or A))
+    B = r.get("B") or {}
+    check("a row ahead of its own account is not obeyed for ever: the account is read again, then its number goes up",
+          B.get("reads", 0) >= 1 and B.get("rows") == [1200], str(B))
+    ctx.close()
+
     # ---- 7. the sync code never reaches a collection anyone can list ----
     # `leaderboard` and `vrooms` can both be ENUMERATED by anyone - this
     # repo's own firestore-admin.py lists them over plain REST with no
