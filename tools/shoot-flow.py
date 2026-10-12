@@ -252,13 +252,17 @@ def main():
                 page.wait_for_timeout(400)
 
                 shot(page, 1, "welcome")
-                # the sign-in-with-a-code screen, then back
-                page.click(".next.ghost.cosmic-welcome-btn"); shot(page, 2, "sign-in-with-code")
+                # the sign-in-with-a-code screen, then back. Build 322:
+                # Sign in is Welcome's FIRST button now, I'm new here the
+                # second, and that opens a check before sign-up.
+                page.click(".cosmic-welcome-btn.welcome-signin"); shot(page, 2, "sign-in-with-code")
                 page.fill(".synccode-entry-panel .searchbox", "MADI-0001"); page.wait_for_timeout(250)
                 shot(page, 2.5, "sign-in-with-code-filled")
                 page.click(".synccode-entry-panel .back-link"); page.wait_for_timeout(400)
                 # the create-account path
-                page.click(".cosmic-welcome-btn.playbtn");            shot(page, 3, "whats-new")
+                page.click(".cosmic-welcome-btn.welcome-new");        shot(page, 2.8, "new-to-nova")
+                page.click(".signupcheck-panel .signupcheck-go"); page.wait_for_timeout(300)
+                shot(page, 3, "whats-new")
                 page.click(".releasenotes-panel .next.playbtn");      shot(page, 4, "what-this-actually-is")
                 page.click(".welcomeintro-panel .next.playbtn");      shot(page, 5, "pick-your-class")
                 page.click(".classselect-panel .modecard"); page.wait_for_timeout(250)

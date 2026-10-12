@@ -19954,3 +19954,81 @@ leaking out, the spin-to-case transition.
   name now also in the lid on purpose), its tab/Profile plate text,
   check-results' badge XP lines (no line; no MASTERY_BONUS), check-curve's
   badge line (no lump).
+
+### Build 322 (b322k) - sign in first, no second account by accident, the board says what Profile says
+
+*"We need to really crack down on the leaderboard accuracy and crack down
+on people's progress randomly going away or people somehow using two
+accounts ... could we make it where it asks you to sign in first and then
+you have to hit I'm new here sign up or something?"*
+
+- **Welcome leads with Sign in** (`.welcome-signin`, the playbtn); **I'm
+  new here** (`.welcome-new`, the ghost) opens `showSignUpCheck()` - "NEW
+  TO NOVA?", what starting again costs, **Sign in instead** in the content
+  group and **I'm new, continue** on the shared Continue floor - and only
+  then What's New and the rest of sign-up. What's New's Back returns to the
+  check. `shoot-flow.py` walks it (shot 2.8 `new-to-nova`); the sweep and
+  check-positions mount it.
+- **A device that still holds an account is offered it first.**
+  `findAccountTrace()` = the code in localStorage, else the IndexedDB
+  mirror's code, else a mirrored onboarded store. With one, Welcome reads
+  "Welcome back", **Continue as <name>** ("Continue to your account" when
+  only the code is known) and **Use a different account**
+  (`welcomeTraceSkip`, this launch only). `continueWithTrace()` merges the
+  same account back (`pullFromCloud`, never adopt) and lands on Home; a
+  sign-up that stopped before Home is finished (`pendingMainMenuTour`); a
+  dead code (`not-found`) is handed back like the launch link's.
+- **`finishWelcomeStartFresh()` refuses to mint over a trace** unless the
+  check screen showed that trace and the person tapped I'm new, continue on
+  it (`signupTraceAck`). Then the old account's local copy is WIPED before
+  the new code is minted - otherwise the "new" account is the old progress
+  under a second code. `wipeLocalProgressAndSettings()` sets
+  `accountWipedAt`, so a reset in this session is never offered back while
+  its mirror deletes are still landing.
+- **The username screen asks once about a name already on the board**
+  (`nameTakenOnBoard`: case and spaces ignored, read from the
+  `leaderboardRows` the app already fetches - `fetchBoardForInvites`, its
+  15-minute throttle - never a progress read). "Someone named X already has
+  an account. If that's you, sign in with your code." with **Sign in**; the
+  floor button becomes **It's not me, continue**. Only the name is said.
+- **Three account holes, each with a failing check on 6a387e2:**
+  - *A non-adopt pull only ever merges the SAME account.* The mirror's
+    code-only recovery pulled before the device held a code; if a sign-in
+    or sign-up landed while the read was out, it merged one person's
+    progress into the other's and then switched the code. `pullFromCloud`
+    now answers `changed` when `syncCode` moved to a different code.
+  - *A code whose store is gone lands on Home when its account comes down*
+    (boot's launch pull, and the mirror-store recovery's pull). It used to
+    leave Welcome up over the restored account, where Create an account
+    pushed that same progress up under a second code.
+  - *Linking retires the row the device was publishing under.* Sign-in and
+    Link this device ADOPT first, which replaces `store.publicId`, then call
+    `setSyncCode()` - which retired the adopted account's row (it came back
+    on the next push) and stranded the abandoned one on the board for good.
+    `pullFromCloud` records `adoptedOverPublic`; `setSyncCode` retires that.
+- **The board's numbers are Profile's.** `boardNumbersOf(st)` builds every
+  number a row carries (level, badges, hundos, xp, correct, tests, week,
+  weekPoints, mystery, `rankFloor`) and is used by `buildLeaderboardRow()`
+  AND `liveEntries()` - which carried its own half-copy, so your own card on
+  the board showed the XP and right answers you last PUBLISHED. **The row
+  now carries `rankFloor`** (lazy field), and `rankOfEntry(e)` /
+  `rankWithFloor()` / `overallProgressOf(level, badges, rankFloor)` ask a
+  row's rank exactly as `rankOf()` asks your own: someone held at a rank by
+  build 314's floor was a rank lower on the board, the person card and the
+  Friends list than on their Profile. Rows from older builds have no floor
+  and read as before. The Virtual Room participant entries do not carry it
+  (out of scope; they still use `rankOfStats`).
+- **A row never goes backwards.** `writeLeaderboardRow()` is a transaction
+  (read-then-write for the gates' stand-ins, a plain set for ones that
+  cannot read): if the row on the server holds more `xp`, `correct` or
+  `hundos` (`ROW_GROWS` - the numbers that only grow for an account; a
+  reset is a new public id) nothing is written, the device drops its
+  confirmation and reads the account again (`ensureCloudConfirmed`), and
+  the row goes from the merge. Once only (`rowRecheckFor`): a row AHEAD of
+  its own account (an old build wrote it) is corrected to the account. Cost:
+  one read per row write. A row write that fails is retried on the next
+  push rather than queued offline (it used to be a queued `set()` that could
+  land a day late).
+- **Gates:** `check-sync` 9a-9f (sign in first; the check; the name;
+  device traces x4; board = Profile; no regressed row). All 20 fail on
+  6a387e2.
