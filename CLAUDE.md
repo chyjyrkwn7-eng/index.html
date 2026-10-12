@@ -21174,3 +21174,61 @@ like the stats tab, the virtual room section looks funny, improve this."*
   "no Virtual Room cards" (now: the new tiles, not the old three), and
   check-statsbadges' nine-cards line (the seed has no matches, so nine
   still holds).
+
+### Build 324 (b324v2) - Nova in a Virtual Room, and the Sheriff for beating him
+
+Madison: *"If you want to, you can now invite him to virtual rooms, but he
+will be super hard to beat ... he would need to answer questions right within
+like 4 seconds and almost every time make a 95-100 ... That's gonna be the
+sheriff's new challenge now, is beating nova in a virtual rooms match. Can be
+any of them ... He's invitable like anyone else now and can join. When he
+joins make him delay the ready up."*
+
+- **He is a participant, key `nova`, written by ONE device.** The host's
+  invite sheet has his row first (`buildNovaInviteRow`); Invite writes
+  `participants.nova` (`novaVrEntry`: avatarChar `nova`, level 80, every
+  badge, `titan_rank` banner, `by` = the inviting device) through the same
+  field paths a player's client uses, so every device - older builds too -
+  draws and counts him as a player. A fixed key means at most one Nova.
+  `buildAvatarCharSVG("nova")` returns his head (framed like the others,
+  shoulders faded); he is in no picker. His row reads "Supernova" (no
+  level) and opens his own card (`vroomPersonEntry`).
+- **The driver** (`novaVrDrive`) is the inviter's own listener plus a 200ms
+  clock; it stops itself on any device that is not `by`. Lobby: not ready
+  while the room cannot start; once it can, `prep` ("Readying..." on his
+  row, on every device) for 3.2-6.5s, then ready. A match: spends his
+  ready and last race's fields, then plays the mode by its rules -
+  Race (progress per answer, finish with `computeRunXp` on his answers,
+  `revealDone`), Tug (read-in, pull for clock left, the pauses), Battle
+  (hits 5/7, seeded powers used ~1s after, a freeze or flip on him slows
+  him). His presence rides the inviter's beat (`novaVrPresencePatch`).
+- **Difficulty** (`novaVrPlan`, seeded by room code + startAt): 85% of
+  matches he misses 0.3-2.8% of questions, 15% ("off day") 3.5-7.5%; ~97.9%
+  right overall, 90% of 30/50-question runs at 95%+. Every answer 2-4s
+  (mean of three draws, ~3s). Measured by simulating each mode's rules: a
+  Race is won by missing FEWER than him (equal misses, his speed wins);
+  Tug and Battle are throughput - ~3s answers AND fewer misses.
+  `novaVrTimeScale` is a gate hook only.
+- **The host leaving takes him along** (`novaVrLeavePatch`, one write,
+  "X and Nova left"); a host whose phone died goes stale with him, and
+  the next host removes him (`novaVrOrphanCheck`). `vroomHostKeyOf` never
+  picks him.
+- **Beating him** (`novaVrOutcome`): Race - more of the room's XP, or the
+  same XP faster (exactly level is a draw); Tug/Battle - your side won and
+  he was on the other. Draw, same side, or his forfeit (not finished / not
+  present) is not a win. `novaVrAfterMatch` runs once per match from the
+  race standings, `showTugResult` and `showBattleResult`: `store.novaBeaten`
+  (default false, OR-merged), the Sheriff's unlock card
+  (`playUnlockSpotlight`, above the race standings: `.rs-spot` z 440 there),
+  then one DM (`novaSendDM`, id `vr:<code>@<startAt>`).
+- **The Sheriff's feat is `novabeat`** ("Beat Nova in a Virtual Room match
+  (any mode)"), card "Not yet"/"Done" (`UNLOCK_WINDOWS`, `w.status`).
+  `weektop3x3` stays defined, unread; `settleWeeklyWin` no longer queues
+  him. `migrateSheriff324()` (in `applyLoadedData`, once per account via
+  `sheriffMoved324`) puts him in `legacyChars` for anybody with 3+ podiums.
+- XP, hundos, matches and wins are what the same match against a person
+  pays; he has no board row and is not in `friendPublicIds()`.
+- Gate `check_b324v2_novavr` (fails on c6a50b9). Moved: check_b232's
+  "a third week on the podium hands over Poseidon" (now: counted, hands
+  over nothing); check_b323v's invite test reads a friend's button, not
+  the first (Nova's).
