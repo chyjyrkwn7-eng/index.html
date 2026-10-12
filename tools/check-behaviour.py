@@ -21621,6 +21621,10 @@ B320A_REC = r"""() => {
     R.s.push({ t,
       gIn: landed(g), gOp: g ? +getComputedStyle(g).opacity : 0,
       pct: isNaN(num) ? null : num, col: pe ? rgb(getComputedStyle(pe).color) : null,
+      pcol: pe ? getComputedStyle(pe).color : null, pbg: pe ? getComputedStyle(pe).backgroundImage : null,
+      bars: P ? [...P.querySelectorAll('.rs-byunit .unit-breakdown-fill')].map(f => { const c = getComputedStyle(f); return c.backgroundColor + '|' + c.backgroundImage; }) : [],
+      layers: g ? g.querySelectorAll('.rs-grade-tone > i').length : 0,
+      tinted: !!(g && g.classList.contains('hfx-tinted')),
       tone: !!(g && /\bis-(pass|fail|perfect)\b/.test(g.className)), graded: !!(g && g.classList.contains('rs-graded')),
       stamps: st ? +getComputedStyle(st).opacity : null,
       fills: P ? [...P.querySelectorAll('.rs-byunit .unit-breakdown-fill')].map(f => Math.round(vis(f) * 10) / 10) : [],
@@ -21641,7 +21645,7 @@ B320A_RUN = r"""(o) => {
   /* o: { units: [[name, missN]...], mode, vroom, perfects: {unit: n} } */
   document.querySelectorAll('#pushing-update,#intro-pop').forEach(n => n.remove());
   if(o.perfects) Object.keys(o.perfects).forEach(u => { store.unitPerfects = store.unitPerfects || {}; store.unitPerfects[u] = o.perfects[u] === 'T-1' ? badgeThresholdFor(u) - 1 : o.perfects[u]; });
-  store.hundoFx = o.fx || 'fireworks'; store.lateHundos = 999; store.retroBadgePending = []; store.mergeHold = null; store.pendingBadgeUnlocks = [];
+  store.hundoFx = o.fx || 'fireworks'; try{ store.unlocksShown.fx = (HUNDO_FX || []).map(d => d.id); }catch(e){} store.lateHundos = 999; store.retroBadgePending = []; store.mergeHold = null; store.pendingBadgeUnlocks = [];
   if(o.rankUpShown != null) store.rankUpShown = o.rankUpShown;
   try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){}
   saveStore();
@@ -21723,6 +21727,57 @@ def _b320a_order(tag, s, info, expect_scenes):
     return dict(t_graded=t_graded, t_bars=t_bars, t_xin=t_xin, t_scene=t_scene, t_box=t_box)
 
 
+_B321_RED, _B321_GREEN = (227, 112, 124), (79, 190, 140)
+
+
+def _b321_dist(c, ref=None):
+    """RGB distance from `ref`, or (no ref) from the straight red->green line."""
+    c = [float(v) for v in c[:3]]
+    if ref is not None:
+        return max(abs(a - b) for a, b in zip(c, ref))
+    a, b = _B321_RED, _B321_GREEN
+    d = [y - x for x, y in zip(a, b)]
+    k = max(0.0, min(1.0, sum((c[i] - a[i]) * d[i] for i in range(3)) / sum(v * v for v in d)))
+    return max(abs(c[i] - (a[i] + d[i] * k)) for i in range(3))
+
+
+def _b321_colours(txt):
+    """Every opaque-ish colour in a computed value, as (r, g, b) 0-255."""
+    out = []
+    for m in re.finditer(r"rgba?\(([^)]*)\)|color\(srgb ([^)]*)\)", txt or ""):
+        if m.group(1):
+            v = [float(x) for x in re.split(r"[ ,/]+", m.group(1).strip()) if x]
+            a = v[3] if len(v) > 3 else 1
+            rgb = v[:3]
+        else:
+            v = [float(x) for x in re.split(r"[ ,/]+", m.group(2).strip()) if x]
+            a = v[3] if len(v) > 3 else 1
+            rgb = [x * 255 for x in v[:3]]
+        if a > .3: out.append(tuple(rgb))
+    return out
+
+
+def _b321_hue(c):
+    import colorsys
+    h, l, sat = colorsys.rgb_to_hls(*[v / 255 for v in c[:3]])
+    return h * 360, max(c[:3]) - min(c[:3])
+
+
+def _b321_colours_a(txt):
+    """[(r, g, b, a)] from a computed colour value"""
+    out = []
+    for m in re.finditer(r"rgba?\(([^)]*)\)", txt or ""):
+        v = [float(x) for x in re.split(r"[ ,/]+", m.group(1).strip()) if x]
+        out.append(tuple(v[:3]) + ((v[3] if len(v) > 3 else 1.0),))
+    return out
+
+
+def _b321_gold(c):
+    """gold, amber or orange: a warm hue (15-65deg) with real colour in it"""
+    h, ch = _b321_hue(c)
+    return 15 <= h <= 65 and ch > 45
+
+
 def check_b320a_results(br):
     """Build 320 (b320a): the results screen in Madison's order - "you get a
     grade, you see how that adds up, you get awards". The grade box comes
@@ -21779,8 +21834,13 @@ def check_b320a_results(br):
     cols = [x for x in s if x["gOp"] > .3 and x["pct"] is not None and not x["tone"]]
     first = cols[0] if cols else None
     check("B: the number starts at 0, in red", bool(first) and first["pct"] == 0 and first["col"][0] > first["col"][1] + 40, first)
-    warmer = [x for x in cols if x["col"] and x["col"][1] > (first["col"][1] if first else 999) + 25]
-    check("B: and warms as it climbs", bool(warmer), cols[-1] if cols else None)
+    # BUILD 321 REVERSED "and warms as it climbs" (it went red, orange at 40,
+    # then shot back to red on landing - "if the grade is a fail it shoots
+    # from orange to red and it's just weird"): a fail is red from its first
+    # frame to its landing and after.
+    not_red = [x for x in s if x["gOp"] > .3 and x["col"] and _b321_dist(x["col"], _B321_RED) > 6]
+    check("B: a fail stays red the whole way - counting, landing and landed (build 321)",
+          bool(cols) and not not_red, not_red[:1] and {k: not_red[0][k] for k in ("t", "pct", "col", "tone")})
     run_ms = (cols[-1]["t"] - cols[0]["t"]) if cols else 0
     check("B: a short sequence for a low grade (under 3s of counting)", 0 < run_ms < 3000, run_ms)
 
@@ -21835,26 +21895,103 @@ def check_b320a_results(br):
         const fill = b.querySelector('.xpbar-fill'), tw = b.querySelector('.results-level-trackwrap');
         const num = () => (b.querySelector('.xpnums-have') || {}).textContent || null;
         const t0 = performance.now(), out = [];
+        /* the exact moments (b321a): every write of the number and the
+           knock, as they happen - polling at 30ms on a page painting ~13
+           frames a second misplaces both by up to a frame */
+        const ev = [], ln = b.querySelector('.results-level-line');
+        const mo = new MutationObserver(() => { const t = performance.now() - t0;
+          const v = num(); if(v != null && (!ev.length || ev[ev.length - 1].n !== v || ev[ev.length - 1].k !== 'n')) ev.push({ t, k: 'n', n: v });
+          if(tw.classList.contains('is-xpbump') && !ev.some(e => e.k === 'bump')) ev.push({ t, k: 'bump' }); });
+        mo.observe(ln, { subtree: true, childList: true, characterData: true }); mo.observe(tw, { attributes: true, attributeFilter: ['class'] });
         b.runFill();
         for(let k = 0; k < 260; k++){ await new Promise(r => setTimeout(r, 30));
           out.push({ t: Math.round(performance.now() - t0), v: Math.round(vis(fill) * 10) / 10, n: num(), bump: Number(tw.dataset.xpbump || 0) + (tw.classList.contains('is-xpbump') ? 1 : 0) }); }
-        host.remove(); return out; };
+        mo.disconnect(); host.remove(); out.ev = ev; return { s: out, ev }; };
       return { room: await run(300, xpForLevel(30) - 2000, 0), full: await run(300, xpForLevel(52) + 200, 4),
                gain: await run(300, xpForLevel(50) + 150, 4), top: await run(300, xpForLevel(LEVEL_CAP) + 60000, 16) }; }""")
-    def num_first_change(o):
-        n0 = o[0]["n"]
-        return _b320a_first(o, lambda x: x["n"] != n0)
-    o = xr["room"]; end = o[-1]["v"]
+    xr = {k: v["s"] for k, v in xr.items()}
+    # BUILD 321 REVERSED "the number after the bar" (b320): "the numbers
+    # come through after the xp goes but wouldn't it be at the same time? It
+    # would only be after if the bar is full or gets full ... I noticed that
+    # when the xp bar is full the number increases instantly, there needs to
+    # be a slight delay like the xp is trying to figure out where to go".
+    # So: the number counts WITH a bar that has room; XP past a full bar
+    # waits - the fill (with the number, to the full figure), the knock, a
+    # wait of 0.75s or more from it, then the overflow, easing in (its first quarter
+    # slower than its middle - b320's ease-out started at its fastest, the
+    # "instantly").
+    N = lambda x: int(x["n"].replace(",", "")) if x.get("n") and x["n"].replace(",", "").isdigit() else None
+    o = xr["room"]; end = o[-1]["v"]; n_end = N(o[-1]); v0 = o[0]["v"]; n0 = N(o[0])
+    t_go = _b320a_first(o, lambda x: x["v"] > v0 + .5)
     t_home = _b320a_first(o, lambda x: abs(x["v"] - end) < .5)
-    t_n = num_first_change(o)
-    check("F: a bar with room: the number moves only after the fill is home, a beat later",
-          t_home is not None and t_n is not None and t_n >= t_home + 250, (t_home, t_n))
-    for key, label in (("full", "at a wall, already full (max level)"), ("top", "at level 80"), ("gain", "filled to a wall this run (XP, then max)")):
-        o = xr[key]
-        t_b = _b320a_first(o, lambda x: x["bump"] > 0); t_n = num_first_change(o)
-        t_full = _b320a_first(o, lambda x: x["v"] >= 99.5)
-        check("F %s: the bar's knock first, then the number, a beat later" % label,
-              t_b is not None and t_n is not None and t_n >= t_b + 250 and (t_full is not None and t_b >= t_full - 40), (t_full, t_b, t_n))
+    mid = [x for x in o if t_go is not None and t_home is not None and t_go <= x["t"] < t_home and N(x) is not None]
+    vals = sorted(set(N(x) for x in mid))
+    check("F: a bar with room: the number counts WHILE the bar fills (build 321)",
+          len(vals) >= 3 and n0 is not None and n_end is not None and n0 < vals[-1] <= n_end, (t_go, t_home, vals[:3], vals[-2:], n0, n_end))
+    # in step: the number's share of its run is where the bar's share was
+    # at some moment in the last ~100ms (the number is written on the
+    # frame; a headless page paints ~13 frames a second, the sampler 30)
+    sv = lambda x: (x["v"] - v0) / max(.1, end - v0)
+    lag = []
+    for i, x in enumerate(o):
+        if x not in mid or n_end is None: continue
+        win = [sv(y) for y in o[max(0, i - 4):i + 1]]
+        sn = (N(x) - n0) / max(1, n_end - n0)
+        lag.append(round(max(0, min(win) - .04 - sn, sn - max(win) - .04), 3))
+    check("F: and in step with it - the number's share is the bar's (within its last ~100ms, +-4%)",
+          bool(lag) and max(lag) == 0, max(lag) if lag else None)
+    at_home = [x for x in o if t_home is not None and x["t"] >= t_home][:2]
+    check("F: the number is at its end as the bar gets home", any(N(x) == n_end for x in at_home), [N(x) for x in at_home] + [n_end])
+
+    # the climb to the full figure, on the real clock (the bar moves)
+    o = xr["gain"]
+    t_full = _b320a_first(o, lambda x: x["v"] >= 99.5); n_start = N(o[0])
+    full_n = [N(x) for x in o if t_full is not None and x["t"] >= t_full][:1]
+    moved = [x for x in o if t_full is not None and x["t"] < t_full and N(x) is not None and N(x) != n_start]
+    check("F filled to a wall this run (XP, then max): the number climbs with the bar to the full figure first",
+          bool(moved) and bool(full_n) and full_n[0] is not None and full_n[0] > n_start, (len(moved), n_start, full_n))
+    ctx.close()
+
+    # The knock, the wait and the overflow's ease, on Playwright's clock -
+    # timers, frames and performance.now stepped 16ms at a time, so the
+    # measure is the page's own schedule and not this machine's load (the
+    # real-clock version of this read 650-1,480ms for the same wait).
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(500)
+    pg.clock.install(); pg.clock.pause_at(pg.evaluate("()=>Date.now()") + 50)
+    for key, label, earned, pts_js, nb in (("full", "at a wall, already full (max level)", 300, "xpForLevel(52) + 200", 4),
+                                            ("top", "at level 80", 300, "xpForLevel(LEVEL_CAP) + 60000", 16),
+                                            ("gain", "filled to a wall this run (XP, then max)", 300, "xpForLevel(50) + 150", 4)):
+        pg.evaluate("""([earned, nb]) => { const pts = %s; const units = topicsIn(QUESTIONS);
+          store.lifetime = Object.assign({}, store.lifetime, { points: pts });
+          store.unitPerfects = Object.fromEntries(units.slice(0, nb).map(u => [u, badgeThresholdFor(u)]));
+          store.levelFloor = 0; retroHideBadges = null; mergeHidePoints = null;
+          document.querySelectorAll('.b321host').forEach(e => e.remove());
+          const b = buildResultsLevelBlock(earned, pts, { badgesBefore: nb, badgesAfter: nb });
+          const host = document.createElement('div'); host.className = 'rs-xp b321host'; host.appendChild(b);
+          document.querySelector('#stage .panel').appendChild(host); window.__b321b = b; b.runFill(); }""" % pts_js, [earned, nb])
+        seq = []
+        for k in range(330):
+            pg.clock.run_for(16)
+            seq.append(pg.evaluate("""() => { const b = __b321b, tw = b.querySelector('.results-level-trackwrap');
+              return [(b.querySelector('.xpnums-have') || {}).textContent || null, Number(tw.dataset.xpbump || 0)]; }"""))
+        num = lambda v: int(v.replace(",", "")) if v and v.replace(",", "").isdigit() else None
+        kb = next((i for i, (n, bp) in enumerate(seq) if bp > 0), None)
+        nb0 = num(seq[kb][0]) if kb is not None else None
+        ko = next((i for i in range(kb or 0, len(seq)) if kb is not None and num(seq[i][0]) != nb0), None)
+        ne = num(seq[-1][0])
+        share = None
+        if ko is not None and ne is not None and nb0 is not None and ne > nb0:
+            share = round((num(seq[min(len(seq) - 1, ko + 9)][0]) - nb0) / (ne - nb0), 3)
+        wait = (ko - kb) * 16 if ko is not None and kb is not None else None
+        # (321: the knock's 170ms settle + XP_OVERFLOW_WAIT_MS 650 + a frame;
+        # 320: 170 + 420 + a frame)
+        check("F %s: the knock, then a wait (0.8s or more), then the overflow" % label,
+              wait is not None and wait >= 800, (kb, wait))
+        # (321's ease-in-out: a few percent in its first 150ms; 320's
+        # ease-out: ~40%, "the number increases instantly")
+        check("F %s: the overflow eases in - never a jump (under 15%% of it in its first 150ms)" % label,
+              share is not None and share < .15, share)
     ctx.close()
 
     # G. Reduce motion: the same order, still - the box waits for the badge's still scene.
@@ -21913,6 +22050,132 @@ def check_b320a_results(br):
     info, s = _b320a_play(pg, {"units": [[U1, 0]], "mode": "drill", "perfects": {U1: "T-1"}})
     _b320a_order("J iPad 100%", s, info, True)
     ctx.close()
+def check_b321a_results(br):
+    """Build 321 (b321a): Madison on the 320 results. "starts off at red
+    which is cool, but I noticed the color goes from red to orange? ... It
+    needs to be just the red slowly into the green not other colors. I also
+    see that when you get a hundo, there is a slight moment where the bar
+    turns gold and stuff then into the hundo effect box. It would go from
+    green into the hundo effect though, and the transition would need to be
+    smooth. That goes for any of them." "It could slow down a little more at
+    the back end." "The unlock section says found there now? ... figure this
+    out." "The rank up is still showing in unlocks."
+    Every assertion here fails on 6a387e2 (build 320)."""
+    print("\n321a. red into green, a 100 green into its effect, the slower back end, Found & unlocked, no rank rewards")
+    U1 = "Identity Crimes"
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    sizes = pg.evaluate("()=>topicsIn(QUESTIONS).map(u=>[u, unitQuestionCount(u)]).sort((a,b)=>a[1]-b[1])")
+    U2 = [u for u, n in sizes if u != U1][0]
+    pg.evaluate("()=>{ store.seenFirstResultsTour = true; theme.muteBanners = false; theme.reduceMotion = false; applyTheme(); saveStore(); }")
+
+    def run_until_landed(o, fx, after_ms=1600):
+        """A run up to its grade landing and a little past it - the colour
+        story is over by then."""
+        pg.evaluate("(f)=>{ window.__fx321 = f; hundoFxInUse = () => window.__fx321; showHome(); }", fx)
+        pg.wait_for_timeout(300)
+        pg.evaluate(B320A_REC)
+        # the exact moment a unit bar first takes the gold class, and the
+        # moment the grade lands - 40ms samples can miss a 160ms flash
+        pg.evaluate("""()=>{ window.__g321 = { gold: null, land: null }; if(window.__g321mo) __g321mo.disconnect();
+          window.__g321mo = new MutationObserver(ms => ms.forEach(m => { const e = m.target, now = performance.now();
+            if(!e.classList) return;
+            if(__g321.gold == null && e.classList.contains('unit-breakdown-fill') && e.closest('#stage .rs-byunit') && e.classList.contains('is-gold')) __g321.gold = now;
+            if(__g321.land == null && e.classList.contains('rs-grade') && /\\bis-(pass|fail|perfect)\\b/.test(e.className)) __g321.land = now; }));
+          __g321mo.observe(document.getElementById('stage'), { subtree: true, attributes: true, attributeFilter: ['class'] }); }""")
+        info = pg.evaluate(B320A_RUN, o)
+        t = 0; t_g = None
+        while t < 30000:
+            pg.wait_for_timeout(200); t += 200
+            if pg.evaluate("()=>!!document.querySelector('#stage .rs-grade.rs-graded, #stage .rs-grade.is-perfect, #stage .rs-grade.is-pass')"):
+                t_g = t_g or t
+                if t - t_g >= after_ms: break
+        s = pg.evaluate("()=>{ clearInterval(__b320.timer); return __b320.s; }")
+        info["g321"] = pg.evaluate("()=>{ __g321mo.disconnect(); return __g321; }")
+        return info, s
+
+    # K. The colour path, sampled: every colour the counting number takes is
+    # on the straight line from the red to the green, and none is orange,
+    # amber or gold. A 92% and a 100%, two units each (the cumulative count
+    # crosses the pass mark in the last bar).
+    info, s = run_until_landed({"units": [[U1, 1], [U2, 0]], "mode": "exam", "perfects": {U1: 0, U2: 0}}, "fireworks")
+    cnt = [x for x in s if x["gOp"] > .3 and x["col"] and not x["tone"]]
+    off = [x for x in cnt if _b321_dist(x["col"]) > 6]
+    warm = [x for x in cnt if _b321_gold(x["col"])]
+    hues = sorted(set(round(_b321_hue(x["col"])[0]) for x in cnt))
+    check("K 92%%: the counting number only ever runs along red -> green (%d samples, hues %s)" % (len(cnt), hues[:3] + ["..."] + hues[-3:]),
+          len(cnt) > 20 and not off, off[:1] and (off[0]["pct"], off[0]["col"]))
+    check("K 92%: no orange, amber or gold on the way", not warm, warm[:1] and (warm[0]["pct"], warm[0]["col"]))
+    red_till = [x for x in cnt if x["pct"] is not None and x["pct"] < 70 and _b321_dist(x["col"], _B321_RED) > 3]
+    check("K 92%: red until the pass mark", not red_till, red_till[:1] and (red_till[0]["pct"], red_till[0]["col"]))
+    check("K: two washes on the counting card, red and green - no amber between", max(x["layers"] for x in s) == 2,
+          max(x["layers"] for x in s))
+    bars_warm = [x for x in s if x["gOp"] > .3 and any(_b321_gold(c) for b in x["bars"] for c in _b321_colours(b))]
+    check("K 92%: no unit bar is ever gold, the aced unit's included (a run short of 100 has no hundo box)",
+          not bars_warm, bars_warm[:1] and bars_warm[0]["bars"])
+
+    # L. a 100% in each effect: green up to its landing, no gold before the
+    # box takes its effect's look, and a crossing rather than a snap - for
+    # 150ms after the landing the number is still mostly the green it
+    # counted in (fading into the effect's ramp underneath).
+    for fx in ("confetti", "fireworks", "underwater", "bubbles", "ufo"):
+        info, s = run_until_landed({"units": [[U1, 0]], "mode": "drill", "perfects": {U1: 0}}, fx, after_ms=1200)
+        t_land = _b320a_first(s, lambda x: x["tone"])
+        pre = [x for x in s if x["gOp"] > .3 and (t_land is None or x["t"] < t_land)]
+        gold_pre = [x for x in pre if any(_b321_gold(c) for b in x["bars"] for c in _b321_colours(b))
+                    or any(_b321_gold(c) for c in _b321_colours(x["pbg"])) or (x["col"] and _b321_gold(x["col"]))]
+        last = pre[-1] if pre else None
+        check("L %s: red into green and nothing else up to the landing - no orange, no gold - and green as the count ends" % fx,
+              t_land is not None and bool(pre) and not gold_pre and _b321_dist(last["col"], _B321_GREEN) <= 4,
+              gold_pre[:1] and {k: gold_pre[0][k] for k in ("t", "pct", "col", "bars")} or (last and last["col"]))
+        flash = [x for x in pre if any(_b321_gold(c) for b in x["bars"] for c in _b321_colours(b.split("|", 1)[-1]))]
+        g3 = info.get("g321") or {}
+        early = g3.get("gold") is not None and g3.get("land") is not None and g3["gold"] < g3["land"] - 1
+        check("L %s: no unit bar turns gold before the landing (320: a moment of gold as each bar came home)" % fx,
+              t_land is not None and g3.get("land") is not None and not flash and not early,
+              (g3, flash[:1] and {k: flash[0][k] for k in ("t", "pct", "bars")}))
+        soon = [x for x in s if t_land is not None and t_land <= x["t"] <= t_land + 150]
+        later = [x for x in s if t_land is not None and x["t"] >= t_land + 1100]
+        def green_alpha(x):
+            cs = _b321_colours_a(x["pcol"])
+            return cs[0][3] if cs and _b321_dist(cs[0][:3], _B321_GREEN) <= 8 else 0
+        check("L %s: the landing crosses from that green into the effect's look - still mostly green 150ms in, all effect by 1.1s" % fx,
+              bool(soon) and all(green_alpha(x) > .5 for x in soon) and bool(later)
+              and (fx == "confetti" or later[-1]["tinted"]) and green_alpha(later[-1]) < .05,
+              ([x["pcol"] for x in soon][:3], later[-1:] and later[-1]["pcol"]))
+        if fx == "confetti":
+            # THE BACK END, SLOWER: from the number reaching 92 to the
+            # landing, on a 12/12 (build 320: ~1.9s).
+            t92 = _b320a_first(s, lambda x: x["gOp"] > .3 and (x["pct"] or 0) >= 92 and not x["tone"])
+            check("L: the last stretch of a 100 takes longer - 92 to the landing in 2.15s or more (320: ~1.9s)",
+                  t92 is not None and t_land is not None and t_land - t92 >= 2150, (t92, t_land))
+
+    # M. no rank reward in the unlocks, owed or not: a rank's character and
+    # banner handed in as this run's, with no rank-up owed.
+    m = pg.evaluate("""()=>{ store.rankUpShown = TIER_ORDER_FULL.length + 1; saveStore();
+      const ch = AVATAR_CHARACTERS.find(c => c.unlock && !c.feat && !c.retired), bn = BANNERS.find(b => b.rank && !b.retired);
+      const items = rsUnlockItems({ badges: ['Identity Crimes'], retroBadges: [], characters: [ch.id, 'robot'], banners: bn ? [bn.id] : [], fx: [], flare: null });
+      return { owed: rankUpOwed(), ch: ch.id, bn: bn && bn.id, items: items.map(i => [i.kind, i.kicker, i.name, i.rankReward || null]) }; }""")
+    check("M: a rank's character and banner are never in the results' unlocks, even with no rank-up owed",
+          m["owed"] is None and not any(i[3] for i in m["items"]) and [i[0] for i in m["items"]][:1] == ["badge"], m)
+    ctx.close()
+
+    # N. one box, one name: "Found & unlocked", every row tagged found or
+    # unlocked. A badge-only run (b320 called its box "Found").
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("()=>{ store.seenFirstResultsTour = true; theme.muteBanners = true; theme.reduceMotion = true; applyTheme(); saveStore(); }")
+    pg.evaluate(B320A_REC)
+    pg.evaluate(B320A_RUN, {"units": [[U1, 0]], "mode": "drill", "perfects": {U1: "T-1"}})
+    pg.wait_for_timeout(1500)
+    n = pg.evaluate("""()=>{ const u = document.querySelector('#stage .rs-unlocked');
+      return u ? { title: u.querySelector('.rs-kicker').textContent,
+        rows: [...u.querySelectorAll('.rs-unlock')].map(r => [r.classList.contains('is-found') ? 'found' : r.classList.contains('is-unlocked') ? 'unlocked' : '?',
+          (r.querySelector('.unlockbanner-kicker') || {}).textContent]) } : null; }""")
+    check("N: the box is 'Found & unlocked', and a badge's row is tagged found",
+          bool(n) and n["title"] == "Found & unlocked" and n["rows"] and all(r[0] == "found" for r in n["rows"] if "badge" in (r[1] or "").lower()), n)
+    pg.evaluate("()=>{ clearInterval(__b320.timer); }")
+    ctx.close()
+
+
 # Build 320 (b320e): the planet cracks rank by rank, the crack forms in the
 # rank-up, the Supernova planet remembers the blast, Home's planet whole on
 # its first frame back.
@@ -23609,6 +23872,7 @@ def main():
             check_b319h_layout(br)
             check_b320f_nova(br)
             check_b320a_results(br)
+            check_b321a_results(br)
             check_b320e_cracks(br)
             check_b320g_inspect(br)
             check_b320h_fixes(br)
