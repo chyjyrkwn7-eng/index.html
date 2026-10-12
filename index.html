@@ -97821,7 +97821,7 @@ function showAppearance(opts){
       labelWord.className = "sync-code-label"; labelWord.textContent = "Sync code";
       label.appendChild(labelWord);
       const hint = document.createElement("span");
-      hint.className = "ohint"; hint.textContent = "Tap to show. Enter this on another device to link it.";
+      hint.className = "ohint"; hint.textContent = "Tap to show. Use it to link another device.";
       label.appendChild(hint);
       /* BUILD 324: "The sync code reveal, it's still pretty small when
          viewing the code. Can we slightly enlarge it some more?" Beside
@@ -97841,7 +97841,7 @@ function showAppearance(opts){
         revealed = !revealed;
         codeSpan.textContent = revealed ? syncCode : "\u2022\u2022\u2022\u2022-\u2022\u2022\u2022\u2022";
         codeWell.classList.toggle("is-revealed", revealed);
-        hint.textContent = (revealed ? "Tap to hide" : "Tap to show") + ". Enter this on another device to link it.";
+        hint.textContent = (revealed ? "Tap to hide" : "Tap to show") + ". Use it to link another device.";
       });
       row.append(label, codeWell);
 
