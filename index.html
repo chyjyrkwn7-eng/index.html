@@ -23983,6 +23983,11 @@
      (build 315): the same size, the same weight. */
   .rs-xp .results-level-line{ text-align:left; margin-top:.55rem; font-size:var(--rs-cap, .78rem); line-height:1.35; }
   .rs-xp .results-level-line .xpnums{ font-weight:700; }
+  /* XP with nowhere to go, after the knock (build 321): the figure dims
+     and comes back once while the overflow "figures out where to go"
+     (XP_OVERFLOW_WAIT_MS), then counts on. Opacity only. */
+  .results-level-line.is-seeking .xpnums-have{ display:inline-block; animation:xp-seek .65s ease-in-out both; }
+  @keyframes xp-seek{ 0%{ opacity:1; } 45%{ opacity:.45; } 100%{ opacity:1; } }
   /* THE LEVEL IS A NUMBER, SET LIKE THE GRADE (build 315): "Level 33" in
      the heavy sans, not "LEVEL 33" spaced out in capitals, which pulled
      the 3s apart. The rank under it keeps the small capitals - it is the
@@ -26375,9 +26380,28 @@
   .rs-grade-tone > i{ position:absolute; inset:0; border-radius:inherit; opacity:0; will-change:opacity;
     border:1px solid var(--tb); background:linear-gradient(180deg, var(--tw), transparent 62%); }
   .rs-grade-tone > i.is-red{ --tw:rgba(200,60,84,.16); --tb:rgba(232,104,124,.28); }
-  .rs-grade-tone > i.is-amber{ --tw:rgba(214,140,46,.16); --tb:rgba(240,176,92,.28); }
   .rs-grade-tone > i.is-green{ --tw:rgba(46,170,106,.16); --tb:rgba(92,214,146,.26); }
   .rs-grade.rs-graded > .rs-grade-tone{ opacity:0; }
+  /* THE LANDING EASES THE LAST OF THE COLOUR IN (build 321): a pass short
+     of 100 lands part way from red, so its number finishes the blend into
+     green rather than snapping; a 100 crosses from the green it counted
+     up in into its hundo effect's look (RS_HUNDO_CROSS_MS) - the green
+     wash fading off the effect's, the number's green giving way to its
+     ramp (color to transparent over the clipped gradient), the bars'
+     green lifting off their effect gradient (.rs-was.is-slow) and the
+     effect's inner glow coming up (.rs-tint-in). No gold on the way. A
+     unit bar home at a pass lifts the colour it counted in off its green
+     the same way (.rs-was, --was). */
+  .rs-screen .rs-card.rs-grade.rs-graded .rs-pct.pct{ transition:color .6s ease; }
+  .rs-screen .rs-card.rs-grade.is-perfect.rs-graded .rs-pct.pct{ transition:color .9s ease, filter .9s ease; }
+  .rs-grade.is-perfect.rs-graded > .rs-grade-tone{ transition-duration:.9s; }
+  .rs-grade.rs-tint-in:not(.hfx-ufo-unlit) > .hfx-tint{ animation:rs-tint-in .9s ease both; }
+  @keyframes rs-tint-in{ from{ opacity:0; } to{ opacity:1; } }
+  .rs-byunit .unit-breakdown-fill.rs-was{ position:relative; }
+  .rs-byunit .unit-breakdown-fill.rs-was::after{ content:""; position:absolute; inset:0; border-radius:inherit;
+    background:var(--was); animation:rs-was-off .6s ease both; }
+  .rs-byunit .unit-breakdown-fill.rs-was.is-slow::after{ animation-duration:.9s; }
+  @keyframes rs-was-off{ from{ opacity:1; } to{ opacity:0; } }
   .rs-grade .rs-stamps{ transition:opacity .45s ease .3s; }
   .rs-grade.is-counting .rs-stamps{ opacity:0; transition:none; }
   /* the empty card comes down like any card; the slam is the grade's */
@@ -87015,33 +87039,40 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
      then does the number run on to the overflow. One that was full
      before the run knocks as soon as the XP arrives. */
   const bumps = gained > 0 && barAfter.over && !resultsMotionOff();
-  /* THE NUMBER AFTER THE BAR (build 320): "when it goes to the bar,
-     that's cool, but when the number goes up it needs to be after that
-     bar effect ... if you gain xp and then max in the same result screen,
-     ensure the effect hits there and then goes to the number, like there
-     should be a slight delay". Every bar now fills first - more slowly
-     than it did ("too fast and could be more suspenseful") - lands with
-     its effect (the pop, or at a full bar the knock), and only then, a
-     beat later, does the "into / span XP" number run up to where the run
-     ended. The line holds where the run started until then. */
+  /* THE NUMBER WITH THE BAR (build 321; build 320 ran it after the bar):
+     "The xp bar, the numbers come through after the xp goes but wouldn't
+     it be at the same time? It would only be after if the bar is full or
+     gets full? Because itd need somewhere to go". So:
+     - While the bar fills, "into / span XP" counts WITH it - read off the
+       bar's own position every frame (followBar), so the two cannot drift
+       apart, whatever the bar's easing or a slow phone does to it.
+     - A level-up counts the old level's numbers to its end, wraps, and
+       counts the new level's up from 0 as the bar fills again.
+     - Only XP with nowhere to go waits: XP past a full bar (a wall, level
+       80, or a bar that gets full this run). The bar fills (the number
+       with it, to the full figure), knocks against its end (xpBarBump),
+       and then holds a moment "like the xp is trying to figure out where
+       to go but only a slight delay" (XP_OVERFLOW_WAIT_MS, the number
+       pulsing faintly, .is-seeking) before the overflow runs on - easing
+       in, so it never "increases instantly". A bar already full knocks as
+       soon as the XP arrives, then the same wait. */
   const startInto = barAfter.capped ? fromInto() : levelsUp ? 0 : Math.min(barAfter.into, levelBarOf(before).into);
-  const countMs = Math.min(1500, 750 + Math.max(0, barAfter.into - startInto) / 3);
-  const countUp = then => {
-    const to = barAfter.into, from = startInto;
-    if(to <= from || resultsMotionOff()){ setLine(after); if(then) then(); return; }
-    const t0 = performance.now();
-    const tick = now => {
-      if(finished) return;
-      const k = Math.min(1, (now - t0) / countMs), e = 1 - Math.pow(1 - k, 3);
-      setLine(after, Math.round(from + (to - from) * e));
-      if(k < 1) requestAnimationFrame(tick);
-      else if(then) then();
-    };
-    setLine(after, from);
-    requestAnimationFrame(tick);
+  /* the overflow: from the full figure (or wherever a bar already past
+     it stood) to where the run ended */
+  const overFrom = Math.max(startInto, barAfter.span);
+  const overflows = bumps && barAfter.into > overFrom;
+  const overMs = Math.min(1600, 850 + Math.max(0, barAfter.into - overFrom) / 3);
+  /* the number only ever rewritten when it changes */
+  let shownN = null, shownOf = null;
+  const setLineN = (p, n) => {
+    const key = levelBarOf(p).span + ":" + n;
+    if(shownN === key && shownOf === p) return;
+    shownN = key; shownOf = p;
+    setLine(p, n);
   };
   if(levelsUp) setLine(before);
   else setLine(after, startInto);
+  shownOf = null;
 
   wrap.append(head, trackWrap, line);
   /* NOTHING UNDER THE NUMBERS (build 314): the badge challenge and the
@@ -87069,10 +87100,9 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   const firstMs = levelsUp ? (steps > 1 ? stepMs : Math.round(800 + 600 * Math.min(1, (1 - barBefore.fraction) / .6)))
     : fillMsFor(barAfter.fraction - barBefore.fraction);
   const lastMs = levelsUp ? fillMsFor(barAfter.fraction) : 0;
-  /* the landing: the knock at a full bar (+170 to its settle), else the
-     pop; then the beat; then the count */
-  const XP_COUNT_BEAT_MS = 420;
-  const afterLand = (bumps ? 170 : 0) + XP_COUNT_BEAT_MS + ((barAfter.into > startInto && !resultsMotionOff()) ? countMs : 0);
+  /* after the fill: the pop's settle, or the knock (+170 to its settle),
+     the wait and the overflow */
+  const afterLand = bumps ? 170 + (overflows ? XP_OVERFLOW_WAIT_MS + overMs : 0) : 0;
   /* Read by the results reveal: from runFill to the number at rest. */
   wrap.fillMs = 60 + (levelsUp ? steps * (Math.max(firstMs, 0) + 90) + lastMs : firstMs) + afterLand + 200;
   wrap.bumps = bumps;
@@ -87084,48 +87114,101 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
      the element is created has nothing to transition from. */
   /* Straight to where the run ended, with no movement - the skipped and
      reduced-motion paths of the results reveal. */
-  let finished = false;
+  let finished = false, follow = 0;
+  const stopFollow = () => { if(follow) cancelAnimationFrame(follow); follow = 0; };
   wrap.setFinal = function(){
     finished = true;
+    stopFollow();
     fill.style.transition = "none";
     setBarFill(fill, Math.round(barAfter.fraction * 1000) / 10);
     lvl.textContent = "Level " + after.level;
+    line.classList.remove("is-seeking");
     setLine(after);
     if(levelsUp) wrap.classList.add("is-levelup");
     bank();
   };
   const later = (ms, fn) => setTimeout(() => { if(!finished) fn(); }, ms);
-  const fillTo = (pct, ms, then) => {
+  /* where the bar really is on screen (0-1), transition and all */
+  const barAt = () => {
+    try{
+      const m = new DOMMatrixReadOnly(getComputedStyle(fill).transform), w = fill.offsetWidth;
+      return w ? Math.max(0, Math.min(1, 1 + m.m41 / w)) : null;
+    }catch(e){ return null; }
+  };
+  /* The numbers of level state `p` counted from n0 to n1 as the bar moves
+     from f0 to f1 - every frame, from the bar itself. */
+  const followBar = (p, f0, f1, n0, n1) => {
+    stopFollow();
+    setLineN(p, Math.round(n0));
+    if(n1 === n0) return;
+    const tick = () => {
+      follow = 0;
+      if(finished) return;
+      const f = barAt();
+      const k = f == null ? 0 : f1 > f0 ? Math.max(0, Math.min(1, (f - f0) / (f1 - f0))) : 1;
+      setLineN(p, Math.round(n0 + (n1 - n0) * k));
+      if(k < 1) follow = requestAnimationFrame(tick);
+    };
+    follow = requestAnimationFrame(tick);
+  };
+  const fillTo = (pct, ms, then, nums) => {
     fill.style.transition = "transform " + ms + "ms " + XP_EASE;
     setBarFill(fill, pct);
-    later(ms, then);
+    if(nums) followBar(nums.p, nums.f0, pct / 100, nums.n0, nums.n1);
+    /* home: the number exactly where the fill says, whatever a frame did */
+    later(ms, () => { stopFollow(); if(nums) setLineN(nums.p, Math.round(nums.n1)); then(); });
   };
-  /* The fill is home: its effect, a beat, then the number. */
+  /* THE OVERFLOW, after the knock and the wait: easing in and out, never
+     a jump (build 321). */
+  const runOverflow = () => {
+    line.classList.remove("is-seeking");
+    if(!overflows || resultsMotionOff()){ setLine(after); return; }
+    const from = overFrom, to = barAfter.into, t0 = performance.now();
+    const tick = now => {
+      if(finished) return;
+      const k = Math.min(1, (now - t0) / overMs);
+      const e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      setLineN(after, Math.round(from + (to - from) * e));
+      if(k < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+  /* The fill is home: its effect, and for XP with nowhere to go, the
+     knock, the wait and the overflow. */
   const landed = () => {
     bank();
     if(bumps){
       if(wrap.onFilled) wrap.onFilled("bump");
-      xpBarBump(trackWrap, () => later(XP_COUNT_BEAT_MS, () => countUp(null)));
+      xpBarBump(trackWrap, () => {
+        if(!overflows){ runOverflow(); return; }
+        const xn = line.querySelector(".xpnums");
+        if(xn){ xn.classList.remove("is-seeking"); void xn.offsetWidth; }
+        line.classList.add("is-seeking");
+        later(XP_OVERFLOW_WAIT_MS, runOverflow);
+      });
     } else {
       if(wrap.onFilled) wrap.onFilled("pop");
-      later(XP_COUNT_BEAT_MS, () => {
-        countUp(null);
-        /* the new level's number lights blue for a second, then settles */
-        if(levelsUp){
-          const xn = line.querySelector(".xpnums");
-          if(xn && !xn.classList.contains("is-over")){
-            xn.classList.add("is-flash");
-            setTimeout(() => { const x2 = line.querySelector(".xpnums"); if(x2) x2.classList.remove("is-flash"); }, 1100);
-          }
+      /* the new level's number lights blue for a second, then settles */
+      if(levelsUp){
+        const xn = line.querySelector(".xpnums");
+        if(xn && !xn.classList.contains("is-over")){
+          xn.classList.add("is-flash");
+          setTimeout(() => { const x2 = line.querySelector(".xpnums"); if(x2) x2.classList.remove("is-flash"); }, 1100);
         }
-      });
+      }
     }
   };
+  /* what the numbers do on the run's last fill: up to the full figure if
+     the XP will overflow it, else to where the run ended */
+  const lastTo = bumps ? Math.max(startInto, Math.min(barAfter.into, barAfter.span)) : barAfter.into;
   wrap.runFill = function(){
     if(resultsMotionOff()){ wrap.setFinal(); if(wrap.onFilled) wrap.onFilled("still"); return; }
     requestAnimationFrame(() => requestAnimationFrame(() => {
       if(finished) return;
-      if(!levelsUp){ fillTo(target, firstMs, landed); return; }
+      if(!levelsUp){
+        fillTo(target, firstMs, landed, { p: after, f0: barBefore.fraction, n0: startInto, n1: lastTo });
+        return;
+      }
       /* ONE STEP AT A TIME, each fill to the end of its level, a reset to
          empty with the transition off for one committed frame (or the
          browser coalesces the two writes and the bar simply jumps), and
@@ -87135,7 +87218,10 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
          wrap-overs firing ("the level up bar when leveling up loads a
          second time when the second box hits") is then structural. */
       let lv = before.level;
-      const fillOut = () => fillTo(100, firstMs, wrapOver);
+      const bb = levelBarOf(before);
+      /* the level the run started in counts to its end with the bar */
+      const fillOut = first => fillTo(100, firstMs, wrapOver,
+        first ? { p: before, f0: barBefore.fraction, n0: bb.into, n1: Math.max(bb.into, bb.span) } : null);
       const wrapOver = () => {
         lv += 1;
         lvl.textContent = "Level " + lv;
@@ -87147,16 +87233,19 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
           if(finished) return;
           /* mid-climb, the line says where it is going rather than
              holding the banked figure it started from */
-          if(lv < after.level){ line.textContent = "Climbing to level " + after.level; later(30, fillOut); return; }
-          setLine(after, startInto);
-          requestAnimationFrame(() => { if(!finished) fillTo(target, lastMs, landed); });
+          if(lv < after.level){ shownOf = null; line.textContent = "Climbing to level " + after.level; later(30, () => fillOut(false)); return; }
+          setLineN(after, startInto);
+          requestAnimationFrame(() => { if(!finished) fillTo(target, lastMs, landed, { p: after, f0: 0, n0: startInto, n1: lastTo }); });
         });
       };
-      fillOut();
+      fillOut(true);
     }));
   };
   return wrap;
 }
+/* XP past a full bar, after the knock: a slight delay, "like the xp is
+   trying to figure out where to go" (build 321). */
+const XP_OVERFLOW_WAIT_MS = 650;
 
 /* What the run just finished was worth, and what the lifetime total was
    after it. Set by summarize(); read by the Virtual Room results screen,
@@ -89249,6 +89338,9 @@ function flareCharacterItem(ch){
     art: () => buildAvatarCharSVGSafe(ch) };
 }
 
+/* The results' box of what a run found and unlocked (build 321). */
+const RS_UNLOCK_BOX_TITLE = "Found & unlocked";
+function rsUnlockFound(it){ return !!it && (it.kind === "badge" || it.kind === "flare" || !!it.found); }
 function rsUnlockItems(run){
   const items = [];
   /* THE BADGE FIRST (build 308): "I would also think the badge cutscene
@@ -89268,20 +89360,24 @@ function rsUnlockItems(run){
      have not ranked up until you see the road map cut scene and finished
      it." The rank's theme, flare, character and banner wait for Profile
      (rankUpHolds, below). */
-  /* A rank's own character and banner sit with its theme, ahead of any
-     challenge's: together they are the one rank-reward pop-up. */
-  const chars = run.characters.map(characterUnlockItem);
+  /* NOR ANYTHING A RANK HANDS OVER, EVER (build 321: "The rank up is
+     still showing in unlocks"). A rank's theme, flare, character and
+     banner are its rank-up's, on Profile's road map (rankUpCards ->
+     rankRewardParts, which picks up any of them still unannounced) - not
+     only while that rank-up is owed (rankUpHolds, which let a rank's
+     character through here whenever it was not, e.g. an account whose
+     rank-ups were never counted or a rank character arriving by
+     pendingCharUnlocks) but always. */
+  const chars = run.characters.map(characterUnlockItem).filter(it => !isRankRewardItem(it));
   /* A secret flare character's banner comes straight after its character,
      at the very end (build 313) - announcing it first would give away who
      the flare's scene is about to bring out. */
   const flareBanners = (run.banners || []).filter(id => (bannerDef(id) || {}).flareChar);
-  const banners = (run.banners || []).filter(id => flareBanners.indexOf(id) < 0).map(bannerUnlockItem).filter(Boolean);
+  const banners = (run.banners || []).filter(id => flareBanners.indexOf(id) < 0).map(bannerUnlockItem).filter(it => it && !isRankRewardItem(it));
   const flareBannerItem = ch => { const b = BANNERS.find(x => x.flareChar === ch && flareBanners.indexOf(x.id) >= 0); return b ? bannerUnlockItem(b.id) : null; };
-  chars.filter(it => isRankRewardItem(it) && !rankUpHolds(it.rankReward)).forEach(it => items.push(it));
-  banners.filter(it => isRankRewardItem(it) && !rankUpHolds(it.rankReward)).forEach(it => items.push(it));
-  chars.filter(it => !isRankRewardItem(it)).forEach(it => items.push(it));
+  chars.forEach(it => items.push(it));
   /* Banners, right after the characters: both are things you wear. */
-  banners.filter(it => !isRankRewardItem(it)).forEach(it => items.push(it));
+  banners.forEach(it => items.push(it));
   /* A hundo effect (build 313), after the things you wear. */
   (run.fx || []).forEach(id => { const it = hundoFxUnlockItem(id); if(it) items.push(it); });
   /* A secret flare found this run is the LAST unlock, always. Its scene
@@ -90294,28 +90390,47 @@ const RS_BADGE_PROGRESS_BOX = false;
 /* From the XP box settling to the first cutscene or pop-up: "you can't
    even react to the grade". */
 const RS_UNLOCK_GAP_MS = 1900;
-/* From the XP box settling to a 100's hundo effect: a beat. */
-const RS_FX_AFTER_XP_MS = 650;
-/* The grade's colour as it climbs: the app's red short of a pass, warming
-   through amber, the pass green from PASS_MARK. Gold is the landing's -
-   a 100 is only ever shown once it has landed. */
-const RS_TONE_STOPS = [[0, [227, 112, 124]], [40, [238, 146, 92]], [58, [236, 190, 88]], [PASS_MARK, [79, 190, 140]], [100, [79, 190, 140]]];
-function rsToneAt(p){
-  p = Math.max(0, Math.min(100, Number(p) || 0));
-  let i = 0;
-  while(i < RS_TONE_STOPS.length - 2 && p > RS_TONE_STOPS[i + 1][0]) i++;
-  const [a, ca] = RS_TONE_STOPS[i], [b, cb] = RS_TONE_STOPS[i + 1];
-  const k = b > a ? Math.max(0, Math.min(1, (p - a) / (b - a))) : 1;
-  return "rgb(" + ca.map((v, j) => Math.round(v + (cb[j] - v) * k)).join(",") + ")";
+/* From the XP box settling to a 100's hundo effect: a beat, long enough to
+   read as a hand-over and not as the XP box's own ending (build 321: "the
+   hundo effect is coming in after the xp box is finished? ... do what's
+   best" - after, so the character on the XP box is there to react). */
+const RS_FX_AFTER_XP_MS = 900;
+/* THE GRADE'S COLOUR AS IT CLIMBS (build 321): red, and only ever red into
+   green - "the color goes from red to orange? And if the grade is a fail
+   it shoots from orange to red and it's just weird. It needs to be just
+   the red slowly into the green not other colors." (Build 320 warmed
+   through an orange at 40 and an amber at 58.)
+   - Red below the pass mark, so a fail is red from its first frame to its
+     landing and never comes back to red from anything.
+   - From the pass mark it blends into the pass green, easing in and out,
+     all green at 100: the slow last stretch of a 100 is the red giving
+     way. A pass short of 100 finishes the blend as it lands.
+   - One straight line between the two (the same mix the card's two washes
+     make by crossfading), never round the colour wheel through orange,
+     amber or gold.
+   Both ends are the landed card's own: --wrong and --right (dark). Gold is
+   never the count's: a 100 goes green, then into its effect's look. */
+const RS_TONE_RED = [227, 112, 124], RS_TONE_GREEN = [79, 190, 140];
+function rsToneK(p){
+  const x = Math.max(0, Math.min(1, ((Number(p) || 0) - PASS_MARK) / (100 - PASS_MARK)));
+  return x * x * (3 - 2 * x);
 }
-/* The three washes' opacities at p - stacked layers crossfaded, so the
+function rsToneAt(p){
+  const k = rsToneK(p);
+  return "rgb(" + RS_TONE_RED.map((v, j) => Math.round(v + (RS_TONE_GREEN[j] - v) * k)).join(",") + ")";
+}
+/* The two washes' opacities at p - stacked layers crossfaded, so the
    card's colour moves by opacity alone (no repaint of the card). */
 function rsToneWeights(p){
-  const cl = v => Math.max(0, Math.min(1, v));
-  const g = cl((p - 50) / (PASS_MARK - 50));
-  const a = cl(p / 40) * (1 - g);
-  return [cl(1 - a - g), a, g];
+  const k = rsToneK(p);
+  return [1 - k, k];
 }
+/* A 100's green crossing into its hundo effect's look as it lands (the
+   card's wash, its border and glow, the bars and the number together). */
+const RS_HUNDO_CROSS_MS = 900;
+/* The last unit bar's ease-out power: its slow finish is the suspense
+   (build 321: 3.6, was 3.2 - "slow down a little more at the back end"). */
+const RS_GRADE_LAST_EASE = 3.6;
 /* How long each unit's bar takes. A bar runs longer the further it goes,
    the last one longest - its slow finish is the suspense - and several
    units share a budget so a long run is never tedious. Nothing right is
@@ -90325,7 +90440,8 @@ function rsGradeCountPlan(units, good){
   const fr = u => u.total ? u.right / u.total : 0;
   const ms = units.map((u, i) => {
     const f = fr(u);
-    if(i === n - 1) return Math.round(1200 + 1700 * f + 900 * f * f * f);
+    /* (build 321: longer at its end - was 1200 + 1700f + 900f^3) */
+    if(i === n - 1) return Math.round(1300 + 1800 * f + 1400 * f * f * f);
     return Math.round(500 + 1100 * f);
   });
   if(n > 1){
@@ -90515,7 +90631,8 @@ function showRunRewards(run, hooks, opts){
   if(countIt){
     const tl = document.createElement("span");
     tl.className = "rs-grade-tone"; tl.setAttribute("aria-hidden", "true");
-    toneLayers = ["is-red", "is-amber", "is-green"].map(c => { const s = document.createElement("i"); s.className = c; tl.appendChild(s); return s; });
+    /* two washes, red and green - nothing between them (build 321) */
+    toneLayers = ["is-red", "is-green"].map(c => { const s = document.createElement("i"); s.className = c; tl.appendChild(s); return s; });
     toneLayers[0].style.opacity = "1";
     grade.appendChild(tl);
   }
@@ -90652,11 +90769,16 @@ function showRunRewards(run, hooks, opts){
         const b = document.createElement("span"); b.className = "unit-breakdown-score"; rsPair(b, countIt ? 0 : right, st.total);
         top.append(a, b);
         const track = document.createElement("div"); track.className = "unit-breakdown-track";
-        /* A unit's bar is its OWN verdict: gold at 100, green at a pass,
-           red short of one - "if you don't pass the test, the bar needs to
-           be red too". */
+        /* A unit's bar is its OWN verdict: green at a pass, red short of
+           one - "if you don't pass the test, the bar needs to be red too".
+           Gold - the hundo box's colours - only on a 100% run, and only
+           once its grade has landed (build 321: "there is a slight moment
+           where the bar turns gold and stuff then into the hundo effect
+           box. It would go from green into the hundo effect though");
+           an aced unit on a run short of 100 stays green, as red goes
+           only into green. */
         const fill = document.createElement("div");
-        const fillTone = "unit-breakdown-fill" + (up === 100 ? " full is-gold" : up < PASS_MARK ? " low" : "");
+        const fillTone = "unit-breakdown-fill" + (up === 100 ? (run.isPerfect && !countIt ? " full is-gold" : " full") : up < PASS_MARK ? " low" : "");
         /* counted in, a bar takes its verdict's colour as it finishes (320) */
         fill.className = countIt ? "unit-breakdown-fill is-counting" : fillTone;
         if(countIt) fill.style.background = rsToneAt(0);
@@ -90686,12 +90808,20 @@ function showRunRewards(run, hooks, opts){
     unlocked = document.createElement("div");
     unlocked.className = "rs-card rs-unlocked rs-land";
     const k = document.createElement("p");
-    /* badges are found, not unlocked (build 319) */
-    k.className = "rs-kicker"; k.textContent = unlockItems.every(it => it.kind === "badge") ? "Found" : "Unlocked";
+    /* ONE BOX, ONE NAME (build 321): "The unlock section says found there
+       now? Shoukd it be found or unlocked or will there be two now ...
+       figure this out." One box, always "Found & unlocked" - a name that
+       changed with what was in it read as a different box - and each row
+       says which it is in its own line ("Badge found", "Character
+       unlocked"), as it always has. A row is found when it is a thing
+       that was missing (rsUnlockFound): a badge, a secret flare, anything
+       that carries `found` (a character found through the story). */
+    k.className = "rs-kicker"; k.textContent = RS_UNLOCK_BOX_TITLE;
     unlocked.appendChild(k);
     unlockItems.forEach(it => {
       const row = document.createElement("div");
-      row.className = "rs-unlock unlockbanner rs-land" + (it.kind === "badge" ? " badgebanner" : "") + " rs-unlock-" + it.kind;
+      row.className = "rs-unlock unlockbanner rs-land" + (it.kind === "badge" ? " badgebanner" : "") + " rs-unlock-" + it.kind
+        + (rsUnlockFound(it) ? " is-found" : " is-unlocked");
       row.style.setProperty("--spot-color", it.color || "#6FC2FF");
       const art = document.createElement("span");
       art.className = "rs-unlock-art";
@@ -90820,13 +90950,23 @@ function showRunRewards(run, hooks, opts){
     const tp = Math.floor(u.up * p);
     if(u.toneP !== tp){ u.toneP = tp; u.fill.style.background = rsToneAt(tp); }
   };
-  /* a bar home takes its own verdict's colour - gold, green or red */
+  /* a bar home takes its own verdict's colour - green or red - easing
+     into it rather than snapping (a pass short of 100 is part way from
+     red when it gets there); a 100's gold is the landing's (build 321) */
   const unitHome = u => {
     if(u.home) return;
     u.home = true;
     paintUnit(u, 1);
+    const was = u.fill.style.background;
     u.fill.style.background = "";
     u.fill.className = u.tone + " sbar is-home";
+    /* (a bar's own transition is its transform's alone - .sbar - so the
+       colour it counted in lifts off it as a layer) */
+    if(!gc.done && u.up >= PASS_MARK && u.up < 100 && was){
+      u.fill.style.setProperty("--was", was);
+      u.fill.classList.add("rs-was");
+      setTimeout(() => u.fill.classList.remove("rs-was"), 700);
+    }
   };
   let shownPct = -1, shownGood = -1;
   const paintCount = el => {
@@ -90834,7 +90974,7 @@ function showRunRewards(run, hooks, opts){
     unitBars.forEach((u, i) => {
       const t = (el - plan.starts[i]) / Math.max(1, plan.ms[i]);
       const last = i === unitBars.length - 1;
-      const p = t <= 0 ? 0 : t >= 1 ? 1 : 1 - Math.pow(1 - t, last ? 3.2 : 2.4);
+      const p = t <= 0 ? 0 : t >= 1 ? 1 : 1 - Math.pow(1 - t, last ? RS_GRADE_LAST_EASE : 2.4);
       if(t >= 1) unitHome(u);
       else if(t > 0){ u.running = true; paintUnit(u, p); }
       sofar += u.right * p;
@@ -90881,10 +91021,26 @@ function showRunRewards(run, hooks, opts){
       rsPair(gradeParts.frac, run.good, run.total);
       unitBars.forEach(u => rsPair(u.score, u.right, u.total));
       /* a 100 in its effect's colours from the moment it lands (the UFO's
-         unlit until its beam strikes) */
-      if(run.isPerfect){ try{ hfxTintGrade(grade, hundoFxInUse()); if(!instant && hundoFxInUse() === "ufo") hfxUfoUnlit(grade); }catch(e){} }
+         unlit until its beam strikes) - FROM THE GREEN IT COUNTED UP IN
+         (build 321: "It would go from green into the hundo effect though,
+         and the transition would need to be smooth. That goes for any of
+         them"). Never gold first: the bars were green to here, and the
+         card, its bars and its number all cross over together (.rs-tint-in,
+         .rs-from-green - the green fades off over the effect's colours;
+         Confetti's look is the gold). */
+      if(run.isPerfect){
+        try{ hfxTintGrade(grade, hundoFxInUse()); if(!instant && hundoFxInUse() === "ufo") hfxUfoUnlit(grade); }catch(e){}
+        unitBars.forEach(u => {
+          u.fill.classList.add("is-gold");
+          if(!instant){ u.fill.style.setProperty("--was", "var(--right)"); u.fill.classList.add("rs-was", "is-slow"); }
+        });
+        if(!instant){
+          grade.classList.add("rs-tint-in");
+          setTimeout(() => { grade.classList.remove("rs-tint-in"); unitBars.forEach(u => u.fill.classList.remove("rs-was", "is-slow")); }, RS_HUNDO_CROSS_MS + 120);
+        }
+      }
       const tl = grade.querySelector(".rs-grade-tone");
-      if(tl) setTimeout(() => tl.remove(), instant ? 0 : 650);
+      if(tl) setTimeout(() => tl.remove(), instant ? 0 : (run.isPerfect ? RS_HUNDO_CROSS_MS : 600) + 60);
     }
     if(!instant){
       panel.classList.add("rs-shake");
@@ -91013,25 +91169,12 @@ function showRunRewards(run, hooks, opts){
     let first = true, afterScene = false;
     /* the first waits out a 100's effect (its tail) as well as the pause */
     const nextGap = () => { const g = first ? Math.max(RS_UNLOCK_GAP_MS, fxTail + 400) : afterScene ? 320 : 1200; first = false; afterScene = false; return g; };
-    let rewardsDone = false, caseDone = false;
-    const rewardParts = unlockItems.filter(isRankRewardItem);
-    const bannerIdx = unlockItems.filter(it => it.kind !== "badge" && !isRankRewardItem(it));
+    let caseDone = false;
+    const bannerIdx = unlockItems.filter(it => it.kind !== "badge");
     const onRow = {};
     unlockItems.forEach((it, n) => {
-      /* Everything a rank handed over before (a rank already shown whose
-         character or banner was never announced): one card. */
-      if(isRankRewardItem(it)){
-        if(rewardsDone) return;
-        rewardsDone = true;
-        if(!theme.muteBanners){
-          const card = rewardParts.length > 1 ? rankRewardsItem(it.rankReward, rewardParts) : it;
-          seq.add(nextGap(), (instant, release) => playUnlockSpotlight(card, 1, 1, release), true);
-        } else {
-          markUnlocksShown(rewardParts.filter(p => p.kind === "character").map(p => p.character),
-                           rewardParts.filter(p => p.kind === "banner").map(p => p.banner));
-        }
-        return;
-      }
+      /* (No rank's reward card here: a rank hands its things over on
+         Profile's road map, and rsUnlockItems never lists them - 321.) */
       /* A BADGE'S MOMENT IS THE CASE - once for every badge the run earned,
          each flying to its slot in turn. */
       if(it.kind === "badge"){
