@@ -8436,7 +8436,7 @@ def check_b303(br):
           document.querySelector('.qpanel .choice[data-index="' + ew + '"]').click(); await wait(300);
           out.examJudged = !!document.querySelector('.qpanel .choice.is-right') && !!document.querySelector('.qpanel .choice.is-wrong-pick');
           document.querySelector('.qpanel .choice[data-index="' + er + '"]').click(); await wait(200);
-          out.examLocked = picked[eqi] === ew;
+          out.examLocked = picked[eqi] === ew;   /* still the wrong pick = the second pick was refused */
           out.examMode = document.getElementById('testmodelabel').textContent;
           cfg.examFeedback = false;
           /* 8. Learn, and its flashcards */
@@ -8494,13 +8494,22 @@ def check_b303(br):
         check(dev + ": and shows no words beside it (build 314)", r.get("starNote") == "", r.get("starNote"))
         check(dev + ": paused, the timer stays up in its paused colour", r.get("pausedTimer") is True and r.get("resumedTimer") is True)
         check(dev + ": Instant feedback is not offered in Drill", r.get("drillHasFeedback") is False)
-        check(dev + ": in Exam with it on, a pick is judged and locked",
-              r.get("examJudged") is True and r.get("examLocked") is True and r.get("examMode") == "Exam", (r.get("examJudged"), r.get("examLocked"), r.get("examMode")))
-        # Build 305 put the name back to Review; the sheet, the list and the card all say the same thing.
-        check(dev + ": the mode is called Review everywhere", r.get("sheetTitle") == "Review" and r.get("listTitle") == "Review", (r.get("sheetTitle"), r.get("listTitle")))
-        check(dev + ": with Flashcards on, Begin says so and opens a card", r.get("beginText") == "Start flashcards" and r.get("fcCard") is True, r.get("beginText"))
-        check(dev + ": the card has the count in the middle, Review on the left, no timer and a star",
-              r.get("fcCount") == "1/12" and r.get("fcMode") == "Review" and r.get("fcTimer") is True and r.get("fcStar") is True,
+        # MOVED IN 324 (b324m): Instant feedback is gone from Exam - "Let's
+        # also remove the instant feedback option from the exam mode. Takes
+        # away from the mode for what it's meant for, to give you no idea how
+        # you do till the very end." An old preference left on judges nothing
+        # now; Exam shows as Qualifier (check_b324m_modes holds the rest).
+        check(dev + ": in a Qualifier, even with an old Instant feedback preference on, a pick is not judged or locked (build 324)",
+              r.get("examJudged") is False and r.get("examLocked") is False and r.get("examMode") == "Qualifier", (r.get("examJudged"), r.get("examLocked"), r.get("examMode")))
+        # Build 305 put the name back to Review; build 324 renamed it Briefing
+        # ("exam mode and review mode need a new name and logo"). The sheet,
+        # the list and the card all say the same thing.
+        check(dev + ": the mode is called Briefing everywhere (build 324)", r.get("sheetTitle") == "Briefing" and r.get("listTitle") == "Briefing", (r.get("sheetTitle"), r.get("listTitle")))
+        # MOVED IN 324: "if flashcards are on, it would probably just say the
+        # same thing, begin review" - Begin names the mode, flashcards or not.
+        check(dev + ": with Flashcards on, Begin says Begin briefing and opens a card (build 324)", r.get("beginText") == "Begin briefing" and r.get("fcCard") is True, r.get("beginText"))
+        check(dev + ": the card has the count in the middle, Briefing on the left, no timer and a star",
+              r.get("fcCount") == "1/12" and r.get("fcMode") == "Briefing" and r.get("fcTimer") is True and r.get("fcStar") is True,
               (r.get("fcCount"), r.get("fcMode"), r.get("fcTimer"), r.get("fcStar")))
         check(dev + ": a tap flips it", r.get("fcFlipped") is True)
         check(dev + ": the bar goes green as you go and un-greens going back", r.get("fcGreenAt3") == 2 and r.get("fcGreenBack") == 1, (r.get("fcGreenAt3"), r.get("fcGreenBack")))
@@ -12687,8 +12696,10 @@ def check_b314_study(br):
               r["after"]["filled"] is True and not r["after"]["empty"] and r["after"]["sub"].startswith("1 question"), r["after"])
         check("%s the filled star is the in-test star's soft gold (#E8C770), not 308's #FFD233" % label,
               "#E8C770" in r["stops"] and "#FFD233" not in r["stops"], r["stops"])
-        check("%s the Starred box opens through LOADING REVIEW, ~2s, with the tab bar off it" % label,
-              r["rv"]["label"] == "LOADING REVIEW" and r["rv"]["tabsHidden"] and 1850 <= r["rv"]["ms"] <= 2350 and r["rv"]["screen"], r["rv"])
+        # MOVED IN 324 (b324m): Review is the Briefing on screen ("exam mode
+        # and review mode need a new name"), so its loading screen says so.
+        check("%s the Starred box opens through LOADING BRIEFING, ~2s, with the tab bar off it" % label,
+              r["rv"]["label"] == "LOADING BRIEFING" and r["rv"]["tabsHidden"] and 1850 <= r["rv"]["ms"] <= 2350 and r["rv"]["screen"], r["rv"])
         check("%s flashcards open through LOADING FLASHCARDS, ~2s" % label,
               r["fc"]["label"] == "LOADING FLASHCARDS" and 1850 <= r["fc"]["ms"] <= 2350 and r["fc"]["screen"], r["fc"])
         check("%s and a test keeps LOADING TEST at ~2.5s - half a second longer" % label,
@@ -22016,7 +22027,9 @@ def check_b320f_nova(br):
               t.get("typing0") and t.get("restBefore", 0) > 0 and t.get("idx1") == t.get("idx0") and t.get("restAfter") == 0 and t.get("idx2") == t.get("idx0", 0) + 1, t)
         # build 321: "he calls himself the app maker, don't do that" - an
         # explorer and an instructor now (check_b321g_nova holds the rest)
-        need = ["Nova", "explorer", "badge", "flare", "crew", "Supernova", "XP", "level", "Drill", "Exam", "Review", "Madison"]
+        # MOVED IN 324 (b324m): Exam and Review are Qualifier and Briefing on
+        # screen ("exam mode and review mode need a new name and logo").
+        need = ["Nova", "explorer", "badge", "flare", "crew", "Supernova", "XP", "level", "Drill", "Qualifier", "Briefing", "Madison"]
         miss = [x for x in need if x not in lines]
         check("%s he introduces himself and the story: badges, flares, ranks, levels, tests" % dev, not miss and r.get("goLabel"), {"missing": miss, "go": r.get("goLabel")})
         check("%s the tooltips follow in his bubble, every one" % dev,
@@ -26089,7 +26102,7 @@ def check_b323s_summary(br):
           return { bg: cs.backgroundImage, radius: cs.borderTopLeftRadius }; }""")
         res = {}
         for mode, fl in (("drill", False), ("exam", False), ("review", False), ("review", True)):
-            name = "Flashcards" if fl else {"drill": "Drill", "exam": "Exam", "review": "Review"}[mode]
+            name = "Flashcards" if fl else {"drill": "Drill", "exam": "Qualifier", "review": "Briefing"}[mode]
             pg.evaluate(OPEN, [mode, UNITS])
             if fl:
                 pg.evaluate(ROW, "Flashcards")
@@ -26103,8 +26116,6 @@ def check_b323s_summary(br):
                   sl.value=10; sl.dispatchEvent(new Event('input',{bubbles:true})); sl.dispatchEvent(new Event('change',{bubbles:true}));
                   await new Promise(z=>setTimeout(z,500)); }""")
                 r["afterCut"] = pg.evaluate(READ)
-            elif mode == "exam":
-                pg.evaluate(ROW, "Instant feedback"); r["afterFb"] = pg.evaluate(READ)
             elif fl:
                 pg.evaluate(ROW, "Flashcards"); r["afterOff"] = pg.evaluate(READ)
             res[name] = r
@@ -26124,7 +26135,7 @@ def check_b323s_summary(br):
             check("%s %s: it names the mode, the units count, the question count and the units" % (label, name),
                   r["mode"] == r["want"]["mode"] and r["line"] == "2 units · %d questions" % n
                   and all(u in r["units"] for u in UNITS), {k: r[k] for k in ("mode", "line", "units")})
-        d, e, v, f = res.get("Drill", {}), res.get("Exam", {}), res.get("Review", {}), res.get("Flashcards", {})
+        d, e, v, f = res.get("Drill", {}), res.get("Qualifier", {}), res.get("Briefing", {}), res.get("Flashcards", {})
         if d.get("ok"):
             check("%s Drill: the options line says what is on (Shuffled choices), and nothing that is off" % label,
                   d["opts"] == "Shuffled choices", d["opts"])
@@ -26135,13 +26146,14 @@ def check_b323s_summary(br):
             check("%s Drill: How many at 10 rewrites the count, and No hundo shows in the box, Begin still in view" % label,
                   ac.get("line") == "2 units · 10 questions" and ac.get("chip") is True and ac.get("beginIn") and ac.get("beginOnTop"),
                   {k: ac.get(k) for k in ("line", "chip", "beginIn", "beginOnTop")})
+        # MOVED IN 324 (b324m): the Instant feedback half is gone with the
+        # switch - "Let's also remove the instant feedback option from the
+        # exam mode." What still holds: nothing on says nothing.
         if e.get("ok"):
-            fb = e.get("afterFb") or {}
-            check("%s Exam: nothing on says nothing; Instant feedback on puts it in the line" % label,
-                  e["opts"] == "" and fb.get("opts") == "Instant feedback", [e["opts"], fb.get("opts")])
+            check("%s Qualifier: nothing on says nothing" % label, e["opts"] == "", e["opts"])
         if v.get("ok") and f.get("ok"):
             off = f.get("afterOff") or {}
-            check("%s Review / Flashcards: Flashcards on says Flashcards, and off takes it away" % label,
+            check("%s Briefing / Flashcards: Flashcards on says Flashcards, and off takes it away" % label,
                   v["opts"] == "" and f["opts"] == "Flashcards" and off.get("opts") == "", [v["opts"], f["opts"], off.get("opts")])
 
 
@@ -26829,6 +26841,196 @@ def check_b324p_unlocks(br):
               and r.get("mergedStable") is True, (mg, r.get("mergedStable")))
 
 
+B324M_MODES = """async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+  try{
+  document.querySelectorAll('#pushing-update,#intro-pop').forEach(n => n.remove());
+  store.seenUnitSelectTour = true; store.seenModeSelectTour = true; store.seenUnitHoldTip = true; store.flagged = {};
+  const col = el => el ? getComputedStyle(el).stroke : null;
+  /* 1. the mode cards: names, the two new descriptions, the icons' colours */
+  showModeSelect(); await wait(600);
+  out.cards = {};
+  document.querySelectorAll('.modecard').forEach(c => { const p = c.querySelector('.modeicon .modeiconpath');
+    out.cards[c.dataset.mode] = { title: (c.querySelector('.modecardtitle') || {}).textContent, desc: (c.querySelector('.modecarddesc') || {}).textContent,
+      stroke: col(p), d: [...c.querySelectorAll('.modeicon path, .modeicon circle')].map(e => e.getAttribute('d') || 'c').join('|') }; });
+  /* 2. each start sheet: its title, the box, Begin, the unit-selection pill */
+  const openSheet = async (mode, flash) => {
+    document.getElementById('unitoptions-modal')?.remove();
+    cfg.mode = mode; cfg.units = []; cfg.flashcards = false; showSetup(); await wait(800);
+    const p = [...document.querySelectorAll('.screen-setup .pick')].find(p => p.querySelector('.pname').textContent === 'Identity Crimes');
+    p.click(); await wait(600);
+    document.getElementById('nextbtn').click(); await wait(700);
+    const sh = document.querySelector('#unitoptions-modal');
+    if(flash){ const r = [...sh.querySelectorAll('.opt')].find(o => /Flashcards/.test(o.textContent)); r && r.click(); await wait(400); }
+    const vis = [...sh.querySelectorAll('.opt')].filter(o => !o.hidden && o.offsetParent).map(o => o.textContent);
+    const chip = document.querySelector('.setup-modechip .rs-mode');
+    const ic = sh.querySelector('.sheet-summary-mode .modeicon .modeiconpath');
+    return { title: (sh.querySelector('.unitoptions-modal-title') || {}).textContent,
+      box: (sh.querySelector('.sheet-summary-mode') || {}).textContent, boxIcon: col(ic),
+      opts: (sh.querySelector('.sheet-summary-opts') || {}).textContent || '',
+      begin: (sh.querySelector('.sheet-begin-btn') || {}).textContent, sheetText: sh.textContent,
+      rows: vis, chip: chip ? chip.textContent : null,
+      pill: (document.getElementById('nextbtn') || {}).textContent };
+  };
+  out.sheets = {};
+  out.sheets.drill = await openSheet('drill');
+  out.sheets.exam = await openSheet('exam');
+  out.sheets.review = await openSheet('review');
+  out.sheets.flash = await openSheet('review', true);
+  document.getElementById('unitoptions-modal')?.remove();
+  /* 3. the Virtual Room host's sheet */
+  showVirtualRoomSetup(); await wait(800);
+  { const p = [...document.querySelectorAll('.pick')].find(p => p.querySelector('.pname') && p.querySelector('.pname').textContent === 'Identity Crimes');
+    p && p.click(); await wait(600);
+    const tab = document.querySelector('.bottomtabs .bottomtab-start');
+    out.vrPill = tab ? tab.textContent.trim() : null;
+    document.querySelector('.vroom-setup-go').click(); await wait(700);
+    const sh = document.querySelector('#unitoptions-modal');
+    out.vrBegin = (sh.querySelector('.sheet-begin-btn') || {}).textContent;
+    out.vrTitle = (sh.querySelector('.unitoptions-modal-title') || {}).textContent;
+    sh.remove(); }
+  /* 4. a Qualifier run, with an old Instant feedback preference left on:
+     the label, the blocks' colour, and no right or wrong anywhere */
+  showHome(); await wait(400);
+  out.flashTick = null;
+  cfg.mode = 'exam'; cfg.units = []; showSetup(); await wait(800);
+  [...document.querySelectorAll('.screen-setup .pick')].find(p => p.querySelector('.pname').textContent === 'Identity Crimes').click(); await wait(600);
+  document.getElementById('nextbtn').click(); await wait(700);
+  cfg.examFeedback = true;
+  document.querySelector('#unitoptions-modal .sheet-begin-btn').click();
+  for(let i = 0; i < 120 && !document.querySelector('.qpanel .choice'); i++) await wait(100);
+  await wait(500);
+  out.run = { label: (document.getElementById('testmodelabel') || {}).textContent, stored: store.opts && store.opts.mode, mode: cfg.mode, runMode };
+  const qi = order[pos], right = correctSlot(qi), wrong = (right + 1) % 4;
+  const nowTick = document.querySelector('#meter .tick.now');
+  out.run.now = nowTick ? getComputedStyle(nowTick).backgroundColor : null;
+  document.querySelector('.qpanel .choice[data-index="' + wrong + '"]').click(); await wait(500);
+  const judged = () => !!document.querySelector('.qpanel .choice.is-right, .qpanel .choice.is-wrong-pick, .qpanel .choice.is-wrong-flash, .qpanel .choice.locked, .qpanel .choice.is-right-pop')
+    || /good|bad/.test((document.querySelector('.qpanel > .status') || {}).className || '');
+  out.run.judgedWrong = judged();
+  out.run.status = (document.querySelector('.qpanel > .status') || {}).textContent;
+  document.querySelector('.qpanel .choice[data-index="' + right + '"]').click(); await wait(500);
+  out.run.judgedRight = judged();
+  out.run.changed = picked[qi] === right;
+  document.getElementById('nextbtn').click();
+  for(let i = 0; i < 40 && pos === 0; i++) await wait(100);
+  await wait(500);
+  const doneTick = document.querySelector('#meter .tick.done');
+  out.run.done = doneTick ? getComputedStyle(doneTick).backgroundColor : null;
+  out.run.meterClass = document.getElementById('meter').className;
+  out.run.counter = (document.getElementById('count') || {}).textContent;
+  testInProgress = false;
+  /* 5. a Briefing, as the list and as flashcards */
+  showAnswerReview(['Identity Crimes'], 'all', {}); await wait(500);
+  out.listTitle = (document.querySelector('.screen-answerreview .ar-head-title') || {}).textContent;
+  out.listIcon = col(document.querySelector('.screen-answerreview .ar-head .modeicon .modeiconpath'));
+  showFlashcards(['Identity Crimes'], 'all', {}); await wait(800);
+  out.fcLabel = (document.getElementById('testmodelabel') || {}).textContent;
+  document.getElementById('fcnext').click(); await wait(500);
+  const ft = document.querySelector('#meter .tick.clean');
+  out.flashTick = ft ? getComputedStyle(ft).backgroundColor : null;
+  try{ fcLeave(); }catch(e){}
+  /* 6. history: an entry saved as "exam" long ago, with and without units */
+  store.testHistory = [{ units: ['Identity Crimes'], pct: 88, mode: 'exam', playedAt: Date.now() - 1e6 },
+                       { label: 'All units \\u2014 Exam', pct: 70, mode: 'exam', playedAt: Date.now() - 2e6 },
+                       { units: ['Identity Crimes'], pct: 64, mode: 'drill', playedAt: Date.now() - 3e6 }];
+  showTestReviewList(); await wait(600);
+  out.hist = { chips: [...document.querySelectorAll('.thx-row .thx-chip')].map(c => c.textContent),
+    names: [...document.querySelectorAll('.thx-row .thx-row-name')].map(c => c.textContent),
+    filters: [...document.querySelectorAll('.thx-filter-btn')].map(b => b.textContent),
+    stored: store.testHistory.map(e => e.mode) };
+  showTestHistoryDetail(store.testHistory[0]); await wait(500);
+  out.hist.detail = (document.querySelector('.thx-hero .thx-chip') || {}).textContent;
+  out.results = rsModeLabel({ mode: 'exam' });
+  out.title = { exam: modeTitleOf('exam'), review: modeTitleOf('review') };
+  } catch(e){ out.threw = String(e && e.stack || e).slice(0, 400); }
+  return out; }"""
+
+
+def check_b324m_modes(br):
+    """Build 324 (b324m): Exam and Review get their own names, marks and
+    colours, Instant feedback is gone, and every Begin names its mode.
+    "I feel like exam mode and review mode need a new name and logo ...
+    Could we make it where the review section is now a purple colored
+    icon as well? And exam mode, instead of it being a white for the
+    progress bar ... could that color match? ... Let's also remove the
+    instant feedback option from the exam mode ... for drill it would say
+    begin drill ... For the review one it says show all, it could say
+    begin review and if flashcards are on ... the same thing." Exam shows
+    as Qualifier and Review as Briefing on every card, sheet, chip, label,
+    list and history row, while the stored mode stays "exam"/"review" (an
+    old "exam" history entry reads Qualifier); Briefing's mark is the
+    flashcards' violet; a Qualifier's progress blocks wear its orange;
+    nothing in a Qualifier says right or wrong before the results, even
+    with an old Instant feedback preference left on; Begin reads Begin
+    drill / Begin qualifier / Begin briefing (flashcards too), and the
+    Virtual Room host's reads Open lobby (its button label only - the
+    Next pill and the sheet's title are another builder's). Fails on ab75270."""
+    print("\n324m. build 324: Qualifier and Briefing, their marks and colours, no Instant feedback, Begin names the mode")
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        r = pg.evaluate(B324M_MODES)
+        ctx.close()
+        if r.get("threw"):
+            print("   threw:", r["threw"])
+        cards = r.get("cards") or {}
+        check("%s the mode cards read Drill, Qualifier, Briefing, Virtual Room" % label,
+              [cards.get(m, {}).get("title") for m in ("drill", "exam", "review", "vroom")] == ["Drill", "Qualifier", "Briefing", "Virtual Room"],
+              [cards.get(m, {}).get("title") for m in ("drill", "exam", "review", "vroom")])
+        ed, rd = cards.get("exam", {}).get("desc") or "", cards.get("review", {}).get("desc") or ""
+        check("%s the Qualifier card says no feedback until your grade; Briefing's says it is not a test, answers shown" % label,
+              "no feedback" in ed and "grade" in ed and "Instant feedback" not in ed
+              and rd.startswith("Not a test") and "answer" in rd and "flashcards" in rd, [ed, rd])
+        st = {m: cards.get(m, {}).get("stroke") for m in ("drill", "exam", "review", "vroom")}
+        check("%s Briefing's mark is the flashcards' violet" % label,
+              st["review"] is not None and st["review"] == r.get("flashTick"), [st["review"], r.get("flashTick")])
+        check("%s the Qualifier's mark has its own colour, not Drill's, Briefing's or the Virtual Room's" % label,
+              st["exam"] and len({st["drill"], st["exam"], st["review"], st["vroom"]}) == 4, st)
+        sh = r.get("sheets") or {}
+        want = {"drill": ("Drill", "Begin drill"), "exam": ("Qualifier", "Begin qualifier"),
+                "review": ("Briefing", "Begin briefing"), "flash": ("Briefing", "Begin briefing")}
+        for k, (name, begin) in want.items():
+            s = sh.get(k) or {}
+            check("%s %s sheet: titled %s, the box and the chip say %s, Begin reads %r" % (label, k, name, name, begin),
+                  s.get("title") == name and s.get("box") == name and s.get("chip") == name and s.get("begin") == begin,
+                  {x: s.get(x) for x in ("title", "box", "chip", "begin")})
+        ex = sh.get("exam") or {}
+        check("%s no Instant feedback anywhere in the Qualifier's sheet" % label,
+              bool(ex) and "Instant feedback" not in (ex.get("sheetText") or "x Instant feedback") and not any("feedback" in t for t in ex.get("rows") or []),
+              ex.get("rows"))
+        check("%s each sheet's box carries its mode's mark in its colour" % label,
+              (sh.get("exam") or {}).get("boxIcon") == st["exam"] and (sh.get("review") or {}).get("boxIcon") == st["review"]
+              and (sh.get("drill") or {}).get("boxIcon") == st["drill"],
+              {k: (sh.get(k) or {}).get("boxIcon") for k in ("drill", "exam", "review")})
+        check("%s the unit-selection pill names the mode: Start drill / qualifier / briefing" % label,
+              (sh.get("drill") or {}).get("pill", "").startswith("Start drill,") and (sh.get("exam") or {}).get("pill", "").startswith("Start qualifier,")
+              and (sh.get("review") or {}).get("pill", "").startswith("Start briefing,"),
+              {k: (sh.get(k) or {}).get("pill") for k in ("drill", "exam", "review")})
+        check("%s the Virtual Room host's sheet button reads Open lobby" % label,
+              r.get("vrBegin") == "Open lobby",
+              {k: r.get(k) for k in ("vrPill", "vrTitle", "vrBegin")})
+        run = r.get("run") or {}
+        check("%s a Qualifier run says Qualifier, while cfg, store.opts and runMode keep \"exam\"" % label,
+              run.get("label") == "Qualifier" and run.get("stored") == "exam" and run.get("mode") == "exam" and run.get("runMode") == "exam"
+              and "qualifier" in (run.get("counter") or ""),
+              {k: run.get(k) for k in ("label", "stored", "mode", "runMode", "counter")})
+        check("%s its progress blocks wear the Qualifier's orange, not white" % label,
+              "is-qualifier" in (run.get("meterClass") or "") and run.get("done") == st["exam"]
+              and run.get("now") not in (None, "rgb(255, 255, 255)", "rgb(231, 237, 241)"),
+              {k: run.get(k) for k in ("meterClass", "done", "now")})
+        check("%s nothing says right or wrong before the results, even with an old Instant feedback preference on" % label,
+              run.get("judgedWrong") is False and run.get("judgedRight") is False and run.get("changed") is True,
+              {k: run.get(k) for k in ("judgedWrong", "judgedRight", "changed", "status")})
+        check("%s a Briefing's list and its flashcards say Briefing, the list in the Briefing's violet" % label,
+              r.get("listTitle") == "Briefing" and r.get("fcLabel") == "Briefing" and r.get("listIcon") == st["review"],
+              {k: r.get(k) for k in ("listTitle", "fcLabel", "listIcon")})
+        hi = r.get("hist") or {}
+        check("%s history entries saved as \"exam\" read Qualifier (chips, filter, label, detail, results), still stored as exam" % label,
+              hi.get("chips", [])[:2] == ["Qualifier", "Qualifier"] and "Qualifier" in hi.get("filters", [])
+              and "Exam" not in " ".join(hi.get("names", []) + hi.get("filters", [])) and hi.get("detail") == "Qualifier"
+              and r.get("results") == "Qualifier" and hi.get("stored") == ["exam", "exam", "drill"],
+              {k: hi.get(k) for k in ("chips", "names", "filters", "detail", "stored")} | {"results": r.get("results")})
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -27062,6 +27264,7 @@ def main():
             check_b324l_board(br)
             check_b324g_toggles(br)
             check_b324p_unlocks(br)
+            check_b324m_modes(br)
         finally:
             br.close()
     SERVER.shutdown()
