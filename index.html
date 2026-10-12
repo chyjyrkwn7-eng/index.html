@@ -19262,8 +19262,10 @@
   .picks > label.pick:has(input:checked) .pick-more-body, .picks > label.pick.pick-checked .pick-more-body{
     opacity:1; transform:none; transition-delay:.06s;
   }
-  .picks.is-dragselecting > label.pick > .pick-more{ grid-template-rows:0fr; visibility:hidden; }
-  .picks.is-dragselecting > label.pick .pick-more-body{ opacity:0; }
+  .picks.is-dragselecting > label.pick > .pick-more{ grid-template-rows:0fr !important; visibility:hidden !important; }
+  .picks.is-dragselecting > label.pick .pick-more-body{ opacity:0 !important; }
+  .picks.is-dragselecting > label.pick.dfz-open > .pick-more{ grid-template-rows:1fr !important; visibility:visible !important; }
+  .picks.is-dragselecting > label.pick.dfz-open .pick-more-body{ opacity:1 !important; transform:none !important; }
   .pick-more-stats{ flex:1; min-width:0; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.35rem; }
   .pick-more-stat{ display:flex; flex-direction:column; gap:.1rem; min-width:0; }
   .pick-more-val{ font-size:.92rem; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -82182,6 +82184,11 @@ function attachDragSelect(list, onChange){
     st.anchor = st.rows.indexOf(st.row);
     if(st.anchor < 0){ st = null; return; }
     st.orig = st.rows.map(r => r.querySelector("input[type=checkbox]").checked);
+    /* Every row's details drawer holds still while the finger is moving
+       (build 323): open ones stay open, shut ones stay shut, and they all
+       catch up when the drag ends - a row growing or shrinking under a
+       moving finger would put a different row under it. */
+    st.rows.forEach((r, i) => r.classList.toggle("dfz-open", st.orig[i]));
     st.target = !st.orig[st.anchor];
     st.over = st.row;
     st.moved = true;
