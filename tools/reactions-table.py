@@ -1086,3 +1086,18 @@ happy("inferno", glee([(16.6, 18.9, 1.6), (23.4, 18.9, 1.6)], "#FF4A2A", core="#
 happy("astral", glee([(17.2, 18.9, 1.6), (22.8, 18.9, 1.6)], "#3EF0FF", core="#EFFFFF", sw=.42), hide=("eyes", "fx-zceyeglow"))
 happy("celestial", grin(20, 23.5, 1.25, "#8E9AB4", sw=.3), use_joy=True)
 happy("zenith", glee([(17.5, 18.9, 1.5), (22.5, 18.9, 1.5)], "#8FCBFF", core="#FFFFFF", sw=.42), hide=("eyes", "fx-zaeyeglow"))
+# A FAIL IS LET DOWN: a face that rests in a smile (the Detective, the
+# Hacker, Tempest, Frost) turns it over when it fails, so a fail never
+# reads pleased.
+for cid, pose in (("detective", "transform:scale(.75, -.9)"), ("hacker", "transform:scale(.9, -.8)"),
+                  ("tempest", "transform:scale(.9, -.9)"), ("frost", "transform:scale(.9, -.9)")):
+    spec = RX[cid]["fail"]
+    spec["parts"] = [p for p in spec["parts"] if p.sel[0] != "mouth"] + [P("mouth", pose, (.8, EASE_OUT, {}), at=.3)]
+# ...and never cross: eyes that slant down to the nose (the Alien, the
+# Masked One, Ronin, Umbra, Inferno, Astral, Zenith, Celestial, Orion) drop
+# and narrow to dim, tired slits, and Tempest's and Frost's brows go level.
+for cid in ("alien", "masked", "ronin", "umbra", "inferno", "astral", "zenith", "celestial", "astronaut"):
+    spec = RX[cid]["fail"]
+    spec["parts"] = [p for p in spec["parts"] if p.sel[0] != "eyes"] + [P("eyes", "opacity:.5; transform:translateY(.6px) scaleY(.36)", (1.0, EASE_OUT, {}), at=.3)]
+for cid in ("tempest", "frost"):
+    RX[cid]["fail"]["parts"] += [P("brow", "transform:translateY(.3px) scaleY(.1)", (.8, EASE_OUT, {}), at=.3)]
