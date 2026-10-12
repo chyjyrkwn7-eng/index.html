@@ -19653,11 +19653,20 @@ def check_b317_badge2(br):
         pg.evaluate("() => showRanksScreen('badges')")
         pg.wait_for_timeout(1500)
         tab = pg.evaluate(SIDE, ".badge-case .badge-case-front .nova-case-sideplate")
-        tabLid = pg.evaluate("() => { const l = document.querySelector('.badge-case .badge-case-lid'); return l ? /badge case/i.test(l.textContent) : null; }")
+        # REVISED IN 321 (b321c): the Badges tab's case is now the cutscene's
+        # case part for part ("the Badges screen case must match the
+        # cutscene"), and the cutscene's lid has carried the name debossed in
+        # its cushion on purpose since 320. What Madison asked against in 317
+        # was the name UNDER the top instead of on the side - so the side
+        # plate is still required, and any name on the lid may only be that
+        # deboss, never a plate or a heading.
+        tabLid = pg.evaluate("""() => { const l = document.querySelector('.badge-case .badge-case-lid'); if(!l) return null;
+          const c = l.cloneNode(true); c.querySelectorAll('.nova-case-cushion, .nova-case-lidlabel').forEach(n => n.remove());
+          return /badge case/i.test(c.textContent); }""")
         # the case's name since build 320
         good = lambda v: bool(v) and v["text"].lower() == "level 1 badge case" and v["hit"]
-        check(f"{dev}: the Badges tab's case has the same plate on its side, and nothing on its lid",
-              good(tab) and tabLid is False, {"plate": tab, "lid says it": tabLid})
+        check(f"{dev}: the Badges tab's case has the same plate on its side, and nothing on its lid but the cutscene's deboss",
+              good(tab) and tabLid is False, {"plate": tab, "lid says it (outside the deboss)": tabLid})
         check(f"{dev}: ...and so does the Profile card's - its name on its side, no heading over the tray",
               # build 319: the Profile case is shut and has no head row at all
               good(pf) and pfHead in (False, None), {"plate": pf, "head says it": pfHead})
