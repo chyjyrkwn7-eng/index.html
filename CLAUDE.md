@@ -20038,7 +20038,10 @@ now? ... figure this out"*, *"The rank up is still showing in unlocks."*
   back end; a rank's character and banner absent with no rank-up owed; the
   box's name and its found tag. Moved to the new decisions in
   `check_b320a_results`: B (a fail stays red - was "warms as it climbs") and
-  F (the number with the bar; knock, 0.75s+ from the knock - timed by a
-  mutation observer, not polled - and an overflow that eases
-  in - was "the number after the bar"). check-results section 8: the rank
+  F (the number with the bar and in step with it, at its end as the bar
+  stops; then, on Playwright's clock - timers, frames and performance.now
+  stepped 16ms, because on a loaded machine the real-clock wait read
+  650-1,480ms for the same schedule - the knock, 0.8s+ to the overflow (321:
+  896ms, 320: 608ms) and under 15% of it in its first 150ms (321: 5-8%, 320:
+  46%) - was "the number after the bar"). check-results section 8: the rank
   rewards and `rsToneAt` at every percent.

@@ -21940,8 +21940,9 @@ def check_b320a_results(br):
         lag.append(round(max(0, min(win) - .04 - sn, sn - max(win) - .04), 3))
     check("F: and in step with it - the number's share is the bar's (within its last ~100ms, +-4%)",
           bool(lag) and max(lag) == 0, max(lag) if lag else None)
-    at_home = [x for x in o if t_home is not None and x["t"] >= t_home][:2]
-    check("F: the number is at its end as the bar gets home", any(N(x) == n_end for x in at_home), [N(x) for x in at_home] + [n_end])
+    t_stop = _b320a_first(o, lambda x: x["v"] == end)
+    at_home = [x for x in o if t_stop is not None and t_stop <= x["t"] <= t_stop + 150]
+    check("F: the number is at its end as the bar stops (within 150ms)", any(N(x) == n_end for x in at_home), [N(x) for x in at_home] + [n_end])
 
     # the climb to the full figure, on the real clock (the bar moves)
     o = xr["gain"]
