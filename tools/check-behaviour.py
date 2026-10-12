@@ -23397,6 +23397,211 @@ def check_b320c_case(br):
         ctx.close()
 
 
+# The mood of a face, measured off its shapes (build 321, b321b). Every
+# point is in the units of the group that holds the eyes, so a head tilt is
+# not read as a scowl:
+#   eyes   a filled eye's long axis, and how far its inner end (towards the
+#          middle of the face, x=20) drops below its outer end per unit
+#          across - over .2 is a scowl; a drawn line's arch, how far its
+#          middle stands over its ends per half-width - over .25 is a ^
+#   brows  the same droop, on whatever is drawn as a brow (.cx-brow)
+#   mouth  where its middle sits against its corners per half-width
+#          (+ lower: a smile; - a frown; an O is level)
+# happy = no scowling eye or brow, no frown, and both eyes arched or a smile.
+B321B_MOOD = r"""(av) => {
+  /* the face's mood, measured off its shapes in the face's own units
+     (the group holding the eyes, so a head tilt does not count) */
+  const svg = av.querySelector('svg.avatarchar-svg');
+  const eg = svg.querySelector('.cx-eyes'), sg = svg.querySelector('.cx-eyes-closed');
+  const host = (sg || eg) ? (sg || eg).parentNode : null;
+  const out = { face: false, eyes: [], brows: [], mouth: null };
+  if(!host) return out;
+  const H = host.getScreenCTM().inverse();
+  const vis = el => { let o = 1; for(let e = el; e && e !== svg.parentNode; e = e.parentNode){ const cs = getComputedStyle(e); if(cs.display === 'none' || cs.visibility === 'hidden') return 0; o *= parseFloat(cs.opacity); } return o; };
+  const LEAF = 'path, circle, ellipse, rect, polygon, line';
+  const leaves = sel => [...svg.querySelectorAll(sel)].flatMap(g => g.matches(LEAF) ? [g] : [...g.querySelectorAll(LEAF)])
+    .filter(k => !k.closest('.cx-hx') && !k.classList.contains('rxpv') && vis(k) > .3);
+  const pts = k => { const m = H.multiply(k.getScreenCTM()); const L = k.getTotalLength(); const ps = [];
+    for(let i = 0; i <= 48; i++){ const q = k.getPointAtLength(L * i / 48); ps.push([m.a * q.x + m.c * q.y + m.e, m.b * q.x + m.d * q.y + m.f]); } return ps; };
+  const stroked = k => { const cs = getComputedStyle(k); return (cs.fill === 'none' || parseFloat(cs.fillOpacity) === 0) && cs.stroke !== 'none'; };
+  /* a filled shape: its long axis, and how far its inner end (towards the
+     middle of the face) drops below its outer end, per unit across */
+  const axis = ps => { const n = ps.length, mx = ps.reduce((a, p) => a + p[0], 0) / n, my = ps.reduce((a, p) => a + p[1], 0) / n;
+    let sxx = 0, syy = 0, sxy = 0; ps.forEach(([x, y]) => { sxx += (x - mx) ** 2; syy += (y - my) ** 2; sxy += (x - mx) * (y - my); });
+    const tr = sxx + syy, det = sxx * syy - sxy * sxy, l1 = tr / 2 + Math.sqrt(Math.max(0, tr * tr / 4 - det)), l2 = tr - l1;
+    const ang = .5 * Math.atan2(2 * sxy, sxx - syy); const el = Math.sqrt(l1 / Math.max(l2, 1e-6));
+    const slope = Math.tan(ang); /* dy per dx along the long axis */
+    const side = mx < 20 ? -1 : 1; /* inner is towards x=20: on the left inner is +x */
+    return { mx, my, el, droop: side < 0 ? slope : -slope, w: Math.max(...ps.map(p => p[0])) - Math.min(...ps.map(p => p[0])) }; };
+  /* a line: how far its middle stands above its ends, per half-width (+ = an arch) */
+  const bend = ps => { const xs = ps.map(p => p[0]), x0 = Math.min(...xs), x1 = Math.max(...xs), hw = (x1 - x0) / 2 || 1;
+    const ends = ps.filter(p => p[0] < x0 + hw * .16 || p[0] > x1 - hw * .16), mid = ps.filter(p => Math.abs(p[0] - (x0 + hw)) < hw * .3);
+    if(!ends.length || !mid.length) return 0;
+    return ((ends.reduce((a, p) => a + p[1], 0) / ends.length) - (mid.reduce((a, p) => a + p[1], 0) / mid.length)) / hw; };
+  const split = ps => [ps.filter(p => p[0] < 20), ps.filter(p => p[0] >= 20)].filter(s => s.length > 4);
+  out.face = true;
+  leaves('.cx-eyes, .cx-eyes-closed, .cx-fx-eyeglow, .cx-fx-slotglow, .cx-fx-zs3eyes, .cx-sp-mkeyes, .cx-sp-zseyes, [data-face="eye"]').forEach(k => {
+    const s = stroked(k);
+    split(pts(k)).forEach(ps => {
+      const a = axis(ps);
+      if(a.w < .5) return;
+      out.eyes.push(s ? { kind: 'line', bend: +bend(ps).toFixed(2), x: +a.mx.toFixed(1), w: +a.w.toFixed(1) }
+                      : { kind: 'fill', droop: a.el > 1.4 ? +a.droop.toFixed(2) : 0, el: +a.el.toFixed(1), x: +a.mx.toFixed(1), w: +a.w.toFixed(1) });
+    });
+  });
+  leaves('.cx-brow, [data-face="brow"]').forEach(k => split(pts(k)).forEach(ps => { const a = axis(ps); out.brows.push({ droop: +a.droop.toFixed(2), x: +a.mx.toFixed(1) }); }));
+  const ml = leaves('.cx-mouth, [data-face="mouth"]'), mp = ml.flatMap(pts), lineMouth = ml.length && ml.every(stroked);
+  /* the mouth: where its middle sits against its corners, per half-width
+     (+ = lower: a smile). The middle is the midpoint of the middle third's
+     top and bottom, so an O is level and a grin (flat top, round bottom) is
+     a smile; a mouth drawn in lines is read at its lowest point there, so
+     a bear's nose line does not count against its smile */
+  if(mp.length){ const xs = mp.map(p => p[0]), x0 = Math.min(...xs), x1 = Math.max(...xs), hw = (x1 - x0) / 2 || 1;
+    const ends = mp.filter(p => p[0] < x0 + hw * .16 || p[0] > x1 - hw * .16), mid = mp.filter(p => Math.abs(p[0] - (x0 + hw)) < hw * .3).map(p => p[1]);
+    out.mouth = +((((Math.max(...mid) + (lineMouth ? Math.max(...mid) : Math.min(...mid))) / 2) - ends.reduce((a, p) => a + p[1], 0) / ends.length) / hw).toFixed(2); }
+  /* the verdict */
+  out.angryEye = out.eyes.some(e => e.kind === 'fill' && e.droop > .2);
+  out.angryBrow = out.brows.some(b => b.droop > .12);
+  out.frown = out.mouth !== null && out.mouth < -.06;
+  const L = out.eyes.filter(e => e.kind === 'line' && e.bend > .25);
+  out.happyEyes = L.some(e => e.x < 20) && L.some(e => e.x >= 20);
+  out.smile = out.mouth !== null && out.mouth > .15;
+  out.happy = out.face && !out.angryEye && !out.angryBrow && !out.frown && (out.happyEyes || out.smile);
+  return out;
+}"""
+B321B_FACES = r"""async ([bands, ts, mood]) => {
+  const f = eval(mood), out = [];
+  const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:20px;top:20px;z-index:99999'; document.body.appendChild(host);
+  const frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  for(const c of AVATAR_CHARACTERS.filter(c => !c.retired)){
+    for(const band of bands){
+      const av = document.createElement('span'); av.className = 'results-level-avatar char-live'; av.appendChild(buildAvatarCharSVGSafe(c.id)); host.appendChild(av);
+      reactCharacter(av, band); await frame();
+      for(const t of ts){
+        av.getAnimations({ subtree: true }).forEach(a => { try{ a.pause(); a.currentTime = t * 1000; }catch(e){} });
+        const m = f(av);
+        const svg = av.querySelector('svg');
+        /* a drawing with no face at all (a fishbowl, a hood of stars) */
+        m.faceless = ![...svg.querySelectorAll('.cx-eyes *, .cx-eyes-closed *, .cx-mouth *')].some(k => /^(path|circle|ellipse|rect|polygon|line)$/.test(k.tagName));
+        out.push(Object.assign({ id: c.id, band, t }, m));
+      }
+      av.remove();
+    }
+  }
+  host.remove();
+  return out; }"""
+# after the hundo effect's own reaction (hfxCharReact) has run and ended,
+# and right through the character's special that plays after it
+B321B_AFTER = r"""async ([fx, mood]) => {
+  const f = eval(mood), out = [];
+  const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:20px;top:20px;z-index:99999'; document.body.appendChild(host);
+  const frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  for(const c of AVATAR_CHARACTERS.filter(c => !c.retired)){
+    const av = document.createElement('span'); av.className = 'results-level-avatar char-live'; av.appendChild(buildAvatarCharSVGSafe(c.id)); host.appendChild(av);
+    reactCharacter(av, 'perfect'); await frame();
+    av.getAnimations({ subtree: true }).forEach(a => { try{ a.pause(); a.currentTime = 3000; }catch(e){} });
+    const R = hfxCharReact(av, fx, {});
+    await frame();
+    if(R){ R.anims.forEach(a => { try{ a.pause(); a.currentTime = 2500; }catch(e){} }); }
+    if(R) R.end(false);
+    await frame();
+    const after = f(av);
+    /* the special, after it: every new animation stepped through it */
+    const before = new Set(av.getAnimations({ subtree: true }));
+    before.forEach(a => { try{ a.pause(); a.currentTime = 3000; }catch(e){} });
+    const played = playCharSpecial(av); await frame();
+    const sp = [];
+    if(played){
+      const fresh = av.getAnimations({ subtree: true }).filter(a => !before.has(a));
+      for(const t of [.3, .8, 1.4, 2.0, 2.5]){
+        fresh.forEach(a => { try{ a.pause(); a.currentTime = t * 1000; }catch(e){} });
+        before.forEach(a => { try{ a.pause(); a.currentTime = 3000 + t * 1000; }catch(e){} });
+        const m = f(av); sp.push({ t, happy: m.happy, angryEye: m.angryEye, frown: m.frown });
+      }
+    }
+    out.push({ id: c.id, reacted: !!R, after: after.happy, afterM: after, played, sp });
+    av.remove();
+  }
+  host.remove();
+  return out; }"""
+# how many of one prop are showing at once, through the 100 and the special
+B321B_ONE = r"""async ([id, sels]) => {
+  const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:20px;top:20px;z-index:99999'; document.body.appendChild(host);
+  const frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const av = document.createElement('span'); av.className = 'results-level-avatar char-live'; av.appendChild(buildAvatarCharSVGSafe(id)); host.appendChild(av);
+  const svg = av.querySelector('svg');
+  const shown = el => { let o = 1; for(let e = el; e && e !== av; e = e.parentNode){ const cs = getComputedStyle(e); if(cs.display === 'none' || cs.visibility === 'hidden') return 0; o *= parseFloat(cs.opacity); } return o; };
+  const count = () => sels.map(s => [...svg.querySelectorAll(s)].filter(e => shown(e) > .5).length).reduce((a, b) => a + b, 0);
+  const at = el => { const b = el.getBoundingClientRect(), r = svg.getBoundingClientRect(); return [(b.left + b.width / 2 - r.left) / r.width * 34 + 3, (b.top + b.height / 2 - r.top) / r.height * 34 + 3]; };
+  reactCharacter(av, 'perfect'); await frame();
+  const out = { pose: [], special: [], moved: null };
+  for(const t of [.5, 1.2, 2.2, 3.0]){ av.getAnimations({ subtree: true }).forEach(a => { try{ a.pause(); a.currentTime = t * 1000; }catch(e){} }); out.pose.push(count()); }
+  const before = new Set(av.getAnimations({ subtree: true }));
+  out.played = playCharSpecial(av); await frame();
+  const fresh = av.getAnimations({ subtree: true }).filter(a => !before.has(a));
+  for(const t of [.05, .3, .7, 1.0, 1.5, 2.0, 2.4, 2.75]){
+    fresh.forEach(a => { try{ a.pause(); a.currentTime = t * 1000; }catch(e){} });
+    before.forEach(a => { try{ a.pause(); a.currentTime = 3000 + t * 1000; }catch(e){} });
+    out.special.push(count());
+    if(t === 1.0){ const vis = sels.flatMap(s => [...svg.querySelectorAll(s)]).filter(e => shown(e) > .5); out.moved = vis.length ? at(vis[0]).map(v => Math.round(v * 10) / 10) : null; }
+  }
+  host.remove();
+  return out; }"""
+
+
+def check_b321b_moods(br):
+    """Build 321 (b321b). "Ensure the characters expression change on the
+    mood of the grade, the alien still looks mad even after the hundred..
+    ensure all characters are happy when they get the 100 ... Ensure this
+    is every character not just the starters." And "in the background of
+    the alien there is a ufo, a second one comes in.. shouldn't that same
+    one just move instead of putting in a second one?"
+      - every live character's face at a 100 and at 90+ (4s in, its pose,
+        and 8s in, inside its loops) measured off its shapes (B321B_MOOD,
+        never a name): no eye slanting down to the nose, no brow doing it,
+        no frown, and both eyes arched (^ ^) or a smile. A drawing with no
+        face at all (no eyes or mouth drawn) is reported, not passed;
+      - a fail is never happy, and no brow scowls (let down, not cross);
+      - after the hundo effect's own reaction (Confetti, UFO) has run and
+        ended, every face is back on its happy 100, and stays on it right
+        through the special that plays after it;
+      - the Alien's 100: one saucer showing at every moment, through the
+        reaction and the special, and the one showing in the special is
+        over the cow's beam (it moved there); the Detective's: one
+        magnifier, the same mistake.
+    Fails on 6a387e2: 18 faces not happy at a 100 (the Alien, the Masked
+    One, Ronin, Umbra, Inferno, Astral, Zenith ...), two saucers and two
+    magnifiers up at once."""
+    print("\n321b. every face matches its grade, a 100 is happy on every face; one saucer, one magnifier")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    rows = pg.evaluate(B321B_FACES, [["perfect", "great", "fail"], [4, 8], B321B_MOOD])
+    faceless = sorted({r["id"] for r in rows if r["faceless"]})
+    check("faceless drawings are few and draw no eyes or mouth at all (%s)" % ", ".join(faceless), len(faceless) <= 2, faceless)
+    for band in ("perfect", "great"):
+        bad = [(r["id"], r["t"], {k: r[k] for k in ("angryEye", "angryBrow", "frown", "happyEyes", "smile", "mouth")})
+               for r in rows if r["band"] == band and not r["faceless"] and not r["happy"]]
+        n = len({r["id"] for r in rows if r["band"] == band and not r["faceless"]})
+        check("a %s: every face (%d) is happy - no scowl in the eyes or brows, no frown, eyes arched or a smile" % ("100" if band == "perfect" else "90+", n), not bad, bad)
+    bad = [(r["id"], r["t"]) for r in rows if r["band"] == "fail" and not r["faceless"] and (r["happy"] or r["angryBrow"])]
+    check("a fail: no face is happy, and no brow scowls (let down, not cross)", not bad, bad)
+    for fx in ("confetti", "ufo"):
+        r = pg.evaluate(B321B_AFTER, [fx, B321B_MOOD])
+        faced = [x for x in r if x["id"] not in faceless]
+        bad = [(x["id"], {k: x["afterM"][k] for k in ("angryEye", "angryBrow", "frown", "happyEyes", "smile")}) for x in faced if not (x["reacted"] and x["after"])]
+        check("%s: after the hundo effect's reaction ends, every face (%d) is back on its happy 100" % (fx, len(faced)), not bad, bad)
+        bad = [(x["id"], [s["t"] for s in x["sp"] if not s["happy"]]) for x in faced if x["played"] and not all(s["happy"] for s in x["sp"])]
+        check("%s: ... and stays happy right through the special that plays after it" % fx, not bad, bad)
+    al = pg.evaluate(B321B_ONE, ["alien", [".cx-rx-ufo", ".cx-rx-ufo2", ".cx-sp-alufo"]])
+    check("the Alien's 100: one saucer showing all through the reaction %s and the special %s" % (al["pose"], al["special"]),
+          al["played"] and max(al["pose"] + al["special"]) == 1 and min(al["special"][1:-1]) == 1, al)
+    check("... and that one saucer moves over the cow's beam (centre x %s; the beam is at 28.6)" % (al["moved"] and al["moved"][0]),
+          bool(al["moved"]) and al["moved"][0] > 25.5, al)
+    dt = pg.evaluate(B321B_ONE, ["detective", [".cx-rx-glass", ".cx-sp-dtglass"]])
+    check("the Detective's 100: one magnifier showing through the reaction %s and the special %s" % (dt["pose"], dt["special"]),
+          dt["played"] and max(dt["pose"] + dt["special"]) == 1, dt)
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -23614,6 +23819,7 @@ def main():
             check_b320h_fixes(br)
             check_b320b_reactions(br)
             check_b320c_case(br)
+            check_b321b_moods(br)
         finally:
             br.close()
     SERVER.shutdown()
