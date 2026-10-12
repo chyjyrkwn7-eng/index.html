@@ -64,6 +64,12 @@ SCENARIOS = [
     {"key": "mainmenu", "flag": None, "source": "startMainMenuTour",
      "setup": "showHome(); startMainMenuTour()",
      "note": "the bottom bar, the daily question, the flares"},
+    # Build 321: an existing account's meeting with Nova - the main menu's
+    # tips (in their returning words) and then what is new on Home and
+    # Profile. Gated by store.novaMet; called by hand here, as above.
+    {"key": "novareturn", "flag": None, "source": "startNovaReturnTour",
+     "setup": "showHome(); startNovaReturnTour()",
+     "note": "the main menu's tips, then the planet, Profile, the calendar"},
     {"key": "modeselect", "flag": "seenModeSelectTour", "source": "showModeSelect",
      "setup": "showModeSelect()", "note": "Drill / Exam / Review / Virtual Room"},
     {"key": "unitselect", "flag": "seenUnitSelectTour", "source": "showSetup",
@@ -159,10 +165,16 @@ def declared_steps(src):
     # Build 289: the three Profile tips are a shared constant, handed to
     # startSimpleTour on their own for anybody re-armed by tourRev 3.
     out["PROFILE_TIPS_289"] = shared_steps(src, "PROFILE_TIPS_289")
-    # startMainMenuTour builds `steps` as a variable and passes it by name.
-    m = re.search(r"function startMainMenuTour\(\)\{(.*?)\n\}", src, re.S)
+    # startMainMenuTour builds `steps` as a variable and passes it by name;
+    # since build 321 the steps are mainMenuTourSteps(), which the meeting
+    # with Nova (startNovaReturnTour) also uses, followed by the new tips.
+    m = re.search(r"function mainMenuTourSteps\([^)]*\)\{(.*?)\n\}", src, re.S) \
+        or re.search(r"function startMainMenuTour\(\)\{(.*?)\n\}", src, re.S)
     if m:
         out["startMainMenuTour"] = len(re.findall(r"\btarget\s*:", m.group(1)))
+        if "function startNovaReturnTour(" in src:
+            out["startNovaReturnTour"] = out["startMainMenuTour"] + shared_steps(src, "NOVA_NEW_TIPS_321")
+    out.pop("mainMenuTourSteps", None)
     return out
 
 

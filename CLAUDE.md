@@ -20051,3 +20051,84 @@ is a ufo, a second one comes in.. shouldn't that same one just move?"*
   happy right through the special after them, one saucer and one magnifier
   at every moment (saucers counted by shape: a filled disc 4+ units across,
   3x as wide as tall), the saucer over the beam. Fails on 6a387e2.
+
+### Build 321 (b321g) - Nova is an explorer, his crew are the characters, existing accounts meet him
+
+Madison: *"he calls himself the app maker, don't do that. The cutscene where
+it shows the planet and the planet explosion is ass ... Mention how during
+the ship explosion a lot of characters or people on the ship went missing
+too and you need to find them ... Mr nova screen when meeting a new player,
+it's great. I almost feel like that should be the one shown to all the
+existing profiles, but at the end it can go over the ones they have
+unlocked ... still give the tool tips but after the main menu ones ...
+ensure nova still says good bye and they'll talk again. AFTER the nova intro
+that's when the what's new screen will show up."*
+
+- **Nova never made the app.** He is "a space explorer and an instructor"
+  (`novaIntroLines`, the 7.8 release note, What's New). Gate: no line of his,
+  nor RELEASE_NOTES[0], matches made-the-app phrasing.
+- **The lore: his crew went missing in the wreck, and the characters ARE
+  them.** A character is *found*, like a badge and a secret flare. The
+  introduction has a crew line with `novaCrewRow()` (characters you have,
+  then cut-outs of missing ones, `charSilhouetteSVG`) and "N of M characters
+  found" (`novaCrewTally` = Customize's character tally).
+- **The wreck is redrawn (`buildNovaWreck`, `NW` timings in ms).** Home's
+  own planet (`buildCosmicHero(false)` with `heroCrackStageFor = 0`, orbit
+  badges hidden by `.nw2` CSS) in a square camera (`.nw2-cam`, container
+  query units); Supernova's crack forms on it (`crackFormArm(hero, 0,
+  CRACK_TOP)` at 0.9s, warmed while he says hello); it trembles, swells and
+  goes at 3.5s: flash, fireball, a shockwave in the plane of the rings and a
+  spherical one, 28 sparks, embers, dust that stays as a nebula; the planet
+  breaks into 17 shards of ITSELF (`nwShards`: 7 wedges x crust/mantle + a
+  3-piece core; every shared edge is one jagged polyline used both ways, so
+  they fit at the blast) painted with `nwPlanetPaint` (the hero's sphere svg
+  cropped and serialised to an image, under Supernova's burn), their broken
+  edges glowing then cooling (`.nw2-hot`). His ship (`NW_SHIP_SVG`: hull,
+  fins, nacelles, canopy, four lit portholes, his star, running lights,
+  engine flames) is hit at 3.88s, its engines die, a breach burns, it
+  tumbles away end over end trailing smoke, and six escape pods (his crew)
+  fly out with beacons. Web Animations on transform/opacity only, no filter;
+  the last keyframe is the resting style, which is all Reduce motion shows.
+- **Existing accounts meet him once (`playNovaMeeting`).** Gated on the
+  ACCOUNT: `store.novaMet` (`NOVA_MEET_REV` 1), default 0 in
+  `applyLoadedData` (deliberately "not met", like tourRev), set at sign-up,
+  merged by the higher in `mergeSameAccount` (a copy from an older build
+  that drops it cannot bring him back). It plays from `maybeShowIntro` on
+  the first Home where What's New is due (`INTRO_REV` 5, local): the
+  introduction with `{ existing: true }` (greeted by username; Skip jumps to
+  the recap, `skipTo`) ending in the recap - `novaRecapCard` (rank, level,
+  badges, characters, secret flares found as Home's planet counts them) and
+  his lines about it; then What's New CHAINED (`showIntroPopup({ chained,
+  then })`: no second hello, ends "Show me"); then `startNovaReturnTour()` =
+  `mainMenuTourSteps(true)` + `NOVA_NEW_TIPS_321` (the planet, the new
+  Profile, the calendar's tab); then `novaGoodbye()` ("I'll speak with you
+  again", id `nova-intro` so every hold that waits on him still does). No
+  welcome bonus. `novaMeetOn` holds everything `whatsNewHolds` holds for the
+  whole meeting, and `endNovaMeeting` gives the held pop-ups their turn. A
+  device whose account already met him gets What's New alone ("Hello again").
+  New accounts are unchanged: introduction, the seven main-menu tips
+  (`mainMenuTourSteps(false)`), the bonus.
+- **Gate `check_b321g_nova`** (fails on 6a387e2). Moved to this decision:
+  `check_b320f_nova` (the story's words: explorer and crew, not "made this
+  app"; What's New on its own needs `novaMet`), `check_b319_levelnote` (the
+  note is said in the chained What's New too), check-tours (`novareturn`
+  scenario; `startMainMenuTour` counts `mainMenuTourSteps`), check-chat's
+  introduction (the meeting first, then What's New, tips and goodbye, once).
+- **This release is VERSION 9** (*"This is gonna be version 9 ... show a
+  version 8 with some of this stuff but put in parenthesis not launched"*).
+  `RELEASE_NOTES[0]` is `version: "9"` (sound effects and Android vibration,
+  both off by default; sign in first; rankings that match Profile; Nova; and
+  one "Everything From Version 8" bullet). Build 320's "7.8" entry is
+  `version: "8", notLaunched: true`, shown as "Version 8 (not launched)".
+  Home's label, What's New's eyebrow and Nova's "what's new in version 9"
+  all read `RELEASE_NOTES[0].version`. The newest entry is also Welcome's
+  `showWhatsNew()`, so its items keep icons. Nova's What's New opens with a
+  "Sound effects" row (WHATS_NEW_320 `sound`).
+- **The version history lists every item as a bullet, in full**
+  (`.releasehistory-list`: title, then what it does). It used to print a
+  group's titles joined by commas, which is why it read thin. Builds before
+  97 are not in this repo's git, so 2.0/3.0/Beta keep their existing text
+  (now shown in full) rather than gaining anything that cannot be sourced.
+  At the bottom, `#releasehistory-home`: a black "Back to Home" (`.next.ghost`,
+  Quit test's look). check-fixes' Release History check moved: no back link
+  at the top, Back to Home at the bottom.
