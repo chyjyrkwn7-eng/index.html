@@ -20035,6 +20035,15 @@ there's more space to left of it than the right."*
   falling row by row, the Badges screen's case part for part the
   cutscene's (and still opening), and all 16 slots centred within 1px on
   both cases (the cutscene's measured with its camera square on).
+  **Moved to the new decision:** check_b320c_case's crack colours (every
+  badge OUTSIDE the back row is seen; a back-row badge gives only a little
+  light now), check_b317_badgecase's two badges (the second token waits
+  under the case's front, not over the case), check_b319_badges' "nothing
+  written in the case" (the case's name in the lid is allowed, as the
+  cutscene's always was). check_b319_badges now calls
+  `finishBadgeCaseOpen` before it measures the open case: 1.5s in, the
+  opening could still be under way on a busy machine (it failed that way on
+  the iPad on 9b3bed6 too, before any of this).
 
 ### Build 321 (b321h) - the Supernova streak on Home, Save and exit as a real button
 
