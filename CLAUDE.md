@@ -20963,3 +20963,52 @@ key."*
 - `check_b323u_units` (fails on 22bf429). Moved: check_b297's "first and
   full width" Starred box; check_penal_versions scrolls the version line
   into view before sampling it.
+
+### Build 324 (b324w) - Nova's weekly recap on Home, honorable mentions
+
+Madison: *"Every Tuesday we need a weekly recap from nova instructor on screen
+... instead of it being on the leaderboard? It will come in on the main menu
+... honorable mentions after the top 3 ... a comeback if someone did a lot last second to
+take first place ... At the end mention how Mr nova will see us next week".*
+
+- **Build 289's Leaderboard card is gone** (`maybeShowWeekCongrats`,
+  `showWeekCongrats`, its CSS). The This Week podium on the board stays.
+- **The recap is `novaTalk` with id `nova-intro`** (class `is-weekrecap`), the
+  same choice `novaGoodbye` made, so every hold that waits on Nova waits on it.
+  `scheduleWeekRecap()` from `showHome()`'s ordinary branch ->
+  `maybeShowWeekRecap()`: Tuesday to Sunday (`weekRecapDayOk`), once a week per
+  device (`class26e.weekrecap.v1`, localStorage: `{ wk, hist: { week: { win,
+  cats } } }`), never under a tour/splash/cutscene/badge queue/Home unlock
+  card/What's New/rank-up owed/open sheet (`weekRecapBlocked`), server rows only.
+  Gates seed the marker as `9999-12-31` (check-behaviour `booted`); a check
+  that wants the recap removes it.
+- **Script** (`weekRecapLines`): hello; third, second, first rising on a podium,
+  first with a storyline (`weekRecapStory`: comeback - 4th or lower on Friday
+  night by the XP-by-day blocks, only when the final top five all publish
+  them; photo finish <= 2%/50 XP; late surge; back to back; runaway 1.75x and
+  1,000 clear); honorable mentions as cards; "you finished Nth" for a viewer
+  not named; "I'll see you all next Tuesday".
+- **Mentions** (`RECAP_MENTIONS`): hundos, tests, daily questions right,
+  most improved (XP minus the week before's), study time, longest run of
+  study days. One or two a week (`weekRecapMentionCount`), order drawn from
+  the week (`weekRecapCatOrder`), never a category the week before led with
+  (`weekRecapPlanned`, walked forward from `WEEK_RECAP_EPOCH` so every device
+  agrees) nor one this device showed. Skipped: fewer than three people
+  report it, under 60% of last week's active rows do, or the best is under
+  its minimum. The top 3 are never mentioned; nobody twice.
+- **Data**: `store.weekStats` / `store.prevWeekStats` (`{ k, t, h, d, p[7], b }`,
+  defaulted null and seeded from the history on first roll - `rollWeekStats`,
+  inside `rollWeek`), published as `wk` / `pwk` blocks (`weekBlockOf`, adds `x`
+  XP, `m` minutes and `s` study run from the study log; lazy row fields). A
+  seeded block's unknowns are null, never 0. Merged by the higher per field on
+  the same week (`mergeWeekStats`).
+- **Hidden people are never named**: only rows on the board now (opting out
+  deletes the row); the device's cached top three is filtered before counting
+  (`weekRecapTop`). An opted-out viewer gets hello, their own week, how to turn
+  the rankings back on, goodbye.
+- **A mention hands nothing over.** Madison also asked for the Sheriff to be
+  earned by a mention; the integrator moved the Sheriff to a Virtual Room match
+  against Nova (another builder), so the recap touches no unlock (the gate
+  asserts that).
+- Gate `check_b324w_recap` (fails on ab75270). Moved: check_b289's congrats
+  (no card; podium stays), check-sound's fanfare (from Nova's first place).

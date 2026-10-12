@@ -1920,7 +1920,7 @@
     background:linear-gradient(180deg, color-mix(in srgb, var(--wr-c) 40%, rgba(255,255,255,.12)), color-mix(in srgb, var(--wr-c) 12%, rgba(255,255,255,.02)) 72%, rgba(255,255,255,.02));
     border:1px solid color-mix(in srgb, var(--wr-c) 55%, rgba(255,255,255,.18)); border-bottom-color:rgba(255,255,255,.06);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.38), inset 0 -18px 30px rgba(0,0,0,.18), 0 14px 32px rgba(0,0,0,.35);
-    transform-origin:50% 100%; transform:scaleY(.1); opacity:.32;
+    transform-origin:50% 100%; transform:scaleY(.16); opacity:.42;
     transition:transform .7s cubic-bezier(.2,1.25,.35,1), opacity .3s ease; }
   .wr-col.is-up .wr-block{ transform:none; opacity:1; }
   .wr-block b{ font-family:var(--serif); font-size:1.7rem; font-weight:800; line-height:1; color:var(--wr-c); opacity:0; transition:opacity .3s ease .45s; }
@@ -1970,8 +1970,12 @@
   .wr-mcat{ margin:0; font-size:.62rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--wr-m); }
   .wr-mname{ margin:.1rem 0 0; font-size:1.04rem; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .wr-mval{ margin:.04rem 0 0; font-size:.8rem; font-weight:700; color:rgba(243,245,247,.72); font-variant-numeric:tabular-nums; }
-  .wr-mav{ position:relative; display:block; width:3.3rem; height:3.3rem; }
-  .wr-mav > svg{ width:100%; height:100%; display:block; }
+  .wr-av.wr-mav{ --wr-c:var(--wr-m); width:3.3rem; margin:0; opacity:1; transform:none; }
+  .wr-mention.is-me .wr-mav{ box-shadow:0 0 0 3px #fff, 0 10px 24px rgba(0,0,0,.45); }
+  .wr-mini{ display:flex; justify-content:center; gap:1.1rem; margin:0 0 1.1rem; }
+  .wr-mini-it{ display:flex; flex-direction:column; align-items:center; gap:.3rem; min-width:0; max-width:6rem; }
+  .wr-av.wr-mini-av{ width:2.5rem; margin:0; border-width:1.5px; box-shadow:0 0 0 3px color-mix(in srgb, var(--wr-c) 14%, transparent); }
+  .wr-mini-name{ max-width:100%; font-size:.72rem; font-weight:800; color:rgba(243,245,247,.8); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   /* a viewer who hides from the rankings: their own week */
   .wr-mecard{ display:flex; align-items:center; gap:1rem; width:min(100%, 22rem); padding:1rem 1.1rem; border-radius:22px;
     background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.03) 55%, rgba(0,0,0,.08)), rgba(22,26,44,.72);
@@ -1991,7 +1995,8 @@
     .wr-block b{ font-size:1.2rem; } .wr-block{ padding-top:.25rem; }
     .wr-mention{ padding:.45rem .7rem; gap:.6rem; border-radius:16px; } .wr-mlist{ gap:.4rem; }
     .wr-micon{ width:2rem; height:2rem; } .wr-micon svg{ width:1.05rem; height:1.05rem; }
-    .wr-mav{ width:2.5rem; height:2.5rem; } .wr-mname{ font-size:.92rem; } .wr-mval{ font-size:.72rem; }
+    .wr-av.wr-mav{ width:2.5rem; } .wr-mname{ font-size:.92rem; } .wr-mval{ font-size:.72rem; }
+    .wr-mini{ display:none; }
     .wr-sub{ margin-bottom:.3rem; }
   }
   @media (max-height:44rem){
@@ -2010,7 +2015,7 @@
     .wr-mention{ padding:1rem 1.2rem; gap:1.1rem; border-radius:24px; }
     .wr-micon{ width:3.4rem; height:3.4rem; } .wr-micon svg{ width:1.8rem; height:1.8rem; }
     .wr-mcat{ font-size:.76rem; } .wr-mname{ font-size:1.35rem; } .wr-mval{ font-size:1rem; }
-    .wr-mav{ width:4.6rem; height:4.6rem; }
+    .wr-av.wr-mav{ width:4.6rem; } .wr-av.wr-mini-av{ width:3.6rem; } .wr-mini-name{ font-size:.92rem; } .wr-mini{ gap:2rem; margin-bottom:1.6rem; } .wr-mini-it{ max-width:9rem; }
     .wr-mecard{ width:min(100%, 30rem); padding:1.3rem 1.5rem; } .wr-meav{ width:6rem; height:6rem; }
     .wr-mename{ font-size:1.5rem; } .wr-meline{ font-size:1.05rem; }
     .wr-next{ font-size:.8rem; }
@@ -43237,19 +43242,9 @@ const CHARACTER_FEATS = {
      maybe make Poseidon?" Counted by settleWeeklyWin() off the same
      observed weekly rank Zeus is, and seeded from weeklyWins, since a
      week won is a week on the podium. */
-  /* AN HONORABLE MENTION SINCE BUILD 324: "The sheriff award is about
-     ranking top 3 three times. Let's make where you get it by getting a
-     weekly honorable mention." Nova names one or two every Tuesday in his
-     recap on Home (weekRecapMentions), and the week he names you is
-     recorded in store.mentionWeeks when you see it (awardWeeklyMention).
-     KEPT, NEVER TAKEN BACK: anybody who reached three podium finishes
-     under the old rule still holds him - weeklyTop3 is no longer counted
-     (settleWeeklyWin), so that clause only ever covers what was already
-     earned. The key stays `weektop3x3`; it is only a name. */
-  weektop3x3: { label: "Get one of Nova’s weekly honorable mentions",
-                done: () => (Array.isArray(store.mentionWeeks) && store.mentionWeeks.length >= 1) || (store.weeklyTop3 || 0) >= 3,
-                have: () => ((Array.isArray(store.mentionWeeks) && store.mentionWeeks.length >= 1) || (store.weeklyTop3 || 0) >= 3 ? 1 : 0), need: 1,
-                note: "Every Tuesday Nova recaps last week on Home and names one or two honorable mentions - the most hundos, the most tests, the daily question and more." },
+  weektop3x3: { label: "Finish in the top 3 of the weekly XP board 3 times",
+                done: () => (store.weeklyTop3 || 0) >= 3,
+                have: () => (store.weeklyTop3 || 0), need: 3 },
   /* Reads the flares themselves rather than a flag set when the third
      is found. One source of truth, so a person who somehow arrives at
      three found without passing through foundMysteryFlare - a cloud
@@ -50178,9 +50173,8 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               seenModeSelectTour: false, seenUnitSelectTour: false,
               pendingSupernovaCutscene: false, supernovaAchieved: false,
               weekKey: "", weekPoints: 0, prevWeekKey: "", prevWeekPoints: 0,
-              /* build 324: the week's counters for Nova's recap, and the
-                 weeks Nova gave this account an honorable mention */
-              weekStats: null, prevWeekStats: null, mentionWeeks: [],
+              /* build 324: the week's counters for Nova's recap */
+              weekStats: null, prevWeekStats: null,
               pendingBadgeUnlocks: [],
               pendingCharUnlocks: [],
               tourRev: 0,
@@ -50602,11 +50596,9 @@ function applyLoadedData(got){
   /* Build 324, Nova's weekly recap. Null until this build first rolls the
      week, which seeds both blocks from the history (rollWeekStats) - an
      existing account starts with what it has done, never with zeros it
-     did not earn. mentionWeeks: the weeks Nova named this account (the
-     Sheriff's challenge); none for everybody until he does. */
+     did not earn. */
   store.weekStats = cleanWeekStats(got.weekStats);
   store.prevWeekStats = cleanWeekStats(got.prevWeekStats);
-  store.mentionWeeks = Array.isArray(got.mentionWeeks) ? got.mentionWeeks.filter(x => typeof x === "string").slice(-60) : [];
   store.supernovaAchieved = typeof got.supernovaAchieved === "boolean"
     ? got.supernovaAchieved : false;
   /* Same migration pattern as seenModeSelectTour/seenUnitSelectTour
@@ -52033,7 +52025,7 @@ function wipeLocalProgressAndSettings(){
   store.bigTest450Passed = false;
   store.bigTest500Passed = false;
   store.bestTestStreak = 0;
-  store.weekStats = null; store.prevWeekStats = null; store.mentionWeeks = [];   /* build 324 */
+  store.weekStats = null; store.prevWeekStats = null;   /* build 324 */
   store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.retakenQuestions = 0; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
   store.unlocksShown = { chars: [], banners: [], fx: [] };
   store.seenUnlocks = null;
@@ -53227,9 +53219,6 @@ function mergeLeavingAccount(src, note){
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
   });
-  /* Nova's honorable mentions (build 324): a week named on either is kept */
-  { const a = Array.isArray(store.mentionWeeks) ? store.mentionWeeks : [];
-    store.mentionWeeks = a.concat((Array.isArray(src.mentionWeeks) ? src.mentionWeeks : []).filter(x => typeof x === "string" && a.indexOf(x) < 0)).slice(-60); }
   ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved"]
     .forEach(k => { if(src[k] === true) store[k] = true; });
   if(src.mysteryColorsFound && store.mysteryColorsFound){
@@ -53630,8 +53619,7 @@ function mergeSameAccount(dst, src){
   /* this week's board: only where both copies are on the same week */
   if(src.weekKey && src.weekKey === dst.weekKey) maxInto(dst, "weekPoints", src.weekPoints);
   /* Nova's recap (build 324): the week's counters, the higher of each on
-     the same week; the mentions as a union */
-  unionArr("mentionWeeks", 60);
+     the same week */
   ["weekStats", "prevWeekStats"].forEach(k => {
     if(!src[k]) return;
     const before = JSON.stringify(dst[k] || null);
@@ -57383,11 +57371,15 @@ function settleWeeklyWin(){
     store.weeklyWins = (store.weeklyWins || 0) + 1;
     store.weekWinWeeks = (Array.isArray(store.weekWinWeeks) ? store.weekWinWeeks : []).filter(w => w !== seen.week).concat([seen.week]).slice(-60);
   }
-  /* weeklyTop3 (three podium finishes) was the Sheriff's challenge until
-     build 324 and is no longer counted: the Sheriff is an honorable
-     mention in Nova's recap now, and the count stays where it was only so
-     that whoever earned him the old way keeps him (CHARACTER_FEATS
-     weektop3x3). */
+  if(rank >= 1 && rank <= 3){
+    const before = store.weeklyTop3 || 0;
+    store.weeklyTop3 = before + 1;
+    /* Announced like the Champion: queued for the next results screen,
+       which is where every other character is handed over. */
+    if(before < 3 && store.weeklyTop3 >= 3){
+      store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== "poseidon").concat(["poseidon"]);
+    }
+  }
   saveStore();
   return won;
 }
@@ -106586,8 +106578,8 @@ function buildLastWeekPodium(top, entries){
    Builder L gates the Leaderboard itself on the same switch.
 
    MUTE BANNERS does not mute it: it is Nova talking, like What's New, not
-   an achievement banner. The Sheriff it can hand over is announced through
-   Home's ordinary unlock card, which Mute banners does mute as always.
+   an achievement banner, and it hands nothing over - an honorable mention
+   is recognition, not an unlock.
    REDUCE MOTION (the app's or the system's): no typing, no rises, no
    sparkle - every part is simply there when its line is (novaMotionOff). */
 const WEEK_RECAP_KEY = "class26e.weekrecap.v1";
@@ -106840,27 +106832,14 @@ function buildWeekRecap(rowsIn){
   const inTop = top.findIndex(t => t.me);
   const place = mine > 0 ? 1 + list.filter(e => e.pub !== me && lastWeekPointsOfEntry(e) > mine).length : 0;
   return { week: lw, optedOut: false, top, story, mentions,
-    sheriffNew: mentions.some(m => m.me) && isLockedCharacter("poseidon"),
     viewer: { pts: mine, place, inTop, mention: mentions.some(m => m.me) } };
 }
 function buildWeekRecapOptedOut(){
   const lw = lastWeekKey();
   const ws = [store.prevWeekStats, store.weekStats].find(x => x && x.k === lw) || null;
-  return { week: lw, optedOut: true, top: [], story: { kind: "none" }, mentions: [], sheriffNew: false,
+  return { week: lw, optedOut: true, top: [], story: { kind: "none" }, mentions: [],
     viewer: { pts: storePointsForWeek(lw) || 0, t: ws && typeof ws.t === "number" ? ws.t : 0, h: ws && typeof ws.h === "number" ? ws.h : 0,
               place: 0, inTop: -1, mention: false } };
-}
-/* THE SHERIFF (build 324): a week Nova named you. Recorded once per week,
-   when your own mention is said - or when the recap closes, if it was
-   skipped first: skipping the talking never costs anybody a character.
-   Home's ordinary unlock card announces him after the recap. */
-function awardWeeklyMention(wk){
-  if(!wk) return false;
-  const have = Array.isArray(store.mentionWeeks) ? store.mentionWeeks : [];
-  if(have.indexOf(wk) >= 0) return false;
-  store.mentionWeeks = have.concat([wk]).slice(-60);
-  saveStore();
-  return true;
 }
 function recapIcon(glyph){
   const NS = "http://www.w3.org/2000/svg";
@@ -106913,6 +106892,14 @@ function buildWeekRecapStage(r){
     pages.push(pg);
     if(r.mentions.length){
       const pm = el("div", "wr-page wr-page-mentions"); pm.dataset.page = "mentions";
+      /* last week's three stay in view, small, above the mentions */
+      const mini = el("div", "wr-mini");
+      r.top.forEach((t, i) => {
+        const it = el("div", "wr-mini-it wr-p" + (i + 1));
+        it.append(recapAvatar(t.avatar, "wr-av wr-mini-av"), el("span", "wr-mini-name", t.name));
+        mini.appendChild(it);
+      });
+      pm.appendChild(mini);
       pm.appendChild(el("p", "wr-sub", r.mentions.length === 1 ? "Honorable mention" : "Honorable mentions"));
       const ml = el("div", "wr-mlist");
       r.mentions.forEach(m => {
@@ -106922,7 +106909,7 @@ function buildWeekRecapStage(r){
         const ic = el("span", "wr-micon"); ic.appendChild(recapIcon(def.glyph));
         const tx = el("div", "wr-mtext");
         tx.append(el("p", "wr-mcat", def.title), el("p", "wr-mname", m.name), el("p", "wr-mval", def.value(m.value)));
-        const av = recapAvatar(m.avatar, "wr-mav");
+        const av = recapAvatar(m.avatar, "wr-av wr-mav");
         if(m.me) av.appendChild(el("b", "wr-you", "You"));
         c.append(ic, tx, av);
         ml.appendChild(c);
@@ -106997,8 +106984,8 @@ function weekRecapLines(r){
   for(let i = r.top.length - 1; i >= 0; i--){
     const t = r.top[i], st = r.story;
     let text;
-    if(i === 2) text = "In third place: " + t.name + withP(t) + "." + (t.me ? " That’s you, " + name + ". Well done." : "");
-    else if(i === 1) text = "In second: " + t.name + withP(t) + "." + (t.me ? " That’s you, " + name + ". Well done." : "");
+    if(i === 2) text = "In third place: " + t.name + withP(t) + "." + (t.me ? " That’s you. Well done!" : "");
+    else if(i === 1) text = "In second: " + t.name + withP(t) + "." + (t.me ? " That’s you. Well done!" : "");
     else {
       const who = t.me ? "you, " + name : t.name;
       if(st.kind === "comeback") text = t.me
@@ -107021,11 +107008,10 @@ function weekRecapLines(r){
     r.mentions.forEach((m, k) => {
       const def = RECAP_MENTIONS.find(d => d.cat === m.cat);
       let text = def.say(m.name, m.value);
-      if(m.me) text += " That’s you, " + name + "!" + (r.sheriffNew ? " For that, the Sheriff joins your crew." : " Well earned.");
+      if(m.me) text += " That’s you! Well earned.";
       lines.push({ text, enter: (ctx, instant) => {
         on(ui && ui.mcards[k], "is-in");
         if(!still && !instant) playSound("ui.notice");
-        if(m.me && !r.awarded){ r.awarded = true; awardWeeklyMention(r.week); }
       } });
     });
   }
@@ -107089,8 +107075,6 @@ function playWeekRecap(r){
       closedBy = reason;
       weekRecapOn = false;
       try{ onNavigate.disconnect(); }catch(e){}
-      /* skipped before his line about you: still yours */
-      if(!r.awarded && r.mentions.some(m => m.me)){ r.awarded = true; awardWeeklyMention(r.week); }
       popupGapUntil = Date.now() + POPUP_GAP_MS;
       setTimeout(() => {
         try{ checkLobbyInvites(); checkFriendRequests(); checkChatInvites(); checkSaveCodeReminder(); }catch(e){}

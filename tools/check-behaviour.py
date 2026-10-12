@@ -26369,19 +26369,18 @@ def check_b324w_recap(br):
     """Build 324 (b324w): Nova's weekly recap on Home. "Every Tuesday we need a
     weekly recap from nova instructor on screen ... instead of it being on
     the leaderboard? It will come in on the main menu ... honorable mentions
-    after the top 3 ... The sheriff award ... by getting a weekly honorable
-    mention ... I can talk about a comeback ... At the end mention how Mr
+    after the top 3 ... I can talk about a comeback ... At the end mention how Mr
     nova will see us next week". It appears on the first Tuesday-or-later
     Home of a week and not twice, never on another screen or under a tour;
     the top 3 in order with the comeback told; mentions skip categories
     with no data, never name the top 3, never repeat a category two weeks
     running, never show a zero; nobody hidden from the rankings is named,
-    and a viewer who hides sees nobody else; the Sheriff is the mention
-    (an old Sheriff is kept, the old top-3 count no longer counts); the
-    first week, with no blocks published yet, has the top 3 and no empty
+    and a viewer who hides sees nobody else; a mention hands nothing over
+    (the Sheriff was dropped from this task by the integrator: he went to a
+    Virtual Room match against Nova, another builder's); the first week, with no blocks published yet, has the top 3 and no empty
     mention; the row publishes the blocks; build 289's Leaderboard card is
     gone. Fails on ab75270 (none of it exists; the card is still there)."""
-    print("\n_b324w. build 324: Nova's weekly recap on Home, honorable mentions, the Sheriff")
+    print("\n_b324w. build 324: Nova's weekly recap on Home, honorable mentions")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       try{
@@ -26422,16 +26421,6 @@ def check_b324w_recap(br):
       out.firstMents = first ? first.mentions.length : -1;
       out.firstStory = first ? first.story.kind : null;
       out.firstTexts = first ? weekRecapLines(first).map(l => l.text) : [];
-      /* the Sheriff: an honorable mention; an old Sheriff kept; the old count frozen */
-      const f = CHARACTER_FEATS[(AVATAR_CHARACTERS.find(c => c.id === 'poseidon') || {}).feat] || {};
-      out.sheriffLabel = f.label || '';
-      store.mentionWeeks = []; store.weeklyTop3 = 0; store.weeklyWins = 0;
-      out.sheriffLockedBefore = isLockedCharacter('poseidon');
-      store.weeklyTop3 = 3; out.oldSheriffKept = !isLockedCharacter('poseidon');
-      store.weeklyTop3 = 2; store.pendingCharUnlocks = [];
-      store.weekRankSeen = { week: '2026-08-03', rank: 2 }; settleWeeklyWin();
-      out.top3Frozen = store.weeklyTop3 === 2 && (store.pendingCharUnlocks || []).indexOf('poseidon') < 0 && isLockedCharacter('poseidon');
-      out.lockMsg = characterLockMessage('poseidon');
       /* the row publishes this week's and last week's blocks */
       store.weekStats = null; store.prevWeekStats = null; rollWeek();
       const t0 = (store.weekStats || {}).t; weekStatsAdd('t', 2); weekStatsAddXp(40);
@@ -26465,8 +26454,8 @@ def check_b324w_recap(br):
     check("b324w one or two mentions, none of them the top 3, the viewer named first",
           len(ments) == r.get("mentCount") and all(m["name"] not in ("Ada", "Bo", "Cy") for m in ments)
           and ments and ments[0]["me"], ments)
-    check("b324w the mention is said to the viewer, and the Sheriff with it",
-          "That’s you" in joined and "Sheriff" in joined, [t for t in texts if "you" in t])
+    check("b324w the mention is said to the viewer, and promises no reward",
+          "That’s you" in joined and "Sheriff" not in joined and "unlock" not in joined.lower(), [t for t in texts if "you" in t])
     check("b324w he ends by seeing everyone next week", texts and "next Tuesday" in texts[-1], texts[-1:] if texts else None)
     check("b324w never Ghost (no row: hidden from the rankings)", "Ghost" not in joined, joined[:200])
     check("b324w categories with no data are skipped", set(r.get("onlyTests") or []) <= {"tests"}, r.get("onlyTests"))
@@ -26479,11 +26468,6 @@ def check_b324w_recap(br):
           r.get("firstTop") == ["Ada", "Bo", "Cy"] and r.get("firstMents") == 0 and r.get("firstStory") != "comeback"
           and not any(re.search(r"\b0 (XP|tests?|hundos?)\b|nobody|undefined|null|NaN", t) for t in ft),
           [r.get("firstTop"), r.get("firstMents"), r.get("firstStory")])
-    check("b324w the Sheriff's challenge is an honorable mention",
-          "honorable mention" in (r.get("sheriffLabel") or "") and "Sheriff" in (r.get("lockMsg") or "")
-          and r.get("sheriffLockedBefore") is True, [r.get("sheriffLabel"), r.get("lockMsg")])
-    check("b324w an old Sheriff is kept; a podium finish no longer counts toward him",
-          r.get("oldSheriffKept") is True and r.get("top3Frozen") is True, [r.get("oldSheriffKept"), r.get("top3Frozen")])
     check("b324w the row publishes this week's and last week's blocks (lazily)",
           r.get("row") == {"wk": True, "pwk": True, "t": 2, "lazy": True}, r.get("row"))
     check("b324w the week rolls its counters and keeps last week's total",
@@ -26499,7 +26483,8 @@ def check_b324w_recap(br):
       if(typeof buildWeekRecap !== 'function') return { none: true };
       """ + RECAP_FIXTURE_JS + """
       window.weekRecapDayOk = () => true;
-      store.mentionWeeks = []; store.weeklyTop3 = 0; store.weeklyWins = 0;
+      store.pendingCharUnlocks = [];
+      const locks0 = AVATAR_CHARACTERS.map(c => isLockedCharacter(c.id)).join(',');
       __recapMine(3000);
       leaderboardRows = __recapRows(); leaderboardRowsFromServer = true;
       try{ localStorage.removeItem('class26e.weekrecap.v1'); }catch(e){}
@@ -26530,7 +26515,9 @@ def check_b324w_recap(br):
         out.podium = [...el.querySelectorAll('.wr-col.is-up .wr-name')].map(n => n.textContent);
         out.cards = el.querySelectorAll('.wr-mention.is-in').length;
         out.meCard = !!el.querySelector('.wr-mention.is-me');
-        out.awarded = (store.mentionWeeks || []).indexOf(lastWeekKey()) >= 0 && !isLockedCharacter('poseidon');
+        /* a mention is recognition, not an unlock: nothing changes hands */
+        out.untouched = AVATAR_CHARACTERS.map(c => isLockedCharacter(c.id)).join(',') === locks0
+          && !(store.pendingCharUnlocks || []).length && store.mentionWeeks === undefined;
         out.skip = !!el.querySelector('.nt-skip');
         el.__nova.close('done'); await wait(600);
       }
@@ -26543,11 +26530,8 @@ def check_b324w_recap(br):
       showRankings('week'); await wait(1800);
       out.lbCard = !!document.querySelector('.week-congrats, .is-weekrecap');
       showHome(); await wait(300);
-      /* a viewer who hides from the rankings: the recap without the class
-         (the Sheriff's card, owed since the mention, is taken off first) */
+      /* a viewer who hides from the rankings: the recap without the class */
       document.querySelectorAll('.nova-talk, .rs-spot, .rs-fly, .scene-bridge, .invite-overlay').forEach(n => n.remove()); weekRecapOn = false;
-      homeUnlockPlaying = false; clearTimeout(homeUnlockTimer); homeUnlockTimer = null;
-      try{ ensureUnlocksShown().chars.push('poseidon'); }catch(e){}
       try{ localStorage.removeItem('class26e.weekrecap.v1'); }catch(e){}
       store.leaderboardOptIn = false;
       showHome();
@@ -26572,7 +26556,7 @@ def check_b324w_recap(br):
     check("b324w the podium rose third, second, first, and the mentions came in as cards",
           r.get("podium") and sorted(r.get("podium")) == ["Ada", "Bo", "Cy"] and (r.get("cards") or 0) >= 1 and r.get("meCard") is True,
           [r.get("podium"), r.get("cards"), r.get("meCard")])
-    check("b324w the viewer's mention hands over the Sheriff", r.get("awarded") is True, r.get("awarded"))
+    check("b324w the viewer's mention unlocks nothing (the Sheriff is not the recap's)", r.get("untouched") is True, r.get("untouched"))
     check("b324w skippable, and closed", r.get("skip") is True and r.get("gone") is True, [r.get("skip"), r.get("gone")])
     check("b324w not twice in a week", r.get("again") is False, r.get("again"))
     check("b324w nothing on the Leaderboard", r.get("lbCard") is False, r.get("lbCard"))
