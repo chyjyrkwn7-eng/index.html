@@ -109940,8 +109940,6 @@ function showProfile(defaultTab, opts){
   fTitle.textContent = "Friends";
   const friendIds = friendPublicIds();
   const pendingN = incomingFriendRequests().length;
-  const onlineN = (leaderboardRows || [])
-    .filter(e => friendIds.indexOf(e.pub) >= 0 && isOnline(e)).length;
   const fCount = document.createElement("span");
   fCount.className = "profile-classcard-count";
   /* Worded, like "178 class days left" opposite it, rather than a bare
