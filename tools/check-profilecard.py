@@ -205,31 +205,27 @@ with sync_playwright() as pw:
         ck("Copy is the standard button", f["copyClass"] and "friend-send" in f["copyClass"] and "ghost" not in f["copyClass"], f["copyClass"])
         ck("Copy is 44px", (f["copyH"] or 0)>=44, f["copyH"])
         ck("no horizontal page scroll (friends)", f["scrollX"]<=0, f["scrollX"])
-        # ---- Calendar: list view ----
+        # ---- Calendar: the month (the list view went in build 324 - "instead
+        # of the list tab, could we remove that and maybe really hone in on
+        # the calendar we have?") ----
         pg.evaluate("()=>showCalendar()"); pg.wait_for_timeout(600)
-        c=pg.evaluate("""()=>{
-          const btns=[...document.querySelectorAll('.cal-view-tab, .navsegment .iconbtn, button')];
-          const lt=btns.find(b=>/^list$/i.test((b.textContent||'').trim()));
-          if(lt) lt.click();
-          return !!lt;}""")
-        pg.evaluate("""()=>{ document.querySelectorAll('.cal-month-head').forEach(h=>h.click()); }""")
-        pg.wait_for_timeout(500)
-        cal=pg.evaluate("""()=>{
-          const testRows=[...document.querySelectorAll('.cal-row-test')];
-          const lastRows=[...document.querySelectorAll('.cal-row-last')];
-          const testCells=[...document.querySelectorAll('.cal-cell-test')];
-          const dots=[...document.querySelectorAll('.cal-cell-dot-test')];
-          return {
-            listedTest: testRows.length, listedLast: lastRows.length,
-            testChips: document.querySelectorAll('.cal-row-chip-test').length,
-            lastChips: document.querySelectorAll('.cal-row-chip-last').length,
-            lastChipText: (document.querySelector('.cal-row-chip-last')||{}).textContent||null,
-            scrollX: document.documentElement.scrollWidth - document.documentElement.clientWidth
-          };}""")
-        print("   calendar list:", json.dumps(cal), "(list tab found:", c, ")")
-        ck("test days marked in the list", cal["listedTest"]>0 and cal["testChips"]==cal["listedTest"], cal)
-        ck("exactly one last day in the list", cal["listedLast"]==1 and cal["lastChips"]==1, (cal["listedLast"],cal["lastChips"]))
-        ck("no horizontal page scroll (calendar list)", cal["scrollX"]<=0, cal["scrollX"])
+        cal=pg.evaluate("""async ()=>{
+          const wait=ms=>new Promise(r=>setTimeout(r,ms));
+          for(let i=0;i<20;i++){ const b=document.querySelectorAll('.cal-grid-arrow')[0]; if(!b||b.disabled) break; b.click(); await wait(40); }
+          let testCells=0, testDots=0, last=0;
+          for(let i=0;i<20;i++){
+            testCells+=document.querySelectorAll('.cal-grid .cal-cell-test').length;
+            testDots+=document.querySelectorAll('.cal-grid .cal-cell-test .cal-cell-dot-test').length;
+            last+=document.querySelectorAll('.cal-grid .cal-cell-last').length;
+            const n=document.querySelectorAll('.cal-grid-arrow')[1]; if(!n||n.disabled) break; n.click(); await wait(40);
+          }
+          return { testCells, testDots, last, list: !!document.querySelector('.cal-listview, .cal-viewseg'),
+                   scrollX: document.documentElement.scrollWidth - document.documentElement.clientWidth };}""")
+        print("   calendar month:", json.dumps(cal))
+        ck("test days marked on the month", cal["testCells"]>0 and cal["testDots"]==cal["testCells"], cal)
+        ck("exactly one last day on the month", cal["last"]==1, cal["last"])
+        ck("no List view", not cal["list"], cal["list"])
+        ck("no horizontal page scroll (calendar)", cal["scrollX"]<=0, cal["scrollX"])
         ck("no uncaught JS errors", not errs, errs[:3])
         ctx.close()
     br.close()

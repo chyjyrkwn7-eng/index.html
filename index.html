@@ -4589,6 +4589,116 @@
        text is the signal instead, so the words follow it. */
     .cal-grid-legend .cal-legend-dot{ display:none; }
   }
+  /* ---- THE CALENDAR TAB'S CARDS (build 324) - see buildCalendarPane ----
+     "I like the way the stat page looks so maybe it could use of that? We
+     want it to be very simple though". Four cards in the Stats tab's own
+     glass (.points-progress-sect) and its slab headings: Today, This week,
+     Next test, The course. A few big, readable things. Colours keep their
+     calendar meanings: amber is a test (the key's dot), gold the last day,
+     the information blue the countdown. */
+  .cal-glance{ display:flex; flex-direction:column; gap:.85rem; margin:0 0 1.5rem; }
+  .screen-calendar-tab .cal-glance > .cal-card{ margin:0; min-width:0; }
+  .screen-calendar-tab > .cal-course-card{ margin:1.2rem 0 0; }
+  .screen-calendar-tab > .cal-course-card[hidden]{ display:none; }
+  .cal-glance > [hidden]{ display:none; }
+  @media (min-width:40rem){
+    .cal-glance{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:1rem; align-items:stretch; margin-bottom:1.8rem; }
+    /* Today and Next test side by side, the week under both */
+    .cal-glance > .cal-today-card{ order:1; }
+    .cal-glance > .cal-nexttest-card{ order:2; }
+    .cal-glance > .cal-week-card{ order:3; grid-column:1 / -1; }
+  }
+  .cal-card-head{ display:flex; align-items:baseline; justify-content:space-between; gap:.6rem; }
+  .cal-card .cal-card-head .slab{ margin:0 0 .45rem; }
+  .cal-card-aside{ margin:0; font-size:.78rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; text-align:right; }
+  .cal-today-status{ margin:0 0 .35rem; font-size:1.7rem; font-weight:800; letter-spacing:-.015em; line-height:1.12; color:var(--ink); }
+  .cal-today-card.is-test .cal-today-status{ color:#F5B54D; }
+  .cal-today-card.is-last .cal-today-status{ color:#E5C06A; }
+  .cal-today-sub{ margin:0; font-size:.92rem; color:var(--soft); line-height:1.4; }
+  .cal-sched{ list-style:none; margin:.2rem 0 0; padding:0; }
+  .cal-sched-item{
+    display:flex; align-items:baseline; justify-content:space-between; gap:.8rem;
+    padding:.42rem 0; border-top:1px solid rgba(255,255,255,.06);
+    font-size:.98rem; font-weight:650; line-height:1.3; color:var(--ink);
+  }
+  .cal-sched-item:first-child{ border-top:0; }
+  .cal-sched-name{ min-width:0; overflow-wrap:break-word; }
+  .cal-sched-hrs{ flex:none; font-size:.76rem; font-weight:700; color:var(--soft); font-variant-numeric:tabular-nums; }
+  .cal-sched-item.is-test .cal-sched-name{ color:#F5B54D; font-weight:800; }
+  .cal-today-card .cal-today-next{ margin-top:.55rem; padding-bottom:0; border-top-color:rgba(255,255,255,.09); }
+  /* the week: the grid's own row for today, a little larger, with its dots */
+  .cal-week{ display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:.3rem; margin-top:.15rem; }
+  .cal-week-day{
+    font:inherit; -webkit-appearance:none; appearance:none; min-width:0;
+    display:flex; flex-direction:column; align-items:center; gap:.24rem;
+    padding:.5rem 0 .5rem; min-height:4.5rem; border-radius:14px;
+    background:transparent; border:1px solid transparent; color:var(--soft);
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+    transition:background-color .2s ease, border-color .2s ease;
+  }
+  .cal-week-day.is-class, .cal-week-day.is-holiday{
+    background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.08); color:var(--ink);
+  }
+  .cal-week-day.is-holiday{ opacity:.75; }
+  .cal-week-dow{ font-size:.62rem; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--soft); white-space:nowrap; }
+  .cal-week-num{ font-size:1.15rem; font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; }
+  .cal-week-dots{ display:flex; gap:.18rem; height:.4rem; }
+  .cal-week-dot{ width:.4rem; height:.4rem; border-radius:999px; background:var(--accent); }
+  .cal-week-dot.cal-week-dot-test{ background:#F5B54D; }
+  .cal-week-day.is-holiday .cal-week-dot{ background:var(--wrong); }
+  /* today: the month's own white rim; picked: its frosted fill */
+  .cal-week-day.is-today{ border:1.5px solid rgba(255,255,255,.85); }
+  .cal-week-day.is-today .cal-week-dow{ color:#fff; }
+  .cal-week-day.is-sel{ background:rgba(255,255,255,.13); }
+  .cal-week-day:active{ background:rgba(255,255,255,.1); }
+  .cal-week-what{ display:none; }
+  /* the next test: the countdown in the test amber */
+  .cal-nt-row{ display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+  .cal-nt-text{ min-width:0; }
+  .cal-nt-title{ margin:0; font-size:1.45rem; font-weight:800; letter-spacing:-.01em; line-height:1.15; color:var(--ink); }
+  .cal-nt-when{ margin:.25rem 0 0; font-size:.88rem; font-weight:700; color:#F5B54D; }
+  .cal-nt-count{
+    flex:none; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-width:5.2rem; min-height:4.6rem; padding:.5rem .7rem; border-radius:16px;
+    background:rgba(245,181,77,.09); border:1px solid rgba(245,181,77,.3);
+  }
+  .cal-nt-num{ font-family:var(--mono); font-size:2rem; font-weight:700; line-height:1; letter-spacing:-.02em; color:#F5B54D; font-variant-numeric:tabular-nums; }
+  .cal-nt-unit{ margin-top:.3rem; font-size:.66rem; font-weight:700; color:var(--soft); white-space:nowrap; }
+  .cal-nt-count.is-today .cal-nt-num{ font-family:inherit; font-size:1.3rem; font-weight:800; letter-spacing:0; }
+  .cal-topics{ margin:.8rem 0 0; padding:.75rem 0 0; border-top:1px solid rgba(255,255,255,.09); }
+  .cal-topics-lab{ margin:0 0 .35rem; font-size:.66rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
+  .cal-topics-list{ margin:0; padding:0 0 0 1.15rem; font-size:.94rem; line-height:1.5; color:var(--ink); }
+  .cal-topics-list li::marker{ color:#F5B54D; }
+  .cal-topics-posted{ margin:.4rem 0 0; font-size:.74rem; color:var(--soft); }
+  .cal-topics-none{ margin:0; font-size:.88rem; line-height:1.4; color:var(--soft); }
+  .cal-daycard .cal-topics{ margin-top:.7rem; padding-top:.65rem; }
+  /* the course: the Stats tab's ring and tiles */
+  .cal-course-card .cal-course-hero{ margin:.1rem 0 .85rem; }
+  .cal-course-grid{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.6rem; }
+  .cal-course-grid > .cal-stat{ cursor:default; padding:.8rem .8rem .75rem; min-width:0; }
+  .cal-stat .stat-num{ font-size:1.55rem; }
+  .cal-stat .stat-lab{ font-size:.74rem; line-height:1.3; }
+  .cal-stat.is-days .stat-num{ color:#9CCBFF; }
+  .cal-stat.is-tests .stat-num{ color:#F5B54D; }
+  .cal-stat.is-grad .stat-num{ color:#E5C06A; }
+  @media (min-width:40rem){
+    .cal-today-status{ font-size:1.9rem; }
+    .cal-week{ gap:.5rem; }
+    .cal-week-day{ min-height:5.6rem; padding:.6rem .1rem; gap:.3rem; }
+    .cal-week-dow{ font-size:.7rem; }
+    .cal-week-num{ font-size:1.35rem; }
+    /* a tablet has room to say what the day is, in a word */
+    .cal-week-what{
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+      max-width:100%; padding:0 .35rem; font-size:.66rem; font-weight:650; line-height:1.25;
+      text-align:center; color:var(--soft); overflow-wrap:break-word;
+    }
+    .cal-week-day.is-test .cal-week-what{ color:#F5B54D; }
+    .cal-nt-title{ font-size:1.6rem; }
+    .cal-course-grid{ gap:.8rem; }
+    .cal-stat .stat-num{ font-size:1.8rem; }
+    .cal-stat .stat-lab{ font-size:.8rem; }
+  }
   /* The two-board leaderboard layout, per explicit request \u2014 genuinely
      side by side (not stacked), each a compact self-contained ranked
      list: rank, name, and just that board's own metric, nothing else
@@ -54520,6 +54630,86 @@ function formatCalendarDate(iso){
   return formatCalendarDate._f.format(d);
 }
 
+/* ---- WHAT'S ON THE NEXT TEST (build 324) ----
+   Madison: "We also need to incorporate a way to see what's on the next
+   test. She tells us what's on it every Sunday so I need to figure that
+   out." Keyed by the test's date (the same ISO date CALENDAR_DATA uses).
+   Filled by hand each Sunday from what the instructor said:
+     "2026-10-19": { title: "Test #5", topics: ["Arrest", "Search", ...], postedAt: "2026-10-18" }
+   title is optional (the schedule names the test anyway). Seeded EMPTY on
+   purpose: a test with no entry says "Not posted yet", never a guess. */
+const TEST_TOPICS = {
+};
+/* The topics for one test date, cleaned, or null when none are posted. */
+function testTopicsFor(iso){
+  const t = TEST_TOPICS[iso];
+  if(!t || !Array.isArray(t.topics)) return null;
+  const topics = t.topics.map(x => String(x == null ? "" : x).trim()).filter(Boolean);
+  if(!topics.length) return null;
+  return { title: t.title ? String(t.title) : null, topics, postedAt: t.postedAt ? String(t.postedAt) : null };
+}
+/* The next test still to sit, today included - the same days
+   testsRemaining() counts, so the card and the count can never disagree. */
+function nextTestEntry(){
+  const k = todayCalendarKey();
+  return CALENDAR_DATA.find(d => d.date >= k && isExamDay(d)) || null;
+}
+/* Whole days from one ISO date to another, by the local calendar (noon,
+   so a daylight-saving change cannot round a day away). */
+function calendarDaysBetween(fromIso, toIso){
+  const at = iso => { const p = String(iso).split("-").map(Number); return new Date(p[0], p[1] - 1, p[2], 12).getTime(); };
+  return Math.round((at(toIso) - at(fromIso)) / 86400000);
+}
+/* Every class day in the course - the total classDaysRemaining() counts
+   down from, by the same rule (not a holiday, up to the last day). */
+function classDaysTotal(){
+  return CALENDAR_DATA.filter(d => d.date <= LAST_CLASS_DATE && !d.holiday).length;
+}
+/* A shouted schedule part in plain case ("LEVEL ONE FINAL" -> "Level One
+   Final", "HOLIDAY" -> "Holiday"), keeping the academy's acronyms. */
+function calendarPlainCase(s){
+  if(s !== s.toUpperCase() || !/[A-Z]{4}/.test(s)) return s;
+  const KEEP = { PT: 1, CCP: 1, TCOLE: 1, SFST: 1, TCIC: 1, TLETS: 1, MLK: 1 };
+  return s.split(/(\s+)/).map(w => KEEP[w] || !/[A-Z]/.test(w) ? w : w.charAt(0) + w.slice(1).toLowerCase()).join("");
+}
+/* One day's schedule text as its parts: "CCP (3.5) • PT • TEST #4" is
+   CCP for 3.5 hours, PT, and Test #4. An hours-only part ("(4.5)") belongs
+   to the part before it. */
+function scheduleParts(text){
+  const out = [];
+  String(text || "").split("•").map(s => s.trim()).filter(Boolean).forEach(seg => {
+    const only = seg.match(/^\(\s*([\d.]+)\s*\)$/);
+    if(only){ if(out.length && !out[out.length - 1].hours) out[out.length - 1].hours = only[1]; return; }
+    const m = seg.match(/^(.*?)\s*\(\s*([\d.]+)\s*\)$/);
+    let name = m ? m[1] : seg;
+    const hours = m ? m[2] : null;
+    const num = name.match(/^test\s*#\s*(\d+)$/i);
+    if(num) name = "Test #" + num[1];
+    name = calendarPlainCase(name);
+    const test = /test\s*#|state test|\bfinal\b|\bexam\b/i.test(name) && !/PT FINALS|study for/i.test(name);
+    out.push({ name, hours, test });
+  });
+  out.forEach(p => { if(p.hours && p.hours.charAt(0) === ".") p.hours = "0" + p.hours; });
+  return out;
+}
+/* What a test day's test is called, read off its schedule text the way
+   isExamDay() finds it: "Test #4", "State test", "Level One Final". */
+function testNameOf(entry){
+  if(!entry) return "Test";
+  const t = entry.text || "";
+  const num = t.match(/TEST\s*#\s*(\d+)/i);
+  if(num) return "Test #" + num[1];
+  if(/state test/i.test(t)) return "State test";
+  const parts = scheduleParts(t);
+  const fin = parts.find(p => /\bfinal\b/i.test(p.name) && !/PT FINALS|study for/i.test(p.name));
+  if(fin){
+    if(/level/i.test(fin.name)) return fin.name;
+    const lvl = parts.find(p => /^level\b/i.test(p.name));
+    return lvl ? lvl.name + " " + fin.name : fin.name;
+  }
+  return "Test";
+}
+
 
 function applySaved(){
   if(store.opts){
@@ -98176,7 +98366,7 @@ function showAppearance(opts){
     theme.showClassDaysLeft = classDaysCb.checked;
     saveTheme();
     showToast(theme.showClassDaysLeft
-      ? "Class days remaining is back on your profile."
+      ? "Class days remaining is back on the Calendar tab."
       : "Class days remaining hidden.");
   });
   const classDaysBox = document.createElement("span");
@@ -98187,7 +98377,7 @@ function showAppearance(opts){
   classDaysWrap.appendChild(document.createTextNode("Show class days remaining"));
   const classDaysHint = document.createElement("span");
   classDaysHint.className = "ohint";
-  classDaysHint.textContent = "The countdown to graduation on your profile\u2019s class card.";
+  classDaysHint.textContent = "The countdown to graduation on the Calendar tab.";
   classDaysWrap.appendChild(classDaysHint);
   classDaysRow.append(classDaysCb, classDaysBox, classDaysWrap);
   studyDetails.appendChild(classDaysRow);
@@ -98242,7 +98432,7 @@ function showAppearance(opts){
     });
     const HINTS = {
       "Reduce motion":                  "Turns off shimmer, pulse and other animations.",
-      "Show class days remaining":      "Shows the countdown to graduation on your profile.",
+      "Show class days remaining":      "Shows the countdown to graduation on the Calendar tab.",
       "Swipe to next question":         "Swipe left to move on instead of tapping Next.",
       /* BUILD 324: "the auto advance in correct, the title and description
          are slightly vague. The auto star description says every 5th miss
@@ -108670,7 +108860,10 @@ function fillDeferredBannerArt(queue){
    be off by default"), not as a setting to remember, and anything stored
    on `store` would also need its own default in applyLoadedData(). It
    survives a trip to another screen and back inside one session, and a
-   relaunch puts it back on the month grid. */
+   relaunch puts it back on the month grid.
+   VESTIGIAL SINCE BUILD 324: the List view is gone ("instead of the list
+   tab, could we remove that"), so the month is the only view. Kept
+   declared so an old link or harness that sets it does nothing harmful. */
 let calendarView = "month";
 
 /* ---------- Friends -----------------------------------------------------
@@ -109105,74 +109298,9 @@ function showFriends(){
   toTop();
 }
 
-/* THE CLASS 26E BOX - "add a box below the top box and make it dedicated
-   to the class calendar and class days remaining, maybe you could show
-   what's on the schedule for today and the next class day". It sat under
-   the Profile card until build 319 and heads Profile > Calendar now, so it
-   has no "View class calendar" button: the calendar is right under it.
-   ONE OF EACH (build 319, builder h): "I like how there is that
-   information at the top, but some of it is redundant". The box had a
-   Today line, and the day card under the month opens on today and says
-   the same thing ("Sat, October 10 - Today / No class - it's the
-   weekend"). The day card keeps today, because it is also where any other
-   day you tap is read; the box keeps what nothing else on the page says
-   at a glance - how many class days are left and what the next one is. */
-function buildClassCard(){
-  const classSect = document.createElement("div");
-  classSect.className = "profile-classcard";
-
-  const classHead = document.createElement("div");
-  classHead.className = "profile-classcard-head";
-  const classTitle = document.createElement("p");
-  classTitle.className = "profile-classcard-title";
-  classTitle.textContent = "Class 26E";
-  const daysLeftNow = classDaysRemaining();
-  const classCount = document.createElement("span");
-  classCount.className = "profile-classcard-count";
-  classCount.textContent = daysLeftNow + (daysLeftNow === 1 ? " class day left" : " class days left");
-  /* Off by choice, not by accident: a countdown to graduation is either
-     the best thing on the screen or the worst, depending on the week. */
-  classCount.hidden = theme.showClassDaysLeft === false;
-  /* NO TESTS-LEFT PILL (build 318): "Remove the amount of tests left as
-     well." Build 314 put one beside the class days; the class days pill
-     stays on its own. testsRemaining() is kept - the calendar marks the
-     same exam days it counted. */
-  const counts = document.createElement("span");
-  counts.className = "profile-classcard-counts";
-  counts.append(classCount);
-  classHead.append(classTitle, counts);
-  classSect.appendChild(classHead);
-
-  function classDayRow(label, entry, isToday){
-    const row = document.createElement("div");
-    row.className = "profile-classday" + (isToday ? " is-today" : "");
-    const lab = document.createElement("span");
-    lab.className = "profile-classday-label";
-    lab.textContent = label;
-    const body = document.createElement("span");
-    body.className = "profile-classday-body";
-    if(entry){
-      const when = document.createElement("span");
-      when.className = "profile-classday-when";
-      when.textContent = formatCalendarDate(entry.date);
-      const what = document.createElement("span");
-      what.className = "profile-classday-what" + (entry.holiday ? " is-holiday" : "");
-      what.textContent = entry.text;
-      body.append(when, what);
-    } else {
-      const what = document.createElement("span");
-      what.className = "profile-classday-what is-none";
-      /* Two genuinely different "nothing" cases: no class today is an
-         ordinary Saturday, no class ever again is the course being over. */
-      what.textContent = isToday ? "No class today" : "No class days left";
-      body.appendChild(what);
-    }
-    row.append(lab, body);
-    return row;
-  }
-  classSect.appendChild(classDayRow("Next", nextClassEntry(), false));
-  return classSect;
-}
+/* (THE CLASS 26E BOX - buildClassCard - came off in build 324: its Next
+   line is on the Calendar tab's Today card and its days-left count is the
+   first tile of The course. See buildCalendarPane.) */
 /* ---- THE CALENDAR IS A BOTTOM TAB (build 323) ----
    "Calendar is gonna move to the bottom tab. It's gonna change places with
    the settings bottom tab ... I think this could be a huge improvement
@@ -109201,31 +109329,27 @@ function showCalendarTab(){
 function showCalendar(){
   return showCalendarTab();
 }
-/* The Calendar tab: the Class 26E box (the days left, the next class
-   day), then the calendar. No back link and no title - the header and the
-   lit tab in the bar say where this is. */
+/* ---- THE CALENDAR TAB, HONED (build 324, builder c) ----
+   Madison: "instead of the list tab, could we remove that and maybe really
+   hone in on the calendar we have? Could it be better? Nicer? It's gonna be
+   a tab now and I want it to really feel like the place people go to see
+   what's next up in class. If someone asks what's today they go there.
+   Maybe we have a this week or this month thing? ... a better way of
+   showing remaining test days and class days? I like the way the stat page
+   looks so maybe it could use of that? We want it to be very simple though
+   ... I like the current calendar, just some improvements. We also need to
+   incorporate a way to see what's on the next test."
+   So the List view and its Month / List switcher are gone and the month is
+   the heart of the tab, under four plain cards in the Stats tab's glass:
+   Today, This week, Next test (with what is on it - TEST_TOPICS) and The
+   course (the countdowns, in the Stats tab's ring and tiles). The Class 26E
+   box went with them: its Next line is on the Today card and its days-left
+   count is The course's first tile. One picked day for the whole tab - a
+   day tapped in the week is picked in the month as well. */
 function buildCalendarPane(panel){
-  panel.appendChild(buildClassCard());
-
-  /* The same .navsegment/.iconbtn switcher the tabbed screens use, per
-     the shared-pattern convention - not a third kind of toggle. */
-  const seg = document.createElement("div");
-  /* .profiletabs as well as .navsegment, which is the pattern the other
-     tabbed screens use and the only one that actually renders: bare
-     .navsegment is the retired legacy header element and computes to
-     width:0 with overflow:hidden, so a switcher built on it alone is
-     present in the DOM, reports two buttons 61px and 43px wide, and
-     draws nothing. .profiletabs is what carries display:flex,
-     width:fit-content and the centring. */
-  seg.className = "navsegment profiletabs cal-viewseg sub-seg";
-  const monthTabBtn = document.createElement("button");
-  monthTabBtn.type = "button"; monthTabBtn.className = "iconbtn"; monthTabBtn.textContent = "Month";
-  const listTabBtn = document.createElement("button");
-  listTabBtn.type = "button"; listTabBtn.className = "iconbtn"; listTabBtn.textContent = "List";
-  seg.append(monthTabBtn, listTabBtn);
-  panel.appendChild(seg);
-  attachSegSlider(seg, ".iconbtn.active");
-
+  const glance = document.createElement("div");
+  glance.className = "cal-glance";
+  panel.appendChild(glance);
   /* ---- the month grid ---- */
   const monthWrap = document.createElement("div");
   monthWrap.className = "cal-monthview";
@@ -109307,37 +109431,6 @@ function buildCalendarPane(panel){
   monthWrap.appendChild(gridTodayRow);
 
 
-  /* ---- the day-by-day list, unchanged, now behind the toggle ---- */
-  const listWrap = document.createElement("div");
-  listWrap.className = "cal-listview";
-  panel.appendChild(listWrap);
-
-  const actionRow = document.createElement("div");
-  actionRow.className = "cal-action-row";
-  const expandAllBtn = document.createElement("button");
-  expandAllBtn.type = "button"; expandAllBtn.className = "cal-action-btn";
-  expandAllBtn.textContent = "Expand all";
-  const todayBtn = document.createElement("button");
-  todayBtn.type = "button"; todayBtn.className = "cal-action-btn";
-  todayBtn.textContent = "Go to today";
-  actionRow.append(expandAllBtn, todayBtn);
-  listWrap.appendChild(actionRow);
-
-  const searchWrap = document.createElement("div");
-  searchWrap.className = "searchwrap";
-  const searchIcon = buildMagnifyIcon();
-  searchIcon.setAttribute("class", "searchicon");
-  const searchInput = document.createElement("input");
-  searchInput.type = "search"; searchInput.className = "searchbox";
-  searchInput.placeholder = "Search dates or events";
-  searchInput.setAttribute("aria-label", "Search dates or events");
-  searchWrap.append(searchIcon, searchInput);
-  listWrap.appendChild(searchWrap);
-
-  const list = document.createElement("div");
-  list.className = "cal-list";
-  listWrap.appendChild(list);
-
   const now = new Date();
   const todayStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
   const MONTH_LABELS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -109360,145 +109453,7 @@ function buildCalendarPane(panel){
     if(!monthEntries[key]){ monthEntries[key] = []; monthKeys.push(key); }
     monthEntries[key].push(entry);
   });
-  const expandState = {};
-  monthKeys.forEach(key => { expandState[key] = false; });
   const todayMonthKey = todayStr.slice(0, 7);
-
-  function render(filterText){
-    list.replaceChildren();
-    const q = (filterText || "").trim().toLowerCase();
-    const searching = q.length > 0;
-    let anyShown = false;
-
-    monthKeys.forEach(monthKey => {
-      const entries = monthEntries[monthKey].filter(entry =>
-        !q || entry.date.includes(q) || entry.text.toLowerCase().includes(q) || formatDayHead(entry.date).toLowerCase().includes(q));
-      if(searching && entries.length === 0) return;
-      anyShown = true;
-
-      const [y, m] = monthKey.split("-").map(Number);
-      const section = document.createElement("div");
-      section.className = "cal-month-sect";
-      const head = document.createElement("button");
-      head.type = "button";
-      /* Searching auto-expands a matching month so results are
-         actually visible without an extra tap, without permanently
-         changing that month's own manually-set state \u2014 clearing
-         the search reverts to whatever expandState already held. */
-      const isOpen = searching ? true : expandState[monthKey];
-      head.className = "cal-month-head" + (isOpen ? " cal-month-head-open" : "");
-      head.setAttribute("aria-expanded", isOpen ? "true" : "false");
-      const headLabel = document.createElement("span");
-      headLabel.textContent = MONTH_LABELS[m - 1] + " " + y;
-      const chevron = document.createElement("span");
-      chevron.className = "cal-month-chevron";
-      chevron.innerHTML = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 9l6 6 6-6\"/></svg>";
-      head.append(headLabel, chevron);
-      if(!searching){
-        /* Toggles the class directly on these already-in-the-DOM
-           elements now, rather than calling render() again \u2014 this is
-           the actual fix for the transition never being visible: a
-           full re-render replaces this section with a brand new one,
-           and a freshly created element has no "before" state to
-           animate from, only the state it's born into. Mutating the
-           existing head/body in place is what lets the CSS transition
-           genuinely see a change and animate it. */
-        head.addEventListener("click", () => {
-          const nowOpen = !expandState[monthKey];
-          expandState[monthKey] = nowOpen;
-          head.classList.toggle("cal-month-head-open", nowOpen);
-          head.setAttribute("aria-expanded", nowOpen ? "true" : "false");
-          openCollapsible(body, nowOpen);
-        });
-      }
-      section.appendChild(head);
-
-      const body = document.createElement("div");
-      body.className = "cal-month-body";
-      body.className = "cal-month-body" + (isOpen ? " cal-month-body-open is-settled" : "");
-      entries.forEach(entry => {
-        const row = document.createElement("div");
-        row.className = "cal-row" + (entry.holiday ? " cal-row-holiday" : "")
-          + (entry.date === todayStr ? " cal-row-today" : "")
-          + (isExamDay(entry) ? " cal-row-test" : "")
-          + (entry.date === lastClassDay ? " cal-row-last" : "");
-        row.dataset.date = entry.date;
-        const dateEl = document.createElement("p");
-        dateEl.className = "cal-row-date"; dateEl.textContent = formatDayHead(entry.date);
-        const textEl = document.createElement("p");
-        textEl.className = "cal-row-text"; textEl.textContent = entry.text;
-        row.append(dateEl, textEl);
-        if(entry.date === todayStr){
-          const badge = document.createElement("span");
-          badge.className = "cal-today-badge"; badge.textContent = "Today";
-          dateEl.appendChild(badge);
-        }
-        /* Order matters: Today first, then what the day IS. A row can
-           carry all three and on a 320px phone .cal-row-date wraps
-           rather than clipping, which is why the chips are flex-shrink:0
-           and short words. */
-        /* EVERY EXAM IS MARKED, NOT ONLY THE NUMBERED ONES (build 314):
-           "tests left" counts the level finals and the state test, so the
-           days it counts are the days marked - a final says FINAL, the
-           state test carries its own chip below. */
-        if(isExamDay(entry) && !isStateTestDay(entry)){
-          const chip = document.createElement("span");
-          chip.className = "cal-row-chip cal-row-chip-test"; chip.textContent = isTestDay(entry) ? "TEST" : "FINAL";
-          dateEl.appendChild(chip);
-        }
-        if(entry.date === lastClassDay){
-          const chip = document.createElement("span");
-          chip.className = "cal-row-chip cal-row-chip-last"; chip.textContent = "LAST DAY";
-          dateEl.appendChild(chip);
-        }
-        if(isStateTestDay(entry)){
-          const chip = document.createElement("span");
-          chip.className = "cal-row-chip cal-row-chip-test cal-row-chip-state"; chip.textContent = "STATE TEST";
-          dateEl.appendChild(chip);
-        }
-        body.appendChild(row);
-      });
-      section.appendChild(body);
-      list.appendChild(section);
-    });
-
-    if(!anyShown){
-      const empty = document.createElement("p");
-      empty.className = "info-note";
-      empty.textContent = "No matching days found.";
-      list.appendChild(empty);
-    }
-  }
-
-  expandAllBtn.addEventListener("click", () => {
-    /* Toggles based on current majority state \u2014 if most months are
-       already open, this collapses everything; otherwise it opens
-       everything. Simpler and more predictable than a separate
-       "collapse all" button that's only relevant half the time. */
-    const openCount = monthKeys.filter(k => expandState[k]).length;
-    const shouldExpand = openCount < monthKeys.length / 2;
-    monthKeys.forEach(key => { expandState[key] = shouldExpand; });
-    expandAllBtn.textContent = shouldExpand ? "Collapse all" : "Expand all";
-    render(searchInput.value);
-  });
-
-  todayBtn.addEventListener("click", () => {
-    if(!monthEntries[todayMonthKey]){
-      showToast("Today isn't a class day on the calendar.");
-      return;
-    }
-    searchInput.value = "";
-    expandState[todayMonthKey] = true;
-    render("");
-    requestAnimationFrame(() => {
-      const row = list.querySelector('.cal-row[data-date="' + todayStr + '"]');
-      if(row){
-        row.scrollIntoView({ behavior: "smooth", block: "center" });
-        row.classList.add("cal-row-pulse");
-        setTimeout(() => row.classList.remove("cal-row-pulse"), 1600);
-      }
-    });
-  });
 
   /* ---- the grid's own state and rendering ---- */
   const byDate = {};
@@ -109528,6 +109483,7 @@ function buildCalendarPane(panel){
 
   function renderDayCard(){
     dayCard.replaceChildren();
+    paintWeekSel();
     const entry = selectedDate ? byDate[selectedDate] : null;
     if(!entry && selectedDate){
       dayCard.className = "cal-daycard cal-daycard-none";
@@ -109593,6 +109549,12 @@ function buildCalendarPane(panel){
     const body = document.createElement("p");
     body.className = "cal-row-text"; body.textContent = entry.text;
     dayCard.append(head, body);
+    /* WHAT'S ON IT (build 324): a test day says what the test covers, or
+       that it has not been posted yet - the Next test card's own block. */
+    if(isExamDay(entry)){
+      const tb = buildTopicsBlock(entry);
+      if(tb) dayCard.appendChild(tb);
+    }
   }
 
   function renderGrid(){
@@ -109629,6 +109591,8 @@ function buildCalendarPane(panel){
          one more thing to remember on every new entry; "TEST #" is how
          every one of them is written. */
       if(entry && isExamDay(entry)) cls += " cal-cell-test";
+      /* topics posted for this test (build 324) - the day card lists them */
+      if(entry && isExamDay(entry) && testTopicsFor(ds)) cls += " cal-cell-topics";
       if(ds === todayStr) cls += " cal-cell-today";
       if(ds === lastClassDay) cls += " cal-cell-last";
       if(!entry) cls += " cal-cell-free";
@@ -109722,33 +109686,305 @@ function buildCalendarPane(panel){
     });
   });
 
-  function selectCalendarView(which){
-    calendarView = which === "list" ? "list" : "month";
-    const onMonth = calendarView === "month";
-    monthTabBtn.classList.toggle("active", onMonth);
-    listTabBtn.classList.toggle("active", !onMonth);
-    monthTabBtn.setAttribute("aria-pressed", onMonth ? "true" : "false");
-    listTabBtn.setAttribute("aria-pressed", onMonth ? "false" : "true");
-    monthWrap.hidden = !onMonth;
-    listWrap.hidden = onMonth;
-  }
-  monthTabBtn.addEventListener("click", () => selectCalendarView("month"));
-  listTabBtn.addEventListener("click", () => selectCalendarView("list"));
-  /* SWIPE BETWEEN MONTH AND LIST (build 314): "the month list tab in
-     calendar, ensure that's swipable to change between the two, similar
-     to the leaderboard" - the same contained gesture the Leaderboard's
-     boards use (attachTabSwipe), and the switcher's bubble slides with
-     it because it follows the active button (attachSegSlider). */
-  /* along the Month / List switcher only (build 319): a swipe anywhere
-     else on the page moves Profile's own tabs (showProfile skips this
-     switcher for that). */
-  attachTabSwipe(panel, ["month", "list"], () => calendarView, selectCalendarView, { zone: seg });
+  /* ---- the cards above the month (build 324) ---- */
+  const DOW_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const isoOf = d => d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  const firstClassDay = CALENDAR_DATA.length ? CALENDAR_DATA[0].date : null;
+  let weekBtns = [];
 
-  render("");
-  searchInput.addEventListener("input", () => render(searchInput.value));
+  /* One picked day for the whole tab: the month turns to it, its cell is
+     picked and the day card says what is on it. From the week strip the
+     day card is brought into view, since on a phone it is a screen away. */
+  function pickDay(ds, reveal){
+    const idx = monthKeys.indexOf(ds.slice(0, 7));
+    if(idx >= 0) gridMonthIdx = idx;
+    selectedDate = ds;
+    renderGrid(); renderDayCard();
+    if(reveal){
+      requestAnimationFrame(() => {
+        if(!dayCard.isConnected) return;
+        const r = dayCard.getBoundingClientRect();
+        if(r.top >= 0 && r.bottom <= window.innerHeight * 0.8) return;
+        dayCard.scrollIntoView({ behavior: theme.reduceMotion ? "auto" : "smooth", block: "center" });
+      });
+    }
+  }
+  /* The week strip follows whatever day is picked, wherever it was picked. */
+  function paintWeekSel(){
+    weekBtns.forEach(b => {
+      const on = b.dataset.date === selectedDate;
+      b.classList.toggle("is-sel", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+  function cardHead(text, aside){
+    const h = document.createElement("div");
+    h.className = "cal-card-head";
+    const s = document.createElement("p");
+    s.className = "slab"; s.textContent = text;
+    h.appendChild(s);
+    if(aside){
+      const a = document.createElement("p");
+      a.className = "cal-card-aside"; a.textContent = aside;
+      h.appendChild(a);
+    }
+    return h;
+  }
+  function scheduleList(entry){
+    const ul = document.createElement("ul");
+    ul.className = "cal-sched";
+    scheduleParts(entry.text).forEach(p => {
+      const li = document.createElement("li");
+      li.className = "cal-sched-item" + (p.test ? " is-test" : "");
+      const n = document.createElement("span");
+      n.className = "cal-sched-name"; n.textContent = p.name;
+      li.appendChild(n);
+      if(p.hours){
+        const h = document.createElement("span");
+        h.className = "cal-sched-hrs"; h.textContent = p.hours + (p.hours === "1" ? " hr" : " hrs");
+        li.appendChild(h);
+      }
+      ul.appendChild(li);
+    });
+    return ul;
+  }
+  function holidayName(entry){
+    const parts = scheduleParts(entry.text).map(p => p.name).filter(n => !/^holiday$/i.test(n));
+    return parts.length ? parts.join(" · ") : "Holiday";
+  }
+
+  /* TODAY: class or no class, a test or not, and what is on. "If someone
+     asks what's today they go there." */
+  function buildTodayCard(){
+    const entry = byDate[todayStr] || null;
+    const p = todayStr.split("-").map(Number);
+    const dow = new Date(p[0], p[1] - 1, p[2]).getDay();
+    let kind = "free", status = "No class", sub = null;
+    if(entry && entry.holiday){ kind = "holiday"; sub = holidayName(entry); }
+    else if(entry && todayStr === lastClassDay){ kind = "last"; status = "Last day"; }
+    else if(entry && isExamDay(entry)){ kind = "test"; status = "Test day"; }
+    else if(entry){ kind = "class"; status = "Class day"; }
+    else if(firstClassDay && todayStr < firstClassDay){ status = "No class yet"; sub = "Class 26E begins " + formatCalendarDate(firstClassDay) + "."; }
+    else if(todayStr > LAST_CLASS_DATE){ status = "Class 26E is done"; sub = "Graduation was " + formatCalendarDate(GRADUATION_DATE) + "."; }
+    else sub = (dow === 0 || dow === 6) ? "It's the weekend." : "Nothing on the schedule today.";
+    const card = document.createElement("section");
+    card.className = "points-progress-sect cal-card cal-today-card is-" + kind;
+    card.dataset.kind = kind;
+    card.appendChild(cardHead("Today", formatCalendarDate(todayStr)));
+    const st = document.createElement("p");
+    st.className = "cal-today-status"; st.textContent = status;
+    card.appendChild(st);
+    if(sub){
+      const s = document.createElement("p");
+      s.className = "cal-today-sub"; s.textContent = sub;
+      card.appendChild(s);
+    }
+    /* (a test today is also the Next test card, which says what is on it -
+       said once, there) */
+    if(entry && !entry.holiday) card.appendChild(scheduleList(entry));
+    /* the Class 26E box's Next line, kept: what's next up in class */
+    {
+      const next = nextClassEntry();
+      const row = document.createElement("div");
+      row.className = "profile-classday cal-today-next";
+      const lab = document.createElement("span");
+      lab.className = "profile-classday-label"; lab.textContent = "Next";
+      const body = document.createElement("span");
+      body.className = "profile-classday-body";
+      const what = document.createElement("span");
+      if(next){
+        const when = document.createElement("span");
+        when.className = "profile-classday-when"; when.textContent = formatCalendarDate(next.date);
+        what.className = "profile-classday-what"; what.textContent = scheduleParts(next.text).map(x => x.name).join(" · ");
+        body.append(when, what);
+      } else {
+        what.className = "profile-classday-what is-none"; what.textContent = "No class days left";
+        body.appendChild(what);
+      }
+      row.append(lab, body);
+      card.appendChild(row);
+    }
+    return card;
+  }
+
+  /* THIS WEEK: the seven days of the grid's own row for today, each with
+     the grid's dots; a Saturday shows the week ahead. Tapping a day picks it. */
+  function buildWeekCard(){
+    const p = todayStr.split("-").map(Number);
+    const t = new Date(p[0], p[1] - 1, p[2]);
+    const ahead = t.getDay() === 6;
+    const start = new Date(t.getFullYear(), t.getMonth(), t.getDate() - t.getDay() + (ahead ? 7 : 0));
+    const days = [];
+    for(let i = 0; i < 7; i++) days.push(isoOf(new Date(start.getFullYear(), start.getMonth(), start.getDate() + i)));
+    const classN = days.filter(ds => byDate[ds] && !byDate[ds].holiday).length;
+    const testN = days.filter(ds => byDate[ds] && isExamDay(byDate[ds])).length;
+    const aside = classN
+      ? classN + (classN === 1 ? " class day" : " class days") + (testN ? " · " + testN + (testN === 1 ? " test" : " tests") : "")
+      : "No class";
+    const card = document.createElement("section");
+    card.className = "points-progress-sect cal-card cal-week-card";
+    card.appendChild(cardHead(ahead ? "Next week" : "This week", aside));
+    const strip = document.createElement("div");
+    strip.className = "cal-week";
+    weekBtns = days.map((ds, i) => {
+      const entry = byDate[ds] || null;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "cal-week-day" + (entry && !entry.holiday ? " is-class" : "") + (entry && entry.holiday ? " is-holiday" : "")
+        + (entry && isExamDay(entry) ? " is-test" : "") + (ds === todayStr ? " is-today" : "");
+      b.dataset.date = ds;
+      const dw = document.createElement("span");
+      dw.className = "cal-week-dow"; dw.textContent = DOW_SHORT[i];
+      const num = document.createElement("span");
+      num.className = "cal-week-num"; num.textContent = String(Number(ds.slice(8)));
+      const dots = document.createElement("span");
+      dots.className = "cal-week-dots";
+      if(entry){
+        const d1 = document.createElement("i"); d1.className = "cal-week-dot"; dots.appendChild(d1);
+        if(isExamDay(entry)){ const d2 = document.createElement("i"); d2.className = "cal-week-dot cal-week-dot-test"; dots.appendChild(d2); }
+      }
+      /* what the day is, in a word - a tablet has the room, a phone has the dots */
+      const what = document.createElement("span");
+      what.className = "cal-week-what";
+      if(entry){
+        const parts = scheduleParts(entry.text);
+        const lead = entry.holiday ? { name: "Holiday" } : (parts.find(x => x.test) || parts[0]);
+        what.textContent = lead ? lead.name : "";
+      }
+      b.append(dw, num, dots, what);
+      b.setAttribute("aria-label", formatDayHead(ds) + " — " + (entry ? entry.text : "no class"));
+      b.addEventListener("click", () => pickDay(ds, true));
+      return b;
+    });
+    weekBtns.forEach(b => strip.appendChild(b));
+    card.appendChild(strip);
+    return card;
+  }
+
+  /* What is on a test: the posted topics, or plainly that they are not
+     posted yet. A test that has been sat with nothing posted says nothing. */
+  function buildTopicsBlock(entry){
+    const tp = testTopicsFor(entry.date);
+    const past = entry.date < todayStr;
+    if(!tp && past) return null;
+    const box = document.createElement("div");
+    box.className = "cal-topics" + (tp ? " is-posted" : " is-none");
+    const lab = document.createElement("p");
+    lab.className = "cal-topics-lab"; lab.textContent = "On the test";
+    box.appendChild(lab);
+    if(tp){
+      const ul = document.createElement("ul");
+      ul.className = "cal-topics-list";
+      tp.topics.forEach(x => { const li = document.createElement("li"); li.textContent = x; ul.appendChild(li); });
+      box.appendChild(ul);
+      if(tp.postedAt){
+        const ps = document.createElement("p");
+        ps.className = "cal-topics-posted"; ps.textContent = "Posted " + formatCalendarDate(tp.postedAt);
+        box.appendChild(ps);
+      }
+    } else {
+      const none = document.createElement("p");
+      none.className = "cal-topics-none";
+      none.textContent = "Not posted yet. Topics are usually posted Sunday.";
+      box.appendChild(none);
+    }
+    return box;
+  }
+
+  /* NEXT TEST: what it is, when, and how many days away. */
+  function buildNextTestCard(){
+    const nt = nextTestEntry();
+    const card = document.createElement("section");
+    card.className = "points-progress-sect cal-card cal-nexttest-card";
+    card.appendChild(cardHead("Next test"));
+    if(!nt){
+      const p = document.createElement("p");
+      p.className = "cal-today-sub"; p.textContent = "No tests left on the calendar.";
+      card.appendChild(p);
+      return card;
+    }
+    card.dataset.date = nt.date;
+    const days = Math.max(0, calendarDaysBetween(todayStr, nt.date));
+    const tp = testTopicsFor(nt.date);
+    const row = document.createElement("div");
+    row.className = "cal-nt-row";
+    const words = document.createElement("div");
+    words.className = "cal-nt-text";
+    const title = document.createElement("p");
+    title.className = "cal-nt-title"; title.textContent = (tp && tp.title) || testNameOf(nt);
+    const when = document.createElement("p");
+    when.className = "cal-nt-when"; when.textContent = formatCalendarDate(nt.date);
+    words.append(title, when);
+    const count = document.createElement("div");
+    count.className = "cal-nt-count" + (days === 0 ? " is-today" : "");
+    count.dataset.days = String(days);
+    const num = document.createElement("span");
+    num.className = "cal-nt-num"; num.textContent = days === 0 ? "Today" : String(days);
+    count.appendChild(num);
+    if(days > 0){
+      const unit = document.createElement("span");
+      unit.className = "cal-nt-unit"; unit.textContent = days === 1 ? "day to go" : "days to go";
+      count.appendChild(unit);
+    }
+    row.append(words, count);
+    card.appendChild(row);
+    const tb = buildTopicsBlock(nt);
+    if(tb) card.appendChild(tb);
+    return card;
+  }
+
+  /* THE COURSE: the countdowns in the Stats tab's own ring and tiles. The
+     numbers are classDaysRemaining() and testsRemaining() - the ones the
+     class card and the calendar always used - not a second count. Behind
+     the same "Show class days remaining" switch the class card's pill was. */
+  function buildCourseCard(){
+    const left = classDaysRemaining();
+    const tests = testsRemaining();
+    const total = classDaysTotal();
+    const done = Math.max(0, Math.min(total, total - left));
+    const pct = total ? Math.round(done / total * 100) : 0;
+    const toGrad = Math.max(0, calendarDaysBetween(todayStr, GRADUATION_DATE));
+    const card = document.createElement("section");
+    card.className = "points-progress-sect cal-card cal-course-card";
+    card.hidden = theme.showClassDaysLeft === false;
+    card.appendChild(cardHead("The course"));
+    const hero = document.createElement("div");
+    hero.className = "stx-hero cal-course-hero";
+    const ring = buildScoreRing(pct, "stx-ring cal-course-ring");
+    ring.style.setProperty("--tone", "#6FC2FF");
+    hero.appendChild(ring);
+    const ht = document.createElement("div");
+    ht.className = "stx-hero-text";
+    const big = document.createElement("p");
+    big.className = "stx-hero-big"; big.textContent = toGrad > 0 ? "Graduation" : "Graduated";
+    const sub = document.createElement("p");
+    sub.className = "stx-hero-sub"; sub.textContent = formatCalendarDate(GRADUATION_DATE) + " \u00b7 " + done + " of " + total + " class days done";
+    ht.append(big, sub);
+    hero.appendChild(ht);
+    card.appendChild(hero);
+    const grid = document.createElement("div");
+    grid.className = "cal-course-grid";
+    [["Class days left", left, "is-days"], ["Tests left", tests, "is-tests"], ["Days to graduation", toGrad, "is-grad"]].forEach(([lab, n, cls]) => {
+      const tile = document.createElement("div");
+      tile.className = "stat-card cal-stat " + cls;
+      const v = document.createElement("span");
+      v.className = "stat-num"; v.textContent = String(n);
+      const l = document.createElement("span");
+      l.className = "stat-lab"; l.textContent = lab;
+      tile.append(v, l);
+      grid.appendChild(tile);
+    });
+    card.appendChild(grid);
+    return card;
+  }
+
+  glance.append(buildTodayCard(), buildWeekCard(), buildNextTestCard());
+  /* The course goes UNDER the month: the month is the heart of the tab
+     ("I like the current calendar"), so the countdowns follow it rather
+     than pushing it further down. */
+  panel.appendChild(buildCourseCard());
   renderGrid();
   renderDayCard();
-  selectCalendarView(calendarView);
 }
 
 /* The dedicated answer-review screen, per explicit request \u2014 reuses

@@ -9809,11 +9809,11 @@ def check_b314h_lead2(br):
       out.opened = act ? act.textContent : null; out.key = rankingsBoardKey;
       const sl = document.querySelector('.screen-rankings .navsegment .seg-slider');
       out.sliderOn = !!(sl && act && Math.abs(sl.getBoundingClientRect().left - act.getBoundingClientRect().left) < 2);
-      /* the class card - on Profile > Calendar since build 319 */
+      /* the countdowns - the Calendar tab's The course card since build 324 */
       showCalendar(); await wait(500);
-      const pills = [...document.querySelectorAll('.profile-classcard:not(.profile-friendcard) .profile-classcard-count')].map(e => e.textContent);
-      out.pills = pills;
-      out.cardText = (document.querySelector('.profile-classcard:not(.profile-friendcard)') || {}).textContent || '';
+      const course = document.querySelector('#stage .cal-course-card');
+      out.tiles = course ? [...course.querySelectorAll('.cal-stat')].map(e => [...e.children].map(c => c.textContent.trim()).join(' ')) : [];
+      out.daysLeft = typeof classDaysRemaining === 'function' ? classDaysRemaining() : null;
       out.testsLeft = typeof testsRemaining === 'function' ? testsRemaining() : null;
       out.exams = typeof isExamDay === 'function' ? CALENDAR_DATA.filter(isExamDay).map(e => e.date) : [];
       const j8 = CALENDAR_DATA.find(e => e.date === '2027-07-08'); out.j8 = j8 ? j8.text : null;
@@ -9826,9 +9826,14 @@ def check_b314h_lead2(br):
           and "2027-01-11" not in ex and "2027-06-09" not in ex and len(ex) >= 16, {"n": len(ex), "testsLeft": r.get("testsLeft")})
     # REVISED IN 318: "Remove the amount of tests left as well" - the class
     # days pill stays, the tests-left pill is gone (fails on 219bfea).
-    check("the class card shows class days left and no tests-left count",
-          any("class day" in p for p in r.get("pills") or []) and not any("test left" in p or "tests left" in p for p in r.get("pills") or [])
-          and "tests left" not in (r.get("cardText") or "") and "test left" not in (r.get("cardText") or ""), (r.get("pills"), r.get("cardText")))
+    # MOVED IN 324 (builder c): "Maybe the calendar can have a better way of
+    # showing remaining test days and class days? I like the way the stat
+    # page looks" - the Class 26E box is gone; the Calendar tab's The course
+    # card shows both counts as Stats tiles (check_b324c_calendar holds the
+    # numbers to classDaysRemaining() / testsRemaining()).
+    tiles = r.get("tiles") or []
+    check("the Calendar tab shows class days left and tests left, from the same helpers",
+          any(t == "%s Class days left" % r.get("daysLeft") for t in tiles) and any(t == "%s Tests left" % r.get("testsLeft") for t in tiles), (tiles, r.get("daysLeft"), r.get("testsLeft")))
     check("July 8th is the State test and says Last day", r.get("j8") and "State Test" in r["j8"] and "Last Day" in r["j8"], r.get("j8"))
     # the last day, both views
     r2 = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
@@ -9845,49 +9850,31 @@ def check_b314h_lead2(br):
     cd = r2.get("card") or {}
     check("tapping it opens the commendation card: a crest, Last day, State test",
           "cal-daycard-last" in (cd.get("cls") or "") and cd.get("crest") and "Last day" in (cd.get("text") or "") and "State test" in (cd.get("text") or ""), cd)
-    # swipe between Month and List, with a real finger
-    cdp = ctx.new_cdp_session(pg)
-    pg.evaluate("() => { window.scrollTo(0, 0); }")
-    before = pg.evaluate("() => document.querySelector('.screen-calendar .navsegment .iconbtn.active').textContent")
-    # Build 319: the calendar is Profile's Calendar tab, and the screen's
-    # swipe moves Profile's tabs; Month / List swipes ALONG its own switcher.
-    sy = pg.evaluate("() => { const r = document.querySelector('.screen-calendar .navsegment').getBoundingClientRect(); return [r.left, r.top + r.height / 2, r.width]; }")
-    _swipe(cdp, sy[0] + sy[2] * 0.9, sy[1], -sy[2] * 0.7, 0, steps=8)
-    pg.wait_for_timeout(500)
-    after = pg.evaluate("() => ({ act: document.querySelector('.screen-calendar .navsegment .iconbtn.active').textContent, list: !document.querySelector('.cal-listview').hidden })")
-    _swipe(cdp, sy[0] + sy[2] * 0.1, sy[1], sy[2] * 0.7, 0, steps=8)
-    pg.wait_for_timeout(500)
-    back = pg.evaluate("() => document.querySelector('.screen-calendar .navsegment .iconbtn.active').textContent")
-    check("a swipe left goes Month to List, and right comes back", before == "Month" and after["act"] == "List" and after["list"] and back == "Month",
-          (before, after, back))
-    # the list view's row for the last day
-    r3 = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
-      document.querySelectorAll('.screen-calendar .navsegment .iconbtn')[1].click(); await wait(200);
-      const s = document.querySelector('.cal-listview .searchbox'); s.value = 'State Test'; s.dispatchEvent(new Event('input', { bubbles: true })); await wait(200);
-      const row = document.querySelector('.cal-row[data-date="2027-07-08"]');
-      return row ? { last: row.classList.contains('cal-row-last'), chips: [...row.querySelectorAll('.cal-row-chip')].map(c => c.textContent) } : null; }""")
-    check("the list view's July 8th row is gold-rimmed and says LAST DAY and STATE TEST",
-          r3 and r3["last"] and "LAST DAY" in r3["chips"] and "STATE TEST" in r3["chips"], r3)
+    # MOVED IN 324 (builder c): the Month / List swipe and the list view's
+    # July 8th row went with the List view - "instead of the list tab, could
+    # we remove that and maybe really hone in on the calendar we have?"
     # THE DAYS "TESTS LEFT" COUNTS ARE THE DAYS MARKED AS TESTS: the finals
     # and the state test are tests in the count, so they are test days on
     # the grid (the amber dot) and in the list (a chip) as well. On the
     # first pass the count took them in and the calendar did not mark them.
-    r4 = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
-      const s = document.querySelector('.cal-listview .searchbox'); s.value = ''; s.dispatchEvent(new Event('input', { bubbles: true })); await wait(250);
-      const want = CALENDAR_DATA.filter(isExamDay).map(e => e.date).sort();
-      const rows = [...document.querySelectorAll('.cal-listview .cal-row.cal-row-test')];
-      out.listMissing = want.filter(d => !rows.some(r => r.dataset.date === d));
-      out.listExtra = rows.map(r => r.dataset.date).filter(d => want.indexOf(d) < 0);
-      out.unchipped = rows.filter(r => !r.querySelector('.cal-row-chip-test')).map(r => r.dataset.date);
-      const fin = document.querySelector('.cal-row[data-date="2027-01-19"]');
-      out.finalChips = fin ? [...fin.querySelectorAll('.cal-row-chip')].map(c => c.textContent) : null;
-      document.querySelectorAll('.screen-calendar .navsegment .iconbtn')[0].click(); await wait(250);
-      for(let i = 0; i < 20 && !document.querySelector('.cal-cell[data-date="2027-01-19"]'); i++){ const b = document.querySelectorAll('.cal-grid-arrow')[0]; if(!b || b.disabled) break; b.click(); await wait(60); }
-      const jan = document.querySelector('.cal-cell[data-date="2027-01-19"]');
-      out.gridFinal = jan ? !!jan.querySelector('.cal-cell-dot-test') : null;
+    # (MOVED IN 324: the list half of this went with the List view; the
+    # grid half now walks every month of the course.)
+    r4 = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = { missing: [], extra: [] };
+      showCalendar(); await wait(400);
+      const want = CALENDAR_DATA.filter(isExamDay).map(e => e.date);
+      for(let i = 0; i < 20; i++){ const b = document.querySelectorAll('.cal-grid-arrow')[0]; if(!b || b.disabled) break; b.click(); await wait(40); }
+      for(let i = 0; i < 20; i++){
+        document.querySelectorAll('.cal-grid .cal-cell[data-date]').forEach(c => {
+          const marked = !!c.querySelector('.cal-cell-dot-test'), d = c.dataset.date;
+          if(want.indexOf(d) >= 0 && !marked) out.missing.push(d);
+          if(want.indexOf(d) < 0 && marked) out.extra.push(d);
+        });
+        const n = document.querySelectorAll('.cal-grid-arrow')[1]; if(!n || n.disabled) break; n.click(); await wait(40);
+      }
+      out.n = want.length;
       return out; }""")
-    check("every day 'tests left' counts is marked as a test in the list and on the grid - the finals (FINAL) and the State test too",
-          r4 and not r4["listMissing"] and not r4["listExtra"] and not r4["unchipped"] and r4["finalChips"] and "FINAL" in r4["finalChips"] and r4["gridFinal"] is True, r4)
+    check("every day 'tests left' counts is marked as a test on the grid - the finals and the State test too",
+          r4 and not r4["missing"] and not r4["extra"] and r4["n"] >= 16, r4)
     ctx.close()
 
 
@@ -21623,7 +21610,10 @@ B319H_CAL = """async (iso) => {
   document.querySelectorAll('#tour-overlay, #tour-tooltip, .daily-alert, .toast, .rs-spot').forEach(x => x.remove());
   const tab = document.querySelector('#stage > .screen-calendar-tab');
   if(!tab || tab.hidden) return { tab: false };
-  const card = tab.querySelector('.profile-classcard');
+  /* MOVED IN 324 (builder c): the Class 26E box is the Today card now
+     (its Next line came with it) and the days-left count is The course's
+     first tile - "If someone asks what's today they go there". */
+  const card = tab.querySelector('.cal-today-card');
   const day = tab.querySelector('.cal-daycard');
   const k = todayCalendarKey(), today = todaysClassEntry(), next = nextClassEntry();
   const todayWhen = formatCalendarDate(k);
@@ -21632,17 +21622,19 @@ B319H_CAL = """async (iso) => {
   /* every place on the tab that says what today is */
   const todayMarks = [...tab.querySelectorAll('.cal-today-badge, .profile-classday.is-today')].filter(e => e.getClientRects().length);
   return { tab: true, key: k, todayEntry: today ? today.text : null,
-           card: !!card, head: !!(card && card.querySelector('.profile-classcard-title')), daysLeft: (card && card.querySelector('.profile-classcard-count') || {}).textContent || null,
+           card: !!card, head: !!(card && card.querySelector('.cal-card-head .slab')),
+           daysLeft: (tab.querySelector('.cal-course-card .cal-stat.is-days .stat-num') || {}).textContent || null,
            wantLeft: classDaysRemaining(),
            rows: card ? [...card.querySelectorAll('.profile-classday-label')].map(e => e.textContent.trim()) : [],
            nextText: (card && card.querySelector('.profile-classday-what') || {}).textContent || null,
-           wantNext: next ? next.text : 'No class days left',
-           cardSaysToday: /no class today/i.test(cardText) || (!!today && cardText.indexOf(today.text) >= 0 && (!next || next.text !== today.text)) || cardText.indexOf(todayWhen) >= 0,
+           wantNext: next ? scheduleParts(next.text).map(x => x.name).join(' \u00b7 ') : 'No class days left',
+           /* the Today card says today, by its date - since 324 that is its job */
+           cardSaysToday: cardText.indexOf(todayWhen) >= 0,
            todayMarks: todayMarks.length, dayText: day ? day.textContent.replace(/\s+/g, ' ').trim() : null,
            month: (tab.querySelector('.cal-grid-month') || {}).textContent || null,
            grid: !!tab.querySelector('.cal-grid .cal-cell'),
-           order: [card, tab.querySelector('.cal-viewseg'), tab.querySelector('.cal-grid')].map(e => e ? Math.round(e.getBoundingClientRect().top) : null),
-           cardBox: R(card), dayBox: R(day), gridBox: R(tab.querySelector('.cal-monthview')) };
+           order: [card, tab.querySelector('.cal-week-card'), tab.querySelector('.cal-grid')].map(e => e ? Math.round(e.getBoundingClientRect().top) : null),
+           cardBox: R(tab.querySelector('.cal-week-card')), dayBox: R(day), gridBox: R(tab.querySelector('.cal-monthview')) };
 }"""
 
 
@@ -21765,13 +21757,16 @@ def check_b319h_layout(br):
             check("%s: a swipe moves exactly one Profile tab, both ways, and stops at the ends" % dev, order == [1, 2, 2, 1, 0], order)
             # MOVED IN 323 (builder n): Month / List is on the Calendar tab
             # root now ("Calendar is gonna move to the bottom tab").
-            pg.evaluate("() => { calendarView = 'month'; showCalendar(); window.scrollTo(0, 0); }"); pg.wait_for_timeout(700)
-            sb = pg.evaluate("() => { const e = document.querySelector('#stage .cal-viewseg'); const r = e.getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }")
-            _swipe(cdp, sb[0] + sb[2] * 0.9, sb[1] + sb[3] / 2, -sb[2] * 0.8, 0)
+            # MOVED AGAIN IN 324 (builder c): "instead of the list tab, could
+            # we remove that and maybe really hone in on the calendar we
+            # have?" - there is no Month / List to swipe along; a swipe on the
+            # Calendar tab must leave it where it is.
+            pg.evaluate("() => { showCalendar(); window.scrollTo(0, 0); }"); pg.wait_for_timeout(700)
+            _swipe(cdp, w * 0.75, h * 0.55, -w * 0.5, 0)
             pg.wait_for_timeout(450)
             a1 = pg.evaluate(B319H_TABS)
-            check("%s: a swipe along Month / List changes the view and stays on the Calendar tab" % dev,
-                  a1["calRoot"] and a1["calView"] == "List", [a1["calRoot"], a1["calView"]])
+            check("%s: a swipe on the Calendar tab stays on the Calendar tab (no Month / List since 324)" % dev,
+                  a1["calRoot"] and a1["calView"] is None, [a1["calRoot"], a1["calView"]])
             # ---- the Calendar tab, in every state of the course ----
             states = [("a weekend", "2026-10-10"), ("a class day", "2026-10-13"), ("a test day", "2026-10-12"),
                       ("the first day", "2026-08-24"), ("the last day", "2027-07-08"), ("after the academy", "2027-08-02"),
@@ -21780,7 +21775,7 @@ def check_b319h_layout(br):
                 c = pg.evaluate(B319H_CAL, iso)
                 ok = (c.get("tab") and c["card"] and c["head"] and c["grid"] and c["rows"] == ["Next"]
                       and c["nextText"] == c["wantNext"] and str(c["wantLeft"]) in (c["daysLeft"] or "")
-                      and not c["cardSaysToday"] and c["todayMarks"] <= 1
+                      and c["cardSaysToday"] and c["todayMarks"] <= 1
                       and c["order"][0] is not None and c["order"][0] < c["order"][1] < c["order"][2])
                 if iso and iso <= "2027-07-08" and iso >= "2026-08-24":
                     ok = ok and c["todayMarks"] == 1
@@ -21790,7 +21785,7 @@ def check_b319h_layout(br):
                     ok = ok and c["month"] == "August 2026"
                 if iso == "2027-07-08":
                     ok = ok and c["wantLeft"] == 1 and "Last day" in (c["dayText"] or "")
-                check("%s, %s%s: the Class 26E box (days left, Next) over the month, and today said once" % (dev, label, " (%s)" % iso if iso else ""),
+                check("%s, %s%s: the Today card (its date, Next) and the days left over the month, the grid's today marked once (moved in 324)" % (dev, label, " (%s)" % iso if iso else ""),
                       bool(ok), {k: c.get(k) for k in ("rows", "nextText", "wantNext", "daysLeft", "wantLeft", "cardSaysToday", "todayMarks", "month", "dayText", "order")})
             pg.evaluate("() => { if(window.__RealDate) window.Date = window.__RealDate; }")
             c = pg.evaluate(B319H_CAL, None)
@@ -21800,7 +21795,7 @@ def check_b319h_layout(br):
                 hero = pg.evaluate("() => { const r = document.querySelector('.screen-profile .profile-hero').getBoundingClientRect(); return [Math.round(r.left), Math.round(r.right)]; }")
                 c = pg.evaluate(B319H_CAL, None)
                 cols = [c["cardBox"], c["dayBox"]]
-                check("%s: the Calendar tab's box and day card line up with the Profile card's edges" % dev,
+                check("%s: the Calendar tab's week card and day card line up with the Profile card's edges" % dev,
                       all(b and abs(b[0] - hero[0]) <= 1 and abs(b[2] - hero[1]) <= 1 for b in cols), [hero, cols])
             # ---- the bottom tab: Leaderboard and the trophy, fitting ----
             pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(500)
@@ -23883,8 +23878,12 @@ def check_b320h_fixes(br):
         for key, r in sorted(seen.items()):
             check("%s: %s (%s, '%s') - label middle %+.2fpx from the pill's" % (dev, key, r["at"], r["label"], r["off"]),
                   abs(r["off"]) <= 0.5, r)
-        check("%s: every switcher measured (Profile, Month / List, chat, room review)" % dev,
-              all(k in seen for k in ("profiletabs", "profiletabs cal-viewseg sub-seg", "chatdock-tabs", "rs-tabs")), sorted(seen))
+        # MOVED IN 324 (builder c): "instead of the list tab, could we remove
+        # that and maybe really hone in on the calendar we have?" - the
+        # Calendar has no Month / List switcher any more, so there is none
+        # to measure (check_b324c_calendar holds that it is gone).
+        check("%s: every switcher measured (Profile, chat, room review)" % dev,
+              all(k in seen for k in ("profiletabs", "chatdock-tabs", "rs-tabs")), sorted(seen))
         ctx.close()
     # ---- 4: Save and exit --------------------------------------------------
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
@@ -25479,8 +25478,11 @@ def check_b323n_nav(br):
               % (", the bar's Calendar lit" if r.get("barHasCal") else " (this bar has no Calendar tab yet - builder T's)"),
               r.get("hasFn") and "screen-calendar-tab" in (c.get("cls") or "") and not c.get("back") and c.get("title") == "Calendar"
               and c.get("nav") == "calendar" and not c.get("inProfile") and lit_ok, c)
-        check("...with the whole calendar: Month / List, the grid, the day card, Go to today",
-              c.get("grid") and c.get("seg") == ["Month", "List"] and c.get("day") and c.get("today"), c)
+        # MOVED IN 324 (builder c): "instead of the list tab, could we remove
+        # that and maybe really hone in on the calendar we have?" - the
+        # month is the whole calendar now, with no Month / List switcher.
+        check("...with the whole calendar: the grid, the day card, Go to today (no Month / List since 324)",
+              c.get("grid") and c.get("seg") == [] and c.get("day") and c.get("today"), c)
         check("every older way to the calendar lands on the Calendar tab", bool(r.get("ways")) and all(v is True for v in r["ways"].values()), r.get("ways"))
         labels = [l.lower() for l in (r.get("labels") or [])]
         check("Profile's tabs are Profile, Stats, Settings in that order, the swipe order the same, no calendar inside",
@@ -27150,6 +27152,184 @@ def check_b324s_settings(br):
             check("%s every Settings button is at least 44px tall" % label, not r.get("small"), r.get("small"))
         except Exception as ex:
             check("%s Settings could be driven at all" % label, False, str(ex)[:300])
+
+
+
+# The Calendar tab at a fixed date, read off the page. `topics` is put into
+# TEST_TOPICS (when the build has it) before the tab is built; null clears it.
+B324C_CAL = """async ([iso, topics]) => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const RealDate = window.__RealDate || Date; window.__RealDate = RealDate;
+  const off = new RealDate(iso + 'T10:00:00').getTime() - RealDate.now();
+  window.Date = class extends RealDate { constructor(...a){ if(a.length) super(...a); else super(RealDate.now() + off); }
+                                         static now(){ return RealDate.now() + off; } };
+  const out = { err: null };
+  try{
+    out.hasTopics = typeof TEST_TOPICS !== 'undefined';
+    if(out.hasTopics){ Object.keys(TEST_TOPICS).forEach(k => delete TEST_TOPICS[k]); if(topics) Object.assign(TEST_TOPICS, topics); }
+    showHome(); await wait(250);
+    (typeof showCalendarTab === 'function' ? showCalendarTab : showCalendar)(); await wait(700);
+    document.querySelectorAll('#tour-overlay, #tour-tooltip, .daily-alert, .toast').forEach(x => x.remove());
+    const tab = document.querySelector('#stage > .screen-calendar');
+    const txt = el => el ? el.textContent.replace(/\\s+/g, ' ').trim() : null;
+    const bg = el => el ? getComputedStyle(el).backgroundColor : null;
+    out.tab = !!tab;
+    out.lit = [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id);
+    /* 1. no List view, no Month / List switcher */
+    out.list = { seg: !!(tab && tab.querySelector('.cal-viewseg, .navsegment')), listview: !!(tab && tab.querySelector('.cal-listview, .cal-list, .cal-month-head')),
+                 listBtn: !!(tab && [...tab.querySelectorAll('button')].some(b => /^\\s*list\\s*$/i.test(b.textContent))),
+                 grid: !!(tab && tab.querySelector('.cal-grid .cal-cell')), day: !!(tab && tab.querySelector('.cal-daycard')) };
+    /* what the app's own schedule says about the date */
+    const k = todayCalendarKey();
+    const entry = CALENDAR_DATA.find(e => e.date === k) || null;
+    const nt = CALENDAR_DATA.find(e => e.date >= k && isExamDay(e)) || null;
+    out.want = { k, today: entry ? entry.text : null, exam: !!(entry && isExamDay(entry)), when: formatCalendarDate(k),
+                 nt: nt ? nt.date : null, ntWhen: nt ? formatCalendarDate(nt.date) : null,
+                 days: classDaysRemaining(), tests: testsRemaining() };
+    /* 2. Today */
+    const t = tab && tab.querySelector('.cal-today-card');
+    out.today = t ? { status: txt(t.querySelector('.cal-today-status')), text: txt(t), kind: t.dataset.kind || null,
+                      testItems: [...t.querySelectorAll('.cal-sched-item.is-test')].map(txt) } : null;
+    /* 3. This week */
+    const w = tab && tab.querySelector('.cal-week-card');
+    out.week = w ? { days: [...w.querySelectorAll('.cal-week-day')].map(b => ({ d: b.dataset.date, today: b.classList.contains('is-today'),
+                       cls: !!b.querySelector('.cal-week-dot:not(.cal-week-dot-test)'), test: !!b.querySelector('.cal-week-dot-test'),
+                       testBg: bg(b.querySelector('.cal-week-dot-test')) })),
+                     head: txt(w.querySelector('.cal-card-head')) } : null;
+    /* 4. Next test */
+    const n = tab && tab.querySelector('.cal-nexttest-card');
+    out.next = n ? { date: n.dataset.date || null, title: txt(n.querySelector('.cal-nt-title')), when: txt(n.querySelector('.cal-nt-when')),
+                     days: (n.querySelector('.cal-nt-count') || { dataset: {} }).dataset.days, num: txt(n.querySelector('.cal-nt-num')),
+                     topics: [...n.querySelectorAll('.cal-topics-list li')].map(txt), none: txt(n.querySelector('.cal-topics-none')),
+                     posted: txt(n.querySelector('.cal-topics-posted')) } : null;
+    /* 5. the remaining counts */
+    const c = tab && tab.querySelector('.cal-course-card');
+    out.course = c ? { shown: !c.hidden && !!c.getClientRects().length, days: txt(c.querySelector('.cal-stat.is-days .stat-num')),
+                       tests: txt(c.querySelector('.cal-stat.is-tests .stat-num')), ring: !!c.querySelector('.thx-ring svg') } : null;
+    out.order = tab ? [t, w, n, tab.querySelector('.cal-grid')].map(e => e ? Math.round(e.getBoundingClientRect().top + scrollY) : null) : null;
+    out.scrollX = document.documentElement.scrollWidth - document.documentElement.clientWidth;
+    out.outside = tab ? [...tab.querySelectorAll('.cal-card')].filter(e => { const r = e.getBoundingClientRect(); return r.left < -1 || r.right > innerWidth + 1; }).length : null;
+    /* 6. today's test dot, and the key's */
+    const tc = document.querySelector('.cal-grid .cal-cell-today');
+    out.dot = { today: bg(tc && tc.querySelector('.cal-cell-dot-test')), key: bg(document.querySelector('.cal-legend-dot-test')),
+                todaySel: !!(tc && tc.classList.contains('cal-cell-sel')) };
+    /* 7. the next test's day in the month */
+    if(nt){
+      for(let i = 0; i < 12 && !document.querySelector('.cal-cell[data-date="' + nt.date + '"]'); i++){ const b = document.querySelectorAll('.cal-grid-arrow')[1]; if(!b || b.disabled) break; b.click(); await wait(60); }
+      const cell = document.querySelector('.cal-cell[data-date="' + nt.date + '"]');
+      if(cell){ cell.click(); await wait(200); }
+      const dc = document.querySelector('.cal-daycard');
+      out.ntDay = { cell: !!cell, topicsCls: !!(cell && document.querySelector('.cal-cell[data-date="' + nt.date + '"]').classList.contains('cal-cell-topics')),
+                    topics: dc ? [...dc.querySelectorAll('.cal-topics-list li')].map(txt) : [], none: txt(dc && dc.querySelector('.cal-topics-none')) };
+    }
+    /* 8. a day tapped in the week is picked in the month too */
+    const pick = w && [...w.querySelectorAll('.cal-week-day')].find(b => !b.classList.contains('is-today') && CALENDAR_DATA.some(e => e.date === b.dataset.date && !e.holiday));
+    if(pick){
+      pick.click(); await wait(300);
+      const sel = document.querySelector('.cal-grid .cal-cell-sel');
+      const pe = CALENDAR_DATA.find(e => e.date === pick.dataset.date);
+      out.pick = { want: pick.dataset.date, sel: sel ? sel.dataset.date : null, card: txt(document.querySelector('.cal-daycard')),
+                   entry: pe.text, weekSel: pick.classList.contains('is-sel') };
+    }
+    /* 9. "Show class days remaining" off hides the countdowns */
+    const was = theme.showClassDaysLeft; theme.showClassDaysLeft = false;
+    (typeof showCalendarTab === 'function' ? showCalendarTab : showCalendar)(); await wait(400);
+    const c2 = document.querySelector('#stage .cal-course-card');
+    out.offHidden = !!c2 && !c2.getClientRects().length;
+    theme.showClassDaysLeft = was;
+    if(out.hasTopics) Object.keys(TEST_TOPICS).forEach(k => delete TEST_TOPICS[k]);
+  }catch(e){ out.err = String(e && e.message || e); }
+  finally{ window.Date = RealDate; }
+  return out; }"""
+
+
+def check_b324c_calendar(br):
+    """Build 324 (builder c). Madison: "instead of the list tab, could we
+    remove that and maybe really hone in on the calendar we have? ... I want
+    it to really feel like the place people go to see what's next up in
+    class. If someone asks what's today they go there. Maybe we have a this
+    week or this month thing? ... a better way of showing remaining test days
+    and class days? I like the way the stat page looks ... We also need to
+    incorporate a way to see what's on the next test. She tells us what's on
+    it every Sunday." So: no List view and no Month / List switcher; a Today
+    card, a This week strip and a Next test card above the month, with the
+    right values for a fixed date read off the app's own schedule; the
+    remaining counts are classDaysRemaining() / testsRemaining(); TEST_TOPICS
+    shows on the Next test card and on that day in the month, and "not
+    posted" when it is empty; today's test dot is still the key's amber.
+    Fails on ab75270 (Month / List, no cards, no TEST_TOPICS)."""
+    print("\n324c. the Calendar tab: no List, Today / This week / Next test, the counts, what's on the next test")
+    TOPICS = {"2026-10-19": {"title": "Test #5", "topics": ["Arrest warrants", "Search incident to arrest", "Consent searches"], "postedAt": "2026-10-18"}}
+    for dev, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        try:
+            # a class day (Tue Oct 13), nothing posted
+            a = pg.evaluate(B324C_CAL, ["2026-10-13", None])
+            if a.get("err"):
+                check("%s: the Calendar tab could be read at all" % dev, False, a["err"])
+            L = a.get("list") or {}
+            check("%s: no List view and no Month / List switcher; the month and its day card stay" % dev,
+                  a.get("tab") and not L.get("seg") and not L.get("listview") and not L.get("listBtn") and L.get("grid") and L.get("day"), L)
+            check("%s: the bar's Calendar tab is lit" % dev, a.get("lit") == ["bottomtab-calendar"], a.get("lit"))
+            want = a.get("want") or {}
+            t = a.get("today") or {}
+            check("%s, a class day: the Today card says Class day, the date, and what is on (CCP)" % dev,
+                  t.get("status") == "Class day" and want.get("when") in (t.get("text") or "") and "CCP" in (t.get("text") or "")
+                  and not t.get("testItems") and "Next" in (t.get("text") or ""), [t, want.get("when")])
+            wk = a.get("week") or {}
+            days = [d["d"] for d in wk.get("days") or []]
+            check("%s: This week is the seven days of today's week (Oct 11-17), today ringed, the test day dotted amber" % dev,
+                  days == ["2026-10-%02d" % i for i in range(11, 18)] and [d["d"] for d in wk["days"] if d["today"]] == ["2026-10-13"]
+                  and [d["d"] for d in wk["days"] if d["test"]] == ["2026-10-12"]
+                  and all(d["testBg"] == "rgb(245, 181, 77)" for d in wk["days"] if d["test"])
+                  and [d["d"] for d in wk["days"] if d["cls"]] == ["2026-10-%02d" % i for i in range(12, 17)]
+                  and "5 class days" in (wk.get("head") or "") and "1 test" in (wk.get("head") or ""), wk)
+            n = a.get("next") or {}
+            check("%s: the Next test card is Test #5 on Mon, Oct 19, 6 days to go (the schedule's next exam day)" % dev,
+                  want.get("nt") == "2026-10-19" and n.get("date") == "2026-10-19" and n.get("title") == "Test #5"
+                  and n.get("when") == want.get("ntWhen") and n.get("days") == "6" and n.get("num") == "6", [n, want])
+            check("%s: nothing posted - the card says so plainly, and so does that day in the month" % dev,
+                  a.get("hasTopics") and "usually posted Sunday" in (n.get("none") or "") and not n.get("topics")
+                  and "usually posted Sunday" in ((a.get("ntDay") or {}).get("none") or "") and not (a.get("ntDay") or {}).get("topics"),
+                  [n.get("none"), a.get("ntDay")])
+            c = a.get("course") or {}
+            check("%s: the remaining counts are classDaysRemaining() and testsRemaining(), in the Stats tab's ring and tiles" % dev,
+                  c.get("shown") and c.get("ring") and c.get("days") == str(want.get("days")) and c.get("tests") == str(want.get("tests")), [c, want])
+            check("%s: 'Show class days remaining' off hides the countdowns" % dev, a.get("offHidden") is True, a.get("offHidden"))
+            o = a.get("order") or []
+            check("%s: Today, This week and Next test sit above the month, nothing sideways" % dev,
+                  len(o) == 4 and all(v is not None for v in o) and max(o[:3]) < o[3] and a.get("scrollX", 1) <= 0 and a.get("outside") == 0,
+                  [o, a.get("scrollX"), a.get("outside")])
+            p = a.get("pick") or {}
+            check("%s: a day tapped in the week is picked in the month and its card says what is on" % dev,
+                  p.get("sel") == p.get("want") and p.get("weekSel") and (p.get("entry") or "x") in (p.get("card") or ""), p)
+            # a test day (Mon Oct 12), with topics posted for the NEXT one
+            b = pg.evaluate(B324C_CAL, ["2026-10-12", None])
+            t = b.get("today") or {}
+            n = b.get("next") or {}
+            check("%s, a test day: the Today card says Test day and names Test #4; Next test is today" % dev,
+                  t.get("status") == "Test day" and "Test #4" in (t.get("testItems") or []) and n.get("date") == "2026-10-12" and n.get("days") == "0"
+                  and n.get("num") == "Today", [t, n])
+            d = b.get("dot") or {}
+            check("%s: today's test dot is still the key's amber" % dev,
+                  d.get("today") == d.get("key") == "rgb(245, 181, 77)", d)
+            # topics posted for Test #5
+            c3 = pg.evaluate(B324C_CAL, ["2026-10-13", TOPICS])
+            n = c3.get("next") or {}
+            nd = c3.get("ntDay") or {}
+            want_t = TOPICS["2026-10-19"]["topics"]
+            check("%s: TEST_TOPICS shows on the Next test card (and when it was posted) and on that day in the month" % dev,
+                  n.get("topics") == want_t and not n.get("none") and "Oct 18" in (n.get("posted") or "")
+                  and nd.get("topics") == want_t and nd.get("topicsCls") and not nd.get("none"), [n, nd])
+            # a weekend (Sat Oct 10)
+            e = pg.evaluate(B324C_CAL, ["2026-10-10", None])
+            t = e.get("today") or {}
+            wk = e.get("week") or {}
+            check("%s, a Saturday: No class, it's the weekend; the week strip looks ahead to the next week" % dev,
+                  t.get("status") == "No class" and "weekend" in (t.get("text") or "")
+                  and [x["d"] for x in wk.get("days") or []][:1] == ["2026-10-11"] and "Next week" in (wk.get("head") or ""), [t, wk.get("head")])
+        except Exception as ex:
+            check("%s: the build 324 calendar could be driven at all" % dev, False, str(ex)[:300])
         ctx.close()
 
 
@@ -27388,6 +27568,7 @@ def main():
             check_b324p_unlocks(br)
             check_b324m_modes(br)
             check_b324s_settings(br)
+            check_b324c_calendar(br)
         finally:
             br.close()
     SERVER.shutdown()

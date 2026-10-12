@@ -21019,3 +21019,44 @@ key."*
   one element; rings on 1-3, crown and sheen on 1, none on #4, no row
   taller. Moved: check-sync 3 (hidden is the card, not a Find me message).
 
+
+### Build 324 (b324c) - the Calendar tab: Today, This week, Next test, the course, what's on the test
+
+Madison: *"instead of the list tab, could we remove that and maybe really
+hone in on the calendar we have? ... I want it to really feel like the place
+people go to see what's next up in class. If someone asks what's today they
+go there. Maybe we have a this week or this month thing? ... a better way of
+showing remaining test days and class days? I like the way the stat page
+looks ... We want it to be very simple though ... We also need to
+incorporate a way to see what's on the next test. She tells us what's on it
+every Sunday."*
+
+- **No List view, no Month / List switcher.** `buildCalendarPane` is the
+  month (grid, hint, day card, key, Go to today) under `.cal-glance`:
+  **Today** (`.cal-today-card`: Class day / Test day / No class / Last day,
+  the day's schedule as rows via `scheduleParts()`, then the old Class 26E
+  box's **Next** line), **This week** (`.cal-week-card`: the grid's own
+  Sun-Sat row for today with the grid's dots, today ringed; a Saturday
+  shows the week ahead; tapping a day picks it in the month too -
+  `pickDay()`), **Next test** (`.cal-nexttest-card`: `nextTestEntry()`,
+  `testNameOf()`, the countdown in days). **The course**
+  (`.cal-course-card`) sits UNDER the month: the Stats tab's ring (share of
+  class days done) and three tiles - `classDaysRemaining()`,
+  `testsRemaining()`, days to `GRADUATION_DATE` - behind the "Show class
+  days remaining" switch. iPad: Today and Next test side by side.
+  `buildClassCard` is gone; `calendarView` is kept only so old callers that
+  set it do nothing harmful.
+- **`TEST_TOPICS`** (next to `CALENDAR_DATA`), keyed by test date:
+  `{ "YYYY-MM-DD": { title?, topics: [...], postedAt: "YYYY-MM-DD" } }`.
+  **Seeded empty; fill it each Sunday from what the instructor said - never
+  invent topics.** `testTopicsFor(iso)` reads it. Posted topics show on the
+  Next test card and in the month's day card for that date (the cell gets
+  `.cal-cell-topics`); not posted says "Not posted yet. Topics are usually
+  posted Sunday."; a past test with nothing posted says nothing.
+- Gate: `check_b324c_calendar` (fails on ab75270). Moved, with her words:
+  check_b314h_lead2 (the countdowns are The course's tiles; the Month/List
+  swipe and the list rows went; the grid now walks every month for test
+  dots), check_b319h_layout (the Today card replaces the box; no Month /
+  List swipe), check_b323n_nav ("the whole calendar" has no switcher),
+  check_b320h_fixes (no Month / List switcher to measure),
+  check-profilecard (test days and the last day counted on the month).
