@@ -2882,9 +2882,10 @@ Everything in this section postdates build 94 and was undocumented until
 
 - **Unit selection is reachable ONLY from inside a lobby.** Match
   settings opens `showVirtualRoomSetup(editRoom)` in edit mode — the
-  ordinary unit screen, with the bottom bar offering only that options
-  sheet and a back-to-lobby link, and `window.forceHideBottomTabs` set
-  while editing.
+  ordinary unit screen with a back-to-lobby link. **Since build 323 it
+  keeps the tab bar** and its button is the tests' own `.floatbtn`, which
+  the bar takes in as its Start pill (labelled "Next"): grey until a unit
+  is ticked, "Select units to start" if pressed early. See **Build 323 (V)**.
 - **`addEventListener` passes the EVENT as argument one.** Wiring the
   Match settings button as `addEventListener("click",
   showVirtualRoomSetup)` handed it a PointerEvent as `editRoom` and
@@ -3089,6 +3090,32 @@ pull the rope, so each question you get one chance."*
   `.filter(Boolean)` silently** — a friend whose board row has not
   loaded vanishes from the list with nothing to say so. Reported as
   "the invite list is still empty".
+
+#### Build 323 (V) - Match settings on the bar, the lobby turned over, Ready on the bar
+
+- **The Start pill can wear another word.** `syncStartAction` reads
+  `data-tab-label` / `data-tab-icon` off the screen's `.floatbtn` (icons in
+  `START_TAB_ICONS`: play, next, check, none) and mirrors `is-ready`; a label
+  over six letters gets `.is-wide`. Match settings is "Next" with an arrow;
+  the lobby's `.vroom-readyup-btn` is a `.floatbtn` too - "Ready up", green
+  "Ready" with a tick once readied. Its round trip is held by `readyBusy`,
+  not `disabled`, which flashed the pill grey on every tap. check-vroom taps
+  `READY` (`#bottomtab-start` while a lobby is up), never the hidden button.
+- **The lobby reads Room setup, then "In this room"** (Madison: "the room
+  setup stuff should at the top with the lobby under it"). Invite friends is
+  a small pill and Open room a switch with a two-word state, both in
+  `.vroom-roster-tools` inside `.vroom-roster-head` (a second row on a phone,
+  on the title's line from 40rem). The waiting line is inside the roster box.
+- **Re-inviting a friend to a lobby has a 15s cooldown**
+  (`LOBBY_INVITE_COOLDOWN_MS`, the chat's `armInviteButton` with the lobby's
+  own `leftOf`/`send`). The chat's own cooldown is still 30s.
+- **Every lobby and results row opens the person card, your own included**
+  (the board's rule since 304), with the whole participant entry
+  (`vroomPersonEntry`).
+- **The selected game card glows, it does not get a second border**: no
+  spread ring, one even halo in `--mc`, eased in with the fill. The Match
+  settings summary is titled by the game (icon + name, `vroomGameIconSVG`).
+- `check_b323v_vroom` is the gate; it fails on 22bf429.
 
 ### The badge cutscene
 

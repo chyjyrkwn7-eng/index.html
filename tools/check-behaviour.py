@@ -10160,9 +10160,20 @@ def check_b310_vroom(br):
       const lobby = document.querySelector('.screen-vroom-lobby');
       out.inLobby = !!lobby;
       if(lobby){
+        /* MOVED in build 323. This asserted the column ran room list,
+           Ready up, then Invite friends (build 310: "The ready up button
+           needs to be above invite friends"). Madison, 323: "Should the
+           ready up button be on the bottom tab similar to the other
+           tests? I feel like the room setup stuff should at the top with
+           the lobby under it ... the invite friends section ... could be a
+           smaller button near lobby or in the lobby box?" So: Room setup,
+           then the room list with Invite friends in its own header, and
+           Ready up on the bottom bar - check_b323v_vroom holds the rest. */
         const kids = [...lobby.children].map(c => c.className);
-        const iRoster = kids.findIndex(c => /vroom-roster/.test(c)), iReady = kids.findIndex(c => /vroom-readyup-btn/.test(c)), iInvite = kids.findIndex(c => /vroom-code-row/.test(c));
-        out.order = [iRoster, iReady, iInvite];
+        const iSetup = kids.findIndex(c => /vroom-test-summary/.test(c)), iRoster = kids.findIndex(c => /vroom-roster/.test(c));
+        const rb = document.querySelector('.vroom-readyup-btn');
+        out.order = [iSetup, iRoster, rb && rb.classList.contains('merged-into-bar') ? 1 : 0,
+                     lobby.querySelector('.vroom-roster-head .vroom-invite-btn') ? 1 : 0];
         const back = lobby.querySelector('.back-link');
         out.backText = back ? back.textContent.trim() : '';
         /* Match settings: coloured games, the All pill, the hundo note */
@@ -10200,8 +10211,9 @@ def check_b310_vroom(br):
     check("a host goes into the lobby within 2s even if the server never answers", r.get("inLobby") and r.get("hostMs", 9999) < 2000, [r.get("hostMs"), r.get("hostOk")])
     check("the lobby's back link says Virtual Room", r.get("backText") == "Virtual Room", r.get("backText"))
     check("and goes back to the Virtual Room screen", r.get("after") is True, r.get("after"))
-    o = r.get("order") or [-1, -1, -1]
-    check("Ready up sits under the room list and above Invite friends", 0 <= o[0] < o[1] < o[2], o)
+    o = r.get("order") or [-1, -1, 0, 0]
+    check("Room setup sits above the room list, Invite friends in its header, Ready up on the bar (moved in 323)",
+          0 <= o[0] < o[1] and o[2] == 1 and o[3] == 1, o)
     mc = r.get("modeColours") or []
     check("each game in Match settings has its own colour", len(mc) == 3 and all(mc) and len(set(mc)) == 3, mc)
     check("Match settings has the All pill", r.get("allBtn") is True, r)
@@ -25220,6 +25232,190 @@ def check_b321f_profile(br):
               bm.get("label") == "Earn 7 badges" and bm.get("shown") == "5 / 7" and bm.get("bar") and bw.get("shown") == "6 / 7" and bw.get("bar"), [bm, bw])
 
 
+
+_B323V_ROOM = """(n, game) => {
+  const me = publicIdOf();
+  const NAMES = [['Avery','zeus'],['Jordan','alien'],['Kim','ghost'],['Pat','wizard'],['Lee','dragon'],['Ray','queen'],['Jose','samurai'],['Tara','grizzly'],['Brooke','ninja'],['Dee','alien'],['Fay','ghost'],['Hana','wizard']];
+  const parts = {}; parts[me] = { name: 'Madison', avatarChar: 'ninja', level: 41, badges: 6, joinedAt: 1, seen: 9e15, ready: false, accent: 'ink' };
+  for(let i = 0; i < n - 1; i++) parts['pP' + String(i).padStart(10, '0')] = { name: NAMES[i][0], avatarChar: NAMES[i][1], level: 10 + 5 * i, badges: i % 8, joinedAt: 100 + i, seen: 9e15, ready: i % 2 === 0 };
+  __rooms['ROOM323'] = { hostCode: me, hostName: 'Madison', units: ['Penal Code', 'Identity Crimes'], versions: {}, game: game, open: false,
+    status: 'waiting', mode: 'exam', createdAt: 1, count: null, participants: parts };
+  __delay = 40;
+  vroomCode = 'ROOM323'; vroomMyKey = me; vroomIsHost = true; vroomUnits = __rooms.ROOM323.units;
+  vroomLastDoc = { code: 'ROOM323', data: JSON.parse(JSON.stringify(__rooms.ROOM323)) };
+  showVirtualRoomLobby();
+}"""
+
+
+def check_b323v_vroom(br):
+    """Build 323 (V), the Virtual Room. Written against 22bf429, where each
+    of these fails: re-inviting the same friend was "Invited" for the life
+    of the room; Match settings' button was a white slab in a pill of its
+    own, pressable with no units and no tab bar round it; the back-to-top
+    button sat 20px off the corner there (no bar, no inset); the summary
+    box said "Virtual Room" and never the game; the lobby put the people
+    first and Room setup at the foot; Invite friends and Open room were
+    two cards of their own; Ready up was a button in the column; and your
+    own row in a lobby opened nothing."""
+    print("\n323v. build 323: Virtual Room - invite cooldown, Match settings' bar, back-to-top, the game in the summary, the lobby's order, Ready on the bar, every avatar opens a card")
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, init=_ROOM_FAKE)
+        pg.evaluate("() => { document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); __useRooms(); store.seenUnitSelectTour = true; }")
+        # ---- 1. the invite cooldown: 15 seconds, then Invite again ----
+        inv = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          out.ms = typeof LOBBY_INVITE_COOLDOWN_MS === 'number' ? LOBBY_INVITE_COOLDOWN_MS : null;
+          store.publicId = store.publicId || publicIdOf(); store.friendsIn = ['pFRIEND00001'];
+          leaderboardRows = [{ pub: 'pFRIEND00001', firstName: 'Alex', avatarChar: 'alien', level: 20, badges: 2 }];
+          vroomCode = 'ROOM323'; vroomMyKey = publicIdOf(); liveVroomParticipants = {};
+          store.lobbyInvitesOut = {};
+          openInviteFriendsSheet('ROOM323'); await wait(300);
+          const btn = () => document.querySelector('.invite-overlay .friend-act');
+          btn().click(); await wait(200);
+          out.after = { t: btn().textContent, d: btn().disabled };
+          const sent = (store.lobbyInvitesOut || {})['pFRIEND00001'];
+          if(sent){ sent.at -= 12000; } await wait(1200);
+          out.at14 = { t: btn().textContent, d: btn().disabled };
+          if(sent){ sent.at -= 2500; } await wait(1200);
+          out.at15 = { t: btn().textContent, d: btn().disabled };
+          document.querySelector('.invite-overlay')?.remove();
+          return out; }""")
+        if label == PHONE[0]:
+            check("the lobby's invite cooldown is 15000ms", inv.get("ms") == 15000, inv.get("ms"))
+            check("an invite counts down, is still held at ~13s, and is Invite again past 15s",
+                  inv["after"]["d"] and "15" in inv["after"]["t"] and inv["at14"]["d"]
+                  and inv["at15"]["t"] == "Invite" and inv["at15"]["d"] is False, inv)
+
+        # ---- 2-4. Match settings: the bar's own pill, grey until a unit is ticked ----
+        pg.evaluate("() => showVirtualRoomSetup({ units: [], game: null, count: null, status: 'waiting' })")
+        pg.wait_for_timeout(900)
+        tab = pg.evaluate("""() => { const t = document.getElementById('bottomtab-start'); if(!t) return null;
+          const r = t.getBoundingClientRect(), cs = getComputedStyle(t);
+          const lum = c => { const m = c.match(/[\\d.]+/g) || [0,0,0,0]; const a = m.length > 3 ? +m[3] : 1; return a * (0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]) / 255; };
+          return { shown: !t.hidden && r.height > 0 && !document.getElementById('bottomtabs').hidden, inert: t.classList.contains('is-inert') || t.disabled,
+                   lum: lum(cs.backgroundColor), x: r.left + r.width / 2, y: r.top + r.height / 2, bottom: r.bottom, vh: innerHeight,
+                   oldPill: !!document.querySelector('.vroom-setup-bar') }; }""")
+        ok_bar = bool(tab) and tab["shown"] and not tab["oldPill"]
+        check("%s: Match settings' button is the bottom bar's pill, like a test's Start" % label, ok_bar, tab)
+        if ok_bar:
+            check("%s: with no units it is grey, not a white slab" % label, tab["inert"] and tab["lum"] < 0.35, tab)
+            pg.mouse.click(tab["x"], tab["y"]); pg.wait_for_timeout(500)
+            early = pg.evaluate("""() => ({ toast: (document.querySelector('.toast.show') || document.querySelector('.toast') || {}).textContent || '',
+              sheet: !(document.getElementById('unitoptions-modal') || { hidden: true }).hidden })""")
+            check("%s: pressed early it says to select units and opens nothing" % label,
+                  "units" in early["toast"].lower() and not early["sheet"], early)
+            pg.evaluate("() => document.querySelector('.picks .pick input').click()"); pg.wait_for_timeout(900)
+            lit = pg.evaluate("""() => { const t = document.getElementById('bottomtab-start'); const cs = getComputedStyle(t);
+              const m = cs.backgroundColor.match(/[\\d.]+/g); return { inert: t.classList.contains('is-inert') || t.disabled,
+              lum: (0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]) / 255 }; }""")
+            check("%s: with a unit ticked it lights up" % label, not lit["inert"] and lit["lum"] > 0.6, lit)
+            pg.mouse.click(tab["x"], tab["y"]); pg.wait_for_timeout(600)
+            opened = pg.evaluate("() => !(document.getElementById('unitoptions-modal') || { hidden: true }).hidden")
+            check("%s: and then opens the Match settings sheet" % label, opened is True, opened)
+        else:
+            pg.evaluate("() => { const b = document.querySelector('.vroom-setup-go'); document.querySelector('.picks .pick input').click(); setTimeout(() => b && b.click(), 300); }")
+            pg.wait_for_timeout(900)
+        # ---- 5. the summary names the game ----
+        summ = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          for(const [k, name] of [['tug', 'Tug of War'], ['race', 'Race'], ['battle', 'Battle']]){
+            document.querySelector('.vroom-host-mode[data-mode="' + k + '"]').click(); await wait(150);
+            out[k] = (document.querySelector('#unitoptions-modal .sheet-summary') || {}).textContent || '';
+            out[k + 'ok'] = out[k].indexOf(name) >= 0;
+          }
+          const m = document.getElementById('unitoptions-modal'); if(m) m.hidden = true;
+          return out; }""")
+        check("%s: the summary box names the game picked (Tug of War, Race, Battle)" % label,
+              summ["tugok"] and summ["raceok"] and summ["battleok"], summ)
+        # ---- 3. the back-to-top button sits where the tests' unit screen puts it ----
+        b2t = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          const pos = () => { const b = document.getElementById('backtotop'), cs = getComputedStyle(b); return { bottom: parseFloat(cs.bottom), right: parseFloat(cs.right) }; };
+          showVirtualRoomSetup({ units: [], game: null, count: null, status: 'waiting' }); await wait(700);
+          window.scrollTo(0, 400); await wait(600);
+          const vr = pos();
+          cfg.mode = 'drill'; cfg.units = []; showSetup(); await wait(700);
+          window.scrollTo(0, 400); await wait(600);
+          const drill = pos(); window.scrollTo(0, 0);
+          return { vr, drill }; }""")
+        check("%s: the back-to-top button on Match settings sits where it does on a test's unit screen, clear of the bar and the inset" % label,
+              abs(b2t["vr"]["bottom"] - b2t["drill"]["bottom"]) <= 1 and abs(b2t["vr"]["right"] - b2t["drill"]["right"]) <= 1, b2t)
+
+        # ---- 6-9. the lobby ----
+        pg.evaluate("(a) => (%s)(a[0], a[1])" % _B323V_ROOM, [6, "race"])
+        pg.wait_for_timeout(1400)
+        lob = pg.evaluate("""() => { const L = document.querySelector('.screen-vroom-lobby'); if(!L) return null;
+          const before = (a, b) => !!(a && b && (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING));
+          const sum = L.querySelector('.vroom-test-summary'), roster = L.querySelector('.vroom-roster');
+          const head = L.querySelector('.vroom-roster-head');
+          const inv = L.querySelector('.vroom-invite-btn'), sw = L.querySelector('.vroom-open-toggle');
+          const nearHead = el => { if(!el || !head) return false; if(head.contains(el)) return true;
+            const a = el.getBoundingClientRect(), b = head.getBoundingClientRect(); return Math.abs(a.top - b.bottom) < 24 && roster.contains(el); };
+          const rb = document.querySelector('.vroom-readyup-btn'), t = document.getElementById('bottomtab-start');
+          const tr = t ? t.getBoundingClientRect() : null;
+          return { order: before(sum, roster), inv: nearHead(inv), sw: nearHead(sw),
+                   readyMerged: !!rb && rb.classList.contains('merged-into-bar'),
+                   tab: tr ? { shown: !t.hidden && tr.height > 0, label: t.textContent.trim(), bottom: Math.round(tr.bottom), x: tr.left + tr.width / 2, y: tr.top + tr.height / 2 } : null,
+                   vh: innerHeight, hs: document.documentElement.scrollWidth - innerWidth }; }""")
+        check("%s: the lobby reads Room setup first, then the people" % label, bool(lob) and lob["order"], lob)
+        check("%s: Invite friends and the Open room switch sit in the lobby box's header" % label,
+              bool(lob) and lob["inv"] and lob["sw"], lob)
+        rd = (lob or {}).get("tab") or {}
+        check("%s: Ready up is on the bottom bar, like a test's Start" % label,
+              bool(lob) and lob["readyMerged"] and rd.get("shown") and "Ready" in rd.get("label", "")
+              and rd.get("bottom", 0) > lob["vh"] - 130, lob)
+        if rd.get("shown"):
+            pg.mouse.click(rd["x"], rd["y"]); pg.wait_for_timeout(700)
+            readied = pg.evaluate("""() => ({ tab: document.getElementById('bottomtab-start').className,
+              doc: !!(((__rooms.ROOM323 || {}).participants || {})[vroomMyKey] || {}).ready })""")
+            check("%s: tapping it readies you, and it turns green" % label,
+                  readied["doc"] and "is-ready" in readied["tab"], readied)
+        # ---- 10. any avatar, your own included, opens the leaderboard's card ----
+        cards, opened = [], []
+        for mine in (True, False):
+            pg.evaluate("() => document.querySelector('.invite-overlay')?.remove()")
+            c = pg.evaluate("""async (mine) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+              const row = [...document.querySelectorAll('.vroom-roster-list .vroom-row')].find(r => r.classList.contains('is-you') === mine);
+              if(!row) return null;
+              row.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(250);
+              const a = row.querySelector('.vroom-avatar').getBoundingClientRect();
+              return { x: a.left + a.width / 2, y: a.top + a.height / 2, name: row.querySelector('.lb-name').firstChild.textContent.trim() }; }""", mine)
+            cards.append(c)
+            if not c:
+                opened.append(None); continue
+            pg.mouse.click(c["x"], c["y"]); pg.wait_for_timeout(600)
+            opened.append(pg.evaluate("(n) => { const c = document.querySelector('.invite-overlay .person-card'); return c ? c.textContent.indexOf(n) >= 0 : false; }", c["name"]))
+        check("%s: tapping a character in the lobby opens their person card - yours and a classmate's" % label,
+              opened == [True, True], {"cards": cards, "opened": opened})
+        pg.evaluate("() => document.querySelector('.invite-overlay')?.remove()")
+        # ---- less cramped at 2, 6 and 12: nothing off the side, the header's tools inside the box ----
+        fits = {}
+        for n in (2, 6, 12):
+            pg.evaluate("() => { try{ detachVroomListener(); }catch(e){} showHome(); }"); pg.wait_for_timeout(200)
+            pg.evaluate("(a) => (%s)(a[0], a[1])" % _B323V_ROOM, [n, "tug"])
+            pg.wait_for_timeout(900)
+            fits[n] = pg.evaluate("""() => { const r = document.querySelector('.vroom-roster'), t = document.querySelector('.vroom-roster-tools');
+              if(!r || !t) return null; const a = r.getBoundingClientRect(), b = t.getBoundingClientRect();
+              return { hs: document.documentElement.scrollWidth - innerWidth, inside: b.left >= a.left - 1 && b.right <= a.right + 1,
+                       rows: document.querySelectorAll('.vroom-roster-list .vroom-row').length }; }""")
+        check("%s: a lobby of 2, 6 and 12 has no sideways scroll and the header row stays inside its box" % label,
+              all(v and v["hs"] <= 0 and v["inside"] for v in fits.values()), fits)
+        pg.evaluate("() => { try{ detachVroomListener(); }catch(e){} showHome(); }")
+        ctx.close()
+    # and on the narrowest phone, where Invite and the switch cannot share a line
+    ctx, pg = booted(br, 320, 568, seed=USED_ACCOUNT, init=_ROOM_FAKE)
+    pg.evaluate("() => { document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); __useRooms(); }")
+    fits = {}
+    for n in (2, 6, 12):
+        pg.evaluate("() => { try{ detachVroomListener(); }catch(e){} showHome(); }"); pg.wait_for_timeout(200)
+        pg.evaluate("(a) => (%s)(a[0], a[1])" % _B323V_ROOM, [n, "race"])
+        pg.wait_for_timeout(900)
+        fits[n] = pg.evaluate("""() => { const r = document.querySelector('.vroom-roster'), t = document.querySelector('.vroom-roster-tools'), p = document.getElementById('bottomtab-start');
+          if(!r || !t || !p) return null; const a = r.getBoundingClientRect(), b = t.getBoundingClientRect(), c = p.getBoundingClientRect(), l = p.querySelector('.bottomtab-label').getBoundingClientRect();
+          return { hs: document.documentElement.scrollWidth - innerWidth, inside: b.left >= a.left - 1 && b.right <= a.right + 1,
+                   pill: l.left >= c.left && l.right <= c.right + 1 && c.right <= innerWidth }; }""")
+    check("320px phone: a lobby of 2, 6 and 12 fits - no sideways scroll, the header row inside its box, Ready up inside its pill",
+          all(v and v["hs"] <= 0 and v["inside"] and v["pill"] for v in fits.values()), fits)
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -25444,6 +25640,7 @@ def main():
             check_b321h(br)
             check_b321d_badges(br)
             check_b321f_profile(br)
+            check_b323v_vroom(br)
         finally:
             br.close()
     SERVER.shutdown()

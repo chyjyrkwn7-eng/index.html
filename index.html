@@ -4612,7 +4612,40 @@
     .vroom-roster.is-crowded .vroom-row-sub{ display:block; }
     .vroom-roster.is-crowded .vroom-you-tag{ display:inline; }
   }
-  .vroom-setup-head{ margin-top:1.4rem; }
+  .vroom-setup-head{ margin-top:.2rem; }
+  /* ---- THE LOBBY BOX'S HEADER CARRIES INVITE AND OPEN ROOM (build 323) ----
+     On a phone a second row under "In this room", split across the box:
+     the Invite pill on the left, the switch and its two-word state on the
+     right. From a tablet up they sit on the title's own line. */
+  .vroom-roster.has-tools .vroom-roster-head{ flex-wrap:wrap; align-items:center; row-gap:.55rem; margin-bottom:.7rem; }
+  .vroom-roster-tools{
+    flex:0 0 100%; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.45rem .6rem;
+    padding-top:.55rem; border-top:1px solid rgba(255,255,255,.07);
+  }
+  /* a 320px phone has no room for both on one line: the switch drops
+     under the pill, still on the right */
+  .vroom-roster-tools .vroom-open-row{ margin-left:auto; }
+  .vroom-roster-tools .vroom-invite-btn{
+    display:inline-flex; align-items:center; gap:.4rem; margin:0;
+    min-height:44px; padding:.4rem .95rem .4rem .8rem; font-size:.82rem; font-weight:800; white-space:nowrap;
+  }
+  .vroom-roster-tools .vroom-invite-btn svg{ width:1.05rem; height:1.05rem; flex:none; }
+  .vroom-roster-tools .vroom-open-row{ display:flex; align-items:center; gap:.55rem; min-width:0; }
+  .vroom-roster-tools .vroom-open-text{ flex:0 1 auto; min-width:0; text-align:right; }
+  .vroom-open-label{ margin:0; font-size:.82rem; font-weight:800; color:var(--ink); line-height:1.2; white-space:nowrap; }
+  .vroom-open-hint{ margin:.1rem 0 0; font-size:.72rem; color:var(--soft); line-height:1.2; white-space:nowrap; }
+  .vroom-roster > .vroom-autostart-note{ margin:.55rem 0 .1rem; }
+  .vroom-roster:not(.is-crowded) > .vroom-autostart-note{ margin-top:.2rem; }
+  /* The ready button's wrapper holds nothing on screen once the bar has
+     taken the button in, so it adds no space under the chat. */
+  .startbar.vroom-ready-bar{ margin:0; }
+  @media (min-width:40rem){
+    .vroom-roster.has-tools .vroom-roster-head{ flex-wrap:nowrap; justify-content:flex-start; column-gap:.8rem; }
+    .vroom-roster-tools{ flex:0 0 auto; margin-left:auto; padding-top:0; border-top:0; gap:1.1rem; }
+    .vroom-roster-tools .vroom-invite-btn{ font-size:.88rem; }
+    .vroom-open-label{ font-size:.88rem; }
+    .vroom-open-hint{ font-size:.76rem; }
+  }
   @media (min-width:40rem){
     .vroom-roster{ padding:1.1rem 1.15rem; }
     .vroom-roster-title{ font-size:.82rem; }
@@ -6530,7 +6563,7 @@
     border-color:rgba(255,255,255,.12);
     box-shadow:0 8px 28px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.07);
   }
-  .vroom-setup-go{
+  .vroom-setup-bar .vroom-setup-go{
     width:auto; min-width:14rem; margin:0; border-radius:999px;
     min-height:48px; padding:.7rem 1.6rem;
     /* Its own compositing layer: a solid-coloured child inside a
@@ -6539,9 +6572,8 @@
     transform:translateZ(0); backface-visibility:hidden; isolation:isolate;
   }
   @media (min-width:40rem){
-    .vroom-setup-go{ min-width:18rem; font-size:1.02rem; }
+    .vroom-setup-bar .vroom-setup-go{ min-width:18rem; font-size:1.02rem; }
   }
-  .vroom-code-row{ text-align:center; }
   .vroom-test-summary{
     text-align:center; padding:.85rem 1rem .95rem; margin:0 0 1rem; border-radius:14px;
     background:var(--panel); border:1px solid var(--rule);
@@ -8748,6 +8780,21 @@
     fill:currentColor; stroke:currentColor; stroke-width:2; stroke-linejoin:round;
   }
   .bottomtabs.has-start-tab .bottomtab-start .bottomtab-label{ font-size:inherit; font-weight:inherit; }
+  /* build 323: the Virtual Room's arrow and tick are drawn, not filled */
+  .bottomtabs.has-start-tab .bottomtab-start .bottomtab-start-icon[data-icon="next"] svg,
+  .bottomtabs.has-start-tab .bottomtab-start .bottomtab-start-icon[data-icon="check"] svg{
+    fill:none; stroke-width:2.8; stroke-linecap:round; stroke-linejoin:round;
+  }
+  .bottomtabs.has-start-tab .bottomtab-start .bottomtab-label{ white-space:nowrap; }
+  .bottomtabs.has-start-tab .bottomtab-start .bottomtab-start-icon[data-icon="none"]{ display:none; }
+  /* A longer word takes the room it needs from the four icons beside it,
+     which already give up width (min-width:0 on the nav row). */
+  .bottomtabs.has-start-tab .bottomtab-start.is-wide{ width:auto; min-width:clamp(5rem, 23vw, 6.3rem); padding:0 .85rem; flex:0 0 auto; }
+  /* READIED, IN THE LOBBY (build 323): the pill goes the lobby's ready
+     green - the same green as a ready row's chip - and a tap un-readies. */
+  .bottomtabs.has-start-tab .bottomtab-start.is-ready:not(:disabled){
+    background-color:#3DD68C; color:#0E2818;
+  }
   .bottomtabs.has-start-tab .bottomtab-start:active,
   .bottomtabs.has-start-tab .bottomtab-start.glass-pressed{
     box-shadow:0 1px 2px rgba(18,26,32,.28) inset, 0 -1px 1px rgba(255,255,255,.5) inset,
@@ -23161,12 +23208,8 @@
     display:flex; align-items:center; gap:.5rem;
     margin-top:.8rem; padding-top:.7rem; border-top:1px solid var(--rule);
   }
-  /* Invite friends, alone in the card that is about getting people in.
-     It shared that card with the room code and a Copy button until
-     codes were removed; it is the whole card now. */
-  .vroom-code-row .vroom-invite-btn{
-    width:100%; min-height:46px; margin-top:.6rem; margin-left:0; font-size:.92rem;
-  }
+  /* (.vroom-code-row, Invite friends' own card, is retired - build 323:
+     the button is a small pill in the lobby box's header now.) */
   /* Two equal CARDS, not two pills. As pills the unselected one was a
      bare outline on the sheet's own background and was reported as
      looking like it was not there at all - which is also why neither
@@ -23212,11 +23255,28 @@
       color-mix(in srgb, var(--mc) 6%, #161B22);
   }
   .vroom-host-mode[data-mode] .vroom-host-mode-art{ color:var(--mc); }
+  /* ---- ONE SOFT GLOW, NOT A SECOND BORDER (build 323) ----
+     "When selecting one though, the glow for the selected one is weirdly
+     looking." It was a 3px SOLID ring (a spread shadow with no blur) laid
+     outside the card's own light rim, plus a shadow dropped 6px below it:
+     a hard band with a muddy gap round the card - a double border - and
+     a glow that sat low. Now: the rim, a hairline of light along the top
+     inside, and one even halo in the game's colour that fades to nothing
+     on every side. And the halo eases in with the fill rather than
+     snapping on (box-shadow was not in the transition). */
   .vroom-host-mode[data-mode].on{
-    color:#fff; border-color:color-mix(in srgb, var(--mc) 85%, #fff);
+    color:#fff; border-color:color-mix(in srgb, var(--mc) 80%, #fff);
     background:linear-gradient(180deg, color-mix(in srgb, var(--mc) 55%, #10141B), color-mix(in srgb, var(--mc) 30%, #10141B));
-    box-shadow:0 0 0 3px color-mix(in srgb, var(--mc) 30%, transparent), 0 6px 18px -6px color-mix(in srgb, var(--mc) 60%, transparent);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.22), 0 0 18px 0 color-mix(in srgb, var(--mc) 42%, transparent);
   }
+  .vroom-host-mode[data-mode]{ transition:background .16s ease, border-color .16s ease, box-shadow .22s ease, transform .12s ease; }
+  /* The Match settings summary names the game, in its colour, left-aligned
+     like a test's box names its mode (build 323). */
+  .sheet-summary-mode.vroom-summary-game{ justify-content:flex-start; }
+  .sheet-summary-mode.vroom-summary-game .vroom-summary-icon{ width:1.15rem; height:1.15rem; }
+  .sheet-summary-mode[data-mode="race"] .vroom-summary-icon{ color:#7CC0F4; }
+  .sheet-summary-mode[data-mode="tug"] .vroom-summary-icon{ color:#F2B35E; }
+  .sheet-summary-mode[data-mode="battle"] .vroom-summary-icon{ color:#FF7A7A; }
   .vroom-host-mode[data-mode].on .vroom-host-mode-art{ color:#fff; }
   .vroom-host-mode[data-mode] .vroom-host-mode-tick{ color:var(--mc); }
   .vroom-host-mode[data-mode] .vroom-host-mode-tick path{ stroke:#10141B; }
@@ -23231,8 +23291,6 @@
     .vroom-host-mode-art{ width:2.8rem; height:1.8rem; }
   }
   .vroom-invite-btn{ min-height:44px; padding:.4rem .9rem; font-size:.8rem; margin-left:auto; }
-  /* build 310: Invite friends follows Ready up and its waiting line now */
-  .screen-vroom-lobby > .vroom-autostart-note + .vroom-code-row{ margin-top:1rem; }
   /* ---- open-to-the-class switch, and the browser it feeds ---- */
   .vroom-open-row{ display:flex; align-items:center; gap:.9rem; }
   .vroom-open-text{ flex:1 1 auto; min-width:0; }
@@ -50989,6 +51047,19 @@ function inviteFriendToLobby(pub, roomCode){
 /* An invite is only live for a while - a room that finished an hour ago
    is not an invitation, and nothing else clears it. */
 const LOBBY_INVITE_TTL_MS = 30 * 60 * 1000;
+/* ---- 15 SECONDS BETWEEN INVITES TO ONE PERSON (build 323) ----
+   "Ensure the invite cool down is only like 15 seconds." The lobby's
+   Invite button used to go to "Invited" and stay there for the life of
+   the room, so a friend who swiped the first one away could never be
+   asked again. It is the chat's cooldown now (armInviteButton), with
+   its own length: the live countdown on the button, then Invite again
+   with nothing to tap. Keyed on THIS room, like the chat's. */
+const LOBBY_INVITE_COOLDOWN_MS = 15 * 1000;
+function lobbyInviteCooldownLeft(pub, roomCode){
+  const already = (store.lobbyInvitesOut || {})[pub];
+  if(!already || already.code !== roomCode) return 0;
+  return Math.max(0, LOBBY_INVITE_COOLDOWN_MS - (Date.now() - (already.at || 0)));
+}
 /* ================= THE MAILBOX =====================================
    AN INVITE ADDRESSED TO YOU BELONGS IN A DOCUMENT THAT IS YOURS.
 
@@ -80153,10 +80224,14 @@ function chatInviteCooldownLeft(pub){
   if(!already || already.code !== chatRoomCode) return 0;
   return Math.max(0, CHAT_INVITE_COOLDOWN_MS - (Date.now() - (already.at || 0)));
 }
-function armInviteButton(b, pub){
+/* `leftOf` and `send` default to the chat's; the lobby's invite sheet
+   passes its own (build 323), so both counters are this one control. */
+function armInviteButton(b, pub, leftOf, send){
+  leftOf = leftOf || chatInviteCooldownLeft;
+  send = send || inviteFriendToChat;
   let timer = null;
   const paint = () => {
-    const left = chatInviteCooldownLeft(pub);
+    const left = leftOf(pub);
     if(left <= 0){
       b.textContent = "Invite"; b.disabled = false;
       if(timer){ clearInterval(timer); timer = null; }
@@ -80173,8 +80248,8 @@ function armInviteButton(b, pub){
     }, 1000);
   };
   b.addEventListener("click", () => {
-    if(chatInviteCooldownLeft(pub) > 0) return;
-    inviteFriendToChat(pub);
+    if(leftOf(pub) > 0) return;
+    send(pub);
     paint();
   });
   paint();
@@ -98458,6 +98533,34 @@ function showVirtualRoomChoice(){
    look like a rope". The hatches stop clear of the capsule's rounded
    ends rather than being clipped, so there is no clipPath id to
    collide with a second copy on the same screen. */
+/* THE GAME'S SMALL MARK, in one place (build 323): the lobby's room card
+   and the Match settings summary both name the game with it, so the two
+   cannot draw different flags. currentColor, 24-unit box. */
+function vroomGameIconSVG(game){
+  return game === "battle"
+    ? "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\""
+      + " stroke-width=\"2\" stroke-linecap=\"round\">"
+      + "<path d=\"M7.5 16.5L20 4\"/><path d=\"M16.5 16.5L4 4\"/>"
+      + "<path d=\"M5.2 14.2l4.6 4.6\"/><path d=\"M18.8 14.2l-4.6 4.6\"/>"
+      + "<path d=\"M7.5 16.5L4.5 19.5\"/><path d=\"M16.5 16.5l3 3\"/></svg>"
+    : game === "tug"
+    /* A rope with a knot in the middle - the same object the match
+       itself draws, at 18px. */
+    ? "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\""
+      + " stroke-width=\"2\" stroke-linecap=\"round\">"
+      + "<path d=\"M2 12h20\"/><path d=\"M12 8.2v7.6\" stroke-width=\"3\"/></svg>"
+    /* A flag, for a race. */
+    : "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\""
+      + " stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">"
+      + "<path d=\"M6 21V4\"/><path d=\"M6 4.5h11l-2.2 3.5L17 11.5H6z\"/></svg>";
+}
+const VROOM_GAME_NAME = { race: "Race", tug: "Tug of War", battle: "Battle" };
+/* A room participant as the person card reads a leaderboard row: the
+   whole published entry, keyed by the participant key (which IS the
+   public id, so the card's friend state and "this is you" both work). */
+function vroomPersonEntry(key, p){
+  return Object.assign({}, p || {}, { pub: key, firstName: (p && p.name) || "Classmate" });
+}
 function buildVroomModeArt(key){
   const NS = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(NS, "svg");
@@ -98541,14 +98644,20 @@ function showVirtualRoomSetup(editRoom){
      stray value again, it cannot be mistaken for a room. */
   const editing = !!(editRoom && Array.isArray(editRoom.units));
   setActiveNav(null);
-  /* AFTER setActiveNav, which clears it on the way into every screen.
-     NO TAB BAR WHEN CREATING A ROOM EITHER (build 242): this was only
-     hidden when editing a room's settings, so on "Pick the units" the
-     floating "Pick units to start" button and the tab bar sat on top of
-     each other at the foot of the screen, both unreadable - found on the
-     whole-app screenshot pass. The screen has its own Back link, the
-     same as Match settings. */
-  window.forceHideBottomTabs = true;
+  /* THE TAB BAR IS BACK, WITH THE BUTTON IN IT (build 323). "The virtual
+     room match setting button at the bottom isn't the best, it doesn't
+     give me bottom tab vibes and looks weird ... It shouldn't be
+     clickable till you have units selected similar to the start button
+     on the other tests." Build 242 hid the bar here because a floating
+     button and the bar sat on top of each other; the button is now the
+     tests' own .floatbtn, which the bar takes in as its Start pill
+     (syncStartAction) - grey until a unit is ticked, lit after, and
+     "Select units to start" if it is pressed early. The lobby this is
+     reached from carries the same bar. The bar follows the header's
+     nav buttons, which a run hides, so they are put back here as
+     showSetup does - a lobby reached from a match would otherwise have
+     no bar to carry the button. */
+  appearanceBtn.hidden = false; homeBtn.hidden = false; profileBtn.hidden = false;
   countEl.textContent = "Virtual Room";
   const panel = document.createElement("section");
   panel.className = "panel";
@@ -98701,10 +98810,13 @@ function showVirtualRoomSetup(editRoom){
      own rather than by borrowing .bottomtabs - a tab bar is a row of
      destinations and this is one button, so sharing the markup would
      mean sharing rules that only make sense for four tabs. */
+  /* build 323: the tests' own bottom bar, not a pill of its own - see
+     the top of this function. .vroom-setup-go stays as the hook. */
   const bar = document.createElement("div");
-  bar.className = "startbar vroom-setup-bar";
+  bar.className = "startbar";
   const startBtn = document.createElement("button");
-  startBtn.type = "button"; startBtn.className = "next playbtn vroom-setup-go"; startBtn.id = "nextbtn";
+  startBtn.type = "button"; startBtn.className = "next floatbtn playbtn vroom-setup-go"; startBtn.id = "nextbtn";
+  startBtn.dataset.tabLabel = "Next"; startBtn.dataset.tabIcon = "next";
   bar.appendChild(startBtn);
 
   const optionsModalBody = document.createElement("div");
@@ -98714,6 +98826,22 @@ function showVirtualRoomSetup(editRoom){
   const sheetSummaryMode = document.createElement("p");
   sheetSummaryMode.className = "sheet-summary-mode";
   sheetSummaryMode.textContent = "Virtual Room";
+  /* THE BOX NAMES THE GAME (build 323): "When you select a mode, the
+     bottom box talking about what you have selected doesn't mention the
+     game mode you selected." Its title is the game, with the game's mark
+     in the game's colour - the way a test's box is titled Drill or Exam -
+     and "Virtual Room" only until one is picked (paintSummaryGame). */
+  function paintSummaryGame(){
+    sheetSummaryMode.classList.toggle("vroom-summary-game", !!vroomGame);
+    if(vroomGame) sheetSummaryMode.dataset.mode = vroomGame; else delete sheetSummaryMode.dataset.mode;
+    if(!vroomGame){ sheetSummaryMode.textContent = "Virtual Room"; return; }
+    const ic = document.createElement("span");
+    ic.className = "vroom-summary-icon"; ic.setAttribute("aria-hidden", "true");
+    ic.innerHTML = vroomGameIconSVG(vroomGame);
+    const nm = document.createElement("span");
+    nm.textContent = VROOM_GAME_NAME[vroomGame] || "Race";
+    sheetSummaryMode.replaceChildren(ic, nm);
+  }
   const sheetSummaryLine = document.createElement("p");
   sheetSummaryLine.className = "sheet-summary-line";
   const sheetSummaryTime = document.createElement("p");
@@ -98869,6 +98997,7 @@ function showVirtualRoomSetup(editRoom){
       ? "No units selected yet"
       : (picked.size === allUnits.length ? "All units" : picked.size + (picked.size === 1 ? " unit" : " units")) +
         " \u00b7 " + n + (n === 1 ? " question" : " questions");
+    paintSummaryGame();
     syncCountSlider(n);
     const asked = (qCount && qCount < n) ? qCount : n;
     {
@@ -101525,17 +101654,13 @@ function openInviteFriendsSheet(roomCode){
       text.appendChild(activityLabel(e.pub, true, "friend-activity-line"));
       const b = document.createElement("button");
       b.type = "button"; b.className = "next friend-act";
-      const already = (store.lobbyInvitesOut || {})[e.pub];
-      const sent = !!(already && already.code === roomCode);
       /* Already in this room (build 239) - there is nothing to invite. */
       const here = roomCode === vroomCode && liveVroomParticipants &&
         Object.prototype.hasOwnProperty.call(presentParticipants(liveVroomParticipants) || {}, e.pub);
-      b.textContent = here ? "In room" : sent ? "Invited" : "Invite";
-      b.disabled = sent || here;
-      b.addEventListener("click", () => {
-        inviteFriendToLobby(e.pub, roomCode);
-        b.textContent = "Invited"; b.disabled = true;
-      });
+      /* NOT "INVITED" FOR GOOD (build 323): a 15-second cooldown, then
+         Invite again - see LOBBY_INVITE_COOLDOWN_MS. */
+      if(here){ b.textContent = "In room"; b.disabled = true; }
+      else armInviteButton(b, e.pub, pub => lobbyInviteCooldownLeft(pub, roomCode), pub => inviteFriendToLobby(pub, roomCode));
       row.append(art, text, b);
       list.appendChild(row);
     });
@@ -101814,6 +101939,10 @@ function showVirtualRoomLobby(){
      declared up here because drawLobbyRoster runs before its own line */
   let sndLobbyKeys = null;
   setActiveNav(null);
+  /* THE BAR CARRIES READY UP NOW (build 323), and the bar follows the
+     header's nav buttons, which a run hides - so coming back from a match
+     they are put back, or there is no bar and no pill. */
+  appearanceBtn.hidden = false; homeBtn.hidden = false; profileBtn.hidden = false;
   countEl.textContent = "Virtual Room";
   /* THE SIGNATURE IS LOCAL TO THIS MOUNT, and it has to be.
      It guards a rebuild of `list` and `testSummary`, and this function
@@ -101856,43 +101985,32 @@ function showVirtualRoomLobby(){
   chatSlot.className = "vroom-chat-slot";
   panel.appendChild(chatSlot);
 
-  /* Held rather than appended, so the two host cards can be built where
-     their own logic lives and placed where the layout wants them - see
-     "Room setup" at the foot of this function. Null for a joiner, who
-     has neither. */
-  let lobbyInviteCard = null, lobbyOpenCard = null;
+  /* ---- INVITE AND OPEN ROOM, IN THE LOBBY BOX'S OWN HEADER (build 323) ----
+     "I feel like the invite friends section is the part that's throwing
+     me in the layout, I feel like that could be a smaller button near
+     lobby or in the lobby box? ... I feel like the 'open room' toggle
+     should be near that invite friends button as well cause they kind of
+     go hand in hand." Both were full cards of their own - Invite friends
+     a card holding one wide button, Open room a card with a three-line
+     explanation - and they are now one small row in the roster's header:
+     a compact Invite pill and the switch with a two-word state under its
+     name. Built here, placed in the header below. Host only, as before:
+     an invite is addressed from the room owner. Null for a joiner. */
+  let lobbyTools = null;
 
   if(vroomIsHost){
-    /* THE CODE IS NOT SHOWN AND NOT COPYABLE. It was "Share this code"
-       with a one-tap Copy beside it, which is the whole join-by-code
-       flow in one card; with invites as the only way in, a code on
-       screen is a string that no longer does anything and an invitation
-       to try. The card keeps its job - get people into the room - and
-       Invite friends is now the only thing in it. */
-    const codeBox = document.createElement("div");
-    codeBox.className = "cal-row vroom-code-row";
-    const codeLabel = document.createElement("p");
-    codeLabel.className = "cal-row-date"; codeLabel.textContent = "Invite your friends";
-    codeBox.append(codeLabel);
-
-    /* INVITE FRIENDS BELONGS HERE, not down in the host bar beside
-       Match settings - "the invite friends button could be somewhere
-       else". Both things in this card do one job: get people into the
-       room. Beside Match settings it was the odd one out, sharing a row
-       with a control that changes the RULES rather than the guest list,
-       and it made that row two buttons of two different widths.
-       Host only, same as before: an invite addresses the room code to a
-       friend's public id in MY OWN leaderboard row, so only the person
-       who owns the room can send one. */
-    if(vroomIsHost){
-      const inviteBtn = document.createElement("button");
-      inviteBtn.type = "button";
-      inviteBtn.className = "next ghost vroom-invite-btn";
-      inviteBtn.textContent = "Invite friends";
-      inviteBtn.addEventListener("click", () => openInviteFriendsSheet(vroomCode));
-      codeBox.appendChild(inviteBtn);
-    }
-    lobbyInviteCard = codeBox;
+    lobbyTools = document.createElement("div");
+    lobbyTools.className = "vroom-roster-tools";
+    const inviteBtn = document.createElement("button");
+    inviteBtn.type = "button";
+    inviteBtn.className = "next ghost vroom-invite-btn";
+    inviteBtn.setAttribute("aria-label", "Invite friends");
+    inviteBtn.innerHTML = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">"
+      + "<circle cx=\"9.5\" cy=\"8\" r=\"3.6\"/><path d=\"M3 20c.6-3.6 3.2-5.6 6.5-5.6s5.9 2 6.5 5.6\"/><path d=\"M19 8v6\"/><path d=\"M16 11h6\"/></svg>";
+    const inviteWord = document.createElement("span");
+    inviteWord.textContent = "Invite friends";
+    inviteBtn.appendChild(inviteWord);
+    inviteBtn.addEventListener("click", () => openInviteFriendsSheet(vroomCode));
 
     /* ---- OPEN TO THE CLASS, OR NOT ----
        A room defaults to PRIVATE and the host opens it deliberately.
@@ -101900,50 +102018,44 @@ function showVirtualRoomLobby(){
        list the whole class can walk into by accident, and "public" is
        always something somebody chose rather than something they
        failed to turn off.
-       Host only, and it says what it MEANS rather than naming a
-       setting: a toggle reading "Open to the class" tells you what
-       happens, where "Public" makes you work out who that includes. */
-    if(vroomIsHost){
-      const openRow = document.createElement("div");
-      openRow.className = "cal-row vroom-open-row";
-      const openText = document.createElement("div");
-      openText.className = "vroom-open-text";
-      const openLabel = document.createElement("p");
-      /* "OPEN ROOM", AND A LINE THAT SAYS WHAT IT DOES (build 287): "The
-         public toggle switch needs to say open room or something so people
-         actually understand what that toggle does, the description of the
-         toggle is bad." The line names where the room turns up. */
-      openLabel.className = "cal-row-date"; openLabel.textContent = "Open room";
-      const openHint = document.createElement("p");
-      openHint.className = "friend-hint";
-      const openHintText = () => vroomIsOpen
-        ? "On \u2014 this room is listed under Open rooms, and anyone in 26E can join."
-        : "Off \u2014 only people you invite can join. Turn it on to list this room under Open rooms for the whole class.";
-      openHint.textContent = openHintText();
-      openText.append(openLabel, openHint);
-      const sw = document.createElement("button");
-      sw.type = "button";
-      sw.className = "vroom-open-toggle" + (vroomIsOpen ? " on" : "");
-      sw.setAttribute("role", "switch");
+       "OPEN ROOM", AND IT SAYS WHAT IT DOES (build 287): "The public
+       toggle switch needs to say open room or something so people
+       actually understand what that toggle does." The three-line hint
+       is two words now, under the switch's name, because it shares a
+       header row (build 323); the toast on a flip says where it shows. */
+    const openRow = document.createElement("div");
+    openRow.className = "vroom-open-row";
+    const openText = document.createElement("div");
+    openText.className = "vroom-open-text";
+    const openLabel = document.createElement("p");
+    openLabel.className = "vroom-open-label"; openLabel.textContent = "Open room";
+    const openHint = document.createElement("p");
+    openHint.className = "vroom-open-hint";
+    const openHintText = () => vroomIsOpen ? "Anyone in 26E" : "Invite only";
+    openHint.textContent = openHintText();
+    openText.append(openLabel, openHint);
+    const sw = document.createElement("button");
+    sw.type = "button";
+    sw.className = "vroom-open-toggle" + (vroomIsOpen ? " on" : "");
+    sw.setAttribute("role", "switch");
+    sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
+    sw.setAttribute("aria-label", "Open room: list this room for the whole class");
+    const knob = document.createElement("span");
+    knob.className = "vroom-open-knob";
+    sw.appendChild(knob);
+    sw.addEventListener("click", () => {
+      vroomIsOpen = !vroomIsOpen;
+      sw.classList.toggle("on", vroomIsOpen);
       sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
-      sw.setAttribute("aria-label", "Open room: list this room for the whole class");
-      const knob = document.createElement("span");
-      knob.className = "vroom-open-knob";
-      sw.appendChild(knob);
-      sw.addEventListener("click", () => {
-        vroomIsOpen = !vroomIsOpen;
-        sw.classList.toggle("on", vroomIsOpen);
-        sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
-        openHint.textContent = openHintText();
-        if(fbDb && vroomCode){
-          try{ fbDb.collection("vrooms").doc(vroomCode)
-                 .update({ open: vroomIsOpen }).catch(() => {}); }catch(e){}
-        }
-        showToast(vroomIsOpen ? "Open room \u2014 classmates can find it under Open rooms." : "Invite only.");
-      });
-      openRow.append(openText, sw);
-      lobbyOpenCard = openRow;
-    }
+      openHint.textContent = openHintText();
+      if(fbDb && vroomCode){
+        try{ fbDb.collection("vrooms").doc(vroomCode)
+               .update({ open: vroomIsOpen }).catch(() => {}); }catch(e){}
+      }
+      showToast(vroomIsOpen ? "Open room \u2014 anyone in 26E can find it under Open rooms." : "Invite only \u2014 only people you invite can join.");
+    });
+    openRow.append(openText, sw);
+    lobbyTools.append(inviteBtn, openRow);
   }
 
   /* The pre-test summary, per explicit request \u2014 "make sure to show
@@ -101956,20 +102068,19 @@ function showVirtualRoomLobby(){
   const list = document.createElement("div");
   list.className = "cal-list vroom-roster-list";
 
-  /* ---- THE ROOM FIRST, THE ADMIN SECOND ----
-     "The virtual room lobby could have a better visual layout that just
-     feels better, it doesn't look that great at the moment."
-     Looked at on a 440x956 phone, the order was the problem rather than
-     the styling: Invite, Open to the class, Match settings, THEN who is
-     here, THEN Ready up. Every card above the fold was a thing you set
-     once, and the two things the screen actually exists for - who is in
-     the room and whether you have readied - were below it, at 596px and
-     826px. You sit in a lobby watching the roster; you configure it
-     once.
-     So the roster and the ready control are one block at the top now,
-     with the settings and the invites below them. Nothing is removed
-     and nothing changes what it does - this is the append order and a
-     header, which is the cheapest change that fixes what was reported. */
+  /* ---- THE ROOM'S SETUP ON TOP, THE PEOPLE UNDER IT (build 323) ----
+     "I feel like the room setup stuff should at the top with the lobby
+     under it." Build 266 put the roster first and the setup below it;
+     asked the other way now. What the match IS (game, units, the host's
+     Match settings) reads first, then who is in it with the room's two
+     admin controls in that box's header, then the chat. Ready up is not
+     in the column any more - it is on the bottom bar. */
+  const setupHead = document.createElement("p");
+  setupHead.className = "slab vroom-setup-head";
+  setupHead.textContent = "Room setup";
+  panel.appendChild(setupHead);
+  panel.appendChild(testSummary);
+
   const roster = document.createElement("div");
   roster.className = "vroom-roster";
   const rosterHead = document.createElement("div");
@@ -101982,16 +102093,9 @@ function showVirtualRoomLobby(){
   const readyCount = document.createElement("p");
   readyCount.className = "vroom-readycount";
   rosterHead.append(rosterTitle, readyCount);
+  if(lobbyTools){ rosterHead.appendChild(lobbyTools); roster.classList.add("has-tools"); }
   roster.append(rosterHead, list);
   panel.appendChild(roster);
-  /* ---- INVITE BELONGS WITH THE PEOPLE ----
-     "The invite your friends should be near where the people are."
-     It was the first card under "Room setup", three elements below the
-     roster, which is the right place for something you configure and
-     the wrong place for the button that makes the list longer. Moved
-     here, directly under the list it adds to. Host only, as before -
-     an invite is addressed from the room owner's own leaderboard row. */
-  /* (The invite card is appended under Ready up below - build 310.) */
 
   /* The actual "ready up" mechanic, per explicit request \u2014 everyone
      in the lobby, host included, toggles their own ready state here;
@@ -101999,7 +102103,15 @@ function showVirtualRoomLobby(){
      the same pattern progress/finished already use elsewhere in this
      same document. */
   const readyBtn = document.createElement("button");
-  readyBtn.type = "button"; readyBtn.className = "next ghost vroom-readyup-btn";
+  /* ON THE BOTTOM BAR, LIKE A TEST'S START (build 323): "Should the
+     ready up button be on the bottom tab similar to the other tests?"
+     It is the tests' own .floatbtn, so the tab bar takes it in as its
+     pill (syncStartAction): "Ready up" lit when you can, grey while the
+     room cannot start, green with a tick once you are ready - and a tap
+     there un-readies. The button keeps every job it had; the pill only
+     forwards the tap. */
+  readyBtn.type = "button"; readyBtn.className = "next floatbtn playbtn vroom-readyup-btn";
+  readyBtn.dataset.tabLabel = "Ready up"; readyBtn.dataset.tabIcon = "none";
   readyBtn.textContent = "Ready up";
   let amReady = false;
   /* NOBODY READIES UP INTO NOTHING. "You can ready up before you have
@@ -102016,28 +102128,35 @@ function showVirtualRoomLobby(){
      isn't syncing when hit". It paints immediately and the write
      confirms it; a failure puts it back and says so. */
   function paintReady(){
-    readyBtn.textContent = amReady ? "Not ready" : "Ready up";
+    readyBtn.dataset.tabLabel = amReady ? "Ready" : "Ready up";
+    readyBtn.dataset.tabIcon = amReady ? "check" : "none";
     readyBtn.classList.toggle("is-ready", amReady);
+    /* last: the text change is the mutation the bar's pill re-reads on */
+    readyBtn.textContent = amReady ? "Not ready" : "Ready up";
   }
+  /* One write at a time, without `disabled` (build 323): disabling the
+     button for the round trip greyed the bar's pill for a beat on every
+     tap - lit, grey, then green. */
+  let readyBusy = false;
   readyBtn.addEventListener("click", () => {
     if(!fbDb || !vroomCode || !vroomMyKey){
       showToast("Lost connection \u2014 try again in a moment."); return;
     }
     if(!amReady && !lobbyCanReady) return;
+    if(readyBusy) return;
     amReady = !amReady;
     playSound(amReady ? "vr.ready" : "ui.toggle.off");
     paintReady();
-    readyBtn.disabled = true;
+    readyBusy = true;
     fbDb.collection("vrooms").doc(vroomCode).update({
       ["participants." + vroomMyKey + ".ready"]: amReady
-    }).then(() => { readyBtn.disabled = false; })
+    }).then(() => { readyBusy = false; })
       .catch(() => {
-        amReady = !amReady; paintReady(); readyBtn.disabled = false;
+        readyBusy = false;
+        amReady = !amReady; paintReady();
         showToast("Couldn't update \u2014 try again.");
       });
   });
-  panel.appendChild(readyBtn);
-
   /* Replaces the old host-only "Start for everyone" button entirely,
      per explicit request \u2014 "don't let the lobby starter hit start
      test, that would happen automatically when everyone reads up."
@@ -102050,27 +102169,11 @@ function showVirtualRoomLobby(){
   const autostartNote = document.createElement("p");
   autostartNote.className = "vroom-autostart-note";
   autostartNote.textContent = "Waiting for everyone to ready up\u2026";
-  panel.appendChild(autostartNote);
-  /* READY UP FIRST, THEN INVITE (build 310). "The ready up button needs
-     to be above invite friends and beneath the lobby id thing too." Ready
-     up is the one thing everybody in the room presses, so it sits right
-     under the list it changes; inviting is the host's errand and follows
-     it. Still directly beside the roster, so "invite belongs with the
-     people" holds. */
-  if(lobbyInviteCard) panel.appendChild(lobbyInviteCard);
-
-  /* The set-once half of the screen, moved under the room itself and
-     given a header so it reads as a group rather than as three more
-     cards in the same stack. `setupCards` is filled from the nodes
-     built above - they are appended HERE rather than where they are
-     created, so the code that builds each one stays where its own
-     logic is. */
-  const setupHead = document.createElement("p");
-  setupHead.className = "slab section-divider vroom-setup-head";
-  setupHead.textContent = "Room setup";
-  panel.appendChild(setupHead);
-  panel.appendChild(testSummary);
-  if(lobbyOpenCard) panel.appendChild(lobbyOpenCard);
+  /* Under the people it is waiting on, inside their box (build 323). */
+  roster.appendChild(autostartNote);
+  const readyBar = document.createElement("div");
+  readyBar.className = "startbar vroom-ready-bar";
+  readyBar.appendChild(readyBtn);
 
   if(vroomChatUnsubscribe) vroomChatUnsubscribe();
   vroomChatUnsubscribe = buildVroomChatPanel(panel);
@@ -102095,7 +102198,7 @@ function showVirtualRoomLobby(){
   if(vroomLastDoc && vroomLastDoc.code === vroomCode && vroomLastDoc.data){
     try{ const r0 = drawLobbyRoster(vroomLastDoc.data); readyCount.textContent = r0.readyN + " of " + r0.totalN + " ready"; }catch(e){}
   }
-  stage.replaceChildren(panel);
+  stage.replaceChildren(panel, readyBar);
   toTop();
 
   detachVroomListener();
@@ -102125,22 +102228,7 @@ function showVirtualRoomLobby(){
     const gIcon = document.createElement("span");
     gIcon.className = "vroom-summary-icon";
     gIcon.setAttribute("aria-hidden", "true");
-    gIcon.innerHTML = isBattle
-      ? "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\""
-        + " stroke-width=\"2\" stroke-linecap=\"round\">"
-        + "<path d=\"M7.5 16.5L20 4\"/><path d=\"M16.5 16.5L4 4\"/>"
-        + "<path d=\"M5.2 14.2l4.6 4.6\"/><path d=\"M18.8 14.2l-4.6 4.6\"/>"
-        + "<path d=\"M7.5 16.5L4.5 19.5\"/><path d=\"M16.5 16.5l3 3\"/></svg>"
-      : isTug
-      /* A rope with a knot in the middle - the same object the match
-         itself draws, at 18px. */
-      ? "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\""
-        + " stroke-width=\"2\" stroke-linecap=\"round\">"
-        + "<path d=\"M2 12h20\"/><path d=\"M12 8.2v7.6\" stroke-width=\"3\"/></svg>"
-      /* A flag, for a race. */
-      : "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\""
-        + " stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">"
-        + "<path d=\"M6 21V4\"/><path d=\"M6 4.5h11l-2.2 3.5L17 11.5H6z\"/></svg>";
+    gIcon.innerHTML = vroomGameIconSVG(isBattle ? "battle" : isTug ? "tug" : "race");
     const gName = document.createElement("span");
     const noGame = !data.game;
     gName.textContent = noGame ? "No game chosen yet" : isBattle ? "Battle" : isTug ? "Tug of War" : "Race";
@@ -102370,16 +102458,17 @@ function showVirtualRoomLobby(){
          key IS the publicId, which is what makes that work.
          Never your own row: there is nothing to do with yourself, the
          same rule the boards follow. */
-      if(key !== vroomMyKey){
+      /* YOURS TOO, AND THE WHOLE ENTRY (build 323): "Ensure you can click
+         someone's character or banner and their profile would pull up,
+         similar to how the leaderboard does it." The board has opened
+         your own row since build 304 and this one never did; and it
+         handed the card a hand-picked subset, so the theme behind a
+         default banner (`accent`) never arrived. vroomPersonEntry. */
+      {
         row.classList.add("is-tappable");
         row.setAttribute("role", "button");
         row.tabIndex = 0;
-        const open = () => openPersonSheet({
-          pub: key, firstName: p.name, avatarChar: p.avatarChar,
-          level: p.level, badges: p.badges, hundos: p.hundos,
-          xp: p.xp, tests: p.tests, correct: p.correct, mystery: p.mystery,
-          banner: p.banner
-        });
+        const open = () => openPersonSheet(vroomPersonEntry(key, p));
         row.addEventListener("click", open);
         row.addEventListener("keydown", e => {
           if(e.key === "Enter" || e.key === " "){ e.preventDefault(); open(); }
@@ -102575,6 +102664,8 @@ function showVirtualRoomLobby(){
            287): "it wouldn't say ready for everyone when joining like
            that, it would say in match." */
         const midMatch = data.status === "starting" && !inThisStart;
+        readyBtn.dataset.tabLabel = midMatch ? "In a match" : "Ready up";
+        readyBtn.dataset.tabIcon = "none";
         readyBtn.textContent = midMatch ? "Match in progress" : "Ready up";
         autostartNote.classList.remove("all-ready");
         autostartNote.textContent = vroomIsHost
@@ -105012,16 +105103,12 @@ function showVirtualRoomResults(){
       avatarWrap.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ninja" }));
       decorateAvatar(avatarWrap, p.level, p.badges, p.mystery);
       setCharState(avatarWrap, "live");
-      if(key !== vroomMyKey){
+      /* Your own row too, with the whole entry - see the lobby's (build 323). */
+      {
         row.classList.add("vroom-row", "is-tappable");
         row.setAttribute("role", "button");
         row.tabIndex = 0;
-        const openCard = () => openPersonSheet({
-          pub: key, firstName: p.name, avatarChar: p.avatarChar,
-          level: p.level, badges: p.badges, hundos: p.hundos,
-          xp: p.xp, tests: p.tests, correct: p.correct, mystery: p.mystery,
-          banner: p.banner
-        });
+        const openCard = () => openPersonSheet(vroomPersonEntry(key, p));
         row.addEventListener("click", openCard);
         row.addEventListener("keydown", e => {
           if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openCard(); }
@@ -115123,6 +115210,16 @@ function applyGlassRefraction(el, mapImgId){
      here) being a distinct, recognizable island. A real second row,
      with its own background and a small gap from the row above, is
      what actually delivers that. */
+  /* The marks the Start pill can wear (build 323): play for a test,
+     an arrow for the Virtual Room's Match settings, a tick for its
+     Ready up. Outline marks are drawn by .bottomtab-start-icon[data-icon]. */
+  const START_TAB_ICONS = {
+    play: "<svg viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M8 5v14l11-7z\"/></svg>",
+    next: "<svg viewBox=\"0 0 24 24\"><path d=\"M5 12h13\"/><path d=\"M13 6.5l5.5 5.5-5.5 5.5\"/></svg>",
+    check: "<svg viewBox=\"0 0 24 24\"><path d=\"M5 12.6l4.4 4.4L19 7.4\"/></svg>",
+    /* the word alone, where it needs the pill's whole width ("Ready up") */
+    none: ""
+  };
   const extraRow = document.createElement("div");
   extraRow.className = "bottomtabs-extrarow";
   /* appendChild now, not insertBefore \u2014 this placed extraRow ahead of
@@ -115142,7 +115239,8 @@ function applyGlassRefraction(el, mapImgId){
   startTab.hidden = true;
   const startIcon = document.createElement("span");
   startIcon.className = "bottomtab-icon bottomtab-start-icon";
-  startIcon.innerHTML = "<svg viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M8 5v14l11-7z\"/></svg>";
+  startIcon.dataset.icon = "play";
+  startIcon.innerHTML = START_TAB_ICONS.play;
   /* The selected-units summary, per explicit request \u2014 built into
      this pill as a small badge on the icon rather than crammed into
      the label text itself, since the label ("Start") sits in the same
@@ -115194,6 +115292,21 @@ function applyGlassRefraction(el, mapImgId){
          now says "Select units to start". Mirrored here, and live: the
          unit screens call syncStartInert() on every change. */
       startTab.classList.toggle("is-inert", floatBtn.classList.contains("is-inert"));
+      /* ITS OWN WORD AND MARK WHERE A SCREEN ASKS FOR ONE (build 323).
+         The Virtual Room's two screens put their one action here, the
+         same pill as Start: "Next" on Match settings and "Ready up" in
+         the lobby - "it doesn't give me bottom tab vibes" and "should the
+         ready up button be on the bottom tab similar to the other tests".
+         data-tab-label / data-tab-icon on the float button; Start and
+         its play mark otherwise. `is-ready` is mirrored for the lobby's
+         readied state. */
+      const tabWord = floatBtn.dataset.tabLabel || "Start";
+      if(startLabel.textContent !== tabWord) startLabel.textContent = tabWord;
+      const tabIcon = Object.prototype.hasOwnProperty.call(START_TAB_ICONS, floatBtn.dataset.tabIcon || "") ? floatBtn.dataset.tabIcon : "play";
+      if(startIcon.dataset.icon !== tabIcon){ startIcon.dataset.icon = tabIcon; startIcon.innerHTML = START_TAB_ICONS[tabIcon]; }
+      startTab.classList.toggle("is-ready", floatBtn.classList.contains("is-ready"));
+      /* "Ready up" and "In a match" are wider than "Start" (build 323) */
+      startTab.classList.toggle("is-wide", tabWord.length > 6);
       startTab.onclick = () => floatBtn.click();
       bar.classList.add("has-start-tab");
       /* The actual fix for the badly-misaligned slider on this screen

@@ -260,6 +260,14 @@ SEED = ('{"firstName":"Anonymous","avatarChar":"ninja","onboardingComplete":true
 
 FAILURES = []
 
+# READY UP IS ON THE BOTTOM BAR (build 323): "Should the ready up button be
+# on the bottom tab similar to the other tests?" The lobby's .vroom-readyup-btn
+# is a .floatbtn the tab bar takes in as its Start pill, so the thing a finger
+# presses - and the thing that is visible - is #bottomtab-start, and only
+# while a lobby is the screen. The button itself still carries the state
+# (disabled, is-ready) and is read where a section reads state.
+READY = "body:has(#stage > .screen-vroom-lobby) #bottomtab-start:not([hidden])"
+
 
 
 def tap(pg, selector, what):
@@ -300,7 +308,7 @@ def join_lobby(pg, code, tries=3, timeout=12000):
     for attempt in range(tries):
         pg.evaluate("(c)=>joinVirtualRoomLobby(c)", code)
         try:
-            pg.wait_for_selector(".vroom-readyup-btn", state="visible", timeout=timeout)
+            pg.wait_for_selector(READY, state="visible", timeout=timeout)
             return
         except Exception:
             if attempt == tries - 1:
@@ -567,7 +575,7 @@ def sections_246(ctx, open_tab, args):
                   return d; };
                 return c; }; }""")
         for pg in (ha, gb):
-            tap(pg, ".vroom-readyup-btn", "ready-up")
+            tap(pg, READY, "ready-up")
             pg.wait_for_timeout(300)
         for pg in (ha, gb):
             pg.wait_for_function("() => typeof vroomStartAt === 'number' && vroomStartAt && !!document.querySelector('.qpanel .choice')", timeout=40000)
@@ -604,7 +612,7 @@ def sections_246(ctx, open_tab, args):
         check("the host coming back opens the lobby, and nothing starts until people ready up",
               st == "waiting" and not idle["host"]["q"] and not idle["guest"]["q"], {"status": st, **idle})
         for pg in (ha, gb):
-            tap(pg, ".vroom-readyup-btn", "ready-up, second race")
+            tap(pg, READY, "ready-up, second race")
             pg.wait_for_timeout(300)
         ok = True
         try:
@@ -918,14 +926,17 @@ def sections_313(ctx, open_tab, args):
         # A LOBBY OF TWENTY: Ready up used to sit ~2,000px down a phone.
         pg.evaluate("()=>createVirtualRoomLobby(['Identity Crimes'], null, 'race')")
         pg.wait_for_function("()=>typeof vroomCode==='string' && vroomCode", timeout=20000)
-        pg.wait_for_selector(".vroom-readyup-btn", state="visible", timeout=20000)
+        pg.wait_for_selector(READY, state="visible", timeout=20000)
         pg.evaluate("""()=>{ const AV = AVATAR_CHARACTERS.map(c => c.id); const f = {};
           for(let i = 1; i < 20; i++) f['participants.l' + i] = { name: 'P' + i, avatarChar: AV[i % AV.length], level: i,
             joinedAt: Date.now() + i, seen: Date.now(), ready: i % 3 === 0, progress: 0, finished: false };
           return fbDb.collection('vrooms').doc(vroomCode).update(f); }""")
         pg.wait_for_function("()=>document.querySelectorAll('.vroom-row').length === 20", timeout=15000)
         pg.wait_for_timeout(500)
-        lob = pg.evaluate("""()=>({ ready: Math.round(document.querySelector('.vroom-readyup-btn').getBoundingClientRect().top + scrollY),
+        # Build 323: Ready up is the bar's pill now, fixed to the bottom of
+        # the screen, so it is on the first screen at any size - measured
+        # where it is drawn rather than where a column button would be.
+        lob = pg.evaluate("""()=>({ ready: Math.round(document.getElementById('bottomtab-start').getBoundingClientRect().bottom),
           vh: innerHeight, hs: document.documentElement.scrollWidth - innerWidth,
           dots: document.querySelectorAll('.vroom-ready-badge.is-ready').length })""")
         check("a lobby of twenty keeps Ready up within the first screen and a bit, with nothing off the side",
@@ -1228,7 +1239,7 @@ def main():
         print("\n2. ready-up reaches the other device")
         # The guest readies up; the HOST's screen has to change without
         # anybody touching it. This is the reported bug.
-        tap(guest, ".vroom-readyup-btn", "the guest's ready-up button")
+        tap(guest, READY, "the guest's ready-up button")
         host.wait_for_timeout(600)
         seen = host.evaluate("""()=>{
           const rows=[...document.querySelectorAll('.vroom-row')];
@@ -1255,7 +1266,7 @@ def main():
               host.evaluate("()=>!document.querySelector('.vroom-level')"), "none")
 
         print("\n4. everybody starts at the same instant")
-        tap(host, ".vroom-readyup-btn", "the host's ready-up button")
+        tap(host, READY, "the host's ready-up button")
         # Both devices install a per-frame recorder BEFORE the countdown, so
         # the moment each one uncovers its question is measured rather than
         # polled for. Polling from here cannot resolve the difference this
@@ -1684,6 +1695,7 @@ def main():
             badges: cards.filter(c => !!c.querySelector('.pick-badge')).length,
             search: !!document.querySelector('.searchwrap input'),
             tabsGone: !tabs || tabs.hidden || tabs.getBoundingClientRect().height === 0,
+            pill: !!document.getElementById('bottomtab-start') && !document.getElementById('bottomtab-start').hidden,
             back: back ? back.textContent : null,
             title: (document.querySelector('.welcomeintro-title')||{}).textContent,
             over: document.documentElement.scrollWidth - window.innerWidth
@@ -1696,9 +1708,16 @@ def main():
         check("they are the real unit cards, badge and search and all",
               got["badges"] == got["units"] and got["search"] is True,
               {"badges": got["badges"], "search": got["search"]})
-        # You are inside a match: Home, Leaderboard, Ranks and Settings
-        # are not places to be from here.
-        check("no bottom tab bar on it", got["tabsGone"] is True, got["tabsGone"])
+        # MOVED in build 323. This asserted no tab bar here ("you are inside
+        # a match: Home, Leaderboard, Ranks and Settings are not places to
+        # be from here"). Madison, 323: "The virtual room match setting
+        # button at the bottom isn't the best, it doesn't give me bottom
+        # tab vibes and looks weird ... It shouldn't be clickable till you
+        # have units selected similar to the start button on the other
+        # tests." The lobby it is reached from has always had the bar, so
+        # the screen now has it too, with the button as the bar's own pill.
+        check("the bottom tab bar is on it, with the button as its pill (moved in 323)",
+              got["tabsGone"] is False and got["pill"] is True, {"tabsGone": got["tabsGone"], "pill": got["pill"]})
         check("and a way back to the lobby",
               "lobby" in (got["back"] or "").lower(), got["back"])
         check("titled as what it is", got["title"] == "Match settings", got["title"])
@@ -1708,7 +1727,7 @@ def main():
         # (build 246 - "for the race lets not add time options"; every
         # question has its own 45 seconds), and Save rather than Create
         # lobby. This asserted both sliders until the decision changed.
-        tap(pg, "#nextbtn", "the next button")
+        tap(pg, "#bottomtab-start", "the bar's Next pill")
         pg.wait_for_timeout(600)
         sheet = pg.evaluate("""()=>{
           const m = document.getElementById('unitoptions-modal');
@@ -1769,7 +1788,7 @@ def main():
                                    timeout=20000)
             tcode = tugA.evaluate("()=>vroomCode")
             try:
-                tugA.wait_for_selector(".vroom-readyup-btn", state="visible", timeout=25000)
+                tugA.wait_for_selector(READY, state="visible", timeout=25000)
                 join_lobby(tugB, tcode)
             except Exception:
                 # Say WHERE it got stuck. "the button never appeared" on
@@ -1782,9 +1801,9 @@ def main():
                 raise
             check("a tug lobby takes a second device", bool(tcode), tcode)
 
-            tap(tugB, ".vroom-readyup-btn", "Bo's ready-up")
+            tap(tugB, READY, "Bo's ready-up")
             tugA.wait_for_timeout(400 + args.latency * 2)
-            tap(tugA, ".vroom-readyup-btn", "Alex's ready-up")
+            tap(tugA, READY, "Alex's ready-up")
             for pg in (tugA, tugB):
                 pg.wait_for_selector(".screen-tug", timeout=25000)
             check("both devices land in the match",
@@ -2001,7 +2020,7 @@ def main():
                                     count:null, game:'race', status:'waiting'});
             }""")
             tugA.wait_for_timeout(700)
-            tap(tugA, "#nextbtn", "the next button")
+            tap(tugA, "#bottomtab-start", "the bar's Next pill")
             tugA.wait_for_timeout(500)
             def visible_sliders(pg):
                 # The SLIDERS themselves, not their sections: plainSlider
@@ -2118,7 +2137,7 @@ def main():
             # old build cannot satisfy: two people ready, nobody host,
             # nothing happens, forever.
             for pg in (lobB, lobC):
-                tap(pg, ".vroom-readyup-btn", "ready-up")
+                tap(pg, READY, "ready-up")
                 pg.wait_for_timeout(300)
             started = True
             try:
