@@ -479,9 +479,21 @@ with sync_playwright() as pw:
     ck("on to the next question", "test.next" in (r.get("next") or []), r.get("next"))
     ck("Nova talks in blips", (r.get("nova") or []).count("nova.blip") >= 2, r.get("nova"))
     r = ev(pg, """async ()=>{ showHome(); await new Promise(z => setTimeout(z, 300)); window.__played.splice(0);
-      try{ showWeekCongrats([{ name: 'Ann', pub: 'a', avatar: 'ninja', pts: 900 }, { name: 'Bo', pub: 'b', avatar: 'ninja', pts: 800 }], lastWeekKey()); }catch(e){ return 'err ' + e.message; }
-      await new Promise(z => setTimeout(z, 200)); return window.__played.splice(0); }""", default=[])
-    ck("last week's winners get the fanfare, not the plain sheet sound", isinstance(r, list) and "lb.winner" in r and "ui.sheet.open" not in r, r)
+      /* build 324: last week's winners are presented by Nova on Home (his
+         weekly recap), not on a Leaderboard card - the fanfare comes as he
+         names first place */
+      let el = null;
+      try{ el = playWeekRecap({ week: lastWeekKey(), optedOut: false, story: { kind: 'plain' }, mentions: [], sheriffNew: false,
+        top: [{ name: 'Ann', pub: 'a', avatar: 'ninja', pts: 900 }, { name: 'Bo', pub: 'b', avatar: 'ninja', pts: 800 }],
+        viewer: { pts: 0, place: 0, inTop: -1, mention: false } }); }catch(e){ return 'err ' + e.message; }
+      await new Promise(z => setTimeout(z, 900));
+      for(let k = 0; k < 8 && el && el.__nova && el.__nova.index < 2; k++){
+        if(el.__nova.typing) el.__nova.advance();
+        el.__nova.advance(); await new Promise(z => setTimeout(z, 250)); }
+      await new Promise(z => setTimeout(z, 200)); const got = window.__played.splice(0);
+      try{ el.__nova.close('skip'); }catch(e){}
+      await new Promise(z => setTimeout(z, 400)); return got; }""", default=[])
+    ck("last week's winner gets the fanfare from Nova, not the plain sheet sound", isinstance(r, list) and "lb.winner" in r and "ui.sheet.open" not in r, r)
     r = ev(pg, """async ()=>{ const wait = ms => new Promise(z => setTimeout(z, ms));
       document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
       theme.muteBanners = false; window.__played.splice(0);

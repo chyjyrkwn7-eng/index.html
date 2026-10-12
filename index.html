@@ -1882,6 +1882,142 @@
   }
   [data-reduce-motion="true"] .nt-bubble, [data-reduce-motion="true"] .nt-prop{ transform:none !important; }
 
+  /* ---- NOVA'S WEEKLY RECAP (build 324) ----
+     His dialogue, with the week on the stage above him: the title, a
+     podium that rises place by place (third, second, then first with its
+     storyline and a burst of light), then the honorable mentions as glass
+     cards, and the date of the next recap. Sized off the stage itself
+     (container units) so it fits whatever room his bubble leaves, from an
+     SE to an iPad Pro. Transform and opacity only; no SVG filters. */
+  .nova-talk.is-weekrecap .nt-sky{
+    background:
+      radial-gradient(120% 60% at 18% 100%, rgba(123,92,224,.34), transparent 62%),
+      radial-gradient(70% 38% at 50% 26%, rgba(255,196,84,.13), transparent 70%),
+      radial-gradient(90% 50% at 90% 0%, rgba(79,160,255,.14), transparent 60%),
+      linear-gradient(180deg, #05070F, #080816 55%, #0E0A22); }
+  .wr{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; padding:.1rem 0 .5rem; }
+  .wr-head{ flex:0 0 auto; text-align:center; opacity:0; transform:translateY(8px);
+    transition:opacity .4s ease, transform .55s cubic-bezier(.25,1.3,.4,1); }
+  .wr.is-in .wr-head{ opacity:1; transform:none; }
+  .wr-eyebrow{ margin:0; font-size:.68rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:#FFD27A; padding-left:.16em; }
+  .wr-title{ margin:.12rem 0 0; font-family:var(--serif); font-size:1.5rem; font-weight:800; line-height:1.1; }
+  .wr-pages{ position:relative; flex:1 1 auto; min-height:0; width:100%; container-type:size; }
+  .wr-page{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    opacity:0; transform:translateY(14px) scale(.97); pointer-events:none;
+    transition:opacity .4s ease, transform .55s cubic-bezier(.25,1.25,.4,1); }
+  .wr-page.is-on{ opacity:1; transform:none; }
+  .wr-page.is-off{ opacity:0; transform:translateY(-12px) scale(.97); transition:opacity .28s ease, transform .34s ease; }
+  /* the podium: second, first, third */
+  .wr-podium{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); align-items:end; gap:.6rem; width:min(100%, 24rem); }
+  .wr-p1{ --wr-c:#FFD34D; } .wr-p2{ --wr-c:#DCE3EC; } .wr-p3{ --wr-c:#E39A62; }
+  .wr-col{ position:relative; display:flex; flex-direction:column; align-items:center; min-width:0; }
+  .wr-col :is(.wr-story, .wr-av, .wr-name, .wr-pts){ opacity:0; transform:translateY(-16px) scale(.85);
+    transition:opacity .35s ease .2s, transform .65s cubic-bezier(.25,1.55,.4,1) .2s; }
+  .wr-col.is-up :is(.wr-story, .wr-av, .wr-name, .wr-pts){ opacity:1; transform:none; }
+  .wr-col.is-up .wr-name{ transition-delay:.3s; } .wr-col.is-up .wr-pts{ transition-delay:.36s; }
+  .wr-col.is-up .wr-story{ transition-delay:.55s; }
+  .wr-block{ position:relative; width:100%; display:flex; justify-content:center; padding-top:.45rem; border-radius:16px 16px 6px 6px;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--wr-c) 40%, rgba(255,255,255,.12)), color-mix(in srgb, var(--wr-c) 12%, rgba(255,255,255,.02)) 72%, rgba(255,255,255,.02));
+    border:1px solid color-mix(in srgb, var(--wr-c) 55%, rgba(255,255,255,.18)); border-bottom-color:rgba(255,255,255,.06);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.38), inset 0 -18px 30px rgba(0,0,0,.18), 0 14px 32px rgba(0,0,0,.35);
+    transform-origin:50% 100%; transform:scaleY(.1); opacity:.32;
+    transition:transform .7s cubic-bezier(.2,1.25,.35,1), opacity .3s ease; }
+  .wr-col.is-up .wr-block{ transform:none; opacity:1; }
+  .wr-block b{ font-family:var(--serif); font-size:1.7rem; font-weight:800; line-height:1; color:var(--wr-c); opacity:0; transition:opacity .3s ease .45s; }
+  .wr-col.is-up .wr-block b{ opacity:1; }
+  .wr-p1 .wr-block{ height:min(6.6rem, 30cqh); } .wr-p2 .wr-block{ height:min(4.8rem, 22cqh); } .wr-p3 .wr-block{ height:min(3.6rem, 16cqh); }
+  .wr-av{ position:relative; display:block; width:min(4.4rem, 20cqh); aspect-ratio:1; margin-bottom:.35rem; border-radius:50%;
+    background:radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--wr-c) 32%, transparent), rgba(255,255,255,.04) 72%), rgba(14,16,30,.85);
+    border:2px solid color-mix(in srgb, var(--wr-c) 78%, transparent);
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--wr-c) 14%, transparent), 0 10px 24px rgba(0,0,0,.45); }
+  .wr-av > svg{ position:absolute; inset:9%; width:82%; height:82%; display:block; }
+  .wr-p1 .wr-av{ width:min(5.6rem, 25cqh); }
+  .wr-col.is-me .wr-av{ box-shadow:0 0 0 3px #fff, 0 0 0 7px color-mix(in srgb, var(--wr-c) 30%, transparent), 0 10px 24px rgba(0,0,0,.45); }
+  .wr-you{ position:absolute; left:50%; bottom:-.55rem; transform:translateX(-50%); padding:.1rem .45rem; border-radius:999px;
+    font-size:.58rem; font-weight:900; letter-spacing:.1em; text-transform:uppercase; color:#12151A; background:#fff; white-space:nowrap; }
+  .wr-name{ margin:.2rem 0 0; max-width:100%; font-size:.92rem; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wr-pts{ margin:.06rem 0 .4rem; font-size:.76rem; font-weight:700; color:rgba(243,245,247,.7); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .wr-story{ margin:0 0 .4rem; padding:.22rem .62rem; border-radius:999px; font-size:.6rem; font-weight:900; letter-spacing:.12em;
+    text-transform:uppercase; white-space:nowrap; color:#241A04; background:linear-gradient(180deg, #FFEBB0, #FFC93D);
+    box-shadow:0 4px 14px rgba(255,201,61,.32), inset 0 1px 0 rgba(255,255,255,.7); }
+  .wr-glow{ position:absolute; z-index:-1; left:50%; top:-12%; width:15rem; height:15rem; margin-left:-7.5rem; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle, rgba(255,220,120,.42), rgba(255,170,60,.13) 40%, transparent 68%);
+    opacity:0; transform:scale(.4); transition:opacity .7s ease .15s, transform 1.1s cubic-bezier(.2,1,.3,1) .15s; }
+  .wr-p1.is-up .wr-glow{ opacity:1; transform:none; }
+  .wr-spark{ position:absolute; left:50%; top:50%; width:.5rem; height:.5rem; margin:-.25rem 0 0 -.25rem; background:#FFE7A3; opacity:0;
+    clip-path:polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); pointer-events:none;
+    --a:calc(var(--k) * 60deg + 20deg); }
+  .wr-p1.is-up .wr-spark{ animation:wr-spark 1.1s cubic-bezier(.2,.8,.3,1) calc(.5s + var(--k) * 40ms) both; }
+  @keyframes wr-spark{
+    0%{ opacity:0; transform:rotate(var(--a)) translateY(0) scale(.3); }
+    25%{ opacity:1; }
+    100%{ opacity:0; transform:rotate(var(--a)) translateY(-4.2rem) scale(1.1); } }
+  /* the honorable mentions */
+  .wr-sub{ margin:0 0 .6rem; font-size:.7rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:rgba(243,245,247,.62); padding-left:.16em; }
+  .wr-mlist{ display:flex; flex-direction:column; gap:.6rem; width:min(100%, 26rem); }
+  .wr-mention{ display:grid; grid-template-columns:auto minmax(0, 1fr) auto; align-items:center; gap:.8rem; padding:.75rem .9rem; border-radius:20px;
+    background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.03) 55%, rgba(0,0,0,.08)), rgba(22,26,44,.72);
+    border:1px solid color-mix(in srgb, var(--wr-m) 38%, rgba(255,255,255,.12));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 12px 30px rgba(0,0,0,.35);
+    opacity:0; transform:translateY(16px) scale(.96); transition:opacity .4s ease, transform .55s cubic-bezier(.25,1.3,.4,1); }
+  .wr-mention.is-in{ opacity:1; transform:none; }
+  .wr-mention.is-me{ border-color:rgba(255,231,168,.75);
+    background:linear-gradient(180deg, rgba(255,226,150,.16), rgba(255,226,150,.04) 55%, rgba(0,0,0,.06)), rgba(30,28,40,.78); }
+  .wr-micon{ width:2.6rem; height:2.6rem; display:grid; place-items:center; border-radius:50%; color:var(--wr-m);
+    background:color-mix(in srgb, var(--wr-m) 18%, transparent); border:1px solid color-mix(in srgb, var(--wr-m) 48%, transparent); }
+  .wr-micon svg{ width:1.35rem; height:1.35rem; display:block; }
+  .wr-mtext{ min-width:0; }
+  .wr-mcat{ margin:0; font-size:.62rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--wr-m); }
+  .wr-mname{ margin:.1rem 0 0; font-size:1.04rem; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wr-mval{ margin:.04rem 0 0; font-size:.8rem; font-weight:700; color:rgba(243,245,247,.72); font-variant-numeric:tabular-nums; }
+  .wr-mav{ position:relative; display:block; width:3.3rem; height:3.3rem; }
+  .wr-mav > svg{ width:100%; height:100%; display:block; }
+  /* a viewer who hides from the rankings: their own week */
+  .wr-mecard{ display:flex; align-items:center; gap:1rem; width:min(100%, 22rem); padding:1rem 1.1rem; border-radius:22px;
+    background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.03) 55%, rgba(0,0,0,.08)), rgba(22,26,44,.72);
+    border:1px solid rgba(255,255,255,.14); box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 12px 30px rgba(0,0,0,.35);
+    transition:border-color .4s ease; }
+  .wr-mecard.is-hi{ border-color:rgba(255,231,168,.6); }
+  .wr-meav{ width:4.4rem; height:4.4rem; flex:0 0 auto; } .wr-meav svg{ width:100%; height:100%; display:block; }
+  .wr-mename{ margin:0; font-size:1.2rem; font-weight:800; }
+  .wr-meline{ margin:.15rem 0 0; font-size:.88rem; font-weight:700; color:rgba(243,245,247,.75); }
+  .wr-next{ flex:0 0 auto; margin:.5rem 0 0; font-size:.66rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
+    color:rgba(255,210,122,.85); opacity:0; transform:translateY(6px); transition:opacity .4s ease, transform .5s ease; }
+  .wr-next.is-in{ opacity:1; transform:none; }
+  /* a short stage (an SE, a phone on its side) */
+  @container (max-height:13rem){
+    .wr-story{ margin-bottom:.2rem; font-size:.54rem; padding:.14rem .5rem; }
+    .wr-name{ font-size:.8rem; } .wr-pts{ font-size:.68rem; margin-bottom:.2rem; }
+    .wr-block b{ font-size:1.2rem; } .wr-block{ padding-top:.25rem; }
+    .wr-mention{ padding:.45rem .7rem; gap:.6rem; border-radius:16px; } .wr-mlist{ gap:.4rem; }
+    .wr-micon{ width:2rem; height:2rem; } .wr-micon svg{ width:1.05rem; height:1.05rem; }
+    .wr-mav{ width:2.5rem; height:2.5rem; } .wr-mname{ font-size:.92rem; } .wr-mval{ font-size:.72rem; }
+    .wr-sub{ margin-bottom:.3rem; }
+  }
+  @media (max-height:44rem){
+    .wr-title{ font-size:1.2rem; } .wr-eyebrow{ font-size:.6rem; } .wr-next{ margin-top:.25rem; font-size:.58rem; }
+  }
+  @media (min-width:40rem){
+    .wr-title{ font-size:2.1rem; } .wr-eyebrow{ font-size:.8rem; } .wr-sub{ font-size:.82rem; margin-bottom:.9rem; }
+    .wr-podium{ width:min(100%, 36rem); gap:1.1rem; }
+    .wr-av{ width:min(7rem, 21cqh); } .wr-p1 .wr-av{ width:min(9rem, 26cqh); }
+    .wr-p1 .wr-block{ height:min(10rem, 30cqh); } .wr-p2 .wr-block{ height:min(7.4rem, 22cqh); } .wr-p3 .wr-block{ height:min(5.6rem, 16cqh); }
+    .wr-block{ border-radius:22px 22px 8px 8px; } .wr-block b{ font-size:2.6rem; }
+    .wr-name{ font-size:1.25rem; } .wr-pts{ font-size:1rem; } .wr-story{ font-size:.74rem; padding:.3rem .8rem; }
+    .wr-you{ font-size:.7rem; }
+    .wr-glow{ width:24rem; height:24rem; margin-left:-12rem; }
+    .wr-mlist{ width:min(100%, 34rem); gap:.9rem; }
+    .wr-mention{ padding:1rem 1.2rem; gap:1.1rem; border-radius:24px; }
+    .wr-micon{ width:3.4rem; height:3.4rem; } .wr-micon svg{ width:1.8rem; height:1.8rem; }
+    .wr-mcat{ font-size:.76rem; } .wr-mname{ font-size:1.35rem; } .wr-mval{ font-size:1rem; }
+    .wr-mav{ width:4.6rem; height:4.6rem; }
+    .wr-mecard{ width:min(100%, 30rem); padding:1.3rem 1.5rem; } .wr-meav{ width:6rem; height:6rem; }
+    .wr-mename{ font-size:1.5rem; } .wr-meline{ font-size:1.05rem; }
+    .wr-next{ font-size:.8rem; }
+  }
+  .wr.is-still *, .wr.is-still{ transition:none !important; animation:none !important; }
+  .wr.is-still .wr-spark{ display:none; }
+
   /* ---- NOVA NARRATES THE TOOLTIPS (build 320) ----
      "the person will be narrating the tool tips". Every tour bubble is
      his: his face in a small glass circle on its left, his name over the
@@ -9652,23 +9788,8 @@
   .lw-podium-block{ margin-top:.25rem; width:100%; display:grid; place-items:center; border-radius:8px 8px 3px 3px;
     font-weight:900; font-size:.9rem; color:#12151A; background:linear-gradient(180deg, var(--pc), color-mix(in srgb, var(--pc) 60%, #000)); }
   .lw-place-1 .lw-podium-block{ height:2.1rem; } .lw-place-2 .lw-podium-block{ height:1.5rem; } .lw-place-3 .lw-podium-block{ height:1.1rem; }
-  /* Last week's top 3, congratulated (build 289). The podium is the one
-     on This Week, at a size that suits a card of its own. */
-  .week-congrats{ text-align:center; max-width:24rem; }
-  .week-congrats-kicker{ margin:0; font-size:.62rem; font-weight:800; letter-spacing:.18em; text-transform:uppercase; color:#FFD34D; }
-  .week-congrats-title{ margin:.3rem 0 .9rem; font-family:var(--serif); font-size:1.4rem; font-weight:700; line-height:1.2; color:#F3F5F7; }
-  .week-congrats .lw-podium{ margin:0 0 .9rem; padding:1rem .8rem .9rem; }
-  .week-congrats .lw-podium-head{ display:none; }
-  .week-congrats .lw-podium-av{ width:3.2rem; height:3.2rem; }
-  .week-congrats .lw-place-1 .lw-podium-av{ width:4.1rem; height:4.1rem; animation:week-congrats-glow 2.4s ease-in-out infinite; }
-  .week-congrats .lw-podium-name{ font-size:.86rem; }
-  .week-congrats .lw-place-1 .lw-podium-block{ height:2.6rem; } .week-congrats .lw-place-2 .lw-podium-block{ height:1.9rem; } .week-congrats .lw-place-3 .lw-podium-block{ height:1.4rem; }
-  @keyframes week-congrats-glow{
-    0%, 100%{ box-shadow:0 0 0 2.5px var(--pc), 0 0 14px color-mix(in srgb, var(--pc) 45%, transparent); }
-    50%{ box-shadow:0 0 0 2.5px var(--pc), 0 0 26px color-mix(in srgb, var(--pc) 75%, transparent); }
-  }
-  .week-congrats-line{ margin:0 0 .3rem; font-size:.92rem; line-height:1.4; color:var(--ink); font-weight:600; }
-  .week-congrats-sub{ margin:0; font-size:.78rem; color:var(--soft); }
+  /* (build 289's card congratulating last week's top 3 is gone: Nova's
+     weekly recap on Home presents them now - build 324, .wr) */
   .daily-alert.is-progress{ display:flex; align-items:center; gap:.7rem; text-align:left; border-left:3px solid var(--theme-c1); }
   .daily-alert-face{ width:2.2rem; height:2.2rem; border-radius:50%; background:rgba(0,0,0,.25); display:grid; place-items:center; }
   .daily-alert-face svg{ width:100%; height:100%; }
@@ -43116,9 +43237,19 @@ const CHARACTER_FEATS = {
      maybe make Poseidon?" Counted by settleWeeklyWin() off the same
      observed weekly rank Zeus is, and seeded from weeklyWins, since a
      week won is a week on the podium. */
-  weektop3x3: { label: "Finish in the top 3 of the weekly XP board 3 times",
-                done: () => (store.weeklyTop3 || 0) >= 3,
-                have: () => (store.weeklyTop3 || 0), need: 3 },
+  /* AN HONORABLE MENTION SINCE BUILD 324: "The sheriff award is about
+     ranking top 3 three times. Let's make where you get it by getting a
+     weekly honorable mention." Nova names one or two every Tuesday in his
+     recap on Home (weekRecapMentions), and the week he names you is
+     recorded in store.mentionWeeks when you see it (awardWeeklyMention).
+     KEPT, NEVER TAKEN BACK: anybody who reached three podium finishes
+     under the old rule still holds him - weeklyTop3 is no longer counted
+     (settleWeeklyWin), so that clause only ever covers what was already
+     earned. The key stays `weektop3x3`; it is only a name. */
+  weektop3x3: { label: "Get one of Nova’s weekly honorable mentions",
+                done: () => (Array.isArray(store.mentionWeeks) && store.mentionWeeks.length >= 1) || (store.weeklyTop3 || 0) >= 3,
+                have: () => ((Array.isArray(store.mentionWeeks) && store.mentionWeeks.length >= 1) || (store.weeklyTop3 || 0) >= 3 ? 1 : 0), need: 1,
+                note: "Every Tuesday Nova recaps last week on Home and names one or two honorable mentions - the most hundos, the most tests, the daily question and more." },
   /* Reads the flares themselves rather than a flag set when the third
      is found. One source of truth, so a person who somehow arrives at
      three found without passing through foundMysteryFlare - a cloud
@@ -49901,6 +50032,9 @@ const STORE_KEY = "class26e.drill.v1";
    opens by simply asking whether the app finished booting. */
 const ROW_LAZY_FIELDS = ["correct", "level", "badges", "mystery",
                          "hundos", "week", "weekPoints", "rankFloor"];
+/* Build 324: the weekly blocks Nova's recap reads change with every test,
+   and nobody is watching them live - they ride with the next push. */
+ROW_LAZY_FIELDS.push("wk", "pwk");
 /* Long enough to collapse a whole drill into one or two writes, short
    enough that a board somebody is watching is never stale for long. */
 const ROW_SCORE_PUSH_MS = 90 * 1000;
@@ -50044,6 +50178,9 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               seenModeSelectTour: false, seenUnitSelectTour: false,
               pendingSupernovaCutscene: false, supernovaAchieved: false,
               weekKey: "", weekPoints: 0, prevWeekKey: "", prevWeekPoints: 0,
+              /* build 324: the week's counters for Nova's recap, and the
+                 weeks Nova gave this account an honorable mention */
+              weekStats: null, prevWeekStats: null, mentionWeeks: [],
               pendingBadgeUnlocks: [],
               pendingCharUnlocks: [],
               tourRev: 0,
@@ -50462,6 +50599,14 @@ function applyLoadedData(got){
      until its first rollover. */
   store.prevWeekKey = typeof got.prevWeekKey === "string" ? got.prevWeekKey : "";
   store.prevWeekPoints = typeof got.prevWeekPoints === "number" ? got.prevWeekPoints : 0;
+  /* Build 324, Nova's weekly recap. Null until this build first rolls the
+     week, which seeds both blocks from the history (rollWeekStats) - an
+     existing account starts with what it has done, never with zeros it
+     did not earn. mentionWeeks: the weeks Nova named this account (the
+     Sheriff's challenge); none for everybody until he does. */
+  store.weekStats = cleanWeekStats(got.weekStats);
+  store.prevWeekStats = cleanWeekStats(got.prevWeekStats);
+  store.mentionWeeks = Array.isArray(got.mentionWeeks) ? got.mentionWeeks.filter(x => typeof x === "string").slice(-60) : [];
   store.supernovaAchieved = typeof got.supernovaAchieved === "boolean"
     ? got.supernovaAchieved : false;
   /* Same migration pattern as seenModeSelectTour/seenUnitSelectTour
@@ -51888,6 +52033,7 @@ function wipeLocalProgressAndSettings(){
   store.bigTest450Passed = false;
   store.bigTest500Passed = false;
   store.bestTestStreak = 0;
+  store.weekStats = null; store.prevWeekStats = null; store.mentionWeeks = [];   /* build 324 */
   store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.retakenQuestions = 0; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
   store.unlocksShown = { chars: [], banners: [], fx: [] };
   store.seenUnlocks = null;
@@ -52169,6 +52315,13 @@ function buildLeaderboardRow(){
         /* Last week's, so the board can show last week's top three. */
         prevWeek: store.prevWeekKey || "",
         prevWeekPoints: store.prevWeekPoints || 0,
+        /* Build 324: this week's and last week's numbers for Nova's
+           Tuesday recap (weekBlockOf - tests, hundos, daily questions,
+           study time, XP by day). Each carries its week; an older build
+           publishes neither and is simply left out of the honorable
+           mentions until it updates. Nothing here is the sync code. */
+        wk: weekBlockOf(store.weekStats),
+        pwk: weekBlockOf(store.prevWeekStats),
         /* THE FRIENDS FIELDS, in MY OWN row and nobody else's - see
            "FRIENDS" above. `fcode` is the handle somebody types to find
            me; `freq` is who I have asked; `facc` is who I have said yes
@@ -53074,6 +53227,9 @@ function mergeLeavingAccount(src, note){
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
   });
+  /* Nova's honorable mentions (build 324): a week named on either is kept */
+  { const a = Array.isArray(store.mentionWeeks) ? store.mentionWeeks : [];
+    store.mentionWeeks = a.concat((Array.isArray(src.mentionWeeks) ? src.mentionWeeks : []).filter(x => typeof x === "string" && a.indexOf(x) < 0)).slice(-60); }
   ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved"]
     .forEach(k => { if(src[k] === true) store[k] = true; });
   if(src.mysteryColorsFound && store.mysteryColorsFound){
@@ -53473,6 +53629,15 @@ function mergeSameAccount(dst, src){
   if(src.mysteryColorsFound && typeof src.mysteryColorsFound === "object") orMap("mysteryColorsFound");
   /* this week's board: only where both copies are on the same week */
   if(src.weekKey && src.weekKey === dst.weekKey) maxInto(dst, "weekPoints", src.weekPoints);
+  /* Nova's recap (build 324): the week's counters, the higher of each on
+     the same week; the mentions as a union */
+  unionArr("mentionWeeks", 60);
+  ["weekStats", "prevWeekStats"].forEach(k => {
+    if(!src[k]) return;
+    const before = JSON.stringify(dst[k] || null);
+    dst[k] = mergeWeekStats(dst[k], src[k]);
+    if(JSON.stringify(dst[k] || null) !== before) res.gained = true;
+  });
   return res;
 }
 
@@ -56836,12 +57001,17 @@ function awardXp(n){
   store.lifetime.points += n;
   rollWeek();
   store.weekPoints = (store.weekPoints || 0) + n;
+  /* and which day it came in, for Nova's recap (build 324) */
+  weekStatsAddXp(n);
 }
 /* THE WEEK ROLLS OVER IN ONE PLACE, and it keeps what it rolls off -
    last week's total and which week it was - instead of throwing it away,
    so "last week's top three" has something to be read from. */
 function rollWeek(){
   const wk = weekKeyNow();
+  /* the week's counters roll with it (build 324) - before weekPoints
+     moves, so the new week's block can keep last week's total as `b` */
+  try{ rollWeekStats(); }catch(e){}
   if(store.weekKey === wk) return;
   if(store.weekKey){ store.prevWeekKey = store.weekKey; store.prevWeekPoints = store.weekPoints || 0; }
   store.weekKey = wk; store.weekPoints = 0;
@@ -56850,6 +57020,164 @@ function lastWeekKey(){
   const p = weekKeyNow().split("-").map(Number);
   const d = new Date(p[0], p[1] - 1, p[2] - 7);
   return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+}
+/* ---- THE WEEK IN NUMBERS, FOR NOVA'S RECAP (build 324) ----
+   "Every Tuesday we need a weekly recap from nova instructor on screen
+   ... instead of just the top 3, it will also do a weekly improvement?
+   Maybe some cool stuff talking about whoever got the most hundos, or
+   whoever took the most test or who got the daily question right the
+   most times? ... I can talk about a comeback if someone did a lot last
+   second to take first place".
+   The row carried one weekly number (weekPoints) and last week's
+   (prevWeekPoints), which is enough for the top three and nothing else.
+   So the account keeps this week's counters on `store.weekStats` and the
+   last finished week's on `store.prevWeekStats`, and its OWN rankings row
+   publishes both as compact blocks, `wk` and `pwk`, each keyed to its
+   week - the same "a number without its week cannot be expired" rule as
+   week/weekPoints:
+     k  the week (its Monday)        x  XP that week
+     t  tests finished               h  hundos (whole units at 100%)
+     d  daily questions right        m  minutes studied (the study log)
+     s  longest run of study days    b  XP the week before (improvement)
+     p  XP per day, Monday first (the comeback: who led on Friday night)
+   A field this account cannot vouch for is null rather than 0 - a block
+   seeded on the update (below) knows its tests and study time from the
+   history but not its daily questions or which day the XP came in, and a
+   null is never read as a zero by the recap.
+   On Tuesday the row has rolled, so last week is `pwk`; a row that has
+   not rolled yet still carries it as `wk`. Either is read (weekBlockOfEntry). */
+function weekStatsFresh(k, b){
+  return { k: k, t: 0, h: 0, d: 0, p: [0, 0, 0, 0, 0, 0, 0], b: b };
+}
+/* XP this account earned in week `k`, from the two totals it keeps; null
+   when it cannot say (an account that never rolled over). */
+function storePointsForWeek(k){
+  if(store.weekKey === k) return Number(store.weekPoints) || 0;
+  if(store.prevWeekKey === k) return Number(store.prevWeekPoints) || 0;
+  if(store.weekKey && store.weekKey > k && store.prevWeekKey && store.prevWeekKey < k) return 0;
+  return null;
+}
+function weekKeyBefore(k){
+  const p = String(k || "").split("-").map(Number);
+  const d = new Date(p[0], p[1] - 1, p[2] - 7);
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+}
+function weekDayKeys(k){
+  const p = String(k || "").split("-").map(Number), out = [];
+  for(let i = 0; i < 7; i++) out.push(dayKey(new Date(p[0], p[1] - 1, p[2] + i)));
+  return out;
+}
+/* The tests and hundos of week `k` read back off the test history - only
+   for the block made on the update, since nothing counted them before. */
+function weekStatsFromHistory(k){
+  const days = weekDayKeys(k);
+  let t = 0, h = 0;
+  (store.testHistory || []).forEach(r => {
+    if(!r || !r.playedAt || days.indexOf(dayKey(new Date(r.playedAt))) < 0) return;
+    t++;
+    if(r.pct === 100 && !r.part) h += Math.max(1, (r.units || []).length);
+  });
+  return { t, h };
+}
+function rollWeekStats(){
+  const wk = weekKeyNow();
+  const ws = store.weekStats;
+  if(ws && ws.k === wk) return;
+  if(ws && ws.k){
+    store.prevWeekStats = ws;
+    store.weekStats = weekStatsFresh(wk, storePointsForWeek(weekKeyBefore(wk)));
+    return;
+  }
+  /* FIRST RUN OF THIS BUILD: both weeks seeded from what is on record.
+     This week's XP so far goes on Monday while it is still a weekday - the
+     comeback only ever asks how much was in by Friday night, which that
+     answers exactly; seeded at the weekend it cannot, so p is null. */
+  const day = (new Date().getDay() + 6) % 7;
+  const cur = weekStatsFresh(wk, storePointsForWeek(weekKeyBefore(wk)));
+  const hc = weekStatsFromHistory(wk);
+  cur.t = hc.t; cur.h = hc.h; cur.d = null;
+  if(day <= 4) cur.p[0] = weekPointsOf(store); else cur.p = null;
+  cur.seeded = 1;
+  store.weekStats = cur;
+  if(!store.prevWeekStats || store.prevWeekStats.k !== weekKeyBefore(wk)){
+    const lw = weekKeyBefore(wk), hp = weekStatsFromHistory(lw);
+    store.prevWeekStats = { k: lw, t: hp.t, h: hp.h, d: null, p: null, b: null, seeded: 1 };
+  }
+}
+function weekStatsNow(){
+  rollWeek();
+  return store.weekStats;
+}
+function weekStatsAdd(field, n){
+  try{
+    const ws = weekStatsNow();
+    if(!ws || !(n > 0)) return;
+    /* a count seeded as unknown starts from here, and the block stays
+       marked partial for the rest of this week (seeded) */
+    ws[field] = (typeof ws[field] === "number" ? ws[field] : 0) + n;
+  }catch(e){}
+}
+function weekStatsAddXp(n){
+  try{
+    const ws = weekStatsNow();
+    if(!ws || !(n > 0) || !Array.isArray(ws.p)) return;
+    const day = (new Date().getDay() + 6) % 7;
+    ws.p[day] = (Number(ws.p[day]) || 0) + n;
+  }catch(e){}
+}
+function studyMinutesInWeek(k){
+  const log = store.studyLog || {};
+  let ms = 0;
+  weekDayKeys(k).forEach(d => { ms += Number(log[d]) || 0; });
+  return Math.round(ms / 60000);
+}
+/* the longest run of consecutive days with a minute or more of study
+   time, inside the week */
+function studyRunInWeek(k){
+  const log = store.studyLog || {};
+  let best = 0, run = 0;
+  weekDayKeys(k).forEach(d => { if((Number(log[d]) || 0) >= 60000){ run++; best = Math.max(best, run); } else run = 0; });
+  return best;
+}
+/* The block a row publishes for one week. A seeded block's daily count is
+   null for the whole week (it missed the days before the update). */
+function weekBlockOf(ws){
+  if(!ws || typeof ws.k !== "string" || !ws.k) return null;
+  const x = storePointsForWeek(ws.k);
+  const num = v => (typeof v === "number" && isFinite(v) ? Math.max(0, Math.round(v)) : null);
+  return { k: ws.k, x: x == null ? null : Math.round(x), t: num(ws.t), h: num(ws.h),
+    d: ws.seeded ? null : num(ws.d), m: studyMinutesInWeek(ws.k), s: studyRunInWeek(ws.k),
+    p: Array.isArray(ws.p) && ws.p.length === 7 ? ws.p.map(v => Math.max(0, Math.round(Number(v) || 0))) : null,
+    b: num(ws.b) };
+}
+/* Somebody's published block for week `k`, or null. */
+function weekBlockOfEntry(e, k){
+  if(!e) return null;
+  if(e.wk && typeof e.wk === "object" && e.wk.k === k) return e.wk;
+  if(e.pwk && typeof e.pwk === "object" && e.pwk.k === k) return e.pwk;
+  return null;
+}
+/* A loaded block, kept only if it is the right shape (applyLoadedData). */
+function cleanWeekStats(o){
+  if(!o || typeof o !== "object" || typeof o.k !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(o.k)) return null;
+  const n = v => (typeof v === "number" && isFinite(v) ? v : null);
+  const out = { k: o.k, t: n(o.t), h: n(o.h), d: n(o.d), b: n(o.b),
+    p: Array.isArray(o.p) && o.p.length === 7 ? o.p.map(v => Number(v) || 0) : null };
+  if(o.seeded) out.seeded = 1;
+  return out;
+}
+/* Two copies of this account on the same week: the higher of each count
+   (each is counted on whichever device did the thing, and a copy that
+   has seen less is behind, not different). */
+function mergeWeekStats(a, b){
+  const A = cleanWeekStats(a), B = cleanWeekStats(b);
+  if(!A) return B; if(!B) return A;
+  if(A.k !== B.k) return A.k > B.k ? A : B;
+  const mx = (u, v) => (u == null ? v : v == null ? u : Math.max(u, v));
+  const out = { k: A.k, t: mx(A.t, B.t), h: mx(A.h, B.h), d: mx(A.d, B.d), b: mx(A.b, B.b),
+    p: A.p && B.p ? A.p.map((v, i) => Math.max(v, B.p[i] || 0)) : (A.p || B.p) };
+  if(A.seeded && B.seeded) out.seeded = 1;
+  return out;
 }
 /* What somebody's row says about LAST week. Either the row has not
    rolled over yet (its week is last week's) or it has and carries last
@@ -57055,15 +57383,11 @@ function settleWeeklyWin(){
     store.weeklyWins = (store.weeklyWins || 0) + 1;
     store.weekWinWeeks = (Array.isArray(store.weekWinWeeks) ? store.weekWinWeeks : []).filter(w => w !== seen.week).concat([seen.week]).slice(-60);
   }
-  if(rank >= 1 && rank <= 3){
-    const before = store.weeklyTop3 || 0;
-    store.weeklyTop3 = before + 1;
-    /* Announced like the Champion: queued for the next results screen,
-       which is where every other character is handed over. */
-    if(before < 3 && store.weeklyTop3 >= 3){
-      store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== "poseidon").concat(["poseidon"]);
-    }
-  }
+  /* weeklyTop3 (three podium finishes) was the Sheriff's challenge until
+     build 324 and is no longer counted: the Sheriff is an honorable
+     mention in Nova's recap now, and the count stays where it was only so
+     that whoever earned him the old way keeps him (CHARACTER_FEATS
+     weektop3x3). */
   saveStore();
   return won;
 }
@@ -65808,6 +66132,7 @@ function recordTestPlay(elapsedMs, pct){
      got deleted after a day or something". It is still counted
      everywhere else (testStats above, the daily streak, XP). */
   if(runLabel === "Daily question"){ saveStore(); return newBest; }
+  weekStatsAdd("t", 1);   /* this week's tests, for Nova's recap (build 324) */
   store.testHistory.unshift({
     label: testLabelFor(),
     /* The units themselves, so the review list can say what was actually
@@ -81843,6 +82168,9 @@ function showHome(){
          pause a results screen leaves before its unlocks (build 320) */
       : Math.max(HOME_UNLOCK_DELAY_MS, dailyXpFlyEndsAt - Date.now() + RS_UNLOCK_GAP_MS));
     try{ scheduleResumeOffer(); }catch(e){}
+    /* Nova's weekly recap, from Tuesday, once a week - after anything
+       above that is owed (build 324; see maybeShowWeekRecap) */
+    try{ scheduleWeekRecap(); }catch(e){}
   }
 }
 
@@ -96413,6 +96741,7 @@ function summarize(){
        does break it, which is the part that makes it worth holding. */
     store.dailyCorrectStreak = isPerfect ? (store.dailyCorrectStreak || 0) + 1 : 0;
     store.dailyCorrectBest = Math.max(store.dailyCorrectBest || 0, store.dailyCorrectStreak);
+    if(isPerfect) weekStatsAdd("d", 1);   /* Nova's recap (build 324) */
     saveStore();
   }
 
@@ -96535,6 +96864,7 @@ function summarize(){
        would have made the ranking mostly "how many days did you tap the
        ? button". */
     store.lifetime.perfectTests += hundosEarned;
+    weekStatsAdd("h", hundosEarned);   /* Nova's recap (build 324) */
     /* LIGHTS OUT: seeded before this run is added to the history, so it
        is counted once. */
     try{ seedLateHundos312(); if(hundosEarned && isLateHour(Date.now())) store.lateHundos = (Number(store.lateHundos) || 0) + hundosEarned; }catch(e){}
@@ -106207,81 +106537,573 @@ function buildLastWeekPodium(top, entries){
   box.appendChild(stage);
   return box;
 }
-/* ---- LAST WEEK'S TOP 3, CONGRATULATED (build 289) ----
-   "Every next week you can see who was top 3 the week before ... the
-   next time people go leaderboard can you make a little pop up
-   congratulating the top 3 and the winner or something? This would show
-   up even for the top 3 as well. Only shows up once, the first time you
-   open it when the weekly thing is there."
-   The same three the podium on This Week shows (lastWeekTop3), on a card
-   of its own, once per week per device: `class26e.weekcongrats.v1` holds
-   the last week this device was shown. Viewing history, not progress -
-   the same reasoning as class26e.daily.seen - so it is not on `store`
-   and does not sync. It waits for the server's rows (a cached board can
-   be a day stale and name the wrong three), for a tour to finish, and
-   for nothing else to be open, and it marks the week seen only when it
-   actually appears. */
-const WEEK_CONGRATS_KEY = "class26e.weekcongrats.v1";
-const PLACE_WORD = ["first", "second", "third"];
-function weekCongratsWeekLabel(wk){
+/* ---- NOVA'S WEEKLY RECAP (build 324) ----
+   "Every Tuesday we need a weekly recap from nova instructor on screen. Mr
+   nova can also be the guy to congratulate last weeks top 3. But instead
+   of it being on the leaderboard? It will come in on the main menu, and
+   now instead of just the top 3, it will also do a weekly improvement? ...
+   We can call them honorable mentions after the top 3 are presented ...
+   The weekly honorable mentions will be kind of random but kinda not ...
+   Maybe the top 3 can be cooler too, I can talk about a comeback if
+   someone did a lot last second to take first place things of that
+   nature? ... At the end mention how Mr nova will see us next week".
+   It replaces build 289's card on the Leaderboard (the first Leaderboard
+   visit of a week congratulated last week's top 3); that card is gone.
+
+   WHEN: once per person per week, on Home, on the first launch from
+   Tuesday to Sunday (weekRecapDayOk) - Monday is still the week's first
+   day and the recap is a Tuesday moment. Never during a tour, onboarding,
+   a cutscene, the splash, the generating overlay, a badge queue, Home's
+   unlock cards, What's New or Nova's own meeting, an open sheet or chat,
+   or while a rank-up is owed (Home locks to Profile for that): it waits
+   and looks again every second (weekRecapBlocked), and gives up for this
+   visit to Home after a minute. The seen marker is
+   `class26e.weekrecap.v1` in localStorage - viewing history, not
+   progress, so it does not sync (the class26e.daily.seen reasoning) - and
+   holds the last week shown plus, per week, who won and which mentions
+   were shown (the "repeat winner" story and the rotation read it). It is
+   marked the moment the recap appears.
+
+   IT IS NOVA'S DIALOGUE (novaTalk), with his id, `nova-intro` - the same
+   choice novaGoodbye made, so every hold in the app that already waits on
+   him (whatsNewHolds and with it the badge queue and Home's unlock cards,
+   the notices, the invites and banners, the rank-up lock) waits on the
+   recap too, without a list to keep up to date. It carries `is-weekrecap`.
+   Skip ends it; the last line ends on "See you next week".
+
+   WHAT HE SAYS, in order: hello and last week's recap; third, second and
+   first on the This Week board as each rises on the podium, first with a
+   storyline when the numbers support one (weekRecapStory: a comeback, a
+   photo finish, a late surge, back to back, a runaway); then one or two
+   honorable mentions as cards (weekRecapMentions); where you finished, if
+   you were not named; and that he will see everyone next week. When the
+   viewer is on the podium or is a mention, he says so to them.
+
+   WHO IS NAMED: only people with a row on the board, which is exactly the
+   people who chose to show in the rankings (opting out deletes the row).
+   A viewer who opted out gets the recap without the class in it - his
+   hello, their own week, how to turn the rankings back on, and goodbye.
+   Builder L gates the Leaderboard itself on the same switch.
+
+   MUTE BANNERS does not mute it: it is Nova talking, like What's New, not
+   an achievement banner. The Sheriff it can hand over is announced through
+   Home's ordinary unlock card, which Mute banners does mute as always.
+   REDUCE MOTION (the app's or the system's): no typing, no rises, no
+   sparkle - every part is simply there when its line is (novaMotionOff). */
+const WEEK_RECAP_KEY = "class26e.weekrecap.v1";
+const WEEK_RECAP_DELAY_MS = 2600;
+function weekLabelOf(wk){
   const p = String(wk || "").split("-").map(Number);
   if(p.length !== 3 || p.some(isNaN)) return "Last week";
   const d = new Date(p[0], p[1] - 1, p[2]);
   return "Week of " + d.getDate() + " " + d.toLocaleString("en-US", { month: "long" });
 }
-function maybeShowWeekCongrats(panel, getEntries, tries){
-  const n = tries || 0;
-  if(!panel || !document.contains(panel)) return;
-  const lw = lastWeekKey();
-  let seen = null;
-  try{ seen = localStorage.getItem(WEEK_CONGRATS_KEY); }catch(e){}
-  if(seen === lw) return;
-  const busy = document.getElementById("tour-overlay") || document.querySelector(".invite-overlay") ||
-    document.getElementById("splashscreen") || document.getElementById("genprofile-overlay") ||
-    document.getElementById("badge-cutscene") || document.getElementById("supernova-cutscene");
-  const entries = getEntries() || [];
-  const ready = entries.length && (leaderboardRowsFromServer || WEEK_RESULTS_KNOWN[lw]);
-  if(busy || !ready){
-    if(n < 60) setTimeout(() => maybeShowWeekCongrats(panel, getEntries, n + 1), 500);
-    return;
-  }
-  const top = lastWeekTop3(entries);
-  /* A week nobody earned anything in has nobody to congratulate; it is
-     left unmarked, which costs one look at the rows next time. */
-  if(!top.length) return;
-  try{ localStorage.setItem(WEEK_CONGRATS_KEY, lw); }catch(e){}
-  showWeekCongrats(top, lw);
+/* Tuesday to Sunday. Exposed so a gate can ask about any date. */
+function weekRecapDayOk(d){
+  return (d || new Date()).getDay() !== 1;
 }
-function showWeekCongrats(top, wk){
-  const overlay = document.createElement("div");
-  overlay.className = "invite-overlay week-congrats-overlay";
-  const sheet = document.createElement("div");
-  sheet.className = "invite-sheet person-card week-congrats";
-  const kick = document.createElement("p");
-  kick.className = "week-congrats-kicker"; kick.textContent = weekCongratsWeekLabel(wk);
-  const h = document.createElement("h2");
-  h.className = "week-congrats-title"; h.textContent = "Congratulations to last week's top 3";
-  const podium = buildLastWeekPodium(top);
-  podium.classList.add("week-congrats-podium");
-  const mine = top.findIndex(t => t.pub && t.pub === store.publicId);
-  const line = document.createElement("p");
-  line.className = "week-congrats-line";
-  const others = top.slice(1).map(t => t.name);
-  if(mine === 0) line.textContent = "You won the week. Well done.";
-  else if(mine > 0) line.textContent = "You finished " + PLACE_WORD[mine] + " for the week. Well done - and congratulations to " + top[0].name + " on the win.";
-  else line.textContent = top[0].name + " won the week" + (others.length ? ", with " + others.join(" and ") + " close behind." : ".");
-  const sub = document.createElement("p");
-  sub.className = "week-congrats-sub";
-  sub.textContent = "This week's board started fresh on Monday.";
-  const close = document.createElement("button");
-  close.type = "button"; close.className = "next person-sheet-close";
-  close.textContent = "Nice";
-  close.addEventListener("click", () => overlay.remove());
-  sheet.append(kick, h, podium, line, sub, close);
-  overlay.appendChild(sheet);
-  overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
-  overlay.dataset.sndOpen = "lb.winner";   /* last week's winners get the fanfare */
-  mountSheetOverlay(overlay);
+function weekRecapRecord(){
+  try{
+    const raw = localStorage.getItem(WEEK_RECAP_KEY);
+    if(!raw) return null;
+    try{ const o = JSON.parse(raw); if(o && typeof o === "object") return o; }catch(e){}
+    return { wk: String(raw) };
+  }catch(e){ return null; }
+}
+function weekRecapSeen(lw){
+  const r = weekRecapRecord();
+  return !!(r && typeof r.wk === "string" && r.wk >= lw);
+}
+function markWeekRecapSeen(r){
+  try{
+    const prev = weekRecapRecord() || {};
+    const hist = prev.hist && typeof prev.hist === "object" ? prev.hist : {};
+    hist[r.week] = { win: r.top[0] ? r.top[0].pub : "", cats: r.mentions.map(m => m.cat) };
+    Object.keys(hist).sort().slice(0, -6).forEach(k => delete hist[k]);
+    localStorage.setItem(WEEK_RECAP_KEY, JSON.stringify({ wk: r.week, hist }));
+  }catch(e){}
+}
+function weekRecapHash(s){
+  let h = 2166136261;
+  for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function recapFmt(n){ return Math.round(Number(n) || 0).toLocaleString("en-US"); }
+/* "fifth", said the way he would say it; "12th" past the tenth */
+function recapOrdinal(n){
+  const w = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"];
+  if(n >= 1 && n <= 10) return w[n - 1];
+  const s = ["th", "st", "nd", "rd"], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+function recapMinutes(v){
+  const h = Math.floor(v / 60), m = v % 60;
+  if(!h) return m + (m === 1 ? " minute" : " minutes");
+  return h + (h === 1 ? " hour" : " hours") + (m ? " " + m + (m === 1 ? " minute" : " minutes") : "");
+}
+function recapNum(v, cap){
+  return (typeof v === "number" && isFinite(v) && v >= 0) ? Math.min(Math.round(v), cap) : null;
+}
+/* THE POOL OF HONORABLE MENTIONS. `val` reads a published week block
+   (weekBlockOf); `min` is the least that is worth naming, so nobody is
+   ever named for a zero or for next to nothing; `cap` guards against a
+   row nobody should trust. */
+const RECAP_MENTIONS = [
+  { cat: "hundos", title: "Most hundos", color: "#FFD84D", min: 1, cap: 500, val: b => b.h,
+    glyph: "M12 1.8a7.2 7.2 0 1 0 0 14.4 7.2 7.2 0 0 0 0-14.4Zm0 3.1 1.25 2.6 2.85.4-2.06 2 .48 2.84L12 11.4l-2.52 1.34.48-2.84-2.06-2 2.85-.4L12 4.9ZM7.4 15.4 5.8 22l3.3-1.7 2.1 1.6-.7-4.9a8.7 8.7 0 0 1-3.1-1.6Zm9.2 0a8.7 8.7 0 0 1-3.1 1.6l-.7 4.9 2.1-1.6 3.3 1.7-1.6-6.6Z",
+    value: v => v + (v === 1 ? " hundo" : " hundos"),
+    say: (who, v) => "For hundos, " + who + ": " + v + (v === 1 ? " whole unit" : " whole units") + " at 100% in one week." },
+  { cat: "tests", title: "Most tests taken", color: "#5CA8FF", min: 3, cap: 1000, val: b => b.t,
+    glyph: "M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1Zm1 2v2h4V4h-4Zm5.3 6.3-4.8 4.8-2.3-2.3-1.4 1.4 3.7 3.7 6.2-6.2-1.4-1.4Z",
+    value: v => v + " tests",
+    say: (who, v) => "Most tests taken goes to " + who + ", with " + v + " finished." },
+  { cat: "daily", title: "Daily question", color: "#FFB03D", min: 2, cap: 7, val: b => b.d,
+    glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2.2a7.8 7.8 0 1 1 0 15.6 7.8 7.8 0 0 1 0-15.6Zm-.1 3.1c-1.9 0-3.2 1.1-3.3 2.8h2c.1-.7.6-1.1 1.3-1.1.8 0 1.3.5 1.3 1.1 0 .6-.3.9-1.1 1.4-.9.5-1.3 1.1-1.2 2.1v.5h1.9v-.4c0-.6.2-.9 1-1.3.9-.5 1.5-1.2 1.5-2.3 0-1.7-1.4-2.8-3.4-2.8Zm-.1 8.2a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Z",
+    value: v => v + " right",
+    say: (who, v) => "The daily question: " + who + " got it right " + v + " times last week." },
+  { cat: "improve", title: "Most improved", color: "#4ADE80", min: 100, cap: 10000000,
+    val: b => (typeof b.x === "number" && typeof b.b === "number" && b.b > 0) ? b.x - b.b : null,
+    glyph: "M3 17.6 9.2 11.4l3.6 3.6 5.8-5.8V12h2.2V5.4h-6.6v2.2h2.8l-4.2 4.2-3.6-3.6-7.6 7.6L3 17.6Z",
+    value: v => "+" + recapFmt(v) + " XP",
+    say: (who, v) => "Most improved: " + who + ", up " + recapFmt(v) + " XP on the week before." },
+  { cat: "study", title: "Most study time", color: "#B79BFF", min: 30, cap: 10080, val: b => b.m,
+    glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2.2a7.8 7.8 0 1 1 0 15.6 7.8 7.8 0 0 1 0-15.6ZM11 6.5v6.1l4.6 2.8 1.1-1.8-3.5-2.1V6.5H11Z",
+    value: v => ((Math.floor(v / 60) ? Math.floor(v / 60) + "h " : "") + (v % 60 ? (v % 60) + "m" : "")).trim(),
+    say: (who, v) => "Most time studying: " + who + ", with " + recapMinutes(v) + " on the clock." },
+  { cat: "streak", title: "Longest streak", color: "#FF7A59", min: 3, cap: 7, val: b => b.s,
+    glyph: "M12 2c.6 3.2-1.4 4.9-3 6.6C7.6 10.1 6 12 6 14.8 6 18.3 8.7 22 12.6 22c3.6 0 5.9-2.9 5.9-6.3 0-3-1.5-4.8-2.7-6.4-.2 1.6-.9 2.8-2.1 3.4.5-2.9-.3-5.9-1.7-8.4C11.7 3.9 12 2.9 12 2Zm.2 11.2c1.7 1.5 2.7 2.8 2.7 4.4a2.6 2.6 0 0 1-5.2.1c0-1.5.9-2.6 2.5-4.5Z",
+    value: v => v + " days in a row",
+    say: (who, v) => v >= 7 ? who + " studied every single day last week. Seven for seven." : who + " studied " + v + " days in a row." }
+];
+/* "KIND OF RANDOM BUT KINDA NOT": the pool in an order drawn from the week
+   itself, so every device draws the same one, and one or two mentions a
+   week by the same draw. */
+function weekRecapCatOrder(wk){
+  const cats = RECAP_MENTIONS.map(d => d.cat);
+  let h = weekRecapHash("recap|" + wk);
+  for(let i = cats.length - 1; i > 0; i--){
+    h = Math.imul(h ^ (h >>> 15), 2246822519) >>> 0;
+    const j = h % (i + 1);
+    const t = cats[i]; cats[i] = cats[j]; cats[j] = t;
+  }
+  return cats;
+}
+function weekRecapMentionCount(wk){ return 1 + (weekRecapHash("count|" + wk) & 1); }
+/* The categories a week leads with when everybody's numbers are in: the
+   first of its order that the week before did not lead with. Walked
+   forward from a fixed Monday well before the first recap, so it comes
+   out the same on every device and two weeks in a row never share one. */
+const WEEK_RECAP_EPOCH = "2026-01-05";
+function weekRecapPlanned(wk){
+  const first = k => weekRecapCatOrder(k).slice(0, weekRecapMentionCount(k));
+  if(!(wk > WEEK_RECAP_EPOCH)) return first(wk);
+  const p = WEEK_RECAP_EPOCH.split("-").map(Number);
+  let k = WEEK_RECAP_EPOCH, prev = first(k), guard = 0;
+  while(k < wk && guard++ < 2000){
+    const d = new Date(p[0], p[1] - 1, p[2] + 7 * guard);
+    k = d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+    const avoid = prev;
+    prev = weekRecapCatOrder(k).filter(c => avoid.indexOf(c) < 0).slice(0, weekRecapMentionCount(k));
+  }
+  return prev;
+}
+/* THE ROTATION: never a category two weeks running. The ones the week
+   before leads with (weekRecapPlanned - the same on every device) are
+   skipped, and so is anything this device actually showed then. Then the week's order
+   is walked: a category nobody has data for, or fewer than three people
+   do, or under 60% of last week's active rows do (a "most" the class is
+   not really in), or whose best is under its minimum, is skipped. The top
+   3 are not mentioned (they have had theirs), nobody is named twice, and
+   a tie goes to the one with more XP that week. If the rotation leaves
+   nothing, the categories the week before only WOULD have shown are let
+   back in - never the ones it did show. */
+function weekRecapMentions(list, top, lw){
+  const before = weekKeyBefore(lw);
+  const rec = weekRecapRecord() || {};
+  const shownBefore = ((rec.hist && rec.hist[before]) || {}).cats || [];
+  const preferredBefore = weekRecapPlanned(before);
+  const n = weekRecapMentionCount(lw), order = weekRecapCatOrder(lw);
+  const topPubs = new Set((top || []).map(t => t.pub));
+  const active = (list || []).filter(e => lastWeekPointsOfEntry(e) > 0).length;
+  const pick = avoid => {
+    const out = [], named = new Set();
+    for(const cat of order){
+      if(out.length >= n) break;
+      if(avoid.indexOf(cat) >= 0) continue;
+      const def = RECAP_MENTIONS.find(d => d.cat === cat);
+      const vals = [];
+      (list || []).forEach(e => {
+        const b = weekBlockOfEntry(e, lw);
+        const v = b ? recapNum(def.val(b), def.cap) : null;
+        if(v != null) vals.push({ e, v, x: Number(b.x) || 0 });
+      });
+      if(vals.length < 3 || vals.length < Math.ceil(active * .6)) continue;
+      const cands = vals.filter(r => !topPubs.has(r.e.pub) && !named.has(r.e.pub) && r.v >= def.min)
+        .sort((a, b) => (b.v - a.v) || (b.x - a.x) || String(a.e.firstName || "").localeCompare(String(b.e.firstName || "")));
+      if(!cands.length) continue;
+      const w = cands[0];
+      named.add(w.e.pub);
+      out.push({ cat, pub: w.e.pub, name: String(w.e.firstName || "").trim(), avatar: w.e.avatarChar || "ninja",
+                 value: w.v, me: !!(store.publicId && w.e.pub === store.publicId) });
+    }
+    return out;
+  };
+  const strict = pick(preferredBefore.concat(shownBefore));
+  return strict.length ? strict : pick(shownBefore);
+}
+/* Who won the week before last, for "back to back": what this device saw
+   (its own recap, or the top three it cached that week), or a
+   hand-recorded week. */
+function weekRecapWinnerOf(wk){
+  const rec = weekRecapRecord() || {};
+  if(rec.hist && rec.hist[wk] && rec.hist[wk].win) return rec.hist[wk].win;
+  const c = (weekTopCache()[wk] || [])[0];
+  if(c && c.pub) return c.pub;
+  const k = (WEEK_RESULTS_KNOWN[wk] || [])[0];
+  return k ? (typeof k === "string" ? k : k.pub) : null;
+}
+/* THE STORYLINE FOR FIRST PLACE, from what the rows can prove.
+   comeback - the winner was 4th or lower on Friday night and won it over
+     the weekend. Read off the XP-by-day blocks (p), and only when everyone
+     who finished in the top five has one, so the Friday standings are real.
+   photo    - first by 2% or less (50 XP at the least).
+   overtake - 2nd or 3rd on Friday, a third of the week earned at the
+     weekend, and first by the end.
+   repeat   - the same winner as the week before.
+   runaway  - first with 1.75x second's total, and 1,000 XP clear.
+   plain    - none of those. */
+function weekRecapStory(top, list, lw){
+  if(!top || !top.length) return { kind: "none" };
+  const w = top[0], s = top[1];
+  const pw = typeof w.pts === "number" ? w.pts : null, ps = s && typeof s.pts === "number" ? s.pts : null;
+  let overtake = null;
+  if(pw){
+    const withP = [];
+    (list || []).forEach(e => { const b = weekBlockOfEntry(e, lw); if(b && Array.isArray(b.p) && b.p.length === 7) withP.push({ e, p: b.p }); });
+    const finals = (list || []).map(e => ({ e, pts: lastWeekPointsOfEntry(e) })).filter(x => x.pts > 0).sort((a, b) => b.pts - a.pts).slice(0, 5);
+    const covered = finals.length >= 4 && finals.every(x => withP.some(y => y.e.pub === x.e.pub));
+    const mine = withP.find(y => y.e.pub === w.pub);
+    if(covered && mine){
+      const fri = y => y.p.slice(0, 5).reduce((a, v) => a + (Number(v) || 0), 0);
+      const wf = fri(mine);
+      const ahead = withP.filter(y => y.e.pub !== w.pub && fri(y) > wf).sort((a, b) => fri(b) - fri(a));
+      const place = ahead.length + 1, weekend = pw - wf;
+      if(place >= 4 && weekend > 0) return { kind: "comeback", place, weekend };
+      if(place >= 2 && weekend >= pw / 3) overtake = { kind: "overtake", place, leader: String(ahead[0].e.firstName || "").trim() };
+    }
+  }
+  if(pw && ps != null && pw - ps <= Math.max(50, Math.round(pw * .02))) return { kind: "photo", margin: pw - ps };
+  if(overtake && overtake.leader) return overtake;
+  if(w.pub && weekRecapWinnerOf(weekKeyBefore(lw)) === w.pub) return { kind: "repeat" };
+  if(pw && ps && pw >= ps * 1.75 && pw - ps >= 1000) return { kind: "runaway", margin: pw - ps };
+  return { kind: "plain" };
+}
+const RECAP_STORY_CHIP = { comeback: "Comeback", photo: "Photo finish", overtake: "Late surge", repeat: "Back to back", runaway: "Runaway", plain: "Champion" };
+/* Last week's top three, as the This Week podium works them out
+   (lastWeekTop3) - but only from people with a row NOW: the device's
+   cached top three can name somebody who has since hidden from the
+   rankings, and they are dropped before the three are counted, not after. */
+function weekRecapTop(list){
+  const lw = lastWeekKey();
+  if(WEEK_RESULTS_KNOWN[lw]) return lastWeekTop3(list);
+  const inList = new Set((list || []).map(e => e.pub));
+  const byKey = new Map();
+  const put = (pub, name, avatar, pts) => {
+    if(!(pts > 0) || !pub || !inList.has(pub)) return;
+    const held = byKey.get(pub);
+    if(!held || pts > held.pts) byKey.set(pub, { pub, name, avatar, pts });
+  };
+  (list || []).forEach(e => put(e.pub, e.firstName || "?", e.avatarChar || "ninja", lastWeekPointsOfEntry(e)));
+  (weekTopCache()[lw] || []).forEach(t => put(t.pub, t.name, t.avatar, t.pts));
+  return Array.from(byKey.values()).sort((a, b) => b.pts - a.pts).slice(0, 3);
+}
+/* Everything he will say, worked out once from the rows (the server's,
+   with your own last week from this account). null: nothing to recap. */
+function buildWeekRecap(rowsIn){
+  const lw = lastWeekKey(), me = store.publicId || "";
+  const rows = (rowsIn || []).filter(e => e && e.pub && String(e.firstName || "").trim());
+  const byPub = new Map(rows.map(e => [e.pub, e]));
+  const mine = storePointsForWeek(lw) || 0;
+  const patch = { week: weekKeyNow(), rawWeekPoints: weekPointsOf(store), weekPoints: weekPointsOf(store), prevWeek: lw, prevWeekPoints: mine };
+  const list = rows.map(e => (me && e.pub === me) ? Object.assign({}, e, patch) : e);
+  if(me && store.leaderboardOptIn !== false && !byPub.has(me) && mine > 0){
+    list.push(Object.assign({ pub: me, firstName: store.firstName || "", avatarChar: store.avatarChar || "ninja" }, patch));
+  }
+  const top = weekRecapTop(list).map(t => {
+    const e = list.find(x => x.pub === t.pub) || {};
+    return { pub: t.pub, name: String(e.firstName || t.name || "").trim(), avatar: e.avatarChar || t.avatar || "ninja",
+             pts: typeof t.pts === "number" && t.pts > 0 ? t.pts : null, me: !!(me && t.pub === me) };
+  }).filter(t => t.name);
+  if(!top.length) return null;
+  const mentions = weekRecapMentions(list, top, lw);
+  const story = weekRecapStory(top, list, lw);
+  const inTop = top.findIndex(t => t.me);
+  const place = mine > 0 ? 1 + list.filter(e => e.pub !== me && lastWeekPointsOfEntry(e) > mine).length : 0;
+  return { week: lw, optedOut: false, top, story, mentions,
+    sheriffNew: mentions.some(m => m.me) && isLockedCharacter("poseidon"),
+    viewer: { pts: mine, place, inTop, mention: mentions.some(m => m.me) } };
+}
+function buildWeekRecapOptedOut(){
+  const lw = lastWeekKey();
+  const ws = [store.prevWeekStats, store.weekStats].find(x => x && x.k === lw) || null;
+  return { week: lw, optedOut: true, top: [], story: { kind: "none" }, mentions: [], sheriffNew: false,
+    viewer: { pts: storePointsForWeek(lw) || 0, t: ws && typeof ws.t === "number" ? ws.t : 0, h: ws && typeof ws.h === "number" ? ws.h : 0,
+              place: 0, inTop: -1, mention: false } };
+}
+/* THE SHERIFF (build 324): a week Nova named you. Recorded once per week,
+   when your own mention is said - or when the recap closes, if it was
+   skipped first: skipping the talking never costs anybody a character.
+   Home's ordinary unlock card announces him after the recap. */
+function awardWeeklyMention(wk){
+  if(!wk) return false;
+  const have = Array.isArray(store.mentionWeeks) ? store.mentionWeeks : [];
+  if(have.indexOf(wk) >= 0) return false;
+  store.mentionWeeks = have.concat([wk]).slice(-60);
+  saveStore();
+  return true;
+}
+function recapIcon(glyph){
+  const NS = "http://www.w3.org/2000/svg";
+  const s = document.createElementNS(NS, "svg");
+  s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("aria-hidden", "true");
+  const p = document.createElementNS(NS, "path");
+  p.setAttribute("d", glyph); p.setAttribute("fill", "currentColor"); p.setAttribute("fill-rule", "evenodd");
+  s.appendChild(p);
+  return s;
+}
+function recapAvatar(id, cls){
+  const a = document.createElement("span"); a.className = cls;
+  try{ a.appendChild(buildAvatarCharSVGSafe(id || "ninja")); }catch(e){}
+  return a;
+}
+/* The stage he talks over: the week's title, the podium, the mentions,
+   and the date of the next one. Built once; his lines light it up. */
+function buildWeekRecapStage(r){
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if(cls) n.className = cls; if(text != null) n.textContent = text; return n; };
+  const root = el("div", "wr");
+  const head = el("div", "wr-head");
+  head.append(el("p", "wr-eyebrow", "Weekly recap"), el("h2", "wr-title", weekLabelOf(r.week)));
+  const pagesBox = el("div", "wr-pages");
+  const pages = [], cols = [], mcards = [];
+  if(!r.optedOut){
+    const pg = el("div", "wr-page wr-page-podium"); pg.dataset.page = "podium";
+    const pod = el("div", "wr-podium");
+    /* second, first, third, left to right */
+    [1, 0, 2].forEach(i => {
+      const t = r.top[i];
+      const col = el("div", "wr-col wr-p" + (i + 1) + (t ? "" : " is-empty") + (t && t.me ? " is-me" : ""));
+      if(t){
+        if(i === 0){
+          const glow = el("span", "wr-glow"); glow.setAttribute("aria-hidden", "true");
+          col.appendChild(glow);
+          col.appendChild(el("p", "wr-story", RECAP_STORY_CHIP[r.story.kind] || "Champion"));
+        }
+        const av = recapAvatar(t.avatar, "wr-av");
+        if(i === 0){ for(let k = 0; k < 6; k++){ const sp = el("i", "wr-spark"); sp.style.setProperty("--k", k); av.appendChild(sp); } }
+        if(t.me) av.appendChild(el("b", "wr-you", "You"));
+        col.append(av, el("p", "wr-name", t.name), el("p", "wr-pts", t.pts != null ? recapFmt(t.pts) + " XP" : " "));
+      }
+      const block = el("div", "wr-block");
+      block.appendChild(el("b", null, String(i + 1)));
+      col.appendChild(block);
+      pod.appendChild(col);
+      cols[i] = col;
+    });
+    pg.appendChild(pod);
+    pages.push(pg);
+    if(r.mentions.length){
+      const pm = el("div", "wr-page wr-page-mentions"); pm.dataset.page = "mentions";
+      pm.appendChild(el("p", "wr-sub", r.mentions.length === 1 ? "Honorable mention" : "Honorable mentions"));
+      const ml = el("div", "wr-mlist");
+      r.mentions.forEach(m => {
+        const def = RECAP_MENTIONS.find(d => d.cat === m.cat) || RECAP_MENTIONS[0];
+        const c = el("div", "wr-mention" + (m.me ? " is-me" : ""));
+        c.style.setProperty("--wr-m", def.color);
+        const ic = el("span", "wr-micon"); ic.appendChild(recapIcon(def.glyph));
+        const tx = el("div", "wr-mtext");
+        tx.append(el("p", "wr-mcat", def.title), el("p", "wr-mname", m.name), el("p", "wr-mval", def.value(m.value)));
+        const av = recapAvatar(m.avatar, "wr-mav");
+        if(m.me) av.appendChild(el("b", "wr-you", "You"));
+        c.append(ic, tx, av);
+        ml.appendChild(c);
+        mcards.push(c);
+      });
+      pm.appendChild(ml);
+      pages.push(pm);
+    }
+  } else {
+    const pg = el("div", "wr-page wr-page-me"); pg.dataset.page = "me";
+    const card = el("div", "wr-mecard");
+    card.appendChild(recapAvatar(store.avatarChar || "ninja", "wr-meav"));
+    const tx = el("div", "wr-metext");
+    const v = r.viewer, bits = [];
+    if(v.pts > 0) bits.push(recapFmt(v.pts) + " XP");
+    if(v.t > 0) bits.push(v.t + (v.t === 1 ? " test" : " tests"));
+    if(v.h > 0) bits.push(v.h + (v.h === 1 ? " hundo" : " hundos"));
+    tx.append(el("p", "wr-mename", novaName()), el("p", "wr-meline", bits.length ? bits.join(" · ") : "A quiet week"));
+    card.appendChild(tx);
+    pg.appendChild(card);
+    pages.push(pg);
+  }
+  pages.forEach(p => pagesBox.appendChild(p));
+  const nx = (() => { const p = weekKeyNow().split("-").map(Number); return new Date(p[0], p[1] - 1, p[2] + 8); })();
+  const next = el("p", "wr-next", "Next recap · Tuesday " + nx.getDate() + " " + nx.toLocaleString("en-US", { month: "long" }));
+  root.append(head, pagesBox, next);
+  return { root, pages, cols, mcards, next };
+}
+/* The script. Exposed so a gate can read every line. */
+function weekRecapLines(r){
+  const name = novaName(), still = novaMotionOff();
+  let ui = null;
+  const on = (node, cls) => {
+    if(!node) return;
+    if(still){ node.classList.add(cls); return; }
+    requestAnimationFrame(() => requestAnimationFrame(() => node.classList.add(cls)));
+  };
+  const open = ctx => {
+    if(ui) return;
+    ui = buildWeekRecapStage(r);
+    if(still) ui.root.classList.add("is-still");
+    ctx.stage.appendChild(ui.root);
+    on(ui.root, "is-in");
+  };
+  const page = which => {
+    if(!ui) return;
+    ui.pages.forEach(p => {
+      if(p.dataset.page === which){ p.classList.remove("is-off"); on(p, "is-on"); }
+      else if(p.classList.contains("is-on")){ p.classList.remove("is-on"); p.classList.add("is-off"); }
+    });
+  };
+  const lines = [];
+  if(r.optedOut){
+    const v = r.viewer, bits = [];
+    if(v.t > 0) bits.push(v.t + (v.t === 1 ? " test" : " tests"));
+    if(v.h > 0) bits.push(v.h + (v.h === 1 ? " hundo" : " hundos"));
+    lines.push({ gesture: "wave", text: "Hello, " + name + ". It’s Nova, with my recap of last week.", enter: ctx => { open(ctx); page("me"); } });
+    lines.push({ text: "You’ve chosen not to show in the rankings, so I’ll keep the class’s names to myself." });
+    lines.push({ gesture: "raise", text: v.pts > 0
+        ? "Your week: " + recapFmt(v.pts) + " XP" + (bits.length ? ", " + bits.join(" and ") : "") + ". Good work."
+        : "Last week was a quiet one for you. This week is a fresh start.",
+      enter: () => { const c = ui && ui.root.querySelector(".wr-mecard"); if(c) c.classList.add("is-hi"); } });
+    lines.push({ text: "Turn on “Show me in the rankings” in Settings, and next Tuesday you’ll see who finished on top and who earned my honorable mentions." });
+    lines.push({ gesture: "wave", final: true, text: "I’ll see you next week, " + name + ".", enter: () => on(ui && ui.next, "is-in") });
+    return lines;
+  }
+  const P = t => t.pts != null ? recapFmt(t.pts) + " XP" : "";
+  const withP = t => t.pts != null ? ", with " + P(t) : "";
+  lines.push({ gesture: "wave", text: "Hello, " + name + ". It’s Nova, with my recap of last week. First, the This Week board.",
+    enter: ctx => { open(ctx); page("podium"); } });
+  /* third, then second, then first */
+  for(let i = r.top.length - 1; i >= 0; i--){
+    const t = r.top[i], st = r.story;
+    let text;
+    if(i === 2) text = "In third place: " + t.name + withP(t) + "." + (t.me ? " That’s you, " + name + ". Well done." : "");
+    else if(i === 1) text = "In second: " + t.name + withP(t) + "." + (t.me ? " That’s you, " + name + ". Well done." : "");
+    else {
+      const who = t.me ? "you, " + name : t.name;
+      if(st.kind === "comeback") text = t.me
+        ? "And in first place… you, " + name + "! On Friday night you were " + recapOrdinal(st.place) + " on the board. Then came the weekend: " + recapFmt(st.weekend) + " XP, and the win. What a comeback."
+        : "And in first place… " + t.name + "! On Friday night " + t.name + " was " + recapOrdinal(st.place) + " on the board. Then came the weekend: " + recapFmt(st.weekend) + " XP, and the win. What a comeback.";
+      else if(st.kind === "photo") text = "And in first, by just " + recapFmt(st.margin) + " XP: " + who + withP(t) + ". That one went right down to the wire.";
+      else if(st.kind === "overtake") text = "And in first: " + who + withP(t) + ". " + st.leader + " led going into the weekend, but " + (t.me ? "you" : t.name) + " caught up and took the week.";
+      else if(st.kind === "repeat") text = "And in first place, for the second week running: " + who + withP(t) + ".";
+      else if(st.kind === "runaway") text = "And in first place, by a mile: " + who + withP(t) + ". Nobody else came close.";
+      else text = "And in first place: " + who + withP(t) + ". Congratulations!";
+      if(t.me) text += " Congratulations!";
+      if(st.kind === "plain" && t.me) text = "And in first place: you, " + name + withP(t) + ". Congratulations!";
+    }
+    lines.push({ gesture: i === 0 ? "raise" : null, text,
+      enter: (ctx, instant) => { on(ui && ui.cols[i], "is-up"); if(i === 0 && !still && !instant) playSound("lb.winner"); } });
+  }
+  if(r.mentions.length){
+    lines.push({ gesture: "raise", text: r.mentions.length === 1 ? "Now for this week’s honorable mention." : "Now for my honorable mentions.",
+      enter: () => page("mentions") });
+    r.mentions.forEach((m, k) => {
+      const def = RECAP_MENTIONS.find(d => d.cat === m.cat);
+      let text = def.say(m.name, m.value);
+      if(m.me) text += " That’s you, " + name + "!" + (r.sheriffNew ? " For that, the Sheriff joins your crew." : " Well earned.");
+      lines.push({ text, enter: (ctx, instant) => {
+        on(ui && ui.mcards[k], "is-in");
+        if(!still && !instant) playSound("ui.notice");
+        if(m.me && !r.awarded){ r.awarded = true; awardWeeklyMention(r.week); }
+      } });
+    });
+  }
+  const v = r.viewer;
+  if(v.inTop < 0 && !v.mention && v.place > 0 && v.pts > 0){
+    lines.push({ text: "As for you, " + name + ", you finished " + recapOrdinal(v.place) + " with " + recapFmt(v.pts) + " XP. Let’s see what this week brings." });
+  }
+  lines.push({ gesture: "wave", final: true,
+    text: "That’s last week. This week’s board started fresh on Monday, so it’s anyone’s. I’ll see you all next Tuesday.",
+    enter: () => on(ui && ui.next, "is-in") });
+  return lines;
+}
+let weekRecapTimer = null, weekRecapOn = false;
+function scheduleWeekRecap(ms){
+  clearTimeout(weekRecapTimer);
+  weekRecapTimer = setTimeout(() => maybeShowWeekRecap(0), ms == null ? WEEK_RECAP_DELAY_MS : ms);
+}
+function weekRecapBlocked(){
+  if(document.getElementById("splashscreen") || document.getElementById("tour-overlay") || document.getElementById("genprofile-overlay")) return true;
+  if(document.querySelector(".nova-talk, #intro-pop, #nova-intro, #badge-cutscene, #supernova-cutscene, #void-cutscene, #vroom-cutscene, " +
+    ".rs-spot, .rs-fly, .fl-scene, .ff-scene, .bc-scene, .scene-bridge, #teststart-overlay, .invite-overlay, .chatdock.is-open, #resume-offer")) return true;
+  try{ if(whatsNewHolds()) return true; }catch(e){}
+  try{ if(typeof cutsceneFocusActive === "function" && cutsceneFocusActive()) return true; }catch(e){}
+  /* the badge queue and Home's unlock cards go first: they are about a
+     test just taken, and the recap can wait a beat */
+  if((store.pendingBadgeUnlocks || []).length) return true;
+  try{ if(homeUnlockPlaying || (homeUnlockTimer && homeUnlocksOwed(pendingHomeUnlocks()))) return true; }catch(e){}
+  try{ if(typeof rankUpSceneOwed === "function" && rankUpSceneOwed()) return true; }catch(e){}
+  return false;
+}
+function maybeShowWeekRecap(tries){
+  weekRecapTimer = null;
+  const n = tries || 0;
+  if(weekRecapOn || !store || !store.onboardingComplete) return;
+  if(!stage.querySelector('[data-screen="home"]')) return;
+  if(!weekRecapDayOk()) return;
+  const lw = lastWeekKey();
+  if(weekRecapSeen(lw)) return;
+  const again = () => { if(n < 60) weekRecapTimer = setTimeout(() => maybeShowWeekRecap(n + 1), 1000); };
+  if(weekRecapBlocked()){ again(); return; }
+  let r = null;
+  if(store.leaderboardOptIn === false) r = buildWeekRecapOptedOut();
+  else {
+    /* the server's rows, never a cached board - a cache can be a day stale
+       and name the wrong three (build 289's rule) */
+    const ready = (leaderboardRows && leaderboardRows.length && leaderboardRowsFromServer) || WEEK_RESULTS_KNOWN[lw];
+    if(!ready){ try{ fetchBoardForInvites(); }catch(e){} again(); return; }
+    r = buildWeekRecap(leaderboardRows || []);
+  }
+  /* a week nobody earned anything in: nothing to recap, and left unmarked */
+  if(!r) return;
+  playWeekRecap(r);
+}
+function playWeekRecap(r){
+  if(weekRecapOn) return null;
+  weekRecapOn = true;
+  markWeekRecapSeen(r);
+  let closedBy = null;
+  const el = novaTalk({ id: "nova-intro", label: "Nova’s weekly recap", lines: weekRecapLines(r), finalLabel: "See you next week",
+    onClose: reason => {
+      closedBy = reason;
+      weekRecapOn = false;
+      try{ onNavigate.disconnect(); }catch(e){}
+      /* skipped before his line about you: still yours */
+      if(!r.awarded && r.mentions.some(m => m.me)){ r.awarded = true; awardWeeklyMention(r.week); }
+      popupGapUntil = Date.now() + POPUP_GAP_MS;
+      setTimeout(() => {
+        try{ checkLobbyInvites(); checkFriendRequests(); checkChatInvites(); checkSaveCodeReminder(); }catch(e){}
+        try{ if(stage.querySelector('[data-screen="home"]')) scheduleHomeUnlocks(0); }catch(e){}
+      }, POPUP_GAP_MS + 60);
+    } });
+  el.classList.add("is-weekrecap");
+  el.dataset.week = r.week;
+  /* a screen change takes it with it, the way What's New goes */
+  const onNavigate = new MutationObserver(() => { onNavigate.disconnect(); if(el.__nova && closedBy === null) el.__nova.close("nav"); });
+  onNavigate.observe(stage, { childList: true });
+  el.__recap = r;
+  return el;
 }
 let lbFindMeAt = 0;
 /* ---- BANNERS ON THE BOARD (build 310, NOT SWITCHED ON) ----
@@ -111538,8 +112360,8 @@ function showRankings(defaultBoard){
         text: "Find me jumps to your own row and flashes it. Everybody's numbers here update live \u2014 there is nothing to refresh." }
     ]);
   }
-  /* After the tour, never under it - maybeShowWeekCongrats waits. */
-  setTimeout(() => maybeShowWeekCongrats(panel, () => entries), 700);
+  /* Last week's top 3 are no longer congratulated here (build 289's card):
+     Nova presents them on Home every Tuesday instead - see maybeShowWeekRecap. */
 }
 
 /* ---------- the badge case ----------------------------------------------
