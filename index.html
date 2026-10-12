@@ -23783,6 +23783,36 @@
   [data-layout="modern"] .panel .sync-note-plain.settings-lead{ margin-bottom:.9rem; }
   [data-layout="modern"] .cal-profile-row.settings-actions{ gap:.75rem; }
   [data-layout="modern"] .sect.settings-help-first{ margin-bottom:.75rem; }
+  /* Sound & vibration (build 322): the volume sits under its switch, in
+     the same card, with the same hairline between rows. */
+  [data-layout="modern"] .settings-card > .settings-volume{
+    display:flex; align-items:center; gap:.9rem; padding:.2rem 0 .9rem;
+  }
+  [data-layout="modern"] .settings-card > .settings-volume[hidden]{ display:none; }
+  .settings-volume-label{ flex:0 0 auto; font-size:.9rem; color:var(--soft); }
+  .settings-volume .sliderwrap{ flex:1 1 auto; min-width:0; margin-top:0; }
+  .settings-volume .sliderval{ min-width:2.8rem; }
+  [data-layout="modern"] .settings-card > .settings-volume + label.opt{ border-top:1px solid rgba(255,255,255,.07); }
+  .settings-buildline{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  /* the sound test page (showSoundTest) */
+  .screen-soundtest .snd-bar{ gap:.75rem; margin:.4rem 0 .6rem; }
+  .screen-soundtest .snd-group{ margin-top:1.4rem; }
+  .screen-soundtest .snd-list{ padding:.1rem .4rem; }
+  .snd-row{
+    display:flex; align-items:flex-start; gap:.8rem; width:100%; min-height:44px;
+    padding:.7rem .4rem; text-align:left; background:none; border:none; color:inherit;
+    font:inherit; cursor:pointer; border-radius:12px;
+  }
+  .snd-row + .snd-row{ border-top:1px solid rgba(255,255,255,.07); border-radius:0; }
+  .snd-row.is-playing{ background:rgba(255,255,255,.06); }
+  .snd-play{
+    flex:0 0 auto; width:2.2rem; height:2.2rem; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:.8rem;
+    background:rgba(255,255,255,.08); color:var(--ink);
+  }
+  .snd-text{ display:flex; flex-direction:column; gap:.2rem; min-width:0; }
+  .snd-id{ font-family:var(--mono); font-size:.8rem; color:var(--ink); overflow-wrap:anywhere; }
+  .snd-desc{ font-size:.78rem; line-height:1.35; color:var(--soft); }
 
   /* ---- OVERALL: THREE COLUMNS ----
      Fixed column widths so every row's numbers sit under the header and
@@ -61145,7 +61175,11 @@ let theme = { mode: "dark", accent: "ink", layout: "modern", smoothScroll: true,
               autoFlagMissed: false,
               /* On by default. Somebody who has never opened Settings should
                  see the count - it is the thing the card is for. */
-              showClassDaysLeft: true };
+              showClassDaysLeft: true,
+              /* Sound and vibration (build 322): both OFF until somebody
+                 turns them on - Madison: "option in settings and it's off
+                 by default". soundVolume is 0-1. */
+              soundOn: false, soundVolume: .7, vibrate: false };
 
 /* Pulls the saved theme (if any) into the in-memory `theme` object.
    Call this once at boot, before the first applyTheme(). */
@@ -61170,7 +61204,12 @@ function loadTheme(){
     if(typeof store.theme.muteBanners === "boolean") theme.muteBanners = store.theme.muteBanners;
     if(typeof store.theme.autoFlagMissed === "boolean") theme.autoFlagMissed = store.theme.autoFlagMissed;
     if(typeof store.theme.showClassDaysLeft === "boolean") theme.showClassDaysLeft = store.theme.showClassDaysLeft;
+    if(typeof store.theme.soundOn === "boolean") theme.soundOn = store.theme.soundOn;
+    if(typeof store.theme.soundVolume === "number" && isFinite(store.theme.soundVolume)) theme.soundVolume = Math.max(0, Math.min(1, store.theme.soundVolume));
+    if(typeof store.theme.vibrate === "boolean") theme.vibrate = store.theme.vibrate;
   }
+  /* a change that arrived from another device (sound turned off there) */
+  try{ NovaSound.sync(); }catch(e){}
   /* SWIPE TO ADVANCE, ON FOR EVERYONE ONCE (build 288): "make the swipe
      function on automatically if it's not already." It has defaulted on
      for a long time, but anyone who turned it off - or picked it up off
@@ -61334,9 +61373,1877 @@ function saveTheme(){
                   reduceMotion: theme.reduceMotion,
                   muteBanners: theme.muteBanners,
                   autoFlagMissed: theme.autoFlagMissed,
-                  showClassDaysLeft: theme.showClassDaysLeft };
+                  showClassDaysLeft: theme.showClassDaysLeft,
+                  soundOn: theme.soundOn, soundVolume: theme.soundVolume, vibrate: theme.vibrate };
   saveStore();
 }
+
+/* ======================================================================
+   SOUND AND VIBRATION (build 322, phase 1)
+   ======================================================================
+   Madison: "This will be a setting in settings that will be off by
+   default ... sound effects ... I NEED you to ensure all the sounds and
+   sound effects are unique and make sense. Not sound effects you just
+   find ... Some for opening stuff. Literally just like any other game.
+   ... the main menu has a cool dark kinda offset noise ... each hundo
+   effect to have its own noise ... IF there is any way to put Haptic
+   Touch or a vibration for things that would be awesome too."
+
+   - EVERY SOUND IS SYNTHESISED HERE, IN CODE. No audio files, nothing
+     downloaded or found: SOUND_CATALOGUE maps an id to a small design
+     function that schedules oscillators, FM pairs, filtered noise,
+     plucked strings (Karplus-Strong), vowel formants, a generated
+     reverb and a delay on the Web Audio graph. One identity across the
+     set: D as home, open fifths and ninths for anything good, a minor
+     second or a fall for anything that is not, glassy FM bells for
+     light, filtered air for movement, felt and metal for the badge
+     case. tools/check-sound.py renders every id offline and fails if
+     two of them come out near-identical.
+   - OFF BY DEFAULT, AND FREE WHILE OFF. theme.soundOn / theme.vibrate
+     default false (the behaviour-toggle rule: the theme object, a
+     typeof line in loadTheme, saveTheme). While sound is off no
+     AudioContext exists at all: one is made on the first real gesture
+     after it is turned on (iOS will not start one without a gesture).
+   - ONE AudioContext, a master gain (the volume) into a gentle limiter,
+     and three buses: ui, music (the Home ambience) and cut (cutscenes,
+     hundo effects). A cutscene ducks the ambience under it.
+   - Rapid taps cannot stack into noise: every id has a cooldown and a
+     polyphony cap, and there is a global voice cap (SOUND_MAX_VOICES).
+   - Hidden page: the context is suspended. Back: resumed, and the
+     ambience only if the screen it belongs to (its owner element) is
+     still the one up.
+   - iPhone: Web Audio plays in the "ambient" session, so the ring /
+     silent switch mutes it and the person's own music keeps playing.
+     That is deliberate (navigator.audioSession where it exists).
+   - Vibration: navigator.vibrate patterns per kind of event, behind
+     its own switch, shown only on Android. iOS has no Vibration API and
+     the <input switch> trick fails on a device (see Known quirks in
+     CLAUDE.md) - it is NOT retried here.
+   - API: playSound(id, opts), startAmbience(id, opts), stopAmbience().
+     All no-ops while the setting is off. Phase 1 wires only Settings
+     and the hidden test page (showSoundTest, or a long press on the
+     build line in Settings). */
+const SOUND_DEFAULT_VOLUME = .7;
+const SOUND_MAX_VOICES = 24;
+/* Haptic patterns (ms) per kind of event, Android only. */
+const SOUND_HAPTIC = {
+  tick: 4, tap: 8, select: 12, toggle: 10, swipe: 6,
+  success: [12, 45, 20], error: [30, 40, 30], heavy: [40],
+  celebrate: [16, 40, 16, 40, 50], boom: [60, 30, 25]
+};
+
+function sndHz(n){
+  if(typeof n === "number") return n;
+  const m = /^([A-G])(#|b)?(-?\d)$/.exec(String(n));
+  if(!m) return 440;
+  const idx = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0);
+  return 440 * Math.pow(2, ((Number(m[3]) + 1) * 12 + idx - 69) / 12);
+}
+/* a small seeded generator, so an offline render is the same every time */
+function sndRng(seed){
+  let a = (seed >>> 0) || 1;
+  return () => {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const sndNoiseCache = new WeakMap();
+/* Two seconds of white, pink and brown noise per context, looped from a
+   random point by whoever plays it. */
+function sndNoise(ctx, color){
+  let c = sndNoiseCache.get(ctx);
+  if(!c){ c = {}; sndNoiseCache.set(ctx, c); }
+  if(c[color]) return c[color];
+  const n = Math.round(ctx.sampleRate * 2), buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0), R = sndRng(color === "w" ? 11 : color === "p" ? 23 : 37);
+  let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0, br = 0;
+  for(let i = 0; i < n; i++){
+    const w = R() * 2 - 1;
+    if(color === "p"){
+      b0 = .99886 * b0 + w * .0555179; b1 = .99332 * b1 + w * .0750759; b2 = .969 * b2 + w * .153852;
+      b3 = .8665 * b3 + w * .3104856; b4 = .55 * b4 + w * .5329522; b5 = -.7616 * b5 - w * .016898;
+      d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * .5362) * .11; b6 = w * .115926;
+    } else if(color === "b"){ br = (br + .02 * w) / 1.02; d[i] = br * 3.5; }
+    else d[i] = w;
+  }
+  c[color] = buf;
+  return buf;
+}
+/* The room: a stereo impulse of decaying noise that darkens as it goes,
+   generated, so the reverb is ours too. */
+function sndImpulse(ctx, dur, decay){
+  const sr = ctx.sampleRate, n = Math.round(sr * dur), buf = ctx.createBuffer(2, n, sr);
+  for(let ch = 0; ch < 2; ch++){
+    const d = buf.getChannelData(ch), R = sndRng(101 + ch * 7);
+    let lp = 0;
+    for(let i = 0; i < n; i++){
+      const x = i / n, k = .9 - .82 * x;
+      lp += k * ((R() * 2 - 1) - lp);
+      d[i] = lp * Math.pow(1 - x, decay) * (i < sr * .006 ? i / (sr * .006) : 1);
+    }
+  }
+  return buf;
+}
+const sndKsCache = new Map();
+/* A plucked string (Karplus-Strong), rendered once per pitch. */
+function sndKS(ctx, f, d, bright){
+  const key = ctx.sampleRate + "|" + Math.round(f * 10) + "|" + d + "|" + bright;
+  const hit = sndKsCache.get(key);
+  if(hit && hit.ctx === ctx) return hit.buf;
+  const sr = ctx.sampleRate, N = Math.ceil(sr * d), L = Math.max(2, Math.round(sr / f));
+  const buf = ctx.createBuffer(1, N, sr), y = buf.getChannelData(0), R = sndRng(Math.round(f));
+  let lp = 0;
+  for(let i = 0; i < L && i < N; i++){ lp += bright * ((R() * 2 - 1) - lp); y[i] = lp; }
+  const rho = Math.pow(.001, 1 / Math.max(1, f * d));
+  for(let i = L; i < N; i++) y[i] = rho * .5 * (y[i - L] + (i - L - 1 >= 0 ? y[i - L - 1] : 0));
+  let pk = 0; for(let i = 0; i < N; i++) pk = Math.max(pk, Math.abs(y[i]));
+  if(pk > 0) for(let i = 0; i < N; i++) y[i] /= pk;
+  if(sndKsCache.size > 80) sndKsCache.clear();
+  sndKsCache.set(key, { ctx, buf });
+  return buf;
+}
+const SND_VOWEL = { a: [800, 1150], e: [400, 2000], i: [300, 2300], o: [450, 800], u: [325, 700] };
+
+/* The graph one context plays through: the volume, an optional limiter,
+   the three buses, and the shared reverb and delay sends. Built the same
+   way for the live context and for an offline render. */
+function sndGraph(ctx, o){
+  o = o || {};
+  const master = ctx.createGain();
+  master.gain.value = o.level == null ? 1 : o.level;
+  let tail = master;
+  if(o.limiter !== false && ctx.createDynamicsCompressor){
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -6; comp.knee.value = 6; comp.ratio.value = 12;
+    comp.attack.value = .003; comp.release.value = .2;
+    master.connect(comp); tail = comp;
+  }
+  tail.connect(ctx.destination);
+  const bus = {};
+  const BUS_GAIN = { ui: 1.6, music: .6, cut: 1 };
+  Object.keys(BUS_GAIN).forEach(k => { const n = ctx.createGain(); n.gain.value = BUS_GAIN[k]; n.connect(master); bus[k] = n; });
+  let rev;
+  if(o.cheapRev){
+    /* four feedback delays, darkened, two each side: a room for the
+       ambience render, a few times cheaper than the convolver over 25s */
+    rev = ctx.createGain();
+    const merge = ctx.createChannelMerger(2), revOut = ctx.createGain();
+    revOut.gain.value = .5;
+    [.113, .157, .199, .241].forEach((dt, i) => {
+      const d = ctx.createDelay(1), fb = ctx.createGain(), lp = ctx.createBiquadFilter();
+      d.delayTime.value = dt; fb.gain.value = .62; lp.type = "lowpass"; lp.frequency.value = 2400;
+      rev.connect(d); d.connect(lp); lp.connect(fb); fb.connect(d);
+      lp.connect(merge, 0, i % 2);
+    });
+    merge.connect(revOut); revOut.connect(master);
+  } else {
+    rev = ctx.createConvolver();
+    rev.buffer = sndImpulse(ctx, 2.6, 2.4);
+    const revOut = ctx.createGain(); revOut.gain.value = .55;
+    rev.connect(revOut); revOut.connect(master);
+  }
+  /* a dotted echo, darkened each time round */
+  const dly = ctx.createDelay(1.5), fb = ctx.createGain(), dlp = ctx.createBiquadFilter(), dOut = ctx.createGain();
+  dly.delayTime.value = .27; fb.gain.value = .38; dlp.type = "lowpass"; dlp.frequency.value = 3200; dOut.gain.value = .6;
+  dly.connect(dlp); dlp.connect(fb); fb.connect(dly); dlp.connect(dOut); dOut.connect(master);
+  return { ctx, master, bus, busGain: BUS_GAIN, rev, dly };
+}
+
+/* The kit a design draws with: every primitive schedules from the voice's
+   start (t0) and keeps the voice's end time (K.end) up to date. */
+function sndKit(G, out, t0, seed){
+  const ctx = G.ctx, R = sndRng(seed), srcs = [];
+  const K = { ctx, G, t0, R, srcs, end: 0, wet: 0 };
+  const clampPan = p => Math.max(-1, Math.min(1, p));
+  K.r = (a, b) => a + (b - a) * R();
+  K.hz = sndHz;
+  K.T = t => t0 + (t || 0);
+  K.mark = (abs) => { K.end = Math.max(K.end, abs - t0); };
+  K.track = (src, stopAt) => { srcs.push(src); K.mark(stopAt); return src; };
+  /* where a layer goes: panned (still, swept or circling), with sends */
+  K.dest = o => {
+    const g = ctx.createGain();
+    let node = g;
+    if((o.pan != null || o.pan2 != null || o.orbit) && ctx.createStereoPanner){
+      const p = ctx.createStereoPanner(), t = K.T(o.t);
+      p.pan.setValueAtTime(clampPan(o.pan || 0), t);
+      if(o.pan2 != null) p.pan.linearRampToValueAtTime(clampPan(o.pan2), t + (o.pd || (o.a || 0) + (o.hold || 0) + (o.d || .3)));
+      if(o.orbit){
+        const lfo = ctx.createOscillator(), lg = ctx.createGain();
+        lfo.frequency.value = o.orbit[0]; lg.gain.value = o.orbit[1];
+        lfo.connect(lg); lg.connect(p.pan);
+        const stopAt = t + (o.a || 0) + (o.hold || 0) + (o.d || .3) + .1;
+        lfo.start(t); lfo.stop(stopAt); K.track(lfo, stopAt);
+      }
+      g.connect(p); node = p;
+    }
+    node.connect(out);
+    if(o.rev){ const s = ctx.createGain(); s.gain.value = o.rev; node.connect(s); s.connect(G.rev); K.wet = Math.max(K.wet, 2.4); }
+    if(o.dly){ const s = ctx.createGain(); s.gain.value = o.dly; node.connect(s); s.connect(G.dly); K.wet = Math.max(K.wet, 1.6); }
+    return g;
+  };
+  /* attack, hold, then an exponential-ish decay over d */
+  K.env = (param, t, g, a, hold, d) => {
+    /* silent BEFORE the first event too: a GainNode is 1 until then, and a
+       source starting part-way through a render quantum let one full-scale
+       sample through - a click at the front of every sound */
+    param.value = 0;
+    param.setValueAtTime(0, t);
+    param.linearRampToValueAtTime(g, t + a);
+    if(hold) param.setValueAtTime(g, t + a + hold);
+    param.setTargetAtTime(0, t + a + hold, Math.max(.002, d / 5));
+    return t + a + hold + d;
+  };
+  K.filter = (src, o, t, len) => {
+    const kind = o.lp ? "lowpass" : o.hp ? "highpass" : o.bp ? "bandpass" : null;
+    if(!kind) return src;
+    const fl = ctx.createBiquadFilter();
+    fl.type = kind;
+    fl.frequency.setValueAtTime(o.lp || o.hp || o.bp, t);
+    if(o.ff2) fl.frequency.exponentialRampToValueAtTime(o.ff2, t + (o.fgl || len));
+    if(o.q != null) fl.Q.value = o.q;
+    src.connect(fl);
+    return fl;
+  };
+  /* An oscillator voice. f -> f2 over gl (exponential unless lin);
+     pts: [[t, f], ...] a path of linear glides instead; vib: [rate, cents]. */
+  K.tone = o => {
+    const t = K.T(o.t), a = o.a == null ? .005 : o.a, hold = o.hold || 0, d = o.d == null ? .2 : o.d, len = a + hold + d;
+    const osc = ctx.createOscillator();
+    osc.type = o.type || "sine";
+    const f = sndHz(o.f);
+    osc.frequency.setValueAtTime(f, t);
+    if(o.pts) o.pts.forEach(p => osc.frequency.linearRampToValueAtTime(sndHz(p[1]), t + p[0]));
+    else if(o.f2 != null){
+      const tt = t + (o.gl != null ? o.gl : len);
+      if(o.lin) osc.frequency.linearRampToValueAtTime(sndHz(o.f2), tt);
+      else osc.frequency.exponentialRampToValueAtTime(Math.max(1, sndHz(o.f2)), tt);
+    }
+    if(o.det) osc.detune.setValueAtTime(o.det, t);
+    const stopAt = t + len + .05;
+    if(o.vib){
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.frequency.setValueAtTime(o.vib[0], t);
+      if(o.vib[2]) lfo.frequency.linearRampToValueAtTime(o.vib[2], t + len);
+      lg.gain.value = o.vib[1];
+      lfo.connect(lg); lg.connect(osc.detune);
+      lfo.start(t); lfo.stop(stopAt); K.track(lfo, stopAt);
+    }
+    const node = K.filter(osc, o, t, len);
+    const g = ctx.createGain();
+    K.env(g.gain, t, o.g == null ? .1 : o.g, a, hold, d);
+    node.connect(g); g.connect(K.dest(o));
+    osc.start(t); osc.stop(stopAt);
+    return K.track(osc, stopAt);
+  };
+  /* Two-operator FM: a sine carrier whose pitch is pushed by a sine at
+     ratio x f; the brightness (index) falls from idx to idx2. Bells,
+     clinks, glass, brass edges. */
+  K.fm = o => {
+    const t = K.T(o.t), a = o.a == null ? .002 : o.a, hold = o.hold || 0, d = o.d == null ? .4 : o.d, len = a + hold + d;
+    const f = sndHz(o.f), ratio = o.ratio || 2, idx = o.idx == null ? 2 : o.idx;
+    const car = ctx.createOscillator(), mod = ctx.createOscillator(), mg = ctx.createGain();
+    car.type = o.type || "sine";
+    car.frequency.setValueAtTime(f, t); mod.frequency.setValueAtTime(f * ratio, t);
+    if(o.f2 != null){
+      const tt = t + (o.gl != null ? o.gl : len), f2 = Math.max(1, sndHz(o.f2));
+      car.frequency.exponentialRampToValueAtTime(f2, tt); mod.frequency.exponentialRampToValueAtTime(f2 * ratio, tt);
+    }
+    mg.gain.setValueAtTime(idx * f * ratio, t);
+    mg.gain.setTargetAtTime((o.idx2 == null ? idx * .1 : o.idx2) * f * ratio, t + a, Math.max(.005, (o.id || d) / 4));
+    mod.connect(mg); mg.connect(car.frequency);
+    if(o.vib){
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.frequency.value = o.vib[0]; lg.gain.value = o.vib[1];
+      lfo.connect(lg); lg.connect(car.detune);
+      lfo.start(t); lfo.stop(t + len + .05); K.track(lfo, t + len + .05);
+    }
+    const node = K.filter(car, o, t, len);
+    const g = ctx.createGain();
+    K.env(g.gain, t, o.g == null ? .1 : o.g, a, hold, d);
+    node.connect(g); g.connect(K.dest(o));
+    const stopAt = t + len + .05;
+    car.start(t); mod.start(t); car.stop(stopAt); mod.stop(stopAt);
+    K.track(mod, stopAt);
+    return K.track(car, stopAt);
+  };
+  /* a bell: FM at an inharmonic ratio with a quieter upper partial */
+  K.bell = o => {
+    K.fm(Object.assign({ ratio: 3.5, idx: 1.6, idx2: .15 }, o));
+    if(o.partial !== false) K.fm(Object.assign({}, o, { f: sndHz(o.f) * 2.01, ratio: 1.5, idx: .6, idx2: 0, g: (o.g == null ? .1 : o.g) * .25, d: (o.d == null ? .4 : o.d) * .5 }));
+  };
+  /* Filtered noise: colour w | p | b; bp/lp/hp with a sweep to ff2;
+     am: [rate, depth] a flutter on its level (rate may sweep to am[2]). */
+  K.noise = o => {
+    const t = K.T(o.t), a = o.a == null ? .005 : o.a, hold = o.hold || 0, d = o.d == null ? .2 : o.d, len = a + hold + d;
+    const src = ctx.createBufferSource();
+    src.buffer = sndNoise(ctx, o.color || "w"); src.loop = true;
+    let node = K.filter(src, o, t, len);
+    if(o.q2 != null && o.bp){ const f2 = ctx.createBiquadFilter(); f2.type = "peaking"; f2.frequency.value = o.bp; f2.Q.value = o.q2; f2.gain.value = 12; node.connect(f2); node = f2; }
+    const stopAt = t + len + .05;
+    if(o.am){
+      const amg = ctx.createGain(), lfo = ctx.createOscillator(), lg = ctx.createGain();
+      amg.gain.value = 1 - o.am[1] / 2;
+      lfo.type = o.amType || "sine";
+      lfo.frequency.setValueAtTime(o.am[0], t);
+      if(o.am[2]) lfo.frequency.linearRampToValueAtTime(o.am[2], t + (o.amT || len));
+      if(o.am[3]) lfo.frequency.linearRampToValueAtTime(o.am[3], t + len);
+      lg.gain.value = o.am[1] / 2;
+      lfo.connect(lg); lg.connect(amg.gain);
+      node.connect(amg); node = amg;
+      lfo.start(t); lfo.stop(stopAt); K.track(lfo, stopAt);
+    }
+    const g = ctx.createGain();
+    K.env(g.gain, t, o.g == null ? .1 : o.g, a, hold, d);
+    node.connect(g); g.connect(K.dest(o));
+    src.start(t, R() * 1.5); src.stop(stopAt);
+    return K.track(src, stopAt);
+  };
+  /* a short percussive tick: a few ms of band-passed noise */
+  K.click = o => K.noise(Object.assign({ bp: 3000, q: 2, a: .0005, d: .012, g: .08 }, o));
+  /* a body hit: a sine whose pitch drops fast */
+  K.thump = o => K.tone(Object.assign({ f: 160, f2: 50, gl: .1, a: .002, d: .2, g: .3 }, o));
+  /* a plucked string */
+  K.pluck = o => {
+    const t = K.T(o.t), d = o.d || .6, src = ctx.createBufferSource();
+    src.buffer = sndKS(ctx, sndHz(o.f), d, o.bright == null ? .6 : o.bright);
+    const node = K.filter(src, o, t, d);
+    const g = ctx.createGain(); g.gain.value = o.g == null ? .1 : o.g;
+    node.connect(g); g.connect(K.dest(o));
+    src.start(t); src.stop(t + d + .02);
+    return K.track(src, t + d + .02);
+  };
+  /* a little voice: a buzz through two vowel formants, vowel v -> v2 */
+  K.vox = o => {
+    const t = K.T(o.t), a = o.a == null ? .01 : o.a, hold = o.hold || 0, d = o.d == null ? .15 : o.d, len = a + hold + d;
+    const osc = ctx.createOscillator();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(sndHz(o.f), t);
+    if(o.f2 != null) osc.frequency.exponentialRampToValueAtTime(sndHz(o.f2), t + (o.gl || len));
+    if(o.pts) o.pts.forEach(p => osc.frequency.linearRampToValueAtTime(sndHz(p[1]), t + p[0]));
+    const v1 = SND_VOWEL[o.v || "a"], v2 = SND_VOWEL[o.v2 || o.v || "a"];
+    const g = ctx.createGain();
+    K.env(g.gain, t, o.g == null ? .06 : o.g, a, hold, d);
+    [0, 1].forEach(k => {
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass"; bp.Q.value = k ? 9 : 6;
+      bp.frequency.setValueAtTime(v1[k], t);
+      bp.frequency.linearRampToValueAtTime(v2[k], t + len);
+      const kg = ctx.createGain(); kg.gain.value = k ? 1.2 : 2;
+      osc.connect(bp); bp.connect(kg); kg.connect(g);
+    });
+    g.connect(K.dest(o));
+    const stopAt = t + len + .05;
+    osc.start(t); osc.stop(stopAt);
+    return K.track(osc, stopAt);
+  };
+  /* notes struck one after another */
+  K.arp = (notes, step, fn) => notes.forEach((n, i) => fn(n, i * step, i));
+  /* a cloud of small high pings between t1 and t2 */
+  K.sparkle = o => {
+    for(let i = 0; i < o.n; i++){
+      const tt = o.t + (o.t2 - o.t) * (o.rise ? i / Math.max(1, o.n - 1) : R());
+      const f = o.rise ? o.f1 * Math.pow(o.f2 / o.f1, i / Math.max(1, o.n - 1)) : K.r(o.f1, o.f2);
+      K.fm({ t: tt, f, ratio: o.ratio || 4.1, idx: .8, idx2: 0, d: o.d || .25, g: o.g || .02, pan: K.r(-.7, .7), rev: o.rev, dly: o.dly });
+    }
+  };
+  return K;
+}
+
+/* ---- THE CATALOGUE ----
+   id -> { group, bus, cd (ms between plays), poly (at once), hap (the
+   vibration), vol (a level trim, measured: every sound peaks within a
+   sensible range on its bus - see tools/check-sound.py), desc (what it
+   is and why it fits), fn (the design), demo (opts the test page plays
+   it with) }. */
+const SND_CASE_OPEN = () => (typeof CASE_OPEN === "object" && CASE_OPEN) ? CASE_OPEN : { hold: 110, crack: 190, swing: 800, glint: 460 };
+const SND_FLARE_KEYS = ["rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan"];
+const SOUND_CATALOGUE = {
+  /* ------------------------------ UI ------------------------------ */
+  "ui.tap.primary": { group: "UI", bus: "ui", cd: 40, hap: "tap",
+    desc: "Primary button: a soft, weighty press - a rounded thock under a D with its fifth blooming above it. Confident, never sharp.",
+    fn: K => {
+      K.thump({ f: 190, f2: 105, gl: .05, d: .09, g: .3 });
+      K.tone({ f: "D5", type: "triangle", lp: 2600, a: .002, d: .14, g: .1 });
+      K.tone({ f: "A5", t: .012, a: .002, d: .12, g: .045 });
+      K.click({ bp: 3200, q: 1.2, d: .01, g: .07 });
+    } },
+  "ui.tap.secondary": { group: "UI", bus: "ui", cd: 40, hap: "tap",
+    desc: "Secondary button: a light glass tick - a short high blip over a dry click, half the weight of the primary.",
+    fn: K => {
+      K.click({ bp: 5200, q: 1.5, d: .008, g: .07 });
+      K.tone({ f: "A5", type: "triangle", a: .001, d: .05, g: .075 });
+      K.tone({ f: "E6", t: .006, a: .001, d: .04, g: .02 });
+    } },
+  "ui.toggle.on": { group: "UI", bus: "ui", cd: 60, hap: "toggle",
+    desc: "Switch on: two quick blips rising a fifth (D to A), the second brighter - engaged.",
+    fn: K => {
+      K.click({ bp: 4000, d: .008, g: .06 });
+      K.tone({ f: "D5", type: "triangle", a: .002, d: .06, g: .09 });
+      K.tone({ f: "A5", t: .065, a: .002, d: .13, g: .1 });
+      K.tone({ f: "A6", t: .065, a: .002, d: .06, g: .015 });
+    } },
+  "ui.toggle.off": { group: "UI", bus: "ui", cd: 60, hap: "toggle",
+    desc: "Switch off: the same gesture falling and darker (A to D through a closing filter) - released.",
+    fn: K => {
+      K.click({ bp: 2000, d: .008, g: .05 });
+      K.tone({ f: "A4", type: "triangle", lp: 1800, a: .002, d: .06, g: .09 });
+      K.tone({ f: "D4", t: .065, type: "triangle", lp: 1400, ff2: 500, a: .002, d: .14, g: .1 });
+    } },
+  "ui.tab.bottom": { group: "UI", bus: "ui", cd: 70, hap: "tap",
+    desc: "Bottom tab bar: a soft glass slide - a short swish of air settling onto a low F, the pill landing on its tab.",
+    fn: K => {
+      K.noise({ color: "p", bp: 1900, ff2: 850, q: .9, a: .02, d: .12, g: .13 });
+      K.tone({ f: "F4", t: .07, a: .004, d: .2, g: .085 });
+      K.tone({ f: "C5", t: .075, a: .004, d: .14, g: .03 });
+    } },
+  "ui.tab.top": { vol: 1.2, group: "UI", bus: "ui", cd: 60, hap: "swipe",
+    desc: "Top tabs: a quick sideways flick - a narrow swish panned the way the tabs move (opts.dir), no note at all.",
+    demo: [{ dir: 1 }, { dir: -1 }],
+    fn: (K, o) => {
+      const s = o.dir < 0 ? -1 : 1;
+      K.noise({ bp: 2600, ff2: 5200, q: 2.6, a: .012, d: .07, g: .12, pan: -.5 * s, pan2: .5 * s });
+      K.click({ t: .07, bp: 6000, q: 3, d: .006, g: .03, pan: .5 * s });
+    } },
+  "ui.sheet.open": { group: "UI", bus: "ui", cd: 150, hap: "swipe",
+    desc: "A sheet or panel opens: air rising as its filter opens, landing on a quiet open fifth - a door opening onto space.",
+    fn: K => {
+      K.noise({ color: "p", bp: 420, ff2: 2600, q: .7, a: .12, hold: .04, d: .12, g: .15 });
+      K.tone({ f: "D4", t: .14, a: .03, d: .45, g: .05, rev: .25 });
+      K.tone({ f: "A4", t: .15, a: .03, d: .4, g: .04, rev: .25 });
+    } },
+  "ui.sheet.close": { group: "UI", bus: "ui", cd: 150, hap: "swipe",
+    desc: "A sheet closes: air falling as the filter closes, ending on a soft felt bump.",
+    fn: K => {
+      K.noise({ color: "p", bp: 2300, ff2: 360, q: .7, a: .03, d: .2, g: .13 });
+      K.thump({ t: .19, f: 150, f2: 75, d: .1, g: .18 });
+      K.noise({ t: .19, color: "b", lp: 320, d: .07, g: .12 });
+    } },
+  "ui.back": { group: "UI", bus: "ui", cd: 80, hap: "tap",
+    desc: "Back: two notes stepping down a fourth, each swelling in like a reversed sound - stepping back out.",
+    fn: K => {
+      K.tone({ f: "E5", type: "triangle", lp: 3000, a: .045, d: .04, g: .085 });
+      K.tone({ f: "B4", t: .075, type: "triangle", lp: 2400, a: .035, d: .1, g: .085 });
+    } },
+  "ui.popup.open": { group: "UI", bus: "ui", cd: 120, hap: "tap",
+    desc: "A card or pop-up opens: a small bloom - a Dsus2 swelling in fast with one glassy spark on top.",
+    fn: K => {
+      K.arp(["D5", "E5", "A5"], .015, (n, t) => K.tone({ f: n, t, a: .05, d: .35, g: .045, rev: .3 }));
+      K.bell({ f: "A6", t: .05, d: .3, g: .03, rev: .3 });
+    } },
+  "ui.error": { group: "UI", bus: "ui", cd: 200, hap: "error",
+    desc: "Not allowed / something went wrong: a muted double knock a semitone apart - felt more than heard, never a buzzer.",
+    fn: K => {
+      K.tone({ f: "F3", type: "square", lp: 650, a: .003, d: .09, g: .12 });
+      K.thump({ f: 130, f2: 70, d: .08, g: .15 });
+      K.tone({ f: "E3", t: .12, type: "square", lp: 550, a: .003, d: .12, g: .12 });
+      K.thump({ t: .12, f: 120, f2: 60, d: .1, g: .15 });
+    } },
+  "ui.locked": { group: "UI", bus: "ui", cd: 200, hap: "error",
+    desc: "A locked item (a colour, a character, a banner): a small padlock - a metal clank, its shackle rattling, a dull thunk.",
+    fn: K => {
+      K.fm({ f: 620, ratio: 2.76, idx: 3, idx2: .3, d: .16, g: .07 });
+      K.noise({ bp: 3600, q: 6, am: [38, .9, 38], d: .07, g: .07 });
+      K.fm({ t: .055, f: 540, ratio: 2.76, idx: 2, idx2: .2, d: .1, g: .04 });
+      K.thump({ f: 160, f2: 95, d: .07, g: .12 });
+    } },
+  "ui.slider.tick": { group: "UI", bus: "ui", cd: 30, poly: 2, hap: "tick",
+    desc: "Slider detent: a tiny wooden tick whose pitch follows the value (opts.value 0-1), so a drag plays a scale.",
+    demo: [{ value: 0 }, { value: .25 }, { value: .5 }, { value: .75 }, { value: 1 }],
+    fn: (K, o) => {
+      const v = Math.max(0, Math.min(1, o.value == null ? .5 : o.value));
+      const PENT = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+      const f = sndHz("D5") * Math.pow(2, PENT[Math.round(v * (PENT.length - 1))] / 12);
+      K.pluck({ f, d: .09, bright: .9, g: .09 });
+      K.click({ bp: 2500, q: 3, d: .004, g: .04 });
+    } },
+  "ui.field.focus": { vol: 1.4, group: "UI", bus: "ui", cd: 150, hap: null,
+    desc: "A text field takes focus: a faint glass tink with a tiny upward glide - the cursor waking up.",
+    fn: K => {
+      K.tone({ f: "E6", f2: "F#6", gl: .04, a: .002, d: .12, g: .045 });
+      K.click({ bp: 7000, q: 2, d: .004, g: .02 });
+    } },
+  "ui.notice": { group: "UI", bus: "ui", cd: 600, hap: "tap",
+    desc: "A banner drops in at the top (an update, the daily alert): a two-tone chime, A then D, with a breath of air.",
+    fn: K => {
+      K.tone({ f: "A5", a: .004, d: .3, g: .065, rev: .35 });
+      K.tone({ f: "D6", t: .1, a: .004, d: .45, g: .06, rev: .35 });
+      K.noise({ hp: 5000, a: .05, d: .2, g: .012 });
+    } },
+
+  /* ----------------------------- TEST ----------------------------- */
+  "test.load": { group: "Test", bus: "ui", cd: 500, hap: null,
+    desc: "LOADING TEST: a power-up under the loading bar - a dark drone climbing an octave over a ticking that speeds up, latching as the first question lands (opts.dur, 2.5s).",
+    fn: (K, o) => {
+      const D = o.dur || 2.5;
+      K.tone({ f: "D3", f2: "D4", type: "sawtooth", lp: 280, ff2: 2200, fgl: D, a: D * .9, d: .12, g: .045 });
+      K.tone({ f: "A3", f2: "A4", a: D * .85, d: .12, g: .03 });
+      let t = .1, iv = .32;
+      while(t < D - .06){ K.click({ t, bp: 1700 + t * 500, q: 5, d: .016, g: .045 + t * .01 }); t += iv; iv = Math.max(.07, iv * .86); }
+      K.click({ t: D, bp: 2400, q: 1.5, d: .02, g: .1 });
+      K.tone({ f: "A5", t: D, type: "triangle", a: .002, d: .22, g: .08 });
+      K.thump({ t: D, f: 170, f2: 90, d: .08, g: .16 });
+    } },
+  "test.select": { group: "Test", bus: "ui", cd: 50, hap: "select",
+    desc: "An answer chosen: a wooden mallet pluck on G - tactile and neutral, it says nothing about right or wrong.",
+    fn: K => {
+      K.pluck({ f: "G4", d: .35, bright: .5, g: .2 });
+      K.click({ bp: 1500, q: 2, d: .01, g: .035 });
+    } },
+  "test.correct": { group: "Test", bus: "ui", cd: 120, hap: "success",
+    desc: "Correct: a bright D major arpeggio in glass bells (D, F#, A) capped with a high shimmer - clean and rewarding.",
+    fn: K => {
+      K.arp(["D5", "F#5", "A5"], .065, (n, t) => K.fm({ f: n, t, ratio: 2, idx: 1.5, idx2: .2, d: .5, g: .085, rev: .22 }));
+      K.bell({ f: "D7", t: .19, d: .5, g: .02, rev: .3 });
+      K.tone({ f: "A4", t: .13, a: .03, d: .4, g: .025 });
+    } },
+  "test.wrong": { group: "Test", bus: "ui", cd: 120, hap: "error",
+    desc: "Wrong: a soft fall of a semitone (D to C#) on a muted, slightly detuned reed over a low thud - clear, not punishing.",
+    fn: K => {
+      K.thump({ f: 115, f2: 60, d: .16, g: .2 });
+      K.tone({ f: "D4", type: "sawtooth", lp: 950, a: .01, d: .18, g: .055, det: -9 });
+      K.tone({ f: "D4", type: "sawtooth", lp: 950, a: .01, d: .18, g: .04, det: 9 });
+      K.tone({ f: "C#4", t: .15, type: "sawtooth", lp: 800, ff2: 400, a: .01, d: .32, g: .06, det: -7 });
+      K.tone({ f: "C#4", t: .15, type: "triangle", a: .01, d: .3, g: .05 });
+    } },
+  "test.streak.1": { group: "Test", bus: "ui", cd: 300, hap: "success",
+    desc: "Streak, 3 in a row: the correct motif carried one step higher (A, D) on a rising swish.",
+    fn: K => {
+      K.noise({ bp: 800, ff2: 3200, q: 1.2, a: .18, d: .07, g: .05 });
+      K.fm({ f: "A5", t: .12, ratio: 2, idx: 1.4, d: .4, g: .07, rev: .3 });
+      K.fm({ f: "D6", t: .19, ratio: 2, idx: 1.4, d: .55, g: .075, rev: .3 });
+    } },
+  "test.streak.2": { group: "Test", bus: "ui", cd: 300, hap: "success",
+    desc: "Streak, 5 in a row: a four-note run climbing to the high D with a burst of sparks.",
+    fn: K => {
+      K.arp(["D5", "F#5", "A5", "D6"], .055, (n, t) => K.fm({ f: n, t, ratio: 3, idx: 1.2, idx2: .1, d: .5, g: .065, rev: .3 }));
+      K.sparkle({ n: 7, t: .2, t2: .55, f1: 2400, f2: 5200, g: .016, rev: .3 });
+    } },
+  "test.streak.3": { group: "Test", bus: "ui", cd: 300, hap: "celebrate",
+    desc: "Streak, 10 in a row: a full run up to a high A over a deep boom and a cloud of sparks - the biggest of the three.",
+    fn: K => {
+      K.thump({ f: 95, f2: 38, gl: .25, d: .5, g: .32 });
+      K.arp(["D5", "E5", "F#5", "A5", "B5", "D6", "E6", "A6"], .045, (n, t) => K.fm({ f: n, t, ratio: 2, idx: 1.3, idx2: .15, d: .45, g: .055, rev: .35 }));
+      ["D4", "A4", "F#5"].forEach(n => K.tone({ f: n, t: .1, type: "sawtooth", lp: 900, ff2: 2600, fgl: .5, a: .12, d: .8, g: .02, rev: .3 }));
+      K.sparkle({ n: 14, t: .3, t2: 1.0, f1: 2600, f2: 7000, g: .014, rev: .4, dly: .15 });
+    } },
+  "test.next": { vol: 1.9, group: "Test", bus: "ui", cd: 120, hap: "swipe",
+    desc: "On to the next question: the card whooshing away to the left (panned right to left).",
+    fn: K => {
+      K.noise({ color: "p", bp: 900, ff2: 2700, q: 1.1, a: .04, d: .16, g: .22, pan: .6, pan2: -.6 });
+      K.noise({ color: "b", lp: 600, a: .03, d: .12, g: .08, pan: .4, pan2: -.4 });
+    } },
+  "test.star": { group: "Test", bus: "ui", cd: 150, hap: "tap",
+    desc: "Star a question: two crystalline pings rising (A, E) with a twinkle - marked for later.",
+    fn: K => {
+      K.bell({ f: "A6", ratio: 3.5, idx: 1, d: .35, g: .045, rev: .3 });
+      K.bell({ f: "E7", t: .07, ratio: 3.5, idx: 1, d: .4, g: .04, rev: .3 });
+      K.tone({ f: "B7", t: .12, a: .01, d: .1, g: .012, vib: [12, 40] });
+    } },
+  "test.unstar": { vol: 1.5, group: "Test", bus: "ui", cd: 150, hap: "tap",
+    desc: "Unstar: one ping dropping in pitch and dulling - the mark lifted.",
+    fn: K => {
+      K.fm({ f: "E6", f2: "C6", gl: .16, ratio: 2, idx: 1, idx2: .1, lp: 3200, d: .22, g: .055 });
+    } },
+  "test.pause": { group: "Test", bus: "ui", cd: 250, hap: "tap",
+    desc: "Pause: a tape stop - a held note sagging an octave as its filter closes.",
+    fn: K => {
+      K.tone({ f: "A4", f2: "A3", lin: true, gl: .38, type: "sawtooth", lp: 2000, ff2: 280, fgl: .38, a: .005, hold: .16, d: .25, g: .06 });
+      K.tone({ f: "A3", f2: "A2", lin: true, gl: .38, a: .005, hold: .16, d: .25, g: .05 });
+    } },
+  "test.resume": { group: "Test", bus: "ui", cd: 250, hap: "tap",
+    desc: "Resume: the tape starting again - the note pulled up to pitch as the filter opens, with a catch at the top.",
+    fn: K => {
+      K.tone({ f: "A3", f2: "A4", lin: true, gl: .3, type: "sawtooth", lp: 280, ff2: 2200, fgl: .3, a: .06, hold: .12, d: .2, g: .055 });
+      K.tone({ f: "A2", f2: "A3", lin: true, gl: .3, a: .06, hold: .12, d: .2, g: .045 });
+      K.click({ t: .3, bp: 3000, d: .01, g: .05 });
+    } },
+  "test.tick": { group: "Test", bus: "ui", cd: 300, hap: "tick",
+    desc: "The last ten seconds: a clock's tick-tock, a little higher and brighter as time runs out (opts.left 10 to 1).",
+    demo: [{ left: 10 }, { left: 9 }, { left: 3 }, { left: 2 }, { left: 1 }],
+    fn: (K, o) => {
+      const left = Math.max(1, Math.min(10, o.left || 10)), u = 1 - (left - 1) / 9, tock = left % 2 === 0;
+      K.noise({ bp: (tock ? 1900 : 2500) * (1 + u * .45), q: 9, a: .0005, d: .025, g: .16 + u * .08 });
+      K.tone({ f: (tock ? 980 : 1240) * (1 + u * .45), type: "triangle", a: .001, d: .035, g: .05 + u * .03 });
+    } },
+  "test.timeup": { group: "Test", bus: "ui", cd: 1000, hap: "heavy",
+    desc: "Time up: three falling tones (A, F, D) into a soft gong - final, not alarming.",
+    fn: K => {
+      K.arp(["A4", "F4", "D4"], .18, (n, t) => K.tone({ f: n, t, type: "triangle", lp: 2000, a: .005, d: .45, g: .08 }));
+      K.fm({ f: 110, t: .36, ratio: 1.4, idx: 3, idx2: .4, d: 2, g: .1, rev: .4 });
+    } },
+  "test.save": { group: "Test", bus: "ui", cd: 500, hap: "success",
+    desc: "Save and exit: a document filed - paper sliding, a firm stamp, and a low confirming chime.",
+    fn: K => {
+      K.noise({ color: "p", bp: 2500, ff2: 1500, q: .8, a: .06, d: .12, g: .08 });
+      K.thump({ t: .2, f: 170, f2: 60, d: .12, g: .3 });
+      K.noise({ t: .2, color: "b", lp: 700, d: .05, g: .2 });
+      K.tone({ f: "G4", t: .32, type: "triangle", a: .005, d: .32, g: .06 });
+      K.tone({ f: "D5", t: .38, a: .005, d: .5, g: .06, rev: .25 });
+    } },
+
+  /* ---------------------------- RESULTS ---------------------------- */
+  "res.bar.tick": { group: "Results", bus: "ui", cd: 28, poly: 3, hap: "tick",
+    desc: "The grade's unit bars counting in: a small tight tick that climbs with the bar (opts.frac 0-1) and brightens once it passes (opts.pass).",
+    demo: [{ frac: 0 }, { frac: .3 }, { frac: .6, pass: true }, { frac: .9, pass: true }, { frac: 1, pass: true }],
+    fn: (K, o) => {
+      const fr = Math.max(0, Math.min(1, o.frac || 0)), f = 620 * Math.pow(2, fr * 1.25);
+      K.tone({ f, type: o.pass ? "triangle" : "sine", a: .001, d: .045, g: .06 });
+      K.click({ hp: 4800, d: .005, g: .025 });
+    } },
+  "res.grade.fail": { group: "Results", bus: "cut", cd: 800, hap: "heavy",
+    desc: "The grade lands below the pass mark: a low, warm D minor chord over a soft thud - honest and encouraging, never a buzzer.",
+    fn: K => {
+      K.thump({ f: 120, f2: 55, d: .3, g: .25 });
+      ["D3", "F3", "A3"].forEach((n, i) => K.tone({ f: n, t: i * .02, type: "triangle", lp: 900, a: .01, d: 1.1, g: .05, rev: .2 }));
+      K.tone({ f: "D2", a: .01, d: .9, g: .08 });
+    } },
+  "res.grade.pass": { group: "Results", bus: "cut", cd: 800, hap: "success",
+    desc: "The grade lands on a pass: a steady D major chord struck once with a clean tail.",
+    fn: K => {
+      ["D4", "F#4", "A4"].forEach((n, i) => K.fm({ f: n, t: i * .02, ratio: 1, idx: .8, idx2: .15, d: 1.1, g: .05, rev: .3 }));
+      K.tone({ f: "D5", t: .03, a: .005, d: .8, g: .03, rev: .3 });
+      K.thump({ f: 140, f2: 70, d: .12, g: .14 });
+    } },
+  "res.grade.great": { group: "Results", bus: "cut", cd: 800, hap: "success",
+    desc: "The grade lands 90 and up: a wide major-ninth chord in bells with sparks rising off it - a step above a pass.",
+    fn: K => {
+      ["D4", "A4", "E5", "F#5", "C#6"].forEach((n, i) => K.fm({ f: n, t: i * .03, ratio: 2, idx: 1.2, idx2: .1, d: 1.3, g: .038, rev: .4 }));
+      K.sparkle({ n: 5, t: .15, t2: .45, f1: 2000, f2: 4200, rise: true, g: .018, rev: .4 });
+      K.thump({ f: 150, f2: 60, d: .15, g: .16 });
+    } },
+  "res.grade.perfect": { group: "Results", bus: "cut", cd: 800, hap: "celebrate",
+    desc: "The grade lands on 100: a held breath, then a gold strike - a deep hit, a wide Dmaj9 in bells and a rising shimmer.",
+    fn: K => {
+      K.noise({ color: "p", bp: 600, ff2: 4200, q: 1.2, a: .45, d: .04, g: .09 });
+      K.thump({ t: .45, f: 140, f2: 38, gl: .2, d: .45, g: .38 });
+      ["D3", "A3", "D4", "F#4", "A4", "E5"].forEach((n, i) => K.fm({ f: n, t: .45 + i * .012, ratio: 2, idx: 1.8, idx2: .12, d: 2.2, g: .04, rev: .5 }));
+      K.sparkle({ n: 10, t: .5, t2: 1.3, f1: 2200, f2: 6600, rise: true, g: .016, rev: .5, dly: .2 });
+      K.tone({ f: "A5", t: .5, f2: "D6", gl: .8, type: "sawtooth", lp: 1500, a: .2, d: .9, g: .012, rev: .5 });
+    } },
+  "res.xp.fill": { group: "Results", bus: "ui", cd: 400, hap: null,
+    desc: "The XP bar filling: a smooth glide rising an octave over the fill (opts.dur), shimmering faster as it climbs.",
+    fn: (K, o) => {
+      const D = o.dur || 1.6;
+      K.tone({ f: "A4", f2: "A5", gl: D, a: .12, hold: D - .12, d: .2, g: .045, vib: [4, 10, 11] });
+      K.tone({ f: "A3", f2: "A4", gl: D, type: "sawtooth", lp: 700, ff2: 2800, fgl: D, a: .15, hold: D - .15, d: .2, g: .02 });
+      K.noise({ hp: 6000, am: [6, .8, 18], a: D * .6, hold: D * .4, d: .2, g: .014 });
+    } },
+  "res.xp.pop": { group: "Results", bus: "ui", cd: 400, hap: "success",
+    desc: "The XP bar's pop as it charges full: a bright bubble pop and a ring left hanging in the air.",
+    fn: K => {
+      K.tone({ f: 900, f2: 1900, gl: .03, a: .001, d: .06, g: .12 });
+      K.bell({ f: "D6", t: .02, ratio: 3, d: .35, g: .05, rev: .3 });
+      K.tone({ f: "D7", t: .02, a: .005, d: .5, g: .013, rev: .4 });
+    } },
+  "res.xp.knock": { group: "Results", bus: "ui", cd: 400, hap: "tap",
+    desc: "The XP bar's knock (a full bar, a wall, level 80): a hollow double knock on glass - full, nothing more fits.",
+    fn: K => {
+      K.tone({ f: 310, f2: 230, gl: .03, type: "triangle", lp: 1300, a: .001, d: .09, g: .15 });
+      K.noise({ bp: 950, q: 3, d: .03, g: .06 });
+      K.tone({ f: 290, f2: 215, gl: .03, t: .1, type: "triangle", lp: 1100, a: .001, d: .08, g: .1 });
+    } },
+  "res.xp.count": { vol: 2.2, group: "Results", bus: "ui", cd: 35, poly: 2, hap: null,
+    desc: "The XP number counting up: a fast, soft mechanical counter - one wheel clicking over.",
+    fn: K => {
+      K.click({ bp: 3300, q: 10, d: .008, g: .09 });
+      K.tone({ f: 2600, type: "square", lp: 3000, a: .001, d: .01, g: .02 });
+    } },
+  "res.levelup": { group: "Results", bus: "cut", cd: 1000, hap: "celebrate",
+    desc: "Level up: a short brass call - two pick-up notes into a D major chord with a timpani hit and a shimmer.",
+    fn: K => {
+      const brass = (n, t, hold, g) => [-7, 7].forEach(dt => K.tone({ f: n, t, type: "sawtooth", lp: 700, ff2: 3200, fgl: .12, det: dt, a: .03, hold, d: .5, g }));
+      brass("A4", 0, .05, .028); brass("D5", .13, .05, .028);
+      ["D4", "A4", "D5", "F#5"].forEach(n => brass(n, .26, .35, .022));
+      K.thump({ t: .26, f: 110, f2: 45, d: .5, g: .32 });
+      K.sparkle({ n: 8, t: .4, t2: 1.1, f1: 2500, f2: 6000, g: .014, rev: .45 });
+    } },
+  "res.xp.overflow": { group: "Results", bus: "ui", cd: 800, hap: null,
+    desc: "XP past a wall, 'where does it go?': a curious glide that wanders up and down twice, then settles on an open fifth.",
+    fn: K => {
+      K.tone({ f: "E5", pts: [[.18, "G5"], [.34, "D5"], [.52, "A5"], [.68, "E5"], [.8, "A5"]], type: "triangle", lp: 3000, a: .04, hold: .78, d: .2, g: .06, vib: [5, 18] });
+      K.fm({ f: "A5", t: .85, ratio: 2, idx: 1, d: .7, g: .05, rev: .3 });
+      K.fm({ f: "D6", t: .87, ratio: 2, idx: 1, d: .7, g: .045, rev: .3 });
+    } },
+  "res.unlock.reveal": { group: "Results", bus: "ui", cd: 200, hap: "tap",
+    desc: "An unlock row slides in: a quick swipe and a small 'ta-da' up a fourth (D, G).",
+    fn: K => {
+      K.noise({ bp: 1200, ff2: 3600, q: 1, a: .02, d: .12, g: .08, pan: -.3, pan2: .3 });
+      K.tone({ f: "D5", t: .1, type: "triangle", a: .004, d: .2, g: .07 });
+      K.tone({ f: "G5", t: .2, type: "triangle", a: .004, d: .4, g: .075, rev: .25 });
+    } },
+  "res.found.badge": { group: "Results", bus: "ui", cd: 400, hap: "success",
+    desc: "'Badge found' row: the clink of a metal badge set down, twice, then a warm bell.",
+    fn: K => {
+      K.fm({ f: 1900, ratio: 1.41, idx: 2, idx2: .1, d: .45, g: .055 });
+      K.click({ bp: 5000, d: .006, g: .05 });
+      K.fm({ f: 2600, t: .06, ratio: 1.41, idx: 1.5, idx2: .1, d: .3, g: .03 });
+      K.bell({ f: "D5", t: .15, d: 1.2, g: .055, rev: .35 });
+    } },
+  "res.found.flare": { vol: 1.1, group: "Results", bus: "ui", cd: 400, hap: "success",
+    desc: "'Secret flare found' row: a tritone question (D to G#) answered by a rising whole-tone shimmer that echoes away.",
+    fn: K => {
+      K.fm({ f: "D5", ratio: 3.01, idx: 1.2, d: .4, g: .05, rev: .4 });
+      K.fm({ f: "G#5", t: .14, ratio: 3.01, idx: 1.2, d: .5, g: .05, rev: .4 });
+      K.arp(["C6", "D6", "E6", "F#6", "G#6"], .045, (n, t) => K.tone({ f: n, t: .3 + t, a: .004, d: .3, g: .025, dly: .35, rev: .4 }));
+    } },
+  "res.found.character": { vol: 1.7, group: "Results", bus: "ui", cd: 400, hap: "success",
+    desc: "'Character found' row: a curtain-call - a tiny drum flourish and a two-chord 'ta-da' in bright brass.",
+    fn: K => {
+      for(let i = 0; i < 5; i++) K.noise({ t: i * .035, bp: 1800, q: 1.5, d: .03, g: .04 + i * .01 });
+      const hit = (notes, t, d) => notes.forEach(n => K.tone({ f: n, t, type: "sawtooth", lp: 2600, a: .01, d, g: .022 }));
+      hit(["G4", "D5", "G5"], .2, .14);
+      hit(["C5", "G5", "C6"], .36, .5);
+    } },
+
+  /* ------------------------- HUNDO EFFECTS -------------------------
+     Scored to each effect's own beats (hfxFireworks' shots, HFX_UW, the
+     UFO's --t marks, the Bubbles flourish at 3.5s). */
+  "hundo.confetti": { group: "Hundo effects", bus: "cut", cd: 1500, hap: "celebrate",
+    desc: "Confetti: a party-popper crack, then paper fluttering down for two seconds with little chimes caught in it.",
+    fn: K => {
+      K.noise({ hp: 1500, a: .001, d: .05, g: .3 });
+      K.thump({ f: 210, f2: 80, d: .09, g: .2 });
+      K.noise({ bp: 5000, q: .7, am: [22, .9, 15], amType: "square", a: .06, hold: .5, d: 1.6, g: .055, pan: -.4, pan2: .4, pd: 2 });
+      K.noise({ bp: 3600, q: .9, am: [17, .85, 11], amType: "square", t: .1, a: .06, hold: .4, d: 1.4, g: .04, pan: .4, pan2: -.3, pd: 2 });
+      K.sparkle({ n: 9, t: .15, t2: 2.0, f1: 2000, f2: 5200, g: .016, rev: .3 });
+    } },
+  "hundo.fireworks": { group: "Hundo effects", bus: "cut", cd: 3000, hap: "boom",
+    desc: "Fireworks, on the show's own beats: five shells whistle up and burst (1.0s to 2.35s), the three-shell finale at ~3.4s, the crackle and the embers coming down.",
+    fn: K => {
+      /* hfxFireworks' shots: [launch, climb], and which are big */
+      const SHOTS = [[.25, .75], [.6, .8], [1.0, .85], [1.45, .8], [1.6, .75], [2.55, .8], [2.5, .95, 1], [2.6, .8]];
+      SHOTS.forEach((s, i) => {
+        const tb = s[0] + s[1], big = !!s[2], pan = [-.5, .5, 0, -.7, .7, -.4, 0, .4][i];
+        if(i % 2 === 0 || big) K.tone({ t: s[0], f: 700, f2: 1900 + i * 80, gl: s[1], a: .05, hold: s[1] - .1, d: .05, g: .012, pan });
+        K.noise({ t: s[0], color: "p", bp: 900, ff2: 2400, q: 1.5, a: .05, d: s[1] * .6, g: .025, pan });
+        K.noise({ t: tb, lp: big ? 4500 : 3200, ff2: 700, fgl: .8, a: .002, d: big ? 1.1 : .7, g: big ? .25 : .17, pan, rev: .3 });
+        K.thump({ t: tb, f: big ? 85 : 100, f2: 32, gl: .25, d: big ? .7 : .45, g: big ? .3 : .2 });
+      });
+      for(let i = 0; i < 24; i++) K.click({ t: 4.35 + K.R() * .75, bp: K.r(2000, 6000), q: 4, d: .008, g: K.r(.03, .07), pan: K.r(-.8, .8) });
+      K.noise({ t: 3.9, hp: 4500, ff2: 2500, fgl: 2.4, am: [9, .7], a: .4, hold: 1, d: 1.2, g: .02 });
+    } },
+  "hundo.underwater": { vol: 1.3, group: "Hundo effects", bus: "cut", cd: 3000, hap: "celebrate",
+    desc: "Underwater, on HFX_UW: the sea rushing up from the bottom, the world muffled with bubbles and a whale's call as the fish and the manta pass, then draining away and drips on the glass.",
+    fn: K => {
+      const U = (typeof HFX_UW === "object" && HFX_UW) ? HFX_UW : { rise: .15, riseD: 1.6, drain: 5.0, drainD: 1.2 };
+      const up = U.rise, full = U.rise + U.riseD, dr = U.drain, out = U.drain + U.drainD;
+      K.noise({ t: up, color: "p", lp: 250, ff2: 2600, fgl: U.riseD, a: U.riseD * .8, d: .5, g: .2 });
+      K.noise({ t: full - .2, color: "b", lp: 420, am: [.6, .35], a: .4, hold: dr - full, d: .5, g: .1 });
+      for(let i = 0; i < 18; i++){
+        const t = full + K.R() * (dr - full), f = K.r(320, 700);
+        K.tone({ t, f, f2: f * 2.3, gl: .045, a: .002, d: .05, g: .03, pan: K.r(-.6, .6), lp: 1500 });
+      }
+      K.tone({ t: full + .3, f: 220, pts: [[.7, 185], [1.4, 262], [2.0, 230]], type: "sawtooth", lp: 650, a: .5, hold: 1.2, d: .6, g: .028, vib: [3, 25], rev: .4 });
+      K.noise({ t: dr, color: "p", lp: 2600, ff2: 220, fgl: U.drainD, a: .1, hold: U.drainD * .6, d: .5, g: .14 });
+      for(let i = 0; i < 6; i++) K.tone({ t: dr + .2 + i * .14, f: K.r(250, 400), f2: K.r(700, 900), gl: .06, a: .003, d: .07, g: .03, lp: 1200 });
+      for(let i = 0; i < 5; i++) K.tone({ t: out + .1 + i * .19 + K.R() * .1, f: K.r(1700, 2300), f2: 900, gl: .05, a: .001, d: .06, g: .03, pan: K.r(-.7, .7), rev: .3 });
+    } },
+  "hundo.bubbles": { group: "Hundo effects", bus: "cut", cd: 3000, hap: "celebrate",
+    desc: "Bubbles: soft wobbling blips rising off the box, a glassy pop now and then, and the flourish at 3.5s - a ring of pops and a rainbow spray.",
+    fn: K => {
+      for(let i = 0; i < 16; i++){
+        const t = .1 + (i / 16) * 3.1 + K.R() * .12, f = K.r(380, 820);
+        K.tone({ t, f, f2: f * 1.6, gl: .12, a: .01, d: .14, g: .035, vib: [16, 60], pan: K.r(-.7, .7) });
+      }
+      for(let i = 0; i < 5; i++) K.tone({ t: .6 + i * .55 + K.R() * .2, f: 1300, f2: 2600, gl: .02, a: .001, d: .03, g: .045, pan: K.r(-.6, .6) });
+      for(let i = 0; i < 12; i++) K.tone({ t: 3.5 + i * .012, f: K.r(900, 1600), f2: K.r(2200, 3200), gl: .02, a: .001, d: .035, g: .05, pan: Math.cos(i / 12 * Math.PI * 2) * .9 });
+      ["D5", "F#5", "A5", "D6"].forEach((n, i) => K.fm({ t: 3.52 + i * .01, f: n, ratio: 2.5, idx: 1, d: .9, g: .03, rev: .45 }));
+      K.sparkle({ n: 10, t: 3.55, t2: 4.6, f1: 3000, f2: 7500, g: .012, rev: .4 });
+    } },
+  "hundo.ufo": { group: "Hundo effects", bus: "cut", cd: 3000, hap: "boom",
+    desc: "UFO, on the saucer's beats: a theremin circling in, the tractor beam firing (~4.0s) and humming, the scan sweep (~6.3s) and lock-on beeps, the charge (8.0s), the warp out (8.55s) and stars twinkling off.",
+    fn: K => {
+      K.tone({ f: 520, pts: [[.9, 760], [1.8, 480], [2.7, 820], [3.6, 600], [3.95, 640]], a: .5, hold: 3.2, d: .3, g: .045, vib: [6.5, 45], orbit: [.55, .8], rev: .35 });
+      K.tone({ f: 1040, pts: [[.9, 1520], [1.8, 960], [2.7, 1640], [3.6, 1200]], a: .6, hold: 3, d: .3, g: .01, vib: [6.5, 45] });
+      K.tone({ t: 3.95, f: 200, f2: 1300, gl: .25, type: "sawtooth", lp: 1800, a: .01, d: .25, g: .035 });
+      [3.98, 4.2, 4.42].forEach((t, i) => K.fm({ t, f: 880 * Math.pow(1.122, i), ratio: 1.5, idx: 2, d: .3, g: .03, rev: .3 }));
+      K.tone({ t: 4.18, f: 110, type: "sawtooth", lp: 900, a: .2, hold: 3.6, d: .3, g: .028, vib: [7, 12] });
+      K.tone({ t: 4.18, f: 165, type: "sawtooth", lp: 700, a: .2, hold: 3.6, d: .3, g: .018 });
+      K.thump({ t: 6.1, f: 120, f2: 60, d: .2, g: .15 });
+      K.noise({ t: 6.3, bp: 1500, ff2: 4200, fgl: .31, q: 4, a: .3, d: .3, g: .06, pan: -.5, pan2: .5 });
+      [6.95, 7.07].forEach(t => K.tone({ t, f: 1760, type: "square", lp: 4000, a: .002, d: .06, g: .035 }));
+      K.tone({ t: 8.0, f: 300, f2: 2400, gl: .55, type: "triangle", a: .4, d: .15, g: .04 });
+      K.thump({ t: 8.55, f: 150, f2: 35, gl: .3, d: .6, g: .32 });
+      K.noise({ t: 8.55, lp: 6000, ff2: 400, fgl: .8, a: .002, d: .9, g: .17, rev: .4 });
+      K.tone({ t: 8.6, f: 3200, f2: 120, gl: .45, type: "sawtooth", lp: 4000, a: .002, d: .45, g: .03, pan: 0, pan2: .9 });
+      K.sparkle({ n: 9, t: 9.9, t2: 10.8, f1: 3500, f2: 7800, g: .012, rev: .5 });
+    } },
+  /* the results character's reaction while the effect plays (b320b) */
+  "react.confetti": { vol: 2.6, group: "Hundo effects", bus: "cut", cd: 2000, hap: null,
+    desc: "Character, Confetti: a little giggle as it squints, a paper landing 'pap' on its head and the slide off.",
+    fn: K => {
+      K.vox({ t: .3, f: 520, f2: 610, v: "i", d: .08, g: .08 });
+      K.vox({ t: .43, f: 560, f2: 660, v: "i", v2: "e", d: .1, g: .075 });
+      K.noise({ t: 1.6, bp: 3000, q: 2, d: .025, g: .08 });
+      K.noise({ t: 2.9, bp: 2200, ff2: 1100, q: 1.2, a: .05, d: .25, g: .04 });
+    } },
+  "react.fireworks": { vol: 2.1, group: "Hundo effects", bus: "cut", cd: 2000, hap: null,
+    desc: "Character, Fireworks: a startled 'eep!' at the first bang (1.0s), then a wide-eyed 'ooh' as the sky lights up.",
+    fn: K => {
+      K.vox({ t: 1.0, f: 700, f2: 1050, gl: .06, v: "i", d: .1, g: .055 });
+      K.vox({ t: 1.55, f: 390, f2: 330, v: "o", v2: "u", a: .06, d: .5, g: .05 });
+    } },
+  "react.underwater": { vol: 1.7, group: "Hundo effects", bus: "cut", cd: 2000, hap: null,
+    desc: "Character, Underwater: a sharp breath in, cheeks puffing ('mmf'), and the breath let out in bubbles as the water drains.",
+    fn: K => {
+      const U = (typeof HFX_UW === "object" && HFX_UW) ? HFX_UW : { rise: .15, riseD: 1.6, drain: 5.0 };
+      K.noise({ t: U.rise, bp: 1600, q: 1.2, a: .14, d: .05, g: .08 });
+      K.vox({ t: U.rise + .45, f: 160, v: "u", a: .03, d: .28, g: .08 });
+      for(let i = 0; i < 4; i++) K.tone({ t: U.drain + .7 + i * .09, f: 300 + i * 40, f2: 760, gl: .05, a: .002, d: .06, g: .05, lp: 1300 });
+    } },
+  "react.bubbles": { vol: 1.8, group: "Hundo effects", bus: "cut", cd: 2000, hap: null,
+    desc: "Character, Bubbles: a curious 'oh?' following the bubble, a cross-eyed 'boing' as it lands on the nose, the pop, a blink.",
+    fn: K => {
+      K.vox({ t: .4, f: 300, f2: 430, v: "o", d: .22, g: .045 });
+      K.tone({ t: 2.6, f: 330, f2: 160, gl: .4, type: "triangle", vib: [9, 90], a: .01, d: .4, g: .05 });
+      K.tone({ t: 3.2, f: 1100, f2: 2600, gl: .02, a: .001, d: .035, g: .06 });
+      K.click({ t: 3.5, bp: 2000, q: 2, d: .006, g: .03 });
+    } },
+  "react.ufo": { vol: 3.6, group: "Hundo effects", bus: "cut", cd: 2000, hap: null,
+    desc: "Character, UFO: mirrored goggles sliding down and clicking on (0.65s), the beam and the warp glinting off them (4.0s, 8.55s), pushed back up (9.35s).",
+    fn: K => {
+      K.noise({ t: .65, bp: 3200, ff2: 1500, q: 2, a: .03, d: .17, g: .04 });
+      K.click({ t: .85, bp: 2600, q: 3, d: .01, g: .06 });
+      [4.0, 8.55].forEach(t => { K.fm({ t, f: 3400, ratio: 4.2, idx: 1, d: .3, g: .025 }); K.noise({ t, hp: 6000, ff2: 9000, a: .05, d: .2, g: .015 }); });
+      K.noise({ t: 9.35, bp: 1500, ff2: 3300, q: 2, a: .05, d: .2, g: .035 });
+    } },
+
+  /* ------------------------------ HOME ------------------------------ */
+  "home.planet": { group: "Home", bus: "ui", cd: 90, poly: 3, hap: "heavy",
+    desc: "Tap the planet: a deep resonant 'bwomm' with a slow wobble and a crystal ring over it - striking a hollow world.",
+    fn: K => {
+      K.tone({ f: 98, f2: 82, gl: 1, a: .005, d: 1.2, g: .22, vib: [3, 22] });
+      K.tone({ f: 196, f2: 180, gl: 1, type: "triangle", lp: 520, a: .005, d: .9, g: .09, vib: [3, 22] });
+      K.fm({ f: 392, ratio: 1.41, idx: 2.4, idx2: .2, a: .01, d: 1.4, g: .045, vib: [3, 22], rev: .4 });
+      K.fm({ f: 1568, ratio: 2.76, idx: 1, idx2: .05, d: 1.2, g: .025, rev: .4 });
+      K.noise({ color: "b", lp: 300, d: .08, g: .12 });
+    } },
+  "home.flare.rookie": { vol: 1.1, group: "Home", bus: "ui", cd: 90, poly: 2, hap: "tap",
+    desc: "Tap the Bronze flare (a nebula, where stars begin): a soft breath of gas ringing on D - air more than note.",
+    fn: K => {
+      K.noise({ color: "p", bp: 587, q: 14, a: .05, d: .6, g: .45, rev: .5 });
+      K.tone({ f: "D5", a: .08, d: .5, g: .04, rev: .5 });
+    } },
+  "home.flare.ranger": { vol: 1.1, group: "Home", bus: "ui", cd: 90, poly: 2, hap: "tap",
+    desc: "Tap the Silver flare (a protostar, still forming): a note gathering itself - its brightness growing as it rises E to B.",
+    fn: K => {
+      K.fm({ f: "E5", f2: "B5", gl: .3, ratio: 1, idx: .1, idx2: 3, id: 1.4, a: .01, d: .38, g: .055, rev: .3 });
+      K.noise({ bp: 1300, ff2: 2600, q: 4, am: [24, .7], a: .1, d: .2, g: .02 });
+    } },
+  "home.flare.veteran": { group: "Home", bus: "ui", cd: 90, poly: 2, hap: "tap",
+    desc: "Tap the Gold flare (a sun, making its own light): a full warm bell on A with a glowing low body.",
+    fn: K => {
+      K.fm({ f: "A4", ratio: 2, idx: 2.2, idx2: .3, d: 1, g: .075, rev: .3 });
+      K.tone({ f: "A3", type: "triangle", lp: 800, a: .01, d: .7, g: .05 });
+    } },
+  "home.flare.vanguard": { group: "Home", bus: "ui", cd: 90, poly: 2, hap: "tap",
+    desc: "Tap the Platinum flare (a binary, two stars): two bells a fifth apart, one each side, slowly beating against each other.",
+    fn: K => {
+      K.fm({ f: "E5", ratio: 3, idx: 1.2, d: .9, g: .05, pan: -.65, rev: .3 });
+      K.fm({ f: sndHz("B5") + 3.5, t: .05, ratio: 3, idx: 1.2, d: .9, g: .05, pan: .65, rev: .3 });
+      K.fm({ f: sndHz("B5") - 3.5, t: .05, ratio: 3, idx: .8, d: .9, g: .03, pan: .65 });
+    } },
+  "home.flare.adept": { group: "Home", bus: "ui", cd: 90, poly: 2, hap: "tap",
+    desc: "Tap the Sapphire flare (a spiral galaxy): a swirl - two resonant whirls of air turning opposite ways round the stereo field over a shimmering C# and E.",
+    fn: K => {
+      K.noise({ color: "p", bp: 700, ff2: 2600, q: 9, a: .15, d: .6, g: .22, orbit: [3.2, .9], rev: .4 });
+      K.noise({ color: "p", bp: 2400, ff2: 900, q: 9, a: .15, d: .6, g: .16, orbit: [-3.2, .9], rev: .4 });
+      ["C#5", "E5"].forEach(n => K.tone({ f: n, a: .12, d: .6, g: .03, vib: [7, 14], rev: .4 }));
+    } },
+  "home.flare.elite": { group: "Home", bus: "ui", cd: 90, poly: 2, hap: "tap",
+    desc: "Tap the Amethyst flare (a quasar, seen across the universe): a sharp beam of a ping, falling an octave, echoing far.",
+    fn: K => {
+      K.tone({ f: 2400, f2: 1200, gl: .08, a: .001, d: .3, g: .05, dly: .45 });
+      K.tone({ f: 1200, type: "square", lp: 2400, a: .001, d: .12, g: .015, dly: .4 });
+    } },
+  "home.flare.titan": { group: "Home", bus: "ui", cd: 90, poly: 2, hap: "heavy",
+    desc: "Tap the Supernova flare (outshining its galaxy): a big D chord stab over a deep hit, sparks flying off it.",
+    fn: K => {
+      ["D3", "A3", "D4", "F#4", "A4"].forEach(n => K.tone({ f: n, type: "sawtooth", lp: 400, ff2: 2500, fgl: .05, a: .005, d: .7, g: .022, rev: .45 }));
+      K.thump({ f: 120, f2: 40, d: .35, g: .28 });
+      K.sparkle({ n: 5, t: .05, t2: .4, f1: 3000, f2: 6500, g: .014, rev: .4 });
+    } },
+  "home.flare.locked": { group: "Home", bus: "ui", cd: 150, hap: "error",
+    desc: "Tap a flare or rank not reached yet: a short, damped rattle that matches its little shake - not yet.",
+    fn: K => {
+      K.tone({ f: 330, type: "triangle", lp: 1200, vib: [26, 70, 8], a: .002, d: .24, g: .07 });
+      K.noise({ bp: 900, q: 3, am: [30, .9, 10], a: .002, d: .2, g: .045 });
+    } },
+  "home.secret.tap": { group: "Home", bus: "ui", cd: 150, poly: 2, hap: "tap",
+    desc: "Tap a secret flare you have found: a reversed swell blooming into a soft lydian chord with four sparks - its own glow.",
+    fn: K => {
+      K.noise({ color: "p", bp: 2000, q: 2, a: .25, d: .04, g: .06 });
+      ["G5", "B5", "D6", "F#6"].forEach(n => K.tone({ f: n, t: .25, a: .01, d: .7, g: .026, rev: .4 }));
+      [.27, .31, .36, .42].forEach((t, i) => K.fm({ t, f: 3200 + i * 450, ratio: 4.1, idx: .8, d: .15, g: .015, pan: [-.6, .6, -.3, .3][i] }));
+    } },
+  "home.secret.found": { vol: 1.2, group: "Home", bus: "cut", cd: 1500, hap: "celebrate",
+    desc: "A secret flare found, its scene: an eerie low swell, a whole-tone glide straight up, and an augmented chord of crystal.",
+    fn: K => {
+      K.tone({ f: "D3", type: "triangle", lp: 700, vib: [.8, 30], a: .6, d: .9, g: .05, rev: .4 });
+      K.tone({ f: "C4", pts: [[.15, "D4"], [.3, "E4"], [.45, "F#4"], [.6, "G#4"], [.75, "A#4"], [.9, "C5"]], a: .1, hold: .8, d: .2, g: .03, dly: .3 });
+      ["C6", "E6", "G#6"].forEach((n, i) => K.bell({ f: n, t: .95 + i * .02, d: 1.6, g: .035, rev: .6 }));
+    } },
+  "home.daily.ready": { vol: 1.1, group: "Home", bus: "ui", cd: 1500, hap: "tap",
+    desc: "The daily question is ready: a gentle two-ping beacon (E, B), like a call light coming on.",
+    fn: K => {
+      K.tone({ f: "E6", a: .004, d: .16, g: .055, dly: .3 });
+      K.tone({ f: "B5", t: .14, a: .004, d: .3, g: .055, dly: .3 });
+    } },
+  "home.daily.fill": { group: "Home", bus: "ui", cd: 800, hap: null,
+    desc: "The daily ring filling: a soft rising shimmer over the fill (opts.dur), with one ping as it closes.",
+    fn: (K, o) => {
+      const D = o.dur || 1.2;
+      K.noise({ hp: 3000, ff2: 8000, fgl: D, a: D, d: .15, g: .025 });
+      K.tone({ f: "B4", f2: "B5", gl: D, a: .1, hold: D - .1, d: .15, g: .035 });
+      K.fm({ t: D, f: "B6", ratio: 3.5, idx: 1, d: .4, g: .035, rev: .3 });
+    } },
+  "home.supernova.ring": { vol: 1.1, group: "Home", bus: "ui", cd: 1500, hap: null,
+    desc: "The Supernova ring's streak: a comet sweeping round - a whoosh circling the stereo field with a hot sizzle tail.",
+    fn: K => {
+      K.noise({ bp: 3000, ff2: 1200, q: 2, a: .03, d: .6, g: .09, orbit: [1.6, .9] });
+      K.noise({ hp: 7000, am: [40, .7], a: .02, d: .5, g: .025, orbit: [1.6, .9] });
+      K.tone({ f: 900, f2: 600, gl: .5, type: "triangle", a: .02, d: .5, g: .018 });
+    } },
+
+  /* ----------------------------- BADGES ----------------------------- */
+  "badge.case.open": { group: "Badges", bus: "ui", cd: 600, hap: "tap",
+    desc: "The badge case opens, on CASE_OPEN: two latches snap, the lid cracks with a short hinge creak, swings up, a velvet breath and a glint as it clears.",
+    fn: K => {
+      const C = SND_CASE_OPEN(), hold = C.hold / 1000, crack = C.crack / 1000, swing = C.swing / 1000;
+      [0, .06].forEach(t => { K.tone({ t, f: 2200, f2: 1800, gl: .02, type: "triangle", a: .001, d: .02, g: .1 }); K.click({ t, bp: 4500, q: 3, d: .012, g: .13 }); K.thump({ t, f: 300, f2: 200, d: .03, g: .07 }); });
+      K.noise({ t: hold, bp: 700, ff2: 950, q: 10, am: [40, .8], a: .02, d: crack, g: .07 });
+      K.tone({ t: hold + crack, f: 180, f2: 140, gl: swing, type: "sawtooth", lp: 900, q: 6, vib: [9, 25], a: .05, hold: swing * .6, d: swing * .4, g: .022 });
+      K.noise({ t: hold + crack, color: "p", lp: 500, a: .2, d: swing * .8, g: .03 });
+      K.noise({ t: hold + crack + .1, color: "p", lp: 1200, a: .2, d: .5, g: .045 });
+      K.bell({ t: C.glint / 1000, f: 3200, ratio: 4, d: .45, g: .018, rev: .3 });
+      K.thump({ t: hold + crack + swing, f: 160, f2: 90, d: .1, g: .1 });
+    } },
+  "badge.case.close": { group: "Badges", bus: "ui", cd: 600, hap: "heavy",
+    desc: "The case shuts: the lid swinging down with a falling creak, a padded thump, and two lower latch clicks.",
+    fn: K => {
+      K.noise({ color: "p", bp: 900, ff2: 420, q: 1, a: .3, d: .1, g: .05 });
+      K.tone({ f: 160, f2: 190, gl: .4, type: "sawtooth", lp: 800, q: 6, vib: [10, 25], a: .05, d: .38, g: .02 });
+      K.thump({ t: .44, f: 140, f2: 58, d: .14, g: .3 });
+      K.noise({ t: .44, color: "b", lp: 500, d: .08, g: .15 });
+      [.62, .7].forEach(t => { K.click({ t, bp: 2400, q: 3, d: .012, g: .12 }); K.tone({ t, f: 1600, f2: 1300, gl: .02, type: "triangle", a: .001, d: .02, g: .07 }); });
+    } },
+  "badge.lift": { vol: 1.4, group: "Badges", bus: "ui", cd: 300, hap: "tap",
+    desc: "A badge lifted out of its slot: velvet sliding and a metallic shimmer rising as it comes up into your hand.",
+    fn: K => {
+      K.noise({ color: "p", bp: 900, ff2: 1600, q: .8, a: .08, d: .15, g: .1 });
+      K.tone({ f: 1200, f2: 2400, gl: .35, a: .1, d: .3, g: .035 });
+      K.bell({ t: .25, f: 2600, ratio: 3.2, d: .4, g: .02, rev: .3 });
+    } },
+  "badge.spin": { vol: 1.1, group: "Badges", bus: "ui", cd: 90, poly: 2, hap: "swipe",
+    desc: "A badge flicked into a spin: a metal whoosh whose length, pitch and loudness follow the flick (opts.speed 0-1), ringing faintly as it turns.",
+    demo: [{ speed: .2 }, { speed: .6 }, { speed: 1 }],
+    fn: (K, o) => {
+      const sp = Math.max(.05, Math.min(1, o.speed == null ? .5 : o.speed)), D = .25 + sp * .6;
+      K.noise({ bp: 1200 + sp * 2600, ff2: 800, q: 3, am: [8 + sp * 30, .8, 4], a: .02, d: D, g: .06 + sp * .1 });
+      K.fm({ f: 2200, ratio: 1.41, idx: 1, d: D + .3, g: .01 + sp * .02, vib: [8 + sp * 20, 15] });
+    } },
+  "badge.rub": { vol: 1.9, group: "Badges", bus: "ui", cd: 110, poly: 2, hap: "swipe",
+    desc: "Rubbing a dirty badge: a soft cloth stroke - gritty while it is dirty, smoother and higher as it cleans (opts.clean 0-1).",
+    demo: [{ clean: 0 }, { clean: .5 }, { clean: 1 }],
+    fn: (K, o) => {
+      const c = Math.max(0, Math.min(1, o.clean || 0));
+      K.noise({ bp: 1500 + c * 1800, q: 1.4 + c * 2, am: [18, .5 * (1 - c) + .1], a: .03, hold: .02, d: .14, g: .1 });
+      for(let i = 0; i < Math.round(6 * (1 - c)); i++) K.click({ t: K.R() * .16, bp: K.r(2500, 6000), q: 6, d: .004, g: .03 * (1 - c) + .01 });
+    } },
+  "badge.squeak": { vol: 1.3, group: "Badges", bus: "ui", cd: 160, poly: 2, hap: "tick",
+    desc: "The squeak of the cloth on bare, clean metal: a quick resonant chirp, higher the cleaner it gets (opts.clean).",
+    demo: [{ clean: .5 }, { clean: 1 }],
+    fn: (K, o) => {
+      const c = Math.max(0, Math.min(1, o.clean == null ? 1 : o.clean)), f = 1400 + c * 900;
+      K.tone({ f, f2: f * 1.38, gl: .07, vib: [35, 40], a: .005, d: .09, g: .045 });
+      K.noise({ bp: f * 1.2, q: 18, a: .005, d: .08, g: .05 });
+    } },
+  "badge.sparkle": { vol: 1.2, group: "Badges", bus: "ui", cd: 600, hap: "success",
+    desc: "A badge rubbed clean: four crystal pings rising (F#, A, C#, E) and a shine sweeping across it.",
+    fn: K => {
+      K.arp(["F#6", "A6", "C#7", "E7"], .045, (n, t) => K.bell({ f: n, t, ratio: 4, idx: 1, d: .4, g: .028, rev: .4, partial: false }));
+      K.noise({ bp: 4000, ff2: 9000, q: 2, a: .05, d: .25, g: .025, pan: -.5, pan2: .5 });
+    } },
+  "badge.drop": { group: "Badges", bus: "ui", cd: 200, hap: "tap",
+    desc: "A badge set into its slot: a metallic tick on the rim, then a padded seat - it fits.",
+    fn: K => {
+      K.fm({ f: 3000, ratio: 1.41, idx: 1.5, d: .15, g: .045 });
+      K.click({ bp: 6000, q: 2, d: .005, g: .05 });
+      K.thump({ t: .05, f: 220, f2: 120, d: .08, g: .2 });
+      K.noise({ t: .05, color: "b", lp: 400, d: .05, g: .12 });
+    } },
+  "cs.badge": { group: "Badges", bus: "cut", cd: 2000, hap: "celebrate",
+    desc: "BADGE FOUND, scored: a low build-up (0-0.9s), the reveal chord as the slot lands (0.9s), the click as the badge seats (1.2s), the case lighting up (1.4s), a bell as its name arrives (1.9s), and the flight to Profile (BADGE_CUTSCENE_MS).",
+    fn: K => {
+      const fly = (typeof BADGE_CUTSCENE_MS === "number" ? BADGE_CUTSCENE_MS : 4200) / 1000;
+      K.noise({ color: "p", bp: 300, ff2: 2600, q: 1.2, a: .85, d: .05, g: .08 });
+      K.tone({ f: "D3", f2: "A3", gl: .85, type: "sawtooth", lp: 400, ff2: 1600, fgl: .85, a: .8, d: .1, g: .03 });
+      ["D4", "A4", "D5", "F#5"].forEach((n, i) => K.fm({ t: .9 + i * .015, f: n, ratio: 2, idx: 1.5, d: 1.4, g: .04, rev: .45 }));
+      K.fm({ t: 1.2, f: 3000, ratio: 1.41, idx: 1.5, d: .15, g: .05 });
+      K.thump({ t: 1.2, f: 220, f2: 110, d: .1, g: .22 });
+      ["A4", "C#5", "E5"].forEach(n => K.tone({ t: 1.4, f: n, a: .2, d: 1.2, g: .025, rev: .5 }));
+      K.sparkle({ n: 6, t: 1.45, t2: 1.9, f1: 3000, f2: 6000, g: .012, rev: .4 });
+      K.bell({ t: 1.9, f: "D6", d: 1, g: .04, rev: .4 });
+      K.noise({ t: fly, color: "p", bp: 800, ff2: 3200, q: 1, a: .3, d: .5, g: .07, pan: 0, pan2: .6 });
+    } },
+
+  /* --------------------------- RANK-UP --------------------------- */
+  "rank.road.scroll": { group: "Rank-up journey", bus: "ui", cd: 140, poly: 1, hap: null,
+    desc: "The road map scrolling: a soft ratchet - two low wooden detents under a breath of air, the road clicking past under you.",
+    fn: K => {
+      [0, .055].forEach((t, i) => { K.pluck({ t, f: i ? 330 : 294, d: .08, bright: .4, g: .12 }); K.click({ t, bp: 900, q: 4, d: .006, g: .05 }); });
+      K.noise({ color: "b", lp: 500, a: .02, d: .1, g: .05 });
+    } },
+  "rank.challenge.tick": { group: "Rank-up journey", bus: "ui", cd: 150, hap: "success",
+    desc: "A challenge ticked off: the stroke of a check mark and a bright two-note rise (A, E).",
+    fn: K => {
+      K.noise({ hp: 3000, ff2: 6000, a: .01, d: .06, g: .035 });
+      K.click({ bp: 2600, d: .01, g: .06 });
+      K.tone({ f: "A5", t: .02, type: "triangle", a: .003, d: .16, g: .07 });
+      K.tone({ f: "E6", t: .08, type: "triangle", a: .003, d: .24, g: .065 });
+    } },
+  "rank.road.fill": { group: "Rank-up journey", bus: "ui", cd: 500, hap: null,
+    desc: "The road's light filling: a long warm glide upward with a gentle pulse in it (opts.dur), a soft ping where it stops.",
+    fn: (K, o) => {
+      const D = o.dur || 1.5;
+      K.tone({ f: "D4", f2: "D5", gl: D, type: "triangle", lp: 1200, ff2: 3000, fgl: D, a: .1, hold: D - .1, d: .3, g: .04 });
+      K.noise({ color: "p", bp: 600, ff2: 1800, fgl: D, q: 3, am: [4, .5], a: .1, hold: D - .1, d: .2, g: .03 });
+      K.tone({ t: D, f: "D6", a: .004, d: .35, g: .035, rev: .3 });
+    } },
+  "rank.unlock.pop": { vol: 1.3, group: "Rank-up journey", bus: "cut", cd: 600, hap: "success",
+    desc: "A rank's circle unlocks on the road: a pop, a ring of sparks flying off, and a G chord rising underneath.",
+    fn: K => {
+      K.tone({ f: 600, f2: 1400, gl: .03, a: .001, d: .06, g: .1 });
+      for(let i = 0; i < 6; i++) K.fm({ t: .05 + i * .04, f: 2000 + i * 300, ratio: 4.1, idx: .8, d: .2, g: .016, pan: Math.cos(i) * .8 });
+      ["G4", "D5", "G5", "B5"].forEach((n, i) => K.tone({ t: i * .04, f: n, type: "triangle", lp: 2500, a: .02, d: .6, g: .035, rev: .35 }));
+    } },
+  "rank.flare.zoom": { vol: 3.0, group: "Rank-up journey", bus: "cut", cd: 1000, hap: null,
+    desc: "The road map's flare drawing back into the planet system: a reversed whoosh narrowing and dropping as the view pulls out (RU_HAND_MS).",
+    fn: K => {
+      const D = (typeof RU_HAND_MS === "number" ? RU_HAND_MS : 2000) / 1000;
+      K.noise({ color: "p", bp: 3200, ff2: 450, fgl: D, q: 1.5, a: D * .7, d: D * .3, g: .12, rev: .4 });
+      K.tone({ f: 1200, f2: 280, gl: D, a: D * .5, d: D * .5, g: .03, rev: .4 });
+    } },
+  "rank.attn": { vol: 1.6, group: "Rank-up journey", bus: "cut", cd: 2000, hap: null,
+    desc: "The cutscene's attention on the new flare (RANK_ATTN_MS): a low hum breathing in and out twice with the flare, a glimmer on its loop.",
+    fn: K => {
+      const D = (typeof RANK_ATTN_MS === "number" ? RANK_ATTN_MS : 4000) / 1000;
+      [0, D / 2].forEach(t => { K.tone({ t, f: "A3", a: D * .22, d: D * .26, g: .05 }); K.tone({ t, f: "A4", type: "triangle", lp: 900, a: D * .22, d: D * .26, g: .03 }); });
+      K.sparkle({ n: 5, t: D * .55, t2: D * .7, f1: 2400, f2: 4800, rise: true, g: .012, rev: .4 });
+    } },
+  "rank.whirl": { vol: 1.4, group: "Rank-up journey", bus: "cut", cd: 3000, hap: null,
+    desc: "The whirl: a spinning roar whose pitch and flutter follow the spin - faster for RANK_CUTSPIN_ACCEL_MS, the peak, slowing for RANK_CUTSPIN_DECEL_MS (opts.acc / opts.dec).",
+    fn: (K, o) => {
+      const A = (o.acc || (typeof RANK_CUTSPIN_ACCEL_MS === "number" ? RANK_CUTSPIN_ACCEL_MS : 7200)) / 1000;
+      const Dd = (o.dec || (typeof RANK_CUTSPIN_DECEL_MS === "number" ? RANK_CUTSPIN_DECEL_MS : 5400)) / 1000;
+      const ctx = K.ctx, t = K.T(0), end = t + A + Dd;
+      const roar = (color, f0, f1, q, g0, g1, rate0, rate1, pan) => {
+        const src = ctx.createBufferSource(); src.buffer = sndNoise(ctx, color); src.loop = true;
+        const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = q;
+        bp.frequency.setValueAtTime(f0, t); bp.frequency.exponentialRampToValueAtTime(f1, t + A); bp.frequency.exponentialRampToValueAtTime(f0, end);
+        const am = ctx.createGain(), lfo = ctx.createOscillator(), lg = ctx.createGain();
+        am.gain.value = .6; lg.gain.value = .4;
+        lfo.frequency.setValueAtTime(rate0, t); lfo.frequency.linearRampToValueAtTime(rate1, t + A); lfo.frequency.linearRampToValueAtTime(rate0, end);
+        lfo.connect(lg); lg.connect(am.gain);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(g0, t + .4); g.gain.linearRampToValueAtTime(g1, t + A);
+        g.gain.linearRampToValueAtTime(g1 * .5, t + A + Dd * .4); g.gain.linearRampToValueAtTime(0, end);
+        src.connect(bp); bp.connect(am); am.connect(g); g.connect(K.dest({ pan, rev: .25 }));
+        src.start(t, K.R()); src.stop(end + .05); lfo.start(t); lfo.stop(end + .05);
+        K.track(src, end + .05); K.track(lfo, end + .05);
+      };
+      roar("w", 320, 3600, 2, .015, .1, 2, 42, -.3);
+      roar("p", 220, 2200, 1.5, .02, .08, 1.5, 34, .3);
+      const osc = ctx.createOscillator(), lp = ctx.createBiquadFilter(), g = ctx.createGain();
+      osc.type = "sawtooth"; lp.type = "lowpass";
+      osc.frequency.setValueAtTime(55, t); osc.frequency.exponentialRampToValueAtTime(330, t + A); osc.frequency.exponentialRampToValueAtTime(55, end);
+      lp.frequency.setValueAtTime(300, t); lp.frequency.exponentialRampToValueAtTime(2400, t + A); lp.frequency.exponentialRampToValueAtTime(300, end);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.035, t + A); g.gain.linearRampToValueAtTime(0, end);
+      osc.connect(lp); lp.connect(g); g.connect(K.dest({}));
+      osc.start(t); osc.stop(end + .05); K.track(osc, end + .05);
+    } },
+  "rank.bang": { group: "Rank-up journey", bus: "cut", cd: 2000, hap: "boom",
+    desc: "The bang at the whirl's top speed: a mini-supernova at the new flare - a bright crack and a short bloom of chord.",
+    fn: K => {
+      K.noise({ hp: 2000, a: .001, d: .25, g: .22 });
+      K.thump({ f: 160, f2: 40, gl: .2, d: .5, g: .32 });
+      ["D5", "A5", "E6"].forEach(n => K.bell({ f: n, d: 1.2, g: .035, rev: .5 }));
+    } },
+  "rank.windup": { group: "Rank-up journey", bus: "cut", cd: 120, poly: 3, hap: "tick",
+    desc: "One pulse of the charge into the flash, on the planet's pulse: a heartbeat that climbs and brightens with each one (opts.i of opts.n).",
+    demo: [{ i: 0, n: 8 }, { i: 3, n: 8 }, { i: 6, n: 8 }, { i: 8, n: 8 }],
+    fn: (K, o) => {
+      const n = Math.max(1, o.n || 8), u = Math.max(0, Math.min(1, (o.i || 0) / n)), f = 110 * Math.pow(2, u);
+      K.thump({ f: f * 1.6, f2: f, gl: .08, d: .22, g: .18 + u * .1 });
+      K.tone({ f: f * 2, type: "triangle", lp: 600 + u * 2400, a: .005, d: .25, g: .05 + u * .04 });
+      K.noise({ color: "p", bp: 800 + u * 2000, q: 2, a: .04, d: .12, g: .02 + u * .03 });
+    } },
+  "rank.swell": { group: "Rank-up journey", bus: "cut", cd: 1000, hap: null,
+    desc: "The last held swell into the big flash: a riser of air and tone climbing to the top (opts.dur, the last ~0.5s of RANK_WINDUP_MS).",
+    fn: (K, o) => {
+      const W = typeof RANK_WINDUP_MS === "number" ? RANK_WINDUP_MS : 3000, F = typeof RANK_WINDUP_FILL === "number" ? RANK_WINDUP_FILL : .84;
+      const D = o.dur || (W * (1 - F)) / 1000;
+      K.noise({ bp: 500, ff2: 6500, fgl: D, q: 1.2, a: D, d: .05, g: .12 });
+      K.tone({ f: "A3", f2: "A5", gl: D, type: "sawtooth", lp: 600, ff2: 5000, fgl: D, a: D, d: .05, g: .045 });
+    } },
+  "rank.flash": { group: "Rank-up journey", bus: "cut", cd: 2000, hap: "boom",
+    desc: "The big flash from the flare as the planet changes colour: a white bloom of noise, a deep boom, and a bright chord ringing out under it.",
+    fn: K => {
+      K.noise({ lp: 12000, ff2: 1500, fgl: 1.5, a: .005, d: 2.2, g: .26, rev: .5 });
+      K.thump({ f: 120, f2: 30, gl: .4, d: 1, g: .42 });
+      ["D3", "A3", "D4", "A4", "F#5"].forEach(n => K.tone({ f: n, type: "sawtooth", lp: 3000, ff2: 800, fgl: 2, a: .01, d: 2.4, g: .022, rev: .5 }));
+      ["D6", "A6"].forEach(n => K.bell({ f: n, t: .05, d: 2, g: .03, rev: .6 }));
+    } },
+  "rank.title": { vol: 1.4, group: "Rank-up journey", bus: "cut", cd: 2000, hap: "heavy",
+    desc: "The new rank's title arrives: a stately low brass chord with a long gong tail.",
+    fn: K => {
+      ["D3", "A3", "F#4"].forEach(n => [-6, 6].forEach(dt => K.tone({ f: n, type: "sawtooth", lp: 1400, det: dt, a: .25, hold: .4, d: 1.5, g: .018, rev: .5 })));
+      K.fm({ f: 98, ratio: 1.4, idx: 2, idx2: .3, d: 3, g: .07, rev: .5 });
+    } },
+  "rank.crack": { group: "Rank-up journey", bus: "cut", cd: 2000, hap: "heavy",
+    desc: "The planet's crack forming: stone under strain, a groan and creaks, then a crackle running along the split and the break.",
+    fn: K => {
+      K.noise({ color: "b", lp: 320, am: [5, .6], a: .3, d: .5, g: .12 });
+      K.tone({ f: 80, f2: 62, gl: 1, type: "sawtooth", lp: 420, q: 8, vib: [11, 30], a: .1, d: .9, g: .04 });
+      for(let i = 0; i < 18; i++) K.click({ t: .3 + Math.pow(i / 18, .8) * .8, bp: K.r(1500, 5000), q: 5, d: .006, g: .03 + i * .003, pan: K.r(-.5, .5) });
+      K.noise({ t: 1.1, hp: 1500, d: .12, g: .2 });
+      K.thump({ t: 1.1, f: 140, f2: 60, d: .2, g: .2 });
+    } },
+  "rank.sn.swell": { group: "Rank-up journey", bus: "cut", cd: 2000, hap: "heavy",
+    desc: "Supernova's swell before it goes: the planet heating and shaking - a rumble and growl rising with a thin whine over it (opts.dur, 1.8s).",
+    fn: (K, o) => {
+      const D = o.dur || 1.8;
+      K.noise({ color: "b", lp: 200, ff2: 700, fgl: D, am: [12, .5, 28], a: D, d: .1, g: .22 });
+      K.tone({ f: 55, f2: 110, gl: D, type: "sawtooth", lp: 300, ff2: 900, fgl: D, a: D, d: .1, g: .06 });
+      K.tone({ f: 400, f2: 1600, gl: D, a: D, d: .1, g: .02 });
+    } },
+  "rank.supernova": { group: "Rank-up journey", bus: "cut", cd: 4000, hap: "boom",
+    desc: "Supernova detonating: a deep sub drop, a massive tearing blast, a long rumble of debris and high fragments glittering out for five seconds.",
+    fn: K => {
+      K.tone({ f: 120, f2: 25, gl: 1.5, a: .002, d: 2, g: .45 });
+      K.noise({ lp: 9000, ff2: 600, fgl: 2.5, a: .002, d: 3, g: .3, rev: .5 });
+      K.tone({ f: 90, f2: 40, gl: 1.2, type: "triangle", a: .002, d: 1.5, g: .18 });
+      K.noise({ t: .3, color: "b", lp: 260, am: [6, .4], a: .5, hold: 1, d: 3.5, g: .12 });
+      for(let i = 0; i < 28; i++) K.fm({ t: .5 + Math.pow(K.R(), 1.6) * 4.5, f: K.r(2000, 7000), ratio: 4.1, idx: .8, d: .3, g: .013, pan: K.r(-.9, .9), rev: .4 });
+    } },
+  "rank.upnext": { vol: 1.3, group: "Rank-up journey", bus: "ui", cd: 800, hap: "tap",
+    desc: "Up next: the next rank's box lifts and lights - a soft rising note and a gleam crossing it.",
+    fn: K => {
+      K.tone({ f: "D5", f2: "A5", gl: .25, type: "triangle", a: .03, d: .4, g: .05 });
+      K.noise({ t: .25, bp: 4000, ff2: 8000, q: 2, a: .03, d: .2, g: .025, pan: -.4, pan2: .4 });
+      K.bell({ t: .3, f: "A6", d: .5, g: .028, rev: .3 });
+    } },
+  "rank.card": { group: "Rank-up journey", bus: "ui", cd: 800, hap: "tap",
+    desc: "The card at the top turning over: two air flaps of a card flipping, then a fresh chord on the new side.",
+    fn: K => {
+      K.noise({ color: "p", bp: 1400, ff2: 700, q: 1, a: .01, d: .07, g: .1 });
+      K.noise({ t: .12, color: "p", bp: 1000, ff2: 1900, q: 1, a: .01, d: .07, g: .09 });
+      ["G4", "D5", "A5"].forEach(n => K.fm({ t: .2, f: n, ratio: 2, idx: 1, d: .8, g: .04, rev: .3 }));
+    } },
+  "rank.xp.climb": { group: "Rank-up journey", bus: "ui", cd: 1000, hap: null,
+    desc: "The saved XP climbing on Profile: a slow rising tone, with a ping at each level it crosses (opts.dur, opts.levels).",
+    demo: [{ dur: 2.6, levels: 2 }],
+    fn: (K, o) => {
+      const D = o.dur || 2.6, L = Math.max(1, Math.min(8, o.levels || 1));
+      K.tone({ f: "A3", f2: "A4", gl: D, type: "triangle", lp: 900, a: .2, hold: D - .2, d: .3, g: .03 });
+      for(let k = 1; k <= L; k++) K.tone({ t: D * k / L, f: sndHz("E5") * Math.pow(2, (k - 1) * 2 / 12), a: .003, d: .3, g: .04, rev: .25 });
+    } },
+
+  /* ------------------- LEADERBOARD AND VIRTUAL ROOM ------------------- */
+  "lb.switch": { vol: 1.2, group: "Leaderboard & Virtual Room", bus: "ui", cd: 100, hap: "tap",
+    desc: "Switching boards: a scoreboard flipping over - three quick mechanical flaps and a small landing.",
+    fn: K => {
+      [0, .035, .07].forEach(t => K.click({ t, bp: 2200, q: 3, d: .012, g: .1 }));
+      K.tone({ t: .08, f: 400, f2: 300, gl: .03, type: "triangle", a: .002, d: .04, g: .06 });
+    } },
+  "lb.findme": { group: "Leaderboard & Virtual Room", bus: "ui", cd: 500, hap: "tap",
+    desc: "Find me: a sonar ping echoing out as the list runs to your row.",
+    fn: K => {
+      K.tone({ f: 1320, vib: [3, 8], a: .002, d: .6, g: .065, dly: .5, rev: .35 });
+      K.tone({ t: .35, f: 990, a: .002, d: .5, g: .025, rev: .35 });
+    } },
+  "lb.winner": { group: "Leaderboard & Virtual Room", bus: "cut", cd: 2000, hap: "celebrate",
+    desc: "Last week's winner announced: a short brass fanfare (D, A, D, F# held) with a cymbal swell into a crash.",
+    fn: K => {
+      const br = (n, t, hold, g) => [-7, 7].forEach(dt => K.tone({ f: n, t, type: "sawtooth", lp: 900, ff2: 3200, fgl: .1, det: dt, a: .02, hold, d: .25, g }));
+      br("D4", 0, .08, .026); br("A4", .13, .08, .026); br("D5", .26, .08, .026);
+      ["F#5", "D5", "A4"].forEach(n => br(n, .39, .6, .02));
+      K.noise({ hp: 5000, a: .38, d: .02, g: .05 });
+      K.noise({ t: .39, hp: 4000, a: .002, d: 1.2, g: .07, rev: .4 });
+      [0, .39].forEach(t => K.thump({ t, f: 110, f2: 55, d: .3, g: .25 }));
+    } },
+  "vr.lobby": { group: "Leaderboard & Virtual Room", bus: "ui", cd: 1000, hap: "tap",
+    desc: "Entering a Virtual Room: a deep doorway whoosh into a dark minor-seventh room tone - you are inside.",
+    fn: K => {
+      K.noise({ color: "p", bp: 300, ff2: 1200, q: 1, a: .25, d: .3, g: .1 });
+      ["D3", "F3", "A3", "C4"].forEach(n => K.tone({ t: .2, f: n, type: "sawtooth", lp: 500, a: .3, d: 1.2, g: .018, rev: .4 }));
+      K.tone({ t: .2, f: "D2", a: .3, d: 1.1, g: .05 });
+    } },
+  "vr.join": { group: "Leaderboard & Virtual Room", bus: "ui", cd: 120, hap: "tap",
+    desc: "Someone joins the room: a bright blip pair rising a fifth (G, D) - someone is here.",
+    fn: K => {
+      K.tone({ f: "G5", type: "triangle", a: .002, d: .1, g: .07 });
+      K.tone({ f: "D6", t: .07, a: .002, d: .2, g: .07 });
+      K.tone({ f: 800, f2: 1600, gl: .02, a: .001, d: .03, g: .03 });
+    } },
+  "vr.leave": { vol: 1.1, group: "Leaderboard & Virtual Room", bus: "ui", cd: 120, hap: null,
+    desc: "Someone leaves the room: the same pair falling (D to G) and fading behind a closing filter.",
+    fn: K => {
+      K.tone({ f: "D6", lp: 3000, a: .002, d: .1, g: .055 });
+      K.tone({ f: "G5", t: .08, type: "triangle", lp: 2500, ff2: 600, a: .002, d: .25, g: .055 });
+    } },
+  "vr.ready": { group: "Leaderboard & Virtual Room", bus: "ui", cd: 300, hap: "success",
+    desc: "Ready: locked in - a firm double latch and a square-edged E.",
+    fn: K => {
+      [0, .05].forEach(t => { K.click({ t, bp: 1800, q: 2, d: .012, g: .1 }); K.thump({ t, f: 260, f2: 160, d: .04, g: .1 }); });
+      K.tone({ t: .07, f: "E5", type: "square", lp: 1500, a: .003, d: .2, g: .045 });
+    } },
+  "vr.count": { group: "Leaderboard & Virtual Room", bus: "ui", cd: 500, hap: "tap",
+    desc: "The countdown's 3, 2, 1: a clean beep that steps up a tone on each number (opts.n).",
+    demo: [{ n: 3 }, { n: 2 }, { n: 1 }],
+    fn: (K, o) => {
+      const n = Math.max(1, Math.min(3, o.n || 3)), f = sndHz("A4") * Math.pow(2, (3 - n) * 2 / 12);
+      K.tone({ f, type: "square", lp: 2500, a: .002, hold: .12, d: .08, g: .055 });
+      K.tone({ f, a: .002, hold: .12, d: .1, g: .04 });
+    } },
+  "vr.go": { group: "Leaderboard & Virtual Room", bus: "ui", cd: 800, hap: "heavy",
+    desc: "GO: the beep an octave up and held, bursting outward in a whoosh.",
+    fn: K => {
+      K.tone({ f: "A5", type: "square", lp: 4000, a: .002, hold: .25, d: .3, g: .055 });
+      K.tone({ f: "A6", a: .002, hold: .25, d: .3, g: .025 });
+      K.noise({ bp: 1500, ff2: 5000, q: 1, a: .01, d: .4, g: .07 });
+      K.thump({ f: 150, f2: 60, d: .15, g: .2 });
+    } },
+  "vr.progress": { vol: 1.4, group: "Leaderboard & Virtual Room", bus: "ui", cd: 90, poly: 3, hap: null,
+    desc: "Someone moves up a question on the race line: a short soft blip pitched by their place (opts.place, 1 highest).",
+    demo: [{ place: 3 }, { place: 2 }, { place: 1 }],
+    fn: (K, o) => {
+      const f = ["E6", "D6", "B5", "A5", "G5"][Math.max(0, Math.min(4, (o.place || 1) - 1))];
+      K.tone({ f, type: "triangle", a: .002, d: .07, g: .045 });
+      K.click({ hp: 5000, d: .004, g: .02 });
+    } },
+  "vr.tug": { group: "Leaderboard & Virtual Room", bus: "ui", cd: 150, poly: 2, hap: "heavy",
+    desc: "Tug of War pull: the rope straining - a creaking, stretched tone, its fibres rasping, and the heave.",
+    fn: K => {
+      K.tone({ f: 140, f2: 118, gl: .35, type: "sawtooth", lp: 650, q: 9, vib: [14, 35], a: .05, d: .35, g: .05 });
+      K.thump({ t: .05, f: 150, f2: 70, d: .12, g: .24 });
+      K.noise({ t: .05, bp: 520, q: 2, am: [45, .8], a: .02, d: .12, g: .07 });
+    } },
+  "vr.end": { group: "Leaderboard & Virtual Room", bus: "cut", cd: 3000, hap: "celebrate",
+    desc: "The end-of-match cutscene (VROOM_CUTSCENE_MS): a drum roll building for two seconds, resolving into a bright chord stab and a crash.",
+    fn: K => {
+      let t = 0, iv = .11;
+      while(t < 2.0){ K.noise({ t, bp: 1800, q: 1.4, d: .04, g: .03 + t * .03, pan: (Math.round(t / .03) % 2) ? .2 : -.2 }); K.thump({ t, f: 130, f2: 90, d: .05, g: .04 + t * .04 }); t += iv; iv = Math.max(.032, iv * .93); }
+      ["D4", "F#4", "A4", "D5"].forEach(n => K.tone({ t: 2.05, f: n, type: "sawtooth", lp: 3000, ff2: 1200, fgl: 1, a: .005, d: .9, g: .03, rev: .4 }));
+      K.noise({ t: 2.05, hp: 3500, a: .002, d: 1.5, g: .07, rev: .4 });
+      K.thump({ t: 2.05, f: 120, f2: 45, d: .4, g: .3 });
+    } },
+  "vr.podium": { group: "Leaderboard & Virtual Room", bus: "cut", cd: 2000, hap: "celebrate",
+    desc: "The podium: three stage hits rising - third, second, then first ringing out in bells and sparks.",
+    fn: K => {
+      K.thump({ f: 150, f2: 90, d: .15, g: .2 }); K.tone({ f: "G4", type: "triangle", a: .005, d: .35, g: .06 });
+      K.thump({ t: .45, f: 170, f2: 95, d: .15, g: .24 }); K.tone({ t: .45, f: "B4", type: "triangle", a: .005, d: .35, g: .065 });
+      K.thump({ t: .9, f: 120, f2: 45, d: .4, g: .32 });
+      ["D5", "F#5", "A5"].forEach(n => K.fm({ t: .9, f: n, ratio: 2, idx: 1.4, d: 1.5, g: .045, rev: .4 }));
+      K.sparkle({ n: 8, t: .95, t2: 1.6, f1: 2600, f2: 6400, g: .014, rev: .4 });
+    } },
+
+  /* ------------------------------ CHAT ------------------------------ */
+  "chat.send": { group: "Chat", bus: "ui", cd: 150, hap: "tap",
+    desc: "Message sent: a quick upward swoop, a paper plane leaving your hand.",
+    fn: K => {
+      K.tone({ f: 600, f2: 1500, gl: .09, a: .003, d: .1, g: .065 });
+      K.noise({ hp: 3000, a: .01, d: .06, g: .02, pan: 0, pan2: .5 });
+    } },
+  "chat.receive": { group: "Chat", bus: "ui", cd: 300, hap: "tap",
+    desc: "Message received: a soft two-tone bloop falling a fourth (A, E) - gentle, never a phone alert.",
+    fn: K => {
+      K.tone({ f: "A5", f2: sndHz("A5") * .97, gl: .1, a: .005, d: .12, g: .065 });
+      K.tone({ f: "E5", t: .09, f2: sndHz("E5") * .97, gl: .2, a: .005, d: .25, g: .065 });
+    } },
+  "chat.react": { group: "Chat", bus: "ui", cd: 80, hap: "tick",
+    desc: "A reaction added: a tiny bubbly pop.",
+    fn: K => {
+      K.tone({ f: 500, f2: 1100, gl: .025, a: .001, d: .05, g: .09 });
+      K.tone({ t: .02, f: 2200, a: .001, d: .08, g: .018 });
+    } },
+  "chat.invite": { group: "Chat", bus: "ui", cd: 1000, hap: "success",
+    desc: "An invite: a doorbell's three notes (D, B, G) - somebody at the door.",
+    fn: K => {
+      K.arp(["D5", "B4", "G4"], .2, (n, t) => K.fm({ f: n, t, ratio: 3, idx: .8, d: .8, g: .055, rev: .3 }));
+    } },
+
+  /* ----------------------- ONBOARDING AND NOVA ----------------------- */
+  "ob.step": { group: "Onboarding & Nova", bus: "ui", cd: 150, hap: "tap",
+    desc: "A sign-up step forward: a soft footstep and a short rising fifth.",
+    fn: K => {
+      K.thump({ f: 210, f2: 120, d: .06, g: .15 });
+      K.tone({ f: "D5", t: .02, type: "triangle", a: .003, d: .16, g: .06 });
+      K.tone({ f: "A5", t: .08, type: "triangle", a: .003, d: .22, g: .06 });
+    } },
+  "pick.character": { group: "Onboarding & Nova", bus: "ui", cd: 120, hap: "select",
+    desc: "A character chosen (sign-up and Customize - the same act): a bouncy plucked arpeggio and a cheerful 'hey!'.",
+    fn: K => {
+      K.arp(["C5", "E5", "G5", "C6"], .06, (n, t) => K.pluck({ f: n, t, d: .4, bright: .65, g: .11 }));
+      K.vox({ t: .26, f: 440, f2: 520, v: "e", v2: "i", d: .14, g: .03 });
+    } },
+  "nova.arrive": { group: "Onboarding & Nova", bus: "ui", cd: 2000, hap: "tap",
+    desc: "Nova arrives: a harp glissando sweeping up over a soft pad, landing on a warm bell - the professor appearing.",
+    fn: K => {
+      K.arp(["D4", "E4", "F#4", "A4", "B4", "D5", "E5", "F#5", "A5"], .035, (n, t) => K.pluck({ f: n, t, d: 1.2, bright: .85, g: .065, rev: .4 }));
+      ["D4", "A4"].forEach(n => K.tone({ f: n, a: .4, d: 1.5, g: .025, rev: .4 }));
+      K.bell({ t: .45, f: "D6", d: 1.6, g: .04, rev: .5 });
+    } },
+  "nova.blip": { vol: 1.6, group: "Onboarding & Nova", bus: "ui", cd: 45, poly: 2, hap: null,
+    desc: "Nova talking, a few letters at a time: a tiny soft vowel blip wandering a pentatonic (opts.i), so a line sounds spoken, not beeped.",
+    demo: [{ i: 0 }, { i: 1 }, { i: 2 }, { i: 3 }, { i: 4 }, { i: 5 }],
+    fn: (K, o) => {
+      const i = Math.abs(o.i || 0), N = ["D5", "E5", "G5", "A5", "B5"], V = ["a", "o", "e", "a", "u"];
+      const f = sndHz(N[(i * 3) % 5]) * .5;
+      K.vox({ f, f2: f * 1.04, v: V[i % 5], a: .004, d: .045, g: .075 });
+    } },
+  "cs.planet": { group: "Onboarding & Nova", bus: "cut", cd: 3000, hap: "boom",
+    desc: "Nova's story, the planet breaking apart: a distant rumble, a crack, a muffled explosion and debris drifting off into space.",
+    fn: K => {
+      K.noise({ color: "b", lp: 200, a: .8, d: 1, g: .14 });
+      K.noise({ t: 1, hp: 1500, d: .1, g: .12 });
+      K.noise({ t: 1.15, lp: 900, ff2: 200, fgl: 1.2, a: .005, d: 1.5, g: .24, rev: .6 });
+      K.thump({ t: 1.15, f: 90, f2: 30, gl: .4, d: 1, g: .35 });
+      for(let i = 0; i < 12; i++) K.fm({ t: 1.6 + K.R() * 1.9, f: K.r(900, 2600), ratio: 2.76, idx: 1.5, d: .25, g: .014, pan: K.r(-.9, .9), rev: .5 });
+    } },
+  "ob.whatsnew": { group: "Onboarding & Nova", bus: "ui", cd: 1000, hap: "tap",
+    desc: "What's New: a page turning and an announcer's chime rising a fourth and a fifth (A, D, A).",
+    fn: K => {
+      K.noise({ color: "p", bp: 2500, ff2: 1200, q: .8, a: .03, d: .15, g: .07 });
+      K.arp(["A4", "D5", "A5"], .08, (n, t) => K.bell({ f: n, t: .15 + t, ratio: 3.5, d: .6, g: .04, rev: .35 }));
+    } },
+  "ob.tooltip": { vol: 1.4, group: "Onboarding & Nova", bus: "ui", cd: 200, hap: "tap",
+    desc: "A tooltip step: a light tap of paper and a soft G - the next thing to look at.",
+    fn: K => {
+      K.click({ bp: 3000, q: 2, d: .015, g: .06 });
+      K.tone({ f: "G5", t: .01, a: .003, d: .16, g: .045 });
+    } },
+
+  /* ---------------------------- CUSTOMIZE ---------------------------- */
+  "cust.theme": { group: "Customize", bus: "ui", cd: 200, hap: "select",
+    desc: "A theme colour chosen: a wash of air sweeping through a bright new chord - the app repainting.",
+    fn: K => {
+      K.noise({ color: "p", bp: 600, ff2: 5000, q: .9, a: .05, d: .4, g: .06 });
+      ["B4", "D5", "F#5", "C#6"].forEach((n, i) => K.tone({ t: .05 + i * .03, f: n, type: "triangle", lp: 3000, a: .02, d: .7, g: .03, rev: .45 }));
+    } },
+  "cust.banner": { vol: 1.5, group: "Customize", bus: "ui", cd: 200, hap: "select",
+    desc: "A banner chosen: cloth unfurling with a snap, and a short horn note.",
+    fn: K => {
+      K.noise({ bp: 1400, ff2: 700, q: 1.2, am: [26, .8, 8], a: .02, d: .3, g: .06 });
+      K.noise({ t: .28, hp: 1800, a: .001, d: .03, g: .035 });
+      K.tone({ t: .3, f: "D5", type: "sawtooth", lp: 1600, a: .03, d: .4, g: .03 });
+    } },
+  "cust.fx": { vol: 1.5, group: "Customize", bus: "ui", cd: 200, hap: "select",
+    desc: "A hundo effect chosen: a quick magical flourish - a run of sparkles up into one bright ping.",
+    fn: K => {
+      K.sparkle({ n: 6, t: 0, t2: .25, f1: 1800, f2: 4200, rise: true, g: .02 });
+      K.bell({ t: .28, f: "D7", ratio: 3.5, d: .5, g: .03, rev: .35 });
+    } }
+};
+/* the seven rank flares, Bronze (rookie) to Supernova (titan) */
+SND_FLARE_KEYS.forEach(k => { if(!SOUND_CATALOGUE["home.flare." + k]) console.warn("sound: no flare " + k); });
+
+/* ---- THE HOME AMBIENCE ----
+   "a cool dark kinda offset noise": a low D pad with a slow beating
+   detune, a soft thrum every 4s against a muted bell every 5s (five
+   against four, so the two drift apart and only meet again at the
+   loop), space wind and a few far twinkles. SEAMLESS BY CONSTRUCTION:
+   every frequency and LFO rate is a whole number of cycles per loop,
+   the noise is a loop-length buffer, every event is scheduled for the
+   loops either side too (so tails carry over the seam), and the render
+   starts a few seconds in, at steady state. A short linear crossfade at
+   the seam only cleans up rounding. */
+const SOUND_AMBIENCE = {
+  "amb.home": { group: "Home", loop: 20, level: .9,
+    desc: "Home ambience (main menu only): a dark, slightly offset D pad - slow beating, a thrum every 4s against a muted bell every 5s, space wind, far twinkles. Low and seamless.",
+    fn: (K, L, W, total) => {
+      const ctx = K.ctx, q = f => Math.max(1, Math.round(f * L)) / L, all = W + total;
+      const pad = ctx.createBiquadFilter(); pad.type = "lowpass"; pad.Q.value = 1.1; pad.frequency.value = 480;
+      const plfo = ctx.createOscillator(), plg = ctx.createGain(); plfo.frequency.value = 1 / L; plg.gain.value = 220;
+      plfo.connect(plg); plg.connect(pad.frequency); plfo.start(0); plfo.stop(all);
+      const padG = ctx.createGain(); padG.gain.value = .05;
+      pad.connect(padG); padG.connect(K.dest({ rev: .35 }));
+      [[73.4, 0], [73.55, 0], [110, 0], [174.6, 0], [261.6, -1]].forEach(([f, k]) => {
+        const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = q(f);
+        const g = ctx.createGain(); g.gain.value = k < 0 ? .25 : 1;
+        o.connect(g); g.connect(pad); o.start(0); o.stop(all);
+      });
+      /* space wind: loop-length noise, a slow sweep */
+      const nb = ctx.createBuffer(1, Math.round(L * ctx.sampleRate), ctx.sampleRate), nd = nb.getChannelData(0), NR = sndRng(5);
+      let b = 0; for(let i = 0; i < nd.length; i++){ const w = NR() * 2 - 1; b = .97 * b + .03 * w; nd[i] = w * .3 + b * 2; }
+      const ns = ctx.createBufferSource(); ns.buffer = nb; ns.loop = true;
+      const nbp = ctx.createBiquadFilter(); nbp.type = "bandpass"; nbp.Q.value = .8; nbp.frequency.value = 650;
+      const nl = ctx.createOscillator(), nlg = ctx.createGain(); nl.frequency.value = 2 / L; nlg.gain.value = 380;
+      nl.connect(nlg); nlg.connect(nbp.frequency); nl.start(0); nl.stop(all);
+      const ng = ctx.createGain(); ng.gain.value = .03;
+      ns.connect(nbp); nbp.connect(ng); ng.connect(K.dest({ rev: .4 }));
+      ns.start(0, (L - (W % L)) % L); ns.stop(all);
+      /* a faint high beating pair */
+      [1174.6, 1175.0].forEach(f => { const o = ctx.createOscillator(); o.frequency.value = q(f); const g = ctx.createGain(); g.gain.value = .004; o.connect(g); g.connect(K.dest({ rev: .5 })); o.start(0); o.stop(all); });
+      /* events: at loop time tl, in every loop that can reach the window
+         (abs = W + tl + k L); the warm-up W covers the longest tail */
+      const ev = (tl, fn) => { for(let k = -1; k <= 1; k++){ const abs = W + tl + k * L; if(abs >= 0 && abs < all) fn(abs); } };
+      for(let i = 0; i < L / 4; i++) ev(i * 4, t => K.tone({ t, f: q(146.8), type: "triangle", lp: 500, a: .5, d: 1.2, g: .04, rev: .3 }));
+      for(let i = 0; i < L / 5; i++) ev(2.5 + i * 5, t => K.fm({ t, f: q(466.2), ratio: 3.01, idx: 1, idx2: .1, d: 1.8, g: .018, dly: .4, rev: .5 }));
+      [[3.3, 1760, -.5], [8.1, 1318.5, .5], [13.7, 2217.5, -.4], [17.2, 1396.9, .4]].forEach(([tl, f, pan]) => ev(tl, t => K.fm({ t, f, ratio: 3.5, idx: .7, d: 1, g: .01, pan, dly: .5, rev: .5 })));
+    } }
+};
+
+const NovaSound = (function(){
+  const AC = () => window.AudioContext || window.webkitAudioContext;
+  const st = { wokeAt: 0, ctx: null, G: null, voices: [], last: {}, amb: null, ambWant: null, ambBuf: {}, ambWatch: 0, seq: 1, duck: 0, gesture: false };
+  const on = () => !!(typeof theme === "object" && theme && theme.soundOn);
+  const volume = () => { const v = Number(theme && theme.soundVolume); return isFinite(v) ? Math.max(0, Math.min(1, v)) : SOUND_DEFAULT_VOLUME; };
+  const level = v => .95 * v * v;
+  const canVibrate = () => typeof navigator !== "undefined" && typeof navigator.vibrate === "function" && /Android/i.test(navigator.userAgent || "");
+  function haptic(kind){
+    if(!kind || !(theme && theme.vibrate) || !canVibrate()) return;
+    try{ navigator.vibrate(SOUND_HAPTIC[kind] || 8); }catch(e){}
+  }
+  /* The ONE live context, made only when sound is on and only from inside
+     a gesture (or the Settings switch, which is one). */
+  function ensure(){
+    if(!on()) return null;
+    if(st.ctx) return st.ctx;
+    const C = AC();
+    if(!C) return null;
+    /* the ring/silent switch mutes us, and somebody's music keeps playing */
+    try{ if(navigator.audioSession) navigator.audioSession.type = "ambient"; }catch(e){}
+    try{ st.ctx = new C({ latencyHint: "interactive" }); }catch(e){ try{ st.ctx = new C(); }catch(e2){ return null; } }
+    st.G = sndGraph(st.ctx, { level: level(volume()) });
+    return st.ctx;
+  }
+  function resume(){
+    const ctx = st.ctx;
+    if(!ctx || !on() || document.hidden) return;
+    if(ctx.state !== "running"){ try{ const p = ctx.resume(); if(p && p.then) p.then(afterResume, () => {}); }catch(e){} }
+    else afterResume();
+  }
+  function afterResume(){
+    if(st.ambWant && !st.amb) startAmbience(st.ambWant.id, { owner: st.ambWant.owner });
+  }
+  /* the first real gesture after sound is turned on wakes the context
+     (iOS: inside touchend/click); while sound is off it does nothing */
+  function onGesture(){
+    if(!on()) return;
+    st.wokeAt = Date.now();
+    const had = !!st.ctx;
+    ensure();
+    if(st.ctx && !had){
+      /* older iOS: a silent buffer played inside the gesture unlocks it */
+      try{ const b = st.ctx.createBuffer(1, 1, 22050), s = st.ctx.createBufferSource(); s.buffer = b; s.connect(st.ctx.destination); s.start(0); }catch(e){}
+    }
+    resume();
+  }
+  ["touchend", "pointerup", "click", "keydown"].forEach(ev => document.addEventListener(ev, onGesture, { capture: true, passive: true }));
+  document.addEventListener("visibilitychange", () => {
+    if(!st.ctx) return;
+    if(document.hidden){ try{ st.ctx.suspend(); }catch(e){} }
+    else if(on()){
+      /* back: the ambience only if its screen is still the one up */
+      if(st.ambWant && st.ambWant.owner && !st.ambWant.owner.isConnected) stopAmbience();
+      resume();
+    }
+  });
+  /* a long press on Settings' build line opens the sound test page */
+  (function longPress(){
+    let tm = 0, x0 = 0, y0 = 0;
+    const cancel = () => { clearTimeout(tm); tm = 0; };
+    document.addEventListener("pointerdown", e => {
+      const el = e.target && e.target.closest ? e.target.closest(".settings-buildline") : null;
+      cancel();
+      if(!el) return;
+      x0 = e.clientX; y0 = e.clientY;
+      tm = setTimeout(() => { tm = 0; try{ showSoundTest(); }catch(err){} }, 750);
+    }, true);
+    document.addEventListener("pointermove", e => { if(tm && Math.hypot(e.clientX - x0, e.clientY - y0) > 10) cancel(); }, true);
+    ["pointerup", "pointercancel", "scroll"].forEach(ev => document.addEventListener(ev, cancel, true));
+  })();
+
+  function reap(){
+    const now = st.ctx ? st.ctx.currentTime : 0;
+    st.voices = st.voices.filter(v => {
+      if(v.end > now) return true;
+      try{ v.g.disconnect(); }catch(e){}
+      return false;
+    });
+  }
+  function kill(v, fade){
+    if(!v || v.dead) return;
+    v.dead = true;
+    const ctx = st.ctx, now = ctx.currentTime, f = fade == null ? .04 : fade;
+    try{ v.g.gain.cancelScheduledValues(now); v.g.gain.setValueAtTime(v.g.gain.value, now); v.g.gain.setTargetAtTime(0, now, f / 3); }catch(e){}
+    v.srcs.forEach(s => { try{ s.stop(now + f + .02); }catch(e){} });
+    setTimeout(() => { try{ v.g.disconnect(); }catch(e){} }, (f + .1) * 1000);
+    st.voices = st.voices.filter(x => x !== v);
+  }
+  /* a cutscene sound pulls the ambience down under it */
+  function duck(len){
+    const g = st.G && st.G.bus.music;
+    if(!g) return;
+    const now = st.ctx.currentTime, base = st.G.busGain.music;
+    st.duck = Math.max(st.duck, now + len);
+    g.gain.cancelScheduledValues(now);
+    g.gain.setTargetAtTime(base * .3, now, .25);
+    g.gain.setTargetAtTime(base, st.duck, .8);
+  }
+  function play(id, opts){
+    const e = SOUND_CATALOGUE[id];
+    if(!e) return null;
+    const wantSound = on(), wantBuzz = !!(theme && theme.vibrate) && !!e.hap;
+    if(!wantSound && !wantBuzz) return null;
+    const nowMs = (typeof performance !== "undefined" ? performance.now() : Date.now());
+    if(st.last[id] && nowMs - st.last[id] < (e.cd || 0)) return null;
+    st.last[id] = nowMs;
+    if(wantBuzz) haptic(e.hap);
+    if(!wantSound) return null;
+    const ctx = st.ctx;
+    /* a context still starting inside the gesture that woke it plays as soon as it runs */
+    if(!ctx || document.hidden || ctx.state === "closed" || (ctx.state !== "running" && Date.now() - st.wokeAt > 1500)) return null;
+    reap();
+    const same = st.voices.filter(v => v.id === id);
+    if(same.length >= (e.poly || 3)) kill(same[0]);
+    if(st.voices.length >= SOUND_MAX_VOICES) kill(st.voices.find(v => v.bus !== "cut") || st.voices[0]);
+    const vg = ctx.createGain();
+    vg.gain.value = e.vol || 1;
+    vg.connect(st.G.bus[e.bus] || st.G.bus.ui);
+    const K = sndKit(st.G, vg, ctx.currentTime + .01, (opts && opts.seed) || (st.seq++ * 7919));
+    try{ e.fn(K, opts || {}); }catch(err){ try{ vg.disconnect(); }catch(e2){} return null; }
+    const len = K.end + .1;
+    const v = { id, g: vg, bus: e.bus, srcs: K.srcs, end: ctx.currentTime + len + K.wet };
+    st.voices.push(v);
+    if(e.bus === "cut") duck(len);
+    setTimeout(reap, (len + K.wet + .2) * 1000);
+    return { id, length: len, stop: (fade) => kill(v, fade) };
+  }
+
+  /* ---- ambience ---- */
+  /* the ambience is rendered once, at a modest rate (it is low and dark;
+     nothing in it needs more), and played back resampled */
+  const AMB_SR = 22050;
+  function renderAmbience(id, sr){
+    sr = sr || AMB_SR;
+    const A = SOUND_AMBIENCE[id];
+    if(!A) return Promise.reject(new Error("no ambience " + id));
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    const L = A.loop, W = 4, X = .5, total = L + X;
+    const oc = new OAC(2, Math.round((W + total) * sr), sr);
+    const G = sndGraph(oc, { limiter: false, level: A.level, cheapRev: true });
+    const vg = oc.createGain(); vg.connect(G.bus.music);
+    const K = sndKit(G, vg, 0, 77);
+    A.fn(K, L, W, total);
+    const done = oc.startRendering();
+    return (done && done.then ? done : new Promise(res => { oc.oncomplete = ev => res(ev.renderedBuffer); })).then(buf => {
+      const n = Math.round(L * sr), x = Math.round(X * sr), off = Math.round(W * sr);
+      const out = { sampleRate: sr, length: n, channels: [] };
+      for(let ch = 0; ch < 2; ch++){
+        const src = buf.getChannelData(ch), d = new Float32Array(n);
+        for(let i = 0; i < n; i++) d[i] = src[off + i];
+        /* the seam: the loop's head blends in from the sound just past its end */
+        for(let i = 0; i < x; i++){ const u = i / x; d[i] = d[i] * u + src[off + n + i] * (1 - u); }
+        out.channels.push(d);
+      }
+      return out;
+    });
+  }
+  function ambBuffer(id){
+    const ctx = st.ctx;
+    if(st.ambBuf[id] && st.ambBuf[id].sr === ctx.sampleRate) return st.ambBuf[id].p;
+    const p = renderAmbience(id, AMB_SR).then(r => {
+      const b = ctx.createBuffer(2, r.length, r.sampleRate);
+      r.channels.forEach((d, ch) => { if(b.copyToChannel) b.copyToChannel(d, ch); else b.getChannelData(ch).set(d); });
+      return b;
+    });
+    st.ambBuf[id] = { sr: ctx.sampleRate, p };
+    return p;
+  }
+  function startAmbience(id, opts){
+    if(!SOUND_AMBIENCE[id]) return;
+    st.ambWant = { id, owner: (opts && opts.owner) || null };
+    if(!st.ambWatch) st.ambWatch = setInterval(() => {
+      if(!st.ambWant){ clearInterval(st.ambWatch); st.ambWatch = 0; return; }
+      if(st.ambWant.owner && !st.ambWant.owner.isConnected) stopAmbience();
+    }, 1500);
+    if(!on()) return;
+    const ctx = st.ctx;
+    if(!ctx || ctx.state !== "running") return;   /* starts on the next gesture */
+    if(st.amb && st.amb.id === id) return;
+    if(st.amb) stopAmbience(true);
+    const want = st.ambWant;
+    ambBuffer(id).then(buf => {
+      if(st.ambWant !== want || !on() || st.amb || !st.ctx) return;
+      const src = ctx.createBufferSource(), g = ctx.createGain();
+      src.buffer = buf; src.loop = true;
+      g.gain.setValueAtTime(0, ctx.currentTime);
+      g.gain.linearRampToValueAtTime(1, ctx.currentTime + 3);
+      src.connect(g); g.connect(st.G.bus.music);
+      src.start();
+      st.amb = { id, src, g };
+    }, () => {});
+  }
+  function stopAmbience(keepWant){
+    if(!keepWant) st.ambWant = null;
+    const a = st.amb;
+    st.amb = null;
+    if(!a || !st.ctx) return;
+    const now = st.ctx.currentTime;
+    try{ a.g.gain.cancelScheduledValues(now); a.g.gain.setValueAtTime(a.g.gain.value, now); a.g.gain.linearRampToValueAtTime(0, now + 1.2); a.src.stop(now + 1.3); }catch(e){}
+    setTimeout(() => { try{ a.g.disconnect(); }catch(e){} }, 1500);
+  }
+
+  /* settings changed (the switch, the slider, a sync from another device) */
+  function sync(){
+    if(!on()){
+      stopAmbience(true);
+      st.voices.slice().forEach(v => kill(v, .05));
+      if(st.ctx && st.ctx.state === "running"){ try{ st.ctx.suspend(); }catch(e){} }
+      return;
+    }
+    if(st.G){ const now = st.ctx.currentTime; st.G.master.gain.setTargetAtTime(level(volume()), now, .05); }
+  }
+
+  /* An offline render of one sound for tools (and the test page): no
+     limiter, volume 1, a fixed seed - so it is the design itself that is
+     measured. Resolves to the AudioBuffer. */
+  function render(id, opts){
+    const e = SOUND_CATALOGUE[id];
+    if(!e) return Promise.reject(new Error("no sound " + id));
+    opts = opts || {};
+    const sr = opts.sr || 44100;
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    /* measure the length first with a throwaway kit on a tiny context */
+    const probe = new OAC(1, 128, sr), PG = sndGraph(probe, { limiter: false });
+    const PK = sndKit(PG, probe.createGain(), 0, opts.seed || 1);
+    e.fn(PK, opts);
+    const len = PK.end + PK.wet + .2;
+    const oc = new OAC(2, Math.ceil(len * sr), sr);
+    const G = sndGraph(oc, { limiter: false, level: 1 });
+    const vg = oc.createGain(); vg.gain.value = e.vol || 1; vg.connect(G.bus[e.bus] || G.bus.ui);
+    e.fn(sndKit(G, vg, 0, opts.seed || 1), opts);
+    const done = oc.startRendering();
+    return done && done.then ? done : new Promise(res => { oc.oncomplete = ev => res(ev.renderedBuffer); });
+  }
+
+  return {
+    play, startAmbience, stopAmbience, sync, render, renderAmbience, haptic, canVibrate,
+    catalogue: SOUND_CATALOGUE, ambience: SOUND_AMBIENCE,
+    /* for tools and the test page */
+    state: () => ({ on: on(), hasContext: !!st.ctx, ctxState: st.ctx ? st.ctx.state : null, voices: st.voices.length,
+                    amb: st.amb ? { id: st.amb.id, loop: !!st.amb.src.loop } : null, ambWant: st.ambWant ? st.ambWant.id : null,
+                    volume: volume(), master: st.G ? st.G.master.gain.value : null }),
+    wake: onGesture
+  };
+})();
+function playSound(id, opts){ try{ return NovaSound.play(id, opts); }catch(e){ return null; } }
+function startAmbience(id, opts){ try{ NovaSound.startAmbience(id, opts); }catch(e){} }
+function stopAmbience(){ try{ NovaSound.stopAmbience(); }catch(e){} }
+
+/* ---- SETTINGS: SOUND & VIBRATION (build 322) ----
+   Its own group, between "Display & motion" and "Studying & tests", in the
+   same .settings-card as every other switch. The volume shows only while
+   sound is on; Vibration only where it can do something (Android - iOS has
+   no Vibration API). Both off for everybody until they turn them on. */
+function buildSoundSettings(){
+  const host = document.createElement("div");
+  host.className = "motion-details settings-sound";
+  const lab = document.createElement("p");
+  lab.className = "slab motion-summary section-divider"; lab.id = "settings-sound";
+  lab.textContent = "Sound & vibration";
+  host.appendChild(lab);
+  const card = document.createElement("div");
+  card.className = "settings-card";
+  const mkRow = (title, hint, checked, onChange) => {
+    const row = document.createElement("label");
+    row.className = "opt";
+    const cb = document.createElement("input");
+    cb.type = "checkbox"; cb.checked = !!checked;
+    cb.addEventListener("change", () => onChange(cb.checked));
+    const box = document.createElement("span");
+    box.className = "box"; box.setAttribute("aria-hidden", "true"); box.textContent = "✓";
+    const wrap = document.createElement("span");
+    wrap.className = "otext";
+    wrap.appendChild(document.createTextNode(title));
+    const h = document.createElement("span");
+    h.className = "ohint"; h.textContent = hint;
+    wrap.appendChild(h);
+    row.append(cb, box, wrap);
+    return row;
+  };
+  /* the volume, under the switch, only while sound is on */
+  const vol = document.createElement("div");
+  vol.className = "settings-volume";
+  const volLab = document.createElement("span");
+  volLab.className = "settings-volume-label"; volLab.textContent = "Volume";
+  const sw = document.createElement("div");
+  sw.className = "sliderwrap";
+  const slider = document.createElement("input");
+  slider.type = "range"; slider.min = "0"; slider.max = "100"; slider.step = "5";
+  slider.className = "slider"; slider.setAttribute("aria-label", "Sound volume");
+  const pctOf = () => Math.round((typeof theme.soundVolume === "number" ? theme.soundVolume : SOUND_DEFAULT_VOLUME) * 100);
+  slider.value = String(pctOf());
+  const val = document.createElement("span");
+  val.className = "sliderval"; val.textContent = pctOf() + "%";
+  let lastStep = Math.round(pctOf() / 10);
+  slider.addEventListener("input", () => {
+    const v = Math.max(0, Math.min(100, Number(slider.value) || 0));
+    theme.soundVolume = v / 100;
+    val.textContent = v + "%";
+    paintSliderFill(slider);
+    NovaSound.sync();
+    const step = Math.round(v / 10);
+    if(step !== lastStep){ lastStep = step; playSound("ui.slider.tick", { value: v / 100 }); }
+  });
+  /* saved when the finger lifts, not on every step of a drag */
+  slider.addEventListener("change", () => { saveTheme(); playSound("ui.tap.secondary"); });
+  attachRangeTouch(slider);
+  paintSliderFill(slider);
+  sw.append(slider, val);
+  vol.append(volLab, sw);
+  vol.hidden = !theme.soundOn;
+
+  const sndRow = mkRow("Sound effects", "Sounds for buttons, answers, results and cutscenes. Silent mode mutes them.", theme.soundOn, on => {
+    theme.soundOn = on;
+    saveTheme();
+    vol.hidden = !on;
+    if(on){ NovaSound.wake(); NovaSound.sync(); playSound("ui.toggle.on"); }
+    else NovaSound.sync();
+    showToast(on ? "Sound effects on." : "Sound effects off.");
+  });
+  sndRow.classList.add("settings-sound-row");
+  card.append(sndRow, vol);
+  if(NovaSound.canVibrate()){
+    const vibRow = mkRow("Vibration", "Short vibrations for taps, answers and results.", theme.vibrate, on => {
+      theme.vibrate = on;
+      saveTheme();
+      if(on) NovaSound.haptic("success");
+      showToast(on ? "Vibration on." : "Vibration off.");
+    });
+    vibRow.classList.add("settings-vibrate-row");
+    card.appendChild(vibRow);
+  }
+  host.appendChild(card);
+  return host;
+}
+
+/* ---- THE SOUND TEST PAGE (build 322) ----
+   Every sound in SOUND_CATALOGUE with a play button, by group, and the
+   Home ambience. Reached only from the console (showSoundTest()) or a long
+   press on the build line in Settings - it is for recording a reel, not a
+   screen anybody is sent to. "Play all" runs the whole catalogue with a
+   gap after each sound. */
+let soundTestRun = 0;
+function showSoundTest(){
+  stopTimer(); stopQuestionTimer();
+  meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+  timerlineEl.hidden = true;
+  pauseBtn.hidden = true;
+  countEl.textContent = "";
+  soundTestRun++;
+  const panel = document.createElement("section");
+  panel.className = "panel screen-soundtest";
+  const head = document.createElement("p");
+  head.className = "slab section-divider";
+  head.textContent = "Sound test";
+  panel.appendChild(head);
+  const note = document.createElement("p");
+  note.className = "friend-hint snd-note";
+  const bar = document.createElement("div");
+  bar.className = "cal-profile-row snd-bar";
+  const onBtn = document.createElement("button");
+  onBtn.type = "button"; onBtn.className = "cal-profile-btn";
+  const allBtn = document.createElement("button");
+  allBtn.type = "button"; allBtn.className = "cal-profile-btn";
+  allBtn.textContent = "Play all";
+  const syncNote = () => {
+    note.textContent = theme.soundOn
+      ? Object.keys(SOUND_CATALOGUE).length + " sounds and the Home ambience, all made in code. Tap a row to play it."
+      : "Sound effects are off. Turn them on to hear these.";
+    onBtn.textContent = theme.soundOn ? "Sound on" : "Turn sound on";
+    onBtn.disabled = !!theme.soundOn;
+  };
+  onBtn.addEventListener("click", () => { theme.soundOn = true; saveTheme(); NovaSound.wake(); NovaSound.sync(); syncNote(); playSound("ui.toggle.on"); });
+  let playing = 0;
+  allBtn.addEventListener("click", () => {
+    if(playing){ playing = 0; allBtn.textContent = "Play all"; return; }
+    const run = soundTestRun, me = ++playing, ids = Object.keys(SOUND_CATALOGUE);
+    allBtn.textContent = "Stop";
+    let i = 0;
+    const next = () => {
+      if(playing !== me || run !== soundTestRun || !panel.isConnected || i >= ids.length){ if(playing === me){ playing = 0; allBtn.textContent = "Play all"; } return; }
+      const id = ids[i++], row = panel.querySelector('[data-snd="' + id + '"]');
+      panel.querySelectorAll(".snd-row.is-playing").forEach(r => r.classList.remove("is-playing"));
+      if(row){ row.classList.add("is-playing"); try{ row.scrollIntoView({ block: "center", behavior: "smooth" }); }catch(e){} }
+      playDemo(id, next);
+    };
+    next();
+  });
+  bar.append(onBtn, allBtn);
+  panel.append(note, bar);
+  syncNote();
+  /* a sound with each of its demo settings, one after another; done()
+     once the last has rung out */
+  const playDemo = (id, done) => {
+    const e = SOUND_CATALOGUE[id], list = (e && e.demo) || [{}];
+    let k = 0;
+    const step = () => {
+      if(k >= list.length || !panel.isConnected){ if(done) done(); return; }
+      const h = playSound(id, Object.assign({ seed: 1 + k }, list[k]));
+      k++;
+      setTimeout(step, Math.max(250, ((h && h.length) || .5) * 1000 + (k < list.length ? 150 : 600)));
+    };
+    step();
+  };
+  const groups = {};
+  Object.keys(SOUND_CATALOGUE).forEach(id => { const g = SOUND_CATALOGUE[id].group || "Other"; (groups[g] = groups[g] || []).push(id); });
+  const ambRow = (id) => {
+    const a = SOUND_AMBIENCE[id];
+    const row = document.createElement("button");
+    row.type = "button"; row.className = "snd-row is-amb"; row.dataset.snd = id;
+    const pb = document.createElement("span"); pb.className = "snd-play"; pb.textContent = "▶";
+    const tx = document.createElement("span"); tx.className = "snd-text";
+    const nm = document.createElement("span"); nm.className = "snd-id"; nm.textContent = id + " (loop)";
+    const ds = document.createElement("span"); ds.className = "snd-desc"; ds.textContent = a.desc;
+    tx.append(nm, ds); row.append(pb, tx);
+    row.addEventListener("click", () => {
+      const s = NovaSound.state();
+      if(s.ambWant === id){ stopAmbience(); pb.textContent = "▶"; }
+      else { startAmbience(id, { owner: panel }); pb.textContent = "■"; }
+    });
+    return row;
+  };
+  Object.keys(groups).forEach(g => {
+    const gl = document.createElement("p");
+    gl.className = "slab snd-group";
+    gl.textContent = g + " (" + groups[g].length + ")";
+    panel.appendChild(gl);
+    const list = document.createElement("div");
+    list.className = "settings-card snd-list";
+    if(g === "Home") Object.keys(SOUND_AMBIENCE).forEach(id => list.appendChild(ambRow(id)));
+    groups[g].forEach(id => {
+      const e = SOUND_CATALOGUE[id];
+      const row = document.createElement("button");
+      row.type = "button"; row.className = "snd-row"; row.dataset.snd = id;
+      const pb = document.createElement("span"); pb.className = "snd-play"; pb.textContent = "▶";
+      const tx = document.createElement("span"); tx.className = "snd-text";
+      const nm = document.createElement("span"); nm.className = "snd-id"; nm.textContent = id;
+      const ds = document.createElement("span"); ds.className = "snd-desc"; ds.textContent = e.desc;
+      tx.append(nm, ds); row.append(pb, tx);
+      row.addEventListener("click", () => playDemo(id));
+      list.appendChild(row);
+    });
+    panel.appendChild(list);
+  });
+  stage.replaceChildren(panel);
+  toTop();
+}
+
 
 /* ---------- study time + per-test analytics ------------------------------ */
 
@@ -93789,6 +95696,7 @@ function showAppearance(opts){
   })();
 
   extraSect.appendChild(motionDetails);
+  extraSect.appendChild(buildSoundSettings());
   extraSect.appendChild(studyDetails);
   /* updSect used to be appended here, which put a build number and an
      update button on the end of a run of behaviour switches - reported

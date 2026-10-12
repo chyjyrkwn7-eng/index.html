@@ -20201,3 +20201,82 @@ are good too ... THERE IS WAY TOO much going on here."*
   highlight on every badge, the back's engraving contrast and its wear, the
   simple words on both reference devices, and the stage-4 glow and face light
   at most .2.
+
+### Build 322 (b322s) - sound and vibration, phase 1: the engine, the library, Settings
+
+Madison: *"a setting in settings that will be off by default ... sound
+effects ... I NEED you to ensure all the sounds and sound effects are unique
+and make sense. Not sound effects you just find ... the main menu has a cool
+dark kinda offset noise ... each hundo effect to have its own noise ... IF
+there is any way to put Haptic Touch or a vibration for things that would be
+awesome too."* All of it sits in one block after `saveTheme()`.
+
+- **Every sound is synthesised in code; there are no audio files.**
+  `SOUND_CATALOGUE` maps an id to `{ group, bus, cd, poly, hap, vol, desc,
+  fn, demo }`; `fn(K, opts)` draws with the kit from `sndKit()`: `tone`
+  (glides, paths, vibrato, filters), `fm` / `bell`, `noise` (white / pink /
+  brown, swept filters, flutter), `click`, `thump`, `pluck` (Karplus-Strong,
+  `sndKS`), `vox` (two vowel formants - the characters' and Nova's voices),
+  `sparkle`, `arp`, and the generated reverb (`sndImpulse`) and delay sends.
+  The identity: D as home, open fifths and ninths for anything good, a
+  semitone or a fall for anything that is not, glassy FM for light, filtered
+  air for movement, felt and metal for the badge case. 123 ids plus the Home
+  ambience (`SOUND_AMBIENCE`). Cutscene and hundo scores read the app's own
+  constants where they exist (`CASE_OPEN`, `HFX_UW`, `BADGE_CUTSCENE_MS`,
+  `RU_HAND_MS`, `RANK_ATTN_MS`, `RANK_CUTSPIN_*`, `RANK_WINDUP_*`); the
+  Fireworks shots, the UFO's beats and the Bubbles flourish (3.5s) are inline
+  in their `hfx*` builders, so their times are copied into the score -
+  **move one of those and move the score with it.**
+- **Off, and free while off.** `theme.soundOn`, `theme.soundVolume` (0-1,
+  default .7) and `theme.vibrate`, by the behaviour-toggle rule (the theme
+  object, a `typeof` line in `loadTheme()`, `saveTheme()`). While sound is
+  off no `AudioContext` is constructed at all; one is made on the first
+  gesture after it is turned on (the Settings switch is one). The live graph
+  is master (the volume, `.95 v^2`) -> a gentle limiter, with buses `ui`
+  (1.6), `music` (.6, the ambience) and `cut` (1, cutscenes and hundo
+  effects); a `cut` sound ducks the ambience. Per-id cooldown and polyphony,
+  `SOUND_MAX_VOICES` (24) overall. Hidden page: the context is suspended;
+  back: resumed, and the ambience only if its owner element is still in the
+  document. `NovaSound.sync()` follows a setting that changed (the switch, the
+  slider, a theme arriving from another device - `loadTheme()` calls it).
+- **iPhone: the silent switch mutes it, on purpose.** `navigator.audioSession
+  .type = "ambient"` where it exists, so somebody's own music keeps playing and
+  Silent mode silences the app - the Settings hint says so.
+- **Vibration is Android only, and iOS is still not possible.** WebKit has no
+  `navigator.vibrate`; the `<input switch>` trick was tried on a device and
+  fails (Known quirks) and is not retried. The switch shows only where
+  `navigator.vibrate` exists on an Android user agent (desktop Chrome has the
+  function and no motor). Each id's `hap` names a pattern in `SOUND_HAPTIC`;
+  `playSound()` buzzes when vibration is on even with sound off.
+- **The ambience (`amb.home`) is seamless by construction**: a 20s loop whose
+  every frequency and LFO is a whole number of cycles per loop, loop-length
+  noise, every event scheduled in the loops either side, rendered from 4s in
+  (steady state) at `AMB_SR` 22050 with a cheap feedback-delay room (the
+  convolver over 25s cost seconds of render), and a 0.5s seam crossfade.
+- **API**: `playSound(id, opts)` (returns `{ length, stop }` or null),
+  `startAmbience(id, { owner })`, `stopAmbience()`. All no-ops while off.
+  **Phase 1 wires only Settings and the test page**; phase 2 wires the app.
+- **Settings**: "Sound & vibration" between "Display & motion" and "Studying &
+  tests" (`buildSoundSettings()`): Sound effects, the volume (shown only while
+  on, saved on release), Vibration (Android). The Settings tour is unchanged
+  (its copy is Nova's) - a step for this group is for whoever owns his lines.
+- **`showSoundTest()`** - every id with a play button, by group, the ambience,
+  and Play all. From the console, or a 0.75s press on Settings' build line
+  (`.settings-buildline`, delegated in `NovaSound`). It is in `SCREENS`.
+- **A GainNode is 1 until its first automation event** (`K.env` sets `.value
+  = 0` first). Without it every sound starting part-way through a render
+  quantum let one full-scale sample through - a click on the front of every
+  sound, measured at 0.92 on one that should have peaked at .06.
+- **Gate: `tools/check-sound.py`** (fails on 6a387e2): off by default (new,
+  existing, non-boolean); no AudioContext after boot, taps and direct calls;
+  the Settings group, the volume, Android-only Vibration, one running context
+  on the switch, persistence across a reload, a gesture to wake it; cooldown,
+  voice cap, hidden/visible, the ambience stopping with its screen; vibration
+  without sound; every id renders offline (no limiter, volume 1) with a peak
+  between .04 and .97 and a loudest-50ms RMS of .01+; **no two ids above .90
+  similarity** (spectro-temporal shape, mean spectrum, envelope, length;
+  pitch-tolerant to ~6 semitones), the metric proven able to fail (a sound
+  against itself with another seed = 1.00; the timer's tick against its tock
+  > .90); the ambience's seam step no bigger than the loop's 99.9th
+  percentile step and its level within 1.5dB either side. Closest pair at
+  this build: .85 (the Bronze and Sapphire flares).
