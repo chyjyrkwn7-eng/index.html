@@ -19954,3 +19954,67 @@ leaking out, the spin-to-case transition.
   name now also in the lid on purpose), its tab/Profile plate text,
   check-results' badge XP lines (no line; no MASTERY_BONUS), check-curve's
   badge line (no lump).
+
+### Build 321 (b321e) - the rank-up journey's touch-ups
+
+Madison, on 320's journey. All in the rank-up block after `buildRanksTab()`
+unless noted.
+
+- **The flare keeps one clock into the planet system** (`ruClockSnap`). A
+  CSS animation on a copied element, or on one moved in the tree, starts
+  again from 0 - the road map circle's copy (`rankUpHandOut`) and its move
+  into the bubble (`rankCutHandoff`) each threw the emblem back to its first
+  frame ("it skips a second ahead"). `ruClockSnap(root)` reads every CSS
+  animation's time under `root` (by element index, pseudo-element, name) and
+  returns `apply(dst)` for a same-shaped tree. Use it whenever a moving
+  thing is copied or re-parented mid-scene.
+- **The cutscene's bubbles play their flip-books** (`rankSceneEmblemAnims`,
+  beside `playRankUpScene`): Home's ready sheet for that rank, shown at the
+  scene's bubble size, on Home's clock (`syncLoopClock`); else one recorded
+  at the scene's size that fades in. The layer is `.cosmic-rank-anim.is-scene`
+  and takes its lit/unlit filter from CSS (the new flare lights mid-scene),
+  never inline.
+- **Home's planet pulse on each breath of the charge** (`windUp`,
+  `.rank-planetpulse`): a ring off the planet's edge per beat, on the beat,
+  in the new rank's colour, brighter and wider as the beats quicken; the big
+  flash is the last. Timing constants untouched.
+- **Up next waits for the planet.** On the rank-up's own map the rank after
+  the new one is built locked (`.ru-nexthold`, "Locked") and
+  `rankUpNextLift` makes it Up next as the camera reaches its box
+  (`rankUpUpNext`); `rankUpSceneEnd` lifts it on any early exit.
+- **Up next shows its unlocks in colour** - theme, flare, character, banner -
+  on the ordinary road map too (`.rankmap-stop.is-next:not(.is-celebrate-pending)
+  .rankmap-gift ...`). Ranks past it stay grey.
+- **The light starts near the rank you held**: `rankUpStartFrac(d)` =
+  `RU_START_MIN` (.12) + `RU_START_SPAN` (.25) x d / RANK_ROAD_NEAR, so 12-37%
+  of the stretch ("closer but not directly on top of it"). Only the journey's
+  first frame; the ordinary map's light is unchanged. Reverses b320d's "the
+  pixel it stood on".
+- **No start-pause-start**: the light sets off as the map's settle eases out
+  (`RU_MAP_GO_MS` 820, `rankUpRide(..., go)` skips the 420ms hold).
+- **The card at the top fades, it does not turn** (`rankUpHeroTurn`,
+  `RU_HERO_FADE_MS`): the new card is laid exactly over the old and the two
+  cross over at the top, in view (the change is the moment, so not off
+  screen during the glide). `buildRankHero(..., { levelPending })`: with
+  saved XP its level gauge shows the level after the cut-off, ring empty,
+  "Not met yet" - the climb is Profile's. The old turn CSS is gone.
+- **Profile, back**: `body.ru-journey` (rankUpNewScene -> rankUpSceneEnd)
+  keeps the tab bar and chat button off from the journey's first frame, the
+  unlock tile's knock still, and no character special until the end; focus
+  slides them back as the last thing. The rank line shows the rank you had
+  and fades to the new one after `RU_RANKLINE_AT_MS` (`rankUpRankLineAs`,
+  `rankUpRankLineFade`). The climb shows the real numbers counting
+  ("x / y XP", "to Level N"; `rankUpLevelSpan`) - no "Saved XP · climbing".
+  The level challenge stays where it stood (its bar laid, not filled) until
+  the bar is done, then counts and ticks (`rankUpLevelRowAfter`).
+- **Gates**: `check_b320d_rankup` gains `_b321e_stepped` / `_b321e_checks` -
+  the iPhone journey frame by frame on the fake clock (`B321E_IPAD=1` adds
+  the iPad): the flare's clock through the hand-off, the secret flares'
+  rings turning before and after the whirl, the bubbles' flip-books, the
+  pulses, Platinum grey until after the cutscene and then in colour, the
+  fade (no turn) and "Not met yet", no tab bar or chat on any journey frame,
+  Silver then Gold on Profile, a grey card, numbers while climbing, the
+  level challenge still through the climb, no dance. The real-time walk
+  moved: the first frame at `rankUpStartFrac`, the card's fade, the level
+  challenge holding still. `check_b319_rankup`: the fade, the level row
+  after the bar.

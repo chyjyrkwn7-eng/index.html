@@ -17345,7 +17345,8 @@ B319_RU_WALK = """async (a) => {
       gifts: up.querySelectorAll('.rankmap-gift').length, heroName: (document.querySelector('.rankhero-name') || {}).textContent }; }
     if(document.querySelector('.ru-upnext')) at('upnextcard');
     if(document.querySelector('.rankhero.ru-turn-out')) at('turnout');
-    const ht = document.querySelector('.rankhero.ru-turn-in') || (rankUpScene && rankUpScene.heroTurned ? document.querySelector('.screen-ranks .rankhero') : null);
+    /* build 321: the new card fades in over the old one (.ru-hero-new) */
+    const ht = document.querySelector('.rankhero.ru-turn-in') || (rankUpScene && rankUpScene.heroTurned ? (document.querySelector('.screen-ranks .rankhero.ru-hero-new') || document.querySelector('.screen-ranks .rankhero')) : null);
     if(ht && !out.hero){ at('heroturn'); out.hero = { kick: (ht.querySelector('.rankhero-kicker') || {}).textContent, name: (ht.querySelector('.rankhero-name') || {}).textContent }; }
     if(document.querySelector('.ru-curtain.is-on') && out.at.heroturn) at('curtain');
     if((out.at.curtain || out.at.ph_return || out.at.ph_back) && document.querySelector('.screen-profile')) at('back');
@@ -17448,13 +17449,14 @@ def check_b319_rankup(br):
         check(f"{dev}: 'Up next' is the road map's own Platinum box, with what it unlocks, while the card at the top still says Silver",
               un.get("state") == "Up next" and un.get("name") == "Platinum" and (un.get("gifts") or 0) >= 3 and un.get("heroName") == "Silver" and "upnextcard" not in at, [un, at.get("upnextcard")])
         hr = wk.get("hero") or {}
-        check(f"{dev}: then the card turns over to Gold ('Your rank', no 'Rank up')",
-              at.get("upnext", 0) < at.get("turnout", -1) <= at.get("heroturn", -1) and hr == {"kick": "Your rank", "name": "Gold"}, [at, hr])
+        # build 321: the card no longer turns over - it fades to the new one (b321e)
+        check(f"{dev}: then the card changes to Gold with a fade, not a turn ('Your rank', no 'Rank up')",
+              at.get("upnext", 0) < at.get("heroturn", -1) and "turnout" not in at and hr == {"kick": "Your rank", "name": "Gold"}, [at, hr])
         check(f"{dev}: a slow fade back to Profile; the completed card folds away and Platinum's comes in",
               at.get("heroturn", 0) < at.get("curtain", -1) < at.get("back", -1) < at.get("flipout", -1) < at.get("goalin", -1), at)
         af = wk.get("after") or {}
         lv = wk.get("lvls") or []
-        check(f"{dev}: the saved XP climbs the bar level by level, 49 to 53, and the level challenge counts with it",
+        check(f"{dev}: the saved XP climbs the bar level by level, 49 to 53, and the level challenge then reads 50 (build 321: after the bar, see 320d)",
               lv[:1] == ["Level 49"] and lv[-1:] == ["Level 53"] and len(lv) >= 5 and af.get("lvRow") == "50" and af.get("level") == "Level 53", [lv, af.get("lvRow")])
         check(f"{dev}: done: Gold, Platinum next, shown, nothing held, no layer or curtain left, nothing owed on the device",
               af.get("rank") == "Gold" and af.get("next") == "Platinum" and af.get("shown") == af.get("held") == 3 and af.get("owed") is None
@@ -17647,7 +17649,7 @@ B320D_WALK = """async (a) => {
       const dot = tip ? tip.querySelector('i').getBoundingClientRect() : null;
       const n = node ? node.offsetHeight : 0, H = road ? road.offsetHeight : 0, rt = road ? road.getBoundingClientRect().top : 0;
       const want = rt + n / 2 + 9 + a.dot * (H - n - 18);
-      out.first = { scroll: Math.round(window.scrollY), p0: s.p0, tipOn: tip ? tip.classList.contains('is-on') : false,
+      out.first = { scroll: Math.round(window.scrollY), p0: s.p0, tipOn: tip ? tip.classList.contains('is-on') : false, stretch: (H - n - 18) > 0 && dot ? Math.round((dot.top + dot.height / 2 - rt - n / 2 - 9) / (H - n - 18) * 1000) / 1000 : null,
         dy: dot ? Math.round(Math.abs(dot.top + dot.height / 2 - want) * 10) / 10 : null,
         dotY: dot ? Math.round((dot.top + dot.height / 2) * 10) / 10 : null, want: Math.round(want * 10) / 10,
         cam: dot ? Math.round(Math.abs(window.scrollY - rankUpFollowY(dot.top + dot.height / 2 + window.scrollY))) : null,
@@ -17732,10 +17734,12 @@ B320D_WALK = """async (a) => {
         heroName: (document.querySelector('.rankhero-name') || {}).textContent }; }
     if(out.at.upnext && !out.at.top0 && window.scrollY <= 1 && rankUpScene && rankUpScene.phase !== 'upnext') at('top0');
     if(document.querySelector('.rankhero.ru-turn-out')) at('turnout');
-    if(document.querySelector('.rankhero.ru-turn-in') && !out.heroAfter){ at('turnin');
-      setTimeout(() => { const h = document.querySelector('.screen-ranks .rankhero'); if(!h) return; const v = [...h.querySelectorAll('.rankhero-ringval')];
-        out.heroAfter = { name: (h.querySelector('.rankhero-name') || {}).textContent, kick: (h.querySelector('.rankhero-kicker') || {}).textContent,
-          level: v[0] && v[0].textContent, levelTo: v[0] && v[0].dataset.count, badges: v[1] && v[1].textContent, head: (h.querySelector('.rankhero-gaugehead') || {}).textContent }; }, 2800); }
+    /* build 321: the new card fades in over the old (.ru-hero-new); 320's turned over (.ru-turn-in) */
+    if(document.querySelector('.rankhero.ru-turn-in, .rankhero.ru-hero-new') && !out.heroAfter){ at('turnin');
+      setTimeout(() => { const hs = document.querySelectorAll('.screen-ranks .rankhero'), h = hs[hs.length - 1]; if(!h) return; const v = [...h.querySelectorAll('.rankhero-ringval')];
+        out.heroAfter = { name: (h.querySelector('.rankhero-name') || {}).textContent, kick: (h.querySelector('.rankhero-kicker') || {}).textContent, cards: hs.length,
+          level: v[0] && v[0].textContent, levelTo: v[0] && v[0].dataset.count, badges: v[1] && v[1].textContent, head: (h.querySelector('.rankhero-gaugehead') || {}).textContent,
+          levelText: (h.querySelector('.rankhero-gauge.is-level .rankhero-gaugetarget') || {}).textContent, levelMet: !!h.querySelector('.rankhero-gauge.is-level.is-met') }; }, 2800); }
     if(document.querySelector('.ru-curtain.is-on') && (out.at.turnin || out.at.ph_hero)) at('curtain');
     if(out.at.map && (out.at.curtain || out.at.ph_back || out.at.ph_return) && document.querySelector('.screen-profile')) at('back');
     if(document.querySelector('.pf-goal.ru-flip-out')) at('flipout');
@@ -17763,6 +17767,214 @@ B320D_WALK = """async (a) => {
   out.homeAfter = document.body.classList.contains('rankup-lock');
   }catch(e){ out.threw = String(e && e.stack || e); }
   return out; }"""
+
+
+# Build 321 (b321e): one frame of the journey, read on the fake clock.
+B321E_SAMPLE = r"""(t) => {
+  const S = typeof rankUpScene !== 'undefined' ? rankUpScene : null;
+  const o = { t: Math.round(t * 1000), ph: S ? S.phase : '-', prof: !!document.querySelector('.screen-profile'), map: !!document.querySelector('.screen-ranks .rankmap') };
+  /* the tab bar and the chat button: painted on screen at all? */
+  const shown = sel => { const e = document.querySelector(sel); if(!e) return false; const cs = getComputedStyle(e); if(e.hidden || cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < .05) return false;
+    const r = e.getBoundingClientRect(); return r.width > 2 && r.height > 2 && r.bottom > 1 && r.top < innerHeight - 1 && r.right > 1 && r.left < innerWidth - 1; };
+  o.bar = shown('.bottomtabs'); o.chat = shown('.chatdock-btn');
+  /* the new rank's flare: on the map, then the copy lifted off it - one of
+     its emblem's endless animations, its clock */
+  const toI = S && S.to ? TIER_ORDER_FULL.indexOf(S.to) : -1;
+  const ghost = document.querySelector('.ru-ghost .rankmap-node > svg');
+  const stops = document.querySelectorAll('.screen-ranks .rankmap-stop');
+  const src = ghost || (toI >= 0 && stops[toI] ? stops[toI].querySelector('.rankmap-node > svg') : null);
+  if(src){ const els = [...src.querySelectorAll('*')];
+    for(let i = 0; i < els.length && !o.fl; i++){ const an = els[i].getAnimations().find(a => /^rk-/.test(a.animationName || '') && a.effect.getTiming().iterations === Infinity);
+      if(an) o.fl = { k: i + ':' + an.animationName, ct: Math.round(an.currentTime), g: !!ghost }; } }
+  /* the secret flares' rings in the scene */
+  const ov = document.getElementById('supernova-cutscene');
+  if(ov){ const l = ov.querySelector('.rank-before .cosmic-hero-orbitlayer'), dot = ov.querySelector('.rank-before .cosmic-flare-dot');
+    const m = l ? new DOMMatrix(getComputedStyle(l).transform) : null;
+    o.sc = { a: m ? Math.round(Math.atan2(m.b, m.a) * 18000 / Math.PI) / 100 : null, dots: ov.querySelectorAll('.rank-before .cosmic-flare-dot').length,
+      spin: ov.classList.contains('is-cutspin'), rest: ov.classList.contains('is-cutrest'), burst: ov.classList.contains('supernova-burst'),
+      pulses: ov.querySelectorAll('.rank-planetpulse').length,
+      sheets: ov.querySelectorAll('.rank-before .cosmic-badge-rank > .cosmic-rank-anim').length }; }
+  /* the rank after the new one, on the map */
+  if(o.map && toI >= 0 && stops[toI + 1]){ const st = stops[toI + 1];
+    const gf = sel => { const e = st.querySelector(sel); if(!e) return null; const cs = getComputedStyle(e); return { f: cs.filter, o: +cs.opacity }; };
+    o.nx = { next: st.classList.contains('is-next'), state: (st.querySelector('.rankmap-state') || {}).textContent,
+      dot: gf('.rankmap-gift .rankmap-dot'), flare: gf('.rankmap-gift .rankmap-giftbubble .flare-solo'), ch: gf('.rankmap-gift.is-char .rankmap-giftav svg'), bn: gf('.rankmap-gift .rankmap-giftbanner .bnr') }; }
+  /* the card at the top */
+  const heroes = [...document.querySelectorAll('.screen-ranks .rankhero')];
+  if(heroes.length){ o.hero = heroes.map(h => ({ n: (h.querySelector('.rankhero-name') || {}).textContent, op: +getComputedStyle(h).opacity,
+    tr: getComputedStyle(h).transform, lt: (h.querySelector('.rankhero-gauge.is-level .rankhero-gaugetarget') || {}).textContent,
+    la: (h.querySelector('.rankhero-gauge.is-level .rankhero-ringarc') || { style: {} }).style.strokeDashoffset,
+    art: (() => { const a = h.querySelector('.rankhero-art svg'); return a ? a.getAnimations({ subtree: true }).length : 0; })() })); }
+  /* Profile on the way back */
+  if(o.prof && S && ['back', 'return'].indexOf(S.phase) >= 0 || (o.prof && !S && window.__b321back)){
+    window.__b321back = true;
+    const sd = document.querySelector('.screen-profile .pf-standing');
+    const row = document.querySelector('.screen-profile .pf-goal .pf-task[data-kind="level"]');
+    const ph = document.querySelector('.screen-profile .profile-hero');
+    o.pf = { rank: sd && (sd.querySelector('.pf-rankname') || {}).textContent, lv: sd && (sd.querySelector('.pf-level') || {}).textContent,
+      nums: sd && ((sd.querySelector('.pf-xpnums .xpnums') || {}).textContent || ''), climb: !!(sd && sd.classList.contains('ru-climbing')),
+      row: row && (row.querySelector('.pf-now') || {}).textContent, rowW: row && (row.querySelector('.pf-bar > i') || { style: { getPropertyValue(){ return ''; } } }).style.getPropertyValue('--w'),
+      bg: ph ? getComputedStyle(ph).backgroundImage + ' ' + getComputedStyle(ph).borderTopColor : '',
+      dance: [...document.querySelectorAll('.screen-profile .pf-rw-char .rank-avatar')].some(a => a.getAnimations().some(x => x.playState !== 'idle' && /pf-wait/.test(x.animationName || ''))) ||
+             !!document.querySelector('.screen-profile .profile-hero-avatar.char-special') };
+  }
+  if(!o.pf && o.prof && S && ['profile', 'tick'].indexOf(S.phase) >= 0){
+    o.pf0 = { dance: [...document.querySelectorAll('.screen-profile .pf-rw-char .rank-avatar')].some(a => a.getAnimations().some(x => /pf-wait/.test(x.animationName || ''))) ||
+             !!document.querySelector('.screen-profile .profile-hero-avatar.char-special') };
+  }
+  return o; }"""
+
+
+def _b321e_rgbs(s):
+    out = []
+    for m in re.findall(r"color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)", s or ""):
+        out.append(tuple(float(v) * 255 for v in m))
+    for m in re.findall(r"rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)", s or ""):
+        out.append(tuple(float(v) for v in m))
+    return out
+
+
+def _b321e_stepped(br, w, h, dev):
+    """The whole journey on the fake clock, a frame at a time: a real 100%
+    that tips Gold (results in real time), then from the Profile tap on,
+    1/30s a step with every animation seeked (_Stepper320), the real
+    cutscene, its card tapped after a second, the title tapped. Returns
+    the frames."""
+    ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+    pg.evaluate(B319_RU_SEED, {})
+    pre = pg.evaluate("() => ({ dot: rankRoadProgress(), cap: levelOf(store) })")
+    pg.evaluate(B319_RU_RUN, {})
+    pg.evaluate("() => { if(!document.querySelector('[data-screen=\"home\"]')) showHome(); }")
+    for _ in range(40):
+        if pg.evaluate("() => document.body.classList.contains('rankup-lock')"):
+            break
+        pg.evaluate("() => { const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); }")
+        pg.wait_for_timeout(250)
+    st = _Stepper320(pg)
+    for _ in range(20):
+        st.step(1 / 30)
+    pg.evaluate("() => document.getElementById('bottomtab-profile').click()")
+    frames, card_at, settle_at, started = [], None, None, False
+    while st.t < 260:
+        st.step(1 / 30)
+        f = pg.evaluate(B321E_SAMPLE, st.t)
+        frames.append(f)
+        if f["ph"] != "-":
+            started = True
+        elif started:
+            for _ in range(45):
+                st.step(1 / 30)
+                frames.append(pg.evaluate(B321E_SAMPLE, st.t))
+            break
+        up = pg.evaluate("() => ({ spot: !!document.querySelector('.rs-spot.is-up'), settle: !!document.querySelector('#supernova-cutscene.supernova-settle') })")
+        if up["spot"]:
+            card_at = card_at if card_at is not None else st.t
+            if st.t - card_at > 1.2:
+                pg.evaluate("() => { const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); }")
+                card_at = None
+        if up["settle"]:
+            settle_at = settle_at if settle_at is not None else st.t
+            if st.t - settle_at > 1.2:
+                pg.evaluate("() => { const o = document.getElementById('supernova-cutscene'); if(o) o.click(); }")
+                settle_at = None
+    ctx.close()
+    return pre, frames
+
+
+def _b321e_checks(dev, pre, frames):
+    """Build 321 (b321e) on the frames of one journey. Madison: "The flare
+    does kind of skip and lag in its animation ... it like skips a second
+    ahead"; "the secret flares aren't moving before the spin starts and
+    after"; "before the solar system part starts ... the up next rank is
+    already filled in and colored. That should still be greyed out"; "the
+    up next rank, the unlocks in there should have their color"; "The chat
+    button and bottom tab are still visible"; "The word gold ... it changes
+    at the very beginning"; "It says saved xp and climbing?? Should just be
+    there numbers"; "the level one won't update till after the xp stuff is
+    done"; "the unlock character does a dance". Written against 6a387e2."""
+    fr = frames
+    # 1. the flare's own clock through the hand-off: never back, never ahead
+    fl = [(f["t"], f["fl"]) for f in fr if f.get("fl")]
+    gi = next((i for i, (_, x) in enumerate(fl) if x["g"]), None)
+    seg = fl[max(0, (gi or 0) - 30):] if gi is not None else []
+    seg = [x for x in seg if x[1]["k"] == (seg[0][1]["k"] if seg else None)]
+    steps = [(b[1]["ct"] - a[1]["ct"], b[0] - a[0]) for a, b in zip(seg, seg[1:])]
+    bad = [(d, dt) for d, dt in steps if d < -1 or d > dt + 20]
+    check(f"{dev}: the road map's flare keeps its own animation clock into the planet system - every frame from the circle through the lifted copy and into the bubble moves on by one frame, never back to the start or ahead ({len(steps)} frames)",
+          gi is not None and len(steps) > 60 and not bad and any(x[1]["g"] for x in seg[-5:]) is not None, [gi, len(steps), bad[:5]])
+    # 3. the secret flares move before the whirl and after it
+    sc = [f for f in fr if f.get("sc")]
+    pre_s = [f for f in sc if not f["sc"]["spin"] and f["t"] - sc[0]["t"] > 2600] if sc else []
+    post_s = [f for f in sc if f["sc"]["rest"] and not f["sc"]["burst"]]
+    def moving(lst):
+        a = [f["sc"]["a"] for f in lst if f["sc"]["a"] is not None]
+        return len(a) > 10 and len(set(a)) > len(a) * .8 and abs(a[-1] - a[0]) > .3
+    check(f"{dev}: the secret flares turn on their rings before the whirl starts and after it stops (the ring's angle changes frame to frame)",
+          bool(sc) and sc[0]["sc"]["dots"] > 0 and moving(pre_s) and moving(post_s),
+          [len(pre_s), len(post_s), [f["sc"]["a"] for f in pre_s][:4], [f["sc"]["a"] for f in post_s][:4]])
+    # 4. every bubble in the scene plays its flip-book, as on Home
+    check(f"{dev}: every flare bubble in the cutscene plays its animation (its flip-book on), as on Home",
+          bool(sc) and max(f["sc"]["sheets"] for f in sc) >= 7, max((f["sc"]["sheets"] for f in sc), default=None))
+    # 5. Home's planet pulse on each breath of the charge
+    rest = [f for f in sc if f["sc"]["rest"] and not f["sc"]["burst"]]
+    check(f"{dev}: the charge into the flash sends Home's planet pulse out on its breaths (5+ rings), and the last one is the flash",
+          bool(rest) and max(f["sc"]["pulses"] for f in rest) >= 5, max((f["sc"]["pulses"] for f in rest), default=None))
+    # 6. the rank after the new one is grey until after the planet, then Up next in colour
+    nx = [f for f in fr if f.get("nx")]
+    cut_t = next((f["t"] for f in fr if f.get("sc")), None)
+    before_cut = [f for f in nx if cut_t is not None and f["t"] < cut_t]
+    grey = lambda g: g is not None and ("grayscale(1)" in g["f"] or g["o"] < .7)
+    check(f"{dev}: Platinum is grey and Locked on the map from the first frame until after the cutscene - not Up next, its unlocks grey",
+          len(before_cut) > 30 and all(not f["nx"]["next"] and f["nx"]["state"] == "Locked" and grey(f["nx"]["flare"]) and grey(f["nx"]["ch"]) for f in before_cut),
+          [len(before_cut), before_cut[0]["nx"] if before_cut else None])
+    late = [f for f in nx if f["ph"] in ("upnext", "top", "hero")]
+    col = lambda g: g is not None and "grayscale" not in g["f"] and g["o"] > .95
+    up_t = next((f["t"] for f in nx if f["nx"]["next"]), None)
+    check(f"{dev}: ...and it becomes Up next only when the camera reaches it after the cutscene, every unlock in colour (theme, flare, character, banner)",
+          up_t is not None and cut_t is not None and up_t > cut_t and late and late[-1]["nx"]["state"] == "Up next"
+          and all(col(late[-1]["nx"][k]) for k in ("dot", "flare", "ch")) and (late[-1]["nx"]["bn"] is None or "grayscale" not in late[-1]["nx"]["bn"]["f"]),
+          [up_t, cut_t, late[-1]["nx"] if late else None])
+    # 10. the card changes with a fade, not a turn; 12. the level not met
+    hs = [f for f in fr if f.get("hero") and f["ph"] == "hero"]
+    turned = any("matrix3d" in (x["tr"] or "") or (x["tr"] not in ("none", "") and "matrix(1, 0, 0, 1" not in x["tr"]) for f in hs for x in f["hero"])
+    both = [f for f in hs if len(f["hero"]) == 2]
+    last = next((f["hero"][-1] for f in reversed(hs)), {})
+    check(f"{dev}: the card at the top fades to Gold (both cards crossing over, never turned on its side)",
+          len(both) >= 10 and not turned and any(.2 < f["hero"][0]["op"] < .8 for f in both) and last.get("n") == "Gold", [len(both), turned, last])
+    check(f"{dev}: ...its level challenge shows the next level with no progress - not met, ring empty - though the saved XP is past it",
+          last.get("lt") == "Not met yet" and str(last.get("la")) == "100", last)
+    check(f"{dev}: ...and its rank emblem is animated",
+          (last.get("art") or 0) >= 3, last.get("art"))
+    # 13. the bar and the chat button: off from Profile's first frame to the end
+    jf = [f for f in fr if f["ph"] != "-"]
+    seen_bar = [f["t"] for f in jf if f["bar"] or f["chat"]]
+    after = [f for f in fr if f["ph"] == "-" and f["t"] > (jf[-1]["t"] if jf else 0)]
+    check(f"{dev}: the tab bar and the chat button are not on screen on any frame of the journey, from Profile's first frame ({len(jf)} frames), and come back once it is over",
+          len(jf) > 300 and not seen_bar and any(f["bar"] for f in after), [seen_bar[:5], len(after), any(f["bar"] for f in after)])
+    # 14. the rank word changes after a beat
+    pf = [f for f in fr if f.get("pf")]
+    first_gold = next((f["t"] for f in pf if f["pf"]["rank"] == "Gold"), None)
+    check(f"{dev}: back on Profile the rank reads Silver at first and turns to Gold after a beat (600ms+)",
+          pf and pf[0]["pf"]["rank"] == "Silver" and first_gold is not None and first_gold - pf[0]["t"] >= 600, [pf[0]["pf"]["rank"] if pf else None, first_gold, pf[0]["t"] if pf else None])
+    # 15. the card stays grey
+    gold = [f["t"] for f in pf if any(r - b > 60 and g - b > 25 for (r, g, b) in _b321e_rgbs(f["pf"]["bg"]))]
+    check(f"{dev}: the Profile card keeps its grey look throughout (no rank gold in its background or edge)", pf and not gold, gold[:3])
+    # 16. numbers, not words, while the saved XP climbs
+    cl = [f for f in pf if f["pf"]["climb"]]
+    num_ok = all(re.match(r"^[\d,]+ / [\d,]+ XP", f["pf"]["nums"]) for f in cl)
+    haves = [f["pf"]["nums"].split(" / ")[0] for f in cl]
+    check(f"{dev}: while the saved XP climbs, the line under the bar is the numbers counting ({len(cl)} frames), never 'Saved XP / climbing'",
+          len(cl) > 60 and num_ok and len(set(haves)) > 20, [len(cl), cl[0]["pf"]["nums"] if cl else None, len(set(haves))])
+    # 17. the level challenge waits for the bar
+    rows = [(f["t"], f["pf"]["row"], f["pf"]["climb"]) for f in pf]
+    end_climb = max((t for t, _, c in rows if c), default=None)
+    during = set(r for t, r, c in rows if end_climb is not None and t <= end_climb)
+    final = rows[-1][1] if rows else None
+    check(f"{dev}: the level challenge stays where it stood ({pre['cap']}) the whole climb and moves only after it ({final})",
+          end_climb is not None and during == {str(pre["cap"])} and final == str(pre["cap"] + 1), [sorted(during), final])
+    # 18. no dance
+    dz = [f["t"] for f in fr if f["ph"] != "-" and ((f.get("pf") or {}).get("dance") or (f.get("pf0") or {}).get("dance"))]
+    check(f"{dev}: no character dances on Profile during the journey (the unlock tile's knock and the avatar's special held)", not dz, dz[:3])
 
 
 def check_b320d_rankup(br):
@@ -17835,7 +18047,8 @@ def check_b320d_rankup(br):
     for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         s0 = pg.evaluate(B319_RU_SEED, {})
-        pre = pg.evaluate("() => ({ dot: typeof rankRoadProgress === 'function' ? rankRoadProgress() : rankStepProgress().pct, cap: levelOf(store) })")
+        # build 321 (b321e): the journey's first frame draws the light near the rank held - rankUpStartFrac of where it stood
+        pre = pg.evaluate("() => { const d = typeof rankRoadProgress === 'function' ? rankRoadProgress() : rankStepProgress().pct; return { was: d, dot: typeof rankUpStartFrac === 'function' ? rankUpStartFrac(d) : d, cap: levelOf(store) }; }")
         r = pg.evaluate(B319_RU_RUN, {})
         wk = pg.evaluate(B320D_WALK, {"dot": pre["dot"], "cap": pre["cap"], "cardMs": 900})
         ctx.close()
@@ -17850,6 +18063,8 @@ def check_b320d_rankup(br):
         check(f"{dev}: the map's first visible frame has the light on the pixel it stood on before the rank-up (within 2px), the camera on it, nothing filling in",
               abs((fi.get("p0") or -1) - pre["dot"]) < .002 and fi.get("tipOn") and (fi.get("dy") if fi.get("dy") is not None else 99) <= 2
               and (fi.get("cam") if fi.get("cam") is not None else 99) <= 2 and fi.get("moving") == 0 and not fi.get("loading"), [pre["dot"], fi])
+        check(f"{dev}: ...and that start is near the rank held but not on it: 10-40% of the stretch (it stood at {round(pre['was'], 3)} before; build 321)",
+              .1 <= (fi.get("stretch") if fi.get("stretch") is not None else -1) <= .4, [fi.get("stretch"), pre])
         cam = wk.get("cam") or []
         check(f"{dev}: no replay of the earlier ranks - the camera never goes back up the road while the light runs on (sampled every frame)",
               len(cam) > 20 and min(cam) >= (fi.get("scroll") or 0) - 2 and all(b >= a_ - 2 for a_, b in zip(cam, cam[1:])), [len(cam), cam[:3], min(cam) if cam else None, fi.get("scroll")])
@@ -17871,13 +18086,16 @@ def check_b320d_rankup(br):
         un = wk.get("upnext") or {}
         check(f"{dev}: Up next is the road map's own Platinum box: the map scrolls down to it (centred), it pops in its colour, and the map slides back to the top before the card turns",
               "upnextcard" not in at and un.get("name") == "Platinum" and un.get("state") == "Up next" and un.get("fx") and .3 <= (un.get("mid") or 0) <= .7 and (un.get("scroll") or 0) > 200
-              and at.get("card", 0) < at.get("upnext", -1) < at.get("top0", -1) <= at.get("turnout", -1) < at.get("turnin", -1), [un, at])
+              and at.get("card", 0) < at.get("upnext", -1) < at.get("top0", -1) < at.get("turnin", -1), [un, at])
         hb, ha = wk.get("heroBefore") or {}, wk.get("heroAfter") or {}
         check(f"{dev}: the card at the top shows the rank as it WAS (Silver, Level {pre['cap']}, 4 badges, to reach Gold) and never says 'Rank up'",
               hb.get("name") == "Silver" and hb.get("level") == str(pre["cap"]) and hb.get("badges") == "4" and "Gold" in (hb.get("head") or "") and wk.get("rankUpText") is None,
               [hb, wk.get("rankUpText")])
-        check(f"{dev}: it turns over to Gold showing the next level ({pre['cap'] + 1}), not the cut-off and not the saved levels ahead of Profile; 'Your rank'",
+        check(f"{dev}: it changes to Gold showing the next level ({pre['cap'] + 1}), not the cut-off and not the saved levels ahead of Profile; 'Your rank'",
               ha.get("name") == "Gold" and ha.get("kick") == "Your rank" and ha.get("levelTo") == str(pre["cap"] + 1) and ha.get("badges") == "5" and "Platinum" in (ha.get("head") or ""), ha)
+        # build 321 (b321e): "why would it be met already when it just flipped over ... the progress would show as none"
+        check(f"{dev}: ...with a fade, not a turn, and its level challenge is NOT met yet though the saved XP is past it",
+              "turnout" not in at and ha.get("levelText") == "Not met yet" and ha.get("levelMet") is False and ha.get("cards") == 1, [at.get("turnout"), ha])
         tp = wk.get("taps") or {}
         check(f"{dev}: nothing on the page can be tapped or swiped during the journey ({(wk.get('taps') or {}).get('tried')} taps tried, every phase)",
               (tp.get("tried") or 0) > 60 and not tp.get("reached") and not tp.get("swipeMoved") and (tp.get("swipes") or 0) > 5, tp)
@@ -17892,13 +18110,19 @@ def check_b320d_rankup(br):
               len(pre_climb) > 10 and all((p["x"] or 0) >= .97 for p in pre_climb if p["x"] is not None), [len(pre_climb), [p["x"] for p in pre_climb][:8]])
         check(f"{dev}: the challenge box flips first, THEN the saved XP climbs",
               at.get("flipout") is not None and first_change is not None and at["flipout"] < first_change, [at.get("flipout"), first_change])
-        sync = all(p["row"] == min(p["lv"], p["need"]) for p in pf if p["lv"] is not None and p["row"] is not None and p["need"] and p["t"] >= (first_change or 0))
+        # build 321 (b321e): the level challenge no longer counts with the climb - it waits where it stood until the bar is done
+        sync = all(p["row"] == min(pre["cap"], p["need"]) for p in pf if p["climbing"] and p["row"] is not None and p["need"])
         dur = (last53 or 0) - (first_change or 0)
-        check(f"{dev}: the climb is slow ({dur}ms from level {pre['cap'] + 1} to {lvls[-1] if lvls else None}, 1.4s+ a level) and the level challenge counts in the same frame as the level",
+        check(f"{dev}: the climb is slow ({dur}ms from level {pre['cap'] + 1} to {lvls[-1] if lvls else None}, 1.4s+ a level) and the level challenge holds still through it (build 321)",
               lvls and lvls[-1] == 53 and dur >= 1400 * (53 - pre["cap"] - 1) and sync and (wk.get("after") or {}).get("level") == "Level 53", [dur, sorted(set(lvls)), sync, wk.get("after")])
         check(f"{dev}: after it, the Profile tab tapped (on Profile and from Home) never rings or jumps, and nothing of the scene is left",
               not wk.get("tabAfter") and wk.get("homeAfter") is False and not (wk.get("after") or {}).get("blocker") and not (wk.get("after") or {}).get("veil"),
               [wk.get("tabAfter"), wk.get("homeAfter"), wk.get("after")])
+
+    # Build 321 (b321e): the same journey frame by frame on the fake clock.
+    for (w, h, dev) in ((440, 956, "17 Pro Max"),) + (((834, 1194, "iPad Pro 11"),) if os.environ.get("B321E_IPAD") else ()):
+        pre, frames = _b321e_stepped(br, w, h, dev)
+        _b321e_checks(dev, pre, frames)
 
     # The challenge box is calm: no green, no halo of the rank's colour.
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
