@@ -205,7 +205,7 @@ with sync_playwright() as pw:
     ctx = br.new_context(viewport={"width": 440, "height": 956})
     ctx.add_init_script(FAKE)
     ctx.add_init_script("try{localStorage.setItem('class26e.frame.ok','go-live-1');"
-                        "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.daily.seen','x');}catch(e){}")
+                        "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.daily.seen','x');}catch(e){}")
     pg = ctx.new_page()
     errors = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
@@ -541,7 +541,7 @@ with sync_playwright() as pw:
         c = br.new_context(viewport={"width": w, "height": h})
         c.add_init_script(FAKE)
         c.add_init_script("try{localStorage.setItem('class26e.frame.ok','go-live-1');"
-                          "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.daily.seen','x');}catch(e){}")
+                          "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.daily.seen','x');}catch(e){}")
         p = c.new_page()
         p.on("pageerror", lambda e: errors.append(str(e)))
         if AGAINST:

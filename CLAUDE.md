@@ -7416,9 +7416,9 @@ what shipped, not every draft.
   Ninja) rather than the hunt. The loading line "Calling the SWAT team"
   is unrelated copy and stays.
 - **PENAL CODE HAS TWO VERSIONS, AND IT ASKS EVERY TIME.** (The short
-  version is now **slides 55-124**, not 0-85 - see **The Penal Code's
-  short version moves with the next test** at the end of this file. The
-  history below is kept as it was written.) "Our next test
+  version is now **slides 124-256** (build 324), after 0-85 and then
+  55-124 - see **The Penal Code's short version is slides 124-256** at the
+  end of this file. The history below is kept as it was written.) "Our next test
   is only over slides 0-85 of the penal code ... A lot of people have
   asked that I only put the questions that will be on test." Selecting
   the Penal Code card opens a pop-up with two choices: "Penal Code"
@@ -14916,7 +14916,8 @@ disagree with it.
   described something that never happened to anybody.
 - **THE PENAL CODE NOTE SHOWS ONCE, ON THE FIRST UNIT SCREEN IN ANY
   MODE.** `maybeShowPenalVersionNote()` from `showSetup()`, keyed on
-  `class26e.penal55124.seen` (a device key, like `daily.seen`). It WAITS
+  `class26e.penal124256.seen` since build 324 (`penal55124` before it; a
+  device key, like `daily.seen`, and a NEW key per slide range). It WAITS
   behind any tour, splash, generating overlay, sheet, reward spotlight,
   intro pop-up or cutscene rather than stacking on one, and sets the key
   only once it actually mounts. The question count in it is computed, not
@@ -20963,3 +20964,47 @@ key."*
 - `check_b323u_units` (fails on 22bf429). Moved: check_b297's "first and
   full width" Starred box; check_penal_versions scrolls the version line
   into view before sampling it.
+
+### The Penal Code's short version is slides 124-256 (build 324)
+
+*"The penal code slide version will change. It's now going to be slides
+124-256 ... Ensure each question is correctly there. We can't afford any
+mishaps again."*
+
+- **116 questions on 39 slides, 109 different ones.** All are already in
+  the bank. Nothing is unnumbered in this range. Every deck answer equals
+  the bank's (116/116), and every bank answer equals the study guide's
+  highlight (109/109).
+- **Seven questions sit on two slides each.** Each second appearance is a
+  `versionOnly` copy with `repeatOf`, appended at the END of `QUESTIONS`:
+  184 -> 351, 42 -> 352, 260 -> 353, 309 -> 354, 246 -> 355, 126 -> 356,
+  276 -> 357. Each copy is word for word the question it repeats.
+- **The 55-124 copies stay in the bank, in no version.** Those are 347-350.
+  The 55-124 list is a history comment under `PENAL_TEST_SRCS`.
+- **Matched by TEXT, and it mattered twice.** The deck prints #42 as "60."
+  on slide 148 (our #60 is the "Actor" definition) and #124 as "125." on
+  slide 156 (our #125 is on slide 125). Guide twins (13/231, 73/162,
+  92/337, 14/187, 133/239, 96/190, 9/296, 195/276, 1/127) are resolved by
+  the deck's own number, and each pair has the same answer.
+- **Odd markings, checked:**
+  - slide 222 #246: C carries a WHITE (invisible) highlight;
+  - slide 226 #336: all four choices are highlighted, and only D is bold;
+  - slide 232 #179: C and D are in the other order from the bank.
+  In each case the marked answer agrees with the bank.
+- **How it was checked:**
+  - Pass A parses the notes paragraph by paragraph (typed numbers,
+    `buAutoNum`, wrapped choice lines, highlight colour vs bold).
+  - Pass B is independent: it flattens notes AND slide bodies and
+    searches for every guide question (stem plus 3 of 4 choices).
+  - The two agree slide for slide. The extraction and both scripts are in
+    the build 324 scratchpad (q324/slides-124-256.md, passA.py, passB.py).
+- **Announced again under a new key**, `class26e.penal124256.seen`. Every
+  fixture sets it beside the old one. The pop-up and the card's line say
+  "Slides 124–256", and the counts are computed (116).
+- **Gates:**
+  - `check_b324q_penal` fails on ab75270. It loads ab75270 beside the
+    build and checks that its KEYS are a byte-identical prefix and that
+    the next 400 daily questions are unchanged.
+  - `check_penal_versions`, `check_b298`, `check_b300` and
+    `check_b319_penal346` (now allowing the appended copies) all hold the
+    new set.

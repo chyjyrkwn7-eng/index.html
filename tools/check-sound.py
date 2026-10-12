@@ -81,7 +81,7 @@ COUNT_CTX = r"""
   try{ navigator.vibrate = p => { window.__vibes.push(p); return true; }; }catch(e){}
   try{ localStorage.setItem('class26e.freshstart','1'); localStorage.setItem('class26e.frame.ok','go-live-1');
        localStorage.setItem('class26e.intro.seen','9'); localStorage.setItem('class26e.unithold.tip','1');
-       localStorage.setItem('class26e.penal55124.seen','1'); }catch(e){}
+       localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1'); }catch(e){}
 })();
 """
 

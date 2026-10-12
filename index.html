@@ -41576,6 +41576,125 @@ const QUESTIONS = [
     ],
     answer: 3
   },
+  /* #184 again: the deck has it twice inside slides 124-256 (slides 130 and 132; build 324). Same treatment as
+     #84's copy (src 347): its own identity, the short version only. */
+  {
+    topic: "Penal Code",
+    src: 351,
+    repeatOf: 184,
+    versionOnly: true,
+    q: "According to Penal Code, ______________ means to procure, manufacture, issue sell, give, provide, lend, mail, deliver, transfer, transmit, publish, distribute, circulate, disseminate, present, exhibit, or advertise or to offer or agree to do any of the same.",
+    ref: "(PC 21.16 (a) (2); PC Section 8.12)",
+    choices: [
+      "Market",
+      "Promote",
+      "Auction",
+      "Exchange",
+    ],
+    answer: 1
+  },
+  /* #42 again: the deck has it twice inside slides 124-256 (slides 147 and 148; build 324). The deck prints this second one as "60." - our #60 is a different question (the "Actor" definition), and by its TEXT it is #42, which is what the build 318 lesson says to go by. Same treatment as
+     #84's copy (src 347): its own identity, the short version only. */
+  {
+    topic: "Penal Code",
+    src: 352,
+    repeatOf: 42,
+    versionOnly: true,
+    q: "Sexual assault is committed without consent of the other person if",
+    ref: "(PC 22.011 (b) (3, 5, and 8, PC Section 8.13)",
+    choices: [
+      "The other person has not consented, and the actor knows that the other person is unaware that the sexual assault is unconscious.",
+      "The other person has not consented, and the other person is unaware that the sexual assault is occurring",
+      "The actor is a public servant who coerces the other person to submit or participate",
+      "A, B, and C",
+    ],
+    answer: 3
+  },
+  /* #260 again: the deck has it twice inside slides 124-256 (slides 160 and 161; build 324). Same treatment as
+     #84's copy (src 347): its own identity, the short version only. */
+  {
+    topic: "Penal Code",
+    src: 353,
+    repeatOf: 260,
+    versionOnly: true,
+    q: "A person commits “aggravated sexual assault” if the person intentionally or knowingly cases the penetration of the anus or female sexual organ of a person by any means:",
+    ref: "(PC 22.021 (2) (A) (i), (2) (B), and (2) (A) (iv); Family Violence and RAO Section 17.6; Criminal Investigation, Section 32.15; PC Section 8.13)",
+    choices: [
+      "if the actor causes victim serious bodily injury",
+      "if the victim is younger than 14 years of age",
+      "if the actor exhibits a deadly weapon",
+      "all of the listed answers are aggravated sexual assault",
+    ],
+    answer: 3
+  },
+  /* #309 again: the deck has it twice inside slides 124-256 (slides 196 and 197; build 324). Same treatment as
+     #84's copy (src 347): its own identity, the short version only. */
+  {
+    topic: "Penal Code",
+    src: 354,
+    repeatOf: 309,
+    versionOnly: true,
+    q: "A man is walking down the street with his wife asking her if their children have been doing well. A valid protective order exists that states the man cannot go within 100 feet of his wife due to past family violence. What offense has occurred?",
+    ref: "(PC 25.07 (a) (3), (d); Family Violence and Related Assaultive Offenses, Section 17.6, page 8 of 14)",
+    choices: [
+      "Violations of Certain Court Orders or Conditions of Bond in a Family Violence, Child Abuse or Neglect, Sexual Assault or Abuse, Indecent Assault, Stalking or Trafficking Case",
+      "Repeated Violation of Certain Court Orders or Conditions of Bond in FV, Sexual Assault or abuse, stalking, or trafficking case",
+      "Tampering with Witness",
+      "Requirements of Order Applying to Person who Committed Family Violence.",
+    ],
+    answer: 0
+  },
+  /* #246 again: the deck has it twice inside slides 124-256 (slides 213 and 222; build 324). Same treatment as
+     #84's copy (src 347): its own identity, the short version only. */
+  {
+    topic: "Penal Code",
+    src: 355,
+    repeatOf: 246,
+    versionOnly: true,
+    q: "A person set a fire in his backyard to burn off dead grass; the fire got out of control and burned a neighbor’s fence. The crime is",
+    ref: "(PC 28.04 (a), PC Section 8.15",
+    choices: [
+      "criminal mischief",
+      "reckless damage or destruction",
+      "arson",
+      "none of the above",
+    ],
+    answer: 1
+  },
+  /* #126 again: the deck has it twice inside slides 124-256 (slides 224 and 225; build 324). Same treatment as
+     #84's copy (src 347): its own identity, the short version only. */
+  {
+    topic: "Penal Code",
+    src: 356,
+    repeatOf: 126,
+    versionOnly: true,
+    q: "A person other than a railroad employee commits an offense of “interference with railroad property” if he or she",
+    ref: "(PC Section 28.07 (2) (A, B, & C), Interference with Railroad Property) (PC Section 8.15)",
+    choices: [
+      "knowingly enters or remains on railroad property (b) (2) (A)",
+      "tampers with railroad property (b) (2) (B)",
+      "places an obstruction on a railroad track or causes a train to derail (b) (2) (C)",
+      "All of the above can constitute a crime",
+    ],
+    answer: 3
+  },
+  /* #276 again: the deck has it twice inside slides 124-256 (slides 253 and 254; build 324). Same treatment as
+     #84's copy (src 347): its own identity, the short version only. */
+  {
+    topic: "Penal Code",
+    src: 357,
+    repeatOf: 276,
+    versionOnly: true,
+    q: "A lady possesses a valid Texas Handgun License and is carrying a compact Glock pistol in her purse. As she enters local store, she notices a picture on the front door of a handgun inside a red circle with a line drawn diagonally across it and no other signs talk about weapons. What offense has occurred if she continues into the store?",
+    ref: "(PC 30.06 (a) (1 & 2) and (c) (3) (A & B), Section 8.17)",
+    choices: [
+      "Unlawful Carrying Weapon",
+      "Places weapons prohibited",
+      "Criminal trespass",
+      "No offense has been committed",
+    ],
+    answer: 3
+  },
 ];
 
 /* ==========================================================================
@@ -53811,10 +53930,35 @@ function flaggedIndexes(){
    rememberConfig(), and dropped whenever the unit is deselected. A
    hundo still needs the whole unit (isFullUnitRun counts against the
    whole bank), so the short version is a shortened run like any other. */
-const PENAL_TEST_SRCS = [249, 213, 24, 121, 200, 262, 344, 128, 159, 61, 95, 183, 109, 117, 349, 150, 158, 203, 250, 304,
-  65, 70, 97, 178, 350, 348, 319, 236, 318, 346, 22, 209, 3, 204, 253, 290, 343, 321, 322,
-  324, 28, 41, 66, 68, 76, 141, 207, 323, 255, 83, 90, 100, 222, 299, 88, 230, 297, 338, 114];
-/* ---- SLIDES 55-124 NOW (build 313) ----
+/* ---- SLIDES 124-256 NOW (build 324) ----
+   "The penal code slide version will change. It's now going to be slides
+   124-256 ... Ensure each question is correctly there. We can't afford
+   any mishaps again." Read off the same deck, every question matched to
+   the bank by its TEXT and choices, never by its number (the build 318
+   lesson below), in two independent passes that agree slide for slide:
+   116 questions on 39 slides, all already in the bank, every deck answer
+   equal to the bank's and every bank answer equal to the study guide's.
+   109 different questions: seven sit on two slides each, and like #84,
+   #213, #128 and #183 before them each second appearance is its own
+   version-only copy at the end of the bank (src -> copy: 184 -> 351,
+   42 -> 352, 260 -> 353, 309 -> 354, 246 -> 355, 126 -> 356, 276 -> 357).
+   Two deck numbers name a different question: slide 148's "60." is #42
+   by its text (our #60 is the "Actor" definition, slide 6), and slide
+   156's "125." is #124 (our #125 is on slide 125). None is unnumbered.
+   In deck order, a copy where its second slide puts it. The 55-124 list
+   below is history; its copies (348-350) stay in the bank, out of the
+   version, so their history survives. */
+const PENAL_TEST_SRCS = [114, 27, 125, 145, 177, 197, 26, 98, 115, 166, 184, 351, 86, 123, 156, 176, 13, 20, 42, 73, 127,
+  248, 352, 162, 231, 124, 220, 260, 332, 353, 92, 170, 312, 337, 30, 43, 104, 55, 181, 243, 328, 2,
+  56, 325, 229, 327, 257, 309, 238, 354, 81, 102, 221, 34, 45, 58, 87, 105, 187, 192, 246, 288, 21,
+  25, 133, 239, 171, 217, 272, 355, 126, 356, 82, 336, 345, 54, 93, 136, 140, 261, 263, 275, 308,
+  47, 110, 134, 179, 188, 194, 317, 331, 50, 71, 78, 96, 143, 157, 190, 202, 251, 254, 264, 271,
+  311, 161, 9, 168, 240, 296, 111, 167, 242, 277, 333, 276, 357];
+/* Slides 55-124 (builds 313-323), kept as history:
+   [249, 213, 24, 121, 200, 262, 344, 128, 159, 61, 95, 183, 109, 117, 349, 150, 158, 203, 250, 304,
+     65, 70, 97, 178, 350, 348, 319, 236, 318, 346, 22, 209, 3, 204, 253, 290, 343, 321, 322,
+     324, 28, 41, 66, 68, 76, 141, 207, 323, 255, 83, 90, 100, 222, 299, 88, 230, 297, 338, 114]
+   ---- SLIDES 55-124 (build 313; superseded by 124-256 in build 324) ----
    "We had our test today and now she provided us with the next slides
    from the penal code pptx on what the next test will be over. It is
    slides 55 through 124 ... do the swap." Read off the same deck's
@@ -53840,10 +53984,10 @@ const PENAL_TEST_SRCS = [249, 213, 24, 121, 200, 262, 344, 128, 159, 61, 95, 183
 const UNIT_TEST_VERSIONS = {
   "Penal Code": {
     srcs: new Set(PENAL_TEST_SRCS),
-    label: "Penal Code — Slides 55–124",
-    short: "slides 55–124",
-    desc: "Only the questions from slides 55–124 of the Penal Code PowerPoint.",
-    tag: "Slides 55–124 version available"
+    label: "Penal Code — Slides 124–256",
+    short: "slides 124–256",
+    desc: "Only the questions from slides 124–256 of the Penal Code PowerPoint.",
+    tag: "Slides 124–256 version available"
   }
 };
 function unitHasTestVersion(name){ return !!UNIT_TEST_VERSIONS[name]; }
@@ -83660,8 +83804,14 @@ function plainSlider(labelText, min, max, step, get, set, formatVal, onChange, t
    any unit screen in any mode for the first time put a pop up saying the
    new penal code version is available". Once per device, on the first
    unit screen after this ships, whatever the mode. Waits for a tour or a
-   loading screen to clear rather than sitting on top of one. */
-const PENAL_VERSION_NOTE_KEY = "class26e.penal55124.seen";
+   loading screen to clear rather than sitting on top of one.
+   BUILD 324: the short version is slides 124-256 now ("The penal code
+   slide version will change. It's now going to be slides 124-256"), so
+   it is announced again under a NEW key - everybody saw the 55-124 one
+   and has its key set. The old key (class26e.penal55124.seen) is simply
+   no longer read; it is never renamed or reused. Each range gets its own
+   key: the next change of slides is a new key, not this one cleared. */
+const PENAL_VERSION_NOTE_KEY = "class26e.penal124256.seen";
 let penalNoteBusyAt = 0;
 function maybeShowPenalVersionNote(tries){
   try{ if(localStorage.getItem(PENAL_VERSION_NOTE_KEY)) return; }catch(e){ return; }
@@ -83687,12 +83837,16 @@ function maybeShowPenalVersionNote(tries){
   const sheet = document.createElement("div");
   sheet.className = "invite-sheet person-card penal-note-sheet";
   const kick = document.createElement("p");
-  kick.className = "unlock-card-kicker"; kick.textContent = "New";
+  kick.className = "unlock-card-kicker"; kick.textContent = "Updated";
   const nm = document.createElement("h2");
-  nm.className = "unlock-card-name"; nm.textContent = "Penal Code: slides 55\u2013124";
+  nm.className = "unlock-card-name"; nm.textContent = "Penal Code: slides 124\u2013256";
   const p = document.createElement("p");
   p.className = "penal-note-body";
-  p.textContent = "There's a second version of Penal Code with only the " + n + " questions from slides 55\u2013124 of the PowerPoint. Tap Penal Code and choose which version you want.";
+  /* the range never breaks at its dash (a phone put "124-" on one line
+     and "256" on the next), the same rule as the version pop-up */
+  const rng = document.createElement("span"); rng.style.whiteSpace = "nowrap"; rng.textContent = "slides 124\u2013256";
+  p.append("The shorter version of Penal Code now has the " + n + " questions from ", rng,
+    " of the PowerPoint, for the next test. Tap Penal Code and choose which version you want.");
   const close = document.createElement("button");
   close.type = "button"; close.className = "next";
   close.textContent = "Got it";
@@ -108957,7 +109111,7 @@ function buildCalendarPane(panel){
    looks pixel-for-pixel like it does mid-test, not an approximation.
    Drill-only, reached from the Options sheet's now-unlocked toggle. */
 /* `versions` is the unit-selection screen's cfg.versions: reviewing the
-   Penal Code's slides 55-124 shows those 59 and nothing else. */
+   Penal Code's slides 124-256 shows those 116 and nothing else. */
 function showAnswerReview(units, source, versions, opts){
   const allFlagged = !!(opts && opts.allFlagged);
   setActiveNav(null);

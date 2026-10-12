@@ -185,7 +185,7 @@ def run_class(src_dir, label):
                 # The introduction card opens two seconds after Home and
                 # would land on top of everything below. It has its own
                 # section.
-                "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');}catch(e){}")
+                "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');}catch(e){}")
             pg = ctx.new_page()
             errs = []
             pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
