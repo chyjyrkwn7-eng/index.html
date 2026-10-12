@@ -19769,19 +19769,41 @@
     font-family:var(--sans); font-size:1.65rem; font-weight:800; letter-spacing:-.01em; color:#fff;
   }
   .unitoptions-modal-sheet.is-setup .unitoptions-modal-head{ margin-bottom:.1rem; }
-  /* What you picked: plain grey text under the title, not a card. */
-  .unitoptions-modal-sheet.is-setup .sheet-summary{
-    display:block; background:none; border:none; box-shadow:none; padding:0 .1rem; margin:0 0 1.35rem;
+  /* THE VIRTUAL ROOM'S BOX, ABOVE BEGIN (build 323). It was plain grey
+     text under the title; it is the Match settings card now, inheriting
+     .unitoptions-modal-sheet .sheet-summary as the Virtual Room's does,
+     with what only a test has: "No hundo" beside the mode, the units by
+     name, and one line of what is switched on. */
+  .unitoptions-modal-sheet.is-setup .sheet-summary.start-summary{ margin:0 0 .75rem; row-gap:0; }
+  /* The title sat on the summary; with the summary gone from under it,
+     the first group needs the air a heading gets. */
+  .unitoptions-modal-sheet.is-setup .unitoptions-modal-head:has(+ .optionsmodal-body > .sheet-begin-bar > .start-summary){ margin-bottom:1rem; }
+  .unitoptions-modal-sheet.is-setup .start-summary > .hundo-chip{
+    margin:-.35rem auto -.35rem .1rem; align-self:center; position:relative;
   }
-  .unitoptions-modal-sheet.is-setup .sheet-summary-mode,
-  .unitoptions-modal-sheet.is-setup .sheet-summary-tags{ display:none; }
-  .unitoptions-modal-sheet.is-setup .sheet-summary-line{
-    text-align:left; white-space:normal; margin:0; font-size:.95rem; font-weight:600; color:rgba(255,255,255,.62);
-  }
-  .unitoptions-modal-sheet.is-setup .sheet-summary-units{
-    margin:.2rem 0 0; padding:0; border:0; font-size:.82rem; line-height:1.35; color:rgba(255,255,255,.42);
+  /* a 44px reach on a chip drawn 26px tall */
+  .unitoptions-modal-sheet.is-setup .start-summary > .hundo-chip::before{ content:""; position:absolute; inset:-10px -4px; }
+  .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-units{
+    margin:.5rem 0 0; padding-top:.5rem; font-size:.82rem; line-height:1.35; color:rgba(255,255,255,.62);
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
   }
+  .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-optswrap{
+    flex:0 0 100%; display:grid; grid-template-rows:1fr; margin-top:.35rem;
+    transition:grid-template-rows .22s cubic-bezier(.3,.7,.3,1), margin-top .22s cubic-bezier(.3,.7,.3,1);
+  }
+  .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-optswrap.is-empty{ grid-template-rows:0fr; margin-top:0; }
+  .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-opts{
+    min-height:0; overflow:hidden; margin:0; padding:0; text-align:left; white-space:normal; line-height:1.35;
+    transition:opacity .18s ease;
+  }
+  .unitoptions-modal-sheet.is-setup .start-summary .is-empty > .sheet-summary-opts{ opacity:0; }
+  .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-opt.is-set{ color:#4ADE80; }
+  [data-reduce-motion="true"] .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-optswrap{ transition:none; }
+  /* The reason under "No hundo" opens ABOVE it, so its tip is underneath. */
+  .hundo-why.is-above{ animation-name:hundo-why-up; }
+  .hundo-why.is-above::before{ top:auto; bottom:-6px; left:calc(var(--tip-x, 50%) - 6px);
+    border:0; border-right:1px solid rgba(255,107,91,.35); border-bottom:1px solid rgba(255,107,91,.35); }
+  @keyframes hundo-why-up{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
   /* Groups: no box of their own; the heading sits above, iOS-style. */
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect{
     background:none; border:none; box-shadow:none; padding:0; margin:0 0 1.45rem;
@@ -83637,9 +83659,26 @@ function showSetup(){
   /* WHAT IT IS SET TO, AT A GLANCE (build 235) - "maybe that top box
      can also kinda show what other stuff it's set on, to prevent people
      from having to check the timer drop down each time". */
-  const sheetSummaryTags = document.createElement("div");
-  sheetSummaryTags.className = "sheet-summary-tags";
-  optionsModalBody.appendChild(sheetSummary);
+  /* ---- THE BOX ABOVE BEGIN, THE VIRTUAL ROOM'S WAY (build 323) ----
+     "The virtual room, start menu with the match settings really figured
+     it out, above the save settings button it has a box with the stuff
+     the test has. Can all the start menus follow that idea instead?"
+     This box used to be grey text under the title, with its settings
+     tags hidden, so what the test WAS scrolled away with the title. It
+     is the Virtual Room's card now (.sheet-summary, its mode / line
+     classes), pinned in the Begin bar directly above Begin: the mode and
+     the count, the units by name, and one line of what is switched on.
+     refresh() rewrites it on every change, so it is live. The tags row
+     is gone - one plain line, as the Virtual Room's box has. */
+  sheetSummary.classList.add("start-summary");
+  const sheetSummaryOpts = document.createElement("p");
+  sheetSummaryOpts.className = "sheet-summary-line sheet-summary-opts";
+  /* The line of switches folds open and shut rather than appearing: on a
+     tablet the sheet is shorter than its cap, so a line arriving in the
+     box lifts everything above it - eased, it glides instead of jumping. */
+  const sheetSummaryOptsWrap = document.createElement("div");
+  sheetSummaryOptsWrap.className = "sheet-summary-optswrap is-empty";
+  sheetSummaryOptsWrap.appendChild(sheetSummaryOpts);
   optionsModalBody.appendChild(srcSect);
 
   let lastSliderSize = cfg.size > 0 ? cfg.size : 10;
@@ -83695,17 +83734,28 @@ function showSetup(){
     if(!hundoWhy.hidden){ hideHundoWhy(); return; }
     hundoWhy.textContent = hundoNote.dataset.why || "Only a test with every question in a unit can earn a hundo.";
     hundoWhy.hidden = false;
-    const sr = sizeSect.getBoundingClientRect(), cr = hundoNote.getBoundingClientRect();
+    /* Above the chip now (build 323): it lives in the summary at the
+       foot of the sheet, so the reason opens upward, over the options,
+       the width of the box. */
+    const host = hundoWhy.offsetParent || beginBar;
+    const hr = host.getBoundingClientRect(), sr = sheetSummary.getBoundingClientRect(), cr = hundoNote.getBoundingClientRect();
+    hundoWhy.style.left = Math.round(sr.left - hr.left) + "px";
+    hundoWhy.style.right = Math.round(hr.right - sr.right) + "px";
+    hundoWhy.style.top = "auto";
+    hundoWhy.style.bottom = Math.round(hr.bottom - cr.top + 8) + "px";
     hundoWhy.style.setProperty("--tip-x", Math.round(cr.left + cr.width / 2 - sr.left) + "px");
-    hundoWhy.style.top = Math.round(cr.bottom - sr.top + 8) + "px";
     clearTimeout(hundoWhyTimer);
     hundoWhyTimer = setTimeout(hideHundoWhy, 7000);
     const away = ev => { if(ev.target !== hundoNote){ hideHundoWhy(); document.removeEventListener("pointerdown", away, true); } };
     setTimeout(() => document.addEventListener("pointerdown", away, true), 0);
   });
-  sizeSect.appendChild(hundoWhy);
-  { const hr = sizeSect.querySelector(".sect-headrow"), hv = hr && hr.querySelector(".sect-headval");
-    if(hr) hr.insertBefore(hundoNote, hv || null); }
+  /* IN THE SUMMARY, BESIDE THE MODE (build 323), not over the slider:
+     the box above Begin is where the test is described, and "No hundo"
+     is part of what this test is. It sits in the box's first row, so it
+     comes and goes without changing the box's height, and the slider no
+     longer has anything laid over it. The reason opens above it. */
+  hundoWhy.classList.add("is-above");
+  sheetSummary.insertBefore(hundoNote, sheetSummaryLine);
 
   /* Review mode, per explicit request — promoted out of a button that
      used to live buried two levels deep inside the collapsed "Timer &
@@ -83990,7 +84040,8 @@ function showSetup(){
      own colour, so it never scrolls away and the rows pass under it. */
   const beginBar = document.createElement("div");
   beginBar.className = "sheet-begin-bar";
-  beginBar.appendChild(beginBtn);
+  /* The summary rides in the bar, directly above Begin (build 323). */
+  beginBar.append(sheetSummary, hundoWhy, beginBtn);
   optionsModalBody.appendChild(beginBar);
 
   /* Draw From, Length, and Timer & Options used to live directly in
@@ -84288,44 +84339,41 @@ function showSetup(){
        screen instead of starting anything. */
     beginBtn.textContent = reviewAllMode ? (cfg.flashcards ? "Start flashcards" : "Show all") : "Begin";
 
-    /* WHAT THE RUN IS SET TO, BACK IN THE TOP BOX (build 250): "still
-       needs to say the settings of the test from that menu, in the top
-       like before just make it better than it was." Before, it was a row
-       of identical grey chips that began "All questions", "All 48" -
-       two ways of saying one number, the second of which the line above
-       already says. Now each setting is one short word with its own
-       small icon, so the row reads as a list of settings rather than a
-       row of buttons, and the count is left to the line above it. */
-    sheetSummaryTags.replaceChildren();
-    if(cfg.units.length){
-      const ICON = {
-        bank: '<path d="M8 2 14 5 8 8 2 5Z"/><path d="M2 8l6 3 6-3"/><path d="M2 11l6 3 6-3"/>',
-        speed: '<path d="M3 11a5 5 0 1 1 10 0"/><path d="M8 11l3-3"/>',
-        timer: '<circle cx="8" cy="9" r="5"/><path d="M8 6.5V9l1.8 1.2"/><path d="M6.5 2h3"/>',
-        shuffle: '<path d="M2 4.5h2.5c3 0 4 7 7 7H14"/><path d="M2 11.5h2.5c1.3 0 2.2-1.3 3-3"/><path d="M9.5 6c.6-.9 1.2-1.5 2-1.5H14"/><path d="M12.3 2.8 14 4.5l-1.7 1.7"/><path d="M12.3 9.8 14 11.5l-1.7 1.7"/>',
-        order: '<path d="M3 4.5h10"/><path d="M3 8h10"/><path d="M3 11.5h10"/>',
-        hidden: '<path d="M2 8s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4Z"/><path d="M3 13 13 3"/>'
-      };
-      const tag = (text, icon, cls) => {
-        const t = document.createElement("span");
-        t.className = "sheet-tag" + (cls ? " " + cls : "");
-        t.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + ICON[icon] + '</svg>';
-        const w = document.createElement("span"); w.textContent = text; t.appendChild(w);
-        sheetSummaryTags.appendChild(t);
-      };
-      /* ONLY WHAT IS SWITCHED ON (build 254): "if they are in order,
-         don't show that at the top, only show it if it's shuffled. If
-         there's no timer, don't show that either ... And if it's all
-         questions, don't show that." A default says nothing, so an
-         untouched run shows no row at all. */
-      if(!srcSect.hidden && cfg.source !== "all") tag(cfg.source === "recent" ? "Most missed" : "Starred", "bank");
-      if(!optSect.hidden && !shuffleRow.hidden && cfg.shuffle) tag("Shuffled", "shuffle");
-      if(!optSect.hidden && !recallRow.hidden && cfg.recall) tag("Answers hidden", "hidden");
-      if(!optSect.hidden && !feedbackRow.hidden && cfg.examFeedback) tag("Instant feedback", "feedback");
-      if(!timerSect.hidden && (cfg.timer === "down" || cfg.timer === "up"))
-        tag(cfg.timer === "down" ? cfg.timerMinutes + " min limit" : "Stopwatch", "timer", "is-set");
+    /* WHAT THE RUN IS SET TO, ON ONE LINE IN THE BOX (build 323). It was
+       a row of tags with icons (build 250) in the top box; it is the
+       Virtual Room's plain second line now, so the two boxes read as one
+       family. ONLY WHAT IS SWITCHED ON (build 254): "if they are in
+       order, don't show that at the top, only show it if it's shuffled.
+       If there's no timer, don't show that either ... And if it's all
+       questions, don't show that." A default says nothing. */
+    {
+      /* A timer that is on reads green (build 251: "I like how the timer
+         thing at the top is green though"); the rest are plain words. */
+      const on = [];
+      if(cfg.units.length){
+        if(!srcSect.hidden && cfg.source === "flagged") on.push("Starred only");
+        if(!timerSect.hidden && cfg.timer === "down") on.push({ t: cfg.timerMinutes + " min limit", set: true });
+        if(!timerSect.hidden && cfg.timer === "up") on.push({ t: "Stopwatch", set: true });
+        if(!optSect.hidden && !shuffleRow.hidden && cfg.shuffle) on.push("Shuffled choices");
+        if(!optSect.hidden && !recallRow.hidden && cfg.recall) on.push("Choices hidden");
+        if(!optSect.hidden && !feedbackRow.hidden && cfg.examFeedback) on.push("Instant feedback");
+        if(!optSect.hidden && !flashRow.hidden && cfg.flashcards) on.push("Flashcards");
+      }
+      /* Emptied, it keeps its last words while it folds shut. */
+      if(on.length){
+        sheetSummaryOpts.replaceChildren();
+        on.forEach((o, i) => {
+          if(i) sheetSummaryOpts.appendChild(document.createTextNode(" \u00b7 "));
+          const w = document.createElement("span");
+          w.className = "sheet-summary-opt" + (o.set ? " is-set" : "");
+          w.textContent = o.t || o;
+          sheetSummaryOpts.appendChild(w);
+        });
+      }
+      sheetSummaryOptsWrap.classList.toggle("is-empty", on.length === 0);
+      sheetSummaryOptsWrap.setAttribute("aria-hidden", on.length ? "false" : "true");
     }
-    if(sheetSummaryTags.parentNode !== sheetSummary || sheetSummary.lastChild !== sheetSummaryTags) sheetSummary.appendChild(sheetSummaryTags);
+    if(sheetSummary.lastChild !== sheetSummaryOptsWrap) sheetSummary.appendChild(sheetSummaryOptsWrap);
 
     /* NOT `disabled`, on purpose. A disabled button swallows the tap and
        says nothing, so pressing Start with no units picked did visibly

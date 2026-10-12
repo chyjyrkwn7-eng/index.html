@@ -1447,7 +1447,8 @@ def check_b313_sheet2(br):
       const sl=sheet.querySelector('.howmany-sect input.slider');
       sl.value=Math.floor(Number(sl.max)/2); sl.dispatchEvent(new Event('input',{bubbles:true})); sl.dispatchEvent(new Event('change',{bubbles:true})); await wait(500);
       const chip=sheet.querySelector('.hundo-chip'); const c=chip.getBoundingClientRect(), w=sl.parentElement.getBoundingClientRect();
-      out.chip={ off: Math.round((c.left+c.right)/2-(w.left+w.right)/2), text: chip.innerText };
+      out.chip={ off: Math.round((c.left+c.right)/2-(w.left+w.right)/2), text: chip.innerText,
+                 inBox: !!chip.closest('.sheet-begin-bar .sheet-summary'), overSlider: !!chip.closest('.howmany-sect') };
       chip.click(); await wait(300); out.why=(sheet.querySelector('.hundo-why')||{}).textContent||'';
       { const w=sheet.querySelector('.hundo-why'); const bg = el => { const c=getComputedStyle(el); return c.backgroundImage + ' | ' + c.backgroundColor + ' | ' + c.borderTopColor; };
         out.reds = w ? [bg(chip), bg(w)] : null; }
@@ -1468,7 +1469,14 @@ def check_b313_sheet2(br):
     ctx.close()
     check("the shuffle line says what it does and nothing about question order",
           r["shuffle"] and "random order" not in r["shuffle"], r["shuffle"])
-    check("the No hundo chip is centred over the slider", abs(r["chip"]["off"]) <= 1, r["chip"])
+    # MOVED IN 323 (check_b323s_summary): "The virtual room, start menu
+    # with the match settings really figured it out, above the save
+    # settings button it has a box with the stuff the test has. Can all
+    # the start menus follow that idea instead?" No hundo is part of what
+    # the test is, so it sits in that box beside the mode, above Begin -
+    # no longer centred over the slider.
+    check("the No hundo chip is in the summary box above Begin, not over the slider",
+          r["chip"].get("inBox") is True and r["chip"].get("overSlider") is False, r["chip"])
     check("and says No hundo, and its note names the hundo total and the badge count",
           "hundo" in r["chip"]["text"].lower() and "hundo total" in r["why"] and "badge" in r["why"]
           and "\u201cHow many\u201d" in r["why"] and "\u201cAll\u201d" in r["why"], [r["chip"], r["why"]])
@@ -2285,7 +2293,9 @@ def check_b234(br):
         const sh = document.querySelector('.unitoptions-modal-sheet');
         const hm = sh.querySelector('.howmany-sect');
         const sl = hm && hm.querySelector('.slider');
-        const defaults = [...sh.querySelectorAll('.sheet-summary-tags .sheet-tag')].map(t => t.textContent);
+        /* build 323: the settings are one line in the box above Begin */
+        const ol = sh.querySelector('.sheet-summary-opts');
+        const defaults = ol && !ol.closest('.is-empty') ? [...ol.querySelectorAll('.sheet-summary-opt')].map(t => t.textContent) : [];
         const res = { defaults, chips: hm ? hm.querySelectorAll('.chip').length : -1, all: !!(hm && hm.querySelector('.slider-allbtn')),
                       star: (() => { const r = sh.querySelector('.drawfrom-sect .bank-starred'); if(!r) return null;
                         return { text: (r.querySelector('.otext') || {}).firstChild ? r.querySelector('.otext').firstChild.textContent : '',
@@ -2583,12 +2593,15 @@ def check_b235b(br):
       await T('bankInfo', () => { const fc = document.querySelector('.bank-starred .ohint');
         return { info: !!document.querySelector('.bank-info, .bank-infobody'), shown: !!fc, len: fc ? (fc.textContent || '').trim().length : 0 }; });
       cfg.timer = 'down'; cfg.timerMinutes = 20; document.querySelector('.bank-starred')?.click(); await wait(200);
-      await T('tags', () => { const ts = [...document.querySelectorAll('.sheet-summary .sheet-summary-tags .sheet-tag')];
+      /* build 323: the tags are one line of words in the box above Begin */
+      await T('tags', () => { const ol = document.querySelector('.sheet-summary .sheet-summary-opts');
+        const ts = ol && !ol.closest('.is-empty') ? [...ol.querySelectorAll('.sheet-summary-opt')] : [];
         const card = (document.querySelector('.unitoptions-modal-sheet .more-toggle') || {}).parentElement;
         return { tags: ts.length, texts: ts.map(t => t.textContent), icons: ts.every(t => !!t.querySelector('svg')),
                  cardGreen: !!card && card.classList.contains('is-set'),
                  green: (() => { const p = ts.find(t => /min limit|Stopwatch|min countdown|Tracking time/.test(t.textContent)); if(!p) return false;
-                   const m = (getComputedStyle(p).borderTopColor.match(/[\d.]+/g) || []).map(Number);
+                   /* build 323: green WORDS in the line (the colour), where the pill was a green border */
+                   const m = (getComputedStyle(p).color.match(/[\d.]+/g) || []).map(Number);
                    return p.classList.contains('is-set') && m.length >= 3 && m[1] > m[0] + 80 && m[1] > m[2] + 60; })(),
                  state: (document.querySelector('.more-toggle-state') || {}).textContent || '' }; });
       await T('timerLabel', () => (document.querySelector('.more-toggle') || {}).textContent || '');
@@ -2652,8 +2665,13 @@ def check_b235b(br):
     # Build 254: and ONLY what is switched on - "if they are in order,
     # don't show that ... If there's no timer, don't show that either ...
     # And if it's all questions, don't show that."
-    check("the top box lists only the settings that are on, each with an icon, and no question count",
-          isinstance(t, dict) and t.get("icons") and ("20 min countdown" in tx or "20 min limit" in tx) and ("Flagged" in tx or "Starred" in tx)
+    # REVISED IN 323: "The virtual room, start menu with the match settings
+    # really figured it out, above the save settings button it has a box
+    # with the stuff the test has. Can all the start menus follow that idea
+    # instead?" The settings are the Virtual Room box's plain line now, in
+    # the box above Begin - words, no icons - and still only what is on.
+    check("the box lists only the settings that are on, and no question count",
+          isinstance(t, dict) and ("20 min countdown" in tx or "20 min limit" in tx) and ("Flagged" in tx or "Starred" in tx or "Starred only" in tx)
           and not any(x in ("All questions", "In order", "No timer") for x in tx)
           and not any(x.startswith("All ") and x[4:].isdigit() for x in tx) and not any(" of " in x for x in tx), t)
     # (The Timer bar's own "20 min countdown" state went with the dropdown
@@ -2661,7 +2679,7 @@ def check_b235b(br):
     # Build 250/251: "I need this to go green when you change it" - then
     # "that box turning green is kinda weird. Don't do that. I like how
     # the timer thing at the top is green though." The pill, not the card.
-    check("a timer that is on turns its pill in the top box green, and not the Timer card",
+    check("a timer that is on reads green in the box, and not the Timer card",
           isinstance(t, dict) and t.get("green") is True and t.get("cardGreen") is False, t)
     # build 310 renamed it "Stopwatch & timer": the shape is that it names the timers
     check("the fold is named for the timers", "timer" in str(r["timerLabel"]).lower(), r["timerLabel"])
@@ -10662,7 +10680,8 @@ def check_b313_lead(br):
       await wait(600);
       const chip = document.querySelector('.hundo-chip'); chip?.click(); await wait(400);
       const why = document.querySelector('.hundo-why');
-      out.why = (chip && why && !why.hidden) ? { gap: Math.round(why.getBoundingClientRect().top - chip.getBoundingClientRect().bottom), text: why.textContent.trim() } : null;
+      /* build 323: the chip is in the box above Begin, so its note opens ABOVE it */
+      out.why = (chip && why && !why.hidden) ? { gap: Math.round(chip.getBoundingClientRect().top - why.getBoundingClientRect().bottom), text: why.textContent.trim() } : null;
       document.querySelector('#unitoptions-modal')?.remove(); document.querySelector('.unitoptions-scrim')?.remove();
       /* Customize goes up before its banner scenes are drawn, and every
          one of them is drawn a moment later */
@@ -10736,7 +10755,11 @@ def check_b313_lead(br):
           len(f) == 2 and any(x["met"] for x in f) and all(x["img"].startswith("linear-gradient") and x["glow"] for x in f), f)
     check("scrolling does not rewrite the page's root style on every frame", r.get("shiftWrites") == 0, r.get("shiftWrites"))
     w = r.get("why")
-    check("tapping No hundo opens its note right under the chip, saying to slide to All",
+    # REVISED IN 323: "above the save settings button it has a box with the
+    # stuff the test has. Can all the start menus follow that idea
+    # instead?" The chip lives in that box at the foot of the sheet now, so
+    # the note still opens AT the chip ("put it near the button"), above it.
+    check("tapping No hundo opens its note right by the chip (above it, in the box over Begin), saying to slide to All",
           isinstance(w, dict) and 0 <= w["gap"] <= 40 and "All" in w["text"], w)
     cn, cl = r.get("custNow") or {}, r.get("custLater") or {}
     check("Customize opens before drawing its banner scenes, and draws every one of them a moment later",
@@ -25544,6 +25567,130 @@ def check_b323b_stars(br):
         ctx.close()
 
 
+def check_b323s_summary(br):
+    """Build 323: every start sheet ends the Virtual Room's way - a box
+    saying what the test is, directly above Begin. "The virtual room,
+    start menu with the match settings really figured it out, above the
+    save settings button it has a box with the stuff the test has. Can all
+    the start menus follow that idea instead?" and "Study mode selection,
+    unit selection and start menu needs to be as perfect as possible."
+    In Drill, Exam, Review and Review with Flashcards: the box sits right
+    above Begin (in the pinned bar, so it is in view with it), is the
+    Match settings card (same background and corners), names the mode,
+    the units count and the question count, the units by name and what is
+    switched on, and rewrites itself when a switch or How many moves - and
+    "No hundo" lives in it. Begin is wholly in view and on top on both
+    reference devices. On 22bf429 the summary was grey text under the
+    title, far from Begin, with its settings row hidden. Fails there."""
+    print("\n323s. build 323: a Virtual Room box above Begin on every start sheet, live")
+    OPEN = """async ([mode, units])=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms));
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+      store.seenUnitSelectTour = true; store.seenUnitHoldTip = true; store.flagged = {};
+      cfg.mode = mode; cfg.units = []; cfg.flashcards = false; showSetup(); await wait(800);
+      for(const u of units){ const p=[...document.querySelectorAll('.screen-setup .pick')].find(p => p.querySelector('.pname').textContent === u); p && p.click(); await wait(60); }
+      await wait(700);
+      document.getElementById('nextbtn').click(); await wait(500);
+      /* the sheet rises over .25s; a loaded machine can hold that, so wait it out */
+      const sh = document.querySelector('#unitoptions-modal .unitoptions-modal-sheet');
+      for(let i = 0; i < 40 && sh && sh.getAnimations({ subtree: true }).some(a => a.playState === 'running' && a.effect && a.effect.getComputedTiming().iterations !== Infinity); i++) await wait(100);
+      await wait(200); }"""
+    READ = """()=>{ const sh = document.querySelector('#unitoptions-modal .unitoptions-modal-sheet');
+      const begin = sh && sh.querySelector('.sheet-begin-btn');
+      const box = sh && [...sh.querySelectorAll('.sheet-summary')].find(b => b.offsetParent);
+      if(!sh || !begin || !box) return { ok:false, begin: !!begin, box: !!box };
+      const rb = begin.getBoundingClientRect(), rs = box.getBoundingClientRect();
+      /* nothing laid out between the box and Begin */
+      const between = [...sh.querySelectorAll('*')].filter(e => { if(e === box || box.contains(e) || e === begin || begin.contains(e) || e.contains(box)) return false;
+        const r = e.getBoundingClientRect(); const cs = getComputedStyle(e);
+        return r.height > 2 && r.width > 2 && cs.visibility !== 'hidden' && cs.position !== 'absolute' && r.top >= rs.bottom - 1 && r.bottom <= rb.top + 1 && !e.contains(begin); }).map(e => e.className || e.tagName);
+      const hit = document.elementFromPoint((rb.left + rb.right) / 2, (rb.top + rb.bottom) / 2);
+      const t = s => (box.querySelector(s) || {}).textContent || '';
+      const opts = box.querySelector('.sheet-summary-opts');
+      const optsOn = !!opts && !(opts.closest('.is-empty')) && opts.getBoundingClientRect().height > 4;
+      const chip = box.querySelector('.hundo-chip');
+      const cs = getComputedStyle(box);
+      return { ok:true, gap: Math.round(rb.top - rs.bottom), dl: Math.round(rs.left - rb.left), dr: Math.round(rs.right - rb.right),
+               between, beginIn: rb.top >= 0 && rb.bottom <= innerHeight && rb.left >= 0 && rb.right <= innerWidth,
+               beginOnTop: !!hit && (hit === begin || begin.contains(hit)),
+               mode: t('.sheet-summary-mode'), line: t('.sheet-summary-line'), units: t('.sheet-summary-units'),
+               opts: optsOn ? opts.textContent : '', chip: !!chip && !chip.hidden && box.contains(chip),
+               look: { bg: cs.backgroundImage, radius: cs.borderTopLeftRadius }, title: (sh.querySelector('.unitoptions-modal-title') || {}).textContent }; }"""
+    ROW = """async (t)=>{ const sh=document.querySelector('#unitoptions-modal');
+      const r=[...sh.querySelectorAll('.opt')].find(o=>o.querySelector('.otext') && o.querySelector('.otext').firstChild.textContent===t);
+      if(!r) return false; r.click(); await new Promise(z=>setTimeout(z,300));
+      /* the options line folds open over .22s - on a loaded machine its
+         transition can sit at 0 for a while, so wait for it to finish */
+      const box = sh.querySelector('.sheet-begin-bar .sheet-summary') || sh;
+      for(let i = 0; i < 30 && box.getAnimations({ subtree: true }).some(a => a.playState === 'running'); i++) await new Promise(z=>setTimeout(z,100));
+      return true; }"""
+    UNITS = ["Identity Crimes", "Racial Profiling"]
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        # the Virtual Room's own box, the model
+        vr = pg.evaluate("""async ()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms));
+          document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); store.seenUnitSelectTour = true;
+          showVirtualRoomSetup({ units:['Identity Crimes'], count:null, game:'race' }); await wait(800);
+          document.querySelector('.vroom-setup-go').click(); await wait(700);
+          const b=document.querySelector('#unitoptions-modal .sheet-summary'); const cs=getComputedStyle(b);
+          return { bg: cs.backgroundImage, radius: cs.borderTopLeftRadius }; }""")
+        res = {}
+        for mode, fl in (("drill", False), ("exam", False), ("review", False), ("review", True)):
+            name = "Flashcards" if fl else {"drill": "Drill", "exam": "Exam", "review": "Review"}[mode]
+            pg.evaluate(OPEN, [mode, UNITS])
+            if fl:
+                pg.evaluate(ROW, "Flashcards")
+            r = pg.evaluate(READ)
+            r["want"] = pg.evaluate("()=>{ const n = poolNow().length; return { n, mode: modeTitleOf(cfg.mode) }; }")
+            # live: one switch, and (Drill) How many
+            if mode == "drill":
+                pg.evaluate(ROW, "Stopwatch"); r["afterWatch"] = pg.evaluate(READ)
+                pg.evaluate(ROW, "Hide answer choices"); r["afterHide"] = pg.evaluate(READ)
+                pg.evaluate("""async ()=>{ const sl=document.querySelector('#unitoptions-modal .howmany-sect input.slider');
+                  sl.value=10; sl.dispatchEvent(new Event('input',{bubbles:true})); sl.dispatchEvent(new Event('change',{bubbles:true}));
+                  await new Promise(z=>setTimeout(z,500)); }""")
+                r["afterCut"] = pg.evaluate(READ)
+            elif mode == "exam":
+                pg.evaluate(ROW, "Instant feedback"); r["afterFb"] = pg.evaluate(READ)
+            elif fl:
+                pg.evaluate(ROW, "Flashcards"); r["afterOff"] = pg.evaluate(READ)
+            res[name] = r
+            pg.evaluate("()=>{ document.getElementById('unitoptions-modal')?.remove(); }")
+        ctx.close()
+        for name, r in res.items():
+            if not r.get("ok"):
+                check("%s %s: the sheet has a summary box and Begin" % (label, name), False, r); continue
+            check("%s %s: the summary box sits directly above Begin, as wide as it, nothing between" % (label, name),
+                  0 <= r["gap"] <= 24 and abs(r["dl"]) <= 2 and abs(r["dr"]) <= 2 and not r["between"],
+                  {k: r[k] for k in ("gap", "dl", "dr", "between")})
+            check("%s %s: Begin is wholly in view and nothing covers it" % (label, name),
+                  r["beginIn"] and r["beginOnTop"], {k: r[k] for k in ("beginIn", "beginOnTop")})
+            check("%s %s: it is the Virtual Room's card - same glass and corners" % (label, name),
+                  r["look"]["bg"] == vr["bg"] and r["look"]["radius"] == vr["radius"] and r["look"]["bg"] != "none", [r["look"], vr])
+            n = r["want"]["n"]
+            check("%s %s: it names the mode, the units count, the question count and the units" % (label, name),
+                  r["mode"] == r["want"]["mode"] and r["line"] == "2 units · %d questions" % n
+                  and all(u in r["units"] for u in UNITS), {k: r[k] for k in ("mode", "line", "units")})
+        d, e, v, f = res.get("Drill", {}), res.get("Exam", {}), res.get("Review", {}), res.get("Flashcards", {})
+        if d.get("ok"):
+            check("%s Drill: the options line says what is on (Shuffled choices), and nothing that is off" % label,
+                  d["opts"] == "Shuffled choices", d["opts"])
+            aw, ah, ac = d.get("afterWatch") or {}, d.get("afterHide") or {}, d.get("afterCut") or {}
+            check("%s Drill: switching on Stopwatch and Hide answer choices rewrites the line at once" % label,
+                  "Stopwatch" in aw.get("opts", "") and "Choices hidden" not in aw.get("opts", "")
+                  and "Choices hidden" in ah.get("opts", "") and "Stopwatch" in ah.get("opts", ""), [aw.get("opts"), ah.get("opts")])
+            check("%s Drill: How many at 10 rewrites the count, and No hundo shows in the box, Begin still in view" % label,
+                  ac.get("line") == "2 units · 10 questions" and ac.get("chip") is True and ac.get("beginIn") and ac.get("beginOnTop"),
+                  {k: ac.get(k) for k in ("line", "chip", "beginIn", "beginOnTop")})
+        if e.get("ok"):
+            fb = e.get("afterFb") or {}
+            check("%s Exam: nothing on says nothing; Instant feedback on puts it in the line" % label,
+                  e["opts"] == "" and fb.get("opts") == "Instant feedback", [e["opts"], fb.get("opts")])
+        if v.get("ok") and f.get("ok"):
+            off = f.get("afterOff") or {}
+            check("%s Review / Flashcards: Flashcards on says Flashcards, and off takes it away" % label,
+                  v["opts"] == "" and f["opts"] == "Flashcards" and off.get("opts") == "", [v["opts"], f["opts"], off.get("opts")])
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -25770,6 +25917,7 @@ def main():
             check_b321f_profile(br)
             check_b323t_tabbar(br)
             check_b323b_stars(br)
+            check_b323s_summary(br)
         finally:
             br.close()
     SERVER.shutdown()
