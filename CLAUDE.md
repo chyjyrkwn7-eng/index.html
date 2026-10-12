@@ -20015,10 +20015,12 @@ unless noted.
   unlock tile's knock still, and no character special until the end; focus
   slides them back as the last thing. The rank line shows the rank you had
   and fades to the new one after `RU_RANKLINE_AT_MS` (`rankUpRankLineAs`,
-  `rankUpRankLineFade`). The climb shows the real numbers counting
+  `rankUpRankLineFade`; since b321f the line is the word alone, which pops
+  in with `.ru-rank-new`). The climb shows the real numbers counting
   ("x / y XP", "to Level N"; `rankUpLevelSpan`) - no "Saved XP · climbing".
-  The level challenge stays where it stood (its bar laid, not filled) until
-  the bar is done, then counts and ticks (`rankUpLevelRowAfter`).
+  The level challenge stays where it stood until the XP bar is done, then
+  its level counts up and it ticks and reads "Met" (`rankUpLevelRowAfter`;
+  since b321f the level row has no bar - `.pf-now` and `is-met` only).
 - **Gates**: `check_b320d_rankup` gains `_b321e_stepped` / `_b321e_checks` -
   the iPhone journey frame by frame on the fake clock (`B321E_IPAD=1` adds
   the iPad): the flare's clock through the hand-off, the secret flares'

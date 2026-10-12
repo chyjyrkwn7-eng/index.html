@@ -16098,10 +16098,11 @@
   [data-reduce-motion="true"] .ru-nx-edge{ opacity:.6; }
   /* 10. THE CARD AT THE TOP (build 321): no turn any more - it fades to
      the new card (rankUpHeroTurn), so build 320's turn and sheen are gone. */
-  /* 11. back on Profile: the new rank's emblem arrives with a small pop, the
-     completed card folds away, the next rank's comes in a piece at a
-     time, and the saved XP climbs the bar */
-  .pf-standing.ru-arrive .pf-emb{ animation:ru-emb-arrive .9s cubic-bezier(.2,1.5,.4,1) .1s both; }
+  /* 11. back on Profile: the rank you had, then (build 321) the new rank's
+     word arriving with a small pop (no emblem on the line since b321f), the
+     completed card folds away, the next rank's comes in a piece at a time,
+     and the saved XP climbs the bar */
+  .pf-standing.ru-arrive .pf-rankname.ru-rank-new{ display:inline-block; animation:ru-emb-arrive .9s cubic-bezier(.2,1.5,.4,1) both; }
   @keyframes ru-emb-arrive{ 0%{ transform:scale(.5); opacity:.2; } 60%{ transform:scale(1.2); opacity:1; } 100%{ transform:none; } }
   .ru-flipping{ perspective:1100px; }
   .pf-goal.ru-flip-out{ transform-origin:50% 0; animation:ru-flip-out .43s cubic-bezier(.55,0,.75,.45) both; }
@@ -16113,8 +16114,6 @@
     transition:opacity .45s ease var(--ru-d, 0s), transform .6s cubic-bezier(.2,.9,.25,1) var(--ru-d, 0s); }
   .pf-goal.ru-goal-pre.ru-goal-in .pf-rw{ transition:opacity .4s ease var(--ru-d, 0s), transform .55s cubic-bezier(.2,1.5,.4,1) var(--ru-d, 0s); }
   .pf-goal.ru-goal-pre .pf-rw{ transform:translateY(10px) scale(.7); }
-  .pf-standing .pf-xp-note{ transition:opacity .5s ease; }
-  .pf-standing .pf-xp-note.ru-later{ opacity:0; }
   .pf-standing.ru-climbing .pf-xpbarwrap{ filter:drop-shadow(0 0 8px rgba(111,194,255,.55)); }
   .pf-level.ru-lvpop{ display:inline-block; animation:ru-lvpop .5s cubic-bezier(.2,1.5,.4,1) both; }
   @keyframes ru-lvpop{ 0%{ transform:scale(1); } 45%{ transform:scale(1.2); color:#BFE3FF; } 100%{ transform:scale(1); } }
@@ -113392,14 +113391,12 @@ function rankUpStandingAt(standing, s){
   if(!standing) return;
   const bar = levelBarOf(s);
   const lv = standing.querySelector(".pf-level"), fill = standing.querySelector(".pf-xpbar .xpbar-fill"),
-        track = standing.querySelector(".pf-xpbar"), nums = standing.querySelector(".pf-xpnums .xpnums"),
-        note = standing.querySelector(".pf-xp-note");
+        track = standing.querySelector(".pf-xpbar"), nums = standing.querySelector(".pf-xpnums .xpnums");
   if(lv) lv.textContent = "Level " + s.level;
   syncPfXpTo(standing, s);
   if(fill) fill.dataset.target = String(Math.round(bar.fraction * 1000) / 10);
   if(nums) nums.replaceWith(buildXpNumbers(bar.into, bar.span, bar.over));
   if(track) track.classList.toggle("is-banked", !!bar.over);
-  if(note) note.classList.add("ru-later");
 }
 /* THE SAVED XP TURNS INTO LEVELS, SLOWLY (build 320): "if you have extra
    xp for the newly unlocked levels after it flips and stuff that is when
@@ -113490,8 +113487,6 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
   fill.style.transition = "";
   if(track && toBar.over) track.classList.add("is-banked");
   standing.classList.remove("ru-climbing");
-  const note = standing.querySelector(".pf-xp-note.ru-later");
-  if(note) note.classList.remove("ru-later");
   /* ...and only now the level challenge */
   if(row) await rankUpLevelRowAfter(row, to.level);
 }
@@ -113537,21 +113532,21 @@ async function rankUpLevelRowAfter(row, level){
    the line fades over to the new one once the dark has lifted. */
 function rankUpRankLineAs(standing, key){
   if(!standing || !key) return;
-  const emb = standing.querySelector(".pf-emb"), nm = standing.querySelector(".pf-rankname");
+  const nm = standing.querySelector(".pf-rankname");
   standing.style.setProperty("--rank-color", RANK_COLOR[key]);
   if(nm) nm.textContent = RANK_DISPLAY_NAME[key];
-  if(emb){ emb.replaceChildren(); try{ emb.appendChild(fitRankEmblem(buildRankEmblemSVG(key), key)); }catch(e){} }
 }
 var RU_RANKLINE_FADE_MS = 420;
 async function rankUpRankLineFade(standing, key, still){
-  const parts = standing ? [standing.querySelector(".pf-emb"), standing.querySelector(".pf-rankname")].filter(Boolean) : [];
-  if(still || !parts.length){ rankUpRankLineAs(standing, key); return; }
-  parts.forEach(el => { try{ el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: RU_RANKLINE_FADE_MS, easing: "ease-in", fill: "forwards" }); }catch(e){} });
+  const nm = standing && standing.querySelector(".pf-rankname");
+  if(still || !nm){ rankUpRankLineAs(standing, key); return; }
+  try{ nm.animate([{ opacity: 1 }, { opacity: 0 }], { duration: RU_RANKLINE_FADE_MS, easing: "ease-in", fill: "forwards" }); }catch(e){}
   await rankUpWait(RU_RANKLINE_FADE_MS);
   rankUpRankLineAs(standing, key);
-  const now = [standing.querySelector(".pf-emb"), standing.querySelector(".pf-rankname")].filter(Boolean);
-  now.forEach(el => { try{ el.getAnimations().forEach(a => a.cancel()); el.animate([{ opacity: 0, transform: "translateY(3px)" }, { opacity: 1, transform: "none" }], { duration: 650, easing: "cubic-bezier(.2,.8,.3,1)" }); }catch(e){} });
-  await rankUpWait(650);
+  try{ nm.getAnimations().forEach(a => a.cancel()); }catch(e){}
+  /* the new word comes in with the pop the emblem used to have */
+  nm.classList.remove("ru-rank-new"); void nm.offsetWidth; nm.classList.add("ru-rank-new");
+  await rankUpWait(900);
 }
 var RU_RANKLINE_AT_MS = 900;
 async function rankUpProfileReturn(scene, panel){
