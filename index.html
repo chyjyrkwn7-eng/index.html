@@ -43581,6 +43581,100 @@ function noteHundoDay(unit){
   if(store.hundoDay.units.indexOf(unit) < 0) store.hundoDay.units.push(unit);
   store.hundoDayBest = Math.max(store.hundoDayBest || 0, store.hundoDay.units.length);
 }
+/* ---- A CHALLENGE WITH A WINDOW SAYS WHICH WINDOW (build 324) ----
+   Madison: "Some of the unlocks progress bars are confusing, for example
+   Orion is get 5 hundos in different units in one day. Would that reset
+   when the day is over? Ensure all that stuff is correct and updates and
+   stuff." It did reset, but the bar never said so: it showed the BEST day
+   on record (hundoDayCount), so somebody on 3 yesterday and 0 today read
+   "3 of 5" and had no way to know the 3 was gone. The same was true of
+   every challenge that has to land inside one window - one day, one run,
+   one test. The rule itself is unchanged and still reads the best (so
+   nothing is ever taken back); what changes is what the LOCKED card shows:
+   the window you are in now, by name, how it resets, and the best so far
+   on its own line. Worked out on every call, so a card opened after a run
+   or after midnight is never stale (showUnlockDetail also re-reads an open
+   card when the app comes back and at midnight). */
+function hundoDayToday(){
+  const hd = store.hundoDay;
+  return hd && hd.day === dayKey(new Date()) && Array.isArray(hd.units) ? hd.units.length : 0;
+}
+function answeredToday(){
+  const d = store.dayAnswered;
+  return d && d.day === dayKey(new Date()) ? (Number(d.n) || 0) : 0;
+}
+/* The run of study days you are on: back from today, or from yesterday
+   when today has nothing logged yet (the run is still alive until
+   midnight). Counted the way bestStudyRun() counts a day (any time > 0),
+   so the two can never disagree about whether a day counted. */
+function studyRunNow(){
+  const log = store.studyLog || {};
+  const has = d => (Number(log[dayKey(d)]) || 0) > 0;
+  const c = new Date();
+  if(!has(c)) c.setDate(c.getDate() - 1);
+  let n = 0;
+  while(has(c) && n < 4000){ n++; c.setDate(c.getDate() - 1); }
+  return n;
+}
+function unlockBestLine(best, now, word){
+  return best > now ? " Your best so far: " + best.toLocaleString() + (word ? " " + word : "") + "." : "";
+}
+const UNLOCK_WINDOWS = {
+  /* Detective: daily questions answered in a row. A miss ends the run; a
+     skipped day does not (see summarize). */
+  "feat:daily10": () => {
+    const need = CHARACTER_FEATS.daily10.need, now = Number(store.dailyCorrectStreak) || 0;
+    return { now, need, label: "Current run", tail: "in a row",
+      note: "The daily question on Home. A wrong answer starts the run over; a day you skip does not." + unlockBestLine(dailyBestRun(), now, "in a row") };
+  },
+  /* Marksman: inside ONE test, so outside a test there is nothing in
+     progress to show - the bar is the best test so far, and says so. */
+  "feat:streak100": () => {
+    const need = CHARACTER_FEATS.streak100.need;
+    return { now: Number(store.bestTestStreak) || 0, need, label: "Best in one test", tail: "",
+      note: "Right on the first try, all inside one test. A miss starts the count over, and so does a new test. The bar shows your best test so far." };
+  },
+  /* Orion: different units aced on today's date. */
+  "feat:hundo7day": () => {
+    const need = CHARACTER_FEATS.hundo7day.need, now = hundoDayToday();
+    return { now, need, label: "Today", tail: "different units",
+      note: "A hundo is 100% on a whole unit. All " + need + " have to be on the same day: today's count starts over at midnight." +
+        unlockBestLine(Number(store.hundoDayBest) || 0, now, "units") };
+  },
+  /* Hive: questions answered on today's date, in any mode. */
+  "feat:busyday300": () => {
+    const need = CHARACTER_FEATS.busyday300.need, now = answeredToday();
+    return { now, need, label: "Today", tail: "questions",
+      note: "Any mode counts. Today's count starts over at midnight." + unlockBestLine(Number(store.dayAnsweredBest) || 0, now, "questions") };
+  },
+  /* Koi: days in a row with study time on the log. */
+  "feat:studyrun7": () => {
+    const need = CHARACTER_FEATS.studyrun7.need, now = studyRunNow();
+    return { now, need, label: "Current run", tail: "days",
+      note: "Any study time on a day counts it. Miss a whole day and the run starts over." + unlockBestLine(bestStudyRun(), now, "days") };
+  },
+  /* Phoenix banner: different units aced in a row (recordUnitHundoStreak). */
+  "banner:exam100": () => {
+    const need = PHOENIX_UNIT_RUN, now = Number(store.unitHundoStreak) || 0;
+    return { now, need, label: "Current run", tail: "units",
+      note: "Each unit taken whole, with no misses. Finishing a whole unit under 100% starts the count again." + unlockBestLine(unitStreakBest(), now, "units") };
+  }
+};
+/* The window a challenge is in, or null for a plain running total. `have`
+   is what the bar fills to; `countText` is the line under it ("Today: 2
+   of 5 different units"); `short` goes in a one-line lock message. */
+function unlockWindow(kind, key){
+  const fn = UNLOCK_WINDOWS[kind + ":" + key];
+  if(!fn) return null;
+  try{
+    const w = fn();
+    w.have = Math.max(0, Math.min(w.now, w.need));
+    const of = w.have.toLocaleString() + " of " + w.need.toLocaleString();
+    w.countText = w.label + ": " + of + (w.tail ? " " + w.tail : "");
+    w.short = w.label.toLowerCase() + ": " + of;
+    return w;
+  }catch(e){ return null; }
+}
 
 function featAchieved(key){
   const f = CHARACTER_FEATS[key];
@@ -43697,7 +43791,10 @@ function characterLockMessage(id){
     /* The progress, not just the target. "0 of 10" and "7 of 10" are
        different pieces of information and the second is the one that
        makes somebody go and finish it. */
-    const suffix = f.need > 1 ? " (" + Math.min(f.have(), f.need) + " of " + f.need + ")" : "";
+    /* A windowed one names its window (build 324): "(today: 2 of 5)", not
+       the best day's "(3 of 5)" - see UNLOCK_WINDOWS. */
+    const win = unlockWindow("feat", def.feat);
+    const suffix = win ? " (" + win.short + ")" : f.need > 1 ? " (" + Math.min(f.have(), f.need) + " of " + f.need + ")" : "";
     /* a secret's label names the flare and says which it is, so it reads
        as two sentences (build 313) */
     if(def.secret) return f.label + suffix + ". It unlocks " + (AVATAR_DISPLAY_NAME[id] || id) + ".";
@@ -53420,6 +53517,34 @@ function mergeSameAccount(dst, src){
       } else if(src.mergeHold.points > dst.mergeHold.points) res.otherHadLess = true;
     } else if(dst.mergeHold) res.otherHadLess = true;
   }
+  /* TODAY'S COUNTS ARE THE ACCOUNT'S, NOT ONE DEVICE'S (build 324). Orion's
+     units aced today and the Hive's questions answered today were taken
+     from whichever copy was newer, so units aced on the phone this morning
+     could vanish from today's count after a test on the iPad. Same day:
+     Orion's units are both sides' together, the Hive's count the higher
+     side (two devices' counts cannot be told apart, so adding could count
+     a question twice). A later day replaces an earlier one. The bests
+     beside them were already max-merged below. */
+  {
+    const dayOk = v => !!(v && typeof v === "object" && typeof v.day === "string");
+    const a = dst.hundoDay, b = src.hundoDay;
+    if(dayOk(b) && Array.isArray(b.units)){
+      if(!dayOk(a) || !Array.isArray(a.units) || b.day > a.day){ dst.hundoDay = { day: b.day, units: b.units.slice() }; res.gained = true; }
+      else if(b.day === a.day){
+        const add = b.units.filter(u => a.units.indexOf(u) < 0);
+        if(add.length){ a.units = a.units.concat(add); res.gained = true; }
+        if(a.units.some(u => b.units.indexOf(u) < 0)) res.otherHadLess = true;
+      } else res.otherHadLess = true;
+    } else if(dayOk(a)) res.otherHadLess = true;
+    const c = dst.dayAnswered, d = src.dayAnswered;
+    if(dayOk(d)){
+      if(!dayOk(c) || d.day > c.day){ dst.dayAnswered = { day: d.day, n: Number(d.n) || 0 }; res.gained = true; }
+      else if(d.day === c.day){
+        const x = Number(c.n) || 0, y = Number(d.n) || 0;
+        if(y > x){ c.n = y; res.gained = true; } else if(x > y) res.otherHadLess = true;
+      } else res.otherHadLess = true;
+    } else if(dayOk(c)) res.otherHadLess = true;
+  }
   const minPosInto = (o, k, v) => {
     const a = num(o[k]), b = num(v);
     if(b > 0 && (!(a > 0) || b < a)){ o[k] = b; res.gained = true; }
@@ -57329,7 +57454,9 @@ const BANNERS = [
      LATE_HUNDOS. The id stays `early10`; nothing was ever earned under it. */
   { id: "early10", name: "Lights Out",
     label: "Earn " + LATE_HUNDOS + " hundos between 8 PM and midnight", have: () => Math.min(lateHundosOf(), LATE_HUNDOS), need: LATE_HUNDOS,
-    note: "A hundo counts if its test finishes between 8 PM and midnight." },
+    /* not one night (build 324): the count adds up and never resets - said,
+       because "between 8 PM and midnight" reads like a single evening */
+    note: "A hundo counts if its test finishes between 8 PM and midnight. They add up over as many evenings as it takes." },
   { id: "exam100", name: "Phoenix",
     label: "Ace " + PHOENIX_UNIT_RUN + " different units in a row",
     have: () => (store.practiceExamPerfect ? PHOENIX_UNIT_RUN : Math.min(unitStreakBest(), PHOENIX_UNIT_RUN)), need: PHOENIX_UNIT_RUN,
@@ -107192,8 +107319,21 @@ function characterDetail(id){
     if(def.secret && /^Unlock /.test(locked)){ o.desc = secretLead + locked; return o; }
     const f = CHARACTER_FEATS[def.feat];
     if(f){ o.desc = secretLead + f.label + "."; o.have = Math.min(f.have(), f.need); o.need = f.need; if(f.note) o.note = f.note; }
+    /* the window it has to land in, while it is still to earn (build 324) */
+    const win = f && locked ? unlockWindow("feat", def.feat) : null;
+    if(win){ o.have = win.have; o.countText = win.countText; o.note = win.note; }
     if(f && def.secret && locked) o.note = (o.note ? o.note + " " : "") + "Secret flares hide in your tests, one at a time, from a certain level on.";
   }
+  return unlockDetailLive(o, () => characterDetail(id), () => !isLockedCharacter(id));
+}
+/* HELD MEANS HELD, WHOEVER OPENS THE CARD (build 324). A held item showed
+   "Unlocked" only because the press-and-hold set the flag; any other way
+   in would have drawn today's part-full bar on something already yours.
+   The builders say it themselves now, and carry `live` so an open card can
+   read itself again (showUnlockDetail). */
+function unlockDetailLive(o, rebuild, held){
+  try{ if(held()) o.unlocked = true; }catch(e){}
+  o.live = rebuild;
   return o;
 }
 function bannerDetail(id){
@@ -107212,7 +107352,9 @@ function bannerDetail(id){
   o.desc = def.label + ".";
   o.have = Math.min(def.have(), def.need); o.need = def.need;
   if(def.note) o.note = typeof def.note === "function" ? def.note() : def.note;
-  return o;
+  const win = bannerEarned(id) ? null : unlockWindow("banner", id);
+  if(win){ o.have = win.have; o.countText = win.countText; o.note = win.note; }
+  return unlockDetailLive(o, () => bannerDetail(id), () => bannerEarned(id));
 }
 /* A UNIT BADGE ON THE SAME CARD (build 281): "make it similar to the
    character unlock or banner unlock now, you click it, and opens up the
@@ -107292,7 +107434,7 @@ function hundoFxDetail(id){
   o.desc = "Earn " + d.need + " hundos.";
   o.have = Math.min(hundosOf(store), d.need); o.need = d.need;
   o.note = "A hundo is 100% on a whole unit.";
-  return o;
+  return unlockDetailLive(o, () => hundoFxDetail(id), () => hundoFxEarned(d.id));
 }
 function themeDetail(name){
   return Object.assign({ kind: "theme", id: name, kicker: "Theme",
@@ -107441,9 +107583,12 @@ function showUnlockDetail(o){
        honour for composited children, and the empty state is committed
        for two frames before the fill is set going. */
     setBarFill(fill, 0);
-    const target = Math.max(2, Math.min(100, Math.round(frac * 1000) / 10));
+    /* the target lives on the fill, so a card re-read before the bar has
+       started (keepUnlockCardLive) is not overwritten by the first value */
+    fill.__target = Math.max(2, Math.min(100, Math.round(frac * 1000) / 10));
     setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => {
-      setBarFill(fill, target);
+      fill.__started = true;
+      setBarFill(fill, fill.__target);
     })), 220);
     /* A count under the bar only where it is worth reading: never for a
        one-off ("0/1"), never for a rank step (the note says the rank). */
@@ -107458,7 +107603,7 @@ function showUnlockDetail(o){
     } else if(typeof o.have === "number" && o.need > 1){
       const c = document.createElement("p");
       c.className = "unlock-card-count";
-      c.textContent = o.have.toLocaleString() + " of " + o.need.toLocaleString();
+      c.textContent = unlockCountText(o);
       sheet.appendChild(c);
     }
   }
@@ -107480,6 +107625,69 @@ function showUnlockDetail(o){
   overlay.appendChild(sheet);
   overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
   mountSheetOverlay(overlay);
+  if(!o.unlocked && typeof o.live === "function") keepUnlockCardLive(sheet, o.live);
+}
+/* The line under an unlock card's bar: the window's own words where the
+   challenge has one ("Today: 2 of 5 different units"), else "N of M". */
+function unlockCountText(o){
+  return o.countText || (o.have.toLocaleString() + " of " + o.need.toLocaleString());
+}
+/* AN OPEN CARD IS NEVER LEFT SHOWING YESTERDAY (build 324). "Ensure all
+   that stuff is correct and updates." The card is worked out when it
+   opens; left open over midnight, or in an app put away last night and
+   brought back this morning, "Today: 3 of 5" would still say 3. It reads
+   itself again when the app comes back to the front and just after each
+   midnight, and changes only the words and the bar - nothing moves. If the
+   thing became yours meanwhile (a cloud copy arriving), it turns into the
+   held card: tick, full bar, "Unlocked". Stops by itself once the card is
+   gone. */
+function keepUnlockCardLive(sheet, rebuild){
+  let timer = null;
+  const stop = () => { if(timer){ clearTimeout(timer); timer = null; } document.removeEventListener("visibilitychange", onVis); };
+  const refresh = () => {
+    if(!sheet.isConnected){ stop(); return; }
+    let n = null;
+    try{ n = rebuild(); }catch(e){}
+    if(!n) return;
+    if(!n.note){ const t = unlockNoteFor(n); if(t) n.note = t; }
+    const put = (sel, text) => { const el = sheet.querySelector(sel); if(el && typeof text === "string" && el.textContent !== text) el.textContent = text; };
+    put(".unlock-card-desc", n.desc || "");
+    const fill = sheet.querySelector(".unlock-card-fill");
+    const frac = n.unlocked ? 1 : typeof n.frac === "number" ? n.frac : (typeof n.have === "number" && n.need ? n.have / n.need : null);
+    if(fill && frac !== null){
+      fill.__target = Math.max(2, Math.min(100, Math.round(frac * 1000) / 10));
+      if(fill.__started) setBarFill(fill, fill.__target);
+    }
+    const c = sheet.querySelector(".unlock-card-count");
+    if(c){
+      if(n.unlocked){ c.classList.add("is-done"); put(".unlock-card-count", n.kind === "badge" ? "Mastered" : "Unlocked"); }
+      else if(typeof n.have === "number" && n.need > 1) put(".unlock-card-count", unlockCountText(n));
+    }
+    let note = sheet.querySelector(".unlock-card-note");
+    if(n.note && !note){
+      note = document.createElement("p"); note.className = "unlock-card-note";
+      sheet.insertBefore(note, sheet.querySelector(".person-sheet-close"));
+    }
+    if(note) put(".unlock-card-note", n.note || "");
+    if(n.unlocked && !sheet.classList.contains("is-unlocked")){
+      sheet.classList.add("is-unlocked");
+      const lock = sheet.querySelector(".unlock-card-lock");
+      if(lock){ lock.classList.add("is-held"); lock.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.4 8.4 L6.6 11.4 L12.6 4.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
+      stop();
+      return;
+    }
+    arm();
+  };
+  /* just after the next local midnight - dayKey()'s day */
+  const arm = () => {
+    if(timer) clearTimeout(timer);
+    const now = new Date(), next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
+    timer = setTimeout(refresh, Math.max(1000, Math.min(next - now, 864e5)));
+  };
+  function onVis(){ if(document.visibilityState === "visible") refresh(); }
+  document.addEventListener("visibilitychange", onVis);
+  sheet.__unlockRefresh = refresh;
+  arm();
 }
 
 /* PRESS AND HOLD TO SEE WHAT IT TOOK (build 259). "Characters and banners
