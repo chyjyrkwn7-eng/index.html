@@ -384,7 +384,7 @@ def main():
                       if(b) b.click();}""", i)
                     page.wait_for_timeout(800)
                     shot(page, 25 + i, "profile-" + name, bar_ok=True)
-                    if name in ("profile", "calendar"):
+                    if name in ("profile", "settings"):
                         page.evaluate("()=>window.scrollTo(0, document.documentElement.scrollHeight)")
                         page.wait_for_timeout(450)
                         shot(page, 25 + i + 0.5, "profile-" + name + "-scrolled", bar_ok=True)
@@ -413,13 +413,15 @@ def main():
                     page.wait_for_timeout(500)
                 page.evaluate("()=>window.scrollTo(0,0)"); page.wait_for_timeout(300)
 
-                # settings, top and bottom
-                page.evaluate("()=>document.getElementById('bottomtab-settings').click()")
+                # BUILD 323: Settings is Profile's third tab (shot above, top
+                # and bottom, as profile-settings) and the Calendar has
+                # Settings' place in the bar - tapped there, as anybody would.
+                page.evaluate("()=>{const b=document.getElementById('bottomtab-calendar'); if(b) b.click(); else showCalendar();}")
                 page.wait_for_timeout(900)
-                shot(page, 29, "settings", bar_ok=True)
+                shot(page, 29, "calendar", bar_ok=True)
                 page.evaluate("()=>window.scrollTo(0, document.documentElement.scrollHeight)")
                 page.wait_for_timeout(500)
-                shot(page, 29.5, "settings-scrolled", bar_ok=True)
+                shot(page, 29.5, "calendar-scrolled", bar_ok=True)
 
                 real = [e for e in errs if not any(k in e for k in
                         ("firebase", "firestore", "gstatic", "Failed to fetch", "net::"))]

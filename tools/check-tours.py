@@ -79,7 +79,7 @@ SCENARIOS = [
     {"key": "settings", "flag": "seenSettingsTour", "source": "showAppearance",
      "setup": "showAppearance()", "note": "one step per section"},
     {"key": "profile", "flag": "seenProfileTour", "source": "showProfile",
-     "setup": "showProfile('profile')", "note": "Customize, rank, next rank, badge case, Calendar, Stats"},
+     "setup": "showProfile('profile')", "note": "Customize, rank, next rank, badge case, Friends, Stats, Settings"},
     # Build 289: the same three tips on their own, for everybody who had
     # already seen the Profile tour - armed by the tourRev 3 re-arm, which
     # is what the setup does by hand.

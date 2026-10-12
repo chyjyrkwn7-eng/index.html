@@ -21528,8 +21528,11 @@ B319H_TABS = """() => {
   return { labels: tabs.map(b => b.textContent.trim()), active: tabs.findIndex(b => b.classList.contains('active')),
            visible: shown.length,
            holds: s ? (s.querySelector('.profile-hero') ? 'profile' : s.querySelector('.cal-grid') ? 'calendar'
-                       : s.classList.contains('profile-stats-tab') ? 'stats' : null) : null,
-           calView: (document.querySelector('.screen-profile .cal-viewseg .iconbtn.active') || {}).textContent || null,
+                       : s.classList.contains('profile-stats-tab') ? 'stats'
+                       : s.querySelector('#settings-motion') ? 'settings' : null) : null,
+           /* the calendar is its own tab root since 323 */
+           calView: (document.querySelector('#stage .cal-viewseg .iconbtn.active') || {}).textContent || null,
+           calRoot: !!document.querySelector('#stage > .screen-calendar-tab'),
            litOther: [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id) };
 }"""
 
@@ -21542,9 +21545,12 @@ B319H_CAL = """async (iso) => {
                                            static now(){ return RealDate.now() + off; } };
   }
   calendarView = 'month';
-  showProfile('calendar'); await new Promise(r => setTimeout(r, 700));
+  /* MOVED IN 323 (builder n): "Calendar is gonna move to the bottom tab" -
+     the Calendar tab is a screen of its own, reached as every old way in
+     reaches it; the same box, month and day card, read the same way. */
+  showCalendar(); await new Promise(r => setTimeout(r, 700));
   document.querySelectorAll('#tour-overlay, #tour-tooltip, .daily-alert, .toast, .rs-spot').forEach(x => x.remove());
-  const tab = document.querySelector('.screen-profile .profile-cal-tab');
+  const tab = document.querySelector('#stage > .screen-calendar-tab');
   if(!tab || tab.hidden) return { tab: false };
   const card = tab.querySelector('.profile-classcard');
   const day = tab.querySelector('.cal-daycard');
@@ -21672,8 +21678,11 @@ def check_b319h_layout(br):
                 pg.evaluate("i => document.querySelectorAll('#stage > .screen-profile > .navsegment > .iconbtn')[i].click()", i)
                 pg.wait_for_timeout(400)
                 holds.append(pg.evaluate(B319H_TABS)["holds"])
-            check("%s: Profile has three tabs - Profile, Calendar, Stats - holding the card, the calendar and the stats" % dev,
-                  [l.lower() for l in t["labels"]] == ["profile", "calendar", "stats"] and holds == ["profile", "calendar", "stats"] and t["active"] == 0,
+            # MOVED IN 323 (builder n): "the settings is gonna be within
+            # profile and will be a top tab, the order would be profile,
+            # stats, settings" - the calendar went to the bar.
+            check("%s: Profile has three tabs - Profile, Stats, Settings - holding the card, the stats and Settings" % dev,
+                  [l.lower() for l in t["labels"]] == ["profile", "stats", "settings"] and holds == ["profile", "stats", "settings"] and t["active"] == 0,
                   [t["labels"], holds])
             # ---- swipe: one tab at a time; along Month / List, the view ----
             pg.evaluate("() => { showProfile('profile'); window.scrollTo(0, 0); }"); pg.wait_for_timeout(600)
@@ -21683,13 +21692,15 @@ def check_b319h_layout(br):
                 pg.wait_for_timeout(450)
                 order.append(pg.evaluate(B319H_TABS)["active"])
             check("%s: a swipe moves exactly one Profile tab, both ways, and stops at the ends" % dev, order == [1, 2, 2, 1, 0], order)
-            pg.evaluate("() => { showProfile('calendar'); window.scrollTo(0, 0); }"); pg.wait_for_timeout(700)
-            sb = pg.evaluate("() => { const e = document.querySelector('.screen-profile .cal-viewseg'); const r = e.getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }")
+            # MOVED IN 323 (builder n): Month / List is on the Calendar tab
+            # root now ("Calendar is gonna move to the bottom tab").
+            pg.evaluate("() => { calendarView = 'month'; showCalendar(); window.scrollTo(0, 0); }"); pg.wait_for_timeout(700)
+            sb = pg.evaluate("() => { const e = document.querySelector('#stage .cal-viewseg'); const r = e.getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }")
             _swipe(cdp, sb[0] + sb[2] * 0.9, sb[1] + sb[3] / 2, -sb[2] * 0.8, 0)
             pg.wait_for_timeout(450)
             a1 = pg.evaluate(B319H_TABS)
-            check("%s: a swipe along Month / List changes the view and not the Profile tab" % dev,
-                  a1["active"] == 1 and a1["calView"] == "List", [a1["active"], a1["calView"]])
+            check("%s: a swipe along Month / List changes the view and stays on the Calendar tab" % dev,
+                  a1["calRoot"] and a1["calView"] == "List", [a1["calRoot"], a1["calView"]])
             # ---- the Calendar tab, in every state of the course ----
             states = [("a weekend", "2026-10-10"), ("a class day", "2026-10-13"), ("a test day", "2026-10-12"),
                       ("the first day", "2026-08-24"), ("the last day", "2027-07-08"), ("after the academy", "2027-08-02"),
@@ -21751,8 +21762,9 @@ def check_b319h_layout(br):
                     ("showClass()", "board", "overall"), ("showClass('rankings')", "board", "overall"), ("showClass('week')", "board", "week"),
                     ("showClass('rankings', { board: 'hundos' })", "board", "hundos"), ("showClass(new MouseEvent('click'))", "board", "overall"),
                     ("showFriends()", "friends", None), ("showClass('friends')", "friends", None),
-                    ("showCalendar()", "calendar", None), ("showClass('calendar')", "calendar", None), ("showProfile('calendar')", "calendar", None),
-                    ("showProfile('schedule')", "calendar", None), ("showProfile(new MouseEvent('click'))", "profile", None),
+                    # (323, builder n: the calendar's ways in land on its own tab root -
+                    # check_b323n_nav holds them; this list no longer does)
+                    ("showProfile(new MouseEvent('click'))", "profile", None),
                     ("document.getElementById('bottomtab-rewards').click()", "board", "overall")]
             bad = []
             for (js, want, board) in ways:

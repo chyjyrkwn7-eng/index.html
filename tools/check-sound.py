@@ -437,11 +437,16 @@ with sync_playwright() as pw:
     if isinstance(xy, list): pg.mouse.click(xy[0], xy[1]); pg.wait_for_timeout(250)
     got = played()
     ck("Home: tapping the planet plays the planet", "home.planet" in got, got)
-    try: pg.click("#bottomtab-settings", timeout=3000, no_wait_after=True)
+    # build 323: Settings is Profile's third tab, not a bar tab
+    try: pg.click("#bottomtab-profile", timeout=3000, no_wait_after=True)
     except Exception: pass
     pg.wait_for_timeout(500)
     got = played()
     ck("the bottom tab bar slides", "ui.tab.bottom" in got, got)
+    try: pg.click(".profile-settings-tab-btn", timeout=3000, no_wait_after=True)
+    except Exception: pass
+    pg.wait_for_timeout(500)
+    played()
     try: pg.click("text=Reduce motion", timeout=3000, no_wait_after=True)
     except Exception: pass
     pg.wait_for_timeout(300)
