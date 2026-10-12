@@ -4806,7 +4806,10 @@ def check_b246(br):
     # 43. Madison's list after 245, on a real Home.
     t = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       store.legacyChars = []; store.avatarChar = 'ninja';
-      for(const id of ['bottomtab-rewards', 'bottomtab-profile', 'bottomtab-settings']){
+      /* MOVED IN 323 (builder T): Settings left the bar for Calendar - "Settings
+         leaves the bar and Calendar takes its place" - so the fourth tab tapped
+         is Calendar. */
+      for(const id of ['bottomtab-rewards', 'bottomtab-profile', 'bottomtab-calendar']){
         showHome(); await wait(600);
         const before = document.querySelector('#stage > *');
         document.getElementById(id).click(); await wait(700);
@@ -4823,7 +4826,7 @@ def check_b246(br):
         return !!o && o.textContent === b.label; });
       return out; }""")
     check("every tab on the bar opens its screen when TAPPED, and the Profile card's rank block opens the climb",
-          all(t[k] for k in ("bottomtab-rewards", "bottomtab-profile", "bottomtab-settings")) and t["ranksScreen"], t)
+          all(t[k] for k in ("bottomtab-rewards", "bottomtab-profile", "bottomtab-calendar")) and t["ranksScreen"], t)
     check("Umbra and Singularity are drawn in their pop-ups, not blacked out", t["hiddenArt"] == [False, False], t["hiddenArt"])
     check("all three rank banners animate", t["animated"] == [True, True, True], t["animated"])
     check("every banner in Customize says what it takes, under it", len(t["needs"]) > 10 and all(t["needs"]), t["needs"])
@@ -6477,8 +6480,10 @@ def check_b284(br):
           len(rows) > 3 and not any(x in ("Smooth scrolling", "Keep screen awake") for x in rows), rows)
     check("scrolling is smooth even where an older build saved it off", r.get("scroll") == "smooth", r.get("scroll"))
     check("nothing asks for a wake lock, even where an older build saved it on", r.get("wake") == 0, r.get("wake"))
+    # MOVED IN 323 (builder T): the fourth tab is Calendar, not Settings
+    # (Settings lives in Profile now). Still four, still no Progress.
     check("four tabs on the bar and none of them Progress",
-          r.get("tabs") == ["home", "profile", "rewards", "settings"], r.get("tabs"))
+          r.get("tabs") == ["home", "profile", "rewards", "calendar"], r.get("tabs"))
     check("the Profile card's rank block opens the climb, with Profile lit on the bar",
           r.get("rankOpens") is True and r.get("profileLit") is True, (r.get("rankOpens"), r.get("profileLit")))
     check("and its back link goes to Profile", r.get("backToProfile") is True, r.get("backToProfile"))
@@ -9343,10 +9348,12 @@ def check_b314h_tabs(br):
       /* 1. frames held back (iOS Low Power Mode, a busy compositor) */
       const orig = window.requestAnimationFrame; let held = 0;
       window.requestAnimationFrame = cb => { held++; return 0; };
-      document.getElementById('bottomtab-settings').click();
+      /* MOVED IN 323 (builder T): Settings is off the bar; the tab tapped
+         with frames held back is Calendar, its screen the shown calendar */
+      document.getElementById('bottomtab-calendar').click();
       await wait(600);
       out.heldFrames = held;
-      out.loadedWithoutFrames = !!document.querySelector('#stage .screen-settings');
+      out.loadedWithoutFrames = [...document.querySelectorAll('#stage .screen-calendar')].some(e => !e.closest('[hidden]'));
       window.requestAnimationFrame = orig;
       await wait(400);
       /* 2. the bank's units are worked out once */
@@ -9388,7 +9395,7 @@ def check_b314h_tabs(br):
       document.addEventListener('pointerdown', () => { __tap = performance.now(); }, true);
       new MutationObserver(() => __mounts.push(performance.now())).observe(document.getElementById('stage'), { childList: true });
       (function f(t){ __frames.push(t); requestAnimationFrame(f); })(0); }""")
-    tabs = ["home", "profile", "rewards", "settings"]
+    tabs = ["home", "profile", "rewards", "calendar"]   # 323: Calendar took Settings' place
     times = []; blank = 0
     # three rounds of the twelve switches (build 315): a median of twelve
     # swung 280-350ms run to run on one build here; of thirty-six it holds
@@ -10051,7 +10058,12 @@ def check_b310(br):
       await wait(900); out.streakGone = !document.querySelector('.streak-pop');
       /* the Profile tab stays lit on every screen reached from Profile
          (build 319, h: Friends and the calendar are Profile's again) */
-      const lit = k => !!document.querySelector('#bottomtab-profile.active') && !document.querySelector('#bottomtab-rewards.active');
+      /* MOVED IN 323 (builder T): the calendar is a bar tab of its own now
+         ("Settings leaves the bar and Calendar takes its place"), so the
+         calendar lights Calendar; Friends and Test review still light Profile. */
+      const lit = k => k === 'calendar'
+        ? (!!document.querySelector('#bottomtab-calendar.active') && !document.querySelector('#bottomtab-profile.active'))
+        : (!!document.querySelector('#bottomtab-profile.active') && !document.querySelector('#bottomtab-rewards.active'));
       out.lit = {};
       for(const [k, f] of [['friends', () => showFriends()], ['calendar', () => showCalendar && showCalendar()], ['testreview', () => showTestReviewList && showTestReviewList()]]){
         try{ f(); }catch(e){ out.lit[k] = 'threw ' + e.message; continue; }
@@ -10114,7 +10126,7 @@ def check_b310(br):
     check("the streak pop has eight different colours, one per tier, across the wheel", r["streakDistinct"] == 8 and r["hueSpan"] >= 180, r)
     check("streaks past 50 get their own tiers (75 is the 4th, 350 the 8th)", r["past50"], r)
     check("the streak pop is still up at 2.6s and gone by 3.5s", r["streakStill"] and r["streakGone"], r)
-    check("the Profile tab stays lit on Friends, Calendar and Test review", all(v is True for v in r["lit"].values()), r["lit"])
+    check("the Profile tab stays lit on Friends and Test review, and the calendar lights its own Calendar tab (323)", all(v is True for v in r["lit"].values()), r["lit"])
     sl = r.get("slide") or {}
     check("the leaderboard's top tabs have a sliding indicator", r["slider"], r)
     check("the indicator glides between tabs rather than jumping", bool(sl) and sl["x0"] != sl["end"] and sl["mid"] != sl["end"] and "transform" in sl["tr"], sl)
@@ -21779,7 +21791,8 @@ def check_b319h_layout(br):
                            lit: [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id) }; }""")
                 if want == "board": ok = "screen-rankings" in x["cls"] and x["board"] == board and x["lit"] == ["bottomtab-rewards"]
                 elif want == "friends": ok = "screen-friends" in x["cls"] and x["lit"] == ["bottomtab-profile"]
-                else: ok = "screen-profile" in x["cls"] and x["ptab"] == want and x["lit"] == ["bottomtab-profile"]
+                # 323 (builder T): the calendar lights the bar's own Calendar tab
+                else: ok = "screen-profile" in x["cls"] and x["ptab"] == want and x["lit"] == (["bottomtab-calendar"] if want == "calendar" else ["bottomtab-profile"])
                 if not (ok and x["h"] > 120): bad.append([js, x])
             check("%s: every old way to the boards, Friends and the calendar lands on the right screen and tab, the right bottom tab lit" % dev, not bad, bad)
         except Exception as e:
@@ -25466,6 +25479,157 @@ def check_b323n_nav(br):
                   hp.get("hol") and hp.get("cls") == (h.get("key") or {}).get("hol"), [h.get("key"), hp])
     except Exception as ex:
         check("the calendar's dots could be read at all", False, str(ex)[:300])
+
+B323T_SPY = """() => { window.__snd = []; const o = NovaSound.play;
+  NovaSound.play = function(id, opts){ __snd.push([id, !!(opts && opts.generic), performance.now()]); return o.apply(this, arguments); }; }"""
+
+
+def _b323t_sounds(calls, want="ui.tab.bottom"):
+    """How many times `want` was actually heard, by NovaSound.play's own
+    rules: a generic tap gives way to a specific sound in the last 220ms,
+    and a sound does not repeat inside its 70ms cooldown."""
+    heard, last_specific, last_same = 0, -1e9, -1e9
+    for cid, generic, t in calls:
+        if generic and t - last_specific < 220:
+            continue
+        if not generic:
+            last_specific = t
+        if cid == want:
+            if t - last_same < 70:
+                continue
+            last_same = t
+            heard += 1
+    return heard
+
+
+B323T_LENS = """() => { const l = document.getElementById('bottomtabs-lens');
+  const b = l && l.querySelector('.tab-lens-body'); const bar = document.getElementById('bottomtabs').getBoundingClientRect();
+  if(!b) return { lens: false, barTop: bar.top, barBottom: bar.bottom, barH: bar.height };
+  const r = b.getBoundingClientRect(); const cs = getComputedStyle(l);
+  return { lens: true, up: l.classList.contains('is-up'), op: parseFloat(cs.opacity), vis: cs.visibility,
+           cx: r.left + r.width / 2, top: r.top, bottom: r.bottom, h: r.height, w: r.width,
+           barTop: bar.top, barBottom: bar.bottom, barH: bar.height, pe: cs.pointerEvents }; }"""
+
+
+def check_b323t_tabbar(br):
+    """Build 323 (builder T): the bottom tab bar as her iOS 26 reference.
+    "When I change tabs by tapping or swiping over the Liquid Glass bottom
+    tab bubble doesn't pop out and follow." / "The Liquid Glass in the
+    screenshot I circled is good, that's the best, it should look more like
+    that when that's the tab you are on." / "You see how the bottom tab
+    icons and wording is that nice white too and not the grey we have?"
+    And Settings leaves the bar for Calendar: Home, Profile, Leaderboard,
+    Calendar. On 322 the labels were --soft grey, the resting pill a flat
+    12% white wash with a 13% rim, there was no lens at all, and the fourth
+    tab was Settings."""
+    print("\n323t. build 323: the tab bar - white labels, a clear glass pill, the lens that pops out and follows, Calendar on the bar")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, touch=True)
+    pg.evaluate("()=>{ document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); showHome(); }")
+    pg.wait_for_timeout(1200)
+    r = pg.evaluate("""() => {
+      const tabs = [...document.querySelectorAll('#bottomtabs .bottomtabs-navrow .bottomtab')];
+      const rgb = c => (c.match(/[\\d.]+/g) || []).map(Number);
+      const labs = tabs.map(t => { const c = rgb(getComputedStyle(t.querySelector('.bottomtab-label')).color);
+        return { id: t.id, text: t.querySelector('.bottomtab-label').textContent.trim(), c, active: t.classList.contains('active') }; });
+      const sl = document.getElementById('bottomtabs-slider'); const pb = getComputedStyle(sl, '::before');
+      /* every rgba() in a value, with its alpha */
+      const whites = v => (v.match(/rgba?\\([^)]*\\)/g) || []).map(rgb).filter(a => a.length >= 3 && a[0] > 200 && a[1] > 200 && a[2] > 200).map(a => a.length > 3 ? a[3] : 1);
+      /* a flat layer: a linear-gradient whose stops never go clear */
+      const lin = (pb.backgroundImage.match(/linear-gradient\\((?:[^()]|\\([^()]*\\))*\\)/g) || []);
+      const flatWash = lin.map(g => Math.min.apply(null, whites(g).concat([1])));
+      const inset = (pb.boxShadow.match(/rgba?\\([^)]*\\)[^,]*inset|inset[^,]*rgba?\\([^)]*\\)/g) || []).join(' ');
+      return { labs, settings: !!document.getElementById('bottomtab-settings'), flatWash,
+               rim: Math.max.apply(null, whites(inset).concat([0])),
+               tabs: tabs.map(t => { const b = t.getBoundingClientRect(); return { id: t.id, cx: b.left + b.width / 2, cy: b.top + b.height / 2, h: b.height, w: b.width }; }) }; }""")
+    ids = [l["id"] for l in r["labs"]]
+    check("four tabs in the new order: Home, Profile, Leaderboard, Calendar, and no Settings on the bar",
+          ids == ["bottomtab-home", "bottomtab-profile", "bottomtab-rewards", "bottomtab-calendar"]
+          and [l["text"] for l in r["labs"]] == ["Home", "Profile", "Leaderboard", "Calendar"] and not r["settings"], [ids, r["settings"]])
+    white = lambda c: len(c) >= 3 and min(c[:3]) >= 210 and max(c[:3]) - min(c[:3]) <= 6 and (len(c) < 4 or c[3] >= .8)
+    check("every tab label is white, not grey (the one you are on full white)",
+          all(white(l["c"]) for l in r["labs"]) and all(l["c"][:3] == [255, 255, 255] and len(l["c"]) == 3 for l in r["labs"] if l["active"]),
+          [(l["id"], l["c"]) for l in r["labs"]])
+    check("the resting selected tab is clear glass with a bright rim: no flat white wash, a rim of 30%+ white",
+          r["flatWash"] and max(r["flatWash"]) < .06 and r["rim"] >= .3, {"flatWash": r["flatWash"], "rim": r["rim"]})
+    check("every tab is at least 44px tall and wide", all(t["h"] >= 44 and t["w"] >= 44 for t in r["tabs"]), r["tabs"])
+    T = {t["id"]: t for t in r["tabs"]}
+    pg.evaluate(B323T_SPY)
+    cdp = ctx.new_cdp_session(pg)
+    home, y = T["bottomtab-home"]["cx"], T["bottomtab-home"]["cy"]
+    lb = T["bottomtab-rewards"]["cx"]
+    # 1. press: the lens pops out, bigger than the bar, above and below it
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": home, "y": y}]})
+    pg.wait_for_timeout(450)
+    d = pg.evaluate(B323T_LENS)
+    check("on a press the lens pops out: taller than the bar, over its top and bottom edges, clear of taps",
+          d["lens"] and d["up"] and d["op"] > .95 and d["h"] > d["barH"] + 6 and d["top"] < d["barTop"] - 3 and d["bottom"] > d["barBottom"] + 3
+          and d["pe"] == "none" and abs(d["cx"] - home) < 4, d)
+    # 2. it follows the finger along the bar
+    follow = []
+    mid = (T["bottomtab-profile"]["cx"] + lb) / 2
+    for x in [home + (mid - home) * i / 10 for i in range(1, 11)] + [mid + (lb - mid) * i / 5 for i in range(1, 6)]:
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x, "y": y}]})
+        pg.wait_for_timeout(20)
+        if abs(x - mid) < .5 or abs(x - lb) < .5:
+            pg.wait_for_timeout(60)
+            dd = pg.evaluate(B323T_LENS)
+            follow.append((round(x), round(dd.get("cx", -999)), dd.get("up"), round(dd.get("h", 0))))
+    check("while dragging, the lens follows the finger (within 3px), still popped out",
+          len(follow) == 2 and all(abs(a - b) <= 3 and up and h > r["tabs"][0]["h"] for a, b, up, h in follow), follow)
+    # 3. release: it settles on the tab and shrinks back into the resting pill
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    pg.wait_for_timeout(1100)
+    s = pg.evaluate("""() => { const sl = document.getElementById('bottomtabs-slider').getBoundingClientRect();
+      const l = document.getElementById('bottomtabs-lens');
+      return { lensUp: !!(l && l.classList.contains('is-up')), lensOp: l ? parseFloat(getComputedStyle(l).opacity) : null,
+               pill: sl.left + sl.width / 2, pillOp: parseFloat(getComputedStyle(document.getElementById('bottomtabs-slider')).opacity),
+               lit: [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id),
+               screen: !!document.querySelector('#stage .screen-rankings'),
+               mag: [...document.querySelectorAll('#bottomtabs .bottomtab')].map(t => t.style.transform || '') }; }""")
+    drag_snd = _b323t_sounds(pg.evaluate("() => __snd.splice(0)"))
+    check("let go: the lens settles on Leaderboard and shrinks back into the resting pill there, nothing left magnified",
+          not s["lensUp"] and s["lensOp"] is not None and s["lensOp"] < .05 and abs(s["pill"] - lb) < 3 and s["pillOp"] > .95
+          and s["lit"] == ["bottomtab-rewards"] and s["screen"] and not any(s["mag"]), s)
+    check("a drag to a new tab plays the tab sound once", drag_snd == 1, drag_snd)
+    # 4. a tap: the lens pops out and glides to the tapped tab, then settles
+    cal = (T.get("bottomtab-calendar") or r["tabs"][-1])["cx"]
+    pg.evaluate("""() => { window.__lens = []; const t0 = performance.now();
+      (function f(){ const l = document.getElementById('bottomtabs-lens'); const b = l && l.querySelector('.tab-lens-body');
+        if(b){ const r = b.getBoundingClientRect(); __lens.push([performance.now() - t0, r.left + r.width / 2, r.height, l.classList.contains('is-up')]); }
+        if(performance.now() - t0 < 1400) requestAnimationFrame(f); })(); }""")
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": cal, "y": y}]})
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    pg.wait_for_timeout(1600)
+    tp = pg.evaluate("""() => ({ lens: __lens, lit: [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id),
+      calShown: [...document.querySelectorAll('#stage .screen-calendar')].some(e => !e.closest('[hidden]')),
+      pill: (b => b.left + b.width / 2)(document.getElementById('bottomtabs-slider').getBoundingClientRect()) })""")
+    up = [x for x in tp["lens"] if x[3]]
+    tap_snd = _b323t_sounds(pg.evaluate("() => __snd.splice(0)"))
+    check("a tap pops the lens out over the bar's edges and glides it from Leaderboard to Calendar",
+          bool(up) and max(x[2] for x in up) > r["tabs"][0]["h"] + 8 and abs(up[0][1] - lb) < 30 and abs(up[-1][1] - cal) < 4
+          and any(lb + 10 < x[1] < cal - 10 for x in up), {"n": len(up), "samples": [[round(v) for v in x[:3]] for x in up], "maxH": max([x[2] for x in up] or [0])})
+    check("then it settles: Calendar lit, the calendar showing, the resting pill under Calendar",
+          tp["lit"] == ["bottomtab-calendar"] and tp["calShown"] and abs(tp["pill"] - cal) < 3, {k: tp[k] for k in ("lit", "calShown", "pill")})
+    check("a tap plays the tab sound once", tap_snd == 1, tap_snd)
+    # 5. reduce motion: no pop-out, it only moves
+    pg.evaluate("() => { theme.reduceMotion = true; applyTheme(); showHome(); }")
+    pg.wait_for_timeout(900)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": home, "y": y}]})
+    pg.wait_for_timeout(400)
+    rm = pg.evaluate(B323T_LENS)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    pg.wait_for_timeout(600)
+    pg.evaluate("() => { theme.reduceMotion = false; applyTheme(); }")
+    check("with Reduce motion the lens does not pop out (it stays inside the bar)",
+          rm["lens"] and rm["h"] <= rm["barH"] and rm["top"] >= rm["barTop"], rm)
+    # 6. the Profile tab stays lit on Profile's own sub-screens; Settings lights Profile now
+    sub = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      const lit = () => [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id).join(',');
+      for(const [k, f] of [['friends', () => showFriends()], ['customize', () => showCustomize()], ['settings', () => showAppearance()], ['profile', () => showProfile()]]){
+        try{ f(); }catch(e){ out[k] = 'threw ' + e.message; continue; } await wait(600); out[k] = lit(); }
+      return out; }""")
+    check("Profile stays lit on Friends, Customize and Settings (Settings lives in Profile now), and nothing throws without a Settings tab",
+          all(v == "bottomtab-profile" for v in sub.values()), sub)
     ctx.close()
 
 
@@ -25694,6 +25858,7 @@ def main():
             check_b321d_badges(br)
             check_b321f_profile(br)
             check_b323n_nav(br)
+            check_b323t_tabbar(br)
         finally:
             br.close()
     SERVER.shutdown()

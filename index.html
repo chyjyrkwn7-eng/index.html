@@ -8367,15 +8367,32 @@
        pill floating in the glass, the way iOS draws its selected tab. */
     background:none; border:0; box-shadow:none;
     z-index:0;
-    transition:transform .45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition:transform .45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity .2s ease;
     transform-origin:0 50%; will-change:transform;
     opacity:0;
   }
+  /* CLEAR GLASS, NOT A GREY PILL (build 323). "The Liquid Glass in the
+     screenshot I circled is good, that's the best, it should look more
+     like that when that's the tab you are on." The circled one was the
+     drag lens: almost no fill, a bright rim, the bar showing straight
+     through. The flat 12% white wash that made the old pill read as
+     "greyed out" is gone; what is left is a faint top-lit sheen, a
+     bright hairline rim with a specular along the top, a split of colour
+     where the glass bends the light (cool along the top edge, warm along
+     the bottom), a darker band just inside the rim for the thickness of
+     the glass, and a soft shadow under it. Same box, same 5px inset, so
+     it never touches the bar's own edge. */
   .bottomtabs-slider::before{
     content:""; position:absolute; inset:5px 2px; border-radius:999px; pointer-events:none;
-    background-image:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.04) 60%, rgba(255,255,255,.07)),
-      linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.12));
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.13), inset 0 1px 0 rgba(255,255,255,.26), 0 2px 8px rgba(0,0,0,.16);
+    background-image:radial-gradient(120% 85% at 50% -10%, rgba(255,255,255,.13), rgba(255,255,255,0) 62%),
+      linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01) 55%, rgba(255,255,255,.045));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.34),
+      inset 0 1.5px 0 rgba(255,255,255,.5),
+      inset 0 3px 3px -2px rgba(140,215,255,.32),
+      inset 0 -3px 3px -2px rgba(255,150,215,.26),
+      inset 0 0 0 3px rgba(0,0,0,.08),
+      inset 0 0 12px rgba(255,255,255,.05),
+      0 3px 12px rgba(0,0,0,.28);
     transform-origin:50% 50%;
   }
   /* THE LENS (build 312), from the iOS tab bar Madison sent: while the
@@ -8384,17 +8401,10 @@
      light - and settles back into the flat pill under the new tab. On
      ::before, so it never fights the FLIP transform on the box. */
   .bottomtabs-slider.is-moving::before{ animation:tab-lens .52s cubic-bezier(.3,1.25,.45,1); }
-  .bottomtabs-slider.dragging::before{
-    transform:scale(1.12, 1.18);
-    background-image:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.02) 60%, rgba(255,255,255,.06));
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.42), inset 2px 0 4px rgba(120,214,255,.32), inset -2px 0 4px rgba(255,130,210,.28), 0 6px 18px rgba(0,0,0,.28);
-    transition:transform .2s ease, box-shadow .2s ease;
-  }
+  /* a drag is carried by the lens now (build 323); the pill under it is hidden */
   @keyframes tab-lens{
     0%{ transform:scale(1); }
-    38%{ transform:scale(1.13, 1.2);
-         background-image:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.02) 60%, rgba(255,255,255,.06));
-         box-shadow:inset 0 0 0 1px rgba(255,255,255,.42), inset 2px 0 4px rgba(120,214,255,.32), inset -2px 0 4px rgba(255,130,210,.28), 0 6px 18px rgba(0,0,0,.28); }
+    38%{ transform:scale(1.1, 1.16); }
     100%{ transform:scale(1); }
   }
   [data-reduce-motion="true"] .bottomtabs-slider.is-moving::before{ animation:none; }
@@ -8421,13 +8431,55 @@
      where the finger is with zero lag, rather than perpetually
      easing toward a target that keeps moving out from under it. */
   .bottomtabs-slider.dragging{ transition:none; }
+  /* While the lens is out the resting pill steps aside at once - one
+     piece of glass, never two (build 323) - and fades back in under the
+     lens as it shrinks onto the chosen tab. */
+  .bottomtabs.lens-up .bottomtabs-slider{ opacity:0; transition:none; }
+  /* THE LENS (build 323) - see the JS beside setupBottomTabs' drag code.
+     On <body>, above the bar (200) and under the tour (205). The outer box
+     only moves (translate); the body inside it only scales (the pop and
+     the shrink back), each on its own transition. Transform and opacity,
+     nothing else, and no filter of any kind: it is a near-clear fill and a
+     rim, which is what the reference's lens is. */
+  .tab-lens{
+    position:fixed; left:0; top:0; width:0; height:0; z-index:201; pointer-events:none;
+    opacity:0; visibility:hidden; will-change:transform, opacity;
+    transition:opacity .2s ease, visibility 0s linear .2s;
+  }
+  .tab-lens.is-up{ opacity:1; visibility:visible; }
+  .tab-lens-body{
+    position:absolute; inset:0; border-radius:999px; transform-origin:50% 50%; will-change:transform;
+    background-image:radial-gradient(110% 80% at 50% -8%, rgba(255,255,255,.11), rgba(255,255,255,0) 58%),
+      radial-gradient(90% 60% at 50% 112%, rgba(255,255,255,.06), rgba(255,255,255,0) 70%),
+      linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,.008) 50%, rgba(255,255,255,.03));
+    box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.58),
+      inset 0 2px 1px -.5px rgba(255,255,255,.85),
+      inset 0 -1.5px 1px -.5px rgba(255,255,255,.4),
+      inset 0 5px 5px -3px rgba(130,212,255,.5),
+      inset 0 -5px 5px -3px rgba(255,135,210,.42),
+      inset 4px 0 6px -4px rgba(150,225,255,.3),
+      inset -4px 0 6px -4px rgba(255,170,225,.28),
+      inset 0 0 0 4px rgba(0,0,0,.1),
+      inset 0 0 18px rgba(255,255,255,.07),
+      0 10px 26px rgba(0,0,0,.38), 0 2px 5px rgba(0,0,0,.28);
+  }
+  /* the tabs under the glass are scaled by the lens (an inline transform);
+     a layer each so that is a composite, not a repaint */
+  .bottomtabs.lens-up .bottomtabs-navrow .bottomtab{ will-change:transform; }
+  /* the press is the lens now: no grey wash, no shrink (build 323) -
+     "normally the one you are on is like greyed out or something" */
+  .bottomtabs .bottomtabs-navrow .bottomtab:active,
+  .bottomtabs .bottomtabs-navrow .bottomtab.active:active{ background:none; transform:none; }
   .bottomtab{ position:relative; z-index:1; }
   [data-theme="dark"] .bottomtabs{ box-shadow:0 4px 18px rgba(0,0,0,.5); }
   .bottomtabs[hidden]{ display:none; }
   .bottomtab{
     display:flex; flex-direction:column; align-items:center; gap:.15rem;
     background:none; border:none; border-radius:999px; cursor:pointer;
-    padding:.55rem 1.15rem; color:var(--soft); font:inherit;
+    /* WHITE, NOT GREY (build 323): "You see how the bottom tab icons and
+       wording is that nice white too and not the grey we have?" The tabs
+       you are not on are a soft white; the one you are on is full white. */
+    padding:.55rem 1.15rem; color:rgba(255,255,255,.84); font:inherit;
     /* The explicit rgba form, not the "transparent" keyword \u2014 some iOS
        Safari versions honor this reliably and the keyword not always,
        which was exactly the cause of an old square-tap-highlight glitch
@@ -8441,7 +8493,8 @@
     transition:background .15s ease, transform .1s ease;
   }
   .bottomtab:focus{ outline:none; }
-  .bottomtab.active{ color:var(--ink); transition:color .2s ease .1s; }
+  .bottomtab.active{ color:#fff; transition:color .2s ease .1s; }
+  .bottomtabs-navrow .bottomtab-label{ text-shadow:0 1px 2px rgba(0,0,0,.35); }
   .bottomtab:active{ transform:scale(.93); background:rgba(128,128,128,.18); }
   /* This is the actual white-flash-on-swipe bug: a drag gesture
      naturally begins by pressing down on whichever tab you're
@@ -29326,9 +29379,9 @@
         <span class="bottomtab-icon"></span>
         <span class="bottomtab-label">Leaderboard</span>
       </button>
-      <button type="button" class="bottomtab" id="bottomtab-settings" data-dest="settings">
+      <button type="button" class="bottomtab" id="bottomtab-calendar" data-dest="calendar">
         <span class="bottomtab-icon"></span>
-        <span class="bottomtab-label">Settings</span>
+        <span class="bottomtab-label">Calendar</span>
       </button>
     </div>
   </nav>
@@ -74390,10 +74443,8 @@ function mainMenuTourSteps(returning){
       text: isIOSDevice() && !isStandaloneApp()
         ? "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks. Stats and Settings are its other two tabs, and Settings has a guide for adding this app to your Home Screen."
         : "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks. Stats and Settings are its other two tabs." },
-    /* THE CALENDAR IS SETTINGS' OLD PLACE IN THE BAR (build 323). The
-       second selector is only for a build whose bar has not changed yet;
-       the first is the Calendar tab. */
-    { target: "#bottomtab-calendar, #bottomtab-settings", align: "right", vplacement: "above",
+    /* Calendar took Settings' place on the bar (build 323) */
+    { target: "#bottomtab-calendar", align: "right", vplacement: "above",
       text: "Calendar is the class calendar: how many class days are left, the next class day, and every day of the course." },
     /* Added right after the bottom-tab run, per explicit request,
        since the daily question button sits right there on Home
@@ -74431,7 +74482,7 @@ const NOVA_NEW_TIPS_321 = [
   { target: "#bottomtab-profile", align: "left", vplacement: "above",
     text: "New: Profile has been rebuilt. Your rank, your level and your badges are on one card, your badge case opens from it, and Friends is back underneath." },
   /* build 323: the calendar has its own tab in the bar, Settings is in Profile */
-  { target: "#bottomtab-calendar, #bottomtab-settings", align: "right", vplacement: "above",
+  { target: "#bottomtab-calendar", align: "right", vplacement: "above",
     text: "New: the class calendar has its own tab down here now, and Settings has moved into Profile, beside Stats." }
 ];
 /* An existing account's tooltips, once, in its meeting with Nova: the main
@@ -114898,6 +114949,12 @@ function applyGlassRefraction(el, mapImgId){
 (function setupBottomTabs(){
   const bar = document.getElementById("bottomtabs");
   if(!bar) return;
+  /* The Calendar tab's screen (build 323): showCalendarTab() where the
+     build has it, the class calendar's own way in otherwise. */
+  const openCalendarTab = () => {
+    if(typeof showCalendarTab === "function") return showCalendarTab();
+    return showCalendar();
+  };
   const svgNS = "http://www.w3.org/2000/svg";
   const iconPaths = {
     home: "M4 11l8-7 8 7M6 9.5V20h12V9.5",
@@ -114909,7 +114966,12 @@ function applyGlassRefraction(el, mapImgId){
        like, and the tab is ranks and badges - both of them earned. The
        star is drawn with round joins so it holds at 28px. */
     ranks: "M8.2 2.8l2.6 6.3M15.8 2.8l-2.6 6.3M12 9.1a5.6 5.6 0 100 11.2 5.6 5.6 0 000-11.2zM12 12.1l1 2 2.2.3-1.6 1.5.4 2.2-2-1.1-2 1.1.4-2.2-1.6-1.5 2.2-.3z",
-    settings: "M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 00-2-1.2L14 3h-4l-.5 2.6a7 7 0 00-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 002 1.2L10 21h4l.5-2.6a7 7 0 002-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"
+    settings: "M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 00-2-1.2L14 3h-4l-.5 2.6a7 7 0 00-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 002 1.2L10 21h4l.5-2.6a7 7 0 002-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z",
+    /* CALENDAR TAKES SETTINGS' PLACE ON THE BAR (build 323): Home,
+       Profile, Leaderboard, Calendar. Settings lives in Profile now. The
+       same stroke weight as its neighbours: a page with two rings and a
+       grid of days, the days as round-capped dots so they hold at 28px. */
+    calendar: "M6.5 5h11A2.5 2.5 0 0120 7.5v10a2.5 2.5 0 01-2.5 2.5h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5zM4 9.5h16M8.5 3v4M15.5 3v4M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01"
   };
   bar.querySelectorAll(".bottomtab").forEach(tab => {
     const dest = tab.dataset.dest;
@@ -115007,6 +115069,7 @@ function applyGlassRefraction(el, mapImgId){
       }
       else if(dest === "rewards") showRankings();
       else if(dest === "profile") showProfile();
+      else if(dest === "calendar") openCalendarTab();
       else if(dest === "settings") showAppearance();
     };
   });
@@ -115048,6 +115111,8 @@ function applyGlassRefraction(el, mapImgId){
     const show = isModern && oldNavVisible && !window.forceHideBottomTabs
                  && !!(typeof store !== "undefined" && store && store.onboardingComplete);
     bar.hidden = !show;
+    /* the lens never outlives the bar (build 323) */
+    if(!show && bar._lensHide && bar.classList.contains("lens-up")) bar._lensHide(true);
     document.body.classList.toggle("has-bottomtabs", show);
     /* The chat dock rides the same recalculation, so the bar and the
        dock cannot disagree about whether onboarding is finished.
@@ -115114,12 +115179,24 @@ function applyGlassRefraction(el, mapImgId){
        bottom tab still shows me as within that tab." Friends, Customize,
        the calendar and the test review screens are all reached from the
        Profile card and lit nothing; the bug report is Settings' own. */
-    const onProfileSub = !!document.querySelector(".screen-friends, .screen-customize, .screen-calendar, .screen-testreview");
+    const onProfileSub = !!document.querySelector(".screen-friends, .screen-customize, .screen-testreview");
     const onSettingsSub = !!document.querySelector(".screen-bugreport");
-    bar.querySelector("#bottomtab-profile").classList.toggle("active", onProfile || onRanks || onProfileSub);
-    bar.querySelector("#bottomtab-rewards").classList.toggle("active", onRewards);
-    bar.querySelector("#bottomtab-settings").classList.toggle("active", onSettings || onSettingsSub);
-    bar.querySelector("#bottomtab-home").classList.toggle("active", onHome);
+    /* THE CALENDAR IS A BAR TAB (build 323), so the calendar lights
+       Calendar, not Profile - wherever it is drawn, as its own screen or
+       as a pane: a .screen-calendar that is actually showing (not inside
+       a hidden tab panel). Settings left the bar for Profile, so Settings
+       and its bug report light Profile; if a build still carries a
+       Settings button, it is lit as before. Every lookup tolerates a
+       button that is not there. */
+    const calShown = [...document.querySelectorAll("#stage .screen-calendar")].some(el => !el.closest("[hidden]"));
+    const settingsBtn = bar.querySelector("#bottomtab-settings");
+    const onSettingsAny = onSettings || onSettingsSub;
+    const lit = (id, on) => { const b = bar.querySelector(id); if(b) b.classList.toggle("active", !!on); };
+    lit("#bottomtab-profile", !calShown && (onProfile || onRanks || onProfileSub || (onSettingsAny && !settingsBtn)));
+    lit("#bottomtab-rewards", onRewards && !calShown);
+    lit("#bottomtab-calendar", calShown);
+    lit("#bottomtab-settings", onSettingsAny && !calShown);
+    lit("#bottomtab-home", onHome && !calShown);
     slideBubbleToActiveTab();
   }
   /* Moves and resizes the glass bubble to sit exactly behind whichever
@@ -115172,7 +115249,7 @@ function applyGlassRefraction(el, mapImgId){
     slider.style.transition = "";
     slider.style.transform = "translateX(" + x + "px)";
     /* the lens, only when it actually travels (build 312) */
-    if(Math.abs(fromX - x) > 2){
+    if(Math.abs(fromX - x) > 2 && !bar.classList.contains("lens-up")){
       slider.classList.remove("is-moving"); void slider.offsetWidth; slider.classList.add("is-moving");
       clearTimeout(slider._lensT); slider._lensT = setTimeout(() => slider.classList.remove("is-moving"), 560);
     }
@@ -115212,7 +115289,8 @@ function applyGlassRefraction(el, mapImgId){
   let tabDragMoved = false;
   let tabDragPointerId = null;
   const tabDests = { "bottomtab-home": () => confirmMainMenu(), "bottomtab-rewards": () => showRankings(),
-    "bottomtab-profile": () => showProfile(), "bottomtab-settings": () => showAppearance() };
+    "bottomtab-profile": () => showProfile(), "bottomtab-calendar": () => openCalendarTab(),
+    "bottomtab-settings": () => showAppearance() };
   function tabAtPoint(clientX){
     const tabs = [...navrow.querySelectorAll(".bottomtab")];
     let closest = null, closestDist = Infinity;
@@ -115244,6 +115322,8 @@ function applyGlassRefraction(el, mapImgId){
   navrow.addEventListener("pointerdown", (e) => {
     if(bar.hidden) return;
     tabDragActive = true; tabDragMoved = false; tabDragPointerId = e.pointerId; tabDragX0 = e.clientX;
+    /* the lens pops out under the finger at once (build 323) */
+    if(e.isPrimary !== false && (e.button === 0 || e.button === undefined || e.pointerType !== "mouse")) lensDown(e.clientX);
   });
   navrow.addEventListener("pointermove", (e) => {
     if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
@@ -115269,6 +115349,10 @@ function applyGlassRefraction(el, mapImgId){
        tap (which never reaches this line) is completely unaffected. */
     if(!tabDragMoved){ slider.classList.add("dragging"); navrow.setPointerCapture(e.pointerId); }
     tabDragMoved = true;
+    /* The lens follows the finger itself (build 323) - the resting pill is
+       hidden under it and is put in place once, on release, so a drag no
+       longer forces a layout on every move. */
+    if(lensGeo){ lensMove(e.clientX); return; }
     const tab = tabAtPoint(e.clientX);
     if(tab) slideBubbleToTab(tab);
   });
@@ -115276,6 +115360,10 @@ function applyGlassRefraction(el, mapImgId){
     if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
     tabDragActive = false; tabDragPointerId = null;
     slider.classList.remove("dragging");
+    /* the lens settles on the tab it was let go over and shrinks back into
+       the resting pill there; a cancelled touch takes it home (build 323) */
+    if(e.type === "pointercancel") lensRelease(null);
+    else lensRelease(lensGeo ? lensTabAt(e.clientX) : tabAtPoint(e.clientX));
     if(!tabDragMoved){ return; } // a plain tap: let the tab's own click handler do its normal thing
     if(e.type === "pointercancel"){ slideBubbleToActiveTab(true); return; }
     /* This is the actual cause of drag-to-a-different-tab
@@ -115299,6 +115387,12 @@ function applyGlassRefraction(el, mapImgId){
        drag-release at all, which is exactly the kind of gap that
        left quick swipe-then-swipe-again sequences able to fire
        overlapping navigations. */
+    /* one slide sound for a drag that lands somewhere new: the click a
+       captured pointer releases is on the row, not a tab, so the shared
+       tap layer says nothing for it (build 323) */
+    if(tab && !tab.classList.contains("active") && bar.dataset.navigating !== "1" && typeof playSound === "function"){
+      try{ playSound("ui.tab.bottom"); }catch(err){}
+    }
     if(tab && tab._navigate && bar.dataset.navigating !== "1") tab._navigate();
     else if(tab && tabDests[tab.id] && bar.dataset.navigating !== "1"){
       bar.dataset.navigating = "1";
@@ -115309,6 +115403,203 @@ function applyGlassRefraction(el, mapImgId){
   }
   navrow.addEventListener("pointerup", endTabDrag);
   navrow.addEventListener("pointercancel", endTabDrag);
+
+  /* ---- THE LENS (build 323) ----
+     "When I change tabs by tapping or swiping over the Liquid Glass bottom
+     tab bubble doesn't pop out and follow." The iOS 26 tab bar in her
+     recording: touch the bar and the selection lifts out of it as a clear
+     glass lens - taller and wider than the bar, poking out above and
+     below, a bright rim with a split of colour at its top and bottom edge,
+     the tab under it magnified - follows the finger, glides to a tapped
+     tab, and on release settles there and shrinks back into the resting
+     pill.
+     It lives on <body>, not in the bar: the bar is overflow:hidden (its
+     sheen is a layer four times its width), which would clip the lens to
+     the bar's own outline. Measured once per touch; after that every
+     frame is a transform on the lens and on the tabs under it, and the
+     tap's glide and settle are CSS transitions, so the compositor carries
+     them while the new screen is being built. pointer-events:none - it
+     never takes a tap. Reduce motion: the lens stays the pill's size and
+     only moves. */
+  const lens = document.createElement("div");
+  lens.id = "bottomtabs-lens"; lens.className = "tab-lens"; lens.setAttribute("aria-hidden", "true");
+  const lensBody = document.createElement("div");
+  lensBody.className = "tab-lens-body";
+  lens.appendChild(lensBody);
+  document.body.appendChild(lens);
+  const LENS_PAD_X = 12, LENS_PAD_Y = 9, LENS_MAG = 0.14;
+  const LENS_EASE = "cubic-bezier(.3,1.32,.5,1)";
+  let lensGeo = null, lensAt = null, lensT1 = null, lensT2 = null;
+  const lensCalm = () => document.documentElement.dataset.reduceMotion === "true"
+    || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  function lensMeasure(){
+    const rr = navrow.getBoundingClientRect(), bb = bar.getBoundingClientRect();
+    if(!rr.width || !bb.height) return null;
+    const tabs = [...navrow.querySelectorAll(".bottomtab")].map(t => { const r = t.getBoundingClientRect(); return { el: t, c: r.left + r.width / 2, w: r.width }; }).filter(t => t.w > 0);
+    if(!tabs.length) return null;
+    const W = Math.round(Math.max.apply(null, tabs.map(t => t.w)) + LENS_PAD_X * 2);
+    const H = Math.round(bb.height + LENS_PAD_Y * 2);
+    /* the resting pill is the tab's box inset 2px across and 5px down
+       (.bottomtabs-slider::before), so that is the size it shrinks to */
+    return { tabs, W, H, top: bb.top + bb.height / 2 - H / 2, capH: Math.max(1, rr.height - 10),
+             lo: tabs[0].c - 6, hi: tabs[tabs.length - 1].c + 6 };
+  }
+  function lensTabAt(x){
+    if(!lensGeo) return tabAtPoint(x);
+    let best = null, d = Infinity;
+    lensGeo.tabs.forEach(t => { const k = Math.abs(x - t.c); if(k < d){ d = k; best = t.el; } });
+    return best;
+  }
+  const lensInfo = el => lensGeo && lensGeo.tabs.find(t => t.el === el);
+  const capScale = t => [Math.max(.2, (t.w - 4) / lensGeo.W).toFixed(4), Math.max(.2, lensGeo.capH / lensGeo.H).toFixed(4)];
+  /* the lens is as wide as the tab under it (plus its overhang), blended
+     between two tabs while it is between them - a scaleX, never a width */
+  function lensPopScale(c){
+    const ts = lensGeo.tabs;
+    let w = ts[0].w;
+    if(c >= ts[ts.length - 1].c) w = ts[ts.length - 1].w;
+    else for(let i = 0; i < ts.length - 1; i++){
+      if(c >= ts[i].c && c <= ts[i + 1].c){ const f = (c - ts[i].c) / Math.max(1, ts[i + 1].c - ts[i].c); w = ts[i].w + (ts[i + 1].w - ts[i].w) * f; break; }
+    }
+    return "scale(" + Math.min(1, (w + LENS_PAD_X * 2) / lensGeo.W).toFixed(4) + ",1)";
+  }
+  function lensPlace(c){
+    lens.style.transform = "translate3d(" + (c - lensGeo.W / 2).toFixed(2) + "px," + lensGeo.top.toFixed(2) + "px,0)";
+  }
+  /* what is under the glass swells a little, more the closer it is */
+  function lensMagnify(c, smooth){
+    if(!lensGeo) return;
+    const reach = lensGeo.W * .62, calm = lensCalm();
+    lensGeo.tabs.forEach(t => {
+      const k = calm || c == null ? 0 : Math.max(0, 1 - Math.abs(c - t.c) / reach);
+      t.el.style.transition = smooth ? "transform .4s " + LENS_EASE : "none";
+      t.el.style.transform = k > .001 ? "scale(" + (1 + LENS_MAG * k).toFixed(4) + ")" : "";
+    });
+  }
+  function lensClearTimers(){ clearTimeout(lensT1); clearTimeout(lensT2); lensT1 = lensT2 = null; }
+  /* The body's pop and shrink are Web Animations (build 323), not
+     transitions: a tap's press and release land in the same frame, and a
+     transition retargeted with a delay holds wherever the first one had
+     got to - the lens froze a few pixels into its pop. A shrink queued
+     behind the pop (its own delay, no backwards fill) lets the pop finish
+     first. Both run on the compositor like any transform animation. */
+  let bodyAnims = [], popEnds = 0;
+  const canAnim = typeof lensBody.animate === "function";
+  const scaleOf = cs => "scale(" + cs[0] + "," + cs[1] + ")";
+  function bodyNow(){
+    const cur = bodyAnims.length ? getComputedStyle(lensBody).transform : (lensBody.style.transform || "none");
+    bodyAnims.forEach(an => { try{ an.cancel(); }catch(e){} });
+    bodyAnims = [];
+    lensBody.style.transition = "none";
+    lensBody.style.transform = cur === "none" ? "" : cur;
+    return cur;
+  }
+  function lensDown(x){
+    lensClearTimers();
+    const g = lensMeasure();
+    if(!g){ lensGeo = null; return; }
+    const wasUp = lens.classList.contains("is-up") && lensGeo;
+    lensGeo = g;
+    lens.style.width = g.W + "px"; lens.style.height = g.H + "px";
+    const target = lensTabAt(x);
+    const from = (wasUp && lensAt) || navrow.querySelector(".bottomtab.active") || target;
+    const fromInfo = lensInfo(from) || lensInfo(target);
+    const toInfo = lensInfo(target);
+    if(!fromInfo || !toInfo){ lensGeo = null; return; }
+    const calm = lensCalm() || !canAnim;
+    /* pop out of the resting pill: start exactly its size, where it is */
+    let cur;
+    if(!wasUp){
+      bodyNow();
+      lens.style.transition = "none";
+      lensPlace(fromInfo.c);
+      cur = scaleOf(capScale(fromInfo));
+      lensBody.style.transform = cur;
+      lens.classList.add("is-up"); bar.classList.add("lens-up");
+      void lens.offsetWidth;
+    } else cur = bodyNow();
+    lens.style.transition = "transform " + (calm ? ".3s ease" : ".42s " + LENS_EASE);
+    lensPlace(toInfo.c);
+    if(calm){ lensBody.style.transform = scaleOf(capScale(toInfo)); popEnds = 0; }
+    else{
+      const pop = lensPopScale(toInfo.c);
+      lensBody.style.transform = pop;
+      bodyAnims.push(lensBody.animate([{ transform: cur }, { transform: pop }], { duration: 300, easing: LENS_EASE, fill: "forwards" }));
+      popEnds = performance.now() + 300;
+    }
+    lensAt = target;
+    lensMagnify(toInfo.c, true);
+  }
+  function lensMove(x){
+    if(!lensGeo) return;
+    const c = Math.min(lensGeo.hi, Math.max(lensGeo.lo, x));
+    lens.style.transition = "none";
+    lensPlace(c);
+    if(!(lensCalm() || !canAnim)){
+      /* a short transition, retargeted each move: the pop that started on
+         the press carries on from where it is, and the width keeps up */
+      if(bodyAnims.length){ bodyNow(); void getComputedStyle(lensBody).transform; }
+      lensBody.style.transition = "transform .14s ease-out";
+      lensBody.style.transform = lensPopScale(c);
+      popEnds = 0;
+    } else {
+      /* calm: the pill's size, sized to the nearest tab */
+      const near = lensInfo(lensTabAt(c));
+      if(near){ lensBody.style.transition = "none"; lensBody.style.transform = scaleOf(capScale(near)); }
+    }
+    lensAt = lensTabAt(c);
+    lensMagnify(c, false);
+  }
+  function lensRelease(tab){
+    if(!lensGeo){ lensHide(true); return; }
+    lensClearTimers();
+    const home = tab || navrow.querySelector(".bottomtab.active") || lensAt;
+    const info = lensInfo(home);
+    if(!info){ lensHide(true); return; }
+    lensAt = home;
+    const calm = lensCalm() || !canAnim;
+    lens.style.transition = "transform " + (calm ? ".26s ease" : ".4s " + LENS_EASE);
+    lensPlace(info.c);
+    const capTo = scaleOf(capScale(info));
+    let shrinkAt = 0;
+    if(calm){ lensBody.style.transition = "none"; lensBody.style.transform = capTo; }
+    else{
+      const now = performance.now();
+      const popLeft = Math.max(0, popEnds - now);
+      if(popLeft > 0 && bodyAnims.length){
+        /* still popping (a tap): the shrink waits for the pop to finish */
+        const pop = lensPopScale(info.c);
+        shrinkAt = popLeft + 30;
+        bodyAnims.push(lensBody.animate([{ transform: pop }, { transform: capTo }], { duration: 360, delay: shrinkAt, easing: "cubic-bezier(.35,1.12,.5,1)", fill: "forwards" }));
+      } else {
+        const cur = bodyNow();
+        shrinkAt = 40;
+        bodyAnims.push(lensBody.animate([{ transform: cur }, { transform: capTo }], { duration: 360, delay: shrinkAt, easing: "cubic-bezier(.35,1.12,.5,1)", fill: "forwards" }));
+      }
+      lensBody.style.transform = capTo;
+    }
+    if(shrinkAt > 40){ const t = info; setTimeout(() => { if(lensGeo && lensAt === t.el) lensMagnify(null, true); }, shrinkAt); }
+    else lensMagnify(null, true);
+    /* hand over: the pill comes back in under the lens as it fades */
+    lensT1 = setTimeout(() => {
+      clearTimeout(slider._lensT); slider.classList.remove("is-moving");
+      bar.classList.remove("lens-up");
+      slideBubbleToActiveTab(true);
+      lens.classList.remove("is-up");
+      lensT2 = setTimeout(() => lensHide(false), 240);
+    }, calm ? 200 : shrinkAt + 290);
+  }
+  function lensHide(now){
+    lensClearTimers();
+    lens.classList.remove("is-up");
+    bar.classList.remove("lens-up");
+    bodyAnims.forEach(an => { try{ an.cancel(); }catch(e){} });
+    bodyAnims = []; popEnds = 0;
+    if(lensGeo) lensGeo.tabs.forEach(t => { t.el.style.transition = now ? "none" : ""; t.el.style.transform = ""; });
+    lensGeo = null; lensAt = null;
+    if(now) slideBubbleToActiveTab(true);
+  }
+  bar._lensHide = lensHide;
   function refreshGlass(){ if(!bar.hidden) applyGlassRefraction(bar); }
   window.addEventListener("resize", refreshGlass);
   /* The header is sticky and always present (unlike the bottom bar,
@@ -115326,7 +115617,9 @@ function applyGlassRefraction(el, mapImgId){
     catch(e){ new MutationObserver(refreshHeaderGlass).observe(headerEl, { childList: true, subtree: true, characterData: true }); }
     refreshHeaderGlass();
   }
-  new MutationObserver(syncActive).observe(stage, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+  /* "hidden" too (build 323): the calendar can be a pane that is shown by
+     un-hiding it, and that lights Calendar rather than Profile. */
+  new MutationObserver(syncActive).observe(stage, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "hidden"] });
   syncActive();
   /* the Profile tab's new-item dot, once per screen mount (build 299),
      once the switch has settled (build 314 - syncProfileTabDotSoon) */
