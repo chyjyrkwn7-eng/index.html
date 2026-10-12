@@ -19980,6 +19980,10 @@ is a ufo, a second one comes in.. shouldn't that same one just move?"*
   and Frost's brows and mouths. A 100 lifts the Alien's brow right off and
   turns the frown over; no grade wears the scowl (pass: level mouth; fail:
   let down). Its resting face is unchanged (asked for in build 271).
+- **A fail is let down, never cross.** A face that rests in a smile turns
+  it over (the Detective, the Hacker, Tempest, Frost); eyes that slant
+  down to the nose drop and narrow to dim slits; Tempest's and Frost's
+  brows go level. A pass keeps the face the character rests in.
 - **The hundo effect's reaction covers the glee as well as the eyes**
   (`R.cover`), so it comes back with the pose when the effect ends.
 - **One saucer.** On a 100 the reaction's saucer (`.cx-rx-ufo`) hovers over
@@ -20002,4 +20006,5 @@ is a ufo, a second one comes in.. shouldn't that same one just move?"*
   100 and at 90+ (4s and 8s in), a fail never happy and no brow scowling,
   every face back on its happy 100 after the Confetti and UFO reactions and
   happy right through the special after them, one saucer and one magnifier
-  at every moment, the saucer over the beam. Fails on 6a387e2.
+  at every moment (saucers counted by shape: a filled disc 4+ units across,
+  3x as wide as tall), the saucer over the beam. Fails on 6a387e2.
