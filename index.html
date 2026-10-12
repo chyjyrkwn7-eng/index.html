@@ -1138,6 +1138,46 @@
      these two rules use instead of the full ones. */
   [data-layout="modern"] body.has-active-question{ --statusbar-mix2:1.1%; --statusbar-mix3:1%; }
   [data-theme="dark"][data-layout="modern"] body.has-active-question{ --statusbar-mix2:2.2%; --statusbar-mix3:2.35%; }
+  /* THE STARFIELD (build 323). "Some faint star like dots ... not
+     overwhelming but definitely adds to the space theme ... I think our
+     themes could use that." A layer of its own ON TOP of body::before
+     (same z-index, later in tree order), never painted into it, because
+     body::before and html's fallback have to stay pixel-identical and
+     the status-bar tokens model body::before alone - stars in either
+     would break both. The tiles are drawn ONCE, at the device's own
+     pixel ratio, by buildSkyTiles(); after that this is a static
+     background on a fixed box and costs nothing per frame. The only
+     thing that ever changes is opacity, which the compositor does.
+     - Same box as body::before (bottom-anchored, 100lvh), so it can never
+       stop short of something body::before reaches.
+     - The status-bar band is masked clear: no star sits above the
+       safe-area inset (or the first 1.5rem in a browser tab), and they
+       fade in over the 3.5rem below it, so the strip iOS paints the
+       status bar from is exactly what it was.
+     - Home is the full strength; every other screen carries .6 of it; a
+       question, a test's own chrome and a results screen carry none, the
+       same "settle down while answering" call the dimmed glow above makes.
+     - White stars at low alpha, not tinted ones: over each theme's own
+       glow triad they take that theme's colour on their own, so a set
+       theme still only recolours. */
+  :root{ --sky-clear: max(1.5rem, env(safe-area-inset-top, 0px)); }
+  [data-layout="modern"] body::after{
+    content:""; position:fixed; left:0; right:0; bottom:0; height:100lvh;
+    z-index:-1; pointer-events:none;
+    background-image:var(--sky-b, none), var(--sky-a, none);
+    background-size:var(--sky-b-size, auto), var(--sky-a-size, auto);
+    background-repeat:repeat;
+    background-position:0 0;
+    -webkit-mask-image:linear-gradient(to bottom, transparent var(--sky-clear), #000 calc(var(--sky-clear) + 3.5rem));
+    mask-image:linear-gradient(to bottom, transparent var(--sky-clear), #000 calc(var(--sky-clear) + 3.5rem));
+    opacity:0;
+    transition:opacity .6s ease;
+  }
+  html.sky-ready[data-layout="modern"] body::after{ opacity:.6; }
+  html.sky-ready[data-layout="modern"] body.sky-home::after{ opacity:1; }
+  html.sky-ready[data-layout="modern"] body.sky-calm::after{ opacity:0; }
+  /* `[data-reduce-motion] *` reaches elements, not pseudo-elements. */
+  [data-reduce-motion="true"] body::after{ transition:none !important; }
   /* A structural guarantee, not just a stacking one: as long as
      #splashscreen still exists anywhere earlier in the document, the
      entire rest of the app stays visibility:hidden, full stop \u2014
@@ -41482,6 +41522,86 @@ function syncTestPin(force){
   wrap.classList.add("test-pinned");
 }
 addEventListener("resize", () => { const w = document.querySelector(".wrap.test-pinned"); if(w) syncTestPin(true); });
+/* THE STARFIELD'S TILES (build 323) - see the body::after rule for the
+   why. Two tiles at sizes that share no factor (239 and 433 CSS px), so
+   the field only repeats every ~100,000px and no pattern can be spotted:
+   the small one carries the dense, very faint dust, the large one the
+   fewer, brighter stars. Drawn in DEVICE pixels at the real pixel ratio
+   (a 3x iPhone gets a 717px tile shown at 239px), each star centred on a
+   device pixel, so they are crisp dots and never a resampled smudge.
+   Seeded, so the sky is the same every launch rather than reshuffled.
+   Stars near a tile's edge are drawn again across it, so none is cut in
+   half where two tiles meet. */
+const SKY_TILES = [
+  { css: 239, seed: 0x51a7, n: 46, kind: "dust" },
+  { css: 433, seed: 0x9e21, n: 104, kind: "stars" },
+];
+let skyUrls = [];
+function buildSkyTiles(){
+  const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+  const jobs = SKY_TILES.map(t => new Promise(done => {
+    let s = t.seed >>> 0;
+    const rnd = () => { s = (s + 0x6D2B79F5) >>> 0; let x = Math.imul(s ^ (s >>> 15), 1 | s);
+      x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+    const px = Math.max(1, Math.round(t.css * dpr));
+    const cv = document.createElement("canvas"); cv.width = cv.height = px;
+    const g = cv.getContext("2d");
+    if(!g){ done(null); return; }
+    for(let i = 0; i < t.n; i++){
+      const x = Math.floor(rnd() * px) + .5, y = Math.floor(rnd() * px) + .5;
+      const roll = rnd(), tint = rnd();
+      let a, r, halo = 0;
+      if(t.kind === "dust"){ a = .16 + rnd() * .16; r = .5 + rnd() * .2; }
+      else if(roll < .70){ a = .24 + rnd() * .18; r = .55 + rnd() * .25; }
+      else if(roll < .92){ a = .40 + rnd() * .14; r = .72 + rnd() * .2; }
+      else { a = .62 + rnd() * .12; r = .9 + rnd() * .2; halo = .12; }
+      /* mostly a cool lilac-white, some bluer, a few warm */
+      const rgb = tint < .6 ? "236,233,255" : tint < .85 ? "208,222,255" : "255,238,218";
+      const rd = Math.max(.62, r * dpr);
+      for(let ox = -1; ox <= 1; ox++) for(let oy = -1; oy <= 1; oy++){
+        const cx = x + ox * px, cy = y + oy * px, reach = rd * 3 + 2;
+        if(cx < -reach || cx > px + reach || cy < -reach || cy > px + reach) continue;
+        if(halo){
+          const hg = g.createRadialGradient(cx, cy, 0, cx, cy, rd * 3);
+          hg.addColorStop(0, "rgba(" + rgb + "," + halo + ")"); hg.addColorStop(1, "rgba(" + rgb + ",0)");
+          g.fillStyle = hg; g.fillRect(cx - rd * 3, cy - rd * 3, rd * 6, rd * 6);
+        }
+        g.fillStyle = "rgba(" + rgb + "," + a.toFixed(3) + ")";
+        g.beginPath(); g.arc(cx, cy, rd, 0, Math.PI * 2); g.fill();
+      }
+    }
+    const fin = url => { if(!url){ done(null); return; }
+      const im = new Image(); im.onload = im.onerror = () => done({ url, size: (px / dpr) + "px " + (px / dpr) + "px" }); im.src = url; };
+    try{
+      if(cv.toBlob) cv.toBlob(b => fin(b ? URL.createObjectURL(b) : null), "image/png");
+      else fin(cv.toDataURL("image/png"));
+    }catch(e){ done(null); }
+  }));
+  Promise.all(jobs).then(res => {
+    if(res.some(r => !r)) return;
+    const root = document.documentElement, old = skyUrls;
+    root.style.setProperty("--sky-a", 'url("' + res[0].url + '")');
+    root.style.setProperty("--sky-a-size", res[0].size);
+    root.style.setProperty("--sky-b", 'url("' + res[1].url + '")');
+    root.style.setProperty("--sky-b-size", res[1].size);
+    skyUrls = res.map(r => r.url);
+    root.classList.add("sky-ready");
+    setTimeout(() => old.forEach(u => { if(u.startsWith("blob:")) try{ URL.revokeObjectURL(u); }catch(e){} }), 2000);
+    /* Dragged to a screen with a different pixel ratio: redraw once for it. */
+    try{ const mq = matchMedia("(resolution: " + dpr + "dppx)");
+      const again = () => { mq.removeEventListener("change", again); buildSkyTiles(); };
+      mq.addEventListener("change", again); }catch(e){}
+  }).catch(() => {});
+}
+try{ buildSkyTiles(); }catch(e){}
+/* Where the sky is full, quieter or off - see the body::after rule. */
+function syncSky(isQuestion){
+  const b = document.body;
+  if(isQuestion){ b.classList.remove("sky-home"); b.classList.add("sky-calm"); return; }
+  b.classList.toggle("sky-home", !!stage.querySelector('[data-screen="home"]'));
+  b.classList.toggle("sky-calm", !!(isQuestion || window.forceHideBottomTabs
+    || stage.querySelector(".qnumrow, .fc-screen, .actions-results")));
+}
 new MutationObserver(() => {
   document.body.classList.toggle("has-floatbtn", !!stage.querySelector(".floatbtn"));
   /* The same pattern, extended: detects an active question screen via
@@ -41501,6 +41621,7 @@ new MutationObserver(() => {
   const isQuestion  = !!stage.querySelector(".choice");
   document.body.classList.toggle("has-active-question", isQuestion);
   if(isQuestion !== wasQuestion) syncStatusBarColor();
+  syncSky(isQuestion);
   syncTestPin();
   /* Cheap enough for every stage mutation: one getElementById and a
      dataset read, no fetch. Piggybacking the observer that already runs
