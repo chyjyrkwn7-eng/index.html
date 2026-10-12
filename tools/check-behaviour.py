@@ -21796,10 +21796,10 @@ def check_b321g_nova(br):
           const pb = w.querySelector('.nw2-pbox'), ch = [...w.querySelectorAll('.nw2-chunk')];
           const filt = [...w.querySelectorAll('.nw2-cam > *, .nw2-chunk, .nw2-ship *')].filter(e => getComputedStyle(e).filter !== 'none').length;
           const moved = ch.filter(c => getComputedStyle(c).transform !== 'none').length;
-          return { hero: !!w.querySelector('.cosmic-hero-wrap') || w.__nw.anims.length > 0, chunks: ch.length, moved, filt,
+          return { hero: !!w.querySelector('.cosmic-hero-wrap') || (w.__nw || { anims: [] }).anims.length > 0, chunks: ch.length, moved, filt,
                    paint: (pb && pb.style.getPropertyValue('--nw-planet') || '').indexOf('data:image/svg+xml') >= 0,
                    pbOp: pb ? +getComputedStyle(pb).opacity : 0, ship: !!w.querySelector('.nw2-ship svg circle[cx="56"]'),
-                   pods: w.querySelectorAll('.nw2-pod').length, anims: w.__nw.anims.length,
+                   pods: w.querySelectorAll('.nw2-pod').length, anims: (w.__nw || { anims: [] }).anims.length,
                    heroGone: !w.querySelector('.cosmic-hero-wrap') }; }""", still)
         tag = "Reduce motion" if still else "in motion"
         if not still:
