@@ -15642,12 +15642,14 @@ def check_b317_hundobox(br):
     the whole "100%" shows and is ONE piece of type (the % inline, painting
     no colour of its own, under the number's gradient); the box is in its
     effect's colours on the FIRST frame it is visible - border, number,
-    bar - exactly as it is once settled; and every word in the box (GRADE,
+    bar - exactly as it is once settled (MOVED in build 321: the first
+    frame is the green it counted up in, crossing into the effect's
+    colours by the end of a 0.9s hand-off - see below); and every word in the box (GRADE,
     the 12 / 12, the line under it, each unit and its count) is the
     default's colour on every effect. Plus the default gold and every
     Customize tile, and the page-pinned dims covering the screen as it
     scrolls. Round 3's assertions fail on 13c747f."""
-    print("\n317. every hundo effect's box: whole, one piece of type, its colours from the first frame, the default's words")
+    print("\n317. every hundo effect's box: whole, one piece of type, green into its colours (321), the default's words")
     import colorsys
 
     def rgb(c):
@@ -15668,18 +15670,29 @@ def check_b317_hundobox(br):
               store.hundoFx = fx; theme.reduceMotion = false; theme.muteBanners = true; saveStore();
               const cs = e => getComputedStyle(e);
               const look = g => { const p = g.querySelector('.rs-pct'), f = g.querySelector('.unit-breakdown-fill');
+                /* build 321: what lies OVER the box's own colours during the
+                   green hand-off - the counted-in green wash (and its rim),
+                   and the green lifting off each bar (.rs-was::after) */
+                const tl = g.querySelector(':scope > .rs-grade-tone'), gi = tl && tl.querySelector('.is-green');
+                const fa = f ? getComputedStyle(f, '::after') : null;
                 return { border: cs(g).borderTopColor, num: p ? cs(p).backgroundImage.slice(0, 60) + '|' + cs(p).color : null,
-                  bar: f ? cs(f).backgroundImage.slice(0, 80) : null, shown: +cs(g).opacity }; };
+                  bar: f ? cs(f).backgroundImage.slice(0, 80) : null, shown: +cs(g).opacity,
+                  pcol: p ? cs(p).color : null,
+                  wash: tl ? +cs(tl).opacity * (gi ? +cs(gi).opacity : 0) : 0,
+                  barOver: fa && fa.content !== 'none' ? fa.backgroundColor + '|' + fa.opacity : null }; };
               /* the first frame the card is visible: sampled in the same task the
                  class that lands it is set, before anything paints */
-              let first = null;
+              let first = null, handed = null;
               /* BUILD 320: the card is COUNTED IN with no grade on it (red,
                  warming) and takes its colours when the grade lands - so
                  "its first frame" is the first frame the GRADE is on it:
                  landed and no longer counting. */
               const graded = g => !g.classList.contains('is-counting') && (g.classList.contains('rs-in') || g.classList.contains('rs-in-now'));
               const mo = new MutationObserver(() => { const g = document.querySelector('.rs-screen .rs-grade');
-                if(g && !first && graded(g)) first = look(g); });
+                if(g && !first && graded(g)){ first = look(g);
+                  /* and once the 0.9s hand-off from green is over (b321a) -
+                     long before the effect itself, which waits for the XP box */
+                  setTimeout(() => { handed = look(g); }, 1100); } });
               mo.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
               /* and the first frame it is actually PAINTED with any opacity at all */
               let painted = null; const nraf = window.requestAnimationFrame.bind(window);
@@ -15701,7 +15714,7 @@ def check_b317_hundobox(br):
               const p = g.querySelector('.rs-pct'), sg = p.querySelector('.rs-pct-sign');
               const R = e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
               const txt = sel => [...g.querySelectorAll(sel)].map(e => cs(e).color);
-              const out = { first, painted, settled: look(g), tinted: g.classList.contains('hfx-tinted'),
+              const out = { first, painted, handed, settled: look(g), tinted: g.classList.contains('hfx-tinted'),
                 pctScroll: [p.scrollWidth, p.clientWidth], grade: R(g), sign: R(sg),
                 one: { display: cs(sg).display, color: cs(sg).color, bg: cs(sg).backgroundImage, parentBg: cs(p).backgroundImage.slice(0, 16),
                   clip: cs(p).webkitBackgroundClip || cs(p).backgroundClip, px: parseFloat(cs(sg).fontSize) },
@@ -15746,22 +15759,41 @@ def check_b317_hundobox(br):
             check("%s: the whole \"100%%\" shows - no wider than its box, the %% inside the card - and is one piece of type: the %% inline, no colour of its own, under the number's gradient, %.1fpx" % (tag, o.get("px", 0)),
                   sc[0] <= sc[1] + 1 and sg[2] <= g[2] and sg[0] >= g[0] and okone(o) and o.get("px", 0) >= 12, {"scroll": sc, "sign": sg, "box": g, "one": o})
             fi, pa, se = f.get("first") or {}, f.get("painted") or {}, f.get("settled") or {}
-            same = lambda a: a and all(a.get(k) == se.get(k) for k in ("border", "num", "bar"))
-            if fx == "confetti":
-                check("%s: the default is gold from its first frame" % tag, fi and fi.get("border") == GOLD_BORDER and same(fi) and same(pa), {"first": fi, "painted": pa, "settled": se})
-            elif fx == "ufo":
-                # round 5: the UFO's box is in its colours from the first frame
-                # (the 100% and the bar exactly as settled, never gold) but its
-                # rim is UNLIT - the beam's light comes with the beam
+            ha = f.get("handed") or {}
+            same = lambda a, keys=("border", "num", "bar"): a and all(a.get(k) == se.get(k) for k in keys)
+            # BUILD 321 (b321a) MOVED THIS: "It would go from green into the
+            # hundo effect though, and the transition would need to be
+            # smooth. That goes for any of them." The box is counted in, red
+            # into green, so the FIRST frame the grade is on it is the green
+            # it counted up in - the number green, the green wash and rim
+            # over the card, each bar's green over its own colours - and
+            # never gold (for Confetti, whose own look IS the gold, green
+            # then gold). By the end of the 0.9s hand-off (1.1s here) it is
+            # border, 100% and bar exactly as settled, in its effect's
+            # colours, with nothing green left over it. Build 317-320 asked
+            # for the effect's colours on the first frame instead, which is
+            # exactly the snap Madison asked against; on 6a387e2 the first
+            # frame is the effect's ramp with no green, so these fail there.
+            GREEN = "rgb(79, 190, 140)"
+            isgreen = lambda c: bool(rgb(c)) and abs(rgb(c)[0] * 255 - 79) < 2 and abs(rgb(c)[1] * 255 - 190) < 2 and abs(rgb(c)[2] * 255 - 140) < 2 and rgb(c)[3] > .85
+            green = lambda a: (bool(a) and isgreen(a.get("pcol")) and (a.get("wash") or 0) > .85
+                               and (a.get("barOver") or "").startswith(GREEN) and float((a.get("barOver") or "|0").split("|")[1]) > .85)
+            cleared = lambda a: bool(a) and (a.get("wash") or 0) < .02 and not a.get("barOver")
+            check("%s: the grade lands in the GREEN it counted up in - as the card lands and on the first painted frame: the number, the wash over the card and over each bar (b321a)" % tag,
+                  green(fi) and green(pa) and pa.get("shown", 0) > 0, {"first": fi, "painted": pa})
+            if fx == "ufo":
+                # the UFO's rim stays unlit until its beam - through the hand-off too
                 unlit = lambda a: bool(a) and bool(re.match(r"(rgba\(107, 255, 143, 0\.2\d*\)|.*/ 0\.2\d*\))$", a.get("border") or ""))
-                same2 = lambda a: a and all(a.get(k) == se.get(k) for k in ("num", "bar"))
-                check("%s: in its colours from the FIRST frame - the 100%% and the bar exactly as settled, never the gold default - with its rim unlit until the beam (%s)" % (tag, (fi or {}).get("border")),
-                      fi and pa and unlit(fi) and unlit(pa) and same2(fi) and same2(pa) and pa.get("shown", 0) > 0 and se.get("border") == "rgb(107, 255, 143)"
-                      and f.get("tinted") and "217, 169, 58" not in (fi.get("bar") or ""), {"first": fi, "painted": pa, "settled": se})
+                check("%s: then into its colours by the end of the hand-off - the 100%% and the bar exactly as settled, never the gold default - with its rim unlit until the beam (%s)" % (tag, ha.get("border")),
+                      cleared(ha) and same(ha, ("num", "bar")) and unlit(fi) and unlit(ha) and se.get("border") == "rgb(107, 255, 143)"
+                      and f.get("tinted") and "217, 169, 58" not in (ha.get("bar") or ""), {"first": fi, "handed": ha, "settled": se})
+            elif fx == "confetti":
+                check("%s: then gold, the default's own look, by the end of the hand-off - border, 100%%, bar exactly as settled" % tag,
+                      cleared(ha) and same(ha) and ha.get("border") == GOLD_BORDER and "217, 169, 58" in (ha.get("bar") or ""), {"handed": ha, "settled": se})
             else:
-                check("%s: in its colours from the FIRST frame - as the card lands and on the first painted frame it shows at all - border, 100%%, bar exactly as settled, never the gold default first" % tag,
-                      fi and pa and fi.get("border") != GOLD_BORDER and same(fi) and same(pa) and pa.get("shown", 0) > 0
-                      and f.get("tinted") and "217, 169, 58" not in (fi.get("bar") or ""), {"first": fi, "painted": pa, "settled": se})
+                check("%s: then into its colours by the end of the hand-off - border, 100%%, bar exactly as settled, never the gold default" % tag,
+                      cleared(ha) and same(ha) and ha.get("border") != GOLD_BORDER and f.get("tinted")
+                      and "217, 169, 58" not in (ha.get("bar") or ""), {"handed": ha, "settled": se})
             check("%s: every word in the box is the default's - GRADE, 12 / 12, the line under it, each unit and its count" % tag,
                   base and f.get("text") == base and all(f["text"].get(k) for k in ("kicker", "frac", "sub", "unit", "countAll")), {"this": f.get("text"), "default": base})
             if fx in ("fireworks", "ufo", "blackhole"):
