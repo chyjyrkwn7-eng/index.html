@@ -1029,3 +1029,75 @@ R("zenith", "fail", [
     P("fx-zaeyeglow", "opacity:.2", (1.0, EASE_OUT, {}), at=.3),
     slump(-7, 1.4),
 ])
+
+# ================================================== BUILD 321: THE MOOD OF THE GRADE ===
+# "Ensure the characters expression change on the mood of the grade, the
+# alien still looks mad even after the hundred.. ensure all characters are
+# happy when they get the 100 ... Ensure this is every character not just
+# the starters." Measured (check-behaviour 321b: brow and eye slant, mouth
+# curve), sixteen of the thirty were not happy at a 100: slanted eyes of
+# light that read as a scowl (the Masked One, Ronin, Umbra, Inferno,
+# Astral, Zenith, Celestial, Orion's visor), the Alien's brow and frown,
+# a squint or a stare where a smile should be. Their 100 and their 90+
+# now end on a happy face - the character's own closed eyes turned up
+# (joy) where they show on its face, or two arches of the eyes' own light
+# (glee) where its eyes are light in a dark face - and the moves before it
+# are untouched. A pass keeps the face it rests in; a fail is let down,
+# never cross (the Alien's scowl comes off for every grade).
+def happy(cid, glee_svg=None, hide=("eyes",), drop=(), extra=(), bands=("perfect", "great"), at=.3, use_joy=False):
+    for band in bands:
+        spec = RX[cid][band]
+        gone = set(hide) | set(drop) | ({"eyes", "eyes-closed"} if use_joy else set())
+        spec["parts"] = [p for p in spec["parts"] if p.sel[0] not in gone]
+        a = at if band == "perfect" else max(.2, at - .1)
+        if use_joy:
+            spec["parts"] += joy(a)
+        if glee_svg:
+            spec["parts"] += cheer(a, hide=tuple(h for h in hide if not (use_joy and h == "eyes")))
+            spec["props"] = [x for x in spec["props"] if x[0] != "glee"] + [("glee", 2, glee_svg)]
+        else:
+            spec["parts"] += [P(h, "opacity:0", (.3, "ease-out", {}), at=a) for h in hide if h != "eyes" or not use_joy]
+        spec["parts"] += [P(*x[:3], at=a) if len(x) == 3 else P(x[0], x[1], (.4, SPRING, {}), at=a) for x in extra]
+
+
+# the Alien: the scowl lifts off, the eyes turn up, the frown turns over
+happy("alien", glee([(14.4, 20.4, 3.2), (25.6, 20.4, 3.2)], "#8CFFB8", core="#0E1116", sw=.95, halo=2.4),
+      hide=("eyes", "fx-eyeglow"), extra=[("brow", "opacity:0; transform:translateY(-1.6px)"), ("mouth", "transform:scale(1.4, -2.2)")])
+# ...and no grade wears it: a pass is level, a fail let down
+for band in ("pass", "fail"):
+    RX["alien"][band]["parts"] += [P("brow", "opacity:0; transform:translateY(-1px)", (.6, EASE_OUT, {}), at=.15)]
+RX["alien"]["pass"]["parts"] += [P("mouth", "transform:scaleY(.2)", (.6, EASE_OUT, {}), at=.2)]
+happy("detective", glee([(16.7, 20.1, 1.15), (23.3, 20.1, 1.15)], "#F2B84B", core="#FFE7B0", sw=.4),
+      extra=[("mouth", "transform:scale(1.3, 2.4)")])
+happy("masked", glee([(16.6, 20.1, 2.1), (23.4, 20.1, 2.1)], "#FF3B4E", core="#FFE1E4", sw=.5),
+      hide=("eyes", "fx-slotglow"), extra=[("mouth", "transform:scale(1.15, 2.8)")])
+happy("zeus", grin(20, 20.6, 1.5, "#8C8478", sw=.4), hide=("fx-zs3eyes",), use_joy=True)
+happy("poseidon", glee([(16.8, 19, 1.4), (23.2, 19, 1.4)], "#FFB347", core="#FFE6B0", sw=.42))
+happy("marksman", None, use_joy=True, extra=[("mouth", "transform:scale(1.35, 3.2)")])
+happy("astronaut", glee([(17.2, 17.7, 2.0), (22.8, 17.7, 2.0)], "#5CE1FF", core="#E6FBFF", sw=.45), hide=("eyes", "fx-saeye"))
+happy("hacker", None, use_joy=True, extra=[("mouth", "transform:scale(1.2, 1.6)")])
+happy("ronin", glee([(16.9, 18.5, 1.6), (23.1, 18.5, 1.6)], "#FF3D8E", core="#FFE6F2", sw=.42), drop=("fx-ronineye",))
+happy("umbra", glee([(16.8, 20.3, 2.0), (23.2, 20.3, 2.0)], "#8B5CF6", core="#F1EAFF", sw=.45))
+happy("singularity", glee([(17.5, 19.4, 1.7), (22.5, 19.4, 1.7)], "#7FB8E8", core="#EAF8FF", sw=.42))
+happy("genesis", glee([(16.6, 19.8, 1.9), (23.4, 19.8, 1.9)], "#FF5CA8", core="#FFF6E6", sw=.48) + grin(20, 22.9, 1.5, "#FFE0C0", sw=.4))
+happy("tempest", None, use_joy=True, extra=[("brow", "transform:translateY(-.7px) scaleY(.1)"), ("mouth", "transform:scale(1.3, 2.6)")])
+happy("frost", None, use_joy=True, drop=("fx-freye",), extra=[("brow", "transform:translateY(-.7px) scaleY(.1)"), ("mouth", "transform:scale(1.3, 2.6)")])
+happy("inferno", glee([(16.6, 18.9, 1.6), (23.4, 18.9, 1.6)], "#FF4A2A", core="#FFF2EE", sw=.45))
+happy("astral", glee([(17.2, 18.9, 1.6), (22.8, 18.9, 1.6)], "#3EF0FF", core="#EFFFFF", sw=.42), hide=("eyes", "fx-zceyeglow"))
+happy("celestial", grin(20, 23.5, 1.25, "#8E9AB4", sw=.3), use_joy=True)
+happy("zenith", glee([(17.5, 18.9, 1.5), (22.5, 18.9, 1.5)], "#8FCBFF", core="#FFFFFF", sw=.42), hide=("eyes", "fx-zaeyeglow"))
+# A FAIL IS LET DOWN: a face that rests in a smile (the Detective, the
+# Hacker, Tempest, Frost) turns it over when it fails, so a fail never
+# reads pleased.
+for cid, pose in (("detective", "transform:scale(.75, -.9)"), ("hacker", "transform:scale(.9, -.8)"),
+                  ("tempest", "transform:scale(.9, -.9)"), ("frost", "transform:scale(.9, -.9)")):
+    spec = RX[cid]["fail"]
+    spec["parts"] = [p for p in spec["parts"] if p.sel[0] != "mouth"] + [P("mouth", pose, (.8, EASE_OUT, {}), at=.3)]
+# ...and never cross: eyes that slant down to the nose (the Alien, the
+# Masked One, Ronin, Umbra, Inferno, Astral, Zenith, Celestial, Orion) drop
+# and narrow to dim, tired slits, and Tempest's and Frost's brows go level.
+for cid in ("alien", "masked", "ronin", "umbra", "inferno", "astral", "zenith", "celestial", "astronaut"):
+    spec = RX[cid]["fail"]
+    spec["parts"] = [p for p in spec["parts"] if p.sel[0] != "eyes"] + [P("eyes", "opacity:.5; transform:translateY(.6px) scaleY(.36)", (1.0, EASE_OUT, {}), at=.3)]
+for cid in ("tempest", "frost"):
+    RX[cid]["fail"]["parts"] += [P("brow", "transform:translateY(.3px) scaleY(.1)", (.8, EASE_OUT, {}), at=.3)]
