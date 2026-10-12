@@ -15028,6 +15028,53 @@
   [data-layout="modern"] .settings-card.sync-card{ padding:.8rem 1rem .9rem; }
   .settings-card.sync-card .sync-note-plain{ margin:.1rem 0 0; }
   .settings-card.sync-card .sync-plain-rule{ margin:.7rem 0; }
+  /* BUILD 324: the code on a line of its own, large, in a recessed well
+     ("it's still pretty small when viewing the code"). Centred and mono
+     like the sign-in code field; the negative right margin hands back the
+     letter-spacing the last character carries, so the code is centred on
+     its glyphs and not on glyphs-plus-one-gap. 1.7rem is 27px - the
+     whole code is ~185px wide in it, inside the ~224px a 320px phone's
+     well offers, so it never wraps. The well exists masked or revealed,
+     so a tap swaps characters and moves nothing. */
+  .sync-code-row.sync-code-row{
+    flex-direction:column; align-items:stretch; justify-content:flex-start; gap:.75rem;
+  }
+  .sync-code-well{
+    display:flex; align-items:center; justify-content:center;
+    min-height:3.7rem; padding:.55rem .75rem; border-radius:14px;
+    background:rgba(0,0,0,.24); border:1px solid rgba(255,255,255,.06);
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.35), inset 0 -1px 0 rgba(255,255,255,.04);
+    transition:background-color .2s ease, border-color .2s ease;
+  }
+  .sync-code-well.is-revealed{
+    background-color:rgba(111,194,255,.07); border-color:rgba(111,194,255,.22);
+  }
+  .sync-code-well .sync-code-value{
+    margin:0 -.14em 0 0; font-size:1.7rem; line-height:1.2; letter-spacing:.14em;
+  }
+  @media (min-width:40rem){
+    .sync-code-well{ min-height:4.2rem; }
+    .sync-code-well .sync-code-value{ font-size:2rem; }
+  }
+  /* Share & install and Help, each in a card like every section above
+     them (build 324: "the spacing of the stuff under the sync code
+     section and beyond is pretty tight"). The card's own margins give
+     the same 16px under a header and ~22px before the next one that the
+     switch groups have; inside, a line of text sits .85rem over its
+     buttons. */
+  [data-layout="modern"] .settings-card.settings-group-card{ padding:1rem .8rem; }
+  [data-layout="modern"] .settings-group-card > .sync-note-plain.settings-lead,
+  .screen-settings .settings-group-card .settings-buildline{ padding:0 .2rem; }
+  .screen-settings .settings-group-card .cal-profile-row.settings-pair{ gap:.5rem; }
+  .screen-settings .settings-group-card .cal-profile-row.settings-pair > .cal-profile-btn{ padding-left:.45rem; padding-right:.45rem; }
+  /* Sync is the one .sect followed by a bare header rather than another
+     .sect, so its 1.5rem bottom margin won the collapse and put 24px
+     before Share & install where every other boundary is the card's
+     ~22. The card's own figure, so it is the same with or without one. */
+  .screen-settings #settings-sync-sect{ margin-bottom:1.35rem; }
+  [data-layout="modern"] .panel .settings-group-card > .sync-note-plain.settings-lead{ margin:0 0 .85rem; }
+  [data-layout="modern"] .settings-group-card > .sect.settings-help-first{ margin:0; }
+  .screen-settings .settings-group-card .settings-buildline{ margin:0 0 .85rem; }
   .affiliation-note{
     font-size:.68rem; color:var(--soft); opacity:.55; text-align:center; margin:1.3rem 0 0;
   }
@@ -97502,20 +97549,20 @@ function showAppearance(opts){
   autoAdvCb.addEventListener("change", () => {
     theme.autoAdvance = autoAdvCb.checked;
     saveTheme();
-    showToast(theme.autoAdvance ? "Auto-advance on." : "Auto-advance off.");
+    showToast(theme.autoAdvance ? "You'll move on after a correct answer." : "You'll tap Next to move on.");
   });
   const autoAdvBox = document.createElement("span");
   autoAdvBox.className = "box"; autoAdvBox.setAttribute("aria-hidden", "true"); autoAdvBox.textContent = "\u2713";
   const autoAdvWrap = document.createElement("span");
   autoAdvWrap.className = "otext";
-  autoAdvWrap.appendChild(document.createTextNode("Auto-advance on correct"));
+  autoAdvWrap.appendChild(document.createTextNode("Move on after a correct answer"));
   const autoAdvHint = document.createElement("span");
   autoAdvHint.className = "ohint";
   /* "when you're finished with one", not "after you answer": in Drill a
      wrong answer lets you try again, so answering is not the same as
      being done with the question. This covers that and Exam's
      advance-on-any-pick without listing the modes out. */
-  autoAdvHint.textContent = "Moves on by itself when you're finished with a question.";
+  autoAdvHint.textContent = "Goes to the next question by itself, with no need to tap Next. In Exam mode, after any answer.";
   autoAdvWrap.appendChild(autoAdvHint);
   autoAdvRow.append(autoAdvCb, autoAdvBox, autoAdvWrap);
   studyDetails.appendChild(autoAdvRow);
@@ -97527,16 +97574,16 @@ function showAppearance(opts){
   bannerCb.addEventListener("change", () => {
     theme.muteBanners = bannerCb.checked;
     saveTheme();
-    showToast(theme.muteBanners ? "Achievement banners muted." : "Achievement banners on.");
+    showToast(theme.muteBanners ? "Celebrations and pop-ups off." : "Celebrations and pop-ups on.");
   });
   const bannerBox = document.createElement("span");
   bannerBox.className = "box"; bannerBox.setAttribute("aria-hidden", "true"); bannerBox.textContent = "\u2713";
   const bannerWrap = document.createElement("span");
   bannerWrap.className = "otext";
-  bannerWrap.appendChild(document.createTextNode("Mute achievement banners"));
+  bannerWrap.appendChild(document.createTextNode("Skip celebrations and pop-ups"));
   const bannerHint = document.createElement("span");
   bannerHint.className = "ohint";
-  bannerHint.textContent = "Skips the level-up and unlock banners at the end of a test.";
+  bannerHint.textContent = "No rank-up, badge or unlock scenes, streak banners or message pop-ups. Everything you earn still counts.";
   bannerWrap.appendChild(bannerHint);
   bannerRow.append(bannerCb, bannerBox, bannerWrap);
   studyDetails.appendChild(bannerRow);
@@ -97589,7 +97636,7 @@ function showAppearance(opts){
      behaviour. Both are true (see AUTO_FLAG_MISS_THRESHOLD and
      recordResult), but a settings hint should say what the switch does,
      not document its rules. */
-  autoFlagHint.textContent = "Stars questions you keep getting wrong, so they're saved for review.";
+  autoFlagHint.textContent = "Stars the questions you keep getting wrong, so they're ready to review.";
   autoFlagWrap.appendChild(autoFlagHint);
   autoFlagRow.append(autoFlagCb, autoFlagBox, autoFlagWrap);
   studyDetails.appendChild(autoFlagRow);
@@ -97621,14 +97668,30 @@ function showAppearance(opts){
       "Reduce motion":                  "Turns off shimmer, pulse and other animations.",
       "Show class days remaining":      "Shows the countdown to graduation on your profile.",
       "Swipe to next question":         "Swipe left to move on instead of tapping Next.",
-      "Auto-advance on correct":        "Moves on by itself once you're done.",
-      "Auto-star questions you keep missing": "Stars it for review on every fifth miss.",
-      "Mute achievement banners":       "Skips the level-up and unlock banners after a test."
+      /* BUILD 324: "the auto advance in correct, the title and description
+         are slightly vague. The auto star description says every 5th miss
+         or something. Remove that part and change it. The mute achievement
+         banners needs to be changed to a different more fitting title and
+         description."
+         Each line says what the switch does, read off the code behind it:
+         - autoAdvance: scheduleAutoAdvance() fires on a CORRECT pick in
+           Drill and Game (a wrong one in Drill stays put for another go)
+           and on ANY pick in Exam, which has no right/wrong moment.
+         - autoFlagMissed: recordResult() stars a question on repeated
+           misses. AUTO_FLAG_MISS_THRESHOLD is unchanged; the number just
+           is not the description's business.
+         - muteBanners: far more than "banners" - the rank-up, badge,
+           unlock and flare scenes, streak banners, Virtual Room winner and
+           tug-of-war scenes, battle alerts, new-friend and chat pop-ups.
+           Progress is awarded either way; only the show is skipped. */
+      "Move on after a correct answer": "Goes to the next question by itself, with no need to tap Next. In Exam mode, after any answer.",
+      "Auto-star questions you keep missing": "Stars the questions you keep getting wrong, so they're ready to review.",
+      "Skip celebrations and pop-ups":  "No rank-up, badge or unlock scenes, streak banners or message pop-ups. Everything you earn still counts."
     };
     const GROUPS = [
       [motionDetails, ["Reduce motion", "Show class days remaining"]],
-      [studyDetails,  ["Swipe to next question", "Auto-advance on correct",
-                       "Auto-star questions you keep missing", "Mute achievement banners"]]
+      [studyDetails,  ["Swipe to next question", "Move on after a correct answer",
+                       "Auto-star questions you keep missing", "Skip celebrations and pop-ups"]]
     ];
     GROUPS.forEach(([host, titles]) => {
       const card = document.createElement("div");
@@ -97715,7 +97778,9 @@ function showAppearance(opts){
     || (boardNames.length + " ways");
   lbHint.textContent = "Ranks the class " + howMany + " \u2014 "
     + boardNames.slice(0, -1).join(", ") + " and " + boardNames[boardNames.length - 1]
-    + ". Shares your username, avatar and the numbers those boards rank on \u2014 nothing else. "
+    /* Tidied in build 324, same meaning: what is shared, and that
+       switching off hides the boards from you as well. */
+    + ". Shares only your username, avatar and those numbers. "
     + "With this off, you can't see the rankings either.";
   lbWrap.appendChild(lbHint);
   lbRow.append(lbCb, lbBox, lbWrap);
@@ -97756,16 +97821,29 @@ function showAppearance(opts){
       labelWord.className = "sync-code-label"; labelWord.textContent = "Sync code";
       label.appendChild(labelWord);
       const hint = document.createElement("span");
-      hint.className = "ohint"; hint.textContent = "Tap to reveal \u2014 enter this on another device to link it.";
+      hint.className = "ohint"; hint.textContent = "Tap to show. Enter this on another device to link it.";
       label.appendChild(hint);
+      /* BUILD 324: "The sync code reveal, it's still pretty small when
+         viewing the code. Can we slightly enlarge it some more?" Beside
+         the label it could not grow: on a 320px phone the label and its
+         hint already had most of the row. So the code has a line of its
+         own under them, in a recessed well the full width of the card -
+         centred and mono, like the code field on the sign-in screen - and
+         the well is there masked or not, so revealing it changes the
+         characters and nothing else: no row reflows, nothing jumps. */
+      const codeWell = document.createElement("span");
+      codeWell.className = "sync-code-well";
       const codeSpan = document.createElement("span");
       codeSpan.className = "sync-code-value"; codeSpan.textContent = "\u2022\u2022\u2022\u2022-\u2022\u2022\u2022\u2022";
+      codeWell.appendChild(codeSpan);
       let revealed = false;
       row.addEventListener("click", () => {
         revealed = !revealed;
         codeSpan.textContent = revealed ? syncCode : "\u2022\u2022\u2022\u2022-\u2022\u2022\u2022\u2022";
+        codeWell.classList.toggle("is-revealed", revealed);
+        hint.textContent = (revealed ? "Tap to hide" : "Tap to show") + ". Enter this on another device to link it.";
       });
-      row.append(label, codeSpan);
+      row.append(label, codeWell);
 
       /* ONE CARD FOR THE CODE, not four treatments stacked. Reported as
          the section needing to be better organised, and looked at, it
@@ -98264,14 +98342,27 @@ function showAppearance(opts){
      description above it is bad too, it's too too tight". */
   shareHint.className = "sync-note-plain settings-lead";
   shareHint.textContent = "Send it to a classmate, or put it on your own Home Screen so it opens like an app.";
-  panel.appendChild(shareHint);
-  panel.appendChild(shareInstallRow);
+  /* BUILD 324: "the spacing of the stuff under the sync code section and
+     beyond is pretty tight, could this be updated and better?" Every
+     section above Sync is a header over a card; these two were a header
+     over loose text and buttons, 16px from the next header where the
+     cards above sit 22px from theirs. One shape for every section now:
+     the line and its buttons in a .settings-card, which also brings the
+     cards' own spacing below them. */
+  const shareCard = document.createElement("div");
+  shareCard.className = "settings-card settings-group-card";
+  shareCard.append(shareHint, shareInstallRow);
+  panel.appendChild(shareCard);
 
   const helpLab = document.createElement("p");
   helpLab.className = "slab section-divider motion-summary";
   helpLab.textContent = "Help";
   panel.appendChild(helpLab);
-  panel.appendChild(updSect);
+  /* In a card like Share & install above it (build 324). */
+  const helpCard = document.createElement("div");
+  helpCard.className = "settings-card settings-group-card";
+  helpCard.appendChild(updSect);
+  panel.appendChild(helpCard);
 
   /* REPORT A BUG, and the awkward part is where a report LANDS.
      A `bugs` collection is the obvious home and it is unreadable:
@@ -98392,9 +98483,9 @@ function showAppearance(opts){
        Rankings or about what the sync code actually is. */
     startSimpleTour([
       { target: "#settings-motion", align: "left", vplacement: "below",
-        text: "How the app moves: smooth scrolling, reduced motion, and swiping to the next question." },
+        text: "What the app shows and how it moves: reduced motion and the class days countdown." },
       { target: "#settings-study", align: "left", vplacement: "below",
-        text: "How tests behave: keep the screen awake, advance on its own, mute banners, and star a question you keep missing." },
+        text: "How tests behave: swiping or moving on by itself to the next question, starring questions you keep missing, and skipping celebrations." },
       { target: "#settings-rankings", align: "left", vplacement: "below",
         text: "Turn this off to come off the class leaderboards. Your XP, badges and hundos all still count \u2014 nobody else sees them." },
       { target: "#settings-sync", align: "left", vplacement: "below",

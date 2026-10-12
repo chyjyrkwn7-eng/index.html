@@ -26325,6 +26325,128 @@ def check_b323u_units(br):
               {"shape": ok_shape, "copy": [cards.get(m, {}).get("desc") for m in ("drill", "exam", "review")], "ink": ink})
 
 
+# A FIXTURE CODE, never a real one: nothing here reaches Firestore (the
+# page runs on the stub), and the code is only ever compared, not printed.
+_B324S_CODE = "KQ7W-M4XZ"
+_B324S_INIT = "try{localStorage.setItem('class26e.synccode','%s');}catch(e){}" % _B324S_CODE
+
+_B324S_SETTINGS = r"""async (fixture) => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const out = {};
+  store.seenSettingsTour = true;
+  showAppearance(); await wait(900);
+  document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(x => x.remove());
+  const de = document.documentElement; de.style.scrollBehavior = 'auto';
+  const tab = document.querySelector('.profile-settings-tab');
+  if(!tab){ out.err = 'no Settings tab'; return out; }
+  const txt = tab.textContent;
+  out.fifth = /fifth|5th/i.test(txt);
+  out.oldMute = /Mute achievement banners/.test(txt);
+  out.oldAdv = /Auto-advance on correct/.test(txt);
+  /* every switch title with its description, read off the rows */
+  out.rows = [...tab.querySelectorAll('label.opt .otext')].map(t => ({
+    title: (t.firstChild && t.firstChild.textContent || '').trim(),
+    hint: ((t.querySelector('.ohint') || {}).textContent || '').trim() }));
+  /* the tour copy still describes switches that exist */
+  const src = String(showAppearance);
+  out.tourStale = /keep the screen awake|smooth scrolling|mute banners/i.test(src.slice(src.indexOf('startSimpleTour(')));
+  /* the storage field behind the renamed switch is still muteBanners */
+  const muteRow = [...tab.querySelectorAll('label.opt')].find(r => /celebrations/i.test(r.textContent));
+  if(muteRow){ const was = theme.muteBanners; muteRow.querySelector('input').click(); await wait(60);
+    out.muteWired = theme.muteBanners === !was; muteRow.querySelector('input').click(); await wait(60);
+    document.querySelectorAll('.toast').forEach(t => t.remove()); }
+  /* the code, masked then revealed */
+  const row = tab.querySelector('.sync-code-row'), val = tab.querySelector('.sync-code-value');
+  if(row && val){
+    const well = val.parentElement;
+    const box = () => { const r = val.getBoundingClientRect(), w = well.getBoundingClientRect(), cs = getComputedStyle(val);
+      return { fs: parseFloat(cs.fontSize), lh: r.height, txt: val.textContent, fam: cs.fontFamily,
+        /* the glyphs' centre: the box carries one letter-space after the last character */
+        cx: r.left + (r.width - (parseFloat(cs.letterSpacing) || 0)) / 2, wcx: w.left + w.width / 2,
+        w: r.width, ww: w.width, wh: w.height, rowH: row.getBoundingClientRect().height,
+        own: val.parentElement !== row || r.top > (row.querySelector('.otext') || row).getBoundingClientRect().bottom - 1 }; };
+    out.masked = box();
+    row.click(); await wait(120);
+    out.revealed = box();
+    out.revealed.isFixture = out.revealed.txt === fixture;  // compared, never returned
+    out.revealed.txt = null; out.masked.txt = out.masked.txt.replace(/[^•-]/g, 'x');
+    row.click(); await wait(80);
+  }
+  /* the section rhythm: every header's gap to the block above it */
+  const heads = [...tab.querySelectorAll('.slab.motion-summary')].filter(h => h.offsetParent);
+  const blocks = [...tab.querySelectorAll('.settings-card, .sect, .motion-details, .cal-profile-row, .startbar, .sync-note-plain, .more-toggle, .settings-buildline')]
+    .filter(e => e.offsetParent && !e.querySelector('.slab.motion-summary'));
+  out.heads = heads.map(h => { const r = h.getBoundingClientRect();
+    let above = -1e9; blocks.forEach(b => { const q = b.getBoundingClientRect(); if(q.height > 0 && q.bottom <= r.top + 1) above = Math.max(above, q.bottom); });
+    let below = 1e9; blocks.forEach(b => { const q = b.getBoundingClientRect(); if(q.height > 0 && q.top >= r.bottom - 1) below = Math.min(below, q.top); });
+    return { t: h.firstChild ? String(h.firstChild.textContent).trim() : '', above: Math.round(r.top - above), below: Math.round(below - r.bottom), sync: h.id === 'settings-sync' }; });
+  /* every control a finger lands on is at least 44px tall */
+  out.small = [...tab.querySelectorAll('button')].filter(b => b.offsetParent && !b.closest('.more-body') && !b.classList.contains('info-icon') && !b.closest('.slab'))
+    .map(b => ({ t: b.textContent.trim().slice(0, 24), h: Math.round(b.getBoundingClientRect().height) })).filter(b => b.h < 44);
+  out.hscroll = de.scrollWidth > innerWidth + 1;
+  return out;
+}"""
+
+
+def check_b324s_settings(br):
+    """Build 324 (builder s). Madison: "In settings, the auto advance in
+    correct, the title and description are slightly vague. The auto star
+    description says every 5th miss or something. Remove that part and
+    change it. The mute achievement banners needs to be changed to a
+    different more fitting title and description. ... The sync code
+    reveal, it's still pretty small when viewing the code. Can we slightly
+    enlarge it some more? And finally, the spacing of the stuff under the
+    sync code section and beyond is pretty tight."
+    So: no "fifth" anywhere on Settings, the old auto-advance and mute
+    titles gone and each switch with a description; the renamed switch
+    still drives theme.muteBanners; the tour no longer names switches that
+    were removed; the revealed code is at least 26px (it was 17.9), on a
+    line of its own, centred in a well that is the same height masked or
+    revealed, and still one line on a 320px phone; and every section from
+    Sync down sits at least as far from the block above it as the sections
+    above Sync do (Help and Advanced were 16px against 22). Fails on
+    ab75270."""
+    print("\n324s. Settings: plain switch copy, a larger sync code, and the rhythm from Sync down")
+    for label, w, h in (("iPhone 17 Pro Max", 440, 956), ("iPad Pro 11", 834, 1194), ("320px phone", 320, 568)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, init=_B324S_INIT)
+        try:
+            r = pg.evaluate(_B324S_SETTINGS, _B324S_CODE)
+            if r.get("err"):
+                check("%s Settings could be read at all" % label, False, r["err"]); ctx.close(); continue
+            rv, mk = r.get("revealed") or {}, r.get("masked") or {}
+            check("%s the revealed code is the account's own code, large (>= 26px), mono, on one line of its own" % label,
+                  rv.get("isFixture") and rv.get("fs", 0) >= 26 and "mono" in (rv.get("fam") or "").lower()
+                  and rv.get("lh", 99) < rv.get("fs", 0) * 1.6 and rv.get("own") and rv.get("w", 999) <= rv.get("ww", 0),
+                  {k: rv.get(k) for k in ("isFixture", "fs", "lh", "own", "w", "ww")})
+            check("%s it is centred in its well, and revealing it moves nothing (well %s -> %s px)" % (label, mk.get("wh"), rv.get("wh")),
+                  abs(rv.get("cx", 0) - rv.get("wcx", 99)) <= 1.5 and mk.get("wh") is not None and abs(mk.get("wh", 0) - rv.get("wh", 99)) < 0.5
+                  and abs(mk.get("rowH", 0) - rv.get("rowH", 99)) < 0.5, [round(rv.get("cx", 0) - rv.get("wcx", 0), 1), mk.get("rowH"), rv.get("rowH")])
+            check("%s no sideways scroll" % label, not r.get("hscroll"))
+            if w == 320:
+                ctx.close(); continue
+            check("%s no switch description counts misses ('fifth'), and the old auto-advance and mute titles are gone" % label,
+                  not r.get("fifth") and not r.get("oldMute") and not r.get("oldAdv"), [r.get("fifth"), r.get("oldMute"), r.get("oldAdv")])
+            rows = r.get("rows") or []
+            check("%s every switch has a title and a description" % label,
+                  len(rows) >= 6 and all(x["title"] and len(x["hint"]) >= 12 for x in rows), rows)
+            check("%s the celebrations switch still sets theme.muteBanners" % label, r.get("muteWired") is True, r.get("muteWired"))
+            check("%s the Settings tour does not name switches that were removed" % label, r.get("tourStale") is False)
+            heads = r.get("heads") or []
+            si = next((i for i, x in enumerate(heads) if x["sync"]), None)
+            above_sync = [x["above"] for x in heads[1:si]] if si else []
+            from_sync = [x["above"] for x in heads[si:]] if si else []
+            floor = min(above_sync) if above_sync else 999
+            check("%s every section from Sync down is at least as far from the block above it as the ones above Sync (%s vs %s)"
+                  % (label, from_sync, above_sync),
+                  bool(from_sync) and len(from_sync) >= 4 and all(g >= floor - 1 for g in from_sync), heads)
+            check("%s and every header sits clear of its own content (>= 12px)" % label,
+                  all(x["below"] >= 12 for x in heads), [(x["t"], x["below"]) for x in heads])
+            check("%s every Settings button is at least 44px tall" % label, not r.get("small"), r.get("small"))
+        except Exception as ex:
+            check("%s Settings could be driven at all" % label, False, str(ex)[:300])
+        ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -26555,6 +26677,7 @@ def main():
             check_b323b_stars(br)
             check_b323s_summary(br)
             check_b323u_units(br)
+            check_b324s_settings(br)
         finally:
             br.close()
     SERVER.shutdown()
