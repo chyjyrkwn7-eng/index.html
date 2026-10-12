@@ -116,7 +116,7 @@ def check(name, ok, detail=""):
 SEED_ONCE = ("try{ if(!localStorage.getItem('__seeded')){ localStorage.setItem('__seeded','1');"
              "localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
              "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
-             "localStorage.setItem('class26e.penal55124.seen','1');"
+             "localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');"
              "localStorage.setItem('class26e.drill.v1', '%s'); } }catch(e){}" % USED_ACCOUNT)
 
 # Cards that can land over a screen mid-check (a challenge completing, a

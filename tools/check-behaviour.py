@@ -157,7 +157,7 @@ def booted(br, w, h, seed=None, init=None, touch=False, dpr=1):
     if init:
         ctx.add_init_script(init)
     if seed:
-        ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');"
+        ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');"
                             "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % seed)
         # A gate's fixture is an up-to-date account: it has seen this week's
         # recap from Nova (build 324), or any check that fixtures last week's
@@ -3612,18 +3612,34 @@ def check_b244(br):
 
 
 # --------------------------------------------------------------------------
-# The questions on slides 55-124 of "TEXAS PENAL CODE for 736 updated
-# 8-14-26" (build 313: the next test's slides, replacing slides 0-85), by
-# the bank's own `src`. Typed here on purpose: this is the reference the
-# app's PENAL_TEST_SRCS is checked AGAINST, not read back from it.
+# The questions on slides 124-256 of "TEXAS PENAL CODE for 736 updated
+# 8-14-26" (build 324: "The penal code slide version will change. It's now
+# going to be slides 124-256 ... We can't afford any mishaps again."),
+# by the bank's own `src`. Typed here on purpose: this is the reference the
+# app's PENAL_TEST_SRCS is checked AGAINST, not read back from it. Every
+# slide 124-256 was matched to the bank by question TEXT and choices, in
+# two independent passes that agree slide for slide (scratchpad
+# q324/slides-124-256.md): 116 questions on 39 slides, 109 different.
+# Slide 148 prints #42 as "60." and slide 156 prints #124 as "125."; the
+# text decides, as build 318 learned from the unnumbered #203.
 PENAL_SLIDES_SRCS = sorted([
-    249, 213, 24, 121, 200, 262, 344, 128, 159, 61, 95, 183, 109, 117, 150,
-    158, 203, 250, 304, 65, 70, 97, 178, 319, 236, 318, 346, 22, 209, 3, 204, 253,
-    290, 343, 321, 322, 324, 28, 41, 66, 68, 76, 141, 207, 323, 255, 83, 90,
-    100, 222, 299, 88, 230, 297, 338, 114,
-    348, 349, 350])  # #213, #128 and #183 again - the deck has each on two slides
-# The version-only copies, by the src each one repeats.
-PENAL_REPEATS = {348: 213, 349: 128, 350: 183}
+    114, 27, 125, 145, 177, 197, 26, 98, 115, 166, 184, 86, 123, 156, 176, 13, 20, 42, 73, 127,
+    248, 162, 231, 124, 220, 260, 332, 92, 170, 312, 337, 30, 43, 104, 55, 181, 243, 328, 2,
+    56, 325, 229, 327, 257, 309, 238, 81, 102, 221, 34, 45, 58, 87, 105, 187, 192, 246, 288, 21,
+    25, 133, 239, 171, 217, 272, 126, 82, 336, 345, 54, 93, 136, 140, 261, 263, 275, 308,
+    47, 110, 134, 179, 188, 194, 317, 331, 50, 71, 78, 96, 143, 157, 190, 202, 251, 254, 264, 271,
+    311, 161, 9, 168, 240, 296, 111, 167, 242, 277, 333, 276,
+    351, 352, 353, 354, 355, 356, 357])  # the seven second appearances, below
+# The version-only copies, by the src each one repeats (second slide in a comment).
+PENAL_REPEATS = {351: 184,   # slides 130, 132
+                 352: 42,    # slides 147, 148 (printed "60." on 148)
+                 353: 260,   # slides 160, 161
+                 354: 309,   # slides 196, 197
+                 355: 246,   # slides 213, 222
+                 356: 126,   # slides 224, 225
+                 357: 276}   # slides 253, 254
+# The 55-124 version's copies (build 313) stay in the bank, in no version.
+PENAL_OLD_REPEATS = {347: 84, 348: 213, 349: 128, 350: 183}
 
 PENAL_CARD = ".picks .pick:has(.pname:text-is('Penal Code'))"
 
@@ -3650,7 +3666,7 @@ PENAL_STATE = """()=>{ const row = [...document.querySelectorAll('.picks .pick')
 
 def check_penal_versions(br):
     """The Penal Code has two versions: the whole unit, and the questions on
-    slides 55-124 of the instructor's PowerPoint. Selecting it asks which,
+    slides 124-256 of the instructor's PowerPoint. Selecting it asks which,
     EVERY time; nothing is remembered, and the card (which says the second
     version exists) does not change when one is chosen.
     The run draws only the chosen version, Re-run repeats it without asking,
@@ -3690,7 +3706,7 @@ def check_penal_versions(br):
     def choose(which):
         """which: 'short' (the one naming slides) or 'whole'."""
         pg.evaluate("""(w)=>{ const b = [...document.querySelectorAll('#unitver .unitver-opt')]
-          .find(x => /55\\u2013124|55-124/.test(x.textContent) === (w === 'short')); if(b) b.click(); }""", which)
+          .find(x => /124\\u2013256|124-256/.test(x.textContent) === (w === 'short')); if(b) b.click(); }""", which)
         pg.wait_for_timeout(450)
         return pg.evaluate(PENAL_STATE)
 
@@ -3700,11 +3716,11 @@ def check_penal_versions(br):
           s1["pop"] and not s1["checked"] and s1["units"] == [], s1)
     opts = s1["opts"]
     # The whole unit is the study guide's 340 (build 300): the second #84,
-    # flagged versionOnly, belongs to the slides 55-124 version alone.
+    # flagged versionOnly, belongs to a short version alone.
     nums = pg.evaluate("""()=>({ whole: QUESTIONS.filter(q => (q.topic||'').trim() === 'Penal Code' && !q.versionOnly).length })""")
-    short = [o for o in opts if ("55–124" in o or "55-124" in o)]
+    short = [o for o in opts if ("124–256" in o or "124-256" in o)]
     whole = [o for o in opts if o not in short]
-    check("two choices: the whole unit, and the one from slides 55-124 of the PowerPoint",
+    check("two choices: the whole unit, and the one from slides 124-256 of the PowerPoint",
           len(opts) == 2 and len(short) == 1 and "PowerPoint" in short[0] and "Penal Code" in whole[0]
           and ("%d questions" % len(PENAL_SLIDES_SRCS)) in short[0]
           and ("%d questions" % nums["whole"]) in whole[0], opts)
@@ -3713,7 +3729,7 @@ def check_penal_versions(br):
     check("the short choice says on the pop-up that it earns no hundo, and the whole unit does not",
           bool(short) and bool(whole) and "hundo" in short[0].lower() and "hundo" not in whole[0].lower(), opts)
     s2 = choose("short")
-    check("choosing slides 55-124 selects the card on that version",
+    check("choosing slides 124-256 selects the card on that version",
           not s2["pop"] and s2["checked"] and s2["units"] == ["Penal Code"]
           and s2["versions"] == '{"Penal Code":"test"}', s2)
     check("the card does not change when a version is chosen",
@@ -3729,8 +3745,8 @@ def check_penal_versions(br):
       return { text: t.textContent, passesTap: !!hit && c.contains(hit) && !t.contains(hit),
         hit: hit ? (hit.id || String(hit.className && hit.className.baseVal !== undefined ? hit.className.baseVal : hit.className)).slice(0, 60) : null,
         y: Math.round(b.top), vh: innerHeight, sy: Math.round(scrollY) }; }""")
-    check("the card says it carries the slides 55-124 version, and a tap on that line is a tap on the card",
-          bool(pill) and "55–124" in pill["text"] and pill["passesTap"], pill)
+    check("the card says it carries the slides 124-256 version, and a tap on that line is a tap on the card",
+          bool(pill) and "124–256" in pill["text"] and pill["passesTap"], pill)
     # 2. deselect never asks; the next select asks again
     s3 = tap()
     check("tapping it again deselects it, with no pop-up",
@@ -3753,7 +3769,7 @@ def check_penal_versions(br):
       if(sl){ sl.value = sl.max; sl.dispatchEvent(new Event('input', { bubbles: true })); }
       return out; }""")
     n_ver = "%d questions" % len(PENAL_SLIDES_SRCS)
-    check("the start sheet and the Start button count the slides 55-124 questions",
+    check("the start sheet and the Start button count the slides 124-256 questions",
           n_ver in sheet["line"] and n_ver in sheet["start"], sheet)
     # Build 250: the version pop-up is where the short version says it
     # earns no hundo ("put the warning ... only at the pop up for which
@@ -3766,7 +3782,7 @@ def check_penal_versions(br):
     pg.wait_for_timeout(200)
     run = pg.evaluate(PENAL_RUN)
     pg.evaluate(PENAL_HALT)
-    check("the run is exactly the %d questions on slides 55-124" % len(PENAL_SLIDES_SRCS),
+    check("the run is exactly the %d questions on slides 124-256" % len(PENAL_SLIDES_SRCS),
           run["allPenal"] and run["srcs"] == PENAL_SLIDES_SRCS, "%d questions" % run["n"])
     # 4. a perfect run of it earns XP and no hundo
     hundo = pg.evaluate("""()=>{ const u = 'Penal Code';
@@ -3776,7 +3792,7 @@ def check_penal_versions(br):
       summarize();
       return { before, after: { hundos: unitPerfectCount(u), perfect: store.lifetime.perfectTests || 0, xp: store.lifetime.points || 0 },
                rows: [...document.querySelectorAll('.badgeprogress-name')].map(e => e.textContent) }; }""")
-    check("a perfect slides 55-124 run is not a Penal Code hundo, and shows no badge progress for it",
+    check("a perfect slides 124-256 run is not a Penal Code hundo, and shows no badge progress for it",
           hundo["after"]["hundos"] == hundo["before"]["hundos"] and hundo["after"]["perfect"] == hundo["before"]["perfect"]
           and not any("Penal Code" in r for r in hundo["rows"]), hundo)
     check("it still earns XP", hundo["after"]["xp"] > hundo["before"]["xp"], hundo)
@@ -3789,7 +3805,7 @@ def check_penal_versions(br):
       return { found: true, pop: !!document.getElementById('unitver') }; }""")
     run2 = pg.evaluate(PENAL_RUN)
     pg.evaluate(PENAL_HALT)
-    check("Re-run repeats slides 55-124, and does not ask",
+    check("Re-run repeats slides 124-256, and does not ask",
           rr.get("found") and not rr.get("pop") and run2["srcs"] == PENAL_SLIDES_SRCS, [rr, run2["n"]])
     # 6. the whole unit
     pg.evaluate(setup)
@@ -3852,7 +3868,7 @@ def check_penal_versions(br):
       document.getElementById('nextbtn').click(); document.querySelector('.sheet-begin-btn').click();
       await wait(100); while(document.getElementById('teststart-overlay')) await wait(30); await wait(300);
       return document.querySelectorAll('.review-question').length; }""")
-    check("Review of slides 55-124 lists those questions only", rv == len(PENAL_SLIDES_SRCS), rv)
+    check("Review of slides 124-256 lists those questions only", rv == len(PENAL_SLIDES_SRCS), rv)
     # 10. the Virtual Room: the host's pick goes on the room, and only the room decides
     pg.evaluate("()=>{ window.__room = null; createVirtualRoomLobby = function(){ window.__room = [...arguments]; }; showVirtualRoomSetup(); }")
     pg.wait_for_timeout(700)
@@ -3885,7 +3901,7 @@ def check_penal_versions(br):
       inVirtualRoom = false; testInProgress = false; window.forceHideBottomTabs = false;
       return out; }""")
     whole_n = nums["whole"]
-    check("a room runs what the ROOM says: the whole unit despite a player's last pick, and slides 55-124 when it is set",
+    check("a room runs what the ROOM says: the whole unit despite a player's last pick, and slides 124-256 when it is set",
           vr.get("wholeRoom") == whole_n and vr.get("shortRoom") == PENAL_SLIDES_SRCS,
           [vr.get("wholeRoom"), len(vr.get("shortRoom") or [])])
     check("Tug of War draws from the room's version too", vr.get("tug") == PENAL_SLIDES_SRCS,
@@ -7468,8 +7484,8 @@ def check_b298(br):
         }
       }
       out.near = near / R; out.twins = twins / R;
-      /* build 313: the slides 55-124 version carries three deliberate repeats
-         and five questions on one answer set ("which offense is this") */
+      /* build 313: the short version carries deliberate repeats and questions
+         on one answer set ("which offense is this"); build 324: slides 124-256, seven repeats */
       const ver = pen.filter(i => inChosenVersion(i, { 'Penal Code': 'test' }));
       let repMin = 1e9, sideBySide = 0;
       for(let r = 0; r < R; r++){
@@ -7511,7 +7527,7 @@ def check_b298(br):
           r["astray"] == ["Sexual Assault and Family Violence 41"] or r["astray"] == [], r["astray"])
     check("a shuffled run never puts two questions from the same stretch of the guide side by side, or a repeated question near its twin",
           r["near"] < 0.5 and r["twins"] < 0.5, (r["near"], r["twins"]))
-    check("the Penal slides 55-124 version: a repeated question is 15 or more questions from its twin, and no two on one answer set are ever side by side",
+    check("the Penal slides 124-256 version: a repeated question is 15 or more questions from its twin, and no two on one answer set are ever side by side",
           r["verRepMin"] >= 15 and r["verSideBySide"] == 0, (r["verRepMin"], r["verSideBySide"]))
     check("a shuffled question leaves at most one choice where the guide had it, and the answer still lands on every letter about equally",
           r["stay2"] == 0 and all(0.2 <= s <= 0.3 for s in r["slots"]), (r["stay2"], r["slots"]))
@@ -7562,7 +7578,7 @@ def check_b298(br):
       const srcs = pc.map(i => QUESTIONS[i].src);
       const v = all.filter(i => inChosenVersion(i, { 'Penal Code': 'test' }));
       const reps = QUESTIONS.filter(q => q.topic === 'Penal Code' && q.repeatOf != null);
-      const twice = {}; [213, 128, 183].forEach(s => { const t = QUESTIONS.find(q => q.topic === 'Penal Code' && q.src === s).q; twice[s] = v.filter(i => QUESTIONS[i].q === t).length; });
+      const twice = {}; [184, 42, 260, 309, 246, 126, 276].forEach(s => { const t = QUESTIONS.find(q => q.topic === 'Penal Code' && q.src === s).q; twice[s] = v.filter(i => QUESTIONS[i].q === t).length; });
       const days = []; for(let d = 0; d < 400; d++){ const k = new Date(2026, 9, 1 + d); days.push(dailyQuestionIndexFor(k.getFullYear() + '-' + String(k.getMonth() + 1).padStart(2, '0') + '-' + String(k.getDate()).padStart(2, '0'))); }
       return { n: pc.length, srcs, size: unitQuestionCount('Penal Code'), version: v.length,
                versionIn: v.every(i => pc.indexOf(i) >= 0 || QUESTIONS[i].repeatOf != null), twice,
@@ -7574,9 +7590,10 @@ def check_b298(br):
     # Build 300: "remove it from the entire unit one, the entire unit one
     # should be 340 questions not 341" - a repeat is the short version's only.
     check("the whole Penal Code unit is exactly the study guide's 340 questions - no repeat in it",
-          r["n"] == 340 and sorted(r["srcs"]) == guide and not ({347, 348, 349, 350} & set(r["srcs"])) and r["size"] == 340, (r["n"], len(r["srcs"]), r["size"]))
-    check("the slides 55-124 version is the deck's 59 (#203 is unnumbered on slide 88), #213, #128 and #183 twice each, and every other one is in the whole unit too",
-          r["version"] == len(PENAL_SLIDES_SRCS) == 59 and r["twice"] == {"213": 2, "128": 2, "183": 2} and r["versionIn"] and r["repeatsOnlyHere"],
+          r["n"] == 340 and sorted(r["srcs"]) == guide and not (set(range(347, 358)) & set(r["srcs"])) and r["size"] == 340, (r["n"], len(r["srcs"]), r["size"]))
+    # BUILD 324: the short version is slides 124-256 now (was 55-124's 59).
+    check("the slides 124-256 version is the deck's 116, #184, #42, #260, #309, #246, #126 and #276 twice each, and every other one is in the whole unit too",
+          r["version"] == len(PENAL_SLIDES_SRCS) == 116 and r["twice"] == {str(k): 2 for k in (184, 42, 260, 309, 246, 126, 276)} and r["versionIn"] and r["repeatsOnlyHere"],
           (r["version"], r["twice"], r["versionIn"], r["repeatsOnlyHere"]))
     check("the repeats have their own identity, sit at the end of the bank (no other question moves), and are never a daily question",
           r["keysUnique"] and r["repeatLast"] and not r["dailyRepeat"], r)
@@ -7916,7 +7933,7 @@ def check_b300(br):
 
     # "Remove it from the entire unit one, the entire unit one should be 340
     # questions not 341" - the card says so, and a whole-unit run of 340
-    # is still a whole unit (its hundo counts); the slides 55-124 version has 59.
+    # is still a whole unit (its hundo counts); the slides 124-256 version has 116 (build 324).
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       try{
@@ -7936,8 +7953,8 @@ def check_b300(br):
     check("Penal Code: the unit card says 340 questions", r.get("card") == "340 questions", r.get("card"))
     check("Penal Code: a whole-unit run is 340 and counts as the full unit (its hundo still lands)",
           r.get("whole") == 340 and r.get("full") is True and r.get("covered") == ["Penal Code"], (r.get("whole"), r.get("full"), r.get("covered")))
-    check("Penal Code: the slides 55-124 version has its 59, the three repeats included and the old #84 one not",
-          r.get("test") == 59 and r.get("testRepeats") == [348, 349, 350], (r.get("test"), r.get("testRepeats")))
+    check("Penal Code: the slides 124-256 version has its 116, its seven repeats included and the older ones (347-350) not",
+          r.get("test") == 116 and r.get("testRepeats") == sorted(PENAL_REPEATS), (r.get("test"), r.get("testRepeats")))
     ctx.close()
 
 
@@ -17680,7 +17697,7 @@ def check_b319_rankup(br):
     once = ("try{ if(!localStorage.getItem('__seeded319')){ localStorage.setItem('__seeded319','1');"
             "localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
             "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
-            "localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.drill.v1', '%s'); } }catch(e){}" % USED_ACCOUNT)
+            "localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.drill.v1', '%s'); } }catch(e){}" % USED_ACCOUNT)
     ctx, pg = booted(br, 440, 956, init=once)
     pg.evaluate(B319_RU_SEED, {})
     pg.evaluate(B319_RU_RUN, {})
@@ -18844,7 +18861,7 @@ def check_b317_sflare(br):
 B318_ONCE = ("try{ if(!sessionStorage.getItem('b318seeded')){ sessionStorage.setItem('b318seeded','1');"
              "localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
              "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
-             "localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.daily.seen','x');"
+             "localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.daily.seen','x');"
              "localStorage.setItem('class26e.drill.v1', '%s'); } }catch(e){}")
 
 # Every scene and card logged, in order; the scenes are quick stand-ins
@@ -21398,12 +21415,18 @@ def check_b319_penal346(br):
           len(p) == 1 and p[0]["choices"] == ["Criminally negligent homicide", "Murder.", "Capital murder.", "Manslaughter."] and p[0]["answer"] == 0, p)
     check("its KEYS entry is byte-identical to 8aded7f's (Penal Code|346|243n1v)",
           len(p) == 1 and p[0]["key"] == "Penal Code|346|243n1v" and was["p346"] and was["p346"][0]["key"] == p[0]["key"], [p and p[0]["key"], was["p346"] and was["p346"][0]["key"]])
-    check("all of KEYS is byte-identical to 8aded7f's", now["keys"] == was["keys"], [len(now["keys"]), len(was["keys"])])
+    # BUILD 324 appends seven version-only copies (srcs 351-357) for the
+    # slides 124-256 version, at the END of the bank, so nothing moves: the
+    # 8aded7f keys are a byte-identical prefix and the rest are those copies.
+    extra = now["bank"][len(was["bank"]):]
+    check("all of KEYS is byte-identical to 8aded7f's (build 324's appended copies aside)",
+          now["keys"][:len(was["keys"])] == was["keys"] and all(b[0] == "Penal Code" and 351 <= b[1] <= 357 for b in extra),
+          [len(now["keys"]), len(was["keys"])])
     diff = [i for i, (a, b) in enumerate(zip(now["bank"], was["bank"])) if a != b]
     # Victims of Crime #5 was also rejoined to the study guide in 319 (its
     # own check is check_b313_shuffle); it is the only other allowed change.
     vi = next((i for i, b in enumerate(now["bank"]) if b[0] == "Victims of Crime" and b[1] == 5), -1)
-    check("no other question's text, choices or answer moved", len(now["bank"]) == len(was["bank"]) and diff == sorted(([p[0]["i"]] if p else []) + [vi]), diff[:6])
+    check("no other question's text, choices or answer moved", len(now["bank"]) - len(was["bank"]) == len(extra) and diff == sorted(([p[0]["i"]] if p else []) + [vi]), diff[:6])
 
 
 B319G_SEED = """(n) => {
@@ -24037,7 +24060,7 @@ def check_b320h_fixes(br):
     ctx.close()
     # the waiting ring on a faked clock: answered, 11pm is a quarter of the way to 5pm
     ctx = br.new_context(viewport={"width": 440, "height": 956}, timezone_id="America/Los_Angeles")
-    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');"
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');"
                         "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % USED_ACCOUNT)
     pg = open_page(ctx)
     pg.clock.install(time="2026-10-12T23:00:00-07:00")
@@ -28151,6 +28174,111 @@ def check_b324n2_friends(br):
     ctx.close()
 
 
+def check_b324q_penal(br):
+    """Build 324: "The penal code slide version will change. It's now going
+    to be slides 124-256 ... Ensure each question is correctly there. We
+    can't afford any mishaps again." The short version is exactly the 116
+    questions on slides 124-256 (PENAL_SLIDES_SRCS, typed from the deck by
+    TEXT): every repeat has its own version-only copy at the END of the
+    bank, identical to the question it repeats; nothing that was in the
+    bank moves (ab75270 is loaded beside this build and its KEYS are a
+    byte-identical prefix, and the next 400 daily questions are the same);
+    no repeat is ever a daily question; the whole unit is still the study
+    guide's 340; the two questions the deck numbers wrongly are in by their
+    text; the pop-up, the card and a one-time note under a NEW key all say
+    124-256 and count 116. Fails on ab75270 (slides 55-124, 59 questions,
+    no copies 351-357, the note keyed penal55124)."""
+    import subprocess as _sp
+    print("\n324q. Penal Code: the short version is slides 124-256")
+    Q = """() => { const pen = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === 'Penal Code');
+      const days = []; for(let d = 0; d < 400; d++){ const k = new Date(2026, 9, 12 + d);
+        days.push(dailyQuestionIndexFor(k.getFullYear() + '-' + String(k.getMonth() + 1).padStart(2, '0') + '-' + String(k.getDate()).padStart(2, '0'))); }
+      return { keys: KEYS.slice(), n: QUESTIONS.length,
+        version: pen.filter(i => inChosenVersion(i, { 'Penal Code': 'test' })).map(i => Number(QUESTIONS[i].src)).sort((a, b) => a - b),
+        testSrcs: (typeof PENAL_TEST_SRCS !== 'undefined' ? PENAL_TEST_SRCS.slice() : []).sort((a, b) => a - b),
+        whole: pen.filter(i => inWholeUnit(QUESTIONS[i])).map(i => Number(QUESTIONS[i].src)).sort((a, b) => a - b),
+        unitSize: unitQuestionCount('Penal Code'),
+        bank: pen.map(i => ({ i, src: QUESTIONS[i].src, repeatOf: QUESTIONS[i].repeatOf, vo: QUESTIONS[i].versionOnly === true,
+          q: QUESTIONS[i].q, ref: QUESTIONS[i].ref, choices: QUESTIONS[i].choices, answer: QUESTIONS[i].answer })),
+        keysUnique: new Set(pen.map(i => KEYS[i])).size === pen.length,
+        daily: days.map(i => KEYS[i]), dailyRepeat: days.some(i => QUESTIONS[i] && QUESTIONS[i].repeatOf != null),
+        noteKey: typeof PENAL_VERSION_NOTE_KEY !== 'undefined' ? PENAL_VERSION_NOTE_KEY : null,
+        label: UNIT_TEST_VERSIONS['Penal Code'].label, tag: UNIT_TEST_VERSIONS['Penal Code'].tag }; }"""
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate(Q)
+    want = PENAL_SLIDES_SRCS
+    check("the slides 124-256 version is exactly the deck's 116 (109 different, seven twice)",
+          r["version"] == want and len(want) == 116 and len(set(want) - set(PENAL_REPEATS)) == 109,
+          [len(r["version"]), sorted(set(want) ^ set(r["version"]))[:12]])
+    check("PENAL_TEST_SRCS is that list, and nothing else", r["testSrcs"] == want, len(r["testSrcs"]))
+    by = {}
+    for b in r["bank"]:
+        by.setdefault(b["src"], []).append(b)
+    def same(a, b): return all(a[k] == b[k] for k in ("q", "ref", "choices", "answer"))
+    copies = [(c, o, by.get(c), by.get(o)) for c, o in sorted(PENAL_REPEATS.items())]
+    check("every repeat has its own version-only copy (351-357), word for word the question it repeats",
+          all(cb and ob and len(cb) == 1 and cb[0]["repeatOf"] == o and cb[0]["vo"] and not ob[0]["vo"] and same(cb[0], ob[0])
+              for c, o, cb, ob in copies),
+          [(c, o, bool(cb), cb and cb[0]["repeatOf"]) for c, o, cb, ob in copies])
+    reps = sorted(b["i"] for b in r["bank"] if b["repeatOf"] is not None)
+    check("and every copy sits at the end of the bank (no question's index moves), the 351-357 ones last",
+          reps == list(range(r["n"] - len(reps), r["n"]))
+          and [b["src"] for b in sorted(r["bank"], key=lambda b: b["i"])][-7:] == sorted(PENAL_REPEATS), reps[-9:])
+    check("the 55-124 copies (347-350) stay in the bank, version-only, out of this version, so their history survives",
+          all(by.get(c) and by[c][0]["vo"] and by[c][0]["repeatOf"] == o and c not in r["version"] for c, o in PENAL_OLD_REPEATS.items()),
+          [(c, bool(by.get(c))) for c in PENAL_OLD_REPEATS])
+    guide = [n for n in range(1, 347) if n not in (122, 137, 148, 237, 256, 258)]
+    check("the whole Penal Code unit is still the study guide's 340, with no copy in it",
+          r["whole"] == guide and r["unitSize"] == 340, (len(r["whole"]), r["unitSize"]))
+    check("every Penal Code question has its own key", r["keysUnique"], r["keysUnique"])
+    check("no repeat is ever a daily question (the next 400 days)", not r["dailyRepeat"], r["dailyRepeat"])
+    # The two the deck numbers wrongly: slide 148 prints #42 as "60.", slide
+    # 156 prints #124 as "125." - in by their TEXT (the build 318 lesson).
+    check("by text, not number: #42 is in twice (slide 148 prints it \"60.\"), #124 is in (slide 156 prints it \"125.\"), and #60 is not",
+          r["version"].count(42) == 1 and 352 in r["version"] and 124 in r["version"] and 60 not in r["version"] and 125 in r["version"],
+          [42 in r["version"], 352 in r["version"], 124 in r["version"], 60 in r["version"]])
+    check("the version is named for its slides: label and card line say 124\u2013256",
+          "124\u2013256" in r["label"] and "124\u2013256" in r["tag"], [r["label"], r["tag"]])
+    check("the one-time note has a NEW key, so a device that saw the 55-124 one is told again",
+          r["noteKey"] == "class26e.penal124256.seen", r["noteKey"])
+    # the pop-up's count, and the note on a device that has seen the 55-124 one
+    pop = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      store.seenUnitSelectTour = true; cfg.mode = 'drill'; cfg.units = []; cfg.versions = {}; showSetup(); await wait(600);
+      let opts = []; askUnitVersion('Penal Code', () => {}); await wait(300);
+      opts = [...document.querySelectorAll('#unitver .unitver-opt')].map(b => b.textContent);
+      document.querySelector('#unitver .unitver-cancel')?.click(); await wait(300);
+      try{ localStorage.removeItem('class26e.penal124256.seen'); localStorage.setItem('class26e.penal55124.seen', '1'); }catch(e){}
+      showHome(); await wait(300); showSetup();
+      let note = null; for(let k = 0; k < 40 && !note; k++){ await wait(250); note = document.querySelector('.penal-note-sheet'); }
+      const out = { opts, note: note ? note.textContent : null, seen: localStorage.getItem('class26e.penal124256.seen') };
+      document.querySelectorAll('.invite-overlay').forEach(x => x.remove());
+      return out; }""")
+    short = [o for o in pop["opts"] if "124\u2013256" in o]
+    check("the pop-up's slides choice says 116 questions", len(short) == 1 and "116 questions" in short[0], pop["opts"])
+    check("a device that saw the 55-124 note is shown the 124-256 one, with the count, once",
+          bool(pop["note"]) and "124\u2013256" in pop["note"] and "116 questions" in pop["note"] and pop["seen"] == "1", pop)
+    ctx.close()
+    # nothing that was in the bank moves: ab75270 beside this build
+    try:
+        old = _sp.run(["git", "-C", ROOT, "show", "ab75270:index.html"], capture_output=True, check=True).stdout.decode("utf-8")
+    except Exception as e:
+        check("ab75270 is in this repo to compare against", False, str(e)[:120]); return
+    ob = INSET_RE.sub(lambda m: "0px", old).replace("let fbDb = null;", "let fbDb = null;" + FIRESTORE_STUB, 1)
+    ctx = br.new_context(viewport={"width": 440, "height": 956})
+    pg = ctx.new_page()
+    pg.route("**/index.html", lambda rr: rr.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=ob))
+    pg.route("**/version.json*", lambda rr: rr.fulfill(status=200, headers={"content-type": "application/json"}, body='{"build":"x","frameId":"","note":""}'))
+    pg.goto(URL); pg.wait_for_timeout(2600)
+    was = pg.evaluate(Q)
+    ctx.close()
+    extra = r["keys"][len(was["keys"]):]
+    check("every key that was in the bank is byte-identical and in place; only the copies are new",
+          r["keys"][:len(was["keys"])] == was["keys"] and extra == ["Penal Code|%d|" % c + k.split("|")[2] for c, k in zip(sorted(PENAL_REPEATS), extra)]
+          and len(extra) == len(PENAL_REPEATS), [len(r["keys"]), len(was["keys"])])
+    check("and the next 400 daily questions are the same ones", r["daily"] == was["daily"],
+          sum(1 for a, b in zip(r["daily"], was["daily"]) if a != b))
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -28397,6 +28525,9 @@ def main():
 
             check_b324n_nova(br)
             check_b324n2_friends(br)
+
+
+            check_b324q_penal(br)
         finally:
             br.close()
     SERVER.shutdown()

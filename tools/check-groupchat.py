@@ -66,7 +66,7 @@ def main(src, size):
             ctx.add_init_script(FAKE)
             ctx.add_init_script(
                 "try{localStorage.setItem('class26e.frame.ok','go-live-1');"
-                "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');}catch(e){}")
+                "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');}catch(e){}")
             errs = []
 
             def tab(name, pub, av):
@@ -320,7 +320,7 @@ def main_313(src, size):
             ctx.add_init_script(FAKE)
             ctx.add_init_script(
                 "try{localStorage.setItem('class26e.frame.ok','go-live-1');"
-                "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');}catch(e){}")
+                "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');}catch(e){}")
             errs = []
 
             def boot(first):
