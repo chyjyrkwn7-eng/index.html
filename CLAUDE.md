@@ -20035,3 +20035,72 @@ there's more space to left of it than the right."*
   falling row by row, the Badges screen's case part for part the
   cutscene's (and still opening), and all 16 slots centred within 1px on
   both cases (the cutscene's measured with its camera square on).
+
+### Build 321 (b321d) - the grain is the clean look, a dirtier dirtiest, a bevel, an engraved back, a simple badge in your hand
+
+Madison: *"the semi dirty look adds a lot of texture to the badges and almost
+makes them look better. Could be make that the normal tone ... and then just
+redo the dirty scale so the dirtiest would be dirtier, a noticeable less shine
+and less glow ... the backside stamp ... needs to look more engraved though and
+legit ... especially where like the color meets the silver, ensure the sides
+are good too ... THERE IS WAY TOO much going on here."*
+
+- **`BADGE_DIRT` is a table BY STAGE now** (arrays indexed 0-4), not a
+  per-unit-of-stage scale. Stage 0 - every new badge, every clean one - wears
+  what build 320's stage 1-2 looked like: a fine grain in the metal and the
+  enamel (`grain`, `grainE`), a faint patina in soft patches (`film`), grime
+  at the foot of every wall (`grime`), and still most of its shine. Stage 4
+  is far past build 320's dirtiest: highlights nearly gone (`gloss` .92),
+  flat warm metal, a heavy film and soft dust flecks (`dust`). `glow` and
+  `shine` are the badge-in-your-hand's glow and face light per stage. Hue
+  never changes (the ±12 degree gate still holds). A grey token wears none.
+- **One noise table (`badgeNoiseTable`, `badgeNoiseAt`)**, 128 texels,
+  tileable, read bilinearly; `badgeSmudge` reads it too. **All wear noise is
+  read once per OUTPUT pixel per row** (`wearRow`), never per sample: per
+  sample it doubled a case-sized render for nothing. The fine grain fades out
+  below ~1.6 output px per token unit (`gF`) so the 4x-reference sampling
+  gate (check_b318) still holds. Dust is two readings at odd angles: a
+  thresholded single reading printed square flecks on the table's lattice.
+- **THE COLOUR MEETS THE SILVER AT A BEVEL** (`bvTop`, `bvFoot`, `bvR`,
+  `bvCrown`, `bevelMax`; the inner profile `BADGE_PROF_IN` over distance
+  from the colour in token units). Build 319's soft wall (`wallMax`, still
+  in the table, no longer used by the inner side) took out the hairline and
+  with it the step. A ~35 degree bevel, ~1.9 units wide, rounded at both
+  ends by smooth min/max: in shadow on a plate's top and left edges, a
+  bright line on its bottom and right. **check_b319_badges' seam metric is
+  moved**: only scans against the light must have no dark hairline; the
+  shadowed side is check_b321d's bevel check.
+- **THE BACK IS RENDERED LIKE THE FRONT (`renderBadgeBack`)**: the same
+  geometry, mirrored (fields read at the mirrored column, x-slopes negated -
+  the light stays top-left), the same rim, outer wall and bevel down into a
+  recessed BRUSHED field, and the name ENGRAVED as a height field
+  (`badgeBackLayout` draws the words; `BADGE_BACK_RELIEF`): walls lit by
+  their normals, a cast shadow along the side the light comes from, a matte
+  darker floor, grime in the cuts. It wears the badge's stage.
+  `badgeBackEntry(unit, W, stage, draft)` caches by size and stage;
+  `badgeBackFaceFlatURL` is build 320's flat drawing, used only if the render
+  throws. **Not rendered in the tap**: the inspect view puts up a cached back
+  if there is one, the draft 140ms after the lift starts (the front's draft is
+  at 60ms), and the finish (and a new stage's back after a rub) in its idle
+  work. Cost ~ the coin's front face.
+- **The coin's side is rounded over** (`badgeEdgeURL(unit, tone, stage)`):
+  slices near a face are dark (the tone the face's outer wall ends on), the
+  middle ones lighter, and the whole edge dims and warms with the stage. With
+  no tone it is build 320's edge exactly - the cutscene's coin (builder C's)
+  calls it that way.
+- **Seated** (token side only; the slot's lip, wall and floor are untouched):
+  a tight two-step contact shadow round the token (`.badge-contact`), and a
+  first, crisp seat-shade step (`BADGE_SEAT_SHADE[0]`, .22 units at .5) - the
+  hole's lip lying over the token's top-left edge. check_b242's
+  `rgba(0,0,0,.42)` shadow is unchanged.
+- **The badge in your hand says almost nothing**: its name, "Rub to clean
+  it." only while dirty (nothing - not "clean" - once clean, even right after
+  a rub), a quiet "Swipe to spin it.", Close. No kicker, Mastered,
+  requirement, bar, count or care line. A badge not found: its name and one
+  line, "12 of 35 hundos". **Moved**: check_b320g_inspect's words and hint
+  checks, check_b319_badges' "Mastered on the card", check_b281's green bar.
+- **Gate: `check_b321d_badges`** (fails on 6a387e2): stage-0 enamel grain,
+  stage 4's highlights gone and p97 down a median 85+, the bevel's shadow and
+  highlight on every badge, the back's engraving contrast and its wear, the
+  simple words on both reference devices, and the stage-4 glow and face light
+  at most .2.

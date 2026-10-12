@@ -6193,16 +6193,17 @@ def check_b281_badge_card(br):
       const c = document.querySelector('.binspect');
       out.card = !!c; out.kind = c ? c.className : '';
       out.art = !!(c && c.querySelector('.binspect-slot svg'));
-      out.fill = c ? getComputedStyle(c.querySelector('.unlock-card-fill')).backgroundImage : '';
-      out.count = c ? (c.querySelector('.unlock-card-count') || {}).textContent || '' : '';
+      /* MOVED IN 321 (b321d): no bar ("The progress bar ... can go away"), one line of progress */
+      out.bar = !!(c && c.querySelector('.unlock-card-bar, .unlock-card-fill'));
+      out.count = c ? (c.querySelector('.binspect-count, .unlock-card-count') || {}).textContent || '' : '';
       out.need = String(badgeThresholdFor(u));
       out.bubble = !!document.getElementById('contextual-info-popup');
       }catch(e){ out.threw = String(e); }
       return out; }""")
     check("a badge opens the floating view (build 320), not the info bubble",
           r.get("card") is True and "is-empty" in r.get("kind", "") and r.get("art") is True and r.get("bubble") is False, r)
-    check("the view's bar is the green one and counts hundos of what the badge needs",
-          "47, 191, 113" in r.get("fill", "") and re.search(r" of " + r.get("need", "?") + r" hundos?$", r.get("count", "")) is not None, r)
+    check("the view has no bar (321) and one line counting hundos of what the badge needs",
+          r.get("bar") is False and re.search(r" of " + r.get("need", "?") + r" hundos?$", r.get("count", "")) is not None, r)
     ctx.close()
 
 
@@ -20534,7 +20535,11 @@ def check_b319_badges(br):
             if(c === 2 && m >= 0 && b - m <= 5){ let lo = 999; for(let t = m; t <= b; t++) lo = Math.min(lo, lum[get(a, t)]);
               r.push(lo / Math.min(lum[get(a, m)], lum[i])); m = -1; }
             if(c === 0) m = -1; } } };
-        scan((a, b) => a * W + b); scan((a, b) => a * W + (W - 1 - b)); scan((a, b) => b * W + a); scan((a, b) => (W - 1 - b) * W + a);
+        /* MOVED IN 321 (b321d): the step is now a bevel with its shadow on the
+           side away from the light ("especially where like the color meets
+           the silver ... the 3d look"), so only the scans AGAINST the light
+           (right to left, bottom to top) must show no dark hairline. */
+        scan((a, b) => a * W + (W - 1 - b)); scan((a, b) => (W - 1 - b) * W + a);
         r.sort((p, q) => p - q);
         if(r.length >= 40) out[u] = +r[Math.floor(r.length * .1)].toFixed(2);
       }
@@ -20544,8 +20549,14 @@ def check_b319_badges(br):
       return { gap: BADGE_GEOM.gap, shades: s.querySelectorAll('.badge-seat-shade').length }; }""")
     ctx.close()
     worst = min(seam.values()) if seam else 0
-    check("the seam: where the colour meets the silver is one soft step on every badge (no dark hairline: 10th-percentile step >= .8 of the darker side)",
-          len(seam) >= 14 and worst >= 0.8, {k[:14]: v for k, v in sorted(seam.items(), key=lambda kv: kv[1])[:5]})
+    # MOVED IN 321 (b321d): only the scans against the light, and a badge whose
+    # plate edges run diagonally (Missing and Exploited Children) has some of
+    # its shadowed bevel inside those scans, so it is 12 of 14 clean and a
+    # median of .9 (8aded7f: 2 of 14, median ~.55 on these same scans).
+    vals = sorted(seam.values())
+    clean = sum(1 for v in vals if v >= .8)
+    check("the seam: where the colour meets the silver on the lit side is one clean step (no dark hairline: 10th-percentile step >= .8 on 12+ of the badges, median >= .9; the shadowed bevel is check_b321d's)",
+          len(seam) >= 14 and clean >= 12 and vals[len(vals) // 2] >= .9, {k[:14]: v for k, v in sorted(seam.items(), key=lambda kv: kv[1])[:5]})
     check("seated: the hole is wider than the badge (gap >= 2.4) and its shade lies on the badge's top-left edge",
           seat["gap"] >= 2.4 and seat["shades"] >= 3, seat)
 
@@ -20626,8 +20637,9 @@ def check_b319_badges(br):
         pf_extra = [t for t in (pf["text"] if pf else []) if not re.match(r"^(\d+ of \d+ badges|\u203a|New|\d+ of \d+ badges(New)?\u203a)$", t)]
         check(f"{dev}: nothing is written in the case (no 'Mastered' under the badges); the shut one says only its count",
               bool(tab and pf) and not tab["text"] and not pf_extra, [tab and tab["text"][:4], pf and pf["text"][:4]])
-        check(f"{dev}: a found badge's card says Mastered, and every title ends in 'Badge'",
-              bool(cards.get("found") and cards.get("not")) and cards["found"]["count"] == "Mastered" and cards["found"]["name"].endswith(" Badge")
+        # MOVED IN 321 (b321d): "The word mastered does not need to be on this screen."
+        check(f"{dev}: a found badge's card does not say Mastered (321), and every title ends in 'Badge'",
+              bool(cards.get("found") and cards.get("not")) and "master" not in cards["found"]["count"].lower() and cards["found"]["name"].endswith(" Badge")
               and cards["not"]["name"].endswith(" Badge") and res["itemName"].endswith(" Badge"), [cards, res["itemName"]])
         check(f"{dev}: badges are found, not earned or unlocked (the tab's head, the results' row)",
               "found" in head and "earned" not in head and res["kicker"] == "Badge found", [head, res["kicker"]])
@@ -22233,9 +22245,12 @@ def check_b320g_inspect(br):
                     and abs((mid["words"]["l"] + mid["words"]["r"]) / 2 - mid["vw"] / 2) <= 3 and mid["float"]["w"] >= min(mid["vw"], mid["vh"]) * .36)
         check(f"{dev}: a found badge opens the floating view, not the unlock card: the badge big and centred, the words under it",
               found_ok, {k: mid[k] for k in ("ov", "card", "cls", "float", "words")})
-        check(f"{dev}: the words: '... Badge', Mastered, the requirement, the count, and that badges lose their shine",
-              mid["name"] == u0 + " Badge" and mid["state"].lower() == "mastered" and "hundo" in mid["desc"]
-              and re.match(r"^\d+ of \d+ hundos?$", mid["count"] or "") and "shine" in mid["care"].lower() and "clean" in mid["care"].lower(),
+        # MOVED IN 321 (b321d): "THERE IS WAY TOO much going on here ... The word
+        # mastered does not need to be on this screen ... The progress bar and the
+        # numbers saying how many you needed can go away too." The name, and no
+        # Mastered, requirement, count or care line (check_b321d_badges has the rest).
+        check(f"{dev}: the words: '... Badge' and nothing crowding it - no Mastered, requirement, count or care line (321)",
+              mid["name"] == u0 + " Badge" and not mid["state"] and not mid["desc"] and not mid["count"] and not mid["care"],
               {k: mid[k] for k in ("name", "state", "desc", "count", "care")})
         check(f"{dev}: the view turned: the case tipped away (rotateX, m22 < .7) and sank, the slot left empty, the tab bar's focus held",
               mid["caseM22"] is not None and mid["caseM22"] < .7 and mid["caseB"]["t"] > mid["vh"] * .55 and mid["lifted"] == 1 and mid["focus"] is True,
@@ -22452,8 +22467,9 @@ def check_b320g_inspect(br):
           and abs(rub["mid"][2] - rub["mid"][0]) < .05 and rub["mid"][3] is True and rub["sparks"] >= 4 and rub["stored"] == 0 and rub["tile"] == "0", rub)
     check("a rub never spins the badge: it only comes round to show its front (no further than that, give or take 10 degrees)",
           rub["ok"] and rub["maxTurn"] <= 0 and rub.get("endFront") is True, [rub.get("maxTurn"), rub.get("endFront")])
-    check("the hint: 'This badge is dirty. Rub it to clean it.' while it is dirty, and it says it is clean after",
-          rub["ok"] and rub["hint0"] == "This badge is dirty. Rub it to clean it." and "clean" in (rub["hint1"] or "").lower() and "dirty" not in (rub["hint1"] or "").lower(),
+    # MOVED IN 321 (b321d): "If the badge is clean then it will not say that it's clean."
+    check("the hint: 'Rub to clean it.' while it is dirty, and nothing at all once it is clean (321)",
+          rub["ok"] and rub["hint0"] == "Rub to clean it." and not (rub["hint1"] or "").strip(),
           [rub.get("hint0"), rub.get("hint1")])
     ctx.close()
 
@@ -22473,6 +22489,151 @@ def check_b320g_inspect(br):
     check("Reduce motion: the view fades in (opacity rising) and the case never turns",
           all(r[0] for r in rm) and all(r[1] == 1 for r in rm) and rm[0][2] is not None and rm[0][2] < .6 and rm[-1][2] == 1,
           rm[:3] + rm[-1:])
+
+
+def check_b321d_badges(br):
+    """Build 321 (b321d), the badge tokens and the badge in your hand.
+    Madison: "the semi dirty look adds a lot of texture to the badges and
+    almost makes them look better. Could be make that the normal tone of the
+    metal and badge and then just redo the dirty scale so the dirtiest would
+    be dirtier, a noticeable less shine and less glow ... the backside stamp
+    of the badge is a great idea, needs to look more engraved though and
+    legit ... especially where like the color meets the silver ... when
+    clicking a badge it pulls up, THERE IS WAY TOO much going on here ... If
+    the badge is clean then it will not say that it's clean. The word
+    mastered does not need to be on this screen ... The progress bar and the
+    numbers saying how many you needed can go away too." Written against
+    6a387e2, where every check here fails:
+      - texture: a CLEAN badge's enamel has a grain (mean high-pass over its
+        interior at 480px; 6a387e2's smooth enamel ~.2-.4, now ~.6+);
+      - the dirtiest is far duller: at stage 4 no bright highlight survives
+        (pixels over 225 at most 2% of stage 0's; 6a387e2 kept 10-30%) and
+        the brightest 3% fall by a median of 85+ levels (6a387e2: ~52); the
+        glow round the badge in your hand at stage 4 is at most .2 of a
+        clean one's (6a387e2: .36) and the light across its face at most .2;
+      - the bevel: scanning from the silver into the colour along the light
+        (left to right, top to bottom) the step dips into shadow (median
+        darkest/colour <= .7 on every badge; 6a387e2's soft wall .84-1.0),
+        and against the light it catches it (>= 1.7);
+      - the back is engraved: the words' walls throw shadows and catch light
+        (1st and 99th percentile of local contrast in the text block, median
+        99th >= 95, every one >= 88; 6a387e2's printed letters 60-84), and
+        the back wears the badge's dirt (a stage 4 back is not a stage 0
+        one);
+      - the badge in your hand says only its name, "Rub to clean it." while
+        it is dirty and nothing about cleanliness once clean, a quiet tip and
+        Close: no Mastered, no requirement, no bar, no count, no care line.
+        A badge not found: its name and one line of progress."""
+    print("\n321d. badge tokens: the grain as the clean look, a dirtier dirtiest, the bevel, an engraved back, a simple badge in your hand")
+    ctx, pg = booted(br, 400, 400, seed=USED_ACCOUNT, dpr=1)
+    r = pg.evaluate(r"""() => { const out = { tex: {}, shine: {}, bevel: {}, back: {} };
+      const units = unitsInTeachingOrder();
+      const lumOf = d => { const L = new Float32Array(d.length / 4); for(let i = 0; i < L.length; i++) L[i] = .299 * d[i*4] + .587 * d[i*4+1] + .114 * d[i*4+2]; return L; };
+      const pct = (a, p) => { a = a.slice().sort((x, y) => x - y); return a.length ? a[Math.floor(a.length * p)] : 0; };
+      const px = (u, W, s) => renderBadgeStrike(u, false, W, 2, s).getContext('2d').getImageData(0, 0, W, W).data;
+      for(const u of units){
+        /* texture: enamel interior, high-pass against a 7x7 mean */
+        const W = 480, d0 = px(u, W, 0), L0 = lumOf(d0);
+        const ch = q => Math.max(d0[q*4], d0[q*4+1], d0[q*4+2]) - Math.min(d0[q*4], d0[q*4+1], d0[q*4+2]);
+        let hs = 0, hn = 0;
+        for(let y = 6; y < W - 6; y += 1) for(let x = 6; x < W - 6; x += 1){ const i = y * W + x;
+          let ok = true; for(const q of [i, i - 6, i + 6, i - 6 * W, i + 6 * W, i - 5 - 5 * W, i + 5 + 5 * W, i + 5 - 5 * W, i - 5 + 5 * W]) if(d0[q*4+3] < 255 || ch(q) < 45){ ok = false; break; }
+          if(!ok) continue; let m = 0; for(let v = -3; v <= 3; v++) for(let w = -3; w <= 3; w++) m += L0[i + v * W + w]; hs += Math.abs(L0[i] - m / 49); hn++; }
+        if(hn > 200) out.tex[u] = +(hs / hn).toFixed(2);
+        /* shine: stage 0 against stage 4 at 300px */
+        const a = px(u, 300, 0), b = px(u, 300, 4), La = lumOf(a), Lb = lumOf(b), A = [], B = [];
+        for(let i = 0; i < La.length; i++){ if(a[i*4+3] >= 250) A.push(La[i]); if(b[i*4+3] >= 250) B.push(Lb[i]); }
+        out.shine[u] = [Math.round(pct(A, .97)), Math.round(pct(B, .97)), A.filter(v => v > 225).length, B.filter(v => v > 225).length];
+        /* the bevel at 400px, stage 0 */
+        const BW = 400, d = px(u, BW, 0), L = lumOf(d), cls = new Int8Array(BW * BW);
+        for(let i = 0; i < BW * BW; i++){ const j = i * 4, mx = Math.max(d[j], d[j+1], d[j+2]), mn = Math.min(d[j], d[j+1], d[j+2]);
+          cls[i] = d[j+3] < 250 ? 0 : (mx - mn) > 45 ? 2 : (mx - mn) < 16 ? 1 : 3; }
+        const sh = [], hi = [];
+        const scan = (get, into, dark) => { for(let aa = 0; aa < BW; aa++){ let m = -1;
+          for(let bb = 0; bb < BW; bb++){ const i = get(aa, bb), c = cls[i];
+            if(c === 1){ m = bb; continue; }
+            if(c === 2 && m >= 0 && bb - m <= 9){ let lo = 999, hv = 0; for(let t = Math.max(0, m - 6); t <= bb; t++){ const v = L[get(aa, t)]; lo = Math.min(lo, v); hv = Math.max(hv, v); }
+              into.push(dark ? lo / Math.max(1, L[i]) : hv / Math.max(1, L[i])); m = -1; }
+            if(c === 0) m = -1; } } };
+        scan((x, y) => x * BW + y, sh, true); scan((x, y) => y * BW + x, sh, true);
+        scan((x, y) => x * BW + (BW - 1 - y), hi, false); scan((x, y) => (BW - 1 - y) * BW + x, hi, false);
+        if(sh.length >= 40 && hi.length >= 40) out.bevel[u] = [+pct(sh, .5).toFixed(3), +pct(hi, .5).toFixed(3)];
+      }
+      return out; }""")
+    back = pg.evaluate(r"""async () => { const out = {}; const units = unitsInTeachingOrder(), BW = 432;
+      const lumOf = d => { const L = new Float32Array(d.length / 4); for(let i = 0; i < L.length; i++) L[i] = .299 * d[i*4] + .587 * d[i*4+1] + .114 * d[i*4+2]; return L; };
+      const load = src => new Promise(r => { const im = new Image(); im.onload = () => r(im); im.onerror = () => r(null); im.src = src; });
+      for(const u of units.slice(0, 6)){
+        const im = await load(badgeBackFaceURL(u, BW, 0)); if(!im){ out[u] = null; continue; }
+        const c = document.createElement('canvas'); c.width = c.height = BW; const g = c.getContext('2d'); g.drawImage(im, 0, 0);
+        const L = lumOf(g.getImageData(0, 0, BW, BW).data), hp = [];
+        for(let y = Math.floor(BW * .35); y < BW * .65; y++) for(let x = Math.floor(BW * .25); x < BW * .75; x++){ const i = y * BW + x;
+          let s = 0, k = 0; for(let v = -4; v <= 4; v += 2) for(let w = -4; w <= 4; w += 2){ s += L[i + v * BW + w]; k++; } hp.push(L[i] - s / k); }
+        hp.sort((a, b) => a - b);
+        out[u] = { hp1: +hp[Math.floor(hp.length * .01)].toFixed(1), hp99: +hp[Math.floor(hp.length * .99)].toFixed(1),
+                   wears: badgeBackFaceURL(u, 96, 4) !== badgeBackFaceURL(u, 96, 0) };
+      }
+      return out; }""")
+    ctx.close()
+    tex = r["tex"]
+    tv = sorted(tex.values())
+    check("texture: a clean badge's enamel has a grain (high-pass mean >= .5 on every badge, median >= .6; it was smooth)",
+          len(tv) >= 12 and tv[0] >= .5 and tv[len(tv) // 2] >= .6, sorted(tex.items(), key=lambda kv: kv[1])[:4])
+    sh = r["shine"]
+    drops = sorted(v[0] - v[1] for v in sh.values())
+    gone = [u for u, v in sh.items() if v[3] > .02 * max(1, v[2])]
+    check("the dirtiest is far duller: no bright highlight left at stage 4 (<= 2% of stage 0's) and the brightest 3% fall by a median of 85+ levels",
+          len(sh) == len(r["shine"]) >= 12 and not gone and drops[len(drops) // 2] >= 85, [drops[len(drops) // 2] if drops else None, gone[:3]])
+    bev = r["bevel"]
+    flat = [u for u, v in bev.items() if not (v[0] <= .7 and v[1] >= 1.7)]
+    check("the bevel: from the silver into the colour along the light the step falls into shadow (<= .7), against it it catches the light (>= 1.7), every badge",
+          len(bev) >= 12 and not flat, {u[:16]: bev[u] for u in (flat or list(bev))[:4]})
+    bh = [v for v in back.values() if v]
+    h99 = sorted(v["hp99"] for v in bh)
+    check("the back is engraved: its words' walls catch the light and throw shadows (99th percentile local contrast every >= 88, median >= 95)",
+          len(bh) == 6 and h99[0] >= 88 and h99[len(h99) // 2] >= 95 and all(v["hp1"] <= -60 for v in bh), back)
+    check("the back wears the badge's dirt (a stage 4 back is not a stage 0 one)", len(bh) == 6 and all(v["wears"] for v in bh), [v["wears"] for v in bh])
+
+    # the badge in your hand: its words, the glow and the shine at stage 4
+    SEED = """(o) => { const units = unitsInTeachingOrder(); store.unitPerfects = {};
+      units.forEach((u, i) => store.unitPerfects[u] = (i % 3 !== 2) ? badgeThresholdFor(u) : Math.floor(badgeThresholdFor(u) / 3));
+      store.seenUnlocks = store.seenUnlocks || { chars: [], banners: [], themes: [], badges: [] }; store.seenUnlocks.badges = units.slice();
+      const W = (typeof BADGE_DIRT_WEEK_MS === 'number') ? BADGE_DIRT_WEEK_MS : 604800000, now = Date.now();
+      store.badgeCleanedAt = {}; units.forEach((u, i) => { store.badgeCleanedAt[u] = now - o.dirt * W - 3600e3; });
+      store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
+      store.pendingBadgeUnlocks = []; theme.muteBanners = true; theme.reduceMotion = true; applyTheme();
+      document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert,.update-banner').forEach(n => n.remove()); }"""
+    WORDS = """async (i) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const c = [...document.querySelectorAll('.badges-tab .ncase-cell')][i]; c.click(); await wait(900);
+      const ov = document.querySelector('.binspect'); if(!ov) return null;
+      const vis = e => !!(e && !e.hidden && e.getClientRects().length && getComputedStyle(e).display !== 'none' && (e.textContent || '').trim());
+      const texts = [...ov.querySelectorAll('.binspect-words *')].filter(e => vis(e) && ![...e.children].some(vis)).map(e => e.textContent.trim());
+      const spec = ov.querySelector('.binspect-face.is-front .binspect-spec i');
+      const out = { texts, bar: !!ov.querySelector('.binspect-words .unlock-card-bar, .binspect-words .sbar, .binspect-words [role=progressbar]'),
+        glow: parseFloat(getComputedStyle(ov).getPropertyValue('--glow-k')) || null, stage: badgeInspectNow ? badgeInspectNow.state().stage : null };
+      badgeInspectNow && badgeInspectNow.teardown(); await wait(200); return out; }"""
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        res = {}
+        for dirt in (0, 6):
+            ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+            pg.evaluate(SEED, {"dirt": dirt})
+            pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1500)
+            res[dirt] = pg.evaluate(WORDS, 0)
+            if dirt == 0:
+                res["empty"] = pg.evaluate(WORDS, pg.evaluate("() => [...document.querySelectorAll('.badges-tab .ncase-cell')].findIndex(c => !c.classList.contains('is-earned'))"))
+                res["shineK"] = pg.evaluate("() => (typeof BADGE_DIRT !== 'undefined' && BADGE_DIRT.shine) ? BADGE_DIRT.shine[4] : 1 - .72")
+            ctx.close()
+        c0, c4, em = res[0] or {"texts": ["?"]}, res[6] or {"texts": ["?"]}, res["empty"] or {"texts": ["?"]}
+        crowd = lambda t: [x for x in t if re.search(r"master|hundo|earn|\d+ of \d+|lose their shine|clean\.|shines|unit badge|badge case", x, re.I)]
+        check(f"{dev}: a clean badge in your hand: its name, a quiet 'Swipe to spin it.' and Close - no Mastered, no requirement, no bar, no count, nothing about being clean",
+              len(c0["texts"]) == 3 and c0["texts"][0].endswith(" Badge") and "spin" in c0["texts"][1].lower() and c0["texts"][2] == "Close"
+              and not c0.get("bar") and not crowd(c0["texts"]) and not [x for x in c0["texts"] if "clean" in x.lower()], c0)
+        check(f"{dev}: a dirty one adds one short hint, 'Rub to clean it.', and nothing else",
+              c4["texts"][:2] == [c0["texts"][0], "Rub to clean it."] and len(c4["texts"]) == 4 and not c4.get("bar") and c4.get("stage") == 4, c4)
+        check(f"{dev}: a badge not found: its name and one line of progress, no bar",
+              len(em["texts"]) == 3 and em["texts"][0].endswith(" Badge") and re.match(r"^\d+ of \d+ hundos?$", em["texts"][1]) and em["texts"][2] == "Close" and not em.get("bar"), em)
+        check(f"{dev}: the dirtiest has a noticeably weaker glow (<= .2 of clean) and light across its face (<= .2)",
+              c0.get("glow") == 1 and c4.get("glow") is not None and c4["glow"] <= .2 and res["shineK"] <= .2, [c0.get("glow"), c4.get("glow"), res["shineK"]])
 
 
 
@@ -23831,6 +23992,7 @@ def main():
             check_b320b_reactions(br)
             check_b320c_case(br)
             check_b321c_case(br)
+            check_b321d_badges(br)
         finally:
             br.close()
     SERVER.shutdown()
