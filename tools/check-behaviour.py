@@ -2120,9 +2120,14 @@ def check_b232(br):
     check("the Masked One unlocks at 100 retaken questions and says how far along you are",
           isinstance(r["masked"], dict) and r["masked"]["feat"] == "retake100" and r["masked"]["before"] is True
           and "99 of 100" in r["masked"]["msg"] and r["masked"]["after"] is False, r["masked"])
-    check("a third week on the weekly podium hands over Poseidon",
-          isinstance(r["poseidon"], dict) and r["poseidon"]["top3"] == 3 and "poseidon" in r["poseidon"]["queued"]
-          and r["poseidon"]["locked"] is False, r["poseidon"])
+    # MOVED in build 324 (b324v2): the Sheriff (the poseidon id) is beating
+    # Nova in a Virtual Room now - Madison: "That's gonna be the sheriff's
+    # new challenge now, is beating nova in a virtual rooms match." A third
+    # podium is still counted; it hands over nothing. check_b324v2_novavr
+    # holds the new rule and that an old holder keeps him.
+    check("a third week on the weekly podium is counted, and no longer hands over the Sheriff (build 324)",
+          isinstance(r["poseidon"], dict) and r["poseidon"]["top3"] == 3 and "poseidon" not in r["poseidon"]["queued"]
+          and r["poseidon"]["locked"] is True, r["poseidon"])
     # Build 289: the Koi (the Valkyrie's id) is seven study days in a row,
     # so a tenth win counts as a win and hands over nothing.
     check("a tenth Virtual Room win is counted and no longer hands over the Koi (build 289)",
@@ -25616,7 +25621,8 @@ def check_b323v_vroom(br):
           vroomCode = 'ROOM323'; vroomMyKey = publicIdOf(); liveVroomParticipants = {};
           store.lobbyInvitesOut = {};
           openInviteFriendsSheet('ROOM323'); await wait(300);
-          const btn = () => document.querySelector('.invite-overlay .friend-act');
+          /* a friend's button: Nova's row sits above the friends since build 324 */
+          const btn = () => document.querySelector('.invite-overlay .friend-row:not(.is-nova) .friend-act');
           btn().click(); await wait(200);
           out.after = { t: btn().textContent, d: btn().disabled };
           const sent = (store.lobbyInvitesOut || {})['pFRIEND00001'];
@@ -28279,6 +28285,326 @@ def check_b324q_penal(br):
           sum(1 for a, b in zip(r["daily"], was["daily"]) if a != b))
 
 
+
+# ---------------------------------------------------------------------------
+# Build 324 (b324v2): Nova in a Virtual Room, and the Sheriff for beating him.
+B324V2_SETUP = """() => {
+  document.querySelectorAll('#pushing-update,#intro-pop').forEach(n => n.remove());
+  __useRooms(); window.__delay = 60;
+  window.firebase = window.firebase || {};
+  window.firebase.firestore = window.firebase.firestore || {};
+  window.firebase.firestore.FieldValue = { delete: () => ({ _delete: true }), arrayUnion: v => ({ __au: v }) };
+  /* the fake room, with arrayUnion and a record of every write */
+  window.__writes = [];
+  const base = window.__docRef;
+  window.__docRef = id => { const r = base(id); const up = r.update;
+    r.update = u => { window.__writes.push({ id, keys: Object.keys(u), at: Date.now(), u: JSON.parse(JSON.stringify(u)) });
+      const plain = {};
+      Object.keys(u).forEach(k => { const v = u[k];
+        if(v && v.__au){ const ks = k.split('.'); let o = __rooms[id]; for(let i = 0; i < ks.length - 1; i++){ o[ks[i]] = o[ks[i]] || {}; o = o[ks[i]]; }
+          const arr = Array.isArray(o[ks[ks.length - 1]]) ? o[ks[ks.length - 1]] : []; arr.push(v.__au); o[ks[ks.length - 1]] = arr; }
+        else plain[k] = v; });
+      return up(plain); };
+    return r; };
+  /* anything written outside the room collection - a board row would land here */
+  window.__otherWrites = [];
+  const coll = fbDb.collection;
+  fbDb.collection = n => { const c = coll(n); if(n === 'vrooms') return c;
+    const d0 = c.doc ? c.doc.bind(c) : null;
+    if(d0) c.doc = id => { const ref = d0(id); ['set', 'update'].forEach(m => { const f = ref[m]; if(f) ref[m] = function(){ __otherWrites.push(n + '/' + id); return f.apply(ref, arguments); }; }); return ref; };
+    return c; };
+  store.publicId = store.publicId || 'PUBHOST00001';
+  store.firstName = 'Madison';
+  theme.muteBanners = false;
+  store.novaBeaten = false; store.legacyChars = (store.legacyChars || []).filter(x => x !== 'poseidon'); store.weeklyTop3 = 0;
+  try{ localStorage.removeItem('class26e.nova'); novaAwayForce = false; novaBefriend({ quiet: true }); }catch(e){}
+  return { friend: typeof novaIsFriend === 'function' && novaIsFriend(), api: typeof novaVrPlan === 'function' && typeof novaVrInvite === 'function' };
+}"""
+
+B324V2_ROOM = """(o) => { const now = Date.now();
+  const me = store.publicId;
+  const parts = { [me]: { name: 'Madison', avatarChar: 'ninja', level: 40, badges: 6, joinedAt: now - 60000, seen: now, ready: false, progress: 0, finished: false } };
+  (o.others || []).forEach((k, i) => { parts[k] = { name: 'Classmate' + i, avatarChar: 'alien', level: 20, badges: 2, joinedAt: now - 50000 + i, seen: now, ready: false, progress: 0, finished: false }; });
+  __rooms[o.code] = { hostCode: me, hostName: 'Madison', units: o.units || [], versions: {}, game: o.game || null, count: o.count || null,
+    open: false, status: 'waiting', mode: 'exam', createdAt: now - 60000, participants: parts };
+  vroomCode = o.code; vroomMyKey = me; vroomIsHost = true; vroomUnits = o.units || [];
+  vroomLastDoc = { code: o.code, data: JSON.parse(JSON.stringify(__rooms[o.code])) };
+  return me; }"""
+
+
+def check_b324v2_novavr(br):
+    """Build 324 (b324v2). Madison: "If you want to, you can now invite him
+    to virtual rooms, but he will be super hard to beat ... he would need to
+    answer questions right within like 4 seconds and almost every time make a
+    95-100 ... That's gonna be the sheriff's new challenge now, is beating
+    nova in a virtual rooms match. Can be any of them ... He's invitable like
+    anyone else now and can join. When he joins make him delay the ready up."
+    Nova in the lobby's invite sheet; a participant entry like a player's
+    (his face, Supernova, the Supernova banner, his card); readying a few
+    seconds late; his answers 2-4s and ~98% right from a seeded plan; a
+    Race, a Tug of War and a Battle each run to the end with him driven by
+    the host; the Sheriff for beating him and not for losing, through the
+    unlock card; an old Sheriff kept; one DM per match; the host leaving
+    takes him along, a dead host's Nova is removed by the next; only the
+    host drives him; never a board row. Fails on c6a50b9 (no Nova in a
+    room, and the Sheriff was the weekly top three)."""
+    print("\n324v2. Nova in a Virtual Room: invite, a slow ready, a hard opponent in every mode, and the Sheriff for beating him")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=_ROOM_FAKE)
+    errs = []
+    pg.on("pageerror", lambda e: errs.append(str(e)))
+    s = pg.evaluate(B324V2_SETUP)
+    check("Nova's Virtual Room API exists (novaVrPlan, novaVrInvite) and he is a friend", s.get("api") and s.get("friend"), s)
+    if not s.get("api"):
+        ctx.close()
+        return
+
+    # ---- 1. the plan: seeded, 2-4s, ~95-98% right, runs end 95-100 ----
+    st = pg.evaluate("""() => { const out = { n: {} };
+      const a = novaVrPlan(12345, 30), b = novaVrPlan(12345, 30), c = novaVrPlan(12346, 30);
+      out.same = JSON.stringify([a.ok, a.ms]) === JSON.stringify([b.ok, b.ms]);
+      out.differs = JSON.stringify([a.ok, a.ms]) !== JSON.stringify([c.ok, c.ms]);
+      out.seed = novaVrSeed('ROOMX', 1700000000000) === novaVrSeed('ROOMX', 1700000000000) && novaVrSeed('ROOMX', 1) !== novaVrSeed('ROOMX', 2);
+      for(const n of [20, 30, 50]){
+        let right = 0, total = 0, ge95 = 0, lo = 0, minMs = 1e9, maxMs = 0, msSum = 0;
+        for(let i = 1; i <= 2000; i++){ const p = novaVrPlan(novaVrSeed('R' + i, i * 7919), n);
+          right += p.right; total += n; if(p.pct >= 95) ge95++; else lo++;
+          p.ms.forEach(m => { minMs = Math.min(minMs, m); maxMs = Math.max(maxMs, m); msSum += m; }); }
+        out.n[n] = { acc: right / total, ge95: ge95 / 2000, lower: lo, minMs, maxMs, meanMs: msSum / total };
+      }
+      return out; }""")
+    check("his plan is seeded: the same room and start give the same match, another start another",
+          st["same"] and st["differs"] and st["seed"], st)
+    okn = all(0.95 <= v["acc"] <= 0.985 for v in st["n"].values())
+    check("over 2,000 matches each he is 95-98% right", okn, {k: round(v["acc"], 4) for k, v in st["n"].items()})
+    check("30- and 50-question runs end at 95% or better almost every time (>=85%), and occasionally lower",
+          st["n"]["30"]["ge95"] >= 0.85 and st["n"]["50"]["ge95"] >= 0.85 and st["n"]["30"]["lower"] > 0 and st["n"]["50"]["lower"] > 0,
+          {k: (v["ge95"], v["lower"]) for k, v in st["n"].items()})
+    check("every answer takes 2-4 seconds, about 3 on average",
+          all(v["minMs"] >= 2000 and v["maxMs"] <= 4000 and 2800 <= v["meanMs"] <= 3200 for v in st["n"].values()),
+          {k: (v["minMs"], v["maxMs"], round(v["meanMs"])) for k, v in st["n"].items()})
+
+    # ---- 2. invite, join, a delayed ready ----
+    pg.evaluate(B324V2_ROOM, {"code": "NOVAR1"})
+    pg.evaluate("() => { showVirtualRoomLobby(); }")
+    pg.wait_for_timeout(900)
+    pg.evaluate("() => openInviteFriendsSheet('NOVAR1')")
+    pg.wait_for_timeout(500)
+    row = pg.evaluate("""() => { const r = document.querySelector('.invite-overlay .friend-row.is-nova');
+      const rows = [...document.querySelectorAll('.invite-overlay .friend-row')];
+      return r ? { first: rows[0] === r, name: r.querySelector('.friend-row-name').textContent, face: !!r.querySelector('.nova-svg'),
+                   btn: r.querySelector('.friend-act').textContent } : null; }""")
+    check("the invite sheet has Nova first, with his face and an Invite button", bool(row) and row["first"] and row["name"] == "Nova"
+          and row["face"] and row["btn"] == "Invite", row)
+    if row:
+        pg.click(".invite-overlay .friend-row.is-nova .friend-act")
+    t_inv = pg.evaluate("() => Date.now()")
+    pg.wait_for_timeout(700)
+    j = pg.evaluate("""() => { const p = (__rooms.NOVAR1.participants || {}).nova || null;
+      const b = document.querySelector('.invite-overlay .friend-row.is-nova .friend-act');
+      return { p, btn: b && b.textContent, dis: b && b.disabled, driving: novaVrDriving('NOVAR1'), host: vroomHostKeyOf(__rooms.NOVAR1.participants) }; }""")
+    p = j.get("p") or {}
+    check("inviting him puts a player's entry in the room: Nova, his character, Supernova level and badges, the Supernova banner, not ready",
+          p.get("name") == "Nova" and p.get("avatarChar") == "nova" and p.get("nova") is True and p.get("banner") == "titan_rank"
+          and p.get("level") == 80 and p.get("badges", 0) >= 14 and p.get("ready") is False and p.get("joinedAt") and p.get("seen")
+          and p.get("by") == pg.evaluate("() => store.publicId"), p)
+    check("the button says he is in the room, and the host's device is the one driving him (never the host himself)",
+          j.get("btn") == "In room" and j.get("dis") and j.get("driving") and j.get("host") != "nova", j)
+    pg.evaluate("() => document.querySelector('.invite-overlay .invite-close')?.click()")
+    pg.wait_for_timeout(600)
+    lob = pg.evaluate("""() => { const r = document.querySelector('.vroom-roster-list .vroom-row.is-nova');
+      return r ? { face: r.querySelector('[data-char=\"nova\"]') ? true : false, sub: r.querySelector('.vroom-row-sub').textContent,
+                   badge: r.querySelector('.vroom-ready-badge').textContent, banner: !!r.querySelector('.bnr-titan_rank') } : null; }""")
+    check("his lobby row: his face, Supernova, his banner, Not ready while the room has no game or units",
+          bool(lob) and lob["face"] and lob["sub"].strip() == "Supernova" and lob["badge"] == "Not ready" and lob["banner"], lob)
+    card = pg.evaluate("""async () => { const r = document.querySelector('.vroom-roster-list .vroom-row.is-nova'); r.click();
+      await new Promise(x => setTimeout(x, 500)); const s = document.querySelector('.person-sheet.is-nova');
+      const out = !!s; document.querySelectorAll('.invite-overlay').forEach(n => n.remove()); return out; }""")
+    check("tapping his row opens his own person card", card is True, card)
+    # the room becomes startable: he gets ready, slowly
+    pg.evaluate("() => { const r = __rooms.NOVAR1; r.game = 'race'; r.units = ['Identity Crimes']; __docRef('NOVAR1').update({ game: 'race' }); }")
+    t0 = pg.evaluate("() => Date.now()")
+    pg.wait_for_timeout(1200)
+    mid = pg.evaluate("""() => { const p = __rooms.NOVAR1.participants.nova; const r = document.querySelector('.vroom-roster-list .vroom-row.is-nova .vroom-ready-badge');
+      return { ready: p.ready, prep: p.prep, badge: r && r.textContent, cls: r && r.className, note: (document.querySelector('.vroom-autostart-note') || {}).textContent }; }""")
+    check("once the room can start he is 'Readying', not ready, on his row", mid["ready"] is False and mid["prep"] is True
+          and (mid["badge"] or "").startswith("Readying") and "is-prep" in (mid["cls"] or ""), mid)
+    ready_at = pg.evaluate("""async () => { for(let i = 0; i < 100; i++){ if(__rooms.NOVAR1.participants.nova.ready) return Date.now(); await new Promise(r => setTimeout(r, 100)); } return 0; }""")
+    delay = (ready_at - t0) / 1000.0 if ready_at else None
+    check("...and readies himself after a few seconds (3-7s), slightly random", delay is not None and 3.0 <= delay <= 7.2, delay)
+    # host readies, the room starts with him in it; the race runs to his finish
+    pg.evaluate("() => { novaVrTimeScale = 0.06; __rooms.NOVAR1.participants[store.publicId].ready = true; __docRef('NOVAR1').update({}); }")
+    started = pg.evaluate("""async () => { for(let i = 0; i < 60; i++){ const r = __rooms.NOVAR1; if(r.status === 'starting') return { racers: r.racers, startAt: r.startAt }; await new Promise(x => setTimeout(x, 100)); } return null; }""")
+    check("everyone ready, Nova included: the host's device starts the match with him named a racer",
+          bool(started) and "nova" in (started.get("racers") or []), started)
+    race = pg.evaluate("""async () => { const seen = []; let last = -1;
+      for(let i = 0; i < 400; i++){ const p = __rooms.NOVAR1.participants.nova;
+        if(p.progress !== last){ seen.push([p.progress, Date.now() - __rooms.NOVAR1.startAt]); last = p.progress; }
+        if(p.finished) break; await new Promise(x => setTimeout(x, 50)); }
+      const p = __rooms.NOVAR1.participants.nova;
+      const plan = novaVrPlan(novaVrSeed('NOVAR1', __rooms.NOVAR1.startAt), 12);
+      const expect = novaVrRaceResult({ pool: novaVrMatchPoolFor(__rooms.NOVAR1), plan }, __rooms.NOVAR1);
+      return { seen, p: { finished: p.finished, score: p.score, xp: p.xp, elapsedMs: p.elapsedMs, revealDone: p.revealDone, ready: p.ready, lines: (p.xpLines || []).length },
+               expect: { pct: expect.pct, xp: expect.xp, elapsedMs: expect.elapsedMs }, planMs: plan.ms.reduce((a, b) => a + b, 0) }; }""")
+    rp = race["p"]
+    check("Race: his marker moves question by question, from the shared start, never before it",
+          len(race["seen"]) >= 6 and all(t >= -50 for _, t in race["seen"][1:]) and [x for x, _ in race["seen"]] == sorted(x for x, _ in race["seen"]), race["seen"][:14])
+    check("Race: he finishes like a player - score, time, the room's XP (computeRunXp on his own answers), and done revealing",
+          rp["finished"] is True and rp["score"] == race["expect"]["pct"] and rp["xp"] == race["expect"]["xp"] and rp["elapsedMs"] == race["planMs"]
+          and rp["revealDone"] is True and rp["lines"] >= 2 and rp["ready"] is False, race)
+    # ---- 3. the leave: the host goes and takes him along ----
+    lv = pg.evaluate("""async () => { __rooms.NOVAR1.participants.pOTHER00002 = { name: 'Jordan', avatarChar: 'alien', joinedAt: 1, seen: Date.now() };
+      leaveVirtualRoom(); try{ testInProgress = false; stopRaceClock(); }catch(e){}
+      await new Promise(x => setTimeout(x, 300)); const r = __rooms.NOVAR1;
+      return { nova: !!r.participants.nova, host: !!r.participants[store.publicId], other: !!r.participants.pOTHER00002, leave: r.lastLeave && r.lastLeave.name,
+               driving: !!novaVr }; }""")
+    check("the host leaving takes Nova along in the same write (he forfeits), names you both, and the room carries on",
+          not lv["nova"] and not lv["host"] and lv["other"] and lv["leave"] == "Madison and Nova" and not lv["driving"], lv)
+
+    # ---- 4. Tug of War, to the end, driven by the host ----
+    tug = pg.evaluate("""async () => { const wait = ms => new Promise(x => setTimeout(x, ms));
+      const me = store.publicId; const now = Date.now(); novaVrTimeScale = 0.06;
+      __rooms.NOVAT1 = { hostCode: me, units: ['Identity Crimes'], versions: {}, game: 'tug', count: null, status: 'starting', startAt: now + 400,
+        racers: [me, 'nova'], mode: 'exam', createdAt: now,
+        participants: { [me]: { name: 'Madison', avatarChar: 'ninja', joinedAt: now - 9000, seen: now, ready: false },
+                        nova: Object.assign(novaVrEntry(), { by: me, joinedAt: now - 5000, ready: true }) },
+        tug: { progress: {}, over: false, winner: null, finalPos: 0, count: 12, teams: { [me]: 'a', nova: 'b' } } };
+      vroomCode = 'NOVAT1'; vroomMyKey = me; vroomIsHost = true; novaVrDrive('NOVAT1');
+      beginTugMatch(JSON.parse(JSON.stringify(__rooms.NOVAT1)));
+      for(let i = 0; i < 300; i++){ if(__rooms.NOVAT1.tug.over) break; await wait(50); }
+      const t = __rooms.NOVAT1.tug; const np = t.progress.nova || {};
+      await wait(2600);
+      return { over: t.over, winner: t.winner, nova: np, rope: t.finalPos, outcome: novaVrOutcome(__rooms.NOVAT1, me), status: __rooms.NOVAT1.status,
+               result: !!document.querySelector('.screen-tug-result, .tug-xp') }; }""")
+    check("Tug of War runs to the end with him: he pulls (pos, right answers, pull), the host calls it, and he wins a rope nobody pulls back",
+          tug["over"] is True and tug["winner"] == "b" and (tug["nova"].get("pos") or 0) >= 2 and (tug["nova"].get("pull") or 0) >= 3
+          and tug["outcome"] == "lost", tug)
+    # ---- 5. Battle, to the end ----
+    bat = pg.evaluate("""async () => { const wait = ms => new Promise(x => setTimeout(x, ms));
+      try{ leaveVirtualRoom(); }catch(e){}
+      const me = store.publicId; const now = Date.now(); novaVrTimeScale = 0.04;
+      __rooms.NOVAB1 = { hostCode: me, units: ['Identity Crimes'], versions: {}, game: 'battle', count: null, status: 'starting', startAt: now + 400,
+        racers: [me, 'nova'], mode: 'exam', createdAt: now,
+        participants: { [me]: { name: 'Madison', avatarChar: 'ninja', joinedAt: now - 9000, seen: now, ready: false },
+                        nova: Object.assign(novaVrEntry(), { by: me, joinedAt: now - 5000, ready: true }) },
+        battle: { log: [], progress: {}, over: false, winner: null, count: 0, teams: { [me]: 'a', nova: 'b' } } };
+      vroomCode = 'NOVAB1'; vroomMyKey = me; vroomIsHost = true; novaVrDrive('NOVAB1');
+      beginBattleMatch(JSON.parse(JSON.stringify(__rooms.NOVAB1)));
+      for(let i = 0; i < 400; i++){ if(__rooms.NOVAB1.battle.over) break; await wait(50); }
+      const b = __rooms.NOVAB1.battle; const log = b.log || [];
+      await wait(2600);
+      return { over: b.over, winner: b.winner, hits: log.filter(e => e.from === 'nova' && e.kind === 'hit').length,
+               dmg: [...new Set(log.filter(e => e.from === 'nova' && e.kind === 'hit').map(e => e.dmg))].sort(),
+               kinds: [...new Set(log.filter(e => e.from === 'nova').map(e => e.kind))], prog: b.progress.nova || {},
+               outcome: novaVrOutcome(__rooms.NOVAB1, me) }; }""")
+    check("Battle runs to the end with him: hits of 5 and 7 on a streak from the host's device, and your side goes down",
+          bat["over"] is True and bat["winner"] == "b" and bat["hits"] >= 14 and 7 in bat["dmg"] and bat["outcome"] == "lost", bat)
+    # ---- 6. losing does not unlock the Sheriff; one gracious DM per match ----
+    lost = pg.evaluate("""async () => { for(let i = 0; i < 60 && novaThread().filter(m => m.kind === 'vr').length < 2; i++) await new Promise(x => setTimeout(x, 250));
+      await new Promise(x => setTimeout(x, 600));
+      const vr = novaThread().filter(m => m.kind === 'vr');
+      return { locked: isLockedCharacter('poseidon'), beaten: store.novaBeaten, dms: vr.map(m => m.text), spot: !!document.querySelector('.rs-spot') }; }""")
+    check("losing to him unlocks nothing; he sends one gracious message per match lost (Tug, Battle)",
+          lost["locked"] is True and not lost["beaten"] and len(lost["dms"]) == 2 and all("Invite me" in t for t in lost["dms"]) and not lost["spot"], lost)
+    # ---- 7. beating him in a Race: the Sheriff through the unlock card on the standings, and his congratulations ----
+    won = pg.evaluate("""async () => { const wait = ms => new Promise(x => setTimeout(x, ms));
+      try{ leaveVirtualRoom(); }catch(e){}
+      const me = store.publicId; const now = Date.now();
+      const lockedBefore = isLockedCharacter('poseidon');
+      const msg = characterLockMessage('poseidon'), det = characterDetail('poseidon');
+      const P = o => Object.assign({ avatarChar: 'ninja', seen: now, finished: true, revealDone: true, xpLines: [{ key: 'correct', label: 'c', value: 120 }] }, o);
+      __rooms.NOVAW1 = { units: ['Identity Crimes'], game: 'race', status: 'starting', startAt: now - 60000, racers: [me, 'nova'],
+        participants: { [me]: P({ name: 'Madison', joinedAt: 1, xp: 455, elapsedMs: 52000, score: 100 }),
+                        nova: P(Object.assign(novaVrEntry(), { by: 'x', seen: now, finished: true, xp: 300, elapsedMs: 34000, score: 92, xpLines: [{ key: 'correct', label: 'c', value: 110 }], revealDone: true })) } };
+      vroomCode = 'NOVAW1'; vroomMyKey = me; vroomIsHost = false;
+      theme.reduceMotion = true; lastFinaleData = JSON.parse(JSON.stringify(__rooms.NOVAW1));
+      startVroomRaceCutscene();
+      let spot = null; for(let i = 0; i < 40 && !(spot = document.querySelector('.rs-spot')); i++) await wait(100);
+      const spotText = spot ? spot.textContent : '';
+      await wait(900);
+      const top = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
+      const out = { lockedBefore, msg, det: { desc: det.desc, count: det.countText, note: det.note }, spotText, locked: isLockedCharacter('poseidon'), beaten: store.novaBeaten,
+                    over: !!document.getElementById('vroom-race-cut') && !!(top && top.closest('.rs-spot')) };
+      if(spot) spot.click(); await wait(2200);
+      out.dms = novaThread().filter(m => m.kind === 'vr').map(m => m.text);
+      document.getElementById('vroom-race-cut')?.remove(); document.querySelectorAll('.rs-spot').forEach(n => n.remove());
+      theme.reduceMotion = false;
+      const h = characterDetail('poseidon'); out.held = { unlocked: h.unlocked };
+      /* and again, in Tug of War, with the Sheriff already held: no card, a different line, once */
+      __rooms.NOVAW2 = { units: ['Identity Crimes'], game: 'tug', status: 'finished', startAt: now - 30000,
+        participants: { [me]: { name: 'Madison', avatarChar: 'ninja', joinedAt: 1, seen: now }, nova: Object.assign(novaVrEntry(), { by: 'x', seen: now }) },
+        tug: { over: true, winner: 'a', finalPos: 4, count: 12, teams: { [me]: 'a', nova: 'b' }, progress: { [me]: { pos: 12, correct: 12, pull: 16 }, nova: { pos: 12, correct: 11, pull: 12 } } } };
+      vroomCode = 'NOVAW2';
+      showTugResult(JSON.parse(JSON.stringify(__rooms.NOVAW2))); await wait(1800);
+      out.spot2 = !!document.querySelector('.rs-spot');
+      showTugResult(JSON.parse(JSON.stringify(__rooms.NOVAW2))); await wait(3600);
+      out.dms2 = novaThread().filter(m => m.kind === 'vr').map(m => m.text);
+      return out; }""")
+    check("the Sheriff's challenge reads 'Beat Nova in a Virtual Room match (any mode)', Not yet, with the how in its note",
+          "Beat Nova in a Virtual Room match (any mode)" in (won["msg"] or "") and won["det"]["desc"] == "Beat Nova in a Virtual Room match (any mode)."
+          and won["det"]["count"] == "Not yet" and "Invite Nova" in (won["det"]["note"] or ""), {k: won[k] for k in ("msg", "det")})
+    check("beating him in a Race (more of the room's XP) unlocks the Sheriff through the unlock card, over the standings",
+          won["lockedBefore"] is True and won["locked"] is False and won["beaten"] is True and "Sheriff" in won["spotText"] and won["over"]
+          and won["held"]["unlocked"] is True, {k: won[k] for k in ("lockedBefore", "locked", "beaten", "spotText", "over", "held")})
+    check("...and he congratulates you for that match, naming the Sheriff",
+          len(won["dms"]) == 3 and "Sheriff is yours" in won["dms"][-1], won["dms"])
+    check("beating him again (Tug of War, Sheriff held): no second card, a different line, once however often the results are drawn",
+          won["spot2"] is False and len(won["dms2"]) == 4 and "got me again" in won["dms2"][-1], won["dms2"])
+    # ---- 8. who beats whom: the rules ----
+    rules = pg.evaluate("""() => { const me = 'ME'; const P = (o) => Object.assign({ name: 'x', seen: Date.now(), finished: true }, o);
+      const race = (a, b) => ({ game: 'race', racers: [me, 'nova'], participants: { [me]: P(a), nova: P(Object.assign({ nova: true }, b)) } });
+      const team = (winner, mine, his, here) => ({ game: 'tug', participants: { [me]: P({}), nova: P({ nova: true, seen: here === false ? 1 : Date.now() }) },
+        tug: { over: true, winner, teams: { [me]: mine, nova: his } } });
+      return {
+        raceMoreXp: novaVrOutcome(race({ xp: 600, elapsedMs: 90000 }, { xp: 580, elapsedMs: 40000 }), me),
+        raceLessXp: novaVrOutcome(race({ xp: 560, elapsedMs: 30000 }, { xp: 580, elapsedMs: 40000 }), me),
+        raceTieFaster: novaVrOutcome(race({ xp: 580, elapsedMs: 39000 }, { xp: 580, elapsedMs: 40000 }), me),
+        raceDead: novaVrOutcome(race({ xp: 580, elapsedMs: 40000 }, { xp: 580, elapsedMs: 40000 }), me),
+        raceHeUnfinished: novaVrOutcome(race({ xp: 600 }, { xp: 0, finished: false }), me),
+        tugWon: novaVrOutcome(team('a', 'a', 'b'), me), tugDraw: novaVrOutcome(team(null, 'a', 'b'), me),
+        tugSameSide: novaVrOutcome(team('a', 'a', 'a'), me), tugHeWentStale: novaVrOutcome(team('a', 'a', 'b', false), me),
+        battleLost: novaVrOutcome(Object.assign(team('b', 'a', 'b'), { game: 'battle', battle: { over: true, winner: 'b', teams: { [me]: 'a', nova: 'b' } } }), me) }; }""")
+    check("finishing ahead under each mode's rule: more race XP, or the same XP faster; your side over his; a draw, his side, or his forfeit is not a win",
+          rules == {"raceMoreXp": "won", "raceLessXp": "lost", "raceTieFaster": "won", "raceDead": "draw", "raceHeUnfinished": None,
+                    "tugWon": "won", "tugDraw": "draw", "tugSameSide": "team", "tugHeWentStale": None, "battleLost": "lost"}, rules)
+    # ---- 9. a Sheriff held the old way is kept; the old way hands over nothing new ----
+    keep = pg.evaluate("""() => { const base = JSON.parse(JSON.stringify(store)); const out = {};
+      const load = o => { const g = Object.assign(JSON.parse(JSON.stringify(base)), o); delete g.sheriffMoved324; if(o.sheriffMoved324 !== undefined) g.sheriffMoved324 = o.sheriffMoved324; applyLoadedData(g); };
+      load({ weeklyTop3: 3, novaBeaten: false, legacyChars: [] }); out.held3 = !isLockedCharacter('poseidon'); out.moved = store.sheriffMoved324;
+      load({ weeklyTop3: 2, novaBeaten: false, legacyChars: [], sheriffMoved324: true });
+      out.at2 = isLockedCharacter('poseidon');
+      store.weekRankSeen = { week: '1999-W01', rank: 2 }; store.pendingCharUnlocks = []; settleWeeklyWin();
+      out.thirdNow = { top3: store.weeklyTop3, locked: isLockedCharacter('poseidon'), queued: (store.pendingCharUnlocks || []).indexOf('poseidon') >= 0 };
+      load({ weeklyTop3: 0, novaBeaten: true, legacyChars: [], sheriffMoved324: true }); out.beaten = !isLockedCharacter('poseidon');
+      return out; }""")
+    check("anybody who already had the Sheriff keeps it; a third podium from now on counts but hands over nothing; beating Nova is kept with the account",
+          keep["held3"] and keep["moved"] and keep["at2"] and keep["thirdNow"] == {"top3": 3, "locked": True, "queued": False} and keep["beaten"], keep)
+    # ---- 10. only the host drives him; a dead host's Nova is taken out by the next host ----
+    host = pg.evaluate("""async () => { const wait = ms => new Promise(x => setTimeout(x, ms)); try{ leaveVirtualRoom(); }catch(e){}
+      const now = Date.now(); const me = store.publicId; __writes.length = 0;
+      __rooms.NOVAJ1 = { units: ['Identity Crimes'], game: 'race', status: 'waiting', participants: {
+        pHOSTGONE001: { name: 'Avery', joinedAt: now - 9000, seen: now }, [me]: { name: 'Madison', joinedAt: now - 8000, seen: now },
+        nova: Object.assign(novaVrEntry(), { by: 'pHOSTGONE001', joinedAt: now - 7000, seen: now, ready: false }) } };
+      vroomCode = 'NOVAJ1'; vroomMyKey = me; vroomIsHost = false;
+      novaVrDrive('NOVAJ1'); await wait(700);
+      const joiner = { driving: !!novaVr, wrote: __writes.filter(w => w.id === 'NOVAJ1' && w.keys.some(k => k.indexOf('nova') >= 0)).length };
+      const hostIsNova = vroomHostKeyOf({ nova: { joinedAt: 1 }, a: { joinedAt: 5 } });
+      /* the host's phone dies: no beat for three minutes, his and Nova's */
+      const r = __rooms.NOVAJ1; r.participants.pHOSTGONE001.seen = now - 200000; r.participants.nova.seen = now - 200000;
+      syncVroomHost(JSON.parse(JSON.stringify(r))); await wait(400);
+      return { joiner, hostIsNova, nowHost: vroomIsHost, novaLeft: !__rooms.NOVAJ1.participants.nova, leave: (__rooms.NOVAJ1.lastLeave || {}).name }; }""")
+    check("a device that did not invite him never drives him or writes for him; Nova is never the host",
+          host["joiner"] == {"driving": False, "wrote": 0} and host["hostIsNova"] == "a", host)
+    check("a host whose phone died: the next host takes Nova out of the room (a forfeit), and says so",
+          host["nowHost"] is True and host["novaLeft"] and host["leave"] == "Nova", host)
+    # ---- 11. he never earns, and never has a board row ----
+    board = pg.evaluate("""() => ({ other: __otherWrites.filter(x => /nova/i.test(x)), row: JSON.stringify(buildLeaderboardRow()).indexOf('"nova"') >= 0,
+                                    friends: friendPublicIds().indexOf('nova') >= 0 })""")
+    check("Nova never gets a leaderboard row or a friends-list place: nothing outside the room was written for him",
+          board["other"] == [] and not board["row"] and not board["friends"], board)
+    check("no page errors through all of it", not errs, errs[:5])
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -28528,6 +28854,9 @@ def main():
 
 
             check_b324q_penal(br)
+
+
+            check_b324v2_novavr(br)
         finally:
             br.close()
     SERVER.shutdown()

@@ -5444,6 +5444,24 @@
     border-radius:999px; color:var(--soft); background:rgba(128,128,128,.16);
   }
   .vroom-ready-badge.is-ready{ color:#0E2818; background:#3DD68C; }
+  /* Nova taking his few seconds (build 324): his own gold, breathing,
+     three dots filling in after the words - opacity only. */
+  .vroom-ready-badge.is-prep{ color:#FFD27A; background:rgba(255,210,122,.14);
+    box-shadow:inset 0 0 0 1px rgba(255,210,122,.28); animation:vr-nova-prep 1.6s ease-in-out infinite; }
+  .vroom-ready-badge.is-prep::after{ content:"\2026"; display:inline-block; width:1em; text-align:left;
+    animation:vr-nova-dots 1.2s steps(4, end) infinite; clip-path:inset(0 100% 0 0); }
+  @keyframes vr-nova-prep{ 0%,100%{ opacity:1; } 50%{ opacity:.62; } }
+  @keyframes vr-nova-dots{ to{ clip-path:inset(0 -10% 0 0); } }
+  .vroom-roster.is-crowded .vroom-ready-badge.is-prep{ background:#FFD27A; }
+  /* Nova drawn as a player (build 324): kept inside his own box, his
+     shoulders fading out like a free-standing character's (build 233) */
+  svg.nova-svg[data-char="nova"]{ overflow:hidden;
+    -webkit-mask-image:linear-gradient(#000 74%, transparent 97%); mask-image:linear-gradient(#000 74%, transparent 97%); }
+  /* An unlock card over the race standings (the Sheriff, build 324) sits
+     above them: the standings layer is 430, a card is 320 elsewhere. */
+  body:has(> #vroom-race-cut) > .rs-spot{ z-index:440; }
+  .nova-invite-line{ margin-top:.1rem; font-size:.78rem; font-weight:600; color:var(--soft); }
+  .vroom-roster.is-crowded .vroom-ready-badge.is-prep::after{ content:none; }
   .vroom-you-tag{ font-size:.72rem; color:var(--soft); font-weight:600; margin-left:.35rem; }
   .vroom-readyup-btn{ width:100%; margin-top:1rem; }
   .vroom-readyup-btn.is-ready{ background:#3DD68C; border-color:#3DD68C; color:#0E2818; }
@@ -43500,7 +43518,12 @@ const AVATAR_CHARACTERS = [
   { id: "detective",  kind: "detective",  feat: "daily10" },
   { id: "masked",     kind: "masked",     feat: "retake100" },
   { id: "zeus",       kind: "zeus",       feat: "weektop" },
-  { id: "poseidon",   kind: "sheriff",    feat: "weektop3x3" },
+  /* THE SHERIFF IS BEATING NOVA (build 324): "That's gonna be the
+     sheriff's new challenge now, is beating nova in a virtual rooms match.
+     Can be any of them." It was three weeks in the weekly top three
+     (weektop3x3, kept below and unread); anybody who held it that way
+     keeps it - see migrateSheriff324(). */
+  { id: "poseidon",   kind: "sheriff",    feat: "novabeat" },
   { id: "clown",      kind: "clown",      feat: "vrwins5" },
   { id: "valkyrie",   kind: "koi",        feat: "studyrun7" },
   { id: "marksman",   kind: "marksman",   feat: "streak100" },
@@ -43668,6 +43691,7 @@ const AVATAR_GLOW = {
    still looked up under the old id, so a Ninja stood in the Robot's
    light. */
 function avatarGlowColor(id){
+  if(id === "nova") return "#FFD27A";   /* NOVA_COLOR, declared further down */
   const shown = (typeof RETIRED_CHARACTER_TO !== "undefined" && RETIRED_CHARACTER_TO[id]) || id;
   return AVATAR_GLOW[shown] || "var(--accent)";
 }
@@ -43751,6 +43775,12 @@ const CHARACTER_FEATS = {
   weektop3x3: { label: "Finish in the top 3 of the weekly XP board 3 times",
                 done: () => (store.weeklyTop3 || 0) >= 3,
                 have: () => (store.weeklyTop3 || 0), need: 3 },
+  /* The Sheriff's since build 324 - see AVATAR_CHARACTERS and novaVrOutcome().
+     A one-off, so its card is "Not yet" or done (UNLOCK_WINDOWS). */
+  novabeat: { label: "Beat Nova in a Virtual Room match (any mode)",
+              done: () => store.novaBeaten === true,
+              have: () => (store.novaBeaten === true ? 1 : 0), need: 1,
+              note: "Invite Nova from a Virtual Room lobby and finish ahead of him: more XP in a Race, the rope on your side in Tug of War, or his side out of health first in Battle. He answers in two to four seconds and almost never misses." },
   /* Reads the flares themselves rather than a flag set when the third
      is found. One source of truth, so a person who somehow arrives at
      three found without passing through foundMysteryFlare - a cloud
@@ -44182,6 +44212,10 @@ const UNLOCK_WINDOWS = {
     return { now, need, label: "Current run", tail: "days",
       note: "Any study time on a day counts it. Miss a whole day and the run starts over." + unlockBestLine(bestStudyRun(), now, "days") };
   },
+  /* Sheriff (build 324): one match, won or not yet - no count to show. */
+  "feat:novabeat": () => ({ now: store.novaBeaten === true ? 1 : 0, need: 1, label: "Nova", tail: "",
+    status: store.novaBeaten === true ? "Done" : "Not yet",
+    note: CHARACTER_FEATS.novabeat.note }),
   /* Phoenix banner: different units aced in a row (recordUnitHundoStreak). */
   "banner:exam100": () => {
     const need = PHOENIX_UNIT_RUN, now = Number(store.unitHundoStreak) || 0;
@@ -44201,6 +44235,8 @@ function unlockWindow(kind, key){
     const of = w.have.toLocaleString() + " of " + w.need.toLocaleString();
     w.countText = w.label + ": " + of + (w.tail ? " " + w.tail : "");
     w.short = w.label.toLowerCase() + ": " + of;
+    /* a one-off says Not yet / Done rather than "0 of 1" (build 324) */
+    if(w.status){ w.countText = w.status; w.short = ""; }
     return w;
   }catch(e){ return null; }
 }
@@ -44323,7 +44359,7 @@ function characterLockMessage(id){
     /* A windowed one names its window (build 324): "(today: 2 of 5)", not
        the best day's "(3 of 5)" - see UNLOCK_WINDOWS. */
     const win = unlockWindow("feat", def.feat);
-    const suffix = win ? " (" + win.short + ")" : f.need > 1 ? " (" + Math.min(f.have(), f.need) + " of " + f.need + ")" : "";
+    const suffix = win ? (win.short ? " (" + win.short + ")" : "") : f.need > 1 ? " (" + Math.min(f.have(), f.need) + " of " + f.need + ")" : "";
     /* a secret's label names the flare and says which it is, so it reads
        as two sentences (build 313) */
     if(def.secret) return f.label + suffix + ". It unlocks " + (AVATAR_DISPLAY_NAME[id] || id) + ".";
@@ -44661,6 +44697,14 @@ const RETIRED_CHARACTER_TO = { queen: "wizard", dragon: "wizard",
    unique per copy, or two copies on one screen would share one gradient. */
 const AVATAR_SVG_TEMPLATE = {};
 function buildAvatarCharSVG(charId){
+  /* NOVA, AS A PLAYER (build 324): a Virtual Room draws everybody through
+     here, so his own head stands in wherever a room puts a character. He
+     is not in AVATAR_CHARACTERS, so no picker ever offers him. */
+  if(charId === "nova" && typeof buildNovaSVG === "function"){
+    /* framed like the others (their head is about a quarter of the box):
+       head and shoulders, not the chat's close crop */
+    try{ const nv = buildNovaSVG({ crop: "head" }); nv.setAttribute("viewBox", "3 2.5 42 42"); nv.setAttribute("data-char", "nova"); return nv; }catch(e){}
+  }
   charId = RETIRED_CHARACTER_TO[charId] || charId;
   let t = AVATAR_SVG_TEMPLATE[charId];
   if(!t){
@@ -50756,7 +50800,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false, core: false },
               testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
-              dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, bestTestStreak: 0,
+              dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
@@ -51056,6 +51100,10 @@ function applyLoadedData(got){
   store.bigTestPassed = got.bigTestPassed === true;
   store.bigTest450Passed = got.bigTest450Passed === true;
   store.bigTest500Passed = got.bigTest500Passed === true;
+  /* build 324: the Sheriff is beating Nova in a Virtual Room. An existing
+     account has not, and has not been moved over yet (migrateSheriff324). */
+  store.novaBeaten = got.novaBeaten === true;
+  store.sheriffMoved324 = got.sheriffMoved324 === true;
   store.bestTestStreak = Math.max(0, Number(got.bestTestStreak) || 0);
   store.lastModified = typeof got.lastModified === "number" ? got.lastModified : 0;
   store.testHistory = Array.isArray(got.testHistory) ? got.testHistory.slice(0, TEST_HISTORY_MAX) : [];
@@ -51247,6 +51295,7 @@ function applyLoadedData(got){
   store.shadesAt = typeof got.shadesAt === "number" ? got.shadesAt : null;
   store.weekWinWeeks = Array.isArray(got.weekWinWeeks) ? got.weekWinWeeks.filter(x => typeof x === "string").slice(-60) : [];
   store.legacyChars = Array.isArray(got.legacyChars) ? got.legacyChars.filter(x => typeof x === "string" && x !== "robot") : legacyCharsFromRanks();
+  try{ migrateSheriff324(); }catch(e){}
   /* After everything the locks read (the streak, the study log) is in. */
   try{ revokeRaisedCharacters(); }catch(e){}
   try{ revokeLeakedStudyRewards(); }catch(e){}
@@ -51267,6 +51316,19 @@ function applyLoadedData(got){
    Officer and the Astronaut came with Sapphire, Amethyst and Supernova
    and are challenges now. Whoever held one keeps it - and whoever is
    wearing one keeps it, whatever the ranks say. */
+/* THE SHERIFF MOVED (build 324) AND NOBODY LOSES HIM. He was three weeks in
+   the weekly top three; he is beating Nova now. Anybody who held him the
+   old way when this build first loads their account keeps him for good
+   (legacyChars, which is merged as a union), and the old route closes
+   behind them. Once per account: the flag travels with it. */
+function migrateSheriff324(){
+  if(store.sheriffMoved324 === true) return;
+  if((Number(store.weeklyTop3) || 0) >= 3){
+    store.legacyChars = Array.isArray(store.legacyChars) ? store.legacyChars : [];
+    if(store.legacyChars.indexOf("poseidon") < 0) store.legacyChars.push("poseidon");
+  }
+  store.sheriffMoved324 = true;
+}
 function legacyCharsFromRanks(){
   if(!store.onboardingComplete) return [];
   const out = [];
@@ -52627,6 +52689,7 @@ function wipeLocalProgressAndSettings(){
   store.bigTestPassed = false;
   store.bigTest450Passed = false;
   store.bigTest500Passed = false;
+  store.novaBeaten = false; store.sheriffMoved324 = true;   /* build 324 */
   store.bestTestStreak = 0;
   store.weekStats = null; store.prevWeekStats = null;   /* build 324 */
   store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.retakenQuestions = 0; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
@@ -53822,7 +53885,7 @@ function mergeLeavingAccount(src, note){
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
   });
-  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved"]
+  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324"]
     .forEach(k => { if(src[k] === true) store[k] = true; });
   if(src.mysteryColorsFound && store.mysteryColorsFound){
     Object.keys(src.mysteryColorsFound).forEach(c => { if(src.mysteryColorsFound[c]) store.mysteryColorsFound[c] = true; });
@@ -54244,7 +54307,7 @@ function mergeSameAccount(dst, src){
   /* when each badge was last clean (build 320, b320g): the newer time,
      badge by badge - cleaned on either device is cleaned */
   if(dst.badgeCleanedAt || src.badgeCleanedAt) maxMap("badgeCleanedAt");
-  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved",
+  ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324",
    "starfallKept", "onboardingComplete", "fullTestsSeeded", "koiRevoked295"].forEach(k => orInto(dst, k, src[k]));
   if(src.mysteryColorsFound && typeof src.mysteryColorsFound === "object") orMap("mysteryColorsFound");
   /* this week's board: only where both copies are on the same week */
@@ -58123,11 +58186,9 @@ function settleWeeklyWin(){
   if(rank >= 1 && rank <= 3){
     const before = store.weeklyTop3 || 0;
     store.weeklyTop3 = before + 1;
-    /* Announced like the Champion: queued for the next results screen,
-       which is where every other character is handed over. */
-    if(before < 3 && store.weeklyTop3 >= 3){
-      store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== "poseidon").concat(["poseidon"]);
-    }
+    /* (A third podium handed over the Sheriff until build 324, which moved
+       it to beating Nova in a Virtual Room - "That's gonna be the
+       sheriff's new challenge now". Still counted.) */
   }
   saveStore();
   return won;
@@ -79631,7 +79692,9 @@ function novaHelloLine(fromIntro){
     : "Hello again, " + n + ". It’s Nova. I’ve added you as a friend, so you’ll find me here in your chats now. I’ll message you when there’s news, when you rank up, and now and then with a tip. You can message me too, and I’ll answer when I’m around.";
 }
 function novaChallengeLine(){
-  return "I’m back on my feet, " + novaName() + ", and I’m available to challenge now. Open a Virtual Room and invite me, and we’ll race. Beat me and you’ll unlock the Sheriff.";
+  /* says what the Virtual Room builder built (build 324, b324v2): any of
+     the three games, from the lobby's Invite, and the Sheriff for a win */
+  return "I’m back on my feet, " + novaName() + ", and I’m available to challenge now. Open a Virtual Room, tap Invite and you’ll find me at the top. Race, Tug of War or Battle, your pick. Beat me and the Sheriff is yours. Fair warning: I don’t miss much.";
 }
 
 function isNovaChatCode(code){ return code === "DM-NOVA"; }
@@ -79972,7 +80035,7 @@ function novaReplyFor(raw){
     return "The Calendar tab has the next test date and every class day. When your instructor gives out what’s on it, I’ll pass the topics on here, usually on a Sunday.";
   if(has(/ (virtual room|vr|race|challenge|sheriff|battle|duel|versus|vs|play you|fight) /))
     return NOVA_VR_READY
-      ? "I’m always up for a race. Open a Virtual Room and invite me. Beat me and you’ll unlock the Sheriff."
+      ? "I’m always up for a match. Open a Virtual Room, tap Invite and pick me: Race, Tug of War or Battle. Beat me and you’ll unlock the Sheriff."
       : "A Virtual Room is a race against your classmates. Open one from Start Studying and invite your friends.";
   if(has(/ (ranks?|rank up|supernova|bronze|silver|gold|platinum|sapphire|amethyst|promot\w*) /))
     return "The ranks go Bronze, Silver, Gold, Platinum, Sapphire, Amethyst and Supernova. Each asks for a level and a number of badges. " + rankNow
@@ -80903,6 +80966,8 @@ function startVroomPresence(){
       patch["participants." + vroomMyKey + ".seen"] = Date.now();
       patch["participants." + vroomMyKey + ".name"] = store.firstName || "Anonymous";
       patch["participants." + vroomMyKey + ".avatarChar"] = store.avatarChar || "ninja";
+      /* and Nova's, if this device brought him (build 324) */
+      try{ novaVrPresencePatch(patch); }catch(e){}
       fbDb.collection("vrooms").doc(vroomCode).update(patch).catch(() => {});
     }catch(e){}
   }, PRESENCE_BEAT_MS);
@@ -101292,7 +101357,8 @@ let vroomIsHost = false;
    is not decoration: two people whose joinedAt collides must not end up
    with two devices each believing it is in charge. */
 function vroomHostKeyOf(participants){
-  const ks = Object.keys(participants || {});
+  /* Nova is never the host (build 324): he has no device of his own. */
+  const ks = Object.keys(participants || {}).filter(k => k !== "nova");
   if(!ks.length) return null;
   ks.sort((a, b) =>
     (((participants[a] || {}).joinedAt || 0) - ((participants[b] || {}).joinedAt || 0))
@@ -101317,6 +101383,8 @@ function syncVroomHost(data){
      out must not carry a stale idea of whether it is listed. */
   if(data && typeof data.open === "boolean") vroomIsOpen = data.open;
   if(vroomCode && vroomMyKey && !vroomBeatTimer) startVroomPresence();
+  /* Nova left behind by a host whose phone died (build 324) */
+  if(vroomIsHost && typeof novaVrOrphanCheck === "function"){ try{ novaVrOrphanCheck(data); }catch(e){} }
   return vroomIsHost;
 }
 
@@ -101363,16 +101431,21 @@ function leaveVirtualRoom(){
          towards a rope that nobody is pulling. */
       patch["tug.progress." + myKey] = gone;
       patch["tug.teams." + myKey] = gone;
+      /* NOVA GOES WITH WHOEVER BROUGHT HIM (build 324): he forfeits, and
+         the match carries on for everybody else. */
+      let withNova = false;
+      try{ withNova = novaVrLeavePatch(patch, code); }catch(e){}
       /* WHO left, so the others can be told. A field rather than a diff
          of successive snapshots: snapshots can arrive out of order or
          coalesce, and a banner that depends on catching the exact
          moment between two of them is a banner that sometimes does not
          appear. */
-      patch.lastLeave = { name: myName, key: myKey, at: Date.now() };
+      patch.lastLeave = { name: withNova ? myName + " and Nova" : myName, key: myKey, at: Date.now() };
       fbDb.collection("vrooms").doc(code).update(patch).catch(() => {});
     }catch(e){}
   }
   clearInterval(vroomBeatTimer); vroomBeatTimer = null;
+  try{ novaVrStop(); }catch(e){}
   vroomCode = null;
   vroomMyKey = null;
   vroomIsHost = false;
@@ -101619,6 +101692,8 @@ const VROOM_GAME_NAME = { race: "Race", tug: "Tug of War", battle: "Battle" };
    whole published entry, keyed by the participant key (which IS the
    public id, so the card's friend state and "this is you" both work). */
 function vroomPersonEntry(key, p){
+  /* Nova's own card, the one his chat opens (build 324) */
+  if(key === "nova" || (p && p.nova)) return { pub: "nova", nova: true, firstName: "Nova", banner: "titan_rank", avatarChar: "nova" };
   return Object.assign({}, p || {}, { pub: key, firstName: (p && p.name) || "Classmate" });
 }
 function buildVroomModeArt(key){
@@ -103639,6 +103714,8 @@ function showTugResult(d){
        first place, a loss or a draw is a match. */
     const others = Object.keys(teams).filter(k => k !== vroomMyKey);
     try{ recordVroomOutcome(vroomCode, won ? [vroomMyKey].concat(others) : others.concat([vroomMyKey]), vroomMyKey, d.startAt); }catch(e){}
+    /* Beat Nova? (build 324) */
+    try{ novaVrAfterMatch(d, { delay: 1400 }); }catch(e){}
   }
   const xpCard = document.createElement("div");
   xpCard.className = "tug-xp" + (won ? " is-won" : drawn ? " is-draw" : " is-lost");
@@ -104524,6 +104601,8 @@ function showBattleResult(d){
     const others = Object.keys(battleTeams(d)).filter(k => k !== vroomMyKey);
     try{ recordVroomOutcome(vroomCode, won ? [vroomMyKey].concat(others) : others.concat([vroomMyKey]), vroomMyKey, d.startAt); }catch(e){}
     saveStore();
+    /* Beat Nova? (build 324) */
+    try{ novaVrAfterMatch(d, { delay: 1400 }); }catch(e){}
   }
   const xpCard = document.createElement("div");
   xpCard.className = "tug-xp" + (won ? " is-won" : drawn ? " is-draw" : " is-lost");
@@ -104592,6 +104671,559 @@ function showBattleResult(d){
   panel.appendChild(exits);
   stage.replaceChildren(panel);
   toTop();
+}
+
+/* ================= NOVA IN A VIRTUAL ROOM (build 324, b324v2) =================
+   Madison: "If you want to, you can now invite him to virtual rooms, but he
+   will be super hard to beat ... he would need to answer questions right
+   within like 4 seconds and almost every time make a 95-100. You'd have to
+   really be locked in to beat him ... That's gonna be the sheriff's new
+   challenge now, is beating nova in a virtual rooms match. Can be any of
+   them ... He's invitable like anyone else now and can join. When he joins
+   make him delay the ready up. Like I said make him extremely hard but
+   still beatable."
+
+   HE IS A PARTICIPANT LIKE ANY OTHER, written by ONE device. The host who
+   invites him writes `participants.nova` (and, in a match, his progress)
+   through exactly the field paths a real player's own client writes - so
+   every other device in the room, this build or older, draws him as a
+   player and every rule the room already has (ready-up, racers, teams,
+   presence, finishing) applies to him unchanged. The key is fixed, so a
+   room can never hold two of him. `by` names the device that drives him,
+   and only that device ever writes for him.
+
+   THE HOST LEAVING. A host who leaves takes him along in the same write
+   (leaveVirtualRoom): he forfeits, the leave banner names them both, and
+   the match carries on for everybody else. A host whose phone dies writes
+   nothing - but his presence is stamped by that phone's own beat, so he
+   goes stale with it: every gate that already ignores a gone player
+   (the finale's count, Tug of War's and Battle's forfeit) ignores him, and
+   the next host removes him outright (novaVrOrphanCheck). A forfeit never
+   hands over the Sheriff: in a Race he has to have finished, in a team
+   game he has to still be there.
+
+   DIFFICULTY (novaVrPlan), from one seeded generator per match - the room
+   code and the shared start instant - so the host's simulation is the same
+   every time it is asked and can be checked. Each match he is "on" (85%:
+   0.3-2.8% of questions missed) or having an off day (15%: 3.5-7.5%); the
+   misses are that share of the bank, rounded by chance and placed at
+   random. Over many matches that is ~97.9% right, and 90% of 30- or
+   50-question runs end at 95% or better. Every answer takes 2-4 seconds
+   (the mean of three draws, so most are near 3s; a miss hesitates, 2.6-4s).
+   What it takes to beat him, measured by tools' simulation of each mode's
+   own rules (see the report for the tables):
+     Race - ranked by the room's XP, then time. Miss FEWER than he does:
+     at the same number of misses his speed wins the tie. A 99%-accurate
+     student wins about half of 30-question races; at 95% about one in
+     five; at 90% about one in twenty.
+     Tug of War and Battle - throughput. He reaches the next question every
+     ~4.5s (Tug) / ~5s (Battle), so to beat him you answer in about three
+     seconds AND miss less: 98% at 3s wins about half; 97% at 4s about one
+     in thirty.
+   He plays each mode by its own rules: Tug's read-in and pauses and the
+   pull for time left; Battle's hits, streak hits and powers (seeded; he
+   uses one about a second after it lands), and a freeze or flip aimed at
+   him slows him as it would a player. */
+const NOVA_VR_KEY = "nova";
+const NOVA_VR_MS_MIN = 2000, NOVA_VR_MS_MAX = 4000;
+const NOVA_VR_OFF_DAY = 0.15;
+/* A hook for the gate: every one of his delays is multiplied by this.
+   Nothing in the app changes it. */
+var novaVrTimeScale = 1;
+function novaVrRng(seed){
+  let a = (seed >>> 0) || 1;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function novaVrSeed(code, startAt){
+  const s = String(code || "") + "@" + String(startAt || 0);
+  let h = 2166136261;
+  for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+/* His whole match, decided up front: which questions he gets right and how
+   long each takes him. */
+function novaVrPlan(seed, n){
+  n = Math.max(0, Math.floor(Number(n) || 0));
+  const r = novaVrRng(seed);
+  const off = r() < NOVA_VR_OFF_DAY;
+  const rate = off ? 0.035 + 0.04 * r() : 0.003 + 0.025 * r();
+  const misses = Math.min(n, Math.floor(n * rate + r()));
+  const idx = []; for(let i = 0; i < n; i++) idx.push(i);
+  for(let i = n - 1; i > 0; i--){ const j = Math.floor(r() * (i + 1)); const t = idx[i]; idx[i] = idx[j]; idx[j] = t; }
+  const missSet = new Set(idx.slice(0, misses));
+  const ok = [], ms = [];
+  for(let i = 0; i < n; i++){
+    const miss = missSet.has(i);
+    const a = (r() + r() + r()) / 3;
+    ok.push(!miss);
+    ms.push(Math.round(miss ? 2600 + 1400 * a : NOVA_VR_MS_MIN + (NOVA_VR_MS_MAX - NOVA_VR_MS_MIN) * a));
+  }
+  return { seed: seed, n: n, off: off, rate: rate, misses: misses, ok: ok, ms: ms,
+           right: n - misses, pct: n ? Math.round((n - misses) / n * 100) : 0, powers: r };
+}
+/* The entry a player's client writes on joining, his version. */
+function novaVrEntry(){
+  let units = 16; try{ units = topicsIn(QUESTIONS).length || units; }catch(e){}
+  const now = Date.now();
+  return { name: "Nova", avatarChar: "nova", nova: true, by: vroomMyKey || null,
+           level: 80, badges: units, hundos: 0, xp: 0, tests: 0, correct: 0, mystery: 0,
+           banner: "titan_rank", accent: "titan", rankFloor: TIER_ORDER_FULL.length,
+           joinedAt: now, seen: now, progress: 0, finished: false, score: null, elapsedMs: null,
+           ready: false, prep: false };
+}
+function isNovaVrEntry(key, p){ return key === NOVA_VR_KEY || !!(p && p.nova); }
+/* The question bank a room plays, built the way every player builds it. */
+function novaVrRoomPool(data){
+  const keep = { u: cfg.units, v: cfg.versions, s: cfg.source };
+  try{
+    cfg.units = (data && data.units) || []; cfg.versions = roomVersionsOf(data || {}); cfg.source = "all";
+    return poolNow();
+  } finally { cfg.units = keep.u; cfg.versions = keep.v; cfg.source = keep.s; }
+}
+
+/* The questions in the order every player gets them, per game - the same
+   calls beginVirtualRoomTest, beginTugMatch and beginBattleMatch make. */
+function novaVrMatchPoolFor(d){
+  const game = d && d.game;
+  if(game === "battle"){
+    const keep = { u: cfg.units, v: cfg.versions, s: cfg.source };
+    try{ cfg.units = d.units || []; cfg.versions = roomVersionsOf(d); cfg.source = "all"; return battleBuildPool(d); }
+    finally { cfg.units = keep.u; cfg.versions = keep.v; cfg.source = keep.s; }
+  }
+  let pool = shuffleSeeded(novaVrRoomPool(d).slice(), (d && d.startAt) || 1);
+  if(game === "tug"){
+    const asked = Number(d.count) || Number((d.tug || {}).count) || 0;
+    if(asked > 0 && asked < pool.length) pool = pool.slice(0, asked);
+  } else if(Number(d && d.count) > 0) pool = pool.slice(0, Number(d.count));
+  return pool;
+}
+let novaVr = null;
+function novaVrDriving(code){ return !!(novaVr && novaVr.code && novaVr.code === (code || vroomCode)); }
+function novaVrInRoom(data){ return !!(data && data.participants && data.participants[NOVA_VR_KEY]); }
+
+/* INVITING HIM. From the lobby's own invite sheet, host only (the sheet is
+   only ever the host's). He is in the room the moment the write lands. */
+function novaVrInvite(code){
+  if(!fbDb || !code || code !== vroomCode || !vroomMyKey){ showToast("Lost connection — try again in a moment."); return false; }
+  if(!vroomIsHost){ showToast("Only the host can invite Nova."); return false; }
+  const live = (vroomLastDoc && vroomLastDoc.code === code && vroomLastDoc.data) ? vroomLastDoc.data : null;
+  const here = live && live.participants && live.participants[NOVA_VR_KEY];
+  if(here && (presentParticipants({ nova: here }) || {}).nova){ showToast("Nova is already in this room."); return false; }
+  const entry = novaVrEntry();
+  fbDb.collection("vrooms").doc(code).update({ ["participants." + NOVA_VR_KEY]: entry }).catch(() => {});
+  if(vroomLastDoc && vroomLastDoc.code === code && vroomLastDoc.data){
+    vroomLastDoc.data.participants = Object.assign({}, vroomLastDoc.data.participants || {}, { [NOVA_VR_KEY]: entry });
+  }
+  try{ liveVroomParticipants = Object.assign({}, liveVroomParticipants || {}, { [NOVA_VR_KEY]: entry }); }catch(e){}
+  novaVrDrive(code);
+  return true;
+}
+
+/* His row in the lobby's invite sheet, above the friends: his face, what
+   he is, and Invite - or "In room" while he is in it. */
+function novaVrHere(code){
+  const d = (vroomLastDoc && vroomLastDoc.code === code) ? vroomLastDoc.data : null;
+  const p = (d && d.participants && d.participants[NOVA_VR_KEY]) || (code === vroomCode && liveVroomParticipants && liveVroomParticipants[NOVA_VR_KEY]);
+  return !!(p && (presentParticipants({ nova: p }) || {}).nova);
+}
+function buildNovaInviteRow(roomCode){
+  if(typeof NOVA_VR_READY !== "undefined" && !NOVA_VR_READY) return null;
+  const row = document.createElement("div");
+  row.className = "friend-row is-nova";
+  const art = document.createElement("div");
+  art.className = "friend-row-art is-nova";
+  art.appendChild(novaAvatarSpan());
+  const text = document.createElement("div");
+  text.className = "friend-row-text";
+  const nm = document.createElement("p");
+  nm.className = "friend-row-name"; nm.textContent = "Nova";
+  const line = document.createElement("p");
+  line.className = "nova-invite-line";
+  const rk = document.createElement("span");
+  rk.className = "vroom-row-rank"; rk.textContent = RANK_DISPLAY_NAME.titan; rk.style.color = RANK_COLOR.titan;
+  line.append(rk, document.createTextNode(" \u00b7 Instructor"));
+  text.append(nm, line);
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "next friend-act";
+  const paint = () => {
+    const here = novaVrHere(roomCode);
+    b.textContent = here ? "In room" : "Invite";
+    b.disabled = here;
+  };
+  paint();
+  b.addEventListener("click", () => {
+    if(b.disabled) return;
+    if(novaVrInvite(roomCode)){ b.textContent = "In room"; b.disabled = true; }
+  });
+  row.append(art, text, b);
+  return row;
+}
+
+/* THE DRIVER: its own listener on the room (the SDK shares one watch per
+   document, so this costs no reads of its own) and a clock. It lives as
+   long as this device is in the room and he is in it. */
+function novaVrDrive(code){
+  if(novaVrDriving(code)) return;
+  novaVrStop();
+  if(!fbDb || !code) return;
+  const me = { code: code, data: null, unsub: null, timer: null, readyAt: 0, lobbySent: "", match: null, judged: null };
+  novaVr = me;
+  try{
+    me.unsub = onSnapshotResilient(fbDb.collection("vrooms").doc(code), snap => {
+      if(novaVr !== me) return;
+      if(!snap.exists){ novaVrStop(); return; }
+      me.data = snap.data();
+      novaVrTick();
+    });
+  }catch(e){}
+  me.timer = setInterval(novaVrTick, 200);
+}
+function novaVrStop(){
+  if(!novaVr) return;
+  try{ if(novaVr.unsub) novaVr.unsub(); }catch(e){}
+  clearInterval(novaVr.timer);
+  novaVr = null;
+}
+function novaVrWrite(patch){
+  if(!novaVr || !fbDb) return;
+  try{ fbDb.collection("vrooms").doc(novaVr.code).update(patch).catch(() => {}); }catch(e){}
+}
+function novaVrTick(){
+  const v = novaVr;
+  if(!v) return;
+  if(v.code !== vroomCode){ novaVrStop(); return; }
+  const d = v.data;
+  if(!d) return;
+  const nv = (d.participants || {})[NOVA_VR_KEY];
+  /* He left (or was removed): nothing to drive. */
+  if(!nv){ novaVrStop(); return; }
+  /* ONE DRIVER: whoever invited him, and nobody else. */
+  if(nv.by && nv.by !== vroomMyKey){ novaVrStop(); return; }
+  if(!d.status || d.status === "waiting") novaVrLobbyTick(v, d, nv);
+  else novaVrMatchTick(v, d, nv);
+}
+
+/* ---- THE LOBBY: HE TAKES HIS TIME READYING UP ----
+   "When he joins make him delay the ready up." Not ready while the room
+   cannot start (no game, no units, nobody to play), exactly like a player
+   whose Ready up is greyed; once it can, he spends a few seconds "getting
+   ready" (shown on his row on every device) and then readies. */
+function novaVrReadyDelay(){ return Math.round((3200 + Math.random() * 3300) * novaVrTimeScale); }
+function novaVrLobbyTick(v, d, nv){
+  v.match = null;
+  const parts = presentParticipants(d.participants || {}) || {};
+  const totalN = Object.keys(parts).length;
+  const canReady = (d.units || []).length > 0 && !!d.game && totalN > 1;
+  const now = Date.now();
+  let want;
+  if(!canReady){ v.readyAt = 0; want = "idle"; }
+  else if(nv.ready){ v.readyAt = 0; want = "ready"; }
+  else {
+    if(!v.readyAt) v.readyAt = now + novaVrReadyDelay();
+    want = now >= v.readyAt ? "ready" : "prep";
+  }
+  const sig = want + "|" + (d.startAt || 0);
+  if(v.lobbySent === sig) return;
+  v.lobbySent = sig;
+  const k = "participants." + NOVA_VR_KEY + ".";
+  if(want === "idle"){ if(nv.ready || nv.prep) novaVrWrite({ [k + "ready"]: false, [k + "prep"]: false }); return; }
+  if(want === "prep"){ if(!nv.prep) novaVrWrite({ [k + "prep"]: true }); return; }
+  if(!nv.ready || nv.prep){ novaVrWrite({ [k + "ready"]: true, [k + "prep"]: false, [k + "seen"]: now }); v.readyAt = 0; }
+}
+
+/* ---- A MATCH ---- */
+function novaVrMatchTick(v, d, nv){
+  const game = d.game === "tug" ? "tug" : d.game === "battle" ? "battle" : "race";
+  const key = (d.startAt || 0) + ":" + game;
+  if(!v.match || v.match.key !== key){
+    v.lobbySent = ""; v.readyAt = 0;
+    const m = { key: key, game: game, done: true };
+    v.match = m;
+    /* In it only if the host named him at the start (racers / teams) - a
+       room he joined mid-match is the next match's. */
+    const inIt = game === "race"
+      ? (!Array.isArray(d.racers) || d.racers.indexOf(NOVA_VR_KEY) >= 0)
+      : !!(((d[game] || {}).teams || {})[NOVA_VR_KEY]);
+    const over = game === "race" ? (nv.finished === true && nv.ready !== true) : !!(d[game] || {}).over;
+    if(!inIt || over || d.status === "finished") return;
+    m.done = false;
+    m.startAt = Number(d.startAt) || Date.now();
+    const pool = novaVrMatchPoolFor(d);
+    m.pool = pool;
+    m.plan = novaVrPlan(novaVrSeed(v.code, d.startAt), pool.length);
+    m.pos = 0; m.correct = 0; m.pull = 0; m.streak = 0; m.sinceGrant = 0; m.held = null; m.useAt = 0;
+    m.shownAt = m.startAt; m.frozenUntil = 0; m.flippedUntil = 0; m.seenFx = new Set(); m.sent = "";
+    /* The ready is spent on this match, as every player's own client
+       spends theirs - and last match's race fields go with it. */
+    const k = "participants." + NOVA_VR_KEY + ".";
+    const reset = { [k + "ready"]: false, [k + "prep"]: false, [k + "seen"]: Date.now() };
+    if(game === "race") Object.assign(reset, { [k + "progress"]: 0, [k + "finished"]: false, [k + "score"]: null,
+      [k + "elapsedMs"]: null, [k + "xp"]: null, [k + "xpLines"]: null, [k + "revealDone"]: false });
+    if(game === "tug") reset["tug.progress." + NOVA_VR_KEY] = { pos: 0, correct: 0, pull: 0, done: false, at: Date.now() };
+    if(game === "battle") reset["battle.progress." + NOVA_VR_KEY] = { pos: 0, correct: 0, done: false, at: Date.now() };
+    novaVrWrite(reset);
+  }
+  const m = v.match;
+  if(m.done) return;
+  if(m.game === "race") novaVrRaceStep(m, d);
+  else if(m.game === "tug") novaVrTugStep(m, d);
+  else novaVrBattleStep(m, d);
+}
+function novaVrMs(m, i){ return Math.round(m.plan.ms[i] * novaVrTimeScale); }
+
+/* A RACE: the room's own 45-second clock never bites (he is done in four),
+   each answer moves his marker, and the finish publishes what a finishing
+   player publishes - the run's XP worked out by computeRunXp from his
+   answers, the same function every player's own run goes through. */
+function novaVrRaceStep(m, d){
+  const n = m.pool.length;
+  const now = Date.now();
+  let t = m.shownAt, pos = m.pos;
+  while(pos < n && now >= t + novaVrMs(m, pos)){ t += novaVrMs(m, pos); pos++; }
+  if(pos === m.pos) return;
+  m.pos = pos; m.shownAt = t;
+  const k = "participants." + NOVA_VR_KEY + ".";
+  if(pos < n){
+    novaVrWrite({ [k + "progress"]: Math.round(pos / n * 100), [k + "seen"]: now });
+    return;
+  }
+  m.done = true;
+  const r = novaVrRaceResult(m, d);
+  novaVrWrite({ [k + "progress"]: 100, [k + "finished"]: true, [k + "revealDone"]: true,
+    [k + "score"]: r.pct, [k + "elapsedMs"]: r.elapsedMs, [k + "xp"]: r.xp, [k + "xpLines"]: r.lines,
+    [k + "totalScore"]: r.xp, [k + "seen"]: now });
+}
+/* His race as the room scores it: no personal bests, no badge. A unit is a
+   hundo only if the room took it whole and he missed nothing in it. */
+function novaVrRaceResult(m, d){
+  const n = m.pool.length, plan = m.plan;
+  const okList = plan.ok.slice(0, n);
+  const good = okList.filter(Boolean).length;
+  const elapsedMs = plan.ms.slice(0, n).reduce((s, x) => s + x, 0);
+  let hundos = 0, wholeUnits = 0;
+  ((d && d.units) || []).forEach(u => {
+    const inRun = m.pool.map((qi, i) => [qi, i]).filter(([qi]) => (QUESTIONS[qi].topic || "").trim() === u);
+    const total = QUESTIONS.filter(q => (q.topic || "").trim() === u && inWholeUnit(q)).length;
+    if(!inRun.length || inRun.length !== total) return;
+    wholeUnits++;
+    if(inRun.every(([, i]) => okList[i])) hundos++;
+  });
+  const run = computeRunXp({ good: good, answered: n, elapsedMs: elapsedMs, okList: okList,
+    hundos: hundos, wholeUnits: wholeUnits, timePRs: [], scorePRs: [], badgesPaid: [] });
+  const lines = (run.lines || []).map(l => ({ key: String(l.key || ""), label: String(l.label || ""), value: Number(l.value) || 0 }));
+  return { pct: n ? Math.round(good / n * 100) : 0, elapsedMs: elapsedMs, xp: Math.max(0, run.total || 0), lines: lines, good: good, hundos: hundos };
+}
+
+/* TUG OF WAR: his own walk through the bank, with the read-in, the
+   one-chance pull for the clock still left, and the pause after each
+   answer (longer after a miss, longest on a question with a bank note) -
+   everything tugSettleAnswer does for a player. */
+function novaVrTugStep(m, d){
+  const t = d.tug || {};
+  if(t.over){ m.done = true; return; }
+  const count = Number(t.count) || m.pool.length;
+  const now = Date.now();
+  let moved = false, lastAt = 0;
+  while(m.pos < count && m.pos < m.plan.n){
+    const ans = m.shownAt + novaVrMs(m, m.pos);
+    if(now < ans) break;
+    const qMs = tugQuestionMs(m.shownAt - m.startAt, count);
+    const ok = m.plan.ok[m.pos] && novaVrMs(m, m.pos) < qMs;
+    const usable = Math.max(1, qMs - TUG_ARM_MS);
+    const left = Math.max(0, m.shownAt + qMs - ans);
+    const speed = Math.max(0, Math.min(1, left / usable));
+    m.pull += ok ? TUG_PULL_BASE + TUG_PULL_SPEED * speed : TUG_PULL_MISS;
+    if(ok) m.correct += 1;
+    let note = false; try{ note = !!buildBankNote(QUESTIONS[m.pool[m.pos % m.pool.length]]); }catch(e){}
+    m.pos += 1;
+    m.shownAt = ans + Math.round((note ? 3500 : ok ? 1500 : 3000) * novaVrTimeScale);
+    moved = true; lastAt = ans;
+  }
+  if(!moved) return;
+  const done = m.pos >= count;
+  if(done) m.done = true;
+  novaVrWrite({ ["tug.progress." + NOVA_VR_KEY]: { pos: m.pos, correct: m.correct, pull: Math.round(m.pull * 1000) / 1000, done: done, at: lastAt || now },
+                ["participants." + NOVA_VR_KEY + ".seen"]: now });
+}
+
+/* BATTLE: a hit for every right answer (a heavier one on a streak of
+   three), a power every third right answer after question ten - drawn
+   from his own seeded generator - used about a second after it lands, and
+   a freeze or a flip aimed at him slowing him the way it slows a player. */
+function novaVrBattleStep(m, d){
+  const b = d.battle || {};
+  if(b.over){ m.done = true; return; }
+  let rep = null; try{ rep = battleReplay(d); }catch(e){}
+  if(rep && rep.downed){ m.done = true; return; }
+  (rep ? rep.events : []).forEach(ev => {
+    if(ev.to !== NOVA_VR_KEY || m.seenFx.has(ev.id)) return;
+    m.seenFx.add(ev.id);
+    const at = Number(ev.at) || Date.now();
+    if(ev.kind === "freeze") m.frozenUntil = Math.max(m.frozenUntil, at + BATTLE_FREEZE_MS);
+    if(ev.kind === "flip") m.flippedUntil = Math.max(m.flippedUntil, at + BATTLE_FLIP_MS);
+  });
+  const count = m.pool.length;
+  const now = Date.now();
+  const mine = battleSideOf(d, NOVA_VR_KEY);
+  const log = [];
+  const entry = (at, o) => Object.assign({ id: NOVA_VR_KEY + "-" + at.toString(36) + "-" + (m.seq = (m.seq || 0) + 1),
+                                           at: at, from: NOVA_VR_KEY }, o);
+  if(m.held && m.useAt && now >= m.useAt){
+    const kind = m.held; m.held = null; m.useAt = 0;
+    if(kind === "freeze" || kind === "flip"){
+      const to = battleBestOf(d, battleOther(mine));
+      if(to) log.push(entry(now, { kind: kind, to: to }));
+    } else log.push(entry(now, { kind: kind }));
+  }
+  let moved = false;
+  while(m.pos < count){
+    let ans = m.shownAt + novaVrMs(m, m.pos) + (m.flippedUntil > m.shownAt ? Math.round(1500 * novaVrTimeScale) : 0);
+    if(ans < m.frozenUntil) ans = m.frozenUntil + Math.round(500 * novaVrTimeScale);
+    if(now < ans) break;
+    const ok = m.plan.ok[m.pos % m.plan.n] && novaVrMs(m, m.pos) < BATTLE_Q_MS;
+    m.pos += 1; moved = true;
+    if(ok){
+      m.correct += 1; m.streak += 1;
+      log.push(entry(ans, { kind: "hit", dmg: m.streak >= 3 ? BATTLE_STREAK_HIT : BATTLE_HIT }));
+      if(m.pos > BATTLE_ABILITY_FROM && !m.held){
+        m.sinceGrant += 1;
+        if(m.sinceGrant >= BATTLE_ABILITY_EVERY){
+          m.sinceGrant = 0;
+          const keys = Object.keys(BATTLE_ABILITIES);
+          m.held = keys[Math.floor(m.plan.powers() * keys.length)];
+          m.useAt = ans + Math.round(1000 * novaVrTimeScale);
+        }
+      }
+    } else m.streak = 0;
+    m.shownAt = ans + Math.round(BATTLE_PAUSE_MS * novaVrTimeScale);
+  }
+  if(!moved && !log.length) return;
+  const done = m.pos >= count;
+  const patch = { ["participants." + NOVA_VR_KEY + ".seen"]: now };
+  if(moved) patch["battle.progress." + NOVA_VR_KEY] = { pos: m.pos, correct: m.correct, done: done, at: now };
+  /* One entry per write: arrayUnion of a single value is what every player
+     writes, and what every fake of it in the gates understands. */
+  if(log.length) patch["battle.log"] = firebase.firestore.FieldValue.arrayUnion(log[0]);
+  novaVrWrite(patch);
+  log.slice(1).forEach(e => novaVrWrite({ "battle.log": firebase.firestore.FieldValue.arrayUnion(e) }));
+}
+
+/* HIS PRESENCE rides on the driving device's own beat, so it stops when that
+   device stops - which is what makes a host whose phone died take him out
+   of every gate along with themselves. */
+function novaVrPresencePatch(patch){
+  if(!novaVrDriving() || !novaVr.data || !novaVrInRoom(novaVr.data)) return patch;
+  const k = "participants." + NOVA_VR_KEY + ".";
+  patch[k + "seen"] = Date.now();
+  patch[k + "name"] = "Nova";
+  patch[k + "avatarChar"] = "nova";
+  return patch;
+}
+/* The host leaving takes him along, in the same write. */
+function novaVrLeavePatch(patch, code){
+  if(!novaVrDriving(code)) return false;
+  const gone = firebase.firestore.FieldValue.delete();
+  patch["participants." + NOVA_VR_KEY] = gone;
+  patch["tug.progress." + NOVA_VR_KEY] = gone;
+  patch["tug.teams." + NOVA_VR_KEY] = gone;
+  return true;
+}
+/* A HOST WHOSE PHONE DIED: whoever is host now takes him out of the room
+   (a forfeit) rather than leaving a player nobody is driving. Once per
+   stranded entry. */
+let novaVrOrphanDone = "";
+function novaVrOrphanCheck(data){
+  const p = data && data.participants && data.participants[NOVA_VR_KEY];
+  if(!p || !vroomIsHost || !vroomCode || !vroomMyKey || !fbDb) return;
+  if(!p.by || p.by === vroomMyKey) return;
+  const live = presentParticipants(data.participants || {}) || {};
+  if(live[p.by]) return;
+  const tag = vroomCode + ":" + (p.joinedAt || 0);
+  if(novaVrOrphanDone === tag) return;
+  novaVrOrphanDone = tag;
+  const gone = firebase.firestore.FieldValue.delete();
+  try{
+    fbDb.collection("vrooms").doc(vroomCode).update({
+      ["participants." + NOVA_VR_KEY]: gone,
+      ["tug.progress." + NOVA_VR_KEY]: gone,
+      ["tug.teams." + NOVA_VR_KEY]: gone,
+      lastLeave: { name: "Nova", key: NOVA_VR_KEY, at: Date.now() }
+    }).catch(() => { novaVrOrphanDone = ""; });
+  }catch(e){ novaVrOrphanDone = ""; }
+}
+
+/* ---- DID YOU BEAT HIM ----
+   Finishing ahead of him under the mode's own rule. A Race: more of the
+   room's XP, or the same XP in less time (exactly level is a draw, not a
+   win). Tug of War and Battle: your side won and he was on the other one
+   (on your side there is nobody to beat). A draw is not a win, and nor is
+   a forfeit - he has to have finished the race, or still be in the room.
+   Returns "won", "lost", "draw", "team", or null when he was not in it. */
+function novaVrOutcome(data, myKey){
+  if(!data || !myKey || myKey === NOVA_VR_KEY) return null;
+  const parts = data.participants || {};
+  const nv = parts[NOVA_VR_KEY];
+  if(!nv) return null;
+  if(data.game === "tug" || data.game === "battle"){
+    const box = data[data.game] || {};
+    const teams = box.teams || {};
+    if(!teams[NOVA_VR_KEY] || !teams[myKey] || !box.over) return null;
+    if(!(presentParticipants(parts) || {})[NOVA_VR_KEY]) return null;
+    if(teams[NOVA_VR_KEY] === teams[myKey]) return "team";
+    if(!box.winner) return "draw";
+    return box.winner === teams[myKey] ? "won" : "lost";
+  }
+  const racers = vroomRacersOf(data);
+  const me = racers[myKey];
+  if(!racers[NOVA_VR_KEY] || !me || !nv.finished || !me.finished) return null;
+  const xp = p => p.xp != null ? Number(p.xp) || 0 : Number(p.totalScore) || 0;
+  const a = xp(me), b = xp(nv);
+  if(a !== b) return a > b ? "won" : "lost";
+  const ta = Number(me.elapsedMs) || 0, tb = Number(nv.elapsedMs) || 0;
+  return ta < tb ? "won" : ta > tb ? "lost" : "draw";
+}
+/* What he says afterwards - one message per match, through his own DM. */
+function novaVrMatchLine(out, earned, game){
+  const n = novaName();
+  const mode = game === "tug" ? "Tug of War" : game === "battle" ? "Battle" : "race";
+  if(out === "won" && earned) return "Well, " + n + ". You beat me fair and square, and that doesn’t happen often. The Sheriff is yours. Wear the badge well.";
+  if(out === "won") return "You got me again, " + n + ". I’m going to need more practice. Invite me back any time.";
+  if(out === "draw") return "A dead heat, " + n + ". Neither of us gave an inch. Next time one of us won’t be so lucky.";
+  return "Good " + mode + ", " + n + ". I had the edge today, but you made me work for it. Invite me any time you want another go.";
+}
+/* Called once by each results screen (Race standings, Tug of War, Battle):
+   the Sheriff through the ordinary unlock card, then his message. */
+let novaVrJudgedMatch = "";
+function novaVrAfterMatch(data, opts){
+  opts = opts || {};
+  let out = null;
+  try{ out = novaVrOutcome(data, vroomMyKey); }catch(e){ out = null; }
+  if(!out || out === "team") return null;
+  const matchId = (vroomCode || "room") + "@" + ((data && data.startAt) || 0);
+  if(novaVrJudgedMatch === matchId) return out;
+  novaVrJudgedMatch = matchId;
+  let earned = false;
+  if(out === "won"){
+    const was = isLockedCharacter("poseidon");
+    if(store.novaBeaten !== true){ store.novaBeaten = true; saveStore(); }
+    earned = was && !isLockedCharacter("poseidon");
+  }
+  const game = (data && data.game) || "race";
+  const say = () => { try{ novaSendDM(novaVrMatchLine(out, earned, game), { id: "vr:" + matchId, kind: "vr" }); }catch(e){} };
+  const lead = Math.max(0, Number(opts.delay) || 0);
+  if(earned && !theme.muteBanners && typeof playUnlockSpotlight === "function"){
+    setTimeout(() => {
+      try{ playUnlockSpotlight(characterUnlockItem("poseidon"), 1, 1, () => setTimeout(say, 700)); }
+      catch(e){ say(); }
+    }, lead);
+  } else setTimeout(say, lead + 2500);
+  return out;
 }
 
 function joinVirtualRoomLobby(code){
@@ -104689,6 +105321,11 @@ function openInviteFriendsSheet(roomCode){
     const ids = friendPublicIds();
     const people = ids.map(id => rows[id] || { pub: id });
     body.replaceChildren();
+    /* NOVA FIRST, LIKE A FRIEND (build 324): "He's invitable like anyone
+       else now and can join." He is on every account's friends list in the
+       chat, and here he is the row above them. */
+    const novaRow = buildNovaInviteRow(roomCode);
+    if(novaRow){ const nl = document.createElement("div"); nl.className = "invite-list invite-list-nova"; nl.appendChild(novaRow); body.appendChild(nl); }
 
     if(!people.length){
       const none = document.createElement("p");
@@ -105420,7 +106057,7 @@ function showVirtualRoomLobby(){
        button, the auto-start gate, the start branch - still runs on
        every snapshot, because those are cheap and some of them are
        what make the room start at all. */
-    const shape = entries.map(([key, p]) => [key, p.name, p.ready ? 1 : 0,
+    const shape = entries.map(([key, p]) => [key, p.name, p.ready ? 1 : p.prep ? "p" : 0,
       p.level || 0, p.badges || 0, p.avatarChar || "", p.banner || ""].join("~")).join("|")
       + "||" + (data.units || []).join(",") + "|" + JSON.stringify(roomVersionsOf(data)) + "|" + (data.timeLimit || 0)
       /* `count`, the field Match settings writes. This read
@@ -105510,11 +106147,19 @@ function showVirtualRoomLobby(){
       }
       const lvlEl = document.createElement("span");
       lvlEl.textContent = "Level " + (p.level || 1);
-      sub.appendChild(lvlEl);
+      /* Nova is his rank and nothing else (build 324): an instructor has no
+         level, and "Supernova" alone is the one line that fits beside his
+         Readying badge without the row growing a line. */
+      if(isNovaVrEntry(key, p)){ while(sub.lastChild && sub.lastChild.nodeType === 3) sub.lastChild.remove(); }
+      else sub.appendChild(lvlEl);
       nameWrap.appendChild(sub);
       const badge = document.createElement("span");
-      badge.className = "vroom-ready-badge" + (p.ready ? " is-ready" : "");
-      badge.textContent = p.ready ? "Ready" : "Not ready";
+      /* "GETTING READY" (build 324): "When he joins make him delay the
+         ready up." His few seconds are said on his row on every device. */
+      const prepping = !p.ready && !!p.prep;
+      badge.className = "vroom-ready-badge" + (p.ready ? " is-ready" : "") + (prepping ? " is-prep" : "");
+      badge.textContent = p.ready ? "Ready" : prepping ? "Readying" : "Not ready";
+      if(isNovaVrEntry(key, p)) row.classList.add("is-nova");
       /* ---- AND TAPPING ONE OPENS THE SAME CARD ----
          "If you click their profile while in a lobby, or after a test
          in the results screen, or click them on the leaderboard, that
@@ -105654,6 +106299,8 @@ function showVirtualRoomLobby(){
               ? (data.game === "battle" ? "Battle" : "Tug of War") + " needs even teams \u2014 waiting for one more player"
             : totalN < 2
               ? "Waiting for someone else to join\u2026"
+              : (entries.length && entries.every(([k, p]) => p.ready || (isNovaVrEntry(k, p) && p.prep)))
+                ? "Nova is getting ready\u2026"
               : "Waiting for everyone to ready up\u2026";
       }
       /* The actual fix for "the start test for the lobby creator was
@@ -107894,7 +108541,11 @@ function playVroomRaceCutscene(ranked){
     });
     if(!quiet) setTimeout(() => { if(sorted[0] && sorted[0].r.key === me) celebrate(["#FFD37A", "#F5C542", "#FFF1B8"]); }, 2700);
   });
-  at(t + (quiet ? 0 : 3600), () => overlay.classList.add("is-done"));
+  at(t + (quiet ? 0 : 3600), () => {
+    overlay.classList.add("is-done");
+    /* Beat Nova? The Sheriff's card, then his message (build 324). */
+    try{ if(lastFinaleData) novaVrAfterMatch(lastFinaleData, { delay: quiet ? 300 : 900 }); }catch(e){}
+  });
 }
 
 /* ---- ONE REVIEW BLOCK, AND TWO SCREENS NEED IT ----
