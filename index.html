@@ -3095,6 +3095,11 @@
      XP; studying cards is neither, so it is a soft violet. */
   .wrap:has(.fc-screen) .meter .tick.clean{ background:#A694FF; }
   .wrap:has(.fc-screen) .meter .tick.now{ background:#CFC4FF; box-shadow:0 0 4px rgba(166,148,255,.6); }
+  /* A QUALIFIER'S BLOCKS (build 324) take the Qualifier's orange, the way
+     flashcards take the Briefing's violet: answered ones a step back, the
+     one you are on full and lit. See drawMeter(). */
+  .meter.is-qualifier .tick.done{ background:#FF9A3C; opacity:.62; }
+  .meter.is-qualifier .tick.now{ background:#FFB066; box-shadow:0 0 4px rgba(255,154,60,.6); }
   .panel.fc-screen{ background:none; border:none; box-shadow:none; padding:0; }
   /* ---- MOVING THROUGH THE DECK (build 306) ----
      "Ensure you can swipe to the next flash card but give it a nice
@@ -11057,7 +11062,7 @@
   .thx-row-chev{ font-size:1.25rem; color:var(--soft); opacity:.6; line-height:1; }
   .thx-chip{ display:inline-block; padding:.1rem .5rem; border-radius:999px; font-size:.68rem; font-weight:700;
     letter-spacing:.02em; white-space:nowrap; color:#CFE6FF; background:rgba(124,192,244,.14); border:1px solid rgba(124,192,244,.3); }
-  .thx-chip-exam{ color:#FFE2B8; background:rgba(242,179,94,.14); border-color:rgba(242,179,94,.32); }
+  .thx-chip-exam{ color:#FFDDBA; background:rgba(255,154,60,.14); border-color:rgba(255,154,60,.34); }
   .thx-chip-vr{ color:#E6D4FF; background:rgba(168,85,247,.15); border-color:rgba(168,85,247,.34); }
   .thx-day{ margin:1.15rem 0 .5rem; font-size:.74rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--soft); }
   .thx-groups > .thx-day:first-child{ margin-top:.4rem; }
@@ -11167,6 +11172,8 @@
     border:1px solid rgba(255,255,255,.11); box-shadow:inset 0 1px 0 rgba(255,255,255,.12); }
   .ar-head.is-starred{ border-color:rgba(255,211,106,.28);
     background:radial-gradient(120% 160% at 0% 50%, rgba(255,211,106,.12), transparent 60%), rgba(26,31,38,.45); }
+  .ar-head.is-briefing{ border-color:rgba(166,148,255,.3);
+    background:radial-gradient(120% 160% at 0% 50%, rgba(166,148,255,.13), transparent 60%), rgba(26,31,38,.45); }
   .ar-head-icon{ flex:0 0 auto; width:2.4rem; height:2.4rem; display:grid; place-items:center; }
   .ar-head-icon svg{ width:85%; height:85%; }
   .ar-head-text{ min-width:0; }
@@ -15203,7 +15210,10 @@
   /* RED, app-wide - "red would be a better colour for drill ... ensure that
      change is made app wide". Gold read as the hundo tint beside it. */
   .modeicon-drill .modeiconpath{ stroke:#FF5A60; }
-  .modeicon-exam .modeiconpath{ stroke:#F5804D; }
+  /* The Qualifier's orange (build 324), moved off the old #F5804D toward
+     amber so it no longer sits a few degrees from Drill's coral; it is
+     what a Qualifier's progress blocks wear too (.meter.is-qualifier). */
+  .modeicon-exam .modeiconpath{ stroke:#FF9A3C; }
   .modeicon-game .modeiconpath{ fill:#C23B7A; stroke:none; }
   /* Virtual Room was the one mode icon left with no color at all,
      defaulting to plain grey/outline while every other mode has its
@@ -15226,7 +15236,9 @@
      correct answer. A book full of right answers is exactly what it
      is. Fixed rather than a theme stop, like the Virtual Room's blue
      beside it: the meaning does not change with the accent. */
-  .modeicon-review .modeiconpath{ stroke:#4ADE80; }
+  /* VIOLET NOW (build 324), the flashcards' own #A694FF - see the
+     Briefing's icon in modeIcon(). Green stays a right answer. */
+  .modeicon-review .modeiconpath{ stroke:#A694FF; }
   /* The Virtual Room's two ways in (build 287), coloured like the modes */
   .modeicon-host .modeiconpath{ stroke:#B48CFF; }
   .modeicon-join .modeiconpath{ stroke:#3FE3A8; }
@@ -15246,10 +15258,11 @@
   .modecard.locked .modeicon-vroom .modeiconpath{ stroke:var(--soft); }
   .modecard.locked .modeicon-vroom circle.modeiconpath{ fill:var(--soft); }
   .modeiconcheck{ stroke-width:2; }
+  .modeicon-exam .modeiconcheck{ stroke-width:2.6; }
   /* the solid parts of the Exam and Review marks (build 323) take their
      mode's colour as a fill, like the Virtual Room's heads */
-  .modeicon-exam .modeiconsolid{ fill:#F5804D; }
-  .modeicon-review .modeiconsolid{ fill:#4ADE80; }
+  .modeicon-exam .modeiconsolid{ fill:#FF9A3C; }
+  .modeicon-review .modeiconsolid{ fill:#A694FF; }
   .modecard.locked .modeiconsolid{ fill:var(--soft); }
   .modecard.locked .modeiconpath{ stroke:var(--soft); }
   .modecardtitle{
@@ -17247,7 +17260,8 @@
      The colours are the ones the Mode Select cards already use, so
      the icon means the same thing on both screens. */
   [data-layout="modern"] .modedisplay-top .modeicon-drill .modeiconpath{ stroke:#FF5A60; fill:none; }
-  [data-layout="modern"] .modedisplay-top .modeicon-exam .modeiconpath{ stroke:#F5804D; fill:none; }
+  [data-layout="modern"] .modedisplay-top .modeicon-exam .modeiconpath{ stroke:#FF9A3C; fill:none; }
+  [data-layout="modern"] .modedisplay-top .modeicon-review .modeiconpath{ stroke:#A694FF; fill:none; }
   [data-layout="modern"] .modedisplay-top .modeicon-game .modeiconpath{ fill:#C23B7A; stroke:none; }
   [data-layout="modern"] .modedisplay-top .modeicon-vroom .modeiconpath{ stroke:#4A9FE8; fill:none; }
   [data-layout="modern"] .modedisplay-top .modeicon-vroom circle.modeiconpath{ fill:#4A9FE8; }
@@ -23673,6 +23687,9 @@
   .sheet-summary-mode.vroom-summary-game{ justify-content:flex-start; }
   .sheet-summary-mode.vroom-summary-game .vroom-summary-icon{ width:1.15rem; height:1.15rem; }
   .sheet-summary-mode[data-mode="race"] .vroom-summary-icon{ color:#7CC0F4; }
+  /* A test's box: the mode's own mark before its name (build 324), sat on
+     the text's baseline rather than making the line a flex row. */
+  .sheet-summary-mode .sheet-summary-modeicon{ width:1.1em; height:1.1em; vertical-align:-.2em; margin-right:.4rem; }
   .sheet-summary-mode[data-mode="tug"] .vroom-summary-icon{ color:#F2B35E; }
   .sheet-summary-mode[data-mode="battle"] .vroom-summary-icon{ color:#FF7A7A; }
   .vroom-host-mode[data-mode].on .vroom-host-mode-art{ color:#fff; }
@@ -24526,10 +24543,10 @@
   }
   .rs-mode .modeicon{ width:1rem; height:1rem; }
   .rs-mode-drill{ --mode-c:#FF6B70; }
-  .rs-mode-exam{ --mode-c:#F7925F; }
+  .rs-mode-exam{ --mode-c:#FF9A3C; }
   .rs-mode-game{ --mode-c:#EE6FA8; }
   .rs-mode-vroom{ --mode-c:#7CC0F4; }
-  .rs-mode-review{ --mode-c:#4ADE80; }
+  .rs-mode-review{ --mode-c:#A694FF; }
   .rs-mode-src{ padding-left:.72rem; }
   /* The grade's face, not Georgia (build 315): its figures are old-style,
      so the "1" of "1 unit" sat at lowercase height on a phone. */
@@ -27234,10 +27251,10 @@
      Exam orange, Game magenta, Virtual Room blue - filled, so it reads
      as that mode's badge rather than a label in its colour. */
   .rs-mode-drill{ --mode-c:#FF6B70; }
-  .rs-mode-exam{ --mode-c:#F5804D; }
+  .rs-mode-exam{ --mode-c:#FF9A3C; }   /* build 324: the Qualifier's orange */
   .rs-mode-game{ --mode-c:#E0559A; }
   .rs-mode-vroom{ --mode-c:#4A9FE8; }
-  .rs-mode-review{ --mode-c:#4ADE80; }
+  .rs-mode-review{ --mode-c:#A694FF; }   /* build 324: the Briefing's violet */
   .rs-mode{
     background:color-mix(in srgb, var(--mode-c) 22%, rgba(20,24,30,.6));
     border-color:color-mix(in srgb, var(--mode-c) 55%, transparent);
@@ -27245,6 +27262,7 @@
     box-shadow:0 0 14px -4px color-mix(in srgb, var(--mode-c) 60%, transparent);
   }
   .rs-mode .modeiconpath{ stroke:currentColor; }
+  .rs-mode .modeiconsolid{ fill:currentColor; }
   .rs-mode-game .modeiconpath{ fill:currentColor; stroke:none; }
   .setup-modechip{ display:flex; justify-content:center; margin:.2rem 0 .1rem; }
   .setup-modechip .rs-mode{ font-size:.74rem; padding:.36rem .85rem .36rem .6rem; }
@@ -29424,7 +29442,7 @@
 
     var messagePool = [
       "> booting core runtime...",
-      "> loading Drill & Exam modes...",
+      "> loading Drill & Qualifier modes...",
       "> syncing unit progress...",
       "> initializing badge case...",
       "> calibrating XP curve...",
@@ -42160,7 +42178,7 @@ function saveRunSession(asSaved){
              source: cfg.source, size: cfg.size, timer: cfg.timer, timerMinutes: cfg.timerMinutes,
              recall: cfg.recall, shuffle: cfg.shuffle },
       order: order.slice(), pos, attempts, picked, firstPick, layout, timedOutSet,
-      runLabel, runMode, isMissedRetake, practiceTestMinutes, runTrackable, runExamFeedback,
+      runLabel, runMode, isMissedRetake, practiceTestMinutes, runTrackable,
       runLiveStreak, qTimeMs: qt, cleared, lastWrong, hinted, revealed,
       elapsedMs: runStartTime ? Math.max(0, at - runStartTime) : 0,
       timerLeftMs: (timerDeadline && (cfg.timer === "down" || practiceTestMinutes != null)) ? Math.max(0, timerDeadline - at) : null,
@@ -42358,7 +42376,8 @@ function resumeRunSession(s){
   }
   attempts = s.attempts || {}; picked = s.picked || {}; firstPick = s.firstPick || {};
   layout = s.layout || {}; timedOutSet = s.timedOutSet || {};
-  runExamFeedback = !!s.runExamFeedback; examFeedbackNext = false;
+  /* s.runExamFeedback, from a run saved before build 324, is ignored: a
+     Qualifier never says right or wrong before the results. */
   raceTimed = false; raceTimedNext = false; raceQuestionDeadline = null; raceRevealUntil = null; raceRevealQi = null;
   runLabel = s.runLabel || null; runMode = s.runMode || "drill";
   runTrackable = !!s.runTrackable;
@@ -42451,7 +42470,7 @@ function runOfferFacts(s){
   const names = us.map(u => (c.versions && c.versions[u] === "test" && UNIT_TEST_VERSIONS[u]) ? UNIT_TEST_VERSIONS[u].label : u);
   const units = (us.length === 0 || us.length === all.length) ? "All units"
     : names.length <= 2 ? names.join(" · ") : names.length + " units";
-  const mode = s.runMode === "exam" ? "Exam" : (s.isMissedRetake ? "Retake" : "Drill");
+  const mode = s.runMode === "exam" ? modeTitleOf("exam") : (s.isMissedRetake ? "Retake" : "Drill");
   const n = s.order.length, at = Math.min((s.pos | 0) + 1, n);
   return { mode, units: units + (c.source === "flagged" ? " (starred questions)" : ""),
     where: "Question " + at + " of " + n, frac: n ? (s.pos | 0) / n : 0,
@@ -42606,7 +42625,7 @@ function runModeTitle(){
   if(runLabel === "Daily question") return "";
   if(vroomCode) return "Virtual Room";
   if(isMissedRetake) return "Retake";
-  return runMode === "exam" ? "Exam" : "Drill";
+  return modeTitleOf(runMode === "exam" ? "exam" : "drill");
 }
 const titleEl   = document.getElementById("banktitle");
 const titleBtnEl = document.getElementById("banktitlebtn");
@@ -51076,9 +51095,9 @@ const ACTIVITY_MIN_GAP_MS = 8000;
 const ACTIVITY_TEXT = {
   menu:    ["Main menu",      "On the main menu"],
   drill:   ["In a Drill",     "In a Drill"],
-  exam:    ["Taking an Exam", "Taking an Exam"],
+  exam:    ["In a Qualifier", "Taking a Qualifier"],   /* build 324: Exam is the Qualifier on screen */
   game:    ["In Game mode",   "Playing Game mode"],
-  review:  ["Learning",       "Going over questions"],
+  review:  ["In a Briefing",  "Going over questions"],   /* build 324: Review is the Briefing */
   daily:   ["Daily question", "On the daily question"],
   lobby:   ["In a lobby",     "In a Virtual Room lobby"],
   match:   ["In a match",     "In a Virtual Room match"],
@@ -54272,10 +54291,23 @@ function applySaved(){
 /* What a mode is called on screen. Build 303 showed "review" as Learn;
    build 305 put it back: "let's go ahead and keep that section as
    'review' let's not rename it learn." */
+/* QUALIFIER AND BRIEFING (build 324): "I feel like exam mode and review
+   mode need a new name and logo ... Drill and virtual room are nice
+   unique names but they also make sense. Could we rename the two". An
+   Exam is a Qualifier - a test you pass or do not, graded only at the
+   end - and Review is a Briefing - going over the material with the
+   answers in front of you. ON SCREEN ONLY: the mode values stay "exam"
+   and "review" in cfg, store.opts, store.unitExam, test history and
+   every saved run, so an old entry reads under its new name. Every
+   label that names a mode asks this one function. */
 function modeTitleOf(mode){
-  if(mode === "review") return "Review";
+  const NAMES = { drill: "Drill", exam: "Qualifier", review: "Briefing", vroom: "Virtual Room", game: "Game" };
+  if(NAMES[mode]) return NAMES[mode];
   return String(mode || "").charAt(0).toUpperCase() + String(mode || "").slice(1);
 }
+/* What a start sheet's Begin says (build 324): the verb and the mode,
+   "Begin drill" - see refresh() in showSetup(). */
+function beginLabelOf(mode){ return "Begin " + modeTitleOf(mode).toLowerCase(); }
 /* ---- EVERY TEST STARTS FROM THE DEFAULTS (build 309) ----
    "The settings that are within the start menu, ensure they are reset
    each time the start menu button lights up or unlights up too. So each
@@ -64362,12 +64394,15 @@ function modeIcon(kind){
        clipboard was a narrow outline with a hairline clip, the lightest
        mark of the four. It is as wide as the others now, and its clip is
        solid, the way the Virtual Room's heads are. */
-    svg.appendChild(mk("M6.6 4.6h10.8a1.6 1.6 0 011.6 1.6v13.6a1.6 1.6 0 01-1.6 1.6H6.6A1.6 1.6 0 015 19.8V6.2a1.6 1.6 0 011.6-1.6z"));
-    const clip = mk("M9.4 2.6h5.2a1 1 0 011 1v1.9a1 1 0 01-1 1H9.4a1 1 0 01-1-1V3.6a1 1 0 011-1z");
-    clip.setAttribute("class", "modeiconpath modeiconsolid");
-    svg.appendChild(clip);
+    /* THE QUALIFIER'S SHIELD (build 324): "exam mode and review mode need
+       a new name and logo ... Drill has a unique logo too with the two
+       circles looking like a target. We need this." A shield with a
+       check in it - qualified, the mark you earn by passing - for a
+       police academy class. One outline and one bold stroke, the target's
+       weight (its ink is measured against Drill's in check_b323u). */
+    svg.appendChild(mk("M12 2.2l8.1 3v6.1c0 5.2-3.4 9.2-8.1 10.8-4.7-1.6-8.1-5.6-8.1-10.8V5.2z"));
     const check = document.createElementNS(svgNS2, "path");
-    check.setAttribute("d", "M8.6 13.4l2.5 2.5 4.5-5");
+    check.setAttribute("d", "M8 12.3l2.8 2.8 5.3-5.8");
     check.setAttribute("class", "modeiconpath modeiconcheck");
     svg.appendChild(check);
   } else if(kind === "vroom"){
@@ -64394,18 +64429,18 @@ function modeIcon(kind){
     svg.appendChild(mk("M3.5 12H14"));
     svg.appendChild(mk("M10.5 8.5L14 12l-3.5 3.5"));
   } else if(kind === "review"){
-    /* An open book. The one mode that is reading rather than
-       answering, so it should not look like any of the others - the
-       rest are targets, clocks and people. */
-    svg.appendChild(mk("M12 6.5C10.3 5.2 8.3 4.6 6 4.6c-1 0-2 .1-2.9.4v13c.9-.3 1.9-.4 2.9-.4 2.3 0 4.3.6 6 1.9"));
-    svg.appendChild(mk("M12 6.5c1.7-1.3 3.7-1.9 6-1.9 1 0 2 .1 2.9.4v13c-.9-.3-1.9-.4-2.9-.4-2.3 0-4.3.6-6 1.9"));
-    svg.appendChild(mk("M12 6.5v13"));
-    /* A solid bookmark down the right-hand page (build 323), for the same
-       weight as the Virtual Room's heads - an open book in outline alone
-       was the faintest mark on the mode screen. */
-    const mark = mk("M15.6 4.75h3.2v7.4l-1.6-1.25-1.6 1.25z");
+    /* THE BRIEFING'S CARDS (build 324): two study cards, one behind the
+       other - the list and the flashcards both - with a solid heading bar
+       on the front one, as solid as the Virtual Room's heads. Violet, the
+       flashcards' own colour: "I like how the flashcard section has the
+       purple progress bar stuff. Could we somehow make it where the
+       review section is now a purple colored icon as well?" */
+    svg.appendChild(mk("M8 6.4V4.6A1.6 1.6 0 019.6 3h9.2a1.6 1.6 0 011.6 1.6v9.6a1.6 1.6 0 01-1.6 1.6h-1.4"));
+    svg.appendChild(mk("M5.2 7.4h10.6a1.6 1.6 0 011.6 1.6v10.4a1.6 1.6 0 01-1.6 1.6H5.2a1.6 1.6 0 01-1.6-1.6V9a1.6 1.6 0 011.6-1.6z"));
+    const mark = mk("M7.7 10.8h5.6a.8.8 0 010 1.6H7.7a.8.8 0 010-1.6z");
     mark.setAttribute("class", "modeiconpath modeiconsolid");
     svg.appendChild(mark);
+    svg.appendChild(mk("M6.9 16.4h5.4"));
   } else {
     svg.appendChild(mk("M12 20s-7-4.5-9.5-9C.8 7.5 3 4 6.5 4c2 0 3.5 1.3 5.5 3.5C14 5.3 15.5 4 17.5 4 21 4 23.2 7.5 21.5 11c-2.5 4.5-9.5 9-9.5 9z"));
   }
@@ -65743,7 +65778,7 @@ function testLabelFor(){
   let base;
   if(cfg.units.length === 0 || cfg.units.length === all.length) base = "All units";
   else base = cfg.units.length + " units";
-  const modeName = cfg.mode === "exam" ? "Exam" : "Drill";
+  const modeName = modeTitleOf(cfg.mode === "exam" ? "exam" : "drill");
   return base + " \u2014 " + modeName;
 }
 
@@ -66920,8 +66955,6 @@ const WRONG_FLASH_MS = 2600;
 let choiceFx = null;
 let choicePressTimer = null;
 let nextRisenFor = null;
-let runExamFeedback = false;
-let examFeedbackNext = false;
 let cleared = false;
 /* Daily question only ever gets one attempt, right or wrong \u2014 kept
    deliberately separate from `cleared` rather than reusing it,
@@ -72873,7 +72906,7 @@ function showWelcomeIntro(){
      itself an earlier explicit fix for text that read as too small. */
   const items = [
     { head: "Built for one thing", body: "Every question is written to match what you'll actually see on test day \u2014 by classmates studying the exact same material." },
-    { head: "Four ways to study", body: "Drill gives instant feedback, Exam mimics test day, Review goes over the material, and Virtual Room takes it live against classmates." },
+    { head: "Four ways to study", body: "Drill gives instant feedback, Qualifier is test day with your grade at the end, Briefing goes over the material, and Virtual Room takes it live against classmates." },
     { head: "Progress that means something", body: "Right answers level you up, a perfect unit earns its badge, and levels and badges together climb the ranks." },
     { head: "Everything saves itself", body: "No save button \u2014 your progress is already here next time, on any device." },
   ];
@@ -74373,7 +74406,7 @@ function novaXpBar(){
 }
 function novaModeRow(){
   const row = document.createElement("div"); row.className = "nt-row";
-  [["drill", "Drill"], ["exam", "Exam"], ["review", "Review"]].forEach(([k, label], i) => {
+  ["drill", "exam", "review"].map(k => [k, modeTitleOf(k)]).forEach(([k, label], i) => {
     const m = document.createElement("span"); m.className = "nt-mode"; m.style.setProperty("--i", i);
     try{ m.appendChild(modeIcon(k)); }catch(e){}
     const l = document.createElement("span"); l.textContent = label;
@@ -74479,7 +74512,7 @@ function novaIntroLines(o){
       enter: ctx => novaProp(ctx, novaStack(novaRankRow(), novaCap("Seven ranks"))) },
     { gesture: "raise", text: "Every question you get right earns XP, and XP raises your level.",
       enter: ctx => novaProp(ctx, novaXpBar()) },
-    { text: "Tests are how you do all of it. Drill to learn, Exam to test yourself, and Review to go over the material first.",
+    { text: "Tests are how you do all of it. Drill to learn, Qualifier to see if you are ready, and Briefing to go over the material first.",
       enter: ctx => novaProp(ctx, novaModeRow()) }
   ];
   if(!existing){
@@ -80992,7 +81025,7 @@ const WHATS_NEW_320 = [
     say: "The class calendar has its own tab at the bottom now. Settings moved into Profile, and your Friends box shows who is on." },
   { key: "save", color: "#4ADE80", title: "Save a test for later",
     glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-3.4 6.2h2.3v7.6H8.6V8.2Zm4.5 0h2.3v7.6h-2.3V8.2Z",
-    body: "Pause a Drill or Exam and tap Save and exit. Start Studying offers it back, and Resume loads it right where you left off.",
+    body: "Pause a Drill or Qualifier and tap Save and exit. Start Studying offers it back, and Resume loads it right where you left off.",
     say: "You can save a test for later. Pause it, tap Save and exit, and Resume picks it up right where you left off." },
   { key: "daily", color: "#FFD84D", title: "The daily question ring",
     glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2.2a7.8 7.8 0 1 1 0 15.6 7.8 7.8 0 0 1 0-15.6Zm-.1 3.1c-1.9 0-3.2 1.1-3.3 2.8h2c.1-.7.6-1.1 1.3-1.1.8 0 1.3.5 1.3 1.1 0 .6-.3.9-1.1 1.4-.9.5-1.3 1.1-1.2 2.1v.5h1.9v-.4c0-.6.2-.9 1-1.3.9-.5 1.5-1.2 1.5-2.3 0-1.7-1.4-2.8-3.4-2.8Zm-.1 8.2a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Z",
@@ -82177,8 +82210,12 @@ function showModeSelect(){
        disclaimer; both now say what the mode is and then what it is best
        for, at the same length as the two cards that were liked. Exam still
        names Instant feedback (build 312). */
-    { value: "exam", title: "Exam",
-      desc: "A test like the real thing \u2014 you find out what you got right and wrong at the end, unless you turn on Instant feedback. Best for testing yourself." },
+    /* THE QUALIFIER (build 324): "We need to really let them know that
+       exam is designed to be a test with no feedback until you see your
+       grade." Instant feedback is gone, so the card says it outright:
+       nothing on any question, the grade at the end. */
+    { value: "exam", title: modeTitleOf("exam"),
+      desc: "A real test with no feedback on any question. You find out what you got right and wrong only when you see your grade. Best for knowing you are ready." },
     /* THIRD, UNDER EXAM (build 245): "The review option on the mode
        selection screen should not be at the bottom on the iPhone, it'll
        need to be the 3rd one listed, under exam instead." One list, so
@@ -82200,8 +82237,11 @@ function showModeSelect(){
        flash cards"); 305 put the name back. The value
        stays "review" - it is stored in store.opts and every check in the
        file asks for it - and only what is shown changes (modeTitleOf). */
-    { value: "review", title: "Review",
-      desc: "Read through the study guide questions with their answers, as a list or as flashcards. Not a test, so no score. Best for going over material." },
+    /* THE BRIEFING (build 324): the old Review - "I like the current
+       review and exam descriptions ... but could they be better?" It
+       leads with what it is NOT, because the other three are tests. */
+    { value: "review", title: modeTitleOf("review"),
+      desc: "Not a test. Every question is shown with its answer, as a list or as flashcards, so you can study it. Best for going over material." },
     { value: "vroom", title: "Virtual Room",
       desc: "Take tests together, live \u2014 everyone answers the same questions at the same time. Best for studying with classmates." }
   ];
@@ -82257,12 +82297,12 @@ function showModeSelect(){
       { target: '.modecard[data-mode="drill"]', align: "left", vplacement: "below",
         text: "Drill is the classic mode \u2014 instant feedback, and you can retry until you get it right. Best for learning." },
       { target: '.modecard[data-mode="exam"]', align: "left", vplacement: "below",
-        text: "Exam holds feedback until the end, just like the real thing." },
+        text: "Qualifier is a real test: no feedback on any question until you see your grade at the end." },
       /* Review had no step (build 289: "ensure all the tool tips are
          updated for this new app") - it became a mode of its own in
          build 128 and the tour went straight from Exam to Virtual Room. */
       { target: '.modecard[data-mode="review"]', align: "left", vplacement: "below",
-        text: "Review is not a test \u2014 it walks through each unit\u2019s questions and answers, as a list or as flashcards. Good for going over material before you test yourself." },
+        text: "Briefing is not a test \u2014 it walks through each unit\u2019s questions with the answers shown, as a list or as flashcards. Good for going over material before you test yourself." },
       /* vplacement was hardcoded to "above" here, mismatched with Game's
          own "below" right above - harmless-looking on phone (cards
          stack in one column, so Virtual Room being last made "above"
@@ -83739,7 +83779,7 @@ function showSetup(){
   /* Review is its own colour, the green of its icon (build 266): "the
      word review at the top of the unit selection is not a green tint,
      it's the drill tint". It fell through to "drill" here. */
-  const modeNames = { drill: "Drill", exam: "Exam", game: "Game", review: "Review" };
+  const modeNames = { drill: "Drill", exam: modeTitleOf("exam"), game: "Game", review: modeTitleOf("review") };
   const modeKind = ["drill", "exam", "game", "review"].indexOf(cfg.mode) >= 0 ? cfg.mode : "drill";
   const modeChip = document.createElement("span");
   modeChip.className = "rs-mode rs-mode-" + modeKind;
@@ -83855,7 +83895,7 @@ function showSetup(){
       const fl = flaggedIndexes();
       if(!fl.length){ showToast("Nothing starred yet. Tap the star on any question to save it here."); return; }
       const fUnits = starredUnits(fl);
-      showStudyLoading("LOADING REVIEW", () => showAnswerReview(fUnits, "flagged", {}, { allFlagged: true }));
+      showStudyLoading("LOADING BRIEFING", () => showAnswerReview(fUnits, "flagged", {}, { allFlagged: true }));
     });
     /* ONE ROW AMONG THE UNITS, AFTER THEM (build 323): "I'm still not a
        fan of how the review section shows the starred question at the
@@ -84432,14 +84472,13 @@ function showSetup(){
   const recallRow = toggle("Hide answer choices",
     "Think of the answer first, then tap to show the choices.",
     () => cfg.recall, v => { cfg.recall = v; });
-  /* INSTANT FEEDBACK, EXAM ONLY, OFF UNLESS ASKED FOR (build 303): "In
-     exam mode, introduce a button for instant feedback in the start menu
-     options where if you have this on, it does tell you if you got it
-     wrong (you can't change it in this mode of course) this is off by
-     default". A pick is final with it on - see runExamFeedback. */
-  const feedbackRow = toggle("Instant feedback",
-    "See right or wrong after each answer. Answers lock in.",
-    () => cfg.examFeedback, v => { cfg.examFeedback = v; });
+  /* NO INSTANT FEEDBACK (build 324). Build 303 gave Exam a switch that
+     said right or wrong after each pick; it is gone: "Let's also remove
+     the instant feedback option from the exam mode. Takes away from the
+     mode for what it's meant for, to give you no idea how you do till
+     the very end." A Qualifier is always graded only at the end.
+     cfg.examFeedback stays as a defaulted field nothing reads (store.opts
+     still carries it), per the applyLoadedData rule. */
   /* Plain switch rows now, the same as the timer's (build 249) - inside
      More options every setting is one kind of control. */
   optTiles.className = "opt-rows";
@@ -84448,7 +84487,7 @@ function showSetup(){
   const flashRow = toggle("Flashcards",
     "One card at a time. Tap a card to flip it.",
     () => cfg.flashcards, v => { cfg.flashcards = v; });
-  optTiles.append(shuffleRow, recallRow, feedbackRow, flashRow);
+  optTiles.append(shuffleRow, recallRow, flashRow);
   optSect.appendChild(optTiles);
   /* "Show all correct answers" is GONE, per explicit request - "we
      don't need it anymore because of the review button". It highlighted
@@ -84492,7 +84531,7 @@ function showSetup(){
      Answer Review path elsewhere in this file. */
   const beginBtn = document.createElement("button");
   beginBtn.type = "button"; beginBtn.className = "next playbtn sheet-begin-btn";
-  beginBtn.textContent = "Begin";
+  beginBtn.textContent = beginLabelOf(cfg.mode);
   beginBtn.addEventListener("click", () => {
     if(cfg.units.length === 0) return;
     closeOptionsModal();
@@ -84512,7 +84551,7 @@ function showSetup(){
         if(!flashcardDeck(units, src, vers).length){ showFlashcards(units, src, vers); return; }
         showStudyLoading("LOADING FLASHCARDS", () => showFlashcards(units, src, vers));
       }
-      else showStudyLoading("LOADING REVIEW", () => showAnswerReview(units, src, vers));
+      else showStudyLoading("LOADING BRIEFING", () => showAnswerReview(units, src, vers));
       return;
     }
     rememberConfig();
@@ -84523,7 +84562,6 @@ function showSetup(){
     /* EXAM HONOURS LENGTH. The slider is on the sheet for Exam ("Pick
        your own units and length") but this line only ever trimmed a
        Drill, so a shortened exam quietly ran every question. */
-    examFeedbackNext = cfg.mode === "exam" && !!cfg.examFeedback;
     beginRun(cfg.size > 0 ? pool.slice(0, cfg.size) : pool, null);
   });
   /* Pinned to the foot of the sheet (build 270) on a bar of the sheet's
@@ -84631,7 +84669,7 @@ function showSetup(){
     resetSheetOptions();
     lastSliderSize = 10;
     paint();
-    [shuffleRow, recallRow, feedbackRow, flashRow].forEach(r => { if(r && r.sync) r.sync(); });
+    [shuffleRow, recallRow, flashRow].forEach(r => { if(r && r.sync) r.sync(); });
   }
   function refresh(){
     cfg.units = chosenUnits();
@@ -84661,7 +84699,15 @@ function showSetup(){
     const modeLabel = modeTitleOf(cfg.mode);
     /* "Review Review" is what the old suffix produced once Review
        became a mode of its own rather than a switch on top of one. */
-    sheetSummaryMode.textContent = modeLabel;
+    /* The box names the mode with its mark, in its colour (build 324),
+       the way the Virtual Room's names its game. Inline, so the name
+       keeps the text baseline the count beside it is aligned to. */
+    if(sheetSummaryMode.dataset.mode !== cfg.mode || sheetSummaryMode.textContent !== modeLabel){
+      sheetSummaryMode.dataset.mode = cfg.mode;
+      const mk = ["drill", "exam", "review"].indexOf(cfg.mode) >= 0 ? cfg.mode : "drill";
+      const ic = modeIcon(mk); ic.classList.add("sheet-summary-modeicon");
+      sheetSummaryMode.replaceChildren(ic, document.createTextNode(modeLabel));
+    }
     optionsModalTitle.textContent = modeLabel;
     sheetSummaryLine.textContent = cfg.units.length === 0
       ? "No units selected yet"
@@ -84721,7 +84767,6 @@ function showSetup(){
     timerSect.hidden = reviewAllMode;
     recallRow.hidden = isExam;
     shuffleRow.hidden = isExam;
-    feedbackRow.hidden = !isExam;
     flashRow.hidden = !reviewAllMode;
     /* ---- A LABEL WITH NOTHING UNDER IT ----
        "The word Options is underneath the timer stuff for some random
@@ -84733,10 +84778,10 @@ function showSetup(){
        happened to be true when it was written. A row added later is
        covered without anybody having to remember this line. */
     if(reviewAllMode){ recallRow.hidden = true; shuffleRow.hidden = true; }
-    optSect.hidden = recallRow.hidden && shuffleRow.hidden && feedbackRow.hidden && flashRow.hidden;
-    /* Exam's only row here is Instant feedback (build 311): "Exam mode,
-       same with the other stuff, the sections need a better name". */
-    optLab.textContent = reviewAllMode ? "How to study" : isExam ? "Feedback" : "Answer choice options";
+    optSect.hidden = recallRow.hidden && shuffleRow.hidden && flashRow.hidden;
+    /* A Qualifier has no rows here since Instant feedback went (build
+       324), so the section hides by the rule above. */
+    optLab.textContent = reviewAllMode ? "How to study" : "Answer choice options";
     /* AFTER the four it asks about, because it asks them rather than
        re-deriving their conditions - reading them before they are set
        is how this kind of check answers last render's question. */
@@ -84827,7 +84872,13 @@ function showSetup(){
        above already makes, just reflected in the button's text too so
        it doesn't keep saying "Begin" while actually opening the review
        screen instead of starting anything. */
-    beginBtn.textContent = reviewAllMode ? (cfg.flashcards ? "Start flashcards" : "Show all") : "Begin";
+    /* BEGIN SAYS WHICH MODE (build 324): "In each mode, when you have the
+       start menu open, the button needs to be specified about the mode
+       you are taking ... for drill it would say begin drill ... For the
+       review one it says show all, it could say begin review and if
+       flashcards are on, it would probably just say the same thing".
+       Begin drill / Begin qualifier / Begin briefing, flashcards or not. */
+    beginBtn.textContent = beginLabelOf(cfg.mode);
 
     /* WHAT THE RUN IS SET TO, ON ONE LINE IN THE BOX (build 323). It was
        a row of tags with icons (build 250) in the top box; it is the
@@ -84846,7 +84897,6 @@ function showSetup(){
         if(!timerSect.hidden && cfg.timer === "up") on.push({ t: "Stopwatch", set: true });
         if(!optSect.hidden && !shuffleRow.hidden && cfg.shuffle) on.push("Shuffled choices");
         if(!optSect.hidden && !recallRow.hidden && cfg.recall) on.push("Choices hidden");
-        if(!optSect.hidden && !feedbackRow.hidden && cfg.examFeedback) on.push("Instant feedback");
         if(!optSect.hidden && !flashRow.hidden && cfg.flashcards) on.push("Flashcards");
       }
       /* Emptied, it keeps its last words while it folds shut. */
@@ -84881,8 +84931,7 @@ function showSetup(){
       : (pool.length === 0 ? "Nothing to draw from in those units." : "");
     /* Review has its own verb (build 245) - it used to fall through to
        "Start drill", which is not what the button does in Review. */
-    const verb = cfg.mode === "exam" ? "Start exam, "
-      : reviewAllMode ? "Start learning, " : "Start drill, ";
+    const verb = "Start " + modeTitleOf(reviewAllMode ? "review" : cfg.mode === "exam" ? "exam" : "drill").toLowerCase() + ", ";
     startBtn.textContent =
       cfg.units.length === 0 ? "Start" :
       pool.length === 0 ? "Nothing to draw" :
@@ -85042,10 +85091,6 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
   picked = {};
   firstPick = {};
   choiceFx = null; nextRisenFor = null; clearTimeout(choicePressTimer); choicePressTimer = null;
-  /* Only the start sheet's own Begin can switch this on, and only for
-     the one run it starts - a Virtual Room, a retake or a re-run never
-     inherits it. */
-  runExamFeedback = examFeedbackNext; examFeedbackNext = false;
   layout = {};
   timedOutSet = {};
   raceTimed = raceTimedNext; raceTimedNext = false;
@@ -85405,6 +85450,14 @@ function drawMeter(){
      scratch every time, up to 340+ elements for the largest unit,
      just to redraw one tile that was already correct and about to be
      replaced with an identical copy of itself. */
+  /* A QUALIFIER'S BLOCKS ARE ITS COLOUR (build 324): "exam mode, instead
+     of it being a white for the progress bar (we are talking about the
+     tiny blocks at the top as you take the test), could that color
+     match?" Every block is the same orange, done or not - one colour
+     says nothing about right or wrong, which a Qualifier never does
+     until the results. A Virtual Room race runs as "exam" too and is
+     left as it was. */
+  meterEl.classList.toggle("is-qualifier", runMode === "exam" && !vroomCode);
   if(!meterTicks){
     meterTicks = order.map(() => {
       const t = document.createElement("span");
@@ -85475,7 +85528,7 @@ function render(){
 
   drawMeter();
   countEl.textContent = scopeLabel() + " \u2014 " +
-    (runMode === "exam" ? "exam, " : "") +
+    (runMode === "exam" ? "qualifier, " : "") +
     (runLabel ? runLabel + ", " : "") +
     "question " + (pos + 1) + " of " + order.length;
   testScopeLabelEl.textContent = countEl.textContent;
@@ -85594,10 +85647,6 @@ function render(){
   if(raceRevealing){
     status.classList.add("bad");
     status.textContent = "Out of time \u2014 counted as wrong. The right answer is highlighted.";
-  } else if(runMode === "exam" && runExamFeedback && picked[qi] !== undefined){
-    const ok = picked[qi] === right;
-    status.classList.add(ok ? "good" : "bad");
-    status.textContent = ok ? correctLine(qi) : "Not quite \u2014 the right answer is marked.";
   } else if(runMode === "exam"){
     status.textContent = picked[qi] === undefined
       ? "Choose an answer."
@@ -85660,18 +85709,6 @@ function render(){
          choice off, the right one marked. */
       if(slot === right){ btn.classList.add("is-right", "locked"); mark.textContent = "\u2713"; }
       else { btn.classList.add("locked"); }
-      btn.disabled = true;
-    } else if(runMode === "exam" && runExamFeedback && picked[qi] !== undefined){
-      /* Answered with instant feedback on: judged and locked, the way a
-         wrong daily question is - the right one marked, yours too if it
-         was not the right one. */
-      if(slot === right){
-        btn.classList.add("is-right", "locked"); mark.textContent = "\u2713";
-        if(fx && fx.kind === "right") btn.classList.add("is-right-pop");
-      } else if(picked[qi] === slot){
-        btn.classList.add("is-wrong-pick", "locked"); mark.textContent = "\u2715";
-        if(fx && fx.kind === "wrong-lock") btn.classList.add("is-pick-pop");
-      } else { btn.classList.add("locked"); }
       btn.disabled = true;
     } else if(runMode === "exam"){
       if(picked[qi] === slot){
@@ -85932,11 +85969,10 @@ function choose(slot){
   if(runMode === "exam"){
     /* A race question that ran out is answered - by the clock. */
     if(raceTimed && (paused || raceRevealUntil != null || timedOutSet[qi])) return;
-    if(runExamFeedback && (picked[qi] !== undefined || paused)) return;
     picked[qi] = slot;
-    choiceFx = { qi, slot, at: Date.now(),
-      kind: !runExamFeedback ? "pick" : slot === correctSlot(qi) ? "right" : "wrong-lock" };
-    playSound(choiceFx.kind === "pick" ? "test.select" : choiceFx.kind === "right" ? "test.correct" : "test.wrong");
+    /* Always a plain pick (build 324): no right or wrong until the results. */
+    choiceFx = { qi, slot, at: Date.now(), kind: "pick" };
+    playSound("test.select");
     renderAfterPress(qi, slot);
     scheduleAutoAdvance(qi);
     return;
@@ -94140,7 +94176,7 @@ function rsLand(el, instant){
 function rsModeLabel(run){
   if(run.vroom) return "Virtual Room";
   if(run.practice) return "Practice test";
-  if(run.mode === "exam") return "Exam";
+  if(run.mode === "exam") return modeTitleOf("exam");
   return "Drill";
 }
 function rsModeIconKind(run){
@@ -96772,7 +96808,7 @@ function summarize(){
   }
 
   countEl.textContent = scopeLabel() + " \u2014 " +
-    (timedOut ? "time's up" : (runMode === "exam" ? "exam complete" : (runLabel ? runLabel : "run") + " complete"));
+    (timedOut ? "time's up" : (runMode === "exam" ? "qualifier complete" : (runLabel ? runLabel : "run") + " complete"));
   testScopeLabelEl.textContent = countEl.textContent;
 
   /* Daily question's entire results treatment, per explicit, revised
@@ -98449,10 +98485,12 @@ const TEST_ROW_NAME_BUDGET = 40;
    rather than claiming a run covered nothing. */
 function testHistoryUnitLine(entry){
   const units = Array.isArray(entry && entry.units) ? entry.units.filter(Boolean) : [];
-  const modeName = entry && entry.mode === "exam" ? "Exam"
+  const modeName = entry && entry.mode === "exam" ? modeTitleOf("exam")
     : entry && entry.mode === "game" ? "Game"
     : entry && entry.mode === "vroom" ? "Virtual Room" : "Drill";
-  if(!units.length) return entry && entry.label ? entry.label : modeName;
+  /* An older entry's stored label ends in the name it was saved under
+     ("All units - Exam"); it reads under today's name (build 324). */
+  if(!units.length) return entry && entry.label ? String(entry.label).replace(/ \u2014 Exam$/, " \u2014 " + modeTitleOf("exam")) : modeName;
   const all = topicsIn(QUESTIONS);
   let what;
   if(units.length === all.length) what = "All " + units.length + " units";
@@ -98572,7 +98610,7 @@ function buildScoreRing(pct, cls){
 }
 function testModeName(entry){
   if(entry && entry.vr) return "Virtual Room";
-  return entry && entry.mode === "exam" ? "Exam" : entry && entry.mode === "game" ? "Game" : "Drill";
+  return entry && entry.mode === "exam" ? modeTitleOf("exam") : entry && entry.mode === "game" ? "Game" : "Drill";
 }
 function historyDayLabel(ts){
   const d = new Date(ts), now = new Date();
@@ -98595,7 +98633,7 @@ function buildTestRow(entry){
   body.className = "thx-row-body";
   const name = document.createElement("span");
   name.className = "thx-row-name";
-  name.textContent = testHistoryUnitLine(entry).replace(/ · (Drill|Exam|Game|Virtual Room)$/, "");
+  name.textContent = testHistoryUnitLine(entry).replace(/ · (Drill|Exam|Qualifier|Game|Virtual Room)$/, "");
   const meta = document.createElement("span");
   meta.className = "thx-row-meta";
   const chip = document.createElement("span");
@@ -98668,7 +98706,7 @@ function showTestReviewList(){
   if(all.length === 0){
     const p = document.createElement("p");
     p.className = "info-note";
-    p.textContent = "Finish a drill or an exam and it shows up here. The last 50 are kept.";
+    p.textContent = "Finish a drill or a qualifier and it shows up here. The last 50 are kept.";
     panel.appendChild(p);
     stage.replaceChildren(panel);
     toTop();
@@ -98695,7 +98733,7 @@ function showTestReviewList(){
   panel.appendChild(sum);
 
   /* Drill / Exam / Virtual Room - only the filters this history can use. */
-  const kinds = [["all", "All"], ["drill", "Drill"], ["exam", "Exam"], ["vr", "Virtual Room"]]
+  const kinds = [["all", "All"], ["drill", "Drill"], ["exam", modeTitleOf("exam")], ["vr", "Virtual Room"]]
     .filter(([k]) => k === "all" || all.some(e => k === "vr" ? e.vr : (!e.vr && (e.mode || "drill") === k)));
   if(!kinds.some(([k]) => k === testHistoryFilter)) testHistoryFilter = "all";
   const listHost = document.createElement("div");
@@ -99573,7 +99611,13 @@ function showVirtualRoomSetup(editRoom){
      handler calls showVirtualRoomLobby() and replaces #stage under it. */
   const beginBtn = document.createElement("button");
   beginBtn.type = "button"; beginBtn.className = "next playbtn sheet-begin-btn";
-  beginBtn.textContent = editing ? "Save settings" : "Create lobby";
+  /* "OPEN LOBBY" (build 324): "In each mode, when you have the start
+     menu open, the button needs to be specified about the mode you are
+     taking ... Virtual room, gonna be a smidge different but the same."
+     A test's Begin starts the test; this one opens the room's lobby,
+     where the match starts once everyone readies up - so it says that,
+     in Begin drill's shape: the verb, then where it takes you. */
+  beginBtn.textContent = editing ? "Save settings" : "Open lobby";
   beginBtn.addEventListener("click", () => {
     if(picked.size === 0) return;
     if(!vroomGame){
@@ -108961,7 +109005,7 @@ function buildCalendarPane(panel){
 function showAnswerReview(units, source, versions, opts){
   const allFlagged = !!(opts && opts.allFlagged);
   setActiveNav(null);
-  countEl.textContent = "Review";
+  countEl.textContent = modeTitleOf("review");
   /* Only the flagged or most-missed questions, when that is what was
      picked on the sheet. */
   const only = source === "flagged" ? new Set(flaggedIndexes())
@@ -108989,11 +109033,18 @@ function showAnswerReview(units, source, versions, opts){
     const ic = document.createElement("span"); ic.className = "ar-head-icon"; ic.setAttribute("aria-hidden", "true");
     try{ ic.appendChild(buildStarredCardStar(howMany > 0)); }catch(e){}
     head.appendChild(ic);
+  } else {
+    /* The Briefing's own card (build 324): its mark and its violet, the
+       way the starred list wears its star and gold. */
+    head.classList.add("is-briefing");
+    const ic = document.createElement("span"); ic.className = "ar-head-icon"; ic.setAttribute("aria-hidden", "true");
+    try{ ic.appendChild(modeIcon("review")); }catch(e){}
+    head.appendChild(ic);
   }
   const headText = document.createElement("div"); headText.className = "ar-head-text";
   const title = document.createElement("h1");
   title.className = "ar-head-title";
-  title.textContent = source === "flagged" ? "Starred questions" : "Review";
+  title.textContent = source === "flagged" ? "Starred questions" : modeTitleOf("review");
   const sub = document.createElement("p");
   sub.className = "ar-head-sub";
   sub.textContent = howMany + (howMany === 1 ? " question" : " questions") + " \u00b7 "
@@ -109217,6 +109268,7 @@ function showFlashcards(units, source, versions){
   pauseBtn.hidden = false;
   meterEl.hidden = false;
   meterTicks = null; meterNowIndex = -1;
+  meterEl.classList.remove("is-qualifier");
   meterEl.replaceChildren(...deck.map(() => { const t = document.createElement("span"); t.className = "tick"; return t; }));
   countEl.textContent = "";
   renderFlashcard(0);
@@ -109247,7 +109299,7 @@ function renderFlashcard(dir){
   const qi = fc.deck[fc.pos];
   const item = QUESTIONS[qi];
   fc.flipped = false;
-  testModeLabelEl.textContent = "Review";
+  testModeLabelEl.textContent = modeTitleOf("review");
   testQCounterEl.textContent = (fc.pos + 1) + "/" + fc.deck.length;
   fcPaintMeter();
 
@@ -110717,9 +110769,9 @@ function showProfile(defaultTab, opts){
     "This month": "Time spent inside tests since the 1st of this month.",
     "All time": "Every minute you have spent inside tests on this account, across all your devices.",
     "Study sessions": "Tests you have finished. One test is one session however many units were in it, and a test you quit part way does not count.",
-    "Questions answered": "Every question you have answered anywhere \u2014 drills, exams, the daily question and the Virtual Room.",
+    "Questions answered": "Every question you have answered anywhere \u2014 drills, qualifiers, the daily question and the Virtual Room.",
     "Correct answers": "How many of those you got right first time. There is no second chance on a question, so this never counts a retry.",
-    "Tests finished": "Drills and exams you played to the end. The daily question is not a test.",
+    "Tests finished": "Drills and qualifiers you played to the end. The daily question is not a test.",
     "Total XP": "Every XP you have earned on this account, from every test and the daily question. Your level is worked out from it.",
     "Hundos": "Units you have finished with every question right. A run covering three units can earn three, and the daily question earns none.",
     /* (the three Virtual Room cards came off in the 317 fix - see below) */
@@ -110847,7 +110899,7 @@ function showProfile(defaultTab, opts){
   } else {
     const p = document.createElement("p");
     p.className = "info-note";
-    p.textContent = "Finish a drill or an exam and it shows up here.";
+    p.textContent = "Finish a drill or a qualifier and it shows up here.";
     recentSect.appendChild(p);
   }
   const reviewBtn = document.createElement("button");
