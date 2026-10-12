@@ -24051,6 +24051,7 @@ def main():
             check_b320b_reactions(br)
             check_b320c_case(br)
             check_b321b_moods(br)
+            check_b321h(br)
         finally:
             br.close()
     SERVER.shutdown()
