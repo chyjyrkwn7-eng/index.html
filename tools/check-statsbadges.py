@@ -141,8 +141,10 @@ def main():
         # Eight since the 317 fix: "Remove the virtual room stats from the
         # stats tab" - the three Virtual Room cards came off (the counts
         # they showed are still kept on store).
-        check("eight of them, in two sections - no Virtual Room cards",
-              r["n"] == 8 and r.get("grids") == [4, 4]
+        # Nine since build 320 (b320h): Total XP came off the phone's
+        # Profile card and leads At a glance here - "Total XP" first.
+        check("nine of them, in two sections, Total XP first - no Virtual Room cards",
+              r["n"] == 9 and r.get("grids") == [5, 4] and (r.get("labels") or [""])[0] == "Total XP"
               and not any(l in ("Matches played", "First-place finishes", "Top-3 finishes") for l in (r.get("labels") or [])),
               [r["n"], r.get("grids"), r.get("labels")])
         check("there is an explanation panel", r["why"] is True)

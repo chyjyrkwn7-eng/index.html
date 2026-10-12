@@ -614,7 +614,12 @@ BANNER_RUN = """()=>{
     const onQuestion = !!document.querySelector('.rs-spot');
     let homeErr = null;
     try{ showHome(); }catch(e){ homeErr = String(e && e.stack || e).slice(0, 300); }
-    setTimeout(() => {
+    /* build 320 (b320a): Home's unlock cards wait 1.9s after the XP has
+       flown into Profile (was 0.25s), so poll for the card for up to 10s
+       rather than reading it at a fixed 4.5s */
+    const t0 = Date.now();
+    const poll = () => { if(!document.querySelector('.rs-spot.is-challenge') && Date.now() - t0 < 10000) return setTimeout(poll, 200); read(); };
+    const read = () => {
     const b = document.querySelector('.rs-spot.is-challenge');
     const need = b && b.querySelector('.rs-spot-need-text');
     res({ streak: store.dailyCorrectStreak,
@@ -625,7 +630,8 @@ BANNER_RUN = """()=>{
           feat: CHARACTER_FEATS.daily10.label,
           says: b ? b.textContent : '', onQuestion,
           why: { home: !!document.querySelector('[data-screen="home"]'), stage: [...stage.children].map(e=>e.className+':'+(e.dataset.screen||'')).join('|').slice(0,160), onb: !!store.onboardingComplete, splash: !!document.getElementById('splashscreen'), homeErr, voidc: !!store.pendingVoidCutscene, pending: (pendingHomeUnlocks().chars || []).join(','), blocked: homeUnlockBlocked(), whatsNew: whatsNewHolds(), mute: !!theme.muteBanners, hold: !!store.mergeHold } });
-    }, 4500);
+    };
+    setTimeout(poll, 1500);
   }, 1800));}"""
 
 
