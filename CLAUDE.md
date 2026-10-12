@@ -20017,3 +20017,21 @@ that's when the what's new screen will show up."*
   note is said in the chained What's New too), check-tours (`novareturn`
   scenario; `startMainMenuTour` counts `mainMenuTourSteps`), check-chat's
   introduction (the meeting first, then What's New, tips and goodbye, once).
+- **This release is VERSION 9** (*"This is gonna be version 9 ... show a
+  version 8 with some of this stuff but put in parenthesis not launched"*).
+  `RELEASE_NOTES[0]` is `version: "9"` (sound effects and Android vibration,
+  both off by default; sign in first; rankings that match Profile; Nova; and
+  one "Everything From Version 8" bullet). Build 320's "7.8" entry is
+  `version: "8", notLaunched: true`, shown as "Version 8 (not launched)".
+  Home's label, What's New's eyebrow and Nova's "what's new in version 9"
+  all read `RELEASE_NOTES[0].version`. The newest entry is also Welcome's
+  `showWhatsNew()`, so its items keep icons. Nova's What's New opens with a
+  "Sound effects" row (WHATS_NEW_320 `sound`).
+- **The version history lists every item as a bullet, in full**
+  (`.releasehistory-list`: title, then what it does). It used to print a
+  group's titles joined by commas, which is why it read thin. Builds before
+  97 are not in this repo's git, so 2.0/3.0/Beta keep their existing text
+  (now shown in full) rather than gaining anything that cannot be sourced.
+  At the bottom, `#releasehistory-home`: a black "Back to Home" (`.next.ghost`,
+  Quit test's look). check-fixes' Release History check moved: no back link
+  at the top, Back to Home at the bottom.
