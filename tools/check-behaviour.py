@@ -2248,8 +2248,12 @@ def check_b234(br):
       for(let i = 0; i < 40 && !document.querySelectorAll('.rankmap-stop')[4]?.querySelector('.rankmap-gift.is-char .rankmap-giftav svg'); i++) await wait(100);
       await T('grey', () => { const st = [...document.querySelectorAll('.rankmap-stop')];
         const f = (el) => el ? getComputedStyle(el).filter : null;
-        return { reached: f(st[0].querySelector('.rankmap-dot')), next: f(st[3].querySelector('.rankmap-dot')),
+        /* a reached rank's theme is its live swatch (build 315), not the plain dot */
+        return { reached: f(st[0].querySelector('.rankmap-gift.is-theme .rankmap-swatch .dot, .rankmap-gift.is-theme .rankmap-dot')), next: f(st[3].querySelector('.rankmap-dot')),
+                 nextIsNext: st[3].classList.contains('is-next'), lockedDot: f(st[4].querySelector('.rankmap-dot')),
                  lockedChar: f(st[4].querySelector('.rankmap-gift.is-char .rankmap-giftav svg')) }; });
+      /* the banner preview is drawn after first paint too: wait for it under load */
+      for(let i = 0; i < 40 && ![...document.querySelectorAll('.rankmap-stop')].pop()?.querySelector('.rankmap-gift.is-banner .bnr'); i++) await wait(100);
       await T('novaPrev', () => { const st = [...document.querySelectorAll('.rankmap-stop')].pop();
         const b = st && st.querySelector('.rankmap-gift.is-banner .bnr');
         const chip = b && b.closest('.rankmap-gift'), other = st && st.querySelector('.rankmap-gift.is-theme');
@@ -2262,7 +2266,10 @@ def check_b234(br):
       showProfile('ranks'); await wait(300);
       await T('pendingAtFirst', () => { const g = [...document.querySelectorAll('.rankmap-stop')][2];
         return g.classList.contains('is-celebrate-pending'); });
+      /* the show glides and waits on the screen being clear: under load it
+         runs long, so wait for it (up to 12s) rather than a fixed 5.2s */
       await wait(5200);
+      for(let i = 0; i < 68 && document.querySelectorAll('.is-celebrate-pending').length; i++) await wait(100);
       await T('afterShow', () => ({ pending: document.querySelectorAll('.is-celebrate-pending').length, seen: store.rankMapSeen }));
       // Never opened on this build: set quietly, no show.
       store.rankMapSeen = null; showProfile('ranks'); await wait(300);
@@ -2316,8 +2323,12 @@ def check_b234(br):
         return res; });
       return out; }""")
     g = r["grey"] if isinstance(r["grey"], dict) else {}
-    check("a reward you have not reached is grey on the road map, and one you have is in colour",
-          "grayscale" not in str(g.get("reached")) and "grayscale" in str(g.get("next")) and "grayscale" in str(g.get("lockedChar")), g)
+    # Build 321 (b321e) moved this: "the up next rank, the unlocks in there
+    # shoukd have their color ... THATS ONLY for the next up one" - Up next
+    # (st[3]) is in colour now; every rank past it stays grey.
+    check("a reward you have not reached is grey on the road map, one you have is in colour - and Up next's are in colour (build 321)",
+          g.get("reached") is not None and "grayscale" not in str(g.get("reached")) and g.get("nextIsNext") is True and "grayscale" not in str(g.get("next"))
+          and "grayscale" in str(g.get("lockedDot")) and "grayscale" in str(g.get("lockedChar")), g)
     np_ = r["novaPrev"] if isinstance(r["novaPrev"], dict) else {}
     # Build 236: a chip the size of the other rewards, not a wide preview -
     # "I didn't mean to make that extremely large".
@@ -10224,6 +10235,8 @@ def check_b311_rank(br):
       const u = topicsIn(QUESTIONS); u.slice(0, 4).forEach(n => store.unitPerfects[n] = 999);
       store.rankMapFx244 = true; store.rankMapSeen = 99; store.rankMapProg = null;
       showProfile('ranks'); await wait(400);
+      /* placed two frames after the tab is shown: under load those frames come late */
+      for(let i = 0; i < 30 && [...document.querySelectorAll('.rankmap-roadtip')].some(t => !t.style.transform); i++) await wait(100);
       const tips = [...document.querySelectorAll('.rankmap-roadtip')];
       out.tips = tips.length;
       out.tipPx = tips.every(t => /^translateY\\(-?[0-9.]+px\\)$/.test(t.style.transform));
