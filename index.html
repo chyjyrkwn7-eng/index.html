@@ -4684,8 +4684,9 @@
     .cal-week-num{ font-size:1.35rem; }
     /* a tablet has room to say what the day is, in a word */
     .cal-week-what{
-      display:block; max-width:100%; padding:0 .35rem; font-size:.66rem; font-weight:650;
-      color:var(--soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+      max-width:100%; padding:0 .35rem; font-size:.66rem; font-weight:650; line-height:1.25;
+      text-align:center; color:var(--soft); overflow-wrap:break-word;
     }
     .cal-week-day.is-test .cal-week-what{ color:#F5B54D; }
     .cal-nt-title{ font-size:1.6rem; }
