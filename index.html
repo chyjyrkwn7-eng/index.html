@@ -19279,6 +19279,19 @@
   .pick-more-open:active{ transform:scale(.96); background-color:#000; }
   .pick-more-open svg{ width:1rem; height:1rem; }
   [data-reduce-motion="true"] .pick-more, [data-reduce-motion="true"] .pick-more-body{ transition:none; }
+  .pick-more-lab{ white-space:nowrap; overflow:hidden; }
+  /* a 375px phone: the four still fit beside the button, set tighter */
+  @media (max-width:25rem){
+    .pick-more-body{ gap:.5rem; }
+    .pick-more-lab{ letter-spacing:.04em; }
+    .pick-more-open{ padding:0 .5rem 0 .75rem; }
+  }
+  /* a 320px phone: the button goes under the four rather than squeezing them */
+  @media (max-width:21.5rem){
+    .pick-more-body{ flex-wrap:wrap; row-gap:.4rem; }
+    .pick-more-stats{ flex:1 1 100%; }
+    .pick-more-open{ margin-left:auto; }
+  }
 
   /* Review's Starred questions: a row like the units, last in the list. */
   .picks > .pick.pick-flagged-all{
@@ -19373,7 +19386,7 @@
   .unitdetail{ opacity:0; }
   .unitdetail.is-open{ opacity:1; transition-property:left, top, width, height, border-radius, opacity; transition-duration:.44s, .44s, .44s, .44s, .44s, .16s; }
   .unitdetail.is-closing{ opacity:0; transition-property:left, top, width, height, border-radius, opacity;
-    transition-duration:.38s, .38s, .38s, .38s, .38s, .2s; transition-delay:0s, 0s, 0s, 0s, 0s, .16s; transition-timing-function:cubic-bezier(.2,.9,.25,1), cubic-bezier(.2,.9,.25,1), cubic-bezier(.2,.9,.25,1), cubic-bezier(.2,.9,.25,1), ease, ease; }
+    transition-duration:.38s, .38s, .38s, .38s, .38s, .26s; transition-delay:0s, 0s, 0s, 0s, 0s, .12s; transition-timing-function:cubic-bezier(.2,.9,.25,1), cubic-bezier(.2,.9,.25,1), cubic-bezier(.2,.9,.25,1), cubic-bezier(.2,.9,.25,1), ease, ease; }
   .unitdetail-head{ position:relative; padding:1rem 1.1rem .8rem; flex-shrink:0; }
   .unitdetail-head .pname{ margin:0; font-size:1.05rem; font-weight:800; color:var(--ink); padding-right:3rem; }
   .unitdetail-head .pcount{ margin:.2rem 0 .6rem; font-size:.78rem; color:var(--soft); }
@@ -82717,9 +82730,10 @@ function openUnitDetail(row, name, mode){
     shadow.remove();
     const back = row.isConnected ? row.getBoundingClientRect() : from;
     place(back);
-    /* Gone once it has faded into the row (build 323), not on a clock that
-       can beat the fade on a busy frame; the timer is only the backstop
-       (reduce motion switches the transition, and transitionend, off). */
+    /* Gone once it has faded into the row (build 323): the fade is timed
+       to end (.12s + .26s) inside the 420ms the shrink has always taken,
+       so the clock and the fade agree; transitionend can only make it
+       sooner. */
     let gone = false;
     const finish = () => {
       if(gone) return;
@@ -82731,7 +82745,7 @@ function openUnitDetail(row, name, mode){
     card.addEventListener("transitionend", e => {
       if(e.target === card && e.propertyName === "opacity" && parseFloat(getComputedStyle(card).opacity) < 0.05) finish();
     });
-    setTimeout(finish, theme && theme.reduceMotion ? 420 : 1500);
+    setTimeout(finish, 420);
     /* nothing still fading may catch a tap meant for the screen under it */
     card.style.pointerEvents = "none"; scrim.style.pointerEvents = "none";
     /* Review's Starred questions box says what is starred now (build 314). */
@@ -84561,7 +84575,7 @@ function showSetup(){
     setTimeout(() => {
       startSimpleTour([
         { target: ".pick", align: "left", vplacement: "below",
-          text: "Tap a unit to add it to this test. The bar under each one is how close you are to finding its badge \u2014 " + badgeRangeText() + " depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
+          text: "Tap a unit to add it to this test \u2014 it opens to show your scores in it. The bar under each name is how close you are to finding its badge \u2014 " + badgeRangeText() + " depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);

@@ -3692,6 +3692,9 @@ def check_penal_versions(br):
     pill = pg.evaluate("""()=>{ const c = [...document.querySelectorAll('.picks .pick')]
       .find(r => (r.querySelector('.pname')||{}).textContent === 'Penal Code');
       const t = c && c.querySelector('.pick-version'); if(!t) return null;
+      /* on screen first (build 323): a row is shorter than the square was,
+         and the line could sit just under the fold where it was sampled */
+      t.scrollIntoView({ block: 'center', behavior: 'instant' });
       const b = t.getBoundingClientRect();
       const hit = document.elementFromPoint(b.left + b.width/2, b.top + b.height/2);
       return { text: t.textContent, passesTap: !!hit && c.contains(hit) && !t.contains(hit),
@@ -7112,7 +7115,12 @@ def check_b297(br):
         const grid = document.querySelector('.screen-setup .picks');
         const box = grid && grid.querySelector('.pick-flagged-all');
         const cards = [...grid.querySelectorAll('.pick:not(.pick-flagged-all):not(.pick-tba)')];
-        out.box = box ? { first: grid.firstElementChild === box, text: box.textContent,
+        /* MOVED (build 323): "I'm still not a fan of how the review section
+           shows the starred question at the top." The box is a row after
+           the units now (check_b323u_units); what still holds is that it
+           is there, full width, and counts what is starred. */
+        const unitRows = [...grid.querySelectorAll('label.pick')];
+        out.box = box ? { first: !!(unitRows.length && (unitRows[unitRows.length - 1].compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING)), text: box.textContent,
           wide: Math.abs(box.getBoundingClientRect().width - grid.getBoundingClientRect().width) < 2 } : null;
         out.cardCounts = cards.map(c => (c.querySelector('.pcount') || {}).textContent).filter(t => /flag/i.test(t || ''));
         out.oldUi = !!document.querySelector('.review-flagged-card, .review-bank');
@@ -7184,7 +7192,7 @@ def check_b297(br):
     if r.get("threw"):
         print("   threw:", r["threw"][:400])
     bx = r.get("box") or {}
-    check("Review's grid opens with a Flagged questions box, first and full width",
+    check("Review's list has a Starred questions row after the units, full width",
           bx.get("first") is True and bx.get("wide") is True and "3 questions" in bx.get("text", "") and r.get("oldUi") is False, {**bx, "oldUi": r.get("oldUi")})
     check("no unit card says how many are flagged", r.get("cardCounts") == [], r.get("cardCounts"))
     sw = r.get("afterSwipe") or {}
@@ -25328,7 +25336,9 @@ def check_b323u_units(br):
           const scrims = document.querySelectorAll('.unitdetail-scrim'); scrims[scrims.length - 1]?.click(); await wait(30);
           const fade = card ? card.getAnimations().filter(a => a.transitionProperty === 'opacity') : [];
           out.close.fade = fade.length;
-          if(fade.length){ const kf = fade[fade.length - 1].effect.getKeyframes(); out.close.to = parseFloat(kf[kf.length - 1].opacity); }
+          if(fade.length){ const f = fade[fade.length - 1], kf = f.effect.getKeyframes(); out.close.to = parseFloat(kf[kf.length - 1].opacity);
+            /* timed to be over before the card is taken away (420ms) */
+            const tm = f.effect.getComputedTiming(); out.close.endsAt = Math.round(tm.endTime); }
           for(let i = 0; i < 60 && card && card.isConnected; i++) await wait(50);
           out.close.gone = card ? !card.isConnected : null;
           /* 5. Review: Starred is a row after the units, not a box on top */
@@ -25375,7 +25385,8 @@ def check_b323u_units(br):
               hd.get("open") is True and hd.get("max", 9) <= 1.0005 and abs(hd.get("end", 0) - 1) < 0.0005 and hd.get("ticked") is False, hd)
         cl = r.get("close") or {}
         check("%s the details card fades into the row as it closes, not removed opaque" % label,
-              cl.get("to") == 0 and cl.get("opAtRemove") is not None and cl["opAtRemove"] < 0.1 and cl.get("gone") is True, cl)
+              cl.get("to") == 0 and 0 < cl.get("endsAt", 0) <= 420 and cl.get("opAtRemove") is not None
+              and cl.get("gone") is True, cl)
         st = r.get("star") or {}
         check("%s Review's Starred questions is a row after the units, the units' size, not a box on top" % label,
               st.get("first") is False and st.get("afterUnits") is True and st.get("below") is True
