@@ -26403,11 +26403,9 @@ def check_b324n_nova(br):
                store: JSON.stringify(store).indexOf('Hello again') >= 0 }; }""")
     hello = (r.get("thread") or [""])[0]
     check("an existing account is not a friend before this build's first Home, and is after it", not r.get("before") and r.get("after"), r)
-    check("...with his hello as an unread DM, the chat button counting it, and a preview banner",
+    check("...quietly: his hello is an unread DM and the chat button counts it, with no banner over the screen",
           hello.startswith("nova:Hello again, Madison") and r.get("unread") and not r.get("dotHidden") and int(r.get("dot") or 0) >= 1
-          and "Nova" in (r.get("preview") or ""), {k: r.get(k) for k in ("thread", "unread", "dot", "preview")})
-    check("his messages live on the device, not on the synced store", not r.get("store"))
-
+          and "Nova" not in (r.get("preview") or ""), {k: r.get(k) for k in ("thread", "unread", "dot", "preview")})
     # His row on the Friends tab, unread, and the thread.
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       chatDockTab = 'friends'; openChatDock(); await wait(400);
@@ -26494,21 +26492,50 @@ def check_b324n_nova(br):
                lb: (leaderboardRows || []).some(e => e && (e.pub === 'nova' || e.firstName === 'Nova')) }; }""")
     check("he never appears on the leaderboard", "Nova" not in (r.get("rows") or "") and not r.get("lb"), (r.get("rows") or "")[:120])
 
+    # Any later message of his arrives like a classmate's: a preview banner that opens his chat.
+    r2 = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      /* his chat is still the open one (the dock is shut), so it is the
+         panel's own announcement - and from the list, the ping's */
+      novaSendDM('Testing, testing.', { kind: 'test' }); await wait(500);
+      let b = document.querySelector('.vroom-chat-alert');
+      const out0 = b ? b.textContent : null;
+      if(b) b.click(); await wait(500);
+      const open0 = chatRoomCode, dock0 = chatDockOpen;
+      closeChatRoom(); closeChatDock(); await wait(300);
+      novaSendDM('Testing again.', { kind: 'test' }); await wait(500);
+      b = document.querySelector('.vroom-chat-alert.is-ping');
+      const out = { text: b ? b.textContent : null };
+      if(b) b.click(); await wait(600);
+      out.open = chatRoomCode; out.dock = chatDockOpen; out.text0 = out0; out.open0 = open0; out.dock0 = dock0;
+      closeChatRoom(); closeChatDock(); await wait(300);
+      return out; }""")
+    check("a message from him arrives as a preview banner like any DM, and a tap opens his chat (his chat open or not)",
+          "Nova" in (r2.get("text") or "") and "Testing again" in (r2.get("text") or "") and r2.get("open") == "DM-NOVA" and r2.get("dock")
+          and "Nova" in (r2.get("text0") or "") and r2.get("open0") == "DM-NOVA" and r2.get("dock0"), r2)
+    check("his messages live on the device, not on the synced store", not r.get("store"))
+
     # Broadcasts: not before their time, once, and never stale.
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       showHome(); await wait(600);
       const fmt = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
         + 'T' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
       const count = id => novaThread().filter(m => m.text === 'BCAST ' + id).length;
+      /* in the first minute and a half of the friendship he says nothing more */
+      NOVA_BROADCASTS.push({ id: 'chk-settle', at: fmt(new Date(Date.now() - 3600e3)), text: 'BCAST chk-settle' });
+      let s0 = novaState(); s0.since = Date.now() - 30e3; novaSave(s0);
+      novaTick(); await wait(100);
+      const settle = count('chk-settle');
+      s0 = novaState(); s0.since = Date.now() - 3600e3; novaSave(s0);
       NOVA_BROADCASTS.push({ id: 'chk-future', at: fmt(new Date(Date.now() + 3600e3)), text: 'BCAST chk-future' });
       NOVA_BROADCASTS.push({ id: 'chk-old', at: fmt(new Date(Date.now() - 9 * 86400e3)), text: 'BCAST chk-old' });
       novaTick(); await wait(100);
       const early = count('chk-future');
       NOVA_BROADCASTS.push({ id: 'chk-now', at: fmt(new Date(Date.now() - 3600e3)), text: 'BCAST chk-now' });
       novaTick(); await wait(100); novaTick(); await wait(100); novaTick();
-      return { early, now: count('chk-now'), old: count('chk-old'), seeded: NOVA_BROADCASTS[0].id,
+      return { settle, early, now: count('chk-now'), old: count('chk-old'), seeded: NOVA_BROADCASTS[0].id,
                seededText: NOVA_BROADCASTS[0].text }; }""")
-    check("a broadcast is not delivered before its time, nor when it is over a week old", r.get("early") == 0 and r.get("old") == 0, r)
+    check("a broadcast is not delivered before its time, nor when it is over a week old, nor in the hello's first minute and a half",
+          r.get("early") == 0 and r.get("old") == 0 and r.get("settle") == 0, r)
     check("a broadcast that is due is delivered once, not twice", r.get("now") == 1, r)
     check("the seeded broadcast says he can be messaged now", "message me" in (r.get("seededText") or ""), r.get("seededText"))
 

@@ -78248,6 +78248,7 @@ const NOVA_KEEP_N = 60;
 const NOVA_TIP_GAP_MS = 3 * 24 * 3600 * 1000;
 const NOVA_QUIET_MS = 20 * 3600 * 1000;
 const NOVA_TIP_SETTLE_MS = 2 * 24 * 3600 * 1000;
+const NOVA_SETTLE_MS = 90 * 1000;
 const NOVA_COLOR = "#FFD27A";
 const NOVA_TIPS = [
   "Tip: a hundo only counts when you take a whole unit. A shortened run is good practice, but it won’t count towards a badge.",
@@ -78340,7 +78341,9 @@ function novaBackInMin(now){
   return Math.max(5, Math.ceil((t - now) / 60000 / 5) * 5);
 }
 function novaStatusText(){
-  return novaAway() ? "Away · back in about " + novaBackInMin() + " min" : "Available";
+  if(!novaAway()) return "Available";
+  const m = novaBackInMin();
+  return "Away \u00b7 back in about " + (m < 60 ? m + " min" : Math.round(m / 60) + (Math.round(m / 60) === 1 ? " hour" : " hours"));
 }
 
 /* ---- THE SMALL API THE VIRTUAL ROOM BUILDER USES ---- */
@@ -78447,6 +78450,21 @@ function novaFriendMoment(){
   const fresh = novaBefriend({ intro: true, quiet: true });
   const btn = document.getElementById("chatdock-btn");
   if(btn) btn.classList.add("is-introduced");
+  /* the ringed button sits in the corner his Skip uses: Skip steps left of
+     it while it is lit, rather than being covered */
+  try{
+    const bar = document.querySelector(".nova-talk .nt-top");
+    if(btn && bar){
+      const b = btn.getBoundingClientRect(), r = bar.getBoundingClientRect();
+      const cs = getComputedStyle(bar);
+      const pad = Math.max(0, r.right - (parseFloat(cs.paddingRight) || 0) - b.left + 10);
+      if(pad && b.bottom > r.top && b.top < r.bottom){
+        bar.style.transition = "padding-right .3s ease";
+        bar.style.paddingRight = Math.round(pad + (parseFloat(cs.paddingRight) || 0)) + "px";
+        bar.classList.add("nova-clear-btn");
+      }
+    }
+  }catch(e){}
   document.querySelectorAll(".nova-friend-note").forEach(n => n.remove());
   if(typeof theme === "object" && theme && theme.muteBanners) return fresh;
   const def = BANNER_KINDS.friend;
@@ -78471,7 +78489,14 @@ function novaFriendMoment(){
   }catch(e){}
   try{ playSound("ui.notice"); }catch(e){}
   requestAnimationFrame(() => el.classList.add("show"));
-  setTimeout(() => novaFriendMomentEnd(el), 5200);
+  /* up for as long as he is saying it (at least 4s, at most 12s) */
+  const talk = document.querySelector(".nova-talk");
+  const at = talk && talk.__nova ? talk.__nova.index : -1, t0 = Date.now();
+  const watch = setInterval(() => {
+    const gone = !el.isConnected || !talk || !talk.isConnected || (talk.__nova && talk.__nova.index !== at);
+    const age = Date.now() - t0;
+    if((gone && age >= 4000) || age >= 12000 || !el.isConnected){ clearInterval(watch); novaFriendMomentEnd(el); }
+  }, 300);
   return fresh;
 }
 function novaFriendMomentEnd(only){
@@ -78483,6 +78508,7 @@ function novaFriendMomentEnd(only){
   if(!only){
     const btn = document.getElementById("chatdock-btn");
     if(btn) btn.classList.remove("is-introduced");
+    document.querySelectorAll(".nt-top.nova-clear-btn").forEach(bar => { bar.style.paddingRight = ""; bar.classList.remove("nova-clear-btn"); });
   }
 }
 
@@ -78526,7 +78552,7 @@ function novaTick(){
       /* met him before this build, or this is a second device: quietly */
       /* (an account still owed the meeting meets him there - unless this
          device has already seen What's New, when the meeting cannot come) */
-      if((!novaMeetOwed() || introSeen()) && novaCalm() && document.querySelector("#stage [data-screen]")) novaBefriend({ quiet: false });
+      if((!novaMeetOwed() || introSeen()) && novaCalm() && document.querySelector("#stage [data-screen]")) novaBefriend({ quiet: true });
       return;
     }
     if(!novaCalm()) return;
@@ -78543,8 +78569,11 @@ function novaTick(){
       novaSendDM(novaRankLine(shown), { id: "rank-" + shown, kind: "rank" });
       return;
     }
-    /* broadcasts, oldest first, inside their window */
+    /* nothing else in the first minute and a half after his hello: one
+       message at a time, and the hello is the one that comes first */
     s = novaState();
+    if(now - (s.since || 0) < NOVA_SETTLE_MS) return;
+    /* broadcasts, oldest first, inside their window */
     const due = (NOVA_BROADCASTS || []).filter(b => b && b.id && b.text && !(s.sent || {})["b:" + b.id])
       .map(b => ({ b: b, at: novaBroadcastAt(b) }))
       .filter(x => isFinite(x.at) && x.at <= now && now - x.at <= NOVA_BROADCAST_WINDOW_MS)
@@ -78670,7 +78699,7 @@ const NOVA_CHAT_CTX = {
       const art = document.querySelector(".chatdock-friendhead-art.is-nova");
       if(art) art.classList.toggle("is-online", !away);
     }catch(e){}
-    return away ? { off: true, placeholder: "Nova is away · back in about " + novaBackInMin() + " min" }
+    return away ? { off: true, placeholder: "Nova is away right now" }
                 : { off: false, placeholder: "Message Nova…" };
   },
   isMuted: () => isChatMuted(NOVA_CODE),
@@ -80461,6 +80490,7 @@ function renderFriendChatList(){
   intro.className = "chatdock-note";
   intro.textContent = pubs.length
     ? "A chat with each of your friends. Messages clear after a day."
+    : nova ? "Add classmates from Profile \u203a Friends and they\u2019ll appear here beside Nova, each with their own chat."
     : "Your friends appear here, each with their own chat. Add friends from Profile \u203a Friends.";
   chatTabBody.appendChild(intro);
   if(!pubs.length){
