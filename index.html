@@ -27172,6 +27172,8 @@
     --open-y:calc(var(--cw) * .15);
     /* the case's corners: a radius in its own width, and the metal caps on them */
     --bc-r:calc(var(--cw) * .03); --bc-cap:calc(var(--cw) * .085);
+    /* one hundredth of the case's width: the hardware's unit (build 321) */
+    --cu:calc(var(--cw) / 100); --hw-r:var(--bc-r);
     position:fixed; inset:0; z-index:420; overflow:hidden; cursor:pointer;
     padding:env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
     background:rgba(5,7,11,0); transition:background .26s ease, opacity .45s ease;
@@ -27185,6 +27187,10 @@
      put its open lid up into the badge. Sideways the badge and the words
      go beside it and 44vh stands. badgeCaseWidthPx() is this, in JS. */
   @media (max-aspect-ratio:13/10){ .bc-scene{ --cw:min(80vw, 22.5rem, 44vh, calc((100vh - 15rem) / 1.75)); } }
+  /* UPRIGHT, THE BADGE WAITS UNDER THE CASE NOW (build 321, b321c) - in
+     front of it, where the lid never goes - so the open case comes up the
+     screen to make the room there, rather than down it. */
+  @media (max-aspect-ratio:13/10){ .bc-scene{ --open-y:calc(var(--cw) * .07); } }
   @media (min-width:40rem) and (max-aspect-ratio:13/10){ .bc-scene{ --cw:min(62vw, 29rem, 44vh, calc((100vh - 17rem) / 1.75)); } }
   .bc-scene.bc-in{ background:rgba(5,7,11,.93); }
   .bc-scene.bc-out{ opacity:0; }
@@ -27256,23 +27262,10 @@
      (the wall's ::before/::after), in the same metal, so the four corners
      of the case read as four corner protectors. The caps are drawn, not
      filtered: a lit diagonal ramp, a bevel and a rivet. */
-  .bc-cap{ position:absolute; width:var(--bc-cap); height:var(--bc-cap); z-index:3; pointer-events:none;
-    background:radial-gradient(circle at 50% 50%, #E8EDF2 0 9%, #59636D 11% 15%, transparent 17%),
-      linear-gradient(135deg, #D9DFE6 0%, #A3ADB8 30%, #6C7782 62%, #8C96A1 82%, #4E5862 100%);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.6), inset 0 -1px 1px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.55), 0 1px 3px rgba(0,0,0,.5); }
-  .bc-cap.is-tl{ left:-2px; top:-2px; border-radius:var(--bc-r) 0 calc(var(--bc-cap) * .5) 0; }
-  .bc-cap.is-tr{ right:-2px; top:-2px; border-radius:0 var(--bc-r) 0 calc(var(--bc-cap) * .5); }
-  .bc-cap.is-bl{ left:-2px; bottom:-2px; border-radius:0 calc(var(--bc-cap) * .5) 0 var(--bc-r); }
-  .bc-cap.is-br{ right:-2px; bottom:-2px; border-radius:calc(var(--bc-cap) * .5) 0 var(--bc-r) 0; }
+  /* (build 321: the caps' metal is the shared .nova-case-cap - see THE CASE'S HARDWARE at the end of the sheet) */
   /* the walls' end guards, in the caps' metal and as wide, rounded where
      the wall meets the table */
-  .bc-case .bc-front.nova-case-wall::before, .bc-case .bc-front.nova-case-wall::after,
-  .bc-case .bc-lid-front.nova-case-wall::before, .bc-case .bc-lid-front.nova-case-wall::after{
-    width:var(--bc-cap); min-width:0;
-    background-image:linear-gradient(90deg, #4E5862 0%, #8C96A1 18%, #C9D0D8 40%, #A3ADB8 58%, #6C7782 82%, #454E57 100%);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.45), inset 0 -1px 0 rgba(0,0,0,.4), 0 0 0 1px rgba(0,0,0,.5); }
-  .bc-case .bc-front.nova-case-wall::before, .bc-case .bc-lid-front.nova-case-wall::before{ left:-1px; border-radius:0 0 calc(var(--bc-cap) * .3) var(--bc-r); }
-  .bc-case .bc-front.nova-case-wall::after, .bc-case .bc-lid-front.nova-case-wall::after{ right:-1px; border-radius:0 0 calc(var(--bc-cap) * .3) var(--bc-r); }
+  /* (build 321: the walls' end guards are the shared .nova-case-wall.is-hw) */
   .bc-slot{ display:flex; align-items:center; justify-content:center; position:relative; min-width:0; min-height:0; }
   .bc-slot svg{ position:relative; z-index:1; width:100%; height:100%; display:block; }
   .bc-hinge{ position:absolute; top:-.3rem; width:12%; height:.6rem; z-index:2; }
@@ -27288,7 +27281,7 @@
     transform:rotateX(0deg); transition:transform .42s cubic-bezier(.3,1.35,.5,1); }
   .bc-unlatch .bc-latch-l .bc-hasp, .bc-unlatch2 .bc-latch-r .bc-hasp{ transform:rotateX(-158deg); }
   /* the handle, folded down in front of the case */
-  .bc-handle{ left:33%; right:33%; top:100%; height:calc(var(--d) * .5); transform:translateY(calc(var(--d) * .32)) translateZ(calc(var(--d) * .22)); }
+  /* the handle: hung on the front wall (build 321) - .nova-case-handle.is-hung */
   /* the light inside, seen through the gap as the lid lifts - from the
      NEAR edge, where the gap is (build 319: it was at the far edge, under
      the lid, and never showed through the crack) */
@@ -27311,6 +27304,18 @@
      tray, and the only light in the open case is the badge's own, when it
      seats (.bc-slot.is-new::before). */
   .bc-open .bc-spill{ opacity:0; transition:opacity .3s ease; }
+  /* THE BADGES' LIGHT ON THE LID'S INSIDE (build 321, b321c): "The glow
+     needs to look real to whatever is in there". While the lid is low each
+     badge lights the patch of cushion right over it (.is-near); as the lid
+     swings up those go and what is left is the light reaching the lid's
+     foot by the hinge (.is-far), strongest from the back row, which is
+     nearest it. Both are set by the scene from where the badges are
+     (bcLeakLayers); opacity only. */
+  .bc-lidlight{ position:absolute; inset:calc(var(--cu) * 2); border-radius:var(--bc-r); pointer-events:none; opacity:0; z-index:1; }
+  .bc-crack .bc-lidlight.is-near{ opacity:.9; transition:opacity .3s ease; }
+  .bc-open .bc-lidlight.is-near{ opacity:.08; transition:opacity 1.5s ease .1s; }
+  .bc-open .bc-lidlight.is-far{ opacity:.6; transition:opacity 1.6s ease .5s; }
+  .bc-scene.bc-still .bc-lidlight.is-far{ opacity:.6; }
   /* the lid, on its hinges at the tray's far edge: the near edge lifts
      TOWARDS you (positive rotateX about the top edge, build 308) and goes
      on round until it stands behind the tray, lining out */
@@ -27327,22 +27332,11 @@
      stitched twice round its edge, with the case's name debossed in the
      top band. */
   .bc-lid-in{ inset:0; transform:rotateX(180deg); border-radius:var(--bc-r); box-shadow:0 0 0 1px rgba(0,0,0,.6); }
-  .bc-lid-pad{ position:absolute; inset:calc(var(--cw) * .045); border-radius:calc(var(--bc-r) * .8); display:flex; align-items:flex-start; justify-content:center; padding-top:9%;
-    box-shadow:0 0 0 1.5px rgba(150,158,168,.55), 0 0 0 3px rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.6), inset 0 calc(var(--cw) * .02) calc(var(--cw) * .05) rgba(0,0,0,.6), inset 0 calc(var(--cw) * -.012) calc(var(--cw) * .04) rgba(0,0,0,.45); }
-  .bc-lid-pad::after{ content:""; position:absolute; inset:calc(var(--cw) * .014); border-radius:calc(var(--bc-r) * .6); border:1px dashed var(--case-stitch); pointer-events:none; }
-  .bc-lid-pad::before{ content:""; position:absolute; inset:calc(var(--cw) * .026); border-radius:calc(var(--bc-r) * .5); border:1px dashed rgba(206,214,224,.13); pointer-events:none; }
-  .bc-lid-label{ position:relative; z-index:1; font-family:var(--sans); font-weight:800; text-transform:uppercase; white-space:nowrap;
-    font-size:calc(var(--cw) * .036); letter-spacing:.22em; color:rgba(198,206,216,.34);
-    text-shadow:0 -1px 0 rgba(0,0,0,.75), 0 1px 0 rgba(255,255,255,.08); padding:calc(var(--cw) * .014) calc(var(--cw) * .04);
-    border:1px dashed rgba(206,214,224,.18); border-radius:calc(var(--cw) * .012); }
+  /* the cushion and its name: the shared .nova-case-cushion (build 321) */
   .bc-lid-out{ inset:0; transform:translateZ(var(--dl)); border-radius:var(--bc-r); display:flex; align-items:center; justify-content:center; }
   /* the clips on top: a keeper over each latch at the lid's front edge,
      the plate the latch's hasp hooks up into */
-  .bc-clip{ position:absolute; bottom:-2px; width:13%; height:9%; z-index:2; border-radius:calc(var(--cw) * .012) calc(var(--cw) * .012) 0 0;
-    background:linear-gradient(180deg, #E6EBF0 0%, #B6C0CA 35%, #7D8894 70%, #A5AFBA 100%);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.75), 0 0 0 1px rgba(0,0,0,.55), 0 -1px 3px rgba(0,0,0,.45); }
-  .bc-clip::after{ content:""; position:absolute; left:28%; right:28%; top:38%; height:24%; border-radius:999px; background:#161A1F; box-shadow:0 1px 0 rgba(255,255,255,.45); }
-  .bc-clip.is-l{ left:15%; } .bc-clip.is-r{ right:15%; }
+  /* (build 321: the clips are the shared .nova-case-clip) */
   .bc-lid-front{ left:0; right:0; top:100%; height:var(--dl); transform-origin:50% 0; transform:translateZ(var(--dl)) rotateX(-90deg); border-radius:0 0 var(--bc-r) var(--bc-r); }
   /* a small knock as the badge seats */
   .bc-case.bc-open.bc-thud{ animation:bc-thud .42s cubic-bezier(.3,0,.3,1); }
@@ -28607,6 +28601,156 @@
      also debossed in the open lid and said under the case. */
   .bc-sideplate{ position:absolute; left:50%; top:50%; transform:translate(-50%, -50%) translateZ(1.5px);
     font-size:calc(var(--cw) * .029); letter-spacing:.14em; padding:calc(var(--cw) * .014) calc(var(--cw) * .03); }
+
+  /* ---- THE CASE'S HARDWARE (build 321, b321c) - see caseKit ----
+     "all the metal pieces in the corners and handles and the clip things to
+     lock it and stuff and the 'screws' like the dots and all that stuff,
+     looks bad, I think it's maybe because it has a super flat look?" Every
+     metal part was one gradient with a 1px line round it. Now each is lit
+     as a solid: brushed metal (fine lines, an image) under a specular
+     falloff from the top left, a bevel (a lit top-left edge, a shaded
+     bottom-right one and a soft falloff into the face), a hairline where it
+     meets the leather and a contact shadow on the leather under it. Every
+     screw is a countersunk recess (its shadow inside the top-left rim, its
+     catch-light on the bottom-right) with a domed head in it, a slot cut
+     across the head (dark, its lower lip lit), each turned its own way.
+     Sizes are in --cu, a hundredth of the case's width: the cutscene's
+     (--cw / 100) and the Badges screen's (1cqw), so the two cases are one
+     drawing. No filter anywhere: gradients and shadows on the parts. */
+  .nova-case.ncase{ --cu:1cqw; --hw-r:var(--case-r); }
+  .nova-case.ncase, .bc-scene{
+    --hw-brush:repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 1px, rgba(0,0,0,.06) 1px 2px, rgba(255,255,255,0) 2px 3px);
+    --hw-spec:radial-gradient(70% 60% at 30% 18%, rgba(255,255,255,.72) 0%, rgba(255,255,255,.22) 38%, rgba(255,255,255,0) 72%);
+    --hw-chrome:linear-gradient(180deg, #F7F9FB 0%, #DDE3E9 12%, #A6B1BC 34%, #6A7581 50%, #4C5560 57%, #7F8A96 72%, #BEC7D0 88%, #6E7884 100%);
+    --hw-bevel:inset 0 calc(var(--cu) * .3) 0 rgba(255,255,255,.88), inset calc(var(--cu) * .22) 0 0 rgba(255,255,255,.32),
+      inset 0 calc(var(--cu) * -.34) 0 rgba(0,0,0,.6), inset calc(var(--cu) * -.22) 0 0 rgba(0,0,0,.34),
+      inset 0 0 calc(var(--cu) * .9) rgba(0,0,0,.28);
+    --hw-seat:0 0 0 calc(var(--cu) * .14) rgba(0,0,0,.62), 0 calc(var(--cu) * .5) calc(var(--cu) * 1.1) rgba(0,0,0,.72), 0 calc(var(--cu) * .15) calc(var(--cu) * .25) rgba(0,0,0,.5);
+  }
+  /* a screw: the recess (this), its head (::before), its slot (::after) */
+  .nova-case-screw{ position:absolute; box-sizing:border-box; width:var(--sw, calc(var(--cu) * 2.6)); height:var(--sw, calc(var(--cu) * 2.6));
+    border-radius:50%; pointer-events:none; z-index:1;
+    background:radial-gradient(circle at 50% 50%, #07090C 0 52%, #222930 70%, #6E7985 88%, #A9B3BD 100%);
+    box-shadow:inset calc(var(--cu) * .22) calc(var(--cu) * .26) calc(var(--cu) * .3) rgba(0,0,0,.9),
+      inset calc(var(--cu) * -.16) calc(var(--cu) * -.2) calc(var(--cu) * .14) rgba(255,255,255,.42); }
+  .nova-case-screw::before{ content:""; position:absolute; inset:15%; border-radius:50%;
+    background:radial-gradient(circle at 33% 28%, #FFFFFF 0 7%, #E9EDF1 17%, #B3BDC7 40%, #737E8A 70%, #3A424B 100%);
+    box-shadow:0 calc(var(--cu) * .12) calc(var(--cu) * .16) rgba(0,0,0,.7); }
+  .nova-case-screw::after{ content:""; position:absolute; left:21%; right:21%; top:50%; height:15%; margin-top:-7.5%; border-radius:999px;
+    background:linear-gradient(180deg, #050608 0 58%, rgba(255,255,255,.7) 100%); transform:rotate(var(--turn, 30deg)); }
+  /* a corner cap: a protector folded round the corner, screwed through its middle */
+  .nova-case-cap{ position:absolute; z-index:3; pointer-events:none; width:calc(var(--cu) * 8.5); height:calc(var(--cu) * 8.5);
+    background-color:#9AA5B1;
+    background-image:var(--hw-spec), var(--hw-brush), linear-gradient(135deg, #E7ECF1 0%, #B4BEC8 26%, #7A8591 56%, #59636E 78%, #8B96A2 92%, #4A535D 100%);
+    box-shadow:var(--hw-bevel), var(--hw-seat); }
+  .nova-case-cap.is-tl{ left:-2px; top:-2px; border-radius:var(--hw-r) 0 calc(var(--cu) * 4.25) 0; }
+  .nova-case-cap.is-tr{ right:-2px; top:-2px; border-radius:0 var(--hw-r) 0 calc(var(--cu) * 4.25); }
+  .nova-case-cap.is-bl{ left:-2px; bottom:-2px; border-radius:0 calc(var(--cu) * 4.25) 0 var(--hw-r); }
+  .nova-case-cap.is-br{ right:-2px; bottom:-2px; border-radius:calc(var(--cu) * 4.25) 0 var(--hw-r) 0; }
+  .nova-case-cap > .nova-case-screw{ left:50%; top:50%; margin:calc(var(--cu) * -1.3) 0 0 calc(var(--cu) * -1.3); }
+  .nova-case-cap.is-tl > .nova-case-screw{ margin:calc(var(--cu) * -1.8) 0 0 calc(var(--cu) * -1.8); }
+  .nova-case-cap.is-tr > .nova-case-screw{ margin:calc(var(--cu) * -1.8) 0 0 calc(var(--cu) * -.8); }
+  .nova-case-cap.is-bl > .nova-case-screw{ margin:calc(var(--cu) * -.8) 0 0 calc(var(--cu) * -1.8); }
+  .nova-case-cap.is-br > .nova-case-screw{ margin:calc(var(--cu) * -.8) 0 0 calc(var(--cu) * -.8); }
+  /* a latch, a hasp, a clip: polished plate, bevelled, seated */
+  :is(.bc-case .bc-front, .nova-case.ncase > .ncase-front) .nova-case-latch{
+    border-radius:calc(var(--cu) * .9); background-color:#A3AEBA;
+    background-image:var(--hw-spec), var(--hw-brush), var(--hw-chrome); box-shadow:var(--hw-bevel), var(--hw-seat); }
+  :is(.bc-case .bc-front, .nova-case.ncase > .ncase-front) .nova-case-latch::after{ left:31%; right:31%; top:44%; height:22%;
+    background:linear-gradient(180deg, #050608 0%, #1A1F25 60%, #2C333B 100%);
+    box-shadow:inset 0 calc(var(--cu) * .2) calc(var(--cu) * .25) rgba(0,0,0,.9), 0 calc(var(--cu) * .16) 0 rgba(255,255,255,.6); }
+  :is(.bc-case .bc-front, .nova-case.ncase > .ncase-front) .nova-case-latch > .nova-case-screw{ --sw:calc(var(--cu) * 2); top:50%; margin-top:calc(var(--cu) * -1); }
+  :is(.bc-case .bc-front, .nova-case.ncase > .ncase-front) .nova-case-latch > .nova-case-screw.is-l{ left:7%; }
+  :is(.bc-case .bc-front, .nova-case.ncase > .ncase-front) .nova-case-latch > .nova-case-screw.is-r{ right:7%; }
+  :is(.bc-case .bc-front, .nova-case.ncase > .ncase-front) .nova-case-hasp{ border-radius:calc(var(--cu) * 1.6) calc(var(--cu) * 1.6) calc(var(--cu) * .5) calc(var(--cu) * .5);
+    background-color:#A3AEBA; background-image:var(--hw-spec), var(--hw-brush), linear-gradient(90deg, #6A7581 0%, #C9D1D9 22%, #F2F5F8 40%, #A6B1BC 64%, #5E6976 100%);
+    box-shadow:var(--hw-bevel), var(--hw-seat); }
+  :is(.bc-case .bc-front, .nova-case.ncase > .ncase-front) .nova-case-hasp::after{ content:""; position:absolute; left:34%; right:34%; top:16%; height:18%; border-radius:999px;
+    background:#07090C; box-shadow:inset 0 calc(var(--cu) * .2) calc(var(--cu) * .2) #000, 0 calc(var(--cu) * .14) 0 rgba(255,255,255,.5); }
+  .nova-case-clip{ position:absolute; bottom:-2px; width:13%; height:9%; z-index:2; border-radius:calc(var(--cu) * 1.2) calc(var(--cu) * 1.2) 0 0;
+    background-color:#A3AEBA; background-image:var(--hw-spec), var(--hw-brush), var(--hw-chrome);
+    box-shadow:var(--hw-bevel), 0 0 0 calc(var(--cu) * .14) rgba(0,0,0,.62), 0 calc(var(--cu) * -.4) calc(var(--cu) * 1) rgba(0,0,0,.6); }
+  .nova-case-clip.is-l{ left:15%; } .nova-case-clip.is-r{ right:15%; }
+  .nova-case-clip > .nova-case-screw{ --sw:calc(var(--cu) * 2.2); left:50%; top:50%; margin:calc(var(--cu) * -1.1) 0 0 calc(var(--cu) * -1.1); }
+  /* a hinge: a barrel lit along its length, knuckles, a screw each end */
+  :is(.bc-tray, .nova-case.ncase .ncase-tray) > .nova-case-hinge{ border-radius:calc(var(--cu) * 1.2); background-color:#A3AEBA;
+    background-image:linear-gradient(90deg, rgba(0,0,0,0) 32%, rgba(0,0,0,.55) 32.5% 33.6%, rgba(255,255,255,.35) 33.8% 34.4%, rgba(0,0,0,0) 34.6% 65.4%, rgba(0,0,0,.55) 65.6% 66.7%, rgba(255,255,255,.35) 66.9% 67.5%, rgba(0,0,0,0) 67.7%),
+      linear-gradient(180deg, #3E4650 0%, #B9C2CB 18%, #FFFFFF 27%, #C3CCD5 40%, #7D8894 62%, #4A535D 82%, #8E99A5 94%, #2E353D 100%);
+    box-shadow:0 0 0 calc(var(--cu) * .14) rgba(0,0,0,.62), 0 calc(var(--cu) * .5) calc(var(--cu) * 1) rgba(0,0,0,.65); }
+  :is(.bc-tray, .nova-case.ncase .ncase-tray) > .nova-case-hinge > .nova-case-screw{ --sw:calc(var(--cu) * 1.6); top:50%; margin-top:calc(var(--cu) * -.8); }
+  :is(.bc-tray, .nova-case.ncase .ncase-tray) > .nova-case-hinge > .nova-case-screw.is-l{ left:9%; }
+  :is(.bc-tray, .nova-case.ncase .ncase-tray) > .nova-case-hinge > .nova-case-screw.is-r{ right:9%; }
+  /* a wall's end guards: a rounded aluminium edge, lit down its length */
+  .nova-case-wall.is-hw::before, .nova-case-wall.is-hw::after{ width:calc(var(--cu) * 8.5); min-width:0;
+    background-image:var(--hw-brush), linear-gradient(90deg, #3E4650 0%, #7D8894 12%, #DCE2E8 34%, #FFFFFF 42%, #AEB8C2 58%, #6A7581 80%, #3A424B 100%);
+    box-shadow:inset 0 calc(var(--cu) * .3) 0 rgba(255,255,255,.7), inset 0 calc(var(--cu) * -.3) 0 rgba(0,0,0,.5), 0 0 0 calc(var(--cu) * .14) rgba(0,0,0,.55); }
+  .nova-case-wall.is-hw::before{ left:-1px; border-radius:0 0 calc(var(--cu) * 2.5) var(--hw-r); }
+  .nova-case-wall.is-hw::after{ right:-1px; border-radius:0 0 calc(var(--cu) * 2.5) var(--hw-r); }
+  /* THE HANDLE, HUNG ON THE FRONT WALL: two mounts screwed to it and the
+     leather grip between them, its ends in the mounts. In the cutscene each
+     part has a top (-top, turned 90deg out of the wall), so from over the
+     open case you see the grip's round back as it hangs, not a flat bar. */
+  .nova-case-handle.is-hung{ position:absolute; display:block; left:32%; right:32%; background:none; border-radius:0; box-shadow:none; pointer-events:none; z-index:2; }
+  .nova-case-handle.is-hung::before, .nova-case-handle.is-hung::after{ content:none; }
+  .nova-case-mount{ position:absolute; top:0; width:calc(var(--cu) * 3.4); height:calc(var(--cu) * 3.8); z-index:2;
+    border-radius:calc(var(--cu) * .8) calc(var(--cu) * .8) calc(var(--cu) * 1.7) calc(var(--cu) * 1.7); background-color:#A3AEBA;
+    background-image:var(--hw-spec), var(--hw-brush), var(--hw-chrome); box-shadow:var(--hw-bevel), var(--hw-seat); }
+  .nova-case-mount.is-l{ left:0; } .nova-case-mount.is-r{ right:0; }
+  .nova-case-mount > .nova-case-screw{ --sw:calc(var(--cu) * 1.9); left:50%; top:22%; margin-left:calc(var(--cu) * -.95); }
+  .nova-case-grip{ position:absolute; left:calc(var(--cu) * 1.2); right:calc(var(--cu) * 1.2); top:calc(var(--cu) * 2.1); height:calc(var(--cu) * 3.4);
+    border-radius:999px; background-color:#1D2228; z-index:1;
+    background-image:linear-gradient(180deg, rgba(0,0,0,0) 0 44%, rgba(206,214,224,.32) 44% 47%, rgba(0,0,0,0) 47%),
+      radial-gradient(60% 40% at 50% 22%, rgba(255,255,255,.3), rgba(255,255,255,0) 70%),
+      var(--case-grain), linear-gradient(180deg, #4A535D 0%, #2B3139 30%, #1A1E23 62%, #0B0D10 100%);
+    background-size:100% 100%, 100% 100%, 96px 96px, 100% 100%;
+    box-shadow:inset 0 calc(var(--cu) * .25) 0 rgba(255,255,255,.2), inset 0 calc(var(--cu) * -.4) calc(var(--cu) * .5) rgba(0,0,0,.6),
+      0 0 0 calc(var(--cu) * .12) rgba(0,0,0,.7), 0 calc(var(--cu) * .6) calc(var(--cu) * 1.2) rgba(0,0,0,.7); }
+  .nova-case-mount-top, .nova-case-grip-top{ display:none; }
+  /* in the cutscene: on the wall, standing out of it */
+  .bc-front > .nova-case-handle.is-hung{ top:52%; height:calc(var(--cu) * 6); transform:translateZ(1px); transform-style:preserve-3d; }
+  .bc-front .nova-case-mount{ transform:translateZ(calc(var(--cu) * 2)); transform-style:preserve-3d; }
+  .bc-front .nova-case-grip{ transform-origin:50% 0; transform:translateZ(calc(var(--cu) * 1.7)); transform-style:preserve-3d; }
+  .bc-front .nova-case-mount-top, .bc-front .nova-case-grip-top{ display:block; position:absolute; left:0; right:0; top:0; transform-origin:50% 0; transform:rotateX(-90deg); }
+  .bc-front .nova-case-mount-top{ height:calc(var(--cu) * 2); border-radius:calc(var(--cu) * .8);
+    background-image:var(--hw-brush), linear-gradient(180deg, #59636E 0%, #E8EDF2 60%, #FFFFFF 100%); box-shadow:0 0 0 calc(var(--cu) * .12) rgba(0,0,0,.55); }
+  .bc-front .nova-case-grip-top{ height:calc(var(--cu) * 1.7); border-radius:999px;
+    background-image:var(--case-grain), linear-gradient(180deg, #14181D 0%, #3B434D 70%, #58616B 100%); background-size:96px 96px, 100% 100%;
+    box-shadow:0 0 0 calc(var(--cu) * .12) rgba(0,0,0,.6); }
+  /* it swings a little as the latches let go, and settles - on its mounts */
+  .bc-unlatch2 .bc-front .nova-case-grip{ animation:bc-grip-swing 1.4s cubic-bezier(.3,0,.3,1) both; }
+  @keyframes bc-grip-swing{ 0%{ transform:translateZ(calc(var(--cu) * 1.7)) rotateX(0deg); } 22%{ transform:translateZ(calc(var(--cu) * 1.7)) rotateX(16deg); }
+    50%{ transform:translateZ(calc(var(--cu) * 1.7)) rotateX(-7deg); } 76%{ transform:translateZ(calc(var(--cu) * 1.7)) rotateX(3deg); } 100%{ transform:translateZ(calc(var(--cu) * 1.7)) rotateX(0deg); } }
+  /* the plate sits higher on the wall, the handle hung under it */
+  .bc-sideplate{ top:30%; }
+  /* the cushion in the lid, its two rows of stitching and the name in it */
+  .nova-case-cushion{ position:absolute; inset:calc(var(--cu) * 4.5); border-radius:calc(var(--hw-r) * .8); display:flex; align-items:flex-start; justify-content:center; padding-top:9%;
+    box-shadow:0 0 0 1.5px rgba(150,158,168,.55), 0 0 0 3px rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.6), inset 0 calc(var(--cu) * 2) calc(var(--cu) * 5) rgba(0,0,0,.6), inset 0 calc(var(--cu) * -1.2) calc(var(--cu) * 4) rgba(0,0,0,.45); }
+  .nova-case-cushion::after{ content:""; position:absolute; inset:calc(var(--cu) * 1.4); border-radius:calc(var(--hw-r) * .6); border:1px dashed var(--case-stitch); pointer-events:none; }
+  .nova-case-cushion::before{ content:""; position:absolute; inset:calc(var(--cu) * 2.6); border-radius:calc(var(--hw-r) * .5); border:1px dashed rgba(206,214,224,.13); pointer-events:none; }
+  .nova-case-lidlabel{ position:relative; z-index:1; font-family:var(--sans); font-weight:800; text-transform:uppercase; white-space:nowrap;
+    font-size:calc(var(--cu) * 3.6); letter-spacing:.22em; color:rgba(198,206,216,.34);
+    text-shadow:0 -1px 0 rgba(0,0,0,.75), 0 1px 0 rgba(255,255,255,.08); padding:calc(var(--cu) * 1.4) calc(var(--cu) * 4);
+    border:1px dashed rgba(206,214,224,.18); border-radius:calc(var(--cu) * 1.2); }
+  .nova-case.ncase .ncase-pad.nova-case-cushion{ inset:calc(var(--cu) * 4.5); border-radius:calc(var(--hw-r) * .8); }
+  /* ON THE BADGES SCREEN (build 321): the cutscene's case part for part -
+     caps on the tray's and the lid's corners, screwed hinges, latches with
+     their screws and hasps (flipped down: the case is open), the lining's
+     stitched seam, the name in the lid, and the handle hung on the front
+     wall under the plate rather than floating below it */
+  .nova-case.ncase .ncase-lining::after{ content:""; position:absolute; inset:calc(var(--cu) * 1.2); border-radius:calc(var(--case-r-in) * .6);
+    border:1px dashed var(--case-stitch); pointer-events:none; }
+  .nova-case.ncase > .ncase-front{ height:10cqw; }
+  .nova-case.ncase > .ncase-front .nova-case-sideplate{ position:absolute; left:50%; top:.7cqw; margin:0; transform:translateX(-50%);
+    font-size:2.5cqw; padding:.7cqw 3cqw; }
+  .nova-case.ncase > .ncase-front > .nova-case-handle.is-hung{ top:4.7cqw; height:calc(var(--cu) * 6); margin:0; width:auto; }
+  .nova-case.ncase > .ncase-front .nova-case-hasp{ position:absolute; left:16%; right:16%; top:42%; height:110%; z-index:-1; }
+  .nova-case.ncase > .ncase-front .ncase-latch{ z-index:2; }
+  /* EVERY BADGE ON THE MIDDLE OF ITS SLOT (build 321, b321c): a shape whose
+     own middle is off the drawing's (the C-ring's, ten units right) is
+     moved back by that much (badgeSlotShift, --sdx/--sdy, a share of the
+     drawing's size: 100cqmin of the slot), in both cases. */
+  .bc-slot, .nova-case.ncase .ncase-cell .badge-tile-art{ container-type:size; }
+  .bc-slot > svg, .nova-case.ncase .ncase-cell .badge-tile-art > svg{ translate:calc(var(--sdx, 0) * 100cqmin) calc(var(--sdy, 0) * 100cqmin); }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -91186,25 +91330,146 @@ function buildCaseSidePlate(extra){
   b.setAttribute("aria-hidden", "true");
   return b;
 }
+/* ---- THE CASE'S HARDWARE, ONE BUILDER (build 321, b321c) ----
+   Madison: "all the metal pieces in the corners and handles and the clip
+   things to lock it and stuff and the 'screws' like the dots and all that
+   stuff, looks bad, I think it's maybe because it has a super flat look?
+   This case needs to look so incredible legit" and "Not sure why the badge
+   case doesn't look like the cutscene?" Every metal part, the lid's
+   cushion and the case's name are made here and nowhere else, for the
+   cutscene's case (buildBadgeCase3D) and the Badges screen's
+   (buildOpenBadgeCase), so the two cannot drift: a corner cap with its
+   screw, a latch with its hasp and two screws, a clip on the lid with its
+   screw, a hinge, the handle (two mounts, each screwed to the front wall,
+   and the leather grip hung between them), the lid's quilted cushion with
+   the name in it, and the plates. The depth is drawn, never filtered
+   (.nova-case-cap and friends: a bevel - a lit edge and a shaded one -
+   brushed metal under a specular falloff, a contact shadow where the metal
+   sits on the leather, and every screw a recessed head with its slot).
+   Tags matter: a front's only spans are its two latches (check_b242). */
+const CASE_SCREW_TURN = [28, -52, 71, -14, 46, -67, 9, 63];
+let caseScrewSeq = 0;
+function caseKit(){
+  const mk = (cls, tag) => { const e = document.createElement(tag || "i"); e.className = cls; return e; };
+  /* a screw: the recess, its domed head and its slot, each turned its own way */
+  const screw = extra => {
+    const s = mk("nova-case-screw" + (extra ? " " + extra : ""), "b");
+    s.style.setProperty("--turn", CASE_SCREW_TURN[(caseScrewSeq++) % CASE_SCREW_TURN.length] + "deg");
+    return s;
+  };
+  const kit = {
+    screw,
+    cap(corner, extra){ const c = mk("nova-case-cap is-" + corner + (extra ? " " + extra : "")); c.appendChild(screw()); return c; },
+    caps(el, extra){ ["tl", "tr", "bl", "br"].forEach(k => el.appendChild(kit.cap(k, extra))); return el; },
+    hinge(side, extra){
+      const h = mk((extra ? extra + " " : "") + "nova-case-hinge is-" + side, "span");
+      h.setAttribute("aria-hidden", "true");
+      h.append(screw("is-l"), screw("is-r"));
+      return h;
+    },
+    /* a latch: the body screwed to the wall, its catch, and the hasp that
+       reaches over the seam (flipped down once the case is open) */
+    latch(extra, tag){
+      const l = mk((extra ? extra + " " : "") + "nova-case-latch", tag || "span");
+      l.append(screw("is-l"), screw("is-r"), mk("nova-case-hasp" + (extra && /bc-latch/.test(extra) ? " bc-hasp" : "")));
+      return l;
+    },
+    clip(side, extra){ const c = mk((extra ? extra + " " : "") + "nova-case-clip is-" + side); c.appendChild(screw()); return c; },
+    /* the handle, hung on the front wall: a mount at each end, screwed
+       on, and the grip between them - never loose in front of the case */
+    handle(extra){
+      const h = mk((extra ? extra + " " : "") + "nova-case-handle is-hung");
+      h.setAttribute("aria-hidden", "true");
+      ["l", "r"].forEach(k => { const m = mk("nova-case-mount is-" + k, "b"); m.appendChild(mk("nova-case-mount-top", "b")); m.appendChild(screw()); h.appendChild(m); });
+      const g = mk("nova-case-grip", "b");
+      g.appendChild(mk("nova-case-grip-top", "b"));
+      h.appendChild(g);
+      return h;
+    },
+    /* the lid's inside: a quilted cushion, stitched twice, the name in it */
+    cushion(extra){
+      const pad = mk((extra ? extra + " " : "") + "nova-case-lid nova-case-cushion", "div");
+      const label = mk("bc-lid-label nova-case-lidlabel", "span");
+      label.textContent = badgeCaseName(BADGE_CASES[0]);
+      label.setAttribute("aria-hidden", "true");
+      pad.appendChild(label);
+      return pad;
+    },
+    /* the lid's outside: the Nova plate, the corners, a clip over each latch */
+    lidOutside(el){
+      const plate = mk("bc-plate nova-case-plate", "span"); plate.textContent = "Nova · Class 26E";
+      el.appendChild(plate);
+      kit.caps(el, "bc-cap");
+      ["l", "r"].forEach(side => el.appendChild(kit.clip(side, "bc-clip is-" + side)));
+      return el;
+    }
+  };
+  return kit;
+}
+/* The parts a case is made of, as a list of names - what the gate compares
+   between the cutscene's case and the Badges screen's. */
+function caseHardwareOf(root){
+  const out = {};
+  if(!root) return out;
+  ["nova-case-cap", "nova-case-screw", "nova-case-latch", "nova-case-hasp", "nova-case-clip", "nova-case-hinge",
+   "nova-case-handle", "nova-case-mount", "nova-case-grip", "nova-case-cushion", "nova-case-lidlabel", "nova-case-sideplate", "nova-case-plate"]
+    .forEach(c => { out[c] = root.querySelectorAll("." + c).length; });
+  const lab = root.querySelector(".nova-case-lidlabel"), side = root.querySelector(".nova-case-sideplate");
+  out.lidName = lab ? lab.textContent : ""; out.sideName = side ? side.textContent : "";
+  return out;
+}
+/* A BADGE CENTRED IN ITS SLOT (build 321, b321c): "the badge in the 2nd
+   column three down ... doesn't look centered in the space within the
+   case. I feel like there's more space to left of it than the right." The
+   drawing is centred on the frame's middle (50,50), but a shape's own
+   middle is not always there - the C-ring's mass sits 10 units right of
+   it. This is how far the visible shape's box is from the frame's middle,
+   as a share of the drawing's size, so a slot can move its drawing back
+   onto the middle of its cell. */
+const BADGE_SLOT_SHIFT_CACHE = {};
+function badgeSlotShift(unitName){
+  const shape = badgeShapeFor(unitName), d = shape.d;
+  if(BADGE_SLOT_SHIFT_CACHE[d]) return BADGE_SLOT_SHIFT_CACHE[d];
+  let out = [0, 0];
+  try{
+    const b = badgeBBoxFor(d);
+    const vb = String(badgeViewBoxFor(d)).split(/\s+/).map(Number);
+    if(b && vb.length === 4 && vb[2] > 0){
+      const c = shape.c || [50, 50], S = BADGE_GEOM.scale;
+      const vx = c[0] + S * (b.x + b.w / 2 - c[0]), vy = c[1] + S * (b.y + b.h / 2 - c[1]);
+      out = [(vb[0] + vb[2] / 2 - vx) / vb[2], (vb[1] + vb[3] / 2 - vy) / vb[3]];
+    }
+  }catch(e){ out = [0, 0]; }
+  BADGE_SLOT_SHIFT_CACHE[d] = out;
+  return out;
+}
+function setBadgeSlotShift(el, unitName){
+  const s = badgeSlotShift(unitName);
+  el.style.setProperty("--sdx", s[0].toFixed(4));
+  el.style.setProperty("--sdy", s[1].toFixed(4));
+}
 function buildBadgeCase3D(all, held){
   const mk = (cls, tag) => { const e = document.createElement(tag || "div"); e.className = cls; return e; };
+  const kit = caseKit();
   const stage = mk("bc-stage");
   /* the slots, laid out from the unit list (build 320) */
-  applyBadgeCaseGrid(stage, all.length);
+  const grid = applyBadgeCaseGrid(stage, all.length);
   const kase = mk("bc-case nova-case");
   const floor = mk("bc-floor");
-  const caps = el => ["tl", "tr", "bl", "br"].forEach(k => el.appendChild(mk("bc-cap is-" + k, "i")));
-  const front = mk("bc-front nova-case-shell nova-case-wall");
-  ["l", "r"].forEach(side => {
-    const latch = mk("bc-latch bc-latch-" + side + " nova-case-latch", "span");
-    latch.appendChild(mk("bc-hasp nova-case-hasp", "i"));
-    front.appendChild(latch);
-  });
+  const front = mk("bc-front nova-case-shell nova-case-wall is-hw");
+  ["l", "r"].forEach(side => front.appendChild(kit.latch("bc-latch bc-latch-" + side)));
   /* THE NAME ON ITS SIDE (build 317, badge2), FLAT ON IT (build 320). On
      the front wall between the latches - part of the base, so it never
      moves with the lid and the lid never covers it - lying on the wall. */
   front.appendChild(buildCaseSidePlate("bc-sideplate"));
-  const handle = mk("bc-handle nova-case-handle");
+  /* THE HANDLE IS HUNG ON THE FRONT WALL (build 321, b321c): "In the open
+     position the handle at the bottom is broken too, it's disconnected and
+     laying there." It lay flat on the table in front of the wall, so once
+     the camera rose over the open case it was a bar on the floor with a
+     gap above it. It is the wall's own now, screwed to it at both ends, so
+     it goes wherever the wall goes in every frame. */
+  const handle = kit.handle("bc-handle");
+  front.appendChild(handle);
   const tray = mk("bc-tray nova-case-shell nova-case-trimmed");
   const lining = mk("bc-lining nova-case-lining");
   const slots = {};
@@ -91214,57 +91479,80 @@ function buildBadgeCase3D(all, held){
     /* its own light, in its own colour (build 320) */
     try{ const bt = badgeThemeFor(u); if(bt && bt.p) s.style.setProperty("--slot-col", bt.p); }catch(e){}
     s.dataset.i = String(i);
+    setBadgeSlotShift(s, u);
     s.appendChild(buildUnitBadgeSVG(u, held(u), { px }));
     lining.appendChild(s);
     slots[u] = s;
   });
   tray.appendChild(lining);
-  ["l", "r"].forEach(side => tray.appendChild(mk("bc-hinge bc-hinge-" + side + " nova-case-hinge", "span")));
-  caps(tray);
+  ["l", "r"].forEach(side => tray.appendChild(kit.hinge(side, "bc-hinge bc-hinge-" + side)));
+  kit.caps(tray, "bc-cap");
   const spill = mk("bc-spill");
   const lid = mk("bc-lid");
   const lidIn = mk("bc-lid-in nova-case-shell nova-case-trimmed");
-  const pad = mk("bc-lid-pad nova-case-lid");
   /* the case's name, debossed in the cushion: what you read once it is open */
-  const label = mk("bc-lid-label", "span");
-  label.textContent = badgeCaseName(BADGE_CASES[0]);
-  label.setAttribute("aria-hidden", "true");
-  pad.appendChild(label);
+  const pad = kit.cushion("bc-lid-pad");
   lidIn.appendChild(pad);
-  caps(lidIn);
-  const lidOut = mk("bc-lid-out nova-case-shell nova-case-trimmed");
-  const plate = mk("bc-plate nova-case-plate", "span"); plate.textContent = "Nova · Class 26E";
-  lidOut.appendChild(plate);
-  caps(lidOut);
-  /* the clips on top, over each latch */
-  ["l", "r"].forEach(side => lidOut.appendChild(mk("bc-clip is-" + side, "i")));
-  const lidFront = mk("bc-lid-front nova-case-shell nova-case-wall");
+  /* the badges' light on the lid's inside (build 321): see bcLidLight */
+  const lidNear = mk("bc-lidlight is-near"), lidFar = mk("bc-lidlight is-far");
+  lidIn.append(lidNear, lidFar);
+  kit.caps(lidIn, "bc-cap");
+  const lidOut = kit.lidOutside(mk("bc-lid-out nova-case-shell nova-case-trimmed"));
+  const lidFront = mk("bc-lid-front nova-case-shell nova-case-wall is-hw");
   lid.append(lidIn, lidOut, lidFront);
-  kase.append(floor, front, handle, tray, spill, lid);
+  kase.append(floor, front, tray, spill, lid);
   stage.appendChild(kase);
-  return { stage, kase, slots, lid, lidIn, tray, handle, front, spill, lining };
+  return { stage, kase, slots, lid, lidIn, lidOut, lidFront, tray, handle, front, spill, lining, lidNear, lidFar, grid };
 }
 /* THE BADGES' OWN LIGHT, AS LAYERS (build 320): one soft pool per badge in
-   the case, in its colour, along an edge, so two, three, six badges give
-   two, three, six colours side by side. `at` is how
-   far down the layer the pools sit (the near edge of the tray, or the
-   seam), `w`/`h` their size. An empty case gives a faint neutral sheen
-   rather than nothing - there is still a lid opening. */
-function bcLeakLayers(all, held, at, w, h, strength){
-  const have = all.filter(held);
-  const pools = [];
-  /* spread evenly in the order they sit in the case, so each colour has a
-     place of its own (two in one column would mix into a third colour) */
-  const ww = Math.min(w, 78 / Math.max(1, have.length) + 6);
-  have.forEach((u, k) => {
-    const bt = badgeThemeFor(u) || {};
-    const col = bt.p || "#C9D3DE";
-    const x = (k + .5) / have.length * 100;
-    w = ww;
-    pools.push("radial-gradient(" + w + "% " + h + "% at " + x.toFixed(1) + "% " + at + "%, color-mix(in srgb, " + col + " " + Math.round(70 * strength) + "%, #fff) 0%, " +
-      "color-mix(in srgb, " + col + " " + Math.round(46 * strength) + "%, transparent) 38%, transparent 100%)");
+   the case, in its colour, so two, three, six badges give two, three, six
+   colours side by side. An empty case gives a faint neutral sheen rather
+   than nothing - there is still a lid opening.
+   FROM WHERE EACH BADGE IS (build 321, b321c): "it's not realistic because
+   the glow is so strong when they are badges in the back. The glow needs to
+   look real to whatever is in there ... if the badge is at the back that's
+   how it would be if there's some in the front and back then yeah." Each
+   pool sits over its badge's own column, and how much light it gives
+   depends on its row: out of the crack at the front (o.mode "front"), a
+   badge in the front row gives the most and one in the back row a little;
+   on the open lid's inside (o.mode "back"), where the light lands on the
+   lid's foot by the hinge, the back row gives the most. o.mode "over" is
+   the patch of the lid's inside right over each badge while it is shut.
+   o.x maps a column's middle (0-1 across the tray) to the layer's own %. */
+function bcBadgeSpots(all, held, grid){
+  const cols = (grid && grid.cols) || 4, rows = (grid && grid.rows) || Math.ceil(all.length / cols);
+  const out = [];
+  all.forEach((u, i) => {
+    if(!held(u)) return;
+    const c = i % cols, r = Math.floor(i / cols);
+    /* the slots sit inside the lining's inset: about nine tenths of the tray */
+    const fx = .5 + ((c + .5) / cols - .5) * .9, fy = .5 + ((r + .5) / rows - .5) * .9;
+    out.push({ u, c, r, fx, fy, depth: (r + .5) / rows, col: ((badgeThemeFor(u) || {}).p) || "#C9D3DE" });
   });
-  if(!pools.length) pools.push("radial-gradient(60% " + h + "% at 50% " + at + "%, rgba(214,222,232,.3) 0%, rgba(214,222,232,.1) 45%, transparent 100%)");
+  return out;
+}
+/* how much of a badge's light goes where: by its depth in the case (0 the
+   back row, 1 the front) - never nothing, a back badge still glows */
+function bcRowWeight(depth, mode){
+  const f = mode === "back" ? 1 - depth : depth;
+  return mode === "over" ? .8 : .16 + .84 * Math.pow(Math.max(0, Math.min(1, f)), 1.4);
+}
+function bcLeakLayers(all, held, o){
+  const spots = bcBadgeSpots(all, held, o.grid);
+  const mode = o.mode || "front", st = o.strength == null ? 1 : o.strength;
+  const map = o.x || (fx => fx * 100);
+  const pools = [];
+  /* never wider than a column, so two colours side by side stay two */
+  const cols = (o.grid && o.grid.cols) || 4;
+  const ww = Math.min(o.w, 100 / cols * 1.15);
+  spots.forEach(p => {
+    const k = bcRowWeight(p.depth, mode) * st;
+    const x = map(p.fx), y = mode === "over" ? (o.y ? o.y(p.fy) : p.fy * 100) : o.at;
+    pools.push("radial-gradient(" + ww.toFixed(1) + "% " + o.h + "% at " + x.toFixed(1) + "% " + y.toFixed(1) + "%, " +
+      "color-mix(in srgb, color-mix(in srgb, " + p.col + " 70%, #fff) " + Math.round(100 * k) + "%, transparent) 0%, " +
+      "color-mix(in srgb, " + p.col + " " + Math.round(46 * k) + "%, transparent) 38%, transparent 100%)");
+  });
+  if(!pools.length) pools.push("radial-gradient(60% " + o.h + "% at 50% " + (o.at || 50) + "%, rgba(214,222,232,.3) 0%, rgba(214,222,232,.1) 45%, transparent 100%)");
   return pools.join(", ");
 }
 
@@ -91291,10 +91579,17 @@ function playBadgeCaseScene(units, done, retro, opts){
   /* the badges already in it light, one after another, from the crack */
   let gi = 0;
   all.forEach(u => { if(heldBefore(u)) slots[u].style.setProperty("--gd", (gi++ * .09).toFixed(2) + "s"); });
-  C.spill.style.background = bcLeakLayers(all, heldBefore, 94, 26, 46, 1);
+  /* the light through the crack, from where each badge is (build 321):
+     the spill is inset 5% each side of the tray, the leak 8% wider */
+  C.spill.style.background = bcLeakLayers(all, heldBefore, { grid: C.grid, mode: "front", at: 94, w: 26, h: 46, x: fx => (fx - .05) / .9 * 100 });
   /* the light out of the seam, flat over the case */
   const leak = mk("bc-leak");
-  leak.style.background = bcLeakLayers(all, heldBefore, 78, 22, 80, 1);
+  leak.style.background = bcLeakLayers(all, heldBefore, { grid: C.grid, mode: "front", at: 78, w: 22, h: 80, x: fx => (fx + .08) / 1.16 * 100 });
+  /* and on the lid's inside: over each badge while it is near, then on the
+     foot of the open lid, strongest from the back row (lidIn is the lid
+     turned over, so its top is the lid's free edge) */
+  C.lidNear.style.background = bcLeakLayers(all, heldBefore, { grid: C.grid, mode: "over", w: 22, h: 18, y: fy => (1 - fy) * 100 });
+  C.lidFar.style.background = bcLeakLayers(all, heldBefore, { grid: C.grid, mode: "back", at: 104, w: 30, h: 34 });
   overlay.appendChild(leak);
 
   /* The token on its own, first. .bc-flyer moves it about the screen and
@@ -91402,23 +91697,54 @@ function playBadgeCaseScene(units, done, retro, opts){
   const box = () => overlay.getBoundingClientRect();
   const place = (x, y, s) => "translate(" + Math.round(x) + "px, " + Math.round(y) + "px) scale(" + s.toFixed(4) + ")";
   const SHOW = () => [0, -.07 * box().height, 1];
-  /* WAITING ABOVE THE LID'S WHOLE SWING (build 320): "The badge phases
-     through the top thing when it opens." It waited in front of where the
-     open lid stands, so the lid swung up through it. Now it waits at the
-     top of the screen, clear of everything the lid passes through (the
-     open case sits lower to make the room), and only comes down once the
-     lid has stopped. A phone held sideways has no room above, so there it
-     waits beside the case. */
+  /* THE OPEN CASE, MEASURED BEFORE IT OPENS (build 321, b321c): where its
+     front, its handle, its tray and its standing lid will be once the
+     camera has risen over it - so the token can wait where the lid never
+     goes and come into its slot without crossing the lid. Read once, with
+     the open pose put on for a moment with no transition. */
+  let OPEN = null;
+  const openGeom = () => {
+    if(OPEN) return OPEN;
+    const was = [kase.style.transition, C.lid.style.transition];
+    try{
+      kase.style.transition = "none"; C.lid.style.transition = "none";
+      const had = kase.className;
+      kase.classList.add("bc-rise", "bc-open");
+      const r = e => e.getBoundingClientRect();
+      const o = r(overlay), f = r(C.front), h = r(C.handle), t = r(C.tray);
+      const lids = [C.lidIn, C.lidFront].map(r);
+      OPEN = { o, low: Math.max(f.bottom, h.bottom), tray: t,
+        lid: { left: Math.min.apply(null, lids.map(x => x.left)), right: Math.max.apply(null, lids.map(x => x.right)),
+               top: Math.min.apply(null, lids.map(x => x.top)), bottom: Math.max.apply(null, lids.map(x => x.bottom)) } };
+      kase.className = had;
+      void kase.offsetWidth;
+    }catch(e){ OPEN = null; }
+    kase.style.transition = was[0]; C.lid.style.transition = was[1];
+    return OPEN;
+  };
+  /* WHERE IT WAITS (build 321, b321c): "When the case opens, the badge
+     still cuts through it slowly and doesn't make sense." It waited at the
+     top of the screen, over the standing lid, so its way down to the slot
+     crossed the lid's whole face. It waits in FRONT of the case now - under
+     it on the screen, nearer you than any of it, where the lid never goes -
+     and goes in over the front wall, so it never meets the lid at all. A
+     phone held sideways has no room under the case: there it waits beside
+     the case, level with the tray. */
   const HOVER = () => {
     const o = box();
     const C0 = Math.max(1, flyer.offsetWidth);
-    const s = .44;
+    const g = openGeom();
+    let s = .44;
     if(o.width > o.height * 1.3){
       const sw = stage.getBoundingClientRect().width;
-      return [-(sw * .62 + C0 * s * .5 + 24), -.02 * o.height, s];
+      const ty = g ? (g.tray.top + g.tray.bottom) / 2 - (o.top + o.height / 2) : -.02 * o.height;
+      return [-(sw * .62 + C0 * s * .5 + 24), ty, s];
     }
-    const top = (parseFloat(getComputedStyle(overlay).paddingTop) || 0) + 12;
-    return [0, -o.height / 2 + top + C0 * s / 2, s];
+    const pb = parseFloat(getComputedStyle(overlay).paddingBottom) || 0;
+    const top = g ? g.low + 10 : o.top + o.height * .8;
+    const room = o.bottom - pb - 10 - top;
+    s = Math.max(.26, Math.min(s, room / C0));
+    return [0, top + C0 * s / 2 - (o.top + o.height / 2), s];
   };
   let pos = SHOW();
   const moveTo = (p, ms, easing) => {
@@ -91450,20 +91776,42 @@ function playBadgeCaseScene(units, done, retro, opts){
   /* Into its slot: a short rise, then the drop - one flip on the way and
      a tilt to lie in the tray - landing on the slot's own drawing, which
      shares its frame. Then the seat. */
+  /* Into its slot from in front: over the front wall and down onto its
+     slot, a little nearer you on the way (a touch bigger) - one flip on the
+     way and a tilt to lie in the tray - landing on the slot's own drawing,
+     which shares its frame. Then the seat. The path is sampled, and at
+     every sample its box is kept under the open lid's (build 321), so it
+     never crosses the lid on any device or either way up. */
   const flyInto = u => {
     const s = slots[u].querySelector("svg").getBoundingClientRect();
     const o = box();
-    const tx = (s.left + s.width / 2) - (o.left + o.width / 2);
-    const ty = (s.top + s.height / 2) - (o.top + o.height / 2);
-    const ts = s.width / Math.max(1, flyer.offsetWidth);
+    const cx = o.left + o.width / 2, cy = o.top + o.height / 2;
+    const tx = (s.left + s.width / 2) - cx;
+    const ty = (s.top + s.height / 2) - cy;
+    const C0 = Math.max(1, flyer.offsetWidth);
+    const ts = s.width / C0;
     flyer.classList.remove("bc-alive");
     const from = pos.slice();
-    const up = [from[0] + (tx - from[0]) * .18, from[1] - 18, from[2] * 1.04];
-    const a = flyer.animate([
-      { transform: place(from[0], from[1], from[2]), easing: "cubic-bezier(.2,.6,.35,1)" },
-      { transform: place(up[0], up[1], up[2]), offset: .24, easing: "cubic-bezier(.55,0,.85,.35)" },
-      { transform: place(tx, ty, ts) }
-    ], { duration: BC_T.flyMs, fill: "forwards" });
+    const g = openGeom();
+    const lid = g ? g.lid : null;
+    const ease = bezierCurve(.45, 0, .25, 1).at;
+    const K = [], N = 24;
+    for(let k = 0; k <= N; k++){
+      const u0 = k / N, e = ease(u0);
+      let x = from[0] + (tx - from[0]) * e;
+      let y = from[1] + (ty - from[1]) * e;
+      /* nearer you mid-way, and the last stretch a short drop onto it */
+      let sc = from[2] + (ts - from[2]) * e + Math.sin(Math.PI * Math.min(1, u0 * 1.15)) * .06 * from[2];
+      y -= Math.sin(Math.PI * u0) * Math.min(16, Math.abs(ty - from[1]) * .12);
+      if(lid){
+        const half = C0 * sc / 2;
+        const ax = cx + x;
+        if(ax + half > lid.left && ax - half < lid.right) y = Math.max(y, lid.bottom + 2 + half - cy);
+      }
+      if(k === N){ x = tx; y = ty; sc = ts; }
+      K.push({ offset: u0, transform: place(x, y, sc) });
+    }
+    const a = flyer.animate(K, { duration: BC_T.flyMs, easing: "linear", fill: "forwards" });
     anims.push(a); pos = [tx, ty, ts];
     const sw = flyer.querySelector(".bc-sway"), sp = flyer.querySelector(".bc-spin");
     if(sw) anims.push(sw.animate([{ transform: "none" }, { transform: "rotateX(" + BC_OPEN.tilt + "deg)" }],
@@ -91531,7 +91879,10 @@ function playBadgeCaseScene(units, done, retro, opts){
       at(t, () => {
         showCoin(u, 2, 1900, HOVER());
         name.textContent = badgeTitle(u); sub.textContent = paid(u);
-        words.classList.add("bc-words-in");
+        /* upright, the next badge waits where the words are: they come
+           back with its name once it is in (seat) */
+        if(box().width > box().height * 1.3) words.classList.add("bc-words-in");
+        else words.classList.remove("bc-words-in");
       });
       at(t + 2000, swayOn);
       t += 2600;
@@ -110122,16 +110473,15 @@ function closestBadge(){
 function buildOpenBadgeCase(kind, cellFor){
   const tab = kind === "tab";
   const mk = (cls, tag) => { const e = document.createElement(tag || "div"); e.className = cls; return e; };
+  /* the cutscene's hardware, from the same builder (build 321, b321c) */
+  const kit = caseKit();
   const root = mk((tab ? "badge-case " : "pf-case-box ") + "nova-case ncase ncase-" + kind);
   const lid = mk((tab ? "badge-case-lid " : "") + "ncase-lid nova-case-shell nova-case-trimmed");
   lid.setAttribute("aria-hidden", "true");
-  lid.appendChild(mk((tab ? "badge-case-pad " : "") + "ncase-pad nova-case-lid"));
+  lid.appendChild(kit.cushion((tab ? "badge-case-pad " : "") + "ncase-pad"));
+  kit.caps(lid);
   const tray = mk((tab ? "badge-case-tray " : "") + "ncase-tray nova-case-shell nova-case-trimmed");
-  ["l", "r"].forEach(side => {
-    const h = mk((tab ? "badge-case-hinge " : "") + "ncase-hinge nova-case-hinge is-" + side, "span");
-    h.setAttribute("aria-hidden", "true");
-    tray.appendChild(h);
-  });
+  ["l", "r"].forEach(side => tray.appendChild(kit.hinge(side, (tab ? "badge-case-hinge " : "") + "ncase-hinge")));
   const lining = mk((tab ? "badge-case-lining " : "pf-strip badge-strip ") + "ncase-lining nova-case-lining");
   /* THE SLOTS FOLLOW THE UNIT LIST (build 320): "I'm gonna be adding more
      units to level 1 probably tomorrow. So the case will change slightly."
@@ -110141,17 +110491,17 @@ function buildOpenBadgeCase(kind, cellFor){
   const grid = applyBadgeCaseGrid(root, held.length);
   tray.style.aspectRatio = "1 / " + (.88 * grid.rows / grid.cols).toFixed(4);
   lid.style.aspectRatio = "1 / " + (.8 * grid.rows / grid.cols).toFixed(4);
-  held.forEach(u => { const c = cellFor(u); if(c) lining.appendChild(c); });
+  held.forEach(u => { const c = cellFor(u); if(c){ setBadgeSlotShift(c, u); lining.appendChild(c); } });
   tray.appendChild(lining);
-  const front = mk((tab ? "badge-case-front " : "pf-case-front ") + "ncase-front nova-case-shell nova-case-wall");
+  kit.caps(tray);
+  const front = mk((tab ? "badge-case-front " : "pf-case-front ") + "ncase-front nova-case-shell nova-case-wall is-hw");
   front.setAttribute("aria-hidden", "true");
-  /* exactly two latches (spans on the tab: check_b242 counts them) and the
-     name plate between them, a <b> */
-  ["l", "r"].forEach(() => front.appendChild(mk("nova-case-latch ncase-latch", tab ? "span" : "i")));
+  /* exactly two latches (spans on the tab: check_b242 counts them), the
+     name plate between them (a <b>), and the handle hung under it */
+  ["l", "r"].forEach(() => front.appendChild(kit.latch("ncase-latch", tab ? "span" : "i")));
   front.insertBefore(buildCaseSidePlate(tab ? "badge-case-sideplate" : "pf-case-sideplate"), front.lastChild);
-  const handle = mk((tab ? "badge-case-handle " : "pf-case-handle ") + "ncase-handle nova-case-handle", "span");
-  handle.setAttribute("aria-hidden", "true");
-  root.append(lid, tray, front, handle);
+  front.appendChild(kit.handle((tab ? "badge-case-handle " : "pf-case-handle ") + "ncase-handle"));
+  root.append(lid, tray, front);
   return root;
 }
 function buildBadgeStrip(cls){
@@ -110362,13 +110712,10 @@ const CASE_OPEN = { hold: 110, crack: 190, swing: 800, shut: -180, cracked: -166
 function shutBadgeCase(kase){
   const lid = kase.querySelector(".ncase-lid");
   if(!lid || lid.querySelector(".ncase-lid-out")) return;
-  const out = document.createElement("div");
+  /* the lid's outside: the cutscene's, from the same builder (build 321) */
+  const out = caseKit().lidOutside(document.createElement("div"));
   out.className = "ncase-lid-out nova-case-shell nova-case-trimmed";
   out.setAttribute("aria-hidden", "true");
-  const plate = document.createElement("span");
-  plate.className = "nova-case-plate";
-  plate.textContent = "Nova · Class 26E";
-  out.appendChild(plate);
   lid.appendChild(out);
   kase.classList.add("is-shut");
   /* NEVER BLOCKS A TAP. A press anywhere on the case puts the lid up and

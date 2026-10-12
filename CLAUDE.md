@@ -19955,6 +19955,96 @@ leaking out, the spin-to-case transition.
   check-results' badge XP lines (no line; no MASTERY_BONUS), check-curve's
   badge line (no lump).
 
+### Build 321 (b321c) - the case's metal, its handle, light from where the badges are, a badge that never crosses the lid, one case
+
+Madison: *"all the metal pieces in the corners and handles and the clip
+things to lock it ... and the 'screws' like the dots ... looks bad, I think
+it's maybe because it has a super flat look? ... In the open position the
+handle at the bottom is broken too, it's disconnected and laying there"*,
+*"the glow is so strong when they are badges in the back. The glow needs to
+look real to whatever is in there"*, *"When the case opens, the badge still
+cuts through it slowly"*, *"Not sure why the badge case doesn't look like
+the cutscene?"* and *"the badge in the 2nd column three down ... I feel like
+there's more space to left of it than the right."*
+
+- **ONE BUILDER FOR THE HARDWARE: `caseKit()`.** Corner caps
+  (`.nova-case-cap`, each screwed through), screws (`.nova-case-screw`),
+  latches with two screws and a hasp, clips on the lid's top, hinges with a
+  screw each end, the handle (`.nova-case-handle.is-hung`: two
+  `.nova-case-mount`s and a `.nova-case-grip`), the lid's cushion with the
+  case's name (`.nova-case-cushion`, `.nova-case-lidlabel`) and the lid's
+  outside (`lidOutside`: the Nova plate, caps, clips). `buildBadgeCase3D`
+  (the cutscene) and `buildOpenBadgeCase` (the Badges screen) both build
+  from it, and `shutBadgeCase` builds the shut lid's face from it, so the
+  two cases cannot drift. `caseHardwareOf(root)` lists the parts.
+  **Tags still matter**: a front's only spans are its two latches
+  (check_b242); screws and mounts are `<b>`, the handle an `<i>`.
+- **THE METAL IS LIT, NEVER FILTERED.** One sheet near the end of the style
+  block (`THE CASE'S HARDWARE`): brushed lines (an image), a specular
+  falloff from the top left, a bevel (`--hw-bevel`: lit top-left edge,
+  shaded bottom-right, soft falloff), a hairline and a contact shadow on the
+  leather (`--hw-seat`). A screw is a countersunk recess (shadow inside its
+  top-left rim, catch-light bottom-right), a domed head and a slot, each
+  turned its own way (`CASE_SCREW_TURN`). Sizes are in `--cu`, a hundredth
+  of the case's width (`--cw / 100` in the cutscene, `1cqw` on the Badges
+  screen). The Profile card's small shut case (`.pf-ccase`) is NOT built
+  from the kit and its `.nova-case-latch`/`-hasp`/`-handle` rules are
+  untouched: the shared depth rules are scoped to the two open cases.
+- **THE HANDLE HANGS ON THE FRONT WALL** (a child of `.bc-front` /
+  `.ncase-front`), under the name plate (which moved up the wall to make
+  room: `.bc-sideplate` top 30%; the flat front is 10cqw tall). In the
+  cutscene each mount and the grip has a top face turned out of the wall
+  (`-top`, `rotateX(-90deg)`), so from over the open case you see the
+  grip's back, and the grip swings a little on its mounts as the latches let
+  go (`bc-grip-swing`, transform only). It used to lie on the table in
+  front of the wall, which open read as a loose bar with a gap above it.
+- **LIGHT FROM WHERE EACH BADGE IS** (`bcBadgeSpots`, `bcRowWeight`,
+  `bcLeakLayers(all, held, o)`): every pool is over its badge's own column.
+  Out of the crack (`mode:"front"`, the spill and the seam leak) a badge
+  gives `.16 + .84 * depth^1.4` of the light - the front row most, the back
+  row a little, never nothing. On the lid's inside two layers in `.bc-lid-in`:
+  `.bc-lidlight.is-near` (the patch right over each badge, on while the lid
+  is low, gone as it rises) and `.is-far` (the light reaching the open lid's
+  foot by the hinge, `mode:"back"`: the back row most). Opacity only.
+- **THE TOKEN WAITS IN FRONT OF THE CASE, NOT OVER IT.** Upright it waits
+  under the open case (nearer you than any of it - the lid never comes
+  down there) and goes in over the front wall; on a phone held sideways it
+  waits beside the case, level with the tray. `openGeom()` reads where the
+  open case's front, handle, tray and lid will be (the open pose put on for
+  one layout with no transition), and `flyInto` samples its path (24
+  keyframes) keeping the token's box under the open lid's at every sample.
+  Upright the open case sits a little higher to make the room (`--open-y`
+  .07 of its width, was .15). The next badge, when there are several, waits
+  where the words are, so the words go while it waits and come back with
+  its name when it is in.
+- **EVERY BADGE ON THE MIDDLE OF ITS SLOT.** A drawing is centred on its
+  frame's (50,50), not on the shape's own middle; the C-ring (Arrest,
+  Search, and Seizure, column 2 row 3) sat 7px right of its slot's middle on
+  a phone, 10 on an iPad, and the trefoil, the star and the disc 2.5-5px
+  high. `badgeSlotShift(unit)` is the visible shape's offset (from
+  `badgeBBoxFor` and the shape's `c` and `BADGE_GEOM.scale`) as a share of
+  the drawing, set on each slot as `--sdx/--sdy` and applied as a
+  `translate` of `100cqmin` (the slot and the tile's art are size
+  containers). The badge art itself (builder D's) is untouched; the inspect
+  view and the coin still draw the shape about the frame's middle.
+- **Gate: `check_b321c_case`** (fails on 6a387e2): the corner screws at 3x
+  on both cases (range and a lit-minus-shaded side), the handle on its wall
+  in every frame from the rise to the landing, no token-lid overlap from
+  the crack to the landing (both devices and a phone on its side), the
+  crack's light rising row by row to the front and the open lid's foot
+  falling row by row, the Badges screen's case part for part the
+  cutscene's (and still opening), and all 16 slots centred within 1px on
+  both cases (the cutscene's measured with its camera square on).
+  **Moved to the new decision:** check_b320c_case's crack colours (every
+  badge OUTSIDE the back row is seen; a back-row badge gives only a little
+  light now), check_b317_badgecase's two badges (the second token waits
+  under the case's front, not over the case), check_b319_badges' "nothing
+  written in the case" (the case's name in the lid is allowed, as the
+  cutscene's always was). check_b319_badges now calls
+  `finishBadgeCaseOpen` before it measures the open case: 1.5s in, the
+  opening could still be under way on a busy machine (it failed that way on
+  the iPad on 9b3bed6 too, before any of this).
+
 ### Build 321 (b321e) - the rank-up journey's touch-ups
 
 Madison, on 320's journey. All in the rank-up block after `buildRanksTab()`
