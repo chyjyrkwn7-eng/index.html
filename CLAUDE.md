@@ -19940,9 +19940,11 @@ leaking out, the spin-to-case transition.
   same metal), clips on the lid's top over each latch (`.bc-clip`), the lid's
   inside a leather frame with an aluminium bead round a velvet cushion
   quilted in three bands, stitched twice, the name debossed in it
-  (`.bc-lid-label`); the lining and the cushion are velvet (`--case-velvet`,
-  a 64px noise tile at 32px - an image, never a filter; neutral grey for
-  check_b232). The side plate lies FLAT on the front wall (it leaned out 42deg
+  (`.bc-lid-label`); the cushions are velvet (`--case-velvet`, a 64px noise
+  tile at 32px - an image, never a filter; neutral grey for check_b232). The
+  pile is on the CUTSCENE's lining only (`.bc-lining`): on the Badges screen
+  the tiles sit flat on the lining and its single-pixel specks read as a hard
+  edge to every badge's glow (check_b250: steps up to 20 levels, limit 3). The side plate lies FLAT on the front wall (it leaned out 42deg
   since 317, which open read as "facing me").
 - **Gate: `check_b320c_case`** (fails on a73c681; uses `_Stepper320`, whose
   seek cancels a CSS animation whose name has left `animation-name`, as the
