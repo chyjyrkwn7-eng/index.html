@@ -15987,6 +15987,16 @@
      (no transition on the way out, or they would show for the first
      frames) and come up over 2s. */
   .ru-hand-veil{ position:absolute; inset:-40%; z-index:2; pointer-events:none; background:#050308; }
+  /* the bubble under the copy: none of its own paint until the copy fades
+     (build 321, rankCutHandoff) */
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble:not(.ru-hand-reveal){ background-color:transparent !important; border-color:transparent !important; box-shadow:none !important; transition:none !important; }
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble:not(.ru-hand-reveal) > :not(.ru-ghost),
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble:not(.ru-hand-reveal)::before,
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble:not(.ru-hand-reveal)::after{ opacity:0 !important; transition:none !important; }
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble.ru-hand-reveal{ transition:background-color 1.3s ease-in-out .25s, border-color 1.3s ease-in-out .25s, box-shadow 1.3s ease-in-out .25s; }
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble.ru-hand-reveal > :not(.ru-ghost),
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble.ru-hand-reveal::before,
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble.ru-hand-reveal::after{ transition:opacity 1.3s ease-in-out .25s; }
   #supernova-cutscene.ru-handoff:not(.ru-handoff-in) .rank-before .rank-orbit > :not(.ru-hand-slot){ opacity:0 !important; transition:none !important; }
   #supernova-cutscene.ru-handoff.ru-handoff-in .rank-before .rank-orbit > :not(.ru-hand-slot){ transition:opacity 2s cubic-bezier(.4,0,.3,1) .3s; }
   /* 9. UP NEXT, ON THE ROAD MAP ITSELF (build 320): "after the unlock pop
@@ -71335,6 +71345,14 @@ function rankCutHandoff(overlay, stageWrap, heroBefore, tierKey, ghost){
     Object.assign(ghost.style, { left: "0px", top: "0px", transform: "scale(" + (badge.offsetWidth / w0).toFixed(5) + ")" });
     /* moved into the bubble with its emblem's clock running on (build 321) */
     const clock = ruClockSnap(ghost);
+    /* NOTHING OF THE BUBBLE SHOWS ROUND THE COPY (build 321): "As it phases
+       into the planet system, the flare has a weird mark on the side of the
+       flare". The copy sat over a whole bubble - its frosted rim, its glow
+       and its offset shadow, scaled up with the zoomed stage - and that rim
+       showed past the copy's edge on one side. The bubble's own paint is
+       off while the copy is in it (.ru-hand-bubble) and comes up only as
+       the copy fades (.ru-hand-reveal): the copy becomes the bubble. */
+    badge.classList.add("ru-hand-bubble");
     badge.appendChild(ghost);
     clock(ghost);
     const orbit = slot.parentElement;
@@ -71348,6 +71366,7 @@ function rankCutHandoff(overlay, stageWrap, heroBefore, tierKey, ghost){
       stageWrap.style.transition = "transform " + RU_HAND_ZOOM_MS + "ms cubic-bezier(.3,.02,.2,1)";
       stageWrap.style.transform = "translate(0px, 0px) scale(1)";
       overlay.classList.add("ru-handoff-in");
+      badge.classList.add("ru-hand-reveal");
       try{ ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1300, delay: 250, easing: "ease-in-out", fill: "forwards" }); }catch(e){ ghost.style.opacity = "0"; }
       try{ cover.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 2000, delay: 300, easing: "cubic-bezier(.4,0,.3,1)", fill: "forwards" }); }catch(e){ cover.style.opacity = "0"; }
     }));
@@ -71355,6 +71374,7 @@ function rankCutHandoff(overlay, stageWrap, heroBefore, tierKey, ghost){
       ghost.remove(); cover.remove();
       overlay.classList.remove("ru-handoff", "ru-handoff-in");
       slot.classList.remove("ru-hand-slot");
+      badge.classList.remove("ru-hand-bubble", "ru-hand-reveal");
       ["transition", "opacity", "transform", "transformOrigin"].forEach(p => { stageWrap.style[p] = ""; });
       overlay.style.transition = "";
     }, RU_HAND_ZOOM_MS + 200);

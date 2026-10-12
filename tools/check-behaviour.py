@@ -17786,6 +17786,11 @@ B321E_SAMPLE = r"""(t) => {
   if(src){ const els = [...src.querySelectorAll('*')];
     for(let i = 0; i < els.length && !o.fl; i++){ const an = els[i].getAnimations().find(a => /^rk-/.test(a.animationName || '') && a.effect.getTiming().iterations === Infinity);
       if(an) o.fl = { k: i + ':' + an.animationName, ct: Math.round(an.currentTime), g: !!ghost }; } }
+  /* the bubble the copy is handed into: nothing of its own round the copy at first */
+  const gb = document.querySelector('#supernova-cutscene .cosmic-icon-badge > .ru-ghost');
+  if(gb){ const b = gb.parentElement, cs = getComputedStyle(b);
+    o.hb = { bs: cs.boxShadow, bc: cs.borderTopColor, kids: Math.max(0, ...[...b.children].filter(k => k !== gb).map(k => +getComputedStyle(k).opacity)),
+      lens: +getComputedStyle(b, '::after').opacity }; }
   /* the secret flares' rings in the scene */
   const ov = document.getElementById('supernova-cutscene');
   if(ov){ const l = ov.querySelector('.rank-before .cosmic-hero-orbitlayer'), dot = ov.querySelector('.rank-before .cosmic-flare-dot');
@@ -17850,6 +17855,11 @@ def _b321e_stepped(br, w, h, dev):
             break
         pg.evaluate("() => { const sp = document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); }")
         pg.wait_for_timeout(250)
+    # Home's flip-books made, as on any phone that has had Home up for a minute
+    for _ in range(90):
+        if pg.evaluate("() => document.querySelectorAll('[data-screen=\"home\"] .cosmic-badge-rank > .cosmic-rank-anim').length >= 7"):
+            break
+        pg.wait_for_timeout(1000)
     st = _Stepper320(pg)
     for _ in range(20):
         st.step(1 / 30)
@@ -17902,6 +17912,13 @@ def _b321e_checks(dev, pre, frames):
     bad = [(d, dt) for d, dt in steps if d < -1 or d > dt + 20]
     check(f"{dev}: the road map's flare keeps its own animation clock into the planet system - every frame from the circle through the lifted copy and into the bubble moves on by one frame, never back to the start or ahead ({len(steps)} frames)",
           gi is not None and len(steps) > 60 and not bad and any(x[1]["g"] for x in seg[-5:]) is not None, [gi, len(steps), bad[:5]])
+    # 2. nothing of the bubble round the copy as the planet system comes up
+    hb = [f["hb"] for f in fr if f.get("hb")]
+    def _a0(c):
+        m = re.search(r"rgba\([^)]*,\s*([\d.]+)\)", c or "")
+        return (m is not None and float(m.group(1)) < .02) or (c or "").strip() == "transparent"
+    check(f"{dev}: as the flare goes into the planet system nothing of the bubble shows round it at first - no rim, glow, shadow or lens past its edge",
+          bool(hb) and hb[0]["bs"] == "none" and _a0(hb[0]["bc"]) and hb[0]["kids"] < .02 and hb[0]["lens"] < .02, hb[:1])
     # 3. the secret flares move before the whirl and after it
     sc = [f for f in fr if f.get("sc")]
     pre_s = [f for f in sc if not f["sc"]["spin"] and f["t"] - sc[0]["t"] > 2600] if sc else []
@@ -17925,14 +17942,15 @@ def _b321e_checks(dev, pre, frames):
     before_cut = [f for f in nx if cut_t is not None and f["t"] < cut_t]
     grey = lambda g: g is not None and ("grayscale(1)" in g["f"] or g["o"] < .7)
     check(f"{dev}: Platinum is grey and Locked on the map from the first frame until after the cutscene - not Up next, its unlocks grey",
-          len(before_cut) > 30 and all(not f["nx"]["next"] and f["nx"]["state"] == "Locked" and grey(f["nx"]["flare"]) and grey(f["nx"]["ch"]) for f in before_cut),
+          len(before_cut) > 30 and all(not f["nx"]["next"] and f["nx"]["state"] == "Locked" and grey(f["nx"]["flare"]) and (f["nx"]["ch"] is None or grey(f["nx"]["ch"])) for f in before_cut),
           [len(before_cut), before_cut[0]["nx"] if before_cut else None])
     late = [f for f in nx if f["ph"] in ("upnext", "top", "hero")]
     col = lambda g: g is not None and "grayscale" not in g["f"] and g["o"] > .95
     up_t = next((f["t"] for f in nx if f["nx"]["next"]), None)
+    lx = late[-1]["nx"] if late else {}
     check(f"{dev}: ...and it becomes Up next only when the camera reaches it after the cutscene, every unlock in colour (theme, flare, character, banner)",
-          up_t is not None and cut_t is not None and up_t > cut_t and late and late[-1]["nx"]["state"] == "Up next"
-          and all(col(late[-1]["nx"][k]) for k in ("dot", "flare", "ch")) and (late[-1]["nx"]["bn"] is None or "grayscale" not in late[-1]["nx"]["bn"]["f"]),
+          up_t is not None and cut_t is not None and up_t > cut_t and late and lx["state"] == "Up next"
+          and col(lx["dot"]) and col(lx["flare"]) and (lx["ch"] is None or col(lx["ch"])) and (lx["bn"] is None or "grayscale" not in lx["bn"]["f"]),
           [up_t, cut_t, late[-1]["nx"] if late else None])
     # 10. the card changes with a fade, not a turn; 12. the level not met
     hs = [f for f in fr if f.get("hero") and f["ph"] == "hero"]
@@ -18033,11 +18051,23 @@ def check_b320d_rankup(br):
       const dot = tip && tip.querySelector('.rankmap-roadtip-dot');
       if(tip && node && dot){ const d = dot.getBoundingClientRect(), nr = node.getBoundingClientRect(), H = tip.offsetHeight, n = node.offsetHeight;
         out.mapAt = +tip.dataset.tipAt; out.gap = Math.round((nr.top - (d.top + d.height / 2)) * 10) / 10; out.stretch = Math.round((H - n - 18) * 10) / 10; }
+      /* build 321: Up next's unlocks in colour, every rank past it grey */
+      const gifts = st => { if(!st) return null; const g = sel => { const e = st.querySelector(sel); if(!e) return null; const cs = getComputedStyle(e); return { f: cs.filter, o: +cs.opacity }; };
+        return { name: (st.querySelector('.rankmap-name') || {}).textContent, dot: g('.rankmap-gift .rankmap-dot'), flare: g('.rankmap-gift .rankmap-giftbubble .flare-solo'), ch: g('.rankmap-gift.is-char .rankmap-giftav svg'), bn: g('.rankmap-gift .rankmap-giftbanner .bnr') }; };
+      out.nextGifts = gifts(document.querySelector('.screen-ranks .rankmap-stop.is-next'));
+      out.lockedGifts = gifts([...document.querySelectorAll('.screen-ranks .rankmap-stop.is-locked')].find(x => x.querySelector('.rankmap-gift.is-char')));
       }catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
     ctx.close()
     check("the light's formula: the last badge 34/35 away with the level met stays out of the last fifth (<= 0.8), and so does every badge with 1 XP of level to go",
           not f.get("threw") and f.get("near") == 0.8 and 0 < (f.get("lastBadge") or 9) <= 0.8 and 0 < (f.get("lastXp") or 9) <= 0.8 and f.get("reached") == 1, f)
+    ng, lg = f.get("nextGifts") or {}, f.get("lockedGifts") or {}
+    col = lambda g: g is not None and "grayscale" not in g["f"] and g["o"] > .95
+    gry = lambda g: g is not None and ("grayscale(1)" in g["f"] or g["o"] < .7)
+    check("build 321: on the road map Up next shows every unlock in its colour (theme, flare, character, banner), and a rank past it stays grey",
+          ng.get("name") == "Platinum" and col(ng.get("dot")) and col(ng.get("flare")) and (ng.get("ch") or ng.get("bn"))
+          and (ng.get("ch") is None or col(ng["ch"])) and (ng.get("bn") is None or "grayscale" not in ng["bn"]["f"])
+          and gry(lg.get("ch")) and gry(lg.get("flare")), [ng, lg])
     check("badges carry much more weight: half the badges moves the light 3x as far as half the levels",
           (f.get("halfBadges") or 0) >= 2.9 * (f.get("halfLevels") or 1) and (f.get("halfLevels") or 0) > 0, [f.get("halfBadges"), f.get("halfLevels")])
     check("the ordinary road map draws its light at the same number, and at least a fifth of the stretch clear of the next circle",
