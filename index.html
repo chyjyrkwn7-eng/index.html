@@ -74520,7 +74520,9 @@ function novaIntroLines(o){
      in your chats (novaFriendMoment). */
   const friendLine = { gesture: "raise", friend: true,
     text: "One more thing: I’ve added you as a friend. When I have news for you, I’ll send it to your chats, up there.",
-    enter: ctx => { novaProp(ctx, novaStack(novaFriendProp(), novaCap("Friends"))); novaFriendMoment(); } };
+    /* a new account sees his chat row; an existing one keeps the recap of
+       what it has found on the stage while he says it */
+    enter: ctx => { if(!existing) novaProp(ctx, novaStack(novaFriendProp(), novaCap("Friends"))); novaFriendMoment(); } };
   if(!existing){
     lines.push(friendLine);
     lines.push({ gesture: "nod", final: true, text: "Find my crew and my badges, light my flares and climb the ranks. I’ll show you around.",
