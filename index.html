@@ -4706,7 +4706,7 @@
   .vroom-roster-tools .vroom-open-row{ margin-left:auto; }
   .vroom-roster-tools .vroom-invite-btn{
     display:inline-flex; align-items:center; gap:.4rem; margin:0;
-    min-height:44px; padding:.4rem .95rem .4rem .8rem; font-size:.82rem; font-weight:800; white-space:nowrap;
+    min-height:44px; padding:.4rem .9rem; font-size:.82rem; font-weight:800; white-space:nowrap; justify-content:center;
   }
   .vroom-roster-tools .vroom-invite-btn svg{ width:1.05rem; height:1.05rem; flex:none; }
   .vroom-roster-tools .vroom-open-row{ display:flex; align-items:center; gap:.55rem; min-width:0; }
@@ -5093,10 +5093,22 @@
     content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
     background:transparent; transition:background .2s ease; border-radius:2px 0 0 2px;
   }
-  .vroom-row.is-ready::before{ background:#3DD68C; }
+  /* BUILD 323: THE WHOLE ROW, NOT A STRIP. "The ready up person has green
+     on the very left, fix that too." A 3px bar down the left of a card
+     with 14px corners only ever showed as a green sliver caught in the
+     curve. The row's own outline turns green instead, all the way round
+     its corners; the ::before stays (transparent) so nothing else moves. */
+  .vroom-row.is-ready::before{ background:transparent; }
+  .vroom-roster .vroom-row.is-ready{ border-color:rgba(61,214,140,.55); transition:border-color .2s ease; }
+  /* ...and the words sit dead centre in the pill. Capitals ride high in a
+     line box that keeps room for descenders, so "NOT READY" read a pixel
+     or two above centre; text-box trims the box to the capitals (Safari
+     18.2+, current Chrome), so equal padding is equal space round the
+     letters. Older browsers keep line-height:1 and the same padding. */
   .vroom-ready-badge{
     margin-left:auto; flex-shrink:0; font-size:.68rem; font-weight:800;
-    letter-spacing:.03em; text-transform:uppercase; padding:.3rem .6rem;
+    letter-spacing:.03em; text-transform:uppercase; padding:.5rem .6rem; line-height:1;
+    text-box:trim-both cap alphabetic; text-align:center;
     border-radius:999px; color:var(--soft); background:rgba(128,128,128,.16);
   }
   .vroom-ready-badge.is-ready{ color:#0E2818; background:#3DD68C; }
