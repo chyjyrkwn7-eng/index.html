@@ -4447,6 +4447,45 @@
     background:transparent; border:1.5px solid rgba(255,255,255,.5); box-shadow:none; color:var(--ink);
   }
   .cal-today-badge{ background:rgba(255,255,255,.14); color:#FFFFFF; text-shadow:none; box-shadow:none; }
+  /* ---- A DOT IS ITS KEY'S COLOUR ON EVERY DAY, TODAY INCLUDED (build 323) ----
+     "On the calendar, if today's the current day, the test dot turns white
+     instead of yellow as shown to be in the key." Today's rule (and a
+     picked day's) painted EVERY dot in its cell one colour - white on
+     today, the accent's ink on a picked day - so a test day that was today
+     lost the one mark that says it is a test. The day's ring and fill
+     stay; the test dot stays the key's amber and a no-class day's dot the
+     key's pink wherever it is. Only the class-day dot, the key's own
+     white, takes the cell's ink on a picked (accent-filled) day so it can
+     still be seen. Later than every rule above and carrying their
+     prefixes. */
+  .cal-cell .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test,
+  .cal-cell-sel .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test,
+  .cal-cell-today .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-sel .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-today .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-today.cal-cell-sel .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test{
+    background:#F5B54D;
+  }
+  .cal-cell-holiday .cal-cell-dots > .cal-cell-dot:not(.cal-cell-dot-test),
+  [data-theme="dark"][data-layout="modern"] .cal-cell-holiday.cal-cell-sel .cal-cell-dots > .cal-cell-dot:not(.cal-cell-dot-test),
+  [data-theme="dark"][data-layout="modern"] .cal-cell-holiday.cal-cell-today .cal-cell-dots > .cal-cell-dot:not(.cal-cell-dot-test),
+  [data-theme="dark"][data-layout="modern"] .cal-cell-holiday.cal-cell-today.cal-cell-sel .cal-cell-dots > .cal-cell-dot:not(.cal-cell-dot-test){
+    background:var(--wrong);
+  }
+  /* today's class-day dot is the key's too: the accent (white on the
+     default theme) - today is the grid's neutral frosted cell since build
+     314, so it no longer needs a white of its own to show */
+  .cal-cell-today:not(.cal-cell-holiday) .cal-cell-dots > .cal-cell-dot:not(.cal-cell-dot-test),
+  [data-theme="dark"][data-layout="modern"] .cal-cell-today:not(.cal-cell-holiday) .cal-cell-dots > .cal-cell-dot:not(.cal-cell-dot-test),
+  [data-theme="dark"][data-layout="modern"] .cal-cell-today.cal-cell-sel:not(.cal-cell-holiday) .cal-cell-dots > .cal-cell-dot:not(.cal-cell-dot-test){
+    background:var(--accent);
+  }
+  /* on a picked day's accent fill, a hairline of the cell's ink keeps the
+     amber and the pink dots sharp against it */
+  [data-theme="dark"][data-layout="modern"] .cal-cell-sel:not(.cal-cell-today) .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-holiday.cal-cell-sel:not(.cal-cell-today) .cal-cell-dots > .cal-cell-dot{
+    box-shadow:0 0 0 1px color-mix(in srgb, var(--accent-ink) 55%, transparent);
+  }
   /* ---- THE LAST DAY, AND THE STATE TEST ON IT (build 314) ----
      "Ensure that day also says last day and that day on the calendar and
      stuff has a cool box to celebrate." Academy gold - the colour of a
@@ -20869,6 +20908,41 @@
   .profile-friendcard-pending{
     margin:.45rem 0 0; font-size:.82rem; font-weight:700; color:#F5B54D;
   }
+  /* ---- THE FRIENDS ON THE CARD (build 323) - see paintFriendPreview ----
+     A short list in the card's own surface: the character (asleep when
+     they are off), the name, and what they are doing in the online green
+     or "Offline" in the quiet grey. Rows divided by the hairline the class
+     days use, so the two cards still read as a pair. */
+  .pf-friends{ display:flex; flex-direction:column; margin:-.2rem 0 0; }
+  .pf-friends[hidden], .pf-friends-more[hidden], .profile-friendcard-line[hidden]{ display:none; }
+  .pf-friend{
+    display:flex; align-items:center; gap:.75rem; min-height:3.1rem;
+    padding:.45rem .1rem; border-top:1px solid rgba(255,255,255,.06);
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+    border-radius:10px; transition:background-color .18s ease;
+  }
+  .pf-friend:first-child{ border-top:0; }
+  .pf-friend:active{ background:rgba(255,255,255,.05); }
+  .pf-friend-art{ width:2.4rem; height:2.4rem; }
+  /* the online dot is the friends list's own, shown only while they are on */
+  .pf-friend-dot:not(.is-online){ display:none; }
+  .pf-friend-text{ flex:1 1 auto; min-width:0; }
+  .pf-friend-name{
+    margin:0; font-size:.92rem; font-weight:700; color:var(--ink);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .pf-friend-status{ margin:.08rem 0 0; font-size:.76rem; line-height:1.25;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pf-friend-act[hidden]{ display:none; }
+  .pf-friend-off{ display:none; color:var(--soft); font-weight:600; }
+  .pf-friend-act[hidden] + .pf-friend-off{ display:inline; }
+  .pf-friends-more{ margin:.35rem 0 0; font-size:.76rem; color:var(--soft); padding-left:.1rem; }
+  @media (min-width:40rem){
+    .pf-friend{ min-height:3.4rem; }
+    .pf-friend-art{ width:2.7rem; height:2.7rem; }
+    .pf-friend-name{ font-size:.98rem; }
+    .pf-friend-status{ font-size:.8rem; }
+  }
   /* One button across the whole row. It was one of a pair sharing the
      width; on its own it is the card's single action and reads like one. */
   .profile-classcard-btn{
@@ -20903,6 +20977,9 @@
   /* ---- PROFILE > CALENDAR (build 319, builder h) - see buildCalendarPane ----
      The Class 26E box heads it, then Month / List, then the month. */
   .profile-cal-tab > .profile-classcard{ margin:0 0 1.2rem; }
+  /* The Calendar tab root (build 323): the same order, at the top of the
+     screen where a tab root's first block sits. */
+  .screen-calendar-tab > .profile-classcard{ margin:0 0 1.2rem; }
   /* Customize: the name and its Change button on one line. */
   .customize-namerow{
     display:flex; align-items:center; justify-content:flex-start; gap:.7rem;
@@ -50397,6 +50474,9 @@ function firebaseBecameReady(){
   }
   const appearanceBtnEl = document.getElementById("appearancebtn");
   if(appearanceBtnEl && appearanceBtnEl.getAttribute("aria-current") === "page") showAppearance();
+  /* Settings is a Profile tab now (build 323): redrawn the same way when
+     it is the tab on screen. */
+  else if(document.querySelector("#stage .screen-profile .profile-settings-tab[data-built='1']:not([hidden])")) showAppearance();
   const pending = fbReadyCallbacks.splice(0);
   pending.forEach(cb => { try { cb(); } catch(e){} });
   /* Once per account: count the Virtual Room matches and wins from
@@ -74574,10 +74654,12 @@ function mainMenuTourSteps(returning){
     { target: "#bottomtab-rewards", align: "left", vplacement: "above",
       text: "The Leaderboard is the whole class: this week, overall and hundos, updating live. Search for anyone, or tap Find me." },
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
-      text: "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks. Calendar and Stats are its other two tabs." },
+      text: isIOSDevice() && !isStandaloneApp()
+        ? "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks. Stats and Settings are its other two tabs, and Settings has a guide for adding this app to your Home Screen."
+        : "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks. Stats and Settings are its other two tabs." },
     /* Calendar took Settings' place on the bar (build 323) */
     { target: "#bottomtab-calendar", align: "right", vplacement: "above",
-      text: "Calendar is the class schedule: what\u2019s on each class day, the tests, and how many days are left." },
+      text: "Calendar is the class calendar: how many class days are left, the next class day, and every day of the course." },
     /* Added right after the bottom-tab run, per explicit request,
        since the daily question button sits right there on Home
        already \u2014 no reason to make it wait for a separate pass
@@ -74613,8 +74695,9 @@ const NOVA_NEW_TIPS_321 = [
     text: "New: the planet answers your touch. Tap it to see where you stand, and keep tapping to spin its rings. It cracks a little more with every rank you reach." },
   { target: "#bottomtab-profile", align: "left", vplacement: "above",
     text: "New: Profile has been rebuilt. Your rank, your level and your badges are on one card, your badge case opens from it, and Friends is back underneath." },
-  { target: "#bottomtab-profile", align: "left", vplacement: "above",
-    text: "New: the class calendar has moved. It\u2019s the Calendar tab on Profile now, between Profile and Stats." }
+  /* build 323: the calendar has its own tab in the bar, Settings is in Profile */
+  { target: "#bottomtab-calendar", align: "right", vplacement: "above",
+    text: "New: the class calendar has its own tab down here now, and Settings has moved into Profile, beside Stats." }
 ];
 /* An existing account's tooltips, once, in its meeting with Nova: the main
    menu's, then what is new. No welcome bonus - that is for a new account. */
@@ -80674,10 +80757,11 @@ const WHATS_NEW_320 = [
     glyph: "M12 2l1.6 6.1L19.8 6l-4.2 4.6L22 12l-6.4 1.4 4.2 4.6-6.2-2.1L12 22l-1.6-6.1L4.2 18l4.2-4.6L2 12l6.4-1.4L4.2 6l6.2 2.1L12 2Z",
     body: "At Supernova the planet on Home keeps the mark of the blast: the scar glints, smoke rises from it, and pieces drift off its rings.",
     say: "Reach Supernova and the planet keeps the mark of the blast for good. The scar glints and smoke rises from it." },
-  { key: "profile", color: "#5CA8FF", title: "Profile, Calendar and Stats",
+  /* build 323: the calendar to the bar, Settings into Profile */
+  { key: "profile", color: "#5CA8FF", title: "Calendar in the tab bar",
     glyph: "M3 4.5h5.2v4.2H3V4.5Zm6.4 0h5.2v4.2H9.4V4.5Zm6.4 0H21v4.2h-5.2V4.5ZM3 10.2h18V20H3v-9.8Z",
-    body: "Profile is three tabs: Profile, Calendar and Stats. Your rank, level and badges are on one card, and Friends is back under it.",
-    say: "Profile is three tabs now: Profile, Calendar and Stats. The class calendar lives there, and Friends is back under your card." },
+    body: "The class calendar has its own tab in the bar. Profile is Profile, Stats and Settings, and your Friends box shows who is on and what they are doing.",
+    say: "The class calendar has its own tab at the bottom now. Settings moved into Profile, and your Friends box shows who is on." },
   { key: "save", color: "#4ADE80", title: "Save a test for later",
     glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-3.4 6.2h2.3v7.6H8.6V8.2Zm4.5 0h2.3v7.6h-2.3V8.2Z",
     body: "Pause a Drill or Exam and tap Save and exit. Start Studying offers it back, and Resume loads it right where you left off.",
@@ -96917,18 +97001,20 @@ function moreBodyMoving(body){
   clearTimeout(body._movingT);
   body._movingT = setTimeout(() => body.classList.remove("is-moving"), 560);
 }
+/* ---- SETTINGS IS PROFILE'S THIRD TAB (build 323) ----
+   "the settings is gonna be within profile and will be a top tab, the
+   order would be profile, stats, settings." Every way in - the save-your-
+   code banner, a back link, Firebase arriving - still calls this, and it
+   lands on Profile > Settings with Profile lit. showProfile then calls it
+   back with `opts.into`, the tab's own container, and this fills it: one
+   builder, never a second copy of Settings. */
 function showAppearance(opts){
-  captureSetupReturn();
-  rankUpAbsorbPending();
-  stopTimer();
-  flushStudyTime();
-  meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
-  timerlineEl.hidden = true;
-  setActiveNav("appearance");
-  countEl.textContent = "Settings";
-
-  const panel = document.createElement("section");
-  panel.className = "panel screen-settings";
+  const into = opts && opts.into && opts.into.nodeType === 1 ? opts.into : null;
+  if(!into){
+    const plain = (opts && typeof opts === "object" && !(typeof Event !== "undefined" && opts instanceof Event)) ? opts : undefined;
+    return showProfile("settings", plain);
+  }
+  const panel = into;
 
 
 
@@ -97910,14 +97996,14 @@ function showAppearance(opts){
   affiliationNote.textContent = "Not affiliated with or endorsed by HCC or TCOLE.";
   panel.appendChild(affiliationNote);
 
-  stage.replaceChildren(panel);
+  /* (mounted by showProfile, inside its Settings tab - build 323) */
   /* INSTANT WHEN WE ARE ABOUT TO SCROLL SOMEWHERE ELSE. A plain toTop()
      defers to the person's Smooth Scrolling setting, so it STARTS an
      animation to 0 that is still running when the park() below jumps to
      the section - and the animation finishes last, dragging the page
      back to the top. That is the whole reason the section flashed
      correctly while sitting 1045px below the fold. */
-  toTop(!!(opts && opts.focus));
+  if(opts && opts.focus) toTop(true);
   /* SCROLLED TO AND LIT UP, after the screen is mounted and laid out -
      a getBoundingClientRect on a node that is not in the document yet
      has no box, and scrollIntoView on it does nothing. Two frames,
@@ -107952,15 +108038,37 @@ function buildClassCard(){
   classSect.appendChild(classDayRow("Next", nextClassEntry(), false));
   return classSect;
 }
-/* The class calendar is the Calendar tab of Class now (build 319). */
-/* The class calendar is Profile's Calendar tab (build 319, builder h).
-   Every way in - a notification, a tour, an old link - lands there. */
-function showCalendar(){
-  return showProfile("calendar");
+/* ---- THE CALENDAR IS A BOTTOM TAB (build 323) ----
+   "Calendar is gonna move to the bottom tab. It's gonna change places with
+   the settings bottom tab ... I think this could be a huge improvement
+   because the calendar is pretty important." It was Profile's middle tab
+   (build 319); it is a tab root of its own now, in Settings' old place in
+   the bar: no back link, the header says Calendar, the bar lights
+   Calendar (setActiveNav("calendar") and .screen-calendar-tab). Every way
+   in - showCalendar(), showProfile("calendar"), showClass("calendar"), a
+   tour, an old link - lands here. */
+function showCalendarTab(){
+  captureSetupReturn();
+  rankUpAbsorbPending();
+  stopTimer();
+  flushStudyTime();
+  meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
+  timerlineEl.hidden = true;
+  setActiveNav("calendar");
+  countEl.textContent = "Calendar";
+  const panel = document.createElement("section");
+  panel.className = "panel screen-calendar screen-calendar-tab";
+  panel.dataset.nav = "calendar";
+  buildCalendarPane(panel);
+  stage.replaceChildren(panel);
+  toTop();
 }
-/* Profile's Calendar tab: the Class 26E box (the days left, the next class
-   day), then the calendar. No back link and no title - Profile's own
-   switcher above says where this is. */
+function showCalendar(){
+  return showCalendarTab();
+}
+/* The Calendar tab: the Class 26E box (the days left, the next class
+   day), then the calendar. No back link and no title - the header and the
+   lit tab in the bar say where this is. */
 function buildCalendarPane(panel){
   panel.appendChild(buildClassCard());
 
@@ -109116,13 +109224,19 @@ document.addEventListener("keydown", e => {
    three tabs should be profile, calendar, and stats". It was its own
    screen behind a button on the Profile card, then for one build a tab of
    a Class bottom tab that Madison sent back. */
-const PROFILE_TABS = ["profile", "calendar", "stats"];
+/* PROFILE, STATS, SETTINGS (build 323): "Calendar is gonna move to the
+   bottom tab. It's gonna change places with the settings bottom tab and
+   then the settings is gonna be within profile and will be a top tab, the
+   order would be profile, stats, settings." The calendar is its own tab
+   root now (showCalendarTab); Settings is built into Profile's third tab
+   by showAppearance({ into }). */
+const PROFILE_TABS = ["profile", "stats", "settings"];
 const RANKS_TABS = ["ranks", "badges"];
 /* Every name this tab has ever had still lands on it, so an older link
    or a stored value goes where it means rather than silently falling
    back to Profile. */
 const PROFILE_TAB_ALIASES = { achievements: "ranks", ladder: "ranks", unlocks: "ranks",
-  cal: "calendar", schedule: "calendar", class: "calendar" };
+  cal: "calendar", schedule: "calendar", class: "calendar", appearance: "settings" };
 
 /* ---- THE RANKS TAB (build 219) ----
    Rank first, Badges second, a bottom tab of its own: "I'm starting to
@@ -109707,11 +109821,15 @@ function buildProfileCase(have, total){
   return box;
 }
 
-function showProfile(defaultTab){
+/* How many friends the Profile card lists before "and N more" (build 323). */
+const FRIEND_PREVIEW_MAX = 4;
+function showProfile(defaultTab, opts){
   /* The Profile card counts how many friends are online, so it needs
      presence too - and like Friends it detaches on the next screen. */
   attachPresence();
   refreshPresenceViews = function(){};
+  /* a listener hands over a MouseEvent; only a plain object is options */
+  const tabOpts = (opts && typeof opts === "object" && !(typeof Event !== "undefined" && opts instanceof Event)) ? opts : null;
   /* Validated, not just defaulted, and that is the whole of a real bug:
      showProfile was passed STRAIGHT to addEventListener and to
      buildBackLink at three call sites, so defaultTab arrived as a
@@ -109726,6 +109844,8 @@ function showProfile(defaultTab){
   /* Anything that still asks Profile for the rank or the badges goes to
      where they live now. */
   if(asked === "ranks" || asked === "badges") return showRanksScreen(asked);
+  /* The calendar is a bottom tab of its own (build 323). */
+  if(asked === "calendar") return showCalendarTab();
   const initialTab = PROFILE_TABS.indexOf(asked) !== -1 ? asked : "profile";
   captureSetupReturn();
   /* Same interception as showHome — reaching a new tier redirects
@@ -109760,13 +109880,14 @@ function showProfile(defaultTab){
   profileTabSeg.className = "navsegment profiletabs";
 
   const identityTab = document.createElement("div");
-  /* .screen-calendar so every selector that found the calendar screen
-     still finds it; built the first time it is shown (buildCalendarPane
-     draws every class day, and a tab nobody opens should cost nothing). */
-  const calendarTab = document.createElement("div");
-  calendarTab.className = "profile-cal-tab screen-calendar";
   const statsTab = document.createElement("div");
   statsTab.className = "profile-stats-tab";
+  /* SETTINGS, PROFILE'S THIRD TAB (build 323). .screen-settings so every
+     rule and selector that found the Settings screen still finds it;
+     filled by showAppearance({ into }) the first time it is shown, the
+     way the calendar tab was - a tab nobody opens should cost nothing. */
+  const settingsTab = document.createElement("div");
+  settingsTab.className = "profile-settings-tab screen-settings";
   /* Built once, here, rather than inside the selector: the track
      animates its fills on build, and rebuilding it on every tab change
      would replay that animation each time someone swiped past. */
@@ -109785,8 +109906,8 @@ function showProfile(defaultTab){
        alias for this tab. */
     /* .profile-stats-tab-btn is not decorative - the Profile tour
        points at it. See the tour at the end of this function. */
-    { key: "calendar", label: "Calendar", node: calendarTab, cls: " profile-cal-tab-btn" },
-    { key: "stats",   label: "Stats",   node: statsTab,    cls: " profile-stats-tab-btn" }
+    { key: "stats",   label: "Stats",   node: statsTab,    cls: " profile-stats-tab-btn" },
+    { key: "settings", label: "Settings", node: settingsTab, cls: " profile-settings-tab-btn" }
   ];
   const profileTabBtns = {};
   profileTabDefs.forEach(t => {
@@ -109805,15 +109926,16 @@ function showProfile(defaultTab){
 
   const profileTabOrder = PROFILE_TABS;
   let profileTabKey = initialTab;
-  function buildCalendarTab(){
-    if(calendarTab.dataset.built === "1") return;
-    calendarTab.dataset.built = "1";
-    try{ buildCalendarPane(calendarTab); }catch(e){ console.error(e); }
+  /* Built once it is on screen and visible: showAppearance's own scroll
+     to a section (opts.focus) and its tour both measure what they point
+     at, and a hidden tab has no boxes to measure. */
+  function buildSettingsTab(o){
+    if(settingsTab.dataset.built === "1") return;
+    settingsTab.dataset.built = "1";
+    try{ showAppearance(Object.assign({}, o || {}, { into: settingsTab })); }catch(e){ console.error(e); }
   }
-  if(initialTab === "calendar") buildCalendarTab();
   function selectProfileTab(which){
     profileTabKey = which;
-    if(which === "calendar") buildCalendarTab();
     beginSettle(320);
     profileTabDefs.forEach(t => {
       t.node.hidden = t.key !== which;
@@ -109824,13 +109946,16 @@ function showProfile(defaultTab){
        in a hidden panel is a bar nobody sees move. */
     if(which === "profile") runXpBarFill();
     toTop();
+    if(which === "settings") buildSettingsTab();
   }
   /* Swipeable, per explicit request, using the same helper the Rankings
      tab uses. */
   /* A swipe that starts on the calendar's own Month / List switcher is
      that switcher's (see buildCalendarPane); anywhere else it moves one
      Profile tab. */
-  attachTabSwipe(panel, profileTabOrder, () => profileTabKey, selectProfileTab, { skip: ".cal-viewseg" });
+  /* Settings' volume slider is dragged sideways; a drag on it is the
+     slider's, never a tab change. */
+  attachTabSwipe(panel, profileTabOrder, () => profileTabKey, selectProfileTab, { skip: ".sliderwrap, input[type=range]" });
 
   /* ---------- identity header ----------------------------------------
      One card: the character you chose, your name, the day streak, and
@@ -110071,8 +110196,6 @@ function showProfile(defaultTab){
   fTitle.textContent = "Friends";
   const friendIds = friendPublicIds();
   const pendingN = incomingFriendRequests().length;
-  const onlineN = (leaderboardRows || [])
-    .filter(e => friendIds.indexOf(e.pub) >= 0 && isOnline(e)).length;
   const fCount = document.createElement("span");
   fCount.className = "profile-classcard-count";
   /* Worded, like "178 class days left" opposite it, rather than a bare
@@ -110084,17 +110207,113 @@ function showProfile(defaultTab){
   fHead.append(fTitle, fCount);
   friendSect.appendChild(fHead);
 
+  /* ---- YOUR FRIENDS, RIGHT ON THE CARD (build 323) ----
+     "the 'friends' section in profile where it says manage friends need a
+     little more so it can make up for the last space the calendar had.
+     Not much bigger just a little taller and maybe would show your
+     friends right there before even hitting manage? ... show your current
+     friends and what they are doing currently or if they are offline."
+     Up to FRIEND_PREVIEW_MAX of them, on first: character, name, and what
+     they are doing (the same ACTIVITY_TEXT labels as everywhere) or
+     Offline. Read from what is already loaded - the class board's rows
+     and the presence document Profile attaches anyway - so this costs no
+     read of its own. Manage friends is unchanged (add, remove, your code). */
   const fLine = document.createElement("p");
   fLine.className = "profile-friendcard-line";
-  if(!friendIds.length){
-    fLine.textContent = "Nobody yet \u2014 swap codes with a classmate.";
-  } else if(onlineN){
-    fLine.textContent = onlineN + (onlineN === 1 ? " is online now" : " are online now");
-    fLine.classList.add("is-online");
-  } else {
-    fLine.textContent = "Nobody online right now.";
+  const fList = document.createElement("div");
+  fList.className = "pf-friends";
+  const fMore = document.createElement("p");
+  fMore.className = "pf-friends-more";
+  let fShownSig = null;
+  function friendPreviewEntries(){
+    const rows = rowsByPublicId();
+    return friendPublicIds().map(pub => rows[pub]).filter(e => e && e.pub)
+      .map(e => ({ e, on: isOnline(e) }))
+      .sort((a, b) => (b.on - a.on) || String(a.e.firstName || "").localeCompare(String(b.e.firstName || "")));
   }
-  friendSect.appendChild(fLine);
+  function friendPreviewSig(){
+    return friendPreviewEntries().slice(0, FRIEND_PREVIEW_MAX)
+      .map(x => x.e.pub + (x.on ? ":" + ((presenceActivity && presenceActivity[x.e.pub]) || "app") : ":off") + ":" + (x.e.avatarChar || "") + ":" + (x.e.firstName || ""))
+      .join("|") + "#" + friendPublicIds().length;
+  }
+  function paintFriendPreview(){
+    fShownSig = friendPreviewSig();
+    const ids = friendPublicIds();
+    const all = friendPreviewEntries();
+    const shown = all.slice(0, FRIEND_PREVIEW_MAX);
+    fList.replaceChildren();
+    fLine.classList.remove("is-online");
+    if(!ids.length){
+      fLine.textContent = "No friends yet. Swap friend codes with a classmate to add one.";
+      fLine.hidden = false;
+    } else if(!shown.length){
+      fLine.textContent = "Your friends show here once the class list has loaded.";
+      fLine.hidden = false;
+    } else {
+      fLine.hidden = true;
+    }
+    shown.forEach(({ e, on }) => {
+      const row = document.createElement("div");
+      row.className = "pf-friend is-tappable" + (on ? " is-on" : "");
+      row.setAttribute("role", "button");
+      row.tabIndex = 0;
+      row.dataset.pub = e.pub;
+      const art = document.createElement("div");
+      art.className = "friend-row-art pf-friend-art";
+      art.appendChild(avatarSpanFor(e));
+      if(e.firstName) setCharState(art, on ? "live" : "sleep");
+      /* the green dot, repainted by presence where it stands */
+      const dot = document.createElement("span");
+      dot.className = "friend-online-dot pf-friend-dot" + (on ? " is-online" : "");
+      dot.dataset.onlinePub = e.pub;
+      dot.setAttribute("aria-hidden", "true");
+      art.appendChild(dot);
+      const text = document.createElement("div");
+      text.className = "pf-friend-text";
+      const nm = document.createElement("p");
+      nm.className = "pf-friend-name";
+      nm.textContent = e.firstName || "Anonymous";
+      const st = document.createElement("p");
+      st.className = "pf-friend-status";
+      const off = document.createElement("span");
+      off.className = "pf-friend-off";
+      off.textContent = "Offline";
+      st.append(activityLabel(e.pub, true, "friend-row-on pf-friend-act"), off);
+      text.append(nm, st);
+      row.append(art, text);
+      const openCard = () => { try{ openPersonSheet(e); }catch(err){ showFriends(); } };
+      row.addEventListener("click", openCard);
+      row.addEventListener("keydown", ev => {
+        if((ev.key === "Enter" || ev.key === " ") && ev.target === row){ ev.preventDefault(); openCard(); }
+      });
+      fList.appendChild(row);
+    });
+    const more = all.length - shown.length;
+    fMore.hidden = more <= 0;
+    fMore.textContent = more > 0 ? "and " + more + " more" : "";
+    fList.hidden = !shown.length;
+  }
+  paintFriendPreview();
+  friendSect.append(fLine, fList, fMore);
+  /* A presence snapshot or the class list landing repaints the rows -
+     only when something on them changed, so a character is never
+     restarted under somebody for nothing. */
+  refreshPresenceViews = () => {
+    if(!fList.isConnected) return;
+    if(document.querySelector(".invite-overlay .person-card")) return;
+    if(friendPreviewSig() !== fShownSig) paintFriendPreview();
+  };
+  if(friendIds.length && !friendPreviewEntries().length){
+    /* the class list Home reads, on its own fifteen minutes */
+    try{ fetchBoardForInvites(false); }catch(e){}
+    let tries = 0;
+    const waitRows = () => {
+      if(!fList.isConnected || ++tries > 12) return;
+      if(friendPreviewEntries().length){ refreshPresenceViews(); return; }
+      setTimeout(waitRows, 700);
+    };
+    setTimeout(waitRows, 700);
+  }
 
   /* The count of people waiting rides up here rather than on the
      button's label, because a request nobody is told about is a
@@ -110113,7 +110332,8 @@ function showProfile(defaultTab){
   const friendsLine = document.createElement("button");
   friendsLine.type = "button";
   friendsLine.className = "next ghost profile-classcard-btn profile-classline";
-  friendsLine.textContent = pendingN ? "Open friends" : "Manage friends";
+  /* nobody yet: the same screen, named for the one thing to do there */
+  friendsLine.textContent = pendingN ? "Open friends" : friendIds.length ? "Manage friends" : "Add friends";
   if(pendingN) friendsLine.classList.add("has-pending");
   friendsLine.addEventListener("click", showFriends);
   fBtns.appendChild(friendsLine);
@@ -110373,10 +110593,16 @@ function showProfile(defaultTab){
   stage.replaceChildren(panel);
   toTop();
   if(initialTab === "profile") runXpBarFill();
+  /* Opened on Settings (showAppearance, the save-your-code banner): built
+     now it is mounted, with whatever section it was asked to show. */
+  if(initialTab === "settings"){ buildSettingsTab(tabOpts); return; }
   /* a rank-up waiting to be shown plays from here; no tour over it (317) */
   if(rankUpScene && playRankUpProfileScene(rankUpScene, panel)) return;
   /* (nor over the rank-up coming back to Profile, build 319) */
-  if(!store.seenProfileTour && !rankUpScene){
+  /* The Profile tour points at the Profile tab's card, so it waits for
+     the Profile tab (build 323: opening on Settings left every step
+     hidden, and the Settings tab has a tour of its own). */
+  if(initialTab === "profile" && !store.seenProfileTour && !rankUpScene){
     store.seenProfileTour = true;
     /* The full tour includes the three tips below, so it settles them. */
     store.profileTips289 = false;
@@ -110390,11 +110616,8 @@ function showProfile(defaultTab){
          at the button that opens the screen those controls live on,
          which is the thing somebody on THIS screen needs to know. */
       ...PROFILE_TIPS_289,
-      /* THE CALENDAR TAB (build 319, builder h): the class calendar is
-         Profile's middle tab, so the step points at its button - the tab
-         itself is hidden while the tour runs on the Profile tab. */
-      { target: ".profile-cal-tab-btn", align: "left", vplacement: "below",
-        text: "Calendar is the class calendar: how many class days are left, the next class day, and every day of the course." },
+      /* (build 323: the calendar left Profile for the tab bar; the main
+         menu's tour points at it there) */
       /* This used to target ".points-progress-sect" and talk about stars
          — leftover copy from a stars/points summary box that lived
          here before it was removed as a duplicate of Rewards' own
@@ -110412,8 +110635,13 @@ function showProfile(defaultTab){
          the Profile tab), and a hidden element's getBoundingClientRect()
          is all zeros, which breaks the tour's connector-line positioning
          outright. */
+      { target: ".profile-friendcard", align: "left", vplacement: "above",
+        text: "Friends shows who is on and what they are doing. Manage friends is where you add or remove them." },
       { target: ".profile-stats-tab-btn", align: "left", vplacement: "below",
-        text: "Stats has your study time, your testing stats and your test history, all in one place." }
+        text: "Stats has your study time, your testing stats and your test history, all in one place." },
+      /* Settings is Profile's third tab (build 323). */
+      { target: ".profile-settings-tab-btn", align: "right", vplacement: "below",
+        text: "Settings has the rest of the options: sound, motion, how tests behave, and your sync code." }
       /* Badges and the rank climb moved to their own Ranks tab in the
          bottom bar in build 219, and the main menu tour points at it. */
 
