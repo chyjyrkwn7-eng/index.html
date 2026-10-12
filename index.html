@@ -98646,7 +98646,7 @@ function buildStudyDotChart(){
     if(picked < 0){
       const total = days.reduce((s, x) => s + x.ms, 0);
       big.textContent = formatDuration(total);
-      cap.textContent = rangeText(days[0].d, days[6].d) + (total ? "" : " \u00b7 none yet");
+      cap.textContent = rangeText(days[0].d, days[6].d);
     } else {
       const x = days[picked];
       big.textContent = formatDuration(x.ms);
