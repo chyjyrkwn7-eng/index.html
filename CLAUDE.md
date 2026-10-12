@@ -20032,4 +20032,4 @@ awesome too."* All of it sits in one block after `saveTheme()`.
   against itself with another seed = 1.00; the timer's tick against its tock
   > .90); the ambience's seam step no bigger than the loop's 99.9th
   percentile step and its level within 1.5dB either side. Closest pair at
-  this build: .85 (the Bronze and Amethyst flares).
+  this build: .85 (the Bronze and Sapphire flares).

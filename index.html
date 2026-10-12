@@ -61657,21 +61657,21 @@ const SOUND_CATALOGUE = {
       K.tone({ f: "A3", type: "triangle", lp: 800, a: .01, d: .7, g: .05 });
     } },
   "home.flare.vanguard": { group: "Home", bus: "ui", cd: 90, poly: 2, hap: "tap",
-    desc: "Tap the Sapphire flare (a binary, two stars): two bells a fifth apart, one each side, slowly beating against each other.",
+    desc: "Tap the Platinum flare (a binary, two stars): two bells a fifth apart, one each side, slowly beating against each other.",
     fn: K => {
       K.fm({ f: "E5", ratio: 3, idx: 1.2, d: .9, g: .05, pan: -.65, rev: .3 });
       K.fm({ f: sndHz("B5") + 3.5, t: .05, ratio: 3, idx: 1.2, d: .9, g: .05, pan: .65, rev: .3 });
       K.fm({ f: sndHz("B5") - 3.5, t: .05, ratio: 3, idx: .8, d: .9, g: .03, pan: .65 });
     } },
   "home.flare.adept": { group: "Home", bus: "ui", cd: 90, poly: 2, hap: "tap",
-    desc: "Tap the Amethyst flare (a spiral galaxy): a swirl - two resonant whirls of air turning opposite ways round the stereo field over a shimmering C# and E.",
+    desc: "Tap the Sapphire flare (a spiral galaxy): a swirl - two resonant whirls of air turning opposite ways round the stereo field over a shimmering C# and E.",
     fn: K => {
       K.noise({ color: "p", bp: 700, ff2: 2600, q: 9, a: .15, d: .6, g: .22, orbit: [3.2, .9], rev: .4 });
       K.noise({ color: "p", bp: 2400, ff2: 900, q: 9, a: .15, d: .6, g: .16, orbit: [-3.2, .9], rev: .4 });
       ["C#5", "E5"].forEach(n => K.tone({ f: n, a: .12, d: .6, g: .03, vib: [7, 14], rev: .4 }));
     } },
   "home.flare.elite": { group: "Home", bus: "ui", cd: 90, poly: 2, hap: "tap",
-    desc: "Tap the Ruby flare (a quasar, seen across the universe): a sharp beam of a ping, falling an octave, echoing far.",
+    desc: "Tap the Amethyst flare (a quasar, seen across the universe): a sharp beam of a ping, falling an octave, echoing far.",
     fn: K => {
       K.tone({ f: 2400, f2: 1200, gl: .08, a: .001, d: .3, g: .05, dly: .45 });
       K.tone({ f: 1200, type: "square", lp: 2400, a: .001, d: .12, g: .015, dly: .4 });
