@@ -1472,7 +1472,12 @@ Everything below follows from that.
 - **Find me has three reasons to fail and naming the wrong one is how this
   was reported**: a device with no code was told to turn on a setting that
   was already on. Not loaded / hidden (`leaderboardOptIn`) / not syncing
-  (`!syncCode`) are separate messages. A brand-new account with no data is
+  (`!syncCode`) are separate messages. **Since build 324 "hidden" is the
+  whole screen, not a Find me message**: with `leaderboardOptIn` off the
+  Leaderboard shows only the hidden card (`buildRankingsOptedOut`), so
+  there is no Find me to press; the hidden branch in Find me stays as a
+  fallback for a flag flipped under an open board (which `paint()` also
+  catches). check-sync 3 asserts the card. A brand-new account with no data is
   **not** one of them — `liveEntries()` synthesises your row at zero — so
   nothing there may ever say "not in the rankings yet" to somebody who
   simply has not answered a question.
@@ -20963,3 +20968,54 @@ key."*
 - `check_b323u_units` (fails on 22bf429). Moved: check_b297's "first and
   full width" Starred box; check_penal_versions scrolls the version line
   into view before sampling it.
+
+### Build 324 (b324l) - hidden means hidden, a person's rank is their flare, a top three with some metal
+
+- **"The show me in rankings toggle, if I turn it off, I can still see the
+  leaderboard.. fix that."** One gate at the top of `showRankings()`, which
+  every way in already goes through (the tab, `showLeaderboard`,
+  `showClass`, a stored or linked board name). Off: the hidden card
+  (`buildRankingsOptedOut`) - "The rankings are hidden", one line, and
+  **Show me in the rankings**, which flips the setting right there (the
+  same three lines as Settings' switch) and draws the boards at once. No
+  board means no Find me, no row to open a person card from, no last
+  week's podium and no listener on the collection. A flag flipped under an
+  open board (another device) takes the board down on the next `paint()`,
+  and a row tapped then opens nothing. Settings' hint already promised
+  this ("With this off, you can't see the rankings either").
+- **A person's rank is their flare** (`buildRankMark`, `startRankMarks`).
+  Madison asked whether "the rank symbol everywhere was just the rank
+  flare". Wherever the app puts a rank SYMBOL beside a person it is now
+  Home's lit glass bubble with the emblem moving inside it, the rank's name
+  beside it: the Overall board's Rank column and the person card. Places
+  she asked to be words stay words - the Profile line (321: "Remove the
+  tiny icon"), no coin on any character (241; `decorateAvatar` still draws
+  nothing, so the Virtual Room rows are words too) - and the bare emblem
+  stays where it IS the rank (road map, rank-up journey, the Profile's "To
+  reach" box). Read at small sizes before deciding: lit flares stay legible
+  down to ~16px, where the bare Bronze emblem is already a smudge.
+  - **Motion is the shared flip-book**, sized per screen (a sheet per tier
+    and size, cached like Home's). A mark is carried over when a snapshot
+    rebuilds the rows (`keptMarks`, keyed pub|tier) and set to the loop
+    clock (`syncLoopClock`), so a classmate's push never restarts it; an
+    off-screen row pauses it (`.is-offscreen`) and re-syncs it on return.
+  - **Never `startOrbitEmblemAnimsKnown` outside Home**: its geometry map
+    is keyed by tier and viewport, not size, so a board-sized bubble would
+    be handed Home's 46px cell.
+  - `.rank-mark` drops the bubble's backdrop blur and shrinks its halo -
+    forty of them sit in a list of glass rows. Column sizes keep Overall
+    rows exactly as tall as before (60px phone, 66 tablet).
+- **The top three** ("could we slightly improve the looks of the top 3 so
+  it's more prestigious?"): the same tinted glass and height, plus a metal
+  ring per place (a masked `::before` gradient over the border, not on your
+  own row, which keeps its accent ring), a struck edge on the medals, a
+  small crown on first place's medal, and on first place only a soft light
+  crossing the glass once every 7s (`.lb-podium-sheen`, a transform; off
+  under Reduce motion, paused off screen). The older note "deliberately not
+  animated" is overridden for #1 only, and only that much.
+- **Gate: `check_b324l_board`** (fails on ab75270): every way in hidden,
+  the button, a row and a snapshot while off; flares on every ranked row,
+  flip-books running and carried over; board / person card / Profile flare
+  one element; rings on 1-3, crown and sheen on 1, none on #4, no row
+  taller. Moved: check-sync 3 (hidden is the card, not a Find me message).
+

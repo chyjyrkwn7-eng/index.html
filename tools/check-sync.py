@@ -133,9 +133,15 @@ with sync_playwright() as pw:
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake([]);}")
     pg.evaluate("()=>showRankings('week')"); pg.wait_for_timeout(400)
-    pg.evaluate("()=>document.querySelector('.rank-me-btn').click()"); pg.wait_for_timeout(300)
-    msg = pg.evaluate("()=>(document.querySelector('.daily-alert')||{}).textContent||''")
-    check("Find me names the Settings toggle", "Show me in the rankings" in msg, repr(msg))
+    # MOVED IN 324 (builder L): "If I have it off then I shouldn't be able
+    # to see it." Hidden is no longer a Find me message - there is no board
+    # and no Find me at all, only the hidden card, and the reason it names
+    # is the same setting, as its one button.
+    res = pg.evaluate("""()=>({findMe:!!document.querySelector('.rank-me-btn'),
+        rows:document.querySelectorAll('.rank-rows .rank-row').length,
+        card:(document.querySelector('.lb-optout')||{}).textContent||''})""")
+    check("hidden: no board and no Find me, and the card names the Settings toggle",
+          not res["findMe"] and res["rows"] == 0 and "Show me in the rankings" in res["card"], str(res))
     ctx.close()
 
     # ---- 4. localStorage evicted: recovery must land on Home, with the code ----
