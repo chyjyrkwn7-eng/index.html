@@ -17906,10 +17906,12 @@ def _b321e_checks(dev, pre, frames):
     # 1. the flare's own clock through the hand-off: never back, never ahead
     fl = [(f["t"], f["fl"]) for f in fr if f.get("fl")]
     gi = next((i for i, (_, x) in enumerate(fl) if x["g"]), None)
-    seg = fl[max(0, (gi or 0) - 30):] if gi is not None else []
+    gl = max((i for i, (_, x) in enumerate(fl) if x["g"]), default=None)
+    seg = fl[max(0, (gi or 0) - 30):(gl or 0) + 30] if gi is not None else []
     seg = [x for x in seg if x[1]["k"] == (seg[0][1]["k"] if seg else None)]
     steps = [(b[1]["ct"] - a[1]["ct"], b[0] - a[0]) for a, b in zip(seg, seg[1:])]
-    bad = [(d, dt) for d, dt in steps if d < -1 or d > dt + 20]
+    # a frame the emblem stopped on (its animations taken off in the bubble) drops out of `seg`: no gaps either
+    bad = [(d, dt) for d, dt in steps if d < -1 or d > dt + 20 or dt > 70]
     check(f"{dev}: the road map's flare keeps its own animation clock into the planet system - every frame from the circle through the lifted copy and into the bubble moves on by one frame, never back to the start or ahead ({len(steps)} frames)",
           gi is not None and len(steps) > 60 and not bad and any(x[1]["g"] for x in seg[-5:]) is not None, [gi, len(steps), bad[:5]])
     # 2. nothing of the bubble round the copy as the planet system comes up
@@ -17942,8 +17944,9 @@ def _b321e_checks(dev, pre, frames):
     before_cut = [f for f in nx if cut_t is not None and f["t"] < cut_t]
     grey = lambda g: g is not None and ("grayscale(1)" in g["f"] or g["o"] < .7)
     check(f"{dev}: Platinum is grey and Locked on the map from the first frame until after the cutscene - not Up next, its unlocks grey",
-          len(before_cut) > 30 and all(not f["nx"]["next"] and f["nx"]["state"] == "Locked" and grey(f["nx"]["flare"]) and (f["nx"]["ch"] is None or grey(f["nx"]["ch"])) for f in before_cut),
-          [len(before_cut), before_cut[0]["nx"] if before_cut else None])
+          len(before_cut) > 30 and not [f for f in before_cut if not (not f["nx"]["next"] and f["nx"]["state"] == "Locked" and grey(f["nx"]["flare"]) and (f["nx"]["ch"] is None or grey(f["nx"]["ch"])))],
+          [len(before_cut), before_cut[0]["nx"] if before_cut else None,
+           [(f["t"], f["ph"], f["nx"]) for f in before_cut if not (not f["nx"]["next"] and f["nx"]["state"] == "Locked" and grey(f["nx"]["flare"]) and (f["nx"]["ch"] is None or grey(f["nx"]["ch"])))][:2]])
     late = [f for f in nx if f["ph"] in ("upnext", "top", "hero")]
     col = lambda g: g is not None and "grayscale" not in g["f"] and g["o"] > .95
     up_t = next((f["t"] for f in nx if f["nx"]["next"]), None)
@@ -17986,7 +17989,8 @@ def _b321e_checks(dev, pre, frames):
     # 17. the level challenge waits for the bar
     rows = [(f["t"], f["pf"]["row"], f["pf"]["climb"]) for f in pf]
     end_climb = max((t for t, _, c in rows if c), default=None)
-    during = set(r for t, r, c in rows if end_climb is not None and t <= end_climb)
+    start_climb = min((t for t, _, c in rows if c), default=None)
+    during = set(r for t, r, c in rows if end_climb is not None and start_climb <= t <= end_climb)
     final = rows[-1][1] if rows else None
     check(f"{dev}: the level challenge stays where it stood ({pre['cap']}) the whole climb and moves only after it ({final})",
           end_climb is not None and during == {str(pre["cap"])} and final == str(pre["cap"] + 1), [sorted(during), final])

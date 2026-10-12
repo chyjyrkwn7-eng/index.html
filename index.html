@@ -15385,7 +15385,9 @@
      why. !important for the same reason as the chips: the per-rank
      "-big" rules further down set animation-name again at equal
      specificity, and Gold's swing was still running in every orbit. */
-  .cosmic-badge-rank .rank-emblem-svg .rk-a{ animation:none !important; }
+  /* (not the road map's flare carried into a bubble by the rank-up's
+     hand-off, build 321: it keeps moving on its own clock - ruClockSnap) */
+  .cosmic-badge-rank .rank-emblem-svg:not(.ru-ghost *) .rk-a{ animation:none !important; }
   /* off screen, nothing moves (build 252 - see watchRankEmblemOnScreen) */
   .rank-emblem-svg.rk-idle .rk-a{ animation:none !important; }
   .bnr.rk-idle, .bnr.rk-idle *{ animation:none !important; }
@@ -109274,7 +109276,16 @@ function ruClockSnap(root){
     try{
       dst.getAnimations({ subtree: true }).forEach(an => {
         const k = keyOf(list, an);
-        if(k != null && times.has(k) && times.get(k) != null){ try{ an.currentTime = times.get(k); }catch(e){} }
+        if(k == null || !times.has(k) || times.get(k) == null) return;
+        /* by its start, not its current time: a new animation given a
+           current time waits, held, until the compositor has started it
+           (measured: up to a couple of seconds on a busy page), while one
+           given a start time runs on the timeline from this frame */
+        try{
+          const tl = document.timeline && document.timeline.currentTime;
+          if(typeof tl === "number" && an.playState !== "paused") an.startTime = tl - times.get(k) / (an.playbackRate || 1);
+          else an.currentTime = times.get(k);
+        }catch(e){ try{ an.currentTime = times.get(k); }catch(e2){} }
       });
     }catch(e){}
   };

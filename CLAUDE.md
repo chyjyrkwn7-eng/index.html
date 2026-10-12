@@ -19968,6 +19968,12 @@ unless noted.
   animation's time under `root` (by element index, pseudo-element, name) and
   returns `apply(dst)` for a same-shaped tree. Use it whenever a moving
   thing is copied or re-parented mid-scene.
+- **Nothing of the bubble round the copy** ("a weird mark on the side of the
+  flare"): while the road map's copy sits in the planet's bubble, the
+  bubble's own rim, glow, offset shadow, emblem and lens are off
+  (`.ru-hand-bubble`) and come up only as the copy fades (`.ru-hand-reveal`,
+  the copy's own 1.3s from .25s) - the frosted rim used to show past the
+  copy's edge on one side, scaled up with the zoomed stage.
 - **The cutscene's bubbles play their flip-books** (`rankSceneEmblemAnims`,
   beside `playRankUpScene`): Home's ready sheet for that rank, shown at the
   scene's bubble size, on Home's clock (`syncLoopClock`); else one recorded
