@@ -21109,3 +21109,68 @@ take first place ... At the end mention how Mr nova will see us next week".*
   asserts that).
 - Gate `check_b324w_recap` (fails on ab75270). Moved: check_b289's congrats
   (no card; podium stays), check-sound's fanfare (from Nova's first place).
+
+### Build 324 (b324t) - the study-hour dots, the Virtual Room tiles back, no holes in At a glance
+
+Madison: *"I also attached a study hour chart, I really like the looks of
+it, could we add something like that in stats? It'd be yours, you can't
+see others, but it looks sick, better than the one we have I think. I
+like the stats tab, the virtual room section looks funny, improve this."*
+
+- **The seven bars are a dot chart** (`buildStudyDotChart`, beside
+  `formatDuration`). Read off `store.studyLog` like every other study
+  number - there is no second tracker. Monday to Sunday (the app's week,
+  `weekKeyNow`), one three-dot-wide column a day; the MIDDLE column is the
+  value (`studyDotsLit`: nearest dot, any time at all lights one) with a
+  white cap on it, and the two beside it stop one short to round the top
+  off - drawing, not data. The scale's top is the busier of the two weeks'
+  longest day rounded up to a whole hour, never under 2h, and a dot is the
+  smallest of 10/15/20/30/60/120 minutes that keeps a column at 16 dots or
+  fewer (6h = 30 min, as in her picture). Both weeks share it, so the
+  switch compares like with like.
+- Violet is the flashcards' `#A694FF`, deeper at the foot of the scale and
+  paler at the top; unlit dots are a dim grey. Dots are spans sized off the
+  plot's width with a container unit (`3.1cqi - 2.2px`, 3.5-12px), with a
+  7px fallback where `cqi` is unsupported. No canvas, no SVG filter.
+- **Today** is a faint lane behind its column and its name in violet; a
+  **tapped** day is a stronger lane, and the reading above the chart turns
+  into that day's time and date ("Wed, Oct 14"); a second tap goes back to
+  the week's total. **Last week** is a two-segment switch (`role=tab`, so
+  it gets the top-tab sound). The switch never moves when the reading
+  changes: beside it from 25rem, on its own row below that, by width.
+- **It lights up when the Stats tab is SHOWN.** It is built with
+  `.is-pre` (every lit dot held dim, no transition); `playIn()` - called
+  by `selectProfileTab("stats")`, by a mount that opens on Stats, and by
+  the week switch - commits the dim frame and lets each dot light with a
+  delay up its column, Monday first, cap last. Reduce motion lands lit.
+- **"This week" is Monday to today now** (`studyTotals`), the chart's
+  week, so the card and the chart's total agree. It was the last seven
+  days, and on a Monday the two disagreed by a whole week. Its
+  `STAT_MEANINGS` line says so.
+- **The Virtual Room section is back**, reversing the 317 fix's removal on
+  her newer word. What looked funny (on the live 313b she was looking at):
+  three cards in a two-column grid, the third full width under the other
+  two, two labels wrapped, and three zeros for somebody who never played.
+  Now: three centred tiles on ONE row at every width (`.stx-vr-row`),
+  labels Matches / Wins / Top 3 that never wrap on a 320px phone, a small
+  icon each, every tile still a stat card with its `STAT_MEANINGS` line,
+  and one line under them saying Top 3 only counts in a room of four or
+  more (why it can be lower than Wins). Before a first match: one row,
+  the Virtual Room icon and "No matches yet", no tiles. Same counts as
+  ever (`vrMatches`/`vrWins`/`vrTop3`).
+- **At a glance had a hole on both devices.** Total XP is a wide card
+  plus four, which is five buttons, so the phone's "odd last card runs
+  full width" rule left Hundos alone beside a gap, and the tablet's
+  "five in a row" rule put four cards in five columns. A grid led by a
+  `.stat-card-wide` now counts from the card after it.
+- The duration cards ("12h 15m") stay on one line on a phone.
+- Gate: `check_b324t_stats` (fails on ab75270): on both reference devices
+  and a 320px phone - the chart dim and unplayed while built behind the
+  Profile tab and lit after Stats is shown; 7 columns; the scale; lit dots
+  = logged time at the resolution, the cap at the value; today marked;
+  the reading = the This week card; a tap's exact time; last week on the
+  same scale, replayed; the VR tiles on one row with whole labels and the
+  empty state; no overflow; no hole in At a glance. Moved: check_b236's
+  "no Virtual Room cards" (now: the new tiles, not the old three), and
+  check-statsbadges' nine-cards line (the seed has no matches, so nine
+  still holds).

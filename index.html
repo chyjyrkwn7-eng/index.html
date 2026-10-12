@@ -11532,16 +11532,79 @@
   .stx-hero-sub{ margin:.2rem 0 0; font-size:.82rem; color:var(--soft); line-height:1.35; }
   .stx-recent .thx-list{ margin:.3rem 0 .8rem; }
   .stx-allbtn{ width:100%; }
-  .stx-week{ display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:.4rem; align-items:end; height:8.4rem; margin:.3rem 0 1rem; }
-  .stx-day{ display:flex; flex-direction:column; align-items:center; gap:.3rem; height:100%; min-width:0; }
-  .stx-day-val{ font-size:.62rem; color:var(--soft); font-variant-numeric:tabular-nums; white-space:nowrap; min-height:.8rem; }
-  .stx-day-track{ flex:1 1 auto; width:100%; max-width:2.2rem; display:flex; align-items:flex-end; border-radius:8px;
-    background:rgba(255,255,255,.04); overflow:hidden; }
-  .stx-day-bar{ display:block; width:100%; border-radius:8px 8px 4px 4px;
-    background:linear-gradient(180deg, color-mix(in srgb, var(--theme-c2) 80%, #fff), var(--theme-c2)); opacity:.6; }
-  .stx-day.is-today .stx-day-bar{ opacity:1; box-shadow:0 0 12px color-mix(in srgb, var(--theme-c2) 50%, transparent); }
-  .stx-day-lab{ font-size:.68rem; color:var(--soft); white-space:nowrap; }
-  .stx-day.is-today .stx-day-lab{ color:var(--ink); font-weight:700; }
+  /* ---- THE STUDY-HOUR DOT CHART (build 324, buildStudyDotChart) ----
+     A dark card of dots, one three-dot column a day, after the picture
+     Madison sent. The dot is sized off the plot's own width (a container
+     unit) so seven columns fit a 320px phone and do not turn into a
+     sparse field on an iPad; 7px where cqi is not supported. */
+  .stx-dots{ margin:.3rem 0 1rem; padding:.95rem .9rem .8rem; border-radius:18px;
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012) 40%, rgba(0,0,0,.16)), rgba(12,14,20,.55);
+    border:1px solid rgba(255,255,255,.09); box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 2px 10px rgba(0,0,0,.22);
+    --sd-unlit:rgba(255,255,255,.075); }
+  /* The switch sits beside the reading and never moves when the reading
+     changes length (a tapped day): on a narrow phone it has its own row
+     below, by width, not by what the text happens to say. */
+  .stx-dots-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:.55rem .75rem; margin-bottom:.85rem; }
+  @media (max-width:24.99rem){ .stx-dots-head{ flex-direction:column; } }
+  .stx-dots-read{ min-width:0; flex:1 1 auto; display:flex; flex-direction:column; }
+  .stx-dots-switch{ flex:0 0 auto; }
+  .stx-dots-big{ font-family:var(--mono); font-size:1.45rem; font-weight:700; line-height:1.1; letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums; color:var(--ink); }
+  .stx-dots-cap{ margin-top:.22rem; font-size:.74rem; color:var(--soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .stx-dots-switch{ display:inline-flex; padding:3px; border-radius:999px; background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.08); }
+  .stx-dots-switch button{ position:relative; appearance:none; -webkit-appearance:none; border:0; margin:0; background:transparent; font:inherit;
+    font-size:.7rem; font-weight:700; color:var(--soft); padding:.45rem .62rem; min-height:2rem; border-radius:999px; cursor:pointer; white-space:nowrap;
+    -webkit-tap-highlight-color:transparent; transition:background-color .2s ease, color .2s ease, box-shadow .2s ease; }
+  /* 44px to the finger, 32px to the eye */
+  .stx-dots-switch button::before{ content:""; position:absolute; inset:-6px -1px; }
+  .stx-dots-switch button[aria-selected="true"]{ background:rgba(166,148,255,.2); color:#ECE7FF; box-shadow:inset 0 0 0 1px rgba(166,148,255,.38); }
+  .stx-dots-plot{ --dot:7px; --gap:calc(var(--dot) * .5); container-type:inline-size;
+    display:grid; grid-template-columns:auto minmax(0, 1fr); column-gap:.3rem; }
+  @supports (width:1cqi){ .stx-dots-plot{ --dot:clamp(3.5px, calc(3.1cqi - 2.2px), 12px); } }
+  .stx-dots-axis{ display:grid; grid-template-rows:repeat(var(--rows), var(--dot)); row-gap:var(--gap); padding-top:.3rem; align-self:start; }
+  .stx-dots-axis span{ display:flex; align-items:center; justify-content:flex-end; height:var(--dot); overflow:visible;
+    font-size:.6rem; color:var(--soft); opacity:.85; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .stx-dots-cols{ display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); }
+  .stx-dcol{ appearance:none; -webkit-appearance:none; border:0; margin:0; padding:0; background:transparent; font:inherit; color:inherit;
+    min-width:0; display:flex; flex-direction:column; align-items:center; gap:.45rem; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .stx-dcol:disabled{ cursor:default; }
+  .stx-dcol-grid{ display:grid; grid-template-columns:repeat(3, var(--dot)); grid-auto-rows:var(--dot); gap:var(--gap);
+    padding:.3rem .25rem; border-radius:999px; transition:background-color .2s ease, box-shadow .2s ease; }
+  /* today: a faint lane behind its column and its name in violet */
+  .stx-dcol.is-today .stx-dcol-grid{ background:rgba(166,148,255,.055); }
+  .stx-dcol.is-picked .stx-dcol-grid{ background:rgba(166,148,255,.15); box-shadow:inset 0 0 0 1px rgba(166,148,255,.42); }
+  .stx-dot{ width:var(--dot); height:var(--dot); border-radius:50%; background:var(--sd-unlit); }
+  .stx-dot.on{ background:var(--c); transform:none;
+    transition:background-color .3s ease var(--d, 0ms), transform .34s cubic-bezier(.3, 1.45, .5, 1) var(--d, 0ms), box-shadow .3s ease var(--d, 0ms); }
+  .stx-dot.is-cap{ --c:#F8F6FF; box-shadow:0 0 calc(var(--dot) * .9) rgba(207,196,255,.7); }
+  /* held dim until playIn() - see buildStudyDotChart */
+  .stx-dots.is-pre .stx-dot.on{ background:var(--sd-unlit); box-shadow:none; transform:scale(.55); transition:none; }
+  .stx-dcol-lab{ font-size:.68rem; color:var(--soft); white-space:nowrap; transition:color .2s ease; }
+  .stx-dcol.is-today .stx-dcol-lab{ color:#CFC4FF; font-weight:800; }
+  .stx-dcol.is-picked .stx-dcol-lab{ color:var(--ink); font-weight:800; }
+  .stx-dcol.is-future .stx-dcol-lab{ opacity:.5; }
+  .stx-l-n{ display:none; }
+  @media (max-width:22.4rem){ .stx-l-s{ display:none; } .stx-l-n{ display:inline; } }
+  /* "12h 15m" on one line: it broke after the hours on a 375px phone */
+  @media (max-width:39.99rem){ .stx-study-grid .stat-num{ white-space:nowrap; font-size:clamp(1.15rem, 6.2vw, 1.7rem); } }
+  /* ---- THE VIRTUAL ROOM SECTION (build 324) ---- three tiles in one
+     row at every width, centred, labels that never wrap */
+  .stx-vr .stat-grid.stx-vr-row{ grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.6rem; margin-bottom:.6rem; }
+  .stx-vr .stat-grid.stx-vr-row > button.stat-card:last-of-type:nth-of-type(n){ grid-column:auto; }
+  .stx-vr .stat-card.stx-vr-cell{ align-items:center; text-align:center; padding:.8rem .35rem .75rem; min-width:0; }
+  .stx-vr .stx-vr-cell .stat-num{ font-size:1.5rem; }
+  .stx-vr .stx-vr-cell .stat-lab{ white-space:nowrap; font-size:.74rem; margin-top:.2rem; }
+  .stx-vr-ico{ display:block; width:1.15rem; height:1.15rem; margin:0 auto .4rem; color:var(--soft); opacity:.9; }
+  @media (min-width:40rem){ .stx-vr-ico{ width:1.35rem; height:1.35rem; } }
+  .stx-vr-note{ margin:0; font-size:.72rem; color:var(--soft); text-align:center; line-height:1.35; }
+  .stx-vr-empty{ display:flex; align-items:center; gap:.85rem; padding:.85rem .95rem; border-radius:14px;
+    background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.08); }
+  .stx-vr-empty-ico{ flex:0 0 auto; width:2.6rem; height:2.6rem; border-radius:50%; display:grid; place-items:center;
+    background:rgba(255,255,255,.06); box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); color:var(--soft); }
+  .stx-vr-empty-ico svg{ width:58%; height:58%; }
+  .stx-vr-empty-text{ min-width:0; }
+  .stx-vr-empty-title{ margin:0; font-size:.92rem; font-weight:800; color:var(--ink); }
+  .stx-vr-empty-sub{ margin:.18rem 0 0; font-size:.78rem; line-height:1.38; color:var(--soft); }
   /* Color changed from theme-dependent currentColor (which inherits
      var(--accent), defaulting to a near-white neutral — exactly why
      this read as a stray white outline) to a fixed warm tone matching
@@ -17752,6 +17815,18 @@
   /* five on a tablet are one row of five, not three and a gap */
   @media (min-width:40rem){
     .stat-grid:has(> button.stat-card:nth-of-type(5):last-of-type){ grid-template-columns:repeat(5, minmax(0, 1fr)); }
+  }
+  /* A GRID LED BY A WIDE CARD COUNTS FROM THE CARD AFTER IT (build 324).
+     At a glance is Total XP across the top and four under it - five
+     buttons, so both rules above fired on it: on a phone the fifth ran
+     full width and left Hundos alone with a hole beside it, and on a
+     tablet the four sat in a five-column row with a hole at the end. */
+  @media (max-width:39.99rem){
+    .stat-grid:has(> button.stat-card-wide:first-child) > button.stat-card:last-of-type:nth-of-type(odd){ grid-column:auto; }
+    .stat-grid:has(> button.stat-card-wide:first-child) > button.stat-card:last-of-type:nth-of-type(even){ grid-column:1 / -1; }
+  }
+  @media (min-width:40rem){
+    .profile-stats-tab .stat-grid.stat-grid-four:has(> button.stat-card-wide:first-child){ grid-template-columns:repeat(4, minmax(0, 1fr)); }
   }
   .stat-card.is-asked{
     border-color:color-mix(in srgb, var(--accent) 55%, transparent);
@@ -99598,7 +99673,11 @@ function studyTotals(){
     const parts = key.split("-").map(Number);
     const d = new Date(parts[0], parts[1] - 1, parts[2]);
     const diffDays = Math.round((startOfToday - d) / 86400000);
-    if(diffDays >= 0 && diffDays < 7) weekMs += ms;
+    /* THIS WEEK IS MONDAY TO TODAY (build 324): the app's own week
+       (weekKeyNow), and the week the dot chart above the card draws.
+       It was the last seven days, so on a Monday the card said 14h
+       while the chart's week right above it said 2h. */
+    if(diffDays >= 0 && diffDays <= (now.getDay() + 6) % 7) weekMs += ms;
     if(d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) monthMs += ms;
   });
   return { dayMs, weekMs, monthMs, totalMs };
@@ -99611,6 +99690,204 @@ function formatDuration(ms){
   const m = totalMin % 60;
   if(h === 0) return m + "m";
   return h + "h " + m + "m";
+}
+
+/* ---- THE STUDY-HOUR DOT CHART (build 324) ----
+   Madison, with a picture of a "Highest Study hour" card: "I also
+   attached a study hour chart, I really like the looks of it, could we
+   add something like that in stats? It'd be yours, you can't see
+   others, but it looks sick, better than the one we have I think." It
+   replaces the seven bars that were here, and does the same job.
+
+   - The numbers are store.studyLog, the one study-time log (addStudyTime
+     writes it from time spent inside a run, studyLogCaps holds it). No
+     second tracker.
+   - Monday to Sunday, the app's own week (weekKeyNow), and the switch
+     shows last week. Both weeks share ONE scale, so flipping between
+     them compares like with like instead of re-scaling under the eye.
+   - The scale's top is the busier week's longest day rounded UP to a
+     whole hour, never under STUDY_DOT_MIN_HOURS. A dot is the smallest
+     step in STUDY_DOT_STEPS that keeps the column at or under
+     STUDY_DOT_MAX_ROWS dots (2h -> 10 minutes a dot, 6h -> 30, as in
+     her picture, 16h -> an hour).
+   - Each day is three dot-columns wide like the picture. The middle one
+     IS the value (studyDotsLit: rounded to the nearest dot, and any time
+     at all lights one) and carries the white cap dot; the two beside it
+     stop one dot short, which rounds the top off. They are drawing, not
+     data - only the middle column is read.
+   - Lit dots are the flashcards' violet (#A694FF), deeper at the bottom
+     and paler towards the top of the scale; unlit are a dim grey.
+   - Pure DOM: spans in a grid, sized off the plot's own width with a
+     container unit, no canvas and no SVG filter. The light-up is a
+     transition held back by .is-pre until playIn() is called - by the
+     Stats tab when it is SHOWN, never when it is built (a chart that
+     animated inside a hidden tab is a chart nobody saw move). */
+const STUDY_DOT_STEPS = [10, 15, 20, 30, 60, 120];   /* minutes a dot */
+const STUDY_DOT_MAX_ROWS = 16;
+const STUDY_DOT_MIN_HOURS = 2;
+function studyWeekDays(weeksBack){
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const mon = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (today.getDay() + 6) % 7 - 7 * (weeksBack || 0));
+  const log = (store && store.studyLog) || {};
+  const out = [];
+  for(let i = 0; i < 7; i++){
+    const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
+    const key = dayKey(d);
+    out.push({ d, key, ms: Math.max(0, Number(log[key]) || 0),
+               today: d.getTime() === today.getTime(), future: d.getTime() > today.getTime() });
+  }
+  return out;
+}
+function studyDotScale(maxMs){
+  const hours = Math.max(STUDY_DOT_MIN_HOURS, Math.ceil(maxMs / 3600000 - 1e-9));
+  const stepMin = STUDY_DOT_STEPS.find(s => hours * 60 / s <= STUDY_DOT_MAX_ROWS) || STUDY_DOT_STEPS[STUDY_DOT_STEPS.length - 1];
+  return { hours, stepMin, rows: Math.ceil(hours * 60 / stepMin) };
+}
+function studyDotsLit(ms, scale){
+  if(!(ms > 0)) return 0;
+  return Math.max(1, Math.min(scale.rows, Math.round(ms / (scale.stepMin * 60000))));
+}
+/* deep violet at the foot of the scale, the flashcard violet, then pale */
+function studyDotColor(t){
+  const A = [0x4E, 0x3F, 0xA8], B = [0xA6, 0x94, 0xFF], C = [0xD6, 0xCC, 0xFF];
+  const mix = (p, q, u) => p.map((v, i) => Math.round(v + (q[i] - v) * u));
+  const c = t < .72 ? mix(A, B, t / .72) : mix(B, C, (t - .72) / .28);
+  return "rgb(" + c.join(",") + ")";
+}
+function buildStudyDotChart(){
+  const root = document.createElement("div");
+  root.className = "stx-dots is-pre";
+  const weeks = [studyWeekDays(0), studyWeekDays(1)];
+  const scale = studyDotScale(Math.max(0, ...weeks[0].map(x => x.ms), ...weeks[1].map(x => x.ms)));
+  root.dataset.stepMin = String(scale.stepMin);
+  root.dataset.rows = String(scale.rows);
+  root.dataset.hours = String(scale.hours);
+  root.style.setProperty("--rows", String(scale.rows));
+  let weeksBack = 0, picked = -1;
+
+  const head = document.createElement("div");
+  head.className = "stx-dots-head";
+  const read = document.createElement("div");
+  read.className = "stx-dots-read";
+  read.setAttribute("aria-live", "polite");
+  const big = document.createElement("span");
+  big.className = "stx-dots-big";
+  const cap = document.createElement("span");
+  cap.className = "stx-dots-cap";
+  read.append(big, cap);
+  const sw = document.createElement("div");
+  sw.className = "stx-dots-switch";
+  sw.setAttribute("role", "tablist"); sw.setAttribute("aria-label", "Week");
+  const swBtns = [["this", "This week"], ["prev", "Last week"]].map(([k, t], i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.week = k; b.textContent = t;
+    b.setAttribute("role", "tab");
+    b.addEventListener("click", () => {
+      if(weeksBack === i) return;
+      weeksBack = i; render(); root.playIn();
+    });
+    sw.appendChild(b);
+    return b;
+  });
+  head.append(read, sw);
+
+  const plot = document.createElement("div");
+  plot.className = "stx-dots-plot";
+  const axis = document.createElement("div");
+  axis.className = "stx-dots-axis"; axis.setAttribute("aria-hidden", "true");
+  const every = scale.hours <= 6 ? 1 : scale.hours <= 12 ? 2 : 4;
+  for(let h = every; h <= scale.hours; h += every){
+    const r = h * 60 / scale.stepMin;
+    if(r !== Math.round(r)) continue;
+    const l = document.createElement("span");
+    l.textContent = h + "h";
+    l.style.gridRow = String(scale.rows - r + 1);
+    axis.appendChild(l);
+  }
+  const cols = document.createElement("div");
+  cols.className = "stx-dots-cols";
+  plot.append(axis, cols);
+  root.append(head, plot);
+
+  const dateText = d => d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  /* "Oct 12 - 18": short enough to sit beside the week switch on a phone */
+  const rangeText = (a, b) => {
+    try{ return new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" }).formatRange(a, b); }
+    catch(e){ return dateText(a) + " \u2013 " + dateText(b); }
+  };
+  function readout(){
+    const days = weeks[weeksBack];
+    [...cols.children].forEach((c, i) => {
+      c.classList.toggle("is-picked", i === picked);
+      c.setAttribute("aria-pressed", i === picked ? "true" : "false");
+    });
+    if(picked < 0){
+      const total = days.reduce((s, x) => s + x.ms, 0);
+      big.textContent = formatDuration(total);
+      cap.textContent = rangeText(days[0].d, days[6].d);
+    } else {
+      const x = days[picked];
+      big.textContent = formatDuration(x.ms);
+      cap.textContent = (x.today ? "Today, " : x.d.toLocaleDateString(undefined, { weekday: "short" }) + ", ") + dateText(x.d);
+    }
+  }
+  function render(){
+    const days = weeks[weeksBack];
+    picked = -1;
+    swBtns.forEach((b, i) => b.setAttribute("aria-selected", i === weeksBack ? "true" : "false"));
+    root.dataset.week = weeksBack ? "prev" : "this";
+    cols.replaceChildren(...days.map((x, i) => {
+      const n = studyDotsLit(x.ms, scale);
+      const col = document.createElement("button");
+      col.type = "button";
+      col.className = "stx-dcol" + (x.today ? " is-today" : "") + (x.future ? " is-future" : "");
+      col.dataset.ms = String(x.ms); col.dataset.lit = String(n); col.dataset.key = x.key;
+      col.disabled = x.future;
+      col.setAttribute("aria-label", x.d.toLocaleDateString(undefined, { weekday: "long" }) + ": "
+        + (x.future ? "still to come" : formatDuration(x.ms)));
+      const grid = document.createElement("span");
+      grid.className = "stx-dcol-grid";
+      for(let r = scale.rows; r >= 1; r--){
+        for(let c = 0; c < 3; c++){
+          const dot = document.createElement("span");
+          dot.className = "stx-dot" + (c === 1 ? " is-mid" : "");
+          const lit = c === 1 ? n : Math.max(0, n - 1);
+          if(r <= lit){
+            dot.classList.add("on");
+            if(c === 1 && r === n) dot.classList.add("is-cap");
+            else dot.style.setProperty("--c", studyDotColor((r - 1) / Math.max(1, scale.rows - 1)));
+            /* up the column from the bottom, Monday first, the cap last */
+            dot.style.setProperty("--d", ((r - 1) * 24 + i * 32 + (c === 1 ? 0 : 14) + (dot.classList.contains("is-cap") ? 90 : 0)) + "ms");
+          }
+          grid.appendChild(dot);
+        }
+      }
+      const lab = document.createElement("span");
+      lab.className = "stx-dcol-lab";
+      /* "Mon", or "M" where seven names would touch (a 320px phone);
+         both are in the label and the width picks one */
+      const ls = document.createElement("span"), ln = document.createElement("span");
+      ls.className = "stx-l-s"; ls.textContent = x.d.toLocaleDateString(undefined, { weekday: "short" });
+      ln.className = "stx-l-n"; ln.textContent = x.d.toLocaleDateString(undefined, { weekday: "narrow" });
+      lab.append(ls, ln);
+      col.append(grid, lab);
+      col.addEventListener("click", () => { picked = picked === i ? -1 : i; readout(); });
+      return col;
+    }));
+    readout();
+  }
+  /* Called when the chart is on screen: snap every lit dot back to dim
+     with no transition, commit that frame, then let them light in. */
+  root.playIn = function(){
+    root.classList.add("is-pre");
+    void root.offsetWidth;
+    root.dataset.played = String((Number(root.dataset.played) || 0) + 1);
+    if(document.documentElement.dataset.reduceMotion === "true"){ root.classList.remove("is-pre"); return; }
+    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove("is-pre")));
+  };
+  render();
+  return root;
 }
 
 /* Characters of unit names a review row will spell out before it starts
@@ -112167,6 +112444,8 @@ function showProfile(defaultTab, opts){
        in a hidden panel is a bar nobody sees move. */
     if(which === "profile") runXpBarFill();
     toTop();
+    /* the study dots light up as the Stats tab arrives (build 324) */
+    if(which === "stats" && statsTab._playDots) statsTab._playDots();
     if(which === "settings") buildSettingsTab();
   }
   /* Swipeable, per explicit request, using the same helper the Rankings
@@ -112603,7 +112882,7 @@ function showProfile(defaultTab, opts){
      Keep them accurate. A help text that drifts from what it describes
      is worse than no help text, because it is believed. */
   const STAT_MEANINGS = {
-    "This week": "Time spent inside tests over the last 7 days, today included. Only time in a run counts \u2014 sitting on a menu does not.",
+    "This week": "Time spent inside tests since Monday, today included \u2014 the week the dots above show. Only time in a run counts \u2014 sitting on a menu does not.",
     "This month": "Time spent inside tests since the 1st of this month.",
     "All time": "Every minute you have spent inside tests on this account, across all your devices.",
     "Study sessions": "Tests you have finished. One test is one session however many units were in it, and a test you quit part way does not count.",
@@ -112612,7 +112891,10 @@ function showProfile(defaultTab, opts){
     "Tests finished": "Drills and qualifiers you played to the end. The daily question is not a test.",
     "Total XP": "Every XP you have earned on this account, from every test and the daily question. Your level is worked out from it.",
     "Hundos": "Units you have finished with every question right. A run covering three units can earn three, and the daily question earns none.",
-    /* (the three Virtual Room cards came off in the 317 fix - see below) */
+    /* The Virtual Room's three, back in build 324 - see below. */
+    "Matches": "Virtual Room matches you played to the end. Each race in a room counts once, however many times its results are opened.",
+    "Wins": "Virtual Room matches you finished first in, with at least one other person racing.",
+    "Top 3": "Top-three finishes in a Virtual Room of " + VROOM_PODIUM_MIN + " or more. In a smaller room only the winner is placed, so this can be lower than your wins.",
     "All-time best answer streak": "Your longest run of correct answers ever. It carries over from test to test, so a streak can start in one test and keep going in the next. The daily question never counts either way."
   };
   const statWhyBox = document.createElement("p");
@@ -112752,40 +113034,17 @@ function showProfile(defaultTab, opts){
   const head = document.createElement("p");
   head.className = "slab"; head.textContent = "Study time";
   studyTimeSect.appendChild(head);
-  /* The last seven days as bars, today on the right and lit. */
+  /* The week as dots (build 324, buildStudyDotChart) - it replaced
+     the seven bars here. It lights up when the tab is SHOWN:
+     selectProfileTab and the mount below call statsTab._playDots. */
   {
-    const chart = document.createElement("div");
-    chart.className = "stx-week";
-    const days = [];
-    const now = new Date();
-    for(let i = 6; i >= 0; i--){
-      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-      days.push({ d, ms: Number(store.studyLog[dayKey(d)]) || 0, today: i === 0 });
-    }
-    const max = Math.max(1, ...days.map(x => x.ms));
-    days.forEach(x => {
-      const col = document.createElement("div");
-      col.className = "stx-day" + (x.today ? " is-today" : "") + (x.ms ? "" : " is-empty");
-      const val = document.createElement("span");
-      val.className = "stx-day-val";
-      val.textContent = x.ms ? formatDuration(x.ms) : "";
-      const bar = document.createElement("span");
-      bar.className = "stx-day-bar";
-      bar.style.height = (x.ms ? Math.max(6, Math.round(x.ms / max * 100)) : 0) + "%";
-      const barWrap = document.createElement("span");
-      barWrap.className = "stx-day-track";
-      barWrap.appendChild(bar);
-      const lab = document.createElement("span");
-      lab.className = "stx-day-lab";
-      lab.textContent = x.today ? "Today" : x.d.toLocaleDateString(undefined, { weekday: "short" });
-      col.append(val, barWrap, lab);
-      chart.appendChild(col);
-    });
-    studyTimeSect.appendChild(chart);
+    const dots = buildStudyDotChart();
+    studyTimeSect.appendChild(dots);
+    statsTab._playDots = () => dots.playIn();
   }
   const totals = studyTotals();
   const grid = document.createElement("div");
-  grid.className = "stat-grid stat-grid-four";
+  grid.className = "stat-grid stat-grid-four stx-study-grid";
   let sumTestPlays = 0;
   Object.values(store.testStats).forEach(s => { sumTestPlays += s.plays; });
   [["This week", totals.weekMs, "duration"],
@@ -112797,14 +113056,74 @@ function showProfile(defaultTab, opts){
   studyTimeSect.appendChild(grid);
   statsTab.appendChild(studyTimeSect);
 
-  /* NO VIRTUAL ROOM SECTION (317 fix). Build 236 added one - matches,
-     first places, top threes - and it came off: "Remove the virtual room
-     stats from the stats tab. I don't think there will be enough usage
-     to care to track it." Only the display went. The Virtual Room still
-     counts store.vrMatches / vrWins / vrTop3 (recordVroomOutcome), they
-     still sync and still default in applyLoadedData, and the challenges
-     and banners built on them (vrwins5, the Arena, the Champion) still
-     read them. */
+  /* ---- THE VIRTUAL ROOM, BACK AND REDRAWN (build 324) ----
+     The 317 fix took this section off ("Remove the virtual room stats
+     from the stats tab. I don't think there will be enough usage to
+     care to track it."); build 324 asks for it the other way: "I like
+     the stats tab, the virtual room section looks funny, improve
+     this." What looked funny, measured on the build she was looking
+     at: three cards in a two-column grid, so the third ran the full
+     width under the other two, with "Matches played" and "First-place
+     finishes" each wrapped onto two lines - and a brand-new player got
+     three zeros. Now: three tiles in ONE row at every width, short
+     labels that never wrap (a 320px phone included), each still a
+     card you can tap for what it counts; a line saying why Top 3 can
+     be lower than Wins (it only counts in a room of four or more,
+     VROOM_PODIUM_MIN); and before a first match, one plain line
+     instead of zeros. Same numbers as ever: store.vrMatches / vrWins /
+     vrTop3, counted by recordVroomOutcome. */
+  {
+    const vrSect = document.createElement("div");
+    vrSect.className = "points-progress-sect stx-vr";
+    const vrHead = document.createElement("p");
+    vrHead.className = "slab"; vrHead.textContent = "Virtual Room";
+    vrSect.appendChild(vrHead);
+    const played = Math.max(0, Number(store.vrMatches) || 0);
+    if(played > 0){
+      const NS = "http://www.w3.org/2000/svg";
+      const icon = d => {
+        const sv = document.createElementNS(NS, "svg");
+        sv.setAttribute("viewBox", "0 0 24 24"); sv.setAttribute("class", "stx-vr-ico"); sv.setAttribute("aria-hidden", "true");
+        const p = document.createElementNS(NS, "path");
+        p.setAttribute("d", d); p.setAttribute("fill", "none"); p.setAttribute("stroke", "currentColor");
+        p.setAttribute("stroke-width", "1.8"); p.setAttribute("stroke-linecap", "round"); p.setAttribute("stroke-linejoin", "round");
+        sv.appendChild(p);
+        return sv;
+      };
+      const row = document.createElement("div");
+      row.className = "stat-grid stx-vr-row";
+      [["Matches", played, "M6 21V4 M6 4.5h11l-2.4 3.7L17 12H6"],
+       ["Wins", store.vrWins, "M4 18h16 M4.6 18 3.5 8.5l4.7 3.8L12 6l3.8 6.3 4.7-3.8L19.4 18"],
+       ["Top 3", store.vrTop3, "M3 20h18 M9 20V8h6v12 M3 20v-7h6 M15 20v-4.5h6"]].forEach(([label, val, d]) => {
+        const c = makeStatCard(label, Math.max(0, Number(val) || 0).toLocaleString());
+        c.classList.add("stx-vr-cell");
+        c.prepend(icon(d));
+        row.appendChild(c);
+      });
+      vrSect.appendChild(row);
+      const note = document.createElement("p");
+      note.className = "stx-vr-note";
+      note.textContent = "Top 3 only counts in a room of " + VROOM_PODIUM_MIN + " or more.";
+      vrSect.appendChild(note);
+    } else {
+      const empty = document.createElement("div");
+      empty.className = "stx-vr-empty";
+      const ico = document.createElement("span");
+      ico.className = "stx-vr-empty-ico";
+      ico.appendChild(modeIcon("vroom"));
+      const txt = document.createElement("div");
+      txt.className = "stx-vr-empty-text";
+      const t1 = document.createElement("p");
+      t1.className = "stx-vr-empty-title"; t1.textContent = "No matches yet";
+      const t2 = document.createElement("p");
+      t2.className = "stx-vr-empty-sub";
+      t2.textContent = "Race classmates live in the Virtual Room and your matches, wins and top 3 finishes show up here.";
+      txt.append(t1, t2);
+      empty.append(ico, txt);
+      vrSect.appendChild(empty);
+    }
+    statsTab.appendChild(vrSect);
+  }
   statsTab.appendChild(statWhyBox);
 
 
@@ -112814,6 +113133,7 @@ function showProfile(defaultTab, opts){
   stage.replaceChildren(panel);
   toTop();
   if(initialTab === "profile") runXpBarFill();
+  if(initialTab === "stats" && statsTab._playDots) statsTab._playDots();
   /* Opened on Settings (showAppearance, the save-your-code banner): built
      now it is mounted, with whatever section it was asked to show. */
   if(initialTab === "settings"){ buildSettingsTab(tabOpts); return; }
