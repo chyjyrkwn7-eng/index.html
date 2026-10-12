@@ -1206,6 +1206,10 @@
      bar stays on the page, so its layers are gone before the reload -
      see releasePageForReload(). */
   html.is-reloading body > :not(#pushing-update){ display:none !important; }
+  /* ...and the starfield (build 323), which is body's own ::after rather
+     than a child: clearing the stage re-runs syncSky(), whose opacity
+     transition would otherwise start again under the bar. */
+  html.is-reloading body::after{ display:none !important; }
   #splashscreen{
     /* Sized in viewport units as well as inset:0, and clipped.
        Reported on a real device: on launch the splash content appears in
