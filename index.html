@@ -7109,6 +7109,37 @@
   .chatdock-friendhead-text{ display:flex; flex-direction:column; min-width:0; }
   .chatdock-friendhead-name{ font-size:1rem; font-weight:800; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .chatdock-friendhead-status{ font-size:.72rem; font-weight:600; color:var(--soft); }
+  /* ---- NOVA, A CONTACT (build 324) ----
+     His face is the round crop of his bust on his own night sky, ringed in
+     his gold; his chip says what he is; the composer says when he is away. */
+  .nova-avatar{ display:block; width:100%; height:100%; border-radius:50%; overflow:hidden;
+    background:radial-gradient(circle at 50% 40%, #3A2D7A, #141433 70%); }
+  .nova-avatar .nova-svg{ width:100%; height:100%; }
+  .chatdock-chatrow-avatar.is-nova, .chatdock-friendhead-art.is-nova{
+    background:#141433; box-shadow:0 0 0 1.5px rgba(255,210,122,.55), 0 0 12px -2px rgba(255,210,122,.45); }
+  .chatdock-chatrow-kind.is-nova{ color:#FFD27A; background:rgba(255,210,122,.12); border-color:rgba(255,210,122,.4); }
+  button.chatdock-friendhead.nova-head{ background:none; border:0; padding:0; margin:0; color:inherit; font:inherit;
+    text-align:left; cursor:pointer; min-height:44px; -webkit-tap-highlight-color:transparent; border-radius:12px; }
+  button.chatdock-friendhead.nova-head:active{ opacity:.8; }
+  .vroom-chat-row.is-off .vroom-chat-input{ opacity:.75; }
+  .vroom-chat-row.is-off .vroom-chat-input::placeholder{ color:#FFD27A; opacity:.9; }
+  .vroom-chat-row.is-off .vroom-chat-send, .vroom-chat-row.is-off .vroom-chat-tool{ opacity:.4; pointer-events:none; }
+  /* the friend banner in his introduction: above his sky, under his top
+     row, a passive notice (a tap still moves his dialogue on) */
+  .daily-alert.nova-friend-note{ z-index:380; pointer-events:none; }
+  .daily-alert.nova-friend-note > *{ pointer-events:none; }
+  .nova-friend-face{ width:2.1rem; height:2.1rem; flex:0 0 auto; border-radius:50%; overflow:hidden;
+    background:radial-gradient(circle at 50% 40%, #3A2D7A, #141433 70%); box-shadow:0 0 0 1.5px var(--banner-color, #4ADE80); }
+  .nova-friend-face .nova-svg{ width:100%; height:100%; }
+  .nt-friendrow{ display:flex; align-items:center; gap:.85rem; padding:.85rem 1.2rem .85rem .9rem; border-radius:20px;
+    background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.14);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 10px 26px rgba(0,0,0,.35); }
+  .nt-friendface{ width:3.3rem; height:3.3rem; flex:0 0 auto; border-radius:50%; overflow:hidden;
+    background:radial-gradient(circle at 50% 40%, #3A2D7A, #141433 70%); box-shadow:0 0 0 2px #4ADE80, 0 0 18px -2px rgba(74,222,128,.6); }
+  .nt-friendface .nova-svg{ width:100%; height:100%; }
+  .nt-friendtext{ display:flex; flex-direction:column; text-align:left; gap:.1rem; }
+  .nt-friendtext b{ font-size:1.1rem; color:#F3F5F7; }
+  .nt-friendtext span{ font-size:.8rem; font-weight:700; color:#86EFAC; }
   /* A group's header is two rows: how many are in it and the controls,
      then everybody in it. With four people the old one-line header
      wrapped Leave onto a line of its own. */
@@ -75676,7 +75707,18 @@ function novaIntroLines(o){
     { text: "Tests are how you do all of it. Drill to learn, Qualifier to see if you are ready, and Briefing to go over the material first.",
       enter: ctx => novaProp(ctx, novaModeRow()) }
   ];
+  /* ---- AND HE BECOMES YOUR FRIEND, PARTWAY THROUGH (build 324) ----
+     "When Mr nova introduces himself, throughout that cutscene you will get
+     the added friends notification thing saying y'all are now friends."
+     The app's own FRIENDS banner drops in over his sky and his hello lands
+     in your chats (novaFriendMoment). */
+  const friendLine = { gesture: "raise", friend: true,
+    text: "One more thing: I’ve added you as a friend. When I have news for you, I’ll send it to your chats, up there.",
+    /* a new account sees his chat row; an existing one keeps the recap of
+       what it has found on the stage while he says it */
+    enter: ctx => { if(!existing) novaProp(ctx, novaStack(novaFriendProp(), novaCap("Friends"))); novaFriendMoment(); } };
   if(!existing){
+    lines.push(friendLine);
     lines.push({ gesture: "nod", final: true, text: "Find my crew and my badges, light my flares and climb the ranks. I’ll show you around.",
       enter: ctx => novaProp(ctx, null) });
     return lines;
@@ -75690,8 +75732,22 @@ function novaIntroLines(o){
     enter: ctx => { const b = ctx.stage.querySelector(".nt-recap .nt-me-line"); if(b) b.classList.add("is-hi"); } });
   lines.push({ text: novaFoundLine(st),
     enter: ctx => ctx.stage.querySelectorAll(".nt-recap .nt-me-badges, .nt-recap .nt-me-crew" + (st.flares > 0 ? ", .nt-recap .nt-me-flares" : "")).forEach(b => b.classList.add("is-hi")) });
+  lines.push(friendLine);
   lines.push({ gesture: "nod", final: true, text: "A few things have changed around here, too. Let me show you what’s new." });
   return lines;
+}
+/* The friend line's picture: his face on a chat row, the way his chat
+   will look on your Friends tab. */
+function novaFriendProp(){
+  const row = document.createElement("div"); row.className = "nt-friendrow";
+  const face = document.createElement("span"); face.className = "nt-friendface";
+  try{ face.appendChild(buildNovaSVG({ crop: "head" })); }catch(e){}
+  const t = document.createElement("span"); t.className = "nt-friendtext";
+  const nm = document.createElement("b"); nm.textContent = "Nova";
+  const sub = document.createElement("span"); sub.textContent = "Instructor \u00b7 Friends";
+  t.append(nm, sub);
+  row.append(face, t);
+  return row;
 }
 let novaIntroOn = false;
 function playNovaIntro(then, o){
@@ -75706,6 +75762,9 @@ function playNovaIntro(then, o){
     skipTo: recapAt > 0 ? recapAt : null,
     onClose: reason => {
       novaIntroOn = false;
+      /* friends whether or not the line was reached - a Skip goes past it
+         (build 324); quietly, since his tooltips or What's New come next */
+      try{ novaBefriend({ intro: true, quiet: true }); novaFriendMomentEnd(); }catch(e){}
       if(!o.existing){ try{ popupGapUntil = Date.now() + POPUP_GAP_MS; }catch(e){} }
       /* his tooltips (or, for an existing account, What's New) follow on as he leaves */
       setTimeout(() => { if(typeof then === "function") then(reason); }, novaMotionOff() ? 0 : 380);
@@ -79149,6 +79208,15 @@ function refreshChatList(force){
 function paintChatRow(code){
   const row = document.querySelector('.chatdock-chatrow[data-code="' + code + '"]');
   if(!row) return;
+  /* Nova's last line is read off his thread, never fetched (build 324). */
+  if(isNovaChatCode(code)){
+    try{
+      const t = novaThread(); const m = t[t.length - 1];
+      chatListLast[code] = m ? { name: m.key === "nova" ? "Nova" : (store.firstName || "You"), text: m.text, ts: m.ts, key: m.key } : null;
+      const art = row.querySelector(".chatdock-chatrow-avatar");
+      if(art) art.classList.toggle("is-online", !novaAway());
+    }catch(e){}
+  }
   const entry = chatEntry(code) || {};
   /* A line past the chat's day is not shown, cached or not (build 313). */
   let last = chatListLast[code] || null;
@@ -79305,6 +79373,598 @@ function friendOfChatCode(code){
 /* Which dock tab a chat belongs on. */
 function chatTabFor(code){ return isFriendChatCode(code) ? "friends" : "groups"; }
 function isChatTab(){ return chatDockTab === "friends" || chatDockTab === "groups"; }
+
+/* ---- NOVA IS A CONTACT (build 324) ----
+   Madison: "maybe Mr nova is a chat notification and will randomly send you
+   messages? This could be a cool easy way to get updates to the class app
+   when needed ... Let's give him the rank of supernova, and when you click
+   on profile it will pop his stats ... make his banner the supernova one ...
+   if you get a message from him it'd show up like any other message.
+   Anytime someone ranks up, when that entire cutscene is over he will send
+   you a dm saying congrats. When Mr nova introduces himself, throughout that
+   cutscene you will get the added friends notification thing saying y'all
+   are now friends ... He will mention that he is available to challenge
+   now ... Mr. Nova will also send a message when new updates are out if I
+   ask you to do it ... he will randomly give tips. We don't want him to be
+   annoying, we want to forget he's there but also know he's there ... If I
+   message him, he'll say something automated depending on the question but
+   he won't be an ai bot. Or maybe you make him unavailable if he can't chat
+   so it won't let you message him sometimes?"
+
+   HE IS LOCAL. Everything he says is written on this device from what is in
+   this file (the tables below) and from what happens in the app. Nothing of
+   his touches Firestore: no document, no listener, no ping, no presence. His
+   chat is a friend chat in every way the screen can see - the Friends tab,
+   its unread dot and count, the preview banner, the chat button's total, a
+   thread that looks like any DM - with its own code ("DM-NOVA", which no pair
+   of public ids can produce) and a local source in place of the room
+   document (NOVA_CHAT_CTX.local; buildVroomChatPanel branches on it before
+   every write it would otherwise make).
+
+   WHERE IT LIVES: localStorage ("class26e.nova"), never `store`. It is a
+   thread of messages and a record of what this device has been told - the
+   same kind of thing as class26e.chatseen and class26e.daily.seen. On
+   `store` it would push the whole progress document to Firestore on every
+   message he sends, and a broadcast marked as delivered on the phone would
+   never reach the iPad. Per device, each device gets its own copy of every
+   message, the way a DM arrives on both. Read state is the chat's own
+   (class26e.chatseen, keyed "DM-NOVA").
+
+   HE IS NOT IN friendPublicIds(). That list addresses inboxes, invites,
+   rows and the friend count (Koi Pond, the Profile Friends box, "and N
+   more"), and every one of those is about classmates. The chat's Friends
+   tab draws him beside them; nothing else counts him. */
+const NOVA_CODE = "DM-NOVA";
+const NOVA_KEY = "class26e.nova";
+/* The Virtual Room opponent (a separate builder). Off, and his challenge
+   message waits; on, he sends it once, on a later day than his hello. */
+const NOVA_VR_READY = true;
+/* ---- WHAT HE ANNOUNCES ----
+   Filled by hand when Madison asks: update notes, the Sunday "what's on the
+   next test" message, a tip she wants sent. `at` is LOCAL time. Each is
+   delivered once per device, the first time the app is open on or after
+   `at`, and never more than NOVA_BROADCAST_WINDOW_MS after it - so an
+   account made a fortnight later is not met with last month's test
+   topics. Ids must never be reused. */
+const NOVA_BROADCASTS = [
+  { id: "v9-dms", at: "2026-10-12T08:00",
+    text: "Something new: you can message me now. Ask me about ranks, badges, the modes, the next test or the Virtual Room, and I’ll answer when I’m around. When your instructor gives out what’s on the next test, I’ll pass it on here." }
+];
+const NOVA_BROADCAST_WINDOW_MS = 7 * 24 * 3600 * 1000;
+/* His thread keeps two weeks and 60 messages. A friend chat clears after a
+   day because a classmate's chat is a conversation; his is a noticeboard -
+   Sunday's test topics still have to be there on Wednesday. */
+const NOVA_KEEP_MS = 14 * 24 * 3600 * 1000;
+const NOVA_KEEP_N = 60;
+/* At most one unprompted message (a tip, the challenge) every three days,
+   never within 20 hours of anything else he said, never in his first two
+   days, and only once you have studied that day. */
+const NOVA_TIP_GAP_MS = 3 * 24 * 3600 * 1000;
+const NOVA_QUIET_MS = 20 * 3600 * 1000;
+const NOVA_TIP_SETTLE_MS = 2 * 24 * 3600 * 1000;
+const NOVA_SETTLE_MS = 90 * 1000;
+const NOVA_COLOR = "#FFD27A";
+const NOVA_TIPS = [
+  "Tip: a hundo only counts when you take a whole unit. A shortened run is good practice, but it won’t count towards a badge.",
+  "Tip: before a test, run Review on the units you’re least sure of. Reading the material first is what makes a Drill stick.",
+  "Tip: little and often beats one long night. Twenty minutes a day keeps your streak alive and the material fresh.",
+  "Tip: can’t finish a test? Pause, then Save and exit. It will be waiting for you on Home.",
+  "Tip: the daily question is quick XP. When the button on Home lights up, there’s a new one.",
+  "Tip: star a question you want to see again. Your Starred list is in Start Studying.",
+  "Tip: when you miss one, take a second with the right answer before you move on. Knowing why it’s right is what stays with you.",
+  "Tip: your badges decide how high your level can go, so mastering units matters as much as answering a lot of questions.",
+  "Tip: the Calendar tab has every class day and the next test date. Worth a look at the start of each week.",
+  "Tip: race a friend in a Virtual Room. A little competition is the fastest way to find out what you really know."
+];
+function novaRankLine(idx){
+  const n = novaName();
+  const lines = [
+    "Bronze, " + n + "! Your first rank, and my Bronze flare is lit again. The first one is the hardest. Well done.",
+    "Silver! You’ve lit my Silver flare, and I can see it from here. Keep finding those badges, " + n + ".",
+    "Gold, " + n + ". That’s a real rank, and my Gold flare is burning again. Four more to go.",
+    "Platinum! Four ranks down, and my Platinum flare is back in orbit. I’m proud of you, " + n + ".",
+    "Sapphire, " + n + ". Not many get this far. My Sapphire flare is shining again.",
+    "Amethyst! One rank left, " + n + ". My Amethyst flare is lit, and Supernova is in sight.",
+    "Supernova. " + n + ", you’ve done it: the top rank, my rank. All seven of my flares are lit again. I couldn’t have asked for a better student."
+  ];
+  return lines[Math.max(0, Math.min(lines.length - 1, idx))];
+}
+function novaHelloLine(fromIntro){
+  const n = novaName();
+  return fromIntro
+    ? "Hello, " + n + "! It’s Nova. We’re friends now, so this is where you’ll find me. I’ll message you when there’s news, when you rank up, and now and then with a tip. You can message me too."
+    : "Hello again, " + n + ". It’s Nova. I’ve added you as a friend, so you’ll find me here in your chats now. I’ll message you when there’s news, when you rank up, and now and then with a tip. You can message me too, and I’ll answer when I’m around.";
+}
+function novaChallengeLine(){
+  return "I’m back on my feet, " + novaName() + ", and I’m available to challenge now. Open a Virtual Room and invite me, and we’ll race. Beat me and you’ll unlock the Sheriff.";
+}
+
+function isNovaChatCode(code){ return code === "DM-NOVA"; }
+function novaState(){
+  try{ const s = JSON.parse(localStorage.getItem("class26e.nova") || "null"); return (s && typeof s === "object") ? s : {}; }
+  catch(e){ return {}; }
+}
+function novaSave(s){ try{ localStorage.setItem("class26e.nova", JSON.stringify(s)); }catch(e){} }
+/* Friends on this device, with THIS account: a device signed into another
+   account (or reset and signed up again) starts him afresh, so nobody
+   reads a thread addressed to somebody else. */
+function novaIsFriend(){
+  try{
+    if(!(store && store.onboardingComplete)) return false;
+    const s = novaState();
+    return !!s.since && (!s.pub || !store.publicId || s.pub === store.publicId);
+  }catch(e){ return false; }
+}
+function novaMyKey(){ try{ return store.publicId || "me"; }catch(e){ return "me"; } }
+/* His thread as the chat draws it: two weeks, newest last. */
+function novaThread(){
+  const cut = Date.now() - NOVA_KEEP_MS;
+  return (novaState().thread || []).filter(m => m && m.text && (m.ts || 0) >= cut);
+}
+function novaLastFromHim(){
+  const t = novaThread().filter(m => m.key === "nova");
+  return t.length ? t[t.length - 1] : null;
+}
+function novaUnread(){
+  if(!novaIsFriend()) return false;
+  const last = novaLastFromHim();
+  if(!last) return false;
+  if(chatRoomCode === "DM-NOVA") return false;
+  return (last.ts || 0) > (chatSeenMap()["DM-NOVA"] || 0);
+}
+
+/* ---- AVAILABLE OR AWAY ----
+   "Or maybe you make him unavailable if he can't chat so it won't let you
+   message him sometimes?" Her own suggestion, taken as it was made: while
+   he is away the composer says so and does not send, which is simpler and
+   more honest than accepting a message and answering it hours later.
+   The day is cut into 50-minute spells and about one in four is away,
+   decided by the spell's own number - so it is the same on every screen
+   for the whole spell and needs nothing stored. */
+const NOVA_SPELL_MS = 50 * 60 * 1000;
+var novaAwayForce = null;
+function novaAway(now){
+  if(novaAwayForce === true || novaAwayForce === false) return novaAwayForce;
+  const spell = Math.floor((now || Date.now()) / NOVA_SPELL_MS);
+  return ((Math.imul(spell ^ 0x5bd1e995, 2654435761) >>> 0) % 4) === 0;
+}
+function novaBackInMin(now){
+  now = now || Date.now();
+  let t = (Math.floor(now / NOVA_SPELL_MS) + 1) * NOVA_SPELL_MS;
+  for(let i = 0; i < 8 && novaAway(t); i++) t += NOVA_SPELL_MS;
+  return Math.max(5, Math.ceil((t - now) / 60000 / 5) * 5);
+}
+function novaStatusText(){
+  if(!novaAway()) return "Available";
+  const m = novaBackInMin();
+  return "Away \u00b7 back in about " + (m < 60 ? m + " min" : Math.round(m / 60) + (Math.round(m / 60) === 1 ? " hour" : " hours"));
+}
+
+/* ---- THE SMALL API THE VIRTUAL ROOM BUILDER USES ---- */
+function novaContactInfo(){
+  return { name: "Nova", character: "nova", rank: "titan", banner: "titan_rank",
+           title: "Instructor", code: NOVA_CODE, color: NOVA_COLOR,
+           friend: novaIsFriend(), away: novaAway() };
+}
+/* One way in for everything he says. `opts`: { id } delivers once (a
+   repeat of the same id does nothing), { kind } is kept on the message for
+   tools, { quiet } skips the preview banner. Returns the message, or null
+   when nothing was sent (not friends, or already said). */
+const novaListeners = new Set();
+function novaNotify(){
+  const data = novaPanelData();
+  novaListeners.forEach(fn => { try{ fn(data); }catch(e){} });
+}
+function novaPanelData(){
+  return { messages: novaThread(), typing: novaTypingSince ? { nova: novaTypingSince } : null };
+}
+var novaTypingSince = 0;
+function novaAppend(msg){
+  const s = novaState();
+  const cut = Date.now() - NOVA_KEEP_MS;
+  s.thread = (s.thread || []).filter(m => m && (m.ts || 0) >= cut).concat([msg]);
+  if(s.thread.length > NOVA_KEEP_N) s.thread = s.thread.slice(-NOVA_KEEP_N);
+  if(msg.key === "nova") s.lastAt = msg.ts;
+  novaSave(s);
+}
+function novaSendDM(text, opts){
+  opts = opts || {};
+  text = String(text || "").trim();
+  if(!text || !novaIsFriend()) return null;
+  const s = novaState();
+  s.sent = s.sent || {};
+  if(opts.id && s.sent[opts.id]) return null;
+  /* never two stamps the same: unread and ordering both compare them */
+  const last = (s.thread || []).slice(-1)[0];
+  const ts = Math.max(Date.now(), last ? (last.ts || 0) + 1 : 0);
+  const msg = { id: "nova-" + ts.toString(36) + "-" + Math.random().toString(36).slice(2, 6),
+                key: "nova", name: "Nova", text: text.slice(0, 600), ts: ts };
+  if(opts.kind) msg.kind = opts.kind;
+  if(opts.id){ s.sent[opts.id] = ts; novaSave(s); }
+  novaAppend(msg);
+  novaArrived(msg, opts);
+  return msg;
+}
+/* What a message arriving does to the screen: the open thread redraws (and
+   announces itself, as any open chat does), otherwise the row, the counts,
+   the dot, a sound and the preview banner - each refusing on the same
+   terms a classmate's message refuses on. */
+function novaArrived(msg, opts){
+  const open = chatRoomCode === NOVA_CODE && novaListeners.size > 0;
+  novaNotify();
+  try{ paintChatRow(NOVA_CODE); }catch(e){}
+  try{ syncChatDockDot(); }catch(e){}
+  if(open) return;
+  if(opts && opts.quiet) return;
+  if(isChatMuted(NOVA_CODE)) return;
+  try{ playSound("chat.receive"); }catch(e){}
+  if(typeof theme === "object" && theme && theme.muteBanners) return;
+  try{ showChatPreview("Nova", msg.text, () => openNovaChat()); }catch(e){}
+}
+
+/* ---- BECOMING FRIENDS ----
+   During his introduction (the line that says so, novaFriendMoment), or -
+   for an account that met him before this build, or a second device -
+   quietly on the first calm moment, with his hello. Seeds what he must not
+   back-fill: ranks already shown are not congratulated. */
+function novaBefriend(o){
+  o = o || {};
+  if(novaIsFriend()) return false;
+  if(!(store && store.onboardingComplete)) return false;
+  const old = novaState();
+  /* another account's thread is not carried over */
+  const s = (old.pub && store.publicId && old.pub !== store.publicId) ? {} : old;
+  if(s !== old){ s.thread = []; s.sent = {}; }
+  const now = Date.now();
+  s.v = 1; s.since = now; s.spontAt = now; s.pub = store.publicId || "";
+  s.congrats = novaShownRankIdx();
+  s.thread = s.thread || []; s.sent = s.sent || {};
+  novaSave(s);
+  novaSendDM(novaHelloLine(!!o.intro), { id: "hello", kind: "hello", quiet: !!o.quiet });
+  try{ if(chatDockOpen && !chatRoomCode) rebuildChatTab(); }catch(e){}
+  return true;
+}
+/* The highest rank whose rank-up has been SHOWN (the journey has played),
+   or the rank held for an account that has never been counted. */
+function novaShownRankIdx(){
+  try{
+    const n = rankUpShownCount();
+    if(n != null) return n - 1;
+    return rankUpHeldIdxReal();
+  }catch(e){ return -1; }
+}
+
+/* ---- THE MOMENT IN HIS INTRODUCTION ----
+   "throughout that cutscene you will get the added friends notification
+   thing saying y'all are now friends". The app's own FRIENDS banner (the
+   green one, its tag and its person), over his dim, and the chat button
+   ringed above it with his hello waiting on its count. Passive: a tap
+   anywhere still moves his dialogue on. */
+function novaFriendMoment(){
+  const fresh = novaBefriend({ intro: true, quiet: true });
+  const btn = document.getElementById("chatdock-btn");
+  if(btn) btn.classList.add("is-introduced");
+  /* the ringed button sits in the corner his Skip uses: Skip steps left of
+     it while it is lit, rather than being covered */
+  try{
+    const bar = document.querySelector(".nova-talk .nt-top");
+    if(btn && bar){
+      const b = btn.getBoundingClientRect(), r = bar.getBoundingClientRect();
+      const cs = getComputedStyle(bar);
+      const pad = Math.max(0, r.right - (parseFloat(cs.paddingRight) || 0) - b.left + 10);
+      if(pad && b.bottom > r.top && b.top < r.bottom){
+        bar.style.transition = "padding-right .3s ease";
+        bar.style.paddingRight = Math.round(pad + (parseFloat(cs.paddingRight) || 0)) + "px";
+        bar.classList.add("nova-clear-btn");
+      }
+    }
+  }catch(e){}
+  document.querySelectorAll(".nova-friend-note").forEach(n => n.remove());
+  if(typeof theme === "object" && theme && theme.muteBanners) return fresh;
+  const def = BANNER_KINDS.friend;
+  const el = document.createElement("div");
+  el.className = "daily-alert app-banner app-banner-friend nova-friend-note";
+  el.setAttribute("role", "status");
+  el.style.setProperty("--banner-color", def.color);
+  const face = document.createElement("span");
+  face.className = "nova-friend-face";
+  try{ face.appendChild(buildNovaSVG({ crop: "head" })); }catch(e){}
+  const body = document.createElement("span"); body.className = "app-banner-body";
+  const tag = document.createElement("span"); tag.className = "app-banner-tag"; tag.textContent = "NEW FRIEND";
+  const text = document.createElement("span"); text.className = "app-banner-text";
+  text.textContent = "You and Nova are now friends";
+  body.append(tag, text);
+  el.append(face, body);
+  document.body.appendChild(el);
+  /* under his dialogue's top row (the dots and Skip), not over it */
+  try{
+    const bar = document.querySelector(".nova-talk .nt-top");
+    if(bar){ const r = bar.getBoundingClientRect(); if(r.height) el.style.top = Math.round(r.bottom + 6) + "px"; }
+  }catch(e){}
+  try{ playSound("ui.notice"); }catch(e){}
+  requestAnimationFrame(() => el.classList.add("show"));
+  /* up for as long as he is saying it (at least 4s, at most 12s) */
+  const talk = document.querySelector(".nova-talk");
+  const at = talk && talk.__nova ? talk.__nova.index : -1, t0 = Date.now();
+  const watch = setInterval(() => {
+    const gone = !el.isConnected || !talk || !talk.isConnected || (talk.__nova && talk.__nova.index !== at);
+    const age = Date.now() - t0;
+    if((gone && age >= 4000) || age >= 12000 || !el.isConnected){ clearInterval(watch); novaFriendMomentEnd(el); }
+  }, 300);
+  return fresh;
+}
+function novaFriendMomentEnd(only){
+  document.querySelectorAll(".nova-friend-note").forEach(el => {
+    if(only && el !== only) return;
+    el.classList.remove("show");
+    setTimeout(() => el.remove(), 260);
+  });
+  if(!only){
+    const btn = document.getElementById("chatdock-btn");
+    if(btn) btn.classList.remove("is-introduced");
+    document.querySelectorAll(".nt-top.nova-clear-btn").forEach(bar => { bar.style.paddingRight = ""; bar.classList.remove("nova-clear-btn"); });
+  }
+}
+
+/* ---- WHEN HE MAY SPEAK UNPROMPTED ----
+   Never in a test, a cutscene, the rank-up journey, his own introduction,
+   What's New, a tour, a loading screen or a reward card. */
+function novaCalm(){
+  try{ if(typeof testInProgress !== "undefined" && testInProgress) return false; }catch(e){}
+  try{ if(cutsceneFocusActive()) return false; }catch(e){}
+  try{ if(rankUpScene) return false; }catch(e){}
+  try{ if(introPending || novaMeetOn || novaIntroOn) return false; }catch(e){}
+  if(document.body.classList.contains("has-active-question")) return false;
+  if(document.documentElement.classList.contains("ru-scene")) return false;
+  return !document.querySelector("#nova-intro, #intro-pop, #tour-overlay, #splashscreen, #genprofile-overlay, " +
+    "#teststart-overlay, .rs-spot, .unlock-card, #badge-cutscene, #supernova-cutscene, .friend-moment");
+}
+function novaUsedToday(){
+  try{
+    const k = dayKey(new Date());
+    if((Number((store.studyLog || {})[k]) || 0) > 0) return true;
+    return (store.testHistory || []).some(t => t && t.ts && dayKey(new Date(t.ts)) === k);
+  }catch(e){ return false; }
+}
+function novaBroadcastAt(b){
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?$/.exec(String(b && b.at || ""));
+  if(!m) return NaN;
+  return new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0)).getTime();
+}
+/* Everything he says on his own goes through here, at most once a minute
+   and on the moments that matter (Home, a journey ending, the app coming
+   back), so a message lands when somebody is around to see it. */
+let novaTickTimer = 0;
+function novaTickSoon(ms){
+  clearTimeout(novaTickTimer);
+  novaTickTimer = setTimeout(novaTick, ms == null ? 1500 : ms);
+}
+function novaTick(){
+  try{
+    if(!store || !store.onboardingComplete) return;
+    if(!novaIsFriend()){
+      /* met him before this build, or this is a second device: quietly */
+      /* (an account still owed the meeting meets him there - unless this
+         device has already seen What's New, when the meeting cannot come) */
+      if((!novaMeetOwed() || introSeen()) && novaCalm() && document.querySelector("#stage [data-screen]")) novaBefriend({ quiet: true });
+      return;
+    }
+    if(!novaCalm()) return;
+    const now = Date.now();
+    let s = novaState();
+    /* a rank-up, once its whole journey has played */
+    const shown = novaShownRankIdx();
+    if(typeof s.congrats !== "number") { s.congrats = shown; novaSave(s); }
+    else if(shown > s.congrats){
+      /* rankUpShown moves only as a journey reaches its end (and the
+         calm test above waits out the rest of it, reward cards too); a
+         jump of two ranks is one journey and one message, for the top */
+      s.congrats = shown; novaSave(s);
+      novaSendDM(novaRankLine(shown), { id: "rank-" + shown, kind: "rank" });
+      return;
+    }
+    /* nothing else in the first minute and a half after his hello: one
+       message at a time, and the hello is the one that comes first */
+    s = novaState();
+    if(now - (s.since || 0) < NOVA_SETTLE_MS) return;
+    /* broadcasts, oldest first, inside their window */
+    const due = (NOVA_BROADCASTS || []).filter(b => b && b.id && b.text && !(s.sent || {})["b:" + b.id])
+      .map(b => ({ b: b, at: novaBroadcastAt(b) }))
+      .filter(x => isFinite(x.at) && x.at <= now && now - x.at <= NOVA_BROADCAST_WINDOW_MS)
+      .sort((a, b) => a.at - b.at);
+    if(due.length){
+      due.forEach(x => novaSendDM(x.b.text, { id: "b:" + x.b.id, kind: "broadcast" }));
+      return;
+    }
+    /* one unprompted message at most, and only on a day you have studied */
+    s = novaState();
+    if(now - (s.lastAt || 0) < NOVA_QUIET_MS) return;
+    if(!novaUsedToday()) return;
+    if(NOVA_VR_READY && !(s.sent || {}).challenge){
+      if(now - (s.since || 0) < NOVA_QUIET_MS) return;
+      if(novaSendDM(novaChallengeLine(), { id: "challenge", kind: "challenge" })){
+        const s2 = novaState(); s2.spontAt = Date.now(); novaSave(s2);
+      }
+      return;
+    }
+    if(now - (s.since || 0) < NOVA_TIP_SETTLE_MS) return;
+    if(now - (s.spontAt || 0) < NOVA_TIP_GAP_MS) return;
+    const i = (Number(s.tipIdx) || 0) % NOVA_TIPS.length;
+    if(novaSendDM(NOVA_TIPS[i], { kind: "tip" })){
+      const s2 = novaState(); s2.tipIdx = i + 1; s2.spontAt = Date.now(); novaSave(s2);
+    }
+  }catch(e){}
+}
+try{ setInterval(() => { if(document.visibilityState === "visible") novaTick(); }, 60000); }catch(e){}
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") novaTickSoon(2500); });
+
+/* ---- WHAT HE SAYS BACK ----
+   "he'll say something automated depending on the question but he won't be
+   an ai bot." Keyword rules, first match wins, in his voice; anything else
+   gets a polite "I can't chat right now" and a pointer to what he can
+   answer. No network, nothing generated. */
+function novaReplyFor(raw){
+  const t = " " + String(raw || "").toLowerCase().replace(/[’']/g, "'").replace(/[^a-z0-9%' ]+/g, " ") + " ";
+  const n = novaName();
+  const has = re => re.test(t);
+  let units = 16; try{ units = topicsIn(QUESTIONS).length || units; }catch(e){}
+  let badges = 0; try{ badges = badgeCountOf(store); }catch(e){}
+  let rk = null; try{ rk = rankOf(store); }catch(e){}
+  const rankNow = rk ? "You’re " + RANK_DISPLAY_NAME[rk] + " now" : "You haven’t reached Bronze yet";
+  const nextIdx = rk ? TIER_ORDER_FULL.indexOf(rk) + 1 : 0;
+  const next = TIER_ORDER_FULL[nextIdx] ? RANK_DISPLAY_NAME[TIER_ORDER_FULL[nextIdx]] : null;
+  if(has(/ (next test|the test|test (on|is|day|date|topics?)|what's on|whats on|on the test|calendar|sunday|topics?|quiz) /))
+    return "The Calendar tab has the next test date and every class day. When your instructor gives out what’s on it, I’ll pass the topics on here, usually on a Sunday.";
+  if(has(/ (virtual room|vr|race|challenge|sheriff|battle|duel|versus|vs|play you|fight) /))
+    return NOVA_VR_READY
+      ? "I’m always up for a race. Open a Virtual Room and invite me. Beat me and you’ll unlock the Sheriff."
+      : "A Virtual Room is a race against your classmates. Open one from Start Studying and invite your friends.";
+  if(has(/ (ranks?|rank up|supernova|bronze|silver|gold|platinum|sapphire|amethyst|promot\w*) /))
+    return "The ranks go Bronze, Silver, Gold, Platinum, Sapphire, Amethyst and Supernova. Each asks for a level and a number of badges. " + rankNow
+      + (next ? "; Profile shows what " + next + " needs." : ", at the very top. Well done.");
+  if(has(/ (badges?|hundos?|100%|100|master\w*) /))
+    return "There’s a badge for every unit, " + units + " in all. Score 100% on a whole unit and that’s a hundo; a few hundos in one unit earns its badge. You’ve found " + badges + " of my " + units + " so far.";
+  if(has(/ (xp|levels?|level up) /))
+    return "Every right answer earns XP, and XP raises your level. Your badges decide how high your level can go, so mastering units matters as much as answering a lot.";
+  if(has(/ (drill|exam|review|flashcards?|learn|modes?|study|studying|practice|starred|flag\w*) /))
+    return "Drill to learn a unit, Exam to test yourself, and Review to go over the material first. They’re all under Start Studying on Home.";
+  if(has(/ (flares?|crew|characters?|ship|planet|blast|wreck|lost|explorer|space) /))
+    return "My ship went down by a planet like the one on your Home screen. My badges, my flares and my crew were scattered. Every badge you master and every character you unlock is one of them found.";
+  if(has(/ (friends?|friend code|add) /))
+    return "Add classmates from Profile › Friends with their friend code, or tap someone on the Leaderboard. Friends can chat and race you in a Virtual Room.";
+  if(has(/ (leaderboard|board|rankings|top|first place|1st) /))
+    return "The Leaderboard tab ranks the class. Tap anyone on it to see their card.";
+  if(has(/ (who are you|your name|about you|are you real|ai|bot|robot|human|chatgpt) /))
+    return "I’m Nova, a space explorer and your instructor here. I’m no robot, but I can’t really chat either: I answer what I can about the app and pass on news.";
+  if(has(/ (thanks|thank you|thx|ty|cheers|appreciate) /))
+    return "Any time, " + n + ".";
+  if(has(/ (hi|hey|hello|yo|sup|hiya|howdy|good morning|good afternoon|good evening|morning) /))
+    return "Hello, " + n + ". Ask me about ranks, badges, the modes, the next test or the Virtual Room, and I’ll tell you what I know.";
+  if(has(/ (help|how|what can|what do|explain|confused|stuck) /))
+    return "I can help with ranks, badges, levels, the modes, the next test and the Virtual Room. Ask me about any of those.";
+  const fall = [
+    "I can’t chat right now, " + n + ". Ask me about ranks, badges, the next test or the Virtual Room and I’ll do my best.",
+    "I’m out on a survey, so I can’t really chat. Try asking about ranks, badges, the modes or the next test."
+  ];
+  const s = novaState(); const k = (Number(s.fallIdx) || 0) % fall.length; s.fallIdx = k + 1; novaSave(s);
+  return fall[k];
+}
+let novaReplyTimers = [];
+function novaUserSent(msg){
+  if(!novaIsFriend() || novaAway()) return false;
+  novaAppend({ id: msg.id, key: novaMyKey(), name: store.firstName || "You", text: String(msg.text || "").slice(0, 200), ts: Date.now() });
+  try{ markChatSeen(NOVA_CODE, Date.now()); }catch(e){}
+  novaNotify();
+  try{ paintChatRow(NOVA_CODE); }catch(e){}
+  const reply = novaReplyFor(msg.text);
+  const quick = novaMotionOff() ? 0 : 1;
+  novaReplyTimers.push(setTimeout(() => { novaTypingSince = Date.now(); novaNotify(); }, 550 * quick));
+  novaReplyTimers.push(setTimeout(() => {
+    novaTypingSince = 0;
+    novaSendDM(reply, { kind: "reply" });
+  }, (550 + Math.min(2200, 900 + reply.length * 9)) * quick + 20));
+  return true;
+}
+/* Reactions, kept on his messages here rather than in a document. */
+function novaRewrite(list){
+  const byId = {};
+  (list || []).forEach(m => { if(m && m.id) byId[m.id] = m; });
+  const s = novaState();
+  s.thread = (s.thread || []).map(m => (m && byId[m.id]) ? Object.assign({}, m, { r: byId[m.id].r || {}, bump: byId[m.id].bump }) : m);
+  novaSave(s);
+  novaNotify();
+}
+const NOVA_CHAT_CTX = {
+  label: "Nova",
+  alertTag: null,
+  noAttach: true,
+  local: {
+    subscribe: fn => { novaListeners.add(fn); setTimeout(() => { if(novaListeners.has(fn)) fn(novaPanelData()); }, 0); return () => novaListeners.delete(fn); },
+    send: msg => novaUserSent(msg),
+    rewrite: list => novaRewrite(list)
+  },
+  /* read by the panel every second: the composer, and his header's line */
+  composer: () => {
+    const away = novaAway();
+    try{
+      const st = document.querySelector(".nova-head-status");
+      const line = "Instructor · " + novaStatusText();
+      if(st && st.textContent !== line) st.textContent = line;
+      const art = document.querySelector(".chatdock-friendhead-art.is-nova");
+      if(art) art.classList.toggle("is-online", !away);
+    }catch(e){}
+    return away ? { off: true, placeholder: "Nova is away right now" }
+                : { off: false, placeholder: "Message Nova…" };
+  },
+  isMuted: () => isChatMuted(NOVA_CODE),
+  code: () => NOVA_CODE,
+  myKey: () => novaMyKey(),
+  colorFor: key => key === "nova" ? NOVA_COLOR : null,
+  nameFor: (key, fallback) => key === "nova" ? "Nova" : (store.firstName || fallback),
+  shouldTrim: () => false,
+  cap: NOVA_KEEP_N, keep: NOVA_KEEP_N,
+  staleBefore: () => Date.now() - NOVA_KEEP_MS,
+  keepStale: 0,
+  historyNote: false,
+  initialSeen: () => chatSeenMap()[NOVA_CODE] || 0,
+  participantsOf: () => ({ nova: { name: "Nova" } }),
+  isVisible: () => chatDockOpen && chatRoomCode === NOVA_CODE && chatDockTab === "friends",
+  reveal: () => openNovaChat(),
+  onSeen: ts => { markChatSeen(NOVA_CODE, ts); syncChatDockDot(); },
+  onUnread: n => { chatUnseenAt = n; syncChatDockDot(); }
+};
+function openNovaChat(){
+  if(!novaIsFriend()) return;
+  chatDockTab = "friends";
+  if(!chatDockOpen) openChatDock();
+  enterChatRoom(NOVA_CODE);
+}
+/* His face, as a character span would be: the round crop of his bust. */
+function novaAvatarSpan(full){
+  const span = document.createElement("span");
+  span.className = "rank-avatar nova-avatar";
+  span.dataset.char = "nova";
+  try{ span.appendChild(buildNovaSVG(full ? {} : { crop: "head" })); }catch(e){}
+  return span;
+}
+/* His row on the Friends tab: the same row a friend gets. */
+function buildNovaChatRow(){
+  const row = document.createElement("div");
+  row.className = "chatdock-chatrow is-friend is-nova";
+  row.dataset.code = NOVA_CODE;
+  const open = document.createElement("button");
+  open.type = "button"; open.className = "chatdock-chatrow-open";
+  const art = document.createElement("span");
+  art.className = "chatdock-chatrow-avatar is-nova" + (novaAway() ? "" : " is-online");
+  art.appendChild(novaAvatarSpan());
+  const top = document.createElement("span"); top.className = "chatdock-chatrow-top";
+  const nm = document.createElement("span"); nm.className = "chatdock-chatrow-name"; nm.textContent = "Nova";
+  const kind = document.createElement("span"); kind.className = "chatdock-chatrow-kind is-nova"; kind.textContent = "Instructor";
+  const when = document.createElement("span"); when.className = "chatdock-chatrow-when";
+  top.append(nm, kind, when);
+  const sub = document.createElement("span"); sub.className = "chatdock-chatrow-sub"; sub.textContent = "Say hi";
+  open.append(art, top, sub);
+  open.addEventListener("click", openNovaChat);
+  row.appendChild(open);
+  return row;
+}
+/* His card: the person card, made to make sense for somebody who lost
+   everything in a blast. */
+/* His four cells: what the blast scattered, counted by what you have found. */
+function novaCardCells(){
+  let units = 16, badges = 0, lit = 0, crew = { have: 0, total: 0 };
+  try{ units = topicsIn(QUESTIONS).length || units; }catch(e){}
+  try{ badges = badgeCountOf(store); }catch(e){}
+  try{ lit = TIER_ORDER_FULL.indexOf(rankOf(store)) + 1; }catch(e){}
+  try{ crew = novaCrewTally(); }catch(e){}
+  return [["Badges recovered", badges + " / " + units],
+          ["Flares lit", lit + " / " + TIER_ORDER_FULL.length],
+          ["Crew found", crew.total ? crew.have + " / " + crew.total : "\u2014"],
+          ["Right now", novaAway() ? "Away" : "Available"]];
+}
+function openNovaCard(){
+  try{ openPersonSheet({ pub: "nova", nova: true, firstName: "Nova", banner: "titan_rank", avatarChar: "nova" }); }catch(e){}
+}
 /* The group list: every room you are a member of that is not a friend
    chat. A two-person room from before this build that is WITH a current
    friend is left out - the friend chat above it is the conversation with
@@ -79725,6 +80385,9 @@ function chatUnreadByTab(){
   });
   /* The chat that is open counts itself through the panel. */
   if(chatRoomCode && chatUnseenAt > 0) out[chatTabFor(chatRoomCode)]++;
+  /* Nova's chat is a friend chat with no mailbox: his thread is here, on
+     the device (build 324). */
+  try{ if(novaUnread()) out.friends++; }catch(e){}
   if(added){ try{ saveStore(); }catch(e){} }
   return out;
 }
@@ -80056,11 +80719,14 @@ let chatBeatTimer = null;
    another device kept writing them back into it. */
 let chatSawMeIn = null;
 function chatMayStamp(){
+  /* Nova's chat has no document to stamp (build 324) */
+  if(isNovaChatCode(chatRoomCode)) return false;
   return !!(chatRoomCode && chatMyKey && fbDb
     && (isFriendChatCode(chatRoomCode) || chatSawMeIn === chatRoomCode));
 }
 function startChatPresence(){
   clearInterval(chatBeatTimer);
+  if(isNovaChatCode(chatRoomCode)){ chatBeatTimer = null; chatSawMeIn = null; return; }
   /* STAMPED ON ARRIVAL, NOT 45 SECONDS FROM NOW (build 239) - but on the
      first snapshot that has you in it (build 307, participantsOf), not
      blind: an immediate stamp here is the write that re-adds somebody who
@@ -80161,7 +80827,10 @@ function enterChatRoom(code){
   /* In the list from the moment you are in the chat, named or not - a
      row reading its code is still a row you can get back into, and the
      name arrives on the first snapshot. */
-  rememberChat(code, (chatEntry(code) || {}).name || "");
+  /* Nova's chat is on no list but the Friends tab's own (build 324): not
+     in store.chats, which syncs, and not in any document. */
+  if(!isNovaChatCode(code)) rememberChat(code, (chatEntry(code) || {}).name || "");
+  else liveChatParticipants = {};
   /* Whatever happened in this room before this device walked in is not
      an event for it - reset so the first snapshot is a backlog rather
      than a stream of arrivals and departures. */
@@ -80768,6 +81437,8 @@ function startChatDock(){
   sizer.addEventListener("pointercancel", endSize);
 
   chatRoomCode = loadChatRoom();
+  /* his chat reopens only while he is a friend on this device (build 324) */
+  if(isNovaChatCode(chatRoomCode) && !novaIsFriend()){ chatRoomCode = null; saveChatRoom(null); }
   if(chatRoomCode){
     chatMyKey = publicIdOf();
     /* A relaunch is a join as far as everybody else is concerned - the
@@ -80844,7 +81515,9 @@ function openChatDock(){
 function markOpenChatSeen(){
   if(chatDockOpen && chatRoomCode && chatDockTab === chatTabFor(chatRoomCode)
      && typeof CHAT_CTX === "object" && CHAT_CTX.markSeen){
-    try{ CHAT_CTX.markSeen(); }catch(e){}
+    /* Nova's panel is built on its own context (build 324) */
+    const ctx = isNovaChatCode(chatRoomCode) ? NOVA_CHAT_CTX : CHAT_CTX;
+    try{ if(ctx.markSeen) ctx.markSeen(); }catch(e){}
   }
   syncChatDockDot();
 }
@@ -80906,7 +81579,31 @@ function rebuildChatTab(){
 
   const head = document.createElement("div");
   head.className = "chatdock-roomhead" + (isDm ? " is-friend" : "");
-  if(isDm){
+  if(isDm && isNovaChatCode(chatRoomCode)){
+    /* NOVA'S HEADER (build 324): the same as a friend's - his face, his
+       name, whether he is around - and his face and name open his card
+       ("when you click on profile it will pop his stats"). */
+    head.classList.add("is-nova");
+    const who = document.createElement("button");
+    who.type = "button";
+    who.className = "chatdock-friendhead nova-head";
+    who.setAttribute("aria-label", "Nova's profile");
+    const art = document.createElement("span");
+    art.className = "chatdock-friendhead-art is-nova" + (novaAway() ? "" : " is-online");
+    art.appendChild(novaAvatarSpan());
+    const txt = document.createElement("span");
+    txt.className = "chatdock-friendhead-text";
+    const nm = document.createElement("span");
+    nm.className = "chatdock-friendhead-name";
+    nm.textContent = "Nova";
+    const st = document.createElement("span");
+    st.className = "chatdock-friendhead-status nova-head-status";
+    st.textContent = "Instructor · " + novaStatusText();
+    txt.append(nm, st);
+    who.append(art, txt);
+    who.addEventListener("click", openNovaCard);
+    head.append(who, buildChatMuteBtn(() => chatRoomCode));
+  } else if(isDm){
     /* A FRIEND CHAT HAS NOTHING TO MANAGE: no Invite, no Leave - "in the
        friend chats you can't invite people to them or leave the chat".
        The friend, whether they are on, and the mute. */
@@ -80968,7 +81665,7 @@ function rebuildChatTab(){
   const panelHost = document.createElement("div");
   panelHost.className = "chatdock-chathost";
   chatTabBody.appendChild(panelHost);
-  chatPanelCleanup = buildVroomChatPanel(panelHost, CHAT_CTX);
+  chatPanelCleanup = buildVroomChatPanel(panelHost, isNovaChatCode(chatRoomCode) ? NOVA_CHAT_CTX : CHAT_CTX);
 }
 
 /* ---- THE FRIENDS TAB ----
@@ -80980,13 +81677,24 @@ function renderFriendChatList(){
   attachPresence();
   const pubs = friendPublicIds();
   const rows = rowsByPublicId();
+  /* Nova is on this tab once he is your friend (build 324) - a row like
+     any friend's, sorted with them, counted by nobody else. */
+  const nova = novaIsFriend();
   const intro = document.createElement("p");
   intro.className = "chatdock-note";
   intro.textContent = pubs.length
     ? "A chat with each of your friends. Messages clear after a day."
+    : nova ? "Add classmates from Profile \u203a Friends and they\u2019ll appear here beside Nova, each with their own chat."
     : "Your friends appear here, each with their own chat. Add friends from Profile \u203a Friends.";
   chatTabBody.appendChild(intro);
   if(!pubs.length){
+    if(nova){
+      const only = document.createElement("div");
+      only.className = "chatdock-chatlist is-friends";
+      only.appendChild(buildNovaChatRow());
+      chatTabBody.appendChild(only);
+      paintChatRow(NOVA_CODE);
+    }
     const go = document.createElement("button");
     go.type = "button"; go.className = "next chatdock-act";
     go.textContent = "Find friends";
@@ -81003,7 +81711,18 @@ function renderFriendChatList(){
     || String(a.firstName || "").localeCompare(String(b.firstName || "")));
   const wrap = document.createElement("div");
   wrap.className = "chatdock-chatlist is-friends";
-  people.forEach(e => {
+  /* his place in the order: unread first, then whoever is on (he is "on"
+     while available), then by name */
+  let novaAt = -1;
+  if(nova){
+    const nu = novaUnread() ? 1 : 0, non = novaAway() ? 0 : 1;
+    novaAt = people.findIndex(e => (nu - unread(e.pub)) > 0
+      || (nu === unread(e.pub) && (non - (isOnline(e) ? 1 : 0)) > 0)
+      || (nu === unread(e.pub) && non === (isOnline(e) ? 1 : 0) && "Nova".localeCompare(String(e.firstName || "")) < 0));
+    if(novaAt < 0) novaAt = people.length;
+  }
+  people.forEach((e, i) => {
+    if(i === novaAt) wrap.appendChild(buildNovaChatRow());
     const code = friendChatCode(e.pub);
     const row = document.createElement("div");
     row.className = "chatdock-chatrow is-friend";
@@ -81034,7 +81753,9 @@ function renderFriendChatList(){
     row.appendChild(open);
     wrap.appendChild(row);
   });
+  if(nova && novaAt >= people.length) wrap.appendChild(buildNovaChatRow());
   chatTabBody.appendChild(wrap);
+  if(nova) paintChatRow(NOVA_CODE);
   people.forEach(e => paintChatRow(friendChatCode(e.pub)));
   refreshChatList();
 }
@@ -82491,19 +83212,29 @@ function openPersonSheet(entry){
     sheet.appendChild(cover);
   }
 
+  /* ---- NOVA'S CARD (build 324) ----
+     "give him the rank of supernova, and when you click on profile it will
+     pop his stats, make it make sense, since he technically lost his
+     badges and stuff but make it cool, make his banner the supernova one".
+     The same card: the Supernova banner, his face, Supernova as the
+     headline - and in place of a classmate's numbers, what the blast took
+     from him and how much of it YOU have found. Message opens his chat;
+     there is nothing to add and nothing to remove. */
+  const isNova = !!entry.nova;
+  if(isNova) sheet.classList.add("is-nova");
   const art = document.createElement("div");
   art.className = "person-sheet-art person-card-art";
-  art.appendChild(platePortrait(avatarSpanFor(entry)));
+  art.appendChild(isNova ? novaAvatarSpan() : platePortrait(avatarSpanFor(entry)));
   /* Big and alone here, so this is exactly where the character's own
      light belongs - the opposite call from the list rows, which lost
      it for being a smear. */
   art.classList.add("has-glow");
   art.style.setProperty("--char-glow",
-    avatarGlowColor((entry && entry.avatarChar) || AVATAR_CHARACTERS[0].id));
+    isNova ? NOVA_COLOR : avatarGlowColor((entry && entry.avatarChar) || AVATAR_CHARACTERS[0].id));
   /* A friend who is not on is asleep; anybody else - including anybody
      opened from the Leaderboard, whose presence you cannot see - is
      simply alive. */
-  setCharState(art, isFriendPub(entry.pub) && !isOnline(entry) ? "sleep" : "live");
+  if(!isNova) setCharState(art, isFriendPub(entry.pub) && !isOnline(entry) ? "sleep" : "live");
   /* No rank coin on the character here - "go ahead and remove the icon
      above their head that's their rank. That icon will only appear in
      lobbies." The rank is the headline under the name already. */
@@ -82516,7 +83247,7 @@ function openPersonSheet(entry){
   /* THE RANK IS THE HEADLINE, IN ITS OWN COLOUR, with the level under
      it - asked for in that order. Somebody below Bronze gets the level
      alone rather than the word "Unranked". */
-  const rk = rankOfEntry(entry);
+  const rk = isNova ? "titan" : rankOfEntry(entry);
   if(rk){
     const rankEl = document.createElement("p");
     rankEl.className = "person-card-rank";
@@ -82534,7 +83265,7 @@ function openPersonSheet(entry){
   }
   const lvlEl = document.createElement("p");
   lvlEl.className = "person-card-level";
-  lvlEl.textContent = "Level " + (entry.level || 0);
+  lvlEl.textContent = isNova ? "Space explorer \u00b7 Instructor" : "Level " + (entry.level || 0);
   sheet.appendChild(lvlEl);
 
   /* ---- PROGRESS ----
@@ -82546,7 +83277,7 @@ function openPersonSheet(entry){
   prog.className = "person-card-progress";
   const progLab = document.createElement("p");
   progLab.className = "person-card-proglabel";
-  progLab.textContent = "Progress";
+  progLab.textContent = isNova ? "Lost in the blast \u00b7 found by you" : "Progress";
   prog.appendChild(progLab);
   const grid = document.createElement("div");
   grid.className = "person-card-grid";
@@ -82561,7 +83292,7 @@ function openPersonSheet(entry){
      fill in on their own: every app republishes its row once on launch
      (see republishRowOnLaunch). */
   const known = k => entry[k] !== undefined && entry[k] !== null && entry[k] !== "";
-  [["XP", known("xp") ? Number(entry.xp).toLocaleString() : "\u2014"],
+  (isNova ? novaCardCells() : [["XP", known("xp") ? Number(entry.xp).toLocaleString() : "\u2014"],
    /* The ceiling is the number of units there are, read off the
       question bank the same way badgeCountOf does rather than typed as
       16 - the bank has grown before and a hardcoded total is how a
@@ -82569,7 +83300,7 @@ function openPersonSheet(entry){
    ["Badges", (entry.badges || 0) + " / " + (function(){
       try{ return topicsIn(QUESTIONS).length; }catch(e){ return 16; } })()],
    ["Hundos", String(entry.hundos || 0)],
-   ["Correct answers", known("correct") ? Number(entry.correct).toLocaleString() : "\u2014"]].forEach(([label, value]) => {
+   ["Correct answers", known("correct") ? Number(entry.correct).toLocaleString() : "\u2014"]]).forEach(([label, value]) => {
     const cell = document.createElement("div");
     cell.className = "person-card-cell";
     const v = document.createElement("span");
@@ -82589,13 +83320,16 @@ function openPersonSheet(entry){
      profile or something." Same card, same numbers as a classmate sees
      - it is read off the same row - and the one thing to do with
      yourself is go to your own Profile. */
-  const isSelf = !!(store.publicId && entry.pub === store.publicId);
-  const state = isSelf ? "self" : friendStateOf(entry.pub);
+  const isSelf = !isNova && !!(store.publicId && entry.pub === store.publicId);
+  const state = isNova ? "nova" : isSelf ? "self" : friendStateOf(entry.pub);
   if(isSelf) sheet.classList.add("is-self");
   /* FOUR STATES, AND EACH ONE SAYS WHICH IN A WORD. A button that says
      "Add friend" to somebody who already asked you is how a request
      sits unanswered for a week. */
-  if(state === "self"){
+  if(state === "nova"){
+    act.textContent = "Message";
+    act.addEventListener("click", () => { overlay.remove(); openNovaChat(); });
+  } else if(state === "self"){
     act.textContent = "Go to profile";
     act.addEventListener("click", () => {
       overlay.remove();
@@ -82634,7 +83368,9 @@ function openPersonSheet(entry){
 
   const hint = document.createElement("p");
   hint.className = "friend-hint person-sheet-hint";
-  hint.textContent = "Friends are who you can invite to a chat or a Virtual Room.";
+  hint.textContent = isNova
+    ? "Nova is your instructor. He isn\u2019t on the leaderboard, and he\u2019s always your friend."
+    : "Friends are who you can invite to a chat or a Virtual Room.";
   if(!isSelf) sheet.appendChild(hint);
 
   const close = document.createElement("button");
@@ -82992,6 +83728,8 @@ function showHome(){
   toTop();
   /* a rank-up not yet shown locks Home to the Profile tab (build 317) */
   scheduleRankUpLock();
+  /* Nova looks for anything he has to say once Home has settled (build 324) */
+  try{ novaTickSoon(3500); }catch(e){}
   if(pendingMainMenuTour){
     pendingMainMenuTour = false;
     /* The genuine completion point for a fresh signup \\u2014 flipped here
@@ -83007,6 +83745,9 @@ function showHome(){
     store.tourRev = TOUR_REV;
     /* and has met Nova: his introduction is about to play (build 321) */
     store.novaMet = NOVA_MEET_REV;
+    /* and his chat starts empty: he befriends this account in the
+       introduction about to play (build 324) */
+    try{ localStorage.removeItem("class26e.nova"); }catch(e){}
     /* Current on badge bands by definition too: every badge this
        account ever gets is earned under them and celebrated at the time. */
     store.badgeBandsVersion = BADGE_BANDS_VERSION;
@@ -105164,6 +105905,21 @@ function buildVroomChatPanel(container, ctx){
   const fileIn = document.createElement("input");
   fileIn.type = "file"; fileIn.accept = "image/*"; fileIn.hidden = true;
   row.append(plusBtn, emojiBtn, input, sendBtn, fileIn);
+  /* A LOCAL CHAT (build 324: Nova's) has no documents to put a photo or a
+     poll in, so it has no + at all. */
+  if(CTX.noAttach) plusBtn.remove();
+  /* ...and may say the composer is off (he is away), in its own words. */
+  function paintComposer(){
+    if(!CTX.composer) return;
+    let st = null; try{ st = CTX.composer(); }catch(e){}
+    if(!st) return;
+    const off = !!st.off;
+    if(input.disabled !== off){ input.disabled = off; sendBtn.disabled = off; emojiBtn.disabled = off; if(off) input.blur(); }
+    const ph = st.placeholder || "Say something\u2026";
+    if(input.placeholder !== ph) input.placeholder = ph;
+    row.classList.toggle("is-off", off);
+  }
+  paintComposer();
   const typingLine = document.createElement("div");
   typingLine.className = "vroom-chat-typing";
   typingLine.setAttribute("aria-live", "polite");
@@ -105325,6 +106081,11 @@ function buildVroomChatPanel(container, ctx){
      nothing. The plain update is only a fallback for an SDK without
      transactions. */
   function rewriteChat(transform){
+    /* a local chat rewrites its own list, on the device (build 324) */
+    if(CTX.local){
+      try{ const next = transform(lastMessages || []); if(next && CTX.local.rewrite) CTX.local.rewrite(next); }catch(e){}
+      return;
+    }
     if(!fbDb || !CTX.code()) return;
     try{
       const ref = fbDb.collection("vrooms").doc(CTX.code());
@@ -105342,7 +106103,7 @@ function buildVroomChatPanel(container, ctx){
   }
 
   function toggleReaction(m, id){
-    if(!fbDb || !CTX.code() || !CTX.myKey()) return;
+    if((!fbDb && !CTX.local) || !CTX.code() || !CTX.myKey()) return;
     playSound("chat.react");
     const me = CTX.myKey();
     rewriteChat(list => !list.some(x => x.id === m.id) ? null : list.map(x => {
@@ -105716,6 +106477,7 @@ function buildVroomChatPanel(container, ctx){
   function clearTyping(){
     if(!lastTypingWrite) return;
     lastTypingWrite = 0;
+    if(CTX.local) return;
     if(!fbDb || !CTX.code() || !CTX.myKey()) return;
     try{
       const patch = {};
@@ -105724,6 +106486,7 @@ function buildVroomChatPanel(container, ctx){
     }catch(e){}
   }
   function noteTyping(){
+    if(CTX.local) return;
     if(!fbDb || !CTX.code() || !CTX.myKey()) return;
     const now = Date.now();
     if(now - lastTypingWrite < TYPING_WRITE_MS) return;
@@ -105737,6 +106500,17 @@ function buildVroomChatPanel(container, ctx){
 
   function send(){
     const text = input.value.trim();
+    /* A LOCAL CHAT SENDS TO ITS OWN SOURCE and nothing else - no document,
+       no ping, no typing flag (build 324). It may refuse (he is away). */
+    if(CTX.local){
+      if(!text || input.disabled) return;
+      const ok = CTX.local.send({ id: CTX.myKey() + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+                                  key: CTX.myKey(), name: store.firstName || "You", text: text.slice(0, 200), ts: Date.now() });
+      if(ok === false){ paintComposer(); return; }
+      input.value = "";
+      playSound("chat.send");
+      return;
+    }
     if(!text || !CTX.code() || !fbDb || !CTX.myKey()) return;
     input.value = "";
     playSound("chat.send");
@@ -105779,7 +106553,7 @@ function buildVroomChatPanel(container, ctx){
      same record as a line of text with a `type` and their own fields, so
      they share the id, the arrayUnion append, the ping and the trim. */
   function sendKind(extra, previewText){
-    if(!CTX.code() || !fbDb || !CTX.myKey()) return;
+    if(CTX.local || !CTX.code() || !fbDb || !CTX.myKey()) return;
     playSound("chat.send");
     const msg = Object.assign({
       id: (CTX.myKey() + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8)),
@@ -106004,7 +106778,7 @@ function buildVroomChatPanel(container, ctx){
     return "Someone";
   }
   function trimIfHost(messages){
-    if(!fbDb || !CTX.code()) return;
+    if(CTX.local || !fbDb || !CTX.code()) return;
     if(!messages || !messages.length) return;
     if(!CTX.shouldTrim(messages)) return;
     rewriteChat(trimmedChat);
@@ -106061,7 +106835,7 @@ function buildVroomChatPanel(container, ctx){
      line would keep saying somebody is typing until the next message
      arrived. One second is finer than the eye needs and costs nothing -
      it reads local state and touches no network. */
-  typingTick = setInterval(renderTyping, 1000);
+  typingTick = setInterval(() => { renderTyping(); paintComposer(); }, 1000);
 
   /* The actual bug behind the whole lobby screen failing to render at
      all with no connection \u2014 confirmed directly: this call threw
@@ -106085,7 +106859,21 @@ function buildVroomChatPanel(container, ctx){
   let dead = false;
   let unsubscribe = () => {};
   function attachChat(){
-    if(dead || !fbDb || !CTX.code()) return;
+    if(dead || !CTX.code()) return;
+    /* A LOCAL SOURCE IN PLACE OF THE DOCUMENT (build 324): the same
+       render, fed from the device, with no listener anywhere. */
+    if(CTX.local){
+      unsubscribe = CTX.local.subscribe(data => {
+        if(dead) return;
+        roomParticipants = CTX.participantsOf(data || {});
+        noteTypingSnapshot((data && data.typing) || null);
+        renderMessages((data && data.messages) || []);
+        renderTyping();
+        paintComposer();
+      }) || (() => {});
+      return;
+    }
+    if(!fbDb) return;
     unsubscribe = trackVroomHandle(
       onSnapshotResilient(fbDb.collection("vrooms").doc(CTX.code()), docSnap => {
         if(!docSnap.exists) return;
@@ -106099,7 +106887,7 @@ function buildVroomChatPanel(container, ctx){
         trimIfHost(messages);
       }));
   }
-  if(fbDb) attachChat();
+  if(fbDb || CTX.local) attachChat();
   else onFirebaseReady(() => {
     if(dead || !CTX.code() || !document.body.contains(container)) return;
     attachChat();
@@ -117568,6 +118356,8 @@ function rankUpSceneEnd(scene, played){
   document.querySelectorAll(".rankmap-stop.ru-nexthold").forEach(rankUpNextLift);
   if(scene.focus){ scene.focus = false; try{ setCutsceneFocus(false); }catch(e){} }
   try{ document.body.classList.remove("ru-journey"); }catch(e){}
+  /* the whole journey is over: Nova's congratulations follow it (build 324) */
+  if(played){ try{ novaTickSoon(2600); }catch(e){} }
 }
 
 
