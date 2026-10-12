@@ -3116,9 +3116,12 @@ def check_b241b(br):
       } catch(e){ out.threw = String(e); }
       return out; }""")
     # The astronaut id draws the Cyborg since 271; the name is read off the page.
+    # Build 324 moved the progress from "(0 of N)" to "(today: 0 of N)":
+    # "Orion is get 5 hundos in different units in one day. Would that reset
+    # when the day is over?" - the count is today's and says so (check_b324p_unlocks).
     check("the astronaut id (Blitz's challenge since 243) sits right after the Marksman, locked, with its challenge and progress",
           isinstance(r, dict) and r.get("blitzAt") == 1 and r.get("lockedAtStart") is True
-          and r.get("msg") == "Get a hundo in %d different units in one day (0 of %d) to unlock %s." % (r.get("need"), r.get("need"), r.get("astroName")), r)
+          and r.get("msg") == "Get a hundo in %d different units in one day (today: 0 of %d) to unlock %s." % (r.get("need"), r.get("need"), r.get("astroName")), r)
     check("only different units count, and one short is not enough",
           r.get("sixDistinct") == r.get("need", 0) - 1 and r.get("lockedAtSix") is True, r)
     check("a new day starts again but keeps the best day",
@@ -26325,6 +26328,175 @@ def check_b323u_units(br):
               {"shape": ok_shape, "copy": [cards.get(m, {}).get("desc") for m in ("drill", "exam", "review")], "ink": ink})
 
 
+# --------------------------------------------------------------------------
+B324P_JS = r"""async (opts)=>{ const out = {}; const wait = ms => new Promise(r => setTimeout(r, ms));
+  const Real = Date;
+  const shiftDays = n => {
+    const off = n * 864e5;
+    class Fake extends Real { constructor(...a){ if(a.length) super(...a); else super(Real.now() + off); } static now(){ return Real.now() + off; } }
+    window.Date = n ? Fake : Real;
+  };
+  const close = () => document.querySelectorAll('.invite-overlay').forEach(e => e.remove());
+  const read = () => { const s = document.querySelector('.unlock-card'); if(!s) return null;
+    const t = sel => { const e = s.querySelector(sel); return e ? e.textContent : null; };
+    const f = s.querySelector('.unlock-card-fill');
+    const c = s.querySelector('.unlock-card-count');
+    return { count: t('.unlock-card-count'), note: t('.unlock-card-note') || '', desc: t('.unlock-card-desc') || '',
+      held: s.classList.contains('is-unlocked'), tick: !!s.querySelector('.unlock-card-lock.is-held'),
+      fill: f ? parseFloat(f.style.getPropertyValue('--fill')) : null,
+      fits: c ? c.getBoundingClientRect().width <= s.getBoundingClientRect().width + .5 && c.scrollWidth <= c.clientWidth + 1 : null }; };
+  /* the bar starts 220ms and two frames in; on a busy machine later - wait for it, not a guess */
+  const settle = async () => { for(let i = 0; i < 40; i++){ const f = document.querySelector('.unlock-card-fill');
+    if(f && parseFloat(f.style.getPropertyValue('--fill')) > 0) break; await wait(100); } await wait(120); };
+  const card = async o => { close(); showUnlockDetail(o); await settle(); return read(); };
+  const refresh = async () => { document.dispatchEvent(new Event('visibilitychange')); await wait(500); return read(); };
+  try{
+    store.avatarChar = 'ninja'; store.banner = ''; store.pendingCharUnlocks = [];
+    store.practiceExamPerfect = false;
+    const units = topicsIn(QUESTIONS);
+    const today = () => dayKey(new Date());
+    const ago = n => { const d = new Date(); d.setDate(d.getDate() - n); return dayKey(d); };
+
+    /* ORION: a best day of 3 yesterday, 2 so far today - through the
+       real Customize tile, then the recorder a run calls, then midnight */
+    store.hundoDayBest = 3; store.hundoDay = { day: today(), units: units.slice(0, 2) };
+    out.orionLocked = isLockedCharacter('astronaut');
+    out.orionMsg = characterLockMessage('astronaut');
+    showCustomize('character'); await wait(500);
+    const tile = document.querySelector('.screen-customize .avatarchar-option.locked[aria-label="' + AVATAR_DISPLAY_NAME.astronaut + '"]');
+    out.tile = !!tile;
+    if(tile){ tile.click(); await settle(); }
+    out.orion = read();
+    noteHundoDay(units[2]);                        /* a hundo in a third unit, as summarize() records it */
+    out.orionAfterRun = await refresh();
+    shiftDays(1); out.orionMidnight = await refresh();
+    out.orionNextDay = await card(characterDetail('astronaut'));
+    out.orionMsgNextDay = characterLockMessage('astronaut');
+    out.orionStillLocked = isLockedCharacter('astronaut');
+    shiftDays(0); close();
+
+    /* HIVE: best 310, 120 today; one more answered; then the next day */
+    store.dayAnsweredBest = 310; store.dayAnswered = { day: today(), n: 120 };
+    out.hive = await card(characterDetail('hive'));
+    noteAnsweredToday();
+    out.hiveAfter = await refresh();
+    shiftDays(1); out.hiveNextDay = await card(characterDetail('hive')); shiftDays(0);
+
+    /* DETECTIVE: best run 6, on a run of 2 */
+    store.dailyCorrectBest = 6; store.dailyCorrectStreak = 2;
+    out.det = await card(characterDetail('detective'));
+    store.dailyCorrectStreak = 0;
+    out.detMiss = await card(characterDetail('detective'));
+
+    /* KOI: a run of 5 a fortnight ago, and today and yesterday studied */
+    store.studyLog = {};
+    for(let i = 14; i < 19; i++) store.studyLog[ago(i)] = 20 * 60000;
+    store.studyLog[ago(0)] = 20 * 60000; store.studyLog[ago(1)] = 20 * 60000;
+    out.koi = await card(characterDetail('valkyrie'));
+    shiftDays(1); out.koiTomorrow = await card(characterDetail('valkyrie'));
+    shiftDays(2); out.koiSkipped = await card(characterDetail('valkyrie')); shiftDays(0);
+
+    /* MARKSMAN: best single test 140 */
+    store.bestTestStreak = 140;
+    out.marks = await card(characterDetail('marksman'));
+
+    /* PHOENIX banner: best run 5, on a run of 3 */
+    store.unitHundoStreakBest = 5; store.unitHundoStreak = 3; store.unitHundoStreakUnits = units.slice(0, 3);
+    out.phoenix = await card(bannerDetail('exam100'));
+
+    /* LIGHTS OUT: a total, and it says so */
+    store.lateHundos = 1; store.lateHundosSeed312 = true;
+    out.lights = await card(bannerDetail('early10'));
+
+    /* HELD: nothing yours shows a part-full bar, however the card is opened */
+    store.hundoDayBest = 5; store.hundoDay = null;
+    out.orionHeld = await card(characterDetail('astronaut'));
+    store.unitHundoStreakBest = 10; store.unitHundoStreak = 0;
+    out.phoenixHeld = await card(bannerDetail('exam100'));
+    store.dayAnsweredBest = 500; store.dayAnswered = null;
+    out.hiveHeld = await card(characterDetail('hive'));
+    close();
+
+    /* TWO DEVICES, ONE DAY: today's units are the account's */
+    const dst = { hundoDay: { day: today(), units: [units[0], units[1]] }, dayAnswered: { day: today(), n: 40 } };
+    const src = { hundoDay: { day: today(), units: [units[1], units[3]] }, dayAnswered: { day: today(), n: 70 } };
+    const res = mergeSameAccount(dst, src);
+    out.merged = { units: dst.hundoDay.units.length, n: dst.dayAnswered.n, gained: res.gained, other: res.otherHadLess };
+    const again = mergeSameAccount(dst, JSON.parse(JSON.stringify(dst)));
+    out.mergedStable = !again.gained && !again.otherHadLess;
+  }catch(e){ out.threw = String(e && e.stack || e); }
+  finally{ window.Date = Real; }
+  return out; }"""
+
+
+def check_b324p_unlocks(br):
+    """Build 324 (builder P): every challenge that has to land inside a
+    window - one day, one run, one test - shows that window on its card.
+    Madison: "Some of the unlocks progress bars are confusing, for example
+    Orion is get 5 hundos in different units in one day. Would that reset
+    when the day is over? Ensure all that stuff is correct and updates and
+    stuff." On ab75270 the bar showed the best day or best run on record
+    (Orion "3 of 5" with nothing today), named no window, never re-read an
+    open card, drew a part-full or unlabelled bar on something already held
+    when opened outside a press-and-hold, and lost one device's units aced
+    today when two copies of the account merged."""
+    print("\n324p. unlock bars count the window they are in, say it, and reset with it")
+    for label, w, h, dpr in [("iPhone 17 Pro Max", 440, 956, 3), ("iPad Pro 11", 834, 1194, 2)]:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+        r = pg.evaluate(B324P_JS, {})
+        ctx.close()
+        if r.get("threw"):
+            check(label + ": the walk ran", False, r["threw"][:400])
+            continue
+        g = lambda k: r.get(k) or {}
+        o = g("orion")
+        check(label + ": Orion's locked tile opens today's count, not the best day's, with the reset said",
+              r.get("tile") is True and o.get("count") == "Today: 2 of 5 different units" and o.get("fill") == 40
+              and "midnight" in o.get("note", "") and "best so far: 3" in o.get("note", "").lower() and r.get("orionLocked") is True, o)
+        check(label + ": its one-line lock message names the window too",
+              "(today: 2 of 5)" in (r.get("orionMsg") or ""), r.get("orionMsg"))
+        oa, om, on = g("orionAfterRun"), g("orionMidnight"), g("orionNextDay")
+        check(label + ": a third unit aced moves the open card to 3 of 5",
+              oa.get("count") == "Today: 3 of 5 different units" and oa.get("fill") == 60, oa)
+        check(label + ": past midnight the open card starts over, and a fresh one agrees; still locked",
+              om.get("count") == "Today: 0 of 5 different units" and (om.get("fill") or 99) <= 2
+              and on.get("count") == "Today: 0 of 5 different units" and "(today: 0 of 5)" in (r.get("orionMsgNextDay") or "")
+              and r.get("orionStillLocked") is True and "best so far: 3" in on.get("note", "").lower(), (om, on))
+        hv, ha, hn = g("hive"), g("hiveAfter"), g("hiveNextDay")
+        check(label + ": the Hive counts today's questions, one more answered shows, and the next day is 0",
+              hv.get("count") == "Today: 120 of 500 questions" and hv.get("fill") == 24 and "midnight" in hv.get("note", "")
+              and "310" in hv.get("note", "") and ha.get("count") == "Today: 121 of 500 questions"
+              and hn.get("count") == "Today: 0 of 500 questions", (hv, ha, hn))
+        dt, dm = g("det"), g("detMiss")
+        check(label + ": the Detective shows the run you are on, says a miss restarts it and a skipped day does not, best kept",
+              dt.get("count") == "Current run: 2 of 10 in a row" and dt.get("fill") == 20
+              and "wrong answer starts the run over" in dt.get("note", "") and "skip" in dt.get("note", "")
+              and "best so far: 6" in dt.get("note", "").lower() and dm.get("count") == "Current run: 0 of 10 in a row", (dt, dm))
+        k, kt, ks = g("koi"), g("koiTomorrow"), g("koiSkipped")
+        check(label + ": the Koi shows the run of days you are on; it survives until a whole day is missed",
+              k.get("count") == "Current run: 2 of 7 days" and "best so far: 5 days" in k.get("note", "").lower()
+              and kt.get("count") == "Current run: 2 of 7 days" and ks.get("count") == "Current run: 0 of 7 days", (k, kt, ks))
+        mk = g("marks")
+        check(label + ": the Marksman says its bar is the best single test",
+              mk.get("count") == "Best in one test: 140 of 250" and "one test" in mk.get("note", ""), mk)
+        ph = g("phoenix")
+        check(label + ": Phoenix shows the run of units you are on, with its best",
+              ph.get("count") == "Current run: 3 of 10 units" and ph.get("fill") == 30 and "best so far: 5 units" in ph.get("note", "").lower(), ph)
+        lo = g("lights")
+        check(label + ": Lights Out says its hundos add up over any number of evenings",
+              lo.get("count") == "1 of 3" and "evenings" in lo.get("note", ""), lo)
+        held = {k2: g(k2) for k2 in ("orionHeld", "phoenixHeld", "hiveHeld")}
+        check(label + ": anything already held shows the tick, a full bar and Unlocked - never part-full",
+              all(v.get("held") and v.get("tick") and v.get("fill") == 100 and v.get("count") == "Unlocked" for v in held.values()), held)
+        check(label + ": every count line fits its card",
+              all(g(k2).get("fits") in (True, None) for k2 in ("orion", "hive", "det", "koi", "marks", "phoenix")),
+              {k2: g(k2).get("fits") for k2 in ("orion", "hive", "det", "koi", "marks", "phoenix")})
+        mg = r.get("merged") or {}
+        check(label + ": two devices' units aced today merge into one count, and merging again changes nothing",
+              mg.get("units") == 3 and mg.get("n") == 70 and mg.get("gained") is True and mg.get("other") is True
+              and r.get("mergedStable") is True, (mg, r.get("mergedStable")))
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -26555,6 +26727,7 @@ def main():
             check_b323b_stars(br)
             check_b323s_summary(br)
             check_b323u_units(br)
+            check_b324p_unlocks(br)
         finally:
             br.close()
     SERVER.shutdown()
