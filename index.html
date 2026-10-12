@@ -27353,6 +27353,9 @@
   .bc-flyer.bc-landed{ opacity:0; transition:opacity .12s linear; }
   .bc-persp{ position:absolute; inset:0; perspective:900px; }
   .bc-coin, .bc-sway, .bc-spin{ position:absolute; inset:0; transform-style:preserve-3d; }
+  /* centred on its shape, turning about it (build 321, b321d - as .binspect-coin) */
+  .bc-coin{ translate:calc(var(--sdx, 0) * 100%) calc(var(--sdy, 0) * 100%); }
+  .bc-sway, .bc-spin{ transform-origin:calc(50% - var(--sdx, 0) * 100%) calc(50% - var(--sdy, 0) * 100%); }
   .bc-spin{ --thick:calc(var(--coin) * .07); }
   .bc-face, .bc-edge{ position:absolute; inset:0; }
   .bc-face{ backface-visibility:hidden; -webkit-backface-visibility:hidden; }
@@ -28505,6 +28508,15 @@
   }
   .binspect-persp{ position:absolute; inset:0; perspective:calc(var(--bi) * 3.2); }
   .binspect-coin, .binspect-spin{ position:absolute; inset:0; transform-style:preserve-3d; }
+  /* CENTRED ON ITS SHAPE (build 321, b321d, after b321c's badgeSlotShift):
+     a drawing is centred on its frame, and some shapes are not - the C-ring
+     sat ~8px right of the middle of the screen, the trefoil and the star a
+     few px high. The coin moves back by --sdx/--sdy of its size (the
+     independent translate, so it composes with any transform), and it
+     turns about the shape's own middle, so a turn never swings it aside. */
+  .binspect-coin{ translate:calc(var(--sdx, 0) * 100%) calc(var(--sdy, 0) * 100%); }
+  .binspect-spin{ transform-origin:calc(50% - var(--sdx, 0) * 100%) calc(50% - var(--sdy, 0) * 100%); }
+  .binspect-slot svg{ translate:calc(var(--sdx, 0) * 100%) calc(var(--sdy, 0) * 100%); }
   .binspect-spin{ --thick:calc(var(--bi) * .07); will-change:transform; }
   .binspect-face, .binspect-edge{ position:absolute; inset:0; }
   .binspect-face{ backface-visibility:hidden; -webkit-backface-visibility:hidden; }
@@ -91220,10 +91232,18 @@ function badgeCaseSlotPx(){
    so a results screen that is going to play the case renders it - and
    the case's seated badges - in idle time while its own reveal runs,
    rather than as the scene starts. */
+function badgeCoinBackPx(){
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const wide = !!(window.matchMedia && window.matchMedia("(min-width:40rem)").matches);
+  const css = wide ? Math.min(innerWidth * .36, 15.5 * rem, innerHeight * .34) : Math.min(innerWidth * .52, 14 * rem, innerHeight * .34);
+  return Math.min(864, badgeStrikeSize(css * badgeDpr()));
+}
 function warmBadgeCoinFaces(units){
   try{
     const ric = f => (typeof window.requestIdleCallback === "function") ? window.requestIdleCallback(f, { timeout: 1500 }) : setTimeout(f, 200);
     (units || []).slice(0, 4).forEach(u => ric(() => { try{ badgeCoinFaceURL(u); }catch(e){} }));
+    /* ...and its back (build 321: rendered like the front, about as dear) */
+    (units || []).slice(0, 4).forEach(u => ric(() => { try{ badgeBackFaceURL(u, badgeCoinBackPx(), 0); }catch(e){} }));
     const W = badgeStrikeSize(badgeCaseSlotPx() * badgeDpr());
     unitsInTeachingOrder().filter(u => unitBadgeEarned(u)).forEach(u => ric(() => { try{ badgeStrikeURL(u, false, W, badgeDirtStage(u)); }catch(e){} }));
   }catch(e){}
@@ -91238,6 +91258,7 @@ function buildBadgeCoin(unitName){
   const mk = (cls, tag) => { const e = document.createElement(tag || "div"); e.className = cls; return e; };
   const pic = (cls, src) => { const i = mk(cls, "img"); i.alt = ""; i.decoding = "sync"; i.draggable = false; i.src = src; return i; };
   const coin = mk("bc-coin"), sway = mk("bc-sway"), spin = mk("bc-spin");
+  try{ setBadgeSlotShift(coin, unitName); }catch(e){}
   const sil = badgeSilhouetteURL(unitName);
   const faceSrc = badgeCoinFaceURL(unitName);
   const edgeSrc = badgeEdgeURL(unitName);
@@ -91250,7 +91271,9 @@ function buildBadgeCoin(unitName){
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     const wide = !!(window.matchMedia && window.matchMedia("(min-width:40rem)").matches);
     const css = wide ? Math.min(innerWidth * .36, 15.5 * rem, innerHeight * .34) : Math.min(innerWidth * .52, 14 * rem, innerHeight * .34);
-    if(typeof badgeBackFaceURL === "function") backSrc = badgeBackFaceURL(unitName, Math.min(864, badgeStrikeSize(css * badgeDpr())));
+    /* build 321: the back is a render now - the one warmed in idle time
+       (warmBadgeCoinFaces), or its quick draft, never the finish here */
+    if(typeof badgeBackFaceURL === "function") backSrc = badgeBackFaceURL(unitName, Math.min(864, badgeStrikeSize(css * badgeDpr())), 0, true);
   }catch(e){ backSrc = null; }
   const face = side => {
     const real = side === "is-back" && !!backSrc;
@@ -91786,8 +91809,11 @@ function playBadgeCaseScene(units, done, retro, opts){
     const s = slots[u].querySelector("svg").getBoundingClientRect();
     const o = box();
     const cx = o.left + o.width / 2, cy = o.top + o.height / 2;
-    const tx = (s.left + s.width / 2) - cx;
-    const ty = (s.top + s.height / 2) - cy;
+    /* to the shape's middle in the slot, where the centred coin's shape
+       lands (build 321, b321d) */
+    let shf = [0, 0]; try{ shf = badgeSlotShift(u); }catch(e){}
+    const tx = (s.left + s.width * (.5 - shf[0])) - cx;
+    const ty = (s.top + s.height * (.5 - shf[1])) - cy;
     const C0 = Math.max(1, flyer.offsetWidth);
     const ts = s.width / C0;
     flyer.classList.remove("bc-alive");
@@ -110910,7 +110936,9 @@ function badgeBackLayout(unitName, g, Wout){
   const c2 = cv.getContext("2d");
   const f = Wout / g.vw, G = BADGE_GEOM, S = G.scale;
   const b = badgeBBoxFor(badgeShapeFor(unitName).d) || { x: 6, y: 6, w: 88, h: 88 };
-  const px = Wout - (g.cx - g.vx) * f, py = (g.cy - g.vy) * f;
+  /* on the shape's visible middle, not its drawing's (build 321) */
+  const mx = g.cx + S * (b.x + b.w / 2 - g.cx), my = g.cy + S * (b.y + b.h / 2 - g.cy);
+  const px = Wout - (mx - g.vx) * f, py = (my - g.vy) * f;
   const maxW = Math.max(Wout * .2, (b.w * S - 2 * (G.inner + G.edge) - 6) * f * .86);
   const maxH = Math.max(Wout * .2, (b.h * S - 2 * (G.inner + G.edge) - 8) * f * .78);
   const words = String(unitName).toUpperCase().split(/\s+/);
@@ -111176,6 +111204,7 @@ function openBadgeInspect(unit, tile){
   ov.setAttribute("aria-modal", "true");
   ov.setAttribute("aria-label", det.name);
   try{ const bt = badgeThemeFor(unit); ov.style.setProperty("--badge-col", found && bt && bt.p ? bt.p : "#8E9196"); }catch(e){}
+  try{ setBadgeSlotShift(ov, unit); }catch(e){}
   const dim = mk("binspect-dim");
   const stageEl = mk("binspect-stage");
   const float = mk("binspect-float");
@@ -111554,7 +111583,10 @@ function openBadgeInspect(unit, tile){
   };
   const fromSlot = () => {
     const f = float.getBoundingClientRect(), dy = (window.scrollY || 0) - scroll0;
-    const sx = slotRect.left + slotRect.width / 2, sy = slotRect.top - dy + slotRect.height / 2;
+    /* the shape's own middle in the slot (its drawing is moved by the
+       shift there too), where the centred coin's shape must start and end */
+    let sh = [0, 0]; try{ sh = badgeSlotShift(unit); }catch(e){}
+    const sx = slotRect.left + slotRect.width * (.5 - sh[0]), sy = slotRect.top - dy + slotRect.height * (.5 - sh[1]);
     const k = slotRect.width / Math.max(1, f.width);
     return { x: sx - (f.left + f.width / 2), y: sy - (f.top + f.height / 2), k };
   };
