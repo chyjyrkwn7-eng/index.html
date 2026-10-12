@@ -572,8 +572,11 @@ def main():
 
                         misc = pg.evaluate("""()=>{showReleaseHistory();
                           const back=!!document.querySelector('.panel .back-link');
-                          return {back};}""")
+                          /* build 321: a black Back to Home at the bottom, asked for by name */
+                          const h=document.getElementById('releasehistory-home');
+                          return {back, home: !!h && /Back to Home/.test(h.textContent)};}""")
                         if misc["back"]: fails.append(f"{tag}: Release History still has a back link")
+                        if not misc["home"]: fails.append(f"{tag}: Release History has no Back to Home button")
 
                         real = [e for e in errs if not any(k in e.lower() for k in
                                 ("firebase", "firestore", "gstatic", "failed to fetch", "net::"))]

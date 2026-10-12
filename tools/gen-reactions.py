@@ -225,6 +225,42 @@ def joy_blink(at=.2, dur=1.2):
                                                  80: "opacity:1; transform:scaleY(-1)", 100: "opacity:0; transform:scaleY(-1)"}), at=at)]
 
 
+def face_arc(cx, cy, w, k=.75):
+    """One happy eye: an arch (^), its middle well above its ends."""
+    return "M%s %s Q%s %s %s %s" % (f2(cx - w), f2(cy + w * .35), f2(cx), f2(cy - w * k), f2(cx + w), f2(cy + w * .35))
+
+
+def glee(eyes, col, core=None, sw=.42, halo=None):
+    """HAPPY EYES THAT ARE LIGHT (build 321): a character whose eyes glow -
+    slits of light in a dark face, a visor - smiles with two arches of
+    that light (^ ^), a soft wide one under a bright core. Drawn on the
+    face (front=2: inside the group that holds the eyes, so the head's
+    fit and every head move carry it). eyes: [(cx, cy, halfWidth)]."""
+    out = ""
+    for cx, cy, w in eyes:
+        d = face_arc(cx, cy, w)
+        out += path(d, stroke=col, sw=sw * (halo or 2.6), op=.45)
+        out += path(d, stroke=core or col, sw=sw).replace("<path ", '<path data-face="eye" ', 1)
+    return out
+
+
+def grin(cx, cy, w, col, sw=.45, k=.55):
+    """A smile drawn on the face: the middle well below the corners."""
+    return path("M%s %s Q%s %s %s %s" % (f2(cx - w), f2(cy), f2(cx), f2(cy + w * k * 2), f2(cx + w), f2(cy)),
+                stroke=col, sw=sw).replace("<path ", '<path data-face="mouth" ', 1)
+
+
+def cheer(at=.3, hide=("eyes",), extra=()):
+    """THE 100 IS HAPPY ON EVERY FACE (build 321): "the alien still looks
+    mad even after the hundred.. ensure all characters are happy when they
+    get the 100." The open eyes (and anything else named) go, and the
+    face's own happy pieces (the prop `glee`, drawn by glee()/grin()) come
+    in and stay - the pose every later loop and the hundo effect's own
+    reaction come back to."""
+    return ([P(h, "opacity:0", (.3, "ease-out", {}), at=at) for h in hide] +
+            [P("p-glee", "opacity:1", (.3, "ease-out", {0: "opacity:0"}), at=at)] + list(extra))
+
+
 def nod(dur=1.1, at=.1, k=1.0):
     """A satisfied double nod."""
     return P("head", "", (dur, EASE_IO, {22: "transform:translateY(%spx) rotate(%sdeg)" % (f2(1.1 * k), f2(3 * k)),
@@ -359,7 +395,7 @@ def build():
             spec = RX[cid].get(band)
             if not spec or not spec["props"]:
                 continue
-            items = ", ".join("[%s, %d, %s]" % (jsq(n), 1 if front else 0, jsq(svg)) for n, front, svg in spec["props"])
+            items = ", ".join("[%s, %d, %s]" % (jsq(n), 2 if front == 2 else (1 if front else 0), jsq(svg)) for n, front, svg in spec["props"])
             bands.append("    %s: [%s]" % (band, items))
         if bands:
             js.append("  %s: {\n%s\n  }," % (cid, ",\n".join(bands)))

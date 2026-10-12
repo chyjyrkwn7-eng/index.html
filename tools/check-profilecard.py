@@ -13,7 +13,7 @@ plates and the two code groups have no slack to hide a mistake in.
 """
 import argparse, functools, http.server, os, re, shutil, socket, tempfile, threading, json
 from playwright.sync_api import sync_playwright
-ROOT="/home/user/index.html"
+ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ap=argparse.ArgumentParser()
 ap.add_argument("--against", help="run the same checks against another index.html; they are SUPPOSED to fail there")
 A=ap.parse_args()
@@ -40,7 +40,7 @@ def ck(n,c,d=""):
     if not c: ok=False
 SEED="""()=>{document.getElementById('splashscreen')?.remove(); __useFake();
   store.onboardingComplete=true; store.firstName='Madison'; store.publicId='me01'; store.tourRev=99; store.rankMapFx244=true;
-  store.avatarChar='wizard'; store.lifetime={points:4200}; store.points=4200;
+  store.avatarChar='wizard'; store.lifetime=Object.assign(store.lifetime||{}, {points:4200}); store.points=4200;
   ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour',
    'seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour','seenFriendsTour','seenCalendarTour'].forEach(k=>store[k]=true);
   syncCode='AAAA-1111'; store.leaderboardOptIn=true; showHome();}"""
@@ -114,13 +114,12 @@ with sync_playwright() as pw:
         # badges), each in its own dark box, with no arc and nothing
         # moving on them; the badges are still their own section with no
         # meter and no set.
-        ck("two plain rings, level and badges, each in its own box; no meter and no set",
-           r["plates"]==2 and r["bsect"] and r["bcells"]==0 and r["btokens"]==0
-           and len(r["boxes"])==2 and all(b not in ("rgba(0, 0, 0, 0)","transparent") for b in r["boxes"]),
-           (r["plates"], r["bcells"], r["btokens"], r["boxes"]))
+        # ---- RETIRED (build 316 onward) ----
+        # The two ring boxes came off when the card was unboxed into a rank
+        # line and a level bar (316), and the percentage went with them.
+        # check_b321f_profile in check-behaviour holds the card as it is now.
         ck("no progress arc on either ring, and nothing on them animates",
            r["ringArcs"]==0 and r["ringAnims"]==0, (r["ringArcs"], r["ringAnims"]))
-        ck("rings >=44px tall", bool(r["plateRects"]) and min(h for _,h in r["plateRects"])>=44, r["plateRects"])
         ck("bar filled to target", r["fillW"] not in (None,"0%"), (r["fillW"],r["fillTarget"]))
         # ---- THIS ENCODED A DECISION, AND IT REVERSED ----
         # The three quarter marks across the XP track were asked for,
@@ -132,7 +131,6 @@ with sync_playwright() as pw:
         # What is still worth holding is that the bar is ONE length
         # against ONE track, which is what the ticks were interrupting.
         ck("no ticks across the XP track", r["ticks"] in (None, "auto", "0px"), r["ticks"])
-        ck("percentage shown", r["pct"] and r["pct"].endswith("%"), r["pct"])
         ck("no horizontal page scroll (profile)", r["scrollX"]<=0, r["scrollX"])
         # ---- Friends ----
         pg.evaluate("""()=>{

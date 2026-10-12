@@ -90,7 +90,7 @@ Object.defineProperty(navigator,'standalone',{get:()=>true,configurable:true});
        addEventListener(){}, removeEventListener(){}, onchange:null, dispatchEvent(){return false;}}
     : mm(q); })();"""
 
-ONBOARDING = ["showWelcomeIntro", "showClassSelection", "showWelcomeNamePrompt",
+ONBOARDING = ["showSignUpCheck", "showWelcomeIntro", "showClassSelection", "showWelcomeNamePrompt",
               "showWelcomeCharacterPrompt", "showWelcomeCodeEntry", "showWelcomeCodeReveal"]
 
 def patched(insets):
@@ -108,7 +108,7 @@ def serve():
     return srv, f"http://127.0.0.1:{port}/index.html"
 
 ONBOARDING_SCREENS = {
-    "showWelcome", "showWhatsNew", "showWelcomeIntro", "showClassSelection",
+    "showWelcome", "showSignUpCheck", "showWhatsNew", "showWelcomeIntro", "showClassSelection",
     "showWelcomeNamePrompt", "showWelcomeCharacterPrompt",
     "showWelcomeCodeEntry", "showWelcomeCodeReveal",
 }

@@ -2408,13 +2408,16 @@ def check_b235(br):
          it). Build 316: the rank is one line under the name again - the
          emblem, the rank, the level, the XP - so: the emblem sits on that
          line, centred on the rank's name, with the name after it. */
-      await T('plate', () => { const e = document.querySelector('.pf-standing .pf-emb');
-        const v = e && e.querySelector('svg'); const nm = document.querySelector('.pf-standing .pf-rankname');
+      /* REVISED IN 321: "Remove the tiny icon" - the line is the rank's
+         name, then the level, no emblem; the name is centred on the level's
+         line (within 2px). */
+      await T('plate', () => { const e = document.querySelector('.pf-standing .pf-idline svg');
+        const nm = document.querySelector('.pf-standing .pf-rankname');
         const lab = document.querySelector('.pf-standing .pf-level');
-        if(!e || !v || !nm) return 'no emblem or no rank name on the line';
-        const a = e.getBoundingClientRect(), b = nm.getBoundingClientRect();
+        if(e || !nm || !lab) return 'an emblem on the line, or no rank name / level';
+        const a = lab.getBoundingClientRect(), b = nm.getBoundingClientRect();
         const off = Math.round(Math.abs((a.top + a.height / 2) - (b.top + b.height / 2)));
-        return b.left >= a.right && lab && lab.getBoundingClientRect().left >= b.right ? off : 'not emblem, rank, level in that order'; });
+        return a.left >= b.right ? off : 'not rank, level in that order'; });
       await T('heroLive', () => document.querySelector('.profile-hero-avatar').classList.contains('char-live'));
       // An existing account on Gold, opening this build for the first
       // time, then winning a week off-screen.
@@ -2485,7 +2488,7 @@ def check_b235(br):
         const v = getComputedStyle(document.documentElement).getPropertyValue('--theme-c3').trim();
         document.documentElement.dataset.accent = theme.accent || 'ink'; return v; });
       return out; }""")
-    check("the held rank's emblem sits on the rank line, centred on its name, then the level (build 316; a bubble in 315, the level ring before it)",
+    check("the held rank's name leads the rank line, then the level, and no emblem (321; an emblem 316-320, a bubble in 315, the level ring before it)",
           isinstance(r["plate"], int) and r["plate"] <= 2, r["plate"])
     check("your own character is alive on the Profile card", r["heroLive"] is True, r["heroLive"])
     sd = r["seed"] if isinstance(r["seed"], dict) else {}
@@ -2791,11 +2794,12 @@ def check_b237(br):
                rankBar: !!p.querySelector('.profile-rankplate-fill, .profile-rankplate-next, .pf-bar'),
                xpBar: !!p.querySelector('.pf-xpbar .xpbar-fill'),
                w: Math.round(p.getBoundingClientRect().width),
-               emb: !!p.querySelector('.pf-idline .pf-emb svg'), bubble: !!p.querySelector('.flare-solo'),
+               emb: !!p.querySelector('.pf-idline svg'), bubble: !!p.querySelector('.flare-solo'),
                boxed: cs.backgroundImage !== 'none' || !/rgba\\(0, 0, 0, 0\\)|transparent/.test(cs.backgroundColor) || parseFloat(cs.borderTopWidth) > 0,
                button: p.tagName }; }""")
-    check("the rank leads the card as one line under the name - its emblem, the rank, the level, the XP - with no box round it, as one button across the card",
-          isinstance(r, dict) and r.get("w", 0) > 300 and r.get("emb") and not r.get("bubble") and r.get("boxed") is False and r.get("button") == "BUTTON", r)
+    # REVISED IN 321: "Remove the tiny icon" - no emblem on the line.
+    check("the rank leads the card as one line under the name - the rank, the level, the XP, no emblem (321) - with no box round it, as one button across the card",
+          isinstance(r, dict) and r.get("w", 0) > 300 and not r.get("emb") and not r.get("bubble") and r.get("boxed") is False and r.get("button") == "BUTTON", r)
     # REVISED IN 267: "the current rank in the profile box has a progress
     # bar, let's remove that". REVISED IN 315: the bar under the rank is
     # the XP bar, asked back ("how do we still get that nice xp stuff");
@@ -3533,12 +3537,14 @@ def check_b244(br):
       /* Build 315: the coin was the standing block's flare bubble. Build
          316: it is the emblem on the rank line, the held rank's own,
          fitted the way every emblem is - held to the same centring */
-      const coin = document.querySelector('.pf-standing .pf-emb'), held = 'ranger';
-      const csvg = coin && coin.querySelector('svg');
-      out.coin = csvg ? { name: (document.querySelector('.pf-standing .pf-rankname') || {}).textContent, want: RANK_DISPLAY_NAME[held], off: off(coin, csvg, held) } : null;
+      /* REVISED IN 321: no emblem on the rank line ("Remove the tiny
+         icon"), only the held rank's name */
+      const held = 'ranger';
+      out.coin = { name: (document.querySelector('.pf-standing .pf-rankname') || {}).textContent, want: RANK_DISPLAY_NAME[held],
+                   svg: !!document.querySelector('.pf-standing .pf-idline svg') };
       rankOf = rk0;
       showProfile('profile'); await wait(500);
-      out.unrankedEmpty = !rankOf(store) ? (!document.querySelector('.pf-standing .pf-emb') && !document.querySelector('.pf-standing .pf-rankname')
+      out.unrankedEmpty = !rankOf(store) ? (!document.querySelector('.pf-standing .pf-idline svg') && !document.querySelector('.pf-standing .pf-rankname')
         && /^Level \\d+$/.test((document.querySelector('.pf-standing .pf-level') || {}).textContent || '')) : true;
       } catch(e){ out.threw = String(e) + ' ' + (e.stack || '').split('\\n')[1]; }
       return out; }""")
@@ -3559,8 +3565,8 @@ def check_b244(br):
     # boxes on purpose, and no further), not to show the change.
     check("every Home bubble's emblem is centred in it (within 1.5px)", len(home) == 7 and max(home) <= 1.5, home)
     coin = r.get("coin") or {}
-    check("the Profile card's rank line carries the held rank's emblem, centred in its box (within 1.5px, as on Home), and its name",
-          coin.get("name") == coin.get("want") and coin.get("off", 9) <= 1.5, coin)
+    check("the Profile card's rank line names the held rank and carries no emblem (321: 'Remove the tiny icon')",
+          coin.get("name") == coin.get("want") and coin.get("svg") is False, coin)
     check("an unranked card names no rank and draws no emblem - just the level (268)", r.get("unrankedEmpty") is True, r.get("unrankedEmpty"))
     ctx.close()
 
@@ -5079,8 +5085,10 @@ def check_b258(br):
       out.fillBg = fill ? getComputedStyle(fill).backgroundImage : '';
       /* build 282: the level is the Rank tab's blue ring; its colour is the stroke.
          Build 315: the ring is gone; the level is said in the bar's blue.
-         Build 316: the mockup's line - the XP is the blue on it */
-      const lv = document.querySelector('.profile-hero .pf-standing .pf-xp-total');
+         Build 316: the mockup's line - the XP is the blue on it.
+         Build 321: the total took the line's colour; this level's XP
+         ("x / y XP") is the blue that is held */
+      const lv = document.querySelector('.profile-hero .pf-standing .xpnums-have');
       out.levelBg = lv ? getComputedStyle(lv).color : '';
       out.coverMark = document.querySelectorAll('.profile-cover .profile-cover-mark').length;
       const cov = document.querySelector('.profile-cover:not(.has-banner)');
@@ -6248,7 +6256,7 @@ def check_b282(br):
       const tasks = [...document.querySelectorAll('.pf-goal .pf-task')];
       const tcOf = re => { const t = tasks.find(x => re.test((x.querySelector('.pf-task-label') || {}).textContent || ''));
         return t ? t.style.getPropertyValue('--tc').trim() : null; };
-      out.profLevelRing = tcOf(/^Reach level/); out.profBadgeRing = tcOf(/^Earn /);
+      out.profLevelRing = tcOf(/^Reach level/i); out.profBadgeRing = tcOf(/^Earn /);
       out.profRings = tasks.length;
       /* every HTML-element animation running on Profile: transform/opacity only */
       const paintProps = [];
@@ -8051,7 +8059,8 @@ def check_b302(br):
           /* build 315: the rings are gone. Build 316: the rank you hold is
              an emblem on its line, the line's own size - not a ring, and
              not a second big mark beside the next rank's */
-          out.rings = [wOf('.pf-standing .pf-emb'), wOf('.pf-goal .pf-goal-emb')];
+          /* build 321: no emblem on the rank line ("Remove the tiny icon") */
+          out.rings = [document.querySelectorAll('.pf-standing .pf-idline svg').length, wOf('.pf-goal .pf-goal-emb')];
           const tot = document.querySelector('.pf-standing .pf-xp-total'), bar = document.querySelector('.pf-standing .profile-xpbar');
           out.total = tot ? tot.textContent : '';
           out.totalOnLine = !!(tot && tot.closest('.pf-idline') && bar && (bar.compareDocumentPosition(tot) & Node.DOCUMENT_POSITION_PRECEDING));
@@ -8061,6 +8070,9 @@ def check_b302(br):
           out.xpCols = ['.xpnums-have', '.xpnums-need', '.pf-xp-total'].map(sel => { const e = document.querySelector('.pf-standing ' + sel);
             if(!e) return null; const c = getComputedStyle(e).color, m = c.match(/[\d.]+/g); if(!m) return null;
             const v = m.slice(0, 3).map(Number); return /^color\(/.test(c) ? v.map(x => Math.round(x * 255)) : v; });
+          /* build 321: the total's colour is the level's, whole (alpha too) */
+          { const t = document.querySelector('.pf-standing .pf-xp-total'), l = document.querySelector('.pf-standing .pf-level');
+            out.totalLevelCol = t && l ? [getComputedStyle(t).color, getComputedStyle(l).color] : null; }
           if(keepPerf === undefined) delete store.unitPerfects[keepU0]; else store.unitPerfects[keepU0] = keepPerf;
           store.lifetime.points = keepPts;
           const fill = document.querySelector('.profile-xpbar .xpbar-fill');
@@ -8112,8 +8124,9 @@ def check_b302(br):
         # REVISED IN 316: the held rank is the mockup's small emblem on the
         # rank line ("I prefer how your current level and rank looked"), so
         # it is the line's size and the next rank's emblem is the big one.
-        check(f"{dev}: the rank you hold is an emblem the size of its line, the next rank's the big one",
-              len(rings) == 2 and None not in rings and 20 <= rings[0] <= 32 and rings[1] >= 2 * rings[0], rings)
+        # REVISED IN 321: "Remove the tiny icon" - no emblem on the line.
+        check(f"{dev}: the rank you hold has no emblem on its line; the next rank's emblem is the big one",
+              len(rings) == 2 and rings[0] == 0 and (rings[1] or 0) >= 50, rings)
         # REVISED IN 315: "we wouldn't need that total xp there because it'd
         # be with all the xp stuff" - the total joined the bar's numbers.
         # REVISED IN 316: back on the rank line, as the mockup had it; the
@@ -8133,8 +8146,13 @@ def check_b302(br):
               r.get("totalOnLine") is False and re.match(r"^[0-9,]+ total XP$", r.get("total") or "")
               and re.match(want_nums, r.get("barNums") or ""), [r.get("totalOnLine"), r.get("total"), r.get("barNums")])
         xc = r.get("xpCols") or [None, None, None]
-        check(f"{dev}: ...all three in one blue, none grey",
-              None not in xc and xc[0] == xc[1] == xc[2] and xc[0][2] - xc[0][0] >= 80, xc)
+        # REVISED IN 321: "Total xp probably should be the same color as
+        # the other stuff" - this level's two numbers one blue, the total
+        # the level's colour.
+        tl = r.get("totalLevelCol") or [None, 1]
+        check(f"{dev}: ...this level's two numbers one blue; the total in the level's colour, not blue",
+              None not in xc and xc[0] == xc[1] and xc[0][2] - xc[0][0] >= 80 and tl[0] == tl[1]
+              and not (xc[2][2] - xc[2][0] >= 80), [xc, tl])
         check(f"{dev}: the XP bar carries its slow light", r.get("glide") == "xp-glide", r.get("glide"))
         check(f"{dev}: back on Home, no flare bubble is empty", r.get("bubbles", 0) >= 7 and r.get("blank") == 0, [r.get("bubbles"), r.get("blank")])
         check(f"{dev}: Sapphire turns on a half-turn loop, Platinum has its spiral, Silver's star glints",
@@ -13420,7 +13438,7 @@ def check_b317_pfcard(br):
           const col = sel => { const e = document.querySelector('.profile-hero .pf-standing ' + sel); if(!e) return null;
             const c = getComputedStyle(e).color, m = c.match(/[\d.]+/g); if(!m) return null;
             const v = m.slice(0, 3).map(Number); return /^color\(/.test(c) ? v.map(x => Math.round(x * 255)) : v; };
-          const xpCols = () => ({ have: col('.xpnums-have'), need: col('.xpnums-need'), total: col('.pf-xp-total'),
+          const xpCols = () => ({ have: col('.xpnums-have'), need: col('.xpnums-need'), total: col('.pf-xp-total'), level: col('.pf-level'),
             over: !!document.querySelector('.profile-hero .pf-standing .xpnums.is-over') });
           out.xpMid = xpCols();
           out.rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
@@ -13472,15 +13490,20 @@ def check_b317_pfcard(br):
         g, rem = r.get("gaps"), r.get("rem") or 16
         # REVISED IN 319 (g: 1.1rem), BACK IN 319 (h): the strip is part of
         # the card, so it takes the boxes' own .8rem; its handle stands in it.
-        check(f"{dev}: ...with the card's usual gaps (1.05rem under the bar, .8rem between the boxes)",
-              bool(g) and abs(g[0] - 1.05 * rem) <= 1.5 and abs(g[1] - 0.8 * rem) <= 1.5, [g, rem])
+        # REVISED IN 321: "The badge case under the rank challenge thing, the
+        # spacing is a smidge too close" - 1.15rem under the Next rank box.
+        check(f"{dev}: ...with the card's gaps (1.05rem under the bar, 1.15rem from the Next rank box to the case)",
+              bool(g) and abs(g[0] - 1.05 * rem) <= 1.5 and abs(g[1] - 1.15 * rem) <= 1.5, [g, rem])
         # REVISED IN THE 317 TOUCH-UP: no grey. This level's XP, what it
         # asks and the total are one blue - mid level (not over) and at
         # level 80 (over).
         blue = lambda c: c is not None and c[2] - c[0] >= 80
         for tag, xc in (("mid level", r.get("xpMid") or {}), ("level %s" % r.get("topLevel"), r.get("xpTop") or {})):
-            check(f"{dev}, {tag}: this level's XP, what it asks and the total XP are one blue, none grey",
-                  xc.get("have") is not None and xc.get("have") == xc.get("need") == xc.get("total") and blue(xc.get("have")), xc)
+            # REVISED IN 321: the total takes the level's colour ("Total xp
+            # probably should be the same color as the other stuff").
+            check(f"{dev}, {tag}: this level's XP and what it asks are one blue; the total XP is the level's colour",
+                  xc.get("have") is not None and xc.get("have") == xc.get("need") and blue(xc.get("have"))
+                  and xc.get("total") is not None and xc.get("total") == xc.get("level") and not blue(xc.get("total")), xc)
         check(f"{dev}: ...the mid account is under its requirement and level 80 is over it (both states seen)",
               (r.get("xpMid") or {}).get("over") is False and (r.get("xpTop") or {}).get("over") is True and r.get("topLevel") == 80,
               [(r.get("xpMid") or {}).get("over"), (r.get("xpTop") or {}).get("over"), r.get("topLevel")])
@@ -16361,6 +16384,7 @@ def check_b317_xpcap(br):
       window.__pf = () => ({ level: q('.pf-standing .pf-level'), nums: q('.pf-standing .pf-xpnums .xpnums'),
         over: !!document.querySelector('.pf-standing .xpnums.is-over'), cap: q('.pf-standing .pf-xp-cap'),
         note: q('.pf-standing .pf-xp-note'), text: q('.pf-standing'),
+        lvc: document.querySelector('.pf-standing .pf-level') && getComputedStyle(document.querySelector('.pf-standing .pf-level')).color,
         tot: document.querySelector('.pf-standing .pf-xp-total') && getComputedStyle(document.querySelector('.pf-standing .pf-xp-total')).color,
         need: document.querySelector('.pf-standing .xpnums-need') && getComputedStyle(document.querySelector('.pf-standing .xpnums-need')).color,
         have: document.querySelector('.pf-standing .xpnums-have') && getComputedStyle(document.querySelector('.pf-standing .xpnums-have')).color });
@@ -16376,15 +16400,14 @@ def check_b317_xpcap(br):
     m = re.match(r"^([0-9,]+) / ([0-9,]+) XP$", l80["nums"] or "")
     check("...it shows the XP since level 80 against a level's cost, past it, both numbers blue",
           bool(m) and int(m.group(1).replace(",", "")) > int(m.group(2).replace(",", "")) and l80["over"], l80["nums"])
-    check("...and the note says 80 is the top level for now and the XP counts toward new levels when they are added",
-          bool(l80["note"]) and "top level for now" in l80["note"] and "still counts" in l80["note"]
-          and "when they are added" in l80["note"], l80["note"])
+    # REVISED IN 321: "remove the description under the xp bar that talks
+    # about using xp for the next level, we don't need that anymore".
+    check("...and there is no note under the bar at level 80 (321)",
+          l80["note"] is None and "still counts" not in (l80["text"] or ""), l80["note"])
     # 2. the wall note, Silver held at 49 behind the four-badge wall
     wall = pg.evaluate("""async () => { __acct(xpForLevel(52) + 200, 4); showProfile('identity'); %s return __pf(); }""" % (wait % 900))
-    check("the wall note is the plain new copy: top level for Silver, Gold rank challenges, XP still counts toward those levels",
-          bool(wall["note"]) and wall["note"].startswith("You've reached the top level for Silver.")
-          and "Finish the Gold rank challenges to unlock more levels." in wall["note"]
-          and "still counts" in wall["note"] and "is kept" not in wall["note"], wall["note"])
+    check("no note under the bar at the wall either - not the 'top level for Silver ... still counts' copy (321)",
+          wall["note"] is None and "still counts" not in (wall["text"] or "") and "top level" not in (wall["text"] or ""), wall["note"])
     def rgb(c):
         v = [float(x) for x in re.findall(r"[\d.]+", c or "")[:3]]
         return [round(x * 255) for x in v] if (c or "").startswith("color(") else v
@@ -16393,8 +16416,9 @@ def check_b317_xpcap(br):
     blue = lambda c: len(c) == 3 and c[2] - c[0] >= 80
     for tag, st in (("a mid level, under its requirement", mid), ("a wall", wall), ("level 80, over the wall", l80)):
         hv, nd, tt = rgb(st["have"]), rgb(st["need"]), rgb(st["tot"])
-        check(f"{tag}: this level's XP, what it asks and the total XP are one blue, none grey",
-              blue(hv) and hv == nd == tt, [hv, nd, tt, st["nums"], st["over"]])
+        # REVISED IN 321: the total in the level's colour (compared whole)
+        check(f"{tag}: this level's XP and what it asks are one blue; the total XP is the level's colour",
+              blue(hv) and hv == nd and st["tot"] == st["lvc"] and not blue(tt), [hv, nd, st["tot"], st["lvc"], st["nums"], st["over"]])
     check("...and the mid level is under its requirement, so the have number is blue without being over",
           mid["over"] is False and bool(re.match(r"^[0-9,]+ / [0-9,]+ XP$", mid["nums"] or "")), [mid["over"], mid["nums"]])
     # 3. the knock: results card, XP added into a bar at a wall
@@ -17497,7 +17521,8 @@ def check_b319_rankup(br):
           const rows = [...(g ? g.querySelectorAll('.pf-task') : [])].map(r => ({ k: r.dataset.kind || (/badge/i.test(r.textContent) ? 'badges' : 'level'),
             now: (r.querySelector('.pf-now') || {}).textContent, need: (r.querySelector('.pf-need') || {}).textContent,
             met: r.classList.contains('is-met'), tick: (r.querySelector('.pf-check') || {}).textContent,
-            w: parseFloat(getComputedStyle(r.querySelector('.pf-bar > i')).width) / parseFloat(getComputedStyle(r.querySelector('.pf-bar')).width),
+            /* build 321: the level row has no bar */
+            w: r.querySelector('.pf-bar > i') ? parseFloat(getComputedStyle(r.querySelector('.pf-bar > i')).width) / parseFloat(getComputedStyle(r.querySelector('.pf-bar')).width) : null,
             aria: r.getAttribute('aria-label') }));
           /* any challenge kind, the same cap */
           const x = buildProfileTask({ kind: 'other', label: 'Something', now: 9, need: 4, met: true }, '#6FC2FF', null);
@@ -20840,12 +20865,17 @@ B319_NOTE = """async ([lvl, nb]) => {
   const n = document.querySelector('#intro-pop .intro-gate-note');
   let spoken = '';
   try{ spoken = whatsNewLines(whatsNewState()).map(l => l.text).join(' '); }catch(e){}
+  /* build 321: and in the meeting with Nova, where What's New follows his
+     introduction (chained) - the note is said there too */
+  let chained = '';
+  try{ chained = whatsNewLines(whatsNewState(), true).map(l => l.text).join(' '); }catch(e){}
+
   const s = levelStateFor(store);
   const r = n ? n.getBoundingClientRect() : null;
   const out = { text: n ? [...n.querySelectorAll('.intro-gate-body')].map(p => p.textContent) : null, title: n ? (n.querySelector('.intro-gate-title') || {}).textContent : null,
     level: s.level, curve: s.curveLevel, held: rankOf(store) ? RANK_DISPLAY_NAME[rankOf(store)] : null,
     gate: s.gateKey ? RANK_DISPLAY_NAME[s.gateKey] : null, need: s.badgesToPass,
-    inView: r ? r.left >= 0 && r.right <= innerWidth : null, spoken };
+    inView: r ? r.left >= 0 && r.right <= innerWidth : null, spoken, chained };
   document.getElementById('intro-pop')?.remove();
   return out; }"""
 
@@ -20880,6 +20910,8 @@ def check_b319_levelnote(br):
             miss = [x for x in want if x not in t]
             # build 320: Nova says the note, its facts exactly
             miss += ["(spoken) " + x for x in want if x not in (r.get("spoken") or "")]
+            # build 321: and in the meeting's What's New, after his introduction
+            miss += ["(chained) " + x for x in want if "Here’s what’s new" not in (r.get("chained") or "") or x not in (r.get("chained") or "")]
             check("%s: level %d, %d badge(s): the note says it plainly" % (dev, lvl, nb),
                   r["title"] == "Your level was adjusted" and not miss and not bad and r["level"] == top and r["inView"],
                   {"missing": miss, "bad": bad, "text": r["text"], "state": [r["level"], r["curve"], r["held"], r["gate"], r["need"]]})
@@ -21262,7 +21294,8 @@ def check_b319h_layout(br):
                       bool(bx and gl) and abs(bx[0] - gl[0]) <= 1 and abs(bx[2] - gl[2]) <= 1 and abs(rc["radius"] - rc["goalRadius"]) <= 1,
                       [bx, gl, rc.get("radius"), rc.get("goalRadius")])
                 gap = (bx[1] - gl[3]) if (bx and gl) else None
-                check("%s: ...and the box's own gap above it (.8rem)" % dev, gap is not None and abs(gap - 12.8) <= 1.5, gap)
+                # REVISED IN 321: "the spacing is a smidge too close" - 1.15rem
+                check("%s: ...and a gap above it of 1.15rem (321; .8rem before)" % dev, gap is not None and abs(gap - 18.4) <= 1.5, gap)
                 hw, al = (m or {}).get("hw") or {}, (m or {}).get("all") or {}
                 print("     %s case strip: %s" % (dev, json.dumps({"hardware": hw, "with text": al})))
                 check("%s: the strip's metal is not the brightest thing on the card (peak %s against the card's %s)" % (dev, hw.get("strip_peak"), al.get("card_peak")),
@@ -21491,6 +21524,9 @@ B320F_NEWS = """async ([reduce]) => {
     store.unitPerfects = {}; U.slice(0, 3).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
     /* Gold held from the old ladder (rankFloor 3), three badges */
     store.levelFloor = 0; store.rankFloor = 3; store.lifetime.points = xpForLevel(49) + 300;
+    /* build 321: an account that has not met Nova meets him first
+       (check_b321g_nova); this is What's New on its own */
+    store.novaMet = 1;
     theme.reduceMotion = !!reduce; applyTheme(); saveStore();
     out.rank = RANK_DISPLAY_NAME[rankOf(store)]; out.badges = badgeCountOf(store); out.level = levelOf(store);
     localStorage.removeItem('class26e.intro.seen');
@@ -21531,6 +21567,7 @@ B320F_SKIP = """async () => {
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const out = {};
   try{
+    store.novaMet = 1; saveStore();   /* What's New on its own (build 321) */
     localStorage.removeItem('class26e.intro.seen'); showHome();
     for(let i = 0; i < 50 && !document.getElementById('intro-pop'); i++) await wait(100);
     const el = document.getElementById('intro-pop');
@@ -21585,7 +21622,9 @@ def check_b320f_nova(br):
         t = r.get("tap") or {}
         check("%s a tap finishes the line, the next tap moves on" % dev,
               t.get("typing0") and t.get("restBefore", 0) > 0 and t.get("idx1") == t.get("idx0") and t.get("restAfter") == 0 and t.get("idx2") == t.get("idx0", 0) + 1, t)
-        need = ["Nova", "made this app", "badge", "flare", "Supernova", "XP", "level", "Drill", "Exam", "Review", "Madison"]
+        # build 321: "he calls himself the app maker, don't do that" - an
+        # explorer and an instructor now (check_b321g_nova holds the rest)
+        need = ["Nova", "explorer", "badge", "flare", "crew", "Supernova", "XP", "level", "Drill", "Exam", "Review", "Madison"]
         miss = [x for x in need if x not in lines]
         check("%s he introduces himself and the story: badges, flares, ranks, levels, tests" % dev, not miss and r.get("goLabel"), {"missing": miss, "go": r.get("goLabel")})
         check("%s the tooltips follow in his bubble, every one" % dev,
@@ -21599,7 +21638,7 @@ def check_b320f_nova(br):
         txt = " ".join(r.get("lines") or [])
         check("%s existing account: the narrated What's New opens on Home" % dev, not r.get("err") and r.get("firstTyping"), {k: r.get(k) for k in ("err", "firstTyping")})
         check("%s he greets them by username, names the rank and the badges found" % dev,
-              "Madison" in txt and "I’m Nova" in txt and (r.get("rank") or "?") in txt and "found 3 of my lost badges" in txt and r.get("rank") == "Gold" and r.get("badges") == 3,
+              "Madison" in txt and "Nova" in txt and (r.get("rank") or "?") in txt and "found 3 of my lost badges" in txt and r.get("rank") == "Gold" and r.get("badges") == 3,
               {"rank": r.get("rank"), "badges": r.get("badges"), "head": (r.get("lines") or [])[:4]})
         check("%s the card is built as he talks, and ends on Got it" % dev,
               (r.get("rows") or 0) >= 9 and "3 of %s badges found" % r.get("units") in (r.get("me") or "") and r.get("go") and "speak with you again" in txt,
@@ -21617,6 +21656,240 @@ def check_b320f_nova(br):
     check("Skip on the introduction goes straight to the tooltips", r.get("intro") and r.get("tourAfterSkip"), r)
     check("Nova is not a character: not in the list, not in Customize", r.get("inChars") is False and r.get("inPicker") is False and (r.get("pickerHasChars") or 0) > 0, r)
     ctx.close()
+
+
+# ---------------------------------------------------------------------------
+# BUILD 321 (b321g): NOVA IS NOT THE APP'S MAKER; EXISTING ACCOUNTS MEET HIM.
+B321G_TALK = """async (id) => {
+  /* click through one Nova dialogue; returns every line it said */
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  for(let i = 0; i < 40 && !document.getElementById(id); i++) await wait(100);
+  const el = document.getElementById(id);
+  if(!el || !el.__nova) return { open: false, lines: [] };
+  const nv = el.__nova, out = { open: true, lines: [], label: el.getAttribute('aria-label') };
+  await wait(700);
+  for(let i = 0; i < 120 && el.isConnected; i++){
+    const t = el.querySelector('.nt-text').textContent;
+    if(out.lines[out.lines.length - 1] !== t) out.lines.push(t);
+    if(nv.typing){ el.querySelector('.nt-stage').click(); await wait(30); continue; }
+    const go = el.querySelector('.nt-go');
+    if(go && getComputedStyle(go).display !== 'none'){
+      out.go = go.textContent;
+      out.stage = (el.querySelector('.nt-stage') || {}).innerText || '';
+      go.click(); break; }
+    el.querySelector('.nt-stage').click(); await wait(40);
+  }
+  return out;
+}"""
+
+B321G_TOUR = """async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  for(let i = 0; i < 40 && !document.getElementById('tour-tooltip'); i++) await wait(100);
+  await wait(400);
+  const out = [];
+  for(let i = 0; i < 20; i++){
+    const tt = document.getElementById('tour-tooltip');
+    if(!tt) break;
+    out.push((document.getElementById('tour-text') || {}).textContent || '');
+    document.getElementById('tour-next').click(); await wait(450);
+  }
+  return out;
+}"""
+
+
+def check_b321g_nova(br):
+    """Build 321 (b321g). Madison: "he calls himself the app maker, don't do
+    that ... Mention how during the ship explosion a lot of characters or
+    people on the ship went missing too and you need to find them ... Mr nova
+    screen when meeting a new player ... should be the one shown to all the
+    existing profiles, but at the end it can go over the ones they have
+    unlocked ... AFTER the nova intro that's when the what's new screen will
+    show up ... still give the tool tips but after the main menu ones ...
+    ensure nova still says good bye and they'll talk again."
+    No line anywhere says he made the app; the story carries the lore (the
+    people aboard went missing; the characters are them, found). An existing
+    account, on its first Home: his introduction (greeted by username, the
+    story, then its rank, level, badges, characters and secret flares), then
+    What's New without a second hello, then the main menu's tooltips and the
+    three new ones and no other tour, then his goodbye - once, recorded on
+    the account (novaMet, merged by the higher) and not again; a second
+    device of an account that has met him gets What's New alone. A new
+    account: unchanged (introduction, the seven main-menu tooltips, the
+    welcome bonus, no What's New, no goodbye), marked met. The wreck is
+    Home's own planet breaking into pieces of itself, a drawn ship and six
+    pods, and Reduce motion shows the aftermath. Fails on 6a387e2."""
+    print("\n321g. Nova: not the maker, the crew is the characters, existing accounts meet him")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""() => { const out = {};
+      try{
+        const txt = [];
+        try{ novaIntroLines({}).forEach(l => txt.push(l.text)); }catch(e){ out.e1 = String(e); }
+        try{ novaIntroLines({ existing: true }).forEach(l => txt.push(l.text)); }catch(e){ out.e2 = String(e); }
+        const st = whatsNewState();
+        try{ whatsNewLines(st).forEach(l => txt.push(l.text)); }catch(e){}
+        try{ whatsNewLines(st, true).forEach(l => txt.push(l.text)); }catch(e){}
+        RELEASE_NOTES[0].groups.forEach(g => g.items.forEach(i => txt.push(i.title + ' ' + i.body)));
+        out.intro = novaIntroLines({}).map(l => l.text);
+        out.all = txt;
+      }catch(e){ out.err = String(e); }
+      return out; }""")
+    allt = " | ".join(r.get("all") or [])
+    bad = re.findall(r".{30}(?:made (?:this|the) app|app[’']?s? maker|app maker|I made|I built).{20}", allt, re.I)
+    check("no line of Nova's, nor the release notes, says he made the app", bool(r.get("all")) and not bad, bad[:3] or r.get("err"))
+    lore = [t for t in (r.get("intro") or []) if re.search(r"missing", t, re.I) and re.search(r"character", t, re.I) and re.search(r"crew", t, re.I) and re.search(r"found", t, re.I)]
+    check("the introduction says the people aboard went missing and the characters are them, found", bool(lore), (r.get("intro") or [])[:5])
+    m = pg.evaluate("""() => { const a = { novaMet: 0 }; try{ mergeSameAccount(a, { novaMet: 1 }); }catch(e){}
+      const b = { novaMet: 1 }; try{ mergeSameAccount(b, {}); }catch(e){}
+      const keep = JSON.parse(JSON.stringify(store)); let def = null;
+      try{ const g = JSON.parse(JSON.stringify(store)); delete g.novaMet; applyLoadedData(g); def = store.novaMet; }catch(e){}
+      try{ applyLoadedData(keep); }catch(e){}
+      return { merged: a.novaMet, kept: b.novaMet, def }; }""")
+    check("met Nova is merged by the higher copy, kept against a copy without it, and defaults to not met", m.get("merged") == 1 and m.get("kept") == 1 and m.get("def") == 0, m)
+    ctx.close()
+
+    # An existing account on its first Home of this build.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate("""() => { const U = topicsIn(QUESTIONS); store.unitPerfects = {}; U.slice(0, 3).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+      store.levelFloor = 0; store.rankFloor = 3; store.lifetime.points = xpForLevel(49) + 300;
+      store.mysteryColorsFound = Object.assign({}, store.mysteryColorsFound, { red: true });
+      delete store.novaMet; saveStore(); localStorage.removeItem('class26e.intro.seen');
+      window.__seen = []; new MutationObserver(() => { ['nova-intro', 'intro-pop', 'tour-tooltip'].forEach(id => {
+        const e = document.getElementById(id); if(e && !e.__b321){ e.__b321 = 1; window.__seen.push(id + ':' + (e.getAttribute('aria-label') || '')); } }); })
+        .observe(document.body, { childList: true });
+      showHome(); }""")
+    intro = pg.evaluate(B321G_TALK, "nova-intro")
+    it = " ".join(intro.get("lines") or [])
+    check("existing account: Nova's introduction opens on Home (not What's New first)", intro.get("open") and (pg.evaluate("()=>window.__seen") or [""])[0].startswith("nova-intro"),
+          pg.evaluate("()=>window.__seen"))
+    check("he greets them by username and tells the whole story, the crew included",
+          "Madison" in it and "wrecked my ship" in it and "missing" in it and "Supernova" in it and "Drill" in it, (intro.get("lines") or [])[:4])
+    check("at the end he goes over what they have: rank, level, badges, characters and secret flares found",
+          "Gold" in it and "level 49" in it and "found 3 of my lost badges" in it and "of my missing crew" in it and "one of my secret flares" in it
+          and re.search(r"\d+ of \d+ characters found", intro.get("stage") or "") and "1 of 3 secret flares found" in (intro.get("stage") or ""),
+          {"tail": (intro.get("lines") or [])[-4:], "stage": (intro.get("stage") or "")[:160]})
+    news = pg.evaluate(B321G_TALK, "intro-pop")
+    nt = " ".join(news.get("lines") or [])
+    check("then What's New, narrated, with no second hello, leading into the tips",
+          news.get("open") and "Hello" not in (news.get("lines") or [""])[0] and "version 9" in nt and news.get("go") == "Show me",
+          {"head": (news.get("lines") or [])[:2], "go": news.get("go")})
+    tips = pg.evaluate(B321G_TOUR)
+    want = pg.evaluate("()=>{ try{ return mainMenuTourSteps(true).length + NOVA_NEW_TIPS_321.length; }catch(e){ return -1; } }")
+    tj = " | ".join(tips)
+    check("then the main menu's tooltips and the new ones (the planet, the new Profile, the calendar), every one",
+          want > 7 and len(tips) == want and "Home always brings you back" in tj and "planet" in tj and "Calendar tab" in tj and "Profile has been rebuilt" in tj,
+          {"n": len(tips), "want": want, "first": tips[:1], "last": tips[-3:]})
+    bye = pg.evaluate(B321G_TALK, "nova-intro")
+    check("then he says goodbye, and that he'll speak again", bye.get("open") and "speak with you again" in " ".join(bye.get("lines") or []) and "Madison" in " ".join(bye.get("lines") or []),
+          bye.get("lines"))
+    pg.wait_for_timeout(800)
+    after = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const seen0 = window.__seen.length; showProfile('profile'); await wait(500); showHome(); await wait(3600);
+      return { more: window.__seen.slice(seen0), met: store.novaMet, local: Number(localStorage.getItem('class26e.intro.seen')) >= INTRO_REV,
+               tour: !!document.getElementById('tour-tooltip'), welcome: !!document.getElementById('welcomebonus-banner'),
+               seen: window.__seen }; }""")
+    order = [x.split(":")[0] for x in after.get("seen") or []]
+    check("in that order, with no other tour and no welcome bonus", order[:2] == ["nova-intro", "intro-pop"] and order[-1] == "nova-intro" and not after.get("welcome"),
+          after.get("seen"))
+    check("once: recorded on the account and on the device, and nothing on the next Home", after.get("met") == 1 and after.get("local") and not after.get("more") and not after.get("tour"), after)
+    # a second device of the same account: What's New alone
+    r2 = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); localStorage.removeItem('class26e.intro.seen'); window.__seen = [];
+      /* the fixture's owed rank-up (Gold held from the old ladder) is not what this asks about */
+      store.rankUpShown = TIER_ORDER_FULL.length; saveStore();
+      showProfile('profile'); await wait(300); showHome();
+      for(let i = 0; i < 120 && !document.getElementById('intro-pop') && !document.getElementById('nova-intro'); i++) await wait(100);
+      const out = { intro: !!document.getElementById('nova-intro'), news: !!document.getElementById('intro-pop') };
+      const el = document.getElementById('intro-pop'); if(el && el.__nova){ el.__nova.skip(); await wait(100); out.last = el.querySelector('.nt-text').textContent; }
+      return out; }""")
+    check("a device whose account has met him gets What's New alone, ending on 'I'll speak with you again'", r2.get("news") and not r2.get("intro") and "speak with you again" in (r2.get("last") or ""), r2)
+    ctx.close()
+
+    # Version 9, the version history in bullets, and Back to Home (build 321)
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    h = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); showReleaseHistory(); await wait(300);
+      const heads = [...document.querySelectorAll('#stage .releasehistory-version')].map(e => e.textContent.replace(/[\u2303\u2304]/g, '').trim());
+      document.querySelectorAll('#stage .releasehistory-version-btn').forEach(b => b.click()); await wait(100);
+      const groups = [...document.querySelectorAll('#stage .releasehistory-row')];
+      const bulleted = groups.filter(g => g.querySelectorAll('ul > li').length > 0).length;
+      const lis = [...document.querySelectorAll('#stage .releasehistory-row li')];
+      const v9 = (document.querySelector('#stage .releasehistory-row') || {}).parentNode;
+      const v9text = v9 ? v9.textContent : '';
+      const b = document.getElementById('releasehistory-home');
+      const out = { heads, groups: groups.length, bulleted, lis: lis.length, detailed: lis.filter(l => l.textContent.length > 60).length,
+        v9text: v9text.slice(0, 3000) };
+      if(b){ const cs = getComputedStyle(b), rgb = (cs.backgroundColor.match(/[\d.]+/g) || []).map(Number);
+        const r = b.getBoundingClientRect();
+        out.btn = { text: b.textContent, bg: cs.backgroundColor, dark: rgb.length >= 3 && (rgb.length < 4 || rgb[3] > .5) && rgb[0] + rgb[1] + rgb[2] < 120,
+                    last: b === b.parentNode.lastElementChild, w: Math.round(r.width) };
+        b.click(); await wait(400); out.home = !!document.querySelector('#stage [data-screen="home"]'); }
+      if(!out.home){ showHome(); await wait(400); }
+      out.label = (document.querySelector('.homeversion-long') || {}).textContent || null;
+      return out; }""")
+    heads = h.get("heads") or []
+    check("Version 9 is at the top of the version history, and Version 8 is marked (not launched)",
+          heads[:2] == ["Version 9", "Version 8 (not launched)"] and "Version 7.7" in heads, heads[:4])
+    check("Version 9's notes bring Version 8 and add sound effects, Android vibration, sign-in first and rankings that match Profile",
+          all(w in (h.get("v9text") or "") for w in ("Sound Effects", "Vibration On Android", "Sign In First", "Rankings That Match Profile", "Version 8")), (h.get("v9text") or "")[:200])
+    check("every version's notes are bullet lists, each bullet its title and what it does",
+          h.get("groups", 0) > 20 and h.get("bulleted") == h.get("groups") and h.get("detailed", 0) >= h.get("lis", 0) * .8, {k: h.get(k) for k in ("groups", "bulleted", "lis", "detailed")})
+    b = h.get("btn") or {}
+    check("a black Back to Home button at the bottom, and it goes Home", b.get("text") == "Back to Home" and b.get("dark") and b.get("last") and h.get("home"), b)
+    check("Home's version label reads Version 9", h.get("label") == "Version 9", h.get("label"))
+    ctx.close()
+
+    # Skip on an existing account's introduction skips the story, not the recap.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      delete store.novaMet; saveStore(); localStorage.removeItem('class26e.intro.seen'); showHome();
+      for(let i = 0; i < 50 && !document.getElementById('nova-intro'); i++) await wait(100);
+      const el = document.getElementById('nova-intro'); if(!el) return { open: false };
+      await wait(900); el.querySelector('.nt-skip').click(); await wait(300);
+      return { open: true, text: el.querySelector('.nt-text').textContent, card: !!el.querySelector('.nt-recap'), still: !!document.getElementById('nova-intro') }; }""")
+    check("Skip on an existing account's introduction goes to the recap of what they have", r.get("open") and r.get("still") and r.get("card") and "how you’re doing" in (r.get("text") or ""), r)
+    ctx.close()
+
+    # A new account: as it was.
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate("""() => { localStorage.removeItem('class26e.intro.seen'); window.__seen = [];
+          new MutationObserver(() => { ['nova-intro', 'intro-pop', 'tour-tooltip'].forEach(id => {
+            const e = document.getElementById(id); if(e && !e.__b321){ e.__b321 = 1; window.__seen.push(id); } }); }).observe(document.body, { childList: true });
+          window.__xp0 = store.lifetime.points;
+          store.onboardingComplete = false; store.tourRev = 0; delete store.novaMet; pendingMainMenuTour = true; showHome(); }""")
+        intro = pg.evaluate(B321G_TALK, "nova-intro")
+        tips = pg.evaluate(B321G_TOUR)
+        pg.wait_for_timeout(2600)
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); showHome(); await wait(3500);
+          return { seen: window.__seen, met: store.novaMet, bonus: store.lifetime.points - window.__xp0 }; }""")
+        check("%s new account: the introduction, then the seven main-menu tooltips, then nothing else" % dev,
+              intro.get("open") and intro.get("go") == "Let’s go" and len(tips) == 7 and "pop up with tips" in tips[-1] and r.get("seen") == ["nova-intro", "tour-tooltip"],
+              {"tips": len(tips), "seen": r.get("seen"), "go": intro.get("go")})
+        check("%s ... with the welcome bonus, and marked as having met him" % dev, r.get("bonus") >= 100 and r.get("met") == 1, r)
+        ctx.close()
+
+    # The wreck.
+    for still in (False, True):
+        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async (still) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          theme.reduceMotion = still; applyTheme();
+          const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:0;top:80px;width:420px;height:440px;z-index:999';
+          document.body.appendChild(host);
+          let w = null; try{ w = buildNovaWreck(); }catch(e){ return { err: String(e) }; }
+          host.appendChild(w); await wait(still ? 300 : 7600);
+          const pb = w.querySelector('.nw2-pbox'), ch = [...w.querySelectorAll('.nw2-chunk')];
+          const filt = [...w.querySelectorAll('.nw2-cam > *, .nw2-chunk, .nw2-ship *')].filter(e => getComputedStyle(e).filter !== 'none').length;
+          const moved = ch.filter(c => getComputedStyle(c).transform !== 'none').length;
+          return { hero: !!w.querySelector('.cosmic-hero-wrap') || (w.__nw || { anims: [] }).anims.length > 0, chunks: ch.length, moved, filt,
+                   paint: (pb && pb.style.getPropertyValue('--nw-planet') || '').indexOf('data:image/svg+xml') >= 0,
+                   pbOp: pb ? +getComputedStyle(pb).opacity : 0, ship: !!w.querySelector('.nw2-ship svg circle[cx="56"]'),
+                   pods: w.querySelectorAll('.nw2-pod').length, anims: (w.__nw || { anims: [] }).anims.length,
+                   heroGone: !w.querySelector('.cosmic-hero-wrap') }; }""", still)
+        tag = "Reduce motion" if still else "in motion"
+        if not still:
+            check("the wreck (%s): Home's own planet, broken into %s pieces of its own picture, a drawn ship, six pods; no CSS filter" % (tag, r.get("chunks")),
+                  r.get("paint") and (r.get("chunks") or 0) >= 12 and r.get("ship") and r.get("pods") == 6 and r.get("filt") == 0 and (r.get("anims") or 0) > 40, r)
+        check("the wreck (%s) ends on the aftermath: the planet gone, its pieces apart" % tag,
+              r.get("heroGone") and r.get("pbOp") == 1 and r.get("moved") == r.get("chunks") and (r.get("chunks") or 0) >= 12 and (still is False or r.get("anims") == 0), r)
+        ctx.close()
 
 
 # ---------------------------------------------------------------------------
@@ -23789,6 +24062,533 @@ def check_b321c_case(br):
         ctx.close()
 
 
+B321H_SN = """(sn) => {
+  const U = topicsIn(QUESTIONS);
+  if(sn){
+    store.unitPerfects = {}; U.forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+    store.lifetime.points = xpForLevel(80) + 900;
+    store.rankUpShown = TIER_ORDER_FULL.length; store.rankMapSeen = TIER_ORDER_FULL.length - 1; try{ store.seenUnlockedTiers = TIER_ORDER_FULL.slice(); }catch(e){}
+  }
+  store.supernovaAchieved = !!sn; store.rankUpFrom = null; store.pendingTierCutscene = null; store.pendingBadgeUnlocks = [];
+  store.savedCodeSaved = true; store.lateHundos = 999; store.retroBadgePending = [];
+  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(h => { try{ markFlareHintShown(h); }catch(e){} }); }catch(e){}
+  saveStore();
+  try{ localStorage.setItem('class26e.ringtier.seen', sn ? 'supernova' : ''); }catch(e){}
+  return [rankOf(store), homeRingTier()]; }"""
+
+B321H_HOME = """() => { try{ homeUnlockPlaying = false; }catch(e){} showHome();
+  document.querySelectorAll('.rs-spot,.scene-bridge,.daily-alert,#tour-overlay,.update-banner,.toast,#contextual-info-popup').forEach(n => n.remove()); }"""
+
+# Tap the planet, then read the streak ~600ms in: one per ring, lit, turning,
+# under the flares, taking no touches.
+B321H_TAP = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  const hero = document.querySelector('.panel.home .cosmic-hero-wrap');
+  /* the pulse's own streak must not be the one measured, nor block the tap's */
+  try{ clearTimeout(homeStreakTimer); }catch(e){}
+  hero.querySelectorAll(':scope > .sn-ringglint').forEach(g => g.remove());
+  const sph = [...hero.querySelectorAll('.cosmic-hero-main circle')].find(e => /cosmicSphereGrad/.test(e.getAttribute('fill') || ''));
+  const r = sph.getBoundingClientRect();
+  sph.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, isPrimary: true, pointerType: 'touch', clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
+  sph.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
+  const gs = [...hero.querySelectorAll(':scope > .sn-ringglint')];
+  const op = gs.map(() => 0), t0 = performance.now();
+  while(performance.now() - t0 < 2300){ gs.forEach((g, i) => { op[i] = Math.max(op[i], +getComputedStyle(g).opacity); }); await wait(40); }
+  const kids = [...hero.children];
+  const firstFlare = kids.findIndex(k => k.matches('.cosmic-hero-orbitlayer, .cosmic-icon-badge'));
+  return { n: gs.length, why: gs.map(g => g.dataset.why), op,
+    turning: gs.map(g => g.getAnimations().some(a => a.playState === 'running' && a.effect.getKeyframes().some(k => /rotate/.test(k.transform || '')))),
+    under: gs.every(g => firstFlare >= 0 && kids.indexOf(g) < firstFlare), pe: gs.map(g => getComputedStyle(g).pointerEvents),
+    mask: gs.map(g => !!(g.style.maskImage || g.style.webkitMaskImage)) }; }"""
+
+# Put the pulse at `lead` ms before pulse number k leaves the planet (78% of
+# its 9s), re-arm the schedule from it as a Home build does, and watch
+# `ms` for a streak; returns the pulse's phase when one was first seen.
+B321H_IDLE = """async (o) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  const hero = document.querySelector('.panel.home .cosmic-hero-wrap');
+  hero.querySelectorAll(':scope > .sn-ringglint').forEach(g => g.remove());
+  const p = hero.querySelector('.cosmic-pulse-ring');
+  const a = p && p.getAnimations().find(x => x.animationName === 'cosmic-pulse-out');
+  if(!a) return { pulse: false };
+  const base = Math.floor((a.currentTime - 3500) / 9000);
+  let k = base + 8; k += ((o.mod - k % 4) + 4) % 4;
+  a.currentTime = 3500 + k * 9000 + 9000 * .78 - o.lead;
+  /* the delay the schedule asks for, read off its setTimeout in the same
+     task as the pulse's time - exact, where a timer on a loaded machine
+     can fire hundreds of ms late */
+  const st = window.setTimeout; let asked = null, at0 = null;
+  window.setTimeout = function(fn, ms){ if(asked === null){ asked = Number(ms) || 0; at0 = a.currentTime; } return st.apply(this, arguments); };
+  try{ homeStreakArm(hero); }catch(e){ window.setTimeout = st; return { pulse: true, err: String(e) }; }
+  window.setTimeout = st;
+  const due = asked === null ? null : at0 + asked * (a.playbackRate || 1);
+  const sched = due === null ? null : { phase: ((due - 3500) % 9000) / 9000, k: Math.floor((due - 3500) / 9000), inMs: asked };
+  /* the pulse's time read in the same task that puts the streak in */
+  let hit = null;
+  const mo = new MutationObserver(() => { if(hit) return; const g = hero.querySelector(':scope > .sn-ringglint');
+    if(g) hit = { why: g.dataset.why, at: a.currentTime }; });
+  mo.observe(hero, { childList: true });
+  const t0 = performance.now();
+  while(performance.now() - t0 < o.ms && !hit) await wait(40);
+  mo.disconnect();
+  if(hit) return { pulse: true, seen: true, why: hit.why, sched, phase: ((hit.at - 3500) % 9000) / 9000, k: Math.floor((hit.at - 3500) / 9000) };
+  return { pulse: true, seen: false, sched }; }"""
+
+B321H_ARMED = "() => { try{ return homeStreakTimer != null; }catch(e){ return 'none'; } }"
+
+
+def _b321h_shadows(s):
+    """A computed box-shadow as [(inset, x, y, blur, spread)], colours dropped."""
+    import re as _re
+    out, depth, cur = [], 0, ""
+    for ch in s or "":
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        if ch == "," and depth == 0:
+            out.append(cur); cur = ""
+        else:
+            cur += ch
+    if cur.strip():
+        out.append(cur)
+    res = []
+    for part in out:
+        p = _re.sub(r"(rgba?|color)\([^)]*\)", "", part)
+        nums = [float(x) for x in _re.findall(r"-?\d*\.?\d+(?=px)", p)]
+        res.append(("inset" in p, tuple(nums + [0] * (4 - len(nums)))))
+    return [x for x in res if part]
+
+
+def check_b321h(br):
+    """Build 321 (b321h). Two of Madison's notes:
+    1. "At the end of the supernova flare unlock cutscene there's a cool
+       animation where something fast shoots around the rings? ... can we
+       make it where that's also on the Home Screen every so often? ...
+       maybe when you click the planet there for that rank? Or maybe at
+       certain intervals along with the pulse?" - the cutscene's streak
+       (ringStreak) runs round Home's two rings for a Supernova account:
+       on a planet tap, and on its own with every fourth pulse of the
+       planet, as that pulse leaves it (and not with the three between).
+       Under the flares, taking no touches. Never below Supernova, never
+       under Reduce motion (the app's switch or the system's).
+    2. "The save and exit button grey is nice, but the button doesn't look
+       like the black button or white buttons, it's missing that nice
+       button look the others have." - Save and exit carries Quit's own
+       structure: the same shadow layers in the same places (inset lip,
+       inset shade, three under it), the same border, the same background
+       layers, opaque, the same height; and pressed it goes darker and
+       shrinks as Quit does.
+    Fails on 6a387e2."""
+    print("\n321h. the Supernova streak on Home, and Save and exit as a real button")
+    # ---- 1: the streak -------------------------------------------------
+    for dev, w, h in ((PHONE[0], PHONE[1], PHONE[2]), (TABLET[0], TABLET[1], TABLET[2])):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        st = pg.evaluate(B321H_SN, True)
+        pg.evaluate(B321H_HOME); pg.wait_for_timeout(1500)
+        armed = pg.evaluate(B321H_ARMED)
+        check("%s: Supernova (%s): Home arms the pulse streak when it is built" % (dev, st), armed is True, armed)
+        t = pg.evaluate(B321H_TAP)
+        check("%s: a planet tap runs the streak round both rings, lit and turning" % dev,
+              t["n"] == 2 and t["why"] == ["tap", "tap"] and min(t["op"] or [0]) > .9 and all(t["turning"]) and all(t["mask"]), t)
+        check("%s: under the flares, taking no touches" % dev, t["n"] == 2 and t["under"] and set(t["pe"]) == {"none"}, t)
+        pg.wait_for_timeout(1500)
+        left = pg.evaluate("() => document.querySelectorAll('.cosmic-hero-wrap > .sn-ringglint[data-why=\"tap\"]').length")
+        check("%s: and is gone when it has run (nothing left running)" % dev, left == 0, left)
+        on = pg.evaluate(B321H_IDLE, {"mod": 0, "lead": 1200, "ms": 2600})
+        check("%s: on its own with every fourth pulse, starting as that pulse leaves the planet (78%% of its 9s)" % dev,
+              on.get("seen") and on.get("why") == "pulse" and (on.get("sched") or {}).get("k", 1) % 4 == 0
+              and abs((on.get("sched") or {}).get("phase", 0) - .78) < .005 and on.get("k", 1) % 4 == 0 and abs(on.get("phase", 0) - .78) < .12, on)
+        offs = [pg.evaluate(B321H_IDLE, {"mod": m, "lead": 1200, "ms": 2600}) for m in (1, 2, 3)]
+        check("%s: and not with the three pulses between (each waits for the next fourth)" % dev,
+              all(x.get("pulse") and x.get("seen") is False and (x.get("sched") or {}).get("k", 1) % 4 == 0 for x in offs), offs)
+        ctx.close()
+    # below Supernova
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    st = pg.evaluate(B321H_SN, False)
+    pg.evaluate(B321H_HOME); pg.wait_for_timeout(1500)
+    t = pg.evaluate(B321H_TAP)
+    on = pg.evaluate(B321H_IDLE, {"mod": 0, "lead": 1200, "ms": 2600})
+    armed = pg.evaluate(B321H_ARMED)
+    check("below Supernova (%s): no streak on a tap, none with the pulse, nothing armed" % (st,),
+          t["n"] == 0 and on.get("pulse") and on.get("seen") is False and armed is False, (t["n"], on, armed))
+    ctx.close()
+    # Reduce motion: the app's switch, then the system's
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(B321H_SN, True)
+    pg.evaluate("() => { theme.reduceMotion = true; applyTheme(); saveTheme(); }")
+    pg.evaluate(B321H_HOME); pg.wait_for_timeout(1200)
+    t = pg.evaluate(B321H_TAP); armed = pg.evaluate(B321H_ARMED)
+    forced = pg.evaluate("() => { try{ return homeRingStreak(document.querySelector('.panel.home .cosmic-hero-wrap'), 'pulse'); }catch(e){ return 'none'; } }")
+    check("Reduce motion (the app's): no streak on a tap, nothing armed, none even when asked for",
+          t["n"] == 0 and armed is False and forced is False, (t["n"], armed, forced))
+    pg.evaluate("() => { theme.reduceMotion = false; applyTheme(); saveTheme(); }")
+    pg.emulate_media(reduced_motion="reduce")
+    pg.evaluate(B321H_HOME); pg.wait_for_timeout(1200)
+    t = pg.evaluate(B321H_TAP); armed = pg.evaluate(B321H_ARMED)
+    check("Reduce motion (the system's): none either", t["n"] == 0 and armed is False, (t["n"], armed))
+    pg.emulate_media(reduced_motion="no-preference")
+    # and back on, in the same session: a tap runs it again (the test above is not vacuous)
+    pg.evaluate(B321H_HOME); pg.wait_for_timeout(1200)
+    t = pg.evaluate(B321H_TAP)
+    check("motion back on: a tap runs it again", t["n"] == 2, t["n"])
+    ctx.close()
+    # ---- 2: Save and exit ------------------------------------------------
+    for dev, w, h in ((PHONE[0], PHONE[1], PHONE[2]), (TABLET[0], TABLET[1], TABLET[2])):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate(B320H_RUN, {"answer": 1})
+        CS = """(id) => { const e = document.getElementById(id); if(!e) return null; const c = getComputedStyle(e), r = e.getBoundingClientRect();
+          return { bs: c.boxShadow, bi: c.backgroundImage, bg: c.backgroundColor, bw: [c.borderTopWidth, c.borderRightWidth, c.borderBottomWidth, c.borderLeftWidth],
+            bst: c.borderTopStyle, h: r.height, tf: c.transform, rect: [r.left, r.top, r.width, r.height] }; }"""
+        sv, qt = pg.evaluate(CS, "pause-save"), pg.evaluate(CS, "pause-quit")
+        if not sv or not qt:
+            check("%s: the pause menu has Save and exit and Quit" % dev, False, (sv, qt)); ctx.close(); continue
+        ss, qs = _b321h_shadows(sv["bs"]), _b321h_shadows(qt["bs"])
+        check("%s: Save and exit has Quit's shadow layers, in the same places (%d against %d)" % (dev, len(ss), len(qs)),
+              len(ss) == len(qs) == 5 and ss == qs, (ss, qs))
+        check("%s: the same border and the same background layers as Quit" % dev,
+              sv["bw"] == qt["bw"] and sv["bst"] == qt["bst"] and sv["bi"] == qt["bi"], (sv["bw"], sv["bi"], qt["bw"], qt["bi"]))
+        alpha = 1.0
+        if sv["bg"].startswith("rgba"):
+            alpha = float(sv["bg"].rstrip(")").split(",")[-1])
+        check("%s: an opaque grey body (%s), the height of Quit" % (dev, sv["bg"]),
+              alpha == 1.0 and abs(sv["h"] - qt["h"]) < .5, (sv["bg"], sv["h"], qt["h"]))
+
+        def pressed(rest):
+            b = rest["rect"]
+            pg.mouse.move(b[0] + b[2] / 2, b[1] + b[3] / 2); pg.mouse.down(); pg.wait_for_timeout(250)
+            return b
+
+        def lum(c):
+            v = [float(x) for x in c[c.index("(") + 1:c.index(")")].split(",")[:3]]
+            return .2126 * v[0] + .7152 * v[1] + .0722 * v[2]
+        pressed(sv); sp = pg.evaluate(CS, "pause-save"); pg.mouse.up()
+        pg.mouse.move(5, 5)
+        check("%s: pressed, it goes darker in place and shrinks, as Quit does (%.0f -> %.0f, %s)" % (dev, lum(sv["bg"]), lum(sp["bg"]), sp["tf"]),
+              lum(sp["bg"]) < lum(sv["bg"]) - 4 and sp["tf"].startswith("matrix(0.97"), sp)
+        ctx.close()
+
+
+# The mood of a face, measured off its shapes (build 321, b321b). Every
+# point is in the units of the group that holds the eyes, so a head tilt is
+# not read as a scowl:
+#   eyes   a filled eye's long axis, and how far its inner end (towards the
+#          middle of the face, x=20) drops below its outer end per unit
+#          across - over .2 is a scowl; a drawn line's arch, how far its
+#          middle stands over its ends per half-width - over .25 is a ^
+#   brows  the same droop, on whatever is drawn as a brow (.cx-brow)
+#   mouth  where its middle sits against its corners per half-width
+#          (+ lower: a smile; - a frown; an O is level)
+# happy = no scowling eye or brow, no frown, and both eyes arched or a smile.
+B321B_MOOD = r"""(av) => {
+  /* the face's mood, measured off its shapes in the face's own units
+     (the group holding the eyes, so a head tilt does not count) */
+  const svg = av.querySelector('svg.avatarchar-svg');
+  const eg = svg.querySelector('.cx-eyes'), sg = svg.querySelector('.cx-eyes-closed');
+  const host = (sg || eg) ? (sg || eg).parentNode : null;
+  const out = { face: false, eyes: [], brows: [], mouth: null };
+  if(!host) return out;
+  const H = host.getScreenCTM().inverse();
+  const vis = el => { let o = 1; for(let e = el; e && e !== svg.parentNode; e = e.parentNode){ const cs = getComputedStyle(e); if(cs.display === 'none' || cs.visibility === 'hidden') return 0; o *= parseFloat(cs.opacity); } return o; };
+  const LEAF = 'path, circle, ellipse, rect, polygon, line';
+  const leaves = sel => [...svg.querySelectorAll(sel)].flatMap(g => g.matches(LEAF) ? [g] : [...g.querySelectorAll(LEAF)])
+    .filter(k => !k.closest('.cx-hx') && !k.classList.contains('rxpv') && vis(k) > .3);
+  const pts = k => { const m = H.multiply(k.getScreenCTM()); const L = k.getTotalLength(); const ps = [];
+    for(let i = 0; i <= 48; i++){ const q = k.getPointAtLength(L * i / 48); ps.push([m.a * q.x + m.c * q.y + m.e, m.b * q.x + m.d * q.y + m.f]); } return ps; };
+  const stroked = k => { const cs = getComputedStyle(k); return (cs.fill === 'none' || parseFloat(cs.fillOpacity) === 0) && cs.stroke !== 'none'; };
+  /* (a streak standing near upright - a flash across an eye - is not a
+     slant: a scowl is well under 50 degrees) */
+  /* a filled shape: its long axis, and how far its inner end (towards the
+     middle of the face) drops below its outer end, per unit across */
+  const axis = ps => { const n = ps.length, mx = ps.reduce((a, p) => a + p[0], 0) / n, my = ps.reduce((a, p) => a + p[1], 0) / n;
+    let sxx = 0, syy = 0, sxy = 0; ps.forEach(([x, y]) => { sxx += (x - mx) ** 2; syy += (y - my) ** 2; sxy += (x - mx) * (y - my); });
+    const tr = sxx + syy, det = sxx * syy - sxy * sxy, l1 = tr / 2 + Math.sqrt(Math.max(0, tr * tr / 4 - det)), l2 = tr - l1;
+    const ang = .5 * Math.atan2(2 * sxy, sxx - syy); const el = Math.sqrt(l1 / Math.max(l2, 1e-6));
+    const slope = Math.tan(ang); /* dy per dx along the long axis */
+    const side = mx < 20 ? -1 : 1; /* inner is towards x=20: on the left inner is +x */
+    return { mx, my, el, droop: side < 0 ? slope : -slope, w: Math.max(...ps.map(p => p[0])) - Math.min(...ps.map(p => p[0])) }; };
+  /* a line: how far its middle stands above its ends, per half-width (+ = an arch) */
+  const bend = ps => { const xs = ps.map(p => p[0]), x0 = Math.min(...xs), x1 = Math.max(...xs), hw = (x1 - x0) / 2 || 1;
+    const ends = ps.filter(p => p[0] < x0 + hw * .16 || p[0] > x1 - hw * .16), mid = ps.filter(p => Math.abs(p[0] - (x0 + hw)) < hw * .3);
+    if(!ends.length || !mid.length) return 0;
+    return ((ends.reduce((a, p) => a + p[1], 0) / ends.length) - (mid.reduce((a, p) => a + p[1], 0) / mid.length)) / hw; };
+  const split = ps => [ps.filter(p => p[0] < 20), ps.filter(p => p[0] >= 20)].filter(s => s.length > 4);
+  out.face = true;
+  leaves('.cx-eyes, .cx-eyes-closed, .cx-fx-eyeglow, .cx-fx-slotglow, .cx-fx-zs3eyes, .cx-sp-mkeyes, .cx-sp-zseyes, [data-face="eye"]').forEach(k => {
+    const s = stroked(k);
+    split(pts(k)).forEach(ps => {
+      const a = axis(ps);
+      if(a.w < .5) return;
+      out.eyes.push(s ? { kind: 'line', bend: +bend(ps).toFixed(2), x: +a.mx.toFixed(1), w: +a.w.toFixed(1) }
+                      : { kind: 'fill', droop: a.el > 1.4 && Math.abs(a.droop) < 1.2 ? +a.droop.toFixed(2) : 0, el: +a.el.toFixed(1), x: +a.mx.toFixed(1), w: +a.w.toFixed(1) });
+    });
+  });
+  leaves('.cx-brow, [data-face="brow"]').forEach(k => split(pts(k)).forEach(ps => { const a = axis(ps); out.brows.push({ droop: +a.droop.toFixed(2), x: +a.mx.toFixed(1) }); }));
+  const ml = leaves('.cx-mouth, [data-face="mouth"]'), mp = ml.flatMap(pts), lineMouth = ml.length && ml.every(stroked);
+  /* the mouth: where its middle sits against its corners, per half-width
+     (+ = lower: a smile). The middle is the midpoint of the middle third's
+     top and bottom, so an O is level and a grin (flat top, round bottom) is
+     a smile; a mouth drawn in lines is read at its lowest point there, so
+     a bear's nose line does not count against its smile */
+  /* (a drop of honey is not a mouth: a mouth is wider than it is tall) */
+  const mh = mp.length ? Math.max(...mp.map(p => p[1])) - Math.min(...mp.map(p => p[1])) : 0;
+  if(mp.length && Math.max(...mp.map(p => p[0])) - Math.min(...mp.map(p => p[0])) > mh){ const xs = mp.map(p => p[0]), x0 = Math.min(...xs), x1 = Math.max(...xs), hw = (x1 - x0) / 2 || 1;
+    const ends = mp.filter(p => p[0] < x0 + hw * .16 || p[0] > x1 - hw * .16), mid = mp.filter(p => Math.abs(p[0] - (x0 + hw)) < hw * .3).map(p => p[1]);
+    out.mouth = +((((Math.max(...mid) + (lineMouth ? Math.max(...mid) : Math.min(...mid))) / 2) - ends.reduce((a, p) => a + p[1], 0) / ends.length) / hw).toFixed(2); }
+  /* the verdict */
+  out.angryEye = out.eyes.some(e => e.kind === 'fill' && e.droop > .2);
+  out.angryBrow = out.brows.some(b => b.droop > .12);
+  out.frown = out.mouth !== null && out.mouth < -.06;
+  const L = out.eyes.filter(e => e.kind === 'line' && e.bend > .25);
+  out.happyEyes = L.some(e => e.x < 20) && L.some(e => e.x >= 20);
+  out.smile = out.mouth !== null && out.mouth > .15;
+  out.happy = out.face && !out.angryEye && !out.angryBrow && !out.frown && (out.happyEyes || out.smile);
+  return out;
+}"""
+B321B_FACES = r"""async ([bands, ts, mood]) => {
+  const f = eval(mood), out = [];
+  const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:20px;top:20px;z-index:99999'; document.body.appendChild(host);
+  const frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  for(const c of AVATAR_CHARACTERS.filter(c => !c.retired)){
+    for(const band of bands){
+      const av = document.createElement('span'); av.className = 'results-level-avatar char-live'; av.appendChild(buildAvatarCharSVGSafe(c.id)); host.appendChild(av);
+      reactCharacter(av, band); await frame();
+      for(const t of ts){
+        av.getAnimations({ subtree: true }).forEach(a => { try{ a.pause(); a.currentTime = t * 1000; }catch(e){} });
+        const m = f(av);
+        const svg = av.querySelector('svg');
+        /* a drawing with no face at all (a fishbowl, a hood of stars) */
+        m.faceless = ![...svg.querySelectorAll('.cx-eyes *, .cx-eyes-closed *, .cx-mouth *')].some(k => /^(path|circle|ellipse|rect|polygon|line)$/.test(k.tagName));
+        out.push(Object.assign({ id: c.id, band, t }, m));
+      }
+      av.remove();
+    }
+  }
+  host.remove();
+  return out; }"""
+# after the hundo effect's own reaction (hfxCharReact) has run and ended,
+# and right through the character's special that plays after it
+B321B_AFTER = r"""async ([fx, mood]) => {
+  const f = eval(mood), out = [];
+  /* a CSS animation this harness paused outlives its class (Chromium
+     keeps a script-touched one), so one the special's rules replaced is
+     cancelled here, as the page would have it */
+  const stale = set => set.forEach(a => { try{ if(a.animationName && a.effect && a.effect.target &&
+    getComputedStyle(a.effect.target).animationName.split(',').map(x => x.trim()).indexOf(a.animationName) < 0){ a.cancel(); set.delete(a); } }catch(e){} });
+  const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:20px;top:20px;z-index:99999'; document.body.appendChild(host);
+  const frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  for(const c of AVATAR_CHARACTERS.filter(c => !c.retired)){
+    const av = document.createElement('span'); av.className = 'results-level-avatar char-live'; av.appendChild(buildAvatarCharSVGSafe(c.id)); host.appendChild(av);
+    reactCharacter(av, 'perfect'); await frame();
+    av.getAnimations({ subtree: true }).forEach(a => { try{ a.pause(); a.currentTime = 3000; }catch(e){} });
+    const R = hfxCharReact(av, fx, {});
+    await frame();
+    if(R){ R.anims.forEach(a => { try{ a.pause(); a.currentTime = 2500; }catch(e){} }); }
+    if(R) R.end(false);
+    await frame();
+    const after = f(av);
+    /* the special, after it: every new animation stepped through it */
+    const before = new Set(av.getAnimations({ subtree: true }));
+    before.forEach(a => { try{ a.pause(); a.currentTime = 3000; }catch(e){} });
+    const played = playCharSpecial(av); await frame();
+    stale(before);
+    const sp = [];
+    if(played){
+      const fresh = av.getAnimations({ subtree: true }).filter(a => !before.has(a));
+      for(const t of [.3, .8, 1.4, 2.0, 2.5]){
+        fresh.forEach(a => { try{ a.pause(); a.currentTime = t * 1000; }catch(e){} });
+        before.forEach(a => { try{ a.pause(); a.currentTime = 3000 + t * 1000; }catch(e){} });
+        const m = f(av); sp.push({ t, happy: m.happy, angryEye: m.angryEye, frown: m.frown });
+      }
+    }
+    out.push({ id: c.id, reacted: !!R, after: after.happy, afterM: after, played, sp });
+    av.remove();
+  }
+  host.remove();
+  return out; }"""
+# how many of one prop are showing at once, through the 100 and the special
+B321B_ONE = r"""async ([id, sels]) => {
+  /* a CSS animation this harness paused outlives its class (Chromium
+     keeps a script-touched one), so one the special's rules replaced is
+     cancelled here, as the page would have it */
+  const stale = set => set.forEach(a => { try{ if(a.animationName && a.effect && a.effect.target &&
+    getComputedStyle(a.effect.target).animationName.split(',').map(x => x.trim()).indexOf(a.animationName) < 0){ a.cancel(); set.delete(a); } }catch(e){} });
+  const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:20px;top:20px;z-index:99999'; document.body.appendChild(host);
+  const frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const av = document.createElement('span'); av.className = 'results-level-avatar char-live'; av.appendChild(buildAvatarCharSVGSafe(id)); host.appendChild(av);
+  const svg = av.querySelector('svg');
+  const shown = el => { let o = 1; for(let e = el; e && e !== av; e = e.parentNode){ const cs = getComputedStyle(e); if(cs.display === 'none' || cs.visibility === 'hidden') return 0; o *= parseFloat(cs.opacity); } return o; };
+  /* sels null: count saucers by their shape, so a second one counts
+     whatever it is called - the groups holding a filled disc at least 4
+     units across and three times as wide as it is tall */
+  const discs = () => [...new Set([...svg.querySelectorAll('ellipse')].filter(e => { const rx = +e.getAttribute('rx'), ry = +e.getAttribute('ry'), fl = e.getAttribute('fill');
+    return rx >= 4 && rx >= ry * 3 && fl && fl !== 'none'; }).map(e => e.parentNode))];
+  const count = () => sels ? sels.map(s => [...svg.querySelectorAll(s)].filter(e => shown(e) > .5).length).reduce((a, b) => a + b, 0)
+    : discs().filter(e => shown(e) > .5).length;
+  const at = el => { const b = el.getBoundingClientRect(), r = svg.getBoundingClientRect(); return [(b.left + b.width / 2 - r.left) / r.width * 34 + 3, (b.top + b.height / 2 - r.top) / r.height * 34 + 3]; };
+  reactCharacter(av, 'perfect'); await frame();
+  const out = { pose: [], special: [], moved: null };
+  for(const t of [.5, 1.2, 2.2, 3.0]){ av.getAnimations({ subtree: true }).forEach(a => { try{ a.pause(); a.currentTime = t * 1000; }catch(e){} }); out.pose.push(count()); }
+  const before = new Set(av.getAnimations({ subtree: true }));
+  out.played = playCharSpecial(av); await frame();
+  stale(before);
+  const fresh = av.getAnimations({ subtree: true }).filter(a => !before.has(a));
+  for(const t of [.05, .3, .7, 1.0, 1.5, 2.0, 2.4, 2.75]){
+    fresh.forEach(a => { try{ a.pause(); a.currentTime = t * 1000; }catch(e){} });
+    before.forEach(a => { try{ a.pause(); a.currentTime = 3000 + t * 1000; }catch(e){} });
+    out.special.push(count());
+    if(t === 1.0){ const vis = (sels ? sels.flatMap(s => [...svg.querySelectorAll(s)]) : discs()).filter(e => shown(e) > .5); out.moved = vis.length ? at(vis[0]).map(v => Math.round(v * 10) / 10) : null; }
+  }
+  host.remove();
+  return out; }"""
+
+
+def check_b321b_moods(br):
+    """Build 321 (b321b). "Ensure the characters expression change on the
+    mood of the grade, the alien still looks mad even after the hundred..
+    ensure all characters are happy when they get the 100 ... Ensure this
+    is every character not just the starters." And "in the background of
+    the alien there is a ufo, a second one comes in.. shouldn't that same
+    one just move instead of putting in a second one?"
+      - every live character's face at a 100 and at 90+ (4s in, its pose,
+        and 8s in, inside its loops) measured off its shapes (B321B_MOOD,
+        never a name): no eye slanting down to the nose, no brow doing it,
+        no frown, and both eyes arched (^ ^) or a smile. A drawing with no
+        face at all (no eyes or mouth drawn) is reported, not passed;
+      - a fail is never happy, and no eye or brow scowls (let down, not
+        cross);
+      - after the hundo effect's own reaction (Confetti, UFO) has run and
+        ended, every face is back on its happy 100, and stays on it right
+        through the special that plays after it;
+      - the Alien's 100: one saucer showing at every moment, through the
+        reaction and the special, and the one showing in the special is
+        over the cow's beam (it moved there); the Detective's: one
+        magnifier, the same mistake.
+    Saucers are counted by their shape (a filled disc 4+ units across and
+    three times as wide as tall), so a second one counts whatever it is
+    called. Fails on 6a387e2: 18 faces not happy at a 100 (the Alien, the
+    Masked One, Ronin, Umbra, Inferno, Astral, Zenith ...), not back on it
+    after either effect, 15 fails smiling or scowling, and two saucers and
+    two magnifiers up at once through the special."""
+    print("\n321b. every face matches its grade, a 100 is happy on every face; one saucer, one magnifier")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    rows = pg.evaluate(B321B_FACES, [["perfect", "great", "fail"], [4, 8], B321B_MOOD])
+    faceless = sorted({r["id"] for r in rows if r["faceless"]})
+    check("faceless drawings are few and draw no eyes or mouth at all (%s)" % ", ".join(faceless), len(faceless) <= 2, faceless)
+    for band in ("perfect", "great"):
+        bad = [(r["id"], r["t"], {k: r[k] for k in ("angryEye", "angryBrow", "frown", "happyEyes", "smile", "mouth")})
+               for r in rows if r["band"] == band and not r["faceless"] and not r["happy"]]
+        n = len({r["id"] for r in rows if r["band"] == band and not r["faceless"]})
+        check("a %s: every face (%d) is happy - no scowl in the eyes or brows, no frown, eyes arched or a smile" % ("100" if band == "perfect" else "90+", n), not bad, bad)
+    bad = [(r["id"], r["t"]) for r in rows if r["band"] == "fail" and not r["faceless"] and (r["happy"] or r["angryBrow"] or r["angryEye"])]
+    check("a fail: no face is happy, and no eye or brow scowls (let down, not cross)", not bad, bad)
+    for fx in ("confetti", "ufo"):
+        r = pg.evaluate(B321B_AFTER, [fx, B321B_MOOD])
+        faced = [x for x in r if x["id"] not in faceless]
+        bad = [(x["id"], {k: x["afterM"][k] for k in ("angryEye", "angryBrow", "frown", "happyEyes", "smile")}) for x in faced if not (x["reacted"] and x["after"])]
+        check("%s: after the hundo effect's reaction ends, every face (%d) is back on its happy 100" % (fx, len(faced)), not bad, bad)
+        bad = [(x["id"], [s["t"] for s in x["sp"] if not s["happy"]]) for x in faced if x["played"] and not all(s["happy"] for s in x["sp"])]
+        check("%s: ... and stays happy right through the special that plays after it" % fx, not bad, bad)
+    al = pg.evaluate(B321B_ONE, ["alien", None])
+    check("the Alien's 100: one saucer showing all through the reaction %s and the special %s" % (al["pose"], al["special"]),
+          al["played"] and max(al["pose"] + al["special"]) == 1 and min(al["special"][1:-1]) == 1, al)
+    check("... and that one saucer moves over the cow's beam (centre x %s; the beam is at 28.6)" % (al["moved"] and al["moved"][0]),
+          bool(al["moved"]) and al["moved"][0] > 25.5, al)
+    dt = pg.evaluate(B321B_ONE, ["detective", [".cx-rx-glass", ".cx-sp-dtglass"]])
+    check("the Detective's 100: one magnifier showing through the reaction %s and the special %s" % (dt["pose"], dt["special"]),
+          dt["played"] and max(dt["pose"] + dt["special"]) == 1, dt)
+    ctx.close()
+
+
+def check_b321f_profile(br):
+    """Build 321 (b321f): the static Profile card, Madison's round on it -
+    "I really really like how it is. I don't want it to change much. The
+    level one is just kinda confusing."
+    - "remove the description under the xp bar that talks about using xp
+      for the next level": no .pf-xp-note, at a wall or at level 80;
+    - "Under the level challenge it says finish the badge challenge to
+      reach gold? Remove that and remove the one that's there for the
+      badge challenge": no note under either challenge row;
+    - "Remove the tiny icon and make the color match the level and badge
+      color": no emblem on the rank line; the rank word, "Level N" and
+      "N badges" one computed colour;
+    - "Total xp probably should be the same color as the other stuff": a
+      tablet's total under the bar is the level's computed colour, and on
+      Stats the Total XP figure is every other card's;
+    - "the spacing is a smidge too close": the Next rank box to the case
+      strip is at least 1.15rem (18px), phone and tablet;
+    - the level challenge: "Reach Level N", your level on the right
+      ("Level 44"), no bar; met, "Met" and ticked; the badge row keeps
+      "5 / 7" and its bar; the card is headed "To reach" over the rank.
+    Fails on 6a387e2 on every one of these."""
+    print("\n321f. the Profile card: no notes, no rank icon, one colour, a smidge more space, the level challenge")
+    SEED = """async ([lv, nb, tab]) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const U = topicsIn(QUESTIONS); store.unitPerfects = {};
+      U.slice(0, nb).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+      store.rankFloor = 0; store.levelFloor = 0; retroHideBadges = null; mergeHidePoints = null;
+      store.lifetime.points = lv >= LEVEL_CAP ? xpForLevel(LEVEL_CAP) + 60000 : xpForLevel(lv) + Math.round((xpForLevel(lv + 1) - xpForLevel(lv)) * .4);
+      store.rankUpShown = null; store.rankUpFrom = null; persistLocally();
+      showProfile(tab || 'profile'); await wait(1400);
+      const Q = s => document.querySelector(s), col = e => e ? getComputedStyle(e).color : null;
+      const st = Q('.profile-hero .pf-standing'), g = Q('.profile-hero .pf-goal'), cs = Q('.profile-hero .pf-case');
+      const rows = g ? [...g.querySelectorAll('.pf-task')].map(r => ({ k: r.dataset.kind, met: r.classList.contains('is-met'),
+        label: ((r.querySelector('.pf-task-label') || {}).innerText || '').trim(), shown: ((r.querySelector('.pf-task-val') || {}).innerText || '').replace(/\s+/g, ' ').trim(),
+        bar: !!r.querySelector('.pf-bar > i'), tick: (r.querySelector('.pf-check') || {}).textContent,
+        now: (r.querySelector('.pf-now') || {}).textContent, need: (r.querySelector('.pf-need') || {}).textContent,
+        notes: [...r.children].filter(c => !/pf-check|pf-task-label|pf-task-val|pf-bar/.test(c.className)).map(c => c.textContent) })) : [];
+      const stats = [...document.querySelectorAll('.stat-grid .stat-card .stat-num')];
+      const tot = Q('.stx-totalxp .stat-num');
+      return { level: levelOf(store), badges: badgeCountOf(store), rank: rankOf(store),
+        xpNote: !!Q('.pf-standing .pf-xp-note'), standingText: st ? st.innerText : '',
+        svg: st ? st.querySelectorAll('.pf-idline svg, .pf-idline .pf-emb').length : -1,
+        rankCol: col(Q('.pf-standing .pf-rankname')), levelCol: col(Q('.pf-standing .pf-level')), badgeCol: col(Q('.pf-standing .pf-badgecount')),
+        totalCol: col(Q('.pf-standing .pf-xp-total')), totalShown: !!(Q('.pf-standing .pf-xp-total') && Q('.pf-standing .pf-xp-total').getClientRects().length),
+        gap: g && cs ? cs.getBoundingClientRect().top - g.getBoundingClientRect().bottom : null,
+        rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+        kick: g ? ((g.querySelector('.pf-goal-head .pf-kick') || {}).textContent || '') : '',
+        goalName: g ? ((g.querySelector('.pf-goal-name') || {}).textContent || '') : '',
+        rows, statTot: col(tot), statOthers: stats.filter(n => n !== tot).map(col) }; }"""
+    for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        mid = pg.evaluate(SEED, [44, 5, "profile"])
+        wall = pg.evaluate(SEED, [62, 6, "profile"])
+        cap = pg.evaluate(SEED, [80, 16, "profile"])
+        stats = pg.evaluate(SEED, [44, 5, "stats"])
+        ctx.close()
+        check(f"{dev}: the fixtures are Gold at 44 / 5 badges, Gold held at the wall (59, 6 badges), and level 80",
+              mid["level"] == 44 and mid["badges"] == 5 and wall["level"] == 59 and wall["badges"] == 6 and cap["level"] == 80,
+              [(x["level"], x["badges"], x["rank"]) for x in (mid, wall, cap)])
+        check(f"{dev}: no note under the XP bar - mid level, at the wall, at level 80",
+              not mid["xpNote"] and not wall["xpNote"] and not cap["xpNote"]
+              and not any(re.search(r"still counts|top level|toward those levels", x["standingText"]) for x in (mid, wall, cap)),
+              [x["standingText"] for x in (mid, wall, cap)])
+        check(f"{dev}: no note under either challenge row - not 'Done. Finish the badge challenge', not 'Closest'",
+              all(not r["notes"] for x in (mid, wall) for r in x["rows"]) and len(mid["rows"]) == 2 and len(wall["rows"]) == 2,
+              [[r["notes"] for r in x["rows"]] for x in (mid, wall)])
+        check(f"{dev}: no emblem on the rank line",
+              mid["svg"] == 0 and wall["svg"] == 0 and cap["svg"] == 0, [mid["svg"], wall["svg"], cap["svg"]])
+        check(f"{dev}: the rank word is the level's and the badges' computed colour",
+              mid["rankCol"] and mid["rankCol"] == mid["levelCol"] == mid["badgeCol"], [mid["rankCol"], mid["levelCol"], mid["badgeCol"]])
+        check(f"{dev}: the total XP (shown on a tablet) is the level's computed colour",
+              mid["totalCol"] == mid["levelCol"] and cap["totalCol"] == cap["levelCol"] and (mid["totalShown"] == (w >= 640)),
+              [mid["totalCol"], mid["levelCol"], mid["totalShown"]])
+        check(f"{dev}: on Stats, the Total XP figure is every other figure's colour",
+              stats["statTot"] and stats["statOthers"] and all(c == stats["statTot"] for c in stats["statOthers"]), [stats["statTot"], stats["statOthers"]])
+        check(f"{dev}: the Next rank box clears the case strip by at least 1.15rem (was .8rem)",
+              mid["gap"] is not None and mid["gap"] >= 1.15 * mid["rem"] - .5 and wall["gap"] >= 1.15 * wall["rem"] - .5, [mid["gap"], wall["gap"], mid["rem"]])
+        lm = next((r for r in mid["rows"] if r["k"] == "level"), {}); bm = next((r for r in mid["rows"] if r["k"] == "badges"), {})
+        lw = next((r for r in wall["rows"] if r["k"] == "level"), {}); bw = next((r for r in wall["rows"] if r["k"] == "badges"), {})
+        check(f"{dev}: the card is headed 'To reach' over the rank, the road map's words",
+              mid["kick"].strip().lower() == "to reach" and mid["goalName"] == "Platinum", [mid["kick"], mid["goalName"]])
+        check(f"{dev}: the level challenge reads 'Reach Level 50', your level on the right ('Level 44'), no bar, unticked",
+              lm.get("label") == "Reach Level 50" and lm.get("shown") == "Level 44" and not lm.get("bar") and not lm.get("met") and lm.get("tick") == "", lm)
+        check(f"{dev}: ...met, it reads 'Met', ticked, still no bar - never a level past its goal",
+              lw.get("label") == "Reach Level 50" and lw.get("shown") == "Met" and lw.get("met") and lw.get("tick") == "\u2713" and not lw.get("bar")
+              and "59" not in lw.get("shown", "x"), lw)
+        check(f"{dev}: ...and keeps the journey's hooks (.pf-now the level, capped; .pf-need the goal)",
+              lm.get("now") == "44" and lm.get("need") == "50" and lw.get("now") == "50" and lw.get("need") == "50", [lm.get("now"), lm.get("need"), lw.get("now")])
+        check(f"{dev}: the badge challenge keeps its '5 / 7' and its bar",
+              bm.get("label") == "Earn 7 badges" and bm.get("shown") == "5 / 7" and bm.get("bar") and bw.get("shown") == "6 / 7" and bw.get("bar"), [bm, bw])
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -24000,6 +24800,7 @@ def main():
             check_b319f_casespace(br)
             check_b319h_layout(br)
             check_b320f_nova(br)
+            check_b321g_nova(br)
             check_b320a_results(br)
             check_b320e_cracks(br)
             check_b320g_inspect(br)
@@ -24007,7 +24808,10 @@ def main():
             check_b320b_reactions(br)
             check_b320c_case(br)
             check_b321c_case(br)
+            check_b321b_moods(br)
+            check_b321h(br)
             check_b321d_badges(br)
+            check_b321f_profile(br)
         finally:
             br.close()
     SERVER.shutdown()

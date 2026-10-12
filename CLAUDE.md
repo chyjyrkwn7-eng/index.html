@@ -20036,6 +20036,184 @@ there's more space to left of it than the right."*
   cutscene's (and still opening), and all 16 slots centred within 1px on
   both cases (the cutscene's measured with its camera square on).
 
+### Build 321 (b321h) - the Supernova streak on Home, Save and exit as a real button
+
+- **The streak the Supernova cutscene runs round the rings plays on Home
+  too, for a Supernova account** (`homeRingTier()`, the same switch as the
+  orange rings). *"can we make it where that's also on the Home Screen
+  every so often? ... maybe when you click the planet ... Or maybe at
+  certain intervals along with the pulse?"* Both:
+  - on a planet tap (`homeRingStreak(wrap, "tap")` in the sphere's
+    `homeTapBind`, after `planetTapFx`), unless one is already running -
+    spamming the planet does not stack or restart it;
+  - on its own with every `RING_STREAK_EVERY` (4th) pulse of the planet,
+    starting as that pulse leaves it (78% of `cosmic-pulse-out`'s 9s), so
+    about every 36s. `homeStreakArm(heroWrap)` from `showHome` reads the
+    pulse's own animation time and sets ONE timer for the next pulse whose
+    number is a multiple of 4, re-armed after each. The pulse is on the
+    wall clock (`syncLoopClock`), so the schedule is too: a Home built
+    again keeps it, and every device agrees.
+- **`ringStreak(host, before, radii)` is the one drawing**; the cutscene's
+  `snRingGlint` calls it. Conic gradient masked to a band on the ring,
+  rotated once in 2s (outer ring 220ms behind), removed when done -
+  transform and opacity only, nothing left running between streaks. On
+  Home it is inserted before the first `.cosmic-hero-orbitlayer` with
+  `z-index:auto` (`.sn-ringglint.is-home`), so it paints over the rings and
+  under every flare and secret flare, and `pointer-events:none`.
+- Never under Reduce motion (`ringMotionOff()`: the app's switch or the
+  system's - nothing armed, a tap does nothing extra), never below
+  Supernova, never in the background, while a cutscene holds focus, during
+  the ring draw, or whenever `ringDrawHeld(0)` holds (tours, reward cards,
+  other cutscenes). The timer stops when Home's planet leaves the document.
+- **Save and exit is Quit's matte recipe in grey** (as Reset's red is):
+  opaque `#3A3D43`, no background image, no border (Quit's height to the
+  pixel), Quit's five shadow layers at the same offsets (the lip a lighter
+  grey, as Quit's is lighter than its black), pressed `#2B2D32` with the
+  shared .97 press. The glass pane (translucent, backdrop blur, one soft
+  shadow) is gone. `check_b320h_fixes`'s "lighter than Quit" still holds.
+- **Gate: `check_b321h`** - the tap streak on both rings (lit, turning,
+  under the flares, no touches, gone after), the idle streak with a 4th
+  pulse at 78% and none with the three between, armed on Home's build;
+  none below Supernova; none under either Reduce motion (and a tap runs it
+  again once motion is back); Save and exit's shadow layers, border,
+  background layers, opacity, height and pressed state against Quit's, on
+  both reference devices. Fails on 6a387e2.
+
+### Build 321 (b321b) - every face happy at a 100, one saucer
+
+*"Ensure the characters expression change on the mood of the grade, the
+alien still looks mad even after the hundred.. ensure all characters are
+happy when they get the 100"* and *"in the background of the alien there
+is a ufo, a second one comes in.. shouldn't that same one just move?"*
+
+- **Measured, not looked at: 18 of the 30 were not happy at a 100** on
+  6a387e2. Slanted eyes of light read as a scowl (the Masked One, Ronin,
+  Umbra, Inferno, Astral, Zenith, Celestial, Orion's visor), the Alien
+  kept its brow and its frown, the Sheriff squinted, the Detective
+  stared. Only the faces already using `joy()` were happy.
+- **The fix is one block at the end of `tools/reactions-table.py`**
+  (`happy()`), applied to a 100 and a 90+: the open eyes go and the face's
+  own happy pieces come in and stay - `joy()` (its closed eyes turned up)
+  where they show on the face, or `glee()` (two arches of the eyes' own
+  light, a soft wide one under a bright core) where the eyes are light in
+  a dark face; `grin()` where a mouth is missing or flat. The moves before
+  the pose are untouched. A prop with **front 2** is drawn ON THE FACE
+  (inside the group holding the eyes), so the head's fit and every head
+  move carry it - `reactCharacter()` handles it.
+- **The Alien's brow is its own part now (`cx-brow`)** - so are Tempest's
+  and Frost's brows and mouths. A 100 lifts the Alien's brow right off and
+  turns the frown over; no grade wears the scowl (pass: level mouth; fail:
+  let down). Its resting face is unchanged (asked for in build 271).
+- **A fail is let down, never cross.** A face that rests in a smile turns
+  it over (the Detective, the Hacker, Tempest, Frost); eyes that slant
+  down to the nose drop and narrow to dim slits; Tempest's and Frost's
+  brows go level. A pass keeps the face the character rests in.
+- **The hundo effect's reaction covers the glee as well as the eyes**
+  (`R.cover`), so it comes back with the pose when the effect ends.
+- **One saucer.** On a 100 the reaction's saucer (`.cx-rx-ufo`) hovers over
+  the head; the special then brought a second one (`.cx-sp-alufo`). Now,
+  on a 100, the special's saucer is hidden and the reaction's one flies
+  over the cow, beams it up and comes home (`cxsp-al-rxufo`, same clock as
+  `cxsp-al-ufo`). Off the results screen (no saucer up) the special's own
+  saucer swoops in as before. **The same mistake on the Detective**: his
+  100 holds the reaction's magnifier and his special brought a second one
+  out of the coat; on a 100 the special's glass starts and ends where the
+  held one is and the two cross over in the special's fade. The other 28
+  sceneries were audited: their props are weather, sparks, leaves or
+  meteors (more of a kind, not a second copy of one thing).
+- **Faceless drawings** (the Koi's bowl, Void's hood of flares) draw no eyes
+  or mouth at all; the gate reports them by that, it does not pass them as
+  happy.
+- **Gate: `check_b321b_moods`** - the face's mood read off its shapes in the
+  face's own units (a filled eye's or brow's droop towards the nose, a drawn
+  eye's arch, the mouth's middle against its corners): every face happy at a
+  100 and at 90+ (4s and 8s in), a fail never happy and no brow scowling,
+  every face back on its happy 100 after the Confetti and UFO reactions and
+  happy right through the special after them, one saucer and one magnifier
+  at every moment (saucers counted by shape: a filled disc 4+ units across,
+  3x as wide as tall), the saucer over the beam. Fails on 6a387e2.
+
+### Build 321 (b321g) - Nova is an explorer, his crew are the characters, existing accounts meet him
+
+Madison: *"he calls himself the app maker, don't do that. The cutscene where
+it shows the planet and the planet explosion is ass ... Mention how during
+the ship explosion a lot of characters or people on the ship went missing
+too and you need to find them ... Mr nova screen when meeting a new player,
+it's great. I almost feel like that should be the one shown to all the
+existing profiles, but at the end it can go over the ones they have
+unlocked ... still give the tool tips but after the main menu ones ...
+ensure nova still says good bye and they'll talk again. AFTER the nova intro
+that's when the what's new screen will show up."*
+
+- **Nova never made the app.** He is "a space explorer and an instructor"
+  (`novaIntroLines`, the 7.8 release note, What's New). Gate: no line of his,
+  nor RELEASE_NOTES[0], matches made-the-app phrasing.
+- **The lore: his crew went missing in the wreck, and the characters ARE
+  them.** A character is *found*, like a badge and a secret flare. The
+  introduction has a crew line with `novaCrewRow()` (characters you have,
+  then cut-outs of missing ones, `charSilhouetteSVG`) and "N of M characters
+  found" (`novaCrewTally` = Customize's character tally).
+- **The wreck is redrawn (`buildNovaWreck`, `NW` timings in ms).** Home's
+  own planet (`buildCosmicHero(false)` with `heroCrackStageFor = 0`, orbit
+  badges hidden by `.nw2` CSS) in a square camera (`.nw2-cam`, container
+  query units); Supernova's crack forms on it (`crackFormArm(hero, 0,
+  CRACK_TOP)` at 0.9s, warmed while he says hello); it trembles, swells and
+  goes at 3.5s: flash, fireball, a shockwave in the plane of the rings and a
+  spherical one, 28 sparks, embers, dust that stays as a nebula; the planet
+  breaks into 17 shards of ITSELF (`nwShards`: 7 wedges x crust/mantle + a
+  3-piece core; every shared edge is one jagged polyline used both ways, so
+  they fit at the blast) painted with `nwPlanetPaint` (the hero's sphere svg
+  cropped and serialised to an image, under Supernova's burn), their broken
+  edges glowing then cooling (`.nw2-hot`). His ship (`NW_SHIP_SVG`: hull,
+  fins, nacelles, canopy, four lit portholes, his star, running lights,
+  engine flames) is hit at 3.88s, its engines die, a breach burns, it
+  tumbles away end over end trailing smoke, and six escape pods (his crew)
+  fly out with beacons. Web Animations on transform/opacity only, no filter;
+  the last keyframe is the resting style, which is all Reduce motion shows.
+- **Existing accounts meet him once (`playNovaMeeting`).** Gated on the
+  ACCOUNT: `store.novaMet` (`NOVA_MEET_REV` 1), default 0 in
+  `applyLoadedData` (deliberately "not met", like tourRev), set at sign-up,
+  merged by the higher in `mergeSameAccount` (a copy from an older build
+  that drops it cannot bring him back). It plays from `maybeShowIntro` on
+  the first Home where What's New is due (`INTRO_REV` 5, local): the
+  introduction with `{ existing: true }` (greeted by username; Skip jumps to
+  the recap, `skipTo`) ending in the recap - `novaRecapCard` (rank, level,
+  badges, characters, secret flares found as Home's planet counts them) and
+  his lines about it; then What's New CHAINED (`showIntroPopup({ chained,
+  then })`: no second hello, ends "Show me"); then `startNovaReturnTour()` =
+  `mainMenuTourSteps(true)` + `NOVA_NEW_TIPS_321` (the planet, the new
+  Profile, the calendar's tab); then `novaGoodbye()` ("I'll speak with you
+  again", id `nova-intro` so every hold that waits on him still does). No
+  welcome bonus. `novaMeetOn` holds everything `whatsNewHolds` holds for the
+  whole meeting, and `endNovaMeeting` gives the held pop-ups their turn. A
+  device whose account already met him gets What's New alone ("Hello again").
+  New accounts are unchanged: introduction, the seven main-menu tips
+  (`mainMenuTourSteps(false)`), the bonus.
+- **Gate `check_b321g_nova`** (fails on 6a387e2). Moved to this decision:
+  `check_b320f_nova` (the story's words: explorer and crew, not "made this
+  app"; What's New on its own needs `novaMet`), `check_b319_levelnote` (the
+  note is said in the chained What's New too), check-tours (`novareturn`
+  scenario; `startMainMenuTour` counts `mainMenuTourSteps`), check-chat's
+  introduction (the meeting first, then What's New, tips and goodbye, once).
+- **This release is VERSION 9** (*"This is gonna be version 9 ... show a
+  version 8 with some of this stuff but put in parenthesis not launched"*).
+  `RELEASE_NOTES[0]` is `version: "9"` (sound effects and Android vibration,
+  both off by default; sign in first; rankings that match Profile; Nova; and
+  one "Everything From Version 8" bullet). Build 320's "7.8" entry is
+  `version: "8", notLaunched: true`, shown as "Version 8 (not launched)".
+  Home's label, What's New's eyebrow and Nova's "what's new in version 9"
+  all read `RELEASE_NOTES[0].version`. The newest entry is also Welcome's
+  `showWhatsNew()`, so its items keep icons. Nova's What's New opens with a
+  "Sound effects" row (WHATS_NEW_320 `sound`).
+- **The version history lists every item as a bullet, in full**
+  (`.releasehistory-list`: title, then what it does). It used to print a
+  group's titles joined by commas, which is why it read thin. Builds before
+  97 are not in this repo's git, so 2.0/3.0/Beta keep their existing text
+  (now shown in full) rather than gaining anything that cannot be sourced.
+  At the bottom, `#releasehistory-home`: a black "Back to Home" (`.next.ghost`,
+  Quit test's look). check-fixes' Release History check moved: no back link
+  at the top, Back to Home at the bottom.
+
 ### Build 321 (b321d) - the grain is the clean look, a dirtier dirtiest, a bevel, an engraved back, a simple badge in your hand
 
 Madison: *"the semi dirty look adds a lot of texture to the badges and almost
@@ -20104,3 +20282,216 @@ are good too ... THERE IS WAY TOO much going on here."*
   highlight on every badge, the back's engraving contrast and its wear, the
   simple words on both reference devices, and the stage-4 glow and face light
   at most .2.
+
+### Build 322 (b322s) - sound and vibration, phase 1: the engine, the library, Settings
+
+Madison: *"a setting in settings that will be off by default ... sound
+effects ... I NEED you to ensure all the sounds and sound effects are unique
+and make sense. Not sound effects you just find ... the main menu has a cool
+dark kinda offset noise ... each hundo effect to have its own noise ... IF
+there is any way to put Haptic Touch or a vibration for things that would be
+awesome too."* All of it sits in one block after `saveTheme()`.
+
+- **Every sound is synthesised in code; there are no audio files.**
+  `SOUND_CATALOGUE` maps an id to `{ group, bus, cd, poly, hap, vol, desc,
+  fn, demo }`; `fn(K, opts)` draws with the kit from `sndKit()`: `tone`
+  (glides, paths, vibrato, filters), `fm` / `bell`, `noise` (white / pink /
+  brown, swept filters, flutter), `click`, `thump`, `pluck` (Karplus-Strong,
+  `sndKS`), `vox` (two vowel formants - the characters' and Nova's voices),
+  `sparkle`, `arp`, and the generated reverb (`sndImpulse`) and delay sends.
+  The identity: D as home, open fifths and ninths for anything good, a
+  semitone or a fall for anything that is not, glassy FM for light, filtered
+  air for movement, felt and metal for the badge case. 123 ids plus the Home
+  ambience (`SOUND_AMBIENCE`). Cutscene and hundo scores read the app's own
+  constants where they exist (`CASE_OPEN`, `HFX_UW`, `BADGE_CUTSCENE_MS`,
+  `RU_HAND_MS`, `RANK_ATTN_MS`, `RANK_CUTSPIN_*`, `RANK_WINDUP_*`); the
+  Fireworks shots, the UFO's beats and the Bubbles flourish (3.5s) are inline
+  in their `hfx*` builders, so their times are copied into the score -
+  **move one of those and move the score with it.**
+- **Off, and free while off.** `theme.soundOn`, `theme.soundVolume` (0-1,
+  default .7) and `theme.vibrate`, by the behaviour-toggle rule (the theme
+  object, a `typeof` line in `loadTheme()`, `saveTheme()`). While sound is
+  off no `AudioContext` is constructed at all; one is made on the first
+  gesture after it is turned on (the Settings switch is one). The live graph
+  is master (the volume, `.95 v^2`) -> a gentle limiter, with buses `ui`
+  (1.6), `music` (.6, the ambience) and `cut` (1, cutscenes and hundo
+  effects); a `cut` sound ducks the ambience. Per-id cooldown and polyphony,
+  `SOUND_MAX_VOICES` (24) overall. Hidden page: the context is suspended;
+  back: resumed, and the ambience only if its owner element is still in the
+  document. `NovaSound.sync()` follows a setting that changed (the switch, the
+  slider, a theme arriving from another device - `loadTheme()` calls it).
+- **iPhone: the silent switch mutes it, on purpose.** `navigator.audioSession
+  .type = "ambient"` where it exists, so somebody's own music keeps playing and
+  Silent mode silences the app - the Settings hint says so.
+- **Vibration is Android only, and iOS is still not possible.** WebKit has no
+  `navigator.vibrate`; the `<input switch>` trick was tried on a device and
+  fails (Known quirks) and is not retried. The switch shows only where
+  `navigator.vibrate` exists on an Android user agent (desktop Chrome has the
+  function and no motor). Each id's `hap` names a pattern in `SOUND_HAPTIC`;
+  `playSound()` buzzes when vibration is on even with sound off.
+- **The ambience (`amb.home`) is seamless by construction**: a 20s loop whose
+  every frequency and LFO is a whole number of cycles per loop, loop-length
+  noise, every event scheduled in the loops either side, rendered from 4s in
+  (steady state) at `AMB_SR` 22050 with a cheap feedback-delay room (the
+  convolver over 25s cost seconds of render), and a 0.5s seam crossfade.
+- **API**: `playSound(id, opts)` (returns `{ length, stop }` or null),
+  `startAmbience(id, { owner })`, `stopAmbience()`. All no-ops while off.
+  **Phase 1 wires only Settings and the test page**; phase 2 wires the app.
+- **Settings**: "Sound & vibration" between "Display & motion" and "Studying &
+  tests" (`buildSoundSettings()`): Sound effects, the volume (shown only while
+  on, saved on release), Vibration (Android). The Settings tour is unchanged
+  (its copy is Nova's) - a step for this group is for whoever owns his lines.
+- **`showSoundTest()`** - every id with a play button, by group, the ambience,
+  and Play all. From the console, or a 0.75s press on Settings' build line
+  (`.settings-buildline`, delegated in `NovaSound`). It is in `SCREENS`.
+- **A GainNode is 1 until its first automation event** (`K.env` sets `.value
+  = 0` first). Without it every sound starting part-way through a render
+  quantum let one full-scale sample through - a click on the front of every
+  sound, measured at 0.92 on one that should have peaked at .06.
+- **Gate: `tools/check-sound.py`** (fails on 6a387e2): off by default (new,
+  existing, non-boolean); no AudioContext after boot, taps and direct calls;
+  the Settings group, the volume, Android-only Vibration, one running context
+  on the switch, persistence across a reload, a gesture to wake it; cooldown,
+  voice cap, hidden/visible, the ambience stopping with its screen; vibration
+  without sound; every id renders offline (no limiter, volume 1) with a peak
+  between .04 and .97 and a loudest-50ms RMS of .01+; **no two ids above .90
+  similarity** (spectro-temporal shape, mean spectrum, envelope, length;
+  pitch-tolerant to ~6 semitones), the metric proven able to fail (a sound
+  against itself with another seed = 1.00; the timer's tick against its tock
+  > .90); the ambience's seam step no bigger than the loop's 99.9th
+  percentile step and its level within 1.5dB either side. Closest pair at
+  this build: .85 (the Bronze and Sapphire flares).
+
+### Build 322 (b322k) - sign in first, no second account by accident, the board says what Profile says
+
+*"We need to really crack down on the leaderboard accuracy and crack down
+on people's progress randomly going away or people somehow using two
+accounts ... could we make it where it asks you to sign in first and then
+you have to hit I'm new here sign up or something?"*
+
+- **Welcome leads with Sign in** (`.welcome-signin`, the playbtn); **I'm
+  new here** (`.welcome-new`, the ghost) opens `showSignUpCheck()` - "NEW
+  TO NOVA?", what starting again costs, **Sign in instead** in the content
+  group and **I'm new, continue** on the shared Continue floor - and only
+  then What's New and the rest of sign-up. What's New's Back returns to the
+  check. `shoot-flow.py` walks it (shot 2.8 `new-to-nova`); the sweep and
+  check-positions mount it.
+- **A device that still holds an account is offered it first.**
+  `findAccountTrace()` = the code in localStorage, else the IndexedDB
+  mirror's code, else a mirrored onboarded store. With one, Welcome reads
+  "Welcome back", **Continue as <name>** ("Continue to your account" when
+  only the code is known) and **Use a different account**
+  (`welcomeTraceSkip`, this launch only). `continueWithTrace()` merges the
+  same account back (`pullFromCloud`, never adopt) and lands on Home; a
+  sign-up that stopped before Home is finished (`pendingMainMenuTour`); a
+  dead code (`not-found`) is handed back like the launch link's.
+- **`finishWelcomeStartFresh()` refuses to mint over a trace** unless the
+  check screen showed that trace and the person tapped I'm new, continue on
+  it (`signupTraceAck`). Then the old account's local copy is WIPED before
+  the new code is minted - otherwise the "new" account is the old progress
+  under a second code. `wipeLocalProgressAndSettings()` sets
+  `accountWipedAt`, so a reset in this session is never offered back while
+  its mirror deletes are still landing.
+- **The username screen asks once about a name already on the board**
+  (`nameTakenOnBoard`: case and spaces ignored, read from the
+  `leaderboardRows` the app already fetches - `fetchBoardForInvites`, its
+  15-minute throttle - never a progress read). "Someone named X already has
+  an account. If that's you, sign in with your code." with **Sign in**; the
+  floor button becomes **It's not me, continue**. Only the name is said.
+- **Three account holes, each with a failing check on 6a387e2:**
+  - *A non-adopt pull only ever merges the SAME account.* The mirror's
+    code-only recovery pulled before the device held a code; if a sign-in
+    or sign-up landed while the read was out, it merged one person's
+    progress into the other's and then switched the code. `pullFromCloud`
+    now answers `changed` when `syncCode` moved to a different code.
+  - *A code whose store is gone lands on Home when its account comes down*
+    (boot's launch pull, and the mirror-store recovery's pull). It used to
+    leave Welcome up over the restored account, where Create an account
+    pushed that same progress up under a second code.
+  - *Linking retires the row the device was publishing under.* Sign-in and
+    Link this device ADOPT first, which replaces `store.publicId`, then call
+    `setSyncCode()` - which retired the adopted account's row (it came back
+    on the next push) and stranded the abandoned one on the board for good.
+    `pullFromCloud` records `adoptedOverPublic`; `setSyncCode` retires that.
+- **The board's numbers are Profile's.** `boardNumbersOf(st)` builds every
+  number a row carries (level, badges, hundos, xp, correct, tests, week,
+  weekPoints, mystery, `rankFloor`) and is used by `buildLeaderboardRow()`
+  AND `liveEntries()` - which carried its own half-copy, so your own card on
+  the board showed the XP and right answers you last PUBLISHED. **The row
+  now carries `rankFloor`** (lazy field), and `rankOfEntry(e)` /
+  `rankWithFloor()` / `overallProgressOf(level, badges, rankFloor)` ask a
+  row's rank exactly as `rankOf()` asks your own: someone held at a rank by
+  build 314's floor was a rank lower on the board, the person card and the
+  Friends list than on their Profile. Rows from older builds have no floor
+  and read as before. The Virtual Room participant entries do not carry it
+  (out of scope; they still use `rankOfStats`).
+- **A row never goes backwards.** `writeLeaderboardRow()` is a transaction
+  (read-then-write for the gates' stand-ins, a plain set for ones that
+  cannot read): if the row on the server holds more `xp`, `correct` or
+  `hundos` (`ROW_GROWS` - the numbers that only grow for an account; a
+  reset is a new public id) nothing is written, the device drops its
+  confirmation and reads the account again (`ensureCloudConfirmed`), and
+  the row goes from the merge. Once only (`rowRecheckFor`): a row AHEAD of
+  its own account (an old build wrote it) is corrected to the account. Cost:
+  one read per row write. A row write that fails is retried on the next
+  push rather than queued offline (it used to be a queued `set()` that could
+  land a day late).
+- **Gates:** `check-sync` 9a-9f (sign in first; the check; the name;
+  device traces x4; board = Profile; no regressed row). All 20 fail on
+  6a387e2.
+
+### Build 321 (b321f) - the Profile card: no notes, no rank icon, one colour, more air, "Reach Level N"
+
+Madison: *"I really really like how it is. I don't want it to change much.
+The level one is just kinda confusing."* So the card is the same card,
+with five subtractions and one change of form.
+
+- **No note under the XP bar** (*"remove the description under the xp bar
+  that talks about using xp for the next level"*): `profileXpNote()` and
+  `.pf-xp-note` are gone, at a wall and at level 80. At a wall the phone's
+  line is just "x / y XP" (`pfXpToText` is empty there, as before). The
+  rank-up journey's `.pf-xp-note.ru-later` lookups are now no-ops.
+- **No notes under the challenge rows**: the level row's "Done. Finish the
+  badge challenge to reach <rank>." and the badge row's "Closest: <unit>
+  (n/m hundos)" are both gone; `buildProfileTask(c, color)` takes no note
+  and `.pf-task-note` is deleted. `closestBadge()` is left in place, unused.
+- **No emblem on the rank line; the rank word is the line's colour.**
+  `.pf-emb` is gone; `.pf-rankname` is `color:inherit` (weight 800 kept),
+  so "Gold", "Level 44" and "5 badges" are one computed colour
+  (`--pf-line`, rgba(255,255,255,.72), set on `.pf-standing`). The
+  new-rank dot sits on the word. `.ru-arrive .pf-emb` (the journey's
+  emblem pop) has nothing to hit now.
+- **The total XP is the line's colour too** (*"Total xp probably should be
+  the same color as the other stuff"*), reversing the 317 touch-up's "one
+  XP blue": a tablet's "N total XP" is `--pf-line`; "x / y XP" of this
+  level stays `--xpnum`. Stats' Total XP figure was already every card's
+  `--theme-c2` and is held there.
+- **1.15rem between the Next rank box and the case strip** (was .8rem; the
+  handle stands .42rem up into it, so it now clears the box by ~12px, not
+  ~6px). `.pf-goal + .pf-case.pf-case-closed` only; standing-to-case stays.
+- **The level challenge is "Reach Level N", not a fraction and a bar.**
+  The road map's "To reach <rank>" names each requirement and says where
+  you are ("41 of 50", "Met"); the Profile's level row had "41 / 50" and a
+  bar that repeated the XP bar right above it. Now: the box, "Reach Level
+  50", "Level 44" on the right (the word quiet, the number blue), no bar;
+  met: ticked and "Met" on the right - never a level past the goal. The
+  badge row keeps "7 / 8" and its bar. The card's head kicker is "To
+  reach" (was "Next rank"), so it reads "To reach / Platinum / 1 of 2
+  done", the road map's words; "Rank challenges" stays over the rows (the
+  Profile's "complete the challenges" feel, 317's ask). Hooks for the
+  journey are unchanged: `.pf-task[data-kind]`, `.pf-check`, `is-met`,
+  `.pf-now` (the level, capped, now inside `.pf-lv-now`), `.pf-need` (the
+  goal, now inside the label); the level row has `.is-level` and no
+  `.pf-bar`, and CSS swaps `.pf-lv-now` for `.pf-lv-met` on `is-met`.
+- **Gate: `check_b321f_profile`** (both reference devices): no notes
+  anywhere, no emblem, rank/level/badges one computed colour, the total the
+  level's computed colour, Stats' Total XP the others', the gap >= 1.15rem,
+  "To reach", the level row's two states, the badge row kept. Fails on
+  6a387e2 (9 per device; the Stats colour, the hooks and the badge row are
+  holds and pass there). Moved to the new decisions: check_b235 'plate',
+  check_b237, check_b244 (no emblem), check_b258 (blue read off the XP
+  numbers), check_b282 (label case), check_b302 (no emblem; total = level
+  colour), check_b317_pfcard (1.15rem; total = level colour),
+  check_b317_xpcap (no notes; total = level colour), check_b319h_layout
+  (1.15rem), check_b319_rankup (the level row has no bar), check-curve 8
+  (no notes, "Reach Level N", "Met", total = level colour).
