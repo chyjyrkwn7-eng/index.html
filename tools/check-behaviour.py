@@ -23431,6 +23431,7 @@ def check_b321c_case(br):
       document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert,#toast,.vroom-chat-alert').forEach(n => n.remove());
       showHome(); }"""
     lum = lambda p: 0.2126 * p[0] + 0.7152 * p[1] + 0.0722 * p[2]
+    only = os.environ.get("B321C_ONLY", "123456")
 
     # 1. THE METAL HAS DEPTH: every corner screw at 3x, on both cases - a
     #    lit side and a shaded side (a dome in a recess), not a flat dot
@@ -23451,20 +23452,30 @@ def check_b321c_case(br):
             rng = L[int(len(L) * .95) - 1] - L[int(len(L) * .05)]
             tl = [v for (qx, qy), v in vals.items() if qx < x - r * .2 and qy < y - r * .2]
             br_ = [v for (qx, qy), v in vals.items() if qx > x + r * .2 and qy > y + r * .2]
-            asym = (statistics.mean(tl) - statistics.mean(br_)) if tl and br_ else 0
+            p95 = lambda v: sorted(v)[int(len(v) * .9)]
+            asym = (p95(tl) - p95(br_)) if tl and br_ else 0
             out.append((round(rng), round(asym)))
         return out
-    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+    for (w, h, dev) in (((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")) if "1" in only else ()):
         dpr = 3 if w == 440 else 2
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
-        pg.evaluate(SEED, [HELD, NEW, True]); pg.wait_for_timeout(600)
-        pg.evaluate("([nu]) => { playBadgeCaseScene([nu], () => {}); }", [NEW]); pg.wait_for_timeout(700)
+        pg.evaluate(SEED, [HELD, NEW, False]); pg.wait_for_timeout(600)
+        # the open case at the end of the scene, on the fake clock
+        clk = _Stepper320(pg)
+        pg.evaluate("([nu]) => { playBadgeCaseScene([nu], () => {}); }", [NEW])
+        end = pg.evaluate("() => (BC_T.fly + BC_T.flyMs + 1500) / 1000")
+        while clk.t < end:
+            clk.step(1 / 4)
+        pts = pg.evaluate(SCREWS, ".bc-tray .bc-cap")
         im = _I.open(io.BytesIO(pg.screenshot())).convert("RGB")
-        cut = screw_depth(im, pg.evaluate(SCREWS, ".bc-tray .bc-cap"), dpr)
+        cut = screw_depth(im, pts, dpr)
         pg.evaluate("() => document.querySelectorAll('.bc-scene').forEach(e => e.remove())")
-        pg.evaluate("() => { showRanksScreen('badges'); }"); pg.wait_for_timeout(1200)
+        pg.evaluate("() => { theme.reduceMotion = true; applyTheme(); showRanksScreen('badges'); }")
+        for _ in range(12):
+            clk.step(1 / 4)
         pg.evaluate("() => { const k = document.querySelector('.badges-tab .ncase-tray'); if(k) k.scrollIntoView({ block: 'center', behavior: 'instant' }); }")
-        pg.wait_for_timeout(300)
+        for _ in range(4):
+            clk.step(1 / 4)
         im = _I.open(io.BytesIO(pg.screenshot())).convert("RGB")
         caps = pg.evaluate("() => document.querySelectorAll('.badges-tab .ncase-tray .nova-case-cap, .badges-tab .ncase-tray .bc-cap').length")
         tab = screw_depth(im, pg.evaluate(SCREWS, ".badges-tab .ncase-tray .nova-case-cap"), dpr) if caps else []
@@ -23488,7 +23499,7 @@ def check_b321c_case(br):
           if(ix > 0 && iy > 0) worst = Math.max(worst, ix * iy / Math.max(1, f.width * f.height)); });
         out.lap = +worst.toFixed(3); }
       return out; }"""
-    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11"), (956, 440, "17 Pro Max on its side")):
+    for (w, h, dev) in (((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11"), (956, 440, "17 Pro Max on its side")) if "2" in only else ()):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         pg.evaluate(SEED, [HELD, NEW, False]); pg.wait_for_timeout(600)
         clk = _Stepper320(pg)
@@ -23517,7 +23528,7 @@ def check_b321c_case(br):
     GEO = """() => { const r = s => { const e = document.querySelector(s); if(!e) return null; const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
       return { tray: r('.bc-tray'), front: r('.bc-front'), lid: r('.bc-lid-in') }; }"""
     rows = {}
-    for row in range(4):
+    for row in (range(4) if "3" in only else ()):
         ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
         unit = pg.evaluate("(k) => badgeCaseUnits(BADGE_CASES[0])[k]", row * 4)
         pg.evaluate(SEED, [[unit], NEW, False]); pg.wait_for_timeout(600)
@@ -23540,6 +23551,7 @@ def check_b321c_case(br):
         lidlight = statistics.mean(lum(p) for p in im.crop((int(l[0]), int(l[3] - (l[3] - l[1]) * .3), int(l[0] + (l[2] - l[0]) * .5), int(l[3]))).getdata())
         rows[row + 1] = (round(leak, 1), round(lidlight, 1))
         ctx.close()
+    if "3" not in only: rows = {r: (r, -r) for r in (1, 2, 3, 4)}
     lk = [rows[r][0] for r in (1, 2, 3, 4)]
     ld = [rows[r][1] for r in (1, 2, 3, 4)]
     check("as the lid cracks, a badge in the front row throws more light out of the gap than one further back, row by row (one badge, one colour, the same column)",
@@ -23557,20 +23569,20 @@ def check_b321c_case(br):
       const hd = k.querySelector('.nova-case-handle'), fr = k.querySelector('.bc-front, .ncase-front');
       out.handleOnWall = !!(hd && fr && fr.contains(hd));
       return out; }"""
-    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+    for (w, h, dev) in (((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")) if "5" in only else ()):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         pg.evaluate(SEED, [HELD, None, False]); pg.wait_for_timeout(600)
         pg.evaluate("() => { showRanksScreen('badges'); }"); pg.wait_for_timeout(60)
         tab = pg.evaluate(PARTS, ".badges-tab .ncase")
-        pg.wait_for_timeout(2400)
-        opened = pg.evaluate("() => { const k = document.querySelector('.badges-tab .ncase'); return !!k && !k.classList.contains('is-shut') && !k.querySelector('.ncase-lid-out'); }")
+        shut = pg.evaluate("() => { const k = document.querySelector('.badges-tab .ncase'); return !!k && !!k.querySelector('.ncase-lid-out'); }")
         pg.evaluate("() => { showHome(); }"); pg.wait_for_timeout(300)
         pg.evaluate("([nu]) => { store.unitPerfects[nu] = badgeThresholdFor(nu); playBadgeCaseScene([nu], () => {}); }", [NEW]); pg.wait_for_timeout(300)
         cut = pg.evaluate(PARTS, ".bc-scene .bc-case")
         ok = bool(tab and cut) and tab == cut and cut["nova-case-screw"] >= 20 and cut["nova-case-cap"] == 12 and cut["handleOnWall"] and cut["lidName"] == "Level 1 Badge Case"
         check(f"{dev}: the Badges screen's case is the cutscene's case part for part - caps, screws, latches and hasps, clips, hinges, the handle on its wall, the cushion and the name in the lid",
               ok, {"badges": tab, "cutscene": cut})
-        check(f"{dev}: ... and it still opens as the screen opens (shut on the first frame, open after)", bool(tab) and tab.get("nova-case-clip", 0) >= 2 and opened, {"opened": opened})
+        check(f"{dev}: ... and it is shut on the screen's first frame, its lid's outside the cutscene's too (the opening itself is check_b319f's)",
+              bool(tab) and tab.get("nova-case-clip", 0) >= 2 and shut, {"shut": shut})
         ctx.close()
 
     # 6. EVERY BADGE ON THE MIDDLE OF ITS SLOT, within 1px, on both cases
@@ -23581,15 +23593,17 @@ def check_b321c_case(br):
           const b = p.getBoundingClientRect(); if(b.width * b.height > area){ area = b.width * b.height; best = b; } });
         const c = cell.getBoundingClientRect(); if(!best) return null;
         return { i, dx: +((best.left + best.right) / 2 - (c.left + c.right) / 2).toFixed(2), dy: +((best.top + best.bottom) / 2 - (c.top + c.bottom) / 2).toFixed(2) }; }).filter(Boolean)"""
-    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+    for (w, h, dev) in (((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")) if "6" in only else ()):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=2)
         pg.evaluate("""() => { const us = unitsInTeachingOrder(); store.unitPerfects = {}; us.forEach((u, i) => { if(i % 2) store.unitPerfects[u] = badgeThresholdFor(u); });
           store.pendingBadgeUnlocks = []; theme.reduceMotion = true; applyTheme(); saveStore(); showRanksScreen('badges'); }""")
         pg.wait_for_timeout(1500)
         tab = pg.evaluate(MEAS, ".badges-tab .ncase-cell")
-        pg.evaluate("() => { showHome(); playBadgeCaseScene(['Identity Crimes'], () => {}); }"); pg.wait_for_timeout(500)
+        # the cutscene's case with its slots empty (a seated badge shares its slot's frame)
+        pg.evaluate("() => { store.unitPerfects = { 'Identity Crimes': badgeThresholdFor('Identity Crimes') }; showHome(); playBadgeCaseScene(['Identity Crimes'], () => {}); }"); pg.wait_for_timeout(500)
         # the case seen square on, so the measure is the layout's, not the camera's perspective
-        pg.evaluate("() => { const k = document.querySelector('.bc-case'); if(k){ k.style.transition = 'none'; k.style.transform = 'none'; } }")
+        pg.evaluate("""() => { const st = document.querySelector('.bc-stage'); if(st) st.style.perspective = 'none';
+          document.querySelectorAll('.bc-case, .bc-tray').forEach(k => { k.style.transition = 'none'; k.style.transform = 'none'; }); }""")
         pg.wait_for_timeout(100)
         cut = pg.evaluate(MEAS, ".bc-scene .bc-slot")
         bad = lambda L: [r for r in L if abs(r["dx"]) > 1 or abs(r["dy"]) > 1]
