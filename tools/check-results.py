@@ -466,6 +466,30 @@ with sync_playwright() as pw:
     # results keep the badge first and any other unlock after it.
     ck("unlocks run the badge first, then the rest; the rank and its rewards are not on the results (build 319)",
        order[:1] == ["badge"] and "character" in order[1:] and not any(k in ("rank", "theme", "rankflare", "rankrewards") for k in order), order)
+    # BUILD 321: "The rank up is still showing in unlocks." Nothing a rank
+    # hands over is ever on the results - not only while its rank-up is
+    # owed (320 let a rank's character and banner through whenever it was
+    # not). Fails on 6a387e2.
+    rk = pg.evaluate("""()=>{ const keep = store.rankUpShown; store.rankUpShown = TIER_ORDER_FULL.length + 1;
+      const ch = AVATAR_CHARACTERS.find(c => c.unlock && !c.feat && !c.retired), bn = BANNERS.find(b => b.rank && !b.retired);
+      const items = rsUnlockItems({ badges: [], retroBadges: [], characters: [ch.id], banners: bn ? [bn.id] : [], fx: [], flare: null });
+      store.rankUpShown = keep; return { owed: rankUpOwed(), items: items.map(i => [i.kind, i.name, i.rankReward || null]) }; }""")
+    ck("a rank's own character and banner are not on the results even with no rank-up owed (build 321)",
+       rk["items"] == [], rk)
+    # BUILD 321: the grade's colour is red into green and nothing else -
+    # red below the pass mark (a fail ends red), then straight into green,
+    # all green at 100 ("It needs to be just the red slowly into the green
+    # not other colors"). Asked of rsToneAt at every whole percent.
+    tone = pg.evaluate("()=>Array.from({length: 101}, (_, p) => (rsToneAt(p).match(/\\d+/g) || []).slice(0, 3).map(Number))")
+    R, G = (227, 112, 124), (79, 190, 140)
+    def off_line(c):
+        d = [g - r for r, g in zip(R, G)]
+        k = max(0, min(1, sum((c[i] - R[i]) * d[i] for i in range(3)) / sum(v * v for v in d)))
+        return max(abs(c[i] - (R[i] + d[i] * k)) for i in range(3))
+    ck("the grade's colour runs only along the straight line from red to green (build 321)",
+       all(off_line(c) <= 2 for c in tone), [(p, c) for p, c in enumerate(tone) if off_line(c) > 2][:3])
+    ck("red all the way to the pass mark, green at 100",
+       all(tuple(c) == R for c in tone[:70]) and tuple(tone[100]) == G, (tone[40], tone[69], tone[100]))
     # A run that missed one: the badge line, the avatar, the chip.
     pg.evaluate("([u])=>{ store.unitPerfects = store.unitPerfects || {}; store.unitPerfects[u] = 3; __run(u,0,'drill'); }", [UNIT])
     wait_done(pg)

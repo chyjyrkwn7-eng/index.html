@@ -20045,6 +20045,97 @@ there's more space to left of it than the right."*
   opening could still be under way on a busy machine (it failed that way on
   the iPad on 9b3bed6 too, before any of this).
 
+### Build 321 (b321a) - red into green, a 100 green into its effect, the XP number with its bar, one Found & unlocked box
+
+Madison on 320's results: *"the color goes from red to orange? And if the
+grade is a fail it shoots from orange to red ... It needs to be just the red
+slowly into the green not other colors"*, *"a slight moment where the bar
+turns gold ... It would go from green into the hundo effect though, and the
+transition would need to be smooth. That goes for any of them"*, *"It could
+slow down a little more at the back end"*, *"the numbers come through after
+the xp goes but wouldn't it be at the same time? It would only be after if
+the bar is full"*, *"when the xp bar is full the number increases instantly,
+there needs to be a slight delay"*, *"The unlock section says found there
+now? ... figure this out"*, *"The rank up is still showing in unlocks."*
+
+- **THE GRADE'S COLOUR IS RED INTO GREEN AND NOTHING ELSE** (`rsToneK`,
+  `rsToneAt`, `rsToneWeights`; 320's `RS_TONE_STOPS` with its orange at 40
+  and amber at 58 is gone). Red below `PASS_MARK`, so a fail is red from its
+  first frame through its landing and never returns to red from anything;
+  from the pass mark a smoothstep blend along the STRAIGHT line to the pass
+  green (RGB - the same mix the card's two washes make crossfading; going
+  round the hue wheel is exactly the orange she rejected), all green at 100.
+  The card's washes are two now (`is-red`, `is-green`). Both ends are the
+  landed card's own `--wrong`/`--right`.
+- **A pass short of 100 finishes the blend as it lands** (the number's
+  `color` transition .6s on `.rs-graded`; a unit bar home at a pass lifts
+  the colour it counted in off its green as a fading `::after`,
+  `.rs-was` / `--was` - a bar's own transition is `transform` only, `.sbar`
+  has `transition-property:transform !important`).
+- **NO GOLD BEFORE A 100's BOX.** A unit bar at 100 is plain green (`full`)
+  until the grade lands; only on a 100% run, and only at `landGrade`, does
+  it take `is-gold` (the effect's gradient via `--hfx-fa/fb`), with the
+  green lifting off it over `RS_HUNDO_CROSS_MS` (900, `.rs-was.is-slow`).
+  The card crosses the same way: the green wash fades off the effect's
+  (`.rs-grade-tone`, .9s on a 100), the number's green fades to transparent
+  over its clipped ramp (`color` + `filter` transition), and the effect's
+  inner glow comes up (`.rs-tint-in`, skipped while the UFO is unlit). An
+  aced unit on a run short of 100 stays green - there is no hundo box for
+  it to go into. Confetti's look IS the gold, so on Confetti it is green
+  into gold at the landing.
+- **The back end is slower**: the last bar is `1300 + 1800f + 1400f^3` ms
+  easing out at `RS_GRADE_LAST_EASE` (3.6; 320: `1200 + 1700f + 900f^3`,
+  3.2). A 12/12 now takes ~2.4s from 92 to the landing (320: ~1.9s).
+- **THE HUNDO EFFECT STAYS AFTER THE XP BOX** (the decision she left to
+  us): the results character on the XP box reacts to it (b320b), so it has
+  to be on screen. The beat after the XP is `RS_FX_AFTER_XP_MS` 900 (650).
+- **THE XP NUMBER COUNTS WITH ITS BAR** (`buildResultsLevelBlock`,
+  `followBar`): every frame it reads the bar's own on-screen position
+  (computed transform) and puts the number in proportion, so the two cannot
+  drift on a slow phone or under the recorders' clock. A level-up counts the
+  old level's numbers to its end, wraps, then the new level's from 0. Only
+  XP with nowhere to go waits: the bar fills (the number with it, to the
+  full figure), knocks (`xpBarBump`), the line takes `.is-seeking` (the
+  figure dims and returns once, opacity only) for `XP_OVERFLOW_WAIT_MS`
+  (650), and the overflow then counts on easing IN and out (`overMs`) - 320's
+  ease-out cubic ran ~40% of it in the first 150ms, which is what read as
+  "increases instantly". Same for a wall, level 80, and a bar already full.
+  `wrap.fillMs` covers all of it, which the reveal (and the hundo effect)
+  waits on. The Virtual Room's standings use the same block.
+- **ONE BOX, ONE NAME: "Found & unlocked"** (`RS_UNLOCK_BOX_TITLE`). 320
+  named it "Found" when every row was a badge and "Unlocked" otherwise, and
+  a box whose name changes reads as a different box. Each row already says
+  which it is in its own kicker ("Badge found", "Character unlocked"), and
+  now carries `is-found` / `is-unlocked` (`rsUnlockFound`: a badge, a secret
+  flare, or any item with `found: true` - set it on a character found
+  through the story and its row is tagged found).
+- **NOTHING A RANK HANDS OVER IS EVER ON THE RESULTS.** `rsUnlockItems`
+  drops every `isRankRewardItem` (320 dropped them only while
+  `rankUpHolds`, so a rank's character or banner came through whenever no
+  rank-up was owed - an account whose rank-ups were never counted, a rank
+  character arriving by `pendingCharUnlocks`). The reveal's rank-reward
+  card branch is gone with it. They belong to Profile's road map
+  (`rankUpCards` -> `rankRewardParts`, which picks up any still
+  unannounced). Home's queue is unchanged (still `rankUpHolds`).
+- **Gates**: `check_b321a_results` (check-behaviour; fails on 6a387e2): the
+  counting number's colour sampled along a 92% exam (on the red-green line,
+  no warm hue with colour in it, red to the pass mark, two washes, no gold
+  bar on an aced unit); a 12/12 in each of Confetti, Fireworks, Underwater,
+  Bubbles and UFO (nothing but red into green to the landing and green at
+  its end; no bar takes `is-gold` before the grade lands - timed by a
+  class observer, a 160ms flash slips between samples; the number still
+  mostly green 150ms after the landing and all effect by 1.1s); the slower
+  back end; a rank's character and banner absent with no rank-up owed; the
+  box's name and its found tag. Moved to the new decisions in
+  `check_b320a_results`: B (a fail stays red - was "warms as it climbs") and
+  F (the number with the bar and in step with it, at its end as the bar
+  stops; then, on Playwright's clock - timers, frames and performance.now
+  stepped 16ms, because on a loaded machine the real-clock wait read
+  650-1,480ms for the same schedule - the knock, 0.8s+ to the overflow (321:
+  896ms, 320: 608ms) and under 15% of it in its first 150ms (321: 5-8%, 320:
+  46%) - was "the number after the bar"). check-results section 8: the rank
+  rewards and `rsToneAt` at every percent.
+
 ### Build 321 (b321e) - the rank-up journey's touch-ups
 
 Madison, on 320's journey. All in the rank-up block after `buildRanksTab()`
@@ -20122,6 +20213,7 @@ unless noted.
   moved: the first frame at `rankUpStartFrac`, the card's fade, the level
   challenge holding still. `check_b319_rankup`: the fade, the level row
   after the bar.
+
 ### Build 321 (b321h) - the Supernova streak on Home, Save and exit as a real button
 
 - **The streak the Supernova cutscene runs round the rings plays on Home
@@ -20629,6 +20721,21 @@ with five subtractions and one change of form.
   spy on `NovaSound.play`: ambience, planet, tab bar, a Settings switch,
   LOADING TEST, wrong, right, star, pause/resume, next, Nova's blips, and last
   week's fanfare replacing the plain sheet sound.
+
+- **Centred on its shape, out of the case too** (after b321c's
+  `badgeSlotShift`). The badge in your hand (`.binspect-coin`) and the
+  cutscene's coin (`.bc-coin`) carry `--sdx`/`--sdy` and move back by that
+  share of their size with the independent `translate` property (so it
+  composes with `bc-pop`'s transform), and `.binspect-spin`, `.bc-spin` and
+  `.bc-sway` turn about the shape's own middle, so a turn never swings an
+  off-centre shape (the C-ring) aside. The engraved back's words are centred
+  on the visible shape too. The lift out of a slot, the drop back in and the
+  cutscene's flight into its slot aim at the shape's middle in the slot
+  (`slot centre - shift x size`), where the slot's own drawing is moved. The
+  cutscene's coin takes its back warmed in idle (`warmBadgeCoinFaces`,
+  `badgeCoinBackPx`) or the quick draft - never the finish as the scene
+  builds. Gate: check_b321d_badges, all sixteen within 1px front and back
+  (b316-work 8c729e8: the C-ring 34px off at the hand's size).
 
 ### Build 322 (b322s) - sound, phase 3: the badge case, the rank-up journey, the Profile card
 
