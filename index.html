@@ -7117,6 +7117,8 @@
   .nova-avatar .nova-svg{ width:100%; height:100%; }
   .chatdock-chatrow-avatar.is-nova, .chatdock-friendhead-art.is-nova{
     background:#141433; box-shadow:0 0 0 1.5px rgba(255,210,122,.55), 0 0 12px -2px rgba(255,210,122,.45); }
+  .friend-row-art.is-nova{ border-radius:50%; box-shadow:0 0 0 1.5px rgba(255,210,122,.55); }
+  .friend-row-away{ color:var(--soft); font-weight:700; }
   .chatdock-chatrow-kind.is-nova{ color:#FFD27A; background:rgba(255,210,122,.12); border-color:rgba(255,210,122,.4); }
   button.chatdock-friendhead.nova-head{ background:none; border:0; padding:0; margin:0; color:inherit; font:inherit;
     text-align:left; cursor:pointer; min-height:44px; -webkit-tap-highlight-color:transparent; border-radius:12px; }
@@ -79962,6 +79964,64 @@ function novaCardCells(){
           ["Crew found", crew.total ? crew.have + " / " + crew.total : "\u2014"],
           ["Right now", novaAway() ? "Away" : "Available"]];
 }
+/* ---- NOVA ON THE FRIENDS LISTS (build 324, b324n2) ----
+   Madison: "Nova can appear in the profiles friends box, and in manage but
+   the option to remove him won't be there." DISPLAY ONLY: he is drawn on
+   Profile's Friends box and on Manage friends and counted in the numbers
+   those two screens show, but he is still not in friendPublicIds(), so
+   nothing that counts real friends (Koi Pond, invites, rows, Firestore)
+   sees him. A tap opens his card; there is no Remove, no swipe, no menu. */
+function novaFriendEntry(){
+  return { pub: "nova", nova: true, firstName: "Nova", banner: "titan_rank", avatarChar: "nova" };
+}
+/* How many people the friends screens show: your friends, and Nova once
+   he is yours. */
+function shownFriendsCount(){
+  let n = 0; try{ n = friendPublicIds().length; }catch(e){}
+  try{ if(novaIsFriend()) n++; }catch(e){}
+  return n;
+}
+/* His row on Manage friends: the same .friend-row a classmate gets, with
+   Available/Away where their activity goes and his rank, and no actions. */
+function novaManageRow(){
+  const on = !novaAway();
+  const row = document.createElement("div");
+  row.className = "friend-row is-tappable is-nova";
+  row.dataset.pub = "nova";
+  row.setAttribute("role", "button");
+  row.tabIndex = 0;
+  const art = document.createElement("div");
+  art.className = "friend-row-art is-nova";
+  art.appendChild(novaAvatarSpan());
+  if(on){
+    const dot = document.createElement("span");
+    dot.className = "friend-online-dot";
+    dot.title = "Available";
+    art.appendChild(dot);
+  }
+  const text = document.createElement("div");
+  text.className = "friend-row-text";
+  const nm = document.createElement("p");
+  nm.className = "friend-row-name";
+  nm.textContent = "Nova";
+  const sub = document.createElement("p");
+  sub.className = "friend-row-sub";
+  const st = document.createElement("span");
+  st.className = on ? "friend-row-on" : "friend-row-away";
+  st.textContent = on ? "Available" : "Away";
+  const rk = document.createElement("span");
+  rk.className = "friend-row-rank";
+  rk.textContent = RANK_DISPLAY_NAME.titan;
+  rk.style.color = RANK_COLOR.titan;
+  sub.append(st, document.createTextNode(" \u00b7 "), rk, document.createTextNode(" \u00b7 Instructor"));
+  text.append(nm, sub);
+  row.append(art, text);
+  row.addEventListener("click", openNovaCard);
+  row.addEventListener("keydown", e => {
+    if((e.key === "Enter" || e.key === " ") && e.target === row){ e.preventDefault(); openNovaCard(); }
+  });
+  return row;
+}
 function openNovaCard(){
   try{ openPersonSheet({ pub: "nova", nova: true, firstName: "Nova", banner: "titan_rank", avatarChar: "nova" }); }catch(e){}
 }
@@ -111088,21 +111148,31 @@ function showFriends(){
   const lh = document.createElement("p");
   lh.className = "sect-label";
   {
-    const onlineN = friendPublicIds().map(id => rows[id]).filter(isOnline).length;
+    /* Nova counts as online while he is available (b324n2) */
+    const onlineN = friendPublicIds().map(id => rows[id]).filter(isOnline).length
+      + ((novaIsFriend() && !novaAway()) ? 1 : 0);
     lh.textContent = "Your friends" + (onlineN ? "  \u00b7  " + onlineN + " online" : "");
   }
   list.appendChild(lh);
   const ids = friendPublicIds();
   const known = ids.map(id => rows[id]).filter(Boolean);
+  /* Nova's row (b324n2): placed by the same order as everybody's below -
+     on first, then by name - or on his own when there is nobody else.
+     No Remove: "the option to remove him won't be there". */
+  const nova = novaIsFriend();
+  const novaOn = nova && !novaAway();
   if(!store.leaderboardOptIn){
+    if(nova) list.appendChild(novaManageRow());
     const off = document.createElement("p");
     off.className = "friend-hint";
     off.textContent = "Turn on class sharing in Settings to use friends \u2014 it is what puts you and your friends on the class board, which is where this reads from.";
     list.appendChild(off);
   } else if(!ids.length){
+    if(nova) list.appendChild(novaManageRow());
     const none = document.createElement("p");
     none.className = "friend-hint";
-    none.textContent = "Nobody yet. Send someone your code, or add theirs above.";
+    none.textContent = nova ? "No classmates yet. Send someone your code, or add theirs above."
+      : "Nobody yet. Send someone your code, or add theirs above.";
     list.appendChild(none);
   } else {
     /* Online first, then by name. A friends list is for finding
@@ -111117,7 +111187,14 @@ function showFriends(){
        Inviting belongs to the Virtual Room, where the lobby you are
        inviting somebody INTO already exists. This screen is who you
        have and how to add more. */
+    let novaPlaced = !nova;
     known.forEach(e => {
+      if(!novaPlaced){
+        const eOn = isOnline(e) ? 1 : 0, nOn = novaOn ? 1 : 0;
+        if(nOn > eOn || (nOn === eOn && "Nova".localeCompare(e.firstName || "") < 0)){
+          list.appendChild(novaManageRow()); novaPlaced = true;
+        }
+      }
       list.appendChild(personRow(e, [
         actBtn("Remove", "ghost", () => {
           if(!window.confirm("Remove " + (e.firstName || "this friend") + "?")) return;
@@ -111127,6 +111204,7 @@ function showFriends(){
         })
       ]));
     });
+    if(!novaPlaced) list.appendChild(novaManageRow());
     /* Somebody on your list whose row has not loaded - they have not
        opened the app since, or turned sharing off. Named rather than
        silently dropped, so a friends list of four does not quietly
@@ -113489,8 +113567,10 @@ function showProfile(defaultTab, opts){
   /* Worded, like "178 class days left" opposite it, rather than a bare
      numeral. A lone "1" in the corner of a card says nothing about
      what it counts. */
-  fCount.textContent = friendIds.length
-    ? friendIds.length + (friendIds.length === 1 ? " friend" : " friends")
+  /* Nova counts here now that he is shown here (b324n2) */
+  const fShownN = shownFriendsCount();
+  fCount.textContent = fShownN
+    ? fShownN + (fShownN === 1 ? " friend" : " friends")
     : "none yet";
   fHead.append(fTitle, fCount);
   friendSect.appendChild(fHead);
@@ -113513,28 +113593,40 @@ function showProfile(defaultTab, opts){
   const fMore = document.createElement("p");
   fMore.className = "pf-friends-more";
   let fShownSig = null;
+  /* Nova is one of them (b324n2), in the same order as everybody: on
+     first (he is "on" while available), then by name. */
   function friendPreviewEntries(){
     const rows = rowsByPublicId();
-    return friendPublicIds().map(pub => rows[pub]).filter(e => e && e.pub)
-      .map(e => ({ e, on: isOnline(e) }))
-      .sort((a, b) => (b.on - a.on) || String(a.e.firstName || "").localeCompare(String(b.e.firstName || "")));
+    const out = friendPublicIds().map(pub => rows[pub]).filter(e => e && e.pub)
+      .map(e => ({ e, on: isOnline(e) }));
+    if(novaIsFriend()) out.push({ e: novaFriendEntry(), on: !novaAway() });
+    return out.sort((a, b) => (b.on - a.on) || String(a.e.firstName || "").localeCompare(String(b.e.firstName || "")));
+  }
+  function friendPreviewReal(){ return friendPreviewEntries().filter(x => !x.e.nova); }
+  /* The four on the card. He never falls into "and N more": where the
+     order would put him past the fourth, he takes the fourth. */
+  function friendPreviewShown(all){
+    const shown = all.slice(0, FRIEND_PREVIEW_MAX);
+    const nv = all.find(x => x.e.nova);
+    if(!nv || shown.indexOf(nv) >= 0) return shown;
+    return all.filter(x => !x.e.nova).slice(0, FRIEND_PREVIEW_MAX - 1).concat([nv]);
   }
   function friendPreviewSig(){
-    return friendPreviewEntries().slice(0, FRIEND_PREVIEW_MAX)
+    return friendPreviewShown(friendPreviewEntries())
       .map(x => x.e.pub + (x.on ? ":" + ((presenceActivity && presenceActivity[x.e.pub]) || "app") : ":off") + ":" + (x.e.avatarChar || "") + ":" + (x.e.firstName || ""))
-      .join("|") + "#" + friendPublicIds().length;
+      .join("|") + "#" + shownFriendsCount();
   }
   function paintFriendPreview(){
     fShownSig = friendPreviewSig();
     const ids = friendPublicIds();
     const all = friendPreviewEntries();
-    const shown = all.slice(0, FRIEND_PREVIEW_MAX);
+    const shown = friendPreviewShown(all);
     fList.replaceChildren();
     fLine.classList.remove("is-online");
-    if(!ids.length){
+    if(!ids.length && !shown.length){
       fLine.textContent = "No friends yet. Swap friend codes with a classmate to add one.";
       fLine.hidden = false;
-    } else if(!shown.length){
+    } else if(ids.length && !friendPreviewReal().length){
       fLine.textContent = "Your friends show here once the class list has loaded.";
       fLine.hidden = false;
     } else {
@@ -113547,13 +113639,14 @@ function showProfile(defaultTab, opts){
       row.tabIndex = 0;
       row.dataset.pub = e.pub;
       const art = document.createElement("div");
-      art.className = "friend-row-art pf-friend-art";
-      art.appendChild(avatarSpanFor(e));
-      if(e.firstName) setCharState(art, on ? "live" : "sleep");
-      /* the green dot, repainted by presence where it stands */
+      art.className = "friend-row-art pf-friend-art" + (e.nova ? " is-nova" : "");
+      art.appendChild(e.nova ? novaAvatarSpan() : avatarSpanFor(e));
+      if(e.firstName && !e.nova) setCharState(art, on ? "live" : "sleep");
+      /* the green dot, repainted by presence where it stands (his is not
+         presence's to repaint) */
       const dot = document.createElement("span");
       dot.className = "friend-online-dot pf-friend-dot" + (on ? " is-online" : "");
-      dot.dataset.onlinePub = e.pub;
+      if(!e.nova) dot.dataset.onlinePub = e.pub;
       dot.setAttribute("aria-hidden", "true");
       art.appendChild(dot);
       const text = document.createElement("div");
@@ -113565,11 +113658,17 @@ function showProfile(defaultTab, opts){
       st.className = "pf-friend-status";
       const off = document.createElement("span");
       off.className = "pf-friend-off";
-      off.textContent = "Offline";
-      st.append(activityLabel(e.pub, true, "friend-row-on pf-friend-act"), off);
+      off.textContent = e.nova ? "Away" : "Offline";
+      if(e.nova){
+        const act = document.createElement("span");
+        act.className = "friend-row-on pf-friend-act";
+        act.textContent = "Available";
+        act.hidden = !on;
+        st.append(act, off);
+      } else st.append(activityLabel(e.pub, true, "friend-row-on pf-friend-act"), off);
       text.append(nm, st);
       row.append(art, text);
-      const openCard = () => { try{ openPersonSheet(e); }catch(err){ showFriends(); } };
+      const openCard = () => { try{ if(e.nova) openNovaCard(); else openPersonSheet(e); }catch(err){ showFriends(); } };
       row.addEventListener("click", openCard);
       row.addEventListener("keydown", ev => {
         if((ev.key === "Enter" || ev.key === " ") && ev.target === row){ ev.preventDefault(); openCard(); }
@@ -113591,13 +113690,13 @@ function showProfile(defaultTab, opts){
     if(document.querySelector(".invite-overlay .person-card")) return;
     if(friendPreviewSig() !== fShownSig) paintFriendPreview();
   };
-  if(friendIds.length && !friendPreviewEntries().length){
+  if(friendIds.length && !friendPreviewReal().length){
     /* the class list Home reads, on its own fifteen minutes */
     try{ fetchBoardForInvites(false); }catch(e){}
     let tries = 0;
     const waitRows = () => {
       if(!fList.isConnected || ++tries > 12) return;
-      if(friendPreviewEntries().length){ refreshPresenceViews(); return; }
+      if(friendPreviewReal().length){ refreshPresenceViews(); return; }
       setTimeout(waitRows, 700);
     };
     setTimeout(waitRows, 700);

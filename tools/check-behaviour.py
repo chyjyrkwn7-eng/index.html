@@ -28079,6 +28079,78 @@ def check_b324n_nova(br):
     ctx.close()
 
 
+def check_b324n2_friends(br):
+    """Build 324 (b324n2). Madison: "Nova can appear in the profiles friends
+    box, and in manage but the option to remove him won't be there."
+    Display only: Profile's Friends box draws him (online-first order, he is
+    on while available) with Available/Away, counts him in "N friends" and
+    "and N more"; Manage friends draws him as a row with no Remove (no
+    button at all) and counts him online while available; a tap opens his
+    card; friendPublicIds(), Koi Pond and Firestore never see him.
+    Fails on c6a50b9."""
+    print("\n324n2. Nova on Profile's Friends box and Manage friends, display only")
+    seed = USED_ACCOUNT.replace('"onboardingComplete":true,', '"onboardingComplete":true,"novaMet":1,"publicId":"PUBMADISON01",', 1)
+    ctx, pg = booted(br, 440, 956, seed=seed)
+    pg.evaluate(B324N_REC)
+    ok = pg.evaluate("() => typeof novaManageRow === 'function' && typeof shownFriendsCount === 'function'")
+    check("Nova has a row for the friends lists", ok)
+    if not ok:
+        ctx.close()
+        return
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      novaAwayForce = false;
+      ['novaManageRow', 'shownFriendsCount', 'novaFriendEntry'].forEach(n => { const f = window[n];
+        window[n] = function(){ window.__novaDepth++; try{ return f.apply(this, arguments); } finally { window.__novaDepth--; } }; });
+      novaBefriend({ quiet: true });
+      const now = Date.now();
+      const mk = (pub, name, on) => ({ pub, firstName: name, avatarChar: 'robot', level: 30, badges: 4, seenAt: on ? now : now - 864e5, lastModified: 0 });
+      leaderboardRows = [mk('pubann000001', 'Ann', true), mk('pubzed000001', 'Zed', true), mk('pubbob000001', 'Bob', false),
+                         mk('pubcat000001', 'Cat', false), mk('pubdan000001', 'Dan', false)];
+      presenceMap = null;
+      store.friendsIn = leaderboardRows.map(e => e.pub);
+      const koi0 = BANNERS.find(b => b.id === 'tests500').have();
+      showProfile('profile'); await wait(700);
+      const read = () => ({ count: (document.querySelector('.profile-classcard-count') || {}).textContent,
+        rows: [...document.querySelectorAll('.pf-friend')].map(r => (r.dataset.pub === 'nova' ? 'NOVA:' : '') + r.querySelector('.pf-friend-name').textContent
+          + '|' + [...r.querySelectorAll('.pf-friend-act, .pf-friend-off')].filter(x => getComputedStyle(x).display !== 'none' && !x.hidden).map(x => x.textContent).join('')),
+        more: (document.querySelector('.pf-friends-more') || {}).textContent });
+      const avail = read();
+      novaAwayForce = true; showProfile('profile'); await wait(700);
+      const away = read();
+      novaAwayForce = false; showProfile('profile'); await wait(700);
+      document.querySelector('.pf-friend[data-pub="nova"]').click(); await wait(500);
+      const card = !!document.querySelector('.person-card.is-nova');
+      document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+      showFriends(); await wait(600);
+      const nrow = document.querySelector('.friend-sect .friend-row.is-nova');
+      const manage = { has: !!nrow, buttons: nrow ? nrow.querySelectorAll('button').length : -1, text: nrow ? nrow.textContent : '',
+        order: [...document.querySelectorAll('.friend-sect .friend-row')].map(r => r.querySelector('.friend-row-name').textContent),
+        removes: [...document.querySelectorAll('.friend-sect .friend-row button')].filter(b => b.textContent === 'Remove').length,
+        head: [...document.querySelectorAll('.friend-sect .sect-label')].map(e => e.textContent).find(t => /Your friends/.test(t)) };
+      nrow.click(); await wait(500);
+      manage.card = !!document.querySelector('.person-card.is-nova');
+      document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+      return { avail, away, card, manage, ids: friendPublicIds(), koi0, koi: BANNERS.find(b => b.id === 'tests500').have(),
+               w: window.__fsw.slice(), push: window.__push }; }""")
+    av, aw, mg = r.get("avail") or {}, r.get("away") or {}, r.get("manage") or {}
+    check("Profile's Friends box shows Nova, online-first by name while available, with 'Available'",
+          (av.get("rows") or [])[:3] == ["Ann|Online", "NOVA:Nova|Available", "Zed|Online"] or
+          ((av.get("rows") or [""])[1].startswith("NOVA:Nova|Available") and len(av.get("rows") or []) == 4), av)
+    check("...and counts him: '6 friends', four rows, 'and 2 more'", av.get("count") == "6 friends" and len(av.get("rows") or []) == 4 and av.get("more") == "and 2 more", av)
+    check("away, he says Away and drops below the friends who are on, but never into 'and N more' (he takes the fourth row)",
+          [x.split("|")[0] for x in aw.get("rows") or []] == ["Ann", "Zed", "Bob", "NOVA:Nova"] and (aw.get("rows") or [""])[-1] == "NOVA:Nova|Away"
+          and aw.get("more") == "and 2 more", aw)
+    check("tapping him on the Friends box opens his card", r.get("card"), r.get("card"))
+    check("Manage friends lists Nova with his rank and no Remove (no button at all), the others keep theirs",
+          mg.get("has") and mg.get("buttons") == 0 and "Supernova" in (mg.get("text") or "") and "Available" in (mg.get("text") or "")
+          and mg.get("removes") == 5 and (mg.get("order") or [])[:3] == ["Ann", "Nova", "Zed"], mg)
+    check("...counts him online while he is available, and a tap opens his card", "3 online" in (mg.get("head") or "") and mg.get("card"), mg.get("head"))
+    check("display only: not in friendPublicIds(), not counted for Koi Pond", "nova" not in (r.get("ids") or []) and len(r.get("ids") or []) == 5
+          and r.get("koi") == r.get("koi0") and r.get("koi", 9) <= 5, {k: r.get(k) for k in ("ids", "koi0", "koi")})
+    check("...and nothing of his wrote to Firestore or the store", not r.get("w") and not r.get("push"), {k: r.get(k) for k in ("w", "push")})
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -28324,6 +28396,7 @@ def main():
 
 
             check_b324n_nova(br)
+            check_b324n2_friends(br)
         finally:
             br.close()
     SERVER.shutdown()
