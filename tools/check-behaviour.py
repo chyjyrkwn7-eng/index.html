@@ -24126,11 +24126,16 @@ B321H_TAP = """async () => { const wait = ms => new Promise(r => setTimeout(r, m
   sph.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
   const gs = [...hero.querySelectorAll(':scope > .sn-ringglint')];
   const op = gs.map(() => 0), t0 = performance.now();
-  while(performance.now() - t0 < 2300){ gs.forEach((g, i) => { op[i] = Math.max(op[i], +getComputedStyle(g).opacity); }); await wait(40); }
+  /* turning is sampled WHILE the streak runs: ring one's 2000ms finishes
+     before a 2300ms watch ends, so reading it afterwards only passed on a
+     machine slow enough to stretch the watch */
+  const spin = gs.map(() => false);
+  while(performance.now() - t0 < 2300){ gs.forEach((g, i) => { op[i] = Math.max(op[i], +getComputedStyle(g).opacity);
+    if(g.getAnimations().some(a => a.playState === 'running' && a.effect.getKeyframes().some(k => /rotate/.test(k.transform || '')))) spin[i] = true; }); await wait(40); }
   const kids = [...hero.children];
   const firstFlare = kids.findIndex(k => k.matches('.cosmic-hero-orbitlayer, .cosmic-icon-badge'));
   return { n: gs.length, why: gs.map(g => g.dataset.why), op,
-    turning: gs.map(g => g.getAnimations().some(a => a.playState === 'running' && a.effect.getKeyframes().some(k => /rotate/.test(k.transform || '')))),
+    turning: spin,
     under: gs.every(g => firstFlare >= 0 && kids.indexOf(g) < firstFlare), pe: gs.map(g => getComputedStyle(g).pointerEvents),
     mask: gs.map(g => !!(g.style.maskImage || g.style.webkitMaskImage)) }; }"""
 
