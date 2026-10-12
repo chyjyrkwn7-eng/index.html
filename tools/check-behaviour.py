@@ -21639,6 +21639,7 @@ B321G_TALK = """async (id) => {
 B321G_TOUR = """async () => {
   const wait = ms => new Promise(r => setTimeout(r, ms));
   for(let i = 0; i < 40 && !document.getElementById('tour-tooltip'); i++) await wait(100);
+  await wait(400);
   const out = [];
   for(let i = 0; i < 20; i++){
     const tt = document.getElementById('tour-tooltip');
@@ -21723,7 +21724,7 @@ def check_b321g_nova(br):
     news = pg.evaluate(B321G_TALK, "intro-pop")
     nt = " ".join(news.get("lines") or [])
     check("then What's New, narrated, with no second hello, leading into the tips",
-          news.get("open") and "Hello" not in (news.get("lines") or [""])[0] and "version 7.8" in nt and news.get("go") == "Show me",
+          news.get("open") and "Hello" not in (news.get("lines") or [""])[0] and "version 9" in nt and news.get("go") == "Show me",
           {"head": (news.get("lines") or [])[:2], "go": news.get("go")})
     tips = pg.evaluate(B321G_TOUR)
     want = pg.evaluate("()=>{ try{ return mainMenuTourSteps(true).length + NOVA_NEW_TIPS_321.length; }catch(e){ return -1; } }")
@@ -21746,12 +21747,47 @@ def check_b321g_nova(br):
     check("once: recorded on the account and on the device, and nothing on the next Home", after.get("met") == 1 and after.get("local") and not after.get("more") and not after.get("tour"), after)
     # a second device of the same account: What's New alone
     r2 = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); localStorage.removeItem('class26e.intro.seen'); window.__seen = [];
+      /* the fixture's owed rank-up (Gold held from the old ladder) is not what this asks about */
+      store.rankUpShown = TIER_ORDER_FULL.length; saveStore();
       showProfile('profile'); await wait(300); showHome();
-      for(let i = 0; i < 50 && !document.getElementById('intro-pop') && !document.getElementById('nova-intro'); i++) await wait(100);
+      for(let i = 0; i < 120 && !document.getElementById('intro-pop') && !document.getElementById('nova-intro'); i++) await wait(100);
       const out = { intro: !!document.getElementById('nova-intro'), news: !!document.getElementById('intro-pop') };
       const el = document.getElementById('intro-pop'); if(el && el.__nova){ el.__nova.skip(); await wait(100); out.last = el.querySelector('.nt-text').textContent; }
       return out; }""")
     check("a device whose account has met him gets What's New alone, ending on 'I'll speak with you again'", r2.get("news") and not r2.get("intro") and "speak with you again" in (r2.get("last") or ""), r2)
+    ctx.close()
+
+    # Version 9, the version history in bullets, and Back to Home (build 321)
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    h = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); showReleaseHistory(); await wait(300);
+      const heads = [...document.querySelectorAll('#stage .releasehistory-version')].map(e => e.textContent.replace(/[\u2303\u2304]/g, '').trim());
+      document.querySelectorAll('#stage .releasehistory-version-btn').forEach(b => b.click()); await wait(100);
+      const groups = [...document.querySelectorAll('#stage .releasehistory-row')];
+      const bulleted = groups.filter(g => g.querySelectorAll('ul > li').length > 0).length;
+      const lis = [...document.querySelectorAll('#stage .releasehistory-row li')];
+      const v9 = (document.querySelector('#stage .releasehistory-row') || {}).parentNode;
+      const v9text = v9 ? v9.textContent : '';
+      const b = document.getElementById('releasehistory-home');
+      const out = { heads, groups: groups.length, bulleted, lis: lis.length, detailed: lis.filter(l => l.textContent.length > 60).length,
+        v9text: v9text.slice(0, 3000) };
+      if(b){ const cs = getComputedStyle(b), rgb = (cs.backgroundColor.match(/[\d.]+/g) || []).map(Number);
+        const r = b.getBoundingClientRect();
+        out.btn = { text: b.textContent, bg: cs.backgroundColor, dark: rgb.length >= 3 && (rgb.length < 4 || rgb[3] > .5) && rgb[0] + rgb[1] + rgb[2] < 120,
+                    last: b === b.parentNode.lastElementChild, w: Math.round(r.width) };
+        b.click(); await wait(400); out.home = !!document.querySelector('#stage [data-screen="home"]'); }
+      if(!out.home){ showHome(); await wait(400); }
+      out.label = (document.querySelector('.homeversion-long') || {}).textContent || null;
+      return out; }""")
+    heads = h.get("heads") or []
+    check("Version 9 is at the top of the version history, and Version 8 is marked (not launched)",
+          heads[:2] == ["Version 9", "Version 8 (not launched)"] and "Version 7.7" in heads, heads[:4])
+    check("Version 9's notes bring Version 8 and add sound effects, Android vibration, sign-in first and rankings that match Profile",
+          all(w in (h.get("v9text") or "") for w in ("Sound Effects", "Vibration On Android", "Sign In First", "Rankings That Match Profile", "Version 8")), (h.get("v9text") or "")[:200])
+    check("every version's notes are bullet lists, each bullet its title and what it does",
+          h.get("groups", 0) > 20 and h.get("bulleted") == h.get("groups") and h.get("detailed", 0) >= h.get("lis", 0) * .8, {k: h.get(k) for k in ("groups", "bulleted", "lis", "detailed")})
+    b = h.get("btn") or {}
+    check("a black Back to Home button at the bottom, and it goes Home", b.get("text") == "Back to Home" and b.get("dark") and b.get("last") and h.get("home"), b)
+    check("Home's version label reads Version 9", h.get("label") == "Version 9", h.get("label"))
     ctx.close()
 
     # Skip on an existing account's introduction skips the story, not the recap.

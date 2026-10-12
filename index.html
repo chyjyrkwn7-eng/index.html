@@ -14742,6 +14742,13 @@
   .releasehistory-row{ display:flex; flex-direction:column; gap:.1rem; padding:.4rem 0; }
   .releasehistory-label{ font-weight:700; font-size:.85rem; color:var(--ink); }
   .releasehistory-summary{ font-size:.82rem; color:var(--soft); line-height:1.4; }
+  /* build 321: every item a bullet, in full; the unlaunched version says so */
+  .releasehistory-list{ margin:.25rem 0 0; padding-left:1.15rem; display:flex; flex-direction:column; gap:.35rem; }
+  .releasehistory-list li{ font-size:.84rem; color:var(--soft); line-height:1.45; }
+  .releasehistory-list li b{ color:var(--ink); font-weight:700; }
+  .releasehistory-list li::marker{ color:var(--accent, #FFD27A); }
+  .releasehistory-version.is-unlaunched{ opacity:.85; }
+  .releasehistory-home{ display:block; width:min(20rem, 100%); margin:1.6rem auto .4rem; }
   /* Same flex-column, push-to-bottom layout as every other single-
      purpose screen (Continue, Start Studying) — this panel previously
      had no such behavior at all, so its buttons sat right after the
@@ -64988,12 +64995,39 @@ function poolNow(){
    now reads directly from RELEASE_NOTES[0].groups below, so there is
    only one place this content can ever be edited. */
 const RELEASE_NOTES = [
-  /* 7.8 (builds 319, 320 and 321, which ship together). Nova narrates the
-     headline of each of these on What's New (WHATS_NEW_320); this is the
-     full list. "Save A Test For Later" moved here from 7.7, which had
+  /* VERSION 9 (build 321 and the round that ships with it): "This is gonna
+     be version 9. When doing it on the version history show a version 8
+     with some of this stuff but put in parenthesis not launched." Version
+     9 is what launches: everything built as Version 8 (below, marked not
+     launched), plus what is listed here. Nova narrates the headlines on
+     What's New (WHATS_NEW_320); this is the full list. The newest entry
+     is also what Welcome's What's New screen draws, so every item keeps
+     an icon. */
+  {
+    version: "9",
+    groups: [
+      { label: "New In Version 9", items: [
+        { icon: buildSparkleIcon, color: "#FFD27A", title: "Sound Effects", body: "A new option in Settings, off until you turn it on. Sounds for nearly everything: your answers, your results, Home's ambience, the planet, badges, cutscenes, the Leaderboard and the Virtual Room." },
+        { icon: buildDevicesIcon, color: "#4ADE80", title: "Vibration On Android", body: "Android phones can buzz on answers and moments that matter. Also a setting, also off until you turn it on." },
+        { icon: buildPersonIcon, color: "#5CA8FF", title: "Sign In First", body: "Welcome leads with Sign in. Signing up asks whether you have used Nova before, and warns you if the name you chose already belongs to an account." },
+        { icon: buildDualBoardIcon, color: "#F5C518", title: "Rankings That Match Profile", body: "Your rank, level and badges on the Leaderboard always match what your own Profile says." }
+      ]},
+      { label: "Meet Nova", items: [
+        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. When a planet beside his ship cracked apart, the blast scattered his badges, his flares and his crew across this system. Every character you unlock is one of his missing crew, found." },
+        { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "He Meets Everyone", body: "Everybody meets him once: he tells the story, goes over what you have found, narrates What's New and shows you what has changed. He narrates every tip in the app." }
+      ]},
+      { label: "Everything From Version 8", items: [
+        { icon: buildRocketIcon, color: "#F5804D", title: "Version 8, Launched At Last", body: "Version 8 was built but never launched on its own. All of it arrives with Version 9: your grade first on the results, characters that celebrate a hundo, the Level 1 Badge Case, badges you can hold, spin and clean, the rank-up on the road map, the planet that cracks with every rank, a new Profile, Save and exit, and the daily question ring." }
+      ]}
+    ]
+  },
+  /* VERSION 8 (builds 319 and 320; was "7.8"). Built, never launched on
+     its own - Version 9 carries it - so the history marks it "(not
+     launched)". "Save A Test For Later" moved here from 7.7, which had
      already gone out without it. */
   {
-    version: "7.8",
+    version: "8",
+    notLaunched: true,
     groups: [
       { label: "Meet Nova", items: [
         { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. When a planet beside his ship cracked apart, the blast scattered his badges, his flares and his crew across this system. Every character you unlock is one of his missing crew, found. He narrates What's New and every tip in the app." }
@@ -65004,6 +65038,7 @@ const RELEASE_NOTES = [
       ]},
       { label: "Badges", items: [
         { icon: buildStarIcon, color: "#4ADE80", title: "Badges Are Found", body: "A badge you earn is found, and its moment has the screen to itself: chat and notifications wait until it is over. Badges no longer add XP." },
+        { icon: buildStarIcon, color: "#C9D3DE", title: "The Level 1 Badge Case", body: "Your badges live in one case, with a lid, lining, clips and its name on the plate. Finding a badge opens it: the badge lands in its slot and every badge already there lights up in its own colour." },
         { icon: buildStarIcon, color: "#C9D3DE", title: "A Badge In Your Hand", body: "Tap a badge in your case and it floats out, head on, while the case tips away. Drag to spin it, fast or slow. Badges gather dirt week by week, in five stages; rub one with your finger to clean it." }
       ]},
       { label: "Ranks", items: [
@@ -65273,7 +65308,8 @@ function showReleaseHistory(){
   const panel = document.createElement("section");
   panel.className = "panel";
 
-  /* No back link. Per explicit request, and consistent with the rule
+  /* No back link at the top (build 321 added "Back to Home" at the
+     bottom, asked for by name - see below). Per explicit request, and consistent with the rule
      the rest of the app already follows: a screen the bottom tab bar
      can already leave does not get its own exit. Release History is
      reached from Home's version label and every tab is one tap away
@@ -65283,15 +65319,22 @@ function showReleaseHistory(){
   head.textContent = "Release History";
   panel.appendChild(head);
 
+  /* BULLETS, IN FULL (build 321): "Some of things things could have a
+     little more.. especially the older stuff.. seems so thin. Doesn't go
+     into detail. Stuff shoukd be listed as bullet points". The history
+     used to print each group as its item TITLES joined by commas; every
+     item now is a bullet with its title and what it actually does. */
+  const versionName = r => "Version " + r.version + (r.notLaunched ? " (not launched)" : "");
   RELEASE_NOTES.forEach((release, releaseIndex) => {
     const isNewest = releaseIndex === 0;
     const versionHead = document.createElement(isNewest ? "p" : "button");
-    versionHead.className = "releasehistory-version" + (isNewest ? "" : " releasehistory-version-btn");
+    versionHead.className = "releasehistory-version" + (isNewest ? "" : " releasehistory-version-btn") + (release.notLaunched ? " is-unlaunched" : "");
     if(!isNewest) versionHead.type = "button";
-    versionHead.textContent = "Version " + release.version + (isNewest ? "" : "  \u2304");
+    versionHead.textContent = versionName(release) + (isNewest ? "" : "  \u2304");
     panel.appendChild(versionHead);
 
     const body = document.createElement("div");
+    body.className = "releasehistory-body";
     body.hidden = !isNewest;
     release.groups.forEach(group => {
       const row = document.createElement("div");
@@ -65301,10 +65344,15 @@ function showReleaseHistory(){
         label.className = "releasehistory-label"; label.textContent = group.label;
         row.appendChild(label);
       }
-      const summary = document.createElement("span");
-      summary.className = "releasehistory-summary";
-      summary.textContent = group.items.map(i => i.title).join(", ") + ".";
-      row.appendChild(summary);
+      const list = document.createElement("ul");
+      list.className = "releasehistory-list";
+      group.items.forEach(item => {
+        const li = document.createElement("li");
+        const t = document.createElement("b"); t.textContent = item.title;
+        li.append(t, document.createTextNode(item.body ? " \u2014 " + item.body : ""));
+        list.appendChild(li);
+      });
+      row.appendChild(list);
       body.appendChild(row);
     });
     panel.appendChild(body);
@@ -65312,10 +65360,19 @@ function showReleaseHistory(){
     if(!isNewest){
       versionHead.addEventListener("click", () => {
         body.hidden = !body.hidden;
-        versionHead.textContent = "Version " + release.version + (body.hidden ? "  \u2304" : "  \u2303");
+        versionHead.textContent = versionName(release) + (body.hidden ? "  \u2304" : "  \u2303");
       });
     }
   });
+
+  /* "While looking at version history, button is needed at the button, a
+     black button that says back to home" (build 321) - the app's black
+     button (Quit test's .next.ghost) */
+  const home = document.createElement("button");
+  home.type = "button"; home.className = "next ghost releasehistory-home"; home.id = "releasehistory-home";
+  home.textContent = "Back to Home";
+  home.addEventListener("click", () => showHome());
+  panel.appendChild(home);
 
   stage.replaceChildren(panel);
   toTop();
@@ -70410,7 +70467,7 @@ function buildNovaWreck(){
   /* the pieces of it */
   const pb = el("nw2-pbox", at(P.px - D / 2, P.py - D / 2, D) + "height:" + D.toFixed(2) + "%", cam, "div");
   pb.style.setProperty("--nw-planet", nwPlanetPaint(hero));
-  play(pb, [{ opacity: 0 }, { opacity: 1 }], { duration: 40, delay: B + 10 });
+  play(pb, [{ opacity: 0 }, { opacity: 0, offset: (B + 10) / (B + 50) }, { opacity: 1 }], { duration: B + 50 });
   const pc = q => ((q + .5) * 100).toFixed(2) + "%";
   nwShards().forEach((s, i) => {
     const ch = el("nw2-chunk", "clip-path:polygon(" + s.pts.map(p => pc(p[0]) + " " + pc(p[1])).join(",") + ");transform-origin:" + pc(s.cx) + " " + pc(s.cy), pb, "div");
@@ -76981,8 +77038,8 @@ const INTRO_MAX_TRIES = 20;
 /* 4 = the 7.8 update (builds 319 and 320, which ship together): What's
    New narrated by Nova - see showIntroPopup. Every fixture that sets
    class26e.intro.seen to 9 is still past it. */
-/* 5 = 7.8 again (build 321): builds 319, 320 and 321 ship together and 4
-   never went out, but a device that saw 320's What's New is shown this
+/* 5 = Version 9 (build 321): builds 319, 320 and 321 ship together (320's
+   "7.8" became Version 8, never launched) and 4 never went out, but a device that saw 320's What's New is shown this
    one. The meeting with Nova an existing account gets with it is gated on
    the ACCOUNT (store.novaMet), so it plays once however many devices. */
 const INTRO_REV = 5;
@@ -77058,6 +77115,12 @@ function levelGateNoteText(s){
    flares, said in his voice. One short line each.
    Builds 319 and 320 ship together, so this is both of their news. */
 const WHATS_NEW_320 = [
+  /* Version 9's own news that everybody will notice (the rest of 9 - sign
+     in first, the rankings - is for new devices and the board) */
+  { key: "sound", color: "#FFD27A", title: "Sound effects",
+    glyph: "M4 9h4l5-4v14l-5-4H4V9Zm12.5-1.8a6.5 6.5 0 0 1 0 9.6l-1.4-1.4a4.5 4.5 0 0 0 0-6.8l1.4-1.4Zm2.8-2.8a10.5 10.5 0 0 1 0 15.2l-1.4-1.4a8.5 8.5 0 0 0 0-12.4l1.4-1.4Z",
+    body: "A new option in Settings, off until you turn it on: sounds for your answers, your results, Home, badges, cutscenes and more.",
+    say: "First, something you can hear. Sound effects are a new option in Settings. They are off until you turn them on." },
   { key: "results", color: "#FFD84D", title: "Results, grade first",
     glyph: "M12 1.8a7.2 7.2 0 1 0 0 14.4 7.2 7.2 0 0 0 0-14.4Zm0 3.1 1.25 2.6 2.85.4-2.06 2 .48 2.84L12 11.4l-2.52 1.34.48-2.84-2.06-2 2.85-.4L12 4.9ZM7.4 15.4 5.8 22l3.3-1.7 2.1 1.6-.7-4.9a8.7 8.7 0 0 1-3.1-1.6Zm9.2 0a8.7 8.7 0 0 1-3.1 1.6l-.7 4.9 2.1-1.6 3.3 1.7-1.6-6.6Z",
     body: "Your grade counts up first, red to green as each unit fills. Then your XP, then anything you unlocked.",

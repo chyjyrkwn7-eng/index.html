@@ -494,6 +494,8 @@ def run_intro(src_dir, label):
             # builds the card row by row as he talks; Skip puts every row on
             # it at once, which is what is measured here. The list it must
             # cover is 319's and 320's, in version 7.8, and Nova says it.
+            # (build 321: the release is Version 9 - "This is gonna be
+            # version 9" - and 319-320's "7.8" is Version 8, not launched)
             pg.evaluate("()=>{ const s = document.querySelector('#intro-pop .nt-skip'); if(s) setTimeout(() => s.click(), 900); }")
             pg.wait_for_timeout(1500)
             out = pg.evaluate("""()=>{
@@ -510,7 +512,7 @@ def run_intro(src_dir, label):
                       bottomReachable: lr.bottom <= br.top + 1 && br.bottom <= innerHeight + 1 && list.scrollHeight >= list.clientHeight,
                       wide: lr.width > innerWidth * 0.7,
                       says78: ['nova', 'results', 'badge', 'badge case', 'road map', 'planet', 'profile', 'calendar', 'save a test', 'daily question'].every(w => txt.indexOf(w) >= 0)
-                        && txt.indexOf('7.8') >= 0,
+                        && txt.indexOf('version 9') >= 0,
                       go: !!el.querySelector('.intro-go')};}""")
             if not out:
                 fails.append("the introduction never opened")
@@ -522,7 +524,7 @@ def run_intro(src_dir, label):
                 if not (out["topReachable"] and out["bottomReachable"]):
                     fails.append("part of the introduction cannot be scrolled to: %s" % out)
                 if not out["says78"]:
-                    fails.append("the what's new card is missing one of the things it was asked to say, or is not 7.8")
+                    fails.append("the what's new card is missing one of the things it was asked to say, or is not Version 9")
                 if not out["go"]:
                     fails.append("there is no way to dismiss the introduction")
 
