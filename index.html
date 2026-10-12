@@ -12131,6 +12131,10 @@
     animation-duration:.22s, 1.4s !important;
   }
   .supernova-stage .cosmic-icon-badge{ transition:opacity 1.5s ease; }
+  /* Home's planet pulse, on each breath of the charge (build 321, windUp) */
+  .rank-planetpulse{ position:absolute; z-index:1; border-radius:50%; border:1.6px solid var(--bc); pointer-events:none; opacity:0;
+    transform:translate(-50%, -50%); will-change:transform, opacity;
+    box-shadow:0 0 10px color-mix(in srgb, var(--bc) 55%, transparent), inset 0 0 8px color-mix(in srgb, var(--bc) 35%, transparent); }
   #supernova-cutscene.supernova-burst .supernova-stage .cosmic-icon-badge{ opacity:0; }
   .supernova-flash{
     position:absolute; inset:0; border-radius:50%; pointer-events:none;
@@ -12961,6 +12965,10 @@
   .cosmic-rank-anim .rk-frame{ position:absolute; left:50%; top:50%; overflow:hidden; }
   .cosmic-rank-anim .rk-frame img{ display:block; max-width:none; will-change:transform; backface-visibility:hidden; }
   .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem.rk-under-anim{ visibility:hidden; }
+  /* a cutscene's flip-book (rankSceneEmblemAnims) takes the emblem's own
+     look from the bubble's state, which changes during the scene */
+  .cosmic-icon-badge.cosmic-badge-rank > .cosmic-rank-anim.is-scene{ filter:grayscale(1) brightness(1.9) contrast(.9); opacity:.62; }
+  .cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit > .cosmic-rank-anim.is-scene{ filter:saturate(1.4) brightness(1.32); opacity:1; }
   .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit) svg.cosmic-rank-emblem{ filter:grayscale(1) brightness(1.05); opacity:.62; }
   /* ---- A RANK NOT YET REACHED IS LIQUID GLASS AGAIN (build 232) ----
      "The bubbles on the main menu, the ones that aren't unlocked look
@@ -15445,7 +15453,9 @@
      why. !important for the same reason as the chips: the per-rank
      "-big" rules further down set animation-name again at equal
      specificity, and Gold's swing was still running in every orbit. */
-  .cosmic-badge-rank .rank-emblem-svg .rk-a{ animation:none !important; }
+  /* (not the road map's flare carried into a bubble by the rank-up's
+     hand-off, build 321: it keeps moving on its own clock - ruClockSnap) */
+  .cosmic-badge-rank .rank-emblem-svg:not(.ru-ghost *) .rk-a{ animation:none !important; }
   /* off screen, nothing moves (build 252 - see watchRankEmblemOnScreen) */
   .rank-emblem-svg.rk-idle .rk-a{ animation:none !important; }
   .bnr.rk-idle, .bnr.rk-idle *{ animation:none !important; }
@@ -15770,6 +15780,19 @@
   .rankmap-stop:not(.is-reached) .rankmap-giftbanner .bnr,
   .rankmap-stop.is-celebrate-pending .rankmap-giftbanner .bnr{ filter:grayscale(1) brightness(.75); }
   .rankmap-dot, .rankmap-giftav svg, .rankmap-giftbanner .bnr{ transition:filter .7s ease, opacity .7s ease; }
+  /* UP NEXT SHOWS WHAT IT GIVES IN COLOUR (build 321): "the up next rank,
+     the unlocks in there should have their color ... only the theme with
+     color but the banner and stuff is greyed out ... THATS ONLY for the
+     next up one". The rank you are working towards shows every unlock -
+     theme, flare, character, banner - in its own colour; every rank past
+     it stays grey. (The rank-up's held Up next, .ru-nexthold, is locked
+     until its moment, so it takes its colour in front of you.) */
+  .rankmap-stop.is-next:not(.is-celebrate-pending) .rankmap-gift .rankmap-dot{ filter:none; opacity:1; box-shadow:0 0 6px currentColor; }
+  .rankmap-stop.is-next:not(.is-celebrate-pending) .rankmap-gift .rankmap-giftav svg{ filter:none; opacity:1; }
+  .rankmap-stop.is-next:not(.is-celebrate-pending) .rankmap-gift .rankmap-giftbubble .flare-solo{ filter:none; opacity:1; }
+  .rankmap-stop.is-next:not(.is-celebrate-pending) .rankmap-gift .rankmap-giftbanner .bnr{ filter:none; }
+  .rankhero-gauge.is-pending .rankhero-gaugetarget{ color:rgba(255,255,255,.62); }
+  .rankmap-stop.ru-nextlit .rankmap-state{ transition:color .7s ease, background .7s ease; }
   .rankmap-stop.is-celebrating .rankmap-gift:nth-child(2) .rankmap-giftav svg{ transition-delay:.18s; }
   .rankmap-stop.is-celebrating .rankmap-gift:nth-child(3) .rankmap-giftav svg{ transition-delay:.36s; }
   .rankmap-stop.is-celebrating .rankmap-giftbanner .bnr{ transition-delay:.5s; }
@@ -16034,6 +16057,16 @@
      (no transition on the way out, or they would show for the first
      frames) and come up over 2s. */
   .ru-hand-veil{ position:absolute; inset:-40%; z-index:2; pointer-events:none; background:#050308; }
+  /* the bubble under the copy: none of its own paint until the copy fades
+     (build 321, rankCutHandoff) */
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble:not(.ru-hand-reveal){ background-color:transparent !important; border-color:transparent !important; box-shadow:none !important; transition:none !important; }
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble:not(.ru-hand-reveal) > :not(.ru-ghost),
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble:not(.ru-hand-reveal)::before,
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble:not(.ru-hand-reveal)::after{ opacity:0 !important; transition:none !important; }
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble.ru-hand-reveal{ transition:background-color 1.3s ease-in-out .25s, border-color 1.3s ease-in-out .25s, box-shadow 1.3s ease-in-out .25s; }
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble.ru-hand-reveal > :not(.ru-ghost),
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble.ru-hand-reveal::before,
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble.ru-hand-reveal::after{ transition:opacity 1.3s ease-in-out .25s; }
   #supernova-cutscene.ru-handoff:not(.ru-handoff-in) .rank-before .rank-orbit > :not(.ru-hand-slot){ opacity:0 !important; transition:none !important; }
   #supernova-cutscene.ru-handoff.ru-handoff-in .rank-before .rank-orbit > :not(.ru-hand-slot){ transition:opacity 2s cubic-bezier(.4,0,.3,1) .3s; }
   /* 9. UP NEXT, ON THE ROAD MAP ITSELF (build 320): "after the unlock pop
@@ -16063,29 +16096,13 @@
   @keyframes ru-nx-chip{ 0%{ transform:scale(1); } 45%{ transform:scale(1.18); } 100%{ transform:scale(1); } }
   [data-reduce-motion="true"] .ru-nx-wash{ opacity:.32; }
   [data-reduce-motion="true"] .ru-nx-edge{ opacity:.6; }
-  /* 10. THE CARD AT THE TOP TURNS OVER (build 320): "the current rank card
-     changes, from the old to one ... it says rank up there or something at
-     the top, not sure why, the card should just change to the next one in
-     a nice way." It shows the rank you were, rings and all, until the map
-     is done; then it turns on its vertical axis - the old face away, the
-     new one round - a band of light crosses the new face as it lands, and
-     its rings fill again with their numbers counting. No "Rank up". */
-  html.ru-scene .ranks-tab.ru-turning{ perspective:1300px; }
-  .rankhero.ru-turn-out{ animation:ru-turn-out .46s cubic-bezier(.55,0,.8,.45) both; }
-  @keyframes ru-turn-out{ from{ transform:none; } to{ transform:rotateY(-90deg) scale(.96); } }
-  .rankhero.ru-turn-in{ animation:ru-turn-in .8s cubic-bezier(.2,.9,.3,1.05) both; }
-  @keyframes ru-turn-in{ from{ transform:rotateY(90deg) scale(.96); } to{ transform:none; } }
-  .rankhero.ru-turn-in .rankhero-art{ animation:ru-hero-art .9s cubic-bezier(.2,1.5,.4,1) .2s both; }
-  @keyframes ru-hero-art{ 0%{ transform:scale(.7); opacity:.4; } 60%{ transform:scale(1.1); opacity:1; } 100%{ transform:none; } }
-  .ru-turnsheen{ position:absolute; inset:0; border-radius:inherit; overflow:hidden; pointer-events:none; z-index:2; }
-  .ru-turnsheen > i{ position:absolute; top:-30%; bottom:-30%; left:0; width:34%;
-    background:linear-gradient(100deg, transparent, color-mix(in srgb, var(--rank-color, #fff) 30%, rgba(255,255,255,.35)) 50%, transparent);
-    transform:translateX(-130%) skewX(-14deg); animation:ru-turnsheen 1.15s cubic-bezier(.4,.1,.3,1) .45s both; }
-  @keyframes ru-turnsheen{ from{ transform:translateX(-130%) skewX(-14deg); } to{ transform:translateX(330%) skewX(-14deg); } }
-  /* 11. back on Profile: the new rank's emblem arrives with a small pop, the
-     completed card folds away, the next rank's comes in a piece at a
-     time, and the saved XP climbs the bar */
-  .pf-standing.ru-arrive .pf-emb{ animation:ru-emb-arrive .9s cubic-bezier(.2,1.5,.4,1) .1s both; }
+  /* 10. THE CARD AT THE TOP (build 321): no turn any more - it fades to
+     the new card (rankUpHeroTurn), so build 320's turn and sheen are gone. */
+  /* 11. back on Profile: the rank you had, then (build 321) the new rank's
+     word arriving with a small pop (no emblem on the line since b321f), the
+     completed card folds away, the next rank's comes in a piece at a time,
+     and the saved XP climbs the bar */
+  .pf-standing.ru-arrive .pf-rankname.ru-rank-new{ display:inline-block; animation:ru-emb-arrive .9s cubic-bezier(.2,1.5,.4,1) both; }
   @keyframes ru-emb-arrive{ 0%{ transform:scale(.5); opacity:.2; } 60%{ transform:scale(1.2); opacity:1; } 100%{ transform:none; } }
   .ru-flipping{ perspective:1100px; }
   .pf-goal.ru-flip-out{ transform-origin:50% 0; animation:ru-flip-out .43s cubic-bezier(.55,0,.75,.45) both; }
@@ -16097,8 +16114,6 @@
     transition:opacity .45s ease var(--ru-d, 0s), transform .6s cubic-bezier(.2,.9,.25,1) var(--ru-d, 0s); }
   .pf-goal.ru-goal-pre.ru-goal-in .pf-rw{ transition:opacity .4s ease var(--ru-d, 0s), transform .55s cubic-bezier(.2,1.5,.4,1) var(--ru-d, 0s); }
   .pf-goal.ru-goal-pre .pf-rw{ transform:translateY(10px) scale(.7); }
-  .pf-standing .pf-xp-note{ transition:opacity .5s ease; }
-  .pf-standing .pf-xp-note.ru-later{ opacity:0; }
   .pf-standing.ru-climbing .pf-xpbarwrap{ filter:drop-shadow(0 0 8px rgba(111,194,255,.55)); }
   .pf-level.ru-lvpop{ display:inline-block; animation:ru-lvpop .5s cubic-bezier(.2,1.5,.4,1) both; }
   @keyframes ru-lvpop{ 0%{ transform:scale(1); } 45%{ transform:scale(1.2); color:#BFE3FF; } 100%{ transform:scale(1); } }
@@ -21709,7 +21724,6 @@
     .pf-standing .pf-xpnums{ justify-content:center; flex-wrap:nowrap; gap:.3em; }
     .pf-standing .pf-xp-total{ display:none; }
     .pf-standing .pf-xp-to:not(:empty){ display:inline; white-space:nowrap; color:var(--soft); font-weight:700; }
-    .pf-standing.ru-climbing .pf-xp-to{ display:none; }
   }
   .pf-standing + .pf-goal, .pf-standing + .pf-case{ margin-top:1.05rem; }
   /* the flare bubble, out of Home's orbit */
@@ -28592,6 +28606,10 @@
   body.cutscene-focus :is(.chatdock-panel, #roomchat-sheet){ visibility:hidden !important; pointer-events:none !important; }
   /* Reduce motion: no slide - out of sight and out of reach, and back */
   [data-reduce-motion="true"] body.cutscene-focus :is(.chatdock-btn, .bottomtabs, .roomchat-fab){ visibility:hidden; }
+  /* the rank-up journey: gone from its first frame, back only at its end
+     (build 321, rankUpNewScene) */
+  body.ru-journey :is(.chatdock-btn, .bottomtabs, .roomchat-fab){ visibility:hidden !important; pointer-events:none !important; }
+  body.ru-journey .pf-rw-char.is-waiting .rank-avatar, body.ru-journey .pf-rw-char.is-waiting::after{ animation:none !important; }
   @media (prefers-reduced-motion:reduce){ body.cutscene-focus :is(.chatdock-btn, .bottomtabs, .roomchat-fab){ visibility:hidden; animation:none; } }
 
   /* ---- the case's name, on its side (build 317, badge2) ----
@@ -60953,6 +60971,8 @@ var CHAR_SPECIAL_COVERS = ".bc-scene, #supernova-cutscene, #badge-cutscene, #voi
    end (finish() then plays the hundo's special itself). */
 function charSpecialCovered(el){
   try{
+    /* not during a rank-up journey (build 321) - its end plays one */
+    if(typeof rankUpScene !== "undefined" && rankUpScene) return true;
     /* holding its breath under the Underwater hundo (build 317, round 5) */
     if(el && el.classList && (el.classList.contains("char-hold") || el.classList.contains("char-gasp"))) return true;
     /* ...or reacting to any hundo effect (build 320, hfxCharReact) */
@@ -74755,7 +74775,18 @@ function rankCutHandoff(overlay, stageWrap, heroBefore, tierKey, ghost){
     ghost.getAnimations().forEach(a => { try{ a.cancel(); }catch(e){} });
     const w0 = ghost.offsetWidth || g.width;
     Object.assign(ghost.style, { left: "0px", top: "0px", transform: "scale(" + (badge.offsetWidth / w0).toFixed(5) + ")" });
+    /* moved into the bubble with its emblem's clock running on (build 321) */
+    const clock = ruClockSnap(ghost);
+    /* NOTHING OF THE BUBBLE SHOWS ROUND THE COPY (build 321): "As it phases
+       into the planet system, the flare has a weird mark on the side of the
+       flare". The copy sat over a whole bubble - its frosted rim, its glow
+       and its offset shadow, scaled up with the zoomed stage - and that rim
+       showed past the copy's edge on one side. The bubble's own paint is
+       off while the copy is in it (.ru-hand-bubble) and comes up only as
+       the copy fades (.ru-hand-reveal): the copy becomes the bubble. */
+    badge.classList.add("ru-hand-bubble");
     badge.appendChild(ghost);
+    clock(ghost);
     const orbit = slot.parentElement;
     const cover = document.createElement("i");
     cover.className = "ru-hand-veil"; cover.setAttribute("aria-hidden", "true");
@@ -74767,6 +74798,7 @@ function rankCutHandoff(overlay, stageWrap, heroBefore, tierKey, ghost){
       stageWrap.style.transition = "transform " + RU_HAND_ZOOM_MS + "ms cubic-bezier(.3,.02,.2,1)";
       stageWrap.style.transform = "translate(0px, 0px) scale(1)";
       overlay.classList.add("ru-handoff-in");
+      badge.classList.add("ru-hand-reveal");
       try{ ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1300, delay: 250, easing: "ease-in-out", fill: "forwards" }); }catch(e){ ghost.style.opacity = "0"; }
       try{ cover.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 2000, delay: 300, easing: "cubic-bezier(.4,0,.3,1)", fill: "forwards" }); }catch(e){ cover.style.opacity = "0"; }
     }));
@@ -74774,11 +74806,50 @@ function rankCutHandoff(overlay, stageWrap, heroBefore, tierKey, ghost){
       ghost.remove(); cover.remove();
       overlay.classList.remove("ru-handoff", "ru-handoff-in");
       slot.classList.remove("ru-hand-slot");
+      badge.classList.remove("ru-hand-bubble", "ru-hand-reveal");
       ["transition", "opacity", "transform", "transformOrigin"].forEach(p => { stageWrap.style[p] = ""; });
       overlay.style.transition = "";
     }, RU_HAND_ZOOM_MS + 200);
     return true;
   }catch(e){ return false; }
+}
+/* THE FLARES MOVE IN THE CUTSCENE TOO (build 321): "the animations aren't
+   happening in the flares during the cutscene, the animations during the
+   cutscenes should be there". Home plays each bubble's emblem as its
+   recorded flip-book (attachOrbitSheet); the scene's two planets are built
+   fresh and never had theirs put on, so all fourteen emblems stood still.
+   Each bubble now gets the same flip-book on the same clock as Home's
+   (syncLoopClock). A sheet already made this session - Home's, at Home's
+   size - is put on at once and shown at the scene's bubble size (it is
+   only scaled down); one not made yet is asked for at the scene's size
+   and fades in when it arrives. The lit and unlit looks are CSS here
+   (the bubble lights during the scene), not copied onto the layer. */
+function rankSceneEmblemAnims(hero){
+  if(!hero || !orbitAnimAllowed()) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  hero.querySelectorAll(".cosmic-badge-rank").forEach(badge => {
+    try{
+      const svg = badge.querySelector("svg.cosmic-rank-emblem"), tier = badge.dataset.rankTier;
+      if(!svg || !tier || badge.querySelector(".cosmic-rank-anim")) return;
+      const W = parseFloat(getComputedStyle(badge).width) || badge.offsetWidth;
+      if(!(W > 4)) return;
+      const id = orbitAnimDrawing(tier).id;
+      let best = null;
+      orbitAnimReady.forEach((sp, key) => { if(key.indexOf(id + "|") === 0 && sp && (!best || sp.px > best.px)) best = sp; });
+      const put = (sp, fade) => {
+        if(!sp || !badge.isConnected || badge.querySelector(".cosmic-rank-anim")) return;
+        const op = getComputedStyle(svg).opacity;
+        attachOrbitSheet(badge, svg, sp, { px: sp.px, cellCss: W, filter: "", opacity: op }, fade);
+        const w = badge.querySelector(".cosmic-rank-anim");
+        if(w){ w.style.opacity = ""; w.classList.add("is-scene"); syncLoopClock(w); }
+      };
+      if(best){ put(best, false); return; }
+      let px = Math.round(W * dpr); px -= px % 2;
+      if(px < 12) return;
+      const job = recordRankEmblemFrames(tier, svg, px);
+      if(job && job.then) job.then(sp => put(sp, true), () => {});
+    }catch(e){}
+  });
 }
 function playRankUpScene(tierKey, opts, spec){
   opts = opts || {};
@@ -74967,6 +75038,8 @@ function playRankUpScene(tierKey, opts, spec){
   }
 
   rankOrbitCentre(orbitBefore); rankOrbitCentre(orbitAfter);
+  /* the flares move in the scene as they do on Home (build 321) */
+  if(!still){ rankSceneEmblemAnims(heroBefore); rankSceneEmblemAnims(heroAfter); }
   /* opened from the road map's flare (build 320, rankCutHandoff) */
   if(opts.handoff && !still) rankCutHandoff(overlay, stageWrap, heroBefore, tierKey, opts.handoff);
   /* Every tap in the scene is the scene's, caught on the way DOWN: the
@@ -75327,7 +75400,39 @@ function playRankUpScene(tierKey, opts, spec){
       beats.forEach(([st, p], i) => { const s2 = i / nB; kA.push({ offset: +((st + p * .45) / D).toFixed(4), opacity: +(.35 + .6 * s2).toFixed(3), easing: "ease-in-out" }, { offset: +((st + p * .95) / D).toFixed(4), opacity: +(.15 + .45 * s2).toFixed(3), easing: "ease-in-out" }); });
       kA.push({ offset: 1, opacity: 1 });
       aura.animate(kA.filter((k, i, arr) => i === 0 || k.offset > arr[i - 1].offset), { duration: D, fill: "forwards" });
-      setTimeout(() => { aura.remove(); if(fl) fl.remove(); }, D + 900);
+      /* HOME'S PULSE ON EVERY BREATH (build 321): "You know how at the main
+         menu the large planet will pulse with the thing at that rate?
+         During the cutscene, before the big flash and while the pulsing
+         there that ignites the big flash, lets put the flash effect thing
+         there at the same matched rate and then the big one would be the
+         flash". Home's planet sends a thin ring of light out from its edge
+         (.cosmic-pulse-ring: up to a third bright, out to 1.7x as it
+         fades). Here the same ring goes out from the planet on each breath
+         of the charge, on the breath's own beat - in the new rank's colour,
+         a little brighter and wider each time as the breaths quicken - and
+         the last is the flash itself. A div over the planet, transform and
+         opacity only. */
+      const pulses = [];
+      beats.forEach(([st, per], i) => {
+        const lv = i / nB, peak = st + per * .45;
+        const dur = Math.round(Math.max(700, Math.min(1500, per * 2.3)));
+        const rise = Math.round(dur * .16), at0 = Math.max(0, peak - rise);
+        const ring = document.createElement("i");
+        ring.className = "rank-planetpulse"; ring.setAttribute("aria-hidden", "true");
+        ring.style.setProperty("--bc", newColor);
+        Object.assign(ring.style, { left: pl.cx.toFixed(1) + "px", top: pl.cy.toFixed(1) + "px", width: pl.d.toFixed(1) + "px", height: pl.d.toFixed(1) + "px",
+          borderWidth: Math.max(1.2, pl.d / 104 * 1.6 * 1.25).toFixed(2) + "px" });
+        overlay.appendChild(ring);
+        pulses.push(ring);
+        const o = +(.34 + .5 * lv).toFixed(3), sc = +(1.7 + .25 * lv).toFixed(3);
+        try{
+          ring.animate([{ opacity: 0, transform: "translate(-50%, -50%) scale(1)" },
+                        { offset: rise / dur, opacity: o, transform: "translate(-50%, -50%) scale(1.05)", easing: "ease-out" },
+                        { opacity: 0, transform: "translate(-50%, -50%) scale(" + sc + ")" }],
+            { duration: dur, delay: at0, easing: "linear", fill: "both" });
+        }catch(e){}
+      });
+      setTimeout(() => { aura.remove(); if(fl) fl.remove(); pulses.forEach(r => r.remove()); }, D + 1600);
     }catch(e){}
   };
   /* After the spin has STOPPED: the half-second, the flash, and the rest,
@@ -111565,7 +111670,14 @@ function glideMsFor(px){ return Math.round(Math.max(900, Math.min(1900, 650 + Ma
    WAS - the rank you held, its rings - and then the one you have
    reached). Returns the card and its ring arcs, which the caller fills
    (a property that starts at its target never animates). */
-function buildRankHero(held, levelNow, badgesNow){
+function buildRankHero(held, levelNow, badgesNow, opts){
+  /* opts.levelPending (build 321, the rank-up's new card): the level is
+     the one after the old cut-off and NOTHING of it is shown as earned
+     yet - "when the card FLIPS it would be the very next level but the
+     progress would show as none for it ... the xp won't show that you
+     met the next one already even if you already have or load saved over
+     xp, that's one the next screen part with the profile is for". */
+  const levelPending = !!(opts && opts.levelPending);
   const heldIndex = held ? TIER_ORDER_FULL.indexOf(held) : -1;
   const nextKey = TIER_ORDER_FULL[heldIndex + 1] || null;
   const arcs = [];
@@ -111635,10 +111747,12 @@ function buildRankHero(held, levelNow, badgesNow){
     l.className = "rankhero-gaugelab"; l.textContent = label;
     const t = document.createElement("span");
     t.className = "rankhero-gaugetarget";
-    t.textContent = target == null ? "" : (part >= 1 ? "\u2713 Met" : now + " of " + target);
+    const pend = levelPending && cls === "is-level" && target != null;
+    t.textContent = target == null ? "" : pend ? "Not met yet" : (part >= 1 ? "\u2713 Met" : now + " of " + target);
+    if(pend) g.classList.add("is-pending");
     txt.append(l, t);
     g.append(face, txt);
-    g.setAttribute("aria-label", label + " " + now + (target == null ? "" : " of " + target));
+    g.setAttribute("aria-label", label + " " + now + (target == null ? "" : pend ? ", not met yet" : " of " + target));
     return g;
   };
   /* WHAT THE RINGS ARE FOR, SAID ABOVE THEM (build 247). "It says my
@@ -111683,7 +111797,7 @@ function buildRankHero(held, levelNow, badgesNow){
        over target, which is what "1 of 3" reads as. (heroStepPct, the
        road map's own measure, is unchanged.) */
     const ringPart = (now, target) => target > 0 ? Math.min(1, Math.max(0, now / target)) : 1;
-    gauges.append(gauge("is-level", "Level", levelNow, nextRule.level, ringPart(levelNow, nextRule.level)),
+    gauges.append(gauge("is-level", "Level", levelNow, nextRule.level, levelPending ? 0 : ringPart(levelNow, nextRule.level)),
                   gauge("is-badges", "Badges", badgesNow, nextRule.badges, ringPart(badgesNow, nextRule.badges)));
   } else {
     gauges.append(gauge("is-level", "Level", levelNow, null, 1),
@@ -111871,10 +111985,18 @@ function buildRanksTab(){
     const isHere = key === held;
     const isNext = key === nextKey;
     const pending = celebrateKeys.indexOf(key) >= 0;
+    /* UP NEXT WAITS FOR THE PLANET (build 321): "before the solar system
+       part starts and the rank you hit unlocks, the up next rank is
+       already filled in and colored. That should still be greyed out, it
+       wouldn't get the next color until the planet part is over and the
+       road map shows the next upcoming rank part." On the rank-up's own
+       map the rank after the new one is drawn locked (`ru-nexthold`), and
+       rankUpUpNext turns it into Up next as the camera reaches its box. */
+    const nextHold = !!ruScene && isNext;
     const stop = document.createElement("article");
     stop.className = "rankmap-stop " + (idx % 2 === 0 ? "is-left" : "is-right") +
-      (reached ? " is-reached" : "") + (isHere ? " is-here" : "") + (isNext ? " is-next" : "") +
-      (!reached && !isNext ? " is-locked" : "") + (pending ? " is-celebrate-pending" : "");
+      (reached ? " is-reached" : "") + (isHere ? " is-here" : "") + (isNext && !nextHold ? " is-next" : "") +
+      (!reached && (!isNext || nextHold) ? " is-locked" : "") + (nextHold ? " ru-nexthold" : "") + (pending ? " is-celebrate-pending" : "");
     stop.style.setProperty("--rank-color", RANK_COLOR[key]);
     /* The stretch of road from this stop down to the one below it,
        which is the NEXT rank up: lit when that rank is reached, lit part
@@ -111988,6 +112110,7 @@ function buildRanksTab(){
     state.className = "rankmap-state";
     state.textContent = isHere ? "You are here" : reached ? "Reached" : isNext ? "Up next" : "Locked";
     if(pending){ state.dataset.after = state.textContent; state.textContent = "Locked"; }
+    if(nextHold){ state.dataset.after = "Up next"; state.textContent = "Locked"; }
     head.append(name, state);
     card.appendChild(head);
     const req = document.createElement("p");
@@ -112618,6 +112741,17 @@ function rankUpNewScene(owed){
      rankUpSceneEnd, which every way out goes through, once each. */
   scene.focus = true;
   try{ setCutsceneFocus(true); }catch(e){}
+  /* NOT THERE AT ALL UNTIL THE END (build 321): "The chat button and
+     bottom tab are still visible, I thought we said this won't be there
+     until this entire cutscene is over ... it will pop up at the very end
+     once it's all done so you know the cutscene is over." Focus slides
+     them out over half a second, which left them on Profile's first
+     frames; the journey takes them off at once (body.ru-journey), and
+     rankUpSceneEnd lets focus slide them back in as the last thing. The
+     same class holds the unlock character in the challenge box still
+     ("the unlock character does a dance") and keeps the Profile
+     character's special for the end. */
+  try{ document.body.classList.add("ru-journey"); }catch(e){}
   return scene;
 }
 /* WHERE THE ROAD MAP'S LIGHT STOOD before the rank-up (build 320): "it
@@ -112633,8 +112767,20 @@ function rankUpStartDot(owed){
       const lp = store.rankMapProg;
       if(lp && typeof lp === "object" && Number(lp.i) === owed.fromIdx) d = Number(lp.p) || 0;
     }
-    return Math.max(0, Math.min(RANK_ROAD_NEAR, Number(d) || 0));
-  }catch(e){ return 0; }
+    return rankUpStartFrac(Math.max(0, Math.min(RANK_ROAD_NEAR, Number(d) || 0)));
+  }catch(e){ return rankUpStartFrac(0); }
+}
+/* ...AND CLOSE TO THE RANK YOU HELD (build 321): "the next rank dot is
+   moved too far away from your current rank, needs to be closer but not
+   directly on top of it. Just at the beginning." Where it stood (0 to
+   RANK_ROAD_NEAR) is kept in order but drawn into the first part of the
+   stretch: RU_START_MIN of the way at nothing, RU_START_MIN +
+   RU_START_SPAN at the most - never on the circle, never past the first
+   ~40%. Only the journey's first frame; the ordinary map is unchanged. */
+var RU_START_MIN = .12, RU_START_SPAN = .25;
+function rankUpStartFrac(d){
+  d = Math.max(0, Math.min(RANK_ROAD_NEAR, Number(d) || 0));
+  return Math.round((RU_START_MIN + RU_START_SPAN * d / RANK_ROAD_NEAR) * 1000) / 1000;
 }
 function armRankUpProfileScene(tab){
   if(tab !== "profile" || rankUpScene) return null;
@@ -112875,14 +113021,14 @@ function rankUpRideMake(scene, P){
   };
   return { line, tip, set };
 }
-async function rankUpRide(scene, P, R, s0, s1, ms, under){
+async function rankUpRide(scene, P, R, s0, s1, ms, under, go){
   const roadTop = () => P.road.getBoundingClientRect().top + window.scrollY;
   let y = R.set(s0);
   /* the camera goes to where the light is now */
   const y0 = rankUpFollowY(roadTop() + y);
   if(Math.abs(y0 - window.scrollY) > 2) await glideScrollTo(y0, glideMsFor(y0 - window.scrollY), () => !rankUpAlive(scene));
   R.tip.classList.add("is-on");
-  await rankUpWait(420);
+  if(!go) await rankUpWait(420);
   if(!rankUpAlive(scene)) return;
   const de = document.documentElement, was = de.style.scrollBehavior;
   try{ de.style.scrollBehavior = "auto"; }catch(e){}
@@ -112925,7 +113071,7 @@ async function rankUpArrive(scene, c, api, pre){
     const from = pre && pre.R ? pre.from : 0;
     R = pre && pre.R ? pre.R : rankUpRideMake(scene, P);
     /* the whole stretch takes ~3.2s; what was already lit is not run again */
-    await rankUpRide(scene, P, R, from, 1, Math.round(3200 - 1200 * from), true);
+    await rankUpRide(scene, P, R, from, 1, Math.round(3200 - 1200 * from), true, !!(pre && pre.R && from > 0));
   } else if(node){
     /* no road into it (the first rank): the camera goes to the circle */
     const r = c.stop.getBoundingClientRect();
@@ -112976,6 +113122,54 @@ async function rankUpClimbNext(scene, map){
    cutscene (opts.handoff), which opens with the new flare's bubble
    exactly under it and carries on pulling back (rankCutHandoff). */
 var RU_HAND_MS = 2000, RU_HAND_SCALE = .84, RU_VEIL_MS = 1300;
+/* ONE CLOCK FOR THE FLARE THROUGH THE HAND-OFF (build 321): "The flare does
+   kind of skip and lag in its animation, so ensure it doesn't move or jump
+   to any point ... it like skips a second ahead". The road map's circle is
+   copied (rankUpHandOut) and the copy is then moved into the planet
+   system's bubble (rankCutHandoff), and a CSS animation on an element that
+   is new to the document, or moved within it, starts again from its first
+   frame - so every part of the emblem jumped back twice. ruClockSnap(root)
+   reads where every CSS animation under `root` is (by its element's place
+   in the tree, its pseudo-element and its name) and returns a function
+   that puts the same animations under another tree of the same shape -
+   the copy, or the same element after its move - at exactly those times. */
+function ruClockSnap(root){
+  const els = root ? [root, ...root.querySelectorAll("*")] : [];
+  const keyOf = (list, an) => {
+    const t = an.effect && an.effect.target;
+    const i = list.indexOf(t);
+    return i < 0 ? null : i + "|" + (an.effect.pseudoElement || "") + "|" + (an.animationName || "");
+  };
+  const times = new Map();
+  try{
+    root.getAnimations({ subtree: true }).forEach(an => {
+      if(!an.animationName) return;
+      const k = keyOf(els, an);
+      if(k != null && !times.has(k)) times.set(k, an.currentTime);
+    });
+  }catch(e){}
+  return dst => {
+    if(!dst || !times.size) return;
+    const list = [dst, ...dst.querySelectorAll("*")], set = [];
+    try{
+      dst.getAnimations({ subtree: true }).forEach(an => {
+        const k = keyOf(list, an);
+        if(k == null || !times.has(k) || times.get(k) == null) return;
+        try{ an.currentTime = times.get(k); set.push(an); }catch(e){}
+      });
+    }catch(e){}
+    /* A new animation given a current time waits, held there, until the
+       compositor has started it - measured up to ~1.8s on a busy page,
+       the "lag" and then the jump. Any still waiting a frame later is
+       started on the timeline from where it is held. */
+    requestAnimationFrame(() => set.forEach(an => {
+      try{
+        const tl = document.timeline && document.timeline.currentTime;
+        if(an.pending && an.playState === "running" && an.startTime == null && typeof tl === "number") an.startTime = tl - (Number(an.currentTime) || 0) / (an.playbackRate || 1);
+      }catch(e){}
+    }));
+  };
+}
 async function rankUpHandOut(scene, stop){
   const node = stop && stop.querySelector(".rankmap-node");
   if(!node || !node.isConnected) return null;
@@ -112993,11 +113187,15 @@ async function rankUpHandOut(scene, stop){
   const copy = node.cloneNode(true);
   copy.classList.remove("ru-shake", "ru-under", "is-popping");
   copy.removeAttribute("role"); copy.removeAttribute("tabindex");
-  copy.querySelectorAll(".rankmap-burst, .rankmap-flash, .rankmap-sparks, .ru-core").forEach(x => x.remove());
   ghost.appendChild(copy);
   const veil = document.createElement("div");
   veil.className = "ru-veil"; veil.setAttribute("aria-hidden", "true");
+  /* the copy's emblem goes on from the very moment the circle's was at
+     (build 321) - a copy's animations otherwise start again from 0 */
+  const clock = ruClockSnap(node);
   document.body.append(veil, ghost);
+  clock(copy);
+  copy.querySelectorAll(".rankmap-burst, .rankmap-flash, .rankmap-sparks, .ru-core").forEach(x => x.remove());
   node.style.visibility = "hidden";
   const hand = { ghost, veil, node, drop(){
     veil.remove();
@@ -113131,9 +113329,16 @@ async function rankUpMapOpen(scene){
   }
   scene.mapOpenAt = performance.now();
   rankUpCurtain(false);
-  await rankUpWait(still ? 300 : 1300);
-  if(panel) panel.classList.remove("ru-mapin");
+  /* NO START, PAUSE, START (build 321): "There is a lag at this part too,
+     it like starts pauses and starts there?" The map settled (1.25s), then
+     the light sat still for a held beat (420ms), then set off. The light
+     now sets off as the settle eases out, with no held beat between
+     (rankUpRide's `go`), so the map arriving and the light leaving are
+     one movement. */
+  if(panel) setTimeout(() => panel.classList.remove("ru-mapin"), still ? 300 : 1300);
+  await rankUpWait(still ? 300 : RU_MAP_GO_MS);
 }
+var RU_MAP_GO_MS = 820;
 async function rankUpMapShow(scene, api){
   const still = ruStill();
   const map = api.map;
@@ -113203,6 +113408,8 @@ async function rankUpUpNext(scene, map){
   await glideScrollTo(to, still ? 1 : Math.max(2200, Math.round(glideMsFor(to - window.scrollY) * 1.5)), () => !rankUpAlive(scene));
   if(!rankUpAlive(scene)) return;
   await rankUpWait(still ? 0 : 300);
+  /* and only now does it become Up next, in its colour (build 321) */
+  rankUpNextLift(stop);
   const fx = document.createElement("span");
   fx.className = "ru-nextfx"; fx.setAttribute("aria-hidden", "true");
   fx.innerHTML = '<i class="ru-nx-wash"></i><i class="ru-nx-edge"></i><i class="ru-nx-sheen"></i>';
@@ -113210,6 +113417,15 @@ async function rankUpUpNext(scene, map){
   stop.classList.add("ru-nextpop");
   scene.upnext = nx;
   await rankUpWait(still ? 1200 : 2500);
+}
+/* The held Up next (buildRanksTab's `ru-nexthold`) takes its place. */
+function rankUpNextLift(stop){
+  if(!stop || !stop.classList.contains("ru-nexthold")) return;
+  stop.classList.add("ru-nextlit");
+  stop.classList.remove("ru-nexthold", "is-locked");
+  stop.classList.add("is-next");
+  const st = stop.querySelector(".rankmap-state");
+  if(st && st.dataset.after){ st.textContent = st.dataset.after; delete st.dataset.after; }
 }
 /* 10. THE CARD AT THE TOP TURNS OVER to the new rank (build 320), with no
    "Rank up" on it - "the card should just change to the next one in a
@@ -113224,40 +113440,51 @@ function rankUpHeroLevel(scene){
   const real = levelStateFor(store).level, cap = scene.nums && scene.nums.cap ? scene.nums.cap.level : real;
   return real > cap ? cap + 1 : real;
 }
+/* THE CARD CHANGES WITH A FADE (build 321): "im not a fan of how that card
+   flips over to show the next ... Maybe instead of the card flipping it
+   just nicely changes the stuff with a fade? Or it's already there by the
+   time the road map scrolls back up?" A fade, at the top, in front of you:
+   this is the one moment on the map that says your rank changed, so it
+   happens where it is seen rather than off screen during the glide. The
+   new card (the new rank, the level after the old cut-off with nothing of
+   it earned yet, the badges) is laid exactly over the old one and the two
+   cross over; then its rings fill and their numbers count. No turn, no
+   sheen. */
+var RU_HERO_FADE_MS = 900;
 async function rankUpHeroTurn(scene){
   const hero = scene.hero;
   if(!hero || !hero.isConnected || rankUpScene !== scene) return;
   const still = ruStill();
   scene.phase = "hero";
   rankUpSceneWatch(scene, 15000);
-  const tab = hero.closest(".ranks-tab");
-  const fresh = buildRankHero(scene.to, rankUpHeroLevel(scene), badgeCountOf(store));
-  const swap = () => {
-    hero.className = fresh.hero.className;
-    hero.style.cssText = fresh.hero.style.cssText;
-    hero.replaceChildren(...fresh.hero.childNodes);
-    fresh.arcs.forEach(a => { a.el.style.strokeDashoffset = still ? a.value : "100"; });
-  };
-  if(still){ swap(); scene.heroTurned = true; await rankUpWait(1200); return; }
-  if(tab) tab.classList.add("ru-turning");
-  hero.classList.add("ru-turn-out");
-  await rankUpWait(470);
-  if(rankUpScene !== scene) return;
-  swap();
+  const real = levelStateFor(store).level, cap = scene.nums && scene.nums.cap ? scene.nums.cap.level : real;
+  const fresh = buildRankHero(scene.to, rankUpHeroLevel(scene), badgeCountOf(store), { levelPending: real > cap });
+  const nu = fresh.hero;
+  nu.classList.add("ru-hero-new");
+  if(still){
+    fresh.arcs.forEach(a => { a.el.style.strokeDashoffset = a.value; });
+    hero.replaceWith(nu); scene.hero = nu; scene.heroTurned = true;
+    await rankUpWait(1200); return;
+  }
+  /* laid over the old card, the same box */
+  const host = hero.parentElement;
+  Object.assign(nu.style, { position: "absolute", left: hero.offsetLeft + "px", top: hero.offsetTop + "px", width: hero.offsetWidth + "px", margin: "0", opacity: "0", zIndex: "2" });
+  fresh.arcs.forEach(a => { a.el.style.strokeDashoffset = "100"; });
+  nu.querySelectorAll(".rankhero-ringval[data-count]").forEach(el => { el.textContent = "0"; });
+  host.insertBefore(nu, hero.nextSibling);
   scene.heroTurned = true;
-  hero.classList.add("ru-turn-in");
-  const sh = document.createElement("span");
-  sh.className = "ru-turnsheen"; sh.setAttribute("aria-hidden", "true");
-  sh.appendChild(document.createElement("i"));
-  hero.appendChild(sh);
-  /* the rings fill again and their numbers count with them (2.2s, the
-     rings' own clock) */
-  await rankUpFrame(); await rankUpFrame();
+  try{
+    hero.animate([{ opacity: 1 }, { opacity: 0 }], { duration: RU_HERO_FADE_MS, easing: "ease-in-out", fill: "forwards" });
+    nu.animate([{ opacity: 0 }, { opacity: 1 }], { duration: RU_HERO_FADE_MS, easing: "ease-in-out", fill: "forwards" });
+  }catch(e){ hero.style.opacity = "0"; nu.style.opacity = "1"; }
+  await rankUpWait(RU_HERO_FADE_MS * .55);
+  if(rankUpScene !== scene) return;
+  /* the rings fill and their numbers count with them (2.2s, the rings'
+     own clock) */
   fresh.arcs.forEach(a => { a.el.style.strokeDashoffset = a.value; });
-  hero.querySelectorAll(".rankhero-ringval[data-count]").forEach(el => {
+  nu.querySelectorAll(".rankhero-ringval[data-count]").forEach(el => {
     const to = Number(el.dataset.count) || 0;
     const t0 = performance.now() + 350, ms = 2200;
-    el.textContent = "0";
     const step = now => {
       if(!el.isConnected) return;
       const t = Math.max(0, Math.min(1, (now - t0) / ms));
@@ -113266,10 +113493,15 @@ async function rankUpHeroTurn(scene){
     };
     requestAnimationFrame(step);
   });
-  await rankUpWait(2900);
-  hero.classList.remove("ru-turn-in");
-  sh.remove();
-  if(tab) tab.classList.remove("ru-turning");
+  await rankUpWait(RU_HERO_FADE_MS * .45 + 50);
+  if(!nu.isConnected) return;
+  /* the new card takes the old one's place in the flow */
+  hero.remove();
+  ["position", "left", "top", "width", "margin", "zIndex"].forEach(k => { nu.style[k] = ""; });
+  nu.getAnimations().forEach(an => { try{ an.commitStyles(); an.cancel(); }catch(e){} });
+  nu.style.opacity = "";
+  scene.hero = nu;
+  await rankUpWait(2200);
 }
 
 /* ---- 11. back to Profile ---- */
@@ -113302,14 +113534,12 @@ function rankUpStandingAt(standing, s){
   if(!standing) return;
   const bar = levelBarOf(s);
   const lv = standing.querySelector(".pf-level"), fill = standing.querySelector(".pf-xpbar .xpbar-fill"),
-        track = standing.querySelector(".pf-xpbar"), nums = standing.querySelector(".pf-xpnums .xpnums"),
-        note = standing.querySelector(".pf-xp-note");
+        track = standing.querySelector(".pf-xpbar"), nums = standing.querySelector(".pf-xpnums .xpnums");
   if(lv) lv.textContent = "Level " + s.level;
   syncPfXpTo(standing, s);
   if(fill) fill.dataset.target = String(Math.round(bar.fraction * 1000) / 10);
   if(nums) nums.replaceWith(buildXpNumbers(bar.into, bar.span, bar.over));
   if(track) track.classList.toggle("is-banked", !!bar.over);
-  if(note) note.classList.add("ru-later");
 }
 /* THE SAVED XP TURNS INTO LEVELS, SLOWLY (build 320): "if you have extra
    xp for the newly unlocked levels after it flips and stuff that is when
@@ -113330,6 +113560,17 @@ function rankUpClimbMs(dist){
   dist = Math.max(0, Number(dist) || 0);
   return Math.round(Math.min(RANKUP_CLIMB_MAX_MS, Math.max(dist * RANKUP_CLIMB_MIN_LEVEL_MS, Math.min(dist * RANKUP_CLIMB_LEVEL_MS, RANKUP_CLIMB_MAX_MS))));
 }
+/* THE NUMBERS, NOT WORDS (build 321): "It says saved xp and climbing??
+   Should just be there numbers ... so you can legit see all that saved xp
+   going to work." The line under the bar is the ordinary "x / y XP" (and
+   "to Level N" on a phone), counting with the bar every frame. AND THE
+   LEVEL CHALLENGE WAITS FOR THE BAR: "The challenge about reaching the
+   level, let's actually make it so that doesn't update till after the xp
+   bar is done doing its thing" - it is left where it stood and counted up
+   once the climb has landed (rankUpLevelRowAfter). */
+function rankUpLevelSpan(lv){
+  try{ return Math.max(1, xpForLevel(lv + 1) - xpForLevel(lv)); }catch(e){ return 1; }
+}
 async function rankUpStandingClimb(standing, from, to, row, scene){
   const fill = standing.querySelector(".pf-xpbar .xpbar-fill"), lvEl = standing.querySelector(".pf-level"),
         track = standing.querySelector(".pf-xpbar"), numsHost = standing.querySelector(".pf-xpnums");
@@ -113341,34 +113582,31 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
      fraction the bar */
   const u0 = f0, u1 = (to.level - from.level) + f1;
   if(!(u1 > u0)) return;
-  const rowNow = row && row.querySelector(".pf-now"), rowBar = row && row.querySelector(".pf-bar > i");
-  const rowNeed = row ? Number((row.querySelector(".pf-need") || {}).textContent) || 0 : 0;
-  const rowSet = lv => {
-    if(!row || !rowNeed) return;
-    if(rowNow) rowNow.textContent = String(Math.min(lv, rowNeed));
-    if(rowBar) setBarFill(rowBar, Math.round(Math.min(1, lv / rowNeed) * 1000) / 10);
-    if(lv >= rowNeed && !row.classList.contains("is-met")){ row.classList.add("is-met", "ru-ticked"); const ck = row.querySelector(".pf-check"); if(ck) ck.textContent = "✓"; }
-  };
   if(track) track.classList.remove("is-banked");
   standing.classList.add("ru-climbing");
-  const label = numsHost && numsHost.querySelector(".xpnums");
-  if(label){ const c = document.createElement("span"); c.className = "xpnums ru-climbnote"; c.textContent = "Saved XP · climbing to level " + to.level; label.replaceWith(c); }
+  /* the ordinary numbers, run by the climb */
+  let nums = numsHost && numsHost.querySelector(".xpnums");
+  if(nums){ const n = buildXpNumbers(0, rankUpLevelSpan(from.level + 1), false); nums.replaceWith(n); nums = n; }
+  const have = nums && nums.querySelector(".xpnums-have"), need = nums && nums.querySelector(".xpnums-need");
+  const toEl = standing.querySelector(".pf-xp-to");
   fill.style.transition = "none";
-  if(rowBar) rowBar.style.transition = "none";
   const ms = rankUpClimbMs(u1 - u0);
   if(scene) scene.climb = { from: from.level, to: to.level, ms, levels: u1 - u0 };
-  let shownLv = from.level;
+  let shownLv = from.level, shownSpan = -1;
   const place = u => {
     const whole = Math.floor(u + 1e-6), frac = u - whole;
     const lv = Math.min(to.level, from.level + whole);
-    /* at the last level the bar ends at its own fraction (full and held
-       when the new gate stops it again) */
-    setBarFill(fill, Math.round((lv >= to.level ? Math.min(f1, frac) : frac) * 1000) / 10);
+    const last = lv >= to.level;
+    const f = last ? Math.min(f1, frac) : frac;
+    setBarFill(fill, Math.round(f * 1000) / 10);
+    const span = last ? Math.max(1, Math.round(toBar.span) || rankUpLevelSpan(lv)) : rankUpLevelSpan(lv);
+    if(have) have.textContent = Math.round(last && f >= f1 ? toBar.into : f * span).toLocaleString();
+    if(need && span !== shownSpan){ shownSpan = span; need.textContent = " / " + span.toLocaleString() + " XP"; }
     if(lv !== shownLv){
       shownLv = lv;
       lvEl.textContent = "Level " + lv;
       lvEl.classList.remove("ru-lvpop"); void lvEl.offsetWidth; lvEl.classList.add("ru-lvpop");
-      rowSet(lv);
+      if(toEl) toEl.textContent = pfXpToText({ level: lv });
     }
   };
   place(u0);
@@ -113385,17 +113623,75 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
     requestAnimationFrame(step);
   });
   place(u1);
-  const cl = numsHost && numsHost.querySelector(".ru-climbnote");
-  if(cl) cl.replaceWith(buildXpNumbers(toBar.into, toBar.span, toBar.over));
+  const cur = numsHost && numsHost.querySelector(".xpnums");
+  if(cur) cur.replaceWith(buildXpNumbers(toBar.into, toBar.span, toBar.over));
   syncPfXpTo(standing, to);
-  await rankUpWait(950);
+  await rankUpWait(650);
   fill.style.transition = "";
-  if(rowBar) rowBar.style.transition = "";
   if(track && toBar.over) track.classList.add("is-banked");
   standing.classList.remove("ru-climbing");
-  const note = standing.querySelector(".pf-xp-note.ru-later");
-  if(note) note.classList.remove("ru-later");
+  /* ...and only now the level challenge */
+  if(row) await rankUpLevelRowAfter(row, to.level);
 }
+async function rankUpLevelRowAfter(row, level){
+  const rowNow = row.querySelector(".pf-now"), rowBar = row.querySelector(".pf-bar > i");
+  const need = Number((row.querySelector(".pf-need") || {}).textContent) || 0;
+  if(!need) return;
+  const from = Number(rowNow && rowNow.textContent) || 0, to = Math.min(level, need);
+  if(rowBar){ rowBar.style.transition = ""; setBarFill(rowBar, Math.round(Math.min(1, to / need) * 1000) / 10); }
+  if(to > from && rowNow){
+    const t0 = performance.now(), dur = 900;
+    await new Promise(res => {
+      const step = now => {
+        const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+        rowNow.textContent = String(Math.round(from + (to - from) * e));
+        if(k < 1 && row.isConnected) requestAnimationFrame(step); else res();
+      };
+      requestAnimationFrame(step);
+    });
+  }
+  if(rowNow) rowNow.textContent = String(to);
+  if(to >= need && !row.classList.contains("is-met")){
+    row.classList.add("is-met", "ru-ticked");
+    const ck = row.querySelector(".pf-check");
+    if(ck){
+      ck.textContent = "";
+      const NS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("viewBox", "0 0 16 16"); svg.setAttribute("class", "ru-checkmark"); svg.setAttribute("aria-hidden", "true");
+      const p = document.createElementNS(NS, "path");
+      p.setAttribute("d", "M3.6 8.4 L6.6 11.3 L12.4 4.9"); p.setAttribute("pathLength", "1");
+      svg.appendChild(p); ck.appendChild(svg);
+    }
+    const goal = row.closest(".pf-goal"), sub = goal && goal.querySelector(".pf-goal-sub");
+    if(goal && sub){ const met = goal.querySelectorAll(".pf-task.is-met").length, all = goal.querySelectorAll(".pf-task").length; if(all) sub.textContent = met + " of " + all + " done"; }
+  }
+  await rankUpWait(700);
+}
+/* THE RANK ON PROFILE CHANGES AFTER A BEAT (build 321): "The word gold (or
+   your rank) above the xp bar, it changes at the very beginning. There
+   needs to be a delay when the profile screen comes back." Profile comes
+   back showing the rank you had (its emblem, its name, its colour) and
+   the line fades over to the new one once the dark has lifted. */
+function rankUpRankLineAs(standing, key){
+  if(!standing || !key) return;
+  const nm = standing.querySelector(".pf-rankname");
+  standing.style.setProperty("--rank-color", RANK_COLOR[key]);
+  if(nm) nm.textContent = RANK_DISPLAY_NAME[key];
+}
+var RU_RANKLINE_FADE_MS = 420;
+async function rankUpRankLineFade(standing, key, still){
+  const nm = standing && standing.querySelector(".pf-rankname");
+  if(still || !nm){ rankUpRankLineAs(standing, key); return; }
+  try{ nm.animate([{ opacity: 1 }, { opacity: 0 }], { duration: RU_RANKLINE_FADE_MS, easing: "ease-in", fill: "forwards" }); }catch(e){}
+  await rankUpWait(RU_RANKLINE_FADE_MS);
+  rankUpRankLineAs(standing, key);
+  try{ nm.getAnimations().forEach(a => a.cancel()); }catch(e){}
+  /* the new word comes in with the pop the emblem used to have */
+  nm.classList.remove("ru-rank-new"); void nm.offsetWidth; nm.classList.add("ru-rank-new");
+  await rankUpWait(900);
+}
+var RU_RANKLINE_AT_MS = 900;
 async function rankUpProfileReturn(scene, panel){
   const still = ruStill();
   scene.phase = "return";
@@ -113403,6 +113699,9 @@ async function rankUpProfileReturn(scene, panel){
   const cap = scene.nums.cap, real = levelStateFor(store);
   const climb = !still && standing && cap && real.level > cap.level;
   const lvRow = goal && goal.querySelector('.pf-task[data-kind="level"]');
+  /* the rank you had, until the dark has lifted (build 321) */
+  const lineFrom = scene.from && scene.from !== scene.to ? scene.from : null;
+  if(lineFrom) rankUpRankLineAs(standing, lineFrom);
   if(climb){
     rankUpStandingAt(standing, cap);
     if(lvRow){
@@ -113435,8 +113734,13 @@ async function rankUpProfileReturn(scene, panel){
   await rankUpWait(still ? 0 : 650);
   if(rankUpScene !== scene) return;
   if(standing) standing.classList.add("ru-arrive");
+  if(lineFrom){
+    await rankUpWait(still ? 0 : RU_RANKLINE_AT_MS);
+    if(rankUpScene !== scene) return;
+    await rankUpRankLineFade(standing, scene.to, still);
+  }
   if(!still && old && old.isConnected && goal){
-    await rankUpWait(900);
+    await rankUpWait(lineFrom ? 350 : 900);
     if(host) host.classList.add("ru-flipping");
     old.classList.add("ru-flip-out");
     await rankUpWait(430);
@@ -113463,6 +113767,9 @@ async function rankUpProfileReturn(scene, panel){
   rows.forEach(r => {
     const b = r.querySelector(".pf-bar > i");
     if(!b) return;
+    /* the level challenge is already where it stands, and moves only after
+       the XP bar (build 321) */
+    if(climb && r === lvRow){ setBarFill(b, Number(b.dataset.ruTo) || 0); return; }
     setTimeout(() => { b.style.transition = ""; setBarFill(b, Number(b.dataset.ruTo) || 0); }, still ? 0 : (Number(r.dataset.ruAt) || 0) + 260);
   });
   try{ startOrbitEmblemAnims(panel.querySelector(".profile-hero") || panel); }catch(e){}
@@ -113499,7 +113806,9 @@ function rankUpSceneEnd(scene, played){
   if(typeof syncChatDock === "function") syncChatDock();
   /* the scene is over: the tab bar and the chat button come back (build
      320 - cutscene focus, on since rankUpNewScene) */
+  document.querySelectorAll(".rankmap-stop.ru-nexthold").forEach(rankUpNextLift);
   if(scene.focus){ scene.focus = false; try{ setCutsceneFocus(false); }catch(e){} }
+  try{ document.body.classList.remove("ru-journey"); }catch(e){}
 }
 
 
