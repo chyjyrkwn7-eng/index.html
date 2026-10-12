@@ -143,7 +143,11 @@ def main():
         # they showed are still kept on store).
         # Nine since build 320 (b320h): Total XP came off the phone's
         # Profile card and leads At a glance here - "Total XP" first.
-        check("nine of them, in two sections, Total XP first - no Virtual Room cards",
+        # Build 324 brought a Virtual Room section back ("the virtual room
+        # section looks funny, improve this") as three tiles - but only
+        # once somebody has played a match. This seed has not, so it gets
+        # the one-line empty state and still nine cards.
+        check("nine of them, in two sections, Total XP first - no Virtual Room tiles before a first match",
               r["n"] == 9 and r.get("grids") == [5, 4] and (r.get("labels") or [""])[0] == "Total XP"
               and not any(l in ("Matches played", "First-place finishes", "Top-3 finishes") for l in (r.get("labels") or [])),
               [r["n"], r.get("grids"), r.get("labels")])

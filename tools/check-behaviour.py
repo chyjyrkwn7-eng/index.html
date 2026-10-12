@@ -2794,10 +2794,14 @@ def check_b236(br):
     st = r["stats"] if isinstance(r["stats"], list) else []
     # REVISED IN THE 317 FIX: "Remove the virtual room stats from the stats
     # tab. I don't think there will be enough usage to care to track it."
-    # The section is gone; the podium above still counts (the data stays).
-    # Fails on b6cd249, which still shows all three cards.
-    check("Stats shows no Virtual Room cards any more (the counts above are still kept)",
-          bool(st) and not any(x in st for x in ("Matches played", "First-place finishes", "Top-3 finishes")), st)
+    # MOVED IN BUILD 324, which asks for the section the other way: "I like
+    # the stats tab, the virtual room section looks funny, improve this."
+    # It is back as three short tiles (check_b324t_stats holds its layout);
+    # what still holds from 317 is that the old three cards with their
+    # long, wrapping labels are gone. The podium above still counts.
+    check("Stats has the build 324 Virtual Room tiles, not the old three cards (the counts above are still kept)",
+          bool(st) and not any(x in st for x in ("Matches played", "First-place finishes", "Top-3 finishes"))
+          and all(x in st for x in ("Matches", "Wins", "Top 3")), st)
     ctx.close()
 
 
@@ -26325,6 +26329,196 @@ def check_b323u_units(br):
               {"shape": ok_shape, "copy": [cards.get(m, {}).get("desc") for m in ("drill", "exam", "review")], "ink": ink})
 
 
+def check_b324t_stats(br):
+    """Build 324 (b324t): Profile's Stats tab. "I also attached a study
+    hour chart, I really like the looks of it, could we add something
+    like that in stats? It'd be yours, you can't see others, but it looks
+    sick, better than the one we have I think." The seven bars became a
+    dot chart: Mon-Sun of this week (weekKeyNow's week), one column of
+    dots a day at a resolution that fits the busier week, a white cap at
+    the value, today marked, last week on a switch, a tapped column read
+    out exactly, and the light-up fired when the tab is SHOWN, not when
+    it is built. "the virtual room section looks funny, improve this":
+    three tiles on one row that never wrap or overflow a 320px phone,
+    and one plain line instead of three zeros before a first match. And
+    At a glance no longer leaves a hole beside Hundos (phone) or at the
+    end of its row (tablet). Fails on ab75270 (bars, no switch, no
+    Virtual Room section, the holes)."""
+    print("\n_b324t. build 324: the study-hour dots, last week, a tapped day, the Virtual Room tiles")
+    H = 3600000
+    this_w = [2.4 * H, 0.6 * H, 3.1 * H, 1.75 * H, 4.4 * H, 2.9 * H, 1.2 * H]
+    last_w = [1.1 * H, 2.2 * H, 0, 3.6 * H, 0.9 * H, 0, 5.3 * H]
+    js = """async ([thisW, lastW, vr]) => {
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      const out = {};
+      try{
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n => n.remove());
+      const now = new Date();
+      const ti = (now.getDay() + 6) % 7;
+      const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ti);
+      const at = i => dayKey(new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i));
+      store.studyLog = {};
+      const thisLogged = thisW.map((v, i) => i <= ti ? v : 0);
+      thisLogged.forEach((v, i) => { if(v) store.studyLog[at(i)] = v; });
+      lastW.forEach((v, i) => { if(v) store.studyLog[at(i - 7)] = v; });
+      store.studyLog[at(-30)] = 2 * 3600000;
+      store.vrMatches = vr[0]; store.vrWins = vr[1]; store.vrTop3 = vr[2];
+      out.ti = ti; out.thisLogged = thisLogged;
+      /* built on the Profile tab: the chart exists, hidden, and has not played */
+      showProfile('profile'); await wait(900);
+      const ch0 = document.querySelector('.profile-stats-tab .stx-dots');
+      const unlit = el => { const d = document.createElement('span'); d.className = 'stx-dot'; el.appendChild(d);
+        const c = getComputedStyle(d).backgroundColor; d.remove(); return c; };
+      if(ch0){
+        const lit = ch0.querySelector('.stx-dot.on:not(.is-cap)');
+        out.built = { pre: ch0.classList.contains('is-pre'), played: ch0.dataset.played || null,
+          hidden: ch0.closest('.profile-stats-tab').hidden,
+          litBg: lit ? getComputedStyle(lit).backgroundColor : null, unlitBg: unlit(lit.parentElement) };
+      }
+      document.querySelector('.profile-stats-tab-btn').click();
+      const ch = document.querySelector('.profile-stats-tab .stx-dots');
+      const midLit = ch ? getComputedStyle(ch.querySelector('.stx-dot.on.is-mid:not(.is-cap)')).backgroundColor : null;
+      await wait(1700);
+      const read = () => ({ big: ch.querySelector('.stx-dots-big').textContent, cap: ch.querySelector('.stx-dots-cap').textContent });
+      const cols = () => [...ch.querySelectorAll('.stx-dcol')].map(c => {
+        const mids = [...c.querySelectorAll('.stx-dot.is-mid')];
+        const capI = mids.findIndex(d => d.classList.contains('is-cap'));
+        return { ms: Number(c.dataset.ms), lit: mids.filter(d => d.classList.contains('on')).length,
+                 rows: mids.length, capFromBottom: capI < 0 ? 0 : mids.length - capI,
+                 caps: c.querySelectorAll('.is-cap').length, today: c.classList.contains('is-today') };
+      });
+      const lit = ch.querySelector('.stx-dot.on:not(.is-cap)');
+      out.shown = { pre: ch.classList.contains('is-pre'), played: ch.dataset.played || null,
+        earlyMid: midLit, litBg: getComputedStyle(lit).backgroundColor, unlitBg: unlit(lit.parentElement),
+        step: Number(ch.dataset.stepMin), rows: Number(ch.dataset.rows), hours: Number(ch.dataset.hours),
+        axis: [...ch.querySelectorAll('.stx-dots-axis span')].map(s => s.textContent),
+        cols: cols(), read: read(), card: [...document.querySelectorAll('.profile-stats-tab .stat-card')]
+          .filter(c => c.querySelector('.stat-lab').textContent === 'This week').map(c => c.querySelector('.stat-num').textContent)[0],
+        weekSum: formatDuration(thisLogged.reduce((a, b) => a + b, 0)) };
+      /* a tapped day reads out exactly; tapping it again goes back */
+      const tapI = Math.min(ti, 2);
+      ch.querySelectorAll('.stx-dcol')[tapI].click(); await wait(250);
+      out.tap = { read: read(), want: formatDuration(thisLogged[tapI]),
+        picked: ch.querySelectorAll('.stx-dcol.is-picked').length };
+      ch.querySelectorAll('.stx-dcol')[tapI].click(); await wait(250);
+      out.untap = read();
+      /* last week */
+      const before = Number(ch.dataset.played);
+      ch.querySelector('.stx-dots-switch [data-week="prev"]').click(); await wait(1500);
+      out.prev = { cols: cols(), read: read(), played: Number(ch.dataset.played) - before, pre: ch.classList.contains('is-pre'),
+        sel: ch.querySelector('[data-week="prev"]').getAttribute('aria-selected'),
+        want: formatDuration(lastW.reduce((a, b) => a + b, 0)) };
+      ch.querySelectorAll('.stx-dcol')[3].click(); await wait(250);
+      out.prevTap = { read: read(), want: formatDuration(lastW[3]) };
+      /* the Virtual Room */
+      const vrs = document.querySelector('.profile-stats-tab .stx-vr');
+      out.vr = vrs ? { cells: [...vrs.querySelectorAll('.stx-vr-cell')].map(c => {
+          const r = c.getBoundingClientRect(), l = c.querySelector('.stat-lab');
+          return { top: Math.round(r.top), left: r.left, right: r.right, label: l.textContent, num: c.querySelector('.stat-num').textContent,
+                   lines: Math.round(l.getBoundingClientRect().height / parseFloat(getComputedStyle(l).lineHeight || 16)) || 1,
+                   cut: l.scrollWidth > l.clientWidth + 1 }; }),
+        sect: (r => ({ left: r.left, right: r.right }))(vrs.getBoundingClientRect()),
+        empty: !!vrs.querySelector('.stx-vr-empty'), text: vrs.textContent } : null;
+      /* At a glance: the four under Total XP fill their rows */
+      const g = [...document.querySelectorAll('.stx-glance .stat-grid > .stat-card')].map(c => (r => ({ t: Math.round(r.top), l: Math.round(r.left), r: Math.round(r.right) }))(c.getBoundingClientRect()));
+      const gg = document.querySelector('.stx-glance .stat-grid').getBoundingClientRect();
+      out.glance = { cards: g, gridRight: Math.round(gg.right) };
+      /* nothing on the tab wider than the screen */
+      out.overflow = document.documentElement.scrollWidth - innerWidth;
+      const dr = ch.getBoundingClientRect();
+      out.dotsOut = [...ch.querySelectorAll('.stx-dcol-grid, .stx-dcol-lab')].filter(e => { const r = e.getBoundingClientRect(); return r.left < dr.left - .5 || r.right > dr.right + .5; }).length;
+      const labs = [...ch.querySelectorAll('.stx-dcol-lab')].map(e => e.getBoundingClientRect());
+      out.labTouch = labs.slice(1).filter((r, i) => r.left < labs[i].right + 1).length;
+      }catch(e){ out.err = String(e && e.stack || e); }
+      return out; }"""
+
+    def expect_lit(ms, step, rows):
+        if ms <= 0:
+            return 0
+        return max(1, min(rows, int(math.floor(ms / (step * 60000) + 0.5))))
+
+    for label, w, h in [PHONE, TABLET, ("320px phone", 320, 568)]:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True)
+        vr = [14, 3, 8]
+        r = pg.evaluate(js, [this_w, last_w, vr])
+        if r.get("err"):
+            check("%s: the Stats run completed" % label, False, r["err"][:300])
+            ctx.close()
+            continue
+        b, s = r.get("built"), r.get("shown") or {}
+        ti = r["ti"]
+        if label != "320px phone":
+            check("%s: built behind another tab the chart waits dim (no light-up until Stats is SHOWN)" % label,
+                  bool(b) and b["hidden"] and b["pre"] and not b["played"] and b["litBg"] == b["unlitBg"], b)
+            check("%s: shown, it plays once and lands lit (a lit dot is not an unlit one; still dim the instant it is shown)" % label,
+                  s.get("played") == "1" and not s.get("pre") and s.get("litBg") != s.get("unlitBg")
+                  and s.get("earlyMid") == s.get("unlitBg"), {k: s.get(k) for k in ("played", "pre", "litBg", "unlitBg", "earlyMid")})
+        mx = max(max(r["thisLogged"]), max(last_w))
+        hours = max(2, int(math.ceil(mx / H - 1e-9)))
+        step = next((x for x in (10, 15, 20, 30, 60, 120) if hours * 60 / x <= 16), 120)
+        rows = int(math.ceil(hours * 60 / step))
+        cols = s.get("cols") or []
+        check("%s: seven columns, Monday to Sunday, on a %dh scale at %d min a dot (%d rows), axis 1h..%dh"
+              % (label, hours, step, rows, hours),
+              len(cols) == 7 and s.get("step") == step and s.get("rows") == rows and s.get("hours") == hours
+              and all(c["rows"] == rows for c in cols) and (s.get("axis") or [None])[-1] == "%dh" % hours,
+              {k: s.get(k) for k in ("step", "rows", "hours", "axis")})
+        want = [expect_lit(v, step, rows) for v in r["thisLogged"]]
+        check("%s: the dots lit in each day's middle column are its logged time at that resolution" % label,
+              [c["lit"] for c in cols] == want and [c["ms"] for c in cols] == [int(v) for v in r["thisLogged"]],
+              {"got": [c["lit"] for c in cols], "want": want})
+        check("%s: one white cap per studied day, sitting at the value" % label,
+              all((c["caps"] == 1 and c["capFromBottom"] == n) if n else c["caps"] == 0 for c, n in zip(cols, want)),
+              [(c["caps"], c["capFromBottom"], n) for c, n in zip(cols, want)])
+        check("%s: today, and only today, is marked" % label,
+              [i for i, c in enumerate(cols) if c["today"]] == [ti], [c["today"] for c in cols])
+        check("%s: the reading is the week's total, the same as the This week card (Monday on)" % label,
+              (s.get("read") or {}).get("big") == s.get("weekSum") == s.get("card"),
+              (s.get("read"), s.get("weekSum"), s.get("card")))
+        t = r.get("tap") or {}
+        check("%s: a tapped day shows its exact time and is picked; a second tap goes back to the total" % label,
+              t.get("read", {}).get("big") == t.get("want") and t.get("picked") == 1
+              and r.get("untap", {}).get("big") == s.get("weekSum"), (t, r.get("untap")))
+        p = r.get("prev") or {}
+        pw = [expect_lit(v, step, rows) for v in last_w]
+        check("%s: Last week draws last week on the same scale, plays again, and marks no today" % label,
+              [c["lit"] for c in p.get("cols", [])] == pw and not any(c["today"] for c in p.get("cols", []))
+              and p.get("played") == 1 and p.get("sel") == "true" and p.get("read", {}).get("big") == p.get("want"),
+              {"lit": [c["lit"] for c in p.get("cols", [])], "want": pw, "played": p.get("played"), "read": p.get("read"), "total": p.get("want")})
+        check("%s: and a tapped day of last week reads its own time" % label,
+              r.get("prevTap", {}).get("read", {}).get("big") == r.get("prevTap", {}).get("want"), r.get("prevTap"))
+        v = r.get("vr") or {}
+        cells = v.get("cells") or []
+        check("%s: the Virtual Room is three tiles on ONE row, inside the section, each label on one line and whole" % label,
+              len(cells) == 3 and len({c["top"] for c in cells}) == 1 and [c["num"] for c in cells] == ["14", "3", "8"]
+              and all(c["lines"] == 1 and not c["cut"] for c in cells)
+              and all(c["left"] >= v["sect"]["left"] - .5 and c["right"] <= v["sect"]["right"] + .5 for c in cells),
+              cells)
+        check("%s: nothing on the Stats tab runs off the side, and no dot column or day name leaves its card or touches the next"
+              % label, r.get("overflow") == 0 and r.get("dotsOut") == 0 and r.get("labTouch") == 0,
+              (r.get("overflow"), r.get("dotsOut"), r.get("labTouch")))
+        g = r.get("glance") or {}
+        cs = g.get("cards") or []
+        if len(cs) == 5 and label != "320px phone":
+            if w < 640:
+                ok = cs[3]["t"] == cs[4]["t"] and cs[1]["t"] == cs[2]["t"]
+            else:
+                ok = len({c["t"] for c in cs[1:]}) == 1 and abs(cs[4]["r"] - g["gridRight"]) <= 1
+            check("%s: At a glance leaves no hole (Hundos and the streak share a row / four fill the tablet row)" % label, ok, g)
+        elif label != "320px phone":
+            check("%s: At a glance has Total XP and four cards" % label, False, g)
+        # the empty Virtual Room
+        r2 = pg.evaluate("""async () => { store.vrMatches = 0; store.vrWins = 0; store.vrTop3 = 0;
+          showProfile('stats'); await new Promise(r => setTimeout(r, 900));
+          const v = document.querySelector('.profile-stats-tab .stx-vr');
+          return v ? { cells: v.querySelectorAll('.stx-vr-cell, .stat-card').length, empty: !!v.querySelector('.stx-vr-empty'),
+                       text: v.textContent, over: document.documentElement.scrollWidth - innerWidth,
+                       inside: (o => { const e = v.querySelector('.stx-vr-empty'); if(!e) return false; const r = e.getBoundingClientRect(); return r.left >= o.left - .5 && r.right <= o.right + .5; })(v.getBoundingClientRect()) } : null; }""")
+        check("%s: before a first match the section says so in one line, with no zero tiles" % label,
+              bool(r2) and r2["cells"] == 0 and r2["empty"] and "No matches yet" in r2["text"] and r2["over"] == 0 and r2["inside"], r2)
+        ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -26555,6 +26749,7 @@ def main():
             check_b323b_stars(br)
             check_b323s_summary(br)
             check_b323u_units(br)
+            check_b324t_stats(br)
         finally:
             br.close()
     SERVER.shutdown()
