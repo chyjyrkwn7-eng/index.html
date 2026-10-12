@@ -25387,6 +25387,163 @@ def check_b323t_tabbar(br):
     ctx.close()
 
 
+B323B_SKY = """() => { const cs = getComputedStyle(document.body, '::after');
+  const urls = (cs.backgroundImage.match(/url\\(/g) || []).length;
+  const anims = document.getAnimations().filter(a => a.effect && a.effect.target === document.body
+    && a.effect.pseudoElement === '::after' && a.playState === 'running').length;
+  return { ready: document.documentElement.classList.contains('sky-ready'), urls,
+    size: cs.backgroundSize, op: parseFloat(cs.opacity),
+    anim: cs.animationName, tprop: cs.transitionProperty, running: anims,
+    pos: cs.position, z: cs.zIndex }; }"""
+
+B323B_TILES = """async () => { const cs = getComputedStyle(document.body, '::after');
+  const urls = [...cs.backgroundImage.matchAll(/url\\("?([^")]+)"?\\)/g)].map(m => m[1]);
+  const sizes = cs.backgroundSize.split(',').map(s => parseFloat(s));
+  const out = [];
+  for(let i = 0; i < urls.length; i++){ const im = new Image(); im.src = urls[i];
+    try{ await im.decode(); }catch(e){}
+    out.push({ nat: im.naturalWidth, css: sizes[i], dpr: devicePixelRatio }); }
+  return out; }"""
+
+
+def _b323b_shots(pg):
+    """The same frame with and without the starfield: what the stars add,
+    and nothing else (the layer's transition is cut so both are settled)."""
+    from PIL import Image as _Im
+    pg.evaluate("()=>{const s=document.createElement('style');s.id='__b323t';"
+                "s.textContent='body::after{transition:none!important}';document.head.appendChild(s);"
+                "window.__b323p=document.getAnimations().filter(a=>a.playState==='running');"
+                "window.__b323p.forEach(a=>{try{a.pause();}catch(e){}});}")
+    pg.wait_for_timeout(120)
+    on = _Im.open(io.BytesIO(pg.screenshot())).convert("RGB")
+    pg.wait_for_timeout(160)
+    on2 = _Im.open(io.BytesIO(pg.screenshot())).convert("RGB")
+    pg.evaluate("()=>{const s=document.createElement('style');s.id='__b323h';"
+                "s.textContent='body::after{display:none!important}';document.head.appendChild(s);}")
+    pg.wait_for_timeout(160)
+    off = _Im.open(io.BytesIO(pg.screenshot())).convert("RGB")
+    pg.evaluate("()=>{document.getElementById('__b323h')?.remove();document.getElementById('__b323t')?.remove();"
+                "(window.__b323p||[]).forEach(a=>{try{a.play();}catch(e){}});}")
+    pg.wait_for_timeout(60)
+    return (on, on2), off
+
+
+def _b323b_diff(on, off, box=None, thr=6):
+    """(pixels that differ by more than thr levels, the worst difference) in
+    box - counting only pixels that held still between the two "on" frames,
+    so anything still moving on the page (a canvas, a refraction map) cannot
+    pass for a star. Measured: 22bf429 has ~1,200 such moving pixels on Home."""
+    from PIL import ImageChops as _Ch
+    on, on2 = on
+    W, H = on.size
+    box = box or (0, 0, W, H)
+    def chan_max(a, b):
+        r, g, b_ = _Ch.difference(a.crop(box), b.crop(box)).split()
+        return _Ch.lighter(_Ch.lighter(r, g), b_)
+    d = chan_max(on, off)
+    still = chan_max(on, on2).point(lambda v: 255 if v <= 1 else 0)
+    d = _Ch.darker(d, still)
+    worst = d.getextrema()[1]
+    n = sum(d.point(lambda v: 255 if v > thr else 0).histogram()[255:])
+    return n, worst
+
+
+B323B_HERO = """() => { const r = document.querySelector('.cosmic-hero-wrap')?.getBoundingClientRect();
+  return r ? [r.left, r.top, r.right, r.bottom] : null; }"""
+
+
+def _b323b_home_stars(pg, on, off):
+    """Star pixels on Home OUTSIDE the planet scene, which keeps moving in
+    ways a paused animation does not stop (22bf429 shows up to ~1,900
+    "changed" pixels there with no starfield at all)."""
+    W, H = on[0].size
+    k = W / pg.evaluate("() => innerWidth")
+    n, _ = _b323b_diff(on, off, (0, int(H * .08), W, int(H * .95)))
+    r = pg.evaluate(B323B_HERO)
+    if r:
+        box = (max(0, int(r[0] * k)), max(int(H * .08), int(r[1] * k)), min(W, int(r[2] * k)), min(int(H * .95), int(r[3] * k)))
+        if box[2] > box[0] and box[3] > box[1]:
+            n -= _b323b_diff(on, off, box)[0]
+    return n
+
+
+def check_b323b_stars(br):
+    """Build 323 (b323b): "Could the background be improved? Like especially
+    on the main menu? ... Some faint star like dots? It's almost perfect
+    because it's not overwhelming but definitely adds to the space theme
+    ... I think our themes could use that."
+    - a starfield on Home at full strength, and on a non-Home tab, quieter;
+    - static: two pre-drawn image tiles on a fixed layer, no animation
+      running on it, a transition on opacity only (compositor-only), and
+      tiles drawn at the device's own pixel ratio so the stars are crisp;
+    - the status-bar band at the top is the colour it was: with and
+      without the starfield the top rows differ by at most 1 level - and
+      "without" is exactly 22bf429, which has no such layer;
+    - no stars inside an active test (nothing on screen changes when the
+      layer is removed);
+    - present on four themes, Supernova's scarred Home among them.
+    Fails on 22bf429, which has no starfield."""
+    print("\n323b. a faint starfield behind the app, strongest on Home")
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=2)
+        try:
+            pg.wait_for_function("() => document.documentElement.classList.contains('sky-ready')", timeout=6000)
+        except Exception:
+            pass
+        pg.evaluate(B318_STATE, "ink")
+        pg.wait_for_timeout(900)
+        s = pg.evaluate(B323B_SKY)
+        check("%s: Home has the starfield at full strength (two tiles on a fixed layer behind everything)" % label,
+              s["ready"] and s["urls"] == 2 and s["pos"] == "fixed" and s["z"] == "-1" and s["op"] > .97, s)
+        check("%s: it is static - no animation on it, only opacity can transition" % label,
+              s["urls"] == 2 and s["anim"] == "none" and s["running"] == 0 and s["tprop"] == "opacity", s)
+        tiles = pg.evaluate(B323B_TILES) if s["urls"] else []
+        check("%s: each tile is drawn at the device pixel ratio, so the stars are crisp" % label,
+              len(tiles) == 2 and all(t["nat"] > 0 and abs(t["nat"] - t["css"] * t["dpr"]) <= 1 for t in tiles), tiles)
+        on, off = _b323b_shots(pg)
+        W, H = on[0].size
+        n_home = _b323b_home_stars(pg, on, off)
+        check("%s: the stars are actually there to see on Home (%d star pixels outside the planet)" % (label, n_home), n_home >= 600, n_home)
+        band = int(20 * W / w)
+        n_top, worst_top = _b323b_diff(on, off, (0, 0, W, band), thr=1)
+        check("%s: the status-bar band is untouched - the top 20px within 1 level with and without the stars" % label,
+              s["urls"] == 2 and worst_top <= 1, worst_top)
+        # Quieter elsewhere, but there.
+        pg.evaluate("() => { showProfile(); }")
+        pg.wait_for_timeout(1700)
+        p = pg.evaluate(B323B_SKY)
+        on, off = _b323b_shots(pg)
+        n_prof, _ = _b323b_diff(on, off, (0, int(H * .1), W, H))
+        check("%s: Profile carries the starfield too, quieter than Home (opacity %.2f, %d star pixels)" % (label, p["op"], n_prof),
+              p["urls"] == 2 and .3 <= p["op"] < s["op"] and n_prof >= 150, p)
+        if label == PHONE[0]:
+            # Themes, the scarred Supernova Home among them.
+            seen = []
+            for kind in ("accent:adept", "accent:elite", "orange"):
+                info = pg.evaluate(B318_STATE, kind)
+                pg.wait_for_timeout(700)
+                on, off = _b323b_shots(pg)
+                n = _b323b_home_stars(pg, on, off)
+                seen.append((info["accent"], info["sn"], n))
+            check("%s: the starfield shows on Sapphire, Amethyst and Supernova's scarred Home as well as the default" % label,
+                  n_home >= 600 and all(n >= 600 for _, _, n in seen), seen)
+            # Inside a test: none.
+            pg.evaluate("""()=>{ cfg.units=[topicsIn(QUESTIONS)[0]]; cfg.mode='drill'; cfg.size=12; cfg.source='all';
+              const u=topicsIn(QUESTIONS)[0], idx=[]; QUESTIONS.forEach((q,i)=>{ if(q.topic===u && idx.length<12) idx.push(i); });
+              beginRun(idx); }""")
+            pg.wait_for_selector(".choice", timeout=20000)
+            pg.wait_for_timeout(1000)
+            t = pg.evaluate(B323B_SKY)
+            on, off = _b323b_shots(pg)
+            n_test, worst = _b323b_diff(on, off, thr=0)
+            check("%s: no stars inside an active test (layer at opacity %.2f, %d pixels change without it)" % (label, t["op"], n_test),
+                  s["urls"] == 2 and t["urls"] == 2 and t["op"] == 0 and n_test == 0, (t, n_test, worst))
+            # Reduce motion: nothing to fade either.
+            rm = pg.evaluate("() => { theme.reduceMotion = true; applyTheme(); const d = getComputedStyle(document.body, '::after').transitionDuration; theme.reduceMotion = false; applyTheme(); return d; }")
+            check("%s: under Reduce motion the starfield does not fade" % label, s["urls"] == 2 and rm == "0s", rm)
+        ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -25612,6 +25769,7 @@ def main():
             check_b321d_badges(br)
             check_b321f_profile(br)
             check_b323t_tabbar(br)
+            check_b323b_stars(br)
         finally:
             br.close()
     SERVER.shutdown()
