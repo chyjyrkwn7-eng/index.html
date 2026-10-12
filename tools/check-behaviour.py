@@ -19158,12 +19158,16 @@ def check_b317_badgecase(br):
           const w = document.querySelector('.bc-words .bc-name, .bc-name');
           const nm = [...document.querySelectorAll('.bc-words .bc-name')].map(x => x.textContent).join('|');
           if(!f || nm.indexOf('Penal Code') < 0) return null;
-          const b = f.getBoundingClientRect(); return { cy: Math.round(b.top + b.height / 2), op: parseFloat(getComputedStyle(f).opacity), h: innerHeight }; }""")
+          const fr = document.querySelector('.bc-front'), fb = fr ? fr.getBoundingClientRect().bottom : 0;
+          const b = f.getBoundingClientRect(); return { cy: Math.round(b.top + b.height / 2), op: parseFloat(getComputedStyle(f).opacity), h: innerHeight, front: Math.round(fb) }; }""")
         if r2 and r2["op"] > 0.9:
             seen = r2
             break
-    check("two badges in one run: the second token waits up over the case before its drop, not on the first one's slot",
-          bool(seen) and seen["cy"] < 0.45 * seen["h"], seen)
+    # MOVED IN 321 (b321c): "the badge still cuts through it slowly" - a
+    # token waits in FRONT of the case now (under it on the screen, where
+    # the lid never goes), so the second one waits under the case's front
+    check("two badges in one run: the second token waits in front of the case (under its front wall) before it goes in, not on the first one's slot",
+          bool(seen) and seen["cy"] > seen["front"], seen)
     ctx.close()
     # 6. Reduce motion: the case, still
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
@@ -20566,6 +20570,9 @@ def check_b319_badges(br):
       store.pendingBadgeUnlocks = []; theme.muteBanners = true; theme.reduceMotion = false; applyTheme();
       document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert').forEach(n => n.remove()); }"""
     CASE = """(root) => { const k = document.querySelector(root); if(!k) return null;
+      /* the case as it stands open: its opening (check_b319f's) can still
+         be under way 1.5s in on a busy machine (build 321) */
+      try{ finishBadgeCaseOpen(k); }catch(e){}
       const B = e => { if(!e) return null; const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, w: b.width, h: b.height }; };
       const q = s => k.querySelector(s);
       const lid = q('.ncase-lid, .badge-case-lid'), tray = q('.ncase-tray, .badge-case-tray, .pf-strip') ;
@@ -20576,7 +20583,8 @@ def check_b319_badges(br):
       return { parts: !!(lid && tray && front && handle), cells: cells.length, cols: xs.size, rows: ys.size,
                lidRatio: lb && tb ? +(lb.h / tb.w).toFixed(3) : 0, trayRatio: tb ? +(tb.h / tb.w).toFixed(3) : 0,
                lidAbove: !!(lb && tb && lb.b <= tb.t + 2 && lb.t >= 0 - 2000),
-               text: [...k.querySelectorAll('*')].filter(e => !e.closest('.sr-only, .nova-case-plate, .new-dot') && e.childNodes.length && [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()))
+               /* REVISED IN 321 (b321c): the case's name is debossed in the lid, as the cutscene's always was */
+               text: [...k.querySelectorAll('*')].filter(e => !e.closest('.sr-only, .nova-case-plate, .nova-case-lidlabel, .new-dot') && e.childNodes.length && [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()))
                  .map(e => e.textContent.trim()).filter(Boolean),
                tokensUnfound: cells.filter(c => !c.classList.contains('is-earned')).filter(c => c.querySelector('.badge-token, image.badge-raster')).length,
                tokensFound: cells.filter(c => c.classList.contains('is-earned')).filter(c => c.querySelector('.badge-token, image.badge-raster')).length,
@@ -23415,8 +23423,15 @@ def check_b320c_case(br):
                 n = sum(1 for (hh, ss, vv) in sat if ss > .3 and vv > .28 and min(abs(hh - ch), 360 - abs(hh - ch)) < 14)
                 if n >= 0.004 * len(px):
                     hues_found.append(c)
-        check(f"{dev}: as the lid cracks, light leaks out in the colours of the badges already in the case (at least 3 of the 5 seen)",
-              len(hues_found) >= 3, {"found": hues_found, "of": cols})
+        # MOVED IN 321 (b321c): "it's not realistic because the glow is so
+        # strong when they are badges in the back" - the light out of the
+        # crack is by row now, so a back-row badge gives only a little: the
+        # colours of every badge OUTSIDE the back row are seen (here the red
+        # and the pink; the green, gold and blue are in the back row)
+        front_cols = pg.evaluate("""(us) => { const all = badgeCaseUnits(BADGE_CASES[0]), g = badgeCaseGrid(all.length);
+          return us.filter(u => Math.floor(all.indexOf(u) / g.cols) > 0).map(u => (badgeThemeFor(u) || {}).p); }""", HELD)
+        check(f"{dev}: as the lid cracks, light leaks out in the colours of the badges already in the case - every one outside the back row seen ({len(front_cols)})",
+              len(front_cols) >= 2 and all(c in hues_found for c in front_cols), {"found": hues_found, "of": cols, "outside the back row": front_cols})
         # 4. the token never inside the lid's area while it opens; it glows before it lands
         LID = """() => { const fl = document.querySelector('.bc-flyer .bc-face.is-front') || document.querySelector('.bc-flyer');
           const boxes = ['.bc-lid-in', '.bc-lid-out', '.bc-lid-front'].map(s => document.querySelector(s)).filter(Boolean).map(e => e.getBoundingClientRect());
