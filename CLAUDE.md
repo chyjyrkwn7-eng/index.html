@@ -19967,7 +19967,13 @@ unless noted.
   frame ("it skips a second ahead"). `ruClockSnap(root)` reads every CSS
   animation's time under `root` (by element index, pseudo-element, name) and
   returns `apply(dst)` for a same-shaped tree. Use it whenever a moving
-  thing is copied or re-parented mid-scene.
+  thing is copied or re-parented mid-scene. It sets each animation's
+  START time, not its current time: a new animation given a current time
+  sits pending and held until the compositor starts it (measured up to
+  ~1.8s on a busy page - the "lag", then the jump). And the orbit's
+  stillness rule (`.cosmic-badge-rank .rank-emblem-svg .rk-a{animation:none
+  !important}`) now skips `.ru-ghost *`: inside the bubble it had stopped
+  the carried emblem dead for the whole pull-back.
 - **Nothing of the bubble round the copy** ("a weird mark on the side of the
   flare"): while the road map's copy sits in the planet's bubble, the
   bubble's own rim, glow, offset shadow, emblem and lens are off

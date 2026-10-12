@@ -109272,22 +109272,24 @@ function ruClockSnap(root){
   }catch(e){}
   return dst => {
     if(!dst || !times.size) return;
-    const list = [dst, ...dst.querySelectorAll("*")];
+    const list = [dst, ...dst.querySelectorAll("*")], set = [];
     try{
       dst.getAnimations({ subtree: true }).forEach(an => {
         const k = keyOf(list, an);
         if(k == null || !times.has(k) || times.get(k) == null) return;
-        /* by its start, not its current time: a new animation given a
-           current time waits, held, until the compositor has started it
-           (measured: up to a couple of seconds on a busy page), while one
-           given a start time runs on the timeline from this frame */
-        try{
-          const tl = document.timeline && document.timeline.currentTime;
-          if(typeof tl === "number" && an.playState !== "paused") an.startTime = tl - times.get(k) / (an.playbackRate || 1);
-          else an.currentTime = times.get(k);
-        }catch(e){ try{ an.currentTime = times.get(k); }catch(e2){} }
+        try{ an.currentTime = times.get(k); set.push(an); }catch(e){}
       });
     }catch(e){}
+    /* A new animation given a current time waits, held there, until the
+       compositor has started it - measured up to ~1.8s on a busy page,
+       the "lag" and then the jump. Any still waiting a frame later is
+       started on the timeline from where it is held. */
+    requestAnimationFrame(() => set.forEach(an => {
+      try{
+        const tl = document.timeline && document.timeline.currentTime;
+        if(an.pending && an.playState === "running" && an.startTime == null && typeof tl === "number") an.startTime = tl - (Number(an.currentTime) || 0) / (an.playbackRate || 1);
+      }catch(e){}
+    }));
   };
 }
 async function rankUpHandOut(scene, stop){

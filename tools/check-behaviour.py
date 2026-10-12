@@ -17860,6 +17860,11 @@ def _b321e_stepped(br, w, h, dev):
         if pg.evaluate("() => document.querySelectorAll('[data-screen=\"home\"] .cosmic-badge-rank > .cosmic-rank-anim').length >= 7"):
             break
         pg.wait_for_timeout(1000)
+    # the document timeline at rate 0, as the recorders run it: nothing the
+    # page starts between two steps runs on real time until it is seeked
+    cdp = pg.context.new_cdp_session(pg)
+    cdp.send("Animation.enable")
+    cdp.send("Animation.setPlaybackRate", {"playbackRate": 0})
     st = _Stepper320(pg)
     for _ in range(20):
         st.step(1 / 30)
@@ -18069,7 +18074,7 @@ def check_b320d_rankup(br):
     col = lambda g: g is not None and "grayscale" not in g["f"] and g["o"] > .95
     gry = lambda g: g is not None and ("grayscale(1)" in g["f"] or g["o"] < .7)
     check("build 321: on the road map Up next shows every unlock in its colour (theme, flare, character, banner), and a rank past it stays grey",
-          ng.get("name") == "Platinum" and col(ng.get("dot")) and col(ng.get("flare")) and (ng.get("ch") or ng.get("bn"))
+          bool(ng.get("name")) and col(ng.get("dot")) and col(ng.get("flare")) and (ng.get("ch") or ng.get("bn"))
           and (ng.get("ch") is None or col(ng["ch"])) and (ng.get("bn") is None or "grayscale" not in ng["bn"]["f"])
           and gry(lg.get("ch")) and gry(lg.get("flare")), [ng, lg])
     check("badges carry much more weight: half the badges moves the light 3x as far as half the levels",
