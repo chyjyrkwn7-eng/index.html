@@ -159,6 +159,10 @@ def booted(br, w, h, seed=None, init=None, touch=False, dpr=1):
     if seed:
         ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');"
                             "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % seed)
+        # A gate's fixture is an up-to-date account: it has seen this week's
+        # recap from Nova (build 324), or any check that fixtures last week's
+        # rows would have him talking over Home. check_b324w_recap clears it.
+        ctx.add_init_script("try{localStorage.setItem('class26e.weekrecap.v1','9999-12-31');}catch(e){}")
     pg = open_page(ctx)
     pg.goto(URL)
     pg.wait_for_timeout(2600)
@@ -6755,11 +6759,16 @@ def check_b289(br):
           { pub: ids[2], firstName: 'Cy', avatarChar: 'alien', week: lw, weekPoints: 700 },
           { pub: store.publicId, firstName: store.firstName, avatarChar: 'ninja', week: lw, weekPoints: 10 } ];
         leaderboardRowsFromServer = true;
+        /* MOVED IN 324 (b324w): "Mr nova can also be the guy to congratulate
+           last weeks top 3. But instead of it being on the leaderboard? It
+           will come in on the main menu". The Leaderboard opens no card now
+           (Nova's recap on Home presents them - check_b324w_recap); the This
+           Week board still carries last week's podium. */
         showRankings('overall'); await wait(1600);
-        const card = document.querySelector('.week-congrats');
-        out.congrats = card ? card.querySelectorAll('.lw-podium-spot').length : 0;
+        out.congratsCard = !!document.querySelector('.week-congrats');
         document.querySelectorAll('.invite-overlay').forEach(x => x.remove());
         showHome(); await wait(300); showRankings('week'); await wait(1600);
+        out.congrats = document.querySelectorAll('.screen-rankings .lw-podium-spot, .lw-podium .lw-podium-spot').length;
         out.congratsAgain = !!document.querySelector('.week-congrats');
         showHome(); await wait(300);
         /* (4) the rank box and the tips */
@@ -6831,8 +6840,9 @@ def check_b289(br):
           r.get("retakeRun") == 2, r.get("retakeRun"))
     check("bars fill with a transform, not width", isinstance(r.get("bar"), dict) and r["bar"]["sbar"] and r["bar"]["prop"] == "transform" and r["bar"]["t"], r.get("bar"))
     check("the full-tests banners say they count full-length tests", r.get("fullNote") is True, r.get("note"))
-    check("last week's top 3 are congratulated on the first Leaderboard visit, and only once",
-          r.get("congrats") == 3 and r.get("congratsAgain") is False, r)
+    check("last week's top 3 sit on the This Week podium; the Leaderboard opens no card for them (Nova's recap on Home does, build 324)",
+          r.get("congrats") >= 3 and r.get("congratsCard") is False and r.get("congratsAgain") is False,
+          [r.get("congrats"), r.get("congratsCard"), r.get("congratsAgain")])
     check("tourRev 3 arms the three Profile tips, starting with Customize",
           r.get("tourRev") == 3 and "Customize" in str(r.get("tip")), r.get("tip"))
     check("the rank line is no box; the next rank and the badge case are one family: same width, no glow, no watermark - and the case strip takes the Next rank box's corner (319h)",
@@ -27333,6 +27343,239 @@ def check_b324c_calendar(br):
         ctx.close()
 
 
+
+
+# A recap fixture: last week's rows with the weekly blocks build 324 publishes.
+# Ada wins from fifth on Friday night (a comeback); the viewer is sixth on
+# points and leads every honorable-mention category outside the top 3;
+# Ghost is in this device's cached top three but has no row (hid from the
+# rankings) and must never be named.
+RECAP_FIXTURE_JS = r"""
+  const lw = lastWeekKey(), wk = weekKeyNow(), me = publicIdOf();
+  const blk = (x, o) => Object.assign({ k: lw, x: x, t: 4, h: 1, d: 2, m: 120, s: 3, b: 1000,
+    p: [Math.round(x / 7), Math.round(x / 7), Math.round(x / 7), Math.round(x / 7), Math.round(x / 7), Math.round(x / 7), x - 6 * Math.round(x / 7)] }, o || {});
+  const row = (pub, name, x, o, av) => ({ pub, firstName: name, avatarChar: av || 'ninja', week: wk, weekPoints: 5, rawWeekPoints: 5,
+    prevWeek: lw, prevWeekPoints: x, pwk: blk(x, o) });
+  window.__recapRows = (opts) => {
+    opts = opts || {};
+    const rows = [
+      row('a1', 'Ada', 9000, { p: [500, 500, 500, 500, 500, 3000, 3500] }, 'ghost'),
+      row('b2', 'Bo', 8000, { p: [2000, 2000, 2000, 1000, 500, 300, 200] }, 'alien'),
+      row('c3', 'Cy', 7000, { p: [1500, 1500, 1500, 1500, 500, 500, 0] }),
+      row('d4', 'Di', 6000, { p: [1200, 1200, 1200, 1200, 1000, 200, 0], t: 6, h: 2, d: 3, m: 200, s: 4, b: 5000 }),
+      row('e5', 'Ed', 5000, { p: [1000, 1000, 1000, 1000, 500, 500, 0], t: 5, h: 1, d: 2, m: 150, s: 3, b: 4500 }),
+      row(me, store.firstName || 'Me', opts.meX || 3000, { t: 30, h: 9, d: 6, m: 900, s: 7, b: 100 })
+    ];
+    if(opts.noBlocks) rows.forEach(r => { delete r.pwk; });
+    return rows;
+  };
+  window.__recapMine = (x) => { store.weekKey = wk; store.weekPoints = 5; store.prevWeekKey = lw; store.prevWeekPoints = x; };
+  try{ const c = JSON.parse(localStorage.getItem('class26e.weektop.v1') || '{}'); c[lw] = [{ pub: 'ghost9', name: 'Ghost', avatar: 'ninja', pts: 99999 }];
+       localStorage.setItem('class26e.weektop.v1', JSON.stringify(c)); }catch(e){}
+"""
+
+
+def check_b324w_recap(br):
+    """Build 324 (b324w): Nova's weekly recap on Home. "Every Tuesday we need a
+    weekly recap from nova instructor on screen ... instead of it being on
+    the leaderboard? It will come in on the main menu ... honorable mentions
+    after the top 3 ... I can talk about a comeback ... At the end mention how Mr
+    nova will see us next week". It appears on the first Tuesday-or-later
+    Home of a week and not twice, never on another screen or under a tour;
+    the top 3 in order with the comeback told; mentions skip categories
+    with no data, never name the top 3, never repeat a category two weeks
+    running, never show a zero; nobody hidden from the rankings is named,
+    and a viewer who hides sees nobody else; a mention hands nothing over
+    (the Sheriff was dropped from this task by the integrator: he went to a
+    Virtual Room match against Nova, another builder's); the first week, with no blocks published yet, has the top 3 and no empty
+    mention; the row publishes the blocks; build 289's Leaderboard card is
+    gone. Fails on ab75270 (none of it exists; the card is still there)."""
+    print("\n_b324w. build 324: Nova's weekly recap on Home, honorable mentions")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+      document.querySelectorAll('#pushing-update,#intro-pop,.nova-talk').forEach(n => n.remove());
+      out.fns = typeof buildWeekRecap === 'function' && typeof maybeShowWeekRecap === 'function' && typeof weekRecapLines === 'function';
+      out.oldCard = typeof showWeekCongrats === 'function' || typeof maybeShowWeekCongrats === 'function';
+      if(!out.fns) return out;
+      """ + RECAP_FIXTURE_JS + """
+      /* the day: Tuesday to Sunday, never Monday */
+      out.days = [12, 13, 14, 18].map(d => weekRecapDayOk(new Date(2026, 9, d)));
+      /* the recap, worked out */
+      __recapMine(3000);
+      const rec = buildWeekRecap(__recapRows());
+      out.top = rec.top.map(t => t.name);
+      out.story = rec.story;
+      out.ments = rec.mentions.map(m => ({ cat: m.cat, name: m.name, v: m.value, me: m.me }));
+      out.mentCount = weekRecapMentionCount(lastWeekKey());
+      out.place = rec.viewer.place;
+      const texts = weekRecapLines(rec).map(l => l.text);
+      out.texts = texts;
+      /* empty categories are skipped: only tests reported */
+      const only = __recapRows().map(r => { r.pwk = { k: r.pwk.k, x: r.pwk.x, t: r.pwk.t, h: null, d: null, m: null, s: null, b: null, p: null }; return r; });
+      out.onlyTests = buildWeekRecap(only).mentions.map(m => m.cat);
+      /* a zero is never a winner */
+      const zero = __recapRows().map(r => { r.pwk = Object.assign({}, r.pwk, { t: 0, h: 0, d: 0, m: 0, s: 0, b: null }); return r; });
+      out.zeroMents = buildWeekRecap(zero).mentions.length;
+      /* the rotation: twelve weeks of full data, never a category two weeks running, and it moves */
+      try{ localStorage.removeItem('class26e.weekrecap.v1'); }catch(e){}
+      const weeks = []; { const p = lastWeekKey().split('-').map(Number); for(let i = 0; i < 12; i++){ const d = new Date(p[0], p[1] - 1, p[2] + 7 * i); weeks.push(dayKey(d)); } }
+      const listFor = k => __recapRows().map(r => { r.pwk = Object.assign({}, r.pwk, { k }); r.prevWeek = k; return r; });
+      const picked = weeks.map(k => weekRecapMentions(listFor(k), [{ pub: 'a1' }, { pub: 'b2' }, { pub: 'c3' }], k).map(m => m.cat));
+      out.rotRepeats = picked.slice(1).filter((c, i) => c.some(x => picked[i].indexOf(x) >= 0)).length;
+      out.rotDistinct = new Set([].concat(...picked)).size;
+      out.rotEmpty = picked.filter(c => !c.length).length;
+      /* the first week: nobody has published a block yet */
+      const first = buildWeekRecap(__recapRows({ noBlocks: true }));
+      out.firstTop = first ? first.top.map(t => t.name) : null;
+      out.firstMents = first ? first.mentions.length : -1;
+      out.firstStory = first ? first.story.kind : null;
+      out.firstTexts = first ? weekRecapLines(first).map(l => l.text) : [];
+      /* the row publishes this week's and last week's blocks */
+      store.weekStats = null; store.prevWeekStats = null; rollWeek();
+      const t0 = (store.weekStats || {}).t; weekStatsAdd('t', 2); weekStatsAddXp(40);
+      const lr = buildLeaderboardRow();
+      out.row = { wk: lr.wk && lr.wk.k === weekKeyNow(), pwk: lr.pwk && lr.pwk.k === lastWeekKey(), t: lr.wk ? lr.wk.t - (t0 || 0) : null,
+                  lazy: ROW_LAZY_FIELDS.indexOf('wk') >= 0 && ROW_LAZY_FIELDS.indexOf('pwk') >= 0 };
+      /* the week rolls its counters over and keeps last week's total as b */
+      store.weekKey = lastWeekKey(); store.weekPoints = 777; store.weekStats = { k: lastWeekKey(), t: 3, h: 1, d: 1, b: 0, p: [0,0,0,0,0,0,777] };
+      rollWeek();
+      out.rolled = { prev: (store.prevWeekStats || {}).k === lastWeekKey() && store.prevWeekStats.t === 3, cur: store.weekStats.k === weekKeyNow() && store.weekStats.t === 0, b: store.weekStats.b };
+      out.loadDefault = cleanWeekStats(undefined) === null && cleanWeekStats({ k: 'x' }) === null;
+      }catch(e){ out.err = String(e && e.stack || e); }
+      return out; }""")
+    r = r if isinstance(r, dict) else {}
+    check("b324w the recap exists", r.get("fns") is True, r.get("err") or r.get("fns"))
+    check("b324w build 289's Leaderboard card is gone", r.get("oldCard") is False, r.get("oldCard"))
+    if not r.get("fns"):
+        ctx.close()
+        return
+    check("b324w Tuesday to Sunday, never Monday", r.get("days") == [False, True, True, True], r.get("days"))
+    check("b324w the top 3 in order, nobody hidden named", r.get("top") == ["Ada", "Bo", "Cy"], r.get("top"))
+    st = r.get("story") or {}
+    check("b324w the comeback is told: fifth on Friday, first by Sunday",
+          st.get("kind") == "comeback" and st.get("place") == 5, st)
+    texts = r.get("texts") or []
+    joined = " | ".join(texts)
+    check("b324w Nova presents third, second, then first",
+          len(texts) > 4 and "third" in texts[1] and "Cy" in texts[1] and "second" in texts[2] and "Bo" in texts[2]
+          and "Ada" in texts[3] and "comeback" in texts[3] and "fifth" in texts[3] and "9,000" not in texts[1], texts[:4])
+    ments = r.get("ments") or []
+    check("b324w one or two mentions, none of them the top 3, the viewer named first",
+          len(ments) == r.get("mentCount") and all(m["name"] not in ("Ada", "Bo", "Cy") for m in ments)
+          and ments and ments[0]["me"], ments)
+    check("b324w the mention is said to the viewer, and promises no reward",
+          "That’s you" in joined and "Sheriff" not in joined and "unlock" not in joined.lower(), [t for t in texts if "you" in t])
+    check("b324w he ends by seeing everyone next week", texts and "next Tuesday" in texts[-1], texts[-1:] if texts else None)
+    check("b324w never Ghost (no row: hidden from the rankings)", "Ghost" not in joined, joined[:200])
+    check("b324w categories with no data are skipped", set(r.get("onlyTests") or []) <= {"tests"}, r.get("onlyTests"))
+    check("b324w a zero is never a mention", r.get("zeroMents") == 0, r.get("zeroMents"))
+    check("b324w the mentions rotate: never one category two weeks running, and they move",
+          r.get("rotRepeats") == 0 and (r.get("rotDistinct") or 0) >= 4 and r.get("rotEmpty") == 0,
+          [r.get("rotRepeats"), r.get("rotDistinct"), r.get("rotEmpty")])
+    ft = r.get("firstTexts") or []
+    check("b324w the first week: the top 3 from last week's totals, no mentions, no zeros",
+          r.get("firstTop") == ["Ada", "Bo", "Cy"] and r.get("firstMents") == 0 and r.get("firstStory") != "comeback"
+          and not any(re.search(r"\b0 (XP|tests?|hundos?)\b|nobody|undefined|null|NaN", t) for t in ft),
+          [r.get("firstTop"), r.get("firstMents"), r.get("firstStory")])
+    check("b324w the row publishes this week's and last week's blocks (lazily)",
+          r.get("row") == {"wk": True, "pwk": True, "t": 2, "lazy": True}, r.get("row"))
+    check("b324w the week rolls its counters and keeps last week's total",
+          (r.get("rolled") or {}).get("prev") and (r.get("rolled") or {}).get("cur") and (r.get("rolled") or {}).get("b") == 777
+          and r.get("loadDefault") is True, [r.get("rolled"), r.get("loadDefault")])
+    ctx.close()
+
+    # The flow on Home: not under a tour, not on another screen, once a week.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      try{
+      document.querySelectorAll('#pushing-update,#intro-pop,.nova-talk').forEach(n => n.remove());
+      if(typeof buildWeekRecap !== 'function') return { none: true };
+      """ + RECAP_FIXTURE_JS + """
+      window.weekRecapDayOk = () => true;
+      store.pendingCharUnlocks = [];
+      const locks0 = AVATAR_CHARACTERS.map(c => isLockedCharacter(c.id)).join(',');
+      __recapMine(3000);
+      leaderboardRows = __recapRows(); leaderboardRowsFromServer = true;
+      try{ localStorage.removeItem('class26e.weekrecap.v1'); }catch(e){}
+      const up = () => document.querySelector('.nova-talk.is-weekrecap');
+      /* another screen: nothing */
+      showProfile('profile'); await wait(300); maybeShowWeekRecap(0); await wait(600);
+      out.onProfile = !!up();
+      /* Home under a tour: it waits */
+      const tour = document.createElement('div'); tour.id = 'tour-overlay'; document.body.appendChild(tour);
+      showHome(); await wait(4200);
+      out.underTour = !!up();
+      tour.remove();
+      for(let i = 0; i < 40 && !up(); i++) await wait(150);
+      const el = up();
+      out.shown = !!el;
+      if(el){
+        out.onHome = !!stage.querySelector('[data-screen="home"]');
+        out.marked = (localStorage.getItem('class26e.weekrecap.v1') || '').indexOf(lastWeekKey()) >= 0;
+        const said = [];
+        for(let k = 0; k < 40; k++){
+          const n = el.__nova; if(!n) break;
+          if(n.typing){ n.advance(); await wait(80); }
+          said[n.index] = (el.querySelector('.nt-text') || {}).textContent || '';
+          if(n.index >= n.count - 1) break;
+          n.advance(); await wait(700);
+        }
+        out.said = said;
+        out.podium = [...el.querySelectorAll('.wr-col.is-up .wr-name')].map(n => n.textContent);
+        out.cards = el.querySelectorAll('.wr-mention.is-in').length;
+        out.meCard = !!el.querySelector('.wr-mention.is-me');
+        /* a mention is recognition, not an unlock: nothing changes hands */
+        out.untouched = AVATAR_CHARACTERS.map(c => isLockedCharacter(c.id)).join(',') === locks0
+          && !(store.pendingCharUnlocks || []).length && store.mentionWeeks === undefined;
+        out.skip = !!el.querySelector('.nt-skip');
+        el.__nova.close('done'); await wait(600);
+      }
+      out.gone = !up();
+      /* not twice */
+      showHome(); await wait(4200);
+      out.again = !!up();
+      /* the Leaderboard never congratulates any more */
+      try{ localStorage.removeItem('class26e.weekcongrats.v1'); }catch(e){}
+      showRankings('week'); await wait(1800);
+      out.lbCard = !!document.querySelector('.week-congrats, .is-weekrecap');
+      showHome(); await wait(300);
+      /* a viewer who hides from the rankings: the recap without the class */
+      document.querySelectorAll('.nova-talk, .rs-spot, .rs-fly, .scene-bridge, .invite-overlay').forEach(n => n.remove()); weekRecapOn = false;
+      try{ localStorage.removeItem('class26e.weekrecap.v1'); }catch(e){}
+      store.leaderboardOptIn = false;
+      showHome();
+      for(let i = 0; i < 40 && !up(); i++) await wait(150);
+      const oo = up();
+      out.optShown = !!oo;
+      if(oo){
+        const lines = weekRecapLines(oo.__recap).map(l => l.text).join(' | ');
+        out.optNames = ['Ada', 'Bo', 'Cy', 'Di', 'Ed', 'Ghost'].filter(n => lines.indexOf(n) >= 0);
+        out.optPodium = !!oo.querySelector('.wr-podium, .wr-mention');
+        out.optSettings = /Show me in the rankings/.test(lines);
+        oo.__nova.close('skip');
+      }
+      }catch(e){ out.err = String(e && e.stack || e); }
+      return out; }""")
+    r = r if isinstance(r, dict) else {}
+    check("b324w not on another screen", r.get("onProfile") is False, r.get("err") or r.get("onProfile"))
+    check("b324w not under a tour", r.get("underTour") is False, r.get("underTour"))
+    check("b324w on Home once the tour has gone, marked seen", r.get("shown") is True and r.get("onHome") is True and r.get("marked") is True,
+          [r.get("shown"), r.get("onHome"), r.get("marked")])
+    said = [s for s in (r.get("said") or []) if s]
+    check("b324w the podium rose third, second, first, and the mentions came in as cards",
+          r.get("podium") and sorted(r.get("podium")) == ["Ada", "Bo", "Cy"] and (r.get("cards") or 0) >= 1 and r.get("meCard") is True,
+          [r.get("podium"), r.get("cards"), r.get("meCard")])
+    check("b324w the viewer's mention unlocks nothing (the Sheriff is not the recap's)", r.get("untouched") is True, r.get("untouched"))
+    check("b324w skippable, and closed", r.get("skip") is True and r.get("gone") is True, [r.get("skip"), r.get("gone")])
+    check("b324w not twice in a week", r.get("again") is False, r.get("again"))
+    check("b324w nothing on the Leaderboard", r.get("lbCard") is False, r.get("lbCard"))
+    check("b324w a viewer who hides sees the recap without anybody else in it",
+          r.get("optShown") is True and r.get("optNames") == [] and r.get("optPodium") is False and r.get("optSettings") is True,
+          [r.get("optShown"), r.get("optNames"), r.get("optPodium"), r.get("optSettings")])
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -27569,6 +27812,9 @@ def main():
             check_b324m_modes(br)
             check_b324s_settings(br)
             check_b324c_calendar(br)
+
+
+            check_b324w_recap(br)
         finally:
             br.close()
     SERVER.shutdown()
