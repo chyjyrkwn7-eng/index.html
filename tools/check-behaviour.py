@@ -5319,8 +5319,10 @@ def check_b266(br):
       try{ const d = await fbDb.collection('vrooms').doc(vroomCode).get(); out.game = d.data().game; out.hasGameKey = 'game' in d.data(); }catch(e){ out.gameErr = String(e); }
       /* 5 */
       const sw = document.querySelector('.vroom-open-toggle');
-      if(sw){ const b = sw.getBoundingClientRect(), tr = getComputedStyle(sw, '::before');
-        out.sw = { h: Math.round(b.height), w: Math.round(b.width), trackH: parseFloat(tr.height), trackBg: getComputedStyle(sw).backgroundColor }; }
+      /* the track is the app's one switch, .nsw, since build 324 ("ensure
+         they are all the same"); before that it was the button's ::before */
+      if(sw){ const b = sw.getBoundingClientRect(), nsw = sw.querySelector('.nsw'), tr = getComputedStyle(sw, '::before');
+        out.sw = { h: Math.round(b.height), w: Math.round(b.width), trackH: nsw ? nsw.getBoundingClientRect().height : parseFloat(tr.height), trackBg: getComputedStyle(sw).backgroundColor }; }
       /* 6 */
       const av = document.querySelector('.vroom-avatar');
       if(av){ const w = av.querySelector(':scope > .rank-avatar'), sv = av.querySelector('svg');
@@ -26462,6 +26464,199 @@ def check_b324l_board(br):
               out["overall"]["hs"][3] <= out["week"]["hs"][3], {k: v["hs"][3] for k, v in out.items()})
 
 
+
+B324G_SWITCHES = """() => { const vis = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !e.closest('[hidden]'); };
+  /* on ab75270 the lobby's switch has no .nsw: its button stands in */
+  return [...document.querySelectorAll('.opt > .box, .nsw, .vroom-open-toggle:not(:has(> .nsw))')].filter(vis).map(t => {
+    const track = t;
+    const r = track.getBoundingClientRect(), ka = getComputedStyle(track, '::after');
+    const row = track.closest('.opt');
+    const inp = row ? row.querySelector(':scope > input') : track.closest('[role="switch"]');
+    return { kind: row ? 'opt' : 'lobby', w: Math.round(r.width * 10) / 10, h: Math.round(r.height * 10) / 10,
+      kw: parseFloat(ka.width) || 0, kh: parseFloat(ka.height) || 0, role: inp ? inp.getAttribute('role') : null,
+      text: row ? ((row.querySelector('.otext') || {}).firstChild || {}).textContent : 'Open room' }; }); }"""
+
+B324G_LENS = """(i) => { const t = [...document.querySelectorAll('.settings-card .opt > .box')][i]; const r = t.getBoundingClientRect();
+  const l = t.querySelector('.nsw-lens-body'); const ka = getComputedStyle(t, '::after');
+  const row = t.closest('.opt'), inp = row.querySelector('input');
+  const out = { track: [r.left, r.top, r.right, r.bottom], on: inp.checked, knobOp: parseFloat(ka.opacity), kw: parseFloat(ka.width), kh: parseFloat(ka.height),
+    knobX: new DOMMatrixReadOnly(ka.transform === 'none' ? undefined : ka.transform).m41 };
+  if(l){ const b = l.getBoundingClientRect(); Object.assign(out, { lens: true, l: b.left, t: b.top, r: b.right, b: b.bottom, w: b.width, h: b.height, cx: b.left + b.width / 2 }); }
+  else out.lens = false;
+  return out; }"""
+
+
+def check_b324g_toggles(br):
+    """Build 324 (G): every switch in the app. "Do you see how small all of
+    our toggle switches are? Any toggle switch in our needs to be bigger"
+    and "The toggles should work in a similar way [to the bottom tab bar].
+    Watch the video, should be the same kind of Liquid Glass function.
+    Ensure all toggles in the app do this and ensure they are all the same
+    and behave the same and are the correct size". On ab75270 the .opt
+    switches were 41.6x24 with a round knob, the lobby's Open room a
+    different 52.8x32 drawing on its own button, and nothing happened on a
+    press but the flip: no lens, no drag. Here:
+    - every switch on Settings, a start sheet and the lobby is the same
+      component at the same size (64x30, at least 60 wide), with the same
+      capsule knob, and every one is role=switch;
+    - a press swells the knob into a lens taller than the track, over its
+      top and bottom edges and wider than the knob;
+    - a drag moves the lens along the track, and the state follows where
+      it is let go (past the middle flips it, short of it does not), and
+      the setting behind it with it;
+    - a tap flips the state and the setting, through a lens;
+    - afterwards the knob is back at its resting size, the lens gone;
+    - an upright drag on a switch still scrolls the page and flips nothing;
+    - Reduce motion: no lens;
+    - nothing overflows a 320px phone's rows, the lobby's header included."""
+    print("\n324g. build 324: every switch - one bigger component, and the Liquid Glass lens on a press, a drag and a tap")
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, init=_ROOM_FAKE, touch=True)
+        pg.evaluate("() => { document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); __useRooms(); store.seenUnitSelectTour = true; store.seenUnitHoldTip = true; store.seenSettingsTour = true; }")
+        found = []
+        pg.evaluate("() => showAppearance()"); pg.wait_for_timeout(1400)
+        pg.evaluate("() => document.querySelectorAll('#tour-overlay,.tour-tip').forEach(n=>n.remove())")
+        found += pg.evaluate(B324G_SWITCHES)
+        pg.evaluate("""async ()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms));
+          cfg.mode='drill'; cfg.units=[]; showSetup(); await wait(800);
+          const p=document.querySelector('.screen-setup .pick'); p && p.click(); await wait(500);
+          document.getElementById('nextbtn').click(); await wait(1100); }""")
+        found += pg.evaluate(B324G_SWITCHES)
+        pg.evaluate("() => { const m=document.getElementById('unitoptions-modal'); if(m) m.hidden=true; }")
+        pg.evaluate("(a) => (%s)(a[0], a[1])" % _B323V_ROOM, [6, "race"])
+        pg.wait_for_timeout(1200)
+        found += [x for x in pg.evaluate(B324G_SWITCHES) if x["kind"] == "lobby"]
+        kinds = {x["kind"] for x in found}
+        sizes = {(x["w"], x["h"], x["kw"], x["kh"]) for x in found}
+        check("%s: %d switches across Settings, the start sheet and the lobby, Open room among them" % (label, len(found)),
+              len(found) >= 12 and kinds == {"opt", "lobby"}, [(x["text"], x["w"], x["h"]) for x in found])
+        check("%s: every one is the same switch: one size, at least 60x28 (64x30), with one capsule knob" % label,
+              len(sizes) == 1 and all(x["w"] >= 60 and x["h"] >= 28 and x["kw"] > x["kh"] * 1.3 for x in found), sorted(sizes))
+        check("%s: every one is a switch to VoiceOver (role=switch)" % label,
+              all(x["role"] == "switch" for x in found), [(x["text"], x["role"]) for x in found if x["role"] != "switch"])
+        # ---- the lobby's Open room: a tap flips it, the same way ----
+        lob = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const b = document.querySelector('.vroom-open-toggle');
+          const before = b.getAttribute('aria-checked'); b.click(); await wait(300);
+          for(let i = 0; i < 30 && b.querySelector('.nsw-lens'); i++) await wait(100);
+          return { before, after: b.getAttribute('aria-checked'), open: vroomIsOpen, lens: !!b.querySelector('.nsw-lens') }; }""")
+        check("%s: Open room flips on a tap and settles (lens gone)" % label,
+              lob["before"] == "false" and lob["after"] == "true" and lob["open"] is True and not lob["lens"], lob)
+        # ---- press, drag, release on Settings ----
+        pg.evaluate("() => showAppearance()"); pg.wait_for_timeout(1300)
+        pg.evaluate("() => document.querySelectorAll('#tour-overlay,.tour-tip').forEach(n=>n.remove())")
+        idx = pg.evaluate("() => [...document.querySelectorAll('.settings-card .opt')].findIndex(o => /class days/i.test(o.textContent))")
+        pg.evaluate("(i) => { const t=[...document.querySelectorAll('.settings-card .opt > .box')][i]; window.scrollBy({ top: t.getBoundingClientRect().top - 300, behavior: 'instant' }); }", idx)
+        pg.wait_for_timeout(300)
+        rest = pg.evaluate(B324G_LENS, idx)
+        tr = rest["track"]
+        cy = (tr[1] + tr[3]) / 2
+        knob_on = tr[2] - 2 - rest["kw"] / 2
+        knob_off = tr[0] + 2 + rest["kw"] / 2
+        start = knob_on if rest["on"] else knob_off
+        end = knob_off if rest["on"] else knob_on
+        cdp = ctx.new_cdp_session(pg)
+        T = lambda typ, pts: cdp.send("Input.dispatchTouchEvent", {"type": typ, "touchPoints": [{"x": x, "y": y} for x, y in pts]})
+        T("touchStart", [(start, cy)]); pg.wait_for_timeout(450)
+        d = pg.evaluate(B324G_LENS, idx)
+        th = tr[3] - tr[1]
+        check("%s: a press swells the knob into a lens: taller than the track, over its top and bottom, wider than the knob" % label,
+              d["lens"] and d["h"] > th + 6 and d["t"] < tr[1] - 3 and d["b"] > tr[3] + 3 and d["w"] > rest["kw"] + 8 and abs(d["cx"] - start) < 4, d)
+        for i in range(1, 11):
+            T("touchMove", [(start + (end - start) * i / 10, cy)]); pg.wait_for_timeout(25)
+        pg.wait_for_timeout(120)
+        m = pg.evaluate(B324G_LENS, idx)
+        check("%s: dragged, the lens follows the finger along the track (within 4px), still swollen" % label,
+              m["lens"] and abs(m["cx"] - end) < 4 and m["h"] > th + 6, {"cx": m.get("cx"), "end": end, "h": m.get("h")})
+        T("touchEnd", []); pg.wait_for_timeout(1100)
+        a = pg.evaluate(B324G_LENS, idx)
+        setting = pg.evaluate("() => theme.showClassDaysLeft !== false")
+        check("%s: let go past the middle: the switch flips, and the setting behind it (Show class days remaining)" % label,
+              a["on"] == (not rest["on"]) and setting == a["on"], {"before": rest["on"], "after": a["on"], "setting": setting})
+        check("%s: and the lens is gone, the knob back at its resting size at the new end" % label,
+              not a["lens"] and a["knobOp"] > .99 and abs(a["kw"] - rest["kw"]) < .5 and abs(a["kh"] - rest["kh"]) < .5
+              and abs(abs(a["knobX"] - rest["knobX"]) - (knob_on - knob_off)) < 1.5, a)
+        # a drag short of the middle changes nothing
+        s2 = end
+        e2 = end + (start - end) * .3
+        T("touchStart", [(s2, cy)]); pg.wait_for_timeout(300)
+        for i in range(1, 7):
+            T("touchMove", [(s2 + (e2 - s2) * i / 6, cy)]); pg.wait_for_timeout(25)
+        T("touchEnd", []); pg.wait_for_timeout(1100)
+        b2 = pg.evaluate(B324G_LENS, idx)
+        check("%s: let go short of the middle: it settles back and stays as it was" % label,
+              b2["on"] == a["on"] and not b2["lens"] and b2["knobOp"] > .99, {"was": a["on"], "now": b2["on"]})
+        # ---- a tap on another switch ----
+        j = pg.evaluate("() => [...document.querySelectorAll('.settings-card .opt')].findIndex(o => /swipe to next/i.test(o.textContent))")
+        pg.evaluate("(i) => { const t=[...document.querySelectorAll('.settings-card .opt > .box')][i]; window.scrollBy({ top: t.getBoundingClientRect().top - 300, behavior: 'instant' }); }", j)
+        pg.wait_for_timeout(300)
+        r0 = pg.evaluate(B324G_LENS, j)
+        sw0 = pg.evaluate("() => theme.swipeAdvance")
+        t3 = r0["track"]
+        T("touchStart", [((t3[0] + t3[2]) / 2, (t3[1] + t3[3]) / 2)]); pg.wait_for_timeout(60)
+        T("touchEnd", []); pg.wait_for_timeout(30)
+        # The swell, read off the lens's own animations rather than sampled:
+        # a loaded machine can skip every frame of a 260ms swell. The
+        # tallest the lens body is animated to, in px.
+        lh = pg.evaluate("""(i) => { const t=[...document.querySelectorAll('.settings-card .opt > .box')][i];
+          const body = t.querySelector('.nsw-lens-body'); if(!body) return 0;
+          const sy = v => (!v || v === 'none') ? 1 : new DOMMatrixReadOnly(v).d;
+          let mx = 0; body.getAnimations().forEach(a => a.effect.getKeyframes().forEach(k => { if(k.transform) mx = Math.max(mx, sy(k.transform)); }));
+          return body.offsetHeight * mx; }""", j)
+        pg.wait_for_timeout(1300)
+        r1 = pg.evaluate(B324G_LENS, j)
+        sw1 = pg.evaluate("() => theme.swipeAdvance")
+        check("%s: a tap flips the switch and its setting (Swipe to next question)" % label,
+              r1["on"] == (not r0["on"]) and sw1 == (not sw0) and sw1 == r1["on"], {"on": [r0["on"], r1["on"]], "setting": [sw0, sw1]})
+        check("%s: through the lens - it swelled past the track - and settled back to the resting knob" % label,
+              lh > (t3[3] - t3[1]) + 6 and not r1["lens"] and r1["knobOp"] > .99 and abs(r1["kw"] - r0["kw"]) < .5, {"maxLensH": lh, "after": r1})
+        # ---- an upright drag scrolls and flips nothing ----
+        y0 = pg.evaluate("() => scrollY")
+        x = (t3[0] + t3[2]) / 2; yy = (t3[1] + t3[3]) / 2
+        T("touchStart", [(x, yy)])
+        for i in range(1, 11):
+            T("touchMove", [(x + 1, yy - 22 * i)]); pg.wait_for_timeout(20)
+        T("touchEnd", []); pg.wait_for_timeout(1100)
+        y1 = pg.evaluate("() => scrollY")
+        r2 = pg.evaluate(B324G_LENS, j)
+        check("%s: an upright drag starting on a switch still scrolls the page, and flips nothing" % label,
+              y1 - y0 > 60 and r2["on"] == r1["on"] and not r2["lens"], {"scrolled": y1 - y0, "on": [r1["on"], r2["on"]]})
+        # ---- Reduce motion: no lens ----
+        pg.evaluate("() => { theme.reduceMotion = true; applyTheme(); }")
+        pg.evaluate("(i) => { const t=[...document.querySelectorAll('.settings-card .opt > .box')][i]; window.scrollBy({ top: t.getBoundingClientRect().top - 300, behavior: 'instant' }); }", j)
+        pg.wait_for_timeout(300)
+        r3 = pg.evaluate(B324G_LENS, j)
+        t4 = r3["track"]
+        T("touchStart", [((t4[0] + t4[2]) / 2, (t4[1] + t4[3]) / 2)]); pg.wait_for_timeout(300)
+        rm = pg.evaluate(B324G_LENS, j)
+        T("touchEnd", []); pg.wait_for_timeout(700)
+        rm2 = pg.evaluate(B324G_LENS, j)
+        pg.evaluate("() => { theme.reduceMotion = false; applyTheme(); }")
+        check("%s: with Reduce motion a press shows no lens, and a tap is a plain quick switch" % label,
+              not rm["lens"] and rm2["on"] == (not r3["on"]) and not rm2["lens"], {"pressed": rm["lens"], "on": [r3["on"], rm2["on"]]})
+        ctx.close()
+    # ---- a 320px phone: nothing in a switch row runs off it ----
+    ctx, pg = booted(br, 320, 568, seed=USED_ACCOUNT, init=_ROOM_FAKE)
+    pg.evaluate("() => { document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); __useRooms(); store.seenUnitSelectTour = true; store.seenUnitHoldTip = true; store.seenSettingsTour = true; }")
+    FIT = """(sel) => { const out = []; document.querySelectorAll(sel).forEach(row => { const r = row.getBoundingClientRect(); if(!r.width || row.closest('[hidden]')) return;
+        const t = row.querySelector('.opt > .box, .nsw'); const tb = t ? t.getBoundingClientRect() : null;
+        const kids = [...row.querySelectorAll('*')].filter(e => !e.closest('.nsw-lens')).map(e => e.getBoundingClientRect()).filter(b => b.width > 0);
+        out.push({ right: Math.max(...kids.map(b => b.right), r.right), left: Math.min(...kids.map(b => b.left), r.left), vw: innerWidth,
+          trackIn: !tb || (tb.left >= r.left - .5 && tb.right <= r.right + .5), tw: tb ? tb.width : null,
+          text: (row.textContent || '').trim().slice(0, 30) }); });
+      return { rows: out, hs: document.documentElement.scrollWidth - innerWidth }; }"""
+    pg.evaluate("() => showAppearance()"); pg.wait_for_timeout(1300)
+    pg.evaluate("() => document.querySelectorAll('#tour-overlay,.tour-tip').forEach(n=>n.remove())")
+    f1 = pg.evaluate(FIT, ".settings-card > label.opt")
+    pg.evaluate("(a) => (%s)(a[0], a[1])" % _B323V_ROOM, [6, "race"])
+    pg.wait_for_timeout(1200)
+    f2 = pg.evaluate(FIT, ".vroom-roster-tools")
+    rows = f1["rows"] + f2["rows"]
+    bad = [x for x in rows if x["right"] > x["vw"] + .5 or x["left"] < -.5 or not x["trackIn"] or (x["tw"] or 64) < 60]
+    check("320px phone: every Settings switch row and the lobby's header fit, the big switch inside its row (%d rows)" % len(rows),
+          len(rows) >= 8 and not bad and f1["hs"] <= 0 and f2["hs"] <= 0, bad or [f1["hs"], f2["hs"]])
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -26693,6 +26888,7 @@ def main():
             check_b323s_summary(br)
             check_b323u_units(br)
             check_b324l_board(br)
+            check_b324g_toggles(br)
         finally:
             br.close()
     SERVER.shutdown()

@@ -7738,7 +7738,12 @@
     transition:opacity .22s ease, transform .34s cubic-bezier(.5,0,.75,.2);
   }
   [data-reduce-motion="true"] .more-body.is-reveal > .more-body-inner{ transition:none; }
-  .opt{ display:flex; align-items:flex-start; gap:.7rem; padding:.35rem 0; cursor:pointer; }
+  /* The switch on the right, centred on the title-and-description block,
+     the text taking the rest of the row (build 324, the bigger switch). */
+  .opt{ display:flex; align-items:center; gap:1rem; padding:.35rem 0; cursor:pointer; }
+  .opt > .otext{ order:1; flex:1 1 auto; min-width:0; }
+  /* a 320px phone: every pixel of the words' column is a line less */
+  @media (max-width:22rem){ .opt{ gap:.75rem; } }
   .sync-code-row{
     display:flex; align-items:center; justify-content:space-between; width:100%;
     background:none; border:none; font:inherit; text-align:left; padding:.6rem 0; cursor:pointer;
@@ -7813,80 +7818,109 @@
      the knob's own top/left math is measured against — see the
      specificity note below) gives the track a defined edge in both
      themes without disturbing that centering. */
-  .opt .box{
-    flex:none; margin-top:.02rem; position:relative;
-    width:2.6rem; height:1.5rem; border-radius:999px;
-    background:rgba(120,120,128,.32); border:none; color:transparent;
-    box-shadow:inset 0 0 0 1px rgba(120,120,128,.28);
-    transition:background .2s ease;
+  /* ---- THE SWITCH (build 324): ONE COMPONENT, EVERYWHERE ----
+     "Do you see how small all of our toggle switches are? Any toggle
+     switch in our needs to be bigger ... You see how much bigger the nice
+     toggles are?" and "Ensure all toggles in the app do this and ensure
+     they are all the same and behave the same and are the correct size."
+     Every on/off control in the app is this one track: the .box of an
+     .opt row (a real checkbox underneath - Settings, the start sheets,
+     Match settings) and .nsw (the Virtual Room lobby's Open room, a
+     role=switch button). iOS 26's switch, 64x30 CSS px: a pill track,
+     grey off and green on, and a solid white CAPSULE knob 2px inside it
+     (iOS 26's knob is a capsule, not the old circle). The green is a
+     layer (::before) whose opacity the press-and-drag lens drives, so the
+     colour cross-fades under the glass as it moves (see nswPress in the
+     script). The knob is ::after; while the lens is out it steps aside
+     and the lens is the knob. 20.8px tall before, 60% of this.
+     The switch sits on the RIGHT of its row now, the iOS grammar the
+     start sheet's own comment already promised ("switches on the right")
+     and the Open room switch already had - "ensure they are all the
+     same". The [data-theme][data-layout] pair is for the reason further
+     down: the unit checkbox's .box rules carry both and would otherwise
+     win the border and background. */
+  .opt > .box, .nsw,
+  [data-layout="modern"] .opt > .box,
+  [data-theme="dark"][data-layout="modern"] .opt > .box{
+    display:block; flex:none; order:3; margin:0 0 0 auto; position:relative; box-sizing:border-box;
+    width:64px; height:30px; padding:0; border:none; border-radius:999px;
+    background:rgba(120,120,128,.36); color:transparent; font-size:0; line-height:0;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
+    /* a sideways drag is the switch's; an upright one still scrolls */
+    touch-action:pan-y; -webkit-tap-highlight-color:rgba(0,0,0,0);
+    -webkit-user-select:none; user-select:none; cursor:pointer;
+    transition:none;
   }
-  /* The actual cause of the off-center knob: [data-layout="modern"] .box
-     and its dark-theme sibling (further up, written for the unit-
-     selection checkbox) both set a real border, and both have HIGHER
-     specificity (an attribute selector plus a class) than plain
-     ".opt .box" (two classes) — so they were winning over this rule's
-     own "border:none" despite coming first in the file. Since
-     box-sizing is border-box everywhere, that stray border was eating
-     into the same box the knob's top:3.2px/left:2px math was measured
-     against, shifting the knob off the center it was actually built
-     for. Re-declared here at higher specificity than both of those so
-     the toggle switch (unlike the unit checkbox, which is meant to
-     keep its border) genuinely renders with none. */
-  [data-layout="modern"] .opt .box,
-  [data-theme="dark"][data-layout="modern"] .opt .box{
-    border:none;
-    /* More Liquid Glass on the switch itself, per explicit request -
-       matching the same blur(9px) saturate(1.9) brightness(1.06) recipe used everywhere
-       else in the app (.info-note, the daily-question FAB, etc.) rather
-       than inventing a separate amount. Has no visible effect once a
-       switch is on, since input:checked ~ .box's own opaque #34C759
-       leaves nothing behind it to blur - only the off (translucent)
-       state actually shows the frosted effect. Background is NOT
-       re-declared in this rule (see the dedicated :not(:checked) rule
-       right below) - it used to live here unconditionally, which
-       fixed the off-state's color but silently broke the on/green
-       state right along with it, since this selector matches a
-       checked switch's box too and would then outrank the checked-
-       state rule's own background. */
+  /* More Liquid Glass on the switch itself (an earlier explicit request):
+     the same blur(9px) saturate(1.9) brightness(1.06) recipe as the rest
+     of the app, which only shows on the translucent off track. */
+  [data-layout="modern"] .opt > .box,
+  [data-theme="dark"][data-layout="modern"] .opt > .box,
+  [data-layout="modern"] .nsw{
     will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
   }
-  /* The actual background fix for the off-state, scoped so it can
-     never touch a checked switch: the generic [data-theme="dark"]
-     [data-layout="modern"] .box rule (2 attribute selectors + 1
-     class = specificity 0,3,0) outranks plain ".opt .box" (2 classes
-     = 0,2,0), so without a more specific override the switch's
-     off-state silently fell back to that generic dark-glass panel
-     color instead of the neutral gray track meant to show here -
-     confirmed by inspecting the live cascade, not just reading the
-     source. :not(:checked) both makes this MORE specific than that
-     generic rule (0,4,1 / 0,5,1 here vs. its 0,3,0) and keeps it from
-     ever competing with input:checked ~ .box's own #34C759 (0,3,1) -
-     the earlier, unscoped version of this fix happened to be even
-     MORE specific than that checked-state rule too, which is exactly
-     what made the switch stop turning green. */
-  [data-layout="modern"] .opt input:not(:checked) ~ .box,
-  [data-theme="dark"][data-layout="modern"] .opt input:not(:checked) ~ .box{
-    background:rgba(120,120,128,.32);
+  .opt > .box::before, .nsw::before{
+    content:""; position:absolute; inset:0; border-radius:inherit;
+    background:#34C759; opacity:0; transition:opacity .25s ease;
   }
-  .opt .box::after{
-    /* Precisely centered now — with a 1.5rem (24px) track and a
-       1.1rem (17.6px) knob, centering requires top:3.2px, not the
-       2px this had: that left 2px of gap above the knob but 4.4px
-       below it, a real, measurable 2.4px asymmetry, not just a
-       perception issue. */
-    content:""; position:absolute; top:3.2px; left:3.2px;
-    width:1.1rem; height:1.1rem; border-radius:50%; background:#fff;
-    box-shadow:0 1px 3px rgba(0,0,0,.25);
-    transition:transform .2s cubic-bezier(.34,1.56,.64,1);
+  /* On is always green (the universal "on" for a switch like this),
+     whatever the accent - an accent-coloured switch could read as off. */
+  .opt > input:checked ~ .box::before, [aria-checked="true"] > .nsw::before{ opacity:1; }
+  .opt > .box::after, .nsw::after{
+    content:""; position:absolute; top:2px; left:2px; width:39px; height:26px;
+    border-radius:999px; background:#fff;
+    box-shadow:0 1px 2px rgba(0,0,0,.2), 0 3px 8px rgba(0,0,0,.18);
+    transition:transform .3s cubic-bezier(.3,1.08,.45,1);
   }
-  /* On is always green (matching the universal "on" convention for a
-     switch like this), independent of whatever accent color happens
-     to be selected \u2014 an accent-colored toggle could blend in or even
-     read as "off" depending on the chosen color, where green never is
-     ambiguous either way. */
-  .opt input:checked ~ .box{ background:#34C759; border-color:#34C759; }
-  .opt input:checked ~ .box::after{ transform:translateX(1.1rem); }
-  .opt input:focus-visible ~ .box{ outline:2px solid var(--accent); outline-offset:2px; }
+  /* 64 - 2 - 2 - 39: the knob's gap is 2px at either end */
+  .opt > input:checked ~ .box::after, [aria-checked="true"] > .nsw::after{ transform:translateX(21px); }
+  .opt > input:focus-visible ~ .box, .nsw-host:focus-visible > .nsw{ outline:2px solid var(--accent); outline-offset:3px; }
+  .opt > input:disabled ~ .box{ cursor:default; }
+  /* While the lens is out it IS the knob, and the green follows it. */
+  .nsw-lensed::after{ opacity:0; transition:none; }
+  /* Reduce motion: no lens (see nswCalm), and a quicker plain slide */
+  [data-reduce-motion="true"] .opt > .box::after, [data-reduce-motion="true"] .nsw::after{ transition-duration:.14s; }
+  .nsw-live::before{ opacity:var(--nsw-p, 0) !important; transition:opacity var(--nsw-t, 0ms) linear !important; }
+  /* THE LENS. It lives inside the track (so it scrolls with it) and pokes
+     out above and below it and past its ends. The outer box only moves
+     (translateX); the body only scales (the swell and the settle); inside
+     it the track is drawn again, a touch magnified and offset so it lines
+     up with the real one, which is what reads as the track seen THROUGH
+     glass. Transform and opacity only; no filter of any kind. The rim is
+     the tab bar lens's recipe (.tab-lens-body), at this size. */
+  .nsw-lens{ position:absolute; left:0; top:50%; z-index:2; pointer-events:none; will-change:transform; }
+  .nsw-lens-body{
+    position:absolute; inset:0; border-radius:999px; overflow:hidden;
+    transform-origin:50% 50%; will-change:transform;
+    background:rgba(8,10,14,.2);
+    box-shadow:0 6px 16px rgba(0,0,0,.34), 0 1px 4px rgba(0,0,0,.26);
+  }
+  .nsw-lens-glass{ position:absolute; inset:0; border-radius:inherit; will-change:opacity; }
+  .nsw-lens-view{ position:absolute; left:0; top:0; border-radius:999px; background:rgba(128,128,136,.46); will-change:transform; }
+  .nsw-lens-fill{ position:absolute; inset:0; border-radius:inherit; background:#3BD162; }
+  /* Her recording, frame by frame: the glass's edge is not a white line,
+     it is the TRACK'S COLOUR bent round the rim - a green band when the
+     switch is on, grey when off - with the track itself seen smaller
+     through the middle and the dark of the row above and below it. So
+     the edge is two bands (grey, and green over it at the track's own
+     cross-fade), and the rim is a hairline and a top highlight. */
+  .nsw-lens-edge{
+    position:absolute; inset:0; border-radius:inherit;
+    box-shadow:inset 0 0 0 2px rgba(150,150,160,.5), inset 0 0 7px 2.5px rgba(150,150,160,.32);
+  }
+  .nsw-lens-edge.is-on{
+    box-shadow:inset 0 0 0 2px rgba(78,204,112,.9), inset 0 0 7px 2.5px rgba(70,200,105,.58);
+  }
+  .nsw-lens-rim{
+    position:absolute; inset:0; border-radius:inherit;
+    background-image:radial-gradient(100% 60% at 50% -12%, rgba(255,255,255,.16), rgba(255,255,255,0) 62%);
+    box-shadow:inset 0 0 0 .75px rgba(255,255,255,.4),
+      inset 0 1.5px 1px -.5px rgba(255,255,255,.7),
+      inset 0 -1px 1px -.5px rgba(255,255,255,.3),
+      inset 0 3px 4px -3px rgba(130,212,255,.35),
+      inset 0 -3px 4px -3px rgba(255,135,210,.3);
+  }
+  .nsw-lens-solid{ position:absolute; inset:0; border-radius:inherit; background:#fff; will-change:opacity; }
   .otext{ font-size:.95rem; }
   .ohint{ display:block; font-size:.82rem; color:var(--soft); }
 
@@ -19916,7 +19950,9 @@
   /* The timer card inside its disclosure. */
   .unitoptions-modal-sheet .timer-sect{ margin:.7rem 0 0; }
   .unitoptions-modal-sheet .timer-sect .opt{ padding:.35rem 0; }
-  .unitoptions-modal-sheet .timer-sect .minutes-sect{ margin:.1rem 0 .5rem 3.3rem; }
+  /* under its switch's words, which start at the row's left edge now that
+     the switch is on the right (build 324) */
+  .unitoptions-modal-sheet .timer-sect .minutes-sect{ margin:.1rem 0 .5rem 0; }
   .unitoptions-modal-sheet .timer-sect .minutes-sect .slab{ display:none; }
   .unitoptions-modal-sheet .timer-sect .minutes-sect .sliderwrap{ margin-top:0; }
   .unitoptions-modal-sheet .timer-sect .minutes-sect .sliderval{ min-width:4rem; }
@@ -23787,44 +23823,18 @@
      51x44 lozenge with the knob floating in its middle. Now the button
      is an invisible 44px target and the track is ::before, drawn at an
      iOS switch's proportions inside it. */
+  /* THE APP'S ONE SWITCH (build 324): "the virtual room lobby one" is the
+     same .nsw track as every other switch now, same size, same lens - the
+     button stays the invisible 44px target round it. */
   .vroom-open-toggle{
-    flex:0 0 auto; position:relative;
-    width:3.3rem; height:44px; min-height:44px; padding:0;
+    flex:0 0 auto; position:relative; display:flex; align-items:center; justify-content:center;
+    width:64px; height:44px; min-height:44px; padding:0;
     border:0; border-radius:0; background:transparent; cursor:pointer;
-    -webkit-tap-highlight-color:transparent;
+    -webkit-tap-highlight-color:transparent; touch-action:pan-y;
   }
-  .vroom-open-toggle::before{
-    content:""; position:absolute; left:0; right:0; top:50%;
-    height:2rem; transform:translateY(-50%);
-    border-radius:999px;
-    background:rgba(255,255,255,.12);
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
-    transition:background .2s ease, box-shadow .2s ease;
-  }
-  /* On is GREEN, the same green as the Public chip on the way in - on
-     the default theme the accent is near-white and an "on" switch in it
-     read as a grey one. */
-  .vroom-open-toggle.on::before{
-    background:#2FBF71;
-    box-shadow:inset 0 0 0 1px rgba(120,240,170,.55), 0 0 14px rgba(47,191,113,.35);
-  }
-  .vroom-open-knob{
-    position:absolute; left:.18rem; top:50%;
-    width:1.64rem; height:1.64rem; margin-top:-.82rem;
-    border-radius:50%; background:#fff;
-    box-shadow:0 2px 6px rgba(0,0,0,.4), 0 0 0 .5px rgba(0,0,0,.08);
-    transition:transform .22s cubic-bezier(.2,.8,.25,1);
-  }
-  .vroom-open-toggle.on .vroom-open-knob{ transform:translateX(1.3rem); }
   .rooms-list{ display:flex; flex-direction:column; }
   .room-row .friend-row-sub{ color:var(--soft); }
   .rooms-refresh{ width:100%; min-height:44px; margin-top:.9rem; }
-  @media (min-width:40rem){
-    .vroom-open-toggle{ width:3.6rem; }
-    .vroom-open-toggle::before{ height:2.15rem; }
-    .vroom-open-knob{ width:1.79rem; height:1.79rem; margin-top:-.895rem; }
-    .vroom-open-toggle.on .vroom-open-knob{ transform:translateX(1.45rem); }
-  }
   .invite-overlay{
     position:fixed; inset:0; z-index:340; display:flex;
     align-items:flex-end; justify-content:center;
@@ -64355,6 +64365,308 @@ function currentStreak(){
 
 /* A small two-tone flame icon (a genuine SVG we draw and control, not a
    system emoji) for the streak badge. */
+/* ---- THE SWITCH'S LIQUID GLASS (build 324) ----
+   "The toggles should work in a similar way [to the bottom tab bar]. Watch
+   the video, should be the same kind of Liquid Glass function. Ensure all
+   toggles in the app do this and ensure they are all the same and behave
+   the same." Her iOS 26 recording: press a switch and its knob swells into
+   a clear glass lens - taller than the track, poking out above and below
+   it and wider than the knob - with the track showing through it a touch
+   magnified and a bright rim. Held, it drags along the track and the green
+   cross-fades to grey (or back) as it passes the middle. Let go and it
+   settles at the end it is nearest - or, on a plain tap, glides to the
+   other end - and shrinks back into the solid knob.
+   ONE layer for every switch in the app, by delegation: any .opt row's
+   .box (its checkbox does the work) and any role=switch button holding an
+   .nsw track. Nothing here decides anything - a drag that ends on the
+   other side commits through the control's own click(), so the row's
+   change handler, its lock, its save and its sound all run exactly as a
+   tap would. A tap is the browser's own label/button click; this only
+   draws it. Keyboard and VoiceOver go straight to the input or button.
+   The lens is built inside the track on the press and removed when it
+   has settled. Every frame is a transform or an opacity; the swell and
+   the settle are Web Animations (the tab lens's lesson: a tap's press and
+   release land in one frame, and a retargeted transition freezes), the
+   glide a CSS transition. Reduce motion: no lens, the plain quick switch. */
+const NSW_SEL = ".opt > .box, .nsw";
+const NSW_T = { pop: 260, shrink: 360, LX: 1.44, LY: 1.4, MAG: .82,
+  POP: "cubic-bezier(.3,1.25,.5,1)", GLIDE: "cubic-bezier(.32,1.06,.42,1)", SETTLE: "cubic-bezier(.3,1.04,.4,1)" };
+const nswRuns = new WeakMap();
+let nswActive = null, nswPending = null, nswCommitting = false, nswSuppressUntil = 0;
+function nswCalm(){
+  return document.documentElement.dataset.reduceMotion === "true"
+    || !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)
+    || typeof Element.prototype.animate !== "function";
+}
+function nswHost(track){
+  const row = track.parentNode && track.parentNode.classList && track.parentNode.classList.contains("opt") ? track.parentNode : null;
+  const cb = row && row.querySelector(":scope > input[type=checkbox]");
+  if(cb) return { el: cb, on: () => cb.checked, off: () => cb.disabled, commit: () => cb.click() };
+  const b = track.closest('[role="switch"]');
+  if(b) return { el: b, on: () => b.getAttribute("aria-checked") === "true",
+    off: () => b.disabled || b.getAttribute("aria-disabled") === "true", commit: () => b.click() };
+  return null;
+}
+function nswGeo(track){
+  const W = track.offsetWidth, H = track.offsetHeight;
+  if(!W || !H) return null;
+  const ka = getComputedStyle(track, "::after");
+  const KW = parseFloat(ka.width) || W * .61, KH = parseFloat(ka.height) || H - 4, IN = parseFloat(ka.left) || 2;
+  const LW = Math.round(KW * NSW_T.LX), LH = Math.round(H * NSW_T.LY);
+  return { W, H, LW, LH, offC: IN + KW / 2, onC: W - IN - KW / 2, k: [KW / LW, KH / LH] };
+}
+const nswRest = g => "scale(" + g.k[0].toFixed(4) + "," + g.k[1].toFixed(4) + ")";
+function nswBuild(track, g){
+  const mk = (cls, parent) => { const e = document.createElement("span"); e.className = cls; if(parent) parent.appendChild(e); return e; };
+  const lens = mk("nsw-lens");
+  lens.setAttribute("aria-hidden", "true");
+  lens.style.width = g.LW + "px"; lens.style.height = g.LH + "px"; lens.style.marginTop = (-g.LH / 2) + "px";
+  const body = mk("nsw-lens-body", lens);
+  const glass = mk("nsw-lens-glass", body);
+  const view = mk("nsw-lens-view", glass);
+  const fill = mk("nsw-lens-fill", view);
+  mk("nsw-lens-edge", glass);
+  const edgeOn = mk("nsw-lens-edge is-on", glass);
+  mk("nsw-lens-rim", glass);
+  const solid = mk("nsw-lens-solid", body);
+  view.style.width = (g.W * NSW_T.MAG).toFixed(2) + "px"; view.style.height = (g.H * NSW_T.MAG).toFixed(2) + "px";
+  /* at rest: exactly the knob */
+  body.style.transform = nswRest(g); glass.style.opacity = "0"; solid.style.opacity = "1";
+  track.appendChild(lens);
+  track.classList.add("nsw-lensed", "nsw-live");
+  const run = { track, lens, body, glass, view, fill, edgeOn, solid, g, c: 0, anims: [], popEnds: 0, t: 0 };
+  nswRuns.set(track, run);
+  return run;
+}
+/* how green the track is with the lens at c: a cross-fade through the middle */
+function nswProg(g, c){
+  const x = Math.max(0, Math.min(1, (c - g.offC) / Math.max(1, g.onC - g.offC)));
+  return x * x * (3 - 2 * x);
+}
+function nswPlace(run, c, ms, ease){
+  /* a glide that starts in the same task the lens was placed in (a flip
+     from the row's words or the keyboard) needs the start committed first,
+     or it has nothing to transition from */
+  if(ms) void run.track.offsetWidth;
+  const g = run.g, tr = ms ? "transform " + ms + "ms " + ease : "none";
+  run.lens.style.transition = tr; run.view.style.transition = tr;
+  run.lens.style.transform = "translate3d(" + (c - g.LW / 2).toFixed(2) + "px,0,0)";
+  /* the track again, scaled about the lens's centre: what is under the
+     middle of the glass lines up with the real track there */
+  run.view.style.transform = "translate3d(" + (g.LW / 2 - c * NSW_T.MAG).toFixed(2) + "px," + ((g.LH - g.H * NSW_T.MAG) / 2).toFixed(2) + "px,0)";
+  const p = nswProg(g, c).toFixed(3);
+  run.fill.style.transition = run.edgeOn.style.transition = ms ? "opacity " + ms + "ms ease" : "none";
+  run.fill.style.opacity = p; run.edgeOn.style.opacity = p;
+  run.track.style.setProperty("--nsw-t", (ms || 0) + "ms");
+  run.track.style.setProperty("--nsw-p", p);
+  run.c = c;
+}
+/* where the lens is right now, mid-glide included */
+function nswNowC(run){
+  try{
+    const m = new DOMMatrixReadOnly(getComputedStyle(run.lens).transform);
+    return m.m41 + run.g.LW / 2;
+  }catch(e){ return run.c; }
+}
+/* swell into the lens (up) or settle back into the knob, from wherever it
+   is. A settle that arrives while the swell is still playing (every tap:
+   the press and the release are a few frames apart) is QUEUED behind it -
+   its own delay and no backwards fill - so the swell finishes first. The
+   tab lens learned this one: cancel the swell and hold its half-way state
+   through the delay, and the lens freezes at the knob's size. */
+function nswMorph(run, up, delay){
+  const rest = nswRest(run.g);
+  const to = up ? ["none", 0, 1] : [rest, 1, 0];
+  const d = up ? NSW_T.pop : NSW_T.shrink;
+  const queue = !up && run.up && run.anims.length && run.popEnds > performance.now() + 4;
+  let cur;
+  if(queue){
+    cur = ["none", 0, 1];
+    delay = Math.max(delay || 0, run.popEnds - performance.now());
+  } else {
+    cur = [getComputedStyle(run.body).transform, getComputedStyle(run.solid).opacity, getComputedStyle(run.glass).opacity];
+    run.anims.forEach(a => { try{ a.cancel(); }catch(e){} });
+    run.anims = [];
+  }
+  run.body.style.transform = to[0];
+  run.solid.style.opacity = String(to[1]); run.glass.style.opacity = String(to[2]);
+  const fill = queue ? "forwards" : "both";
+  const o = { duration: d, delay: delay || 0, easing: up ? NSW_T.POP : NSW_T.SETTLE, fill };
+  run.anims.push(run.body.animate([{ transform: cur[0] }, { transform: to[0] }], o));
+  /* the white goes early on the swell and comes back late on the settle,
+     so the glass is what you see while it is big */
+  const fo = up ? { duration: d * .55, delay: delay || 0, easing: "ease-out", fill }
+               : { duration: d * .5, delay: (delay || 0) + d * .45, easing: "ease-in", fill };
+  run.anims.push(run.solid.animate([{ opacity: cur[1] }, { opacity: to[1] }], fo));
+  run.anims.push(run.glass.animate([{ opacity: cur[2] }, { opacity: to[2] }], fo));
+  run.up = up;
+  if(up) run.popEnds = performance.now() + (delay || 0) + d;
+}
+function nswDone(run){
+  clearTimeout(run.t);
+  run.anims.forEach(a => { try{ a.cancel(); }catch(e){} });
+  run.lens.remove();
+  run.track.classList.remove("nsw-lensed", "nsw-live", "nsw-drag");
+  run.track.style.removeProperty("--nsw-p"); run.track.style.removeProperty("--nsw-t");
+  if(nswRuns.get(run.track) === run) nswRuns.delete(run.track);
+}
+/* glide to the end that matches the state, then shrink back into the knob */
+function nswSettle(run, on){
+  clearTimeout(run.t);
+  const g = run.g, c = on ? g.onC : g.offC;
+  const span = Math.max(1, g.onC - g.offC), dist = Math.abs(c - run.c);
+  const glide = dist < .5 ? 0 : Math.round(200 + 160 * Math.min(1, dist / span));
+  nswPlace(run, c, glide, NSW_T.GLIDE);
+  const now = performance.now();
+  const delay = Math.round(Math.max(0, run.popEnds - now, glide * .55));
+  nswMorph(run, false, delay);
+  /* gone when the settle has played out - on its own clock, not a timer */
+  const mine = run.anims.slice();
+  Promise.all(mine.map(a => a.finished)).then(() => { if(run.anims[0] === mine[0]) nswDone(run); }, () => {});
+}
+/* the lens for this track, made (at the knob, where the knob is) or caught
+   wherever it had got to */
+function nswLensFor(track, on){
+  let run = nswRuns.get(track);
+  if(run && run.lens.isConnected){
+    clearTimeout(run.t);
+    nswPlace(run, nswNowC(run), 0);
+    return run;
+  }
+  const g = nswGeo(track);
+  if(!g) return null;
+  run = nswBuild(track, g);
+  nswPlace(run, on ? g.onC : g.offC, 0);
+  return run;
+}
+document.addEventListener("pointerdown", e => {
+  if(e.button > 0 || e.isPrimary === false) return;
+  const track = e.target && e.target.closest ? e.target.closest(NSW_SEL) : null;
+  if(!track || nswCalm()) return;
+  const host = nswHost(track);
+  if(!host || host.off()) return;
+  if(nswActive) nswRelease({ pointerId: nswActive.id, type: "pointercancel" });
+  const run = nswLensFor(track, host.on());
+  if(!run) return;
+  nswMorph(run, true, 0);
+  nswActive = { track, host, run, id: e.pointerId, x0: e.clientX, y0: e.clientY, c0: run.c, drag: false };
+  if(e.pointerType === "mouse"){ try{ track.setPointerCapture(e.pointerId); }catch(err){} }
+}, { passive: true });
+document.addEventListener("pointermove", e => {
+  const a = nswActive;
+  if(!a || e.pointerId !== a.id) return;
+  const dx = e.clientX - a.x0, dy = e.clientY - a.y0;
+  if(!a.drag){
+    if(Math.abs(dx) < 5 || Math.abs(dx) < Math.abs(dy)) return;
+    a.drag = true; a.track.classList.add("nsw-drag");
+  }
+  const g = a.run.g;
+  let c = a.c0 + dx;
+  /* a little give past either end, never more than 4px */
+  if(c < g.offC){ const o = g.offC - c; c = g.offC - 4 * o / (o + 14); }
+  else if(c > g.onC){ const o = c - g.onC; c = g.onC + 4 * o / (o + 14); }
+  nswPlace(a.run, c, 0);
+}, { passive: true });
+function nswRelease(e){
+  const a = nswActive;
+  if(!a || e.pointerId !== a.id) return;
+  nswActive = null;
+  a.track.classList.remove("nsw-drag");
+  const run = a.run;
+  if(!run.lens.isConnected) return;
+  /* a scroll took the finger, or the press was abandoned: back as it was */
+  if(e.type === "pointercancel"){ nswSettle(run, a.host.on()); return; }
+  if(a.drag){
+    const want = run.c > (run.g.offC + run.g.onC) / 2;
+    nswSuppressUntil = performance.now() + 450;
+    if(want !== a.host.on()){
+      nswCommitting = true;
+      try{ a.host.commit(); }finally{ nswCommitting = false; }
+    }
+    nswSettle(run, a.host.on());
+    return;
+  }
+  /* a tap: the click that follows flips it (or a lock says no), and the
+     change that comes with it settles the lens - or, if nothing comes,
+     this does */
+  nswPending = a;
+  clearTimeout(run.t);
+  run.t = setTimeout(() => { if(nswPending === a){ nswPending = null; nswSettle(run, a.host.on()); } }, 350);
+}
+document.addEventListener("pointerup", nswRelease, { passive: true });
+document.addEventListener("pointercancel", nswRelease, { passive: true });
+/* the click a drag leaves behind is not a second tap */
+document.addEventListener("click", e => {
+  if(nswCommitting || !nswSuppressUntil) return;
+  if(performance.now() > nswSuppressUntil){ nswSuppressUntil = 0; return; }
+  const t = e.target;
+  if(t && t.closest && t.closest('.opt, [role="switch"]')){
+    nswSuppressUntil = 0;
+    e.preventDefault(); e.stopPropagation();
+  }
+}, true);
+/* A flip from anywhere - the row's words, the keyboard, a script - plays
+   the same lens a tap on the switch does. The capture listener notes the
+   state the flip produced; if the control's own handler then undoes it (a
+   locked option), the bubble listener sees no flip and draws none. */
+let nswFlipSeen = null;
+function nswFlipTrack(t){
+  if(!t || !t.closest) return null;
+  if(t.type === "checkbox"){
+    const row = t.parentNode;
+    return row && row.classList && row.classList.contains("opt") ? row.querySelector(":scope > .box") : null;
+  }
+  const b = t.closest('[role="switch"]');
+  return b ? b.querySelector(":scope > .nsw") : null;
+}
+function nswFlipped(track, before, on){
+  if(nswCommitting) return;
+  const run = nswRuns.get(track);
+  if(nswPending && nswPending.track === track){
+    const a = nswPending; nswPending = null;
+    if(run && run.lens.isConnected) nswSettle(run, on);
+    return;
+  }
+  if(nswActive && nswActive.track === track) return;
+  if(before === on || nswCalm() || !track.isConnected) return;
+  const r = nswLensFor(track, !on);
+  if(!r) return;
+  nswMorph(r, true, 0);
+  nswSettle(r, on);
+}
+document.addEventListener("change", e => {
+  const t = e.target;
+  if(t && t.type === "checkbox") nswFlipSeen = { t, was: !t.checked };
+}, true);
+document.addEventListener("change", e => {
+  const t = e.target, track = nswFlipTrack(t);
+  if(!track) return;
+  const was = nswFlipSeen && nswFlipSeen.t === t ? nswFlipSeen.was : !t.checked;
+  nswFlipSeen = null;
+  nswFlipped(track, was, t.checked);
+});
+document.addEventListener("click", e => {
+  const b = e.target && e.target.closest ? e.target.closest('[role="switch"]') : null;
+  if(b && b.querySelector(":scope > .nsw")) nswFlipSeen = { t: b, was: b.getAttribute("aria-checked") === "true" };
+}, true);
+document.addEventListener("click", e => {
+  const b = e.target && e.target.closest ? e.target.closest('[role="switch"]') : null;
+  const track = b && b.querySelector(":scope > .nsw");
+  if(!track) return;
+  const was = nswFlipSeen && nswFlipSeen.t === b ? nswFlipSeen.was : null;
+  nswFlipSeen = null;
+  nswFlipped(track, was, b.getAttribute("aria-checked") === "true");
+});
+/* Every switch is a switch to a screen reader too: the .opt rows' inputs
+   are checkboxes underneath, and role=switch makes VoiceOver say "switch,
+   on". Set as rows arrive, once a frame at most. */
+(function nswRoles(){
+  let q = 0;
+  const run = () => { q = 0; document.querySelectorAll(".opt > input[type=checkbox]:not([role])").forEach(i => i.setAttribute("role", "switch")); };
+  try{ new MutationObserver(() => { if(!q) q = requestAnimationFrame(run); }).observe(document.documentElement, { childList: true, subtree: true }); }catch(e){}
+  run();
+})();
+
 /* A real iOS-style segmented control drag: press anywhere on the pill
    and drag left/right, and crossing the horizontal midpoint switches
    the selection live, snapping the slider the rest of the way on
@@ -102775,12 +103087,14 @@ function showVirtualRoomLobby(){
     openText.append(openLabel, openHint);
     const sw = document.createElement("button");
     sw.type = "button";
-    sw.className = "vroom-open-toggle" + (vroomIsOpen ? " on" : "");
+    sw.className = "vroom-open-toggle nsw-host" + (vroomIsOpen ? " on" : "");
     sw.setAttribute("role", "switch");
     sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
     sw.setAttribute("aria-label", "Open room: list this room for the whole class");
+    /* the app's one switch (build 324): the .nsw track, drawn and pressed
+       exactly like every .opt switch - aria-checked is its state */
     const knob = document.createElement("span");
-    knob.className = "vroom-open-knob";
+    knob.className = "nsw"; knob.setAttribute("aria-hidden", "true");
     sw.appendChild(knob);
     sw.addEventListener("click", () => {
       vroomIsOpen = !vroomIsOpen;
