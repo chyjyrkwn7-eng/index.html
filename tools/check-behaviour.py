@@ -25220,6 +25220,243 @@ def check_b321f_profile(br):
               bm.get("label") == "Earn 7 badges" and bm.get("shown") == "5 / 7" and bm.get("bar") and bw.get("shown") == "6 / 7" and bw.get("bar"), [bm, bw])
 
 
+# ---- build 323 (builder n): the Calendar tab, Settings in Profile, Friends on the card, today's dots ----
+B323N_FRIENDS = """() => {
+  store.publicId = 'me-pub'; store.friendsIn = ['f1', 'f2', 'f3', 'f4', 'f5', 'f6'];
+  const chars = AVATAR_CHARACTERS.map(c => c.id);
+  leaderboardRows = ['f1', 'f2', 'f3', 'f4', 'f5', 'f6'].map((p, i) => ({ pub: p,
+    firstName: ['Jordan', 'Alex', 'Sam', 'Taylor', 'Chris', 'Pat'][i], avatarChar: chars[i % chars.length], level: 30 + i, badges: 2 }));
+  /* f1 and f2 on (a Drill, the main menu), f3 left an hour ago, the rest never seen */
+  presenceMap = { f1: Date.now(), f2: Date.now(), f3: -(Date.now() - 3600e3) };
+  presenceActivity = { f1: 'drill', f2: 'menu' };
+}"""
+
+B323N_NAV = """async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const out = { err: null };
+  try{
+    const navs = []; const realNav = window.setActiveNav;
+    window.setActiveNav = function(n){ navs.push(n); return realNav.apply(this, arguments); };
+    const clean = () => document.querySelectorAll('#tour-overlay, #tour-tooltip, .daily-alert, .toast').forEach(x => x.remove());
+    const lit = () => [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id);
+    const barHasCal = !!document.getElementById('bottomtab-calendar');
+    out.barHasCal = barHasCal;
+    /* 1. the Calendar tab root */
+    out.hasFn = typeof showCalendarTab === 'function';
+    showHome(); await wait(300); navs.length = 0;
+    if(out.hasFn) showCalendarTab(); else showCalendar();
+    await wait(700); clean();
+    const root = document.querySelector('#stage > .panel');
+    out.cal = { cls: root ? root.className : null, nav: navs[navs.length - 1] || null,
+      back: !!(root && root.querySelector('.back-link')), title: (document.getElementById('count') || {}).textContent,
+      grid: !!(root && root.querySelector('.cal-grid .cal-cell')), seg: root ? [...root.querySelectorAll('.cal-viewseg .iconbtn')].map(b => b.textContent.trim()) : [],
+      day: !!(root && root.querySelector('.cal-daycard')),
+      today: !!(root && [...root.querySelectorAll('.cal-action-btn')].some(b => /go to today/i.test(b.textContent))),
+      inProfile: !!document.querySelector('#stage .screen-profile'), lit: lit() };
+    /* every older way in lands on it */
+    out.ways = {};
+    for(const [k, f] of [['showCalendar', () => showCalendar()], ['showProfile(calendar)', () => showProfile('calendar')],
+                         ['showProfile(schedule)', () => showProfile('schedule')], ['showClass(calendar)', () => showClass('calendar')]]){
+      showHome(); await wait(200);
+      try{ f(); }catch(e){ out.ways[k] = 'threw ' + e.message; continue; }
+      await wait(450);
+      const p = document.querySelector('#stage > .panel');
+      out.ways[k] = !!(p && p.classList.contains('screen-calendar-tab'));
+    }
+    /* 2. Profile: Profile, Stats, Settings */
+    showProfile('profile'); await wait(700); clean();
+    const tabs = () => [...document.querySelectorAll('#stage > .screen-profile > .navsegment > .iconbtn')];
+    out.labels = tabs().map(b => b.textContent.trim());
+    out.swipe = (typeof PROFILE_TABS !== 'undefined') ? PROFILE_TABS.slice() : null;
+    out.calInProfile = !!document.querySelector('#stage .screen-profile .cal-grid, #stage .screen-profile .profile-cal-tab');
+    /* the Settings tab, tapped */
+    const sBtn = tabs().find(b => /settings/i.test(b.textContent));
+    if(sBtn){ sBtn.click(); await wait(600); clean(); }
+    const pane = [...document.querySelectorAll('#stage > .screen-profile > div')].find(d => !d.hidden && d.querySelector('#settings-motion'));
+    out.tapSettings = { pane: !!pane, sync: !!(pane && pane.querySelector('#settings-sync-sect, #settings-sync')),
+      active: (tabs().find(b => b.classList.contains('active')) || {}).textContent || null };
+    /* 3. showAppearance lands on Profile > Settings, Profile lit */
+    showHome(); await wait(300); navs.length = 0;
+    showAppearance(); await wait(800); clean();
+    const p3 = document.querySelector('#stage > .panel');
+    const vis = p3 ? [...p3.querySelectorAll(':scope > div:not(.navsegment)')].filter(d => !d.hidden) : [];
+    out.appearance = { cls: p3 ? p3.className : null, nav: navs[navs.length - 1] || null,
+      active: (tabs().find(b => b.classList.contains('active')) || {}).textContent || null,
+      settingsShown: vis.length === 1 && !!vis[0].querySelector('#settings-motion') && !!vis[0].querySelector('#settings-study'),
+      standalone: !!document.querySelector('#stage > .panel.screen-settings'),
+      profileLit: lit().indexOf('bottomtab-profile') >= 0, lit: lit() };
+    /* the save-your-code banner's way in: Settings, scrolled to the sync code */
+    showHome(); await wait(300);
+    showAppearance({ focus: 'sync' }); await wait(1200);
+    const sync = document.getElementById('settings-sync-sect');
+    out.focus = { tab: (tabs().find(b => b.classList.contains('active')) || {}).textContent || null,
+      inView: !!sync && sync.getBoundingClientRect().top < innerHeight && sync.getBoundingClientRect().bottom > 0, y: Math.round(scrollY) };
+    /* 4. the Friends box */
+    window.setActiveNav = realNav;
+  }catch(e){ out.err = String(e && e.stack || e).slice(0, 300); }
+  return out; }"""
+
+B323N_FRIENDS_BOX = """async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const out = { err: null };
+  try{
+    let boardReads = 0;
+    const realColl = fbDb.collection;
+    fbDb.collection = function(n){ if(n === 'leaderboard') boardReads++; return realColl.apply(this, arguments); };
+    showProfile('profile'); await wait(800);
+    document.querySelectorAll('#tour-overlay, #tour-tooltip, .daily-alert, .toast').forEach(x => x.remove());
+    const box = document.querySelector('#stage .profile-friendcard');
+    const rows = box ? [...box.querySelectorAll('.pf-friend')] : [];
+    const shown = el => !!el && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
+    out.rows = rows.map(r => ({ name: (r.querySelector('.pf-friend-name') || {}).textContent,
+      status: [...r.querySelectorAll('.pf-friend-status > *')].filter(shown).map(e => e.textContent.trim()).join(' '),
+      dot: shown(r.querySelector('.friend-online-dot')),
+      dotGreen: (() => { const d = r.querySelector('.friend-online-dot'); return d ? getComputedStyle(d).backgroundColor : null; })(),
+      avatar: !!r.querySelector('.rank-avatar, svg') }));
+    out.more = box ? ((box.querySelector('.pf-friends-more') || {}).textContent || '').trim() : null;
+    const btn = box && [...box.querySelectorAll('button')].find(b => /friends/i.test(b.textContent));
+    out.btn = btn ? btn.textContent.trim() : null;
+    out.boardReads = boardReads;
+    fbDb.collection = realColl;
+    if(btn){ btn.click(); await wait(500); }
+    out.opens = !!document.querySelector('#stage > .screen-friends');
+    /* nobody yet: a line and the button */
+    store.friendsIn = []; leaderboardRows = [];
+    showProfile('profile'); await wait(600);
+    const b2 = document.querySelector('#stage .profile-friendcard');
+    out.empty = { rows: b2 ? b2.querySelectorAll('.pf-friend').length : -1,
+      line: b2 ? ((b2.querySelector('.profile-friendcard-line') || {}).textContent || '').trim() : null,
+      btn: !!(b2 && b2.querySelector('button')) };
+  }catch(e){ out.err = String(e && e.stack || e).slice(0, 300); }
+  return out; }"""
+
+B323N_DOTS = """async (iso) => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const RealDate = Date;
+  const off = new RealDate(iso + 'T10:00:00').getTime() - RealDate.now();
+  window.Date = class extends RealDate { constructor(...a){ if(a.length) super(...a); else super(RealDate.now() + off); }
+                                         static now(){ return RealDate.now() + off; } };
+  const out = {};
+  try{
+    calendarView = 'month';
+    (typeof showCalendarTab === 'function' ? showCalendarTab : showCalendar)(); await wait(700);
+    const bg = el => el ? getComputedStyle(el).backgroundColor : null;
+    const key = { cls: bg(document.querySelector('.cal-legend-dot:not(.cal-legend-dot-test):not(.cal-legend-dot-holiday)')),
+                  test: bg(document.querySelector('.cal-legend-dot-test')), hol: bg(document.querySelector('.cal-legend-dot-holiday')) };
+    const read = () => { const t = document.querySelector('.cal-grid .cal-cell-today');
+      return t ? { sel: t.classList.contains('cal-cell-sel'), test: t.classList.contains('cal-cell-test'), hol: t.classList.contains('cal-cell-holiday'),
+        cls: bg(t.querySelector('.cal-cell-dot:not(.cal-cell-dot-test)')), dot: bg(t.querySelector('.cal-cell-dot-test')),
+        ring: getComputedStyle(t).borderTopColor } : null; };
+    out.key = key;
+    out.picked = read();
+    /* today not picked: another day tapped */
+    const other = [...document.querySelectorAll('.cal-grid .cal-cell.cal-cell-class:not(.cal-cell-today)')][0];
+    if(other){ other.click(); await wait(300); }
+    out.unpicked = read();
+    /* a picked test day that is not today keeps its amber too */
+    const t2 = [...document.querySelectorAll('.cal-grid .cal-cell.cal-cell-test:not(.cal-cell-today)')][0];
+    if(t2){ t2.click(); await wait(300); }
+    const s2 = document.querySelector('.cal-grid .cal-cell-sel.cal-cell-test:not(.cal-cell-today)');
+    out.pickedOther = s2 ? bg(s2.querySelector('.cal-cell-dot-test')) : null;
+  }finally{ window.Date = RealDate; }
+  return out; }"""
+
+
+def check_b323n_nav(br):
+    """Build 323 (builder n). Madison: "Calendar is gonna move to the bottom
+    tab. It's gonna change places with the settings bottom tab and then the
+    settings is gonna be within profile and will be a top tab, the order
+    would be profile, stats, settings ... the box that says manage friends
+    show your current friends and what they are doing currently or if they
+    are offline." And: "On the calendar, if today's the current day, the
+    test dot turns white instead of yellow as shown to be in the key."
+    So: showCalendarTab() is a tab root (Calendar in the header, no back
+    link, setActiveNav("calendar"), and the bar's Calendar tab lit where
+    the bar has one); every older way to the calendar lands there; Profile's
+    tabs are Profile, Stats, Settings, the swipe order the same; Settings'
+    content is in the third tab and showAppearance() lands on it with
+    Profile lit; the Friends box lists friends - avatar, name, what they are
+    doing or Offline, the green dot - with no read of its own, then Manage
+    friends; today's test dot is the key's amber, picked or not. Fails on
+    22bf429 (no showCalendarTab, Profile / Calendar / Stats, white dots)."""
+    print("\n323n. the Calendar tab, Settings inside Profile, friends on the Friends box, today's test dot")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, touch=True)
+    cdp = ctx.new_cdp_session(pg)
+    try:
+        pg.evaluate(B323N_FRIENDS)
+        r = pg.evaluate(B323N_NAV)
+        if r.get("err"):
+            check("the navigation could be driven at all", False, r["err"])
+        c = r.get("cal") or {}
+        lit_ok = (c.get("lit") == ["bottomtab-calendar"]) if r.get("barHasCal") else True
+        check("showCalendarTab() is a tab root: Calendar in the header, no back link, setActiveNav('calendar'), not inside Profile%s"
+              % (", the bar's Calendar lit" if r.get("barHasCal") else " (this bar has no Calendar tab yet - builder T's)"),
+              r.get("hasFn") and "screen-calendar-tab" in (c.get("cls") or "") and not c.get("back") and c.get("title") == "Calendar"
+              and c.get("nav") == "calendar" and not c.get("inProfile") and lit_ok, c)
+        check("...with the whole calendar: Month / List, the grid, the day card, Go to today",
+              c.get("grid") and c.get("seg") == ["Month", "List"] and c.get("day") and c.get("today"), c)
+        check("every older way to the calendar lands on the Calendar tab", bool(r.get("ways")) and all(v is True for v in r["ways"].values()), r.get("ways"))
+        labels = [l.lower() for l in (r.get("labels") or [])]
+        check("Profile's tabs are Profile, Stats, Settings in that order, the swipe order the same, no calendar inside",
+              labels == ["profile", "stats", "settings"] and r.get("swipe") == labels and not r.get("calInProfile"), [r.get("labels"), r.get("swipe"), r.get("calInProfile")])
+        ts = r.get("tapSettings") or {}
+        check("tapping Settings shows Settings' own content in that tab", ts.get("pane") and ts.get("sync") and ts.get("active") == "Settings", ts)
+        a = r.get("appearance") or {}
+        check("showAppearance() lands on Profile > Settings, Profile lit, no standalone Settings screen",
+              "screen-profile" in (a.get("cls") or "") and a.get("active") == "Settings" and a.get("settingsShown") and not a.get("standalone")
+              and a.get("nav") == "profile" and a.get("profileLit"), a)
+        f = r.get("focus") or {}
+        check("the save-your-code way in opens Settings scrolled to the sync code", f.get("tab") == "Settings" and f.get("inView") and f.get("y", 0) > 200, f)
+        # a real thumb: two swipes left from Profile reach Settings, one back reaches Stats
+        pg.evaluate("() => { showProfile('profile'); window.scrollTo(0, 0); }"); pg.wait_for_timeout(700)
+        seen = []
+        for dx in (-1, -1, -1, 1):
+            _swipe(cdp, 440 * (0.75 if dx < 0 else 0.25), 956 * 0.5, dx * 220, 12)
+            pg.wait_for_timeout(500)
+            seen.append(pg.evaluate("() => (document.querySelector('#stage > .screen-profile > .navsegment > .iconbtn.active') || {}).textContent || null"))
+            pg.evaluate("() => document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(x => x.remove())")
+        check("a swipe moves one Profile tab at a time: Stats, Settings, stays, Stats", seen == ["Stats", "Settings", "Settings", "Stats"], seen)
+        # ---- the Friends box ----
+        pg.evaluate(B323N_FRIENDS)
+        fb = pg.evaluate(B323N_FRIENDS_BOX)
+        rows = fb.get("rows") or []
+        check("the Friends box lists friends (3-5), each with a character and a name", 3 <= len(rows) <= 5 and all(x["avatar"] and x["name"] for x in rows), [fb.get("err"), rows])
+        on = [x for x in rows if x["dot"]]
+        check("the ones on come first, with what they are doing and the green dot",
+              len(on) == 2 and rows[0]["dot"] and rows[1]["dot"] and {rows[0]["status"], rows[1]["status"]} == {"In a Drill", "On the main menu"}
+              and all(x["dotGreen"] == "rgb(74, 222, 128)" for x in on), rows[:2])
+        check("everybody else says Offline, with no dot", all(x["status"] == "Offline" and not x["dot"] for x in rows[2:]) and len(rows) > 2, rows[2:])
+        check("the rest are counted, then Manage friends, which opens the Friends screen",
+              fb.get("more") == "and %d more" % (6 - len(rows)) and fb.get("btn") == "Manage friends" and fb.get("opens"), [fb.get("more"), fb.get("btn"), fb.get("opens")])
+        check("the box reads nothing of its own from the class board (already loaded)", fb.get("boardReads") == 0, fb.get("boardReads"))
+        e = fb.get("empty") or {}
+        check("with no friends: no rows, a short line, and the button", e.get("rows") == 0 and bool(e.get("line")) and e.get("btn"), e)
+    except Exception as ex:
+        check("build 323 navigation could be driven at all", False, str(ex)[:300])
+    ctx.close()
+    # ---- today's dots are the key's, on a test day and a no-class day ----
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    try:
+        test_day = pg.evaluate("() => (CALENDAR_DATA.find(e => isExamDay(e) && !e.holiday) || {}).date || null")
+        d = pg.evaluate(B323N_DOTS, test_day)
+        k, p1, p2 = d.get("key") or {}, d.get("picked") or {}, d.get("unpicked") or {}
+        check("today on a test day (%s), picked: its test dot is the key's amber, its class dot the key's (%s, %s)" % (test_day, p1.get("dot"), p1.get("cls")),
+              p1.get("test") and p1.get("sel") and p1.get("dot") == k.get("test") == "rgb(245, 181, 77)" and p1.get("cls") == k.get("cls"), [k, p1])
+        check("today on a test day, not picked: still the key's amber (%s)" % p2.get("dot"),
+              p2.get("test") and not p2.get("sel") and p2.get("dot") == k.get("test") and p2.get("cls") == k.get("cls"), p2)
+        check("today keeps its own ring", bool(p1.get("ring")) and p1.get("ring") != "rgba(0, 0, 0, 0)", p1.get("ring"))
+        check("a picked test day that is not today keeps its amber too", d.get("pickedOther") == k.get("test"), d.get("pickedOther"))
+        hol = pg.evaluate("() => (CALENDAR_DATA.find(e => e.holiday) || {}).date || null")
+        if hol:
+            h = pg.evaluate(B323N_DOTS, hol)
+            hp = h.get("picked") or {}
+            check("today on a no-class day (%s): its dot is the key's pink" % hol,
+                  hp.get("hol") and hp.get("cls") == (h.get("key") or {}).get("hol"), [h.get("key"), hp])
+    except Exception as ex:
+        check("the calendar's dots could be read at all", False, str(ex)[:300])
+    ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -25444,6 +25681,7 @@ def main():
             check_b321h(br)
             check_b321d_badges(br)
             check_b321f_profile(br)
+            check_b323n_nav(br)
         finally:
             br.close()
     SERVER.shutdown()
