@@ -28605,6 +28605,50 @@ def check_b324v2_novavr(br):
     ctx.close()
 
 
+
+def check_b324v3_tug(br):
+    """Build 324 (b324v3). Madison, asked whether to slow Nova slightly in
+    Tug of War and Battle: "Yes". At 2-4s an answer a locked-in student (4s,
+    97%) beat him about one match in thirty there, since both modes reward
+    getting through questions. He now takes 0.75s longer per answer in those
+    two modes only; a Race is unchanged. Asserted through the driver itself:
+    with the clock held just before and just after each answer is due, the
+    first answer lands at plan + 750ms in Tug and Battle and at plan in a
+    Race. Fails on 61937c4 (no per-mode timing)."""
+    print("\n324v3. Nova is 0.75s slower in Tug of War and Battle, and only there")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=_ROOM_FAKE)
+    errs = []
+    pg.on("pageerror", lambda e: errs.append(str(e)))
+    r = pg.evaluate("""() => { const out = { extra: typeof NOVA_VR_TEAM_EXTRA_MS === 'number' ? NOVA_VR_TEAM_EXTRA_MS : null };
+      if(typeof novaVrPlan !== 'function') return out;
+      window.firebase = window.firebase || { firestore: { FieldValue: { delete: () => ({ _delete: true }), arrayUnion: v => ({ __au: v }) } } };
+      const realNow = Date.now, realWrite = novaVrWrite; const writes = [];
+      novaVrWrite = p => writes.push(Object.keys(p));
+      const start = realNow.call(Date) + 100000;
+      const plan = novaVrPlan(424242, 60);
+      const mk = game => ({ game, pool: Array.from({ length: 50 }, (_, i) => i), plan, pos: 0, correct: 0, pull: 0, streak: 0, sinceGrant: 0,
+        held: null, useAt: 0, shownAt: start, startAt: start, frozenUntil: 0, flippedUntil: 0, seenFx: new Set(), done: false });
+      const room = game => ({ game, startAt: start, units: [], participants: { me: { name: 'Me', seen: start }, nova: { name: 'Nova', nova: true, seen: start } },
+        tug: { over: false, count: 50, teams: { me: 'a', nova: 'b' }, progress: {} }, battle: { over: false, log: [], teams: { me: 'a', nova: 'b' }, progress: {} } });
+      const step = { race: novaVrRaceStep, tug: novaVrTugStep, battle: novaVrBattleStep };
+      const at = (game, dt) => { const m = mk(game); Date.now = () => start + dt; try{ step[game](m, room(game)); } finally { Date.now = realNow; } return m.pos; };
+      out.ms0 = plan.ms[0];
+      ['race', 'tug', 'battle'].forEach(g => {
+        out[g] = { atPlan: at(g, plan.ms[0] + 5), justBefore750: at(g, plan.ms[0] + 740), at750: at(g, plan.ms[0] + 760) };
+      });
+      novaVrWrite = realWrite;
+      return out; }""")
+    check("Nova's extra time in Tug of War and Battle is 750ms", r.get("extra") == 750, r.get("extra"))
+    if r.get("extra") is not None and "race" in r:
+        check("a Race is unchanged: his first answer lands at its planned 2-4s",
+              r["race"] == {"atPlan": 1, "justBefore750": 1, "at750": 1}, r)
+        check("Tug of War: his first answer lands 750ms after its planned time, not before",
+              r["tug"] == {"atPlan": 0, "justBefore750": 0, "at750": 1}, r)
+        check("Battle: the same 750ms",
+              r["battle"] == {"atPlan": 0, "justBefore750": 0, "at750": 1}, r)
+    check("no page errors", not errs, errs[:3])
+    ctx.close()
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -28857,6 +28901,7 @@ def main():
 
 
             check_b324v2_novavr(br)
+            check_b324v3_tug(br)
         finally:
             br.close()
     SERVER.shutdown()

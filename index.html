@@ -104717,10 +104717,10 @@ function showBattleResult(d){
      at the same number of misses his speed wins the tie. A 99%-accurate
      student wins about half of 30-question races; at 95% about one in
      five; at 90% about one in twenty.
-     Tug of War and Battle - throughput. He reaches the next question every
-     ~4.5s (Tug) / ~5s (Battle), so to beat him you answer in about three
-     seconds AND miss less: 98% at 3s wins about half; 97% at 4s about one
-     in thirty.
+     Tug of War and Battle - throughput, and he answers 0.75s slower there
+     (NOVA_VR_TEAM_EXTRA_MS, b324v3): reaching the next question every
+     ~5.25s (Tug) / ~5.75s (Battle). 97% at 4s wins about one in four; 98%
+     at 3s about nine in ten; 95% at 6s or 90% at 6s essentially never.
    He plays each mode by its own rules: Tug's read-in and pauses and the
    pull for time left; Battle's hits, streak hits and powers (seeded; he
    uses one about a second after it lands), and a freeze or flip aimed at
@@ -104976,7 +104976,16 @@ function novaVrMatchTick(v, d, nv){
   else if(m.game === "tug") novaVrTugStep(m, d);
   else novaVrBattleStep(m, d);
 }
-function novaVrMs(m, i){ return Math.round(m.plan.ms[i] * novaVrTimeScale); }
+/* A LITTLE SLOWER WHERE SPEED IS THE WHOLE GAME (build 324, b324v3).
+   Madison, asked whether to slow him in Tug of War and Battle: "Yes". Both
+   are throughput - whoever reaches the next question first pulls or hits -
+   so at 2-4s a locked-in student at 4s and 97% beat him about one match in
+   thirty. Three-quarters of a second more per answer in those two modes
+   (2.75-4.75s, ~3.75 on average) makes that about one in four; at 3s and
+   98% about nine in ten; 90% at 6s still never. A Race keeps 2-4s: it is
+   ranked on accuracy first and was already where she wanted it. */
+const NOVA_VR_TEAM_EXTRA_MS = 750;
+function novaVrMs(m, i){ return Math.round((m.plan.ms[i] + (m.game === "race" ? 0 : NOVA_VR_TEAM_EXTRA_MS)) * novaVrTimeScale); }
 
 /* A RACE: the room's own 45-second clock never bites (he is done in four),
    each answer moves his marker, and the finish publishes what a finishing

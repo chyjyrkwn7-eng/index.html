@@ -21277,3 +21277,16 @@ joins make him delay the ready up."*
   "a third week on the podium hands over Poseidon" (now: counted, hands
   over nothing); check_b323v's invite test reads a friend's button, not
   the first (Nova's).
+
+### Build 324 (b324v3) - Nova a little slower in Tug of War and Battle
+
+Madison, asked whether to slow him in those two modes: *"Yes"*. Both
+modes reward getting through questions quickly, so at 2-4s an answer a
+locked-in student (4s, 97%) won about 1 in 30. `NOVA_VR_TEAM_EXTRA_MS` = 750
+is added to every answer in Tug and Battle only (`novaVrMs`; 2.75-4.75s,
+~3.75s on average). A Race is untouched. Simulated with each mode's rules
+(Tug at 12/20/30/50 questions, Battle without powers), win % before -> after:
+90% at 6s 0 -> 0; 95% at 6s 0 -> 0; 95% at 5s 0-0.1 -> 0-8; 97% at 4s
+1-11 -> 22-26; 98% at 3s 51-55 -> 84-96. Gate `check_b324v3_tug` (fails on
+61937c4): the driver's first answer lands at plan + 750ms in Tug and Battle
+and at plan in a Race.
