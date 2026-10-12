@@ -29,6 +29,9 @@ sense."
   8. The Home ambience loops seamlessly: the step across the seam is no
      bigger than an ordinary step inside the loop, and the level either
      side of it matches.
+  9. Wired (phase 2): with sound on, the hooks fire - Home's ambience and
+     planet, the tab bar, a Settings switch, LOADING TEST, wrong, right,
+     the star, pause and resume, next, Nova's blips, last week's fanfare.
 
   python3 tools/check-sound.py [--against old-index.html]
 """
@@ -411,6 +414,67 @@ with sync_playwright() as pw:
     ck("the level either side of the seam matches within 1.5 dB",
        chs and all(abs(c["dbEnd"] - c["dbStart"]) <= 1.5 for c in chs), [(round(c["dbEnd"], 2), round(c["dbStart"], 2)) for c in chs])
     ck("it is low: peak under 0.5", chs and all(0.02 < c["peak"] < .5 for c in chs), [round(c["peak"], 3) for c in chs])
+    ck("no page errors", not errs, errs[:3])
+    ctx.close()
+
+    print("\n  9. wired into the app (phase 2): the hooks fire, with sound on")
+    ctx, pg, errs = new_page(br)
+    boot(pg)
+    ev(pg, SEED.rstrip("}") + "; theme.soundOn = true; saveTheme(); showHome(); }")
+    pg.wait_for_timeout(400)
+    try: pg.mouse.click(4, 4)
+    except Exception: pass
+    pg.wait_for_timeout(300)
+    ev(pg, """()=>{ window.__played = []; const P = NovaSound.play;
+      NovaSound.play = (id, o) => { window.__played.push(id); return P(id, o); }; return true; }""")
+    def played(): return ev(pg, "()=>window.__played.splice(0)", default=[]) or []
+    r = ev(pg, "()=>NovaSound.state()")
+    ck("Home: the main menu's ambience is asked for", isinstance(r, dict) and r.get("ambWant") == "amb.home", r)
+    xy = ev(pg, """()=>{ const c = [...document.querySelectorAll('.screen-home-actual circle')].find(x => x.style.cursor === 'pointer');
+      if(!c) return null; const b = c.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; }""")
+    if isinstance(xy, list): pg.mouse.click(xy[0], xy[1]); pg.wait_for_timeout(250)
+    got = played()
+    ck("Home: tapping the planet plays the planet", "home.planet" in got, got)
+    try: pg.click("#bottomtab-settings", timeout=3000, no_wait_after=True)
+    except Exception: pass
+    pg.wait_for_timeout(500)
+    got = played()
+    ck("the bottom tab bar slides", "ui.tab.bottom" in got, got)
+    try: pg.click("text=Reduce motion", timeout=3000, no_wait_after=True)
+    except Exception: pass
+    pg.wait_for_timeout(300)
+    got = played()
+    ck("a Settings switch toggles", "ui.toggle.on" in got or "ui.toggle.off" in got, got)
+    ev(pg, "()=>{ theme.reduceMotion = false; applyTheme(); saveTheme(); }")
+    r = ev(pg, """async ()=>{ const wait = ms => new Promise(z => setTimeout(z, ms));
+      const U = QUESTIONS[0].topic; const ix = QUESTIONS.map((q, i) => i).filter(i => QUESTIONS[i].topic === U).slice(0, 4);
+      cfg.mode = 'drill'; cfg.units = [U]; cfg.source = 'all'; runMode = 'drill'; beginRun(ix, null);
+      for(let i = 0; i < 60 && !document.querySelector('.qpanel .choice'); i++) await wait(100);
+      const out = {};
+      const take = k => { out[k] = window.__played.splice(0); };
+      take('load');
+      let qi = order[pos], right = correctSlot(qi), wrong = right === 0 ? 1 : 0;
+      choose(wrong); await wait(250); take('wrong');
+      choose(right); await wait(250); take('right');
+      document.querySelector('.qpanel .flagbtn')?.click(); await wait(100); take('star');
+      pauseRun(); await wait(200); take('pause');
+      resumeRun(); await wait(200); take('resume');
+      advanceWithSlide(); await wait(500); take('next');
+      const d = document.createElement('div'); document.body.appendChild(d);
+      novaType(d, 'Hello there, class twenty six.', 120); await wait(400); d.remove(); take('nova');
+      return out; }""", default={})
+    r = r if isinstance(r, dict) else {}
+    ck("LOADING TEST powers up", "test.load" in (r.get("load") or []), r.get("load"))
+    ck("a wrong answer sounds wrong", "test.wrong" in (r.get("wrong") or []), r.get("wrong"))
+    ck("a right answer sounds right", any(x in (r.get("right") or []) for x in ("test.correct", "test.streak.1")), r.get("right"))
+    ck("starring a question", "test.star" in (r.get("star") or []), r.get("star"))
+    ck("pause and resume", "test.pause" in (r.get("pause") or []) and "test.resume" in (r.get("resume") or []), [r.get("pause"), r.get("resume")])
+    ck("on to the next question", "test.next" in (r.get("next") or []), r.get("next"))
+    ck("Nova talks in blips", (r.get("nova") or []).count("nova.blip") >= 2, r.get("nova"))
+    r = ev(pg, """async ()=>{ showHome(); await new Promise(z => setTimeout(z, 300)); window.__played.splice(0);
+      try{ showWeekCongrats([{ name: 'Ann', pub: 'a', avatar: 'ninja', pts: 900 }, { name: 'Bo', pub: 'b', avatar: 'ninja', pts: 800 }], lastWeekKey()); }catch(e){ return 'err ' + e.message; }
+      await new Promise(z => setTimeout(z, 200)); return window.__played.splice(0); }""", default=[])
+    ck("last week's winners get the fanfare, not the plain sheet sound", isinstance(r, list) and "lb.winner" in r and "ui.sheet.open" not in r, r)
     ck("no page errors", not errs, errs[:3])
     ctx.close()
     br.close()

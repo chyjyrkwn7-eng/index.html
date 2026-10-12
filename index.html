@@ -41853,6 +41853,7 @@ function startStudying(){
    the save is measured there; the study log takes the first half now. */
 function saveAndExitTest(){
   if(!runSessionSavable()) return;
+  playSound("test.save");
   clearTimeout(countdownHandle);
   if(!paused){
     paused = true; pauseStartedAt = Date.now();
@@ -53029,6 +53030,7 @@ function buildQuestionFlag(qi, opts){
   b.addEventListener("click", e => {
     e.stopPropagation();
     toggleFlag(qi); paint();
+    playSound(isFlagged(qi) ? "test.star" : "test.unstar");
     if(isFlagged(qi)){
       b.classList.remove("just-on"); void b.offsetWidth; b.classList.add("just-on");
       clearTimeout(b._jo); b._jo = setTimeout(() => b.classList.remove("just-on"), 800);
@@ -62872,13 +62874,18 @@ const SOUND_CATALOGUE = {
       K.vox({ f, f2: f * 1.04, v: V[i % 5], a: .004, d: .045, g: .075 });
     } },
   "cs.planet": { group: "Onboarding & Nova", bus: "cut", cd: 3000, hap: "boom",
-    desc: "Nova's story, the planet breaking apart: a distant rumble, a crack, a muffled explosion and debris drifting off into space.",
+    desc: "Nova's story, the planet breaking apart (buildNovaWreck, on NW): a distant rumble, the crack running (NW.crack for NW.crackMs), the blast (NW.boom), debris striking his ship (NW.hit) and drifting off into space.",
     fn: K => {
-      K.noise({ color: "b", lp: 200, a: .8, d: 1, g: .14 });
-      K.noise({ t: 1, hp: 1500, d: .1, g: .12 });
-      K.noise({ t: 1.15, lp: 900, ff2: 200, fgl: 1.2, a: .005, d: 1.5, g: .24, rev: .6 });
-      K.thump({ t: 1.15, f: 90, f2: 30, gl: .4, d: 1, g: .35 });
-      for(let i = 0; i < 12; i++) K.fm({ t: 1.6 + K.R() * 1.9, f: K.r(900, 2600), ratio: 2.76, idx: 1.5, d: .25, g: .014, pan: K.r(-.9, .9), rev: .5 });
+      const N = (typeof NW === "object" && NW) ? NW : { crack: 900, crackMs: 2300, boom: 3500, hit: 3880, end: 6900 };
+      const cr = N.crack / 1000, cd = N.crackMs / 1000, bm = N.boom / 1000, ht = N.hit / 1000, en = N.end / 1000;
+      K.noise({ color: "b", lp: 200, a: cr, hold: cd, d: .3, g: .14 });
+      for(let i = 0; i < 16; i++) K.click({ t: cr + Math.pow(i / 16, .7) * cd, bp: K.r(1200, 4000), q: 5, d: .006, g: .025 + i * .003, pan: K.r(-.4, .4) });
+      K.tone({ t: cr, f: 70, f2: 55, gl: cd, type: "sawtooth", lp: 380, q: 7, vib: [10, 30], a: .4, hold: cd - .6, d: .3, g: .035 });
+      K.noise({ t: bm, lp: 900, ff2: 200, fgl: 1.2, a: .005, d: 1.5, g: .24, rev: .6 });
+      K.thump({ t: bm, f: 90, f2: 30, gl: .4, d: 1, g: .35 });
+      K.fm({ t: ht, f: 520, ratio: 2.76, idx: 3, idx2: .3, d: .5, g: .05, rev: .4 });
+      K.thump({ t: ht, f: 180, f2: 90, d: .12, g: .16 });
+      for(let i = 0; i < 12; i++) K.fm({ t: ht + .3 + K.R() * Math.max(.5, en - ht - 1.2), f: K.r(900, 2600), ratio: 2.76, idx: 1.5, d: .25, g: .014, pan: K.r(-.9, .9), rev: .5 });
     } },
   "ob.whatsnew": { group: "Onboarding & Nova", bus: "ui", cd: 1000, hap: "tap",
     desc: "What's New: a page turning and an announcer's chime rising a fourth and a fifth (A, D, A).",
@@ -62965,7 +62972,7 @@ const SOUND_AMBIENCE = {
 
 const NovaSound = (function(){
   const AC = () => window.AudioContext || window.webkitAudioContext;
-  const st = { wokeAt: 0, ctx: null, G: null, voices: [], last: {}, amb: null, ambWant: null, ambBuf: {}, ambWatch: 0, seq: 1, duck: 0, gesture: false };
+  const st = { lastAt: -1e9, wokeAt: 0, ctx: null, G: null, voices: [], last: {}, amb: null, ambWant: null, ambBuf: {}, ambWatch: 0, seq: 1, duck: 0, gesture: false };
   const on = () => !!(typeof theme === "object" && theme && theme.soundOn);
   const volume = () => { const v = Number(theme && theme.soundVolume); return isFinite(v) ? Math.max(0, Math.min(1, v)) : SOUND_DEFAULT_VOLUME; };
   const level = v => .95 * v * v;
@@ -63068,7 +63075,10 @@ const NovaSound = (function(){
     if(!wantSound && !wantBuzz) return null;
     const nowMs = (typeof performance !== "undefined" ? performance.now() : Date.now());
     if(st.last[id] && nowMs - st.last[id] < (e.cd || 0)) return null;
+    /* a generic tap sound gives way to a specific one the same tap made */
+    if(opts && opts.generic && nowMs - st.lastAt < 220) return null;
     st.last[id] = nowMs;
+    if(!(opts && opts.generic)) st.lastAt = nowMs;
     if(wantBuzz) haptic(e.hap);
     if(!wantSound) return null;
     const ctx = st.ctx;
@@ -63079,7 +63089,7 @@ const NovaSound = (function(){
     if(same.length >= (e.poly || 3)) kill(same[0]);
     if(st.voices.length >= SOUND_MAX_VOICES) kill(st.voices.find(v => v.bus !== "cut") || st.voices[0]);
     const vg = ctx.createGain();
-    vg.gain.value = e.vol || 1;
+    vg.gain.value = (e.vol || 1) * (opts && typeof opts.gain === "number" ? Math.max(0, Math.min(2, opts.gain)) : 1);
     vg.connect(st.G.bus[e.bus] || st.G.bus.ui);
     const K = sndKit(st.G, vg, ctx.currentTime + .01, (opts && opts.seed) || (st.seq++ * 7919));
     try{ e.fn(K, opts || {}); }catch(err){ try{ vg.disconnect(); }catch(e2){} return null; }
@@ -63211,6 +63221,53 @@ const NovaSound = (function(){
 function playSound(id, opts){ try{ return NovaSound.play(id, opts); }catch(e){ return null; } }
 function startAmbience(id, opts){ try{ NovaSound.startAmbience(id, opts); }catch(e){} }
 function stopAmbience(){ try{ NovaSound.stopAmbience(); }catch(e){} }
+
+/* ---- WIRED EVERYWHERE AT ONCE: THE GENERIC TAPS (build 322, phase 2) ----
+   Buttons, tabs, back links, switches and text fields answer from one
+   delegated listener rather than a line in every builder: a primary
+   button (.next, the playbtn) thocks, anything else ticks, the bottom tab
+   bar slides, a top tab flicks, a back link steps back, a Customize pick
+   says what it picked (a character, a colour, a banner, an effect) or that
+   it is locked; in sign-up a primary button is a step forward. A specific
+   sound the same tap already made wins (opts.generic gives way to it), and
+   the areas still being rebuilt in build 322 are left out on purpose
+   (SND_NO_GENERIC). Nothing here does anything while sound and vibration
+   are both off - playSound returns at once. */
+const SND_NO_GENERIC = ".rs-screen, #badge-cutscene, .bc-scene, .profile-hero, .ncase, [class^='rankmap'], .ru-blocker, " +
+  ".qpanel .choice, .flagbtn, .snd-row, .settings-sound-row, .binspect, .cosmic-hero-wrap, #vroom-cutscene";
+function sndForTap(t){
+  if(!t || !t.closest || t.closest(SND_NO_GENERIC)) return null;
+  if(document.documentElement.classList.contains("ru-scene")) return null;
+  const opt = t.closest(".avatarchar-option, .swatch, .banner-opt, .hfx-opt");
+  if(opt){
+    if(opt.classList.contains("locked")) return "ui.locked";
+    return opt.matches(".avatarchar-option") ? "pick.character" : opt.matches(".swatch") ? "cust.theme"
+      : opt.matches(".banner-opt") ? "cust.banner" : "cust.fx";
+  }
+  if(t.closest(".choice")) return "test.select";   /* Tug of War and Battle answers */
+  if(t.closest(".bottomtabs .bottomtab")) return "ui.tab.bottom";
+  if(t.closest(".navsegment .iconbtn, [role='tab']")) return "ui.tab.top";
+  if(t.closest(".back-link")) return "ui.back";
+  const b = t.closest("button, [role='button'], a[href]");
+  if(!b || b.disabled || b.getAttribute("aria-disabled") === "true") return null;
+  const primary = b.matches(".next:not(.ghost), .playbtn");
+  if(primary && !(typeof store === "object" && store && store.onboardingComplete)) return "ob.step";
+  return primary ? "ui.tap.primary" : "ui.tap.secondary";
+}
+document.addEventListener("click", e => {
+  const id = sndForTap(e.target);
+  if(id) playSound(id, { generic: true });
+});
+document.addEventListener("change", e => {
+  const t = e.target;
+  if(!t || t.type !== "checkbox" || (t.closest && t.closest(SND_NO_GENERIC))) return;
+  playSound(t.checked ? "ui.toggle.on" : "ui.toggle.off", { generic: true });
+});
+document.addEventListener("focusin", e => {
+  const t = e.target;
+  if(!t || !t.matches || !t.matches("textarea, input:not([type]), input[type='text'], input[type='search'], input[type='email'], input[type='password'], input[type='tel']")) return;
+  playSound("ui.field.focus", { generic: true });
+});
 
 /* ---- SETTINGS: SOUND & VIBRATION (build 322) ----
    Its own group, between "Display & motion" and "Studying & tests", in the
@@ -65350,11 +65407,15 @@ function formatClock(ms){
   return m + ":" + pad2(s);
 }
 
+let sndTimerSec = null;
 function updateTimerDisplay(){
   if(cfg.timer === "down" || practiceTestMinutes != null){
     const left = timerDeadline - Date.now();
     tmainEl.textContent = formatClock(left);
     tmainEl.classList.toggle("low", left <= 30000);
+    /* the last ten seconds tick (build 322), once a second */
+    const secLeft = Math.ceil(left / 1000);
+    if(secLeft >= 1 && secLeft <= 10 && secLeft !== sndTimerSec){ sndTimerSec = secLeft; playSound("test.tick", { left: secLeft }); }
     if(left <= 0){
       stopTimer();
       onTimeUp();
@@ -65423,6 +65484,7 @@ function pauseRun(){
   if(paused || order.length === 0) return;
   paused = true;
   pauseStartedAt = Date.now();
+  playSound("test.pause");
   stopTimer();
   stopQuestionTimer();
   pauseBtn.hidden = true;
@@ -65929,6 +65991,7 @@ function cancelPauseTiming(){
 function resumeRun(){
   if(!paused) return;
   cancelPauseTiming();
+  playSound("test.resume");
   hintEl.hidden = false;
   pauseBtn.hidden = false;
   timerlineEl.classList.remove("is-paused");
@@ -65945,6 +66008,7 @@ function resumeRun(){
    questions actually completed so far. */
 function onTimeUp(){
   timedOut = true;
+  playSound("test.timeup");
   if(pos < order.length) order = order.slice(0, pos);
   summarize();
 }
@@ -70687,6 +70751,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
        while it is up, what is next (round three - the "....." box went
        with the other boxes) */
     homeTapBind(sphere, (e) => {
+      playSound("home.planet");
       try{ planetTapFx(wrap, e); }catch(err){}
       /* and at Supernova, the cutscene's streak round the rings (b321h) */
       try{ homeRingStreak(wrap, "tap"); }catch(err){}
@@ -71116,7 +71181,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
          what is left - go to the caption under the planet; nothing
          follows the bubble or rings it. It still opens nothing. */
       homeTapBind(badge, () => {
-        if(achieved){ flareBubbleTold(badge); homeBubblePress(badge); homeBubbleHalo(badge); }
+        if(achieved){ playSound(SOUND_CATALOGUE["home.flare." + pos.tier] ? "home.flare." + pos.tier : "home.flare.veteran"); flareBubbleTold(badge); homeBubblePress(badge); homeBubbleHalo(badge); }
         else homeLockedNudge(badge, true);
         try{ homeCaptionShow(homePanelOf(badge), homeTapCopyRank(pos.tier), "rank:" + pos.tier); }catch(err){}
       });
@@ -72980,6 +73045,8 @@ function novaType(el, text, cps, hooks){
     let d = 1000 / cps, pause = false;
     if(/[.!?]/.test(ch) && next === " "){ d += 300; pause = true; }
     else if(/[,;:—]/.test(ch)){ d += 120; pause = true; }
+    /* his voice: a blip on a letter (the cooldown spaces them out) */
+    if(/[A-Za-z0-9]/.test(ch)) playSound("nova.blip", { i: n });
     if(hooks.talk) hooks.talk(!pause);
     timer = setTimeout(step, d);
   };
@@ -73117,6 +73184,7 @@ function novaTalk(o){
   if(still){ show(0); bubble.classList.add("is-up"); }
   else {
     fig.classList.add("is-arriving");
+    playSound(o.news ? "ob.whatsnew" : "nova.arrive");
     setTimeout(() => fig.classList.remove("is-arriving"), 1000);
     setTimeout(() => { if(closed) return; bubble.classList.add("is-up"); if(idx < 0) show(0); }, 620);
   }
@@ -73598,7 +73666,7 @@ function novaIntroLines(o){
       enter: ctx => { const t = document.createElement("p"); t.className = "nt-hello"; t.textContent = "Nova";
         novaProp(ctx, novaStack(t, novaCap("Explorer · Instructor"))); } },
     { text: "Before we start, I need your help. Not long ago my ship was passing a planet much like the one on your Home screen, and it cracked apart.",
-      enter: ctx => novaProp(ctx, buildNovaWreck()) },
+      enter: (ctx, instant) => { novaProp(ctx, buildNovaWreck()); if(!instant && !novaMotionOff()) playSound("cs.planet"); } },
     { gesture: "raise", text: "The blast wrecked my ship and scattered everything aboard across this system: my badges, my flares and my crew." },
     { text: "Many of the people aboard went missing. They are the characters in this app. Every character you unlock is one of my crew, found.",
       enter: ctx => novaProp(ctx, novaStack(novaCrewRow(), novaCap(crew.have + " of " + crew.total + " characters found"))) },
@@ -73831,6 +73899,7 @@ function startSimpleTour(steps, onComplete, _waitedMs){
     }
     const rect = el.getBoundingClientRect();
     if(tourTyper) tourTyper.cancel();
+    playSound("ob.tooltip");
     tourTyper = novaType(text, step.text, NOVA_TOUR_CPS, {
       talk: on => face.classList.toggle("is-talking", !!on),
       done: () => face.classList.remove("is-talking")
@@ -74225,6 +74294,7 @@ function playVroomWinnerCutscene(opts, done){
   };
   const timers = [];
   if(theme.muteBanners){ finish(); return finish; }
+  playSound("vr.end");
 
   const slow = !!theme.reduceMotion;
   document.getElementById("vroom-cutscene")?.remove();
@@ -76197,6 +76267,7 @@ function showDailyAlert(msg, opts){
   if(old) old.remove();
   const el = document.createElement("div");
   el.id = "dailyalert"; el.className = "daily-alert";
+  if(!o.live) playSound("ui.notice");
   if(o.live){
     el.classList.add("is-live", "is-fresh");
     el.setAttribute("role", "button");
@@ -76399,6 +76470,8 @@ function playDailyRecharge(btn, then, fromP){
   const prog = dqRing.querySelector(".dq-ring-prog");
   void btn.offsetWidth;
   btn.classList.add("is-charging");
+  /* the fill's shimmer, from where the ring starts to fill (never waited on) */
+  setTimeout(() => { if(btn.isConnected) playSound("home.daily.fill", { dur: fill / 1000 }); }, DAILY_CHARGE.delay);
   /* THE ORB LEAVES WHEN THE RING HAS CLOSED, NOT WHEN A TIMER SAYS IT
      SHOULD HAVE (build 246). The ring starts when the button is first
      painted - which on a busy device (Home's own entrance, a slow phone)
@@ -76522,6 +76595,7 @@ function announceDailyReset(btn){
      is only the fallback for when the "?" is not on screen. */
   const announce = motion => {
     if(!document.body.contains(btn)) return;
+    playSound("home.daily.ready");
     const tap = () => { try { btn.click(); } catch(e){} };
     const tip = showDailyTip('<b>Daily question</b><span>It\u2019s out \u00b7 tap to answer</span>',
       '<b>Daily question</b><span>\u00b7 tap to answer</span>', { onTap: tap, stay: DAILY_CHARGE.stay });
@@ -78752,6 +78826,7 @@ function openChatDock(){
   if(!chatDock) return;
   chatDockOpen = true;
   try{ if(chatDockKbSync) chatDockKbSync(); }catch(e){}
+  playSound("ui.sheet.open");
   chatDock.classList.add("is-open");
   document.body.classList.add("chatdock-open");
   /* The lists are built from who your friends are and what you are in,
@@ -78772,6 +78847,7 @@ function markOpenChatSeen(){
 }
 function closeChatDock(){
   if(!chatDock) return;
+  if(chatDockOpen) playSound("ui.sheet.close");
   chatDockOpen = false;
   try{ if(chatDockKbSync) chatDockKbSync(); }catch(e){}
   closeLeaveChatConfirm();
@@ -79808,6 +79884,13 @@ function checkChatInvites(){
    forget again. */
 function mountSheetOverlay(overlay){
   document.body.appendChild(overlay);
+  /* the sheet opens with its own sound (or the one it asks for), and
+     closes with one however it goes */
+  playSound(overlay.dataset.sndOpen || "ui.sheet.open");
+  try{
+    const gone = new MutationObserver(() => { if(!overlay.isConnected){ gone.disconnect(); playSound("ui.sheet.close"); } });
+    gone.observe(document.body, { childList: true });
+  }catch(e){}
   /* THE SAME "A SCREEN CHANGE IS NOT A MUTATION" RULE THE BANNERS TAKE.
      A sheet opened over the Leaderboard would otherwise be destroyed by
      the board redrawing its own rows a moment later. */
@@ -80779,6 +80862,8 @@ function showHome(){
      position:fixed now stays resolved against the true viewport at
      all times. */
   panel.dataset.screen = "home";   /* see showWelcome for why this lives here */
+  /* the main menu's ambience, for as long as this Home is the screen up */
+  startAmbience("amb.home", { owner: panel });
   /* An invite that arrived while this device was elsewhere is still an
      invite, so Home checks what is already on the board as well as
      watching for new ones. */
@@ -84184,6 +84269,7 @@ function showCountdown(n, then){
   /* 2.5s, not 3 (build 291): "Could the loading test screen be like half
      a second shorter?" The bar still fills in full before it hands over. */
   const TOTAL_MS = 2500;
+  playSound("test.load", { dur: TOTAL_MS / 1000 });
   const startedAt = Date.now();
   let done = false;
   function tick(){
@@ -84907,6 +84993,7 @@ function choose(slot){
     picked[qi] = slot;
     choiceFx = { qi, slot, at: Date.now(),
       kind: !runExamFeedback ? "pick" : slot === correctSlot(qi) ? "right" : "wrong-lock" };
+    playSound(choiceFx.kind === "pick" ? "test.select" : choiceFx.kind === "right" ? "test.correct" : "test.wrong");
     renderAfterPress(qi, slot);
     scheduleAutoAdvance(qi);
     return;
@@ -84916,6 +85003,7 @@ function choose(slot){
   if(runLabel === "Daily question" && !dailySubmitting){
     dailyPickSlot = slot;
     choiceFx = { qi, slot, kind: "pick", at: Date.now() };
+    playSound("test.select");
     render();
     return;
   }
@@ -84936,7 +85024,10 @@ function choose(slot){
       store.retakenQuestions = (store.retakenQuestions || 0) + 1;
     }
     recordResult(qi, attempts[qi] > 1 || hinted);
-    runStreakLive(!(attempts[qi] > 1 || hinted));
+    const streakTier = runStreakLive(!(attempts[qi] > 1 || hinted));
+    /* the streak's own sound at the banner's tiers (10, 25, 50 ...), the
+       right answer's otherwise */
+    playSound(streakTier ? "test.streak." + Math.min(3, streakTier) : "test.correct");
     /* Daily question never advances to a next question or a separate
        results screen \u2014 per explicit, revised request ("no review
        screen... quick, in-and-out experience"), it stays right here
@@ -84959,6 +85050,7 @@ function choose(slot){
     // commitment from the full set of options.
     lastWrong = true;
     if(attempts[qi] === 1) runStreakLive(false);
+    playSound("test.wrong");
     /* The actual "one attempt only" enforcement for a wrong daily
        question \u2014 per explicit request, unlike normal Drill (which
        lets you keep retrying the same question indefinitely until
@@ -85535,6 +85627,7 @@ function advance(){
   } else if(!cleared && !dailyQuestionLocked){
     return;
   }
+  if(pos < order.length - 1) playSound("test.next");
   if(pos === order.length - 1) summarize();
   /* instant=true here specifically - this is the one call to
      openQuestion() that always arrives via advanceWithSlide()'s own
@@ -86060,6 +86153,7 @@ function homeShakeAt(an){
   return k >= pts.length - 1 ? pts[pts.length - 1] : pts[k] + (pts[k + 1] - pts[k]) * (f - k);
 }
 function homeLockedNudge(el, isBubble){
+  playSound("home.flare.locked");
   if(!el) return;
   const still = ringMotionOff();
   if(isBubble){
@@ -86095,6 +86189,7 @@ function homeLockedNudge(el, isBubble){
    a ring of its colour goes out and four sparks fly off - children of the
    flare, so they ride its orbit with it. */
 function secretFlareTold(dot){
+  playSound("home.secret.tap");
   if(!dot) return;
   let fx = dot.querySelector(":scope > .cof-told");
   if(!fx){
@@ -86291,6 +86386,8 @@ function homeRingStreak(hero, why){
   const R = outer ? Number(outer.getAttribute("r")) || HOME_OUTER_R : HOME_OUTER_R;
   const gs = ringStreak(hero, hero.querySelector(":scope > .cosmic-hero-orbitlayer"), [108, R]);
   gs.forEach(g => { g.classList.add("is-home"); g.dataset.why = why || ""; });
+  /* a tap gets the comet in full; the streak on its own pulse, quieter */
+  if(gs.length) playSound("home.supernova.ring", { gain: why === "tap" ? 1 : .45 });
   return gs.length > 0;
 }
 let homeStreakTimer = null;
@@ -86634,6 +86731,7 @@ const NOTICE_OBSTRUCTIONS = [".wrap > .top", ".wrap > .count", ".back-link",
    is actually for. */
 function showNoticeBar(bar){
   document.body.appendChild(bar);
+  playSound("ui.notice");
   bar.style.transition = "none";
   positionNotice();                 /* forces layout, committing the above */
   requestAnimationFrame(() => {
@@ -89137,10 +89235,12 @@ function hfxCharReact(av, id, o){
   };
   av.classList.add("hfx-rx", "hfx-rx-" + id);
   av.__hfxRx = R;
+  R.snd = playSound("react." + id);
   try{ HFX_CHAR_RX[id](R, F, o); }catch(e){}
   R.end = fade => {
     if(R.done) return;
     R.done = true;
+    if(R.snd && fade) R.snd.stop(.3);
     R.timers.forEach(clearTimeout); R.timers = [];
     const off = () => {
       R.anims.forEach(a => { try{ a.cancel(); }catch(e){} });
@@ -90198,6 +90298,7 @@ function playHundoFx(id, opts){
      plays on a results screen, from the moment it starts - hfxCharReact */
   const rxAv = (!opts.boxOnly && !opts.frame && !opts.preview) ? hfxResultsAvatar(opts.box) : null;
   if(id === "confetti" && !opts.boxOnly && !opts.frame){
+    playSound("hundo.confetti");
     celebrate(opts.palette, opts.pct || opts.box);
     if(rxAv){ try{ hfxCharReact(rxAv, "confetti", { palette: opts.palette }); }catch(e){} }
     return null;
@@ -90264,10 +90365,12 @@ function playHundoFx(id, opts){
       { duration: 2300, delay: 60, easing: "ease-in-out" }); }catch(e){}
   }
   const handle = { id, screen: scr, box: bx, total, startedAt: performance.now(), done: false };
+  /* its own score, timed to its own beats - the full effect only */
+  const sndFx = (!opts.boxOnly && !opts.frame) ? playSound("hundo." + id) : null;
   const lifted = () => { if(opts.box) opts.box.classList.remove("hfx-over"); };
   const end = () => { if(handle.done) return; handle.done = true; if(scr) scr.remove(); if(bx) bx.remove(); if(mo) mo.disconnect(); lifted(); undo(false); };
   handle.timer = setTimeout(end, total);
-  handle.stop = () => { if(handle.done) return; handle.done = true; clearTimeout(handle.timer); if(mo) mo.disconnect(); hfxFadeOut(scr); hfxFadeOut(bx); undo(true); setTimeout(lifted, 650); };
+  handle.stop = () => { if(handle.done) return; handle.done = true; clearTimeout(handle.timer); if(mo) mo.disconnect(); hfxFadeOut(scr); hfxFadeOut(bx); undo(true); setTimeout(lifted, 650); if(sndFx) sndFx.stop(.5); };
   /* the screen changing under it: fade, don't leave it over the next one */
   let mo = null;
   if(scr && opts.box && !opts.preview && typeof stage !== "undefined" && stage){
@@ -92491,13 +92594,17 @@ function qClockStop(){
 let runLiveStreak = 0;
 function runStreakLive(ok){
   if(isMissedRetake || runLabel === "Daily question" || runMode !== "drill") return;
-  if(!ok){ runLiveStreak = 0; return; }
+  if(!ok){ runLiveStreak = 0; return 0; }
   runLiveStreak++;
   /* BACK (build 302): "Bring back the correct answer streak thing you
      get during tests." It came off in 284 ("remove 'answer streak'
      notification you get mid test"); it is the build-283 pop exactly,
      at 10, 25, 50 ... in a row, in the top bar's own line. */
-  if(runStreakTiersUpTo(runLiveStreak).slice(-1)[0] === runLiveStreak) showRunStreakBanner(runLiveStreak);
+  if(runStreakTiersUpTo(runLiveStreak).slice(-1)[0] === runLiveStreak){
+    showRunStreakBanner(runLiveStreak);
+    return runStreakTiersUpTo(runLiveStreak).length;   /* the tier, for its sound */
+  }
+  return 0;
 }
 function showRunStreakBanner(n){
   if(theme.muteBanners) return;
@@ -97561,6 +97668,7 @@ function announceVroomLeave(data){
   let inMatch = false; try{ inMatch = !!vroomTestStarted; }catch(e){}
   if(!inMatch) inMatch = !!document.querySelector(".screen-vroom-results, .tug-screen, .battle-screen");
   showToast((l.name || "Someone") + (inMatch ? " left the match." : " left the lobby."));
+  playSound("vr.leave");
 }
 let vroomUnits = [];
 /* This person's own key within participants — needed so the lobby
@@ -98433,6 +98541,7 @@ const BANNER_KINDS = {
 };
 
 function buildAppBanner(id, kind, message, actionLabel, onAction, onDismiss){
+  playSound(kind === "chat" || kind === "vroom" ? "chat.invite" : "ui.notice");
   const def = BANNER_KINDS[kind] || BANNER_KINDS.vroom;
   const el = document.createElement("div");
   el.id = id;
@@ -99031,13 +99140,14 @@ function showVroomCountdown(startAt, onDone){
     const remaining = startAt - Date.now();
     if(remaining <= 0 || !overlay.isConnected){
       clearInterval(h); overlay.remove();
-      if(remaining <= 0) onDone();
+      if(remaining <= 0){ playSound("vr.go"); onDone(); }
       return;
     }
     ring.style.setProperty("--left", Math.max(0, Math.min(1, remaining / countFrom)).toFixed(3));
     const secs = Math.max(1, Math.ceil(remaining / 1000));
     if(secs !== last){
       last = secs; num.textContent = String(secs);
+      if(secs <= 3) playSound("vr.count", { n: secs });
       if(!theme.reduceMotion){ num.classList.remove("vroom-reveal-pulse"); void num.offsetWidth; num.classList.add("vroom-reveal-pulse"); }
     }
   };
@@ -99273,8 +99383,12 @@ function buildTugRope(d){
   tugPaintRope(wrap, d);
   return wrap;
 }
+let sndTugPct = null;
 function tugPaintRope(root, d){
   const v = tugView(d);
+  /* the rope moved: somebody pulled */
+  if(sndTugPct != null && v.pct !== sndTugPct) playSound("vr.tug");
+  sndTugPct = v.pct;
   const knot = root.querySelector(".tug-knot");
   if(knot){
     knot.style.left = v.pct + "%";
@@ -99617,6 +99731,7 @@ function playTugPullCutscene(d, done){
     if(typeof done === "function") done();
   };
   if(theme.muteBanners){ finish(); return finish; }
+  playSound("vr.end");
   const slow = !!theme.reduceMotion;
   const v = tugView(d);
   const winner = d.tug && d.tug.winner;
@@ -101097,6 +101212,10 @@ function showRoomBrowser(){
 }
 
 function showVirtualRoomLobby(){
+  if(!document.querySelector(".screen-vroom-lobby")) playSound("vr.lobby");
+  /* who was in the room last time the roster was drawn (for vr.join);
+     declared up here because drawLobbyRoster runs before its own line */
+  let sndLobbyKeys = null;
   setActiveNav(null);
   countEl.textContent = "Virtual Room";
   /* THE SIGNATURE IS LOCAL TO THIS MOUNT, and it has to be.
@@ -101309,6 +101428,7 @@ function showVirtualRoomLobby(){
     }
     if(!amReady && !lobbyCanReady) return;
     amReady = !amReady;
+    playSound(amReady ? "vr.ready" : "ui.toggle.off");
     paintReady();
     readyBtn.disabled = true;
     fbDb.collection("vrooms").doc(vroomCode).update({
@@ -101523,6 +101643,10 @@ function showVirtualRoomLobby(){
      drawing runs from it - never the ready, start or host logic. */
   function drawLobbyRoster(data){
     const entries = Object.entries(presentParticipants(data.participants || {}) || {});
+    /* somebody new in the room (leaving is announceVroomLeave's) */
+    const sndKeys = entries.map(([k]) => k);
+    if(sndLobbyKeys && sndKeys.some(k => k !== vroomMyKey && sndLobbyKeys.indexOf(k) < 0)) playSound("vr.join");
+    sndLobbyKeys = sndKeys;
     const readyN = entries.filter(([, p]) => p.ready).length;
     const totalN = entries.length;
 
@@ -102257,7 +102381,7 @@ function buildVroomChatPanel(container, ctx){
   /* Unread is measured against the newest message this device has
      actually had on screen, not against a count - a count cannot tell
      "three new" from "three deleted", and the array is trimmed. */
-  let lastSeenTs = 0;
+  let lastSeenTs = 0, sndHeardTs = 0;
   try{ if(CTX.initialSeen) lastSeenTs = CTX.initialSeen() || 0; }catch(e){}
   /* ---- THERE IS NO SHEET, SO THERE IS NOTHING TO OPEN OR DRAG ----
      This was a fixed bottom sheet on a phone with a swipe-down to
@@ -102427,6 +102551,7 @@ function buildVroomChatPanel(container, ctx){
 
   function toggleReaction(m, id){
     if(!fbDb || !CTX.code() || !CTX.myKey()) return;
+    playSound("chat.react");
     const me = CTX.myKey();
     rewriteChat(list => !list.some(x => x.id === m.id) ? null : list.map(x => {
       if(x.id !== m.id) return x;
@@ -102570,6 +102695,12 @@ function buildVroomChatPanel(container, ctx){
        sheet, and .vroom-chat-toggle is display:none above 40rem anyway. */
     const others = (messages || []).filter(m => m.key !== CTX.myKey());
     newestTs = others.length ? Math.max.apply(null, others.map(m => m.ts || 0)) : 0;
+    /* somebody else's message arriving after the first render (build 322) */
+    if(announcedAny && newestTs > sndHeardTs){
+      let muted = false; try{ muted = isChatMuted(CTX.code()); }catch(e){}
+      if(!muted) playSound("chat.receive");
+    }
+    sndHeardTs = Math.max(sndHeardTs, newestTs);
     /* WHO DECIDES "YOU ARE LOOKING AT THIS" IS THE HOST'S TO ANSWER,
        and there is no longer a fallback that could answer it wrongly.
        It used to guess from the toggle's computed display, which was
@@ -102816,6 +102947,7 @@ function buildVroomChatPanel(container, ctx){
     const text = input.value.trim();
     if(!text || !CTX.code() || !fbDb || !CTX.myKey()) return;
     input.value = "";
+    playSound("chat.send");
     lastTypingWrite = 0;
     /* ATOMIC APPEND, not read-modify-write. This used to .get() the whole
        document, push onto the array it found and .update() the result -
@@ -102856,6 +102988,7 @@ function buildVroomChatPanel(container, ctx){
      they share the id, the arrayUnion append, the ping and the trim. */
   function sendKind(extra, previewText){
     if(!CTX.code() || !fbDb || !CTX.myKey()) return;
+    playSound("chat.send");
     const msg = Object.assign({
       id: (CTX.myKey() + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8)),
       key: CTX.myKey(),
@@ -103196,6 +103329,7 @@ function buildVroomChatPanel(container, ctx){
   };
 }
 
+let sndRaceProg = {};
 function startVroomRaceListener(){
   if(!vroomCode) return;
   /* Same "SDK not ready yet" gap as the lobby listener, fixed the same
@@ -103253,6 +103387,11 @@ function startVroomRaceListener(){
     const byPct = entries
       .map(([key, p]) => [key, p.finished ? 100 : Math.min(100, p.progress || 0)])
       .sort((a, b) => a[1] - b[1]);
+    /* somebody else moved up a question: a blip pitched by their place */
+    byPct.forEach(([key, pc], i) => {
+      if(key !== vroomMyKey && sndRaceProg[key] != null && pc > sndRaceProg[key]) playSound("vr.progress", { place: byPct.length - i });
+      sndRaceProg[key] = pc;
+    });
     let i0 = 0;
     while(i0 < byPct.length){
       let i1 = i0 + 1;
@@ -104428,6 +104567,7 @@ function openRoomChatSheet(){
   if(document.getElementById("roomchat-sheet")) return;
   const chat = stage.querySelector(".vroom-chat");
   if(!chat) return;
+  playSound("ui.sheet.open");
   roomChatHome = { parent: chat.parentNode, next: chat.nextSibling, el: chat };
   const ov = document.createElement("div");
   ov.className = "invite-overlay roomchat-overlay"; ov.id = "roomchat-sheet";
@@ -104452,6 +104592,7 @@ function openRoomChatSheet(){
 }
 function closeRoomChatSheet(){
   const ov = document.getElementById("roomchat-sheet");
+  if(ov) playSound("ui.sheet.close");
   if(roomChatHome && roomChatHome.el){
     try{
       if(roomChatHome.parent && roomChatHome.parent.isConnected)
@@ -104817,6 +104958,7 @@ function showWeekCongrats(top, wk){
   sheet.append(kick, h, podium, line, sub, close);
   overlay.appendChild(sheet);
   overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
+  overlay.dataset.sndOpen = "lb.winner";   /* last week's winners get the fanfare */
   mountSheetOverlay(overlay);
 }
 let lbFindMeAt = 0;
@@ -109717,6 +109859,7 @@ function showRankings(defaultBoard){
   }
 
   function selectBoard(key){
+    if(rankingsBoardKey !== key) playSound("lb.switch");
     rankingsBoardKey = key;
     Object.keys(tabBtns).forEach(k => tabBtns[k].classList.toggle("active", k === key));
     paint();
@@ -109742,6 +109885,7 @@ function showRankings(defaultBoard){
      class that is already applied. Only ever your own row - nobody
      else's screen flashes because you looked yourself up. */
   meBtn.addEventListener("click", () => {
+    playSound("lb.findme");
     if(search.value){ search.value = ""; paint(); }
     const mine = rows.querySelector('[data-me="1"]');
     if(!mine){
@@ -110899,6 +111043,7 @@ function openBadgeInspect(unit, tile){
   const pt = e => ({ x: e.clientX, y: e.clientY });
   const cleanStroke = () => {
     if(dirt <= 0) return;
+    playSound("badge.rub", { clean: 1 - dirt / BADGE_DIRT_MAX });
     rubStrokes++;
     polish();
     if(rubStrokes % B.rubPerStage === 0) cleanOne();
@@ -110909,6 +111054,9 @@ function openBadgeInspect(unit, tile){
   };
   const cleanOne = () => {
     dirt = Math.max(0, dirt - 1);
+    /* a stage comes off: the squeak of bare metal, and the shine once clean */
+    playSound("badge.squeak", { clean: 1 - dirt / BADGE_DIRT_MAX });
+    if(dirt === 0) setTimeout(() => playSound("badge.sparkle"), 120);
     try{ setBadgeDirtStage(unit, dirt); }catch(e){}
     const url = ready[dirt] || ensureFace(dirt);
     if(url) swapFace(url, dirt, 380);
@@ -111018,6 +111166,7 @@ function openBadgeInspect(unit, tile){
         if(z.t > a.t) v = (z.x - a.x) / (z.t - a.t);
       }
       om = Math.max(-B.maxSpin, Math.min(B.maxSpin, v * 1000 * B.degPerW / g.w));
+      if(Math.abs(om) >= B.settleAt) playSound("badge.spin", { speed: Math.abs(om) / B.maxSpin });
       if(Math.abs(om) >= B.settleAt) mode = "coast";
       else { mode = "settle"; target = restOf(th, om); }
       kick();
@@ -111159,6 +111308,7 @@ function openBadgeInspect(unit, tile){
   /* ---- in ---- */
   document.body.classList.add("binspect-open");
   setCutsceneFocus(true);
+  playSound(found ? "badge.lift" : "ui.popup.open");
   ov.style.setProperty("--glow-k", String(BADGE_DIRT.glow[dirt]));
   apply();
   if(still){

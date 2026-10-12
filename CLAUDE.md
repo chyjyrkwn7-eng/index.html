@@ -20491,3 +20491,51 @@ with five subtractions and one change of form.
   check_b317_xpcap (no notes; total = level colour), check_b319h_layout
   (1.15rem), check_b319_rankup (the level row has no bar), check-curve 8
   (no notes, "Reach Level N", "Met", total = level colour).
+
+### Build 322 (b322s) - sound, phase 2: wired into the app (all but four areas)
+
+- **Generic taps are one delegated layer** (`sndForTap`, `SND_NO_GENERIC`,
+  after the `playSound` wrappers): a primary button (`.next:not(.ghost)`,
+  `.playbtn`) thocks - or is a step forward (`ob.step`) before onboarding is
+  complete - any other button ticks, `.bottomtab` slides, `.navsegment
+  .iconbtn` / `[role=tab]` flicks, `.back-link` steps back, a Tug/Battle
+  `.choice` is `test.select`, Customize picks say what they picked
+  (`.avatarchar-option` / `.swatch` / `.banner-opt` / `.hfx-opt`, or
+  `ui.locked` on `.locked`), a checkbox toggles, a text field focuses. A
+  specific sound made by the same tap wins: `opts.generic` gives way to any
+  non-generic play in the last 220ms. A new screen needs nothing to get its
+  taps; a new SPECIFIC sound just calls `playSound()` in its handler.
+- **Not wired yet, on purpose** (being rebuilt in build 322): the results
+  screen (grade, XP count/bar, "Found & unlocked"), the badge case cutscene
+  and the Badges-tab case, the rank-up journey (cutscene, road map, card,
+  Profile return) and the Profile card. `SND_NO_GENERIC` keeps generic taps
+  off them too; take each selector out when its area is wired.
+- **Specific hooks** - every one a single `playSound()` line, a no-op with
+  sound and vibration off, never awaited by an animation: the test
+  (`choose`, `runStreakLive` now RETURNS the tier it hit, `advance`, the star
+  in `buildQuestionFlag`, `pauseRun` / `resumeRun`, `updateTimerDisplay`'s
+  last ten seconds, `onTimeUp`, `saveAndExitTest`, `showCountdown`'s LOADING
+  TEST); Home (planet, rank bubbles by tier, `homeLockedNudge`,
+  `secretFlareTold`, `homeRingStreak` - a tap full, the pulse's streak at
+  .45 gain - the daily ring's fill and its announce, `startAmbience` on the
+  Home panel); notices (`showNoticeBar`, `showDailyAlert` unless live,
+  `buildAppBanner` - invites are `chat.invite`); sheets (`mountSheetOverlay`
+  opens with `overlay.dataset.sndOpen` or `ui.sheet.open` and closes on
+  removal; the chat dock and the room chat sheet); chat (send, sendKind,
+  reactions, `chat.receive` for somebody else's newer message after the
+  first render, unless muted); Leaderboard (`selectBoard`, Find me, last
+  week's congratulations = `lb.winner`); Virtual Room (lobby mount, ready,
+  join via the roster's keys, `announceVroomLeave`, the countdown's 3-2-1 and
+  go, the rope moving, another racer moving up, both end cutscenes); Nova
+  (`novaType` blips, `novaTalk`'s arrival or What's New, the wreck's
+  `cs.planet` on `NW`, every tooltip step); hundo effects (`playHundoFx` and
+  `hfxCharReact`, stopped with the effect); badge inspect (lift, spin by
+  speed, rub by dirt, a squeak per stage off, the sparkle when clean).
+- **`let` inside a screen function that a hoisted inner function reads**:
+  `drawLobbyRoster` runs before the line it sits on, so its `sndLobbyKeys`
+  lives at the top of `showVirtualRoomLobby` - declared beside it, the TDZ
+  error (swallowed by a try) emptied the lobby's first frame.
+- **Gate**: `check-sound.py` section 9 drives the app with sound on and a
+  spy on `NovaSound.play`: ambience, planet, tab bar, a Settings switch,
+  LOADING TEST, wrong, right, star, pause/resume, next, Nova's blips, and last
+  week's fanfare replacing the plain sheet sound.
