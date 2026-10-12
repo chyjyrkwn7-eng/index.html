@@ -20629,3 +20629,36 @@ with five subtractions and one change of form.
   spy on `NovaSound.play`: ambience, planet, tab bar, a Settings switch,
   LOADING TEST, wrong, right, star, pause/resume, next, Nova's blips, and last
   week's fanfare replacing the plain sheet sound.
+
+### Build 322 (b322s) - sound, phase 3: the badge case, the rank-up journey, the Profile card
+
+- **The badge case.** The Badges tab's lid (`openBadgeCaseLid`) plays
+  `badge.case.open` on CASE_OPEN from when the lid moves. The BADGE FOUND
+  cutscene (`playBadgeCaseScene`) is scored on BC_T, beat by beat inside its
+  own `at()` timers (so a skip silences what has not started): `cs.badge` at
+  the coin (spin-up, the reveal chord at BC_T.intro, the glint at
+  BC_T.glint); `bc.rise` with the lift; `badge.case.open` at latchL with
+  `{ latch2, crack, swing, swingMs: 2.2 (the .bc-lid transition), light }`;
+  `badge.spin` for each further badge; `badge.slide` over the front wall for
+  BC_T.flyMs and `badge.drop` (with `ring`) as it seats. Every case open now
+  carries the handle's little swing as the latches let go. **If BC_T or the
+  lid's 2.2s change, the score moves with them** (the 2.2 is copied).
+- **The rank-up journey**: `rank.road.scroll` on each camera glide
+  (`rankUpRide`, `rankUpUpNext`), `rank.road.fill` for exactly the ride's
+  `ms`, `rank.unlock.pop` as a circle opens (`rankUpArrive`),
+  `rank.flare.zoom` at the hand-out, then the cutscene: `rank.attn`,
+  `rank.whirl` on ACC/DEC at ignite, `rank.bang`, one `rank.windup` per
+  breath on the planet-pulse ring's own peak (`windUp`'s beats) and
+  `rank.swell` over the last `1 - RANK_WINDUP_FILL`, `rank.flash` (or
+  `rank.sn.swell` + `rank.supernova`), `rank.crack` with `crackForm.play`,
+  `rank.title` with `supernova-settle`. Then `rank.upnext` as Up next lifts,
+  `rank.card` - a FADE now (b321e), redesigned to match - `rank.word` as the
+  rank's name pops on Profile, `rank.xp.climb` with a ping at the exact
+  moment each level lands on the sine-eased climb (`opts.marks`), and
+  `rank.challenge.tick` when the level row ticks Met.
+- **The Profile card** needs nothing of its own: its taps are the generic
+  layer's, and its moments (the rank word, the climb, the tick) are the
+  journey's.
+- `SND_NO_GENERIC` keeps only the results screen (builder A), the journey's
+  input blocker (a tap there reaches nothing, so it says nothing) and the
+  surfaces with their own sounds.

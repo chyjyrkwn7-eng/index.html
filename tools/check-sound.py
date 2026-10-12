@@ -31,7 +31,8 @@ sense."
      side of it matches.
   9. Wired (phase 2): with sound on, the hooks fire - Home's ambience and
      planet, the tab bar, a Settings switch, LOADING TEST, wrong, right,
-     the star, pause and resume, next, Nova's blips, last week's fanfare.
+     the star, pause and resume, next, Nova's blips, last week's fanfare,
+     the badge cutscene's entrance and the Badges tab's case opening.
 
   python3 tools/check-sound.py [--against old-index.html]
 """
@@ -62,7 +63,7 @@ rank.crack rank.supernova rank.upnext rank.card rank.xp.climb rank.whirl
 lb.switch lb.findme lb.winner vr.lobby vr.join vr.leave vr.ready vr.count vr.go vr.progress vr.tug vr.end vr.podium
 chat.send chat.receive chat.react chat.invite
 ob.step pick.character nova.arrive nova.blip cs.planet ob.whatsnew ob.tooltip
-cust.theme ui.locked
+cust.theme ui.locked bc.rise badge.slide rank.word
 """.split()
 
 COUNT_CTX = r"""
@@ -475,6 +476,19 @@ with sync_playwright() as pw:
       try{ showWeekCongrats([{ name: 'Ann', pub: 'a', avatar: 'ninja', pts: 900 }, { name: 'Bo', pub: 'b', avatar: 'ninja', pts: 800 }], lastWeekKey()); }catch(e){ return 'err ' + e.message; }
       await new Promise(z => setTimeout(z, 200)); return window.__played.splice(0); }""", default=[])
     ck("last week's winners get the fanfare, not the plain sheet sound", isinstance(r, list) and "lb.winner" in r and "ui.sheet.open" not in r, r)
+    r = ev(pg, """async ()=>{ const wait = ms => new Promise(z => setTimeout(z, ms));
+      document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+      theme.muteBanners = false; window.__played.splice(0);
+      const u = QUESTIONS[0].topic, h = playBadgeCaseScene([u], () => {});
+      await wait(1200); const scene = window.__played.splice(0);
+      try{ h && h.stop(); }catch(e){}
+      showHome(); await wait(300); window.__played.splice(0);
+      showRanksScreen('badges');
+      for(let i = 0; i < 40 && !window.__played.includes('badge.case.open'); i++) await wait(100);
+      return { scene, tab: window.__played.splice(0) }; }""", default={})
+    r = r if isinstance(r, dict) else {}
+    ck("BADGE FOUND: the badge's entrance is scored", "cs.badge" in (r.get("scene") or []), r.get("scene"))
+    ck("the Badges tab's case opens with its latches and lid", "badge.case.open" in (r.get("tab") or []), r.get("tab"))
     ck("no page errors", not errs, errs[:3])
     ctx.close()
     br.close()

@@ -62622,16 +62622,23 @@ const SOUND_CATALOGUE = {
 
   /* ----------------------------- BADGES ----------------------------- */
   "badge.case.open": { group: "Badges", bus: "ui", cd: 600, hap: "tap",
-    desc: "The badge case opens, on CASE_OPEN: two latches snap, the lid cracks with a short hinge creak, swings up, a velvet breath and a glint as it clears.",
-    fn: K => {
-      const C = SND_CASE_OPEN(), hold = C.hold / 1000, crack = C.crack / 1000, swing = C.swing / 1000;
-      [0, .06].forEach(t => { K.tone({ t, f: 2200, f2: 1800, gl: .02, type: "triangle", a: .001, d: .02, g: .1 }); K.click({ t, bp: 4500, q: 3, d: .012, g: .13 }); K.thump({ t, f: 300, f2: 200, d: .03, g: .07 }); });
-      K.noise({ t: hold, bp: 700, ff2: 950, q: 10, am: [40, .8], a: .02, d: crack, g: .07 });
-      K.tone({ t: hold + crack, f: 180, f2: 140, gl: swing, type: "sawtooth", lp: 900, q: 6, vib: [9, 25], a: .05, hold: swing * .6, d: swing * .4, g: .022 });
-      K.noise({ t: hold + crack, color: "p", lp: 500, a: .2, d: swing * .8, g: .03 });
-      K.noise({ t: hold + crack + .1, color: "p", lp: 1200, a: .2, d: .5, g: .045 });
-      K.bell({ t: C.glint / 1000, f: 3200, ratio: 4, d: .45, g: .018, rev: .3 });
-      K.thump({ t: hold + crack + swing, f: 160, f2: 90, d: .1, g: .1 });
+    desc: "The badge case opens: two latches snap and the handle swings a little as they let go, the lid cracks with a short hinge creak, swings up on its hinges, a velvet breath, a glint. On CASE_OPEN on the Badges tab; on BC_T in the cutscene (opts: latch2, crack, swing, swingMs, glint, light, in seconds from the first latch).",
+    fn: (K, o) => {
+      const C = SND_CASE_OPEN();
+      const l2 = o.latch2 != null ? o.latch2 : .06, cr = o.crack != null ? o.crack : C.hold / 1000;
+      const sw = o.swing != null ? o.swing : (C.hold + C.crack) / 1000, swMs = o.swingMs != null ? o.swingMs : C.swing / 1000;
+      const gl = o.glint === false ? null : (o.glint != null ? o.glint : C.glint / 1000);
+      [0, l2].forEach(t => { K.tone({ t, f: 2200, f2: 1800, gl: .02, type: "triangle", a: .001, d: .02, g: .1 }); K.click({ t, bp: 4500, q: 3, d: .012, g: .13 }); K.thump({ t, f: 300, f2: 200, d: .03, g: .07 }); });
+      /* the handle, let go: a little metal swing on its mounts */
+      K.tone({ t: .05, f: 1250, f2: 1020, gl: .4, type: "triangle", vib: [6, 45], a: .02, d: .4, g: .016 });
+      K.click({ t: l2 + .14, bp: 1100, q: 4, d: .008, g: .035 });
+      K.noise({ t: cr, bp: 700, ff2: 950, q: 10, am: [40, .8], a: .02, d: Math.max(.15, sw - cr), g: .07 });
+      if(o.light) K.tone({ t: cr, f: "A4", a: .3, d: 1.2, g: .025, rev: .5 });
+      K.tone({ t: sw, f: 180, f2: 140, gl: swMs, type: "sawtooth", lp: 900, q: 6, vib: [9, 25], a: .05, hold: swMs * .6, d: swMs * .4, g: .022 });
+      K.noise({ t: sw, color: "p", lp: 500, a: .2, d: swMs * .8, g: .03 });
+      K.noise({ t: sw + .1, color: "p", lp: 1200, a: .2, d: .5, g: .045 });
+      if(gl != null) K.bell({ t: gl, f: 3200, ratio: 4, d: .45, g: .018, rev: .3 });
+      K.thump({ t: sw + swMs, f: 160, f2: 90, d: .1, g: .1 });
     } },
   "badge.case.close": { group: "Badges", bus: "ui", cd: 600, hap: "heavy",
     desc: "The case shuts: the lid swinging down with a falling creak, a padded thump, and two lower latch clicks.",
@@ -62680,26 +62687,42 @@ const SOUND_CATALOGUE = {
       K.noise({ bp: 4000, ff2: 9000, q: 2, a: .05, d: .25, g: .025, pan: -.5, pan2: .5 });
     } },
   "badge.drop": { group: "Badges", bus: "ui", cd: 200, hap: "tap",
-    desc: "A badge set into its slot: a metallic tick on the rim, then a padded seat - it fits.",
-    fn: K => {
+    desc: "A badge set into its slot: a metallic tick on the rim, then a padded seat - it fits (opts.ring: the slot's ring of light answers in the cutscene).",
+    fn: (K, o) => {
       K.fm({ f: 3000, ratio: 1.41, idx: 1.5, d: .15, g: .045 });
       K.click({ bp: 6000, q: 2, d: .005, g: .05 });
       K.thump({ t: .05, f: 220, f2: 120, d: .08, g: .2 });
       K.noise({ t: .05, color: "b", lp: 400, d: .05, g: .12 });
+      if(o.ring) K.bell({ t: .12, f: "A5", d: .9, g: .03, rev: .4 });
     } },
   "cs.badge": { group: "Badges", bus: "cut", cd: 2000, hap: "celebrate",
-    desc: "BADGE FOUND, scored: a low build-up (0-0.9s), the reveal chord as the slot lands (0.9s), the click as the badge seats (1.2s), the case lighting up (1.4s), a bell as its name arrives (1.9s), and the flight to Profile (BADGE_CUTSCENE_MS).",
+    desc: "BADGE FOUND, its entrance (BC_T): the badge spinning up out of the dark for BC_SPIN_MS, a reveal chord as it is lit and named (BC_T.intro), its light crossing its face (BC_T.glint).",
     fn: K => {
-      const fly = (typeof BADGE_CUTSCENE_MS === "number" ? BADGE_CUTSCENE_MS : 4200) / 1000;
-      K.noise({ color: "p", bp: 300, ff2: 2600, q: 1.2, a: .85, d: .05, g: .08 });
-      K.tone({ f: "D3", f2: "A3", gl: .85, type: "sawtooth", lp: 400, ff2: 1600, fgl: .85, a: .8, d: .1, g: .03 });
-      ["D4", "A4", "D5", "F#5"].forEach((n, i) => K.fm({ t: .9 + i * .015, f: n, ratio: 2, idx: 1.5, d: 1.4, g: .04, rev: .45 }));
-      K.fm({ t: 1.2, f: 3000, ratio: 1.41, idx: 1.5, d: .15, g: .05 });
-      K.thump({ t: 1.2, f: 220, f2: 110, d: .1, g: .22 });
-      ["A4", "C#5", "E5"].forEach(n => K.tone({ t: 1.4, f: n, a: .2, d: 1.2, g: .025, rev: .5 }));
-      K.sparkle({ n: 6, t: 1.45, t2: 1.9, f1: 3000, f2: 6000, g: .012, rev: .4 });
-      K.bell({ t: 1.9, f: "D6", d: 1, g: .04, rev: .4 });
-      K.noise({ t: fly, color: "p", bp: 800, ff2: 3200, q: 1, a: .3, d: .5, g: .07, pan: 0, pan2: .6 });
+      const T = (typeof BC_T === "object" && BC_T) ? BC_T : { coin: 300, intro: 1100, glint: 3800 };
+      const S = (typeof BC_SPIN_MS === "number" ? BC_SPIN_MS : 3400) / 1000, I = (T.intro - T.coin) / 1000, G = (T.glint - T.coin) / 1000;
+      K.noise({ color: "p", bp: 300, ff2: 2600, q: 1.2, a: I, d: .08, g: .07 });
+      K.noise({ bp: 1600, ff2: 3600, fgl: S * .5, q: 3, am: [5, .7, 26, 7], a: .3, hold: S * .5, d: S * .4, g: .04 });
+      K.tone({ f: "D3", type: "sawtooth", lp: 350, a: I, hold: S - I, d: .8, g: .02 });
+      ["D4", "A4", "D5", "F#5"].forEach((n, i) => K.fm({ t: I + i * .015, f: n, ratio: 2, idx: 1.5, d: 1.4, g: .04, rev: .45 }));
+      K.bell({ t: G, f: "D6", d: 1, g: .035, rev: .4 });
+      K.noise({ t: G, bp: 4000, ff2: 9000, q: 2, a: .2, d: .5, g: .02, pan: -.5, pan2: .5 });
+    } },
+  "bc.rise": { group: "Badges", bus: "cut", cd: 2000, hap: null,
+    desc: "BADGE FOUND, the camera pulling back as the case rises out of the dark (BC_T.liftMs): a low swell of air and leather, settling with a soft thud.",
+    fn: (K, o) => {
+      const D = o.dur || ((typeof BC_T === "object" && BC_T && BC_T.liftMs) ? BC_T.liftMs / 1000 : 1.7);
+      K.noise({ color: "p", lp: 300, ff2: 1000, fgl: D * .7, a: D * .6, d: D * .4, g: .1 });
+      K.tone({ f: "D2", f2: "A2", gl: D, type: "triangle", lp: 420, a: D * .5, d: D * .5, g: .06 });
+      K.thump({ t: D, f: 130, f2: 70, d: .15, g: .2 });
+      K.noise({ t: D, color: "b", lp: 500, d: .08, g: .1 });
+    } },
+  "badge.slide": { vol: 2.4, group: "Badges", bus: "cut", cd: 400, hap: null,
+    desc: "BADGE FOUND, a badge sliding in over the case's front wall to its slot (BC_T.flyMs): a brushed-metal glide over felt, lifting a little as it crosses the edge.",
+    fn: (K, o) => {
+      const D = o.dur || ((typeof BC_T === "object" && BC_T && BC_T.flyMs) ? BC_T.flyMs / 1000 : 1.15);
+      K.noise({ bp: 1800, ff2: 3400, fgl: D * .6, q: 3, am: [30, .3], a: D * .4, hold: D * .3, d: D * .3, g: .05 });
+      K.tone({ f: 1500, f2: 2100, gl: D * .6, a: .1, hold: D - .3, d: .2, g: .012 });
+      K.noise({ color: "p", lp: 700, a: D * .5, d: D * .5, g: .03 });
     } },
 
   /* --------------------------- RANK-UP --------------------------- */
@@ -62849,19 +62872,30 @@ const SOUND_CATALOGUE = {
       K.bell({ t: .3, f: "A6", d: .5, g: .028, rev: .3 });
     } },
   "rank.card": { group: "Rank-up journey", bus: "ui", cd: 800, hap: "tap",
-    desc: "The card at the top turning over: two air flaps of a card flipping, then a fresh chord on the new side.",
+    desc: "The card at the top changing over - a fade, not a turn (RU_HERO_FADE_MS): a soft breath as the old card dims, and a fresh G chord blooming in as the new one appears.",
     fn: K => {
-      K.noise({ color: "p", bp: 1400, ff2: 700, q: 1, a: .01, d: .07, g: .1 });
-      K.noise({ t: .12, color: "p", bp: 1000, ff2: 1900, q: 1, a: .01, d: .07, g: .09 });
-      ["G4", "D5", "A5"].forEach(n => K.fm({ t: .2, f: n, ratio: 2, idx: 1, d: .8, g: .04, rev: .3 }));
+      const F = (typeof RU_HERO_FADE_MS === "number" ? RU_HERO_FADE_MS : 900) / 1000;
+      K.noise({ color: "p", bp: 2000, ff2: 900, q: 1, a: F * .4, d: F * .6, g: .05 });
+      ["G4", "D5", "A5"].forEach(n => K.tone({ t: F * .3, f: n, a: F * .6, d: 1, g: .03, rev: .35 }));
+      K.bell({ t: F * .8, f: "D6", d: .7, g: .018, rev: .35, partial: false });
+    } },
+  "rank.word": { group: "Rank-up journey", bus: "ui", cd: 800, hap: "success",
+    desc: "The new rank's name popping in on Profile (.ru-rank-new): a reversed shimmer pulling in, and the name landing on a bright octave with a short ring.",
+    fn: K => {
+      K.noise({ hp: 3500, a: .22, d: .02, g: .05 });
+      K.tone({ f: "E5", f2: "A5", gl: .22, a: .2, d: .02, g: .02 });
+      K.fm({ t: .22, f: "A4", ratio: 2, idx: 1.2, d: .9, g: .055, rev: .35 });
+      K.fm({ t: .22, f: "A5", ratio: 3, idx: .8, d: .7, g: .035, rev: .35 });
+      K.thump({ t: .22, f: 200, f2: 120, d: .07, g: .12 });
     } },
   "rank.xp.climb": { group: "Rank-up journey", bus: "ui", cd: 1000, hap: null,
-    desc: "The saved XP climbing on Profile: a slow rising tone, with a ping at each level it crosses (opts.dur, opts.levels).",
+    desc: "The saved XP climbing on Profile: a slow rising tone over the climb, with a ping at each level it crosses (opts.dur; opts.marks, the seconds each level is reached, or opts.levels spread evenly).",
     demo: [{ dur: 2.6, levels: 2 }],
     fn: (K, o) => {
-      const D = o.dur || 2.6, L = Math.max(1, Math.min(8, o.levels || 1));
-      K.tone({ f: "A3", f2: "A4", gl: D, type: "triangle", lp: 900, a: .2, hold: D - .2, d: .3, g: .03 });
-      for(let k = 1; k <= L; k++) K.tone({ t: D * k / L, f: sndHz("E5") * Math.pow(2, (k - 1) * 2 / 12), a: .003, d: .3, g: .04, rev: .25 });
+      const D = o.dur || 2.6, L = Math.max(0, Math.min(8, o.levels == null ? 1 : o.levels));
+      const marks = Array.isArray(o.marks) ? o.marks.slice(0, 8) : Array.from({ length: L }, (_, k) => D * (k + 1) / L);
+      K.tone({ f: "A3", f2: "A4", gl: D, type: "triangle", lp: 900, a: .2, hold: Math.max(0, D - .2), d: .3, g: .03 });
+      marks.forEach((t, k) => K.tone({ t: Math.max(0, t), f: sndHz("E5") * Math.pow(2, k * 2 / 12), a: .003, d: .3, g: .04, rev: .25 }));
     } },
 
   /* ------------------- LEADERBOARD AND VIRTUAL ROOM ------------------- */
@@ -63374,10 +63408,11 @@ function stopAmbience(){ try{ NovaSound.stopAmbience(); }catch(e){} }
    says what it picked (a character, a colour, a banner, an effect) or that
    it is locked; in sign-up a primary button is a step forward. A specific
    sound the same tap already made wins (opts.generic gives way to it), and
-   the areas still being rebuilt in build 322 are left out on purpose
-   (SND_NO_GENERIC). Nothing here does anything while sound and vibration
+   the results screen, still being rebuilt in build 322, is left out on
+   purpose (SND_NO_GENERIC); so is the rank-up journey's input blocker,
+   where a tap reaches nothing and so says nothing. Nothing here does anything while sound and vibration
    are both off - playSound returns at once. */
-const SND_NO_GENERIC = ".rs-screen, #badge-cutscene, .bc-scene, .profile-hero, .ncase, [class^='rankmap'], .ru-blocker, " +
+const SND_NO_GENERIC = ".rs-screen, .ru-blocker, " +
   ".qpanel .choice, .flagbtn, .snd-row, .settings-sound-row, .binspect, .cosmic-hero-wrap, #vroom-cutscene";
 function sndForTap(t){
   if(!t || !t.closest || t.closest(SND_NO_GENERIC)) return null;
@@ -75410,6 +75445,7 @@ function playRankUpScene(tierKey, opts, spec){
   let charge = null;
   const attention = () => {
     const D = RANK_ATTN_MS;
+    playSound("rank.attn");
     const fx = flareFx("is-attention", RANK_CHG_IN.length, RANK_CHG_PALE);
     if(!fx) return;
     charge = fx;
@@ -75499,6 +75535,7 @@ function playRankUpScene(tierKey, opts, spec){
   const bang = () => {
     if(overlay.classList.contains("is-cutlight")) return;
     overlay.classList.add("is-cutlight");
+    playSound("rank.bang");
     const b0 = newBadge(), slot = b0 && b0.closest(".rank-orbit-slot");
     if(slot) slot.classList.add("is-igniting");
     lightFully();
@@ -75603,6 +75640,10 @@ function playRankUpScene(tierKey, opts, spec){
          the last is the flash itself. A div over the planet, transform and
          opacity only. */
       const pulses = [];
+      /* a heartbeat on every breath, on the planet ring's own peak, then the
+         held swell into the flash */
+      beats.forEach(([st, per], i) => at(st + per * .45, () => playSound("rank.windup", { i, n: beats.length })));
+      at(D * RANK_WINDUP_FILL, () => playSound("rank.swell", { dur: D * (1 - RANK_WINDUP_FILL) / 1000 }));
       beats.forEach(([st, per], i) => {
         const lv = i / nB, peak = st + per * .45;
         const dur = Math.round(Math.max(700, Math.min(1500, per * 2.3)));
@@ -75638,9 +75679,10 @@ function playRankUpScene(tierKey, opts, spec){
     const SW = spec.times.swell || 0;
     const p0 = spec.times.pause != null ? spec.times.pause : (SW ? RANK_CUTSPIN_PAUSE_MS : RANK_WINDUP_MS);
     const b = p0 + SW;
-    if(SW) at(p0, snSwell);
+    if(SW) at(p0, () => { playSound("rank.sn.swell", { dur: SW / 1000 }); snSwell(); });
     else windUp(p0);
     at(b, () => {
+      playSound(SW ? "rank.supernova" : "rank.flash");
       /* THE FLASH IS A CIRCLE (build 317), a square box with a radial
          fill - it was the whole overlay with border-radius:50%, a tall
          ellipse. FROM THE NEW FLARE (the evolution round): "it needs to be
@@ -75680,14 +75722,14 @@ function playRankUpScene(tierKey, opts, spec){
        look settles in under them; and only THEN do the rings change
        colour, a glint running round each. */
     if(SW){
-      at(b + 1300, () => { overlay.classList.add("sn-scarred"); if(heroAfter) heroAfter.classList.add("csc-live"); if(crackForm) crackForm.play(CRACK_FORM_SN_MS); });
+      at(b + 1300, () => { overlay.classList.add("sn-scarred"); if(heroAfter) heroAfter.classList.add("csc-live"); if(crackForm){ playSound("rank.crack", { gain: .6 }); crackForm.play(CRACK_FORM_SN_MS); } });
       at(b + 1800, snSweep);
       at(b + 4400, () => overlay.classList.add("sn-settled"));
       at(b + 5400, () => { overlay.classList.add("sn-rings"); snRingGlint(); });
     }
     /* a rank's new crack forms once the flash has cleared (build 320) */
-    if(!SW && crackForm) at(b + CRACK_FORM_AT_MS, () => crackForm.play(CRACK_FORM_MS));
-    at(b + (T.settle - T.burst), () => overlay.classList.add("supernova-settle"));
+    if(!SW && crackForm) at(b + CRACK_FORM_AT_MS, () => { playSound("rank.crack"); crackForm.play(CRACK_FORM_MS); });
+    at(b + (T.settle - T.burst), () => { playSound("rank.title"); overlay.classList.add("supernova-settle"); });
     /* the show is unskippable up to the title; once it is up, a tap ends it */
     at(b + (T.settle - T.burst) + RANK_TITLE_TAP_MS, () => { titleUp = true; });
     at(b + (T.outro - T.burst), endScene);
@@ -75852,6 +75894,7 @@ function playRankUpScene(tierKey, opts, spec){
   at(T.ignite, () => {
     /* the charge lets go on the whirl's first frame (build 319) */
     release();
+    playSound("rank.whirl", { acc: ACC, dec: DEC });
     overlay.classList.add("is-igniting", "is-cutspin");
     stageWrap.classList.add("supernova-zoom");
     const b1 = rankTierBadge(heroAfter, tierKey);
@@ -91851,6 +91894,7 @@ function playBadgeCaseScene(units, done, retro, opts){
      lit in its own colour from the start. */
   const first = units[0];
   at(BC_T.coin, () => {
+    playSound("cs.badge");
     SHOW_P = SHOW();
     showCoin(first, BC_SPIN_TURNS, BC_SPIN_MS, SHOW_P);
     iName.textContent = badgeTitle(first);
@@ -91862,13 +91906,18 @@ function playBadgeCaseScene(units, done, retro, opts){
   /* 2. The camera pulls back: it rises out of the way, still lit, the
      light follows down to the case, and the case comes up under it, shut -
      one move. */
-  at(BC_T.lift, () => { intro.classList.remove("is-in"); flyer.classList.add("bc-lifted"); overlay.classList.add("bc-up"); moveTo(HOVER(), BC_T.liftMs, "cubic-bezier(.45,0,.25,1)"); });
+  at(BC_T.lift, () => { playSound("bc.rise", { dur: BC_T.liftMs / 1000 }); intro.classList.remove("is-in"); flyer.classList.add("bc-lifted"); overlay.classList.add("bc-up"); moveTo(HOVER(), BC_T.liftMs, "cubic-bezier(.45,0,.25,1)"); });
   at(BC_T.rise, () => kase.classList.add("bc-rise"));
   /* 3. The latches, one then the other; the lid cracks with the badges'
      own colours spilling out of the gap, then swings back on its hinges
      and STAYS, while the camera rises over the case and every badge in it
      settles to its own glow. */
-  at(BC_T.latchL, () => kase.classList.add("bc-unlatch"));
+  at(BC_T.latchL, () => {
+    kase.classList.add("bc-unlatch");
+    /* both latches, the handle, the crack and the 2.2s swing, on BC_T */
+    playSound("badge.case.open", { latch2: (BC_T.latchR - BC_T.latchL) / 1000, crack: (BC_T.crack - BC_T.latchL) / 1000,
+      swing: (BC_T.open - BC_T.latchL) / 1000, swingMs: 2.2, glint: false, light: true });
+  });
   at(BC_T.latchR, () => kase.classList.add("bc-unlatch2"));
   at(BC_T.crack, () => { kase.classList.add("bc-crack", "bc-lit"); placeLeak(); leak.classList.add("is-on"); });
   at(BC_T.open, () => { kase.classList.remove("bc-crack"); kase.classList.add("bc-open"); leak.classList.add("is-fading"); });
@@ -91877,6 +91926,7 @@ function playBadgeCaseScene(units, done, retro, opts){
   units.forEach((u, i) => {
     if(i > 0){
       at(t, () => {
+        playSound("badge.spin", { speed: .7 });
         showCoin(u, 2, 1900, HOVER());
         name.textContent = badgeTitle(u); sub.textContent = paid(u);
         /* upright, the next badge waits where the words are: they come
@@ -91887,8 +91937,8 @@ function playBadgeCaseScene(units, done, retro, opts){
       at(t + 2000, swayOn);
       t += 2600;
     }
-    at(t, () => flyInto(u));
-    at(t + BC_T.flyMs, () => seat(u, i));
+    at(t, () => { playSound("badge.slide", { dur: BC_T.flyMs / 1000 }); flyInto(u); });
+    at(t + BC_T.flyMs, () => { playSound("badge.drop", { ring: true }); seat(u, i); });
     t += BC_T.flyMs + (i < units.length - 1 ? 1500 : 0);
   });
   at(t + BC_T.hold, finish);
@@ -110798,6 +110848,8 @@ function openBadgeCaseLid(kase, wait){
   kase.classList.remove("is-shut");
   kase.__opening = true;
   kase.__finishOpen = finish;
+  /* its latches, hinge and lid, on CASE_OPEN, from when the lid moves */
+  setTimeout(() => { if(kase.isConnected && !over) playSound("badge.case.open"); }, W);
   anims[0].finished.then(() => { if(!over){ over = true; tidy(); kase.__finishOpen = null; } }).catch(() => {});
   /* the glints: from the edge-on moment, a diagonal wave across the found
      badges (row + column), 360ms at most from the first to the last */
@@ -113380,7 +113432,7 @@ async function rankUpRide(scene, P, R, s0, s1, ms, under, go){
   let y = R.set(s0);
   /* the camera goes to where the light is now */
   const y0 = rankUpFollowY(roadTop() + y);
-  if(Math.abs(y0 - window.scrollY) > 2) await glideScrollTo(y0, glideMsFor(y0 - window.scrollY), () => !rankUpAlive(scene));
+  if(Math.abs(y0 - window.scrollY) > 2){ playSound("rank.road.scroll"); await glideScrollTo(y0, glideMsFor(y0 - window.scrollY), () => !rankUpAlive(scene)); }
   R.tip.classList.add("is-on");
   if(!go) await rankUpWait(420);
   if(!rankUpAlive(scene)) return;
@@ -113388,6 +113440,8 @@ async function rankUpRide(scene, P, R, s0, s1, ms, under, go){
   try{ de.style.scrollBehavior = "auto"; }catch(e){}
   const core = under ? P.node.querySelector(".ru-core") : null;
   const edge = P.H - P.n / 2;
+  /* the light along the road, for exactly as long as it runs */
+  playSound("rank.road.fill", { dur: ms / 1000 });
   await new Promise(res => {
     const t0 = performance.now();
     const step = now => {
@@ -113444,6 +113498,7 @@ async function rankUpArrive(scene, c, api, pre){
   if(!rankUpAlive(scene)) return;
   if(R) R.tip.classList.add("ru-hit");
   if(node) node.classList.remove("ru-under");
+  if(!still) playSound("rank.unlock.pop");
   c.stop.classList.add("is-celebrating");
   api.finish(c);
   await rankUpWait(still ? 300 : 1900);
@@ -113530,6 +113585,7 @@ async function rankUpHandOut(scene, stop){
   const r = node.getBoundingClientRect();
   if(!r.width || r.bottom < 0 || r.top > window.innerHeight) return null;
   scene.phase = "handoff";
+  playSound("rank.flare.zoom");
   const ghost = document.createElement("div");
   ghost.className = stop.className.replace(/\b(is-celebrating|is-celebrate-pending|is-left|is-right|ru-nextpop)\b/g, " ").replace(/\s+/g, " ").trim() + " ru-ghost";
   ghost.setAttribute("aria-hidden", "true");
@@ -113759,10 +113815,12 @@ async function rankUpUpNext(scene, map){
   rankUpSceneWatch(scene, 25000);
   const r = card.getBoundingClientRect();
   const to = Math.round(r.top + window.scrollY + r.height / 2 - window.innerHeight * .5);
+  if(!still) playSound("rank.road.scroll");
   await glideScrollTo(to, still ? 1 : Math.max(2200, Math.round(glideMsFor(to - window.scrollY) * 1.5)), () => !rankUpAlive(scene));
   if(!rankUpAlive(scene)) return;
   await rankUpWait(still ? 0 : 300);
   /* and only now does it become Up next, in its colour (build 321) */
+  playSound("rank.upnext");
   rankUpNextLift(stop);
   const fx = document.createElement("span");
   fx.className = "ru-nextfx"; fx.setAttribute("aria-hidden", "true");
@@ -113815,6 +113873,7 @@ async function rankUpHeroTurn(scene){
   const fresh = buildRankHero(scene.to, rankUpHeroLevel(scene), badgeCountOf(store), { levelPending: real > cap });
   const nu = fresh.hero;
   nu.classList.add("ru-hero-new");
+  if(!still) playSound("rank.card");
   if(still){
     fresh.arcs.forEach(a => { a.el.style.strokeDashoffset = a.value; });
     hero.replaceWith(nu); scene.hero = nu; scene.heroTurned = true;
@@ -113945,6 +114004,16 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
   const toEl = standing.querySelector(".pf-xp-to");
   fill.style.transition = "none";
   const ms = rankUpClimbMs(u1 - u0);
+  /* the climb's tone, a ping where each new level lands (the climb is
+     sine-eased: level k arrives where .5 - .5 cos(pi t) crosses it) */
+  {
+    const marks = [];
+    for(let L = Math.floor(u0) + 1; L <= Math.floor(u1 + 1e-6) && marks.length < 8; L++){
+      const pp = (L - u0) / (u1 - u0);
+      if(pp > 0 && pp <= 1) marks.push(Math.acos(1 - 2 * pp) / Math.PI * ms / 1000);
+    }
+    playSound("rank.xp.climb", { dur: ms / 1000, marks });
+  }
   if(scene) scene.climb = { from: from.level, to: to.level, ms, levels: u1 - u0 };
   let shownLv = from.level, shownSpan = -1;
   const place = u => {
@@ -114006,6 +114075,7 @@ async function rankUpLevelRowAfter(row, level){
   }
   if(rowNow) rowNow.textContent = String(to);
   if(to >= need && !row.classList.contains("is-met")){
+    playSound("rank.challenge.tick");
     row.classList.add("is-met", "ru-ticked");
     const ck = row.querySelector(".pf-check");
     if(ck){
@@ -114043,6 +114113,7 @@ async function rankUpRankLineFade(standing, key, still){
   try{ nm.getAnimations().forEach(a => a.cancel()); }catch(e){}
   /* the new word comes in with the pop the emblem used to have */
   nm.classList.remove("ru-rank-new"); void nm.offsetWidth; nm.classList.add("ru-rank-new");
+  playSound("rank.word");
   await rankUpWait(900);
 }
 var RU_RANKLINE_AT_MS = 900;
