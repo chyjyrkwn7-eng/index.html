@@ -9354,6 +9354,14 @@
   }
   .synccode-confirm-label{ font-size:.85rem; color:var(--soft); margin:0 0 .2rem; }
   .synccode-confirm-name{ font-size:1.15rem; font-weight:700; margin:0 0 .8rem; }
+  /* Build 322: the name already on the board (Enter a username) and the
+     check before sign-up. Both sit in the content group, so the shared
+     Continue floor below them does not move. */
+  .namecheck-card{ width:100%; max-width:22rem; text-align:center; }
+  .namecheck-text{ font-size:.95rem; line-height:1.45; margin:0 0 .8rem; }
+  .namecheck-card .next{ width:100%; }
+  .signupcheck-panel .signupcheck-text{ max-width:26rem; }
+  .signupcheck-panel .signupcheck-signin{ position:relative; z-index:1; width:100%; max-width:22rem; margin-top:1.2rem; }
   /* Without this, any toast on a screen with the bottom tab bar
      visible renders directly underneath it (both were anchored to
      the same bottom:1rem), completely hidden behind the bar's own
@@ -49141,7 +49149,7 @@ const STORE_KEY = "class26e.drill.v1";
    by a `let` declared below its caller, and the reason check-chat
    opens by simply asking whether the app finished booting. */
 const ROW_LAZY_FIELDS = ["correct", "level", "badges", "mystery",
-                         "hundos", "week", "weekPoints"];
+                         "hundos", "week", "weekPoints", "rankFloor"];
 /* Long enough to collapse a whole drill into one or two writes, short
    enough that a board somebody is watching is never stale for long. */
 const ROW_SCORE_PUSH_MS = 90 * 1000;
@@ -50960,7 +50968,16 @@ function setSyncCode(code){
      Retiring it here rather than at each call site is what makes every
      path that changes a code cover it, including any added later. */
   const previous = syncCode;
-  const previousPublic = store.publicId;
+  /* THE ID THIS DEVICE WAS PUBLISHING UNDER, which is not always
+     store.publicId by now (build 322). Sign-in and Link this device
+     ADOPT first and call this second, and adopting has already replaced
+     store.publicId with the other account's - so this retired the row
+     of the account being joined (which then came back on its next push)
+     and left the abandoned one on everyone's board for good: the same
+     person twice. pullFromCloud notes the id it adopted over. */
+  const previousPublic = (adoptedOverPublic && adoptedOverPublic.code === previous)
+    ? adoptedOverPublic.pub : store.publicId;
+  adoptedOverPublic = null;
   syncCode = code;
   syncOff = false;
   /* THE ROW TO RETIRE IS THE OLD PUBLIC ID'S, not the old sync code's.
@@ -51067,6 +51084,9 @@ function clearSyncCode(disable){
    Does not touch the sync code or cloud record itself; callers handle
    that differently depending on which side of the reset they're on. */
 function wipeLocalProgressAndSettings(){
+  /* the mirror is being emptied behind this: Welcome must not offer back
+     the account that was just reset (build 322, findAccountTrace) */
+  accountWipedAt = Date.now();
   /* a reset is a new account: a test saved by the old one goes with it
      (build 320) */
   clearRunSession();
@@ -51290,8 +51310,33 @@ function scheduleCloudPush(){
 
 
 
+/* ---- THE BOARD'S NUMBERS ARE PROFILE'S NUMBERS (build 322) ----
+   One builder for every number a row carries, used by the row this
+   device publishes AND by the row the board draws for you from live
+   state (liveEntries) - which used to carry its own copy of half of
+   them, so tapping your own row showed the XP and right answers you last
+   PUBLISHED beside a level from now. Each comes from the function
+   Profile and Stats draw with: levelOf, badgeCountOf, hundosOf, the
+   lifetime totals, and rankFloor, which rankOf honours and the board
+   could not see until it was on the row. */
+function boardNumbersOf(st){
+  const L = (st && st.lifetime) || {};
+  return {
+    correct: L.correct || 0,
+    level: levelOf(st),
+    badges: badgeCountOf(st),
+    mystery: st === store ? mysteryColorsFoundCount() : 0,
+    hundos: hundosOf(st),
+    xp: L.points || 0,
+    tests: Array.isArray(st && st.testHistory) ? st.testHistory.length : 0,
+    week: weekKeyNow(),
+    weekPoints: weekPointsOf(st),
+    rankFloor: Math.max(0, Math.min(TIER_ORDER_FULL.length, Math.floor(Number(st && st.rankFloor) || 0)))
+  };
+}
 function buildLeaderboardRow(){
   rollWeek();
+  const n = boardNumbersOf(store);
   return {
         firstName: store.firstName || "Anonymous",
         avatarChar: store.avatarChar || "ninja",
@@ -51302,7 +51347,7 @@ function buildLeaderboardRow(){
            Entries written by an older build still carry points/stars and
            no "correct" - those read as 0 until that person's app updates
            and pushes again, which it does on the next save. */
-        correct: (store.lifetime && store.lifetime.correct) || 0,
+        correct: n.correct,
         /* The three Rankings boards. All three come from the metric
            functions near TIER_ORDER_FULL so there is one definition of
            each, and `correct` stays published beside them: a classmate
@@ -51316,16 +51361,21 @@ function buildLeaderboardRow(){
            not a coincidence worth losing: keying this by anything
            device-local would duplicate every person who uses a phone
            and an iPad. */
-        level: levelOf(store),
-        badges: badgeCountOf(store),
+        level: n.level,
+        badges: n.badges,
         /* Published so somebody else's row can show Titan. Their rank
            is computed from this document, and Titan's rule asks for
            all three Secret Flares - without this every remote person
            is capped at Elite however far they have actually got. An
            older document lacking it reads as 0 and self-heals on that
            person's next push. */
-        mystery: mysteryColorsFoundCount(),
-        hundos: hundosOf(store),
+        mystery: n.mystery,
+        hundos: n.hundos,
+        /* The rank this account held on build 313's ladder, which rankOf
+           keeps it at (build 314). Without it the board recomputed the
+           rank from level and badges alone and showed somebody a rank
+           below the one on their own Profile (build 322; rankOfEntry). */
+        rankFloor: n.rankFloor,
         /* ---- TWO MORE NUMBERS, FOR THE PROFILE CARD ----
            The card that opens when you tap a classmate shows their XP
            and how many tests they have taken, and neither was on the
@@ -51336,14 +51386,14 @@ function buildLeaderboardRow(){
            An older document has neither and reads as 0, which self-heals
            on that person's next push - the same contract every field
            added to this row has had. NOTHING HERE IS THE SYNC CODE. */
-        xp: (store.lifetime && store.lifetime.points) || 0,
-        tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0,
+        xp: n.xp,
+        tests: n.tests,
         /* Both halves, because a number without its week is a number
            that cannot be expired. Anyone still on an older build
            publishes neither and reads as 0 on the weekly board, which
            self-heals on their next update. */
-        week: weekKeyNow(),
-        weekPoints: weekPointsOf(store),
+        week: n.week,
+        weekPoints: n.weekPoints,
         /* The banner you wear, so the card that opens when somebody taps
            you on the Leaderboard or the Friends list shows it the way your
            own Profile does (build 231). An id another build does not know
@@ -51412,17 +51462,77 @@ function writeLeaderboardRow(row){
     return;
   }
   clearTimeout(rowPushTimer); rowPushTimer = null;
+  const code = syncCode;
+  let ref = null;
+  try{ ref = fbDb.collection("leaderboard").doc(publicIdOf()); }catch(e){ return; }
+  lastRowSig = rowSignature(row, false);
+  lastRowUrgentSig = rowSignature(row, true);
+  lastRowKey = publicIdOf();
+  lastRowPushAt = Date.now();
+  /* set() replaces the whole document and this row carries seenAt, so
+     a push IS a heartbeat - the same reasoning as before. */
+  lastHeartbeatAt = lastRowPushAt;
+  /* the account has been read again since a row said this copy was
+     behind it: what goes up now is the truth, whatever the row says */
+  const reread = rowRecheckFor === code;
+  const ok = cur => reread || !rowBehind(cur, row);
+  let run;
   try{
-    fbDb.collection("leaderboard").doc(publicIdOf()).set(row).catch(() => {});
-    lastRowSig = rowSignature(row, false);
-    lastRowUrgentSig = rowSignature(row, true);
-    lastRowKey = publicIdOf();
-    lastRowPushAt = Date.now();
-    /* set() replaces the whole document and this row carries seenAt, so
-       a push IS a heartbeat - the same reasoning as before. It only
-       counts when the write actually happened. */
-    lastHeartbeatAt = lastRowPushAt;
-  }catch(e){}
+    if(typeof fbDb.runTransaction === "function" && typeof ref.get === "function"){
+      run = fbDb.runTransaction(tx => tx.get(ref).then(snap => {
+        if(!ok(snap && snap.exists ? snap.data() : null)) return false;
+        tx.set(ref, row);
+        return true;
+      }));
+    } else if(typeof ref.get === "function"){
+      /* a stand-in without transactions (the gates): read, then write */
+      run = ref.get().then(snap => ok(snap && snap.exists ? snap.data() : null)
+        ? Promise.resolve(ref.set(row)).then(() => true) : false);
+    } else {
+      /* one that cannot read at all (the friends and chat gates) */
+      run = Promise.resolve(ref.set(row)).then(() => true);
+    }
+  }catch(e){ run = Promise.reject(e); }
+  Promise.resolve(run).then(wrote => {
+    if(code !== syncCode) return;
+    if(wrote){ if(rowRecheckFor === code) rowRecheckFor = ""; return; }
+    /* Behind: this device has not seen play the account already holds.
+       Nothing goes up. It reads the account again - merging what it
+       lacked, exactly as a snapshot would - and the row follows that,
+       built from the merged copy. */
+    lastRowSig = null; lastRowUrgentSig = null;
+    rowRecheckFor = code;
+    if(cloudConfirmedFor === code) cloudConfirmedFor = "";
+    rowAwaitingConfirm = true;
+    ensureCloudConfirmed();
+  }, () => {
+    /* not written (offline): the next push tries again rather than
+       believing it already went */
+    if(code === syncCode){ lastRowSig = null; lastRowUrgentSig = null; }
+  });
+}
+/* ---- AND NEVER BEHIND IT EITHER (build 322) ----
+   Build 313 stopped a row running ahead of the account. The other way
+   round was still open: every row is a set() of this device's own
+   numbers, and a device confirmed once at launch - its listener since
+   gone quiet, the other phone playing on - published its older numbers
+   over the row the other phone had just written, every time it was put
+   away (publishNow) or a deferred row came due. "A level up, then down"
+   on everyone else's board, from a current build. The account itself
+   was safe (build 315's transaction); the row had no equivalent.
+   Now the row is a transaction too: it reads what is there, and if that
+   holds play this copy lacks - more XP, right answers or hundos, the
+   three numbers that only ever grow for an account (a reset is a new
+   public id, so it never meets its old row) - nothing is written, the
+   device reads the account again, and the row goes from the merge.
+   Once only: a row ahead of the account it describes (an old build
+   wrote it) is put right by the account, not obeyed. */
+var ROW_GROWS = ["xp", "correct", "hundos"];
+var rowRecheckFor = "";
+function rowBehind(cur, row){
+  if(!cur || typeof cur !== "object") return false;
+  const n = v => Number(v) || 0;
+  return ROW_GROWS.some(k => n(cur[k]) > n(row[k]));
 }
 
 /* ---- PUBLISH NOW (build 232) ----
@@ -51838,10 +51948,19 @@ const FRESH_START_CUTOFF = 1790035200000;   /* 2026-09-22T00:00:00Z */
    copy may be a different account. Every other pull is the same account
    coming back, and merges (syncSameAccount). */
 function adoptFromCloud(code, onDone){ return pullFromCloud(code, onDone, true); }
+/* The public id this device was publishing under when it adopted another
+   account - setSyncCode retires that row, not the adopted one (build 322). */
+var adoptedOverPublic = null;
 function pullFromCloud(code, onDone, adopt){
   if(!fbDb){ onDone && onDone(false, "no-connection"); return; }
   try {
     fbDb.collection("progress").doc(code).get().then(docSnap => {
+      /* A MERGE IS ONLY EVER OF THE SAME ACCOUNT (build 322). The mirror's
+         recovery pulls a code before this device holds one; if a sign-up
+         or a sign-in gave it a different code while the read was out,
+         merging would pour one person's progress into another's account
+         - and the recovery then switched the code under them. */
+      if(!adopt && syncCode && code !== syncCode){ onDone && onDone(false, "changed"); return; }
       if(!docSnap.exists){ onDone && onDone(false, "not-found"); return; }
       const cloud = docSnap.data();
       /* Reported to the caller as "not-found" rather than as its own
@@ -51853,6 +51972,7 @@ function pullFromCloud(code, onDone, adopt){
         return;
       }
       if(adopt){
+        if(syncCode && code !== syncCode) adoptedOverPublic = { code: syncCode, pub: store.publicId };
         applyLoadedData(cloud);
         persistLocally();
       } else {
@@ -59122,9 +59242,10 @@ function testsCompletedOf(st){
    Takes the numbers rather than a store, like rankOfStats above it and
    for the same reason: the board asks this about OTHER people, from a
    published document that has no store behind it. */
-function overallProgressOf(level, badges){
+function overallProgressOf(level, badges, rankFloor){
   const lv = Number(level) || 0, bd = Number(badges) || 0;
-  const held = rankOfStats(lv, bd, 0);
+  /* held as rankOf holds it - the floor included (build 322) */
+  const held = rankWithFloor(rankOfStats(lv, bd, 0), rankFloor);
   const idx = held ? TIER_ORDER_FULL.indexOf(held) : -1;
   /* The rank being climbed TO. Below the first rank that is Bronze; at
      the top there is nothing above Supernova, so it keeps measuring
@@ -59143,7 +59264,7 @@ function overallProgressOf(level, badges){
    level, badges - and then the name, so the list is stable rather than
    re-shuffling two tied people on every snapshot. */
 function overallCompare(a, b){
-  const A = overallProgressOf(a.level, a.badges), B = overallProgressOf(b.level, b.badges);
+  const A = overallProgressOf(a.level, a.badges, a.rankFloor), B = overallProgressOf(b.level, b.badges, b.rankFloor);
   return (B.tier - A.tier)
       || (B.progress - A.progress)
       || ((Number(b.level) || 0) - (Number(a.level) || 0))
@@ -59155,7 +59276,7 @@ function overallCompare(a, b){
    below Bronze has no rank to show, and a placeholder would say
    otherwise. It is the same call decorateAvatar makes. */
 function overallRowLine(e){
-  const p = overallProgressOf(e && e.level, e && e.badges);
+  const p = overallProgressOf(e && e.level, e && e.badges, e && e.rankFloor);
   const bits = [];
   if(p.key) bits.push(RANK_DISPLAY_NAME[p.key]);
   bits.push("Level " + p.level);
@@ -61139,8 +61260,19 @@ function rankOf(st){
      `rankFloor` (1-based index into TIER_ORDER_FULL, 0 = none) is the
      rank an account held on the OLD ladder, set once on the first load of
      this build and merged by max; it only ever raises. */
-  const floor = Number(st && st.rankFloor) || 0;
+  return rankWithFloor(now, st && st.rankFloor);
+}
+/* rankOf's floor, for a rank worked out from numbers (build 322). */
+function rankWithFloor(now, rankFloor){
+  const floor = Math.min(TIER_ORDER_FULL.length, Math.floor(Number(rankFloor) || 0));
   return floor > TIER_ORDER_FULL.indexOf(now) + 1 ? TIER_ORDER_FULL[floor - 1] : now;
+}
+/* THE RANK OF A PUBLISHED ROW, asked exactly as rankOf asks it of your own
+   account (build 322). Rows from a build before this carry no rankFloor
+   and read as before. */
+function rankOfEntry(e){
+  return rankWithFloor(rankOfStats(Number(e && e.level) || 0, Number(e && e.badges) || 0, Number(e && e.mystery) || 0),
+                       e && e.rankFloor);
 }
 /* Build 313's ladder, kept for one job: the rank floor above. */
 const TIER_UNLOCKS_313 = { rookie: [21, 1], ranger: [29, 3], veteran: [36, 5], vanguard: [45, 7],
@@ -67813,7 +67945,8 @@ function showWhatsNew(){
 
   const panel = document.createElement("section");
   panel.className = "panel home releasenotes-panel";
-  panel.appendChild(buildBackLink("Back", showWelcome));
+  /* back to the check it came through (build 322), not past it */
+  panel.appendChild(buildBackLink("Back", showSignUpCheck));
   const glow = document.createElement("div");
   glow.className = "homeglow";
   glow.setAttribute("aria-hidden", "true");
@@ -71545,6 +71678,78 @@ function showWelcome(){
   sub.textContent = "Practice, track your mastery, and walk into test day ready.";
   wrap.appendChild(sub);
 
+  /* SIGN IN FIRST (build 322) - see fillWelcomeActions. A device that
+     still holds an account (a code here or in the mirror) is offered it
+     back before anything else, so it cannot quietly become a second
+     one. The code in localStorage is known now; the mirror answers a
+     few milliseconds later and fills the same block in place. */
+  const actions = document.createElement("div");
+  actions.className = "cosmic-welcome-actions";
+  const traceNow = welcomeTraceSkip ? null : accountTraceNow();
+  fillWelcomeActions(actions, title, traceNow);
+  wrap.appendChild(actions);
+  if(!traceNow && !welcomeTraceSkip){
+    findAccountTrace().then(t => {
+      if(!t || welcomeTraceSkip || !wrap.isConnected) return;
+      fillWelcomeActions(actions, title, t);
+    });
+  }
+
+  /* Tagged so the update notices can tell which screen is actually on
+     display. Marking the element that goes INTO #stage rather than
+     setting a flag somewhere is what makes this self-clearing: the next
+     screen's own replaceChildren removes this node and its marker with
+     it, so no screen has to remember to clear anyone else's state. */
+  wrap.dataset.screen = "welcome";
+  stage.replaceChildren(wrap);
+  toTop();
+}
+
+/* ---- SIGN IN FIRST, AND NO SECOND ACCOUNT BY ACCIDENT (build 322) ----
+   "We need to really crack down on ... people's progress randomly going
+   away or people somehow using two accounts. People who are signing up,
+   could we make it where it asks you to sign in first and then you have
+   to hit I'm new here sign up or something?"
+   Welcome leads with Sign in. "I'm new here" opens a check that says
+   what starting again costs, and only then sign-up. A device that still
+   has an account on it - its code in localStorage, or the code or the
+   progress in the IndexedDB mirror - is offered that account first
+   ("Continue as ..."), and sign-up refuses to make a new one over it
+   until the person has been told, by name, what it is replacing
+   (finishWelcomeStartFresh). The sync code IS the account, so a device
+   that loses track of it here is a second row on the board. */
+/* `var`: showWelcome runs at boot from far below these lines. */
+var welcomeTraceSkip = false;   /* "Use a different account", this launch */
+var signupTraceAck = "";        /* the account a person chose to start over on top of */
+var accountWipedAt = 0;         /* a reset in this session: the mirror is being emptied */
+function accountTraceKey(t){ return t ? (t.code ? "code:" + t.code : "store:" + (t.name || "")) : ""; }
+/* What this device knows right now, with no wait: a code in localStorage. */
+function accountTraceNow(){
+  if(!syncCode) return null;
+  return { code: syncCode, name: String(store.firstName || "").trim(), here: true };
+}
+/* ...and what the mirror adds. Never rejects. A reset in this session
+   ignores the mirror: its own deletes may still be landing. */
+function findAccountTrace(){
+  const now = accountTraceNow();
+  if(accountWipedAt) return Promise.resolve(now);
+  return Promise.all([idbLoad(), idbLoadCode()]).then(([data, code]) => {
+    const dn = data && typeof data.firstName === "string" ? data.firstName.trim() : "";
+    if(now){
+      if(!now.name && code === now.code && dn) now.name = dn;
+      return now;
+    }
+    if(syncOff || accountWipedAt) return null;
+    if(typeof code === "string" && code) return { code: code, name: dn, data: (data && data.onboardingComplete) ? data : null };
+    if(data && data.onboardingComplete) return { code: null, name: dn, data: data };
+    return null;
+  }).catch(() => now);
+}
+function welcomeContinueLabel(t){
+  return t && t.name ? "Continue as " + t.name : "Continue to your account";
+}
+function fillWelcomeActions(actions, title, trace){
+  actions.replaceChildren();
   /* One flex child, not three. .cosmic-welcome is justify-content:
      space-between on a phone, which spreads the leftover height evenly
      into EVERY gap between its children - including the gap between
@@ -71555,40 +71760,187 @@ function showWelcome(){
      distribution entirely: the free space still fills the screen, it
      just lands between the text block and the actions instead of
      between two buttons that belong together. */
-  const actions = document.createElement("div");
-  actions.className = "cosmic-welcome-actions";
-
-  const startFreshBtn = document.createElement("button");
-  startFreshBtn.type = "button"; startFreshBtn.className = "next playbtn cosmic-welcome-btn";
-  /* "Get started" was flagged as vague - it does not say what happens
-     next, and it sat directly above "Sign in with a code", which does.
-     Naming the actual outcome makes the pair read as the two halves of
-     one choice: make an account, or sign in to one you already have. */
-  startFreshBtn.textContent = "Create an account";
-  startFreshBtn.addEventListener("click", showWhatsNew);
-  actions.appendChild(startFreshBtn);
-
-  const haveCodeBtn = document.createElement("button");
-  haveCodeBtn.type = "button"; haveCodeBtn.className = "next ghost cosmic-welcome-btn";
-  haveCodeBtn.textContent = "Sign in with a code";
-  haveCodeBtn.addEventListener("click", showWelcomeCodeEntry);
-  actions.appendChild(haveCodeBtn);
-
+  const primary = document.createElement("button");
+  primary.type = "button"; primary.className = "next playbtn cosmic-welcome-btn";
+  const second = document.createElement("button");
+  second.type = "button"; second.className = "next ghost cosmic-welcome-btn";
   const hint = document.createElement("p");
   hint.className = "cosmic-welcome-hint";
-  hint.textContent = "First time here? Choose Create an account \u2014 a code is only for signing in on a second device.";
-  actions.appendChild(hint);
+  if(trace){
+    actions.dataset.trace = "1";
+    title.textContent = "Welcome back";
+    primary.classList.add("welcome-continue");
+    primary.textContent = welcomeContinueLabel(trace);
+    primary.addEventListener("click", () => continueWithTrace(trace, primary, hint));
+    second.classList.add("welcome-other");
+    second.textContent = "Use a different account";
+    second.addEventListener("click", () => { welcomeTraceSkip = true; showWelcome(); });
+    hint.textContent = "Your account is still on this device. Continue to pick up where you left off.";
+  } else {
+    delete actions.dataset.trace;
+    title.textContent = "Welcome to Nova";
+    primary.classList.add("welcome-signin");
+    primary.textContent = "Sign in";
+    primary.addEventListener("click", showWelcomeCodeEntry);
+    second.classList.add("welcome-new");
+    second.textContent = "I’m new here";
+    second.addEventListener("click", showSignUpCheck);
+    hint.textContent = "Used Nova before? Sign in with your code. First time here? Choose I’m new here.";
+  }
+  actions.append(primary, second, hint);
+}
+/* Puts the account a device still holds back in use, and lands on Home.
+   The code is this device's own, so the cloud copy is the same account
+   coming back and is merged (pullFromCloud), never adopted over it. */
+function continueWithTrace(t, btn, note){
+  if(!t || btn.disabled) return;
+  const label = btn.textContent;
+  const land = () => {
+    welcomeTraceSkip = false;
+    try{ applySaved(); loadTheme(); applyTheme(); }catch(e){}
+    updateHeaderTitle();
+    if(store.onboardingComplete){
+      showHome();
+      showToast("Welcome back — your progress is here.");
+      return;
+    }
+    /* A sign-up that stopped before Home (closed on the code or the
+       loading screen): finish it where it stopped, as Home does. */
+    pendingMainMenuTour = true;
+    showHome();
+  };
+  const fail = why => {
+    btn.disabled = false; btn.textContent = label;
+    if(why === "not-found"){
+      /* The account is gone (reset, or from before a class reset): this
+         device holds a key to nothing. Hand it back, as the launch link
+         does for a dead code, and offer the ordinary choice. */
+      if(t.code && t.code === syncCode) clearSyncCode(false);
+      else idbDeleteCode();
+      welcomeTraceSkip = true;
+      showWelcome();
+      showToast("That account is no longer available. Sign in with your code, or choose I’m new here.");
+      return;
+    }
+    note.textContent = "Couldn’t reach your account right now — try again in a moment.";
+  };
+  if(t.code && t.code === syncCode){
+    if(store.onboardingComplete || String(store.firstName || "").trim()) return land();
+    btn.disabled = true; btn.textContent = "Checking…";
+    pullFromCloud(t.code, (ok, why) => {
+      if(t.code !== syncCode) return fail("error");
+      if(!ok) return fail(why);
+      attachLiveListener(syncCode);
+      land();
+    });
+    return;
+  }
+  if(t.code){
+    btn.disabled = true; btn.textContent = "Checking…";
+    pullFromCloud(t.code, (ok, why) => {
+      if(!ok) return fail(why);
+      if(syncCode && syncCode !== t.code) return fail("error");
+      if(!syncCode) setSyncCode(t.code);
+      persistLocally();
+      attachLiveListener(syncCode);
+      land();
+    });
+    return;
+  }
+  if(t.data && applyLoadedData(JSON.parse(JSON.stringify(t.data)))){
+    saveStore();
+    /* the progress came back and its code did not: the boot self-heal's
+       answer, a code of its own under the same public id */
+    if(!syncCode && !syncOff){
+      setSyncCode(generateSyncCode());
+      onFirebaseReady(() => { pushToCloud(); attachLiveListener(syncCode); });
+    }
+    land();
+  }
+}
 
-  wrap.appendChild(actions);
+/* The check between Welcome and sign-up: what starting again costs, said
+   once, plainly, with the way back to the account right beside it. */
+function showSignUpCheck(){
+  setOnboardingHeader();
+  /* The board's names, for the username check two screens on: the same
+     fetch Home makes, keeping to its own fifteen minutes. */
+  try{ fetchBoardForInvites(false); }catch(e){}
+  const panel = document.createElement("section");
+  panel.className = "panel home onboarding-shortform-panel signupcheck-panel";
+  panel.appendChild(buildBackLink("Back", showWelcome));
+  const glow = document.createElement("div");
+  glow.className = "homeglow";
+  glow.setAttribute("aria-hidden", "true");
+  panel.appendChild(glow);
 
-  /* Tagged so the update notices can tell which screen is actually on
-     display. Marking the element that goes INTO #stage rather than
-     setting a flag somewhere is what makes this self-clearing: the next
-     screen's own replaceChildren removes this node and its marker with
-     it, so no screen has to remember to clear anyone else's state. */
-  wrap.dataset.screen = "welcome";
-  stage.replaceChildren(wrap);
+  const title = document.createElement("p");
+  title.className = "hometitle";
+  title.style.cssText = "position:relative;z-index:1;font-size:1.7rem;";
+  title.textContent = "NEW TO NOVA?";
+  panel.appendChild(title);
+
+  const sub = document.createElement("p");
+  sub.className = "hometagline signupcheck-text";
+  sub.style.cssText = "position:relative;z-index:1;";
+  sub.textContent = "Have you used Nova before, on this or another device? If so, sign in with your code instead. Starting again makes a second account and your progress won’t carry over.";
+  panel.appendChild(sub);
+
+  const back = document.createElement("button");
+  back.type = "button"; back.className = "next ghost signupcheck-signin";
+  back.textContent = "Sign in instead";
+  panel.appendChild(back);
+
+  const go = document.createElement("button");
+  go.type = "button"; go.className = "next playbtn signupcheck-go"; go.id = "nextbtn";
+  go.textContent = "I’m new, continue";
+  panel.appendChild(go);
+
+  /* An account still on this device changes what this screen has to say:
+     not "if you have used Nova", but whose account it is. */
+  let shown = null;
+  const showTrace = t => {
+    shown = t;
+    panel.dataset.trace = "1";
+    sub.textContent = (t.name ? "This device still has " + t.name + "’s account on it." : "This device still has an account on it.")
+      + " Starting again makes a second account, and that progress won’t carry over to it.";
+    back.textContent = welcomeContinueLabel(t);
+  };
+  back.addEventListener("click", () => {
+    if(shown) continueWithTrace(shown, back, sub);
+    else showWelcomeCodeEntry();
+  });
+  findAccountTrace().then(t => { if(t && panel.isConnected && !shown) showTrace(t); });
+  go.addEventListener("click", () => {
+    if(go.disabled) return;
+    go.disabled = true;
+    findAccountTrace().then(t => {
+      go.disabled = false;
+      if(!panel.isConnected) return;
+      /* found after the screen was drawn: say so first, and let the
+         next tap be the decision */
+      if(t && accountTraceKey(t) !== accountTraceKey(shown)){ showTrace(t); return; }
+      signupTraceAck = t ? accountTraceKey(t) : "";
+      showWhatsNew();
+    });
+  });
+
+  stage.replaceChildren(panel);
   toTop();
+}
+
+/* Case and spaces do not make a different person: "Mad Dog" is "maddog". */
+function accountNameKey(s){ return String(s || "").toLowerCase().replace(/\s+/g, ""); }
+/* The name as somebody on the board already wears it, or null. Only the
+   rows every phone already reads (the board is world-readable), and only
+   the name comes back - never anything else about that account. */
+function nameTakenOnBoard(name){
+  const k = accountNameKey(name);
+  if(!k) return null;
+  const rows = Array.isArray(leaderboardRows) ? leaderboardRows : [];
+  const hit = rows.find(e => e && !isLegacyBoardId(e.pub) && accountNameKey(e.firstName) === k
+                             && !(store.publicId && e.pub === store.publicId));
+  return hit ? String(hit.firstName).trim() : null;
 }
 
 /* A short, purpose-explaining screen between the feature overview and
@@ -71810,10 +72162,37 @@ function showWelcomeNamePrompt(){
      typed then fully deleted while the button was already visible) but
      is no longer the only thing stopping an empty submit. */
   continueBtn.hidden = true;
+
+  /* A NAME ALREADY ON THE BOARD IS PROBABLY SOMEBODY SIGNING UP TWICE
+     (build 322). Asked once, for that name: the person may well be
+     someone else with the same name, so "It's not me, continue" goes
+     straight on. Only the name is said - it is already on the board for
+     everyone to read - and nothing else about that account. */
+  const clashCard = document.createElement("div");
+  clashCard.className = "synccode-confirm namecheck-card";
+  clashCard.setAttribute("role", "status");
+  const clashText = document.createElement("p");
+  clashText.className = "namecheck-text";
+  const clashSignIn = document.createElement("button");
+  clashSignIn.type = "button"; clashSignIn.className = "next ghost namecheck-signin";
+  clashSignIn.textContent = "Sign in";
+  clashSignIn.addEventListener("click", showWelcomeCodeEntry);
+  clashCard.append(clashText, clashSignIn);
+  panel.appendChild(clashCard);
+  let clashAsked = "";
+
   continueBtn.addEventListener("click", () => {
     const name = input.value.trim();
     if(!name){
       showToast("Enter a username to continue.");
+      return;
+    }
+    const taken = nameTakenOnBoard(name);
+    if(taken && clashAsked !== accountNameKey(name)){
+      clashAsked = accountNameKey(name);
+      clashText.textContent = "Someone named " + taken + " already has an account. If that’s you, sign in with your code.";
+      clashCard.classList.add("show");
+      continueBtn.textContent = "It’s not me, continue";
       return;
     }
     store.firstName = name.slice(0, 40);
@@ -71823,7 +72202,14 @@ function showWelcomeNamePrompt(){
   panel.appendChild(continueBtn);
   input.addEventListener("input", () => {
     continueBtn.hidden = !input.value.trim();
+    if(clashAsked && clashAsked !== accountNameKey(input.value)){
+      clashAsked = "";
+      clashCard.classList.remove("show");
+      continueBtn.textContent = "Continue";
+    }
   });
+  /* the board's names, if this device has not read them yet */
+  try{ fetchBoardForInvites(false); }catch(e){}
 
   stage.replaceChildren(panel);
   toTop();
@@ -71945,6 +72331,30 @@ function showWelcomeCharacterPrompt(){
 }
 
 function finishWelcomeStartFresh(){
+  /* NO NEW ACCOUNT OVER ONE THIS DEVICE STILL HOLDS (build 322) unless
+     the person was told whose it is and chose to start again
+     (showSignUpCheck). Asked here as well as there, because the mirror
+     answers asynchronously and a sign-up is several screens long. */
+  findAccountTrace().then(t => {
+    if(t && accountTraceKey(t) !== signupTraceAck){
+      welcomeTraceSkip = false;
+      showWelcome();
+      return;
+    }
+    signupTraceAck = "";
+    if(t){
+      /* Starting again on top of an account: nothing of it may come
+         along, or the new account is the old one under another name. */
+      const name = store.firstName, avatar = store.avatarChar;
+      detachLiveListener();
+      wipeLocalProgressAndSettings();
+      applyTheme(); saveTheme();
+      store.firstName = name; store.avatarChar = avatar;
+    }
+    startNewAccount();
+  });
+}
+function startNewAccount(){
   setSyncCode(generateSyncCode());
   saveStore();
   /* onFirebaseReady, not a bare call. Sign-up is the one moment a
@@ -72105,7 +72515,9 @@ function showWelcomeCodeEntry(){
      one long sentence. Splitting them and cutting the "both update
      automatically" elaboration (true, but not needed to act on this
      screen) leaves just what's needed to actually do the thing. */
-  sub.textContent = "Enter the code from your other device to sync your progress here. You'll find it under Settings \u2192 Sync.";
+  /* Sign in is Welcome's first button now (build 322), so this is the
+     front door rather than the second-device screen. */
+  sub.textContent = "Enter your code to sign in. You'll find it under Settings \u2192 Sync on a device you've used.";
   panel.appendChild(sub);
 
   const inputWrap = document.createElement("div");
@@ -79893,7 +80305,7 @@ function openPersonSheet(entry){
   /* THE RANK IS THE HEADLINE, IN ITS OWN COLOUR, with the level under
      it - asked for in that order. Somebody below Bronze gets the level
      alone rather than the word "Unranked". */
-  const rk = rankOfStats(entry.level || 0, entry.badges || 0, entry.mystery || 0);
+  const rk = rankOfEntry(entry);
   if(rk){
     const rankEl = document.createElement("p");
     rankEl.className = "person-card-rank";
@@ -104091,7 +104503,8 @@ function lbSnapshotOf(list){
     o[e.pub] = { firstName: e.firstName || "", level: Number(e.level) || 0,
                  badges: Number(e.badges) || 0, hundos: Number(e.hundos) || 0,
                  weekPoints: Number(e.weekPoints) || 0, week: e.week || "",
-                 correct: Number(e.correct) || 0, mystery: Number(e.mystery) || 0 };
+                 correct: Number(e.correct) || 0, mystery: Number(e.mystery) || 0,
+                 rankFloor: Number(e.rankFloor) || 0 };
   });
   return o;
 }
@@ -104554,7 +104967,7 @@ function lbWatchOffscreen(rows){
 function buildOverallCols(entry){
   const cols = document.createElement("span");
   cols.className = "rank-cols";
-  const rk = rankOfStats(Number(entry.level) || 0, Number(entry.badges) || 0, Number(entry.mystery) || 0);
+  const rk = rankOfEntry(entry);
   const rc = document.createElement("span");
   rc.className = "rank-col rank-col-rank";
   if(rk){
@@ -106065,7 +106478,7 @@ function showFriends(){
        The colour comes from RANK_COLOR, the one table the emblems, the
        cards and the themes all read, so a rank is the same colour
        everywhere it is mentioned. */
-    const rk = rankOfStats(entry.level || 0, entry.badges || 0, entry.mystery || 0);
+    const rk = rankOfEntry(entry);
     if(rk){
       const rankEl = document.createElement("span");
       rankEl.className = "friend-row-rank";
@@ -109174,14 +109587,12 @@ function showRankings(defaultBoard){
      than waiting for the first push to come back to you. */
   function liveEntries(){
     if(!syncCode) return entries;
-    const mine = {
+    /* every number from the builder the published row uses (build 322) */
+    const mine = Object.assign({
       pub: publicIdOf(),
       firstName: store.firstName || "Anonymous",
-      avatarChar: store.avatarChar || AVATAR_CHARACTERS[0].id,
-      level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store),
-      week: weekKeyNow(), weekPoints: weekPointsOf(store),
-      mystery: mysteryColorsFoundCount()
-    };
+      avatarChar: store.avatarChar || AVATAR_CHARACTERS[0].id
+    }, boardNumbersOf(store));
     let found = false;
     const out = entries.map(e => {
       if(e.pub !== store.publicId) return e;
@@ -114276,6 +114687,18 @@ if(syncCode && !adoptedLaunchCode){
         updateHeaderTitle();
         if(stage.querySelector(".panel.home")) showHome();
       }
+      /* THE CODE SURVIVED AND THE PROGRESS DID NOT (build 322): a store
+         too big for localStorage's quota fails to save while the nine-
+         byte code beside it saves fine. Boot drew Welcome for the empty
+         store; the pull has just brought the whole account back into it
+         - and left Welcome up, where "Create an account" minted a new
+         code and pushed this person's progress up under it: the same
+         person twice on the board. Recovered means on Home. */
+      if(ok && store.onboardingComplete && stage.querySelector('[data-screen="welcome"]')){
+        applySaved(); loadTheme(); applyTheme(); updateHeaderTitle();
+        showHome();
+        showToast("Signed back in — your progress was restored.");
+      }
       /* republishRowOnLaunch: AFTER the pull, so the row published is
          built from the merged, up-to-date store and not from whatever
          this device held before it caught up. A row last written by an
@@ -114343,9 +114766,17 @@ if(!storageHadData){
     if(code && !syncCode) setSyncCode(code);
     else if(store.onboardingComplete && !syncCode && !syncOff) setSyncCode(generateSyncCode());
     if(syncCode) onFirebaseReady(() => {
-      pullFromCloud(syncCode, () => {
+      pullFromCloud(syncCode, (ok) => {
         updateHeaderTitle();
         if(stage.querySelector(".panel.home")) showHome();
+        /* the mirror's store was older than the account it belongs to
+           (not yet onboarded there): the pull has the account now, so
+           Welcome must not stay up over it (build 322) */
+        else if(ok && store.onboardingComplete && stage.querySelector('[data-screen="welcome"]')){
+          applySaved(); loadTheme(); applyTheme(); updateHeaderTitle();
+          showHome();
+          showToast("Signed back in — your progress was restored.");
+        }
       });
       attachLiveListener(syncCode);
     });
