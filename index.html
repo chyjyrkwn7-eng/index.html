@@ -63444,11 +63444,11 @@ function stopAmbience(){ try{ NovaSound.stopAmbience(); }catch(e){} }
    says what it picked (a character, a colour, a banner, an effect) or that
    it is locked; in sign-up a primary button is a step forward. A specific
    sound the same tap already made wins (opts.generic gives way to it), and
-   the results screen, still being rebuilt in build 322, is left out on
-   purpose (SND_NO_GENERIC); so is the rank-up journey's input blocker,
-   where a tap reaches nothing and so says nothing. Nothing here does anything while sound and vibration
+   the only things left out (SND_NO_GENERIC) are the rank-up journey's
+   input blocker, where a tap reaches nothing and so says nothing, and the
+   surfaces that make their own sound. Nothing here does anything while sound and vibration
    are both off - playSound returns at once. */
-const SND_NO_GENERIC = ".rs-screen, .ru-blocker, " +
+const SND_NO_GENERIC = ".ru-blocker, " +
   ".qpanel .choice, .flagbtn, .snd-row, .settings-sound-row, .binspect, .cosmic-hero-wrap, #vroom-cutscene";
 function sndForTap(t){
   if(!t || !t.closest || t.closest(SND_NO_GENERIC)) return null;
@@ -91090,6 +91090,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
     follow = requestAnimationFrame(tick);
   };
   const fillTo = (pct, ms, then, nums) => {
+    if(ms > 200) playSound("res.xp.fill", { dur: ms / 1000 });
     fill.style.transition = "transform " + ms + "ms " + XP_EASE;
     setBarFill(fill, pct);
     if(nums) followBar(nums.p, nums.f0, pct / 100, nums.n0, nums.n1);
@@ -91101,6 +91102,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   const runOverflow = () => {
     line.classList.remove("is-seeking");
     if(!overflows || resultsMotionOff()){ setLine(after); return; }
+    playSound("res.xp.overflow");
     const from = overFrom, to = barAfter.into, t0 = performance.now();
     const tick = now => {
       if(finished) return;
@@ -91116,6 +91118,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   const landed = () => {
     bank();
     if(bumps){
+      playSound("res.xp.knock");
       if(wrap.onFilled) wrap.onFilled("bump");
       xpBarBump(trackWrap, () => {
         if(!overflows){ runOverflow(); return; }
@@ -91125,6 +91128,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
         later(XP_OVERFLOW_WAIT_MS, runOverflow);
       });
     } else {
+      playSound("res.xp.pop");
       if(wrap.onFilled) wrap.onFilled("pop");
       /* the new level's number lights blue for a second, then settles */
       if(levelsUp){
@@ -91162,6 +91166,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
         first ? { p: before, f0: barBefore.fraction, n0: bb.into, n1: Math.max(bb.into, bb.span) } : null);
       const wrapOver = () => {
         lv += 1;
+        playSound("res.levelup");
         lvl.textContent = "Level " + lv;
         wrap.classList.add("is-levelup");
         fill.style.transition = "none";
@@ -94361,6 +94366,7 @@ function unlockSpotLook(item){
 const SPOT_SEEN_MS = 1200;
 function playUnlockSpotlight(item, n, of, release){
   clearCelebrationsForScene();
+  playSound("ui.popup.open");
   /* SHOWN WHEN IT WAS SEEN, NOT WHEN IT STARTED (build 312). "The Home
      Screen unlock banner didn't show up for Zeus when I unlocked it." The
      account had Zeus held and marked shown - because this marked a card
@@ -95172,7 +95178,12 @@ function showRunRewards(run, hooks, opts){
     const pc = Math.min(run.pct, Math.floor(sofar / run.total * 100 + 1e-6));
     if(pc !== shownPct){ shownPct = pc; gradePctMarkup(gradeParts.pctEl, pc); setTone(pc); }
     const g = Math.min(run.good, Math.floor(sofar + 1e-6));
-    if(g !== shownGood){ shownGood = g; rsPair(gradeParts.frac, g, run.total); }
+    if(g !== shownGood){
+      /* a tick per right answer counted, climbing with the count and
+         brightening past the pass mark (build 322) */
+      if(shownGood >= 0 && g > shownGood) playSound("res.bar.tick", { frac: g / Math.max(1, run.total), pass: pc >= PASS_MARK });
+      shownGood = g; rsPair(gradeParts.frac, g, run.total);
+    }
   };
   gc.start = () => {
     if(gc.done) return;
@@ -95235,6 +95246,8 @@ function showRunRewards(run, hooks, opts){
     if(!instant){
       panel.classList.add("rs-shake");
       setTimeout(() => panel.classList.remove("rs-shake"), 420);
+      /* the landing, by verdict: below the pass mark, a pass, 90 and up, 100 */
+      playSound(run.isPerfect ? "res.grade.perfect" : run.pct >= 90 ? "res.grade.great" : run.pct >= PASS_MARK ? "res.grade.pass" : "res.grade.fail");
     }
     if(!countIt) setTimeout(() => fillBars(".rs-byunit .unit-breakdown-fill[data-to]"), instant ? 0 : 350);
     /* (a 100's effect is not played here: it waits for the XP box, below) */
@@ -95395,7 +95408,12 @@ function showRunRewards(run, hooks, opts){
     /* The box, once nothing is left to play. A scene's bridge (its light,
        left up for a pop-up that is not coming) goes as the box lands. */
     seq.add(first ? Math.max(1200, fxTail) : afterScene ? 420 : 650, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(unlocked, instant); });
-    unlockRows.forEach((row, n) => seq.add(n ? 380 : 560, instant => { rsLand(row, instant); if(onRow[n]) onRow[n](); }));
+    unlockRows.forEach((row, n) => seq.add(n ? 380 : 560, instant => {
+      rsLand(row, instant);
+      if(!instant) playSound(row.classList.contains("rs-unlock-badge") ? "res.found.badge" : row.classList.contains("rs-unlock-flare") ? "res.found.flare"
+        : row.classList.contains("rs-unlock-character") ? "res.found.character" : "res.unlock.reveal");
+      if(onRow[n]) onRow[n]();
+    }));
   }
   /* THE BUTTONS DO NOT ARRIVE UNDER A SCENE'S DIM (build 317). */
   if(actions) seq.add(unlocked ? 650 : Math.max(620, fxTail), instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(actions, instant); });

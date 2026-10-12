@@ -32,7 +32,8 @@ sense."
   9. Wired (phase 2): with sound on, the hooks fire - Home's ambience and
      planet, the tab bar, a Settings switch, LOADING TEST, wrong, right,
      the star, pause and resume, next, Nova's blips, last week's fanfare,
-     the badge cutscene's entrance and the Badges tab's case opening.
+     the badge cutscene's entrance and the Badges tab's case opening, and a
+     real results screen: the count's ticks, the grade's landing, the XP fill.
 
   python3 tools/check-sound.py [--against old-index.html]
 """
@@ -489,6 +490,24 @@ with sync_playwright() as pw:
     r = r if isinstance(r, dict) else {}
     ck("BADGE FOUND: the badge's entrance is scored", "cs.badge" in (r.get("scene") or []), r.get("scene"))
     ck("the Badges tab's case opens with its latches and lid", "badge.case.open" in (r.get("tab") or []), r.get("tab"))
+    r = ev(pg, """async ()=>{ const wait = ms => new Promise(z => setTimeout(z, ms));
+      showHome(); await wait(300); window.__played.splice(0);
+      const unit = QUESTIONS[0].topic.trim();
+      cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [unit]; cfg.size = 0;
+      order = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === unit);
+      runTrackable = true; timedOut = false; runMode = 'drill'; runLabel = null; isMissedRetake = false;
+      practiceTestMinutes = null; inVirtualRoom = false; attempts = {}; picked = {}; timedOutSet = {};
+      order.forEach((qi, k) => { const oo = optionOrder(qi), right = oo.indexOf(QUESTIONS[qi].answer); attempts[qi] = k < 2 ? 2 : 1; picked[qi] = right; });
+      runStartTime = Date.now() - 42000; testInProgress = true; pos = order.length - 1;
+      summarize();
+      const got = [];
+      for(let i = 0; i < 140; i++){ await wait(100); got.push(...window.__played.splice(0));
+        if(got.some(x => x === 'res.xp.pop' || x === 'res.xp.knock')) break; }
+      return got; }""", default=[])
+    r = r if isinstance(r, list) else []
+    ck("results: the grade counts in with ticks", r.count("res.bar.tick") >= 3, r[:6])
+    ck("results: the grade lands by its verdict", any(x.startswith("res.grade.") for x in r), [x for x in r if x.startswith("res.grade")])
+    ck("results: the XP bar fills, then pops or knocks", "res.xp.fill" in r and any(x in r for x in ("res.xp.pop", "res.xp.knock")), [x for x in r if x.startswith("res.xp")])
     ck("no page errors", not errs, errs[:3])
     ctx.close()
     br.close()

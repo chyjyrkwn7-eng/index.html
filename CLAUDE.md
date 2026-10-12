@@ -20766,6 +20766,25 @@ with five subtractions and one change of form.
 - **The Profile card** needs nothing of its own: its taps are the generic
   layer's, and its moments (the rank word, the climb, the tick) are the
   journey's.
-- `SND_NO_GENERIC` keeps only the results screen (builder A), the journey's
-  input blocker (a tap there reaches nothing, so it says nothing) and the
-  surfaces with their own sounds.
+- `SND_NO_GENERIC` now keeps only the journey's input blocker (a tap there
+  reaches nothing, so it says nothing) and the surfaces with their own
+  sounds.
+
+### Build 322 (b322s) - sound, phase 4: the results screen (on b321a)
+
+- **The grade**: `paintCount` ticks `res.bar.tick` once per right answer
+  counted (`frac` climbs with the count; `pass` brightens it from
+  PASS_MARK), so the last bar's slow end is heard slowing too; `landGrade`
+  (not instant) plays its verdict - `res.grade.fail` under PASS_MARK,
+  `.pass`, `.great` from 90, `.perfect` on 100 (the hundo effect's own score
+  follows from `playHundoFx`, 900ms after the XP box).
+- **The XP** (`buildResultsLevelBlock`): `res.xp.fill` for each `fillTo`
+  over its own ms (so a level-up's two fills are two glides),
+  `res.levelup` at each `wrapOver`, `res.xp.knock` on a bump, `res.xp.pop`
+  otherwise, `res.xp.overflow` as the dimmed count moves on after
+  XP_OVERFLOW_WAIT_MS.
+- **Found & unlocked**: each row as it lands, by its own kind -
+  `res.found.badge`, `res.found.flare`, `res.found.character`, and
+  `res.unlock.reveal` for a colour, banner or effect; an unlock spotlight
+  card opens with `ui.popup.open`.
+- `.rs-screen` is off `SND_NO_GENERIC`: its buttons tap like any other.
