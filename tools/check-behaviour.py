@@ -23397,6 +23397,208 @@ def check_b320c_case(br):
         ctx.close()
 
 
+def check_b321c_case(br):
+    """Build 321 (b321c). Madison: "all the metal pieces in the corners and
+    handles and the clip things to lock it and stuff and the 'screws' like
+    the dots ... looks bad, I think it's maybe because it has a super flat
+    look?" / "In the open position the handle at the bottom is broken too,
+    it's disconnected and laying there" / "the glow is so strong when they
+    are badges in the back. The glow needs to look real to whatever is in
+    there" / "When the case opens, the badge still cuts through it slowly"
+    / "Not sure why the badge case doesn't look like the cutscene?" / "the
+    badge in the 2nd column three down ... doesn't look centered in the
+    space within the case. I feel like there's more space to left of it".
+    Written against 6a387e2, where each of these fails:
+      - a corner's screw was a flat symmetric dot: no lit side, no shaded one;
+      - the handle lay on the table in front of the case, below the front
+        wall with a gap, once the case was open;
+      - the light out of the crack was the same whichever row a badge was
+        in, and the open lid had no light from the badges at all;
+      - the token came down to its slot across the standing lid;
+      - the Badges screen's case had no corner caps, no screws, no lid
+        name, no clips, no hasps: a different case;
+      - the C-ring sat 7-10px right of its slot's middle.
+    On the fake clock (cutscene) and at 3x for the metal."""
+    print("\n321c. the badge case: metal with depth, the handle on its wall, light from where the badges are, the lid never crossed, one case, centred slots")
+    from PIL import Image as _I
+    import statistics
+    HELD = ["Fitness, Wellness, and Stress Management", "Professionalism and Ethics", "Professional Policing",
+            "US and Texas Constitution and Rights", "Victims of Crime"]
+    NEW = "Identity Crimes"
+    SEED = """([held, nu, still]) => { store.unitPerfects = {}; held.forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+      if(nu) store.unitPerfects[nu] = badgeThresholdFor(nu); store.pendingBadgeUnlocks = []; store.retroBadgePending = [];
+      theme.muteBanners = false; theme.reduceMotion = !!still; applyTheme(); saveStore();
+      document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert,#toast,.vroom-chat-alert').forEach(n => n.remove());
+      showHome(); }"""
+    lum = lambda p: 0.2126 * p[0] + 0.7152 * p[1] + 0.0722 * p[2]
+
+    # 1. THE METAL HAS DEPTH: every corner screw at 3x, on both cases - a
+    #    lit side and a shaded side (a dome in a recess), not a flat dot
+    SCREWS = """(sel) => [...document.querySelectorAll(sel)].map(c => { const s = c.querySelector('.nova-case-screw') || c;
+      const b = s.getBoundingClientRect(), cb = c.getBoundingClientRect();
+      /* a cap with no screw element: its middle, where the old dot was drawn */
+      const r = s === c ? { x: (cb.left + cb.right) / 2, y: (cb.top + cb.bottom) / 2, r: cb.width * .1 } : { x: (b.left + b.right) / 2, y: (b.top + b.bottom) / 2, r: b.width * .42 };
+      return r; })"""
+    def screw_depth(im, pts, dpr):
+        out = []
+        for p in pts:
+            x, y, r = p["x"] * dpr, p["y"] * dpr, max(2, p["r"] * dpr)
+            px = [(int(x + dx), int(y + dy)) for dx in range(-int(r), int(r) + 1) for dy in range(-int(r), int(r) + 1) if dx * dx + dy * dy <= r * r]
+            vals = {q: lum(im.getpixel(q)) for q in px if 0 <= q[0] < im.width and 0 <= q[1] < im.height}
+            if not vals:
+                continue
+            L = sorted(vals.values())
+            rng = L[int(len(L) * .95) - 1] - L[int(len(L) * .05)]
+            tl = [v for (qx, qy), v in vals.items() if qx < x - r * .2 and qy < y - r * .2]
+            br_ = [v for (qx, qy), v in vals.items() if qx > x + r * .2 and qy > y + r * .2]
+            asym = (statistics.mean(tl) - statistics.mean(br_)) if tl and br_ else 0
+            out.append((round(rng), round(asym)))
+        return out
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        dpr = 3 if w == 440 else 2
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+        pg.evaluate(SEED, [HELD, NEW, True]); pg.wait_for_timeout(600)
+        pg.evaluate("([nu]) => { playBadgeCaseScene([nu], () => {}); }", [NEW]); pg.wait_for_timeout(700)
+        im = _I.open(io.BytesIO(pg.screenshot())).convert("RGB")
+        cut = screw_depth(im, pg.evaluate(SCREWS, ".bc-tray .bc-cap"), dpr)
+        pg.evaluate("() => document.querySelectorAll('.bc-scene').forEach(e => e.remove())")
+        pg.evaluate("() => { showRanksScreen('badges'); }"); pg.wait_for_timeout(1200)
+        pg.evaluate("() => { const k = document.querySelector('.badges-tab .ncase-tray'); if(k) k.scrollIntoView({ block: 'center', behavior: 'instant' }); }")
+        pg.wait_for_timeout(300)
+        im = _I.open(io.BytesIO(pg.screenshot())).convert("RGB")
+        caps = pg.evaluate("() => document.querySelectorAll('.badges-tab .ncase-tray .nova-case-cap, .badges-tab .ncase-tray .bc-cap').length")
+        tab = screw_depth(im, pg.evaluate(SCREWS, ".badges-tab .ncase-tray .nova-case-cap"), dpr) if caps else []
+        ok = len(cut) == 4 and all(rg >= 90 and a >= 18 for rg, a in cut) and len(tab) == 4 and all(rg >= 90 and a >= 18 for rg, a in tab)
+        check(f"{dev}: every corner of the tray is capped and screwed down, in the cutscene and on the Badges screen, each screw a lit dome in a shaded recess at {dpr}x (range >= 90, lit-side minus shaded-side >= 18)",
+              ok, {"cutscene (range, lit-shade)": cut, "badges screen": tab})
+        ctx.close()
+
+    # 2. THE HANDLE IS ON ITS WALL in every frame of the opening; 4. the
+    #    token never crosses the lid, from the crack until it has landed
+    LID = """() => { const fl = document.querySelector('.bc-flyer .bc-face.is-front');
+      const boxes = ['.bc-lid-in', '.bc-lid-front'].map(s => document.querySelector(s)).filter(Boolean).map(e => e.getBoundingClientRect());
+      const hd = document.querySelector('.bc-handle'), fr = document.querySelector('.bc-front');
+      const out = { lap: 0 };
+      if(hd && fr){ const a = hd.getBoundingClientRect(), b = fr.getBoundingClientRect();
+        const iy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top), ix = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+        out.hold = +(Math.max(0, iy) / Math.max(1, a.height)).toFixed(2); out.inside = ix >= a.width - 1; }
+      const flv = document.querySelector('.bc-flyer');
+      if(fl && flv && parseFloat(getComputedStyle(flv).opacity) > .05){ const f = fl.getBoundingClientRect(); let worst = 0;
+        boxes.forEach(b => { const ix = Math.min(f.right, b.right) - Math.max(f.left, b.left), iy = Math.min(f.bottom, b.bottom) - Math.max(f.top, b.top);
+          if(ix > 0 && iy > 0) worst = Math.max(worst, ix * iy / Math.max(1, f.width * f.height)); });
+        out.lap = +worst.toFixed(3); }
+      return out; }"""
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11"), (956, 440, "17 Pro Max on its side")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate(SEED, [HELD, NEW, False]); pg.wait_for_timeout(600)
+        clk = _Stepper320(pg)
+        T = pg.evaluate("() => (typeof BC_T === 'object' ? BC_T : {})")
+        crack, fly, flyMs = T["crack"] / 1000, T["fly"] / 1000, T["flyMs"] / 1000
+        pg.evaluate("([nu]) => { window.__bcDone = false; playBadgeCaseScene([nu], () => { window.__bcDone = true; }); }", [NEW])
+        while clk.t < T["rise"] / 1000:
+            clk.step(1 / 10)
+        handle_bad, lap_worst, frames = [], {"lap": 0}, 0
+        while clk.t < fly + flyMs + 0.1:
+            clk.step(1 / 30); frames += 1
+            r = pg.evaluate(LID)
+            if r.get("hold") is not None and (r["hold"] < 0.25 or not r["inside"]):
+                handle_bad.append((round(clk.t, 2), r["hold"], r["inside"]))
+            if clk.t >= crack and r["lap"] > lap_worst["lap"]:
+                lap_worst = dict(r, t=round(clk.t, 2))
+        if w != 956:
+            check(f"{dev}: the handle stays on the front wall in every frame from the case rising until the badge is in ({frames} frames; at least a quarter of it over the wall, all of it within the wall's width)",
+                  not handle_bad, handle_bad[:6])
+        check(f"{dev}: the badge never crosses the lid - not while it waits, not while the lid swings, not on its way into the slot ({frames} frames)",
+              lap_worst["lap"] <= 0.0, lap_worst)
+        ctx.close()
+
+    # 3. THE LIGHT COMES FROM WHERE THE BADGES ARE: one badge, in one colour,
+    #    in column 1 of each row in turn
+    GEO = """() => { const r = s => { const e = document.querySelector(s); if(!e) return null; const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
+      return { tray: r('.bc-tray'), front: r('.bc-front'), lid: r('.bc-lid-in') }; }"""
+    rows = {}
+    for row in range(4):
+        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+        unit = pg.evaluate("(k) => badgeCaseUnits(BADGE_CASES[0])[k]", row * 4)
+        pg.evaluate(SEED, [[unit], NEW, False]); pg.wait_for_timeout(600)
+        pg.evaluate("() => { const f = badgeThemeFor; window.badgeThemeFor = badgeThemeFor = u => Object.assign({}, f(u), { p: '#3CC8FF' }); }")
+        clk = _Stepper320(pg)
+        T = pg.evaluate("() => BC_T")
+        pg.evaluate("([nu]) => { playBadgeCaseScene([nu], () => {}); }", [NEW])
+        while clk.t < T["crack"] / 1000 + 0.4:
+            clk.step(1 / 15)
+        g = pg.evaluate(GEO)
+        im = _I.open(io.BytesIO(pg.screenshot())).convert("RGB")
+        t, f = g["tray"], g["front"]
+        th = t[3] - t[1]
+        leak = statistics.mean(lum(p) for p in im.crop((int(t[0]), int(f[1] - th * .45), int(t[0] + (t[2] - t[0]) * .5), int(f[1] + 4))).getdata())
+        while clk.t < T["open"] / 1000 + 2.8:
+            clk.step(1 / 10)
+        g = pg.evaluate(GEO)
+        im = _I.open(io.BytesIO(pg.screenshot())).convert("RGB")
+        l = g["lid"]
+        lidlight = statistics.mean(lum(p) for p in im.crop((int(l[0]), int(l[3] - (l[3] - l[1]) * .3), int(l[0] + (l[2] - l[0]) * .5), int(l[3]))).getdata())
+        rows[row + 1] = (round(leak, 1), round(lidlight, 1))
+        ctx.close()
+    lk = [rows[r][0] for r in (1, 2, 3, 4)]
+    ld = [rows[r][1] for r in (1, 2, 3, 4)]
+    check("as the lid cracks, a badge in the front row throws more light out of the gap than one further back, row by row (one badge, one colour, the same column)",
+          all(b - a >= 0.8 for a, b in zip(lk, lk[1:])), {"row: (crack, open lid's foot)": rows})
+    check("on the open lid's inside, the light at its foot comes from the back rows: a back-row badge lights it most, a front-row one least",
+          all(a - b >= 0.5 for a, b in zip(ld, ld[1:])), {"row: (crack, open lid's foot)": rows})
+
+    # 5. ONE CASE: the Badges screen's case is the cutscene's, part for part
+    PARTS = """(sel) => { const k = document.querySelector(sel); if(!k) return null; const out = {};
+      ['nova-case-cap', 'nova-case-screw', 'nova-case-latch', 'nova-case-hasp', 'nova-case-clip', 'nova-case-hinge', 'nova-case-handle',
+       'nova-case-mount', 'nova-case-grip', 'nova-case-cushion', 'nova-case-sideplate', 'nova-case-plate'].forEach(c => out[c] = k.querySelectorAll('.' + c).length);
+      out.caps = k.querySelectorAll('.bc-cap, .nova-case-cap').length;
+      out.lidName = (k.querySelector('.bc-lid-label, .nova-case-lidlabel') || {}).textContent || '';
+      out.sideName = (k.querySelector('.nova-case-sideplate') || {}).textContent || '';
+      const hd = k.querySelector('.nova-case-handle'), fr = k.querySelector('.bc-front, .ncase-front');
+      out.handleOnWall = !!(hd && fr && fr.contains(hd));
+      return out; }"""
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate(SEED, [HELD, None, False]); pg.wait_for_timeout(600)
+        pg.evaluate("() => { showRanksScreen('badges'); }"); pg.wait_for_timeout(60)
+        tab = pg.evaluate(PARTS, ".badges-tab .ncase")
+        pg.wait_for_timeout(2400)
+        opened = pg.evaluate("() => { const k = document.querySelector('.badges-tab .ncase'); return !!k && !k.classList.contains('is-shut') && !k.querySelector('.ncase-lid-out'); }")
+        pg.evaluate("() => { showHome(); }"); pg.wait_for_timeout(300)
+        pg.evaluate("([nu]) => { store.unitPerfects[nu] = badgeThresholdFor(nu); playBadgeCaseScene([nu], () => {}); }", [NEW]); pg.wait_for_timeout(300)
+        cut = pg.evaluate(PARTS, ".bc-scene .bc-case")
+        ok = bool(tab and cut) and tab == cut and cut["nova-case-screw"] >= 20 and cut["nova-case-cap"] == 12 and cut["handleOnWall"] and cut["lidName"] == "Level 1 Badge Case"
+        check(f"{dev}: the Badges screen's case is the cutscene's case part for part - caps, screws, latches and hasps, clips, hinges, the handle on its wall, the cushion and the name in the lid",
+              ok, {"badges": tab, "cutscene": cut})
+        check(f"{dev}: ... and it still opens as the screen opens (shut on the first frame, open after)", bool(tab) and tab.get("nova-case-clip", 0) >= 2 and opened, {"opened": opened})
+        ctx.close()
+
+    # 6. EVERY BADGE ON THE MIDDLE OF ITS SLOT, within 1px, on both cases
+    MEAS = """(sel) => [...document.querySelectorAll(sel)].map((cell, i) => {
+        const svg = cell.querySelector('svg'); if(!svg) return null;
+        let best = null, area = 0;
+        [...svg.querySelectorAll('path')].filter(p => !p.closest('defs, clipPath, mask')).forEach(p => {
+          const b = p.getBoundingClientRect(); if(b.width * b.height > area){ area = b.width * b.height; best = b; } });
+        const c = cell.getBoundingClientRect(); if(!best) return null;
+        return { i, dx: +((best.left + best.right) / 2 - (c.left + c.right) / 2).toFixed(2), dy: +((best.top + best.bottom) / 2 - (c.top + c.bottom) / 2).toFixed(2) }; }).filter(Boolean)"""
+    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=2)
+        pg.evaluate("""() => { const us = unitsInTeachingOrder(); store.unitPerfects = {}; us.forEach((u, i) => { if(i % 2) store.unitPerfects[u] = badgeThresholdFor(u); });
+          store.pendingBadgeUnlocks = []; theme.reduceMotion = true; applyTheme(); saveStore(); showRanksScreen('badges'); }""")
+        pg.wait_for_timeout(1500)
+        tab = pg.evaluate(MEAS, ".badges-tab .ncase-cell")
+        pg.evaluate("() => { showHome(); playBadgeCaseScene(['Identity Crimes'], () => {}); }"); pg.wait_for_timeout(500)
+        # the case seen square on, so the measure is the layout's, not the camera's perspective
+        pg.evaluate("() => { const k = document.querySelector('.bc-case'); if(k){ k.style.transition = 'none'; k.style.transform = 'none'; } }")
+        pg.wait_for_timeout(100)
+        cut = pg.evaluate(MEAS, ".bc-scene .bc-slot")
+        bad = lambda L: [r for r in L if abs(r["dx"]) > 1 or abs(r["dy"]) > 1]
+        c9 = [r for r in tab if r["i"] == 9]
+        check(f"{dev}: all 16 badges sit on the middle of their slots within 1px, on the Badges screen and in the cutscene (column 2, row 3 - the C-ring - included: {c9})",
+              len(tab) == 16 and len(cut) == 16 and not bad(tab) and not bad(cut), {"badges screen": bad(tab), "cutscene": bad(cut)})
+        ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -23614,6 +23816,7 @@ def main():
             check_b320h_fixes(br)
             check_b320b_reactions(br)
             check_b320c_case(br)
+            check_b321c_case(br)
         finally:
             br.close()
     SERVER.shutdown()
