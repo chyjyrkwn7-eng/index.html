@@ -123,6 +123,9 @@ SCREENS = [
     "showCustomize", "showCustomize('character')", "showCustomize('banner')",
     "showCustomize('theme')", "showCustomize('fx')",
     "showCalendar", "showFriends", "showTestReviewList",
+    # build 323: the Calendar is a bar tab of its own (showCalendar lands
+    # on it too), and Settings is Profile's third tab (showAppearance)
+    "showCalendarTab", "showProfile('settings')",
     # the rest
     "showInstallGuide", "showInstallPlatformPicker", "showResetWarning",
     "showWhatsNew", "showReleaseHistory",
