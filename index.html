@@ -79446,7 +79446,7 @@ const NOVA_SETTLE_MS = 90 * 1000;
 const NOVA_COLOR = "#FFD27A";
 const NOVA_TIPS = [
   "Tip: a hundo only counts when you take a whole unit. A shortened run is good practice, but it won’t count towards a badge.",
-  "Tip: before a test, run Review on the units you’re least sure of. Reading the material first is what makes a Drill stick.",
+  "Tip: before a test, run a Briefing on the units you’re least sure of. Reading the material first is what makes a Drill stick.",
   "Tip: little and often beats one long night. Twenty minutes a day keeps your streak alive and the material fresh.",
   "Tip: can’t finish a test? Pause, then Save and exit. It will be waiting for you on Home.",
   "Tip: the daily question is quick XP. When the button on Home lights up, there’s a new one.",
@@ -79827,7 +79827,7 @@ function novaReplyFor(raw){
   if(has(/ (xp|levels?|level up) /))
     return "Every right answer earns XP, and XP raises your level. Your badges decide how high your level can go, so mastering units matters as much as answering a lot.";
   if(has(/ (drill|exam|review|flashcards?|learn|modes?|study|studying|practice|starred|flag\w*) /))
-    return "Drill to learn a unit, Exam to test yourself, and Review to go over the material first. They’re all under Start Studying on Home.";
+    return "Drill to learn a unit, a Qualifier to test yourself, and a Briefing to go over the material first. They’re all under Start Studying on Home.";
   if(has(/ (flares?|crew|characters?|ship|planet|blast|wreck|lost|explorer|space) /))
     return "My ship went down by a planet like the one on your Home screen. My badges, my flares and my crew were scattered. Every badge you master and every character you unlock is one of them found.";
   if(has(/ (friends?|friend code|add) /))
