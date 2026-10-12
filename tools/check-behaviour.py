@@ -2408,13 +2408,16 @@ def check_b235(br):
          it). Build 316: the rank is one line under the name again - the
          emblem, the rank, the level, the XP - so: the emblem sits on that
          line, centred on the rank's name, with the name after it. */
-      await T('plate', () => { const e = document.querySelector('.pf-standing .pf-emb');
-        const v = e && e.querySelector('svg'); const nm = document.querySelector('.pf-standing .pf-rankname');
+      /* REVISED IN 321: "Remove the tiny icon" - the line is the rank's
+         name, then the level, no emblem; the name is centred on the level's
+         line (within 2px). */
+      await T('plate', () => { const e = document.querySelector('.pf-standing .pf-idline svg');
+        const nm = document.querySelector('.pf-standing .pf-rankname');
         const lab = document.querySelector('.pf-standing .pf-level');
-        if(!e || !v || !nm) return 'no emblem or no rank name on the line';
-        const a = e.getBoundingClientRect(), b = nm.getBoundingClientRect();
+        if(e || !nm || !lab) return 'an emblem on the line, or no rank name / level';
+        const a = lab.getBoundingClientRect(), b = nm.getBoundingClientRect();
         const off = Math.round(Math.abs((a.top + a.height / 2) - (b.top + b.height / 2)));
-        return b.left >= a.right && lab && lab.getBoundingClientRect().left >= b.right ? off : 'not emblem, rank, level in that order'; });
+        return a.left >= b.right ? off : 'not rank, level in that order'; });
       await T('heroLive', () => document.querySelector('.profile-hero-avatar').classList.contains('char-live'));
       // An existing account on Gold, opening this build for the first
       // time, then winning a week off-screen.
@@ -2485,7 +2488,7 @@ def check_b235(br):
         const v = getComputedStyle(document.documentElement).getPropertyValue('--theme-c3').trim();
         document.documentElement.dataset.accent = theme.accent || 'ink'; return v; });
       return out; }""")
-    check("the held rank's emblem sits on the rank line, centred on its name, then the level (build 316; a bubble in 315, the level ring before it)",
+    check("the held rank's name leads the rank line, then the level, and no emblem (321; an emblem 316-320, a bubble in 315, the level ring before it)",
           isinstance(r["plate"], int) and r["plate"] <= 2, r["plate"])
     check("your own character is alive on the Profile card", r["heroLive"] is True, r["heroLive"])
     sd = r["seed"] if isinstance(r["seed"], dict) else {}
@@ -2791,11 +2794,12 @@ def check_b237(br):
                rankBar: !!p.querySelector('.profile-rankplate-fill, .profile-rankplate-next, .pf-bar'),
                xpBar: !!p.querySelector('.pf-xpbar .xpbar-fill'),
                w: Math.round(p.getBoundingClientRect().width),
-               emb: !!p.querySelector('.pf-idline .pf-emb svg'), bubble: !!p.querySelector('.flare-solo'),
+               emb: !!p.querySelector('.pf-idline svg'), bubble: !!p.querySelector('.flare-solo'),
                boxed: cs.backgroundImage !== 'none' || !/rgba\\(0, 0, 0, 0\\)|transparent/.test(cs.backgroundColor) || parseFloat(cs.borderTopWidth) > 0,
                button: p.tagName }; }""")
-    check("the rank leads the card as one line under the name - its emblem, the rank, the level, the XP - with no box round it, as one button across the card",
-          isinstance(r, dict) and r.get("w", 0) > 300 and r.get("emb") and not r.get("bubble") and r.get("boxed") is False and r.get("button") == "BUTTON", r)
+    # REVISED IN 321: "Remove the tiny icon" - no emblem on the line.
+    check("the rank leads the card as one line under the name - the rank, the level, the XP, no emblem (321) - with no box round it, as one button across the card",
+          isinstance(r, dict) and r.get("w", 0) > 300 and not r.get("emb") and not r.get("bubble") and r.get("boxed") is False and r.get("button") == "BUTTON", r)
     # REVISED IN 267: "the current rank in the profile box has a progress
     # bar, let's remove that". REVISED IN 315: the bar under the rank is
     # the XP bar, asked back ("how do we still get that nice xp stuff");
@@ -3533,12 +3537,14 @@ def check_b244(br):
       /* Build 315: the coin was the standing block's flare bubble. Build
          316: it is the emblem on the rank line, the held rank's own,
          fitted the way every emblem is - held to the same centring */
-      const coin = document.querySelector('.pf-standing .pf-emb'), held = 'ranger';
-      const csvg = coin && coin.querySelector('svg');
-      out.coin = csvg ? { name: (document.querySelector('.pf-standing .pf-rankname') || {}).textContent, want: RANK_DISPLAY_NAME[held], off: off(coin, csvg, held) } : null;
+      /* REVISED IN 321: no emblem on the rank line ("Remove the tiny
+         icon"), only the held rank's name */
+      const held = 'ranger';
+      out.coin = { name: (document.querySelector('.pf-standing .pf-rankname') || {}).textContent, want: RANK_DISPLAY_NAME[held],
+                   svg: !!document.querySelector('.pf-standing .pf-idline svg') };
       rankOf = rk0;
       showProfile('profile'); await wait(500);
-      out.unrankedEmpty = !rankOf(store) ? (!document.querySelector('.pf-standing .pf-emb') && !document.querySelector('.pf-standing .pf-rankname')
+      out.unrankedEmpty = !rankOf(store) ? (!document.querySelector('.pf-standing .pf-idline svg') && !document.querySelector('.pf-standing .pf-rankname')
         && /^Level \\d+$/.test((document.querySelector('.pf-standing .pf-level') || {}).textContent || '')) : true;
       } catch(e){ out.threw = String(e) + ' ' + (e.stack || '').split('\\n')[1]; }
       return out; }""")
@@ -3559,8 +3565,8 @@ def check_b244(br):
     # boxes on purpose, and no further), not to show the change.
     check("every Home bubble's emblem is centred in it (within 1.5px)", len(home) == 7 and max(home) <= 1.5, home)
     coin = r.get("coin") or {}
-    check("the Profile card's rank line carries the held rank's emblem, centred in its box (within 1.5px, as on Home), and its name",
-          coin.get("name") == coin.get("want") and coin.get("off", 9) <= 1.5, coin)
+    check("the Profile card's rank line names the held rank and carries no emblem (321: 'Remove the tiny icon')",
+          coin.get("name") == coin.get("want") and coin.get("svg") is False, coin)
     check("an unranked card names no rank and draws no emblem - just the level (268)", r.get("unrankedEmpty") is True, r.get("unrankedEmpty"))
     ctx.close()
 
@@ -5079,8 +5085,10 @@ def check_b258(br):
       out.fillBg = fill ? getComputedStyle(fill).backgroundImage : '';
       /* build 282: the level is the Rank tab's blue ring; its colour is the stroke.
          Build 315: the ring is gone; the level is said in the bar's blue.
-         Build 316: the mockup's line - the XP is the blue on it */
-      const lv = document.querySelector('.profile-hero .pf-standing .pf-xp-total');
+         Build 316: the mockup's line - the XP is the blue on it.
+         Build 321: the total took the line's colour; this level's XP
+         ("x / y XP") is the blue that is held */
+      const lv = document.querySelector('.profile-hero .pf-standing .xpnums-have');
       out.levelBg = lv ? getComputedStyle(lv).color : '';
       out.coverMark = document.querySelectorAll('.profile-cover .profile-cover-mark').length;
       const cov = document.querySelector('.profile-cover:not(.has-banner)');
@@ -6247,7 +6255,7 @@ def check_b282(br):
       const tasks = [...document.querySelectorAll('.pf-goal .pf-task')];
       const tcOf = re => { const t = tasks.find(x => re.test((x.querySelector('.pf-task-label') || {}).textContent || ''));
         return t ? t.style.getPropertyValue('--tc').trim() : null; };
-      out.profLevelRing = tcOf(/^Reach level/); out.profBadgeRing = tcOf(/^Earn /);
+      out.profLevelRing = tcOf(/^Reach level/i); out.profBadgeRing = tcOf(/^Earn /);
       out.profRings = tasks.length;
       /* every HTML-element animation running on Profile: transform/opacity only */
       const paintProps = [];
@@ -8050,7 +8058,8 @@ def check_b302(br):
           /* build 315: the rings are gone. Build 316: the rank you hold is
              an emblem on its line, the line's own size - not a ring, and
              not a second big mark beside the next rank's */
-          out.rings = [wOf('.pf-standing .pf-emb'), wOf('.pf-goal .pf-goal-emb')];
+          /* build 321: no emblem on the rank line ("Remove the tiny icon") */
+          out.rings = [document.querySelectorAll('.pf-standing .pf-idline svg').length, wOf('.pf-goal .pf-goal-emb')];
           const tot = document.querySelector('.pf-standing .pf-xp-total'), bar = document.querySelector('.pf-standing .profile-xpbar');
           out.total = tot ? tot.textContent : '';
           out.totalOnLine = !!(tot && tot.closest('.pf-idline') && bar && (bar.compareDocumentPosition(tot) & Node.DOCUMENT_POSITION_PRECEDING));
@@ -8060,6 +8069,9 @@ def check_b302(br):
           out.xpCols = ['.xpnums-have', '.xpnums-need', '.pf-xp-total'].map(sel => { const e = document.querySelector('.pf-standing ' + sel);
             if(!e) return null; const c = getComputedStyle(e).color, m = c.match(/[\d.]+/g); if(!m) return null;
             const v = m.slice(0, 3).map(Number); return /^color\(/.test(c) ? v.map(x => Math.round(x * 255)) : v; });
+          /* build 321: the total's colour is the level's, whole (alpha too) */
+          { const t = document.querySelector('.pf-standing .pf-xp-total'), l = document.querySelector('.pf-standing .pf-level');
+            out.totalLevelCol = t && l ? [getComputedStyle(t).color, getComputedStyle(l).color] : null; }
           if(keepPerf === undefined) delete store.unitPerfects[keepU0]; else store.unitPerfects[keepU0] = keepPerf;
           store.lifetime.points = keepPts;
           const fill = document.querySelector('.profile-xpbar .xpbar-fill');
@@ -8111,8 +8123,9 @@ def check_b302(br):
         # REVISED IN 316: the held rank is the mockup's small emblem on the
         # rank line ("I prefer how your current level and rank looked"), so
         # it is the line's size and the next rank's emblem is the big one.
-        check(f"{dev}: the rank you hold is an emblem the size of its line, the next rank's the big one",
-              len(rings) == 2 and None not in rings and 20 <= rings[0] <= 32 and rings[1] >= 2 * rings[0], rings)
+        # REVISED IN 321: "Remove the tiny icon" - no emblem on the line.
+        check(f"{dev}: the rank you hold has no emblem on its line; the next rank's emblem is the big one",
+              len(rings) == 2 and rings[0] == 0 and (rings[1] or 0) >= 50, rings)
         # REVISED IN 315: "we wouldn't need that total xp there because it'd
         # be with all the xp stuff" - the total joined the bar's numbers.
         # REVISED IN 316: back on the rank line, as the mockup had it; the
@@ -8132,8 +8145,13 @@ def check_b302(br):
               r.get("totalOnLine") is False and re.match(r"^[0-9,]+ total XP$", r.get("total") or "")
               and re.match(want_nums, r.get("barNums") or ""), [r.get("totalOnLine"), r.get("total"), r.get("barNums")])
         xc = r.get("xpCols") or [None, None, None]
-        check(f"{dev}: ...all three in one blue, none grey",
-              None not in xc and xc[0] == xc[1] == xc[2] and xc[0][2] - xc[0][0] >= 80, xc)
+        # REVISED IN 321: "Total xp probably should be the same color as
+        # the other stuff" - this level's two numbers one blue, the total
+        # the level's colour.
+        tl = r.get("totalLevelCol") or [None, 1]
+        check(f"{dev}: ...this level's two numbers one blue; the total in the level's colour, not blue",
+              None not in xc and xc[0] == xc[1] and xc[0][2] - xc[0][0] >= 80 and tl[0] == tl[1]
+              and not (xc[2][2] - xc[2][0] >= 80), [xc, tl])
         check(f"{dev}: the XP bar carries its slow light", r.get("glide") == "xp-glide", r.get("glide"))
         check(f"{dev}: back on Home, no flare bubble is empty", r.get("bubbles", 0) >= 7 and r.get("blank") == 0, [r.get("bubbles"), r.get("blank")])
         check(f"{dev}: Sapphire turns on a half-turn loop, Platinum has its spiral, Silver's star glints",
@@ -13419,7 +13437,7 @@ def check_b317_pfcard(br):
           const col = sel => { const e = document.querySelector('.profile-hero .pf-standing ' + sel); if(!e) return null;
             const c = getComputedStyle(e).color, m = c.match(/[\d.]+/g); if(!m) return null;
             const v = m.slice(0, 3).map(Number); return /^color\(/.test(c) ? v.map(x => Math.round(x * 255)) : v; };
-          const xpCols = () => ({ have: col('.xpnums-have'), need: col('.xpnums-need'), total: col('.pf-xp-total'),
+          const xpCols = () => ({ have: col('.xpnums-have'), need: col('.xpnums-need'), total: col('.pf-xp-total'), level: col('.pf-level'),
             over: !!document.querySelector('.profile-hero .pf-standing .xpnums.is-over') });
           out.xpMid = xpCols();
           out.rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
@@ -13471,15 +13489,20 @@ def check_b317_pfcard(br):
         g, rem = r.get("gaps"), r.get("rem") or 16
         # REVISED IN 319 (g: 1.1rem), BACK IN 319 (h): the strip is part of
         # the card, so it takes the boxes' own .8rem; its handle stands in it.
-        check(f"{dev}: ...with the card's usual gaps (1.05rem under the bar, .8rem between the boxes)",
-              bool(g) and abs(g[0] - 1.05 * rem) <= 1.5 and abs(g[1] - 0.8 * rem) <= 1.5, [g, rem])
+        # REVISED IN 321: "The badge case under the rank challenge thing, the
+        # spacing is a smidge too close" - 1.15rem under the Next rank box.
+        check(f"{dev}: ...with the card's gaps (1.05rem under the bar, 1.15rem from the Next rank box to the case)",
+              bool(g) and abs(g[0] - 1.05 * rem) <= 1.5 and abs(g[1] - 1.15 * rem) <= 1.5, [g, rem])
         # REVISED IN THE 317 TOUCH-UP: no grey. This level's XP, what it
         # asks and the total are one blue - mid level (not over) and at
         # level 80 (over).
         blue = lambda c: c is not None and c[2] - c[0] >= 80
         for tag, xc in (("mid level", r.get("xpMid") or {}), ("level %s" % r.get("topLevel"), r.get("xpTop") or {})):
-            check(f"{dev}, {tag}: this level's XP, what it asks and the total XP are one blue, none grey",
-                  xc.get("have") is not None and xc.get("have") == xc.get("need") == xc.get("total") and blue(xc.get("have")), xc)
+            # REVISED IN 321: the total takes the level's colour ("Total xp
+            # probably should be the same color as the other stuff").
+            check(f"{dev}, {tag}: this level's XP and what it asks are one blue; the total XP is the level's colour",
+                  xc.get("have") is not None and xc.get("have") == xc.get("need") and blue(xc.get("have"))
+                  and xc.get("total") is not None and xc.get("total") == xc.get("level") and not blue(xc.get("total")), xc)
         check(f"{dev}: ...the mid account is under its requirement and level 80 is over it (both states seen)",
               (r.get("xpMid") or {}).get("over") is False and (r.get("xpTop") or {}).get("over") is True and r.get("topLevel") == 80,
               [(r.get("xpMid") or {}).get("over"), (r.get("xpTop") or {}).get("over"), r.get("topLevel")])
@@ -16360,6 +16383,7 @@ def check_b317_xpcap(br):
       window.__pf = () => ({ level: q('.pf-standing .pf-level'), nums: q('.pf-standing .pf-xpnums .xpnums'),
         over: !!document.querySelector('.pf-standing .xpnums.is-over'), cap: q('.pf-standing .pf-xp-cap'),
         note: q('.pf-standing .pf-xp-note'), text: q('.pf-standing'),
+        lvc: document.querySelector('.pf-standing .pf-level') && getComputedStyle(document.querySelector('.pf-standing .pf-level')).color,
         tot: document.querySelector('.pf-standing .pf-xp-total') && getComputedStyle(document.querySelector('.pf-standing .pf-xp-total')).color,
         need: document.querySelector('.pf-standing .xpnums-need') && getComputedStyle(document.querySelector('.pf-standing .xpnums-need')).color,
         have: document.querySelector('.pf-standing .xpnums-have') && getComputedStyle(document.querySelector('.pf-standing .xpnums-have')).color });
@@ -16375,15 +16399,14 @@ def check_b317_xpcap(br):
     m = re.match(r"^([0-9,]+) / ([0-9,]+) XP$", l80["nums"] or "")
     check("...it shows the XP since level 80 against a level's cost, past it, both numbers blue",
           bool(m) and int(m.group(1).replace(",", "")) > int(m.group(2).replace(",", "")) and l80["over"], l80["nums"])
-    check("...and the note says 80 is the top level for now and the XP counts toward new levels when they are added",
-          bool(l80["note"]) and "top level for now" in l80["note"] and "still counts" in l80["note"]
-          and "when they are added" in l80["note"], l80["note"])
+    # REVISED IN 321: "remove the description under the xp bar that talks
+    # about using xp for the next level, we don't need that anymore".
+    check("...and there is no note under the bar at level 80 (321)",
+          l80["note"] is None and "still counts" not in (l80["text"] or ""), l80["note"])
     # 2. the wall note, Silver held at 49 behind the four-badge wall
     wall = pg.evaluate("""async () => { __acct(xpForLevel(52) + 200, 4); showProfile('identity'); %s return __pf(); }""" % (wait % 900))
-    check("the wall note is the plain new copy: top level for Silver, Gold rank challenges, XP still counts toward those levels",
-          bool(wall["note"]) and wall["note"].startswith("You've reached the top level for Silver.")
-          and "Finish the Gold rank challenges to unlock more levels." in wall["note"]
-          and "still counts" in wall["note"] and "is kept" not in wall["note"], wall["note"])
+    check("no note under the bar at the wall either - not the 'top level for Silver ... still counts' copy (321)",
+          wall["note"] is None and "still counts" not in (wall["text"] or "") and "top level" not in (wall["text"] or ""), wall["note"])
     def rgb(c):
         v = [float(x) for x in re.findall(r"[\d.]+", c or "")[:3]]
         return [round(x * 255) for x in v] if (c or "").startswith("color(") else v
@@ -16392,8 +16415,9 @@ def check_b317_xpcap(br):
     blue = lambda c: len(c) == 3 and c[2] - c[0] >= 80
     for tag, st in (("a mid level, under its requirement", mid), ("a wall", wall), ("level 80, over the wall", l80)):
         hv, nd, tt = rgb(st["have"]), rgb(st["need"]), rgb(st["tot"])
-        check(f"{tag}: this level's XP, what it asks and the total XP are one blue, none grey",
-              blue(hv) and hv == nd == tt, [hv, nd, tt, st["nums"], st["over"]])
+        # REVISED IN 321: the total in the level's colour (compared whole)
+        check(f"{tag}: this level's XP and what it asks are one blue; the total XP is the level's colour",
+              blue(hv) and hv == nd and st["tot"] == st["lvc"] and not blue(tt), [hv, nd, st["tot"], st["lvc"], st["nums"], st["over"]])
     check("...and the mid level is under its requirement, so the have number is blue without being over",
           mid["over"] is False and bool(re.match(r"^[0-9,]+ / [0-9,]+ XP$", mid["nums"] or "")), [mid["over"], mid["nums"]])
     # 3. the knock: results card, XP added into a bar at a wall
@@ -17496,7 +17520,8 @@ def check_b319_rankup(br):
           const rows = [...(g ? g.querySelectorAll('.pf-task') : [])].map(r => ({ k: r.dataset.kind || (/badge/i.test(r.textContent) ? 'badges' : 'level'),
             now: (r.querySelector('.pf-now') || {}).textContent, need: (r.querySelector('.pf-need') || {}).textContent,
             met: r.classList.contains('is-met'), tick: (r.querySelector('.pf-check') || {}).textContent,
-            w: parseFloat(getComputedStyle(r.querySelector('.pf-bar > i')).width) / parseFloat(getComputedStyle(r.querySelector('.pf-bar')).width),
+            /* build 321: the level row has no bar */
+            w: r.querySelector('.pf-bar > i') ? parseFloat(getComputedStyle(r.querySelector('.pf-bar > i')).width) / parseFloat(getComputedStyle(r.querySelector('.pf-bar')).width) : null,
             aria: r.getAttribute('aria-label') }));
           /* any challenge kind, the same cap */
           const x = buildProfileTask({ kind: 'other', label: 'Something', now: 9, need: 4, met: true }, '#6FC2FF', null);
@@ -21242,7 +21267,8 @@ def check_b319h_layout(br):
                       bool(bx and gl) and abs(bx[0] - gl[0]) <= 1 and abs(bx[2] - gl[2]) <= 1 and abs(rc["radius"] - rc["goalRadius"]) <= 1,
                       [bx, gl, rc.get("radius"), rc.get("goalRadius")])
                 gap = (bx[1] - gl[3]) if (bx and gl) else None
-                check("%s: ...and the box's own gap above it (.8rem)" % dev, gap is not None and abs(gap - 12.8) <= 1.5, gap)
+                # REVISED IN 321: "the spacing is a smidge too close" - 1.15rem
+                check("%s: ...and a gap above it of 1.15rem (321; .8rem before)" % dev, gap is not None and abs(gap - 18.4) <= 1.5, gap)
                 hw, al = (m or {}).get("hw") or {}, (m or {}).get("all") or {}
                 print("     %s case strip: %s" % (dev, json.dumps({"hardware": hw, "with text": al})))
                 check("%s: the strip's metal is not the brightest thing on the card (peak %s against the card's %s)" % (dev, hw.get("strip_peak"), al.get("card_peak")),
@@ -23397,6 +23423,97 @@ def check_b320c_case(br):
         ctx.close()
 
 
+def check_b321f_profile(br):
+    """Build 321 (b321f): the static Profile card, Madison's round on it -
+    "I really really like how it is. I don't want it to change much. The
+    level one is just kinda confusing."
+    - "remove the description under the xp bar that talks about using xp
+      for the next level": no .pf-xp-note, at a wall or at level 80;
+    - "Under the level challenge it says finish the badge challenge to
+      reach gold? Remove that and remove the one that's there for the
+      badge challenge": no note under either challenge row;
+    - "Remove the tiny icon and make the color match the level and badge
+      color": no emblem on the rank line; the rank word, "Level N" and
+      "N badges" one computed colour;
+    - "Total xp probably should be the same color as the other stuff": a
+      tablet's total under the bar is the level's computed colour, and on
+      Stats the Total XP figure is every other card's;
+    - "the spacing is a smidge too close": the Next rank box to the case
+      strip is at least 1.15rem (18px), phone and tablet;
+    - the level challenge: "Reach Level N", your level on the right
+      ("Level 44"), no bar; met, "Met" and ticked; the badge row keeps
+      "5 / 7" and its bar; the card is headed "To reach" over the rank.
+    Fails on 6a387e2 on every one of these."""
+    print("\n321f. the Profile card: no notes, no rank icon, one colour, a smidge more space, the level challenge")
+    SEED = """async ([lv, nb, tab]) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const U = topicsIn(QUESTIONS); store.unitPerfects = {};
+      U.slice(0, nb).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+      store.rankFloor = 0; store.levelFloor = 0; retroHideBadges = null; mergeHidePoints = null;
+      store.lifetime.points = lv >= LEVEL_CAP ? xpForLevel(LEVEL_CAP) + 60000 : xpForLevel(lv) + Math.round((xpForLevel(lv + 1) - xpForLevel(lv)) * .4);
+      store.rankUpShown = null; store.rankUpFrom = null; persistLocally();
+      showProfile(tab || 'profile'); await wait(1400);
+      const Q = s => document.querySelector(s), col = e => e ? getComputedStyle(e).color : null;
+      const st = Q('.profile-hero .pf-standing'), g = Q('.profile-hero .pf-goal'), cs = Q('.profile-hero .pf-case');
+      const rows = g ? [...g.querySelectorAll('.pf-task')].map(r => ({ k: r.dataset.kind, met: r.classList.contains('is-met'),
+        label: ((r.querySelector('.pf-task-label') || {}).innerText || '').trim(), shown: ((r.querySelector('.pf-task-val') || {}).innerText || '').replace(/\s+/g, ' ').trim(),
+        bar: !!r.querySelector('.pf-bar > i'), tick: (r.querySelector('.pf-check') || {}).textContent,
+        now: (r.querySelector('.pf-now') || {}).textContent, need: (r.querySelector('.pf-need') || {}).textContent,
+        notes: [...r.children].filter(c => !/pf-check|pf-task-label|pf-task-val|pf-bar/.test(c.className)).map(c => c.textContent) })) : [];
+      const stats = [...document.querySelectorAll('.stat-grid .stat-card .stat-num')];
+      const tot = Q('.stx-totalxp .stat-num');
+      return { level: levelOf(store), badges: badgeCountOf(store), rank: rankOf(store),
+        xpNote: !!Q('.pf-standing .pf-xp-note'), standingText: st ? st.innerText : '',
+        svg: st ? st.querySelectorAll('.pf-idline svg, .pf-idline .pf-emb').length : -1,
+        rankCol: col(Q('.pf-standing .pf-rankname')), levelCol: col(Q('.pf-standing .pf-level')), badgeCol: col(Q('.pf-standing .pf-badgecount')),
+        totalCol: col(Q('.pf-standing .pf-xp-total')), totalShown: !!(Q('.pf-standing .pf-xp-total') && Q('.pf-standing .pf-xp-total').getClientRects().length),
+        gap: g && cs ? cs.getBoundingClientRect().top - g.getBoundingClientRect().bottom : null,
+        rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+        kick: g ? ((g.querySelector('.pf-goal-head .pf-kick') || {}).textContent || '') : '',
+        goalName: g ? ((g.querySelector('.pf-goal-name') || {}).textContent || '') : '',
+        rows, statTot: col(tot), statOthers: stats.filter(n => n !== tot).map(col) }; }"""
+    for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        mid = pg.evaluate(SEED, [44, 5, "profile"])
+        wall = pg.evaluate(SEED, [62, 6, "profile"])
+        cap = pg.evaluate(SEED, [80, 16, "profile"])
+        stats = pg.evaluate(SEED, [44, 5, "stats"])
+        ctx.close()
+        check(f"{dev}: the fixtures are Gold at 44 / 5 badges, Gold held at the wall (59, 6 badges), and level 80",
+              mid["level"] == 44 and mid["badges"] == 5 and wall["level"] == 59 and wall["badges"] == 6 and cap["level"] == 80,
+              [(x["level"], x["badges"], x["rank"]) for x in (mid, wall, cap)])
+        check(f"{dev}: no note under the XP bar - mid level, at the wall, at level 80",
+              not mid["xpNote"] and not wall["xpNote"] and not cap["xpNote"]
+              and not any(re.search(r"still counts|top level|toward those levels", x["standingText"]) for x in (mid, wall, cap)),
+              [x["standingText"] for x in (mid, wall, cap)])
+        check(f"{dev}: no note under either challenge row - not 'Done. Finish the badge challenge', not 'Closest'",
+              all(not r["notes"] for x in (mid, wall) for r in x["rows"]) and len(mid["rows"]) == 2 and len(wall["rows"]) == 2,
+              [[r["notes"] for r in x["rows"]] for x in (mid, wall)])
+        check(f"{dev}: no emblem on the rank line",
+              mid["svg"] == 0 and wall["svg"] == 0 and cap["svg"] == 0, [mid["svg"], wall["svg"], cap["svg"]])
+        check(f"{dev}: the rank word is the level's and the badges' computed colour",
+              mid["rankCol"] and mid["rankCol"] == mid["levelCol"] == mid["badgeCol"], [mid["rankCol"], mid["levelCol"], mid["badgeCol"]])
+        check(f"{dev}: the total XP (shown on a tablet) is the level's computed colour",
+              mid["totalCol"] == mid["levelCol"] and cap["totalCol"] == cap["levelCol"] and (mid["totalShown"] == (w >= 640)),
+              [mid["totalCol"], mid["levelCol"], mid["totalShown"]])
+        check(f"{dev}: on Stats, the Total XP figure is every other figure's colour",
+              stats["statTot"] and stats["statOthers"] and all(c == stats["statTot"] for c in stats["statOthers"]), [stats["statTot"], stats["statOthers"]])
+        check(f"{dev}: the Next rank box clears the case strip by at least 1.15rem (was .8rem)",
+              mid["gap"] is not None and mid["gap"] >= 1.15 * mid["rem"] - .5 and wall["gap"] >= 1.15 * wall["rem"] - .5, [mid["gap"], wall["gap"], mid["rem"]])
+        lm = next((r for r in mid["rows"] if r["k"] == "level"), {}); bm = next((r for r in mid["rows"] if r["k"] == "badges"), {})
+        lw = next((r for r in wall["rows"] if r["k"] == "level"), {}); bw = next((r for r in wall["rows"] if r["k"] == "badges"), {})
+        check(f"{dev}: the card is headed 'To reach' over the rank, the road map's words",
+              mid["kick"].strip().lower() == "to reach" and mid["goalName"] == "Platinum", [mid["kick"], mid["goalName"]])
+        check(f"{dev}: the level challenge reads 'Reach Level 50', your level on the right ('Level 44'), no bar, unticked",
+              lm.get("label") == "Reach Level 50" and lm.get("shown") == "Level 44" and not lm.get("bar") and not lm.get("met") and lm.get("tick") == "", lm)
+        check(f"{dev}: ...met, it reads 'Met', ticked, still no bar - never a level past its goal",
+              lw.get("label") == "Reach Level 50" and lw.get("shown") == "Met" and lw.get("met") and lw.get("tick") == "\u2713" and not lw.get("bar")
+              and "59" not in lw.get("shown", "x"), lw)
+        check(f"{dev}: ...and keeps the journey's hooks (.pf-now the level, capped; .pf-need the goal)",
+              lm.get("now") == "44" and lm.get("need") == "50" and lw.get("now") == "50" and lw.get("need") == "50", [lm.get("now"), lm.get("need"), lw.get("now")])
+        check(f"{dev}: the badge challenge keeps its '5 / 7' and its bar",
+              bm.get("label") == "Earn 7 badges" and bm.get("shown") == "5 / 7" and bm.get("bar") and bw.get("shown") == "6 / 7" and bw.get("bar"), [bm, bw])
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -23614,6 +23731,7 @@ def main():
             check_b320h_fixes(br)
             check_b320b_reactions(br)
             check_b320c_case(br)
+            check_b321f_profile(br)
         finally:
             br.close()
     SERVER.shutdown()
