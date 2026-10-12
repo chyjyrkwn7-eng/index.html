@@ -20135,6 +20135,16 @@ now? ... figure this out"*, *"The rank up is still showing in unlocks."*
   896ms, 320: 608ms) and under 15% of it in its first 150ms (321: 5-8%, 320:
   46%) - was "the number after the bar"). check-results section 8: the rank
   rewards and `rsToneAt` at every percent.
+  `check_b317_hundobox` (every effect, 320 / 440 / 834 wide) moved too: its
+  "the effect's colours from the FIRST frame, never the gold default" is
+  now "the first frame is the GREEN it counted up in - the number, the
+  green wash over the card, the green over each bar (`::after`) - never
+  gold", then "by the end of the hand-off (1.1s) border, 100% and bar
+  exactly as settled, nothing green left over it" (Confetti: green then its
+  own gold; the UFO's rim unlit through it until the beam). Whole and one
+  piece of type, unchanged. The first-frame assertion fails on 6a387e2 for
+  all 21 (its first frame is the gold or the effect's ramp, no green); the
+  hand-off end passes there, as it should - the settled look did not move.
 
 ### Build 321 (b321e) - the rank-up journey's touch-ups
 
