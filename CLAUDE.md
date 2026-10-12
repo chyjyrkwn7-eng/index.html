@@ -20923,3 +20923,43 @@ key."*
   `check_b319h_layout` (Profile / Stats / Settings; Month / List on the
   Calendar tab; B319H_CAL reads the Calendar tab root; the calendar's old ways
   in are held by check_b323n_nav), check-tours' Profile note.
+
+### Build 323 (b323u) - unit rows that open, a smooth release, Starred as a row, Exam and Review cards
+
+- **Unit selection is a list of full-width rows** ("the tiny square box idea
+  needs to go away ... longer rectangles?", "similar the calendar list"),
+  one column on every device. Same markup as the squares (`label.pick`, its
+  checkbox, `.box`, `.pname`, `.pcount`, `appendUnitProgress`'s badge and
+  bar), so drag-select, the hold, the Penal Code pop-up and the Virtual
+  Room's list keep working. `appendUnitRowMore()` (called from
+  `attachUnitHold`, which both lists already call per row) gathers the
+  words into `.pick-main` (name, version tag, `.pick-meta` = count + bar)
+  and adds `.pick-more`: the row's short details (Best, Last, Done,
+  Fastest from `unitDetailStats`) and a 44px Details button that opens
+  the full card. No starred count on a row ("hell no" still holds).
+- **A ticked row opens**: `.pick-more` goes `grid-template-rows` 0fr to 1fr,
+  its body fades and settles by opacity/transform; closed it is
+  `visibility:hidden`. Never while a drag is selecting
+  (`.picks.is-dragselecting`), or rows would move under the finger.
+  Selected keeps the glass and the 1px border (the square's 1.5px was a
+  half-pixel jump); a `::before` tint layer fades in and the edge takes
+  the accent.
+- **The press and release** ("when you hold a unit card and let go, it's
+  not a smooth transition"): two presses ran on one row - the global
+  bubble's inline scale with a spring past 1 on release, and the hold's
+  `.is-pressing` ring cut off in one frame. `.picks .pick` is out of the
+  bubble now; it presses by CSS (.978, eased in .2s, eased out .34s, no
+  overshoot, shadow on the same curve). The details card fades in as it
+  grows and fades out (.12s + .26s) inside its 420ms shrink, so the row is
+  what is left rather than what replaces it; a closing card and scrim
+  take no taps.
+- **Starred questions is a row after the units** ("not a fan of how the
+  review section shows the starred question at the top"), the units'
+  size and glass, star in the circle's place and a chevron in the
+  badge's; it still opens straight to the starred list.
+- **Exam and Review cards**: the clipboard is as wide as the others with a
+  solid clip, the book has a solid bookmark (`.modeiconsolid`), and both
+  descriptions are two beats ending "Best for ..." at Drill's length.
+- `check_b323u_units` (fails on 22bf429). Moved: check_b297's "first and
+  full width" Starred box; check_penal_versions scrolls the version line
+  into view before sampling it.

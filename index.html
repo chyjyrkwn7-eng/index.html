@@ -15242,6 +15242,11 @@
   .modecard.locked .modeicon-vroom .modeiconpath{ stroke:var(--soft); }
   .modecard.locked .modeicon-vroom circle.modeiconpath{ fill:var(--soft); }
   .modeiconcheck{ stroke-width:2; }
+  /* the solid parts of the Exam and Review marks (build 323) take their
+     mode's colour as a fill, like the Virtual Room's heads */
+  .modeicon-exam .modeiconsolid{ fill:#F5804D; }
+  .modeicon-review .modeiconsolid{ fill:#4ADE80; }
+  .modecard.locked .modeiconsolid{ fill:var(--soft); }
   .modecard.locked .modeiconpath{ stroke:var(--soft); }
   .modecardtitle{
     font-family:var(--serif); font-size:1.35rem; font-weight:700; color:var(--ink);
@@ -19349,6 +19354,181 @@
   .pick{ -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; transition:transform .42s cubic-bezier(.2,.8,.2,1), box-shadow .3s ease; }
   .pick.is-pressing{ transform:scale(.965); box-shadow:0 0 0 2px rgba(111,194,255,.35); }
   .picks-holdhint{ margin:.35rem .2rem .7rem; font-size:.74rem; color:var(--soft); }
+
+  /* ---- UNIT ROWS, NOT SQUARES (build 323) ----
+     "I feel like the way the units are displayed could be improved, I
+     think the tiny square box idea needs to go away. Should it go back to
+     being longer rectangles?" and "similar the calendar list, but when you
+     click that is selecting the unit, but it opens (expands) and then
+     details come up". One full-width row per unit at every width, in the
+     teaching order: the select circle, the name, the question count and
+     the bar towards the badge on one line under it, and the badge at the
+     right. A ticked row lights (a tint layer fading in, not a background
+     swap, so nothing snaps) and opens a drawer of its short details
+     (.pick-more, built by appendUnitRowMore). The same markup as the
+     squares - label.pick, its checkbox, .box, .pname, .pcount and
+     appendUnitProgress's badge and bar - so drag-select, the hold, the
+     Penal Code pop-up and the Virtual Room's list all keep working; only
+     the arrangement is new. One column on a tablet as well: two columns
+     of rows that open put a tall row beside a short one, which reads as
+     a mistake, and a single list is what the calendar does too. */
+  .picks{ grid-template-columns:minmax(0,1fr); gap:.55rem; }
+  .picks > label.pick{
+    display:grid; isolation:isolate;
+    grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-areas:"box main badge" "more more more";
+    align-items:center; column-gap:.8rem; row-gap:0;
+    padding:.8rem .9rem .8rem .95rem; min-height:4.4rem; box-sizing:border-box;
+    /* opacity is not in the list: a row arrives as the cards always have,
+       shown at once and rising into place (the scroll reveal) */
+    transition:transform .34s cubic-bezier(.22,.8,.3,1), box-shadow .34s ease, border-color .28s ease;
+  }
+  .picks > label.pick > .box{ grid-area:box; margin:0; width:26px; height:26px; align-self:center; font-size:.9rem; }
+  .pick-main{ grid-area:main; display:flex; flex-direction:column; align-items:flex-start; min-width:0; }
+  .picks > label.pick .pname{
+    margin:0; padding:0; min-height:0; font-size:1rem; font-weight:700; line-height:1.28; max-width:100%;
+    hyphens:manual; -webkit-hyphens:manual; overflow-wrap:break-word;
+  }
+  .picks > label.pick .pick-version{ align-self:flex-start; margin-top:.32rem; margin-left:calc(-.5rem - 1px); }
+  .pick-meta{ display:flex; align-items:center; gap:.8rem; width:100%; margin-top:.3rem; min-width:0; }
+  .picks > label.pick .pcount{ margin:0; padding:0; font-size:.72rem; white-space:nowrap; flex:none; }
+  .picks > label.pick > .pick-stars{ display:contents; }
+  .picks > label.pick .pick-progress-label{ display:none; }
+  .picks > label.pick .pick-badge{ grid-area:badge; width:2.4rem; height:2.4rem; align-self:center; }
+  .picks > label.pick .pick-meta .pick-barrow{ flex:1 1 auto; max-width:10rem; min-width:0; }
+  /* the press: eased in while the finger is down, eased out on release -
+     transform and shadow on the same curve, and no overshoot */
+  .picks > .pick.is-pressing{
+    transform:scale(.978);
+    transition:transform .2s cubic-bezier(.3,.6,.4,1), box-shadow .2s ease, border-color .28s ease;
+  }
+  [data-theme="dark"][data-layout="modern"] .picks > .pick.is-pressing{
+    box-shadow:0 1px 6px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 0 rgba(0,0,0,.22);
+  }
+  /* SELECTED IS A LIGHT, NOT A NEW BACKGROUND. The square's selected state
+     swapped the glass for a flat fill and its 1px border for 1.5px - an
+     instant change of colour and a half-pixel jump. The row keeps its
+     glass and its border width; a tint layer under the content fades in,
+     and the edge takes the accent. */
+  .picks > label.pick:has(input:checked), .picks > label.pick.pick-checked{
+    border-width:1px !important;
+    border-color:color-mix(in srgb, var(--accent) 62%, transparent) !important;
+    --pick-selected-bg:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
+  }
+  [data-theme="dark"][data-layout="modern"] .picks > label.pick:has(input:checked),
+  [data-theme="dark"][data-layout="modern"] .picks > label.pick.pick-checked{
+    box-shadow:0 4px 16px rgba(0,0,0,.28), 0 0 18px -4px color-mix(in srgb, var(--accent) 40%, transparent),
+      inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 0 rgba(0,0,0,.22);
+  }
+  .picks > label.pick::before{
+    inset:0; width:auto; z-index:-1; border-radius:inherit; pointer-events:none;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 15%, transparent), color-mix(in srgb, var(--accent) 5%, transparent) 70%);
+    opacity:0; transition:opacity .28s ease;
+  }
+  .picks > label.pick:has(input:checked)::before, .picks > label.pick.pick-checked::before{
+    background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 15%, transparent), color-mix(in srgb, var(--accent) 5%, transparent) 70%);
+    opacity:1;
+  }
+  .picks > label.pick > .box{ transition:background .22s ease, border-color .22s ease, color .22s ease, box-shadow .22s ease; }
+
+  /* The drawer. Its height opens by its grid row (0fr to 1fr), the one
+     way to ease a height that is not known in advance; what is inside
+     fades and settles by opacity and transform. Closed it is hidden, so
+     its button cannot be tapped or focused. While a drag is selecting
+     rows nothing opens - a row growing under a moving finger would move
+     the next row out from under it. */
+  .pick-more{
+    grid-area:more; display:grid; grid-template-rows:0fr; min-width:0;
+    visibility:hidden;
+    transition:grid-template-rows .3s cubic-bezier(.22,.8,.3,1), visibility 0s linear .3s;
+  }
+  .pick-more-in{ min-height:0; overflow:hidden; }
+  .pick-more-body{
+    display:flex; align-items:center; gap:.7rem; margin-top:.7rem; padding-top:.65rem;
+    border-top:1px solid rgba(255,255,255,.09);
+    opacity:0; transform:translateY(-6px);
+    transition:opacity .2s ease, transform .3s cubic-bezier(.22,.8,.3,1);
+  }
+  .picks > label.pick:has(input:checked) > .pick-more, .picks > label.pick.pick-checked > .pick-more{
+    grid-template-rows:1fr; visibility:visible; transition-delay:0s;
+  }
+  .picks > label.pick:has(input:checked) .pick-more-body, .picks > label.pick.pick-checked .pick-more-body{
+    opacity:1; transform:none; transition-delay:.06s;
+  }
+  .picks.is-dragselecting > label.pick > .pick-more{ grid-template-rows:0fr !important; visibility:hidden !important; }
+  .picks.is-dragselecting > label.pick .pick-more-body{ opacity:0 !important; }
+  .picks.is-dragselecting > label.pick.dfz-open > .pick-more{ grid-template-rows:1fr !important; visibility:visible !important; }
+  .picks.is-dragselecting > label.pick.dfz-open .pick-more-body{ opacity:1 !important; transform:none !important; }
+  .pick-more-stats{ flex:1; min-width:0; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.35rem; }
+  .pick-more-stat{ display:flex; flex-direction:column; gap:.1rem; min-width:0; }
+  .pick-more-val{ font-size:.92rem; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pick-more-lab{ font-size:.6rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--soft); }
+  .pick-more-open{
+    flex:none; display:inline-flex; align-items:center; gap:.2rem; min-height:44px; padding:0 .7rem 0 .9rem;
+    border-radius:999px; font:inherit; font-size:.78rem; font-weight:800; color:var(--ink); cursor:pointer;
+    background-color:#0A0A0C; border:none;
+    box-shadow:0 1px 1px rgba(70,74,80,.7) inset, 0 -2px 2px rgba(0,0,0,.5) inset, 0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.35);
+    transition:transform .15s ease, background-color .15s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .pick-more-open:active{ transform:scale(.96); background-color:#000; }
+  .pick-more-open svg{ width:1rem; height:1rem; }
+  [data-reduce-motion="true"] .pick-more, [data-reduce-motion="true"] .pick-more-body{ transition:none; }
+  .pick-more-lab{ white-space:nowrap; overflow:hidden; }
+  /* a 375px phone: the four still fit beside the button, set tighter */
+  @media (max-width:25rem){
+    .pick-more-body{ gap:.5rem; }
+    .pick-more-lab{ letter-spacing:.04em; }
+    .pick-more-open{ padding:0 .5rem 0 .75rem; }
+  }
+  /* a 320px phone: the button goes under the four rather than squeezing them */
+  @media (max-width:21.5rem){
+    .pick-more-body{ flex-wrap:wrap; row-gap:.4rem; }
+    .pick-more-stats{ flex:1 1 100%; }
+    .pick-more-open{ margin-left:auto; }
+  }
+
+  /* Review's Starred questions: a row like the units, last in the list. */
+  .picks > .pick.pick-flagged-all{
+    grid-column:auto; display:grid; grid-template-columns:26px minmax(0,1fr) auto; align-items:center;
+    column-gap:.8rem; width:100%; min-height:4.4rem; padding:.8rem .9rem .8rem .95rem; margin:0;
+    border-radius:14px; box-sizing:border-box;
+    border:1px solid rgba(255,255,255,.11);
+    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
+    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    transition:transform .34s cubic-bezier(.22,.8,.3,1), box-shadow .34s ease;
+  }
+  .picks > .pick.pick-flagged-all.is-pressing{
+    transform:scale(.978);
+    transition:transform .2s cubic-bezier(.3,.6,.4,1), box-shadow .2s ease;
+  }
+  .picks > .pick-flagged-all .pick-flagged-icon{ width:26px; height:26px; }
+  .picks > .pick-flagged-all .pick-flagged-icon .starred-card-star{ width:1.75rem; height:1.75rem; flex:none; }
+  .picks > .pick-flagged-all .pick-flagged-text{ gap:.25rem; }
+  .picks > .pick-flagged-all .pname{ font-size:1rem; font-weight:700; line-height:1.28; }
+  .picks > .pick-flagged-all .pcount{ font-size:.72rem; margin:0; white-space:normal; }
+  .picks > .pick-flagged-all .pick-flagged-go{ display:flex; align-items:center; justify-content:center; width:2.4rem; font-size:1.6rem; }
+
+  /* "More units coming soon": the same row, quiet. */
+  .picks > .pick.pick-tba{
+    grid-template-columns:26px minmax(0,1fr); grid-template-areas:"box name" "box sub";
+    min-height:4.4rem; padding:.8rem .9rem .8rem .95rem; column-gap:.8rem; align-items:center;
+  }
+  .picks > .pick.pick-tba > .box{ grid-area:box; width:26px; height:26px; margin:0; }
+  .picks > .pick.pick-tba > .pname{ grid-area:name; margin:0; padding:0; min-height:0; font-size:.95rem; }
+  .picks > .pick.pick-tba > .pick-other{ grid-area:sub; margin:.2rem 0 0; }
+
+  @media (min-width:40rem){
+    .picks{ gap:.65rem; }
+    .picks > label.pick, .picks > .pick.pick-flagged-all, .picks > .pick.pick-tba{ min-height:4.9rem; padding:.95rem 1.2rem .95rem 1.15rem; column-gap:1rem; }
+    .picks > label.pick .pname, .picks > .pick-flagged-all .pname{ font-size:1.08rem; }
+    .picks > label.pick .pcount, .picks > .pick-flagged-all .pcount{ font-size:.78rem; }
+    .picks > label.pick .pick-badge{ width:2.8rem; height:2.8rem; }
+    .picks > label.pick .pick-meta .pick-barrow{ max-width:14rem; }
+    .pick-more-stats{ grid-template-columns:repeat(4, minmax(0, 7.5rem)); gap:.6rem; }
+    .pick-more-val{ font-size:1.02rem; }
+    .pick-more-lab{ font-size:.64rem; }
+  }
   /* BUILD 308: "It's laggy opening up the details and stuff." Two of the
      three costs were here and on the card below. The scrim animated its
      blur RADIUS, 0 to 6px, which re-blurs the whole screen every frame;
@@ -19392,6 +19572,16 @@
   .unitdetail.is-measuring{ transition:none; }
   .unitdetail.is-open{ border-radius:24px; }
   .unitdetail.is-closing{ transition-duration:.38s; }
+  /* IT DISSOLVES INTO THE ROW, AND RISES OUT OF IT (build 323). The card
+     shrank back to the row's place and was then removed at full opacity -
+     a dark opaque card swapped for the glass row in one frame, which is
+     the snap at the end of "it's not a smooth transition going back to how
+     it was". It fades in over its first moment and out over the last part
+     of its shrink, so the row is what is left, not what replaces it. */
+  .unitdetail{ opacity:0; }
+  .unitdetail.is-open{ opacity:1; transition-property:left, top, width, height, border-radius, opacity; transition-duration:.44s, .44s, .44s, .44s, .44s, .16s; }
+  .unitdetail.is-closing{ opacity:0; transition-property:left, top, width, height, border-radius, opacity;
+    transition-duration:.38s, .38s, .38s, .38s, .38s, .26s; transition-delay:0s, 0s, 0s, 0s, 0s, .12s; transition-timing-function:cubic-bezier(.2,.9,.25,1), cubic-bezier(.2,.9,.25,1), cubic-bezier(.2,.9,.25,1), cubic-bezier(.2,.9,.25,1), ease, ease; }
   .unitdetail-head{ position:relative; padding:1rem 1.1rem .8rem; flex-shrink:0; }
   .unitdetail-head .pname{ margin:0; font-size:1.05rem; font-weight:800; color:var(--ink); padding-right:3rem; }
   .unitdetail-head .pcount{ margin:.2rem 0 .6rem; font-size:.78rem; color:var(--soft); }
@@ -64162,10 +64352,18 @@ function modeIcon(kind){
     c2.setAttribute("class", "modeiconpath");
     svg.append(c1, c2);
   } else if(kind === "exam"){
-    svg.appendChild(mk("M7 4h10a1 1 0 011 1v15a1 1 0 01-1 1H7a1 1 0 01-1-1V5a1 1 0 011-1z"));
-    svg.appendChild(mk("M9 3.5h6v2H9z"));
+    /* AS FULL AS THE TARGET AND THE PEOPLE (build 323): "I love the drill
+       and virtual room. I'm not a fan of the review or exam." Drill's
+       rings fill their box and the Virtual Room has solid heads; the
+       clipboard was a narrow outline with a hairline clip, the lightest
+       mark of the four. It is as wide as the others now, and its clip is
+       solid, the way the Virtual Room's heads are. */
+    svg.appendChild(mk("M6.6 4.6h10.8a1.6 1.6 0 011.6 1.6v13.6a1.6 1.6 0 01-1.6 1.6H6.6A1.6 1.6 0 015 19.8V6.2a1.6 1.6 0 011.6-1.6z"));
+    const clip = mk("M9.4 2.6h5.2a1 1 0 011 1v1.9a1 1 0 01-1 1H9.4a1 1 0 01-1-1V3.6a1 1 0 011-1z");
+    clip.setAttribute("class", "modeiconpath modeiconsolid");
+    svg.appendChild(clip);
     const check = document.createElementNS(svgNS2, "path");
-    check.setAttribute("d", "M9 13l2 2 4-4.5");
+    check.setAttribute("d", "M8.6 13.4l2.5 2.5 4.5-5");
     check.setAttribute("class", "modeiconpath modeiconcheck");
     svg.appendChild(check);
   } else if(kind === "vroom"){
@@ -64198,6 +64396,12 @@ function modeIcon(kind){
     svg.appendChild(mk("M12 6.5C10.3 5.2 8.3 4.6 6 4.6c-1 0-2 .1-2.9.4v13c.9-.3 1.9-.4 2.9-.4 2.3 0 4.3.6 6 1.9"));
     svg.appendChild(mk("M12 6.5c1.7-1.3 3.7-1.9 6-1.9 1 0 2 .1 2.9.4v13c-.9-.3-1.9-.4-2.9-.4-2.3 0-4.3.6-6 1.9"));
     svg.appendChild(mk("M12 6.5v13"));
+    /* A solid bookmark down the right-hand page (build 323), for the same
+       weight as the Virtual Room's heads - an open book in outline alone
+       was the faintest mark on the mode screen. */
+    const mark = mk("M15.6 4.75h3.2v7.4l-1.6-1.25-1.6 1.25z");
+    mark.setAttribute("class", "modeiconpath modeiconsolid");
+    svg.appendChild(mark);
   } else {
     svg.appendChild(mk("M12 20s-7-4.5-9.5-9C.8 7.5 3 4 6.5 4c2 0 3.5 1.3 5.5 3.5C14 5.3 15.5 4 17.5 4 21 4 23.2 7.5 21.5 11c-2.5 4.5-9.5 9-9.5 9z"));
   }
@@ -81964,8 +82168,13 @@ function showModeSelect(){
        because that is the one way the answer changes. */
     { value: "drill", title: "Drill",
       desc: "A test that shows you right away if you got each question right or wrong. Miss one and you try again before moving on. Best for learning." },
+    /* TWO BEATS, LIKE DRILL AND THE VIRTUAL ROOM (build 323): the Exam
+       card ran a parenthesis through its middle and Review opened on a
+       disclaimer; both now say what the mode is and then what it is best
+       for, at the same length as the two cards that were liked. Exam still
+       names Instant feedback (build 312). */
     { value: "exam", title: "Exam",
-      desc: "A test where you find out what you got right and wrong at the end, like the real thing (or turn on Instant feedback to see it as you go). Best for testing yourself." },
+      desc: "A test like the real thing \u2014 you find out what you got right and wrong at the end, unless you turn on Instant feedback. Best for testing yourself." },
     /* THIRD, UNDER EXAM (build 245): "The review option on the mode
        selection screen should not be at the bottom on the iPhone, it'll
        need to be the 3rd one listed, under exam instead." One list, so
@@ -81988,7 +82197,7 @@ function showModeSelect(){
        stays "review" - it is stored in store.opts and every check in the
        file asks for it - and only what is shown changes (modeTitleOf). */
     { value: "review", title: "Review",
-      desc: "Not a test \u2014 go through the study guide questions and their answers as a list or as flashcards. Best for going over material." },
+      desc: "Read through the study guide questions with their answers, as a list or as flashcards. Not a test, so no score. Best for going over material." },
     { value: "vroom", title: "Virtual Room",
       desc: "Take tests together, live \u2014 everyone answers the same questions at the same time. Best for studying with classmates." }
   ];
@@ -82183,7 +82392,71 @@ function appendUnitProgress(row, name){
    and the grid scrolls. The tap that ends a hold would otherwise tick
    the card (it is a <label>), so that one click is swallowed. */
 const UNIT_HOLD_MS = 420;
+/* ---- A SELECTED UNIT ROW OPENS UP (build 323) ----
+   "Should all the stuff instead of it being in boxes be let's say,
+   similar the calendar list, but when you click that is selecting the
+   unit, but it opens (expands) and then details come up?" Every unit
+   row carries its own short version of the details - best and last
+   score, how many times finished, the fastest 100% - in a drawer that
+   the CSS opens while the row is ticked, plus a Details button that
+   opens the full card a hold opens. Built here because both unit lists
+   (the test setup and the Virtual Room's) already call this for every
+   row, with the mode; nothing is shown that the details card does not
+   already say (unitDetailStats), and nothing about starred questions -
+   "do not display the amount of flagged questions on a unit card". */
+function appendUnitRowMore(row, name, mode){
+  if(!row || row.querySelector(":scope > .pick-more")) return;
+  /* The row's words in one column beside the circle and the badge: the
+     name, the Penal Code's version tag, and the count with the bar on a
+     line under them. Gathered here, after the list has built the row, so
+     neither list has to build it differently - a circle and a badge
+     spanning loose grid rows padded the empty ones out unevenly. */
+  const mainCol = document.createElement("span");
+  mainCol.className = "pick-main";
+  const meta = document.createElement("span");
+  meta.className = "pick-meta";
+  [":scope > .pname", ":scope > .pick-version"].forEach(sel => { const el = row.querySelector(sel); if(el) mainCol.appendChild(el); });
+  const cnt = row.querySelector(":scope > .pcount");
+  if(cnt) meta.appendChild(cnt);
+  const barRow = row.querySelector(".pick-stars > .pick-barrow");
+  if(barRow) meta.appendChild(barRow);
+  if(meta.childNodes.length) mainCol.appendChild(meta);
+  const boxEl = row.querySelector(":scope > .box");
+  if(boxEl) boxEl.after(mainCol); else row.appendChild(mainCol);
+  const more = document.createElement("span");
+  more.className = "pick-more";
+  const inner = document.createElement("span");
+  inner.className = "pick-more-in";
+  const body = document.createElement("span");
+  body.className = "pick-more-body";
+  const stats = document.createElement("span");
+  stats.className = "pick-more-stats";
+  const SHORT = { "Best score": "Best", "Last score": "Last", "Completed": "Done", "Best time": "Fastest" };
+  let st = [];
+  try{ st = unitDetailStats(name, mode); }catch(e){}
+  st.filter(s => SHORT[s.label]).forEach(s => {
+    const c = document.createElement("span");
+    c.className = "pick-more-stat";
+    const v = document.createElement("span"); v.className = "pick-more-val";
+    v.textContent = s.label === "Completed" ? s.value + "×" : s.value;
+    const l = document.createElement("span"); l.className = "pick-more-lab"; l.textContent = SHORT[s.label];
+    c.append(v, l);
+    stats.appendChild(c);
+  });
+  const open = document.createElement("button");
+  open.type = "button"; open.className = "pick-more-open";
+  open.setAttribute("aria-label", name + " details");
+  open.innerHTML = "<span>Details</span><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 6l6 6-6 6\"/></svg>";
+  /* A button inside the row's <label>: a click on it never ticks the
+     row, and it is not a hold either (attachUnitHold skips it). */
+  open.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); openUnitDetail(row, name, mode); });
+  body.append(stats, open);
+  inner.appendChild(body);
+  more.appendChild(inner);
+  row.appendChild(more);
+}
 function attachUnitHold(row, name, mode){
+  appendUnitRowMore(row, name, mode);
   let timer = null, sx = 0, sy = 0, fired = false;
   const cancel = () => {
     if(timer){ clearTimeout(timer); timer = null; }
@@ -82193,8 +82466,9 @@ function attachUnitHold(row, name, mode){
     if(e.button && e.button !== 0) return;
     fired = false; sx = e.clientX; sy = e.clientY;
     cancel();
-    /* the select circle is drag-select's handle (build 314), not a hold */
-    if(e.target.closest && e.target.closest(".box")) return;
+    /* the select circle is drag-select's handle (build 314), not a hold;
+       the Details button is a button (build 323) */
+    if(e.target.closest && e.target.closest(".box, .pick-more-open")) return;
     row.classList.add("is-pressing");
     timer = setTimeout(() => {
       timer = null; fired = true;
@@ -82286,6 +82560,11 @@ function attachDragSelect(list, onChange){
     st.anchor = st.rows.indexOf(st.row);
     if(st.anchor < 0){ st = null; return; }
     st.orig = st.rows.map(r => r.querySelector("input[type=checkbox]").checked);
+    /* Every row's details drawer holds still while the finger is moving
+       (build 323): open ones stay open, shut ones stay shut, and they all
+       catch up when the drag ends - a row growing or shrinking under a
+       moving finger would put a different row under it. */
+    st.rows.forEach((r, i) => r.classList.toggle("dfz-open", st.orig[i]));
     st.target = !st.orig[st.anchor];
     st.over = st.row;
     st.moved = true;
@@ -82327,6 +82606,7 @@ function attachDragSelect(list, onChange){
     if(e.button && e.button !== 0) return;
     const row = e.target.closest && e.target.closest("label.pick");
     if(!row || !list.contains(row) || !row.querySelector("input[type=checkbox]")) return;
+    if(e.target.closest(".pick-more-open")) return;   /* a button, not a drag (build 323) */
     st = { id: e.pointerId, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY, row,
            fromCircle: !!e.target.closest(".box"), mode: "pending" };
   });
@@ -82833,10 +83113,24 @@ function openUnitDetail(row, name, mode){
     shadow.remove();
     const back = row.isConnected ? row.getBoundingClientRect() : from;
     place(back);
-    setTimeout(() => {
+    /* Gone once it has faded into the row (build 323): the fade is timed
+       to end (.12s + .26s) inside the 420ms the shrink has always taken,
+       so the clock and the fade agree; transitionend can only make it
+       sooner. */
+    let gone = false;
+    const finish = () => {
+      if(gone) return;
+      gone = true;
       card.remove(); scrim.remove(); shadow.remove();
       document.documentElement.classList.remove("unitdetail-lock");
-    }, 420);
+    };
+    /* only the fade OUT ends it - a late end to the fade in must not */
+    card.addEventListener("transitionend", e => {
+      if(e.target === card && e.propertyName === "opacity" && parseFloat(getComputedStyle(card).opacity) < 0.05) finish();
+    });
+    setTimeout(finish, 420);
+    /* nothing still fading may catch a tap meant for the screen under it */
+    card.style.pointerEvents = "none"; scrim.style.pointerEvents = "none";
     /* Review's Starred questions box says what is starred now (build 314). */
     const sb = document.querySelector("#stage .pick-flagged-all");
     if(sb && typeof sb._paint === "function") sb._paint();
@@ -83510,7 +83804,8 @@ function showSetup(){
   /* How anybody finds out the cards can be held. */
   const holdHint = document.createElement("p");
   holdHint.className = "picks-holdhint";
-  holdHint.textContent = "Press and hold a unit to see your stats and starred questions for it.";
+  /* Tapping a row ticks it and opens its short details (build 323). */
+  holdHint.textContent = "Tap a unit to select it. Press and hold one for its full details and starred questions.";
   unitSect.appendChild(holdHint);
 
   const list = document.createElement("div");
@@ -83523,6 +83818,7 @@ function showSetup(){
      columns, first in Review's grid, that opens every flagged question
      in every unit. Unit cards themselves never say how many are flagged
      - "hell no". */
+  let starredRow = null;
   if(cfg.mode === "review"){
     /* KEPT CURRENT (build 314). Starring or unstarring inside a unit's
        details (press and hold) left this box saying what it said when the
@@ -83557,7 +83853,17 @@ function showSetup(){
       const fUnits = starredUnits(fl);
       showStudyLoading("LOADING REVIEW", () => showAnswerReview(fUnits, "flagged", {}, { allFlagged: true }));
     });
-    list.appendChild(box);
+    /* ONE ROW AMONG THE UNITS, AFTER THEM (build 323): "I'm still not a
+       fan of how the review section shows the starred question at the
+       top." It was a wide box above the list (build 297: "double wide and
+       it'd be at the top"). It is now a row of the same size and glass as
+       the unit rows, last in the list - the star where a unit has its
+       select circle, a chevron where a unit has its badge, because it
+       opens rather than ticks. Pressed like a unit row (see .is-pressing). */
+    const press = on => box.classList.toggle("is-pressing", on);
+    box.addEventListener("pointerdown", e => { if(!e.button) press(true); });
+    ["pointerup", "pointercancel", "pointerleave"].forEach(t => box.addEventListener(t, () => press(false)));
+    starredRow = box;
   }
 
   all.forEach(name => {
@@ -83596,6 +83902,7 @@ function showSetup(){
     attachUnitHold(row, name, cfg.mode);
     list.appendChild(row);
   });
+  if(starredRow) list.appendChild(starredRow);
 
   /* Placeholder tiles for units whose study guide hasn't been released
      yet — empty by default; add names here once they're known and
@@ -84677,7 +84984,7 @@ function showSetup(){
     setTimeout(() => {
       startSimpleTour([
         { target: ".pick", align: "left", vplacement: "below",
-          text: "Tap a unit to add it to this test. The bar under each one is how close you are to finding its badge \u2014 " + badgeRangeText() + " depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
+          text: "Tap a unit to add it to this test \u2014 it opens to show your scores in it. The bar under each name is how close you are to finding its badge \u2014 " + badgeRangeText() + " depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
@@ -116083,6 +116390,14 @@ function applyGlassRefraction(el, mapImgId){
     if(theme.reduceMotion) return;
     const btn = e.target.closest(".next, .bottomtab-start, .bottomtab, .choice, .chip, .restart, .iconbtn, .selall-btn, .pick, .swatch, .infoicon, .back-link");
     if(!btn || btn.disabled || btn.hidden) return;
+    /* NOT A UNIT ROW (build 323): "When you hold a unit card and let go,
+       it's not a smooth transition going back to how it was." Two presses
+       ran on the same row - this one's inline scale, and the hold's own
+       .is-pressing ring - and on release this one sprang back past full
+       size with the ring cut off in the same frame. A unit row (and the
+       Starred row beside them) presses with its own CSS now, eased in and
+       eased out, transform and shadow together. */
+    if(btn.classList.contains("pick") && btn.closest(".picks")) return;
     /* A read-only answer - a review list, the unit card's lists - is not
        a button and must not press like one (build 270: "the buttons on
        the pages are tappable"). Every read-only choice is built .locked. */
