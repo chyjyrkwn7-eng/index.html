@@ -35195,6 +35195,125 @@ const QUESTIONS = [
     ],
     answer: 3
   },
+  /* #184 again: the deck has it twice inside slides 124-256 (slides 130 and 132). Same treatment as
+     #84's copy (src 347): its own identity, the slides 124-256 version only (hotfix 313c). */
+  {
+    topic: "Penal Code",
+    src: 351,
+    repeatOf: 184,
+    versionOnly: true,
+    q: "According to Penal Code, ______________ means to procure, manufacture, issue sell, give, provide, lend, mail, deliver, transfer, transmit, publish, distribute, circulate, disseminate, present, exhibit, or advertise or to offer or agree to do any of the same.",
+    ref: "(PC 21.16 (a) (2); PC Section 8.12)",
+    choices: [
+      "Market",
+      "Promote",
+      "Auction",
+      "Exchange",
+    ],
+    answer: 1
+  },
+  /* #42 again: the deck has it twice inside slides 124-256 (slides 147 and 148). Same treatment as
+     #84's copy (src 347): its own identity, the slides 124-256 version only (hotfix 313c). */
+  {
+    topic: "Penal Code",
+    src: 352,
+    repeatOf: 42,
+    versionOnly: true,
+    q: "Sexual assault is committed without consent of the other person if",
+    ref: "(PC 22.011 (b) (3, 5, and 8, PC Section 8.13)",
+    choices: [
+      "The other person has not consented, and the actor knows that the other person is unaware that the sexual assault is unconscious.",
+      "The other person has not consented, and the other person is unaware that the sexual assault is occurring",
+      "The actor is a public servant who coerces the other person to submit or participate",
+      "A, B, and C",
+    ],
+    answer: 3
+  },
+  /* #260 again: the deck has it twice inside slides 124-256 (slides 160 and 161). Same treatment as
+     #84's copy (src 347): its own identity, the slides 124-256 version only (hotfix 313c). */
+  {
+    topic: "Penal Code",
+    src: 353,
+    repeatOf: 260,
+    versionOnly: true,
+    q: "A person commits “aggravated sexual assault” if the person intentionally or knowingly cases the penetration of the anus or female sexual organ of a person by any means:",
+    ref: "(PC 22.021 (2) (A) (i), (2) (B), and (2) (A) (iv); Family Violence and RAO Section 17.6; Criminal Investigation, Section 32.15; PC Section 8.13)",
+    choices: [
+      "if the actor causes victim serious bodily injury",
+      "if the victim is younger than 14 years of age",
+      "if the actor exhibits a deadly weapon",
+      "all of the listed answers are aggravated sexual assault",
+    ],
+    answer: 3
+  },
+  /* #309 again: the deck has it twice inside slides 124-256 (slides 196 and 197). Same treatment as
+     #84's copy (src 347): its own identity, the slides 124-256 version only (hotfix 313c). */
+  {
+    topic: "Penal Code",
+    src: 354,
+    repeatOf: 309,
+    versionOnly: true,
+    q: "A man is walking down the street with his wife asking her if their children have been doing well. A valid protective order exists that states the man cannot go within 100 feet of his wife due to past family violence. What offense has occurred?",
+    ref: "(PC 25.07 (a) (3), (d); Family Violence and Related Assaultive Offenses, Section 17.6, page 8 of 14)",
+    choices: [
+      "Violations of Certain Court Orders or Conditions of Bond in a Family Violence, Child Abuse or Neglect, Sexual Assault or Abuse, Indecent Assault, Stalking or Trafficking Case",
+      "Repeated Violation of Certain Court Orders or Conditions of Bond in FV, Sexual Assault or abuse, stalking, or trafficking case",
+      "Tampering with Witness",
+      "Requirements of Order Applying to Person who Committed Family Violence.",
+    ],
+    answer: 0
+  },
+  /* #246 again: the deck has it twice inside slides 124-256 (slides 213 and 222). Same treatment as
+     #84's copy (src 347): its own identity, the slides 124-256 version only (hotfix 313c). */
+  {
+    topic: "Penal Code",
+    src: 355,
+    repeatOf: 246,
+    versionOnly: true,
+    q: "A person set a fire in his backyard to burn off dead grass; the fire got out of control and burned a neighbor’s fence. The crime is",
+    ref: "(PC 28.04 (a), PC Section 8.15",
+    choices: [
+      "criminal mischief",
+      "reckless damage or destruction",
+      "arson",
+      "none of the above",
+    ],
+    answer: 1
+  },
+  /* #126 again: the deck has it twice inside slides 124-256 (slides 224 and 225). Same treatment as
+     #84's copy (src 347): its own identity, the slides 124-256 version only (hotfix 313c). */
+  {
+    topic: "Penal Code",
+    src: 356,
+    repeatOf: 126,
+    versionOnly: true,
+    q: "A person other than a railroad employee commits an offense of “interference with railroad property” if he or she",
+    ref: "(PC Section 28.07 (2) (A, B, & C), Interference with Railroad Property) (PC Section 8.15)",
+    choices: [
+      "knowingly enters or remains on railroad property (b) (2) (A)",
+      "tampers with railroad property (b) (2) (B)",
+      "places an obstruction on a railroad track or causes a train to derail (b) (2) (C)",
+      "All of the above can constitute a crime",
+    ],
+    answer: 3
+  },
+  /* #276 again: the deck has it twice inside slides 124-256 (slides 253 and 254). Same treatment as
+     #84's copy (src 347): its own identity, the slides 124-256 version only (hotfix 313c). */
+  {
+    topic: "Penal Code",
+    src: 357,
+    repeatOf: 276,
+    versionOnly: true,
+    q: "A lady possesses a valid Texas Handgun License and is carrying a compact Glock pistol in her purse. As she enters local store, she notices a picture on the front door of a handgun inside a red circle with a line drawn diagonally across it and no other signs talk about weapons. What offense has occurred if she continues into the store?",
+    ref: "(PC 30.06 (a) (1 & 2) and (c) (3) (A & B), Section 8.17)",
+    choices: [
+      "Unlawful Carrying Weapon",
+      "Places weapons prohibited",
+      "Criminal trespass",
+      "No offense has been committed",
+    ],
+    answer: 3
+  },
 ];
 
 /* ==========================================================================
@@ -45151,14 +45270,40 @@ const PENAL_TEST_SRCS = [249, 213, 24, 121, 200, 262, 344, 128, 159, 61, 95, 183
    short version exists ("ensure the unit box mentions it has the 0-85
    version ... so people know and want to click it"). Another unit gets
    a short version by adding a line. */
+/* ---- SLIDES 124-256 FROM MIDNIGHT (hotfix 313c) ----
+   "The penal code slide version will change. It's now going to be slides
+   124-256 ... Don't change it now because our test is today but make the
+   update be scheduled for midnight ... We need to be sure it will update
+   even if the weekly usage is used up." So the switch is in the app, not
+   in a scheduled push: before PENAL_124_AT every device still offers
+   slides 55-124 exactly as before; from that moment the same table offers
+   124-256. Every reader goes through these getters at the moment it asks,
+   so an app left open across midnight switches too. A run started before
+   midnight keeps its own pool (Re-run repeats the run's pool).
+   124-256 is 116 questions: 109 different ones plus 7 version-only copies
+   (351-357) for the deck's repeats. Matched to the bank by TEXT on every
+   slide, twice independently, every answer checked against the deck and
+   the study guide. Slide 148's "60." is #42's text and slide 156's
+   "125." is #124's; both were matched by text. */
+const PENAL_124_AT = Date.UTC(2026, 9, 13, 5, 0, 0); /* 12:00 AM Tue Oct 13, Central (CDT, UTC-5) */
+const PENAL_124_SRCS = [2,9,13,20,21,25,26,27,30,34,42,43,45,47,50,54,55,56,58,71,73,78,81,82,86,87,92,93,96,98,102,104,105,110,111,114,115,123,124,125,126,127,133,134,136,140,143,145,156,157,161,162,166,167,168,170,171,176,177,179,181,184,187,188,190,192,194,197,202,217,220,221,229,231,238,239,240,242,243,246,248,251,254,257,260,261,263,264,271,272,275,276,277,288,296,308,309,311,312,317,325,327,328,331,332,333,336,337,345,351,352,353,354,355,356,357];
+function penal124Live(){ return Date.now() >= PENAL_124_AT; }
+const PENAL_55_VERSION = {
+  srcs: new Set(PENAL_TEST_SRCS),
+  label: "Penal Code — Slides 55–124",
+  short: "slides 55–124",
+  desc: "Only the questions from slides 55–124 of the Penal Code PowerPoint.",
+  tag: "Slides 55–124 version available"
+};
+const PENAL_124_VERSION = {
+  srcs: new Set(PENAL_124_SRCS),
+  label: "Penal Code — Slides 124–256",
+  short: "slides 124–256",
+  desc: "Only the questions from slides 124–256 of the Penal Code PowerPoint.",
+  tag: "Slides 124–256 version available"
+};
 const UNIT_TEST_VERSIONS = {
-  "Penal Code": {
-    srcs: new Set(PENAL_TEST_SRCS),
-    label: "Penal Code — Slides 55–124",
-    short: "slides 55–124",
-    desc: "Only the questions from slides 55–124 of the Penal Code PowerPoint.",
-    tag: "Slides 55–124 version available"
-  }
+  get "Penal Code"(){ return penal124Live() ? PENAL_124_VERSION : PENAL_55_VERSION; }
 };
 function unitHasTestVersion(name){ return !!UNIT_TEST_VERSIONS[name]; }
 /* Is this question part of its WHOLE unit? Everything is, except a
@@ -68202,7 +68347,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-09-313b";
+const APP_BUILD = "2026-10-12-313c";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
