@@ -20825,3 +20825,57 @@ with five subtractions and one change of form.
   `res.unlock.reveal` for a colour, banner or effect; an unlock spotlight
   card opens with `ui.popup.open`.
 - `.rs-screen` is off `SND_NO_GENERIC`: its buttons tap like any other.
+
+### Build 323 (b323t) - the tab bar: a lens that pops out and follows, white labels, Calendar on the bar
+
+*"When I change tabs by tapping or swiping over the Liquid Glass bottom tab
+bubble doesn't pop out and follow. The Liquid Glass in the screenshot I
+circled is good, that's the best, it should look more like that when that's
+the tab you are on."* / *"the bottom tab icons and wording is that nice white
+too and not the grey we have"*. Gated in `check_b323t_tabbar` (fails on
+22bf429).
+
+- **The bar is Home, Profile, Leaderboard, Calendar.** `#bottomtab-settings`
+  is gone (Settings lives in Profile); `#bottomtab-calendar` (`data-dest`
+  `calendar`) calls `showCalendarTab()` where it exists, `showCalendar()`
+  otherwise. `syncActive()` lights Calendar for any `#stage .screen-calendar`
+  that is SHOWING (not inside a `[hidden]` panel) - so it is right whether
+  the calendar is its own screen or a pane - and Settings / the bug report
+  light Profile. Every button lookup there tolerates a missing button. The
+  stage observer watches `hidden` as well as `class` for that reason.
+- **The resting pill is clear glass** (`.bottomtabs-slider::before`): no flat
+  white wash (that was the "greyed out" look), a 34% hairline rim, a 50%
+  specular along the top, a cool fringe along its top edge and a warm one
+  along its bottom, a faint dark band inside the rim, a soft shadow. Same
+  `inset:5px 2px`.
+- **The lens** (`#bottomtabs-lens` > `.tab-lens-body`) lives on `<body>`, not
+  in the bar: `[data-layout="modern"] .bottomtabs` is `overflow:hidden` (its
+  sheen layer is 4x its width), which would clip the lens to the bar. It is
+  measured once per touch (`lensMeasure`), `pointer-events:none`, z 201. On
+  press it starts exactly the resting pill's size over the current tab and
+  pops (taller than the bar by 18px, the tab's width plus 12px each side) on
+  its way to the pressed tab; on a drag it follows the finger (a
+  `translate3d` on the box, its width a `scaleX` blended between the tabs it
+  is between); on release it glides to the tab and shrinks back into the
+  pill there, which fades back in under it (`.bottomtabs.lens-up` hides the
+  pill while the lens is out - one piece of glass, never two). The tabs
+  under it are magnified by an inline `transform` (up to 1.14).
+- **The pop and the shrink are Web Animations, not transitions.** A tap's
+  press and release land in the same frame, and a transition retargeted with
+  a delay HOLDS wherever the first one had got to: the lens froze a few
+  pixels into its pop. The shrink is queued behind the pop (its own delay, no
+  backwards fill). The glide is a CSS transition. All of it is transform and
+  opacity; no filter of any kind. Reduce motion: the lens stays the pill's
+  size and only moves.
+- **The press is the lens**: `.bottomtabs-navrow .bottomtab:active` has no grey
+  wash and no shrink any more.
+- **Labels and icons are white**: `rgba(255,255,255,.84)`, the current tab
+  `#fff`, with a faint text shadow.
+- **A drag that lands on a new tab plays `ui.tab.bottom` once.** It played
+  nothing before: the click a captured pointer releases lands on the row, not
+  a tab, so the shared tap layer had nothing to name.
+- Moved, not loosened: check-behaviour b246 (43), b284, b314h_tabs tap the
+  Calendar tab where they tapped Settings; b310 and b319h expect the calendar
+  to light Calendar; check-sound taps Calendar for the slide and opens
+  Settings directly; shoot-flow opens Settings with `showAppearance()`. The
+  main-menu tour's fourth step points at the Calendar tab.

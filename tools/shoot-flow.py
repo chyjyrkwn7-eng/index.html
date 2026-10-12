@@ -414,7 +414,8 @@ def main():
                 page.evaluate("()=>window.scrollTo(0,0)"); page.wait_for_timeout(300)
 
                 # settings, top and bottom
-                page.evaluate("()=>document.getElementById('bottomtab-settings').click()")
+                # 323: Settings left the bar for Calendar; open it where it lives
+                page.evaluate("()=>{const b=document.getElementById('bottomtab-settings'); if(b) b.click(); else showAppearance();}")
                 page.wait_for_timeout(900)
                 shot(page, 29, "settings", bar_ok=True)
                 page.evaluate("()=>window.scrollTo(0, document.documentElement.scrollHeight)")

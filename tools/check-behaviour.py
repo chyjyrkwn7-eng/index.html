@@ -1447,7 +1447,8 @@ def check_b313_sheet2(br):
       const sl=sheet.querySelector('.howmany-sect input.slider');
       sl.value=Math.floor(Number(sl.max)/2); sl.dispatchEvent(new Event('input',{bubbles:true})); sl.dispatchEvent(new Event('change',{bubbles:true})); await wait(500);
       const chip=sheet.querySelector('.hundo-chip'); const c=chip.getBoundingClientRect(), w=sl.parentElement.getBoundingClientRect();
-      out.chip={ off: Math.round((c.left+c.right)/2-(w.left+w.right)/2), text: chip.innerText };
+      out.chip={ off: Math.round((c.left+c.right)/2-(w.left+w.right)/2), text: chip.innerText,
+                 inBox: !!chip.closest('.sheet-begin-bar .sheet-summary'), overSlider: !!chip.closest('.howmany-sect') };
       chip.click(); await wait(300); out.why=(sheet.querySelector('.hundo-why')||{}).textContent||'';
       { const w=sheet.querySelector('.hundo-why'); const bg = el => { const c=getComputedStyle(el); return c.backgroundImage + ' | ' + c.backgroundColor + ' | ' + c.borderTopColor; };
         out.reds = w ? [bg(chip), bg(w)] : null; }
@@ -1468,7 +1469,14 @@ def check_b313_sheet2(br):
     ctx.close()
     check("the shuffle line says what it does and nothing about question order",
           r["shuffle"] and "random order" not in r["shuffle"], r["shuffle"])
-    check("the No hundo chip is centred over the slider", abs(r["chip"]["off"]) <= 1, r["chip"])
+    # MOVED IN 323 (check_b323s_summary): "The virtual room, start menu
+    # with the match settings really figured it out, above the save
+    # settings button it has a box with the stuff the test has. Can all
+    # the start menus follow that idea instead?" No hundo is part of what
+    # the test is, so it sits in that box beside the mode, above Begin -
+    # no longer centred over the slider.
+    check("the No hundo chip is in the summary box above Begin, not over the slider",
+          r["chip"].get("inBox") is True and r["chip"].get("overSlider") is False, r["chip"])
     check("and says No hundo, and its note names the hundo total and the badge count",
           "hundo" in r["chip"]["text"].lower() and "hundo total" in r["why"] and "badge" in r["why"]
           and "\u201cHow many\u201d" in r["why"] and "\u201cAll\u201d" in r["why"], [r["chip"], r["why"]])
@@ -2285,7 +2293,9 @@ def check_b234(br):
         const sh = document.querySelector('.unitoptions-modal-sheet');
         const hm = sh.querySelector('.howmany-sect');
         const sl = hm && hm.querySelector('.slider');
-        const defaults = [...sh.querySelectorAll('.sheet-summary-tags .sheet-tag')].map(t => t.textContent);
+        /* build 323: the settings are one line in the box above Begin */
+        const ol = sh.querySelector('.sheet-summary-opts');
+        const defaults = ol && !ol.closest('.is-empty') ? [...ol.querySelectorAll('.sheet-summary-opt')].map(t => t.textContent) : [];
         const res = { defaults, chips: hm ? hm.querySelectorAll('.chip').length : -1, all: !!(hm && hm.querySelector('.slider-allbtn')),
                       star: (() => { const r = sh.querySelector('.drawfrom-sect .bank-starred'); if(!r) return null;
                         return { text: (r.querySelector('.otext') || {}).firstChild ? r.querySelector('.otext').firstChild.textContent : '',
@@ -2583,12 +2593,15 @@ def check_b235b(br):
       await T('bankInfo', () => { const fc = document.querySelector('.bank-starred .ohint');
         return { info: !!document.querySelector('.bank-info, .bank-infobody'), shown: !!fc, len: fc ? (fc.textContent || '').trim().length : 0 }; });
       cfg.timer = 'down'; cfg.timerMinutes = 20; document.querySelector('.bank-starred')?.click(); await wait(200);
-      await T('tags', () => { const ts = [...document.querySelectorAll('.sheet-summary .sheet-summary-tags .sheet-tag')];
+      /* build 323: the tags are one line of words in the box above Begin */
+      await T('tags', () => { const ol = document.querySelector('.sheet-summary .sheet-summary-opts');
+        const ts = ol && !ol.closest('.is-empty') ? [...ol.querySelectorAll('.sheet-summary-opt')] : [];
         const card = (document.querySelector('.unitoptions-modal-sheet .more-toggle') || {}).parentElement;
         return { tags: ts.length, texts: ts.map(t => t.textContent), icons: ts.every(t => !!t.querySelector('svg')),
                  cardGreen: !!card && card.classList.contains('is-set'),
                  green: (() => { const p = ts.find(t => /min limit|Stopwatch|min countdown|Tracking time/.test(t.textContent)); if(!p) return false;
-                   const m = (getComputedStyle(p).borderTopColor.match(/[\d.]+/g) || []).map(Number);
+                   /* build 323: green WORDS in the line (the colour), where the pill was a green border */
+                   const m = (getComputedStyle(p).color.match(/[\d.]+/g) || []).map(Number);
                    return p.classList.contains('is-set') && m.length >= 3 && m[1] > m[0] + 80 && m[1] > m[2] + 60; })(),
                  state: (document.querySelector('.more-toggle-state') || {}).textContent || '' }; });
       await T('timerLabel', () => (document.querySelector('.more-toggle') || {}).textContent || '');
@@ -2652,8 +2665,13 @@ def check_b235b(br):
     # Build 254: and ONLY what is switched on - "if they are in order,
     # don't show that ... If there's no timer, don't show that either ...
     # And if it's all questions, don't show that."
-    check("the top box lists only the settings that are on, each with an icon, and no question count",
-          isinstance(t, dict) and t.get("icons") and ("20 min countdown" in tx or "20 min limit" in tx) and ("Flagged" in tx or "Starred" in tx)
+    # REVISED IN 323: "The virtual room, start menu with the match settings
+    # really figured it out, above the save settings button it has a box
+    # with the stuff the test has. Can all the start menus follow that idea
+    # instead?" The settings are the Virtual Room box's plain line now, in
+    # the box above Begin - words, no icons - and still only what is on.
+    check("the box lists only the settings that are on, and no question count",
+          isinstance(t, dict) and ("20 min countdown" in tx or "20 min limit" in tx) and ("Flagged" in tx or "Starred" in tx or "Starred only" in tx)
           and not any(x in ("All questions", "In order", "No timer") for x in tx)
           and not any(x.startswith("All ") and x[4:].isdigit() for x in tx) and not any(" of " in x for x in tx), t)
     # (The Timer bar's own "20 min countdown" state went with the dropdown
@@ -2661,7 +2679,7 @@ def check_b235b(br):
     # Build 250/251: "I need this to go green when you change it" - then
     # "that box turning green is kinda weird. Don't do that. I like how
     # the timer thing at the top is green though." The pill, not the card.
-    check("a timer that is on turns its pill in the top box green, and not the Timer card",
+    check("a timer that is on reads green in the box, and not the Timer card",
           isinstance(t, dict) and t.get("green") is True and t.get("cardGreen") is False, t)
     # build 310 renamed it "Stopwatch & timer": the shape is that it names the timers
     check("the fold is named for the timers", "timer" in str(r["timerLabel"]).lower(), r["timerLabel"])
@@ -4806,7 +4824,10 @@ def check_b246(br):
     # 43. Madison's list after 245, on a real Home.
     t = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       store.legacyChars = []; store.avatarChar = 'ninja';
-      for(const id of ['bottomtab-rewards', 'bottomtab-profile', 'bottomtab-settings']){
+      /* MOVED IN 323 (builder T): Settings left the bar for Calendar - "Settings
+         leaves the bar and Calendar takes its place" - so the fourth tab tapped
+         is Calendar. */
+      for(const id of ['bottomtab-rewards', 'bottomtab-profile', 'bottomtab-calendar']){
         showHome(); await wait(600);
         const before = document.querySelector('#stage > *');
         document.getElementById(id).click(); await wait(700);
@@ -4823,7 +4844,7 @@ def check_b246(br):
         return !!o && o.textContent === b.label; });
       return out; }""")
     check("every tab on the bar opens its screen when TAPPED, and the Profile card's rank block opens the climb",
-          all(t[k] for k in ("bottomtab-rewards", "bottomtab-profile", "bottomtab-settings")) and t["ranksScreen"], t)
+          all(t[k] for k in ("bottomtab-rewards", "bottomtab-profile", "bottomtab-calendar")) and t["ranksScreen"], t)
     check("Umbra and Singularity are drawn in their pop-ups, not blacked out", t["hiddenArt"] == [False, False], t["hiddenArt"])
     check("all three rank banners animate", t["animated"] == [True, True, True], t["animated"])
     check("every banner in Customize says what it takes, under it", len(t["needs"]) > 10 and all(t["needs"]), t["needs"])
@@ -6477,8 +6498,10 @@ def check_b284(br):
           len(rows) > 3 and not any(x in ("Smooth scrolling", "Keep screen awake") for x in rows), rows)
     check("scrolling is smooth even where an older build saved it off", r.get("scroll") == "smooth", r.get("scroll"))
     check("nothing asks for a wake lock, even where an older build saved it on", r.get("wake") == 0, r.get("wake"))
+    # MOVED IN 323 (builder T): the fourth tab is Calendar, not Settings
+    # (Settings lives in Profile now). Still four, still no Progress.
     check("four tabs on the bar and none of them Progress",
-          r.get("tabs") == ["home", "profile", "rewards", "settings"], r.get("tabs"))
+          r.get("tabs") == ["home", "profile", "rewards", "calendar"], r.get("tabs"))
     check("the Profile card's rank block opens the climb, with Profile lit on the bar",
           r.get("rankOpens") is True and r.get("profileLit") is True, (r.get("rankOpens"), r.get("profileLit")))
     check("and its back link goes to Profile", r.get("backToProfile") is True, r.get("backToProfile"))
@@ -9343,10 +9366,12 @@ def check_b314h_tabs(br):
       /* 1. frames held back (iOS Low Power Mode, a busy compositor) */
       const orig = window.requestAnimationFrame; let held = 0;
       window.requestAnimationFrame = cb => { held++; return 0; };
-      document.getElementById('bottomtab-settings').click();
+      /* MOVED IN 323 (builder T): Settings is off the bar; the tab tapped
+         with frames held back is Calendar, its screen the shown calendar */
+      document.getElementById('bottomtab-calendar').click();
       await wait(600);
       out.heldFrames = held;
-      out.loadedWithoutFrames = !!document.querySelector('#stage .screen-settings');
+      out.loadedWithoutFrames = [...document.querySelectorAll('#stage .screen-calendar')].some(e => !e.closest('[hidden]'));
       window.requestAnimationFrame = orig;
       await wait(400);
       /* 2. the bank's units are worked out once */
@@ -9388,7 +9413,7 @@ def check_b314h_tabs(br):
       document.addEventListener('pointerdown', () => { __tap = performance.now(); }, true);
       new MutationObserver(() => __mounts.push(performance.now())).observe(document.getElementById('stage'), { childList: true });
       (function f(t){ __frames.push(t); requestAnimationFrame(f); })(0); }""")
-    tabs = ["home", "profile", "rewards", "settings"]
+    tabs = ["home", "profile", "rewards", "calendar"]   # 323: Calendar took Settings' place
     times = []; blank = 0
     # three rounds of the twelve switches (build 315): a median of twelve
     # swung 280-350ms run to run on one build here; of thirty-six it holds
@@ -10051,7 +10076,12 @@ def check_b310(br):
       await wait(900); out.streakGone = !document.querySelector('.streak-pop');
       /* the Profile tab stays lit on every screen reached from Profile
          (build 319, h: Friends and the calendar are Profile's again) */
-      const lit = k => !!document.querySelector('#bottomtab-profile.active') && !document.querySelector('#bottomtab-rewards.active');
+      /* MOVED IN 323 (builder T): the calendar is a bar tab of its own now
+         ("Settings leaves the bar and Calendar takes its place"), so the
+         calendar lights Calendar; Friends and Test review still light Profile. */
+      const lit = k => k === 'calendar'
+        ? (!!document.querySelector('#bottomtab-calendar.active') && !document.querySelector('#bottomtab-profile.active'))
+        : (!!document.querySelector('#bottomtab-profile.active') && !document.querySelector('#bottomtab-rewards.active'));
       out.lit = {};
       for(const [k, f] of [['friends', () => showFriends()], ['calendar', () => showCalendar && showCalendar()], ['testreview', () => showTestReviewList && showTestReviewList()]]){
         try{ f(); }catch(e){ out.lit[k] = 'threw ' + e.message; continue; }
@@ -10114,7 +10144,7 @@ def check_b310(br):
     check("the streak pop has eight different colours, one per tier, across the wheel", r["streakDistinct"] == 8 and r["hueSpan"] >= 180, r)
     check("streaks past 50 get their own tiers (75 is the 4th, 350 the 8th)", r["past50"], r)
     check("the streak pop is still up at 2.6s and gone by 3.5s", r["streakStill"] and r["streakGone"], r)
-    check("the Profile tab stays lit on Friends, Calendar and Test review", all(v is True for v in r["lit"].values()), r["lit"])
+    check("the Profile tab stays lit on Friends and Test review, and the calendar lights its own Calendar tab (323)", all(v is True for v in r["lit"].values()), r["lit"])
     sl = r.get("slide") or {}
     check("the leaderboard's top tabs have a sliding indicator", r["slider"], r)
     check("the indicator glides between tabs rather than jumping", bool(sl) and sl["x0"] != sl["end"] and sl["mid"] != sl["end"] and "transform" in sl["tr"], sl)
@@ -10662,7 +10692,8 @@ def check_b313_lead(br):
       await wait(600);
       const chip = document.querySelector('.hundo-chip'); chip?.click(); await wait(400);
       const why = document.querySelector('.hundo-why');
-      out.why = (chip && why && !why.hidden) ? { gap: Math.round(why.getBoundingClientRect().top - chip.getBoundingClientRect().bottom), text: why.textContent.trim() } : null;
+      /* build 323: the chip is in the box above Begin, so its note opens ABOVE it */
+      out.why = (chip && why && !why.hidden) ? { gap: Math.round(chip.getBoundingClientRect().top - why.getBoundingClientRect().bottom), text: why.textContent.trim() } : null;
       document.querySelector('#unitoptions-modal')?.remove(); document.querySelector('.unitoptions-scrim')?.remove();
       /* Customize goes up before its banner scenes are drawn, and every
          one of them is drawn a moment later */
@@ -10736,7 +10767,11 @@ def check_b313_lead(br):
           len(f) == 2 and any(x["met"] for x in f) and all(x["img"].startswith("linear-gradient") and x["glow"] for x in f), f)
     check("scrolling does not rewrite the page's root style on every frame", r.get("shiftWrites") == 0, r.get("shiftWrites"))
     w = r.get("why")
-    check("tapping No hundo opens its note right under the chip, saying to slide to All",
+    # REVISED IN 323: "above the save settings button it has a box with the
+    # stuff the test has. Can all the start menus follow that idea
+    # instead?" The chip lives in that box at the foot of the sheet now, so
+    # the note still opens AT the chip ("put it near the button"), above it.
+    check("tapping No hundo opens its note right by the chip (above it, in the box over Begin), saying to slide to All",
           isinstance(w, dict) and 0 <= w["gap"] <= 40 and "All" in w["text"], w)
     cn, cl = r.get("custNow") or {}, r.get("custLater") or {}
     check("Customize opens before drawing its banner scenes, and draws every one of them a moment later",
@@ -21779,7 +21814,8 @@ def check_b319h_layout(br):
                            lit: [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id) }; }""")
                 if want == "board": ok = "screen-rankings" in x["cls"] and x["board"] == board and x["lit"] == ["bottomtab-rewards"]
                 elif want == "friends": ok = "screen-friends" in x["cls"] and x["lit"] == ["bottomtab-profile"]
-                else: ok = "screen-profile" in x["cls"] and x["ptab"] == want and x["lit"] == ["bottomtab-profile"]
+                # 323 (builder T): the calendar lights the bar's own Calendar tab
+                else: ok = "screen-profile" in x["cls"] and x["ptab"] == want and x["lit"] == (["bottomtab-calendar"] if want == "calendar" else ["bottomtab-profile"])
                 if not (ok and x["h"] > 120): bad.append([js, x])
             check("%s: every old way to the boards, Friends and the calendar lands on the right screen and tab, the right bottom tab lit" % dev, not bad, bad)
         except Exception as e:
@@ -25416,6 +25452,440 @@ def check_b323v_vroom(br):
     ctx.close()
 
 
+B323T_SPY = """() => { window.__snd = []; const o = NovaSound.play;
+  NovaSound.play = function(id, opts){ __snd.push([id, !!(opts && opts.generic), performance.now()]); return o.apply(this, arguments); }; }"""
+
+
+def _b323t_sounds(calls, want="ui.tab.bottom"):
+    """How many times `want` was actually heard, by NovaSound.play's own
+    rules: a generic tap gives way to a specific sound in the last 220ms,
+    and a sound does not repeat inside its 70ms cooldown."""
+    heard, last_specific, last_same = 0, -1e9, -1e9
+    for cid, generic, t in calls:
+        if generic and t - last_specific < 220:
+            continue
+        if not generic:
+            last_specific = t
+        if cid == want:
+            if t - last_same < 70:
+                continue
+            last_same = t
+            heard += 1
+    return heard
+
+
+B323T_LENS = """() => { const l = document.getElementById('bottomtabs-lens');
+  const b = l && l.querySelector('.tab-lens-body'); const bar = document.getElementById('bottomtabs').getBoundingClientRect();
+  if(!b) return { lens: false, barTop: bar.top, barBottom: bar.bottom, barH: bar.height };
+  const r = b.getBoundingClientRect(); const cs = getComputedStyle(l);
+  return { lens: true, up: l.classList.contains('is-up'), op: parseFloat(cs.opacity), vis: cs.visibility,
+           cx: r.left + r.width / 2, top: r.top, bottom: r.bottom, h: r.height, w: r.width,
+           barTop: bar.top, barBottom: bar.bottom, barH: bar.height, pe: cs.pointerEvents }; }"""
+
+
+def check_b323t_tabbar(br):
+    """Build 323 (builder T): the bottom tab bar as her iOS 26 reference.
+    "When I change tabs by tapping or swiping over the Liquid Glass bottom
+    tab bubble doesn't pop out and follow." / "The Liquid Glass in the
+    screenshot I circled is good, that's the best, it should look more like
+    that when that's the tab you are on." / "You see how the bottom tab
+    icons and wording is that nice white too and not the grey we have?"
+    And Settings leaves the bar for Calendar: Home, Profile, Leaderboard,
+    Calendar. On 322 the labels were --soft grey, the resting pill a flat
+    12% white wash with a 13% rim, there was no lens at all, and the fourth
+    tab was Settings."""
+    print("\n323t. build 323: the tab bar - white labels, a clear glass pill, the lens that pops out and follows, Calendar on the bar")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, touch=True)
+    pg.evaluate("()=>{ document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); showHome(); }")
+    pg.wait_for_timeout(1200)
+    r = pg.evaluate("""() => {
+      const tabs = [...document.querySelectorAll('#bottomtabs .bottomtabs-navrow .bottomtab')];
+      const rgb = c => (c.match(/[\\d.]+/g) || []).map(Number);
+      const labs = tabs.map(t => { const c = rgb(getComputedStyle(t.querySelector('.bottomtab-label')).color);
+        return { id: t.id, text: t.querySelector('.bottomtab-label').textContent.trim(), c, active: t.classList.contains('active') }; });
+      const sl = document.getElementById('bottomtabs-slider'); const pb = getComputedStyle(sl, '::before');
+      /* every rgba() in a value, with its alpha */
+      const whites = v => (v.match(/rgba?\\([^)]*\\)/g) || []).map(rgb).filter(a => a.length >= 3 && a[0] > 200 && a[1] > 200 && a[2] > 200).map(a => a.length > 3 ? a[3] : 1);
+      /* a flat layer: a linear-gradient whose stops never go clear */
+      const lin = (pb.backgroundImage.match(/linear-gradient\\((?:[^()]|\\([^()]*\\))*\\)/g) || []);
+      const flatWash = lin.map(g => Math.min.apply(null, whites(g).concat([1])));
+      const inset = (pb.boxShadow.match(/rgba?\\([^)]*\\)[^,]*inset|inset[^,]*rgba?\\([^)]*\\)/g) || []).join(' ');
+      return { labs, settings: !!document.getElementById('bottomtab-settings'), flatWash,
+               rim: Math.max.apply(null, whites(inset).concat([0])),
+               tabs: tabs.map(t => { const b = t.getBoundingClientRect(); return { id: t.id, cx: b.left + b.width / 2, cy: b.top + b.height / 2, h: b.height, w: b.width }; }) }; }""")
+    ids = [l["id"] for l in r["labs"]]
+    check("four tabs in the new order: Home, Profile, Leaderboard, Calendar, and no Settings on the bar",
+          ids == ["bottomtab-home", "bottomtab-profile", "bottomtab-rewards", "bottomtab-calendar"]
+          and [l["text"] for l in r["labs"]] == ["Home", "Profile", "Leaderboard", "Calendar"] and not r["settings"], [ids, r["settings"]])
+    white = lambda c: len(c) >= 3 and min(c[:3]) >= 210 and max(c[:3]) - min(c[:3]) <= 6 and (len(c) < 4 or c[3] >= .8)
+    check("every tab label is white, not grey (the one you are on full white)",
+          all(white(l["c"]) for l in r["labs"]) and all(l["c"][:3] == [255, 255, 255] and len(l["c"]) == 3 for l in r["labs"] if l["active"]),
+          [(l["id"], l["c"]) for l in r["labs"]])
+    check("the resting selected tab is clear glass with a bright rim: no flat white wash, a rim of 30%+ white",
+          r["flatWash"] and max(r["flatWash"]) < .06 and r["rim"] >= .3, {"flatWash": r["flatWash"], "rim": r["rim"]})
+    check("every tab is at least 44px tall and wide", all(t["h"] >= 44 and t["w"] >= 44 for t in r["tabs"]), r["tabs"])
+    T = {t["id"]: t for t in r["tabs"]}
+    pg.evaluate(B323T_SPY)
+    cdp = ctx.new_cdp_session(pg)
+    home, y = T["bottomtab-home"]["cx"], T["bottomtab-home"]["cy"]
+    lb = T["bottomtab-rewards"]["cx"]
+    # 1. press: the lens pops out, bigger than the bar, above and below it
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": home, "y": y}]})
+    pg.wait_for_timeout(450)
+    d = pg.evaluate(B323T_LENS)
+    check("on a press the lens pops out: taller than the bar, over its top and bottom edges, clear of taps",
+          d["lens"] and d["up"] and d["op"] > .95 and d["h"] > d["barH"] + 6 and d["top"] < d["barTop"] - 3 and d["bottom"] > d["barBottom"] + 3
+          and d["pe"] == "none" and abs(d["cx"] - home) < 4, d)
+    # 2. it follows the finger along the bar
+    follow = []
+    mid = (T["bottomtab-profile"]["cx"] + lb) / 2
+    for x in [home + (mid - home) * i / 10 for i in range(1, 11)] + [mid + (lb - mid) * i / 5 for i in range(1, 6)]:
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x, "y": y}]})
+        pg.wait_for_timeout(20)
+        if abs(x - mid) < .5 or abs(x - lb) < .5:
+            pg.wait_for_timeout(60)
+            dd = pg.evaluate(B323T_LENS)
+            follow.append((round(x), round(dd.get("cx", -999)), dd.get("up"), round(dd.get("h", 0))))
+    check("while dragging, the lens follows the finger (within 3px), still popped out",
+          len(follow) == 2 and all(abs(a - b) <= 3 and up and h > r["tabs"][0]["h"] for a, b, up, h in follow), follow)
+    # 3. release: it settles on the tab and shrinks back into the resting pill
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    pg.wait_for_timeout(1100)
+    s = pg.evaluate("""() => { const sl = document.getElementById('bottomtabs-slider').getBoundingClientRect();
+      const l = document.getElementById('bottomtabs-lens');
+      return { lensUp: !!(l && l.classList.contains('is-up')), lensOp: l ? parseFloat(getComputedStyle(l).opacity) : null,
+               pill: sl.left + sl.width / 2, pillOp: parseFloat(getComputedStyle(document.getElementById('bottomtabs-slider')).opacity),
+               lit: [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id),
+               screen: !!document.querySelector('#stage .screen-rankings'),
+               mag: [...document.querySelectorAll('#bottomtabs .bottomtab')].map(t => t.style.transform || '') }; }""")
+    drag_snd = _b323t_sounds(pg.evaluate("() => __snd.splice(0)"))
+    check("let go: the lens settles on Leaderboard and shrinks back into the resting pill there, nothing left magnified",
+          not s["lensUp"] and s["lensOp"] is not None and s["lensOp"] < .05 and abs(s["pill"] - lb) < 3 and s["pillOp"] > .95
+          and s["lit"] == ["bottomtab-rewards"] and s["screen"] and not any(s["mag"]), s)
+    check("a drag to a new tab plays the tab sound once", drag_snd == 1, drag_snd)
+    # 4. a tap: the lens pops out and glides to the tapped tab, then settles
+    cal = (T.get("bottomtab-calendar") or r["tabs"][-1])["cx"]
+    pg.evaluate("""() => { window.__lens = []; const t0 = performance.now();
+      (function f(){ const l = document.getElementById('bottomtabs-lens'); const b = l && l.querySelector('.tab-lens-body');
+        if(b){ const r = b.getBoundingClientRect(); __lens.push([performance.now() - t0, r.left + r.width / 2, r.height, l.classList.contains('is-up')]); }
+        if(performance.now() - t0 < 1400) requestAnimationFrame(f); })(); }""")
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": cal, "y": y}]})
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    pg.wait_for_timeout(1600)
+    tp = pg.evaluate("""() => ({ lens: __lens, lit: [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id),
+      calShown: [...document.querySelectorAll('#stage .screen-calendar')].some(e => !e.closest('[hidden]')),
+      pill: (b => b.left + b.width / 2)(document.getElementById('bottomtabs-slider').getBoundingClientRect()) })""")
+    up = [x for x in tp["lens"] if x[3]]
+    tap_snd = _b323t_sounds(pg.evaluate("() => __snd.splice(0)"))
+    check("a tap pops the lens out over the bar's edges and glides it from Leaderboard to Calendar",
+          bool(up) and max(x[2] for x in up) > r["tabs"][0]["h"] + 8 and abs(up[0][1] - lb) < 30 and abs(up[-1][1] - cal) < 4
+          and any(lb + 10 < x[1] < cal - 10 for x in up), {"n": len(up), "samples": [[round(v) for v in x[:3]] for x in up], "maxH": max([x[2] for x in up] or [0])})
+    check("then it settles: Calendar lit, the calendar showing, the resting pill under Calendar",
+          tp["lit"] == ["bottomtab-calendar"] and tp["calShown"] and abs(tp["pill"] - cal) < 3, {k: tp[k] for k in ("lit", "calShown", "pill")})
+    check("a tap plays the tab sound once", tap_snd == 1, tap_snd)
+    # 5. reduce motion: no pop-out, it only moves
+    pg.evaluate("() => { theme.reduceMotion = true; applyTheme(); showHome(); }")
+    pg.wait_for_timeout(900)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": home, "y": y}]})
+    pg.wait_for_timeout(400)
+    rm = pg.evaluate(B323T_LENS)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    pg.wait_for_timeout(600)
+    pg.evaluate("() => { theme.reduceMotion = false; applyTheme(); }")
+    check("with Reduce motion the lens does not pop out (it stays inside the bar)",
+          rm["lens"] and rm["h"] <= rm["barH"] and rm["top"] >= rm["barTop"], rm)
+    # 6. the Profile tab stays lit on Profile's own sub-screens; Settings lights Profile now
+    sub = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      const lit = () => [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id).join(',');
+      for(const [k, f] of [['friends', () => showFriends()], ['customize', () => showCustomize()], ['settings', () => showAppearance()], ['profile', () => showProfile()]]){
+        try{ f(); }catch(e){ out[k] = 'threw ' + e.message; continue; } await wait(600); out[k] = lit(); }
+      return out; }""")
+    check("Profile stays lit on Friends, Customize and Settings (Settings lives in Profile now), and nothing throws without a Settings tab",
+          all(v == "bottomtab-profile" for v in sub.values()), sub)
+    ctx.close()
+
+
+B323B_SKY = """() => { const cs = getComputedStyle(document.body, '::after');
+  const urls = (cs.backgroundImage.match(/url\\(/g) || []).length;
+  const anims = document.getAnimations().filter(a => a.effect && a.effect.target === document.body
+    && a.effect.pseudoElement === '::after' && a.playState === 'running').length;
+  return { ready: document.documentElement.classList.contains('sky-ready'), urls,
+    size: cs.backgroundSize, op: parseFloat(cs.opacity),
+    anim: cs.animationName, tprop: cs.transitionProperty, running: anims,
+    pos: cs.position, z: cs.zIndex }; }"""
+
+B323B_TILES = """async () => { const cs = getComputedStyle(document.body, '::after');
+  const urls = [...cs.backgroundImage.matchAll(/url\\("?([^")]+)"?\\)/g)].map(m => m[1]);
+  const sizes = cs.backgroundSize.split(',').map(s => parseFloat(s));
+  const out = [];
+  for(let i = 0; i < urls.length; i++){ const im = new Image(); im.src = urls[i];
+    try{ await im.decode(); }catch(e){}
+    out.push({ nat: im.naturalWidth, css: sizes[i], dpr: devicePixelRatio }); }
+  return out; }"""
+
+
+def _b323b_shots(pg):
+    """The same frame with and without the starfield: what the stars add,
+    and nothing else (the layer's transition is cut so both are settled)."""
+    from PIL import Image as _Im
+    pg.evaluate("()=>{const s=document.createElement('style');s.id='__b323t';"
+                "s.textContent='body::after{transition:none!important}';document.head.appendChild(s);"
+                "window.__b323p=document.getAnimations().filter(a=>a.playState==='running');"
+                "window.__b323p.forEach(a=>{try{a.pause();}catch(e){}});}")
+    pg.wait_for_timeout(120)
+    on = _Im.open(io.BytesIO(pg.screenshot())).convert("RGB")
+    pg.wait_for_timeout(160)
+    on2 = _Im.open(io.BytesIO(pg.screenshot())).convert("RGB")
+    pg.evaluate("()=>{const s=document.createElement('style');s.id='__b323h';"
+                "s.textContent='body::after{display:none!important}';document.head.appendChild(s);}")
+    pg.wait_for_timeout(160)
+    off = _Im.open(io.BytesIO(pg.screenshot())).convert("RGB")
+    pg.evaluate("()=>{document.getElementById('__b323h')?.remove();document.getElementById('__b323t')?.remove();"
+                "(window.__b323p||[]).forEach(a=>{try{a.play();}catch(e){}});}")
+    pg.wait_for_timeout(60)
+    return (on, on2), off
+
+
+def _b323b_diff(on, off, box=None, thr=6):
+    """(pixels that differ by more than thr levels, the worst difference) in
+    box - counting only pixels that held still between the two "on" frames,
+    so anything still moving on the page (a canvas, a refraction map) cannot
+    pass for a star. Measured: 22bf429 has ~1,200 such moving pixels on Home."""
+    from PIL import ImageChops as _Ch
+    on, on2 = on
+    W, H = on.size
+    box = box or (0, 0, W, H)
+    def chan_max(a, b):
+        r, g, b_ = _Ch.difference(a.crop(box), b.crop(box)).split()
+        return _Ch.lighter(_Ch.lighter(r, g), b_)
+    d = chan_max(on, off)
+    still = chan_max(on, on2).point(lambda v: 255 if v <= 1 else 0)
+    d = _Ch.darker(d, still)
+    worst = d.getextrema()[1]
+    n = sum(d.point(lambda v: 255 if v > thr else 0).histogram()[255:])
+    return n, worst
+
+
+B323B_HERO = """() => { const r = document.querySelector('.cosmic-hero-wrap')?.getBoundingClientRect();
+  return r ? [r.left, r.top, r.right, r.bottom] : null; }"""
+
+
+def _b323b_home_stars(pg, on, off):
+    """Star pixels on Home OUTSIDE the planet scene, which keeps moving in
+    ways a paused animation does not stop (22bf429 shows up to ~1,900
+    "changed" pixels there with no starfield at all)."""
+    W, H = on[0].size
+    k = W / pg.evaluate("() => innerWidth")
+    n, _ = _b323b_diff(on, off, (0, int(H * .08), W, int(H * .95)))
+    r = pg.evaluate(B323B_HERO)
+    if r:
+        box = (max(0, int(r[0] * k)), max(int(H * .08), int(r[1] * k)), min(W, int(r[2] * k)), min(int(H * .95), int(r[3] * k)))
+        if box[2] > box[0] and box[3] > box[1]:
+            n -= _b323b_diff(on, off, box)[0]
+    return n
+
+
+def check_b323b_stars(br):
+    """Build 323 (b323b): "Could the background be improved? Like especially
+    on the main menu? ... Some faint star like dots? It's almost perfect
+    because it's not overwhelming but definitely adds to the space theme
+    ... I think our themes could use that."
+    - a starfield on Home at full strength, and on a non-Home tab, quieter;
+    - static: two pre-drawn image tiles on a fixed layer, no animation
+      running on it, a transition on opacity only (compositor-only), and
+      tiles drawn at the device's own pixel ratio so the stars are crisp;
+    - the status-bar band at the top is the colour it was: with and
+      without the starfield the top rows differ by at most 1 level - and
+      "without" is exactly 22bf429, which has no such layer;
+    - no stars inside an active test (nothing on screen changes when the
+      layer is removed);
+    - present on four themes, Supernova's scarred Home among them.
+    Fails on 22bf429, which has no starfield."""
+    print("\n323b. a faint starfield behind the app, strongest on Home")
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=2)
+        try:
+            pg.wait_for_function("() => document.documentElement.classList.contains('sky-ready')", timeout=6000)
+        except Exception:
+            pass
+        pg.evaluate(B318_STATE, "ink")
+        pg.wait_for_timeout(900)
+        s = pg.evaluate(B323B_SKY)
+        check("%s: Home has the starfield at full strength (two tiles on a fixed layer behind everything)" % label,
+              s["ready"] and s["urls"] == 2 and s["pos"] == "fixed" and s["z"] == "-1" and s["op"] > .97, s)
+        check("%s: it is static - no animation on it, only opacity can transition" % label,
+              s["urls"] == 2 and s["anim"] == "none" and s["running"] == 0 and s["tprop"] == "opacity", s)
+        tiles = pg.evaluate(B323B_TILES) if s["urls"] else []
+        check("%s: each tile is drawn at the device pixel ratio, so the stars are crisp" % label,
+              len(tiles) == 2 and all(t["nat"] > 0 and abs(t["nat"] - t["css"] * t["dpr"]) <= 1 for t in tiles), tiles)
+        on, off = _b323b_shots(pg)
+        W, H = on[0].size
+        n_home = _b323b_home_stars(pg, on, off)
+        check("%s: the stars are actually there to see on Home (%d star pixels outside the planet)" % (label, n_home), n_home >= 600, n_home)
+        band = int(20 * W / w)
+        n_top, worst_top = _b323b_diff(on, off, (0, 0, W, band), thr=1)
+        check("%s: the status-bar band is untouched - the top 20px within 1 level with and without the stars" % label,
+              s["urls"] == 2 and worst_top <= 1, worst_top)
+        # Quieter elsewhere, but there.
+        pg.evaluate("() => { showProfile(); }")
+        pg.wait_for_timeout(1700)
+        p = pg.evaluate(B323B_SKY)
+        on, off = _b323b_shots(pg)
+        n_prof, _ = _b323b_diff(on, off, (0, int(H * .1), W, H))
+        check("%s: Profile carries the starfield too, quieter than Home (opacity %.2f, %d star pixels)" % (label, p["op"], n_prof),
+              p["urls"] == 2 and .3 <= p["op"] < s["op"] and n_prof >= 150, p)
+        if label == PHONE[0]:
+            # Themes, the scarred Supernova Home among them.
+            seen = []
+            for kind in ("accent:adept", "accent:elite", "orange"):
+                info = pg.evaluate(B318_STATE, kind)
+                pg.wait_for_timeout(700)
+                on, off = _b323b_shots(pg)
+                n = _b323b_home_stars(pg, on, off)
+                seen.append((info["accent"], info["sn"], n))
+            check("%s: the starfield shows on Sapphire, Amethyst and Supernova's scarred Home as well as the default" % label,
+                  n_home >= 600 and all(n >= 600 for _, _, n in seen), seen)
+            # Inside a test: none.
+            pg.evaluate("""()=>{ cfg.units=[topicsIn(QUESTIONS)[0]]; cfg.mode='drill'; cfg.size=12; cfg.source='all';
+              const u=topicsIn(QUESTIONS)[0], idx=[]; QUESTIONS.forEach((q,i)=>{ if(q.topic===u && idx.length<12) idx.push(i); });
+              beginRun(idx); }""")
+            pg.wait_for_selector(".choice", timeout=20000)
+            pg.wait_for_timeout(1000)
+            t = pg.evaluate(B323B_SKY)
+            on, off = _b323b_shots(pg)
+            n_test, worst = _b323b_diff(on, off, thr=0)
+            check("%s: no stars inside an active test (layer at opacity %.2f, %d pixels change without it)" % (label, t["op"], n_test),
+                  s["urls"] == 2 and t["urls"] == 2 and t["op"] == 0 and n_test == 0, (t, n_test, worst))
+            # Reduce motion: nothing to fade either.
+            rm = pg.evaluate("() => { theme.reduceMotion = true; applyTheme(); const d = getComputedStyle(document.body, '::after').transitionDuration; theme.reduceMotion = false; applyTheme(); return d; }")
+            check("%s: under Reduce motion the starfield does not fade" % label, s["urls"] == 2 and rm == "0s", rm)
+        ctx.close()
+
+
+def check_b323s_summary(br):
+    """Build 323: every start sheet ends the Virtual Room's way - a box
+    saying what the test is, directly above Begin. "The virtual room,
+    start menu with the match settings really figured it out, above the
+    save settings button it has a box with the stuff the test has. Can all
+    the start menus follow that idea instead?" and "Study mode selection,
+    unit selection and start menu needs to be as perfect as possible."
+    In Drill, Exam, Review and Review with Flashcards: the box sits right
+    above Begin (in the pinned bar, so it is in view with it), is the
+    Match settings card (same background and corners), names the mode,
+    the units count and the question count, the units by name and what is
+    switched on, and rewrites itself when a switch or How many moves - and
+    "No hundo" lives in it. Begin is wholly in view and on top on both
+    reference devices. On 22bf429 the summary was grey text under the
+    title, far from Begin, with its settings row hidden. Fails there."""
+    print("\n323s. build 323: a Virtual Room box above Begin on every start sheet, live")
+    OPEN = """async ([mode, units])=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms));
+      document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
+      store.seenUnitSelectTour = true; store.seenUnitHoldTip = true; store.flagged = {};
+      cfg.mode = mode; cfg.units = []; cfg.flashcards = false; showSetup(); await wait(800);
+      for(const u of units){ const p=[...document.querySelectorAll('.screen-setup .pick')].find(p => p.querySelector('.pname').textContent === u); p && p.click(); await wait(60); }
+      await wait(700);
+      document.getElementById('nextbtn').click(); await wait(500);
+      /* the sheet rises over .25s; a loaded machine can hold that, so wait it out */
+      const sh = document.querySelector('#unitoptions-modal .unitoptions-modal-sheet');
+      for(let i = 0; i < 40 && sh && sh.getAnimations({ subtree: true }).some(a => a.playState === 'running' && a.effect && a.effect.getComputedTiming().iterations !== Infinity); i++) await wait(100);
+      await wait(200); }"""
+    READ = """()=>{ const sh = document.querySelector('#unitoptions-modal .unitoptions-modal-sheet');
+      const begin = sh && sh.querySelector('.sheet-begin-btn');
+      const box = sh && [...sh.querySelectorAll('.sheet-summary')].find(b => b.offsetParent);
+      if(!sh || !begin || !box) return { ok:false, begin: !!begin, box: !!box };
+      const rb = begin.getBoundingClientRect(), rs = box.getBoundingClientRect();
+      /* nothing laid out between the box and Begin */
+      const between = [...sh.querySelectorAll('*')].filter(e => { if(e === box || box.contains(e) || e === begin || begin.contains(e) || e.contains(box)) return false;
+        const r = e.getBoundingClientRect(); const cs = getComputedStyle(e);
+        return r.height > 2 && r.width > 2 && cs.visibility !== 'hidden' && cs.position !== 'absolute' && r.top >= rs.bottom - 1 && r.bottom <= rb.top + 1 && !e.contains(begin); }).map(e => e.className || e.tagName);
+      const hit = document.elementFromPoint((rb.left + rb.right) / 2, (rb.top + rb.bottom) / 2);
+      const t = s => (box.querySelector(s) || {}).textContent || '';
+      const opts = box.querySelector('.sheet-summary-opts');
+      const optsOn = !!opts && !(opts.closest('.is-empty')) && opts.getBoundingClientRect().height > 4;
+      const chip = box.querySelector('.hundo-chip');
+      const cs = getComputedStyle(box);
+      return { ok:true, gap: Math.round(rb.top - rs.bottom), dl: Math.round(rs.left - rb.left), dr: Math.round(rs.right - rb.right),
+               between, beginIn: rb.top >= 0 && rb.bottom <= innerHeight && rb.left >= 0 && rb.right <= innerWidth,
+               beginOnTop: !!hit && (hit === begin || begin.contains(hit)),
+               mode: t('.sheet-summary-mode'), line: t('.sheet-summary-line'), units: t('.sheet-summary-units'),
+               opts: optsOn ? opts.textContent : '', chip: !!chip && !chip.hidden && box.contains(chip),
+               look: { bg: cs.backgroundImage, radius: cs.borderTopLeftRadius }, title: (sh.querySelector('.unitoptions-modal-title') || {}).textContent }; }"""
+    ROW = """async (t)=>{ const sh=document.querySelector('#unitoptions-modal');
+      const r=[...sh.querySelectorAll('.opt')].find(o=>o.querySelector('.otext') && o.querySelector('.otext').firstChild.textContent===t);
+      if(!r) return false; r.click(); await new Promise(z=>setTimeout(z,300));
+      /* the options line folds open over .22s - on a loaded machine its
+         transition can sit at 0 for a while, so wait for it to finish */
+      const box = sh.querySelector('.sheet-begin-bar .sheet-summary') || sh;
+      for(let i = 0; i < 30 && box.getAnimations({ subtree: true }).some(a => a.playState === 'running'); i++) await new Promise(z=>setTimeout(z,100));
+      return true; }"""
+    UNITS = ["Identity Crimes", "Racial Profiling"]
+    for label, w, h in DEVICES:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        # the Virtual Room's own box, the model
+        vr = pg.evaluate("""async ()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms));
+          document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); store.seenUnitSelectTour = true;
+          showVirtualRoomSetup({ units:['Identity Crimes'], count:null, game:'race' }); await wait(800);
+          document.querySelector('.vroom-setup-go').click(); await wait(700);
+          const b=document.querySelector('#unitoptions-modal .sheet-summary'); const cs=getComputedStyle(b);
+          return { bg: cs.backgroundImage, radius: cs.borderTopLeftRadius }; }""")
+        res = {}
+        for mode, fl in (("drill", False), ("exam", False), ("review", False), ("review", True)):
+            name = "Flashcards" if fl else {"drill": "Drill", "exam": "Exam", "review": "Review"}[mode]
+            pg.evaluate(OPEN, [mode, UNITS])
+            if fl:
+                pg.evaluate(ROW, "Flashcards")
+            r = pg.evaluate(READ)
+            r["want"] = pg.evaluate("()=>{ const n = poolNow().length; return { n, mode: modeTitleOf(cfg.mode) }; }")
+            # live: one switch, and (Drill) How many
+            if mode == "drill":
+                pg.evaluate(ROW, "Stopwatch"); r["afterWatch"] = pg.evaluate(READ)
+                pg.evaluate(ROW, "Hide answer choices"); r["afterHide"] = pg.evaluate(READ)
+                pg.evaluate("""async ()=>{ const sl=document.querySelector('#unitoptions-modal .howmany-sect input.slider');
+                  sl.value=10; sl.dispatchEvent(new Event('input',{bubbles:true})); sl.dispatchEvent(new Event('change',{bubbles:true}));
+                  await new Promise(z=>setTimeout(z,500)); }""")
+                r["afterCut"] = pg.evaluate(READ)
+            elif mode == "exam":
+                pg.evaluate(ROW, "Instant feedback"); r["afterFb"] = pg.evaluate(READ)
+            elif fl:
+                pg.evaluate(ROW, "Flashcards"); r["afterOff"] = pg.evaluate(READ)
+            res[name] = r
+            pg.evaluate("()=>{ document.getElementById('unitoptions-modal')?.remove(); }")
+        ctx.close()
+        for name, r in res.items():
+            if not r.get("ok"):
+                check("%s %s: the sheet has a summary box and Begin" % (label, name), False, r); continue
+            check("%s %s: the summary box sits directly above Begin, as wide as it, nothing between" % (label, name),
+                  0 <= r["gap"] <= 24 and abs(r["dl"]) <= 2 and abs(r["dr"]) <= 2 and not r["between"],
+                  {k: r[k] for k in ("gap", "dl", "dr", "between")})
+            check("%s %s: Begin is wholly in view and nothing covers it" % (label, name),
+                  r["beginIn"] and r["beginOnTop"], {k: r[k] for k in ("beginIn", "beginOnTop")})
+            check("%s %s: it is the Virtual Room's card - same glass and corners" % (label, name),
+                  r["look"]["bg"] == vr["bg"] and r["look"]["radius"] == vr["radius"] and r["look"]["bg"] != "none", [r["look"], vr])
+            n = r["want"]["n"]
+            check("%s %s: it names the mode, the units count, the question count and the units" % (label, name),
+                  r["mode"] == r["want"]["mode"] and r["line"] == "2 units · %d questions" % n
+                  and all(u in r["units"] for u in UNITS), {k: r[k] for k in ("mode", "line", "units")})
+        d, e, v, f = res.get("Drill", {}), res.get("Exam", {}), res.get("Review", {}), res.get("Flashcards", {})
+        if d.get("ok"):
+            check("%s Drill: the options line says what is on (Shuffled choices), and nothing that is off" % label,
+                  d["opts"] == "Shuffled choices", d["opts"])
+            aw, ah, ac = d.get("afterWatch") or {}, d.get("afterHide") or {}, d.get("afterCut") or {}
+            check("%s Drill: switching on Stopwatch and Hide answer choices rewrites the line at once" % label,
+                  "Stopwatch" in aw.get("opts", "") and "Choices hidden" not in aw.get("opts", "")
+                  and "Choices hidden" in ah.get("opts", "") and "Stopwatch" in ah.get("opts", ""), [aw.get("opts"), ah.get("opts")])
+            check("%s Drill: How many at 10 rewrites the count, and No hundo shows in the box, Begin still in view" % label,
+                  ac.get("line") == "2 units · 10 questions" and ac.get("chip") is True and ac.get("beginIn") and ac.get("beginOnTop"),
+                  {k: ac.get(k) for k in ("line", "chip", "beginIn", "beginOnTop")})
+        if e.get("ok"):
+            fb = e.get("afterFb") or {}
+            check("%s Exam: nothing on says nothing; Instant feedback on puts it in the line" % label,
+                  e["opts"] == "" and fb.get("opts") == "Instant feedback", [e["opts"], fb.get("opts")])
+        if v.get("ok") and f.get("ok"):
+            off = f.get("afterOff") or {}
+            check("%s Review / Flashcards: Flashcards on says Flashcards, and off takes it away" % label,
+                  v["opts"] == "" and f["opts"] == "Flashcards" and off.get("opts") == "", [v["opts"], f["opts"], off.get("opts")])
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
@@ -25641,6 +26111,9 @@ def main():
             check_b321d_badges(br)
             check_b321f_profile(br)
             check_b323v_vroom(br)
+            check_b323t_tabbar(br)
+            check_b323b_stars(br)
+            check_b323s_summary(br)
         finally:
             br.close()
     SERVER.shutdown()

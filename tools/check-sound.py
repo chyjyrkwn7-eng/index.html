@@ -437,11 +437,14 @@ with sync_playwright() as pw:
     if isinstance(xy, list): pg.mouse.click(xy[0], xy[1]); pg.wait_for_timeout(250)
     got = played()
     ck("Home: tapping the planet plays the planet", "home.planet" in got, got)
-    try: pg.click("#bottomtab-settings", timeout=3000, no_wait_after=True)
+    # 323: Settings is off the bar (Calendar took its place); the tab tapped
+    # is Calendar, and Settings is opened directly for the switch below
+    try: pg.click("#bottomtab-calendar", timeout=3000, no_wait_after=True)
     except Exception: pass
     pg.wait_for_timeout(500)
     got = played()
     ck("the bottom tab bar slides", "ui.tab.bottom" in got, got)
+    ev(pg, "()=>{ showAppearance(); return true; }"); pg.wait_for_timeout(600); played()
     try: pg.click("text=Reduce motion", timeout=3000, no_wait_after=True)
     except Exception: pass
     pg.wait_for_timeout(300)

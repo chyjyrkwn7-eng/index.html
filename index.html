@@ -1138,6 +1138,46 @@
      these two rules use instead of the full ones. */
   [data-layout="modern"] body.has-active-question{ --statusbar-mix2:1.1%; --statusbar-mix3:1%; }
   [data-theme="dark"][data-layout="modern"] body.has-active-question{ --statusbar-mix2:2.2%; --statusbar-mix3:2.35%; }
+  /* THE STARFIELD (build 323). "Some faint star like dots ... not
+     overwhelming but definitely adds to the space theme ... I think our
+     themes could use that." A layer of its own ON TOP of body::before
+     (same z-index, later in tree order), never painted into it, because
+     body::before and html's fallback have to stay pixel-identical and
+     the status-bar tokens model body::before alone - stars in either
+     would break both. The tiles are drawn ONCE, at the device's own
+     pixel ratio, by buildSkyTiles(); after that this is a static
+     background on a fixed box and costs nothing per frame. The only
+     thing that ever changes is opacity, which the compositor does.
+     - Same box as body::before (bottom-anchored, 100lvh), so it can never
+       stop short of something body::before reaches.
+     - The status-bar band is masked clear: no star sits above the
+       safe-area inset (or the first 1.5rem in a browser tab), and they
+       fade in over the 3.5rem below it, so the strip iOS paints the
+       status bar from is exactly what it was.
+     - Home is the full strength; every other screen carries .6 of it; a
+       question, a test's own chrome and a results screen carry none, the
+       same "settle down while answering" call the dimmed glow above makes.
+     - White stars at low alpha, not tinted ones: over each theme's own
+       glow triad they take that theme's colour on their own, so a set
+       theme still only recolours. */
+  :root{ --sky-clear: max(1.5rem, env(safe-area-inset-top, 0px)); }
+  [data-layout="modern"] body::after{
+    content:""; position:fixed; left:0; right:0; bottom:0; height:100lvh;
+    z-index:-1; pointer-events:none;
+    background-image:var(--sky-b, none), var(--sky-a, none);
+    background-size:var(--sky-b-size, auto), var(--sky-a-size, auto);
+    background-repeat:repeat;
+    background-position:0 0;
+    -webkit-mask-image:linear-gradient(to bottom, transparent var(--sky-clear), #000 calc(var(--sky-clear) + 3.5rem));
+    mask-image:linear-gradient(to bottom, transparent var(--sky-clear), #000 calc(var(--sky-clear) + 3.5rem));
+    opacity:0;
+    transition:opacity .6s ease;
+  }
+  html.sky-ready[data-layout="modern"] body::after{ opacity:.6; }
+  html.sky-ready[data-layout="modern"] body.sky-home::after{ opacity:1; }
+  html.sky-ready[data-layout="modern"] body.sky-calm::after{ opacity:0; }
+  /* `[data-reduce-motion] *` reaches elements, not pseudo-elements. */
+  [data-reduce-motion="true"] body::after{ transition:none !important; }
   /* A structural guarantee, not just a stacking one: as long as
      #splashscreen still exists anywhere earlier in the document, the
      entire rest of the app stays visibility:hidden, full stop \u2014
@@ -8360,15 +8400,32 @@
        pill floating in the glass, the way iOS draws its selected tab. */
     background:none; border:0; box-shadow:none;
     z-index:0;
-    transition:transform .45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition:transform .45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity .2s ease;
     transform-origin:0 50%; will-change:transform;
     opacity:0;
   }
+  /* CLEAR GLASS, NOT A GREY PILL (build 323). "The Liquid Glass in the
+     screenshot I circled is good, that's the best, it should look more
+     like that when that's the tab you are on." The circled one was the
+     drag lens: almost no fill, a bright rim, the bar showing straight
+     through. The flat 12% white wash that made the old pill read as
+     "greyed out" is gone; what is left is a faint top-lit sheen, a
+     bright hairline rim with a specular along the top, a split of colour
+     where the glass bends the light (cool along the top edge, warm along
+     the bottom), a darker band just inside the rim for the thickness of
+     the glass, and a soft shadow under it. Same box, same 5px inset, so
+     it never touches the bar's own edge. */
   .bottomtabs-slider::before{
     content:""; position:absolute; inset:5px 2px; border-radius:999px; pointer-events:none;
-    background-image:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.04) 60%, rgba(255,255,255,.07)),
-      linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.12));
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.13), inset 0 1px 0 rgba(255,255,255,.26), 0 2px 8px rgba(0,0,0,.16);
+    background-image:radial-gradient(120% 85% at 50% -10%, rgba(255,255,255,.13), rgba(255,255,255,0) 62%),
+      linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01) 55%, rgba(255,255,255,.045));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.34),
+      inset 0 1.5px 0 rgba(255,255,255,.5),
+      inset 0 3px 3px -2px rgba(140,215,255,.32),
+      inset 0 -3px 3px -2px rgba(255,150,215,.26),
+      inset 0 0 0 3px rgba(0,0,0,.08),
+      inset 0 0 12px rgba(255,255,255,.05),
+      0 3px 12px rgba(0,0,0,.28);
     transform-origin:50% 50%;
   }
   /* THE LENS (build 312), from the iOS tab bar Madison sent: while the
@@ -8377,17 +8434,10 @@
      light - and settles back into the flat pill under the new tab. On
      ::before, so it never fights the FLIP transform on the box. */
   .bottomtabs-slider.is-moving::before{ animation:tab-lens .52s cubic-bezier(.3,1.25,.45,1); }
-  .bottomtabs-slider.dragging::before{
-    transform:scale(1.12, 1.18);
-    background-image:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.02) 60%, rgba(255,255,255,.06));
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.42), inset 2px 0 4px rgba(120,214,255,.32), inset -2px 0 4px rgba(255,130,210,.28), 0 6px 18px rgba(0,0,0,.28);
-    transition:transform .2s ease, box-shadow .2s ease;
-  }
+  /* a drag is carried by the lens now (build 323); the pill under it is hidden */
   @keyframes tab-lens{
     0%{ transform:scale(1); }
-    38%{ transform:scale(1.13, 1.2);
-         background-image:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.02) 60%, rgba(255,255,255,.06));
-         box-shadow:inset 0 0 0 1px rgba(255,255,255,.42), inset 2px 0 4px rgba(120,214,255,.32), inset -2px 0 4px rgba(255,130,210,.28), 0 6px 18px rgba(0,0,0,.28); }
+    38%{ transform:scale(1.1, 1.16); }
     100%{ transform:scale(1); }
   }
   [data-reduce-motion="true"] .bottomtabs-slider.is-moving::before{ animation:none; }
@@ -8414,13 +8464,55 @@
      where the finger is with zero lag, rather than perpetually
      easing toward a target that keeps moving out from under it. */
   .bottomtabs-slider.dragging{ transition:none; }
+  /* While the lens is out the resting pill steps aside at once - one
+     piece of glass, never two (build 323) - and fades back in under the
+     lens as it shrinks onto the chosen tab. */
+  .bottomtabs.lens-up .bottomtabs-slider{ opacity:0; transition:none; }
+  /* THE LENS (build 323) - see the JS beside setupBottomTabs' drag code.
+     On <body>, above the bar (200) and under the tour (205). The outer box
+     only moves (translate); the body inside it only scales (the pop and
+     the shrink back), each on its own transition. Transform and opacity,
+     nothing else, and no filter of any kind: it is a near-clear fill and a
+     rim, which is what the reference's lens is. */
+  .tab-lens{
+    position:fixed; left:0; top:0; width:0; height:0; z-index:201; pointer-events:none;
+    opacity:0; visibility:hidden; will-change:transform, opacity;
+    transition:opacity .2s ease, visibility 0s linear .2s;
+  }
+  .tab-lens.is-up{ opacity:1; visibility:visible; }
+  .tab-lens-body{
+    position:absolute; inset:0; border-radius:999px; transform-origin:50% 50%; will-change:transform;
+    background-image:radial-gradient(110% 80% at 50% -8%, rgba(255,255,255,.11), rgba(255,255,255,0) 58%),
+      radial-gradient(90% 60% at 50% 112%, rgba(255,255,255,.06), rgba(255,255,255,0) 70%),
+      linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,.008) 50%, rgba(255,255,255,.03));
+    box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.58),
+      inset 0 2px 1px -.5px rgba(255,255,255,.85),
+      inset 0 -1.5px 1px -.5px rgba(255,255,255,.4),
+      inset 0 5px 5px -3px rgba(130,212,255,.5),
+      inset 0 -5px 5px -3px rgba(255,135,210,.42),
+      inset 4px 0 6px -4px rgba(150,225,255,.3),
+      inset -4px 0 6px -4px rgba(255,170,225,.28),
+      inset 0 0 0 4px rgba(0,0,0,.1),
+      inset 0 0 18px rgba(255,255,255,.07),
+      0 10px 26px rgba(0,0,0,.38), 0 2px 5px rgba(0,0,0,.28);
+  }
+  /* the tabs under the glass are scaled by the lens (an inline transform);
+     a layer each so that is a composite, not a repaint */
+  .bottomtabs.lens-up .bottomtabs-navrow .bottomtab{ will-change:transform; }
+  /* the press is the lens now: no grey wash, no shrink (build 323) -
+     "normally the one you are on is like greyed out or something" */
+  .bottomtabs .bottomtabs-navrow .bottomtab:active,
+  .bottomtabs .bottomtabs-navrow .bottomtab.active:active{ background:none; transform:none; }
   .bottomtab{ position:relative; z-index:1; }
   [data-theme="dark"] .bottomtabs{ box-shadow:0 4px 18px rgba(0,0,0,.5); }
   .bottomtabs[hidden]{ display:none; }
   .bottomtab{
     display:flex; flex-direction:column; align-items:center; gap:.15rem;
     background:none; border:none; border-radius:999px; cursor:pointer;
-    padding:.55rem 1.15rem; color:var(--soft); font:inherit;
+    /* WHITE, NOT GREY (build 323): "You see how the bottom tab icons and
+       wording is that nice white too and not the grey we have?" The tabs
+       you are not on are a soft white; the one you are on is full white. */
+    padding:.55rem 1.15rem; color:rgba(255,255,255,.84); font:inherit;
     /* The explicit rgba form, not the "transparent" keyword \u2014 some iOS
        Safari versions honor this reliably and the keyword not always,
        which was exactly the cause of an old square-tap-highlight glitch
@@ -8434,7 +8526,8 @@
     transition:background .15s ease, transform .1s ease;
   }
   .bottomtab:focus{ outline:none; }
-  .bottomtab.active{ color:var(--ink); transition:color .2s ease .1s; }
+  .bottomtab.active{ color:#fff; transition:color .2s ease .1s; }
+  .bottomtabs-navrow .bottomtab-label{ text-shadow:0 1px 2px rgba(0,0,0,.35); }
   .bottomtab:active{ transform:scale(.93); background:rgba(128,128,128,.18); }
   /* This is the actual white-flash-on-swipe bug: a drag gesture
      naturally begins by pressing down on whichever tab you're
@@ -19723,19 +19816,41 @@
     font-family:var(--sans); font-size:1.65rem; font-weight:800; letter-spacing:-.01em; color:#fff;
   }
   .unitoptions-modal-sheet.is-setup .unitoptions-modal-head{ margin-bottom:.1rem; }
-  /* What you picked: plain grey text under the title, not a card. */
-  .unitoptions-modal-sheet.is-setup .sheet-summary{
-    display:block; background:none; border:none; box-shadow:none; padding:0 .1rem; margin:0 0 1.35rem;
+  /* THE VIRTUAL ROOM'S BOX, ABOVE BEGIN (build 323). It was plain grey
+     text under the title; it is the Match settings card now, inheriting
+     .unitoptions-modal-sheet .sheet-summary as the Virtual Room's does,
+     with what only a test has: "No hundo" beside the mode, the units by
+     name, and one line of what is switched on. */
+  .unitoptions-modal-sheet.is-setup .sheet-summary.start-summary{ margin:0 0 .75rem; row-gap:0; }
+  /* The title sat on the summary; with the summary gone from under it,
+     the first group needs the air a heading gets. */
+  .unitoptions-modal-sheet.is-setup .unitoptions-modal-head:has(+ .optionsmodal-body > .sheet-begin-bar > .start-summary){ margin-bottom:1rem; }
+  .unitoptions-modal-sheet.is-setup .start-summary > .hundo-chip{
+    margin:-.35rem auto -.35rem .1rem; align-self:center; position:relative;
   }
-  .unitoptions-modal-sheet.is-setup .sheet-summary-mode,
-  .unitoptions-modal-sheet.is-setup .sheet-summary-tags{ display:none; }
-  .unitoptions-modal-sheet.is-setup .sheet-summary-line{
-    text-align:left; white-space:normal; margin:0; font-size:.95rem; font-weight:600; color:rgba(255,255,255,.62);
-  }
-  .unitoptions-modal-sheet.is-setup .sheet-summary-units{
-    margin:.2rem 0 0; padding:0; border:0; font-size:.82rem; line-height:1.35; color:rgba(255,255,255,.42);
+  /* a 44px reach on a chip drawn 26px tall */
+  .unitoptions-modal-sheet.is-setup .start-summary > .hundo-chip::before{ content:""; position:absolute; inset:-10px -4px; }
+  .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-units{
+    margin:.5rem 0 0; padding-top:.5rem; font-size:.82rem; line-height:1.35; color:rgba(255,255,255,.62);
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
   }
+  .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-optswrap{
+    flex:0 0 100%; display:grid; grid-template-rows:1fr; margin-top:.35rem;
+    transition:grid-template-rows .22s cubic-bezier(.3,.7,.3,1), margin-top .22s cubic-bezier(.3,.7,.3,1);
+  }
+  .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-optswrap.is-empty{ grid-template-rows:0fr; margin-top:0; }
+  .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-opts{
+    min-height:0; overflow:hidden; margin:0; padding:0; text-align:left; white-space:normal; line-height:1.35;
+    transition:opacity .18s ease;
+  }
+  .unitoptions-modal-sheet.is-setup .start-summary .is-empty > .sheet-summary-opts{ opacity:0; }
+  .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-opt.is-set{ color:#4ADE80; }
+  [data-reduce-motion="true"] .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-optswrap{ transition:none; }
+  /* The reason under "No hundo" opens ABOVE it, so its tip is underneath. */
+  .hundo-why.is-above{ animation-name:hundo-why-up; }
+  .hundo-why.is-above::before{ top:auto; bottom:-6px; left:calc(var(--tip-x, 50%) - 6px);
+    border:0; border-right:1px solid rgba(255,107,91,.35); border-bottom:1px solid rgba(255,107,91,.35); }
+  @keyframes hundo-why-up{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
   /* Groups: no box of their own; the heading sits above, iOS-style. */
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect{
     background:none; border:none; box-shadow:none; padding:0; margin:0 0 1.45rem;
@@ -29307,9 +29422,9 @@
         <span class="bottomtab-icon"></span>
         <span class="bottomtab-label">Leaderboard</span>
       </button>
-      <button type="button" class="bottomtab" id="bottomtab-settings" data-dest="settings">
+      <button type="button" class="bottomtab" id="bottomtab-calendar" data-dest="calendar">
         <span class="bottomtab-icon"></span>
-        <span class="bottomtab-label">Settings</span>
+        <span class="bottomtab-label">Calendar</span>
       </button>
     </div>
   </nav>
@@ -41540,6 +41655,86 @@ function syncTestPin(force){
   wrap.classList.add("test-pinned");
 }
 addEventListener("resize", () => { const w = document.querySelector(".wrap.test-pinned"); if(w) syncTestPin(true); });
+/* THE STARFIELD'S TILES (build 323) - see the body::after rule for the
+   why. Two tiles at sizes that share no factor (239 and 433 CSS px), so
+   the field only repeats every ~100,000px and no pattern can be spotted:
+   the small one carries the dense, very faint dust, the large one the
+   fewer, brighter stars. Drawn in DEVICE pixels at the real pixel ratio
+   (a 3x iPhone gets a 717px tile shown at 239px), each star centred on a
+   device pixel, so they are crisp dots and never a resampled smudge.
+   Seeded, so the sky is the same every launch rather than reshuffled.
+   Stars near a tile's edge are drawn again across it, so none is cut in
+   half where two tiles meet. */
+const SKY_TILES = [
+  { css: 239, seed: 0x51a7, n: 46, kind: "dust" },
+  { css: 433, seed: 0x9e21, n: 104, kind: "stars" },
+];
+let skyUrls = [];
+function buildSkyTiles(){
+  const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+  const jobs = SKY_TILES.map(t => new Promise(done => {
+    let s = t.seed >>> 0;
+    const rnd = () => { s = (s + 0x6D2B79F5) >>> 0; let x = Math.imul(s ^ (s >>> 15), 1 | s);
+      x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+    const px = Math.max(1, Math.round(t.css * dpr));
+    const cv = document.createElement("canvas"); cv.width = cv.height = px;
+    const g = cv.getContext("2d");
+    if(!g){ done(null); return; }
+    for(let i = 0; i < t.n; i++){
+      const x = Math.floor(rnd() * px) + .5, y = Math.floor(rnd() * px) + .5;
+      const roll = rnd(), tint = rnd();
+      let a, r, halo = 0;
+      if(t.kind === "dust"){ a = .16 + rnd() * .16; r = .5 + rnd() * .2; }
+      else if(roll < .70){ a = .24 + rnd() * .18; r = .55 + rnd() * .25; }
+      else if(roll < .92){ a = .40 + rnd() * .14; r = .72 + rnd() * .2; }
+      else { a = .62 + rnd() * .12; r = .9 + rnd() * .2; halo = .12; }
+      /* mostly a cool lilac-white, some bluer, a few warm */
+      const rgb = tint < .6 ? "236,233,255" : tint < .85 ? "208,222,255" : "255,238,218";
+      const rd = Math.max(.62, r * dpr);
+      for(let ox = -1; ox <= 1; ox++) for(let oy = -1; oy <= 1; oy++){
+        const cx = x + ox * px, cy = y + oy * px, reach = rd * 3 + 2;
+        if(cx < -reach || cx > px + reach || cy < -reach || cy > px + reach) continue;
+        if(halo){
+          const hg = g.createRadialGradient(cx, cy, 0, cx, cy, rd * 3);
+          hg.addColorStop(0, "rgba(" + rgb + "," + halo + ")"); hg.addColorStop(1, "rgba(" + rgb + ",0)");
+          g.fillStyle = hg; g.fillRect(cx - rd * 3, cy - rd * 3, rd * 6, rd * 6);
+        }
+        g.fillStyle = "rgba(" + rgb + "," + a.toFixed(3) + ")";
+        g.beginPath(); g.arc(cx, cy, rd, 0, Math.PI * 2); g.fill();
+      }
+    }
+    const fin = url => { if(!url){ done(null); return; }
+      const im = new Image(); im.onload = im.onerror = () => done({ url, size: (px / dpr) + "px " + (px / dpr) + "px" }); im.src = url; };
+    try{
+      if(cv.toBlob) cv.toBlob(b => fin(b ? URL.createObjectURL(b) : null), "image/png");
+      else fin(cv.toDataURL("image/png"));
+    }catch(e){ done(null); }
+  }));
+  Promise.all(jobs).then(res => {
+    if(res.some(r => !r)) return;
+    const root = document.documentElement, old = skyUrls;
+    root.style.setProperty("--sky-a", 'url("' + res[0].url + '")');
+    root.style.setProperty("--sky-a-size", res[0].size);
+    root.style.setProperty("--sky-b", 'url("' + res[1].url + '")');
+    root.style.setProperty("--sky-b-size", res[1].size);
+    skyUrls = res.map(r => r.url);
+    root.classList.add("sky-ready");
+    setTimeout(() => old.forEach(u => { if(u.startsWith("blob:")) try{ URL.revokeObjectURL(u); }catch(e){} }), 2000);
+    /* Dragged to a screen with a different pixel ratio: redraw once for it. */
+    try{ const mq = matchMedia("(resolution: " + dpr + "dppx)");
+      const again = () => { mq.removeEventListener("change", again); buildSkyTiles(); };
+      mq.addEventListener("change", again); }catch(e){}
+  }).catch(() => {});
+}
+try{ buildSkyTiles(); }catch(e){}
+/* Where the sky is full, quieter or off - see the body::after rule. */
+function syncSky(isQuestion){
+  const b = document.body;
+  if(isQuestion){ b.classList.remove("sky-home"); b.classList.add("sky-calm"); return; }
+  b.classList.toggle("sky-home", !!stage.querySelector('[data-screen="home"]'));
+  b.classList.toggle("sky-calm", !!(isQuestion || window.forceHideBottomTabs
+    || stage.querySelector(".qnumrow, .fc-screen, .actions-results")));
+}
 new MutationObserver(() => {
   document.body.classList.toggle("has-floatbtn", !!stage.querySelector(".floatbtn"));
   /* The same pattern, extended: detects an active question screen via
@@ -41559,6 +41754,7 @@ new MutationObserver(() => {
   const isQuestion  = !!stage.querySelector(".choice");
   document.body.classList.toggle("has-active-question", isQuestion);
   if(isQuestion !== wasQuestion) syncStatusBarColor();
+  syncSky(isQuestion);
   syncTestPin();
   /* Cheap enough for every stage mutation: one getElementById and a
      dataset read, no fetch. Piggybacking the observer that already runs
@@ -74379,10 +74575,9 @@ function mainMenuTourSteps(returning){
       text: "The Leaderboard is the whole class: this week, overall and hundos, updating live. Search for anyone, or tap Find me." },
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
       text: "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks. Calendar and Stats are its other two tabs." },
-    { target: "#bottomtab-settings", align: "right", vplacement: "above",
-      text: isIOSDevice() && !isStandaloneApp()
-        ? "Settings is where the rest of the options live \u2014 including a guide for adding this app to your Home Screen, any time."
-        : "Settings is where the rest of the options live." },
+    /* Calendar took Settings' place on the bar (build 323) */
+    { target: "#bottomtab-calendar", align: "right", vplacement: "above",
+      text: "Calendar is the class schedule: what\u2019s on each class day, the tests, and how many days are left." },
     /* Added right after the bottom-tab run, per explicit request,
        since the daily question button sits right there on Home
        already \u2014 no reason to make it wait for a separate pass
@@ -83539,9 +83734,26 @@ function showSetup(){
   /* WHAT IT IS SET TO, AT A GLANCE (build 235) - "maybe that top box
      can also kinda show what other stuff it's set on, to prevent people
      from having to check the timer drop down each time". */
-  const sheetSummaryTags = document.createElement("div");
-  sheetSummaryTags.className = "sheet-summary-tags";
-  optionsModalBody.appendChild(sheetSummary);
+  /* ---- THE BOX ABOVE BEGIN, THE VIRTUAL ROOM'S WAY (build 323) ----
+     "The virtual room, start menu with the match settings really figured
+     it out, above the save settings button it has a box with the stuff
+     the test has. Can all the start menus follow that idea instead?"
+     This box used to be grey text under the title, with its settings
+     tags hidden, so what the test WAS scrolled away with the title. It
+     is the Virtual Room's card now (.sheet-summary, its mode / line
+     classes), pinned in the Begin bar directly above Begin: the mode and
+     the count, the units by name, and one line of what is switched on.
+     refresh() rewrites it on every change, so it is live. The tags row
+     is gone - one plain line, as the Virtual Room's box has. */
+  sheetSummary.classList.add("start-summary");
+  const sheetSummaryOpts = document.createElement("p");
+  sheetSummaryOpts.className = "sheet-summary-line sheet-summary-opts";
+  /* The line of switches folds open and shut rather than appearing: on a
+     tablet the sheet is shorter than its cap, so a line arriving in the
+     box lifts everything above it - eased, it glides instead of jumping. */
+  const sheetSummaryOptsWrap = document.createElement("div");
+  sheetSummaryOptsWrap.className = "sheet-summary-optswrap is-empty";
+  sheetSummaryOptsWrap.appendChild(sheetSummaryOpts);
   optionsModalBody.appendChild(srcSect);
 
   let lastSliderSize = cfg.size > 0 ? cfg.size : 10;
@@ -83597,17 +83809,28 @@ function showSetup(){
     if(!hundoWhy.hidden){ hideHundoWhy(); return; }
     hundoWhy.textContent = hundoNote.dataset.why || "Only a test with every question in a unit can earn a hundo.";
     hundoWhy.hidden = false;
-    const sr = sizeSect.getBoundingClientRect(), cr = hundoNote.getBoundingClientRect();
+    /* Above the chip now (build 323): it lives in the summary at the
+       foot of the sheet, so the reason opens upward, over the options,
+       the width of the box. */
+    const host = hundoWhy.offsetParent || beginBar;
+    const hr = host.getBoundingClientRect(), sr = sheetSummary.getBoundingClientRect(), cr = hundoNote.getBoundingClientRect();
+    hundoWhy.style.left = Math.round(sr.left - hr.left) + "px";
+    hundoWhy.style.right = Math.round(hr.right - sr.right) + "px";
+    hundoWhy.style.top = "auto";
+    hundoWhy.style.bottom = Math.round(hr.bottom - cr.top + 8) + "px";
     hundoWhy.style.setProperty("--tip-x", Math.round(cr.left + cr.width / 2 - sr.left) + "px");
-    hundoWhy.style.top = Math.round(cr.bottom - sr.top + 8) + "px";
     clearTimeout(hundoWhyTimer);
     hundoWhyTimer = setTimeout(hideHundoWhy, 7000);
     const away = ev => { if(ev.target !== hundoNote){ hideHundoWhy(); document.removeEventListener("pointerdown", away, true); } };
     setTimeout(() => document.addEventListener("pointerdown", away, true), 0);
   });
-  sizeSect.appendChild(hundoWhy);
-  { const hr = sizeSect.querySelector(".sect-headrow"), hv = hr && hr.querySelector(".sect-headval");
-    if(hr) hr.insertBefore(hundoNote, hv || null); }
+  /* IN THE SUMMARY, BESIDE THE MODE (build 323), not over the slider:
+     the box above Begin is where the test is described, and "No hundo"
+     is part of what this test is. It sits in the box's first row, so it
+     comes and goes without changing the box's height, and the slider no
+     longer has anything laid over it. The reason opens above it. */
+  hundoWhy.classList.add("is-above");
+  sheetSummary.insertBefore(hundoNote, sheetSummaryLine);
 
   /* Review mode, per explicit request — promoted out of a button that
      used to live buried two levels deep inside the collapsed "Timer &
@@ -83892,7 +84115,8 @@ function showSetup(){
      own colour, so it never scrolls away and the rows pass under it. */
   const beginBar = document.createElement("div");
   beginBar.className = "sheet-begin-bar";
-  beginBar.appendChild(beginBtn);
+  /* The summary rides in the bar, directly above Begin (build 323). */
+  beginBar.append(sheetSummary, hundoWhy, beginBtn);
   optionsModalBody.appendChild(beginBar);
 
   /* Draw From, Length, and Timer & Options used to live directly in
@@ -84190,44 +84414,41 @@ function showSetup(){
        screen instead of starting anything. */
     beginBtn.textContent = reviewAllMode ? (cfg.flashcards ? "Start flashcards" : "Show all") : "Begin";
 
-    /* WHAT THE RUN IS SET TO, BACK IN THE TOP BOX (build 250): "still
-       needs to say the settings of the test from that menu, in the top
-       like before just make it better than it was." Before, it was a row
-       of identical grey chips that began "All questions", "All 48" -
-       two ways of saying one number, the second of which the line above
-       already says. Now each setting is one short word with its own
-       small icon, so the row reads as a list of settings rather than a
-       row of buttons, and the count is left to the line above it. */
-    sheetSummaryTags.replaceChildren();
-    if(cfg.units.length){
-      const ICON = {
-        bank: '<path d="M8 2 14 5 8 8 2 5Z"/><path d="M2 8l6 3 6-3"/><path d="M2 11l6 3 6-3"/>',
-        speed: '<path d="M3 11a5 5 0 1 1 10 0"/><path d="M8 11l3-3"/>',
-        timer: '<circle cx="8" cy="9" r="5"/><path d="M8 6.5V9l1.8 1.2"/><path d="M6.5 2h3"/>',
-        shuffle: '<path d="M2 4.5h2.5c3 0 4 7 7 7H14"/><path d="M2 11.5h2.5c1.3 0 2.2-1.3 3-3"/><path d="M9.5 6c.6-.9 1.2-1.5 2-1.5H14"/><path d="M12.3 2.8 14 4.5l-1.7 1.7"/><path d="M12.3 9.8 14 11.5l-1.7 1.7"/>',
-        order: '<path d="M3 4.5h10"/><path d="M3 8h10"/><path d="M3 11.5h10"/>',
-        hidden: '<path d="M2 8s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4Z"/><path d="M3 13 13 3"/>'
-      };
-      const tag = (text, icon, cls) => {
-        const t = document.createElement("span");
-        t.className = "sheet-tag" + (cls ? " " + cls : "");
-        t.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + ICON[icon] + '</svg>';
-        const w = document.createElement("span"); w.textContent = text; t.appendChild(w);
-        sheetSummaryTags.appendChild(t);
-      };
-      /* ONLY WHAT IS SWITCHED ON (build 254): "if they are in order,
-         don't show that at the top, only show it if it's shuffled. If
-         there's no timer, don't show that either ... And if it's all
-         questions, don't show that." A default says nothing, so an
-         untouched run shows no row at all. */
-      if(!srcSect.hidden && cfg.source !== "all") tag(cfg.source === "recent" ? "Most missed" : "Starred", "bank");
-      if(!optSect.hidden && !shuffleRow.hidden && cfg.shuffle) tag("Shuffled", "shuffle");
-      if(!optSect.hidden && !recallRow.hidden && cfg.recall) tag("Answers hidden", "hidden");
-      if(!optSect.hidden && !feedbackRow.hidden && cfg.examFeedback) tag("Instant feedback", "feedback");
-      if(!timerSect.hidden && (cfg.timer === "down" || cfg.timer === "up"))
-        tag(cfg.timer === "down" ? cfg.timerMinutes + " min limit" : "Stopwatch", "timer", "is-set");
+    /* WHAT THE RUN IS SET TO, ON ONE LINE IN THE BOX (build 323). It was
+       a row of tags with icons (build 250) in the top box; it is the
+       Virtual Room's plain second line now, so the two boxes read as one
+       family. ONLY WHAT IS SWITCHED ON (build 254): "if they are in
+       order, don't show that at the top, only show it if it's shuffled.
+       If there's no timer, don't show that either ... And if it's all
+       questions, don't show that." A default says nothing. */
+    {
+      /* A timer that is on reads green (build 251: "I like how the timer
+         thing at the top is green though"); the rest are plain words. */
+      const on = [];
+      if(cfg.units.length){
+        if(!srcSect.hidden && cfg.source === "flagged") on.push("Starred only");
+        if(!timerSect.hidden && cfg.timer === "down") on.push({ t: cfg.timerMinutes + " min limit", set: true });
+        if(!timerSect.hidden && cfg.timer === "up") on.push({ t: "Stopwatch", set: true });
+        if(!optSect.hidden && !shuffleRow.hidden && cfg.shuffle) on.push("Shuffled choices");
+        if(!optSect.hidden && !recallRow.hidden && cfg.recall) on.push("Choices hidden");
+        if(!optSect.hidden && !feedbackRow.hidden && cfg.examFeedback) on.push("Instant feedback");
+        if(!optSect.hidden && !flashRow.hidden && cfg.flashcards) on.push("Flashcards");
+      }
+      /* Emptied, it keeps its last words while it folds shut. */
+      if(on.length){
+        sheetSummaryOpts.replaceChildren();
+        on.forEach((o, i) => {
+          if(i) sheetSummaryOpts.appendChild(document.createTextNode(" \u00b7 "));
+          const w = document.createElement("span");
+          w.className = "sheet-summary-opt" + (o.set ? " is-set" : "");
+          w.textContent = o.t || o;
+          sheetSummaryOpts.appendChild(w);
+        });
+      }
+      sheetSummaryOptsWrap.classList.toggle("is-empty", on.length === 0);
+      sheetSummaryOptsWrap.setAttribute("aria-hidden", on.length ? "false" : "true");
     }
-    if(sheetSummaryTags.parentNode !== sheetSummary || sheetSummary.lastChild !== sheetSummaryTags) sheetSummary.appendChild(sheetSummaryTags);
+    if(sheetSummary.lastChild !== sheetSummaryOptsWrap) sheetSummary.appendChild(sheetSummaryOptsWrap);
 
     /* NOT `disabled`, on purpose. A disabled button swallows the tap and
        says nothing, so pressing Start with no units picked did visibly
@@ -114754,6 +114975,12 @@ function applyGlassRefraction(el, mapImgId){
 (function setupBottomTabs(){
   const bar = document.getElementById("bottomtabs");
   if(!bar) return;
+  /* The Calendar tab's screen (build 323): showCalendarTab() where the
+     build has it, the class calendar's own way in otherwise. */
+  const openCalendarTab = () => {
+    if(typeof showCalendarTab === "function") return showCalendarTab();
+    return showCalendar();
+  };
   const svgNS = "http://www.w3.org/2000/svg";
   const iconPaths = {
     home: "M4 11l8-7 8 7M6 9.5V20h12V9.5",
@@ -114765,7 +114992,12 @@ function applyGlassRefraction(el, mapImgId){
        like, and the tab is ranks and badges - both of them earned. The
        star is drawn with round joins so it holds at 28px. */
     ranks: "M8.2 2.8l2.6 6.3M15.8 2.8l-2.6 6.3M12 9.1a5.6 5.6 0 100 11.2 5.6 5.6 0 000-11.2zM12 12.1l1 2 2.2.3-1.6 1.5.4 2.2-2-1.1-2 1.1.4-2.2-1.6-1.5 2.2-.3z",
-    settings: "M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 00-2-1.2L14 3h-4l-.5 2.6a7 7 0 00-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 002 1.2L10 21h4l.5-2.6a7 7 0 002-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"
+    settings: "M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 00-2-1.2L14 3h-4l-.5 2.6a7 7 0 00-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 002 1.2L10 21h4l.5-2.6a7 7 0 002-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z",
+    /* CALENDAR TAKES SETTINGS' PLACE ON THE BAR (build 323): Home,
+       Profile, Leaderboard, Calendar. Settings lives in Profile now. The
+       same stroke weight as its neighbours: a page with two rings and a
+       grid of days, the days as round-capped dots so they hold at 28px. */
+    calendar: "M6.5 5h11A2.5 2.5 0 0120 7.5v10a2.5 2.5 0 01-2.5 2.5h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5zM4 9.5h16M8.5 3v4M15.5 3v4M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01"
   };
   bar.querySelectorAll(".bottomtab").forEach(tab => {
     const dest = tab.dataset.dest;
@@ -114863,6 +115095,7 @@ function applyGlassRefraction(el, mapImgId){
       }
       else if(dest === "rewards") showRankings();
       else if(dest === "profile") showProfile();
+      else if(dest === "calendar") openCalendarTab();
       else if(dest === "settings") showAppearance();
     };
   });
@@ -114904,6 +115137,8 @@ function applyGlassRefraction(el, mapImgId){
     const show = isModern && oldNavVisible && !window.forceHideBottomTabs
                  && !!(typeof store !== "undefined" && store && store.onboardingComplete);
     bar.hidden = !show;
+    /* the lens never outlives the bar (build 323) */
+    if(!show && bar._lensHide && bar.classList.contains("lens-up")) bar._lensHide(true);
     document.body.classList.toggle("has-bottomtabs", show);
     /* The chat dock rides the same recalculation, so the bar and the
        dock cannot disagree about whether onboarding is finished.
@@ -114970,12 +115205,24 @@ function applyGlassRefraction(el, mapImgId){
        bottom tab still shows me as within that tab." Friends, Customize,
        the calendar and the test review screens are all reached from the
        Profile card and lit nothing; the bug report is Settings' own. */
-    const onProfileSub = !!document.querySelector(".screen-friends, .screen-customize, .screen-calendar, .screen-testreview");
+    const onProfileSub = !!document.querySelector(".screen-friends, .screen-customize, .screen-testreview");
     const onSettingsSub = !!document.querySelector(".screen-bugreport");
-    bar.querySelector("#bottomtab-profile").classList.toggle("active", onProfile || onRanks || onProfileSub);
-    bar.querySelector("#bottomtab-rewards").classList.toggle("active", onRewards);
-    bar.querySelector("#bottomtab-settings").classList.toggle("active", onSettings || onSettingsSub);
-    bar.querySelector("#bottomtab-home").classList.toggle("active", onHome);
+    /* THE CALENDAR IS A BAR TAB (build 323), so the calendar lights
+       Calendar, not Profile - wherever it is drawn, as its own screen or
+       as a pane: a .screen-calendar that is actually showing (not inside
+       a hidden tab panel). Settings left the bar for Profile, so Settings
+       and its bug report light Profile; if a build still carries a
+       Settings button, it is lit as before. Every lookup tolerates a
+       button that is not there. */
+    const calShown = [...document.querySelectorAll("#stage .screen-calendar")].some(el => !el.closest("[hidden]"));
+    const settingsBtn = bar.querySelector("#bottomtab-settings");
+    const onSettingsAny = onSettings || onSettingsSub;
+    const lit = (id, on) => { const b = bar.querySelector(id); if(b) b.classList.toggle("active", !!on); };
+    lit("#bottomtab-profile", !calShown && (onProfile || onRanks || onProfileSub || (onSettingsAny && !settingsBtn)));
+    lit("#bottomtab-rewards", onRewards && !calShown);
+    lit("#bottomtab-calendar", calShown);
+    lit("#bottomtab-settings", onSettingsAny && !calShown);
+    lit("#bottomtab-home", onHome && !calShown);
     slideBubbleToActiveTab();
   }
   /* Moves and resizes the glass bubble to sit exactly behind whichever
@@ -115028,7 +115275,7 @@ function applyGlassRefraction(el, mapImgId){
     slider.style.transition = "";
     slider.style.transform = "translateX(" + x + "px)";
     /* the lens, only when it actually travels (build 312) */
-    if(Math.abs(fromX - x) > 2){
+    if(Math.abs(fromX - x) > 2 && !bar.classList.contains("lens-up")){
       slider.classList.remove("is-moving"); void slider.offsetWidth; slider.classList.add("is-moving");
       clearTimeout(slider._lensT); slider._lensT = setTimeout(() => slider.classList.remove("is-moving"), 560);
     }
@@ -115068,7 +115315,8 @@ function applyGlassRefraction(el, mapImgId){
   let tabDragMoved = false;
   let tabDragPointerId = null;
   const tabDests = { "bottomtab-home": () => confirmMainMenu(), "bottomtab-rewards": () => showRankings(),
-    "bottomtab-profile": () => showProfile(), "bottomtab-settings": () => showAppearance() };
+    "bottomtab-profile": () => showProfile(), "bottomtab-calendar": () => openCalendarTab(),
+    "bottomtab-settings": () => showAppearance() };
   function tabAtPoint(clientX){
     const tabs = [...navrow.querySelectorAll(".bottomtab")];
     let closest = null, closestDist = Infinity;
@@ -115100,6 +115348,8 @@ function applyGlassRefraction(el, mapImgId){
   navrow.addEventListener("pointerdown", (e) => {
     if(bar.hidden) return;
     tabDragActive = true; tabDragMoved = false; tabDragPointerId = e.pointerId; tabDragX0 = e.clientX;
+    /* the lens pops out under the finger at once (build 323) */
+    if(e.isPrimary !== false && (e.button === 0 || e.button === undefined || e.pointerType !== "mouse")) lensDown(e.clientX);
   });
   navrow.addEventListener("pointermove", (e) => {
     if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
@@ -115125,6 +115375,10 @@ function applyGlassRefraction(el, mapImgId){
        tap (which never reaches this line) is completely unaffected. */
     if(!tabDragMoved){ slider.classList.add("dragging"); navrow.setPointerCapture(e.pointerId); }
     tabDragMoved = true;
+    /* The lens follows the finger itself (build 323) - the resting pill is
+       hidden under it and is put in place once, on release, so a drag no
+       longer forces a layout on every move. */
+    if(lensGeo){ lensMove(e.clientX); return; }
     const tab = tabAtPoint(e.clientX);
     if(tab) slideBubbleToTab(tab);
   });
@@ -115132,6 +115386,10 @@ function applyGlassRefraction(el, mapImgId){
     if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
     tabDragActive = false; tabDragPointerId = null;
     slider.classList.remove("dragging");
+    /* the lens settles on the tab it was let go over and shrinks back into
+       the resting pill there; a cancelled touch takes it home (build 323) */
+    if(e.type === "pointercancel") lensRelease(null);
+    else lensRelease(lensGeo ? lensTabAt(e.clientX) : tabAtPoint(e.clientX));
     if(!tabDragMoved){ return; } // a plain tap: let the tab's own click handler do its normal thing
     if(e.type === "pointercancel"){ slideBubbleToActiveTab(true); return; }
     /* This is the actual cause of drag-to-a-different-tab
@@ -115155,6 +115413,12 @@ function applyGlassRefraction(el, mapImgId){
        drag-release at all, which is exactly the kind of gap that
        left quick swipe-then-swipe-again sequences able to fire
        overlapping navigations. */
+    /* one slide sound for a drag that lands somewhere new: the click a
+       captured pointer releases is on the row, not a tab, so the shared
+       tap layer says nothing for it (build 323) */
+    if(tab && !tab.classList.contains("active") && bar.dataset.navigating !== "1" && typeof playSound === "function"){
+      try{ playSound("ui.tab.bottom"); }catch(err){}
+    }
     if(tab && tab._navigate && bar.dataset.navigating !== "1") tab._navigate();
     else if(tab && tabDests[tab.id] && bar.dataset.navigating !== "1"){
       bar.dataset.navigating = "1";
@@ -115165,6 +115429,203 @@ function applyGlassRefraction(el, mapImgId){
   }
   navrow.addEventListener("pointerup", endTabDrag);
   navrow.addEventListener("pointercancel", endTabDrag);
+
+  /* ---- THE LENS (build 323) ----
+     "When I change tabs by tapping or swiping over the Liquid Glass bottom
+     tab bubble doesn't pop out and follow." The iOS 26 tab bar in her
+     recording: touch the bar and the selection lifts out of it as a clear
+     glass lens - taller and wider than the bar, poking out above and
+     below, a bright rim with a split of colour at its top and bottom edge,
+     the tab under it magnified - follows the finger, glides to a tapped
+     tab, and on release settles there and shrinks back into the resting
+     pill.
+     It lives on <body>, not in the bar: the bar is overflow:hidden (its
+     sheen is a layer four times its width), which would clip the lens to
+     the bar's own outline. Measured once per touch; after that every
+     frame is a transform on the lens and on the tabs under it, and the
+     tap's glide and settle are CSS transitions, so the compositor carries
+     them while the new screen is being built. pointer-events:none - it
+     never takes a tap. Reduce motion: the lens stays the pill's size and
+     only moves. */
+  const lens = document.createElement("div");
+  lens.id = "bottomtabs-lens"; lens.className = "tab-lens"; lens.setAttribute("aria-hidden", "true");
+  const lensBody = document.createElement("div");
+  lensBody.className = "tab-lens-body";
+  lens.appendChild(lensBody);
+  document.body.appendChild(lens);
+  const LENS_PAD_X = 12, LENS_PAD_Y = 9, LENS_MAG = 0.14;
+  const LENS_EASE = "cubic-bezier(.3,1.32,.5,1)";
+  let lensGeo = null, lensAt = null, lensT1 = null, lensT2 = null;
+  const lensCalm = () => document.documentElement.dataset.reduceMotion === "true"
+    || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  function lensMeasure(){
+    const rr = navrow.getBoundingClientRect(), bb = bar.getBoundingClientRect();
+    if(!rr.width || !bb.height) return null;
+    const tabs = [...navrow.querySelectorAll(".bottomtab")].map(t => { const r = t.getBoundingClientRect(); return { el: t, c: r.left + r.width / 2, w: r.width }; }).filter(t => t.w > 0);
+    if(!tabs.length) return null;
+    const W = Math.round(Math.max.apply(null, tabs.map(t => t.w)) + LENS_PAD_X * 2);
+    const H = Math.round(bb.height + LENS_PAD_Y * 2);
+    /* the resting pill is the tab's box inset 2px across and 5px down
+       (.bottomtabs-slider::before), so that is the size it shrinks to */
+    return { tabs, W, H, top: bb.top + bb.height / 2 - H / 2, capH: Math.max(1, rr.height - 10),
+             lo: tabs[0].c - 6, hi: tabs[tabs.length - 1].c + 6 };
+  }
+  function lensTabAt(x){
+    if(!lensGeo) return tabAtPoint(x);
+    let best = null, d = Infinity;
+    lensGeo.tabs.forEach(t => { const k = Math.abs(x - t.c); if(k < d){ d = k; best = t.el; } });
+    return best;
+  }
+  const lensInfo = el => lensGeo && lensGeo.tabs.find(t => t.el === el);
+  const capScale = t => [Math.max(.2, (t.w - 4) / lensGeo.W).toFixed(4), Math.max(.2, lensGeo.capH / lensGeo.H).toFixed(4)];
+  /* the lens is as wide as the tab under it (plus its overhang), blended
+     between two tabs while it is between them - a scaleX, never a width */
+  function lensPopScale(c){
+    const ts = lensGeo.tabs;
+    let w = ts[0].w;
+    if(c >= ts[ts.length - 1].c) w = ts[ts.length - 1].w;
+    else for(let i = 0; i < ts.length - 1; i++){
+      if(c >= ts[i].c && c <= ts[i + 1].c){ const f = (c - ts[i].c) / Math.max(1, ts[i + 1].c - ts[i].c); w = ts[i].w + (ts[i + 1].w - ts[i].w) * f; break; }
+    }
+    return "scale(" + Math.min(1, (w + LENS_PAD_X * 2) / lensGeo.W).toFixed(4) + ",1)";
+  }
+  function lensPlace(c){
+    lens.style.transform = "translate3d(" + (c - lensGeo.W / 2).toFixed(2) + "px," + lensGeo.top.toFixed(2) + "px,0)";
+  }
+  /* what is under the glass swells a little, more the closer it is */
+  function lensMagnify(c, smooth){
+    if(!lensGeo) return;
+    const reach = lensGeo.W * .62, calm = lensCalm();
+    lensGeo.tabs.forEach(t => {
+      const k = calm || c == null ? 0 : Math.max(0, 1 - Math.abs(c - t.c) / reach);
+      t.el.style.transition = smooth ? "transform .4s " + LENS_EASE : "none";
+      t.el.style.transform = k > .001 ? "scale(" + (1 + LENS_MAG * k).toFixed(4) + ")" : "";
+    });
+  }
+  function lensClearTimers(){ clearTimeout(lensT1); clearTimeout(lensT2); lensT1 = lensT2 = null; }
+  /* The body's pop and shrink are Web Animations (build 323), not
+     transitions: a tap's press and release land in the same frame, and a
+     transition retargeted with a delay holds wherever the first one had
+     got to - the lens froze a few pixels into its pop. A shrink queued
+     behind the pop (its own delay, no backwards fill) lets the pop finish
+     first. Both run on the compositor like any transform animation. */
+  let bodyAnims = [], popEnds = 0;
+  const canAnim = typeof lensBody.animate === "function";
+  const scaleOf = cs => "scale(" + cs[0] + "," + cs[1] + ")";
+  function bodyNow(){
+    const cur = bodyAnims.length ? getComputedStyle(lensBody).transform : (lensBody.style.transform || "none");
+    bodyAnims.forEach(an => { try{ an.cancel(); }catch(e){} });
+    bodyAnims = [];
+    lensBody.style.transition = "none";
+    lensBody.style.transform = cur === "none" ? "" : cur;
+    return cur;
+  }
+  function lensDown(x){
+    lensClearTimers();
+    const g = lensMeasure();
+    if(!g){ lensGeo = null; return; }
+    const wasUp = lens.classList.contains("is-up") && lensGeo;
+    lensGeo = g;
+    lens.style.width = g.W + "px"; lens.style.height = g.H + "px";
+    const target = lensTabAt(x);
+    const from = (wasUp && lensAt) || navrow.querySelector(".bottomtab.active") || target;
+    const fromInfo = lensInfo(from) || lensInfo(target);
+    const toInfo = lensInfo(target);
+    if(!fromInfo || !toInfo){ lensGeo = null; return; }
+    const calm = lensCalm() || !canAnim;
+    /* pop out of the resting pill: start exactly its size, where it is */
+    let cur;
+    if(!wasUp){
+      bodyNow();
+      lens.style.transition = "none";
+      lensPlace(fromInfo.c);
+      cur = scaleOf(capScale(fromInfo));
+      lensBody.style.transform = cur;
+      lens.classList.add("is-up"); bar.classList.add("lens-up");
+      void lens.offsetWidth;
+    } else cur = bodyNow();
+    lens.style.transition = "transform " + (calm ? ".3s ease" : ".42s " + LENS_EASE);
+    lensPlace(toInfo.c);
+    if(calm){ lensBody.style.transform = scaleOf(capScale(toInfo)); popEnds = 0; }
+    else{
+      const pop = lensPopScale(toInfo.c);
+      lensBody.style.transform = pop;
+      bodyAnims.push(lensBody.animate([{ transform: cur }, { transform: pop }], { duration: 300, easing: LENS_EASE, fill: "forwards" }));
+      popEnds = performance.now() + 300;
+    }
+    lensAt = target;
+    lensMagnify(toInfo.c, true);
+  }
+  function lensMove(x){
+    if(!lensGeo) return;
+    const c = Math.min(lensGeo.hi, Math.max(lensGeo.lo, x));
+    lens.style.transition = "none";
+    lensPlace(c);
+    if(!(lensCalm() || !canAnim)){
+      /* a short transition, retargeted each move: the pop that started on
+         the press carries on from where it is, and the width keeps up */
+      if(bodyAnims.length){ bodyNow(); void getComputedStyle(lensBody).transform; }
+      lensBody.style.transition = "transform .14s ease-out";
+      lensBody.style.transform = lensPopScale(c);
+      popEnds = 0;
+    } else {
+      /* calm: the pill's size, sized to the nearest tab */
+      const near = lensInfo(lensTabAt(c));
+      if(near){ lensBody.style.transition = "none"; lensBody.style.transform = scaleOf(capScale(near)); }
+    }
+    lensAt = lensTabAt(c);
+    lensMagnify(c, false);
+  }
+  function lensRelease(tab){
+    if(!lensGeo){ lensHide(true); return; }
+    lensClearTimers();
+    const home = tab || navrow.querySelector(".bottomtab.active") || lensAt;
+    const info = lensInfo(home);
+    if(!info){ lensHide(true); return; }
+    lensAt = home;
+    const calm = lensCalm() || !canAnim;
+    lens.style.transition = "transform " + (calm ? ".26s ease" : ".4s " + LENS_EASE);
+    lensPlace(info.c);
+    const capTo = scaleOf(capScale(info));
+    let shrinkAt = 0;
+    if(calm){ lensBody.style.transition = "none"; lensBody.style.transform = capTo; }
+    else{
+      const now = performance.now();
+      const popLeft = Math.max(0, popEnds - now);
+      if(popLeft > 0 && bodyAnims.length){
+        /* still popping (a tap): the shrink waits for the pop to finish */
+        const pop = lensPopScale(info.c);
+        shrinkAt = popLeft + 30;
+        bodyAnims.push(lensBody.animate([{ transform: pop }, { transform: capTo }], { duration: 360, delay: shrinkAt, easing: "cubic-bezier(.35,1.12,.5,1)", fill: "forwards" }));
+      } else {
+        const cur = bodyNow();
+        shrinkAt = 40;
+        bodyAnims.push(lensBody.animate([{ transform: cur }, { transform: capTo }], { duration: 360, delay: shrinkAt, easing: "cubic-bezier(.35,1.12,.5,1)", fill: "forwards" }));
+      }
+      lensBody.style.transform = capTo;
+    }
+    if(shrinkAt > 40){ const t = info; setTimeout(() => { if(lensGeo && lensAt === t.el) lensMagnify(null, true); }, shrinkAt); }
+    else lensMagnify(null, true);
+    /* hand over: the pill comes back in under the lens as it fades */
+    lensT1 = setTimeout(() => {
+      clearTimeout(slider._lensT); slider.classList.remove("is-moving");
+      bar.classList.remove("lens-up");
+      slideBubbleToActiveTab(true);
+      lens.classList.remove("is-up");
+      lensT2 = setTimeout(() => lensHide(false), 240);
+    }, calm ? 200 : shrinkAt + 290);
+  }
+  function lensHide(now){
+    lensClearTimers();
+    lens.classList.remove("is-up");
+    bar.classList.remove("lens-up");
+    bodyAnims.forEach(an => { try{ an.cancel(); }catch(e){} });
+    bodyAnims = []; popEnds = 0;
+    if(lensGeo) lensGeo.tabs.forEach(t => { t.el.style.transition = now ? "none" : ""; t.el.style.transform = ""; });
+    lensGeo = null; lensAt = null;
+    if(now) slideBubbleToActiveTab(true);
+  }
+  bar._lensHide = lensHide;
   function refreshGlass(){ if(!bar.hidden) applyGlassRefraction(bar); }
   window.addEventListener("resize", refreshGlass);
   /* The header is sticky and always present (unlike the bottom bar,
@@ -115182,7 +115643,9 @@ function applyGlassRefraction(el, mapImgId){
     catch(e){ new MutationObserver(refreshHeaderGlass).observe(headerEl, { childList: true, subtree: true, characterData: true }); }
     refreshHeaderGlass();
   }
-  new MutationObserver(syncActive).observe(stage, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+  /* "hidden" too (build 323): the calendar can be a pane that is shown by
+     un-hiding it, and that lights Calendar rather than Profile. */
+  new MutationObserver(syncActive).observe(stage, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "hidden"] });
   syncActive();
   /* the Profile tab's new-item dot, once per screen mount (build 299),
      once the switch has settled (build 314 - syncProfileTabDotSoon) */
