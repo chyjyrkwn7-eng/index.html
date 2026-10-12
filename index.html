@@ -54410,20 +54410,42 @@ setTimeout(() => {
 const BADGE_DIRT_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const BADGE_DIRT_MAX = 4;
 const BADGE_DIRT_NAMES = ["Clean", "Light", "Dull", "Grimy", "Dirtiest"];
-/* The look, per unit of stage / 4 (renderBadgeStrike). Dull and smudged,
-   with grime in the recesses - and never another colour: the enamel only
-   loses its clear coat and a tenth of its light. */
+/* THE LOOK, PER STAGE (build 321, b321d). Madison, of build 320's five
+   stages: "the semi dirty look adds a lot of texture to the badges and
+   almost makes them look better. Could be make that the normal tone of the
+   metal and badge and then just redo the dirty scale so the dirtiest would
+   be dirtier, a noticeable less shine and less glow". So stage 0 - a clean
+   badge, a new one - is what stage 1-2 was: a fine grain in the metal and
+   the enamel, a faint patina in soft patches, a little grime at the foot
+   of every wall (it is what gives the step its depth), and still the
+   shine. Each stage after it is a visible step, and the dirtiest is far
+   past where build 320 stopped: the metal's highlights nearly gone, its
+   reflection flat and warm, a film over everything, dust in it, and the
+   glow round it almost out. Never another colour: the enamel only loses
+   its clear coat and some of its light (the gate holds the hue within 12
+   degrees). Every array is indexed by stage. */
 const BADGE_DIRT = {
-  gloss: .8, glossSm: .2,       /* the metal's specular taken off, more under a smudge */
-  flat: .42, flatTo: .055,      /* its reflection flattened towards a dull grey (linear) */
-  tarnish: [1, .95, .86],       /* ...and a little warmer: tarnish, at the dirtiest */
-  coat: .8, coatSm: .2,         /* the enamel's clear coat dulled */
-  dim: .16,                     /* the enamel a touch darker */
-  grime: .8, grimeE: .62,       /* grime settled at the foot of every wall */
-  recM: 1.3, recE: 1.5,         /* ...how far it reaches up the wall and into the colour, token units */
-  gc: [.012, .009, .006],       /* its colour, linear: a dark brown-grey */
-  film: .42, filmE: .26,        /* a smudge: a film that greys what is under it */
-  fc: [.075, .064, .05]         /* the film's colour, linear */
+  gloss:  [.2, .4, .6, .78, .92],      /* the metal's specular taken off */
+  glossSm: .1,                          /* ...more under a smudge */
+  flat:   [.08, .2, .34, .5, .66],      /* its reflection flattened towards a dull grey (linear) */
+  flatTo: .045,
+  tarnish: [.1, .3, .52, .76, 1],       /* how far towards the warm tarnish tint */
+  tint: [1, .94, .84],
+  coat:   [.16, .4, .6, .78, .92],      /* the enamel's clear coat dulled */
+  coatSm: .1,
+  dim:    [.02, .06, .11, .17, .25],    /* the enamel darker */
+  grime:  [.3, .46, .62, .8, .94],      /* grime settled at the foot of every wall, metal side */
+  grimeE: [.24, .36, .48, .62, .76],    /* ...and colour side */
+  recM: 1.3, recE: 1.5,                 /* how far it reaches up the wall and into the colour, token units */
+  gc: [.012, .009, .006],               /* its colour, linear: a dark brown-grey */
+  film:   [.15, .24, .34, .46, .58],    /* a smudge: a film that greys what is under it (metal) */
+  filmE:  [.1, .15, .21, .29, .38],    /* ...on the colour */
+  fc: [.075, .064, .05],                /* the film's colour, linear */
+  grain:  [.085, .09, .1, .11, .12],    /* the metal's fine grain, a share of its light either way */
+  grainE: [.05, .055, .065, .075, .085],/* ...and the enamel's */
+  dust:   [0, .06, .16, .3, .46],       /* dust: fine dark flecks, soft-edged */
+  glow:   [1, .76, .54, .34, .14],      /* the glow round the badge in your hand */
+  shine:  [1, .74, .5, .3, .12]         /* the light that crosses its face as it turns */
 };
 function badgeHash2(seed, a, b){
   let n = (Math.imul(a, 374761393) + Math.imul(b, 668265263) + Math.imul(seed, -2048144777)) | 0;
@@ -54436,10 +54458,37 @@ function badgeValueNoise(seed, x, y){
   const a = badgeHash2(seed, xi, yi), b = badgeHash2(seed, xi + 1, yi), c = badgeHash2(seed, xi, yi + 1), d = badgeHash2(seed, xi + 1, yi + 1);
   return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
 }
+/* ONE NOISE TABLE (build 321): smooth, tileable value noise, 128 texels a
+   side on a 4-texel lattice, read bilinearly. The grain and the smudges are
+   read from it - a hash per sample was ~4x the cost of a table read, and
+   the grain is now on every sample of every badge. */
+const BADGE_NOISE_N = 128;
+let BADGE_NOISE = null;
+function badgeNoiseTable(){
+  if(BADGE_NOISE) return BADGE_NOISE;
+  const N = BADGE_NOISE_N, C = N / 4, t = new Float32Array(N * N);
+  for(let y = 0; y < N; y++) for(let x = 0; x < N; x++){
+    const gx = x / 4, gy = y / 4, xi = Math.floor(gx), yi = Math.floor(gy), xf = gx - xi, yf = gy - yi;
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const h = (a, b) => badgeHash2(0x2c1b3c6d, ((a % C) + C) % C, ((b % C) + C) % C);
+    const a = h(xi, yi), b = h(xi + 1, yi), c = h(xi, yi + 1), d = h(xi + 1, yi + 1);
+    t[y * N + x] = a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  }
+  return (BADGE_NOISE = t);
+}
+/* the table at (x, y) texels, wrapped, 0-1 */
+function badgeNoiseAt(T, x, y){
+  const N = BADGE_NOISE_N, M = N - 1;
+  x -= Math.floor(x / N) * N; y -= Math.floor(y / N) * N;
+  const xi = x | 0, yi = y | 0, ax = x - xi, ay = y - yi, x1 = (xi + 1) & M, y1 = (yi + 1) & M, r0 = yi * N, r1 = y1 * N;
+  const a = T[r0 + xi], b = T[r0 + x1], c = T[r1 + xi], d = T[r1 + x1];
+  return a + (b - a) * ax + (c - a) * ay + (a - b - c + d) * ax * ay;
+}
 /* Where a badge is smudged, 0-1: soft patches about a fifth of a badge
-   across, the same on every render of that badge. */
+   across, the same on every render of that badge (seed shifts the table). */
 function badgeSmudge(seed, x, y){
-  const n = .62 * badgeValueNoise(seed, x / 15 + 7.3, y / 15 + 2.1) + .38 * badgeValueNoise(seed ^ 0x5bd1e995, x / 6.5 + 31.7, y / 6.5 + 17.9);
+  const T = BADGE_NOISE || badgeNoiseTable(), ox = (seed & 1023) * .37, oy = ((seed >>> 10) & 1023) * .53;
+  const n = .62 * badgeNoiseAt(T, x * (4 / 15) + ox, y * (4 / 15) + oy) + .38 * badgeNoiseAt(T, y * (4 / 6.5) + oy + 31.7, -x * (4 / 6.5) + ox + 17.9);
   const t = (n - .4) / .36;
   return t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
 }
@@ -54497,6 +54546,21 @@ const BADGE_STRIKE = {
      meets its level (eOff, in token units) instead of a ring of bare
      metal floor - one soft step from silver to colour. */
   wallMax: .22, eOff: .5,
+  /* THE STEP DOWN TO THE COLOUR IS A BEVEL (build 321, b321d): "Ensure the
+     3d look of the badge and the details are great, especially where like
+     the color meets the silver". Build 319's soft wall (its slope held to
+     wallMax) took out the black hairline and with it any sense of a step:
+     the silver ran into the colour like a butt joint. The metal now falls
+     to the colour by a straight bevel (bvSlope of the relief per token
+     unit, ~35 degrees, from bvTop units out of the colour down to bvFoot),
+     its top arris and its foot rounded by bvR, and the flat of the rim
+     crowned by bvCrown. Lit from the top-left, the bevel on a plate's
+     bottom and right edges faces the light (a bright line) and on its top
+     and left edges faces away (a shadow) - the cue that reads as a real
+     step - and it is wide enough (~1.9 units: 4 device pixels in the case,
+     13 in your hand) never to be a hairline. wallMax caps only what the
+     channels' own walls might do past it. */
+  bvTop: 2.35, bvFoot: .42, bvR: .3, bvCrown: .1, bevelMax: .95,
   geoW: 288, geoBlur: 2,
   ceilLo: .2, ceilHi: .62, edge0: -.02, edgeW: .16, ceilTilt: .12, ceilA: .5, ceilB: .9,
   boxA: .35, boxB: .7, box: 1.5, wall: .035, wallTilt: .06,
@@ -54691,7 +54755,7 @@ function badgeStrikeGeometry(shape){
   return (BADGE_STRIKE_GEOM[d] = { O: Os, E: Es, Ox, Oy, Ex, Ey, vx, vy, vw, cx, cy, S, W });
 }
 /* The profile and its slope, as tables. */
-let BADGE_PROF = null, BADGE_DPROF = null;
+let BADGE_PROF = null, BADGE_DPROF = null, BADGE_PROF_IN = null, BADGE_DPROF_IN = null;
 const BADGE_PROF_N = 2048;
 function badgeProfileTables(){
   if(BADGE_PROF) return;
@@ -54702,6 +54766,20 @@ function badgeProfileTables(){
   for(let i = 0; i <= PN + 1; i++) BADGE_PROF[i] = f(Math.min(1, i / PN));
   for(let i = 0; i <= PN; i++) BADGE_DPROF[i] = (BADGE_PROF[i + 1] - BADGE_PROF[i]) * PN;
   BADGE_DPROF[PN + 1] = BADGE_DPROF[PN];
+  /* the inner side (build 321): height over the distance e (token units)
+     from the colour into the metal, 0..RH - the crowned flat, a rounded
+     arris, a straight bevel, a rounded foot at the colour's level - and
+     its slope dh/de. Smooth min/max (polynomial, radius bvR) round both
+     corners, so the slope never jumps. */
+  const G = BADGE_GEOM, RH = (G.key + G.inner + G.edge) / 2, en = P.enamel;
+  const smin = (a, b, k) => { const h = Math.max(k - Math.abs(a - b), 0) / k; return Math.min(a, b) - h * h * k * .25; };
+  const top = e => 1 - P.bvCrown * (1 - ss(P.bvTop, RH, e));
+  const topAt = top(P.bvTop), sl = (topAt - en) / (P.bvTop - P.bvFoot), kr = P.bvR * sl;
+  const hIn = e => smin(top(e), -smin(-en, -(en + sl * (e - P.bvFoot)), kr), kr);
+  BADGE_PROF_IN = new Float32Array(PN + 2); BADGE_DPROF_IN = new Float32Array(PN + 2);
+  for(let i = 0; i <= PN + 1; i++) BADGE_PROF_IN[i] = hIn(Math.min(1, i / PN) * RH);
+  for(let i = 0; i <= PN; i++) BADGE_DPROF_IN[i] = (BADGE_PROF_IN[i + 1] - BADGE_PROF_IN[i]) * PN / RH;
+  BADGE_DPROF_IN[PN + 1] = BADGE_DPROF_IN[PN];
 }
 /* THE STUDIO, as tables over the surface's normal. Polished metal shows
    what it reflects: a lit ceiling whose softbox edge runs diagonally, a
@@ -54769,13 +54847,14 @@ function badgeStrikeBuffers(N){
 }
 function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
   const P = BADGE_STRIKE, G = BADGE_GEOM;
-  /* DIRT (build 320, b320g): 0 clean to 4 dirtiest, 0 for a grey token.
-     See BADGE_DIRT for what each part of the look does. */
-  const DT = grey ? 0 : Math.max(0, Math.min(BADGE_DIRT_MAX, dirt | 0)) / BADGE_DIRT_MAX, DK = BADGE_DIRT;
-  const dSeed = DT > 0 ? (parseInt(hashOf(String(unitName)), 36) >>> 0) : 0;
+  /* DIRT (build 320, b320g; rescaled build 321): 0 clean to 4 dirtiest.
+     A found badge always wears its stage's look (BADGE_DIRT) - stage 0 is
+     the grain and patina, not a bare render. A grey token wears none. */
+  const WEAR = !grey, ST = Math.max(0, Math.min(BADGE_DIRT_MAX, dirt | 0)), DK = BADGE_DIRT;
+  const dSeed = WEAR ? (parseInt(hashOf(String(unitName)), 36) >>> 0) : 0;
   const g = badgeStrikeGeometry(badgeShapeFor(unitName));
   badgeProfileTables();
-  const PROF = BADGE_PROF, DPROF = BADGE_DPROF, PN = BADGE_PROF_N;
+  const PROF = BADGE_PROF, DPROF = BADGE_DPROF, PN = BADGE_PROF_N, PIN = BADGE_PROF_IN, DPIN = BADGE_DPROF_IN;
   const k1 = Wout / g.vw * g.S;
   const SS = ssForce || Math.max(P.ssMin, Math.min(P.ssMax, Math.ceil(P.ssK / k1 - .05)));
   const W = Wout * SS;
@@ -54806,18 +54885,18 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
       let ae = .5 - eF * k; ae = ae >= 1 ? 1 : ae <= 0 ? 0 : ae;
       AE[i] = ae; WD[i] = -eF;
       let h, hx = 0, hy = 0;
-      const tin = e <= 0 ? 1 : e >= RH ? 0 : 1 - e / RH;
-      const hin = e <= 0 ? 0 : PROF[(tin * PN) | 0];
+      const qin = e <= 0 ? 0 : e >= RH ? PN : (e / RH * PN) | 0;
+      const hin = e <= 0 ? 0 : PIN[qin];
       const tout = o <= RC ? 0 : (o - RC) / RH;
       const hout = tout >= 1 ? 0 : PROF[(tout * PN) | 0];
       if(hin <= hout){
         h = hin;
-        if(e > 0 && e < RH){ const dp = -DPROF[(tin * PN) | 0] / RH;
+        if(e > 0 && e < RH){ const dp = DPIN[qin];
           hx = dp * (GEx[i00] * w00 + GEx[i01] * w01 + GEx[i10] * w10 + GEx[i11] * w11);
           hy = dp * (GEy[i00] * w00 + GEy[i01] * w01 + GEy[i10] * w10 + GEy[i11] * w11);
-          /* the wall down to the colour leans at most wallMax (build 319) */
+          /* the bevel down to the colour (build 321), never steeper than bevelMax */
           const sm = Math.sqrt(hx * hx + hy * hy) * P.relief;
-          if(sm > P.wallMax){ const q = P.wallMax / sm; hx *= q; hy *= q; } }
+          if(sm > P.bevelMax){ const q = P.bevelMax / sm; hx *= q; hy *= q; } }
       } else {
         h = hout;
         if(tout > 0 && tout < 1){ const dp = DPROF[(tout * PN) | 0] / RH;
@@ -54848,6 +54927,12 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
   const ldx = l[0] / ll, ldy = l[1] / ll, rise = l[2] / ll;
   const Zp = P.relief * k, shStep = Math.max(1, .5 * k), shN = Math.ceil(4 * k / shStep);
   const RAMP = P.enRamp, RL = RAMP.length - 1, EM = P.enMetal, ED = P.enDiff, CK = P.coatK, SPT = Lt.SP, SPE = Lt.SPE, DIF = Lt.DIF, FR = Lt.FR;
+  /* the wear, this stage's (build 321) */
+  const NT = badgeNoiseTable(), gOx = (dSeed & 255) * .71, gOy = ((dSeed >>> 8) & 255) * .43;
+  const gF = Math.max(0, Math.min(1, (k / SS - 1.6) / 2.2));
+  const W_GLOSS = DK.gloss[ST], W_FLAT = DK.flat[ST], W_TARN = DK.tarnish[ST], W_COAT = DK.coat[ST], W_DIM = DK.dim[ST],
+        W_GRIME = DK.grime[ST], W_GRIMEE = DK.grimeE[ST], W_FILM = DK.film[ST], W_FILME = DK.filmE[ST],
+        W_GRAIN = DK.grain[ST], W_GRAINE = DK.grainE[ST], DU = DK.dust[ST];
   /* premultiplied linear light per sample, averaged SS x SS below */
   const AR = BF.AR, AG = BF.AG, AB = BF.AB; AR.fill(0, 0, N); AG.fill(0, 0, N); AB.fill(0, 0, N);
   for(let y = 0; y < W; y++){
@@ -54863,24 +54948,39 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
       const h0 = H[i];
       const occ = h0 < .5 ? .25 + .75 * (h0 / .5) : 1;
       let mm = ev * .95 * (1 - P.wallAO + P.wallAO * occ);
-      /* dirt: a smudged film (sm, a soft noise field in token units) that
-         takes the gloss off, flatter metal, and grime settled at the foot
-         of every wall (rM on the metal side, rE on the colour's) */
-      let sm = 0, rM = 0, rE = 0;
-      if(DT > 0){
-        sm = badgeSmudge(dSeed, (x - pcx) / k, (y - pcy) / k);
+      /* wear (BADGE_DIRT, by stage): a fine grain (gr, either way), a
+         smudged film (sm, soft patches), dust (du), the gloss taken off,
+         flatter and warmer metal, and grime settled at the foot of every
+         wall (rM on the metal side, rE on the colour's) */
+      let sm = 0, rM = 0, rE = 0, gr = 0, du = 0;
+      if(WEAR){
+        const tx = (x - pcx) / k, ty = (y - pcy) / k;
+        sm = badgeSmudge(dSeed, tx, ty);
+        /* the grain: ~3 units and a fine ~.9 unit, the fine one only where
+           a pixel is small enough to hold it (gF) - finer than a pixel it
+           is noise the next render size would draw differently */
+        gr = (badgeNoiseAt(NT, tx * 1.3 + gOx, ty * 1.3 + gOy) - .5) * 1.4 + gF * (badgeNoiseAt(NT, ty * 4.4 + gOy + 57.1, tx * 4.4 + gOx + 13.3) - .5) * 1.8;
+        if(DU > 0){
+          /* two readings at odd angles and scales, so no flecks line up on the table's lattice */
+          const dn = .5 * badgeNoiseAt(NT, (.8 * tx - .6 * ty) * 2.3 + gOy + 91.7, (.6 * tx + .8 * ty) * 2.3 + gOx + 44.9)
+                   + .5 * badgeNoiseAt(NT, (.28 * tx + .96 * ty) * 3.7 + gOx + 7.3, (-.96 * tx + .28 * ty) * 3.7 + gOy + 63.1);
+          du = dn > .6 ? DU * (dn >= .78 ? 1 : (dn - .6) / .18) : 0; du *= du > 0 ? (2 - du / DU) * .5 + .25 : 0;
+        }
         const wd0 = WD[i];
         rM = wd0 < 0 ? Math.exp(wd0 / DK.recM) : 1;
         rE = wd0 > 0 ? Math.exp(-wd0 / DK.recE) : 1;
-        sp *= 1 - DT * (DK.gloss + DK.glossSm * sm);
-        mm = mm * (1 - DK.flat * DT) + DK.flatTo * DT;
+        const gl = W_GLOSS + DK.glossSm * sm;
+        sp *= (gl >= .97 ? .03 : 1 - gl) * (1 + 2.2 * W_GRAIN * gr);
+        if(sp < 0) sp = 0;
+        mm = (mm * (1 - W_FLAT) + DK.flatTo * W_FLAT) * (1 + W_GRAIN * gr);
       }
       let mr = mm * tint[0] + sp, mg = mm * tint[1] + sp, mb = mm * tint[2] + sp;
-      if(DT > 0){
-        const T = DK.tarnish, gq = DK.grime * DT * rM, fq = DK.film * DT * sm;
-        mr *= 1 + (T[0] - 1) * DT; mg *= 1 + (T[1] - 1) * DT; mb *= 1 + (T[2] - 1) * DT;
+      if(WEAR){
+        const T = DK.tint, gq = W_GRIME * rM, fq = W_FILM * sm;
+        mr *= 1 + (T[0] - 1) * W_TARN; mg *= 1 + (T[1] - 1) * W_TARN; mb *= 1 + (T[2] - 1) * W_TARN;
         mr = mr * (1 - fq) + DK.fc[0] * fq; mg = mg * (1 - fq) + DK.fc[1] * fq; mb = mb * (1 - fq) + DK.fc[2] * fq;
         mr = mr * (1 - gq) + DK.gc[0] * gq; mg = mg * (1 - gq) + DK.gc[1] * gq; mb = mb * (1 - gq) + DK.gc[2] * gq;
+        if(du > 0){ mr = mr * (1 - du) + DK.gc[0] * du; mg = mg * (1 - du) + DK.gc[1] * du; mb = mb * (1 - du) + DK.gc[2] * du; }
       }
       const aE = AE[i];
       let er = 0, eg = 0, eb = 0;
@@ -54904,12 +55004,18 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
         const dif = (.6 + .4 * (DIF[li] * w0 + DIF[li1] * w1 + DIF[li2] * w2 + DIF[li3] * w3)) * ED + (RAMP[r0] * (1 - rs) + RAMP[r1] * rs) * EM;
         let cc = ((P.coat + .6 * (FR[li] * w0 + FR[li1] * w1 + FR[li2] * w2 + FR[li3] * w3)) * ev + .45 * (SPE[li] * w0 + SPE[li1] * w1 + SPE[li2] * w2 + SPE[li3] * w3)) * CK;
         let dd = dif;
-        if(DT > 0){ cc *= 1 - DT * (DK.coat + DK.coatSm * sm); dd *= 1 - DK.dim * DT; }
+        if(WEAR){
+          const cl = W_COAT + DK.coatSm * sm;
+          cc *= (cl >= .97 ? .03 : 1 - cl) * (1 + 1.6 * W_GRAINE * gr);
+          if(cc < 0) cc = 0;
+          dd *= (1 - W_DIM) * (1 + W_GRAINE * gr);
+        }
         er = en[0] * dd * shade + cc; eg = en[1] * dd * shade + cc; eb = en[2] * dd * shade + cc;
-        if(DT > 0){
-          const gq = DK.grimeE * DT * rE, fq = DK.filmE * DT * sm;
+        if(WEAR){
+          const gq = W_GRIMEE * rE, fq = W_FILME * sm;
           er = er * (1 - fq) + DK.fc[0] * fq; eg = eg * (1 - fq) + DK.fc[1] * fq; eb = eb * (1 - fq) + DK.fc[2] * fq;
           er = er * (1 - gq) + DK.gc[0] * gq; eg = eg * (1 - gq) + DK.gc[1] * gq; eb = eb * (1 - gq) + DK.gc[2] * gq;
+          if(du > 0){ er = er * (1 - du) + DK.gc[0] * du; eg = eg * (1 - du) + DK.gc[1] * du; eb = eb * (1 - du) + DK.gc[2] * du; }
         }
       }
       const cM = aS - aE;
