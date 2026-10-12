@@ -676,13 +676,14 @@ def main():
                 level: q('.pf-standing .pf-level'), rank: q('.pf-standing .pf-rankname'),
                 nums: q('.pf-standing .pf-xpnums .xpnums'), over: !!document.querySelector('.pf-standing .xpnums.is-over'),
                 total: q('.pf-standing .pf-xp-total'), totalUnder: !!document.querySelector('.pf-standing .pf-xpnums .pf-xp-total'),
-                totalCol: rgb(document.querySelector('.pf-standing .pf-xp-total')), haveCol: rgb(document.querySelector('.pf-standing .xpnums-have')), needCol: rgb(document.querySelector('.pf-standing .xpnums-need')), banked: !!document.querySelector('.pf-standing .pf-xpbar.is-banked'),
+                totalCol: rgb(document.querySelector('.pf-standing .pf-xp-total')), lvCol: rgb(document.querySelector('.pf-standing .pf-level')), haveCol: rgb(document.querySelector('.pf-standing .xpnums-have')), needCol: rgb(document.querySelector('.pf-standing .xpnums-need')), banked: !!document.querySelector('.pf-standing .pf-xpbar.is-banked'),
                 note: q('.pf-standing .pf-xp-note'), noteWall: !!document.querySelector('.pf-standing .pf-xp-note.is-wall'),
                 nextGate: !!document.querySelector('.next-gate'), max: !!document.querySelector('.level-max-tag'),
                 goal: q('.pf-goal .pf-goal-name'), sub: q('.pf-goal .pf-goal-sub'), goalText: q('.pf-goal'),
                 tasks: tasks.map(t => ({ label: (t.querySelector('.pf-task-label') || {}).textContent, met: t.classList.contains('is-met'),
                   tick: (t.querySelector('.pf-check') || {}).textContent, note: (t.querySelector('.pf-task-note') || {}).textContent || null,
-                  val: (t.querySelector('.pf-task-val') || {}).textContent,
+                  val: (t.querySelector('.pf-task-val') || {}).textContent, shown: (t.querySelector('.pf-task-val') || {}).innerText,
+                  bar: !!t.querySelector('.pf-bar'),
                   now: rgb(t.querySelector('.pf-now')), need: rgb(t.querySelector('.pf-need')) })),
                 tiles: [...document.querySelectorAll('.pf-goal .pf-rw .pf-rw-lab')].map(n => n.textContent),
                 caseCount: q('.pf-case .pf-case-count') };
@@ -801,10 +802,13 @@ def main():
             # and over at a cap both numbers are the same blue.
             # REVISED IN THE 317 TOUCH-UP: one XP blue for the numbers and
             # the total ("I guess the total xp should be the same?").
-            check("Profile at a cap: this level's XP marked over under the bar (both numbers and the total one blue), the total under the bar saying 'total XP', the bar banked, and no Next gate box",
+            # REVISED IN 321: "Total xp probably should be the same color as
+            # the other stuff, would look better actually" - the total takes
+            # the line's colour ("Level N"), the level's two numbers stay blue.
+            check("Profile at a cap: this level's XP marked over under the bar (both numbers one blue), the total under the bar saying 'total XP' in the level's colour, the bar banked, and no Next gate box",
                   pf["nums"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["nums"]) and pf["over"]
-                  and pf["haveCol"] == pf["needCol"] == pf["totalCol"] and blue(pf["needCol"])
-                  and re.match(r"^[0-9,]+ total XP$", pf["total"] or "") and pf["totalUnder"] and blue(pf["totalCol"]) and pf["banked"]
+                  and pf["haveCol"] == pf["needCol"] and blue(pf["needCol"])
+                  and re.match(r"^[0-9,]+ total XP$", pf["total"] or "") and pf["totalUnder"] and pf["totalCol"] == pf["lvCol"] and not blue(pf["totalCol"]) and pf["banked"]
                   and not pf["max"] and not pf["nextGate"] and pf["level"] == "Level 29", pf)
             # "I don't like how it means that 5th badge part": no ordinal.
             # REVISED IN 316: no count either - it says this is as high as the
@@ -821,16 +825,15 @@ def main():
             # be used towards the next levels once unlocked but simple". The
             # SHAPE is held, not the prose: top level, which rank's
             # challenges open more, and that the XP still counts toward them.
-            note_shape = lambda n, held, nxt: bool(n) and n.startswith("You've reached the top level " + held + ". ") \
-                and ("Finish the " + nxt + " rank challenges to unlock more levels.") in n \
-                and "still counts" in n and "toward those levels" in n and "is kept" not in n
-            check("...and the plain line under the bar says this is the top level before a first rank, the Bronze rank challenges unlock more levels, and the XP still counts toward them - no number in it",
-                  not pf["noteWall"] and note_shape(pf["note"], "before your first rank", "Bronze")
-                  and not re.search(r"\d", pf["note"] or ""), pf["note"])
+            # REVISED IN 321: "remove the description under the xp bar that
+            # talks about using xp for the next level, we don't need that
+            # anymore" - no line under the bar at all, at a wall or not.
+            check("...and there is no note under the bar at the wall (321)",
+                  pf["note"] is None and not pf["noteWall"], pf["note"])
             t = pf["tasks"]
             check("the next rank is Bronze, 1 of 2 done, with what is left listed first",
                   pf["goal"] == "Bronze" and pf["sub"] == "1 of 2 done" and len(t) == 2
-                  and t[0]["label"] == "Earn 1 badge" and not t[0]["met"] and t[1]["label"] == "Reach level 21" and t[1]["met"], pf)
+                  and t[0]["label"] == "Earn 1 badge" and not t[0]["met"] and t[1]["label"] == "Reach Level 21" and t[1]["met"], pf)
             # 315 swapped them on request ("the goal number and moving level
             # number should swap colors"); REVISED IN 316, asked back: "I
             # preferred how the leveling requirement looked too" - your count
@@ -840,9 +843,11 @@ def main():
             # REVISED IN 318: "the number on the left can match actually,
             # don't make it grey" - both numbers in the row's colour, met or
             # not (fails on 219bfea, where the unmet count is grey).
-            check("a task's count and its goal are both in its colour, met or not (never a grey count); a met one has a tick",
+            # REVISED IN 321: the level row is "Reach Level N" with your level
+            # on the right and "Met" once it is - in the row's blue, no bar.
+            check("a task's count and its goal are both in its colour, met or not (never a grey count); a met one has a tick; a met level reads 'Met' in its blue",
                   len(t) == 2 and gold(t[0]["now"]) and t[0]["now"] == t[0]["need"] and t[0]["tick"] == ""
-                  and blue(t[1]["now"]) and blue(t[1]["need"]) and t[1]["tick"] == "✓", t)
+                  and blue(t[1]["now"]) and t[1]["shown"] == "Met" and not t[1]["bar"] and t[1]["tick"] == "✓", t)
             # REVISED IN 317, round two: "the flare and the theme unlock box
             # thing in profile should swap" - the rank's own flare first.
             # REVISED AGAIN IN THE 317 FIX: "switch the flare and theme spot
@@ -852,9 +857,10 @@ def main():
             p49 = w["profile49"]
             t49 = p49["tasks"]
             # "talks about you being level 49 but it's asking for level 40"
-            check("at level 49 behind the four-badge wall, Gold's level task reads 40 / 40, done, and says nothing about 49",
+            # REVISED IN 321: "Reach Level 40 ... Met", not "40 / 40" and a bar.
+            check("at level 49 behind the four-badge wall, Gold's level task reads Reach Level 40, Met, ticked, no bar, and says nothing about 49",
                   p49["level"] == "Level 49" and p49["goal"] == "Gold" and len(t49) == 2
-                  and t49[1]["label"] == "Reach level 40" and t49[1]["met"] and (t49[1]["val"] or "").replace(" ", "") == "40/40"
+                  and t49[1]["label"] == "Reach Level 40" and t49[1]["met"] and t49[1]["shown"] == "Met" and not t49[1]["bar"]
                   and "49" not in (p49["goalText"] or "")
                   and not re.search(r"\b\d+(st|nd|rd|th)\b", p49["goalText"] or ""), p49)
             # Build 316: "The description in the level unlock challenge when at
@@ -867,11 +873,12 @@ def main():
             # REVISED IN 317, round two: "the description under the level
             # challenge, I'm not in love with it ... could be better" - the bar's
             # note says where the XP goes; this one says what is left for the rank.
-            check("...and at the wall the level task says, in one short line, it is done and the badge challenge is left for Gold - no badge count",
-                  t49[1]["note"] == "Done. Finish the badge challenge to reach Gold."
-                  and not re.search(r"\d", t49[1]["note"] or ""), t49[1]["note"])
-            check("...and the line under the bar says this is the top level for Silver and the Gold rank challenges unlock more",
-                  note_shape(p49["note"], "for Silver", "Gold"), p49["note"])
+            # REVISED IN 321: "Under the level challenge it says finish the
+            # badge challenge to reach gold? Remove that and remove the one
+            # that's there for the badge challenge" - no note under either row.
+            check("...and at the wall neither task has a note under it - not the level's 'Done. Finish the badge challenge', not the badges' 'Closest' (321)",
+                  all(x["note"] is None for x in t49 + t), [x["note"] for x in t49 + t])
+            check("...and nothing is under the bar for Silver either (321)", p49["note"] is None, p49["note"])
             tp = w["taps"]
             check("tapping where you stand opens the climb", tp["standing"]["hit"] and tp["standing"]["map"], tp["standing"])
             # "assuming you click anywhere in that box, it opens up the rank road map"

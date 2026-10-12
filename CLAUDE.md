@@ -20358,3 +20358,59 @@ you have to hit I'm new here sign up or something?"*
 - **Gates:** `check-sync` 9a-9f (sign in first; the check; the name;
   device traces x4; board = Profile; no regressed row). All 20 fail on
   6a387e2.
+
+### Build 321 (b321f) - the Profile card: no notes, no rank icon, one colour, more air, "Reach Level N"
+
+Madison: *"I really really like how it is. I don't want it to change much.
+The level one is just kinda confusing."* So the card is the same card,
+with five subtractions and one change of form.
+
+- **No note under the XP bar** (*"remove the description under the xp bar
+  that talks about using xp for the next level"*): `profileXpNote()` and
+  `.pf-xp-note` are gone, at a wall and at level 80. At a wall the phone's
+  line is just "x / y XP" (`pfXpToText` is empty there, as before). The
+  rank-up journey's `.pf-xp-note.ru-later` lookups are now no-ops.
+- **No notes under the challenge rows**: the level row's "Done. Finish the
+  badge challenge to reach <rank>." and the badge row's "Closest: <unit>
+  (n/m hundos)" are both gone; `buildProfileTask(c, color)` takes no note
+  and `.pf-task-note` is deleted. `closestBadge()` is left in place, unused.
+- **No emblem on the rank line; the rank word is the line's colour.**
+  `.pf-emb` is gone; `.pf-rankname` is `color:inherit` (weight 800 kept),
+  so "Gold", "Level 44" and "5 badges" are one computed colour
+  (`--pf-line`, rgba(255,255,255,.72), set on `.pf-standing`). The
+  new-rank dot sits on the word. `.ru-arrive .pf-emb` (the journey's
+  emblem pop) has nothing to hit now.
+- **The total XP is the line's colour too** (*"Total xp probably should be
+  the same color as the other stuff"*), reversing the 317 touch-up's "one
+  XP blue": a tablet's "N total XP" is `--pf-line`; "x / y XP" of this
+  level stays `--xpnum`. Stats' Total XP figure was already every card's
+  `--theme-c2` and is held there.
+- **1.15rem between the Next rank box and the case strip** (was .8rem; the
+  handle stands .42rem up into it, so it now clears the box by ~12px, not
+  ~6px). `.pf-goal + .pf-case.pf-case-closed` only; standing-to-case stays.
+- **The level challenge is "Reach Level N", not a fraction and a bar.**
+  The road map's "To reach <rank>" names each requirement and says where
+  you are ("41 of 50", "Met"); the Profile's level row had "41 / 50" and a
+  bar that repeated the XP bar right above it. Now: the box, "Reach Level
+  50", "Level 44" on the right (the word quiet, the number blue), no bar;
+  met: ticked and "Met" on the right - never a level past the goal. The
+  badge row keeps "7 / 8" and its bar. The card's head kicker is "To
+  reach" (was "Next rank"), so it reads "To reach / Platinum / 1 of 2
+  done", the road map's words; "Rank challenges" stays over the rows (the
+  Profile's "complete the challenges" feel, 317's ask). Hooks for the
+  journey are unchanged: `.pf-task[data-kind]`, `.pf-check`, `is-met`,
+  `.pf-now` (the level, capped, now inside `.pf-lv-now`), `.pf-need` (the
+  goal, now inside the label); the level row has `.is-level` and no
+  `.pf-bar`, and CSS swaps `.pf-lv-now` for `.pf-lv-met` on `is-met`.
+- **Gate: `check_b321f_profile`** (both reference devices): no notes
+  anywhere, no emblem, rank/level/badges one computed colour, the total the
+  level's computed colour, Stats' Total XP the others', the gap >= 1.15rem,
+  "To reach", the level row's two states, the badge row kept. Fails on
+  6a387e2 (9 per device; the Stats colour, the hooks and the badge row are
+  holds and pass there). Moved to the new decisions: check_b235 'plate',
+  check_b237, check_b244 (no emblem), check_b258 (blue read off the XP
+  numbers), check_b282 (label case), check_b302 (no emblem; total = level
+  colour), check_b317_pfcard (1.15rem; total = level colour),
+  check_b317_xpcap (no notes; total = level colour), check_b319h_layout
+  (1.15rem), check_b319_rankup (the level row has no bar), check-curve 8
+  (no notes, "Reach Level N", "Met", total = level colour).

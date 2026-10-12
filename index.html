@@ -21650,12 +21650,13 @@
      profile rather than as a card inside it */
   .pf-standing{ position:relative; margin:.75rem 0 0; padding:.2rem 0; border-radius:.6rem; }
   .pf-standing:active{ opacity:.82; }
+  .pf-standing{ --pf-line:rgba(255,255,255,.72); }
   .pf-idline{ display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:.4rem;
-    font-size:.95rem; font-weight:700; line-height:1.3; color:rgba(255,255,255,.72); text-align:center; }
-  .pf-emb{ width:1.55rem; height:1.55rem; display:inline-flex; flex:none; }
-  .pf-emb svg{ display:block; width:100%; height:100%; }
+    font-size:.95rem; font-weight:700; line-height:1.3; color:var(--pf-line, rgba(255,255,255,.72)); text-align:center; }
   .pf-standing .new-dot-anchor > .new-dot{ top:-.22rem; right:-.3rem; width:10px; height:10px; }
-  .pf-rankname{ font-weight:800; color:color-mix(in srgb, var(--rank-color) 55%, #fff); }
+  /* the rank in the line's own colour, no emblem (build 321) - see
+     buildProfileStanding */
+  .pf-rankname{ font-weight:800; color:inherit; }
   .pf-idsep{ opacity:.35; }
   /* the XP is blue, the bar's own light blue - never the rank's colour
      (build 259: "I don't like the bronze all the way through") */
@@ -21664,7 +21665,13 @@
      total xp should be the same?" One XP blue under the bar; the total
      keeps its lighter weight, so it still reads as a running total
      rather than a third number about this level. */
-  .pf-xp-total{ color:var(--xpnum); white-space:nowrap; font-weight:700; }
+  /* THE TOTAL IN THE LINE'S COLOUR (build 321, reversing the 317 touch-up
+     above): "Total xp probably should be the same color as the other
+     stuff, would look better actually." The "x / y XP" of this level stays
+     the XP blue; the running total (a tablet's, bottom right) is set like
+     "Level N" and "N badges" over the bar - --pf-line. On Stats the Total
+     XP card's figure was already every other card's colour. */
+  .pf-xp-total{ color:var(--pf-line, rgba(255,255,255,.72)); white-space:nowrap; font-weight:700; }
   .pf-xp{ display:block; margin-top:.85rem; }
   .pf-xpbar.xpbar-track{ display:block; }
   .pf-xpbar .xpbar-fill{ display:block; height:100%; border-radius:inherit; }
@@ -21689,7 +21696,6 @@
   }
   @media (max-width:24rem){
     .pf-idline{ font-size:.84rem; }
-    .pf-emb{ width:1.45rem; height:1.45rem; }
     .pf-xpnums{ font-size:.78rem; }
     .pf-xp-next{ font-size:.72rem; }
   }
@@ -21705,8 +21711,6 @@
     .pf-standing .pf-xp-to:not(:empty){ display:inline; white-space:nowrap; color:var(--soft); font-weight:700; }
     .pf-standing.ru-climbing .pf-xp-to{ display:none; }
   }
-  .pf-xp-note{ display:block; margin-top:.35rem; font-size:.8rem; line-height:1.35; color:rgba(255,255,255,.62); }
-  .pf-xp-note.is-wall{ color:#E8C770; }
   .pf-standing + .pf-goal, .pf-standing + .pf-case{ margin-top:1.05rem; }
   /* the flare bubble, out of Home's orbit */
   .flare-solo.cosmic-icon-badge.cosmic-badge-rank{ position:relative; top:auto; left:auto; flex:none; translate:none; }
@@ -21751,7 +21755,14 @@
   .pf-bar > i{ display:block; height:100%; width:var(--w); border-radius:inherit;
     background:linear-gradient(90deg, color-mix(in srgb, var(--tc) 78%, #000), var(--tc));
     box-shadow:0 0 10px color-mix(in srgb, var(--tc) 45%, transparent); }
-  .pf-task-note{ grid-column:2 / 4; font-size:.8rem; line-height:1.35; color:rgba(255,255,255,.62); }
+  /* THE LEVEL ROW (build 321) - see buildProfileTask: "Reach Level 50",
+     "Level 41" on the right (the word quiet, the number in the row's
+     blue), "Met" once it is, no bar. */
+  .pf-task-label .pf-need{ font-weight:inherit; color:inherit; }
+  .pf-task-val .pf-lv-now{ color:rgba(255,255,255,.55); }
+  .pf-task-val .pf-lv-met{ display:none; color:color-mix(in srgb, var(--tc) 85%, #fff); }
+  .pf-task.is-level.is-met .pf-lv-now{ display:none; }
+  .pf-task.is-level.is-met .pf-lv-met{ display:inline; }
   .pf-rewards-kick{ margin-top:1rem; }
   .pf-rewards{ display:flex; gap:.5rem; margin-top:.55rem; }
   .pf-rewards > .pf-rw{ flex:1 1 0; }
@@ -21860,7 +21871,6 @@
      taller hit area, pulled back out so the line does not move */
   .pf-badgecount{ padding:.6rem 0; margin:-.6rem 0; }
   .pf-standing .pf-idline{ flex-wrap:nowrap; }
-  .pf-standing .pf-idline .pf-emb{ width:1.6em; height:1.6em; }
   @media (max-width:22rem){ .pf-standing .pf-idline{ margin-left:-.85rem; margin-right:-.85rem; } }
   /* ---- THE SHUT CASE IS PART OF THE CARD (build 319, builder h) ----
      "I love the briefcase idea ... However I think it's kinda rough on the
@@ -21881,7 +21891,13 @@
      thing on the card any more. */
   .pf-case.pf-case-closed{ --case-tint:#AEBBCB; --pfc-r:1.1rem; margin:.8rem 0 0; padding:0; border:0; border-radius:var(--pfc-r); background:none; }
   .pf-case.pf-case-closed:active{ filter:none; }
-  .pf-standing + .pf-case.pf-case-closed, .pf-goal + .pf-case.pf-case-closed{ margin-top:.8rem; }
+  .pf-standing + .pf-case.pf-case-closed{ margin-top:.8rem; }
+  /* A SMIDGE MORE AIR UNDER THE NEXT RANK BOX (build 321): "The badge
+     case under the rank challenge thing, the spacing is a smidge too
+     close." The handle stands .42rem up into this gap, so at .8rem it
+     cleared the box by ~6px; at 1.15rem it clears it by ~12px, phone and
+     tablet alike. */
+  .pf-goal + .pf-case.pf-case-closed{ margin-top:1.15rem; }
   .pf-ccase{ position:relative; display:block; box-sizing:border-box; width:100%; border-radius:var(--pfc-r);
     background:linear-gradient(160deg, color-mix(in srgb, var(--case-tint) 12%, rgba(0,0,0,.3)), rgba(0,0,0,.34) 58%);
     border:1px solid color-mix(in srgb, var(--case-tint) 26%, rgba(255,255,255,.06));
@@ -21938,7 +21954,6 @@
   @media (min-width:40rem){
     .pf-goal{ padding:1.2rem 1.35rem 1.15rem; }
     .pf-idline{ font-size:1.05rem; }
-    .pf-emb{ width:1.8rem; height:1.8rem; }
     .pf-xpnums{ font-size:.92rem; }
     .pf-goal-emb{ width:4.4rem; height:4.4rem; }
     .pf-goal-name{ font-size:2.05rem; }
@@ -21975,7 +21990,7 @@
   }
   @media (max-width:22rem){
     .pf-task{ grid-template-columns:1.45rem minmax(0, 1fr); }
-    .pf-task-val, .pf-bar, .pf-task-note{ grid-column:2; }
+    .pf-task-val, .pf-bar{ grid-column:2; }
     .pf-rw{ padding-left:.05rem; padding-right:.05rem; }
     .pf-rw-lab{ font-size:.68rem; }
   }
@@ -108114,43 +108129,12 @@ function buildRankRewardTiles(key){
   });
   return row;
 }
-/* The line under the XP bar. At a wall it says three things, in the
-   order Madison put them (build 316): this is as high as your rank goes,
-   the next rank's challenges are what open more, and the XP is not lost -
-   "this is the max level you can achieve at this rank, complete the
-   challenges to keep leveling up, your xp still goes up and will be given
-   to you when the levels or ranks unlock". No badge count, no ordinal
-   ("I don't like how it means that 5th badge part"): the Next rank card
-   right under it lists the challenges with their numbers. The rank named
-   is the one whose challenges open the wall (gateKey), which at a wall is
-   always the next rank - see rankChallengesOf. */
-function profileXpNote(prog){
-  /* REWRITTEN (build 317): "could be worded better and easier to
-     understand ... needs to say something that easier to understand and
-     explains to the user that the overflow xp will be used towards the
-     next levels once unlocked but simple ... but not vague either." Three
-     short sentences: where you are stopped, what opens more, what
-     happens to the XP. Level 80 says the same thing about the cap: "for
-     the max level right now, there's nothing to get past it until we get
-     more levels and units." */
-  if(prog.atCap){
-    return "You've reached level " + LEVEL_CAP + ", the top level for now. More levels are coming with new units. " +
-      "XP you earn now still counts and goes toward those levels when they are added.";
-  }
-  if(prog.stopped || prog.held){
-    let held = null, next = null;
-    try{ held = rankOf(store); }catch(e){}
-    try{ next = prog.gateKey || (rankChallengesOf() || {}).key || null; }catch(e){}
-    const nextName = next ? RANK_DISPLAY_NAME[next] || next : "next";
-    /* no number in it: the level is printed right above the bar */
-    return "You've reached the top level " +
-      (held ? "for " + RANK_DISPLAY_NAME[held] : "before your first rank") + ". " +
-      "Finish the " + nextName + " rank challenges to unlock more levels. " +
-      "XP you earn now still counts and goes toward those levels as soon as they unlock.";
-  }
-  const left = Math.max(0, Math.round((Number(prog.span) || 0) - (Number(prog.into) || 0)));
-  return left.toLocaleString() + " XP to level " + (prog.level + 1);
-}
+/* NO NOTE UNDER THE XP BAR (build 321): "remove the description under
+   the xp bar that talks about using xp for the next level, we don't need
+   that anymore." profileXpNote() and its .pf-xp-note (build 316-317: at a
+   wall, "You've reached the top level for <rank>. Finish the <next> rank
+   challenges ...", and the level-80 version) are gone. At a wall the bar
+   is full and the Next rank card under it already lists what opens more. */
 /* ---- WHO YOU ARE, THEN HOW FAR INTO THE LEVEL (build 316) ----
    Build 315 put this in a box of its own - "YOUR RANK", the emblem in a
    bubble, the rank name large, the bar and three numbers - and it read
@@ -108162,8 +108146,8 @@ function profileXpNote(prog){
    under the name, and the level's own bar sits under that line with no
    box round it: what you have into this level against what it asks on
    the left, what is left to the next level on the right. At a badge wall
-   the right side gives way to the gold line saying what opens the next
-   levels. Still one button to the road map, with no chrome of its own. */
+   there is no next level to name (and, since build 321, no note under
+   the bar). Still one button to the road map, with no chrome of its own. */
 function pfXpToText(prog){
   if(!prog || prog.atCap || prog.stopped || prog.held) return "";
   return "to Level " + ((Number(prog.level) || 0) + 1);
@@ -108190,13 +108174,17 @@ function buildProfileStanding(prog, rankNow){
      (build 299), on the emblem. */
   let rankNew = false;
   try{ rankNew = rankIsNew(); }catch(e){}
+  /* THE RANK IS A WORD, IN THE LINE'S OWN COLOUR (build 321): "above the
+     xp bar, it has your rank in the color and with the icon. Remove the
+     tiny icon and make the color match the level and badge color, would
+     look way better overall". No emblem (.pf-emb is gone), and the name
+     takes .pf-idline's colour like "Level N" and "N badges"; it keeps its
+     heavier weight, so it still leads the line. The new-rank dot that sat
+     on the emblem (build 299) sits on the word. */
   if(rankNow){
-    const emb = document.createElement("span");
-    emb.className = "pf-emb";
-    try{ emb.appendChild(fitRankEmblem(buildRankEmblemSVG(rankNow), rankNow)); }catch(e){}
     const nm = document.createElement("b");
     nm.className = "pf-rankname"; nm.textContent = RANK_DISPLAY_NAME[rankNow];
-    line.append(rankNew ? wrapWithNewDot(emb) : emb, nm, sep("a"));
+    line.append(rankNew ? wrapWithNewDot(nm) : nm, sep("a"));
     if(rankNew) box.classList.add("has-new");
   }
   const lv = document.createElement("span");
@@ -108233,8 +108221,6 @@ function buildProfileStanding(prog, rankNow){
   trackWrap.appendChild(track);
   const nums = document.createElement("span");
   nums.className = "pf-xpnums";
-  const noteText = profileXpNote(prog);
-  const wall = prog.atCap || prog.stopped || prog.held;
   nums.appendChild(buildXpNumbers(bar.into, bar.span, bar.over));
   /* for runXpBarFill: whether this bar is full and still collecting, and
      the total it was built with */
@@ -108255,22 +108241,16 @@ function buildProfileStanding(prog, rankNow){
      card), so the card says each thing once: who you are on the line
      above, how far into this level and what it leads to under the bar.
      A tablet keeps the total in the corner as before (CSS picks). At a
-     wall there is no next level to name: the gold note says what opens
-     it. */
+     wall there is no next level to name, so it is empty; the Next rank
+     card under it says what opens more (build 321: no note here). */
   const to = document.createElement("span");
   to.className = "pf-xp-to";
   to.textContent = pfXpToText(prog);
   nums.insertBefore(to, tot);
   xp.append(trackWrap, nums);
-  if(wall && noteText){
-    const note = document.createElement("span");
-    note.className = "pf-xp-note";
-    note.textContent = noteText;
-    xp.appendChild(note);
-  }
   box.appendChild(xp);
   box.setAttribute("aria-label", (rankNow ? RANK_DISPLAY_NAME[rankNow] + " rank, " : "No rank yet, ") +
-    "level " + prog.level + ", " + bc.textContent + ", " + prog.total.toLocaleString() + " total XP. " + (noteText || "") + " Open the Rank screen.");
+    "level " + prog.level + ", " + bc.textContent + ", " + prog.total.toLocaleString() + " total XP. Open the Rank screen.");
   box.addEventListener("click", e => {
     const t = e && e.target;
     if(t && t.closest && t.closest(".pf-badgecount")) return showRanksScreen("badges");
@@ -108366,16 +108346,32 @@ function bindProfileIdFit(){
    ("the goal number and moving level number should swap colors") and the
    swap was then asked against: "I preferred how the leveling requirement
    looked too". */
-function buildProfileTask(c, color, noteText){
+/* THE LEVEL ROW SAYS THE LEVEL, NOT A FRACTION (build 321): "for the
+   xp challenge/level challenge, should it even say '50/50 or whatever
+   with the loading bar, would it make more sense if it just had the
+   number you needed ... I feel like it should almost kinda be more like
+   how it says 'to reach platinum' and then those two things are under
+   it". "41 / 50" and a bar under the XP bar's own bar said the level
+   twice in two shapes. The road map's "To reach <rank>" names the level
+   and says where you are ("41 of 50", "Met"), so the row does the same
+   in the Profile's checklist: "Reach Level 50", your level on the right
+   ("Level 41"), the box ticked when it is met - and then "Met" on the
+   right, the road map's word, never a level past the goal (build 319's
+   cap). No bar. The badge row keeps its "7 / 8" and its bar - "that
+   makes sense". The hooks the rank-up journey drives stay: .pf-now is
+   the level number on the right, .pf-need the goal number (in the
+   label), .pf-check the box, `is-met` the state. */
+function buildProfileTask(c, color){
   const t = document.createElement("span");
-  t.className = "pf-task" + (c.met ? " is-met" : "");
+  const isLevel = c.kind === "level";
+  t.className = "pf-task" + (isLevel ? " is-level" : "") + (c.met ? " is-met" : "");
   /* which challenge, for the rank-up's tick (build 319) */
   if(c.kind) t.dataset.kind = c.kind;
   t.style.setProperty("--tc", color);
   const ck = document.createElement("span");
   ck.className = "pf-check"; ck.setAttribute("aria-hidden", "true"); ck.textContent = c.met ? "✓" : "";
   const lab = document.createElement("span");
-  lab.className = "pf-task-label"; lab.textContent = c.label;
+  lab.className = "pf-task-label";
   const val = document.createElement("span");
   val.className = "pf-task-val";
   /* EVERY COUNT STOPS AT ITS GOAL (build 319, reversing build 317's "4 /
@@ -108386,21 +108382,26 @@ function buildProfileTask(c, color, noteText){
      for level 40"). Any challenge kind added later gets the same cap. */
   const shownNow = Math.min(Number(c.now) || 0, Number(c.need) || 0);
   const now = document.createElement("b"); now.className = "pf-now"; now.textContent = String(shownNow);
-  const sep = document.createElement("span"); sep.className = "pf-sep"; sep.textContent = " / ";
   const need = document.createElement("b"); need.className = "pf-need"; need.textContent = String(c.need);
-  val.append(now, sep, need);
-  const bar = document.createElement("span");
-  bar.className = "pf-bar";
-  const fill = document.createElement("i");
-  fill.style.setProperty("--w", Math.round(Math.min(1, c.now / Math.max(1, c.need)) * 1000) / 10 + "%");
-  bar.appendChild(fill);
-  t.append(ck, lab, val, bar);
-  if(noteText){
-    const n = document.createElement("span");
-    n.className = "pf-task-note"; n.textContent = noteText;
-    t.appendChild(n);
+  if(isLevel){
+    lab.append("Reach Level ", need);
+    const here = document.createElement("span"); here.className = "pf-lv-now";
+    here.append("Level ", now);
+    const done = document.createElement("span"); done.className = "pf-lv-met"; done.textContent = "Met";
+    val.append(here, done);
+    t.append(ck, lab, val);
+  } else {
+    lab.textContent = c.label;
+    const sep = document.createElement("span"); sep.className = "pf-sep"; sep.textContent = " / ";
+    val.append(now, sep, need);
+    const bar = document.createElement("span");
+    bar.className = "pf-bar";
+    const fill = document.createElement("i");
+    fill.style.setProperty("--w", Math.round(Math.min(1, c.now / Math.max(1, c.need)) * 1000) / 10 + "%");
+    bar.appendChild(fill);
+    t.append(ck, lab, val, bar);
   }
-  t.setAttribute("aria-label", c.label + ", " + shownNow + " of " + c.need + (c.met ? ", done" : ""));
+  t.setAttribute("aria-label", (isLevel ? "Reach Level " + c.need : c.label) + ", " + shownNow + " of " + c.need + (c.met ? ", done" : ""));
   return t;
 }
 function buildProfileGoal(prog){
@@ -108447,7 +108448,13 @@ function buildProfileGoal(prog){
   const tx = document.createElement("span");
   tx.className = "pf-goal-tx";
   const k = document.createElement("span");
-  k.className = "pf-kick"; k.textContent = "Next rank";
+  /* "TO REACH" <RANK> (build 321): the road map's own words over the
+     same two requirements - "it should almost kinda be more like how it
+     says 'to reach platinum' and then those two things are under it ...
+     by giving them two different looks it could be confusing". The rank
+     name stays the card's header; "Rank challenges" stays over the rows,
+     which is the Profile's "complete the challenges" feel. */
+  k.className = "pf-kick"; k.textContent = "To reach";
   const nm = document.createElement("span");
   nm.className = "pf-goal-name"; nm.textContent = rc.name;
   const sub = document.createElement("span");
@@ -108464,31 +108471,18 @@ function buildProfileGoal(prog){
   const tasks = document.createElement("span");
   tasks.className = "pf-tasks";
   const lv = rc.list.find(c => c.kind === "level"), bd = rc.list.find(c => c.kind === "badges");
-  let closest = null;
-  try{ closest = bd && !bd.met ? closestBadge() : null; }catch(e){}
   /* the Rank tab's own two colours (.rankhero-gauge's --ring): the level
      blue and the badge gold, so a requirement reads the same everywhere
      it is drawn (build 282: "make those circles the same") */
-  /* AT A WALL THE LEVEL CHALLENGE SAYS WHAT OPENS MORE LEVELS (build 316),
-     in words rather than a badge count - "make that say something more
-     along the lines of there, complete rank challenges or something. Don't
-     specifically mention the badges amount". The saved-XP half was liked
-     and asked to be better: it says the XP is waiting, and that it lands
-     all at once. Only once XP is actually banked past the wall does it
-     call it saved. */
-  const atWall = !prog.atCap && (prog.stopped || prog.held);
-  /* ONE SHORT LINE (build 317): "could be simpler ... sounds redundant to
-     what's underneath the xp bar ... needs to be less wordy". Round two:
-     "the description under the level challenge, I'm not in love with it.
-     I like it but could be better." The line under the bar already says
-     where the XP goes, so this one says what the level means for the
-     rank: this half is done, the badge challenge is what is left. Still
-     no badge count (316), and away from a wall still no note. */
-  const lvNote = !atWall ? null
-    : (bd && !bd.met ? "Done. Finish the badge challenge to reach " + rc.name + "." : "Done.");
+  /* NO NOTES UNDER THE ROWS (build 321): "Under the level challenge it
+     says finish the badge challenge to reach gold? Remove that and remove
+     the one that's there for the badge challenge". The level row's "Done.
+     Finish the badge challenge to reach <rank>." (316-317, at a wall) and
+     the badge row's "Closest: <unit> (n/m hundos)" are gone; the rows are
+     the requirement and where you stand, nothing under them. */
   const rows = [
-    lv ? buildProfileTask(lv, "#6FC2FF", lvNote) : null,
-    bd ? buildProfileTask(bd, "#E3C77A", closest ? "Closest: " + closest.unit + " (" + closest.done + "/" + closest.need + " hundos)" : null) : null
+    lv ? buildProfileTask(lv, "#6FC2FF") : null,
+    bd ? buildProfileTask(bd, "#E3C77A") : null
   ].filter(Boolean);
   /* what is still to do first; what is done sinks */
   rows.sort((a, b) => (a.classList.contains("is-met") ? 1 : 0) - (b.classList.contains("is-met") ? 1 : 0));
@@ -108501,8 +108495,8 @@ function buildProfileGoal(prog){
   const foot = document.createElement("span");
   foot.className = "pf-goal-foot"; foot.textContent = "See every rank ›";
   box.appendChild(foot);
-  box.setAttribute("aria-label", "Next rank, " + rc.name + ": " +
-    rc.list.map(c => c.label + " " + Math.min(c.now, c.need) + " of " + c.need + (c.met ? " done" : "")).join(", ") + ". Open the Rank screen.");
+  box.setAttribute("aria-label", "To reach " + rc.name + ": " +
+    rc.list.map(c => (c.kind === "level" ? "Reach Level " + c.need : c.label) + " " + Math.min(c.now, c.need) + " of " + c.need + (c.met ? " done" : "")).join(", ") + ". Open the Rank screen.");
   box.addEventListener("click", () => showRanksScreen("ranks"));
   return box;
 }
