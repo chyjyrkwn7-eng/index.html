@@ -12441,6 +12441,9 @@
   .sn-orb.is-ember::before{ inset:-60%; background:radial-gradient(circle, rgba(255,226,170,.95) 0, rgba(255,140,58,.55) 30%, rgba(255,86,26,0) 66%); }
   .sn-ringglint{ position:absolute; left:50%; top:47.368%; aspect-ratio:1; translate:-50% -50%; border-radius:50%;
     pointer-events:none; opacity:0; z-index:2; }
+  /* Home's (b321h, homeRingStreak): in paint order - over the rings, under
+     the flares and the secret flares, which it is inserted before */
+  .cosmic-hero-wrap > .sn-ringglint.is-home{ z-index:auto; }
   /* SUPERNOVA'S SPIN IS ITS OWN: the planet heats with the speed
      (.sn-spinheat, over the planet and under the bubbles), dark streaks
      run through the light trails (.rank-trail.is-void), and its bang
@@ -17367,14 +17370,25 @@
      switchers' own white-on-dark recipe, a hairline drawn INSIDE (a
      border would make it 2px taller than the buttons beside it and move
      Quit) - between Resume's white and Quit's black. Quit is unchanged. */
+  /* ...AND THE SAME KIND OF BUTTON AS QUIT (build 321, b321h). "The save
+     and exit button grey is nice, but the button doesn't look like the
+     black button or white buttons, it's missing that nice button look the
+     others have." The glass pane was see-through, with a hairline and one
+     soft shadow: no body, no lip, nothing under it. It is now Quit's own
+     matte recipe in grey, as Reset's red is (.next.danger): an opaque
+     fill, the same five shadows in the same places - a lit lip along the
+     top edge (a lighter grey, as Quit's is lighter than its black), a
+     shade inside the bottom edge, and the contact, mid and wide shadows
+     under it - no border (so it stays the height of Quit and nothing
+     moves), and pressed it goes darker in place as Quit goes to #000,
+     with the shared press shrink and the ghost's faint lift. */
   [data-layout="modern"] .pausepanel .next.ghost#pause-save{
-    background-color:rgba(255,255,255,.14);
-    background-image:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.02) 60%);
-    color:#fff;
-    will-change:backdrop-filter; backdrop-filter:blur(14px) saturate(1.6); -webkit-backdrop-filter:blur(14px) saturate(1.6);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.24), inset 0 0 0 1px rgba(255,255,255,.12), 0 4px 12px rgba(0,0,0,.28);
+    background-color:#3A3D43; background-image:none;
+    color:#fff; border:none;
+    box-shadow:0 1px 1px rgba(150,156,166,.75) inset, 0 -2px 2px rgba(0,0,0,.42) inset,
+      0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 22px -6px rgba(0,0,0,.55);
   }
-  [data-layout="modern"] .pausepanel .next.ghost#pause-save:active{ background-color:rgba(255,255,255,.2); }
+  [data-layout="modern"] .pausepanel .next.ghost#pause-save:active{ background-color:#2B2D32; opacity:1; }
   /* Back links were plain text with no button treatment at all \u2014 the
      same black-glass pill as the ghost button, just smaller, so it
      reads as a real tappable control instead of a caption. */
@@ -67980,6 +67994,8 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
        with the other boxes) */
     homeTapBind(sphere, (e) => {
       try{ planetTapFx(wrap, e); }catch(err){}
+      /* and at Supernova, the cutscene's streak round the rings (b321h) */
+      try{ homeRingStreak(wrap, "tap"); }catch(err){}
       try{
         const again = homeCaptionState.key === "planet" && !!document.querySelector("#stage .home-caption > .hc-item.is-in");
         homeCaptionState.planetN = again ? homeCaptionState.planetN + 1 : 0;
@@ -72101,23 +72117,11 @@ function playRankUpScene(tierKey, opts, spec){
     }catch(e){}
     setTimeout(() => DONE.forEach(n => n.remove()), D + 1400);
   };
-  /* a glint running round each ring as it takes its new colour */
+  /* a glint running round each ring as it takes its new colour - the
+     streak Home plays again for a Supernova account (ringStreak, b321h) */
   const snRingGlint = () => {
     if(!heroAfter) return;
-    [108, HOME_OUTER_R].forEach((R, i) => {
-      try{
-        const g = document.createElement("i");
-        g.className = "sn-ringglint"; g.setAttribute("aria-hidden", "true");
-        const b2 = 7, E = R + b2 * 2.5, pc = v => (v / E * 100).toFixed(2) + "%";
-        g.style.width = (2 * E / 360 * 100).toFixed(3) + "%";
-        g.style.background = "conic-gradient(from 0deg, rgba(255,170,110,0) 0deg 250deg, rgba(255,170,110,.35) 320deg, rgba(255,236,214,.95) 354deg, #fff 358deg, rgba(255,236,214,0) 360deg)";
-        g.style.webkitMaskImage = g.style.maskImage = "radial-gradient(circle closest-side, transparent " + pc(R - b2) + ", #000 " + pc(R - b2 * .3) + ", #000 " + pc(R + b2 * .3) + ", transparent " + pc(R + b2) + ")";
-        heroAfter.insertBefore(g, heroAfter.querySelector(":scope > .rank-orbit"));
-        g.animate([{ opacity: 0, transform: "rotate(0deg)" }, { opacity: 1, transform: "rotate(60deg)", offset: .15 }, { opacity: 1, transform: "rotate(300deg)", offset: .8 }, { opacity: 0, transform: "rotate(380deg)" }],
-          { duration: 2000, delay: i * 220, easing: "cubic-bezier(.4,0,.3,1)", fill: "both" });
-        setTimeout(() => g.remove(), 2500 + i * 220);
-      }catch(e){}
-    });
+    ringStreak(heroAfter, heroAfter.querySelector(":scope > .rank-orbit"), [108, HOME_OUTER_R]);
   };
   const snDetonate = () => {
     overlay.classList.add("sn-detonate");
@@ -77290,6 +77294,8 @@ function showHome(){
   }
   syncLoopClock(panel);
   heroSettleSkip(panel);
+  /* the Supernova streak with every fourth pulse (b321h) */
+  try{ homeStreakArm(heroWrap); }catch(e){}
   setTimeout(() => { if(panel.isConnected) startOrbitEmblemAnims(panel); }, 1600);
   /* THE XP FLIES IN AFTER THE DAILY QUESTION ONLY (build 304). It used
      to fly after every run, from back when the results screen did not
@@ -82691,6 +82697,93 @@ function planetTapFx(hero, ev){
   A(parts.rout, [{ opacity: from.rout }, { opacity: 1, offset: .3 }, { opacity: 0 }], { duration: 900, delay: from.rout > .05 ? 0 : 300, easing: "ease-in-out" });
   /* the rings speed up (build 318, orbitBoost) */
   orbitBoostKick(hero);
+}
+/* THE SUPERNOVA STREAK (build 321, b321h). "At the end of the supernova
+   flare unlock cutscene there's a cool animation where something fast
+   shoots around the rings? ... can we make it where that's also on the
+   Home Screen every so often? ... maybe when you click the planet there
+   for that rank? Or maybe at certain intervals along with the pulse?"
+   ringStreak is THE drawing - the glint the Supernova cutscene runs round
+   each ring as they turn (snRingGlint calls it), built once here so Home's
+   and the cutscene's cannot drift apart: a conic gradient (a white head on
+   a warm tail) masked to a band on the ring, turned once round in 2s, the
+   outer ring 220ms behind the inner. Transform and opacity only; the
+   nodes are removed when they finish, so nothing is left running.
+   On Home it is for a Supernova account only (homeRingTier, the same
+   switch as the orange rings it runs on), and plays:
+   - on a tap of the planet, every time one is not already running;
+   - on its own with the planet's pulse (cosmic-pulse-out, 9s, on the
+     shared loop clock): every RING_STREAK_EVERY-th pulse, starting as that
+     pulse leaves the planet. The pulse is on the wall clock
+     (syncLoopClock), so the schedule is too: a Home built again keeps it.
+   One timer, re-armed per streak; it stops when Home's planet leaves the
+   document. Never under Reduce motion, never while a cutscene, a tour,
+   a reward card or the ring draw holds the screen, never in the
+   background. */
+const RING_STREAK_MS = 2000, RING_STREAK_STAGGER_MS = 220, RING_STREAK_EVERY = 4;
+const PULSE_CYCLE_MS = 9000, PULSE_DELAY_MS = 3500, PULSE_OUT_AT = .78;
+function ringStreak(host, before, radii){
+  const out = [];
+  (radii || []).forEach((R, i) => {
+    try{
+      const g = document.createElement("i");
+      g.className = "sn-ringglint"; g.setAttribute("aria-hidden", "true");
+      const b2 = 7, E = R + b2 * 2.5, pc = v => (v / E * 100).toFixed(2) + "%";
+      g.style.width = (2 * E / 360 * 100).toFixed(3) + "%";
+      g.style.background = "conic-gradient(from 0deg, rgba(255,170,110,0) 0deg 250deg, rgba(255,170,110,.35) 320deg, rgba(255,236,214,.95) 354deg, #fff 358deg, rgba(255,236,214,0) 360deg)";
+      g.style.webkitMaskImage = g.style.maskImage = "radial-gradient(circle closest-side, transparent " + pc(R - b2) + ", #000 " + pc(R - b2 * .3) + ", #000 " + pc(R + b2 * .3) + ", transparent " + pc(R + b2) + ")";
+      host.insertBefore(g, before && before.parentNode === host ? before : null);
+      g.animate([{ opacity: 0, transform: "rotate(0deg)" }, { opacity: 1, transform: "rotate(60deg)", offset: .15 }, { opacity: 1, transform: "rotate(300deg)", offset: .8 }, { opacity: 0, transform: "rotate(380deg)" }],
+        { duration: RING_STREAK_MS, delay: i * RING_STREAK_STAGGER_MS, easing: "cubic-bezier(.4,0,.3,1)", fill: "both" });
+      setTimeout(() => g.remove(), RING_STREAK_MS + 500 + i * RING_STREAK_STAGGER_MS);
+      out.push(g);
+    }catch(e){}
+  });
+  return out;
+}
+function homeStreakHeld(hero){
+  try{
+    if(document.hidden) return true;
+    if(typeof cutsceneFocusActive === "function" && cutsceneFocusActive()) return true;
+    if(hero.querySelector(".cosmic-hero-ringlayer.is-drawing") || hero.dataset.ringDrawing) return true;
+    return ringDrawHeld(0);
+  }catch(e){ return false; }
+}
+/* why: "tap" or "pulse". True when a streak started. */
+function homeRingStreak(hero, why){
+  if(!hero || !hero.isConnected || !homeRingTier() || ringMotionOff()) return false;
+  if(!hero.closest('[data-screen="home"]')) return false;
+  if(hero.querySelector(":scope > .sn-ringglint")) return false;
+  if(homeStreakHeld(hero)) return false;
+  const outer = hero.querySelector(".cosmic-orbit-ring[r]:not([r='108'])");
+  const R = outer ? Number(outer.getAttribute("r")) || HOME_OUTER_R : HOME_OUTER_R;
+  const gs = ringStreak(hero, hero.querySelector(":scope > .cosmic-hero-orbitlayer"), [108, R]);
+  gs.forEach(g => { g.classList.add("is-home"); g.dataset.why = why || ""; });
+  return gs.length > 0;
+}
+let homeStreakTimer = null;
+function homeStreakArm(hero){
+  clearTimeout(homeStreakTimer); homeStreakTimer = null;
+  if(!hero || !hero.isConnected || !homeRingTier() || ringMotionOff()) return;
+  let a = null;
+  try{
+    const p = hero.querySelector(".cosmic-pulse-ring");
+    a = p && p.getAnimations ? p.getAnimations().find(x => x.animationName === "cosmic-pulse-out") : null;
+  }catch(e){}
+  if(!a || a.currentTime == null) return;
+  const t = Number(a.currentTime), rate = Number(a.playbackRate) || 1, outAt = PULSE_CYCLE_MS * PULSE_OUT_AT;
+  /* the next pulse whose number is a multiple of RING_STREAK_EVERY; the
+     200ms is a timer that fires a hair early, which must not pick the
+     same pulse again */
+  let k = Math.max(0, Math.floor((t + 200 - PULSE_DELAY_MS - outAt) / PULSE_CYCLE_MS) + 1);
+  k += (RING_STREAK_EVERY - (k % RING_STREAK_EVERY)) % RING_STREAK_EVERY;
+  const wait = Math.max(0, (PULSE_DELAY_MS + k * PULSE_CYCLE_MS + outAt - t) / rate);
+  homeStreakTimer = setTimeout(() => {
+    homeStreakTimer = null;
+    if(!hero.isConnected) return;
+    homeRingStreak(hero, "pulse");
+    homeStreakArm(hero);
+  }, wait);
 }
 /* A TAP SPEEDS THE RINGS UP, AND SPAMMING IT KEEPS THEM GOING (build 318).
    "Tapping it speeds it up that's sick, keep it like that, ensure that

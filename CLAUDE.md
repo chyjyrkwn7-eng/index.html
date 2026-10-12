@@ -19954,3 +19954,46 @@ leaking out, the spin-to-case transition.
   name now also in the lid on purpose), its tab/Profile plate text,
   check-results' badge XP lines (no line; no MASTERY_BONUS), check-curve's
   badge line (no lump).
+
+### Build 321 (b321h) - the Supernova streak on Home, Save and exit as a real button
+
+- **The streak the Supernova cutscene runs round the rings plays on Home
+  too, for a Supernova account** (`homeRingTier()`, the same switch as the
+  orange rings). *"can we make it where that's also on the Home Screen
+  every so often? ... maybe when you click the planet ... Or maybe at
+  certain intervals along with the pulse?"* Both:
+  - on a planet tap (`homeRingStreak(wrap, "tap")` in the sphere's
+    `homeTapBind`, after `planetTapFx`), unless one is already running -
+    spamming the planet does not stack or restart it;
+  - on its own with every `RING_STREAK_EVERY` (4th) pulse of the planet,
+    starting as that pulse leaves it (78% of `cosmic-pulse-out`'s 9s), so
+    about every 36s. `homeStreakArm(heroWrap)` from `showHome` reads the
+    pulse's own animation time and sets ONE timer for the next pulse whose
+    number is a multiple of 4, re-armed after each. The pulse is on the
+    wall clock (`syncLoopClock`), so the schedule is too: a Home built
+    again keeps it, and every device agrees.
+- **`ringStreak(host, before, radii)` is the one drawing**; the cutscene's
+  `snRingGlint` calls it. Conic gradient masked to a band on the ring,
+  rotated once in 2s (outer ring 220ms behind), removed when done -
+  transform and opacity only, nothing left running between streaks. On
+  Home it is inserted before the first `.cosmic-hero-orbitlayer` with
+  `z-index:auto` (`.sn-ringglint.is-home`), so it paints over the rings and
+  under every flare and secret flare, and `pointer-events:none`.
+- Never under Reduce motion (`ringMotionOff()`: the app's switch or the
+  system's - nothing armed, a tap does nothing extra), never below
+  Supernova, never in the background, while a cutscene holds focus, during
+  the ring draw, or whenever `ringDrawHeld(0)` holds (tours, reward cards,
+  other cutscenes). The timer stops when Home's planet leaves the document.
+- **Save and exit is Quit's matte recipe in grey** (as Reset's red is):
+  opaque `#3A3D43`, no background image, no border (Quit's height to the
+  pixel), Quit's five shadow layers at the same offsets (the lip a lighter
+  grey, as Quit's is lighter than its black), pressed `#2B2D32` with the
+  shared .97 press. The glass pane (translucent, backdrop blur, one soft
+  shadow) is gone. `check_b320h_fixes`'s "lighter than Quit" still holds.
+- **Gate: `check_b321h`** - the tap streak on both rings (lit, turning,
+  under the flares, no touches, gone after), the idle streak with a 4th
+  pulse at 78% and none with the three between, armed on Home's build;
+  none below Supernova; none under either Reduce motion (and a tap runs it
+  again once motion is back); Save and exit's shadow layers, border,
+  background layers, opacity, height and pressed state against Quit's, on
+  both reference devices. Fails on 6a387e2.

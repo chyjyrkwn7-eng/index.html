@@ -23397,6 +23397,211 @@ def check_b320c_case(br):
         ctx.close()
 
 
+B321H_SN = """(sn) => {
+  const U = topicsIn(QUESTIONS);
+  if(sn){
+    store.unitPerfects = {}; U.forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
+    store.lifetime.points = xpForLevel(80) + 900;
+    store.rankUpShown = TIER_ORDER_FULL.length; store.rankMapSeen = TIER_ORDER_FULL.length - 1; try{ store.seenUnlockedTiers = TIER_ORDER_FULL.slice(); }catch(e){}
+  }
+  store.supernovaAchieved = !!sn; store.rankUpFrom = null; store.pendingTierCutscene = null; store.pendingBadgeUnlocks = [];
+  store.savedCodeSaved = true; store.lateHundos = 999; store.retroBadgePending = [];
+  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(h => { try{ markFlareHintShown(h); }catch(e){} }); }catch(e){}
+  saveStore();
+  try{ localStorage.setItem('class26e.ringtier.seen', sn ? 'supernova' : ''); }catch(e){}
+  return [rankOf(store), homeRingTier()]; }"""
+
+B321H_HOME = """() => { try{ homeUnlockPlaying = false; }catch(e){} showHome();
+  document.querySelectorAll('.rs-spot,.scene-bridge,.daily-alert,#tour-overlay,.update-banner,.toast,#contextual-info-popup').forEach(n => n.remove()); }"""
+
+# Tap the planet, then read the streak ~600ms in: one per ring, lit, turning,
+# under the flares, taking no touches.
+B321H_TAP = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  const hero = document.querySelector('.panel.home .cosmic-hero-wrap');
+  /* the pulse's own streak must not be the one measured, nor block the tap's */
+  try{ clearTimeout(homeStreakTimer); }catch(e){}
+  hero.querySelectorAll(':scope > .sn-ringglint').forEach(g => g.remove());
+  const sph = [...hero.querySelectorAll('.cosmic-hero-main circle')].find(e => /cosmicSphereGrad/.test(e.getAttribute('fill') || ''));
+  const r = sph.getBoundingClientRect();
+  sph.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, isPrimary: true, pointerType: 'touch', clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
+  sph.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
+  const gs = [...hero.querySelectorAll(':scope > .sn-ringglint')];
+  const op = gs.map(() => 0), t0 = performance.now();
+  while(performance.now() - t0 < 2300){ gs.forEach((g, i) => { op[i] = Math.max(op[i], +getComputedStyle(g).opacity); }); await wait(40); }
+  const kids = [...hero.children];
+  const firstFlare = kids.findIndex(k => k.matches('.cosmic-hero-orbitlayer, .cosmic-icon-badge'));
+  return { n: gs.length, why: gs.map(g => g.dataset.why), op,
+    turning: gs.map(g => g.getAnimations().some(a => a.playState === 'running' && a.effect.getKeyframes().some(k => /rotate/.test(k.transform || '')))),
+    under: gs.every(g => firstFlare >= 0 && kids.indexOf(g) < firstFlare), pe: gs.map(g => getComputedStyle(g).pointerEvents),
+    mask: gs.map(g => !!(g.style.maskImage || g.style.webkitMaskImage)) }; }"""
+
+# Put the pulse at `lead` ms before pulse number k leaves the planet (78% of
+# its 9s), re-arm the schedule from it as a Home build does, and watch
+# `ms` for a streak; returns the pulse's phase when one was first seen.
+B321H_IDLE = """async (o) => { const wait = ms => new Promise(r => setTimeout(r, ms));
+  const hero = document.querySelector('.panel.home .cosmic-hero-wrap');
+  hero.querySelectorAll(':scope > .sn-ringglint').forEach(g => g.remove());
+  const p = hero.querySelector('.cosmic-pulse-ring');
+  const a = p && p.getAnimations().find(x => x.animationName === 'cosmic-pulse-out');
+  if(!a) return { pulse: false };
+  const base = Math.floor((a.currentTime - 3500) / 9000);
+  let k = base + 8; k += ((o.mod - k % 4) + 4) % 4;
+  a.currentTime = 3500 + k * 9000 + 9000 * .78 - o.lead;
+  /* the delay the schedule asks for, read off its setTimeout in the same
+     task as the pulse's time - exact, where a timer on a loaded machine
+     can fire hundreds of ms late */
+  const st = window.setTimeout; let asked = null, at0 = null;
+  window.setTimeout = function(fn, ms){ if(asked === null){ asked = Number(ms) || 0; at0 = a.currentTime; } return st.apply(this, arguments); };
+  try{ homeStreakArm(hero); }catch(e){ window.setTimeout = st; return { pulse: true, err: String(e) }; }
+  window.setTimeout = st;
+  const due = asked === null ? null : at0 + asked * (a.playbackRate || 1);
+  const sched = due === null ? null : { phase: ((due - 3500) % 9000) / 9000, k: Math.floor((due - 3500) / 9000), inMs: asked };
+  /* the pulse's time read in the same task that puts the streak in */
+  let hit = null;
+  const mo = new MutationObserver(() => { if(hit) return; const g = hero.querySelector(':scope > .sn-ringglint');
+    if(g) hit = { why: g.dataset.why, at: a.currentTime }; });
+  mo.observe(hero, { childList: true });
+  const t0 = performance.now();
+  while(performance.now() - t0 < o.ms && !hit) await wait(40);
+  mo.disconnect();
+  if(hit) return { pulse: true, seen: true, why: hit.why, sched, phase: ((hit.at - 3500) % 9000) / 9000, k: Math.floor((hit.at - 3500) / 9000) };
+  return { pulse: true, seen: false, sched }; }"""
+
+B321H_ARMED = "() => { try{ return homeStreakTimer != null; }catch(e){ return 'none'; } }"
+
+
+def _b321h_shadows(s):
+    """A computed box-shadow as [(inset, x, y, blur, spread)], colours dropped."""
+    import re as _re
+    out, depth, cur = [], 0, ""
+    for ch in s or "":
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        if ch == "," and depth == 0:
+            out.append(cur); cur = ""
+        else:
+            cur += ch
+    if cur.strip():
+        out.append(cur)
+    res = []
+    for part in out:
+        p = _re.sub(r"(rgba?|color)\([^)]*\)", "", part)
+        nums = [float(x) for x in _re.findall(r"-?\d*\.?\d+(?=px)", p)]
+        res.append(("inset" in p, tuple(nums + [0] * (4 - len(nums)))))
+    return [x for x in res if part]
+
+
+def check_b321h(br):
+    """Build 321 (b321h). Two of Madison's notes:
+    1. "At the end of the supernova flare unlock cutscene there's a cool
+       animation where something fast shoots around the rings? ... can we
+       make it where that's also on the Home Screen every so often? ...
+       maybe when you click the planet there for that rank? Or maybe at
+       certain intervals along with the pulse?" - the cutscene's streak
+       (ringStreak) runs round Home's two rings for a Supernova account:
+       on a planet tap, and on its own with every fourth pulse of the
+       planet, as that pulse leaves it (and not with the three between).
+       Under the flares, taking no touches. Never below Supernova, never
+       under Reduce motion (the app's switch or the system's).
+    2. "The save and exit button grey is nice, but the button doesn't look
+       like the black button or white buttons, it's missing that nice
+       button look the others have." - Save and exit carries Quit's own
+       structure: the same shadow layers in the same places (inset lip,
+       inset shade, three under it), the same border, the same background
+       layers, opaque, the same height; and pressed it goes darker and
+       shrinks as Quit does.
+    Fails on 6a387e2."""
+    print("\n321h. the Supernova streak on Home, and Save and exit as a real button")
+    # ---- 1: the streak -------------------------------------------------
+    for dev, w, h in ((PHONE[0], PHONE[1], PHONE[2]), (TABLET[0], TABLET[1], TABLET[2])):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        st = pg.evaluate(B321H_SN, True)
+        pg.evaluate(B321H_HOME); pg.wait_for_timeout(1500)
+        armed = pg.evaluate(B321H_ARMED)
+        check("%s: Supernova (%s): Home arms the pulse streak when it is built" % (dev, st), armed is True, armed)
+        t = pg.evaluate(B321H_TAP)
+        check("%s: a planet tap runs the streak round both rings, lit and turning" % dev,
+              t["n"] == 2 and t["why"] == ["tap", "tap"] and min(t["op"] or [0]) > .9 and all(t["turning"]) and all(t["mask"]), t)
+        check("%s: under the flares, taking no touches" % dev, t["n"] == 2 and t["under"] and set(t["pe"]) == {"none"}, t)
+        pg.wait_for_timeout(1500)
+        left = pg.evaluate("() => document.querySelectorAll('.cosmic-hero-wrap > .sn-ringglint[data-why=\"tap\"]').length")
+        check("%s: and is gone when it has run (nothing left running)" % dev, left == 0, left)
+        on = pg.evaluate(B321H_IDLE, {"mod": 0, "lead": 1200, "ms": 2600})
+        check("%s: on its own with every fourth pulse, starting as that pulse leaves the planet (78%% of its 9s)" % dev,
+              on.get("seen") and on.get("why") == "pulse" and (on.get("sched") or {}).get("k", 1) % 4 == 0
+              and abs((on.get("sched") or {}).get("phase", 0) - .78) < .005 and on.get("k", 1) % 4 == 0 and abs(on.get("phase", 0) - .78) < .12, on)
+        offs = [pg.evaluate(B321H_IDLE, {"mod": m, "lead": 1200, "ms": 2600}) for m in (1, 2, 3)]
+        check("%s: and not with the three pulses between (each waits for the next fourth)" % dev,
+              all(x.get("pulse") and x.get("seen") is False and (x.get("sched") or {}).get("k", 1) % 4 == 0 for x in offs), offs)
+        ctx.close()
+    # below Supernova
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    st = pg.evaluate(B321H_SN, False)
+    pg.evaluate(B321H_HOME); pg.wait_for_timeout(1500)
+    t = pg.evaluate(B321H_TAP)
+    on = pg.evaluate(B321H_IDLE, {"mod": 0, "lead": 1200, "ms": 2600})
+    armed = pg.evaluate(B321H_ARMED)
+    check("below Supernova (%s): no streak on a tap, none with the pulse, nothing armed" % (st,),
+          t["n"] == 0 and on.get("pulse") and on.get("seen") is False and armed is False, (t["n"], on, armed))
+    ctx.close()
+    # Reduce motion: the app's switch, then the system's
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    pg.evaluate(B321H_SN, True)
+    pg.evaluate("() => { theme.reduceMotion = true; applyTheme(); saveTheme(); }")
+    pg.evaluate(B321H_HOME); pg.wait_for_timeout(1200)
+    t = pg.evaluate(B321H_TAP); armed = pg.evaluate(B321H_ARMED)
+    forced = pg.evaluate("() => { try{ return homeRingStreak(document.querySelector('.panel.home .cosmic-hero-wrap'), 'pulse'); }catch(e){ return 'none'; } }")
+    check("Reduce motion (the app's): no streak on a tap, nothing armed, none even when asked for",
+          t["n"] == 0 and armed is False and forced is False, (t["n"], armed, forced))
+    pg.evaluate("() => { theme.reduceMotion = false; applyTheme(); saveTheme(); }")
+    pg.emulate_media(reduced_motion="reduce")
+    pg.evaluate(B321H_HOME); pg.wait_for_timeout(1200)
+    t = pg.evaluate(B321H_TAP); armed = pg.evaluate(B321H_ARMED)
+    check("Reduce motion (the system's): none either", t["n"] == 0 and armed is False, (t["n"], armed))
+    pg.emulate_media(reduced_motion="no-preference")
+    # and back on, in the same session: a tap runs it again (the test above is not vacuous)
+    pg.evaluate(B321H_HOME); pg.wait_for_timeout(1200)
+    t = pg.evaluate(B321H_TAP)
+    check("motion back on: a tap runs it again", t["n"] == 2, t["n"])
+    ctx.close()
+    # ---- 2: Save and exit ------------------------------------------------
+    for dev, w, h in ((PHONE[0], PHONE[1], PHONE[2]), (TABLET[0], TABLET[1], TABLET[2])):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
+        pg.evaluate(B320H_RUN, {"answer": 1})
+        CS = """(id) => { const e = document.getElementById(id); if(!e) return null; const c = getComputedStyle(e), r = e.getBoundingClientRect();
+          return { bs: c.boxShadow, bi: c.backgroundImage, bg: c.backgroundColor, bw: [c.borderTopWidth, c.borderRightWidth, c.borderBottomWidth, c.borderLeftWidth],
+            bst: c.borderTopStyle, h: r.height, tf: c.transform, rect: [r.left, r.top, r.width, r.height] }; }"""
+        sv, qt = pg.evaluate(CS, "pause-save"), pg.evaluate(CS, "pause-quit")
+        if not sv or not qt:
+            check("%s: the pause menu has Save and exit and Quit" % dev, False, (sv, qt)); ctx.close(); continue
+        ss, qs = _b321h_shadows(sv["bs"]), _b321h_shadows(qt["bs"])
+        check("%s: Save and exit has Quit's shadow layers, in the same places (%d against %d)" % (dev, len(ss), len(qs)),
+              len(ss) == len(qs) == 5 and ss == qs, (ss, qs))
+        check("%s: the same border and the same background layers as Quit" % dev,
+              sv["bw"] == qt["bw"] and sv["bst"] == qt["bst"] and sv["bi"] == qt["bi"], (sv["bw"], sv["bi"], qt["bw"], qt["bi"]))
+        alpha = 1.0
+        if sv["bg"].startswith("rgba"):
+            alpha = float(sv["bg"].rstrip(")").split(",")[-1])
+        check("%s: an opaque grey body (%s), the height of Quit" % (dev, sv["bg"]),
+              alpha == 1.0 and abs(sv["h"] - qt["h"]) < .5, (sv["bg"], sv["h"], qt["h"]))
+
+        def pressed(rest):
+            b = rest["rect"]
+            pg.mouse.move(b[0] + b[2] / 2, b[1] + b[3] / 2); pg.mouse.down(); pg.wait_for_timeout(250)
+            return b
+
+        def lum(c):
+            v = [float(x) for x in c[c.index("(") + 1:c.index(")")].split(",")[:3]]
+            return .2126 * v[0] + .7152 * v[1] + .0722 * v[2]
+        pressed(sv); sp = pg.evaluate(CS, "pause-save"); pg.mouse.up()
+        pg.mouse.move(5, 5)
+        check("%s: pressed, it goes darker in place and shrinks, as Quit does (%.0f -> %.0f, %s)" % (dev, lum(sv["bg"]), lum(sp["bg"]), sp["tf"]),
+              lum(sp["bg"]) < lum(sv["bg"]) - 4 and sp["tf"].startswith("matrix(0.97"), sp)
+        ctx.close()
+
+
 def main():
     # ONLY_B245=slogan,modes runs just those build 245 polish sections.
     # ONLY_FN=check_b308_timer,... runs just those sections.
