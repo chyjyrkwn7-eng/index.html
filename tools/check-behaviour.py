@@ -8484,7 +8484,11 @@ def check_b304(br):
           %s
           const offer = document.getElementById('resume-offer');
           out.offer = offer ? offer.textContent : null;
-          if(offer){ document.getElementById('resume-go').click(); await wait(900); }
+          /* build 320 (b320h): Resume shows the LOADING TEST bar (~2.5s) before
+             the question, so wait for the question rather than a fixed 900ms */
+          if(offer){ document.getElementById('resume-go').click(); await wait(900);
+            for(let t = 0; t < 80 && !(testInProgress === true && document.querySelector('.qpanel .choice')); t++) await wait(100);
+            await wait(300); }
           out.pos = typeof pos === 'number' ? pos : null; out.q = order && order[pos];
           out.inTest = testInProgress === true && !!document.querySelector('.qpanel .choice');
           /* leave it, so nothing below is inside a test */
