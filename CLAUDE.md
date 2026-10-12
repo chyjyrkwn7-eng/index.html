@@ -19997,3 +19997,57 @@ leaking out, the spin-to-case transition.
   again once motion is back); Save and exit's shadow layers, border,
   background layers, opacity, height and pressed state against Quit's, on
   both reference devices. Fails on 6a387e2.
+
+### Build 321 (b321b) - every face happy at a 100, one saucer
+
+*"Ensure the characters expression change on the mood of the grade, the
+alien still looks mad even after the hundred.. ensure all characters are
+happy when they get the 100"* and *"in the background of the alien there
+is a ufo, a second one comes in.. shouldn't that same one just move?"*
+
+- **Measured, not looked at: 18 of the 30 were not happy at a 100** on
+  6a387e2. Slanted eyes of light read as a scowl (the Masked One, Ronin,
+  Umbra, Inferno, Astral, Zenith, Celestial, Orion's visor), the Alien
+  kept its brow and its frown, the Sheriff squinted, the Detective
+  stared. Only the faces already using `joy()` were happy.
+- **The fix is one block at the end of `tools/reactions-table.py`**
+  (`happy()`), applied to a 100 and a 90+: the open eyes go and the face's
+  own happy pieces come in and stay - `joy()` (its closed eyes turned up)
+  where they show on the face, or `glee()` (two arches of the eyes' own
+  light, a soft wide one under a bright core) where the eyes are light in
+  a dark face; `grin()` where a mouth is missing or flat. The moves before
+  the pose are untouched. A prop with **front 2** is drawn ON THE FACE
+  (inside the group holding the eyes), so the head's fit and every head
+  move carry it - `reactCharacter()` handles it.
+- **The Alien's brow is its own part now (`cx-brow`)** - so are Tempest's
+  and Frost's brows and mouths. A 100 lifts the Alien's brow right off and
+  turns the frown over; no grade wears the scowl (pass: level mouth; fail:
+  let down). Its resting face is unchanged (asked for in build 271).
+- **A fail is let down, never cross.** A face that rests in a smile turns
+  it over (the Detective, the Hacker, Tempest, Frost); eyes that slant
+  down to the nose drop and narrow to dim slits; Tempest's and Frost's
+  brows go level. A pass keeps the face the character rests in.
+- **The hundo effect's reaction covers the glee as well as the eyes**
+  (`R.cover`), so it comes back with the pose when the effect ends.
+- **One saucer.** On a 100 the reaction's saucer (`.cx-rx-ufo`) hovers over
+  the head; the special then brought a second one (`.cx-sp-alufo`). Now,
+  on a 100, the special's saucer is hidden and the reaction's one flies
+  over the cow, beams it up and comes home (`cxsp-al-rxufo`, same clock as
+  `cxsp-al-ufo`). Off the results screen (no saucer up) the special's own
+  saucer swoops in as before. **The same mistake on the Detective**: his
+  100 holds the reaction's magnifier and his special brought a second one
+  out of the coat; on a 100 the special's glass starts and ends where the
+  held one is and the two cross over in the special's fade. The other 28
+  sceneries were audited: their props are weather, sparks, leaves or
+  meteors (more of a kind, not a second copy of one thing).
+- **Faceless drawings** (the Koi's bowl, Void's hood of flares) draw no eyes
+  or mouth at all; the gate reports them by that, it does not pass them as
+  happy.
+- **Gate: `check_b321b_moods`** - the face's mood read off its shapes in the
+  face's own units (a filled eye's or brow's droop towards the nose, a drawn
+  eye's arch, the mouth's middle against its corners): every face happy at a
+  100 and at 90+ (4s and 8s in), a fail never happy and no brow scowling,
+  every face back on its happy 100 after the Confetti and UFO reactions and
+  happy right through the special after them, one saucer and one magnifier
+  at every moment (saucers counted by shape: a filled disc 4+ units across,
+  3x as wide as tall), the saucer over the beam. Fails on 6a387e2.
