@@ -17916,7 +17916,8 @@ def _b321e_checks(dev, pre, frames):
     seg = [x for x in seg if x[1]["k"] == (seg[0][1]["k"] if seg else None)]
     steps = [(b[1]["ct"] - a[1]["ct"], b[0] - a[0]) for a, b in zip(seg, seg[1:])]
     # a frame the emblem stopped on (its animations taken off in the bubble) drops out of `seg`: no gaps either
-    bad = [(d, dt) for d, dt in steps if d < -1 or d > dt + 20 or dt > 70]
+    # (two frames of slack: a copy made inside a step is seeked from the step after)
+    bad = [(d, dt) for d, dt in steps if d < -1 or d > dt + 70 or dt > 70]
     check(f"{dev}: the road map's flare keeps its own animation clock into the planet system - every frame from the circle through the lifted copy and into the bubble moves on by one frame, never back to the start or ahead ({len(steps)} frames)",
           gi is not None and len(steps) > 60 and not bad and any(x[1]["g"] for x in seg[-5:]) is not None, [gi, len(steps), bad[:5]])
     # 2. nothing of the bubble round the copy as the planet system comes up
@@ -18083,7 +18084,8 @@ def check_b320d_rankup(br):
           abs((f.get("mapAt") or -1) - round(f.get("now") or -9, 3)) < .002 and (f.get("gap") or 0) >= .2 * (f.get("stretch") or 999) - 1,
           [f.get("now"), f.get("mapAt"), f.get("gap"), f.get("stretch")])
 
-    for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
+    # B321E_ONLY=1: the formula, the map and the frame-stepped journey only (build 321's own checks)
+    for (w, h, dev) in (() if os.environ.get("B321E_ONLY") else ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11"))):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         s0 = pg.evaluate(B319_RU_SEED, {})
         # build 321 (b321e): the journey's first frame draws the light near the rank held - rankUpStartFrac of where it stood
