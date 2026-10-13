@@ -33,6 +33,7 @@ KNOWN = {
     "rankmap-tip-ping": "a ping off the road's progress light that fades to nothing",
     "stat-shine": "shifted by exactly one period of a 200% background",
     "swatch-sheen": "a sweep from off one edge to off the other",
+    "lb-podium-sheen": "first place's band of light, from off one edge (-130%, clear of the skew) to off the other (300%) inside an overflow:hidden row (build 324)",
     "vrc-drift": "stars drifting, respawned off-screen",
     "vroom-prep-bar": "a highlight from off one edge to off the other",
     "xp-sheen": "shifted by whole periods of a 200% background",

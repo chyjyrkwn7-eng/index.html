@@ -68,7 +68,14 @@ def run(src_dir, label):
     try:
         with sync_playwright() as pw:
             br = pw.chromium.launch(executable_path=CHROME, args=["--no-sandbox"])
-            ctx = br.new_context(viewport={"width": 440, "height": 956}, is_mobile=True, has_touch=True)
+            # 800 TALL, NOT 956 (build 324). The count is asked about a chat
+            # that is OFF screen. Build 323's lobby is ~200px shorter, and at
+            # 956 the chat list's top 61px sit inside the viewport - enough,
+            # while the list is short, for the first messages to be read for
+            # real (the host's rule: 80px or half the list), so it counted 1.
+            # At 800 the list starts 95px below the fold, which is the
+            # situation this check is about.
+            ctx = br.new_context(viewport={"width": 440, "height": 800}, is_mobile=True, has_touch=True)
             ctx.add_init_script(ROOM)
             pg = ctx.new_page()
             errs = []
@@ -562,7 +569,42 @@ ap = argparse.ArgumentParser(); ap.add_argument("--against")
 a = ap.parse_args()
 where = a.against or ROOT
 label = os.path.basename(where.rstrip("/")) if a.against else "current"
-fails = run(where, label) + run_class(where, label) + run_intro(where, label)
+def run_peek(src_dir, label):
+    """THE CHAT PEEKING IN, AND THEN READ (build 324). On a 956px phone -
+    Madison's own - build 323's lobby leaves the chat list's top ~60px in
+    view. The scroll observer fired once at that sliver (12%) and, the
+    list being "intersecting" from then on, never again, while the
+    snapshot (which asks the host's 80px-or-half rule) counted the
+    newest message unread. Scrolling the chat into view left the badge
+    up. Written against ab75270, where it stays at '1'."""
+    srv, url = serve(src_dir); fails = []
+    try:
+        with sync_playwright() as pw:
+            br = pw.chromium.launch(executable_path=CHROME, args=["--no-sandbox"])
+            ctx = br.new_context(viewport={"width": 440, "height": 956}, is_mobile=True, has_touch=True)
+            ctx.add_init_script(ROOM)
+            pg = ctx.new_page(); pg.goto(url); pg.wait_for_timeout(2400)
+            pg.evaluate("document.getElementById('splashscreen')?.remove()")
+            pg.evaluate("()=>{ vroomCode='TESTROOM'; vroomMyKey='me'; vroomIsHost=true; showVirtualRoomLobby(); }")
+            pg.wait_for_timeout(700)
+            for k, n, t in [("ann","Ann","are we starting"),("bo","Bo","one sec"),("cy","Cy","ready"),("di","Di","go")]:
+                pg.evaluate("([k,n,t])=>window.__push(k,n,t)", [k,n,t]); pg.wait_for_timeout(260)
+            before = pg.evaluate("()=>{ const d=document.querySelector('.vroom-chat-dot'); return d ? {hidden:d.hidden, text:d.textContent} : null; }")
+            pg.evaluate("()=>{ const w=document.querySelector('.vroom-chat'); if(w) w.scrollIntoView({block:'center', behavior:'instant'}); }")
+            pg.wait_for_timeout(600)
+            after = pg.evaluate("()=>{ const d=document.querySelector('.vroom-chat-dot'); return d ? {hidden:d.hidden, text:d.textContent} : null; }")
+            print(f"  [{label}] peek: before {before} after {after}")
+            if not before or before["hidden"]:
+                fails.append("the peek scenario never had an unread count to clear: %r" % before)
+            elif not after or after["hidden"] is not True:
+                fails.append("with the chat peeking in, scrolling to it left the unread count up: %r" % after)
+            br.close()
+    finally:
+        srv.shutdown()
+    return fails
+
+
+fails = run(where, label) + run_peek(where, label) + run_class(where, label) + run_intro(where, label)
 if fails:
     print(f"\n{len(fails)} FAILURE(S) [{label}]")
     for f in fails: print("  *", f)

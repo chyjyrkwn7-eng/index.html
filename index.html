@@ -5224,10 +5224,10 @@
   .lb-podium-sheen::after{
     content:""; position:absolute; top:-20%; bottom:-20%; left:0; width:38%;
     background:linear-gradient(100deg, rgba(255,236,180,0) 0%, rgba(255,236,180,.13) 45%, rgba(255,250,232,.2) 50%, rgba(255,236,180,.13) 55%, rgba(255,236,180,0) 100%);
-    transform:translate3d(-110%, 0, 0) skewX(-14deg); will-change:transform;
+    transform:translate3d(-130%, 0, 0) skewX(-14deg); will-change:transform;
     animation:lb-podium-sheen 7s cubic-bezier(.45,.05,.35,1) infinite; animation-delay:1.2s;
   }
-  @keyframes lb-podium-sheen{ 0%{ transform:translate3d(-110%, 0, 0) skewX(-14deg); } 26%, 100%{ transform:translate3d(300%, 0, 0) skewX(-14deg); } }
+  @keyframes lb-podium-sheen{ 0%{ transform:translate3d(-130%, 0, 0) skewX(-14deg); } 26%, 100%{ transform:translate3d(300%, 0, 0) skewX(-14deg); } }
   [data-reduce-motion="true"] .lb-podium-sheen::after{ animation:none; opacity:0; }
   @media (prefers-reduced-motion:reduce){ .lb-podium-sheen::after{ animation:none; opacity:0; } }
   /* the medals, struck: a fine bright edge inside a darker one */
@@ -54318,11 +54318,16 @@ function mergeSameAccount(dst, src){
   if(src.weekKey && src.weekKey === dst.weekKey) maxInto(dst, "weekPoints", src.weekPoints);
   /* Nova's recap (build 324): the week's counters, the higher of each on
      the same week */
+  /* Compared CLEANED against CLEANED. cleanWeekStats() fills in nulls and
+     drops anything else, so the raw copy on this device never stringified
+     the same as the merge of it - every live snapshot said "gained",
+     which re-mounted Home under whatever sheet was open (the chat's
+     Invite sheet closed itself a second after inviting) and re-pushed. */
   ["weekStats", "prevWeekStats"].forEach(k => {
     if(!src[k]) return;
-    const before = JSON.stringify(dst[k] || null);
-    dst[k] = mergeWeekStats(dst[k], src[k]);
-    if(JSON.stringify(dst[k] || null) !== before) res.gained = true;
+    const was = JSON.stringify(cleanWeekStats(dst[k]));
+    const merged = mergeWeekStats(dst[k], src[k]);
+    if(JSON.stringify(merged) !== was){ dst[k] = merged; res.gained = true; }
   });
   return res;
 }
@@ -106876,12 +106881,21 @@ function buildVroomChatPanel(container, ctx){
   };
   let seenObs = null;
   try{
+    /* ONE ANSWER TO "IS IT ON SCREEN" (build 324). This fired at 12% of
+       the list while the snapshot asked the host, which wants 80px (or
+       half). Build 323's lobby leaves a sliver of the chat in view, so
+       the observer marked the first messages read at that sliver, the
+       snapshot counted the next one unread - "1", not "3" - and since
+       the list was already intersecting, scrolling to it never fired
+       again and the "1" stayed. It now asks the host too, at enough
+       thresholds that scrolling it properly into view always fires. */
     seenObs = new IntersectionObserver(entries => {
       if(!entries.some(e => e.isIntersecting)) return;
+      if(CTX.isVisible && !CTX.isVisible(list)) return;
       lastSeenTs = Math.max(lastSeenTs, newestTs);
       dot.hidden = true; dot.textContent = "";
       if(CTX.onUnread) CTX.onUnread(0);
-    }, { threshold: 0.12 });
+    }, { threshold: [0, 0.12, 0.25, 0.4, 0.5, 0.65, 0.8, 1] });
     seenObs.observe(list);
   }catch(e){}
   let newestTs = 0;

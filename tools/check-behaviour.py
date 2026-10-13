@@ -28616,6 +28616,31 @@ def check_b324v2_novavr(br):
 
 
 
+def check_b324_merge_quiet(br):
+    """Build 324. Nova's weekly recap merged weekStats/prevWeekStats by
+    comparing the raw copy on this device with the cleaned merge of it, so
+    the two never stringified alike and EVERY live snapshot reported a
+    gain: Home re-mounted under any open sheet (the chat's Invite sheet
+    shut itself a second after inviting) and the account re-pushed. The
+    same stats merged twice must gain nothing; a higher count from the
+    other device must still gain. Fails on 685dc7b."""
+    print("\n324m. the weekly counters merge quietly when nothing changed")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""() => {
+      const k = '2026-10-12';
+      const raw = { k, t: 3 };
+      store.weekStats = Object.assign({}, raw); store.prevWeekStats = { k: '2026-10-05', t: 9, h: 2 };
+      const same = JSON.parse(JSON.stringify(store));
+      const quiet = mergeSameAccount(store, same).gained;
+      const again = mergeSameAccount(store, JSON.parse(JSON.stringify(store))).gained;
+      const more = JSON.parse(JSON.stringify(store)); more.weekStats = { k, t: 7 };
+      const loud = mergeSameAccount(store, more).gained;
+      return { quiet, again, loud, t: store.weekStats && store.weekStats.t }; }""")
+    check("the same week stats merged in gain nothing (no Home re-mount, no re-push)", r["quiet"] is False and r["again"] is False, r)
+    check("a higher count from the other device still gains, and is kept", r["loud"] is True and r["t"] == 7, r)
+    ctx.close()
+
+
 def check_b324v3_tug(br):
     """Build 324 (b324v3). Madison, asked whether to slow Nova slightly in
     Tug of War and Battle: "Yes". At 2-4s an answer a locked-in student (4s,
@@ -28912,6 +28937,7 @@ def main():
 
             check_b324v2_novavr(br)
             check_b324v3_tug(br)
+            check_b324_merge_quiet(br)
         finally:
             br.close()
     SERVER.shutdown()
