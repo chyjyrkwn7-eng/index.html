@@ -20648,11 +20648,21 @@ def check_b318_one_chat(br):
         at("race leaderboard", """vroomMyKey = 'me';
           playVroomRaceCutscene([{ key: 'me', xp: 275, p: { username: 'Madison', avatarChar: 'ninja', finished: true, joinedAt: 1 } },
             { key: 'b', xp: 255, p: { username: 'Alex', avatarChar: 'bear', finished: true, joinedAt: 2 } }]);""", 900)
+        # (build 324) THE REVEAL IS A CUTSCENE: b320c's focus takes every chat
+        # button out of frame while it plays, and this used to count one here
+        # only because the room's slid DOWN and stayed on screen. Zero during
+        # the reveal; the room's own, in the dock's corner, once it is over.
+        seen["race leaderboard (reveal)"] = seen.pop("race leaderboard")
+        pg.wait_for_function("() => !document.body.classList.contains('cutscene-focus')", timeout=45000)
+        pg.wait_for_timeout(900)
+        seen["race leaderboard"] = pg.evaluate(B318_CHATS)
         dock = pg.evaluate("() => { const d = document.getElementById('chatdock-btn').getBoundingClientRect(); return [Math.round(d.right), Math.round(d.top + d.height / 2)]; }")
         race = seen["race leaderboard"]
         at("Home after the race", "document.getElementById('vroom-race-cut')?.remove(); showHome();")
-        bad = {k: v for k, v in seen.items() if len(v) != 1 and k != "race results"}
-        check(dev + ": exactly one chat button on each of %d screens and boards" % (len(seen) - 1), not bad, bad or "")
+        bad = {k: v for k, v in seen.items() if len(v) != 1 and k not in ("race results", "race leaderboard (reveal)")}
+        check(dev + ": exactly one chat button on each of %d screens and boards" % (len(seen) - 2), not bad, bad or "")
+        check(dev + ": none at all while the race leaderboard's reveal plays (no chat during a cutscene)",
+              seen["race leaderboard (reveal)"] == [], seen["race leaderboard (reveal)"])
         ok_room = (len(race) == 1 and race[0][0] == "roomchat-fab"
                    and abs(race[0][1] + race[0][3] - dock[0]) <= 2)
         check(dev + ": on the race leaderboard it is the room's chat, in the dock's own corner", ok_room, [race, dock])
@@ -28616,6 +28626,49 @@ def check_b324v2_novavr(br):
 
 
 
+def check_b324_roomchat_focus(br):
+    """Build 324. Cutscene focus (b320c: "you shouldn't be able to chat at
+    all during any type of cutscene") slid the chat dock's button UP out of
+    frame and gave a room's chat button the tab bar's slide DOWN. The room
+    chat button is top-anchored everywhere it appears - beside the dock's
+    button, or in the dock's own corner over the race leaderboard - so
+    "down by its own height and a bit" left it 102px lower, still on screen
+    over the leaderboard cutscene, a chat button you could see and not tap.
+    Found on a recording of a race against Nova. During focus both chat
+    buttons are above the top edge and take no tap; after it both are back
+    where they were. Fails on ebf5d4a (the room's button sits in frame)."""
+    print("\n324rc. cutscene focus takes a room's chat button out of frame too (it is top-anchored, so it leaves upward)")
+    for race in (False, True):
+        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+        r = pg.evaluate("""async (race) => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          document.querySelectorAll('#pushing-update,#intro-pop,.nova-talk').forEach(n => n.remove());
+          showHome(); await wait(400);
+          const chat = document.createElement('section'); chat.className = 'vroom-chat'; stage.firstElementChild.appendChild(chat);
+          if(race){ const c = document.createElement('div'); c.id = 'vroom-race-cut'; document.body.appendChild(c); }
+          mountRoomChatFab(); await wait(300);
+          const box = s => { const e = document.querySelector(s); if(!e) return null; const b = e.getBoundingClientRect();
+            const cs = getComputedStyle(e); return { top: Math.round(b.top), bottom: Math.round(b.bottom), pe: cs.pointerEvents, vis: cs.visibility }; };
+          out.before = { fab: box('#roomchat-fab'), dock: box('#chatdock-btn') };
+          setCutsceneFocus(true); await wait(900);
+          out.during = { fab: box('#roomchat-fab'), dock: box('#chatdock-btn') };
+          setCutsceneFocus(false); await wait(1200);
+          out.after = { fab: box('#roomchat-fab'), dock: box('#chatdock-btn') };
+          document.getElementById('vroom-race-cut')?.remove();
+          return out; }""", race)
+        b, d, a = r["before"]["fab"], r["during"]["fab"], r["after"]["fab"]
+        where = "over the race leaderboard" if race else "beside the dock's button"
+        # (over the race leaderboard the cutscene itself switches focus on, and holds it while it is up)
+        if not race:
+            check("%s: the room's chat button is in frame before a cutscene" % where, b and b["top"] >= 0 and b["bottom"] <= 956, b)
+        check("%s: during the cutscene it is above the top edge and takes no tap" % where,
+              d and (d["bottom"] <= 0 or d["vis"] == "hidden") and d["pe"] == "none", d)
+        dd = r["during"]["dock"]
+        check("%s: the dock's button leaves the same way" % where, dd is None or dd["bottom"] <= 0 or dd["vis"] == "hidden", dd)
+        if not race:
+            check("%s: after it, it is back where it was" % where, a and b and abs(a["top"] - b["top"]) <= 1, {"before": b, "after": a})
+        ctx.close()
+
+
 def check_b324_merge_quiet(br):
     """Build 324. Nova's weekly recap merged weekStats/prevWeekStats by
     comparing the raw copy on this device with the cleaned merge of it, so
@@ -28938,6 +28991,7 @@ def main():
             check_b324v2_novavr(br)
             check_b324v3_tug(br)
             check_b324_merge_quiet(br)
+            check_b324_roomchat_focus(br)
         finally:
             br.close()
     SERVER.shutdown()

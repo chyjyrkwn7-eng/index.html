@@ -29592,11 +29592,17 @@
   @keyframes cs-up-in{ from{ translate:0 calc(-100% - 1.5rem - env(safe-area-inset-top, 0px)); } to{ translate:0 0; } }
   @keyframes cs-down-out{ from{ translate:0 0; } to{ translate:0 calc(100% + 1.5rem + env(safe-area-inset-bottom, 0px)); } }
   @keyframes cs-down-in{ from{ translate:0 calc(100% + 1.5rem + env(safe-area-inset-bottom, 0px)); } to{ translate:0 0; } }
-  body.cutscene-focus .chatdock-btn{ animation:cs-up-out .5s cubic-bezier(.5,0,.75,0) both; pointer-events:none !important; }
-  body.cutscene-focus .bottomtabs, body.cutscene-focus .roomchat-fab{ animation:cs-down-out .5s cubic-bezier(.5,0,.75,0) both; pointer-events:none !important; }
+  /* A ROOM'S CHAT BUTTON LEAVES UPWARD, like the dock's (build 324). It is
+     top-anchored on every screen it appears on (beside the dock's button,
+     or in the dock's own corner over the race leaderboard), and it had
+     the tab bar's slide: down by its own height and a bit, which is 102px
+     on a phone - still in frame, sitting over the leaderboard cutscene
+     and dead to a tap, the opposite of "no chat during a cutscene". */
+  body.cutscene-focus .chatdock-btn, body.cutscene-focus .roomchat-fab{ animation:cs-up-out .5s cubic-bezier(.5,0,.75,0) both; pointer-events:none !important; }
+  body.cutscene-focus .bottomtabs{ animation:cs-down-out .5s cubic-bezier(.5,0,.75,0) both; pointer-events:none !important; }
   body.cutscene-focus .bottomtabs *, body.cutscene-focus .roomchat-fab *{ pointer-events:none !important; }
-  body.cutscene-return:not(.cutscene-focus) .chatdock-btn{ animation:cs-up-in .62s cubic-bezier(.2,.9,.25,1) both; }
-  body.cutscene-return:not(.cutscene-focus) .bottomtabs, body.cutscene-return:not(.cutscene-focus) .roomchat-fab{ animation:cs-down-in .62s cubic-bezier(.2,.9,.25,1) both; }
+  body.cutscene-return:not(.cutscene-focus) .chatdock-btn, body.cutscene-return:not(.cutscene-focus) .roomchat-fab{ animation:cs-up-in .62s cubic-bezier(.2,.9,.25,1) both; }
+  body.cutscene-return:not(.cutscene-focus) .bottomtabs{ animation:cs-down-in .62s cubic-bezier(.2,.9,.25,1) both; }
   body.cutscene-focus :is(.daily-alert, .app-banner, .vroom-chat-alert, .toast, .update-banner){ visibility:hidden !important; pointer-events:none !important; }
   /* an open chat goes out of reach with its button */
   body.cutscene-focus :is(.chatdock-panel, #roomchat-sheet){ visibility:hidden !important; pointer-events:none !important; }
