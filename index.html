@@ -9150,8 +9150,12 @@
   /* FOUR TABS AGAIN (build 284): the Progress tab came off the bar and
      Home's went back to 376px, so the cap goes back with it - the rule is
      "the same footprint as Home", and 26rem was Home's five-tab width. */
+  /* CALENDAR ON THE BAR (build 324): build 323 swapped a tab for Calendar
+     and Home's bar settled at 379px on every phone wider than ~403px, so
+     the 376px cap left this one 3px short of it again. 23.7rem is Home's
+     379px; below that width both bars are the viewport cap and agree. */
   @media (max-width:639px){
-    .bottomtabs.has-start-tab{ width:min(23.5rem, calc(100vw - 1.5rem)); gap:.5rem; }
+    .bottomtabs.has-start-tab{ width:min(23.7rem, calc(100vw - 1.5rem)); gap:.5rem; }
   }
   /* The pill's own sizing sits further down the file and would win on
      source order, hence the extra class; a 320px phone keeps its stacked
@@ -97145,6 +97149,12 @@ function playHomeUnlocks(tries){
     /* Left Home mid-queue: the rest wait for the next visit, unshown. */
     if(!stage.querySelector('[data-screen="home"]')){ homeUnlockPlaying = false; return; }
     homeUnlockActiveAt = Date.now();
+    /* WHAT'S NEW BETWEEN TWO CARDS (build 324). The queue asked
+       whatsNewHolds() before its first card and never again, so What's
+       New (or Nova's weekly recap) that came up in the gap between two
+       cards had the next card land on top of it - two dialogues stacked.
+       The next card waits for it the way the first one does. */
+    if(whatsNewHolds()){ setTimeout(next, 700); return; }
     const it = items[i++];
     /* a find's scene, then straight into its card out of the scene's light */
     if(it.kind === "flare-scene"){

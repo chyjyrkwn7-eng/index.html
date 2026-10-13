@@ -21765,7 +21765,10 @@ def check_b319h_layout(br):
               out.pendingBtn = !!(b2 && b2.querySelector('.has-pending'));
               window.incomingFriendRequests = real;
               const src = renderFriendChatList.toString() + openChatInviteSheet.toString() + openInviteFriendsSheet.toString();
-              out.chatCopy = (src.split('Profile \\\\u203a Friends').length - 1) === 3 && src.indexOf('Class \\\\u203a') < 0;
+              /* each of the three says it at least once (build 324: the chat list's
+                 empty state has a second line for when Nova is the only friend) */
+              out.chatCopy = [renderFriendChatList, openChatInviteSheet, openInviteFriendsSheet]
+                .every(f => f.toString().indexOf('Profile \\\\u203a Friends') >= 0) && src.indexOf('Class \\\\u203a') < 0;
               return out; }""")
             check("%s: the Friends box is back on Profile, under the card, the card's width" % dev,
                   fr["box"] and fr["below"] and fr["sameWidth"] and (fr["title"] or "").strip() == "Friends", fr)
@@ -22218,7 +22221,7 @@ def check_b321g_nova(br):
     want = pg.evaluate("()=>{ try{ return mainMenuTourSteps(true).length + NOVA_NEW_TIPS_321.length; }catch(e){ return -1; } }")
     tj = " | ".join(tips)
     check("then the main menu's tooltips and the new ones (the planet, the new Profile, the calendar), every one",
-          want > 7 and len(tips) == want and "Home always brings you back" in tj and "planet" in tj and "Calendar tab" in tj and "Profile has been rebuilt" in tj,
+          want > 7 and len(tips) == want and "Home always brings you back" in tj and "planet" in tj and "calendar" in tips[-1].lower() and "Profile has been rebuilt" in tj,
           {"n": len(tips), "want": want, "first": tips[:1], "last": tips[-3:]})
     bye = pg.evaluate(B321G_TALK, "nova-intro")
     check("then he says goodbye, and that he'll speak again", bye.get("open") and "speak with you again" in " ".join(bye.get("lines") or []) and "Madison" in " ".join(bye.get("lines") or []),
@@ -22238,11 +22241,18 @@ def check_b321g_nova(br):
       /* the fixture's owed rank-up (Gold held from the old ladder) is not what this asks about */
       store.rankUpShown = TIER_ORDER_FULL.length; saveStore();
       showProfile('profile'); await wait(300); showHome();
-      for(let i = 0; i < 120 && !document.getElementById('intro-pop') && !document.getElementById('nova-intro'); i++) await wait(100);
+      /* a queue of unlock cards left from the meeting above can still be
+         playing: What's New waits for the card on screen (up to its 12s
+         hold), so this waits long enough for one card */
+      for(let i = 0; i < 300 && !document.getElementById('intro-pop') && !document.getElementById('nova-intro'); i++) await wait(100);
       const out = { intro: !!document.getElementById('nova-intro'), news: !!document.getElementById('intro-pop') };
+      /* build 324: and no unlock card comes up over it while it is open */
+      out.stacked = false;
+      for(let i = 0; i < 30 && document.getElementById('intro-pop'); i++){ if(document.querySelector('.rs-spot')) out.stacked = true; await wait(100); }
       const el = document.getElementById('intro-pop'); if(el && el.__nova){ el.__nova.skip(); await wait(100); out.last = el.querySelector('.nt-text').textContent; }
       return out; }""")
     check("a device whose account has met him gets What's New alone, ending on 'I'll speak with you again'", r2.get("news") and not r2.get("intro") and "speak with you again" in (r2.get("last") or ""), r2)
+    check("and no unlock card lands on top of What's New while it is open", r2.get("news") and not r2.get("stacked"), r2.get("stacked"))
     ctx.close()
 
     # Version 9, the version history in bullets, and Back to Home (build 321)
@@ -22257,7 +22267,7 @@ def check_b321g_nova(br):
       const v9text = v9 ? v9.textContent : '';
       const b = document.getElementById('releasehistory-home');
       const out = { heads, groups: groups.length, bulleted, lis: lis.length, detailed: lis.filter(l => l.textContent.length > 60).length,
-        v9text: v9text.slice(0, 3000) };
+        v9text: v9text.slice(0, 12000) };  /* build 324's notes pushed 'Version 8' past 3000 */
       if(b){ const cs = getComputedStyle(b), rgb = (cs.backgroundColor.match(/[\d.]+/g) || []).map(Number);
         const r = b.getBoundingClientRect();
         out.btn = { text: b.textContent, bg: cs.backgroundColor, dark: rgb.length >= 3 && (rgb.length < 4 || rgb[3] > .5) && rgb[0] + rgb[1] + rgb[2] < 120,
