@@ -116612,7 +116612,14 @@ function openBadgeInspect(unit, tile){
           g.samples.push({ t: now, x: p.x });
           while(g.samples.length > 2 && now - g.samples[0].t > 90) g.samples.shift();
           g.lastMove = now;
-          if(!raf){ raf = requestAnimationFrame(t => { raf = 0; apply(); }); }
+          /* THE DRAW FRAME STARTS THE SPIN IF THE FINGER HAS ALREADY GONE
+             (build 324). A flick's last move and its release can land in
+             the same frame; release() then found this frame pending,
+             kick() did nothing, and the frame only drew - the badge sat
+             frozen mid-coast at whatever angle it had reached. Found on a
+             recording that delivered move and release together, as a fast
+             flick on a phone can. */
+          if(!raf){ raf = requestAnimationFrame(t => { raf = 0; apply(); if(mode === "coast" || mode === "settle") kick(); }); }
         }
       }
       g.lx = p.x;

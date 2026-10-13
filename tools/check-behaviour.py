@@ -28626,6 +28626,51 @@ def check_b324v2_novavr(br):
 
 
 
+def check_b324_inspect_flick(br):
+    """Build 324. A badge in your hand spins on a flick and coasts round to a
+    face. The pointer's draw frame and the spin's own loop shared one rAF
+    handle, and release() only started the loop if no frame was pending: a
+    flick whose last move and release land in the same frame - which a fast
+    flick on a phone can deliver - left the draw frame pending, so the loop
+    never started and the badge froze mid-coast at whatever angle it had
+    reached, "coast" for ever. Found on a recording that did exactly that.
+    Real moves a frame apart, then the last move and the release in one
+    task: the badge has to come to rest on a face. Fails on 8ad9457."""
+    print("\n324fl. a flick whose last move and release share a frame still spins the badge round to a face")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+      const units = unitsInTeachingOrder(); store.unitPerfects = {}; units.forEach(u => store.unitPerfects[u] = badgeThresholdFor(u));
+      store.seenUnlocks = store.seenUnlocks || { chars: [], banners: [], themes: [], badges: [] }; store.seenUnlocks.badges = units.slice();
+      store.badgeCleanedAt = {}; units.forEach(u => store.badgeCleanedAt[u] = Date.now());
+      store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
+      store.pendingBadgeUnlocks = []; theme.muteBanners = true; theme.reduceMotion = false; applyTheme();
+      document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert,.update-banner').forEach(n => n.remove());
+      showRanksScreen('badges'); await wait(1800);
+      const cell = document.querySelector('.badges-tab .ncase-cell'); cell.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(300);
+      cell.click();
+      for(let i = 0; i < 40 && !(badgeInspectNow && badgeInspectNow.state().mode === 'idle'); i++) await wait(100);
+      await wait(1500);
+      const hit = document.querySelector('.binspect-hit'); const f = document.querySelector('.binspect-float').getBoundingClientRect();
+      const x0 = f.left + f.width * .2, y = f.top + f.height / 2, w = f.width;
+      const ev = (type, x) => hit.dispatchEvent(new PointerEvent(type, { pointerId: 7, pointerType: 'touch', isPrimary: true, bubbles: true, clientX: x, clientY: y, button: 0, buttons: type === 'pointerup' ? 0 : 1 }));
+      ev('pointerdown', x0);
+      let x = x0;
+      for(let i = 1; i <= 5; i++){ await new Promise(r => requestAnimationFrame(r)); x = x0 + i * w * .07; ev('pointermove', x); }
+      /* the last move and the release in the same task: no frame between them */
+      await wait(6); ev('pointermove', x + w * .07); ev('pointerup', x + w * .07);
+      out.after = badgeInspectNow.state();
+      await wait(4000);
+      out.rest = badgeInspectNow.state();
+      try{ badgeInspectNow.teardown(); }catch(e){}
+      return out; }""")
+    a, z = r.get("after") or {}, r.get("rest") or {}
+    th = z.get("theta")
+    check("the flick sets it spinning (coast) on release", a.get("mode") == "coast", a)
+    check("...and it comes to rest on a face (idle, a multiple of 180 degrees), not frozen mid-turn",
+          z.get("mode") == "idle" and th is not None and abs(((th % 180) + 180) % 180) < 0.01 and abs(th) >= 180, z)
+    ctx.close()
+
+
 def check_b324_roomchat_focus(br):
     """Build 324. Cutscene focus (b320c: "you shouldn't be able to chat at
     all during any type of cutscene") slid the chat dock's button UP out of
@@ -28992,6 +29037,7 @@ def main():
             check_b324v3_tug(br)
             check_b324_merge_quiet(br)
             check_b324_roomchat_focus(br)
+            check_b324_inspect_flick(br)
         finally:
             br.close()
     SERVER.shutdown()
