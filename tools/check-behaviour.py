@@ -27648,8 +27648,11 @@ def check_b324t_stats(br):
     Virtual Room section, the holes)."""
     print("\n_b324t. build 324: the study-hour dots, last week, a tapped day, the Virtual Room tiles")
     H = 3600000
-    this_w = [2.4 * H, 0.6 * H, 3.1 * H, 1.75 * H, 4.4 * H, 2.9 * H, 1.2 * H]
-    last_w = [1.1 * H, 2.2 * H, 0, 3.6 * H, 0.9 * H, 0, 5.3 * H]
+    # Whole milliseconds, as a real log holds: 4.4 * H is 15840000.000000002
+    # as a float, which the chart echoes back and int() then truncates, so
+    # the check failed from Friday on (when that day joins the week).
+    this_w = [round(h * H) for h in (2.4, 0.6, 3.1, 1.75, 4.4, 2.9, 1.2)]
+    last_w = [round(h * H) for h in (1.1, 2.2, 0, 3.6, 0.9, 0, 5.3)]
     js = """async ([thisW, lastW, vr]) => {
       const wait = ms => new Promise(r => setTimeout(r, ms));
       const out = {};
