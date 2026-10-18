@@ -12189,11 +12189,18 @@ def check_b313_fx(br):
           }
           if(fx === 'blackhole'){
             const xp = document.querySelector('.rs-screen > .rs-xp');
-            await until(2650);
-            const cs = getComputedStyle(xp);
-            out.pulled = { translate: cs.translate, scale: cs.scale };
-            const hole = document.querySelector('.hfx-bh'), hr = hole && hole.getBoundingClientRect(), gr = g.getBoundingClientRect();
-            out.atBox = hr ? Math.round(Math.hypot(hr.left - (gr.left + gr.width / 2), hr.top - (gr.top + gr.height / 2))) : null;
+            /* the deepest point of the pull, sampled every 50ms through it: one
+               instant at 2.65s sat on the ramp in (it read .76 to .86 run to run,
+               on this build and the one before it) */
+            await until(2300);
+            let deep = null;
+            for(let k = 0; k < 24; k++){ const cs = getComputedStyle(xp), sc = (cs.scale || '1').split(' ').map(Number);
+              if(!deep || Math.min(...sc) < deep.m) deep = { m: Math.min(...sc), translate: cs.translate, scale: cs.scale };
+              if(k === 7){ /* 2.65s, where the hole was always measured */
+                const hole = document.querySelector('.hfx-bh'), hr = hole && hole.getBoundingClientRect(), gr = g.getBoundingClientRect();
+                out.atBox = hr ? Math.round(Math.hypot(hr.left - (gr.left + gr.width / 2), hr.top - (gr.top + gr.height / 2))) : null; }
+              await new Promise(r => setTimeout(r, 50)); }
+            out.pulled = { translate: deep.translate, scale: deep.scale };
             await until(4800);
             const c2 = getComputedStyle(xp);
             out.back = { translate: c2.translate, scale: c2.scale };
@@ -12433,7 +12440,9 @@ def check_b313_fx(br):
             out.use = !!out.use || !!sp.querySelector('.rs-spot-use') || /use this effect/i.test(sp.textContent);
             out.need = out.need || (sp.querySelector('.rs-spot-need-text') || {}).textContent;
             sp.click(); await wait(1100);
-            out.gone.push(document.querySelectorAll('.rs-spot-fx, .hfx-box, .hfx-layer').length);
+            /* what is left of THIS pop-up: the next one in the queue can come up inside
+               the 1.1s on a loaded machine, and its own live preview is not a leftover */
+            out.gone.push([...document.querySelectorAll('.rs-spot-fx, .hfx-box, .hfx-layer')].filter(e => { const o = e.closest('.rs-spot'); return !o || o === sp; }).length);
             continue;
           }
         } else if(sp) sp.click();
@@ -18387,8 +18396,15 @@ B317_FLOW_RUN = """async (a)=>{
     let n = 0; store.lifetime.points = 1000; while(levelProgress(store.lifetime.points).level < r.level && n++ < 4000) store.lifetime.points += 1500;
   } else {
     store.unitPerfects[t] = 3;
-    /* 150 XP short of the next level: a 100% climbs exactly one */
-    const lv = levelOf(store); store.lifetime.points = Math.max(store.lifetime.points, xpForLevel(lv + 1) - 150);
+    /* 150 XP short of the next level: a 100% climbs exactly one. BUILD 325:
+       the seed (no badges, level 25) is held at 25 by its grandfather floor,
+       over the new wall (21), where by design nothing climbs - so the climb
+       is taken from under the wall, floor cleared */
+    store.levelFloor = 0;
+    let lv = levelOf(store);
+    const wall = typeof levelWallOf === 'function' ? levelWallOf(badgeCountOf(store), 0, store.rankFloor) : 99;
+    if(lv + 1 > wall) lv = wall - 2;
+    store.lifetime.points = typeof levelWallOf === 'function' ? xpForLevel(lv + 1) - 150 : Math.max(store.lifetime.points, xpForLevel(lv + 1) - 150);
   }
   try{ seedBannerCounters(); seedChallenges289(); }catch(e){}
   const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx);
