@@ -129,9 +129,7 @@ SCREENS = [
     # the rest
     "showInstallGuide", "showInstallPlatformPicker", "showResetWarning",
     "showWhatsNew", "showReleaseHistory",
-    # the hidden sound test page (build 322): reached from the console or a
-    # long press on Settings' build line, but it is a screen like any other
-    "showSoundTest",
+    # (showSoundTest, the hidden sound test page, came out in build 325)
     "showVirtualRoomChoice", "showVirtualRoomSetup",
     # The end of a run (build 315). It needs a run behind it, which is why
     # it was never here - so RESULTS_STAGE puts a real one through

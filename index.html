@@ -24815,26 +24815,6 @@
   .settings-volume .sliderwrap{ flex:1 1 auto; min-width:0; margin-top:0; }
   .settings-volume .sliderval{ min-width:2.8rem; }
   [data-layout="modern"] .settings-card > .settings-volume + label.opt{ border-top:1px solid rgba(255,255,255,.07); }
-  .settings-buildline{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
-  /* the sound test page (showSoundTest) */
-  .screen-soundtest .snd-bar{ gap:.75rem; margin:.4rem 0 .6rem; }
-  .screen-soundtest .snd-group{ margin-top:1.4rem; }
-  .screen-soundtest .snd-list{ padding:.1rem .4rem; }
-  .snd-row{
-    display:flex; align-items:flex-start; gap:.8rem; width:100%; min-height:44px;
-    padding:.7rem .4rem; text-align:left; background:none; border:none; color:inherit;
-    font:inherit; cursor:pointer; border-radius:12px;
-  }
-  .snd-row + .snd-row{ border-top:1px solid rgba(255,255,255,.07); border-radius:0; }
-  .snd-row.is-playing{ background:rgba(255,255,255,.06); }
-  .snd-play{
-    flex:0 0 auto; width:2.2rem; height:2.2rem; border-radius:50%;
-    display:flex; align-items:center; justify-content:center; font-size:.8rem;
-    background:rgba(255,255,255,.08); color:var(--ink);
-  }
-  .snd-text{ display:flex; flex-direction:column; gap:.2rem; min-width:0; }
-  .snd-id{ font-family:var(--mono); font-size:.8rem; color:var(--ink); overflow-wrap:anywhere; }
-  .snd-desc{ font-size:.78rem; line-height:1.35; color:var(--soft); }
 
   /* ---- OVERALL: THREE COLUMNS ----
      Fixed column widths so every row's numbers sit under the header and
@@ -63639,9 +63619,9 @@ function saveTheme(){
      the <input switch> trick fails on a device (see Known quirks in
      CLAUDE.md) - it is NOT retried here.
    - API: playSound(id, opts), startAmbience(id, opts), stopAmbience().
-     All no-ops while the setting is off. Phase 1 wires only Settings
-     and the hidden test page (showSoundTest, or a long press on the
-     build line in Settings). */
+     All no-ops while the setting is off. (The hidden sound test page,
+     showSoundTest, came out in build 325: "I see a picture of a 'sound
+     test' but I don't want that screen in the app.") */
 const SOUND_DEFAULT_VOLUME = .7;
 const SOUND_MAX_VOICES = 24;
 /* Haptic patterns (ms) per kind of event, Android only. */
@@ -65110,20 +65090,6 @@ const NovaSound = (function(){
       resume();
     }
   });
-  /* a long press on Settings' build line opens the sound test page */
-  (function longPress(){
-    let tm = 0, x0 = 0, y0 = 0;
-    const cancel = () => { clearTimeout(tm); tm = 0; };
-    document.addEventListener("pointerdown", e => {
-      const el = e.target && e.target.closest ? e.target.closest(".settings-buildline") : null;
-      cancel();
-      if(!el) return;
-      x0 = e.clientX; y0 = e.clientY;
-      tm = setTimeout(() => { tm = 0; try{ showSoundTest(); }catch(err){} }, 750);
-    }, true);
-    document.addEventListener("pointermove", e => { if(tm && Math.hypot(e.clientX - x0, e.clientY - y0) > 10) cancel(); }, true);
-    ["pointerup", "pointercancel", "scroll"].forEach(ev => document.addEventListener(ev, cancel, true));
-  })();
 
   function reap(){
     const now = st.ctx ? st.ctx.currentTime : 0;
@@ -65319,7 +65285,7 @@ function stopAmbience(){ try{ NovaSound.stopAmbience(); }catch(e){} }
    surfaces that make their own sound. Nothing here does anything while sound and vibration
    are both off - playSound returns at once. */
 const SND_NO_GENERIC = ".ru-blocker, " +
-  ".qpanel .choice, .flagbtn, .snd-row, .settings-sound-row, .binspect, .cosmic-hero-wrap, #vroom-cutscene";
+  ".qpanel .choice, .flagbtn, .settings-sound-row, .binspect, .cosmic-hero-wrap, #vroom-cutscene";
 function sndForTap(t){
   if(!t || !t.closest || t.closest(SND_NO_GENERIC)) return null;
   if(document.documentElement.classList.contains("ru-scene")) return null;
@@ -65440,119 +65406,6 @@ function buildSoundSettings(){
   host.appendChild(card);
   return host;
 }
-
-/* ---- THE SOUND TEST PAGE (build 322) ----
-   Every sound in SOUND_CATALOGUE with a play button, by group, and the
-   Home ambience. Reached only from the console (showSoundTest()) or a long
-   press on the build line in Settings - it is for recording a reel, not a
-   screen anybody is sent to. "Play all" runs the whole catalogue with a
-   gap after each sound. */
-let soundTestRun = 0;
-function showSoundTest(){
-  stopTimer(); stopQuestionTimer();
-  meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
-  timerlineEl.hidden = true;
-  pauseBtn.hidden = true;
-  countEl.textContent = "";
-  soundTestRun++;
-  const panel = document.createElement("section");
-  panel.className = "panel screen-soundtest";
-  const head = document.createElement("p");
-  head.className = "slab section-divider";
-  head.textContent = "Sound test";
-  panel.appendChild(head);
-  const note = document.createElement("p");
-  note.className = "friend-hint snd-note";
-  const bar = document.createElement("div");
-  bar.className = "cal-profile-row snd-bar";
-  const onBtn = document.createElement("button");
-  onBtn.type = "button"; onBtn.className = "cal-profile-btn";
-  const allBtn = document.createElement("button");
-  allBtn.type = "button"; allBtn.className = "cal-profile-btn";
-  allBtn.textContent = "Play all";
-  const syncNote = () => {
-    note.textContent = theme.soundOn
-      ? Object.keys(SOUND_CATALOGUE).length + " sounds and the Home ambience, all made in code. Tap a row to play it."
-      : "Sound effects are off. Turn them on to hear these.";
-    onBtn.textContent = theme.soundOn ? "Sound on" : "Turn sound on";
-    onBtn.disabled = !!theme.soundOn;
-  };
-  onBtn.addEventListener("click", () => { theme.soundOn = true; saveTheme(); NovaSound.wake(); NovaSound.sync(); syncNote(); playSound("ui.toggle.on"); });
-  let playing = 0;
-  allBtn.addEventListener("click", () => {
-    if(playing){ playing = 0; allBtn.textContent = "Play all"; return; }
-    const run = soundTestRun, me = ++playing, ids = Object.keys(SOUND_CATALOGUE);
-    allBtn.textContent = "Stop";
-    let i = 0;
-    const next = () => {
-      if(playing !== me || run !== soundTestRun || !panel.isConnected || i >= ids.length){ if(playing === me){ playing = 0; allBtn.textContent = "Play all"; } return; }
-      const id = ids[i++], row = panel.querySelector('[data-snd="' + id + '"]');
-      panel.querySelectorAll(".snd-row.is-playing").forEach(r => r.classList.remove("is-playing"));
-      if(row){ row.classList.add("is-playing"); try{ row.scrollIntoView({ block: "center", behavior: "smooth" }); }catch(e){} }
-      playDemo(id, next);
-    };
-    next();
-  });
-  bar.append(onBtn, allBtn);
-  panel.append(note, bar);
-  syncNote();
-  /* a sound with each of its demo settings, one after another; done()
-     once the last has rung out */
-  const playDemo = (id, done) => {
-    const e = SOUND_CATALOGUE[id], list = (e && e.demo) || [{}];
-    let k = 0;
-    const step = () => {
-      if(k >= list.length || !panel.isConnected){ if(done) done(); return; }
-      const h = playSound(id, Object.assign({ seed: 1 + k }, list[k]));
-      k++;
-      setTimeout(step, Math.max(250, ((h && h.length) || .5) * 1000 + (k < list.length ? 150 : 600)));
-    };
-    step();
-  };
-  const groups = {};
-  Object.keys(SOUND_CATALOGUE).forEach(id => { const g = SOUND_CATALOGUE[id].group || "Other"; (groups[g] = groups[g] || []).push(id); });
-  const ambRow = (id) => {
-    const a = SOUND_AMBIENCE[id];
-    const row = document.createElement("button");
-    row.type = "button"; row.className = "snd-row is-amb"; row.dataset.snd = id;
-    const pb = document.createElement("span"); pb.className = "snd-play"; pb.textContent = "▶";
-    const tx = document.createElement("span"); tx.className = "snd-text";
-    const nm = document.createElement("span"); nm.className = "snd-id"; nm.textContent = id + " (loop)";
-    const ds = document.createElement("span"); ds.className = "snd-desc"; ds.textContent = a.desc;
-    tx.append(nm, ds); row.append(pb, tx);
-    row.addEventListener("click", () => {
-      const s = NovaSound.state();
-      if(s.ambWant === id){ stopAmbience(); pb.textContent = "▶"; }
-      else { startAmbience(id, { owner: panel }); pb.textContent = "■"; }
-    });
-    return row;
-  };
-  Object.keys(groups).forEach(g => {
-    const gl = document.createElement("p");
-    gl.className = "slab snd-group";
-    gl.textContent = g + " (" + groups[g].length + ")";
-    panel.appendChild(gl);
-    const list = document.createElement("div");
-    list.className = "settings-card snd-list";
-    if(g === "Home") Object.keys(SOUND_AMBIENCE).forEach(id => list.appendChild(ambRow(id)));
-    groups[g].forEach(id => {
-      const e = SOUND_CATALOGUE[id];
-      const row = document.createElement("button");
-      row.type = "button"; row.className = "snd-row"; row.dataset.snd = id;
-      const pb = document.createElement("span"); pb.className = "snd-play"; pb.textContent = "▶";
-      const tx = document.createElement("span"); tx.className = "snd-text";
-      const nm = document.createElement("span"); nm.className = "snd-id"; nm.textContent = id;
-      const ds = document.createElement("span"); ds.className = "snd-desc"; ds.textContent = e.desc;
-      tx.append(nm, ds); row.append(pb, tx);
-      row.addEventListener("click", () => playDemo(id));
-      list.appendChild(row);
-    });
-    panel.appendChild(list);
-  });
-  stage.replaceChildren(panel);
-  toTop();
-}
-
 
 /* ---------- study time + per-test analytics ------------------------------ */
 
@@ -88318,6 +88171,21 @@ function scheduleAutoAdvance(qi){
      meantime, which is exactly the kind of stale-state bug a captured
      value avoids. */
   if(!theme.autoAdvance) return;
+  /* ---- NEVER IN A VIRTUAL ROOM (build 325) ----
+     "Ensure that the timing of that when on doesn't mess with any of the
+     timing of the virtual room game modes so it's still fair for
+     everyone." A race (and a classic room, which runs the same way) is
+     ranked by score and then by TIME, and with this on a pick moved on
+     by itself after AUTO_ADVANCE_MS while everybody else was still
+     reaching for Next - a switch in one person's Settings changing the
+     clock of a shared match, and taking away the moment to change an
+     answer before it is locked in. So inside a room it does nothing at
+     all: every player moves on the same way, by Next or by the
+     question's own 45 seconds running out (raceQuestionTimeUp). Tug of
+     War and Battle never come through here - their pauses between
+     questions are fixed by the game (tugSettleAnswer,
+     battleSettleAnswer) and read nothing from Settings. */
+  if(inVirtualRoom || raceTimed) return;
   const capturedQi = qi;
   setTimeout(() => {
     /* The actual fix for a real bug caught in regression \u2014 on the
@@ -88337,6 +88205,7 @@ function scheduleAutoAdvance(qi){
        there's no "cleared" flag to check \u2014 picked staying set is
        Exam's own signal that this question hasn't been left yet. */
     if(paused || order[pos] !== capturedQi || !testInProgress) return;
+    if(inVirtualRoom || raceTimed) return;   /* a room began under it (build 325) */
     if(runMode === "exam" && picked[capturedQi] === undefined) return;
     if(runMode !== "exam" && !cleared) return;
     advanceWithSlide();
@@ -99941,20 +99810,27 @@ function showAppearance(opts){
   autoAdvCb.addEventListener("change", () => {
     theme.autoAdvance = autoAdvCb.checked;
     saveTheme();
-    showToast(theme.autoAdvance ? "You'll move on after a correct answer." : "You'll tap Next to move on.");
+    showToast(theme.autoAdvance ? "Auto-advance on." : "Auto-advance off.");
   });
   const autoAdvBox = document.createElement("span");
   autoAdvBox.className = "box"; autoAdvBox.setAttribute("aria-hidden", "true"); autoAdvBox.textContent = "\u2713";
   const autoAdvWrap = document.createElement("span");
   autoAdvWrap.className = "otext";
-  autoAdvWrap.appendChild(document.createTextNode("Move on after a correct answer"));
+  /* "AUTO-ADVANCE" (build 325): "Move on after next question in settings
+     title? That's a weird title, and the description is weird because it
+     only mentions qualifier? It probably shouldn't mention any." The name
+     says what the switch is, the line under it says what it does in any
+     mode, and no mode is named. It does nothing inside a Virtual Room
+     (scheduleAutoAdvance), so a shared match runs the same for everyone;
+     the line does not say so either, for the same reason. */
+  autoAdvWrap.appendChild(document.createTextNode("Auto-advance"));
   const autoAdvHint = document.createElement("span");
   autoAdvHint.className = "ohint";
   /* "when you're finished with one", not "after you answer": in Drill a
      wrong answer lets you try again, so answering is not the same as
      being done with the question. This covers that and Exam's
      advance-on-any-pick without listing the modes out. */
-  autoAdvHint.textContent = "Goes to the next question by itself, with no need to tap Next. In a Qualifier, after any answer.";
+  autoAdvHint.textContent = "Moves to the next question on its own once you're done with one, so there's no need to tap Next.";
   autoAdvWrap.appendChild(autoAdvHint);
   autoAdvRow.append(autoAdvCb, autoAdvBox, autoAdvWrap);
   studyDetails.appendChild(autoAdvRow);
@@ -100076,13 +99952,13 @@ function showAppearance(opts){
            unlock and flare scenes, streak banners, Virtual Room winner and
            tug-of-war scenes, battle alerts, new-friend and chat pop-ups.
            Progress is awarded either way; only the show is skipped. */
-      "Move on after a correct answer": "Goes to the next question by itself, with no need to tap Next. In a Qualifier, after any answer.",
+      "Auto-advance": "Moves to the next question on its own once you're done with one, so there's no need to tap Next.",
       "Auto-star questions you keep missing": "Stars the questions you keep getting wrong, so they're ready to review.",
       "Skip celebrations and pop-ups":  "No rank-up, badge or unlock scenes, streak banners or message pop-ups. Everything you earn still counts."
     };
     const GROUPS = [
       [motionDetails, ["Reduce motion", "Show class days remaining"]],
-      [studyDetails,  ["Swipe to next question", "Move on after a correct answer",
+      [studyDetails,  ["Swipe to next question", "Auto-advance",
                        "Auto-star questions you keep missing", "Skip celebrations and pop-ups"]]
     ];
     GROUPS.forEach(([host, titles]) => {
