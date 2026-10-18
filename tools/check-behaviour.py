@@ -16568,7 +16568,8 @@ def check_b317_xpcap(br):
         const host = document.createElement('div'); host.className = 'rs-xp'; host.appendChild(b);
         document.querySelector('.panel').appendChild(host); b.runFill(); return b; };
       const line = b => (b.querySelector('.results-level-line') || {}).textContent;
-      __bumps = 0; let b = block(300, xpForLevel(50) + 150, 4); %s
+      /* (build 325: reaching the 4-badge wall - Gold's 40 now - this run) */
+      __bumps = 0; let b = block(300, xpForLevel(41) + 150, 4); %s
       out.fill = { bumps: __bumps, line: line(b), over: !!b.querySelector('.xpnums.is-over') }; b.parentNode.remove();
       __bumps = 0; b = block(300, xpForLevel(52) + 200, 4); %s
       out.full = { bumps: __bumps, line: line(b), over: !!b.querySelector('.xpnums.is-over') }; b.parentNode.remove();
@@ -22671,8 +22672,11 @@ def check_b320a_results(br):
         for(let k = 0; k < 260; k++){ await new Promise(r => setTimeout(r, 30));
           out.push({ t: Math.round(performance.now() - t0), v: Math.round(vis(fill) * 10) / 10, n: num(), bump: Number(tw.dataset.xpbump || 0) + (tw.classList.contains('is-xpbump') ? 1 : 0) }); }
         mo.disconnect(); host.remove(); out.ev = ev; return { s: out, ev }; };
-      return { room: await run(300, xpForLevel(30) - 2000, 0), full: await run(300, xpForLevel(52) + 200, 4),
-               gain: await run(300, xpForLevel(50) + 150, 4), top: await run(300, xpForLevel(LEVEL_CAP) + 60000, 16) }; }""")
+      /* build 325: the walls are the next rank's level (21 with no badges,
+         40 with four), so "room" sits inside level 19 and "gain" reaches
+         Gold's 40 this run - 324's fixtures sat inside its 29 / 49 walls */
+      return { room: await run(300, xpForLevel(19) + 200, 0), full: await run(300, xpForLevel(52) + 200, 4),
+               gain: await run(300, xpForLevel(41) + 150, 4), top: await run(300, xpForLevel(LEVEL_CAP) + 60000, 16) }; }""")
     xr = {k: v["s"] for k, v in xr.items()}
     # BUILD 321 REVERSED "the number after the bar" (b320): "the numbers
     # come through after the xp goes but wouldn't it be at the same time? It
@@ -22726,7 +22730,7 @@ def check_b320a_results(br):
     pg.clock.install(); pg.clock.pause_at(pg.evaluate("()=>Date.now()") + 50)
     for key, label, earned, pts_js, nb in (("full", "at a wall, already full (max level)", 300, "xpForLevel(52) + 200", 4),
                                             ("top", "at level 80", 300, "xpForLevel(LEVEL_CAP) + 60000", 16),
-                                            ("gain", "filled to a wall this run (XP, then max)", 300, "xpForLevel(50) + 150", 4)):
+                                            ("gain", "filled to a wall this run (XP, then max)", 300, "xpForLevel(41) + 150", 4)):  # build 325: Gold's 40 is the 4-badge wall
         pg.evaluate("""([earned, nb]) => { const pts = %s; const units = topicsIn(QUESTIONS);
           store.lifetime = Object.assign({}, store.lifetime, { points: pts });
           store.unitPerfects = Object.fromEntries(units.slice(0, nb).map(u => [u, badgeThresholdFor(u)]));
