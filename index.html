@@ -10757,7 +10757,14 @@
     color:transparent; text-shadow:none;
     background:linear-gradient(105deg, var(--hfx-g1), var(--hfx-g2) 55%, var(--hfx-g3, var(--hfx-g1)));
     -webkit-background-clip:text; background-clip:text;
-    filter:drop-shadow(0 0 12px color-mix(in srgb, var(--hfx-b) 40%, transparent)); }
+    filter:drop-shadow(0 0 12px var(--hfx-glow, color-mix(in srgb, var(--hfx-b) 40%, transparent))); }
+  /* THE GLOW AS A PLAIN rgba (build 325): "the number 100 lights up on a
+     delay and it's not a smooth transition at the end". The landing eases
+     this filter in over .9s (RS_HUNDO_CROSS_MS), and Chromium interpolates
+     a drop-shadow whose colour is a color-mix() result as a near-black
+     shadow - rgba(1,0,0,.4), measured frame by frame - so the number came
+     up dark and SNAPPED to its glow on the last frame. --hfx-glow is the
+     same colour written as rgba() by hfxTintVars, which interpolates. */
   .hfx-tint{ position:absolute; inset:0; border-radius:inherit; opacity:0; pointer-events:none;
     box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--hfx-b) 55%, transparent), inset 0 0 30px color-mix(in srgb, var(--hfx-b) 26%, transparent); }
   .hfx-tinted .hfx-tint{ opacity:1; }
@@ -90973,6 +90980,9 @@ const HFX_TINT = {
 const HFX_TINT_VARS = [["--hfx-b", "b"], ["--hfx-g1", "g1"], ["--hfx-g2", "g2"], ["--hfx-g3", "g3"]];
 function hfxTintVars(el, tint){
   HFX_TINT_VARS.forEach(([k, f]) => { if(tint[f]) el.style.setProperty(k, tint[f]); });
+  /* the number's glow as rgba() (build 325, see .hfx-tinted .rs-pct) */
+  const m = /^#([0-9a-f]{6})$/i.exec(tint.b || "");
+  if(m){ const n = parseInt(m[1], 16); el.style.setProperty("--hfx-glow", "rgba(" + (n >> 16) + "," + ((n >> 8) & 255) + "," + (n & 255) + ",.4)"); }
 }
 function hfxMotionOff(){
   try{ if(theme.reduceMotion) return true; }catch(e){}
