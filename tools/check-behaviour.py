@@ -28292,7 +28292,8 @@ def check_b324q_penal(br):
           q: QUESTIONS[i].q, ref: QUESTIONS[i].ref, choices: QUESTIONS[i].choices, answer: QUESTIONS[i].answer })),
         keysUnique: new Set(pen.map(i => KEYS[i])).size === pen.length,
         daily: days.map(i => KEYS[i]), dailyRepeat: days.some(i => QUESTIONS[i] && QUESTIONS[i].repeatOf != null),
-        noteKey: typeof PENAL_VERSION_NOTE_KEY !== 'undefined' ? PENAL_VERSION_NOTE_KEY : null,
+        noteKey: typeof penalVersionNoteKey === 'function' ? penalVersionNoteKey() : (typeof PENAL_VERSION_NOTE_KEY !== 'undefined' ? PENAL_VERSION_NOTE_KEY : null),
+        live256: typeof penal256Live === 'function' && penal256Live(),
         label: UNIT_TEST_VERSIONS['Penal Code'].label, tag: UNIT_TEST_VERSIONS['Penal Code'].tag }; }"""
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate(Q)
@@ -28310,10 +28311,13 @@ def check_b324q_penal(br):
           all(cb and ob and len(cb) == 1 and cb[0]["repeatOf"] == o and cb[0]["vo"] and not ob[0]["vo"] and same(cb[0], ob[0])
               for c, o, cb, ob in copies),
           [(c, o, bool(cb), cb and cb[0]["repeatOf"]) for c, o, cb, ob in copies])
-    reps = sorted(b["i"] for b in r["bank"] if b["repeatOf"] is not None)
-    check("and every copy sits at the end of the bank (no question's index moves), the 351-357 ones last",
+    # BUILD 325 appends the slides 256-578 version's own (358-364) after
+    # these: every version-only question is still at the end, in src order.
+    reps = sorted(b["i"] for b in r["bank"] if b["vo"])
+    tail = [b["src"] for b in sorted(r["bank"], key=lambda b: b["i"])][-len(reps):] if reps else []
+    check("and every copy sits at the end of the bank (no question's index moves), the 351-357 ones after the older copies",
           reps == list(range(r["n"] - len(reps), r["n"]))
-          and [b["src"] for b in sorted(r["bank"], key=lambda b: b["i"])][-7:] == sorted(PENAL_REPEATS), reps[-9:])
+          and tail[-14:] == sorted(PENAL_REPEATS) + list(range(358, 365)), [reps[-9:], tail[-16:]])
     check("the 55-124 copies (347-350) stay in the bank, version-only, out of this version, so their history survives",
           all(by.get(c) and by[c][0]["vo"] and by[c][0]["repeatOf"] == o and c not in r["version"] for c, o in PENAL_OLD_REPEATS.items()),
           [(c, bool(by.get(c))) for c in PENAL_OLD_REPEATS])
@@ -28330,7 +28334,7 @@ def check_b324q_penal(br):
     check("the version is named for its slides: label and card line say 124\u2013256",
           "124\u2013256" in r["label"] and "124\u2013256" in r["tag"], [r["label"], r["tag"]])
     check("the one-time note has a NEW key, so a device that saw the 55-124 one is told again",
-          r["noteKey"] == "class26e.penal124256.seen", r["noteKey"])
+          r["noteKey"] == ("class26e.penal256578.seen" if r["live256"] else "class26e.penal124256.seen"), r["noteKey"])
     # the pop-up's count, and the note on a device that has seen the 55-124 one
     pop = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       store.seenUnitSelectTour = true; cfg.mode = 'drill'; cfg.units = []; cfg.versions = {}; showSetup(); await wait(600);
@@ -28362,9 +28366,11 @@ def check_b324q_penal(br):
     was = pg.evaluate(Q)
     ctx.close()
     extra = r["keys"][len(was["keys"]):]
+    # BUILD 325 adds 358-364 after 351-357.
+    added = sorted(PENAL_REPEATS) + list(range(358, 365))
     check("every key that was in the bank is byte-identical and in place; only the copies are new",
-          r["keys"][:len(was["keys"])] == was["keys"] and extra == ["Penal Code|%d|" % c + k.split("|")[2] for c, k in zip(sorted(PENAL_REPEATS), extra)]
-          and len(extra) == len(PENAL_REPEATS), [len(r["keys"]), len(was["keys"])])
+          r["keys"][:len(was["keys"])] == was["keys"] and extra == ["Penal Code|%d|" % c + k.split("|")[2] for c, k in zip(added, extra)]
+          and len(extra) == len(added), [len(r["keys"]), len(was["keys"])])
     check("and the next 400 daily questions are the same ones", r["daily"] == was["daily"],
           sum(1 for a, b in zip(r["daily"], was["daily"]) if a != b))
 
