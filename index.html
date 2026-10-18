@@ -92912,8 +92912,8 @@ function hfxFishURL(k, part, far){
         '<linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F3D445" stop-opacity=".95"/><stop offset=".75" stop-color="#4C9BE6" stop-opacity=".85"/><stop offset="1" stop-color="#7FD2FF" stop-opacity=".6"/></linearGradient>' +
         '<radialGradient id="cr" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#2058C8"/><stop offset=".65" stop-color="#2E6FD8"/><stop offset="1" stop-color="#8FD8FF" stop-opacity="0"/></radialGradient>' +
         '<linearGradient id="t" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F5D43A"/><stop offset="1" stop-color="#FFE37A" stop-opacity=".85"/></linearGradient>';
-      body = '<path d="M30 14 C44 3 68 1.5 88 6.5 C100 9.5 106 15 108 20.5 C99 16.5 90 18.5 85.5 25 C70 14 50 11 30 14 Z" fill="url(#d)"/>' +
-        '<path d="M34 52 C48 61 70 63 88 58 C100 55 106 49.5 108 44.5 C99 48 90 46 85.5 39.5 C70 51 52 55 34 52 Z" fill="url(#a)"/>' +
+      body = '<path d="M30 14 C44 4 66 3 82 10 C90 14 94 20 95 26.5 C91 23.5 88 24 85.5 26 C70 14 50 11 30 14 Z" fill="url(#d)"/>' +
+        '<path d="M34 52 C48 60 66 61 82 55 C90 51 94 45 95 38 C91 41 88 40.5 85.5 38.5 C70 51 52 55 34 52 Z" fill="url(#a)"/>' +
         '<path d="' + bodyD + '" fill="url(#b)"/>' + sheen(42, 20, 34, 8) +
         '<circle cx="30" cy="19.5" r="4.4" fill="url(#cr)" fill-opacity=".85"/>' +
         '<path d="M27 34 C34 33 40 37 41 43 C34 43 28.5 39.5 27 34 Z" fill="#F7DC5A" fill-opacity=".9"/>' +
@@ -93150,7 +93150,7 @@ function hfxSea(parent, o){
   const lineAt = s => o.lvl + seaY(s) - WH * .3;
   /* the water's own clock: time since its css animations started (read
      off the timeline - a finished animation's own time stops at its end) */
-  let began = null;
+  let began = null, drainAnim = null, drainEnd = null;
   const clock = () => {
     try{
       /* THE DRAIN'S OWN TIME, while it has not finished (build 325): it
@@ -93160,8 +93160,19 @@ function hfxSea(parent, o){
          Read off document.timeline instead, a recording (which pauses and
          seeks the animations to its own clock) put the waterline seconds
          ahead of the water on screen and the breath was let go under it. */
-      const dr = sea.getAnimations().find(a => a.animationName === "hfx-uw-drain");
-      if(dr && dr.playState !== "finished" && dr.currentTime != null) return dr.currentTime / 1000;
+      /* FOUND ONCE, THEN ONLY READ (build 326). getAnimations() brings the
+         whole page's style up to date before it answers, and with the sea
+         and a hundred moving pieces in it that cost ~3ms every 150ms on a
+         desktop - a dropped frame every tick on a phone, through the
+         water's whole life (profiled: the single biggest piece of script
+         in it). The drain animation is the same object from start to end,
+         so it is looked up the first time and its time read after. */
+      /* (its playState would bring the style up to date too: whether it
+         has finished is its time against its own end, read once) */
+      if(!drainAnim || !drainAnim.effect){ drainAnim = sea.getAnimations().find(a => a.animationName === "hfx-uw-drain") || null;
+        try{ const tm = drainAnim && drainAnim.effect.getTiming(); drainEnd = tm ? (+tm.delay || 0) + (+tm.duration || 0) : null; }catch(e){ drainEnd = null; } }
+      const dr = drainAnim, ct = dr ? dr.currentTime : null;
+      if(ct != null && drainEnd != null && ct < drainEnd) return ct / 1000;
       if(began == null){ const a = sea.getAnimations()[0]; if(a && a.startTime != null) began = a.startTime; }
       if(began != null && document.timeline) return (document.timeline.currentTime - began) / 1000;
     }catch(e){}
@@ -93210,23 +93221,44 @@ function hfxUwScreen(c, S, page, k, tot){
       const x = env * ax * Math.sin(2 * Math.PI * tt / P + p1), y = kink + env * ay * Math.sin(2 * Math.PI * tt / (P * 1.27) + p2);
       fr.push({ translate: px(x) + " " + px(y), easing: "steps(1, end)" });
     }
-    try{ r.a = r.el.animate(fr, { duration: span * 1000, easing: "linear" }); r.a.id = "hfx-uw-sway"; }catch(e){ r.a = null; }
+    try{ r.a = r.el.animate(fr, { duration: span * 1000, easing: "linear" }); r.a.id = "hfx-uw-sway"; r.fr = fr; r.span = span * 1000; }catch(e){ r.a = null; }
   };
   const settle = r => {
     if(!r.a) return;
+    /* where the sway has it now, read off its own frames by its own time
+       (build 326): getComputedStyle here brought the whole page's style up
+       to date - ~20ms, profiled, on the very frame the water leaves the
+       card, which is where the drain's hitch was */
     let tr = "0px 0px";
-    try{ const cs = getComputedStyle(r.el); if(cs.translate && cs.translate !== "none") tr = cs.translate; }catch(e){}
+    try{ const ct = r.a.currentTime, n = r.fr.length - 1; if(ct != null && n > 0) tr = r.fr[Math.max(0, Math.min(n, Math.floor(ct / r.span * n)))].translate; }catch(e){}
     try{ r.a.cancel(); }catch(e){}
     r.a = null;
     try{ r.s = r.el.animate([{ translate: tr }, { translate: "0px 0px" }], { duration: HFX_UW_SETTLE_MS, easing: "cubic-bezier(.3,.6,.35,1)" }); r.s.id = "hfx-uw-settle"; }catch(e){ r.s = null; }
   };
+  /* WHERE THINGS ARE, MEASURED ONCE A SECOND (build 326). Every
+     getBoundingClientRect here brought the page's style and layout up to
+     date first - with the sea's hundred moving pieces, ~2-3ms of it every
+     tick, through the whole effect (profiled: the largest piece of script
+     left in it once the water's clock stopped asking getAnimations()). A
+     card does not move on the page while the water is up (its sway is
+     ours, and a few px), so its place is read once a second and carried
+     with the scroll in between; the ocean is fixed to the screen. */
+  const placed = new Map();
+  const where = (key, read, scrolls) => {
+    /* (the scroll as its listener last saw it: reading window.scrollY
+       here would bring the layout up to date all over again) */
+    const at = performance.now(), sy = typeof knownScrollY === "number" ? knownScrollY : 0;
+    let p = placed.get(key);
+    if(!p || at - p.at > 1000){ const v = read(); p = { v, sy: typeof knownScrollY === "number" ? (knownScrollY = window.scrollY || 0) : sy, at }; placed.set(key, p); }
+    return scrolls ? p.v - (sy - p.sy) : p.v;
+  };
   const tick = () => {
     const s = now();
     if(s > tot + .3){ quit(false); return; }
-    const top = S.ocean.getBoundingClientRect().top, line = top + S.lineAt(s);
+    const top = where(S.ocean, () => S.ocean.getBoundingClientRect().top, !page), line = top + S.lineAt(s);
     recs.forEach(r => {
       if(!r.el.isConnected || r.due) return;
-      const q = r.el.getBoundingClientRect(), cy = q.top + q.height / 2;
+      const cy = where(r.el, () => { const q = r.el.getBoundingClientRect(); return q.top + q.height / 2; }, true);
       if(!r.wet && cy > line + 6){ r.wet = true; sway(r, s); }
       else if(r.wet && cy < line - 6){ r.wet = false; settle(r); }
       /* THE CARD COMES TO REST AS THE WATER LEAVES IT (build 326): the
@@ -93257,7 +93289,7 @@ function hfxUwScreen(c, S, page, k, tot){
        (the waterline is the css curves on the water's own clock, so the
        crossing inside the next tick is found and scheduled exactly). */
     if(hold && !hold.done && !hold.due){
-      const fy = hold.faceY ? hold.faceY() : (() => { const q = hold.el.getBoundingClientRect(); return q.top + q.height / 2; })();
+      const fy = where(hold, () => hold.faceY ? hold.faceY() : (() => { const q = hold.el.getBoundingClientRect(); return q.top + q.height / 2; })(), true);
       const cross = (test, lead) => { for(let u = 0; u <= .17; u += .01){ if(test(top + S.lineAt(s + u + lead))) return u; } return -1; };
       if(!hold.on){
         const u = cross(y => y <= fy, HFX_UW_GULP);
@@ -121693,7 +121725,13 @@ if(backToTopBtn){
   window.addEventListener("resize", queueBackToTop);
   /* A screen's content can grow under a resting scroll position (a list
      arriving, a section opening), which is no scroll event at all. */
-  try{ new MutationObserver(queueBackToTop).observe(stage, { childList: true, subtree: true }); }catch(e){}
+  /* (build 326) not for what a hundo effect or the results character
+     puts in and takes out of the screen many times a second - the box's
+     own layer, the breath's bubbles: none of it is tappable, and each one
+     queued a measure of every tappable thing on the screen */
+  const BTT_QUIET = ".hfx-box, .results-level-avatar, svg";
+  try{ new MutationObserver(ms => { if(ms.some(m => !(m.target && m.target.closest && m.target.closest(BTT_QUIET)))) queueBackToTop(); })
+    .observe(stage, { childList: true, subtree: true }); }catch(e){}
   /* Wrapped, not passed directly. addEventListener hands the listener
      the click event, so "toTop" received a PointerEvent as its "instant"
      argument - and an event object is truthy, so every press took the

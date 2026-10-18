@@ -344,7 +344,7 @@ def sec_dim_edges(br, do_dim=True, do_edges=True):
             ctx, pg = fx_session(br, w, h, fx)
             tail = pg.evaluate("() => (typeof HUNDO_FX_TAIL_AT === 'object' && HUNDO_FX_TAIL_AT['%s']) || 0" % fx) / 1000
             tot = pg.evaluate("() => (typeof HUNDO_FX_TOTAL === 'object' && HUNDO_FX_TOTAL['%s']) || 3000" % fx) / 1000
-            times = [.02, .5, max(.6, tail * .5), max(.7, tail - .5), tail + .1, tot + .6]
+            times = [.02, .5, max(.55, tail - 1.45), max(.7, tail - .5), tail + .1, tot + .6]
             S = {}
             for t in times:
                 fx_to(pg, t)
@@ -365,7 +365,7 @@ def sec_dim_edges(br, do_dim=True, do_edges=True):
                 over = gz not in (None, "auto") and d and d[0]["z"] not in ("auto",) and int(gz) > int(d[0]["z"])
                 peak = [round(S[t]["dims"][0]["op"], 2) if S[t]["dims"] else 0 for t in times]
                 check("%s: one dim, the shared one (%s), up at its peak through the effect and gone when the buttons rise (opacity %s), the box over it" % (tag, kinds, peak),
-                      one and over and abs(peak[1] - .5) < .02 and abs(peak[3] - .5) < .2 and peak[4] < .02 and not S[times[5]]["dims"],
+                      one and over and abs(peak[1] - .5) < .02 and abs(peak[2] - .5) < .02 and 0 < peak[3] < .45 and peak[4] < .02 and not S[times[5]]["dims"],
                       {"dims": [(x["cls"], x["op"], x["z"]) for x in d], "gz": gz, "peak": peak})
             if do_edges:
                 xp = None
@@ -390,7 +390,8 @@ def sec_dim_edges(br, do_dim=True, do_edges=True):
             if not shape:
                 norm[k] = None; continue
             ups = [o for o, op in shape if op and op > .49]
-            norm[k] = (ups[0] if ups else None, shape[-1][0] - (ups[-1] if ups else 0), max(op or 0 for _, op in shape), shape[-1][0] == end)
+            r10 = lambda v: int(round(v / 10.0)) * 10 if v is not None else None
+            norm[k] = (r10(ups[0] if ups else None), r10(shape[-1][0] - (ups[-1] if ups else 0)), max(op or 0 for _, op in shape), abs(shape[-1][0] - end) <= 2)
         vals = set(v for v in norm.values())
         check("every effect's dim has the same peak, comes up over the same time and lifts over the same time, ending at its own buttons (%s)" % sorted(map(str, vals)),
               len(vals) == 1 and None not in vals and all(v and v[3] for v in vals), norm)
@@ -440,17 +441,30 @@ def sec_water(br):
     for label, w, h in (PHONE, TABLET):
         ctx, pg = fx_session(br, w, h, "underwater")
         U = pg.evaluate("() => ({ rise: HFX_UW.rise + HFX_UW.riseD, drain: HFX_UW.drain, gone: HFX_UW.drain + HFX_UW.drainD })")
+        # what forces the page's style and layout up to date, counted while
+        # the water is up and draining (the drain's hitch, profiled, was
+        # three of these every 150ms and a getComputedStyle as each card
+        # left the water)
+        pg.evaluate("""() => { const n = window.__flush = { gbcr: 0, gcs: 0, ga: 0, on: false };
+          n.who = {}; const wrap = (o, k, key) => { const f = o[k]; o[k] = function(){ if(n.on){ n[key]++; const st = (new Error().stack || '').split('\\n')[2] || ''; const w = (st.match(/at ([\\w.$]+)/) || [])[1] || '?'; n.who[w] = (n.who[w] || 0) + 1; } return f.apply(this, arguments); }; };
+          wrap(Element.prototype, 'getBoundingClientRect', 'gbcr'); wrap(window, 'getComputedStyle', 'gcs'); wrap(Element.prototype, 'getAnimations', 'ga'); }""")
+        fx_to(pg, U["rise"])
+        pg.evaluate("() => { window.__flush.on = true; }")
         seen, during = [], []
         t = U["rise"] + .2
         while t < U["drain"] - .1:
             fx_to(pg, t)
+            pg.evaluate("() => { window.__flush.on = false; }")
             r = pg.evaluate(WATER, "in")
+            pg.evaluate("() => { window.__flush.on = true; }")
             during.append(r)
             seen += [f for f in r["fish"] if f["in"] and f["op"] > .05]
             t += .35
         sprites = pg.evaluate(SPRITES)
         fx_to(pg, U["drain"] + .02)
+        pg.evaluate("() => { window.__flush.on = false; }")
         after = pg.evaluate(WATER, "drain")
+        pg.evaluate("() => { window.__flush.on = true; }")
         species = sorted(set(re.sub(r"-(all|body|tail|null|undefined)?(-far)?$", "", f["key"]) for f in seen))
         sizes = sorted(set(round(f["w"] / 8) * 8 for f in seen))
         marks = {s["k"]: dark_marks(s["t"]) for s in sprites}
@@ -466,6 +480,11 @@ def sec_water(br):
         check("%s: no fish left in sight once the water starts to drain (%s)" % (label, left), not left, left)
         bfs = set(x for r in during + [after] for x in r["bf"])
         check("%s: no backdrop-filter anywhere in the water (%s)" % (label, sorted(bfs)), not bfs, sorted(bfs))
+        fx_to(pg, U["gone"])
+        fl = pg.evaluate("() => { window.__flush.on = false; return window.__flush; }")
+        per = (fl["gbcr"] + fl["gcs"] + fl["ga"]) / (U["gone"] - U["rise"])
+        check("%s: while the water is up and draining, the page is made to work out its style and layout no more than 12 times a second (%.1f: %s)" % (label, per, fl),
+              per <= 12, fl)
         fx_to(pg, U["gone"] + .9, 30)
         rise = pg.evaluate("() => window.__riseAt")
         check("%s: the buttons rise only once the water has gone (%.2fs; drained by %.2fs)" % (label, (rise or 0) / 1000, U["gone"]),

@@ -217,10 +217,12 @@ def sec_rise(br):
 def sec_dim(br):
     print("\n2. the default hundo effect dims the screen like the others")
     ctx, pg = boot(br, 440, 956, fx="confetti")
-    pg.evaluate("""() => { window.__dim = null; const rc = celebrate; window.celebrate = function(){ const r = rc.apply(this, arguments);
+    # (build 326: the dim is the one every effect shares, .hfx-dim, its own
+    # layer put up beside the burst - looked for there too, a tick later)
+    pg.evaluate("""() => { window.__dim = null; const rc = celebrate; window.celebrate = function(){ const r = rc.apply(this, arguments); setTimeout(() => {
       const lay = [...document.querySelectorAll('.confetti-layer')].pop(), g = document.querySelector('.rs-grade');
       /* every full-screen layer the burst put up, and how its opacity runs */
-      const full = lay ? [...lay.children].filter(e => { const b = e.getBoundingClientRect(); return b.width >= innerWidth - 1 && b.height >= innerHeight - 1; }) : [];
+      const full = (lay ? [...lay.children] : []).concat([...document.querySelectorAll('.hfx-dim')]).filter(e => { const b = e.getBoundingClientRect(); return b.width >= innerWidth - 1 && b.height >= innerHeight - 1; });
       window.__dim = { full: full.map(e => e.getAnimations().map(a => { const t = a.effect.getComputedTiming(); return { dur: t.duration, delay: t.delay, k: a.effect.getKeyframes().map(f => [f.computedOffset, f.opacity == null ? null : +f.opacity]) }; })),
         bg: full.map(e => getComputedStyle(e).backgroundImage !== 'none' || getComputedStyle(e).backgroundColor !== 'rgba(0, 0, 0, 0)'),
         over: null };
@@ -230,7 +232,7 @@ def sec_dim(br):
       if(acts){ const mo = new MutationObserver(() => { if(acts.classList.contains('rs-in-now') || acts.classList.contains('rs-in')){ mo.disconnect();
         __dim.atButtons = { t: Math.round(performance.now() - t0), dim: dimEl && dimEl.isConnected ? +getComputedStyle(dimEl).opacity : 0 }; } });
         mo.observe(acts, { attributes: true, attributeFilter: ['class'] }); }
-      return r; }; }""")
+      }, 0); return r; }; }""")
     pg.evaluate("() => __run('Identity Crimes', 0, 'drill', false)")
     for _ in range(160):
         if pg.evaluate("() => !!window.__dim && window.__dim.over !== null"):
