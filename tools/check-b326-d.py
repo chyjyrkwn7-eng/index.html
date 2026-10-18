@@ -19,10 +19,11 @@ banners and hundo effects maybe? ... it also doesn't mention anything about
 your level if it went back some to reflect the new required gate stuff ...
 Remove the weekly recap and badge case from what's new."
 
-Every section fails on the build before it (build 325):
+Every section fails on the build before it (build 325, 5869856):
 
+  git show 5869856:index.html > /tmp/base325.html
   python3 tools/check-b326-d.py
-  python3 tools/check-b326-d.py --against /tmp/claude-0/wbase325/index.html
+  python3 tools/check-b326-d.py --against /tmp/base325.html
   ONLY_FN=check_lag,check_recap python3 tools/check-b326-d.py
 
 Exits non-zero on any failure.

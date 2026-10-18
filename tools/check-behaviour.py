@@ -22188,7 +22188,9 @@ def check_b320f_nova(br):
               {"rank": r.get("rank"), "badges": r.get("badges"), "head": (r.get("lines") or [])[:4]})
         check("%s the card is built as he talks, and ends on Got it" % dev,
               # MOVED IN 325 (b325d): no badge total ("they will be more")
-              (r.get("rows") or 0) >= 9 and "3 badges found" in (r.get("me") or "") and r.get("go") and "speak with you again" in txt,
+              # MOVED IN 326 (b326d): "Remove the weekly recap and badge case
+              # from what's new" - nine rows became seven
+              (r.get("rows") or 0) >= 7 and "3 badges found" in (r.get("me") or "") and r.get("go") and "speak with you again" in txt,
               {k: r.get(k) for k in ("rows", "me", "go")})
         check("%s once: marked seen and not shown again" % dev, r.get("closed") and r.get("seen") and not r.get("again"), {k: r.get(k) for k in ("closed", "seen", "again")})
         ctx.close()
@@ -22317,7 +22319,10 @@ def check_b321g_nova(br):
           # (325: an existing account with a rank hears how many flares it
           # has relit rather than "Bronze to Supernova"; it hears the
           # Virtual Room instead - "It doesn't mention virtual room")
-          "Madison" in it and "tore through my ship" in it and "missing" in it and "Virtual Room" in it and "Drill" in it, (intro.get("lines") or [])[:4])
+          # (326: "missing" came from the recap's "N of my missing crew", which
+          # is gone - "talks about how many characters you have found as if
+          # that's an achievement?" - the crew is in the story's own lines)
+          "Madison" in it and "tore through my ship" in it and "crew" in it and "Virtual Room" in it and "Drill" in it, (intro.get("lines") or [])[:4])
     # MOVED IN 326 (b326d): "It also talks about how many characters you have
     # found as if that's an achievement? ... it says there's only 3 secret
     # flares but there's more than that?" - the recap is rank, level, badges,
