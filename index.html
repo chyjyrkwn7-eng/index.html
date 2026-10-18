@@ -116420,7 +116420,7 @@ const BADGE_BACK_CACHE = {};
    and a dark, blackened floor - an engraver's fill - on a field that is
    lighter than the letters, never the same grey. */
 const BADGE_BACK_RELIEF = { depth: .36, wallU: .42, shadowU: .9, shadowK: .55, floor: .24, floorSp: .12, ink: [.30, .31, .33], inkK: .93, brush: .13, fieldFlat: .6, fieldLevel: .34, fieldDirt: .55,
-  rimIn: 4.6, margin: 2.0, planW: 260, fsMax: .092, fsMin: .026, classMin: .034, classKeep: .96, weight: 800 };
+  rimIn: 4.6, margin: 1.6, planW: 260, fsMax: .092, fsMin: .026, classMin: .034, classKeep: .96, classNameMin: 5.6, tidyKeep: .9, weight: 800 };
 const BADGE_BACK_FONT = '"Helvetica Neue", Helvetica, Arial, sans-serif';
 const BADGE_BACK_PLAN = {};
 /* the outline's signed distance (token units, negative inside) as the
@@ -116530,10 +116530,16 @@ function badgeBackPlan(unitName){
     });
     return { items, fs, small, slack: best.slack, rows: rows.length, cls: !!withClass, mode: "rows" };
   };
+  /* TIDY BREAKS: no row that is only AND / OF / THE, and round a ring no
+     top line that ends on one - taken unless they cost more than tidyKeep
+     of the size (strict is set by the two passes below) */
+  const LONE = /^(AND|OF|THE|&)$/, TAIL = /\b(AND|OF|THE)$/;
+  let strict = false;
   const bestAt = (fs, withClass) => {
     let best = null;
     allSplits.forEach(ss => ss.forEach(rows => {
       if(best && rows.length > best.rows) return;
+      if(strict && rows.some(r => LONE.test(r))) return;
       if(rows.some(r => width(r, fs, 0) + 2 > fieldW)) return;
       const p = block(rows, fs, withClass); if(p && (!best || p.rows < best.rows || (p.rows === best.rows && p.slack > best.slack))) best = p; }));
     return best;
@@ -116592,6 +116598,7 @@ function badgeBackPlan(unitName){
       for(let j = 1; j < words.length; j++) cands.push([words.slice(0, j).join(" "), words.slice(j).join(" "), fs, ls]);
       let best = null;
       for(const [up, low, lfs, lls] of cands){
+        if(strict && TAIL.test(up)) continue;
         const Lu = arcLen(up, fs, ls), Ll = arcLen(low, lfs, lls);
         if(Lu + Ll + gapDeg > span - 4) continue;
         const [la] = vmet(lfs);
@@ -116627,8 +116634,12 @@ function badgeBackPlan(unitName){
   let plan = null;
   try{
     /* a ring's words always go round it (its rows come out a fraction of the size) */
-    const arc = bestArc(), a = arc ? null : bestRows(true), n = arc ? null : bestRows(false);
-    plan = a && (!n || a.fs >= n.fs * R.classKeep) ? a : n;
+    const tidy = f => { strict = true; const t = f(); strict = false; const l = f(); return t && (!l || t.fs >= l.fs * R.tidyKeep) ? t : l; };
+    const arc = tidy(bestArc), a = arc ? null : tidy(() => bestRows(true)), n = arc ? null : tidy(() => bestRows(false));
+    /* the class line only where the name keeps nearly all its size AND is
+       not small anyway (classNameMin, token units) - on a tight shape the
+       name has the room */
+    plan = a && (!n || (a.fs >= n.fs * R.classKeep && a.fs >= R.classNameMin * u)) ? a : n;
     if(arc && (!plan || arc.fs > plan.fs)) plan = arc;
   }catch(e){ plan = null; }
   if(!plan) plan = { items: [{ s: words.join(" "), x: mx, y: my, rot: 0, fs: R.fsMin * WR, ls: 0 }], fs: R.fsMin * WR, small: 0, rows: 1, cls: false, mode: "rows" };
