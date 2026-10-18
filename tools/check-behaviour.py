@@ -15988,7 +15988,7 @@ def check_b317_hundobox(br):
           await wait(400);
           const long = HUNDO_FX_TOTAL.ufo > 9000, A = long ? 1.1 : 0, B = long ? 2 : 0;
           const g = document.querySelector('.rs-screen .rs-grade');
-          const anims = () => document.getAnimations().filter(a => { const e = a.effect && a.effect.target; return e && e.closest && e.closest('.hfx-layer.hfx-ufo, .hfx-box.hfx-ufo'); });
+          const anims = () => document.getAnimations().filter(a => { const e = a.effect && a.effect.target; return e && e.closest && e.closest('.hfx-layer.hfx-ufo, .hfx-box.hfx-ufo, .hfx-dim'); });
           const seek = t => anims().forEach(a => { try{ a.pause(); a.currentTime = t * 1000; }catch(e){} });
           const op = el => { let o = 1; for(let e = el; e && e !== document.body; e = e.parentElement) o *= +getComputedStyle(e).opacity; return o; };
           const R = el => { if(!el) return null; const b = el.getBoundingClientRect(); return { t: b.top, b: b.bottom, h: b.height, cx: b.left + b.width / 2, cy: b.top + b.height / 2, o: op(el) }; };
@@ -16140,7 +16140,7 @@ def check_b317_hundobox(br):
         for t in pre + (lit,):
             dom = pg.evaluate("""(t) => { const g = document.querySelector('.rs-screen .rs-grade');
               document.getAnimations().forEach(a => { const e = a.effect && a.effect.target; if(!e) return;
-                const mine = e.closest && e.closest('.hfx-layer.hfx-ufo, .hfx-box.hfx-ufo') || ((e === g || e.parentElement === g) && !(a instanceof CSSAnimation));
+                const mine = e.closest && e.closest('.hfx-layer.hfx-ufo, .hfx-box.hfx-ufo, .hfx-dim') || ((e === g || e.parentElement === g) && !(a instanceof CSSAnimation));
                 if(mine){ try{ a.pause(); a.currentTime = t * 1000; }catch(x){} } });
               const r = g.getBoundingClientRect(), cs = getComputedStyle(g), tn = g.querySelector(':scope > .hfx-tint');
               const bx = g.querySelector('.hfx-box.hfx-ufo');
@@ -16221,9 +16221,12 @@ def check_b317_hundobox(br):
           return { long: getComputedStyle(document.querySelector('.hfx-saucer:not(.is-mini)')).animationDuration === '9.5s' }; }""", multi)
         if not info or not info["long"]:
             check("%s, ufo: a real 100%% played the long UFO" % label, False, info); ctx.close(); continue
+        # (build 326: the screen's dim is its own layer, .hfx-dim, on the
+        # effect's clock - seeked with the rest, or it lifts in real time
+        # behind the card's translucent glass while the frames are read)
         SEEK = """(t) => { const g = document.querySelector('.rs-screen .rs-grade');
           document.getAnimations().forEach(a => { const e = a.effect && a.effect.target; if(!e) return;
-            const mine = e.closest && e.closest('.hfx-layer.hfx-ufo, .hfx-box.hfx-ufo') || ((e === g || e.parentElement === g) && !(a instanceof CSSAnimation));
+            const mine = e.closest && e.closest('.hfx-layer.hfx-ufo, .hfx-box.hfx-ufo, .hfx-dim') || ((e === g || e.parentElement === g) && !(a instanceof CSSAnimation));
             if(mine){ try{ a.pause(); a.currentTime = t * 1000; }catch(x){} } });
           const r = g.getBoundingClientRect(), bm = document.querySelector('.hfx-saucer:not(.is-mini) > .hfx-ufo-beam');
           let o = 1; for(let e = bm; e && e !== document.body; e = e.parentElement) o *= +getComputedStyle(e).opacity;
@@ -16249,7 +16252,14 @@ def check_b317_hundobox(br):
             p1, p0 = im.load(), base.load()
             ex = [p1[x, y] - p0[x, y] for y in range(ya, yb, 2) for x in range(xa, xb, 2)]
             frames.append((t, round(sum(ex) / len(ex), 2)))
-        ahead = [f for f in frames if f[1] is not None and f[1] > 2.5]
+        # (build 326: the box is no longer under its own dark - .55 to .93
+        # black over everything in it until the beam, now gone with the one
+        # shared dim, which the box is lifted over - so a change in it reads
+        # ~2.2x as bright as it did through that layer: 2.5 through the
+        # dark is 5.5 without it. What is held is the same: no light comes
+        # down the box ahead of the beam's head.)
+        AHEAD = 2.5 if pg.evaluate("() => !document.querySelector('.hfx-ufo-boxdim') && typeof hfxDim === 'function'") is False else 5.5
+        ahead = [f for f in frames if f[1] is not None and f[1] > AHEAD]
         check("%s, ufo: no light in the box ahead of the beam's head - from 3.75s to its floor (every 1/30s) the box below the head is as dark as before it fired%s" % (label, " (two units)" if multi else ""),
               not ahead and sum(1 for f in frames if f[1] is not None) >= 3, {"ahead": ahead, "frames": frames})
         seams = []
