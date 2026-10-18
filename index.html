@@ -5218,6 +5218,13 @@
   .vroom-access-opt:focus{ outline:none; }
   .vroom-access-opt:focus-visible{ outline:2px solid rgba(255,255,255,.7); outline-offset:-3px; }
   .vroom-access-line{ margin:0; min-width:0; font-size:.78rem; line-height:1.35; color:var(--soft); }
+  /* up to a 414px phone: both words whole, the marks a touch smaller; a 320px
+     phone drops the marks rather than cut a word ("Invite o...") */
+  @media (max-width:26.5rem){
+    .vroom-access-opt{ padding:0 .45rem; gap:.32rem; font-size:.8rem; }
+    .vroom-access-icon{ width:.92rem; height:.92rem; }
+  }
+  @media (max-width:21rem){ .vroom-access-icon{ display:none; } }
   .vroom-roster > .vroom-autostart-note{ margin:.55rem 0 .1rem; }
   .vroom-roster:not(.is-crowded) > .vroom-autostart-note{ margin-top:.2rem; }
   @media (min-width:40rem){

@@ -180,7 +180,9 @@ ACCESS = """() => {
   /* the old shape: a control named one thing with a different state printed under its name */
   const oldSwitch = !!L.querySelector('.vroom-open-toggle, .vroom-open-hint');
   const bgA = el => { const m = (getComputedStyle(el).backgroundColor.match(/[\\d.]+/g) || []).map(Number); return m.length > 3 ? m[3] : (m.length ? 1 : 0); };
-  return { n: groups.length, radios: radios.map(r => ({ t: r.textContent.trim(), on: r.getAttribute('aria-checked') === 'true',
+  /* every word whole: nothing in an option clipped or cut with an ellipsis */
+  const cut = radios.some(r => [...r.querySelectorAll('*')].concat([r]).some(e => e.scrollWidth > e.clientWidth + 0.5 && getComputedStyle(e).overflow !== 'visible'));
+  return { n: groups.length, cut, radios: radios.map(r => ({ t: r.textContent.trim(), on: r.getAttribute('aria-checked') === 'true',
              h: r.getBoundingClientRect().height, a: bgA(r), col: getComputedStyle(r).color })),
            line: line ? line.textContent.trim() : '', oldSwitch, open: vroomIsOpen }; }"""
 
@@ -190,18 +192,18 @@ def check_access(br):
     then invite only under it?" On 325 it was a switch named "Open room" with
     its state, "Invite only", printed underneath."""
     print("\n2. who can join: two options, one lit, a line saying what the current one means")
-    for label, w, h in (PHONE, TABLET):
+    for label, w, h in (PHONE, TABLET, ("iPhone SE 2nd gen", 375, 667), ("iPhone 14/15/16", 393, 852), ("iPhone SE 1st gen", 320, 568)):
         ctx, pg = booted(br, w, h, seed=USED, init=ROOM_FAKE)
         pg.evaluate(CLEAN)
         pg.evaluate("(o) => (%s)(o)" % LOBBY, {"n": 3, "meReady": False})
         pg.wait_for_timeout(1300)
         a = pg.evaluate(ACCESS)
         shape = (a["n"] == 1 and len(a["radios"]) == 2 and sum(r["on"] for r in a["radios"]) == 1 and not a["oldSwitch"]
-                 and all(r["h"] >= 44 for r in a["radios"]) and len(a["line"]) > 10)
+                 and all(r["h"] >= 44 for r in a["radios"]) and len(a["line"]) > 10 and not a["cut"])
         lit = [r for r in a["radios"] if r["on"]]
         unlit = [r for r in a["radios"] if not r["on"]]
         distinct = bool(lit and unlit) and lit[0]["a"] > unlit[0]["a"] + 0.1 and lit[0]["col"] != unlit[0]["col"]
-        check("%s: one radio group of two options (44px each), exactly one checked, no switch with a contradicting sub-label" % label, shape, a)
+        check("%s: one radio group of two options (44px each, every word whole), exactly one checked, no switch with a contradicting sub-label" % label, shape, a)
         check("%s: the chosen option is raised and lit, the other quiet" % label, distinct, a["radios"])
         # choose the other one: the room's `open` flips, the line changes, the lit one moves
         other = next((i for i, r in enumerate(a["radios"]) if not r["on"]), None)
@@ -243,20 +245,32 @@ def check_bar_unlit(br):
             same = bool(ref and vr) and "is-inert" in ref["cls"] and "is-inert" in vr["cls"] and all(ref[k] == vr[k] for k in ("bg", "bgi", "color", "sh"))
             check("%s, %s: unlit, it is the tab bar's inert Start exactly (fill, image, words, depth)" % (label, acc), same, {"start": ref, "vr": vr})
             # light it: the grey holds while the fill grows from the centre, then it is lit
-            # the whole beat, frame by frame in the page: the grey under the
-            # growing fill first, then the accent, and never the grey again
-            fr = pg.evaluate("""async () => { const b = document.querySelector('#stage > .vroom-setup-bar .vroom-setup-go'); const out = [];
-              const t0 = performance.now(); document.querySelector('.picks .pick input').click();
-              while(performance.now() - t0 < 1300){ await new Promise(r => requestAnimationFrame(r));
-                const c = getComputedStyle(b); out.push({ t: Math.round(performance.now() - t0), bg: c.backgroundColor, before: getComputedStyle(b, '::before').animationName, cls: b.className }); }
-              return out; }""")
+            # the beat, read off the animations themselves (paused and stepped, so
+            # a loaded machine cannot skip it): at 120ms the pill is still the
+            # unlit grey with the fill growing over it; at 700ms it is lit; and
+            # when the class comes off nothing transitions back from grey
+            fr = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+              const b = document.querySelector('#stage > .vroom-setup-bar .vroom-setup-go');
+              document.querySelector('.picks .pick input').click();
+              await wait(0);
+              const anims = b.getAnimations({ subtree: true }).filter(a => a.animationName);
+              const names = anims.map(a => a.animationName);
+              const lighting = b.classList.contains('is-lighting');
+              anims.forEach(a => a.pause());
+              const at = ms => { anims.forEach(a => { try{ a.currentTime = ms; }catch(e){} }); return getComputedStyle(b).backgroundColor; };
+              const early = at(120), clip = getComputedStyle(b, '::before').clipPath;
+              const late = at(700);
+              /* the BASE style under the lighting class, with every animation off: it has to be the lit
+                 accent already, or the pill transitions back from grey when the class comes off */
+              anims.forEach(a => a.cancel());
+              b.getAnimations().forEach(a => { if(a.transitionProperty) a.finish(); });
+              const base = getComputedStyle(b).backgroundColor;
+              return { names, lighting, early, clip, late, base }; }""")
             acc_col = pg.evaluate("() => { const p = document.createElement('i'); p.style.color = 'var(--accent)'; document.body.appendChild(p); const c = getComputedStyle(p).color; p.remove(); return c; }")
-            grey_fill = [f for f in fr if f["bg"] == ref["bg"] and f["before"] == "start-fill-in"]
-            first_lit = next((i for i, f in enumerate(fr) if f["bg"] == acc_col), None)
-            flash = first_lit is not None and any(f["bg"] != acc_col for f in fr[first_lit:])
             check("%s, %s: lit by a tap, the grey holds while the fill grows from the centre (as Start's), then the accent - and no flash back" % (label, acc),
-                  bool(grey_fill) and first_lit is not None and not flash and "is-lighting" not in fr[-1]["cls"] and acc_col != ref["bg"],
-                  {"accent": acc_col, "frames": [(f["t"], f["bg"], f["before"]) for f in fr[::4]][:16]})
+                  fr["lighting"] and fr["early"] == ref["bg"] and "start-fill-in" in fr["names"] and fr["clip"] not in (None, "none")
+                  and fr["late"] == acc_col and fr["base"] == acc_col,
+                  {"accent": acc_col, "beat": fr})
             ctx.close()
 
 
