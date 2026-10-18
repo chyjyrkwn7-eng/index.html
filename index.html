@@ -92017,6 +92017,11 @@ function hfxDim(id, frame){
     const a = el.animate([{ opacity: 0 }, { opacity: HFX_DIM.a, offset: inMs / E }, { opacity: HFX_DIM.a, offset: (E - outMs) / E }, { opacity: 0 }],
       { duration: E, fill: "forwards", easing: "linear" });
     a.id = "hfx-dim";
+    /* started NOW, not on the next frame: on a busy phone a new animation
+       can wait for its first frame for a few hundred ms while the timers
+       that bring the buttons up do not, and the dim then lifted late,
+       under the buttons rising (build 326) */
+    try{ if(document.timeline && document.timeline.currentTime != null) a.startTime = document.timeline.currentTime; }catch(e){}
   }catch(e){ el.style.opacity = "0"; }
   el.__end = setTimeout(() => el.remove(), E + 60);
   return el;

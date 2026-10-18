@@ -12169,7 +12169,7 @@ def check_b313_fx(br):
             await until(420);
             const gr = g.getBoundingClientRect();
             out.early = lit(); out.boxAt = { l: Math.round(gr.left), r: Math.round(gr.right), t: Math.round(gr.top), b: Math.round(gr.bottom) };
-            out.dimEarly = (() => { const d = document.querySelector('.hfx-fw-dim'); return d ? parseFloat(getComputedStyle(d).opacity) : null; })();
+            out.dimEarly = (() => { const d = document.querySelector('.hfx-fw-dim') || document.querySelector('.hfx-dim'); return d ? parseFloat(getComputedStyle(d).opacity) : null; })();
           }
           await until(1600);
           const scr = document.querySelector('.hfx-layer.hfx-' + fx), box = document.querySelector('.rs-grade .hfx-box.hfx-' + fx);
@@ -12211,7 +12211,8 @@ def check_b313_fx(br):
             await until(3900);
             const gr = g.getBoundingClientRect();
             out.late = lit(); out.boxLate = { t: Math.round(gr.top) };
-            out.dimMid = (d => d ? parseFloat(getComputedStyle(d).opacity) : null)(document.querySelector('.hfx-fw-dim'));
+            /* (build 326: the dim is the one every effect shares, .hfx-dim) */
+            out.dimMid = (d => d ? parseFloat(getComputedStyle(d).opacity) : null)(document.querySelector('.hfx-fw-dim') || document.querySelector('.hfx-dim'));
           }
           if(fx === 'ufo'){
             out.beforeBeam = getComputedStyle(g).borderTopColor;
@@ -15878,7 +15879,7 @@ def check_b317_hundobox(br):
                   clip: cs(p).webkitBackgroundClip || cs(p).backgroundClip, px: parseFloat(cs(sg).fontSize) },
                 text: { kicker: txt(':scope > .rs-kicker'), frac: txt('.rs-grade-frac'), of: txt('.rs-grade-frac .rs-frac-of'), sub: txt('.rs-grade-sub'),
                   unit: txt('.rs-byunit .unit-breakdown-name'), count: txt('.rs-byunit .rs-frac-of'), countAll: [...g.querySelectorAll('.rs-byunit *')].filter(e => /\\d/.test(e.textContent) && !e.children.length).map(e => cs(e).color) } };
-              const dim = document.querySelector('.hfx-layer > .hfx-fw-dim, .hfx-layer > .hfx-ufo-dim, .hfx-layer > .hfx-bh-dim');
+              const dim = document.querySelector('.hfx-layer > .hfx-fw-dim, .hfx-layer > .hfx-ufo-dim, .hfx-layer > .hfx-bh-dim, .hfx-dim');
               /* BUILD 320: the grade is the first card, so with the effect up
                  the page can be too short to scroll at all - a spacer under
                  the screen gives it somewhere to go (it is the dim being
