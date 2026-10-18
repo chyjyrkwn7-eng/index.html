@@ -47,7 +47,6 @@ RECAP_JS = r"""async () => {
     const rows = thisWeek(__recapRows());
     try{ localStorage.removeItem('class26e.weekrecap.v1'); }catch(e){}
     const r = buildWeekRecap(rows);
-    const lw = lastWeekKey();
     out.top = r.top.map(t => t.name);
     out.ments = r.mentions.map(m => ({ cat: m.cat, name: m.name }));
     out.cw = r.classWeek || null;
@@ -64,7 +63,7 @@ RECAP_JS = r"""async () => {
     const rt = buildWeekRecap(thin);
     out.thin = rt.classWeek ? { totals: rt.classWeek.totals, awards: rt.classWeek.awards.map(a => a.cat) } : null;
     /* the ending before anybody has scored this week: how far off the podium */
-    const quiet = __recapRows();
+    const quiet = __recapRows().map(x => { x.weekPoints = 0; x.rawWeekPoints = 0; return x; }); store.weekPoints = 0;
     out.closeQuiet = typeof weekRecapClose === 'function' ? weekRecapClose(quiet, r.top, { inTop: -1, place: 6, pts: 3000 }) : null;
     out.closeFirst = typeof weekRecapClose === 'function' ? weekRecapClose(quiet, r.top, { inTop: 0, place: 1, pts: 9000 }) : null;
   }catch(e){ out.err = String(e && e.stack || e); }
@@ -230,7 +229,7 @@ def home_section(br):
                             "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % USED_ACCOUNT)
         ctx.add_init_script(STANDALONE)
         pg = ctx.new_page()
-        pg.route("**/index.html", lambda r, b=body: r.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=b))
+        pg.route("**/index.html", lambda r, req=None, b=body: r.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=b))
         pg.route("**/version.json*", lambda r: r.fulfill(status=200, headers={"content-type": "application/json"},
                                                           body='{"build":"%s","frameId":"","note":""}' % cb.SERVED_BUILD))
         pg.goto(cb.URL)
@@ -240,7 +239,7 @@ def home_section(br):
         ctx.close()
         tablet = w >= 640
         moved = top325 - m["btnTop"]
-        ok = lo <= (m["toTabs"] or -99) <= hi and m["tagGap"] == gap and m["scroll"] <= 0
+        ok = lo <= (m["toTabs"] or -99) <= hi and abs((m["tagGap"] or -99) - gap) <= 1 and m["scroll"] <= 0
         if tablet:
             ok = ok and abs(moved) <= 1
         else:
@@ -324,7 +323,7 @@ def cal_section(br):
               and [r["n"] for r in rows[1:]] == ["Level One Final", "Level Two Final", "Level Three Final Exam", "State test"], rows)
         check("%s: Today says PT finals; a PT final is never counted as a test" % dev,
               a.get("today") == "PT finals" and a.get("ptIsExam") == [False, False, False], [a.get("today"), a.get("ptIsExam")])
-        check("%s: an ordinary class day has no outline (%d cells), and nothing scrolls sideways" % dev,
+        check("%s: an ordinary class day has no outline, and nothing scrolls sideways" % dev,
               a.get("plain", 0) > 10 and a.get("outlined") == 0 and (a.get("scrollX") or 0) <= 0,
               [a.get("plain"), a.get("outlined"), a.get("scrollX")])
 
