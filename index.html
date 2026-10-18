@@ -58006,45 +58006,69 @@ function badgeSignedDistance(a, W){
   }
   return sd;
 }
-/* the largest value within r pixels (a square), each way in turn */
+/* the largest value within r pixels (a square), each way in turn - van
+   Herk / Gil-Werman: blocks of 2r+1, a running max from each end, so it
+   costs the same whatever r is */
 function badgeMaxFilter(a, W, r){
+  const n = 2 * r + 1, L = W + 2 * r, pad = Math.ceil(L / n) * n;
   const t = new Float32Array(W * W), o = new Float32Array(W * W);
-  for(let y = 0; y < W; y++) for(let x = 0; x < W; x++){ let m = -1e9; const x0 = Math.max(0, x - r), x1 = Math.min(W - 1, x + r);
-    for(let q = x0; q <= x1; q++){ const v = a[y * W + q]; if(v > m) m = v; } t[y * W + x] = m; }
-  for(let x = 0; x < W; x++) for(let y = 0; y < W; y++){ let m = -1e9; const y0 = Math.max(0, y - r), y1 = Math.min(W - 1, y + r);
-    for(let q = y0; q <= y1; q++){ const v = t[q * W + x]; if(v > m) m = v; } o[y * W + x] = m; }
+  const g = new Float32Array(pad), h = new Float32Array(pad), line = new Float32Array(pad);
+  for(let pass = 0; pass < 2; pass++){
+    const src = pass ? t : a, dst = pass ? o : t;
+    /* pass 0 runs along rows (stride 1), pass 1 down columns (stride W) */
+    const sa = pass ? W : 1, sb = pass ? 1 : W;
+    for(let q = 0; q < W; q++){
+      const base = q * sb;
+      for(let i = 0; i < pad; i++){ const x = i - r; line[i] = x < 0 || x >= W ? -1e9 : src[base + x * sa]; }
+      for(let b = 0; b < pad; b += n){
+        let m = -1e9; for(let i = b; i < b + n; i++){ const v = line[i]; if(v > m) m = v; g[i] = m; }
+        m = -1e9; for(let i = b + n - 1; i >= b; i--){ const v = line[i]; if(v > m) m = v; h[i] = m; }
+      }
+      for(let x = 0; x < W; x++){ const p1 = h[x], p2 = g[x + 2 * r]; dst[base + x * sa] = p1 > p2 ? p1 : p2; }
+    }
+  }
   return o;
 }
-/* THE WORDS' DISTANCE FIELD (build 326): in pixels, positive inside the
-   letters, from their coverage `a` (0..1) at W x W - an exact squared
-   distance transform each way (Felzenszwalb), the half-covered edge pixels
-   placed by their coverage so a cut's walls are as smooth as the type. */
+/* THE WORDS' DISTANCE FIELD (build 326): in pixels, how far each point
+   inside the letters is from their edge, from their coverage `a` (0..1) at
+   W x W - a two-pass chamfer transform (the 5-7-11 mask: steps of 1, the
+   diagonal and the knight's move, within a couple of percent of true
+   distance, linear in the pixels), the half-covered edge pixels placed by
+   their coverage so a cut's walls are as smooth as the type. Outside the
+   letters it is only the edge's own coverage, negative - nothing there is
+   cut. */
 function badgeEDT(a, W){
-  const N = W * W, INF = 1e12, f = new Float64Array(Math.max(W, 1)), d = new Float64Array(W), v = new Int32Array(W), z = new Float64Array(W + 1);
-  const pass = (src) => {
-    const g = new Float64Array(N);
-    for(let x = 0; x < W; x++){ for(let y = 0; y < W; y++) f[y] = src[y * W + x]; dt1(W); for(let y = 0; y < W; y++) g[y * W + x] = d[y]; }
-    for(let y = 0; y < W; y++){ for(let x = 0; x < W; x++) f[x] = g[y * W + x]; dt1(W); for(let x = 0; x < W; x++) g[y * W + x] = d[x]; }
-    return g;
-  };
-  function dt1(n){
-    let k = 0; v[0] = 0; z[0] = -INF; z[1] = INF;
-    for(let q = 1; q < n; q++){
-      let sx;
-      while(true){ const p = v[k]; sx = ((f[q] + q * q) - (f[p] + p * p)) / (2 * q - 2 * p); if(sx <= z[k] && k > 0) k--; else break; }
-      if(sx <= z[k]){ v[0] = q; z[0] = -INF; z[1] = INF; k = 0; continue; }
-      k++; v[k] = q; z[k] = sx; z[k + 1] = INF;
-    }
-    k = 0;
-    for(let q = 0; q < n; q++){ while(z[k + 1] < q) k++; const p = v[k]; d[q] = (q - p) * (q - p) + f[p]; }
+  const N = W * W, d = new Float32Array(N), BIG = 1e6, D1 = 1, D2 = Math.SQRT2, D3 = Math.sqrt(5);
+  for(let i = 0; i < N; i++) d[i] = a[i] >= .5 ? BIG : 0;
+  const at = (x, y) => (x < 0 || y < 0 || x >= W || y >= W) ? 0 : d[y * W + x];
+  for(let y = 0; y < W; y++) for(let x = 0; x < W; x++){
+    const i = y * W + x; let v = d[i]; if(v === 0) continue;
+    let c = at(x - 1, y) + D1; if(c < v) v = c;
+    c = at(x, y - 1) + D1; if(c < v) v = c;
+    c = at(x - 1, y - 1) + D2; if(c < v) v = c;
+    c = at(x + 1, y - 1) + D2; if(c < v) v = c;
+    c = at(x - 1, y - 2) + D3; if(c < v) v = c;
+    c = at(x + 1, y - 2) + D3; if(c < v) v = c;
+    c = at(x - 2, y - 1) + D3; if(c < v) v = c;
+    c = at(x + 2, y - 1) + D3; if(c < v) v = c;
+    d[i] = v;
   }
-  const sIn = new Float64Array(N), sOut = new Float64Array(N);
-  for(let i = 0; i < N; i++){ const inside = a[i] >= .5; sIn[i] = inside ? INF : 0; sOut[i] = inside ? 0 : INF; }
-  const dIn = pass(sIn), dOut = pass(sOut), out = new Float32Array(N);
+  for(let y = W - 1; y >= 0; y--) for(let x = W - 1; x >= 0; x--){
+    const i = y * W + x; let v = d[i]; if(v === 0) continue;
+    let c = at(x + 1, y) + D1; if(c < v) v = c;
+    c = at(x, y + 1) + D1; if(c < v) v = c;
+    c = at(x + 1, y + 1) + D2; if(c < v) v = c;
+    c = at(x - 1, y + 1) + D2; if(c < v) v = c;
+    c = at(x + 1, y + 2) + D3; if(c < v) v = c;
+    c = at(x - 1, y + 2) + D3; if(c < v) v = c;
+    c = at(x + 2, y + 1) + D3; if(c < v) v = c;
+    c = at(x - 2, y + 1) + D3; if(c < v) v = c;
+    d[i] = v;
+  }
+  const out = new Float32Array(N);
   for(let i = 0; i < N; i++){
     const c = a[i];
-    if(c > .02 && c < .98) out[i] = c - .5;
-    else out[i] = c >= .5 ? Math.sqrt(dIn[i]) - .5 : -(Math.sqrt(dOut[i]) - .5);
+    out[i] = (c > .02 && c < .98) || c < .5 ? c - .5 : d[i] - .5;
   }
   return out;
 }
@@ -95684,15 +95708,14 @@ const BADGE_EDGE_CACHE = {};
    Dirt (`stage`) dims and warms it like the faces. With no tone (an older
    caller) it is the middle of the edge. */
 const EDGE_LIGHT_PX = 128;
-function badgeEdgeURL(unitName, tone, stage){
-  const shape = badgeShapeFor(unitName), d = shape.d;
-  const tq = Math.round(Math.max(0, Math.min(1, tone == null ? 1 : tone)) * 4), st = Math.max(0, Math.min(BADGE_DIRT_MAX, stage | 0));
-  const key = d + "|n" + tq + "|" + st;
-  if(BADGE_EDGE_CACHE[key]) return BADGE_EDGE_CACHE[key];
-  const NS = "http://www.w3.org/2000/svg";
-  const c = shape.c, G = BADGE_GEOM;
-  const vb = badgeViewBoxFor(d).split(/\s+/).map(Number);
-  let lightHref = null;
+/* the light round one outline, as an image - once per shape (the tones and
+   the dirt are overlays on it in each slice's drawing, so five tones cost
+   one image, not five) */
+const EDGE_LIGHT_CACHE = {};
+function badgeEdgeLightHref(shape){
+  const d = shape.d;
+  if(EDGE_LIGHT_CACHE[d] !== undefined) return EDGE_LIGHT_CACHE[d];
+  let href = null;
   try{
     const g = badgeStrikeGeometry(shape), R = EDGE_LIGHT_PX, GW = g.W, sc = GW / R;
     const cv = document.createElement("canvas"); cv.width = cv.height = R;
@@ -95704,41 +95727,57 @@ function badgeEdgeURL(unitName, tone, stage){
        between. Lit by a left-or-right light baked in, the same side read
        bright with the front towards you and wrongly bright with the back. */
     const lx = -.45, ly = -.89;
-    const lift = [.62, .76, .9, 1, 1.07][tq] * (1 - .085 * st), warm = .06 * st;
-    for(let y = 0; y < R; y++) for(let x = 0; x < R; x++){
-      const fx = Math.min(GW - 1, Math.max(0, ((x + .5) * sc) | 0)), fy = Math.min(GW - 1, Math.max(0, ((y + .5) * sc) | 0)), q = fy * GW + fx;
-      let nx = g.Ox[q], ny = g.Oy[q]; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
-      const fdot = -Math.abs(nx) * lx + ny * ly;
-      const diff = Math.max(0, .5 + .5 * fdot), spec = Math.pow(Math.max(0, fdot), 14);
-      /* steel in shade, silver in the light, a white sheen where it faces it */
-      let v = (58 + 132 * Math.pow(diff, 1.35)) * lift + 70 * spec * lift;
-      const j = (y * R + x) * 4;
-      od[j] = Math.min(255, Math.round(v * (1 + warm * .5) * .97));
-      od[j + 1] = Math.min(255, Math.round(v * (1 + warm * .15)));
-      od[j + 2] = Math.min(255, Math.round(v * (1 - warm * .45) * 1.05));
-      od[j + 3] = 255;
+    for(let y = 0; y < R; y++){
+      const fy = Math.min(GW - 1, Math.max(0, ((y + .5) * sc) | 0));
+      for(let x = 0; x < R; x++){
+        const fx = Math.min(GW - 1, Math.max(0, ((x + .5) * sc) | 0)), q = fy * GW + fx;
+        let nx = g.Ox[q], ny = g.Oy[q]; const nl = Math.sqrt(nx * nx + ny * ny) || 1; nx /= nl; ny /= nl;
+        const fdot = -(nx < 0 ? -nx : nx) * lx + ny * ly;
+        const diff = .5 + .5 * fdot, sp = fdot > 0 ? fdot : 0, sp2 = sp * sp, sp4 = sp2 * sp2, spec = sp4 * sp4 * sp4 * sp2;
+        /* steel in shade, silver in the light, a white sheen where it faces it */
+        const v = 58 + 132 * Math.pow(diff, 1.35) + 70 * spec, j = (y * R + x) * 4;
+        od[j] = Math.min(255, Math.round(v * .97)); od[j + 1] = Math.min(255, Math.round(v)); od[j + 2] = Math.min(255, Math.round(v * 1.05)); od[j + 3] = 255;
+      }
     }
     cx.putImageData(img, 0, 0);
-    lightHref = cv.toDataURL("image/png");
-  }catch(e){ lightHref = null; }
+    href = cv.toDataURL("image/png");
+  }catch(e){ href = null; }
+  return (EDGE_LIGHT_CACHE[d] = href);
+}
+function badgeEdgeURL(unitName, tone, stage){
+  const shape = badgeShapeFor(unitName), d = shape.d;
+  const tq = Math.round(Math.max(0, Math.min(1, tone == null ? 1 : tone)) * 4), st = Math.max(0, Math.min(BADGE_DIRT_MAX, stage | 0));
+  const key = d + "|n" + tq + "|" + st;
+  if(BADGE_EDGE_CACHE[key]) return BADGE_EDGE_CACHE[key];
+  const NS = "http://www.w3.org/2000/svg";
+  const c = shape.c, G = BADGE_GEOM;
+  const vb = badgeViewBoxFor(d).split(/\s+/).map(Number);
+  const lightHref = badgeEdgeLightHref(shape);
   const svg = document.createElementNS(NS, "svg");
-  svg.setAttribute("xmlns", NS); svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+  svg.setAttribute("xmlns", NS);
   svg.setAttribute("viewBox", vb.join(" "));
   const tr = "translate(" + c[0] + " " + c[1] + ") scale(" + G.scale + ") translate(" + (-c[0]) + " " + (-c[1]) + ")";
   const p = document.createElementNS(NS, "path");
   p.setAttribute("d", d); p.setAttribute("transform", tr);
   p.setAttribute("stroke-width", String(2 * G.key)); p.setAttribute("stroke-linejoin", "round");
+  const box = el => { el.setAttribute("x", String(vb[0])); el.setAttribute("y", String(vb[1])); el.setAttribute("width", String(vb[2])); el.setAttribute("height", String(vb[3])); return el; };
   if(lightHref){
-    const defs = document.createElementNS(NS, "defs"), m = document.createElementNS(NS, "mask");
+    const defs = document.createElementNS(NS, "defs"), m = box(document.createElementNS(NS, "mask"));
     m.setAttribute("id", "s"); m.setAttribute("maskUnits", "userSpaceOnUse");
-    m.setAttribute("x", String(vb[0])); m.setAttribute("y", String(vb[1])); m.setAttribute("width", String(vb[2])); m.setAttribute("height", String(vb[3]));
     p.setAttribute("fill", "#fff"); p.setAttribute("stroke", "#fff");
     m.appendChild(p); defs.appendChild(m); svg.appendChild(defs);
-    const im = document.createElementNS(NS, "image");
-    im.setAttribute("x", String(vb[0])); im.setAttribute("y", String(vb[1])); im.setAttribute("width", String(vb[2])); im.setAttribute("height", String(vb[3]));
+    const grp = document.createElementNS(NS, "g"); grp.setAttribute("mask", "url(#s)");
+    const im = box(document.createElementNS(NS, "image"));
     im.setAttribute("preserveAspectRatio", "none"); im.setAttribute("href", lightHref);
-    im.setAttribute("mask", "url(#s)");
-    svg.appendChild(im);
+    grp.appendChild(im);
+    /* across the thickness, rounded over: darker where it turns in to a
+       face (tq 0), a touch of light along its middle (tq 4); dirt dims and
+       warms it like the faces */
+    const lift = [.62, .76, .9, 1, 1.07][tq] * (1 - .085 * st);
+    if(lift < 1){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", "#000"); r.setAttribute("opacity", (1 - lift).toFixed(3)); grp.appendChild(r); }
+    else if(lift > 1){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", "#fff"); r.setAttribute("opacity", ((lift - 1) * .6).toFixed(3)); grp.appendChild(r); }
+    if(st > 0){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", "#8A6A3E"); r.setAttribute("opacity", (.045 * st).toFixed(3)); grp.appendChild(r); }
+    svg.appendChild(grp);
   } else {
     p.setAttribute("fill", "#8E98A3"); p.setAttribute("stroke", "#8E98A3");
     svg.appendChild(p);
@@ -95799,6 +95838,8 @@ function warmBadgeCoinFaces(units){
   try{
     const ric = f => (typeof window.requestIdleCallback === "function") ? window.requestIdleCallback(f, { timeout: 1500 }) : setTimeout(f, 200);
     (units || []).slice(0, 4).forEach(u => ric(() => { try{ badgeCoinFaceURL(u); }catch(e){} }));
+    /* ...and its side's five tones (build 326: each a small lit image) */
+    (units || []).slice(0, 4).forEach(u => ric(() => { try{ for(let t = 0; t <= 4; t++) badgeEdgeURL(u, t / 4, 0); }catch(e){} }));
     /* ...and its back (build 321: rendered like the front, about as dear) */
     (units || []).slice(0, 4).forEach(u => ric(() => { try{ badgeBackFaceURL(u, badgeCoinBackPx(), 0); }catch(e){} }));
     const W = badgeStrikeSize(badgeCaseSlotPx() * badgeDpr());
