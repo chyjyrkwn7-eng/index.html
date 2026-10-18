@@ -730,7 +730,17 @@ def _locked_art_body(pg):
     # this check is about. The locked class is also applied by hand
     # below, so what is under test is the CSS filter on `.locked`
     # whatever the fixture has unlocked.
-    pg.evaluate("()=>{ store.retakenQuestions = 0; store.unitGameBeat = {}; showCustomize('character'); }")
+    # BUILD 325: a locked CHALLENGE character is a black cut-out now
+    # ("all the unlockable characters you don't have THAT aren't unlocked by
+    # a rank" - check-b325-d), so the greyed treatment this measures is a
+    # rank character's. The Masked One is still the darkest drawing to
+    # measure it on, so its tile is given back its real drawing, the way a
+    # locked rank character's tile is built, and the filter measured on it.
+    pg.evaluate("""()=>{ store.retakenQuestions = 0; store.unitGameBeat = {}; showCustomize('character');
+      /* its real drawing, as a locked non-cut-out tile is drawn (build 325) */
+      const o = [...document.querySelectorAll('.avatarchar-option')].find(e => /mask/i.test(e.title || ''));
+      if(o && o.classList.contains('is-silhouette')){ o.querySelectorAll('.char-sil, .char-flip-play').forEach(n => n.remove());
+        o.classList.remove('is-silhouette', 'is-sil-challenge', 'char-flip', 'char-live'); o.insertBefore(buildAvatarCharSVG('masked'), o.firstChild); } }""")
     pg.wait_for_timeout(900)
     # WAIT FOR THE SCREEN TO FINISH ARRIVING, not for a fixed 900ms. The
     # capture below reads pixels, and a busy machine could still be

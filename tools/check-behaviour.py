@@ -11142,7 +11142,10 @@ def check_b314_chars(br):
           const playing = o => { const img = o.querySelector('.char-flip-play img'); return !!img && img.getAnimations().some(a => a.playState === 'running'); };
           out.nearHeld = held.filter(near).length; out.nearPlaying = held.filter(near).filter(playing).length;
           /* a silhouette scrolled into view plays too */
-          const sil = opts.find(o => o.classList.contains('is-silhouette'));
+          /* the SECRET's (build 325: challenge and ultimate characters are
+             cut-outs too, each in its category's own colour - see check-b325-d;
+             "no colour" is the secret flare cut-out's rule) */
+          const sil = opts.find(o => o.classList.contains('is-sil-secret')) || opts.find(o => o.classList.contains('is-silhouette'));
           sil.scrollIntoView({ block: 'center', behavior: 'instant' });
           for(let t = 0; t < 400; t++){ if(sil.querySelector('.char-flip-play img')) break; await wait(250); }
           out.silPlaying = playing(sil);
@@ -13891,15 +13894,18 @@ def check_b317_silhouettes(br):
           store.mysteryColorsFound = {}; document.querySelectorAll('.app-banner, #pushing-update, #intro-pop, .daily-alert').forEach(n => n.remove());
           showCustomize('character'); await wait(800);
           document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot').forEach(x => x.remove());
-          const s = document.querySelector('.avatarchar-option.is-silhouette');
+          /* build 325: challenge and ultimate characters are cut-outs too,
+             each in its own look (check-b325-d holds those); this is the
+             four SECRETS' rule */
+          const s = document.querySelector('.avatarchar-option.is-sil-secret') || document.querySelector('.avatarchar-option.is-silhouette');
           if(s) s.scrollIntoView({ block: 'center', behavior: 'instant' }); }""")
         for _ in range(60):
-            n = pg.evaluate("() => [...document.querySelectorAll('.avatarchar-option.is-silhouette')].map(o => !!o.querySelector('.char-flip-play img') || !o.classList.contains('char-flip'))")
+            n = pg.evaluate("() => [...document.querySelectorAll(document.querySelector('.is-sil-secret') ? '.avatarchar-option.is-sil-secret' : '.avatarchar-option.is-silhouette')].map(o => !!o.querySelector('.char-flip-play img') || !o.classList.contains('char-flip'))")
             if n and all(n):
                 break
             pg.wait_for_timeout(500)
         pg.wait_for_timeout(400)
-        tiles = pg.evaluate("""() => [...document.querySelectorAll('.avatarchar-option.is-silhouette')].map(o => {
+        tiles = pg.evaluate("""() => [...document.querySelectorAll(document.querySelector('.is-sil-secret') ? '.avatarchar-option.is-sil-secret' : '.avatarchar-option.is-silhouette')].map(o => {
           const b = o.getBoundingClientRect(); return { id: (o.title || ''), box: [b.left, b.top, b.width, b.height],
             flip: !!o.querySelector('.char-flip-play img') }; })""")
         shot = _Im.open(_io.BytesIO(pg.screenshot())).convert("RGB")
@@ -22045,7 +22051,10 @@ B320F_SKIP = """async () => {
     for(let i = 0; i < 40 && !document.getElementById('nova-intro'); i++) await wait(100);
     const ni = document.getElementById('nova-intro');
     out.intro = !!ni;
-    if(ni){ await wait(800); ni.querySelector('.nt-skip').click(); }
+    /* MOVED IN 325 (b325d): no Skip button on the introduction; the
+       tools' fast-forward still goes straight to the tooltips */
+    out.introSkipBtn = !!(ni && ni.querySelector('.nt-skip'));
+    if(ni){ await wait(800); ni.__nova.skip(); }
     for(let i = 0; i < 30 && !document.getElementById('tour-tooltip'); i++) await wait(100);
     out.tourAfterSkip = !!document.getElementById('tour-tooltip') && !document.getElementById('nova-intro');
     /* Customize never offers him */
@@ -22080,7 +22089,9 @@ def check_b320f_nova(br):
         r = pg.evaluate(B320F_NEW)
         lines = " ".join(r.get("introLines") or [])
         check("%s new account: Nova's introduction comes before any tooltip" % dev, r.get("order") == ["nova"] and r.get("hasNova"), {k: r.get(k) for k in ("order", "hasNova", "err")})
-        check("%s his bubble and Nova are on screen, with Skip and the progress dots" % dev, r.get("inView") and r.get("skip") and (r.get("dots") or 0) >= 6, {k: r.get(k) for k in ("inView", "skip", "dots")})
+        # MOVED IN 325 (b325d): "Remove the skip button during this, I need
+        # them to see it" - no Skip on his introduction now
+        check("%s his bubble and Nova are on screen, with the progress dots and no Skip" % dev, r.get("inView") and not r.get("skip") and (r.get("dots") or 0) >= 6, {k: r.get(k) for k in ("inView", "skip", "dots")})
         t = r.get("tap") or {}
         check("%s a tap finishes the line, the next tap moves on" % dev,
               t.get("typing0") and t.get("restBefore", 0) > 0 and t.get("idx1") == t.get("idx0") and t.get("restAfter") == 0 and t.get("idx2") == t.get("idx0", 0) + 1, t)
@@ -22105,7 +22116,8 @@ def check_b320f_nova(br):
               "Madison" in txt and "Nova" in txt and (r.get("rank") or "?") in txt and "found 3 of my lost badges" in txt and r.get("rank") == "Gold" and r.get("badges") == 3,
               {"rank": r.get("rank"), "badges": r.get("badges"), "head": (r.get("lines") or [])[:4]})
         check("%s the card is built as he talks, and ends on Got it" % dev,
-              (r.get("rows") or 0) >= 9 and "3 of %s badges found" % r.get("units") in (r.get("me") or "") and r.get("go") and "speak with you again" in txt,
+              # MOVED IN 325 (b325d): no badge total ("they will be more")
+              (r.get("rows") or 0) >= 9 and "3 badges found" in (r.get("me") or "") and r.get("go") and "speak with you again" in txt,
               {k: r.get(k) for k in ("rows", "me", "go")})
         check("%s once: marked seen and not shown again" % dev, r.get("closed") and r.get("seen") and not r.get("again"), {k: r.get(k) for k in ("closed", "seen", "again")})
         ctx.close()
@@ -22117,7 +22129,7 @@ def check_b320f_nova(br):
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate(B320F_SKIP)
     check("Skip on What's New keeps the news: every row on the card, his last line", r.get("open") and r.get("atEnd") and r.get("rows") == r.get("want") and r.get("want", 0) > 0, r)
-    check("Skip on the introduction goes straight to the tooltips", r.get("intro") and r.get("tourAfterSkip"), r)
+    check("the introduction has no Skip (325), and fast-forwarding it goes straight to the tooltips", r.get("intro") and not r.get("introSkipBtn") and r.get("tourAfterSkip"), r)
     check("Nova is not a character: not in the list, not in Customize", r.get("inChars") is False and r.get("inPicker") is False and (r.get("pickerHasChars") or 0) > 0, r)
     ctx.close()
 
@@ -22132,6 +22144,8 @@ B321G_TALK = """async (id) => {
   if(!el || !el.__nova) return { open: false, lines: [] };
   const nv = el.__nova, out = { open: true, lines: [], label: el.getAttribute('aria-label') };
   await wait(700);
+  /* build 325: an existing account's introduction opens on a signal first */
+  for(let i = 0; i < 50 && nv.index < 0; i++) await wait(100);
   for(let i = 0; i < 120 && el.isConnected; i++){
     const t = el.querySelector('.nt-text').textContent;
     if(out.lines[out.lines.length - 1] !== t) out.lines.push(t);
@@ -22200,8 +22214,11 @@ def check_b321g_nova(br):
     allt = " | ".join(r.get("all") or [])
     bad = re.findall(r".{30}(?:made (?:this|the) app|app[’']?s? maker|app maker|I made|I built).{20}", allt, re.I)
     check("no line of Nova's, nor the release notes, says he made the app", bool(r.get("all")) and not bad, bad[:3] or r.get("err"))
-    lore = [t for t in (r.get("intro") or []) if re.search(r"missing", t, re.I) and re.search(r"character", t, re.I) and re.search(r"crew", t, re.I) and re.search(r"found", t, re.I)]
-    check("the introduction says the people aboard went missing and the characters are them, found", bool(lore), (r.get("intro") or [])[:5])
+    # MOVED IN 325 (b325d): the story told in order - his crew got away in
+    # pods and are the characters; the job is to bring them home
+    lore = [t for t in (r.get("intro") or []) if re.search(r"character", t, re.I) and re.search(r"crew", t, re.I)]
+    home = [t for t in (r.get("intro") or []) if re.search(r"crew home", t, re.I)]
+    check("the introduction says his crew are the characters, and the job is to bring them home", bool(lore) and bool(home), (r.get("intro") or [])[:5])
     m = pg.evaluate("""() => { const a = { novaMet: 0 }; try{ mergeSameAccount(a, { novaMet: 1 }); }catch(e){}
       const b = { novaMet: 1 }; try{ mergeSameAccount(b, {}); }catch(e){}
       const keep = JSON.parse(JSON.stringify(store)); let def = null;
@@ -22226,7 +22243,10 @@ def check_b321g_nova(br):
     check("existing account: Nova's introduction opens on Home (not What's New first)", intro.get("open") and (pg.evaluate("()=>window.__seen") or [""])[0].startswith("nova-intro"),
           pg.evaluate("()=>window.__seen"))
     check("he greets them by username and tells the whole story, the crew included",
-          "Madison" in it and "wrecked my ship" in it and "missing" in it and "Supernova" in it and "Drill" in it, (intro.get("lines") or [])[:4])
+          # (325: an existing account with a rank hears how many flares it
+          # has relit rather than "Bronze to Supernova"; it hears the
+          # Virtual Room instead - "It doesn't mention virtual room")
+          "Madison" in it and "tore through my ship" in it and "missing" in it and "Virtual Room" in it and "Drill" in it, (intro.get("lines") or [])[:4])
     check("at the end he goes over what they have: rank, level, badges, characters and secret flares found",
           "Gold" in it and "level 49" in it and "found 3 of my lost badges" in it and "of my missing crew" in it and "one of my secret flares" in it
           and re.search(r"\d+ of \d+ characters found", intro.get("stage") or "") and "1 of 3 secret flares found" in (intro.get("stage") or ""),
@@ -22237,10 +22257,14 @@ def check_b321g_nova(br):
           news.get("open") and "Hello" not in (news.get("lines") or [""])[0] and "version 9" in nt and news.get("go") == "Show me",
           {"head": (news.get("lines") or [])[:2], "go": news.get("go")})
     tips = pg.evaluate(B321G_TOUR)
-    want = pg.evaluate("()=>{ try{ return mainMenuTourSteps(true).length + NOVA_NEW_TIPS_321.length; }catch(e){ return -1; } }")
+    # MOVED IN 325 (b325d): "all the walk through stuff on the main menu can
+    # be removed, only the ones with the 'new' at the beginning ... it
+    # doesn't need to say new though"
+    want = pg.evaluate("()=>{ try{ return NOVA_NEW_TIPS_321.length; }catch(e){ return -1; } }")
     tj = " | ".join(tips)
-    check("then the main menu's tooltips and the new ones (the planet, the new Profile, the calendar), every one",
-          want > 7 and len(tips) == want and "Home always brings you back" in tj and "planet" in tj and "calendar" in tips[-1].lower() and "Profile has been rebuilt" in tj,
+    check("then the new tooltips alone (the planet, the new Profile, the calendar), none starting 'New'",
+          want == 3 and len(tips) == want and "Home always brings you back" not in tj and "planet" in tj and "calendar" in tips[-1].lower() and "Profile has been rebuilt" in tj
+          and not any(t.lower().startswith("new") for t in tips),
           {"n": len(tips), "want": want, "first": tips[:1], "last": tips[-3:]})
     bye = pg.evaluate(B321G_TALK, "nova-intro")
     check("then he says goodbye, and that he'll speak again", bye.get("open") and "speak with you again" in " ".join(bye.get("lines") or []) and "Madison" in " ".join(bye.get("lines") or []),
@@ -22313,9 +22337,10 @@ def check_b321g_nova(br):
       delete store.novaMet; saveStore(); localStorage.removeItem('class26e.intro.seen'); showHome();
       for(let i = 0; i < 50 && !document.getElementById('nova-intro'); i++) await wait(100);
       const el = document.getElementById('nova-intro'); if(!el) return { open: false };
-      await wait(900); el.querySelector('.nt-skip').click(); await wait(300);
-      return { open: true, text: el.querySelector('.nt-text').textContent, card: !!el.querySelector('.nt-recap'), still: !!document.getElementById('nova-intro') }; }""")
-    check("Skip on an existing account's introduction goes to the recap of what they have", r.get("open") and r.get("still") and r.get("card") and "how you’re doing" in (r.get("text") or ""), r)
+      await wait(3200); const btn = !!el.querySelector('.nt-skip'); el.__nova.skip(); await wait(300);
+      return { open: true, btn, text: el.querySelector('.nt-text').textContent, card: !!el.querySelector('.nt-recap'), still: !!document.getElementById('nova-intro') }; }""")
+    # MOVED IN 325 (b325d): no Skip button; the tools' fast-forward still lands on the recap
+    check("no Skip on an existing account's introduction; fast-forwarding goes to the recap of what they have", r.get("open") and not r.get("btn") and r.get("still") and r.get("card") and "how you’re doing" in (r.get("text") or ""), r)
     ctx.close()
 
     # A new account: as it was.
