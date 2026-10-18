@@ -1766,7 +1766,15 @@
   .nt-prop.is-in{ opacity:1; transform:none; }
   /* made ahead (build 326): laid out under the slide that is up, unseen
      and untouchable, until his line comes */
-  .nt-prop.is-prepped{ z-index:-1; opacity:0; transition:none; }
+  .nt-prop.is-prepped{ z-index:-1; opacity:.002; transform:none; transition:none; }
+  /* NOT QUITE ZERO, ON PURPOSE: a layer at opacity 0 is neither painted nor
+     rasterised, so a slide made ahead at 0 still cost its whole first paint
+     in the frame it appeared - measured, the badge parade landed ~.5s after
+     the tap on a loaded machine. At .002 (under half a level of light, on
+     his sky) it is painted and rasterised while the line before is said,
+     at the size and place it will be shown (no scale on the way in), and
+     its rows are already there to slide. */
+  .nt-prop.is-prepped .nt-parade-row{ opacity:.002; }
   .nt-prop.is-out{ opacity:0; transform:translateY(-8px) scale(.98); transition:opacity .25s ease, transform .3s ease; }
   .nt-hello{ margin:0; font-family:var(--serif); font-size:3rem; font-weight:800; letter-spacing:.06em; line-height:1.1;
     background:linear-gradient(90deg, #FFD37A, #F5804D 55%, #C23B7A); -webkit-background-clip:text; background-clip:text; color:transparent; }
@@ -1882,7 +1890,8 @@
     box-shadow:inset 0 1px 0 rgba(255,255,255,.08); opacity:0; }
   .nt-prop.is-in :is(.nt-kind, .nt-modes .nt-mode){ animation:nt-cardup .55s cubic-bezier(.25,1.3,.4,1) both; animation-delay:calc(.1s + var(--i, 0) * 90ms); }
   [data-reduce-motion="true"] :is(.nt-kind, .nt-modes .nt-mode){ opacity:1; animation:none !important; }
-  @keyframes nt-cardup{ from{ opacity:0; transform:translateY(12px) scale(.96); } to{ opacity:1; transform:none; } }
+  @keyframes nt-cardup{ from{ opacity:.002; transform:translateY(12px) scale(.96); } to{ opacity:1; transform:none; } }
+  .nt-prop.is-prepped :is(.nt-kind, .nt-modes .nt-mode, .nt-flair-item){ opacity:.002; }
   .nt-kind-ic, .nt-mode-ic{ display:block; width:2.4rem; height:2.4rem; margin-bottom:.35rem; color:var(--kc); flex:0 0 auto; }
   .nt-kind-ic svg, .nt-mode-ic svg{ width:100%; height:100%; display:block; }
   .nt-kind-name, .nt-mode-t b{ display:block; font-size:1.02rem; font-weight:800; color:#F3F5F7; line-height:1.2; }
