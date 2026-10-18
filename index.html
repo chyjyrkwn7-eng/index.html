@@ -77524,20 +77524,20 @@ function novaIntroLines(o){
       : "A flare only lights again for someone who has earned it. Every rank you reach lights one, from Bronze all the way to Supernova.",
     enter: ctx => novaProp(ctx, novaStack(novaRankRow(), novaCap("A flare for every rank"))) });
   lines.push({ text: "I had a few secret flares aboard as well. They were thrown further than the rest, into your tests, so keep your eyes open." });
-  /* build 326: the slides from here on are made ahead (novaSlide) */
-  lines.push(Object.assign({ text: "My badges were scattered too, one into every unit you study. Master a unit and you’ll find its badge." },
-    novaSlide("badges", () => novaStack(novaBadgeParade(), novaCap(existing && st.badges > 0 ? st.badges + (st.badges === 1 ? " badge" : " badges") + " found so far" : "Every unit has its own badge")))));
-  lines.push(Object.assign({ gesture: "raise", text: "My crew got away in escape pods, but they landed all over this system. They’re the characters in this app." },
-    novaSlide("crew", () => novaStack(novaCrewParade(), novaCap(crew.have + " of " + crew.total + " characters found")))));
-  lines.push(Object.assign({ text: "Each one comes home a different way: some with a rank, most with a challenge, a few behind a secret flare, and the ultimate ones last of all." },
-    novaSlide("kinds", () => novaStack(novaCrewKinds(), novaCap("How my crew comes home")))));
+  lines.push({ text: "My badges were scattered too, one into every unit you study. Master a unit and you’ll find its badge.",
+    /* build 326: this slide and the four after it are made ahead (novaSlide) */
+    ...novaSlide("badges", () => novaStack(novaBadgeParade(), novaCap(existing && st.badges > 0 ? st.badges + (st.badges === 1 ? " badge" : " badges") + " found so far" : "Every unit has its own badge"))) });
+  lines.push({ gesture: "raise", text: "My crew got away in escape pods, but they landed all over this system. They’re the characters in this app.",
+    ...novaSlide("crew", () => novaStack(novaCrewParade(), novaCap(crew.have + " of " + crew.total + " characters found"))) });
+  lines.push({ text: "Each one comes home a different way: some with a rank, most with a challenge, a few behind a secret flare, and the ultimate ones last of all.",
+    ...novaSlide("kinds", () => novaStack(novaCrewKinds(), novaCap("How my crew comes home"))) });
   /* BANNERS AND HUNDO EFFECTS (build 326) - after the crew, as asked */
-  lines.push(Object.assign({ gesture: "raise", text: "As thanks, I’ll hand you things along the way: banners for your profile, and effects that play when you score a hundo. You earn them by studying, and they’re all in Customize, on your Profile." },
-    novaSlide("flair", () => novaStack(novaWarmTake("flair") || novaFlairProp(), novaCap("Yours to wear · Customize")))));
+  lines.push({ gesture: "raise", text: "As thanks, I’ll hand you things along the way: banners for your profile, and effects that play when you score a hundo. You earn them by studying, and they’re all in Customize, on your Profile.",
+    ...novaSlide("flair", () => novaStack(novaWarmTake("flair") || novaFlairProp(), novaCap("Yours to wear · Customize"))) });
   lines.push({ gesture: "raise", text: "You’ll do all of it by studying. Every question you get right earns XP, XP raises your level, and your level and badges decide your rank.",
     enter: ctx => novaProp(ctx, novaXpBar()) });
-  lines.push(Object.assign({ text: "Drill to learn a unit, the Qualifier to prove you’re ready, and Review to go over the material first. Or take any of them into a Virtual Room." },
-    novaSlide("modes", () => novaModeRow())));
+  lines.push({ text: "Drill to learn a unit, the Qualifier to prove you’re ready, and Review to go over the material first. Or take any of them into a Virtual Room.",
+    ...novaSlide("modes", () => novaModeRow()) });
   lines.push({ gesture: "raise", text: "You don’t have to do it alone, either. In a Virtual Room you can race your classmates, and you can challenge me there too.",
     enter: ctx => novaProp(ctx, novaVroomProp()) });
   /* ---- AND HE BECOMES YOUR FRIEND, PARTWAY THROUGH (build 324) ----
@@ -90654,7 +90654,9 @@ function homeTapCopyPlanet(n){
   const lit = TIER_ORDER_FULL.filter(t => tierColorUnlocked(t)).length;
   const found = keys.filter(k => f[k]).length;
   return { kind: "planet", name: "Your flares", state: "", color: "",
-    parts: [lit + " of " + TIER_ORDER_FULL.length + " rank flares lit,", found + " of " + keys.length + " secret flares found."] };
+    /* no total for the secret flares (build 326): more of them come into
+       view as you find them, so "of 3" was never the whole of it */
+    parts: [lit + " of " + TIER_ORDER_FULL.length + " rank flares lit,", found ? found + (found === 1 ? " secret flare found." : " secret flares found.") : "no secret flares found yet."] };
 }
 
 /* ---- THE CAPTION ----

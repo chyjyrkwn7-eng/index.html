@@ -17143,11 +17143,9 @@ def check_b317_hometaps(br):
               and (UF.get("text") or "").startswith("They say this one") and ((UF.get("title") or {}).get("chroma") or 99) <= 24
               and UF.get("shake", 0) >= 1 and UF.get("dim") and UF.get("sparks") == 0 and UF.get("press") == 0, UF)
         check(dev + ": the planet keeps its touch (press, ripple, halo, rings, both flare rings surge, no filter) and counts your flares under \"Your flares\" in the theme's colour",
-              # MOVED IN 326 (b326d): Home draws every secret flare now ("If the
-              # main menu needs to now show every single secret flare not lit up
-              # ... let's do that"), so the count is of all of them, not Void's three
-              PL.get("kind") == "is-planet" and PL.get("name") == "Your flares"
-              and bool(re.fullmatch(r"3 of 7 rank flares lit, 2 of ([4-9]|\d\d) secret flares found\.", PL.get("text") or ""))
+              # MOVED IN 326 (b326e): no total for the secret flares - more
+              # come into view as you find them ("it says there's only 3")
+              PL.get("kind") == "is-planet" and PL.get("name") == "Your flares" and PL.get("text") == "3 of 7 rank flares lit, 2 secret flares found."
               and ((PL.get("title") or {}).get("dist") if (PL.get("title") or {}).get("dist") is not None else 99) <= 10
               and PL.get("fxMoving", 0) >= 4 and PL.get("fxFiltered") == 0 and len(PL.get("surge") or []) == 2 and all(n >= 1 for n in PL.get("surge") or [0]), PL)
         check(dev + ": tapped again it says what is next, and the first ripple is still running beside the second",
