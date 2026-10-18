@@ -77472,6 +77472,17 @@ function rankCutHandoff(overlay, stageWrap, heroBefore, tierKey, ghost){
     stageWrap.style.transformOrigin = "50% 50%";
     stageWrap.style.transform = "translate(" + tx.toFixed(2) + "px, " + ty.toFixed(2) + "px) scale(" + k.toFixed(4) + ")";
     ghost.getAnimations().forEach(a => { try{ a.cancel(); }catch(e){} });
+    /* THE DRAW-BACK'S FILL, CANCELLED BY NAME (build 325). Its scale(.84)
+       had FINISHED by now, and a finished animation is not in
+       getAnimations() - but its fill:forwards still wins over the inline
+       transform set just below. So the copy kept .84 of its own size
+       instead of the bubble's: on an iPad (a 220px stop box) it sat in the
+       planet system at 185px, 59px off the bubble's centre, the bubble's
+       rim cutting a gold stripe out of it - "the flare bubble changes in
+       the transition and doesn't look like the flare". On the iPhone .84
+       happened to be the bubble's own ratio, which is why it looked right
+       there and why the 2px check passed. */
+    if(ghost.__ruDraw){ try{ ghost.__ruDraw.cancel(); }catch(e){} ghost.__ruDraw = null; }
     const w0 = ghost.offsetWidth || g.width;
     Object.assign(ghost.style, { left: "0px", top: "0px", transform: "scale(" + (badge.offsetWidth / w0).toFixed(5) + ")" });
     /* moved into the bubble with its emblem's clock running on (build 321) */
@@ -119183,7 +119194,10 @@ async function rankUpHandOut(scene, stop){
   scene.hand = hand;
   let dark = null;
   try{
-    ghost.animate([{ transform: "scale(1)" }, { transform: "scale(" + RU_HAND_SCALE + ")" }],
+    /* kept on the element: once it has finished, Chromium's
+       ghost.getAnimations() no longer lists it, yet its fill still holds
+       the transform - see rankCutHandoff */
+    ghost.__ruDraw = ghost.animate([{ transform: "scale(1)" }, { transform: "scale(" + RU_HAND_SCALE + ")" }],
       { duration: RU_HAND_MS, easing: "cubic-bezier(.45,0,.4,1)", fill: "forwards" });
     dark = veil.animate([{ opacity: 0 }, { opacity: 1 }], { duration: RU_VEIL_MS, delay: RU_HAND_MS - RU_VEIL_MS, easing: "ease-in-out", fill: "forwards" });
   }catch(e){ veil.style.opacity = "1"; }

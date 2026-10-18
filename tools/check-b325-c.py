@@ -533,31 +533,39 @@ def section_scene_flares(br):
 
 # --------------------------------------------------------------------------
 def section_handoff(br):
-    print("\nJ. from the road map, the flare goes into the planet system as the same lit flare")
-    ctx, pg = boot(br, *PHONE[1:])
-    pg.evaluate(cb.B319_RU_SEED, {})
-    pg.evaluate(cb.B319_RU_RUN, {})
-    pg.evaluate("()=>{ showHome(); }")
-    for i in range(80):
-        if pg.evaluate("()=>document.body.classList.contains('rankup-lock')"):
-            break
-        pg.evaluate("()=>{ const sp=document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); }")
-        pg.wait_for_timeout(150)
-    pg.evaluate("""()=>{ window.__hand = null; const orig = rankCutHandoff;
-      rankCutHandoff = function(ov, sw, hb, key, ghost){ const r = orig(ov, sw, hb, key, ghost);
-        const b = rankTierBadge(hb, key);
-        window.__hand = { took: r, key, lit: !!(b && b.classList.contains('cosmic-badge-lit')), glow: b ? b.style.getPropertyValue('--tier-glow') : null,
-                          inBubble: !!(b && ghost && b.contains(ghost)), want: flareColorOf(key) };
-        return r; }; }""")
-    pg.evaluate("()=>document.getElementById('bottomtab-profile').click()")
-    for i in range(1500):
-        if pg.evaluate("()=>!!window.__hand"):
-            break
-        pg.wait_for_timeout(50)
-    hnd = pg.evaluate("()=>window.__hand")
-    check("the copy of the road map's circle lands in the scene's bubble, and that bubble is already lit in the flare's own colour (not the unlit glass it turned into)",
-          bool(hnd) and hnd["took"] and hnd["inBubble"] and hnd["lit"] and hnd["glow"] == hnd["want"], hnd)
-    ctx.close()
+    print("\nJ. from the road map, the flare goes into the planet system as the same lit flare, the same size, in the same place")
+    for label, w, h in (PHONE, TABLET):
+        ctx, pg = boot(br, w, h)
+        pg.evaluate(cb.B319_RU_SEED, {})
+        pg.evaluate(cb.B319_RU_RUN, {})
+        pg.evaluate("()=>{ showHome(); }")
+        for i in range(80):
+            if pg.evaluate("()=>document.body.classList.contains('rankup-lock')"):
+                break
+            pg.evaluate("()=>{ const sp=document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); }")
+            pg.wait_for_timeout(150)
+        pg.evaluate("""()=>{ window.__hand = null; const orig = rankCutHandoff;
+          rankCutHandoff = function(ov, sw, hb, key, ghost){ const r = orig(ov, sw, hb, key, ghost);
+            const b = rankTierBadge(hb, key);
+            const R = e => { const q = e.getBoundingClientRect(); return [q.left + q.width / 2, q.top + q.height / 2, q.width]; };
+            const g = R(ghost), bb = b ? R(b) : null;
+            window.__hand = { took: r, key, lit: !!(b && b.classList.contains('cosmic-badge-lit')), glow: b ? b.style.getPropertyValue('--tier-glow') : null,
+                              inBubble: !!(b && ghost && b.contains(ghost)), want: flareColorOf(key),
+                              off: bb ? Math.round(Math.max(Math.abs(g[0] - bb[0]), Math.abs(g[1] - bb[1]), Math.abs(g[2] - bb[2])) * 10) / 10 : null,
+                              g: g.map(Math.round), b: bb && bb.map(Math.round) };
+            return r; }; }""")
+        pg.evaluate("()=>document.getElementById('bottomtab-profile').click()")
+        for i in range(1500):
+            if pg.evaluate("()=>!!window.__hand"):
+                break
+            pg.wait_for_timeout(50)
+        hnd = pg.evaluate("()=>window.__hand")
+        # the size is the iPad's: the draw-back's finished fill (scale .84)
+        # outlived getAnimations() and held a 220px copy at 185px, 59px off
+        # the 72px bubble (on the iPhone .84 happened to be the right ratio)
+        check("%s: the road map's circle lands in the scene's bubble - same centre and size within 2px - and that bubble is already lit in the flare's own colour (not the unlit glass it turned into)" % label,
+              bool(hnd) and hnd["took"] and hnd["inBubble"] and hnd["lit"] and hnd["glow"] == hnd["want"] and hnd["off"] is not None and hnd["off"] <= 2, hnd)
+        ctx.close()
 
 
 def main():
