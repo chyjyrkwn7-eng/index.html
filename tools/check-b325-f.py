@@ -226,9 +226,16 @@ def check_press(br):
         check("%s: the lens is a capsule wider than it is tall (1.12-1.6 : 1; the reference's 1.4), ~1.27x the bar's height (1.15-1.4)" % label,
               shown(d) and 1.12 <= d["w"] / d["h"] <= 1.6 and 1.15 <= d["h"] / bar0["h"] <= 1.4,
               {"w/h": round(d["w"] / max(1, d["h"]), 3), "h/bar": round(d["h"] / bar0["h"], 3)})
-        check("%s: the bar swells while it is held (x1.06-1.11 wide, x1.02-1.07 tall; the reference: 1.084 x 1.043), about its centre" % label,
-              1.06 <= d["barW"] / bar0["w"] <= 1.11 and 1.02 <= d["barH"] / bar0["h"] <= 1.07 and abs(d["barCx"] - bc0) <= 1,
-              {"w": round(d["barW"] / bar0["w"], 4), "h": round(d["barH"] / bar0["h"], 4)})
+        # what sits level with the bar beside it (a tablet's "?" and version label)
+        side = pg.evaluate("""(b) => { let room = Infinity; document.querySelectorAll('.daily-question-fab, .homeversion-btn').forEach(el => {
+            const r = el.getBoundingClientRect(); if(!r.width || r.bottom < b[0] || r.top > b[1]) return;
+            room = Math.min(room, r.left >= b[2] ? r.left - b[3] : b[4] - r.right); }); return isFinite(room) ? room : null; }""",
+            [bar0["t"], bar0["b"], bc0, d["barCx"] + d["barW"] / 2, d["barCx"] - d["barW"] / 2])
+        wide = d["barW"] / bar0["w"]
+        check("%s: the bar swells while it is held (the reference: 1.084 x 1.043; x1.06-1.11 wide where there is room), about its centre, never into what sits beside it (3px+)" % label,
+              1.02 <= wide <= 1.11 and (wide >= 1.06 or (side is not None and side <= 12)) and (side is None or side >= 3)
+              and 1.02 <= d["barH"] / bar0["h"] <= 1.07 and abs(d["barCx"] - bc0) <= 1,
+              {"w": round(wide, 4), "h": round(d["barH"] / bar0["h"], 4), "room left beside it": None if side is None else round(side, 1)})
         check("%s: what is under the lens is drawn 1.18-1.3x (the reference: 1.23)" % label,
               1.18 <= icon / icon0 <= 1.3, round(icon / icon0, 3))
         drawn = [c for c in caps if c["layers"]]
@@ -340,8 +347,8 @@ def check_drag(br):
         check("%s: it turns grey while it is still shrinking (the grey coat over half while the lens is 4px+ taller than the platter), as the reference does (b0166-b0169)" % label,
               len(greyBig) >= 2, {"frames": greyBig, "held h": round(before["h"])})
         gone = next((f["ms"] for f in rel if not shown(f) and f["slOp"] > .95), None)
-        check("%s: and, let go at rest over its tab, it is the platter again within 250ms (the reference, at rest over Settings: 133ms, b0328-b0332)" % label,
-              gone is not None and gone <= 250, gone)
+        check("%s: and it is the grey platter again within 380ms of letting go (the reference: ~300ms, b0161-b0170)" % label,
+              gone is not None and gone <= 380 and .08 <= s["fillWhite"] <= .16, {"ms": gone, "fill": s["fillWhite"]})
         ctx.close()
 
 
@@ -369,7 +376,8 @@ def check_tap(br):
         sc = lambda f, x: f["barCx"] + (x - bc0) * f["barW"] / g0["bar"]["w"]
         swell = max([f["barW"] for f in rec] or [0]) / g0["bar"]["w"]
         check("%s: the tap lifts the lens over the bar's edges and glides it from Leaderboard to Calendar, the bar swelling under it (>=3%%)" % label,
-              bool(up) and max(f["h"] for f in up) > g0["bar"]["h"] + 8 and abs(up[0]["cx"] - sc(up[0], lb)) < 8
+              # (a tap's lens stands only a little proud: b0326, ~1.1x the bar)
+              bool(up) and max(f["h"] for f in up) > g0["bar"]["h"] + 4 and abs(up[0]["cx"] - sc(up[0], lb)) < 8
               and any(sc(f, lb) + 10 < f["cx"] < sc(f, cal) - 10 for f in up) and swell >= 1.03,
               {"n": len(up), "maxH": round(max([f["h"] for f in up] or [0])), "xs": [round(f["cx"]) for f in up][:12], "swell": round(swell, 3)})
         gone = next((f["ms"] for f in rec if f["ms"] > 40 and not shown(f) and f["slOp"] > .95), None)
