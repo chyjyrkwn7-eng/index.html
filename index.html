@@ -12839,6 +12839,105 @@
     -webkit-mask-size:100% 100%; mask-size:100% 100%; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; }
   @media (prefers-reduced-motion:reduce){ .cosmic-scar, .cosmic-scar *, .cosmic-scar *::before{ animation:none !important; } }
   [data-reduce-motion="true"] .cosmic-scar *, [data-reduce-motion="true"] .cosmic-scar *::before{ animation:none !important; }
+  /* ---- HIS LIGHT GETTING OUT (build 326) ----
+     Madison: "I don't really like the supernova crack how it is ... there
+     was a point where the supernova main menu crack animation was cool, it
+     looked like there was a large large crack and you could see the stuff
+     from the crack being sucked into the rings rotation kinda." Build 317's
+     planet round had it: a burning fissure with fragments rising off it
+     and debris riding the rings. Build 325 made the mark a crack ("less
+     burn mark and more crack like") with a faint light in it, and the
+     fragments stopped going anywhere. Now, in the story's terms - the
+     crack is the planet waking into a star, his light leaking out:
+     - THE SEAM (.csc-seam, scarSeam): the crack's own paths drawn as light
+       down the middle of it - a warm halo, a gold glow and a near-white
+       core, tapering from the impact to hairlines, each breathing on its
+       own clock. Screen-blended, so it is light added to whatever planet
+       colour the theme gives it, and the dark walls of the (wider, 326)
+       crack stay either side of it.
+     - THE MOTES (.csc-motes, scarMotes): light, and now and then a dark
+       chip, leaves the crack and is drawn out into the rings' turn - each
+       starts ON the crack, rises off the planet mostly straight out, spirals
+       outwards and lands on a ring, then runs along it in the rings'
+       direction (clockwise), faster than the ring itself, and fades. Three
+       nested boxes so it is all transform and opacity: the outer turns
+       about the planet's middle (the angle), the middle slides out from it
+       (the radius - % of its own height, which is the hero's), the inner is
+       the mote (its look, its streak turning from radial to along the
+       ring). Invisible at both ends of every loop.
+     Nothing moves under either Reduce motion (the motes are not shown);
+     hidden in a rank cutscene unless the planet is .csc-live. */
+  .csc-seam{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; mix-blend-mode:screen; }
+  .csc-seam path{ fill:none; stroke-linecap:round; stroke-linejoin:round; }
+  .csc-seam .csc-sm-spill{ stroke:#FF8A3A; opacity:.13; }
+  .csc-seam .csc-sm-halo{ stroke:#FF9E4A; opacity:.42; }
+  .csc-seam .csc-sm-glow{ stroke:#FFC977; opacity:.72; }
+  .csc-seam .csc-sm-core{ stroke:#FFF6E4; opacity:.95; }
+  @media (prefers-reduced-motion:no-preference){
+    .csc-seam .csc-sm-halo{ animation:csc-sm-breathe 4.7s ease-in-out infinite alternate; }
+    .csc-seam .csc-sm-glow{ animation:csc-sm-breathe2 3.3s ease-in-out -1.2s infinite alternate; }
+  }
+  @keyframes csc-sm-breathe{ from{ opacity:.26; } to{ opacity:.5; } }
+  @keyframes csc-sm-breathe2{ from{ opacity:.55; } to{ opacity:.85; } }
+  /* drawn on (build 326): the crack forming in the Supernova cutscene and
+     the fracture in its swell - each run of the seam from its own arrival,
+     at the forming's pace, so the light runs out of the impact; the hot
+     white core runs with it and cools away behind */
+  .csc-seam.is-forming path{ stroke-dasharray:1 1; stroke-dashoffset:1; }
+  .csc-seam.is-forming.is-drawing path{ animation:csc-sm-draw calc((var(--a1) - var(--a0)) * var(--fd, 3000ms)) linear calc(var(--a0) * var(--fd, 3000ms)) forwards; }
+  @keyframes csc-sm-draw{ from{ stroke-dashoffset:1; } to{ stroke-dashoffset:0; } }
+  .csc-seam .csc-sm-hot{ stroke:#FFFFFF; opacity:0; }
+  .csc-seam.is-forming.is-drawing .csc-sm-hot{ animation:csc-sm-hot calc(var(--fd, 3000ms) + 2600ms) ease-out both; }
+  @keyframes csc-sm-hot{ 0%{ opacity:1; } 55%{ opacity:.9; } 100%{ opacity:0; } }
+  .csc-seam.is-forming.is-drawing .csc-sm-halo, .csc-seam.is-forming.is-drawing .csc-sm-spill{ animation:csc-sm-flare calc(var(--fd, 3000ms) + 2600ms) ease-out both; }
+  @keyframes csc-sm-flare{ 0%{ opacity:.9; } 60%{ opacity:.7; } 100%{ opacity:.38; } }
+  .csc-motes{ position:absolute; inset:0; pointer-events:none; z-index:1; }
+  .csc-motes > i, .csc-motes > i > b, .csc-motes > i > b > u{ position:absolute; display:block; pointer-events:none; text-decoration:none; }
+  .csc-motes > i{ inset:0; transform-origin:50% 47.368%; transform:rotate(var(--a0)); }
+  /* the radius: a box as tall as the hero whose foot is the planet's middle */
+  .csc-motes > i > b{ left:0; right:0; bottom:52.632%; height:100%; transform:translateY(calc(var(--r1) * -1%)); }
+  .csc-motes > i > b > u{ left:50%; bottom:0; width:var(--s); aspect-ratio:2.6; translate:-50% 50%; opacity:0; border-radius:50%;
+    background:radial-gradient(ellipse 50% 50% at 50% 50%, #FFFBF2 0 14%, rgba(255,226,170,.9) 30%, rgba(255,170,90,.42) 52%, rgba(255,140,60,0) 74%); }
+  .csc-motes > i.is-chip > b > u{ aspect-ratio:1; border-radius:0;
+    background:linear-gradient(140deg, #FFE3B0 0 9%, #8A5A3A 20%, #1C1210 42%, #070505 100%);
+    clip-path:polygon(38% 0, 70% 12%, 100% 52%, 70% 66%, 56% 100%, 26% 72%, 0 54%, 22% 26%); }
+  @media (prefers-reduced-motion:no-preference){
+    .csc-motes > i{ animation:csc-mote-turn var(--t) linear var(--d) infinite; }
+    .csc-motes > i > b{ animation:csc-mote-out var(--t) linear var(--d) infinite; }
+    .csc-motes > i > b > u{ animation:csc-mote-look var(--t) linear var(--d) infinite; }
+    .csc-motes > i.is-chip > b > u{ animation-name:csc-mote-chip; }
+    .csc-motes.is-fresh > i, .csc-motes.is-fresh > i > b, .csc-motes.is-fresh > i > b > u{ animation-delay:var(--d2); }
+  }
+  @media (prefers-reduced-motion:reduce){ .csc-motes{ display:none; } }
+  [data-reduce-motion="true"] .csc-motes{ display:none; }
+  .tier-cutscene .cosmic-hero-wrap:not(.csc-live) .csc-motes{ display:none; }
+  @keyframes csc-mote-turn{
+    0%{ transform:rotate(var(--a0)); animation-timing-function:cubic-bezier(.5,0,.9,.6); }
+    24%{ transform:rotate(calc(var(--a0) + var(--da) * .06)); animation-timing-function:cubic-bezier(.3,.1,.7,.8); }
+    62%{ transform:rotate(calc(var(--a0) + var(--da) * .5)); animation-timing-function:linear; }
+    100%{ transform:rotate(calc(var(--a0) + var(--da))); }
+  }
+  @keyframes csc-mote-out{
+    0%{ transform:translateY(calc(var(--r0) * -1%)); animation-timing-function:cubic-bezier(.15,.6,.35,1); }
+    24%{ transform:translateY(calc(var(--rl) * -1%)); animation-timing-function:cubic-bezier(.45,.05,.4,1); }
+    62%{ transform:translateY(calc(var(--r1) * -1%)); }
+    100%{ transform:translateY(calc(var(--r1) * -1%)); }
+  }
+  @keyframes csc-mote-look{
+    0%{ opacity:0; transform:rotate(90deg) scale(.3); }
+    5%{ opacity:var(--o); transform:rotate(90deg) scale(1.15); }
+    24%{ opacity:var(--o); transform:rotate(80deg) scale(.9); }
+    62%{ opacity:calc(var(--o) * .9); transform:rotate(14deg) scale(.85); }
+    82%{ opacity:calc(var(--o) * .7); transform:rotate(0deg) scale(.95, .8); }
+    100%{ opacity:0; transform:rotate(0deg) scale(1.3, .4); }
+  }
+  @keyframes csc-mote-chip{
+    0%{ opacity:0; transform:rotate(0deg) scale(.4); }
+    6%{ opacity:.95; transform:rotate(60deg) scale(1); }
+    62%{ opacity:.9; transform:rotate(320deg) scale(.85); }
+    86%{ opacity:.7; transform:rotate(470deg) scale(.75); }
+    100%{ opacity:0; transform:rotate(540deg) scale(.6); }
+  }
   /* ---- WHAT PASSES THE SCAR (build 317, planet round; planet2) ----
      scarPassEffects. The scar is cold char since planet2, so it lights
      nothing; what it leaves is soot. The rings are sooted over a short arc
@@ -13513,6 +13612,16 @@
   .sn-fx{ position:absolute; pointer-events:none; z-index:3; }
   .sn-fx > *, .sn-debris > i{ position:absolute; pointer-events:none; }
   .sn-fx > :not(.sn-debris){ left:50%; top:50%; translate:-50% -50%; border-radius:50%; opacity:0; }
+  /* the fracture (build 326): the seam's drawing over the heat, swelling
+     with the planet, gone in the flash */
+  .sn-fx > svg.sn-fracture{ left:0; top:0; translate:none; width:100%; height:100%; border-radius:0; opacity:1; overflow:visible;
+    transform-origin:50% 50%; }
+  #supernova-cutscene.sn-swell .sn-fx > svg.sn-fracture{ scale:1.14; transition:scale var(--sn-swell, 1.8s) cubic-bezier(.55,0,.85,.35); }
+  .sn-fx > svg.sn-fracture.is-forming.is-drawing path{ animation-delay:calc(var(--f0, 0ms) + var(--a0) * var(--fd, 1000ms)); }
+  .sn-fx > svg.sn-fracture.is-drawing .csc-sm-hot{ animation:none; opacity:1; }
+  .sn-fx > svg.sn-fracture.is-drawing :is(.csc-sm-halo, .csc-sm-spill){ animation:none; opacity:.85; }
+  #supernova-cutscene.sn-detonate .sn-fx > svg.sn-fracture{ animation:sn-fracture-out .5s ease-out both; }
+  @keyframes sn-fracture-out{ 0%{ opacity:1; transform:scale(1); } 100%{ opacity:0; transform:scale(1.35); } }
   .sn-fx .sn-heat{ width:100%; height:100%;
     background:radial-gradient(circle, #FFFFFF 0 18%, #FFF1D2 34%, rgba(255,196,120,.82) 50%, rgba(255,120,60,.32) 63%, rgba(255,90,40,0) 74%); }
   /* ONE animation for the heat, the swell and the blow-out after it (the
@@ -17321,28 +17430,19 @@
   .pf-goal.ru-goal-pre.ru-goal-in .pf-rw{ transition:opacity .4s ease var(--ru-d, 0s), transform .55s cubic-bezier(.2,1.5,.4,1) var(--ru-d, 0s); }
   .pf-goal.ru-goal-pre .pf-rw{ transform:translateY(10px) scale(.7); }
   .pf-standing.ru-climbing .pf-xpbarwrap{ filter:drop-shadow(0 0 8px rgba(111,194,255,.55)); }
-  /* THE SAVED XP AS A POOL THAT EMPTIES (build 325). Madison: "since it's
-     extra xp, it should almost be subtracting, so you can see in realtime
-     all the xp going to work". While the climb runs, the right of the line
-     under the bar (the total, or "to Level N" on a phone) gives its place
-     to the pool: "Saved XP" and the number left, counting DOWN in the same
-     frame as the bar fills; every level the bar completes takes its XP out
-     as a "-N XP" that lifts off the pool towards the bar
-     (rankUpPoolTake). It ends on what is left - 0, or what is still saved
-     behind the next rank's level. Transform and opacity only, and DRIVEN
-     A FRAME AT A TIME (ruTween), not by CSS keyframes: a CSS animation
-     started on this busy screen sat pending ~400ms in Chromium before it
-     ran (the compositor start the ruClockSnap note measures), so the pool
-     came up late and every "-N XP" was gone before it had moved. */
-  .pf-standing.ru-pooling .pf-xpnums > :is(.pf-xp-total, .pf-xp-to){ display:none; }
-  .ru-pool{ position:relative; margin-left:auto; display:inline-flex; align-items:baseline; gap:.4rem; white-space:nowrap;
-    padding:.12rem .55rem; border-radius:999px; background:rgba(143,193,255,.12); box-shadow:inset 0 0 0 1px rgba(143,193,255,.34);
-    font-variant-numeric:tabular-nums; }
-  .ru-pool-lab{ font-size:.72em; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:rgba(207,230,255,.72); }
-  .ru-pool-num{ display:inline-block; font-weight:800; color:#CFE6FF; }
-  .ru-pool.is-empty .ru-pool-num{ color:rgba(207,230,255,.6); }
-  .ru-pool-chip{ position:absolute; right:.4rem; bottom:100%; font-weight:800; font-size:.86em; color:#8FC1FF; pointer-events:none;
+  /* THE EXTRA IS SPENT WHERE IT STANDS (build 326; build 325's "Saved XP"
+     pool is gone - "the 'saved up' xp thing is not the move"). The number
+     under the bar stays put and counts down level by level
+     (rankUpStandingClimb); each level's cost lifts off it as "-N XP"
+     (.ru-spend-chip, set over the number it came off) and the level's
+     completion is a short light at the end of the bar (.ru-spend-flash).
+     Both driven a frame at a time (ruTween), transform and opacity only. */
+  .pf-standing .pf-xpnums{ position:relative; }
+  .pf-standing.ru-spending .xpnums-have{ font-variant-numeric:tabular-nums; }
+  .ru-spend-chip{ position:absolute; bottom:100%; font-weight:800; font-size:.86em; color:#9FD0FF; pointer-events:none;
     white-space:nowrap; text-shadow:0 1px 6px rgba(20,60,140,.6); opacity:0; will-change:transform, opacity; }
+  .ru-spend-flash{ position:absolute; right:-.35rem; top:50%; width:1.6rem; height:1.6rem; margin-top:-.8rem; border-radius:50%;
+    pointer-events:none; opacity:0; background:radial-gradient(closest-side, rgba(225,242,255,.95), rgba(111,194,255,.45) 45%, rgba(111,194,255,0)); }
   .pf-level.ru-lvpop{ display:inline-block; animation:ru-lvpop .5s cubic-bezier(.2,1.5,.4,1) both; }
   @keyframes ru-lvpop{ 0%{ transform:scale(1); } 45%{ transform:scale(1.2); color:#BFE3FF; } 100%{ transform:scale(1); } }
   .xpnums.ru-climbnote{ color:#8FC1FF; font-weight:800; }
@@ -51856,7 +51956,11 @@ function applyLoadedData(got){
     ? Object.assign({ r: got.rankUpFrom.r, b: got.rankUpFrom.b, p: got.rankUpFrom.p },
         /* where the road map's light stood (build 320) - optional, an
            older build's record has none and falls back */
-        typeof got.rankUpFrom.d === "number" && isFinite(got.rankUpFrom.d) ? { d: Math.max(0, Math.min(1, got.rankUpFrom.d)) } : {}) : null;
+        typeof got.rankUpFrom.d === "number" && isFinite(got.rankUpFrom.d) ? { d: Math.max(0, Math.min(1, got.rankUpFrom.d)) } : {},
+        /* q (build 326): this record follows a journey that has just shown
+           the rank before it - another rank-up from the same test. Absent
+           on every record an older build wrote, which reads as before. */
+        got.rankUpFrom.q === 1 ? { q: 1 } : {}) : null;
   /* Build 235: which unlocks this account has been SHOWN. Null until
      ensureUnlocksShown() seeds it from what is already held, so an
      existing account is not met by a parade of things it has had for
@@ -56879,10 +56983,13 @@ function levelWallMigrate325(got, into){
      gateKey      the rank whose badges open the wall
      badgesToPass how many more badges that takes
      banked       XP earned since the bar filled */
-function levelStateOf(points, badges, floor, rankFloor){
+function levelStateOf(points, badges, floor, rankFloor, wallMax){
   const lp = levelProgress(points);
   const have = Math.max(0, Number(badges) || 0);
-  const wall = levelWallOf(have, floor, rankFloor);
+  /* wallMax (build 326): a lower wall for one rank-up journey of several -
+     the level the next rank still to be shown asks (rankUpSceneNumbers) */
+  let wall = levelWallOf(have, floor, rankFloor);
+  if(typeof wallMax === "number" && isFinite(wallMax) && wallMax < wall) wall = Math.max(1, Math.floor(wallMax));
   const out = Object.assign({}, lp, { curveLevel: lp.level, wall, badges: have, gateKey: null,
                                       held: false, stopped: false, badgesToPass: 0, banked: 0 });
   if(wall >= LEVEL_CAP || lp.level < wall) return out;
@@ -56916,6 +57023,7 @@ function levelStateFor(st){
   /* Profile drawn as it was before a rank-up (build 319): the level the
      old badges allowed, for that one build - see levelStateStandIn */
   if(st === store && levelStateStandIn) return levelStateStandIn;
+  if(st === store && rankUpView) return rankUpView.state;
   let p = st && st.lifetime ? Number(st.lifetime.points) || 0 : 0;
   /* the held level, only inside summarize()'s snapshot window after a
      merge - see mergeHidePoints */
@@ -64141,8 +64249,22 @@ var rankOfStandIn, rankOfStandInReal;
 /* ...and the level state it is drawn with (build 319): set beside
    rankOfStandIn by armRankUpProfileScene, cleared by the same microtask. */
 var levelStateStandIn;
+/* THE QUEUE'S VIEW (build 326): while a rank-up journey that has another
+   rank after it builds its road map and its Profile, the account is drawn
+   holding the rank this journey reaches, at the level it ends on
+   (rankUpViewRun) - so the rank after it is still to come, on the map and
+   on the card. Only for the length of those builds: nothing that runs
+   later (the rankings row, a save) ever sees it. */
+var rankUpView = null;
+function rankUpViewRun(scene, fn){
+  if(!scene || !scene.more || !scene.nums || !scene.nums.end) return fn();
+  const was = rankUpView;
+  rankUpView = { idx: scene.toIdx, state: scene.nums.end };
+  try{ return fn(); } finally { rankUpView = was; }
+}
 function rankOf(st){
   if(rankOfStandIn !== undefined && st === store) return rankOfStandIn;
+  if(rankUpView && st === store) return TIER_ORDER_FULL[rankUpView.idx] || null;
   const now = rankOfStats(levelOf(st), badgeCountOf(st),
                           st === store ? mysteryColorsFoundCount() : 0);
   /* NOBODY DROPS A RANK (build 314). The ladder moved to 21/30/40/50/60/
@@ -72910,6 +73032,10 @@ const SCAR_SHINE = { x: -.33, y: -.35, r: .36 };
    the crack into it) and spreading out from there. */
 function scarShineWound(g, N, gM, MQ, amt, Ar, arr0, clean){
   const AMT = amt == null ? 1 : amt;
+  /* FINE (build 326, clean === 2, Supernova's crack): crazing on the shine,
+     not a black web - thinner seams, warm and a little less dark, so the
+     shine reads as broken by the crack rather than as a tree drawn on it */
+  const FINE = clean === 2;
   /* clean (build 325): the plates and their seams only - no soot on them,
      no plate chipped out to char, no scorch past them: broken, not burnt */
   const CLEAN = !!clean;
@@ -72978,7 +73104,7 @@ function scarShineWound(g, N, gM, MQ, amt, Ar, arr0, clean){
     if(a2 < 0){ haloOnly(); continue; }
     const A = SD[a1], B = SD[a2], bx = B[0] - A[0], by = B[1] - A[1], bl = Math.hypot(bx, by) || 1;
     const e = (d2 - d1) / (2 * bl);                       /* distance to the seam */
-    const wid = (.0035 + .0085 * Math.max(0, 1 - r / RW)) * (.75 + .5 * nz(u * 9 + 1, v * 9 + 4));
+    const wid = (.0035 + .0085 * Math.max(0, 1 - r / RW)) * (.75 + .5 * nz(u * 9 + 1, v * 9 + 4)) * (FINE ? .78 : 1);
     /* seams thin out and break off towards the edge - only some reach it */
     const sk = ((a1 * 7919 + a2 * 104729) ^ (a2 * 7919 + a1 * 104729)) % 1000 / 1000;
     const reach = 1 - sm(Math.min(1, Math.max(0, (r / RW - (.42 + .5 * sk)) / .18)));
@@ -72996,7 +73122,8 @@ function scarShineWound(g, N, gM, MQ, amt, Ar, arr0, clean){
     else over(30 + 22 * nz(u * 12, v * 12), 20, 15, Math.min(.85, A[2] * mott * (.55 + .6 * Math.max(0, 1 - r / RW))) * fall);
     if(facing > .15) over(176, 171, 165, .26 * facing * (lipBand - crack) * reach * fall);
     else if(facing < -.15) over(10, 8, 8, .35 * -facing * (lipBand - crack) * reach * fall);
-    over(12, 10, 10, .93 * crack * reach * Math.pow(fall, 1.2));
+    if(FINE) over(40, 22, 14, .7 * crack * reach * Math.pow(fall, 1.2));
+    else over(12, 10, 10, .93 * crack * reach * Math.pow(fall, 1.2));
     dd[o] = R; dd[o + 1] = Gc; dd[o + 2] = Bc; dd[o + 3] = Math.round(al * 255);
   }
   tg.putImageData(im, 0, 0);
@@ -73060,6 +73187,8 @@ const CRACK_STAGES = [
    lost its scorch for the same reason, so every stage holds the one
    before it. The old scar's code is kept, switched by SCAR_CRACK_ONLY. */
 const SCAR_CRACK_ONLY = true, SCAR_CRACK_GLOW = .8;
+/* build 326: how much wider and deeper Supernova's crack is than the scar's network (see drawScarArt) */
+const SCAR_CRACK_WIDE = 1.9, SCAR_CRACK_DEEP = 1.4, SCAR_CRACK_WIDE_BRANCH = 1.15;
 const CRACK_TOP = CRACK_STAGES.length - 1;
 /* how far behind the crack's front it narrows to nothing */
 const CRACK_TAPER = .2;
@@ -73262,7 +73391,10 @@ function drawScarArt(stg){
     /* ...and the segments, as far as this stage reaches: narrowing to
        nothing over the last CRACK_TAPER behind the front */
     const SEGW = 14, SEG = [];
-    const KW = FULL ? 1 : ST.width, KD = FULL ? 1 : ST.depth, KH = FULL ? 1 : ST.burn;
+    /* (build 326) the crack-only Supernova is a LARGE crack: "it looked like
+       there was a large large crack" - wider and deeper than the scar's own */
+    const KWB = CK ? SCAR_CRACK_WIDE_BRANCH : Infinity;
+    const KW = FULL ? (CK ? SCAR_CRACK_WIDE : 1) : ST.width, KD = FULL ? (CK ? SCAR_CRACK_DEEP : 1) : ST.depth, KH = FULL ? 1 : ST.burn;
     const cut = a => FULL ? 1 : Math.pow(Math.max(0, Math.min(1, (REACH - a) / CRACK_TAPER)), .6);
     PATHS.forEach(rec => {
       rec.on = !((rec.only === "full" && (!FULL || CK)) || (rec.only === "low" && FULL && !CK) || (rec.only === "star" && !CK)) && rec.ar[0] < REACH;
@@ -73274,7 +73406,9 @@ function drawScarArt(stg){
       for(let k = 1; k < p.length; k++){
         if(ar[k - 1] >= REACH) break;
         const a = p[k - 1], b = p[k], ca = cut(ar[k - 1]), cb = cut(ar[k]);
-        SEG.push(a[0], a[1], b[0], b[1], W(a[2]) * KW * ca, W(b[2]) * KW * cb, D(a[2]) * KD * ca, D(b[2]) * KD * cb,
+        /* (build 326) the large crack is the ARMS: what branches off them grows a little */
+        const kw = kind === 0 ? KW : Math.min(KW, KWB);
+        SEG.push(a[0], a[1], b[0], b[1], W(a[2]) * kw * ca, W(b[2]) * kw * cb, D(a[2]) * KD * ca, D(b[2]) * KD * cb,
           Hh(a[2]) * KH * ca, Hh(b[2]) * KH * cb, rec.lips[k - 1], kind, ar[k - 1], ar[k]);
       }
     });
@@ -73363,7 +73497,7 @@ function drawScarArt(stg){
     /* the shine takes its own damage (build 319): on the burn, and half
        off the plasma's mask */
     const shineAmt = FULL ? 1 : ST.shine;
-    if(shineAmt > 0){ try{ scarShineWound(gB, N, gM, MQ, shineAmt, P.Ar, recC.ar[recC.ar.length - 1], CK || !FULL); }catch(e){} }
+    if(shineAmt > 0){ try{ scarShineWound(gB, N, gM, MQ, shineAmt, P.Ar, recC.ar[recC.ar.length - 1], CK ? 2 : !FULL); }catch(e){} }
     if(gM) mask = cM.toDataURL("image/png");
     /* the fragments rise from the crack and the rupture: out from the
        planet's middle and a little up, uneven so ten never read as a
@@ -74543,6 +74677,10 @@ function decorateSupernovaHero(hero){
   hero.classList.add("is-scarred");
   try{ addRingDebris(hero); }catch(e){}
   try{ scarPassEffects(hero, art); }catch(e){}
+  /* his light getting out (build 326): the seam in the crack, the motes
+     off it into the rings */
+  try{ scarSeam(sc, art); }catch(e){}
+  try{ scarMotes(hero, art); }catch(e){}
   return sc;
 }
 function attachCosmicScar(hero){ return decorateSupernovaHero(hero); }
@@ -74702,6 +74840,22 @@ function crackFormArm(hero, from, to){
   });
   sc.classList.add("is-forming");
   sc.removeAttribute("data-sn-reveal");
+  /* SUPERNOVA (build 326): the light in the crack is DRAWN ON with the
+     crack, from the impact out, white-hot as it runs and cooling to Home's
+     glow behind it; the motes leave the crack as it reaches them */
+  const seam = L.full ? sc.querySelector(".csc-seam") : null;
+  const motes = L.full ? hero.querySelector(":scope > .csc-motes") : null;
+  if(seam){
+    seam.classList.add("is-forming");
+    if(!seam.querySelector(".csc-sm-hot")){
+      try{
+        const hot = scarSeamSVG(A, [["csc-sm-hot", .9]]);
+        const g = hot && hot.querySelector(".csc-sm-hot");
+        if(g) seam.appendChild(g);
+      }catch(e){}
+    }
+  }
+  if(motes) motes.classList.add("is-fresh");
   let done = false, ended = false;
   const anims = [];
   function finish(){
@@ -74715,12 +74869,14 @@ function crackFormArm(hero, from, to){
     setMask(A); hero.classList.add("is-scarred");
     sc.classList.remove("is-forming");
     sc.classList.add("is-formed");
+    if(seam){ seam.classList.remove("is-forming", "is-drawing"); seam.querySelectorAll(".csc-sm-hot").forEach(g => g.remove()); }
   }
   function play(ms){
     if(ended || done) return;
     ended = true;
     if(!sc.animate){ finish(); return; }
     const K = layers.length, D = ms;
+    if(seam){ seam.style.setProperty("--fd", D + "ms"); seam.classList.add("is-drawing"); }
     /* each layer comes up over a little more than its own slice, so the
        growth is continuous */
     layers.forEach((c, i) => {
@@ -74803,6 +74959,102 @@ const RING_DEBRIS = [
   [0, 196, 4, 1.3, -11.6, -3.7], [0, 204, -2.5, 1.1, 9.9, -7.3], [0, 211, -4, 1.4, 13.3, -2.5],
   [0, 318, 2, 1.0, -7.6, -5.1], [0, 325, 5, 1.2, 10.8, -8.6], [0, 333, -2, 1.3, -12.9, -4.0]
 ];
+/* ---- HIS LIGHT GETTING OUT (build 326) - see the CSS block of the same
+   name. scarSeam(sc, art): the crack's own paths, as light, in the scar's
+   disc (sphere units, -1..1). scarMotes(hero, art): light and chips off the
+   crack into the rings' turn, in the hero (its 360 x 342 frame, the
+   planet's middle at 180, 150, radius 52). Both only for the full stage,
+   both built once per hero. */
+const SEAM_W = { main: [.034, .006], branch: [.012, .003] };
+/* The seam as an svg (viewBox the sphere's -1..1), from an art's paths.
+   Every path carries pathLength 1 and its stretch of the crack's arrival
+   (--a0 / --a1, 0..1 of the whole crack) so it can be DRAWN ON from the
+   impact outwards (.is-forming, the cutscene; .sn-fracture, the swell). */
+function scarSeamSVG(art, extra){
+  if(!art || !art.fronts) return null;
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("class", "csc-seam"); svg.setAttribute("viewBox", "-1 -1 2 2"); svg.setAttribute("aria-hidden", "true");
+  const defs = [["csc-sm-spill", 6.5], ["csc-sm-halo", 2.4], ["csc-sm-glow", 1.15], ["csc-sm-core", .42]].concat(extra || []);
+  const layers = defs.map(([c, k]) => {
+    const g = document.createElementNS(NS, "g"); g.setAttribute("class", c); g.dataset.k = k; svg.appendChild(g); return g;
+  });
+  const arMax = Math.max(.001, Number(art.arMax) || 0, ...art.fronts.map(f => f.pts && f.pts.length ? f.pts[f.pts.length - 1][2] || 0 : 0));
+  art.fronts.forEach(f => {
+    const p = f.pts; if(!p || p.length < 2) return;
+    const W = f.kind === 0 ? SEAM_W.main : SEAM_W.branch;
+    const n = p.length - 1;
+    /* in short runs, each a little narrower than the last: a taper with
+       round joins and no seams between the runs */
+    for(let a = 0; a < n; a += 3){
+      const b = Math.min(n, a + 3), fr = (a + b) / 2 / n;
+      const w = W[1] + (W[0] - W[1]) * Math.pow(1 - fr, f.kind === 0 ? .9 : 1.3);
+      let d = "M" + p[a][0].toFixed(4) + " " + p[a][1].toFixed(4);
+      for(let k = a + 1; k <= b; k++) d += "L" + p[k][0].toFixed(4) + " " + p[k][1].toFixed(4);
+      const a0 = Math.max(0, Math.min(1, (p[a][2] || 0) / arMax)), a1 = Math.max(a0 + .001, Math.min(1, (p[b][2] || 0) / arMax));
+      layers.forEach(g => {
+        const el = document.createElementNS(NS, "path");
+        el.setAttribute("d", d); el.setAttribute("stroke-width", (w * Number(g.dataset.k)).toFixed(4));
+        el.setAttribute("pathLength", "1");
+        el.style.setProperty("--a0", a0.toFixed(3)); el.style.setProperty("--a1", a1.toFixed(3));
+        g.appendChild(el);
+      });
+    }
+  });
+  return svg;
+}
+function scarSeam(sc, art){
+  const disc = sc && sc.querySelector(".csc-disc");
+  if(!disc || disc.querySelector(".csc-seam")) return null;
+  const svg = scarSeamSVG(art);
+  if(svg) disc.appendChild(svg);
+  return svg;
+}
+/* where the motes leave from: along the two arms (and the run into the
+   shine), seeded, so every Supernova planet is the same one */
+function scarMotePlan(art){
+  const fr = ((art && art.fronts) || []).filter(f => f.main && f.pts && f.pts.length > 3);
+  if(!fr.length) return [];
+  let sd = 32611;
+  const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+  const out = [], N = 18;
+  for(let i = 0; i < N; i++){
+    const f = fr[i % fr.length], k = Math.max(1, Math.min(f.pts.length - 2, Math.round((.06 + .82 * rnd()) * (f.pts.length - 1))));
+    const q = f.pts[k];
+    const x = 52 * q[0], y = 52 * q[1], ar = Math.max(0, Math.min(1, (q[2] || 0) / Math.max(.001, Number(art.arMax) || 1)));
+    const chip = i % 4 === 3;
+    const ring = rnd() < .55 ? 0 : 1;
+    out.push({ x, y, ar, chip, ring, t: +(6.4 + 3.6 * rnd()).toFixed(2), d: +(-(i / N) * 9.5 - rnd() * .8).toFixed(2),
+      da: Math.round(70 + 60 * rnd()), s: chip ? +(1.7 + .9 * rnd()).toFixed(2) : +(3.4 + 2.2 * rnd()).toFixed(2), o: chip ? .95 : +(.72 + .28 * rnd()).toFixed(2),
+      off: (rnd() - .5) * 6 });
+  }
+  return out;
+}
+function scarMotes(hero, art){
+  if(!hero || hero.querySelector(":scope > .csc-motes")) return null;
+  const plan = scarMotePlan(art);
+  if(!plan.length) return null;
+  const rs = [...hero.querySelectorAll(".cosmic-orbit-ring")].map(r => Number(r.getAttribute("r"))).filter(r => r > 60);
+  const R1 = rs.length ? Math.max(...rs) : HOME_OUTER_R, R0 = rs.length ? Math.min(...rs) : 108;
+  const box = document.createElement("div");
+  box.className = "csc-motes"; box.setAttribute("aria-hidden", "true");
+  const pc = v => (v / 342 * 100).toFixed(3);
+  plan.forEach(m => {
+    const r0 = Math.hypot(m.x, m.y), a0 = Math.atan2(m.x, -m.y) * 180 / Math.PI;
+    const R = (m.ring ? R1 : R0) + m.off;
+    const el = document.createElement("i");
+    if(m.chip) el.className = "is-chip";
+    el.style.cssText = "--a0:" + a0.toFixed(1) + "deg;--da:" + m.da + "deg;--r0:" + pc(r0) + ";--rl:" + pc(Math.max(r0 + 6, 62)) + ";--r1:" + pc(R) +
+      ";--t:" + m.t + "s;--d:" + m.d + "s;--s:" + m.s + "%;--o:" + m.o +
+      /* in the cutscene (is-fresh) each leaves as the forming crack reaches its place */
+      ";--d2:" + (m.ar * CRACK_FORM_SN_MS / 1000 + .25 + (m.d % 1 + 1) * .9).toFixed(2) + "s";
+    el.innerHTML = "<b><u></u></b>";
+    box.appendChild(el);
+  });
+  const sc = hero.querySelector(":scope > .cosmic-scar");
+  hero.insertBefore(box, sc ? sc.nextSibling : null);
+  return box;
+}
 function addRingDebris(hero){
   if(!hero || hero.querySelector(".csc-ringfrag")) return;
   const outer = hero.querySelector(":scope > .cosmic-hero-orbitlayer:not(.cosmic-hero-orbitlayer-inner)");
@@ -79046,6 +79298,24 @@ function playRankUpScene(tierKey, opts, spec){
           's;--dl:' + (rnd() * .08).toFixed(3) + 's"></i>';
       }
       snFx.innerHTML = '<i class="sn-dust"></i><i class="sn-heat"></i><i class="sn-shock"></i><i class="sn-shock is-2"></i><div class="sn-debris">' + bits + '</div>';
+      /* THE PLANET FRACTURES BEFORE IT GOES (build 326): "I also don't like
+         the crack animations during the cutscene. Could that look better?"
+         Through the swell the crack runs right across the planet with his
+         light bursting through it - the whole of Supernova's crack drawn
+         on from the impact over the swell's last two thirds, white-hot, on
+         top of the heat - and the detonation comes out of it. */
+      if(!ruStill()){
+        try{
+          const fx = scarSeamSVG(cosmicScarArt(), [["csc-sm-hot", .9]]);
+          if(fx){
+            fx.classList.add("sn-fracture", "is-forming");
+            fx.style.setProperty("--fd", Math.round(sw * .62) + "ms");
+            fx.style.setProperty("--f0", Math.round(sw * .3) + "ms");
+            snFx.insertBefore(fx, snFx.querySelector(".sn-shock"));
+            requestAnimationFrame(() => fx.classList.add("is-drawing"));
+          }
+        }catch(e){}
+      }
       overlay.appendChild(snFx);
       /* the swell about the planet's own centre */
       const sr = spin.getBoundingClientRect(), o = overlay.getBoundingClientRect();
@@ -115138,7 +115408,8 @@ function showRanksScreen(defaultTab){
   /* the case opens on a new opening of the screen, not on this screen
      built again over itself (b319f) */
   const again = initialTab === "badges" && !!stage.querySelector(".screen-ranks .badges-tab");
-  const body = initialTab === "badges" ? buildBadgesTab({ still: again }) : buildRanksTab();
+  const body = initialTab === "badges" ? buildBadgesTab({ still: again })
+    : (rankUpScene && rankUpScene.wantsMap ? rankUpViewRun(rankUpScene, buildRanksTab) : buildRanksTab());
   panel.appendChild(body);
   stage.replaceChildren(panel);
   toTop(true);
@@ -119278,6 +119549,8 @@ function buildRanksTab(){
     if(typeof rule.mysteryStars === "number"){
       pct = Math.min(pct, mysteryColorsFoundCount() / rule.mysteryStars);
     }
+    /* a rank still to be shown is not reached yet (build 326) */
+    if(rankUpView && TIER_ORDER_FULL.indexOf(key) > rankUpView.idx) pct = Math.min(pct, .999);
     return pct;
   }
   /* Collected and set one frame later, all together. A property that
@@ -119937,6 +120210,21 @@ function rankUpOwed(){
     return { fromIdx: n - 1, toIdx: held };
   }catch(e){ return null; }
 }
+/* ONE RANK AT A TIME (build 326). Madison: "you could technically rank up
+   twice from one test if you happened to get that much xp or badges in one
+   go. If that ever does happen, they would go to main menu after the one
+   rank up stuff is done, the character would vibrate or move again, and it
+   would just do another cutscene." What is owed is still every rank past
+   the last one shown (rankUpOwed: Home's dark flares, the held rewards),
+   but a journey shows exactly ONE of them - the next - and ends on Home,
+   where the Profile tab calls again for the one after. The queue IS
+   store.rankUpShown against the rank held: it survives a relaunch, it
+   cannot skip (a journey only ever shows shown + 1) and it cannot repeat
+   (rankUpMarkShown only moves it forward). */
+function rankUpStepOf(owed){
+  if(!owed) return null;
+  return { fromIdx: owed.fromIdx, toIdx: Math.min(owed.toIdx, owed.fromIdx + 1), heldIdx: owed.toIdx };
+}
 /* The rank to SHOW while a rank-up waits (results, Profile): the last
    one shown. Otherwise the rank held. */
 function rankUpShownRank(){
@@ -119976,7 +120264,13 @@ function rankUpMarkShown(toIdx){
     /* the road map has shown it too */
     if(typeof store.rankMapSeen !== "number" || store.rankMapSeen < toIdx) store.rankMapSeen = toIdx;
     store.rankMapFx244 = true;
-    store.rankUpFrom = null;
+    /* ANOTHER RANK STILL TO SHOW (build 326): the next journey starts
+       where this one ended - its record says so (q), with the light at the
+       start of its stretch. Otherwise nothing is left to start from. */
+    const more = rankUpOwed();
+    store.rankUpFrom = more && more.fromIdx === toIdx
+      ? { r: toIdx, b: badgeCountOf(store), p: Math.max(0, Number(store.lifetime && store.lifetime.points) || 0), d: 0, q: 1 }
+      : null;
     saveStore();
   }catch(e){}
   try{ localStorage.removeItem(RANKUP_PROG_KEY); }catch(e){}
@@ -120069,7 +120363,9 @@ function setRankUpLock(on){
     }
     document.body.classList.add("rankup-lock");
     if(tab){
-      const o = rankUpOwed();
+      /* the colour of the rank it is calling you for: the next one to show
+         (build 326 - one at a time) */
+      const o = rankUpStepOf(rankUpOwed());
       const held = o ? TIER_ORDER_FULL[o.toIdx] : null;
       if(held) tab.style.setProperty("--ru-color", rankRoadColor(held));
       tab.classList.add("ru-call");
@@ -120188,8 +120484,21 @@ function rankUpSceneNumbers(owed){
   const rule = TIER_UNLOCKS[r1] || {};
   const needL = Number(rule.level) || 0, needB = Number(rule.badges) || 0;
   const rec = store.rankUpFrom && store.rankUpFrom.r === owed.fromIdx ? store.rankUpFrom : null;
+  /* A RANK STILL TO COME AFTER THIS ONE (build 326): this journey ends at
+     the level that rank asks, with the rest still extra - the next
+     journey spends it. And a journey that follows one (rec.q) starts
+     where that one ended: its rank's level, every badge already counted
+     (the last journey's Profile showed them). */
+  const held = typeof owed.heldIdx === "number" ? owed.heldIdx : owed.toIdx;
+  const after = owed.toIdx < held ? TIER_UNLOCKS[TIER_ORDER_FULL[owed.toIdx + 1]] : null;
+  const wallOut = after ? Number(after.level) || LEVEL_CAP : Infinity;
+  const queued = !!(rec && rec.q);
+  const wallIn = queued ? (needL || LEVEL_CAP) : Infinity;
+  const walled = (b, w) => (isFinite(w) ? levelStateOf(pts, b, floor, rFloor, w) : levelStateOf(pts, b, floor, rFloor));
   let bBefore, lvBefore;
-  if(rec){
+  if(queued){
+    bBefore = bNow; lvBefore = Math.min(real.level, wallIn);
+  } else if(rec){
     bBefore = Math.min(bNow, rec.b);
     lvBefore = levelStateOf(Math.min(pts, rec.p), bBefore, floor, rFloor).level;
   } else if(needB > 0 && bNow === needB && levelStateOf(pts, needB - 1, floor, rFloor).level >= needL){
@@ -120198,13 +120507,20 @@ function rankUpSceneNumbers(owed){
   } else {
     bBefore = bNow; lvBefore = Math.max(0, Math.min(real.level, needL - 1));
   }
-  const cap = rec ? levelStateOf(pts, bBefore, floor, rFloor) : real;
-  return { r1, needL, needB, bBefore, lvBefore, cap, real, bNow };
+  const capW = Math.min(wallIn, wallOut);
+  const cap = rec ? walled(bBefore, capW) : (isFinite(capW) ? walled(bNow, capW) : real);
+  /* where this journey's climb ends */
+  const end = isFinite(wallOut) ? walled(bNow, wallOut) : real;
+  return { r1, needL, needB, bBefore, lvBefore, cap, real, end, bNow, more: isFinite(wallOut), queued };
 }
-function rankUpNewScene(owed){
+function rankUpNewScene(owedAll){
+  /* one rank per journey (build 326) - see rankUpStepOf */
+  const owed = rankUpStepOf(owedAll);
   const keys = TIER_ORDER_FULL.slice(owed.fromIdx + 1, owed.toIdx + 1);
-  const scene = { phase: "armed", fromIdx: owed.fromIdx, toIdx: owed.toIdx, from: TIER_ORDER_FULL[owed.fromIdx] || null,
-                  to: TIER_ORDER_FULL[owed.toIdx], keys, count: keys.length, nums: rankUpSceneNumbers(owed),
+  const nums = rankUpSceneNumbers(owed);
+  const scene = { phase: "armed", fromIdx: owed.fromIdx, toIdx: owed.toIdx, heldIdx: owed.heldIdx, more: owed.toIdx < owed.heldIdx,
+                  from: TIER_ORDER_FULL[owed.fromIdx] || null,
+                  to: TIER_ORDER_FULL[owed.toIdx], keys, count: keys.length, nums,
                   prog: rankUpProgRead(owed.toIdx), taps: false, p0: rankUpStartDot(owed) };
   rankUpScene = scene;
   setRankUpLock(false);
@@ -120575,6 +120891,9 @@ async function rankUpArrive(scene, c, api, pre){
 }
 /* The stretch on to the next rank: only if there is progress on it. */
 async function rankUpClimbNext(scene, map){
+  /* the stretch on to a rank still to be shown is that journey's own ride
+     (build 326): it starts there, from the circle */
+  if(scene.more) return;
   const rf = map.querySelector(".rankmap-roadfill[data-ru-climb]");
   const p = rf ? Math.max(0, Math.min(1, Number(rf.dataset.ruClimb) || 0)) : 0;
   if(!rf || p <= 0) return;
@@ -120920,8 +121239,13 @@ function rankUpNextLift(stop){
    after the box flips (rankUpProfileReturn) - so here it is the cut-off
    plus one when there is saved XP, and the real level when there is not. */
 function rankUpHeroLevel(scene){
-  const real = levelStateFor(store).level, cap = scene.nums && scene.nums.cap ? scene.nums.cap.level : real;
+  const real = rankUpEndOf(scene).level, cap = scene.nums && scene.nums.cap ? scene.nums.cap.level : real;
   return real > cap ? cap + 1 : real;
+}
+/* Where this journey's climb ends: the level it reaches, which is the
+   real one unless another rank is still to be shown (build 326). */
+function rankUpEndOf(scene){
+  return scene && scene.nums && scene.nums.end ? scene.nums.end : levelStateFor(store);
 }
 /* THE CARD CHANGES WITH A FADE (build 321): "im not a fan of how that card
    flips over to show the next ... Maybe instead of the card flipping it
@@ -120940,7 +121264,7 @@ async function rankUpHeroTurn(scene){
   const still = ruStill();
   scene.phase = "hero";
   rankUpSceneWatch(scene, 15000);
-  const real = levelStateFor(store).level, cap = scene.nums && scene.nums.cap ? scene.nums.cap.level : real;
+  const real = rankUpEndOf(scene).level, cap = scene.nums && scene.nums.cap ? scene.nums.cap.level : real;
   const fresh = buildRankHero(scene.to, rankUpHeroLevel(scene), badgeCountOf(store), { levelPending: real > cap });
   const nu = fresh.hero;
   nu.classList.add("ru-hero-new");
@@ -121008,7 +121332,9 @@ async function rankUpSceneBack(scene){
      that XP, so it is counted as seen, and the bar is laid at once
      (rankUpProfileReturn). */
   try{ const t = Number(levelStateFor(store).total); if(isFinite(t)) localStorage.setItem(PF_XP_SEEN_KEY, String(Math.round(t))); }catch(e){}
-  showProfile();
+  /* built holding this journey's rank and level when a rank is still to
+     come (build 326) */
+  rankUpViewRun(scene, () => showProfile());
   const panel = stage.querySelector(".screen-profile");
   if(!panel){ rankUpSceneEnd(scene, true); return; }
   rankUpProfileReturn(scene, panel);
@@ -121055,108 +121381,102 @@ function rankUpClimbMs(dist){
 function rankUpLevelSpan(lv){
   try{ return Math.max(1, xpForLevel(lv + 1) - xpForLevel(lv)); }catch(e){ return 1; }
 }
+/* THE EXTRA STAYS WHERE IT IS AND IS SPENT, LEVEL AFTER LEVEL (build 326 -
+   supersedes build 325's "Saved XP" pool). Madison: "The 'saved up' xp
+   thing is not the move. The extra xp would just stay where it was but I
+   [would] subtract from the extra and it would do it level after level,
+   until it goes to your new current level." At the wall the line under
+   the bar already holds the extra: the bar is full and the XP into the
+   level runs on past what it asks ("4,700 / 2,000 XP"). Nothing new comes
+   up beside it and nothing resets it to 0. The climb SUBTRACTS from that
+   number where it stands: each level, the level it was holding completes
+   (the level pops one on, the bar empties with a flash at its end), "-N
+   XP" lifts off the number - N is what that level cost - and the number
+   counts DOWN by exactly N while the bar fills the new level from what is
+   left. Level after level, until the number is under what the level asks:
+   your new current level, its bar part-filled with the remainder - or, at
+   the next rank's wall, full again with what is still extra.
+   THE NUMBERS ARE NEVER A FIB AT A STEP'S END: xpForLevel(level) + the
+   number = the total, every step (scene.climb.steps; the gate holds it).
+   Driven a frame at a time (ruTween's reason, build 325: a CSS animation
+   started on this busy screen sat pending ~400ms). One step per level,
+   RANKUP_CLIMB_LEVEL_MS each (rankUpClimbMs over the whole climb). */
 async function rankUpStandingClimb(standing, from, to, row, scene){
   const fill = standing.querySelector(".pf-xpbar .xpbar-fill"), lvEl = standing.querySelector(".pf-level"),
         track = standing.querySelector(".pf-xpbar"), numsHost = standing.querySelector(".pf-xpnums");
   if(!fill || !lvEl) return;
-  const f0 = Math.max(0, Math.min(1, levelBarOf(from).fraction || 0));
+  const L0 = Math.round(Number(from.level) || 0), L1 = Math.round(Number(to.level) || 0);
+  if(!(L1 > L0)) return;
+  const total = Number(to.total) || 0;
+  /* the XP into level lv, whatever it is called there: total less what
+     the levels below it cost (at a wall it runs on past the level's span) */
+  const into = lv => Math.max(0, Math.round(total - xpForLevel(lv)));
   const toBar = levelBarOf(to);
-  const f1 = to.stopped ? 1 : Math.max(0, Math.min(1, toBar.fraction || 0));
-  /* u: levels climbed, as a number - from.level + u is the level, its
-     fraction the bar */
-  const u0 = f0, u1 = (to.level - from.level) + f1;
-  if(!(u1 > u0)) return;
-  if(track) track.classList.remove("is-banked");
-  standing.classList.add("ru-climbing");
-  /* the ordinary numbers, run by the climb */
+  const spanOf = lv => lv >= L1 ? Math.max(1, Math.round(toBar.span) || rankUpLevelSpan(lv)) : rankUpLevelSpan(lv);
+  standing.classList.add("ru-climbing", "ru-spending");
+  /* the numbers that were there stay there: the extra, against the level */
   let nums = numsHost && numsHost.querySelector(".xpnums");
-  if(nums){ const n = buildXpNumbers(0, rankUpLevelSpan(from.level + 1), false); nums.replaceWith(n); nums = n; }
+  if(nums){ const n = buildXpNumbers(into(L0), spanOf(L0), into(L0) > spanOf(L0)); nums.replaceWith(n); nums = n; }
   const have = nums && nums.querySelector(".xpnums-have"), need = nums && nums.querySelector(".xpnums-need");
   const toEl = standing.querySelector(".pf-xp-to");
   fill.style.transition = "none";
-  const ms = rankUpClimbMs(u1 - u0);
-  /* the pool (build 325): what is saved, emptied by the climb. The XP the
-     bar has taken at u is xpForLevel(level) plus what it shows into that
-     level, never past its span - so the pool lands on what is still saved
-     (to.banked) when the climb stops at the next wall, and on 0 when not. */
-  const total = Number(to.total) || 0;
-  const xpAt = (lv, have, span) => xpForLevel(lv) + Math.min(have, span);
-  const pool = rankUpPoolMount(standing, numsHost);
-  let pool0 = null, poolLive = false;
-  if(scene) scene.pool = { start: null, end: null, takes: [] };
-  /* the climb's tone, a ping where each new level lands (the climb is
-     sine-eased: level k arrives where .5 - .5 cos(pi t) crosses it) */
-  {
-    const marks = [];
-    for(let L = Math.floor(u0) + 1; L <= Math.floor(u1 + 1e-6) && marks.length < 8; L++){
-      const pp = (L - u0) / (u1 - u0);
-      if(pp > 0 && pp <= 1) marks.push(Math.acos(1 - 2 * pp) / Math.PI * ms / 1000);
-    }
-    playSound("rank.xp.climb", { dur: ms / 1000, marks });
-  }
-  if(scene) scene.climb = { from: from.level, to: to.level, ms, levels: u1 - u0 };
-  let shownLv = from.level, shownSpan = -1;
-  const place = u => {
-    /* the last level holds the end of the climb: at u1 a climb that stops
-       at the next wall is ITS bar full (f1 = 1), not the level after it
-       empty - which is what flooring u1 gave, and a climb now very often
-       ends at a wall (build 325: the wall is the next rank's level) */
-    const whole = Math.min(Math.floor(u + 1e-6), to.level - from.level), frac = u - whole;
-    const lv = Math.min(to.level, from.level + whole);
-    const last = lv >= to.level;
-    const f = last ? Math.min(f1, frac) : frac;
-    setBarFill(fill, Math.round(f * 1000) / 10);
-    const span = last ? Math.max(1, Math.round(toBar.span) || rankUpLevelSpan(lv)) : rankUpLevelSpan(lv);
-    const hv = Math.round(last && f >= f1 ? toBar.into : f * span);
-    if(have) have.textContent = hv.toLocaleString();
-    if(need && span !== shownSpan){ shownSpan = span; need.textContent = " / " + span.toLocaleString() + " XP"; }
-    if(pool){
-      const left = Math.max(0, total - xpAt(lv, hv, span));
-      if(pool0 == null){ pool0 = left; if(scene) scene.pool.start = left; }
-      rankUpPoolSet(pool, left);
-      if(scene) scene.pool.end = left;
-    }
-    if(lv !== shownLv){
-      /* the level just completed is taken out of the pool */
-      if(pool && poolLive) for(let L = shownLv; L < lv; L++){ const took = rankUpLevelSpan(L); rankUpPoolTake(pool, took); if(scene) scene.pool.takes.push(took); }
-      shownLv = lv;
-      lvEl.textContent = "Level " + lv;
-      lvEl.classList.remove("ru-lvpop"); void lvEl.offsetWidth; lvEl.classList.add("ru-lvpop");
-      if(toEl) toEl.textContent = pfXpToText({ level: lv });
-    }
+  const steps = L1 - L0;
+  const ms = rankUpClimbMs(steps);
+  const stepMs = ms / steps;
+  /* each step: the spend (the number down, the bar up) and a short beat */
+  const beat = Math.min(320, Math.round(stepMs * .22)), run = Math.max(380, Math.round(stepMs - beat));
+  const rec = { from: L0, to: L1, ms: steps * (run + beat), levels: steps, start: into(L0), end: null, steps: [], total };
+  if(scene) scene.climb = rec;
+  const show = (lv, h, f) => {
+    if(have){ const t = Math.max(0, Math.round(h)).toLocaleString(); if(have.textContent !== t) have.textContent = t; }
+    setBarFill(fill, Math.round(Math.max(0, Math.min(1, f)) * 1000) / 10);
+    if(track) track.classList.toggle("is-banked", h > spanOf(lv));
+    if(nums) nums.classList.toggle("is-over", h > spanOf(lv));
   };
-  place(u0);
-  /* (a bar full at the old wall opens on the next level: that level's XP
-     was never in the pool, so nothing is taken for it) */
-  poolLive = true;
-  /* the full pool, a beat before any of it moves */
-  if(pool) await rankUpWait(RU_POOL_LEAD_MS);
-  await new Promise(res => {
-    const t0 = performance.now();
-    const step = now => {
-      if(!standing.isConnected){ res(); return; }
-      const k = Math.min(1, (now - t0) / ms);
-      /* in and out over the whole climb (a sine ease) */
+  show(L0, into(L0), Math.min(1, into(L0) / spanOf(L0)));
+  {
+    /* the climb's tone, a ping as each level completes */
+    const marks = [];
+    for(let k = 0; k < steps && marks.length < 8; k++) marks.push((RU_SPEND_LEAD_MS + k * (run + beat)) / 1000);
+    playSound("rank.xp.climb", { dur: (RU_SPEND_LEAD_MS + rec.ms) / 1000, marks });
+  }
+  /* the extra where it was, a beat before any of it is spent */
+  await rankUpWait(RU_SPEND_LEAD_MS);
+  for(let lv = L0; lv < L1; lv++){
+    if(!standing.isConnected) break;
+    const cost = rankUpLevelSpan(lv), h0 = into(lv), nx = lv + 1, h1 = into(nx), span1 = spanOf(nx);
+    const f1 = Math.min(1, h1 / span1);
+    /* the level it held completes: one on, the bar empties with a flash */
+    lvEl.textContent = "Level " + nx;
+    lvEl.classList.remove("ru-lvpop"); void lvEl.offsetWidth; lvEl.classList.add("ru-lvpop");
+    if(need) need.textContent = " / " + span1.toLocaleString() + " XP";
+    if(toEl) toEl.textContent = nx < L1 || !to.stopped ? pfXpToText({ level: nx }) : "";
+    rankUpSpendFlash(standing);
+    rankUpSpendChip(numsHost, have, cost);
+    show(nx, h0, 0);
+    /* the number counts down by what it cost while the new level fills */
+    await ruTween(standing, run, k => {
       const e = .5 - .5 * Math.cos(Math.PI * k);
-      place(u0 + (u1 - u0) * e);
-      if(k < 1) requestAnimationFrame(step); else res();
-    };
-    requestAnimationFrame(step);
-  });
-  place(u1);
+      show(nx, h0 - cost * e, f1 * e);
+    });
+    show(nx, h1, f1);
+    rec.steps.push({ level: nx, cost, have: h1, span: span1, sum: xpForLevel(nx) + h1, fill: parseFloat(fill.style.getPropertyValue("--fill")) || 0 });
+    if(beat) await rankUpWait(beat);
+  }
+  /* where it ends, in the card's own numbers */
   const cur = numsHost && numsHost.querySelector(".xpnums");
   if(cur) cur.replaceWith(buildXpNumbers(toBar.into, toBar.span, toBar.over));
   syncPfXpTo(standing, to);
-  if(pool){ rankUpPoolSet(pool, Math.max(0, Number(to.banked) || 0)); if(scene) scene.pool.end = Math.max(0, Number(to.banked) || 0); }
+  setBarFill(fill, Math.round((to.stopped ? 1 : Math.max(0, Math.min(1, toBar.fraction || 0))) * 1000) / 10);
+  rec.end = Math.round(toBar.into);
   await rankUpWait(650);
-  if(pool) await rankUpPoolDone(standing, pool);
   fill.style.transition = "";
-  if(track && toBar.over) track.classList.add("is-banked");
-  standing.classList.remove("ru-climbing");
+  if(track) track.classList.toggle("is-banked", !!toBar.over);
+  standing.classList.remove("ru-climbing", "ru-spending");
   /* ...and only now the level challenge */
   if(row) await rankUpLevelRowAfter(row, to.level);
 }
-var RU_POOL_LEAD_MS = 750, RU_POOL_HOLD_MS = 1100, RU_POOL_CHIP_MS = 1100;
+var RU_SPEND_LEAD_MS = 900, RU_SPEND_CHIP_MS = 1100;
 /* one rAF-driven tween: fn(k) for k 0..1, resolved at the end */
 function ruTween(el, ms, fn){
   return new Promise(res => {
@@ -121169,47 +121489,32 @@ function ruTween(el, ms, fn){
     requestAnimationFrame(step);
   });
 }
-function rankUpPoolMount(standing, host){
-  if(!standing || !host) return null;
-  const p = document.createElement("span");
-  p.className = "ru-pool";
-  p.style.opacity = "0";
-  ruTween(p, 450, k => { const e = 1 - Math.pow(1 - k, 3); p.style.opacity = String(Math.min(1, k * 2));
-    p.style.transform = k < 1 ? "translateY(" + (5 * (1 - e)).toFixed(2) + "px) scale(" + (.9 + .1 * e + .06 * Math.sin(Math.PI * e)).toFixed(3) + ")" : ""; });
-  const lab = document.createElement("span"); lab.className = "ru-pool-lab"; lab.textContent = "Saved XP";
-  const num = document.createElement("b"); num.className = "ru-pool-num"; num.textContent = "0";
-  p.append(lab, num);
-  host.appendChild(p);
-  standing.classList.add("ru-pooling");
-  return p;
-}
-function rankUpPoolSet(pool, v){
-  const n = pool && pool.querySelector(".ru-pool-num");
-  const t = Math.max(0, Math.round(v)).toLocaleString();
-  if(n && n.textContent !== t) n.textContent = t;
-  if(pool){ pool.dataset.left = String(Math.max(0, Math.round(v))); pool.classList.toggle("is-empty", Math.round(v) <= 0); }
-}
-function rankUpPoolTake(pool, n){
-  if(!pool || !pool.isConnected) return;
-  const num = pool.querySelector(".ru-pool-num");
-  if(num) ruTween(num, 420, k => { num.style.transform = k < 1 ? "scale(" + (1 - .14 * Math.sin(Math.PI * k)).toFixed(3) + ")" : ""; });
+/* "-N XP" lifts off the number it was taken from, up and away */
+function rankUpSpendChip(host, from, n){
+  if(!host || !host.isConnected) return;
   const c = document.createElement("span");
-  c.className = "ru-pool-chip"; c.textContent = "\u2212" + Math.round(n).toLocaleString() + " XP";
-  pool.appendChild(c);
-  pool.dataset.takes = String((Number(pool.dataset.takes) || 0) + 1);
-  /* it lifts off the pool and drifts up and left, towards the bar */
-  ruTween(c, RU_POOL_CHIP_MS, k => {
+  c.className = "ru-spend-chip"; c.setAttribute("aria-hidden", "true");
+  c.textContent = "−" + Math.round(n).toLocaleString() + " XP";
+  try{
+    const hr = host.getBoundingClientRect(), fr = from ? from.getBoundingClientRect() : hr;
+    c.style.left = Math.round(fr.left - hr.left) + "px";
+  }catch(e){}
+  host.appendChild(c);
+  host.dataset.ruTakes = String((Number(host.dataset.ruTakes) || 0) + 1);
+  ruTween(c, RU_SPEND_CHIP_MS, k => {
     const e = 1 - Math.pow(1 - k, 2.2);
-    c.style.opacity = String(k < .16 ? k / .16 : Math.max(0, 1 - (k - .16) / .84));
-    c.style.transform = "translate(" + (-38 * e).toFixed(1) + "px, " + (4 - 30 * e).toFixed(1) + "px) scale(" + (k < .16 ? .8 + 1.5 * k : 1.04 - .1 * k).toFixed(3) + ")";
+    c.style.opacity = String(k < .14 ? k / .14 : Math.max(0, 1 - (k - .14) / .86));
+    c.style.transform = "translateY(" + (2 - 26 * e).toFixed(1) + "px) scale(" + (k < .14 ? .82 + 1.3 * k : 1.0 - .08 * k).toFixed(3) + ")";
   }).then(() => c.remove());
 }
-/* held on what is left, then gone, and the line is Profile's own again */
-async function rankUpPoolDone(standing, pool){
-  await rankUpWait(RU_POOL_HOLD_MS);
-  await ruTween(pool, 450, k => { pool.style.opacity = String(1 - k); pool.style.transform = "translateY(" + (4 * k).toFixed(2) + "px)"; });
-  pool.remove();
-  standing.classList.remove("ru-pooling");
+/* the level completing: a short light off the end of the full bar */
+function rankUpSpendFlash(standing){
+  const wrap = standing && standing.querySelector(".pf-xpbarwrap");
+  if(!wrap) return;
+  const f = document.createElement("i");
+  f.className = "ru-spend-flash"; f.setAttribute("aria-hidden", "true");
+  wrap.appendChild(f);
+  ruTween(f, 520, k => { f.style.opacity = String(k < .2 ? k / .2 : Math.max(0, 1 - (k - .2) / .8)); f.style.transform = "scale(" + (.6 + .7 * k).toFixed(3) + ")"; }).then(() => f.remove());
 }
 async function rankUpLevelRowAfter(row, level){
   const rowNow = row.querySelector(".pf-now"), rowBar = row.querySelector(".pf-bar > i");
@@ -121276,7 +121581,7 @@ async function rankUpProfileReturn(scene, panel){
   const still = ruStill();
   scene.phase = "return";
   const standing = panel.querySelector(".pf-standing"), goal = panel.querySelector(".pf-goal");
-  const cap = scene.nums.cap, real = levelStateFor(store);
+  const cap = scene.nums.cap, real = rankUpEndOf(scene);
   const climb = !still && standing && cap && real.level > cap.level;
   const lvRow = goal && goal.querySelector('.pf-task[data-kind="level"]');
   /* the rank you had, until the dark has lifted (build 321) */
@@ -121366,9 +121671,36 @@ async function rankUpProfileReturn(scene, panel){
   await rankUpWait(still ? 0 : 500);
   if(rankUpScene === scene) rankUpSceneEnd(scene, true);
 }
+/* ANOTHER RANK TO COME: BACK TO HOME FIRST (build 326). "they would go to
+   main menu after the one rank up stuff is done, the character would
+   vibrate or move again, and it would just do another cutscene." This
+   journey is marked shown, Profile holds its last frame a moment, the dark
+   comes down and lifts on Home - and only then does the layer come off, so
+   nothing can be tapped on the way. Home finds the next rank owed and
+   locks, and the Profile tab makes its call again (setRankUpLock, the same
+   gesture as the first). */
+var RU_HOME_HOLD_MS = 1500;
+async function rankUpSceneHome(scene){
+  const still = ruStill();
+  scene.phase = "home";
+  rankUpSceneWatch(scene, 9000);
+  await rankUpWait(still ? 300 : RU_HOME_HOLD_MS);
+  if(rankUpScene !== scene) return;
+  rankUpCurtain(true);
+  await rankUpWait(still ? 0 : 900);
+  if(rankUpScene !== scene) return;
+  try{ showHome(); }catch(e){}
+  await rankUpFrame();
+  rankUpSceneEnd(scene, true);
+}
 /* The one way out, played or not. Safe to call twice. */
 function rankUpSceneEnd(scene, played){
   if(rankUpScene !== scene) return;
+  if(played && scene.more && !scene.homing){
+    scene.homing = true;
+    rankUpMarkShown(scene.toIdx);
+    if(rankUpOwed()){ rankUpSceneHome(scene); return; }
+  }
   if(played) rankUpMarkShown(scene.toIdx);
   rankUpScene = null;
   clearTimeout(scene.watch);
@@ -121382,15 +121714,19 @@ function rankUpSceneEnd(scene, played){
   document.querySelectorAll(".pf-goal.ru-goal-pre, .pf-goal.ru-flip-in").forEach(g => g.classList.remove("ru-goal-pre", "ru-flip-in"));
   document.querySelectorAll(".ru-flipping").forEach(g => g.classList.remove("ru-flipping"));
   /* back on Profile after the rank-up: the character's special (build 317) */
-  if(played){ const hero = stage.querySelector(".profile-hero-avatar"); if(hero){ charSpecialWake(); charSpecialFire(hero, 500); } }
+  if(played && !scene.homing){ const hero = stage.querySelector(".profile-hero-avatar"); if(hero){ charSpecialWake(); charSpecialFire(hero, 500); } }
   if(typeof syncChatDock === "function") syncChatDock();
   /* the scene is over: the tab bar and the chat button come back (build
      320 - cutscene focus, on since rankUpNewScene) */
   document.querySelectorAll(".rankmap-stop.ru-nexthold").forEach(rankUpNextLift);
   if(scene.focus){ scene.focus = false; try{ setCutsceneFocus(false); }catch(e){} }
   try{ document.body.classList.remove("ru-journey"); }catch(e){}
-  /* the whole journey is over: Nova's congratulations follow it (build 324) */
-  if(played){ try{ novaTickSoon(2600); }catch(e){} }
+  /* the whole journey is over: Nova's congratulations follow it (build 324)
+     - once, after the last of them (build 326) */
+  const more = played && rankUpOwed();
+  if(played && !more){ try{ novaTickSoon(2600); }catch(e){} }
+  /* the next rank owed: Home locks and the tab calls again */
+  if(more && stage.querySelector('[data-screen="home"]')) scheduleRankUpLock(ruStill() ? 300 : 700);
 }
 
 

@@ -19,9 +19,9 @@ Madison's list, item by item, each held by checks that FAIL on build 324
   C. While a rank-up waits, the Profile tab makes its "something new"
      gesture - grows, rings and shakes - once a call, every few seconds,
      and on a refused tap; never under Reduce motion.
-  D. The rank-up climb empties a Saved XP pool, level by level, ending on
-     what is left; a climb that stops at the next wall ends with its bar
-     full.
+  D. (moved in 326 - see check-b326-c.py A) the climb spends the extra
+     where it stands, no pool; a climb that stops at the next wall ends
+     with its bar full.
   E. The results XP card: plain lines with their sums, a Bonuses heading,
      and "base + bonuses = total" under the total, which adds up.
   F. No black rings: every secret flare plus Supernova is the orange tier.
@@ -334,7 +334,13 @@ def section_nudge(br):
 
 # --------------------------------------------------------------------------
 def section_pool(br):
-    print("\nD. the saved XP is a pool that empties as the bar climbs, level by level, ending on what is left")
+    # MOVED IN 326: "The 'saved up' xp thing is not the move. The extra xp
+    # would just stay where it was but I [would] subtract from the extra and it
+    # would do it level after level". No pool any more: the number under the
+    # bar starts on the extra and counts down level by level. The full check
+    # is tools/check-b326-c.py A; this keeps the one thing build 325 added that
+    # still stands - a climb that stops at the next wall ends with the bar full.
+    print("\nD. (moved in 326) the climb spends the extra where it stands; a climb that stops at the next wall ends with the bar full")
     for label, w, h in (PHONE, TABLET):
         ctx, pg = boot(br, w, h)
         r = pg.evaluate("""async () => {
@@ -342,41 +348,27 @@ def section_pool(br):
           const U = topicsIn(QUESTIONS);
           store.unitPerfects = {}; U.slice(0, 5).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
           store.rankFloor = 0; store.levelFloor = 0; store.lifetime.points = xpForLevel(53) + 700; store.rankUpShown = 3;
+          try{ localStorage.setItem(PF_XP_SEEN_KEY, String(store.lifetime.points)); }catch(e){}
           saveStore(); showProfile(); await new Promise(r => setTimeout(r, 900));
           const st = document.querySelector('.pf-standing');
           const from = levelStateOf(store.lifetime.points, 4, 0, 0), to = levelStateFor(store);
-          out.from = [from.level, from.banked]; out.to = [to.level, to.banked, to.stopped];
+          out.to = [to.level, to.banked, to.stopped];
           rankUpStandingAt(st, from);
-          const xf = st.querySelector('.pf-xpbar .xpbar-fill'); xf.style.transition = 'none'; setBarFill(xf, Number(xf.dataset.target) || 0);
-          const sc = {}, samples = [];
-          let done = false;
-          rankUpStandingClimb(st, from, to, null, sc).then(() => { done = true; });
-          const T0 = performance.now(); let chips = 0;
+          let done = false, pool = false, first = null;
+          rankUpStandingClimb(st, from, to, null, {}).then(() => { done = true; });
+          const T0 = performance.now();
           await new Promise(res => { const tick = () => {
-            const p = document.querySelector('.pf-standing .ru-pool');
-            const have = (document.querySelector('.pf-standing .xpnums-have') || {}).textContent, lv = (document.querySelector('.pf-standing .pf-level') || {}).textContent;
-            if(p) samples.push([Number(p.dataset.left), lv, have]);
-            chips = Math.max(chips, document.querySelectorAll('.pf-standing .ru-pool-chip').length ? 1 : 0) + 0;
-            if(document.querySelector('.pf-standing .ru-pool-chip')) out.chipSeen = true;
-            if(!done && performance.now() - T0 < 30000) requestAnimationFrame(tick); else res(); };
+            if(document.querySelector('.pf-standing .ru-pool')) pool = true;
+            if(first == null) first = Number(((document.querySelector('.pf-standing .xpnums-have') || {}).textContent || '').replace(/[^0-9]/g, ''));
+            if(!done && performance.now() - T0 < 40000) requestAnimationFrame(tick); else res(); };
             requestAnimationFrame(tick); });
-          out.pool = sc.pool || null; out.climb = sc.climb || null;
-          const ls = samples.map(s => s[0]).filter(v => !isNaN(v));
-          out.first = ls[0]; out.last = ls[ls.length - 1]; out.n = ls.length;
-          out.monotone = ls.every((v, i) => i === 0 || v <= ls[i - 1]);
-          out.spans = []; for(let L = from.level + 1; L < to.level; L++) out.spans.push(xpForLevel(L + 1) - xpForLevel(L));
+          out.pool = pool; out.first = first; out.extra = Math.round(from.into);
           const f = st.querySelector('.pf-xpbar .xpbar-fill');
           out.endFill = f ? getComputedStyle(f).getPropertyValue('--fill').trim() : null;
-          out.poolGone = !document.querySelector('.pf-standing .ru-pool') && !st.classList.contains('ru-pooling');
           return out;
         }""")
-        p = r.get("pool") or {}
-        check("%s: a Saved XP pool comes up at what was saved behind the old wall (%s) and only ever counts down, in step with the bar" % (label, r.get("from")),
-              p.get("start") == r["from"][1] and r.get("n", 0) >= 12 and r.get("monotone"), {k: r.get(k) for k in ("first", "last", "n", "monotone", "from")})
-        check("%s: each level the bar completes takes its own XP out of it, shown as it goes (-N XP)" % label,
-              p.get("takes") == r["spans"] and r.get("chipSeen"), [p.get("takes"), r["spans"]])
-        check("%s: it ends on what is still saved behind the next wall (%s), then makes way" % (label, r["to"][1]),
-              p.get("end") == r["to"][1] and r.get("last") == r["to"][1] and r.get("poolGone"), [p.get("end"), r.get("last"), r["to"]])
+        check("%s: no Saved XP pool; the number starts on the extra where it was (%s)" % (label, r.get("extra")),
+              not r.get("pool") and r.get("first") == r.get("extra"), r)
         check("%s: a climb that stops at the next wall ends with the bar full, not empty" % label,
               r["to"][2] and r.get("endFill") == "100%", [r["to"], r.get("endFill")])
         ctx.close()
