@@ -51,14 +51,23 @@ RECAP_JS = r"""async (opt) => {
     window.weekRecapPlanned = () => [];
     out.cats = cats;
     out.per = {};
+    /* BUILD 326: hundos and study time are no longer rotating mentions -
+       they are the class's week awards (fixed: true, weekRecapClassWeek),
+       with the same rules. For those two the award is read instead, one
+       category at a time so nobody is "already named" by the other. */
+    const fixedAll = typeof RECAP_FIXED !== 'undefined' ? RECAP_FIXED.slice() : [];
     for(const cat of cats){
       window.weekRecapCatOrder = () => [cat];
+      const isFixed = fixedAll.indexOf(cat) >= 0;
+      if(isFixed){ RECAP_FIXED.length = 0; RECAP_FIXED.push(cat); }
       const r = buildWeekRecap(rows());
-      const res = { top: r.top.map(t => t.name), ments: r.mentions.map(m => ({ cat: m.cat, name: m.name, v: m.value })) };
-      if(!opt.samLow && r.mentions.length){
+      if(isFixed){ RECAP_FIXED.length = 0; fixedAll.forEach(c => RECAP_FIXED.push(c)); }
+      const list = isFixed ? ((r.classWeek && r.classWeek.awards) || []) : r.mentions;
+      const res = { top: r.top.map(t => t.name), ments: list.map(m => ({ cat: m.cat, name: m.name, v: m.value })) };
+      if(!opt.samLow && list.length){
         const ui = buildWeekRecapStage(r);
         document.body.appendChild(ui.root);
-        const card = ui.root.querySelector('.wr-mention');
+        const card = ui.root.querySelector(isFixed ? '.wr-award' : '.wr-mention');
         res.title = card ? (card.querySelector('.wr-mcat') || {}).textContent : null;
         res.line = card ? (card.querySelector('.wr-mval') || {}).textContent : null;
         res.strip = (() => { const b = ui.root.querySelector('.wr-page-mentions .wr-minibox');
@@ -151,7 +160,7 @@ CAL_JS = r"""async ([iso, months]) => {
       const cells = [...tab.querySelectorAll('.cal-grid .cal-cell[data-date]')].map(c => {
         const ds = c.dataset.date, e = CALENDAR_DATA.find(x => x.date === ds) || null;
         const dots = [...c.querySelectorAll('.cal-cell-dots > i')];
-        return { ds, kind: !e ? 'none' : e.holiday ? 'off' : (typeof isBigExamDay === 'function' ? isBigExamDay(e) : (isExamDay(e) && !/TEST\s*#/i.test(e.text))) ? 'big' : isExamDay(e) ? 'test' : 'class',
+        return { ds, kind: !e ? 'none' : e.holiday ? 'off' : (typeof isPtFinalDay === 'function' && isPtFinalDay(e)) ? 'pt' : (typeof isBigExamDay === 'function' ? isBigExamDay(e) : (isExamDay(e) && !/TEST\s*#/i.test(e.text))) ? 'big' : isExamDay(e) ? 'test' : 'class',
                  cls: c.className, dots: dots.filter(vis).map(d => ({ c: d.className, l: look(d) })) };
       });
       out.months[m] = cells;
@@ -213,24 +222,34 @@ def calendar_section(br):
                 continue
             mark = dots[-1]["l"]
             looks.setdefault(k, set()).add(mark["bg"] + mark["tf"] + mark["rad"])
-            if k in ("test", "big") and len(dots) != 2:
+            if k in ("test", "big", "pt") and len(dots) != 2:
                 problems.append([c["ds"], k, "wants a class dot and its own mark", len(dots)])
-        # each kind has ONE look, and the four looks are all different
+        # each kind has ONE look, and the four looks are all different.
+        # MOVED IN BUILD 326: a PT final (Jan 11-13) is a fifth kind that
+        # wears the big exams' orange ("Include the pt finals as orange too").
         one = all(len(v) == 1 for v in looks.values())
-        distinct = len(set(next(iter(v)) for v in looks.values())) == len(looks) == 4
+        four = {k: v for k, v in looks.items() if k != "pt"}
+        distinct = len(set(next(iter(v)) for v in four.values())) == len(four) == 4
+        if "pt" in looks:
+            distinct = distinct and looks["pt"] == looks.get("big")
         big_l = next(iter(looks.get("big", {""})))
         test_l = next(iter(looks.get("test", {""})))
         check("%s: every class day, test, big exam and no-class day in the grid shows its dot (Oct, Jan, Mar, Jun, Jul), "
               "one look per kind and four different looks" % dev, not problems and one and distinct,
               [problems[:6], {k: len(v) for k, v in looks.items()}])
-        check("%s: a big exam's mark is not the test's round amber dot (its own shape)" % dev,
-              bool(big_l) and big_l != test_l and "matrix" in big_l, [big_l[-80:], test_l[-60:]])
+        # MOVED IN BUILD 326: "the key is cool with the orange big exam but it
+        # has a diamond, should just be a normal orange." Was: its own shape
+        # (a rotated square). Now: a round dot like the others, in a colour
+        # that is not the test's amber.
+        check("%s: a big exam's mark is a plain round dot, not the test's amber - no diamond" % dev,
+              bool(big_l) and big_l != test_l and "matrix" not in big_l and "999px" in big_l
+              and big_l.split("|")[0] != test_l.split("|")[0], [big_l[-80:], test_l[-60:]])
         mar = [c for c in (a.get("months") or {}).get("March 2027", []) if "2027-03-08" <= c["ds"] <= "2027-03-12"]
         check("%s: spring break (Mar 8-12) is no class, not five class days" % dev,
               len(mar) == 5 and all(c["kind"] == "off" for c in mar), [(c["ds"], c["kind"]) for c in mar])
         key = a.get("key") or {}
         items = key.get("items") or []
-        cell_look = {k: next(iter(v)) for k, v in looks.items()}
+        cell_look = {k: next(iter(v)) for k, v in looks.items() if k != "pt"}
         key_looks = [i["l"]["bg"] + i["l"]["tf"] + i["l"]["rad"] if i.get("l") else None for i in items]
         check("%s: the key sits right under the grid, shows a visible mark for each of the four kinds, "
               "each mark the same as the grid's" % dev,
@@ -239,9 +258,11 @@ def calendar_section(br):
               [[i["t"] for i in items], [i["vis"] for i in items], key.get("afterGrid"), key.get("inside"), a.get("scrollX")])
         bc = a.get("bigCard") or {}
         rows = bc.get("rows") or []
-        check("%s: a Big exams card lists the four in order, each with the key's mark and how far off it is" % dev,
-              [[r["d"], r["n"]] for r in rows] == BIG and all(r["mark"] for r in rows)
-              and rows and rows[0]["c"] == "93 days", rows)
+        # MOVED IN BUILD 326: the PT finals join the card as one row, in date order
+        want = sorted(BIG + [["2027-01-11", "PT finals"]])
+        check("%s: the Big exams & PT finals card lists the four and the PT finals in date order, each with the key's mark and how far off it is" % dev,
+              [[r["d"], r["n"]] for r in rows] == want and all(r["mark"] for r in rows)
+              and rows and rows[0]["c"] == "85 days" and rows[1]["c"] == "93 days", rows)
         pk = a.get("pick") or {}
         check("%s: tapping a big exam picks its day in the month" % dev,
               pk.get("sel") == "2027-06-21" and "Final Exam" in (pk.get("card") or ""), pk)
@@ -255,7 +276,7 @@ def calendar_section(br):
         j = pg.evaluate(CAL_JS, ["2027-01-15", ["January 2027"]])
         ctx.close()
         nj = j.get("next") or {}
-        check("%s: Jan 15: Next test is the Level One Final, marked as a big exam with the key's diamond" % dev,
+        check("%s: Jan 15: Next test is the Level One Final, marked as a big exam with the key's orange dot" % dev,
               nj.get("date") == "2027-01-19" and nj.get("title") == "Level One Final" and nj.get("big") and nj.get("chipMark"),
               [j.get("err"), nj])
 

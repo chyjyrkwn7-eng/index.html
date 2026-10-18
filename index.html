@@ -2062,6 +2062,32 @@
   .wr-mini-it{ display:flex; flex-direction:column; align-items:center; gap:.3rem; min-width:0; max-width:6rem; }
   .wr-av.wr-mini-av{ width:2.5rem; margin:0; border-width:1.5px; box-shadow:0 0 0 3px color-mix(in srgb, var(--wr-c) 14%, transparent); }
   .wr-mini-name{ max-width:100%; font-size:.72rem; font-weight:800; color:rgba(243,245,247,.8); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* the class's week (build 326): two tiles - the hundos and the hours the
+     whole class put in - over the Flawless and Long Shift awards, which
+     are the mention cards with their own colours */
+  .wr-tiles{ display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0, 1fr); gap:.6rem; width:min(100%, 26rem); margin:0 0 .75rem; }
+  .wr-tile{ display:flex; align-items:center; gap:.6rem; min-width:0; padding:.6rem .75rem; border-radius:16px;
+    background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02) 55%, rgba(0,0,0,.08)), rgba(22,26,44,.72);
+    border:1px solid color-mix(in srgb, var(--wr-m) 30%, rgba(255,255,255,.1)); box-shadow:inset 0 1px 0 rgba(255,255,255,.1); }
+  .wr-tile-icon{ flex:none; width:2.1rem; height:2.1rem; display:grid; place-items:center; border-radius:50%; color:var(--wr-m);
+    background:color-mix(in srgb, var(--wr-m) 16%, transparent); }
+  .wr-tile-icon svg{ width:1.15rem; height:1.15rem; display:block; }
+  .wr-tile-text{ min-width:0; }
+  .wr-tile-num{ margin:0; font-size:1.3rem; font-weight:800; line-height:1.05; color:#fff; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .wr-tile-lab{ margin:.08rem 0 0; font-size:.7rem; font-weight:700; color:rgba(243,245,247,.62); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wr-alist{ gap:.5rem; }
+  /* the ending: this week's board so far */
+  .wr-closecard{ display:flex; flex-direction:column; gap:.45rem; width:min(100%, 22rem); padding:.8rem 1rem; border-radius:20px;
+    background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02) 55%, rgba(0,0,0,.08)), rgba(22,26,44,.72);
+    border:1px solid rgba(255,255,255,.12); box-shadow:inset 0 1px 0 rgba(255,255,255,.1), 0 12px 30px rgba(0,0,0,.3); }
+  .wr-close-cap{ margin:0; font-size:.62rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:#FFD27A; padding-left:.16em; }
+  .wr-close-row{ display:flex; align-items:center; gap:.6rem; min-width:0; }
+  .wr-av.wr-close-av{ --wr-c:#9FB4D8; width:2.2rem; margin:0; flex:none; border-width:1.5px; box-shadow:none; }
+  .wr-close-row.is-lead .wr-close-av{ --wr-c:#FFD34D; }
+  .wr-close-name{ flex:1 1 auto; min-width:0; font-size:.98rem; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wr-close-pts{ flex:none; font-size:.86rem; font-weight:800; color:rgba(243,245,247,.78); font-variant-numeric:tabular-nums; }
+  .wr-close-row.is-lead .wr-close-pts{ color:#FFD34D; }
+  .wr-close-line{ margin:0; font-size:1rem; font-weight:800; }
   /* a viewer who hides from the rankings: their own week */
   .wr-mecard{ display:flex; align-items:center; gap:1rem; width:min(100%, 22rem); padding:1rem 1.1rem; border-radius:22px;
     background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.03) 55%, rgba(0,0,0,.08)), rgba(22,26,44,.72);
@@ -2084,6 +2110,30 @@
     .wr-av.wr-mav{ width:2.5rem; } .wr-mname{ font-size:.92rem; } .wr-mval{ font-size:.72rem; }
     .wr-mini, .wr-minibox{ display:none; }
     .wr-sub{ margin-bottom:.3rem; } .wr-subwrap{ margin-bottom:.3rem; } .wr-subnote{ font-size:.64rem; margin-top:.08rem; }
+    .wr-alist{ gap:.35rem; }
+    .wr-closecard{ padding:.45rem .8rem; gap:.25rem; border-radius:16px; } .wr-close-cap{ font-size:.56rem; }
+    .wr-av.wr-close-av{ width:1.6rem; } .wr-close-name{ font-size:.86rem; } .wr-close-pts{ font-size:.78rem; } .wr-close-line{ font-size:.88rem; }
+  }
+  /* the class's week on a short stage (an SE, a phone on its side): the
+     heading goes, and the two tiles become one line of two small pills,
+     so the totals and both award cards still fit between the title and
+     his bubble */
+  @container (max-height:16rem){
+    .wr-page-class .wr-subwrap{ display:none; }
+    .wr-tiles{ margin-bottom:.35rem; gap:.4rem; width:auto; }
+    .wr-tile{ padding:.2rem .6rem .2rem .3rem; gap:.35rem; border-radius:999px; }
+    .wr-tile-icon{ width:1.3rem; height:1.3rem; } .wr-tile-icon svg{ width:.78rem; height:.78rem; }
+    .wr-tile-text{ display:flex; align-items:baseline; gap:.3rem; }
+    .wr-tile-num{ font-size:.92rem; } .wr-tile-lab{ margin:0; font-size:.66rem; }
+  }
+  /* and under 12rem the two awards side by side, without the icon and the
+     avatar: stacked, the pills and two cards need ~185px and an SE's stage
+     is 155-165 (measured); side by side they need ~120 */
+  @container (max-height:12rem){
+    .wr-alist{ display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0, 1fr); gap:.4rem; }
+    .wr-award{ grid-template-columns:minmax(0, 1fr); padding:.45rem .6rem; }
+    .wr-award .wr-micon, .wr-award .wr-mav{ display:none; }
+    .wr-award .wr-mval{ line-height:1.25; }
   }
   @media (max-height:44rem){
     .wr-title{ font-size:1.2rem; } .wr-eyebrow{ font-size:.6rem; } .wr-next{ margin-top:.25rem; font-size:.58rem; }
@@ -2105,6 +2155,11 @@
     .wr-minibox{ width:min(100%, 30rem); margin-bottom:1.4rem; padding-bottom:1.2rem; } .wr-mini-cap{ font-size:.74rem; margin-bottom:.7rem; }
     .wr-mini-place{ min-width:1.5rem; height:1.5rem; font-size:.82rem; } .wr-subwrap{ margin-bottom:.9rem; } .wr-subwrap .wr-sub{ margin:0; } .wr-subnote{ font-size:.9rem; }
     .wr-mecard{ width:min(100%, 30rem); padding:1.3rem 1.5rem; } .wr-meav{ width:6rem; height:6rem; }
+    .wr-tiles{ width:min(100%, 34rem); gap:.9rem; margin-bottom:1rem; } .wr-tile{ padding:.85rem 1.1rem; gap:.85rem; border-radius:20px; }
+    .wr-tile-icon{ width:2.8rem; height:2.8rem; } .wr-tile-icon svg{ width:1.5rem; height:1.5rem; }
+    .wr-tile-num{ font-size:1.75rem; } .wr-tile-lab{ font-size:.86rem; } .wr-alist{ gap:.8rem; }
+    .wr-closecard{ width:min(100%, 30rem); padding:1.1rem 1.4rem; gap:.7rem; border-radius:24px; } .wr-close-cap{ font-size:.74rem; }
+    .wr-av.wr-close-av{ width:3.2rem; } .wr-close-name{ font-size:1.25rem; } .wr-close-pts{ font-size:1.05rem; } .wr-close-line{ font-size:1.25rem; }
     .wr-mename{ font-size:1.5rem; } .wr-meline{ font-size:1.05rem; }
     .wr-next{ font-size:.8rem; }
   }
@@ -111153,6 +111208,10 @@ function recapMinutes(v){
   if(!h) return m + (m === 1 ? " minute" : " minutes");
   return h + (h === 1 ? " hour" : " hours") + (m ? " " + m + (m === 1 ? " minute" : " minutes") : "");
 }
+/* the class's study clock, said and shown: whole hours once there are a
+   couple of them, exact minutes under that */
+function recapClockSay(m){ return m >= 120 ? Math.round(m / 60).toLocaleString("en-US") + " hours" : recapMinutes(m); }
+function recapClockShort(m){ return m >= 120 ? Math.round(m / 60).toLocaleString("en-US") + "h" : (Math.floor(m / 60) ? Math.floor(m / 60) + "h " : "") + (m % 60) + "m"; }
 function recapNum(v, cap){
   return (typeof v === "number" && isFinite(v) && v >= 0) ? Math.min(Math.round(v), cap) : null;
 }
@@ -111176,7 +111235,7 @@ function recapNum(v, cap){
    first try (one a day), x - b XP on the week before, m minutes on the
    study clock, s days in a row with study time. */
 const RECAP_MENTIONS = [
-  { cat: "hundos", title: "Flawless", color: "#FFD84D", min: 1, cap: 500, val: b => b.h,
+  { cat: "hundos", fixed: true, title: "Flawless", color: "#FFD84D", min: 1, cap: 500, val: b => b.h,
     glyph: "M12 1.8a7.2 7.2 0 1 0 0 14.4 7.2 7.2 0 0 0 0-14.4Zm0 3.1 1.25 2.6 2.85.4-2.06 2 .48 2.84L12 11.4l-2.52 1.34.48-2.84-2.06-2 2.85-.4L12 4.9ZM7.4 15.4 5.8 22l3.3-1.7 2.1 1.6-.7-4.9a8.7 8.7 0 0 1-3.1-1.6Zm9.2 0a8.7 8.7 0 0 1-3.1 1.6l-.7 4.9 2.1-1.6 3.3 1.7-1.6-6.6Z",
     line: v => v + (v === 1 ? " whole unit" : " whole units") + " at 100%",
     say: (who, v) => "The Flawless award goes to " + who + ": " + v + (v === 1 ? " whole unit" : " whole units") + " at 100% in one week." },
@@ -111193,7 +111252,7 @@ const RECAP_MENTIONS = [
     glyph: "M3 17.6 9.2 11.4l3.6 3.6 5.8-5.8V12h2.2V5.4h-6.6v2.2h2.8l-4.2 4.2-3.6-3.6-7.6 7.6L3 17.6Z",
     line: v => "+" + recapFmt(v) + " XP on the week before",
     say: (who, v) => "On the Rise: " + who + ", up " + recapFmt(v) + " XP on the week before." },
-  { cat: "study", title: "Long Shift", color: "#B79BFF", min: 30, cap: 10080, val: b => b.m,
+  { cat: "study", fixed: true, title: "Long Shift", color: "#B79BFF", min: 30, cap: 10080, val: b => b.m,
     glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2.2a7.8 7.8 0 1 1 0 15.6 7.8 7.8 0 0 1 0-15.6ZM11 6.5v6.1l4.6 2.8 1.1-1.8-3.5-2.1V6.5H11Z",
     line: v => ((Math.floor(v / 60) ? Math.floor(v / 60) + "h " : "") + (v % 60 ? (v % 60) + "m" : "")).trim() + " on the study clock",
     say: (who, v) => "The Long Shift award: " + who + ", with " + recapMinutes(v) + " on the study clock." },
@@ -111206,11 +111265,25 @@ const RECAP_MENTIONS = [
    (a second sign-up, the Safari jar) carries the same name under another
    pub, and on the stage the two are one person. */
 function recapNameKey(s){ return String(s == null ? "" : s).trim().replace(/\s+/g, " ").toLowerCase(); }
+/* HUNDOS AND STUDY TIME, EVERY WEEK (build 326). Madison: "it's good but
+   could also talk about people's hundos, or impressive study time". Those
+   two were two of the six rotating mentions, so most weeks neither came
+   up. They are FIXED now (`fixed: true` above): they leave the rotation
+   (weekRecapCatOrder walks the other four, so two weeks running still
+   never share a mention) and get a page of their own after the
+   mentions - the class's week: the hundos the whole class scored and the
+   hours on its study clock, then the Flawless and Long Shift awards. The
+   awards keep every rule a mention has: never the top 3 or a podium name,
+   nobody named twice in one recap (a mention counts), the minimum, the
+   cap, at least three people reporting and 60% of last week's active
+   rows. Read off the same published week blocks (h, m) - nothing new is
+   written or fetched, and no total is ever shown off fewer than three. */
+const RECAP_FIXED = RECAP_MENTIONS.filter(d => d.fixed).map(d => d.cat);
 /* "KIND OF RANDOM BUT KINDA NOT": the pool in an order drawn from the week
    itself, so every device draws the same one, and one or two mentions a
    week by the same draw. */
 function weekRecapCatOrder(wk){
-  const cats = RECAP_MENTIONS.map(d => d.cat);
+  const cats = RECAP_MENTIONS.filter(d => !d.fixed).map(d => d.cat);
   let h = weekRecapHash("recap|" + wk);
   for(let i = cats.length - 1; i > 0; i--){
     h = Math.imul(h ^ (h >>> 15), 2246822519) >>> 0;
@@ -111266,6 +111339,7 @@ function weekRecapMentions(list, top, lw){
       if(out.length >= n) break;
       if(avoid.indexOf(cat) >= 0) continue;
       const def = RECAP_MENTIONS.find(d => d.cat === cat);
+      if(!def || def.fixed) continue;
       const vals = [];
       (list || []).forEach(e => {
         const b = weekBlockOfEntry(e, lw);
@@ -111286,6 +111360,63 @@ function weekRecapMentions(list, top, lw){
   };
   const strict = pick(preferredBefore.concat(shownBefore));
   return strict.length ? strict : pick(shownBefore);
+}
+/* THE CLASS'S WEEK (build 326) - see RECAP_FIXED. `named` is everyone the
+   recap has already named (the podium and the mentions), by pub and by
+   name. Returns null when there is nothing honest to show. */
+function weekRecapClassWeek(list, top, lw, mentions){
+  const rows = list || [];
+  const active = rows.filter(e => lastWeekPointsOfEntry(e) > 0).length;
+  const topPubs = new Set((top || []).map(t => t.pub));
+  const topNames = new Set((top || []).map(t => recapNameKey(t.name)).filter(Boolean));
+  const named = new Set((mentions || []).map(m => m.pub));
+  const namedNames = new Set((mentions || []).map(m => recapNameKey(m.name)).filter(Boolean));
+  const out = { totals: {}, awards: [] };
+  RECAP_FIXED.forEach(cat => {
+    const def = RECAP_MENTIONS.find(d => d.cat === cat);
+    const vals = [];
+    rows.forEach(e => {
+      const b = weekBlockOfEntry(e, lw);
+      const v = b ? recapNum(def.val(b), def.cap) : null;
+      if(v != null) vals.push({ e, v, x: Number(b.x) || 0 });
+    });
+    if(vals.length < 3 || vals.length < Math.ceil(active * .6)) return;
+    const sum = vals.reduce((a, r) => a + r.v, 0);
+    if(sum > 0) out.totals[cat] = sum;
+    const nk = r => recapNameKey(r.e.firstName);
+    const cands = vals.filter(r => !topPubs.has(r.e.pub) && !topNames.has(nk(r)) && !named.has(r.e.pub) && !namedNames.has(nk(r)) && r.v >= def.min)
+      .sort((a, b) => (b.v - a.v) || (b.x - a.x) || String(a.e.firstName || "").localeCompare(String(b.e.firstName || "")));
+    if(!cands.length) return;
+    const w = cands[0];
+    named.add(w.e.pub); namedNames.add(nk(w));
+    out.awards.push({ cat, pub: w.e.pub, name: String(w.e.firstName || "").trim(), avatar: w.e.avatarChar || "ninja",
+                      value: w.v, me: !!(store.publicId && w.e.pub === store.publicId) });
+  });
+  return (Object.keys(out.totals).length || out.awards.length) ? out : null;
+}
+/* HOW THE RECAP ENDS (build 326): "The description at the end where it
+   talks about next week's is anyone's and stuff is bad as well." It said
+   the same thing every week ("This week's board started fresh on Monday,
+   so it's anyone's"). It now reads the board: who leads THIS week so far
+   and by how much you trail them, or - before anybody has scored - how
+   far you finished off the podium or off first last week. */
+function weekRecapClose(list, top, viewer){
+  const me = store.publicId || "";
+  const now = (list || []).map(e => ({ e, pts: (me && e.pub === me) ? weekPointsOf(store) : weekPointsOfEntry(e) }))
+    .filter(x => x.pts > 0 && String(x.e.firstName || "").trim())
+    .sort((a, b) => (b.pts - a.pts) || String(a.e.firstName || "").localeCompare(String(b.e.firstName || "")));
+  const mine = weekPointsOf(store) || 0;
+  if(now.length){
+    const L = now[0];
+    return { kind: "now", leader: String(L.e.firstName || "").trim(), leaderAvatar: L.e.avatarChar || "ninja", leaderPts: L.pts,
+             leaderMe: !!(me && L.e.pub === me), mine, gap: Math.max(0, L.pts - mine) };
+  }
+  const v = viewer || {};
+  const third = top && top[2] && top[2].pts, first = top && top[0] && top[0].pts;
+  if(v.inTop === 0) return { kind: "defend" };
+  if(v.inTop > 0 && first && v.pts) return { kind: "chase", gap: Math.max(0, first - v.pts) };
+  if(v.pts > 0 && third && v.place > 3) return { kind: "podium", gap: Math.max(0, third - v.pts) };
+  return { kind: "open" };
 }
 /* Who won the week before last, for "back to back": what this device saw
    (its own recap, or the top three it cached that week), or a
@@ -111372,11 +111503,12 @@ function buildWeekRecap(rowsIn){
   }).filter(t => t.name);
   if(!top.length) return null;
   const mentions = weekRecapMentions(list, top, lw);
+  const classWeek = weekRecapClassWeek(list, top, lw, mentions);
   const story = weekRecapStory(top, list, lw);
   const inTop = top.findIndex(t => t.me);
   const place = mine > 0 ? 1 + list.filter(e => e.pub !== me && lastWeekPointsOfEntry(e) > mine).length : 0;
-  return { week: lw, optedOut: false, top, story, mentions,
-    viewer: { pts: mine, place, inTop, mention: mentions.some(m => m.me) } };
+  const viewer = { pts: mine, place, inTop, mention: mentions.some(m => m.me) || !!(classWeek && classWeek.awards.some(a => a.me)) };
+  return { week: lw, optedOut: false, top, story, mentions, classWeek, viewer, close: weekRecapClose(list, top, viewer) };
 }
 function buildWeekRecapOptedOut(){
   const lw = lastWeekKey();
@@ -111407,7 +111539,7 @@ function buildWeekRecapStage(r){
   const head = el("div", "wr-head");
   head.append(el("p", "wr-eyebrow", "Weekly recap"), el("h2", "wr-title", weekLabelOf(r.week)));
   const pagesBox = el("div", "wr-pages");
-  const pages = [], cols = [], mcards = [];
+  const pages = [], cols = [], mcards = [], acards = [];
   if(!r.optedOut){
     const pg = el("div", "wr-page wr-page-podium"); pg.dataset.page = "podium";
     const pod = el("div", "wr-podium");
@@ -111475,6 +111607,44 @@ function buildWeekRecapStage(r){
       pm.appendChild(ml);
       pages.push(pm);
     }
+    /* the class's week (build 326): the totals, then its two awards */
+    if(r.classWeek){
+      const cw = r.classWeek, t = cw.totals;
+      const pc = el("div", "wr-page wr-page-class"); pc.dataset.page = "class";
+      const sub = el("div", "wr-subwrap");
+      sub.append(el("p", "wr-sub", "The class’s week"), el("p", "wr-subnote", "Everyone, together"));
+      pc.appendChild(sub);
+      const tiles = el("div", "wr-tiles");
+      const tile = (cat, big, lab) => {
+        const def = RECAP_MENTIONS.find(d => d.cat === cat);
+        const tl = el("div", "wr-tile"); tl.dataset.cat = cat; tl.style.setProperty("--wr-m", def.color);
+        const ic = el("span", "wr-tile-icon"); ic.appendChild(recapIcon(def.glyph));
+        const tx = el("div", "wr-tile-text"); tx.append(el("p", "wr-tile-num", big), el("p", "wr-tile-lab", lab));
+        tl.append(ic, tx); tiles.appendChild(tl);
+      };
+      if(t.hundos) tile("hundos", recapFmt(t.hundos), t.hundos === 1 ? "hundo" : "hundos");
+      if(t.study) tile("study", recapClockShort(t.study), "studied");
+      if(tiles.children.length) pc.appendChild(tiles);
+      if(cw.awards.length){
+        const al = el("div", "wr-mlist wr-alist");
+        cw.awards.forEach(m => {
+          const def = RECAP_MENTIONS.find(d => d.cat === m.cat);
+          const c = el("div", "wr-mention wr-award" + (m.me ? " is-me" : ""));
+          c.style.setProperty("--wr-m", def.color);
+          c.dataset.cat = m.cat;
+          const ic = el("span", "wr-micon"); ic.appendChild(recapIcon(def.glyph));
+          const tx = el("div", "wr-mtext");
+          tx.append(el("p", "wr-mcat", def.title), el("p", "wr-mname", m.name), el("p", "wr-mval", def.line(m.value)));
+          const av = recapAvatar(m.avatar, "wr-av wr-mav");
+          if(m.me) av.appendChild(el("b", "wr-you", "You"));
+          c.append(ic, tx, av);
+          al.appendChild(c);
+          acards.push(c);
+        });
+        pc.appendChild(al);
+      }
+      pages.push(pc);
+    }
   } else {
     const pg = el("div", "wr-page wr-page-me"); pg.dataset.page = "me";
     const card = el("div", "wr-mecard");
@@ -111489,11 +111659,32 @@ function buildWeekRecapStage(r){
     pg.appendChild(card);
     pages.push(pg);
   }
+  /* the ending (build 326): this week's board so far, in one small card,
+     so the stage says what he is saying - and is short enough for an SE */
+  if(!r.optedOut && r.close){
+    const cl = r.close;
+    const pe = el("div", "wr-page wr-page-close"); pe.dataset.page = "close";
+    const card = el("div", "wr-closecard");
+    card.appendChild(el("p", "wr-close-cap", cl.kind === "now" ? "This week so far" : "This week"));
+    if(cl.kind === "now"){
+      const row = (av, who, pts, cls) => {
+        const rw = el("div", "wr-close-row" + (cls ? " " + cls : ""));
+        rw.append(recapAvatar(av, "wr-av wr-close-av"), el("span", "wr-close-name", who), el("span", "wr-close-pts", recapFmt(pts) + " XP"));
+        return rw;
+      };
+      card.appendChild(row(cl.leaderMe ? (store.avatarChar || "ninja") : cl.leaderAvatar, cl.leaderMe ? "You" : cl.leader, cl.leaderPts, "is-lead" + (cl.leaderMe ? " is-me" : "")));
+      if(!cl.leaderMe && cl.mine > 0) card.appendChild(row(store.avatarChar || "ninja", "You", cl.mine, "is-me"));
+    } else {
+      card.appendChild(el("p", "wr-close-line", "The board reset Monday"));
+    }
+    pe.appendChild(card);
+    pages.push(pe);
+  }
   pages.forEach(p => pagesBox.appendChild(p));
   const nx = (() => { const p = weekKeyNow().split("-").map(Number); return new Date(p[0], p[1] - 1, p[2] + 8); })();
   const next = el("p", "wr-next", "Next recap · Tuesday " + nx.getDate() + " " + nx.toLocaleString("en-US", { month: "long" }));
   root.append(head, pagesBox, next);
-  return { root, pages, cols, mcards, next };
+  return { root, pages, cols, mcards, acards, next };
 }
 /* The script. Exposed so a gate can read every line. */
 function weekRecapLines(r){
@@ -111572,12 +111763,46 @@ function weekRecapLines(r){
       } });
     });
   }
-  const v = r.viewer;
-  if(v.inTop < 0 && !v.mention && v.place > 0 && v.pts > 0){
-    lines.push({ text: "As for you, " + name + ", you finished " + recapOrdinal(v.place) + " with " + recapFmt(v.pts) + " XP. Let’s see what this week brings." });
+  /* the class's week (build 326): hundos and hours, then the two awards */
+  if(r.classWeek){
+    const cw = r.classWeek, t = cw.totals;
+    let text;
+    if(t.hundos && t.study) text = "Now the whole class: " + recapFmt(t.hundos) + (t.hundos === 1 ? " hundo" : " hundos") + " last week, and " + recapClockSay(t.study) + " on the study clock.";
+    else if(t.hundos) text = "Now the whole class: " + recapFmt(t.hundos) + (t.hundos === 1 ? " hundo" : " hundos") + " last week.";
+    else if(t.study) text = "Now the whole class: " + recapClockSay(t.study) + " on the study clock last week.";
+    else text = "Now the whole class’s week.";
+    lines.push({ gesture: "raise", text, enter: () => page("class") });
+    cw.awards.forEach((m, k) => {
+      const def = RECAP_MENTIONS.find(d => d.cat === m.cat);
+      let tx = def.say(m.name, m.value);
+      if(m.me) tx += " That’s you! Well earned.";
+      lines.push({ text: tx, enter: (ctx, instant) => {
+        on(ui && ui.acards[k], "is-in");
+        if(!still && !instant) playSound("ui.notice");
+      } });
+    });
   }
+  /* YOUR WEEK, AND THE ONE UNDER WAY (build 326) - see weekRecapClose */
+  const v = r.viewer, cl = r.close || { kind: "open" };
+  if(v.inTop < 0 && !v.mention && v.place > 0 && v.pts > 0){
+    const third = r.top[2] && r.top[2].pts;
+    lines.push({ text: "As for you, " + name + ": " + recapOrdinal(v.place) + ", with " + recapFmt(v.pts) + " XP"
+      + (third && third > v.pts && cl.kind === "now" ? ", " + recapFmt(third - v.pts) + " XP off the podium." : ".") });
+  }
+  let closing;
+  if(cl.kind === "now"){
+    if(cl.leaderMe) closing = "This week so far, you lead with " + recapFmt(cl.leaderPts) + " XP. Hold it to Sunday night.";
+    else if(cl.mine > 0 && cl.gap === 0) closing = "This week so far, you and " + cl.leader + " are level on " + recapFmt(cl.leaderPts) + " XP.";
+    else if(cl.mine > 0) closing = "This week so far, " + cl.leader + " leads with " + recapFmt(cl.leaderPts) + " XP. You’re " + recapFmt(cl.gap) + " behind.";
+    else closing = "This week so far, " + cl.leader + " leads with " + recapFmt(cl.leaderPts) + " XP. One test puts you on the board.";
+  }
+  else if(cl.kind === "defend") closing = "The board reset Monday, and you’re the one to catch now.";
+  else if(cl.kind === "chase") closing = "You finished " + recapFmt(cl.gap) + " XP off first. The board reset Monday.";
+  else if(cl.kind === "podium") closing = "You finished " + recapFmt(cl.gap) + " XP off the podium. The board reset Monday.";
+  else closing = "The board reset Monday. One test puts you on it.";
+  lines.push({ text: closing, enter: () => page("close") });
   lines.push({ gesture: "wave", final: true,
-    text: "That’s last week. This week’s board started fresh on Monday, so it’s anyone’s. I’ll see you all next Tuesday.",
+    text: "I’ll be out scanning for more of my ship. See you all next Tuesday.",
     enter: () => on(ui && ui.next, "is-in") });
   return lines;
 }
