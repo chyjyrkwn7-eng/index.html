@@ -10522,6 +10522,14 @@
     background:radial-gradient(circle, rgba(255,255,255,.95) 0%, color-mix(in srgb, var(--c0) 70%, transparent) 30%, transparent 68%);
     animation:stardust-flash .9s cubic-bezier(.15,.7,.3,1) both;
   }
+  /* THE DEFAULT'S DIM (build 325): the Fireworks' own dim - the same
+     night-blue fall-off and the same 0.5 - in the first .42s (the
+     Fireworks' 6% of 7s), held while the stardust flies, lifted over the
+     last 1.4s as the motes fade, gone by the time the layer is (3s). */
+  .stardust-dim{ position:absolute; inset:0; opacity:0; pointer-events:none;
+    background:radial-gradient(130% 75% at 50% 0%, #0C0A22, #040309 72%);
+    animation:stardust-dim 3s linear both; }
+  @keyframes stardust-dim{ 0%{ opacity:0; } 14%{ opacity:.5; } 50%{ opacity:.5; } 97%, 100%{ opacity:0; } }
   @keyframes stardust-flash{ 0%{ transform:scale(.1); opacity:0; } 18%{ opacity:1; } 100%{ transform:scale(2.4); opacity:0; } }
   .stardust-ring{
     position:absolute; left:var(--ox); top:var(--oy); width:6rem; height:6rem; margin:-3rem 0 0 -3rem;
@@ -10758,12 +10766,19 @@
   .hfx-uw-wave.is-back{ top:-5px; animation-name:hfx-uw-wave-back; }
   @keyframes hfx-uw-wave{ from{ transform:translateX(0); } to{ transform:translateX(calc(var(--p) * -1)); } }
   @keyframes hfx-uw-wave-back{ from{ transform:translateX(calc(var(--p) * -1)); } to{ transform:translateX(0); } }
-  .hfx-uw-fish, .hfx-uw-manta{ left:0; top:0; }
+  .hfx-uw-fish{ left:0; top:0; }
   /* round 6: the school is one layer - each fish holds its place in it
      and the school moves */
   .hfx-uw-school{ position:absolute; left:0; top:0; width:0; height:0; animation:hfx-uw-swim .9s ease-in-out 8 alternate; }
   @keyframes hfx-uw-swim{ from{ transform:translateY(-4px); } to{ transform:translateY(4px); } }
   .hfx-uw-fishk{ position:absolute; width:var(--ps); height:var(--ps); margin:calc(var(--ps) / -2) 0 0 calc(var(--ps) / -2); background:center / contain no-repeat; }
+  /* a drawn fish (build 325): its tail beats - a small turn either side,
+     on `rotate`, so the transform that flips it to face its way is kept -
+     a finite number of times, about its middle */
+  .hfx-uw-school.is-big{ animation-duration:1.3s; }
+  .hfx-uw-f{ position:absolute; width:var(--fw); height:calc(var(--fw) / 2); margin:calc(var(--fw) / -4) 0 0 calc(var(--fw) / -2);
+    background:center / contain no-repeat; animation:hfx-uw-wag var(--wg) ease-in-out var(--wn) alternate; }
+  @keyframes hfx-uw-wag{ from{ rotate:-4deg; } to{ rotate:4deg; } }
 
   .hfx-uw-drop{ animation:hfx-uw-drop var(--d) cubic-bezier(.55,0,.8,.6) var(--t) both; }
   @keyframes hfx-uw-drop{ 0%{ opacity:0; transform:translateY(0) scaleY(.6); } 14%{ opacity:1; transform:translateY(2px) scaleY(1); } 100%{ opacity:0; transform:translateY(var(--fall)) scaleY(1.35); } }
@@ -11127,7 +11142,14 @@
     color:transparent; text-shadow:none;
     background:linear-gradient(105deg, var(--hfx-g1), var(--hfx-g2) 55%, var(--hfx-g3, var(--hfx-g1)));
     -webkit-background-clip:text; background-clip:text;
-    filter:drop-shadow(0 0 12px color-mix(in srgb, var(--hfx-b) 40%, transparent)); }
+    filter:drop-shadow(0 0 12px var(--hfx-glow, color-mix(in srgb, var(--hfx-b) 40%, transparent))); }
+  /* THE GLOW AS A PLAIN rgba (build 325): "the number 100 lights up on a
+     delay and it's not a smooth transition at the end". The landing eases
+     this filter in over .9s (RS_HUNDO_CROSS_MS), and Chromium interpolates
+     a drop-shadow whose colour is a color-mix() result as a near-black
+     shadow - rgba(1,0,0,.4), measured frame by frame - so the number came
+     up dark and SNAPPED to its glow on the last frame. --hfx-glow is the
+     same colour written as rgba() by hfxTintVars, which interpolates. */
   .hfx-tint{ position:absolute; inset:0; border-radius:inherit; opacity:0; pointer-events:none;
     box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--hfx-b) 55%, transparent), inset 0 0 30px color-mix(in srgb, var(--hfx-b) 26%, transparent); }
   .hfx-tinted .hfx-tint{ opacity:1; }
@@ -25459,7 +25481,7 @@
      grade however it is drawn - a visor, a fishbowl, a mask with no
      mouth. Transform and opacity only; no filter anywhere near the
      drawing. Each layer's resting state IS its final picture, so with
-     motion off a 100 still has its light, a pass its tick and a fail its
+     motion off a 100 still has its light and a fail its
      cloud - only the movement goes. */
   .char-emote{ position:absolute; inset:0; pointer-events:none; }
   .char-emote-back{ z-index:0; }
@@ -25483,12 +25505,8 @@
   .char-emote-front.char-emote-great i:nth-child(1){ left:4%; top:10%; }
   .char-emote-front.char-emote-great i:nth-child(2){ right:2%; top:4%; width:.86rem; height:.86rem; background:#FFFFFF; }
   .char-emote-front.char-emote-great i:nth-child(3){ right:-6%; top:52%; width:.56rem; height:.56rem; }
-  /* 70-89: a green tick on the circle's edge */
-  .char-emote-front.char-emote-pass i{ right:-.22rem; top:-.12rem; width:1.5rem; height:1.5rem; border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, #5FE39A, #22A85E 70%);
-    box-shadow:0 0 0 2px rgba(14,18,26,.95), 0 0 12px rgba(61,220,132,.55); }
-  .char-emote-front.char-emote-pass i::after{ content:""; position:absolute; left:32%; top:24%; width:30%; height:46%;
-    border:solid #FFFFFF; border-width:0 .2rem .2rem 0; rotate:40deg; border-radius:1px; }
+  /* 70-89: nothing on the circle (build 325 - the green tick is gone,
+     "Don't do that"); the character's own move says it */
   /* under 70: the light drains out of the circle and a cloud hangs over it */
   .char-emote-front.char-emote-fail i:nth-child(1){ inset:0; border-radius:50%;
     background:radial-gradient(circle at 50% 38%, rgba(40,52,72,.18), rgba(10,14,22,.58) 72%); }
@@ -25504,7 +25522,6 @@
     .char-emote-front.char-emote-perfect i{ animation:char-emote-burst 2.2s ease-out infinite; animation-delay:calc(var(--k) * -.275s); }
     .char-emote-back.char-emote-great i{ animation:char-emote-breathe 1.5s ease-in-out infinite alternate, char-emote-in .7s ease-out both; }
     .char-emote-front.char-emote-great i{ animation:char-emote-twinkle 1.8s ease-in-out infinite; animation-delay:calc(var(--k) * -.6s); }
-    .char-emote-front.char-emote-pass i{ animation:char-emote-pop .6s cubic-bezier(.3,1.6,.5,1) .35s both, char-emote-nudge 3s ease-in-out 1s infinite; }
     .char-emote-front.char-emote-fail i:nth-child(1){ animation:char-emote-in 1.4s ease-out both; }
     .char-emote-front.char-emote-fail i:nth-child(2){ animation:char-emote-cloud .9s ease-out .3s both, char-emote-bob 1.5s ease-in-out 1.2s infinite alternate; }
     .char-emote-front.char-emote-fail i:nth-child(n+3){ animation:char-emote-rain .9s linear infinite; }
@@ -25526,8 +25543,6 @@
   @keyframes char-emote-burst{ 0%, 100%{ opacity:0; transform:translateY(-.7rem) scale(.3); } 12%{ opacity:1; } 80%{ opacity:0; transform:translateY(-3.1rem) scale(1) rotate(90deg); } }
   @keyframes char-emote-breathe{ from{ transform:scale(.9); opacity:.6; } to{ transform:scale(1.08); opacity:1; } }
   @keyframes char-emote-twinkle{ 0%, 100%{ transform:scale(.2); opacity:0; } 40%{ transform:scale(1.15) rotate(45deg); opacity:1; } 75%{ transform:scale(.4) rotate(90deg); opacity:0; } }
-  @keyframes char-emote-pop{ from{ scale:0; opacity:0; } to{ scale:1; opacity:1; } }
-  @keyframes char-emote-nudge{ 0%, 70%, 100%{ transform:none; } 78%{ transform:scale(1.16) rotate(-8deg); } 86%{ transform:scale(.98); } }
   @keyframes char-emote-cloud{ from{ opacity:0; transform:translateY(-.4rem); } to{ opacity:1; transform:none; } }
   @keyframes char-emote-bob{ from{ translate:0 0; } to{ translate:0 -.12rem; } }
   @keyframes char-emote-rain{ 0%, 100%{ opacity:0; transform:none; } 10%{ opacity:.9; } 80%{ opacity:0; transform:translateY(1rem); } 81%{ opacity:0; transform:none; } }
@@ -28256,6 +28271,25 @@
   .actions.rs-final > button:not(.rs-wide){ flex:1 1 calc(50% - .45rem); min-width:max-content; }
   .actions.rs-final > button.rs-wide{ white-space:normal; text-wrap:balance; }
   @media (max-width:24rem){ .actions.rs-final > button{ padding-left:1rem; padding-right:1rem; } }
+  /* ---- THE WAY ON RISES (build 325) ----
+     "The continue to review button, re run button, and main menu button
+     just show up really fast. Have them slide up from the bottom like how
+     the next question button does during a test." Each button is the Next
+     question pill's own move (qnext-rise): up from its own height and 3rem
+     below where it rests, in by a third of the way, over .62s on the same
+     curve - a row at a time, .09s apart (rsRise sets --rise-dl). On every
+     end-of-run screen: the results (after everything above has landed),
+     the review, back to the results, the Virtual Room's race board, Tug
+     of War, Battle and its results. The class comes off when the last one
+     is up, so a press (.next:active) is the button's own again. */
+  @keyframes rs-rise{
+    from{ transform:translateY(calc(100% + 3rem)); opacity:0; }
+    35%{ opacity:1; }
+    to{ transform:none; opacity:1; }
+  }
+  .rs-rising > :is(button, .next){ animation:rs-rise .62s cubic-bezier(.16,.84,.3,1) var(--rise-dl, 0s) both; }
+  [data-reduce-motion="true"] .rs-rising > :is(button, .next){ animation:none; }
+  @media (prefers-reduced-motion:reduce){ .rs-rising > :is(button, .next){ animation:none; } }
 
   /* ---- ANSWER STREAKS, DURING A TEST ----
      At the TOP, asked for directly, just under the top bar - below where
@@ -29284,6 +29318,37 @@
   /* Between the grade and the XP card since build 320 (the grade is the
      first card now): an ordinary gap there, like every other card's. */
   .rs-screen .rs-card.rs-grade + .rs-card.vroom-waitcard{ margin-top:0; }
+  /* ---- EVERY CARD'S EDGE IS THE HUNDO BOX'S (build 325) ----
+     "The hundo box is nice, but the edges of it have that nice hard glow,
+     ensure all the other boxes on the result screen match this. So the
+     unlock and xp box need to be a little better." The hundo box is a rim
+     in its colour (border-color, full), a 1px line of it inside (55%) and
+     a glow coming in off the edge (30px, 26%) - .hfx-tinted and its
+     .hfx-tint. Every other card on the end-of-run screens now carries the
+     same three in its OWN colour (--rs-edge, an r,g,b triplet so the
+     grade's landing can ease into it - a color-mix() in a transition
+     interpolates wrongly, see .hfx-tinted .rs-pct): the XP card blue, the
+     Found & unlocked card violet, a pass green, a fail red, a retake
+     amber or green, the default (Confetti) 100 its gold, the Virtual
+     Room's waiting card its blue, the badge box its steel. Their washes
+     are unchanged. */
+  .rs-screen .rs-card.rs-xp{ --rs-edge:143,193,255; }
+  .rs-screen .rs-card.rs-unlocked{ --rs-edge:176,140,255; }
+  .rs-screen .rs-card.rs-grade.is-pass, .rs-screen .rs-card.rs-grade.is-retake-clear{ --rs-edge:92,214,146; }
+  .rs-screen .rs-card.rs-grade.is-fail{ --rs-edge:232,104,124; }
+  .rs-screen .rs-card.rs-grade.is-retake-left{ --rs-edge:255,178,92; }
+  .rs-screen .rs-card.rs-grade.is-over{ --rs-edge:255,140,90; }
+  .rs-screen .rs-card.rs-grade.is-perfect:not(.hfx-tinted){ --rs-edge:242,211,138; }
+  .rs-screen .rs-card.vroom-waitcard{ --rs-edge:74,159,232; }
+  .rs-screen .rs-card.rs-badges{ --rs-edge:176,190,210; }
+  .rs-screen .rs-card:is(.rs-xp, .rs-unlocked, .vroom-waitcard, .rs-badges, .rs-grade.is-pass, .rs-grade.is-fail, .rs-grade.is-retake-clear, .rs-grade.is-retake-left, .rs-grade.is-over, .rs-grade.is-perfect:not(.hfx-tinted)){
+    border-color:rgb(var(--rs-edge));
+    box-shadow:0 10px 30px -14px rgba(0,0,0,.6), inset 0 0 0 1px rgba(var(--rs-edge), .55), inset 0 0 30px rgba(var(--rs-edge), .26);
+  }
+  /* the grade comes into its edge as it lands, with its wash - not a 100,
+     whose rim is its effect's and lands with it (the UFO's stays unlit
+     until its beam) */
+  .rs-screen .rs-card.rs-grade.rs-graded:not(.is-perfect){ transition:border-color .6s ease, box-shadow .6s ease; }
   .vroom-wait-line{ margin:0; display:flex; align-items:center; gap:.55rem; font-size:var(--rs-label, .9rem); font-weight:700; line-height:1.3; color:var(--ink); }
   .vroom-wait-text{ flex:1 1 auto; min-width:0; text-wrap:balance; }
   /* "3 / 4" in the screen's figures, not the mono (build 315) */
@@ -29437,6 +29502,9 @@
   .vroom-prep.is-counting .vroom-prep-spin{ display:none; }
   .vrc-exits{ display:flex; gap:.6rem; margin-top:0; padding-top:1rem; opacity:0; transform:translateY(10px); transition:opacity .5s ease, transform .5s ease; pointer-events:none; }
   .vrc.is-done .vrc-exits{ opacity:1; transform:none; pointer-events:auto; }
+  /* (build 325) its two buttons rise as the results' do - rsRise - so the
+     row itself is simply there */
+  .vrc.is-done .vrc-exits.rs-rising{ transition:none; }
   /* Side by side only when both fit in equal halves, else a row each
      (build 315) - "Return to lobby" broke onto two lines beside Main menu
      on 320 and 375px phones. The pills' side padding is a little less here,
@@ -29873,21 +29941,24 @@
      the tab bar's slide: down by its own height and a bit, which is 102px
      on a phone - still in frame, sitting over the leaderboard cutscene
      and dead to a tap, the opposite of "no chat during a cutscene". */
-  body.cutscene-focus .chatdock-btn, body.cutscene-focus .roomchat-fab{ animation:cs-up-out .5s cubic-bezier(.5,0,.75,0) both; pointer-events:none !important; }
+  /* (:not(.cutscene-soft): a hundo effect leaves the chat where it is -
+     build 325, syncCutsceneSoft) */
+  body.cutscene-focus:not(.cutscene-soft) .chatdock-btn, body.cutscene-focus:not(.cutscene-soft) .roomchat-fab{ animation:cs-up-out .5s cubic-bezier(.5,0,.75,0) both; pointer-events:none !important; }
   body.cutscene-focus .bottomtabs{ animation:cs-down-out .5s cubic-bezier(.5,0,.75,0) both; pointer-events:none !important; }
-  body.cutscene-focus .bottomtabs *, body.cutscene-focus .roomchat-fab *{ pointer-events:none !important; }
+  body.cutscene-focus .bottomtabs *, body.cutscene-focus:not(.cutscene-soft) .roomchat-fab *{ pointer-events:none !important; }
   body.cutscene-return:not(.cutscene-focus) .chatdock-btn, body.cutscene-return:not(.cutscene-focus) .roomchat-fab{ animation:cs-up-in .62s cubic-bezier(.2,.9,.25,1) both; }
   body.cutscene-return:not(.cutscene-focus) .bottomtabs{ animation:cs-down-in .62s cubic-bezier(.2,.9,.25,1) both; }
   body.cutscene-focus :is(.daily-alert, .app-banner, .vroom-chat-alert, .toast, .update-banner){ visibility:hidden !important; pointer-events:none !important; }
   /* an open chat goes out of reach with its button */
-  body.cutscene-focus :is(.chatdock-panel, #roomchat-sheet){ visibility:hidden !important; pointer-events:none !important; }
+  body.cutscene-focus:not(.cutscene-soft) :is(.chatdock-panel, #roomchat-sheet){ visibility:hidden !important; pointer-events:none !important; }
   /* Reduce motion: no slide - out of sight and out of reach, and back */
-  [data-reduce-motion="true"] body.cutscene-focus :is(.chatdock-btn, .bottomtabs, .roomchat-fab){ visibility:hidden; }
+  [data-reduce-motion="true"] body.cutscene-focus:not(.cutscene-soft) :is(.chatdock-btn, .roomchat-fab),
+  [data-reduce-motion="true"] body.cutscene-focus .bottomtabs{ visibility:hidden; }
   /* the rank-up journey: gone from its first frame, back only at its end
      (build 321, rankUpNewScene) */
   body.ru-journey :is(.chatdock-btn, .bottomtabs, .roomchat-fab){ visibility:hidden !important; pointer-events:none !important; }
   body.ru-journey .pf-rw-char.is-waiting .rank-avatar, body.ru-journey .pf-rw-char.is-waiting::after{ animation:none !important; }
-  @media (prefers-reduced-motion:reduce){ body.cutscene-focus :is(.chatdock-btn, .bottomtabs, .roomchat-fab){ visibility:hidden; animation:none; } }
+  @media (prefers-reduced-motion:reduce){ body.cutscene-focus:not(.cutscene-soft) :is(.chatdock-btn, .roomchat-fab), body.cutscene-focus .bottomtabs{ visibility:hidden; animation:none; } }
 
   /* ---- the case's name, on its side (build 317, badge2) ----
      One plate on the front wall of every case, between the latches: a
@@ -45356,7 +45427,53 @@ function buildAvatarCharSVG(charId){
   }
   return copy;
 }
+/* ---- EVERY CHARACTER SITS IN THE MIDDLE OF ITS CIRCLE (build 325) ----
+   "Looking at all the characters in those circles, almost every character
+   and its stuff is not centered, they are all near the top." Measured in
+   the results circle, it was true: each drawing is a bust whose shoulders
+   dissolve into the frame's bottom fade (the .avatarchar-svg mask), so
+   what you SEE of a character - from the top of its head (or hat, or
+   crown) down to where its body fades out - sat high in the circle on
+   24 of the 30, the middle of it up to 7% of the circle's height above
+   the middle of the circle. Each figure is moved down by its own amount
+   (drawing units), measured from the drawing itself by
+   tools/check-b325-a.py (the visible ink's top and bottom in the results
+   circle, the figure only - its scenery and its halo are light behind it
+   and stay where they are) and held there by that gate. It is a
+   translate on ONE wrapper (.cx-centre) round the figure, laid on last,
+   so every place a character is drawn - the results, the boards, the
+   person card, the lobby, Profile, the tab bar, Customize - gets it, and
+   anything placed into the figure later (a reaction's props, the hundo
+   effects' face parts) lands in the same place it always did relative to
+   the face. Re-measure after redrawing anybody: run the gate. */
+const AVATAR_CENTRE_DY = {
+  ninja: 1.9, ghost: 2.3, wizard: 0.4, grizzly: -1.0, alien: 0.2, detective: -2.1, masked: 1.2,
+  zeus: 3.3, poseidon: 0.4, clown: 3.3, valkyrie: 3.3, marksman: 1.4, astronaut: 3.3, hacker: -0.8,
+  timekeeper: 3.3, ronin: 3.3, voidwalker: 2.1, umbra: 1.7, genesis: -1.9, lunar: 1.9, solar: 2.3,
+  tempest: 2.9, frost: 2.7, oracle: 3.1, inferno: 4.8, astral: 1.9, celestial: 1.2, zenith: 1.0
+  /* the Ronin's figure is a pale hat and face on a dark body, so its
+     measured middle chases the hat - held where it reads centred, its
+     red moon still behind the hat */
+};
+function centreFigure(svg, charId){
+  if(!svg) return svg;
+  const dy = AVATAR_CENTRE_DY[charId] || 0;
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.setAttribute("class", "cx-centre");
+  if(dy) g.setAttribute("transform", "translate(0 " + dy + ")");
+  Array.from(svg.childNodes).forEach(n => {
+    if(n.nodeName === "defs") return;
+    if(n.nodeName === "circle" && /url\(#(aura|halo)-/.test(n.getAttribute("fill") || "")) return;
+    if(n.nodeName === "g" && /(^| )cx-bg( |$)/.test(n.getAttribute("class") || "")) return;
+    g.appendChild(n);
+  });
+  svg.appendChild(g);
+  return svg;
+}
 function buildAvatarCharSVGFresh(charId){
+  return centreFigure(buildAvatarCharSVGFresh0(charId), charId);
+}
+function buildAvatarCharSVGFresh0(charId){
   const svg = drawAvatarCharSVG(charId);
   const hs = svg && AVATAR_HEAD_SCALE[charId];
   const head = hs && svg.querySelector(".cx-head");
@@ -63736,8 +63853,8 @@ function gradeReaction(run){
    its own sorry version. Its idle loop keeps running underneath, so the
    scenery and every part the move leaves alone stay alive.
    The sign round the circle stays only where it helps: a 100's light and
-   a fail's dimming, both softer, and a pass's tick, which says "passed"
-   at a glance on a character whose move is small. The stars, sparkles and
+   a fail's dimming, both softer (a pass's tick went in build 325 - "What's
+   up with the check mark for the 70 %? Don't do that"). The stars, sparkles and
    rain cloud are gone - they competed with the character.
    The class names stay char-react-<band> (the flip-book hides itself under
    any of them); char-rx and rx-<id> rx-<band> pick the character's own
@@ -63764,8 +63881,11 @@ function reactCharacter(av, band){
        the figure or in front of everything */
     const list = ((RX_PROPS[id] || {})[band]) || [];
     if(svg && list.length){
+      /* inside the figure's centring wrapper (build 325, centreFigure), so
+         a prop moves with the figure it belongs to */
+      const host = svg.querySelector(":scope > .cx-centre") || svg;
       let top = svg.querySelector(".cx-fig");
-      while(top && top.parentNode !== svg) top = top.parentNode;
+      while(top && top.parentNode !== host) top = top.parentNode;
       list.forEach(([name, front, markup]) => {
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.setAttribute("class", "cx-rx cx-rx-" + name);
@@ -63776,7 +63896,7 @@ function reactCharacter(av, band){
            happy eyes and smiles of a 100, see glee() in the table) */
         const face = front === 2 && (svg.querySelector(".cx-eyes-closed") || svg.querySelector(".cx-eyes"));
         if(face) face.parentNode.appendChild(g);
-        else if(front || !top) svg.appendChild(g); else svg.insertBefore(g, top);
+        else if(front || !top) host.appendChild(g); else host.insertBefore(g, top);
       });
     }
   } else {
@@ -63799,8 +63919,11 @@ function reactCharacter(av, band){
     f.style.setProperty("--rx-at", flash[1] + "s");
     back.appendChild(f);
   }
-  const front = layer("front", own ? (band === "pass" || band === "fail" ? 1 : 0)
-    : (band === "perfect" ? 8 : (band === "great" ? 3 : (band === "pass" ? 1 : 4))));
+  /* NO TICK ON A PASS (build 325): "What's up with the check mark for
+     the 70 %? Don't do that." A pass is the character's own small
+     gesture and nothing on the circle. */
+  const front = layer("front", own ? (band === "fail" ? 1 : 0)
+    : (band === "perfect" ? 8 : (band === "great" ? 3 : (band === "pass" ? 0 : 4))));
   av.insertBefore(back, av.firstChild);
   av.appendChild(front);
   return av;
@@ -64864,7 +64987,7 @@ const SOUND_CATALOGUE = {
       K.noise({ t: 3.9, hp: 4500, ff2: 2500, fgl: 2.4, am: [9, .7], a: .4, hold: 1, d: 1.2, g: .02 });
     } },
   "hundo.underwater": { vol: 1.3, group: "Hundo effects", bus: "cut", cd: 3000, hap: "celebrate",
-    desc: "Underwater, on HFX_UW: the sea rushing up from the bottom, the world muffled with bubbles and a whale's call as the fish and the manta pass, then draining away and drips on the glass.",
+    desc: "Underwater, on HFX_UW: the sea rushing up from the bottom, the world muffled with bubbles and a low call as the fish pass, then draining away and drips on the glass.",
     fn: K => {
       const U = (typeof HFX_UW === "object" && HFX_UW) ? HFX_UW : { rise: .15, riseD: 1.6, drain: 5.0, drainD: 1.2 };
       const up = U.rise, full = U.rise + U.riseD, dr = U.drain, out = U.drain + U.drainD;
@@ -83121,7 +83244,11 @@ function setCutsceneFocus(on){
   const was = cutsceneFocusDepth > 0;
   cutsceneFocusDepth = Math.max(0, cutsceneFocusDepth + (on ? 1 : -1));
   const now = cutsceneFocusDepth > 0;
+  /* a focus that was only ever a hundo effect's leaves nothing to slide
+     back (build 325, cutscene-soft) */
+  if(was && !now) cutsceneEndedSoft = document.body.classList.contains("cutscene-soft");
   try{ document.body.classList.toggle("cutscene-focus", now); }catch(e){}
+  syncCutsceneSoft();
   if(!was && now){ try{ document.body.classList.remove("cutscene-return"); }catch(e){} }
   if(was && !now){
     cutsceneFocusReleaseHooks.slice().forEach(f => { try{ f(); }catch(e){} });
@@ -83139,8 +83266,23 @@ function onCutsceneFocusRelease(fn){ if(typeof fn === "function") cutsceneFocusR
    how the person knows the scene is over. */
 const CUTSCENE_RETURN_MS = 620;
 let cutsceneReturnTimer = 0;
+/* ---- A HUNDO EFFECT IS FOCUS WITHOUT MOVING THE CHAT (build 325) ----
+   "The chat button disappears and comes back during hundo effect? Fix
+   that, it can stay." A full-page hundo effect still holds what would
+   interrupt it (toasts, invites, the chat dot), but the chat button stays
+   where it is, seen and working, and so does an open chat: while the only
+   thing holding focus is a hundo effect, body carries `cutscene-soft` and
+   the slide-out rules skip it. A real scene starting over its tail (the
+   badge case) takes the class off and the button leaves as before; when
+   a soft focus ends there is nothing to slide back. */
+var cutsceneEndedSoft = false;
+let sceneFocusSoftOnly = false;
+function syncCutsceneSoft(){
+  try{ document.body.classList.toggle("cutscene-soft", cutsceneFocusDepth === 1 && sceneFocusHeld && sceneFocusSoftOnly); }catch(e){}
+}
 onCutsceneFocusRelease(() => {
   try{
+    if(cutsceneEndedSoft){ cutsceneEndedSoft = false; document.body.classList.remove("cutscene-soft"); return; }
     document.body.classList.add("cutscene-return");
     clearTimeout(cutsceneReturnTimer);
     cutsceneReturnTimer = setTimeout(() => document.body.classList.remove("cutscene-return"), CUTSCENE_RETURN_MS + 60);
@@ -83194,6 +83336,8 @@ onCutsceneFocusRelease(() => {
    rank-up journey nests under the journey's own hold. */
 const CUTSCENE_SCENE_SEL = ".bc-scene:not(.bc-out), .sf-scene:not(.sf-out), #supernova-cutscene, #badge-cutscene, " +
   "#vroom-cutscene, #vroom-race-cut:not(.is-done), #void-cutscene, .hfx-layer.is-page";
+/* the one kind that holds focus softly - see syncCutsceneSoft */
+const CUTSCENE_SOFT_SEL = ".hfx-layer.is-page";
 const CUTSCENE_SCENE_CLASSED = ".bc-scene, .sf-scene, #vroom-race-cut";
 let sceneFocusHeld = false;
 let sceneClassObs = null;
@@ -83201,6 +83345,7 @@ function syncSceneFocus(){
   let on = false;
   try{
     on = !!document.body.querySelector(":scope > :is(" + CUTSCENE_SCENE_SEL + ")");
+    sceneFocusSoftOnly = on && !document.body.querySelector(":scope > :is(" + CUTSCENE_SCENE_SEL + "):not(" + CUTSCENE_SOFT_SEL + ")");
     /* the scenes that end by a class: watch that class */
     document.body.querySelectorAll(":scope > :is(" + CUTSCENE_SCENE_CLASSED + ")").forEach(el => {
       if(el.__csWatched || !sceneClassObs) return;
@@ -83208,7 +83353,7 @@ function syncSceneFocus(){
       sceneClassObs.observe(el, { attributes: true, attributeFilter: ["class"] });
     });
   }catch(e){}
-  if(on === sceneFocusHeld) return;
+  if(on === sceneFocusHeld){ syncCutsceneSoft(); return; }
   sceneFocusHeld = on;
   setCutsceneFocus(on);
 }
@@ -91450,7 +91595,12 @@ setInterval(() => {
    rather than falling like paper. Same signature as before, so every
    caller keeps its palette; `origin` is an element (or a point) to burst
    from, the middle of the screen when there is none. */
-function celebrate(palette, origin){
+/* `o.dim` (build 325): the default hundo effect dims the screen a little
+   while it plays, the way the earned effects do - "the new hundo effects
+   the screen goes slightly dim and the effect happens, let's ensure the
+   default one is the same". Only playHundoFx asks for it; a Virtual Room
+   win or a level-up still gets the plain burst. */
+function celebrate(palette, origin, o){
   if(theme.reduceMotion) return;
   if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const colors = (palette && palette.length) ? palette : ["#FFD37A", "#F5804D", "#C23B7A", "#FFFFFF"];
@@ -91466,6 +91616,7 @@ function celebrate(palette, origin){
   layer.style.setProperty("--ox", ox + "px");
   layer.style.setProperty("--oy", oy + "px");
   layer.style.setProperty("--c0", colors[0]);
+  if(o && o.dim){ const dim = document.createElement("span"); dim.className = "stardust-dim"; layer.appendChild(dim); }
   const flash = document.createElement("span"); flash.className = "stardust-flash";
   const ring = document.createElement("span"); ring.className = "stardust-ring";
   const ring2 = document.createElement("span"); ring2.className = "stardust-ring is-late";
@@ -91527,7 +91678,11 @@ const HUNDO_FX_BOX_TOTAL = { confetti: 3000, fireworks: 3600, blackhole: 3600, u
    4.6s, 6 at 5.0s and none from 5.2s (the same on 336c444) - so its gate
    passed only when the machine was slow enough to start the effect late.
    4.6s is where its last pieces go. */
-const HUNDO_FX_TAIL_AT = { fireworks: 5000, blackhole: 4000, underwater: 5900, worldtree: 4100, bubbles: 4600, ufo: 9500 };
+/* Confetti (build 325): its dim (.stardust-dim) is down to nothing at 97%
+   of its 3s and its layer goes at 3s; the results' buttons and the first
+   unlock wait for that (3.05s), as they wait for every other effect -
+   without an entry they came at 1.5s, rising under the dim. */
+const HUNDO_FX_TAIL_AT = { confetti: 3050, fireworks: 5000, blackhole: 4000, underwater: 5900, worldtree: 4100, bubbles: 4600, ufo: 9500 };
 /* THE BOX'S COLOURS WHILE EACH ONE PLAYS (build 313): "Would be pretty
    cool if the themes matches the box, cause if the just stays yellow it
    would get kinda boring." Border, wash and the numerals' gradient;
@@ -91558,6 +91713,9 @@ const HFX_TINT = {
 const HFX_TINT_VARS = [["--hfx-b", "b"], ["--hfx-g1", "g1"], ["--hfx-g2", "g2"], ["--hfx-g3", "g3"]];
 function hfxTintVars(el, tint){
   HFX_TINT_VARS.forEach(([k, f]) => { if(tint[f]) el.style.setProperty(k, tint[f]); });
+  /* the number's glow as rgba() (build 325, see .hfx-tinted .rs-pct) */
+  const m = /^#([0-9a-f]{6})$/i.exec(tint.b || "");
+  if(m){ const n = parseInt(m[1], 16); el.style.setProperty("--hfx-glow", "rgba(" + (n >> 16) + "," + ((n >> 8) & 255) + "," + (n & 255) + ",.4)"); }
 }
 function hfxMotionOff(){
   try{ if(theme.reduceMotion) return true; }catch(e){}
@@ -91875,7 +92033,7 @@ function hfxWarm(id){
     else if(id === "worldtree"){ [0, 1, 2].forEach(i => urls.push(hfxBlossomURL(i))); urls.push(hfxLeafURL()); HFX_BLOOM.forEach(cl => urls.push(hfxPetalURL(cl))); }
     else if(id === "fireworks"){ hfxFwHeads(); urls.push(hfxGlintURL()); }
     else if(id === "blackhole"){ urls.push(hfxDiscURL(), hfxSwirlURL(), hfxStreakURL(), hfxGlintURL()); }
-    else if(id === "underwater"){ urls.push(hfxWaveURL(0), hfxWaveURL(1), hfxUwLensURL(), hfxUwLightURL(0), hfxUwLightURL(1), hfxRayURL(), hfxUwBubbleURL(), hfxMantaURL(), hfxDropURL(), hfxGlintURL()); [0, 1, 2].forEach(k => urls.push(hfxFishURL(k))); }
+    else if(id === "underwater"){ urls.push(hfxWaveURL(0), hfxWaveURL(1), hfxUwLensURL(), hfxUwLightURL(0), hfxUwLightURL(1), hfxRayURL(), hfxUwBubbleURL(), hfxDropURL(), hfxGlintURL()); [0, 1, 2].forEach(k => urls.push(hfxFishURL(k))); }
   }catch(e){}
   /* every sprite made so far, this effect's included, to a bitmap */
   Object.keys(hfxSprites).forEach(k => hfxRasterise(hfxSprites[k]));
@@ -92221,11 +92379,16 @@ function hfxWorldTree(scr, bx, c){
    - THE CHARACTER HOLDS ITS BREATH (round 5, hfxUwHold).
    - LIGHT RAYS down from the surface (still since round 6, leaning in
      their picture rather than rotated); the school of fish (one layer since
-     round 6) and the manta from the first build.
+     round 6), and since build 325 drawn fish - a silver school and a
+     clownfish and a blue tang - that swim in once the water is up and are
+     gone before it drains; the manta is gone.
    Transform and opacity only, plus that one thin lens; every picture drawn
    once and rasterised; no svg filters; pieces go in when they are due and
    come out when they are done. */
 const HFX_UW = { rise: .15, riseD: 1.6, drain: 5.0, drainD: 1.2, wavePeriod: 220, waveH: 34 };
+/* the breath is taken this long before the surface reaches the face
+   (build 325): the gulp, not a held breath on dry land */
+const HFX_UW_GULP = .05, HFX_UW_LETGO = .04;
 /* the body's colour right under the surface - the wave tiles are filled
    with exactly this, so crest and body are one water */
 const HFX_UW_TOP = "rgba(118,220,236,.24)";
@@ -92317,16 +92480,59 @@ function hfxUwBubbleURL(){
     '<ellipse cx="13.5" cy="12.5" rx="4.8" ry="2.7" fill="#fff" fill-opacity=".92" transform="rotate(-38 13.5 12.5)"/>' +
     '<path d="M27 30 Q31 27 32 22" stroke="#fff" stroke-opacity=".45" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>', 96);
 }
+/* THE FISH, DRAWN PROPERLY (build 325). "The fish coming by and the
+   random shadow black thing is bad. Fix what's in the water." The old
+   fish were one pale lozenge with a dot; the manta was a dark silhouette
+   that read as a shadow passing over the screen - it is gone. Three
+   species now, each lit from above the way the water is (a dark back, a
+   pale belly, a sheen along the top), with fins that carry their own
+   colour, an eye with a catch-light, and in the clownfish's and the
+   tang's case the markings that make them what they are: k 0 a silver
+   schooling fish (an iridescent stripe down its side), k 1 a clownfish
+   (three white bands, each edged in black, clipped to the body), k 2 a
+   blue tang (its dark sweep and a yellow tail). Every one faces LEFT and
+   is drawn once and rasterised, like every sprite. */
 function hfxFishURL(k){
-  const body = ["#9FD8E6", "#C6EEF6", "#7FC2D6"][k % 3];
-  return hfxSprite("fish" + k, () => 'viewBox="0 0 64 32"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3E7F94"/><stop offset=".45" stop-color="' + body + '"/><stop offset="1" stop-color="#F2FFFF"/></linearGradient></defs>' +
-    '<path d="M6 16 Q20 3 40 8 Q50 11 54 16 Q50 21 40 24 Q20 29 6 16 Z" fill="url(#g)"/><path d="M52 16 L63 6 Q60 16 63 26 Z" fill="' + body + '"/>' +
-    '<path d="M24 8 Q30 2 36 7" fill="' + body + '"/><path d="M10 14 Q26 10 46 14" stroke="#ffffff" stroke-opacity=".55" stroke-width="1.4" fill="none"/><circle cx="14" cy="14" r="1.8" fill="#0B2530"/></svg>', 128);
-}
-function hfxMantaURL(){
-  return hfxSprite("manta", () => 'viewBox="0 0 200 110"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0A2A38"/><stop offset="1" stop-color="#14465A"/></linearGradient></defs>' +
-    '<path d="M100 18 Q120 20 132 34 Q160 40 198 60 Q160 64 138 72 Q120 92 100 96 Q80 92 62 72 Q40 64 2 60 Q40 40 68 34 Q80 20 100 18 Z" fill="url(#g)" fill-opacity=".85"/>' +
-    '<path d="M92 18 Q90 8 84 4 M108 18 Q110 8 116 4" stroke="#0A2A38" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M100 96 Q101 104 103 110" stroke="#0A2A38" stroke-width="2" fill="none"/></svg>', 360);
+  k = k % 3;
+  return hfxSprite("fish2-" + k, () => {
+    const eye = (x, y, r) => '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#F4FBFF"/><circle cx="' + (x - r * .12) + '" cy="' + y + '" r="' + (r * .66) + '" fill="#0A1620"/><circle cx="' + (x - r * .38) + '" cy="' + (y - r * .32) + '" r="' + (r * .24) + '" fill="#fff"/>';
+    if(k === 0) return 'viewBox="0 0 100 50"><defs>' +
+      '<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1D5670"/><stop offset=".4" stop-color="#5FA9C0"/><stop offset=".6" stop-color="#D9F2F7"/><stop offset="1" stop-color="#FFFFFF"/></linearGradient>' +
+      '<linearGradient id="s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7FF0FF" stop-opacity="0"/><stop offset=".25" stop-color="#8FF4FF" stop-opacity=".9"/><stop offset=".65" stop-color="#C2B0FF" stop-opacity=".8"/><stop offset="1" stop-color="#C2B0FF" stop-opacity="0"/></linearGradient>' +
+      '<linearGradient id="t" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2B6F88"/><stop offset="1" stop-color="#A9DCE8" stop-opacity=".85"/></linearGradient></defs>' +
+      '<path d="M76 25 Q85 17 97 7 Q91 25 97 43 Q85 33 76 25 Z" fill="url(#t)"/>' +
+      '<path d="M38 11 Q48 1 62 8 Q54 10 47 13 Z" fill="#2A6C86"/><path d="M46 38 Q53 46 60 38 Z" fill="#A9DCE8" fill-opacity=".85"/>' +
+      '<path d="M5 25 Q13 11 37 9 Q64 8 79 25 Q64 41 37 41 Q13 39 5 25 Z" fill="url(#b)"/>' +
+      '<path d="M15 24 Q44 20 76 25" stroke="url(#s)" stroke-width="2.4" fill="none" stroke-linecap="round"/>' +
+      '<path d="M16 15 Q40 9 64 14" stroke="#fff" stroke-opacity=".3" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+      '<path d="M22 15 Q27 25 22 35" stroke="#1D5670" stroke-opacity=".45" stroke-width="1.3" fill="none" stroke-linecap="round"/>' +
+      '<path d="M28 28 Q37 29 39 35 Q31 35 28 28 Z" fill="#E4F6FA" fill-opacity=".85"/>' +
+      '<path d="M6 26.5 Q9 27.5 11.5 26.5" stroke="#1D5670" stroke-opacity=".6" stroke-width="1" fill="none" stroke-linecap="round"/>' +
+      eye(15, 22, 3.8) + '</svg>';
+    if(k === 1) return 'viewBox="0 0 100 50"><defs>' +
+      '<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFB45C"/><stop offset=".45" stop-color="#FF7A1A"/><stop offset="1" stop-color="#D9520A"/></linearGradient>' +
+      '<clipPath id="c"><path d="M5 25 Q9 9 35 8 Q62 8 77 25 Q62 42 35 42 Q9 41 5 25 Z"/></clipPath></defs>' +
+      '<path d="M75 25 Q83 13 95 11 Q100 25 95 39 Q83 37 75 25 Z" fill="#FF8A2A" stroke="#1A120C" stroke-width="2"/>' +
+      '<path d="M30 11 Q36 1 48 4 Q46 9 44 11 M48 9 Q58 3 67 13" fill="#FF8A2A" stroke="#1A120C" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path d="M40 39 Q46 48 54 39 Z" fill="#FF8A2A" stroke="#1A120C" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path d="M5 25 Q9 9 35 8 Q62 8 77 25 Q62 42 35 42 Q9 41 5 25 Z" fill="url(#b)"/>' +
+      '<g clip-path="url(#c)" stroke="#1A120C" stroke-width="1.8">' +
+      '<path d="M19 4 Q27 25 19 46 L28 46 Q36 25 28 4 Z" fill="#FFFFFF"/><path d="M45 4 Q51 25 45 46 L53 46 Q59 25 53 4 Z" fill="#FFFFFF"/><path d="M68 4 Q72 25 68 46 L74 46 Q78 25 74 4 Z" fill="#FFFFFF"/></g>' +
+      '<path d="M5 25 Q9 9 35 8 Q62 8 77 25 Q62 42 35 42 Q9 41 5 25 Z" fill="none" stroke="#1A120C" stroke-width="1.6"/>' +
+      '<path d="M14 15 Q36 8 60 13" stroke="#fff" stroke-opacity=".35" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
+      '<path d="M31 28 Q39 29 41 35 Q34 36 31 28 Z" fill="#FF9E4A" stroke="#1A120C" stroke-width="1.3" stroke-linejoin="round"/>' +
+      eye(13, 21, 4.2) + '</svg>';
+    return 'viewBox="0 0 100 50"><defs>' +
+      '<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4C8DFF"/><stop offset=".55" stop-color="#2557E8"/><stop offset="1" stop-color="#1B3FB8"/></linearGradient>' +
+      '<linearGradient id="t" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFC21F"/><stop offset="1" stop-color="#FFE27A"/></linearGradient></defs>' +
+      '<path d="M76 25 Q84 15 97 9 Q92 25 97 41 Q84 35 76 25 Z" fill="url(#t)"/>' +
+      '<path d="M18 13 Q40 1 70 14 Q50 12 30 16 Z" fill="#1B3FB8"/><path d="M20 37 Q42 48 68 36 Q48 38 30 35 Z" fill="#1B3FB8"/>' +
+      '<path d="M5 25 Q12 9 38 9 Q64 9 78 25 Q64 41 38 41 Q12 41 5 25 Z" fill="url(#b)"/>' +
+      '<path d="M20 20 Q36 13 54 17 Q70 21 74 27 Q66 23 58 25 Q46 28 38 34 Q36 26 28 26 Q22 26 20 20 Z" fill="#0B1A4A" fill-opacity=".85"/>' +
+      '<path d="M14 14 Q36 9 58 13" stroke="#fff" stroke-opacity=".3" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+      '<path d="M27 28 Q35 30 37 36 Q30 36 27 28 Z" fill="#FFD54A"/>' +
+      eye(14, 22, 3.9) + '</svg>';
+  }, 192);
 }
 function hfxDropURL(){
   return hfxSprite("drop", () => 'viewBox="0 0 20 40"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2FFFF" stop-opacity=".95"/><stop offset="1" stop-color="#7FD9E8" stop-opacity=".35"/></linearGradient></defs>' +
@@ -92543,6 +92749,15 @@ function hfxSea(parent, o){
   let began = null;
   const clock = () => {
     try{
+      /* THE DRAIN'S OWN TIME, while it has not finished (build 325): it
+         runs from the sea's start (its delay is part of it) to the end of
+         the drain, so it is the water's clock wherever the water is moving -
+         and it is the clock a recorder that seeks every animation sees too.
+         Read off document.timeline instead, a recording (which pauses and
+         seeks the animations to its own clock) put the waterline seconds
+         ahead of the water on screen and the breath was let go under it. */
+      const dr = sea.getAnimations().find(a => a.animationName === "hfx-uw-drain");
+      if(dr && dr.playState !== "finished" && dr.currentTime != null) return dr.currentTime / 1000;
       if(began == null){ const a = sea.getAnimations()[0]; if(a && a.startTime != null) began = a.startTime; }
       if(began != null && document.timeline) return (document.timeline.currentTime - began) / 1000;
     }catch(e){}
@@ -92611,12 +92826,30 @@ function hfxUwScreen(c, S, page, k, tot){
       if(!r.wet && cy > line + 6){ r.wet = true; sway(r, s); }
       else if(r.wet && cy < line - 6){ r.wet = false; settle(r); }
     });
-    if(hold && !hold.done){
-      const q = hold.el.getBoundingClientRect(), cy = q.top + q.height / 2;
-      /* the breath is taken a beat before the water arrives */
-      if(!hold.on && q.height && cy > top + S.lineAt(s + .3)) hold.start();
-      if(hold.on && cy > line + 2) hold.under = true;
-      else if(hold.on && hold.under && cy < line - 2) hold.release();
+    /* THE BREATH IS HELD WHILE THE FACE IS UNDER, AND ONLY THEN (build
+       325). It was the middle of the circle against the surface, read
+       every 150ms, with a 0.3s lead: the character drew breath well
+       before the water reached its face and let it out only once the
+       surface had dropped below its middle - a held breath on dry
+       land at both ends. Now the line is the face (hold.faceY: the
+       mouth, or the eyes), the gulp is taken HFX_UW_GULP before the
+       surface reaches it, and the release comes as the surface drops
+       past it - each one timed to the frame the curves say it happens
+       (the waterline is the css curves on the water's own clock, so the
+       crossing inside the next tick is found and scheduled exactly). */
+    if(hold && !hold.done && !hold.due){
+      const fy = hold.faceY ? hold.faceY() : (() => { const q = hold.el.getBoundingClientRect(); return q.top + q.height / 2; })();
+      const cross = (test, lead) => { for(let u = 0; u <= .17; u += .01){ if(test(top + S.lineAt(s + u + lead))) return u; } return -1; };
+      if(!hold.on){
+        const u = cross(y => y <= fy, HFX_UW_GULP);
+        if(u >= 0){ hold.due = true; setTimeout(() => { hold.due = false; if(!hold.done && !quitted) hold.start(); }, u * 1000); }
+      } else if(!hold.under){ if(line <= fy) hold.under = true; }
+      else {
+        /* let go a beat early, as the surface leaves the eyes - a timer that
+           fires late on a busy phone still lands as the face clears */
+        const u = cross(y => y > fy + 1, HFX_UW_LETGO);
+        if(u >= 0){ hold.due = true; setTimeout(() => { hold.due = false; if(!hold.done && !quitted) hold.release(); }, u * 1000); }
+      }
     }
   };
   const iv = setInterval(tick, 150);
@@ -92733,6 +92966,20 @@ function hfxUwHold(av, face){
     const e = svg.querySelector(".cx-eyes"), er = e && e.getBoundingClientRect();
     if(er && er.width > 0) return { x: er.left + er.width / 2 - ar.left, y: er.bottom - ar.top + ar.height * .12 };
     return { x: ar.width / 2, y: ar.height * .62 };
+  };
+  /* THE FACE'S HEIGHT ON THE SCREEN (build 325): the line the water has to
+     cross for the breath to be held - the mouth, or for a helmet or the
+     bowl the middle of the eyes, or failing both the middle of the drawing.
+     hfxUwScreen holds the breath while the surface is over THIS, not over
+     the middle of the circle: "he holds his breath even before the water
+     and holds it after it's gone". */
+  H.faceY = () => {
+    if(!helmet && !fish && mouth && !keepMouth){ const m = mouth.getBoundingClientRect(); if(m.height > 0) return m.top + m.height / 2; }
+    const e = svg.querySelector(".cx-eyes"), er = e && e.getBoundingClientRect();
+    if(er && er.height > 0) return er.top + er.height / 2;
+    if(mouth){ const m = mouth.getBoundingClientRect(); if(m.height > 0) return m.top + m.height / 2; }
+    const ar = av.getBoundingClientRect();
+    return ar.top + ar.height / 2;
   };
   const later = (ms, fn) => H.timers.push(setTimeout(fn, ms));
   /* a bubble escaping */
@@ -92939,7 +93186,7 @@ const HFX_RX_FW = { m: "#FF5CD6", c: "#5CE3FF", g: "#FFD38C", w: "#FFF6EC" };
    hfxFireworks' own table (the finale's three are within 0.1s). */
 const HFX_RX_FW_BURSTS = [[1.0, "m"], [1.4, "c"], [1.85, "m"], [2.25, "g"], [2.35, "c"], [3.35, "c"], [3.45, "m"]];
 /* how long each reaction lasts (s): the last of it has eased out by then */
-const HFX_RX_TOTAL = { confetti: 3.4, fireworks: 6.3, underwater: 7.4, bubbles: 4.9, ufo: 10.4 };
+const HFX_RX_TOTAL = { confetti: 3.05, fireworks: 6.3, underwater: 7.4, bubbles: 4.9, ufo: 10.4 };
 const HFX_CHAR_RX = {
   /* a happy squint and a blush; a piece of confetti lands on its head */
   confetti(R, F, o){
@@ -92951,8 +93198,10 @@ const HFX_CHAR_RX = {
       hfxSvgEl("path", { "data-hx": "eye" + i, d: "M" + (cx - w).toFixed(2) + " " + (cy + w * .32).toFixed(2) + " Q" + cx.toFixed(2) + " " + (cy - w * .78).toFixed(2) + " " + (cx + w).toFixed(2) + " " + (cy + w * .32).toFixed(2),
         fill: "none", stroke: F.stroke, "stroke-width": (Math.max(.5, F.sw) * 1.25).toFixed(2), "stroke-linecap": "round" }, sq);
     });
-    R.fade(sq, .12, .3, 2.75, .45);
-    R.cover(F, .12, .3, 2.75, .45);
+    /* (build 325) out by 2.9s, with the default's dim and its last motes,
+       not a beat after them */
+    R.fade(sq, .12, .3, 2.45, .45);
+    R.cover(F, .12, .3, 2.45, .45);
     /* the head lifts a little with it */
     R.anim(R.svg, [{ translate: "0px 0px" }, { translate: "0px -1.6px", offset: .35 }, { translate: "0px 0px" }], { duration: 700, delay: 120, easing: "ease-out", fill: "none" });
     /* the piece: flutters down, lands, sits, slides off */
@@ -92972,8 +93221,8 @@ const HFX_CHAR_RX = {
       { duration: 1150, delay: 150, easing: "ease-in-out" });
     /* it slides off the side as the squint goes */
     R.anim(pc, [{ transform: at(0, 0), opacity: 1 }, { transform: at(1.4, .2), opacity: 1, offset: .35 }, { transform: at(3.4, 3.2), opacity: 0 }],
-      { duration: 650, delay: 2600, easing: "cubic-bezier(.5,0,.8,.5)", fill: "forwards" });
-    R.anim(tilt, [{ transform: "rotate(-16deg)" }, { transform: "rotate(40deg)" }], { duration: 650, delay: 2600, easing: "ease-in", fill: "forwards" });
+      { duration: 650, delay: 2250, easing: "cubic-bezier(.5,0,.8,.5)", fill: "forwards" });
+    R.anim(tilt, [{ transform: "rotate(-16deg)" }, { transform: "rotate(40deg)" }], { duration: 650, delay: 2250, easing: "ease-in", fill: "forwards" });
   },
   /* a flinch at the first bang, then eyes wide, lit by every burst */
   fireworks(R, F){
@@ -93240,38 +93489,63 @@ function hfxUnderwater(scr, bx, c){
       n: { rays: mini ? 3 : small ? 4 : 6, vents: mini ? 2 : small ? 3 : 4, gap: mini ? [.55, .9] : [.3, .5],
         scatter: mini ? 3 : small ? 7 : 9, boxGap: mini ? [.7, 1.1] : [.4, .65], rush: mini ? 2 : small ? 4 : 5 } });
     const body = S.body, bodyH = S.bodyH;
-    /* a school of fish across, above the box, and a manta behind them */
-    const dir = Math.random() < .5 ? 1 : -1, y0 = Math.max(60 * k, box.top - lvl - c.vh * hfxR(.12, .22));
-    /* ONE layer for the whole school (round 6): it swims across as one,
-       bobbing; each fish keeps its own place in it, the ones further back
-       behind by how much they lagged */
-    const fat = U.rise + U.riseD + .15, fl = dir > 0 ? -1 : 1, sp = (c.vw + 120) / 3, fish = [];
+    /* THE LIFE IN IT (build 325): "The fish coming by and the random
+       shadow black thing is bad. Fix what's in the water." The manta (the
+       black shape) is gone. A silver school swims across the band above
+       the box, a clownfish and a blue tang the other way lower down, in
+       the clear water under the cards where there is room (across the
+       box's lower half when there is not), each one drawn (hfxFishURL),
+       its tail beating as it goes. All of it ON THE WATER'S CLOCK: nothing
+       comes in until the sea is up (U.rise + U.riseD) and every fish has
+       swum out of frame before it starts to drain (U.drain), so nothing
+       is ever left in the air. Depth: the fish further back are smaller
+       and fainter, the water's colour showing through them. */
+    const inAt = U.rise + U.riseD + .1, outBy = U.drain - .1, win = outBy - inAt;
+    const dir = Math.random() < .5 ? 1 : -1, fl = dir > 0 ? -1 : 1;
+    const swim = (el, x0, x1, ys, dl, d, easing) => hfxAnim(c, el, [
+      { translate: x0 + "px " + ys[0] + "px" },
+      { translate: (x0 + (x1 - x0) * .33) + "px " + ys[1] + "px", offset: .33 },
+      { translate: (x0 + (x1 - x0) * .66) + "px " + ys[2] + "px", offset: .66 },
+      { translate: x1 + "px " + ys[3] + "px" }
+    ], { duration: d * 1000, delay: Math.max(0, dl) * 1000, fill: "both", easing: easing || "linear" });
+    const fishEl = (parent, kk, w, x, y, wag, depth, face) => {
+      const e = hfxMk(parent, "i", "hfx-uw-f", { left: x + "px", top: y + "px", "--fw": w + "px", "--wg": wag.toFixed(2) + "s", "--wn": String(Math.ceil(win / wag) + 2) });
+      e.style.backgroundImage = hfxFishURL(kk);
+      e.style.transform = "scaleX(" + face + ")";
+      if(depth) e.style.opacity = String(depth);
+      return e;
+    };
+    /* the school: one moving layer, each fish its own place and tail */
+    const y0 = Math.max(56 * k, box.top - lvl - c.vh * hfxR(.11, .17));
+    const nS = mini ? 5 : small ? 9 : 13, school = [];
     let back = 0;
-    for(let i = 0; i < (mini ? 5 : small ? 8 : 12); i++){
-      const lag = i * .07 + hfxR(0, .12);
-      back = Math.max(back, lag * sp);
-      fish.push({ s: hfxR(26, 40) * k, dx: -dir * lag * sp, dy: hfxR(-40, 40) * k });
+    for(let i = 0; i < nS; i++){
+      const far = i % 3 === 2, w = (far ? hfxR(24, 30) : hfxR(32, 44)) * k, lag = i * (small ? 11 : 13) * k + hfxR(0, 14) * k;
+      back = Math.max(back, lag + w);
+      school.push({ w, dx: -dir * lag, dy: hfxR(-34, 34) * k, far });
     }
-    const xs = dir > 0 ? -60 : c.vw + 60, xe = (dir > 0 ? c.vw + 60 : -60) + dir * back;
-    due(fat, off => {
+    const xs = dir > 0 ? -60 * k : c.vw + 60 * k, xe = dir > 0 ? c.vw + back + 40 * k : -back - 40 * k;
+    due(inAt, off => {
       const sc = hfxMk(body, "span", "hfx-uw-school");
-      fish.forEach((f, i) => { const e = hfxMk(sc, "i", "hfx-uw-fishk", { left: f.dx + "px", top: f.dy + "px", "--ps": f.s + "px" }); e.style.backgroundImage = hfxFishURL(i % 3); e.style.transform = "scaleX(" + fl + ")"; });
-      const a = hfxAnim(c, sc, [
-        { translate: xs + "px " + (y0 + 40) + "px" },
-        { translate: (xs + (xe - xs) * .15) + "px " + (y0 + 20) + "px", offset: .12 },
-        { translate: (xs + (xe - xs) * .5) + "px " + (y0 - 10) + "px", offset: .5 },
-        { translate: (xs + (xe - xs) * .85) + "px " + (y0 + 14) + "px", offset: .88 },
-        { translate: xe + "px " + (y0 + 4) + "px" }
-      ], { duration: 3000 + back / sp * 1000, delay: Math.max(0, fat - off) * 1000, fill: "both", easing: "ease-in-out" });
+      school.forEach(f => fishEl(sc, 0, f.w, f.dx, f.dy, f.far ? .34 : .26, f.far ? .62 : 0, fl));
+      const a = swim(sc, xs, xe, [y0 + 18 * k, y0 - 6 * k, y0 + 8 * k, y0 - 4 * k], inAt - off, win, "cubic-bezier(.3,.1,.6,.95)");
       if(a) a.onfinish = () => sc.remove();
     });
-    const mw = (mini ? 120 : small ? 190 : 260);
-    const my = Math.max(bodyH * .1, box.top - lvl - c.vh * .3), mat = U.rise + U.riseD + .05;
-    due(mat, off => hfxAnim(c, hfxPiece(body, "hfx-uw-manta", hfxMantaURL(), 0, 0, mw, {}), [
-      { transform: "translate(" + (dir > 0 ? c.vw + mw : -mw) + "px," + (my + 30) + "px) rotate(" + (dir > 0 ? -6 : 6) + "deg) scale(.8)", opacity: 0 },
-      { transform: "translate(" + (c.vw / 2) + "px," + (my - 10) + "px) rotate(0deg) scale(1)", opacity: .85, offset: .5 },
-      { transform: "translate(" + (dir > 0 ? -mw : c.vw + mw) + "px," + (my - 40) + "px) rotate(" + (dir > 0 ? 6 : -6) + "deg) scale(.9)", opacity: 0 }
-    ], { duration: 3400, delay: Math.max(0, mat - off) * 1000, fill: "both", easing: "ease-in-out" }));
+    /* the two big ones, the other way: under the cards where there is
+       clear water, else across the box's lower half */
+    const cardsBottom = c.scene && c.scene.cards && c.scene.cards.length ? Math.max(...c.scene.cards.map(q => q.bottom)) - rest : box.top + box.height;
+    const clear = c.vh - cardsBottom;
+    const lowY = clear > 110 * k ? cardsBottom + clear * .45 : box.top + box.height * .7;
+    [[1, 64, .2, .22], [2, 58, .55, .34]].forEach(([kk, w0, dl, dy], j) => {
+      const w = w0 * k * (small ? 1 : 1.2), y = lowY - lvl + (j ? 1 : -1) * dy * 100 * k;
+      const x0 = dir > 0 ? c.vw + w : -w, x1 = dir > 0 ? -w * 1.2 : c.vw + w * 1.2;
+      due(inAt + dl, off => {
+        const g = hfxMk(body, "span", "hfx-uw-school is-big");
+        fishEl(g, kk, w, 0, 0, .3 + j * .06, 0, -fl);
+        const a = swim(g, x0, x1, [y, y - 8 * k, y + 6 * k, y - 4 * k], inAt + dl - off, win - dl, "cubic-bezier(.35,.05,.65,1)");
+        if(a) a.onfinish = () => g.remove();
+      });
+    });
     /* drops running down the glass once the water has gone */
     const drops = hfxMk(scr, "span", "hfx-uw-ocean is-drops");
     for(let i = 0; i < (mini ? 4 : small ? 9 : 13); i++){
@@ -94258,7 +94532,10 @@ function playHundoFx(id, opts){
   const rxAv = (!opts.boxOnly && !opts.frame && !opts.preview) ? hfxResultsAvatar(opts.box) : null;
   if(id === "confetti" && !opts.boxOnly && !opts.frame){
     playSound("hundo.confetti");
-    celebrate(opts.palette, opts.pct || opts.box);
+    celebrate(opts.palette, opts.pct || opts.box, { dim: true });
+    /* the box is lifted over its dim, as the Fireworks lift theirs, so
+       the number is never dimmed (build 325) */
+    if(opts.box){ const bx0 = opts.box; bx0.classList.add("hfx-over"); setTimeout(() => bx0.classList.remove("hfx-over"), 3000); }
     if(rxAv){ try{ hfxCharReact(rxAv, "confetti", { palette: opts.palette }); }catch(e){} }
     return null;
   }
@@ -97190,6 +97467,49 @@ function rsLand(el, instant){
   });
 }
 
+/* THE WAY-ON BUTTONS RISE (build 325, see .rs-rising): the container is
+   simply there and its buttons come up from below, a row at a time,
+   `o.delay` ms after the call. `o.follow` (default on) lets the camera
+   follow them down as rsLand's does, to where they will REST. Nothing
+   moves with motion off. Returns how long the rise takes. */
+const RS_RISE_MS = 620, RS_RISE_ROW_MS = 90;
+function rsRise(el, o){
+  o = o || {};
+  if(!el) return 0;
+  el.classList.remove("rs-in"); el.classList.add("rs-in-now");
+  if(o.instant || resultsMotionOff()) return 0;
+  const btns = [...el.children].filter(b => b.matches("button, .next") && !b.hidden);
+  if(!btns.length) return 0;
+  /* a row at a time: buttons side by side share a row's delay */
+  const rows = [];
+  btns.forEach(b => { const t = b.offsetTop; let i = rows.findIndex(y => Math.abs(y - t) < 6); if(i < 0){ rows.push(t); } });
+  rows.sort((a, b) => a - b);
+  const d0 = Math.max(0, o.delay || 0);
+  let last = 0;
+  btns.forEach(b => {
+    const r = rows.findIndex(y => Math.abs(y - b.offsetTop) < 6), dl = d0 + Math.max(0, r) * RS_RISE_ROW_MS;
+    b.style.setProperty("--rise-dl", (dl / 1000).toFixed(3) + "s");
+    last = Math.max(last, dl);
+  });
+  clearTimeout(el.__riseT);
+  el.classList.remove("rs-rising"); void el.offsetWidth; el.classList.add("rs-rising");
+  const total = last + RS_RISE_MS;
+  el.__riseT = setTimeout(() => { el.classList.remove("rs-rising"); btns.forEach(b => b.style.removeProperty("--rise-dl")); }, total + 60);
+  if(o.follow !== false) setTimeout(() => { if(el.isConnected) rsFollow(el); }, d0);
+  return total;
+}
+/* The camera to where `el` rests (the floor rsLand uses). */
+function rsFollow(el){
+  requestAnimationFrame(() => {
+    const r = el.getBoundingClientRect();
+    let floor = window.innerHeight - 24;
+    const bt = document.getElementById("backtotop");
+    const bb = bt && !bt.hidden ? bt.getBoundingClientRect() : null;
+    if(bb && bb.height && bb.left < r.right && bb.right > r.left) floor = Math.min(floor, bb.top - 12);
+    if(r.bottom > floor) window.scrollBy({ top: Math.min(r.bottom - floor, r.top - 90), behavior: "smooth" });
+  });
+}
+
 /* What the run was, in words: the mode chip and the units. Shared by
    both screens so the review cannot disagree with the rewards about
    what was just sat. */
@@ -99031,7 +99351,10 @@ function showRunRewards(run, hooks, opts){
        the Unlocked box only once the scenes are over. */
     const holdBox = !!unlocked && !(opts && opts.instant) && !theme.muteBanners &&
       ((run.badges && run.badges.length && typeof playBadgeCaseScene === "function") || (run.flare && typeof playFlareFoundScene === "function"));
-    [head, grade, xp, ...lineEls, totalRow, levelBlock, ...boxes, ...(holdBox ? [] : [unlocked, ...unlockRows]), actions].forEach(el => rsLand(el, true));
+    [head, grade, xp, ...lineEls, totalRow, levelBlock, ...boxes, ...(holdBox ? [] : [unlocked, ...unlockRows])].forEach(el => rsLand(el, true));
+    /* back from the review the screen is drawn at once, and its buttons
+       still come up from below (build 325); the page is not scrolled */
+    if(actions) rsRise(actions, { delay: 160, follow: false });
     let boxDown = !holdBox;
     const boxNow = () => { if(boxDown || !panel.isConnected) return; boxDown = true; [unlocked, ...unlockRows].forEach(el => rsLand(el, true)); };
     if(holdBox) setTimeout(boxNow, 30000);
@@ -99189,7 +99512,7 @@ function showRunRewards(run, hooks, opts){
     }));
   }
   /* THE BUTTONS DO NOT ARRIVE UNDER A SCENE'S DIM (build 317). */
-  if(actions) seq.add(unlocked ? 650 : Math.max(620, fxTail), instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(actions, instant); });
+  if(actions) seq.add(unlocked ? 650 : Math.max(620, fxTail), instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsRise(actions, { instant }); });
   seq.add(0, () => { resultsSeq = null; if(sceneBridgeOpen()) dropSceneBridge(false); finish(); });
 
   /* A TAP SPEEDS UP THE BOX ON SCREEN, NOT THE WHOLE SHOW (build 305):
@@ -99310,6 +99633,9 @@ function showRunReview(run, hooks){
   panel.appendChild(actions);
   stage.replaceChildren(panel);
   toTop(true);
+  /* its buttons come up from below like every end-of-run screen's (build
+     325) - the page stays where it is */
+  rsRise(actions, { delay: 160, follow: false });
   const first = actions.querySelector("button");
   if(first) focusQuietly(first);
 }
@@ -99919,12 +100245,25 @@ function summarize(){
       toTop();
       const exitBtn = document.getElementById("dailyq-exitbtn");
       if(exitBtn) focusQuietly(exitBtn);
+      /* EXIT RISES ONCE THE VERDICT HAS SAID ITS PIECE (build 325): "slide
+         up from the bottom like how the next question button does ...
+         the same for the other buttons ... if xp or something is
+         beforehand". Submit answer goes with the answer; Exit comes up -
+         the Next pill's own rise - into the exact spot it left, after the
+         outro's XP line (.9s) and its last line (1.45s + .45s) are in. */
+      if(exitBtn && !resultsMotionOff()){
+        exitBtn.classList.add("is-rising");
+        exitBtn.style.animationDelay = "1.9s";
+      }
       /* The card is the answer, so it must not sit behind the pill: on a
          phone a long question leaves it under the button, half read.
          Bring its bottom edge up to just above the pill. */
       requestAnimationFrame(() => {
         if(!outro.isConnected || !exitBtn) return;
-        const over = outro.getBoundingClientRect().bottom - (exitBtn.getBoundingClientRect().top - 16);
+        /* where the pill RESTS - it may be rising (build 325) */
+        let lift = 0;
+        try{ lift = new DOMMatrixReadOnly(getComputedStyle(exitBtn).transform).m42 || 0; }catch(e){}
+        const over = outro.getBoundingClientRect().bottom - (exitBtn.getBoundingClientRect().top - lift - 16);
         if(over <= 0) return;
         const smooth = theme.smoothScroll && !theme.reduceMotion;
         try{ window.scrollTo({ top: window.scrollY + over, left: 0, behavior: smooth ? "smooth" : "instant" }); }
@@ -104689,6 +105028,7 @@ function showTugResult(d){
 
   stage.replaceChildren(panel);
   toTop();
+  rsRise(exits, { delay: 400, follow: false });
 }
 
 /* ================================ BATTLE ================================
@@ -105555,6 +105895,7 @@ function showBattleResult(d){
   panel.appendChild(exits);
   stage.replaceChildren(panel);
   toTop();
+  rsRise(exits, { delay: 400, follow: false });
 }
 
 /* ================= NOVA IN A VIRTUAL ROOM (build 324, b324v2) =================
@@ -109463,6 +109804,7 @@ function playVroomRaceCutscene(ranked){
     if(!quiet) setTimeout(() => { if(sorted[0] && sorted[0].r.key === me) celebrate(["#FFD37A", "#F5C542", "#FFF1B8"]); }, 2700);
   });
   at(t + (quiet ? 0 : 3600), () => {
+    if(!quiet) rsRise(exits, { follow: false });
     overlay.classList.add("is-done");
     /* Beat Nova? The Sheriff's card, then his message (build 324). */
     try{ if(lastFinaleData) novaVrAfterMatch(lastFinaleData, { delay: quiet ? 300 : 900 }); }catch(e){}
@@ -109691,6 +110033,7 @@ function showVirtualRoomResults(){
      one, so the XP was genuinely awarded and simply never shown. The
      numbers come from that run rather than being recomputed, so the
      two screens cannot disagree. */
+  let vroomResultsAt = performance.now(), vroomExitRiseOwed = false;
   const vroomLevelBlock = buildResultsLevelBlock(lastRunXpEarned, lastRunPointsAfter,
     { badgesBefore: lastRunBadgesBefore, badgesAfter: lastRunBadgesAfter });
   panel.appendChild(vroomLevelBlock);
@@ -109837,8 +110180,15 @@ function showVirtualRoomResults(){
     });
 
     const everyoneDone = allIn;
+    const exitsWereHidden = backLink.hidden;
     backLink.hidden = !everyoneDone;
     backToLobbyBtn.hidden = !everyoneDone;
+    /* the way out rises the moment it is there, after the level bar has
+       filled (build 325) */
+    if(exitsWereHidden && everyoneDone){
+      if(!exitRow.isConnected) vroomExitRiseOwed = true;
+      else rsRise(exitRow, { delay: Math.max(0, (vroomLevelBlock.fillMs || 0) - (performance.now() - vroomResultsAt)), follow: false });
+    }
     waitNote.hidden = everyoneDone;
     waitNote.textContent = "Waiting for everyone to finish (" + doneNow + " of " + totalNow + ")\u2014 "
       + "the standings go up when the last person is in.";
@@ -109874,6 +110224,8 @@ function showVirtualRoomResults(){
 
   stage.replaceChildren(panel);
   toTop();
+  vroomResultsAt = performance.now();
+  if(vroomExitRiseOwed){ vroomExitRiseOwed = false; rsRise(exitRow, { delay: vroomLevelBlock.fillMs || 0, follow: false }); }
   if(vroomLevelBlock.runFill) vroomLevelBlock.runFill();
   mountRoomChatFab();
 }
