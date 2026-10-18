@@ -17256,6 +17256,16 @@
   /* the bubble under the copy: none of its own paint until the copy fades
      (build 321, rankCutHandoff) */
   #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble:not(.ru-hand-reveal){ background-color:transparent !important; border-color:transparent !important; box-shadow:none !important; transition:none !important; }
+  /* THE COPY IS NOT CLIPPED BY THE BUBBLE IT IS IN (build 325, stream I).
+     A rank bubble is overflow:hidden, and the road map's copy moved into
+     it carries its gold rim on its own edge, a 4px ring and a 30px glow
+     OUTSIDE it - all cut off at the bubble's padding edge, so in one frame
+     the gold, glowing flare became a plain glass ball and the gold came
+     back only as the bubble lit, ~0.6s on. While the copy is in it the
+     bubble clips nothing; everything of its own is round on its own
+     (the emblem's clip-path, the flip-book's and the lens's radius), and
+     the copy is gone (faded, then removed) before the class comes off. */
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble{ overflow:visible; }
   #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble:not(.ru-hand-reveal) > :not(.ru-ghost),
   #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble:not(.ru-hand-reveal)::before,
   #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble:not(.ru-hand-reveal)::after{ opacity:0 !important; transition:none !important; }
@@ -78279,7 +78289,16 @@ function rankCutHandoff(overlay, stageWrap, heroBefore, tierKey, ghost){
       stageWrap.style.transform = "translate(0px, 0px) scale(1)";
       overlay.classList.add("ru-handoff-in");
       badge.classList.add("ru-hand-reveal");
-      try{ ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1300, delay: 250, easing: "ease-in-out", fill: "forwards" }); }catch(e){ ghost.style.opacity = "0"; }
+      /* THE BUBBLE LIGHTS FIRST, THEN THE COPY GOES (build 325, stream I).
+         Faded on the bubble's own timing (1.3s from .25s), half of each
+         at the midpoint was a dimmer flare than either: measured, its
+         rim lost a fifth of its gold around .8s and came back. The
+         bubble now lights under the copy (.25s on, 1.3s, CSS) and the
+         copy goes from .65s to 1.65s, over a bubble that is mostly lit -
+         the rim holds its gold all the way and the ring and glow only
+         ever grow into the bubble's. Still well inside the 3s before
+         the copy is removed. */
+      try{ ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1000, delay: 650, easing: "ease-in-out", fill: "forwards" }); }catch(e){ ghost.style.opacity = "0"; }
       try{ cover.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 2000, delay: 300, easing: "cubic-bezier(.4,0,.3,1)", fill: "forwards" }); }catch(e){ cover.style.opacity = "0"; }
     }));
     setTimeout(() => {
