@@ -12397,7 +12397,8 @@ def check_b313_fx(br):
     r = pg.evaluate("async () => { store.lifetime.perfectTests = 600; store.hundoFx = 'confetti'; saveStore(); " + FX_RUN + """
       await wait(4200); const g = document.querySelector('.rs-grade'), f = document.querySelector('.rs-screen .unit-breakdown-fill.is-gold');
       return { border: getComputedStyle(g).borderTopColor, fill: f ? getComputedStyle(f).backgroundImage : null, tinted: g.classList.contains('hfx-tinted') }; }""")
-    check("Confetti, the default, leaves the box and its bar gold", r.get("border") == "rgba(242, 211, 138, 0.2)" and "rgb(217, 169, 58)" in (r.get("fill") or "") and not r.get("tinted"), r)
+    # (the default's rim at full strength since build 325: --rs-edge)
+    check("Confetti, the default, leaves the box and its bar gold", r.get("border") == "rgb(242, 211, 138)" and "rgb(217, 169, 58)" in (r.get("fill") or "") and not r.get("tinted"), r)
     ctx.close()
 
     # --- the pop-ups. An account with no record of them, at 120 hundos:
