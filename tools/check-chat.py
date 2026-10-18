@@ -526,8 +526,12 @@ def run_intro(src_dir, label):
                       /* build 325: "Results grade first, characters celebrate, the
                          ranking up on the road map, a planet that cracks, supernovas
                          mark, the daily question ring. Remove all of those" - and
-                         Version 9's own additions in their place */
-                      says78: ['nova', 'sound', 'qualifier', 'briefing', 'badge case', 'profile', 'calendar', 'save a test', 'study', 'virtual room'].every(w => txt.indexOf(w) >= 0)
+                         Version 9's own additions in their place.
+                         MOVED IN 326 (b326d): "I kinda prefer briefing to be called
+                         review" and "Remove the weekly recap and badge case from
+                         what's new" - neither word is asked for, and both must be gone */
+                      says78: ['nova', 'sound', 'qualifier', 'profile', 'calendar', 'save a test', 'study', 'virtual room'].every(w => txt.indexOf(w) >= 0)
+                        && ['briefing', 'badge case', 'weekly recap'].every(w => txt.indexOf(w) < 0)
                         && txt.indexOf('version 9') >= 0,
                       go: !!el.querySelector('.intro-go')};}""")
             if not out:

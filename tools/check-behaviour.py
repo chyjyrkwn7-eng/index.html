@@ -4768,7 +4768,9 @@ def check_b245_start_pill(br):
       return document.getElementById('bottomtab-start').getAttribute('aria-label') || ''; }""")
     # Build 324 renamed Review to Briefing ("Start briefing"); what is held is
     # the shape: the button names the review mode it starts, never Drill.
-    check("in Review mode Start says review, not drill", lab.lower().startswith(("start review", "start learning", "start briefing")) and "drill" not in lab.lower(), lab)
+    # MOVED IN 326 (b326d): "I kinda prefer briefing to be called review
+    # actually" - it says Start review again, and only that.
+    check("in Review mode Start says review, not drill or briefing", lab.lower().startswith("start review") and "drill" not in lab.lower(), lab)
     ctx.close()
 
 
@@ -8550,12 +8552,13 @@ def check_b303(br):
         # Build 305 put the name back to Review; build 324 renamed it Briefing
         # ("exam mode and review mode need a new name and logo"). The sheet,
         # the list and the card all say the same thing.
-        check(dev + ": the mode is called Briefing everywhere (build 324)", r.get("sheetTitle") == "Briefing" and r.get("listTitle") == "Briefing", (r.get("sheetTitle"), r.get("listTitle")))
+        # MOVED IN 326 (b326d): Review again ("I kinda prefer briefing to be called review")
+        check(dev + ": the mode is called Review everywhere (build 326)", r.get("sheetTitle") == "Review" and r.get("listTitle") == "Review", (r.get("sheetTitle"), r.get("listTitle")))
         # MOVED IN 324: "if flashcards are on, it would probably just say the
         # same thing, begin review" - Begin names the mode, flashcards or not.
-        check(dev + ": with Flashcards on, Begin says Begin briefing and opens a card (build 324)", r.get("beginText") == "Begin briefing" and r.get("fcCard") is True, r.get("beginText"))
-        check(dev + ": the card has the count in the middle, Briefing on the left, no timer and a star",
-              r.get("fcCount") == "1/12" and r.get("fcMode") == "Briefing" and r.get("fcTimer") is True and r.get("fcStar") is True,
+        check(dev + ": with Flashcards on, Begin says Begin review and opens a card (build 324, 326's name)", r.get("beginText") == "Begin review" and r.get("fcCard") is True, r.get("beginText"))
+        check(dev + ": the card has the count in the middle, Review on the left (326's name), no timer and a star",
+              r.get("fcCount") == "1/12" and r.get("fcMode") == "Review" and r.get("fcTimer") is True and r.get("fcStar") is True,
               (r.get("fcCount"), r.get("fcMode"), r.get("fcTimer"), r.get("fcStar")))
         check(dev + ": a tap flips it", r.get("fcFlipped") is True)
         check(dev + ": the bar goes green as you go and un-greens going back", r.get("fcGreenAt3") == 2 and r.get("fcGreenBack") == 1, (r.get("fcGreenAt3"), r.get("fcGreenBack")))
@@ -12754,8 +12757,9 @@ def check_b314_study(br):
               "#E8C770" in r["stops"] and "#FFD233" not in r["stops"], r["stops"])
         # MOVED IN 324 (b324m): Review is the Briefing on screen ("exam mode
         # and review mode need a new name"), so its loading screen says so.
-        check("%s the Starred box opens through LOADING BRIEFING, ~2s, with the tab bar off it" % label,
-              r["rv"]["label"] == "LOADING BRIEFING" and r["rv"]["tabsHidden"] and 1850 <= r["rv"]["ms"] <= 2350 and r["rv"]["screen"], r["rv"])
+        # MOVED IN 326 (b326d): Review again - LOADING REVIEW.
+        check("%s the Starred box opens through LOADING REVIEW, ~2s, with the tab bar off it" % label,
+              r["rv"]["label"] == "LOADING REVIEW" and r["rv"]["tabsHidden"] and 1850 <= r["rv"]["ms"] <= 2350 and r["rv"]["screen"], r["rv"])
         check("%s flashcards open through LOADING FLASHCARDS, ~2s" % label,
               r["fc"]["label"] == "LOADING FLASHCARDS" and 1850 <= r["fc"]["ms"] <= 2350 and r["fc"]["screen"], r["fc"])
         check("%s and a test keeps LOADING TEST at ~2.5s - half a second longer" % label,
@@ -17139,7 +17143,11 @@ def check_b317_hometaps(br):
               and (UF.get("text") or "").startswith("They say this one") and ((UF.get("title") or {}).get("chroma") or 99) <= 24
               and UF.get("shake", 0) >= 1 and UF.get("dim") and UF.get("sparks") == 0 and UF.get("press") == 0, UF)
         check(dev + ": the planet keeps its touch (press, ripple, halo, rings, both flare rings surge, no filter) and counts your flares under \"Your flares\" in the theme's colour",
-              PL.get("kind") == "is-planet" and PL.get("name") == "Your flares" and PL.get("text") == "3 of 7 rank flares lit, 2 of 3 secret flares found."
+              # MOVED IN 326 (b326d): Home draws every secret flare now ("If the
+              # main menu needs to now show every single secret flare not lit up
+              # ... let's do that"), so the count is of all of them, not Void's three
+              PL.get("kind") == "is-planet" and PL.get("name") == "Your flares"
+              and bool(re.fullmatch(r"3 of 7 rank flares lit, 2 of ([4-9]|\d\d) secret flares found\.", PL.get("text") or ""))
               and ((PL.get("title") or {}).get("dist") if (PL.get("title") or {}).get("dist") is not None else 99) <= 10
               and PL.get("fxMoving", 0) >= 4 and PL.get("fxFiltered") == 0 and len(PL.get("surge") or []) == 2 and all(n >= 1 for n in PL.get("surge") or [0]), PL)
         check(dev + ": tapped again it says what is next, and the first ripple is still running beside the second",
@@ -21400,8 +21408,12 @@ def check_b319_levelnote(br):
             miss = [x for x in want if x not in t]
             # build 320: Nova says the note, its facts exactly
             miss += ["(spoken) " + x for x in want if x not in (r.get("spoken") or "")]
-            # build 321: and in the meeting's What's New, after his introduction
-            miss += ["(chained) " + x for x in want if "Here’s what’s new" not in (r.get("chained") or "") or x not in (r.get("chained") or "")]
+            # build 321: and in the meeting's What's New, after his introduction.
+            # MOVED IN 326 (b326d): the meeting's recap says where the wall
+            # leaves them just before ("it also doesn't mention anything about
+            # your level ... Shouldn't that be there??"), so the chained What's
+            # New no longer repeats it - check-b326-d d3 holds the recap's words
+            miss += ["(chained, said twice) " + x for x in want[:1] if "Here’s what’s new" not in (r.get("chained") or "") or x in (r.get("chained") or "")]
             check("%s: level %d, %d badge(s): the note says it plainly" % (dev, lvl, nb),
                   r["title"] == "Levels wait for your next rank" and not miss and not bad and r["level"] == top and r["inView"],
                   {"missing": miss, "bad": bad, "text": r["text"], "state": [r["level"], r["curve"], r["held"], r["gate"], r["need"]]})
@@ -22159,7 +22171,8 @@ def check_b320f_nova(br):
         # explorer and an instructor now (check_b321g_nova holds the rest)
         # MOVED IN 324 (b324m): Exam and Review are Qualifier and Briefing on
         # screen ("exam mode and review mode need a new name and logo").
-        need = ["Nova", "explorer", "badge", "flare", "crew", "Supernova", "XP", "level", "Drill", "Qualifier", "Briefing", "Madison"]
+        # MOVED IN 326 (b326d): Review again
+        need = ["Nova", "explorer", "badge", "flare", "crew", "Supernova", "XP", "level", "Drill", "Qualifier", "Review", "Madison"]
         miss = [x for x in need if x not in lines]
         check("%s he introduces himself and the story: badges, flares, ranks, levels, tests" % dev, not miss and r.get("goLabel"), {"missing": miss, "go": r.get("goLabel")})
         check("%s the tooltips follow in his bubble, every one" % dev,
@@ -22307,10 +22320,15 @@ def check_b321g_nova(br):
           # has relit rather than "Bronze to Supernova"; it hears the
           # Virtual Room instead - "It doesn't mention virtual room")
           "Madison" in it and "tore through my ship" in it and "missing" in it and "Virtual Room" in it and "Drill" in it, (intro.get("lines") or [])[:4])
-    check("at the end he goes over what they have: rank, level, badges, characters and secret flares found",
-          "Gold" in it and "level 49" in it and "found 3 of my lost badges" in it and "of my missing crew" in it and "one of my secret flares" in it
-          and re.search(r"\d+ of \d+ characters found", intro.get("stage") or "") and "1 of 3 secret flares found" in (intro.get("stage") or ""),
-          {"tail": (intro.get("lines") or [])[-4:], "stage": (intro.get("stage") or "")[:160]})
+    # MOVED IN 326 (b326d): "It also talks about how many characters you have
+    # found as if that's an achievement? ... it says there's only 3 secret
+    # flares but there's more than that?" - the recap is rank, level, badges,
+    # hundos and flares; no character count, no total of secret flares
+    check("at the end he goes over what they have: rank, level, badges and secret flares found - no characters, no secret-flare total",
+          "Gold" in it and "level 49" in it and "found 3 of my badges" in it and "missing crew" not in it and "one of my secret flares" in it
+          and not re.search(r"characters found", intro.get("stage") or "") and not re.search(r"of \d+ secret flares", (intro.get("stage") or "") + it)
+          and re.search(r"\d\s*secret flares? found", intro.get("stage") or ""),
+          {"tail": (intro.get("lines") or [])[-4:], "stage": (intro.get("stage") or "")[:200]})
     news = pg.evaluate(B321G_TALK, "intro-pop")
     nt = " ".join(news.get("lines") or [])
     check("then What's New, narrated, with no second hello, leading into the tips",
@@ -22398,7 +22416,8 @@ def check_b321g_nova(br):
       for(let i = 0; i < 50 && !document.getElementById('nova-intro'); i++) await wait(100);
       const el = document.getElementById('nova-intro'); if(!el) return { open: false };
       await wait(3200); const btn = !!el.querySelector('.nt-skip'); el.__nova.skip(); await wait(300);
-      return { open: true, btn, text: el.querySelector('.nt-text').textContent, card: !!el.querySelector('.nt-recap'), still: !!document.getElementById('nova-intro') }; }""")
+      return { open: true, btn, text: el.querySelector('.nt-text').textContent, card: !!el.querySelector('.nt-rc'), still: !!document.getElementById('nova-intro') }; }""")
+    # MOVED IN 326 (b326d): the recap is the .nt-rc card now (rebuilt: "this could be way better")
     # MOVED IN 325 (b325d): no Skip button; the tools' fast-forward still lands on the recap
     check("no Skip on an existing account's introduction; fast-forwarding goes to the recap of what they have", r.get("open") and not r.get("btn") and r.get("still") and r.get("card") and "how you’re doing" in (r.get("text") or ""), r)
     ctx.close()
@@ -26311,7 +26330,7 @@ def check_b323s_summary(br):
           return { bg: cs.backgroundImage, radius: cs.borderTopLeftRadius }; }""")
         res = {}
         for mode, fl in (("drill", False), ("exam", False), ("review", False), ("review", True)):
-            name = "Flashcards" if fl else {"drill": "Drill", "exam": "Qualifier", "review": "Briefing"}[mode]
+            name = "Flashcards" if fl else {"drill": "Drill", "exam": "Qualifier", "review": "Review"}[mode]  # 326: Review again
             pg.evaluate(OPEN, [mode, UNITS])
             if fl:
                 pg.evaluate(ROW, "Flashcards")
@@ -26344,7 +26363,7 @@ def check_b323s_summary(br):
             check("%s %s: it names the mode, the units count, the question count and the units" % (label, name),
                   r["mode"] == r["want"]["mode"] and r["line"] == "2 units · %d questions" % n
                   and all(u in r["units"] for u in UNITS), {k: r[k] for k in ("mode", "line", "units")})
-        d, e, v, f = res.get("Drill", {}), res.get("Qualifier", {}), res.get("Briefing", {}), res.get("Flashcards", {})
+        d, e, v, f = res.get("Drill", {}), res.get("Qualifier", {}), res.get("Review", {}), res.get("Flashcards", {})
         if d.get("ok"):
             check("%s Drill: the options line says what is on (Shuffled choices), and nothing that is off" % label,
                   d["opts"] == "Shuffled choices", d["opts"])
@@ -27187,8 +27206,9 @@ def check_b324m_modes(br):
         if r.get("threw"):
             print("   threw:", r["threw"])
         cards = r.get("cards") or {}
-        check("%s the mode cards read Drill, Qualifier, Briefing, Virtual Room" % label,
-              [cards.get(m, {}).get("title") for m in ("drill", "exam", "review", "vroom")] == ["Drill", "Qualifier", "Briefing", "Virtual Room"],
+        # MOVED IN 326 (b326d): Review again
+        check("%s the mode cards read Drill, Qualifier, Review, Virtual Room" % label,
+              [cards.get(m, {}).get("title") for m in ("drill", "exam", "review", "vroom")] == ["Drill", "Qualifier", "Review", "Virtual Room"],
               [cards.get(m, {}).get("title") for m in ("drill", "exam", "review", "vroom")])
         ed, rd = cards.get("exam", {}).get("desc") or "", cards.get("review", {}).get("desc") or ""
         check("%s the Qualifier card says no feedback until your grade; Briefing's says it is not a test, answers shown" % label,
@@ -27201,7 +27221,7 @@ def check_b324m_modes(br):
               st["exam"] and len({st["drill"], st["exam"], st["review"], st["vroom"]}) == 4, st)
         sh = r.get("sheets") or {}
         want = {"drill": ("Drill", "Begin drill"), "exam": ("Qualifier", "Begin qualifier"),
-                "review": ("Briefing", "Begin briefing"), "flash": ("Briefing", "Begin briefing")}
+                "review": ("Review", "Begin review"), "flash": ("Review", "Begin review")}  # 326: Review again
         for k, (name, begin) in want.items():
             s = sh.get(k) or {}
             check("%s %s sheet: titled %s, the box and the chip say %s, Begin reads %r" % (label, k, name, name, begin),
@@ -27215,9 +27235,9 @@ def check_b324m_modes(br):
               (sh.get("exam") or {}).get("boxIcon") == st["exam"] and (sh.get("review") or {}).get("boxIcon") == st["review"]
               and (sh.get("drill") or {}).get("boxIcon") == st["drill"],
               {k: (sh.get(k) or {}).get("boxIcon") for k in ("drill", "exam", "review")})
-        check("%s the unit-selection pill names the mode: Start drill / qualifier / briefing" % label,
+        check("%s the unit-selection pill names the mode: Start drill / qualifier / review (326's name)" % label,
               (sh.get("drill") or {}).get("pill", "").startswith("Start drill,") and (sh.get("exam") or {}).get("pill", "").startswith("Start qualifier,")
-              and (sh.get("review") or {}).get("pill", "").startswith("Start briefing,"),
+              and (sh.get("review") or {}).get("pill", "").startswith("Start review,"),
               {k: (sh.get(k) or {}).get("pill") for k in ("drill", "exam", "review")})
         check("%s the Virtual Room host's sheet button reads Open lobby" % label,
               r.get("vrBegin") == "Open lobby",
@@ -27234,8 +27254,8 @@ def check_b324m_modes(br):
         check("%s nothing says right or wrong before the results, even with an old Instant feedback preference on" % label,
               run.get("judgedWrong") is False and run.get("judgedRight") is False and run.get("changed") is True,
               {k: run.get(k) for k in ("judgedWrong", "judgedRight", "changed", "status")})
-        check("%s a Briefing's list and its flashcards say Briefing, the list in the Briefing's violet" % label,
-              r.get("listTitle") == "Briefing" and r.get("fcLabel") == "Briefing" and r.get("listIcon") == st["review"],
+        check("%s a Review's list and its flashcards say Review, the list in Review's violet (326's name)" % label,
+              r.get("listTitle") == "Review" and r.get("fcLabel") == "Review" and r.get("listIcon") == st["review"],
               {k: r.get(k) for k in ("listTitle", "fcLabel", "listIcon")})
         hi = r.get("hist") or {}
         check("%s history entries saved as \"exam\" read Qualifier (chips, filter, label, detail, results), still stored as exam" % label,

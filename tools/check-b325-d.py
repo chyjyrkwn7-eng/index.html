@@ -61,7 +61,8 @@ TALK = r"""async (o) => {
     if(out.lines[out.lines.length - 1] !== t){
       out.lines.push(t);
       await wait(700);
-      const prop = [...el.querySelectorAll('.nt-prop')].filter(p => !p.classList.contains('is-out')).pop();
+      /* build 326: a slide made ahead (.is-prepped) is the NEXT line's, not this one's */
+      const prop = [...el.querySelectorAll('.nt-prop')].filter(p => !p.classList.contains('is-out') && !p.classList.contains('is-prepped')).pop();
       if(prop){
         const cap = (prop.querySelector('.nt-cap') || {}).textContent || '';
         const par = prop.querySelector('.nt-parade');
@@ -151,8 +152,11 @@ def story_checks(dev, r, truth, existing):
         kind = re.search(r"is-(\w+)", k["cls"]).group(1)
         mm = re.search(r"(\d+)\s+of\s+(\d+)", k["n"])
         got[kind] = [int(mm.group(1)), int(mm.group(2))] if mm else None
-    want = {k: v for k, v in truth["kinds"].items() if k != "kept"}
-    check("%s %s: a box on how characters are found - starters, ranks, challenges, secrets, ultimate - each 'have of total' from the table, all on screen" % (dev, who),
+    # MOVED IN 326 (b326d): "The slide that explains how to find each
+    # character is very badly shown and confusing" - rebuilt as the WAYS a
+    # crewman comes home; the starters are not a way of finding anyone
+    want = {k: v for k, v in truth["kinds"].items() if k not in ("kept", "starter")}
+    check("%s %s: a box on how characters are found - ranks, challenges, secrets, ultimate - each 'have of total' from the table, all on screen" % (dev, who),
           kp is not None and got == want and kp.get("vis"), {"got": got, "want": want, "vis": (kp or {}).get("vis")})
     # 6. no Skip, and Escape does not skip either
     check("%s %s: no Skip on the introduction, and Escape does not skip it" % (dev, who),
@@ -240,11 +244,14 @@ def check_whatsnew(br):
     in_hist = [n for n, rx in gone if re.search(rx, r["hist"], re.I)]
     check("none of the six is in Nova's What's New, and all six are still in the version history",
           not present and len(in_hist) == len(gone), {"present": present, "history": in_hist})
-    adds = [n for n, rx in (("Qualifier", r"Qualifier"), ("Briefing", r"Briefing"), ("message him", r"Message Nova|message"),
-                            ("challenge him", r"Challenge Nova|Sheriff"), ("study hours", r"study time|study hours"),
-                            ("weekly recap", r"weekly recap|top three")) if re.search(rx, " ".join(r["rows"]), re.I)]
-    check("Version 9's real additions are in it: the new modes, messaging and challenging Nova, study hours, the weekly recap",
-          len(adds) == 6, adds)
+    # MOVED IN 326 (b326d): "I kinda prefer briefing to be called review" and
+    # "Remove the weekly recap and badge case from what's new" - so the
+    # Qualifier is the one renamed mode, and the recap row is gone
+    adds = [n for n, rx in (("Qualifier", r"Qualifier"), ("message him", r"Message Nova|message"),
+                            ("challenge him", r"Challenge Nova|Sheriff"), ("study hours", r"study time|study hours"))
+            if re.search(rx, " ".join(r["rows"]), re.I)]
+    check("Version 9's real additions are in it: the Qualifier, messaging and challenging Nova, study hours",
+          len(adds) == 4, adds)
     ctx.close()
 
 
@@ -382,7 +389,11 @@ def check_cutout_tops(br):
 
 
 def check_qualifier(br):
-    print("\nd6. the Qualifier's mark is new: a seal with ribbon tails and a tick, not the shield")
+    # MOVED IN 326 (b326d): "I also don't like the qualifier logo still." The
+    # seal is gone too; what this holds now is that neither old mark is back
+    # and the Version 9 note still draws modeIcon's own (check-b326-d d6 has
+    # the new mark itself).
+    print("\nd6. the Qualifier's mark: not the shield, not 325's seal, and the Version 9 note draws modeIcon's own")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""() => { const s = modeIcon('exam'); document.body.appendChild(s);
       const paths = [...s.querySelectorAll('path')].map(p => p.getAttribute('d'));
@@ -392,8 +403,8 @@ def check_qualifier(br):
       const rn = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /Qualifier/.test(i.title));
       try{ const ic = rn.icon(); out.notes = ic.classList.contains('modeicon-exam'); }catch(e){ out.notes = false; }
       s.remove(); return out; }""")
-    check("modeIcon('exam'): a scalloped seal, solid ribbon tails and a bold tick; the shield is gone; the Version 9 note uses it",
-          r.get("seal") and r.get("solid", 0) >= 1 and r.get("check") and not r.get("shield") and r.get("notes"), r)
+    check("modeIcon('exam'): a bold tick; neither the shield nor the seal; the Version 9 note uses it",
+          not r.get("seal") and r.get("check") and not r.get("shield") and r.get("notes"), r)
     ctx.close()
 
 
