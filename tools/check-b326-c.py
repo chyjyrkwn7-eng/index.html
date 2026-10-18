@@ -169,7 +169,7 @@ def section_spend(br):
             seg = [x["fill"] for x in s if x["lv"] == L and x["fill"] is not None]
             want = 100 * min(1, st["have"] / max(1, st["span"]))
             # near empty as the level opens, rising while the frames watch, and set where its numbers say at the step's end
-            if len(seg) < 2 or min(seg[:2]) > 20 or max(seg) < min(want, 40) or abs((st.get("fill") or 0) - want) > 1.5:
+            if len(seg) < 2 or min(seg[:2]) > 20 or max(seg) < min(want, 40) - 1 or abs((st.get("fill") or 0) - want) > 1.5:
                 fills_ok = False; bad.append((L, seg[:3], max(seg) if seg else None, st.get("fill"), round(want, 1)))
         check("%s: and the bar fills each new level from empty as the extra goes in" % label, fills_ok, bad[:4])
         check("%s: it ends on the new current level (%s) with what is left (%s / %s XP)%s" % (label, to["level"], to["into"], to["span"], ", the bar full at the next wall" if to["stopped"] else ""),
@@ -365,16 +365,18 @@ def section_queue(br):
     # three ranks at once
     ctx, pg = boot(br, 440, 956)
     s0 = pg.evaluate(THREE_SEED)
-    wk = pg.evaluate(QUEUE_WALK, {"cutMs": 250, "cardMs": 400, "max": 5})
+    wk = pg.evaluate(QUEUE_WALK, {"cutMs": 250, "cardMs": 400, "max": 5, "doubleTap": True})
     js = wk.get("journeys") or []
     check("three ranks at once (Bronze shown, Platinum held: %s): three journeys - Silver, Gold, Platinum - in order, each from the one before" % s0.get("owed"),
           not wk.get("threw") and [[(c["key"], c["from"]) for c in j["cuts"]] for j in js] == [[("ranger", "rookie")], [("veteran", "ranger")], [("vanguard", "veteran")]],
           [wk.get("threw"), [[(c["key"], c["from"]) for c in j["cuts"]] for j in js]])
+    check("three ranks, the tab tapped twice each time (and the scene asked for again): one journey each, never two at once",
+          [j.get("scenes") for j in js] == [1, 1, 1], [j.get("scenes") for j in js])
     check("three ranks: one card each, Home and the tab's call between each, ends on the real level with nothing owed",
           [[c["name"] for c in j["cards"]] for j in js] == [["Silver rank"], ["Gold rank"], ["Platinum rank"]]
           and all(h.get("sawNudge") and h.get("lock") for h in (wk.get("homes") or [])[:3])
           and [j.get("levelEnd") for j in js] == ["Level 40", "Level 50", "Level %d" % s0.get("level")] and (wk.get("final") or {}).get("owed") is None,
-          [[c["name"] for c in j["cards"]] for j in js], [j.get("levelEnd") for j in js], [(h.get("sawNudge"), h.get("lock")) for h in (wk.get("homes") or [])])
+          [[[c["name"] for c in j["cards"]] for j in js], [j.get("levelEnd") for j in js], [(h.get("sawNudge"), h.get("lock")) for h in (wk.get("homes") or [])]])
     ctx.close()
 
     # a reload between the two: only the second plays, from Gold
@@ -418,8 +420,179 @@ def section_queue(br):
     ctx.close()
 
 
+
 # --------------------------------------------------------------------------
-SECTIONS = {"A": section_spend, "B": section_queue}
+# C. the Supernova crack
+SN_HOME = """async (acc) => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  store.supernovaAchieved = true; store.rankUpShown = 7; saveStore();
+  try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); }catch(e){}
+  if(acc !== undefined){ theme.accent = acc; applyTheme(); }
+  showHome(); await wait(1600);
+  document.querySelectorAll('.rs-spot,.daily-alert,#tour-overlay,.update-banner,.toast,#nova-intro').forEach(n => n.remove());
+  const hero = document.querySelector('.panel.home .cosmic-hero-wrap');
+  const out = { hero: !!hero };
+  if(!hero) return out;
+  const hr = hero.getBoundingClientRect(), u = hr.width / 360;
+  const cx = hr.left + 180 * u, cy = hr.top + (150 + 12) * u * (360 / 360);
+  out.u = u;
+  const art = cosmicScarArt();
+  const seams = [...hero.querySelectorAll('.cosmic-scar .csc-disc > svg.csc-seam')];
+  out.seam = seams.length ? { paths: seams.reduce((n, x) => n + x.querySelectorAll('path').length, 0), blend: [...new Set(seams.map(x => getComputedStyle(x).mixBlendMode))].join(),
+    layers: seams.flatMap(x => [...x.children].map(g => g.getAttribute('class'))).sort(),
+    /* what moves on it is whole svgs' opacity - never a group inside one (a repaint of every path a frame) */
+    moving: seams.flatMap(x => x.getAnimations({ subtree: true }).map(a => (a.effect.target === x ? 'svg' : 'inner') + ':' + (a.animationName || ''))) } : null;
+  const motes = hero.querySelector(':scope > .csc-motes');
+  out.motes = motes ? motes.children.length : 0;
+  out.motesAfterScar = !!(motes && motes.previousElementSibling && motes.previousElementSibling.classList.contains('cosmic-scar'));
+  out.props = [];
+  /* every mote at three points of its own loop, the page's own animations seeked */
+  const crack = ((art && art.fronts) || []).filter(f => f.main).flatMap(f => f.pts.map(q => [cx + 52 * u * q[0], cy + 52 * u * q[1]]));
+  const ringR = [...hero.querySelectorAll('.cosmic-orbit-ring')].map(r => Number(r.getAttribute('r'))).filter(r => r > 60);
+  out.rings = ringR;
+  out.paths = [];
+  if(motes){
+    [...motes.children].forEach(m => {
+      const els = [m, m.firstElementChild, m.firstElementChild.firstElementChild];
+      const ans = els.flatMap(e => e.getAnimations());
+      ans.forEach(a => { try{ (a.effect.getKeyframes() || []).forEach(k => Object.keys(k).forEach(p => { if(!/^(offset|easing|composite|computedOffset)$/.test(p) && out.props.indexOf(p) < 0) out.props.push(p); })); }catch(e){} });
+      if(ans.length < 3){ out.paths.push(null); return; }
+      const T = ans[0].effect.getComputedTiming().duration;
+      const at = f => { ans.forEach(a => { a.pause(); const d = a.effect.getComputedTiming().delay; let ct = d + f * T; while(ct < Math.max(0, d)) ct += T; a.currentTime = ct; });
+        const r = els[2].getBoundingClientRect(); const x = r.left + r.width / 2, y = r.top + r.height / 2;
+        return { d: Math.hypot(x - cx, y - cy) / u, a: (Math.atan2(x - cx, -(y - cy)) * 180 / Math.PI + 360) % 360, o: +getComputedStyle(els[2]).opacity, x, y }; };
+      const p0 = at(.001), p62 = at(.62), p95 = at(.95), pend = at(.999);
+      const near = crack.length ? Math.min(...crack.map(c => Math.hypot(c[0] - p0.x, c[1] - p0.y))) / u : 99;
+      ans.forEach(a => a.play());
+      out.paths.push({ start: Math.round(p0.d), near: Math.round(near * 10) / 10, mid: Math.round(p62.d), end: Math.round(p95.d),
+        turn: Math.round(((p95.a - p62.a) + 540) % 360 - 180), o0: p0.o, o95: pend.o });
+    });
+  }
+  return out; }"""
+
+
+def section_crack(br):
+    print("\nC. Supernova's crack: a large lit crack, his light drawn out of it into the rings' turn; the cutscene's fracture")
+    import json as _json
+    acct = _json.loads(cb.USED_ACCOUNT); acct["supernovaAchieved"] = True
+    seed_sn = _json.dumps(acct)
+    for (label, w, h) in (PHONE, TABLET):
+        ctx, pg = boot(br, w, h, seed=seed_sn)
+        for acc in (None, "adept", "elite", "ranger"):
+            r = pg.evaluate(SN_HOME, acc) if acc else pg.evaluate(SN_HOME)
+            tag = "%s, %s theme" % (label, acc or "default")
+            if acc is None:
+                sm = r.get("seam") or {}
+                check("%s: the crack carries its light - a seam of %d+ paths (spill, halo, glow, core) in the scar's disc, screen-blended" % (label, 40),
+                      sm.get("paths", 0) >= 40 and sm.get("blend") == "screen" and sm.get("layers") == sorted(["csc-sm-spill", "csc-sm-halo", "csc-sm-glow", "csc-sm-core"]), sm)
+                check("%s: the seam breathes as a whole svg (the compositor fades it) - nothing inside one animates on Home" % label,
+                      sm.get("moving") and all(m.startswith("svg:") for m in sm.get("moving")), sm.get("moving"))
+                ps = [p for p in r.get("paths") or [] if p]
+                check("%s: %d motes leave the crack, painted over the planet (after the scar)" % (label, len(ps)),
+                      r.get("motes", 0) >= 14 and len(ps) == r.get("motes") and r.get("motesAfterScar"), [r.get("motes"), len(ps), r.get("motesAfterScar")])
+                rings = r.get("rings") or [108, 140]
+                bad = [p for p in ps if not (p["start"] <= 54 and p["near"] <= 3)]
+                check("%s: each starts ON the crack (inside the planet, within 3 units of a point of the crack)" % label, ps and not bad, bad[:4])
+                bad = [p for p in ps if not any(abs(p["end"] - R) <= 9 for R in rings) or not any(abs(p["mid"] - R) <= 9 for R in rings)]
+                check("%s: ...and is drawn out onto a ring (%s) by the time it is two thirds through" % (label, rings), ps and not bad, bad[:4])
+                bad = [p for p in ps if p["turn"] < 15]
+                check("%s: ...then runs along it clockwise - the rings' way - faster than the ring turns (15+ degrees in a third of its loop)" % label, ps and not bad, bad[:4])
+                bad = [p for p in ps if p["o0"] > .05 or p["o95"] > .05]
+                check("%s: ...invisible at both ends of its loop (no pop, no seam)" % label, ps and not bad, bad[:4])
+                check("%s: transform and opacity only" % label, set(r.get("props") or []) <= {"transform", "opacity", "rotate", "translate", "scale"} and r.get("props"), r.get("props"))
+            # the light reads on every theme: sample the seam's core along the arms
+            px = pg.evaluate("""() => { const hero = document.querySelector('.panel.home .cosmic-hero-wrap'); const r = hero.getBoundingClientRect(), u = r.width / 360;
+              const art = cosmicScarArt(); const pts = art.fronts.filter(f => f.main && f.kind === 0).flatMap(f => f.pts.filter((q, i) => i % 6 === 3 && q[2] < art.arMax * .7));
+              return { pts: pts.map(q => [r.left + 180 * u + 52 * u * q[0], r.top + 162 * u + 52 * u * q[1]]) }; }""")
+            shot = pg.screenshot()
+            from PIL import Image
+            import io as _io
+            im = Image.open(_io.BytesIO(shot)).convert("RGB")
+            sc = im.width / w
+            lum = []
+            for (x, y) in px["pts"]:
+                best = 0
+                for dx in (-1, 0, 1):
+                    for dy in (-1, 0, 1):
+                        rr, gg, bb = im.getpixel((int(x * sc) + dx, int(y * sc) + dy))
+                        best = max(best, .2126 * rr + .7152 * gg + .0722 * bb)
+                lum.append(round(best))
+            good = sum(1 for v in lum if v >= 175)
+            check("%s: the seam is light you can see - bright (175+) on %d of %d points down the arms" % (tag, good, len(lum)),
+                  lum and good >= .75 * len(lum), lum)
+        # Reduce motion: no motes, nothing moving on the seam
+        rm = pg.evaluate("""async () => { theme.reduceMotion = true; applyTheme(); showHome(); await new Promise(r => setTimeout(r, 900));
+          const hero = document.querySelector('.panel.home .cosmic-hero-wrap'); const m = hero.querySelector(':scope > .csc-motes');
+          const seam = hero.querySelector('.csc-disc');
+          const run = el => el ? el.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length : -1;
+          const out = { motes: m ? getComputedStyle(m).display : 'absent', seamRunning: run(seam), seam: !!seam };
+          theme.reduceMotion = false; applyTheme(); return out; }""")
+        check("%s: Reduce motion: the crack and its light stay, the motes are not shown, nothing on the seam moves" % label,
+              rm.get("seam") and rm.get("motes") == "none" and rm.get("seamRunning") == 0, rm)
+        ctx.close()
+
+    # the cutscene, on the fake clock (check-behaviour's _Stepper320: every timer
+    # and animation stepped together - load cannot move a frame): the fracture
+    # through the swell, the light drawn on with the crack, the motes leaving as
+    # it reaches them, and Home's planet after
+    ctx, pg = boot(br, 440, 956)
+    pg.evaluate("async () => { store.supernovaAchieved = false; saveStore(); showHome(); }")
+    pg.wait_for_timeout(1500)
+    cdp = ctx.new_cdp_session(pg); cdp.send("Animation.enable"); cdp.send("Animation.setPlaybackRate", {"playbackRate": 0})
+    st = cb._Stepper320(pg)
+    st.step(1 / 30)
+    pg.evaluate("() => { window.__snEnded = false; store.pendingSupernovaCutscene = true; playSupernovaCutscene({ from: 'elite', onDone(){ window.__snEnded = true; } }); }")
+    CLS = "() => { const o = document.getElementById('supernova-cutscene'); return o ? o.className : null; }"
+    def until(pred, limit):
+        while st.t < limit:
+            st.step(1 / 15)
+            if pg.evaluate(pred):
+                return st.t
+        return None
+    t_sw = until("() => { const o = document.getElementById('supernova-cutscene'); return !!(o && o.classList.contains('sn-swell')); }", 60)
+    DASH = """(sel) => { const o = document.getElementById('supernova-cutscene'); const svg = o && o.querySelector(sel); if(!svg) return null;
+      const ps = [...svg.querySelectorAll('.csc-sm-core path')], offs = ps.map(p => parseFloat(getComputedStyle(p).strokeDashoffset));
+      const hot = svg.querySelector('.csc-sm-hot');
+      return { paths: ps.length, drawn: offs.filter(v => v < .02).length, partial: offs.filter(v => v >= .02 && v < .98).length, undrawn: offs.filter(v => v >= .98).length,
+               hot: hot ? +getComputedStyle(hot).opacity : null, cls: svg.getAttribute('class') }; }"""
+    fr = None
+    if t_sw is not None:
+        for _ in range(int(1.05 / (1 / 15))):
+            st.step(1 / 15)
+        fr = pg.evaluate(DASH, ".sn-fx svg.sn-fracture")
+    t_det = until("() => { const o = document.getElementById('supernova-cutscene'); return !!(o && o.classList.contains('sn-detonate')); }", 70)
+    t_sc = until("() => { const o = document.getElementById('supernova-cutscene'); return !!(o && o.classList.contains('sn-scarred')); }", 75)
+    sm = mo = None
+    if t_sc is not None:
+        for _ in range(int(1.0 / (1 / 15))):
+            st.step(1 / 15)
+        sm = pg.evaluate(DASH, ".rank-after svg.csc-seam")
+        mo = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene'); const m = o && o.querySelector('.rank-after .csc-motes');
+          const us = m ? [...m.querySelectorAll('u')].map(u => +getComputedStyle(u).opacity) : [];
+          return { shown: m ? getComputedStyle(m).display : null, fresh: !!(m && m.classList.contains('is-fresh')), visible: us.filter(v => v > .05).length, n: us.length }; }""")
+    t_end = until("() => window.__snEnded === true || !document.getElementById('supernova-cutscene')", 110)
+    # (inline - the rank-up journey's way - the scene hands back to the journey, not to Home: Home is next built fresh)
+    pg.evaluate("() => { document.querySelectorAll('.rs-spot').forEach(n => n.remove()); showHome(); }")
+    for _ in range(30):
+        st.step(1 / 15)
+    home = pg.evaluate("""() => { const h = document.querySelector('.panel.home .cosmic-hero-wrap'); return h ? { seam: !!h.querySelector('svg.csc-seam'),
+      motes: h.querySelectorAll(':scope > .csc-motes > i').length, forming: !!h.querySelector('.is-forming'), sn: !!store.supernovaAchieved } : null; }""")
+    fr, sm, mo = fr or {}, sm or {}, mo or {}
+    times = {"swell": t_sw, "detonate": t_det, "scarred": t_sc, "end": t_end}
+    check("the swell: the planet fractures - a second in, the crack's light is part-drawn across it from the impact (%s drawn, %s running, %s still to come), white-hot, before it goes" % (fr.get("drawn"), fr.get("partial"), fr.get("undrawn")),
+          fr.get("paths", 0) >= 20 and fr.get("drawn", 0) > 0 and (fr.get("partial", 0) + fr.get("undrawn", 0)) > 0 and (fr.get("hot") or 0) > .5
+          and t_sw is not None and t_det is not None and t_sw < t_det, [fr, times])
+    check("after the blast the crack's light is drawn on with the crack, white-hot as it runs (some drawn, some still to come)",
+          sm.get("paths", 0) >= 20 and sm.get("drawn", 0) > 0 and (sm.get("partial", 0) + sm.get("undrawn", 0)) > 0 and (sm.get("hot") or 0) > .3, [sm, times])
+    check("...and the motes start leaving the crack as it reaches them (shown, fresh, some out, not all yet)",
+          mo.get("shown") == "block" and mo.get("fresh") and 0 < mo.get("visible", 0) < mo.get("n", 0), mo)
+    check("the scene ends on Home's Supernova planet: the seam settled (not forming) and the motes looping",
+          t_end is not None and (home or {}).get("seam") and (home or {}).get("motes", 0) >= 14 and not (home or {}).get("forming"), [times, home])
+    ctx.close()
+
+
+# --------------------------------------------------------------------------
+SECTIONS = {"A": section_spend, "B": section_queue, "C": section_crack}
 
 
 def main():

@@ -12826,8 +12826,10 @@
   .cosmic-scar canvas.csc-form{ will-change:opacity; }
   .cosmic-scar .csc-run{ left:0; top:0; width:7%; aspect-ratio:1; translate:-50% -50%; opacity:0; border-radius:50%;
     background:radial-gradient(circle, #FFFFFF 0, rgba(232,240,252,.85) 22%, rgba(200,216,242,.3) 46%, rgba(200,216,242,0) 70%); }
-  .cosmic-scar .csc-run.is-burn{ width:10%;
-    background:radial-gradient(circle, #FFF1D6 0, rgba(255,170,90,.85) 24%, rgba(255,96,30,.35) 48%, rgba(255,80,20,0) 72%); }
+  /* (build 326) the front of Supernova's crack is his light, white-hot -
+     not an ember: the seam is drawn on behind it */
+  .cosmic-scar .csc-run.is-burn{ width:9%;
+    background:radial-gradient(circle, #FFFFFF 0 10%, rgba(255,240,214,.9) 24%, rgba(255,196,120,.38) 48%, rgba(255,160,80,0) 72%); }
   .cosmic-scar .csc-chip{ width:3.6%; aspect-ratio:1; margin:-1.8% 0 0 -1.8%; opacity:0;
     background:linear-gradient(170deg, #040303 0, #121010 50%, #3A3634 75%, #8C8680 100%);
     clip-path:polygon(38% 0, 62% 14%, 100% 52%, 72% 64%, 58% 100%, 30% 70%, 0 58%, 22% 30%); }
@@ -12873,12 +12875,11 @@
   .csc-seam .csc-sm-halo{ stroke:#FF9E4A; opacity:.42; }
   .csc-seam .csc-sm-glow{ stroke:#FFC977; opacity:.72; }
   .csc-seam .csc-sm-core{ stroke:#FFF6E4; opacity:.95; }
+  .csc-seam.is-breath{ will-change:opacity; }
   @media (prefers-reduced-motion:no-preference){
-    .csc-seam .csc-sm-halo{ animation:csc-sm-breathe 4.7s ease-in-out infinite alternate; }
-    .csc-seam .csc-sm-glow{ animation:csc-sm-breathe2 3.3s ease-in-out -1.2s infinite alternate; }
+    .csc-seam.is-breath{ animation:csc-sm-breathe 4.3s ease-in-out infinite alternate; }
   }
-  @keyframes csc-sm-breathe{ from{ opacity:.26; } to{ opacity:.5; } }
-  @keyframes csc-sm-breathe2{ from{ opacity:.55; } to{ opacity:.85; } }
+  @keyframes csc-sm-breathe{ from{ opacity:.6; } to{ opacity:1; } }
   /* drawn on (build 326): the crack forming in the Supernova cutscene and
      the fracture in its swell - each run of the seam from its own arrival,
      at the forming's pace, so the light runs out of the impact; the hot
@@ -12896,8 +12897,10 @@
   .csc-motes > i{ inset:0; transform-origin:50% 47.368%; transform:rotate(var(--a0)); }
   /* the radius: a box as tall as the hero whose foot is the planet's middle */
   .csc-motes > i > b{ left:0; right:0; bottom:52.632%; height:100%; transform:translateY(calc(var(--r1) * -1%)); }
-  .csc-motes > i > b > u{ left:50%; bottom:0; width:var(--s); aspect-ratio:2.6; translate:-50% 50%; opacity:0; border-radius:50%;
-    background:radial-gradient(ellipse 50% 50% at 50% 50%, #FFFBF2 0 14%, rgba(255,226,170,.9) 30%, rgba(255,170,90,.42) 52%, rgba(255,140,60,0) 74%); }
+  /* a head of light at its leading end (+x) and a tail behind it */
+  .csc-motes > i > b > u{ left:50%; bottom:0; width:var(--s); aspect-ratio:4.2; translate:-50% 50%; opacity:0; border-radius:50%;
+    background:radial-gradient(ellipse 20% 50% at 80% 50%, #FFFCF4 0 22%, rgba(255,226,170,.85) 48%, rgba(255,190,110,0) 100%),
+      linear-gradient(90deg, rgba(255,170,90,0) 4%, rgba(255,190,110,.28) 55%, rgba(255,214,150,.6) 78%, rgba(255,214,150,0) 96%); }
   .csc-motes > i.is-chip > b > u{ aspect-ratio:1; border-radius:0;
     background:linear-gradient(140deg, #FFE3B0 0 9%, #8A5A3A 20%, #1C1210 42%, #070505 100%);
     clip-path:polygon(38% 0, 70% 12%, 100% 52%, 70% 66%, 56% 100%, 26% 72%, 0 54%, 22% 26%); }
@@ -12924,10 +12927,10 @@
     100%{ transform:translateY(calc(var(--r1) * -1%)); }
   }
   @keyframes csc-mote-look{
-    0%{ opacity:0; transform:rotate(90deg) scale(.3); }
-    5%{ opacity:var(--o); transform:rotate(90deg) scale(1.15); }
-    24%{ opacity:var(--o); transform:rotate(80deg) scale(.9); }
-    62%{ opacity:calc(var(--o) * .9); transform:rotate(14deg) scale(.85); }
+    0%{ opacity:0; transform:rotate(-90deg) scale(.3); }
+    5%{ opacity:var(--o); transform:rotate(-90deg) scale(1.15); }
+    24%{ opacity:var(--o); transform:rotate(-78deg) scale(.95); }
+    62%{ opacity:calc(var(--o) * .9); transform:rotate(-12deg) scale(.9); }
     82%{ opacity:calc(var(--o) * .7); transform:rotate(0deg) scale(.95, .8); }
     100%{ opacity:0; transform:rotate(0deg) scale(1.3, .4); }
   }
@@ -74843,10 +74846,11 @@ function crackFormArm(hero, from, to){
   /* SUPERNOVA (build 326): the light in the crack is DRAWN ON with the
      crack, from the impact out, white-hot as it runs and cooling to Home's
      glow behind it; the motes leave the crack as it reaches them */
-  const seam = L.full ? sc.querySelector(".csc-seam") : null;
+  const seams = L.full ? [...sc.querySelectorAll(".csc-disc > .csc-seam")] : [];
+  const seam = seams[0] || null;
   const motes = L.full ? hero.querySelector(":scope > .csc-motes") : null;
+  seams.forEach(x => x.classList.add("is-forming"));
   if(seam){
-    seam.classList.add("is-forming");
     if(!seam.querySelector(".csc-sm-hot")){
       try{
         const hot = scarSeamSVG(A, [["csc-sm-hot", .9]]);
@@ -74869,21 +74873,24 @@ function crackFormArm(hero, from, to){
     setMask(A); hero.classList.add("is-scarred");
     sc.classList.remove("is-forming");
     sc.classList.add("is-formed");
-    if(seam){ seam.classList.remove("is-forming", "is-drawing"); seam.querySelectorAll(".csc-sm-hot").forEach(g => g.remove()); }
+    seams.forEach(x => x.classList.remove("is-forming", "is-drawing"));
+    if(seam) seam.querySelectorAll(".csc-sm-hot").forEach(g => g.remove());
   }
   function play(ms){
     if(ended || done) return;
     ended = true;
     if(!sc.animate){ finish(); return; }
     const K = layers.length, D = ms;
-    if(seam){ seam.style.setProperty("--fd", D + "ms"); seam.classList.add("is-drawing"); }
+    seams.forEach(x => { x.style.setProperty("--fd", D + "ms"); x.classList.add("is-drawing"); });
     /* each layer comes up over a little more than its own slice, so the
        growth is continuous */
     layers.forEach((c, i) => {
       const a = c.animate([{ opacity: 0 }, { opacity: 1 }], { duration: Math.max(120, D / K * 1.6), delay: D * i / K, easing: "ease-out", fill: "both" });
       anims.push(a);
       const up = Math.max(120, D / K * 1.6), cool = L.full ? 1400 : 900;
-      try{ anims.push(glows[i].animate([{ opacity: 0 }, { opacity: 1, offset: up / (up + cool) }, { opacity: 0 }],
+      /* (build 326) Supernova's light is the seam drawn on with it: the
+         layer's ember twin only warms the walls now, it was the blotch */
+      try{ anims.push(glows[i].animate([{ opacity: 0 }, { opacity: L.full ? .35 : 1, offset: up / (up + cool) }, { opacity: 0 }],
         { duration: up + cool, delay: D * i / K, easing: "ease-out", fill: "both" })); }catch(e){}
     });
     /* a point of light at each front, running with it */
@@ -75007,7 +75014,15 @@ function scarSeam(sc, art){
   const disc = sc && sc.querySelector(".csc-disc");
   if(!disc || disc.querySelector(".csc-seam")) return null;
   const svg = scarSeamSVG(art);
-  if(svg) disc.appendChild(svg);
+  if(!svg) return null;
+  /* THE BREATHING IS A WHOLE SVG'S OPACITY, NOT A GROUP'S: an animated
+     <g> inside an svg repaints all ~800 paths every frame on Home; the
+     svg element itself is a box the compositor can fade. So the halo and
+     the glow go in a second svg (.is-breath), which breathes. */
+  const breath = svg.cloneNode(false);
+  breath.setAttribute("class", "csc-seam is-breath");
+  [...svg.querySelectorAll(":scope > .csc-sm-halo, :scope > .csc-sm-glow")].forEach(g => breath.appendChild(g));
+  disc.append(svg, breath);
   return svg;
 }
 /* where the motes leave from: along the two arms (and the run into the
@@ -75017,15 +75032,15 @@ function scarMotePlan(art){
   if(!fr.length) return [];
   let sd = 32611;
   const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
-  const out = [], N = 18;
+  const out = [], N = 26;
   for(let i = 0; i < N; i++){
     const f = fr[i % fr.length], k = Math.max(1, Math.min(f.pts.length - 2, Math.round((.06 + .82 * rnd()) * (f.pts.length - 1))));
     const q = f.pts[k];
     const x = 52 * q[0], y = 52 * q[1], ar = Math.max(0, Math.min(1, (q[2] || 0) / Math.max(.001, Number(art.arMax) || 1)));
-    const chip = i % 4 === 3;
+    const chip = i % 5 === 4;
     const ring = rnd() < .55 ? 0 : 1;
-    out.push({ x, y, ar, chip, ring, t: +(6.4 + 3.6 * rnd()).toFixed(2), d: +(-(i / N) * 9.5 - rnd() * .8).toFixed(2),
-      da: Math.round(70 + 60 * rnd()), s: chip ? +(1.7 + .9 * rnd()).toFixed(2) : +(3.4 + 2.2 * rnd()).toFixed(2), o: chip ? .95 : +(.72 + .28 * rnd()).toFixed(2),
+    out.push({ x, y, ar, chip, ring, t: +(6.4 + 3.6 * rnd()).toFixed(2), d: +(-(i / N) * 10 - rnd() * .8).toFixed(2),
+      da: Math.round(70 + 60 * rnd()), s: chip ? +(1.7 + .9 * rnd()).toFixed(2) : +(3.9 + 2.2 * rnd()).toFixed(2), o: chip ? .95 : +(.72 + .28 * rnd()).toFixed(2),
       off: (rnd() - .5) * 6 });
   }
   return out;
@@ -121504,7 +121519,7 @@ function rankUpSpendChip(host, from, n){
   ruTween(c, RU_SPEND_CHIP_MS, k => {
     const e = 1 - Math.pow(1 - k, 2.2);
     c.style.opacity = String(k < .14 ? k / .14 : Math.max(0, 1 - (k - .14) / .86));
-    c.style.transform = "translateY(" + (2 - 26 * e).toFixed(1) + "px) scale(" + (k < .14 ? .82 + 1.3 * k : 1.0 - .08 * k).toFixed(3) + ")";
+    c.style.transform = "translateY(" + (2 - 15 * e).toFixed(1) + "px) scale(" + (k < .14 ? .82 + 1.3 * k : 1.0 - .08 * k).toFixed(3) + ")";
   }).then(() => c.remove());
 }
 /* the level completing: a short light off the end of the full bar */
