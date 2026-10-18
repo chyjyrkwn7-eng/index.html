@@ -333,6 +333,54 @@ def check_locked_looks(br):
         ctx.close()
 
 
+def check_cutout_tops(br):
+    print("\nd5b. the new cut-outs are not cut off: nothing of a challenge or ultimate cut-out in the top 6% of its tile")
+    import io
+    from PIL import Image
+    for (w, h, dev), dpr in zip(DEVS, (3, 2)):
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+        pg.evaluate("async () => { showCustomize('character'); }")
+        pg.wait_for_timeout(1200)
+        tops = {}
+        for look in ("challenge", "ultimate"):
+            sel = ".avatarchar-option.is-sil-" + look
+            if not pg.evaluate("(s) => !!document.querySelector(s)", sel):
+                tops[look] = None
+                continue
+            pg.evaluate("(s) => document.querySelector(s).scrollIntoView({ block: 'center', behavior: 'instant' })", sel)
+            for _ in range(80):
+                n = pg.evaluate("""(s) => [...document.querySelectorAll(s)].filter(o => { const b = o.getBoundingClientRect(); return b.top > 0 && b.bottom < innerHeight; })
+                  .map(o => !!o.querySelector('.char-flip-play img') || !o.classList.contains('char-flip'))""", sel)
+                if n and all(n):
+                    break
+                pg.wait_for_timeout(400)
+            pg.wait_for_timeout(500)
+            tiles = pg.evaluate("""(s) => [...document.querySelectorAll(s)].map(o => { const b = o.getBoundingClientRect();
+              return { id: o.title, box: [b.left, b.top, b.width, b.height] }; }).filter(t => t.box[1] > 0 && t.box[1] + t.box[3] < innerHeight)""", sel)
+            shot = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+            for t in tiles:
+                x, y, tw, th = t["box"]
+                crop = shot.crop((int(x * dpr), int(y * dpr), int((x + tw) * dpr), int((y + th) * dpr)))
+                W, H = crop.size
+                px = crop.load()
+                top = None
+                for yy in range(0, int(H * .5)):
+                    # a lit RUN wider than the sky's stars (about 1.5 CSS px), not a star
+                    run = best = 0
+                    for xx in range(int(W * .1), int(W * .9)):
+                        run = run + 1 if sum(px[xx, yy]) / 3 >= 110 else 0
+                        best = max(best, run)
+                    if best >= 2 * dpr + 1:
+                        top = yy / H
+                        break
+                tops[t["id"]] = round(top, 3) if top is not None else None
+        bad = {k: v for k, v in tops.items() if v is not None and v < 0.06}
+        seen = [k for k, v in tops.items() if v is not None]
+        check("%s every challenge and ultimate cut-out in view clears the top 6%% of its tile" % dev,
+              len(seen) >= 8 and not bad and tops.get("challenge", 1) is not None, tops)
+        ctx.close()
+
+
 def check_qualifier(br):
     print("\nd6. the Qualifier's mark is new: a seal with ribbon tails and a tick, not the shield")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
@@ -354,7 +402,7 @@ def main():
         br = pw.chromium.launch(executable_path=cb.CHROME)
         try:
             fns = os.environ.get("ONLY_FN")
-            for fn in (fns.split(",") if fns else ["check_story", "check_meeting", "check_whatsnew", "check_broadcast", "check_locked_looks", "check_qualifier"]):
+            for fn in (fns.split(",") if fns else ["check_story", "check_meeting", "check_whatsnew", "check_broadcast", "check_locked_looks", "check_cutout_tops", "check_qualifier"]):
                 globals()[fn](br)
         finally:
             br.close()

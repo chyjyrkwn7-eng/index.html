@@ -44708,7 +44708,7 @@ function buildCharArtFor(id){
 const SIL_LIGHT = ["cx-fx-umaura", "cx-fx-umaura2", "cx-fx-wisps", "cx-fx-umcglow", "cx-fx-umcglint", "cx-fx-umrim",
   "cx-fx-sgsparks", "cx-fx-sglight", "cx-fx-sgsurgew", "cx-fx-sgsurgeb", "cx-fx-sgaurora",
   "cx-fx-gnatm", "cx-fx-gnleak", "cx-fx-gnerupt", "cx-fx-gnseam", "cx-fx-starfield", "cx-fx-sparkles"];
-const SIL_LIGHT_RE = /^cx-fx-(bg|sparkles|.*(glow|glint|flash|strike|bolt|fork|spark|rain|code|dust|mote|meteor|surge|flare|stars|drift|neon|slash|petals|bubble|scan|led|rays|streak|pour|dots|far|near|veins|seam|pulse|flow|drip|bees))/;
+const SIL_LIGHT_RE = /^cx-fx-(bg|sparkles|.*(glow|glint|flash|strike|bolt|fork|spark|rain|code|dust|mote|meteor|surge|flare|stars|drift|neon|slash|petals|bubble|scan|led|rays|streak|pour|dots|far|near|veins|seam|pulse|flow|drip|bees|halo|ring|orbit|sats|satx|saty))/;
 const SIL_FLARE = ["cx-fx-flares", "cx-fx-umflare", "cx-fx-sgstar", "cx-fx-gnheart", "cx-fx-wfrings", "cx-fx-wforbit"];
 const SIL_RIM = "#C9CBCE";
 const SIL_BLACK = "#05060A";
@@ -44858,9 +44858,23 @@ function charSilhouetteSVG(id){
       ["fill", "stroke"].forEach(a => { const v = n.getAttribute(a); if(v && v !== "none") n.setAttribute(a, silGreyPaint(svg, v)); });
     });
   });
-  svg.append(...halos, rim, body);
+  /* A CUT-OUT'S EDGE IS ABOVE ITS DRAWING (build 325). The edge and the
+     ultimate's light sit outside the figure, so the tallest new cut-outs -
+     Zeus's curls, the Ronin's hat, the ultimates' crowns - reached the
+     top 3% of their tile, inside the tile's own fade, and read as cut off
+     (the same complaint 317 fixed for the secrets with SIL_HEAD_FIT). Each
+     is brought down onto its own shoulders, the whole figure about the
+     foot of the tile, just enough to clear 6% (check-b325-d measures it). */
+  const k = SIL_FIG_FIT[id];
+  if(k){
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("transform", "translate(20 37) scale(" + k + ") translate(-20 -37)");
+    g.append(...halos, rim, body);
+    svg.appendChild(g);
+  } else svg.append(...halos, rim, body);
   return svg;
 }
+const SIL_FIG_FIT = { zeus: .95, ronin: .95, astral: .97, celestial: .94, zenith: .93 };
 let charSilSeq = 0;
 /* THE PICKER'S DRAWING (build 314). "It's hard to tell which character is
    selected because some of the characters have the glow effect on them at

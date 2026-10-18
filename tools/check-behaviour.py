@@ -11140,7 +11140,10 @@ def check_b314_chars(br):
           const playing = o => { const img = o.querySelector('.char-flip-play img'); return !!img && img.getAnimations().some(a => a.playState === 'running'); };
           out.nearHeld = held.filter(near).length; out.nearPlaying = held.filter(near).filter(playing).length;
           /* a silhouette scrolled into view plays too */
-          const sil = opts.find(o => o.classList.contains('is-silhouette'));
+          /* the SECRET's (build 325: challenge and ultimate characters are
+             cut-outs too, each in its category's own colour - see check-b325-d;
+             "no colour" is the secret flare cut-out's rule) */
+          const sil = opts.find(o => o.classList.contains('is-sil-secret')) || opts.find(o => o.classList.contains('is-silhouette'));
           sil.scrollIntoView({ block: 'center', behavior: 'instant' });
           for(let t = 0; t < 400; t++){ if(sil.querySelector('.char-flip-play img')) break; await wait(250); }
           out.silPlaying = playing(sil);
@@ -13889,15 +13892,18 @@ def check_b317_silhouettes(br):
           store.mysteryColorsFound = {}; document.querySelectorAll('.app-banner, #pushing-update, #intro-pop, .daily-alert').forEach(n => n.remove());
           showCustomize('character'); await wait(800);
           document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot').forEach(x => x.remove());
-          const s = document.querySelector('.avatarchar-option.is-silhouette');
+          /* build 325: challenge and ultimate characters are cut-outs too,
+             each in its own look (check-b325-d holds those); this is the
+             four SECRETS' rule */
+          const s = document.querySelector('.avatarchar-option.is-sil-secret') || document.querySelector('.avatarchar-option.is-silhouette');
           if(s) s.scrollIntoView({ block: 'center', behavior: 'instant' }); }""")
         for _ in range(60):
-            n = pg.evaluate("() => [...document.querySelectorAll('.avatarchar-option.is-silhouette')].map(o => !!o.querySelector('.char-flip-play img') || !o.classList.contains('char-flip'))")
+            n = pg.evaluate("() => [...document.querySelectorAll(document.querySelector('.is-sil-secret') ? '.avatarchar-option.is-sil-secret' : '.avatarchar-option.is-silhouette')].map(o => !!o.querySelector('.char-flip-play img') || !o.classList.contains('char-flip'))")
             if n and all(n):
                 break
             pg.wait_for_timeout(500)
         pg.wait_for_timeout(400)
-        tiles = pg.evaluate("""() => [...document.querySelectorAll('.avatarchar-option.is-silhouette')].map(o => {
+        tiles = pg.evaluate("""() => [...document.querySelectorAll(document.querySelector('.is-sil-secret') ? '.avatarchar-option.is-sil-secret' : '.avatarchar-option.is-silhouette')].map(o => {
           const b = o.getBoundingClientRect(); return { id: (o.title || ''), box: [b.left, b.top, b.width, b.height],
             flip: !!o.querySelector('.char-flip-play img') }; })""")
         shot = _Im.open(_io.BytesIO(pg.screenshot())).convert("RGB")
