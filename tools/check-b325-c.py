@@ -91,6 +91,9 @@ def section_wall(br):
         out.cap = LEVEL_CAP;
         const units = topicsIn(QUESTIONS);
         const perf = n => Object.fromEntries(units.slice(0, n).map(u => [u, badgeThresholdFor(u)]));
+        /* build 324's wall, written here so this runs on 324 too */
+        const badgeWall324 = b => { const met = TIER_ORDER_FULL.filter(k => b >= TIER_UNLOCKS[k].badges).length, after = TIER_UNLOCKS[TIER_ORDER_FULL[met + 1]];
+          return after ? Math.min(LEVEL_CAP, after.level - 1) : LEVEL_CAP; };
         /* 1. the wall for every badge count and rank floor */
         out.walls = [];
         for(let rf = 0; rf <= TIER_ORDER_FULL.length; rf++) for(let b = 0; b <= units.length; b++){
@@ -113,7 +116,7 @@ def section_wall(br):
           if(d.row != null){
             /* the floor that explains the level the row published */
             applyLoadedData(Object.assign({}, doc, { levelWallRule: 325 })); retroHideBadges = null;
-            const plain = Math.min(levelFromPoints(d.p), badgeWallLevel324(badgeCountOf(store)));
+            const plain = Math.min(levelFromPoints(d.p), badgeWall324(badgeCountOf(store)));
             if(d.row > plain) doc.levelFloor = d.row;
           }
           applyLoadedData(JSON.parse(JSON.stringify(doc))); retroHideBadges = null; mergeHidePoints = null;
@@ -212,8 +215,8 @@ def section_wall(br):
         if old_level > new_level:
             grandfathered += 1
     n_board = sum(1 for d in loads if d.get("row") is not None)
-    check("%d build-324 states (a grid, and the %d rows of the live board) load at exactly the level 324 showed or the new rule's, whichever is higher - none lower, every board row its published level"
-          % (len(loads), n_board), not wrong and not drops, (wrong or drops)[:3])
+    check("%d build-324 states (a grid, and the %d rows of the live board) load at exactly the level 324 showed or the new rule's, whichever is higher - none lower, every board row its published level - under the new rule's flag"
+          % (len(loads), n_board), not wrong and not drops and not notflag, (wrong or drops or notflag)[:3])
     # (with the flag: on 324 this would pass trivially - it IS 324's rule)
     check("...and no rank below the one 324 showed, with the new rule's flag set on every one", not rdrops and not notflag, (rdrops or notflag)[:3])
     check("...%d of them kept by a grandfather floor; every one carries levelWallRule 325 after the load" % grandfathered,
