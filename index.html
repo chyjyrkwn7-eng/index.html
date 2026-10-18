@@ -224,6 +224,39 @@
     --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
     --mono: ui-monospace, "SF Mono", "Roboto Mono", "JetBrains Mono", Menlo, Consolas, monospace;
   }
+  /* ---------- SURFACES (build 326) ----------
+     "The interface of the app is starting to become hard to see because
+     of all the Liquid Glass ... like the lobby for exam some of the boxes
+     are darker which is nice but some aren't? ... the settings menu, the
+     Liquid Glass is very glass like, could be better, maybe darker?"
+     Measured before this: eleven different recipes for "a box" - the
+     common card a 40% fill under a 9px blur that SATURATED (1.9) and
+     BRIGHTENED (1.06) what was behind it, so the glow and the stars
+     came through brighter than they were; Settings' cards a 3.5% white
+     wash with no blur at all (the stars showed straight through); the
+     Virtual Room's two boxes one at 40% glass and one at 20% black. One
+     set now, darker, and still glass:
+       --surface-1      a card on the page (most boxes)
+       --surface-2      raised: a section's header bar, a glass control
+       --surface-lift   a card inside a card or on an opaque sheet
+       --surface-inset  a well cut into a card (a track, a code)
+     with ONE recipe round them - the soft top sheen, a hairline border,
+     a top catch-light and a dark lip, a drop shadow - and one frost that
+     blurs what is behind without boosting it. Nothing on a surface is
+     lighter or more see-through than these by accident: a new box takes
+     a token, never a fresh rgba(). The tab bar and its lens keep their
+     own recipe (build 323/325), and so do the floating overlays (toast,
+     banners, tooltips). */
+  :root{
+    --surface-1:rgba(13,16,21,.72);
+    --surface-2:rgba(31,36,44,.78);
+    --surface-lift:rgba(255,255,255,.07);
+    --surface-inset:rgba(0,0,0,.3);
+    --surface-sheen:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.012) 42%, rgba(0,0,0,.1));
+    --surface-border:rgba(255,255,255,.1);
+    --surface-shadow:0 2px 12px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.11), inset 0 -1px 0 rgba(0,0,0,.28);
+    --surface-blur:blur(16px) saturate(1.2);
+  }
 
   /* ---------- dark mode ---------- */
   [data-theme="dark"]{
@@ -3948,11 +3981,11 @@
   }
   [data-layout="modern"] .motion-summary{
     background:rgba(255,255,255,.55);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .motion-summary{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
+    background:var(--surface-sheen), var(--surface-2);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   .section-divider{
@@ -4337,11 +4370,11 @@
   }
   [data-layout="modern"] .cal-month-head{
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .cal-month-head{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-2); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   .cal-month-head-open{ border-color:var(--accent); }
@@ -4394,11 +4427,11 @@
   }
   [data-layout="modern"] .cal-action-btn{
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .cal-action-btn{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-2); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   @media (hover:hover){ .cal-action-btn:hover{ border-color:var(--accent); } }
@@ -4419,11 +4452,11 @@
   }
   [data-layout="modern"] .cal-row{
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .cal-row{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   .cal-row-date{
@@ -4492,10 +4525,10 @@
   .cal-grid-arrow:disabled{ opacity:.35; cursor:default; }
   [data-layout="modern"] .cal-grid-arrow{
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
   }
   [data-theme="dark"][data-layout="modern"] .cal-grid-arrow{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-2); border:1px solid rgba(255,255,255,.11);
   }
   .cal-grid-head, .cal-grid{
     display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:.3rem;
@@ -4640,11 +4673,11 @@
   }
   [data-layout="modern"] .cal-daycard{
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .cal-daycard{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   .cal-daycard-empty{ background:transparent; border-style:dashed; }
@@ -4929,6 +4962,10 @@
   .cal-week-day.is-today{ border:1.5px solid rgba(255,255,255,.85); }
   .cal-week-day.is-today .cal-week-dow{ color:#fff; }
   .cal-week-day.is-sel{ background:rgba(255,255,255,.13); }
+  /* today's and the picked day's number in white, as today's weekday
+     already is: in --soft on the picked day's frosted fill it measured
+     4.4:1 (build 326's contrast sweep) */
+  .cal-week-day.is-today .cal-week-num, .cal-week-day.is-sel .cal-week-num{ color:#fff; }
   .cal-week-day:active{ background:rgba(255,255,255,.1); }
   .cal-week-what{ display:none; }
   /* the next test: the countdown in the test amber */
@@ -5046,11 +5083,11 @@
   }
   [data-layout="modern"] .lb-row{
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .lb-row{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   .lb-row-me{ border-color:var(--accent); }
@@ -5083,7 +5120,10 @@
      thing rather than a bare list with a stray line under a button. */
   .vroom-roster{
     margin:0 0 .9rem; padding:.85rem .9rem; border-radius:16px;
-    background:rgba(0,0,0,.2); border:1px solid rgba(255,255,255,.08);
+    /* build 326: the same surface as Room setup above it - they were a
+       20% black box under a 40% glass one, "some of the boxes are darker" */
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border); box-shadow:var(--surface-shadow);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
   }
   .vroom-roster-head{
     display:flex; align-items:baseline; justify-content:space-between;
@@ -5097,7 +5137,10 @@
      onto its own line and never lands under the tab bar. */
   .vroom-roster-head .vroom-readycount{ margin:0; font-size:.78rem; }
   .vroom-roster-list{ margin:0; }
-  .vroom-roster-list .vroom-row:last-child{ border-bottom:none; }
+  /* (".vroom-row:last-child{ border-bottom:none }" came out in build 326:
+     a leftover from when the roster was a ruled list, it took the bottom
+     edge off the last person's card - so whoever joined last and readied
+     up had a green outline with no bottom to it.) */
   /* Two across at every width; on a phone the level line goes and the
      ready chip is a dot (the row's green edge says it too). */
   .vroom-roster.is-crowded .vroom-roster-list{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:.45rem; }
@@ -5123,35 +5166,73 @@
     .vroom-roster.is-crowded .vroom-you-tag{ display:inline; }
   }
   .vroom-setup-head{ margin-top:.2rem; }
-  /* ---- THE LOBBY BOX'S HEADER CARRIES INVITE AND OPEN ROOM (build 323) ----
-     On a phone a second row under "In this room", split across the box:
-     the Invite pill on the left, the switch and its two-word state on the
-     right. From a tablet up they sit on the title's own line. */
+  /* ---- THE LOBBY BOX'S HEADER: WHO CAN JOIN, AND INVITE (build 326) ----
+     A full-width row under "In this room" at every width (build 323 put
+     a switch and an Invite pill there; 326 replaced the switch - see
+     .vroom-access-seg). Phone: the two choices across the box, then the
+     line saying what the current one means, with Invite friends beside
+     it. From a tablet up all three sit on one line. */
   .vroom-roster.has-tools .vroom-roster-head{ flex-wrap:wrap; align-items:center; row-gap:.55rem; margin-bottom:.7rem; }
   .vroom-roster-tools{
-    flex:0 0 100%; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.45rem .6rem;
-    padding-top:.55rem; border-top:1px solid rgba(255,255,255,.07);
+    flex:0 0 100%; display:grid; grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:"seg seg" "line invite"; align-items:center; gap:.55rem .7rem;
+    padding-top:.65rem; border-top:1px solid rgba(255,255,255,.07);
   }
-  /* a 320px phone has no room for both on one line: the switch drops
-     under the pill, still on the right */
-  .vroom-roster-tools .vroom-open-row{ margin-left:auto; }
+  .vroom-roster-tools .vroom-access-seg{ grid-area:seg; }
+  .vroom-roster-tools .vroom-access-line{ grid-area:line; }
   .vroom-roster-tools .vroom-invite-btn{
-    display:inline-flex; align-items:center; gap:.4rem; margin:0;
+    grid-area:invite; display:inline-flex; align-items:center; gap:.4rem; margin:0;
     min-height:44px; padding:.4rem .9rem; font-size:.82rem; font-weight:800; white-space:nowrap; justify-content:center;
   }
   .vroom-roster-tools .vroom-invite-btn svg{ width:1.05rem; height:1.05rem; flex:none; }
-  .vroom-roster-tools .vroom-open-row{ display:flex; align-items:center; gap:.55rem; min-width:0; }
-  .vroom-roster-tools .vroom-open-text{ flex:0 1 auto; min-width:0; text-align:right; }
-  .vroom-open-label{ margin:0; font-size:.82rem; font-weight:800; color:var(--ink); line-height:1.2; white-space:nowrap; }
-  .vroom-open-hint{ margin:.1rem 0 0; font-size:.72rem; color:var(--soft); line-height:1.2; white-space:nowrap; }
+  /* Two options in one track, the app's segmented look (the Profile /
+     Stats / Settings switcher): a dark inset track, the chosen option a
+     raised lighter pill with white words, the other quiet. Each option
+     is a whole 44px target, never a word on a switch. */
+  .vroom-access-seg{
+    display:grid; grid-template-columns:1fr 1fr; gap:.25rem; padding:.25rem;
+    border-radius:999px; background:rgba(0,0,0,.32);
+    box-shadow:inset 0 1px 2px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.07);
+  }
+  .vroom-access-opt{
+    display:flex; align-items:center; justify-content:center; gap:.42rem; min-width:0;
+    min-height:44px; padding:0 .8rem; margin:0; border:0; border-radius:999px;
+    background:transparent; color:rgba(255,255,255,.6);
+    font:inherit; font-size:.86rem; font-weight:800; letter-spacing:.01em; white-space:nowrap; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    transition:background-color .2s ease, color .2s ease, box-shadow .2s ease;
+  }
+  .vroom-access-word{ overflow:hidden; text-overflow:ellipsis; }
+  .vroom-access-icon{ flex:none; width:1.05rem; height:1.05rem; display:block; }
+  .vroom-access-icon svg{ width:100%; height:100%; display:block; fill:none; stroke:currentColor;
+    stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
+  .vroom-access-opt.is-on{
+    color:#fff; background:rgba(255,255,255,.2);
+    box-shadow:0 1px 4px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(255,255,255,.1);
+  }
+  /* open is the one that lets the class in, so it is lit in the ready
+     green's family; invite only is the private default, plain white */
+  .vroom-access-seg.is-open .vroom-access-opt.is-on .vroom-access-icon{ color:#5BE39F; }
+  .vroom-access-opt:not(.is-on):active{ background:rgba(255,255,255,.07); }
+  @media (hover:hover){ .vroom-access-opt:not(.is-on):hover{ color:#fff; } }
+  .vroom-access-opt:focus{ outline:none; }
+  .vroom-access-opt:focus-visible{ outline:2px solid rgba(255,255,255,.7); outline-offset:-3px; }
+  .vroom-access-line{ margin:0; min-width:0; font-size:.78rem; line-height:1.35; color:var(--soft); }
+  /* up to a 414px phone: both words whole, the marks a touch smaller; a 320px
+     phone drops the marks rather than cut a word ("Invite o...") */
+  @media (max-width:26.5rem){
+    .vroom-access-opt{ padding:0 .45rem; gap:.32rem; font-size:.8rem; }
+    .vroom-access-icon{ width:.92rem; height:.92rem; }
+  }
+  @media (max-width:21rem){ .vroom-access-icon{ display:none; } }
   .vroom-roster > .vroom-autostart-note{ margin:.55rem 0 .1rem; }
   .vroom-roster:not(.is-crowded) > .vroom-autostart-note{ margin-top:.2rem; }
   @media (min-width:40rem){
-    .vroom-roster.has-tools .vroom-roster-head{ flex-wrap:nowrap; justify-content:flex-start; column-gap:.8rem; }
-    .vroom-roster-tools{ flex:0 0 auto; margin-left:auto; padding-top:0; border-top:0; gap:1.1rem; }
+    .vroom-roster-tools{ grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"seg line invite"; gap:.6rem 1rem; }
+    .vroom-access-seg{ min-width:19rem; }
+    .vroom-access-opt{ font-size:.9rem; }
     .vroom-roster-tools .vroom-invite-btn{ font-size:.88rem; }
-    .vroom-open-label{ font-size:.88rem; }
-    .vroom-open-hint{ font-size:.76rem; }
+    .vroom-access-line{ font-size:.82rem; }
   }
   @media (min-width:40rem){
     .vroom-roster{ padding:1.1rem 1.15rem; }
@@ -5253,11 +5334,11 @@
   }
   [data-layout="modern"] .rank-row{
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .rank-row{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   /* Placeholder rows while the board loads (build 313): the real row's
@@ -5277,7 +5358,7 @@
   .lb-optout{
     width:100%; max-width:26rem; box-sizing:border-box; text-align:center;
     padding:1.6rem 1.35rem 1.35rem; border-radius:1.4rem;
-    background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.42);
+    background:var(--surface-sheen), var(--surface-1);
     border:1px solid rgba(255,255,255,.12);
     -webkit-backdrop-filter:blur(12px) saturate(1.6); backdrop-filter:blur(12px) saturate(1.6);
     box-shadow:0 10px 30px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.16), inset 0 -1px 0 rgba(0,0,0,.22);
@@ -5509,8 +5590,8 @@
   [data-theme="dark"][data-layout="modern"] .iconbtn.rank-me-btn{
     align-self:stretch; min-height:0; height:auto; padding:0 1.15rem;
     font-size:.95rem; font-weight:700; letter-spacing:.01em; color:var(--ink);
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11); border-radius:999px;
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    background:var(--surface-sheen), var(--surface-2); border:1px solid rgba(255,255,255,.11); border-radius:999px;
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   /* The top three carry their medal colour through the row's own text,
@@ -5599,7 +5680,30 @@
      curve. The row's own outline turns green instead, all the way round
      its corners; the ::before stays (transparent) so nothing else moves. */
   .vroom-row.is-ready::before{ background:transparent; }
-  .vroom-roster .vroom-row.is-ready{ border-color:rgba(61,214,140,.55); transition:border-color .2s ease; }
+  /* BUILD 326: THE WHOLE RING, ON EVERYBODY. "When ready up is set not
+     everyone has a green outline and if they do it's not fully there."
+     Three causes, all fixed here:
+       - the last card had no bottom edge (the :last-child rule above);
+       - in a full room your OWN card kept the accent edge it wears to say
+         "this is you" - .is-crowded .is-you outranked .is-ready - so you
+         were the one ready player with no green;
+       - the ring was a 1px border at 55%: over the dim banner art behind
+         each card it read as a faint line that came and went round the
+         corners, and the card clips its art to the inside of that border
+         with overflow:hidden, which WebKit is known to do square for an
+         animated child, cutting into the curve.
+     Now the ring is the border in full green PLUS a 1px spread shadow
+     outside it - painted by the card itself, outside its own clip, so
+     nothing inside the card can ever cover any part of it - and a soft
+     green glow. Two pixels, all four sides, round every corner, the same
+     on your card and everybody else's. It arrives with the card (the
+     roster redraws on a ready change), so there is no half-drawn frame. */
+  [data-layout="modern"] .vroom-roster .vroom-roster-list .vroom-row.is-ready,
+  .vroom-roster .vroom-roster-list .vroom-row.is-ready{
+    border-color:#3DD68C;
+    box-shadow:0 0 0 1px #3DD68C, 0 0 14px rgba(61,214,140,.28), 0 2px 10px rgba(0,0,0,.25),
+      inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+  }
   /* ...and the words sit dead centre in the pill. Capitals ride high in a
      line box that keeps room for descenders, so "NOT READY" read a pixel
      or two above centre; text-box trims the box to the capitals (Safari
@@ -7131,7 +7235,7 @@
     display:flex; flex-direction:column; align-items:center; text-align:center;
     margin:1.2rem auto 0; padding:1.6rem 1.25rem 1.3rem; width:100%; max-width:26rem;
     border-radius:18px; border:1px solid rgba(255,255,255,.11);
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
+    background:var(--surface-sheen), var(--surface-1);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15);
   }
   .bugreport-sent-mark{
@@ -7232,27 +7336,43 @@
     transform:translateZ(0) scale(.96);
     box-shadow:0 1px 2px rgba(18,26,32,.28) inset, 0 -1px 1px rgba(255,255,255,.5) inset, 0 1px 2px rgba(0,0,0,.22);
   }
-  /* NOT YET: clear glass, the selected tab's lens (.bottomtabs-slider::before) */
+  /* NOT YET (build 326): THE START PILL'S OWN UNLIT LOOK. "The button when
+     not selected is Liquid Glass and not the same look as the normal start
+     button when not lit up." 325 drew it as the tab bar's clear lens - a
+     bright rim and white words, which read as a different, lit-up control
+     beside a test's grey Start. It is now exactly the tab bar's inert
+     Start (.bottomtabs.has-start-tab .bottomtab-start.is-inert): the same
+     soft grey fill, the same two faint inset lines, the same --soft words,
+     no lift. Lit, it is the Start pill's raised fill as before. */
   #stage > .vroom-setup-bar > .vroom-setup-go.is-inert,
   #stage > .vroom-setup-bar > .vroom-readyup-btn:disabled,
   #stage > .vroom-setup-bar > .vroom-readyup-btn.is-waiting{
-    opacity:1; cursor:default; color:rgba(255,255,255,.72);
-    background-color:transparent;
-    background-image:radial-gradient(120% 85% at 50% -10%, rgba(255,255,255,.13), rgba(255,255,255,0) 62%),
-      linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01) 55%, rgba(255,255,255,.045));
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.34),
-      inset 0 1.5px 0 rgba(255,255,255,.5),
-      inset 0 3px 3px -2px rgba(140,215,255,.32),
-      inset 0 -3px 3px -2px rgba(255,150,215,.26),
-      inset 0 0 0 3px rgba(0,0,0,.08),
-      inset 0 0 12px rgba(255,255,255,.05),
-      0 3px 12px rgba(0,0,0,.28);
+    opacity:1; cursor:default; color:var(--soft);
+    background-color:rgba(128,128,128,.16); background-image:none;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07), inset 0 0 0 1px rgba(255,255,255,.05);
   }
   /* READIED, IN THE LOBBY: the ready green, as a ready row's chip is */
   #stage > .vroom-setup-bar > .vroom-readyup-btn.is-ready:not(:disabled){ background-color:#3DD68C; color:#0E2818; }
   /* LIT BY A TAP: the Start pill's one beat - the fill grows from the
      centre, a small punch out and a sheen across (see .just-ready) */
-  #stage > .vroom-setup-bar > .is-lighting{ animation:start-ready-punch .45s cubic-bezier(.3,.7,.3,1) .12s both; }
+  #stage > .vroom-setup-bar > .is-lighting{ animation:start-ready-punch .45s cubic-bezier(.3,.7,.3,1) .18s both; }
+  /* ...over the unlit grey, as the tab bar's .just-ready does: 325 lit the
+     pill's own fill at once and grew the same colour over it, so the fill
+     from the centre could never be seen (build 326). The grey is held by
+     the ANIMATION, step-end, for the .3s the fill takes - never by the
+     base style: a base that went grey and back would transition back to
+     the accent when the class comes off, a visible flash at 760ms. */
+  #stage > .vroom-setup-bar > .vroom-setup-go.is-lighting,
+  #stage > .vroom-setup-bar > .vroom-readyup-btn.is-lighting{
+    animation:start-ready-punch .45s cubic-bezier(.3,.7,.3,1) .18s both, vroom-bar-hold .3s step-end both;
+  }
+  @keyframes vroom-bar-hold{
+    0%{ background-color:rgba(128,128,128,.16); background-image:none;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.07), inset 0 0 0 1px rgba(255,255,255,.05); }
+    100%{ background-color:var(--accent); background-image:linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0) 58%);
+      box-shadow:0 1px 1px rgba(255,255,255,.95) inset, 0 -2px 2px rgba(18,26,32,.3) inset,
+        0 1px 3px rgba(0,0,0,.24), 0 4px 10px rgba(0,0,0,.22), 0 8px 18px -6px rgba(0,0,0,.35); }
+  }
   #stage > .vroom-setup-bar > .is-lighting::before{
     content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
     background:linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0) 58%), var(--accent);
@@ -7261,7 +7381,7 @@
   #stage > .vroom-setup-bar > .is-lighting::after{
     content:""; position:absolute; top:0; bottom:0; left:0; width:45%; pointer-events:none; border-radius:inherit;
     background:linear-gradient(90deg, transparent, rgba(255,255,255,.8), transparent);
-    animation:start-ready-sheen .46s cubic-bezier(.3,.6,.4,1) .14s both;
+    animation:start-ready-sheen .46s cubic-bezier(.3,.6,.4,1) .2s both;
   }
   #stage > .vroom-setup-bar > .is-lighting{ overflow:hidden; isolation:isolate; }
   [data-reduce-motion="true"] #stage > .vroom-setup-bar > .is-lighting,
@@ -7295,11 +7415,11 @@
   }
   [data-layout="modern"] .vroom-test-summary{
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .vroom-test-summary{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   .vroom-test-summary-title{ font-family:var(--serif); font-size:1rem; font-weight:800; color:var(--ink); margin:0 0 .3rem; }
@@ -7717,7 +7837,7 @@
   }
   [data-layout="modern"] .welcomeintro-row{
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   /* The four cards sat 5px apart with ~50px of nothing under the Continue
@@ -7873,7 +7993,7 @@
     .welcomeintro-panel .welcomeintro-row:last-of-type{ margin-bottom:2.2rem; }
   }
   [data-theme="dark"][data-layout="modern"] .welcomeintro-row{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   .welcomeintro-head{ font-weight:800; font-size:1rem; margin:0 0 .2rem; color:var(--ink); }
@@ -8153,11 +8273,11 @@
   [data-layout="modern"] .speedopt{
     border-radius:14px;
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .speedopt{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   [data-layout="modern"] .speedopt.on{
@@ -8584,13 +8704,13 @@
   .info-note{
     font-size:.82rem; color:var(--soft);
     background:rgba(255,255,255,.55);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     border:1px solid rgba(255,255,255,.5); border-left:3px solid var(--accent);
     border-radius:10px; padding:.65rem .85rem; margin:.8rem 0 1.2rem; text-align:left;
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"] .info-note{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border-color:rgba(255,255,255,.09);
+    background:var(--surface-sheen), var(--surface-1); border-color:rgba(255,255,255,.09);
     border-left:3px solid var(--accent);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
@@ -8621,11 +8741,11 @@
   }
   [data-layout="modern"] .codereveal-box{
     background:rgba(255,255,255,.55);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .codereveal-box{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
+    background:var(--surface-sheen), var(--surface-1);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   .infoicon-wrap{ position:relative; display:inline-block; margin-left:.35rem; }
@@ -8681,13 +8801,13 @@
   [data-layout="modern"] .results-level,
   [data-layout="modern"] .results-review{
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5); border-radius:14px;
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .points-breakdown,
   [data-theme="dark"][data-layout="modern"] .results-level,
   [data-theme="dark"][data-layout="modern"] .results-review{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   .points-line{
@@ -8700,11 +8820,11 @@
   }
   [data-layout="modern"] .points-progress-sect{
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5); border-radius:14px;
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .points-progress-sect{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   .points-progress-sect .slab{ margin:0 0 .5rem; }
@@ -8764,11 +8884,11 @@
   }
   [data-layout="modern"] .points-stat-box{
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .points-stat-box{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   .points-stat-label{ font-size:.75rem; color:var(--soft); margin:.3rem 0 0; font-weight:600; }
@@ -11300,11 +11420,11 @@
   }
   [data-layout="modern"] .pbbanner{
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .pbbanner{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   .pbbanner::after{
@@ -11826,11 +11946,11 @@
   [data-theme="dark"] .stat-card{ background:#20272F; }
   [data-layout="modern"] .stat-card{
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5); border-radius:14px;
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .stat-card{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   /* Solid color pulled from the theme gradient's own middle stop,
@@ -11866,7 +11986,7 @@
   .thx-row{
     font:inherit; color:inherit; text-align:left; width:100%; display:flex; align-items:center; gap:.8rem;
     padding:.7rem .8rem .7rem .7rem; border-radius:14px; cursor:pointer; -webkit-tap-highlight-color:transparent;
-    background:linear-gradient(90deg, color-mix(in srgb, var(--tone) 9%, transparent), transparent 55%), rgba(26,31,38,.45);
+    background:linear-gradient(90deg, color-mix(in srgb, var(--tone) 9%, transparent), transparent 55%), var(--surface-1);
     border:1px solid rgba(255,255,255,.09); box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
     transition:transform .15s ease, background-color .15s ease;
   }
@@ -11908,7 +12028,7 @@
   .thx-day{ margin:1.15rem 0 .5rem; font-size:.74rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--soft); }
   .thx-groups > .thx-day:first-child{ margin-top:.4rem; }
   .thx-summary{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.6rem; margin:.2rem 0 1rem; }
-  .thx-sum-cell{ text-align:center; padding:.75rem .4rem; border-radius:14px; background:rgba(26,31,38,.45);
+  .thx-sum-cell{ text-align:center; padding:.75rem .4rem; border-radius:14px; background:var(--surface-1);
     border:1px solid rgba(255,255,255,.09); box-shadow:inset 0 1px 0 rgba(255,255,255,.08); }
   .thx-sum-num{ display:block; font-family:var(--mono); font-weight:700; font-size:1.35rem; color:var(--ink); font-variant-numeric:tabular-nums; }
   .thx-sum-lab{ display:block; font-size:.72rem; color:var(--soft); margin-top:.15rem; }
@@ -11918,27 +12038,27 @@
   .thx-filter-btn.on{ color:#0E1218; background:var(--ink); border-color:transparent; }
   .thx-foot{ margin:1.2rem 0 0; font-size:.76rem; color:var(--soft); text-align:center; }
   .thx-hero{ display:flex; align-items:center; gap:1.1rem; margin:.4rem 0 1.1rem; padding:1rem 1.1rem; border-radius:18px;
-    background:radial-gradient(120% 140% at 0% 50%, color-mix(in srgb, var(--tone) 16%, transparent), transparent 60%), rgba(26,31,38,.45);
+    background:radial-gradient(120% 140% at 0% 50%, color-mix(in srgb, var(--tone) 16%, transparent), transparent 60%), var(--surface-1);
     border:1px solid color-mix(in srgb, var(--tone) 28%, rgba(255,255,255,.08)); }
   .thx-hero-text{ min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:.4rem; }
   .thx-verdict{ margin:0; font-size:1.3rem; font-weight:800; color:var(--ink); line-height:1.15; }
   .thx-hero-when{ margin:0; font-size:.8rem; color:var(--soft); }
   .thx-tiles{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.6rem; margin:0 0 1.2rem; }
   @media (min-width:40rem){ .thx-tiles{ grid-template-columns:repeat(4, minmax(0, 1fr)); } }
-  .thx-tile{ padding:.75rem .85rem; border-radius:14px; background:rgba(26,31,38,.45); border:1px solid rgba(255,255,255,.09);
+  .thx-tile{ padding:.75rem .85rem; border-radius:14px; background:var(--surface-1); border:1px solid rgba(255,255,255,.09);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.08); }
   .thx-tile-num{ display:block; font-family:var(--mono); font-weight:700; font-size:1.25rem; color:var(--ink); font-variant-numeric:tabular-nums; }
   .thx-tile-lab{ display:block; font-size:.74rem; color:var(--soft); margin-top:.15rem; }
   .thx-sub{ margin:1.1rem 0 .55rem; font-size:.74rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--soft); }
   .thx-units{ display:flex; flex-direction:column; gap:.5rem; }
   .thx-unit{ display:grid; grid-template-columns:minmax(0, 1fr) auto; align-items:center; gap:.35rem .8rem; padding:.65rem .8rem;
-    border-radius:12px; background:rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.08); }
+    border-radius:12px; background:var(--surface-1); border:1px solid rgba(255,255,255,.08); }
   .thx-unit-name{ font-size:.88rem; font-weight:600; color:var(--ink); }
   .thx-unit-pct{ font-family:var(--mono); font-weight:700; font-size:.88rem; }
   .thx-unit-bar{ grid-column:1 / -1; height:5px; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; }
   .thx-unit-bar > span{ display:block; height:100%; border-radius:inherit; }
   .thx-missed{ display:flex; flex-direction:column; gap:.55rem; }
-  .thx-miss{ padding:.75rem .85rem; border-radius:12px; background:rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.08);
+  .thx-miss{ padding:.75rem .85rem; border-radius:12px; background:var(--surface-1); border:1px solid rgba(255,255,255,.08);
     border-left:3px solid rgba(255,122,122,.7); }
   .thx-miss-q{ margin:0 0 .45rem; font-size:.86rem; color:var(--ink); line-height:1.4; }
   .thx-miss-a{ margin:0; font-size:.82rem; color:#9FE8BE; line-height:1.4; }
@@ -12009,12 +12129,12 @@
      the copy itself, which this does not touch. */
   .q-slide-clone *, .q-blurpair *{ transition:none !important; animation:none !important; }
   .ar-head{ display:flex; align-items:center; gap:.9rem; margin:.6rem 0 1rem; padding:.95rem 1.1rem; border-radius:16px;
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.45);
+    background:var(--surface-sheen), var(--surface-1);
     border:1px solid rgba(255,255,255,.11); box-shadow:inset 0 1px 0 rgba(255,255,255,.12); }
   .ar-head.is-starred{ border-color:rgba(255,211,106,.28);
-    background:radial-gradient(120% 160% at 0% 50%, rgba(255,211,106,.12), transparent 60%), rgba(26,31,38,.45); }
+    background:radial-gradient(120% 160% at 0% 50%, rgba(255,211,106,.12), transparent 60%), var(--surface-1); }
   .ar-head.is-briefing{ border-color:rgba(166,148,255,.3);
-    background:radial-gradient(120% 160% at 0% 50%, rgba(166,148,255,.13), transparent 60%), rgba(26,31,38,.45); }
+    background:radial-gradient(120% 160% at 0% 50%, rgba(166,148,255,.13), transparent 60%), var(--surface-1); }
   .ar-head-icon{ flex:0 0 auto; width:2.4rem; height:2.4rem; display:grid; place-items:center; }
   .ar-head-icon svg{ width:85%; height:85%; }
   .ar-head-text{ min-width:0; }
@@ -12049,7 +12169,7 @@
      --theme-c2 where they took violet. It follows a theme change like
      the rest of the tab. */
   .stx-dots{ margin:.3rem 0 1rem; padding:.95rem .9rem .8rem; border-radius:18px;
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
+    background:var(--surface-sheen), var(--surface-1);
     border:1px solid rgba(255,255,255,.11); box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
     --sd-unlit:rgba(255,255,255,.075); }
   /* The switch sits beside the reading and never moves when the reading
@@ -16280,11 +16400,12 @@
     box-shadow:0 6px 20px rgba(18,26,32,.08), inset 0 1px 0 rgba(255,255,255,.6);
   }
   [data-theme="dark"][data-layout="modern"] .modecard{
-    background:rgba(28,33,40,.62); border:1.5px solid rgba(255,255,255,.1);
-    box-shadow:0 6px 20px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.07);
+    background:var(--surface-sheen), var(--surface-1); border:1.5px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
+    backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
   }
   @media (hover:hover){ [data-layout="modern"] .modecard:hover{ border-color:var(--accent); background:rgba(255,255,255,.75); } }
-  [data-theme="dark"][data-layout="modern"] .modecard:hover{ background:rgba(28,33,40,.8); }
+  [data-theme="dark"][data-layout="modern"] .modecard:hover{ background:var(--surface-sheen), var(--surface-2); }
   .modecard:focus-visible{ border-color:var(--accent); outline:none; }
   .modecard:active{ transform:scale(.98); }
   .modecard.locked{ opacity:.5; }
@@ -18345,21 +18466,21 @@
   [data-layout="modern"] .pick{
     border-radius:14px;
     background:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .pick{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   [data-layout="modern"] .searchbox{
     border-radius:999px; border:1px solid rgba(255,255,255,.5);
     background:rgba(255,255,255,.55);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 8px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .searchbox{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-2); border:1px solid rgba(255,255,255,.11);
     box-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   [data-layout="modern"] .selall-btn{ padding:.4rem 1rem; }
@@ -18441,11 +18562,11 @@
        floor brings it to a real tap target without losing the style. */
     padding:.85rem 1.4rem; font-size:.88rem; letter-spacing:.06em; text-transform:uppercase;
     min-height:2.75rem; box-sizing:border-box;
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .more-toggle{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
+    background:var(--surface-sheen), var(--surface-2);
     box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   /* Solid, deliberately NOT the glass treatment every other control on
@@ -18995,7 +19116,8 @@
     will-change:backdrop-filter; backdrop-filter:blur(14px) saturate(1.5); -webkit-backdrop-filter:blur(14px) saturate(1.5);
   }
   [data-theme="dark"][data-layout="modern"] .unlock-row{
-    background:rgba(28,33,40,.5); border:1px solid rgba(255,255,255,.08);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
   }
   [data-layout="modern"] .unlock-row.got{ border-color:var(--accent); }
   [data-layout="modern"] .info-note{ border-radius:10px; }
@@ -20546,6 +20668,96 @@
   .pick.is-pressing{ transform:scale(.965); box-shadow:0 0 0 2px rgba(111,194,255,.35); }
   .picks-holdhint{ margin:.35rem .2rem .7rem; font-size:.74rem; color:var(--soft); }
 
+  /* ---- THE UNIT CARD, LAID OUT (build 326) ----
+     "I think the unit selection screen could still be improved. I'm
+     wondering if the layout of the stuff in the box, and the
+     interface/look of the boxes could be better." Still squares, two
+     across ("the square boxes were better", 325). What changed is the
+     inside, which had grown one rule at a time into a column of five
+     things all the same size and weight - circle, name, count, then the
+     badge squeezed into the foot beside its own bar:
+       - the CIRCLE and the BADGE share the top line: what you tick on the
+         left, what the unit is working towards on the right, in its slot
+         at a size you can read (it was 34px in the footer);
+       - the NAME is the headline - heavier and larger - with room held
+         for three lines so every card's footer starts at the same height;
+       - the FOOTER is the facts: the question count, and under it the
+         bar to the badge with its count on it, as before. The bar's row
+         keeps its height on a card whose badge is found (no bar - "just
+         the badge"), so the counts across a row still line up;
+       - SELECTED is the accent ring all the way round (a 1px spread
+         outside the border, as the lobby's ready ring), a faint wash of
+         the accent inside and the filled circle - not a darker slab with
+         a 3px stripe caught in the left-hand curve;
+       - the card is the --surface-1 glass every other box is.
+     The long-press details card, the Penal Code version line, drag to
+     select (the circle is still the handle) and the hold tip are all
+     untouched; the whole card is still the tap target. */
+  [data-layout="modern"] .picks > label.pick{
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-rows:auto auto minmax(0,1fr) auto 1.05rem;
+    grid-template-areas:"box badge" "name name" "ver ver" "count count" "bar bar";
+    align-items:start; gap:0; padding:.8rem .85rem .75rem .9rem; border-radius:18px;
+  }
+  .picks > label.pick::before{ display:none; }
+  .picks > label.pick > .box{ grid-area:box; align-self:center; width:24px; height:24px; font-size:.8rem; }
+  .picks > label.pick > .pname{
+    grid-area:name; margin:.6rem 0 0; font-size:.88rem; font-weight:700; line-height:1.22; letter-spacing:.005em;
+    min-height:calc(3 * 1.22em); color:var(--ink);
+  }
+  /* the version line has a row of its own under the name, and that row
+     takes the card's slack - so on a 375px phone, where it wraps to three
+     lines, it can never sit on top of the name (it did, sharing the name's
+     cell, on the first pass). A card that carries it holds no lines for its
+     name: "Penal Code" plus the line is about the height of three lines. */
+  .picks > label.pick > .pick-version{ grid-area:ver; align-self:start; margin-top:.45rem; }
+  .picks > label.pick:has(> .pick-version) > .pname{ min-height:0; }
+  .picks > label.pick > .pcount{
+    grid-area:count; margin:.55rem 0 0;
+    font-size:.72rem; font-weight:700; letter-spacing:.02em; color:var(--soft);
+  }
+  /* A phone is (hover:none) and (pointer:coarse), and a rule from the list
+     days pads .pick .pname and .pick .pcount by 1.05rem top and bottom for a
+     bigger target - which on this card is 67px of air inside it, between the
+     name and its own count. The whole card is the target; the card's own
+     spacing is the spacing (desktop Chromium never applies that rule, which is
+     why only a touch-emulated render shows it). */
+  .picks > label.pick > .pname, .picks > label.pick > .pcount{ padding-top:0; padding-bottom:0; }
+  .picks > label.pick > .pick-stars{ display:contents; }
+  .picks > label.pick .pick-progress-label{ display:none; }
+  .picks > label.pick .pick-badge{ grid-area:badge; justify-self:end; align-self:start; width:2.6rem; height:2.6rem; margin:-.25rem -.2rem -.35rem .4rem; }
+  .picks > label.pick .pick-barrow{ grid-area:bar; align-self:end; width:100%; gap:.5rem; }
+  .picks > label.pick .pick-bar-track{ height:4px; background:rgba(255,255,255,.12); }
+  .picks > label.pick .pick-bar-count{ font-size:.68rem; color:var(--soft); }
+  /* a 375px phone's column is 117px of text: "Professionalism" in the
+     headline weight needs it a step smaller there, or it breaks mid-word */
+  @media (max-width:24.5rem){
+    [data-layout="modern"] .picks > label.pick{ padding-left:.75rem; padding-right:.65rem; }
+    .picks > label.pick > .pname{ font-size:.8rem; letter-spacing:0; }
+  }
+  /* selected */
+  [data-layout="modern"] .picks > label.pick:has(input:checked),
+  [data-layout="modern"] .picks > label.pick.pick-checked{
+    border-color:var(--accent) !important; border-width:1px !important;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 13%, transparent), color-mix(in srgb, var(--accent) 4%, transparent) 70%),
+      var(--surface-sheen), var(--surface-1) !important;
+    box-shadow:0 0 0 1px var(--accent), 0 6px 20px color-mix(in srgb, var(--accent) 16%, transparent),
+      0 2px 12px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.12) !important;
+  }
+  .picks > label.pick.is-pressing{ box-shadow:0 0 0 2px rgba(111,194,255,.35) !important; }
+  /* the "more units coming" tile keeps its own quiet layout, on the same corner */
+  [data-layout="modern"] .picks > .pick.pick-tba{ border-radius:18px; }
+  @media (min-width:40rem){
+    [data-layout="modern"] .picks > label.pick{ padding:1.05rem 1.15rem 1rem 1.15rem; grid-template-rows:auto auto minmax(0,1fr) auto 1.15rem; border-radius:20px; }
+    .picks > label.pick > .box{ width:26px; height:26px; }
+    .picks > label.pick > .pname{ margin-top:.75rem; font-size:1.12rem; line-height:1.25; min-height:calc(2 * 1.25em); }
+    .picks > label.pick:has(> .pick-version) > .pname{ min-height:0; }
+    .picks > label.pick > .pcount{ font-size:.8rem; margin-top:.7rem; }
+    .picks > label.pick .pick-badge{ width:3.3rem; height:3.3rem; margin:-.35rem -.25rem -.5rem .6rem; }
+    .picks > label.pick .pick-bar-count{ font-size:.76rem; }
+    .picks{ gap:.85rem; }
+  }
+
   /* ---- SQUARES AGAIN (build 325) ----
      "The unit selection screen, I think we can revert that, the square
      boxes were better I think." Build 323 made every unit a full-width
@@ -20903,17 +21115,20 @@
   }
   .unitoptions-modal-sheet .optionsmodal-body > .sect{
     padding:.8rem .9rem .9rem; border-radius:16px; margin-bottom:.75rem;
-    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.05));
-    border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-lift);
+    border:1px solid var(--surface-border);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 2px 8px rgba(0,0,0,.22);
   }
   .unitoptions-modal-sheet .optionsmodal-body > .sect .slab{ color:rgba(255,255,255,.7); }
   /* the summary: the same card, a step lighter and bigger type - it is
      what you are about to start, not a control */
+  /* build 326: the same lift as the groups above it, one hairline - it
+     was a step lighter with a brighter edge, the one box on the sheet
+     that did not match ("some of the boxes are darker ... some aren't") */
   .unitoptions-modal-sheet .sheet-summary{
-    background:linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.075));
-    border-color:rgba(255,255,255,.16);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 2px 10px rgba(0,0,0,.25);
+    background:var(--surface-lift);
+    border-color:var(--surface-border);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 2px 8px rgba(0,0,0,.22);
     margin-bottom:.75rem;
   }
   .unitoptions-modal-sheet .sheet-summary-mode{ font-size:1.2rem; font-weight:800; color:#fff; }
@@ -21131,7 +21346,8 @@
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .slab,
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .sect-headrow{
     margin:0 .9rem .45rem; font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
-    color:rgba(255,255,255,.45);
+    /* .6, not .45 (build 326): white at 45% on the sheet measured 4.4-4.5:1 */
+    color:rgba(255,255,255,.6);
   }
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .sect-headrow .slab{ margin:0; }
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .sect-headval{
@@ -21178,7 +21394,7 @@
      the ink sat high in the box. A little more room, and the space moved
      to the top, puts the ink in the middle. */
   .unitoptions-modal-sheet.is-setup .bank-opt{ min-height:52px; padding-top:calc(.4rem + 3px); padding-bottom:calc(.4rem - 1px); gap:.1rem; line-height:1.15; }
-  .unitoptions-modal-sheet.is-setup .bank-caption{ margin:.45rem .9rem 0; font-size:.78rem; color:rgba(255,255,255,.45); }
+  .unitoptions-modal-sheet.is-setup .bank-caption{ margin:.45rem .9rem 0; font-size:.78rem; color:rgba(255,255,255,.6); }
   /* How many: the slider and All on one plain group row. */
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .slider-row,
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect .slider-wrap{
@@ -21189,7 +21405,7 @@
   .unitoptions-modal-sheet.is-setup .opt-rows,
   .unitoptions-modal-sheet.is-setup .bank-rows,
   .unitoptions-modal-sheet.is-setup .timer-sect{
-    background:rgba(255,255,255,.07); border-radius:13px; padding:0 .9rem;
+    background:var(--surface-lift); border:1px solid var(--surface-border); border-radius:13px; padding:0 .9rem;
   }
   .unitoptions-modal-sheet.is-setup .opt-tiles-sect .opt-rows .opt,
   .unitoptions-modal-sheet.is-setup .bank-rows .opt,
@@ -21216,13 +21432,13 @@
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect:has(> .more-toggle.is-static){ background:none; border-radius:0; }
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect > .more-toggle.is-static{
     display:block; width:auto; min-height:0; padding:0; margin:0 .9rem .45rem;
-    font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.45);
+    font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.6);
   }
   .unitoptions-modal-sheet.is-setup .optionsmodal-body > .sect:has(> .more-toggle.is-static) > .more-body.open > .more-body-inner{
     border-top:0; padding:0;
   }
   .unitoptions-modal-sheet.is-setup .sect:has(> .more-toggle.is-static) .timer-sect{
-    background:rgba(255,255,255,.07); border-radius:13px; padding:0 .9rem;
+    background:var(--surface-lift); border:1px solid var(--surface-border); border-radius:13px; padding:0 .9rem;
   }
   /* Game's three speeds stay three tiles - they are the choice - but the
      legend about the dots on the unit cards is not needed to start. */
@@ -22245,7 +22461,8 @@
   .cz-row{ all:unset; box-sizing:border-box; display:grid; grid-template-columns:5.6rem minmax(0, 1fr) auto; align-items:center;
     grid-template-areas:"art tx chev" "art meta chev"; row-gap:.38rem;
     column-gap:.85rem; width:100%; min-height:5.4rem; padding:.8rem .85rem .8rem .75rem; border-radius:1.1rem; cursor:pointer;
-    background:rgba(0,0,0,.26); border:1px solid rgba(255,255,255,.08); font-family:var(--sans); -webkit-tap-highlight-color:transparent; }
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border); box-shadow:var(--surface-shadow);
+    font-family:var(--sans); -webkit-tap-highlight-color:transparent; }
   .cz-row:active{ background:rgba(255,255,255,.05); }
   .cz-row:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; }
   .cz-art{ grid-area:art; display:grid; place-items:center; width:5.6rem; height:3.9rem; }
@@ -23988,8 +24205,9 @@
        second line with "hundos" alone on it. .75rem buys most of it
        back and still reads as a card. */
     margin:0 0 1rem; padding:1rem .75rem;
-    background:rgba(255,255,255,.035);
-    border:1px solid var(--rule); border-radius:16px;
+    border-radius:16px;
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border); box-shadow:var(--surface-shadow);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
   }
   .friend-sect:last-child{ margin-bottom:0; }
   /* A HEADING THAT LOOKS LIKE A HEADING. Small, heavy and lifted off
@@ -24642,25 +24860,19 @@
      the code card, so this fills the width and is sized like a button
      somebody is meant to press. */
   .vroom-settings-btn{ width:100%; min-height:52px; font-size:1rem; font-weight:800; }
-  /* ---- THE LOBBY'S MATCH SETTINGS, IN THE TAB BAR'S GLASS (build 325) ----
-     "Make the match settings button how it was just better but give it
-     to the button tab vibe." The host's button in Room setup was the
-     matte black slab every ghost button is; it is the same object as the
-     Virtual Room's glass pill now (.vroom-setup-bar) - the tab bar's
-     dark glass with its hairline rim and the catch-light along the top -
-     with the sliders mark beside the words, so the lobby and Match
-     settings read as one family. Same size and place as before. */
+  /* ---- THE LOBBY'S MATCH SETTINGS: THE APP'S SECONDARY BUTTON (build 326) ----
+     "The lobby, the match settings button is a weird color?" 325 drew it
+     as see-through glass - a 55% dark fill with no blur of its own, a
+     blue and a pink split along its edges - so its colour was whatever
+     the Room setup card's tint and the theme's glow behind that happened
+     to be: a muddy violet-grey on the default theme, and a different
+     muddy colour on every other. It is the matte black every secondary
+     button in the app is (.next.ghost: Invite friends right under it,
+     Back, Sign in with a code), with the sliders mark: one colour on
+     every theme, white words at 19:1. */
   [data-layout="modern"] .vroom-host-bar .next.ghost.vroom-settings-btn{
     display:flex; align-items:center; justify-content:center; gap:.55rem;
-    color:#fff; border:none;
-    background-color:rgba(20,24,30,.55);
-    background-image:radial-gradient(120% 90% at 50% -12%, rgba(255,255,255,.12), rgba(255,255,255,0) 60%),
-      linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 45%);
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.14), inset 0 1px 0 rgba(255,255,255,.3),
-      inset 0 3px 3px -2px rgba(140,215,255,.2), inset 0 -3px 3px -2px rgba(255,150,215,.16), inset 0 -1px 1px rgba(0,0,0,.3),
-      0 1px 3px rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.35);
   }
-  [data-layout="modern"] .vroom-host-bar .next.ghost.vroom-settings-btn:active{ background-color:rgba(20,24,30,.75); }
   [data-layout="modern"] .vroom-host-bar .next.ghost.vroom-settings-btn:disabled{ opacity:.45; }
   .vroom-settings-btn .vroom-bar-icon{ flex:none; width:1.15rem; height:1.15rem; display:block; }
   .vroom-settings-btn .vroom-bar-icon svg{ width:100%; height:100%; display:block; fill:none; stroke:currentColor;
@@ -24755,29 +24967,8 @@
     .vroom-host-mode-art{ width:2.8rem; height:1.8rem; }
   }
   .vroom-invite-btn{ min-height:44px; padding:.4rem .9rem; font-size:.8rem; margin-left:auto; }
-  /* ---- open-to-the-class switch, and the browser it feeds ---- */
-  .vroom-open-row{ display:flex; align-items:center; gap:.9rem; }
-  .vroom-open-text{ flex:1 1 auto; min-width:0; }
-  .vroom-open-text .friend-hint{ margin:.15rem 0 0; }
-  /* A REAL SWITCH, not a checkbox with a label. It is the one control
-     in a lobby that changes who can walk in, so it reads as a physical
-     thing that is on or off rather than a tickbox in a list. 44px of
-     target around a 28px pill, which is the app's floor. */
-  /* THE TRACK IS DRAWN, THE BUTTON IS THE TARGET (build 266). "The
-     'open to class' toggle switch is super weirdly shaped." The button
-     WAS the track, and min-height:44px stretched a 28px pill into a
-     51x44 lozenge with the knob floating in its middle. Now the button
-     is an invisible 44px target and the track is ::before, drawn at an
-     iOS switch's proportions inside it. */
-  /* THE APP'S ONE SWITCH (build 324): "the virtual room lobby one" is the
-     same .nsw track as every other switch now, same size, same lens - the
-     button stays the invisible 44px target round it. */
-  .vroom-open-toggle{
-    flex:0 0 auto; position:relative; display:flex; align-items:center; justify-content:center;
-    width:64px; height:44px; min-height:44px; padding:0;
-    border:0; border-radius:0; background:transparent; cursor:pointer;
-    -webkit-tap-highlight-color:transparent; touch-action:pan-y;
-  }
+  /* (The lobby's Open room switch, .vroom-open-toggle and its row, came
+     out in build 326 - see .vroom-access-seg.) */
   .rooms-list{ display:flex; flex-direction:column; }
   .room-row .friend-row-sub{ color:var(--soft); }
   .rooms-refresh{ width:100%; min-height:44px; margin-top:.9rem; }
@@ -25303,8 +25494,11 @@
      reason: the modern .opt rules sit later in the file. */
   [data-layout="modern"] .settings-card{
     margin:.55rem 0 1.35rem; padding:.15rem 1rem;
-    border-radius:16px; border:1px solid rgba(255,255,255,.08);
-    background:rgba(255,255,255,.035);
+    border-radius:16px;
+    /* build 326: the surface tokens - it was a 3.5% white wash with no
+       frost, and the starfield showed straight through every card */
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border); box-shadow:var(--surface-shadow);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
   }
   [data-layout="modern"] .settings-card > label.opt{
     margin:0; padding:.9rem 0; align-items:center;
@@ -108000,41 +108194,72 @@ function showVirtualRoomLobby(){
        actually understand what that toggle does." The three-line hint
        is two words now, under the switch's name, because it shares a
        header row (build 323); the toast on a flip says where it shows. */
-    const openRow = document.createElement("div");
-    openRow.className = "vroom-open-row";
-    const openText = document.createElement("div");
-    openText.className = "vroom-open-text";
-    const openLabel = document.createElement("p");
-    openLabel.className = "vroom-open-label"; openLabel.textContent = "Open room";
-    const openHint = document.createElement("p");
-    openHint.className = "vroom-open-hint";
-    const openHintText = () => vroomIsOpen ? "Anyone in 26E" : "Invite only";
-    openHint.textContent = openHintText();
-    openText.append(openLabel, openHint);
-    const sw = document.createElement("button");
-    sw.type = "button";
-    sw.className = "vroom-open-toggle nsw-host" + (vroomIsOpen ? " on" : "");
-    sw.setAttribute("role", "switch");
-    sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
-    sw.setAttribute("aria-label", "Open room: list this room for the whole class");
-    /* the app's one switch (build 324): the .nsw track, drawn and pressed
-       exactly like every .opt switch - aria-checked is its state */
-    const knob = document.createElement("span");
-    knob.className = "nsw"; knob.setAttribute("aria-hidden", "true");
-    sw.appendChild(knob);
-    sw.addEventListener("click", () => {
-      vroomIsOpen = !vroomIsOpen;
-      sw.classList.toggle("on", vroomIsOpen);
-      sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
-      openHint.textContent = openHintText();
+    /* ---- WHO CAN JOIN: TWO CHOICES, ONE OF THEM LIT (build 326) ----
+       "The toggle for open room is confusing because it says open room
+       and then invite only under it?" It did: a switch NAMED "Open room"
+       with its current state, "Invite only", printed under the name - so
+       the one control said both things at once and you had to know which
+       line was the label and which the value. It is two options now,
+       side by side, the chosen one raised and lit, and one line under
+       them saying what the CURRENT choice means. Nothing on it can be
+       read as the opposite of what it is. Still host only, still a
+       field write on the room (`open`), still private by default. */
+    const access = document.createElement("div");
+    access.className = "vroom-access-seg";
+    access.setAttribute("role", "radiogroup");
+    access.setAttribute("aria-label", "Who can join");
+    const ACCESS = [
+      { open: true, word: "Open room",
+        icon: "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8.2\"/><path d=\"M3.8 12h16.4\"/><path d=\"M12 3.8c2.3 2.3 3.4 5 3.4 8.2s-1.1 5.9-3.4 8.2c-2.3-2.3-3.4-5-3.4-8.2s1.1-5.9 3.4-8.2z\"/></svg>",
+        line: "Anyone in 26E can find this room under Open rooms and join." },
+      { open: false, word: "Invite only",
+        icon: "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"5\" y=\"10.5\" width=\"14\" height=\"9.5\" rx=\"2.4\"/><path d=\"M8.3 10.5V8a3.7 3.7 0 0 1 7.4 0v2.5\"/></svg>",
+        line: "Only people you invite can join." }
+    ];
+    const accessLine = document.createElement("p");
+    accessLine.className = "vroom-access-line";
+    accessLine.setAttribute("aria-live", "polite");
+    const accessBtns = ACCESS.map(o => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "vroom-access-opt";
+      b.setAttribute("role", "radio");
+      b.dataset.open = o.open ? "1" : "0";
+      b.innerHTML = "<span class=\"vroom-access-icon\">" + o.icon + "</span><span class=\"vroom-access-word\">" + o.word + "</span>";
+      b.addEventListener("click", () => setAccess(o.open));
+      access.appendChild(b);
+      return b;
+    });
+    const paintAccess = () => {
+      accessBtns.forEach((b, i) => {
+        const on = ACCESS[i].open === vroomIsOpen;
+        b.classList.toggle("is-on", on);
+        b.setAttribute("aria-checked", on ? "true" : "false");
+        b.tabIndex = on ? 0 : -1;
+      });
+      access.classList.toggle("is-open", vroomIsOpen);
+      const cur = ACCESS.find(o => o.open === vroomIsOpen);
+      if(accessLine.textContent !== cur.line) accessLine.textContent = cur.line;
+    };
+    function setAccess(open){
+      if(open === vroomIsOpen) return;
+      vroomIsOpen = open;
+      paintAccess();
+      playSound(open ? "ui.toggle.on" : "ui.toggle.off");
       if(fbDb && vroomCode){
         try{ fbDb.collection("vrooms").doc(vroomCode)
                .update({ open: vroomIsOpen }).catch(() => {}); }catch(e){}
       }
-      showToast(vroomIsOpen ? "Open room \u2014 anyone in 26E can find it under Open rooms." : "Invite only \u2014 only people you invite can join.");
+    }
+    /* a radio group moves with the arrow keys */
+    access.addEventListener("keydown", e => {
+      if(e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+      e.preventDefault();
+      setAccess(!vroomIsOpen);
+      const on = accessBtns.find(b => b.classList.contains("is-on")); if(on) on.focus();
     });
-    openRow.append(openText, sw);
-    lobbyTools.append(inviteBtn, openRow);
+    paintAccess();
+    lobbyTools.append(access, accessLine, inviteBtn);
   }
 
   /* The pre-test summary, per explicit request \u2014 "make sure to show

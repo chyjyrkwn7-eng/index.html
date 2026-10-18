@@ -349,7 +349,7 @@ def check_vroom(br):
         a = pg.evaluate(VR_BAR)
         ok_a = a["bar"] and not a["tabsShown"] and a["fixed"] and a["centred"] and "blur(30px)" in a["blur"] and a["radius"] \
             and a["sheen"] not in ("none", "") and a["inert"] and a["btnAlpha"] < 0.2
-        check("%s: picking units - no tab bar; a centred glass pill (the tab bar's 30px blur, its sheen); the button clear glass until a unit is picked" % label,
+        check("%s: picking units - no tab bar; a centred glass pill (the tab bar's 30px blur, its sheen); the button unlit (326: the Start pill's own grey, was clear glass) until a unit is picked" % label,
               ok_a, a)
         early = None
         if a.get("bar"):

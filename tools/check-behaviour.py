@@ -5357,6 +5357,11 @@ def check_b266(br):
       out.game = null;
       try{ const d = await fbDb.collection('vrooms').doc(vroomCode).get(); out.game = d.data().game; out.hasGameKey = 'game' in d.data(); }catch(e){ out.gameErr = String(e); }
       /* 5 */
+      /* build 326: Open room is two options in a radio group now ("it says
+         open room and then invite only under it?") - measured as that */
+      const seg = document.querySelector('.vroom-access-seg');
+      if(seg){ const rs = [...seg.querySelectorAll('[role="radio"]')];
+        out.seg = { n: rs.length, on: rs.filter(r => r.getAttribute('aria-checked') === 'true').length, h: Math.min(...rs.map(r => Math.round(r.getBoundingClientRect().height))) }; }
       const sw = document.querySelector('.vroom-open-toggle');
       /* the track is the app's one switch, .nsw, since build 324 ("ensure
          they are all the same"); before that it was the button's ::before */
@@ -5393,10 +5398,12 @@ def check_b266(br):
     check("a new room starts with no game chosen", r.get("hasGameKey") is True and r.get("game") is None, r)
     check("and the lobby says so instead of saying Race",
           "No game chosen yet" in r.get("summary", "") and "Race" not in r.get("summary", ""), r)
-    sw = r.get("sw") or {}
-    check("the Open-to-the-class switch is a track inside a 44px target, not a lozenge",
-          sw.get("h") == 44 and 28 <= (sw.get("trackH") or 0) <= 36 and (sw.get("w") or 0) / max(1, sw.get("trackH") or 1) >= 1.5
-          and sw.get("trackBg") in ("rgba(0, 0, 0, 0)", "transparent"), sw)
+    # 326 (moved): "The toggle for open room is confusing because it says open
+    # room and then invite only under it?" - the switch is two options now,
+    # each a 44px target, exactly one chosen (check-b326-f measures the rest).
+    seg = r.get("seg") or {}
+    check("Open room / Invite only is two options, each a 44px target, one chosen (326; was a switch in 266)",
+          seg.get("n") == 2 and seg.get("on") == 1 and (seg.get("h") or 0) >= 44, {"seg": seg, "old switch": r.get("sw")})
     g = r.get("glow") or {}
     check("a lobby character's glow comes off the wrapper, never the masked drawing",
           "drop-shadow" in g.get("wrapFilter", "") and "drop-shadow" not in g.get("svgFilter", ""), g)
@@ -25894,7 +25901,7 @@ def check_b323v_vroom(br):
           const before = (a, b) => !!(a && b && (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING));
           const sum = L.querySelector('.vroom-test-summary'), roster = L.querySelector('.vroom-roster');
           const head = L.querySelector('.vroom-roster-head');
-          const inv = L.querySelector('.vroom-invite-btn'), sw = L.querySelector('.vroom-open-toggle');
+          const inv = L.querySelector('.vroom-invite-btn'), sw = L.querySelector('.vroom-access-seg');   /* 326: two options, not a switch */
           const nearHead = el => { if(!el || !head) return false; if(head.contains(el)) return true;
             const a = el.getBoundingClientRect(), b = head.getBoundingClientRect(); return Math.abs(a.top - b.bottom) < 24 && roster.contains(el); };
           const rb = document.querySelector('.vroom-readyup-btn'), t = document.querySelector('#stage > .vroom-setup-bar .vroom-readyup-btn');
@@ -25904,7 +25911,7 @@ def check_b323v_vroom(br):
                    tab: tr ? { shown: tr.height > 0, label: t.textContent.trim(), bottom: Math.round(tr.bottom), x: tr.left + tr.width / 2, y: tr.top + tr.height / 2 } : null,
                    vh: innerHeight, hs: document.documentElement.scrollWidth - innerWidth }; }""")
         check("%s: the lobby reads Room setup first, then the people" % label, bool(lob) and lob["order"], lob)
-        check("%s: Invite friends and the Open room switch sit in the lobby box's header" % label,
+        check("%s: Invite friends and Open room / Invite only sit in the lobby box's header" % label,
               bool(lob) and lob["inv"] and lob["sw"], lob)
         rd = (lob or {}).get("tab") or {}
         # 325: at the foot of the screen still, on the lobby's own glass pill -
@@ -26803,22 +26810,27 @@ def check_b324g_toggles(br):
         pg.evaluate("() => { const m=document.getElementById('unitoptions-modal'); if(m) m.hidden=true; }")
         pg.evaluate("(a) => (%s)(a[0], a[1])" % _B323V_ROOM, [6, "race"])
         pg.wait_for_timeout(1200)
-        found += [x for x in pg.evaluate(B324G_SWITCHES) if x["kind"] == "lobby"]
+        # 326 (moved): the lobby's Open room is not a switch any more - "it says
+        # open room and then invite only under it?" - it is two options in a
+        # radio group (check-b326-f). So the lobby contributes no switch, and
+        # the claim is that every switch that IS left is the one switch.
+        lobby_sw = [x for x in pg.evaluate(B324G_SWITCHES) if x["kind"] == "lobby"]
         kinds = {x["kind"] for x in found}
         sizes = {(x["w"], x["h"], x["kw"], x["kh"]) for x in found}
-        check("%s: %d switches across Settings, the start sheet and the lobby, Open room among them" % (label, len(found)),
-              len(found) >= 12 and kinds == {"opt", "lobby"}, [(x["text"], x["w"], x["h"]) for x in found])
+        check("%s: %d switches across Settings and the start sheet; the lobby has none (326: two options instead)" % (label, len(found)),
+              len(found) >= 11 and kinds == {"opt"} and not lobby_sw, [(x["text"], x["w"], x["h"]) for x in found + lobby_sw])
         check("%s: every one is the same switch: one size, at least 60x28 (64x30), with one capsule knob" % label,
               len(sizes) == 1 and all(x["w"] >= 60 and x["h"] >= 28 and x["kw"] > x["kh"] * 1.3 for x in found), sorted(sizes))
         check("%s: every one is a switch to VoiceOver (role=switch)" % label,
               all(x["role"] == "switch" for x in found), [(x["text"], x["role"]) for x in found if x["role"] != "switch"])
-        # ---- the lobby's Open room: a tap flips it, the same way ----
-        lob = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const b = document.querySelector('.vroom-open-toggle');
+        # ---- the lobby's Open room: a tap on it opens the room (326: an option, not a switch) ----
+        lob = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          const b = document.querySelector('.vroom-access-seg [role="radio"][data-open="1"]');
+          if(!b) return { missing: true };
           const before = b.getAttribute('aria-checked'); b.click(); await wait(300);
-          for(let i = 0; i < 30 && b.querySelector('.nsw-lens'); i++) await wait(100);
-          return { before, after: b.getAttribute('aria-checked'), open: vroomIsOpen, lens: !!b.querySelector('.nsw-lens') }; }""")
-        check("%s: Open room flips on a tap and settles (lens gone)" % label,
-              lob["before"] == "false" and lob["after"] == "true" and lob["open"] is True and not lob["lens"], lob)
+          return { before, after: b.getAttribute('aria-checked'), open: vroomIsOpen }; }""")
+        check("%s: Open room is chosen with a tap (326: an option of two, not a switch)" % label,
+              lob.get("before") == "false" and lob.get("after") == "true" and lob.get("open") is True, lob)
         # ---- press, drag, release on Settings ----
         pg.evaluate("() => showAppearance()"); pg.wait_for_timeout(1300)
         pg.evaluate("() => document.querySelectorAll('#tour-overlay,.tour-tip').forEach(n=>n.remove())")
