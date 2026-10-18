@@ -490,7 +490,10 @@ def run_intro(src_dir, label):
             # what you have; Skip again ends it and What's New follows.
             met = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
               const el = document.getElementById('nova-intro'); if(!el) return { intro: false };
-              await wait(900); const name = el.innerText.indexOf('Madison') >= 0;
+              /* build 325: an existing account's meeting opens on a signal
+                 (.is-signal), and he speaks - by name - once it clears */
+              let name = false;
+              for(let i = 0; i < 120 && !(name = el.innerText.indexOf('Madison') >= 0); i++) await wait(100);
               /* build 325: no Skip on his introduction ("I need them to see
                  it"); the tools' fast-forward is el.__nova.skip() */
               el.__nova.skip(); await wait(200); el.__nova.skip();

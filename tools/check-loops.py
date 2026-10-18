@@ -15,6 +15,8 @@ import re, sys
 SRC = sys.argv[1] if len(sys.argv) > 1 else __file__.rsplit("/tools/", 1)[0] + "/index.html"
 KNOWN = {
     "ru-tab-ring": "a ripple, invisible at both ends of its cycle - it grows and fades, then the next one fades in",
+    # Build 325: Nova's signal beacon (an existing account's meeting) - fades in at 14%, so it is invisible at both ends.
+    "nt-sig-ring": "the signal's ripple, invisible at both ends - it fades in, grows and fades out",
     "avatar-scan": "a visor sweep that rests, then restarts under the mask",
     "bnr-grid": "shifted by exactly one 16px grid cell",
     "bnr-holo": "shifted by whole periods of a 300% background",
