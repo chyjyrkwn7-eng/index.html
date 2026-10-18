@@ -22639,9 +22639,9 @@ def check_b320a_results(br):
           out.push({ t: Math.round(performance.now() - t0), v: Math.round(vis(fill) * 10) / 10, n: num(), bump: Number(tw.dataset.xpbump || 0) + (tw.classList.contains('is-xpbump') ? 1 : 0) }); }
         mo.disconnect(); host.remove(); out.ev = ev; return { s: out, ev }; };
       /* build 325: the walls are the next rank's level (21 with no badges,
-         40 with four), so "room" sits inside level 19 and "gain" reaches
+         40 with four), so "room" sits inside level 19 before and after and "gain" reaches
          Gold's 40 this run - 324's fixtures sat inside its 29 / 49 walls */
-      return { room: await run(300, xpForLevel(19) + 200, 0), full: await run(300, xpForLevel(52) + 200, 4),
+      return { room: await run(300, xpForLevel(19) + 400, 0), full: await run(300, xpForLevel(52) + 200, 4),
                gain: await run(300, xpForLevel(41) + 150, 4), top: await run(300, xpForLevel(LEVEL_CAP) + 60000, 16) }; }""")
     xr = {k: v["s"] for k, v in xr.items()}
     # BUILD 321 REVERSED "the number after the bar" (b320): "the numbers
