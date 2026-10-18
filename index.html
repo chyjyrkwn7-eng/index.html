@@ -55439,6 +55439,9 @@ function scheduleParts(text){
     const num = name.match(/^test\s*#\s*(\d+)$/i);
     if(num) name = "Test #" + num[1];
     name = calendarPlainCase(name);
+    /* "NO PT" and "(NO) PT" are the same note, written two ways and both
+       shouted (build 325): one plain "No PT" */
+    if(/^\(?\s*no\s*\)?\s*PT$/i.test(name)) name = "No PT";
     const test = /test\s*#|state test|\bfinal\b|\bexam\b/i.test(name) && !/PT FINALS|study for/i.test(name);
     out.push({ name, hours, test });
   });
