@@ -503,7 +503,9 @@ def check_unit_cards(br):
     selected card a darker slab with a 3px stripe caught in its corner."""
     print("\n6. the unit card: circle and badge on the top line, the name the headline, footers aligned, a ring when selected")
     for label, w, h in (PHONE, TABLET, ("iPhone SE 2nd gen", 375, 667), ("iPad Pro 12.9\"", 1024, 1366)):
-        ctx, pg = booted(br, w, h, seed=USED, init=ROOM_FAKE)
+        # a phone as a phone: (hover:none) and (pointer:coarse) carry their own rules
+        # (a list-era 1.05rem of padding on .pick .pname / .pcount) that desktop never sees
+        ctx, pg = booted(br, w, h, seed=USED, init=ROOM_FAKE, touch=w < 600)
         pg.evaluate(CLEAN)
         pg.evaluate("""() => { store.unitPerfects = { 'Professional Policing': 15, 'Professionalism and Ethics': 5 };
           cfg.mode = 'drill'; cfg.units = ['Professional Policing']; showSetup(); }""")

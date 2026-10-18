@@ -20583,6 +20583,13 @@
     grid-area:count; margin:.55rem 0 0;
     font-size:.72rem; font-weight:700; letter-spacing:.02em; color:var(--soft);
   }
+  /* A phone is (hover:none) and (pointer:coarse), and a rule from the list
+     days pads .pick .pname and .pick .pcount by 1.05rem top and bottom for a
+     bigger target - which on this card is 67px of air inside it, between the
+     name and its own count. The whole card is the target; the card's own
+     spacing is the spacing (desktop Chromium never applies that rule, which is
+     why only a touch-emulated render shows it). */
+  .picks > label.pick > .pname, .picks > label.pick > .pcount{ padding-top:0; padding-bottom:0; }
   .picks > label.pick > .pick-stars{ display:contents; }
   .picks > label.pick .pick-progress-label{ display:none; }
   .picks > label.pick .pick-badge{ grid-area:badge; justify-self:end; align-self:start; width:2.6rem; height:2.6rem; margin:-.25rem -.2rem -.35rem .4rem; }
