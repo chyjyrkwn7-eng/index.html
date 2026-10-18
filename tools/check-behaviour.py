@@ -4766,7 +4766,9 @@ def check_b245_start_pill(br):
       const cb = [...document.querySelectorAll('.picks .pick:not(.pick-flagged-all)')].find(p => !/Penal/.test(p.textContent) && p.querySelector('input')).querySelector('input');
       cb.click(); await wait(400);
       return document.getElementById('bottomtab-start').getAttribute('aria-label') || ''; }""")
-    check("in Review mode Start says review, not drill", lab.lower().startswith(("start review", "start learning")), lab)
+    # Build 324 renamed Review to Briefing ("Start briefing"); what is held is
+    # the shape: the button names the review mode it starts, never Drill.
+    check("in Review mode Start says review, not drill", lab.lower().startswith(("start review", "start learning", "start briefing")) and "drill" not in lab.lower(), lab)
     ctx.close()
 
 
