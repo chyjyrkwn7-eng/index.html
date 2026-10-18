@@ -50964,6 +50964,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               novaMet: 0,      /* build 321: the meeting with Nova - see playNovaMeeting() */
               levelFloor: 0,   /* build 314: no floor for a new account - see badgeWallLevel() */
               rankFloor: 0,    /* build 314: see rankOf() */
+              levelWallRule: 325,  /* build 325: a new account starts under the new wall - see levelWallMigrate325() */
               seenSettingsTour: false, seenProfileTour: false, seenRewardsTour: false,
               seenUnitOptionsTour: false, seenFirstResultsTour: false,
               /* On by default here as well as in applyLoadedData(): this
@@ -51347,6 +51348,16 @@ function applyLoadedData(got){
   store.rankFloor = (typeof got.rankFloor === "number" && isFinite(got.rankFloor))
     ? Math.max(0, Math.min(TIER_ORDER_FULL.length, Math.floor(got.rankFloor)))
     : legacyRankFloorOf(got);
+  /* THE NEW WALL'S GRANDFATHER FLOOR (build 325) - see levelWallMigrate325.
+     A copy without the flag (every account on the update, and a copy an
+     older build wrote) keeps the level build 324 showed it as its floor,
+     once; then the flag is set. A new sign-up starts with the flag (the
+     store literal), so it never runs for an account with nothing to keep. */
+  store.levelWallRule = (typeof got.levelWallRule === "number" && isFinite(got.levelWallRule)) ? got.levelWallRule : 0;
+  if(store.levelWallRule < LEVEL_WALL_RULE){
+    try{ levelWallMigrate325(got, store); }catch(e){}
+    store.levelWallRule = LEVEL_WALL_RULE;
+  }
   /* Defaults to 0 for an existing account, like levelPreserved and for
      the same reason: grantRetroBadgesOnce() is SUPPOSED to run once for
      people who are already here. */
@@ -52809,6 +52820,7 @@ function wipeLocalProgressAndSettings(){
   store.unflagged = {};
   store.levelFloor = 0;   /* build 314: a reset starts under the badge wall like anybody new */
   store.rankFloor = 0;
+  store.levelWallRule = LEVEL_WALL_RULE;   /* build 325: and under the new wall, with nothing to grandfather */
   store.tally = {}; store.tallyBase = {};
   store.unitGameBeat = {};
   store.unitBestPct = {}; store.unitBestMs = {}; store.flareLevels = {};
@@ -53997,6 +54009,7 @@ function mergeLeavingAccount(src, note){
      level keeps it - neither side loses one by being merged */
   store.levelFloor = Math.max(num(store.levelFloor), num(src.levelFloor));
   store.rankFloor = Math.max(num(store.rankFloor), num(src.rankFloor));
+  store.levelWallRule = Math.max(num(store.levelWallRule), num(src.levelWallRule));
   maxMap("unitBestPct"); minMap("unitBestMs"); maxMap("flareLevels");
   /* game records: per unit, per speed */
   ["unitGameBeat", "gameFarthest"].forEach(k => {
@@ -54363,6 +54376,9 @@ function mergeSameAccount(dst, src){
      an older build carries none and changes nothing here. */
   maxInto(dst, "levelFloor", src.levelFloor);
   maxInto(dst, "rankFloor", src.rankFloor);
+  /* build 325: the new wall's grandfathering ran on either copy - see
+     levelWallMigrate325; a copy from an older build carries none */
+  if(typeof src.levelWallRule === "number") maxInto(dst, "levelWallRule", src.levelWallRule);
   /* a rank-up shown on either copy is shown (build 319); a copy from an
      older build carries none and changes nothing */
   if(typeof src.rankUpShown === "number") maxInto(dst, "rankUpShown", src.rankUpShown);
@@ -56045,36 +56061,89 @@ function preserveLegacyLevel(){
    EVERYTHING THAT SHOWS OR PUBLISHES A LEVEL ASKS levelStateFor() /
    levelOf(), so the bar, the number, the rankings row, the ranks and
    the unlocks can never disagree about where somebody is held. */
-/* THE LEVEL BANDS (build 314, final - Madison): "their max level is at
-   their rank ... someone is level 80 but doesn't have a single badge,
-   their level would actually show as the max level in bronze, they
-   would need to hit bronze in order to hit the next set of levels."
-   Each rank owns a block of levels - Bronze 21-29, Silver 30-39, Gold
-   40-49, Platinum 50-59, Sapphire 60-69, Amethyst 70-79, Supernova 80 -
-   and you can climb to the top of the NEXT rank's block; going past it
-   takes that rank's badges. So no badges caps at 29, Bronze's badge
-   (1) at 39, Silver's (3) at 49, Gold's (5) at 59, Platinum's (7) at
-   69, Sapphire's (9) at 79, Amethyst's (12) at the cap. The XP is never
-   touched: levels past the cap are SAVED and arrive the moment the
-   badges do. The cap is always above the level of the highest rank your
-   badges hold, so it can never cost anybody a rank. Read off
-   TIER_UNLOCKS, never typed. */
-function badgeWallLevel(badges){
+/* THE LEVEL BANDS (build 314) - SUPERSEDED IN BUILD 325, kept for the
+   reasoning: each rank owned a block of levels (Bronze 21-29, Silver
+   30-39 ...) and you could climb to the top of the NEXT rank's block, so
+   no badges capped at 29. badgeWallLevel324() below is that rule, kept
+   for one job: the grandfather floor (levelWallMigrate325).
+   ---- THE WALL IS THE NEXT RANK'S LEVEL (build 325) ----
+   Madison: "The max level you can reach should the level your rank
+   needs. So for platinum it says reach level 50, that should be your max
+   level ... if you are unranked, the highest level you can reach is the
+   level required for that first rank." So the cap is the LEVEL
+   REQUIREMENT OF THE NEXT RANK YOU DO NOT HOLD: unranked, Bronze's 21;
+   holding Gold, Platinum's 50. At the cap you need that rank's badges;
+   when they arrive you hold the rank and the cap moves on to the
+   following rank's level. Holding every rank, the cap is LEVEL_CAP.
+   "The next rank you do not hold" is the first rank, from the one past
+   any rank floor (rankFloor - a rank held on an older ladder), whose
+   badges you do not have: a rank whose badges you have has a level below
+   the cap, so at the cap you hold it. Which is also why the cap can never
+   cost anybody a rank - every rank your badges hold asks for a level
+   under it. Read off TIER_UNLOCKS, never typed.
+   XP IS NEVER LOST: levels past the cap stay saved (levelStateOf().saved)
+   and pour in when the cap lifts - the rank-up journey's pool. */
+function wallRankIndex(badges, rankFloor){
+  const b = Math.max(0, Number(badges) || 0);
+  const f = Math.max(0, Math.min(TIER_ORDER_FULL.length, Math.floor(Number(rankFloor) || 0)));
+  for(let i = f; i < TIER_ORDER_FULL.length; i++){
+    const r = TIER_UNLOCKS[TIER_ORDER_FULL[i]];
+    if(r && b < (Number(r.badges) || 0)) return i;
+  }
+  return -1;
+}
+function badgeWallLevel(badges, rankFloor){
+  const i = wallRankIndex(badges, rankFloor);
+  const r = i >= 0 ? TIER_UNLOCKS[TIER_ORDER_FULL[i]] : null;
+  return r ? Math.min(LEVEL_CAP, Number(r.level) || LEVEL_CAP) : LEVEL_CAP;
+}
+/* Build 324's rule (one block further), for the grandfather floor only. */
+function badgeWallLevel324(badges){
   const b = Math.max(0, Number(badges) || 0);
   const met = TIER_ORDER_FULL.filter(k => TIER_UNLOCKS[k] && b >= (Number(TIER_UNLOCKS[k].badges) || 0)).length;
   const after = TIER_UNLOCKS[TIER_ORDER_FULL[met + 1]];
   return after ? Math.min(LEVEL_CAP, (Number(after.level) || LEVEL_CAP) - 1) : LEVEL_CAP;
 }
-/* The rank whose badges lift the cap you are under: the first rank your
-   badges do not yet hold. */
-function gateRankForBadges(badges){
-  const b = Math.max(0, Number(badges) || 0);
-  return TIER_ORDER_FULL.find(k => TIER_UNLOCKS[k] && b < (Number(TIER_UNLOCKS[k].badges) || 0)) || null;
+/* The rank whose badges lift the cap you are under: the next rank you do
+   not hold (the cap is its level). */
+function gateRankForBadges(badges, rankFloor){
+  const i = wallRankIndex(badges, rankFloor);
+  return i >= 0 ? TIER_ORDER_FULL[i] : null;
 }
-/* The highest level `badges` and a floor let you hold. */
-function levelWallOf(badges, floor){
+/* The highest level `badges`, a level floor and a rank floor let you hold. */
+function levelWallOf(badges, floor, rankFloor){
   const f = Math.max(0, Math.floor(Number(floor) || 0));
-  return Math.min(LEVEL_CAP, Math.max(badgeWallLevel(badges), f));
+  return Math.min(LEVEL_CAP, Math.max(badgeWallLevel(badges, rankFloor), f));
+}
+/* ---- NOBODY'S LEVEL DROPS FOR THE NEW WALL (build 325) ----
+   The wall moved DOWN a block (29 -> 21 with no badges, 39 -> 30 with
+   one ...), and a level is derived every time it is shown, so without
+   this anybody between the two walls would see a lower level on the
+   update. Once per account, on the first load of a copy without
+   `levelWallRule`, the level build 324 showed (its wall, its floor) is
+   kept as `levelFloor` wherever it is above the new wall - so the shown
+   level is exactly what it was, and the new rule applies from there.
+   ONE SHOT, and it has to be: run again later, it would read a higher
+   old-rule level off the XP earned since and lift the floor again - the
+   old rule leaking back. `levelWallRule` (325) is the flag; it lives on
+   `store`, syncs, and merges by max, and levelFloor merges by max too, so
+   two devices that each ran it agree on the higher of two levels that
+   were each really shown, and nothing can ping-pong: both only ever go
+   up. A reset clears the floor and sets the flag (a fresh account starts
+   under the new rule). Returns the floor written, or 0. */
+const LEVEL_WALL_RULE = 325;
+function levelWallMigrate325(got, into){
+  if(!got || typeof got !== "object") return 0;
+  if(typeof got.levelWallRule === "number" && got.levelWallRule >= LEVEL_WALL_RULE) return 0;
+  const pts = got.lifetime ? Number(got.lifetime.points) || 0 : 0;
+  if(pts <= 0) return 0;
+  let b = 0; try{ b = badgeCountOf(got); }catch(e){}
+  const floor = Math.max(0, Math.floor(Number(into.levelFloor) || 0));
+  const curve = levelFromPoints(pts);
+  const old = Math.min(curve, Math.min(LEVEL_CAP, Math.max(badgeWallLevel324(b), floor)));
+  const now = Math.min(curve, levelWallOf(b, floor, into.rankFloor));
+  if(old > now){ into.levelFloor = Math.max(floor, old); return into.levelFloor; }
+  return 0;
 }
 /* levelProgress() with the wall applied - the same fields, plus:
      curveLevel   what the XP alone would give
@@ -56085,20 +56154,20 @@ function levelWallOf(badges, floor){
      gateKey      the rank whose badges open the wall
      badgesToPass how many more badges that takes
      banked       XP earned since the bar filled */
-function levelStateOf(points, badges, floor){
+function levelStateOf(points, badges, floor, rankFloor){
   const lp = levelProgress(points);
   const have = Math.max(0, Number(badges) || 0);
-  const wall = levelWallOf(have, floor);
+  const wall = levelWallOf(have, floor, rankFloor);
   const out = Object.assign({}, lp, { curveLevel: lp.level, wall, badges: have, gateKey: null,
                                       held: false, stopped: false, badgesToPass: 0, banked: 0 });
   if(wall >= LEVEL_CAP || lp.level < wall) return out;
   out.held = true;
-  out.gateKey = gateRankForBadges(have);
+  out.gateKey = gateRankForBadges(have, rankFloor);
   {
     const g = out.gateKey ? TIER_UNLOCKS[out.gateKey] : null;
     out.badgesToPass = Math.max(1, (g ? Number(g.badges) || 0 : 0) - have);
-    /* the block those badges open, e.g. "levels 40-49" */
-    out.opensTo = g ? badgeWallLevel(Number(g.badges) || 0) : LEVEL_CAP;
+    /* where those badges move the cap: the following rank's level */
+    out.opensTo = g ? badgeWallLevel(Number(g.badges) || 0, rankFloor) : LEVEL_CAP;
   }
   /* levels the XP has already paid for past the cap - kept, not lost */
   out.saved = Math.max(0, lp.level - wall);
@@ -56127,7 +56196,7 @@ function levelStateFor(st){
      merge - see mergeHidePoints */
   if(st === store && typeof mergeHidePoints !== "undefined" && mergeHidePoints != null)
     p = Math.min(p, Number(mergeHidePoints) || 0);
-  return levelStateOf(p, badgeCountOf(st), st ? st.levelFloor : 0);
+  return levelStateOf(p, badgeCountOf(st), st ? st.levelFloor : 0, st ? st.rankFloor : 0);
 }
 function effectiveLevelOf(st){ return levelStateFor(st).level; }
 /* Every caller that asks "what level is this account" - the rankings
@@ -56212,7 +56281,8 @@ function rankChallengesOf(){
     { kind: "level", label: "Reach level " + needL, now: s.level, need: needL, met: s.level >= needL },
     { kind: "badges", label: "Earn " + needB + (needB === 1 ? " badge" : " badges"), now: s.badges, need: needB, met: s.badges >= needB }
   ];
-  const to = badgeWallLevel(needB), from = badgeWallLevel(Math.max(0, needB - 1)) + 1;
+  const rf = store.rankFloor || 0;
+  const to = badgeWallLevel(needB, rf), from = badgeWallLevel(Math.max(0, needB - 1), rf) + 1;
   return { key, name: RANK_DISPLAY_NAME[key] || key, color: RANK_COLOR[key] || "#9FACBA", list,
            done: list.filter(c => c.met).length, total: list.length,
            opensFrom: from, opensTo: to, opens: to >= from, state: s };
@@ -76253,7 +76323,7 @@ const PROFILE_TIPS_289 = [
   { target: ".profile-edit-btn", align: "right", vplacement: "below",
     text: "Customize changes your name, your character, your banner and the app\u2019s colour. More of each unlock as you climb the ranks and finish challenges." },
   { target: ".profile-hero .pf-standing", align: "left", vplacement: "below",
-    text: "Your rank, your level and how many of my badges you\u2019ve found. XP fills the bar, and your badges decide how high your level can go. Tap the badge count to see them." },
+    text: "Your rank, your level and how many of my badges you\u2019ve found. XP fills the bar. Your level goes as high as your next rank\u2019s level, and that rank\u2019s badges take it further. Tap the badge count to see them." },
   { target: ".profile-hero .pf-goal", align: "left", vplacement: "above",
     text: "The challenges for your next rank, ticked off as you go, and what it unlocks. When you rank up, it plays out on the road map. Tap to see every rank." },
   { target: ".profile-hero .pf-case", align: "left", vplacement: "above",
@@ -79858,7 +79928,7 @@ const NOVA_TIPS = [
   "Tip: the daily question is quick XP. When the button on Home lights up, there’s a new one.",
   "Tip: star a question you want to see again. Your Starred list is in Start Studying.",
   "Tip: when you miss one, take a second with the right answer before you move on. Knowing why it’s right is what stays with you.",
-  "Tip: your badges decide how high your level can go, so mastering units matters as much as answering a lot of questions.",
+  "Tip: your level waits at your next rank\u2019s level until you have its badges, so mastering units matters as much as answering a lot of questions.",
   "Tip: the Calendar tab has every class day and the next test date. Worth a look at the start of each week.",
   "Tip: race a friend in a Virtual Room. A little competition is the fastest way to find out what you really know."
 ];
@@ -80233,7 +80303,7 @@ function novaReplyFor(raw){
   if(has(/ (badges?|hundos?|100%|100|master\w*) /))
     return "There’s a badge for every unit, " + units + " in all. Score 100% on a whole unit and that’s a hundo; a few hundos in one unit earns its badge. You’ve found " + badges + " of my " + units + " so far.";
   if(has(/ (xp|levels?|level up) /))
-    return "Every right answer earns XP, and XP raises your level. Your badges decide how high your level can go, so mastering units matters as much as answering a lot.";
+    return "Every right answer earns XP, and XP raises your level. Your level waits at your next rank\u2019s level until you have its badges, so mastering units matters as much as answering a lot.";
   if(has(/ (drill|exam|review|flashcards?|learn|modes?|study|studying|practice|starred|flag\w*) /))
     return "Drill to learn a unit, a Qualifier to test yourself, and a Briefing to go over the material first. They’re all under Start Studying on Home.";
   if(has(/ (flares?|crew|characters?|ship|planet|blast|wreck|lost|explorer|space) /))
@@ -83298,27 +83368,27 @@ function introRow(glyph, color, title, body){
   return row;
 }
 
-/* "YOUR LEVEL WAS ADJUSTED", in two short paragraphs (build 319): what
-   changed and what it did to your level, then what happens to your XP and
-   what opens the next levels. `s` is levelStateFor(store) for somebody the
-   cap moved down (s.held && s.saved > 0). The rank named for the top level
-   is the one you hold, when that cap is your rank's own; a level floor (an
-   admin's gift) can put the cap elsewhere, and then it is "for now". */
+/* THE WALL, SAID ONCE IN WHAT'S NEW (build 325; was "Your level was
+   adjusted", build 319). `s` is levelStateFor(store) for somebody at their
+   wall with levels saved past it (s.held && s.saved > 0). Nobody's level
+   moved on this update (levelWallMigrate325 keeps what 324 showed), so it
+   never says "went from" - it says the rule and where you stand in it:
+   the cap is the next rank's level, its badges lift it, and the saved
+   levels come in then. A level floor above that level (grandfathered) is
+   "you keep level N". */
 function levelGateNoteText(s){
-  let held = null;
-  try{ held = rankOf(store); }catch(e){}
-  const ownCap = badgeWallLevel(held && TIER_UNLOCKS[held] ? Number(TIER_UNLOCKS[held].badges) || 0 : 0);
-  const where = s.wall !== ownCap ? "Level " + s.level + " is the highest you can be for now"
-    : held ? "Level " + s.level + " is the top level for " + (RANK_DISPLAY_NAME[held] || held)
-    : "Level " + s.level + " is the top level before your first rank";
-  const first = "Levels now unlock one rank at a time. " + where + ", so your level went from " +
-    s.curveLevel + " to " + s.level + ".";
-  const n = Math.max(1, Number(s.badgesToPass) || 1);
   const gate = s.gateKey ? RANK_DISPLAY_NAME[s.gateKey] || s.gateKey : "";
+  const rule = s.gateKey ? TIER_UNLOCKS[s.gateKey] : null;
+  const need = rule ? Number(rule.level) || 0 : 0;
+  const first = "Your level now goes as high as your next rank's level and waits there until you have that rank's badges. " +
+    (gate && s.level > need ? "You keep level " + s.level + ", and it stays there until you reach " + gate + "."
+      : gate ? "For you that is level " + need + ", the level " + gate + " asks for."
+      : "You are at level " + s.level + ".");
+  const n = Math.max(1, Number(s.badgesToPass) || 1);
   const earn = "Earn " + n + (Number(s.badges) > 0 ? " more" : "") + (n === 1 ? " badge" : " badges") +
     (gate ? " to reach " + gate : "") + ".";
-  return [first, "You kept all of your XP, and it still counts. " + earn +
-    " The next levels unlock then, and your XP counts toward them right away."];
+  return [first, "You keep all of your XP. " + earn +
+    " The levels your XP has already paid for come in then."];
 }
 /* ---- WHAT'S NEW, NARRATED (build 320, version 7.8) ----
    "For the now (mostly everyone) existing accounts, it would be narrating
@@ -83466,10 +83536,10 @@ function whatsNewLines(st, chained){
   WHATS_NEW_320.forEach(it => lines.push({ text: it.say, gesture: it.key === "planet" ? "nod" : null,
     enter: (ctx, instant) => card(ctx, introRow(it.glyph, it.color, it.title, it.body), instant) }));
   if(st.note){
-    lines.push({ gesture: "raise", text: "One more thing, " + name + ": your level was adjusted. " + st.note[0],
+    lines.push({ gesture: "raise", text: "One more thing, " + name + ". " + st.note[0],
       enter: (ctx, instant) => {
         const n = document.createElement("div"); n.className = "intro-gate-note";
-        const h = document.createElement("p"); h.className = "intro-gate-title"; h.textContent = "Your level was adjusted";
+        const h = document.createElement("p"); h.className = "intro-gate-title"; h.textContent = "Levels wait for your next rank";
         n.appendChild(h);
         st.note.forEach(t => { const b = document.createElement("p"); b.className = "intro-gate-body"; b.textContent = t; n.appendChild(b); });
         card(ctx, n, instant);
@@ -94022,9 +94092,9 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   const nowBadges = (() => { try{ return badgeCountOf(store); }catch(e){ return 0; } })();
   const bAfter = opts && typeof opts.badgesAfter === "number" ? opts.badgesAfter : nowBadges;
   const bBefore = opts && typeof opts.badgesBefore === "number" ? opts.badgesBefore : bAfter;
-  const floor = store.levelFloor || 0;
-  const after = levelStateOf(pointsAfter, bAfter, floor);
-  const before = levelStateOf(Math.max(0, pointsAfter - gained), bBefore, floor);
+  const floor = store.levelFloor || 0, rFloor = store.rankFloor || 0;
+  const after = levelStateOf(pointsAfter, bAfter, floor, rFloor);
+  const before = levelStateOf(Math.max(0, pointsAfter - gained), bBefore, floor, rFloor);
 
   const wrap = document.createElement("div");
   wrap.className = "results-level";
@@ -117566,7 +117636,7 @@ function buildRanksTab(){
   /* THE BANDS, SAID ONCE (build 314): the boxes below are exactly build
      313's - "I don't like how the road map boxes changed, that's a no go"
      - so the one new idea is a sentence here, not a change to the cards. */
-  mapNote.textContent = "Each rank needs a level and a number of badges, and unlocks rewards along the way. Your badges also decide how high your level can go. Tap a rank to see what it gives.";
+  mapNote.textContent = "Each rank needs a level and a number of badges, and unlocks rewards along the way. Your level goes as high as the next rank\u2019s level, and that rank\u2019s badges take it further. Tap a rank to see what it gives.";
   tab.appendChild(mapNote);
 
   /* ---- IRON AT THE TOP, SUPERNOVA AT THE BOTTOM (build 232) ----
@@ -118372,7 +118442,7 @@ function rankUpSceneWatch(scene, ms){
    met, and the level the OLD badges allowed (the XP since is saved
    behind that gate and climbs once the rank-up has been shown). */
 function rankUpSceneNumbers(owed){
-  const floor = store.levelFloor || 0;
+  const floor = store.levelFloor || 0, rFloor = store.rankFloor || 0;
   const pts = Number(store.lifetime && store.lifetime.points) || 0;
   const real = levelStateFor(store);
   const bNow = badgeCountOf(store);
@@ -118383,14 +118453,14 @@ function rankUpSceneNumbers(owed){
   let bBefore, lvBefore;
   if(rec){
     bBefore = Math.min(bNow, rec.b);
-    lvBefore = levelStateOf(Math.min(pts, rec.p), bBefore, floor).level;
-  } else if(needB > 0 && bNow === needB && levelStateOf(pts, needB - 1, floor).level >= needL){
+    lvBefore = levelStateOf(Math.min(pts, rec.p), bBefore, floor, rFloor).level;
+  } else if(needB > 0 && bNow === needB && levelStateOf(pts, needB - 1, floor, rFloor).level >= needL){
     /* no record (a rank-up that no test saw): the badge looks like the last */
     bBefore = needB - 1; lvBefore = real.level;
   } else {
     bBefore = bNow; lvBefore = Math.max(0, Math.min(real.level, needL - 1));
   }
-  const cap = rec ? levelStateOf(pts, bBefore, floor) : real;
+  const cap = rec ? levelStateOf(pts, bBefore, floor, rFloor) : real;
   return { r1, needL, needB, bBefore, lvBefore, cap, real, bNow };
 }
 function rankUpNewScene(owed){
