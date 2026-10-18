@@ -56670,7 +56670,8 @@ const BADGE_SHAPE = {
     d: "M45.1 16.7Q50.0 8.0 54.9 16.7L87.1 73.3Q92.0 82.0 82.0 82.0L18.0 82.0Q8.0 82.0 12.9 73.3Z" },
   burstplate: { c: [50.0, 50.0], cuts: ["M50 -10V110", "M-10 50H110"],
     d: "M48.3 8.6Q50.0 5.0 51.7 8.6L58.2 22.4Q59.9 26.0 63.7 24.6L78.1 19.5Q81.8 18.2 80.5 21.9L75.4 36.3Q74.0 40.1 77.6 41.8L91.4 48.3Q95.0 50.0 91.4 51.7L77.6 58.2Q74.0 59.9 75.4 63.7L80.5 78.1Q81.8 81.8 78.1 80.5L63.7 75.4Q59.9 74.0 58.2 77.6L51.7 91.4Q50.0 95.0 48.3 91.4L41.8 77.6Q40.1 74.0 36.3 75.4L21.9 80.5Q18.2 81.8 19.5 78.1L24.6 63.7Q26.0 59.9 22.4 58.2L8.6 51.7Q5.0 50.0 8.6 48.3L22.4 41.8Q26.0 40.1 24.6 36.3L19.5 21.9Q18.2 18.2 21.9 19.5L36.3 24.6Q40.1 26.0 41.8 22.4Z" },
-  cring:      { c: [60.6, 50.0], cuts: ["M-6 50H106"],
+  /* backArc (build 325): the ring the back's words run round - its centre and its inner and outer radii */
+  cring:      { c: [60.6, 50.0], cuts: ["M-6 50H106"], backArc: { c: [50, 50], r: [25, 44], margin: 1.2 },
     d: "M50 6A44 44 0 1 1 26 86L34 68A25 25 0 1 0 50 24Z" },
   bolt:       { c: [49.3, 50.2], cuts: [],
     d: "M17.8 14.0Q18.0 10.0 22.0 10.0L66.0 10.0Q70.0 10.0 68.1 13.5L53.9 40.5Q52.0 44.0 56.0 44.0L80.0 44.0Q84.0 44.0 81.1 46.8L36.9 89.2Q34.0 92.0 35.3 88.2L44.7 59.8Q46.0 56.0 42.0 56.0L20.0 56.0Q16.0 56.0 16.2 52.0Z" },
@@ -116202,40 +116203,242 @@ const BADGE_BACK_CACHE = {};
    grain, film and grime; grime settles in the letters). Its outline is the
    front's MIRRORED (the back of a shape is its mirror image, so the edge
    lines up as it turns); its letters are not. */
-const BADGE_BACK_RELIEF = { depth: .32, wallU: .42, shadowU: .9, shadowK: .62, floor: .55, floorSp: .25, brush: .13 };
+/* THE WORDS FIT THE SHAPE (build 325, b325b). Madison: "the title of the
+   back of them though aren't visible though, especially for some depending
+   on the shape. This needs to be fixed badly." The words were sized to the
+   shape's BOUNDING BOX and centred on it, so on every shape that is not a
+   box they ran off the field: under the rim of the star, the bolt, the
+   wedge, the fan, the trefoil and the peaks, and on the C-ring nearly
+   every letter was cut away. Now each back is planned against its own
+   field (badgeBackPlan): the field's signed distance at PLAN_W pixels, the
+   rows that fit inside it with a margin (`margin` token units clear of the
+   field's edge, which is where its foot shade and the bevel are), and the
+   largest size at which the name fits - wrapped one to four rows, every
+   row centred in the band of the field it sits in at ITS height, the
+   block as near the shape's middle as the field allows. "CLASS 26E" and
+   its rule come along only if the name keeps at least `classKeep` of the
+   size it has without them. A ring (`backArc` in BADGE_SHAPE) has no wide
+   band anywhere, so its words run round it the way a seal's do: the first
+   part clockwise up the left and over the top (letters standing out from
+   the middle), the rest along the bottom reading left to right (letters
+   standing in). The back's rim is narrower than the front's (`rimIn`
+   against the front's 6.4): it only has to meet the front at the OUTLINE,
+   where the edge turns, and every unit it gives up is field for the words.
+   Contrast (`ink`, `floor`): the cut is a recess with a light lower wall
+   and a dark, blackened floor - an engraver's fill - on a field that is
+   lighter than the letters, never the same grey. */
+const BADGE_BACK_RELIEF = { depth: .36, wallU: .42, shadowU: .9, shadowK: .55, floor: .24, floorSp: .12, ink: [.30, .31, .33], brush: .13,
+  rimIn: 4.6, margin: 2.0, planW: 360, fsMax: .092, fsMin: .026, classMin: .034, classKeep: .84, weight: 800 };
+const BADGE_BACK_FONT = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+const BADGE_BACK_PLAN = {};
+/* the outline's signed distance (token units, negative inside) as the
+   back sees it - mirrored - at W pixels across the frame */
+function badgeBackField(g, W){
+  const D = new Float32Array(W * W), GW = g.W, GM = GW - 1, sc = GW / W, O = g.O;
+  for(let y = 0; y < W; y++){
+    let fy = (y + .5) * sc - .5; if(fy < 0) fy = 0; if(fy > GM) fy = GM;
+    const iy = fy | 0, ay = fy - iy, iy1 = iy < GM ? iy + 1 : iy;
+    for(let x = 0; x < W; x++){
+      let fx = (W - x - .5) * sc - .5; if(fx < 0) fx = 0; if(fx > GM) fx = GM;
+      const ix = fx | 0, ax = fx - ix, ix1 = ix < GM ? ix + 1 : ix;
+      D[y * W + x] = O[iy * GW + ix] * (1 - ax) * (1 - ay) + O[iy * GW + ix1] * ax * (1 - ay) + O[iy1 * GW + ix] * (1 - ax) * ay + O[iy1 * GW + ix1] * ax * ay;
+    }
+  }
+  return D;
+}
+/* The plan: what to cut and where, in PLAN_W pixels of the back's frame.
+   { items: [{ s, x, y, rot, fs, ls } | { rule: [x, y, w, h] }], fs, small,
+     mode: "rows" | "arc", rows, cls, W } - x, y are each item's baseline
+   centre. Cached per unit; a few ms once. */
+function badgeBackPlan(unitName){
+  const key = String(unitName);
+  if(BADGE_BACK_PLAN[key]) return BADGE_BACK_PLAN[key];
+  const R = BADGE_BACK_RELIEF, shape = badgeShapeFor(unitName), g = badgeStrikeGeometry(shape);
+  const WR = R.planW, D = badgeBackField(g, WR), u = WR / g.vw * g.S, thr = -(R.rimIn + R.margin);
+  const toPx = (fx, fy) => [WR - (fx - g.vx) * WR / g.vw, (fy - g.vy) * WR / g.vw];
+  const b = badgeBBoxFor(shape.d) || { x: 6, y: 6, w: 88, h: 88 };
+  const [mx, my] = toPx(g.cx + g.S * (b.x + b.w / 2 - g.cx), g.cy + g.S * (b.y + b.h / 2 - g.cy));
+  const okAt = (x, y) => { x = Math.round(x); y = Math.round(y); return x >= 0 && y >= 0 && x < WR && y < WR && D[y * WR + x] <= thr; };
+  const cv = document.createElement("canvas"); cv.width = cv.height = 8;
+  const c2 = cv.getContext("2d");
+  const setFont = (fs, ls) => { c2.font = R.weight + " " + fs.toFixed(2) + "px " + BADGE_BACK_FONT; try{ c2.letterSpacing = (ls || 0).toFixed(2) + "px"; }catch(e){} };
+  const width = (s, fs, ls) => { setFont(fs, ls); return c2.measureText(s).width - (ls || 0); };
+  const vmet = fs => { setFont(fs, 0); const a = c2.measureText("H").actualBoundingBoxAscent || fs * .72, d = c2.measureText(",").actualBoundingBoxDescent || fs * .16; return [a, Math.max(d, fs * .05)]; };
+  const pad = Math.max(1, R.wallU * u * .5) + .5;
+  const words = String(unitName).toUpperCase().split(/\s+/).filter(Boolean);
+  const CLASS = "CLASS 26E";
+  /* rows: every way of breaking the words into k rows, in order */
+  const splits = k => { const out = []; const rec = (i, left, acc) => {
+    if(left === 1){ out.push(acc.concat([words.slice(i).join(" ")])); return; }
+    for(let j = i + 1; j <= words.length - left + 1; j++) rec(j, left - 1, acc.concat([words.slice(i, j).join(" ")])); };
+    if(k <= words.length) rec(0, k, []); return out; };
+  const allSplits = [1, 2, 3, 4].map(splits);
+  /* a column of "bad" counts, summed down, so any band's rows are one lookup */
+  const PS = new Int32Array((WR + 1) * WR);
+  for(let y = 0; y < WR; y++) for(let x = 0; x < WR; x++) PS[(y + 1) * WR + x] = PS[y * WR + x] + (D[y * WR + x] > thr ? 1 : 0);
+  const runCache = new Map();
+  const runs = (y0, h) => {
+    const k = y0 * 4096 + h; let r = runCache.get(k); if(r) return r;
+    r = [];
+    if(y0 >= 0 && y0 + h <= WR){ let s = -1;
+      for(let x = 0; x <= WR; x++){ const bad = x === WR || PS[(y0 + h) * WR + x] - PS[y0 * WR + x] > 0;
+        if(!bad && s < 0) s = x; else if(bad && s >= 0){ r.push([s, x]); s = -1; } } }
+    runCache.set(k, r); return r;
+  };
+  /* where the CENTRE of a row of width w may sit in the band y0..y0+h:
+     a list of [lo, hi] intervals, one per run of the field wide enough */
+  const centres = (y0, h, w) => {
+    const out = [];
+    runs(Math.floor(y0), Math.ceil(h + (y0 - Math.floor(y0)))).forEach(([l, r]) => { if(r - l >= w + 2) out.push([l + 1 + w / 2, r - 1 - w / 2]); });
+    return out;
+  };
+  const meet = (A, B) => { const out = []; A.forEach(a => B.forEach(b => { const lo = Math.max(a[0], b[0]), hi = Math.min(a[1], b[1]); if(hi >= lo) out.push([lo, hi]); })); return out; };
+  /* a block of rows (and the class line) at a size: the offset nearest the middle, or null */
+  const block = (rows, fs, withClass) => {
+    const [asc, desc] = vmet(fs), lh = fs * 1.13, bands = [];
+    rows.forEach((s, i) => bands.push({ s, fs, ls: 0, base: i * lh, top: i * lh - asc - pad, bot: i * lh + desc + pad, w: width(s, fs, 0) }));
+    let small = 0;
+    if(withClass){
+      small = Math.max(R.classMin * WR, fs * .5);
+      const [sa, sd] = vmet(small), ls = small * .16;
+      const last = bands[bands.length - 1].base, ruleY = last + desc + fs * .34, ruleH = Math.max(1.2, fs * .085), sb = ruleY + ruleH + small * .42 + sa;
+      bands.push({ s: CLASS, fs: small, ls, base: sb, top: ruleY - pad, bot: sb + sd + pad, w: Math.max(width(CLASS, small, ls), fs * 2.4), rule: [fs * 2.4, ruleY, ruleH] });
+    }
+    const top0 = bands[0].top, bot1 = bands[bands.length - 1].bot;
+    let best = null;
+    for(let t = -top0; t + bot1 < WR; t += 1){
+      const mid = t + (top0 + bot1) / 2, dist = Math.abs(mid - my);
+      if(best && dist >= best.dist) continue;
+      /* every row on ONE centre line - the nearest to the shape's middle
+         that all of them allow - so the block reads as set, not scattered */
+      let C = [[-1e9, 1e9]];
+      for(const bd of bands){ C = meet(C, centres(t + bd.top, bd.bot - bd.top, bd.w)); if(!C.length) break; }
+      if(!C.length) continue;
+      let x = null, slack = 0;
+      C.forEach(([lo, hi]) => { const c = Math.min(Math.max(mx, lo), hi); if(x === null || Math.abs(c - mx) < Math.abs(x - mx)){ x = c; slack = Math.min(c - lo, hi - c) * 2 + (hi - lo); } });
+      best = { t, dist: dist + Math.abs(x - mx) * .5, xs: bands.map(() => x), slack };
+    }
+    if(!best) return null;
+    const items = [];
+    bands.forEach((bd, i) => {
+      if(bd.rule) items.push({ rule: [best.xs[i] - bd.rule[0] / 2, best.t + bd.rule[1], bd.rule[0], bd.rule[2]] });
+      items.push({ s: bd.s, x: best.xs[i], y: best.t + bd.base, rot: 0, fs: bd.fs, ls: bd.ls });
+    });
+    return { items, fs, small, slack: best.slack, rows: rows.length, cls: !!withClass, mode: "rows" };
+  };
+  const bestRows = withClass => {
+    for(let fs = R.fsMax * WR; fs >= R.fsMin * WR; fs *= .965){
+      let best = null;
+      allSplits.forEach(ss => ss.forEach(rows => { const p = block(rows, fs, withClass); if(p && (!best || p.rows < best.rows || (p.rows === best.rows && p.slack > best.slack))) best = p; }));
+      if(best) return best;
+    }
+    return null;
+  };
+  /* ---- the ring: words round it ---- */
+  const bestArc = () => {
+    const A = shape.backArc; if(!A) return null;
+    /* a ring's words run parallel to both its edges, never towards a
+       corner, so they may come closer to them (A.margin) */
+    const thrA = -(R.rimIn + (A.margin != null ? A.margin : R.margin));
+    const okAt = (x, y) => { x = Math.round(x); y = Math.round(y); return x >= 0 && y >= 0 && x < WR && y < WR && D[y * WR + x] <= thrA; };
+    const [acx, acy] = toPx(g.cx + g.S * (A.c[0] - g.cx), g.cy + g.S * (A.c[1] - g.cy));
+    const r0 = A.r[0] * g.S * WR / g.vw, r1 = A.r[1] * g.S * WR / g.vw;
+    /* the field across the ring at every half degree: its inner and outer
+       edge (the ring is not quite round about any one point, so the words
+       follow the band's own middle, smoothed) */
+    const NA = 720, lo = new Float32Array(NA), hi = new Float32Array(NA), has = new Uint8Array(NA);
+    for(let i = 0; i < NA; i++){ const th = i * .5 * Math.PI / 180, c = Math.cos(th), s = Math.sin(th); let a = -1, z = -1;
+      for(let rr = r0 * .7; rr <= r1 * 1.3; rr += .5) if(okAt(acx + rr * c, acy + rr * s)){ if(a < 0) a = rr; z = rr; }
+      if(a >= 0){ lo[i] = a; hi[i] = z; has[i] = 1; } }
+    let run = null;
+    for(let i0 = 0; i0 < NA; i0++){ if(!has[i0] || has[(i0 + NA - 1) % NA]) continue;
+      let n = 0; while(n < NA && has[(i0 + n) % NA]) n++; if(!run || n > run[1]) run = [i0, n]; }
+    if(!run || run[1] < 60) return null;
+    const mid = new Float32Array(NA);
+    for(let i = 0; i < NA; i++){ let s = 0, n = 0; for(let j = -20; j <= 20; j++){ const q = (i + j + NA) % NA; if(has[q]){ s += (lo[q] + hi[q]) / 2; n++; } } mid[i] = n ? s / n : (r0 + r1) / 2; }
+    const midAt = deg => mid[((Math.round(deg * 2) % NA) + NA) % NA];
+    const rmean = (r0 + r1) / 2;
+    const arcLen = (s, fs, ls) => { setFont(fs, 0); let L = 0; for(const ch of s) L += c2.measureText(ch).width + ls; return (L - ls) / rmean * 180 / Math.PI; };
+    /* chars along the band from angle `from`, dir +1 clockwise; side -1 puts the baseline inside the middle */
+    const glyphs = (s, fs, ls, from, dir, lift) => {
+      const out = []; let at = 0; setFont(fs, 0);
+      for(const ch of s){ const w = c2.measureText(ch).width, deg = from + dir * (at + w / 2) / rmean * 180 / Math.PI, th = deg * Math.PI / 180, rb = midAt(deg) + lift;
+        out.push({ s: ch, x: acx + rb * Math.cos(th), y: acy + rb * Math.sin(th), rot: th + dir * Math.PI / 2, fs, ls: 0, w }); at += w + ls; }
+      return out; };
+    /* every glyph's box, corners and edges, inside the field with the margin */
+    const fits = gl => gl.every(q => { const [a, d] = vmet(q.fs), c = Math.cos(q.rot), s = Math.sin(q.rot);
+      for(const fx of [-.5, 0, .5]) for(const fy of [-a - pad, -a / 2, 0, d + pad]){ const lx = fx * (q.w + 2 * pad);
+        if(!okAt(q.x + lx * c - fy * s, q.y + lx * s + fy * c)) return false; }
+      return true; });
+    const span = run[1] * .5, a0 = run[0] * .5, gapDeg = 12, ARC_TURN = 148;
+    for(let fs = R.fsMax * WR; fs >= R.fsMin * WR; fs *= .965){
+      const [asc] = vmet(fs), ls = fs * .04, cands = [];
+      const small = Math.max(R.classMin * WR, fs * .5);
+      cands.push([words.join(" "), CLASS, small, small * .16]);
+      for(let j = 1; j < words.length; j++) cands.push([words.slice(0, j).join(" "), words.slice(j).join(" "), fs, ls]);
+      let best = null;
+      for(const [up, low, lfs, lls] of cands){
+        const Lu = arcLen(up, fs, ls), Ll = arcLen(low, lfs, lls);
+        if(Lu + Ll + gapDeg > span - 4) continue;
+        const [la] = vmet(lfs);
+        /* The turn between the two is the lower left (ARC_TURN): the words
+           up the left side and over the top read clockwise, standing out;
+           the words along the bottom read left to right, standing in. Each
+           is centred in its own stretch; the turn moves only as far from
+           the lower left as the lengths make it. */
+        for(let k = 0; k <= 40; k++){
+          const turn = ARC_TURN + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 2;
+          const dn = [a0 + 2, turn - gapDeg / 2], upR = [turn + gapDeg / 2, a0 + span - 2];
+          if(dn[1] - dn[0] < Ll || upR[1] - upR[0] < Lu) continue;
+          const ls0 = (dn[0] + dn[1]) / 2 + Ll / 2, us0 = (upR[0] + upR[1]) / 2 - Lu / 2;
+          /* below: angle falling, baseline outside the band's middle; above: angle rising, baseline inside it */
+          const lower = glyphs(low, lfs, lls, ls0, -1, la / 2), upper = glyphs(up, fs, ls, us0, 1, -asc / 2);
+          if(!fits(lower) || !fits(upper)) continue;
+          const p = { items: upper.concat(lower).map(q => ({ s: q.s, x: q.x, y: q.y, rot: q.rot, fs: q.fs, ls: 0 })), fs, small: low === CLASS ? lfs : 0, rows: 2, cls: low === CLASS, mode: "arc", slack: Math.abs(turn - ARC_TURN) };
+          if(!best || (p.cls && !best.cls) || (p.cls === best.cls && p.slack < best.slack)) best = p;
+          break;
+        }
+      }
+      if(best) return best;
+    }
+    return null;
+  };
+  let plan = null;
+  try{
+    const a = bestRows(true), n = bestRows(false), arc = bestArc();
+    plan = a && (!n || a.fs >= n.fs * R.classKeep) ? a : n;
+    if(arc && (!plan || arc.fs > plan.fs)) plan = arc;
+  }catch(e){ plan = null; }
+  if(!plan) plan = { items: [{ s: words.join(" "), x: mx, y: my, rot: 0, fs: R.fsMin * WR, ls: 0 }], fs: R.fsMin * WR, small: 0, rows: 1, cls: false, mode: "rows" };
+  plan.W = WR; plan.u = u;
+  return (BADGE_BACK_PLAN[key] = plan);
+}
+/* the plan drawn into a 2D context at W pixels across the frame */
+function badgeBackDrawPlan(c2, plan, W, fill){
+  const f = W / plan.W;
+  c2.save();
+  const base = c2.getTransform();
+  c2.textAlign = "center"; c2.textBaseline = "alphabetic"; c2.fillStyle = fill || "#000";
+  plan.items.forEach(it => {
+    c2.setTransform(base); c2.scale(f, f);
+    if(it.rule){ c2.fillRect(it.rule[0], it.rule[1], it.rule[2], it.rule[3]); return; }
+    c2.font = BADGE_BACK_RELIEF.weight + " " + it.fs.toFixed(2) + "px " + BADGE_BACK_FONT;
+    try{ c2.letterSpacing = (it.ls || 0).toFixed(2) + "px"; }catch(e){}
+    c2.translate(it.x, it.y); if(it.rot) c2.rotate(it.rot);
+    /* letter-spacing trails the last glyph; centre on the ink */
+    c2.fillText(it.s, (it.ls || 0) / 2, 0);
+  });
+  c2.restore();
+}
 function badgeBackLayout(unitName, g, Wout){
-  /* the words as a coverage mask at Wout, centred on the shape's middle */
+  /* the words as a coverage mask at Wout, fitted to the back's own field */
+  const plan = badgeBackPlan(unitName);
   const cv = document.createElement("canvas"); cv.width = Wout; cv.height = Wout;
   const c2 = cv.getContext("2d");
-  const f = Wout / g.vw, G = BADGE_GEOM, S = G.scale;
-  const b = badgeBBoxFor(badgeShapeFor(unitName).d) || { x: 6, y: 6, w: 88, h: 88 };
-  /* on the shape's visible middle, not its drawing's (build 321) */
-  const mx = g.cx + S * (b.x + b.w / 2 - g.cx), my = g.cy + S * (b.y + b.h / 2 - g.cy);
-  const px = Wout - (mx - g.vx) * f, py = (my - g.vy) * f;
-  const maxW = Math.max(Wout * .2, (b.w * S - 2 * (G.inner + G.edge) - 6) * f * .86);
-  const maxH = Math.max(Wout * .2, (b.h * S - 2 * (G.inner + G.edge) - 8) * f * .78);
-  const words = String(unitName).toUpperCase().split(/\s+/);
-  const family = '"Helvetica Neue", Helvetica, Arial, sans-serif';
-  let fs = Wout * .088, rows = [];
-  for(; fs > Wout * .03; fs *= .93){
-    c2.font = "800 " + fs.toFixed(1) + "px " + family;
-    rows = []; let cur = "";
-    words.forEach(w => { const t = cur ? cur + " " + w : w; if(c2.measureText(t).width <= maxW || !cur) cur = t; else { rows.push(cur); cur = w; } });
-    if(cur) rows.push(cur);
-    const tall = rows.length * fs * 1.18 + fs * 1.6;
-    if(rows.length <= 4 && tall <= maxH && rows.every(r => c2.measureText(r).width <= maxW)) break;
-  }
-  const lh = fs * 1.18, small = Math.max(Wout * .03, fs * .56);
-  const total = rows.length * lh + small * 2.1;
-  let y = py - total / 2 + lh * .8;
-  c2.textAlign = "center"; c2.textBaseline = "alphabetic"; c2.fillStyle = "#000";
-  rows.forEach(r => { c2.font = "800 " + fs.toFixed(1) + "px " + family; c2.fillText(r, px, y); y += lh; });
-  c2.fillRect(px - fs * 1.3, y - lh * .5, fs * 2.6, Math.max(1.5, fs * .09));
-  c2.font = "800 " + small.toFixed(1) + "px " + family;
-  try{ c2.letterSpacing = (small * .18).toFixed(1) + "px"; }catch(e){}
-  c2.fillText("CLASS 26E", px, y + small * .62);
+  badgeBackDrawPlan(c2, plan, Wout);
   const d = c2.getImageData(0, 0, Wout, Wout).data, M = new Float32Array(Wout * Wout);
   for(let i = 0; i < M.length; i++) M[i] = d[i * 4 + 3] / 255;
+  M.plan = plan;
   return M;
 }
 function renderBadgeBack(unitName, Wout, ssForce, dirt){
@@ -116247,6 +116450,9 @@ function renderBadgeBack(unitName, Wout, ssForce, dirt){
   const PROF = BADGE_PROF, DPROF = BADGE_DPROF, PN = BADGE_PROF_N, PIN = BADGE_PROF_IN, DPIN = BADGE_DPROF_IN;
   const SS = ssForce || 2, W = Wout * SS;
   const KEY = G.key, IN = G.inner + G.edge, RC = (KEY - IN) / 2, RH = (KEY + IN) / 2;
+  /* the back's rim is narrower (build 325): the front's inner profile,
+     pressed into rimIn units, so the field the words sit in is wider */
+  const INB = Math.min(IN, R.rimIn), RIMK = (IN + RC) / (INB + RC);
   const pxPerF = W / g.vw, k = pxPerF * g.S, GW = g.W, GM = GW - 1, sc = GW / W;
   const kOut = k / SS;
   /* the words: a mask at Wout, softened into a cut with walls (wallU wide) */
@@ -116308,10 +116514,10 @@ function renderBadgeBack(unitName, Wout, ssForce, dirt){
       const gx = -(GOx[i00] * w00 + GOx[i01] * w01 + GOx[i10] * w10 + GOx[i11] * w11), gy = GOy[i00] * w00 + GOy[i01] * w01 + GOy[i10] * w10 + GOy[i11] * w11;
       /* the rim: the same inner bevel (from the field's edge, IN inside the
          outline) and outer wall as the front */
-      const e = o + IN;
+      const eb = o + INB, e = eb > 0 ? eb * RIMK : eb;
       const qin = e <= 0 ? 0 : e >= RH ? PN : (e / RH * PN) | 0;
       let hin = e <= 0 ? P.enamel : PIN[qin], hxi = 0, hyi = 0;
-      if(e > 0 && e < RH){ const dp = DPIN[qin]; hxi = dp * gx; hyi = dp * gy; }
+      if(e > 0 && e < RH){ const dp = DPIN[qin] * RIMK; hxi = dp * gx; hyi = dp * gy; }
       const tout = o <= RC ? 0 : (o - RC) / RH;
       const hout = tout >= 1 ? 0 : PROF[(tout * PN) | 0];
       let hx, hy, field = false;
@@ -116345,11 +116551,14 @@ function renderBadgeBack(unitName, Wout, ssForce, dirt){
       }
       /* the cut's floor is matte and darker; its light-side wall throws a shadow into it */
       if(mk > 0){ mm *= 1 - (1 - R.floor) * mk; sp *= 1 - (1 - R.floorSp) * mk; mm *= 1 - R.shadowK * sh; sp *= 1 - sh; }
+      /* the floor blackened (build 325): an engraver's fill, so the letters are never the field's grey */
+      const ink = mk > 0 ? Math.pow(mk, 1.6) * R.ink[0] : 0;
       const sm = RSM[ox];
       const gl = W_GLOSS + DK.glossSm * sm;
       sp *= (gl >= .97 ? .03 : 1 - gl) * (1 + 2.2 * W_GRAIN * gr); if(sp < 0) sp = 0;
       mm = (mm * (1 - W_FLAT) + DK.flatTo * W_FLAT) * (1 + W_GRAIN * gr);
       let mr = mm * tint[0] + sp, mg = mm * tint[1] + sp, mb = mm * tint[2] + sp;
+      if(ink > 0){ const iq = Math.min(1, ink / R.ink[0]) * .72; mr = mr * (1 - iq) + R.ink[0] * .06 * iq; mg = mg * (1 - iq) + R.ink[1] * .06 * iq; mb = mb * (1 - iq) + R.ink[2] * .06 * iq; }
       const T = DK.tint, fq = W_FILM * sm, gq = W_GRIME * Math.max(field && e > -1.3 ? Math.exp(-(-e) / DK.recM) : 0, mk * .7);
       mr *= 1 + (T[0] - 1) * W_TARN; mg *= 1 + (T[1] - 1) * W_TARN; mb *= 1 + (T[2] - 1) * W_TARN;
       mr = mr * (1 - fq) + DK.fc[0] * fq; mg = mg * (1 - fq) + DK.fc[1] * fq; mb = mb * (1 - fq) + DK.fc[2] * fq;
@@ -116435,32 +116644,12 @@ function badgeBackFaceFlatURL(unitName, W){
   toToken();
   g.strokeStyle = lit([[0, "rgba(255,255,255,.45)"], [.45, "rgba(255,255,255,0)"], [.6, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,.4)"]]);
   g.lineWidth = 2 * (G.key - 1.3); g.lineJoin = "round"; g.stroke(path);
-  /* the name, engraved: a cut lit on its lower lip */
+  /* the name, engraved: a cut lit on its lower lip, laid out by the same
+     plan as the rendered back (build 325), so it fits the shape too */
   g.setTransform(1, 0, 0, 1, 0, 0);
-  const px = W - ((cx - vb[0]) * f), py = (cy - vb[1]) * f;
-  const maxW = Math.max(W * .2, (b.w * S - 2 * G.inner - 6) * f * .78);
-  const words = String(unitName).toUpperCase().split(/\s+/);
-  const family = '"Helvetica Neue", Helvetica, Arial, sans-serif';
-  let fs = W * .085, rows = [];
-  for(; fs > W * .034; fs *= .92){
-    g.font = "700 " + fs.toFixed(1) + "px " + family;
-    rows = []; let cur = "";
-    words.forEach(w => { const t = cur ? cur + " " + w : w; if(g.measureText(t).width <= maxW || !cur) cur = t; else { rows.push(cur); cur = w; } });
-    if(cur) rows.push(cur);
-    if(rows.length <= 3 && rows.every(r => g.measureText(r).width <= maxW)) break;
-  }
-  const lh = fs * 1.16, small = Math.max(W * .03, fs * .55);
-  const total = rows.length * lh + small * 1.9;
-  let y = py - total / 2 + lh * .78;
-  g.textAlign = "center"; g.textBaseline = "alphabetic";
-  const cut = (txt, yy, font) => {
-    g.font = font;
-    g.fillStyle = "rgba(255,255,255,.55)"; g.fillText(txt, px, yy + Math.max(1, fs * .06));
-    g.fillStyle = "rgba(34,39,46,.88)"; g.fillText(txt, px, yy);
-  };
-  rows.forEach(r => { cut(r, y, "700 " + fs.toFixed(1) + "px " + family); y += lh; });
-  g.fillStyle = "rgba(34,39,46,.5)"; g.fillRect(px - fs * 1.1, y - lh * .45, fs * 2.2, Math.max(1, fs * .06));
-  cut("CLASS 26E", y + small * .55, "700 " + small.toFixed(1) + "px " + family);
+  const plan = badgeBackPlan(unitName), lip = Math.max(1, W * .004);
+  g.save(); g.translate(0, lip); badgeBackDrawPlan(g, plan, W, "rgba(255,255,255,.55)"); g.restore();
+  badgeBackDrawPlan(g, plan, W, "rgba(26,30,36,.92)");
   return cv.toDataURL("image/png");
 }
 /* What is open now, for the gates and the recorder. */
