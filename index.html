@@ -1972,7 +1972,17 @@
   .wr-mval{ margin:.04rem 0 0; font-size:.8rem; font-weight:700; color:rgba(243,245,247,.72); font-variant-numeric:tabular-nums; }
   .wr-av.wr-mav{ --wr-c:var(--wr-m); width:3.3rem; margin:0; opacity:1; transform:none; }
   .wr-mention.is-me .wr-mav{ box-shadow:0 0 0 3px #fff, 0 10px 24px rgba(0,0,0,.45); }
-  .wr-mini{ display:flex; justify-content:center; gap:1.1rem; margin:0 0 1.1rem; }
+  /* the podium strip over the mentions is labelled as the podium, set
+     apart by a rule (build 325) - see buildWeekRecapStage */
+  .wr-minibox{ display:flex; flex-direction:column; align-items:center; width:min(100%, 22rem); margin:0 0 1rem; padding:0 0 .9rem;
+    border-bottom:1px solid rgba(255,255,255,.12); }
+  .wr-mini-cap{ margin:0 0 .5rem; font-size:.6rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:rgba(243,245,247,.5); padding-left:.16em; }
+  .wr-mini-place{ position:absolute; right:-.3rem; bottom:-.2rem; min-width:1.1rem; height:1.1rem; padding:0 .2rem; box-sizing:border-box; border-radius:999px;
+    display:grid; place-items:center; font-size:.62rem; font-weight:900; line-height:1; color:#14161C; background:var(--wr-c); box-shadow:0 0 0 2px rgba(10,12,20,.9); }
+  .wr-subwrap{ display:flex; flex-direction:column; align-items:center; margin:0 0 .6rem; }
+  .wr-subwrap .wr-sub{ margin:0; color:rgba(243,245,247,.82); }
+  .wr-subnote{ margin:.18rem 0 0; font-size:.72rem; font-weight:700; color:rgba(243,245,247,.55); }
+  .wr-mini{ display:flex; justify-content:center; gap:1.1rem; margin:0; }
   .wr-mini-it{ display:flex; flex-direction:column; align-items:center; gap:.3rem; min-width:0; max-width:6rem; }
   .wr-av.wr-mini-av{ width:2.5rem; margin:0; border-width:1.5px; box-shadow:0 0 0 3px color-mix(in srgb, var(--wr-c) 14%, transparent); }
   .wr-mini-name{ max-width:100%; font-size:.72rem; font-weight:800; color:rgba(243,245,247,.8); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -1996,8 +2006,8 @@
     .wr-mention{ padding:.45rem .7rem; gap:.6rem; border-radius:16px; } .wr-mlist{ gap:.4rem; }
     .wr-micon{ width:2rem; height:2rem; } .wr-micon svg{ width:1.05rem; height:1.05rem; }
     .wr-av.wr-mav{ width:2.5rem; } .wr-mname{ font-size:.92rem; } .wr-mval{ font-size:.72rem; }
-    .wr-mini{ display:none; }
-    .wr-sub{ margin-bottom:.3rem; }
+    .wr-mini, .wr-minibox{ display:none; }
+    .wr-sub{ margin-bottom:.3rem; } .wr-subwrap{ margin-bottom:.3rem; } .wr-subnote{ font-size:.64rem; margin-top:.08rem; }
   }
   @media (max-height:44rem){
     .wr-title{ font-size:1.2rem; } .wr-eyebrow{ font-size:.6rem; } .wr-next{ margin-top:.25rem; font-size:.58rem; }
@@ -2015,7 +2025,9 @@
     .wr-mention{ padding:1rem 1.2rem; gap:1.1rem; border-radius:24px; }
     .wr-micon{ width:3.4rem; height:3.4rem; } .wr-micon svg{ width:1.8rem; height:1.8rem; }
     .wr-mcat{ font-size:.76rem; } .wr-mname{ font-size:1.35rem; } .wr-mval{ font-size:1rem; }
-    .wr-av.wr-mav{ width:4.6rem; } .wr-av.wr-mini-av{ width:3.6rem; } .wr-mini-name{ font-size:.92rem; } .wr-mini{ gap:2rem; margin-bottom:1.6rem; } .wr-mini-it{ max-width:9rem; }
+    .wr-av.wr-mav{ width:4.6rem; } .wr-av.wr-mini-av{ width:3.6rem; } .wr-mini-name{ font-size:.92rem; } .wr-mini{ gap:2rem; } .wr-mini-it{ max-width:9rem; }
+    .wr-minibox{ width:min(100%, 30rem); margin-bottom:1.4rem; padding-bottom:1.2rem; } .wr-mini-cap{ font-size:.74rem; margin-bottom:.7rem; }
+    .wr-mini-place{ min-width:1.5rem; height:1.5rem; font-size:.82rem; } .wr-subwrap{ margin-bottom:.9rem; } .wr-subwrap .wr-sub{ margin:0; } .wr-subnote{ font-size:.9rem; }
     .wr-mecard{ width:min(100%, 30rem); padding:1.3rem 1.5rem; } .wr-meav{ width:6rem; height:6rem; }
     .wr-mename{ font-size:1.5rem; } .wr-meline{ font-size:1.05rem; }
     .wr-next{ font-size:.8rem; }
@@ -4535,6 +4547,7 @@
     .cal-cell{ min-height:3.55rem; font-size:1.06rem; border-radius:14px; }
     .cal-grid-dow{ font-size:.72rem; }
     .cal-cell-dot{ width:.42rem; height:.42rem; }
+    .cal-cell .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big{ width:.5rem; height:.5rem; }
     .cal-grid-month{ font-size:1.3rem; }
   }
   .cal-daycard{
@@ -4636,6 +4649,40 @@
   [data-theme="dark"][data-layout="modern"] .cal-cell-holiday.cal-cell-sel:not(.cal-cell-today) .cal-cell-dots > .cal-cell-dot{
     box-shadow:0 0 0 1px color-mix(in srgb, var(--accent-ink) 55%, transparent);
   }
+  /* ---- THE BIG FOUR AND NO CLASS, IN THE KEY'S OWN MARKS (build 325) ----
+     "We need some dots for the 4 big tests, the level 1 exam, level 2
+     exam, level 3 exam and the state test." A larger DIAMOND in exam
+     orange with a soft halo: a different shape as well as a different
+     colour, so it reads apart from the round amber test dot at six
+     pixels, and the cell carries an orange rim (.cal-cell-bigexam). The
+     no-class dot is the key's red on its own class. Same prefixes as the
+     rules above so neither today nor a picked day repaints them, and the
+     key (.cal-legend-dot) wears the same classes. */
+  .cal-cell-dot-off,
+  .cal-cell .cal-cell-dots > .cal-cell-dot.cal-cell-dot-off,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-sel .cal-cell-dots > .cal-cell-dot.cal-cell-dot-off,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-today.cal-cell-sel .cal-cell-dots > .cal-cell-dot.cal-cell-dot-off{
+    background:var(--wrong);
+  }
+  .cal-cell-dot-big,
+  .cal-cell .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-sel .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-today .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-today.cal-cell-sel .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big,
+  [data-theme="dark"][data-layout="modern"] .cal-cell.cal-cell-today:not(.cal-cell-holiday) .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big:not(.cal-cell-dot-test),
+  [data-theme="dark"][data-layout="modern"] .cal-cell.cal-cell-today.cal-cell-sel:not(.cal-cell-holiday) .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big:not(.cal-cell-dot-test),
+  .cal-week-dot.cal-week-dot-big{
+    width:.46rem; height:.46rem; margin:0 .08rem; border-radius:1.5px; transform:rotate(45deg);
+    background:linear-gradient(135deg, #FFD08A, #FF8A3D 60%);
+    box-shadow:0 0 0 1.5px rgba(255,138,61,.28), 0 0 7px rgba(255,138,61,.6);
+  }
+  .cal-cell.cal-cell-bigexam:not(.cal-cell-sel):not(.cal-cell-today):not(.cal-cell-last),
+  [data-layout="modern"] .cal-cell.cal-cell-bigexam:not(.cal-cell-sel):not(.cal-cell-today):not(.cal-cell-last),
+  [data-theme="dark"][data-layout="modern"] .cal-cell.cal-cell-bigexam:not(.cal-cell-sel):not(.cal-cell-today):not(.cal-cell-last){
+    background:linear-gradient(160deg, rgba(255,138,61,.2), rgba(255,138,61,.05) 70%), rgba(26,31,38,.4);
+    border:1.5px solid rgba(255,138,61,.62);
+  }
+  .cal-cell.cal-cell-bigexam .cal-cell-num{ font-weight:800; }
   /* ---- THE LAST DAY, AND THE STATE TEST ON IT (build 314) ----
      "Ensure that day also says last day and that day on the calendar and
      stuff has a cool box to celebrate." Academy gold - the colour of a
@@ -4680,10 +4727,11 @@
   .cal-last-kicker{ margin:0; font-size:.66rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:#E5C06A; }
   .cal-last-title{ margin:.1rem 0 0; font-family:var(--serif); font-size:1.3rem; font-weight:800; color:#FFF3D6; line-height:1.1; }
   .cal-grid-legend{
-    display:flex; flex-wrap:wrap; gap:.25rem .9rem; margin:.8rem 0 0;
-    font-size:.72rem; color:var(--soft);
+    display:flex; flex-wrap:wrap; justify-content:center; gap:.35rem 1.05rem; margin:.85rem 0 0;
+    font-size:.74rem; font-weight:650; color:var(--soft);
   }
-  .cal-grid-legend span{ display:flex; align-items:center; gap:.35rem; }
+  .cal-grid-legend span{ display:flex; align-items:center; gap:.4rem; white-space:nowrap; }
+  .cal-grid-legend .cal-legend-dot{ flex:none; }
   .cal-legend-dot{ width:.34rem; height:.34rem; border-radius:999px; background:var(--accent); }
   .cal-legend-dot-holiday{ background:var(--wrong); }
   /* The same amber as .cal-cell-dot-test, which is the mark it
@@ -4706,7 +4754,11 @@
       padding:.4rem .4rem .35rem; text-align:left;
     }
     .cal-cell-num{ font-weight:800; }
-    .cal-cell .cal-cell-dot{ display:none; }
+    /* the dots stay (build 325) - along the foot of the cell, under its
+       text, where a wall calendar puts its stickers */
+    .cal-cell .cal-cell-dots{ justify-content:flex-start; margin-top:auto; padding:.2rem 0 .05rem .05rem; }
+    .cal-cell .cal-cell-dot{ width:.44rem; height:.44rem; }
+    .cal-cell .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big{ width:.52rem; height:.52rem; }
     .cal-cell-note{
       display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
       overflow:hidden; font-size:.62rem; line-height:1.25; font-weight:600;
@@ -4725,10 +4777,9 @@
     .cal-grid-head, .cal-grid{ gap:.45rem; }
     .cal-grid-dow{ font-size:.74rem; }
     .cal-grid-month{ font-size:1.35rem; }
-    .cal-grid-legend{ font-size:.8rem; }
-    /* The dot legend describes a phone. On a tablet the colour of the
-       text is the signal instead, so the words follow it. */
-    .cal-grid-legend .cal-legend-dot{ display:none; }
+    .cal-grid-legend{ font-size:.82rem; gap:.4rem 1.4rem; }
+    .cal-grid-legend .cal-legend-dot{ width:.5rem; height:.5rem; }
+    .cal-grid-legend .cal-legend-dot.cal-cell-dot-big{ width:.54rem; height:.54rem; }
   }
   /* ---- THE CALENDAR TAB'S CARDS (build 324) - see buildCalendarPane ----
      "I like the way the stat page looks so maybe it could use of that? We
@@ -4786,7 +4837,9 @@
   .cal-week-dots{ display:flex; gap:.18rem; height:.4rem; }
   .cal-week-dot{ width:.4rem; height:.4rem; border-radius:999px; background:var(--accent); }
   .cal-week-dot.cal-week-dot-test{ background:#F5B54D; }
-  .cal-week-day.is-holiday .cal-week-dot{ background:var(--wrong); }
+  .cal-week-day.is-holiday .cal-week-dot, .cal-week-dot.cal-week-dot-off{ background:var(--wrong); }
+  .cal-week-dots{ align-items:center; }
+  .cal-week-day.is-bigexam:not(.is-today){ border-color:rgba(255,138,61,.55); background:rgba(255,138,61,.09); }
   /* today: the month's own white rim; picked: its frosted fill */
   .cal-week-day.is-today{ border:1.5px solid rgba(255,255,255,.85); }
   .cal-week-day.is-today .cal-week-dow{ color:#fff; }
@@ -54998,6 +55051,15 @@ function isExamDay(entry){
   const t = entry.text || "";
   return isTestDay(entry) || isStateTestDay(entry) || (/\bfinal\b/i.test(t) && !/PT FINALS|study for/i.test(t));
 }
+/* THE BIG FOUR (build 325): "We need some dots for the 4 big tests, the
+   level 1 exam, level 2 exam, level 3 exam and the state test." Every exam
+   day that is not a numbered TEST: the Level One Final (Jan 19), the
+   Level Two Final (Jun 10), the Level Three Final Exam (Jun 21) and the
+   state test (Jul 8). Read off the schedule text like isExamDay, so a
+   final added to the schedule is one without anybody listing it. */
+function isBigExamDay(entry){
+  return isExamDay(entry) && !isTestDay(entry);
+}
 const CALENDAR_DATA = [
   { date: "2026-08-24", text: "Class 26E Begins • Orientation (2) • Fitness & Wellness (2.5)" },
   { date: "2026-08-25", text: "Fitness & Wellness (4.5)" },
@@ -55139,11 +55201,11 @@ const CALENDAR_DATA = [
   { date: "2027-03-03", text: "Emergency Medical Assistance (4.5" },
   { date: "2027-03-04", text: "Emergency Medical Assistance (4.5" },
   { date: "2027-03-05", text: "Child Alert Check List (1.5) • Civilian Interaction Training (3)" },
-  { date: "2027-03-08", text: "SPRING BREAK" },
-  { date: "2027-03-09", text: "SPRING BREAK" },
-  { date: "2027-03-10", text: "SPRING BREAK" },
-  { date: "2027-03-11", text: "SPRING BREAK" },
-  { date: "2027-03-12", text: "SPRING BREAK" },
+  { date: "2027-03-08", text: "SPRING BREAK", holiday: true },
+  { date: "2027-03-09", text: "SPRING BREAK", holiday: true },
+  { date: "2027-03-10", text: "SPRING BREAK", holiday: true },
+  { date: "2027-03-11", text: "SPRING BREAK", holiday: true },
+  { date: "2027-03-12", text: "SPRING BREAK", holiday: true },
   { date: "2027-03-15", text: "Force Options Theory (4.5) • TEST #5" },
   { date: "2027-03-16", text: "Force Options Theory (4.5)" },
   { date: "2027-03-17", text: "Force Options Theory (4.5)" },
@@ -109663,34 +109725,53 @@ function recapNum(v, cap){
 /* THE POOL OF HONORABLE MENTIONS. `val` reads a published week block
    (weekBlockOf); `min` is the least that is worth naming, so nobody is
    ever named for a zero or for next to nothing; `cap` guards against a
-   row nobody should trust. */
+   row nobody should trust.
+   AWARDS, NOT SUPERLATIVES (build 325). Madison: "ensure the honorable
+   mention makes sense it isn't one of the top 3 players for the week.
+   Ensure the description seem game like and are well made." Each mention
+   is an award with a name of its own (`title`, the card's heading and the
+   first words Nova says), a line saying exactly what was done (`line`, the
+   card) and how Nova announces it (`say`). The titles used to be "Most
+   hundos", "Most improved", "Longest streak" - and the top 3 are never
+   mentioned, so the person named was the best OFF THE PODIUM, and the
+   podium had often done more: "Most improved: Tara" in a week the winner
+   improved by twice as much. An award name with the number beside it is
+   true whoever else did what; Nova says "off the podium" once, before the
+   first one. Every line is read straight off the field it is computed
+   from: h whole units at 100%, t tests finished, d daily questions right
+   first try (one a day), x - b XP on the week before, m minutes on the
+   study clock, s days in a row with study time. */
 const RECAP_MENTIONS = [
-  { cat: "hundos", title: "Most hundos", color: "#FFD84D", min: 1, cap: 500, val: b => b.h,
+  { cat: "hundos", title: "Flawless", color: "#FFD84D", min: 1, cap: 500, val: b => b.h,
     glyph: "M12 1.8a7.2 7.2 0 1 0 0 14.4 7.2 7.2 0 0 0 0-14.4Zm0 3.1 1.25 2.6 2.85.4-2.06 2 .48 2.84L12 11.4l-2.52 1.34.48-2.84-2.06-2 2.85-.4L12 4.9ZM7.4 15.4 5.8 22l3.3-1.7 2.1 1.6-.7-4.9a8.7 8.7 0 0 1-3.1-1.6Zm9.2 0a8.7 8.7 0 0 1-3.1 1.6l-.7 4.9 2.1-1.6 3.3 1.7-1.6-6.6Z",
-    value: v => v + (v === 1 ? " hundo" : " hundos"),
-    say: (who, v) => "For hundos, " + who + ": " + v + (v === 1 ? " whole unit" : " whole units") + " at 100% in one week." },
-  { cat: "tests", title: "Most tests taken", color: "#5CA8FF", min: 3, cap: 1000, val: b => b.t,
+    line: v => v + (v === 1 ? " whole unit" : " whole units") + " at 100%",
+    say: (who, v) => "The Flawless award goes to " + who + ": " + v + (v === 1 ? " whole unit" : " whole units") + " at 100% in one week." },
+  { cat: "tests", title: "Workhorse", color: "#5CA8FF", min: 3, cap: 1000, val: b => b.t,
     glyph: "M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1Zm1 2v2h4V4h-4Zm5.3 6.3-4.8 4.8-2.3-2.3-1.4 1.4 3.7 3.7 6.2-6.2-1.4-1.4Z",
-    value: v => v + " tests",
-    say: (who, v) => "Most tests taken goes to " + who + ", with " + v + " finished." },
-  { cat: "daily", title: "Daily question", color: "#FFB03D", min: 2, cap: 7, val: b => b.d,
-    glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2.2a7.8 7.8 0 1 1 0 15.6 7.8 7.8 0 0 1 0-15.6Zm-.1 3.1c-1.9 0-3.2 1.1-3.3 2.8h2c.1-.7.6-1.1 1.3-1.1.8 0 1.3.5 1.3 1.1 0 .6-.3.9-1.1 1.4-.9.5-1.3 1.1-1.2 2.1v.5h1.9v-.4c0-.6.2-.9 1-1.3.9-.5 1.5-1.2 1.5-2.3 0-1.7-1.4-2.8-3.4-2.8Zm-.1 8.2a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Z",
-    value: v => v + " right",
-    say: (who, v) => "The daily question: " + who + " got it right " + v + " times last week." },
-  { cat: "improve", title: "Most improved", color: "#4ADE80", min: 100, cap: 10000000,
+    line: v => v + " tests finished",
+    say: (who, v) => "Workhorse: " + who + ", with " + v + " tests finished in one week." },
+  { cat: "daily", title: "Sharpshooter", color: "#FFB03D", min: 2, cap: 7, val: b => b.d,
+    glyph: "M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17Zm0 1.7a6.8 6.8 0 1 1 0 13.6 6.8 6.8 0 0 1 0-13.6ZM11.1.6h1.8v2.9h-1.8ZM11.1 20.5h1.8v2.9h-1.8ZM.6 11.1h2.9v1.8H.6ZM20.5 11.1h2.9v1.8h-2.9ZM11.1 6.4h1.8V9h-1.8ZM11.1 15h1.8v2.6h-1.8ZM6.4 11.1H9v1.8H6.4ZM15 11.1h2.6v1.8H15ZM12 10.7a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6Z",
+    line: v => "Daily question right, " + v + " of 7 days",
+    say: (who, v) => "Sharpshooter: " + who + " got the daily question right first try on " + v + " of 7 days." },
+  { cat: "improve", title: "On the Rise", color: "#4ADE80", min: 100, cap: 10000000,
     val: b => (typeof b.x === "number" && typeof b.b === "number" && b.b > 0) ? b.x - b.b : null,
     glyph: "M3 17.6 9.2 11.4l3.6 3.6 5.8-5.8V12h2.2V5.4h-6.6v2.2h2.8l-4.2 4.2-3.6-3.6-7.6 7.6L3 17.6Z",
-    value: v => "+" + recapFmt(v) + " XP",
-    say: (who, v) => "Most improved: " + who + ", up " + recapFmt(v) + " XP on the week before." },
-  { cat: "study", title: "Most study time", color: "#B79BFF", min: 30, cap: 10080, val: b => b.m,
+    line: v => "+" + recapFmt(v) + " XP on the week before",
+    say: (who, v) => "On the Rise: " + who + ", up " + recapFmt(v) + " XP on the week before." },
+  { cat: "study", title: "Long Shift", color: "#B79BFF", min: 30, cap: 10080, val: b => b.m,
     glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2.2a7.8 7.8 0 1 1 0 15.6 7.8 7.8 0 0 1 0-15.6ZM11 6.5v6.1l4.6 2.8 1.1-1.8-3.5-2.1V6.5H11Z",
-    value: v => ((Math.floor(v / 60) ? Math.floor(v / 60) + "h " : "") + (v % 60 ? (v % 60) + "m" : "")).trim(),
-    say: (who, v) => "Most time studying: " + who + ", with " + recapMinutes(v) + " on the clock." },
-  { cat: "streak", title: "Longest streak", color: "#FF7A59", min: 3, cap: 7, val: b => b.s,
+    line: v => ((Math.floor(v / 60) ? Math.floor(v / 60) + "h " : "") + (v % 60 ? (v % 60) + "m" : "")).trim() + " on the study clock",
+    say: (who, v) => "The Long Shift award: " + who + ", with " + recapMinutes(v) + " on the study clock." },
+  { cat: "streak", title: "Streak Keeper", color: "#FF7A59", min: 3, cap: 7, val: b => b.s,
     glyph: "M12 2c.6 3.2-1.4 4.9-3 6.6C7.6 10.1 6 12 6 14.8 6 18.3 8.7 22 12.6 22c3.6 0 5.9-2.9 5.9-6.3 0-3-1.5-4.8-2.7-6.4-.2 1.6-.9 2.8-2.1 3.4.5-2.9-.3-5.9-1.7-8.4C11.7 3.9 12 2.9 12 2Zm.2 11.2c1.7 1.5 2.7 2.8 2.7 4.4a2.6 2.6 0 0 1-5.2.1c0-1.5.9-2.6 2.5-4.5Z",
-    value: v => v + " days in a row",
-    say: (who, v) => v >= 7 ? who + " studied every single day last week. Seven for seven." : who + " studied " + v + " days in a row." }
+    line: v => v >= 7 ? "Studied all 7 days" : v + " study days in a row",
+    say: (who, v) => v >= 7 ? "Streak Keeper: " + who + " studied every day of the week. Seven for seven." : "Streak Keeper: " + who + " studied " + v + " days in a row." }
 ];
+/* A first name as the recap compares it: the same person's second row
+   (a second sign-up, the Safari jar) carries the same name under another
+   pub, and on the stage the two are one person. */
+function recapNameKey(s){ return String(s == null ? "" : s).trim().replace(/\s+/g, " ").toLowerCase(); }
 /* "KIND OF RANDOM BUT KINDA NOT": the pool in an order drawn from the week
    itself, so every device draws the same one, and one or two mentions a
    week by the same draw. */
@@ -109740,9 +109821,13 @@ function weekRecapMentions(list, top, lw){
   const preferredBefore = weekRecapPlanned(before);
   const n = weekRecapMentionCount(lw), order = weekRecapCatOrder(lw);
   const topPubs = new Set((top || []).map(t => t.pub));
+  /* NEVER ONE OF THE TOP 3 (build 325): not their row, and not another
+     row under the same name - the podium is who the class sees, and a
+     mention with a podium name on it reads as the podium again. */
+  const topNames = new Set((top || []).map(t => recapNameKey(t.name)).filter(Boolean));
   const active = (list || []).filter(e => lastWeekPointsOfEntry(e) > 0).length;
   const pick = avoid => {
-    const out = [], named = new Set();
+    const out = [], named = new Set(), namedNames = new Set();
     for(const cat of order){
       if(out.length >= n) break;
       if(avoid.indexOf(cat) >= 0) continue;
@@ -109754,11 +109839,12 @@ function weekRecapMentions(list, top, lw){
         if(v != null) vals.push({ e, v, x: Number(b.x) || 0 });
       });
       if(vals.length < 3 || vals.length < Math.ceil(active * .6)) continue;
-      const cands = vals.filter(r => !topPubs.has(r.e.pub) && !named.has(r.e.pub) && r.v >= def.min)
+      const nk = r => recapNameKey(r.e.firstName);
+      const cands = vals.filter(r => !topPubs.has(r.e.pub) && !topNames.has(nk(r)) && !named.has(r.e.pub) && !namedNames.has(nk(r)) && r.v >= def.min)
         .sort((a, b) => (b.v - a.v) || (b.x - a.x) || String(a.e.firstName || "").localeCompare(String(b.e.firstName || "")));
       if(!cands.length) continue;
       const w = cands[0];
-      named.add(w.e.pub);
+      named.add(w.e.pub); namedNames.add(recapNameKey(w.e.firstName));
       out.push({ cat, pub: w.e.pub, name: String(w.e.firstName || "").trim(), avatar: w.e.avatarChar || "ninja",
                  value: w.v, me: !!(store.publicId && w.e.pub === store.publicId) });
     }
@@ -109916,15 +110002,27 @@ function buildWeekRecapStage(r){
     pages.push(pg);
     if(r.mentions.length){
       const pm = el("div", "wr-page wr-page-mentions"); pm.dataset.page = "mentions";
-      /* last week's three stay in view, small, above the mentions */
+      /* last week's three stay in view, small, above the mentions - and
+         SAY WHAT THEY ARE (build 325). Unlabelled, three avatars and names
+         sat straight over "Honorable mentions" and read as the first three
+         of them: "ensure the honorable mention makes sense it isn't one of
+         the top 3 players". Now a captioned strip with each one's place on
+         it, a rule, and then the mentions, which are off the podium. */
+      const miniBox = el("div", "wr-minibox");
+      miniBox.appendChild(el("p", "wr-mini-cap", "Top 3"));
       const mini = el("div", "wr-mini");
       r.top.forEach((t, i) => {
         const it = el("div", "wr-mini-it wr-p" + (i + 1));
-        it.append(recapAvatar(t.avatar, "wr-av wr-mini-av"), el("span", "wr-mini-name", t.name));
+        const av = recapAvatar(t.avatar, "wr-av wr-mini-av");
+        av.appendChild(el("b", "wr-mini-place", String(i + 1)));
+        it.append(av, el("span", "wr-mini-name", t.name));
         mini.appendChild(it);
       });
-      pm.appendChild(mini);
-      pm.appendChild(el("p", "wr-sub", r.mentions.length === 1 ? "Honorable mention" : "Honorable mentions"));
+      miniBox.appendChild(mini);
+      pm.appendChild(miniBox);
+      const sub = el("div", "wr-subwrap");
+      sub.append(el("p", "wr-sub", r.mentions.length === 1 ? "Honorable mention" : "Honorable mentions"), el("p", "wr-subnote", "Off the podium"));
+      pm.appendChild(sub);
       const ml = el("div", "wr-mlist");
       r.mentions.forEach(m => {
         const def = RECAP_MENTIONS.find(d => d.cat === m.cat) || RECAP_MENTIONS[0];
@@ -109932,7 +110030,8 @@ function buildWeekRecapStage(r){
         c.style.setProperty("--wr-m", def.color);
         const ic = el("span", "wr-micon"); ic.appendChild(recapIcon(def.glyph));
         const tx = el("div", "wr-mtext");
-        tx.append(el("p", "wr-mcat", def.title), el("p", "wr-mname", m.name), el("p", "wr-mval", def.value(m.value)));
+        c.dataset.cat = m.cat;
+        tx.append(el("p", "wr-mcat", def.title), el("p", "wr-mname", m.name), el("p", "wr-mval", def.line(m.value)));
         const av = recapAvatar(m.avatar, "wr-av wr-mav");
         if(m.me) av.appendChild(el("b", "wr-you", "You"));
         c.append(ic, tx, av);
@@ -110027,7 +110126,7 @@ function weekRecapLines(r){
       enter: (ctx, instant) => { on(ui && ui.cols[i], "is-up"); if(i === 0 && !still && !instant) playSound("lb.winner"); } });
   }
   if(r.mentions.length){
-    lines.push({ gesture: "raise", text: r.mentions.length === 1 ? "Now for this week’s honorable mention." : "Now for my honorable mentions.",
+    lines.push({ gesture: "raise", text: r.mentions.length === 1 ? "Now, from off the podium, my honorable mention." : "Now, from off the podium, my honorable mentions.",
       enter: () => page("mentions") });
     r.mentions.forEach((m, k) => {
       const def = RECAP_MENTIONS.find(d => d.cat === m.cat);
@@ -112327,6 +112426,20 @@ function showCalendar(){
    box went with them: its Next line is on the Today card and its days-left
    count is The course's first tile. One picked day for the whole tab - a
    day tapped in the week is picked in the month as well. */
+/* A day's marks, for the month's cells and the week strip alike (build
+   325): a class day's dot, then a test's amber dot - or, on one of the
+   big four (isBigExamDay), the larger orange diamond instead - and a
+   no-class day's red dot. `base` is the strip's or the grid's dot class;
+   the key builds its marks from the same suffixes. */
+function calDayDots(entry, base, into){
+  const add = cls => { const i = document.createElement("i"); i.className = base + (cls ? " " + base + "-" + cls : ""); into.appendChild(i); };
+  if(!entry) return into;
+  if(entry.holiday){ add("off"); return into; }
+  add("");
+  if(isBigExamDay(entry)) add("big");
+  else if(isExamDay(entry)) add("test");
+  return into;
+}
 function buildCalendarPane(panel){
   const glance = document.createElement("div");
   glance.className = "cal-glance";
@@ -112364,6 +112477,30 @@ function buildCalendarPane(panel){
   grid.className = "cal-grid";
   monthWrap.appendChild(grid);
 
+  /* ---- THE KEY, UNDER THE GRID IT EXPLAINS, ON EVERY DEVICE (build 325) ----
+     "The calendar is missing the key dots though, the red ones for no
+     class. The yellow ones, and the others. We need some dots for the 4
+     big tests". From tablet up the cells showed their text and every dot
+     came off - the grid's AND the key's - so an iPad's key was three grey
+     words with nothing to point at. The dots are on every cell at every
+     size now, and the key sits straight under the grid (it was below the
+     day card) with its own dot beside each word: class day, test, the big
+     four (Level One, Two and Three finals and the state test - a larger
+     diamond, see isBigExamDay) and no class. Each key mark carries the
+     cell's own class, so the two cannot drift apart. */
+  const legend = document.createElement("div");
+  legend.className = "cal-grid-legend";
+  [["", "Class day"], ["cal-cell-dot-test", "Test"], ["cal-cell-dot-big", "Final / State test"], ["cal-cell-dot-off", "No class"]].forEach(([cls, label]) => {
+    const it = document.createElement("span");
+    it.className = "cal-legend-item";
+    const dot = document.createElement("i");
+    dot.className = "cal-legend-dot cal-cell-dot" + (cls ? " " + cls : "");
+    dot.setAttribute("aria-hidden", "true");
+    it.append(dot, document.createTextNode(label));
+    legend.appendChild(it);
+  });
+  monthWrap.appendChild(legend);
+
   /* THE HINT LIVES UNDER THE GRID NOW (build 302), not in the card: the
      card always has a day in it - today, on opening - so a hint there
      was only ever seen on a blank card. */
@@ -112375,27 +112512,6 @@ function buildCalendarPane(panel){
   dayCard.className = "cal-daycard";
   monthWrap.appendChild(dayCard);
 
-  const legend = document.createElement("div");
-  legend.className = "cal-grid-legend";
-  const legClass = document.createElement("span");
-  const legClassDot = document.createElement("i");
-  legClassDot.className = "cal-legend-dot";
-  legClass.append(legClassDot, document.createTextNode("Class day"));
-  /* ---- THE KEY HAS TO SAY WHAT EVERY DOT ON THE GRID MEANS ----
-     The amber test-day dot shipped without its entry here, so the grid
-     had three marks and the key explained two - reported exactly that
-     way. Same dot, same colour, built from the same class the cells
-     use, so the two cannot drift apart. */
-  const legTest = document.createElement("span");
-  const legTestDot = document.createElement("i");
-  legTestDot.className = "cal-legend-dot cal-legend-dot-test";
-  legTest.append(legTestDot, document.createTextNode("Test day"));
-  const legHol = document.createElement("span");
-  const legHolDot = document.createElement("i");
-  legHolDot.className = "cal-legend-dot cal-legend-dot-holiday";
-  legHol.append(legHolDot, document.createTextNode("No class"));
-  legend.append(legClass, legTest, legHol);
-  monthWrap.appendChild(legend);
 
   /* LAST, and that ordering is the whole point. Above the grid it
      pushed the day card - the thing you actually came to read - down
@@ -112572,6 +112688,8 @@ function buildCalendarPane(panel){
          one more thing to remember on every new entry; "TEST #" is how
          every one of them is written. */
       if(entry && isExamDay(entry)) cls += " cal-cell-test";
+      /* one of the big four (build 325): its own mark and a rim */
+      if(entry && isBigExamDay(entry)) cls += " cal-cell-bigexam";
       /* topics posted for this test (build 324) - the day card lists them */
       if(entry && isExamDay(entry) && testTopicsFor(ds)) cls += " cal-cell-topics";
       if(ds === todayStr) cls += " cal-cell-today";
@@ -112605,15 +112723,8 @@ function buildCalendarPane(panel){
            place the difference can live. */
         const dots = document.createElement("span");
         dots.className = "cal-cell-dots";
-        const dot = document.createElement("i");
-        dot.className = "cal-cell-dot";
-        dots.appendChild(dot);
-        if(isExamDay(entry)){
-          const testDot = document.createElement("i");
-          testDot.className = "cal-cell-dot cal-cell-dot-test";
-          dots.appendChild(testDot);
-        }
-        cell.appendChild(dots);
+        dots.setAttribute("aria-hidden", "true");
+        cell.appendChild(calDayDots(entry, "cal-cell-dot", dots));
       } else {
         cell.setAttribute("aria-label", formatDayHead(ds) + " \u2014 no class");
       }
@@ -112812,7 +112923,7 @@ function buildCalendarPane(panel){
       const b = document.createElement("button");
       b.type = "button";
       b.className = "cal-week-day" + (entry && !entry.holiday ? " is-class" : "") + (entry && entry.holiday ? " is-holiday" : "")
-        + (entry && isExamDay(entry) ? " is-test" : "") + (ds === todayStr ? " is-today" : "");
+        + (entry && isExamDay(entry) ? " is-test" : "") + (entry && isBigExamDay(entry) ? " is-bigexam" : "") + (ds === todayStr ? " is-today" : "");
       b.dataset.date = ds;
       const dw = document.createElement("span");
       dw.className = "cal-week-dow"; dw.textContent = DOW_SHORT[i];
@@ -112820,10 +112931,7 @@ function buildCalendarPane(panel){
       num.className = "cal-week-num"; num.textContent = String(Number(ds.slice(8)));
       const dots = document.createElement("span");
       dots.className = "cal-week-dots";
-      if(entry){
-        const d1 = document.createElement("i"); d1.className = "cal-week-dot"; dots.appendChild(d1);
-        if(isExamDay(entry)){ const d2 = document.createElement("i"); d2.className = "cal-week-dot cal-week-dot-test"; dots.appendChild(d2); }
-      }
+      if(entry) calDayDots(entry, "cal-week-dot", dots);
       /* what the day is, in a word - a tablet has the room, a phone has the dots */
       const what = document.createElement("span");
       what.className = "cal-week-what";
