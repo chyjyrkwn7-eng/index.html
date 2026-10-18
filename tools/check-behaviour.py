@@ -17139,7 +17139,9 @@ def check_b317_hometaps(br):
               and (UF.get("text") or "").startswith("They say this one") and ((UF.get("title") or {}).get("chroma") or 99) <= 24
               and UF.get("shake", 0) >= 1 and UF.get("dim") and UF.get("sparks") == 0 and UF.get("press") == 0, UF)
         check(dev + ": the planet keeps its touch (press, ripple, halo, rings, both flare rings surge, no filter) and counts your flares under \"Your flares\" in the theme's colour",
-              PL.get("kind") == "is-planet" and PL.get("name") == "Your flares" and PL.get("text") == "3 of 7 rank flares lit, 2 of 3 secret flares found."
+              # MOVED IN 326 (b326e): no total for the secret flares - more
+              # come into view as you find them ("it says there's only 3")
+              PL.get("kind") == "is-planet" and PL.get("name") == "Your flares" and PL.get("text") == "3 of 7 rank flares lit, 2 secret flares found."
               and ((PL.get("title") or {}).get("dist") if (PL.get("title") or {}).get("dist") is not None else 99) <= 10
               and PL.get("fxMoving", 0) >= 4 and PL.get("fxFiltered") == 0 and len(PL.get("surge") or []) == 2 and all(n >= 1 for n in PL.get("surge") or [0]), PL)
         check(dev + ": tapped again it says what is next, and the first ripple is still running beside the second",
@@ -28114,8 +28116,9 @@ def check_b324n_nova(br):
       novaAwayForce = false; await wait(1300);
       out.back = !document.querySelector('#chatdock .vroom-chat-input').disabled;
       return out; }""")
-    check("away: the composer is off and says he is away, and nothing is sent", r.get("disabled") and "away" in (r.get("ph") or "").lower()
-          and "Away" in (r.get("status") or "") and r.get("sent") == 0 and r.get("api") is False, r)
+    # MOVED IN 326 (b326e): in-world - out of range, back in range in N min
+    check("away: the composer is off and says he is out of range, and nothing is sent", r.get("disabled") and "out of range" in (r.get("ph") or "").lower()
+          and "back in range" in (r.get("status") or "") and r.get("sent") == 0 and r.get("api") is False, r)
     check("available again: the composer is back", r.get("back"), r)
 
     # His card.
@@ -28191,38 +28194,54 @@ def check_b324n_nova(br):
     check("a broadcast that is due is delivered once, not twice", r.get("now") == 1, r)
     check("the seeded broadcast says he can be messaged now", "message me" in (r.get("seededText") or ""), r.get("seededText"))
 
-    # The challenge, once; then tips, rate-limited; never in a test.
+    # The challenge; then tips, rate-limited; never in a test.
+    # MOVED IN 326 (b326e): "ensure you get like a challenge to play him once
+    # a week ... Let's not make it where they double up though or become
+    # spam whatsoever." The challenge is the week's now (once a week, not
+    # once ever), and everything he says on his own goes through one
+    # scheduler: one a day on any device of the account (store.novaHeard
+    # ["@last"]), never two in a session, a quiet day after this build first
+    # runs (["@base"]). check-b326-e holds the rest.
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       const D = 86400e3, now = Date.now();
       const k = dayKey(new Date()); store.studyLog = Object.assign({}, store.studyLog, { [k]: 600000 });
-      let s = novaState(); s.since = now - 3 * D; s.lastAt = now - 25 * 3600e3; s.spontAt = now - 3 * D; delete (s.sent || {}).challenge; novaSave(s);
+      let s = novaState(); s.since = now - 3 * D; s.spontAt = now - 3 * D; novaSave(s);
+      const h = novaHeardMap(); h['@base'] = now - 3 * D; h['@last'] = now - 25 * 3600e3; delete h['wk:' + weekKeyNow()];
+      novaSessionAt = 0; showHome(); await wait(600);
       const kinds = () => novaThread().filter(m => m.kind === 'challenge' || m.kind === 'tip').map(m => m.kind);
       novaTick(); await wait(50);
       const c1 = kinds();
       const chal = (novaThread().filter(m => m.kind === 'challenge')[0] || {}).text;
-      s = novaState(); s.lastAt = now - 25 * 3600e3; novaSave(s);
-      novaTick(); await wait(50);
+      document.querySelectorAll('#nova-challenge').forEach(b => b.remove());
+      /* a new session the same day: nothing (one a day) */
+      novaSessionAt = 0; novaTick(); await wait(50);
       const c2 = kinds();
-      s = novaState(); s.lastAt = now - 25 * 3600e3; s.spontAt = now - 4 * D; novaSave(s);
+      /* a day on, in a test: nothing */
+      h['@last'] = now - 25 * 3600e3; novaSessionAt = 0;
       testInProgress = true; novaTick(); await wait(50); testInProgress = false;
       const inTest = kinds();
+      /* out of the test: not the week's challenge again, a tip */
       novaTick(); await wait(50);
       const c3 = kinds();
-      s = novaState(); s.lastAt = now - 25 * 3600e3; novaSave(s);
+      h['@last'] = now - 25 * 3600e3; novaSessionAt = 0;
       novaTick(); await wait(50);
       const c4 = kinds();
       const tip = (novaThread().filter(m => m.kind === 'tip')[0] || {}).text;
       return { c1, c2, inTest, c3, c4, chal, tip, pool: NOVA_TIPS.length }; }""")
-    check("the challenge message comes once, and says Virtual Room and the Sheriff", r.get("c1") == ["challenge"] and r.get("c2") == ["challenge"]
+    check("the week's challenge message comes once, and says Virtual Room and the Sheriff", r.get("c1") == ["challenge"] and r.get("c2") == ["challenge"]
           and "Virtual Room" in (r.get("chal") or "") and "Sheriff" in (r.get("chal") or ""), r)
-    check("a tip waits out its three days and a test, then comes once, and not again the same day",
+    check("a tip waits out a day and a test, then comes once, and not again within its three days",
           r.get("inTest") == ["challenge"] and r.get("c3") == ["challenge", "tip"] and r.get("c4") == ["challenge", "tip"]
           and (r.get("tip") or "").startswith("Tip:") and r.get("pool", 0) >= 8, r)
 
     # Rank-up congratulations: only once the whole journey has ended.
+    # MOVED IN 326 (b326e): "only make his messages appear or get to you
+    # when you are out of the profile tab ... maybe when you finally get
+    # back to the main menu?" - the journey ends on Profile, and he waits
+    # for Home.
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       showProfile('profile'); await wait(400);
-      let s = novaState(); s.congrats = 1; novaSave(s);
+      const h = novaHeardMap(); h['@last'] = Date.now() - 25 * 3600e3; h['@rank'] = 2; novaSessionAt = 0;
       store.rankUpShown = 2;
       const congrats = () => novaThread().filter(m => m.kind === 'rank').map(m => m.text);
       const scene = { toIdx: 2 };
@@ -28234,9 +28253,11 @@ def check_b324n_nova(br):
       await wait(800);
       const justAfter = congrats().length;
       await wait(3200);
-      return { during, justAfter, after: congrats() }; }""")
-    check("no congratulations while the rank-up journey is still on", r.get("during") == 0 and r.get("justAfter") == 0, r)
-    check("once it has ended, he congratulates you on that rank (Gold)", len(r.get("after") or []) == 1 and "Gold" in (r.get("after") or [""])[0], r)
+      const onProfile = congrats().length;
+      showHome(); await wait(4400);
+      return { during, justAfter, onProfile, after: congrats() }; }""")
+    check("no congratulations while the rank-up journey is still on, nor on Profile after it", r.get("during") == 0 and r.get("justAfter") == 0 and r.get("onProfile") == 0, r)
+    check("back on Home, he congratulates you on that rank (Gold)", len(r.get("after") or []) == 1 and "Gold" in (r.get("after") or [""])[0], r)
 
     w = pg.evaluate("() => ({ w: window.__fsw.slice(), push: window.__push })")
     check("none of it wrote to Firestore, saved the store or pushed the progress document", not w.get("w") and not w.get("push"), w)
@@ -28340,8 +28361,11 @@ def check_b324n2_friends(br):
           (av.get("rows") or [])[:3] == ["Ann|Online", "NOVA:Nova|Available", "Zed|Online"] or
           ((av.get("rows") or [""])[1].startswith("NOVA:Nova|Available") and len(av.get("rows") or []) == 4), av)
     check("...and counts him: '6 friends', four rows, 'and 2 more'", av.get("count") == "6 friends" and len(av.get("rows") or []) == 4 and av.get("more") == "and 2 more", av)
-    check("away, he says Away and drops below the friends who are on, but never into 'and N more' (he takes the fourth row)",
-          [x.split("|")[0] for x in aw.get("rows") or []] == ["Ann", "Zed", "Bob", "NOVA:Nova"] and (aw.get("rows") or [""])[-1] == "NOVA:Nova|Away"
+    # MOVED IN 326 (b326e): away is "Out of range" - he is out scanning the
+    # debris field ("When nova says he away in chat make it more
+    # game/storyline like")
+    check("away, he says Out of range and drops below the friends who are on, but never into 'and N more' (he takes the fourth row)",
+          [x.split("|")[0] for x in aw.get("rows") or []] == ["Ann", "Zed", "Bob", "NOVA:Nova"] and (aw.get("rows") or [""])[-1] == "NOVA:Nova|Out of range"
           and aw.get("more") == "and 2 more", aw)
     check("tapping him on the Friends box opens his card", r.get("card"), r.get("card"))
     check("Manage friends lists Nova with his rank and no Remove (no button at all), the others keep theirs",

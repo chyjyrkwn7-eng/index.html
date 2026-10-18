@@ -7415,9 +7415,23 @@
   button.chatdock-friendhead.nova-head{ background:none; border:0; padding:0; margin:0; color:inherit; font:inherit;
     text-align:left; cursor:pointer; min-height:44px; -webkit-tap-highlight-color:transparent; border-radius:12px; }
   button.chatdock-friendhead.nova-head:active{ opacity:.8; }
+  /* his header line can run to two lines while he is out of range (what he
+     is doing, when he is back): it wraps inside his name's column and the
+     mute bell keeps its place on the right (build 326) */
+  .chatdock-roomhead.is-nova{ flex-wrap:nowrap; }
+  button.chatdock-friendhead.nova-head{ flex:1 1 0; }
   .vroom-chat-row.is-off .vroom-chat-input{ opacity:.75; }
   .vroom-chat-row.is-off .vroom-chat-input::placeholder{ color:#FFD27A; opacity:.9; }
   .vroom-chat-row.is-off .vroom-chat-send, .vroom-chat-row.is-off .vroom-chat-tool{ opacity:.4; pointer-events:none; }
+  /* where he is while he is out of range (build 326): his words, in his
+     gold, one short paragraph above the composer */
+  .vroom-chat-awaynote{ flex:0 0 auto; margin:0 .15rem .45rem; padding:.5rem .7rem; font-size:.78rem; line-height:1.35;
+    color:#FFE2A6; background:rgba(255,210,122,.08); border:1px solid rgba(255,210,122,.22); border-radius:12px; }
+  /* Accept under his weekly challenge (build 326): the app's own button,
+     left-aligned under his message, at the 44px minimum */
+  .nova-msg-act{ display:flex; margin:.1rem 0 .55rem .1rem; }
+  [data-layout="modern"] .nova-msg-act .next, .nova-msg-act .next{ min-height:44px; padding:.45rem 1.5rem; font-size:.88rem; width:auto; margin:0; }
+  .nova-msg-act .next:disabled{ opacity:.45; cursor:default; }
   /* the friend banner in his introduction: above his sky, under his top
      row, a passive notice (a tap still moves his dialogue on) */
   .daily-alert.nova-friend-note{ z-index:380; pointer-events:none; }
@@ -70076,12 +70090,13 @@ function showFlareFoundBanner(color, all){
   const text = document.createElement("div");
   const kicker = document.createElement("p");
   kicker.className = "tierup-banner-kicker";
-  kicker.textContent = all ? "ALL THREE FOUND" : "SECRET FLARE";
+  kicker.textContent = all ? "THREE FOUND" : "SECRET FLARE";
   const name = document.createElement("p");
   name.className = "tierup-banner-name";
   name.textContent = all
     ? "Void unlocked"
-    : MYSTERY_NAME[color] + " \u2014 " + mysteryColorsFoundCount() + " of " + MYSTERY_ORDER.length;
+    /* no "of 6" (build 326): more come into view as you find them */
+    : MYSTERY_NAME[color] + " \u2014 the " + (recapOrdinal(mysteryColorsFoundCount()) || "next") + " you\u2019ve found";
   text.append(kicker, name);
   banner.append(icon, text);
   document.body.appendChild(banner);
@@ -70773,11 +70788,11 @@ const RELEASE_NOTES = [
         { icon: buildBarStatsIcon, color: "#A694FF", title: "Your Study Hours", body: "Stats has a new chart of your study time this week, in dots. Tap a day for its exact time, or look back at last week." }
       ]},
       { label: "Meet Nova", items: [
-        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. A cracked planet his ship was studying exploded, and the blast scattered everything aboard: his flares came to rest, dark, around the planet on your Home screen, his badges landed one in every unit, and his crew are the characters. Every rank you reach relights a flare, every unit you master finds a badge, and every character you unlock brings one of his crew home." },
+        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. A cracked planet his ship was studying exploded, and the blast scattered everything aboard: his flares came to rest, dark, around the planet on your Home screen, his badges landed one in every unit, and his crew are the characters. Every rank you reach relights a flare and he thanks you with its rewards; its light pours into your planet, which is why it cracks: it is becoming a star. Every badge you find gives him back a page of his instructor's log, and every character you find joins you. His scanners keep finding more of his ship, so there is always more to bring home." },
         { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "He Meets Everyone", body: "Everybody meets him once: he tells the story, goes over what you have found, narrates What's New and shows you what has changed. He narrates every tip in the app." },
-        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova is your friend now. He congratulates you when you rank up, passes on news and what is on the next test, gives the odd tip, and answers questions when he is around." },
+        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova is your friend now. Back on Home after a rank-up he tells you what your new flare did, he notices when you find a badge or one of his crew, he invites you to a match once a week, and he passes on news and the odd tip. Never more than one message a day, and he answers questions when he is in range." },
         { icon: buildTrophyIcon, color: "#F5C518", title: "The Weekly Recap", body: "Every Tuesday on Home, Nova presents last week's top three, with comebacks and photo finishes, and hands out honorable mentions." },
-        { icon: buildDevicesIcon, color: "#E23B3B", title: "Challenge Nova", body: "Invite Nova to a Virtual Room. He answers in two to four seconds and almost never misses. Beat him in any game and the Sheriff is yours." }
+        { icon: buildDevicesIcon, color: "#E23B3B", title: "Challenge Nova", body: "Invite Nova to a Virtual Room, or accept his weekly challenge in your chats. He answers in two to four seconds and almost never misses. Beat him in any game and the Sheriff is yours." }
       ]},
       { label: "Better In Version 9", items: [
         { icon: buildTrophyIcon, color: "#4ADE80", title: "Results", body: "Your grade climbs from red to green, and a 100 glows green before your hundo effect takes over. Your XP counts up with the bar. Badges and unlocks share one box: Found & Unlocked." },
@@ -70825,8 +70840,8 @@ const RELEASE_NOTES = [
       ]},
       { label: "Ranks", items: [
         { icon: buildLadderIcon, color: "#E8B84A", title: "Ranking Up, On The Road Map", body: "A rank-up plays out on Profile's road map: your challenges tick off, the road lights up to your new rank, its rewards are handed over there, and any saved XP climbs into levels. Smoother from start to finish." },
-        { icon: buildPlanetIcon, color: "#F5804D", title: "A Planet That Cracks", body: "From Gold up, the planet on Home cracks a little more with every rank you reach, and you see the crack form in the rank-up." },
-        { icon: buildPlanetIcon, color: "#FF7A59", title: "Supernova's Mark", body: "At Supernova the planet on Home keeps the mark of the blast: the scar glints, smoke rises from it, and pieces drift off its rings." }
+        { icon: buildPlanetIcon, color: "#F5804D", title: "A Planet That Cracks", body: "From Gold up, the planet on Home cracks a little more with every rank you reach, as the light of each flare breaks through, and you see the crack form in the rank-up." },
+        { icon: buildPlanetIcon, color: "#FF7A59", title: "Supernova's Mark", body: "At Supernova the planet on Home is a star at last: light pours out of its crack, and pieces drift off its rings." }
       ]},
       { label: "Profile", items: [
         { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Profile, Calendar And Stats", body: "Profile is three tabs: Profile, Calendar and Stats. Your badge count sits beside your level, the badge case opens from the card, and Friends is back under it." }
@@ -77017,7 +77032,16 @@ function novaRecapCard(st){
    and that you have already found some of what he lost - its own
    characters on the stage - before the story; the recap of what it has
    comes at the end, as before. No Skip on any of it ("I need them to see
-   it"). */
+   it").
+   BUILD 326: "what happens when we bring him back his stuff, why is our own
+   planet system cracking? What do we get for helping him? ... we will get
+   more levels and ranks at some point". Same lines, same slides, plus the
+   cause and the payoff: a relit flare comes with his thanks (the rank's
+   rewards) and pours its light into your planet, which cracks because it
+   is becoming a star (one new line; "Hello" and "I need your help" made
+   one to keep the count); a badge gives him back a page of his
+   instructor's log; the crew join you; his scanners keep finding more of
+   his ship (the last line), so it never ends. No totals anywhere. */
 function novaIntroLines(o){
   o = o || {};
   const existing = !!o.existing, name = novaName();
@@ -77033,28 +77057,31 @@ function novaIntroLines(o){
       text: "I’ve been following your progress, and you’ve already found some of what I lost. Let me tell you how I lost it.",
       enter: ctx => novaProp(ctx, novaStack(novaFoundRow(), novaCap("Found by you so far"))) });
   } else {
-    lines.push({ gesture: "wave", text: "Hello, " + name + "! I’m Nova, an explorer and an instructor. I’ll be your guide here.", enter: hello });
-    lines.push({ gesture: "raise", text: "Before we start, you should know why I’m here. I need your help." });
+    lines.push({ gesture: "wave", text: "Hello, " + name + "! I’m Nova, an explorer and an instructor. I’ll be your guide here, and I need your help.", enter: hello });
   }
-  lines.push({ text: "Not long ago, my ship was studying a planet much like the one on your Home screen. It had started to crack.",
+  lines.push({ text: "Not long ago, my ship was studying a planet much like the one on your Home screen. Its core was failing, and it had started to crack.",
     enter: (ctx, instant) => { novaProp(ctx, buildNovaWreck()); if(!instant && !novaMotionOff()) playSound("cs.planet"); } });
-  lines.push({ gesture: "raise", text: "Then its core gave way, and the whole planet exploded. The blast tore through my ship and threw everything aboard across this system." });
+  lines.push({ gesture: "raise", text: "Then the core gave way, and the whole planet exploded. The blast tore through my ship and threw everything aboard across this system." });
   lines.push({ text: existing && rankIdx >= 0
       ? "My flares, one for each rank, came to rest around your planet, but the blast had put their light out. They’re the flares on your Home screen."
       : "My flares, one for each rank, came to rest around your planet, but the blast had put their light out. That’s why the flares on your Home screen are dark.",
     enter: ctx => novaProp(ctx, novaStack(novaFlareRow(rankIdx), novaCap(rankIdx >= 0 ? (rankIdx + 1) + " of " + TIER_ORDER_FULL.length + " lit again" : "My flares, all dark"))) });
   lines.push({ gesture: "raise", text: existing && rankIdx >= 0
-      ? "A flare only lights again for someone who has earned it. Every rank you reach lights one, and you’ve already lit " + (rankIdx === 0 ? "the first." : (["two", "three", "four", "five", "six", "all seven"][rankIdx - 1] || (rankIdx + 1)) + ".")
-      : "A flare only lights again for someone who has earned it. Every rank you reach lights one, from Bronze all the way to Supernova.",
+      ? "A flare only lights again for someone who has earned it. Every rank you reach relights one, and you’ve already lit " + (rankIdx === 0 ? "the first" : (["two", "three", "four", "five", "six"][rankIdx - 1] || (rankIdx + 1))) + ". Each one comes with my thanks: that rank’s rewards."
+      : "A flare only lights again for someone who has earned it. Every rank you reach relights one, and each comes with my thanks: that rank’s rewards.",
     enter: ctx => novaProp(ctx, novaStack(novaRankRow(), novaCap("A flare for every rank"))) });
-  lines.push({ text: "I had a few secret flares aboard as well. They were thrown further than the rest, into your tests, so keep your eyes open." });
-  lines.push({ text: "My badges were scattered too, one into every unit you study. Master a unit and you’ll find its badge.",
+  /* WHY YOUR OWN PLANET CRACKS (build 326): "why is our own planet system
+     cracking? ... Maybe our planet system shouldn't crack?" It is not
+     breaking: it is where his light came to rest, and it is waking up. */
+  lines.push({ text: "Every flare you light pours its light into your planet. It can’t hold it all, so it cracks and the light shows through. It isn’t breaking. It’s becoming a star, and at Supernova it will be one." });
+  lines.push({ text: "Some of my secret flares were thrown further out, into your tests. I’ve lost count of them, so keep your eyes open." });
+  lines.push({ text: "My badges landed one in every unit. Master a unit and you’ll find its badge, and each one gives me back a page of my instructor’s log, so I can teach you that unit.",
     enter: ctx => novaProp(ctx, novaStack(novaBadgeParade(), novaCap(existing && st.badges > 0 ? st.badges + (st.badges === 1 ? " badge" : " badges") + " found so far" : "Every unit has its own badge"))) });
-  lines.push({ gesture: "raise", text: "My crew got away in escape pods, but they landed all over this system. They’re the characters in this app.",
+  lines.push({ gesture: "raise", text: "My crew got away in escape pods and landed all over this system. They’re the characters in this app, and every one you find joins you.",
     enter: ctx => novaProp(ctx, novaStack(novaCrewParade(), novaCap(crew.have + " of " + crew.total + " characters found"))) });
   lines.push({ text: "Each one comes home a different way: some with a rank, most with a challenge, a few behind a secret flare, and the ultimate ones ask for nearly everything else first.",
     enter: ctx => novaProp(ctx, novaStack(novaCrewKinds(), novaCap("How they’re found"))) });
-  lines.push({ gesture: "raise", text: "You’ll do all of it by studying. Every question you get right earns XP, XP raises your level, and your level and badges decide your rank.",
+  lines.push({ gesture: "raise", text: "You’ll do all of it by studying. Right answers earn XP, XP raises your level, and your level and badges decide your rank.",
     enter: ctx => novaProp(ctx, novaXpBar()) });
   lines.push({ text: "Drill to learn a unit, the Qualifier to prove you’re ready, and the Briefing to go over the material first.",
     enter: ctx => novaProp(ctx, novaModeRow()) });
@@ -77072,7 +77099,7 @@ function novaIntroLines(o){
     enter: ctx => { if(!existing) novaProp(ctx, novaStack(novaFriendProp(), novaCap("Friends"))); novaFriendMoment(); } };
   if(!existing){
     lines.push(friendLine);
-    lines.push({ gesture: "nod", final: true, text: "So that’s the job: light my flares, find my badges and bring my crew home. Let me show you around.",
+    lines.push({ gesture: "nod", final: true, text: "So that’s the job: light my flares, find my badges and bring my crew home. My scanners keep finding more of my ship, so there will always be more. Let me show you around.",
       enter: ctx => novaProp(ctx, null) });
     return lines;
   }
@@ -77173,7 +77200,7 @@ function novaGoodbye(){
   const name = novaName();
   novaTalk({ id: "nova-intro", label: "Nova says goodbye", finalLabel: "Goodbye", noSkip: true,
     lines: [{ gesture: "wave", final: true,
-      text: "That’s everything for now, " + name + ". Light my flares, find my badges and bring my crew home. I’ll speak with you again when there’s more to show you. Goodbye for now." }],
+      text: "That’s everything for now, " + name + ". Light my flares, find my badges and bring my crew home, and your planet will be a star one day. I’ll speak with you again when my scanners find more. Goodbye for now." }],
     onClose: () => endNovaMeeting() });
 }
 function endNovaMeeting(){
@@ -77505,8 +77532,8 @@ function mainMenuTourSteps(returning){
     { target: ".daily-question-fab", align: "right", vplacement: "above",
       text: "Your daily question: one a day, one try, worth " + DAILY_XP + " XP. After you answer, its ring fills until the next one. No retakes, so take your time." },
     { target: ".cosmic-icon-badge", align: "left", vplacement: "below",
-      text: returning ? "These are my flares, one for each rank. Every rank you reach lights one up. Tap one to see what it takes."
-        : "These are my flares, one for each rank, still dark. Reach a rank and its flare lights up. Tap one to see what it takes." },
+      text: returning ? "These are my flares, one for each rank. Every rank you reach lights one up, and its light goes into your planet. Tap one to see what it takes."
+        : "These are my flares, one for each rank, still dark. Reach a rank and its flare lights up, and its light goes into your planet. Tap one to see what it takes." },
     { target: "#nextbtn", align: "left", vplacement: "above",
       text: returning ? "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later."
         : "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later. I\u2019ll pop up with tips like these as you explore." }
@@ -77529,7 +77556,7 @@ function startMainMenuTour(){
    calendar reposition". After the main menu's own tips, and nothing else. */
 const NOVA_NEW_TIPS_321 = [
   { target: ".panel.home .cosmic-plasma", align: "left", vplacement: "below",
-    text: "The planet answers your touch. Tap it to see where you stand, and keep tapping to spin its rings. It cracks a little more with every rank you reach." },
+    text: "The planet answers your touch. Tap it to see where you stand, and keep tapping to spin its rings. From Gold up it cracks a little more with every rank: that’s my light breaking through as it becomes a star." },
   { target: "#bottomtab-profile", align: "left", vplacement: "above",
     text: "Profile has been rebuilt. Your rank, your level and your badges are on one card, your badge case opens from it, and Friends is back underneath." },
   /* build 323: the calendar has its own tab in the bar, Settings is in Profile */
@@ -80839,13 +80866,48 @@ const NOVA_BROADCAST_WINDOW_MS = 7 * 24 * 3600 * 1000;
    Sunday's test topics still have to be there on Wednesday. */
 const NOVA_KEEP_MS = 14 * 24 * 3600 * 1000;
 const NOVA_KEEP_N = 60;
-/* At most one unprompted message (a tip, the challenge) every three days,
-   never within 20 hours of anything else he said, never in his first two
-   days, and only once you have studied that day. */
+/* ---- ONE MESSAGE A DAY, AND WHICH ONE (build 326) ----
+   Madison: "I need clarity on when nova will be seen/come back after his
+   introduction? Will it be when you rank up? If that's the case, only make
+   his messages appear or get to you when you are out of the profile tab
+   during all that because it could seem like a lot, so maybe when you
+   finally get back to the main menu? Let's also ensure you get like a
+   challenge to play him once a week ... he will randomly send you messages
+   when you make progress with helping him. Let's not make it where they
+   double up though or become spam whatsoever."
+   Everything he says on his own goes through ONE scheduler (novaSchedule,
+   from novaTick) with hard rules:
+   - only on Home, with nothing else up (novaMomentCalm: no splash, tour,
+     dialogue, cutscene, reward card, badge queue, Home unlock card, sheet,
+     open chat, and no rank-up still owed - so a double rank-up's second
+     journey plays before he says a word);
+   - at most one a day and NOVA_GAP_MS (20h) after the last one, on ANY
+     device of the account (store.novaHeard["@last"], max-merged), and
+     never two in one session (novaSessionAt);
+   - in order: a rank-up's reaction > a broadcast > the week's challenge >
+     progress (a badge, one of his crew, a secret flare, every tenth level)
+     > a tip. One wins; what it covers is said in the same message (a
+     rank-up says the badge found on the way) and marked heard, the rest
+     waits for another day or goes stale (NOVA_PROGRESS_STALE_MS);
+   - nothing on a new account's first day, nor in the first NOVA_GAP_MS
+     after this build first runs on an existing one (store.novaHeard
+     ["@base"], with everything it already has marked heard), so an update
+     never arrives as a burst of old news;
+   - muteBanners: still sent, never announced with a banner.
+   A BROADCAST is Madison's own news (the next test's topics) and is not
+   held by the gap or the day - it can be time-sensitive - but it is still
+   Home-only and one-per-session, and it uses up the day. The weekly recap
+   is its own moment: it uses up the day too, and does not play on a day
+   he has already messaged you (Tuesday is the recap's: lower-priority
+   messages wait on a Tuesday while it is owed). */
 const NOVA_TIP_GAP_MS = 3 * 24 * 3600 * 1000;
 const NOVA_QUIET_MS = 20 * 3600 * 1000;
+const NOVA_GAP_MS = NOVA_QUIET_MS;
 const NOVA_TIP_SETTLE_MS = 2 * 24 * 3600 * 1000;
 const NOVA_SETTLE_MS = 90 * 1000;
+const NOVA_PROGRESS_STALE_MS = 3 * 24 * 3600 * 1000;
+/* a "session" ends when the app has been in the background this long */
+const NOVA_SESSION_IDLE_MS = 30 * 60 * 1000;
 const NOVA_COLOR = "#FFD27A";
 const NOVA_TIPS = [
   "Tip: a hundo only counts when you take a whole unit. A shortened run is good practice, but it won’t count towards a badge.",
@@ -80855,33 +80917,156 @@ const NOVA_TIPS = [
   "Tip: the daily question is quick XP. When the button on Home lights up, there’s a new one.",
   "Tip: star a question you want to see again. Your Starred list is in Start Studying.",
   "Tip: when you miss one, take a second with the right answer before you move on. Knowing why it’s right is what stays with you.",
-  "Tip: your level waits at your next rank\u2019s level until you have its badges, so mastering units matters as much as answering a lot of questions.",
+  "Tip: your level waits at your next rank’s level until you have its badges, so mastering units matters as much as answering a lot of questions.",
   "Tip: the Calendar tab has every class day and the next test date. Worth a look at the start of each week.",
   "Tip: race a friend in a Virtual Room. A little competition is the fastest way to find out what you really know."
 ];
-function novaRankLine(idx){
+
+/* ---- WHAT HE SAYS, AND WHY (build 326) ----
+   "what happens when we bring him back his stuff, why is our own planet
+   system cracking? What do we get for helping him? What's he do when he
+   finds the badges and characters and stuff? ... Do we save Mr nova by
+   finding everything? Idk it's hard because we will get more levels and
+   ranks at some point and more badges and stuff." The story every line of
+   his keeps to:
+   - a flare you light is his light returned. It pours into your planet,
+     which cannot hold it all: from Gold up it cracks and the light shows
+     through. Not damage - it is waking up, becoming a star. At Supernova
+     it is one: the system has a sun again, and he has a home;
+   - he thanks you for each with that rank's rewards;
+   - a badge gives him back a page of his instructor's log, so he can teach
+     that unit again; one of his crew found joins you;
+   - his scanners keep finding more of his ship further out, which is why
+     new ranks, badges and characters keep arriving. Never finished, and no
+     totals in his voice. */
+const NOVA_RANK_HEAD = [
+  n => "Bronze, " + n + "! My Bronze flare is lit again: the first of my light back around your planet.",
+  n => "Silver! My Silver flare is burning again, " + n + ", and your planet is holding its light.",
+  n => "Gold, " + n + ". My Gold flare is lit, and there’s so much of my light in your planet now that it has started to crack. Don’t worry: that’s the light breaking through. It’s waking up.",
+  n => "Platinum! Another of my flares is lit, " + n + ". The crack in your planet is wider now, and the light through it is brighter.",
+  n => "Sapphire, " + n + ". My Sapphire flare is shining, and not many get this far. Your planet is more light than rock now.",
+  n => "Amethyst! My Amethyst flare is shining, " + n + ", and your planet is nearly a star.",
+  n => "Supernova. " + n + ", you’ve done it: your planet has become a star. This system has a sun again, and I have a home."
+];
+/* what the rank hands over, said as his thanks - read off the tables, so a
+   rank with no character or no colour never promises one */
+function novaRankThanks(k){
+  const colour = !!(k && typeof ACCENT_SWATCH === "object" && ACCENT_SWATCH[k]);
+  let ch = null; try{ ch = AVATAR_CHARACTERS.find(c => c.unlock === k && !c.retired) || null; }catch(e){}
+  const who = ch ? ((typeof AVATAR_DISPLAY_NAME === "object" && AVATAR_DISPLAY_NAME[ch.id]) || ch.id) : "";
+  if(colour && ch) return "As thanks, its theme colour is yours, and " + who + " from my crew has joined you.";
+  if(colour) return "As thanks, its theme colour is yours.";
+  if(ch) return "As thanks, " + who + " from my crew has joined you.";
+  return "Thank you.";
+}
+/* `extra` (novaPending's progress, the same day): the badge or crew found
+   on the way, in one more sentence - one message, never two */
+function novaRankLine(idx, extra){
   const n = novaName();
-  const lines = [
-    "Bronze, " + n + "! Your first rank, and my Bronze flare is lit again. The first one is the hardest. Well done.",
-    "Silver! You’ve lit my Silver flare, and I can see it from here. Keep finding those badges, " + n + ".",
-    "Gold, " + n + ". That’s a real rank, and my Gold flare is burning again. Four more to go.",
-    "Platinum! Four ranks down, and my Platinum flare is back in orbit. I’m proud of you, " + n + ".",
-    "Sapphire, " + n + ". Not many get this far. My Sapphire flare is shining again.",
-    "Amethyst! One rank left, " + n + ". My Amethyst flare is lit, and Supernova is in sight.",
-    "Supernova. " + n + ", you’ve done it: the top rank, my rank. All seven of my flares are lit again. I couldn’t have asked for a better student."
-  ];
-  return lines[Math.max(0, Math.min(lines.length - 1, idx))];
+  const k = TIER_ORDER_FULL[idx];
+  const head = NOVA_RANK_HEAD[idx]
+    ? NOVA_RANK_HEAD[idx](n)
+    : (RANK_DISPLAY_NAME[k] || "A new rank") + ", " + n + ". Another of my flares is lit, and your planet is brighter for it.";
+  let t = head + " " + novaRankThanks(k);
+  const more = extra ? novaProgressTail(extra, null) : "";
+  if(more) t += more;
+  if(idx === TIER_ORDER_FULL.length - 1) t += " And my scanners have already picked up more of my ship further out, so we’re not finished yet.";
+  return t;
 }
 function novaHelloLine(fromIntro){
   const n = novaName();
   return fromIntro
-    ? "Hello, " + n + "! It’s Nova. We’re friends now, so this is where you’ll find me. I’ll message you when there’s news, when you rank up, and now and then with a tip. You can message me too."
-    : "Hello again, " + n + ". It’s Nova. I’ve added you as a friend, so you’ll find me here in your chats now. I’ll message you when there’s news, when you rank up, and now and then with a tip. You can message me too, and I’ll answer when I’m around.";
+    ? "Hello, " + n + "! It’s Nova. We’re friends now, so this is where you’ll find me. I’ll message you after a rank-up, when you find something of mine, once a week with a challenge, and when there’s news. Never more than once a day. You can message me too."
+    : "Hello again, " + n + ". It’s Nova. I’ve added you as a friend, so you’ll find me here in your chats now. I’ll message you after a rank-up, when you find something of mine, once a week with a challenge, and when there’s news. Never more than once a day. You can message me too, when I’m in range.";
 }
-function novaChallengeLine(){
-  /* says what the Virtual Room builder built (build 324, b324v2): any of
-     the three games, from the lobby's Invite, and the Sheriff for a win */
-  return "I’m back on my feet, " + novaName() + ", and I’m available to challenge now. Open a Virtual Room, tap Invite and you’ll find me at the top. Race, Tug of War or Battle, your pick. Beat me and the Sheriff is yours. Fair warning: I don’t miss much.";
+/* ---- THE WEEK'S CHALLENGE ----
+   "ensure you get like a challenge to play him once a week, he will invite
+   you to a challenge once a week". The week is the app's own (weekKeyNow,
+   Monday to Sunday - the board's and the recap's), the invitation is
+   `wk:<week>` on the account, sent once whether it is accepted, dismissed
+   or ignored, and over when the week is. Accept opens a Virtual Room with
+   him already in it (novaAcceptChallenge). */
+const NOVA_WEEK_LINES = [
+  n => "Weekly challenge, " + n + ": you against me in a Virtual Room. Race, Tug of War or Battle, your pick.",
+  n => "My scanners are quiet this week, " + n + ", so I have time for a match. One Virtual Room, you against me, any game you like.",
+  n => "Time to test yourself against your instructor, " + n + ". One Virtual Room match this week, any game you like."
+];
+function novaWeekNumber(wk){
+  const p = String(wk || "").split("-").map(Number);
+  if(p.length !== 3 || p.some(isNaN)) return 0;
+  return Math.floor(Date.UTC(p[0], p[1] - 1, p[2]) / (7 * 86400000));
+}
+function novaChallengeLine(wk){
+  const n = novaName();
+  const pick = NOVA_WEEK_LINES[novaWeekNumber(wk || weekKeyNow()) % NOVA_WEEK_LINES.length];
+  let beaten = false; try{ beaten = !!store.novaBeaten; }catch(e){}
+  return pick(n) + (beaten ? " You’ve beaten me before. Let’s see you do it again." : " Beat me and the Sheriff is yours.")
+    + " Tap Accept and I’ll meet you in the lobby. This one stands until Sunday.";
+}
+/* ---- WHEN YOU FIND SOMETHING OF HIS ----
+   "he will randomly send you messages when you make progress with helping
+   him". Different words for each kind of find, and more than one way of
+   saying each (picked by what was found, so the same find always reads the
+   same on every device): a badge is a page of his log back, one of his
+   crew is home, a secret flare is one more he had lost count of, every
+   tenth level his scanners reach further. */
+function novaPickOf(list, key){
+  let h = 0; const s = String(key || "");
+  for(let i = 0; i < s.length; i++) h = (Math.imul(h, 31) + s.charCodeAt(i)) >>> 0;
+  return list[h % list.length];
+}
+function novaCrewName(id){ return (typeof AVATAR_DISPLAY_NAME === "object" && AVATAR_DISPLAY_NAME[id]) || id; }
+function novaProgressLine(p){
+  const n = novaName();
+  if(p.crew && p.crew.length){
+    let t;
+    if(p.crew.length > 1){
+      t = homeJoin(p.crew.map(novaCrewName)) + " are home, " + n + ". My crew is getting bigger, and they’re all with you now.";
+    } else {
+      const id = p.crew[0], who = novaCrewName(id), kind = charCategory(id);
+      t = kind === "secret" ? who + " was out past my secret flares, and you brought them home, " + n + ". Thank you."
+        : kind === "ultimate" ? who + ". I wasn’t sure I’d ever see them again, " + n + ". Thank you for bringing them home."
+        : novaPickOf([
+            who + " is home! That was no easy challenge, " + n + ". They’re with you now.",
+            "You found " + who + ", one of my crew. Thank you, " + n + ". They’d much rather be with you than drifting out there."
+          ], id);
+    }
+    return t + novaProgressTail(p, "crew");
+  }
+  if(p.badges && p.badges.length){
+    let t;
+    if(p.badges.length > 1){
+      t = "You found " + p.badges.length + " of my badges, " + n + ": " + homeJoin(p.badges) + ". That’s " + p.badges.length + " pages of my instructor’s log restored.";
+    } else {
+      const u = p.badges[0];
+      t = novaPickOf([
+        "You found my " + u + " badge, " + n + ". That’s a page of my instructor’s log restored, and I can teach " + u + " properly again.",
+        "My " + u + " badge is home. Thank you, " + n + ". Another page of my log is readable again: " + u + ".",
+        "That’s the " + u + " badge back where it belongs. One more page of my log restored, and one more unit I can teach from it."
+      ], u);
+    }
+    return t + novaProgressTail(p, "badges");
+  }
+  if(p.sflares && p.sflares.length){
+    const key = p.sflares[p.sflares.length - 1];
+    const nm = (typeof MYSTERY_NAME === "object" && MYSTERY_NAME[key]) || "a secret flare";
+    return "You found " + nm + ", one of my secret flares. I’d lost count of them out there. Keep looking, " + n + "." + novaProgressTail(p, "sflares");
+  }
+  if(p.level){
+    return novaPickOf([
+      "Level " + p.level + ", " + n + ". Every level you climb, my scanners reach a little further out. Keep going.",
+      "Level " + p.level + ". My scanners picked up another piece of my ship as you climbed, " + n + ". There’s always more out there."
+    ], p.level);
+  }
+  return "";
+}
+/* one more sentence for what else was found the same day, never a list */
+function novaProgressTail(p, said){
+  if(said !== "crew" && p.crew && p.crew.length) return " " + (p.crew.length === 1 ? novaCrewName(p.crew[0]) + " came home on the way, too." : homeJoin(p.crew.map(novaCrewName)) + " came home on the way, too.");
+  if(said !== "badges" && said !== "crew" && p.badges && p.badges.length) return " " + (p.badges.length === 1 ? "You found my " + p.badges[0] + " badge on the way, too: another page of my log is back." : "You found " + p.badges.length + " of my badges on the way, too: that’s " + p.badges.length + " pages of my log back.");
+  if(said === "crew" && p.badges && p.badges.length) return " " + (p.badges.length === 1 ? "And my " + p.badges[0] + " badge, too." : "And " + p.badges.length + " of my badges, too.");
+  if(said !== "sflares" && p.sflares && p.sflares.length) return " And one of my secret flares, too.";
+  return "";
 }
 
 function isNovaChatCode(code){ return code === "DM-NOVA"; }
@@ -80939,10 +81124,39 @@ function novaBackInMin(now){
   for(let i = 0; i < 8 && novaAway(t); i++) t += NOVA_SPELL_MS;
   return Math.max(5, Math.ceil((t - now) / 60000 / 5) * 5);
 }
+/* WHERE HE IS WHEN HE IS AWAY (build 326). "When nova says he away in
+   chat make it more game/storyline like." He is out of range: scanning the
+   debris field for more of his ship. Which job he is on is the spell's own
+   number (and at night, the night watch), so it reads the same everywhere
+   for the whole spell. One short label ("Out of range") wherever a friend
+   says Away; what he is doing on his chat's header; his own words in the
+   chat above the composer. */
+const NOVA_AWAY_JOBS = [
+  { short: "Scanning the debris field", say: "I’m out scanning the debris field for more of my ship." },
+  { short: "Following a signal", say: "I’m following a signal out past the rings. It could be one of my crew’s escape pods." },
+  { short: "Searching the outer rings", say: "I’m searching the outer rings for pieces of my ship." }
+];
+const NOVA_AWAY_NIGHT = { short: "On night watch", say: "I’m on night watch over the debris field." };
+const NOVA_AWAY_LABEL = "Out of range";
+function novaAwayJob(now){
+  now = now || Date.now();
+  const h = new Date(now).getHours();
+  if(h >= 22 || h < 6) return NOVA_AWAY_NIGHT;
+  const spell = Math.floor(now / NOVA_SPELL_MS);
+  return NOVA_AWAY_JOBS[(Math.imul(spell ^ 0x2545f491, 2246822519) >>> 0) % NOVA_AWAY_JOBS.length];
+}
+function novaBackInText(){
+  const m = novaBackInMin();
+  return m < 60 ? "about " + m + " min" : "about " + Math.round(m / 60) + (Math.round(m / 60) === 1 ? " hour" : " hours");
+}
 function novaStatusText(){
   if(!novaAway()) return "Available";
-  const m = novaBackInMin();
-  return "Away \u00b7 back in about " + (m < 60 ? m + " min" : Math.round(m / 60) + (Math.round(m / 60) === 1 ? " hour" : " hours"));
+  return novaAwayJob().short + " \u00b7 back in range in " + novaBackInText();
+}
+/* his own words while he is away, above the composer */
+function novaAwayNote(){
+  if(!novaAway()) return "";
+  return novaAwayJob().say + " I can’t chat from out here. I’ll be back in range in " + novaBackInText() + ".";
 }
 
 /* ---- THE SMALL API THE VIRTUAL ROOM BUILDER USES ---- */
@@ -80985,6 +81199,7 @@ function novaSendDM(text, opts){
   const msg = { id: "nova-" + ts.toString(36) + "-" + Math.random().toString(36).slice(2, 6),
                 key: "nova", name: "Nova", text: text.slice(0, 600), ts: ts };
   if(opts.kind) msg.kind = opts.kind;
+  if(opts.wk) msg.wk = String(opts.wk);
   if(opts.id){ s.sent[opts.id] = ts; novaSave(s); }
   novaAppend(msg);
   novaArrived(msg, opts);
@@ -81152,75 +81367,295 @@ function novaTick(){
       /* (an account still owed the meeting meets him there - unless this
          device has already seen What's New, when the meeting cannot come) */
       if((!novaMeetOwed() || introSeen()) && novaCalm() && document.querySelector("#stage [data-screen]")) novaBefriend({ quiet: true });
-      return;
+      /* friends now: carry on to the seed below (his settle keeps him quiet) */
+      if(!novaIsFriend()) return;
     }
-    if(!novaCalm()) return;
     const now = Date.now();
-    let s = novaState();
-    /* a rank-up, once its whole journey has played */
-    const shown = novaShownRankIdx();
-    if(typeof s.congrats !== "number") { s.congrats = shown; novaSave(s); }
-    else if(shown > s.congrats){
-      /* rankUpShown moves only as a journey reaches its end (and the
-         calm test above waits out the rest of it, reward cards too); a
-         jump of two ranks is one journey and one message, for the top */
-      s.congrats = shown; novaSave(s);
-      novaSendDM(novaRankLine(shown), { id: "rank-" + shown, kind: "rank" });
-      return;
-    }
-    /* nothing else in the first minute and a half after his hello: one
-       message at a time, and the hello is the one that comes first */
-    s = novaState();
-    if(now - (s.since || 0) < NOVA_SETTLE_MS) return;
-    /* broadcasts, oldest first, inside their window */
+    const heard = novaHeardMap();
     /* ONCE PER ACCOUNT (build 325). "I keep seeing in a lot of these
        videos that nova will send a message that says 'something new, you
-       can message me now' but I've seen it multiple times." Two causes:
-       what he had said was recorded on the DEVICE only (class26e.nova), so
-       every new device, every Safari jar beside the installed app and
-       every fresh recording was owed it again; and his hello, sent a
-       minute and a half before it, already said "You can message me too".
-       So a broadcast is also recorded on the account (store.novaHeard,
-       merged by the higher), one the account has had is not sent on any
-       device, and one marked `hello` is not owed to a friendship that
-       began after it. The record rides along with the next save rather
-       than pushing one of its own (persistLocally) - nothing of his
-       writes to Firestore by itself. */
-    const heard = (store.novaHeard && typeof store.novaHeard === "object") ? store.novaHeard : (store.novaHeard = {});
+       can message me now' but I've seen it multiple times." What he had
+       said was recorded on the DEVICE only (class26e.nova), so every new
+       device, every Safari jar beside the installed app and every fresh
+       recording was owed it again. So what he has said is also recorded on
+       the account (store.novaHeard, merged by the higher), and one the
+       account has had is not sent on any device. The record rides along
+       with the next save rather than pushing one of its own
+       (persistLocally) - nothing of his writes to Firestore by itself.
+       A device that delivered a broadcast before build 325 writes it in. */
+    const s = novaState();
     let carried = false;
     Object.keys(s.sent || {}).forEach(k => { if(k.indexOf("b:") === 0 && !heard[k.slice(2)]){ heard[k.slice(2)] = Number(s.sent[k]) || now; carried = true; } });
-    const due = (NOVA_BROADCASTS || []).filter(b => b && b.id && b.text && !(s.sent || {})["b:" + b.id] && !heard[b.id])
-      .map(b => ({ b: b, at: novaBroadcastAt(b) }))
-      .filter(x => isFinite(x.at) && x.at <= now && now - x.at <= NOVA_BROADCAST_WINDOW_MS)
-      .filter(x => !(x.b.hello && (s.since || 0) >= x.at))
-      .sort((a, b) => a.at - b.at);
-    if(due.length){
-      due.forEach(x => { if(novaSendDM(x.b.text, { id: "b:" + x.b.id, kind: "broadcast" })) heard[x.b.id] = Date.now(); });
-      try{ persistLocally(); }catch(e){}
-      return;
-    }
+    /* build 326: the first run on this account marks what it already has */
+    if(novaSeed(heard, now)) carried = true;
     if(carried){ try{ persistLocally(); }catch(e){} }
-    /* one unprompted message at most, and only on a day you have studied */
-    s = novaState();
-    if(now - (s.lastAt || 0) < NOVA_QUIET_MS) return;
-    if(!novaUsedToday()) return;
-    if(NOVA_VR_READY && !(s.sent || {}).challenge){
-      if(now - (s.since || 0) < NOVA_QUIET_MS) return;
-      if(novaSendDM(novaChallengeLine(), { id: "challenge", kind: "challenge" })){
-        const s2 = novaState(); s2.spontAt = Date.now(); novaSave(s2);
-      }
-      return;
-    }
-    if(now - (s.since || 0) < NOVA_TIP_SETTLE_MS) return;
-    if(now - (s.spontAt || 0) < NOVA_TIP_GAP_MS) return;
-    const i = (Number(s.tipIdx) || 0) % NOVA_TIPS.length;
-    if(novaSendDM(NOVA_TIPS[i], { kind: "tip" })){
-      const s2 = novaState(); s2.tipIdx = i + 1; s2.spontAt = Date.now(); novaSave(s2);
-    }
+    novaSchedule(now);
   }catch(e){}
 }
+
+/* ---- THE SCHEDULER (build 326) - see "ONE MESSAGE A DAY" above ---- */
+var novaSessionAt = 0, novaHiddenAt = 0;
+function novaHeardMap(){
+  if(!store.novaHeard || typeof store.novaHeard !== "object" || Array.isArray(store.novaHeard)) store.novaHeard = {};
+  return store.novaHeard;
+}
+/* Home, and nothing else up - the badge queue's own rule (dataset.screen
+   is set in exactly two places, so every other screen fails by
+   construction) plus everything the weekly recap waits for. */
+function novaMomentCalm(){
+  if(!novaCalm()) return false;
+  if(!stage.querySelector('[data-screen="home"]')) return false;
+  try{ if(weekRecapOn || weekRecapBlocked()) return false; }catch(e){}
+  try{ if(typeof rankUpOwed === "function" && rankUpOwed()) return false; }catch(e){}
+  try{ if(typeof popupGapUntil === "number" && Date.now() < popupGapUntil) return false; }catch(e){}
+  /* another banner already has the top of the screen, or the daily
+     question is announcing itself beside its "?" */
+  if(document.querySelector(".daily-alert, .vroom-chat-alert.is-ping, .tierup-banner, #daily-lock-tip, .daily-question-fab.is-charging")) return false;
+  return true;
+}
+/* What this account has found, as his story counts it: badges, the crew
+   that is found rather than handed over (a rank's character comes with the
+   rank's own message), secret flares, and every tenth level. */
+function novaFoundNow(){
+  const out = { badges: [], crew: [], sflares: [], level: 0 };
+  try{ out.badges = badgesEarnedList(); }catch(e){}
+  try{ out.crew = novaCrewShown().filter(c => !isLockedCharacter(c.id)).map(c => c.id)
+         .filter(id => ["challenge", "secret", "ultimate"].indexOf(charCategory(id)) >= 0); }catch(e){}
+  try{ const f = store.mysteryColorsFound || {}; out.sflares = MYSTERY_ORDER.filter(k => f[k]); }catch(e){}
+  try{ out.level = Math.floor((Number(levelOf(store)) || 0) / 10) * 10; }catch(e){}
+  return out;
+}
+/* The first run of this build on an account (no "@base"): everything it
+   already has is heard, so an update is never met by old news, and the
+   quiet day starts now. Returns true when it wrote anything. */
+function novaSeed(heard, now){
+  if(heard["@base"]) return false;
+  heard["@base"] = now;
+  const shown = novaShownRankIdx();
+  if(shown + 1 > (Number(heard["@rank"]) || 0)) heard["@rank"] = shown + 1;
+  const f = novaFoundNow();
+  f.badges.forEach(u => { heard["badge:" + u] = heard["badge:" + u] || now; });
+  f.crew.forEach(id => { heard["char:" + id] = heard["char:" + id] || now; });
+  f.sflares.forEach(k => { heard["sflare:" + k] = heard["sflare:" + k] || now; });
+  if(f.level > (Number(heard["@lvl"]) || 0)) heard["@lvl"] = f.level;
+  return true;
+}
+/* Is the week's recap still owed on its own day (Tuesday)? Then the day is
+   the recap's, and only a rank-up or a broadcast goes before it. */
+function novaRecapOwedToday(now){
+  try{
+    const d = new Date(now);
+    if(d.getDay() !== 2 || !weekRecapDayOk(d)) return false;
+    return !weekRecapSeen(lastWeekKey());
+  }catch(e){ return false; }
+}
+/* What is waiting, highest first. Progress waits on this device's own
+   clock (s.pend: when each find was first seen here) and goes stale
+   rather than arriving days late. */
+function novaPending(heard, now){
+  const s = novaState();
+  const out = { rank: null, broadcast: null, weekly: null, progress: null, tip: null };
+  const shown = novaShownRankIdx();
+  if(shown >= 0 && shown + 1 > (Number(heard["@rank"]) || 0)) out.rank = shown;
+  /* broadcasts, oldest first, inside their window; one marked `hello` is
+     not owed to a friendship that began after it (build 325) */
+  const due = (NOVA_BROADCASTS || []).filter(b => b && b.id && b.text && !(s.sent || {})["b:" + b.id] && !heard[b.id])
+    .map(b => ({ b: b, at: novaBroadcastAt(b) }))
+    .filter(x => isFinite(x.at) && x.at <= now && now - x.at <= NOVA_BROADCAST_WINDOW_MS)
+    .filter(x => !(x.b.hello && (s.since || 0) >= x.at))
+    .sort((a, b) => a.at - b.at);
+  if(due.length) out.broadcast = due[0].b;
+  const wk = weekKeyNow();
+  if(NOVA_VR_READY && !heard["wk:" + wk]) out.weekly = wk;
+  /* progress */
+  const f = novaFoundNow();
+  const pend = (s.pend && typeof s.pend === "object") ? s.pend : {};
+  const keep = {}, p = { badges: [], crew: [], sflares: [], level: 0 };
+  let stale = false;
+  const consider = (key, push) => {
+    if(heard[key]) return;
+    const first = Number(pend[key]) || now;
+    if(now - first > NOVA_PROGRESS_STALE_MS){ heard[key] = now; stale = true; return; }
+    keep[key] = first; push();
+  };
+  f.badges.forEach(u => consider("badge:" + u, () => p.badges.push(u)));
+  f.crew.forEach(id => consider("char:" + id, () => p.crew.push(id)));
+  f.sflares.forEach(k => consider("sflare:" + k, () => p.sflares.push(k)));
+  if(f.level >= 10 && f.level > (Number(heard["@lvl"]) || 0)){
+    const key = "lvl:" + f.level, first = Number(pend[key]) || now;
+    if(now - first > NOVA_PROGRESS_STALE_MS){ heard["@lvl"] = f.level; stale = true; }
+    else { keep[key] = first; p.level = f.level; }
+  }
+  if(JSON.stringify(keep) !== JSON.stringify(pend)){ const s2 = novaState(); s2.pend = keep; novaSave(s2); }
+  if(stale){ try{ persistLocally(); }catch(e){} }
+  if(p.badges.length || p.crew.length || p.sflares.length || p.level) out.progress = p;
+  /* a tip: three days since the last one on any device, not in his first
+     two days, and only on a day you have studied */
+  const lastTip = Math.max(Number(s.spontAt) || 0, Number(heard["@tip"]) || 0);
+  if(now - (s.since || 0) >= NOVA_TIP_SETTLE_MS && now - lastTip >= NOVA_TIP_GAP_MS && novaUsedToday())
+    out.tip = (Number(s.tipIdx) || 0) % NOVA_TIPS.length;
+  return out;
+}
+/* The day is open: NOVA_GAP_MS since anything he said on any device of
+   this account, since this build first ran on it and since his hello, and
+   not the calendar day of his last message. */
+function novaDayOpen(heard, now){
+  const s = novaState();
+  const last = Number(heard["@last"]) || 0;
+  const from = Math.max(last, Number(heard["@base"]) || 0, Number(s.since) || 0);
+  if(now - from < NOVA_GAP_MS) return false;
+  if(last && dayKey(new Date(last)) === dayKey(new Date(now))) return false;
+  return true;
+}
+/* Marks what a message covered, on the account, and uses up the day. */
+function novaMarkSaid(heard, now, p){
+  heard["@last"] = now;
+  if(p){
+    (p.badges || []).forEach(u => { heard["badge:" + u] = now; });
+    (p.crew || []).forEach(id => { heard["char:" + id] = now; });
+    (p.sflares || []).forEach(k => { heard["sflare:" + k] = now; });
+    if(p.level) heard["@lvl"] = Math.max(Number(heard["@lvl"]) || 0, p.level);
+    const s = novaState(); if(s.pend){ s.pend = {}; novaSave(s); }
+  }
+  novaSessionAt = now;
+  try{ persistLocally(); }catch(e){}
+}
+/* Has he already had his moment today, on any device of this account? */
+function novaSaidToday(now){
+  try{
+    const last = Number((store.novaHeard || {})["@last"]) || 0;
+    return !!last && dayKey(new Date(last)) === dayKey(new Date(now || Date.now()));
+  }catch(e){ return false; }
+}
+/* One pass: at most one message, or nothing. Returns what was sent (for
+   tools), or null. */
+function novaSchedule(now){
+  now = now || Date.now();
+  if(!novaMomentCalm()) return null;
+  const s = novaState();
+  /* nothing in the first minute and a half after his hello */
+  if(now - (s.since || 0) < NOVA_SETTLE_MS) return null;
+  /* never two in one session */
+  if(novaSessionAt) return null;
+  const heard = novaHeardMap();
+  const pend = novaPending(heard, now);
+  const open = novaDayOpen(heard, now);
+  /* 1. the rank-up: once its whole journey has played (rankUpShown moves
+     only at its end, and novaMomentCalm waits out a second one owed), on
+     Home. A jump of two ranks is one message, for the top; anything else
+     found the same day is said in it. */
+  if(pend.rank != null && open){
+    const extra = pend.progress ? { badges: pend.progress.badges, crew: pend.progress.crew, sflares: pend.progress.sflares } : null;
+    const msg = novaSendDM(novaRankLine(pend.rank, extra), { id: "rank-" + pend.rank, kind: "rank" });
+    heard["@rank"] = pend.rank + 1;
+    novaMarkSaid(heard, now, pend.progress || {});
+    return msg;
+  }
+  /* 2. a broadcast: Madison's own news, not held by the gap */
+  if(pend.broadcast){
+    const b = pend.broadcast;
+    const msg = novaSendDM(b.text, { id: "b:" + b.id, kind: "broadcast" });
+    heard[b.id] = now;
+    novaMarkSaid(heard, now, null);
+    return msg;
+  }
+  if(!open) return null;
+  if(novaRecapOwedToday(now)) return null;
+  /* 3. the week's challenge */
+  if(pend.weekly){
+    const wk = pend.weekly;
+    heard["wk:" + wk] = now;
+    const msg = novaSendDM(novaChallengeLine(wk), { id: "wk:" + wk, kind: "challenge", wk: wk, quiet: true });
+    novaMarkSaid(heard, now, null);
+    if(msg) novaChallengeAnnounce(wk, msg);
+    return msg;
+  }
+  /* 4. something of his found */
+  if(pend.progress){
+    const msg = novaSendDM(novaProgressLine(pend.progress), { kind: "progress" });
+    novaMarkSaid(heard, now, pend.progress);
+    return msg;
+  }
+  /* 5. a tip */
+  if(pend.tip != null){
+    const msg = novaSendDM(NOVA_TIPS[pend.tip], { kind: "tip" });
+    if(msg){ const s2 = novaState(); s2.tipIdx = pend.tip + 1; s2.spontAt = now; novaSave(s2); heard["@tip"] = now; }
+    novaMarkSaid(heard, now, null);
+    return msg;
+  }
+  return null;
+}
+/* The week's challenge on screen: the app's own Virtual Room banner, with
+   his face and Accept - unless banners are muted or his chat is open (it is
+   there, with its Accept). */
+function novaChallengeAnnounce(wk, msg){
+  const open = chatRoomCode === NOVA_CODE && novaListeners.size > 0;
+  if(!open && !isChatMuted(NOVA_CODE)){ try{ playSound("chat.receive"); }catch(e){} }
+  if(open || (typeof theme === "object" && theme && theme.muteBanners)) return;
+  novaChallengeBanner(wk);
+}
+function novaChallengeBanner(wk){
+  if(document.getElementById("nova-challenge")) return null;
+  const el = buildAppBanner("nova-challenge", "vroom", "Nova challenged you to a match", "Accept",
+    () => novaAcceptChallenge(wk), () => {});
+  const ico = el.querySelector(".app-banner-icon");
+  if(ico){
+    const face = document.createElement("span");
+    face.className = "nova-friend-face";
+    try{ face.appendChild(buildNovaSVG({ crop: "head" })); }catch(e){}
+    ico.replaceWith(face);
+  }
+  /* the text opens his chat, where the whole message is */
+  const txt = el.querySelector(".app-banner-body");
+  if(txt){ txt.style.cursor = "pointer"; txt.addEventListener("click", () => { el.remove(); openNovaChat(); }); }
+  document.body.appendChild(el);
+  placeTopBanner(el);
+  clearBannerOnScreenChange(el);
+  requestAnimationFrame(() => el.classList.add("show"));
+  return el;
+}
+function novaChallengeLive(wk){ return !!wk && wk === weekKeyNow(); }
+/* Accept: a Virtual Room of your own with him already in it - the host's
+   own Match settings choose the game and the units, as in any room. */
+function novaAcceptChallenge(wk){
+  document.querySelectorAll("#nova-challenge").forEach(b => b.remove());
+  if(!novaChallengeLive(wk)){ showToast("That challenge has ended. I’ll send you another one next week."); return false; }
+  if(typeof testInProgress !== "undefined" && testInProgress) return false;
+  if(!fbDb){ showToast("Virtual Room needs a live connection — check your connection and try again."); return false; }
+  if(typeof vroomCode !== "undefined" && vroomCode){ showToast("You’re already in a Virtual Room."); return false; }
+  const s = novaState(); s.accepted = Object.assign({}, s.accepted || {}, { [wk]: Date.now() });
+  Object.keys(s.accepted).sort().slice(0, -8).forEach(k => delete s.accepted[k]);
+  novaSave(s);
+  try{ if(chatDockOpen){ closeChatRoom(); closeChatDock(); } }catch(e){}
+  return Promise.resolve(createVirtualRoomLobby([], null)).then(ok => {
+    if(ok === false || !vroomCode || !vroomIsHost) return false;
+    try{ return novaVrInvite(vroomCode); }catch(e){ return false; }
+  });
+}
+/* The Accept under the challenge in his chat (buildVroomChatPanel's
+   msgAction): good for the week it was sent in. */
+function novaMsgAction(m){
+  if(!m || m.kind !== "challenge" || !m.wk) return null;
+  const live = novaChallengeLive(m.wk);
+  const row = document.createElement("div");
+  row.className = "nova-msg-act";
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "next nova-msg-accept";
+  b.textContent = live ? "Accept" : "Ended";
+  b.disabled = !live;
+  b.addEventListener("click", e => { e.stopPropagation(); if(!b.disabled) novaAcceptChallenge(m.wk); });
+  row.appendChild(b);
+  return row;
+}
 try{ setInterval(() => { if(document.visibilityState === "visible") novaTick(); }, 60000); }catch(e){}
-document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") novaTickSoon(2500); });
+document.addEventListener("visibilitychange", () => {
+  if(document.visibilityState === "visible"){
+    /* back after a real absence: a new session */
+    if(novaHiddenAt && Date.now() - novaHiddenAt >= NOVA_SESSION_IDLE_MS) novaSessionAt = 0;
+    novaHiddenAt = 0;
+    novaTickSoon(2500);
+  } else novaHiddenAt = Date.now();
+});
 
 /* ---- WHAT HE SAYS BACK ----
    "he'll say something automated depending on the question but he won't be
@@ -81240,21 +81675,32 @@ function novaReplyFor(raw){
     return "The Calendar tab has the next test date and every class day. When your instructor gives out what’s on it, I’ll pass the topics on here, usually on a Sunday.";
   if(has(/ (virtual room|vr|race|challenge|sheriff|battle|duel|versus|vs|play you|fight) /))
     return NOVA_VR_READY
-      ? "I’m always up for a match. Open a Virtual Room, tap Invite and pick me: Race, Tug of War or Battle. Beat me and you’ll unlock the Sheriff."
+      ? "I’m always up for a match. Open a Virtual Room, tap Invite and pick me: Race, Tug of War or Battle. Once a week I’ll send you a challenge here, too. Beat me and you’ll unlock the Sheriff."
       : "A Virtual Room is a race against your classmates. Open one from Start Studying and invite your friends.";
+  /* what helping him gets you (build 326) */
+  if(has(/ (rewards?|what do i get|what do we get|in return|why help|why should i|what's in it|whats in it) /))
+    return "For every flare you light, I give you that rank’s rewards. Every badge gives me back a page of my instructor’s log, so I can teach you that unit, and every one of my crew you find joins you.";
   if(has(/ (ranks?|rank up|supernova|bronze|silver|gold|platinum|sapphire|amethyst|promot\w*) /))
-    return "The ranks go Bronze, Silver, Gold, Platinum, Sapphire, Amethyst and Supernova. Each asks for a level and a number of badges. " + rankNow
+    return "So far the ranks go " + homeJoin(TIER_ORDER_FULL.map(k => RANK_DISPLAY_NAME[k])) + ". Each one relights a flare of mine and asks for a level and a number of badges. " + rankNow
       + (next ? "; Profile shows what " + next + " needs." : ", at the very top. Well done.");
   if(has(/ (badges?|hundos?|100%|100|master\w*) /))
     /* no total (build 325): there will be more units */
-    return "There’s a badge for every unit. Score 100% on a whole unit and that’s a hundo; a few hundos in one unit earns its badge. You’ve found " + badges + " so far.";
+    return "There’s a badge for every unit. Score 100% on a whole unit and that’s a hundo; a few hundos in one unit earns its badge, and gives me back a page of my instructor’s log. You’ve found " + badges + " so far.";
   if(has(/ (xp|levels?|level up) /))
     return "Every right answer earns XP, and XP raises your level. Your level waits at your next rank\u2019s level until you have its badges, so mastering units matters as much as answering a lot.";
   if(has(/ (drill|exam|review|flashcards?|learn|modes?|study|studying|practice|starred|flag\w*) /))
     return "Drill to learn a unit, a Qualifier to test yourself, and a Briefing to go over the material first. They’re all under Start Studying on Home.";
-  if(has(/ (flares?|crew|characters?|ship|planet|blast|wreck|lost|explorer|space) /))
-    /* the story as his introduction tells it (build 325) */
-    return "A planet like the one on your Home screen cracked and exploded beside my ship. My flares came to rest around your planet, dark; my badges landed in your units; my crew are the characters. Every rank lights a flare, every unit you master finds a badge, and every character you unlock brings one of my crew home.";
+  /* the story as his introduction tells it (build 326) */
+  if(has(/ (planet|crack\w*|becoming a star) /))
+    return "Your planet is where my light came to rest. Every flare you light pours more of it in, and from Gold up it can’t hold it all, so it cracks and the light shows through. It isn’t breaking. It’s becoming a star, and at Supernova it will be one.";
+  if(has(/ (crew|characters?|pods?) /))
+    return "My crew got away from the blast in escape pods and landed all over this system. They’re the characters. Every one you find comes home and joins you: some with a rank, most with a challenge, a few behind my secret flares.";
+  if(has(/ (flares?|secret) /))
+    return "My flares came to rest around your planet, dark. Every rank you reach relights one, and its light pours into your planet. My secret flares were thrown further, into your tests. I’ve lost count of how many.";
+  if(has(/ (where are you|away|range|scanning|scanner\w*|busy|offline) /))
+    return "When I’m out of range I’m scanning the debris field for more of my ship. The top of this chat says what I’m doing and when I’ll be back.";
+  if(has(/ (ship|blast|wreck|lost|explorer|space|save you|finish\w*|end) /))
+    return "My ship was studying a planet much like yours when its core gave way. The blast threw my flares, my badges and my crew across this system. My scanners keep finding more of my ship further out, so there’s always more to bring home.";
   if(has(/ (friends?|friend code|add) /))
     return "Add classmates from Profile › Friends with their friend code, or tap someone on the Leaderboard. Friends can chat and race you in a Virtual Room.";
   if(has(/ (leaderboard|board|rankings|top|first place|1st) /))
@@ -81269,7 +81715,7 @@ function novaReplyFor(raw){
     return "I can help with ranks, badges, levels, the modes, the next test and the Virtual Room. Ask me about any of those.";
   const fall = [
     "I can’t chat right now, " + n + ". Ask me about ranks, badges, the next test or the Virtual Room and I’ll do my best.",
-    "I’m out on a survey, so I can’t really chat. Try asking about ranks, badges, the modes or the next test."
+    "My scanners are busy, so I can’t really chat. Try asking about ranks, badges, the modes or the next test."
   ];
   const s = novaState(); const k = (Number(s.fallIdx) || 0) % fall.length; s.fallIdx = k + 1; novaSave(s);
   return fall[k];
@@ -81318,9 +81764,13 @@ const NOVA_CHAT_CTX = {
       const art = document.querySelector(".chatdock-friendhead-art.is-nova");
       if(art) art.classList.toggle("is-online", !away);
     }catch(e){}
-    return away ? { off: true, placeholder: "Nova is away right now" }
+    return away ? { off: true, placeholder: "Nova is out of range" }
                 : { off: false, placeholder: "Message Nova…" };
   },
+  /* where he is, in his words, while the composer is off (build 326) */
+  awayNote: () => novaAwayNote(),
+  /* Accept under the week's challenge (build 326) */
+  msgAction: m => novaMsgAction(m),
   isMuted: () => isChatMuted(NOVA_CODE),
   code: () => NOVA_CODE,
   myKey: () => novaMyKey(),
@@ -81377,15 +81827,16 @@ function buildNovaChatRow(){
    everything in a blast. */
 /* His four cells: what the blast scattered, counted by what you have found. */
 function novaCardCells(){
-  let units = 16, badges = 0, lit = 0, crew = { have: 0, total: 0 };
-  try{ units = topicsIn(QUESTIONS).length || units; }catch(e){}
+  let badges = 0, lit = 0, crew = { have: 0, total: 0 };
   try{ badges = badgeCountOf(store); }catch(e){}
   try{ lit = TIER_ORDER_FULL.indexOf(rankOf(store)) + 1; }catch(e){}
   try{ crew = novaCrewTally(); }catch(e){}
-  return [["Badges recovered", badges + " / " + units],
-          ["Flares lit", lit + " / " + TIER_ORDER_FULL.length],
-          ["Crew found", crew.total ? crew.have + " / " + crew.total : "\u2014"],
-          ["Right now", novaAway() ? "Away" : "Available"]];
+  /* counts, not "of": his scanners keep finding more of his ship, so
+     there is no total to count against (build 326) */
+  return [["Badges recovered", String(badges)],
+          ["Flares lit", String(Math.max(0, lit))],
+          ["Crew found", crew.total ? String(crew.have) : "\u2014"],
+          ["Right now", novaAway() ? NOVA_AWAY_LABEL : "Available"]];
 }
 /* ---- NOVA ON THE FRIENDS LISTS (build 324, b324n2) ----
    Madison: "Nova can appear in the profiles friends box, and in manage but
@@ -81431,7 +81882,7 @@ function novaManageRow(){
   sub.className = "friend-row-sub";
   const st = document.createElement("span");
   st.className = on ? "friend-row-on" : "friend-row-away";
-  st.textContent = on ? "Available" : "Away";
+  st.textContent = on ? "Available" : NOVA_AWAY_LABEL;
   const rk = document.createElement("span");
   rk.className = "friend-row-rank";
   rk.textContent = RANK_DISPLAY_NAME.titan;
@@ -84408,12 +84859,12 @@ const WHATS_NEW_320 = [
     say: "Stats now charts your study time for the week. Tap a day to see exactly how long you studied." },
   { key: "novachat", color: "#8E7CF5", title: "Message Nova",
     glyph: "M20.5 11.3a7.8 7.8 0 0 1-8.4 7.8 9.2 9.2 0 0 1-2.7-.4L4 20.7l1.5-4.3a7.6 7.6 0 0 1-1-4.1 7.8 7.8 0 0 1 8-7.8 7.8 7.8 0 0 1 8 7.8Z",
-    body: "Nova is in your chats. He passes on news and what is on the next test, congratulates you when you rank up, and answers questions when he is around.",
+    body: "Nova is in your chats. He passes on news and what is on the next test, tells you what each rank-up did for your planet, and answers questions when he is in range.",
     say: "My chat isn’t one-way, either. Ask me about ranks, badges, the modes or the next test, and I’ll answer when I’m around." },
   { key: "novavr", color: "#E23B3B", title: "Challenge Nova",
     glyph: "M13.4 2 4.6 13.6h6.1L9.6 22l9.8-12.4h-6.2L13.4 2Z",
-    body: "Invite Nova to a Virtual Room: Race, Tug of War or Battle. He almost never misses. Beat him and the Sheriff is yours.",
-    say: "You can take me on in a Virtual Room: Race, Tug of War or Battle. Beat me and the Sheriff is yours." },
+    body: "Invite Nova to a Virtual Room: Race, Tug of War or Battle. Once a week he challenges you himself. He almost never misses. Beat him and the Sheriff is yours.",
+    say: "You can take me on in a Virtual Room: Race, Tug of War or Battle. Once a week I’ll challenge you myself. Beat me and the Sheriff is yours." },
   { key: "recap", color: "#F5C518", title: "The weekly recap",
     glyph: "M7 3h10v2h3v3a4 4 0 0 1-4 4h-.4A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 8.4 12H8a4 4 0 0 1-4-4V5h3V3Zm0 4H6v1a2 2 0 0 0 1 1.7V7Zm10 0v2.7A2 2 0 0 0 18 8V7h-1Z",
     body: "Every Tuesday on Home, Nova presents last week’s top three and hands out honorable mentions.",
@@ -84503,7 +84954,7 @@ function whatsNewLines(st, chained){
         : st.badges === 1 ? "And it appears you have found one of my lost badges."
         : "You haven’t found any of my lost badges yet, but I have a feeling you will.",
     enter: () => { const b = me && me.querySelector(".nt-me-badges"); if(b) b.classList.add("is-hi"); } });
-  lines.push({ text: "Every badge you find comes home, and every character you unlock is one of my missing crew, found." });
+  lines.push({ text: "Every badge you find gives me back a page of my log, every one of my crew you find joins you, and every flare you light brings your planet closer to being a star." });
   lines.push({ gesture: "raise", text: (st.badges > 0 ? "Thank you. " : "") + "Now, here’s what’s new." });
   }
   WHATS_NEW_320.forEach(it => lines.push({ text: it.say, gesture: it.key === "planet" ? "nod" : null,
@@ -90170,7 +90621,9 @@ function homeTapCopyPlanet(n){
   const lit = TIER_ORDER_FULL.filter(t => tierColorUnlocked(t)).length;
   const found = keys.filter(k => f[k]).length;
   return { kind: "planet", name: "Your flares", state: "", color: "",
-    parts: [lit + " of " + TIER_ORDER_FULL.length + " rank flares lit,", found + " of " + keys.length + " secret flares found."] };
+    /* no total for the secret flares (build 326): more of them come into
+       view as you find them, so "of 3" was never the whole of it */
+    parts: [lit + " of " + TIER_ORDER_FULL.length + " rank flares lit,", found ? found + (found === 1 ? " secret flare found." : " secret flares found.") : "no secret flares found yet."] };
 }
 
 /* ---- THE CAPTION ----
@@ -96796,10 +97249,10 @@ function playVoidFlareScene(done){
   const F = sfFigure(S, "voidwalker");
   st.appendChild(F.el);
   sfOrbit(st, F.el, VOID_FLARES, .2, -8, "sfv-ring");
-  const kick = "ALL THREE SECRET FLARES";
+  const kick = "THREE SECRET FLARES";
   if(S.still){
     F.lit();
-    S.stillEnd(kick, "VOID", "Three more flares are still out there.");
+    S.stillEnd(kick, "VOID", "More of them are still out there.");
     return S.handle;
   }
   S.later(820, () => comet.classList.add("is-go"));
@@ -96807,7 +97260,7 @@ function playVoidFlareScene(done){
     comet.classList.add("is-done");
     spots[2].classList.add("is-lit", "is-new");
     sfIgnite(spots[2], MYSTERY_COLOR.yellow);
-    S.say("SECRET FLARE FOUND", MYSTERY_NAME.yellow + " — 3 of 3", "Every flare in the sky is lit.");
+    S.say("SECRET FLARE FOUND", MYSTERY_NAME.yellow + " — the third", "The first three are lit.");
   });
   S.step(3700, "sf-whirl");
   S.later(4300, () => S.hush());
@@ -96830,7 +97283,7 @@ function playVoidFlareScene(done){
   S.later(17100, () => F.special());
   S.later(20200, () => { F.reveal(); S.overlay.classList.add("sf-lit"); S.flashAt(50, 50, "is-soft"); });
   S.step(21500, "sf-orbits");
-  S.later(22300, () => S.title(kick, "VOID", "Three more flares are still out there."));
+  S.later(22300, () => S.title(kick, "VOID", "More of them are still out there."));
   S.later(27300, S.endScene);
   return S.handle;
 }
@@ -97078,7 +97531,7 @@ function playGenesisFlareScene(done){
     return S.handle;
   }
   S.later(900, () => { S.overlay.classList.add("sf-found");
-    S.say("SECRET FLARE FOUND", MYSTERY_NAME.core, "The sixth and last secret flare"); });
+    S.say("SECRET FLARE FOUND", MYSTERY_NAME.core, "The sixth secret flare"); });
   S.step(3600, "sf-clear");
   S.step(4300, "sf-dive");
   S.later(4500, () => S.say("YOUR PLANET", "It is waking up", ""));
@@ -97897,13 +98350,15 @@ function flareFoundItem(c, all){
   let name = MYSTERY_NAME[c], sub;
   if(FLARE_CHARACTER[c]){
     const nthAll = MYSTERY_ORDER.indexOf(c) + 1;
-    sub = c === "core" ? "The sixth and last secret flare"
+    sub = c === "core" ? "The sixth secret flare"
       : c === "white" ? "The " + ord[nthAll] + " secret flare \u2014 one more waits on the rings"
       : "The " + ord[nthAll] + " secret flare";
   } else {
     const nth = VOID_FLARES.filter(k => (store.mysteryColorsFound || {})[k]).length;
-    name = MYSTERY_NAME[c] + " \u2014 " + nth + " of " + VOID_FLARES.length;
-    sub = all ? "The last of the three in the sky" : "Keep an eye out for the next one";
+    /* Void's three, said as Void's (build 326): "it says there's only 3
+       secret flares but there's more than that?" */
+    name = MYSTERY_NAME[c] + " \u2014 " + nth + " of Void\u2019s " + VOID_FLARES.length;
+    sub = all ? "The last of Void\u2019s three" : "Keep an eye out for the next one";
   }
   return { kind: "flare", flare: c, kicker: "Secret flare found", name, sub,
     color: MYSTERY_COLOR[c], art: () => buildFlareOrb(MYSTERY_COLOR[c], "ul") };
@@ -106745,7 +107200,7 @@ function novaVrOutcome(data, myKey){
 function novaVrMatchLine(out, earned, game){
   const n = novaName();
   const mode = game === "tug" ? "Tug of War" : game === "battle" ? "Battle" : "race";
-  if(out === "won" && earned) return "Well, " + n + ". You beat me fair and square, and that doesn’t happen often. The Sheriff is yours. Wear the badge well.";
+  if(out === "won" && earned) return "Well, " + n + ". You beat me fair and square, and that doesn’t happen often. The Sheriff, one of my crew, is with you now. Wear the badge well.";
   if(out === "won") return "You got me again, " + n + ". I’m going to need more practice. Invite me back any time.";
   if(out === "draw") return "A dead heat, " + n + ". Neither of us gave an inch. Next time one of us won’t be so lucky.";
   return "Good " + mode + ", " + n + ". I had the edge today, but you made me work for it. Invite me any time you want another go.";
@@ -106766,6 +107221,9 @@ function novaVrAfterMatch(data, opts){
     const was = isLockedCharacter("poseidon");
     if(store.novaBeaten !== true){ store.novaBeaten = true; saveStore(); }
     earned = was && !isLockedCharacter("poseidon");
+    /* his message after the match says it, so his "one of my crew is
+       home" never says it again on Home (build 326) */
+    if(earned){ try{ novaHeardMap()["char:poseidon"] = Date.now(); persistLocally(); }catch(e){} }
   }
   const game = (data && data.game) || "race";
   const say = () => { try{ novaSendDM(novaVrMatchLine(out, earned, game), { id: "vr:" + matchId, kind: "vr" }); }catch(e){} };
@@ -108351,6 +108809,7 @@ function buildVroomChatPanel(container, ctx){
      poll in, so it has no + at all. */
   if(CTX.noAttach) plusBtn.remove();
   /* ...and may say the composer is off (he is away), in its own words. */
+  let awayEl = null;
   function paintComposer(){
     if(!CTX.composer) return;
     let st = null; try{ st = CTX.composer(); }catch(e){}
@@ -108360,6 +108819,13 @@ function buildVroomChatPanel(container, ctx){
     const ph = st.placeholder || "Say something\u2026";
     if(input.placeholder !== ph) input.placeholder = ph;
     row.classList.toggle("is-off", off);
+    /* where he is while it is off, one line above it (build 326) */
+    let note = ""; try{ note = (off && CTX.awayNote) ? (CTX.awayNote() || "") : ""; }catch(e){}
+    if(note && !awayEl){ awayEl = document.createElement("p"); awayEl.className = "vroom-chat-awaynote"; awayEl.setAttribute("aria-live", "polite"); }
+    if(awayEl){
+      if(note){ if(awayEl.textContent !== note) awayEl.textContent = note; if(row.parentNode && awayEl.nextSibling !== row) row.parentNode.insertBefore(awayEl, row); }
+      else if(awayEl.parentNode) awayEl.remove();
+    }
   }
   paintComposer();
   const typingLine = document.createElement("div");
@@ -108681,6 +109147,10 @@ function buildVroomChatPanel(container, ctx){
           openReactPicker(wrap, m);
         });
         list.appendChild(wrap);
+        /* a button a local chat puts under one of its messages (build
+           326: Accept under Nova's weekly challenge) - beside the message,
+           never inside its button */
+        if(CTX.msgAction){ let act = null; try{ act = CTX.msgAction(m); }catch(e){} if(act) list.appendChild(act); }
       });
     }
     /* A re-render replaces every node, so a picker left open is a
@@ -111485,6 +111955,9 @@ function maybeShowWeekRecap(tries){
   if(!weekRecapDayOk()) return;
   const lw = lastWeekKey();
   if(weekRecapSeen(lw)) return;
+  /* one moment of his a day (build 326): not on a day he has already
+     messaged you on any device - the recap has until Sunday */
+  if(novaSaidToday()) return;
   const again = () => { if(n < 60) weekRecapTimer = setTimeout(() => maybeShowWeekRecap(n + 1), 1000); };
   if(weekRecapBlocked()){ again(); return; }
   let r = null;
@@ -111504,6 +111977,8 @@ function playWeekRecap(r){
   if(weekRecapOn) return null;
   weekRecapOn = true;
   markWeekRecapSeen(r);
+  /* and it is the day's (build 326): nothing else of his today */
+  try{ const h = novaHeardMap(); h["@last"] = Date.now(); novaSessionAt = Date.now(); persistLocally(); }catch(e){}
   let closedBy = null;
   const el = novaTalk({ id: "nova-intro", label: "Nova’s weekly recap", lines: weekRecapLines(r), finalLabel: "See you next week",
     onClose: reason => {
@@ -116193,7 +116668,7 @@ function showProfile(defaultTab, opts){
       st.className = "pf-friend-status";
       const off = document.createElement("span");
       off.className = "pf-friend-off";
-      off.textContent = e.nova ? "Away" : "Offline";
+      off.textContent = e.nova ? NOVA_AWAY_LABEL : "Offline";
       if(e.nova){
         const act = document.createElement("span");
         act.className = "friend-row-on pf-friend-act";
@@ -118858,11 +119333,11 @@ function beginSettle(ms){ settleUntil = Date.now() + (ms || 420); }
 const RANK_LORE = {
   rookie: "A nebula: a cloud of gas and dust where every star begins. Nothing shines yet, but the work has started, and every rank above this one started right here.",
   ranger: "A protostar. The cloud has pulled itself together into a young star, still wrapped in the disc it feeds on, firing light out of both ends. The habits are forming.",
-  veteran: "A sun, making its own light, with a world turning round it. This is where you stop borrowing light and start giving it — the one classmates come to with questions.",
+  veteran: "A sun, making its own light, with a world turning round it. This is where you stop borrowing light and start giving it — the one classmates come to with questions. It is also where your planet starts to crack: Nova's light breaking through as it wakes.",
   vanguard: "A binary: two stars holding each other in orbit. Neither one drifts, because each keeps the other steady — the way a good partner does.",
   adept: "A spiral galaxy, billions of stars turning together as one. From here on the ranks are not single stars any more, and the units stop being separate subjects.",
   elite: "A quasar: the black hole at the heart of a galaxy, feeding, so bright it can be seen from across the universe. Very few make it this far.",
-  titan: "A supernova. A star at the end of its life, outshining the whole galaxy around it for a moment. The top of the climb — and the name of this app."
+  titan: "A supernova. A star at the end of its life, outshining the whole galaxy around it for a moment. Here your planet becomes a star: the system has a sun again, and Nova has a home. The top of the climb so far — and the name of this app."
 };
 /* What a rank hands over, as chips (build 311: one size, one start).
    "Ensure the unlocks listed in those rank boxes ... are already in the
