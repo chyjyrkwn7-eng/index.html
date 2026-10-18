@@ -18130,8 +18130,10 @@ def _b321e_checks(dev, pre, frames):
     start_climb = min((t for t, _, c in rows if c), default=None)
     during = set(r for t, r, c in rows if end_climb is not None and start_climb <= t <= end_climb)
     final = rows[-1][1] if rows else None
+    # build 325: the climb runs 40 -> 50 (Platinum's level, the next wall),
+    # so the row lands on its goal, 50 - under 324 it was 49 -> 53, row 50 = cap + 1
     check(f"{dev}: the level challenge stays where it stood ({pre['cap']}) the whole climb and moves only after it ({final})",
-          end_climb is not None and during == {str(pre["cap"])} and final == str(pre["cap"] + 1), [sorted(during), final])
+          end_climb is not None and during == {str(pre["cap"])} and final == "50", [sorted(during), final])
     # 18. no dance
     dz = [f["t"] for f in fr if f["ph"] != "-" and ((f.get("pf") or {}).get("dance") or (f.get("pf0") or {}).get("dance"))]
     check(f"{dev}: no character dances on Profile during the journey (the unlock tile's knock and the avatar's special held)", not dz, dz[:3])
