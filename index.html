@@ -9258,11 +9258,27 @@
      .nsw-lens-* layers) - see .tab-lens-glass.
      .tab-lens-body is an invisible frame the size of the lens, for
      measuring. Transform and opacity only; no filter of any kind. */
+  /* HIDDEN BY ITS OPACITY ALONE, NEVER BY visibility (build 325). Tap a
+     tab, then press and hold that same tab: the bar swelled, the platter
+     went and the label grew, but no lens was drawn for the whole hold,
+     while every value on the page said it was up and opaque. The lens
+     used to be visibility:hidden at rest and visible while .is-up, and
+     the browser does not repaint the two clipped halves (.tab-lens-clip:
+     a layer each, masked, plus-lighter) when they become visible through
+     that inherited flip alone - they keep what they painted while hidden,
+     which is nothing, until something of their OWN changes. Every other
+     press moves them (they sit on the lens's centre line), so it showed;
+     a press on the tab the last lens landed on puts them exactly where
+     they already were, and nothing ever repainted them (read off the
+     compositor mid-hold: no layer for the lens at all). Measured frame by
+     frame: resetting the clips' transform brings it back, and so does
+     never hiding them - which is the fix, because it leaves nothing to
+     go stale. Opacity is 0 at rest (the fades end there), and
+     pointer-events are off, so a visible lens at opacity 0 is nothing. */
   .tab-lens{
     position:absolute; left:0; top:0; width:0; height:0; z-index:0; pointer-events:none;
-    opacity:0; visibility:hidden; will-change:opacity; isolation:isolate;
+    opacity:0; will-change:opacity; isolation:isolate;
   }
-  .tab-lens.is-up{ visibility:visible; }
   .tab-lens-body{
     position:absolute; left:0; top:0; visibility:hidden; pointer-events:none;
     transform-origin:0 0; will-change:transform;
