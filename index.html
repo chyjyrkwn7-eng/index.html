@@ -16856,6 +16856,28 @@
   .pf-goal.ru-goal-pre.ru-goal-in .pf-rw{ transition:opacity .4s ease var(--ru-d, 0s), transform .55s cubic-bezier(.2,1.5,.4,1) var(--ru-d, 0s); }
   .pf-goal.ru-goal-pre .pf-rw{ transform:translateY(10px) scale(.7); }
   .pf-standing.ru-climbing .pf-xpbarwrap{ filter:drop-shadow(0 0 8px rgba(111,194,255,.55)); }
+  /* THE SAVED XP AS A POOL THAT EMPTIES (build 325). Madison: "since it's
+     extra xp, it should almost be subtracting, so you can see in realtime
+     all the xp going to work". While the climb runs, the right of the line
+     under the bar (the total, or "to Level N" on a phone) gives its place
+     to the pool: "Saved XP" and the number left, counting DOWN in the same
+     frame as the bar fills; every level the bar completes takes its XP out
+     as a "-N XP" that lifts off the pool towards the bar
+     (rankUpPoolTake). It ends on what is left - 0, or what is still saved
+     behind the next rank's level. Transform and opacity only, and DRIVEN
+     A FRAME AT A TIME (ruTween), not by CSS keyframes: a CSS animation
+     started on this busy screen sat pending ~400ms in Chromium before it
+     ran (the compositor start the ruClockSnap note measures), so the pool
+     came up late and every "-N XP" was gone before it had moved. */
+  .pf-standing.ru-pooling .pf-xpnums > :is(.pf-xp-total, .pf-xp-to){ display:none; }
+  .ru-pool{ position:relative; margin-left:auto; display:inline-flex; align-items:baseline; gap:.4rem; white-space:nowrap;
+    padding:.12rem .55rem; border-radius:999px; background:rgba(143,193,255,.12); box-shadow:inset 0 0 0 1px rgba(143,193,255,.34);
+    font-variant-numeric:tabular-nums; }
+  .ru-pool-lab{ font-size:.72em; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:rgba(207,230,255,.72); }
+  .ru-pool-num{ display:inline-block; font-weight:800; color:#CFE6FF; }
+  .ru-pool.is-empty .ru-pool-num{ color:rgba(207,230,255,.6); }
+  .ru-pool-chip{ position:absolute; right:.4rem; bottom:100%; font-weight:800; font-size:.86em; color:#8FC1FF; pointer-events:none;
+    white-space:nowrap; text-shadow:0 1px 6px rgba(20,60,140,.6); opacity:0; will-change:transform, opacity; }
   .pf-level.ru-lvpop{ display:inline-block; animation:ru-lvpop .5s cubic-bezier(.2,1.5,.4,1) both; }
   @keyframes ru-lvpop{ 0%{ transform:scale(1); } 45%{ transform:scale(1.2); color:#BFE3FF; } 100%{ transform:scale(1); } }
   .xpnums.ru-climbnote{ color:#8FC1FF; font-weight:800; }
@@ -25128,6 +25150,12 @@
   .rs-xpline-name{ grid-column:1; grid-row:1; min-width:0; text-wrap:balance; }
   .rs-xpline-val{ grid-column:2; grid-row:1; font-weight:800; color:var(--xp); white-space:nowrap; text-align:right; }
   .rs-xpline-none{ display:block; color:var(--soft); }
+  /* build 325: "Bonuses", over the lines that are not the answers */
+  .rs-xpline.rs-xpkick{ display:block; margin:.85rem 0 .45rem; font-size:.7rem; font-weight:800; letter-spacing:.14em;
+    text-transform:uppercase; color:rgba(255,255,255,.46); }
+  /* build 325: the sum under the total, in the line's own small grey */
+  .rs-xpsum{ margin:-.55rem 0 .95rem; text-align:right; font-size:var(--rs-cap, .78rem); line-height:1.35; color:var(--soft);
+    font-variant-numeric:tabular-nums; }
   .rs-xptotal{
     display:flex; align-items:baseline; justify-content:space-between; gap:1rem;
     margin:.95rem 0 1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,.08);
@@ -93285,7 +93313,7 @@ function buildHundoFxMock(id, o){
   el("span", "hfx-mk-sub", "1 unit · Identity Crimes", head);
   const xp = el("div", "rs-card rs-xp");
   el("p", "hfx-mk-kicker", "XP earned", xp);
-  [["12 correct × 10", "+120"], ["Hundo bonus", "+100"], ["Streak bonus", "+25"]].forEach(r => { const l = el("p", "hfx-mk-line", null, xp); el("span", "", r[0], l); el("b", "", r[1], l); });
+  [["Correct answers", "+120"], ["Perfect unit", "+100"], ["Answers in a row", "+25"]].forEach(r => { const l = el("p", "hfx-mk-line", null, xp); el("span", "", r[0], l); el("b", "", r[1], l); });
   const tl = el("p", "hfx-mk-line is-total", null, xp); el("span", "", "Total", tl); el("b", "", "+245 XP", tl);
   const xb = el("span", "hfx-mk-bar", null, xp); el("i", "", null, xb);
   const gr = el("div", "rs-card rs-grade is-perfect");
@@ -96228,12 +96256,23 @@ function computeRunXp(r){
     add("daily", "Daily question", r.good > 0 ? DAILY_XP : 0);
     return { lines: lines, total: lines.reduce((s, l) => s + l.value, 0) };
   }
-  add("correct", r.good + " correct × " + POINTS_PER_QUESTION, r.good * POINTS_PER_QUESTION);
+  /* PLAIN NAMES, AND EVERY LINE SAYS HOW IT WAS WORKED OUT (build 325).
+     Madison: "the names of the xp and stuff and showing how it's
+     calculated is hard to understand, could that be improved?" Each line
+     is a plain name ("Correct answers", "Answers in a row", "Speed") and
+     its sub-line is its sum - "47 right × 10 XP", "10 in a row +25 · 25 in
+     a row +50", "+20% of 955" - so the card adds up on its face. The
+     results card then splits them: what the answers earned, the bonuses,
+     and "470 for answers + 675 in bonuses = 1,145" under the total. The
+     keys did not change; the Virtual Room's steps are matched by key. */
+  add("correct", "Correct answers", r.good * POINTS_PER_QUESTION,
+      { sub: r.good + " right \u00d7 " + POINTS_PER_QUESTION + " XP", base: true });
   /* A retake is "literally gonna be just purely retake": the answers it
      got right, and nothing else of any kind. */
   if(r.retake) return { lines: lines, total: lines.reduce((s, l) => s + l.value, 0) };
 
-  if(r.hundos > 0) add("hundo", r.hundos > 1 ? "Hundo bonus ×" + r.hundos : "Hundo bonus", r.hundos * PERFECT_BONUS);
+  if(r.hundos > 0) add("hundo", r.hundos > 1 ? "Perfect units" : "Perfect unit", r.hundos * PERFECT_BONUS,
+      { sub: (r.hundos > 1 ? r.hundos + " hundos \u00d7 " : "A hundo, every answer right: ") + PERFECT_BONUS + " XP" });
 
   /* ONE STREAK LINE, NOT ONE PER TIER (build 309): "The xp board looks
      good but it quickly seems to flood in with multiple types of xp
@@ -96246,17 +96285,17 @@ function computeRunXp(r){
   if(tierKeys.length){
     const streakXp = tierKeys.reduce((sum, t) => sum + runStreakTierXp(t) * tiers[t], 0);
     const top = tierKeys[tierKeys.length - 1];
-    add("streak", "Streak bonus", streakXp, {
+    add("streak", "Answers in a row", streakXp, {
       streak: top, tiers: tierKeys.map(t => ({ t: t, n: tiers[t] })),
-      sub: tierKeys.map(t => t + (tiers[t] > 1 ? " \u00d7" + tiers[t] : "")).join(" \u00b7 ") + " in a row" });
+      sub: tierKeys.map(t => t + " in a row +" + (runStreakTierXp(t) * tiers[t]).toLocaleString() + (tiers[t] > 1 ? " (\u00d7" + tiers[t] + ")" : "")).join(" \u00b7 ") });
   }
 
   if(r.answered > 0 && r.elapsedMs > 0){
     const avgSec = r.elapsedMs / 1000 / r.answered;
     const scaled = speedTierXp(avgSec) * Math.min(1, r.answered / 10) * (r.good / r.answered);
     const v = r.good > 0 ? Math.max(5, roundTo5(scaled)) : 0;
-    add("speed", "Speed bonus", v, { sub: formatClock(r.elapsedMs) + " total · " +
-      (avgSec < 10 ? avgSec.toFixed(1) : Math.round(avgSec)) + "s a question" });
+    add("speed", "Speed", v, { sub: (avgSec < 10 ? avgSec.toFixed(1) : Math.round(avgSec)) + "s a question on average (" +
+      formatClock(r.elapsedMs) + " in all)" });
   }
 
   /* THE LONG TEST BONUS - "taking a test with like loads of questions
@@ -96268,9 +96307,9 @@ function computeRunXp(r){
   const LONG_TEST_EVERY = 50, LONG_TEST_XP = 100;
   const longBlocks = Math.floor((r.answered || 0) / LONG_TEST_EVERY);
   if(longBlocks > 0 && r.good > 0){
-    add("long", "Long test bonus" + (longBlocks > 1 ? " ×" + longBlocks : ""),
+    add("long", "Long test",
         Math.max(5, roundTo5(longBlocks * LONG_TEST_XP * (r.good / r.answered))),
-        { sub: (longBlocks * LONG_TEST_EVERY) + "+ questions · +" + LONG_TEST_XP + " every " + LONG_TEST_EVERY });
+        { sub: "+" + LONG_TEST_XP + " for every " + LONG_TEST_EVERY + " questions (" + (longBlocks * LONG_TEST_EVERY) + "+)" });
   }
 
   /* Personal bests, one line for both kinds (build 309) - the same
@@ -96280,8 +96319,8 @@ function computeRunXp(r){
     const tp = r.timePRs || [], sp = r.scorePRs || [];
     const n = tp.length + sp.length;
     if(n){
-      const what = tp.length && sp.length ? "New personal bests" : tp.length ? "New best time" : "New best score";
-      add("pb", what + (n > 1 && !(tp.length && sp.length) ? " \u00d7" + n : ""),
+      const what = n > 1 ? "Personal bests" : tp.length ? "Best time" : "Best score";
+      add("pb", what,
         PB_TIME_BONUS * tp.length + PB_SCORE_BONUS * sp.length,
         { pbTime: tp.length, pbScore: sp.length,
           sub: sp.map(p => p.text).concat(tp.map(p => p.text)).join(" \u00b7 ") });
@@ -96296,8 +96335,8 @@ function computeRunXp(r){
      pays nothing. The grinding that finds a badge still pays its own way. */
   const m = multiUnitMultiplier(r.wholeUnits || 0);
   if(m > 1){
-    add("multi", "Multi-unit ×" + (Math.round(m * 100) / 100), roundTo5(beforeMult * (m - 1)),
-        { sub: r.wholeUnits + " whole units" });
+    add("multi", "Several units \u00d7" + (Math.round(m * 100) / 100), roundTo5(beforeMult * (m - 1)),
+        { sub: "+" + Math.round((m - 1) * 100) + "% of the " + beforeMult.toLocaleString() + " above, for " + r.wholeUnits + " whole units" });
   }
   return { lines: lines, total: lines.reduce((s, l) => s + l.value, 0) };
 }
@@ -97929,7 +97968,16 @@ function showRunRewards(run, hooks, opts){
   const xpKick = document.createElement("p");
   xpKick.className = "rs-kicker"; xpKick.textContent = "XP earned";
   xp.appendChild(xpKick);
-  const lineEls = run.xpLines.map(l => {
+  let bonusKick = null;
+  const lineEls = [];
+  run.xpLines.forEach(l => {
+    /* the bonuses under their own small heading, after what the answers
+       earned (build 325) */
+    if(!bonusKick && l.key !== "correct" && l.key !== "daily" && run.xpLines.some(x => x.key === "correct")){
+      bonusKick = document.createElement("p");
+      bonusKick.className = "rs-xpline rs-xpkick rs-land"; bonusKick.textContent = "Bonuses";
+      xp.appendChild(bonusKick); lineEls.push(bonusKick);
+    }
     const row = document.createElement("div");
     row.className = "rs-xpline rs-land" + (l.key === "multi" ? " is-multi" : "") + (l.badge ? " is-badge" : "");
     const a = document.createElement("span"); a.className = "rs-xpline-label";
@@ -97942,7 +97990,7 @@ function showRunRewards(run, hooks, opts){
     const b = document.createElement("span"); b.className = "rs-xpline-val"; b.textContent = "+" + l.value.toLocaleString();
     row.append(a, b);
     xp.appendChild(row);
-    return row;
+    lineEls.push(row);
   });
   if(!run.xpLines.length){
     const none = document.createElement("p");
@@ -97966,6 +98014,19 @@ function showRunRewards(run, hooks, opts){
   totalVal.append(totalNum, totalUnit);
   totalRow.append(totalLabel, totalVal);
   if(run.xpTotal > 0) xp.appendChild(totalRow);
+  /* THE SUM, SAID (build 325): what the answers earned plus the bonuses
+     is the total - "470 for answers + 675 in bonuses = 1,145". Only when
+     there are both halves; a single line is its own sum. */
+  const xpSum = (() => {
+    const base = run.xpLines.filter(l => l.key === "correct").reduce((t, l) => t + l.value, 0);
+    const extra = run.xpLines.filter(l => l.key !== "correct").reduce((t, l) => t + l.value, 0);
+    if(!(run.xpTotal > 0) || !base || !extra) return null;
+    const e = document.createElement("p");
+    e.className = "rs-xpsum rs-land";
+    e.textContent = base.toLocaleString() + " for answers + " + extra.toLocaleString() + " in bonuses = " + (base + extra).toLocaleString() + " XP";
+    xp.insertBefore(e, totalRow.nextSibling);
+    return e;
+  })();
   /* The rank you held going in, for the head of the level bar, until the
      rank-up cutscene hands back. Coming back from the review it is the
      rank you hold now. */
@@ -98497,7 +98558,7 @@ function showRunRewards(run, hooks, opts){
        the Unlocked box only once the scenes are over. */
     const holdBox = !!unlocked && !(opts && opts.instant) && !theme.muteBanners &&
       ((run.badges && run.badges.length && typeof playBadgeCaseScene === "function") || (run.flare && typeof playFlareFoundScene === "function"));
-    [head, grade, xp, ...lineEls, totalRow, levelBlock, ...boxes, ...(holdBox ? [] : [unlocked, ...unlockRows]), actions].forEach(el => rsLand(el, true));
+    [head, grade, xp, ...lineEls, totalRow, ...(xpSum ? [xpSum] : []), levelBlock, ...boxes, ...(holdBox ? [] : [unlocked, ...unlockRows]), actions].forEach(el => rsLand(el, true));
     let boxDown = !holdBox;
     const boxNow = () => { if(boxDown || !panel.isConnected) return; boxDown = true; [unlocked, ...unlockRows].forEach(el => rsLand(el, true)); };
     if(holdBox) setTimeout(boxNow, 30000);
@@ -98570,7 +98631,7 @@ function showRunRewards(run, hooks, opts){
   const fxTail = fxId ? ((typeof HUNDO_FX_TAIL_AT === "object" && HUNDO_FX_TAIL_AT[fxId]) || 1500) : 0;
   seq.add(countIt ? 1250 : 700, instant => rsLand(xp, instant));
   lineEls.forEach(l => seq.add(380, instant => rsLand(l, instant)));
-  seq.add(750, instant => { rsLand(totalRow, instant); countUp(instant); });
+  seq.add(750, instant => { rsLand(totalRow, instant); countUp(instant); if(xpSum) setTimeout(() => rsLand(xpSum, instant), instant ? 0 : 520); });
   /* THE BAR, SLOWER, AND ITS NUMBER AFTER IT (build 320): "the xp when it
      goes to the xp bar is too fast and could be more suspenseful ... when
      the number goes up it needs to be after that bar effect". The block
@@ -119394,6 +119455,15 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
   const toEl = standing.querySelector(".pf-xp-to");
   fill.style.transition = "none";
   const ms = rankUpClimbMs(u1 - u0);
+  /* the pool (build 325): what is saved, emptied by the climb. The XP the
+     bar has taken at u is xpForLevel(level) plus what it shows into that
+     level, never past its span - so the pool lands on what is still saved
+     (to.banked) when the climb stops at the next wall, and on 0 when not. */
+  const total = Number(to.total) || 0;
+  const xpAt = (lv, have, span) => xpForLevel(lv) + Math.min(have, span);
+  const pool = rankUpPoolMount(standing, numsHost);
+  let pool0 = null, poolLive = false;
+  if(scene) scene.pool = { start: null, end: null, takes: [] };
   /* the climb's tone, a ping where each new level lands (the climb is
      sine-eased: level k arrives where .5 - .5 cos(pi t) crosses it) */
   {
@@ -119407,15 +119477,28 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
   if(scene) scene.climb = { from: from.level, to: to.level, ms, levels: u1 - u0 };
   let shownLv = from.level, shownSpan = -1;
   const place = u => {
-    const whole = Math.floor(u + 1e-6), frac = u - whole;
+    /* the last level holds the end of the climb: at u1 a climb that stops
+       at the next wall is ITS bar full (f1 = 1), not the level after it
+       empty - which is what flooring u1 gave, and a climb now very often
+       ends at a wall (build 325: the wall is the next rank's level) */
+    const whole = Math.min(Math.floor(u + 1e-6), to.level - from.level), frac = u - whole;
     const lv = Math.min(to.level, from.level + whole);
     const last = lv >= to.level;
     const f = last ? Math.min(f1, frac) : frac;
     setBarFill(fill, Math.round(f * 1000) / 10);
     const span = last ? Math.max(1, Math.round(toBar.span) || rankUpLevelSpan(lv)) : rankUpLevelSpan(lv);
-    if(have) have.textContent = Math.round(last && f >= f1 ? toBar.into : f * span).toLocaleString();
+    const hv = Math.round(last && f >= f1 ? toBar.into : f * span);
+    if(have) have.textContent = hv.toLocaleString();
     if(need && span !== shownSpan){ shownSpan = span; need.textContent = " / " + span.toLocaleString() + " XP"; }
+    if(pool){
+      const left = Math.max(0, total - xpAt(lv, hv, span));
+      if(pool0 == null){ pool0 = left; if(scene) scene.pool.start = left; }
+      rankUpPoolSet(pool, left);
+      if(scene) scene.pool.end = left;
+    }
     if(lv !== shownLv){
+      /* the level just completed is taken out of the pool */
+      if(pool && poolLive) for(let L = shownLv; L < lv; L++){ const took = rankUpLevelSpan(L); rankUpPoolTake(pool, took); if(scene) scene.pool.takes.push(took); }
       shownLv = lv;
       lvEl.textContent = "Level " + lv;
       lvEl.classList.remove("ru-lvpop"); void lvEl.offsetWidth; lvEl.classList.add("ru-lvpop");
@@ -119423,6 +119506,11 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
     }
   };
   place(u0);
+  /* (a bar full at the old wall opens on the next level: that level's XP
+     was never in the pool, so nothing is taken for it) */
+  poolLive = true;
+  /* the full pool, a beat before any of it moves */
+  if(pool) await rankUpWait(RU_POOL_LEAD_MS);
   await new Promise(res => {
     const t0 = performance.now();
     const step = now => {
@@ -119439,12 +119527,69 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
   const cur = numsHost && numsHost.querySelector(".xpnums");
   if(cur) cur.replaceWith(buildXpNumbers(toBar.into, toBar.span, toBar.over));
   syncPfXpTo(standing, to);
+  if(pool){ rankUpPoolSet(pool, Math.max(0, Number(to.banked) || 0)); if(scene) scene.pool.end = Math.max(0, Number(to.banked) || 0); }
   await rankUpWait(650);
+  if(pool) await rankUpPoolDone(standing, pool);
   fill.style.transition = "";
   if(track && toBar.over) track.classList.add("is-banked");
   standing.classList.remove("ru-climbing");
   /* ...and only now the level challenge */
   if(row) await rankUpLevelRowAfter(row, to.level);
+}
+var RU_POOL_LEAD_MS = 750, RU_POOL_HOLD_MS = 1100, RU_POOL_CHIP_MS = 1100;
+/* one rAF-driven tween: fn(k) for k 0..1, resolved at the end */
+function ruTween(el, ms, fn){
+  return new Promise(res => {
+    const t0 = performance.now();
+    const step = now => {
+      const k = Math.min(1, (now - t0) / ms);
+      try{ fn(k); }catch(e){}
+      if(k < 1 && el && el.isConnected) requestAnimationFrame(step); else res();
+    };
+    requestAnimationFrame(step);
+  });
+}
+function rankUpPoolMount(standing, host){
+  if(!standing || !host) return null;
+  const p = document.createElement("span");
+  p.className = "ru-pool";
+  p.style.opacity = "0";
+  ruTween(p, 450, k => { const e = 1 - Math.pow(1 - k, 3); p.style.opacity = String(Math.min(1, k * 2));
+    p.style.transform = k < 1 ? "translateY(" + (5 * (1 - e)).toFixed(2) + "px) scale(" + (.9 + .1 * e + .06 * Math.sin(Math.PI * e)).toFixed(3) + ")" : ""; });
+  const lab = document.createElement("span"); lab.className = "ru-pool-lab"; lab.textContent = "Saved XP";
+  const num = document.createElement("b"); num.className = "ru-pool-num"; num.textContent = "0";
+  p.append(lab, num);
+  host.appendChild(p);
+  standing.classList.add("ru-pooling");
+  return p;
+}
+function rankUpPoolSet(pool, v){
+  const n = pool && pool.querySelector(".ru-pool-num");
+  const t = Math.max(0, Math.round(v)).toLocaleString();
+  if(n && n.textContent !== t) n.textContent = t;
+  if(pool){ pool.dataset.left = String(Math.max(0, Math.round(v))); pool.classList.toggle("is-empty", Math.round(v) <= 0); }
+}
+function rankUpPoolTake(pool, n){
+  if(!pool || !pool.isConnected) return;
+  const num = pool.querySelector(".ru-pool-num");
+  if(num) ruTween(num, 420, k => { num.style.transform = k < 1 ? "scale(" + (1 - .14 * Math.sin(Math.PI * k)).toFixed(3) + ")" : ""; });
+  const c = document.createElement("span");
+  c.className = "ru-pool-chip"; c.textContent = "\u2212" + Math.round(n).toLocaleString() + " XP";
+  pool.appendChild(c);
+  pool.dataset.takes = String((Number(pool.dataset.takes) || 0) + 1);
+  /* it lifts off the pool and drifts up and left, towards the bar */
+  ruTween(c, RU_POOL_CHIP_MS, k => {
+    const e = 1 - Math.pow(1 - k, 2.2);
+    c.style.opacity = String(k < .16 ? k / .16 : Math.max(0, 1 - (k - .16) / .84));
+    c.style.transform = "translate(" + (-38 * e).toFixed(1) + "px, " + (4 - 30 * e).toFixed(1) + "px) scale(" + (k < .16 ? .8 + 1.5 * k : 1.04 - .1 * k).toFixed(3) + ")";
+  }).then(() => c.remove());
+}
+/* held on what is left, then gone, and the line is Profile's own again */
+async function rankUpPoolDone(standing, pool){
+  await rankUpWait(RU_POOL_HOLD_MS);
+  await ruTween(pool, 450, k => { pool.style.opacity = String(1 - k); pool.style.transform = "translateY(" + (4 * k).toFixed(2) + "px)"; });
+  pool.remove();
+  standing.classList.remove("ru-pooling");
 }
 async function rankUpLevelRowAfter(row, level){
   const rowNow = row.querySelector(".pf-now"), rowBar = row.querySelector(".pf-bar > i");

@@ -381,13 +381,16 @@ with sync_playwright() as pw:
     ck("a one-unit test says 1 unit and lists it", hd["title"] == "1 unit" and hd["items"] == [UNIT], hd)
     lab = pg.evaluate("()=>computeRunXp({good:12, answered:12, elapsedMs:60000, okList:Array(12).fill(true), hundos:0, wholeUnits:1})"
                       ".lines.filter(l=>/^streak/.test(l.key)).map(l=>l.label)")
-    ck("a streak line says what kind of bonus it is", lab == ["Streak bonus"], lab)
+    # build 325 renamed it ("the names of the xp ... hard to understand"):
+    # the shape held is that the one streak line says it is about answers
+    # in a row, not the exact words
+    ck("a streak line says what kind of bonus it is", len(lab) == 1 and "in a row" in lab[0].lower(), lab)
     pg.evaluate("([u])=>__run(u,1,'drill',true)", [UNIT]); wait_done(pg)
     rt = pg.evaluate("()=>({ pct: !!document.querySelector('#stage .rs-pct'),"
       " note: (document.querySelector('#stage .rs-retake-line')||{}).textContent,"
       " xp: [...document.querySelectorAll('#stage .rs-xpline-name')].map(e=>e.textContent) })")
     ck("a retake shows no score", not rt["pct"] and bool(rt["note"]), rt)
-    ck("and earns its right answers only", len(rt["xp"]) == 1 and "correct" in rt["xp"][0], rt)
+    ck("and earns its right answers only", len(rt["xp"]) == 1 and "correct" in rt["xp"][0].lower(), rt)
     pg.evaluate("([u])=>{ store.unitBestPct = store.unitBestPct || {}; store.unitBestPct[u] = 50; saveStore(); }", [UNIT])
     pg.evaluate("([u])=>__run(u,0,'drill')", [UNIT]); wait_done(pg, 60000)
     rm2 = pg.evaluate("()=>({ mine: (lastRunResult.xpLines||[]).map(l=>l.key),"
