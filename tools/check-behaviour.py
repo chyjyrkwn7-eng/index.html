@@ -21434,14 +21434,21 @@ def check_b319_penal346(br):
     # slides 124-256 version, at the END of the bank, so nothing moves: the
     # 8aded7f keys are a byte-identical prefix and the rest are those copies.
     extra = now["bank"][len(was["bank"]):]
-    check("all of KEYS is byte-identical to 8aded7f's (build 324's appended copies aside)",
-          now["keys"][:len(was["keys"])] == was["keys"] and all(b[0] == "Penal Code" and 351 <= b[1] <= 357 for b in extra),
+    # BUILD 325 appends seven more (358-364, the slides 256-578 version).
+    check("all of KEYS is byte-identical to 8aded7f's (builds 324-325's appended copies aside)",
+          now["keys"][:len(was["keys"])] == was["keys"] and all(b[0] == "Penal Code" and 351 <= b[1] <= 364 for b in extra),
           [len(now["keys"]), len(was["keys"])])
     diff = [i for i, (a, b) in enumerate(zip(now["bank"], was["bank"])) if a != b]
     # Victims of Crime #5 was also rejoined to the study guide in 319 (its
     # own check is check_b313_shuffle); it is the only other allowed change.
     vi = next((i for i, b in enumerate(now["bank"]) if b[0] == "Victims of Crime" and b[1] == 5), -1)
-    check("no other question's text, choices or answer moved", len(now["bank"]) - len(was["bank"]) == len(extra) and diff == sorted(([p[0]["i"]] if p else []) + [vi]), diff[:6])
+    # BUILD 325 re-keys two answers Madison flagged (Arrest, Search and
+    # Seizure #31 to its twin #55's C; Sexual Assault #30 to Penal #243's
+    # Terroristic Threat) - answers only, never text, choices or identity.
+    at = lambda t, s: next((i for i, b in enumerate(now["bank"]) if b[0] == t and b[1] == s), -1)
+    rekeyed = [at("Arrest, Search, and Seizure", 31), at("Sexual Assault and Family Violence", 30)]
+    same_but_answer = all(now["bank"][i][:4] == was["bank"][i][:4] for i in rekeyed if i >= 0)
+    check("no other question's text, choices or answer moved", same_but_answer and len(now["bank"]) - len(was["bank"]) == len(extra) and diff == sorted(([p[0]["i"]] if p else []) + [vi] + rekeyed), diff[:6])
 
 
 B319G_SEED = """(n) => {
