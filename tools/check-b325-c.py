@@ -493,8 +493,11 @@ def section_scar(br):
       return { darkShare: Math.round(dark / disc * 1000) / 1000, glowFar, smoke: document.querySelectorAll('.panel.home .csc-smoke').length,
                scar: !!document.querySelector('.panel.home .cosmic-scar') };
     }""")
-    check("no crater at the impact: under half of the disc round it is solid dark (324: all of it) (the crack runs through it)",
-          not r.get("none") and r["darkShare"] < 0.5, r)
+    # MOVED IN 326: the arms are 1.9x wider ("a large large crack") and meet
+    # at the impact, so more of the disc round it is crack - still no crater
+    # (324's was all of it)
+    check("no crater at the impact: under two thirds of the disc round it is solid dark (324: all of it; under half before 326's wider arms)",
+          not r.get("none") and r["darkShare"] < 0.67, r)
     check("the fissures carry a light inside them along their length (ember pixels away from the impact)", r.get("glowFar", 0) > 150, r)
     check("no smoke rising off it on Home, and the mark is still there", r.get("scar") and r.get("smoke") == 0, r)
     ctx.close()
