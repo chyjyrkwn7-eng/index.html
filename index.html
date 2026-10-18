@@ -2845,6 +2845,14 @@
      (build 314): in the character's colour it gave the colour away */
   .char-sil::before{ content:""; position:absolute; inset:8% 10% 18%; border-radius:50%; pointer-events:none;
     background:radial-gradient(closest-side, rgba(255,255,255,.13), rgba(255,255,255,.04) 60%, transparent); }
+  /* build 325: the challenge and ultimate looks (see charCategory) - the
+     pool in the look's colour; the ultimate's breathes, and stops with
+     Reduce motion like every animation */
+  .char-sil-look-challenge::before{ background:radial-gradient(closest-side, rgba(127,163,214,.16), rgba(127,163,214,.05) 60%, transparent); }
+  .char-sil-look-ultimate::before{ inset:2% 4% 12%;
+    background:radial-gradient(closest-side, rgba(255,217,138,.34), rgba(255,200,107,.12) 55%, transparent);
+    animation:char-sil-ult 3.2s ease-in-out infinite; }
+  @keyframes char-sil-ult{ 0%, 100%{ opacity:.7; transform:scale(.94); } 50%{ opacity:1; transform:scale(1.04); } }
   .avatarchar-option.locked.is-silhouette{ opacity:1; }
   .char-sil > svg, .avatarchar-option.locked .char-sil > svg, .avatarchar-option.locked.selected .char-sil > svg{ filter:none; }
   /* the fills and the grey outline are set on the parts by
@@ -44554,6 +44562,52 @@ function isSecretSilhouette(id){
   const def = AVATAR_CHARACTERS.find(c => c.id === id);
   return !!(def && def.secret && isLockedCharacter(id));
 }
+/* ---- EVERY CHARACTER YOU HAVE NOT EARNED IS BLACKED OUT (build 325) ----
+   "I really like how the characters are blacked out. Can we make it so all
+   the unlockable characters you don't have THAT aren't unlocked by a rank
+   do this? Maybe they each kinda do it in their own unique way, like the
+   challenge ones can all have the same challenge look, the secret flare
+   ones can be how they are, and the ultimate ones can be a little cooler
+   like a glow as well." So a character's CATEGORY decides how it looks
+   while it is not yours:
+   - "secret": the build 313/314 cut-out, unchanged (grey rim, solid black);
+   - "challenge": one shared look for every challenge character - a black
+     cut-out hatched with the diagonal stripes of the challenge card's
+     strip, edged in steel blue;
+   - "ultimate": black, edged in white gold with a soft gold light round
+     the edge (wide translucent strokes inside the drawing, so a recorded
+     flip-book carries it - never a filter);
+   - "rank": NOT a cut-out - it keeps the greyed preview (Madison: the ones
+     unlocked by a rank are left as they are), and so does a starter or a
+     kept character, which are never locked anyway.
+   The category is the table's own fields, so a character added later
+   falls into its look by being written down. */
+function charCategory(id){
+  const def = AVATAR_CHARACTERS.find(c => c.id === id);
+  if(!def) return null;
+  if(def.retired || def.legacy) return "kept";
+  if(def.ultimate) return "ultimate";
+  if(def.secret) return "secret";
+  if(def.feat) return "challenge";
+  if(def.unlock) return "rank";
+  return "starter";
+}
+const CHAR_SIL_LOOKS = ["secret", "challenge", "ultimate"];
+/* the look a not-yet-yours character is drawn in, or null when it is yours
+   (or locked behind a rank, which keeps the greyed preview) */
+function charLockLook(id){
+  const k = charCategory(id);
+  if(CHAR_SIL_LOOKS.indexOf(k) < 0) return null;
+  return isLockedCharacter(id) ? k : null;
+}
+function isCharSilhouette(id){ return !!charLockLook(id); }
+/* the light a silhouette's tile and card give off, in its look's colour */
+const CHAR_SIL_GLOW = { secret: "#A7AAAF", challenge: "#7FA3D6", ultimate: "#FFD98A" };
+/* A character as it should be drawn for THIS account: yours in colour, a
+   cut-out in its look, or (a rank's) the plain drawing the caller greys. */
+function buildCharArtFor(id){
+  return isCharSilhouette(id) ? buildCharSilhouette(id) : buildAvatarCharSVGSafe(id);
+}
 /* NO COLOUR, AND ONE DRAWING (build 314). "Umbra and horizon characters
    are cutoff when looking at them, also, remove the colors from their
    outline when not unlocked." Both were the silhouette's own doing:
@@ -44577,6 +44631,7 @@ function isSecretSilhouette(id){
 const SIL_LIGHT = ["cx-fx-umaura", "cx-fx-umaura2", "cx-fx-wisps", "cx-fx-umcglow", "cx-fx-umcglint", "cx-fx-umrim",
   "cx-fx-sgsparks", "cx-fx-sglight", "cx-fx-sgsurgew", "cx-fx-sgsurgeb", "cx-fx-sgaurora",
   "cx-fx-gnatm", "cx-fx-gnleak", "cx-fx-gnerupt", "cx-fx-gnseam", "cx-fx-starfield", "cx-fx-sparkles"];
+const SIL_LIGHT_RE = /^cx-fx-(bg|sparkles|.*(glow|glint|flash|strike|bolt|fork|spark|rain|code|dust|mote|meteor|surge|flare|stars|drift|neon|slash|petals|bubble|scan|led|rays|streak|pour|dots|far|near|veins|seam|pulse|flow|drip|bees))/;
 const SIL_FLARE = ["cx-fx-flares", "cx-fx-umflare", "cx-fx-sgstar", "cx-fx-gnheart", "cx-fx-wfrings", "cx-fx-wforbit"];
 const SIL_RIM = "#C9CBCE";
 const SIL_BLACK = "#05060A";
@@ -44644,6 +44699,13 @@ function charSilhouetteSVG(id){
   svg.querySelectorAll(".cx-bg").forEach(n => n.remove());
   [...svg.querySelectorAll("circle")].forEach(n => { if(/url\(#(aura|halo)-/.test(n.getAttribute("fill") || "")) n.remove(); });
   SIL_LIGHT.forEach(c => svg.querySelectorAll("." + c).forEach(n => n.remove()));
+  /* build 325: the challenge and ultimate cut-outs leave out their own
+     light and weather too - lightning, code rain, glints, sparks, the lit
+     backdrop - which as black would be shapes that are not the character */
+  if(CHAR_SIL_LOOKS.indexOf(charCategory(id)) > 0)
+    [...svg.querySelectorAll("[class*='cx-fx-']")].forEach(n => {
+      if([...n.classList].some(c => SIL_LIGHT_RE.test(c)) && n.parentNode) n.remove();
+    });
   const isFlare = n => SIL_FLARE.some(c => n.classList && n.classList.contains(c));
   const inFlare = n => { for(let x = n; x && x !== svg; x = x.parentNode) if(isFlare(x)) return true; return false; };
   /* the figure is everything that is not defs; it may sit inside the
@@ -44651,33 +44713,78 @@ function charSilhouetteSVG(id){
   const body = document.createElementNS("http://www.w3.org/2000/svg", "g");
   body.setAttribute("class", "char-sil-body");
   [...svg.childNodes].forEach(n => { if(n.nodeName !== "defs") body.appendChild(n); });
+  /* build 325: the look is the character's category (charCategory) */
+  const look = CHAR_SIL_LOOKS.indexOf(charCategory(id)) >= 0 ? charCategory(id) : "secret";
+  svg.classList.add("char-sil-" + look);
   const rim = body.cloneNode(true);
   rim.setAttribute("class", "char-sil-rim");
-  rim.setAttribute("opacity", ".78");
+  rim.setAttribute("opacity", look === "secret" ? ".78" : look === "challenge" ? ".85" : ".95");
   const shapes = "path, circle, ellipse, rect, polygon, polyline, line";
+  const rimPaint = (layer, color, width) => layer.querySelectorAll(shapes).forEach(n => {
+    if(inFlare(n)){ n.style.visibility = "hidden"; return; }
+    const none = n.getAttribute("fill") === "none";
+    /* the newer looks edge the filled shapes only: a stroked detail (a
+       seam, a fish in the bowl) edged as well showed through the black as
+       lines inside the figure */
+    if(none && look !== "secret" && !((parseFloat(n.getAttribute("stroke-width")) || 0) >= 1.1)){ n.style.visibility = "hidden"; return; }
+    n.style.fill = none ? "none" : color;
+    n.style.stroke = color;
+    n.style.strokeWidth = width;
+    n.style.strokeLinejoin = "round";
+  });
+  /* the challenge look's fill: the challenge strip's diagonal stripes, dark
+     on black, in the drawing's own units (its own id - one per drawing) */
+  let fill = SIL_BLACK;
+  if(look === "challenge"){
+    const NS = "http://www.w3.org/2000/svg";
+    let defs = svg.querySelector(":scope > defs");
+    if(!defs){ defs = document.createElementNS(NS, "defs"); svg.insertBefore(defs, svg.firstChild); }
+    /* named after the drawing's own uid, which the flip-book's hash
+       normalises - so the same drawing hashes the same every time */
+    const pid = (svg.getAttribute("data-cx-uid") || ("silh" + (++charSilSeq))) + "-silh";
+    const pat = document.createElementNS(NS, "pattern");
+    pat.setAttribute("id", pid); pat.setAttribute("patternUnits", "userSpaceOnUse");
+    pat.setAttribute("width", "3.2"); pat.setAttribute("height", "3.2");
+    pat.setAttribute("patternTransform", "rotate(-45)");
+    const bg = document.createElementNS(NS, "rect");
+    bg.setAttribute("width", "3.2"); bg.setAttribute("height", "3.2"); bg.setAttribute("fill", SIL_BLACK);
+    const st = document.createElementNS(NS, "rect");
+    st.setAttribute("width", "1.2"); st.setAttribute("height", "3.2"); st.setAttribute("fill", "#141B28");
+    pat.append(bg, st);
+    defs.appendChild(pat);
+    fill = "url(#" + pid + ")";
+  }
   body.querySelectorAll(shapes).forEach(n => {
     if(inFlare(n)) return;
     const none = n.getAttribute("fill") === "none";
-    n.style.fill = none ? "none" : SIL_BLACK;
+    n.style.fill = none ? "none" : fill;
     n.style.stroke = none ? SIL_BLACK : "none";
   });
-  rim.querySelectorAll(shapes).forEach(n => {
-    if(inFlare(n)){ n.style.visibility = "hidden"; return; }
-    const none = n.getAttribute("fill") === "none";
-    n.style.fill = none ? "none" : SIL_RIM;
-    n.style.stroke = SIL_RIM;
-    n.style.strokeWidth = "1.5px";
-    n.style.strokeLinejoin = "round";
-  });
+  if(look === "challenge") rimPaint(rim, "#7FA3D6", "1.5px");
+  else if(look === "ultimate") rimPaint(rim, "#FFF0C9", "1.3px");
+  else rimPaint(rim, SIL_RIM, "1.5px");
+  /* the ultimate look's light: two wider, fainter copies of the edge under
+     it - a glow drawn, not filtered */
+  const halos = [];
+  if(look === "ultimate"){
+    [["4.6px", ".16", "#FFC86B"], ["2.8px", ".34", "#FFE3A0"]].forEach(([w, op, c]) => {
+      const g = rim.cloneNode(true);
+      g.setAttribute("class", "char-sil-halo");
+      g.setAttribute("opacity", op);
+      rimPaint(g, c, w);
+      halos.push(g);
+    });
+  }
   /* the worn flare stays lit on the black - in greys */
   body.querySelectorAll(SIL_FLARE.map(c => "." + c).join(",")).forEach(f => {
     [f, ...f.querySelectorAll("*")].forEach(n => {
       ["fill", "stroke"].forEach(a => { const v = n.getAttribute(a); if(v && v !== "none") n.setAttribute(a, silGreyPaint(svg, v)); });
     });
   });
-  svg.append(rim, body);
+  svg.append(...halos, rim, body);
   return svg;
 }
+let charSilSeq = 0;
 /* THE PICKER'S DRAWING (build 314). "It's hard to tell which character is
    selected because some of the characters have the glow effect on them at
    all times." Every character carries a soft halo in its own colour and
@@ -44708,7 +44815,8 @@ function addPickCheck(opt){
 }
 function buildCharSilhouette(id){
   const wrap = document.createElement("span");
-  wrap.className = "char-sil";
+  const k = charCategory(id);
+  wrap.className = "char-sil char-sil-look-" + (CHAR_SIL_LOOKS.indexOf(k) >= 0 ? k : "secret");
   wrap.appendChild(charSilhouetteSVG(id));
   return wrap;
 }
@@ -78786,7 +78894,8 @@ function showDailyAlert(msg, opts){
     el.classList.add("is-progress");
     const icon = document.createElement("span");
     icon.className = "daily-alert-icon daily-alert-face";
-    if(o.character) icon.appendChild(buildAvatarCharSVGSafe(o.character));
+    /* not yours yet (the Detective's run): its cut-out (build 325) */
+    if(o.character) icon.appendChild(buildCharArtFor(o.character));
     const body = document.createElement("span");
     body.className = "daily-alert-body";
     const tag = document.createElement("span");
@@ -97209,7 +97318,7 @@ function flareHintItem(ch){
       const f = document.createDocumentFragment();
       const ghost = document.createElement("span"); ghost.className = "rs-hint-ghost char-live";
       /* not yet yours, so its silhouette (build 313) */
-      try{ ghost.appendChild(isSecretSilhouette(ch) ? buildCharSilhouette(ch) : buildAvatarCharSVGSafe(ch)); }catch(e){}
+      try{ ghost.appendChild(buildCharArtFor(ch)); }catch(e){}
       const orb = document.createElement("span"); orb.className = "rs-hint-orb";
       orb.style.setProperty("--hy", ch === "umbra" ? "80%" : ch === "genesis" ? "83%" : "35%");
       orb.appendChild(buildFlareOrb((store.mysteryColorsFound || {})[flare] ? MYSTERY_COLOR[flare] : FLARE_UNFOUND_TINT, "hint-" + ch));
@@ -110794,7 +110903,9 @@ function showUnlockDetail(o){
     art.classList.add("char-live");
     /* a silhouette's card gives off no colour either (build 314) - its
        circle and glow were the character's own */
-    if(isSecretSilhouette(o.id)){ art.classList.add("is-silhouette"); art.style.setProperty("--char-glow", "#A7AAAF"); try{ art.appendChild(buildCharSilhouette(o.id)); }catch(e){} }
+    /* build 325: any character drawn as a cut-out (charLockLook), in its look */
+    const silLook = charLockLook(o.id);
+    if(silLook){ art.classList.add("is-silhouette", "is-sil-" + silLook); art.style.setProperty("--char-glow", CHAR_SIL_GLOW[silLook]); try{ art.appendChild(buildCharSilhouette(o.id)); }catch(e){} }
     else { try{ art.appendChild(buildAvatarCharSVG(o.id)); }catch(e){} }
     if(o.hideArt) art.classList.add("is-hidden-art");
   } else if(o.kind === "badge"){
@@ -111402,7 +111513,8 @@ function buildCustomizeCharacterSect(){
     const locked = isLockedCharacter(charDef.id);
     opt.className = "avatarchar-option" + (store.avatarChar === charDef.id ? " selected" : "") +
       (locked ? " locked" : "");
-    opt.style.setProperty("--char-glow", locked && isSecretSilhouette(charDef.id) ? "#A7AAAF" : avatarGlowColor(charDef.id));
+    const silLook = locked ? charLockLook(charDef.id) : null;
+    opt.style.setProperty("--char-glow", silLook ? CHAR_SIL_GLOW[silLook] : avatarGlowColor(charDef.id));
     opt.title = AVATAR_DISPLAY_NAME[charDef.id] || charDef.id;
     opt.setAttribute("aria-label", opt.title);
     /* a secret flare character is a live black cut-out until it is yours */
@@ -111416,8 +111528,10 @@ function buildCustomizeCharacterSect(){
        see stays still, greyed - a preview, not something you hold. Only
        tiles near the screen play (charFlipWatch), so thirty of them cost
        what the ten on screen cost. */
-    if(locked && isSecretSilhouette(charDef.id)){
-      opt.classList.add("is-silhouette");
+    /* build 325: every unearned challenge, secret and ultimate character,
+       each in its category's look (charLockLook); a rank's stays greyed */
+    if(silLook){
+      opt.classList.add("is-silhouette", "is-sil-" + silLook);
       opt.appendChild(buildCharSilhouette(charDef.id));
       setCharState(opt, "live");
     } else {
