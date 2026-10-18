@@ -1831,6 +1831,69 @@
   .nt-me.nt-recap .nt-me-line{ font-size:.86rem; }
   /* his crew: the ones found, and cut-outs of the ones still missing */
   .nt-crewman.is-lost{ opacity:.85; }
+  /* ---- build 325: the parade, the kinds, the dark flares, the signal ---- */
+  /* a rank character not yet held: the greyed preview Customize uses */
+  .nt-crewman.is-ranklocked svg{ filter:saturate(.3) contrast(.4) brightness(1.34); opacity:.62; }
+  .nt-crewman.is-sil-ultimate, .nt-crewman.is-sil-secret, .nt-crewman.is-sil-challenge{ opacity:1; }
+  .nt-crewman .char-sil{ position:relative; width:100%; height:100%; }
+  .nt-parade{ width:100%; display:flex; flex-direction:column; gap:.55rem; }
+  .nt-parade-row{ width:100%; overflow:hidden;
+    -webkit-mask-image:linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+            mask-image:linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent); }
+  .nt-parade-row.is-still{ -webkit-mask-image:none; mask-image:none; }
+  .nt-parade-track{ display:flex; gap:.55rem; width:max-content; padding:0 1.2rem;
+    animation:nt-pan var(--pan-s, 12s) ease-in-out .6s infinite alternate; }
+  .nt-parade-row.is-rev .nt-parade-track{ animation-direction:alternate-reverse; }
+  .nt-parade-row.is-still .nt-parade-track{ animation:none; margin:0 auto; }
+  @keyframes nt-pan{ from{ transform:translateX(0); } to{ transform:translateX(var(--pan, 0px)); } }
+  .nt-parade-track > *{ flex:0 0 auto; animation:nt-popin .5s cubic-bezier(.25,1.5,.4,1) both; animation-delay:calc(var(--i, 0) * 45ms); }
+  .nt-crewpar .nt-slot{ width:3.7rem; height:3.7rem; }
+  .nt-badgepar .nt-slot{ width:3.4rem; height:3.4rem; }
+  /* not found yet: its grey form (never its colour - build 319), lifted
+     so it reads on his dark sky */
+  .nt-slot.is-unfound svg{ filter:brightness(2.1) contrast(.85); opacity:.85; }
+  .nt-kinds{ display:flex; flex-direction:column; gap:.4rem; width:min(24rem, 100%); padding:0 .2rem; text-align:left; }
+  .nt-kind{ display:flex; align-items:center; gap:.7rem; padding:.35rem .8rem .35rem .45rem;
+    border-radius:16px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+    animation:nt-popin .5s cubic-bezier(.25,1.5,.4,1) both; animation-delay:calc(var(--i, 0) * 90ms); }
+  .nt-kind .nt-slot{ width:2.9rem; height:2.9rem; flex:0 0 auto; }
+  .nt-kind-t{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:.05rem; }
+  .nt-kind-t b{ font-size:.86rem; font-weight:800; color:#F3F5F7; }
+  .nt-kind-t span{ font-size:.72rem; font-weight:600; color:rgba(243,245,247,.62); line-height:1.3; }
+  .nt-kind-n{ flex:0 0 auto; font-size:.8rem; font-weight:800; color:rgba(243,245,247,.8); font-variant-numeric:tabular-nums; }
+  .nt-kind.is-challenge{ border-color:rgba(127,163,214,.4); }
+  .nt-kind.is-ultimate{ border-color:rgba(255,217,138,.45); background:rgba(255,217,138,.07); }
+  .nt-flare.is-dark .cosmic-icon-badge{ opacity:.55; }
+  .nt-mode-nova .nt-friendface{ width:1.8rem; height:1.8rem; }
+  /* the signal an existing account's meeting opens on (novaTalk o.signal) */
+  .nova-talk.is-signal .nt-talk{ visibility:hidden; }
+  .nt-signal{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.7rem;
+    pointer-events:none; transition:opacity .45s ease, transform .55s cubic-bezier(.5,0,.75,0); }
+  .nt-sig-beacon{ position:relative; width:7.5rem; height:7.5rem; display:block; }
+  .nt-sig-beacon b{ position:absolute; left:50%; top:50%; width:1.3rem; height:1.3rem; margin:-.65rem; border-radius:50%;
+    background:#FFE7A8; box-shadow:0 0 18px 6px rgba(255,210,122,.55); animation:nt-sig-blink .7s ease-in-out infinite alternate; }
+  .nt-sig-beacon i{ position:absolute; inset:0; border-radius:50%; border:2.5px solid rgba(255,210,122,.8); opacity:0;
+    animation:nt-sig-ring 1.5s cubic-bezier(.2,.6,.3,1) infinite; }
+  .nt-sig-beacon i:nth-child(2){ animation-delay:.5s; } .nt-sig-beacon i:nth-child(3){ animation-delay:1s; }
+  @keyframes nt-sig-ring{ 0%{ transform:scale(.15); opacity:.95; } 100%{ transform:scale(1.25); opacity:0; } }
+  @keyframes nt-sig-blink{ from{ opacity:.55; transform:scale(.85); } to{ opacity:1; transform:scale(1.1); } }
+  .nt-sig-tag{ font-size:.78rem; font-weight:800; letter-spacing:.24em; text-transform:uppercase; color:#FFD27A; padding-left:.24em;
+    animation:nt-sig-blink .7s steps(2) infinite alternate; }
+  .nt-sig-sub{ font-size:.82rem; font-weight:700; color:rgba(243,245,247,.6); letter-spacing:.06em; }
+  .nt-signal.is-found{ opacity:0; transform:translateY(42vh) scale(.3); }
+  .nt-signal.is-found .nt-sig-beacon b{ animation:none; transform:scale(3); }
+  @media (min-width:40rem){
+    .nt-crewpar .nt-slot{ width:5.2rem; height:5.2rem; }
+    .nt-badgepar .nt-slot{ width:5.4rem; height:5.4rem; }
+    .nt-parade, .nt-parade-track{ gap:.9rem; }
+    .nt-kinds{ width:min(34rem, 100%); gap:.6rem; }
+    .nt-kind{ gap:1rem; padding:.45rem 1.2rem .45rem .6rem; border-radius:20px; }
+    .nt-kind .nt-slot{ width:4.2rem; height:4.2rem; }
+    .nt-kind-t b{ font-size:1.12rem; } .nt-kind-t span{ font-size:.92rem; } .nt-kind-n{ font-size:1.05rem; }
+    .nt-mode-nova .nt-friendface{ width:2.6rem; height:2.6rem; }
+    .nt-sig-beacon{ width:11rem; height:11rem; }
+    .nt-sig-tag{ font-size:1rem; } .nt-sig-sub{ font-size:1rem; }
+  }
   @media (min-width:40rem){
     .nt-me.nt-recap{ width:min(30rem, 92%); padding:1.3rem 1.5rem; }
     .nt-me.nt-recap .nt-me-av{ width:6.4rem; height:6.4rem; }
@@ -1864,6 +1927,7 @@
     .nt-flare{ width:5.4rem; height:5.4rem; }
     .nt-row{ max-width:42rem; gap:1rem; }
     .nt-row:has(.nt-emblem){ max-width:44rem; gap:.9rem; }
+    .nt-row:has(.nt-flare){ max-width:48rem; flex-wrap:nowrap; }
     .nt-cap{ font-size:1rem; }
     .nt-mode{ width:9rem; padding:1.1rem .4rem; } .nt-mode svg{ width:2.6rem; height:2.6rem; } .nt-mode span{ font-size:1.1rem; }
     .nt-wreck{ width:min(26rem, 70%); }
@@ -17776,6 +17840,7 @@
      the icon means the same thing on both screens. */
   [data-layout="modern"] .modedisplay-top .modeicon-drill .modeiconpath{ stroke:#FF5A60; fill:none; }
   [data-layout="modern"] .modedisplay-top .modeicon-exam .modeiconpath{ stroke:#FF9A3C; fill:none; }
+  [data-layout="modern"] .modedisplay-top .modeicon-exam .modeiconsolid{ fill:#FF9A3C; }
   [data-layout="modern"] .modedisplay-top .modeicon-review .modeiconpath{ stroke:#A694FF; fill:none; }
   [data-layout="modern"] .modedisplay-top .modeicon-game .modeiconpath{ fill:#C23B7A; stroke:none; }
   [data-layout="modern"] .modedisplay-top .modeicon-vroom .modeiconpath{ stroke:#4A9FE8; fill:none; }
@@ -51070,6 +51135,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               pendingCharUnlocks: [],
               tourRev: 0,
               novaMet: 0,      /* build 321: the meeting with Nova - see playNovaMeeting() */
+              novaHeard: {},   /* build 325: his broadcasts this ACCOUNT has had - see novaTick() */
               levelFloor: 0,   /* build 314: no floor for a new account - see badgeWallLevel() */
               rankFloor: 0,    /* build 314: see rankOf() */
               seenSettingsTour: false, seenProfileTour: false, seenRewardsTour: false,
@@ -51520,6 +51586,14 @@ function applyLoadedData(got){
      higher of two copies (mergeSameAccount), so a copy from an older
      build, which drops the field, cannot bring him back. */
   store.novaMet = (typeof got.novaMet === "number" && isFinite(got.novaMet)) ? Math.max(0, Math.floor(got.novaMet)) : 0;
+  /* BUILD 325: the broadcasts of Nova's this ACCOUNT has had, id -> when
+     ("I keep seeing ... 'something new, you can message me now' ... I've
+     seen it multiple times"). Defaults to none; a device that delivered
+     one before this build writes it in on its next tick (novaTick), and
+     a broadcast his hello already covers is never owed (`hello`). */
+  store.novaHeard = {};
+  if(got.novaHeard && typeof got.novaHeard === "object" && !Array.isArray(got.novaHeard))
+    Object.keys(got.novaHeard).forEach(k => { const v = Number(got.novaHeard[k]); if(k && isFinite(v) && v > 0) store.novaHeard[k] = v; });
   store.seenSettingsTour = typeof got.seenSettingsTour === "boolean" ? got.seenSettingsTour : store.onboardingComplete;
   store.seenProfileTour = typeof got.seenProfileTour === "boolean" ? got.seenProfileTour : store.onboardingComplete;
   /* Build 289's three Profile tips. Off unless the tourRev re-arm turns
@@ -52934,6 +53008,7 @@ function wipeLocalProgressAndSettings(){
   store.bigTest450Passed = false;
   store.bigTest500Passed = false;
   store.novaBeaten = false; store.sheriffMoved324 = true;   /* build 324 */
+  store.novaHeard = {};   /* build 325: a wiped device's next account has heard nothing */
   store.bestTestStreak = 0;
   store.weekStats = null; store.prevWeekStats = null;   /* build 324 */
   store.weeklyWins = 0; store.weeklyTop3 = 0; store.weekWinWeeks = []; store.retakenQuestions = 0; store.hundoDay = null; store.hundoDayBest = 0; store.shadesFound = false; store.shadesAt = null; store.legacyChars = []; store.rankMapSeen = -1; store.rankMapFx244 = false; store.rankMapProg = null; store.rankUpShown = 0; store.rankUpFrom = null;
@@ -54476,6 +54551,8 @@ function mergeSameAccount(dst, src){
   if(typeof src.rankUpShown === "number") maxInto(dst, "rankUpShown", src.rankUpShown);
   /* met Nova on either copy is met (build 321) */
   if(typeof src.novaMet === "number") maxInto(dst, "novaMet", src.novaMet);
+  /* a broadcast either copy has had, the account has had (build 325) */
+  maxMap("novaHeard");
   /* Flags: per question, the later of its last flag and its last unflag
      (build 297 - see setFlag). */
   { const fd = mapOf(dst, "flagged"), ud = mapOf(dst, "unflagged");
@@ -66095,9 +66172,18 @@ function modeIcon(kind){
        check in it - qualified, the mark you earn by passing - for a
        police academy class. One outline and one bold stroke, the target's
        weight (its ink is measured against Drill's in check_b323u). */
-    svg.appendChild(mk("M12 2.2l8.1 3v6.1c0 5.2-3.4 9.2-8.1 10.8-4.7-1.6-8.1-5.6-8.1-10.8V5.2z"));
+    /* THE QUALIFIER'S SEAL (build 325): "Qualifier is a cool name, not a
+       fan of the icon though." The shield read as security software, not
+       as passing. A rosette - the seal pressed on a certificate, with its
+       two ribbon tails - and the tick inside it: you met the standard. The
+       seal is an outline at the target's weight, the tails are solid like
+       the Virtual Room's heads, and the tick keeps its bold stroke. */
+    svg.appendChild(mk("M13.71 2.92Q16.2 2.03 16.67 4.63Q19.27 5.1 18.38 7.59Q20.4 9.3 18.38 11.01Q19.27 13.5 16.67 13.97Q16.2 16.57 13.71 15.68Q12 17.7 10.29 15.68Q7.8 16.57 7.33 13.97Q4.73 13.5 5.62 11.01Q3.6 9.3 5.62 7.59Q4.73 5.1 7.33 4.63Q7.8 2.03 10.29 2.92Q12 .9 13.71 2.92Z"));
+    const tails = mk("M8.3 15.4 6.6 21.7l2.6-1.2 1.6 2.1 1.3-5.6M15.7 15.4l1.7 6.3-2.6-1.2-1.6 2.1-1.3-5.6");
+    tails.setAttribute("class", "modeiconpath modeiconsolid");
+    svg.appendChild(tails);
     const check = document.createElementNS(svgNS2, "path");
-    check.setAttribute("d", "M8 12.3l2.8 2.8 5.3-5.8");
+    check.setAttribute("d", "M9.2 9.5l2 2 3.7-4");
     check.setAttribute("class", "modeiconpath modeiconcheck");
     svg.appendChild(check);
   } else if(kind === "vroom"){
@@ -70178,11 +70264,11 @@ const RELEASE_NOTES = [
         { icon: buildPillTabBarIcon, color: "#FFFFFF", title: "A Liquid Glass Tab Bar", body: "The tab bar is clear glass with white icons and labels. A glass lens lifts out and follows your finger when you tap or slide between tabs." },
         { icon: buildCalendarGridIcon, color: "#FFD27A", title: "Calendar On The Tab Bar", body: "The class calendar has its own tab at the bottom: today, this week and the next test at a glance, the days left in the course, and what is on the next test once it is posted. Settings moved into Profile, so Profile's tabs are Profile, Stats and Settings." },
         { icon: buildPersonIcon, color: "#4ADE80", title: "Friends On Your Profile", body: "Your Profile card shows your friends and what each one is doing, or that they are offline. Manage friends works as before." },
-        { icon: buildTargetIcon, color: "#FF9A3C", title: "Qualifier And Briefing", body: "Exam is now the Qualifier: a real test with no feedback until your grade. Review is now the Briefing: every question with its answer, as a list or flashcards. Each has its own look, and every start button says what you are beginning." },
+        { icon: () => modeIcon("exam"), color: "#FF9A3C", title: "Qualifier And Briefing", body: "Exam is now the Qualifier: a real test with no feedback until your grade. Review is now the Briefing: every question with its answer, as a list or flashcards. Each has its own look, and every start button says what you are beginning." },
         { icon: buildBarStatsIcon, color: "#A694FF", title: "Your Study Hours", body: "Stats has a new chart of your study time this week, in dots. Tap a day for its exact time, or look back at last week." }
       ]},
       { label: "Meet Nova", items: [
-        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. When a planet beside his ship cracked apart, the blast scattered his badges, his flares and his crew across this system. Every character you unlock is one of his missing crew, found." },
+        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. A cracked planet his ship was studying exploded, and the blast scattered everything aboard: his flares came to rest, dark, around the planet on your Home screen, his badges landed one in every unit, and his crew are the characters. Every rank you reach relights a flare, every unit you master finds a badge, and every character you unlock brings one of his crew home." },
         { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "He Meets Everyone", body: "Everybody meets him once: he tells the story, goes over what you have found, narrates What's New and shows you what has changed. He narrates every tip in the app." },
         { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova is your friend now. He congratulates you when you rank up, passes on news and what is on the next test, gives the odd tip, and answers questions when he is around." },
         { icon: buildTrophyIcon, color: "#F5C518", title: "The Weekly Recap", body: "Every Tuesday on Home, Nova presents last week's top three, with comebacks and photo finishes, and hands out honorable mentions." },
@@ -75627,8 +75713,12 @@ function novaTalk(o){
   });
   const top = document.createElement("div"); top.className = "nt-top";
   const prog = document.createElement("div"); prog.className = "nt-progress"; prog.setAttribute("aria-hidden", "true");
+  /* NO SKIP ON HIS INTRODUCTION (build 325): "Remove the skip button
+     during this, I need them to see it." `noSkip` takes the button and
+     Escape away; el.__nova.skip stays for tools that fast-forward. */
   const skip = document.createElement("button"); skip.type = "button"; skip.className = "nt-skip"; skip.textContent = "Skip";
-  top.append(prog, skip);
+  top.append(prog);
+  if(!o.noSkip) top.appendChild(skip);
   const stage = document.createElement("div"); stage.className = "nt-stage";
   const talk = document.createElement("div"); talk.className = "nt-talk";
   const bubble = document.createElement("div"); bubble.className = "nt-bubble";
@@ -75702,7 +75792,7 @@ function novaTalk(o){
   }
   function onKey(e){
     if(closed || !el.isConnected) return;
-    if(e.key === "Escape"){ e.preventDefault(); skipAll(); }
+    if(e.key === "Escape"){ if(!o.noSkip){ e.preventDefault(); skipAll(); } }
     else if((e.key === " " || e.key === "Enter" || e.key === "ArrowRight") && !(e.target && e.target.closest && e.target.closest("button"))){
       e.preventDefault(); advance();
     }
@@ -75719,13 +75809,31 @@ function novaTalk(o){
 
   document.body.appendChild(el);
   requestAnimationFrame(() => el.classList.add("show"));
-  if(still){ show(0); bubble.classList.add("is-up"); }
-  else {
+  const arrive = () => {
+    if(closed) return;
     fig.classList.add("is-arriving");
     playSound(o.news ? "ob.whatsnew" : "nova.arrive");
     setTimeout(() => fig.classList.remove("is-arriving"), 1000);
     setTimeout(() => { if(closed) return; bubble.classList.add("is-up"); if(idx < 0) show(0); }, 620);
+  };
+  if(still){ show(0); bubble.classList.add("is-up"); }
+  else if(o.signal){
+    /* A SIGNAL FIRST (build 325): "when he first comes up on screen, it
+       needs to feel more surprising, more story line like." The screen
+       goes to his sky with nobody in it; a beacon pulses in the middle
+       under "Incoming signal" and its words; then it flares, collapses to
+       where he stands, and he arrives in that light. About two and a half seconds;
+       a tap does nothing until he is there. Reduce motion skips it. */
+    el.classList.add("is-signal");
+    const sig = document.createElement("div"); sig.className = "nt-signal"; sig.setAttribute("aria-hidden", "true");
+    sig.innerHTML = '<span class="nt-sig-beacon"><i></i><i></i><i></i><b></b></span>' +
+      '<span class="nt-sig-tag">Incoming signal</span><span class="nt-sig-sub">' + (typeof o.signal === "string" ? o.signal : "") + '</span>';
+    stage.appendChild(sig);
+    try{ playSound("ui.notice"); }catch(e){}
+    setTimeout(() => { if(!closed) sig.classList.add("is-found"); }, 1800);
+    setTimeout(() => { sig.remove(); el.classList.remove("is-signal"); arrive(); }, 2400);
   }
+  else arrive();
   return el;
 }
 
@@ -76068,22 +76176,61 @@ function buildNovaWreck(){
   box.__nw = { anims, still };
   return box;
 }
-function novaBadgeSlots(n){
-  const row = document.createElement("div"); row.className = "nt-row";
+/* ---- THE BADGES, AS MANY AS THERE ARE (build 325) ----
+   "mentions 16 badges and only shows a few ... we can't say there were
+   only 16 badges because they will be more." So no number is said or
+   printed: every unit's badge goes past on a slow pan, the found ones in
+   their enamel, the rest as the grey form the badge card shows - one per
+   unit, whatever the bank holds. */
+function novaBadgeParade(){
   let units = [];
   try{ units = topicsIn(QUESTIONS); }catch(e){}
-  units.slice(0, n).forEach((u, i) => {
-    const s = document.createElement("span"); s.className = "nt-slot"; s.style.setProperty("--i", i);
-    try{ s.appendChild(buildUnitBadgeSVG(u, false)); }catch(e){}
-    row.appendChild(s);
+  let have = [];
+  try{ have = badgesEarnedList(); }catch(e){}
+  const tiles = units.map(u => {
+    const s = document.createElement("span"); s.className = "nt-slot";
+    const got = have.indexOf(u) >= 0;
+    try{ s.appendChild(buildUnitBadgeSVG(u, got)); }catch(e){}
+    if(!got) s.classList.add("is-unfound");
+    return s;
   });
-  return row;
+  return novaParade(tiles, 2, "nt-badgepar");
 }
-function novaFlareRow(){
+/* A slow pan across more than fits: the tiles in `rows` rows, each row
+   gliding to its far end and back (alternate rows the other way); a row
+   that fits does not move. The distance is measured once the stage has
+   laid it out, so the pan is exactly as long as the row is too wide. */
+function novaParade(tiles, rows, cls){
+  const box = document.createElement("div"); box.className = "nt-parade " + (cls || "");
+  const per = Math.ceil(tiles.length / Math.max(1, rows));
+  for(let r = 0; r < rows; r++){
+    const row = document.createElement("div"); row.className = "nt-parade-row" + (r % 2 ? " is-rev" : "");
+    const track = document.createElement("div"); track.className = "nt-parade-track";
+    tiles.slice(r * per, (r + 1) * per).forEach((t, i) => { t.style.setProperty("--i", i); track.appendChild(t); });
+    row.appendChild(track);
+    box.appendChild(row);
+  }
+  const measure = () => {
+    if(!box.isConnected) return;
+    box.querySelectorAll(".nt-parade-row").forEach(row => {
+      const t = row.firstChild, over = Math.max(0, t.scrollWidth - row.clientWidth);
+      row.classList.toggle("is-still", over < 4);
+      t.style.setProperty("--pan", (-over) + "px");
+      t.style.setProperty("--pan-s", Math.max(6, over / 22).toFixed(1) + "s");
+    });
+  };
+  requestAnimationFrame(() => requestAnimationFrame(measure));
+  setTimeout(measure, 400);
+  return box;
+}
+function novaFlareRow(litTo){
+  /* build 325: the ones this account has relit (litTo = the index of the
+     rank held) are lit; the rest are dark, as on Home */
+  const lit = typeof litTo === "number" ? litTo : -1;
   const row = document.createElement("div"); row.className = "nt-row";
   TIER_ORDER_FULL.forEach((k, i) => {
-    const s = document.createElement("span"); s.className = "nt-flare"; s.style.setProperty("--i", i);
-    try{ s.appendChild(buildFlareBubble(k, {})); }catch(e){}
+    const s = document.createElement("span"); s.className = "nt-flare" + (i <= lit ? " is-lit" : " is-dark"); s.style.setProperty("--i", i);
+    try{ s.appendChild(buildFlareBubble(k, { lit: i <= lit })); }catch(e){}
     row.appendChild(s);
   });
   return row;
@@ -76156,19 +76303,85 @@ function novaName(){
 function novaCrewTally(){
   try{ const t = customizeTally("character"); return { have: t.have, total: t.total }; }catch(e){ return { have: 0, total: 0 }; }
 }
-function novaCrewRow(){
-  const row = document.createElement("div"); row.className = "nt-row nt-crew";
-  let shown = [];
-  try{ shown = AVATAR_CHARACTERS.filter(c => !(c.retired && store.avatarChar !== c.id) && !(c.legacy && isLockedCharacter(c.id))); }catch(e){}
-  const mine = shown.filter(c => !isLockedCharacter(c.id)), lost = shown.filter(c => isLockedCharacter(c.id));
-  const own = mine.find(c => c.id === store.avatarChar);
-  const found = (own ? [own] : []).concat(mine.filter(c => c !== own)).slice(0, lost.length ? 4 : 8);
-  const pick = found.map(c => [c, true]).concat(lost.slice(0, 8 - found.length).map(c => [c, false]));
-  pick.forEach(([c, have], i) => {
-    const s = document.createElement("span"); s.className = "nt-slot nt-crewman" + (have ? "" : " is-lost"); s.style.setProperty("--i", i);
-    try{ s.appendChild(have ? buildAvatarCharSVGSafe(c.id) : charSilhouetteSVG(c.id)); }catch(e){}
-    row.appendChild(s);
+/* ---- THE CREW (build 325) ----
+   "it like shows some characters but only 4 even though it says 5 and it
+   says there's 30 but only shows like 10? ... there's gotta be a better
+   way." Two things, each honest about what it shows:
+   - novaCrewParade(): EVERY character there is, on a slow two-row pan -
+     the ones you have in colour, the rest in their locked looks (a rank's
+     greyed, the others cut out, charLockLook) - under "N of M characters
+     found", both counted from the same list;
+   - novaCrewKinds(): how they are found, one card per kind with a
+     character of that kind and "have of total" for it, all counted from
+     the table - so a character added later changes the numbers by itself. */
+function novaCrewShown(){
+  try{ return AVATAR_CHARACTERS.filter(c => !(c.retired && store.avatarChar !== c.id) && !(c.legacy && isLockedCharacter(c.id))); }
+  catch(e){ return []; }
+}
+const NOVA_CREW_KINDS = [
+  { k: "starter", label: "Starters", how: "Yours from day one" },
+  { k: "rank", label: "Rank rewards", how: "Handed over as you climb the ranks" },
+  { k: "challenge", label: "Challenges", how: "Each one unlocked by a challenge" },
+  { k: "secret", label: "Secrets", how: "Hidden behind the secret flares" },
+  { k: "ultimate", label: "Ultimate", how: "The hardest of all to find" }
+];
+function novaCrewArt(id){
+  const s = document.createElement("span"); s.className = "nt-slot nt-crewman";
+  const look = charLockLook(id);
+  if(look) s.classList.add("is-lost", "is-sil-" + look);
+  else if(isLockedCharacter(id)) s.classList.add("is-lost", "is-ranklocked");
+  try{ s.appendChild(buildCharArtFor(id)); }catch(e){}
+  return s;
+}
+function novaCrewParade(){
+  const order = NOVA_CREW_KINDS.map(x => x.k).concat(["kept"]);
+  const list = novaCrewShown().slice().sort((a, b) => order.indexOf(charCategory(a.id)) - order.indexOf(charCategory(b.id)));
+  return novaParade(list.map(c => novaCrewArt(c.id)), 3, "nt-crewpar");
+}
+function novaCrewKinds(){
+  const shown = novaCrewShown();
+  const row = document.createElement("div"); row.className = "nt-kinds";
+  NOVA_CREW_KINDS.forEach((kd, i) => {
+    const of = shown.filter(c => charCategory(c.id) === kd.k);
+    if(!of.length) return;
+    const have = of.filter(c => !isLockedCharacter(c.id));
+    /* the face of the kind: one still to find, so its look is shown -
+       or, when every one is found, the first */
+    const pick = (of.find(c => isLockedCharacter(c.id)) || of[0]).id;
+    const card = document.createElement("div"); card.className = "nt-kind is-" + kd.k; card.style.setProperty("--i", i);
+    card.appendChild(novaCrewArt(pick));
+    const t = document.createElement("span"); t.className = "nt-kind-t";
+    const n = document.createElement("b"); n.textContent = kd.label;
+    const h = document.createElement("span"); h.textContent = kd.how;
+    t.append(n, h);
+    const c = document.createElement("span"); c.className = "nt-kind-n"; c.textContent = have.length + " of " + of.length;
+    card.append(t, c);
+    row.appendChild(card);
   });
+  return row;
+}
+/* An existing account's characters, the ones it has found (build 325):
+   "you've already found some of these". Your own first. */
+function novaFoundRow(){
+  const mine = novaCrewShown().filter(c => !isLockedCharacter(c.id));
+  const own = mine.find(c => c.id === store.avatarChar);
+  const pick = (own ? [own] : []).concat(mine.filter(c => c !== own)).slice(0, 6);
+  const row = document.createElement("div"); row.className = "nt-row nt-crew";
+  pick.forEach((c, i) => { const s = novaCrewArt(c.id); s.style.setProperty("--i", i); row.appendChild(s); });
+  return row;
+}
+/* The Virtual Room, and him in it. */
+function novaVroomProp(){
+  const row = document.createElement("div"); row.className = "nt-row";
+  const m = document.createElement("span"); m.className = "nt-mode"; m.style.setProperty("--i", 0);
+  try{ m.appendChild(modeIcon("vroom")); }catch(e){}
+  const l = document.createElement("span"); l.textContent = "Virtual Room"; m.appendChild(l);
+  const n = document.createElement("span"); n.className = "nt-mode nt-mode-nova"; n.style.setProperty("--i", 1);
+  const face = document.createElement("span"); face.className = "nt-friendface";
+  try{ face.appendChild(buildNovaSVG({ crop: "head" })); }catch(e){}
+  const l2 = document.createElement("span"); l2.textContent = "Challenge Nova";
+  n.append(face, l2);
+  row.append(m, n);
   return row;
 }
 function novaFoundLine(st){
@@ -76191,36 +76404,80 @@ function novaRecapCard(st){
   add("nt-me-flares", st.flares + " of " + st.flareTotal + " secret flares found");
   return c;
 }
+/* ---- ONE STORY, TOLD IN ORDER (build 325) ----
+   Madison: "This walk through needs to feel like a story line and you are
+   now on the hunt to help Mr nova ... the story line for the non lit up
+   flares doesn't make sense, it says my flares but it doesn't really tie
+   in.. the explosion happening doesn't make sense enough ... It kinda
+   reads as my ship came across a planet, the planet blew up and then I
+   lost my stuff in the ship?" So every line now follows from the one
+   before it, and every thing he asks for is tied to the blast:
+   - WHY THE PLANET WENT: his ship was studying a planet like yours that
+     had started to crack (the crack Home's own planet grows as you climb);
+     its core gave way.
+   - WHAT IT DID: the blast tore through his ship and threw everything
+     aboard across this system - his flares, his badges and his crew.
+   - THE FLARES ARE ON YOUR HOME SCREEN because that is where they came to
+     rest, around your planet, with their light put out - and a flare
+     only lights for someone who has earned it, which is what a rank is.
+     A few were thrown further: the secret flares, hidden in tests.
+   - THE BADGES landed one in every unit; mastering the unit finds it.
+     No total is said (there will be more units).
+   - THE CREW got away in pods and are the characters; how each one comes
+     home is the next card (starters, ranks, challenges, secrets, the
+     ultimate three), counted from the table.
+   - Then how you do it (XP, levels, ranks; Drill, Qualifier, Briefing),
+     the Virtual Room ("It doesn't mention virtual room"), his friendship,
+     and the job: light my flares, find my badges, bring my crew home.
+   An EXISTING account ("this will be almost everyone ... it needs to feel
+   more surprising") is met differently: a signal comes in first
+   (novaTalk's `signal`), he arrives, says he does not think you have met,
+   and that you have already found some of what he lost - its own
+   characters on the stage - before the story; the recap of what it has
+   comes at the end, as before. No Skip on any of it ("I need them to see
+   it"). */
 function novaIntroLines(o){
   o = o || {};
   const existing = !!o.existing, name = novaName();
-  let units = 16;
-  try{ units = topicsIn(QUESTIONS).length || units; }catch(e){}
   const crew = novaCrewTally();
-  const lines = [
-    { gesture: "wave", text: existing
-        ? "Hello, " + name + ". I’m Nova, a space explorer and an instructor. I don’t think we’ve met."
-        : "Hello, " + name + "! I’m Nova, a space explorer and an instructor. I’ll be your guide here.",
-      enter: ctx => { const t = document.createElement("p"); t.className = "nt-hello"; t.textContent = "Nova";
-        novaProp(ctx, novaStack(t, novaCap("Explorer · Instructor"))); } },
-    { text: "Before we start, I need your help. Not long ago my ship was passing a planet much like the one on your Home screen, and it cracked apart.",
-      enter: (ctx, instant) => { novaProp(ctx, buildNovaWreck()); if(!instant && !novaMotionOff()) playSound("cs.planet"); } },
-    { gesture: "raise", text: "The blast wrecked my ship and scattered everything aboard across this system: my badges, my flares and my crew." },
-    { text: "Many of the people aboard went missing. They are the characters in this app. Every character you unlock is one of my crew, found.",
-      enter: ctx => novaProp(ctx, novaStack(novaCrewRow(), novaCap(crew.have + " of " + crew.total + " characters found"))) },
-    { text: "There’s a badge for every unit, " + units + " in all. To find one, master its unit. Each 100% on a whole unit is a hundo, and each badge takes a few.",
-      enter: ctx => novaProp(ctx, novaStack(novaBadgeSlots(8), novaCap((existing ? "Badges" : "0 of " + units + " badges found")))) },
-    { gesture: "raise", text: existing ? "My flares orbit the planet on your Home screen. Every rank you reach lights one up."
-        : "My flares orbit the planet on your Home screen, but they’re dark for now. Every rank you reach lights one up.",
-      enter: ctx => novaProp(ctx, novaStack(novaFlareRow(), novaCap(existing ? "Flares" : "Flares: not lit yet"))) },
-    { text: "A few of my flares are secret. They turn up during tests, so keep your eyes open." },
-    { text: "The ranks go from Bronze all the way to Supernova. Each one asks for a level and a number of badges.",
-      enter: ctx => novaProp(ctx, novaStack(novaRankRow(), novaCap("Seven ranks"))) },
-    { gesture: "raise", text: "Every question you get right earns XP, and XP raises your level.",
-      enter: ctx => novaProp(ctx, novaXpBar()) },
-    { text: "Tests are how you do all of it. Drill to learn, Qualifier to see if you are ready, and Briefing to go over the material first.",
-      enter: ctx => novaProp(ctx, novaModeRow()) }
-  ];
+  const st = existing ? whatsNewState() : null;
+  const rankIdx = st && st.rank ? TIER_ORDER_FULL.indexOf(st.rank) : -1;
+  const lines = [];
+  const hello = ctx => { const t = document.createElement("p"); t.className = "nt-hello"; t.textContent = "Nova";
+    novaProp(ctx, novaStack(t, novaCap("Explorer · Instructor"))); };
+  if(existing){
+    lines.push({ gesture: "wave", text: "There you are, " + name + ". I’m Nova, an explorer and an instructor. I don’t think we’ve met.", enter: hello });
+    lines.push({ gesture: "raise",
+      text: "I’ve been following your progress, and you’ve already found some of what I lost. Let me tell you how I lost it.",
+      enter: ctx => novaProp(ctx, novaStack(novaFoundRow(), novaCap("Found by you so far"))) });
+  } else {
+    lines.push({ gesture: "wave", text: "Hello, " + name + "! I’m Nova, an explorer and an instructor. I’ll be your guide here.", enter: hello });
+    lines.push({ gesture: "raise", text: "Before we start, you should know why I’m here. I need your help." });
+  }
+  lines.push({ text: "Not long ago, my ship was studying a planet much like the one on your Home screen. It had started to crack.",
+    enter: (ctx, instant) => { novaProp(ctx, buildNovaWreck()); if(!instant && !novaMotionOff()) playSound("cs.planet"); } });
+  lines.push({ gesture: "raise", text: "Then its core gave way, and the whole planet exploded. The blast tore through my ship and threw everything aboard across this system." });
+  lines.push({ text: existing && rankIdx >= 0
+      ? "My flares, one for each rank, came to rest around your planet, but the blast had put their light out. They’re the flares on your Home screen."
+      : "My flares, one for each rank, came to rest around your planet, but the blast had put their light out. That’s why the flares on your Home screen are dark.",
+    enter: ctx => novaProp(ctx, novaStack(novaFlareRow(rankIdx), novaCap(rankIdx >= 0 ? (rankIdx + 1) + " of " + TIER_ORDER_FULL.length + " lit again" : "My flares, all dark"))) });
+  lines.push({ gesture: "raise", text: existing && rankIdx >= 0
+      ? "A flare only lights again for someone who has earned it. Every rank you reach lights one, and you’ve already lit " + (rankIdx === 0 ? "the first." : (["two", "three", "four", "five", "six", "all seven"][rankIdx - 1] || (rankIdx + 1)) + ".")
+      : "A flare only lights again for someone who has earned it. Every rank you reach lights one, from Bronze all the way to Supernova.",
+    enter: ctx => novaProp(ctx, novaStack(novaRankRow(), novaCap("A flare for every rank"))) });
+  lines.push({ text: "I had a few secret flares aboard as well. They were thrown further than the rest, into your tests, so keep your eyes open." });
+  lines.push({ text: "My badges were scattered too, one into every unit you study. Master a unit and you’ll find its badge.",
+    enter: ctx => novaProp(ctx, novaStack(novaBadgeParade(), novaCap(existing && st.badges > 0 ? st.badges + (st.badges === 1 ? " badge" : " badges") + " found so far" : "Every unit has its own badge"))) });
+  lines.push({ gesture: "raise", text: "My crew got away in escape pods, but they landed all over this system. They’re the characters in this app.",
+    enter: ctx => novaProp(ctx, novaStack(novaCrewParade(), novaCap(crew.have + " of " + crew.total + " characters found"))) });
+  lines.push({ text: "Each one comes home a different way: some with a rank, most with a challenge, a few behind a secret flare, and the ultimate ones ask for nearly everything else first.",
+    enter: ctx => novaProp(ctx, novaStack(novaCrewKinds(), novaCap("How they’re found"))) });
+  lines.push({ gesture: "raise", text: "You’ll do all of it by studying. Every question you get right earns XP, XP raises your level, and your level and badges decide your rank.",
+    enter: ctx => novaProp(ctx, novaXpBar()) });
+  lines.push({ text: "Drill to learn a unit, the Qualifier to prove you’re ready, and the Briefing to go over the material first.",
+    enter: ctx => novaProp(ctx, novaModeRow()) });
+  lines.push({ gesture: "raise", text: "You don’t have to do it alone, either. In a Virtual Room you can race your classmates, and you can challenge me there too.",
+    enter: ctx => novaProp(ctx, novaVroomProp()) });
   /* ---- AND HE BECOMES YOUR FRIEND, PARTWAY THROUGH (build 324) ----
      "When Mr nova introduces himself, throughout that cutscene you will get
      the added friends notification thing saying y'all are now friends."
@@ -76233,13 +76490,12 @@ function novaIntroLines(o){
     enter: ctx => { if(!existing) novaProp(ctx, novaStack(novaFriendProp(), novaCap("Friends"))); novaFriendMoment(); } };
   if(!existing){
     lines.push(friendLine);
-    lines.push({ gesture: "nod", final: true, text: "Find my crew and my badges, light my flares and climb the ranks. I’ll show you around.",
+    lines.push({ gesture: "nod", final: true, text: "So that’s the job: light my flares, find my badges and bring my crew home. Let me show you around.",
       enter: ctx => novaProp(ctx, null) });
     return lines;
   }
   /* what this account has, said to them by name */
-  const st = whatsNewState();
-  lines.push({ gesture: "raise", recap: true, text: "Now, " + name + ", let me see how you’re doing.",
+  lines.push({ gesture: "raise", recap: true, text: "Now, " + name + ", let me see exactly how you’re doing.",
     enter: ctx => novaProp(ctx, novaRecapCard(st)) });
   lines.push({ text: st.rank ? "You’re " + RANK_DISPLAY_NAME[st.rank] + " rank, level " + st.level + ". Good work."
                              : "You’re level " + st.level + ", on your way to your first rank, " + RANK_DISPLAY_NAME[TIER_ORDER_FULL[0]] + ".",
@@ -76273,7 +76529,9 @@ function playNovaIntro(then, o){
   /* the art of the crack the wreck forms, made while he says hello */
   setTimeout(() => { try{ if(!novaMotionOff()) warmCrackForm(0, CRACK_TOP); }catch(e){} }, 900);
   novaTalk({ id: "nova-intro", label: "Nova introduces himself", lines, finalLabel: o.existing ? "What’s new" : "Let’s go",
-    skipTo: recapAt > 0 ? recapAt : null,
+    skipTo: recapAt > 0 ? recapAt : null, noSkip: true,
+    /* an existing account is found by him (build 325) */
+    signal: o.existing ? "Nova, explorer" : null,
     onClose: reason => {
       novaIntroOn = false;
       /* friends whether or not the line was reached - a Skip goes past it
@@ -76329,7 +76587,7 @@ function playNovaMeeting(){
 }
 function novaGoodbye(){
   const name = novaName();
-  novaTalk({ id: "nova-intro", label: "Nova says goodbye", finalLabel: "Goodbye",
+  novaTalk({ id: "nova-intro", label: "Nova says goodbye", finalLabel: "Goodbye", noSkip: true,
     lines: [{ gesture: "wave", final: true,
       text: "That’s everything for now, " + name + ". Find my crew, find my badges and climb the ranks. I’ll speak with you again when there’s more to show you. Goodbye for now." }],
     onClose: () => endNovaMeeting() });
@@ -76687,17 +76945,22 @@ function startMainMenuTour(){
    calendar reposition". After the main menu's own tips, and nothing else. */
 const NOVA_NEW_TIPS_321 = [
   { target: ".panel.home .cosmic-plasma", align: "left", vplacement: "below",
-    text: "New: the planet answers your touch. Tap it to see where you stand, and keep tapping to spin its rings. It cracks a little more with every rank you reach." },
+    text: "The planet answers your touch. Tap it to see where you stand, and keep tapping to spin its rings. It cracks a little more with every rank you reach." },
   { target: "#bottomtab-profile", align: "left", vplacement: "above",
-    text: "New: Profile has been rebuilt. Your rank, your level and your badges are on one card, your badge case opens from it, and Friends is back underneath." },
+    text: "Profile has been rebuilt. Your rank, your level and your badges are on one card, your badge case opens from it, and Friends is back underneath." },
   /* build 323: the calendar has its own tab in the bar, Settings is in Profile */
   { target: "#bottomtab-calendar", align: "right", vplacement: "above",
-    text: "New: the class calendar has its own tab down here now, and Settings has moved into Profile, beside Stats." }
+    text: "The class calendar has its own tab down here now, and Settings has moved into Profile, beside Stats." }
 ];
-/* An existing account's tooltips, once, in its meeting with Nova: the main
-   menu's, then what is new. No welcome bonus - that is for a new account. */
+/* An existing account's tooltips, once, in its meeting with Nova. No
+   welcome bonus - that is for a new account.
+   BUILD 325: "all the walk through stuff on the main menu can be removed,
+   only the ones with the 'new' at the beginning need to be there, it
+   doesn't need to say new though." So it is the new ones alone (the
+   main menu's own tips are for a new account, mainMenuTourSteps), and
+   they no longer start "New:". */
 function startNovaReturnTour(onDone){
-  startSimpleTour(mainMenuTourSteps(true).concat(NOVA_NEW_TIPS_321), onDone);
+  startSimpleTour(NOVA_NEW_TIPS_321.slice(), onDone);
 }
 
 
@@ -79942,7 +80205,10 @@ const NOVA_VR_READY = true;
    account made a fortnight later is not met with last month's test
    topics. Ids must never be reused. */
 const NOVA_BROADCASTS = [
-  { id: "v9-dms", at: "2026-10-12T08:00",
+  /* `hello: true` (build 325): it says only what his hello already says
+     ("You can message me too"), so an account made friends with him on or
+     after `at` is never sent it - it would be the same news twice. */
+  { id: "v9-dms", at: "2026-10-12T08:00", hello: true,
     text: "Something new: you can message me now. Ask me about ranks, badges, the modes, the next test or the Virtual Room, and I’ll answer when I’m around. When your instructor gives out what’s on the next test, I’ll pass it on here." }
 ];
 const NOVA_BROADCAST_WINDOW_MS = 7 * 24 * 3600 * 1000;
@@ -80285,14 +80551,33 @@ function novaTick(){
     s = novaState();
     if(now - (s.since || 0) < NOVA_SETTLE_MS) return;
     /* broadcasts, oldest first, inside their window */
-    const due = (NOVA_BROADCASTS || []).filter(b => b && b.id && b.text && !(s.sent || {})["b:" + b.id])
+    /* ONCE PER ACCOUNT (build 325). "I keep seeing in a lot of these
+       videos that nova will send a message that says 'something new, you
+       can message me now' but I've seen it multiple times." Two causes:
+       what he had said was recorded on the DEVICE only (class26e.nova), so
+       every new device, every Safari jar beside the installed app and
+       every fresh recording was owed it again; and his hello, sent a
+       minute and a half before it, already said "You can message me too".
+       So a broadcast is also recorded on the account (store.novaHeard,
+       merged by the higher), one the account has had is not sent on any
+       device, and one marked `hello` is not owed to a friendship that
+       began after it. The record rides along with the next save rather
+       than pushing one of its own (persistLocally) - nothing of his
+       writes to Firestore by itself. */
+    const heard = (store.novaHeard && typeof store.novaHeard === "object") ? store.novaHeard : (store.novaHeard = {});
+    let carried = false;
+    Object.keys(s.sent || {}).forEach(k => { if(k.indexOf("b:") === 0 && !heard[k.slice(2)]){ heard[k.slice(2)] = Number(s.sent[k]) || now; carried = true; } });
+    const due = (NOVA_BROADCASTS || []).filter(b => b && b.id && b.text && !(s.sent || {})["b:" + b.id] && !heard[b.id])
       .map(b => ({ b: b, at: novaBroadcastAt(b) }))
       .filter(x => isFinite(x.at) && x.at <= now && now - x.at <= NOVA_BROADCAST_WINDOW_MS)
+      .filter(x => !(x.b.hello && (s.since || 0) >= x.at))
       .sort((a, b) => a.at - b.at);
     if(due.length){
-      due.forEach(x => novaSendDM(x.b.text, { id: "b:" + x.b.id, kind: "broadcast" }));
+      due.forEach(x => { if(novaSendDM(x.b.text, { id: "b:" + x.b.id, kind: "broadcast" })) heard[x.b.id] = Date.now(); });
+      try{ persistLocally(); }catch(e){}
       return;
     }
+    if(carried){ try{ persistLocally(); }catch(e){} }
     /* one unprompted message at most, and only on a day you have studied */
     s = novaState();
     if(now - (s.lastAt || 0) < NOVA_QUIET_MS) return;
@@ -80324,7 +80609,6 @@ function novaReplyFor(raw){
   const t = " " + String(raw || "").toLowerCase().replace(/[’']/g, "'").replace(/[^a-z0-9%' ]+/g, " ") + " ";
   const n = novaName();
   const has = re => re.test(t);
-  let units = 16; try{ units = topicsIn(QUESTIONS).length || units; }catch(e){}
   let badges = 0; try{ badges = badgeCountOf(store); }catch(e){}
   let rk = null; try{ rk = rankOf(store); }catch(e){}
   const rankNow = rk ? "You’re " + RANK_DISPLAY_NAME[rk] + " now" : "You haven’t reached Bronze yet";
@@ -80340,13 +80624,15 @@ function novaReplyFor(raw){
     return "The ranks go Bronze, Silver, Gold, Platinum, Sapphire, Amethyst and Supernova. Each asks for a level and a number of badges. " + rankNow
       + (next ? "; Profile shows what " + next + " needs." : ", at the very top. Well done.");
   if(has(/ (badges?|hundos?|100%|100|master\w*) /))
-    return "There’s a badge for every unit, " + units + " in all. Score 100% on a whole unit and that’s a hundo; a few hundos in one unit earns its badge. You’ve found " + badges + " of my " + units + " so far.";
+    /* no total (build 325): there will be more units */
+    return "There’s a badge for every unit. Score 100% on a whole unit and that’s a hundo; a few hundos in one unit earns its badge. You’ve found " + badges + " so far.";
   if(has(/ (xp|levels?|level up) /))
     return "Every right answer earns XP, and XP raises your level. Your badges decide how high your level can go, so mastering units matters as much as answering a lot.";
   if(has(/ (drill|exam|review|flashcards?|learn|modes?|study|studying|practice|starred|flag\w*) /))
     return "Drill to learn a unit, a Qualifier to test yourself, and a Briefing to go over the material first. They’re all under Start Studying on Home.";
   if(has(/ (flares?|crew|characters?|ship|planet|blast|wreck|lost|explorer|space) /))
-    return "My ship went down by a planet like the one on your Home screen. My badges, my flares and my crew were scattered. Every badge you master and every character you unlock is one of them found.";
+    /* the story as his introduction tells it (build 325) */
+    return "A planet like the one on your Home screen cracked and exploded beside my ship. My flares came to rest around your planet, dark; my badges landed in your units; my crew are the characters. Every rank lights a flare, every unit you master finds a badge, and every character you unlock brings one of my crew home.";
   if(has(/ (friends?|friend code|add) /))
     return "Add classmates from Profile › Friends with their friend code, or tap someone on the Leaderboard. Friends can chat and race you in a Virtual Room.";
   if(has(/ (leaderboard|board|rankings|top|first place|1st) /))
@@ -83453,30 +83739,10 @@ const WHATS_NEW_320 = [
     glyph: "M4 9h4l5-4v14l-5-4H4V9Zm12.5-1.8a6.5 6.5 0 0 1 0 9.6l-1.4-1.4a4.5 4.5 0 0 0 0-6.8l1.4-1.4Zm2.8-2.8a10.5 10.5 0 0 1 0 15.2l-1.4-1.4a8.5 8.5 0 0 0 0-12.4l1.4-1.4Z",
     body: "A new option in Settings, off until you turn it on: sounds for your answers, your results, Home, badges, cutscenes and more.",
     say: "First, something you can hear. Sound effects are a new option in Settings. They are off until you turn them on." },
-  { key: "results", color: "#FFD84D", title: "Results, grade first",
-    glyph: "M12 1.8a7.2 7.2 0 1 0 0 14.4 7.2 7.2 0 0 0 0-14.4Zm0 3.1 1.25 2.6 2.85.4-2.06 2 .48 2.84L12 11.4l-2.52 1.34.48-2.84-2.06-2 2.85-.4L12 4.9ZM7.4 15.4 5.8 22l3.3-1.7 2.1 1.6-.7-4.9a8.7 8.7 0 0 1-3.1-1.6Zm9.2 0a8.7 8.7 0 0 1-3.1 1.6l-.7 4.9 2.1-1.6 3.3 1.7-1.6-6.6Z",
-    body: "Your grade counts up first, red to green as each unit fills. Then your XP, then anything you unlocked.",
-    say: "Your results start with your grade now. It counts up as each unit fills, red to green, and then come your XP and your rewards." },
-  { key: "hundofx", color: "#FF9EC8", title: "Characters celebrate your hundo",
-    glyph: "M12 2.5l1.9 5.9 5.9 1.9-5.9 1.9-1.9 5.9-1.9-5.9-5.9-1.9 5.9-1.9L12 2.5Zm6.5 12.5.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z",
-    body: "Score 100% and your character is thrilled, and reacts to your hundo effect while it plays.",
-    say: "Score 100% and your character is thrilled. It even reacts to your hundo effect." },
-  { key: "case", color: "#C9D3DE", title: "The Level 1 Badge Case",
-    glyph: "M9 3h6a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3V5a2 2 0 0 1 2-2Zm0 2v1h6V5H9Zm-5 6.2v1.8h16v-1.8H4Z",
-    body: "A badge you find gets the screen to itself, then goes into your badge case. Tap one to hold it and spin it, and rub it clean when it gets dirty. Badges no longer add XP.",
-    say: "Every badge you find goes into my Level 1 Badge Case. Tap one to hold it and spin it, and rub it clean when it gets dirty." },
-  { key: "rankup", color: "#E8B84A", title: "Ranking up, on the road map",
-    glyph: "M12 3l8 5v3.2l-8-5-8 5V8l8-5Zm0 6.2 8 5v3.2l-8-5-8 5v-3.2l8-5Z",
-    body: "A rank-up plays out on Profile’s road map: your challenges tick off, the road lights up to your new rank, and its rewards are handed over there.",
-    say: "Ranking up now plays out on Profile’s road map. Your challenges tick off and the road lights up to your new rank." },
-  { key: "planet", color: "#F5804D", title: "A planet that cracks",
-    glyph: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm-1.2 2.3 1.9 4.2-2.5 2.4 2.9 3.3-1.1 3.7-1.2-.2.9-3.1-3-3.5 2.6-2.5-1.7-3.9 1.4-.4Z",
-    body: "From Gold up, the planet on Home cracks a little more with every rank you reach. You see it happen in the rank-up.",
-    say: "Keep an eye on the planet on your Home screen. From Gold up it cracks a little more with every rank. I’ve seen that before." },
-  { key: "supernova", color: "#FF7A59", title: "Supernova’s mark",
-    glyph: "M12 2l1.6 6.1L19.8 6l-4.2 4.6L22 12l-6.4 1.4 4.2 4.6-6.2-2.1L12 22l-1.6-6.1L4.2 18l4.2-4.6L2 12l6.4-1.4L4.2 6l6.2 2.1L12 2Z",
-    body: "At Supernova the planet on Home keeps the mark of the blast: the scar glints, smoke rises from it, and pieces drift off its rings.",
-    say: "Reach Supernova and the planet keeps the mark of the blast for good. The scar glints and smoke rises from it." },
+  { key: "modes", color: "#FF9A3C", title: "Qualifier and Briefing",
+    glyph: "M13.71 2.92Q16.2 2.03 16.67 4.63Q19.27 5.1 18.38 7.59Q20.4 9.3 18.38 11.01Q19.27 13.5 16.67 13.97Q16.2 16.57 13.71 15.68Q12 17.7 10.29 15.68Q7.8 16.57 7.33 13.97Q4.73 13.5 5.62 11.01Q3.6 9.3 5.62 7.59Q4.73 5.1 7.33 4.63Q7.8 2.03 10.29 2.92Q12 .9 13.71 2.92ZM8.6 9.5l1.1-1.1 1.5 1.5 3.4-3.6 1.1 1.1-4.5 4.7-2.6-2.6ZM8.6 16.4 6.6 21.7l2.6-1.2 1.6 2.1.6-5.4ZM15.4 16.4l2 5.3-2.6-1.2-1.6 2.1-.6-5.4Z",
+    body: "Exam is now the Qualifier: a real test, with nothing shown until your grade. Review is now the Briefing: every question with its answer, as a list or as flashcards.",
+    say: "Two modes have new names. Exam is now the Qualifier, a real test with no feedback until your grade, and Review is now the Briefing." },
   /* build 323: the calendar to the bar, Settings into Profile */
   { key: "profile", color: "#5CA8FF", title: "Calendar in the tab bar",
     glyph: "M3 4.5h5.2v4.2H3V4.5Zm6.4 0h5.2v4.2H9.4V4.5Zm6.4 0H21v4.2h-5.2V4.5ZM3 10.2h18V20H3v-9.8Z",
@@ -83486,10 +83752,32 @@ const WHATS_NEW_320 = [
     glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-3.4 6.2h2.3v7.6H8.6V8.2Zm4.5 0h2.3v7.6h-2.3V8.2Z",
     body: "Pause a Drill or Qualifier and tap Save and exit. Start Studying offers it back, and Resume loads it right where you left off.",
     say: "You can save a test for later. Pause it, tap Save and exit, and Resume picks it up right where you left off." },
-  { key: "daily", color: "#FFD84D", title: "The daily question ring",
-    glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2.2a7.8 7.8 0 1 1 0 15.6 7.8 7.8 0 0 1 0-15.6Zm-.1 3.1c-1.9 0-3.2 1.1-3.3 2.8h2c.1-.7.6-1.1 1.3-1.1.8 0 1.3.5 1.3 1.1 0 .6-.3.9-1.1 1.4-.9.5-1.3 1.1-1.2 2.1v.5h1.9v-.4c0-.6.2-.9 1-1.3.9-.5 1.5-1.2 1.5-2.3 0-1.7-1.4-2.8-3.4-2.8Zm-.1 8.2a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Z",
-    body: "After you answer, a ring around the daily question button fills until the next question at 5pm.",
-    say: "Once you answer the daily question, a ring around its button fills until the next one arrives at 5pm." }
+  /* BUILD 325: "Results grade first, characters celebrate, the ranking up
+     on the road map, a planet that cracks, supernovas mark, the daily
+     question ring. Remove all of those from the what's new stuff shown by
+     Mr nova. It can still be in the version history of course ... Replace
+     a couple of those thing with LEGIT additions to the app." They are
+     still in RELEASE_NOTES (Version 8); these are Version 9's own. */
+  { key: "hours", color: "#A694FF", title: "Your study hours",
+    glyph: "M4 20V11h3.2v9H4Zm6.4 0V4h3.2v16h-3.2Zm6.4 0v-6.5H20V20h-3.2Z",
+    body: "Stats has a chart of your study time this week. Tap a day for its exact time, or look back at last week.",
+    say: "Stats now charts your study time for the week. Tap a day to see exactly how long you studied." },
+  { key: "novachat", color: "#8E7CF5", title: "Message Nova",
+    glyph: "M20.5 11.3a7.8 7.8 0 0 1-8.4 7.8 9.2 9.2 0 0 1-2.7-.4L4 20.7l1.5-4.3a7.6 7.6 0 0 1-1-4.1 7.8 7.8 0 0 1 8-7.8 7.8 7.8 0 0 1 8 7.8Z",
+    body: "Nova is in your chats. He passes on news and what is on the next test, congratulates you when you rank up, and answers questions when he is around.",
+    say: "My chat isn’t one-way, either. Ask me about ranks, badges, the modes or the next test, and I’ll answer when I’m around." },
+  { key: "novavr", color: "#E23B3B", title: "Challenge Nova",
+    glyph: "M13.4 2 4.6 13.6h6.1L9.6 22l9.8-12.4h-6.2L13.4 2Z",
+    body: "Invite Nova to a Virtual Room: Race, Tug of War or Battle. He almost never misses. Beat him and the Sheriff is yours.",
+    say: "You can take me on in a Virtual Room: Race, Tug of War or Battle. Beat me and the Sheriff is yours." },
+  { key: "recap", color: "#F5C518", title: "The weekly recap",
+    glyph: "M7 3h10v2h3v3a4 4 0 0 1-4 4h-.4A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 8.4 12H8a4 4 0 0 1-4-4V5h3V3Zm0 4H6v1a2 2 0 0 0 1 1.7V7Zm10 0v2.7A2 2 0 0 0 18 8V7h-1Z",
+    body: "Every Tuesday on Home, Nova presents last week’s top three and hands out honorable mentions.",
+    say: "And every Tuesday, I’ll present last week’s top three on your Home screen, with a few honorable mentions." },
+  { key: "case", color: "#C9D3DE", title: "The Level 1 Badge Case",
+    glyph: "M9 3h6a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3V5a2 2 0 0 1 2-2Zm0 2v1h6V5H9Zm-5 6.2v1.8h16v-1.8H4Z",
+    body: "A badge you find gets the screen to itself, then goes into your badge case. Tap one to hold it and spin it, and rub it clean when it gets dirty. Badges no longer add XP.",
+    say: "Every badge you find goes into my Level 1 Badge Case. Tap one to hold it and spin it, and rub it clean when it gets dirty." },
 ];
 /* You, as he sees you: your character, your name, your rank and level,
    and how many of his badges you have found. */
@@ -83506,7 +83794,9 @@ function novaMeCard(st){
   const rk = document.createElement("b"); rk.textContent = st.rank ? RANK_DISPLAY_NAME[st.rank] : "No rank yet";
   l1.append(rk, document.createTextNode("· Level " + st.level));
   const l2 = document.createElement("p"); l2.className = "nt-me-line nt-me-badges";
-  l2.textContent = st.badges + " of " + st.units + (st.units === 1 ? " badge" : " badges") + " found";
+  /* a count, never "of 16" (build 325): "we can't say there were only 16
+     badges because they will be more" */
+  l2.textContent = st.badges + (st.badges === 1 ? " badge" : " badges") + " found";
   t.append(n, l1, l2);
   c.append(av, t);
   return c;
@@ -83598,6 +83888,8 @@ function showIntroPopup(o){
   if(document.getElementById("intro-pop")) return;
   const st = whatsNewState();
   const el = novaTalk({ id: "intro-pop", news: true, label: "What’s new, from Nova", lines: whatsNewLines(st, !!o.chained),
+    /* in the meeting, no Skip (build 325) */
+    noSkip: !!o.chained,
     finalLabel: o.chained ? "Show me" : "Got it",
     onClose: reason => {
       closeIntroPopup(null, !!o.chained);
