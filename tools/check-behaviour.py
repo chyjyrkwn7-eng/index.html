@@ -16749,7 +16749,8 @@ def check_b317_rings(br):
             /* nothing else owed on Home: the reward cards would go first */
             const clearCards = () => { try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); }catch(e){}
               document.querySelectorAll('.rs-spot').forEach(x => x.remove()); try{ homeUnlockPlaying = false; }catch(e){} };
-            allFlares('all'); clearCards(); localStorage.setItem(KEY, 'supernova');
+            /* build 325: no tier above orange - the draw is plain -> orange */
+            allFlares('all'); clearCards(); localStorage.setItem(KEY, '');
             showHome(); await wait(150);
             out.dPending = drawState();
             await until(() => drawState().playing, 3000); await wait(250);
@@ -16759,7 +16760,7 @@ def check_b317_rings(br):
             showHome(); await wait(1200);
             out.dSecond = drawState();
             /* a tour is up: it waits, then plays when the tour has gone */
-            clearCards(); localStorage.setItem(KEY, 'supernova');
+            clearCards(); localStorage.setItem(KEY, '');
             const tov = document.createElement('div'); tov.id = 'tour-overlay'; document.body.appendChild(tov);
             showHome(); await wait(1800);
             out.dHeld = drawState();
@@ -16775,7 +16776,7 @@ def check_b317_rings(br):
             out.dFreshPlaying = drawState();
             await until(() => !drawState().draw, 5000);
             /* Reduce motion: the new look, recorded, nothing drawn */
-            allFlares('all'); clearCards(); localStorage.setItem(KEY, 'supernova');
+            allFlares('all'); clearCards(); localStorage.setItem(KEY, '');
             const rm0 = theme.reduceMotion; theme.reduceMotion = true; document.documentElement.dataset.reduceMotion = 'true';
             showHome(); await wait(1200);
             out.dReduce = drawState();
@@ -16834,73 +16835,35 @@ def check_b317_rings(br):
         check(dev + ": max rank without every secret flare: the orange tier, unchanged (1.4 wide, .55, a 3px glow at .5)",
               o.get("n") == 2 and o.get("orange") == 2 and o.get("top") == 0 and o.get("extras") == 0
               and op_.get("sw") == 1.4 and op_.get("alphas") == [0.55] and op_.get("shape") == "drop-shadow( 0px 0px 3px)" and op_.get("glowA") == 0.5, o)
-        check(dev + ": max rank AND every secret flare: the top tier and NOT the orange one",
-              t.get("n") == 2 and t.get("top") == 2 and t.get("orange") == 0, {k: t.get(k) for k in ("n", "top", "orange")})
-        # PLANET2: "I want black black to work". The default top tier is
-        # black: the orange's one circle a ring - its width, its opacity -
-        # in TRUE black, edged by a thin cool rim (the same ring again in an
-        # HTML-level svg just under it), no filter on the ring, no colour
-        # and no corona, and still.
-        tp = t.get("per") or [{}]
-        def black_ring(x):
-            if x.get("n") != 2 or x.get("extras") != 0 or len(x.get("per") or []) != 2: return False
-            for q in x["per"]:
-                rim = q.get("rim") or {}
-                if not (abs(q["sw"] - op_.get("sw", -9)) < 1e-6 and q["op"] == op_.get("op") and q["so"] == op_.get("so")
-                        and q["shape"] == "none" and not q["svgFilter"] and q["ownAnim"] == "none" and not q.get("glow")
-                        and q.get("alphas") == [1] and 0 <= q.get("lum", -1) < 8
-                        and rim.get("n") == 1 and rim.get("html") and q["sw"] < rim.get("sw", 0) <= q["sw"] + 1.2
-                        and 0 < rim.get("blurU", -1) <= .5 and 0 < rim.get("op", 0) <= .8
-                        and len(rim.get("rgb") or []) == 3 and min(rim["rgb"]) >= 190 and max(rim["rgb"]) - min(rim["rgb"]) <= 30):
-                    return False
-            return True
-        check(dev + ": the top tier is black by default - the orange's one circle (same width, opacity) in true black, with a thin cool rim, no filter, no colour, no corona",
-              r.get("style") == "black" and black_ring(t), {"style": r.get("style"), "top": tp, "extras": t.get("extras")})
-        check(dev + ": ... and still, like the orange, Reduce motion or not",
-              "cosmic-orbit-spin" not in (t.get("layerAnim") or "") and black_ring(ts), [t.get("layerAnim"), ts.get("layerAnim")])
-        rd = r.get("readable") or {}
-        check(dev + ": the debris and the secret flares read against the black rings: every shard has a dark body and a light edge, every flare is far lighter than the ring",
-              rd.get("shards", 0) >= 12 and rd.get("edged", 0) >= rd.get("shards", 1) * .9 and rd.get("flares") == 6 and rd.get("flareMin", 0) >= 100,
-              rd)
-        # the alternatives: the flares (round four's) and white, one line away
-        flp = fl.get("per") or [{}]
-        fh = r.get("flareHues") or []
-        near = lambda a, b: min(abs(a - b), 360 - abs(a - b)) <= 25
-        check(dev + ": the \"flares\" alternative is built exactly like the orange and carries all six secret flares' colours round the ring",
-              built_like_orange(fl) and all(q.get("lum", -1) > 100 for q in flp)
-              and len(fh) == 6 and all(all(any(near(h0, hh) for hh in q.get("hues") or []) for h0 in fh) for q in flp),
-              {"lum": [q.get("lum") for q in flp], "hues": [q.get("hues") for q in flp], "flareHues": fh})
-        oc = (op_.get("chroma") or [0])[0]
-        cen = [[c[k] for k in range(0, 24, 4)] if len(c) == 24 else [] for c in (q.get("chroma") or [] for q in flp)]
-        check(dev + ": ... each flare colour at least as vivid as the orange along the ring, the glow carrying the colours, turning (and still under Reduce motion)",
-              oc > 0 and all(len(c) == 6 and min(c) >= oc for c in cen) and all((q.get("glow") or {}).get("samePaint") for q in flp)
-              and "cosmic-orbit-spin" in (fl.get("layerAnim") or "") and "cosmic-orbit-spin" not in (fls.get("layerAnim") or "x") and built_like_orange(fls),
-              {"orange": oc, "flareCentres": cen, "spin": [fl.get("layerAnim"), fls.get("layerAnim")]})
-        wp = wh.get("per") or [{}]
-        check(dev + ": the \"white\" alternative: the same one circle in white, its rim the orange's glow in white light",
-              wh.get("n") == 2 and wh.get("extras") == 0 and all(abs(q.get("sw", 0) - 1.4) < 1e-6 and q.get("lum", 0) > 240 and (q.get("rim") or {}).get("n") == 1
-              and abs((q.get("rim") or {}).get("sw", 0) - 1.4) < 1e-6 for q in wp), wp)
+        # BUILD 325 RETIRED THE TOP TIER: "Maybe we just get rid of the black
+        # ones and only keep the new ones you get from reaching supernova?"
+        # Every secret flare plus Supernova is the orange tier now; the black,
+        # "flares" and "white" looks are unreachable (homeRingTier never
+        # returns "eclipse"), so their style checks are gone with them, and
+        # the draw is held on the one tier there is: plain -> orange.
+        check(dev + ": max rank AND every secret flare: the orange tier, no top tier (build 325)",
+              t.get("n") == 2 and t.get("top") == 0 and t.get("orange") == 2, {k: t.get(k) for k in ("n", "top", "orange")})
         dp, dg, dd, d2, dh, dat, df, dfp, drm = (r.get(k) or {} for k in ("dPending", "dPlaying", "dDone", "dSecond", "dHeld", "dAfterTour", "dFresh", "dFreshPlaying", "dReduce"))
-        check(dev + ": a tier new to this device opens in the old look (the orange rings, the new ones hidden)",
-              dp.get("draw") and dp.get("old") == 2 and dp.get("oldOrange") == 2 and dp.get("hidden") is True and dp.get("rings") == 2, dp)
-        check(dev + ": ... then the new colour - black, its rim under it - draws on round both rings with a glint, filter-free, and the tier is recorded",
+        check(dev + ": a tier new to this device opens in the old look (plain rings, the orange ones hidden)",
+              dp.get("draw") and dp.get("old") == 2 and dp.get("oldOrange") == 0 and dp.get("hidden") is True and dp.get("rings") == 2, dp)
+        check(dev + ": ... then the orange draws on round both rings with a glint, filter-free, and the tier is recorded",
               dg.get("playing") and dg.get("arcs") == 2 and dg.get("arcsMoving") == 2 and dg.get("glints") == 2
-              and dg.get("filtered") == 0 and dg.get("key") == "eclipse"
-              and len(dg.get("arcPaint") or []) == 2 and all(len(c) >= 3 and sum(c[:3]) / 3 < 10 for c in dg["arcPaint"]) and dg.get("rims") == 2, dg)
+              and dg.get("filtered") == 0 and dg.get("key") == "supernova"
+              and len(dg.get("arcPaint") or []) == 2 and all(len(c) >= 3 and c[0] > c[2] + 60 for c in dg["arcPaint"]), dg)
         check(dev + ": ... and hands over to the real rings, the draw layers gone",
               dd.get("draw") is False and dd.get("old") == 0 and dd.get("hidden") is False and dd.get("rings") == 2, dd)
         check(dev + ": the second Home does not play it again",
-              d2.get("draw") is False and d2.get("key") == "eclipse", d2)
+              d2.get("draw") is False and d2.get("key") == "supernova", d2)
         check(dev + ": it waits while a tour is up (key untouched), then plays",
-              dh.get("draw") and not dh.get("playing") and dh.get("key") == "supernova"
-              and dat.get("playing") and dat.get("key") == "eclipse", [dh, dat])
+              dh.get("draw") and not dh.get("playing") and dh.get("key") == ""
+              and dat.get("playing") and dat.get("key") == "supernova", [dh, dat])
         check(dev + ": a device that never recorded a tier draws it once from no tier",
               df.get("draw") and df.get("old") == 2 and df.get("oldOrange") == 0 and dfp.get("playing") and dfp.get("key") == "supernova", [df, dfp])
         check(dev + ": Reduce motion: no draw, the new look, the tier recorded",
-              drm.get("draw") is False and drm.get("key") == "eclipse" and drm.get("rings") == 2, drm)
+              drm.get("draw") is False and drm.get("key") == "supernova" and drm.get("rings") == 2, drm)
         check(dev + ": every secret flare without max rank: neither treatment",
               f.get("n") == 2 and f.get("orange") == 0 and f.get("top") == 0 and f.get("extras") == 0, f)
-        check(dev + ": the flare bubbles and the tiny flares are all still there in the top tier",
+        check(dev + ": the flare bubbles and the tiny flares are all still there with every flare found",
               t.get("bubbles") == o.get("bubbles") and t.get("bubbles", 0) >= 7 and t.get("dots") == 6,
               [o.get("bubbles"), t.get("bubbles"), t.get("dots")])
         ctx.close()
@@ -21330,25 +21293,28 @@ def check_b319_levelnote(br):
     print("\n319d. the 'Your level was adjusted' note, plainly")
     for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
-        for (lvl, nb, rank, top, gate, n) in ((35, 0, None, 29, "Bronze", 1), (52, 1, "Bronze", 39, "Silver", 2), (55, 4, "Silver", 49, "Gold", 1)):
+        # REWRITTEN IN BUILD 325: the wall is the next rank's level and no
+        # shown level drops on the update (levelWallMigrate325), so the note
+        # says the rule and where you stand - never "your level went from".
+        for (lvl, nb, rank, top, gate, n) in ((35, 0, None, 21, "Bronze", 1), (52, 1, "Bronze", 30, "Silver", 2), (55, 4, "Silver", 40, "Gold", 1)):
             r = pg.evaluate(B319_NOTE, [lvl, nb])
             t = " ".join(r["text"] or [])
-            where = ("the top level for " + rank) if rank else "the top level before your first rank"
-            want = ["Levels now unlock one rank at a time.",
-                    "Level %d is %s, so your level went from %d to %d." % (top, where, lvl, top),
-                    "You kept all of your XP, and it still counts.",
+            want = ["Your level now goes as high as your next rank's level and waits there until you have that rank's badges.",
+                    "For you that is level %d, the level %s asks for." % (top, gate),
+                    "You keep all of your XP.",
                     "Earn %d%s %s to reach %s." % (n, " more" if nb else "", "badge" if n == 1 else "badges", gate),
-                    "The next levels unlock then"]
-            bad = [x for x in ("keep leveling up", "turns back into levels", "rank system", "wall", "band") if x in t]
+                    "The levels your XP has already paid for come in then."]
+            bad = [x for x in ("keep leveling up", "turns back into levels", "rank system", "wall", "band", "went from") if x in t]
             miss = [x for x in want if x not in t]
             # build 320: Nova says the note, its facts exactly
             miss += ["(spoken) " + x for x in want if x not in (r.get("spoken") or "")]
             # build 321: and in the meeting's What's New, after his introduction
             miss += ["(chained) " + x for x in want if "Here’s what’s new" not in (r.get("chained") or "") or x not in (r.get("chained") or "")]
             check("%s: level %d, %d badge(s): the note says it plainly" % (dev, lvl, nb),
-                  r["title"] == "Your level was adjusted" and not miss and not bad and r["level"] == top and r["inView"],
+                  r["title"] == "Levels wait for your next rank" and not miss and not bad and r["level"] == top and r["inView"],
                   {"missing": miss, "bad": bad, "text": r["text"], "state": [r["level"], r["curve"], r["held"], r["gate"], r["need"]]})
-        r = pg.evaluate(B319_NOTE, [25, 0])
+        # (build 325: 18, under the no-badge wall of 21 - 25 was under 324's 29)
+        r = pg.evaluate(B319_NOTE, [18, 0])
         check("%s: nobody under the cap gets the note" % dev, r["text"] is None, r)
         ctx.close()
 
@@ -22971,7 +22937,12 @@ B320E_RANK = """async (k) => { const wait = ms => new Promise(r => setTimeout(r,
   /* each stage against the one before it: of what was solid (alpha > 128),
      how much is still drawn (alpha > 64) */
   const P = window.__b320prev;
-  if(P && P.length === A.length){ let was = 0, kept = 0; for(let k2 = 0; k2 < A.length; k2++) if(P[k2] > 128){ was++; if(A[k2] > 64) kept++; } out.was = was; out.kept = kept; }
+  /* build 325: Supernova's mark is the crack lit, not burnt - a wall of a
+     wider crack facing the light is painted as a pale sheen at a low alpha
+     where the narrower Amethyst crack had it in shadow, so at the top stage
+     "still drawn" is any paint at all (alpha > 8); below it, as before */
+  const keepA = k === 'titan' && typeof SCAR_CRACK_ONLY !== 'undefined' && SCAR_CRACK_ONLY ? 8 : 64;
+  if(P && P.length === A.length){ let was = 0, kept = 0; for(let k2 = 0; k2 < A.length; k2++) if(P[k2] > 128){ was++; if(A[k2] > keepA) kept++; } out.was = was; out.kept = kept; }
   window.__b320prev = A;
   /* the largest dark piece (alpha > 180, dark), and whether it holds the
      impact, the far end of the long arm and the middle of the broken shine */
@@ -23059,9 +23030,11 @@ def check_b320e_cracks(br):
       const a = tf(); await new Promise(r => setTimeout(r, 700));
       return { frags: sc.querySelectorAll('.csc-frag').length, fragsRun: run('.csc-frag'), moved: a !== tf(),
         glints: sc.querySelectorAll('.csc-glint').length, glintsRun: run('.csc-glint'), smoke: sc.querySelectorAll('.csc-smoke').length, smokeRun: run('.csc-smoke') }; }""")
-    check("Home's Supernova planet: the flakes still come off it (looping, moving), with glints along the crack and smoke off the burn",
+    # build 325: "less burn mark and more crack like" - no smoke rising off
+    # it any more (it rose off the crater and the burnt shine, both gone)
+    check("Home's Supernova planet: the flakes still come off it (looping, moving), with glints along the crack, and no smoke (build 325)",
           bool(live) and live["frags"] >= 6 and live["fragsRun"] == live["frags"] and live["moved"] and live["glints"] >= 4 and live["glintsRun"] == live["glints"]
-          and live["smoke"] >= 2 and live["smokeRun"] == live["smoke"], live)
+          and live["smoke"] == 0, live)
     ctx.close()
 
     # the rank-up: Silver to Gold, and Amethyst to Supernova, frame-stepped
@@ -24990,7 +24963,10 @@ def check_b321h(br):
               and abs((on.get("sched") or {}).get("phase", 0) - .78) < .005 and on.get("k", 1) % 4 == 0 and abs(on.get("phase", 0) - .78) < .12, on)
         offs = [pg.evaluate(B321H_IDLE, {"mod": m, "lead": 1200, "ms": 2600}) for m in (1, 2, 3)]
         check("%s: and not with the three pulses between (each waits for the next fourth)" % dev,
-              all(x.get("pulse") and x.get("seen") is False and (x.get("sched") or {}).get("k", 1) % 4 == 0 for x in offs), offs)
+              # build 325: a streak at a random moment (why "random",
+              # homeStreakRandArm) may land in one of these windows - that is
+              # the new behaviour, not the pulse's; the pulse's own still waits
+              all(x.get("pulse") and (x.get("seen") is False or x.get("why") == "random") and (x.get("sched") or {}).get("k", 1) % 4 == 0 for x in offs), offs)
         ctx.close()
     # below Supernova
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
@@ -25344,8 +25320,9 @@ def check_b321f_profile(br):
         cap = pg.evaluate(SEED, [80, 16, "profile"])
         stats = pg.evaluate(SEED, [44, 5, "stats"])
         ctx.close()
-        check(f"{dev}: the fixtures are Gold at 44 / 5 badges, Gold held at the wall (59, 6 badges), and level 80",
-              mid["level"] == 44 and mid["badges"] == 5 and wall["level"] == 59 and wall["badges"] == 6 and cap["level"] == 80,
+        # build 325: Gold's wall is Platinum's level, 50 (was 59, the top of Platinum's block)
+        check(f"{dev}: the fixtures are Gold at 44 / 5 badges, Gold held at the wall (50, 6 badges), and level 80",
+              mid["level"] == 44 and mid["badges"] == 5 and wall["level"] == 50 and wall["badges"] == 6 and cap["level"] == 80,
               [(x["level"], x["badges"], x["rank"]) for x in (mid, wall, cap)])
         check(f"{dev}: no note under the XP bar - mid level, at the wall, at level 80",
               not mid["xpNote"] and not wall["xpNote"] and not cap["xpNote"]
