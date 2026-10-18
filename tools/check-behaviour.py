@@ -10247,7 +10247,9 @@ def check_b310_vroom(br):
         const kids = [...lobby.children].map(c => c.className);
         const iSetup = kids.findIndex(c => /vroom-test-summary/.test(c)), iRoster = kids.findIndex(c => /vroom-roster/.test(c));
         const rb = document.querySelector('.vroom-readyup-btn');
-        out.order = [iSetup, iRoster, rb && rb.classList.contains('merged-into-bar') ? 1 : 0,
+        /* 325: Ready up is on the lobby's own glass pill (.vroom-setup-bar),
+           not the tab bar - "the button tab should not be there" */
+        out.order = [iSetup, iRoster, rb && !!rb.closest('#stage > .vroom-setup-bar') ? 1 : 0,
                      lobby.querySelector('.vroom-roster-head .vroom-invite-btn') ? 1 : 0];
         const back = lobby.querySelector('.back-link');
         out.backText = back ? back.textContent.trim() : '';
@@ -10287,7 +10289,7 @@ def check_b310_vroom(br):
     check("the lobby's back link says Virtual Room", r.get("backText") == "Virtual Room", r.get("backText"))
     check("and goes back to the Virtual Room screen", r.get("after") is True, r.get("after"))
     o = r.get("order") or [-1, -1, 0, 0]
-    check("Room setup sits above the room list, Invite friends in its header, Ready up on the bar (moved in 323)",
+    check("Room setup sits above the room list, Invite friends in its header, Ready up on the lobby's glass pill (moved in 323, 325)",
           0 <= o[0] < o[1] and o[2] == 1 and o[3] == 1, o)
     mc = r.get("modeColours") or []
     check("each game in Match settings has its own colour", len(mc) == 3 and all(mc) and len(set(mc)) == 3, mc)
@@ -23913,8 +23915,10 @@ def check_b320h_fixes(br):
         st = pg.evaluate("""async () => { showProfile('stats'); await new Promise(r => setTimeout(r, 700));
           const c = [...document.querySelectorAll('.profile-stats-tab .stat-card')].find(x => /Total XP/.test(x.textContent));
           return c ? c.querySelector('.stat-num').textContent : null; }""")
-        tot = pg.evaluate("() => Math.round(Number(levelStateFor(store).total) || 0).toLocaleString()")
-        check("%s: Stats shows the total XP (%s)" % (dev, st), st == tot, (st, tot))
+        # MOVED in build 325: "I'm not sure why total xp is in the at a glance
+        # box. Remove that." Stats no longer shows it (check-b325-e.py holds
+        # the four cards left); this asserted the build-320 card.
+        check("%s: Stats no longer carries a Total XP card (325)" % dev, st is None, st)
         ctx.close()
     ctx, pg = booted(br, 375, 667, seed=USED_ACCOUNT)
     pg.evaluate(B320H_SEED, {"badges": 9, "level": 62, "accent": "veteran"})
@@ -25348,8 +25352,10 @@ def check_b321f_profile(br):
         check(f"{dev}: the total XP (shown on a tablet) is the level's computed colour",
               mid["totalCol"] == mid["levelCol"] and cap["totalCol"] == cap["levelCol"] and (mid["totalShown"] == (w >= 640)),
               [mid["totalCol"], mid["levelCol"], mid["totalShown"]])
-        check(f"{dev}: on Stats, the Total XP figure is every other figure's colour",
-              stats["statTot"] and stats["statOthers"] and all(c == stats["statTot"] for c in stats["statOthers"]), [stats["statTot"], stats["statOthers"]])
+        # Total XP came off Stats in build 325 ("Remove that."); what is left of
+        # this check is that every figure on Stats is one colour.
+        check(f"{dev}: on Stats, every figure is one colour (no Total XP card since 325)",
+              not stats["statTot"] and stats["statOthers"] and len(set(stats["statOthers"])) == 1, [stats["statTot"], stats["statOthers"]])
         check(f"{dev}: the Next rank box clears the case strip by at least 1.15rem (was .8rem)",
               mid["gap"] is not None and mid["gap"] >= 1.15 * mid["rem"] - .5 and wall["gap"] >= 1.15 * wall["rem"] - .5, [mid["gap"], wall["gap"], mid["rem"]])
         lm = next((r for r in mid["rows"] if r["k"] == "level"), {}); bm = next((r for r in mid["rows"] if r["k"] == "badges"), {})
@@ -25661,14 +25667,21 @@ def check_b323v_vroom(br):
         # ---- 2-4. Match settings: the bar's own pill, grey until a unit is ticked ----
         pg.evaluate("() => showVirtualRoomSetup({ units: [], game: null, count: null, status: 'waiting' })")
         pg.wait_for_timeout(900)
-        tab = pg.evaluate("""() => { const t = document.getElementById('bottomtab-start'); if(!t) return null;
+        # REVERSED in build 325: "it should not be there when you are
+        # selecting the units for the virtual room lobby either. So revert
+        # that but make the match settings button how it was just better but
+        # give it to the button tab vibe." No tab bar; the button is on the
+        # Virtual Room's own pill (.vroom-setup-bar) in the tab bar's glass.
+        # What 323 asked of the button itself still holds and is held below.
+        tab = pg.evaluate("""() => { const t = document.querySelector('#stage > .vroom-setup-bar .vroom-setup-go'); if(!t) return null;
           const r = t.getBoundingClientRect(), cs = getComputedStyle(t);
           const lum = c => { const m = c.match(/[\\d.]+/g) || [0,0,0,0]; const a = m.length > 3 ? +m[3] : 1; return a * (0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]) / 255; };
-          return { shown: !t.hidden && r.height > 0 && !document.getElementById('bottomtabs').hidden, inert: t.classList.contains('is-inert') || t.disabled,
+          const tb = document.getElementById('bottomtabs');
+          return { shown: r.height > 0, inert: t.classList.contains('is-inert') || t.disabled,
                    lum: lum(cs.backgroundColor), x: r.left + r.width / 2, y: r.top + r.height / 2, bottom: r.bottom, vh: innerHeight,
-                   oldPill: !!document.querySelector('.vroom-setup-bar') }; }""")
-        ok_bar = bool(tab) and tab["shown"] and not tab["oldPill"]
-        check("%s: Match settings' button is the bottom bar's pill, like a test's Start" % label, ok_bar, tab)
+                   tabBar: !!tb && !tb.hidden && tb.getBoundingClientRect().height > 0 }; }""")
+        ok_bar = bool(tab) and tab["shown"] and not tab["tabBar"]
+        check("%s: no tab bar; Match settings' button on its own glass pill (325)" % label, ok_bar, tab)
         if ok_bar:
             check("%s: with no units it is grey, not a white slab" % label, tab["inert"] and tab["lum"] < 0.35, tab)
             pg.mouse.click(tab["x"], tab["y"]); pg.wait_for_timeout(500)
@@ -25677,7 +25690,7 @@ def check_b323v_vroom(br):
             check("%s: pressed early it says to select units and opens nothing" % label,
                   "units" in early["toast"].lower() and not early["sheet"], early)
             pg.evaluate("() => document.querySelector('.picks .pick input').click()"); pg.wait_for_timeout(900)
-            lit = pg.evaluate("""() => { const t = document.getElementById('bottomtab-start'); const cs = getComputedStyle(t);
+            lit = pg.evaluate("""() => { const t = document.querySelector('#stage > .vroom-setup-bar .vroom-setup-go'); const cs = getComputedStyle(t);
               const m = cs.backgroundColor.match(/[\\d.]+/g); return { inert: t.classList.contains('is-inert') || t.disabled,
               lum: (0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]) / 255 }; }""")
             check("%s: with a unit ticked it lights up" % label, not lit["inert"] and lit["lum"] > 0.6, lit)
@@ -25721,22 +25734,25 @@ def check_b323v_vroom(br):
           const inv = L.querySelector('.vroom-invite-btn'), sw = L.querySelector('.vroom-open-toggle');
           const nearHead = el => { if(!el || !head) return false; if(head.contains(el)) return true;
             const a = el.getBoundingClientRect(), b = head.getBoundingClientRect(); return Math.abs(a.top - b.bottom) < 24 && roster.contains(el); };
-          const rb = document.querySelector('.vroom-readyup-btn'), t = document.getElementById('bottomtab-start');
-          const tr = t ? t.getBoundingClientRect() : null;
+          const rb = document.querySelector('.vroom-readyup-btn'), t = document.querySelector('#stage > .vroom-setup-bar .vroom-readyup-btn');
+          const tr = t ? t.getBoundingClientRect() : null, tb = document.getElementById('bottomtabs');
           return { order: before(sum, roster), inv: nearHead(inv), sw: nearHead(sw),
-                   readyMerged: !!rb && rb.classList.contains('merged-into-bar'),
-                   tab: tr ? { shown: !t.hidden && tr.height > 0, label: t.textContent.trim(), bottom: Math.round(tr.bottom), x: tr.left + tr.width / 2, y: tr.top + tr.height / 2 } : null,
+                   readyMerged: !!t && t === rb && !(tb && !tb.hidden && tb.getBoundingClientRect().height > 0),
+                   tab: tr ? { shown: tr.height > 0, label: t.textContent.trim(), bottom: Math.round(tr.bottom), x: tr.left + tr.width / 2, y: tr.top + tr.height / 2 } : null,
                    vh: innerHeight, hs: document.documentElement.scrollWidth - innerWidth }; }""")
         check("%s: the lobby reads Room setup first, then the people" % label, bool(lob) and lob["order"], lob)
         check("%s: Invite friends and the Open room switch sit in the lobby box's header" % label,
               bool(lob) and lob["inv"] and lob["sw"], lob)
         rd = (lob or {}).get("tab") or {}
-        check("%s: Ready up is on the bottom bar, like a test's Start" % label,
+        # 325: at the foot of the screen still, on the lobby's own glass pill -
+        # no tab bar ("When in virtual room lobby, the button tab should not
+        # be there").
+        check("%s: Ready up is at the foot of the screen on its glass pill, with no tab bar (325)" % label,
               bool(lob) and lob["readyMerged"] and rd.get("shown") and "Ready" in rd.get("label", "")
               and rd.get("bottom", 0) > lob["vh"] - 130, lob)
         if rd.get("shown"):
             pg.mouse.click(rd["x"], rd["y"]); pg.wait_for_timeout(700)
-            readied = pg.evaluate("""() => ({ tab: document.getElementById('bottomtab-start').className,
+            readied = pg.evaluate("""() => ({ tab: document.querySelector('.vroom-readyup-btn').className,
               doc: !!(((__rooms.ROOM323 || {}).participants || {})[vroomMyKey] || {}).ready })""")
             check("%s: tapping it readies you, and it turns green" % label,
                   readied["doc"] and "is-ready" in readied["tab"], readied)
@@ -25780,8 +25796,8 @@ def check_b323v_vroom(br):
         pg.evaluate("() => { try{ detachVroomListener(); }catch(e){} showHome(); }"); pg.wait_for_timeout(200)
         pg.evaluate("(a) => (%s)(a[0], a[1])" % _B323V_ROOM, [n, "race"])
         pg.wait_for_timeout(900)
-        fits[n] = pg.evaluate("""() => { const r = document.querySelector('.vroom-roster'), t = document.querySelector('.vroom-roster-tools'), p = document.getElementById('bottomtab-start');
-          if(!r || !t || !p) return null; const a = r.getBoundingClientRect(), b = t.getBoundingClientRect(), c = p.getBoundingClientRect(), l = p.querySelector('.bottomtab-label').getBoundingClientRect();
+        fits[n] = pg.evaluate("""() => { const r = document.querySelector('.vroom-roster'), t = document.querySelector('.vroom-roster-tools'), p = document.querySelector('#stage > .vroom-setup-bar .vroom-readyup-btn');
+          if(!r || !t || !p) return null; const a = r.getBoundingClientRect(), b = t.getBoundingClientRect(), c = p.getBoundingClientRect(), l = p.querySelector('.vroom-bar-label').getBoundingClientRect();
           return { hs: document.documentElement.scrollWidth - innerWidth, inside: b.left >= a.left - 1 && b.right <= a.right + 1,
                    pill: l.left >= c.left && l.right <= c.right + 1 && c.right <= innerWidth }; }""")
     check("320px phone: a lobby of 2, 6 and 12 fits - no sideways scroll, the header row inside its box, Ready up inside its pill",
@@ -26274,7 +26290,10 @@ def check_b323u_units(br):
           out.lw = Math.round(lw);
           /* the Penal Code's version line stays under its name, words on the name's edge */
           const pv = rows().find(r => r.querySelector('.pick-version'));
-          if(pv){ const a = pv.querySelector('.pname').getBoundingClientRect(), rg = document.createRange();
+          if(pv){ const ra = document.createRange(); ra.selectNodeContents(pv.querySelector('.pname'));
+            /* the name's WORDS, not its box: a square's .pname is held to a
+               shared height (build 325 put the squares back) */
+            const a = ra.getBoundingClientRect(), rg = document.createRange();
             rg.selectNodeContents(pv.querySelector('.pick-version')); const t = rg.getBoundingClientRect();
             out.version = { dx: Math.round(t.left - a.left), below: Math.round(t.top - a.bottom) }; }
           /* 2. a tap ticks it and opens its details */
@@ -26365,19 +26384,20 @@ def check_b323u_units(br):
         if r.get("threw"):
             print("   threw:", r["threw"][:500])
         rows = r.get("rows") or []
-        check("%s every unit is a full-width row, not a small square" % label,
-              len(rows) >= 10 and all(abs(x["w"] - r["lw"]) <= 2 and x["w"] / max(1, x["h"]) > 3 for x in rows)
-              and len(set(x["l"] for x in rows)) == 1, (r.get("lw"), rows[:3]))
+        # REVERSED in build 325: "The unit selection screen, I think we can
+        # revert that, the square boxes were better I think." Build 322's
+        # squares, two across, are back; this asserted 323's full-width rows.
+        check("%s the units are build 322's boxes again, two across (325)" % label,
+              len(rows) >= 10 and len(set(x["l"] for x in rows)) == 2
+              and all(x["w"] < r["lw"] * 0.55 and x["h"] / max(1, x["w"]) >= 0.45 for x in rows), (r.get("lw"), rows[:3]))
         v = r.get("version") or {}
         check("%s the Penal Code row's version line sits under its name, on the name's edge" % label,
               abs(v.get("dx", 99)) <= 1.5 and -2 <= v.get("below", -99) <= 16, v)
         t = r.get("tap") or {}
-        check("%s a tap ticks the row and opens its details (best, last, done, fastest) with a 44px Details button" % label,
-              t.get("checked") is True and t.get("grew", 0) > 30 and t.get("moreH", 0) > 30 and t.get("visible") == "visible"
-              and all(k in t.get("text", "") for k in ("Best", "Last", "Done", "Fastest")) and t.get("btnH", 0) >= 44
-              and t.get("others") is True, t)
-        check("%s the Details button opens the full card and leaves the row ticked" % label,
-              (r.get("detailsBtn") or {}).get("open") is True and (r.get("detailsBtn") or {}).get("still") is True, r.get("detailsBtn"))
+        # 325: a tap only ticks the card again - nothing opens and nothing
+        # grows; the full details are a press and hold away, as in 322.
+        check("%s a tap ticks the card and opens nothing - no drawer, no Details button, no growth (325)" % label,
+              t.get("checked") is True and abs(t.get("grew", 99)) <= 1 and t.get("moreH", 1) == 0 and t.get("btnH", 1) == 0, t)
         sh = r.get("short") or {}
         check("%s a press sinks the row, and letting go eases it back with no spring past full size" % label,
               sh.get("pressed", 1) < 0.99 and sh.get("max", 9) <= 1.0005 and abs(sh.get("end", 0) - 1) < 0.0005
@@ -26390,10 +26410,11 @@ def check_b323u_units(br):
               cl.get("to") == 0 and 0 < cl.get("endsAt", 0) <= 420 and cl.get("opAtRemove") is not None
               and cl.get("gone") is True, cl)
         st = r.get("star") or {}
-        check("%s Review's Starred questions is a row after the units, the units' size, not a box on top" % label,
+        # Kept in 325 with the squares back: after the units, not on top -
+        # full width under the squares, as it was full width over them.
+        check("%s Review's Starred questions is after the units, full width, not a box on top" % label,
               st.get("first") is False and st.get("afterUnits") is True and st.get("below") is True
-              and abs(st.get("w", 0) - st.get("uw", -9)) <= 2 and abs(st.get("h", 0) - st.get("uh", -99)) <= 14
-              and "3 questions" in st.get("text", ""), st)
+              and abs(st.get("w", 0) - r.get("lw", -9)) <= 2 and "3 questions" in st.get("text", ""), st)
         cards = {c["mode"]: c for c in r.get("cards") or []}
         d = cards.get("drill") or {}
         ok_shape = all(cards.get(m, {}).get("shape") == d.get("shape") for m in ("exam", "review", "vroom")) and bool(d)
@@ -27804,14 +27825,16 @@ def check_b324t_stats(br):
               (r.get("overflow"), r.get("dotsOut"), r.get("labTouch")))
         g = r.get("glance") or {}
         cs = g.get("cards") or []
-        if len(cs) == 5 and label != "320px phone":
+        # FOUR CARDS since build 325 (Total XP removed - "Remove that."):
+        # two even rows on a phone, one full row on a tablet, no hole.
+        if len(cs) == 4 and label != "320px phone":
             if w < 640:
-                ok = cs[3]["t"] == cs[4]["t"] and cs[1]["t"] == cs[2]["t"]
+                ok = cs[0]["t"] == cs[1]["t"] and cs[2]["t"] == cs[3]["t"] and cs[0]["t"] != cs[2]["t"]
             else:
-                ok = len({c["t"] for c in cs[1:]}) == 1 and abs(cs[4]["r"] - g["gridRight"]) <= 1
-            check("%s: At a glance leaves no hole (Hundos and the streak share a row / four fill the tablet row)" % label, ok, g)
+                ok = len({c["t"] for c in cs}) == 1 and abs(cs[3]["r"] - g["gridRight"]) <= 1
+            check("%s: At a glance leaves no hole (two even rows / four fill the tablet row)" % label, ok, g)
         elif label != "320px phone":
-            check("%s: At a glance has Total XP and four cards" % label, False, g)
+            check("%s: At a glance has four cards (no Total XP since 325)" % label, False, g)
         # the empty Virtual Room
         r2 = pg.evaluate("""async () => { store.vrMatches = 0; store.vrWins = 0; store.vrTop3 = 0;
           showProfile('stats'); await new Promise(r => setTimeout(r, 900));

@@ -188,7 +188,13 @@ def check_pause_save(br):
 
 
 STATS = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
-  showProfile('stats'); await wait(1600);
+  showProfile('stats'); await wait(900);
+  /* on screen, as it is when anybody reads it: an off-screen chart's
+     light-up is not guaranteed to have run */
+  const ch0 = document.querySelector('.profile-stats-tab .stx-dots');
+  /* twice: the tab's own smooth scroll to the top can still be running */
+  if(ch0){ ch0.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(700);
+           ch0.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(1300); }
   const tab = document.querySelector('.profile-stats-tab') || document;
   const g = tab.querySelector('.stx-glance .stat-grid');
   const cards = g ? [...g.querySelectorAll(':scope > .stat-card')] : [];
@@ -198,7 +204,9 @@ STATS = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
     const rr = r.getBoundingClientRect(), body = r.querySelector('.thx-row-body').getBoundingClientRect();
     const right = [...r.children].filter(c => c.getBoundingClientRect().left >= body.right - 1 && c.getBoundingClientRect().width > 0);
     return { right: right.length, bodyToEdge: Math.round(rr.right - body.right) }; });
-  const dot = tab.querySelector('.stx-dot.on:not(.is-cap)');
+  /* the foot of the last lit column: the theme's own colour, deepened -
+     not the top of the scale, where it warms toward --theme-c1 */
+  const dot = [...tab.querySelectorAll('.stx-dot.on.is-mid:not(.is-cap)')].pop();
   const sel = tab.querySelector('.stx-dots-switch button[aria-selected="true"]');
   return { n: cards.length, wide: g ? g.querySelectorAll('.stat-card-wide').length : -1, rows: Object.values(rows), widths, recent,
            dot: dot ? getComputedStyle(dot).backgroundColor : null, sel: sel ? getComputedStyle(sel).backgroundColor : null,
@@ -287,12 +295,24 @@ def check_units(br):
         ctx, pg = booted(br, w, h, seed=USED)
         pg.evaluate(CLEAN); pg.evaluate("() => { store.seenUnitSelectTour = true; store.seenUnitHoldTip = true; }")
         r = pg.evaluate(UNITS, "drill")
-        check("%s: cards sit side by side as boxes (taller than a row: h/w %.2f), with no drawer and no growth when ticked" % (label, r["h"] / max(1, r["w"])),
-              r["side"] and r["h"] / max(1, r["w"]) >= 0.6 and r["drawers"] == 0 and abs(r["grow"]) <= 1, r)
+        # 322's squares: two across, and a box (h/w 1.1 on a phone, 0.55 on
+        # an iPad Pro 11") - a 323 row was one across at h/w ~0.2 and less
+        check("%s: cards sit two across as boxes (h/w %.2f), with no drawer and no growth when ticked" % (label, r["h"] / max(1, r["w"])),
+              r["side"] and r["h"] / max(1, r["w"]) >= 0.45 and r["drawers"] == 0 and abs(r["grow"]) <= 1, r)
         rv = pg.evaluate(UNITS, "review")
         check("%s: Briefing's Starred questions box is still after the units" % label,
               "pick-flagged-all" in (rv["starredLast"] or ""), rv["starredLast"])
         ctx.close()
+
+
+def tap_at(pg, sel):
+    """A real tap at the element's middle. Not pg.click(): the not-yet button
+    carries aria-disabled (it still takes the tap, and says why), which
+    Playwright's actionability check refuses to click."""
+    r = pg.evaluate("(s) => { const e = document.querySelector(s); if(!e) return null; const b = e.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }", sel)
+    if r:
+        pg.mouse.click(r["x"], r["y"])
+    return bool(r)
 
 
 VR_BAR = """() => { const bar = document.querySelector('#stage > .vroom-setup-bar');
@@ -327,13 +347,13 @@ def check_vroom(br):
               ok_a, a)
         early = None
         if a.get("bar"):
-            pg.click("#stage > .vroom-setup-bar .vroom-setup-go"); pg.wait_for_timeout(500)
+            tap_at(pg, "#stage > .vroom-setup-bar .vroom-setup-go"); pg.wait_for_timeout(500)
             early = pg.evaluate("() => ({ toast: (document.querySelector('.toast') || {}).textContent || '', sheet: !(document.getElementById('unitoptions-modal') || { hidden: true }).hidden })")
             pg.evaluate("() => document.querySelector('.picks .pick input').click()"); pg.wait_for_timeout(800)
         b = pg.evaluate(VR_BAR)
         opened = False
         if b.get("bar"):
-            pg.click("#stage > .vroom-setup-bar .vroom-setup-go"); pg.wait_for_timeout(700)
+            tap_at(pg, "#stage > .vroom-setup-bar .vroom-setup-go"); pg.wait_for_timeout(700)
             opened = pg.evaluate("() => !(document.getElementById('unitoptions-modal') || { hidden: true }).hidden")
         check("%s: pressed early it says to select units and opens nothing; with a unit it lights (filled) and opens the sheet" % label,
               bool(early) and "unit" in early["toast"].lower() and not early["sheet"] and b.get("bar") and not b["inert"]
@@ -346,7 +366,7 @@ def check_vroom(br):
               L["bar"] and not L["tabsShown"] and "blur(30px)" in L["blur"] and "ready" in L["label"].lower()
               and not L["inert"] and L["btnAlpha"] > 0.9, L)
         if L.get("bar"):
-            pg.click("#stage > .vroom-setup-bar .vroom-readyup-btn"); pg.wait_for_timeout(800)
+            tap_at(pg, "#stage > .vroom-setup-bar .vroom-readyup-btn"); pg.wait_for_timeout(800)
             rd = pg.evaluate("() => ({ doc: !!(((__rooms.ROOM323 || {}).participants || {})[vroomMyKey] || {}).ready, cls: document.querySelector('.vroom-readyup-btn').className })")
             check("%s: tapping it readies you, and it turns green" % label, rd["doc"] and "is-ready" in rd["cls"], rd)
         ctx.close()

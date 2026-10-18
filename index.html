@@ -7110,8 +7110,13 @@
      under its last card, and back-to-top clears it as it clears the bar. */
   body:has(#stage > .vroom-setup-bar) .wrap{ padding-bottom:8rem; }
   body:has(#stage > .vroom-setup-bar) .backtotop{ bottom:calc(env(safe-area-inset-bottom, 0px) + 6.2rem); }
-  @media (min-width:40rem){
-    body:has(#stage > .vroom-setup-bar) .backtotop{ bottom:calc(env(safe-area-inset-bottom, 0px) + 7rem); }
+  /* ...and from 44rem it sits in the corner beside the pill, as it does
+     beside the tab bar on a test's unit screen (the same two lines). */
+  @media (min-width:44rem){
+    body:has(#stage > .vroom-setup-bar) .backtotop{
+      bottom:calc(.6rem + env(safe-area-inset-bottom, 0px));
+      right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
+    }
   }
   .vroom-test-summary{
     text-align:center; padding:.85rem 1rem .95rem; margin:0 0 1rem; border-radius:14px;
