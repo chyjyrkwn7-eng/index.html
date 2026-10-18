@@ -96,9 +96,9 @@ def shoot(outdir, name, w, h):
         code = a.evaluate("()=>vroomCode")
         b.evaluate("(c)=>joinVirtualRoomLobby(c)", code)
         for pg in (a, b):
-            pg.wait_for_selector("body:has(#stage > .screen-vroom-lobby) #bottomtab-start:not([hidden])", state="visible", timeout=20000)
-        b.click("body:has(#stage > .screen-vroom-lobby) #bottomtab-start:not([hidden])"); b.wait_for_timeout(400)
-        a.click("body:has(#stage > .screen-vroom-lobby) #bottomtab-start:not([hidden])")
+            pg.wait_for_selector("body:has(#stage > .screen-vroom-lobby) #stage > .vroom-setup-bar > .vroom-readyup-btn", state="visible", timeout=20000)
+        b.click("body:has(#stage > .screen-vroom-lobby) #stage > .vroom-setup-bar > .vroom-readyup-btn"); b.wait_for_timeout(400)
+        a.click("body:has(#stage > .screen-vroom-lobby) #stage > .vroom-setup-bar > .vroom-readyup-btn")
         for pg in (a, b):
             pg.wait_for_selector(".screen-tug", timeout=25000)
 
