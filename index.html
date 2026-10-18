@@ -12774,7 +12774,9 @@
     68%{ opacity:.85; }
     100%{ opacity:0; transform:translate(var(--dx), var(--dy)) rotate(var(--r)) scale(.6); }
   }
-  @keyframes csc-ember{ from{ opacity:.45; } to{ opacity:1; } }
+  /* (build 325: from .7, not .45 - the light in a crack at its lowest read
+     as brown char rather than as a glow; the crater's coal is gone) */
+  @keyframes csc-ember{ from{ opacity:.7; } to{ opacity:1; } }
   /* THE EXPLOSION, REMEMBERED (build 320, scarAfterEffects): now and then
      a broken edge along the crack catches the light - a short cool streak
      laid along the crack - and faint dark smoke rises off the crater and
@@ -13273,6 +13275,21 @@
   .rank-orbit-slot > .cosmic-icon-badge{ transition:scale 1.1s cubic-bezier(.2,1.4,.4,1), opacity .9s ease .45s; }
   @keyframes rank-orbit{ to{ rotate:360deg; } }
   @keyframes rank-orbit-back{ to{ rotate:-360deg; } }
+  /* THE SECRET FLARES KEEP UP WITH THE BUBBLES (build 325). Madison: "the
+     secret flares during the cutscene, after and before the spin, they
+     don't move, fix that." They did turn - on Home's clock, 120s a lap
+     outside and 52s inside (~3 and ~7 degrees a second) - while the rank
+     bubbles round them go round in RANK_ORBIT_MS (30s, 12 a second), so
+     beside the bubbles they read as standing still. In a scene their two
+     rings run at the bubbles' pace, the inner one keeping Home's ratio
+     (52/120 of it): they visibly orbit before the whirl, ride it (the
+     whirl is on `rotate`, this on `transform`, so the two add), and go on
+     orbiting after it. Supernova's spin-up still wins (!important).
+     Reduce motion: .rank-still stops it, as before. */
+  @media (prefers-reduced-motion:no-preference){
+    .tier-cutscene .cosmic-hero-wrap > .cosmic-hero-orbitlayer{ animation-duration:.22s, 30s; }
+    .tier-cutscene .cosmic-hero-wrap > .cosmic-hero-orbitlayer.cosmic-hero-orbitlayer-inner{ animation-duration:.22s, 13s; }
+  }
   /* The rank's own flare lighting: a pool of its colour behind it that
      swells and breathes, and the bubble itself grows. */
   .rank-orbit-slot::before{
@@ -17095,6 +17112,27 @@
      rank's colour and the yellow dot (has-new) stays, and the refused
      taps still say "Your profile needs you". Nothing on the tab moves. */
   #bottomtab-profile.ru-call .bottomtab-label{ color:color-mix(in srgb, var(--ru-color, var(--accent)) 55%, #fff); }
+  /* THE CALL MOVES AGAIN, AS A GESTURE (build 325). Madison: "it didn't
+     seem like the profile tab on bottom was moving or shaking. The word
+     profile was only highlighted yellow." So the tab makes the app's
+     "something new is in there" gesture - avatar-pulse's grow and ring
+     (showPointsFlyEffect), in the new rank's colour - with a short shake
+     on top, ONCE per call, never a loop: as Home locks, then every
+     RU_NUDGE_EVERY_MS while it stays locked, and on a refused tap
+     (rankUpNudge). 320's complaint was a ring breathing and the character
+     bobbing for as long as Home was locked; this rests between calls. The
+     global Reduce motion rule stops it (it is the element's own animation). */
+  @keyframes ru-nudge{
+    0%{ transform:scale(1); box-shadow:0 0 0 0 color-mix(in srgb, var(--ru-color, var(--accent)) 85%, transparent); }
+    20%{ transform:scale(1.15); }
+    32%{ transform:scale(1.14) translateX(-3px) rotate(-5deg); }
+    44%{ transform:scale(1.12) translateX(3px) rotate(5deg); }
+    56%{ transform:scale(1.09) translateX(-2px) rotate(-3deg); box-shadow:0 0 0 7px rgba(0,0,0,0); }
+    68%{ transform:scale(1.05) translateX(1px) rotate(1.5deg); }
+    82%{ transform:scale(1.02); }
+    100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(0,0,0,0); }
+  }
+  #bottomtab-profile.ru-nudge{ animation:ru-nudge 1.1s ease-out; transform-origin:50% 60%; }
   /* While it plays nothing can be pressed: this layer takes every touch,
      and the scene swallows keys, wheels and clicks on the window. */
   .ru-blocker{ position:fixed; inset:0; z-index:2147483000; background:transparent; touch-action:none; -webkit-tap-highlight-color:rgba(0,0,0,0); }
@@ -17257,6 +17295,28 @@
   .pf-goal.ru-goal-pre.ru-goal-in .pf-rw{ transition:opacity .4s ease var(--ru-d, 0s), transform .55s cubic-bezier(.2,1.5,.4,1) var(--ru-d, 0s); }
   .pf-goal.ru-goal-pre .pf-rw{ transform:translateY(10px) scale(.7); }
   .pf-standing.ru-climbing .pf-xpbarwrap{ filter:drop-shadow(0 0 8px rgba(111,194,255,.55)); }
+  /* THE SAVED XP AS A POOL THAT EMPTIES (build 325). Madison: "since it's
+     extra xp, it should almost be subtracting, so you can see in realtime
+     all the xp going to work". While the climb runs, the right of the line
+     under the bar (the total, or "to Level N" on a phone) gives its place
+     to the pool: "Saved XP" and the number left, counting DOWN in the same
+     frame as the bar fills; every level the bar completes takes its XP out
+     as a "-N XP" that lifts off the pool towards the bar
+     (rankUpPoolTake). It ends on what is left - 0, or what is still saved
+     behind the next rank's level. Transform and opacity only, and DRIVEN
+     A FRAME AT A TIME (ruTween), not by CSS keyframes: a CSS animation
+     started on this busy screen sat pending ~400ms in Chromium before it
+     ran (the compositor start the ruClockSnap note measures), so the pool
+     came up late and every "-N XP" was gone before it had moved. */
+  .pf-standing.ru-pooling .pf-xpnums > :is(.pf-xp-total, .pf-xp-to){ display:none; }
+  .ru-pool{ position:relative; margin-left:auto; display:inline-flex; align-items:baseline; gap:.4rem; white-space:nowrap;
+    padding:.12rem .55rem; border-radius:999px; background:rgba(143,193,255,.12); box-shadow:inset 0 0 0 1px rgba(143,193,255,.34);
+    font-variant-numeric:tabular-nums; }
+  .ru-pool-lab{ font-size:.72em; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:rgba(207,230,255,.72); }
+  .ru-pool-num{ display:inline-block; font-weight:800; color:#CFE6FF; }
+  .ru-pool.is-empty .ru-pool-num{ color:rgba(207,230,255,.6); }
+  .ru-pool-chip{ position:absolute; right:.4rem; bottom:100%; font-weight:800; font-size:.86em; color:#8FC1FF; pointer-events:none;
+    white-space:nowrap; text-shadow:0 1px 6px rgba(20,60,140,.6); opacity:0; will-change:transform, opacity; }
   .pf-level.ru-lvpop{ display:inline-block; animation:ru-lvpop .5s cubic-bezier(.2,1.5,.4,1) both; }
   @keyframes ru-lvpop{ 0%{ transform:scale(1); } 45%{ transform:scale(1.2); color:#BFE3FF; } 100%{ transform:scale(1); } }
   .xpnums.ru-climbnote{ color:#8FC1FF; font-weight:800; }
@@ -25384,6 +25444,12 @@
   .rs-xpline-name{ grid-column:1; grid-row:1; min-width:0; text-wrap:balance; }
   .rs-xpline-val{ grid-column:2; grid-row:1; font-weight:800; color:var(--xp); white-space:nowrap; text-align:right; }
   .rs-xpline-none{ display:block; color:var(--soft); }
+  /* build 325: "Bonuses", over the lines that are not the answers */
+  .rs-xpline.rs-xpkick{ display:block; margin:.85rem 0 .45rem; font-size:.7rem; font-weight:800; letter-spacing:.14em;
+    text-transform:uppercase; color:rgba(255,255,255,.46); }
+  /* build 325: the sum under the total, in the line's own small grey */
+  .rs-xpsum{ margin:-.55rem 0 .95rem; text-align:right; font-size:var(--rs-cap, .78rem); line-height:1.35; color:var(--soft);
+    font-variant-numeric:tabular-nums; }
   .rs-xptotal{
     display:flex; align-items:baseline; justify-content:space-between; gap:1rem;
     margin:.95rem 0 1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,.08);
@@ -51574,6 +51640,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               novaHeard: {},   /* build 325: his broadcasts this ACCOUNT has had - see novaTick() */
               levelFloor: 0,   /* build 314: no floor for a new account - see badgeWallLevel() */
               rankFloor: 0,    /* build 314: see rankOf() */
+              levelWallRule: 325,  /* build 325: a new account starts under the new wall - see levelWallMigrate325() */
               seenSettingsTour: false, seenProfileTour: false, seenRewardsTour: false,
               seenUnitOptionsTour: false, seenFirstResultsTour: false,
               /* On by default here as well as in applyLoadedData(): this
@@ -51957,6 +52024,16 @@ function applyLoadedData(got){
   store.rankFloor = (typeof got.rankFloor === "number" && isFinite(got.rankFloor))
     ? Math.max(0, Math.min(TIER_ORDER_FULL.length, Math.floor(got.rankFloor)))
     : legacyRankFloorOf(got);
+  /* THE NEW WALL'S GRANDFATHER FLOOR (build 325) - see levelWallMigrate325.
+     A copy without the flag (every account on the update, and a copy an
+     older build wrote) keeps the level build 324 showed it as its floor,
+     once; then the flag is set. A new sign-up starts with the flag (the
+     store literal), so it never runs for an account with nothing to keep. */
+  store.levelWallRule = (typeof got.levelWallRule === "number" && isFinite(got.levelWallRule)) ? got.levelWallRule : 0;
+  if(store.levelWallRule < LEVEL_WALL_RULE){
+    try{ levelWallMigrate325(got, store); }catch(e){}
+    store.levelWallRule = LEVEL_WALL_RULE;
+  }
   /* Defaults to 0 for an existing account, like levelPreserved and for
      the same reason: grantRetroBadgesOnce() is SUPPOSED to run once for
      people who are already here. */
@@ -53427,6 +53504,7 @@ function wipeLocalProgressAndSettings(){
   store.unflagged = {};
   store.levelFloor = 0;   /* build 314: a reset starts under the badge wall like anybody new */
   store.rankFloor = 0;
+  store.levelWallRule = LEVEL_WALL_RULE;   /* build 325: and under the new wall, with nothing to grandfather */
   store.tally = {}; store.tallyBase = {};
   store.unitGameBeat = {};
   store.unitBestPct = {}; store.unitBestMs = {}; store.flareLevels = {};
@@ -54616,6 +54694,7 @@ function mergeLeavingAccount(src, note){
      level keeps it - neither side loses one by being merged */
   store.levelFloor = Math.max(num(store.levelFloor), num(src.levelFloor));
   store.rankFloor = Math.max(num(store.rankFloor), num(src.rankFloor));
+  store.levelWallRule = Math.max(num(store.levelWallRule), num(src.levelWallRule));
   maxMap("unitBestPct"); minMap("unitBestMs"); maxMap("flareLevels");
   /* game records: per unit, per speed */
   ["unitGameBeat", "gameFarthest"].forEach(k => {
@@ -54982,6 +55061,9 @@ function mergeSameAccount(dst, src){
      an older build carries none and changes nothing here. */
   maxInto(dst, "levelFloor", src.levelFloor);
   maxInto(dst, "rankFloor", src.rankFloor);
+  /* build 325: the new wall's grandfathering ran on either copy - see
+     levelWallMigrate325; a copy from an older build carries none */
+  if(typeof src.levelWallRule === "number") maxInto(dst, "levelWallRule", src.levelWallRule);
   /* a rank-up shown on either copy is shown (build 319); a copy from an
      older build carries none and changes nothing */
   if(typeof src.rankUpShown === "number") maxInto(dst, "rankUpShown", src.rankUpShown);
@@ -56678,36 +56760,89 @@ function preserveLegacyLevel(){
    EVERYTHING THAT SHOWS OR PUBLISHES A LEVEL ASKS levelStateFor() /
    levelOf(), so the bar, the number, the rankings row, the ranks and
    the unlocks can never disagree about where somebody is held. */
-/* THE LEVEL BANDS (build 314, final - Madison): "their max level is at
-   their rank ... someone is level 80 but doesn't have a single badge,
-   their level would actually show as the max level in bronze, they
-   would need to hit bronze in order to hit the next set of levels."
-   Each rank owns a block of levels - Bronze 21-29, Silver 30-39, Gold
-   40-49, Platinum 50-59, Sapphire 60-69, Amethyst 70-79, Supernova 80 -
-   and you can climb to the top of the NEXT rank's block; going past it
-   takes that rank's badges. So no badges caps at 29, Bronze's badge
-   (1) at 39, Silver's (3) at 49, Gold's (5) at 59, Platinum's (7) at
-   69, Sapphire's (9) at 79, Amethyst's (12) at the cap. The XP is never
-   touched: levels past the cap are SAVED and arrive the moment the
-   badges do. The cap is always above the level of the highest rank your
-   badges hold, so it can never cost anybody a rank. Read off
-   TIER_UNLOCKS, never typed. */
-function badgeWallLevel(badges){
+/* THE LEVEL BANDS (build 314) - SUPERSEDED IN BUILD 325, kept for the
+   reasoning: each rank owned a block of levels (Bronze 21-29, Silver
+   30-39 ...) and you could climb to the top of the NEXT rank's block, so
+   no badges capped at 29. badgeWallLevel324() below is that rule, kept
+   for one job: the grandfather floor (levelWallMigrate325).
+   ---- THE WALL IS THE NEXT RANK'S LEVEL (build 325) ----
+   Madison: "The max level you can reach should the level your rank
+   needs. So for platinum it says reach level 50, that should be your max
+   level ... if you are unranked, the highest level you can reach is the
+   level required for that first rank." So the cap is the LEVEL
+   REQUIREMENT OF THE NEXT RANK YOU DO NOT HOLD: unranked, Bronze's 21;
+   holding Gold, Platinum's 50. At the cap you need that rank's badges;
+   when they arrive you hold the rank and the cap moves on to the
+   following rank's level. Holding every rank, the cap is LEVEL_CAP.
+   "The next rank you do not hold" is the first rank, from the one past
+   any rank floor (rankFloor - a rank held on an older ladder), whose
+   badges you do not have: a rank whose badges you have has a level below
+   the cap, so at the cap you hold it. Which is also why the cap can never
+   cost anybody a rank - every rank your badges hold asks for a level
+   under it. Read off TIER_UNLOCKS, never typed.
+   XP IS NEVER LOST: levels past the cap stay saved (levelStateOf().saved)
+   and pour in when the cap lifts - the rank-up journey's pool. */
+function wallRankIndex(badges, rankFloor){
+  const b = Math.max(0, Number(badges) || 0);
+  const f = Math.max(0, Math.min(TIER_ORDER_FULL.length, Math.floor(Number(rankFloor) || 0)));
+  for(let i = f; i < TIER_ORDER_FULL.length; i++){
+    const r = TIER_UNLOCKS[TIER_ORDER_FULL[i]];
+    if(r && b < (Number(r.badges) || 0)) return i;
+  }
+  return -1;
+}
+function badgeWallLevel(badges, rankFloor){
+  const i = wallRankIndex(badges, rankFloor);
+  const r = i >= 0 ? TIER_UNLOCKS[TIER_ORDER_FULL[i]] : null;
+  return r ? Math.min(LEVEL_CAP, Number(r.level) || LEVEL_CAP) : LEVEL_CAP;
+}
+/* Build 324's rule (one block further), for the grandfather floor only. */
+function badgeWallLevel324(badges){
   const b = Math.max(0, Number(badges) || 0);
   const met = TIER_ORDER_FULL.filter(k => TIER_UNLOCKS[k] && b >= (Number(TIER_UNLOCKS[k].badges) || 0)).length;
   const after = TIER_UNLOCKS[TIER_ORDER_FULL[met + 1]];
   return after ? Math.min(LEVEL_CAP, (Number(after.level) || LEVEL_CAP) - 1) : LEVEL_CAP;
 }
-/* The rank whose badges lift the cap you are under: the first rank your
-   badges do not yet hold. */
-function gateRankForBadges(badges){
-  const b = Math.max(0, Number(badges) || 0);
-  return TIER_ORDER_FULL.find(k => TIER_UNLOCKS[k] && b < (Number(TIER_UNLOCKS[k].badges) || 0)) || null;
+/* The rank whose badges lift the cap you are under: the next rank you do
+   not hold (the cap is its level). */
+function gateRankForBadges(badges, rankFloor){
+  const i = wallRankIndex(badges, rankFloor);
+  return i >= 0 ? TIER_ORDER_FULL[i] : null;
 }
-/* The highest level `badges` and a floor let you hold. */
-function levelWallOf(badges, floor){
+/* The highest level `badges`, a level floor and a rank floor let you hold. */
+function levelWallOf(badges, floor, rankFloor){
   const f = Math.max(0, Math.floor(Number(floor) || 0));
-  return Math.min(LEVEL_CAP, Math.max(badgeWallLevel(badges), f));
+  return Math.min(LEVEL_CAP, Math.max(badgeWallLevel(badges, rankFloor), f));
+}
+/* ---- NOBODY'S LEVEL DROPS FOR THE NEW WALL (build 325) ----
+   The wall moved DOWN a block (29 -> 21 with no badges, 39 -> 30 with
+   one ...), and a level is derived every time it is shown, so without
+   this anybody between the two walls would see a lower level on the
+   update. Once per account, on the first load of a copy without
+   `levelWallRule`, the level build 324 showed (its wall, its floor) is
+   kept as `levelFloor` wherever it is above the new wall - so the shown
+   level is exactly what it was, and the new rule applies from there.
+   ONE SHOT, and it has to be: run again later, it would read a higher
+   old-rule level off the XP earned since and lift the floor again - the
+   old rule leaking back. `levelWallRule` (325) is the flag; it lives on
+   `store`, syncs, and merges by max, and levelFloor merges by max too, so
+   two devices that each ran it agree on the higher of two levels that
+   were each really shown, and nothing can ping-pong: both only ever go
+   up. A reset clears the floor and sets the flag (a fresh account starts
+   under the new rule). Returns the floor written, or 0. */
+const LEVEL_WALL_RULE = 325;
+function levelWallMigrate325(got, into){
+  if(!got || typeof got !== "object") return 0;
+  if(typeof got.levelWallRule === "number" && got.levelWallRule >= LEVEL_WALL_RULE) return 0;
+  const pts = got.lifetime ? Number(got.lifetime.points) || 0 : 0;
+  if(pts <= 0) return 0;
+  let b = 0; try{ b = badgeCountOf(got); }catch(e){}
+  const floor = Math.max(0, Math.floor(Number(into.levelFloor) || 0));
+  const curve = levelFromPoints(pts);
+  const old = Math.min(curve, Math.min(LEVEL_CAP, Math.max(badgeWallLevel324(b), floor)));
+  const now = Math.min(curve, levelWallOf(b, floor, into.rankFloor));
+  if(old > now){ into.levelFloor = Math.max(floor, old); return into.levelFloor; }
+  return 0;
 }
 /* levelProgress() with the wall applied - the same fields, plus:
      curveLevel   what the XP alone would give
@@ -56718,20 +56853,20 @@ function levelWallOf(badges, floor){
      gateKey      the rank whose badges open the wall
      badgesToPass how many more badges that takes
      banked       XP earned since the bar filled */
-function levelStateOf(points, badges, floor){
+function levelStateOf(points, badges, floor, rankFloor){
   const lp = levelProgress(points);
   const have = Math.max(0, Number(badges) || 0);
-  const wall = levelWallOf(have, floor);
+  const wall = levelWallOf(have, floor, rankFloor);
   const out = Object.assign({}, lp, { curveLevel: lp.level, wall, badges: have, gateKey: null,
                                       held: false, stopped: false, badgesToPass: 0, banked: 0 });
   if(wall >= LEVEL_CAP || lp.level < wall) return out;
   out.held = true;
-  out.gateKey = gateRankForBadges(have);
+  out.gateKey = gateRankForBadges(have, rankFloor);
   {
     const g = out.gateKey ? TIER_UNLOCKS[out.gateKey] : null;
     out.badgesToPass = Math.max(1, (g ? Number(g.badges) || 0 : 0) - have);
-    /* the block those badges open, e.g. "levels 40-49" */
-    out.opensTo = g ? badgeWallLevel(Number(g.badges) || 0) : LEVEL_CAP;
+    /* where those badges move the cap: the following rank's level */
+    out.opensTo = g ? badgeWallLevel(Number(g.badges) || 0, rankFloor) : LEVEL_CAP;
   }
   /* levels the XP has already paid for past the cap - kept, not lost */
   out.saved = Math.max(0, lp.level - wall);
@@ -56760,7 +56895,7 @@ function levelStateFor(st){
      merge - see mergeHidePoints */
   if(st === store && typeof mergeHidePoints !== "undefined" && mergeHidePoints != null)
     p = Math.min(p, Number(mergeHidePoints) || 0);
-  return levelStateOf(p, badgeCountOf(st), st ? st.levelFloor : 0);
+  return levelStateOf(p, badgeCountOf(st), st ? st.levelFloor : 0, st ? st.rankFloor : 0);
 }
 function effectiveLevelOf(st){ return levelStateFor(st).level; }
 /* Every caller that asks "what level is this account" - the rankings
@@ -56845,7 +56980,8 @@ function rankChallengesOf(){
     { kind: "level", label: "Reach level " + needL, now: s.level, need: needL, met: s.level >= needL },
     { kind: "badges", label: "Earn " + needB + (needB === 1 ? " badge" : " badges"), now: s.badges, need: needB, met: s.badges >= needB }
   ];
-  const to = badgeWallLevel(needB), from = badgeWallLevel(Math.max(0, needB - 1)) + 1;
+  const rf = store.rankFloor || 0;
+  const to = badgeWallLevel(needB, rf), from = badgeWallLevel(Math.max(0, needB - 1), rf) + 1;
   return { key, name: RANK_DISPLAY_NAME[key] || key, color: RANK_COLOR[key] || "#9FACBA", list,
            done: list.filter(c => c.met).length, total: list.length,
            opensFrom: from, opensTo: to, opens: to >= from, state: s };
@@ -69354,9 +69490,21 @@ function secretFlaresAllFound(){
    lit (store.supernovaAchieved), the orange rings; "eclipse" - that AND
    every secret flare, the top rings (RING_ECLIPSE_STYLE). Every secret
    flare without Supernova is plain: tier two needs both. */
+/* THE BLACK RINGS ARE RETIRED (build 325). Madison: "I really like the
+   orange rings, but I know I said if you get all the secret flares then
+   it would turn black ... We need it to be a progression though ... Maybe
+   we just get rid of the black ones and only keep the new ones you get
+   from reaching supernova?" Decided: the orange rings are Supernova's
+   reward and there is no tier above them. Every secret flare found still
+   gives what each flare gives (its own scene, its character, the planet's
+   "the secret ones too"); the rings were the only thing the full set
+   added, and they are gone rather than moved anywhere. "eclipse" stays in
+   RING_TIER_RANK only so a device that last showed it (ringtier.seen)
+   settles on orange quietly, with no draw; the eclipse drawing below is
+   unreachable and kept for the record. */
 function homeRingTier(){
   if(!store || !store.supernovaAchieved) return "";
-  return secretFlaresAllFound() ? "eclipse" : "supernova";
+  return "supernova";
 }
 /* WHAT THE TOP RING TIER LOOKS LIKE (build 317, round three). Either way
    it is built exactly like the orange tier - one circle a ring, 1.4 wide,
@@ -72570,7 +72718,10 @@ function scarPass1(P){
             /* burnt along its length: the ground either side scorched, more
                the nearer the crater (the crack's old heat, bH) - planet2:
                nothing in it glows any more */
-            if(bKind < 2 && bH > 0){ const sc = .64 * Math.exp(-bt / 2.9) * Math.min(1, bH * 1.8); if(sc > cov) cov = sc; }
+            if(bKind < 2 && bH > 0 && !P.NOSCORCH){ const sc = .64 * Math.exp(-bt / 2.9) * Math.min(1, bH * 1.8); if(sc > cov) cov = sc; }
+            /* (build 325) the light in the bottom of the fissure: narrower
+               than its opening, strongest where the crack was hottest */
+            if(P.GLOW && bt < .4 && bH > 0){ const q = 1 - bt * bt / .16, gl = P.GLOW * (bKind === 0 ? Math.max(.75, Math.min(1, bH * 1.4)) : Math.min(1, bH * 1.4)) * q * Math.sqrt(q) * bW; if(gl > em) em = gl; }
           }
         }
         /* THE CRATER'S FLOOR, BURNT OUT (planet2): what was molten is
@@ -72658,7 +72809,10 @@ function scarPass2(P){
       dB[k4] = R; dB[k4 + 1] = Gc; dB[k4 + 2] = Bc; dB[k4 + 3] = A * disc * 255;
       /* the last of the heat: one dull red, never brighter than this */
       const e = Em[k];
-      if(e > .003){ dE[k4] = 150; dE[k4 + 1] = 30; dE[k4 + 2] = 10; dE[k4 + 3] = (e > 1 ? 1 : e) * .62 * disc * 255; }
+      if(e > .003){
+        if(P.GLOW){ const hot = e > 1 ? 1 : e; dE[k4] = 255; dE[k4 + 1] = 110 + 100 * hot; dE[k4 + 2] = 40 + 90 * hot; dE[k4 + 3] = Math.min(1, hot * 1.1) * disc * 255; }
+        else { dE[k4] = 150; dE[k4 + 1] = 30; dE[k4 + 2] = 10; dE[k4 + 3] = (e > 1 ? 1 : e) * .62 * disc * 255; }
+      }
     }
     }
   }
@@ -72728,8 +72882,11 @@ const SCAR_SHINE = { x: -.33, y: -.35, r: .36 };
    all of it - Supernova's; Amethyst's is under half); Ar / arr0: each
    pixel's arrival along the crack, the patch reached at arr0 (the end of
    the crack into it) and spreading out from there. */
-function scarShineWound(g, N, gM, MQ, amt, Ar, arr0){
+function scarShineWound(g, N, gM, MQ, amt, Ar, arr0, clean){
   const AMT = amt == null ? 1 : amt;
+  /* clean (build 325): the plates and their seams only - no soot on them,
+     no plate chipped out to char, no scorch past them: broken, not burnt */
+  const CLEAN = !!clean;
   let seed = 9173;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
   const S = N / 2, IX = SCAR_SHINE.x, IY = SCAR_SHINE.y, RW = SCAR_SHINE.r, IZ = Math.sqrt(1 - IX * IX - IY * IY);
@@ -72771,7 +72928,7 @@ function scarShineWound(g, N, gM, MQ, amt, Ar, arr0){
     let fall = 1 - sm(Math.min(1, Math.max(0, (r - edge * .55) / (edge * .45))));
     /* a scorch past the plates, so the broken patch sits IN a burn rather
        than on a clean shine */
-    let halo = .44 * (1 - sm(Math.min(1, Math.max(0, (r - edge * .3) / (edge * .95))))) * (.7 + .6 * nz(u * 14 + 21, v * 14 + 6));
+    let halo = CLEAN ? 0 : .44 * (1 - sm(Math.min(1, Math.max(0, (r - edge * .3) / (edge * .95))))) * (.7 + .6 * nz(u * 14 + 21, v * 14 + 6));
     /* only part-way out from the middle yet (build 320, Amethyst) */
     if(AMT < 1){
       fall *= 1 - sm(Math.min(1, Math.max(0, (r / RW - AMT * .8) / .22)));
@@ -72808,7 +72965,8 @@ function scarShineWound(g, N, gM, MQ, amt, Ar, arr0){
     /* soot over the plate, mottled; a chipped plate is char */
     const mott = .75 + .5 * nz(u * 30 + 5, v * 30 + 2);
     over(22, 15, 12, Math.min(.5, halo));
-    if(A[3]) over(16, 12, 11, .82 * fall);
+    if(CLEAN){ /* the plate is left as it was */ }
+    else if(A[3]) over(16, 12, 11, .82 * fall);
     else over(30 + 22 * nz(u * 12, v * 12), 20, 15, Math.min(.85, A[2] * mott * (.55 + .6 * Math.max(0, 1 - r / RW))) * fall);
     if(facing > .15) over(176, 171, 165, .26 * facing * (lipBand - crack) * reach * fall);
     else if(facing < -.15) over(10, 8, 8, .35 * -facing * (lipBand - crack) * reach * fall);
@@ -72858,9 +73016,24 @@ const CRACK_STAGES = [
   { reach: .30, width: .16, depth: .40, burn: 0, shine: 0 },     /* Gold: a hairline through the impact point */
   { reach: .62, width: .30, depth: .55, burn: 0, shine: 0 },     /* Platinum */
   { reach: .96, width: .48, depth: .70, burn: 0, shine: 0 },     /* Sapphire */
-  { reach: 1.36, width: .70, depth: .85, burn: .32, shine: .32 }, /* Amethyst: the burn begins */
-  { full: true }                                                  /* Supernova: the blast's own scar */
+  { reach: 1.36, width: .70, depth: .85, burn: 0, shine: .32 },   /* Amethyst: the shine starts to break (no burn since 325) */
+  { full: true }                                                  /* Supernova: the whole crack, glowing inside (325) */
 ];
+/* SUPERNOVA'S MARK IS A CRACK, NOT A BURN (build 325). Madison: "I'm not a
+   fan of the supernova burn mark thing. Fix that. Feels random, make it
+   less burn mark and more crack like there." So the full stage is the
+   rank cracks' own network at its widest and deepest, not the blast's
+   scar: no crater (the black blob at the impact), no soot round it and no
+   scorch along the crack; the two arms meet at the impact point through
+   the stretch the ranks below already have, a short star of fissures
+   splits out of that point, and the shine is broken into plates with dark
+   seams and lit lips and nothing laid on them. What it has that the ranks
+   do not is light INSIDE it: a faint ember in the bottom of every fissure,
+   strongest along the arms and near the impact (the crack-form's glowing
+   twin, kept) - the ember canvas, breathing on its slow clock. Amethyst
+   lost its scorch for the same reason, so every stage holds the one
+   before it. The old scar's code is kept, switched by SCAR_CRACK_ONLY. */
+const SCAR_CRACK_ONLY = true, SCAR_CRACK_GLOW = .8;
 const CRACK_TOP = CRACK_STAGES.length - 1;
 /* how far behind the crack's front it narrows to nothing */
 const CRACK_TAPER = .2;
@@ -72899,6 +73072,8 @@ function drawScarArt(stg){
   let out = false;
   try{
     const ST = stg >= CRACK_TOP ? null : CRACK_STAGES[stg], FULL = !ST, REACH = FULL ? Infinity : ST.reach;
+    /* build 325: the full stage drawn as a crack (SCAR_CRACK_ONLY) */
+    const CK = FULL && SCAR_CRACK_ONLY;
     const t0 = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
 
     const dpr = (typeof window !== "undefined" && window.devicePixelRatio) || 1;
@@ -73035,6 +73210,20 @@ function drawScarArt(stg){
       addPath(jag(pts, 2, .45, rnd2), w, w, .072, 1, 0, 1, 0, "low", rnd2).main = 1;
     };
     seedTo(jA[0], .066); seedTo(jB[0], .052);
+    /* (build 325) THE IMPACT AS A STAR OF FISSURES, for the crack-only
+       Supernova: short splits out of the point the arms meet at, in place
+       of the crater. A seed of its own, so nothing above moved. */
+    if(CK){
+      let seed3 = 81919;
+      const rnd3 = () => { seed3 = (seed3 * 16807) % 2147483647; return seed3 / 2147483647; };
+      [[.55, .2, .011], [1.75, .15, .009], [2.7, .17, .010], [3.75, .13, .008], [4.9, .16, .009], [5.75, .11, .007]].forEach(([az, len, w0]) => {
+        /* from just inside the arms' own width, so the impact itself is the
+           arms' (a star seg nearest the point left a dark plug in the glow) */
+        const a2 = az + (rnd3() - .5) * .3, E = onS(CX + Math.cos(a2) * len, CY + Math.sin(a2) * len);
+        const S0 = onS(CX + Math.cos(a2) * .04, CY + Math.sin(a2) * .04);
+        addPath(jag(P2(arc(S0, E, 7, .04, 1.2, rnd3() * 3, rnd3)), 2, .5, rnd3), w0, .0022, .03, .8, 1, 1.2, .04, "star", rnd3);
+      });
+    }
     /* (build 320) THE CRACK INTO THE SHINE: "the burn mark looks great but
        it seems disconnected from the other crack". From the point of the
        long arm nearest the shine, up into the middle of the shattered
@@ -73050,7 +73239,7 @@ function drawScarArt(stg){
     const KW = FULL ? 1 : ST.width, KD = FULL ? 1 : ST.depth, KH = FULL ? 1 : ST.burn;
     const cut = a => FULL ? 1 : Math.pow(Math.max(0, Math.min(1, (REACH - a) / CRACK_TAPER)), .6);
     PATHS.forEach(rec => {
-      rec.on = !((rec.only === "full" && !FULL) || (rec.only === "low" && FULL)) && rec.ar[0] < REACH;
+      rec.on = !((rec.only === "full" && (!FULL || CK)) || (rec.only === "low" && FULL && !CK) || (rec.only === "star" && !CK)) && rec.ar[0] < REACH;
       if(!rec.on) return;
       const { p, w0, w1, d0, h0, kind, wPow, ar } = rec;
       const W = f => w1 + (w0 - w1) * Math.pow(1 - f, wPow);
@@ -73124,7 +73313,9 @@ function drawScarArt(stg){
       LV[j * LV1 + i] = fbm(x * 15 + 12.7, y * 15 + 4.4, 3);
     }
     const P = { N, BK, Q, Q1, FI, FR, FE, FN, LV, LVN, LVS, cnt, lst, SF, CX, CY, C3x: C3[0], C3y: C3[1], C3z: C3[2], RHO, SR,
-      LX, LY, LZ, NN: N * N, MQ: 96, Msk: new Float32Array(96 * 96), CR: FULL ? 1 : 0, SW: SEGW };
+      LX, LY, LZ, NN: N * N, MQ: 96, Msk: new Float32Array(96 * 96), CR: FULL && !CK ? 1 : 0, SW: SEGW,
+      /* build 325: the crack-only Supernova - no scorch along it, light in it */
+      NOSCORCH: CK || (!FULL && !(ST.burn > 0)) ? 1 : 0, GLOW: CK ? SCAR_CRACK_GLOW : 0 };
     scarPass1(P);
     const iB = gB.createImageData(N, N), iE = gE.createImageData(N, N);
     P.dB = iB.data; P.dE = iE.data;
@@ -73146,7 +73337,7 @@ function drawScarArt(stg){
     /* the shine takes its own damage (build 319): on the burn, and half
        off the plasma's mask */
     const shineAmt = FULL ? 1 : ST.shine;
-    if(shineAmt > 0){ try{ scarShineWound(gB, N, gM, MQ, shineAmt, P.Ar, recC.ar[recC.ar.length - 1]); }catch(e){} }
+    if(shineAmt > 0){ try{ scarShineWound(gB, N, gM, MQ, shineAmt, P.Ar, recC.ar[recC.ar.length - 1], CK || !FULL); }catch(e){} }
     if(gM) mask = cM.toDataURL("image/png");
     /* the fragments rise from the crack and the rupture: out from the
        planet's middle and a little up, uneven so ten never read as a
@@ -74284,7 +74475,9 @@ function scarAfterEffects(sc, art){
   const sm = document.createElement("div");
   sm.className = "csc-smokes";
   const cr = (art && art.crater) || [65, 63.5];
-  [[cr[0], cr[1], 7.9, -1.3, 1], [cr[0] - 4, cr[1] - 2, 10.3, -6.2, -1], [(SCAR_SHINE.x + 1) * 50, (SCAR_SHINE.y + 1) * 50, 12.7, -3.9, -1]].forEach(([x, y, t, d, s]) => {
+  /* no smoke off a crack (build 325): it rose off the crater and the burnt
+     shine, and both are gone (SCAR_CRACK_ONLY) */
+  (SCAR_CRACK_ONLY ? [] : [[cr[0], cr[1], 7.9, -1.3, 1], [cr[0] - 4, cr[1] - 2, 10.3, -6.2, -1], [(SCAR_SHINE.x + 1) * 50, (SCAR_SHINE.y + 1) * 50, 12.7, -3.9, -1]]).forEach(([x, y, t, d, s]) => {
     const el = document.createElement("i");
     el.className = "csc-smoke";
     el.style.cssText = "--x:" + x.toFixed(1) + "%;--y:" + y.toFixed(1) + "%;--t:" + t + "s;--d:" + d + "s;--sx:" + s;
@@ -76981,7 +77174,7 @@ const PROFILE_TIPS_289 = [
   { target: ".profile-edit-btn", align: "right", vplacement: "below",
     text: "Customize changes your name, your character, your banner and the app\u2019s colour. More of each unlock as you climb the ranks and finish challenges." },
   { target: ".profile-hero .pf-standing", align: "left", vplacement: "below",
-    text: "Your rank, your level and how many of my badges you\u2019ve found. XP fills the bar, and your badges decide how high your level can go. Tap the badge count to see them." },
+    text: "Your rank, your level and how many of my badges you\u2019ve found. XP fills the bar. Your level goes as high as your next rank\u2019s level, and that rank\u2019s badges take it further. Tap the badge count to see them." },
   { target: ".profile-hero .pf-goal", align: "left", vplacement: "above",
     text: "The challenges for your next rank, ticked off as you go, and what it unlocks. When you rank up, it plays out on the road map. Tap to see every rank." },
   { target: ".profile-hero .pf-case", align: "left", vplacement: "above",
@@ -78012,8 +78205,22 @@ function rankCutHandoff(overlay, stageWrap, heroBefore, tierKey, ghost){
     stageWrap.style.transformOrigin = "50% 50%";
     stageWrap.style.transform = "translate(" + tx.toFixed(2) + "px, " + ty.toFixed(2) + "px) scale(" + k.toFixed(4) + ")";
     ghost.getAnimations().forEach(a => { try{ a.cancel(); }catch(e){} });
+    /* THE DRAW-BACK'S FILL, CANCELLED BY NAME (build 325). Its scale(.84)
+       had FINISHED by now, and a finished animation is not in
+       getAnimations() - but its fill:forwards still wins over the inline
+       transform set just below. So the copy kept .84 of its own size
+       instead of the bubble's: on an iPad (a 220px stop box) it sat in the
+       planet system at 185px, 59px off the bubble's centre, the bubble's
+       rim cutting a gold stripe out of it - "the flare bubble changes in
+       the transition and doesn't look like the flare". On the iPhone .84
+       happened to be the bubble's own ratio, which is why it looked right
+       there and why the 2px check passed. */
+    if(ghost.__ruDraw){ try{ ghost.__ruDraw.cancel(); }catch(e){} ghost.__ruDraw = null; }
     const w0 = ghost.offsetWidth || g.width;
-    Object.assign(ghost.style, { left: "0px", top: "0px", transform: "scale(" + (badge.offsetWidth / w0).toFixed(5) + ")" });
+    /* on the bubble's BORDER box (build 325): left/top 0 is its padding
+       edge, which put the copy a border's width (~2px) right of and below
+       the bubble it is scaled to */
+    Object.assign(ghost.style, { left: (-badge.clientLeft) + "px", top: (-badge.clientTop) + "px", transform: "scale(" + (badge.offsetWidth / w0).toFixed(5) + ")" });
     /* moved into the bubble with its emblem's clock running on (build 321) */
     const clock = ruClockSnap(ghost);
     /* NOTHING OF THE BUBBLE SHOWS ROUND THE COPY (build 321): "As it phases
@@ -78024,6 +78231,21 @@ function rankCutHandoff(overlay, stageWrap, heroBefore, tierKey, ghost){
        off while the copy is in it (.ru-hand-bubble) and comes up only as
        the copy fades (.ru-hand-reveal): the copy becomes the bubble. */
     badge.classList.add("ru-hand-bubble");
+    /* ...AND THE BUBBLE IT BECOMES IS ALREADY LIT (build 325). Madison: "the
+       flare bubble changes in the transition and doesn't look like the
+       flare.. fix that. That's a big one." The road map has just lit this
+       rank's flare (its unlock) and the copy carries that light into the
+       planet system - but the scene's own planet still had the bubble dark
+       ("the planet you had": syncSceneFlares stops a rank short), so as the
+       copy faded the lit gold flare turned into a grey, unlit glass ball.
+       Opened from the road map, the bubble is lit from the hand-off's first
+       frame - Home's own lit look, its glow in the flare's colour, the
+       emblem's lit flip-book - so the copy fades into the same flare. The
+       bang still lights it fully (lightFully), which it already is. */
+    badge.style.setProperty("--tier-glow", flareColorOf(tierKey));
+    badge.classList.add("cosmic-badge-lit");
+    if(FLARE_NOIR[tierKey]) badge.classList.add("cosmic-badge-noir");
+    badge.dataset.ruHandLit = "1";
     badge.appendChild(ghost);
     clock(ghost);
     const orbit = slot.parentElement;
@@ -80595,7 +80817,7 @@ const NOVA_TIPS = [
   "Tip: the daily question is quick XP. When the button on Home lights up, there’s a new one.",
   "Tip: star a question you want to see again. Your Starred list is in Start Studying.",
   "Tip: when you miss one, take a second with the right answer before you move on. Knowing why it’s right is what stays with you.",
-  "Tip: your badges decide how high your level can go, so mastering units matters as much as answering a lot of questions.",
+  "Tip: your level waits at your next rank\u2019s level until you have its badges, so mastering units matters as much as answering a lot of questions.",
   "Tip: the Calendar tab has every class day and the next test date. Worth a look at the start of each week.",
   "Tip: race a friend in a Virtual Room. A little competition is the fastest way to find out what you really know."
 ];
@@ -80989,7 +81211,7 @@ function novaReplyFor(raw){
     /* no total (build 325): there will be more units */
     return "There’s a badge for every unit. Score 100% on a whole unit and that’s a hundo; a few hundos in one unit earns its badge. You’ve found " + badges + " so far.";
   if(has(/ (xp|levels?|level up) /))
-    return "Every right answer earns XP, and XP raises your level. Your badges decide how high your level can go, so mastering units matters as much as answering a lot.";
+    return "Every right answer earns XP, and XP raises your level. Your level waits at your next rank\u2019s level until you have its badges, so mastering units matters as much as answering a lot.";
   if(has(/ (drill|exam|review|flashcards?|learn|modes?|study|studying|practice|starred|flag\w*) /))
     return "Drill to learn a unit, a Qualifier to test yourself, and a Briefing to go over the material first. They’re all under Start Studying on Home.";
   if(has(/ (flares?|crew|characters?|ship|planet|blast|wreck|lost|explorer|space) /))
@@ -84077,27 +84299,27 @@ function introRow(glyph, color, title, body){
   return row;
 }
 
-/* "YOUR LEVEL WAS ADJUSTED", in two short paragraphs (build 319): what
-   changed and what it did to your level, then what happens to your XP and
-   what opens the next levels. `s` is levelStateFor(store) for somebody the
-   cap moved down (s.held && s.saved > 0). The rank named for the top level
-   is the one you hold, when that cap is your rank's own; a level floor (an
-   admin's gift) can put the cap elsewhere, and then it is "for now". */
+/* THE WALL, SAID ONCE IN WHAT'S NEW (build 325; was "Your level was
+   adjusted", build 319). `s` is levelStateFor(store) for somebody at their
+   wall with levels saved past it (s.held && s.saved > 0). Nobody's level
+   moved on this update (levelWallMigrate325 keeps what 324 showed), so it
+   never says "went from" - it says the rule and where you stand in it:
+   the cap is the next rank's level, its badges lift it, and the saved
+   levels come in then. A level floor above that level (grandfathered) is
+   "you keep level N". */
 function levelGateNoteText(s){
-  let held = null;
-  try{ held = rankOf(store); }catch(e){}
-  const ownCap = badgeWallLevel(held && TIER_UNLOCKS[held] ? Number(TIER_UNLOCKS[held].badges) || 0 : 0);
-  const where = s.wall !== ownCap ? "Level " + s.level + " is the highest you can be for now"
-    : held ? "Level " + s.level + " is the top level for " + (RANK_DISPLAY_NAME[held] || held)
-    : "Level " + s.level + " is the top level before your first rank";
-  const first = "Levels now unlock one rank at a time. " + where + ", so your level went from " +
-    s.curveLevel + " to " + s.level + ".";
-  const n = Math.max(1, Number(s.badgesToPass) || 1);
   const gate = s.gateKey ? RANK_DISPLAY_NAME[s.gateKey] || s.gateKey : "";
+  const rule = s.gateKey ? TIER_UNLOCKS[s.gateKey] : null;
+  const need = rule ? Number(rule.level) || 0 : 0;
+  const first = "Your level now goes as high as your next rank's level and waits there until you have that rank's badges. " +
+    (gate && s.level > need ? "You keep level " + s.level + ", and it stays there until you reach " + gate + "."
+      : gate ? "For you that is level " + need + ", the level " + gate + " asks for."
+      : "You are at level " + s.level + ".");
+  const n = Math.max(1, Number(s.badgesToPass) || 1);
   const earn = "Earn " + n + (Number(s.badges) > 0 ? " more" : "") + (n === 1 ? " badge" : " badges") +
     (gate ? " to reach " + gate : "") + ".";
-  return [first, "You kept all of your XP, and it still counts. " + earn +
-    " The next levels unlock then, and your XP counts toward them right away."];
+  return [first, "You keep all of your XP. " + earn +
+    " The levels your XP has already paid for come in then."];
 }
 /* ---- WHAT'S NEW, NARRATED (build 320, version 7.8) ----
    "For the now (mostly everyone) existing accounts, it would be narrating
@@ -84249,10 +84471,10 @@ function whatsNewLines(st, chained){
   WHATS_NEW_320.forEach(it => lines.push({ text: it.say, gesture: it.key === "planet" ? "nod" : null,
     enter: (ctx, instant) => card(ctx, introRow(it.glyph, it.color, it.title, it.body), instant) }));
   if(st.note){
-    lines.push({ gesture: "raise", text: "One more thing, " + name + ": your level was adjusted. " + st.note[0],
+    lines.push({ gesture: "raise", text: "One more thing, " + name + ". " + st.note[0],
       enter: (ctx, instant) => {
         const n = document.createElement("div"); n.className = "intro-gate-note";
-        const h = document.createElement("p"); h.className = "intro-gate-title"; h.textContent = "Your level was adjusted";
+        const h = document.createElement("p"); h.className = "intro-gate-title"; h.textContent = "Levels wait for your next rank";
         n.appendChild(h);
         st.note.forEach(t => { const b = document.createElement("p"); b.className = "intro-gate-body"; b.textContent = t; n.appendChild(b); });
         card(ctx, n, instant);
@@ -89902,7 +90124,7 @@ function homeTapCopyPlanet(n){
       const left = tierShortfall(TIER_UNLOCKS[next]);
       parts = ["Next: the " + (ACCENT_DISPLAY_NAME[next] || RANK_DISPLAY_NAME[next]) + " flare.", left.length ? homeJoin(left) + " to go." : "It is ready to light."];
     } else {
-      parts = homeRingTier() === "eclipse" ? ["Every flare is lit,", "the secret ones too."] : ["Every rank flare is lit."];
+      parts = homeRingTier() && secretFlaresAllFound() ? ["Every flare is lit,", "the secret ones too."] : ["Every rank flare is lit."];
     }
     return { kind: "planet", name: "Your flares", state: "", color: "", parts };
   }
@@ -90495,9 +90717,35 @@ function homeRingStreak(hero, why){
   return gs.length > 0;
 }
 let homeStreakTimer = null;
+/* AT RANDOM TIMES TOO (build 325). Madison: "I really like the random like
+   circle from the glowing things too, I'm hoping that's gonna be on the
+   Home Screen at random times too and maybe even when you tap the large
+   planet." The tap already runs it (homeTapBind); the pulse runs it every
+   RING_STREAK_EVERY-th beat; and now a second timer runs it on its own
+   at a random moment RING_STREAK_RAND_MIN_MS to RING_STREAK_RAND_MAX_MS
+   apart (why "random"), so it does not only ever come with the pulse.
+   One timer per Home planet (re-armed on its own schedule, never reset by
+   the pulse's), the same holds as every other streak (homeRingStreak:
+   nothing on top of one already running, a cutscene, a tour, the ring
+   draw, the background, Reduce motion), and it stops with the planet. */
+const RING_STREAK_RAND_MIN_MS = 12000, RING_STREAK_RAND_MAX_MS = 38000;
+let homeStreakRandTimer = null, homeStreakRandHero = null;
+function homeStreakRandArm(hero){
+  if(homeStreakRandTimer && homeStreakRandHero === hero) return;
+  clearTimeout(homeStreakRandTimer); homeStreakRandTimer = null; homeStreakRandHero = hero;
+  if(!hero || !hero.isConnected || !homeRingTier() || ringMotionOff()) return;
+  const wait = RING_STREAK_RAND_MIN_MS + Math.random() * (RING_STREAK_RAND_MAX_MS - RING_STREAK_RAND_MIN_MS);
+  homeStreakRandTimer = setTimeout(() => {
+    homeStreakRandTimer = null;
+    if(!hero.isConnected || homeStreakRandHero !== hero) return;
+    homeRingStreak(hero, "random");
+    homeStreakRandArm(hero);
+  }, wait);
+}
 function homeStreakArm(hero){
   clearTimeout(homeStreakTimer); homeStreakTimer = null;
   if(!hero || !hero.isConnected || !homeRingTier() || ringMotionOff()) return;
+  homeStreakRandArm(hero);
   let a = null;
   try{
     const p = hero.querySelector(".cosmic-pulse-ring");
@@ -94053,7 +94301,7 @@ function buildHundoFxMock(id, o){
   el("span", "hfx-mk-sub", "1 unit · Identity Crimes", head);
   const xp = el("div", "rs-card rs-xp");
   el("p", "hfx-mk-kicker", "XP earned", xp);
-  [["12 correct × 10", "+120"], ["Hundo bonus", "+100"], ["Streak bonus", "+25"]].forEach(r => { const l = el("p", "hfx-mk-line", null, xp); el("span", "", r[0], l); el("b", "", r[1], l); });
+  [["Correct answers", "+120"], ["Perfect unit", "+100"], ["Answers in a row", "+25"]].forEach(r => { const l = el("p", "hfx-mk-line", null, xp); el("span", "", r[0], l); el("b", "", r[1], l); });
   const tl = el("p", "hfx-mk-line is-total", null, xp); el("span", "", "Total", tl); el("b", "", "+245 XP", tl);
   const xb = el("span", "hfx-mk-bar", null, xp); el("i", "", null, xb);
   const gr = el("div", "rs-card rs-grade is-perfect");
@@ -94884,9 +95132,9 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   const nowBadges = (() => { try{ return badgeCountOf(store); }catch(e){ return 0; } })();
   const bAfter = opts && typeof opts.badgesAfter === "number" ? opts.badgesAfter : nowBadges;
   const bBefore = opts && typeof opts.badgesBefore === "number" ? opts.badgesBefore : bAfter;
-  const floor = store.levelFloor || 0;
-  const after = levelStateOf(pointsAfter, bAfter, floor);
-  const before = levelStateOf(Math.max(0, pointsAfter - gained), bBefore, floor);
+  const floor = store.levelFloor || 0, rFloor = store.rankFloor || 0;
+  const after = levelStateOf(pointsAfter, bAfter, floor, rFloor);
+  const before = levelStateOf(Math.max(0, pointsAfter - gained), bBefore, floor, rFloor);
 
   const wrap = document.createElement("div");
   wrap.className = "results-level";
@@ -97039,12 +97287,23 @@ function computeRunXp(r){
     add("daily", "Daily question", r.good > 0 ? DAILY_XP : 0);
     return { lines: lines, total: lines.reduce((s, l) => s + l.value, 0) };
   }
-  add("correct", r.good + " correct × " + POINTS_PER_QUESTION, r.good * POINTS_PER_QUESTION);
+  /* PLAIN NAMES, AND EVERY LINE SAYS HOW IT WAS WORKED OUT (build 325).
+     Madison: "the names of the xp and stuff and showing how it's
+     calculated is hard to understand, could that be improved?" Each line
+     is a plain name ("Correct answers", "Answers in a row", "Speed") and
+     its sub-line is its sum - "47 right × 10 XP", "10 in a row +25 · 25 in
+     a row +50", "+20% of 955" - so the card adds up on its face. The
+     results card then splits them: what the answers earned, the bonuses,
+     and "470 for answers + 675 in bonuses = 1,145" under the total. The
+     keys did not change; the Virtual Room's steps are matched by key. */
+  add("correct", "Correct answers", r.good * POINTS_PER_QUESTION,
+      { sub: r.good + " right \u00d7 " + POINTS_PER_QUESTION + " XP", base: true });
   /* A retake is "literally gonna be just purely retake": the answers it
      got right, and nothing else of any kind. */
   if(r.retake) return { lines: lines, total: lines.reduce((s, l) => s + l.value, 0) };
 
-  if(r.hundos > 0) add("hundo", r.hundos > 1 ? "Hundo bonus ×" + r.hundos : "Hundo bonus", r.hundos * PERFECT_BONUS);
+  if(r.hundos > 0) add("hundo", r.hundos > 1 ? "Perfect units" : "Perfect unit", r.hundos * PERFECT_BONUS,
+      { sub: (r.hundos > 1 ? r.hundos + " hundos \u00d7 " : "A hundo, every answer right: ") + PERFECT_BONUS + " XP" });
 
   /* ONE STREAK LINE, NOT ONE PER TIER (build 309): "The xp board looks
      good but it quickly seems to flood in with multiple types of xp
@@ -97057,17 +97316,17 @@ function computeRunXp(r){
   if(tierKeys.length){
     const streakXp = tierKeys.reduce((sum, t) => sum + runStreakTierXp(t) * tiers[t], 0);
     const top = tierKeys[tierKeys.length - 1];
-    add("streak", "Streak bonus", streakXp, {
+    add("streak", "Answers in a row", streakXp, {
       streak: top, tiers: tierKeys.map(t => ({ t: t, n: tiers[t] })),
-      sub: tierKeys.map(t => t + (tiers[t] > 1 ? " \u00d7" + tiers[t] : "")).join(" \u00b7 ") + " in a row" });
+      sub: tierKeys.map(t => t + " in a row" + (tiers[t] > 1 ? " \u00d7" + tiers[t] : "") + " +" + (runStreakTierXp(t) * tiers[t]).toLocaleString()).join(" \u00b7 ") });
   }
 
   if(r.answered > 0 && r.elapsedMs > 0){
     const avgSec = r.elapsedMs / 1000 / r.answered;
     const scaled = speedTierXp(avgSec) * Math.min(1, r.answered / 10) * (r.good / r.answered);
     const v = r.good > 0 ? Math.max(5, roundTo5(scaled)) : 0;
-    add("speed", "Speed bonus", v, { sub: formatClock(r.elapsedMs) + " total · " +
-      (avgSec < 10 ? avgSec.toFixed(1) : Math.round(avgSec)) + "s a question" });
+    add("speed", "Speed", v, { sub: (avgSec < 10 ? avgSec.toFixed(1) : Math.round(avgSec)) + "s a question on average (" +
+      formatClock(r.elapsedMs) + " in all)" });
   }
 
   /* THE LONG TEST BONUS - "taking a test with like loads of questions
@@ -97079,9 +97338,9 @@ function computeRunXp(r){
   const LONG_TEST_EVERY = 50, LONG_TEST_XP = 100;
   const longBlocks = Math.floor((r.answered || 0) / LONG_TEST_EVERY);
   if(longBlocks > 0 && r.good > 0){
-    add("long", "Long test bonus" + (longBlocks > 1 ? " ×" + longBlocks : ""),
+    add("long", "Long test",
         Math.max(5, roundTo5(longBlocks * LONG_TEST_XP * (r.good / r.answered))),
-        { sub: (longBlocks * LONG_TEST_EVERY) + "+ questions · +" + LONG_TEST_XP + " every " + LONG_TEST_EVERY });
+        { sub: "+" + LONG_TEST_XP + " for every " + LONG_TEST_EVERY + " questions (" + (longBlocks * LONG_TEST_EVERY) + "+)" });
   }
 
   /* Personal bests, one line for both kinds (build 309) - the same
@@ -97091,8 +97350,8 @@ function computeRunXp(r){
     const tp = r.timePRs || [], sp = r.scorePRs || [];
     const n = tp.length + sp.length;
     if(n){
-      const what = tp.length && sp.length ? "New personal bests" : tp.length ? "New best time" : "New best score";
-      add("pb", what + (n > 1 && !(tp.length && sp.length) ? " \u00d7" + n : ""),
+      const what = n > 1 ? "Personal bests" : tp.length ? "Best time" : "Best score";
+      add("pb", what,
         PB_TIME_BONUS * tp.length + PB_SCORE_BONUS * sp.length,
         { pbTime: tp.length, pbScore: sp.length,
           sub: sp.map(p => p.text).concat(tp.map(p => p.text)).join(" \u00b7 ") });
@@ -97107,8 +97366,8 @@ function computeRunXp(r){
      pays nothing. The grinding that finds a badge still pays its own way. */
   const m = multiUnitMultiplier(r.wholeUnits || 0);
   if(m > 1){
-    add("multi", "Multi-unit ×" + (Math.round(m * 100) / 100), roundTo5(beforeMult * (m - 1)),
-        { sub: r.wholeUnits + " whole units" });
+    add("multi", "Several units \u00d7" + (Math.round(m * 100) / 100), roundTo5(beforeMult * (m - 1)),
+        { sub: "+" + Math.round((m - 1) * 100) + "% of the " + beforeMult.toLocaleString() + " above, for " + r.wholeUnits + " whole units" });
   }
   return { lines: lines, total: lines.reduce((s, l) => s + l.value, 0) };
 }
@@ -98783,7 +99042,16 @@ function showRunRewards(run, hooks, opts){
   const xpKick = document.createElement("p");
   xpKick.className = "rs-kicker"; xpKick.textContent = "XP earned";
   xp.appendChild(xpKick);
-  const lineEls = run.xpLines.map(l => {
+  let bonusKick = null;
+  const lineEls = [];
+  run.xpLines.forEach(l => {
+    /* the bonuses under their own small heading, after what the answers
+       earned (build 325) */
+    if(!bonusKick && l.key !== "correct" && l.key !== "daily" && run.xpLines.some(x => x.key === "correct")){
+      bonusKick = document.createElement("p");
+      bonusKick.className = "rs-xpline rs-xpkick rs-land"; bonusKick.textContent = "Bonuses";
+      xp.appendChild(bonusKick); lineEls.push(bonusKick);
+    }
     const row = document.createElement("div");
     row.className = "rs-xpline rs-land" + (l.key === "multi" ? " is-multi" : "") + (l.badge ? " is-badge" : "");
     const a = document.createElement("span"); a.className = "rs-xpline-label";
@@ -98796,7 +99064,7 @@ function showRunRewards(run, hooks, opts){
     const b = document.createElement("span"); b.className = "rs-xpline-val"; b.textContent = "+" + l.value.toLocaleString();
     row.append(a, b);
     xp.appendChild(row);
-    return row;
+    lineEls.push(row);
   });
   if(!run.xpLines.length){
     const none = document.createElement("p");
@@ -98820,6 +99088,19 @@ function showRunRewards(run, hooks, opts){
   totalVal.append(totalNum, totalUnit);
   totalRow.append(totalLabel, totalVal);
   if(run.xpTotal > 0) xp.appendChild(totalRow);
+  /* THE SUM, SAID (build 325): what the answers earned plus the bonuses
+     is the total - "470 for answers + 675 in bonuses = 1,145". Only when
+     there are both halves; a single line is its own sum. */
+  const xpSum = (() => {
+    const base = run.xpLines.filter(l => l.key === "correct").reduce((t, l) => t + l.value, 0);
+    const extra = run.xpLines.filter(l => l.key !== "correct").reduce((t, l) => t + l.value, 0);
+    if(!(run.xpTotal > 0) || !base || !extra) return null;
+    const e = document.createElement("p");
+    e.className = "rs-xpsum rs-land";
+    e.textContent = base.toLocaleString() + " for answers + " + extra.toLocaleString() + " in bonuses = " + (base + extra).toLocaleString() + " XP";
+    xp.insertBefore(e, totalRow.nextSibling);
+    return e;
+  })();
   /* The rank you held going in, for the head of the level bar, until the
      rank-up cutscene hands back. Coming back from the review it is the
      rank you hold now. */
@@ -99351,7 +99632,7 @@ function showRunRewards(run, hooks, opts){
        the Unlocked box only once the scenes are over. */
     const holdBox = !!unlocked && !(opts && opts.instant) && !theme.muteBanners &&
       ((run.badges && run.badges.length && typeof playBadgeCaseScene === "function") || (run.flare && typeof playFlareFoundScene === "function"));
-    [head, grade, xp, ...lineEls, totalRow, levelBlock, ...boxes, ...(holdBox ? [] : [unlocked, ...unlockRows])].forEach(el => rsLand(el, true));
+    [head, grade, xp, ...lineEls, totalRow, ...(xpSum ? [xpSum] : []), levelBlock, ...boxes, ...(holdBox ? [] : [unlocked, ...unlockRows])].forEach(el => rsLand(el, true));
     /* back from the review the screen is drawn at once, and its buttons
        still come up from below (build 325); the page is not scrolled */
     if(actions) rsRise(actions, { delay: 160, follow: false });
@@ -99427,7 +99708,7 @@ function showRunRewards(run, hooks, opts){
   const fxTail = fxId ? ((typeof HUNDO_FX_TAIL_AT === "object" && HUNDO_FX_TAIL_AT[fxId]) || 1500) : 0;
   seq.add(countIt ? 1250 : 700, instant => rsLand(xp, instant));
   lineEls.forEach(l => seq.add(380, instant => rsLand(l, instant)));
-  seq.add(750, instant => { rsLand(totalRow, instant); countUp(instant); });
+  seq.add(750, instant => { rsLand(totalRow, instant); countUp(instant); if(xpSum) setTimeout(() => rsLand(xpSum, instant), instant ? 0 : 520); });
   /* THE BAR, SLOWER, AND ITS NUMBER AFTER IT (build 320): "the xp when it
      goes to the xp bar is too fast and could be more suspenseful ... when
      the number goes up it needs to be after that bar effect". The block
@@ -115051,8 +115332,15 @@ function buildProfileStanding(prog, rankNow){
   track.className = "xpbar-track profile-xpbar pf-xpbar" + (bar.over ? " is-banked" : "");
   const fill = document.createElement("span");
   fill.className = "xpbar-fill";
-  setBarFill(fill, 0);
   fill.dataset.target = String(Math.round((Number(bar.fraction) || 0) * 1000) / 10);
+  /* THE BAR IS BUILT WHERE IT STANDS (build 325). Madison: "when you open
+     profile the xp bar shouldn't move to right like how it does, doesn't
+     really make sense." It used to be built empty and filled once the tab
+     was shown - a glide from 0 every time Profile opened, which is not XP
+     being earned. A new element takes its first --fill with no transition,
+     so it is simply there; it only ever moves when XP is added in front of
+     you (the rank-up's climb, the results card). */
+  setBarFill(fill, Number(fill.dataset.target) || 0);
   track.appendChild(fill);
   const trackWrap = document.createElement("span");
   trackWrap.className = "pf-xpbarwrap";
@@ -115123,7 +115411,8 @@ function profileXpEarnedSince(box){
   show(from);
   if(from < span) xn.classList.remove("is-over");
   return () => {
-    /* the fill's own .9s glide, then the knock */
+    /* a beat after the tab is up (the bar is already full - build 325),
+       then the knock */
     setTimeout(() => {
       if(!box.isConnected) return show(into);
       xpBarBump(host, () => {
@@ -115137,7 +115426,7 @@ function profileXpEarnedSince(box){
         };
         requestAnimationFrame(tick);
       });
-    }, resultsMotionOff() ? 0 : 900);
+    }, resultsMotionOff() ? 0 : 600);
   };
 }
 /* A LINE THAT DOES NOT FIT BREAKS AT THE XP, NOT AT A DOT (build 316).
@@ -115937,10 +116226,11 @@ function showProfile(defaultTab, opts){
   identityTab.appendChild(friendSect);
 
   /* Kicked off when the Profile tab is actually SHOWN, not when it is
-     built - showProfile("stats") builds this panel hidden, and a bar
-     that animated there is a bar nobody saw move. rAF twice so the
-     0% width is a committed style before the transition target lands
-     on it; one frame is not reliably enough for that. */
+     built - showProfile("stats") builds this panel hidden. Since build 325
+     the bar is already at its value (buildProfileStanding) and this does
+     not move it: it only measures the line, starts the flip-books and
+     plays the "earned since" knock into a FULL bar, which is XP that
+     arrived since this device last showed it - the bar itself stays put. */
   function runXpBarFill(){
     const earnedInto = profileXpEarnedSince(standing);
     requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -119016,7 +119306,7 @@ function buildRanksTab(){
   /* THE BANDS, SAID ONCE (build 314): the boxes below are exactly build
      313's - "I don't like how the road map boxes changed, that's a no go"
      - so the one new idea is a sentence here, not a change to the cards. */
-  mapNote.textContent = "Each rank needs a level and a number of badges, and unlocks rewards along the way. Your badges also decide how high your level can go. Tap a rank to see what it gives.";
+  mapNote.textContent = "Each rank needs a level and a number of badges, and unlocks rewards along the way. Your level goes as high as the next rank\u2019s level, and that rank\u2019s badges take it further. Tap a rank to see what it gives.";
   tab.appendChild(mapNote);
 
   /* ---- IRON AT THE TOP, SUPERNOVA AT THE BOTTOM (build 232) ----
@@ -119706,11 +119996,39 @@ function rankUpLockCheck(){
   /* still asked while Home is up: a synced device may have shown it */
   rankUpLockTimer = setTimeout(rankUpLockCheck, 2000);
 }
+/* THE PROFILE TAB CALLS YOU (build 325): the "something new is in there"
+   gesture, once - see .ru-nudge. RU_NUDGE_MS matches the keyframes. */
+const RU_NUDGE_MS = 1100, RU_NUDGE_EVERY_MS = 5000, RU_NUDGE_FIRST_MS = 450;
+var rankUpNudgeTimer = null;
+function rankUpNudge(){
+  const tab = document.getElementById("bottomtab-profile");
+  if(!tab || !document.body.classList.contains("rankup-lock")) return false;
+  tab.classList.remove("ru-nudge"); void tab.offsetWidth; tab.classList.add("ru-nudge");
+  tab.dataset.ruNudges = String((Number(tab.dataset.ruNudges) || 0) + 1);
+  clearTimeout(tab.ruNudgeOff);
+  tab.ruNudgeOff = setTimeout(() => tab.classList.remove("ru-nudge"), RU_NUDGE_MS + 40);
+  return true;
+}
+/* as Home locks, then every few seconds while it stays locked - waiting,
+   not stacking, behind anything that holds Home (a pop-up, a tour) */
+function rankUpNudgeArm(ms){
+  clearTimeout(rankUpNudgeTimer);
+  rankUpNudgeTimer = setTimeout(() => {
+    rankUpNudgeTimer = null;
+    if(!document.body.classList.contains("rankup-lock")) return;
+    if(!document.hidden && !rankUpLockWaits()) rankUpNudge();
+    rankUpNudgeArm(RU_NUDGE_EVERY_MS);
+  }, ms);
+}
 function setRankUpLock(on){
   if(!document.body) return;
   const tab = document.getElementById("bottomtab-profile");
   if(on){
     wireRankUpLock();
+    if(!document.body.classList.contains("rankup-lock") || !rankUpNudgeTimer){
+      document.body.classList.add("rankup-lock");
+      rankUpNudgeArm(RU_NUDGE_FIRST_MS);
+    }
     document.body.classList.add("rankup-lock");
     if(tab){
       const o = rankUpOwed();
@@ -119721,6 +120039,7 @@ function setRankUpLock(on){
     }
   } else {
     document.body.classList.remove("rankup-lock");
+    clearTimeout(rankUpNudgeTimer); rankUpNudgeTimer = null;
     if(tab && tab.classList.contains("ru-call")){ tab.classList.remove("ru-call"); tab.removeAttribute("aria-label"); }
   }
 }
@@ -119749,12 +120068,13 @@ function rankUpLockRefuses(dest){
   return true;
 }
 function rankUpLockRefused(){
-  /* no ring and no jump on the Profile tab (build 320 - see .ru-call):
-     the banner says it */
+  /* the banner says it, and the Profile tab makes its call once (build
+     325 - see .ru-nudge; 320 took the looping ring off) */
   const now = Date.now();
   if(now - rankUpRefusedAt < 700 && document.getElementById("dailyalert")) return;
   rankUpRefusedAt = now;
   showDailyAlert("Your profile needs you");
+  if(rankUpNudge()) rankUpNudgeArm(RU_NUDGE_EVERY_MS);
 }
 
 /* ---- the input layer ---- */
@@ -119822,7 +120142,7 @@ function rankUpSceneWatch(scene, ms){
    met, and the level the OLD badges allowed (the XP since is saved
    behind that gate and climbs once the rank-up has been shown). */
 function rankUpSceneNumbers(owed){
-  const floor = store.levelFloor || 0;
+  const floor = store.levelFloor || 0, rFloor = store.rankFloor || 0;
   const pts = Number(store.lifetime && store.lifetime.points) || 0;
   const real = levelStateFor(store);
   const bNow = badgeCountOf(store);
@@ -119833,14 +120153,14 @@ function rankUpSceneNumbers(owed){
   let bBefore, lvBefore;
   if(rec){
     bBefore = Math.min(bNow, rec.b);
-    lvBefore = levelStateOf(Math.min(pts, rec.p), bBefore, floor).level;
-  } else if(needB > 0 && bNow === needB && levelStateOf(pts, needB - 1, floor).level >= needL){
+    lvBefore = levelStateOf(Math.min(pts, rec.p), bBefore, floor, rFloor).level;
+  } else if(needB > 0 && bNow === needB && levelStateOf(pts, needB - 1, floor, rFloor).level >= needL){
     /* no record (a rank-up that no test saw): the badge looks like the last */
     bBefore = needB - 1; lvBefore = real.level;
   } else {
     bBefore = bNow; lvBefore = Math.max(0, Math.min(real.level, needL - 1));
   }
-  const cap = rec ? levelStateOf(pts, bBefore, floor) : real;
+  const cap = rec ? levelStateOf(pts, bBefore, floor, rFloor) : real;
   return { r1, needL, needB, bBefore, lvBefore, cap, real, bNow };
 }
 function rankUpNewScene(owed){
@@ -120326,7 +120646,10 @@ async function rankUpHandOut(scene, stop){
   scene.hand = hand;
   let dark = null;
   try{
-    ghost.animate([{ transform: "scale(1)" }, { transform: "scale(" + RU_HAND_SCALE + ")" }],
+    /* kept on the element: once it has finished, Chromium's
+       ghost.getAnimations() no longer lists it, yet its fill still holds
+       the transform - see rankCutHandoff */
+    ghost.__ruDraw = ghost.animate([{ transform: "scale(1)" }, { transform: "scale(" + RU_HAND_SCALE + ")" }],
       { duration: RU_HAND_MS, easing: "cubic-bezier(.45,0,.4,1)", fill: "forwards" });
     dark = veil.animate([{ opacity: 0 }, { opacity: 1 }], { duration: RU_VEIL_MS, delay: RU_HAND_MS - RU_VEIL_MS, easing: "ease-in-out", fill: "forwards" });
   }catch(e){ veil.style.opacity = "1"; }
@@ -120714,6 +121037,15 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
   const toEl = standing.querySelector(".pf-xp-to");
   fill.style.transition = "none";
   const ms = rankUpClimbMs(u1 - u0);
+  /* the pool (build 325): what is saved, emptied by the climb. The XP the
+     bar has taken at u is xpForLevel(level) plus what it shows into that
+     level, never past its span - so the pool lands on what is still saved
+     (to.banked) when the climb stops at the next wall, and on 0 when not. */
+  const total = Number(to.total) || 0;
+  const xpAt = (lv, have, span) => xpForLevel(lv) + Math.min(have, span);
+  const pool = rankUpPoolMount(standing, numsHost);
+  let pool0 = null, poolLive = false;
+  if(scene) scene.pool = { start: null, end: null, takes: [] };
   /* the climb's tone, a ping where each new level lands (the climb is
      sine-eased: level k arrives where .5 - .5 cos(pi t) crosses it) */
   {
@@ -120727,15 +121059,28 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
   if(scene) scene.climb = { from: from.level, to: to.level, ms, levels: u1 - u0 };
   let shownLv = from.level, shownSpan = -1;
   const place = u => {
-    const whole = Math.floor(u + 1e-6), frac = u - whole;
+    /* the last level holds the end of the climb: at u1 a climb that stops
+       at the next wall is ITS bar full (f1 = 1), not the level after it
+       empty - which is what flooring u1 gave, and a climb now very often
+       ends at a wall (build 325: the wall is the next rank's level) */
+    const whole = Math.min(Math.floor(u + 1e-6), to.level - from.level), frac = u - whole;
     const lv = Math.min(to.level, from.level + whole);
     const last = lv >= to.level;
     const f = last ? Math.min(f1, frac) : frac;
     setBarFill(fill, Math.round(f * 1000) / 10);
     const span = last ? Math.max(1, Math.round(toBar.span) || rankUpLevelSpan(lv)) : rankUpLevelSpan(lv);
-    if(have) have.textContent = Math.round(last && f >= f1 ? toBar.into : f * span).toLocaleString();
+    const hv = Math.round(last && f >= f1 ? toBar.into : f * span);
+    if(have) have.textContent = hv.toLocaleString();
     if(need && span !== shownSpan){ shownSpan = span; need.textContent = " / " + span.toLocaleString() + " XP"; }
+    if(pool){
+      const left = Math.max(0, total - xpAt(lv, hv, span));
+      if(pool0 == null){ pool0 = left; if(scene) scene.pool.start = left; }
+      rankUpPoolSet(pool, left);
+      if(scene) scene.pool.end = left;
+    }
     if(lv !== shownLv){
+      /* the level just completed is taken out of the pool */
+      if(pool && poolLive) for(let L = shownLv; L < lv; L++){ const took = rankUpLevelSpan(L); rankUpPoolTake(pool, took); if(scene) scene.pool.takes.push(took); }
       shownLv = lv;
       lvEl.textContent = "Level " + lv;
       lvEl.classList.remove("ru-lvpop"); void lvEl.offsetWidth; lvEl.classList.add("ru-lvpop");
@@ -120743,6 +121088,11 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
     }
   };
   place(u0);
+  /* (a bar full at the old wall opens on the next level: that level's XP
+     was never in the pool, so nothing is taken for it) */
+  poolLive = true;
+  /* the full pool, a beat before any of it moves */
+  if(pool) await rankUpWait(RU_POOL_LEAD_MS);
   await new Promise(res => {
     const t0 = performance.now();
     const step = now => {
@@ -120759,12 +121109,69 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
   const cur = numsHost && numsHost.querySelector(".xpnums");
   if(cur) cur.replaceWith(buildXpNumbers(toBar.into, toBar.span, toBar.over));
   syncPfXpTo(standing, to);
+  if(pool){ rankUpPoolSet(pool, Math.max(0, Number(to.banked) || 0)); if(scene) scene.pool.end = Math.max(0, Number(to.banked) || 0); }
   await rankUpWait(650);
+  if(pool) await rankUpPoolDone(standing, pool);
   fill.style.transition = "";
   if(track && toBar.over) track.classList.add("is-banked");
   standing.classList.remove("ru-climbing");
   /* ...and only now the level challenge */
   if(row) await rankUpLevelRowAfter(row, to.level);
+}
+var RU_POOL_LEAD_MS = 750, RU_POOL_HOLD_MS = 1100, RU_POOL_CHIP_MS = 1100;
+/* one rAF-driven tween: fn(k) for k 0..1, resolved at the end */
+function ruTween(el, ms, fn){
+  return new Promise(res => {
+    const t0 = performance.now();
+    const step = now => {
+      const k = Math.min(1, (now - t0) / ms);
+      try{ fn(k); }catch(e){}
+      if(k < 1 && el && el.isConnected) requestAnimationFrame(step); else res();
+    };
+    requestAnimationFrame(step);
+  });
+}
+function rankUpPoolMount(standing, host){
+  if(!standing || !host) return null;
+  const p = document.createElement("span");
+  p.className = "ru-pool";
+  p.style.opacity = "0";
+  ruTween(p, 450, k => { const e = 1 - Math.pow(1 - k, 3); p.style.opacity = String(Math.min(1, k * 2));
+    p.style.transform = k < 1 ? "translateY(" + (5 * (1 - e)).toFixed(2) + "px) scale(" + (.9 + .1 * e + .06 * Math.sin(Math.PI * e)).toFixed(3) + ")" : ""; });
+  const lab = document.createElement("span"); lab.className = "ru-pool-lab"; lab.textContent = "Saved XP";
+  const num = document.createElement("b"); num.className = "ru-pool-num"; num.textContent = "0";
+  p.append(lab, num);
+  host.appendChild(p);
+  standing.classList.add("ru-pooling");
+  return p;
+}
+function rankUpPoolSet(pool, v){
+  const n = pool && pool.querySelector(".ru-pool-num");
+  const t = Math.max(0, Math.round(v)).toLocaleString();
+  if(n && n.textContent !== t) n.textContent = t;
+  if(pool){ pool.dataset.left = String(Math.max(0, Math.round(v))); pool.classList.toggle("is-empty", Math.round(v) <= 0); }
+}
+function rankUpPoolTake(pool, n){
+  if(!pool || !pool.isConnected) return;
+  const num = pool.querySelector(".ru-pool-num");
+  if(num) ruTween(num, 420, k => { num.style.transform = k < 1 ? "scale(" + (1 - .14 * Math.sin(Math.PI * k)).toFixed(3) + ")" : ""; });
+  const c = document.createElement("span");
+  c.className = "ru-pool-chip"; c.textContent = "\u2212" + Math.round(n).toLocaleString() + " XP";
+  pool.appendChild(c);
+  pool.dataset.takes = String((Number(pool.dataset.takes) || 0) + 1);
+  /* it lifts off the pool and drifts up and left, towards the bar */
+  ruTween(c, RU_POOL_CHIP_MS, k => {
+    const e = 1 - Math.pow(1 - k, 2.2);
+    c.style.opacity = String(k < .16 ? k / .16 : Math.max(0, 1 - (k - .16) / .84));
+    c.style.transform = "translate(" + (-38 * e).toFixed(1) + "px, " + (4 - 30 * e).toFixed(1) + "px) scale(" + (k < .16 ? .8 + 1.5 * k : 1.04 - .1 * k).toFixed(3) + ")";
+  }).then(() => c.remove());
+}
+/* held on what is left, then gone, and the line is Profile's own again */
+async function rankUpPoolDone(standing, pool){
+  await rankUpWait(RU_POOL_HOLD_MS);
+  await ruTween(pool, 450, k => { pool.style.opacity = String(1 - k); pool.style.transform = "translateY(" + (4 * k).toFixed(2) + "px)"; });
+  pool.remove();
+  standing.classList.remove("ru-pooling");
 }
 async function rankUpLevelRowAfter(row, level){
   const rowNow = row.querySelector(".pf-now"), rowBar = row.querySelector(".pf-bar > i");
