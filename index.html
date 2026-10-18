@@ -5097,7 +5097,10 @@
      onto its own line and never lands under the tab bar. */
   .vroom-roster-head .vroom-readycount{ margin:0; font-size:.78rem; }
   .vroom-roster-list{ margin:0; }
-  .vroom-roster-list .vroom-row:last-child{ border-bottom:none; }
+  /* (".vroom-row:last-child{ border-bottom:none }" came out in build 326:
+     a leftover from when the roster was a ruled list, it took the bottom
+     edge off the last person's card - so whoever joined last and readied
+     up had a green outline with no bottom to it.) */
   /* Two across at every width; on a phone the level line goes and the
      ready chip is a dot (the row's green edge says it too). */
   .vroom-roster.is-crowded .vroom-roster-list{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:.45rem; }
@@ -5123,35 +5126,66 @@
     .vroom-roster.is-crowded .vroom-you-tag{ display:inline; }
   }
   .vroom-setup-head{ margin-top:.2rem; }
-  /* ---- THE LOBBY BOX'S HEADER CARRIES INVITE AND OPEN ROOM (build 323) ----
-     On a phone a second row under "In this room", split across the box:
-     the Invite pill on the left, the switch and its two-word state on the
-     right. From a tablet up they sit on the title's own line. */
+  /* ---- THE LOBBY BOX'S HEADER: WHO CAN JOIN, AND INVITE (build 326) ----
+     A full-width row under "In this room" at every width (build 323 put
+     a switch and an Invite pill there; 326 replaced the switch - see
+     .vroom-access-seg). Phone: the two choices across the box, then the
+     line saying what the current one means, with Invite friends beside
+     it. From a tablet up all three sit on one line. */
   .vroom-roster.has-tools .vroom-roster-head{ flex-wrap:wrap; align-items:center; row-gap:.55rem; margin-bottom:.7rem; }
   .vroom-roster-tools{
-    flex:0 0 100%; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.45rem .6rem;
-    padding-top:.55rem; border-top:1px solid rgba(255,255,255,.07);
+    flex:0 0 100%; display:grid; grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:"seg seg" "line invite"; align-items:center; gap:.55rem .7rem;
+    padding-top:.65rem; border-top:1px solid rgba(255,255,255,.07);
   }
-  /* a 320px phone has no room for both on one line: the switch drops
-     under the pill, still on the right */
-  .vroom-roster-tools .vroom-open-row{ margin-left:auto; }
+  .vroom-roster-tools .vroom-access-seg{ grid-area:seg; }
+  .vroom-roster-tools .vroom-access-line{ grid-area:line; }
   .vroom-roster-tools .vroom-invite-btn{
-    display:inline-flex; align-items:center; gap:.4rem; margin:0;
+    grid-area:invite; display:inline-flex; align-items:center; gap:.4rem; margin:0;
     min-height:44px; padding:.4rem .9rem; font-size:.82rem; font-weight:800; white-space:nowrap; justify-content:center;
   }
   .vroom-roster-tools .vroom-invite-btn svg{ width:1.05rem; height:1.05rem; flex:none; }
-  .vroom-roster-tools .vroom-open-row{ display:flex; align-items:center; gap:.55rem; min-width:0; }
-  .vroom-roster-tools .vroom-open-text{ flex:0 1 auto; min-width:0; text-align:right; }
-  .vroom-open-label{ margin:0; font-size:.82rem; font-weight:800; color:var(--ink); line-height:1.2; white-space:nowrap; }
-  .vroom-open-hint{ margin:.1rem 0 0; font-size:.72rem; color:var(--soft); line-height:1.2; white-space:nowrap; }
+  /* Two options in one track, the app's segmented look (the Profile /
+     Stats / Settings switcher): a dark inset track, the chosen option a
+     raised lighter pill with white words, the other quiet. Each option
+     is a whole 44px target, never a word on a switch. */
+  .vroom-access-seg{
+    display:grid; grid-template-columns:1fr 1fr; gap:.25rem; padding:.25rem;
+    border-radius:999px; background:rgba(0,0,0,.32);
+    box-shadow:inset 0 1px 2px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.07);
+  }
+  .vroom-access-opt{
+    display:flex; align-items:center; justify-content:center; gap:.42rem; min-width:0;
+    min-height:44px; padding:0 .8rem; margin:0; border:0; border-radius:999px;
+    background:transparent; color:rgba(255,255,255,.6);
+    font:inherit; font-size:.86rem; font-weight:800; letter-spacing:.01em; white-space:nowrap; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    transition:background-color .2s ease, color .2s ease, box-shadow .2s ease;
+  }
+  .vroom-access-word{ overflow:hidden; text-overflow:ellipsis; }
+  .vroom-access-icon{ flex:none; width:1.05rem; height:1.05rem; display:block; }
+  .vroom-access-icon svg{ width:100%; height:100%; display:block; fill:none; stroke:currentColor;
+    stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
+  .vroom-access-opt.is-on{
+    color:#fff; background:rgba(255,255,255,.2);
+    box-shadow:0 1px 4px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(255,255,255,.1);
+  }
+  /* open is the one that lets the class in, so it is lit in the ready
+     green's family; invite only is the private default, plain white */
+  .vroom-access-seg.is-open .vroom-access-opt.is-on .vroom-access-icon{ color:#5BE39F; }
+  .vroom-access-opt:not(.is-on):active{ background:rgba(255,255,255,.07); }
+  @media (hover:hover){ .vroom-access-opt:not(.is-on):hover{ color:#fff; } }
+  .vroom-access-opt:focus{ outline:none; }
+  .vroom-access-opt:focus-visible{ outline:2px solid rgba(255,255,255,.7); outline-offset:-3px; }
+  .vroom-access-line{ margin:0; min-width:0; font-size:.78rem; line-height:1.35; color:var(--soft); }
   .vroom-roster > .vroom-autostart-note{ margin:.55rem 0 .1rem; }
   .vroom-roster:not(.is-crowded) > .vroom-autostart-note{ margin-top:.2rem; }
   @media (min-width:40rem){
-    .vroom-roster.has-tools .vroom-roster-head{ flex-wrap:nowrap; justify-content:flex-start; column-gap:.8rem; }
-    .vroom-roster-tools{ flex:0 0 auto; margin-left:auto; padding-top:0; border-top:0; gap:1.1rem; }
+    .vroom-roster-tools{ grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"seg line invite"; gap:.6rem 1rem; }
+    .vroom-access-seg{ min-width:19rem; }
+    .vroom-access-opt{ font-size:.9rem; }
     .vroom-roster-tools .vroom-invite-btn{ font-size:.88rem; }
-    .vroom-open-label{ font-size:.88rem; }
-    .vroom-open-hint{ font-size:.76rem; }
+    .vroom-access-line{ font-size:.82rem; }
   }
   @media (min-width:40rem){
     .vroom-roster{ padding:1.1rem 1.15rem; }
@@ -5599,7 +5633,30 @@
      curve. The row's own outline turns green instead, all the way round
      its corners; the ::before stays (transparent) so nothing else moves. */
   .vroom-row.is-ready::before{ background:transparent; }
-  .vroom-roster .vroom-row.is-ready{ border-color:rgba(61,214,140,.55); transition:border-color .2s ease; }
+  /* BUILD 326: THE WHOLE RING, ON EVERYBODY. "When ready up is set not
+     everyone has a green outline and if they do it's not fully there."
+     Three causes, all fixed here:
+       - the last card had no bottom edge (the :last-child rule above);
+       - in a full room your OWN card kept the accent edge it wears to say
+         "this is you" - .is-crowded .is-you outranked .is-ready - so you
+         were the one ready player with no green;
+       - the ring was a 1px border at 55%: over the dim banner art behind
+         each card it read as a faint line that came and went round the
+         corners, and the card clips its art to the inside of that border
+         with overflow:hidden, which WebKit is known to do square for an
+         animated child, cutting into the curve.
+     Now the ring is the border in full green PLUS a 1px spread shadow
+     outside it - painted by the card itself, outside its own clip, so
+     nothing inside the card can ever cover any part of it - and a soft
+     green glow. Two pixels, all four sides, round every corner, the same
+     on your card and everybody else's. It arrives with the card (the
+     roster redraws on a ready change), so there is no half-drawn frame. */
+  [data-layout="modern"] .vroom-roster .vroom-roster-list .vroom-row.is-ready,
+  .vroom-roster .vroom-roster-list .vroom-row.is-ready{
+    border-color:#3DD68C;
+    box-shadow:0 0 0 1px #3DD68C, 0 0 14px rgba(61,214,140,.28), 0 2px 10px rgba(0,0,0,.25),
+      inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+  }
   /* ...and the words sit dead centre in the pill. Capitals ride high in a
      line box that keeps room for descenders, so "NOT READY" read a pixel
      or two above centre; text-box trims the box to the capitals (Safari
@@ -7232,27 +7289,41 @@
     transform:translateZ(0) scale(.96);
     box-shadow:0 1px 2px rgba(18,26,32,.28) inset, 0 -1px 1px rgba(255,255,255,.5) inset, 0 1px 2px rgba(0,0,0,.22);
   }
-  /* NOT YET: clear glass, the selected tab's lens (.bottomtabs-slider::before) */
+  /* NOT YET (build 326): THE START PILL'S OWN UNLIT LOOK. "The button when
+     not selected is Liquid Glass and not the same look as the normal start
+     button when not lit up." 325 drew it as the tab bar's clear lens - a
+     bright rim and white words, which read as a different, lit-up control
+     beside a test's grey Start. It is now exactly the tab bar's inert
+     Start (.bottomtabs.has-start-tab .bottomtab-start.is-inert): the same
+     soft grey fill, the same two faint inset lines, the same --soft words,
+     no lift. Lit, it is the Start pill's raised fill as before. */
   #stage > .vroom-setup-bar > .vroom-setup-go.is-inert,
   #stage > .vroom-setup-bar > .vroom-readyup-btn:disabled,
   #stage > .vroom-setup-bar > .vroom-readyup-btn.is-waiting{
-    opacity:1; cursor:default; color:rgba(255,255,255,.72);
-    background-color:transparent;
-    background-image:radial-gradient(120% 85% at 50% -10%, rgba(255,255,255,.13), rgba(255,255,255,0) 62%),
-      linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01) 55%, rgba(255,255,255,.045));
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.34),
-      inset 0 1.5px 0 rgba(255,255,255,.5),
-      inset 0 3px 3px -2px rgba(140,215,255,.32),
-      inset 0 -3px 3px -2px rgba(255,150,215,.26),
-      inset 0 0 0 3px rgba(0,0,0,.08),
-      inset 0 0 12px rgba(255,255,255,.05),
-      0 3px 12px rgba(0,0,0,.28);
+    opacity:1; cursor:default; color:var(--soft);
+    background-color:rgba(128,128,128,.16); background-image:none;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07), inset 0 0 0 1px rgba(255,255,255,.05);
   }
   /* READIED, IN THE LOBBY: the ready green, as a ready row's chip is */
   #stage > .vroom-setup-bar > .vroom-readyup-btn.is-ready:not(:disabled){ background-color:#3DD68C; color:#0E2818; }
   /* LIT BY A TAP: the Start pill's one beat - the fill grows from the
      centre, a small punch out and a sheen across (see .just-ready) */
-  #stage > .vroom-setup-bar > .is-lighting{ animation:start-ready-punch .45s cubic-bezier(.3,.7,.3,1) .12s both; }
+  #stage > .vroom-setup-bar > .is-lighting{ animation:start-ready-punch .45s cubic-bezier(.3,.7,.3,1) .18s both; }
+  /* ...over the unlit grey, as the tab bar's .just-ready does: 325 lit the
+     pill's own fill at once and grew the same colour over it, so the fill
+     from the centre could never be seen (build 326). The grey is held for
+     the .3s the fill takes, then the lit fill takes over underneath. */
+  #stage > .vroom-setup-bar > .vroom-setup-go.is-lighting,
+  #stage > .vroom-setup-bar > .vroom-readyup-btn.is-lighting{
+    background-color:rgba(128,128,128,.16); background-image:none;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07), inset 0 0 0 1px rgba(255,255,255,.05);
+    animation:start-ready-punch .45s cubic-bezier(.3,.7,.3,1) .18s both, vroom-bar-lit 0s linear .3s forwards;
+  }
+  @keyframes vroom-bar-lit{
+    to{ background-color:var(--accent); background-image:linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0) 58%);
+      box-shadow:0 1px 1px rgba(255,255,255,.95) inset, 0 -2px 2px rgba(18,26,32,.3) inset,
+        0 1px 3px rgba(0,0,0,.24), 0 4px 10px rgba(0,0,0,.22), 0 8px 18px -6px rgba(0,0,0,.35); }
+  }
   #stage > .vroom-setup-bar > .is-lighting::before{
     content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
     background:linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0) 58%), var(--accent);
@@ -7261,7 +7332,7 @@
   #stage > .vroom-setup-bar > .is-lighting::after{
     content:""; position:absolute; top:0; bottom:0; left:0; width:45%; pointer-events:none; border-radius:inherit;
     background:linear-gradient(90deg, transparent, rgba(255,255,255,.8), transparent);
-    animation:start-ready-sheen .46s cubic-bezier(.3,.6,.4,1) .14s both;
+    animation:start-ready-sheen .46s cubic-bezier(.3,.6,.4,1) .2s both;
   }
   #stage > .vroom-setup-bar > .is-lighting{ overflow:hidden; isolation:isolate; }
   [data-reduce-motion="true"] #stage > .vroom-setup-bar > .is-lighting,
@@ -24509,25 +24580,19 @@
      the code card, so this fills the width and is sized like a button
      somebody is meant to press. */
   .vroom-settings-btn{ width:100%; min-height:52px; font-size:1rem; font-weight:800; }
-  /* ---- THE LOBBY'S MATCH SETTINGS, IN THE TAB BAR'S GLASS (build 325) ----
-     "Make the match settings button how it was just better but give it
-     to the button tab vibe." The host's button in Room setup was the
-     matte black slab every ghost button is; it is the same object as the
-     Virtual Room's glass pill now (.vroom-setup-bar) - the tab bar's
-     dark glass with its hairline rim and the catch-light along the top -
-     with the sliders mark beside the words, so the lobby and Match
-     settings read as one family. Same size and place as before. */
+  /* ---- THE LOBBY'S MATCH SETTINGS: THE APP'S SECONDARY BUTTON (build 326) ----
+     "The lobby, the match settings button is a weird color?" 325 drew it
+     as see-through glass - a 55% dark fill with no blur of its own, a
+     blue and a pink split along its edges - so its colour was whatever
+     the Room setup card's tint and the theme's glow behind that happened
+     to be: a muddy violet-grey on the default theme, and a different
+     muddy colour on every other. It is the matte black every secondary
+     button in the app is (.next.ghost: Invite friends right under it,
+     Back, Sign in with a code), with the sliders mark: one colour on
+     every theme, white words at 19:1. */
   [data-layout="modern"] .vroom-host-bar .next.ghost.vroom-settings-btn{
     display:flex; align-items:center; justify-content:center; gap:.55rem;
-    color:#fff; border:none;
-    background-color:rgba(20,24,30,.55);
-    background-image:radial-gradient(120% 90% at 50% -12%, rgba(255,255,255,.12), rgba(255,255,255,0) 60%),
-      linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 45%);
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.14), inset 0 1px 0 rgba(255,255,255,.3),
-      inset 0 3px 3px -2px rgba(140,215,255,.2), inset 0 -3px 3px -2px rgba(255,150,215,.16), inset 0 -1px 1px rgba(0,0,0,.3),
-      0 1px 3px rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.35);
   }
-  [data-layout="modern"] .vroom-host-bar .next.ghost.vroom-settings-btn:active{ background-color:rgba(20,24,30,.75); }
   [data-layout="modern"] .vroom-host-bar .next.ghost.vroom-settings-btn:disabled{ opacity:.45; }
   .vroom-settings-btn .vroom-bar-icon{ flex:none; width:1.15rem; height:1.15rem; display:block; }
   .vroom-settings-btn .vroom-bar-icon svg{ width:100%; height:100%; display:block; fill:none; stroke:currentColor;
@@ -24622,29 +24687,8 @@
     .vroom-host-mode-art{ width:2.8rem; height:1.8rem; }
   }
   .vroom-invite-btn{ min-height:44px; padding:.4rem .9rem; font-size:.8rem; margin-left:auto; }
-  /* ---- open-to-the-class switch, and the browser it feeds ---- */
-  .vroom-open-row{ display:flex; align-items:center; gap:.9rem; }
-  .vroom-open-text{ flex:1 1 auto; min-width:0; }
-  .vroom-open-text .friend-hint{ margin:.15rem 0 0; }
-  /* A REAL SWITCH, not a checkbox with a label. It is the one control
-     in a lobby that changes who can walk in, so it reads as a physical
-     thing that is on or off rather than a tickbox in a list. 44px of
-     target around a 28px pill, which is the app's floor. */
-  /* THE TRACK IS DRAWN, THE BUTTON IS THE TARGET (build 266). "The
-     'open to class' toggle switch is super weirdly shaped." The button
-     WAS the track, and min-height:44px stretched a 28px pill into a
-     51x44 lozenge with the knob floating in its middle. Now the button
-     is an invisible 44px target and the track is ::before, drawn at an
-     iOS switch's proportions inside it. */
-  /* THE APP'S ONE SWITCH (build 324): "the virtual room lobby one" is the
-     same .nsw track as every other switch now, same size, same lens - the
-     button stays the invisible 44px target round it. */
-  .vroom-open-toggle{
-    flex:0 0 auto; position:relative; display:flex; align-items:center; justify-content:center;
-    width:64px; height:44px; min-height:44px; padding:0;
-    border:0; border-radius:0; background:transparent; cursor:pointer;
-    -webkit-tap-highlight-color:transparent; touch-action:pan-y;
-  }
+  /* (The lobby's Open room switch, .vroom-open-toggle and its row, came
+     out in build 326 - see .vroom-access-seg.) */
   .rooms-list{ display:flex; flex-direction:column; }
   .room-row .friend-row-sub{ color:var(--soft); }
   .rooms-refresh{ width:100%; min-height:44px; margin-top:.9rem; }
@@ -107284,41 +107328,72 @@ function showVirtualRoomLobby(){
        actually understand what that toggle does." The three-line hint
        is two words now, under the switch's name, because it shares a
        header row (build 323); the toast on a flip says where it shows. */
-    const openRow = document.createElement("div");
-    openRow.className = "vroom-open-row";
-    const openText = document.createElement("div");
-    openText.className = "vroom-open-text";
-    const openLabel = document.createElement("p");
-    openLabel.className = "vroom-open-label"; openLabel.textContent = "Open room";
-    const openHint = document.createElement("p");
-    openHint.className = "vroom-open-hint";
-    const openHintText = () => vroomIsOpen ? "Anyone in 26E" : "Invite only";
-    openHint.textContent = openHintText();
-    openText.append(openLabel, openHint);
-    const sw = document.createElement("button");
-    sw.type = "button";
-    sw.className = "vroom-open-toggle nsw-host" + (vroomIsOpen ? " on" : "");
-    sw.setAttribute("role", "switch");
-    sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
-    sw.setAttribute("aria-label", "Open room: list this room for the whole class");
-    /* the app's one switch (build 324): the .nsw track, drawn and pressed
-       exactly like every .opt switch - aria-checked is its state */
-    const knob = document.createElement("span");
-    knob.className = "nsw"; knob.setAttribute("aria-hidden", "true");
-    sw.appendChild(knob);
-    sw.addEventListener("click", () => {
-      vroomIsOpen = !vroomIsOpen;
-      sw.classList.toggle("on", vroomIsOpen);
-      sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
-      openHint.textContent = openHintText();
+    /* ---- WHO CAN JOIN: TWO CHOICES, ONE OF THEM LIT (build 326) ----
+       "The toggle for open room is confusing because it says open room
+       and then invite only under it?" It did: a switch NAMED "Open room"
+       with its current state, "Invite only", printed under the name - so
+       the one control said both things at once and you had to know which
+       line was the label and which the value. It is two options now,
+       side by side, the chosen one raised and lit, and one line under
+       them saying what the CURRENT choice means. Nothing on it can be
+       read as the opposite of what it is. Still host only, still a
+       field write on the room (`open`), still private by default. */
+    const access = document.createElement("div");
+    access.className = "vroom-access-seg";
+    access.setAttribute("role", "radiogroup");
+    access.setAttribute("aria-label", "Who can join");
+    const ACCESS = [
+      { open: true, word: "Open room",
+        icon: "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8.2\"/><path d=\"M3.8 12h16.4\"/><path d=\"M12 3.8c2.3 2.3 3.4 5 3.4 8.2s-1.1 5.9-3.4 8.2c-2.3-2.3-3.4-5-3.4-8.2s1.1-5.9 3.4-8.2z\"/></svg>",
+        line: "Anyone in 26E can find this room under Open rooms and join." },
+      { open: false, word: "Invite only",
+        icon: "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"5\" y=\"10.5\" width=\"14\" height=\"9.5\" rx=\"2.4\"/><path d=\"M8.3 10.5V8a3.7 3.7 0 0 1 7.4 0v2.5\"/></svg>",
+        line: "Only people you invite can join." }
+    ];
+    const accessLine = document.createElement("p");
+    accessLine.className = "vroom-access-line";
+    accessLine.setAttribute("aria-live", "polite");
+    const accessBtns = ACCESS.map(o => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "vroom-access-opt";
+      b.setAttribute("role", "radio");
+      b.dataset.open = o.open ? "1" : "0";
+      b.innerHTML = "<span class=\"vroom-access-icon\">" + o.icon + "</span><span class=\"vroom-access-word\">" + o.word + "</span>";
+      b.addEventListener("click", () => setAccess(o.open));
+      access.appendChild(b);
+      return b;
+    });
+    const paintAccess = () => {
+      accessBtns.forEach((b, i) => {
+        const on = ACCESS[i].open === vroomIsOpen;
+        b.classList.toggle("is-on", on);
+        b.setAttribute("aria-checked", on ? "true" : "false");
+        b.tabIndex = on ? 0 : -1;
+      });
+      access.classList.toggle("is-open", vroomIsOpen);
+      const cur = ACCESS.find(o => o.open === vroomIsOpen);
+      if(accessLine.textContent !== cur.line) accessLine.textContent = cur.line;
+    };
+    function setAccess(open){
+      if(open === vroomIsOpen) return;
+      vroomIsOpen = open;
+      paintAccess();
+      playSound(open ? "ui.toggle.on" : "ui.toggle.off");
       if(fbDb && vroomCode){
         try{ fbDb.collection("vrooms").doc(vroomCode)
                .update({ open: vroomIsOpen }).catch(() => {}); }catch(e){}
       }
-      showToast(vroomIsOpen ? "Open room \u2014 anyone in 26E can find it under Open rooms." : "Invite only \u2014 only people you invite can join.");
+    }
+    /* a radio group moves with the arrow keys */
+    access.addEventListener("keydown", e => {
+      if(e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+      e.preventDefault();
+      setAccess(!vroomIsOpen);
+      const on = accessBtns.find(b => b.classList.contains("is-on")); if(on) on.focus();
     });
-    openRow.append(openText, sw);
-    lobbyTools.append(inviteBtn, openRow);
+    paintAccess();
+    lobbyTools.append(access, accessLine, inviteBtn);
   }
 
   /* The pre-test summary, per explicit request \u2014 "make sure to show
