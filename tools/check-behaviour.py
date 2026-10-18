@@ -14722,8 +14722,13 @@ def check_b317_planet(br):
     # middle of each fissure (SCAR_CRACK_ONLY, P.GLOW). What stays true: the
     # crack's walls are still dark, the light lives inside the fissures and
     # is a thread, not a fire filling the mark.
-    check("a crack, not a fire: where the scar is solid it is still dark (mean under 40), and the warm light in it is a thread down the fissures - under 10% of the mark",
-          bool(art) and art.get("foot", 0) > 1000 and art["glowing"] <= art["foot"] * .10 and art["coreLum"] < 40,
+    # MOVED IN 326: "it looked like there was a large large crack" - the arms
+    # are 1.9x wider (SCAR_CRACK_WIDE), so more of the wall facing the light
+    # is lit and the solid part's mean rises a little (43 against 40); it is
+    # still a dark crack, and the light is still a thread (the seam, b326c, is
+    # an svg over the art, not in it).
+    check("a crack, not a fire: where the scar is solid it is still dark (mean under 48 - 40 before 326's wider crack), and the warm light in it is a thread down the fissures - under 10% of the mark",
+          bool(art) and art.get("foot", 0) > 1000 and art["glowing"] <= art["foot"] * .10 and art["coreLum"] < 48,
           art and {k: (round(art[k], 1) if isinstance(art.get(k), float) else art.get(k)) for k in ("layers", "foot", "glowing", "coreLum")})
     check("the light inside the crack: one ember layer under the crack art, under 30% of the mark, breathing slowly (8s or more); no bloom, no hot layer, no heat shimmer",
           bool(art) and art.get("emArea", 1e9) <= art.get("foot", 0) * .30 and art.get("emArea", 0) > 0
@@ -17570,7 +17575,9 @@ B319_RU_WALK = """async (a) => {
     shown: store.rankUpShown, held: TIER_ORDER_FULL.indexOf(rankOf(store)) + 1, owed: rankUpOwed(), blocker: !!document.querySelector('.ru-blocker'),
     curtain: !!document.querySelector('.ru-curtain'), accent: theme.accent, prog: localStorage.getItem('class26e.rankup.prog'), dot: rankIsNew() };
   window.playTierCutscene = realTier; window.playSupernovaCutscene = realSn;
-  /* Home is free afterwards, and it plays once */
+  /* Home is free afterwards, and it plays once (a.noAgain: another rank is
+     still owed - build 326 - and the next walk plays it) */
+  if(a.noAgain) return out;
   showHome(); await wait(2600);
   out.home2 = { lock: document.body.classList.contains('rankup-lock'), flare: (() => { const b = document.querySelector('.panel.home .cosmic-icon-badge[data-rank-tier="' + a.top + '"]'); return b ? b.classList.contains('cosmic-badge-lit') : null; })() };
   showProfile(); await wait(1500);
@@ -17673,19 +17680,27 @@ def check_b319_rankup(br):
 
     # Two at once, Reduce motion, a reload part-way, the watchdog, and the
     # Rank screen opened straight - on the phone.
+    # MOVED IN 326: two ranks from one run are TWO journeys now - "they would
+    # go to main menu after the one rank up stuff is done, the character would
+    # vibrate or move again, and it would just do another cutscene". The first
+    # walk here is Silver to Gold, ending on Home with Platinum still owed;
+    # a second walk from Home plays Gold to Platinum. (tools/check-b326-c.py B
+    # holds the whole queue: the call between, the flares, a reload, three.)
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate(B319_RU_SEED, {"two": True})
     r = pg.evaluate(B319_RU_RUN, {})
-    wk = pg.evaluate(B319_RU_WALK, {"top": "vanguard", "cutMs": 300, "cardMs": 400})
+    wk = pg.evaluate(B319_RU_WALK, {"top": "veteran", "cutMs": 300, "cardMs": 400, "noAgain": True})
+    wk2 = pg.evaluate(B319_RU_WALK, {"top": "vanguard", "cutMs": 300, "cardMs": 400})
     ca, cards = wk.get("cutArgs") or [], wk.get("cards") or []
-    check("two at once: nothing threw", not r.get("threw") and not wk.get("threw"), [r.get("threw"), wk.get("threw")])
+    ca2, cards2 = wk2.get("cutArgs") or [], wk2.get("cards") or []
+    check("two at once: nothing threw", not r.get("threw") and not wk.get("threw") and not wk2.get("threw"), [r.get("threw"), wk.get("threw"), wk2.get("threw")])
     check("two at once: the results owe Silver to Platinum and play nothing", r.get("owed") == {"fromIdx": 1, "toIdx": 3} and r.get("cut") == 0, [r.get("owed"), r.get("cut")])
-    check("two at once: ONE cutscene, Platinum's, from Silver; then Gold's card and Platinum's, in order, '1 of 2' and '2 of 2'",
-          len(ca) == 1 and ca[0].get("key") == "vanguard" and ca[0].get("from") == "ranger"
-          and [c.get("name") for c in cards] == ["Gold rank", "Platinum rank"] and (cards[0].get("foot") or "").startswith("1 of 2"),
-          [ca, [(c.get("name"), c.get("foot")) for c in cards]])
-    af = wk.get("after") or {}
-    check("two at once: ends on Platinum, Sapphire next, both shown", af.get("rank") == "Platinum" and af.get("next") == "Sapphire" and af.get("shown") == 4, af)
+    check("two at once (326): Gold's journey first - its cutscene from Silver, Gold's card alone - then Platinum's from Gold, Platinum's card alone",
+          [(c.get("key"), c.get("from")) for c in ca] == [("veteran", "ranger")] and [c.get("name") for c in cards] == ["Gold rank"]
+          and [(c.get("key"), c.get("from")) for c in ca2] == [("vanguard", "veteran")] and [c.get("name") for c in cards2] == ["Platinum rank"],
+          [ca, [c.get("name") for c in cards], ca2, [c.get("name") for c in cards2]])
+    af2 = wk2.get("after") or {}
+    check("two at once: ends on Platinum, Sapphire next, both shown", af2.get("rank") == "Platinum" and af2.get("next") == "Sapphire" and af2.get("shown") == 4, af2)
     ctx.close()
 
     # EVERY CHALLENGE COUNT STOPS AT ITS GOAL (Madison's screenshot: "Earn 3
@@ -20640,8 +20655,11 @@ def check_b319_shine(br):
           h.querySelector(':scope > .cosmic-scar').style.visibility = 'hidden'; h.classList.remove('is-scarred'); }""")
         pg.wait_for_timeout(100)
         lB, dB = shot()
-        check("%s: the shine is damaged - dulled (%.0f against %.0f clean, under 80%%) with dark structure in it (%.1f%% under 40, clean %.1f%%)" % (acc, lA, lB, dA * 100, dB * 100),
-              box["scar"] and lA <= .8 * lB and dA >= .03 and dB < .01, (round(lA, 1), round(lB, 1), round(dA, 4), round(dB, 4)))
+        check("%s: the shine is damaged - dulled (%.0f against %.0f clean, under 85%% - 80%% before 326's finer crazing) with structure in it (%.1f%% under 40, clean %.1f%%)" % (acc, lA, lB, dA * 100, dB * 100),
+              # MOVED IN 326: Supernova's shine is fine warm crazing, not a black
+              # web ("it read as a tree"), so less of it is under 40 - still
+              # dulled the same, still structure where the clean shine has none
+              box["scar"] and lA <= .85 * lB and dA >= .008 and dB < .01 and dA > 3 * dB, (round(lA, 1), round(lB, 1), round(dA, 4), round(dB, 4)))
     ctx.close()
 
 B318_DAILY = """async (acc) => { const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -23161,8 +23179,10 @@ def check_b320e_cracks(br):
           t.get("impact", 0) > 20 and t.get("shine", 0) > 20 and t.get("farX", 1) < .12,
           {k: t.get(k) for k in ("piece", "impact", "shine", "farX")})
     e = rows["elite"]
-    check("the burn begins at Amethyst: its shine already breaking, less than Supernova's",
-          0 < e.get("shineDark", 0) < t.get("shineDark", 0) * .8 and rows["adept"].get("shineDark", 0) == 0,
+    # MOVED IN 326: Supernova's broken shine is finer, warmer crazing than
+    # Amethyst's black seams, so it no longer counts as darker; both broken
+    check("the burn begins at Amethyst: its shine already breaking (Supernova's broken too, in finer crazing since 326)",
+          0 < e.get("shineDark", 0) and t.get("shineDark", 0) > 0 and rows["adept"].get("shineDark", 0) == 0,
           (rows["adept"].get("shineDark"), e.get("shineDark"), t.get("shineDark")))
     check("only Supernova's has the flakes and the ember", t.get("frags", 0) >= 6 and t.get("ember") and not any(rows[k].get("frags") or rows[k].get("ember") for k in up[:-1]),
           [(rows[k].get("frags"), rows[k].get("ember")) for k in up])
