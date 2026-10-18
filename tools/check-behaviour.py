@@ -17562,7 +17562,8 @@ def check_b319_rankup(br):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         s0 = pg.evaluate(B319_RU_SEED, {})
         r = pg.evaluate(B319_RU_RUN, {})
-        check(f"{dev}: the fixture is Silver at the 4-badge gate (level 49) before the run", s0 == {"rank": "ranger", "level": 49, "badges": 4}, s0)
+        # build 325: the wall is the next rank's level - Gold's 40 with four badges (was 49, the top of Gold's block)
+        check(f"{dev}: the fixture is Silver at the 4-badge wall (level 40, Gold's) before the run", s0 == {"rank": "ranger", "level": 40, "badges": 4}, s0)
         check(f"{dev}: the run: nothing threw", not r.get("threw"), r.get("threw"))
         check(f"{dev}: the results play NO rank cutscene and NO rank reward card",
               r.get("cut") == 0 and not any("rankrewards" in c or "rankreward" in c or "is-rankup" in c for c in r.get("cards", [])), [r.get("cut"), r.get("cards")])
@@ -17573,8 +17574,8 @@ def check_b319_rankup(br):
         check(f"{dev}: no row for the rank-up on the results (build 320), and no theme/flare/character rows",
               "rs-unlock-rankwait" not in r.get("kinds", []) and not r.get("waitText") and not r.get("rankUpText")
               and not any(k in ("rs-unlock-theme", "rs-unlock-rankflare", "rs-unlock-rank") for k in r.get("kinds", [])), [r.get("kinds"), r.get("waitText"), r.get("rankUpText")])
-        check(f"{dev}: the results card stays at Silver and the old gate (Level 49) - the saved levels climb on Profile",
-              r.get("level") == "Level 49" and (r.get("rankLine") or "").startswith("Silver"), [r.get("level"), r.get("rankLine")])
+        check(f"{dev}: the results card stays at Silver and the old wall (Level 40) - the saved levels climb on Profile",
+              r.get("level") == "Level 40" and (r.get("rankLine") or "").startswith("Silver"), [r.get("level"), r.get("rankLine")])
         check(f"{dev}: the rank-up is owed (Silver shown, Gold held) with where it stood recorded; no old cutscene flags",
               r.get("owed") == {"fromIdx": 1, "toIdx": 2} and r.get("pending") == [None, False] and (r.get("rec") or {}).get("b") == 4,
               [r.get("owed"), r.get("pending"), r.get("rec")])
@@ -17585,8 +17586,8 @@ def check_b319_rankup(br):
               wk.get("lock") is True and wk.get("ring") is True and wk.get("homeFlare") is False, [wk.get("lock"), wk.get("ring"), wk.get("homeFlare")])
         p0 = wk.get("p0") or {}
         rows = {x["k"]: x for x in (p0.get("rows") or [])}
-        check(f"{dev}: Profile opens as it was - Silver, Level 49, Gold's badges 4 / 5 unticked, input held",
-              p0.get("rank") == "Silver" and p0.get("level") == "Level 49" and p0.get("next") == "Gold" and p0.get("blocker")
+        check(f"{dev}: Profile opens as it was - Silver, Level 40, Gold's badges 4 / 5 unticked, input held",
+              p0.get("rank") == "Silver" and p0.get("level") == "Level 40" and p0.get("next") == "Gold" and p0.get("blocker")
               and rows.get("badges", {}).get("met") is False and rows.get("badges", {}).get("now") == "4" and rows.get("level", {}).get("met") is True, p0)
         # build 320 moves the loading screen to its new decision (none - see check_b320d_rankup)
         check(f"{dev}: no cursor - the badge challenge fills and ticks ('2 of 2 done'), then into the road map (no loading screen since 320)",
@@ -17620,8 +17621,9 @@ def check_b319_rankup(br):
               at.get("heroturn", 0) < at.get("curtain", -1) < at.get("back", -1) < at.get("flipout", -1) < at.get("goalin", -1), at)
         af = wk.get("after") or {}
         lv = wk.get("lvls") or []
-        check(f"{dev}: the saved XP climbs the bar level by level, 49 to 53, and the level challenge then reads 50 (build 321: after the bar, see 320d)",
-              lv[:1] == ["Level 49"] and lv[-1:] == ["Level 53"] and len(lv) >= 5 and af.get("lvRow") == "50" and af.get("level") == "Level 53", [lv, af.get("lvRow")])
+        # build 325: from Gold's 40 to Platinum's 50 - the next wall - with the rest still saved
+        check(f"{dev}: the saved XP climbs the bar level by level, 40 to 50 (Platinum's level, the new wall), and the level challenge then reads 50 (build 321: after the bar, see 320d)",
+              lv[:1] == ["Level 40"] and lv[-1:] == ["Level 50"] and len(lv) >= 5 and af.get("lvRow") == "50" and af.get("level") == "Level 50", [lv, af.get("lvRow")])
         check(f"{dev}: done: Gold, Platinum next, shown, nothing held, no layer or curtain left, nothing owed on the device",
               af.get("rank") == "Gold" and af.get("next") == "Platinum" and af.get("shown") == af.get("held") == 3 and af.get("owed") is None
               and not af.get("blocker") and not af.get("curtain") and af.get("prog") is None and not af.get("dot"), af)
@@ -18260,9 +18262,15 @@ def check_b320d_rankup(br):
         ctx.close()
         at = wk.get("at") or {}
         check(f"{dev}: the walk: nothing threw", not wk.get("threw") and not r.get("threw") and s0.get("rank") == "ranger", [wk.get("threw"), r.get("threw"), s0])
-        check(f"{dev}: Home locked, and the Profile tab neither rings nor jumps (no ring, no running move), even on a refused tap",
-              wk.get("lock") is True and (wk.get("lockTab") or {}).get("ring") is False and not (wk.get("lockTab") or {}).get("moves") and not (wk.get("lockTab") or {}).get("refused"),
-              wk.get("lockTab"))
+        # REVISED IN BUILD 325: "it didn't seem like the profile tab on bottom
+        # was moving or shaking. The word profile was only highlighted yellow."
+        # The looping ring (::before) and the bob stay gone (320); the only
+        # thing that may move the tab is its one-shot call, .ru-nudge
+        # (tools/check-b325-c.py section C holds its timing and shape).
+        lt = wk.get("lockTab") or {}
+        check(f"{dev}: Home locked, and the Profile tab has no ring and nothing on a loop - only its one-shot call (ru-nudge), even on a refused tap",
+              wk.get("lock") is True and lt.get("ring") is False and all(m == "ru-nudge" for m in (lt.get("moves") or []) + (lt.get("refused") or [])),
+              lt)
         check(f"{dev}: no loading screen - Profile ticks, leans into the dark, and the road map comes up out of it",
               "loading" not in at and 0 < at.get("tick", -1) < at.get("dive", -1) < at.get("map", -1) <= at.get("mapvisible", -1) and at.get("mapvisible", 99999) - at.get("dive", 0) < 4000, at)
         fi = wk.get("first") or {}
@@ -18320,7 +18328,7 @@ def check_b320d_rankup(br):
         sync = all(p["row"] == min(pre["cap"], p["need"]) for p in pf if p["climbing"] and p["row"] is not None and p["need"])
         dur = (last53 or 0) - (first_change or 0)
         check(f"{dev}: the climb is slow ({dur}ms from level {pre['cap'] + 1} to {lvls[-1] if lvls else None}, 1.4s+ a level) and the level challenge holds still through it (build 321)",
-              lvls and lvls[-1] == 53 and dur >= 1400 * (53 - pre["cap"] - 1) and sync and (wk.get("after") or {}).get("level") == "Level 53", [dur, sorted(set(lvls)), sync, wk.get("after")])
+              lvls and lvls[-1] == 50 and dur >= 1400 * (50 - pre["cap"] - 1) and sync and (wk.get("after") or {}).get("level") == "Level 50", [dur, sorted(set(lvls)), sync, wk.get("after")])
         check(f"{dev}: after it, the Profile tab tapped (on Profile and from Home) never rings or jumps, and nothing of the scene is left",
               not wk.get("tabAfter") and wk.get("homeAfter") is False and not (wk.get("after") or {}).get("blocker") and not (wk.get("after") or {}).get("veil"),
               [wk.get("tabAfter"), wk.get("homeAfter"), wk.get("after")])
