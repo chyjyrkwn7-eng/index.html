@@ -997,21 +997,41 @@ def badges_of(f):
     return sum(1 for u in UNIT_QUESTIONS if (up.get(u) or 0) >= badge_threshold(u))
 
 
-def badge_wall(badges):
-    """badgeWallLevel(): the level band cap. Each rank owns a block of
-    levels and you can climb to the top of the NEXT rank's block - 0
-    badges caps at 29, 1 at 39, 3 at 49 ... 12 or more at the cap."""
+def badge_wall(badges, rank_floor=0):
+    """badgeWallLevel() (build 325): the level of the next rank you do not
+    hold - the first rank from the one past rank_floor whose badges you do
+    not have. 0 badges caps at 21, 1-2 at 30, 3-4 at 40 ... 12 or more at
+    the cap."""
+    for lv, b in RANKS[max(0, int(rank_floor or 0)):]:
+        if badges < b:
+            return min(LEVEL_CAP, lv)
+    return LEVEL_CAP
+
+
+def badge_wall_324(badges):
+    """Build 324's cap (the top of the NEXT rank's block - 29, 39, 49 ...),
+    for the grandfather floor only (levelWallMigrate325)."""
     met = sum(1 for lv, b in RANKS if badges >= b)
     return min(LEVEL_CAP, RANKS[met + 1][0] - 1) if met + 1 < len(RANKS) else LEVEL_CAP
 
 
 def effective_level(f):
-    """levelStateFor(): min(curve level, max(band cap, floor)). No
-    grandfathering - a floor exists only where a merge's bonus gave one."""
+    """levelStateFor(): min(curve level, max(cap, floor)). A copy without
+    levelWallRule (one the app has not loaded since build 325) is read the
+    way the app will load it: the level build 324 showed is kept as its
+    floor wherever that is above the new cap."""
     pts = ((f.get("lifetime") or {}).get("points")) or 0
     fl = f.get("levelFloor")
     fl = int(fl) if isinstance(fl, (int, float)) else 0
-    return min(level_of(pts), max(badge_wall(badges_of(f)), fl), LEVEL_CAP)
+    rf = f.get("rankFloor")
+    rf = int(rf) if isinstance(rf, (int, float)) else 0
+    b, curve = badges_of(f), level_of(pts)
+    rule = f.get("levelWallRule")
+    if pts > 0 and not (isinstance(rule, (int, float)) and rule >= 325):
+        old = min(curve, max(badge_wall_324(b), fl), LEVEL_CAP)
+        if old > min(curve, max(badge_wall(b, rf), fl), LEVEL_CAP):
+            fl = max(fl, old)
+    return min(curve, max(badge_wall(b, rf), fl), LEVEL_CAP)
 
 
 def _acct_summary(f):

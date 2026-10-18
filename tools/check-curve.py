@@ -547,13 +547,17 @@ def main():
             check("build 314 hands no badge out to a live account (version 3)",
                   retro.get("b314") == [], retro.get("b314"))
 
-        print("\n8. the level bands: your badges cap your level, the XP is saved (build 314)")
-        """ "their max level is at their rank ... someone is level 80 but
-        doesn't have a single badge, their level would actually show as the
-        max level in bronze." Each rank owns a block of levels and the badges
-        you hold cap you at the top of the next block. Every one of these
-        fails on build 313, which had no cap: its level was the curve's,
-        whatever the badges."""
+        print("\n8. the level wall: your level stops at the next rank's level, the XP is saved (build 325)")
+        """ Build 314 capped you at the top of the NEXT rank's block (29 with
+        no badges). REVISED IN BUILD 325 (Madison): "The max level you can
+        reach should the level your rank needs. So for platinum it says reach
+        level 50, that should be your max level ... if you are unranked, the
+        highest level you can reach is the level required for that first
+        rank." So the cap is the level of the next rank you do not hold, and
+        these checks moved to it deliberately (they fail on build 324, whose
+        caps were 29/39/49...). An account loaded from a copy without the
+        new rule's flag keeps the level 324 showed (levelWallMigrate325) -
+        the "never lower" half is tools/check-b325-c.py's."""
         w = pg.evaluate("""async ()=>{
           const out = {};
           try{
@@ -569,7 +573,7 @@ def main():
             const perfFor = n => Object.fromEntries(units.slice(0, n).map(u => [u, badgeThresholdFor(u)]));
             out.walls = [];
             for(let b = 0; b <= units.length; b++){
-              setAcct(xpForLevel(LEVEL_CAP) + 5000, perfFor(b), 0);
+              setAcct(xpForLevel(LEVEL_CAP) + 5000, perfFor(b), 0); store.rankFloor = 0;
               out.walls.push([b, badgeCountOf(store), levelOf(store)]);
             }
             /* XP keeps counting at a cap, and the bar says so */
@@ -595,9 +599,9 @@ def main():
               closest: !!document.querySelector('#stage .results-level-closest, #stage .level-chal') };
             /* the badge arrives: the level jumps to what the XP has earned */
             const U = 'Identity Crimes';
-            /* XP for level 33 - past the 29 cap, short of the 39 one a
-               single badge moves it to */
-            setAcct(xpForLevel(33) + 100, { [U]: badgeThresholdFor(U) - 1 }, 0);
+            /* XP for level 27 - past the 21 cap (build 325), short of the 30
+               one a single badge moves it to */
+            setAcct(xpForLevel(27) + 100, { [U]: badgeThresholdFor(U) - 1 }, 0);
             store.pendingBadgeUnlocks = []; store.pendingTierCutscene = null;
             const lv0 = levelOf(store);
             runOf(U, 0);
@@ -626,7 +630,7 @@ def main():
             };
             out.floor = [];
             [5000, 20000, 39395, 66355, 87480, 160000, 600000].forEach(p => [0, 1, 3, 6, 9, 12].forEach(n => {
-              applyLoadedData({ lifetime: { points: p }, unitPerfects: perfFor(n), onboardingComplete: true });
+              applyLoadedData({ lifetime: { points: p }, unitPerfects: perfFor(n), onboardingComplete: true, levelWallRule: 325 });
               retroHideBadges = null;
               const s = levelStateFor(store);
               out.floor.push({ p, n, badges: badgeCountOf(store), floor: store.levelFloor, curve: levelFromPoints(p),
@@ -725,28 +729,25 @@ def main():
         if w.get("threw"):
             check("the badge wall exists", False, w["threw"][:300])
         else:
-            want = []
-            for b in range(len(w["walls"])):
-                levels = [lv for lv, bd in w["tiers"] if bd > b]
-                want.append(min(levels) if levels else 80)
-            got = [lv for b, bc, lv in w["walls"]]
+            # build 325: the level of the first rank asking for more badges
+            # than you have - the next rank you do not hold
             def cap_for(b):
-                met = sum(1 for lv, bd in w["tiers"] if b >= bd)
-                return w["tiers"][met + 1][0] - 1 if met + 1 < len(w["tiers"]) else 80
+                levels = [lv for lv, bd in w["tiers"] if bd > b]
+                return min(levels) if levels else 80
             want = [cap_for(b) for b in range(len(w["walls"]))]
             got = [lv for b, bc, lv in w["walls"]]
-            check("the cap per badge count is the top of the next rank's band",
+            check("the cap per badge count is the next rank's level (build 325)",
                   got == want and [bc for b, bc, lv in w["walls"]] == list(range(len(w["walls"]))), list(zip(want, got)))
-            check("...which is 29, 39, 39, 49, 49, 59, 59, 69, 69, 79, 79, 79, then 80",
-                  got[:15] == [29, 39, 39, 49, 49, 59, 59, 69, 69, 79, 79, 79, 80, 80, 80], got)
+            check("...which is 21, 30, 30, 40, 40, 50, 50, 60, 60, 70, 70, 70, then 80",
+                  got[:15] == [21, 30, 30, 40, 40, 50, 50, 60, 60, 70, 70, 70, 80, 80, 80], got)
             a0 = w["atWall"]
             check("at a cap the level is held and the bar is stopped, the XP past it still counted",
-                  a0["level"] == 29 and a0["stopped"] and a0["into"] > a0["span"], a0)
-            check("the levels past the cap are counted as saved, and the badge opens the next band",
-                  a0["saved"] == a0["curve"] - 29 >= 1 and a0["opensTo"] == 39 and a0["gate"] == "rookie", a0)
+                  a0["level"] == 21 and a0["stopped"] and a0["into"] > a0["span"], a0)
+            check("the levels past the cap are counted as saved, and the badge moves the cap to the next rank's level",
+                  a0["saved"] == a0["curve"] - 21 >= 1 and a0["opensTo"] == 30 and a0["gate"] == "rookie", a0)
             ar = w["afterRun"]
             check("XP keeps counting at a cap; the level does not move",
-                  ar["gained"] > 0 and ar["level"] == 29, ar)
+                  ar["gained"] > 0 and ar["level"] == 21, ar)
             # Build 314: "not a fan of the challenge stuff under the xp there
             # at all. Remove it" - the numbers alone, nothing under them.
             check("the results card shows the overflow, with no challenge lines under it",
@@ -754,10 +755,10 @@ def main():
                   and not ar.get("closest"), ar)
             j = w["jump"]
             check("earning the badge jumps the level straight to what the XP earned",
-                  j["before"] == 29 and j["after"] == j["curve"] and 29 < j["after"] <= 39 and j["badges"] == 1, j)
+                  j["before"] == 21 and j["after"] == j["curve"] and 21 < j["after"] <= 30 and j["badges"] == 1, j)
             check("and the level-up says it was several levels", j["tag"] == str(j["after"] - j["before"]), j)
             fl = w["floor"]
-            check("no grandfathering: a loaded account has no floor", all(f["floor"] == 0 for f in fl), fl[:3])
+            check("a copy already under the new rule (levelWallRule 325) gets no floor", all(f["floor"] == 0 for f in fl), fl[:3])
             check("the shown level is the curve's, capped by the badges' band",
                   all(f["level"] == min(f["curve"], f["cap"]) for f in fl), [f for f in fl if f["level"] != min(f["curve"], f["cap"])][:3])
             check("the XP is untouched, and every level past the cap is saved",
@@ -769,14 +770,14 @@ def main():
             # badges hold - so the cap alone never costs a rank either
             check("the cap never sits below a rank the badges hold",
                   all(cap_for(b) >= max([lv for lv, bd in w["tiers"] if b >= bd] or [0]) for b in range(17)))
-            check("someone at level 80 with no badges shows 29 with 51 saved",
-                  any(f["p"] == 600000 and f["n"] == 0 and f["level"] == 29 and f["saved"] == f["curve"] - 29 for f in fl), fl[-6:])
+            check("someone at level 80 with no badges shows 21 with 59 saved (under the new rule)",
+                  any(f["p"] == 600000 and f["n"] == 0 and f["level"] == 21 and f["saved"] == f["curve"] - 21 for f in fl), fl[-6:])
             check("a floor a merge's bonus gave survives the load", w["gift"] == 33, w["gift"])
             check("a brand-new account has no floor", w["freshFloor"] == 0, w["freshFloor"])
             check("a merge takes the higher floor, either way round", w["merge"] == [40, 40, 40], w["merge"])
             r = w["row"]
             check("the rankings row publishes the shown level, not the curve's",
-                  r["level"] == r["eff"] == 39 and r["curve"] > 39, r)
+                  r["level"] == r["eff"] == 30 and r["curve"] > 30, r)
             check("the rank is asked about the shown level", r["rank"] == "rookie" == r["rankOfCurve"], r)
             check("a reset clears the floor", w["resetFloor"] == 0, w["resetFloor"])
             pf = w["profile"]
@@ -809,7 +810,7 @@ def main():
                   pf["nums"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["nums"]) and pf["over"]
                   and pf["haveCol"] == pf["needCol"] and blue(pf["needCol"])
                   and re.match(r"^[0-9,]+ total XP$", pf["total"] or "") and pf["totalUnder"] and pf["totalCol"] == pf["lvCol"] and not blue(pf["totalCol"]) and pf["banked"]
-                  and not pf["max"] and not pf["nextGate"] and pf["level"] == "Level 29", pf)
+                  and not pf["max"] and not pf["nextGate"] and pf["level"] == "Level 21", pf)
             # "I don't like how it means that 5th badge part": no ordinal.
             # REVISED IN 316: no count either - it says this is as high as the
             # rank goes, that the next rank's challenges open more, and that
@@ -858,8 +859,9 @@ def main():
             t49 = p49["tasks"]
             # "talks about you being level 49 but it's asking for level 40"
             # REVISED IN 321: "Reach Level 40 ... Met", not "40 / 40" and a bar.
-            check("at level 49 behind the four-badge wall, Gold's level task reads Reach Level 40, Met, ticked, no bar, and says nothing about 49",
-                  p49["level"] == "Level 49" and p49["goal"] == "Gold" and len(t49) == 2
+            # build 325: with four badges the wall IS Gold's level, 40
+            check("at the four-badge wall (Gold's level, 40), Gold's level task reads Reach Level 40, Met, ticked, no bar, and says nothing about 49",
+                  p49["level"] == "Level 40" and p49["goal"] == "Gold" and len(t49) == 2
                   and t49[1]["label"] == "Reach Level 40" and t49[1]["met"] and t49[1]["shown"] == "Met" and not t49[1]["bar"]
                   and "49" not in (p49["goalText"] or "")
                   and not re.search(r"\b\d+(st|nd|rd|th)\b", p49["goalText"] or ""), p49)
@@ -908,8 +910,11 @@ def main():
             check("its band caps are the page's", [fa.badge_wall(b) for b in range(17)] == page["caps"],
                   ([fa.badge_wall(b) for b in range(17)], page["caps"]))
             f = {"lifetime": {"points": 600000}, "unitPerfects": {}}
-            check("its effective level holds a no-badge account at 29, with no floor",
+            check("its effective level keeps a no-badge account from an older build at 29 (grandfathered), with no floor",
                   fa.effective_level(f) == 29, fa.effective_level(f))
+            f2 = {"lifetime": {"points": 600000}, "unitPerfects": {}, "levelWallRule": 325}
+            check("...and holds one under the new rule at 21 (build 325)",
+                  fa.effective_level(f2) == 21, fa.effective_level(f2))
         except Exception as e:
             check("firestore-admin.py loads and has the badge wall", False, repr(e))
 
