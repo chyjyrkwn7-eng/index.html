@@ -432,8 +432,8 @@ def sec_water(br):
     held = [f for f in fr if f[1]]
     under = [f for f in fr if f[2] <= -60]
     dry_under = [f for f in under if not f[1]]
-    check("the breath is never held while the water is still, or again, well below the face (>120px under the eyes)", bool(held) and not early, early[:3] or held[:1])
-    check("... and is held on every frame the water is over the face", bool(under) and not dry_under, dry_under[:3])
+    check("the breath is held on every frame the water is over the face, and never while it is still, or again, well below it (>120px under the eyes)",
+          bool(held) and not early and bool(under) and not dry_under, [early[:3], dry_under[:3]] if (early or dry_under) else held[:1])
     ctx.close()
 
 
