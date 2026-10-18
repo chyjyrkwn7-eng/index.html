@@ -29745,6 +29745,9 @@
   .bc-lid-front > .bc-keeper{ top:14%; height:72%; transform:translateZ(.5px); transform-style:preserve-3d; }
   .bc-lid-front > .bc-keeper-l{ left:15%; } .bc-lid-front > .bc-keeper-r{ right:15%; }
   .bc-keeper > .nova-case-staple{ top:26%; height:30%; transform:translateZ(3.5px); }
+  /* 3D parts of a 3D wall each face their own way: once the lid is up the
+     wall faces away, and so must they, or they show through its back */
+  .bc-keeper, .bc-keeper *{ backface-visibility:hidden; -webkit-backface-visibility:hidden; }
   /* ---- THE NAMEPLATE (build 325, b325b) - see caseKit().nameplate ----
      One plate on the lid's top, a piece of metal on the leather: its
      shadow on the leather (a gradient, never a filter), its thickness
@@ -116273,7 +116276,9 @@ function openBadgeCaseLid(kase, wait){
     kase.querySelectorAll(".ncase-front .nova-case-hasp").forEach((hp, i) => {
       const t0 = (C.hold + i * HASP_STAGGER * C.unlatch) / D, t1 = (C.hold + C.unlatch) / D, len = t1 - t0;
       const over = hp.parentNode && hp.parentNode.querySelector(".ncase-staple-over");
-      if(over) anims.push(over.animate([{ opacity: 1 }, { opacity: 1, offset: t0 }, { opacity: 0, offset: t0 }, { opacity: 0 }], o));
+      /* the staple drawn over the hasp stays while the slot is still over it (the lift), and goes as the hasp swings away */
+      const tOff = t0 + len * .3;
+      if(over) anims.push(over.animate([{ opacity: 1 }, { opacity: 1, offset: tOff }, { opacity: 0, offset: tOff }, { opacity: 0 }], o));
       anims.push(hp.animate([
         { offset: 0, transform: hr(0) }, { offset: t0, transform: hr(0), easing: "cubic-bezier(.2,1.5,.45,1)" },
         { offset: t0 + len * .3, transform: hr(HASP_POP), easing: "cubic-bezier(.5,0,.3,1)" },

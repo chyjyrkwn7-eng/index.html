@@ -3212,8 +3212,13 @@ def check_b242(br):
            still struck into the middle of it */
         medal: (document.querySelector('.badges-head .statring .statring-num') || {}).textContent || '',
         /* REVISED IN 317 (badge2): the name is on the case's SIDE, the
-           front wall, not on the lid ("it should be on the side") */
-        lid: !!document.querySelector('.badge-case .badge-case-lid') && !!document.querySelector('.badge-case .badge-case-front .nova-case-sideplate'),
+           front wall, not on the lid ("it should be on the side").
+           REVISED IN 325 (b325b): "Would it make more sense if that one was
+           just combined with the other one and put on top?" - nothing on
+           the front; the name is on the lid's one nameplate (shut) and in
+           its cushion (open), from the same badgeCaseName */
+        lid: !!document.querySelector('.badge-case .badge-case-lid') && !document.querySelector('.badge-case .badge-case-front .nova-case-sideplate, .badge-case .badge-case-front .nova-case-plate')
+          && (document.querySelector('.badge-case .badge-case-lid .nova-case-lidlabel') || {}).textContent === badgeCaseName(BADGE_CASES[0]),
         clasps: document.querySelectorAll('.badge-case .badge-case-front span').length,
         earned: String(badgesEarnedList().length) };
       /* 6. an earned badge: no printed grain, and a shadow in its slot */
@@ -19683,6 +19688,10 @@ B317_RING_JS = r"""async (a) => {
   return out; }"""
 
 
+def v_name_in(name, text):
+    return bool(name) and name.upper() in (text or "").upper()
+
+
 def check_b317_badge2(br):
     """Build 317, badge2. Madison: "not sure why when you open the case the
     word badge case would be under the top, it should be on the side and
@@ -19720,6 +19729,16 @@ def check_b317_badge2(br):
       return { found: true, inLid, hit: !!(hit && hit.closest('.nova-case-sideplate')), hitIs: hit ? hit.className : null,
         squash: +(r.height / (p.offsetHeight || 1)).toFixed(2), wall: wr ? +(wr.height / (wall.offsetHeight || 1)).toFixed(2) : null,
         text: p.textContent.trim() }; }"""
+    # MOVED IN 325 (b325b): "Would it make more sense if that one was just
+    # combined with the other one and put on top?" The name is on the lid's
+    # one nameplate while the case is shut and in the lid's cushion once it
+    # is open; nothing on the front wall at any moment.
+    PLATE325 = """() => { const name = badgeCaseName(BADGE_CASES[0]);
+      const front = !!document.querySelector('.bc-stage .bc-front .nova-case-plate, .bc-stage .bc-front .nova-case-sideplate');
+      const at = sel => { const p = document.querySelector(sel); if(!p) return { found: false };
+        const r = p.getBoundingClientRect(), hit = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
+        return { found: true, hit: !!(hit && (hit === p || p.contains(hit))), text: p.textContent.replace(/\\s+/g, ' ').trim() }; };
+      return { name, front, top: at('.bc-stage .bc-lid-out .nova-case-nameplate'), cushion: at('.bc-stage .bc-lid-in .nova-case-lidlabel') }; }"""
     for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2)):
         # ---- 1. the cutscene: the name on the side, closed to fully open ----
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
@@ -19757,7 +19776,7 @@ def check_b317_badge2(br):
         for t in (7.6, 8.75, 9.6, 10.4, 12.5):
             while clk.t < t:
                 clk.step(1 / 30)
-            seen[t] = pg.evaluate(PLATE)
+            seen[t] = pg.evaluate(PLATE325)
         # REVISED IN 320: "In the open position, the bottom tag says badge case
         # but it's like facing me". The plate lies FLAT on the wall now
         # (foreshortened exactly as the wall is, where 317 leaned it out to
@@ -19765,9 +19784,10 @@ def check_b317_badge2(br):
         # the name is also debossed in the open lid on purpose - so neither
         # "unsquashed" nor "never in the lid" holds any more. What stays: on
         # the side at every moment from shut to fully open, nothing over it.
-        ok = all(v.get("found") and v.get("hit") and v.get("wall") and abs(v.get("squash", 0) - v["wall"]) <= 0.08 * max(.2, v["wall"])
-                 and v.get("text", "").lower() == "level 1 badge case" for v in seen.values())
-        check(f"{dev}: 'Level 1 Badge Case' is on the case's side - shut, unlatched, opening and fully open: nothing over it, lying flat on the wall (build 320)",
+        ok = all(not v["front"] for v in seen.values()) \
+            and all(seen[t]["top"].get("found") and seen[t]["top"].get("hit") and v_name_in(seen[t]["name"], seen[t]["top"].get("text")) for t in (7.6, 8.75)) \
+            and all(seen[t]["cushion"].get("found") and seen[t]["cushion"].get("hit") and seen[t]["cushion"].get("text") == seen[t]["name"] for t in (10.4, 12.5))
+        check(f"{dev}: the case's name is on its lid - on the one nameplate while shut, in the cushion once open, nothing over it - and never on the front (325)",
               ok, seen)
         ctx.close()
         # ---- 2. the Badges tab and the Profile card: the same plate on the same side ----
@@ -19785,6 +19805,12 @@ def check_b317_badge2(br):
           const r = p.getBoundingClientRect(), hit = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
           const cs = getComputedStyle(p);
           return { text: p.textContent.trim(), hit: !!(hit && hit.closest('.nova-case-sideplate')), bg: cs.backgroundImage.slice(0, 60), font: cs.fontWeight + ' ' + cs.letterSpacing }; }"""
+        # (325) the tab's nameplate, read while the case is still shut on its first frame
+        pg.evaluate("() => showRanksScreen('badges')")
+        pg.wait_for_timeout(60)
+        tabPlate = pg.evaluate("""() => { const l = document.querySelector('.badge-case .ncase-lid-out .nova-case-nameplate .nova-case-np-l2');
+          const sl = document.querySelector('.badge-case .ncase-lid-out .nova-case-np-slab');
+          return l ? { text: l.textContent.trim(), font: getComputedStyle(l).fontWeight, bg: sl ? getComputedStyle(sl).backgroundImage.slice(0, 60) : '' } : null; }""")
         pg.evaluate("() => showProfile('profile')")
         pg.wait_for_timeout(1200)
         pf = pg.evaluate(SIDE, ".profile-hero .pf-case .pf-case-front .nova-case-sideplate")
@@ -19804,16 +19830,21 @@ def check_b317_badge2(br):
           return /badge case/i.test(c.textContent); }""")
         # the case's name since build 320
         good = lambda v: bool(v) and v["text"].lower() == "level 1 badge case" and v["hit"]
-        check(f"{dev}: the Badges tab's case has the same plate on its side, and nothing on its lid but the cutscene's deboss",
-              good(tab) and tabLid is False, {"plate": tab, "lid says it (outside the deboss)": tabLid})
+        # MOVED IN 325 (b325b): no plate on the tab's front; open, its lid says
+        # the name only in the cushion; shut, on the nameplate (tabPlate)
+        tabCushion = pg.evaluate("() => (document.querySelector('.badge-case .badge-case-lid .nova-case-lidlabel') || {}).textContent || ''")
+        check(f"{dev}: the Badges tab's case has nothing on its front, the name on its shut lid's nameplate and in the open lid's cushion, nothing else on the lid (325)",
+              tab is None and tabLid is False and bool(tabPlate) and tabPlate["text"].lower() == "level 1 badge case" and tabCushion.lower() == "level 1 badge case",
+              {"front plate": tab, "lid says it (outside the deboss)": tabLid, "nameplate": tabPlate, "cushion": tabCushion})
         check(f"{dev}: ...and so does the Profile card's - its name on its side, no heading over the tray",
               # build 319: the Profile case is shut and has no head row at all
               good(pf) and pfHead in (False, None), {"plate": pf, "head says it": pfHead})
         # REVISED IN 319 (h): one lettering on both; the Profile strip's plate
         # is in the card's own dull surface, not the open case's bright metal
         # ("the brief case sticks out") - see check_b319h_layout.
-        check(f"{dev}: ...one plate: the same lettering on both, the Profile's in the card's own dull surface",
-              bool(tab and pf) and tab["font"].split(" ")[0] == pf["font"].split(" ")[0] and tab["bg"] != pf["bg"], [tab and tab["bg"], pf and pf["bg"]])
+        # MOVED IN 325: the tab's name is its nameplate's second line now
+        check(f"{dev}: ...one lettering: the Profile's plate and the tab's nameplate the same weight, the Profile's in the card's own dull surface",
+              bool(tabPlate and pf) and tabPlate["font"] == pf["font"].split(" ")[0] and tabPlate["bg"] != pf["bg"], [tabPlate, pf and pf["bg"]])
         # every badge on the tab: struck at its own device pixels (after the measure)
         pg.wait_for_timeout(1200)
         res = pg.evaluate("""(dpr) => { const out = [];
