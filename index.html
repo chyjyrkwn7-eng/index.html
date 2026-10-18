@@ -77484,7 +77484,10 @@ function rankCutHandoff(overlay, stageWrap, heroBefore, tierKey, ghost){
        there and why the 2px check passed. */
     if(ghost.__ruDraw){ try{ ghost.__ruDraw.cancel(); }catch(e){} ghost.__ruDraw = null; }
     const w0 = ghost.offsetWidth || g.width;
-    Object.assign(ghost.style, { left: "0px", top: "0px", transform: "scale(" + (badge.offsetWidth / w0).toFixed(5) + ")" });
+    /* on the bubble's BORDER box (build 325): left/top 0 is its padding
+       edge, which put the copy a border's width (~2px) right of and below
+       the bubble it is scaled to */
+    Object.assign(ghost.style, { left: (-badge.clientLeft) + "px", top: (-badge.clientTop) + "px", transform: "scale(" + (badge.offsetWidth / w0).toFixed(5) + ")" });
     /* moved into the bubble with its emblem's clock running on (build 321) */
     const clock = ruClockSnap(ghost);
     /* NOTHING OF THE BUBBLE SHOWS ROUND THE COPY (build 321): "As it phases

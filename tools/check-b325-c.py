@@ -456,8 +456,13 @@ def section_streak(br):
     pg.clock.run_for(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
     pg.evaluate("""()=>{ window.__whys = []; const o = homeRingStreak; homeRingStreak = function(h, why){ const r = o(h, why); if(r) __whys.push(why); return r; };
-      store.supernovaAchieved = true; saveStore(); showHome(); }""")
+      store.supernovaAchieved = true;
+      /* nothing owed on this Home: a reward card (Supernova hands some
+         over) would hold every streak while it plays */
+      try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); (u.hints || []).forEach(markFlareHintShown); homeUnlockPlaying = false; }catch(e){}
+      store.pendingBadgeUnlocks = []; saveStore(); showHome(); }""")
     pg.clock.run_for(3000)
+    pg.evaluate("()=>{ document.querySelectorAll('.rs-spot, .daily-alert, .scene-bridge, #intro-pop').forEach(n => n.remove()); try{ homeUnlockPlaying = false; }catch(e){} }")
     for i in range(10):
         pg.clock.run_for(5000)
     whys = pg.evaluate("()=>__whys.slice()")
