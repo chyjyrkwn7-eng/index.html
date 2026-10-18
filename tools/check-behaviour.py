@@ -12394,8 +12394,12 @@ def check_b313_fx(br):
             # in the UFO's green from its first frame, before the beam
             # round 5: in the UFO's colours but UNLIT until the beam (a faint
             # green rim, as the default's is faint gold) - never gold first
-            check("ufo: the box is in the UFO's colours before the beam reaches it, unlit - never gold first (build 317)",
-                  bool(re.match(r"(rgba\(107, 255, 143, 0\.2\d*\)|.*/ 0\.2\d*\))$", r.get("beforeBeam") or "")), r.get("beforeBeam"))
+            # MOVED in build 326: "the score box border of it before the ufo
+            # arrives it doesn't have the same border like xp, it's not as
+            # dark" - the rim is the card's full edge from the first frame;
+            # only the beam's wash waits for the beam (check-b326-a 6)
+            check("ufo: the box is in the UFO's colours before the beam reaches it, its rim at full like every card's - never gold first (build 317, 326)",
+                  (r.get("beforeBeam") or "") == "rgb(107, 255, 143)", r.get("beforeBeam"))
             ld = r.get("landed") or {}
             check("ufo: it lands ON the 100% box - its feet on the box's top edge, over its middle",
                   ld and abs(ld.get("feet", 99)) <= 8 and abs(ld.get("cx", 99)) <= 30, ld)
@@ -15937,8 +15941,10 @@ def check_b317_hundobox(br):
                   green(fi) and green(pa) and pa.get("shown", 0) > 0, {"first": fi, "painted": pa})
             if fx == "ufo":
                 # the UFO's rim stays unlit until its beam - through the hand-off too
-                unlit = lambda a: bool(a) and bool(re.match(r"(rgba\(107, 255, 143, 0\.2\d*\)|.*/ 0\.2\d*\))$", a.get("border") or ""))
-                check("%s: then into its colours by the end of the hand-off - the 100%% and the bar exactly as settled, never the gold default - with its rim unlit until the beam (%s)" % (tag, ha.get("border")),
+                # (build 326: the rim is at full from the first frame, as
+                # every card's edge is - only the beam's wash waits for it)
+                unlit = lambda a: bool(a) and (a.get("border") or "") == "rgb(107, 255, 143)"
+                check("%s: then into its colours by the end of the hand-off - the 100%% and the bar exactly as settled, never the gold default - with its rim at full throughout (326) (%s)" % (tag, ha.get("border")),
                       cleared(ha) and same(ha, ("num", "bar")) and unlit(fi) and unlit(ha) and se.get("border") == "rgb(107, 255, 143)"
                       and f.get("tinted") and "217, 169, 58" not in (ha.get("bar") or ""), {"first": fi, "handed": ha, "settled": se})
             elif fx == "confetti":
@@ -16149,10 +16155,16 @@ def check_b317_hundobox(br):
         ctx.close()
         L = shots[lit][1]
         tag = "%s, ufo" % label
+        # MOVED in build 326: the rim and its glow are every card's edge,
+        # there from the first frame ("the score box border of it before the
+        # ufo arrives it doesn't have the same border like xp"); what waits
+        # for the beam is the beam - no column of light down the box, no
+        # wash, nothing of the effect in it.
         bad = [(t, shots[t][1], shots[t][0]["border"], shots[t][0]["glow"], shots[t][0]["shown"]) for t in pre
-               if shots[t][1]["ring"] > max(4, L["ring"] * .45) or shots[t][1]["col"] > 2 or (shots[t][0]["glow"] or 0) > .05 or shots[t][0]["shown"]]
-        check("%s: NO BEAM ON THE BOX before the saucer fires (%s) - its rim unlit (green under %.0f%% of its lit %.1f), no inner glow, no column of light down it, nothing of the effect showing in it but its dim - and the light comes on with the beam%s" % (
-                  tag, "/".join("%.1fs" % t for t in pre), 45, L["ring"], " (%d unit rows)" % info["rows"] if multi else ""),
+               if shots[t][1]["ring"] < L["ring"] * .6 or shots[t][1]["col"] > 2 or (shots[t][0]["glow"] or 0) < .95 or shots[t][0]["shown"]
+               or shots[t][0]["wash"] == shots[lit][0]["wash"]]
+        check("%s: NO BEAM ON THE BOX before the saucer fires (%s) - its edge already there (the rim at 60%%+ of its lit %.1f, the glow on), no column of light down it, no wash, nothing of the effect in it - and the light comes with the beam (326)%s" % (
+                  tag, "/".join("%.1fs" % t for t in pre), L["ring"], " (%d unit rows)" % info["rows"] if multi else ""),
               not bad and L["ring"] >= 12 and L["col"] >= 3 and (multi is False or info["rows"] >= 2),
               {"bad": bad, "lit": L, "rows": info["rows"], "pre": {t: shots[t][1] for t in pre}})
     # --- ONE BEAM, ARRIVING AS ONE (round 6): "the ray beam is still being
@@ -16284,10 +16296,12 @@ def check_b317_hundobox(br):
     def alpha(c):   # rgba(), or a colour caught mid-animation: oklab(... / a), color(srgb ... / a)
         m = re.match(r"rgba\([^)]*,\s*([\d.]+)\)", c or "") or re.search(r"/\s*([\d.]+)\)", c or "")
         return float(m.group(1)) if m else 1.0
-    okm = mk and all(alpha(x["border"]) <= .3 and (x["glow"] or 0) < .05 for x in mk["mock"][:3]) and alpha(mk["mock"][3]["border"]) > .9 and (mk["mock"][3]["glow"] or 0) > .9
-    oks = mk and all(alpha(x["border"]) <= .3 and (x["glow"] or 0) < .05 for x in mk["stage"][:3]) and alpha(mk["stage"][3]["border"]) > .9 and (mk["stage"][3]["glow"] or 0) > .9
-    check("ufo: the unlock card's miniature and a live Customize stage - their boxes unlit until the beam fires (from the first frame), lit once it has",
-          okm and oks and alpha(mk["first"]["mock"]) <= .3 and alpha(mk["first"]["stage"]) <= .3, mk)
+    # MOVED in build 326: the rim and the glow are the box's edge from the
+    # first frame, as on the results screen (only the beam's wash waits)
+    okm = mk and all(alpha(x["border"]) > .9 and (x["glow"] or 0) > .9 for x in mk["mock"])
+    oks = mk and all(alpha(x["border"]) > .9 and (x["glow"] or 0) > .9 for x in mk["stage"])
+    check("ufo: the unlock card's miniature and a live Customize stage - their boxes carry their edge from the first frame, before the beam and after (326)",
+          okm and oks and alpha(mk["first"]["mock"]) > .9 and alpha(mk["first"]["stage"]) > .9, mk)
     # and the results flow waits for all of it: the first scene comes after
     # the saucer has gone (8.91s), not 2.3s in, nor at the old 7s tail
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
@@ -25145,8 +25159,11 @@ def check_b321h(br):
         alpha = 1.0
         if sv["bg"].startswith("rgba"):
             alpha = float(sv["bg"].rstrip(")").split(",")[-1])
-        check("%s: a clear glass body (%s), the height of Quit (325)" % (dev, sv["bg"]),
-              alpha < 0.15 and abs(sv["h"] - qt["h"]) < .5, (sv["bg"], sv["h"], qt["h"]))
+        # MOVED in build 326: "The save and exit button is clear and see
+        # through? Thats a terrible idea" - an opaque body again, not Quit's
+        # colour (check-b326-a holds the green and its contrast)
+        check("%s: an opaque body (%s), not Quit's colour, the height of Quit (326)" % (dev, sv["bg"]),
+              alpha == 1 and sv["bg"] != qt["bg"] and abs(sv["h"] - qt["h"]) < .5, (sv["bg"], qt["bg"], sv["h"], qt["h"]))
 
         def pressed(rest):
             b = rest["rect"]
@@ -25157,8 +25174,9 @@ def check_b321h(br):
             return float(c.rstrip(")").split(",")[-1]) if c.startswith("rgba") else 1.0
         pressed(sv); sp = pg.evaluate(CS, "pause-save"); pg.mouse.up()
         pg.mouse.move(5, 5)
-        check("%s: pressed, the glass dims in place and shrinks, as Quit does (%.3f -> %.3f, %s)" % (dev, alpha_of(sv["bg"]), alpha_of(sp["bg"]), sp["tf"]),
-              alpha_of(sp["bg"]) < alpha_of(sv["bg"]) and sp["tf"].startswith("matrix(0.97"), sp)
+        lum = lambda c: sum(float(v) * k for v, k in zip(c[c.index("(") + 1:].rstrip(")").split(",")[:3], (.2126, .7152, .0722)))
+        check("%s: pressed, it goes darker in place and shrinks, as Quit does (%s -> %s, %s) (326: an opaque body darkens)" % (dev, sv["bg"], sp["bg"], sp["tf"]),
+              lum(sp["bg"]) < lum(sv["bg"]) and sp["tf"].startswith("matrix(0.97"), sp)
         ctx.close()
 
 

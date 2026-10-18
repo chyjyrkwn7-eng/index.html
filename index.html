@@ -10538,14 +10538,25 @@
     background:radial-gradient(circle, rgba(255,255,255,.95) 0%, color-mix(in srgb, var(--c0) 70%, transparent) 30%, transparent 68%);
     animation:stardust-flash .9s cubic-bezier(.15,.7,.3,1) both;
   }
-  /* THE DEFAULT'S DIM (build 325): the Fireworks' own dim - the same
-     night-blue fall-off and the same 0.5 - in the first .42s (the
-     Fireworks' 6% of 7s), held while the stardust flies, lifted over the
-     last 1.4s as the motes fade, gone by the time the layer is (3s). */
-  .stardust-dim{ position:absolute; inset:0; opacity:0; pointer-events:none;
-    background:radial-gradient(130% 75% at 50% 0%, #0C0A22, #040309 72%);
-    animation:stardust-dim 3s linear both; }
-  @keyframes stardust-dim{ 0%{ opacity:0; } 14%{ opacity:.5; } 50%{ opacity:.5; } 97%, 100%{ opacity:0; } }
+  /* ---- ONE DIM FOR EVERY HUNDO EFFECT (build 326, hfxDim) ----
+     "The bubble effect when it goes doesn't [dim] the background like the
+     others. Ensure each effect dims the same so it's all cohesive and
+     nice." Each effect had its own: Confetti and the Fireworks a night
+     blue at .5, the UFO near-black at .93 then .55, the Black Hole .8-.88,
+     Underwater and Bubbles none at all. Now there is one, drawn by one
+     function for every effect: this night-blue fall-off, at HFX_DIM.a,
+     up over HFX_DIM.inMs from the moment the effect starts, held, and
+     down over HFX_DIM.outMs so that it is gone exactly when the way-on
+     buttons rise (HUNDO_FX_TAIL_AT). It is its own layer UNDER every
+     effect's (58 against their 60), so whatever the effect draws is
+     never dimmed, and the 100% box is lifted over it (.hfx-lift, 59) for
+     as long as it is up - under the water and the bubbles still, over
+     the dim always: the number reads the same on every effect. */
+  .hfx-dim{ position:fixed; inset:0; z-index:58; pointer-events:none; opacity:0;
+    background:radial-gradient(130% 75% at 50% 0%, #0C0A22, #040309 72%); }
+  .hfx-dim.is-inset{ position:absolute; z-index:1; border-radius:inherit; }
+  .rs-card.hfx-lift{ z-index:59; }
+  .hfx-mock > .rs-card.hfx-lift{ z-index:1; }
   @keyframes stardust-flash{ 0%{ transform:scale(.1); opacity:0; } 18%{ opacity:1; } 100%{ transform:scale(2.4); opacity:0; } }
   .stardust-ring{
     position:absolute; left:var(--ox); top:var(--oy); width:6rem; height:6rem; margin:-3rem 0 0 -3rem;
@@ -10600,8 +10611,7 @@
      whole of the Fireworks, the UFO and the Black Hole. A fixed child is
      not clipped by the layer's overflow (it has no transform), so the
      dim stays on the whole screen whatever the page does. */
-  .confetti-layer.hfx-layer.is-page > .hfx-fw-dim, .confetti-layer.hfx-layer.is-page > .hfx-ufo-dim,
-  .confetti-layer.hfx-layer.is-page > .hfx-bh-dim{ position:fixed; }
+  /* (build 326: the dims are one fixed layer of their own now, .hfx-dim) */
   .hfx-box{ position:absolute; inset:0; border-radius:inherit; overflow:hidden; pointer-events:none; z-index:2;
     clip-path:inset(0 round var(--hfx-r, 18px)); }
   .hfx-box > *, .hfx-layer > *{ pointer-events:none; }
@@ -10771,8 +10781,19 @@
      water, a strip ~20px tall following the crest - what is behind the
      line goes soft and bright as it passes. The one blur in this effect,
      and kept that small on purpose. */
+  /* NO BACKDROP FILTER (build 326). "When the water goes down and away,
+     the boxes lag/glitch." The lens was the effect's one backdrop-filter,
+     a strip the whole width of the screen riding the crest - and as the
+     water drains, the crest sweeps down over every card in a second, so
+     every frame of the drain re-sampled and re-blurred whatever it was
+     over, cards that were moving themselves as they settled. Recorded
+     frame by frame it also cut hard-edged rectangles out of the cards
+     under it (its mask and its filter region disagreeing), the "glitch".
+     The lens is light now, not a filter: the same mask, filled with the
+     brightening it used to apply - no blur, nothing sampled, nothing to
+     redraw behind it. */
   .hfx-uw-lens{ position:absolute; inset:0; pointer-events:none;
-    -webkit-backdrop-filter:blur(1.5px) brightness(1.13) saturate(1.25); backdrop-filter:blur(1.5px) brightness(1.13) saturate(1.25);
+    background:linear-gradient(180deg, rgba(226,252,255,.2), rgba(200,246,255,.08) 55%, rgba(200,246,255,0));
     -webkit-mask-size:var(--p) 100%; mask-size:var(--p) 100%; -webkit-mask-repeat:repeat-x; mask-repeat:repeat-x; -webkit-mask-position:0 0; mask-position:0 0; }
   /* the surface: two seamless wave tiles sliding opposite ways, each by
      exactly one period per cycle, a finite number of cycles */
@@ -10783,18 +10804,19 @@
   @keyframes hfx-uw-wave{ from{ transform:translateX(0); } to{ transform:translateX(calc(var(--p) * -1)); } }
   @keyframes hfx-uw-wave-back{ from{ transform:translateX(calc(var(--p) * -1)); } to{ transform:translateX(0); } }
   .hfx-uw-fish{ left:0; top:0; }
-  /* round 6: the school is one layer - each fish holds its place in it
-     and the school moves */
-  .hfx-uw-school{ position:absolute; left:0; top:0; width:0; height:0; animation:hfx-uw-swim .9s ease-in-out 8 alternate; }
-  @keyframes hfx-uw-swim{ from{ transform:translateY(-4px); } to{ transform:translateY(4px); } }
-  .hfx-uw-fishk{ position:absolute; width:var(--ps); height:var(--ps); margin:calc(var(--ps) / -2) 0 0 calc(var(--ps) / -2); background:center / contain no-repeat; }
-  /* a drawn fish (build 325): its tail beats - a small turn either side,
-     on `rotate`, so the transform that flips it to face its way is kept -
-     a finite number of times, about its middle */
-  .hfx-uw-school.is-big{ animation-duration:1.3s; }
-  .hfx-uw-f{ position:absolute; width:var(--fw); height:calc(var(--fw) / 2); margin:calc(var(--fw) / -4) 0 0 calc(var(--fw) / -2);
-    background:center / contain no-repeat; animation:hfx-uw-wag var(--wg) ease-in-out var(--wn) alternate; }
-  @keyframes hfx-uw-wag{ from{ rotate:-4deg; } to{ rotate:4deg; } }
+  /* THE FISH SWIM (build 326, see hfxFishURL and "THE LIFE IN IT"): a
+     fish is an element moved along its wave by a script animation on
+     `translate` and `rotate` (its `transform` only faces it the way it is
+     going), holding two pictures of itself in the same box - the body,
+     still, and the tail, beating about its root (--fr): pinched and
+     flexed up and down, a finite number of strokes. A school is one
+     element too; its fish are plain pictures inside it. */
+  .hfx-uw-school, .hfx-uw-fish3{ position:absolute; left:0; top:0; width:0; height:0; }
+  .hfx-uw-f{ position:absolute; left:0; top:0; width:var(--fw); height:calc(var(--fw) / 2); margin:calc(var(--fw) / -4) 0 0 calc(var(--fw) / -2); }
+  .hfx-uw-fb, .hfx-uw-ft{ position:absolute; inset:0; background:center / 100% 100% no-repeat; }
+  .hfx-uw-ft{ transform-origin:var(--fr) 50%; animation:hfx-uw-tail var(--tb) ease-in-out var(--tn) alternate both; }
+  @keyframes hfx-uw-tail{ from{ transform:scaleX(1) skewY(-7deg); } to{ transform:scaleX(.8) skewY(7deg); } }
+  .hfx-uw-sf{ position:absolute; width:var(--fw); height:calc(var(--fw) / 2); margin:calc(var(--fw) / -4) 0 0 calc(var(--fw) / -2); background:center / 100% 100% no-repeat; }
 
   .hfx-uw-drop{ animation:hfx-uw-drop var(--d) cubic-bezier(.55,0,.8,.6) var(--t) both; }
   @keyframes hfx-uw-drop{ 0%{ opacity:0; transform:translateY(0) scaleY(.6); } 14%{ opacity:1; transform:translateY(2px) scaleY(1); } 100%{ opacity:0; transform:translateY(var(--fall)) scaleY(1.35); } }
@@ -10847,8 +10869,6 @@
   @keyframes hfx-fishbub{ 0%{ opacity:0; transform:translateY(0) scale(.5); } 20%{ opacity:1; } 85%{ opacity:.9; } 100%{ opacity:0; transform:translateY(-8px) scale(1.15); } }
 
   /* ===== round 3: black hole ===== */
-  .hfx-bh-dim{ position:absolute; inset:0; background:#030208; opacity:0; animation:hfx-bh-dim 4.7s linear .05s both; }
-  @keyframes hfx-bh-dim{ 0%{ opacity:0; } 16%{ opacity:.8; } 62%{ opacity:.88; } 66%{ opacity:.3; } 100%{ opacity:0; } }
   .hfx-bh{ position:absolute; width:0; height:0; animation:hfx-bh-life 4.4s linear .1s both; }
   @keyframes hfx-bh-life{ 0%{ transform:scale(0); opacity:0; } 6%{ opacity:1; } 18%{ transform:scale(.7); } 62%{ transform:scale(1); opacity:1; } 67%{ transform:scale(1.18); opacity:1; } 74%{ transform:scale(.25); opacity:.5; } 82%, 100%{ transform:scale(0); opacity:0; } }
   .hfx-bh.is-box{ animation:hfx-bh-life 2.6s linear .05s both; }
@@ -10881,9 +10901,6 @@
      The sky is one canvas; the dim, the light each burst throws across
      the screen and the box's own pieces are plain layers. Nothing on the
      screen itself moves. */
-  .hfx-fw-dim{ position:absolute; inset:0; opacity:0; background:radial-gradient(130% 75% at 50% 0%, #0C0A22, #040309 72%);
-    animation:hfx-fw-dim var(--tot) linear both; }
-  @keyframes hfx-fw-dim{ 0%{ opacity:0; } 6%{ opacity:.5; } 66%{ opacity:.5; } 92%, 100%{ opacity:0; } }
   .hfx-fw-sky{ position:absolute; left:0; top:0; animation:hfx-fw-out var(--tot) linear both; }
   @keyframes hfx-fw-out{ 0%, 76%{ opacity:1; } 97%, 100%{ opacity:0; } }
   .hfx-fw-glow{ position:absolute; width:var(--gs); height:var(--gs); margin:calc(var(--gs) / -2) 0 0 calc(var(--gs) / -2); border-radius:50%; opacity:0;
@@ -10978,18 +10995,10 @@
      settle, its beam and its lights, so they cannot drift apart: 7s in a
      small box (.is-mini, Customize and the unlock card) and 9.5s on the
      results screen (round 4, the -l keyframes below). */
-  /* dark until it has circled (2.9s), lifting to .55 as it comes down to
-     the box, and gone by 10.9s, inside the 11.1s total */
-  .hfx-ufo-dim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-dim 10.9s linear both; }
-  @keyframes hfx-ufo-dim{ 0%{ opacity:0; } 5.5%{ opacity:.93; } 26.61%{ opacity:.93; } 33.94%{ opacity:.55; } 70%{ opacity:.55; } 100%{ opacity:0; } }
-  /* the box goes dark with the screen, lifts with it to the screen's .55,
-     and is LIT BY THE BEAM (build 317, round 3): the last of its dark goes
-     as the beam strikes (3.94s on the long timeline) and floods down it,
-     not before the beam arrives, when it lit up on its own */
-  /* (round 6: dark until the beam's head reaches the box's floor, 4.18s;
-     the beam goes down through a dark box, then the box lights) */
-  .hfx-ufo-boxdim{ position:absolute; inset:0; background:#020305; opacity:0; animation:hfx-ufo-boxdim 4.4s linear both; }
-  @keyframes hfx-ufo-boxdim{ 0%{ opacity:0; } 13.41%{ opacity:.93; } 65.91%{ opacity:.93; } 84.09%{ opacity:.55; } 95%{ opacity:.55; animation-timing-function:ease-out; } 100%{ opacity:0; } }
+  /* (build 326: the UFO's own black - .93, then .55 - and the box's dark
+     with it are gone; the screen dims as every effect's does, .hfx-dim,
+     and the box is never dimmed. Its beam still lights it: the wash pours
+     down it as the beam reaches its floor, hfxUfoLight.) */
   /* (not .hfx-ufo: the effect's own layers are named hfx-<id>) */
   .hfx-saucer{ position:absolute; width:0; height:0; opacity:0; animation:hfx-ufo-path 7s linear both; }
   @keyframes hfx-ufo-path{
@@ -11181,9 +11190,17 @@
      until the beam strikes, and the light comes on with the beam
      (hfxUfoLight, on the effect's own clock). The number and the bars
      keep the green throughout - colour, not light. */
+  /* ...AND ITS EDGE IS EVERY CARD'S FROM THE FIRST FRAME (build 326).
+     "The score box border of it before the ufo arrives it doesn't have the
+     same border like xp, it's not as dark, it's normal when the ufo leaves
+     though." Unlit used to take the edge away too - the rim at 22%, the
+     inner line and glow off - which since 325 is the one card on the
+     screen without the edge every card carries (--rs-edge). So unlit is
+     only the beam's light now: the green wash poured down the box. The
+     rim, the 1px line inside it and the glow off the edge are there from
+     the first frame, as the XP card's are, and the beam adds the wash. */
   .rs-screen .rs-card.rs-grade.is-perfect.hfx-tinted.hfx-ufo-unlit, .hfx-stage.hfx-tinted.hfx-ufo-unlit, .hfx-mock > .rs-card.rs-grade.hfx-tinted.hfx-ufo-unlit{
-    border-color:color-mix(in srgb, var(--hfx-b) 22%, transparent); --hfx-wash:rgba(107,255,143,0); }
-  .hfx-tinted.hfx-ufo-unlit > .hfx-tint{ opacity:0; }
+    --hfx-wash:rgba(107,255,143,0); }
   /* a blossom BUDS - a small closed knot of colour - and then OPENS */
   @keyframes hfx-bloom2{ 0%{ transform:scale(.05) rotate(var(--r0)); opacity:0; } 12%{ transform:scale(.15) rotate(var(--r0)); opacity:1; } 38%{ transform:scale(.19) rotate(var(--r0)); } 78%{ transform:scale(1.08) rotate(4deg); } 100%{ transform:scale(1) rotate(0deg); opacity:1; } }
   /* the World Tree's burst (build 317, hfxWorldTree): out like the
@@ -91912,7 +91929,6 @@ function celebrate(palette, origin, o){
   layer.style.setProperty("--ox", ox + "px");
   layer.style.setProperty("--oy", oy + "px");
   layer.style.setProperty("--c0", colors[0]);
-  if(o && o.dim){ const dim = document.createElement("span"); dim.className = "stardust-dim"; layer.appendChild(dim); }
   const flash = document.createElement("span"); flash.className = "stardust-flash";
   const ring = document.createElement("span"); ring.className = "stardust-ring";
   const ring2 = document.createElement("span"); ring2.className = "stardust-ring is-late";
@@ -91978,7 +91994,33 @@ const HUNDO_FX_BOX_TOTAL = { confetti: 3000, fireworks: 3600, blackhole: 3600, u
    of its 3s and its layer goes at 3s; the results' buttons and the first
    unlock wait for that (3.05s), as they wait for every other effect -
    without an entry they came at 1.5s, rising under the dim. */
-const HUNDO_FX_TAIL_AT = { confetti: 3050, fireworks: 5000, blackhole: 4000, underwater: 5900, worldtree: 4100, bubbles: 4600, ufo: 9500 };
+/* Underwater (build 326): 6250, when the water has drained out of the
+   bottom edge (HFX_UW.drain + drainD = 6.2s). At 5900 the buttons rose
+   into a screen still half under water - "when the water goes down and
+   away, the boxes lag/glitch". */
+const HUNDO_FX_TAIL_AT = { confetti: 3050, fireworks: 5000, blackhole: 4000, underwater: 6250, worldtree: 4100, bubbles: 4600, ufo: 9500 };
+/* THE ONE DIM (build 326) - see .hfx-dim. How dark, how fast it comes up
+   from the effect's first frame, and how long it takes to lift; it is
+   gone exactly at HUNDO_FX_TAIL_AT, when the buttons rise. */
+const HFX_DIM = { a: .5, inMs: 420, outMs: 1400 };
+function hfxDimEnd(id){ return (HUNDO_FX_TAIL_AT[id] || 1500); }
+/* Puts the dim up for effect `id`: on <body> (fixed, under every effect
+   layer) or, for a stand-in screen, inside `frame`. Returns the element;
+   it takes itself away when it has lifted. */
+function hfxDim(id, frame){
+  const el = document.createElement("i");
+  el.className = "hfx-dim" + (frame ? " is-inset" : "");
+  el.setAttribute("aria-hidden", "true");
+  if(frame) frame.insertBefore(el, frame.firstChild); else document.body.appendChild(el);
+  const E = hfxDimEnd(id), inMs = Math.min(HFX_DIM.inMs, E * .3), outMs = Math.min(HFX_DIM.outMs, E - inMs);
+  try{
+    const a = el.animate([{ opacity: 0 }, { opacity: HFX_DIM.a, offset: inMs / E }, { opacity: HFX_DIM.a, offset: (E - outMs) / E }, { opacity: 0 }],
+      { duration: E, fill: "forwards", easing: "linear" });
+    a.id = "hfx-dim";
+  }catch(e){ el.style.opacity = "0"; }
+  el.__end = setTimeout(() => el.remove(), E + 60);
+  return el;
+}
 /* THE BOX'S COLOURS WHILE EACH ONE PLAYS (build 313): "Would be pretty
    cool if the themes matches the box, cause if the just stays yellow it
    would get kinda boring." Border, wash and the numerals' gradient;
@@ -92329,7 +92371,8 @@ function hfxWarm(id){
     else if(id === "worldtree"){ [0, 1, 2].forEach(i => urls.push(hfxBlossomURL(i))); urls.push(hfxLeafURL()); HFX_BLOOM.forEach(cl => urls.push(hfxPetalURL(cl))); }
     else if(id === "fireworks"){ hfxFwHeads(); urls.push(hfxGlintURL()); }
     else if(id === "blackhole"){ urls.push(hfxDiscURL(), hfxSwirlURL(), hfxStreakURL(), hfxGlintURL()); }
-    else if(id === "underwater"){ urls.push(hfxWaveURL(0), hfxWaveURL(1), hfxUwLensURL(), hfxUwLightURL(0), hfxUwLightURL(1), hfxRayURL(), hfxUwBubbleURL(), hfxDropURL(), hfxGlintURL()); [0, 1, 2].forEach(k => urls.push(hfxFishURL(k))); }
+    else if(id === "underwater"){ urls.push(hfxWaveURL(0), hfxWaveURL(1), hfxUwLensURL(), hfxUwLightURL(0), hfxUwLightURL(1), hfxRayURL(), hfxUwBubbleURL(), hfxDropURL(), hfxGlintURL());
+      [0, 1, 2, 4].forEach(k => urls.push(hfxFishURL(k))); urls.push(hfxFishURL(0, null, true)); [1, 2, 3, 4].forEach(k => urls.push(hfxFishURL(k, "body"), hfxFishURL(k, "tail"))); }
   }catch(e){}
   /* every sprite made so far, this effect's included, to a bitmap */
   Object.keys(hfxSprites).forEach(k => hfxRasterise(hfxSprites[k]));
@@ -92685,6 +92728,10 @@ const HFX_UW = { rise: .15, riseD: 1.6, drain: 5.0, drainD: 1.2, wavePeriod: 220
 /* the breath is taken this long before the surface reaches the face
    (build 325): the gulp, not a held breath on dry land */
 const HFX_UW_GULP = .05, HFX_UW_LETGO = .04;
+/* a card's sway settles over this long, starting this far ahead of the
+   water leaving it (build 326) - it is still by the time the water has
+   gone past */
+const HFX_UW_SETTLE_MS = 520, HFX_UW_SETTLE_LEAD = .12;
 /* the body's colour right under the surface - the wave tiles are filled
    with exactly this, so crest and body are one water */
 const HFX_UW_TOP = "rgba(118,220,236,.24)";
@@ -92776,59 +92823,120 @@ function hfxUwBubbleURL(){
     '<ellipse cx="13.5" cy="12.5" rx="4.8" ry="2.7" fill="#fff" fill-opacity=".92" transform="rotate(-38 13.5 12.5)"/>' +
     '<path d="M27 30 Q31 27 32 22" stroke="#fff" stroke-opacity=".45" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>', 96);
 }
-/* THE FISH, DRAWN PROPERLY (build 325). "The fish coming by and the
-   random shadow black thing is bad. Fix what's in the water." The old
-   fish were one pale lozenge with a dot; the manta was a dark silhouette
-   that read as a shadow passing over the screen - it is gone. Three
-   species now, each lit from above the way the water is (a dark back, a
-   pale belly, a sheen along the top), with fins that carry their own
-   colour, an eye with a catch-light, and in the clownfish's and the
-   tang's case the markings that make them what they are: k 0 a silver
-   schooling fish (an iridescent stripe down its side), k 1 a clownfish
-   (three white bands, each edged in black, clipped to the body), k 2 a
-   blue tang (its dark sweep and a yellow tail). Every one faces LEFT and
-   is drawn once and rasterised, like every sprite. */
-function hfxFishURL(k){
-  k = k % 3;
-  return hfxSprite("fish2-" + k, () => {
-    const eye = (x, y, r) => '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#F4FBFF"/><circle cx="' + (x - r * .12) + '" cy="' + y + '" r="' + (r * .66) + '" fill="#0A1620"/><circle cx="' + (x - r * .38) + '" cy="' + (y - r * .32) + '" r="' + (r * .24) + '" fill="#fff"/>';
-    if(k === 0) return 'viewBox="0 0 100 50"><defs>' +
-      '<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1D5670"/><stop offset=".4" stop-color="#5FA9C0"/><stop offset=".6" stop-color="#D9F2F7"/><stop offset="1" stop-color="#FFFFFF"/></linearGradient>' +
-      '<linearGradient id="s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7FF0FF" stop-opacity="0"/><stop offset=".25" stop-color="#8FF4FF" stop-opacity=".9"/><stop offset=".65" stop-color="#C2B0FF" stop-opacity=".8"/><stop offset="1" stop-color="#C2B0FF" stop-opacity="0"/></linearGradient>' +
-      '<linearGradient id="t" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2B6F88"/><stop offset="1" stop-color="#A9DCE8" stop-opacity=".85"/></linearGradient></defs>' +
-      '<path d="M76 25 Q85 17 97 7 Q91 25 97 43 Q85 33 76 25 Z" fill="url(#t)"/>' +
-      '<path d="M38 11 Q48 1 62 8 Q54 10 47 13 Z" fill="#2A6C86"/><path d="M46 38 Q53 46 60 38 Z" fill="#A9DCE8" fill-opacity=".85"/>' +
-      '<path d="M5 25 Q13 11 37 9 Q64 8 79 25 Q64 41 37 41 Q13 39 5 25 Z" fill="url(#b)"/>' +
-      '<path d="M15 24 Q44 20 76 25" stroke="url(#s)" stroke-width="2.4" fill="none" stroke-linecap="round"/>' +
-      '<path d="M16 15 Q40 9 64 14" stroke="#fff" stroke-opacity=".3" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
-      '<path d="M22 15 Q27 25 22 35" stroke="#1D5670" stroke-opacity=".45" stroke-width="1.3" fill="none" stroke-linecap="round"/>' +
-      '<path d="M28 28 Q37 29 39 35 Q31 35 28 28 Z" fill="#E4F6FA" fill-opacity=".85"/>' +
-      '<path d="M6 26.5 Q9 27.5 11.5 26.5" stroke="#1D5670" stroke-opacity=".6" stroke-width="1" fill="none" stroke-linecap="round"/>' +
-      eye(15, 22, 3.8) + '</svg>';
-    if(k === 1) return 'viewBox="0 0 100 50"><defs>' +
-      '<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFB45C"/><stop offset=".45" stop-color="#FF7A1A"/><stop offset="1" stop-color="#D9520A"/></linearGradient>' +
-      '<clipPath id="c"><path d="M5 25 Q9 9 35 8 Q62 8 77 25 Q62 42 35 42 Q9 41 5 25 Z"/></clipPath></defs>' +
-      '<path d="M75 25 Q83 13 95 11 Q100 25 95 39 Q83 37 75 25 Z" fill="#FF8A2A" stroke="#1A120C" stroke-width="2"/>' +
-      '<path d="M30 11 Q36 1 48 4 Q46 9 44 11 M48 9 Q58 3 67 13" fill="#FF8A2A" stroke="#1A120C" stroke-width="2" stroke-linejoin="round"/>' +
-      '<path d="M40 39 Q46 48 54 39 Z" fill="#FF8A2A" stroke="#1A120C" stroke-width="2" stroke-linejoin="round"/>' +
-      '<path d="M5 25 Q9 9 35 8 Q62 8 77 25 Q62 42 35 42 Q9 41 5 25 Z" fill="url(#b)"/>' +
-      '<g clip-path="url(#c)" stroke="#1A120C" stroke-width="1.8">' +
-      '<path d="M19 4 Q27 25 19 46 L28 46 Q36 25 28 4 Z" fill="#FFFFFF"/><path d="M45 4 Q51 25 45 46 L53 46 Q59 25 53 4 Z" fill="#FFFFFF"/><path d="M68 4 Q72 25 68 46 L74 46 Q78 25 74 4 Z" fill="#FFFFFF"/></g>' +
-      '<path d="M5 25 Q9 9 35 8 Q62 8 77 25 Q62 42 35 42 Q9 41 5 25 Z" fill="none" stroke="#1A120C" stroke-width="1.6"/>' +
-      '<path d="M14 15 Q36 8 60 13" stroke="#fff" stroke-opacity=".35" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
-      '<path d="M31 28 Q39 29 41 35 Q34 36 31 28 Z" fill="#FF9E4A" stroke="#1A120C" stroke-width="1.3" stroke-linejoin="round"/>' +
-      eye(13, 21, 4.2) + '</svg>';
-    return 'viewBox="0 0 100 50"><defs>' +
-      '<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4C8DFF"/><stop offset=".55" stop-color="#2557E8"/><stop offset="1" stop-color="#1B3FB8"/></linearGradient>' +
-      '<linearGradient id="t" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFC21F"/><stop offset="1" stop-color="#FFE27A"/></linearGradient></defs>' +
-      '<path d="M76 25 Q84 15 97 9 Q92 25 97 41 Q84 35 76 25 Z" fill="url(#t)"/>' +
-      '<path d="M18 13 Q40 1 70 14 Q50 12 30 16 Z" fill="#1B3FB8"/><path d="M20 37 Q42 48 68 36 Q48 38 30 35 Z" fill="#1B3FB8"/>' +
-      '<path d="M5 25 Q12 9 38 9 Q64 9 78 25 Q64 41 38 41 Q12 41 5 25 Z" fill="url(#b)"/>' +
-      '<path d="M20 20 Q36 13 54 17 Q70 21 74 27 Q66 23 58 25 Q46 28 38 34 Q36 26 28 26 Q22 26 20 20 Z" fill="#0B1A4A" fill-opacity=".85"/>' +
-      '<path d="M14 14 Q36 9 58 13" stroke="#fff" stroke-opacity=".3" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
-      '<path d="M27 28 Q35 30 37 36 Q30 36 27 28 Z" fill="#FFD54A"/>' +
-      eye(14, 22, 3.9) + '</svg>';
-  }, 192);
+/* THE FISH, DRAWN AGAIN (build 326). "The underwater effect, I don't
+   like the fish you got going on. That can be better." Build 325's three
+   were outlined - a clownfish in 2px black strokes, a tang with a near-
+   black sweep across it - and each one rocked whole, a sprite tilting from
+   side to side rather than a fish swimming. Now five species, drawn the
+   way the water is: soft gradients lit from above (a darker back, a pale
+   belly, a sheen along the top), no outlines anywhere, fins that are thin
+   and let the water through, a small catch-lit eye, and nothing dark
+   bigger than that eye:
+     0 sardine     slim and silver, an iridescent line down its side - the
+                   school, far off
+     1 clownfish   orange with three soft white bands (their edges a warm
+                   brown that fades out, never a line)
+     2 yellow tang a bright yellow disc with tall soft fins and the white
+                   spine by its tail
+     3 angelfish   a queen angel: blue over gold, a blue crown, long fins
+                   trailing back past its tail - the big one, close
+     4 chromis     a small blue-green damsel
+   Every one faces LEFT in a 128x64 box, and comes in two pieces drawn in
+   the same box (`part`): the body (everything but the tail) and the tail,
+   so the tail can beat about the root of the tail (HFX_FISH_ROOT, as a
+   fraction of the box's width) while the body glides. No `part` is the
+   whole fish (the box's own tiny ones). `far` lays the water's own blue
+   over it, for the fish further off. Drawn once each and rasterised, like
+   every sprite. */
+const HFX_FISH_ROOT = [.745, .715, .73, .69, .70];
+function hfxFishURL(k, part, far){
+  k = ((k % 5) + 5) % 5;
+  const key = "fish3-" + k + "-" + (part || "all") + (far ? "-far" : "");
+  return hfxSprite(key, () => {
+    const eye = (x, y, r, ring) => '<circle cx="' + x + '" cy="' + y + '" r="' + (r * 1.18) + '" fill="' + ring + '" fill-opacity=".85"/>' +
+      '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="url(#ey)"/><circle cx="' + (x - r * .32) + '" cy="' + (y - r * .34) + '" r="' + (r * .3) + '" fill="#fff" fill-opacity=".95"/>';
+    /* the sheen along the back, clipped to the body: light from above */
+    const sheen = (cx, cy, rx, ry) => '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry + '" fill="url(#sh)" clip-path="url(#bc)"/>';
+    let defs = '<radialGradient id="ey" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#2A3B48"/><stop offset="1" stop-color="#0E1A22"/></radialGradient>' +
+      '<radialGradient id="sh" cx="50%" cy="40%" r="50%"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>';
+    let bodyD, tailD, body, tail, tint = "#3E9EC2";
+    if(k === 0){
+      bodyD = "M4 33 C9 26 21 22 39 21 C59 20 80 25 96 30.5 L96 34.5 C80 39.5 59 43.5 39 43.5 C21 43.5 9 40 4 33 Z";
+      tailD = "M94 31 C102 27 110 21 121 15 C116 25 115 40 121 50 C110 44 102 38 94 34.5 Z";
+      defs += '<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2E6B84"/><stop offset=".36" stop-color="#5FA7BE"/><stop offset=".58" stop-color="#D3ECF2"/><stop offset="1" stop-color="#F4FBFC"/></linearGradient>' +
+        '<linearGradient id="s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8FF4FF" stop-opacity="0"/><stop offset=".25" stop-color="#8FF4FF" stop-opacity=".75"/><stop offset=".7" stop-color="#C6B6FF" stop-opacity=".6"/><stop offset="1" stop-color="#C6B6FF" stop-opacity="0"/></linearGradient>' +
+        '<linearGradient id="t" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3D8098" stop-opacity=".95"/><stop offset="1" stop-color="#A9D9E5" stop-opacity=".7"/></linearGradient>';
+      body = '<path d="M50 21.5 C54 15.5 60 13.5 67 14.5 C63.5 17.5 61.5 20 60.5 22.5 Z" fill="#3D8098" fill-opacity=".7"/><path d="M52 42.5 C56 47.5 61 48.5 65 47 C61.5 45.5 59.5 43.5 58.5 42.5 Z" fill="#CFEAF1" fill-opacity=".7"/>' +
+        '<path d="' + bodyD + '" fill="url(#b)"/>' + sheen(44, 25, 34, 6) +
+        '<path d="M15 31.5 C40 29.5 70 30.5 93 32.5" stroke="url(#s)" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
+        '<path d="M23 26 C26 31 26 36 23 40.5" stroke="#2A5E72" stroke-opacity=".28" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
+        '<path d="M30 35 C36 35 40 38 41 41 C36 41 32 39 30 35 Z" fill="#E3F4F8" fill-opacity=".7"/>' + eye(13.5, 30, 3.1, "#CFE6EC");
+      tail = '<path d="' + tailD + '" fill="url(#t)"/>';
+    } else if(k === 1){
+      tint = "#3A90B4";
+      bodyD = "M6 33 C8 22 22 15.5 44 15.5 C66 15.5 83 23 92 30 L92 37 C83 44 66 50.5 44 50.5 C22 50.5 8 44 6 33 Z";
+      tailD = "M89 30.5 C97 22 108 19.5 117 23 C121.5 30 121.5 37 117 43.5 C108 47 97 44.5 89 36.5 Z";
+      defs += '<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFB873"/><stop offset=".42" stop-color="#FF8126"/><stop offset="1" stop-color="#DE5A0E"/></linearGradient>' +
+        '<linearGradient id="w" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8A3A0E" stop-opacity="0"/><stop offset=".17" stop-color="#8A3A0E" stop-opacity=".26"/><stop offset=".32" stop-color="#FFFFFF" stop-opacity=".96"/><stop offset=".68" stop-color="#F4F7F8" stop-opacity=".96"/><stop offset=".83" stop-color="#8A3A0E" stop-opacity=".26"/><stop offset="1" stop-color="#8A3A0E" stop-opacity="0"/></linearGradient>' +
+        '<linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A9450F" stop-opacity=".55"/><stop offset=".45" stop-color="#FF8A2E" stop-opacity=".9"/><stop offset="1" stop-color="#FF9A45" stop-opacity=".85"/></linearGradient>' +
+        '<linearGradient id="t" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FF8A2E"/><stop offset=".7" stop-color="#F57418"/><stop offset="1" stop-color="#A9450F" stop-opacity=".55"/></linearGradient>' +
+        '<clipPath id="c"><path d="' + bodyD + '"/></clipPath>';
+      body = '<path d="M34 17 C38 7 50 5.5 58 9.5 C64 6.5 74 10.5 78 21 C66 17.5 50 15.5 34 17 Z" fill="url(#f)"/>' +
+        '<path d="M50 49 C54 57.5 64 58.5 70 52 C63 50 56 49 50 49 Z" fill="#FF8A2E" fill-opacity=".85"/>' +
+        '<path d="' + bodyD + '" fill="url(#b)"/>' +
+        '<g clip-path="url(#c)"><path d="M17 10 Q26 33 17 56 L33 56 Q42 33 33 10 Z" fill="url(#w)"/><path d="M42 10 Q52 33 42 56 L58 56 Q68 33 58 10 Z" fill="url(#w)"/><path d="M76 10 Q81 33 76 56 L88 56 Q93 33 88 10 Z" fill="url(#w)"/></g>' +
+        sheen(44, 22, 34, 7) +
+        '<path d="M31 32 C37 31.5 43 35.5 43.5 42 C37 42 31.5 38 31 32 Z" fill="#FFA65A" fill-opacity=".9"/>' + eye(16, 29, 3.6, "#FFC890");
+      tail = '<path d="' + tailD + '" fill="url(#t)"/><path d="M97 27 Q103 33.5 97 40" stroke="#fff" stroke-opacity=".55" stroke-width="3.2" fill="none" stroke-linecap="round"/>';
+    } else if(k === 2){
+      tint = "#4CA6B8";
+      bodyD = "M8 31 C10 26.5 14 23.5 18.5 22.5 C25 10.5 40 7 56 7.5 C76 9 89 20 94 29 L94 37 C89 45 76 56 56 56.5 C40 57 25 53.5 18.5 42 C14 40.5 10 37.5 8 34 Z";
+      tailD = "M92 30 C99 24 107 20.5 117 19.5 C114 27 114 39 117 46.5 C107 45.5 99 42 92 36.5 Z";
+      defs += '<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFEA70"/><stop offset=".5" stop-color="#FFD31F"/><stop offset="1" stop-color="#F2B10A"/></linearGradient>' +
+        '<linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD83A" stop-opacity=".55"/><stop offset="1" stop-color="#FFD83A" stop-opacity=".92"/></linearGradient>' +
+        '<linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD83A" stop-opacity=".92"/><stop offset="1" stop-color="#FFD83A" stop-opacity=".55"/></linearGradient>' +
+        '<linearGradient id="t" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFD21E"/><stop offset="1" stop-color="#FFE77A" stop-opacity=".85"/></linearGradient>';
+      body = '<path d="M22 20 C30 4 56 -0.5 80 10 C86 14 90 20 92 26 C80 14 60 9.5 40 10.5 C32 11.5 26 15 22 20 Z" fill="url(#f)"/>' +
+        '<path d="M24 45 C32 60 56 65 80 55 C86 51 90 45 92 40 C80 50 60 55 40 55 C32 54 27 50 24 45 Z" fill="url(#g)"/>' +
+        '<path d="' + bodyD + '" fill="url(#b)"/>' + sheen(50, 18, 36, 8) +
+        '<ellipse cx="88" cy="33" rx="3.2" ry="1.5" fill="#FFFFFF" fill-opacity=".9"/>' +
+        '<path d="M38 33 C43 32.5 47 36 47.5 41 C43 41 39 38 38 33 Z" fill="#FFE264" fill-opacity=".9"/>' +
+        '<path d="M9.5 32.5 Q11.5 33.6 13.5 32.6" stroke="#B9860A" stroke-opacity=".45" stroke-width="1" fill="none" stroke-linecap="round"/>' + eye(22, 26.5, 3.3, "#FFF0A8");
+      tail = '<path d="' + tailD + '" fill="url(#t)"/>';
+    } else if(k === 3){
+      tint = "#3A8FB8";
+      bodyD = "M7 32 C9 24 18 16 32 13 C50 9 70 14 86 26 L88 32 L86 40 C70 52 50 56 32 52 C18 49 9 41 7 32 Z";
+      tailD = "M85 27 C93 23.5 101 21.5 110 21.5 C113.5 28.5 113.5 36 110 43 C101 43 93 40.5 85 37 Z";
+      defs += '<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B8FE0"/><stop offset=".42" stop-color="#6CC3A8"/><stop offset=".7" stop-color="#E5D45A"/><stop offset="1" stop-color="#F0BE3C"/></linearGradient>' +
+        '<linearGradient id="d" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#F3D445" stop-opacity=".95"/><stop offset=".75" stop-color="#4C9BE6" stop-opacity=".85"/><stop offset="1" stop-color="#7FD2FF" stop-opacity=".6"/></linearGradient>' +
+        '<linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F3D445" stop-opacity=".95"/><stop offset=".75" stop-color="#4C9BE6" stop-opacity=".85"/><stop offset="1" stop-color="#7FD2FF" stop-opacity=".6"/></linearGradient>' +
+        '<radialGradient id="cr" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#2058C8"/><stop offset=".65" stop-color="#2E6FD8"/><stop offset="1" stop-color="#8FD8FF" stop-opacity="0"/></radialGradient>' +
+        '<linearGradient id="t" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F5D43A"/><stop offset="1" stop-color="#FFE37A" stop-opacity=".85"/></linearGradient>';
+      body = '<path d="M30 14 C44 3 68 1.5 88 6.5 C100 9.5 106 15 108 20.5 C99 16.5 90 18.5 85.5 25 C70 14 50 11 30 14 Z" fill="url(#d)"/>' +
+        '<path d="M34 52 C48 61 70 63 88 58 C100 55 106 49.5 108 44.5 C99 48 90 46 85.5 39.5 C70 51 52 55 34 52 Z" fill="url(#a)"/>' +
+        '<path d="' + bodyD + '" fill="url(#b)"/>' + sheen(42, 20, 34, 8) +
+        '<circle cx="30" cy="19.5" r="4.4" fill="url(#cr)" fill-opacity=".85"/>' +
+        '<path d="M27 34 C34 33 40 37 41 43 C34 43 28.5 39.5 27 34 Z" fill="#F7DC5A" fill-opacity=".9"/>' +
+        '<path d="M8 31.5 Q10.5 33 13 32" stroke="#2F6FC0" stroke-opacity=".5" stroke-width="1.2" fill="none" stroke-linecap="round"/>' + eye(17, 28.5, 3.5, "#7FC4FF");
+      tail = '<path d="' + tailD + '" fill="url(#t)"/>';
+    } else {
+      bodyD = "M6 32 C10 24 22 19.5 40 19.5 C60 19.5 78 24 90 30 L90 35 C78 41 60 45.5 40 45.5 C22 45.5 10 40 6 32 Z";
+      tailD = "M88 30 C97 24 107 17 118 12.5 C113 24 113 41 118 52 C107 47 97 40 88 35 Z";
+      defs += '<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2393BC"/><stop offset=".45" stop-color="#48C6D8"/><stop offset="1" stop-color="#C4F0F3"/></linearGradient>' +
+        '<linearGradient id="t" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3AAFCB" stop-opacity=".92"/><stop offset="1" stop-color="#8FDCEA" stop-opacity=".6"/></linearGradient>';
+      body = '<path d="M34 20.5 C42 12.5 62 12 75 18.5 C62 18.5 48 19.5 34 20.5 Z" fill="#2C9CC0" fill-opacity=".75"/>' +
+        '<path d="M46 45 C52 51 62 51.5 68 46.5 C61 45.5 53 45 46 45 Z" fill="#7FD8E6" fill-opacity=".7"/>' +
+        '<path d="' + bodyD + '" fill="url(#b)"/>' + sheen(44, 24, 32, 6) +
+        '<path d="M28 33 C34 33 38 36 39 40 C34 40 30 37.5 28 33 Z" fill="#B9EEF3" fill-opacity=".75"/>' + eye(14, 29, 3.2, "#BFEFF5");
+      tail = '<path d="' + tailD + '" fill="url(#t)"/>';
+    }
+    /* the sheen's clip is the body's own outline */
+    defs += '<clipPath id="bc"><path d="' + bodyD + '"/></clipPath>';
+    /* further off, the water's blue laid over it (its own outline) */
+    const veil = d => far ? '<path d="' + d + '" fill="' + tint + '" fill-opacity=".42"/>' : "";
+    const parts = part === "body" ? body + veil(bodyD) : part === "tail" ? tail + veil(tailD) : tail + veil(tailD) + body + veil(bodyD);
+    return 'viewBox="0 0 128 64"><defs>' + defs + '</defs>' + parts + '</svg>';
+  }, 320);
 }
 function hfxDropURL(){
   return hfxSprite("drop", () => 'viewBox="0 0 20 40"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2FFFF" stop-opacity=".95"/><stop offset="1" stop-color="#7FD9E8" stop-opacity=".35"/></linearGradient></defs>' +
@@ -93110,17 +93218,32 @@ function hfxUwScreen(c, S, page, k, tot){
     try{ const cs = getComputedStyle(r.el); if(cs.translate && cs.translate !== "none") tr = cs.translate; }catch(e){}
     try{ r.a.cancel(); }catch(e){}
     r.a = null;
-    try{ r.s = r.el.animate([{ translate: tr }, { translate: "0px 0px" }], { duration: 650, easing: "cubic-bezier(.3,.6,.35,1)" }); r.s.id = "hfx-uw-settle"; }catch(e){ r.s = null; }
+    try{ r.s = r.el.animate([{ translate: tr }, { translate: "0px 0px" }], { duration: HFX_UW_SETTLE_MS, easing: "cubic-bezier(.3,.6,.35,1)" }); r.s.id = "hfx-uw-settle"; }catch(e){ r.s = null; }
   };
   const tick = () => {
     const s = now();
     if(s > tot + .3){ quit(false); return; }
     const top = S.ocean.getBoundingClientRect().top, line = top + S.lineAt(s);
     recs.forEach(r => {
-      if(!r.el.isConnected) return;
+      if(!r.el.isConnected || r.due) return;
       const q = r.el.getBoundingClientRect(), cy = q.top + q.height / 2;
       if(!r.wet && cy > line + 6){ r.wet = true; sway(r, s); }
       else if(r.wet && cy < line - 6){ r.wet = false; settle(r); }
+      /* THE CARD COMES TO REST AS THE WATER LEAVES IT (build 326): the
+         moment the surface will clear its middle is found inside the next
+         tick (the curves, on the water's own clock, as the breath's is)
+         and the settle starts HFX_UW_SETTLE_LEAD before it - so a card is
+         still as the water goes past, rather than swaying on for up to a
+         tick in the air and then catching up. */
+      else if(r.wet){
+        for(let u = 0; u <= .17; u += .01){
+          if(top + S.lineAt(s + u + HFX_UW_SETTLE_LEAD) > cy + 6){
+            r.due = true;
+            setTimeout(() => { r.due = false; if(!quitted && r.wet){ r.wet = false; settle(r); } }, u * 1000);
+            break;
+          }
+        }
+      }
     });
     /* THE BREATH IS HELD WHILE THE FACE IS UNDER, AND ONLY THEN (build
        325). It was the middle of the circle against the surface, read
@@ -93785,63 +93908,95 @@ function hfxUnderwater(scr, bx, c){
       n: { rays: mini ? 3 : small ? 4 : 6, vents: mini ? 2 : small ? 3 : 4, gap: mini ? [.55, .9] : [.3, .5],
         scatter: mini ? 3 : small ? 7 : 9, boxGap: mini ? [.7, 1.1] : [.4, .65], rush: mini ? 2 : small ? 4 : 5 } });
     const body = S.body, bodyH = S.bodyH;
-    /* THE LIFE IN IT (build 325): "The fish coming by and the random
-       shadow black thing is bad. Fix what's in the water." The manta (the
-       black shape) is gone. A silver school swims across the band above
-       the box, a clownfish and a blue tang the other way lower down, in
-       the clear water under the cards where there is room (across the
-       box's lower half when there is not), each one drawn (hfxFishURL),
-       its tail beating as it goes. All of it ON THE WATER'S CLOCK: nothing
-       comes in until the sea is up (U.rise + U.riseD) and every fish has
-       swum out of frame before it starts to drain (U.drain), so nothing
-       is ever left in the air. Depth: the fish further back are smaller
-       and fainter, the water's colour showing through them. */
-    const inAt = U.rise + U.riseD + .1, outBy = U.drain - .1, win = outBy - inAt;
-    const dir = Math.random() < .5 ? 1 : -1, fl = dir > 0 ? -1 : 1;
-    const swim = (el, x0, x1, ys, dl, d, easing) => hfxAnim(c, el, [
-      { translate: x0 + "px " + ys[0] + "px" },
-      { translate: (x0 + (x1 - x0) * .33) + "px " + ys[1] + "px", offset: .33 },
-      { translate: (x0 + (x1 - x0) * .66) + "px " + ys[2] + "px", offset: .66 },
-      { translate: x1 + "px " + ys[3] + "px" }
-    ], { duration: d * 1000, delay: Math.max(0, dl) * 1000, fill: "both", easing: easing || "linear" });
-    const fishEl = (parent, kk, w, x, y, wag, depth, face) => {
-      const e = hfxMk(parent, "i", "hfx-uw-f", { left: x + "px", top: y + "px", "--fw": w + "px", "--wg": wag.toFixed(2) + "s", "--wn": String(Math.ceil(win / wag) + 2) });
-      e.style.backgroundImage = hfxFishURL(kk);
-      e.style.transform = "scaleX(" + face + ")";
-      if(depth) e.style.opacity = String(depth);
-      return e;
-    };
-    /* the school: one moving layer, each fish its own place and tail */
-    const y0 = Math.max(56 * k, box.top - lvl - c.vh * hfxR(.11, .17));
-    const nS = mini ? 5 : small ? 9 : 13, school = [];
-    let back = 0;
-    for(let i = 0; i < nS; i++){
-      const far = i % 3 === 2, w = (far ? hfxR(24, 30) : hfxR(32, 44)) * k, lag = i * (small ? 11 : 13) * k + hfxR(0, 14) * k;
-      back = Math.max(back, lag + w);
-      school.push({ w, dx: -dir * lag, dy: hfxR(-34, 34) * k, far });
-    }
-    const xs = dir > 0 ? -60 * k : c.vw + 60 * k, xe = dir > 0 ? c.vw + back + 40 * k : -back - 40 * k;
-    due(inAt, off => {
-      const sc = hfxMk(body, "span", "hfx-uw-school");
-      school.forEach(f => fishEl(sc, 0, f.w, f.dx, f.dy, f.far ? .34 : .26, f.far ? .62 : 0, fl));
-      const a = swim(sc, xs, xe, [y0 + 18 * k, y0 - 6 * k, y0 + 8 * k, y0 - 4 * k], inAt - off, win, "cubic-bezier(.3,.1,.6,.95)");
-      if(a) a.onfinish = () => sc.remove();
-    });
-    /* the two big ones, the other way: under the cards where there is
-       clear water, else across the box's lower half */
+    /* THE LIFE IN IT (build 326, after 325's "The fish coming by and the
+       random shadow black thing is bad" and now "I don't like the fish you
+       got going on. That can be better"). Three depths, so the water has
+       some: far off, a school of sardines comes up out of the blue and goes
+       back into it - small, faint, the water's colour over them, one layer
+       moving as one; in the middle, a clownfish, a yellow tang and a pair
+       of chromis, crossing the other way at their own speeds and heights;
+       and close, one big angelfish, quicker, lower, in front. Nearer is
+       bigger, brighter and faster - the parallax that makes it a sea and
+       not a sheet. Each one SWIMS: its path is a long gentle wave, its body
+       turns to follow it (rotate, from the path's own slope), and its tail
+       beats about its root (a second picture of the same fish, only its
+       tail, flexed - .hfx-uw-ft), quicker for a small fish. Every edge is
+       soft (hfxFishURL), and all of it is ON THE WATER'S CLOCK: nothing
+       comes in until the sea is up, and every fish is out of frame - or
+       gone back into the blue - before it drains (HFX_UW.drain). */
+    const inAt = U.rise + U.riseD + .1, outBy = U.drain - .15, win = outBy - inAt;
+    const dir = Math.random() < .5 ? 1 : -1;
+    /* the clear water under the cards, or across the box's lower half */
     const cardsBottom = c.scene && c.scene.cards && c.scene.cards.length ? Math.max(...c.scene.cards.map(q => q.bottom)) - rest : box.top + box.height;
     const clear = c.vh - cardsBottom;
     const lowY = clear > 110 * k ? cardsBottom + clear * .45 : box.top + box.height * .7;
-    [[1, 64, .2, .22], [2, 58, .55, .34]].forEach(([kk, w0, dl, dy], j) => {
-      const w = w0 * k * (small ? 1 : 1.2), y = lowY - lvl + (j ? 1 : -1) * dy * 100 * k;
-      const x0 = dir > 0 ? c.vw + w : -w, x1 = dir > 0 ? -w * 1.2 : c.vw + w * 1.2;
+    const sz = small ? 1 : 1.25;
+    /* a fish (or a whole school, `kids`): an element that swims a wave
+       from x0 to x1 at y0 over d s, turning with it; `fade` brings it up
+       out of the blue and back into it */
+    const swim = (el, x0, x1, y0, amp, waves, ph, dl, d, fade) => {
+      const n = 9, fr = [], dx = x1 - x0, deg = 180 / Math.PI;
+      for(let i = 0; i <= n; i++){
+        const u = i / n, x = x0 + dx * u, y = y0 + amp * Math.sin(2 * Math.PI * waves * u + ph);
+        const vy = amp * 2 * Math.PI * waves * Math.cos(2 * Math.PI * waves * u + ph);
+        const rot = Math.max(-11, Math.min(11, Math.atan(vy / (dx || 1)) * deg));
+        const f = { translate: x.toFixed(1) + "px " + y.toFixed(1) + "px", rotate: rot.toFixed(2) + "deg" };
+        if(fade) f.opacity = u < .18 ? (u / .18) * fade : u > .8 ? Math.max(0, (1 - u) / .2) * fade : fade;
+        fr.push(f);
+      }
+      const an = hfxAnim(c, el, fr, { duration: d * 1000, delay: Math.max(0, dl) * 1000, fill: "both", easing: "linear" });
+      if(an) an.onfinish = () => el.remove();
+      return an;
+    };
+    /* one fish: its body still, its tail beating (`tb` s a stroke) */
+    const fishEl = (parent, kk, w, face, tb, d, far) => {
+      const e = hfxMk(parent, "span", "hfx-uw-f", { "--fw": w + "px", "--fr": (HFX_FISH_ROOT[kk] * 100).toFixed(1) + "%", "--tb": tb.toFixed(2) + "s", "--tn": String(Math.ceil(d / tb) + 2) });
+      e.style.transform = "scaleX(" + face + ")";
+      const tl = hfxMk(e, "i", "hfx-uw-ft"); tl.style.backgroundImage = hfxFishURL(kk, "tail", far);
+      const bd = hfxMk(e, "i", "hfx-uw-fb"); bd.style.backgroundImage = hfxFishURL(kk, "body", far);
+      return e;
+    };
+    /* swimming toward +x the drawing (which faces left) is flipped */
+    const faceFor = d => d > 0 ? -1 : 1;
+    /* far: the school, out of the blue and back into it */
+    const y0 = Math.max(56 * k, box.top - lvl - c.vh * hfxR(.1, .15));
+    const nS = mini ? 5 : small ? 9 : 13, school = [];
+    let spread = 0;
+    for(let i = 0; i < nS; i++){
+      const w = hfxR(22, 30) * k * sz, lag = i * (small ? 13 : 15) * k + hfxR(0, 12) * k;
+      spread = Math.max(spread, lag + w);
+      school.push({ w, dx: -dir * lag, dy: (i % 2 ? 1 : -1) * hfxR(4, 20) * k + hfxR(-6, 6) * k });
+    }
+    due(inAt, off => {
+      const sc = hfxMk(body, "span", "hfx-uw-school");
+      /* the school is one picture: its fish do not move inside it */
+      school.forEach(f => { const e = hfxMk(sc, "i", "hfx-uw-sf", { left: f.dx + "px", top: f.dy + "px", "--fw": f.w + "px" });
+        e.style.backgroundImage = hfxFishURL(0, null, true); e.style.transform = "scaleX(" + faceFor(dir) + ")"; });
+      const xs = dir > 0 ? -spread * .2 : c.vw + spread * .2, xe = dir > 0 ? c.vw * .78 + spread : c.vw * .22 - spread;
+      swim(sc, xs, xe, y0, 9 * k, 1.1, hfxR(0, 6.28), inAt - off, win, .62);
+    });
+    /* middle: crossing the other way, each at its own height and pace */
+    const mids = [[1, 56, .15, .95, -.3, .3], [2, 60, .55, 1, .22, .38], [4, 34, .95, .8, -.06, .24], [4, 31, 1.05, .8, .02, .23]];
+    mids.forEach(([kk, w0, dl, sp, dy, tb], j) => {
+      if(mini && j > 1) return;
+      const w = w0 * k * sz, y = lowY - lvl + dy * 100 * k, dd = (win - dl) * sp;
+      const x0 = dir > 0 ? c.vw + w : -w, x1 = dir > 0 ? -w * 1.3 : c.vw + w * 1.3;
       due(inAt + dl, off => {
-        const g = hfxMk(body, "span", "hfx-uw-school is-big");
-        fishEl(g, kk, w, 0, 0, .3 + j * .06, 0, -fl);
-        const a = swim(g, x0, x1, [y, y - 8 * k, y + 6 * k, y - 4 * k], inAt + dl - off, win - dl, "cubic-bezier(.35,.05,.65,1)");
-        if(a) a.onfinish = () => g.remove();
+        const g = hfxMk(body, "span", "hfx-uw-fish3");
+        fishEl(g, kk, w, faceFor(-dir), tb, dd, false);
+        swim(g, x0, x1, y, hfxR(5, 9) * k, hfxR(.8, 1.3), hfxR(0, 6.28), inAt + dl - off, dd, 0);
       });
     });
+    /* close: the angelfish, big, low and in front, quicker */
+    if(!mini){
+      const w = 104 * k * sz, dl = .7, dd = Math.min(win - dl, 2.1), y = lowY - lvl + 46 * k;
+      const x0 = dir > 0 ? -w : c.vw + w, x1 = dir > 0 ? c.vw + w * 1.3 : -w * 1.3;
+      due(inAt + dl, off => {
+        const g = hfxMk(body, "span", "hfx-uw-fish3 is-near");
+        fishEl(g, 3, w, faceFor(dir), .36, dd, false);
+        swim(g, x0, x1, y, 7 * k, .9, hfxR(0, 6.28), inAt + dl - off, dd, 0);
+      });
+    }
     /* drops running down the glass once the water has gone */
     const drops = hfxMk(scr, "span", "hfx-uw-ocean is-drops");
     for(let i = 0; i < (mini ? 4 : small ? 9 : 13); i++){
@@ -93923,7 +94078,6 @@ function hfxBlackHole(scr, bx, c){
   const r = c.br, small = c.vw < 600, mini = !!c.frame, k = mini ? .55 : 1, H = HFX_BH;
   const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
   if(scr){
-    if(!c.noDim) hfxMk(scr, "i", "hfx-bh-dim");
     const D = Math.min(c.vw * (small ? .95 : .7), (mini ? 220 : 560));
     const g = hfxMk(scr, "span", "hfx-bh", { left: cx + "px", top: cy + "px", "--bd": D + "px" });
     hfxMk(hfxMk(g, "i", "hfx-bh-tilt"), "i", "hfx-bh-disc").style.backgroundImage = hfxDiscURL();
@@ -94196,7 +94350,6 @@ function hfxFireworks(scr, bx, c){
   let litAt = 1;
   if(scr){
     const W = c.vw, H = c.vh, T = HFX_FW_TOT;
-    if(!c.noDim) hfxMk(scr, "i", "hfx-fw-dim", { "--tot": T });
     const S = hfxFwShow(kk);
     const R = Math.min(W * (small ? .3 : .22), H * .2, 230);
     /* the sky above the box: where the bursts go */
@@ -94469,7 +94622,6 @@ function hfxUfo(scr, bx, c){
   const r = c.br, small = c.vw < 600;
   const L = { x: r.left + r.width / 2, y: r.top + 1 };
   if(scr){
-    if(!c.noDim) hfxMk(scr, "i", "hfx-ufo-dim");
     /* the stars it leaves behind are the tail: each twinkles out between
        9.9s and 10.8s, after the saucer has gone, as the dark lifts */
     for(let i = 0; i < (small ? 14 : 20); i++){
@@ -94555,7 +94707,6 @@ function hfxUfo(scr, bx, c){
     /* the box dark until the beam strikes it (round 5) */
     hfxUfoLight(c);
     if(!c.boxOnly){
-      if(!c.noDim) hfxMk(bx, "i", "hfx-ufo-boxdim");
       /* the box flares as the beam reaches its floor, and again as it lands */
       hfxMk(bx, "i", "hfx-ufo-landglow is-hit", { "--t": 4.18, "--bmg": hfxUfoBeam().glow, "--bmd": hfxUfoBeam().deep });
       hfxMk(bx, "i", "hfx-ufo-landglow", { "--t": 6.1 });
@@ -94640,18 +94791,16 @@ function hfxUfoLight(c){
   const D = c.boxOnly ? 7 : 9.5, at = c.boxOnly ? 2.8 : 4.18, dur = .25;
   const had = card.classList.contains("hfx-ufo-unlit");
   card.classList.add("hfx-ufo-unlit");
-  const u = getComputedStyle(card), ub = u.borderColor, uw = u.getPropertyValue("--hfx-wash").trim();
+  const uw = getComputedStyle(card).getPropertyValue("--hfx-wash").trim();
   card.classList.remove("hfx-ufo-unlit");
-  const l = getComputedStyle(card), lb = l.borderColor, lw = l.getPropertyValue("--hfx-wash").trim();
+  const lw = getComputedStyle(card).getPropertyValue("--hfx-wash").trim();
   if(had) card.classList.add("hfx-ufo-unlit");
   const o = { duration: D * 1000, fill: "forwards", easing: "linear" };
   /* lit to the end of the timeline (offset 1, said outright: left implicit,
-     the last keyframe would be the class's unlit look again) */
+     the last keyframe would be the class's unlit look again). Only the
+     wash: the edge is the card's from the first frame (build 326). */
   const k = (a, b) => [Object.assign({ offset: .05 }, a), Object.assign({ offset: at / D }, a), Object.assign({ offset: (at + dur) / D }, b), Object.assign({ offset: 1 }, b)];
-  hfxAnim(c, card, k({ borderColor: ub }, { borderColor: lb }), o);
   if(uw && lw) hfxAnim(c, card, k({ "--hfx-wash": uw }, { "--hfx-wash": lw }), o);
-  const t = card.querySelector(":scope > .hfx-tint");
-  if(t) hfxAnim(c, t, k({ opacity: 0 }, { opacity: 1 }), o);
   hfxOnEnd(c, () => card.classList.remove("hfx-ufo-unlit"));
 }
 /* The UFO's own layer, over the box (round 6): a twin of the effect's
@@ -94828,10 +94977,11 @@ function playHundoFx(id, opts){
   const rxAv = (!opts.boxOnly && !opts.frame && !opts.preview) ? hfxResultsAvatar(opts.box) : null;
   if(id === "confetti" && !opts.boxOnly && !opts.frame){
     playSound("hundo.confetti");
-    celebrate(opts.palette, opts.pct || opts.box, { dim: true });
-    /* the box is lifted over its dim, as the Fireworks lift theirs, so
-       the number is never dimmed (build 325) */
-    if(opts.box){ const bx0 = opts.box; bx0.classList.add("hfx-over"); setTimeout(() => bx0.classList.remove("hfx-over"), 3000); }
+    celebrate(opts.palette, opts.pct || opts.box);
+    /* the one dim (build 326), and the box lifted over it and the
+       stardust, so the number is never dimmed */
+    hfxDim("confetti", null);
+    if(opts.box){ const bx0 = opts.box; bx0.classList.add("hfx-over"); setTimeout(() => bx0.classList.remove("hfx-over"), hfxDimEnd("confetti")); }
     if(rxAv){ try{ hfxCharReact(rxAv, "confetti", { palette: opts.palette }); }catch(e){} }
     return null;
   }
@@ -94882,6 +95032,15 @@ function playHundoFx(id, opts){
     }
   }
   if(bx) opts.box.appendChild(bx);
+  /* THE ONE DIM (build 326): every effect that plays across a screen puts
+     the same dim up under its own layer, and the box is lifted over it
+     (.hfx-lift) for as long as it is up - Underwater's and Bubbles' too,
+     which had none. A Customize showcase (noDim) plays without one. */
+  let dim = null;
+  if(scr && !opts.noDim && !opts.boxOnly){
+    dim = hfxDim(id, layerParent && layerParent.classList && layerParent.classList.contains("hfx-mock") ? layerParent : null);
+    if(opts.box){ const bx1 = opts.box; bx1.classList.add("hfx-lift"); setTimeout(() => bx1.classList.remove("hfx-lift"), hfxDimEnd(id)); }
+  }
   /* The UFO lands ON the box, the black hole opens BEHIND it and the
      fireworks' shells leave from behind its top edge: the box is lifted
      over the screen layer while they play, so the number stays clear of
@@ -94899,10 +95058,10 @@ function playHundoFx(id, opts){
   const handle = { id, screen: scr, box: bx, total, startedAt: performance.now(), done: false };
   /* its own score, timed to its own beats - the full effect only */
   const sndFx = (!opts.boxOnly && !opts.frame) ? playSound("hundo." + id) : null;
-  const lifted = () => { if(opts.box) opts.box.classList.remove("hfx-over"); };
-  const end = () => { if(handle.done) return; handle.done = true; if(scr) scr.remove(); if(bx) bx.remove(); if(mo) mo.disconnect(); lifted(); undo(false); };
+  const lifted = () => { if(opts.box) opts.box.classList.remove("hfx-over", "hfx-lift"); };
+  const end = () => { if(handle.done) return; handle.done = true; if(scr) scr.remove(); if(bx) bx.remove(); if(dim) dim.remove(); if(mo) mo.disconnect(); lifted(); undo(false); };
   handle.timer = setTimeout(end, total);
-  handle.stop = () => { if(handle.done) return; handle.done = true; clearTimeout(handle.timer); if(mo) mo.disconnect(); hfxFadeOut(scr); hfxFadeOut(bx); undo(true); setTimeout(lifted, 650); if(sndFx) sndFx.stop(.5); };
+  handle.stop = () => { if(handle.done) return; handle.done = true; clearTimeout(handle.timer); if(mo) mo.disconnect(); hfxFadeOut(scr); hfxFadeOut(bx); if(dim && dim.isConnected) hfxFadeOut(dim); undo(true); setTimeout(lifted, 650); if(sndFx) sndFx.stop(.5); };
   /* the screen changing under it: fade, don't leave it over the next one */
   let mo = null;
   if(scr && opts.box && !opts.preview && typeof stage !== "undefined" && stage){
@@ -97222,6 +97381,7 @@ function clearCelebrationsForScene(){
   /* a hundo effect goes softly (build 313) - the scene's dim is coming
      up over it anyway, and a cut would show for the frame before it */
   document.querySelectorAll(".confetti-layer").forEach(l => { if(l.classList.contains("hfx-layer")) hfxFadeOut(l); else l.remove(); });
+  document.querySelectorAll(".hfx-dim").forEach(hfxFadeOut);
   document.querySelectorAll(".hfx-box.is-grade").forEach(hfxFadeOut);
 }
 
@@ -97335,7 +97495,8 @@ function multiUnitMultiplier(wholeUnits){
    word. What each mark pays stays in the total on the right (the marks'
    values are fixed: runStreakTierXp). */
 function runStreakSub(tiers, keys){
-  const times = n => n === 1 ? "" : n === 2 ? " twice" : " " + n + " times";
+  const W = ["", "", "", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+  const times = n => n === 1 ? "" : n === 2 ? " twice" : " " + (W[n] || n) + " times";
   const parts = keys.map(t => t.toLocaleString() + times(tiers[t]));
   const list = parts.length < 2 ? parts.join("") : parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
   return "Reached " + list;

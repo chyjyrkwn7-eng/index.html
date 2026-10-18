@@ -176,13 +176,17 @@ PAUSE = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
 
 def check_pause_save(br):
     """3. "The save and exit button idk how I feel about the color." """
-    print("\n3. Save and exit is the neutral clear glass, the same size as its neighbours")
+    # MOVED in build 326: "The save and exit button is clear and see
+    # through? Thats a terrible idea, let's try something else." It is
+    # opaque now, with no backdrop blur (tools/check-b326-a.py holds the
+    # new look); what is kept from 325 is the size and the lift.
+    print("\n3. Save and exit is solid (326), the same size as its neighbours, with a lift")
     for label, w, h in (PHONE, TABLET):
         ctx, pg = booted(br, w, h, seed=USED)
         pg.evaluate(CLEAN)
         r = pg.evaluate(PAUSE)
-        check("%s: Save and exit is see-through glass (fill under 15%%, a backdrop blur, a lit rim) with a lift, as tall and wide as Quit and Resume" % label,
-              bool(r) and r["alpha"] < 0.15 and "blur" in r["bf"] and r["shadows"] >= 4 and r["outer"] >= 2
+        check("%s: Save and exit is opaque (no see-through fill, no backdrop blur) with a lift, as tall and wide as Quit and Resume" % label,
+              bool(r) and r["alpha"] == 1 and r["bf"] == "none" and r["outer"] >= 2
               and abs(r["h"] - r["hq"]) <= 1 and abs(r["w"] - r["wr"]) <= 1, r)
         ctx.close()
 

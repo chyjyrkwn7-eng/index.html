@@ -339,13 +339,14 @@ with sync_playwright() as pw:
         sub = pg.evaluate("""()=>computeRunXp({good:37, answered:38, elapsedMs:38*20000,
           okList:Array(12).fill(true).concat([false], Array(25).fill(true)), hundos:0, wholeUnits:1})
           .lines.find(l=>l.key==='streak').sub""")
-        # build 325: each tier with what it paid, so the line adds up on
-        # its face ("10 in a row x2 +50 · 25 in a row +50") - the shape is
-        # held (both tiers, the x2, and the parts summing to the line)
+        # MOVED in build 326: "The answers in a row one got worse somehow."
+        # 325's "10 in a row x2 +50 · 25 in a row +50" is a sentence now -
+        # the marks it reached, each once, with how often in a word, and
+        # "in a row" not repeated under a label that already says it. The
+        # shape is held: both tiers named in order, the 10 marked as twice.
         import re as _re
-        parts = [int(x) for x in _re.findall(r"\+(\d+)", sub or "")]
-        ck("and it lists the tiers it reached, 10 x2 and 25, each with its XP, adding up to the line",
-           "10 in a row \u00d72" in (sub or "") and "25 in a row" in (sub or "") and sum(parts) == pg.evaluate("()=>runStreakTierXp(10)*2 + runStreakTierXp(25)"), sub)
+        ck("and it says the marks it reached, 10 twice and 25, in words, without repeating 'in a row' (326)",
+           bool(_re.search(r"\b10\b.*\btwice\b.*\b25\b", sub or "")) and "in a row" not in (sub or "") and "+" not in (sub or ""), sub)
         bl = pg.evaluate("()=>computeRunXp({good:12, answered:12, elapsedMs:60000, okList:Array(12).fill(true), hundos:0, wholeUnits:1, badgesPaid:['A','B','C']}).lines.filter(l=>l.badge)")
         # REVERSED IN 320: "no more xp bonus for getting a badge ... remove it
         # from the xp box". Three badges are no line at all.

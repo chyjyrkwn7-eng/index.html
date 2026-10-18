@@ -416,12 +416,12 @@ def section_xpcard(br):
               lines)
         check("%s: the answers' line comes first, then a Bonuses heading over every other line" % label,
               r["kick"] and r["kickAt"] == 2 and lines and r["xpLines"] and r["xpLines"][0]["key"] == "correct", r["kids"][:5])
-        import re as _re
-        m = _re.match(r"^([\d,]+) for answers \+ ([\d,]+) in bonuses = ([\d,]+) XP$", r["sum"] or "")
-        nums = [int(g.replace(",", "")) for g in m.groups()] if m else None
-        check("%s: under the total, 'base + bonuses = total' - and it adds up, to the total shown and to the lines" % label,
-              nums is not None and nums[0] + nums[1] == nums[2] == r["total"] == sum(l["val"] for l in lines) and nums[0] == lines[0]["val"],
-              [r["sum"], r["total"], [l["val"] for l in lines]])
+        # MOVED in build 326: "in the total section under the amount of xp
+        # you got it has a description, seems like that's a new thing,
+        # remove that." No sum line under the total; the total is still
+        # the lines' sum.
+        check("%s: nothing under the total (326: the sum line is gone), and the total is the lines' sum" % label,
+              not r["sum"] and r["total"] == sum(l["val"] for l in lines), [r["sum"], r["total"], [l["val"] for l in lines]])
         ctx.close()
 
 
