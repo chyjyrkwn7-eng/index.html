@@ -25941,7 +25941,7 @@ def check_b323t_tabbar(br):
       const lin = (pb.backgroundImage.match(/linear-gradient\\((?:[^()]|\\([^()]*\\))*\\)/g) || []);
       const flatWash = lin.map(g => Math.min.apply(null, whites(g).concat([1])));
       const inset = (pb.boxShadow.match(/rgba?\\([^)]*\\)[^,]*inset|inset[^,]*rgba?\\([^)]*\\)/g) || []).join(' ');
-      return { labs, settings: !!document.getElementById('bottomtab-settings'), flatWash,
+      return { labs, settings: !!document.getElementById('bottomtab-settings'), flatWash, fill: rgb(pb.backgroundColor),
                rim: Math.max.apply(null, whites(inset).concat([0])),
                tabs: tabs.map(t => { const b = t.getBoundingClientRect(); return { id: t.id, cx: b.left + b.width / 2, cy: b.top + b.height / 2, h: b.height, w: b.width }; }) }; }""")
     ids = [l["id"] for l in r["labs"]]
@@ -25952,8 +25952,15 @@ def check_b323t_tabbar(br):
     check("every tab label is white, not grey (the one you are on full white)",
           all(white(l["c"]) for l in r["labs"]) and all(l["c"][:3] == [255, 255, 255] and len(l["c"]) == 3 for l in r["labs"] if l["active"]),
           [(l["id"], l["c"]) for l in r["labs"]])
-    check("the resting selected tab is clear glass with a bright rim: no flat white wash, a rim of 30%+ white",
-          r["flatWash"] and max(r["flatWash"]) < .06 and r["rim"] >= .3, {"flatWash": r["flatWash"], "rim": r["rim"]})
+    # MOVED IN 325 (b325f), with her words: "When you have one selected, it
+    # should kinda grey." 323's clear pill with a 30%+ white rim is what the
+    # PRESS becomes now; at rest it is iOS 26's grey platter - a flat white
+    # fill (her reference recording: 11% over the bar) and no bright rim.
+    # The lens, its swell and its landing are held by tools/check-b325-f.py.
+    fill = r.get("fill") or []
+    fw = (fill[3] if len(fill) > 3 else 1) if len(fill) >= 3 and min(fill[:3]) > 200 else 0
+    check("the resting selected tab is a grey platter (\"it should kinda grey\"): a flat 8-16% white fill, no bright rim (<=20%)",
+          .08 <= fw <= .16 and r["rim"] <= .2, {"fill": fill, "rim": r["rim"]})
     check("every tab is at least 44px tall and wide", all(t["h"] >= 44 and t["w"] >= 44 for t in r["tabs"]), r["tabs"])
     T = {t["id"]: t for t in r["tabs"]}
     pg.evaluate(B323T_SPY)
@@ -25964,9 +25971,14 @@ def check_b323t_tabbar(br):
     cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": home, "y": y}]})
     pg.wait_for_timeout(450)
     d = pg.evaluate(B323T_LENS)
+    # (325: the bar swells while it is held - her reference's 1.084 x 1.043,
+    # about its centre - so the tab the lens sits on moves out with it)
+    bar0 = pg.evaluate("() => { const b = document.getElementById('bottomtabs'); return [b.offsetWidth, b.getBoundingClientRect().left + b.getBoundingClientRect().width / 2]; }")
+    bw = pg.evaluate("() => document.getElementById('bottomtabs').getBoundingClientRect().width")
+    home_now = bar0[1] + (home - bar0[1]) * bw / bar0[0]
     check("on a press the lens pops out: taller than the bar, over its top and bottom edges, clear of taps",
           d["lens"] and d["up"] and d["op"] > .95 and d["h"] > d["barH"] + 6 and d["top"] < d["barTop"] - 3 and d["bottom"] > d["barBottom"] + 3
-          and d["pe"] == "none" and abs(d["cx"] - home) < 4, d)
+          and d["pe"] == "none" and abs(d["cx"] - home_now) < 4, dict(d, homeNow=home_now))
     # 2. it follows the finger along the bar
     follow = []
     mid = (T["bottomtab-profile"]["cx"] + lb) / 2
@@ -26009,7 +26021,9 @@ def check_b323t_tabbar(br):
     up = [x for x in tp["lens"] if x[3]]
     tap_snd = _b323t_sounds(pg.evaluate("() => __snd.splice(0)"))
     check("a tap pops the lens out over the bar's edges and glides it from Leaderboard to Calendar",
-          bool(up) and max(x[2] for x in up) > r["tabs"][0]["h"] + 8 and abs(up[0][1] - lb) < 30 and abs(up[-1][1] - cal) < 4
+          # (325: the tabs fill the bar's height now, so "over the bar's edges"
+          # is measured against the bar, not a tab)
+          bool(up) and max(x[2] for x in up) > d["barH"] / 1.043 + 1 and abs(up[0][1] - lb) < 30 and abs(up[-1][1] - cal) < 4
           and any(lb + 10 < x[1] < cal - 10 for x in up), {"n": len(up), "samples": [[round(v) for v in x[:3]] for x in up], "maxH": max([x[2] for x in up] or [0])})
     check("then it settles: Calendar lit, the calendar showing, the resting pill under Calendar",
           tp["lit"] == ["bottomtab-calendar"] and tp["calShown"] and abs(tp["pill"] - cal) < 3, {k: tp[k] for k in ("lit", "calShown", "pill")})

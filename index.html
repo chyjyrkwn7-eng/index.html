@@ -9108,6 +9108,37 @@
      what the row was actually missing once width:auto took away the
      space justify-content used to distribute. */
   .bottomtabs-navrow{ position:relative; display:flex; justify-content:space-around; width:100%; gap:.2rem; touch-action:none; }
+  /* ---- THE PLAIN BAR: FOUR EVEN CELLS, THE BAR'S OWN FOOTPRINT (build 325) ----
+     "Ensure the lens size is perfect and ensure the selected tabs lens is
+     perfect and matches." iOS 26 gives every tab an equal share of the bar
+     and the selected platter is the same capsule on each. Here every tab
+     was as wide as its label plus 1.15rem a side, so the pill was 72px on
+     Home and 115 on Leaderboard on a 17 Pro Max. Now the row keeps exactly
+     the width the bar had (23.7rem - Home's 379px - or the screen less
+     1.5rem on a phone, 30.14rem from tablet up, which is 484px) and the
+     tabs share it equally (flex 1 1 0); a label that needs more than its
+     share keeps its own minimum ("Leaderboard"), so on a Pro Max the
+     cells are all 90px instead of 72/77/115/91 (no gap between them: the
+     platter's own overhang is the gap). Only a 320px phone cannot share
+     evenly - "Leaderboard" needs 84px of its 69 - and gives it the room. Her reference recording
+     (an iOS 26 bar, measured frame by frame at 3x) sets the rest: the
+     platter is 4pt inside the bar at the top, the bottom and the end, and
+     4pt WIDER than its tab on each side, so the bar keeps 9px of padding
+     at its ends and none top and bottom (the tabs take that height
+     themselves: the bar is the same 79px, 101 from tablet up), and the
+     platter is the tab less 5px top and bottom, plus 4px each side - 6px
+     from the bar's edge all round on the end tabs. The Start bar
+     (has-start-tab) is untouched. */
+  .bottomtabs:not(.has-start-tab){ padding:0 9px; }
+  .bottomtabs:not(.has-start-tab) .bottomtabs-navrow{ width:min(calc(23.7rem - 20px), calc(100vw - 1.5rem - 20px)); gap:0; }
+  .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab{ flex:1 1 0; min-width:auto; padding:.95rem .3rem; }
+  @media (max-width:22.5rem){
+    .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab{ padding-left:.25rem; padding-right:.25rem; }
+  }
+  @media (min-width:40rem){
+    .bottomtabs:not(.has-start-tab) .bottomtabs-navrow{ width:min(calc(30.14rem - 18px), calc(100vw - 1.5rem - 20px)); }
+    .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab{ padding:1.27rem .45rem; }
+  }
   /* The sliding "glass bubble" behind the active tab \u2014 positioned and
      sized by JS to match whichever tab is active, so switching tabs
      reads as one pill fluidly moving and reshaping itself rather than
@@ -9146,28 +9177,23 @@
     transform-origin:0 50%; will-change:transform;
     opacity:0;
   }
-  /* CLEAR GLASS, NOT A GREY PILL (build 323). "The Liquid Glass in the
-     screenshot I circled is good, that's the best, it should look more
-     like that when that's the tab you are on." The circled one was the
-     drag lens: almost no fill, a bright rim, the bar showing straight
-     through. The flat 12% white wash that made the old pill read as
-     "greyed out" is gone; what is left is a faint top-lit sheen, a
-     bright hairline rim with a specular along the top, a split of colour
-     where the glass bends the light (cool along the top edge, warm along
-     the bottom), a darker band just inside the rim for the thickness of
-     the glass, and a soft shadow under it. Same box, same 5px inset, so
-     it never touches the bar's own edge. */
+  /* THE SELECTED TAB SITS ON A GREY PLATTER (build 325). "When you have
+     one selected, it should kinda grey." iOS 26's selected tab is a soft
+     grey capsule, not a ring of glass: build 323's clear pill (a 34% white
+     rim, a specular, colour fringes) is what the PRESS turns it into now -
+     the lens below - and at rest it is a flat translucent grey with a
+     hairline of light along its top. 5px inside the tab top and bottom and
+     4px past it each side (the reference: 4pt inside the bar, 4pt past the
+     tab), and the plain bar's 9px end padding puts the end tabs' platter
+     the same 6px from the bar's edge at the top, the bottom and the end:
+     concentric with the bar, as iOS draws it. */
   .bottomtabs-slider::before{
-    content:""; position:absolute; inset:5px 2px; border-radius:999px; pointer-events:none;
-    background-image:radial-gradient(120% 85% at 50% -10%, rgba(255,255,255,.13), rgba(255,255,255,0) 62%),
-      linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01) 55%, rgba(255,255,255,.045));
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.34),
-      inset 0 1.5px 0 rgba(255,255,255,.5),
-      inset 0 3px 3px -2px rgba(140,215,255,.32),
-      inset 0 -3px 3px -2px rgba(255,150,215,.26),
-      inset 0 0 0 3px rgba(0,0,0,.08),
-      inset 0 0 12px rgba(255,255,255,.05),
-      0 3px 12px rgba(0,0,0,.28);
+    content:""; position:absolute; inset:5px -4px; border-radius:999px; pointer-events:none;
+    /* her recording: the bar reads 34 and the platter 59 on a 255 scale, an
+       11% white over the bar; flat, with the faintest top light */
+    background-color:rgba(255,255,255,.11);
+    background-image:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 50%);
+    box-shadow:inset 0 .75px 0 rgba(255,255,255,.1);
     transform-origin:50% 50%;
   }
   /* THE LENS (build 312), from the iOS tab bar Madison sent: while the
@@ -9197,47 +9223,102 @@
      .has-glass-refraction JS/CSS pairing elsewhere, which already
      degrades safely on its own since it only ever adds to an existing
      solid background rather than replacing one. */
-  @supports not (backdrop-filter: blur(1px)){
-    .bottomtabs-slider::before{ background-color:rgba(255,255,255,.4); }
-  }
+  /* (build 325: the platter carries its own grey fill now, so the old
+     no-backdrop-filter fallback - a 40% white wash - would only make it
+     glare; it went.) */
   .bottomtabs-slider.ready{ opacity:1; }
   /* Instant position tracking while a finger is actively dragging the
      pill — no transition at all, so every pointermove lands exactly
      where the finger is with zero lag, rather than perpetually
      easing toward a target that keeps moving out from under it. */
   .bottomtabs-slider.dragging{ transition:none; }
-  /* While the lens is out the resting pill steps aside at once - one
-     piece of glass, never two (build 323) - and fades back in under the
-     lens as it shrinks onto the chosen tab. */
-  .bottomtabs.lens-up .bottomtabs-slider{ opacity:0; transition:none; }
-  /* THE LENS (build 323) - see the JS beside setupBottomTabs' drag code.
-     On <body>, above the bar (200) and under the tour (205). The outer box
-     only moves (translate); the body inside it only scales (the pop and
-     the shrink back), each on its own transition. Transform and opacity,
-     nothing else, and no filter of any kind: it is a near-clear fill and a
-     rim, which is what the reference's lens is. */
+  /* (build 325) The platter's fade out under the lens and back in as the
+     lens settles is the script's (Web Animations on the slider), so it is
+     timed to the lens frame for frame - see lensSettle. */
+  /* ---- THE LENS (build 325) - see tabLens* beside setupBottomTabs' drag code ----
+     "There is improvements but it needs to be better ... You did well with
+     updating the toggle switches, now do the same. We need this to be
+     identical!!! ... Ensure the lens size is perfect and ensure the
+     selected tabs lens is perfect and matches." Build 323's lens was one
+     box scaled to every size it passed through, and a capsule scaled by
+     two different amounts is not a capsule: the ends went to ovals at the
+     start of the pop, while it crossed tabs and as it shrank, and the box
+     it shrank into was not the pill it handed over to.
+     Now the lens is a TRUE capsule at every size: two halves, each a
+     capsule scaled the same both ways and clipped at the lens's centre
+     line (.tab-lens-clip), moved apart and together by translate alone.
+     Any width and any height is exact, so it can start as exactly the
+     selected tab's platter, swell to stand proud of the bar's top and
+     bottom, squash and stretch with the finger's speed, and settle back
+     into exactly the platter on the tab it lands on. The numbers are her
+     reference recording's (an iOS 26 bar at 30fps; see LENS).
+     It lives in the tab row, behind the tabs and in front of the platter,
+     so the tab it is over is drawn - magnified - inside the glass and is
+     never dimmed by it. Its rim is the switch's lens (build 324, the
+     .nsw-lens-* layers) - see .tab-lens-glass.
+     .tab-lens-body is an invisible frame the size of the lens, for
+     measuring. Transform and opacity only; no filter of any kind. */
   .tab-lens{
-    position:fixed; left:0; top:0; width:0; height:0; z-index:201; pointer-events:none;
-    opacity:0; visibility:hidden; will-change:transform, opacity;
-    transition:opacity .2s ease, visibility 0s linear .2s;
+    position:absolute; left:0; top:0; width:0; height:0; z-index:0; pointer-events:none;
+    opacity:0; visibility:hidden; will-change:opacity; isolation:isolate;
   }
-  .tab-lens.is-up{ opacity:1; visibility:visible; }
+  .tab-lens.is-up{ visibility:visible; }
   .tab-lens-body{
-    position:absolute; inset:0; border-radius:999px; transform-origin:50% 50%; will-change:transform;
-    background-image:radial-gradient(110% 80% at 50% -8%, rgba(255,255,255,.11), rgba(255,255,255,0) 58%),
-      radial-gradient(90% 60% at 50% 112%, rgba(255,255,255,.06), rgba(255,255,255,0) 70%),
-      linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,.008) 50%, rgba(255,255,255,.03));
-    box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.58),
-      inset 0 2px 1px -.5px rgba(255,255,255,.85),
-      inset 0 -1.5px 1px -.5px rgba(255,255,255,.4),
-      inset 0 5px 5px -3px rgba(130,212,255,.5),
-      inset 0 -5px 5px -3px rgba(255,135,210,.42),
-      inset 4px 0 6px -4px rgba(150,225,255,.3),
-      inset -4px 0 6px -4px rgba(255,170,225,.28),
-      inset 0 0 0 4px rgba(0,0,0,.1),
-      inset 0 0 18px rgba(255,255,255,.07),
-      0 10px 26px rgba(0,0,0,.38), 0 2px 5px rgba(0,0,0,.28);
+    position:absolute; left:0; top:0; visibility:hidden; pointer-events:none;
+    transform-origin:0 0; will-change:transform;
   }
+  /* NO SEAM. The halves meet in an 8px band across the centre line where
+     each fades into the other (a mask fixed to its clip, so moving it
+     repaints nothing), and inside the lens's own group they ADD
+     (plus-lighter) rather than lay one over the other: two fades that sum
+     to one, added, are exactly one piece of glass. Laid over each other,
+     the compositor drew the shared edge twice - a 1px line down the
+     middle of the lens, brighter through its highlight. */
+  .tab-lens-clip{ position:absolute; left:0; top:0; overflow:hidden; pointer-events:none; will-change:transform; mix-blend-mode:plus-lighter; }
+  .tab-lens-clip.is-l{ -webkit-mask-image:linear-gradient(to left, transparent, #000 8px); mask-image:linear-gradient(to left, transparent, #000 8px); }
+  .tab-lens-clip.is-r{ -webkit-mask-image:linear-gradient(to right, transparent, #000 8px); mask-image:linear-gradient(to right, transparent, #000 8px); }
+  .tab-lens-cap{ position:absolute; left:0; top:0; border-radius:999px; will-change:transform; }
+  /* each half scales from its own end, which is what keeps that end where
+     the lens's end is while the half grows or shrinks */
+  .tab-lens-cap.is-l{ transform-origin:0 50%; }
+  .tab-lens-cap.is-r{ transform-origin:100% 50%; }
+  /* Two coats on each half, cross-faded: the GLASS (what you see while it
+     is held) and the GREY (the platter's own colour) - her recording shows
+     the lens turning grey while it is still shrinking, so the last frames
+     of a landing are already the platter, and the hand-over is exact. */
+  .tab-lens-glass, .tab-lens-grey{ position:absolute; inset:0; border-radius:inherit; will-change:opacity; }
+  .tab-lens-grey{ background-color:rgba(255,255,255,.11); box-shadow:inset 0 .75px 0 rgba(255,255,255,.1); opacity:0; }
+  /* The bar's own glass, not darkened: in the reference the inside of the
+     lens is the bar, magnified, and the bar's rim does not run through it
+     (it is bent out of the way), so the lens carries half again of the
+     bar's fill, a shade lighter - the bar's rim line all but gone under
+     it, and standing proud of the bar it reads as more of the bar's glass. The rim is the switch lens's (build 324):
+     .75px of 40% white, a brighter catch-light along the top and a fainter
+     one along the bottom, the cool fringe at the top and the warm one at
+     the bottom, with the grey edge band of what lies under the rim -
+     plus the rainbow the reference throws off the two round ends. A
+     faint shadow only; the reference's lens casts almost none. */
+  .tab-lens-glass{
+    background-color:rgba(54,57,66,.5);
+    background-image:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,0) 30%),
+      linear-gradient(0deg, rgba(255,255,255,.05), rgba(255,255,255,0) 25%);
+    box-shadow:inset 0 0 0 .75px rgba(255,255,255,.4),
+      inset 0 1.5px 1px -.5px rgba(255,255,255,.7),
+      inset 0 -1px 1px -.5px rgba(255,255,255,.3),
+      inset 0 3px 4px -3px rgba(130,212,255,.35),
+      inset 0 -3px 4px -3px rgba(255,135,210,.3),
+      inset 4px 0 5px -4px rgba(120,200,255,.32),
+      inset -4px 0 5px -4px rgba(255,190,120,.3),
+      inset 0 0 0 2px rgba(150,150,160,.28),
+      inset 0 0 7px 2.5px rgba(150,150,160,.16),
+      0 3px 10px rgba(0,0,0,.18);
+  }
+  /* The reference's bar, held, is 8.4% wider and 4.3% taller (915x185 to
+     992x193 device px), in about four frames, and back in about five. The
+     swell is a Web Animation (lensBarSwell), not a transition on a class: a
+     tap's press and release land in one frame, and a class added and taken
+     off in one frame never swells at all. Reduce motion: no lens, no swell. */
+  .bottomtabs{ transform-origin:0 50%; }
   /* the tabs under the glass are scaled by the lens (an inline transform);
      a layer each so that is a composite, not a repaint */
   .bottomtabs.lens-up .bottomtabs-navrow .bottomtab{ will-change:transform; }
@@ -9438,7 +9519,9 @@
     .bottomtabs.has-start-tab .bottomtabs-extrarow .bottomtab-start{ width:clamp(5rem, 22vw, 5.9rem); padding:0 .6rem; }
   }
   @media (min-width:40rem){
-    .bottomtabs:not(.has-start-tab){ padding:.55rem; gap:.3rem; }
+    /* padding:0 since build 325 - the tabs fill the bar and the platter's
+       own 5px inset is the margin; see the plain-bar block by .bottomtabs-navrow */
+    .bottomtabs:not(.has-start-tab){ padding:0 9px; gap:.3rem; }
     .bottomtabs:not(.has-start-tab) .bottomtab{ padding:.72rem 1.55rem; gap:.2rem; }
     .bottomtabs:not(.has-start-tab) .bottomtab-icon{ width:2.2rem; height:2.2rem; }
     .bottomtabs:not(.has-start-tab) .bottomtab-icon-avatar{ width:2.2rem; height:2.2rem; }
@@ -9785,7 +9868,11 @@
     background:rgba(228,233,236,.68);
     will-change:backdrop-filter; backdrop-filter:blur(16px) saturate(2.2) brightness(1.05); -webkit-backdrop-filter:blur(16px) saturate(2.2) brightness(1.05);
     box-shadow:0 8px 32px rgba(18,26,32,.18), inset 0 1px 1px rgba(255,255,255,.6), inset 0 -1px 1px rgba(18,26,32,.05);
-    position:fixed; overflow:hidden;
+    /* overflow VISIBLE since build 325: the press lens is drawn in the tab
+       row and has to stand 7px proud of the bar's top and bottom. The one
+       thing the bar was clipping - its sheen, a layer four times its width -
+       is clipped by its own wrapper now (.bottomtabs-sheen, below). */
+    position:fixed; overflow:visible;
   }
   /* Layered on top of the plain-blur base above as a progressive
      enhancement \u2014 only applied once JS has confirmed the browser
@@ -9826,7 +9913,10 @@
     /* A clearer rim (build 312): a hairline all the way round and a
        brighter catch-light along the top, as the reference's bar has -
        the edge of a piece of glass, not of a dark plate. */
-    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 40%), rgba(20,24,30,.8);
+    /* (build 325) A shade lighter than the page, as her reference's bar
+       is: there the bar reads 34 on a 20 page (255 scale); here it read 23
+       on 24, the same as what was behind it, and only its rim drew it. */
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 40%), rgba(42,45,53,.8);
     box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.07), inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 1px rgba(0,0,0,.3);
   }
   /* A slow, subtly shifting sheen across the glass \u2014 real glass and
@@ -9840,12 +9930,18 @@
      now, slid with transform, which the compositor does on its own. The
      blend went with it: overlay of 18% white on this dark glass is a
      faint lift, so it is a plain 8% instead. */
-  [data-layout="modern"] .bottomtabs::before{
+  /* The sheen's own clip (build 325): the bar no longer clips its
+     children, so the sheen sits in a bar-shaped wrapper that does. */
+  .bottomtabs-sheen{ display:none; }
+  [data-layout="modern"] .bottomtabs-sheen{
+    display:block; position:absolute; inset:0; border-radius:inherit; overflow:hidden; pointer-events:none; z-index:0;
+  }
+  [data-layout="modern"] .bottomtabs-sheen::before{
     content:""; position:absolute; top:0; bottom:0; left:-150%; width:400%; pointer-events:none; z-index:0;
     background:linear-gradient(120deg, transparent 38%, rgba(255,255,255,.22) 50%, transparent 62%);
     animation:glass-sheen 9s ease-in-out infinite;
   }
-  [data-theme="dark"][data-layout="modern"] .bottomtabs::before{
+  [data-theme="dark"][data-layout="modern"] .bottomtabs-sheen::before{
     background:linear-gradient(120deg, transparent 38%, rgba(255,255,255,.08) 50%, transparent 62%);
   }
   @keyframes glass-sheen{
@@ -9853,7 +9949,7 @@
     50%{ transform:translate3d(18%,0,0); }
   }
   @media (prefers-reduced-motion:reduce){
-    [data-layout="modern"] .bottomtabs::before{ animation:none; }
+    [data-layout="modern"] .bottomtabs-sheen::before{ animation:none; }
   }
   body.has-floatbtn .backtotop{ bottom:5.25rem; }
   /* The actual fix for the reported overlap with the bottom tab bar
@@ -30512,6 +30608,7 @@
     </defs>
   </svg>
   <nav id="bottomtabs" class="bottomtabs" hidden aria-label="Main navigation">
+    <span class="bottomtabs-sheen" aria-hidden="true"></span>
     <div class="bottomtabs-navrow">
       <div class="bottomtabs-slider" id="bottomtabs-slider" aria-hidden="true"></div>
       <button type="button" class="bottomtab" id="bottomtab-home" data-dest="home">
@@ -120992,16 +121089,43 @@ function applyGlassRefraction(el, mapImgId){
      and the click handler has already put it there before the screen is
      built. */
   let bubbleAt = null;
+  /* IN THE ROW'S OWN COORDINATES (build 325), to the sub-pixel. A rect
+     read while the bar is swollen (.is-pressing scales it) or a tab is
+     magnified under the lens is undone by that scale; offsetLeft and
+     offsetWidth were tried first and are whole pixels, which put the
+     platter up to 1.3px off its tab's centre. Profile's centring nudge is
+     a relative `left`, which the rect includes. */
+  function tabBox(t){
+    const rr = navrow.getBoundingClientRect();
+    const k = rr.width / (parseFloat(getComputedStyle(navrow).width) || rr.width || 1);
+    const r = t.getBoundingClientRect();
+    let s = 1;
+    const m = t.style.transform ? getComputedStyle(t).transform : "none";
+    if(m && m !== "none"){ try{ s = new DOMMatrixReadOnly(m).a || 1; }catch(e){} }
+    const w = r.width / k / s, c = (r.left + r.width / 2 - rr.left) / k;
+    return { c, w, x: c - w / 2 };
+  }
   function slideBubbleToActiveTab(force){
     const activeTab = navrow.querySelector(".bottomtab.active");
     if(!activeTab){ slider.classList.remove("ready"); bubbleAt = null; return; }
     if(force !== true && bubbleAt === activeTab && slider.classList.contains("ready")) return;
-    const rowRect = navrow.getBoundingClientRect();
-    const tabRect = activeTab.getBoundingClientRect();
-    if(!tabRect.width){ bubbleAt = null; return; }
-    placeBubble(tabRect.left - rowRect.left, tabRect.width, slider.classList.contains("ready") && force !== true);
+    if(!activeTab.offsetWidth){ bubbleAt = null; return; }
+    const tb = tabBox(activeTab);
+    placeBubble(tb.x, tb.w, slider.classList.contains("ready") && force !== true);
     slider.classList.add("ready");
     bubbleAt = activeTab;
+  }
+  /* THE PLATTER IS NEVER TALLER THAN IT IS WIDE (build 325): on a 320px
+     phone a tab is 66px wide and 77 tall, and the platter came out an
+     upright capsule. The slider box is cut there so the platter is no
+     taller than the narrowest tab's platter is wide: a circle at worst. Everywhere else the box is the row's full height. */
+  /* the platter's inset in its tab: .bottomtabs-slider::before's 5px -4px */
+  const PILL_IN_Y = 5, PILL_IN_X = -4;
+  function pillBoxH(){
+    const rowH = parseFloat(getComputedStyle(navrow).height) || navrow.offsetHeight;
+    let minW = Infinity;
+    navrow.querySelectorAll(".bottomtab").forEach(t => { if(!t.hidden && t.offsetWidth) minW = Math.min(minW, tabBox(t).w); });
+    return { rowH, boxH: Math.min(rowH, minW - 2 * PILL_IN_X + 2 * PILL_IN_Y) };
   }
   /* ---- THE BUBBLE MOVES ON THE COMPOSITOR ALONE (build 310) ----
      "There is still lag when clicking a new tab, the bottom tab doesn't
@@ -121018,6 +121142,9 @@ function applyGlassRefraction(el, mapImgId){
     bubbleX = x; bubbleW = w;
     slider.style.transition = "none";
     slider.style.width = w + "px";
+    const vb = pillBoxH();
+    if(vb.boxH < vb.rowH - .5){ slider.style.top = ((vb.rowH - vb.boxH) / 2).toFixed(2) + "px"; slider.style.height = vb.boxH + "px"; }
+    else if(slider.style.height){ slider.style.top = ""; slider.style.height = ""; }
     if(!animate || fromX == null || !fromW || slider.classList.contains("dragging")){
       slider.style.transform = "translateX(" + x + "px)";
       void slider.offsetWidth; slider.style.transition = "";
@@ -121082,9 +121209,8 @@ function applyGlassRefraction(el, mapImgId){
     return closest;
   }
   function slideBubbleToTab(tabEl){
-    const rowRect = navrow.getBoundingClientRect();
-    const tabRect = tabEl.getBoundingClientRect();
-    placeBubble(tabRect.left - rowRect.left, tabRect.width, true);
+    const tb = tabBox(tabEl);
+    placeBubble(tb.x, tb.w, true);
     bubbleAt = tabEl;   /* where it really is now, so a snap back measures */
   }
   /* A TAP THAT WOBBLES IS STILL A TAP (build 314). Any pointermove at
@@ -121101,37 +121227,21 @@ function applyGlassRefraction(el, mapImgId){
   navrow.addEventListener("pointerdown", (e) => {
     if(bar.hidden) return;
     tabDragActive = true; tabDragMoved = false; tabDragPointerId = e.pointerId; tabDragX0 = e.clientX;
-    /* the lens pops out under the finger at once (build 323) */
+    /* the lens lifts out of the platter under the finger at once (build 323, 325) */
     if(e.isPrimary !== false && (e.button === 0 || e.button === undefined || e.pointerType !== "mouse")) lensDown(e.clientX);
   });
   navrow.addEventListener("pointermove", (e) => {
     if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
     if(!tabDragMoved && Math.abs(e.clientX - tabDragX0) < TAB_DRAG_SLOP) return;
-    /* No transition while actively tracking the finger — this is the
-       actual cause of drag feeling laggy: the slider's .45s easing
-       is right for a discrete tap-to-tap jump, but pointermove fires
-       many times a second, and each call was retargeting that same
-       .45s animation before the previous one ever finished, so the
-       pill was perpetually chasing a moving target instead of
-       tracking the finger directly. */
-    /* Pointer capture only once a drag is actually confirmed here
-       (not on every pointerdown, which would also fire for a plain
-       tap and redirect its click away from the real target button)
-       — this is the fix for drag feeling unpredictable or getting
-       stuck: without it, if the finger drifts even slightly outside
-       navrow's own bounds mid-gesture (easy on a real swipe, which
-       is rarely perfectly horizontal), the browser can simply stop
-       delivering pointermove/pointerup here at all. Capturing right
-       when tabDragMoved first becomes true guarantees every
-       subsequent event for this confirmed drag keeps arriving at
-       navrow regardless of where the finger wanders, while a plain
-       tap (which never reaches this line) is completely unaffected. */
-    if(!tabDragMoved){ slider.classList.add("dragging"); navrow.setPointerCapture(e.pointerId); }
+    /* Pointer capture only once a drag is actually confirmed (a plain
+       tap's click must still reach its own button), so a finger that
+       wanders off the bar mid-drag keeps delivering moves and the up. */
+    if(!tabDragMoved){ slider.classList.add("dragging"); try{ navrow.setPointerCapture(e.pointerId); }catch(err){} }
     tabDragMoved = true;
-    /* The lens follows the finger itself (build 323) - the resting pill is
-       hidden under it and is put in place once, on release, so a drag no
-       longer forces a layout on every move. */
-    if(lensGeo){ lensMove(e.clientX); return; }
+    /* The lens follows the finger (build 323, 325); the platter waits,
+       hidden, and is put in place once, on release. Reduce motion has no
+       lens: the platter itself steps from tab to tab. */
+    if(lensG){ lensMove(e.clientX); return; }
     const tab = tabAtPoint(e.clientX);
     if(tab) slideBubbleToTab(tab);
   });
@@ -121139,33 +121249,17 @@ function applyGlassRefraction(el, mapImgId){
     if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
     tabDragActive = false; tabDragPointerId = null;
     slider.classList.remove("dragging");
-    /* the lens settles on the tab it was let go over and shrinks back into
-       the resting pill there; a cancelled touch takes it home (build 323) */
+    /* the lens settles on the tab it was let go over and becomes the
+       platter there; a cancelled touch takes it home */
     if(e.type === "pointercancel") lensRelease(null);
-    else lensRelease(lensGeo ? lensTabAt(e.clientX) : tabAtPoint(e.clientX));
+    else lensRelease(lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX));
     if(!tabDragMoved){ return; } // a plain tap: let the tab's own click handler do its normal thing
     if(e.type === "pointercancel"){ slideBubbleToActiveTab(true); return; }
-    /* This is the actual cause of drag-to-a-different-tab
-       occasionally landing on the wrong screen: releasing a pointer
-       still synthesizes a native click on whatever element is
-       literally under the cursor at that moment, completely separate
-       from this handler's own tabAtPoint() calculation. That
-       synthesized click was firing AFTER this function already
-       called the correct tab's destination, and its own handler
-       (targeting whatever's physically at the release point, which
-       can differ from the "closest tab center" this function uses)
-       would silently navigate again and win. preventDefault on the
-       pointerup is what stops that synthetic click from ever being
-       dispatched in the first place. */
+    /* preventDefault on the pointerup stops the click a release would
+       synthesise on whatever is under the finger, which used to navigate
+       a second time and win. */
     e.preventDefault();
-    const tab = tabAtPoint(e.clientX);
-    /* Same navigation lock the plain-click handler uses, applied here
-       too — endTabDrag calls tabDests[tab.id]() directly rather than
-       going through a tab's own click handler, so without this the
-       debounce that stops rapid taps from overlapping never covered
-       drag-release at all, which is exactly the kind of gap that
-       left quick swipe-then-swipe-again sequences able to fire
-       overlapping navigations. */
+    const tab = lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX);
     /* one slide sound for a drag that lands somewhere new: the click a
        captured pointer releases is on the row, not a tab, so the shared
        tap layer says nothing for it (build 323) */
@@ -121178,204 +121272,454 @@ function applyGlassRefraction(el, mapImgId){
       setTimeout(() => { bar.dataset.navigating = "0"; }, 130);
       tabDests[tab.id]();
     }
-    else slideBubbleToActiveTab(true); // dropped somewhere odd (e.g. off the bar) \u2014 snap back
+    else slideBubbleToActiveTab(true); // dropped somewhere odd (e.g. off the bar) — snap back
   }
   navrow.addEventListener("pointerup", endTabDrag);
   navrow.addEventListener("pointercancel", endTabDrag);
 
-  /* ---- THE LENS (build 323) ----
-     "When I change tabs by tapping or swiping over the Liquid Glass bottom
-     tab bubble doesn't pop out and follow." The iOS 26 tab bar in her
-     recording: touch the bar and the selection lifts out of it as a clear
-     glass lens - taller and wider than the bar, poking out above and
-     below, a bright rim with a split of colour at its top and bottom edge,
-     the tab under it magnified - follows the finger, glides to a tapped
-     tab, and on release settles there and shrinks back into the resting
-     pill.
-     It lives on <body>, not in the bar: the bar is overflow:hidden (its
-     sheen is a layer four times its width), which would clip the lens to
-     the bar's own outline. Measured once per touch; after that every
-     frame is a transform on the lens and on the tabs under it, and the
-     tap's glide and settle are CSS transitions, so the compositor carries
-     them while the new screen is being built. pointer-events:none - it
-     never takes a tap. Reduce motion: the lens stays the pill's size and
-     only moves. */
+  /* ---- THE LENS, AS iOS 26 DRAWS IT (build 325) ----
+     "the tab bar lens Liquid Glass. There is improvements but it needs to
+     be better ... pay very close attention to the button tab and how it
+     functions. We need that. You did well with updating the toggle
+     switches, now do the same. We need this to be identical!!! ... When
+     you have one selected, it should kinda grey. Ensure the lens size is
+     perfect and ensure the selected tabs lens is perfect and matches."
+     At rest the selected tab sits on a grey platter (.bottomtabs-slider).
+     Touch the bar and the platter LIFTS: the lens starts as exactly that
+     platter - same place, same size - and swells into clear glass 7px
+     proud of the bar's top and bottom, with the same overhang past the
+     platter's ends, while the bar swells 3% and the tab under it grows.
+     Held, it stays. Dragged, it follows the finger on a spring (a touch
+     behind it), stretching along its path and thinning with speed, and
+     takes each tab's width as it crosses it. Let go and it springs onto
+     the tab under the finger (a little overshoot) and shrinks back into
+     exactly that tab's platter, which takes over from it as its glass
+     fades. A tap is the same thing, short: it swells for at least
+     LENS.minUp ms before it settles, and glides there if the tap was on
+     another tab.
+     THE SHAPE IS ALWAYS A TRUE CAPSULE. It is drawn as two halves
+     (.tab-lens-clip > .tab-lens-cap): each half is a capsule scaled the
+     SAME both ways (its height / H0) and anchored at its own end, and
+     each is clipped at the lens's centre line - so any width and any
+     height is a capsule with round ends, and every change is a translate
+     or a uniform scale. Build 323's single box scaled two ways at once
+     turned the ends into ovals whenever its width and height changed by
+     different amounts, which was every moment of the pop and the settle.
+     ON THE COMPOSITOR. Each lift and each settle is a spring simulated
+     here up front and handed to Web Animations as a frame-by-frame track
+     (60 keyframes a second, transform only), so it plays through the
+     screen being built on the next frame (the 279/281 lesson); the drag
+     is a requestAnimationFrame spring, while nothing else is happening.
+     Opacity: the lens fades in over the platter as it lifts and out over
+     it as it lands, and the platter does the opposite on the same clock.
+     Reduce motion: no lens, no swell - the platter moves on its own. */
   const lens = document.createElement("div");
   lens.id = "bottomtabs-lens"; lens.className = "tab-lens"; lens.setAttribute("aria-hidden", "true");
-  const lensBody = document.createElement("div");
-  lensBody.className = "tab-lens-body";
-  lens.appendChild(lensBody);
-  document.body.appendChild(lens);
-  const LENS_PAD_X = 12, LENS_PAD_Y = 9, LENS_MAG = 0.14;
-  const LENS_EASE = "cubic-bezier(.3,1.32,.5,1)";
-  let lensGeo = null, lensAt = null, lensT1 = null, lensT2 = null;
+  const mkLens = (cls, parent) => { const el = document.createElement("div"); el.className = cls; parent.appendChild(el); return el; };
+  const lensBody = mkLens("tab-lens-body", lens);
+  const lensClipL = mkLens("tab-lens-clip is-l", lens), lensCapL = mkLens("tab-lens-cap is-l", lensClipL);
+  const lensClipR = mkLens("tab-lens-clip is-r", lens), lensCapR = mkLens("tab-lens-cap is-r", lensClipR);
+  const LENS_ELS = [lensBody, lensClipL, lensCapL, lensClipR, lensCapR];
+  const LENS_GLASS = [mkLens("tab-lens-glass", lensCapL), mkLens("tab-lens-glass", lensCapR)];
+  const LENS_GREY = [mkLens("tab-lens-grey", lensCapL), mkLens("tab-lens-grey", lensCapR)];
+  /* behind the tabs, in front of the platter: the tab it is over is drawn
+     inside the glass, full strength */
+  navrow.insertBefore(lens, slider.nextSibling);
+  /* THE NUMBERS ARE HER REFERENCE RECORDING'S (an iOS 26 tab bar, 3x, read
+     frame by frame at 30fps), in the row's own coordinates - the bar's
+     swell (.is-pressing, 1.084 x 1.043) multiplies all of them on screen.
+     tall: the lens's height as a share of the bar's (222-235 device px
+     over a bar swollen to 193: 1.15-1.22, held 1.19).
+     wide: its width as a share of the platter's (305-341 over 325 = ~1.03),
+     and aspect: never narrower than this for its height (the reference's
+     held lens is 1.4 to 1; 1.2 keeps ours on an end tab inside the bar's
+     end, where the reference's sits).
+     mag: the tab under the middle of it grows by this, which with the
+     bar's swell is the reference's 1.23. stretch/stretchMax: how far it
+     lengthens per px/s of travel, and at most; it keeps its AREA
+     (416x191 against 330x240 at speed), and the stretch is a soft spring
+     of its own, so a lens that stops short wobbles (b0159: 284x268, taller
+     than it is held). give: how far it runs past an end tab (b0075: 16pt).
+     minUp: a tap is up this long before it settles (b0324-b0329); linger:
+     any lens stays up this long after the finger lifts (b0161-b0165).
+     Springs are [stiffness, damping ratio]: pop is up in ~4 frames
+     (b0324-b0327); glide crosses a tab in ~4 (b0324-b0328); settle shrinks
+     into the grey in ~5 with an overshoot (b0328-b0333, and b0161-b0172
+     for a drag let go). */
+  const LENS = { tall: 1.19, wide: 1.03, aspect: 1.2, mag: .16, stretch: .00026, stretchMax: .28, give: 22, minUp: 140, linger: 110,
+    pop: [2000, .72], glide: [1250, .8], settle: [520, .62], follow: [1700, .8], st: [520, .42] };
+  const LENS_DT = 1000 / 60;
+  let lensG = null;           /* this touch's geometry (null: no lens) */
+  let lensS = null, lensV = { cx: 0, W: 0, H: 0, st: 0 };   /* the lens now, and how fast it is changing */
+  let lensRun = null;         /* the Web Animations track playing, if any */
+  let lensAt = null, lensPressT = 0, lensT1 = null, lensFollow = null;
+  const canAnim = typeof lensBody.animate === "function";
   const lensCalm = () => document.documentElement.dataset.reduceMotion === "true"
-    || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+    || !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  /* Measured once per touch, in the row's own (unscaled) coordinates. */
   function lensMeasure(){
-    const rr = navrow.getBoundingClientRect(), bb = bar.getBoundingClientRect();
-    if(!rr.width || !bb.height) return null;
-    const tabs = [...navrow.querySelectorAll(".bottomtab")].map(t => { const r = t.getBoundingClientRect(); return { el: t, c: r.left + r.width / 2, w: r.width }; }).filter(t => t.w > 0);
+    const rowW = navrow.offsetWidth, barH = bar.offsetHeight;
+    if(!rowW || !barH) return null;
+    const tabs = [...navrow.querySelectorAll(".bottomtab")].filter(t => !t.hidden && t.offsetWidth > 0)
+      .map(t => { const b = tabBox(t); return { el: t, c: b.c, w: b.w }; });
     if(!tabs.length) return null;
-    const W = Math.round(Math.max.apply(null, tabs.map(t => t.w)) + LENS_PAD_X * 2);
-    const H = Math.round(bb.height + LENS_PAD_Y * 2);
-    /* the resting pill is the tab's box inset 2px across and 5px down
-       (.bottomtabs-slider::before), so that is the size it shrinks to */
-    return { tabs, W, H, top: bb.top + bb.height / 2 - H / 2, capH: Math.max(1, rr.height - 10),
-             lo: tabs[0].c - 6, hi: tabs[tabs.length - 1].c + 6 };
+    const vb = pillBoxH();
+    const pillH = Math.max(8, vb.boxH - 2 * PILL_IN_Y);
+    /* the bar beside a Start pill has icon-only tabs half the width; a
+       lens of the full height there would be a bubble twice its tab, so
+       it is held to 1.6 of its platter's width and its height follows */
+    const minPw = Math.min.apply(null, tabs.map(t => t.w - 2 * PILL_IN_X));
+    let lensH = Math.max(pillH + 8, barH * LENS.tall);
+    if(lensH * LENS.aspect > minPw * 1.6) lensH = Math.max(pillH + 8, Math.min(lensH, minPw * 1.6 / 1.1));
+    /* never rounder than the reference's held lens (330x235, 1.4 to 1):
+       a tab here is narrower for its height than one of its three, and
+       its platter's width alone made the lens a circle */
+    tabs.forEach(t => { t.pw = t.w - 2 * PILL_IN_X; t.lw = Math.max(t.pw * LENS.wide, Math.min(lensH * LENS.aspect, t.pw * 1.6)); });
+    const maxW = Math.max.apply(null, tabs.map(t => t.lw)) * (1 + LENS.stretchMax) + 6;
+    const H0 = Math.ceil(lensH * 1.08);
+    const kMin = pillH * .7 / H0;
+    /* a half is W0 wide at scale 1; at its smallest it still has to reach
+       past the centre line (and the 4px cross-fade band) by its own round end */
+    const W0 = Math.ceil(maxW / (2 * kMin) + H0 / 2 + 12);
+    return { tabs, cy: vb.rowH / 2, pillH, lensH, H0, W0, B: 100,
+             CW: Math.ceil(maxW / 2 + 44), CH: Math.ceil(H0 * 1.3 + 64),
+             lo: tabs[0].c, hi: tabs[tabs.length - 1].c };
   }
-  function lensTabAt(x){
-    if(!lensGeo) return tabAtPoint(x);
+  function lensSize(g){
+    const key = [g.W0, g.H0, g.CW, g.CH].join();
+    if(lens._key === key) return;
+    lens._key = key;
+    lensBody.style.width = g.B + "px"; lensBody.style.height = g.H0 + "px";
+    [lensCapL, lensCapR].forEach(c => { c.style.width = g.W0 + "px"; c.style.height = g.H0 + "px"; });
+    [lensClipL, lensClipR].forEach(c => { c.style.width = g.CW + "px"; c.style.height = g.CH + "px"; });
+  }
+  const lensInfo = el => lensG && lensG.tabs.find(t => t.el === el);
+  /* the client x of a finger, in the row's coordinates (the bar may be
+     part-way through its swell) */
+  function lensLocal(clientX){
+    const rr = navrow.getBoundingClientRect();
+    const k = rr.width / (parseFloat(getComputedStyle(navrow).width) || rr.width || 1);
+    return (clientX - rr.left) / k;
+  }
+  function lensTabAt(clientX){
+    if(!lensG) return tabAtPoint(clientX);
+    const x = lensLocal(clientX);
     let best = null, d = Infinity;
-    lensGeo.tabs.forEach(t => { const k = Math.abs(x - t.c); if(k < d){ d = k; best = t.el; } });
+    lensG.tabs.forEach(t => { const k = Math.abs(x - t.c); if(k < d){ d = k; best = t.el; } });
     return best;
   }
-  const lensInfo = el => lensGeo && lensGeo.tabs.find(t => t.el === el);
-  const capScale = t => [Math.max(.2, (t.w - 4) / lensGeo.W).toFixed(4), Math.max(.2, lensGeo.capH / lensGeo.H).toFixed(4)];
-  /* the lens is as wide as the tab under it (plus its overhang), blended
-     between two tabs while it is between them - a scaleX, never a width */
-  function lensPopScale(c){
-    const ts = lensGeo.tabs;
-    let w = ts[0].w;
-    if(c >= ts[ts.length - 1].c) w = ts[ts.length - 1].w;
-    else for(let i = 0; i < ts.length - 1; i++){
-      if(c >= ts[i].c && c <= ts[i + 1].c){ const f = (c - ts[i].c) / Math.max(1, ts[i + 1].c - ts[i].c); w = ts[i].w + (ts[i + 1].w - ts[i].w) * f; break; }
+  /* the lens's width at centre c: each tab's own, blended between two */
+  function lensWAt(c){
+    const ts = lensG.tabs;
+    if(c <= ts[0].c) return ts[0].lw;
+    if(c >= ts[ts.length - 1].c) return ts[ts.length - 1].lw;
+    for(let i = 0; i < ts.length - 1; i++) if(c <= ts[i + 1].c){
+      const f = (c - ts[i].c) / Math.max(1, ts[i + 1].c - ts[i].c);
+      return ts[i].lw + (ts[i + 1].lw - ts[i].lw) * f;
     }
-    return "scale(" + Math.min(1, (w + LENS_PAD_X * 2) / lensGeo.W).toFixed(4) + ",1)";
+    return ts[0].lw;
   }
-  function lensPlace(c){
-    lens.style.transform = "translate3d(" + (c - lensGeo.W / 2).toFixed(2) + "px," + lensGeo.top.toFixed(2) + "px,0)";
+  const lensLift = (g, H) => Math.max(0, Math.min(1, (H - g.pillH) / Math.max(1, g.lensH - g.pillH)));
+  /* how far it wants to stretch at this speed */
+  const lensStretchFor = v => Math.min(LENS.stretchMax, Math.abs(v || 0) * LENS.stretch);
+  /* what is drawn: the state, stretched along its path (area kept) - only
+     as far as it has lifted, so the platter itself never stretches */
+  function lensVis(f){
+    const st = (f.st || 0) * lensLift(lensG, f.H);
+    return { cx: f.cx, W: f.W * (1 + st), H: f.H / (1 + st) };
   }
-  /* what is under the glass swells a little, more the closer it is */
-  function lensMagnify(c, smooth){
-    if(!lensGeo) return;
-    const reach = lensGeo.W * .62, calm = lensCalm();
-    lensGeo.tabs.forEach(t => {
-      const k = calm || c == null ? 0 : Math.max(0, 1 - Math.abs(c - t.c) / reach);
-      t.el.style.transition = smooth ? "transform .4s " + LENS_EASE : "none";
-      t.el.style.transform = k > .001 ? "scale(" + (1 + LENS_MAG * k).toFixed(4) + ")" : "";
+  const px = v => (Math.round(v * 100) / 100) + "px";
+  function lensTf(g, s){
+    const k = (s.H / g.H0).toFixed(5), top = px(g.CH / 2 - g.H0 / 2), clipY = px(g.cy - g.CH / 2);
+    return [
+      "translate3d(" + px(s.cx - s.W / 2) + "," + px(g.cy - s.H / 2) + ",0) scale(" + (s.W / g.B).toFixed(5) + "," + k + ")",
+      /* each clip runs 4px past the centre line, into the 8px band where
+         the two halves cross-fade (.tab-lens-clip's masks) */
+      "translate3d(" + px(s.cx - g.CW + 4) + "," + clipY + ",0)",
+      "translate3d(" + px(g.CW - 4 - s.W / 2) + "," + top + ",0) scale(" + k + ")",
+      "translate3d(" + px(s.cx - 4) + "," + clipY + ",0)",
+      "translate3d(" + px(s.W / 2 + 4 - g.W0) + "," + top + ",0) scale(" + k + ")"
+    ];
+  }
+  function lensWrite(f){
+    const tf = lensTf(lensG, lensVis(f));
+    LENS_ELS.forEach((el, j) => { el.style.transform = tf[j]; });
+  }
+  /* the state (and velocity) right now, mid-track included */
+  const LENS_KEYS = ["cx", "W", "H", "st"];
+  function lensNow(){
+    if(lensRun){
+      const a = lensRun.anims[0], f = lensRun.frames, n = f.length;
+      const t = a && typeof a.currentTime === "number" ? a.currentTime : performance.now() - lensRun.t0;
+      const i = Math.max(0, t / LENS_DT);
+      if(i >= n - 1) return { s: Object.assign({}, f[n - 1]), v: { cx: 0, W: 0, H: 0, st: 0 } };
+      const i0 = Math.floor(i), u = i - i0, A = f[i0], B = f[i0 + 1], dt = LENS_DT / 1000;
+      const s = {}, v = {};
+      LENS_KEYS.forEach(k => { s[k] = A[k] + (B[k] - A[k]) * u; v[k] = (B[k] - A[k]) / dt; });
+      return { s, v };
+    }
+    return { s: lensS && Object.assign({}, lensS), v: Object.assign({}, lensV) };
+  }
+  function lensStopTrack(){
+    if(!lensRun) return;
+    const now = lensNow();
+    lensRun.anims.forEach(a => { try{ a.cancel(); }catch(e){} });
+    lensRun = null;
+    lensS = now.s; lensV = now.v;
+    if(lensG && lensS) lensWrite(lensS);
+  }
+  /* one step of every channel's spring; the stretch chases the speed */
+  function lensStep(s, v, tg, P, h){
+    tg.st = lensStretchFor(v.cx);
+    LENS_KEYS.forEach(k => { const p = P[k], w = Math.sqrt(p[0]);
+      v[k] += (-p[0] * (s[k] - tg[k]) - 2 * p[1] * w * v[k]) * h; s[k] += v[k] * h; });
+  }
+  /* Springs, simulated ahead of time: from s/v towards tg(tMs) with
+     springs P(tMs), one frame per 60th of a second, until at rest on the
+     last target (and past `until`). */
+  function lensSpring(s0, v0, tg, P, until, maxMs){
+    const s = Object.assign({ st: 0 }, s0), v = Object.assign({ cx: 0, W: 0, H: 0, st: 0 }, v0);
+    const sub = 4, h = LENS_DT / 1000 / sub;
+    const frames = [Object.assign({}, s)];
+    for(let n = 1; n * LENS_DT <= (maxMs || 1600); n++){
+      for(let j = 0; j < sub; j++){ const t = (n - 1) * LENS_DT + (j + 1) * h * 1000; lensStep(s, v, tg(t), P(t), h); }
+      frames.push(Object.assign({}, s));
+      const t = n * LENS_DT, T = tg(t);
+      if(t > (until || 0) && ["cx", "W", "H"].every(k => Math.abs(s[k] - T[k]) < .06 && Math.abs(v[k]) < 3) && Math.abs(s.st) < .002) break;
+    }
+    const T = tg((frames.length - 1) * LENS_DT);
+    frames.push({ cx: T.cx, W: T.W, H: T.H, st: 0 });
+    return frames;
+  }
+  function lensPlay(frames){
+    lensStopTrack();
+    const g = lensG, n = frames.length;
+    const tfs = frames.map(f => lensTf(g, lensVis(f)));
+    LENS_ELS.forEach((el, j) => { el.style.transform = tfs[n - 1][j]; });
+    lensS = Object.assign({}, frames[n - 1]); lensV = { cx: 0, W: 0, H: 0, st: 0 };
+    if(n < 2 || !canAnim) return;
+    const o = { duration: (n - 1) * LENS_DT, easing: "linear" };
+    const anims = LENS_ELS.map((el, j) => el.animate(tfs.map(tf => ({ transform: tf[j] })), o));
+    lensRun = { t0: performance.now(), frames, anims };
+    anims[0].finished.then(() => { if(lensRun && lensRun.anims === anims) lensRun = null; }, () => {});
+  }
+  /* Opacity on the compositor, as a track of [ms, value] points from now.
+     A press and a release can land in the same frame, when nothing that
+     was started at the press has drawn a frame yet - so a release never
+     reads "where it has got to" off the page; it says where it goes. */
+  const lensOp = el => { const v = parseFloat(getComputedStyle(el).opacity); return isFinite(v) ? v : 0; };
+  function lensFade(el, pts){
+    if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; }
+    const end = pts[pts.length - 1];
+    if(el !== slider) el.style.opacity = String(end[1]);
+    if(!canAnim) return null;
+    const D = Math.max(1, end[0]);
+    el._fade = el.animate(pts.map(p => ({ opacity: p[1], offset: Math.min(1, Math.max(0, p[0] / D)) })), { duration: D, easing: "linear", fill: "both" });
+    return el._fade;
+  }
+  /* the bar's swell, the same way: a track of [ms, "sx sy"] points */
+  let LENS_SWELL = "1.084 1.043";
+  /* ...never into what sits beside it. On a tablet's Home the daily
+     question's circle and the version label sit level with the bar a few
+     px off its ends, and 8.4% of a 484px bar is 20px a side: it ran into
+     the "?". The swell sideways is held to the room there is, less 4px. */
+  function lensSwellNow(){
+    const br = bar.getBoundingClientRect(), w0 = bar.offsetWidth || br.width;
+    const cx = br.left + br.width / 2;
+    let room = Infinity;
+    document.querySelectorAll(".daily-question-fab, .homeversion-btn, .roomchat-fab").forEach(el => {
+      const r = el.getBoundingClientRect();
+      if(!r.width || r.bottom < br.top || r.top > br.bottom) return;
+      if(r.left >= cx) room = Math.min(room, r.left - (cx + w0 / 2));
+      else room = Math.min(room, (cx - w0 / 2) - r.right);
+    });
+    const sx = isFinite(room) ? Math.max(1, Math.min(1.084, 1 + 2 * Math.max(0, room - 4) / w0)) : 1.084;
+    return sx.toFixed(4) + " 1.043";
+  }
+  function lensBarSwell(pts){
+    if(bar._swell){ try{ bar._swell.cancel(); }catch(e){} bar._swell = null; }
+    if(!canAnim || !pts) return;
+    const D = Math.max(1, pts[pts.length - 1][0]);
+    try{
+      const a = bar._swell = bar.animate(pts.map(p => ({ scale: p[1], offset: Math.min(1, Math.max(0, p[0] / D)), easing: "cubic-bezier(.3,1.25,.5,1)" })), { duration: D, fill: "forwards" });
+      /* a swell back to rest lets go of the bar when it is done */
+      if(pts[pts.length - 1][1] === "1 1") a.finished.then(() => { if(bar._swell === a){ a.cancel(); bar._swell = null; } }, () => {});
+    }catch(e){ bar._swell = null; }
+  }
+  /* the tabs under the glass grow: the nearest most, as far as it has lifted */
+  function lensMagnify(c, lift, ms, delay){
+    if(!lensG) return;
+    const reach = lensWAt(c == null ? lensG.lo : c) * .62;
+    lensG.tabs.forEach(t => {
+      const k = c == null ? 0 : Math.max(0, 1 - Math.abs(c - t.c) / reach) * lift;
+      t.el.style.transition = ms ? "transform " + ms + "ms cubic-bezier(.3,1.25,.5,1) " + (delay || 0) + "ms" : "none";
+      t.el.style.transform = k > .001 ? "scale(" + (1 + LENS.mag * k).toFixed(4) + ")" : "";
     });
   }
-  function lensClearTimers(){ clearTimeout(lensT1); clearTimeout(lensT2); lensT1 = lensT2 = null; }
-  /* The body's pop and shrink are Web Animations (build 323), not
-     transitions: a tap's press and release land in the same frame, and a
-     transition retargeted with a delay holds wherever the first one had
-     got to - the lens froze a few pixels into its pop. A shrink queued
-     behind the pop (its own delay, no backwards fill) lets the pop finish
-     first. Both run on the compositor like any transform animation. */
-  let bodyAnims = [], popEnds = 0;
-  const canAnim = typeof lensBody.animate === "function";
-  const scaleOf = cs => "scale(" + cs[0] + "," + cs[1] + ")";
-  function bodyNow(){
-    const cur = bodyAnims.length ? getComputedStyle(lensBody).transform : (lensBody.style.transform || "none");
-    bodyAnims.forEach(an => { try{ an.cancel(); }catch(e){} });
-    bodyAnims = [];
-    lensBody.style.transition = "none";
-    lensBody.style.transform = cur === "none" ? "" : cur;
-    return cur;
-  }
-  function lensDown(x){
-    lensClearTimers();
+  function lensDown(clientX){
+    clearTimeout(lensT1); lensT1 = null;
+    if(lensCalm() || !canAnim){ lensG = null; return; }
+    const caught = lens.classList.contains("is-up") && lensG && lensS;
+    const now = caught ? lensNow() : null;
+    lensStopFollow();
     const g = lensMeasure();
-    if(!g){ lensGeo = null; return; }
-    const wasUp = lens.classList.contains("is-up") && lensGeo;
-    lensGeo = g;
-    lens.style.width = g.W + "px"; lens.style.height = g.H + "px";
-    const target = lensTabAt(x);
-    const from = (wasUp && lensAt) || navrow.querySelector(".bottomtab.active") || target;
-    const fromInfo = lensInfo(from) || lensInfo(target);
-    const toInfo = lensInfo(target);
-    if(!fromInfo || !toInfo){ lensGeo = null; return; }
-    const calm = lensCalm() || !canAnim;
-    /* pop out of the resting pill: start exactly its size, where it is */
-    let cur;
-    if(!wasUp){
-      bodyNow();
-      lens.style.transition = "none";
-      lensPlace(fromInfo.c);
-      cur = scaleOf(capScale(fromInfo));
-      lensBody.style.transform = cur;
-      lens.classList.add("is-up"); bar.classList.add("lens-up");
-      void lens.offsetWidth;
-    } else cur = bodyNow();
-    lens.style.transition = "transform " + (calm ? ".3s ease" : ".42s " + LENS_EASE);
-    lensPlace(toInfo.c);
-    if(calm){ lensBody.style.transform = scaleOf(capScale(toInfo)); popEnds = 0; }
-    else{
-      const pop = lensPopScale(toInfo.c);
-      lensBody.style.transform = pop;
-      bodyAnims.push(lensBody.animate([{ transform: cur }, { transform: pop }], { duration: 300, easing: LENS_EASE, fill: "forwards" }));
-      popEnds = performance.now() + 300;
+    if(!g){ lensG = null; return; }
+    lensG = g; lensSize(g);
+    const target = lensTabAt(clientX), ti = lensInfo(target);
+    if(!ti){ lensG = null; return; }
+    let s0, v0;
+    if(now && now.s){ s0 = now.s; v0 = now.v; }
+    else {
+      /* lift out of the platter: exactly its place, size and grey; the
+         platter steps out in the same frame, so there is one piece of glass */
+      const ai = lensInfo(navrow.querySelector(".bottomtab.active")) || ti;
+      s0 = { cx: ai.c, W: ai.pw, H: g.pillH, st: 0 }; v0 = { cx: 0, W: 0, H: 0, st: 0 };
+      lensS = s0; lensWrite(s0);
+      LENS_GLASS.concat(LENS_GREY).forEach(el => { if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; } });
+      LENS_GLASS.forEach(el => { el.style.opacity = "0"; });
+      LENS_GREY.forEach(el => { el.style.opacity = "1"; });
+      lens.classList.add("is-up");
     }
-    lensAt = target;
-    lensMagnify(toInfo.c, true);
+    lensFade(lens, [[0, 1], [1, 1]]);
+    lensFade(slider, [[0, 0], [1, 0]]);
+    /* the grey clears to glass in about two frames (b0324-b0325) */
+    const g0 = lensOp(LENS_GLASS[0]);
+    LENS_GLASS.forEach(el => lensFade(el, [[0, g0], [70, 1]]));
+    LENS_GREY.forEach(el => lensFade(el, [[0, 1 - g0], [70, 0]]));
+    const sw = getComputedStyle(bar).scale;
+    LENS_SWELL = lensSwellNow();
+    lensBarSwell([[0, sw && sw !== "none" ? sw : "1 1"], [160, LENS_SWELL]]);
+    bar.classList.add("lens-up", "is-pressing");
+    lensPressT = performance.now(); lensAt = target;
+    lensPlay(lensSpring(s0, v0, () => ({ cx: ti.c, W: ti.lw, H: g.lensH }), () => ({ cx: LENS.glide, W: LENS.pop, H: LENS.pop, st: LENS.st })));
+    if(lensRun) lensRun.lift = true;
+    lensMagnify(ti.c, 1, 220, 0);
   }
-  function lensMove(x){
-    if(!lensGeo) return;
-    const c = Math.min(lensGeo.hi, Math.max(lensGeo.lo, x));
-    lens.style.transition = "none";
-    lensPlace(c);
-    if(!(lensCalm() || !canAnim)){
-      /* a short transition, retargeted each move: the pop that started on
-         the press carries on from where it is, and the width keeps up */
-      if(bodyAnims.length){ bodyNow(); void getComputedStyle(lensBody).transform; }
-      lensBody.style.transition = "transform .14s ease-out";
-      lensBody.style.transform = lensPopScale(c);
-      popEnds = 0;
-    } else {
-      /* calm: the pill's size, sized to the nearest tab */
-      const near = lensInfo(lensTabAt(c));
-      if(near){ lensBody.style.transition = "none"; lensBody.style.transform = scaleOf(capScale(near)); }
+  /* The drag: a spring after the finger, every frame, while the finger is down. */
+  function lensStopFollow(){
+    if(!lensFollow) return;
+    cancelAnimationFrame(lensFollow.raf);
+    lensFollow = null;
+  }
+  function lensMove(clientX){
+    if(!lensG) return;
+    const x = lensLocal(clientX);
+    if(!lensFollow){
+      lensStopTrack();
+      if(!lensS) return;
+      lensS = Object.assign({ st: 0 }, lensS); lensV = Object.assign({ cx: 0, W: 0, H: 0, st: 0 }, lensV);
+      lensFollow = { x, last: performance.now(), raf: 0 };
+      const P = { cx: LENS.follow, W: LENS.pop, H: LENS.pop, st: LENS.st };
+      const tick = () => {
+        const f = lensFollow;
+        if(!f || !lensG) return;
+        const t = performance.now(), dt = Math.min(.034, Math.max(.001, (t - f.last) / 1000));
+        f.last = t;
+        const g = lensG;
+        /* the finger can go past the end tabs; the lens follows a little way
+           out of the bar (the reference's runs 16pt past it) */
+        let tx = f.x;
+        if(tx < g.lo){ const o = g.lo - tx; tx = g.lo - LENS.give * o / (o + 50); }
+        else if(tx > g.hi){ const o = tx - g.hi; tx = g.hi + LENS.give * o / (o + 50); }
+        const sub = 4, h = dt / sub;
+        for(let j = 0; j < sub; j++) lensStep(lensS, lensV, { cx: tx, W: lensWAt(lensS.cx), H: g.lensH }, P, h);
+        lensWrite(lensS);
+        lensMagnify(lensS.cx, lensLift(g, lensS.H), 0, 0);
+        f.raf = requestAnimationFrame(tick);
+      };
+      lensFollow.raf = requestAnimationFrame(tick);
     }
-    lensAt = lensTabAt(c);
-    lensMagnify(c, false);
+    lensFollow.x = x;
+    lensAt = lensTabAt(clientX);
   }
   function lensRelease(tab){
-    if(!lensGeo){ lensHide(true); return; }
-    lensClearTimers();
-    const home = tab || navrow.querySelector(".bottomtab.active") || lensAt;
-    const info = lensInfo(home);
-    if(!info){ lensHide(true); return; }
+    if(!lensG){ lensHide(true); return; }
+    clearTimeout(lensT1);
+    lensStopFollow();
+    /* how long it has really been up: the lift's own clock if it is still
+       playing (a busy first frame can hold the lift at its start while the
+       wall clock runs on), the wall clock otherwise */
+    let upFor = performance.now() - lensPressT;
+    if(lensRun && lensRun.lift && typeof lensRun.anims[0].currentTime === "number") upFor = Math.min(upFor, lensRun.anims[0].currentTime);
+    const now = lensNow(), g = lensG;
+    lensStopTrack();
+    const active = navrow.querySelector(".bottomtab.active");
+    const home = tab || active || lensAt;
+    const hi = lensInfo(home);
+    if(!hi || !now.s){ lensHide(true); return; }
     lensAt = home;
-    const calm = lensCalm() || !canAnim;
-    lens.style.transition = "transform " + (calm ? ".26s ease" : ".4s " + LENS_EASE);
-    lensPlace(info.c);
-    const capTo = scaleOf(capScale(info));
-    let shrinkAt = 0;
-    if(calm){ lensBody.style.transition = "none"; lensBody.style.transform = capTo; }
-    else{
-      const now = performance.now();
-      const popLeft = Math.max(0, popEnds - now);
-      if(popLeft > 0 && bodyAnims.length){
-        /* still popping (a tap): the shrink waits for the pop to finish */
-        const pop = lensPopScale(info.c);
-        shrinkAt = popLeft + 30;
-        bodyAnims.push(lensBody.animate([{ transform: pop }, { transform: capTo }], { duration: 360, delay: shrinkAt, easing: "cubic-bezier(.35,1.12,.5,1)", fill: "forwards" }));
-      } else {
-        const cur = bodyNow();
-        shrinkAt = 40;
-        bodyAnims.push(lensBody.animate([{ transform: cur }, { transform: capTo }], { duration: 360, delay: shrinkAt, easing: "cubic-bezier(.35,1.12,.5,1)", fill: "forwards" }));
-      }
-      lensBody.style.transform = capTo;
+    /* a quick tap still swells before it settles, and every lens stays up a
+       few frames on its tab after the finger has gone (b0161-b0165) */
+    const hold = Math.max(LENS.linger, LENS.minUp - upFor);
+    const frames = lensSpring(now.s, now.v,
+      t => t < hold ? { cx: hi.c, W: hi.lw, H: g.lensH } : { cx: hi.c, W: hi.pw, H: g.pillH },
+      t => t < hold ? { cx: LENS.glide, W: LENS.pop, H: LENS.pop, st: LENS.st } : { cx: LENS.settle, W: LENS.settle, H: LENS.settle, st: LENS.st },
+      hold);
+    lensPlay(frames);
+    const total = (frames.length - 1) * LENS_DT;
+    /* it turns grey while it is still shrinking (b0330-b0331, b0166-b0169):
+       as soon as it starts down, over ~80ms - and it is the platter
+       (same place, size and grey) a frame later, so the platter takes over
+       in one frame */
+    let greyAt = hold, handAt = total;
+    for(let i = 0; i < frames.length; i++){
+      if(i * LENS_DT < hold) continue;
+      if(lensLift(g, frames[i].H) < .97){ greyAt = i * LENS_DT; break; }
     }
-    if(shrinkAt > 40){ const t = info; setTimeout(() => { if(lensGeo && lensAt === t.el) lensMagnify(null, true); }, shrinkAt); }
-    else lensMagnify(null, true);
-    /* hand over: the pill comes back in under the lens as it fades */
-    lensT1 = setTimeout(() => {
-      clearTimeout(slider._lensT); slider.classList.remove("is-moving");
-      bar.classList.remove("lens-up");
-      slideBubbleToActiveTab(true);
-      lens.classList.remove("is-up");
-      lensT2 = setTimeout(() => lensHide(false), 240);
-    }, calm ? 200 : shrinkAt + 290);
+    for(let i = 0; i < frames.length; i++){
+      const f = frames[i];
+      if(i * LENS_DT >= greyAt + 80 && Math.abs(f.H - g.pillH) < 1.2 && Math.abs(f.W - hi.pw) < 1.6 && Math.abs(f.cx - hi.c) < 1){ handAt = i * LENS_DT; break; }
+    }
+    handAt = Math.min(handAt, total);
+    bar.classList.remove("is-pressing");
+    /* the bar stays swollen while the lens is up, and goes back as it lands */
+    const sw = getComputedStyle(bar).scale;
+    const swPts = [[0, sw && sw !== "none" ? sw : "1 1"]];
+    if(hold > 0) swPts.push([Math.min(hold, 160), LENS_SWELL], [hold, LENS_SWELL]);
+    swPts.push([Math.max(hold, 1) + 300, "1 1"]);
+    lensBarSwell(swPts);
+    /* the platter is already on the landing tab, unseen, and comes back on
+       the lens's clock; a touch that lands where no tab will be lit (one
+       cancelled with none lit) leaves it hidden */
+    const hb = tabBox(home);
+    placeBubble(hb.x, hb.w, false);
+    bubbleAt = home;
+    if(active || tab) slider.classList.add("ready");
+    /* the glass finishes clearing (a tap's press and release can be one
+       frame apart), holds, and turns grey from greyAt; the lens hands over
+       to the platter in one frame at handAt */
+    const gl = lensOp(LENS_GLASS[0]), gIn = Math.max(1, Math.min(70, greyAt));
+    LENS_GLASS.forEach(el => lensFade(el, [[0, gl], [gIn, 1], [greyAt, 1], [greyAt + 80, 0]]));
+    LENS_GREY.forEach(el => lensFade(el, [[0, 1 - gl], [gIn, 0], [greyAt, 0], [greyAt + 80, 1]]));
+    lensFade(lens, [[0, 1], [handAt, 1], [handAt + 1, 0]]);
+    lensFade(slider, [[0, 0], [handAt, 0], [handAt + 1, 1]]);
+    lensMagnify(hi.c, 0, 260, Math.max(0, greyAt - 60));
+    /* tidy up once the platter has it and the tab has shrunk back */
+    lensT1 = setTimeout(() => lensFinish(), Math.max(handAt + 60, greyAt + 220));
+  }
+  function lensFinish(){
+    lensT1 = null;
+    lens.classList.remove("is-up");
+    bar.classList.remove("lens-up", "is-pressing");
+    if(slider._fade){ try{ slider._fade.cancel(); }catch(e){} slider._fade = null; }
+    if(bar._swell && bar._swell.playState === "finished"){ try{ bar._swell.cancel(); }catch(e){} bar._swell = null; }
+    if(lensG) lensG.tabs.forEach(t => { t.el.style.transition = ""; t.el.style.transform = ""; });
+    lensG = null; lensAt = null;
+    /* the landing tab and the lit tab agree unless a navigation was
+       refused or locked out; then the platter goes where the light is */
+    slideBubbleToActiveTab();
   }
   function lensHide(now){
-    lensClearTimers();
+    clearTimeout(lensT1); lensT1 = null;
+    lensStopFollow();
+    if(lensRun){ lensRun.anims.forEach(a => { try{ a.cancel(); }catch(e){} }); lensRun = null; }
+    [lens, slider].concat(LENS_GLASS, LENS_GREY).forEach(el => { if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; } });
+    lensBarSwell(null);
+    lens.style.opacity = "0";
     lens.classList.remove("is-up");
-    bar.classList.remove("lens-up");
-    bodyAnims.forEach(an => { try{ an.cancel(); }catch(e){} });
-    bodyAnims = []; popEnds = 0;
-    if(lensGeo) lensGeo.tabs.forEach(t => { t.el.style.transition = now ? "none" : ""; t.el.style.transform = ""; });
-    lensGeo = null; lensAt = null;
+    bar.classList.remove("lens-up", "is-pressing");
+    if(lensG) lensG.tabs.forEach(t => { t.el.style.transition = now ? "none" : ""; t.el.style.transform = ""; });
+    lensG = null; lensAt = null;
     if(now) slideBubbleToActiveTab(true);
   }
   bar._lensHide = lensHide;
@@ -121596,6 +121940,11 @@ function applyGlassRefraction(el, mapImgId){
        Starred row beside them) presses with its own CSS now, eased in and
        eased out, transform and shadow together. */
     if(btn.classList.contains("pick") && btn.closest(".picks")) return;
+    /* NOT A TAB ON THE BAR (build 325): there the press IS the lens, which
+       grows the tab under it; this dip ran after it on the same element
+       and put the tab back to 97% under the glass. The Start pill still
+       presses here. */
+    if(btn.classList.contains("bottomtab") && btn.closest(".bottomtabs-navrow")) return;
     /* A read-only answer - a review list, the unit card's lists - is not
        a button and must not press like one (build 270: "the buttons on
        the pages are tappable"). Every read-only choice is built .locked. */
