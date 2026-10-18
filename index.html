@@ -12853,6 +12853,21 @@
   .rank-orbit-slot > .cosmic-icon-badge{ transition:scale 1.1s cubic-bezier(.2,1.4,.4,1), opacity .9s ease .45s; }
   @keyframes rank-orbit{ to{ rotate:360deg; } }
   @keyframes rank-orbit-back{ to{ rotate:-360deg; } }
+  /* THE SECRET FLARES KEEP UP WITH THE BUBBLES (build 325). Madison: "the
+     secret flares during the cutscene, after and before the spin, they
+     don't move, fix that." They did turn - on Home's clock, 120s a lap
+     outside and 52s inside (~3 and ~7 degrees a second) - while the rank
+     bubbles round them go round in RANK_ORBIT_MS (30s, 12 a second), so
+     beside the bubbles they read as standing still. In a scene their two
+     rings run at the bubbles' pace, the inner one keeping Home's ratio
+     (52/120 of it): they visibly orbit before the whirl, ride it (the
+     whirl is on `rotate`, this on `transform`, so the two add), and go on
+     orbiting after it. Supernova's spin-up still wins (!important).
+     Reduce motion: .rank-still stops it, as before. */
+  @media (prefers-reduced-motion:no-preference){
+    .tier-cutscene .cosmic-hero-wrap > .cosmic-hero-orbitlayer{ animation-duration:.22s, 30s; }
+    .tier-cutscene .cosmic-hero-wrap > .cosmic-hero-orbitlayer.cosmic-hero-orbitlayer-inner{ animation-duration:.22s, 13s; }
+  }
   /* The rank's own flare lighting: a pool of its colour behind it that
      swells and breathes, and the bubble itself grows. */
   .rank-orbit-slot::before{
@@ -77469,6 +77484,21 @@ function rankCutHandoff(overlay, stageWrap, heroBefore, tierKey, ghost){
        off while the copy is in it (.ru-hand-bubble) and comes up only as
        the copy fades (.ru-hand-reveal): the copy becomes the bubble. */
     badge.classList.add("ru-hand-bubble");
+    /* ...AND THE BUBBLE IT BECOMES IS ALREADY LIT (build 325). Madison: "the
+       flare bubble changes in the transition and doesn't look like the
+       flare.. fix that. That's a big one." The road map has just lit this
+       rank's flare (its unlock) and the copy carries that light into the
+       planet system - but the scene's own planet still had the bubble dark
+       ("the planet you had": syncSceneFlares stops a rank short), so as the
+       copy faded the lit gold flare turned into a grey, unlit glass ball.
+       Opened from the road map, the bubble is lit from the hand-off's first
+       frame - Home's own lit look, its glow in the flare's colour, the
+       emblem's lit flip-book - so the copy fades into the same flare. The
+       bang still lights it fully (lightFully), which it already is. */
+    badge.style.setProperty("--tier-glow", flareColorOf(tierKey));
+    badge.classList.add("cosmic-badge-lit");
+    if(FLARE_NOIR[tierKey]) badge.classList.add("cosmic-badge-noir");
+    badge.dataset.ruHandLit = "1";
     badge.appendChild(ghost);
     clock(ghost);
     const orbit = slot.parentElement;
