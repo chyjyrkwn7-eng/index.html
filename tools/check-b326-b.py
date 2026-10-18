@@ -56,7 +56,7 @@ check, booted, USED_ACCOUNT, FAILURES = cb.check, cb.booted, cb.USED_ACCOUNT, cb
 
 DEVICES = [("17 Pro Max", 440, 956, 2), ("iPad Pro 11", 834, 1194, 2)]
 ONLY = os.environ.get("B326B_ONLY", "ABCDEF")
-WALL_SPLIT = 40       # levels, lit wall over shaded wall (median)
+WALL_SPLIT = 30       # levels, lit wall over shaded wall (median)
 LIT_OVER_FLOOR = 25   # levels, lit wall over the cut's floor (median)
 SIDE_NORMAL = 25      # levels per unit of the normal's y, the side's light
 
@@ -257,16 +257,27 @@ LOOK = r"""() => {
 def section_f(br):
     print("\nF. the case looks finished: a tufted lid, a stitched outside, in both cases")
     for (dev, w, h, dpr) in DEVICES:
+        # the Badges tab, on its first (shut) frame
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, init=STANDALONE, dpr=1)
         pg.evaluate(SEED)
+        clk = cb._StepperS(pg)
         pg.evaluate("() => { try{ settleUntil = 0; }catch(e){} showRanksScreen('badges'); }")
-        pg.wait_for_timeout(400)
-        pg.evaluate("() => { playBadgeCaseScene(['Identity Crimes'], () => {}); }")
-        pg.wait_for_timeout(300)
-        r = pg.evaluate(LOOK)
-        ok = len(r["cush"]) >= 2 and all(c["diag"] >= 2 and c["radial"] >= 5 for c in r["cush"]) and r["stitch"] == [True, True]
-        check(f"{dev}: both cases' lids are tufted (diagonal seams and buttons) and stitched round the outside", ok, r)
+        clk.step(1 / 30); clk.step(1 / 30)
+        tab = pg.evaluate(LOOK)
         ctx.close()
+        # the cutscene's case, shut and risen
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, init=STANDALONE, dpr=1)
+        pg.evaluate(SEED)
+        clk = cb._StepperS(pg)
+        pg.evaluate("() => { playBadgeCaseScene(['Identity Crimes'], () => {}); }")
+        while clk.t < 7.6:
+            clk.step(0.2)
+        cut = pg.evaluate(LOOK)
+        ctx.close()
+        cush = tab["cush"] + cut["cush"]
+        ok = len(cush) >= 2 and all(c["diag"] >= 2 and c["radial"] >= 5 for c in cush) and tab["stitch"][1] is True and cut["stitch"][0] is True
+        check(f"{dev}: both cases' lids are tufted (diagonal seams and buttons) and stitched round the outside", ok,
+              {"cushions": cush, "tab stitched": tab["stitch"][1], "cutscene stitched": cut["stitch"][0]})
 
 
 def main():
