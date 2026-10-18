@@ -12352,7 +12352,9 @@
     68%{ opacity:.85; }
     100%{ opacity:0; transform:translate(var(--dx), var(--dy)) rotate(var(--r)) scale(.6); }
   }
-  @keyframes csc-ember{ from{ opacity:.45; } to{ opacity:1; } }
+  /* (build 325: from .7, not .45 - the light in a crack at its lowest read
+     as brown char rather than as a glow; the crater's coal is gone) */
+  @keyframes csc-ember{ from{ opacity:.7; } to{ opacity:1; } }
   /* THE EXPLOSION, REMEMBERED (build 320, scarAfterEffects): now and then
      a broken edge along the crack catches the light - a short cool streak
      laid along the crack - and faint dark smoke rises off the crater and
@@ -68948,9 +68950,21 @@ function secretFlaresAllFound(){
    lit (store.supernovaAchieved), the orange rings; "eclipse" - that AND
    every secret flare, the top rings (RING_ECLIPSE_STYLE). Every secret
    flare without Supernova is plain: tier two needs both. */
+/* THE BLACK RINGS ARE RETIRED (build 325). Madison: "I really like the
+   orange rings, but I know I said if you get all the secret flares then
+   it would turn black ... We need it to be a progression though ... Maybe
+   we just get rid of the black ones and only keep the new ones you get
+   from reaching supernova?" Decided: the orange rings are Supernova's
+   reward and there is no tier above them. Every secret flare found still
+   gives what each flare gives (its own scene, its character, the planet's
+   "the secret ones too"); the rings were the only thing the full set
+   added, and they are gone rather than moved anywhere. "eclipse" stays in
+   RING_TIER_RANK only so a device that last showed it (ringtier.seen)
+   settles on orange quietly, with no draw; the eclipse drawing below is
+   unreachable and kept for the record. */
 function homeRingTier(){
   if(!store || !store.supernovaAchieved) return "";
-  return secretFlaresAllFound() ? "eclipse" : "supernova";
+  return "supernova";
 }
 /* WHAT THE TOP RING TIER LOOKS LIKE (build 317, round three). Either way
    it is built exactly like the orange tier - one circle a ring, 1.4 wide,
@@ -72164,7 +72178,10 @@ function scarPass1(P){
             /* burnt along its length: the ground either side scorched, more
                the nearer the crater (the crack's old heat, bH) - planet2:
                nothing in it glows any more */
-            if(bKind < 2 && bH > 0){ const sc = .64 * Math.exp(-bt / 2.9) * Math.min(1, bH * 1.8); if(sc > cov) cov = sc; }
+            if(bKind < 2 && bH > 0 && !P.NOSCORCH){ const sc = .64 * Math.exp(-bt / 2.9) * Math.min(1, bH * 1.8); if(sc > cov) cov = sc; }
+            /* (build 325) the light in the bottom of the fissure: narrower
+               than its opening, strongest where the crack was hottest */
+            if(P.GLOW && bt < .4 && bH > 0){ const q = 1 - bt * bt / .16, gl = P.GLOW * (bKind === 0 ? Math.max(.75, Math.min(1, bH * 1.4)) : Math.min(1, bH * 1.4)) * q * Math.sqrt(q) * bW; if(gl > em) em = gl; }
           }
         }
         /* THE CRATER'S FLOOR, BURNT OUT (planet2): what was molten is
@@ -72252,7 +72269,10 @@ function scarPass2(P){
       dB[k4] = R; dB[k4 + 1] = Gc; dB[k4 + 2] = Bc; dB[k4 + 3] = A * disc * 255;
       /* the last of the heat: one dull red, never brighter than this */
       const e = Em[k];
-      if(e > .003){ dE[k4] = 150; dE[k4 + 1] = 30; dE[k4 + 2] = 10; dE[k4 + 3] = (e > 1 ? 1 : e) * .62 * disc * 255; }
+      if(e > .003){
+        if(P.GLOW){ const hot = e > 1 ? 1 : e; dE[k4] = 255; dE[k4 + 1] = 110 + 100 * hot; dE[k4 + 2] = 40 + 90 * hot; dE[k4 + 3] = Math.min(1, hot * 1.1) * disc * 255; }
+        else { dE[k4] = 150; dE[k4 + 1] = 30; dE[k4 + 2] = 10; dE[k4 + 3] = (e > 1 ? 1 : e) * .62 * disc * 255; }
+      }
     }
     }
   }
@@ -72322,8 +72342,11 @@ const SCAR_SHINE = { x: -.33, y: -.35, r: .36 };
    all of it - Supernova's; Amethyst's is under half); Ar / arr0: each
    pixel's arrival along the crack, the patch reached at arr0 (the end of
    the crack into it) and spreading out from there. */
-function scarShineWound(g, N, gM, MQ, amt, Ar, arr0){
+function scarShineWound(g, N, gM, MQ, amt, Ar, arr0, clean){
   const AMT = amt == null ? 1 : amt;
+  /* clean (build 325): the plates and their seams only - no soot on them,
+     no plate chipped out to char, no scorch past them: broken, not burnt */
+  const CLEAN = !!clean;
   let seed = 9173;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
   const S = N / 2, IX = SCAR_SHINE.x, IY = SCAR_SHINE.y, RW = SCAR_SHINE.r, IZ = Math.sqrt(1 - IX * IX - IY * IY);
@@ -72365,7 +72388,7 @@ function scarShineWound(g, N, gM, MQ, amt, Ar, arr0){
     let fall = 1 - sm(Math.min(1, Math.max(0, (r - edge * .55) / (edge * .45))));
     /* a scorch past the plates, so the broken patch sits IN a burn rather
        than on a clean shine */
-    let halo = .44 * (1 - sm(Math.min(1, Math.max(0, (r - edge * .3) / (edge * .95))))) * (.7 + .6 * nz(u * 14 + 21, v * 14 + 6));
+    let halo = CLEAN ? 0 : .44 * (1 - sm(Math.min(1, Math.max(0, (r - edge * .3) / (edge * .95))))) * (.7 + .6 * nz(u * 14 + 21, v * 14 + 6));
     /* only part-way out from the middle yet (build 320, Amethyst) */
     if(AMT < 1){
       fall *= 1 - sm(Math.min(1, Math.max(0, (r / RW - AMT * .8) / .22)));
@@ -72402,7 +72425,8 @@ function scarShineWound(g, N, gM, MQ, amt, Ar, arr0){
     /* soot over the plate, mottled; a chipped plate is char */
     const mott = .75 + .5 * nz(u * 30 + 5, v * 30 + 2);
     over(22, 15, 12, Math.min(.5, halo));
-    if(A[3]) over(16, 12, 11, .82 * fall);
+    if(CLEAN){ /* the plate is left as it was */ }
+    else if(A[3]) over(16, 12, 11, .82 * fall);
     else over(30 + 22 * nz(u * 12, v * 12), 20, 15, Math.min(.85, A[2] * mott * (.55 + .6 * Math.max(0, 1 - r / RW))) * fall);
     if(facing > .15) over(176, 171, 165, .26 * facing * (lipBand - crack) * reach * fall);
     else if(facing < -.15) over(10, 8, 8, .35 * -facing * (lipBand - crack) * reach * fall);
@@ -72452,9 +72476,24 @@ const CRACK_STAGES = [
   { reach: .30, width: .16, depth: .40, burn: 0, shine: 0 },     /* Gold: a hairline through the impact point */
   { reach: .62, width: .30, depth: .55, burn: 0, shine: 0 },     /* Platinum */
   { reach: .96, width: .48, depth: .70, burn: 0, shine: 0 },     /* Sapphire */
-  { reach: 1.36, width: .70, depth: .85, burn: .32, shine: .32 }, /* Amethyst: the burn begins */
-  { full: true }                                                  /* Supernova: the blast's own scar */
+  { reach: 1.36, width: .70, depth: .85, burn: 0, shine: .32 },   /* Amethyst: the shine starts to break (no burn since 325) */
+  { full: true }                                                  /* Supernova: the whole crack, glowing inside (325) */
 ];
+/* SUPERNOVA'S MARK IS A CRACK, NOT A BURN (build 325). Madison: "I'm not a
+   fan of the supernova burn mark thing. Fix that. Feels random, make it
+   less burn mark and more crack like there." So the full stage is the
+   rank cracks' own network at its widest and deepest, not the blast's
+   scar: no crater (the black blob at the impact), no soot round it and no
+   scorch along the crack; the two arms meet at the impact point through
+   the stretch the ranks below already have, a short star of fissures
+   splits out of that point, and the shine is broken into plates with dark
+   seams and lit lips and nothing laid on them. What it has that the ranks
+   do not is light INSIDE it: a faint ember in the bottom of every fissure,
+   strongest along the arms and near the impact (the crack-form's glowing
+   twin, kept) - the ember canvas, breathing on its slow clock. Amethyst
+   lost its scorch for the same reason, so every stage holds the one
+   before it. The old scar's code is kept, switched by SCAR_CRACK_ONLY. */
+const SCAR_CRACK_ONLY = true, SCAR_CRACK_GLOW = .8;
 const CRACK_TOP = CRACK_STAGES.length - 1;
 /* how far behind the crack's front it narrows to nothing */
 const CRACK_TAPER = .2;
@@ -72493,6 +72532,8 @@ function drawScarArt(stg){
   let out = false;
   try{
     const ST = stg >= CRACK_TOP ? null : CRACK_STAGES[stg], FULL = !ST, REACH = FULL ? Infinity : ST.reach;
+    /* build 325: the full stage drawn as a crack (SCAR_CRACK_ONLY) */
+    const CK = FULL && SCAR_CRACK_ONLY;
     const t0 = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
 
     const dpr = (typeof window !== "undefined" && window.devicePixelRatio) || 1;
@@ -72629,6 +72670,20 @@ function drawScarArt(stg){
       addPath(jag(pts, 2, .45, rnd2), w, w, .072, 1, 0, 1, 0, "low", rnd2).main = 1;
     };
     seedTo(jA[0], .066); seedTo(jB[0], .052);
+    /* (build 325) THE IMPACT AS A STAR OF FISSURES, for the crack-only
+       Supernova: short splits out of the point the arms meet at, in place
+       of the crater. A seed of its own, so nothing above moved. */
+    if(CK){
+      let seed3 = 81919;
+      const rnd3 = () => { seed3 = (seed3 * 16807) % 2147483647; return seed3 / 2147483647; };
+      [[.55, .2, .011], [1.75, .15, .009], [2.7, .17, .010], [3.75, .13, .008], [4.9, .16, .009], [5.75, .11, .007]].forEach(([az, len, w0]) => {
+        /* from just inside the arms' own width, so the impact itself is the
+           arms' (a star seg nearest the point left a dark plug in the glow) */
+        const a2 = az + (rnd3() - .5) * .3, E = onS(CX + Math.cos(a2) * len, CY + Math.sin(a2) * len);
+        const S0 = onS(CX + Math.cos(a2) * .04, CY + Math.sin(a2) * .04);
+        addPath(jag(P2(arc(S0, E, 7, .04, 1.2, rnd3() * 3, rnd3)), 2, .5, rnd3), w0, .0022, .03, .8, 1, 1.2, .04, "star", rnd3);
+      });
+    }
     /* (build 320) THE CRACK INTO THE SHINE: "the burn mark looks great but
        it seems disconnected from the other crack". From the point of the
        long arm nearest the shine, up into the middle of the shattered
@@ -72644,7 +72699,7 @@ function drawScarArt(stg){
     const KW = FULL ? 1 : ST.width, KD = FULL ? 1 : ST.depth, KH = FULL ? 1 : ST.burn;
     const cut = a => FULL ? 1 : Math.pow(Math.max(0, Math.min(1, (REACH - a) / CRACK_TAPER)), .6);
     PATHS.forEach(rec => {
-      rec.on = !((rec.only === "full" && !FULL) || (rec.only === "low" && FULL)) && rec.ar[0] < REACH;
+      rec.on = !((rec.only === "full" && (!FULL || CK)) || (rec.only === "low" && FULL && !CK) || (rec.only === "star" && !CK)) && rec.ar[0] < REACH;
       if(!rec.on) return;
       const { p, w0, w1, d0, h0, kind, wPow, ar } = rec;
       const W = f => w1 + (w0 - w1) * Math.pow(1 - f, wPow);
@@ -72718,7 +72773,9 @@ function drawScarArt(stg){
       LV[j * LV1 + i] = fbm(x * 15 + 12.7, y * 15 + 4.4, 3);
     }
     const P = { N, BK, Q, Q1, FI, FR, FE, FN, LV, LVN, LVS, cnt, lst, SF, CX, CY, C3x: C3[0], C3y: C3[1], C3z: C3[2], RHO, SR,
-      LX, LY, LZ, NN: N * N, MQ: 96, Msk: new Float32Array(96 * 96), CR: FULL ? 1 : 0, SW: SEGW };
+      LX, LY, LZ, NN: N * N, MQ: 96, Msk: new Float32Array(96 * 96), CR: FULL && !CK ? 1 : 0, SW: SEGW,
+      /* build 325: the crack-only Supernova - no scorch along it, light in it */
+      NOSCORCH: CK || (!FULL && !(ST.burn > 0)) ? 1 : 0, GLOW: CK ? SCAR_CRACK_GLOW : 0 };
     scarPass1(P);
     const iB = gB.createImageData(N, N), iE = gE.createImageData(N, N);
     P.dB = iB.data; P.dE = iE.data;
@@ -72740,7 +72797,7 @@ function drawScarArt(stg){
     /* the shine takes its own damage (build 319): on the burn, and half
        off the plasma's mask */
     const shineAmt = FULL ? 1 : ST.shine;
-    if(shineAmt > 0){ try{ scarShineWound(gB, N, gM, MQ, shineAmt, P.Ar, recC.ar[recC.ar.length - 1]); }catch(e){} }
+    if(shineAmt > 0){ try{ scarShineWound(gB, N, gM, MQ, shineAmt, P.Ar, recC.ar[recC.ar.length - 1], CK || !FULL); }catch(e){} }
     if(gM) mask = cM.toDataURL("image/png");
     /* the fragments rise from the crack and the rupture: out from the
        planet's middle and a little up, uneven so ten never read as a
@@ -73878,7 +73935,9 @@ function scarAfterEffects(sc, art){
   const sm = document.createElement("div");
   sm.className = "csc-smokes";
   const cr = (art && art.crater) || [65, 63.5];
-  [[cr[0], cr[1], 7.9, -1.3, 1], [cr[0] - 4, cr[1] - 2, 10.3, -6.2, -1], [(SCAR_SHINE.x + 1) * 50, (SCAR_SHINE.y + 1) * 50, 12.7, -3.9, -1]].forEach(([x, y, t, d, s]) => {
+  /* no smoke off a crack (build 325): it rose off the crater and the burnt
+     shine, and both are gone (SCAR_CRACK_ONLY) */
+  (SCAR_CRACK_ONLY ? [] : [[cr[0], cr[1], 7.9, -1.3, 1], [cr[0] - 4, cr[1] - 2, 10.3, -6.2, -1], [(SCAR_SHINE.x + 1) * 50, (SCAR_SHINE.y + 1) * 50, 12.7, -3.9, -1]]).forEach(([x, y, t, d, s]) => {
     const el = document.createElement("i");
     el.className = "csc-smoke";
     el.style.cssText = "--x:" + x.toFixed(1) + "%;--y:" + y.toFixed(1) + "%;--t:" + t + "s;--d:" + d + "s;--sx:" + s;
@@ -89291,7 +89350,7 @@ function homeTapCopyPlanet(n){
       const left = tierShortfall(TIER_UNLOCKS[next]);
       parts = ["Next: the " + (ACCENT_DISPLAY_NAME[next] || RANK_DISPLAY_NAME[next]) + " flare.", left.length ? homeJoin(left) + " to go." : "It is ready to light."];
     } else {
-      parts = homeRingTier() === "eclipse" ? ["Every flare is lit,", "the secret ones too."] : ["Every rank flare is lit."];
+      parts = homeRingTier() && secretFlaresAllFound() ? ["Every flare is lit,", "the secret ones too."] : ["Every rank flare is lit."];
     }
     return { kind: "planet", name: "Your flares", state: "", color: "", parts };
   }
@@ -89884,9 +89943,35 @@ function homeRingStreak(hero, why){
   return gs.length > 0;
 }
 let homeStreakTimer = null;
+/* AT RANDOM TIMES TOO (build 325). Madison: "I really like the random like
+   circle from the glowing things too, I'm hoping that's gonna be on the
+   Home Screen at random times too and maybe even when you tap the large
+   planet." The tap already runs it (homeTapBind); the pulse runs it every
+   RING_STREAK_EVERY-th beat; and now a second timer runs it on its own
+   at a random moment RING_STREAK_RAND_MIN_MS to RING_STREAK_RAND_MAX_MS
+   apart (why "random"), so it does not only ever come with the pulse.
+   One timer per Home planet (re-armed on its own schedule, never reset by
+   the pulse's), the same holds as every other streak (homeRingStreak:
+   nothing on top of one already running, a cutscene, a tour, the ring
+   draw, the background, Reduce motion), and it stops with the planet. */
+const RING_STREAK_RAND_MIN_MS = 12000, RING_STREAK_RAND_MAX_MS = 38000;
+let homeStreakRandTimer = null, homeStreakRandHero = null;
+function homeStreakRandArm(hero){
+  if(homeStreakRandTimer && homeStreakRandHero === hero) return;
+  clearTimeout(homeStreakRandTimer); homeStreakRandTimer = null; homeStreakRandHero = hero;
+  if(!hero || !hero.isConnected || !homeRingTier() || ringMotionOff()) return;
+  const wait = RING_STREAK_RAND_MIN_MS + Math.random() * (RING_STREAK_RAND_MAX_MS - RING_STREAK_RAND_MIN_MS);
+  homeStreakRandTimer = setTimeout(() => {
+    homeStreakRandTimer = null;
+    if(!hero.isConnected || homeStreakRandHero !== hero) return;
+    homeRingStreak(hero, "random");
+    homeStreakRandArm(hero);
+  }, wait);
+}
 function homeStreakArm(hero){
   clearTimeout(homeStreakTimer); homeStreakTimer = null;
   if(!hero || !hero.isConnected || !homeRingTier() || ringMotionOff()) return;
+  homeStreakRandArm(hero);
   let a = null;
   try{
     const p = hero.querySelector(".cosmic-pulse-ring");
