@@ -31595,7 +31595,9 @@ const QUESTIONS = [
       "Is a mere acquiescence to authority claimed by the officer",
       "Revoked by the person granting consent",
     ],
-    answer: 3
+    /* HOTFIX 313d: #55 is this question word for word and keys C, which is
+       right (mere acquiescence to claimed authority is not consent). */
+    answer: 2
   },
   {
     topic: "Arrest, Search, and Seizure",
@@ -34220,14 +34222,18 @@ const QUESTIONS = [
     src: 30,
     q: "Peter has been terminated from the Post Office. In anger, he calls and states that there is a letter bomb in the mail. This causes the evacuation of the Post Office and the alert of the fire department and bomb squad. What offense has been committed?",
     keyText: "Peter has been terminated from the Post Office. In anger, he calls and states that there is a letter bomb in the mail. This causes the evacuation of the Post Office and the alert of the fire department and bomb squad. What offense has been committed? (PC 42.06 (a) (1-3), PC Section 8.27), https://quizlet.com/221179173/penal-code-flash-cards/ #36 of 121, JeanBrent",
-    ref: "(PC 42.06 (a) (1-3), PC Section 8.27)",
+    /* HOTFIX 313d: the same question is Penal Code #243, keyed Terroristic
+       Threat there by the Penal Code PowerPoint (slide 175, which cites
+       Family Violence & RAO section 17.6, this unit) and the Penal Code
+       study guide. One question, one answer. keyText is untouched. */
+    ref: "(PC 22.07 (a) (2, 5, & 6); Family Violence & RAO section 17.6, PC Section 8.13)",
     choices: [
       "Terroristic Threat",
       "False Alarm or Report",
       "Disorderly Conduct",
       "Interference with Duties of Public Servants",
     ],
-    answer: 1
+    answer: 0
   },
   {
     topic: "Sexual Assault and Family Violence",
@@ -35314,7 +35320,121 @@ const QUESTIONS = [
     ],
     answer: 3
   },
-];
+  /* #52 again: the deck has it twice inside slides 256-578 (slides 359 and 386; build 325). Same treatment as
+     #84's copy (src 347): its own identity, the slides 256-578 version only. */
+  {
+    topic: "Penal Code",
+    src: 358,
+    repeatOf: 52,
+    versionOnly: true,
+    q: "_____ means detained or under arrest by a peace officer?",
+    ref: "(PC 38.01 #1 (A); Arrest, Search, and Seizure Section 10.4)",
+    choices: [
+      "Restraint",
+      "Custody",
+      "Hold",
+      "Charge",
+    ],
+    answer: 1
+  },
+  /* #212 again: the deck has it twice inside slides 256-578 (slides 390 and 391; build 325). Same treatment as
+     #84's copy (src 347): its own identity, the slides 256-578 version only. */
+  {
+    topic: "Penal Code",
+    src: 359,
+    repeatOf: 212,
+    versionOnly: true,
+    q: "Which of the following is the main difference between resisting arrest and evading arrest?",
+    ref: "(PC Section 8.25; PC 38.03 Resisting; PC 38.04 Evading)",
+    choices: [
+      "Suspect uses physical force in avoiding apprehension in each; therefore, there is no difference.",
+      "Suspect uses force to avoid apprehension in evading but not in resisting",
+      "Suspect uses force to avoid apprehension in resisting but merely runs away in evading",
+      "None of the above",
+    ],
+    answer: 2
+  },
+  /* #310 again: the deck has it twice inside slides 256-578 (slides 571 and 573; build 325). Same treatment as
+     #84's copy (src 347): its own identity, the slides 256-578 version only. */
+  {
+    topic: "Penal Code",
+    src: 360,
+    repeatOf: 310,
+    versionOnly: true,
+    q: "Under Sec. 71.02: Engaging in Organized Criminal Activity, which does NOT fall under this topic as an offense?",
+    ref: "(PC 71.02 (a) (1); PC Section 8.34)",
+    choices: [
+      "Murder",
+      "Kidnapping",
+      "Forgery",
+      "Smoking Tobacco",
+    ],
+    answer: 3
+  },
+  /* Slide 344's "67." is not in the Penal Code study guide (the same question as Sexual Assault and Family Violence #10), so it is
+     its own question here, in the slides 256-578 version only, worded as the deck has it (build 325). */
+  {
+    topic: "Penal Code",
+    src: 361,
+    versionOnly: true,
+    q: "According to Penal Code a person commits an offense if the person, over the internet, by electronic mail or text message or other electronic message service or system, or through a commercial online service, knowingly solicits a _____ to meet another person, including the actor, with the intent that the _____ will engage in sexual contact, sexual intercourse, or deviate sexual intercourse with the actor or another person.",
+    ref: "(PC 33.021 (c); PC Section 8.21 and Missing & Exploited Children, page 61)",
+    choices: [
+      "minor",
+      "child",
+      "kid",
+      "juvenile",
+    ],
+    answer: 0
+  },
+  /* Slide 359's "237." is not in the Penal Code study guide (the same question as Professionalism and Ethics #21), so it is
+     its own question here, in the slides 256-578 version only, worded as the deck has it (build 325). */
+  {
+    topic: "Penal Code",
+    src: 362,
+    versionOnly: true,
+    q: "____________ means anything reasonably regarded as pecuniary gain or pecuniary advantage, including benefit to any other person in whose welfare the beneficiary has a direct and substantial interest.",
+    ref: "(PC 36.01 #3, Professionalism & Ethics, Section 1.6)",
+    choices: [
+      "bribery",
+      "corruption",
+      "benefit",
+      "solicitation",
+    ],
+    answer: 2
+  },
+  /* Slide 361's "57." is not in the Penal Code study guide (and no other unit has it either), so it is
+     its own question here, in the slides 256-578 version only, worded as the deck has it (build 325). */
+  {
+    topic: "Penal Code",
+    src: 363,
+    versionOnly: true,
+    q: "A person commits an offense if by means of coercion he influences or attempts to influence a public servant in a specific exercise of his official power or a specific performance of his official duty or influences or attempts to influence a public servant to violate the public servant’s known legal duty. This is known as",
+    ref: "(PC 36.03 (a) (1); Professionalism & Ethics Section 1.6)",
+    choices: [
+      "Coercion of Public Servant or Voter",
+      "Official Oppression",
+      "Improper Influence",
+      "Bribery",
+    ],
+    answer: 0
+  },
+  /* Slide 577's "345." is not in the Penal Code study guide (and no other unit has it either), so it is
+     its own question here, in the slides 256-578 version only, worded as the deck has it (build 325). */
+  {
+    topic: "Penal Code",
+    src: 364,
+    versionOnly: true,
+    q: "Under Penal Code 71.022- Coercing, Inducing, or Soliciting Membership in a Criminal Street Gang, a child is defined as younger than",
+    ref: "(PC 71.022 (d) (1), PC Section 8.34)",
+    choices: [
+      "18 YOA",
+      "17 YOA",
+      "16 YOA",
+      "15 YOA",
+    ],
+    answer: 1
+  },];
 
 /* ==========================================================================
    Everything below runs the drill. You should not need to edit it.
@@ -45264,6 +45384,34 @@ const PENAL_TEST_SRCS = [249, 213, 24, 121, 200, 262, 344, 128, 159, 61, 95, 183
    where the deck marks it in bold rather than yellow (slides 58, 77, 95,
    97, 99, 123) the bold one agrees too. The 0-85 list above is history;
    #84's copy (347) stays in the bank so its history survives. */
+/* ---- SLIDES 256-578 FROM 8 PM MONDAY OCT 19 (hotfix 313d) ----
+   "the next test over slides 124-256 from penal code. The test over is
+   slides 256-578 ... ensure Monday night the version in penal code is
+   updated automatically. Update the version at 8pm automatically." The
+   same kind of switch as 313c's midnight one: in the app, needing nothing
+   else to run. Before PENAL_256_AT every device keeps slides 124-256 for
+   Monday's test; from 8 PM Central it offers 256-578.
+   132 questions on 68 slides, read off the deck in two independent passes
+   that agree slide for slide; 125 are study-guide questions already in the
+   bank (every answer equal to the deck's and the study guide's), three
+   repeats get version-only copies (52 -> 358, 212 -> 359, 310 -> 360), and
+   four deck questions not in the Penal Code study guide are version-only
+   questions of their own (361-364), worded and keyed as the deck has it. */
+const PENAL_256_AT = Date.UTC(2026, 9, 20, 1, 0, 0); /* 8:00 PM Mon Oct 19, Central (CDT, UTC-5) */
+const PENAL_256_SRCS = [132, 37, 79, 140, 175, 186, 215, 291, 320, 341, 99, 252, 306, 326, 334, 10, 18, 64, 89, 247,
+  118, 245, 301, 340, 131, 208, 361, 6, 52, 362, 363, 180, 294, 19, 165, 305, 189, 48, 234, 116, 119, 36, 59, 193,
+  330, 164, 358, 107, 280, 108, 212, 49, 359, 4, 287, 152, 85, 268, 63, 225, 269, 307, 339, 227, 8, 216, 235, 278,
+  279, 298, 17, 67, 335, 144, 211, 300, 273, 94, 154, 224, 129, 29, 149, 199, 233, 293, 12, 112, 113, 267, 316, 270,
+  155, 282, 295, 72, 38, 138, 266, 284, 5, 103, 226, 329, 206, 11, 195, 106, 228, 292, 342, 46, 241, 163, 244, 35,
+  173, 281, 283, 91, 205, 74, 201, 23, 31, 232, 142, 160, 315, 310, 360, 364];
+function penal256Live(){ return Date.now() >= PENAL_256_AT; }
+const PENAL_256_VERSION = {
+  srcs: new Set(PENAL_256_SRCS),
+  label: "Penal Code — Slides 256–578",
+  short: "slides 256–578",
+  desc: "Only the questions from slides 256–578 of the Penal Code PowerPoint.",
+  tag: "Slides 256–578 version available"
+};
 /* Keyed by unit name. `label` is what the pop-up calls the short
    version and `desc` is its one line; the whole unit is always the
    other choice. `tag` is the line on the unit's own card saying the
@@ -45303,7 +45451,7 @@ const PENAL_124_VERSION = {
   tag: "Slides 124–256 version available"
 };
 const UNIT_TEST_VERSIONS = {
-  get "Penal Code"(){ return penal124Live() ? PENAL_124_VERSION : PENAL_55_VERSION; }
+  get "Penal Code"(){ return penal256Live() ? PENAL_256_VERSION : (penal124Live() ? PENAL_124_VERSION : PENAL_55_VERSION); }
 };
 function unitHasTestVersion(name){ return !!UNIT_TEST_VERSIONS[name]; }
 /* Is this question part of its WHOLE unit? Everything is, except a
@@ -59659,7 +59807,7 @@ function dailyQuestionIndexFor(key){
   const units = dailyScheduleUnits(row);
   const pools = units.map(u => {
     const ids = [];
-    QUESTIONS.forEach((q, i) => { if((q.topic || "").trim() === u && q.repeatOf == null) ids.push(i); });
+    QUESTIONS.forEach((q, i) => { if((q.topic || "").trim() === u && q.repeatOf == null && !q.versionOnly) ids.push(i); });
     return ids;
   }).filter(ids => ids.length);
   if(!pools.length){
@@ -68347,7 +68495,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-12-313c";
+const APP_BUILD = "2026-10-18-313d";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
