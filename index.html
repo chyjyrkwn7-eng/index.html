@@ -4665,13 +4665,13 @@
     background:var(--wrong);
   }
   .cal-cell-dot-big,
-  .cal-cell .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big,
-  [data-theme="dark"][data-layout="modern"] .cal-cell-sel .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big,
-  [data-theme="dark"][data-layout="modern"] .cal-cell-today .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big,
-  [data-theme="dark"][data-layout="modern"] .cal-cell-today.cal-cell-sel .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big,
-  [data-theme="dark"][data-layout="modern"] .cal-cell.cal-cell-today:not(.cal-cell-holiday) .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big:not(.cal-cell-dot-test),
-  [data-theme="dark"][data-layout="modern"] .cal-cell.cal-cell-today.cal-cell-sel:not(.cal-cell-holiday) .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big:not(.cal-cell-dot-test),
-  .cal-week-dot.cal-week-dot-big{
+  .cal-cell .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test.cal-cell-dot-big,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-sel .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test.cal-cell-dot-big,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-today .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test.cal-cell-dot-big,
+  [data-theme="dark"][data-layout="modern"] .cal-cell-today.cal-cell-sel .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test.cal-cell-dot-big,
+  [data-theme="dark"][data-layout="modern"] .cal-cell.cal-cell-today:not(.cal-cell-holiday) .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test.cal-cell-dot-big,
+  [data-theme="dark"][data-layout="modern"] .cal-cell.cal-cell-today.cal-cell-sel:not(.cal-cell-holiday) .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test.cal-cell-dot-big,
+  .cal-week-dot.cal-week-dot-test.cal-week-dot-big{
     width:.46rem; height:.46rem; margin:0 .08rem; border-radius:1.5px; transform:rotate(45deg);
     background:linear-gradient(135deg, #FFD08A, #FF8A3D 60%);
     box-shadow:0 0 0 1.5px rgba(255,138,61,.28), 0 0 7px rgba(255,138,61,.6);
@@ -4732,11 +4732,12 @@
   }
   .cal-grid-legend span{ display:flex; align-items:center; gap:.4rem; white-space:nowrap; }
   .cal-grid-legend .cal-legend-dot{ flex:none; }
-  .cal-legend-dot{ width:.34rem; height:.34rem; border-radius:999px; background:var(--accent); }
-  .cal-legend-dot-holiday{ background:var(--wrong); }
-  /* The same amber as .cal-cell-dot-test, which is the mark it
-     explains. */
-  .cal-legend-dot-test{ background:#F5B54D; }
+  /* A key mark is the cell's own dot (.cal-cell-dot plus the same
+     suffix the cells use - see buildCalendarPane), so its colour and shape
+     come from the cell rules and nothing here may set a background over
+     them (build 325: one did, and painted all four white). */
+  .cal-legend-dot{ width:.42rem; height:.42rem; }
+  .cal-grid-legend .cal-legend-dot.cal-cell-dot-big{ width:.5rem; height:.5rem; margin:0 .06rem; }
   /* Phone: the dot is the whole signal, and the card below says what
      the day is. The note is in the DOM but not shown - see the comment
      at its construction. */
@@ -4859,6 +4860,39 @@
   .cal-nt-num{ font-family:var(--mono); font-size:2rem; font-weight:700; line-height:1; letter-spacing:-.02em; color:#F5B54D; font-variant-numeric:tabular-nums; }
   .cal-nt-unit{ margin-top:.3rem; font-size:.66rem; font-weight:700; color:var(--soft); white-space:nowrap; }
   .cal-nt-count.is-today .cal-nt-num{ font-family:inherit; font-size:1.3rem; font-weight:800; letter-spacing:0; }
+  /* the big four (build 325): the key's diamond, in exam orange */
+  .cal-nt-big{ display:inline-flex; align-items:center; gap:.45rem; margin:0 0 .35rem; padding:.2rem .6rem .2rem .5rem; border-radius:999px;
+    font-size:.66rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:#FFB27A;
+    background:rgba(255,138,61,.12); border:1px solid rgba(255,138,61,.4); }
+  .cal-nexttest-card.is-bigexam .cal-nt-when, .cal-nexttest-card.is-bigexam .cal-nt-num{ color:#FF9D5C; }
+  .cal-nexttest-card.is-bigexam .cal-nt-count{ background:rgba(255,138,61,.1); border-color:rgba(255,138,61,.42); }
+  .cal-today-card.is-bigexam .cal-today-status{ color:#FF9D5C; }
+  .screen-calendar-tab > .cal-big-card{ margin:1.2rem 0 0; }
+  .screen-calendar-tab > .cal-big-card[hidden]{ display:none; }
+  .cal-big-list{ display:flex; flex-direction:column; margin-top:.1rem; }
+  .cal-big-row{
+    font:inherit; color:inherit; text-align:left; -webkit-appearance:none; appearance:none; cursor:pointer;
+    display:flex; align-items:center; gap:.85rem; width:100%; min-height:3.2rem; padding:.55rem .1rem;
+    background:transparent; border:0; border-top:1px solid rgba(255,255,255,.07); -webkit-tap-highlight-color:transparent;
+  }
+  .cal-big-row:first-child{ border-top:0; }
+  .cal-big-row > .cal-cell-dot-big{ flex:none; margin:0 .2rem; }
+  .cal-big-text{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:.1rem; }
+  .cal-big-name{ font-size:1rem; font-weight:800; color:var(--ink); line-height:1.25; }
+  .cal-big-when{ font-size:.8rem; font-weight:700; color:var(--soft); }
+  .cal-big-count{ flex:none; font-size:.76rem; font-weight:700; color:var(--soft); white-space:nowrap; }
+  .cal-big-count b{ font-family:var(--mono); font-size:1.15rem; font-weight:700; color:#FF9D5C; font-variant-numeric:tabular-nums; }
+  .cal-big-row.is-today .cal-big-count{ font-size:.92rem; font-weight:800; color:#FF9D5C; }
+  .cal-big-row.is-done{ opacity:.55; }
+  .cal-big-row.is-done .cal-big-count{ font-size:.86rem; }
+  .cal-big-row.is-done > .cal-cell-dot-big{ background:var(--soft); box-shadow:none; }
+  .cal-big-row:active{ background:rgba(255,255,255,.05); }
+  @media (min-width:40rem){
+    /* two by two on a tablet: four rows across a 760px card are mostly air */
+    .cal-big-list{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:1.6rem; }
+    .cal-big-row:nth-child(-n+2){ border-top:0; }
+    .cal-big-name{ font-size:1.08rem; }
+  }
   .cal-topics{ margin:.8rem 0 0; padding:.75rem 0 0; border-top:1px solid rgba(255,255,255,.09); }
   .cal-topics-lab{ margin:0 0 .35rem; font-size:.66rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
   .cal-topics-list{ margin:0; padding:0 0 0 1.15rem; font-size:.94rem; line-height:1.5; color:var(--ink); }
@@ -112428,7 +112462,7 @@ function showCalendar(){
    day tapped in the week is picked in the month as well. */
 /* A day's marks, for the month's cells and the week strip alike (build
    325): a class day's dot, then a test's amber dot - or, on one of the
-   big four (isBigExamDay), the larger orange diamond instead - and a
+   big four (isBigExamDay), the larger orange diamond in its place - and a
    no-class day's red dot. `base` is the strip's or the grid's dot class;
    the key builds its marks from the same suffixes. */
 function calDayDots(entry, base, into){
@@ -112436,8 +112470,13 @@ function calDayDots(entry, base, into){
   if(!entry) return into;
   if(entry.holiday){ add("off"); return into; }
   add("");
-  if(isBigExamDay(entry)) add("big");
-  else if(isExamDay(entry)) add("test");
+  /* the diamond is a test's mark too (it carries -test as well as -big),
+     so everything that asks "is this day marked as a test" still finds it */
+  if(isExamDay(entry)){
+    const i = document.createElement("i");
+    i.className = base + " " + base + "-test" + (isBigExamDay(entry) ? " " + base + "-big" : "");
+    into.appendChild(i);
+  }
   return into;
 }
 function buildCalendarPane(panel){
@@ -112490,7 +112529,7 @@ function buildCalendarPane(panel){
      cell's own class, so the two cannot drift apart. */
   const legend = document.createElement("div");
   legend.className = "cal-grid-legend";
-  [["", "Class day"], ["cal-cell-dot-test", "Test"], ["cal-cell-dot-big", "Final / State test"], ["cal-cell-dot-off", "No class"]].forEach(([cls, label]) => {
+  [["", "Class day"], ["cal-cell-dot-test cal-legend-dot-test", "Test"], ["cal-cell-dot-big", "Big exam"], ["cal-cell-dot-off cal-legend-dot-holiday", "No class"]].forEach(([cls, label]) => {
     const it = document.createElement("span");
     it.className = "cal-legend-item";
     const dot = document.createElement("i");
@@ -112635,6 +112674,15 @@ function buildCalendarPane(panel){
       words.append(k, t);
       crest.appendChild(words);
       dayCard.appendChild(crest);
+    }
+    /* one of the big four (build 325), and not the last day, whose crest
+       already says State test: the Next test card's own chip */
+    if(isBigExamDay(entry) && entry.date !== lastClassDay){
+      const chip = document.createElement("p");
+      chip.className = "cal-nt-big";
+      const dm = document.createElement("i"); dm.className = "cal-cell-dot cal-cell-dot-big"; dm.setAttribute("aria-hidden", "true");
+      chip.append(dm, document.createTextNode("Big exam \u00b7 " + testNameOf(entry)));
+      dayCard.appendChild(chip);
     }
     const head = document.createElement("p");
     head.className = "cal-row-date"; head.textContent = formatDayHead(entry.date);
@@ -112854,13 +112902,13 @@ function buildCalendarPane(panel){
     let kind = "free", status = "No class", sub = null;
     if(entry && entry.holiday){ kind = "holiday"; sub = holidayName(entry); }
     else if(entry && todayStr === lastClassDay){ kind = "last"; status = "Last day"; }
-    else if(entry && isExamDay(entry)){ kind = "test"; status = "Test day"; }
+    else if(entry && isExamDay(entry)){ kind = "test"; status = isBigExamDay(entry) ? "Big exam day" : "Test day"; }
     else if(entry){ kind = "class"; status = "Class day"; }
     else if(firstClassDay && todayStr < firstClassDay){ status = "No class yet"; sub = "Class 26E begins " + formatCalendarDate(firstClassDay) + "."; }
     else if(todayStr > LAST_CLASS_DATE){ status = "Class 26E is done"; sub = "Graduation was " + formatCalendarDate(GRADUATION_DATE) + "."; }
     else sub = (dow === 0 || dow === 6) ? "It's the weekend." : "Nothing on the schedule today.";
     const card = document.createElement("section");
-    card.className = "points-progress-sect cal-card cal-today-card is-" + kind;
+    card.className = "points-progress-sect cal-card cal-today-card is-" + kind + (entry && isBigExamDay(entry) ? " is-bigexam" : "");
     card.dataset.kind = kind;
     card.appendChild(cardHead("Today", formatCalendarDate(todayStr)));
     const st = document.createElement("p");
@@ -112999,6 +113047,15 @@ function buildCalendarPane(panel){
     row.className = "cal-nt-row";
     const words = document.createElement("div");
     words.className = "cal-nt-text";
+    /* one of the big four (build 325): the key's diamond and its name */
+    if(isBigExamDay(nt)){
+      card.classList.add("is-bigexam");
+      const chip = document.createElement("p");
+      chip.className = "cal-nt-big";
+      const dm = document.createElement("i"); dm.className = "cal-cell-dot cal-cell-dot-big"; dm.setAttribute("aria-hidden", "true");
+      chip.append(dm, document.createTextNode("Big exam"));
+      words.appendChild(chip);
+    }
     const title = document.createElement("p");
     title.className = "cal-nt-title"; title.textContent = (tp && tp.title) || testNameOf(nt);
     const when = document.createElement("p");
@@ -113019,6 +113076,46 @@ function buildCalendarPane(panel){
     card.appendChild(row);
     const tb = buildTopicsBlock(nt);
     if(tb) card.appendChild(tb);
+    return card;
+  }
+
+  /* THE BIG EXAMS (build 325): "We need some dots for the 4 big tests,
+     the level 1 exam, level 2 exam, level 3 exam and the state test." The
+     diamond on the grid says which days; this says all four at once - the
+     name, the day, how far off, and Done once sat. A row picks its day in
+     the month, like the week strip. Read off the schedule (isBigExamDay),
+     never a typed list. */
+  function buildBigExamsCard(){
+    const list = CALENDAR_DATA.filter(isBigExamDay);
+    const card = document.createElement("section");
+    card.className = "points-progress-sect cal-card cal-big-card";
+    if(!list.length){ card.hidden = true; return card; }
+    const left = list.filter(e => e.date >= todayStr).length;
+    card.appendChild(cardHead("Big exams", left ? left + " to go" : "All done"));
+    const ul = document.createElement("div");
+    ul.className = "cal-big-list";
+    list.forEach(e => {
+      const days = calendarDaysBetween(todayStr, e.date);
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "cal-big-row" + (days < 0 ? " is-done" : days === 0 ? " is-today" : "");
+      b.dataset.date = e.date;
+      const dm = document.createElement("i"); dm.className = "cal-cell-dot cal-cell-dot-big"; dm.setAttribute("aria-hidden", "true");
+      const tx = document.createElement("span"); tx.className = "cal-big-text";
+      const nm = document.createElement("span"); nm.className = "cal-big-name"; nm.textContent = testNameOf(e);
+      const wh = document.createElement("span"); wh.className = "cal-big-when"; wh.textContent = formatCalendarDate(e.date);
+      tx.append(nm, wh);
+      const ct = document.createElement("span"); ct.className = "cal-big-count";
+      if(days > 0){
+        const n = document.createElement("b"); n.textContent = String(days);
+        ct.append(n, document.createTextNode(days === 1 ? " day" : " days"));
+      } else ct.textContent = days < 0 ? "Done" : "Today";
+      b.append(dm, tx, ct);
+      b.setAttribute("aria-label", testNameOf(e) + ", " + formatDayHead(e.date) + ", " + ct.textContent);
+      b.addEventListener("click", () => pickDay(e.date, true));
+      ul.appendChild(b);
+    });
+    card.appendChild(ul);
     return card;
   }
 
@@ -113071,6 +113168,7 @@ function buildCalendarPane(panel){
   /* The course goes UNDER the month: the month is the heart of the tab
      ("I like the current calendar"), so the countdowns follow it rather
      than pushing it further down. */
+  panel.appendChild(buildBigExamsCard());
   panel.appendChild(buildCourseCard());
   renderGrid();
   renderDayCard();
