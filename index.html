@@ -10396,12 +10396,19 @@
   .hfx-uw-wave.is-back{ top:-5px; animation-name:hfx-uw-wave-back; }
   @keyframes hfx-uw-wave{ from{ transform:translateX(0); } to{ transform:translateX(calc(var(--p) * -1)); } }
   @keyframes hfx-uw-wave-back{ from{ transform:translateX(calc(var(--p) * -1)); } to{ transform:translateX(0); } }
-  .hfx-uw-fish, .hfx-uw-manta{ left:0; top:0; }
+  .hfx-uw-fish{ left:0; top:0; }
   /* round 6: the school is one layer - each fish holds its place in it
      and the school moves */
   .hfx-uw-school{ position:absolute; left:0; top:0; width:0; height:0; animation:hfx-uw-swim .9s ease-in-out 8 alternate; }
   @keyframes hfx-uw-swim{ from{ transform:translateY(-4px); } to{ transform:translateY(4px); } }
   .hfx-uw-fishk{ position:absolute; width:var(--ps); height:var(--ps); margin:calc(var(--ps) / -2) 0 0 calc(var(--ps) / -2); background:center / contain no-repeat; }
+  /* a drawn fish (build 325): its tail beats - a small turn either side,
+     on `rotate`, so the transform that flips it to face its way is kept -
+     a finite number of times, about its middle */
+  .hfx-uw-school.is-big{ animation-duration:1.3s; }
+  .hfx-uw-f{ position:absolute; width:var(--fw); height:calc(var(--fw) / 2); margin:calc(var(--fw) / -4) 0 0 calc(var(--fw) / -2);
+    background:center / contain no-repeat; animation:hfx-uw-wag var(--wg) ease-in-out var(--wn) alternate; }
+  @keyframes hfx-uw-wag{ from{ rotate:-4deg; } to{ rotate:4deg; } }
 
   .hfx-uw-drop{ animation:hfx-uw-drop var(--d) cubic-bezier(.55,0,.8,.6) var(--t) both; }
   @keyframes hfx-uw-drop{ 0%{ opacity:0; transform:translateY(0) scaleY(.6); } 14%{ opacity:1; transform:translateY(2px) scaleY(1); } 100%{ opacity:0; transform:translateY(var(--fall)) scaleY(1.35); } }
@@ -64409,7 +64416,7 @@ const SOUND_CATALOGUE = {
       K.noise({ t: 3.9, hp: 4500, ff2: 2500, fgl: 2.4, am: [9, .7], a: .4, hold: 1, d: 1.2, g: .02 });
     } },
   "hundo.underwater": { vol: 1.3, group: "Hundo effects", bus: "cut", cd: 3000, hap: "celebrate",
-    desc: "Underwater, on HFX_UW: the sea rushing up from the bottom, the world muffled with bubbles and a whale's call as the fish and the manta pass, then draining away and drips on the glass.",
+    desc: "Underwater, on HFX_UW: the sea rushing up from the bottom, the world muffled with bubbles and a low call as the fish pass, then draining away and drips on the glass.",
     fn: K => {
       const U = (typeof HFX_UW === "object" && HFX_UW) ? HFX_UW : { rise: .15, riseD: 1.6, drain: 5.0, drainD: 1.2 };
       const up = U.rise, full = U.rise + U.riseD, dr = U.drain, out = U.drain + U.drainD;
@@ -91386,7 +91393,7 @@ function hfxWarm(id){
     else if(id === "worldtree"){ [0, 1, 2].forEach(i => urls.push(hfxBlossomURL(i))); urls.push(hfxLeafURL()); HFX_BLOOM.forEach(cl => urls.push(hfxPetalURL(cl))); }
     else if(id === "fireworks"){ hfxFwHeads(); urls.push(hfxGlintURL()); }
     else if(id === "blackhole"){ urls.push(hfxDiscURL(), hfxSwirlURL(), hfxStreakURL(), hfxGlintURL()); }
-    else if(id === "underwater"){ urls.push(hfxWaveURL(0), hfxWaveURL(1), hfxUwLensURL(), hfxUwLightURL(0), hfxUwLightURL(1), hfxRayURL(), hfxUwBubbleURL(), hfxMantaURL(), hfxDropURL(), hfxGlintURL()); [0, 1, 2].forEach(k => urls.push(hfxFishURL(k))); }
+    else if(id === "underwater"){ urls.push(hfxWaveURL(0), hfxWaveURL(1), hfxUwLensURL(), hfxUwLightURL(0), hfxUwLightURL(1), hfxRayURL(), hfxUwBubbleURL(), hfxDropURL(), hfxGlintURL()); [0, 1, 2].forEach(k => urls.push(hfxFishURL(k))); }
   }catch(e){}
   /* every sprite made so far, this effect's included, to a bitmap */
   Object.keys(hfxSprites).forEach(k => hfxRasterise(hfxSprites[k]));
@@ -91732,11 +91739,16 @@ function hfxWorldTree(scr, bx, c){
    - THE CHARACTER HOLDS ITS BREATH (round 5, hfxUwHold).
    - LIGHT RAYS down from the surface (still since round 6, leaning in
      their picture rather than rotated); the school of fish (one layer since
-     round 6) and the manta from the first build.
+     round 6), and since build 325 drawn fish - a silver school and a
+     clownfish and a blue tang - that swim in once the water is up and are
+     gone before it drains; the manta is gone.
    Transform and opacity only, plus that one thin lens; every picture drawn
    once and rasterised; no svg filters; pieces go in when they are due and
    come out when they are done. */
 const HFX_UW = { rise: .15, riseD: 1.6, drain: 5.0, drainD: 1.2, wavePeriod: 220, waveH: 34 };
+/* the breath is taken this long before the surface reaches the face
+   (build 325): the gulp, not a held breath on dry land */
+const HFX_UW_GULP = .12;
 /* the body's colour right under the surface - the wave tiles are filled
    with exactly this, so crest and body are one water */
 const HFX_UW_TOP = "rgba(118,220,236,.24)";
@@ -91828,16 +91840,59 @@ function hfxUwBubbleURL(){
     '<ellipse cx="13.5" cy="12.5" rx="4.8" ry="2.7" fill="#fff" fill-opacity=".92" transform="rotate(-38 13.5 12.5)"/>' +
     '<path d="M27 30 Q31 27 32 22" stroke="#fff" stroke-opacity=".45" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>', 96);
 }
+/* THE FISH, DRAWN PROPERLY (build 325). "The fish coming by and the
+   random shadow black thing is bad. Fix what's in the water." The old
+   fish were one pale lozenge with a dot; the manta was a dark silhouette
+   that read as a shadow passing over the screen - it is gone. Three
+   species now, each lit from above the way the water is (a dark back, a
+   pale belly, a sheen along the top), with fins that carry their own
+   colour, an eye with a catch-light, and in the clownfish's and the
+   tang's case the markings that make them what they are: k 0 a silver
+   schooling fish (an iridescent stripe down its side), k 1 a clownfish
+   (three white bands, each edged in black, clipped to the body), k 2 a
+   blue tang (its dark sweep and a yellow tail). Every one faces LEFT and
+   is drawn once and rasterised, like every sprite. */
 function hfxFishURL(k){
-  const body = ["#9FD8E6", "#C6EEF6", "#7FC2D6"][k % 3];
-  return hfxSprite("fish" + k, () => 'viewBox="0 0 64 32"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3E7F94"/><stop offset=".45" stop-color="' + body + '"/><stop offset="1" stop-color="#F2FFFF"/></linearGradient></defs>' +
-    '<path d="M6 16 Q20 3 40 8 Q50 11 54 16 Q50 21 40 24 Q20 29 6 16 Z" fill="url(#g)"/><path d="M52 16 L63 6 Q60 16 63 26 Z" fill="' + body + '"/>' +
-    '<path d="M24 8 Q30 2 36 7" fill="' + body + '"/><path d="M10 14 Q26 10 46 14" stroke="#ffffff" stroke-opacity=".55" stroke-width="1.4" fill="none"/><circle cx="14" cy="14" r="1.8" fill="#0B2530"/></svg>', 128);
-}
-function hfxMantaURL(){
-  return hfxSprite("manta", () => 'viewBox="0 0 200 110"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0A2A38"/><stop offset="1" stop-color="#14465A"/></linearGradient></defs>' +
-    '<path d="M100 18 Q120 20 132 34 Q160 40 198 60 Q160 64 138 72 Q120 92 100 96 Q80 92 62 72 Q40 64 2 60 Q40 40 68 34 Q80 20 100 18 Z" fill="url(#g)" fill-opacity=".85"/>' +
-    '<path d="M92 18 Q90 8 84 4 M108 18 Q110 8 116 4" stroke="#0A2A38" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M100 96 Q101 104 103 110" stroke="#0A2A38" stroke-width="2" fill="none"/></svg>', 360);
+  k = k % 3;
+  return hfxSprite("fish2-" + k, () => {
+    const eye = (x, y, r) => '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#F4FBFF"/><circle cx="' + (x - r * .12) + '" cy="' + y + '" r="' + (r * .66) + '" fill="#0A1620"/><circle cx="' + (x - r * .38) + '" cy="' + (y - r * .32) + '" r="' + (r * .24) + '" fill="#fff"/>';
+    if(k === 0) return 'viewBox="0 0 100 50"><defs>' +
+      '<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1D5670"/><stop offset=".4" stop-color="#5FA9C0"/><stop offset=".6" stop-color="#D9F2F7"/><stop offset="1" stop-color="#FFFFFF"/></linearGradient>' +
+      '<linearGradient id="s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7FF0FF" stop-opacity="0"/><stop offset=".25" stop-color="#8FF4FF" stop-opacity=".9"/><stop offset=".65" stop-color="#C2B0FF" stop-opacity=".8"/><stop offset="1" stop-color="#C2B0FF" stop-opacity="0"/></linearGradient>' +
+      '<linearGradient id="t" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2B6F88"/><stop offset="1" stop-color="#A9DCE8" stop-opacity=".85"/></linearGradient></defs>' +
+      '<path d="M76 25 Q85 17 97 7 Q91 25 97 43 Q85 33 76 25 Z" fill="url(#t)"/>' +
+      '<path d="M38 11 Q48 1 62 8 Q54 10 47 13 Z" fill="#2A6C86"/><path d="M46 38 Q53 46 60 38 Z" fill="#A9DCE8" fill-opacity=".85"/>' +
+      '<path d="M5 25 Q13 11 37 9 Q64 8 79 25 Q64 41 37 41 Q13 39 5 25 Z" fill="url(#b)"/>' +
+      '<path d="M15 24 Q44 20 76 25" stroke="url(#s)" stroke-width="2.4" fill="none" stroke-linecap="round"/>' +
+      '<path d="M16 15 Q40 9 64 14" stroke="#fff" stroke-opacity=".3" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+      '<path d="M22 15 Q27 25 22 35" stroke="#1D5670" stroke-opacity=".45" stroke-width="1.3" fill="none" stroke-linecap="round"/>' +
+      '<path d="M28 28 Q37 29 39 35 Q31 35 28 28 Z" fill="#E4F6FA" fill-opacity=".85"/>' +
+      '<path d="M6 26.5 Q9 27.5 11.5 26.5" stroke="#1D5670" stroke-opacity=".6" stroke-width="1" fill="none" stroke-linecap="round"/>' +
+      eye(15, 22, 3.8) + '</svg>';
+    if(k === 1) return 'viewBox="0 0 100 50"><defs>' +
+      '<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFB45C"/><stop offset=".45" stop-color="#FF7A1A"/><stop offset="1" stop-color="#D9520A"/></linearGradient>' +
+      '<clipPath id="c"><path d="M5 25 Q9 9 35 8 Q62 8 77 25 Q62 42 35 42 Q9 41 5 25 Z"/></clipPath></defs>' +
+      '<path d="M75 25 Q83 13 95 11 Q100 25 95 39 Q83 37 75 25 Z" fill="#FF8A2A" stroke="#1A120C" stroke-width="2"/>' +
+      '<path d="M30 11 Q36 1 48 4 Q46 9 44 11 M48 9 Q58 3 67 13" fill="#FF8A2A" stroke="#1A120C" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path d="M40 39 Q46 48 54 39 Z" fill="#FF8A2A" stroke="#1A120C" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path d="M5 25 Q9 9 35 8 Q62 8 77 25 Q62 42 35 42 Q9 41 5 25 Z" fill="url(#b)"/>' +
+      '<g clip-path="url(#c)" stroke="#1A120C" stroke-width="1.8">' +
+      '<path d="M19 4 Q27 25 19 46 L28 46 Q36 25 28 4 Z" fill="#FFFFFF"/><path d="M45 4 Q51 25 45 46 L53 46 Q59 25 53 4 Z" fill="#FFFFFF"/><path d="M68 4 Q72 25 68 46 L74 46 Q78 25 74 4 Z" fill="#FFFFFF"/></g>' +
+      '<path d="M5 25 Q9 9 35 8 Q62 8 77 25 Q62 42 35 42 Q9 41 5 25 Z" fill="none" stroke="#1A120C" stroke-width="1.6"/>' +
+      '<path d="M14 15 Q36 8 60 13" stroke="#fff" stroke-opacity=".35" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
+      '<path d="M31 28 Q39 29 41 35 Q34 36 31 28 Z" fill="#FF9E4A" stroke="#1A120C" stroke-width="1.3" stroke-linejoin="round"/>' +
+      eye(13, 21, 4.2) + '</svg>';
+    return 'viewBox="0 0 100 50"><defs>' +
+      '<linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4C8DFF"/><stop offset=".55" stop-color="#2557E8"/><stop offset="1" stop-color="#1B3FB8"/></linearGradient>' +
+      '<linearGradient id="t" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFC21F"/><stop offset="1" stop-color="#FFE27A"/></linearGradient></defs>' +
+      '<path d="M76 25 Q84 15 97 9 Q92 25 97 41 Q84 35 76 25 Z" fill="url(#t)"/>' +
+      '<path d="M18 13 Q40 1 70 14 Q50 12 30 16 Z" fill="#1B3FB8"/><path d="M20 37 Q42 48 68 36 Q48 38 30 35 Z" fill="#1B3FB8"/>' +
+      '<path d="M5 25 Q12 9 38 9 Q64 9 78 25 Q64 41 38 41 Q12 41 5 25 Z" fill="url(#b)"/>' +
+      '<path d="M20 20 Q36 13 54 17 Q70 21 74 27 Q66 23 58 25 Q46 28 38 34 Q36 26 28 26 Q22 26 20 20 Z" fill="#0B1A4A" fill-opacity=".85"/>' +
+      '<path d="M14 14 Q36 9 58 13" stroke="#fff" stroke-opacity=".3" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+      '<path d="M27 28 Q35 30 37 36 Q30 36 27 28 Z" fill="#FFD54A"/>' +
+      eye(14, 22, 3.9) + '</svg>';
+  }, 192);
 }
 function hfxDropURL(){
   return hfxSprite("drop", () => 'viewBox="0 0 20 40"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2FFFF" stop-opacity=".95"/><stop offset="1" stop-color="#7FD9E8" stop-opacity=".35"/></linearGradient></defs>' +
@@ -92122,12 +92177,28 @@ function hfxUwScreen(c, S, page, k, tot){
       if(!r.wet && cy > line + 6){ r.wet = true; sway(r, s); }
       else if(r.wet && cy < line - 6){ r.wet = false; settle(r); }
     });
-    if(hold && !hold.done){
-      const q = hold.el.getBoundingClientRect(), cy = q.top + q.height / 2;
-      /* the breath is taken a beat before the water arrives */
-      if(!hold.on && q.height && cy > top + S.lineAt(s + .3)) hold.start();
-      if(hold.on && cy > line + 2) hold.under = true;
-      else if(hold.on && hold.under && cy < line - 2) hold.release();
+    /* THE BREATH IS HELD WHILE THE FACE IS UNDER, AND ONLY THEN (build
+       325). It was the middle of the circle against the surface, read
+       every 150ms, with a 0.3s lead: the character drew breath well
+       before the water reached its face and let it out only once the
+       surface had dropped below its middle - a held breath on dry
+       land at both ends. Now the line is the face (hold.faceY: the
+       mouth, or the eyes), the gulp is taken HFX_UW_GULP before the
+       surface reaches it, and the release comes as the surface drops
+       past it - each one timed to the frame the curves say it happens
+       (the waterline is the css curves on the water's own clock, so the
+       crossing inside the next tick is found and scheduled exactly). */
+    if(hold && !hold.done && !hold.due){
+      const fy = hold.faceY ? hold.faceY() : (() => { const q = hold.el.getBoundingClientRect(); return q.top + q.height / 2; })();
+      const cross = (test, lead) => { for(let u = 0; u <= .17; u += .01){ if(test(top + S.lineAt(s + u + lead))) return u; } return -1; };
+      if(!hold.on){
+        const u = cross(y => y <= fy, HFX_UW_GULP);
+        if(u >= 0){ hold.due = true; setTimeout(() => { hold.due = false; if(!hold.done && !quitted) hold.start(); }, u * 1000); }
+      } else if(!hold.under){ if(line <= fy) hold.under = true; }
+      else {
+        const u = cross(y => y > fy + 1, 0);
+        if(u >= 0){ hold.due = true; setTimeout(() => { hold.due = false; if(!hold.done && !quitted) hold.release(); }, u * 1000); }
+      }
     }
   };
   const iv = setInterval(tick, 150);
@@ -92244,6 +92315,20 @@ function hfxUwHold(av, face){
     const e = svg.querySelector(".cx-eyes"), er = e && e.getBoundingClientRect();
     if(er && er.width > 0) return { x: er.left + er.width / 2 - ar.left, y: er.bottom - ar.top + ar.height * .12 };
     return { x: ar.width / 2, y: ar.height * .62 };
+  };
+  /* THE FACE'S HEIGHT ON THE SCREEN (build 325): the line the water has to
+     cross for the breath to be held - the mouth, or for a helmet or the
+     bowl the middle of the eyes, or failing both the middle of the drawing.
+     hfxUwScreen holds the breath while the surface is over THIS, not over
+     the middle of the circle: "he holds his breath even before the water
+     and holds it after it's gone". */
+  H.faceY = () => {
+    if(!helmet && !fish && mouth && !keepMouth){ const m = mouth.getBoundingClientRect(); if(m.height > 0) return m.top + m.height / 2; }
+    const e = svg.querySelector(".cx-eyes"), er = e && e.getBoundingClientRect();
+    if(er && er.height > 0) return er.top + er.height / 2;
+    if(mouth){ const m = mouth.getBoundingClientRect(); if(m.height > 0) return m.top + m.height / 2; }
+    const ar = av.getBoundingClientRect();
+    return ar.top + ar.height / 2;
   };
   const later = (ms, fn) => H.timers.push(setTimeout(fn, ms));
   /* a bubble escaping */
@@ -92450,7 +92535,7 @@ const HFX_RX_FW = { m: "#FF5CD6", c: "#5CE3FF", g: "#FFD38C", w: "#FFF6EC" };
    hfxFireworks' own table (the finale's three are within 0.1s). */
 const HFX_RX_FW_BURSTS = [[1.0, "m"], [1.4, "c"], [1.85, "m"], [2.25, "g"], [2.35, "c"], [3.35, "c"], [3.45, "m"]];
 /* how long each reaction lasts (s): the last of it has eased out by then */
-const HFX_RX_TOTAL = { confetti: 3.4, fireworks: 6.3, underwater: 7.4, bubbles: 4.9, ufo: 10.4 };
+const HFX_RX_TOTAL = { confetti: 3.05, fireworks: 6.3, underwater: 7.4, bubbles: 4.9, ufo: 10.4 };
 const HFX_CHAR_RX = {
   /* a happy squint and a blush; a piece of confetti lands on its head */
   confetti(R, F, o){
@@ -92462,8 +92547,10 @@ const HFX_CHAR_RX = {
       hfxSvgEl("path", { "data-hx": "eye" + i, d: "M" + (cx - w).toFixed(2) + " " + (cy + w * .32).toFixed(2) + " Q" + cx.toFixed(2) + " " + (cy - w * .78).toFixed(2) + " " + (cx + w).toFixed(2) + " " + (cy + w * .32).toFixed(2),
         fill: "none", stroke: F.stroke, "stroke-width": (Math.max(.5, F.sw) * 1.25).toFixed(2), "stroke-linecap": "round" }, sq);
     });
-    R.fade(sq, .12, .3, 2.75, .45);
-    R.cover(F, .12, .3, 2.75, .45);
+    /* (build 325) out by 2.9s, with the default's dim and its last motes,
+       not a beat after them */
+    R.fade(sq, .12, .3, 2.45, .45);
+    R.cover(F, .12, .3, 2.45, .45);
     /* the head lifts a little with it */
     R.anim(R.svg, [{ translate: "0px 0px" }, { translate: "0px -1.6px", offset: .35 }, { translate: "0px 0px" }], { duration: 700, delay: 120, easing: "ease-out", fill: "none" });
     /* the piece: flutters down, lands, sits, slides off */
@@ -92483,8 +92570,8 @@ const HFX_CHAR_RX = {
       { duration: 1150, delay: 150, easing: "ease-in-out" });
     /* it slides off the side as the squint goes */
     R.anim(pc, [{ transform: at(0, 0), opacity: 1 }, { transform: at(1.4, .2), opacity: 1, offset: .35 }, { transform: at(3.4, 3.2), opacity: 0 }],
-      { duration: 650, delay: 2600, easing: "cubic-bezier(.5,0,.8,.5)", fill: "forwards" });
-    R.anim(tilt, [{ transform: "rotate(-16deg)" }, { transform: "rotate(40deg)" }], { duration: 650, delay: 2600, easing: "ease-in", fill: "forwards" });
+      { duration: 650, delay: 2250, easing: "cubic-bezier(.5,0,.8,.5)", fill: "forwards" });
+    R.anim(tilt, [{ transform: "rotate(-16deg)" }, { transform: "rotate(40deg)" }], { duration: 650, delay: 2250, easing: "ease-in", fill: "forwards" });
   },
   /* a flinch at the first bang, then eyes wide, lit by every burst */
   fireworks(R, F){
@@ -92751,38 +92838,63 @@ function hfxUnderwater(scr, bx, c){
       n: { rays: mini ? 3 : small ? 4 : 6, vents: mini ? 2 : small ? 3 : 4, gap: mini ? [.55, .9] : [.3, .5],
         scatter: mini ? 3 : small ? 7 : 9, boxGap: mini ? [.7, 1.1] : [.4, .65], rush: mini ? 2 : small ? 4 : 5 } });
     const body = S.body, bodyH = S.bodyH;
-    /* a school of fish across, above the box, and a manta behind them */
-    const dir = Math.random() < .5 ? 1 : -1, y0 = Math.max(60 * k, box.top - lvl - c.vh * hfxR(.12, .22));
-    /* ONE layer for the whole school (round 6): it swims across as one,
-       bobbing; each fish keeps its own place in it, the ones further back
-       behind by how much they lagged */
-    const fat = U.rise + U.riseD + .15, fl = dir > 0 ? -1 : 1, sp = (c.vw + 120) / 3, fish = [];
+    /* THE LIFE IN IT (build 325): "The fish coming by and the random
+       shadow black thing is bad. Fix what's in the water." The manta (the
+       black shape) is gone. A silver school swims across the band above
+       the box, a clownfish and a blue tang the other way lower down, in
+       the clear water under the cards where there is room (across the
+       box's lower half when there is not), each one drawn (hfxFishURL),
+       its tail beating as it goes. All of it ON THE WATER'S CLOCK: nothing
+       comes in until the sea is up (U.rise + U.riseD) and every fish has
+       swum out of frame before it starts to drain (U.drain), so nothing
+       is ever left in the air. Depth: the fish further back are smaller
+       and fainter, the water's colour showing through them. */
+    const inAt = U.rise + U.riseD + .1, outBy = U.drain - .1, win = outBy - inAt;
+    const dir = Math.random() < .5 ? 1 : -1, fl = dir > 0 ? -1 : 1;
+    const swim = (el, x0, x1, ys, dl, d, easing) => hfxAnim(c, el, [
+      { translate: x0 + "px " + ys[0] + "px" },
+      { translate: (x0 + (x1 - x0) * .33) + "px " + ys[1] + "px", offset: .33 },
+      { translate: (x0 + (x1 - x0) * .66) + "px " + ys[2] + "px", offset: .66 },
+      { translate: x1 + "px " + ys[3] + "px" }
+    ], { duration: d * 1000, delay: Math.max(0, dl) * 1000, fill: "both", easing: easing || "linear" });
+    const fishEl = (parent, kk, w, x, y, wag, depth, face) => {
+      const e = hfxMk(parent, "i", "hfx-uw-f", { left: x + "px", top: y + "px", "--fw": w + "px", "--wg": wag.toFixed(2) + "s", "--wn": String(Math.ceil(win / wag) + 2) });
+      e.style.backgroundImage = hfxFishURL(kk);
+      e.style.transform = "scaleX(" + face + ")";
+      if(depth) e.style.opacity = String(depth);
+      return e;
+    };
+    /* the school: one moving layer, each fish its own place and tail */
+    const y0 = Math.max(56 * k, box.top - lvl - c.vh * hfxR(.11, .17));
+    const nS = mini ? 5 : small ? 9 : 13, school = [];
     let back = 0;
-    for(let i = 0; i < (mini ? 5 : small ? 8 : 12); i++){
-      const lag = i * .07 + hfxR(0, .12);
-      back = Math.max(back, lag * sp);
-      fish.push({ s: hfxR(26, 40) * k, dx: -dir * lag * sp, dy: hfxR(-40, 40) * k });
+    for(let i = 0; i < nS; i++){
+      const far = i % 3 === 2, w = (far ? hfxR(24, 30) : hfxR(32, 44)) * k, lag = i * (small ? 11 : 13) * k + hfxR(0, 14) * k;
+      back = Math.max(back, lag + w);
+      school.push({ w, dx: -dir * lag, dy: hfxR(-34, 34) * k, far });
     }
-    const xs = dir > 0 ? -60 : c.vw + 60, xe = (dir > 0 ? c.vw + 60 : -60) + dir * back;
-    due(fat, off => {
+    const xs = dir > 0 ? -60 * k : c.vw + 60 * k, xe = dir > 0 ? c.vw + back + 40 * k : -back - 40 * k;
+    due(inAt, off => {
       const sc = hfxMk(body, "span", "hfx-uw-school");
-      fish.forEach((f, i) => { const e = hfxMk(sc, "i", "hfx-uw-fishk", { left: f.dx + "px", top: f.dy + "px", "--ps": f.s + "px" }); e.style.backgroundImage = hfxFishURL(i % 3); e.style.transform = "scaleX(" + fl + ")"; });
-      const a = hfxAnim(c, sc, [
-        { translate: xs + "px " + (y0 + 40) + "px" },
-        { translate: (xs + (xe - xs) * .15) + "px " + (y0 + 20) + "px", offset: .12 },
-        { translate: (xs + (xe - xs) * .5) + "px " + (y0 - 10) + "px", offset: .5 },
-        { translate: (xs + (xe - xs) * .85) + "px " + (y0 + 14) + "px", offset: .88 },
-        { translate: xe + "px " + (y0 + 4) + "px" }
-      ], { duration: 3000 + back / sp * 1000, delay: Math.max(0, fat - off) * 1000, fill: "both", easing: "ease-in-out" });
+      school.forEach(f => fishEl(sc, 0, f.w, f.dx, f.dy, f.far ? .34 : .26, f.far ? .62 : 0, fl));
+      const a = swim(sc, xs, xe, [y0 + 18 * k, y0 - 6 * k, y0 + 8 * k, y0 - 4 * k], inAt - off, win, "cubic-bezier(.3,.1,.6,.95)");
       if(a) a.onfinish = () => sc.remove();
     });
-    const mw = (mini ? 120 : small ? 190 : 260);
-    const my = Math.max(bodyH * .1, box.top - lvl - c.vh * .3), mat = U.rise + U.riseD + .05;
-    due(mat, off => hfxAnim(c, hfxPiece(body, "hfx-uw-manta", hfxMantaURL(), 0, 0, mw, {}), [
-      { transform: "translate(" + (dir > 0 ? c.vw + mw : -mw) + "px," + (my + 30) + "px) rotate(" + (dir > 0 ? -6 : 6) + "deg) scale(.8)", opacity: 0 },
-      { transform: "translate(" + (c.vw / 2) + "px," + (my - 10) + "px) rotate(0deg) scale(1)", opacity: .85, offset: .5 },
-      { transform: "translate(" + (dir > 0 ? -mw : c.vw + mw) + "px," + (my - 40) + "px) rotate(" + (dir > 0 ? 6 : -6) + "deg) scale(.9)", opacity: 0 }
-    ], { duration: 3400, delay: Math.max(0, mat - off) * 1000, fill: "both", easing: "ease-in-out" }));
+    /* the two big ones, the other way: under the cards where there is
+       clear water, else across the box's lower half */
+    const cardsBottom = c.scene && c.scene.cards && c.scene.cards.length ? Math.max(...c.scene.cards.map(q => q.bottom)) - rest : box.top + box.height;
+    const clear = c.vh - cardsBottom;
+    const lowY = clear > 110 * k ? cardsBottom + clear * .45 : box.top + box.height * .7;
+    [[1, 64, .2, .22], [2, 58, .55, .34]].forEach(([kk, w0, dl, dy], j) => {
+      const w = w0 * k * (small ? 1 : 1.2), y = lowY - lvl + (j ? 1 : -1) * dy * 100 * k;
+      const x0 = dir > 0 ? c.vw + w : -w, x1 = dir > 0 ? -w * 1.2 : c.vw + w * 1.2;
+      due(inAt + dl, off => {
+        const g = hfxMk(body, "span", "hfx-uw-school is-big");
+        fishEl(g, kk, w, 0, 0, .3 + j * .06, 0, -fl);
+        const a = swim(g, x0, x1, [y, y - 8 * k, y + 6 * k, y - 4 * k], inAt + dl - off, win - dl, "cubic-bezier(.35,.05,.65,1)");
+        if(a) a.onfinish = () => g.remove();
+      });
+    });
     /* drops running down the glass once the water has gone */
     const drops = hfxMk(scr, "span", "hfx-uw-ocean is-drops");
     for(let i = 0; i < (mini ? 4 : small ? 9 : 13); i++){
