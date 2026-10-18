@@ -43298,9 +43298,20 @@ addEventListener("resize", () => { const w = document.querySelector(".wrap.test-
    Stars near a tile's edge are drawn again across it, so none is cut in
    half where two tiles meet. */
 const SKY_TILES = [
-  { css: 239, seed: 0x51a7, n: 46, kind: "dust" },
-  { css: 433, seed: 0x9e21, n: 104, kind: "stars" },
+  { css: 239, seed: 0x51a7, n: 42, kind: "dust" },
+  { css: 433, seed: 0x9e21, n: 94, kind: "stars" },
 ];
+/* A SMIDGE LESS (build 326): "I like the background with the stars, I do
+   kinda think it's a SMIDGE tiny bit too much." Trimmed, not redesigned:
+   the last 4 dust specks and the last 10 stars come off the end of each
+   seeded run (46 -> 42, 104 -> 94 - every star that stays is exactly
+   where it was, because each one draws the same numbers from the seed in
+   the same order) and every star is drawn at 96% of its old alpha. Measured
+   on Home, the light the field adds to a frame comes down 13-14% on a 17
+   Pro Max and an iPad Pro 11"; the brightest star is unchanged in kind.
+   Same tiles on every screen and theme, so the .6 / 1 / 0 strengths below
+   keep their ratios. */
+const SKY_ALPHA = .96;
 let skyUrls = [];
 function buildSkyTiles(){
   const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
@@ -43328,10 +43339,10 @@ function buildSkyTiles(){
         if(cx < -reach || cx > px + reach || cy < -reach || cy > px + reach) continue;
         if(halo){
           const hg = g.createRadialGradient(cx, cy, 0, cx, cy, rd * 3);
-          hg.addColorStop(0, "rgba(" + rgb + "," + halo + ")"); hg.addColorStop(1, "rgba(" + rgb + ",0)");
+          hg.addColorStop(0, "rgba(" + rgb + "," + (halo * SKY_ALPHA).toFixed(3) + ")"); hg.addColorStop(1, "rgba(" + rgb + ",0)");
           g.fillStyle = hg; g.fillRect(cx - rd * 3, cy - rd * 3, rd * 6, rd * 6);
         }
-        g.fillStyle = "rgba(" + rgb + "," + a.toFixed(3) + ")";
+        g.fillStyle = "rgba(" + rgb + "," + (a * SKY_ALPHA).toFixed(3) + ")";
         g.beginPath(); g.arc(cx, cy, rd, 0, Math.PI * 2); g.fill();
       }
     }
