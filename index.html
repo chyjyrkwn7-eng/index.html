@@ -44933,7 +44933,53 @@ function buildAvatarCharSVG(charId){
   }
   return copy;
 }
+/* ---- EVERY CHARACTER SITS IN THE MIDDLE OF ITS CIRCLE (build 325) ----
+   "Looking at all the characters in those circles, almost every character
+   and its stuff is not centered, they are all near the top." Measured in
+   the results circle, it was true: each drawing is a bust whose shoulders
+   dissolve into the frame's bottom fade (the .avatarchar-svg mask), so
+   what you SEE of a character - from the top of its head (or hat, or
+   crown) down to where its body fades out - sat high in the circle on
+   24 of the 30, the middle of it up to 7% of the circle's height above
+   the middle of the circle. Each figure is moved down by its own amount
+   (drawing units), measured from the drawing itself by
+   tools/check-b325-a.py (the visible ink's top and bottom in the results
+   circle, the figure only - its scenery and its halo are light behind it
+   and stay where they are) and held there by that gate. It is a
+   translate on ONE wrapper (.cx-centre) round the figure, laid on last,
+   so every place a character is drawn - the results, the boards, the
+   person card, the lobby, Profile, the tab bar, Customize - gets it, and
+   anything placed into the figure later (a reaction's props, the hundo
+   effects' face parts) lands in the same place it always did relative to
+   the face. Re-measure after redrawing anybody: run the gate. */
+const AVATAR_CENTRE_DY = {
+  ninja: 1.9, ghost: 2.3, wizard: 0.4, grizzly: -1.0, alien: 0.2, detective: -2.1, masked: 1.2,
+  zeus: 3.3, poseidon: 0.4, clown: 3.3, valkyrie: 3.3, marksman: 1.4, astronaut: 3.3, hacker: -0.8,
+  timekeeper: 3.3, ronin: 3.3, voidwalker: 2.1, umbra: 1.7, genesis: -1.9, lunar: 1.9, solar: 2.3,
+  tempest: 2.9, frost: 2.7, oracle: 3.1, inferno: 4.8, astral: 1.9, celestial: 1.2, zenith: 1.0
+  /* the Ronin's figure is a pale hat and face on a dark body, so its
+     measured middle chases the hat - held where it reads centred, its
+     red moon still behind the hat */
+};
+function centreFigure(svg, charId){
+  if(!svg) return svg;
+  const dy = AVATAR_CENTRE_DY[charId] || 0;
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.setAttribute("class", "cx-centre");
+  if(dy) g.setAttribute("transform", "translate(0 " + dy + ")");
+  Array.from(svg.childNodes).forEach(n => {
+    if(n.nodeName === "defs") return;
+    if(n.nodeName === "circle" && /url\(#(aura|halo)-/.test(n.getAttribute("fill") || "")) return;
+    if(n.nodeName === "g" && /(^| )cx-bg( |$)/.test(n.getAttribute("class") || "")) return;
+    g.appendChild(n);
+  });
+  svg.appendChild(g);
+  return svg;
+}
 function buildAvatarCharSVGFresh(charId){
+  return centreFigure(buildAvatarCharSVGFresh0(charId), charId);
+}
+function buildAvatarCharSVGFresh0(charId){
   const svg = drawAvatarCharSVG(charId);
   const hs = svg && AVATAR_HEAD_SCALE[charId];
   const head = hs && svg.querySelector(".cx-head");
@@ -63313,8 +63359,11 @@ function reactCharacter(av, band){
        the figure or in front of everything */
     const list = ((RX_PROPS[id] || {})[band]) || [];
     if(svg && list.length){
+      /* inside the figure's centring wrapper (build 325, centreFigure), so
+         a prop moves with the figure it belongs to */
+      const host = svg.querySelector(":scope > .cx-centre") || svg;
       let top = svg.querySelector(".cx-fig");
-      while(top && top.parentNode !== svg) top = top.parentNode;
+      while(top && top.parentNode !== host) top = top.parentNode;
       list.forEach(([name, front, markup]) => {
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.setAttribute("class", "cx-rx cx-rx-" + name);
@@ -63325,7 +63374,7 @@ function reactCharacter(av, band){
            happy eyes and smiles of a 100, see glee() in the table) */
         const face = front === 2 && (svg.querySelector(".cx-eyes-closed") || svg.querySelector(".cx-eyes"));
         if(face) face.parentNode.appendChild(g);
-        else if(front || !top) svg.appendChild(g); else svg.insertBefore(g, top);
+        else if(front || !top) host.appendChild(g); else host.insertBefore(g, top);
       });
     }
   } else {

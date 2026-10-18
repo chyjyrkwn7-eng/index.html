@@ -11297,7 +11297,7 @@ def check_b314_reactions(br):
         the move) - the drawing's edges clip, and a flame scaled past the
         top came out cut flat on the first draft;
       - the sign round the circle stepped back: no stars, sparkles or rain
-        cloud; a pass keeps its tick and a fail its dimming;
+        cloud; a fail keeps its dimming (a pass has no tick since build 325);
       - with Reduce motion on, nothing moves and a 100 and a fail still land
         on two different pictures.
     Written against build 313, where every character ran the same hop, nod
@@ -11340,7 +11340,13 @@ def check_b314_reactions(br):
             if(typeof k.getTotalLength === 'function' && k.tagName !== 'text'){ const L = k.getTotalLength(); for(let i = 0; i <= 32; i++){ const q = k.getPointAtLength(L * i / 32); ps.push([q.x, q.y]); } }
             else { const b = k.getBBox(); ps = [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]]; }
             return ps.map(([x, y]) => [m.a * x + m.c * y + m.e, m.b * x + m.d * y + m.f]); };
-          const inPts = k => outline(k).every(([x, y]) => x >= R.left - tol && x <= R.right + tol && y >= R.top - tol && y <= R.bottom + tol);
+          /* (build 325) the BOTTOM edge is not a cut: the drawing's mask
+             dissolves its bottom 30% to nothing at that edge, so a part
+             that passes it has faded out first. Since each figure was
+             moved down to sit centred in its circle (centreFigure), a
+             fail's slump and a few props go that way. The top and the
+             sides still clip and are held. */
+          const inPts = k => outline(k).every(([x, y]) => x >= R.left - tol && x <= R.right + tol && y >= R.top - tol);
           const drawn = k => !k.classList.contains('rxpv') && !(getComputedStyle(k).fill === 'none' && getComputedStyle(k).stroke === 'none');
           const LEAFOK = t => (t.matches(LEAF) ? [t] : [...t.querySelectorAll(LEAF)]).filter(drawn).every(inPts);
           const ok = new Set(movers.filter(t => t.classList.contains('cx-rx') || LEAFOK(t)));
@@ -11394,8 +11400,10 @@ def check_b314_reactions(br):
           [v for v in perf.values() if len(v) > 1][:4])
     check("nothing a move shows leaves the drawing's frame, all the way through the move", r["outside"] == [],
           sorted({o.split(" @")[0] for o in r["outside"]})[:40])
-    check("the sign round the circle steps back: no stars on a 100, no sparkles on a 90, no rain cloud on a fail; a pass keeps its tick",
-          all(r["front"][c + "/perfect"] == 0 and r["front"][c + "/great"] == 0 and r["front"][c + "/pass"] == 1 and r["front"][c + "/fail"] == 1 for c in chars),
+    # (build 325: a pass has NO tick - "What's up with the check mark for
+    # the 70 %? Don't do that." - check-b325-a section 7 holds it)
+    check("the sign round the circle steps back: no stars on a 100, no sparkles on a 90, no rain cloud on a fail; nothing on a pass",
+          all(r["front"][c + "/perfect"] == 0 and r["front"][c + "/great"] == 0 and r["front"][c + "/pass"] == 0 and r["front"][c + "/fail"] == 1 for c in chars),
           {c: [r["front"][c + "/" + b] for b in bands] for c in chars[:3]})
     check("with Reduce motion on, nothing in the drawing moves", r["rmMoving"] == [], r["rmMoving"][:6])
     check("with Reduce motion on, a 100 and a fail still land on two different pictures", all(r["rm"].values()),
@@ -16473,8 +16481,11 @@ def check_b317_plate(br):
             # what the drawing itself reaches past the disc, free of every
             # clip: those must show it over the rim; the rest are shown whole
             reach = [ch for ch in NINE if res[(where, ch)] and res[(where, ch)]["freeOut"] >= 6]
+            # six since build 325: each figure now sits centred in its
+            # circle (centreFigure), and the Clown's bells came down inside
+            # the disc - nothing of it is cut; the lines below hold that
             check(f"{dev}, {label}: most of the nine reach past the disc (px of the free drawing outside it, worst moment)",
-                  len(reach) >= 7, {ch: g(ch, "freeOut") for ch in ALL})
+                  len(reach) >= 6, {ch: g(ch, "freeOut") for ch in ALL})
             check(f"{dev}, {label}: ...and every one that does paints it OVER the rim, as shown (px past the disc)",
                   all(res[(where, ch)]["figOut"] >= max(6, res[(where, ch)]["freeOut"] - 6) for ch in reach),
                   {ch: g(ch, "figOut") for ch in ALL})
