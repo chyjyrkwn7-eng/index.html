@@ -134,11 +134,10 @@ def check_story(br):
           and re.search(r"scanners", src[src.find("function novaGoodbye"):src.find("function novaGoodbye") + 900]), fresh[-1:] )
     bad = [t for t in fresh + existing if re.search(r"\b(all seven|seven|sixteen|16|only three|three secret|a few secret flares)\b", t, re.I)]
     check("no fixed totals in his introduction (no 'seven', '16', 'a few secret flares')", not bad, bad[:3])
-    check("the introduction stays short: a new account hears at most 16 lines, an existing one at most 20 (325: 15 and 18)",
-          0 < len(fresh) <= 16 and 0 < len(existing) <= 20, {"new": len(fresh), "existing": len(existing)})
-    check("...and every line that triggered a slide still carries its trigger (friend, final, enter)",
-          any("friend" in k for k in r.get("keys") or []) and any("final" in k for k in r.get("keys") or []) and sum(1 for k in r.get("keys") or [] if "enter" in k) >= 9,
-          r.get("keys"))
+    check("the planet line costs nothing: a new account still hears at most 16 lines, an existing one at most 20 (325: 15 and 18), and every slide trigger is kept",
+          star and 0 < len(fresh) <= 16 and 0 < len(existing) <= 20
+          and any("friend" in k for k in r.get("keys") or []) and any("final" in k for k in r.get("keys") or []) and sum(1 for k in r.get("keys") or [] if "enter" in k) >= 9,
+          {"new": len(fresh), "existing": len(existing), "keys": r.get("keys")})
     ranks = r.get("ranks") or []
     rbad = [x for x in ranks if re.search(r"(four more|one rank left|all seven|to go\b)", x, re.I)]
     check("rank-up lines: each is his flare's light returned, with his thanks, no countdown of ranks left",
@@ -499,7 +498,8 @@ def check_away(br):
               {k: r.get(k) for k in ("note", "noteAbove", "noteIn")})
         check("%s: his card and Manage friends say 'Out of range' too" % dev,
               r.get("cell") == "Out of range" and "Out of range" in (r.get("manage") or ""), {k: r.get(k) for k in ("cell", "manage")})
-        check("%s: back in range, the note goes and the composer is his again" % dev, not r.get("backNote") and "Message" in (r.get("backPh") or ""), r)
+        check("%s: back in range, his note goes and the composer is his again" % dev,
+              r.get("note") and not r.get("backNote") and "Message" in (r.get("backPh") or ""), {k: r.get(k) for k in ("note", "backNote", "backPh")})
         ctx.close()
 
 

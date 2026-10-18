@@ -233,9 +233,12 @@ def check_whatsnew(br):
       const rows = WHATS_NEW_320.map(x => (x.title + ' ' + x.body + ' ' + x.say));
       const hist = JSON.stringify(RELEASE_NOTES.map(v => v.groups.map(g => g.items.map(i => i.title + ' ' + i.body))));
       return { lines, rows, keys: WHATS_NEW_320.map(x => x.key), hist }; }""")
+    # MOVED IN 326 (b326e): Version 8's "Supernova's Mark" no longer says
+    # "the mark of the blast" (the crack is his light, not damage) - found
+    # by its title
     gone = [("grade", r"grade (first|counts)|Results, grade first"), ("celebrate", r"celebrate|thrilled"),
             ("road map", r"road map"), ("cracks", r"planet that cracks|cracks a little more"),
-            ("Supernova's mark", r"mark of the blast|Supernova’s mark"), ("daily ring", r"daily question ring|ring around (its|the daily)")]
+            ("Supernova's mark", r"mark of the blast|Supernova[’']s mark"), ("daily ring", r"daily question ring|ring around (its|the daily)")]
     present = [n for n, rx in gone if re.search(rx, r["lines"] + " " + " ".join(r["rows"]), re.I)]
     in_hist = [n for n, rx in gone if re.search(rx, r["hist"], re.I)]
     check("none of the six is in Nova's What's New, and all six are still in the version history",
@@ -259,6 +262,11 @@ def check_broadcast(br):
       B.at = fmt(new Date(Date.now() - 3600e3));
       const count = () => novaThread().filter(m => m.text === B.text).length;
       const out = {};
+      /* (build 326: he speaks on his own only on Home with no rank-up owed -
+         the fixture's old-ladder Gold is shown and its reaction said) */
+      store.rankUpShown = rankUpHeldIdxReal() + 1; novaHeardMap()['@rank'] = store.rankUpShown;
+      /* and not under another banner: the save-code ask has had its turn */
+      try{ localStorage.setItem(SAVE_CODE_ASKED_KEY, '9'); }catch(e){} document.querySelectorAll('.daily-alert').forEach(e => e.remove());
       /* DEVICE A: friends with him since before it went out - it comes, once */
       localStorage.removeItem('class26e.nova'); novaBefriend({ quiet: true });
       let s = novaState(); s.since = Date.now() - 2 * 3600e3; novaSave(s);

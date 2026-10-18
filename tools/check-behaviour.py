@@ -28170,7 +28170,14 @@ def check_b324n_nova(br):
     check("his messages live on the device, not on the synced store", not r.get("store"))
 
     # Broadcasts: not before their time, once, and never stale.
+    # MOVED IN 326 (b326e): he speaks on his own only on Home with nothing
+    # owed - the fixture's rank-up still owed (Gold from the old ladder) is
+    # shown first, and its reaction counted as said, so only the broadcast
+    # is being asked about.
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      store.rankUpShown = rankUpHeldIdxReal() + 1; novaHeardMap()['@rank'] = store.rankUpShown; novaSessionAt = 0;
+      /* ...nor under another banner: the save-code ask has had its turn */
+      try{ localStorage.setItem(SAVE_CODE_ASKED_KEY, '9'); }catch(e){} document.querySelectorAll('.daily-alert').forEach(e => e.remove());
       showHome(); await wait(600);
       const fmt = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
         + 'T' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
@@ -28183,10 +28190,16 @@ def check_b324n_nova(br):
       s0 = novaState(); s0.since = Date.now() - 3600e3; novaSave(s0);
       NOVA_BROADCASTS.push({ id: 'chk-future', at: fmt(new Date(Date.now() + 3600e3)), text: 'BCAST chk-future' });
       NOVA_BROADCASTS.push({ id: 'chk-old', at: fmt(new Date(Date.now() - 9 * 86400e3)), text: 'BCAST chk-old' });
+      /* (326: the settle probe is done with - one broadcast a session, oldest
+         first, so it would otherwise be the one that goes) */
+      NOVA_BROADCASTS.splice(NOVA_BROADCASTS.findIndex(b => b.id === 'chk-settle'), 1);
       novaTick(); await wait(100);
       const early = count('chk-future');
       NOVA_BROADCASTS.push({ id: 'chk-now', at: fmt(new Date(Date.now() - 3600e3)), text: 'BCAST chk-now' });
       novaTick(); await wait(100); novaTick(); await wait(100); novaTick();
+      /* and a new session does not bring it again */
+      document.querySelectorAll('.vroom-chat-alert').forEach(e => e.remove()); novaSessionAt = 0;
+      novaTick(); await wait(100);
       return { settle, early, now: count('chk-now'), old: count('chk-old'), seeded: NOVA_BROADCASTS[0].id,
                seededText: NOVA_BROADCASTS[0].text }; }""")
     check("a broadcast is not delivered before its time, nor when it is over a week old, nor in the hello's first minute and a half",
@@ -28208,6 +28221,7 @@ def check_b324n_nova(br):
       let s = novaState(); s.since = now - 3 * D; s.spontAt = now - 3 * D; novaSave(s);
       const h = novaHeardMap(); h['@base'] = now - 3 * D; h['@last'] = now - 25 * 3600e3; delete h['wk:' + weekKeyNow()];
       novaSessionAt = 0; showHome(); await wait(600);
+      document.querySelectorAll('.vroom-chat-alert, .daily-alert').forEach(e => e.remove());
       const kinds = () => novaThread().filter(m => m.kind === 'challenge' || m.kind === 'tip').map(m => m.kind);
       novaTick(); await wait(50);
       const c1 = kinds();
