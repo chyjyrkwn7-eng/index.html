@@ -13360,6 +13360,9 @@ def check_b317_daily(br):
           const sb1 = document.getElementById('dailyq-submitbtn'); out.submit1 = R(sb1); if(sb1) sb1.click();
           await wait(1500);
           const ex = document.getElementById('dailyq-exitbtn');
+          /* (build 325) Exit RISES into the spot once the verdict's lines
+             are in - the spot is where it rests, so wait for the rise */
+          if(ex) await Promise.all(ex.getAnimations().map(a => a.finished.catch(() => {})));
           out.exit = ex ? { text: ex.textContent.trim(), rect: R(ex) } : null;
           out.exits = document.querySelectorAll('#dailyq-exitbtn').length;
           out.correct = !!store.dailyQuestionCorrect;
