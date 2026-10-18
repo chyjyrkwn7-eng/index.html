@@ -21290,3 +21290,1153 @@ is added to every answer in Tug and Battle only (`novaVrMs`; 2.75-4.75s,
 1-11 -> 22-26; 98% at 3s 51-55 -> 84-96. Gate `check_b324v3_tug` (fails on
 61937c4): the driver's first answer lands at plan + 750ms in Tug and Battle
 and at plan in a Race.
+
+## Build 325 - Madison's Oct 18 list
+
+### Build 325 (integrator) - Penal Code slides 256-578 at 8 PM Oct 19, two answers, the next tests' topics
+
+Madison: "the next test over slides 124-256 from penal code. The test over
+is slides 256-578 ... Update the version at 8pm automatically", and later
+"It's not a hotfix. It's gonna live with everything else" - so the switch
+rides with 325 and needs nothing else to run: `PENAL_256_AT` (01:00Z Oct
+20 = 8 PM CDT Mon Oct 19) flips the `UNIT_TEST_VERSIONS["Penal Code"]`
+getter from 124-256 (116) to 256-578 (132). A build shipped after that
+moment is simply on 256-578 from its first launch.
+- Read off the deck by the build 324 two-pass method (paragraph parse of
+  the notes; every guide question searched for in the flattened text):
+  132 entries on 68 slides. Twins in the guide go by the deck's number,
+  except slide 372, which prints "59 and 193 same question" - both.
+- Three repeats in range get version-only copies (52->358, 212->359,
+  310->360). FOUR deck questions are not in the Penal study guide (slide
+  344's "67." online solicitation, also Sexual Assault #10; slide 359's
+  "237." benefit, also Professionalism #21; slide 361's "57." coercion of
+  a public servant; slide 577's "345." 71.022 child age): version-only
+  questions 361-364 with NO `repeatOf`, worded and keyed as the deck has
+  them. The whole unit stays 340.
+- THE DAILY QUESTION POOL NOW SKIPS `versionOnly` as well as `repeatOf`.
+  Every earlier version-only question had a repeatOf, so the old filter
+  was enough by luck; 361-364 would have entered the daily rotation. The
+  pools of existing questions are unchanged, so the schedule is identical.
+- The "Penal Code updated" note's seen-key follows the live range
+  (`penalVersionNoteKey()`): class26e.penal124256.seen, then
+  class26e.penal256578.seen. Gates seed both.
+- One question, one answer: Arrest, Search and Seizure #31 keyed D
+  ("Revoked") while its word-for-word twin #55 keyed C; both C now (mere
+  acquiescence to claimed authority is not consent). Sexual Assault #30
+  (from a classmate's flash cards) keyed False Alarm while Penal #243 keys
+  Terroristic Threat by the deck (slide 175, which cites Family Violence
+  17.6) and the Penal study guide; #30 follows the instructor. keyText is
+  never touched - it is identity. A strict reading of PC 42.06 favours
+  False Alarm; Madison was told so she can ask.
+- `TEST_TOPICS`: Oct 19 = Penal slides 124-256, Oct 26 = 256-578.
+- Gate `tools/check-b325-pc.py` (9 of 13 fail on 6fc16b7; the four that
+  pass hold what must stay). check_b319_penal346 and check_b324q_penal
+  updated for the appended 358-364 and the two re-keyed answers.
+
+### Build 325 (b325a) - the way on rises, Confetti dims, a glow that is its own colour, the chat stays, every card's edge, the water, no tick, every character centred
+
+Madison, Oct 18: *"The continue to review button, re run button, and main
+menu button just show up really fast. Have them slide up from the bottom
+like how the next question button does"*; *"the new hundo effects the
+screen goes slightly dim ... ensure the default one is the same"*; *"the
+number 100 lights up on a delay and it's not a smooth transition at the
+end"*; *"The chat button disappears and comes back during hundo effect?
+... it can stay"*; *"the edges of it have that nice hard glow, ensure all
+the other boxes on the result screen match this"*; *"he holds his breath
+even before the water and holds it after it's gone ... The fish coming by
+and the random shadow black thing is bad"*; *"What's up with the check
+mark for the 70 %? Don't do that"*; *"almost every character and its stuff
+is not centered, they are all near the top"*.
+
+- **THE WAY ON RISES (`rsRise`, next to `rsLand`).** The container is
+  simply there; each button runs `rs-rise` - the Next question pill's own
+  move (`qnext-rise`: up from its own height and 3rem below where it rests,
+  in by 35%, .62s on `cubic-bezier(.16,.84,.3,1)`) - a row at a time
+  (`RS_RISE_ROW_MS` 90). `.rs-rising` comes off when the last one is up,
+  so `.next:active` is the button's own again. Everywhere a run ends: the
+  results (the reveal's last step, so it still waits for every card, the
+  XP fill and a hundo's tail; the camera follows to where they REST,
+  `rsFollow`), the review and back to the results (160ms after the
+  screen, no scroll), the race board's exits (`.vrc.is-done`), Tug of War
+  and Battle's end screens, the room results (after its level bar,
+  `vroomResultsAt`). **The daily question's Exit rises too**, the pill's
+  own `is-rising` with its delay set to 1.9s - after the verdict's XP line
+  (.9s) and last line (1.45s + .45s) - into the exact spot Submit answer
+  had (build 317's "the button does not move" still holds: it is where it
+  RESTS). Reduce motion: nothing moves. `check_b317_daily` now waits for
+  the rise before reading Exit's spot.
+- **CONFETTI DIMS (`celebrate(.., { dim })`, `.stardust-dim`).** The
+  Fireworks' own dim - the same night-blue fall-off at .5 - in over .42s
+  (Fireworks' 6% of 7s), held to 1.5s, out by 2.9s with the last motes;
+  the box is lifted over it (`hfx-over`, 3s) as the Fireworks lift theirs.
+  Only `playHundoFx` asks for it; a Virtual Room win's burst is plain.
+  **Confetti has a tail now (`HUNDO_FX_TAIL_AT.confetti` 3050)**: without
+  an entry the results fell back to 1.5s and the buttons rose under the
+  dim at .5; now they (and the first unlock) wait until it is at 0.
+  **Bubbles has no dim at all**, measured - flagged, not changed.
+- **THE 100's GLOW WAS NEAR-BLACK FOR .9s, THEN SNAPPED.** The landing
+  transitions the number's `filter` over `RS_HUNDO_CROSS_MS`; its
+  drop-shadow colour was `color-mix(in srgb, var(--hfx-b) 40%,
+  transparent)`, and Chromium interpolates that as `rgba(1,0,0,.4)` frame
+  after frame until the end value lands - so the number lit "on a delay"
+  and jumped on the last frame. Read off `getComputedStyle` each frame;
+  nothing in the code says so. `hfxTintVars` now writes the glow as a
+  plain `rgba()` (`--hfx-glow`). **Never transition anything whose colour
+  is a color-mix(); write the colour out.** The cards' new edges use r,g,b
+  triplets for the same reason.
+- **A HUNDO EFFECT HOLDS FOCUS SOFTLY (`cutscene-soft`, `syncCutsceneSoft`,
+  `CUTSCENE_SOFT_SEL`).** A full-page effect still holds toasts, invites
+  and the chat dot (b320c), but while it is the only scene up the chat
+  button stays put, visible and tappable, and an open chat stays open;
+  when it ends there is nothing to slide back (`cutsceneEndedSoft`). A
+  real scene over its tail (the badge case) takes the class off and the
+  button leaves as before.
+- **EVERY CARD'S EDGE IS THE HUNDO BOX'S (`--rs-edge`).** The hundo box is
+  a rim in its colour at full strength, an inset 1px line at 55% and an
+  inset 30px glow at 26%. The XP card (blue), Found & unlocked (violet),
+  a pass (green), a fail (red), a retake (amber/green), the default 100
+  (gold), the room's waiting card and the badge box carry the same three
+  in their own colour; washes unchanged. A grade short of 100 eases into
+  its edge as it lands (.6s); a 100's rim lands with its effect, untouched
+  (the UFO's stays unlit until its beam). The default's gold rim is now at
+  full strength, so `check_b317_hundobox`'s and `check_b313_fx`'s
+  `GOLD_BORDER` is `rgb(242, 211, 138)` (was `rgba(.., .2)`).
+- **UNDERWATER: DRAWN FISH, NO MANTA (`hfxFishURL`).** The manta sprite
+  (the "shadow black thing") is deleted. Three species, each lit from
+  above with fins, markings and a catch-lit eye: a silver school (an
+  iridescent stripe), a clownfish (three black-edged white bands clipped
+  to the body), a blue tang (its sweep and a yellow tail). The school
+  crosses the band above the box, the two big ones the other way in the
+  clear water under the cards (or across the box's lower half when there
+  is none), tails beating (`hfx-uw-wag` on `rotate`, so the flip
+  transform is kept, finite). **On the water's clock**: nothing before the
+  sea is up (`HFX_UW.rise + riseD`), every fish out of frame before the
+  drain (`HFX_UW.drain`) - nothing left in the air.
+- **THE BREATH IS HELD AGAINST THE FACE.** `hfxUwScreen` compared the
+  middle of the CIRCLE with the surface, every 150ms, with a .3s lead: the
+  breath was taken with the water still at the bottom of the screen (259px
+  below the eyes, measured) and let go late. Now the line is the face
+  (`hfxUwHold`'s `faceY`: the mouth, or for a helmet, the bowl or a hidden
+  mouth the eyes), the gulp `HFX_UW_GULP` (.05s) before the surface
+  reaches it and the release `HFX_UW_LETGO` (.04s) before it leaves, each
+  crossing found inside the next tick and scheduled to the moment.
+- **THE WATER'S CLOCK IS THE DRAIN ANIMATION'S OWN TIME.** `hfxSea`'s
+  `clock()` read `document.timeline`. A recorder (record-hundo, the
+  gates' steppers) pauses and seeks every animation to its own clock but
+  cannot touch `document.timeline`, so in every recording the waterline
+  the code believed in ran seconds ahead of the water on screen and the
+  breath was let go UNDER it (3.25s into a 7.4s effect, measured). It
+  reads the drain animation's `currentTime` while that runs; in the app
+  the two are the same number.
+- **NO TICK ON A PASS (`reactCharacter`).** The front sign layer has no
+  child for a pass, for a character the table knows or not; its CSS is
+  gone. `check_b314_reactions` expects 0 now.
+- **EVERY CHARACTER CENTRED IN ITS CIRCLE (`centreFigure`,
+  `AVATAR_CENTRE_DY`).** The bust's bottom 30% dissolves into the mask,
+  so what you SEE of a character sat high: in the results circle the
+  middle of its visible ink was up to 7.5% of the circle above centre, on
+  24 of 30. Each FIGURE (not its scenery or halo) is moved by its own
+  amount inside one wrapper, `.cx-centre`, laid on last in
+  `buildAvatarCharSVGFresh`, so the boards, the plate (Profile, person
+  card), the tab, Customize, the silhouette and the flip-books all get it.
+  Solved iteratively (visible ink = luminance difference > 64 over the
+  circle, top-to-bottom middle on 50%); the Ronin is held at 3.3 by hand
+  (its pale hat on a dark body makes the solve chase the hat to 8). A
+  move's props go inside the wrapper (`reactCharacter`'s `host`). Two
+  gates re-read: `check_b314_reactions` no longer counts the BOTTOM edge
+  as a cut (the mask has dissolved everything there; a fail's slump and a
+  few props now pass it), and `check_b317_plate` wants six of the nine
+  past the disc, not seven - the Clown's bells came down inside it.
+  Nova's circles are portrait crops with his eyes on the centre line;
+  left as they are.
+- **Gate: `tools/check-b325-a.py`** (rise, dim, glow, chat, edges, water,
+  tick, centre; `--only`, `--against`). The rises and the dim are read off
+  the animations themselves (keyframes and timing compared with
+  `qnext-rise`'s rule), the breath on record-hundo's clock - a loaded
+  machine (load 38 on 4 cores during this build) made every real-time
+  sample of them useless. Every check fails on 6fc16b7.
+- **Measuring on a busy box:** `check_b320b_reactions`' underwater matrix
+  fails under heavy load on this build and passes alone (its "cheeks in
+  within 4s" wait); run it on its own.
+
+### Build 325 (b325b) - names that fit the back of every badge, one nameplate, latches that hook, one corner
+
+Madison: *"the title of the back of them though aren't visible though,
+especially for some depending on the shape. This needs to be fixed badly"*;
+*"the thing on the top that says 'Nova - Class 26E' does not look 3d. It
+looks like a sticker. The thing on the front that says level one badge case
+is the same way, and that one has a weird placement because it's sitting on
+top of stuff. Would it make more sense if that one was just combined with
+the other one and put on top?"*; *"some of the metal things on the corners
+are rounded but then the others connecting to it aren't? Fix that"*; *"The
+clips for the case don't make sense either, because they aren't clipping to
+anything"*; *"The badge case that's opened in the badge tab. Ensure the case
+is better here too."*
+
+> **Supersedes** build 317 badge2's "the case's name is on its side"
+> (`buildCaseSidePlate` on the cutscene's and the Badges tab's front walls)
+> and build 320's clips on the lid's top. The Profile card's small shut case
+> (`.pf-ccase`) is not the kit's case and keeps its side plate.
+
+**THE BACK'S WORDS ARE PLANNED AGAINST THE BACK'S OWN FIELD
+(`badgeBackPlan`).** `badgeBackLayout` sized the name to the shape's
+BOUNDING BOX (`b.w * S * .86`) and centred it there, so on every shape that
+is not a box the words ran under the rim: the star, the bolt, the wedge, the
+fan, the trefoil and the peaks lost letters, and on the C-ring nearly the
+whole name was off the metal. Now, once per unit (cached, warmed with the
+strikes 5s after launch, a few ms):
+- `badgeBackField(g, W)` is the outline's signed distance as the back sees
+  it (mirrored), at `planW` (260) px; a pixel is usable when it is
+  `rimIn + margin` (4.6 + 1.6) units inside the outline;
+- a column prefix-sum of unusable pixels makes "is this band of rows clear
+  between x0 and x1" one lookup, and the runs per band are cached;
+- every break of the words into 1-4 rows is tried at a size found by
+  HALVING (`fsMin`..`fsMax`, ~12 sizes, not a 40-step descent - that took
+  up to 1.2s for Code of Criminal Procedure); fewer rows win, then slack;
+- every row sits on ONE centre line, the one nearest the shape's middle
+  that all rows allow (per-row centring scattered the lines on the bolt and
+  the peaks); the block is placed nearest the middle first and the first
+  offset that fits is taken;
+- "CLASS 26E" and its rule come along only if the name keeps `classKeep`
+  (.96) of the size it has without them AND is at least `classNameMin`
+  (5.6 units) anyway - on the wedge, the bolt, the peaks, the trefoil and
+  the cross the name gets the room;
+- **tidy breaks**: no row that is only AND / OF / THE, and round the ring no
+  top line ending on one (a break after the comma preferred) - taken unless
+  they cost more than `tidyKeep` (.9) of the size. Both searches run twice
+  (strict, then loose). "MULTICULTURALISM / AND / HUMAN RELATIONS" and
+  "CIVIL PROCESS / AND / LIABILITY" were the measured-best breaks and read
+  as mistakes;
+- **A RING HAS NO WIDE BAND ANYWHERE**, so `BADGE_SHAPE.cring.backArc`
+  (`c`, inner and outer `r`, a smaller `margin` - the words run parallel to
+  both edges) puts its words round it like a seal: the first part clockwise
+  up the left and over the top (letters standing out), the rest along the
+  bottom reading left to right (letters standing in), the turn at the lower
+  left (`ARC_TURN`), a break after a comma preferred and one leaving AND/OF
+  on the top line avoided. The ring is not quite round about any one point,
+  so the words follow the band's own middle (measured per half degree,
+  smoothed), and every glyph's box is tested against the field.
+- The back's rim is narrower (`rimIn` 4.6 against the front's 6.4): the back
+  only has to meet the front at the OUTLINE, where the edge turns; the inner
+  profile is the front's pressed into the narrower band (`RIMK`).
+
+**THE CUT READS (`BADGE_BACK_RELIEF`: `ink`, `inkK`, `fieldFlat`,
+`fieldLevel`, `fieldDirt`).** The letters were the field's own grey with a
+dark outline. Measured as a contrast ratio (median metal round the words :
+median floor of the letters) the old backs were 0.95-2.6 clean. Three
+changes, each found by measuring:
+- the floor is blackened (an engraver's fill) from the words' UNSOFTENED
+  coverage, so the fill runs to each letter's edge and the softened walls
+  stay lit round it - from the softened mask, thin strokes never got dark;
+- **brushed is satin, not mirror**: the field took the studio's reflection
+  like the polished rim, so the same back was bright under the softbox and
+  dark a few units away (fields measured .10 to .49 linear) and the peaks',
+  the trefoil's and the fan's words sat on the dark side. Most of the
+  field's light is now an even level, eased in from the rim's foot;
+- the fill goes on AFTER the dirt, and the field dulls by `fieldDirt` (.55)
+  of what the rim does - still visibly dirtier, still readable;
+- **the satin is the FIELD's, never the cut's walls** (`* (1 - mk * 5)`):
+  flattened too, the walls lost the studio's light and the letters lost
+  their bright lower lip - check_b321d's "walls catch the light" fell from
+  ~100 to 76-82 (needs 88). Exempt, it is 116-125.
+Now 3.9-5.9 clean and 2.8+ at the dirtiest on every badge.
+
+**ONE NAMEPLATE, ON TOP (`caseKit().nameplate`, `.nova-case-nameplate`).**
+"NOVA · CLASS 26E", a rule, and the case's name (`badgeCaseName`) on one
+plate on the lid's outside: its shadow on the leather (a gradient), its
+thickness along the near edge (`.nova-case-np-edge`), a brushed slab with a
+bevel and a fine chamfer line, the words stamped in (dark with a lit lower
+lip), a rivet in each corner. Sizes in `--cu`, so it is the same plate in
+the cutscene and on the Badges tab. It takes the lid's perspective because
+it is ON the lid. The front walls carry no words; the handle hangs in the
+middle of the wall (cutscene `top:40%`, tab `2.4cqw`). The case's name is
+also still in the lid's cushion, where you read it once it is open.
+`.nova-case-plate` stays on the nameplate (some older audits exclude it by
+that class); its old flat style is overridden at `.nova-case
+.nova-case-plate.nova-case-nameplate`.
+
+**KEEPERS, NOT CLIPS (`caseKit().keeper`, `.nova-case-keeper`, still
+`.nova-case-clip`).** The clips were on the lid's TOP while the hasps reached
+up the FRONT and ended on bare leather. A keeper is a plate on the lid's
+front over each latch with a staple (`.nova-case-staple`) standing out of it.
+- **Cutscene**: shut, each hasp's slot is over its staple and the staple
+  stands through it, in front (`.bc-lid-front` and the keeper are
+  preserve-3d; the staple is `translateZ(3.5px)` over a hasp at 1.5px).
+  **3D children of a 3D wall face their own way**: `.bc-lid-front` is
+  backface-hidden, but its keepers (preserve-3d children) were not, and once
+  the lid stood open they showed through its back as dark blocks along the
+  lid's top edge. `.bc-keeper, .bc-keeper *` are backface-hidden.
+  Letting go is two moves (`bc-hasp-free`): pulled out off the staple to
+  -24deg on a springy curve, then down to -158deg. Both are done before
+  `BC_T.crack` (left by ~8.32s, right by ~8.62s). The end pose is the
+  class's own transform, so the still scene shows them down. **-42deg was
+  tried first and the hasp vanished**: the camera looks down 52deg, so a
+  hasp tipped 42deg towards you is seen edge-on.
+- **Badges tab**: the shut lid's outside has the keepers at its near edge;
+  `.is-latched` puts the hasps up over the seam and lifts the front over
+  the lid (z 5). **The lid is its own layer**, so its staple cannot be put in
+  front of a hasp that belongs to the base: `.ncase-staple-over` draws the
+  staple again inside each latch, above its hasp, while hooked and through
+  the lift (the slot is still over it), and goes as the hasp swings away -
+  gone at the lift's start, the slot showed empty for ~100ms. `openBadgeCaseLid` now has
+  `CASE_OPEN.unlatch` (380ms) after the hold: each hasp is lifted
+  (`HASP_POP`) and swung down (`HASP_DOWN`), the right a beat after the left
+  (`HASP_STAGGER`), and only then does the lid crack. ~1.48s in all (was
+  1.1). The sound is scored from the first latch (`latch2`, `crack`,
+  `swing` passed to `badge.case.open`).
+- A keeper on the tab is as wide as a latch: `13%` of the front's CONTENT
+  box (it has 15% padding each side), so 9.1% of the case. At 13% of the
+  case the staples sat beside the hasps' slots.
+
+**ONE CORNER (`--cap-w`, `--cap-ri`).** The caps on a top were flat plates
+lit from the top left with a big curve on their free corner; the guards
+under them were polished barrels lit across, a different width, with a
+smaller curve at their foot, and the lid's front was rounded at the seam
+over a base that was square there. Now a guard is the cap's plate (metal,
+bevel, seat), exactly the cap's width from the case's outer edge (a cap
+starts 2px out, over the shell's 2px trim; the guard starts at the wall's
+edge - same edge), SQUARE wherever it meets another part (the fold under a
+cap, the seam), and rounded only at its free foot, with the cap's own inner
+curve. The right guard is the left mirrored (`scaleX(-1)`), so its light is
+put back to the top left by hand. On the tab **the shut lid's outside sat
+2px inside the case** (the lid is a trimmed shell: its own border) and the
+lid's inside caps (z 3) showed through it as a second cap on every near
+corner; `.ncase-lid-out` is inset -2px and at z 4 now.
+
+**Gate: `tools/check-b325-b.py`** (both reference devices, installed;
+`B325B_ONLY=A..F` for one section). Against 6fc16b7 every check fails (33
+of 34 on the first draft; the one that passed - "hasps off before the lid
+moves" - passed because there were no staples to be hooked on, so it now
+also requires both hasps to start hooked). A: every pixel of the words
+inside the outline by 5.6 units (tested with the canvas's own
+`isPointInStroke`, not the app's field), the name's letters >= 9.2 CSS px (old: 8.8 / 9.0; now 9.5 / 10, the
+wedge smallest)
+(component HEIGHT - letters set close join and widen, never heighten; and
+in CSS px by the render's own scale, because the phone's back is capped at
+864px for a 951-device-px badge), contrast >= 3 clean and >= 2.5 dirtiest.
+B-F: one plate on the lid with both lines, no words on the front, the
+plate's thickness/shadow/rivets; no front parts overlapping; corners flush
+and square (probed at the fold with 0x0 elements inside the 3D parts);
+both hasps hooked with the staple on top at the staple's middle; both off
+their staples before the lid moves (cutscene on the fake clock, the tab
+frame-stepped); the tab's and the cutscene's case the same parts and the
+same plate drawing.
+
+**Gates moved to the new decision** (check-behaviour, each edit marked
+"MOVED/REVISED IN 325"): check_b242's Badges-tab case (no plate on the
+front; the name in the lid's cushion), check_b317_badge2 (the name on the
+lid - the nameplate while shut, hit-tested; the cushion once open, not
+hit-tested because Chromium hit-tests the backface-hidden nameplate on the
+lid's other side in front of it - and never on the front; the tab's
+nameplate read on its first, shut frame; one lettering = the nameplate's
+weight against the Profile plate's), check_b320c_case (the caption's plate
+is the nameplate's second line; the tab's name is in its cushion).
+**The tab's opening is ~0.4s longer** (`CASE_OPEN.unlatch`), so
+check_b318_badges and the four Badges-screen openings in check_b320g_inspect
+call `finishBadgeCaseOpen` before measuring / installing the fake clock, as
+check_b319_badges already did: a fake clock installed mid-opening freezes the
+WAAPI opening and the case is never open (the iPad's tap then landed on no
+slot).
+
+### Build 325 (b325c) - the wall is the next rank's level, a pool that empties, the tab that calls, a crack not a burn
+
+Madison's list for stream C, in her words, and what each became. Branch
+`b325c`. Gate: `tools/check-b325-c.py` (fails on 6fc16b7, passes here).
+
+- **THE LEVEL WALL IS THE NEXT RANK'S LEVEL (supersedes build 314's
+  bands).** *"The max level you can reach should the level your rank
+  needs. So for platinum it says reach level 50, that should be your max
+  level ... if you are unranked, the highest level you can reach is the
+  level required for that first rank."* The cap is
+  `TIER_UNLOCKS[next rank you do not hold].level`: unranked 21, Bronze
+  30, Silver 40, Gold 50, Platinum 60, Sapphire 70, Amethyst and up 80.
+  `wallRankIndex(badges, rankFloor)` finds that rank - the first one,
+  from the one past any `rankFloor`, whose BADGES you lack (a rank whose
+  badges you have asks for a level under the cap, so at the cap you hold
+  it; that is also why the cap can never cost a rank). `badgeWallLevel`,
+  `gateRankForBadges`, `levelWallOf` and `levelStateOf` all take the rank
+  floor now (`levelStateFor` passes `st.rankFloor`; the results block and
+  the rank-up numbers pass `store.rankFloor`). `rankOfStats` still clamps a
+  published row with the badge-only wall, which cannot change an answer.
+  - **NOBODY'S SHOWN LEVEL DROPS - a one-shot grandfather floor.** The
+    wall moved down a whole block, so `levelWallMigrate325` runs once per
+    account in `applyLoadedData()` for any copy without
+    `levelWallRule >= 325`: the level build 324 showed
+    (`min(curve, max(badgeWallLevel324(b), levelFloor))`) is kept as
+    `levelFloor` wherever it is above the new cap. `levelWallRule` is on
+    `store` (new account 325 in the store literal, a reset sets 325 and
+    clears the floor), merged by max in `mergeSameAccount` and
+    `mergeLeavingAccount`, as `levelFloor` already was - so two devices
+    that each ran it agree on the higher of two levels that were each
+    really shown, and nothing can ping-pong.
+  - **IT MUST STAY ONE-SHOT.** Run again, it would read a higher old-rule
+    level off XP earned since and lift the floor - the old rule leaking
+    back. The residual window: a phone still on 324 strips the unknown
+    field when it saves, and a 325 device loading that copy runs the
+    migration again from that copy's XP. That can only ever RAISE a
+    floor, to a level 324 itself was showing, so it is a leak of the old
+    rule for someone still running 324, never a loss.
+  - **Proved on real data, read-only:** the 40 rows of the live board on
+    Oct 18 (XP, badges, published level - fetched with the public
+    rankings list, ids dropped on read, nothing written) and the 44 Sep 30
+    progress documents, each loaded by BOTH builds' own `applyLoadedData`
+    / `levelStateFor` / `rankOf`: no level drops, no rank drops, no
+    rises, the rankings row equals the shown level, a reload changes
+    nothing; 7 accounts in each set are kept by the floor. Every board
+    row loads at exactly the level it published.
+    Note: most of the class's published levels are ABOVE build 324's own
+    wall (Billyswole 40 with 0 badges against a 29 cap) - they carry
+    `levelFloor`s from build 314's first, grandfathering version. Do not
+    assume `levelFloor` is rare.
+  - **Copy says the new rule.** What's New's level note
+    (`levelGateNoteText`, "Levels wait for your next rank") no longer says
+    "your level went from X to Y" - nobody's did; the Rank tab's map note,
+    Nova's Profile tooltip and the two study tips say the level goes as
+    high as the next rank's level and its badges take it further.
+  - `tools/firestore-admin.py`'s `badge_wall`/`effective_level` follow the
+    app (including the migration for a copy without the flag); check-curve
+    9 compares them with the page.
+- **Gates moved to the new rule, deliberately:** check-curve section 8
+  (caps 21/30/30/40..., the jump at the badge to the curve, Profile at the
+  wall "Level 21", the four-badge wall at 40, the row at 30; its fixtures
+  carry `levelWallRule: 325` where they test the rule, not the
+  migration); check_b319_rankup and check_b320d_rankup (the fixture is
+  Silver at Gold's level 40, the journey climbs 40 -> 50 - Platinum's
+  level, the next wall - not 49 -> 53). **Fixtures that load
+  USED_ACCOUNT without the flag are grandfathered** (14,820 XP, 0 badges
+  keeps level 25 as a floor): set `levelFloor = 0` (most already do) or
+  `levelWallRule: 325` when a check needs the bare rule.
+- **THE PROFILE TAB CALLS (supersedes build 320's "nothing on the tab
+  moves").** *"it didn't seem like the profile tab on bottom was moving or
+  shaking. The word profile was only highlighted yellow."* While Home is
+  locked for a rank-up, `#bottomtab-profile` plays `.ru-nudge` - the
+  "something new is in there" gesture (avatar-pulse's grow and ring, in
+  the rank's colour, plus a short shake), ONCE per call: as the lock
+  engages (`RU_NUDGE_FIRST_MS`), every `RU_NUDGE_EVERY_MS` (5s) while it
+  stays locked and nothing holds Home (`rankUpLockWaits`), and on a
+  refused tap (`rankUpNudge`, `rankUpNudgeArm`). 320's complaint was a
+  ring breathing and the character bobbing on a loop; there is still no
+  ring (::before) and nothing loops. Ring at 7px, scale 1.15 - at 14px
+  and 1.18 the ring was clipped by the bar's top edge on a phone.
+- **PROFILE'S XP BAR NO LONGER FILLS ON OPENING.** *"when you open
+  profile the xp bar shouldn't move to right like how it does."*
+  `buildProfileStanding` sets the fill at its value when it builds it (a
+  new element takes its first `--fill` with no transition);
+  `runXpBarFill` no longer moves it. The "earned since" knock into a full
+  bar (317) stays and starts a beat after the tab is up (600ms). **A
+  transform transition can finish on the compositor while the page is
+  still building**, so sampling the bar after `showProfile()` returned
+  saw it already full on 324 - the gate reads the value synchronously
+  after the build and lists any transition on the fill.
+- **THE SAVED XP IS A POOL THAT EMPTIES.** *"it should almost be
+  subtracting, so you can see in realtime all the xp going to work."*
+  During `rankUpStandingClimb` the right of the line under the bar (the
+  total, or "to Level N") gives its place to `.ru-pool` - "SAVED XP" and
+  the number, held full for `RU_POOL_LEAD_MS`, then counting DOWN in the
+  same frame as the bar: what is left is `total - (xpForLevel(level) +
+  min(shown into level, span))`, so it lands on `to.banked` when the
+  climb stops at the next wall and 0 when not. Each level the bar
+  completes lifts a "-N XP" off it (`rankUpPoolTake`, one per level even
+  when two land in one frame). It holds `RU_POOL_HOLD_MS` and goes.
+  **Driven a frame at a time (`ruTween`), not CSS keyframes**: a CSS
+  animation started on that busy screen sat pending ~400ms in Chromium,
+  so the pool came up late and every chip had gone before it moved.
+- **A CLIMB THAT ENDS AT A WALL ENDED WITH THE BAR EMPTY - fixed.**
+  `place(u1)` floored u1 to the level after the wall and drew it at 0%.
+  The last level now holds the end of the climb. 324 never hit it in a
+  gate (its fixture climbed to a level inside the wall); under the new
+  rule a rank-up very often ends at the next rank's level.
+- **THE RESULTS XP CARD ADDS UP ON ITS FACE.** *"the names of the xp and
+  stuff and showing how it's calculated is hard to understand."*
+  `computeRunXp` labels are plain and each line's sub-line is its sum:
+  "Correct answers - 47 right × 10 XP", "Perfect units - 3 hundos × 100
+  XP", "Answers in a row - 10 in a row +25 · 25 in a row +50", "Speed -
+  9.0s a question on average (7:03 in all)", "Long test", "Best time /
+  Best score / Personal bests", "Several units ×1.2 - +20% of the 955
+  above, for 3 whole units". The card puts a "Bonuses" heading
+  (`.rs-xpkick`) after the answers' line and "470 for answers + 675 in
+  bonuses = 1,145 XP" (`.rs-xpsum`) under the total. Keys unchanged (the
+  Virtual Room's steps match by key). check-results 5 asserted the
+  literal "Streak bonus" - it now asserts the line is about answers in a
+  row.
+- **THE BLACK RINGS ARE RETIRED.** Decision: *"Maybe we just get rid of
+  the black ones and only keep the new ones you get from reaching
+  supernova?"* `homeRingTier()` is "supernova" or "". The full set of
+  secret flares added only the rings; it keeps everything each flare
+  gives. A device whose `ringtier.seen` is "eclipse" settles on orange
+  with no draw. The planet's tap caption still says "the secret ones
+  too" when every one is found. Eclipse drawing code is unreachable and
+  kept for the record; release-notes history untouched.
+- **THE RING STREAK AT RANDOM TIMES.** `homeStreakRandArm` runs it on its
+  own clock, 12-38s apart (why "random"), beside the every-4th-pulse one
+  and the tap one; same holds.
+- **Gates moved for the rest:** check_b319_levelnote (the new note text,
+  "nobody under the cap" at level 18), check_b317_rings (no top tier; the
+  ring draw is held on plain -> orange; the black / "flares" / "white"
+  style checks are gone with the tier), check_b321f_profile (Gold's wall
+  50), check_b321h (a random streak may land between the pulses),
+  check_b320e_cracks (no smoke; Supernova's lit crack walls count as drawn
+  at alpha > 8 - a wider crack's wall facing the light is a pale sheen
+  where Amethyst's narrower one was in shadow, 2.2% of its pixels),
+  check_b317_xpcap and check_b320a_results F (their "room" and "fills to
+  the wall this run" fixtures sat inside 324's walls), check-results 2
+  (the streak line's sub now reads "10 in a row ×2 +50 · 25 in a row +50").
+- What's New's "Supernova's mark" row says the crack and its glow, not
+  smoke (`WHATS_NEW_320`; the version-history copy is left as history).
+- **SUPERNOVA'S MARK IS A CRACK, NOT A BURN.** *"make it less burn mark and
+  more crack like."* `SCAR_CRACK_ONLY`: the full stage draws the rank
+  cracks' network at full width and depth - no crater (CR off), no soot
+  round the impact, no scorch along the crack (`NOSCORCH`), the arms
+  joined through the impact by the stretch the ranks below already have,
+  a short star of fissures out of the impact (its own seed, `rnd3`), the
+  shine broken into plates with nothing laid on them
+  (`scarShineWound(..., clean)`) - and a faint light down the middle of
+  every fissure (`P.GLOW`, the ember canvas), strongest on the arms. No
+  smoke off it. Amethyst lost its scorch too, so every stage holds the
+  one before. The ember's breathing floor is .7 (was .45: at its low the
+  light read as brown char). A glow filling the crack's width read as a
+  tan worm; it is the inner 40% now.
+- **THE SECRET FLARES ORBIT IN THE CUTSCENE.** They did turn, on Home's
+  clock (120s / 52s a lap) - beside the scene's bubbles (30s) that reads
+  as standing still. In `.tier-cutscene` their rings run at 30s / 13s;
+  the whirl (on `rotate`) adds on top. Measured ~11 degrees a second
+  before and after the whirl, against ~3.
+- **THE HAND-OFF: THE COPY WAS THE WRONG SIZE ON AN iPAD - the real
+  "changes in the transition".** `rankUpHandOut` draws the copy back with a
+  WAAPI `scale(.84)`, `fill: forwards`; `rankCutHandoff` cancelled it via
+  `ghost.getAnimations()` and set the copy's own `scale(bubble/width)`
+  inline. A FINISHED animation is not always in `getAnimations()`, but its
+  fill still beats the inline transform - so the copy stayed at .84 of its
+  220px stop box: 185px in the planet system, 59px off a 72px bubble whose
+  rim then cut a gold stripe out of it. On the iPhone .84 happens to be the
+  bubble's ratio (52/62), which is why it looked right there and why
+  check_b320d's 2px check passed. The animation is now kept on the element
+  (`ghost.__ruDraw`) and cancelled by name. **Never trust getAnimations()
+  to find a finished fill-forwards animation you made: keep the handle.**
+- **THE HAND-OFF LANDS IN A LIT BUBBLE.** *"the flare bubble changes in
+  the transition and doesn't look like the flare."* The road map has lit
+  the flare; the scene's planet-you-had kept that bubble DARK (grey glass)
+  until the bang, so the gold copy faded into a grey ball. Opened with a
+  hand-off, `rankCutHandoff` lights the bubble (`cosmic-badge-lit`, the
+  flare's own `--tier-glow`, noir where it applies) on its first frame, so
+  the copy fades into the same lit flare. Frame-stepped by freezing every
+  timer and animation at `ru-handoff-in` and seeking them together.
+
+### Build 325 (b325d) - Nova's story told in order, a signal for everyone who was here first, every unearned character blacked out, a Qualifier seal, his broadcast once per account
+
+Madison: *"Nova walk through for new accounts, when it shows the characters
+... only 4 even though it says 5 and it says there's 30 but only shows like
+10 ... I really like how the characters are blacked out. Can we make it so
+all the unlockable characters you don't have THAT aren't unlocked by a rank
+do this? ... the challenge ones can all have the same challenge look, the
+secret flare ones can be how they are, and the ultimate ones can be a little
+cooler like a glow ... the badges are the same, mentions 16 badges and only
+shows a few ... we can't say there were only 16 badges because they will be
+more ... add another box or slide mentioning the challenges and stuff to
+find them. The badge description is bad here, it's way too specific. This
+walk through needs to feel like a story line ... the story line for the non
+lit up flares doesn't make sense ... the explosion happening doesn't make
+sense enough ... For existing accounts ... it needs to feel more surprising
+... It doesn't mention virtual room ... Qualifier is a cool name, not a fan
+of the icon though. Remove the skip button during this ... Remove all of
+those from the what's new stuff ... only the ones with the 'new' at the
+beginning need to be there, it doesn't need to say new though ... 'something
+new, you can message me now' but I've seen it multiple times."*
+
+- **The introduction is one story with causes, `novaIntroLines()`.** His
+  ship was studying a planet like the one on Home that *had started to
+  crack* (the crack Home's own planet grows from Gold up); its core gave way
+  and it exploded; the blast threw everything aboard across the system. His
+  flares, one per rank, came to rest around *your* planet with their light
+  put out - that is why Home's flares are dark - and a flare only lights for
+  someone who has earned it, which is what a rank is. A few secret flares
+  were thrown further, into tests. His badges landed one in every unit. His
+  crew got away in pods and are the characters. Then how each kind is found,
+  XP/levels/rank, Drill/Qualifier/Briefing, **the Virtual Room (and
+  challenging him there)**, the friend line (unchanged, `friend: true`), and
+  the job: *light my flares, find my badges, bring my crew home*. 15 lines
+  for a new account, 18 for an existing one. The wreck scene (`buildNovaWreck`)
+  is untouched; the words around it now explain it. His goodbye, the Version 9
+  "Nova, Your Instructor" note and his chat reply about flares/ship tell the
+  same story.
+- **An existing account is FOUND by him (`novaTalk` `signal`).** The overlay
+  opens on his sky with nobody in it: a beacon pulses under "Incoming signal"
+  for ~1.8s, collapses towards where he stands, and he arrives in it (2.4s;
+  taps do nothing until he is there; Reduce motion skips it). "There you
+  are, Madison ... I don't think we've met" (she liked that line), then "I've
+  been following your progress, and you've already found some of what I
+  lost" over the characters THEY own (`novaFoundRow`). The recap of what they
+  have stays at the end (`recap: true`, `skipTo` for tools).
+- **No number the stage does not show.** Characters: `novaCrewParade()` draws
+  EVERY character (`novaCrewShown()` = Customize's own list) on a three-row
+  slow pan (`novaParade`: each row glides to its far end and back, alternate
+  rows the other way, the distance measured after layout; a row that fits
+  does not move) under "N of M characters found" - both counted from the
+  same list. Badges: `novaBadgeParade()` - every unit's badge, two rows, found
+  ones in enamel, the rest as the grey form (lifted with a CSS filter so it
+  reads on his sky; never its colour, build 319). **No badge total anywhere
+  he speaks**: not in the line ("one into every unit you study. Master a unit
+  and you'll find its badge."), not the caption ("Every unit has its own
+  badge" / "3 badges found so far"), not `novaMeCard` (now "N badges found",
+  not "N of 16"), not his chat reply.
+- **"How they're found" is its own slide (`novaCrewKinds`).** One row per
+  kind - Starters, Rank rewards, Challenges, Secrets, Ultimate - each with a
+  character of that kind drawn in its locked look, one line on how, and
+  "have of total", all counted from `AVATAR_CHARACTERS` via `charCategory()`.
+  A character added to the table changes the numbers by itself.
+- **Every unearned challenge, secret and ultimate character is blacked out
+  (`charCategory`, `charLockLook`, `charSilhouetteSVG`).** One function
+  decides the look by the table's own fields: `secret` keeps the 313/314
+  cut-out exactly; `challenge` is one shared look - black hatched with the
+  challenge strip's diagonal stripes (an SVG `<pattern>`, id from the
+  drawing's own `data-cx-uid` so the flip-book hash is stable), edged in
+  steel blue `#7FA3D6`; `ultimate` is black, edged in white gold with two
+  wider, fainter copies of the edge under it (a drawn glow - no filter - so
+  the recorded flip-book carries it) and a breathing gold pool behind the
+  tile. **Rank characters keep the greyed preview**, as asked. The newer
+  looks leave out each drawing's own light and weather (`SIL_LIGHT_RE`:
+  lightning, code rain, glints, sparks, the lit backdrop) and edge filled
+  shapes only (thin stroked details edged too showed as lines inside the
+  black). Drawn in: Customize (`buildCustomizeCharacterSect`), the unlock
+  card (`showUnlockDetail` art), the Detective's progress banner and the next
+  secret's card (`buildCharArtFor`), and Nova's slides. Sign-up shows no
+  locked characters, so nothing changes there.
+  The ultimates also leave out their rings, orbits and halos (as black they
+  were a disc that hid the figure), and the tallest cut-outs - Zeus, the
+  Ronin and the three ultimates - are scaled onto their own shoulders
+  (`SIL_FIG_FIT`, whole figure about (20, 37)) because the edge sits
+  outside the drawing and reached the tile's top fade; check-b325-d holds
+  every challenge and ultimate cut-out clear of the top 6%.
+  **The secrets and ultimates move; the twelve challenge cut-outs hold
+  still** - every moving tile is a flip-book recorded on the first visit,
+  and twelve more of them made Void wait 179s for its own on a loaded
+  machine (47s on base, 62s now). A locked challenge character never moved
+  before either.
+  **Trap:** a detached SVG's nodes all report `isConnected === false`, so a
+  removal loop guarded on `n.isConnected` silently removed nothing - guard on
+  `n.parentNode`.
+- **No Skip (`novaTalk` `noSkip`)** on his introduction (both flows), the
+  meeting's chained What's New and his goodbye; Escape does not skip there
+  either. `el.__nova.skip` stays for tools that fast-forward. Decided on her
+  behalf: the STANDALONE What's New (a device whose account already met him)
+  and the weekly recap keep their Skip.
+- **What's New (`WHATS_NEW_320`)**: "Results, grade first", "Characters
+  celebrate", "Ranking up, on the road map", "A planet that cracks",
+  "Supernova's mark" and "The daily question ring" are gone from his
+  narration and still in the version history (Version 8). In: Qualifier and
+  Briefing, Your study hours, Message Nova, Challenge Nova, The weekly recap.
+  Kept: Sound effects, Calendar in the tab bar, Save a test for later, The
+  Level 1 Badge Case. Nine rows.
+- **The returning tips (`startNovaReturnTour`) are the three that said
+  "New:" and nothing else**, without the word. New accounts still get the
+  seven main-menu tips (`mainMenuTourSteps(false)`), unchanged.
+- **"Something new: you can message me now" once per account.** Why it
+  repeated: what he had said was recorded on the DEVICE only
+  (`class26e.nova`), so every new device, every Safari jar beside the
+  installed app and every fresh recording was owed it again; and his hello,
+  sent ninety seconds before, already said "You can message me too". Now:
+  `store.novaHeard` (id -> when; default `{}` in `applyLoadedData`, `maxMap`
+  in `mergeSameAccount`, cleared by `wipeLocalProgressAndSettings`) records a
+  delivered broadcast on the ACCOUNT; a device that delivered one before this
+  build writes it in on its next tick; and a broadcast marked `hello: true`
+  (v9-dms) is never owed to a friendship that began after its `at`. The
+  record is written with `persistLocally()` and rides along with the next
+  real save - nothing of his pushes the progress document by itself (b324n
+  still holds that).
+- **The Qualifier's mark is a rosette seal** (`modeIcon("exam")`): a scalloped
+  seal at the target's stroke weight, two solid ribbon tails (`modeiconsolid`,
+  like the Virtual Room's solid heads) and the bold tick. Not the shield.
+  Every Qualifier icon comes from `modeIcon`; the Version 9 note's row and
+  Nova's What's New row now use it too (a filled-glyph copy for `introRow`).
+- **Parades are drawn ahead** (`novaWarmProps`): thirty characters and every
+  badge were ~1s of drawing at the moment he moved on to the line - a stall
+  in his typing; they are made ~12ms at a time while he says hello and the
+  planet goes, and taken from a cache. Under Reduce motion nothing pans, so
+  the parade is one wrapped grid (three rows of ten on a phone).
+- **Gates moved to this decision**: check-behaviour b320f/b321g (no Skip -
+  tools fast-forward with `el.__nova.skip()`; "3 badges found"; the new tips
+  alone; the story's new words; the harness waits out the signal), b314_chars
+  and b317_silhouettes (their "no colour" and "four tiles" rules are the
+  SECRETS', so they measure `.is-sil-secret`), check-chat's introduction
+  section (fast-forward; Version 9's rows), check-tours (`novareturn` counts
+  the main menu's tips only if the function still asks for them),
+  check-unlocks' locked-art section (the greyed treatment is a rank
+  character's now; the Masked One's tile is given back its real drawing to
+  measure the filter on).
+- **Gate `tools/check-b325-d.py`** (46 checks; all fail on 6fc16b7): the
+  story's order and causes, the Virtual Room, no badge total and every unit's
+  badge drawn, every character drawn with honest counts, the kinds box from
+  the table, no Skip/Escape, the signal (and none under Reduce motion), the
+  meeting's order and its tips, What's New's six out / six additions in /
+  history kept, the broadcast across two devices and a new account, the
+  merge/default, the three locked looks in Customize and on the card, the
+  Qualifier seal, the new cut-outs clear of their tiles' tops - on both reference devices where layout matters.
+
+### Build 325 (b325e) - auto-advance, no sound test, Save and exit in clear glass, Stats colours, mode words, squares back, no tab bar in the Virtual Room's setup
+
+Settings, Stats, the unit screen, the pause sheet, the Virtual Room's setup
+and lobby. Gate: `tools/check-b325-e.py` (written against 6fc16b7, where every
+check fails; `--against` like the others).
+
+#### Auto-advance
+
+- **The switch is "Auto-advance"**, and its line names no mode: *"Moves to the
+  next question on its own once you're done with one, so there's no need to tap
+  Next."* Asked: *"Move on after next question in settings title? That's a weird
+  title, and the description is weird because it only mentions qualifier? It
+  probably shouldn't mention any."* The title is also the key `showAppearance()`'s
+  HINTS/GROUPS block files the row under (`rowByTitle`), so **a rename is three
+  strings, not one** — the createTextNode, the HINTS key and the GROUPS list. Miss
+  the GROUPS entry and the row silently drops out of its card.
+- **It does nothing inside a Virtual Room.** *"Ensure that the timing of that when
+  on doesn't mess with any of the timing of the virtual room game modes so it's
+  still fair for everyone."* A race (and a classic room — a room with no `game`
+  runs as a race) is `runMode === "exam"` through `beginVirtualRoomTest`, so a
+  pick with the switch on moved on by itself after `AUTO_ADVANCE_MS` while
+  everybody else reached for Next — ranked by score then TIME, that is one
+  person's Settings changing a shared clock. `scheduleAutoAdvance()` returns on
+  `inVirtualRoom || raceTimed`, and re-checks when its timer fires. Everyone moves
+  on by Next or by the question's own 45 seconds (`raceQuestionTimeUp`, which
+  already advances on a picked answer). **Tug of War and Battle never reach
+  `scheduleAutoAdvance`** — their pauses are fixed in `tugSettleAnswer` /
+  `battleSettleAnswer` and read nothing from `theme`; the gate prints that as INFO
+  rather than counting it, because it cannot fail on any build.
+
+#### The sound test page is gone
+
+`showSoundTest`, the 0.75s long press on `.settings-buildline` that opened it,
+its CSS (`.screen-soundtest`, `.snd-*`), its `SND_NO_GENERIC` entry and its
+`SCREENS` entry in sweep-layout. Asked: *"I see a picture of a 'sound test' but I
+don't want that screen in the app."* The Sound & vibration switches stay.
+`SOUND_CATALOGUE`'s `demo`/`desc` fields stay as data — nothing reads them now.
+
+#### Save and exit is clear glass
+
+*"The save and exit button idk how I feel about the color."* The flat `#3A3D43`
+was a third colour between Resume's white and Quit's black with no meaning of its
+own. It is the tab bar lens's pane now (`.bottomtabs-slider::before`): near-clear
+fill, bright hairline rim, top specular, the cool/warm split, a thickness band —
+plus a frosted body (`backdrop-filter`) and Quit's contact/mid/wide shadows,
+because 320's see-through pane was reported as *"missing that nice button look"*.
+**No border**, so it stays Quit's height and `centerPauseStack` moves nothing.
+
+#### Stats
+
+- **No Total XP in At a glance.** *"I'm not sure why total xp is in the at a glance
+  box. Remove that."* Four cards: 2×2 on a phone, one row of four from 40rem. The
+  build-324 rules for "a grid led by a wide card" went with it (the only such
+  grid). **Total XP is now shown nowhere on a phone** — it came off the Profile
+  card in 320 and moved here; worth knowing if anyone asks where it went.
+- **The study-hour chart is in the theme's colour, not violet.** *"The study time
+  one is purple and still needs to match the rest of the stats colors/theme."*
+  Every number on Stats is `var(--theme-c2)`, so the lit dots are too (deeper at
+  the foot, warming toward `--theme-c1` at the top — `studyDotColor()` returns a
+  `color-mix()` STRING now, not an rgb() it worked out, so it follows a theme
+  change), and the switch, today's lane/name, the picked day and the cap's glow
+  moved from violet to c2. The card is `.stat-card`'s glass instead of a darker
+  slab. The flashcards keep their violet; this chart only borrowed it.
+- **Nothing on the right of a Recent tests row.** *"The recent tests also has the
+  badge on the right, remove that."* The only thing on the right of those rows was
+  the clock time and the chevron — a time with no day (Stats has no day headings).
+  `buildTestRow(entry, { side: false })` for Stats only; Test history keeps the
+  time under its day headings. **This is a reading of an ambiguous line** — see the
+  report; if she meant something else (the chat button, which sits over the card's
+  top-right corner when that section is scrolled under it), revert the opts.
+
+#### The mode word is in the mode's colour
+
+*"In recent tests, I see drill tests but they aren't showing up in the drill color
+for the word and same for qualifier."* `.thx-chip` was light blue for Drill, peach
+for a Qualifier and violet for the Virtual Room. It takes `--mode-c` from the mode
+picker's table now (the same values `.rs-mode-*` uses): Drill `#FF6B70`, Qualifier
+`#FF9A3C`, Briefing `#A694FF`, Virtual Room `#4A9FE8`, Game `#E0559A`. One rule, so
+Stats' Recent tests, Test history and a test's own page agree.
+
+#### The unit screen is squares again
+
+*"The unit selection screen, I think we can revert that, the square boxes were
+better I think."* Build 323's rows (`.pick-main`, `.pick-meta`, the `.pick-more`
+drawer, `appendUnitRowMore`, the drag's `dfz-open` freeze, the Details button's
+exclusions in `attachUnitHold`/`attachDragSelect`) are gone, and the hold hint and
+the unit-select tour line are 322's again. 322's square rules were never deleted,
+only overridden, so removing the 323 block IS the revert — compared pixel for
+pixel against 9be67f4 on both reference devices. **Kept from 323**, because they
+still apply to a square: the details card fading into the card it closes onto,
+`applyGlassRefraction` skipping `.picks .pick` (one press, not two), and
+Briefing's Starred questions box LAST in the list (full width under the squares).
+
+#### The Virtual Room: no tab bar, the action on a piece of glass
+
+*"When in virtual room lobby, the button tab should not be there, it should not be
+there when you are selecting the units for the virtual room lobby either. So revert
+that but make the match settings button how it was just better but give it to the
+button tab vibe."*
+
+- `showVirtualRoomSetup()` and `showVirtualRoomLobby()` set
+  `window.forceHideBottomTabs = true` AFTER `setActiveNav(null)` again. They still
+  put the header's nav buttons back (a run hides them), so the screens they lead to
+  find them.
+- The action is on `.vroom-setup-bar` again (pre-323's floating pill), **rebuilt as a
+  piece of the tab bar**: `.bottomtabs`' dark glass, rim, catch-light, 30px blur and
+  sheen, Home's bar width on a phone and its lift, laid out like the tests' bar —
+  words on the glass on the left (`vroomBarInfo()`: "1 unit / 29 questions",
+  "3 of 4 ready / Race") and the Start pill's shape on the right. Not yet = the
+  selected tab's clear lens (`.is-inert`, or `:disabled`/`.is-waiting` on Ready up);
+  lit = `var(--accent)` with the Start pill's lift; readied = the ready green with a
+  tick. `vroomBarLight()` plays the Start pill's fill-from-centre beat only when a
+  tap lights it, never on a first paint.
+- The button says **"Match settings"** at every width, with an arrow. Pre-323 it said
+  "Set up lobby, 29 questions", which wrapped to two lines inside the pill.
+- Ready up lives on the same pill in the lobby (it was the tab bar's Start pill in
+  323, a column button before that). Its words are set by `setReadyFace()`; the
+  mid-match state is a class (`.is-midmatch`), not a string compare.
+- The lobby's host **Match settings** button in Room setup is the same glass with a
+  sliders mark (`VROOM_BAR_ICONS.sliders`), same size and place.
+- **Selectors carry `#stage >`** on purpose: these buttons keep `.next` (for the
+  primary-tap sound and focus handling), and `[data-theme="dark"][data-layout=
+  "modern"] .next{box-shadow}` is three classes and later in the file, so a
+  two-class rule loses its shadow to it.
+- The bar holds no space: `body:has(#stage > .vroom-setup-bar) .wrap` keeps the tab
+  bar's 8rem reservation and back-to-top clears the pill as it clears the bar.
+- The tab bar's `data-tab-label`/`START_TAB_ICONS` support (323) is left in place;
+  nothing uses it now.
+- Gates that encoded 323's decision were moved: check-vroom's READY selector and
+  section 8's "the tab bar is on it" (now "no tab bar, the button on its own pill"),
+  its two `#bottomtab-start` taps, and shoot-tug's READY taps.
+
+#### The gate, and the gates that moved
+
+- `tools/check-b325-e.py` — 20 checks on the two reference devices: 20/20 pass on
+  this build, 20/20 fail on 6fc16b7 (the lobby check folds its ready tap in, and
+  the units check folds in "Starred still last", so neither can pass on base by
+  being skipped or by testing something 324 already did). Two things learned writing it:
+  - **Playwright's `click()` refuses an `aria-disabled` button.** The not-yet
+    Match settings button carries `aria-disabled="true"` and still takes the tap
+    (it says "Select units to start."), so the gate taps by coordinates
+    (`tap_at`). A gate using `pg.click` there times out and reads as a broken app.
+  - **An off-screen study chart may not have lit yet.** Its dots light by a
+    transition with per-dot delays; read while the chart is below the fold (or
+    while the tab's own smooth scroll-to-top is still running) and a lit dot can
+    still compute as the unlit grey. Scroll it into view twice, then read.
+- Moved to 325's decisions, each quoting her: check-behaviour 320h ("Stats no
+  longer carries a Total XP card"), 321f (every Stats figure one colour), 324t
+  (At a glance is four cards, no hole), 323u (boxes two across; a tap opens
+  nothing; Starred after the units at full width; the Penal version line measured
+  against the name's WORDS, since a square's `.pname` box is held to a shared
+  height), 323v (no tab bar; the buttons on `.vroom-setup-bar`), 310 (Ready up on
+  the lobby's pill), 321h (Save and exit keeps Quit's three outer shadows and its
+  height under clear glass); check-statsbadges (eight cards, four and four);
+  check-vroom section 8 and its taps; shoot-tug's READY.
+- Pre-existing, failing on 6fc16b7 as well: check-behaviour 321h's iPad "a planet
+  tap runs the streak round both rings" (and on base two more of its iPad lines),
+  and 310's "All slides the bar to the end rather than jumping" when the machine
+  is loaded (passes run alone on this build, fails on base under the same load).
+- Flaky on both builds under load (each passes run alone here): check-tours'
+  iPad `unithold` ("0 of 2 steps rendered" - 2 of 3 runs on 6fc16b7, 2 of 4 here;
+  measured directly the tip lands on screen every time) and check-studyflow 13's
+  close-button reach (failed once while other harnesses were running, passes alone).
+
+### Build 325 (b325f) - the tab bar's Liquid Glass lens, built to her iOS 26 recording
+
+*"the tab bar lens Liquid Glass. There is improvements but it needs to be
+better. I've attached a video, pay very close attention to the button tab
+and how it functions. We need that. You did well with updating the toggle
+switches, now do the same. We need this to be identical!!! Do your best.
+When you have one selected, it should kinda grey. Ensure the lens size is
+perfect and ensure the selected tabs lens is perfect and matches."*
+
+Her recording (an iOS 26 three-tab bar, 1320x2868 at 59fps; crops of the
+bar at 30fps in the b325 scratchpad, `tabvideo/bar/bNNNN.png`) is the spec.
+Every number below was read off it, in device pixels at 3x, and the code
+cites the frames (`LENS` in `setupBottomTabs`).
+
+- **At rest the selected tab sits on a grey platter** (`.bottomtabs-slider::before`):
+  a flat 11% white over the bar (the recording: bar 34, platter 59 on a 255
+  scale), a hairline of light along its top, no rim. 323's clear pill with a
+  34% white rim is what the PRESS turns into now. 5px inside its tab top and
+  bottom, 4px PAST it each side (the recording: 4pt inside the bar, 4pt past
+  the tab).
+- **The plain bar is four even cells.** `.bottomtabs:not(.has-start-tab)`
+  has no top/bottom padding (the tabs take that height: still 79px, 101 from
+  tablet up), 9px at the ends, a fixed row width (23.7rem less 20px, or the
+  screen less 1.5rem; 30.14rem less 18px from tablet up - the old footprint
+  to the pixel) and `flex:1 1 0` tabs with no gap. So the platter is the
+  same capsule on every tab (98x67 on a 17 Pro Max, 124x89 on an iPad; it
+  was 72 to 115 wide) and on the end tabs it is 6px from the bar's edge at
+  the top, the bottom and the end: concentric. A 320px phone cannot fit
+  "Leaderboard" in a quarter and gives it the room; the platter there is
+  never taller than it is wide (`pillBoxH`).
+- **Measured to the sub-pixel, in the row's own coordinates** (`tabBox`):
+  offsetLeft/offsetWidth are whole pixels and put the platter up to 1.3px
+  off centre; a rect read while the bar is swollen is undone by the swell.
+- **The lens is two halves** (`.tab-lens-clip` > `.tab-lens-cap`), each a
+  capsule scaled the SAME both ways from its own end and clipped at the
+  lens's centre line, so any width and height is an exact capsule and every
+  change is a translate or a uniform scale. 323's one box scaled two ways at
+  once turned the ends into ovals through every pop and landing, and the
+  box it shrank into was not the pill it handed over to. **The seam**: the
+  halves overlap 8px and cross-fade there (masks fixed to each clip) and ADD
+  in the lens's isolated group (`mix-blend-mode:plus-lighter`); laid over
+  each other the compositor drew the shared edge twice - a 1px line down the
+  middle, brighter through the highlight. **Trap that cost an hour**: the
+  caps' `transform-origin` (0 50% / 100% 50%) is load-bearing; without it a
+  lens of moderate width rendered as a vesica (two end discs intersecting)
+  while every number in the DOM said capsule. `.tab-lens-body` is an
+  invisible frame the size of the lens, for measuring.
+- **It lives in the tab row, behind the tabs and in front of the platter**
+  (the bar is `overflow:visible` now; its sheen, a layer four times its
+  width, is clipped by its own wrapper `.bottomtabs-sheen`, which is the
+  only thing the bar was clipping). The tab under it is drawn inside the
+  glass, magnified, never dimmed.
+- **Sizes**: held, 1.19x the bar's height (the recording: 222-235 over a
+  swollen 193), standing ~9px proud top and bottom, at least 1.2x as wide as
+  tall and 1.03x its platter (`LENS.tall/wide/aspect`); beside the Start
+  pill its width is held to 1.6x the (icon-only) platter and its height
+  follows. The bar swells 1.084 x 1.043 while held (915x185 -> 992x193) -
+  a Web Animation on the `scale` property (`lensBarSwell`), from the bar's
+  LEFT-centre, which is the point its -50% translate carries to its centre.
+  NOT a class with a transition: a tap's press and release land in one
+  frame and a class added and removed in one frame never swells. Sideways
+  it is held to the room there is (`lensSwellNow`): on a tablet's Home the
+  "?" circle sits level with the bar ~20px off its end, and the full 8.4%
+  ran into it - there it swells 1.068 and stops 4px short. What is under
+  the lens is drawn 1.23x (mag .16 on top of the swell).
+- **Motion is springs**, simulated up front (`lensSpring`) and played as a
+  60-a-second keyframe track of transforms (`lensPlay`), so a lift and a
+  landing run on the compositor through the screen being built on the next
+  frame (the 279/281 lesson); a drag is a requestAnimationFrame spring
+  (`lensMove`) that trails the finger a touch, squashes with speed - wider
+  and flatter, AREA KEPT (the recording: 416x191 against 330x240) - and
+  wobbles taller as it stops (b0159), and runs up to ~22px past the end tab
+  (b0075: 16pt). Every lens stays up `LENS.linger` (110ms) on its tab after
+  the finger lifts (b0161-b0165) and a tap is up at least `LENS.minUp`
+  (140ms) before it lands,
+  timed off the lift's OWN clock: on a busy first frame the wall clock ran
+  400ms while the lift had not drawn one frame, and the tap never swelled.
+- **The landing turns grey while it is still shrinking** (b0166-b0169,
+  b0330-b0331): two coats on each half (`.tab-lens-glass`, `.tab-lens-grey`,
+  the platter's own colour), cross-faded from the moment it starts down; the
+  platter takes over in ONE frame at `handAt`, when the lens is the platter
+  in place, size and colour. Every opacity is a keyframe track of where it
+  GOES (`lensFade(el, [[ms, v], ...])`), never "from the computed value":
+  a press and release in one frame read the lift's fade at its unstarted
+  first keyframe and the lens never appeared.
+- **Timing against the recording, frame for frame at 30fps** (side-by-side
+  strips in the b325/f scratchpad): touch -> lens up ~3 frames (b0324-b0327),
+  across one tab ~4 (b0324-b0328), grey by +233ms and platter by +300ms on
+  a tap (b0330/b0332), bar back by ~+400.
+- **The bar's own fill is a shade lighter than the page** (rgba(42,45,53,.8)
+  for (20,24,30,.8)): the recording's bar reads 34 on a 20 page; ours read
+  23 on 24 and only its rim drew it. The lens carries half of that fill, a
+  shade lighter, so the bar's rim line all but vanishes under it.
+- The global glass press (`setupBubbleButtons`) skips the bar's tabs: its
+  scale(.97) ran after the lens on the same element and put the tab back to
+  97% under the glass.
+- Reduce motion: no lens, no swell; the platter moves.
+- Selected labels stay white: the app's --accent is white by her earlier
+  word ("the buttons should not be changing colors"), so iOS's "tint" is
+  white here.
+- **Gate `tools/check-b325-f.py`** (each check fails on 6fc16b7): the
+  platter on seven widths; press, drag, tap and landing on a FRAME-EXACT
+  clock (Playwright's clock plus every animation paused and seeked, the
+  review recordings' method) - in real time on this machine a first frame
+  after a touch took 400ms and every sampled check was a coin toss; a 3x
+  pixel test for the seam. Moved in check_b323t, with her words: the rest
+  pill is grey now (was clear with a 30% rim), the press's lens is centred
+  where the swell has carried the tab, and "over the bar's edges" on a tap
+  is measured against the bar (the tabs fill its height now).
+
+### Build 325 (b325g) - the recap's awards, the calendar's key dots, the big four exams
+
+Madison, Oct 18: *"The nova weekly recap, ensure the honorable mention makes
+sense it isn't one of the top 3 players for the week. Ensure the description
+seem game like and are well made."* And: *"The calendar is missing the key
+dots though, the red ones for no class. The yellow ones, and the others. We
+need some dots for the 4 big tests, the level 1 exam, level 2 exam, level 3
+exam and the state test."*
+
+- **A mention is never the top 3 - not their row, and not their NAME.**
+  `weekRecapMentions` already skipped the podium's pubs. What it could not
+  see is the same person under a second row (a second sign-up, the Safari
+  jar), which carries the podium's first name under another pub and was
+  free to win a mention. `recapNameKey()` (trimmed, spaces collapsed,
+  lower case) now excludes any candidate whose name is a podium name, and
+  nobody's name is used twice either. If only the podium (and its
+  namesakes) qualify for a category, the category is skipped, never handed
+  to them.
+- **The Top 3 strip over the mentions says what it is.** Three small
+  avatars and names sat straight over "Honorable mentions", unlabelled -
+  in a recording they read as the first three mentions, which is the most
+  likely reading of "it isn't one of the top 3". It is now a captioned
+  strip (`.wr-minibox`: "Top 3", a place number on each avatar, a rule
+  under it), then "Honorable mentions / Off the podium". Hidden with the
+  strip on a short stage, as before.
+- **AWARDS, NOT SUPERLATIVES.** The cards were "Most hundos", "Most
+  improved", "Longest streak". Because the podium is excluded, the person
+  named is the best OFF the podium, and the podium had often done more - a
+  fixture had "Most improved: Tara, up 3,000" in a week the winner went up
+  8,500. Each entry in `RECAP_MENTIONS` now has an award name (`title`:
+  Flawless, Workhorse, Sharpshooter, On the Rise, Long Shift, Streak
+  Keeper), a `line` read straight off its field (`3 whole units at 100%`,
+  `14 tests finished`, `Daily question right, 5 of 7 days`, `+2,000 XP on
+  the week before`, `6h 20m on the study clock`, `5 study days in a row` /
+  `Studied all 7 days`) and a `say` that opens with the award's name. Nova
+  introduces them "from off the podium". `value()` is gone; `line()` is
+  the card's third line. The categories, their minimums, the rotation and
+  the stored history are untouched.
+- **The calendar's dots are on every cell at every size.** From 40rem the
+  cells showed their text and `display:none` took every dot off - the
+  grid's and the key's - so an iPad's key was three grey words. Dots now
+  sit along the foot of a tablet cell (`margin-top:auto`), and the key is
+  straight under the grid (it was under the day card) with a mark per
+  entry: Class day, Test, Big exam, No class. `calDayDots(entry, base,
+  into)` builds the marks for both the grid and the week strip.
+- **The key's marks ARE the cells' marks.** Each key dot carries
+  `cal-cell-dot` plus the same suffix the cells use. The trap: the old
+  `.cal-legend-dot{background:var(--accent)}` came later in source at the
+  same specificity and painted all four white. `.cal-legend-dot` now sets
+  size only. `cal-legend-dot-test` / `-holiday` stay on the Test and No
+  class marks for the gates that read them.
+- **The big four** (`isBigExamDay` = an exam day that is not a numbered
+  TEST: Level One Final Jan 19, Level Two Final Jun 10, Level Three Final
+  Exam Jun 21, the state test Jul 8). Their mark is a larger orange
+  DIAMOND with a soft halo - a different shape as well as colour from the
+  round amber test dot - and the cell gets an orange rim
+  (`.cal-cell-bigexam`, not on a picked day, today or the gold last day).
+  **The diamond carries `-test` as well as `-big`**, so everything that
+  asks "is this day marked as a test" still finds it (check-behaviour's
+  every-exam-day walk, check-profilecard's test dots); its rules carry
+  `.cal-cell-dot-test` in the selector so they outrank the amber ones.
+  The week strip uses the same classes (`cal-week-dot-big`).
+- **Where the big four show**: the grid, the week strip, the key, a "Big
+  exam" chip on the Next test card (orange count) and on the day card
+  (not on Jul 8, whose crest already says State test), "Big exam day" on
+  the Today card, and a new **Big exams** card under the month - the four
+  in order, name, date, days to go or Done, a row picks its day. Two by
+  two from 40rem.
+- **Spring break is no class.** The five "SPRING BREAK" entries had no
+  `holiday: true`, so they were five class days with a class dot and
+  counted in Class days left (201 class days became 196; tests left
+  unchanged). Data only - no store field.
+- **"NO PT" and "(NO) PT" read "No PT"** in every schedule row
+  (`scheduleParts`) - the same note written two ways, both shouted.
+- Gate: `tools/check-b325-g.py` (fails on 6fc16b7: 27 of 27).
+
+### Build 325 (b325h) - review videos carry the app's sound
+
+Madison (Oct 18): *"Ensure all the videos you send from here out include the
+sound."* This was tooling work, and `index.html` was not changed. Every file
+is in the review-pack recorder folder (`pack322/rec/`):
+
+- `sound.py`
+- the hooks in `common.py` and `lib.py`
+- `rec_soundcheck.py`
+- `validate_sound.py`
+- `README.md`
+
+Every recorder built on `lib.record()` now writes an MP4 with an AAC-LC
+48 kHz stereo track holding the app's real sound. A `.sound.json` log is
+written beside each one.
+
+- **THE SOUND IN A VIDEO IS THE APP'S OWN ENGINE, RUN ON THE VIDEO'S CLOCK.**
+  An init script replaces `AudioContext` with a subclass of
+  `OfflineAudioContext`. That subclass's `currentTime` is the page's fake
+  clock, which is also the clock the frames are stepped on. NovaSound then
+  builds every node exactly as it would on a phone. That covers the
+  designs, the limiter, the buses, the duck under a cutscene, voice
+  stealing, and the Home ambience with its fades. Each node is scheduled
+  at the page-clock moment the app asked for it.
+
+  When the last frame is shot, the context is rendered once. The audio
+  from frame 0 onwards is cut out and muxed into the video (`-c:v copy`).
+
+  A log of plays replayed in a fresh context would have been a copy: the
+  duck, the voice cap and the ambience all live inside NovaSound's
+  closure. Running the engine itself keeps them right by construction.
+
+  Measured, not argued: every id played alone through the recording
+  context comes out **sample-identical** to the app's own `sndGraph` +
+  design + seed rendered offline at the same moment. Over 18 ids the
+  residual is ≤ 6.6e-15 with gain 1.0000. Shifting by one sample gives a
+  residual of at least 3e-4.
+
+- **An offline context has not started, so "now" is made explicit.** This
+  applies only to nodes created on the recording context:
+  - `start()`/`stop()` with no time, or a past time, mean the page clock, not 0.
+  - `param.value = v` becomes `setValueAtTime(v, now)`.
+  - `cancelScheduledValues(t)` followed by `setValueAtTime(param.value, t)`
+    is the hold-then-fade in `kill()` and `stopAmbience()`. It becomes a
+    `cancelAndHoldAtTime(t)`, because `.value` cannot report an automated
+    value before the context has rendered.
+  - `disconnect()` is a no-op. The engine only disconnects voices that
+    are already silent.
+
+  `NovaSound.render`, the ambience pre-render and `check-sound` are not
+  touched by any of this.
+
+- **THE TRAP: A PLAY BEFORE THE FAKE CLOCK IS INSTALLED SILENCES THE START
+  OF THE VIDEO.** `page.clock.install()` moves `performance.now()` back
+  while `Date.now()` carries on (measured: 1520ms before, 10ms after).
+  NovaSound's per-id cooldown and its "a generic tap gives way" rule both
+  compare `performance.now()` stamps.
+
+  Home's `home.daily.fill` plays during every recorder's prep. Without a
+  gate, **8 of 8 tab taps in the following 8 seconds of video were refused
+  by the engine**, and nothing reported it. With the gate, 8 of 8 played.
+
+  The gate works like this: plays are held, never reaching the engine and
+  so never stamping it, until `sound_on()` opens it on the fake clock. Each
+  held play is logged as `k:"held"`. In every clip so far that was
+  `home.daily.fill`, once.
+
+- **An "alone" test has to be alone.** The exactness check once gave
+  `test.wrong` a 9e-4 residual under load. Home's daily-charge timer had
+  played over it. The check now clears the stage, and it fails if any
+  other voice starts in the window.
+
+- **THE LIMITER DELAYS EVERYTHING BY 6.00ms (288 samples), on a phone as
+  well.** Nova's master chain ends in a DynamicsCompressor, which has a
+  look-ahead. The validator measures this delay and does not assume it.
+  The figures below are net of it.
+
+- **Sound is off by default in the app, so every recorder turns it on.**
+  `lib.record(sound="on")` is the default and writes `theme.soundOn` into
+  the seed before boot.
+
+  `sound="account"` leaves the account's own setting alone.
+  `rec_touch.py switch` uses it, because that clip drags Sound effects on
+  and then off. It previously started from off, and still does.
+
+  A brand-new account really starts with sound off. `rec_nova.py new` is
+  nonetheless recorded with sound on. **That is a decision to put to
+  Madison.**
+
+- **This Chromium cannot play the MP4.** It has no H.264/AAC decoder:
+  `canPlayType` returns `''`. `validate_sound.py` therefore checks the
+  file in two other ways:
+  - it decodes the AAC out of the MP4 with ffmpeg, as a player would;
+  - it plays a VP9+Opus transcode of the same file in a `<video>` element
+    through a WebAudio analyser.
+
+- **A finding in the harness itself, not changed:** `common.SEEK` starts an
+  animation at the first frame it sees it, at progress 0. Two cases end up
+  starting at the next frame boundary rather than when they were created:
+  - a transition created by a tap made between steps;
+  - a timer that fires partway through a step.
+
+  So the picture side of an animation runs up to one frame late, while the
+  sound is placed at its exact moment.
+
+  Measured on the press of an answer, which is a 90ms transform
+  transition: the DOM shows it at frame 154 and the sound starts 17ms
+  before that frame. The first pixels that actually move are at frame 155,
+  so the sound is 50ms ahead of them.
+
+  This is within one frame of the event but not of the first changed
+  pixel. Fixing it means changing how SEEK starts every animation in every
+  pack clip, so it is reported rather than changed.
+
+- **Fixed in passing, also not ours:** `Clock.__init__`'s
+  `pause_at(now + 50ms)` threw "Cannot fast-forward to the past" when the
+  machine was under load (load average around 20–38). It now retries
+  further ahead.
