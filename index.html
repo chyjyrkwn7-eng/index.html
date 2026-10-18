@@ -91797,7 +91797,7 @@ function hfxWorldTree(scr, bx, c){
 const HFX_UW = { rise: .15, riseD: 1.6, drain: 5.0, drainD: 1.2, wavePeriod: 220, waveH: 34 };
 /* the breath is taken this long before the surface reaches the face
    (build 325): the gulp, not a held breath on dry land */
-const HFX_UW_GULP = .12;
+const HFX_UW_GULP = .05, HFX_UW_LETGO = .04;
 /* the body's colour right under the surface - the wave tiles are filled
    with exactly this, so crest and body are one water */
 const HFX_UW_TOP = "rgba(118,220,236,.24)";
@@ -92158,6 +92158,15 @@ function hfxSea(parent, o){
   let began = null;
   const clock = () => {
     try{
+      /* THE DRAIN'S OWN TIME, while it has not finished (build 325): it
+         runs from the sea's start (its delay is part of it) to the end of
+         the drain, so it is the water's clock wherever the water is moving -
+         and it is the clock a recorder that seeks every animation sees too.
+         Read off document.timeline instead, a recording (which pauses and
+         seeks the animations to its own clock) put the waterline seconds
+         ahead of the water on screen and the breath was let go under it. */
+      const dr = sea.getAnimations().find(a => a.animationName === "hfx-uw-drain");
+      if(dr && dr.playState !== "finished" && dr.currentTime != null) return dr.currentTime / 1000;
       if(began == null){ const a = sea.getAnimations()[0]; if(a && a.startTime != null) began = a.startTime; }
       if(began != null && document.timeline) return (document.timeline.currentTime - began) / 1000;
     }catch(e){}
@@ -92245,7 +92254,9 @@ function hfxUwScreen(c, S, page, k, tot){
         if(u >= 0){ hold.due = true; setTimeout(() => { hold.due = false; if(!hold.done && !quitted) hold.start(); }, u * 1000); }
       } else if(!hold.under){ if(line <= fy) hold.under = true; }
       else {
-        const u = cross(y => y > fy + 1, 0);
+        /* let go a beat early, as the surface leaves the eyes - a timer that
+           fires late on a busy phone still lands as the face clears */
+        const u = cross(y => y > fy + 1, HFX_UW_LETGO);
         if(u >= 0){ hold.due = true; setTimeout(() => { hold.due = false; if(!hold.done && !quitted) hold.release(); }, u * 1000); }
       }
     }

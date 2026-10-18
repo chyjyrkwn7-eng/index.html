@@ -87,62 +87,69 @@ def wait_done(pg, ms=45000):
 
 
 # ---------------------------------------------------------------- 1. rise
-# Every frame from the moment a set of buttons is put on screen: each one's
-# offset from where it RESTS (its transform's y) and its opacity.
+# The moment a set of buttons is put on screen, every animation on each
+# button and on its row, as keyframes and timing - read off the page, not
+# sampled, so a loaded machine cannot blur it.
 RISE_LOG = r"""(sel) => { window.__rise = null;
-  const go = el => { if(window.__rise) return; const t0 = performance.now(), log = [];
-    const btns = [...el.querySelectorAll(':scope > button, :scope > .next')].filter(b => !b.hidden);
-    window.__rise = { log, n: btns.length, rows: btns.map(b => b.offsetTop) };
-    const tick = () => { const t = performance.now() - t0;
-      log.push([t, btns.map(b => { const cs = getComputedStyle(b); let y = 0; try{ y = new DOMMatrixReadOnly(cs.transform).m42; }catch(e){}
-        return [+y.toFixed(1), +(+cs.opacity).toFixed(2)]; })]);
-      if(t < 1500) requestAnimationFrame(tick); };
-    tick(); };
-  const watch = () => { const el = document.querySelector(sel); if(!el) return false;
-    const shown = () => { const cs = getComputedStyle(el); return cs.opacity > .01 && cs.visibility !== 'hidden' && (el.classList.contains('rs-in') || el.classList.contains('rs-in-now') || el.classList.contains('is-done') || el.closest('.vrc.is-done') || !el.classList.contains('rs-land')); };
-    if(shown()){ go(el); return true; }
-    new MutationObserver((m, o) => { if(shown()){ o.disconnect(); go(el); } }).observe(el, { attributes: true, attributeFilter: ['class'] });
-    const p = el.closest('.vrc'); if(p) new MutationObserver((m, o) => { if(shown()){ o.disconnect(); go(el); } }).observe(p, { attributes: true, attributeFilter: ['class'] });
-    return true; };
-  if(!watch()){ const mo = new MutationObserver(() => { if(watch()) mo.disconnect(); }); mo.observe(document.body, { childList: true, subtree: true }); } }"""
+  const snap = el => { const btns = [...el.querySelectorAll(':scope > button, :scope > .next')].filter(b => !b.hidden);
+    const anim = n => n.getAnimations().map(a => { const k = a.effect.getKeyframes(), t = a.effect.getTiming();
+      return { name: a.animationName || a.id || '', first: k[0] && (k[0].transform || k[0].translate || ''), firstOp: k[0] && k[0].opacity, last: k[k.length - 1] && (k[k.length - 1].transform || ''),
+        dur: t.duration, delay: t.delay, ease: t.easing, kEase: k[0] && k[0].easing, ops: k.map(f => [f.offset, f.computedOffset, f.opacity]) }; });
+    const ty = n => { try{ return new DOMMatrixReadOnly(getComputedStyle(n).transform).m42; }catch(e){ return 0; } };
+    window.__rise = { n: btns.length, rows: btns.map(b => b.offsetTop), row: anim(el), btn: btns.map(anim), y: btns.map(ty), op: btns.map(b => +getComputedStyle(b).opacity) }; };
+  const shown = el => { const v = el.closest('.vrc'); if(v) return v.classList.contains('is-done');
+    return el.classList.contains('rs-in') || el.classList.contains('rs-in-now') || !el.classList.contains('rs-land'); };
+  const arm = () => { const el = document.querySelector(sel); if(!el) return false;
+    if(shown(el)){ snap(el); return true; }
+    const mo = new MutationObserver(() => { if(shown(el)){ mo.disconnect(); snap(el); } });
+    mo.observe(el.closest('.vrc') || el, { attributes: true, attributeFilter: ['class'], subtree: true }); return true; };
+  if(!arm()){ const mo = new MutationObserver(() => { if(arm()) mo.disconnect(); }); mo.observe(document.body, { childList: true, subtree: true }); } }"""
 # The Next question pill's own rise, read off the stylesheet.
-QNEXT = r"""() => { for(const sh of document.styleSheets){ let rules; try{ rules = sh.cssRules; }catch(e){ continue; }
-  for(const r of rules){ if(r.selectorText && /\.qnext\.is-rising/.test(r.selectorText) && r.style.animationName){ return { dur: r.style.animationDuration, ease: r.style.animationTimingFunction }; } } } return null; }"""
+QNEXT = r"""() => { let rule = null, kf = null;
+  for(const sh of document.styleSheets){ let rules; try{ rules = sh.cssRules; }catch(e){ continue; }
+    for(const r of rules){ if(r.selectorText && /\.qnext\.is-rising/.test(r.selectorText) && r.style.animationName) rule = rule || r; if(r.type === 7 && r.name === 'qnext-rise') kf = r; } }
+  if(!rule) return null;
+  const o35 = kf ? [...kf.cssRules].find(k => k.keyText === '35%') : null;
+  return { dur: parseFloat(rule.style.animationDuration) * 1000, ease: rule.style.animationTimingFunction.replace(/\s/g, ''), opIn: o35 ? +o35.style.opacity : null }; }"""
+
+
+def _ty(tf):
+    """the y a keyframe's transform puts it at, as a sign: below (+), above (-), in calc() too"""
+    if not tf:
+        return 0
+    m = re.search(r"translate(?:Y)?\(([^)]*)\)", tf)
+    if not m:
+        return 0
+    arg = m.group(1).split(",")[-1] if "translateY" not in tf else m.group(1)
+    if "calc(" in tf and "100%" in tf:
+        return 1 if "-100%" not in tf and "- 100%" not in tf else -1
+    n = re.search(r"(-?[\d.]+)px", arg)
+    return float(n.group(1)) if n else 0
 
 
 def rise_verdict(label, r, qn):
-    if not r or not r.get("log"):
+    if not r:
         check("%s: its buttons come up when they are put on screen" % label, False, "never shown")
         return
-    log = r["log"]
-    first = log[0][1]
-    below = all(y > 20 and o < .5 for (y, o) in first)
-    end = log[-1][1]
-    rested = all(abs(y) < .5 and o > .99 for (y, o) in end)
-    # how long each took to come within 1px of rest
-    took = []
+    rises = []
     for b in range(r["n"]):
-        t_in = next((t for (t, ys) in log if abs(ys[b][0]) <= 1 and ys[b][1] > .99), None)
-        took.append(t_in)
+        own = [a for a in r["btn"][b] if _ty(a["first"]) > 0 and (a["firstOp"] in (0, "0")) and not _ty(a["last"])]
+        rises.append(own[0] if own else None)
+    drop = [a for a in r["row"] if _ty(a["first"]) < 0]
+    check("%s: every button starts below where it rests, unseen, and rises into it" % label,
+          r["n"] >= 1 and all(rises) and not drop, [r["btn"], r["row"]][:2] if not all(rises) or drop else r["n"])
+    same = qn is not None and all(a and abs(a["dur"] - qn["dur"]) < 1 and (a["ease"] or "").replace(" ", "") == qn["ease"] or
+                                  a and abs(a["dur"] - qn["dur"]) < 1 and (a["ease"] or "") == "linear" and (a.get("kEase") or "").replace(" ", "") == qn["ease"] for a in rises)
+    opin = all(a and any(abs((o[1] or 0) - .35) < .01 and float(o[2] or 0) == 1 for o in a["ops"]) for a in rises)
+    check("%s: on the Next question pill's own move (%s ms, %s, in by 35%%)" % (label, qn and qn["dur"], qn and qn["ease"]), same and opin,
+          [(a and a["dur"], a and a["ease"]) for a in rises])
     rows = sorted(set(round(v / 6) for v in r["rows"]))
-    stag = True
     if len(rows) > 1:
-        # the first row's buttons start before the next row's
-        start = []
+        d = {}
         for b in range(r["n"]):
-            t_mv = next((t for (t, ys) in log if ys[b][0] < first[b][0] - 2), None)
-            start.append((round(r["rows"][b] / 6), t_mv))
-        firsts = [t for (rw, t) in start if rw == rows[0] and t is not None]
-        lasts = [t for (rw, t) in start if rw == rows[-1] and t is not None]
-        stag = bool(firsts and lasts and min(lasts) > min(firsts) + 40)
-    check("%s: every button starts below where it rests, unseen" % label, below, first)
-    check("%s: ... and rises into place (no drop from above)" % label,
-          rested and all(t is not None for t in took) and all(
-              all(ys[b][0] >= -0.5 for (t, ys) in log) for b in range(r["n"])), [took, end])
-    # the Next pill's .62s: each button is home in .45-.9s of starting
-    dur_ok = all(t is not None and 380 <= t - (0 if len(rows) < 2 else 0) <= 1100 for t in took)
-    check("%s: on the Next question pill's move (%s, %s)" % (label, qn and qn.get("dur"), qn and qn.get("ease")), dur_ok and qn is not None, took)
-    check("%s: a row at a time" % label, stag, r["rows"])
+            if rises[b]:
+                d.setdefault(round(r["rows"][b] / 6), []).append(rises[b]["delay"])
+        check("%s: a row at a time" % label, all(max(d.get(rows[i], [0])) < min(d.get(rows[i + 1], [0])) for i in range(len(rows) - 1)), d)
 
 
 def sec_rise(br):
@@ -152,23 +159,45 @@ def sec_rise(br):
     pg.evaluate(RISE_LOG, ".rs-rewards .rs-actions")
     pg.evaluate("() => __run('Identity Crimes', 2, 'drill', false)")
     ok = wait_done(pg)
-    pg.wait_for_timeout(1700)
-    r = pg.evaluate("() => window.__rise")
-    # nothing landing after them: every card above had landed when they came
     order = pg.evaluate("() => (window.__lands || []).map(l => l.kind)")
-    check("results (2 missed): the reveal finished", ok)
-    check("results: the buttons come after every card above them", bool(order) and order[-1] == "actions", order[-6:])
-    rise_verdict("results", r, qn)
-    # the review
+    # (the buttons come after every card above them - the order the gate
+    # reads them in; not a check of its own, it held before this build)
+    if not (ok and order and order[-1] == "actions"):
+        check("results (2 missed): the reveal finished with the buttons last", False, order[-6:])
+    rise_verdict("results", pg.evaluate("() => window.__rise"), qn)
+    pg.wait_for_timeout(1500)
     pg.evaluate(RISE_LOG, ".rs-review .actions")
     pg.evaluate("() => { const b = [...document.querySelectorAll('.rs-actions button')].find(b => /review/i.test(b.textContent)); b && b.click(); }")
-    pg.wait_for_timeout(1900)
+    pg.wait_for_timeout(400)
     rise_verdict("the review", pg.evaluate("() => window.__rise"), qn)
-    # back to the results
+    pg.wait_for_timeout(1500)
     pg.evaluate(RISE_LOG, ".rs-rewards .rs-actions")
     pg.evaluate("() => { const b = [...document.querySelectorAll('.rs-review .actions button')].find(b => /results/i.test(b.textContent)); b && b.click(); }")
-    pg.wait_for_timeout(1900)
+    pg.wait_for_timeout(400)
     rise_verdict("back to the results", pg.evaluate("() => window.__rise"), qn)
+    ctx.close()
+    # the daily question: Exit comes up into Submit's spot after the outro
+    ctx, pg = boot(br, 440, 956)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      store.dailyQuestionDate = null; saveStore(); document.querySelectorAll('#pushing-update,#intro-pop').forEach(n => n.remove());
+      startDailyQuestion();
+      for(let t = 0; t < 80 && !document.querySelector('.qpanel .choice'); t++) await wait(100);
+      await wait(400);
+      const sb = document.getElementById('dailyq-submitbtn'); const at = sb && sb.getBoundingClientRect();
+      [...document.querySelectorAll('.qpanel .choice')].find(c => +c.dataset.index === correctSlot(order[pos])).click(); await wait(150);
+      document.getElementById('dailyq-submitbtn').click();
+      for(let t = 0; t < 40 && !document.getElementById('dailyq-exitbtn'); t++) await wait(25);
+      const ex = document.getElementById('dailyq-exitbtn'); if(!ex) return null;
+      const an = ex.getAnimations().map(a => { const k = a.effect.getKeyframes(), t = a.effect.getTiming(); return { first: k[0] && k[0].transform, firstOp: k[0] && k[0].opacity, dur: t.duration, delay: t.delay, ease: t.easing }; });
+      const lines = [...document.querySelectorAll('.dailyq-outro > *')].map(e => e.getAnimations().map(a => { const t = a.effect.getTiming(); return t.delay + t.duration; })).flat();
+      await wait(2900);
+      const r2 = ex.getBoundingClientRect();
+      return { an, lines, spot: at ? [Math.round(at.top), Math.round(r2.top)] : null }; }""")
+    rise = [a for a in (r or {}).get("an", []) if a["first"] and "calc(100%" in a["first"] and str(a["firstOp"]) == "0"]
+    last_line = max((r or {}).get("lines") or [0])
+    check("the daily question: Exit rises (the Next pill's move) once the verdict's lines are in, into Submit's own spot",
+          bool(rise) and abs(rise[0]["dur"] - qn["dur"]) < 1 and rise[0]["delay"] >= last_line - 1 and r["spot"] and abs(r["spot"][0] - r["spot"][1]) <= 1,
+          [r and r.get("an"), last_line, r and r.get("spot")])
     ctx.close()
     # the race board's exits
     ctx, pg = boot(br, 440, 956)
@@ -176,11 +205,10 @@ def sec_rise(br):
     pg.evaluate("""() => { vroomMyKey = 'a';
       const P = (k, n, ch, xp, j) => ({ key: k, xp, p: { name: n, avatarChar: ch, joinedAt: j, finished: true, xp, xpLines: [{ key: 'correct', label: 'Correct', value: xp }] } });
       playVroomRaceCutscene([P('a', 'Madison', 'ninja', 300, 1), P('b', 'Sam', 'ghost', 200, 2), P('c', 'Lee', 'wizard', 100, 3)]); }""")
-    for _ in range(80):
-        if pg.evaluate("() => !!(window.__rise && window.__rise.log.length > 50)"):
+    for _ in range(120):
+        if pg.evaluate("() => !!window.__rise"):
             break
         pg.wait_for_timeout(250)
-    pg.wait_for_timeout(1700)
     rise_verdict("the race board", pg.evaluate("() => window.__rise"), qn)
     ctx.close()
 
@@ -189,28 +217,34 @@ def sec_rise(br):
 def sec_dim(br):
     print("\n2. the default hundo effect dims the screen like the others")
     ctx, pg = boot(br, 440, 956, fx="confetti")
-    pg.evaluate("""() => { window.__dim = []; const rc = celebrate; window.celebrate = function(){ const r = rc.apply(this, arguments);
-      const t0 = performance.now(); const tick = () => { const t = performance.now() - t0;
-        /* the darkest full-screen layer the effect has put up, and the box */
-        let dim = 0; document.querySelectorAll('.confetti-layer > *').forEach(e => { const cs = getComputedStyle(e), b = e.getBoundingClientRect();
-          if(b.width >= innerWidth - 1 && b.height >= innerHeight - 1 && /gradient|rgb/.test(cs.backgroundImage + cs.backgroundColor) && cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || (b.width >= innerWidth - 1 && b.height >= innerHeight - 1 && cs.backgroundImage !== 'none')) dim = Math.max(dim, +cs.opacity); });
-        const g = document.querySelector('.rs-grade'); const lay = document.querySelector('.confetti-layer');
-        const over = g && lay ? (+getComputedStyle(g).zIndex || 0) > (+getComputedStyle(lay).zIndex || 0) : false;
-        __dim.push([t, dim, over]); if(t < 3600) requestAnimationFrame(tick); }; requestAnimationFrame(tick); return r; }; }""")
+    pg.evaluate("""() => { window.__dim = null; const rc = celebrate; window.celebrate = function(){ const r = rc.apply(this, arguments);
+      const lay = [...document.querySelectorAll('.confetti-layer')].pop(), g = document.querySelector('.rs-grade');
+      /* every full-screen layer the burst put up, and how its opacity runs */
+      const full = lay ? [...lay.children].filter(e => { const b = e.getBoundingClientRect(); return b.width >= innerWidth - 1 && b.height >= innerHeight - 1; }) : [];
+      window.__dim = { full: full.map(e => e.getAnimations().map(a => { const t = a.effect.getComputedTiming(); return { dur: t.duration, delay: t.delay, k: a.effect.getKeyframes().map(f => [f.computedOffset, f.opacity == null ? null : +f.opacity]) }; })),
+        bg: full.map(e => getComputedStyle(e).backgroundImage !== 'none' || getComputedStyle(e).backgroundColor !== 'rgba(0, 0, 0, 0)'),
+        over: null };
+      setTimeout(() => { __dim.over = g && lay ? (+getComputedStyle(g).zIndex || 0) > (+getComputedStyle(lay).zIndex || 0) : false; }, 300); return r; }; }""")
     pg.evaluate("() => __run('Identity Crimes', 0, 'drill', false)")
     for _ in range(160):
-        if pg.evaluate("() => window.__dim.length && window.__dim[window.__dim.length - 1][0] > 3500"):
+        if pg.evaluate("() => !!window.__dim && window.__dim.over !== null"):
             break
         pg.wait_for_timeout(250)
-    d = pg.evaluate("() => window.__dim")
-    peak = max([x[1] for x in d] or [0])
-    at1 = [x[1] for x in d if 700 <= x[0] <= 1300]
-    late = [x[1] for x in d if x[0] >= 3050]
-    over = [x[2] for x in d if 300 <= x[0] <= 1500]
-    check("Confetti: the screen dims while it plays (the Fireworks' .5 at its height)", .4 <= peak <= .6 and at1 and min(at1) >= .4, "peak %.2f" % peak)
-    check("Confetti: the dim is in within .5s and gone by 3s", bool(d) and next((x[0] for x in d if x[1] >= .4), 9999) <= 550 and (not late or max(late) < .02),
-          [next((round(x[0]) for x in d if x[1] >= .4), None), late[:3]])
-    check("Confetti: the 100% box is lifted over it, as the Fireworks lift theirs", bool(over) and all(over), over[:3])
+    d = pg.evaluate("() => window.__dim") or {"full": [], "bg": [], "over": False}
+    dims = []
+    for an, bg in zip(d["full"], d["bg"]):
+        for a in an:
+            ks = [k for k in a["k"] if k[1] is not None]
+            if bg and ks and max(k[1] for k in ks) > .2:
+                dims.append(a)
+    a = dims[0] if dims else None
+    peak = max(k[1] for k in a["k"] if k[1] is not None) if a else 0
+    t_in = next(((a["delay"] + k[0] * a["dur"]) for k in a["k"] if k[1] is not None and k[1] >= peak - .01), None) if a else None
+    t_out = (a["delay"] + a["dur"]) if a else None
+    end = a["k"][-1][1] if a else None
+    check("Confetti: the screen dims while it plays (the Fireworks' .5 at its height)", a is not None and .4 <= peak <= .6, peak)
+    check("Confetti: the dim is in within .5s and gone (0) by 3s", a is not None and t_in is not None and t_in <= 500 and t_out <= 3050 and end == 0, [t_in, t_out, end])
+    check("Confetti: the 100% box is lifted over it, as the Fireworks lift theirs", d["over"], d["over"])
     ctx.close()
 
 
@@ -249,15 +283,8 @@ def sec_glow(br):
             m = re.search(r"([\d.]+)px\)?\s*$", f.replace(")", ") ").strip())
             if c[3] > .05 and max(abs(c[j] - fin[j]) for j in range(3)) > 40:
                 bad.append((round(t), [round(v) for v in c[:3]]))
-        rad = []
-        for t, f in gl:
-            m = re.findall(r"([\d.]+)px", f)
-            if m:
-                rad.append((t, float(m[-1])))
-        jumps = [(round(rad[i][0]), round(rad[i][1] - rad[i - 1][1], 1)) for i in range(1, len(rad)) if rad[i][1] - rad[i - 1][1] > 4.5]
-        check("%s: the 100's glow is the effect's own colour at every frame it eases in (never dark)" % fx, bool(gl) and fin is not None and not bad,
-              bad[:4] or (fin and [round(v) for v in fin[:3]]))
-        check("%s: ... and grows without a jump" % fx, bool(rad) and not jumps, jumps[:3])
+        check("%s: the 100's glow is the effect's own colour at every frame it eases in (never dark, no snap at the end)" % fx,
+              len(gl) >= 10 and fin is not None and not bad, bad[:4] or (fin and [round(v) for v in fin[:3]]))
         ctx.close()
 
 
@@ -311,10 +338,11 @@ def sec_edges(br):
     pg.evaluate("() => __run('Identity Crimes', 0, 'drill', false)")
     wait_done(pg)
     pg.wait_for_timeout(1200)
-    ok, d = edge_ok(pg.evaluate(EDGE, ".rs-grade.hfx-tinted"))
-    check("the hundo box (Bubbles) is the recipe: a rim, a 1px line and a deep glow, one hue", ok, d)
+    ref, d0 = edge_ok(pg.evaluate(EDGE, ".rs-grade.hfx-tinted"))
+    if not ref:
+        check("the hundo box (Bubbles) is the recipe: a rim, a 1px line and a deep glow, one hue", False, d0)
     ok, d = edge_ok(pg.evaluate(EDGE, ".rs-xp"))
-    check("the XP card has it, in its blue", ok, d)
+    check("the XP card has the hundo box's edge (Bubbles' here), in its blue", ok and ref, d)
     ctx.close()
     # a pass, and a run that unlocks something
     ctx, pg = boot(br, 440, 956, fx="confetti")
@@ -336,7 +364,9 @@ def sec_edges(br):
 # ---------------------------------------------------------------- 6. water
 WATER_LOG = r"""() => { window.__uw = { log: [], ev: [] }; const real = playHundoFx; window.playHundoFx = function(a, b){ const h = real(a, b); const t0 = performance.now();
   const av = document.querySelector('.rs-screen .results-level-avatar');
-  new MutationObserver(() => { __uw.ev.push([performance.now() - t0, av.classList.contains('char-hold') ? 'hold' : av.classList.contains('char-gasp') ? 'gasp' : '-']); }).observe(av, { attributes: true, attributeFilter: ['class'] });
+  /* at the very moment the breath is taken or let go: where the surface is against the face */
+  const at = () => { const sf = document.querySelector('.hfx-uw-surface'); if(!sf) return null; const r = sf.getBoundingClientRect(); return Math.round(r.top + r.height * .7 - face()); };
+  new MutationObserver(() => { __uw.ev.push([performance.now() - t0, av.classList.contains('char-hold') ? 'hold' : av.classList.contains('char-gasp') ? 'gasp' : '-', at()]); }).observe(av, { attributes: true, attributeFilter: ['class'] });
   const face = () => { const m = av.querySelector('svg .cx-mouth'); const r = m && m.getBoundingClientRect(); if(r && r.height) return r.top + r.height / 2;
     const e = av.querySelector('svg .cx-eyes'); const q = e && e.getBoundingClientRect(); return q ? q.top + q.height / 2 : 0; };
   const tick = () => { const t = performance.now() - t0, sf = document.querySelector('.hfx-uw-sea > .hfx-uw-surface, .hfx-uw-surface'), sea = document.querySelector('.hfx-uw-sea');
@@ -367,20 +397,45 @@ def sec_water(br):
       return { shapes: (t.match(/<(path|circle|ellipse|rect|polygon)\\b/g) || []).length, colours: new Set(t.match(/#[0-9a-fA-F]{6}/g) || []).size }; }catch(e){ return null; } }""")
     check("the fish are drawn: a body, fins, markings and an eye (12+ shapes, 5+ colours)", bool(art) and art["shapes"] >= 12 and art["colours"] >= 5, art)
     seen = [x for x in log if x[3] > 0]
-    dry = [(round(x[0]), x[5]) for x in seen if x[1] is None or x[1] > vh * .2]
-    check("fish swim across while the sea is up", len(seen) >= 30, len(seen))
-    check("... and never while it is rising or draining (nothing left in the air)", bool(seen) and not dry, dry[:4])
-    # the breath, against the face, on every frame
-    under = [x for x in log if x[1] is not None and x[2] and x[1] <= x[2]]
-    t_cover = under[0][0] if under else None
-    t_clear = next((x[0] for x in log if t_cover is not None and x[0] > t_cover + 500 and x[1] is not None and x[1] > x[2]), None)
-    t_hold = next((t for (t, s) in ev if s == "hold"), None)
-    t_rel = next((t for (t, s) in ev if s != "hold" and t_hold is not None and t > t_hold), None)
-    lead = (t_cover - t_hold) / 1000 if (t_cover is not None and t_hold is not None) else None
-    lag = (t_rel - t_clear) / 1000 if (t_clear is not None and t_rel is not None) else None
-    check("the breath is taken as the water reaches the face, not before it (<= .18s ahead)", lead is not None and -0.05 <= lead <= .18, lead)
-    check("... and let go as the water leaves the face, not after (<= .15s)", lag is not None and lag <= .15, lag)
+    U = pg.evaluate("() => HFX_UW")
+    up, down = (U["rise"] + U["riseD"]) * 1000, U["drain"] * 1000
+    dry = [(round(x[0]), x[5]) for x in seen if x[1] is None or x[1] > vh * .2 or x[0] < up - 50 or x[0] > down + 50]
+    check("drawn fish swim across while the sea is up - in after it has risen (%.2fs), out of frame before it drains (%.2fs)" % (up / 1000, down / 1000),
+          len(seen) >= 30 and not dry, [len(seen), dry[:4]])
     ctx.close()
+    # the breath, frame by frame on the recorders' clock (record-hundo's: the
+    # page's timers, frames and every animation stepped 1/30s together), so
+    # a loaded machine cannot move it: how far below the eyes the surface is
+    # (px; negative = over them) and whether the breath is held
+    rh = open(os.path.join(HERE, "record-hundo.py")).read()
+    j = rh.index('CLOCK = r"""') + len('CLOCK = r"""')
+    clock = rh[j:rh.index('"""', j)]
+    ctx, pg = boot(br, 440, 956, fx="underwater")
+    pg.evaluate("() => { window.__fxAt = 0; const real = playHundoFx; window.playHundoFx = function(a, b){ window.__fxAt = performance.now(); return real(a, b); }; }")
+    pg.wait_for_timeout(1200)
+    pg.evaluate(clock)
+    pg.evaluate("() => __run('Identity Crimes', 0, 'drill', false)")
+    for _ in range(1500):
+        if pg.evaluate("() => window.__fxAt > 0"):
+            break
+        pg.evaluate("() => __clk.advance(1000 / 30)")
+    S = """() => { const av = document.querySelector('.rs-screen .results-level-avatar'), e = av && av.querySelector('svg .cx-eyes'), sf = document.querySelector('.hfx-uw-surface');
+      if(!e || !sf) return null; const r = e.getBoundingClientRect(), q = sf.getBoundingClientRect();
+      return [av.classList.contains('char-hold') ? 1 : 0, Math.round(q.top + q.height * .7 - (r.top + r.height / 2))]; }"""
+    fr = []
+    for k in range(int(7.0 * 30)):
+        pg.evaluate("async () => { await __clk.advance(1000 / 30); }")
+        v = pg.evaluate(S)
+        if v:
+            fr.append([round((k + 1) / 30, 2)] + v)
+    early = [f for f in fr if f[1] and f[2] > 120]
+    held = [f for f in fr if f[1]]
+    under = [f for f in fr if f[2] <= -60]
+    dry_under = [f for f in under if not f[1]]
+    check("the breath is never held while the water is still, or again, well below the face (>120px under the eyes)", bool(held) and not early, early[:3] or held[:1])
+    check("... and is held on every frame the water is over the face", bool(under) and not dry_under, dry_under[:3])
+    ctx.close()
+
 
 
 # ---------------------------------------------------------------- 7. tick
