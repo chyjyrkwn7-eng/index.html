@@ -111882,7 +111882,13 @@ function buildCustomizeCharacterSect(){
     if(silLook){
       opt.classList.add("is-silhouette", "is-sil-" + silLook);
       opt.appendChild(buildCharSilhouette(charDef.id));
-      setCharState(opt, "live");
+      /* the secrets and the ultimates move, as the secrets always have; the
+         twelve challenge cut-outs hold still, as every locked challenge
+         character always did - each moving one is a flip-book recorded on
+         the first visit, and twelve more of them made the secrets wait
+         over three times as long for theirs (measured: Void 47s -> 179s on
+         a loaded machine) */
+      if(silLook !== "challenge") setCharState(opt, "live");
     } else {
       /* a locked one is never the selected one, so it keeps its halo -
          the locked treatment's grey hood reads by that light */

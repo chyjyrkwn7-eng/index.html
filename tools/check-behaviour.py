@@ -22234,7 +22234,10 @@ def check_b321g_nova(br):
     check("existing account: Nova's introduction opens on Home (not What's New first)", intro.get("open") and (pg.evaluate("()=>window.__seen") or [""])[0].startswith("nova-intro"),
           pg.evaluate("()=>window.__seen"))
     check("he greets them by username and tells the whole story, the crew included",
-          "Madison" in it and "tore through my ship" in it and "missing" in it and "Supernova" in it and "Drill" in it, (intro.get("lines") or [])[:4])
+          # (325: an existing account with a rank hears how many flares it
+          # has relit rather than "Bronze to Supernova"; it hears the
+          # Virtual Room instead - "It doesn't mention virtual room")
+          "Madison" in it and "tore through my ship" in it and "missing" in it and "Virtual Room" in it and "Drill" in it, (intro.get("lines") or [])[:4])
     check("at the end he goes over what they have: rank, level, badges, characters and secret flares found",
           "Gold" in it and "level 49" in it and "found 3 of my lost badges" in it and "of my missing crew" in it and "one of my secret flares" in it
           and re.search(r"\d+ of \d+ characters found", intro.get("stage") or "") and "1 of 3 secret flares found" in (intro.get("stage") or ""),
