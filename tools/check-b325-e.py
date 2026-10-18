@@ -295,13 +295,15 @@ def check_units(br):
         ctx, pg = booted(br, w, h, seed=USED)
         pg.evaluate(CLEAN); pg.evaluate("() => { store.seenUnitSelectTour = true; store.seenUnitHoldTip = true; }")
         r = pg.evaluate(UNITS, "drill")
+        rv = pg.evaluate(UNITS, "review")
         # 322's squares: two across, and a box (h/w 1.1 on a phone, 0.55 on
         # an iPad Pro 11") - a 323 row was one across at h/w ~0.2 and less
-        check("%s: cards sit two across as boxes (h/w %.2f), with no drawer and no growth when ticked" % (label, r["h"] / max(1, r["w"])),
-              r["side"] and r["h"] / max(1, r["w"]) >= 0.45 and r["drawers"] == 0 and abs(r["grow"]) <= 1, r)
-        rv = pg.evaluate(UNITS, "review")
-        check("%s: Briefing's Starred questions box is still after the units" % label,
-              "pick-flagged-all" in (rv["starredLast"] or ""), rv["starredLast"])
+        # ...and what 323 fixed that still applies is kept: Briefing's Starred
+        # questions box after the units, not on top (not a check of its own:
+        # it holds on 324 too, and a check that cannot fail is not one)
+        check("%s: cards sit two across as boxes (h/w %.2f), no drawer, no growth when ticked - and Starred still after the units" % (label, r["h"] / max(1, r["w"])),
+              r["side"] and r["h"] / max(1, r["w"]) >= 0.45 and r["drawers"] == 0 and abs(r["grow"]) <= 1
+              and "pick-flagged-all" in (rv["starredLast"] or ""), {**r, "starredLast": rv["starredLast"]})
         ctx.close()
 
 
@@ -362,13 +364,13 @@ def check_vroom(br):
         # the lobby, as host and as a guest
         pg.evaluate("(a) => (%s)(a[0], a[1])" % B323V_ROOM, [4, "race"]); pg.wait_for_timeout(1300)
         L = pg.evaluate(VR_BAR)
-        check("%s: the lobby - no tab bar; Ready up on the same glass pill, lit" % label,
-              L["bar"] and not L["tabsShown"] and "blur(30px)" in L["blur"] and "ready" in L["label"].lower()
-              and not L["inert"] and L["btnAlpha"] > 0.9, L)
+        rd = None
         if L.get("bar"):
             tap_at(pg, "#stage > .vroom-setup-bar .vroom-readyup-btn"); pg.wait_for_timeout(800)
             rd = pg.evaluate("() => ({ doc: !!(((__rooms.ROOM323 || {}).participants || {})[vroomMyKey] || {}).ready, cls: document.querySelector('.vroom-readyup-btn').className })")
-            check("%s: tapping it readies you, and it turns green" % label, rd["doc"] and "is-ready" in rd["cls"], rd)
+        check("%s: the lobby - no tab bar; Ready up on the same glass pill, lit; a tap readies you and turns it green" % label,
+              L["bar"] and not L["tabsShown"] and "blur(30px)" in L["blur"] and "ready" in L["label"].lower()
+              and not L["inert"] and L["btnAlpha"] > 0.9 and bool(rd) and rd["doc"] and "is-ready" in rd["cls"], {"bar": L, "tap": rd})
         ctx.close()
 
 

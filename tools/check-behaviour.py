@@ -25023,29 +25023,35 @@ def check_b321h(br):
         sv, qt = pg.evaluate(CS, "pause-save"), pg.evaluate(CS, "pause-quit")
         if not sv or not qt:
             check("%s: the pause menu has Save and exit and Quit" % dev, False, (sv, qt)); ctx.close(); continue
+        # MOVED in build 325: "The save and exit button idk how I feel about
+        # the color." It is clear glass now (the tab bar lens's pane), not
+        # 321's opaque grey - what 321 asked for ("that nice button look the
+        # others have") is held as the LIFT: Quit's three outer shadows in
+        # the same places, no border, Quit's height. check-b325-e.py holds
+        # the glass itself.
         ss, qs = _b321h_shadows(sv["bs"]), _b321h_shadows(qt["bs"])
-        check("%s: Save and exit has Quit's shadow layers, in the same places (%d against %d)" % (dev, len(ss), len(qs)),
-              len(ss) == len(qs) == 5 and ss == qs, (ss, qs))
-        check("%s: the same border and the same background layers as Quit" % dev,
-              sv["bw"] == qt["bw"] and sv["bst"] == qt["bst"] and sv["bi"] == qt["bi"], (sv["bw"], sv["bi"], qt["bw"], qt["bi"]))
+        outer = lambda xs: [x for x in xs if not x[0]]
+        check("%s: Save and exit sits on the surface with Quit's outer shadows, in the same places (325: under clear glass)" % dev,
+              len(outer(qs)) == 3 and outer(ss) == outer(qs), (ss, qs))
+        check("%s: no border, as Quit (so it stays Quit's height)" % dev,
+              sv["bw"] == qt["bw"] and sv["bst"] == qt["bst"], (sv["bw"], qt["bw"]))
         alpha = 1.0
         if sv["bg"].startswith("rgba"):
             alpha = float(sv["bg"].rstrip(")").split(",")[-1])
-        check("%s: an opaque grey body (%s), the height of Quit" % (dev, sv["bg"]),
-              alpha == 1.0 and abs(sv["h"] - qt["h"]) < .5, (sv["bg"], sv["h"], qt["h"]))
+        check("%s: a clear glass body (%s), the height of Quit (325)" % (dev, sv["bg"]),
+              alpha < 0.15 and abs(sv["h"] - qt["h"]) < .5, (sv["bg"], sv["h"], qt["h"]))
 
         def pressed(rest):
             b = rest["rect"]
             pg.mouse.move(b[0] + b[2] / 2, b[1] + b[3] / 2); pg.mouse.down(); pg.wait_for_timeout(250)
             return b
 
-        def lum(c):
-            v = [float(x) for x in c[c.index("(") + 1:c.index(")")].split(",")[:3]]
-            return .2126 * v[0] + .7152 * v[1] + .0722 * v[2]
+        def alpha_of(c):
+            return float(c.rstrip(")").split(",")[-1]) if c.startswith("rgba") else 1.0
         pressed(sv); sp = pg.evaluate(CS, "pause-save"); pg.mouse.up()
         pg.mouse.move(5, 5)
-        check("%s: pressed, it goes darker in place and shrinks, as Quit does (%.0f -> %.0f, %s)" % (dev, lum(sv["bg"]), lum(sp["bg"]), sp["tf"]),
-              lum(sp["bg"]) < lum(sv["bg"]) - 4 and sp["tf"].startswith("matrix(0.97"), sp)
+        check("%s: pressed, the glass dims in place and shrinks, as Quit does (%.3f -> %.3f, %s)" % (dev, alpha_of(sv["bg"]), alpha_of(sp["bg"]), sp["tf"]),
+              alpha_of(sp["bg"]) < alpha_of(sv["bg"]) and sp["tf"].startswith("matrix(0.97"), sp)
         ctx.close()
 
 
@@ -26392,7 +26398,7 @@ def check_b323u_units(br):
               and all(x["w"] < r["lw"] * 0.55 and x["h"] / max(1, x["w"]) >= 0.45 for x in rows), (r.get("lw"), rows[:3]))
         v = r.get("version") or {}
         check("%s the Penal Code row's version line sits under its name, on the name's edge" % label,
-              abs(v.get("dx", 99)) <= 1.5 and -2 <= v.get("below", -99) <= 16, v)
+              abs(v.get("dx", 99)) <= 1.5 and -2 <= v.get("below", -99) <= 24, v)   # 24: a square's gap on a tablet (325)
         t = r.get("tap") or {}
         # 325: a tap only ticks the card again - nothing opens and nothing
         # grows; the full details are a press and hold away, as in 322.

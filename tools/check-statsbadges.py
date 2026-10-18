@@ -147,8 +147,10 @@ def main():
         # section looks funny, improve this") as three tiles - but only
         # once somebody has played a match. This seed has not, so it gets
         # the one-line empty state and still nine cards.
-        check("nine of them, in two sections, Total XP first - no Virtual Room tiles before a first match",
-              r["n"] == 9 and r.get("grids") == [5, 4] and (r.get("labels") or [""])[0] == "Total XP"
+        # Eight since build 325: "I'm not sure why total xp is in the at a
+        # glance box. Remove that." Four in At a glance, four study-time.
+        check("eight of them, in two sections of four, no Total XP - no Virtual Room tiles before a first match",
+              r["n"] == 8 and r.get("grids") == [4, 4] and "Total XP" not in (r.get("labels") or [])
               and not any(l in ("Matches played", "First-place finishes", "Top-3 finishes") for l in (r.get("labels") or [])),
               [r["n"], r.get("grids"), r.get("labels")])
         check("there is an explanation panel", r["why"] is True)
