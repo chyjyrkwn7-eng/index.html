@@ -169,7 +169,7 @@ def section_spend(br):
             seg = [x["fill"] for x in s if x["lv"] == L and x["fill"] is not None]
             want = 100 * min(1, st["have"] / max(1, st["span"]))
             # near empty as the level opens, rising while the frames watch, and set where its numbers say at the step's end
-            if len(seg) < 2 or min(seg[:2]) > 20 or max(seg) < min(want, 40) - 1 or abs((st.get("fill") or 0) - want) > 1.5:
+            if len(seg) < 2 or min(seg[:2]) > 20 or max(seg) < min(want, min(seg[:2]) + 8) - 1 or abs((st.get("fill") or 0) - want) > 1.5:
                 fills_ok = False; bad.append((L, seg[:3], max(seg) if seg else None, st.get("fill"), round(want, 1)))
         check("%s: and the bar fills each new level from empty as the extra goes in" % label, fills_ok, bad[:4])
         check("%s: it ends on the new current level (%s) with what is left (%s / %s XP)%s" % (label, to["level"], to["into"], to["span"], ", the bar full at the next wall" if to["stopped"] else ""),
@@ -249,7 +249,7 @@ QUEUE_WALK = """async (a) => {
     const owed = rankUpOwed();
     const home = { lock: document.body.classList.contains('rankup-lock'), call: tab.classList.contains('ru-call'),
       nudges: (Number(tab.dataset.ruNudges) || 0) - nudges0, sawNudge, onHome: !!document.querySelector('[data-screen="home"]'),
-      owed, shown: store.rankUpShown, lit: {}, tabColor: tab.style.getPropertyValue('--ru-color') || null,
+      owed, shown: store.rankUpShown, lit: {}, screen: (stage.firstElementChild || {}).className || null, tabColor: tab.style.getPropertyValue('--ru-color') || null,
       tabBar: !!document.querySelector('.bottomtabs') && getComputedStyle(document.querySelector('.bottomtabs')).visibility !== 'hidden' };
     TIER_ORDER_FULL.forEach(k => home.lit[k] = flare(k));
     out.homes.push(home);
@@ -280,6 +280,7 @@ QUEUE_WALK = """async (a) => {
       await wait(40);
     }
     j.onHomeAfter = !!document.querySelector('[data-screen="home"]');
+    j.screenAfter = (stage.firstElementChild || {}).className || null;
     j.onProfileAfter = !!document.querySelector('.screen-profile');
     j.shownAfter = store.rankUpShown;
     j.blocker = !!document.querySelector('.ru-blocker');
@@ -376,7 +377,8 @@ def section_queue(br):
           [[c["name"] for c in j["cards"]] for j in js] == [["Silver rank"], ["Gold rank"], ["Platinum rank"]]
           and all(h.get("sawNudge") and h.get("lock") for h in (wk.get("homes") or [])[:3])
           and [j.get("levelEnd") for j in js] == ["Level 40", "Level 50", "Level %d" % s0.get("level")] and (wk.get("final") or {}).get("owed") is None,
-          [[[c["name"] for c in j["cards"]] for j in js], [j.get("levelEnd") for j in js], [(h.get("sawNudge"), h.get("lock")) for h in (wk.get("homes") or [])]])
+          [[[c["name"] for c in j["cards"]] for j in js], [j.get("levelEnd") for j in js], [(h.get("sawNudge"), h.get("lock"), h.get("onHome"), h.get("screen")) for h in (wk.get("homes") or [])],
+           [(j.get("phases"), j.get("onHomeAfter"), j.get("screenAfter")) for j in js]])
     ctx.close()
 
     # a reload between the two: only the second plays, from Gold

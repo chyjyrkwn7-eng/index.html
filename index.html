@@ -120480,7 +120480,12 @@ function rankUpSceneWatch(scene, ms){
   scene.watch = setTimeout(() => {
     if(rankUpScene !== scene) return;
     const played = ["armed", "profile", "tick"].indexOf(scene.phase) < 0;
+    /* on its way back to Home (build 326: another rank still owed) the
+       place to end is Home, never Profile - which would start the next */
+    const toHome = scene.phase === "home";
+    if(toHome) scene.homing = true;
     rankUpSceneEnd(scene, played);
+    if(toHome){ if(!stage.querySelector('[data-screen="home"]')){ try{ showHome(); }catch(e){} } return; }
     if(played && !stage.querySelector(".screen-profile")){ try{ showProfile(); }catch(e){} }
   }, ms);
 }
@@ -121455,9 +121460,13 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
     for(let k = 0; k < steps && marks.length < 8; k++) marks.push((RU_SPEND_LEAD_MS + k * (run + beat)) / 1000);
     playSound("rank.xp.climb", { dur: (RU_SPEND_LEAD_MS + rec.ms) / 1000, marks });
   }
-  /* the extra where it was, a beat before any of it is spent */
+  /* the extra where it was, a beat before any of it is spent. Each step is
+     due at a fixed time from here (T0), so a slow frame or a late timer on
+     a busy phone is made up on the next step, not added to the climb */
+  const T0 = performance.now() + RU_SPEND_LEAD_MS;
   await rankUpWait(RU_SPEND_LEAD_MS);
   for(let lv = L0; lv < L1; lv++){
+    const due = T0 + (lv - L0) * (run + beat);
     if(!standing.isConnected) break;
     const cost = rankUpLevelSpan(lv), h0 = into(lv), nx = lv + 1, h1 = into(nx), span1 = spanOf(nx);
     const f1 = Math.min(1, h1 / span1);
@@ -121470,13 +121479,14 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
     rankUpSpendChip(numsHost, have, cost);
     show(nx, h0, 0);
     /* the number counts down by what it cost while the new level fills */
-    await ruTween(standing, run, k => {
+    await ruTween(standing, Math.max(160, due + run - performance.now()), k => {
       const e = .5 - .5 * Math.cos(Math.PI * k);
       show(nx, h0 - cost * e, f1 * e);
     });
     show(nx, h1, f1);
     rec.steps.push({ level: nx, cost, have: h1, span: span1, sum: xpForLevel(nx) + h1, fill: parseFloat(fill.style.getPropertyValue("--fill")) || 0 });
-    if(beat) await rankUpWait(beat);
+    const rest = due + run + beat - performance.now();
+    if(rest > 0) await rankUpWait(rest);
   }
   /* where it ends, in the card's own numbers */
   const cur = numsHost && numsHost.querySelector(".xpnums");
@@ -121678,7 +121688,9 @@ async function rankUpProfileReturn(scene, panel){
   goal.classList.remove("ru-flip-in");
   /* the box has turned over; THEN the saved XP climbs */
   if(climb && rankUpScene === scene){
-    rankUpSceneWatch(scene, RANKUP_CLIMB_MAX_MS + 10000);
+    /* (build 326) room for a busy phone: the climb keeps its own clock, but
+       the row after it and the beats are timers */
+    rankUpSceneWatch(scene, 2 * RANKUP_CLIMB_MAX_MS + 15000);
     await rankUpWait(400);
     await rankUpStandingClimb(standing, cap, real, lvRow, scene);
   }

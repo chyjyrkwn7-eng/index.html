@@ -14717,8 +14717,13 @@ def check_b317_planet(br):
     # middle of each fissure (SCAR_CRACK_ONLY, P.GLOW). What stays true: the
     # crack's walls are still dark, the light lives inside the fissures and
     # is a thread, not a fire filling the mark.
-    check("a crack, not a fire: where the scar is solid it is still dark (mean under 40), and the warm light in it is a thread down the fissures - under 10% of the mark",
-          bool(art) and art.get("foot", 0) > 1000 and art["glowing"] <= art["foot"] * .10 and art["coreLum"] < 40,
+    # MOVED IN 326: "it looked like there was a large large crack" - the arms
+    # are 1.9x wider (SCAR_CRACK_WIDE), so more of the wall facing the light
+    # is lit and the solid part's mean rises a little (43 against 40); it is
+    # still a dark crack, and the light is still a thread (the seam, b326c, is
+    # an svg over the art, not in it).
+    check("a crack, not a fire: where the scar is solid it is still dark (mean under 48 - 40 before 326's wider crack), and the warm light in it is a thread down the fissures - under 10% of the mark",
+          bool(art) and art.get("foot", 0) > 1000 and art["glowing"] <= art["foot"] * .10 and art["coreLum"] < 48,
           art and {k: (round(art[k], 1) if isinstance(art.get(k), float) else art.get(k)) for k in ("layers", "foot", "glowing", "coreLum")})
     check("the light inside the crack: one ember layer under the crack art, under 30% of the mark, breathing slowly (8s or more); no bloom, no hot layer, no heat shimmer",
           bool(art) and art.get("emArea", 1e9) <= art.get("foot", 0) * .30 and art.get("emArea", 0) > 0
@@ -20625,8 +20630,11 @@ def check_b319_shine(br):
           h.querySelector(':scope > .cosmic-scar').style.visibility = 'hidden'; h.classList.remove('is-scarred'); }""")
         pg.wait_for_timeout(100)
         lB, dB = shot()
-        check("%s: the shine is damaged - dulled (%.0f against %.0f clean, under 80%%) with dark structure in it (%.1f%% under 40, clean %.1f%%)" % (acc, lA, lB, dA * 100, dB * 100),
-              box["scar"] and lA <= .8 * lB and dA >= .03 and dB < .01, (round(lA, 1), round(lB, 1), round(dA, 4), round(dB, 4)))
+        check("%s: the shine is damaged - dulled (%.0f against %.0f clean, under 85%% - 80%% before 326's finer crazing) with structure in it (%.1f%% under 40, clean %.1f%%)" % (acc, lA, lB, dA * 100, dB * 100),
+              # MOVED IN 326: Supernova's shine is fine warm crazing, not a black
+              # web ("it read as a tree"), so less of it is under 40 - still
+              # dulled the same, still structure where the clean shine has none
+              box["scar"] and lA <= .85 * lB and dA >= .008 and dB < .01 and dA > 3 * dB, (round(lA, 1), round(lB, 1), round(dA, 4), round(dB, 4)))
     ctx.close()
 
 B318_DAILY = """async (acc) => { const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -23146,8 +23154,10 @@ def check_b320e_cracks(br):
           t.get("impact", 0) > 20 and t.get("shine", 0) > 20 and t.get("farX", 1) < .12,
           {k: t.get(k) for k in ("piece", "impact", "shine", "farX")})
     e = rows["elite"]
-    check("the burn begins at Amethyst: its shine already breaking, less than Supernova's",
-          0 < e.get("shineDark", 0) < t.get("shineDark", 0) * .8 and rows["adept"].get("shineDark", 0) == 0,
+    # MOVED IN 326: Supernova's broken shine is finer, warmer crazing than
+    # Amethyst's black seams, so it no longer counts as darker; both broken
+    check("the burn begins at Amethyst: its shine already breaking (Supernova's broken too, in finer crazing since 326)",
+          0 < e.get("shineDark", 0) and t.get("shineDark", 0) > 0 and rows["adept"].get("shineDark", 0) == 0,
           (rows["adept"].get("shineDark"), e.get("shineDark"), t.get("shineDark")))
     check("only Supernova's has the flakes and the ember", t.get("frags", 0) >= 6 and t.get("ember") and not any(rows[k].get("frags") or rows[k].get("ember") for k in up[:-1]),
           [(rows[k].get("frags"), rows[k].get("ember")) for k in up])
