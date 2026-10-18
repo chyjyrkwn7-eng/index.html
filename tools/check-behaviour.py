@@ -15776,7 +15776,9 @@ def check_b317_hundobox(br):
             return [float(m.group(i)) / 255 for i in (1, 2, 3)] + [float(m.group(4) or 1)]
         return None
 
-    GOLD_BORDER = "rgba(242, 211, 138, 0.2)"
+    # the default's rim at full strength since build 325 (every results
+    # card carries the hundo box's edge, --rs-edge); it was .2
+    GOLD_BORDER = "rgb(242, 211, 138)"
     for label, w, h in (("SE 1st gen", 320, 568), PHONE, TABLET):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         pg.evaluate("() => { " + RUN100 + " }")

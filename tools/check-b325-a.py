@@ -401,7 +401,7 @@ def sec_water(br):
     up, down = (U["rise"] + U["riseD"]) * 1000, U["drain"] * 1000
     dry = [(round(x[0]), x[5]) for x in seen if x[1] is None or x[1] > vh * .2 or x[0] < up - 50 or x[0] > down + 50]
     check("drawn fish swim across while the sea is up - in after it has risen (%.2fs), out of frame before it drains (%.2fs)" % (up / 1000, down / 1000),
-          len(seen) >= 30 and not dry, [len(seen), dry[:4]])
+          len(seen) >= 30 and not dry and bool(art) and art["shapes"] >= 12, [len(seen), dry[:4], art])
     ctx.close()
     # the breath, frame by frame on the recorders' clock (record-hundo's: the
     # page's timers, frames and every animation stepped 1/30s together), so
