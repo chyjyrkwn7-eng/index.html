@@ -22440,3 +22440,151 @@ written beside each one.
   `pause_at(now + 50ms)` threw "Cannot fast-forward to the past" when the
   machine was under load (load average around 20–38). It now retries
   further ahead.
+
+### Build 325 (b325i) - the road map's flare goes into the planet system unchanged
+
+Madison: *"the flare bubble changes in the transition and doesn't look like
+the flare.. fix that. That's a big one."* Branch `b325i` (on 618ee2b).
+Gate: `tools/check-b325-i.py` (fails on 618ee2b, passes here).
+
+- **THE BUBBLE CLIPPED THE COPY - the change that was left.** Build 325's
+  stream C fixed the copy's size on an iPad and lit the bubble it lands
+  in, and the hand-off still changed in one frame. `rankCutHandoff` moves
+  the road map's copy (the "ghost": a 2px gold rim, a 4px ring of the
+  rank's colour and a 30px glow, plus the "you are here" pulse ring) INTO
+  the scene's bubble, and `.cosmic-icon-badge.cosmic-badge-rank` is
+  `overflow:hidden`. Everything the copy draws at or past its edge was cut
+  off at the bubble's padding edge: a gold, glowing flare became a plain
+  dark glass ball in one frame, and the gold came back only as the bubble
+  lit, ~0.6s on. Measured on 618ee2b: the rim's colour (the brightest
+  pixel round 180 rays) went from (249,217,114) to (43,36,18) on the
+  iPhone and (247,215,113) to (40,33,17) on the iPad; the ring from 72 to
+  5 and the glow from 20 to 0 (mean excess luminance). Size and centre
+  were already right (52->53px, under a third of a pixel).
+  **Fix:** `#supernova-cutscene .cosmic-icon-badge.ru-hand-bubble{
+  overflow:visible }`, next to the other `.ru-hand-bubble` rules. While the
+  copy is in it the bubble clips nothing; everything of the bubble's own
+  is round on its own (the emblem's clip-path, the flip-book's and the
+  lens's border-radius), and the copy has faded and been removed before
+  the class comes off. Now: rim, ring and glow the same either side of
+  the move to within a level or two on both devices.
+  **A bubble with a child that draws past its edge needs its overflow
+  looked at, not just its own paint** - build 321 turned off the bubble's
+  rim, glow and lens round the copy and never asked what the bubble did
+  TO the copy.
+- **THE BUBBLE LIGHTS FIRST, THEN THE COPY GOES.** With the clip gone, the
+  cross-fade itself showed: the copy faded on the bubble's own timing
+  (1.3s from .25s), so at the midpoint half of each was a dimmer flare
+  than either - the rim lost about a fifth of its gold around .8s and came
+  back. The copy now fades from .65s over 1s (to 1.65s, well inside the 3s
+  before it is removed); the bubble still lights from .25s over 1.3s, so
+  the copy goes over a bubble that is mostly lit. The rim's gold holds
+  (lowest ~110 against the flare's 119, was ~95) and the ring and glow
+  only grow into the bubble's.
+- **The gate (check-b325-i, K): pixels, frame by frame, on both reference
+  devices installed.** It holds the journey at the end of `rankUpHandOut`
+  (the last frame before the move), pauses Playwright's clock, and
+  freezes every animation; it then lets the move happen, shoots the first
+  frame after it, and steps the cross-fade 50ms at a time, running the
+  clock and seeking every animation together. Three traps, each of which
+  invented a defect before it was caught:
+  - `page.clock.pause_at(number)` takes **seconds**: a millisecond
+    `Date.now()` jumped the clock decades on and fired every timer in the
+    journey, ending the scene before the hand-off.
+  - The move re-parents the copy, which **restarts its CSS animations**,
+    and `ruClockSnap` puts them back on their clock in the same instant. A
+    seek that reset every newly-seen animation to 0 restarted the "you are
+    here" pulse ring and read it as the ring changing. Animations seen in
+    the same instant keep their time; ones made in a later step start from
+    0. The pulse is held still: its restart every 2.6s is the flare's own
+    heartbeat, the same either side of the move.
+  - The rim is ~5 device px wide, and the planet system (zoomed 2.19x on
+    the iPhone, the bubble is 24px in the scene) rounds its place a third
+    of a pixel differently from the road map, so a band average moved by a
+    fifth with nothing visible changing. The circle is found in the
+    pixels (the rim's peak round 180 rays gives the centre and radius),
+    not taken from the layout box.
+  - The first frame after the move is frozen **inside the hook, in the
+    same task as the move**. Frozen by a later call, the new planet's
+    orbit had turned in real time while the check polled, and the copy
+    came out up to 24px off on an iPad in one run in three. It turns WITH
+    its bubble, so nothing had parted: the harness was the clock.
+  Result: 10/10 here (twice), 8/10 failing on 618ee2b (centre and size
+  pass there; stream C fixed those).
+  Frames for both devices, before and after the fix, are in this folder
+  (`base/`, `fix/` = clip removed only, `stagger/` and `final/`, and
+  `strip_*.png`).
+
+### Build 325 (b325j) - the tab bar's lens is drawn when you hold the tab it last landed on
+
+Found by the review-pack recorder on 618ee2b, then reproduced in plain real
+time: tap a tab, wait about 3s, then press and HOLD that same tab without
+moving. The bar swelled, the grey platter went and the label was magnified,
+but **no lens was drawn for the whole hold**. The page's own state said the
+lens was up and fully visible the whole time (`.tab-lens.is-up`, glass coat
+opacity 1, grey 0, platter 0). Holding a different tab worked, a first hold
+worked, and a drag showed the lens as soon as the finger moved.
+
+- **The cause was paint, not state, so no DOM read could find it.** At rest
+  the lens was `visibility:hidden`, and `.is-up` made it visible. Its two
+  clipped halves (`.tab-lens-clip`: a layer each, masked, `plus-lighter`)
+  were not repainted when that inherited visibility flipped back. They kept
+  what they had painted while hidden, which was nothing, until something of
+  their OWN changed. Read off the compositor (CDP `LayerTree`) in the middle
+  of the bad hold: the bar, the swollen bar's platter and the rest were all
+  there, and **the lens had no layers at all**. The fixed build has every one
+  (clip, cap, glass, grey, both halves).
+- **Why only the same tab.** The clips sit on the lens's centre line
+  (`lensTf`: their transform depends on `cx` only, not on the lens's size).
+  A press anywhere else moves them, and that transform change repaints them.
+  A first-ever press writes their transform for the first time. A drag moves
+  them. A press on the tab the last lens settled on puts them exactly where
+  they already were, so nothing repainted them. It also depends on what else
+  happened to repaint the bar region in between. With the same frame-exact
+  harness, tap Profile then hold Profile fails on both devices every time,
+  but tap Leaderboard, tap Profile, hold Profile passes. The review recorder
+  caught that second sequence failing in real time, so a gate on "sometimes"
+  would be a coin toss.
+- **Bisected by pixels**, frame-exact (the Frames clock), each hypothesis as
+  a patched copy:
+  - Cancelling every finished fill:both fade at `lensFinish`: still no lens.
+    One run passed, and repeat runs said it was a fluke.
+  - Making the lift's clip keyframes never constant: still no lens.
+  - Resetting the CAPS' transforms first: still no lens.
+  - Resetting the CLIPS' transforms (to `none`, flushed, then back): the lens
+    comes back.
+  - Never hiding the lens with visibility: the lens comes back.
+  So the suspects of a stale fill:forwards animation, a stale class, or a rAF
+  loop not restarted were all ruled out. It is a layer never being
+  invalidated because nothing about it changed.
+- **The fix: the lens is hidden by its opacity alone** (`.tab-lens`, next to
+  its own rules). `visibility:hidden` and the `.tab-lens.is-up{visibility:visible}`
+  rule are gone. `.is-up` stays as the JS state flag (the press reads it to
+  catch a lens still up). At rest the lens is opacity 0: the CSS says so, and
+  every fade ends there (`lensFade` writes the end value inline;
+  `lensHide` writes 0). It has `pointer-events:none`, so a visible lens at
+  opacity 0 does nothing. Nothing is left to go stale, so the fix holds
+  whatever the history. Forcing the clips' transform through `none` also
+  worked, but that is a work-around that has to be remembered on every path.
+- **Gate `tools/check-b325-j.py`** reads PIXELS, never the DOM. On the F
+  gate's frame-exact clock, it screenshots the bottom 200px every 4th frame
+  of the hold. It measures the lens's top rim: the median, over the middle
+  40% of the lens's width, of the brightest row 0.5-1.5px inside its top,
+  less the page 4px above it. That is 124-174 levels where the lens is drawn
+  and about 0 where it is not, against a threshold of 40. There are four
+  checks, each in a fresh page, on the iPhone 17 Pro Max at 3x and the iPad
+  Pro 11" at 2x, installed and in a browser: Home, then tap Profile, ~3s,
+  then hold Profile. The lens must be drawn in all 12 sampled frames and must
+  settle into the grey platter on Profile. Installed, the same page then
+  holds Leaderboard, lets go and holds it again, and both must be drawn.
+  These are controls, folded into the check. Result: 4/4 pass here, 4/4 fail
+  on 618ee2b (rim 0 / -1 in every frame while "page says up": True).
+- Trap: **a fresh page per scenario.** The first draft ran a hold, let go,
+  hold-again sequence on Home before the Profile sequence in the same page.
+  The old build then PASSED everything, because the earlier lens use had
+  repainted what the bug leaves stale. Run every new check `--against` the
+  broken build. Green on both builds means it is measuring nothing.
+- Trap: **this machine's real-time captures are not a gate.**
+  `Page.captureScreenshot` at 3x takes 1-2s here while other builders run,
+  and in one real-time run the base build drew the lens. The frame-exact clock
+  is deterministic: the same numbers on every run.
