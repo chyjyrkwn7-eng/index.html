@@ -173,7 +173,13 @@ def declared_steps(src):
     if m:
         out["startMainMenuTour"] = len(re.findall(r"\btarget\s*:", m.group(1)))
         if "function startNovaReturnTour(" in src:
-            out["startNovaReturnTour"] = out["startMainMenuTour"] + shared_steps(src, "NOVA_NEW_TIPS_321")
+            # build 325: the meeting's tips are the new ones alone ("all the
+            # walk through stuff on the main menu can be removed, only the
+            # ones with the 'new' at the beginning") - so the main menu's
+            # count only when the function still asks for them
+            body = re.search(r"function startNovaReturnTour\([^)]*\)\{(.*?)\n\}", src, re.S)
+            mm = out["startMainMenuTour"] if body and "mainMenuTourSteps" in body.group(1) else 0
+            out["startNovaReturnTour"] = mm + shared_steps(src, "NOVA_NEW_TIPS_321")
     out.pop("mainMenuTourSteps", None)
     return out
 

@@ -491,7 +491,9 @@ def run_intro(src_dir, label):
             met = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms));
               const el = document.getElementById('nova-intro'); if(!el) return { intro: false };
               await wait(900); const name = el.innerText.indexOf('Madison') >= 0;
-              el.querySelector('.nt-skip').click(); await wait(200); el.querySelector('.nt-skip').click();
+              /* build 325: no Skip on his introduction ("I need them to see
+                 it"); the tools' fast-forward is el.__nova.skip() */
+              el.__nova.skip(); await wait(200); el.__nova.skip();
               for(let i = 0; i < 30 && !document.getElementById('intro-pop'); i++) await wait(100);
               return { intro: true, name, news: !!document.getElementById('intro-pop') }; }""")
             if not (met.get("intro") and met.get("name") and met.get("news")):
@@ -503,7 +505,7 @@ def run_intro(src_dir, label):
             # cover is 319's and 320's, in version 7.8, and Nova says it.
             # (build 321: the release is Version 9 - "This is gonna be
             # version 9" - and 319-320's "7.8" is Version 8, not launched)
-            pg.evaluate("()=>{ const s = document.querySelector('#intro-pop .nt-skip'); if(s) setTimeout(() => s.click(), 900); }")
+            pg.evaluate("()=>{ const el = document.getElementById('intro-pop'); if(el && el.__nova) setTimeout(() => el.__nova.skip(), 900); }")
             pg.wait_for_timeout(1500)
             out = pg.evaluate("""()=>{
               const el = document.getElementById('intro-pop');
@@ -518,7 +520,11 @@ def run_intro(src_dir, label):
                          above his bubble, and the bubble is on screen */
                       bottomReachable: lr.bottom <= br.top + 1 && br.bottom <= innerHeight + 1 && list.scrollHeight >= list.clientHeight,
                       wide: lr.width > innerWidth * 0.7,
-                      says78: ['nova', 'results', 'badge', 'badge case', 'road map', 'planet', 'profile', 'calendar', 'save a test', 'daily question'].every(w => txt.indexOf(w) >= 0)
+                      /* build 325: "Results grade first, characters celebrate, the
+                         ranking up on the road map, a planet that cracks, supernovas
+                         mark, the daily question ring. Remove all of those" - and
+                         Version 9's own additions in their place */
+                      says78: ['nova', 'sound', 'qualifier', 'briefing', 'badge case', 'profile', 'calendar', 'save a test', 'study', 'virtual room'].every(w => txt.indexOf(w) >= 0)
                         && txt.indexOf('version 9') >= 0,
                       go: !!el.querySelector('.intro-go')};}""")
             if not out:
@@ -543,7 +549,7 @@ def run_intro(src_dir, label):
               for(let i = 0; i < 30 && !document.getElementById('tour-tooltip'); i++) await wait(100);
               for(let i = 0; i < 20 && document.getElementById('tour-tooltip'); i++){ document.getElementById('tour-next').click(); await wait(400); }
               for(let i = 0; i < 30 && !document.getElementById('nova-intro'); i++) await wait(100);
-              const bye = document.getElementById('nova-intro'); if(bye){ await wait(700); bye.querySelector('.nt-skip').click(); }
+              const bye = document.getElementById('nova-intro'); if(bye){ await wait(700); bye.__nova.skip(); }
               await wait(600);
               return new Promise(r => setTimeout(() => {
                 showHome();

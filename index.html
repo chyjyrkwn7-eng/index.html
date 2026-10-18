@@ -1845,6 +1845,16 @@
     animation:nt-pan var(--pan-s, 12s) ease-in-out .6s infinite alternate; }
   .nt-parade-row.is-rev .nt-parade-track{ animation-direction:alternate-reverse; }
   .nt-parade-row.is-still .nt-parade-track{ animation:none; margin:0 auto; }
+  /* nothing glides under Reduce motion, so every tile has to be seen
+     without it: the rows wrap, smaller, centred */
+  [data-reduce-motion="true"] .nt-parade{ flex-direction:row; flex-wrap:wrap; justify-content:center; gap:.3rem; max-width:27rem; }
+  [data-reduce-motion="true"] .nt-parade-row, [data-reduce-motion="true"] .nt-parade-track{ display:contents; }
+  [data-reduce-motion="true"] .nt-crewpar .nt-slot, [data-reduce-motion="true"] .nt-badgepar .nt-slot{ width:2.2rem; height:2.2rem; }
+  @media (prefers-reduced-motion:reduce){
+    .nt-parade{ flex-direction:row; flex-wrap:wrap; justify-content:center; gap:.3rem; max-width:27rem; }
+    .nt-parade-row, .nt-parade-track{ display:contents; }
+    .nt-crewpar .nt-slot, .nt-badgepar .nt-slot{ width:2.2rem; height:2.2rem; }
+  }
   @keyframes nt-pan{ from{ transform:translateX(0); } to{ transform:translateX(var(--pan, 0px)); } }
   .nt-parade-track > *{ flex:0 0 auto; animation:nt-popin .5s cubic-bezier(.25,1.5,.4,1) both; animation-delay:calc(var(--i, 0) * 45ms); }
   .nt-crewpar .nt-slot{ width:3.7rem; height:3.7rem; }
@@ -1886,6 +1896,8 @@
     .nt-crewpar .nt-slot{ width:5.2rem; height:5.2rem; }
     .nt-badgepar .nt-slot{ width:5.4rem; height:5.4rem; }
     .nt-parade, .nt-parade-track{ gap:.9rem; }
+    [data-reduce-motion="true"] .nt-parade{ max-width:44rem; gap:.5rem; }
+    [data-reduce-motion="true"] .nt-crewpar .nt-slot, [data-reduce-motion="true"] .nt-badgepar .nt-slot{ width:3.6rem; height:3.6rem; }
     .nt-kinds{ width:min(34rem, 100%); gap:.6rem; }
     .nt-kind{ gap:1rem; padding:.45rem 1.2rem .45rem .6rem; border-radius:20px; }
     .nt-kind .nt-slot{ width:4.2rem; height:4.2rem; }
@@ -76187,14 +76199,43 @@ function novaBadgeParade(){
   try{ units = topicsIn(QUESTIONS); }catch(e){}
   let have = [];
   try{ have = badgesEarnedList(); }catch(e){}
-  const tiles = units.map(u => {
-    const s = document.createElement("span"); s.className = "nt-slot";
-    const got = have.indexOf(u) >= 0;
-    try{ s.appendChild(buildUnitBadgeSVG(u, got)); }catch(e){}
-    if(!got) s.classList.add("is-unfound");
-    return s;
-  });
+  const tiles = units.map(u => novaWarmTake("badge:" + u) || novaBadgeTile(u, have.indexOf(u) >= 0));
   return novaParade(tiles, 2, "nt-badgepar");
+}
+function novaBadgeTile(u, got){
+  const s = document.createElement("span"); s.className = "nt-slot";
+  try{ s.appendChild(buildUnitBadgeSVG(u, got)); }catch(e){}
+  if(!got) s.classList.add("is-unfound");
+  return s;
+}
+/* MADE AHEAD, A FEW AT A TIME (build 325). Thirty characters (half of them
+   cut-outs, which copy the drawing twice) and every unit's badge are about
+   a second of drawing on a desktop - all in the moment he moved on to the
+   line, that was a visible stall in his typing. So the introduction warms
+   them while he says hello and the planet goes: ~12ms of drawing per
+   step, a step every 30ms, into a cache each tile is taken from once.
+   Anything not ready yet is drawn on the spot, as before. */
+const novaWarmCache = new Map();
+function novaWarmTake(key){
+  const n = novaWarmCache.get(key);
+  if(n){ novaWarmCache.delete(key); return n; }
+  return null;
+}
+function novaWarmProps(){
+  novaWarmCache.clear();
+  const jobs = [];
+  try{ novaCrewShown().forEach(c => jobs.push(() => novaWarmCache.set("crew:" + c.id, novaCrewArt(c.id)))); }catch(e){}
+  try{
+    const have = badgesEarnedList();
+    topicsIn(QUESTIONS).forEach(u => jobs.push(() => novaWarmCache.set("badge:" + u, novaBadgeTile(u, have.indexOf(u) >= 0))));
+  }catch(e){}
+  const run = () => {
+    if(!novaIntroOn){ novaWarmCache.clear(); return; }
+    const t = performance.now();
+    while(jobs.length && performance.now() - t < 12){ try{ jobs.shift()(); }catch(e){} }
+    if(jobs.length) setTimeout(run, 30);
+  };
+  setTimeout(run, 1400);
 }
 /* A slow pan across more than fits: the tiles in `rows` rows, each row
    gliding to its far end and back (alternate rows the other way); a row
@@ -76336,7 +76377,7 @@ function novaCrewArt(id){
 function novaCrewParade(){
   const order = NOVA_CREW_KINDS.map(x => x.k).concat(["kept"]);
   const list = novaCrewShown().slice().sort((a, b) => order.indexOf(charCategory(a.id)) - order.indexOf(charCategory(b.id)));
-  return novaParade(list.map(c => novaCrewArt(c.id)), 3, "nt-crewpar");
+  return novaParade(list.map(c => novaWarmTake("crew:" + c.id) || novaCrewArt(c.id)), 3, "nt-crewpar");
 }
 function novaCrewKinds(){
   const shown = novaCrewShown();
@@ -76528,6 +76569,8 @@ function playNovaIntro(then, o){
   const recapAt = lines.findIndex(l => l.recap);
   /* the art of the crack the wreck forms, made while he says hello */
   setTimeout(() => { try{ if(!novaMotionOff()) warmCrackForm(0, CRACK_TOP); }catch(e){} }, 900);
+  /* and the parades of characters and badges (build 325) */
+  novaWarmProps();
   novaTalk({ id: "nova-intro", label: "Nova introduces himself", lines, finalLabel: o.existing ? "What’s new" : "Let’s go",
     skipTo: recapAt > 0 ? recapAt : null, noSkip: true,
     /* an existing account is found by him (build 325) */
