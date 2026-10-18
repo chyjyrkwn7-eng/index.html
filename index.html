@@ -117930,7 +117930,7 @@ const BADGE_BACK_CACHE = {};
    Contrast (`ink`, `floor`): the cut is a recess with a light lower wall
    and a dark, blackened floor - an engraver's fill - on a field that is
    lighter than the letters, never the same grey. */
-const BADGE_BACK_RELIEF = { depth: .2, cut: .5, cutK: .55, toolK: .3, wallU: .42, shadowU: .9, shadowK: 1.4, floor: .5, floorSp: .25, ink: [.30, .31, .33], inkK: .85, brush: .13, fieldFlat: .6, fieldLevel: .34, fieldDirt: .55,
+const BADGE_BACK_RELIEF = { depth: .2, lipK: 1.6, cut: .5, cutK: .55, toolK: .3, wallU: .42, shadowU: .9, shadowK: 1.4, floor: .5, floorSp: .25, ink: [.30, .31, .33], inkK: .85, brush: .13, fieldFlat: .6, fieldLevel: .34, fieldDirt: .55,
   rimIn: 4.6, margin: 1.6, planW: 260, fsMax: .092, fsMin: .026, classMin: .034, classKeep: .96, classNameMin: 5.6, aboveKeep: .8, tidyKeep: .9, weight: 800 };
 const BADGE_BACK_FONT = '"Helvetica Neue", Helvetica, Arial, sans-serif';
 const BADGE_BACK_PLAN = {};
@@ -118361,6 +118361,11 @@ function renderBadgeBack(unitName, Wout, ssForce, dirt){
       /* the cut's floor is matte and darker; its light-side wall throws a shadow into it */
       if(mk > 0){ const fl = mk * mk; mm *= (1 - (1 - R.floor) * fl) * (1 + R.toolK * tm * fl); sp *= 1 - (1 - R.floorSp) * fl; }
       if(sh > 0){ const q = Math.min(1, sh * R.shadowK); mm *= 1 - q; sp *= 1 - q; }
+      /* THE CATCH-LIGHT: the top of the wall that faces the light is a
+         sharp edge of polished metal, and an edge catches a line of light
+         (`lipK`) - the bright lip that makes a cut read as cut */
+      if(cv > .02 && mk < .55){ const rx = RDX[ox], ry = RDY[ox], rl = Math.sqrt(rx * rx + ry * ry);
+        if(rl > 1e-4){ const f = -(rx * ldx + ry * ldy) / rl; if(f > 0) sp += R.lipK * f * f * (1 - mk / .55) * Math.min(1, cv * 2); } }
       /* the floor blackened (build 325): an engraver's fill, so the letters
          are never the field's grey - from the words' own (unsoftened)
          coverage, so the fill runs right up to each letter's edge and the
