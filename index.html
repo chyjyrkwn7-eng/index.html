@@ -15211,6 +15211,29 @@
     }
     [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:calc(2rem + (var(--zc, 1) - 1) * 59px); }
   }
+  /* ---- BUILD 326: THE BUTTON AND THE TEXT, BOTH A LITTLE HIGHER ----
+     "the phone is where most people use this app ... the start studying
+     button is slightly too low and the good morning and text about the
+     button is slightly too low too." The panel's bottom padding is the
+     one lever that moves BOTH: the button sits on the panel floor, and
+     the greeting's margin-top:auto is the only auto in the column, so
+     every pixel added here lifts the button and the text group by the
+     same amount and the tagline->button gap does not change by a pixel.
+     +12px on a 17 Pro Max (41 -> 53 above the tab bar), +10.4px on a
+     14/15/16 (31 -> 41).
+     HEIGHT FLOORS, NOT DECORATION. Where Home already overflows (a phone
+     in a browser tab: 393x742, 440x846) the button is at the end of the
+     content, not on the floor, and more padding is only more scroll -
+     so these stop at 56rem (896px) and 52rem (832px), under the
+     installed heights and over the browser ones. The 375px phones keep
+     theirs: they have no slack (a 13 mini already overflows by 26px)
+     and their buttons already sit 54-98px above the bar. */
+  @media (max-width:639px) and (min-width:430px) and (min-height:56rem){
+    [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:calc(2.75rem + (var(--zc, 1) - 1) * 59px); }
+  }
+  @media (min-width:384px) and (max-width:429px) and (min-height:52rem){
+    [data-layout="modern"] .panel.home.screen-home-actual{ padding-bottom:calc(2rem + (var(--zc, 1) - 1) * 59px); }
+  }
   /* ---- AND THE NARROWEST PHONES CANNOT AFFORD THE FULL BLEED ----
      Going full-bleed made the hero WIDER, and this hero is square, so it
      also made it ~21px TALLER - which on an overflowing panel comes
