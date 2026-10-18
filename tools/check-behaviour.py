@@ -19737,7 +19737,8 @@ def check_b317_badge2(br):
       const front = !!document.querySelector('.bc-stage .bc-front .nova-case-plate, .bc-stage .bc-front .nova-case-sideplate');
       const at = sel => { const p = document.querySelector(sel); if(!p) return { found: false };
         const r = p.getBoundingClientRect(), hit = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
-        return { found: true, hit: !!(hit && (hit === p || p.contains(hit))), text: p.textContent.replace(/\\s+/g, ' ').trim() }; };
+        return { found: true, hit: !!(hit && (hit === p || p.contains(hit))), text: p.textContent.replace(/\\s+/g, ' ').trim(),
+          shown: r.width > 4 && r.height > 2 && r.bottom > 0 && r.top < innerHeight }; };
       return { name, front, top: at('.bc-stage .bc-lid-out .nova-case-nameplate'), cushion: at('.bc-stage .bc-lid-in .nova-case-lidlabel') }; }"""
     for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2)):
         # ---- 1. the cutscene: the name on the side, closed to fully open ----
@@ -19786,8 +19787,10 @@ def check_b317_badge2(br):
         # the side at every moment from shut to fully open, nothing over it.
         ok = all(not v["front"] for v in seen.values()) \
             and all(seen[t]["top"].get("found") and seen[t]["top"].get("hit") and v_name_in(seen[t]["name"], seen[t]["top"].get("text")) for t in (7.6, 8.75)) \
-            and all(seen[t]["cushion"].get("found") and seen[t]["cushion"].get("hit") and seen[t]["cushion"].get("text") == seen[t]["name"] for t in (10.4, 12.5))
-        check(f"{dev}: the case's name is on its lid - on the one nameplate while shut, in the cushion once open, nothing over it - and never on the front (325)",
+            and all(seen[t]["cushion"].get("found") and seen[t]["cushion"].get("shown") and seen[t]["cushion"].get("text") == seen[t]["name"] for t in (10.4, 12.5))
+        # (the open lid's cushion is not hit-tested: Chromium hit-tests the
+        # backface-hidden nameplate on the lid's other side in front of it)
+        check(f"{dev}: the case's name is on its lid - on the one nameplate while shut (nothing over it), in the cushion once open - and never on the front (325)",
               ok, seen)
         ctx.close()
         # ---- 2. the Badges tab and the Profile card: the same plate on the same side ----
@@ -19826,7 +19829,8 @@ def check_b317_badge2(br):
         # plate is still required, and any name on the lid may only be that
         # deboss, never a plate or a heading.
         tabLid = pg.evaluate("""() => { const l = document.querySelector('.badge-case .badge-case-lid'); if(!l) return null;
-          const c = l.cloneNode(true); c.querySelectorAll('.nova-case-cushion, .nova-case-lidlabel').forEach(n => n.remove());
+          /* (325) the lid's one nameplate may say it too, while it is shut */
+          const c = l.cloneNode(true); c.querySelectorAll('.nova-case-cushion, .nova-case-lidlabel, .nova-case-nameplate').forEach(n => n.remove());
           return /badge case/i.test(c.textContent); }""")
         # the case's name since build 320
         good = lambda v: bool(v) and v["text"].lower() == "level 1 badge case" and v["hit"]
@@ -20075,6 +20079,9 @@ def check_b318_badges(br):
                    guards: a.content !== 'none' && b.content !== 'none', glows }; }""")
         pg.evaluate("() => showRanksScreen('badges')")
         pg.wait_for_timeout(1800)
+        # (325) the opening is ~0.4s longer now (the latches let go before the
+        # lid moves): finish it, as check_b319_badges does, then measure
+        pg.evaluate("() => { try{ finishBadgeCaseOpen(document.querySelector('.badges-tab .ncase')); }catch(e){} }")
         tab = pg.evaluate("""() => { const px = v => parseFloat(v) || 0; const k = document.querySelector('.badges-tab .badge-case'); if(!k) return null;
           const q = s => k.querySelector(s); const lid = q('.badge-case-lid'), tray = q('.badge-case-tray'), front = q('.badge-case-front');
           const B = e => e ? (b => ({ l: b.left, r: b.right, t: b.top, b: b.bottom }))(e.getBoundingClientRect()) : null;
@@ -23254,7 +23261,7 @@ def check_b320g_inspect(br):
         before = pg.evaluate("""() => { try{ syncProfileTabDot(); }catch(e){}
           return { only: (() => { try{ return newCountOf(['chars', 'banners', 'themes', 'fx']) === 0 && !rankIsNew() && badgeNewCount() === 1; }catch(e){ return null; } })(), pf: !!document.querySelector('.profile-hero .pf-case .pf-case-new .new-dot, .pf-case .new-dot'),
                    tab: !!(document.getElementById('bottomtab-profile') || {classList:{contains(){return false;}}}).classList.contains('has-new') }; }""")
-        pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1800)
+        pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1800); pg.evaluate("() => { try{ finishBadgeCaseOpen(document.querySelector('.badges-tab .ncase')); }catch(e){} }")  # (325) the case's opening is ~0.4s longer (its latches let go first): finished before the fake clock
         clk = _StepperS(pg)
         dots = pg.evaluate("""() => [...document.querySelectorAll('.badges-tab .ncase-cell')].map((c, i) => c.querySelector('.new-dot') ? i : -1).filter(i => i >= 0)""")
         # every slot's middle (and a point a third of the way out) is that slot: a
@@ -23320,7 +23327,7 @@ def check_b320g_inspect(br):
     # ---- 3. spin: the drag's speed, a grab stops it; the back face ----
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate(SEED, {})
-    pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1800)
+    pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1800); pg.evaluate("() => { try{ finishBadgeCaseOpen(document.querySelector('.badges-tab .ncase')); }catch(e){} }")  # (325) the case's opening is ~0.4s longer (its latches let go first): finished before the fake clock
     clk = _StepperS(pg)
     open_at(pg, clk, 0)
     has = pg.evaluate(STATE) is not None
@@ -23437,7 +23444,7 @@ def check_b320g_inspect(br):
     # ---- 5. rubbing cleans; a spin never does ----
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate(SEED, {"dirt": 6})
-    pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1800)
+    pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1800); pg.evaluate("() => { try{ finishBadgeCaseOpen(document.querySelector('.badges-tab .ncase')); }catch(e){} }")  # (325) the case's opening is ~0.4s longer (its latches let go first): finished before the fake clock
     clk = _StepperS(pg)
     open_at(pg, clk, 0)
     rub = {"ok": pg.evaluate(STATE) is not None}
@@ -23514,7 +23521,7 @@ def check_b320g_inspect(br):
     # ---- 6. Reduce motion: a fade, no swing ----
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate(SEED, {"rm": True})
-    pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1800)
+    pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1800); pg.evaluate("() => { try{ finishBadgeCaseOpen(document.querySelector('.badges-tab .ncase')); }catch(e){} }")  # (325) the case's opening is ~0.4s longer (its latches let go first): finished before the fake clock
     clk = _StepperS(pg)
     t = pg.evaluate(TILE, 0)
     pg.mouse.click(t["x"], t["y"])
@@ -24550,7 +24557,8 @@ def check_b320c_case(br):
             clk.step(1 / 15)
         words = pg.evaluate("""() => ({ kick: (document.querySelector('.bc-words .bc-kicker') || {}).textContent || '',
           sub: (document.querySelector('.bc-words .bc-sub') || {}).textContent || '',
-          plate: (document.querySelector('.bc-front .nova-case-sideplate') || {}).textContent || '',
+          /* MOVED IN 325 (b325b): the plate is the lid's one nameplate (its second line), not the front's */
+          plate: (document.querySelector('.bc-lid-out .nova-case-nameplate .nova-case-np-l2') || {}).textContent || '',
           lid: (document.querySelector('.bc-lid-label') || {}).textContent || '' })""")
         check(f"{dev}: the caption says 'Found 6 of 16 missing badges' under 'LEVEL 1 BADGE CASE', and the case says Level 1 Badge Case on its plate and in its lid",
               re.match(r"^Found 6 of 16 missing badges$", words["sub"]) is not None and words["kick"].upper() == "LEVEL 1 BADGE CASE"
@@ -24611,7 +24619,8 @@ def check_b320c_case(br):
           store.rankMapFx244 = true; store.rankMapSeen = TIER_ORDER_FULL.indexOf(rankOf(store));
           theme.reduceMotion = true; applyTheme(); showRanksScreen('badges'); await wait(900);
           const head = (document.querySelector('.badges-tab .badges-head') || {}).textContent || '';
-          const tplate = (document.querySelector('.badges-tab .nova-case-sideplate') || {}).textContent || '';
+          /* MOVED IN 325 (b325b): no plate on the tab case's front; open, its name is in the lid's cushion */
+          const tplate = (document.querySelector('.badges-tab .nova-case-sideplate') || document.querySelector('.badges-tab .ncase-lid .nova-case-lidlabel') || {}).textContent || '';
           showProfile('profile'); await wait(900);
           const pplate = (document.querySelector('.pf-case .nova-case-sideplate') || {}).textContent || '';
           let kick = ''; try{ kick = badgeDetail('Identity Crimes').kicker; }catch(e){}
