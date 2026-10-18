@@ -120363,11 +120363,16 @@ function applyGlassRefraction(el, mapImgId){
     if(!tabs.length) return null;
     const vb = pillBoxH();
     const pillH = Math.max(8, vb.boxH - 2 * PILL_IN_Y);
-    const lensH = Math.max(pillH + 8, barH * LENS.tall);
+    /* the bar beside a Start pill has icon-only tabs half the width; a
+       lens of the full height there would be a bubble twice its tab, so
+       it is held to 1.6 of its platter's width and its height follows */
+    const minPw = Math.min.apply(null, tabs.map(t => t.w - 2 * PILL_IN_X));
+    let lensH = Math.max(pillH + 8, barH * LENS.tall);
+    if(lensH * LENS.aspect > minPw * 1.6) lensH = Math.max(pillH + 8, Math.min(lensH, minPw * 1.6 / 1.1));
     /* never rounder than the reference's held lens (330x235, 1.4 to 1):
        a tab here is narrower for its height than one of its three, and
        its platter's width alone made the lens a circle */
-    tabs.forEach(t => { t.pw = t.w - 2 * PILL_IN_X; t.lw = Math.max(t.pw * LENS.wide, lensH * LENS.aspect); });
+    tabs.forEach(t => { t.pw = t.w - 2 * PILL_IN_X; t.lw = Math.max(t.pw * LENS.wide, Math.min(lensH * LENS.aspect, t.pw * 1.6)); });
     const maxW = Math.max.apply(null, tabs.map(t => t.lw)) * (1 + LENS.stretchMax) + 6;
     const H0 = Math.ceil(lensH * 1.08);
     const kMin = pillH * .7 / H0;
