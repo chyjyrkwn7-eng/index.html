@@ -7594,8 +7594,11 @@ def check_b298(br):
                versionIn: v.every(i => pc.indexOf(i) >= 0 || QUESTIONS[i].repeatOf != null), twice,
                repeatsOnlyHere: reps.every(q => q.versionOnly === true),
                keysUnique: new Set(all.map(i => KEYS[i])).size === all.length,
-               repeatLast: QUESTIONS.slice(-reps.length).every(q => q.repeatOf != null),
-               dailyRepeat: days.some(i => QUESTIONS[i] && QUESTIONS[i].repeatOf != null) }; }""")
+               /* build 325: the 256-578 version-only entries (358-364, some with no repeatOf) follow the
+                  repeats - every version-only question is one block at the end, so no other question moves */
+               repeatLast: (() => { const vo = QUESTIONS.filter(q => q.versionOnly).length;
+                 return vo >= reps.length && QUESTIONS.slice(-vo).every(q => q.versionOnly) && reps.every(q => QUESTIONS.indexOf(q) >= QUESTIONS.length - vo); })(),
+               dailyRepeat: days.some(i => QUESTIONS[i] && (QUESTIONS[i].repeatOf != null || QUESTIONS[i].versionOnly)) }; }""")
     guide = [n for n in range(1, 347) if n not in (122, 137, 148, 237, 256, 258)]
     # Build 300: "remove it from the entire unit one, the entire unit one
     # should be 340 questions not 341" - a repeat is the short version's only.
@@ -14697,18 +14700,24 @@ def check_b317_planet(br):
           bool(art) and art.get("dpr") == 3 and art.get("N", 0) >= art.get("sphereDev", 1e9) * .98
           and art.get("shown") and abs(art["shown"][0] - art["shown"][1]) <= 1.5,
           art and (art.get("N"), round(art.get("sphereDev") or 0), art.get("shown")))
-    # planet2: "needs to be black charring" - nothing in it burns any more
-    check("black char, not fire: every picture the scar shows, at its brightest, over a plain planet - no warm light anywhere in it (under 0.2% of it), and where it is solid it is char (mean under 40)",
-          bool(art) and art.get("foot", 0) > 1000 and art["glowing"] <= art["foot"] * .002 and art["coreLum"] < 40,
+    # planet2 asked for "black charring"; build 325 superseded it: "I'm not a
+    # fan of the supernova burn mark thing ... make it less burn mark and more
+    # crack like" - the mark is the crack now, with a faint light down the
+    # middle of each fissure (SCAR_CRACK_ONLY, P.GLOW). What stays true: the
+    # crack's walls are still dark, the light lives inside the fissures and
+    # is a thread, not a fire filling the mark.
+    check("a crack, not a fire: where the scar is solid it is still dark (mean under 40), and the warm light in it is a thread down the fissures - under 10% of the mark",
+          bool(art) and art.get("foot", 0) > 1000 and art["glowing"] <= art["foot"] * .10 and art["coreLum"] < 40,
           art and {k: (round(art[k], 1) if isinstance(art.get(k), float) else art.get(k)) for k in ("layers", "foot", "glowing", "coreLum")})
-    check("at most a faint dying ember: a dull red (never orange or white), no brighter than .45, over under 1% of the scar and only in the crater, breathing slowly (8s or more); no bloom, no hot layer, no heat shimmer",
-          bool(art) and art.get("emPeak", 1) <= .45 and art.get("emG", 255) < 60 and art.get("emArea", 1e9) <= art.get("foot", 0) * .01
-          and art.get("emFar", 1) == 0 and (not art.get("ember") or (len(art["ember"]) == 1 and art["ember"][0] >= 8))
+    check("the light inside the crack: one ember layer under the crack art, under 30% of the mark, breathing slowly (8s or more); no bloom, no hot layer, no heat shimmer",
+          bool(art) and art.get("emArea", 1e9) <= art.get("foot", 0) * .30 and art.get("emArea", 0) > 0
+          and (not art.get("ember") or (len(art["ember"]) == 1 and art["ember"][0] >= 8))
           and art.get("layers") == ["csc-burn", "csc-ember"] and art.get("heat") == 0,
           art and {k: (round(art[k], 3) if isinstance(art.get(k), float) else art.get(k)) for k in ("emPeak", "emG", "emArea", "emFar", "ember", "layers", "heat")})
     check("the fragments and the debris are char too: no warm colour in what they are drawn with",
           bool(art) and art.get("ncols", 0) >= 4 and not art.get("warm"), art and (art.get("ncols"), (art.get("warm") or [])[:3]))
     fr = (art or {}).get("frags") or []
+    # build 325: with no rupture drawn round the crack, every fragment starts on an arm
     check("the fragments rise from the scar: every one starts on it", len(fr) >= 6 and all(a > 40 for a in fr), fr)
     print("        (the scar's art drew in %s ms on this machine, cold, as Home was first built)" % (round(art["ms"]) if art and art.get("ms") is not None else "?"))
     ctx.close()

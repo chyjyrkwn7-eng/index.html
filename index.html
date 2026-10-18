@@ -73346,7 +73346,10 @@ function drawScarArt(stg){
     const frags = [];
     const at = (p, f) => p[Math.min(p.length - 1, Math.round(f * (p.length - 1)))];
     [[at(jA, .03), 7], [at(jA, .11), 5.5], [at(jA, .21), 5], [at(jA, .34), 4.5], [at(jB, .12), 6.5], [at(jB, .36), 5],
-     [P2([rimAt(.2, -1, .9)])[0], 7.5], [P2([rimAt(.9, -.4, .9)])[0], 6], [P2([rimAt(-.3, 1, .9)])[0], 6.5], [P2([rimAt(1, .9, .9)])[0], 5.5]].forEach(([pt, s], i) => {
+     /* build 325: a crack with no rupture drawn round it (CK) - the last
+        four rise from further along the arms instead of off a bare planet */
+     ...(CK ? [[at(jA, .48), 7.5], [at(jA, .62), 6], [at(jB, .52), 6.5], [at(jB, .66), 5.5]]
+        : [[P2([rimAt(.2, -1, .9)])[0], 7.5], [P2([rimAt(.9, -.4, .9)])[0], 6], [P2([rimAt(-.3, 1, .9)])[0], 6.5], [P2([rimAt(1, .9, .9)])[0], 5.5]])].forEach(([pt, s], i) => {
       const r = Math.sqrt(pt[0] * pt[0] + pt[1] * pt[1]) || 1;
       const dx = .8 * pt[0] / r, dy = .8 * pt[1] / r - .55;
       frags.push([+((pt[0] + 1) * 50).toFixed(1), +((pt[1] + 1) * 50).toFixed(1), s, Math.round(Math.atan2(dy, dx) * 180 / Math.PI),
