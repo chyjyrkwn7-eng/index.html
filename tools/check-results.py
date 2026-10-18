@@ -339,7 +339,13 @@ with sync_playwright() as pw:
         sub = pg.evaluate("""()=>computeRunXp({good:37, answered:38, elapsedMs:38*20000,
           okList:Array(12).fill(true).concat([false], Array(25).fill(true)), hundos:0, wholeUnits:1})
           .lines.find(l=>l.key==='streak').sub""")
-        ck("and it lists the tiers it reached, 10 x2 and 25", sub == "10 \u00d72 \u00b7 25 in a row", sub)
+        # build 325: each tier with what it paid, so the line adds up on
+        # its face ("10 in a row x2 +50 · 25 in a row +50") - the shape is
+        # held (both tiers, the x2, and the parts summing to the line)
+        import re as _re
+        parts = [int(x) for x in _re.findall(r"\+(\d+)", sub or "")]
+        ck("and it lists the tiers it reached, 10 x2 and 25, each with its XP, adding up to the line",
+           "10 in a row \u00d72" in (sub or "") and "25 in a row" in (sub or "") and sum(parts) == pg.evaluate("()=>runStreakTierXp(10)*2 + runStreakTierXp(25)"), sub)
         bl = pg.evaluate("()=>computeRunXp({good:12, answered:12, elapsedMs:60000, okList:Array(12).fill(true), hundos:0, wholeUnits:1, badgesPaid:['A','B','C']}).lines.filter(l=>l.badge)")
         # REVERSED IN 320: "no more xp bonus for getting a badge ... remove it
         # from the xp box". Three badges are no line at all.

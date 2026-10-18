@@ -96402,7 +96402,7 @@ function computeRunXp(r){
     const top = tierKeys[tierKeys.length - 1];
     add("streak", "Answers in a row", streakXp, {
       streak: top, tiers: tierKeys.map(t => ({ t: t, n: tiers[t] })),
-      sub: tierKeys.map(t => t + " in a row +" + (runStreakTierXp(t) * tiers[t]).toLocaleString() + (tiers[t] > 1 ? " (\u00d7" + tiers[t] + ")" : "")).join(" \u00b7 ") });
+      sub: tierKeys.map(t => t + " in a row" + (tiers[t] > 1 ? " \u00d7" + tiers[t] : "") + " +" + (runStreakTierXp(t) * tiers[t]).toLocaleString()).join(" \u00b7 ") });
   }
 
   if(r.answered > 0 && r.elapsedMs > 0){

@@ -16576,7 +16576,8 @@ def check_b317_xpcap(br):
       out.top = { bumps: __bumps, line: line(b), over: !!b.querySelector('.xpnums.is-over') }; b.parentNode.remove();
       __bumps = 0; b = block(0, xpForLevel(52) + 200, 4); %s
       out.none = { bumps: __bumps }; b.parentNode.remove();
-      __bumps = 0; b = block(300, xpForLevel(30) - 2000, 0); %s
+      /* (build 325: below 21, the no-badge wall now - level 29 was inside 324's) */
+      __bumps = 0; b = block(300, xpForLevel(20) - 300, 0); %s
       out.room = { bumps: __bumps }; b.parentNode.remove();
       theme.reduceMotion = true; applyTheme();
       __bumps = 0; b = block(300, xpForLevel(52) + 200, 4); %s
