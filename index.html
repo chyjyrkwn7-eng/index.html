@@ -4631,7 +4631,6 @@
     .cal-cell{ min-height:3.55rem; font-size:1.06rem; border-radius:14px; }
     .cal-grid-dow{ font-size:.72rem; }
     .cal-cell-dot{ width:.42rem; height:.42rem; }
-    .cal-cell .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big{ width:.5rem; height:.5rem; }
     .cal-grid-month{ font-size:1.3rem; }
   }
   .cal-daycard{
@@ -4735,10 +4734,9 @@
   }
   /* ---- THE BIG FOUR AND NO CLASS, IN THE KEY'S OWN MARKS (build 325) ----
      "We need some dots for the 4 big tests, the level 1 exam, level 2
-     exam, level 3 exam and the state test." A larger DIAMOND in exam
-     orange with a soft halo: a different shape as well as a different
-     colour, so it reads apart from the round amber test dot at six
-     pixels, and the cell carries an orange rim (.cal-cell-bigexam). The
+     exam, level 3 exam and the state test." (Their mark was a larger
+     orange DIAMOND with a halo and an orange rim on the cell until build
+     326, which made it a plain orange dot - see the rule below.) The
      no-class dot is the key's red on its own class. Same prefixes as the
      rules above so neither today nor a picked day repaints them, and the
      key (.cal-legend-dot) wears the same classes. */
@@ -4748,25 +4746,22 @@
   [data-theme="dark"][data-layout="modern"] .cal-cell-today.cal-cell-sel .cal-cell-dots > .cal-cell-dot.cal-cell-dot-off{
     background:var(--wrong);
   }
-  .cal-cell-dot-big,
-  .cal-cell .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test.cal-cell-dot-big,
-  [data-theme="dark"][data-layout="modern"] .cal-cell-sel .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test.cal-cell-dot-big,
-  [data-theme="dark"][data-layout="modern"] .cal-cell-today .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test.cal-cell-dot-big,
-  [data-theme="dark"][data-layout="modern"] .cal-cell-today.cal-cell-sel .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test.cal-cell-dot-big,
-  [data-theme="dark"][data-layout="modern"] .cal-cell.cal-cell-today:not(.cal-cell-holiday) .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test.cal-cell-dot-big,
-  [data-theme="dark"][data-layout="modern"] .cal-cell.cal-cell-today.cal-cell-sel:not(.cal-cell-holiday) .cal-cell-dots > .cal-cell-dot.cal-cell-dot-test.cal-cell-dot-big,
-  .cal-week-dot.cal-week-dot-test.cal-week-dot-big{
-    width:.46rem; height:.46rem; margin:0 .08rem; border-radius:1.5px; transform:rotate(45deg);
-    background:linear-gradient(135deg, #FFD08A, #FF8A3D 60%);
-    box-shadow:0 0 0 1.5px rgba(255,138,61,.28), 0 0 7px rgba(255,138,61,.6);
+  /* ---- A PLAIN ORANGE DOT, NOT A DIAMOND (build 326) ----
+     "the key is cool with the orange big exam but it has a diamond, should
+     just be a normal orange. Include the pt finals as orange too." The big
+     four and the PT finals wear the same round dot every other mark on
+     this calendar wears, at the same size, in orange - the colour is the
+     whole difference, as it is between class, test and no class. No halo,
+     no rotated square, no orange rim on the cell (that rim came off with
+     it: one more border on a grid that already had too many).
+     :not(#cal-z) is an id's weight, so no today / picked-day rule that
+     repaints a cell's dots - however many classes it chains - can turn
+     this one white or ink; the same trick the reactions use (:not(#rx)). */
+  .cal-cell-dot.cal-cell-dot-big:not(#cal-z),
+  .cal-week-dot.cal-week-dot-big:not(#cal-z){
+    background:#FF7A30; box-shadow:none; transform:none; border-radius:999px; margin:0;
   }
-  .cal-cell.cal-cell-bigexam:not(.cal-cell-sel):not(.cal-cell-today):not(.cal-cell-last),
-  [data-layout="modern"] .cal-cell.cal-cell-bigexam:not(.cal-cell-sel):not(.cal-cell-today):not(.cal-cell-last),
-  [data-theme="dark"][data-layout="modern"] .cal-cell.cal-cell-bigexam:not(.cal-cell-sel):not(.cal-cell-today):not(.cal-cell-last){
-    background:linear-gradient(160deg, rgba(255,138,61,.2), rgba(255,138,61,.05) 70%), rgba(26,31,38,.4);
-    border:1.5px solid rgba(255,138,61,.62);
-  }
-  .cal-cell.cal-cell-bigexam .cal-cell-num{ font-weight:800; }
+  .cal-cell.cal-cell-bigexam .cal-cell-num, .cal-cell.cal-cell-ptfinal .cal-cell-num{ font-weight:800; }
   /* ---- THE LAST DAY, AND THE STATE TEST ON IT (build 314) ----
      "Ensure that day also says last day and that day on the calendar and
      stuff has a cool box to celebrate." Academy gold - the colour of a
@@ -4821,7 +4816,6 @@
      come from the cell rules and nothing here may set a background over
      them (build 325: one did, and painted all four white). */
   .cal-legend-dot{ width:.42rem; height:.42rem; }
-  .cal-grid-legend .cal-legend-dot.cal-cell-dot-big{ width:.5rem; height:.5rem; margin:0 .06rem; }
   /* Phone: the dot is the whole signal, and the card below says what
      the day is. The note is in the DOM but not shown - see the comment
      at its construction. */
@@ -4843,7 +4837,6 @@
        text, where a wall calendar puts its stickers */
     .cal-cell .cal-cell-dots{ justify-content:flex-start; margin-top:auto; padding:.2rem 0 .05rem .05rem; }
     .cal-cell .cal-cell-dot{ width:.44rem; height:.44rem; }
-    .cal-cell .cal-cell-dots > .cal-cell-dot.cal-cell-dot-big{ width:.52rem; height:.52rem; }
     .cal-cell-note{
       display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
       overflow:hidden; font-size:.62rem; line-height:1.25; font-weight:600;
@@ -4864,7 +4857,6 @@
     .cal-grid-month{ font-size:1.35rem; }
     .cal-grid-legend{ font-size:.82rem; gap:.4rem 1.4rem; }
     .cal-grid-legend .cal-legend-dot{ width:.5rem; height:.5rem; }
-    .cal-grid-legend .cal-legend-dot.cal-cell-dot-big{ width:.54rem; height:.54rem; }
   }
   /* ---- THE CALENDAR TAB'S CARDS (build 324) - see buildCalendarPane ----
      "I like the way the stat page looks so maybe it could use of that? We
@@ -4924,7 +4916,6 @@
   .cal-week-dot.cal-week-dot-test{ background:#F5B54D; }
   .cal-week-day.is-holiday .cal-week-dot, .cal-week-dot.cal-week-dot-off{ background:var(--wrong); }
   .cal-week-dots{ align-items:center; }
-  .cal-week-day.is-bigexam:not(.is-today){ border-color:rgba(255,138,61,.55); background:rgba(255,138,61,.09); }
   /* today: the month's own white rim; picked: its frosted fill */
   .cal-week-day.is-today{ border:1.5px solid rgba(255,255,255,.85); }
   .cal-week-day.is-today .cal-week-dow{ color:#fff; }
@@ -4969,7 +4960,7 @@
   .cal-big-row.is-today .cal-big-count{ font-size:.92rem; font-weight:800; color:#FF9D5C; }
   .cal-big-row.is-done{ opacity:.55; }
   .cal-big-row.is-done .cal-big-count{ font-size:.86rem; }
-  .cal-big-row.is-done > .cal-cell-dot-big{ background:var(--soft); box-shadow:none; }
+  .cal-big-row.is-done > .cal-cell-dot-big:not(#cal-z){ background:var(--soft); box-shadow:none; }
   .cal-big-row:active{ background:rgba(255,255,255,.05); }
   @media (min-width:40rem){
     /* two by two on a tablet: four rows across a 760px card are mostly air */
@@ -5010,6 +5001,93 @@
     .cal-course-grid{ gap:.8rem; }
     .cal-stat .stat-num{ font-size:1.8rem; }
     .cal-stat .stat-lab{ font-size:.8rem; }
+  }
+  /* ---- THE CALENDAR, CLEANED UP (build 326) ----
+     "I think another improvement for the calendar too would be to clean it
+     all up some" - in line with "the interface of the app is starting to
+     become hard to see because of all the Liquid Glass". What changed, and
+     only on this screen:
+     - THE GRID IS QUIET. A class day was a bordered glass tile with a
+       gradient, twenty-odd of them a month, so the month read as a wall of
+       outlines. A class day is now a flat, faint fill with no border; a
+       day with no class is just its number. The only outlines left on the
+       grid are the ones that mean something: today's white ring and the
+       last day's gold.
+     - ONE DOT, ONE SIZE. Every mark - class, test, big exam / PT final, no
+       class - is the same round dot at the same size in the grid, the
+       week strip and the key; colour alone says which.
+     - A PICKED DAY READS THE SAME IN THE WEEK STRIP AS IN THE MONTH: the
+       accent fill (today keeps its own frosted fill and white ring).
+     - The surfaces (the day card, Go to today, the month arrows) are one
+       darker, plainer recipe, set by the tokens below so the whole screen
+       can be moved onto the app's glass tokens in one place.
+     Behaviour is untouched: every day is still a button, today is still
+     picked on opening, the key's marks are still the cells' own classes. */
+  .screen-calendar{
+    --cal-cell:rgba(255,255,255,.055);
+    --cal-cell-off:rgba(255,255,255,.028);
+    --cal-glass:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,0) 60%), rgba(14,17,24,.72);
+    --cal-glass-line:rgba(255,255,255,.085);
+    --cal-glass-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 6px 18px rgba(0,0,0,.28);
+    --cal-dot:.4rem;
+  }
+  [data-layout="modern"] .screen-calendar .cal-cell-class:not(.cal-cell-sel):not(.cal-cell-today):not(.cal-cell-last),
+  [data-theme="dark"][data-layout="modern"] .screen-calendar .cal-cell-class:not(.cal-cell-sel):not(.cal-cell-today):not(.cal-cell-last){
+    background:var(--cal-cell); border:1px solid transparent;
+  }
+  [data-layout="modern"] .screen-calendar .cal-cell-holiday:not(.cal-cell-sel):not(.cal-cell-today),
+  [data-theme="dark"][data-layout="modern"] .screen-calendar .cal-cell-holiday:not(.cal-cell-sel):not(.cal-cell-today){
+    background:var(--cal-cell-off); opacity:1; color:var(--soft);
+  }
+  .screen-calendar .cal-cell-free:not(.cal-cell-today):not(.cal-cell-sel){ color:color-mix(in srgb, var(--soft) 80%, transparent); }
+  .screen-calendar .cal-cell-dot,
+  .screen-calendar .cal-week-dot,
+  .screen-calendar .cal-grid-legend .cal-legend-dot{ width:var(--cal-dot); height:var(--cal-dot); }
+  .screen-calendar .cal-cell-dots, .screen-calendar .cal-week-dots{ gap:.2rem; }
+  /* the month header: the arrows are quiet circles, the month the title */
+  [data-layout="modern"] .screen-calendar .cal-grid-arrow,
+  [data-theme="dark"][data-layout="modern"] .screen-calendar .cal-grid-arrow{
+    background:rgba(255,255,255,.06); border:1px solid transparent; box-shadow:none;
+    backdrop-filter:none; -webkit-backdrop-filter:none; will-change:auto;
+  }
+  .screen-calendar .cal-grid-nav{ margin:0 0 .75rem; }
+  .screen-calendar .cal-grid-dow{ color:color-mix(in srgb, var(--soft) 85%, transparent); letter-spacing:.06em; }
+  /* the key straight under the grid, the hint tucked under the key */
+  /* two columns on a phone: four entries across a phone came out three and
+     an orphan ("No class" on a line of its own); two by two they line up */
+  .screen-calendar .cal-grid-legend{ display:grid; grid-template-columns:repeat(2, max-content); justify-content:center;
+    margin:.8rem 0 0; gap:.4rem 1.6rem; font-size:.74rem; font-weight:700; }
+  .screen-calendar .cal-grid-legend span{ gap:.38rem; }
+  .screen-calendar .cal-grid-hint{ margin:.4rem 0 0; font-size:.72rem; color:color-mix(in srgb, var(--soft) 80%, transparent); }
+  /* the day card and Go to today: one plain, darker surface */
+  [data-layout="modern"] .screen-calendar .cal-daycard:not(.cal-daycard-last),
+  [data-theme="dark"][data-layout="modern"] .screen-calendar .cal-daycard:not(.cal-daycard-last),
+  [data-layout="modern"] .screen-calendar .cal-action-btn,
+  [data-theme="dark"][data-layout="modern"] .screen-calendar .cal-action-btn{
+    background:var(--cal-glass); border:1px solid var(--cal-glass-line); box-shadow:var(--cal-glass-shadow);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  }
+  .screen-calendar .cal-daycard{ margin-top:.9rem; padding:.95rem 1.05rem; border-radius:16px; }
+  .screen-calendar .cal-daycard .cal-row-date{ color:var(--ink); font-size:.82rem; }
+  .screen-calendar .cal-daycard .cal-row-text{ color:color-mix(in srgb, var(--ink) 82%, transparent); }
+  .screen-calendar .cal-action-row{ margin-top:.7rem !important; }
+  .screen-calendar .cal-action-btn{ font-size:.86rem; }
+  /* the week strip: no outline on an ordinary day; picked is the grid's fill */
+  .screen-calendar .cal-week-day.is-class, .screen-calendar .cal-week-day.is-holiday{ background:var(--cal-cell); border-color:transparent; }
+  .screen-calendar .cal-week-day.is-holiday{ background:var(--cal-cell-off); opacity:1; color:var(--soft); }
+  .screen-calendar .cal-week-day.is-sel:not(.is-today){ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+  .screen-calendar .cal-week-day.is-sel:not(.is-today) .cal-week-dow{ color:var(--accent-ink); opacity:.75; }
+  .screen-calendar .cal-week-day.is-sel:not(.is-today):not(.is-holiday) .cal-week-dot:not(.cal-week-dot-test):not(.cal-week-dot-big){ background:var(--accent-ink); }
+  .screen-calendar .cal-week-day.is-sel.is-today{ background:rgba(255,255,255,.13); }
+  /* the next test's countdown: a tint, not a second box outline */
+  .screen-calendar .cal-nt-count,
+  .screen-calendar .cal-nexttest-card.is-bigexam .cal-nt-count{ border-color:transparent; }
+  /* the same rhythm between every block under the month */
+  .screen-calendar-tab > .cal-big-card, .screen-calendar-tab > .cal-course-card{ margin-top:1rem; }
+  @media (min-width:40rem){
+    .screen-calendar{ --cal-dot:.44rem; }
+    .screen-calendar .cal-grid-legend{ display:flex; font-size:.82rem; gap:.4rem 1.4rem; }
+    .screen-calendar-tab > .cal-big-card, .screen-calendar-tab > .cal-course-card{ margin-top:1.25rem; }
   }
   /* The two-board leaderboard layout, per explicit request \u2014 genuinely
      side by side (not stacked), each a compact self-contained ranked
@@ -55769,6 +55847,16 @@ function isExamDay(entry){
    final added to the schedule is one without anybody listing it. */
 function isBigExamDay(entry){
   return isExamDay(entry) && !isTestDay(entry);
+}
+/* THE PT FINALS (build 326): "the key is cool with the orange big exam but
+   it has a diamond, should just be a normal orange. Include the pt finals
+   as orange too." Read off the schedule text like everything above - the
+   three "PT FINALS" days (Jan 11, 12 and 13) - so a PT final added to the
+   schedule is marked without anybody listing it. They are fitness, not a
+   paper: never isExamDay, never counted in Tests left, never "On the
+   test". They share the big exams' orange dot, and nothing else of theirs. */
+function isPtFinalDay(entry){
+  return !!(entry && !entry.holiday && /\bPT FINALS?\b/i.test(entry.text || ""));
 }
 const CALENDAR_DATA = [
   { date: "2026-08-24", text: "Class 26E Begins • Orientation (2) • Fitness & Wellness (2.5)" },
@@ -113785,19 +113873,26 @@ function showCalendar(){
    day tapped in the week is picked in the month as well. */
 /* A day's marks, for the month's cells and the week strip alike (build
    325): a class day's dot, then a test's amber dot - or, on one of the
-   big four (isBigExamDay), the larger orange diamond in its place - and a
-   no-class day's red dot. `base` is the strip's or the grid's dot class;
-   the key builds its marks from the same suffixes. */
+   big four (isBigExamDay) or a PT final (isPtFinalDay, build 326), the
+   orange dot in its place - and a no-class day's red dot. Every mark is
+   the same round dot at the same size since build 326; only the colour
+   says what it is. `base` is the strip's or the grid's dot class; the
+   key builds its marks from the same suffixes. */
 function calDayDots(entry, base, into){
   const add = cls => { const i = document.createElement("i"); i.className = base + (cls ? " " + base + "-" + cls : ""); into.appendChild(i); };
   if(!entry) return into;
   if(entry.holiday){ add("off"); return into; }
   add("");
-  /* the diamond is a test's mark too (it carries -test as well as -big),
-     so everything that asks "is this day marked as a test" still finds it */
+  /* a big exam's orange dot is a test's mark too (it carries -test as
+     well as -big), so everything that asks "is this day marked as a test"
+     still finds it; a PT final's carries -big and -pt and is not a test */
   if(isExamDay(entry)){
     const i = document.createElement("i");
     i.className = base + " " + base + "-test" + (isBigExamDay(entry) ? " " + base + "-big" : "");
+    into.appendChild(i);
+  } else if(isPtFinalDay(entry)){
+    const i = document.createElement("i");
+    i.className = base + " " + base + "-big " + base + "-pt";
     into.appendChild(i);
   }
   return into;
@@ -113852,7 +113947,7 @@ function buildCalendarPane(panel){
      cell's own class, so the two cannot drift apart. */
   const legend = document.createElement("div");
   legend.className = "cal-grid-legend";
-  [["", "Class day"], ["cal-cell-dot-test cal-legend-dot-test", "Test"], ["cal-cell-dot-big", "Big exam"], ["cal-cell-dot-off cal-legend-dot-holiday", "No class"]].forEach(([cls, label]) => {
+  [["", "Class day"], ["cal-cell-dot-test cal-legend-dot-test", "Test"], ["cal-cell-dot-big", "Big exam / PT final"], ["cal-cell-dot-off cal-legend-dot-holiday", "No class"]].forEach(([cls, label]) => {
     const it = document.createElement("span");
     it.className = "cal-legend-item";
     const dot = document.createElement("i");
@@ -114000,11 +114095,11 @@ function buildCalendarPane(panel){
     }
     /* one of the big four (build 325), and not the last day, whose crest
        already says State test: the Next test card's own chip */
-    if(isBigExamDay(entry) && entry.date !== lastClassDay){
+    if((isBigExamDay(entry) || isPtFinalDay(entry)) && entry.date !== lastClassDay){
       const chip = document.createElement("p");
       chip.className = "cal-nt-big";
       const dm = document.createElement("i"); dm.className = "cal-cell-dot cal-cell-dot-big"; dm.setAttribute("aria-hidden", "true");
-      chip.append(dm, document.createTextNode("Big exam \u00b7 " + testNameOf(entry)));
+      chip.append(dm, document.createTextNode(isBigExamDay(entry) ? "Big exam \u00b7 " + testNameOf(entry) : "PT finals"));
       dayCard.appendChild(chip);
     }
     const head = document.createElement("p");
@@ -114061,6 +114156,7 @@ function buildCalendarPane(panel){
       if(entry && isExamDay(entry)) cls += " cal-cell-test";
       /* one of the big four (build 325): its own mark and a rim */
       if(entry && isBigExamDay(entry)) cls += " cal-cell-bigexam";
+      if(entry && isPtFinalDay(entry)) cls += " cal-cell-ptfinal";
       /* topics posted for this test (build 324) - the day card lists them */
       if(entry && isExamDay(entry) && testTopicsFor(ds)) cls += " cal-cell-topics";
       if(ds === todayStr) cls += " cal-cell-today";
@@ -114226,12 +114322,13 @@ function buildCalendarPane(panel){
     if(entry && entry.holiday){ kind = "holiday"; sub = holidayName(entry); }
     else if(entry && todayStr === lastClassDay){ kind = "last"; status = "Last day"; }
     else if(entry && isExamDay(entry)){ kind = "test"; status = isBigExamDay(entry) ? "Big exam day" : "Test day"; }
+    else if(entry && isPtFinalDay(entry)){ kind = "class"; status = "PT finals"; }
     else if(entry){ kind = "class"; status = "Class day"; }
     else if(firstClassDay && todayStr < firstClassDay){ status = "No class yet"; sub = "Class 26E begins " + formatCalendarDate(firstClassDay) + "."; }
     else if(todayStr > LAST_CLASS_DATE){ status = "Class 26E is done"; sub = "Graduation was " + formatCalendarDate(GRADUATION_DATE) + "."; }
     else sub = (dow === 0 || dow === 6) ? "It's the weekend." : "Nothing on the schedule today.";
     const card = document.createElement("section");
-    card.className = "points-progress-sect cal-card cal-today-card is-" + kind + (entry && isBigExamDay(entry) ? " is-bigexam" : "");
+    card.className = "points-progress-sect cal-card cal-today-card is-" + kind + (entry && (isBigExamDay(entry) || isPtFinalDay(entry)) ? " is-bigexam" : "");
     card.dataset.kind = kind;
     card.appendChild(cardHead("Today", formatCalendarDate(todayStr)));
     const st = document.createElement("p");
@@ -114294,7 +114391,7 @@ function buildCalendarPane(panel){
       const b = document.createElement("button");
       b.type = "button";
       b.className = "cal-week-day" + (entry && !entry.holiday ? " is-class" : "") + (entry && entry.holiday ? " is-holiday" : "")
-        + (entry && isExamDay(entry) ? " is-test" : "") + (entry && isBigExamDay(entry) ? " is-bigexam" : "") + (ds === todayStr ? " is-today" : "");
+        + (entry && isExamDay(entry) ? " is-test" : "") + (entry && isBigExamDay(entry) ? " is-bigexam" : "") + (entry && isPtFinalDay(entry) ? " is-ptfinal" : "") + (ds === todayStr ? " is-today" : "");
       b.dataset.date = ds;
       const dw = document.createElement("span");
       dw.className = "cal-week-dow"; dw.textContent = DOW_SHORT[i];
@@ -114404,37 +114501,55 @@ function buildCalendarPane(panel){
 
   /* THE BIG EXAMS (build 325): "We need some dots for the 4 big tests,
      the level 1 exam, level 2 exam, level 3 exam and the state test." The
-     diamond on the grid says which days; this says all four at once - the
-     name, the day, how far off, and Done once sat. A row picks its day in
-     the month, like the week strip. Read off the schedule (isBigExamDay),
-     never a typed list. */
+     orange dot on the grid says which days; this says all of them at once
+     - the name, the day, how far off, and Done once sat. A row picks its
+     day in the month, like the week strip. Read off the schedule
+     (isBigExamDay, isPtFinalDay), never a typed list.
+     AND THE PT FINALS (build 326): "Include the pt finals as orange too."
+     Three days in a row are one event, so they are ONE row - "PT finals",
+     the first day and the last ("Mon, Jan 11-13") - in date order with the
+     exams. It counts down to the first day, says Today on any of the
+     three, and Done after the last. */
   function buildBigExamsCard(){
-    const list = CALENDAR_DATA.filter(isBigExamDay);
+    const rows = CALENDAR_DATA.filter(isBigExamDay).map(e => ({ date: e.date, end: e.date, name: testNameOf(e) }));
+    const pt = CALENDAR_DATA.filter(isPtFinalDay);
+    /* consecutive PT final days (no more than 3 calendar days apart, so a
+       weekend inside a run keeps it one row) are one row */
+    pt.forEach(e => {
+      const last = rows.find(r => r.pt && calendarDaysBetween(r.end, e.date) <= 3);
+      if(last) last.end = e.date;
+      else rows.push({ date: e.date, end: e.date, name: "PT finals", pt: true });
+    });
+    rows.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     const card = document.createElement("section");
     card.className = "points-progress-sect cal-card cal-big-card";
-    if(!list.length){ card.hidden = true; return card; }
-    const left = list.filter(e => e.date >= todayStr).length;
-    card.appendChild(cardHead("Big exams", left ? left + " to go" : "All done"));
+    if(!rows.length){ card.hidden = true; return card; }
+    const left = rows.filter(r => r.end >= todayStr).length;
+    card.appendChild(cardHead(pt.length ? "Big exams & PT finals" : "Big exams", left ? left + " to go" : "All done"));
     const ul = document.createElement("div");
     ul.className = "cal-big-list";
-    list.forEach(e => {
+    rows.forEach(e => {
       const days = calendarDaysBetween(todayStr, e.date);
+      const on = todayStr >= e.date && todayStr <= e.end;
+      const done = todayStr > e.end;
       const b = document.createElement("button");
       b.type = "button";
-      b.className = "cal-big-row" + (days < 0 ? " is-done" : days === 0 ? " is-today" : "");
+      b.className = "cal-big-row" + (done ? " is-done" : on ? " is-today" : "") + (e.pt ? " is-pt" : "");
       b.dataset.date = e.date;
       const dm = document.createElement("i"); dm.className = "cal-cell-dot cal-cell-dot-big"; dm.setAttribute("aria-hidden", "true");
       const tx = document.createElement("span"); tx.className = "cal-big-text";
-      const nm = document.createElement("span"); nm.className = "cal-big-name"; nm.textContent = testNameOf(e);
-      const wh = document.createElement("span"); wh.className = "cal-big-when"; wh.textContent = formatCalendarDate(e.date);
+      const nm = document.createElement("span"); nm.className = "cal-big-name"; nm.textContent = e.name;
+      const wh = document.createElement("span"); wh.className = "cal-big-when";
+      wh.textContent = formatCalendarDate(e.date) + (e.end !== e.date
+        ? (e.end.slice(0, 7) === e.date.slice(0, 7) ? "\u2013" + Number(e.end.slice(8)) : " \u2013 " + formatCalendarDate(e.end)) : "");
       tx.append(nm, wh);
       const ct = document.createElement("span"); ct.className = "cal-big-count";
-      if(days > 0){
+      if(!on && !done){
         const n = document.createElement("b"); n.textContent = String(days);
         ct.append(n, document.createTextNode(days === 1 ? " day" : " days"));
-      } else ct.textContent = days < 0 ? "Done" : "Today";
+      } else ct.textContent = done ? "Done" : "Today";
       b.append(dm, tx, ct);
-      b.setAttribute("aria-label", testNameOf(e) + ", " + formatDayHead(e.date) + ", " + ct.textContent);
+      b.setAttribute("aria-label", e.name + ", " + formatDayHead(e.date) + ", " + ct.textContent);
       b.addEventListener("click", () => pickDay(e.date, true));
       ul.appendChild(b);
     });
