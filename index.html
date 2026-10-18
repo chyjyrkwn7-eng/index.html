@@ -28292,8 +28292,19 @@
   /* the hasp reaches up over the seam onto the lid's front, and flips out
      and down to let it go */
   .bc-hasp{ position:absolute; left:16%; right:16%; bottom:62%; height:calc(var(--dl) * 1.1 + 40%); transform-origin:50% 100%;
-    transform:rotateX(0deg); transition:transform .42s cubic-bezier(.3,1.35,.5,1); }
-  .bc-unlatch .bc-latch-l .bc-hasp, .bc-unlatch2 .bc-latch-r .bc-hasp{ transform:rotateX(-158deg); }
+    transform:rotateX(0deg); }
+  /* OFF THE STAPLE, THEN DOWN (build 325, b325b): "The clips for the case
+     don't make sense either, because they aren't clipping to anything".
+     Shut, each hasp's slot is over the staple of a keeper on the lid's
+     front (.bc-keeper) and the staple's loop stands through it. Letting go
+     is two moves: the hasp is pulled out off the staple (to -24deg, a
+     springy snap) and then swings down to hang under its latch. Both are
+     done before the lid cracks (BC_T.crack): the left by 8.32s, the right
+     by 8.62s. The end pose is the class's own transform, so the still
+     scene (animation:none) shows them down. */
+  .bc-unlatch .bc-latch-l .bc-hasp, .bc-unlatch2 .bc-latch-r .bc-hasp{ transform:rotateX(-158deg); animation:bc-hasp-free .95s both; }
+  @keyframes bc-hasp-free{ 0%{ transform:rotateX(0deg); animation-timing-function:cubic-bezier(.2,1.5,.45,1); }
+    28%{ transform:rotateX(-24deg); animation-timing-function:cubic-bezier(.5,0,.3,1); } 100%{ transform:rotateX(-158deg); } }
   /* the handle, folded down in front of the case */
   /* the handle: hung on the front wall (build 321) - .nova-case-handle.is-hung */
   /* the light inside, seen through the gap as the lid lifts - from the
@@ -28351,7 +28362,11 @@
   /* the clips on top: a keeper over each latch at the lid's front edge,
      the plate the latch's hasp hooks up into */
   /* (build 321: the clips are the shared .nova-case-clip) */
-  .bc-lid-front{ left:0; right:0; top:100%; height:var(--dl); transform-origin:50% 0; transform:translateZ(var(--dl)) rotateX(-90deg); border-radius:0 0 var(--bc-r) var(--bc-r); }
+  /* square where it meets the base at the seam (build 325): the base's
+     front is square at its top, and a rounded lid over a square base left
+     a notch at both ends of the seam. 3D inside, for the keepers' staples. */
+  .bc-lid-front{ left:0; right:0; top:100%; height:var(--dl); transform-origin:50% 0; transform:translateZ(var(--dl)) rotateX(-90deg); border-radius:0;
+    transform-style:preserve-3d; }
   /* a small knock as the badge seats */
   .bc-case.bc-open.bc-thud{ animation:bc-thud .42s cubic-bezier(.3,0,.3,1); }
   @keyframes bc-thud{ 0%{ transform:translateY(var(--open-y)) rotateX(21deg) scale(var(--open-s)); }
@@ -29441,7 +29456,12 @@
      the one moment it is edge-on (-90deg), where neither can be seen. The
      lid never takes a tap: a press anywhere on the case finishes it. */
   .badges-tab .nova-case.ncase > .ncase-lid{ pointer-events:none; }
-  .badges-tab .ncase-lid-out{ position:absolute; left:0; right:0; top:-10%; bottom:0; box-sizing:border-box; z-index:2;
+  /* z 4 (build 325): over the lid's own inside caps (z 3), which showed
+     through at its near corners as a second cap stacked on each one */
+  /* -2px each side (build 325): the lid is a trimmed shell, so its own 2px
+     border put its outside 2px inside the case's edge, and its caps 2px in
+     from the guards under them */
+  .badges-tab .ncase-lid-out{ position:absolute; left:-2px; right:-2px; top:calc(-10% - 2px); bottom:-2px; box-sizing:border-box; z-index:4;
     border-radius:var(--case-r); box-shadow:0 0 0 1px rgba(0,0,0,.6); transform:scaleY(-1); opacity:0;
     display:flex; align-items:center; justify-content:center; }
   .badges-tab .ncase-lid-out .nova-case-plate{ font-size:2.9cqw; padding:1.1cqw 3.6cqw; letter-spacing:.24em; }
@@ -29704,6 +29724,64 @@
     box-shadow:var(--hw-bevel), 0 0 0 calc(var(--cu) * .14) rgba(0,0,0,.62), 0 calc(var(--cu) * -.4) calc(var(--cu) * 1) rgba(0,0,0,.6); }
   .nova-case-clip.is-l{ left:15%; } .nova-case-clip.is-r{ right:15%; }
   .nova-case-clip > .nova-case-screw{ --sw:calc(var(--cu) * 2.2); left:50%; top:50%; margin:calc(var(--cu) * -1.1) 0 0 calc(var(--cu) * -1.1); }
+  /* ---- THE KEEPER (build 325, b325b) - see caseKit().keeper ---- a plate
+     screwed to the lid's front over each latch, and its staple: a loop of
+     round bar standing out of it, which the hasp's slot goes over. Shut,
+     the staple shows THROUGH the slot, in front of the hasp. */
+  .nova-case-clip.nova-case-keeper{ position:absolute; bottom:auto; width:13%; z-index:2;
+    border-radius:calc(var(--cu) * .9); background-color:#A3AEBA;
+    background-image:var(--hw-spec), var(--hw-brush), linear-gradient(135deg, #E7ECF1 0%, #B4BEC8 26%, #7A8591 56%, #59636E 78%, #8B96A2 92%, #4A535D 100%);
+    box-shadow:var(--hw-bevel), var(--hw-seat); }
+  .nova-case-keeper > .nova-case-screw{ --sw:calc(var(--cu) * 1.7); top:50%; margin:calc(var(--cu) * -.85) 0 0; }
+  .nova-case-keeper > .nova-case-screw.is-l{ left:6%; } .nova-case-keeper > .nova-case-screw.is-r{ right:6%; left:auto; }
+  .nova-case-staple, .ncase-staple-over{ position:absolute; display:block; left:39%; right:39%; border-radius:999px; pointer-events:none;
+    background:linear-gradient(180deg, #2E353D 0%, #9AA5B1 16%, #FFFFFF 34%, #C3CCD5 50%, #7D8894 72%, #3E4650 100%);
+    box-shadow:0 0 0 calc(var(--cu) * .14) rgba(0,0,0,.75), 0 calc(var(--cu) * .45) calc(var(--cu) * .5) rgba(0,0,0,.7),
+      inset 0 0 0 calc(var(--cu) * .5) rgba(0,0,0,0); }
+  /* the loop's opening: dark, so it reads as a bent bar, not a bead */
+  .nova-case-staple::after, .ncase-staple-over::after{ content:""; position:absolute; left:28%; right:28%; top:34%; bottom:34%; border-radius:999px;
+    background:#07090C; box-shadow:inset 0 calc(var(--cu) * .15) calc(var(--cu) * .2) #000, 0 calc(var(--cu) * .1) 0 rgba(255,255,255,.45); }
+  /* in the cutscene: on the lid's front, the staple standing out past the hasp */
+  .bc-lid-front > .bc-keeper{ top:14%; height:72%; transform:translateZ(.5px); transform-style:preserve-3d; }
+  .bc-lid-front > .bc-keeper-l{ left:15%; } .bc-lid-front > .bc-keeper-r{ right:15%; }
+  .bc-keeper > .nova-case-staple{ top:26%; height:30%; transform:translateZ(3.5px); }
+  /* ---- THE NAMEPLATE (build 325, b325b) - see caseKit().nameplate ----
+     One plate on the lid's top, a piece of metal on the leather: its
+     shadow on the leather (a gradient, never a filter), its thickness
+     along the near edge, then the slab - brushed, lit from the top left,
+     bevelled all round (light top-left, shade bottom-right, a fine chamfer
+     line inside) - with the words stamped into it (dark, a lit lower lip)
+     and a rivet in each corner. Sizes in --cu, so it is the same plate in
+     the cutscene and on the Badges screen. */
+  .nova-case .nova-case-plate.nova-case-nameplate{ position:relative; display:block; box-sizing:border-box; flex:none;
+    width:calc(var(--cu) * 58); height:calc(var(--cu) * 17); padding:0; margin:0; border-radius:calc(var(--cu) * 1.6);
+    background:none; box-shadow:none; text-shadow:none; letter-spacing:normal; font-size:calc(var(--cu) * 3); line-height:1; white-space:nowrap; }
+  .nova-case-np-shadow{ position:absolute; display:block; left:-4%; right:-4%; top:14%; bottom:-34%; border-radius:50%; pointer-events:none;
+    background:radial-gradient(closest-side, rgba(0,0,0,.62) 0%, rgba(0,0,0,.34) 55%, rgba(0,0,0,0) 100%); }
+  .nova-case-np-edge{ position:absolute; display:block; left:0; right:0; top:calc(var(--cu) * 1.2); bottom:calc(var(--cu) * -1.9); border-radius:inherit;
+    background:linear-gradient(90deg, #2A3038 0%, #6E7985 18%, #8E99A5 50%, #5E6874 82%, #262C33 100%);
+    box-shadow:0 0 0 calc(var(--cu) * .14) rgba(0,0,0,.7), inset 0 calc(var(--cu) * -.35) calc(var(--cu) * .3) rgba(0,0,0,.55); }
+  .nova-case-np-slab{ position:absolute; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:calc(var(--cu) * 1.1);
+    inset:0; border-radius:inherit; background-color:#B9C2CB;
+    background-image:var(--hw-spec), var(--hw-brush), linear-gradient(172deg, #F2F5F8 0%, #D3DAE1 24%, #AEB8C2 52%, #C6CED6 74%, #98A3AE 100%);
+    box-shadow:inset 0 calc(var(--cu) * .32) 0 rgba(255,255,255,.95), inset calc(var(--cu) * .24) 0 0 rgba(255,255,255,.45),
+      inset 0 calc(var(--cu) * -.36) 0 rgba(0,0,0,.42), inset calc(var(--cu) * -.24) 0 0 rgba(0,0,0,.26),
+      inset 0 0 0 calc(var(--cu) * .9) rgba(255,255,255,0), inset 0 0 0 calc(var(--cu) * 1.05) rgba(0,0,0,.16),
+      0 0 0 calc(var(--cu) * .14) rgba(0,0,0,.6); }
+  .nova-case-np-l1, .nova-case-np-l2{ display:block; font-family:var(--sans); font-weight:800; text-transform:uppercase; font-style:normal;
+    color:#232A32; text-shadow:0 calc(var(--cu) * .22) 0 rgba(255,255,255,.75), 0 calc(var(--cu) * -.14) 0 rgba(0,0,0,.28); }
+  .nova-case-np-l1{ font-size:calc(var(--cu) * 3.1); letter-spacing:.2em; margin-right:-.2em; }
+  .nova-case-np-l2{ font-size:calc(var(--cu) * 2.2); letter-spacing:.26em; margin-right:-.26em; color:#36404A; }
+  /* the rule between them: a fine engraved line, dark over a lit lip */
+  .nova-case-np-rule{ display:block; width:62%; height:calc(var(--cu) * .32); border-radius:999px;
+    background:rgba(35,42,50,.7); box-shadow:0 calc(var(--cu) * .2) 0 rgba(255,255,255,.7); }
+  .nova-case-np-slab > .nova-case-screw{ --sw:calc(var(--cu) * 2); }
+  .nova-case-np-slab > .nova-case-screw.is-tl{ left:calc(var(--cu) * 1.3); top:calc(var(--cu) * 1.3); }
+  .nova-case-np-slab > .nova-case-screw.is-tr{ right:calc(var(--cu) * 1.3); top:calc(var(--cu) * 1.3); }
+  .nova-case-np-slab > .nova-case-screw.is-bl{ left:calc(var(--cu) * 1.3); bottom:calc(var(--cu) * 1.3); }
+  .nova-case-np-slab > .nova-case-screw.is-br{ right:calc(var(--cu) * 1.3); bottom:calc(var(--cu) * 1.3); }
+  /* on the Badges screen the shut lid's outside is the same: the plate in its middle */
+  .badges-tab .ncase-lid-out .nova-case-plate.nova-case-nameplate{ font-size:calc(var(--cu) * 3); padding:0; letter-spacing:normal; }
   /* a hinge: a barrel lit along its length, knuckles, a screw each end */
   :is(.bc-tray, .nova-case.ncase .ncase-tray) > .nova-case-hinge{ border-radius:calc(var(--cu) * 1.2); background-color:#A3AEBA;
     background-image:linear-gradient(90deg, rgba(0,0,0,0) 32%, rgba(0,0,0,.55) 32.5% 33.6%, rgba(255,255,255,.35) 33.8% 34.4%, rgba(0,0,0,0) 34.6% 65.4%, rgba(0,0,0,.55) 65.6% 66.7%, rgba(255,255,255,.35) 66.9% 67.5%, rgba(0,0,0,0) 67.7%),
@@ -29712,12 +29790,34 @@
   :is(.bc-tray, .nova-case.ncase .ncase-tray) > .nova-case-hinge > .nova-case-screw{ --sw:calc(var(--cu) * 1.6); top:50%; margin-top:calc(var(--cu) * -.8); }
   :is(.bc-tray, .nova-case.ncase .ncase-tray) > .nova-case-hinge > .nova-case-screw.is-l{ left:9%; }
   :is(.bc-tray, .nova-case.ncase .ncase-tray) > .nova-case-hinge > .nova-case-screw.is-r{ right:9%; }
-  /* a wall's end guards: a rounded aluminium edge, lit down its length */
-  .nova-case-wall.is-hw::before, .nova-case-wall.is-hw::after{ width:calc(var(--cu) * 8.5); min-width:0;
-    background-image:var(--hw-brush), linear-gradient(90deg, #3E4650 0%, #7D8894 12%, #DCE2E8 34%, #FFFFFF 42%, #AEB8C2 58%, #6A7581 80%, #3A424B 100%);
-    box-shadow:inset 0 calc(var(--cu) * .3) 0 rgba(255,255,255,.7), inset 0 calc(var(--cu) * -.3) 0 rgba(0,0,0,.5), 0 0 0 calc(var(--cu) * .14) rgba(0,0,0,.55); }
-  .nova-case-wall.is-hw::before{ left:-1px; border-radius:0 0 calc(var(--cu) * 2.5) var(--hw-r); }
-  .nova-case-wall.is-hw::after{ right:-1px; border-radius:0 0 calc(var(--cu) * 2.5) var(--hw-r); }
+  /* A WALL'S END GUARDS ARE THE CAPS FOLDED DOWN (build 325, b325b):
+     "some of the metal things on the corners are rounded but then the
+     others connecting to it aren't? Fix that." The caps on a top were flat
+     plates lit from the top left with a rounded inner corner; the guards
+     under them were polished barrels, lit across, a pixel wider, with a
+     different curve at their foot - two kinds of part meeting at every
+     corner. Now a guard is the same plate (the caps' metal, bevel and
+     seat), exactly as wide as the cap above it measured from the case's
+     outer edge (a cap starts 2px out, over the shell's trim, so both run
+     from the case's edge to 8.5 units in),
+     SQUARE wherever it meets another part - the fold under a cap, and the
+     seam between lid and base - and rounded only where a corner is free:
+     its foot on the table takes the cap's inner curve (--cap-ri) and the
+     case's own corner (--hw-r), the same two radii every cap has. */
+  .nova-case.ncase, .bc-scene{ --cap-w:calc(var(--cu) * 8.5); --cap-ri:calc(var(--cu) * 4.25); }
+  .nova-case-wall.is-hw::before, .nova-case-wall.is-hw::after{ width:var(--cap-w); min-width:0; background-color:#9AA5B1;
+    background-image:var(--hw-spec), var(--hw-brush), linear-gradient(135deg, #E7ECF1 0%, #B4BEC8 26%, #7A8591 56%, #59636E 78%, #8B96A2 92%, #4A535D 100%);
+    box-shadow:var(--hw-bevel), 0 0 0 calc(var(--cu) * .14) rgba(0,0,0,.55); }
+  .nova-case-wall.is-hw::before{ left:0; border-radius:0 0 var(--cap-ri) var(--hw-r); }
+  .nova-case-wall.is-hw::after{ right:0; border-radius:0 0 var(--cap-ri) var(--hw-r);
+    /* it is the left one mirrored (scaleX(-1)); its light is put back to the top left like every other part */
+    background-image:radial-gradient(70% 60% at 70% 18%, rgba(255,255,255,.72) 0%, rgba(255,255,255,.22) 38%, rgba(255,255,255,0) 72%), var(--hw-brush),
+      linear-gradient(225deg, #E7ECF1 0%, #B4BEC8 26%, #7A8591 56%, #59636E 78%, #8B96A2 92%, #4A535D 100%);
+    box-shadow:inset 0 calc(var(--cu) * .3) 0 rgba(255,255,255,.88), inset calc(var(--cu) * -.22) 0 0 rgba(255,255,255,.32),
+      inset 0 calc(var(--cu) * -.34) 0 rgba(0,0,0,.6), inset calc(var(--cu) * .22) 0 0 rgba(0,0,0,.34),
+      inset 0 0 calc(var(--cu) * .9) rgba(0,0,0,.28), 0 0 0 calc(var(--cu) * .14) rgba(0,0,0,.55); }
+  /* the lid's front ends at the seam, on the base's front: square there */
+  .bc-lid-front.nova-case-wall.is-hw::before, .bc-lid-front.nova-case-wall.is-hw::after{ border-radius:0; }
   /* THE HANDLE, HUNG ON THE FRONT WALL: two mounts screwed to it and the
      leather grip between them, its ends in the mounts. In the cutscene each
      part has a top (-top, turned 90deg out of the wall), so from over the
@@ -29739,7 +29839,7 @@
       0 0 0 calc(var(--cu) * .12) rgba(0,0,0,.7), 0 calc(var(--cu) * .6) calc(var(--cu) * 1.2) rgba(0,0,0,.7); }
   .nova-case-mount-top, .nova-case-grip-top{ display:none; }
   /* in the cutscene: on the wall, standing out of it */
-  .bc-front > .nova-case-handle.is-hung{ top:52%; height:calc(var(--cu) * 6); transform:translateZ(1px); transform-style:preserve-3d; }
+  .bc-front > .nova-case-handle.is-hung{ top:40%; height:calc(var(--cu) * 6); transform:translateZ(1px); transform-style:preserve-3d; }
   .bc-front .nova-case-mount{ transform:translateZ(calc(var(--cu) * 2)); transform-style:preserve-3d; }
   .bc-front .nova-case-grip{ transform-origin:50% 0; transform:translateZ(calc(var(--cu) * 1.7)); transform-style:preserve-3d; }
   .bc-front .nova-case-mount-top, .bc-front .nova-case-grip-top{ display:block; position:absolute; left:0; right:0; top:0; transform-origin:50% 0; transform:rotateX(-90deg); }
@@ -29752,8 +29852,7 @@
   .bc-unlatch2 .bc-front .nova-case-grip{ animation:bc-grip-swing 1.4s cubic-bezier(.3,0,.3,1) both; }
   @keyframes bc-grip-swing{ 0%{ transform:translateZ(calc(var(--cu) * 1.7)) rotateX(0deg); } 22%{ transform:translateZ(calc(var(--cu) * 1.7)) rotateX(16deg); }
     50%{ transform:translateZ(calc(var(--cu) * 1.7)) rotateX(-7deg); } 76%{ transform:translateZ(calc(var(--cu) * 1.7)) rotateX(3deg); } 100%{ transform:translateZ(calc(var(--cu) * 1.7)) rotateX(0deg); } }
-  /* the plate sits higher on the wall, the handle hung under it */
-  .bc-sideplate{ top:30%; }
+  /* (build 325: no plate on the wall - the handle hangs in its middle, between the latches) */
   /* the cushion in the lid, its two rows of stitching and the name in it */
   .nova-case-cushion{ position:absolute; inset:calc(var(--cu) * 4.5); border-radius:calc(var(--hw-r) * .8); display:flex; align-items:flex-start; justify-content:center; padding-top:9%;
     box-shadow:0 0 0 1.5px rgba(150,158,168,.55), 0 0 0 3px rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.6), inset 0 calc(var(--cu) * 2) calc(var(--cu) * 5) rgba(0,0,0,.6), inset 0 calc(var(--cu) * -1.2) calc(var(--cu) * 4) rgba(0,0,0,.45); }
@@ -29774,9 +29873,29 @@
   .nova-case.ncase > .ncase-front{ height:10cqw; }
   .nova-case.ncase > .ncase-front .nova-case-sideplate{ position:absolute; left:50%; top:.7cqw; margin:0; transform:translateX(-50%);
     font-size:2.5cqw; padding:.7cqw 3cqw; }
-  .nova-case.ncase > .ncase-front > .nova-case-handle.is-hung{ top:4.7cqw; height:calc(var(--cu) * 6); margin:0; width:auto; }
-  .nova-case.ncase > .ncase-front .nova-case-hasp{ position:absolute; left:16%; right:16%; top:42%; height:110%; z-index:-1; }
+  /* (build 325) the plate is off the wall: the handle hangs in its middle */
+  .nova-case.ncase > .ncase-front > .nova-case-handle.is-hung{ top:2.4cqw; height:calc(var(--cu) * 6); margin:0; width:auto; }
   .nova-case.ncase > .ncase-front .ncase-latch{ z-index:2; }
+  /* THE LATCHES CLIP TO SOMETHING (build 325, b325b). The latch body is
+     on the wall, under the seam; its hasp is hinged across it. Shut
+     (.is-latched) the hasp stands up over the seam onto the lid's front
+     edge, its slot over the staple of the keeper there, and the staple
+     shows through the slot (.ncase-staple-over: the keeper's own staple,
+     drawn again above the hasp - the lid is its own layer, so its staple
+     cannot be put in front of a part of the base). Open, the hasp hangs
+     down over the body. openBadgeCaseLid lifts each off its staple and
+     swings it down (HASP_POP, HASP_DOWN) before the lid cracks. */
+  .nova-case.ncase > .ncase-front .nova-case-latch.ncase-latch{ margin:1cqw 0 0; }
+  .nova-case.ncase > .ncase-front .nova-case-hasp{ position:absolute; left:16%; right:16%; top:auto; bottom:55%; height:5.8cqw; z-index:1;
+    transform-origin:50% 100%; transform:perspective(30cqw) rotateX(-164deg); }
+  .nova-case.ncase.is-latched > .ncase-front{ z-index:5; }
+  .nova-case.ncase.is-latched > .ncase-front .nova-case-hasp{ transform:perspective(30cqw) rotateX(0deg); }
+  .ncase-staple-over{ top:-3.27cqw; height:.9cqw; left:41%; right:41%; z-index:3; opacity:0; }
+  .nova-case.ncase.is-latched > .ncase-front .ncase-staple-over{ opacity:1; }
+  /* as wide as a latch: 13% of the front's content box, which is 70% of the case */
+  .badges-tab .ncase-lid-out > .ncase-keeper{ bottom:.3cqw; height:3.2cqw; width:9.1%; }
+  .badges-tab .ncase-lid-out > .ncase-keeper.is-l{ left:15%; } .badges-tab .ncase-lid-out > .ncase-keeper.is-r{ right:15%; }
+  .badges-tab .ncase-lid-out > .ncase-keeper > .nova-case-staple{ top:38%; height:28%; left:41%; right:41%; }
   /* EVERY BADGE ON THE MIDDLE OF ITS SLOT (build 321, b321c): a shape whose
      own middle is off the drawing's (the C-ring's, ten units right) is
      moved back by that much (badgeSlotShift, --sdx/--sdy, a share of the
@@ -57667,6 +57786,9 @@ function warmBadgeStrikes(){
     const jobs = [];
     units.forEach(u => jobs.push(() => badgeStrikeGeometry(badgeShapeFor(u))));
     units.forEach(u => jobs.push(() => badgeStrikeURL(u, !unitBadgeEarned(u), W, badgeDirtStage(u))));
+    /* where the words go on each found badge's back (build 325), so the
+       back's first render in your hand does not pay for it */
+    units.forEach(u => { if(unitBadgeEarned(u)) jobs.push(() => badgeBackPlan(u)); });
     const ric = f => (typeof window.requestIdleCallback === "function") ? window.requestIdleCallback(f, { timeout: 3000 }) : setTimeout(() => f(null), 60);
     const step = dl => {
       let n = 0;
@@ -94687,6 +94809,44 @@ function caseKit(){
       return l;
     },
     clip(side, extra){ const c = mk((extra ? extra + " " : "") + "nova-case-clip is-" + side); c.appendChild(screw()); return c; },
+    /* THE KEEPER (build 325, b325b): "The clips for the case don't make
+       sense either, because they aren't clipping to anything." The clips
+       sat on the lid's TOP while the hasps reached up the FRONT and ended
+       on bare leather. A keeper is the catch a hasp hooks over: a plate on
+       the lid's front wall just above the seam, screwed on, with a staple
+       standing out of it. Shut, the hasp's slot is over the staple and the
+       staple's loop shows through it, in front of the hasp; the hasp has to
+       be lifted off it before it can swing down, and only then does the
+       lid move. (Still .nova-case-clip: it is the same part, in the place
+       it can do its job.) */
+    keeper(side, extra){
+      const k = mk((extra ? extra + " " : "") + "nova-case-clip nova-case-keeper is-" + side);
+      k.append(screw("is-l"), screw("is-r"), mk("nova-case-staple", "b"));
+      return k;
+    },
+    /* THE NAMEPLATE (build 325, b325b): "the thing on the top that says
+       'Nova - Class 26E' does not look 3d. It looks like a sticker. The
+       thing on the front that says level one badge case is the same way,
+       and that one has a weird placement because it's sitting on top of
+       stuff. Would it make more sense if that one was just combined with
+       the other one and put on top?" One plate on the lid's top: the app
+       and the class, a rule, the case's name under it. It is a piece of
+       metal: a raised slab (.nova-case-np-slab) with its thickness showing
+       along its near edge and sides, a bevelled face, the words stamped
+       into it (dark, with a lit lower lip), a rivet in each corner, and its
+       shadow on the leather. On the lid it takes the lid's perspective. */
+    nameplate(extra){
+      const p = mk("nova-case-plate nova-case-nameplate" + (extra ? " " + extra : ""), "b");
+      p.setAttribute("aria-hidden", "true");
+      const slab = mk("nova-case-np-slab", "b");
+      const l1 = mk("nova-case-np-l1", "b"); l1.textContent = "Nova \u00B7 Class 26E";
+      const rule = mk("nova-case-np-rule", "b");
+      const l2 = mk("nova-case-np-l2", "b"); l2.textContent = badgeCaseName(BADGE_CASES[0]);
+      slab.append(l1, rule, l2);
+      ["tl", "tr", "bl", "br"].forEach(k => slab.appendChild(screw("is-" + k)));
+      p.append(mk("nova-case-np-shadow", "b"), mk("nova-case-np-edge", "b"), slab);
+      return p;
+    },
     /* the handle, hung on the front wall: a mount at each end, screwed
        on, and the grip between them - never loose in front of the case */
     handle(extra){
@@ -94707,12 +94867,11 @@ function caseKit(){
       pad.appendChild(label);
       return pad;
     },
-    /* the lid's outside: the Nova plate, the corners, a clip over each latch */
+    /* the lid's outside: the one nameplate and the corners (build 325:
+       the clips that sat up here are the keepers on the lid's front now) */
     lidOutside(el){
-      const plate = mk("bc-plate nova-case-plate", "span"); plate.textContent = "Nova · Class 26E";
-      el.appendChild(plate);
+      el.appendChild(kit.nameplate("bc-plate"));
       kit.caps(el, "bc-cap");
-      ["l", "r"].forEach(side => el.appendChild(kit.clip(side, "bc-clip is-" + side)));
       return el;
     }
   };
@@ -94724,7 +94883,8 @@ function caseHardwareOf(root){
   const out = {};
   if(!root) return out;
   ["nova-case-cap", "nova-case-screw", "nova-case-latch", "nova-case-hasp", "nova-case-clip", "nova-case-hinge",
-   "nova-case-handle", "nova-case-mount", "nova-case-grip", "nova-case-cushion", "nova-case-lidlabel", "nova-case-sideplate", "nova-case-plate"]
+   "nova-case-handle", "nova-case-mount", "nova-case-grip", "nova-case-cushion", "nova-case-lidlabel", "nova-case-sideplate", "nova-case-plate",
+   "nova-case-keeper", "nova-case-staple", "nova-case-nameplate"]
     .forEach(c => { out[c] = root.querySelectorAll("." + c).length; });
   const lab = root.querySelector(".nova-case-lidlabel"), side = root.querySelector(".nova-case-sideplate");
   out.lidName = lab ? lab.textContent : ""; out.sideName = side ? side.textContent : "";
@@ -94770,10 +94930,10 @@ function buildBadgeCase3D(all, held){
   const floor = mk("bc-floor");
   const front = mk("bc-front nova-case-shell nova-case-wall is-hw");
   ["l", "r"].forEach(side => front.appendChild(kit.latch("bc-latch bc-latch-" + side)));
-  /* THE NAME ON ITS SIDE (build 317, badge2), FLAT ON IT (build 320). On
-     the front wall between the latches - part of the base, so it never
-     moves with the lid and the lid never covers it - lying on the wall. */
-  front.appendChild(buildCaseSidePlate("bc-sideplate"));
+  /* NO PLATE ON THE FRONT (build 325, b325b). The case's name was a plate
+     on the front wall between the latches, laid over the latches' own
+     plates ("it's sitting on top of stuff"). It is on the one nameplate on
+     the lid's top now (kit.nameplate), and in the lid's cushion. */
   /* THE HANDLE IS HUNG ON THE FRONT WALL (build 321, b321c): "In the open
      position the handle at the bottom is broken too, it's disconnected and
      laying there." It lay flat on the table in front of the wall, so once
@@ -94811,6 +94971,8 @@ function buildBadgeCase3D(all, held){
   kit.caps(lidIn, "bc-cap");
   const lidOut = kit.lidOutside(mk("bc-lid-out nova-case-shell nova-case-trimmed"));
   const lidFront = mk("bc-lid-front nova-case-shell nova-case-wall is-hw");
+  /* the keepers the hasps hook over, on the lid's front over each latch (build 325) */
+  ["l", "r"].forEach(side => lidFront.appendChild(kit.keeper(side, "bc-keeper bc-keeper-" + side)));
   lid.append(lidIn, lidOut, lidFront);
   kase.append(floor, front, tray, spill, lid);
   stage.appendChild(kase);
@@ -115794,10 +115956,10 @@ function buildOpenBadgeCase(kind, cellFor){
   kit.caps(tray);
   const front = mk((tab ? "badge-case-front " : "pf-case-front ") + "ncase-front nova-case-shell nova-case-wall is-hw");
   front.setAttribute("aria-hidden", "true");
-  /* exactly two latches (spans on the tab: check_b242 counts them), the
-     name plate between them (a <b>), and the handle hung under it */
-  ["l", "r"].forEach(() => front.appendChild(kit.latch("ncase-latch", tab ? "span" : "i")));
-  front.insertBefore(buildCaseSidePlate(tab ? "badge-case-sideplate" : "pf-case-sideplate"), front.lastChild);
+  /* exactly two latches (spans on the tab: check_b242 counts them) and the
+     handle hung between them. No plate (build 325): the case's name is on
+     the lid's nameplate, and in its cushion. */
+  ["l", "r"].forEach(side => front.appendChild(kit.latch("ncase-latch ncase-latch-" + side, tab ? "span" : "i")));
   front.appendChild(kit.handle((tab ? "badge-case-handle " : "pf-case-handle ") + "ncase-handle"));
   root.append(lid, tray, front);
   return root;
@@ -116006,16 +116168,28 @@ function buildBadgesTab(opts){
    Transform and opacity only (a 2D move on the case, the 3D tilt on the
    lid alone); the lid's z-index drops and its face swaps at the one
    moment it is edge-on (-90deg), where neither can be seen. */
-const CASE_OPEN = { hold: 110, crack: 190, swing: 800, shut: -180, cracked: -166, open: -8, glint: 460 };
+const CASE_OPEN = { hold: 110, unlatch: 380, crack: 190, swing: 800, shut: -180, cracked: -166, open: -8, glint: 460 };
+/* THE LATCHES LET GO FIRST (build 325, b325b): a hasp is lifted off its
+   keeper's staple (pulled out to HASP_POP, past the staple, on a springy
+   curve) and then swings down to hang under its latch (HASP_DOWN); the
+   right one a beat after the left (HASP_STAGGER of the unlatch). Only then
+   does the lid crack. As a share of CASE_OPEN.unlatch. */
+const HASP_POP = -26, HASP_DOWN = -164, HASP_STAGGER = .22;
 function shutBadgeCase(kase){
   const lid = kase.querySelector(".ncase-lid");
   if(!lid || lid.querySelector(".ncase-lid-out")) return;
   /* the lid's outside: the cutscene's, from the same builder (build 321) */
-  const out = caseKit().lidOutside(document.createElement("div"));
+  const kit = caseKit();
+  const out = kit.lidOutside(document.createElement("div"));
   out.className = "ncase-lid-out nova-case-shell nova-case-trimmed";
   out.setAttribute("aria-hidden", "true");
+  /* the keepers on the lid's front edge, over each latch (build 325): shut,
+     each hasp is up over the seam and hooked on its keeper */
+  ["l", "r"].forEach(side => out.appendChild(kit.keeper(side, "ncase-keeper")));
   lid.appendChild(out);
-  kase.classList.add("is-shut");
+  /* each staple drawn again over its hasp, from the latch, while it is hooked (see .ncase-staple-over) */
+  kase.querySelectorAll(".ncase-front .nova-case-latch").forEach(l => { if(!l.querySelector(".ncase-staple-over")){ const s = document.createElement("b"); s.className = "ncase-staple-over"; s.setAttribute("aria-hidden", "true"); l.appendChild(s); } });
+  kase.classList.add("is-shut", "is-latched");
   /* NEVER BLOCKS A TAP. A press anywhere on the case puts the lid up and
      the case in its place at once. The slot pressed is remembered: the
      case has just moved under the finger, so the click may land on
@@ -116044,12 +116218,12 @@ function bezierCurve(x1, y1, x2, y2){
 function openBadgeCaseLid(kase, wait){
   const lid = kase.querySelector(".ncase-lid"), face = kase.querySelector(".ncase-lid-out");
   if(!lid || !face || kase.__opening) return;
-  const C = CASE_OPEN, D = C.hold + C.crack + C.swing, W = wait || 0;
+  const C = CASE_OPEN, H = C.hold + C.unlatch, D = H + C.crack + C.swing, W = wait || 0;
   const rot = a => "perspective(340cqw) rotateX(" + a + "deg)";
   const SWING = "cubic-bezier(.36,0,.16,1)", curve = bezierCurve(.36, 0, .16, 1);
   /* the edge-on moment, on the swing's own curve */
-  const edge = (C.hold + C.crack + C.swing * curve.timeOf((C.cracked + 90) / (C.cracked - C.open))) / D;
-  const swingAt = (C.hold + C.crack) / D;
+  const edge = (H + C.crack + C.swing * curve.timeOf((C.cracked + 90) / (C.cracked - C.open))) / D;
+  const swingAt = (H + C.crack) / D;
   /* where the lid's free edge is on screen, above (-) or below its hinge,
      at an angle: its box is .8 of the case's width, under perspective(340cqw) */
   const h = lid.offsetHeight, dist = 3.4 * lid.offsetWidth;
@@ -116073,7 +116247,7 @@ function openBadgeCaseLid(kase, wait){
   const tidy = () => {
     anims.forEach(a => { try{ a.cancel(); }catch(e){} });
     face.remove();
-    kase.classList.remove("is-shut");
+    kase.classList.remove("is-shut", "is-latched");
   };
   const finish = () => {
     if(over) return;
@@ -116085,19 +116259,37 @@ function openBadgeCaseLid(kase, wait){
   try{
     anims.push(lid.animate([
       { offset: 0, transform: rot(C.shut) },
-      { offset: C.hold / D, transform: rot(C.shut), easing: "cubic-bezier(.3,1.6,.5,1)" },
+      { offset: H / D, transform: rot(C.shut), easing: "cubic-bezier(.3,1.6,.5,1)" },
       { offset: swingAt, transform: rot(C.cracked), easing: SWING },
       { offset: 1, transform: rot(C.open) }
     ], o));
     anims.push(kase.animate(fall, o));
     anims.push(lid.animate([{ zIndex: 4 }, { zIndex: 4, offset: edge }, { zIndex: 0, offset: edge }, { zIndex: 0 }], o));
     anims.push(face.animate([{ opacity: 1 }, { opacity: 1, offset: edge }, { opacity: 0, offset: edge }, { opacity: 0 }], o));
+    /* the latches (build 325): each hasp off its staple and down, before
+       the lid moves; the front stays over the lid's edge while a hasp is
+       still up over the seam */
+    const hr = a => "perspective(30cqw) rotateX(" + a + "deg)";
+    kase.querySelectorAll(".ncase-front .nova-case-hasp").forEach((hp, i) => {
+      const t0 = (C.hold + i * HASP_STAGGER * C.unlatch) / D, t1 = (C.hold + C.unlatch) / D, len = t1 - t0;
+      const over = hp.parentNode && hp.parentNode.querySelector(".ncase-staple-over");
+      if(over) anims.push(over.animate([{ opacity: 1 }, { opacity: 1, offset: t0 }, { opacity: 0, offset: t0 }, { opacity: 0 }], o));
+      anims.push(hp.animate([
+        { offset: 0, transform: hr(0) }, { offset: t0, transform: hr(0), easing: "cubic-bezier(.2,1.5,.45,1)" },
+        { offset: t0 + len * .3, transform: hr(HASP_POP), easing: "cubic-bezier(.5,0,.3,1)" },
+        { offset: t1, transform: hr(HASP_DOWN) }, { offset: 1, transform: hr(HASP_DOWN) }
+      ], o));
+    });
+    const frontEl = kase.querySelector(".ncase-front");
+    if(frontEl) anims.push(frontEl.animate([{ zIndex: 5 }, { zIndex: 5, offset: (C.hold + C.unlatch * .62) / D }, { zIndex: 2, offset: (C.hold + C.unlatch * .62) / D }, { zIndex: 2 }], o));
   }catch(e){ finish(); return; }
-  kase.classList.remove("is-shut");
+  kase.classList.remove("is-shut", "is-latched");
   kase.__opening = true;
   kase.__finishOpen = finish;
   /* its latches, hinge and lid, on CASE_OPEN, from when the lid moves */
-  setTimeout(() => { if(kase.isConnected && !over) playSound("badge.case.open"); }, W);
+  /* scored from the first latch (build 325): the second a beat later, the crack once both are down */
+  setTimeout(() => { if(kase.isConnected && !over) playSound("badge.case.open", { latch2: HASP_STAGGER * C.unlatch / 1000, crack: C.unlatch / 1000,
+    swing: (C.unlatch + C.crack) / 1000, swingMs: C.swing / 1000, glint: (C.unlatch + C.crack + C.swing * .55) / 1000 }); }, W + C.hold);
   anims[0].finished.then(() => { if(!over){ over = true; tidy(); kase.__finishOpen = null; } }).catch(() => {});
   /* the glints: from the edge-on moment, a diagonal wave across the found
      badges (row + column), 360ms at most from the first to the last */
@@ -116133,7 +116325,7 @@ function finishBadgeCaseOpen(kase){
   kase.__opening = true;
   const face = kase.querySelector(".ncase-lid-out");
   if(face) face.remove();
-  kase.classList.remove("is-shut");
+  kase.classList.remove("is-shut", "is-latched");
 }
 
 /* ---- A BADGE IN YOUR HAND (build 320, b320g) ----
@@ -116227,8 +116419,8 @@ const BADGE_BACK_CACHE = {};
    Contrast (`ink`, `floor`): the cut is a recess with a light lower wall
    and a dark, blackened floor - an engraver's fill - on a field that is
    lighter than the letters, never the same grey. */
-const BADGE_BACK_RELIEF = { depth: .36, wallU: .42, shadowU: .9, shadowK: .55, floor: .24, floorSp: .12, ink: [.30, .31, .33], brush: .13,
-  rimIn: 4.6, margin: 2.0, planW: 360, fsMax: .092, fsMin: .026, classMin: .034, classKeep: .84, weight: 800 };
+const BADGE_BACK_RELIEF = { depth: .36, wallU: .42, shadowU: .9, shadowK: .55, floor: .24, floorSp: .12, ink: [.30, .31, .33], inkK: .93, brush: .13, fieldFlat: .6, fieldLevel: .34, fieldDirt: .55,
+  rimIn: 4.6, margin: 2.0, planW: 260, fsMax: .092, fsMin: .026, classMin: .034, classKeep: .96, weight: 800 };
 const BADGE_BACK_FONT = '"Helvetica Neue", Helvetica, Arial, sans-serif';
 const BADGE_BACK_PLAN = {};
 /* the outline's signed distance (token units, negative inside) as the
@@ -116262,8 +116454,13 @@ function badgeBackPlan(unitName){
   const cv = document.createElement("canvas"); cv.width = cv.height = 8;
   const c2 = cv.getContext("2d");
   const setFont = (fs, ls) => { c2.font = R.weight + " " + fs.toFixed(2) + "px " + BADGE_BACK_FONT; try{ c2.letterSpacing = (ls || 0).toFixed(2) + "px"; }catch(e){} };
-  const width = (s, fs, ls) => { setFont(fs, ls); return c2.measureText(s).width - (ls || 0); };
-  const vmet = fs => { setFont(fs, 0); const a = c2.measureText("H").actualBoundingBoxAscent || fs * .72, d = c2.measureText(",").actualBoundingBoxDescent || fs * .16; return [a, Math.max(d, fs * .05)]; };
+  const WC = new Map();
+  const width = (s, fs, ls) => { const key = s + "|" + fs + "|" + (ls || 0); let w = WC.get(key);
+    if(w == null){ setFont(fs, ls); w = c2.measureText(s).width - (ls || 0); WC.set(key, w); } return w; };
+  const VC = new Map();
+  const vmet = fs => { let v = VC.get(fs); if(v) return v;
+    setFont(fs, 0); const a = c2.measureText("H").actualBoundingBoxAscent || fs * .72, d = c2.measureText(",").actualBoundingBoxDescent || fs * .16;
+    v = [a, Math.max(d, fs * .05)]; VC.set(fs, v); return v; };
   const pad = Math.max(1, R.wallU * u * .5) + .5;
   const words = String(unitName).toUpperCase().split(/\s+/).filter(Boolean);
   const CLASS = "CLASS 26E";
@@ -116273,6 +116470,10 @@ function badgeBackPlan(unitName){
     for(let j = i + 1; j <= words.length - left + 1; j++) rec(j, left - 1, acc.concat([words.slice(i, j).join(" ")])); };
     if(k <= words.length) rec(0, k, []); return out; };
   const allSplits = [1, 2, 3, 4].map(splits);
+  /* the field's widest row, for throwing out a break whose longest row
+     could never fit anywhere at a size */
+  let fieldW = 0;
+  for(let y = 0; y < WR; y++){ let run = 0; for(let x = 0; x < WR; x++){ if(D[y * WR + x] <= thr){ run++; if(run > fieldW) fieldW = run; } else run = 0; } }
   /* a column of "bad" counts, summed down, so any band's rows are one lookup */
   const PS = new Int32Array((WR + 1) * WR);
   for(let y = 0; y < WR; y++) for(let x = 0; x < WR; x++) PS[(y + 1) * WR + x] = PS[y * WR + x] + (D[y * WR + x] > thr ? 1 : 0);
@@ -116306,9 +116507,12 @@ function badgeBackPlan(unitName){
     }
     const top0 = bands[0].top, bot1 = bands[bands.length - 1].bot;
     let best = null;
-    for(let t = -top0; t + bot1 < WR; t += 1){
-      const mid = t + (top0 + bot1) / 2, dist = Math.abs(mid - my);
-      if(best && dist >= best.dist) continue;
+    /* nearest the middle first: the first offset that fits is the one */
+    const tIdeal = Math.round(my - (top0 + bot1) / 2), tLo = Math.ceil(-top0), tHi = Math.floor(WR - bot1 - 1);
+    for(let s = 0; s <= 2 * WR && !best; s++){
+      const t = tIdeal + (s & 1 ? (s + 1) / 2 : -s / 2);
+      if(t < tLo || t > tHi) continue;
+      const dist = Math.abs(t + (top0 + bot1) / 2 - my);
       /* every row on ONE centre line - the nearest to the shape's middle
          that all of them allow - so the block reads as set, not scattered */
       let C = [[-1e9, 1e9]];
@@ -116326,13 +116530,23 @@ function badgeBackPlan(unitName){
     });
     return { items, fs, small, slack: best.slack, rows: rows.length, cls: !!withClass, mode: "rows" };
   };
+  const bestAt = (fs, withClass) => {
+    let best = null;
+    allSplits.forEach(ss => ss.forEach(rows => {
+      if(best && rows.length > best.rows) return;
+      if(rows.some(r => width(r, fs, 0) + 2 > fieldW)) return;
+      const p = block(rows, fs, withClass); if(p && (!best || p.rows < best.rows || (p.rows === best.rows && p.slack > best.slack))) best = p; }));
+    return best;
+  };
+  /* the largest size that fits, by halving (a plan is made once per unit,
+     off the tap: ~12 sizes tried, not ~40) */
   const bestRows = withClass => {
-    for(let fs = R.fsMax * WR; fs >= R.fsMin * WR; fs *= .965){
-      let best = null;
-      allSplits.forEach(ss => ss.forEach(rows => { const p = block(rows, fs, withClass); if(p && (!best || p.rows < best.rows || (p.rows === best.rows && p.slack > best.slack))) best = p; }));
-      if(best) return best;
-    }
-    return null;
+    let lo = R.fsMin * WR, hi = R.fsMax * WR, top = bestAt(hi, withClass);
+    if(top) return top;
+    let got = bestAt(lo, withClass);
+    if(!got) return null;
+    for(let i = 0; i < 11 && hi - lo > .15; i++){ const mid = (lo + hi) / 2, p = bestAt(mid, withClass); if(p){ lo = mid; got = p; } else hi = mid; }
+    return got;
   };
   /* ---- the ring: words round it ---- */
   const bestArc = () => {
@@ -116348,7 +116562,7 @@ function badgeBackPlan(unitName){
        follow the band's own middle, smoothed) */
     const NA = 720, lo = new Float32Array(NA), hi = new Float32Array(NA), has = new Uint8Array(NA);
     for(let i = 0; i < NA; i++){ const th = i * .5 * Math.PI / 180, c = Math.cos(th), s = Math.sin(th); let a = -1, z = -1;
-      for(let rr = r0 * .7; rr <= r1 * 1.3; rr += .5) if(okAt(acx + rr * c, acy + rr * s)){ if(a < 0) a = rr; z = rr; }
+      for(let rr = r0 * .7; rr <= r1 * 1.3; rr += .75) if(okAt(acx + rr * c, acy + rr * s)){ if(a < 0) a = rr; z = rr; }
       if(a >= 0){ lo[i] = a; hi[i] = z; has[i] = 1; } }
     let run = null;
     for(let i0 = 0; i0 < NA; i0++){ if(!has[i0] || has[(i0 + NA - 1) % NA]) continue;
@@ -116358,11 +116572,11 @@ function badgeBackPlan(unitName){
     for(let i = 0; i < NA; i++){ let s = 0, n = 0; for(let j = -20; j <= 20; j++){ const q = (i + j + NA) % NA; if(has[q]){ s += (lo[q] + hi[q]) / 2; n++; } } mid[i] = n ? s / n : (r0 + r1) / 2; }
     const midAt = deg => mid[((Math.round(deg * 2) % NA) + NA) % NA];
     const rmean = (r0 + r1) / 2;
-    const arcLen = (s, fs, ls) => { setFont(fs, 0); let L = 0; for(const ch of s) L += c2.measureText(ch).width + ls; return (L - ls) / rmean * 180 / Math.PI; };
+    const arcLen = (s, fs, ls) => { let L = 0; for(const ch of s) L += width(ch, fs, 0) + ls; return (L - ls) / rmean * 180 / Math.PI; };
     /* chars along the band from angle `from`, dir +1 clockwise; side -1 puts the baseline inside the middle */
     const glyphs = (s, fs, ls, from, dir, lift) => {
-      const out = []; let at = 0; setFont(fs, 0);
-      for(const ch of s){ const w = c2.measureText(ch).width, deg = from + dir * (at + w / 2) / rmean * 180 / Math.PI, th = deg * Math.PI / 180, rb = midAt(deg) + lift;
+      const out = []; let at = 0;
+      for(const ch of s){ const w = width(ch, fs, 0), deg = from + dir * (at + w / 2) / rmean * 180 / Math.PI, th = deg * Math.PI / 180, rb = midAt(deg) + lift;
         out.push({ s: ch, x: acx + rb * Math.cos(th), y: acy + rb * Math.sin(th), rot: th + dir * Math.PI / 2, fs, ls: 0, w }); at += w + ls; }
       return out; };
     /* every glyph's box, corners and edges, inside the field with the margin */
@@ -116371,7 +116585,7 @@ function badgeBackPlan(unitName){
         if(!okAt(q.x + lx * c - fy * s, q.y + lx * s + fy * c)) return false; }
       return true; });
     const span = run[1] * .5, a0 = run[0] * .5, gapDeg = 12, ARC_TURN = 148;
-    for(let fs = R.fsMax * WR; fs >= R.fsMin * WR; fs *= .965){
+    const arcAt = fs => {
       const [asc] = vmet(fs), ls = fs * .04, cands = [];
       const small = Math.max(R.classMin * WR, fs * .5);
       cands.push([words.join(" "), CLASS, small, small * .16]);
@@ -116386,26 +116600,34 @@ function badgeBackPlan(unitName){
            the words along the bottom read left to right, standing in. Each
            is centred in its own stretch; the turn moves only as far from
            the lower left as the lengths make it. */
-        for(let k = 0; k <= 40; k++){
-          const turn = ARC_TURN + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 2;
+        for(let k = 0; k <= 24; k++){
+          const turn = ARC_TURN + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 3;
           const dn = [a0 + 2, turn - gapDeg / 2], upR = [turn + gapDeg / 2, a0 + span - 2];
           if(dn[1] - dn[0] < Ll || upR[1] - upR[0] < Lu) continue;
           const ls0 = (dn[0] + dn[1]) / 2 + Ll / 2, us0 = (upR[0] + upR[1]) / 2 - Lu / 2;
           /* below: angle falling, baseline outside the band's middle; above: angle rising, baseline inside it */
           const lower = glyphs(low, lfs, lls, ls0, -1, la / 2), upper = glyphs(up, fs, ls, us0, 1, -asc / 2);
           if(!fits(lower) || !fits(upper)) continue;
-          const p = { items: upper.concat(lower).map(q => ({ s: q.s, x: q.x, y: q.y, rot: q.rot, fs: q.fs, ls: 0 })), fs, small: low === CLASS ? lfs : 0, rows: 2, cls: low === CLASS, mode: "arc", slack: Math.abs(turn - ARC_TURN) };
+          /* a break after a comma reads best; one that leaves AND or OF at the end of the top line, worst */
+          const brk = /,$/.test(up) ? -12 : /\b(AND|OF|THE)$/.test(up) ? 30 : 0;
+          const p = { items: upper.concat(lower).map(q => ({ s: q.s, x: q.x, y: q.y, rot: q.rot, fs: q.fs, ls: 0 })), fs, small: low === CLASS ? lfs : 0, rows: 2, cls: low === CLASS, mode: "arc", slack: Math.abs(turn - ARC_TURN) + brk };
           if(!best || (p.cls && !best.cls) || (p.cls === best.cls && p.slack < best.slack)) best = p;
           break;
         }
       }
-      if(best) return best;
-    }
-    return null;
+      return best;
+    };
+    let fLo = R.fsMin * WR, fHi = R.fsMax * WR, got = arcAt(fHi);
+    if(got) return got;
+    got = arcAt(fLo);
+    if(!got) return null;
+    for(let i = 0; i < 11 && fHi - fLo > .15; i++){ const mid = (fLo + fHi) / 2, p = arcAt(mid); if(p){ fLo = mid; got = p; } else fHi = mid; }
+    return got;
   };
   let plan = null;
   try{
-    const a = bestRows(true), n = bestRows(false), arc = bestArc();
+    /* a ring's words always go round it (its rows come out a fraction of the size) */
+    const arc = bestArc(), a = arc ? null : bestRows(true), n = arc ? null : bestRows(false);
     plan = a && (!n || a.fs >= n.fs * R.classKeep) ? a : n;
     if(arc && (!plan || arc.fs > plan.fs)) plan = arc;
   }catch(e){ plan = null; }
@@ -116548,21 +116770,37 @@ function renderBadgeBack(unitName, Wout, ssForce, dirt){
         mm *= 1 + R.brush * br * 2; sp *= 1 + .9 * br;
         /* the field sits below the rim: shaded at its foot */
         const ao = e > -2.2 ? 1 - .3 * (1 - (-e) / 2.2) : 1; mm *= ao;
+        /* BRUSHED IS SATIN, NOT MIRROR (build 325): the field took the
+           studio's reflection like the polished rim, so it was bright under
+           the softbox and dark a few units away, and words on its dark side
+           were dark on dark. Brushed metal scatters: most of its light is an
+           even level (fieldLevel), eased in from the rim's foot. */
+        const ff = R.fieldFlat * (e < -1.6 ? 1 : (-e) / 1.6);
+        mm = mm * (1 - ff) + R.fieldLevel * ao * ff; sp *= 1 - ff * .45;
       }
       /* the cut's floor is matte and darker; its light-side wall throws a shadow into it */
       if(mk > 0){ mm *= 1 - (1 - R.floor) * mk; sp *= 1 - (1 - R.floorSp) * mk; mm *= 1 - R.shadowK * sh; sp *= 1 - sh; }
-      /* the floor blackened (build 325): an engraver's fill, so the letters are never the field's grey */
-      const ink = mk > 0 ? Math.pow(mk, 1.6) * R.ink[0] : 0;
+      /* the floor blackened (build 325): an engraver's fill, so the letters
+         are never the field's grey - from the words' own (unsoftened)
+         coverage, so the fill runs right up to each letter's edge and the
+         softened walls stay lit round it */
+      const ink = (field || e < .8) ? M0[(y / SS | 0) * Wout + ox] : 0;
       const sm = RSM[ox];
       const gl = W_GLOSS + DK.glossSm * sm;
       sp *= (gl >= .97 ? .03 : 1 - gl) * (1 + 2.2 * W_GRAIN * gr); if(sp < 0) sp = 0;
-      mm = (mm * (1 - W_FLAT) + DK.flatTo * W_FLAT) * (1 + W_GRAIN * gr);
+      /* the words' field keeps more of its light as it dirties than the rim
+         does (build 325: dirtiest, the words read at least 2.5:1) - it still
+         dulls, tarnishes and takes the smudges, by fieldDirt of the rim's */
+      const fk = field ? R.fieldDirt : 1;
+      mm = (mm * (1 - W_FLAT * fk) + DK.flatTo * W_FLAT * fk) * (1 + W_GRAIN * gr);
       let mr = mm * tint[0] + sp, mg = mm * tint[1] + sp, mb = mm * tint[2] + sp;
-      if(ink > 0){ const iq = Math.min(1, ink / R.ink[0]) * .72; mr = mr * (1 - iq) + R.ink[0] * .06 * iq; mg = mg * (1 - iq) + R.ink[1] * .06 * iq; mb = mb * (1 - iq) + R.ink[2] * .06 * iq; }
-      const T = DK.tint, fq = W_FILM * sm, gq = W_GRIME * Math.max(field && e > -1.3 ? Math.exp(-(-e) / DK.recM) : 0, mk * .7);
+      const T = DK.tint, fq = W_FILM * sm * fk, gq = W_GRIME * Math.max(field && e > -1.3 ? Math.exp(-(-e) / DK.recM) : 0, mk * .7);
       mr *= 1 + (T[0] - 1) * W_TARN; mg *= 1 + (T[1] - 1) * W_TARN; mb *= 1 + (T[2] - 1) * W_TARN;
       mr = mr * (1 - fq) + DK.fc[0] * fq; mg = mg * (1 - fq) + DK.fc[1] * fq; mb = mb * (1 - fq) + DK.fc[2] * fq;
       mr = mr * (1 - gq) + DK.gc[0] * gq; mg = mg * (1 - gq) + DK.gc[1] * gq; mb = mb * (1 - gq) + DK.gc[2] * gq;
+      /* the fill goes in last: the dirt dulls the metal round the words, and
+         settles in the cuts as grime, but the cut stays dark at any stage */
+      if(ink > 0){ const iq = ink * R.inkK; mr = mr * (1 - iq) + R.ink[0] * .06 * iq; mg = mg * (1 - iq) + R.ink[1] * .06 * iq; mb = mb * (1 - iq) + R.ink[2] * .06 * iq; }
       AR[i] = mr * a; AG[i] = mg * a; AB[i] = mb * a;
     }
   }
