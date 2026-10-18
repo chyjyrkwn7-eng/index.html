@@ -28764,7 +28764,10 @@
      the lining's velvet, quilted in three puffed bands (--case-lid-bg),
      stitched twice round its edge, with the case's name debossed in the
      top band. */
-  .bc-lid-in{ inset:0; transform:rotateX(180deg); border-radius:var(--bc-r); box-shadow:0 0 0 1px rgba(0,0,0,.6); }
+  /* a hair above the tray's own plane (build 326): shut, the lid's inside
+     lay exactly ON the tray - two coplanar layers, which a compositor that
+     sorts whole layers may draw either way round */
+  .bc-lid-in{ inset:0; transform:translateZ(.6px) rotateX(180deg); border-radius:var(--bc-r); box-shadow:0 0 0 1px rgba(0,0,0,.6); }
   /* the cushion and its name: the shared .nova-case-cushion (build 321) */
   .bc-lid-out{ inset:0; transform:translateZ(var(--dl)); border-radius:var(--bc-r); display:flex; align-items:center; justify-content:center; }
   /* the clips on top: a keeper over each latch at the lid's front edge,
@@ -28773,8 +28776,7 @@
   /* square where it meets the base at the seam (build 325): the base's
      front is square at its top, and a rounded lid over a square base left
      a notch at both ends of the seam. 3D inside, for the keepers' staples. */
-  .bc-lid-front{ left:0; right:0; top:100%; height:var(--dl); transform-origin:50% 0; transform:translateZ(var(--dl)) rotateX(-90deg); border-radius:0;
-    transform-style:preserve-3d; }
+  .bc-lid-front{ left:0; right:0; top:100%; height:var(--dl); transform-origin:50% 0; transform:translateZ(var(--dl)) rotateX(-90deg); border-radius:0; }
   /* a small knock as the badge seats */
   .bc-case.bc-open.bc-thud{ animation:bc-thud .42s cubic-bezier(.3,0,.3,1); }
   @keyframes bc-thud{ 0%{ transform:translateY(var(--open-y)) rotateX(21deg) scale(var(--open-s)); }
@@ -29737,14 +29739,28 @@
     --case-lining-bg:radial-gradient(120% 85% at 50% 0%, #2A2F36 0%, #191C21 55%, #0D0F12 100%);
     /* the lid's lining: a velvet cushion quilted in three puffed bands, the
        light coming down onto it */
-    --case-lid-bg:linear-gradient(180deg, rgba(0,0,0,0) 0 32%, rgba(0,0,0,.5) 33%, rgba(255,255,255,.06) 34%, rgba(0,0,0,0) 35.5%,
-        rgba(0,0,0,0) 65%, rgba(0,0,0,.5) 66%, rgba(255,255,255,.06) 67%, rgba(0,0,0,0) 68.5%),
-      radial-gradient(70% 22% at 50% 18%, rgba(255,255,255,.075), rgba(255,255,255,0) 72%),
-      radial-gradient(70% 22% at 50% 50%, rgba(255,255,255,.06), rgba(255,255,255,0) 72%),
-      radial-gradient(70% 22% at 50% 82%, rgba(255,255,255,.05), rgba(255,255,255,0) 72%),
+    /* THE LID IS TUFTED (build 326): "I think the case could LOOK better
+       ... We want these to look so good." It was three flat puffed bands.
+       A display case's lid is buttoned: a diamond quilt (two diagonal seams
+       through every tile, pinched dark into the seam with a catch of light
+       on its lower lip), a soft puff of light on each diamond, and a
+       covered button at every crossing - all gradients on a tile a quarter
+       of the cushion wide, over the velvet, so it is one drawing at every
+       size and in both cases. */
+    --case-lid-bg:radial-gradient(9% 11% at 50% 50%, #08090B 0 32%, rgba(214,220,228,.42) 44%, rgba(0,0,0,.42) 62%, rgba(0,0,0,0) 100%),
+      radial-gradient(9% 11% at 0 0, #08090B 0 32%, rgba(214,220,228,.42) 44%, rgba(0,0,0,.42) 62%, rgba(0,0,0,0) 100%),
+      radial-gradient(9% 11% at 100% 0, #08090B 0 32%, rgba(214,220,228,.42) 44%, rgba(0,0,0,.42) 62%, rgba(0,0,0,0) 100%),
+      radial-gradient(9% 11% at 0 100%, #08090B 0 32%, rgba(214,220,228,.42) 44%, rgba(0,0,0,.42) 62%, rgba(0,0,0,0) 100%),
+      radial-gradient(9% 11% at 100% 100%, #08090B 0 32%, rgba(214,220,228,.42) 44%, rgba(0,0,0,.42) 62%, rgba(0,0,0,0) 100%),
+      linear-gradient(to bottom right, rgba(0,0,0,0) 43%, rgba(0,0,0,.24) calc(50% - 1.5px), rgba(0,0,0,.7) 50%, rgba(255,255,255,.07) calc(50% + 1.3px), rgba(0,0,0,.2) calc(50% + 2.4px), rgba(0,0,0,0) 57%),
+      linear-gradient(to bottom left, rgba(0,0,0,0) 43%, rgba(0,0,0,.24) calc(50% - 1.5px), rgba(0,0,0,.7) 50%, rgba(255,255,255,.07) calc(50% + 1.3px), rgba(0,0,0,.2) calc(50% + 2.4px), rgba(0,0,0,0) 57%),
+      radial-gradient(42% 42% at 50% 0, rgba(255,255,255,.075), rgba(255,255,255,0) 100%),
+      radial-gradient(42% 42% at 50% 100%, rgba(255,255,255,.075), rgba(255,255,255,0) 100%),
+      radial-gradient(42% 42% at 0 50%, rgba(255,255,255,.075), rgba(255,255,255,0) 100%),
+      radial-gradient(42% 42% at 100% 50%, rgba(255,255,255,.075), rgba(255,255,255,0) 100%),
       var(--case-velvet),
       radial-gradient(110% 90% at 50% 0%, #343A42 0%, #21252B 56%, #131519 100%);
-    --case-lid-size:100% 100%, 100% 100%, 100% 100%, 100% 100%, 32px 32px, 100% 100%;
+    --case-lid-size:25% 25%, 25% 25%, 25% 25%, 25% 25%, 25% 25%, 25% 25%, 25% 25%, 25% 25%, 25% 25%, 25% 25%, 25% 25%, 32px 32px, 100% 100%;
     --case-stitch:rgba(206,214,224,.24);
     /* THE CASE IS SQUARE (build 318): "the corners of the case don't look
        good, you can see where it disconnects on the top and bottom". The
@@ -30187,12 +30203,25 @@
   .nova-case-staple::after, .ncase-staple-over::after{ content:""; position:absolute; left:28%; right:28%; top:34%; bottom:34%; border-radius:999px;
     background:#07090C; box-shadow:inset 0 calc(var(--cu) * .15) calc(var(--cu) * .2) #000, 0 calc(var(--cu) * .1) 0 rgba(255,255,255,.45); }
   /* in the cutscene: on the lid's front, the staple standing out past the hasp */
-  .bc-lid-front > .bc-keeper{ top:14%; height:72%; transform:translateZ(.5px); transform-style:preserve-3d; }
+  /* THE LID IS FLAT LEAVES (build 326): "During the badge cutscene, the
+     top opening part is glitched and isn't there". The lid's front was a
+     3D wall with 3D keepers on it (preserve-3d inside preserve-3d inside
+     the swinging lid), each part backface-hidden on its own - the one
+     corner of the case built three 3D levels deep, and the part of the
+     scene that went missing. Every face of the lid is now one flat layer
+     (.bc-lid-in, .bc-lid-out, .bc-lid-front) under the one 3D lid, with
+     nothing 3D inside any of them: the keepers are painted on the lid's
+     front, and the staple that has to show THROUGH a hooked hasp is drawn
+     again from the latch, above its hasp (.ncase-staple-over, as the
+     Badges tab has always done), and goes as the hasp lifts off. */
+  .bc-lid-front > .bc-keeper{ top:14%; height:72%; }
   .bc-lid-front > .bc-keeper-l{ left:15%; } .bc-lid-front > .bc-keeper-r{ right:15%; }
-  .bc-keeper > .nova-case-staple{ top:26%; height:30%; transform:translateZ(3.5px); }
-  /* 3D parts of a 3D wall each face their own way: once the lid is up the
-     wall faces away, and so must they, or they show through its back */
-  .bc-keeper, .bc-keeper *{ backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+  .bc-keeper > .nova-case-staple{ top:26%; height:30%; }
+  .bc-latch > .ncase-staple-over{ left:39%; right:39%; top:calc(var(--d) * -.07 - var(--dl) * .673); height:calc(var(--dl) * .216);
+    z-index:3; opacity:1; transform:translateZ(2.5px); }
+  .bc-unlatch .bc-latch-l > .ncase-staple-over, .bc-unlatch2 .bc-latch-r > .ncase-staple-over{ animation:bc-staple-off .22s step-end both; }
+  @keyframes bc-staple-off{ from{ opacity:1; } to{ opacity:0; } }
+  .bc-scene.bc-still .ncase-staple-over{ opacity:0; }
   /* ---- THE NAMEPLATE (build 325, b325b) - see caseKit().nameplate ----
      One plate on the lid's top, a piece of metal on the leather: its
      shadow on the leather (a gradient, never a filter), its thickness
@@ -30306,10 +30335,18 @@
     box-shadow:0 0 0 1.5px rgba(150,158,168,.55), 0 0 0 3px rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.6), inset 0 calc(var(--cu) * 2) calc(var(--cu) * 5) rgba(0,0,0,.6), inset 0 calc(var(--cu) * -1.2) calc(var(--cu) * 4) rgba(0,0,0,.45); }
   .nova-case-cushion::after{ content:""; position:absolute; inset:calc(var(--cu) * 1.4); border-radius:calc(var(--hw-r) * .6); border:1px dashed var(--case-stitch); pointer-events:none; }
   .nova-case-cushion::before{ content:""; position:absolute; inset:calc(var(--cu) * 2.6); border-radius:calc(var(--hw-r) * .5); border:1px dashed rgba(206,214,224,.13); pointer-events:none; }
+  /* the lid's outside (build 326): a row of saddle stitching inside the
+     trim, and a satin sheen across the leather - the light it catches */
+  .nova-case-stitchrow{ position:absolute; inset:calc(var(--cu) * 2.6); border-radius:calc(var(--hw-r) * .6); pointer-events:none; z-index:0;
+    border:calc(var(--cu) * .32) dashed rgba(214,220,228,.3); box-shadow:0 1px 0 rgba(0,0,0,.45), inset 0 1px 0 rgba(0,0,0,.45);
+    background:linear-gradient(118deg, rgba(255,255,255,0) 22%, rgba(255,255,255,.055) 40%, rgba(255,255,255,.02) 52%, rgba(255,255,255,0) 64%); }
   .nova-case-lidlabel{ position:relative; z-index:1; font-family:var(--sans); font-weight:800; text-transform:uppercase; white-space:nowrap;
     font-size:calc(var(--cu) * 3.6); letter-spacing:.22em; color:rgba(198,206,216,.34);
     text-shadow:0 -1px 0 rgba(0,0,0,.75), 0 1px 0 rgba(255,255,255,.08); padding:calc(var(--cu) * 1.4) calc(var(--cu) * 4);
-    border:1px dashed rgba(206,214,224,.18); border-radius:calc(var(--cu) * 1.2); }
+    border:1px dashed rgba(206,214,224,.18); border-radius:calc(var(--cu) * 1.2);
+    /* build 326: on a smooth panel, so the tufting stops round it */
+    background:radial-gradient(120% 140% at 50% 0%, #2E343B 0%, #1E2227 70%, #171A1E 100%);
+    box-shadow:0 0 0 calc(var(--cu) * .6) rgba(0,0,0,.35), inset 0 calc(var(--cu) * .3) calc(var(--cu) * .8) rgba(0,0,0,.45); }
   .nova-case.ncase .ncase-pad.nova-case-cushion{ inset:calc(var(--cu) * 4.5); border-radius:calc(var(--hw-r) * .8); }
   /* ON THE BADGES SCREEN (build 321): the cutscene's case part for part -
      caps on the tray's and the lid's corners, screwed hinges, latches with
@@ -57995,6 +58032,72 @@ function badgeSignedDistance(a, W){
     sd[i] = a[i] >= .5 ? -dd : dd;
   }
   return sd;
+}
+/* the largest value within r pixels (a square), each way in turn - van
+   Herk / Gil-Werman: blocks of 2r+1, a running max from each end, so it
+   costs the same whatever r is */
+function badgeMaxFilter(a, W, r){
+  const n = 2 * r + 1, L = W + 2 * r, pad = Math.ceil(L / n) * n;
+  const t = new Float32Array(W * W), o = new Float32Array(W * W);
+  const g = new Float32Array(pad), h = new Float32Array(pad), line = new Float32Array(pad);
+  for(let pass = 0; pass < 2; pass++){
+    const src = pass ? t : a, dst = pass ? o : t;
+    /* pass 0 runs along rows (stride 1), pass 1 down columns (stride W) */
+    const sa = pass ? W : 1, sb = pass ? 1 : W;
+    for(let q = 0; q < W; q++){
+      const base = q * sb;
+      for(let i = 0; i < pad; i++){ const x = i - r; line[i] = x < 0 || x >= W ? -1e9 : src[base + x * sa]; }
+      for(let b = 0; b < pad; b += n){
+        let m = -1e9; for(let i = b; i < b + n; i++){ const v = line[i]; if(v > m) m = v; g[i] = m; }
+        m = -1e9; for(let i = b + n - 1; i >= b; i--){ const v = line[i]; if(v > m) m = v; h[i] = m; }
+      }
+      for(let x = 0; x < W; x++){ const p1 = h[x], p2 = g[x + 2 * r]; dst[base + x * sa] = p1 > p2 ? p1 : p2; }
+    }
+  }
+  return o;
+}
+/* THE WORDS' DISTANCE FIELD (build 326): in pixels, how far each point
+   inside the letters is from their edge, from their coverage `a` (0..1) at
+   W x W - a two-pass chamfer transform (the 5-7-11 mask: steps of 1, the
+   diagonal and the knight's move, within a couple of percent of true
+   distance, linear in the pixels), the half-covered edge pixels placed by
+   their coverage so a cut's walls are as smooth as the type. Outside the
+   letters it is only the edge's own coverage, negative - nothing there is
+   cut. */
+function badgeEDT(a, W){
+  const N = W * W, d = new Float32Array(N), BIG = 1e6, D1 = 1, D2 = Math.SQRT2, D3 = Math.sqrt(5);
+  for(let i = 0; i < N; i++) d[i] = a[i] >= .5 ? BIG : 0;
+  const at = (x, y) => (x < 0 || y < 0 || x >= W || y >= W) ? 0 : d[y * W + x];
+  for(let y = 0; y < W; y++) for(let x = 0; x < W; x++){
+    const i = y * W + x; let v = d[i]; if(v === 0) continue;
+    let c = at(x - 1, y) + D1; if(c < v) v = c;
+    c = at(x, y - 1) + D1; if(c < v) v = c;
+    c = at(x - 1, y - 1) + D2; if(c < v) v = c;
+    c = at(x + 1, y - 1) + D2; if(c < v) v = c;
+    c = at(x - 1, y - 2) + D3; if(c < v) v = c;
+    c = at(x + 1, y - 2) + D3; if(c < v) v = c;
+    c = at(x - 2, y - 1) + D3; if(c < v) v = c;
+    c = at(x + 2, y - 1) + D3; if(c < v) v = c;
+    d[i] = v;
+  }
+  for(let y = W - 1; y >= 0; y--) for(let x = W - 1; x >= 0; x--){
+    const i = y * W + x; let v = d[i]; if(v === 0) continue;
+    let c = at(x + 1, y) + D1; if(c < v) v = c;
+    c = at(x, y + 1) + D1; if(c < v) v = c;
+    c = at(x + 1, y + 1) + D2; if(c < v) v = c;
+    c = at(x - 1, y + 1) + D2; if(c < v) v = c;
+    c = at(x + 1, y + 2) + D3; if(c < v) v = c;
+    c = at(x - 1, y + 2) + D3; if(c < v) v = c;
+    c = at(x + 2, y + 1) + D3; if(c < v) v = c;
+    c = at(x - 2, y + 1) + D3; if(c < v) v = c;
+    d[i] = v;
+  }
+  const out = new Float32Array(N);
+  for(let i = 0; i < N; i++){
+    const c = a[i];
+    out[i] = (c > .02 && c < .98) || c < .5 ? c - .5 : d[i] - .5;
+  }
+  return out;
 }
 function badgeBoxBlur(a, W, r){
   if(r < 1) return a;
@@ -95792,42 +95895,99 @@ const BADGE_EDGE_CACHE = {};
    whole edge loses its light and warms with the badge's dirt (`stage`),
    as its faces do. Still one drawing per tone, cached; never alternating
    steps (a milled edge read as a ladder, build 317). */
+/* THE SIDE IS LIT BY WHICH WAY IT FACES (build 326). Madison: "The badges
+   look good but the edges on the side don't look good." Every slice of the
+   side was one vertical ramp across the shape's box - top light, bottom
+   dark, the same everywhere - so the side read as a flat, pale band of
+   card, with no difference between a stretch of edge facing the light and
+   one facing away, and a hard step where it met the face's dark outer
+   wall. A struck token's side is metal lit like every other surface here:
+   each stretch of it by its own NORMAL (the outline's outward direction,
+   read off the shape's distance field, badgeStrikeGeometry): the stretches
+   facing the top-left light bright with a soft specular, the ones facing
+   away down to a dark steel, so as the token turns the light runs round
+   its side. `tone` is where the slice sits across the thickness (0 at a
+   face, 1 across the middle): the edge is rounded over, darker where it
+   turns in to each face and brightest along its middle line - the bevel.
+   The lighting is a small image (EDGE_LIGHT_PX, smooth by nature) inside
+   the outline as a vector mask, so the silhouette stays crisp at any size.
+   Dirt (`stage`) dims and warms it like the faces. With no tone (an older
+   caller) it is the middle of the edge. */
+const EDGE_LIGHT_PX = 128;
+/* the light round one outline, as an image - once per shape (the tones and
+   the dirt are overlays on it in each slice's drawing, so five tones cost
+   one image, not five) */
+const EDGE_LIGHT_CACHE = {};
+function badgeEdgeLightHref(shape){
+  const d = shape.d;
+  if(EDGE_LIGHT_CACHE[d] !== undefined) return EDGE_LIGHT_CACHE[d];
+  let href = null;
+  try{
+    const g = badgeStrikeGeometry(shape), R = EDGE_LIGHT_PX, GW = g.W, sc = GW / R;
+    const cv = document.createElement("canvas"); cv.width = cv.height = R;
+    const cx = cv.getContext("2d"), img = cx.createImageData(R, R), od = img.data;
+    /* the light: from above and in front. The side is seen from whichever
+       face is turned towards you - and from the back its left and right
+       swap - so it is lit the same either way across (|nx|): the stretches
+       facing up bright, the ones facing down in shade, a sideways one in
+       between. Lit by a left-or-right light baked in, the same side read
+       bright with the front towards you and wrongly bright with the back. */
+    const lx = -.45, ly = -.89;
+    for(let y = 0; y < R; y++){
+      const fy = Math.min(GW - 1, Math.max(0, ((y + .5) * sc) | 0));
+      for(let x = 0; x < R; x++){
+        const fx = Math.min(GW - 1, Math.max(0, ((x + .5) * sc) | 0)), q = fy * GW + fx;
+        let nx = g.Ox[q], ny = g.Oy[q]; const nl = Math.sqrt(nx * nx + ny * ny) || 1; nx /= nl; ny /= nl;
+        const fdot = -(nx < 0 ? -nx : nx) * lx + ny * ly;
+        const diff = .5 + .5 * fdot, sp = fdot > 0 ? fdot : 0, sp2 = sp * sp, sp4 = sp2 * sp2, spec = sp4 * sp4 * sp4 * sp2;
+        /* steel in shade, silver in the light, a white sheen where it faces it */
+        const v = 58 + 132 * Math.pow(diff, 1.35) + 70 * spec, j = (y * R + x) * 4;
+        od[j] = Math.min(255, Math.round(v * .97)); od[j + 1] = Math.min(255, Math.round(v)); od[j + 2] = Math.min(255, Math.round(v * 1.05)); od[j + 3] = 255;
+      }
+    }
+    cx.putImageData(img, 0, 0);
+    href = cv.toDataURL("image/png");
+  }catch(e){ href = null; }
+  return (EDGE_LIGHT_CACHE[d] = href);
+}
 function badgeEdgeURL(unitName, tone, stage){
   const shape = badgeShapeFor(unitName), d = shape.d;
-  const tq = Math.round(Math.max(0, Math.min(1, tone == null ? .6 : tone)) * 4), st = Math.max(0, Math.min(BADGE_DIRT_MAX, stage | 0));
-  const key = tone == null ? d : d + "|" + tq + "|" + st;
+  const tq = Math.round(Math.max(0, Math.min(1, tone == null ? 1 : tone)) * 4), st = Math.max(0, Math.min(BADGE_DIRT_MAX, stage | 0));
+  const key = d + "|n" + tq + "|" + st;
   if(BADGE_EDGE_CACHE[key]) return BADGE_EDGE_CACHE[key];
   const NS = "http://www.w3.org/2000/svg";
   const c = shape.c, G = BADGE_GEOM;
-  const b = badgeBBoxFor(d) || { x: 6, y: 6, w: 88, h: 88 };
+  const vb = badgeViewBoxFor(d).split(/\s+/).map(Number);
+  const lightHref = badgeEdgeLightHref(shape);
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("xmlns", NS);
-  svg.setAttribute("viewBox", badgeViewBoxFor(d));
-  const defs = document.createElementNS(NS, "defs");
-  const g = document.createElementNS(NS, "linearGradient");
-  g.setAttribute("id", "e"); g.setAttribute("gradientUnits", "userSpaceOnUse");
-  g.setAttribute("x1", "0"); g.setAttribute("y1", String(b.y - G.key));
-  g.setAttribute("x2", "0"); g.setAttribute("y2", String(b.y + b.h + G.key));
-  /* lit along the top, turning away down the bottom; brighter across the
-     middle of the edge (tq 4) than where it meets a face (tq 0) */
-  const lift = [.58, .72, .86, .96, 1.04][tq] * (1 - .085 * st), warm = .06 * st;
-  const tone3 = (v) => { const r = Math.min(255, Math.round(v * lift * (1 + warm * .5))), gg = Math.min(255, Math.round(v * lift * (1 + warm * .15))), bb = Math.min(255, Math.round(v * lift * (1 - warm * .45)));
-    return "#" + [r, gg, bb].map(x => x.toString(16).padStart(2, "0")).join(""); };
-  /* asked for with no tone (the cutscene's coin): build 320's edge, as it was */
-  const stops = tone == null ? [[0, "#D5DCE3"], [.3, "#A4AFBB"], [.55, "#6E7A87"], [.78, "#515C68"], [1, "#363E48"]]
-    : [[0, 214], [.22, 178], [.48, 128], [.72, 92], [1, 60]].map(([o, v]) => [o, tone3(v)]);
-  stops.forEach(([o, col]) => {
-    const stp = document.createElementNS(NS, "stop");
-    stp.setAttribute("offset", String(o)); stp.setAttribute("stop-color", col);
-    g.appendChild(stp);
-  });
-  defs.appendChild(g); svg.appendChild(defs);
+  svg.setAttribute("viewBox", vb.join(" "));
+  const tr = "translate(" + c[0] + " " + c[1] + ") scale(" + G.scale + ") translate(" + (-c[0]) + " " + (-c[1]) + ")";
   const p = document.createElementNS(NS, "path");
-  p.setAttribute("d", d);
-  p.setAttribute("transform", "translate(" + c[0] + " " + c[1] + ") scale(" + G.scale + ") translate(" + (-c[0]) + " " + (-c[1]) + ")");
-  p.setAttribute("fill", "url(#e)"); p.setAttribute("stroke", "url(#e)");
+  p.setAttribute("d", d); p.setAttribute("transform", tr);
   p.setAttribute("stroke-width", String(2 * G.key)); p.setAttribute("stroke-linejoin", "round");
-  svg.appendChild(p);
+  const box = el => { el.setAttribute("x", String(vb[0])); el.setAttribute("y", String(vb[1])); el.setAttribute("width", String(vb[2])); el.setAttribute("height", String(vb[3])); return el; };
+  if(lightHref){
+    const defs = document.createElementNS(NS, "defs"), m = box(document.createElementNS(NS, "mask"));
+    m.setAttribute("id", "s"); m.setAttribute("maskUnits", "userSpaceOnUse");
+    p.setAttribute("fill", "#fff"); p.setAttribute("stroke", "#fff");
+    m.appendChild(p); defs.appendChild(m); svg.appendChild(defs);
+    const grp = document.createElementNS(NS, "g"); grp.setAttribute("mask", "url(#s)");
+    const im = box(document.createElementNS(NS, "image"));
+    im.setAttribute("preserveAspectRatio", "none"); im.setAttribute("href", lightHref);
+    grp.appendChild(im);
+    /* across the thickness, rounded over: darker where it turns in to a
+       face (tq 0), a touch of light along its middle (tq 4); dirt dims and
+       warms it like the faces */
+    const lift = [.62, .76, .9, 1, 1.07][tq] * (1 - .085 * st);
+    if(lift < 1){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", "#000"); r.setAttribute("opacity", (1 - lift).toFixed(3)); grp.appendChild(r); }
+    else if(lift > 1){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", "#fff"); r.setAttribute("opacity", ((lift - 1) * .6).toFixed(3)); grp.appendChild(r); }
+    if(st > 0){ const r = box(document.createElementNS(NS, "rect")); r.setAttribute("fill", "#8A6A3E"); r.setAttribute("opacity", (.045 * st).toFixed(3)); grp.appendChild(r); }
+    svg.appendChild(grp);
+  } else {
+    p.setAttribute("fill", "#8E98A3"); p.setAttribute("stroke", "#8E98A3");
+    svg.appendChild(p);
+  }
   return (BADGE_EDGE_CACHE[key] = badgeImageURL(svg));
 }
 /* The coin's face: the struck token rendered at the coin's own size in
@@ -95884,6 +96044,8 @@ function warmBadgeCoinFaces(units){
   try{
     const ric = f => (typeof window.requestIdleCallback === "function") ? window.requestIdleCallback(f, { timeout: 1500 }) : setTimeout(f, 200);
     (units || []).slice(0, 4).forEach(u => ric(() => { try{ badgeCoinFaceURL(u); }catch(e){} }));
+    /* ...and its side's five tones (build 326: each a small lit image) */
+    (units || []).slice(0, 4).forEach(u => ric(() => { try{ for(let t = 0; t <= 4; t++) badgeEdgeURL(u, t / 4, 0); }catch(e){} }));
     /* ...and its back (build 321: rendered like the front, about as dear) */
     (units || []).slice(0, 4).forEach(u => ric(() => { try{ badgeBackFaceURL(u, badgeCoinBackPx(), 0); }catch(e){} }));
     const W = badgeStrikeSize(badgeCaseSlotPx() * badgeDpr());
@@ -95903,7 +96065,8 @@ function buildBadgeCoin(unitName){
   try{ setBadgeSlotShift(coin, unitName); }catch(e){}
   const sil = badgeSilhouetteURL(unitName);
   const faceSrc = badgeCoinFaceURL(unitName);
-  const edgeSrc = badgeEdgeURL(unitName);
+  /* the side rounded over and lit by its facing (build 326), as the badge in your hand's */
+  const edgeSrc = k => badgeEdgeURL(unitName, Math.sin(Math.PI * k), 0);
   /* ITS REAL BACK (build 320, from b320g's badge in your hand): brushed
      metal in a polished rim with the unit's name, its outline the front's
      mirror - where it used to show the front again. At the coin's own
@@ -95930,7 +96093,7 @@ function buildBadgeCoin(unitName){
   };
   spin.appendChild(face("is-back"));
   for(let i = 0; i < BC_EDGE_LAYERS; i++){
-    const e = pic("bc-edge", edgeSrc);
+    const e = pic("bc-edge", edgeSrc(i / (BC_EDGE_LAYERS - 1)));
     e.style.setProperty("--k", (i / (BC_EDGE_LAYERS - 1)).toFixed(3));
     spin.appendChild(e);
   }
@@ -96101,6 +96264,9 @@ function caseKit(){
     /* the lid's outside: the one nameplate and the corners (build 325:
        the clips that sat up here are the keepers on the lid's front now) */
     lidOutside(el){
+      /* a row of saddle stitching round the leather, inside the trim, and
+         the satin sheen across it (build 326: the case could LOOK better) */
+      el.appendChild(mk("nova-case-stitchrow", "b"));
       el.appendChild(kit.nameplate("bc-plate"));
       kit.caps(el, "bc-cap");
       return el;
@@ -96160,7 +96326,14 @@ function buildBadgeCase3D(all, held){
   const kase = mk("bc-case nova-case");
   const floor = mk("bc-floor");
   const front = mk("bc-front nova-case-shell nova-case-wall is-hw");
-  ["l", "r"].forEach(side => front.appendChild(kit.latch("bc-latch bc-latch-" + side)));
+  ["l", "r"].forEach(side => {
+    const l = kit.latch("bc-latch bc-latch-" + side);
+    /* the keeper's staple, drawn again above the hasp while it is hooked
+       (build 326: the lid's front is flat now - see .bc-lid-front) */
+    const so = document.createElement("b"); so.className = "ncase-staple-over"; so.setAttribute("aria-hidden", "true");
+    l.appendChild(so);
+    front.appendChild(l);
+  });
   /* NO PLATE ON THE FRONT (build 325, b325b). The case's name was a plate
      on the front wall between the latches, laid over the latches' own
      plates ("it's sitting on top of stuff"). It is on the one nameplate on
@@ -118018,8 +118191,8 @@ const BADGE_BACK_CACHE = {};
    Contrast (`ink`, `floor`): the cut is a recess with a light lower wall
    and a dark, blackened floor - an engraver's fill - on a field that is
    lighter than the letters, never the same grey. */
-const BADGE_BACK_RELIEF = { depth: .36, wallU: .42, shadowU: .9, shadowK: .55, floor: .24, floorSp: .12, ink: [.30, .31, .33], inkK: .93, brush: .13, fieldFlat: .6, fieldLevel: .34, fieldDirt: .55,
-  rimIn: 4.6, margin: 1.6, planW: 260, fsMax: .092, fsMin: .026, classMin: .034, classKeep: .96, classNameMin: 5.6, tidyKeep: .9, weight: 800 };
+const BADGE_BACK_RELIEF = { depth: .2, lipK: 1.6, cut: .5, cutK: .55, toolK: .3, wallU: .42, shadowU: .9, shadowK: 1.4, floor: .5, floorSp: .25, ink: [.30, .31, .33], inkK: .85, brush: .13, fieldFlat: .6, fieldLevel: .34, fieldDirt: .55,
+  rimIn: 4.6, margin: 1.6, planW: 260, fsMax: .092, fsMin: .026, classMin: .034, classKeep: .96, classNameMin: 5.6, aboveKeep: .8, tidyKeep: .9, weight: 800 };
 const BADGE_BACK_FONT = '"Helvetica Neue", Helvetica, Arial, sans-serif';
 const BADGE_BACK_PLAN = {};
 /* the outline's signed distance (token units, negative inside) as the
@@ -118094,15 +118267,27 @@ function badgeBackPlan(unitName){
   };
   const meet = (A, B) => { const out = []; A.forEach(a => B.forEach(b => { const lo = Math.max(a[0], b[0]), hi = Math.min(a[1], b[1]); if(hi >= lo) out.push([lo, hi]); })); return out; };
   /* a block of rows (and the class line) at a size: the offset nearest the middle, or null */
-  const block = (rows, fs, withClass) => {
+  /* above: the class line and its rule OVER the name (build 326) - on a
+     shape that is wide at the top and narrow below (the wedge, the bolt)
+     that is where the room is, and the line is never dropped */
+  const block = (rows, fs, withClass, above) => {
     const [asc, desc] = vmet(fs), lh = fs * 1.13, bands = [];
-    rows.forEach((s, i) => bands.push({ s, fs, ls: 0, base: i * lh, top: i * lh - asc - pad, bot: i * lh + desc + pad, w: width(s, fs, 0) }));
-    let small = 0;
+    let small = 0, y0 = 0, cband = null;
     if(withClass){
       small = Math.max(R.classMin * WR, fs * .5);
-      const [sa, sd] = vmet(small), ls = small * .16;
-      const last = bands[bands.length - 1].base, ruleY = last + desc + fs * .34, ruleH = Math.max(1.2, fs * .085), sb = ruleY + ruleH + small * .42 + sa;
-      bands.push({ s: CLASS, fs: small, ls, base: sb, top: ruleY - pad, bot: sb + sd + pad, w: Math.max(width(CLASS, small, ls), fs * 2.4), rule: [fs * 2.4, ruleY, ruleH] });
+      const [sa, sd] = vmet(small), ls = small * .16, ruleH = Math.max(1.2, fs * .085), cw = Math.max(width(CLASS, small, ls), fs * 2.4);
+      if(above){
+        const ruleY = sd + small * .42;
+        cband = { s: CLASS, fs: small, ls, base: 0, top: -sa - pad, bot: ruleY + ruleH + pad, w: cw, rule: [fs * 2.4, ruleY, ruleH] };
+        y0 = ruleY + ruleH + fs * .34 + asc;
+      } else cband = { sa, sd, ls, ruleH, cw };
+    }
+    if(cband && above) bands.push(cband);
+    rows.forEach((s, i) => bands.push({ s, fs, ls: 0, base: y0 + i * lh, top: y0 + i * lh - asc - pad, bot: y0 + i * lh + desc + pad, w: width(s, fs, 0) }));
+    if(cband && !above){
+      const { sa, sd, ls, ruleH, cw } = cband;
+      const last = bands[bands.length - 1].base, ruleY = last + desc + fs * .34, sb = ruleY + ruleH + small * .42 + sa;
+      bands.push({ s: CLASS, fs: small, ls, base: sb, top: ruleY - pad, bot: sb + sd + pad, w: cw, rule: [fs * 2.4, ruleY, ruleH] });
     }
     const top0 = bands[0].top, bot1 = bands[bands.length - 1].bot;
     let best = null;
@@ -118133,14 +118318,14 @@ function badgeBackPlan(unitName){
      top line that ends on one - taken unless they cost more than tidyKeep
      of the size (strict is set by the two passes below) */
   const LONE = /^(AND|OF|THE|&)$/, TAIL = /\b(AND|OF|THE)$/;
-  let strict = false;
+  let strict = false, above = false;
   const bestAt = (fs, withClass) => {
     let best = null;
     allSplits.forEach(ss => ss.forEach(rows => {
       if(best && rows.length > best.rows) return;
       if(strict && rows.some(r => LONE.test(r))) return;
       if(rows.some(r => width(r, fs, 0) + 2 > fieldW)) return;
-      const p = block(rows, fs, withClass); if(p && (!best || p.rows < best.rows || (p.rows === best.rows && p.slack > best.slack))) best = p; }));
+      const p = block(rows, fs, withClass, above); if(p && (!best || p.rows < best.rows || (p.rows === best.rows && p.slack > best.slack))) best = p; }));
     return best;
   };
   /* the largest size that fits, by halving (a plan is made once per unit,
@@ -118193,8 +118378,9 @@ function badgeBackPlan(unitName){
     const arcAt = fs => {
       const [asc] = vmet(fs), ls = fs * .04, cands = [];
       const small = Math.max(R.classMin * WR, fs * .5);
+      /* the name up and over, CLASS 26E along the bottom (build 326: the
+         same three things as every other back) */
       cands.push([words.join(" "), CLASS, small, small * .16]);
-      for(let j = 1; j < words.length; j++) cands.push([words.slice(0, j).join(" "), words.slice(j).join(" "), fs, ls]);
       let best = null;
       for(const [up, low, lfs, lls] of cands){
         if(strict && TAIL.test(up)) continue;
@@ -118234,12 +118420,22 @@ function badgeBackPlan(unitName){
   try{
     /* a ring's words always go round it (its rows come out a fraction of the size) */
     const tidy = f => { strict = true; const t = f(); strict = false; const l = f(); return t && (!l || t.fs >= l.fs * R.tidyKeep) ? t : l; };
-    const arc = tidy(bestArc), a = arc ? null : tidy(() => bestRows(true)), n = arc ? null : tidy(() => bestRows(false));
-    /* the class line only where the name keeps nearly all its size AND is
-       not small anyway (classNameMin, token units) - on a tight shape the
-       name has the room */
-    plan = a && (!n || (a.fs >= n.fs * R.classKeep && a.fs >= R.classNameMin * u)) ? a : n;
-    if(arc && (!plan || arc.fs > plan.fs)) plan = arc;
+    /* ONE RULE FOR EVERY BACK (build 326): Madison, "The wording on the
+       back of the badge is not cohesive for all of them. Some say class 26e
+       some don't." The class line went only where the name kept nearly all
+       its size, so seven of the sixteen backs had it and nine did not. Every
+       back now carries the same three things - the unit's name, a rule,
+       CLASS 26E - and the layout (rows, the line over or under the name, or
+       round a ring) is what changes with the shape. The plan without the
+       line is only a fallback for a name that cannot fit at all. */
+    /* the line goes UNDER the name on every back that has the room for it
+       there; over it only where under would cost the name more than
+       aboveKeep of its size (the bolt, whose room is all at the top) */
+    const arc = tidy(bestArc);
+    let a = arc ? null : tidy(() => bestRows(true));
+    if(!arc){ above = true; const a2 = tidy(() => bestRows(true)); above = false; if(a2 && (!a || a.fs < a2.fs * R.aboveKeep)) a = a2; }
+    const n = (arc || a) ? null : tidy(() => bestRows(false));
+    plan = arc || a || n;
   }catch(e){ plan = null; }
   if(!plan) plan = { items: [{ s: words.join(" "), x: mx, y: my, rot: 0, fs: R.fsMin * WR, ls: 0 }], fs: R.fsMin * WR, small: 0, rows: 1, cls: false, mode: "rows" };
   plan.W = WR; plan.u = u;
@@ -118287,10 +118483,38 @@ function renderBadgeBack(unitName, Wout, ssForce, dirt){
   const INB = Math.min(IN, R.rimIn), RIMK = (IN + RC) / (INB + RC);
   const pxPerF = W / g.vw, k = pxPerF * g.S, GW = g.W, GM = GW - 1, sc = GW / W;
   const kOut = k / SS;
-  /* the words: a mask at Wout, softened into a cut with walls (wallU wide) */
+  /* THE WORDS ARE CUT, NOT PAINTED (build 326). Madison: "I also don't
+     like the way the engraving looks, doesn't look legit." The letters were
+     a blurred mask pressed into the field with a black fill laid over them
+     edge to edge - puffy, soft-walled, ink on metal. A real cut has a
+     section: a chamfered wall (`cut` token units wide, the same depth on
+     every letter) running down from a crisp edge to a flat, matte floor,
+     and a stroke narrower than two walls is a V with its ridge down the
+     middle - the bevelled stroke an engraver's tool leaves. So the cut's
+     height is read off the letters' own DISTANCE field (an exact distance
+     transform of the words' coverage, badgeEDT): the walls are lit by their
+     normals like every other surface here (the lower-right wall faces the
+     light: the catch-light; the upper-left one is in shade), the wall on
+     the light's side throws its shadow across the floor, the floor carries
+     the cutter's marks, and only the FLOOR is darkened (`ink`, an
+     antiquing), never the walls - which is what keeps every edge lit. */
   const M0 = badgeBackLayout(unitName, g, Wout);
-  const wr = Math.max(1, Math.round(R.wallU * kOut * .5));
-  const MB = badgeBoxBlur(badgeBoxBlur(M0, Wout, wr), Wout, wr);
+  const SDm = badgeEDT(M0, Wout);
+  const cutPx = Math.max(.9, R.cut * kOut);
+  /* A THIN STROKE GETS NARROWER WALLS, never only walls: the class line's
+     strokes are a third of the name's, and with the name's walls they were
+     two shaded slopes meeting with no floor between - nothing dark to read.
+     Each stroke's half width is the deepest point near it (a max filter of
+     the distance), and its walls take at most `cutK` of that, so every
+     stroke keeps a floor down its middle. */
+  const HW = badgeMaxFilter(SDm, Wout, Math.min(12, Math.ceil(cutPx * 2.5) + 1));
+  const MB0 = new Float32Array(Wout * Wout);
+  for(let i = 0; i < MB0.length; i++){ const sd = SDm[i]; if(sd <= 0){ MB0[i] = 0; continue; }
+    const cw = Math.max(.6, Math.min(cutPx, HW[i] * R.cutK)); const t = sd / cw;
+    MB0[i] = t >= 1 ? 1 : (t - (t > .8 ? (t - .8) * (t - .8) / .4 : 0)) / .9; }
+  /* a pixel's worth of softening, so the edge's turn is one smooth line
+     and not single bright pixels where the slope jumps */
+  const MB = badgeBoxBlur(MB0, Wout, 1);
   const WM = Wout - 1;
   const mAt = (x, y) => { x = x < 0 ? 0 : x > WM ? WM : x; y = y < 0 ? 0 : y > WM ? WM : y;
     const xi = x | 0, yi = y | 0, ax = x - xi, ay = y - yi, x1 = xi < WM ? xi + 1 : xi, y1 = yi < WM ? yi + 1 : yi;
@@ -118307,7 +118531,7 @@ function renderBadgeBack(unitName, Wout, ssForce, dirt){
   AR.fill(0, 0, N); AG.fill(0, 0, N); AB.fill(0, 0, N); A.fill(0, 0, N);
   /* everything that varies over units, not samples, once per output pixel
      of the row: the cut (mask, slope, shadow), the smudge, grain, brushing */
-  const RMK = new Float32Array(Wout), RDX = new Float32Array(Wout), RDY = new Float32Array(Wout), RSH = new Float32Array(Wout),
+  const RCV = new Float32Array(Wout), RTM = new Float32Array(Wout), RMK = new Float32Array(Wout), RDX = new Float32Array(Wout), RDY = new Float32Array(Wout), RSH = new Float32Array(Wout),
         RSM = new Float32Array(Wout), RGR = new Float32Array(Wout), RBR = new Float32Array(Wout);
   let row = -1;
   const pcxO = pcx / SS, pcyO = pcy / SS;
@@ -118315,12 +118539,17 @@ function renderBadgeBack(unitName, Wout, ssForce, dirt){
     row = oy;
     const ty = (oy + .5 - pcyO) / kOut;
     for(let ox = 0; ox < Wout; ox++){
-      const tx = (ox + .5 - pcxO) / kOut, mk = MB[oy * Wout + ox];
-      RMK[ox] = mk; RDX[ox] = 0; RDY[ox] = 0; RSH[ox] = 0;
-      if(mk > .002){
+      const tx = (ox + .5 - pcxO) / kOut, mk = MB[oy * Wout + ox], cov = M0[oy * Wout + ox];
+      RMK[ox] = mk; RCV[ox] = cov; RDX[ox] = 0; RDY[ox] = 0; RSH[ox] = 0; RTM[ox] = 0;
+      if(cov > .002 || mk > .002){
         RDX[ox] = -depth * (mAt(ox + 1, oy) - mAt(ox - 1, oy)) * .5 * kOut;
         RDY[ox] = -depth * (mAt(ox, oy + 1) - mAt(ox, oy - 1)) * .5 * kOut;
-        RSH[ox] = mk * (1 - mAt(ox + ldx * shOff, oy + ldy * shOff));
+        /* the light-side wall's shadow across the floor: how much deeper
+           this point is than the cut a little way towards the light */
+        RSH[ox] = Math.max(0, mk - mAt(ox + ldx * shOff, oy + ldy * shOff));
+        /* the cutter's marks: fine parallel lines across the floor */
+        const ru = tx * .8 + ty * .6, rv = -tx * .6 + ty * .8;
+        RTM[ox] = (badgeNoiseAt(NT, ru * .35 + gOx, rv * 6.5 + gOy) - .5) * 2;
       }
       RSM[ox] = badgeSmudge(dSeed ^ 0x9e3779b9, tx, ty);
       RGR[ox] = (badgeNoiseAt(NT, tx * 1.3 + gOx, ty * 1.3 + gOy) - .5) * 1.4;
@@ -118356,11 +118585,11 @@ function renderBadgeBack(unitName, Wout, ssForce, dirt){
       if(hin <= hout){ hx = hxi; hy = hyi; field = e <= 0; }
       else { const dp = tout > 0 && tout < 1 ? DPROF[(tout * PN) | 0] / RH : 0; hx = dp * gx; hy = dp * gy; }
       const tx = (x - pcx) / k, ty = (y - pcy) / k, ox = (x / SS) | 0;
-      let mk = 0, sh = 0;
+      let mk = 0, sh = 0, cv = 0, tm = 0;
       if(field || e < .8){
-        /* the cut: the words' softened mask, its slope, its shadow */
-        mk = RMK[ox];
-        if(mk > .002){ hx += RDX[ox]; hy += RDY[ox]; sh = RSH[ox]; }
+        /* the cut: its depth (0 at the edge, 1 on the floor), its walls' slope, its shadow */
+        mk = RMK[ox]; cv = RCV[ox];
+        if(mk > .002 || cv > .002){ hx += RDX[ox]; hy += RDY[ox]; sh = RSH[ox]; tm = RTM[ox]; }
       }
       const dome = P.dome * 2.5;
       const sx = hx * P.relief - tx * dome, sy = hy * P.relief - ty * dome;
@@ -118387,16 +118616,22 @@ function renderBadgeBack(unitName, Wout, ssForce, dirt){
            even level (fieldLevel), eased in from the rim's foot. */
         /* ...but not the cut's walls: they keep the studio's light, which is
            what lights each letter's lower lip (the engraving's bright edge) */
-        const ff = R.fieldFlat * (e < -1.6 ? 1 : (-e) / 1.6) * Math.max(0, 1 - mk * 5);
+        const ff = R.fieldFlat * (e < -1.6 ? 1 : (-e) / 1.6) * Math.max(0, 1 - cv * 5);
         mm = mm * (1 - ff) + R.fieldLevel * ao * ff; sp *= 1 - ff * .45;
       }
       /* the cut's floor is matte and darker; its light-side wall throws a shadow into it */
-      if(mk > 0){ mm *= 1 - (1 - R.floor) * mk; sp *= 1 - (1 - R.floorSp) * mk; mm *= 1 - R.shadowK * sh; sp *= 1 - sh; }
+      if(mk > 0){ const fl = mk * mk; mm *= (1 - (1 - R.floor) * fl) * (1 + R.toolK * tm * fl); sp *= 1 - (1 - R.floorSp) * fl; }
+      if(sh > 0){ const q = Math.min(1, sh * R.shadowK); mm *= 1 - q; sp *= 1 - q; }
+      /* THE CATCH-LIGHT: the top of the wall that faces the light is a
+         sharp edge of polished metal, and an edge catches a line of light
+         (`lipK`) - the bright lip that makes a cut read as cut */
+      if(cv > .02 && mk < .55){ const rx = RDX[ox], ry = RDY[ox], rl = Math.sqrt(rx * rx + ry * ry);
+        if(rl > 1e-4){ const f = -(rx * ldx + ry * ldy) / rl; if(f > 0) sp += R.lipK * f * f * (1 - mk / .55) * Math.min(1, cv * 2); } }
       /* the floor blackened (build 325): an engraver's fill, so the letters
          are never the field's grey - from the words' own (unsoftened)
          coverage, so the fill runs right up to each letter's edge and the
          softened walls stay lit round it */
-      const ink = (field || e < .8) ? M0[(y / SS | 0) * Wout + ox] : 0;
+      const ink = (field || e < .8) ? mk * mk * mk : 0;
       const sm = RSM[ox];
       const gl = W_GLOSS + DK.glossSm * sm;
       sp *= (gl >= .97 ? .03 : 1 - gl) * (1 + 2.2 * W_GRAIN * gr); if(sp < 0) sp = 0;
