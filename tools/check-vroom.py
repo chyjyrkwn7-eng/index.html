@@ -260,13 +260,12 @@ SEED = ('{"firstName":"Anonymous","avatarChar":"ninja","onboardingComplete":true
 
 FAILURES = []
 
-# READY UP IS ON THE BOTTOM BAR (build 323): "Should the ready up button be
-# on the bottom tab similar to the other tests?" The lobby's .vroom-readyup-btn
-# is a .floatbtn the tab bar takes in as its Start pill, so the thing a finger
-# presses - and the thing that is visible - is #bottomtab-start, and only
-# while a lobby is the screen. The button itself still carries the state
-# (disabled, is-ready) and is read where a section reads state.
-READY = "body:has(#stage > .screen-vroom-lobby) #bottomtab-start:not([hidden])"
+# READY UP IS ON THE LOBBY'S OWN GLASS PILL (build 325): "When in virtual room
+# lobby, the button tab should not be there." Build 323 had it as the tab
+# bar's Start pill (#bottomtab-start); the bar is gone from the lobby and the
+# button sits on the Virtual Room's floating pill (.vroom-setup-bar) at the
+# foot of the screen - still only while a lobby is the screen.
+READY = "body:has(#stage > .screen-vroom-lobby) #stage > .vroom-setup-bar > .vroom-readyup-btn"
 
 
 
@@ -933,10 +932,10 @@ def sections_313(ctx, open_tab, args):
           return fbDb.collection('vrooms').doc(vroomCode).update(f); }""")
         pg.wait_for_function("()=>document.querySelectorAll('.vroom-row').length === 20", timeout=15000)
         pg.wait_for_timeout(500)
-        # Build 323: Ready up is the bar's pill now, fixed to the bottom of
-        # the screen, so it is on the first screen at any size - measured
-        # where it is drawn rather than where a column button would be.
-        lob = pg.evaluate("""()=>({ ready: Math.round(document.getElementById('bottomtab-start').getBoundingClientRect().bottom),
+        # Ready up is on a pill fixed to the bottom of the screen (the tab
+        # bar's Start pill in 323, the lobby's own glass pill since 325), so
+        # it is on the first screen at any size - measured where it is drawn.
+        lob = pg.evaluate("""()=>({ ready: Math.round(document.querySelector('#stage > .vroom-setup-bar > .vroom-readyup-btn').getBoundingClientRect().bottom),
           vh: innerHeight, hs: document.documentElement.scrollWidth - innerWidth,
           dots: document.querySelectorAll('.vroom-ready-badge.is-ready').length })""")
         check("a lobby of twenty keeps Ready up within the first screen and a bit, with nothing off the side",
@@ -1695,7 +1694,7 @@ def main():
             badges: cards.filter(c => !!c.querySelector('.pick-badge')).length,
             search: !!document.querySelector('.searchwrap input'),
             tabsGone: !tabs || tabs.hidden || tabs.getBoundingClientRect().height === 0,
-            pill: !!document.getElementById('bottomtab-start') && !document.getElementById('bottomtab-start').hidden,
+            pill: !!document.querySelector('#stage > .vroom-setup-bar > .vroom-setup-go'),
             back: back ? back.textContent : null,
             title: (document.querySelector('.welcomeintro-title')||{}).textContent,
             over: document.documentElement.scrollWidth - window.innerWidth
@@ -1708,16 +1707,14 @@ def main():
         check("they are the real unit cards, badge and search and all",
               got["badges"] == got["units"] and got["search"] is True,
               {"badges": got["badges"], "search": got["search"]})
-        # MOVED in build 323. This asserted no tab bar here ("you are inside
-        # a match: Home, Leaderboard, Ranks and Settings are not places to
-        # be from here"). Madison, 323: "The virtual room match setting
-        # button at the bottom isn't the best, it doesn't give me bottom
-        # tab vibes and looks weird ... It shouldn't be clickable till you
-        # have units selected similar to the start button on the other
-        # tests." The lobby it is reached from has always had the bar, so
-        # the screen now has it too, with the button as the bar's own pill.
-        check("the bottom tab bar is on it, with the button as its pill (moved in 323)",
-              got["tabsGone"] is False and got["pill"] is True, {"tabsGone": got["tabsGone"], "pill": got["pill"]})
+        # BACK AGAIN in build 325. 323 put the tab bar here with the button
+        # as its pill; Madison, 325: "it should not be there when you are
+        # selecting the units for the virtual room lobby either. So revert
+        # that but make the match settings button how it was just better
+        # but give it to the button tab vibe." No tab bar; the button on
+        # its own glass pill.
+        check("no bottom tab bar on it, and the button on its own glass pill (325)",
+              got["tabsGone"] is True and got["pill"] is True, {"tabsGone": got["tabsGone"], "pill": got["pill"]})
         check("and a way back to the lobby",
               "lobby" in (got["back"] or "").lower(), got["back"])
         check("titled as what it is", got["title"] == "Match settings", got["title"])
@@ -1727,7 +1724,7 @@ def main():
         # (build 246 - "for the race lets not add time options"; every
         # question has its own 45 seconds), and Save rather than Create
         # lobby. This asserted both sliders until the decision changed.
-        tap(pg, "#bottomtab-start", "the bar's Next pill")
+        tap(pg, "#stage > .vroom-setup-bar > .vroom-setup-go", "the Match settings pill")
         pg.wait_for_timeout(600)
         sheet = pg.evaluate("""()=>{
           const m = document.getElementById('unitoptions-modal');
@@ -2020,7 +2017,7 @@ def main():
                                     count:null, game:'race', status:'waiting'});
             }""")
             tugA.wait_for_timeout(700)
-            tap(tugA, "#bottomtab-start", "the bar's Next pill")
+            tap(tugA, "#stage > .vroom-setup-bar > .vroom-setup-go", "the Match settings pill")
             tugA.wait_for_timeout(500)
             def visible_sliders(pg):
                 # The SLIDERS themselves, not their sections: plainSlider

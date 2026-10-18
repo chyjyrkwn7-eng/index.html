@@ -4975,9 +4975,6 @@
   .vroom-open-hint{ margin:.1rem 0 0; font-size:.72rem; color:var(--soft); line-height:1.2; white-space:nowrap; }
   .vroom-roster > .vroom-autostart-note{ margin:.55rem 0 .1rem; }
   .vroom-roster:not(.is-crowded) > .vroom-autostart-note{ margin-top:.2rem; }
-  /* The ready button's wrapper holds nothing on screen once the bar has
-     taken the button in, so it adds no space under the chat. */
-  .startbar.vroom-ready-bar{ margin:0; }
   @media (min-width:40rem){
     .vroom-roster.has-tools .vroom-roster-head{ flex-wrap:nowrap; justify-content:flex-start; column-gap:.8rem; }
     .vroom-roster-tools{ flex:0 0 auto; margin-left:auto; padding-top:0; border-top:0; gap:1.1rem; }
@@ -6981,39 +6978,140 @@
     .bug-report-box,
     [data-layout="modern"] .screen-bugreport .bug-report-box{ min-height:11rem; }
   }
-  /* ---- THE VIRTUAL ROOM'S UNIT SCREEN: A FLOATING GLASS PILL ----
-     The same object the main menu's tab bar is - centred, lifted off
-     the bottom edge, one glass surface - carrying one button instead
-     of four tabs. Lifted rather than padded, for the reason
-     .bottomtabs records: padding grows the pill downward and leaves
-     the label sitting high in it. */
+  /* ---- THE VIRTUAL ROOM'S ONE BUTTON, ON A PIECE OF THE TAB BAR (build 325) ----
+     "When in virtual room lobby, the button tab should not be there, it
+     should not be there when you are selecting the units for the virtual
+     room lobby either. So revert that but make the match settings button
+     how it was just better but give it to the button tab vibe."
+     Build 323 put the tab bar back on both screens and its Start pill
+     carried the action ("Next", "Ready up"). The bar is gone from both
+     again (forceHideBottomTabs), and the action is back on its own
+     floating pill as before 323 - .vroom-setup-bar, on Match settings
+     and in the lobby - but the pill is now the tab bar's own glass, not
+     a lighter grey panel: the same dark fill with a lit top, the hairline
+     rim and catch-light along the top edge, the 30px frosted blur, the
+     slow sheen sliding across it, the same width as Home's bar on a
+     phone and the same lift off the bottom edge. And it is laid out as
+     the tests' bar is - white words on the glass where the tabs are
+     (.vroom-bar-info: what is picked, or who is ready), and the action
+     at the right end in the Start pill's shape:
+       - lit: the Start pill's raised fill (var(--accent), white on the
+         default theme), an arrow or a tick beside the word;
+       - not yet (no units / a room that cannot start): CLEAR GLASS - the
+         tab bar's selected-tab lens, a near-clear pane with a bright rim,
+         a specular along its top edge and the split of colour where the
+         glass bends the light - so it reads as part of the bar, waiting,
+         rather than as a grey slab;
+       - readied, in the lobby: the ready green, with a tick.
+     It is one line of words at every width (the pre-323 button wrapped
+     "Set up lobby, 29 questions" onto two lines inside the pill). */
   .startbar.vroom-setup-bar{
     position:fixed; left:50%; transform:translateX(-50%);
     bottom:calc(.6rem + env(safe-area-inset-bottom, 0px));
-    z-index:200; width:auto; max-width:calc(100vw - 2.6rem);
-    margin:0; padding:.4rem;
-    display:flex; justify-content:center;
-    background:var(--panel); border:1px solid var(--rule);
-    border-radius:999px; box-shadow:0 4px 18px rgba(18,26,32,.18);
+    z-index:200; box-sizing:border-box; width:min(23.7rem, calc(100vw - 1.5rem)); max-width:none;
+    margin:0; padding:.42rem;
+    display:flex; align-items:center; justify-content:space-between; gap:.5rem; overflow:hidden; isolation:isolate;
+    border:0; border-radius:999px;
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 40%), rgba(20,24,30,.8);
+    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.07), inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 1px rgba(0,0,0,.3);
     will-change:backdrop-filter;
-    backdrop-filter:blur(12px) saturate(1.9) brightness(1.05);
-    -webkit-backdrop-filter:blur(12px) saturate(1.9) brightness(1.05);
+    backdrop-filter:blur(30px) saturate(1.8); -webkit-backdrop-filter:blur(30px) saturate(1.8);
   }
   [data-theme="dark"] .startbar.vroom-setup-bar{
-    background:rgba(24,28,35,.62);
-    border-color:rgba(255,255,255,.12);
-    box-shadow:0 8px 28px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.07);
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 40%), rgba(20,24,30,.8);
   }
-  .vroom-setup-bar .vroom-setup-go{
-    width:auto; min-width:14rem; margin:0; border-radius:999px;
-    min-height:48px; padding:.7rem 1.6rem;
+  /* the tab bar's sheen, moved by transform (see .bottomtabs::before) */
+  .startbar.vroom-setup-bar::before{
+    content:""; position:absolute; top:0; bottom:0; left:-150%; width:400%; pointer-events:none; z-index:0;
+    background:linear-gradient(120deg, transparent 38%, rgba(255,255,255,.08) 50%, transparent 62%);
+    animation:glass-sheen 9s ease-in-out infinite;
+  }
+  [data-reduce-motion="true"] .startbar.vroom-setup-bar::before{ animation:none; }
+  @media (prefers-reduced-motion:reduce){ .startbar.vroom-setup-bar::before{ animation:none; } }
+  /* the words on the glass: white, two lines, the tabs' weight */
+  .vroom-bar-info{ position:relative; z-index:1; flex:1 1 auto; min-width:0; padding:0 .3rem 0 1rem;
+    display:flex; flex-direction:column; justify-content:center; gap:.12rem; color:#fff; }
+  .vroom-bar-main{ font-size:.95rem; font-weight:800; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .vroom-bar-sub{ font-size:.74rem; font-weight:600; line-height:1.15; color:rgba(255,255,255,.62); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .vroom-bar-sub:empty{ display:none; }
+  #stage > .vroom-setup-bar > .vroom-setup-go,
+  #stage > .vroom-setup-bar > .vroom-readyup-btn{
+    position:relative; z-index:1; flex:0 0 auto; width:auto; min-width:min(11rem, 52%); max-width:62%; margin:0;
+    display:flex; align-items:center; justify-content:center; gap:.45rem;
+    box-sizing:border-box; min-height:3.9rem; padding:0 1.2rem; border:0; border-radius:999px;
+    font:inherit; font-size:.95rem; font-weight:800; letter-spacing:.01em; white-space:nowrap;
+    color:var(--accent-ink);
+    background-color:var(--accent);
+    background-image:linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0) 58%);
+    box-shadow:0 1px 1px rgba(255,255,255,.95) inset, 0 -2px 2px rgba(18,26,32,.3) inset,
+      0 1px 3px rgba(0,0,0,.24), 0 4px 10px rgba(0,0,0,.22), 0 8px 18px -6px rgba(0,0,0,.35);
+    transition:background-color .25s ease, box-shadow .25s ease, color .2s ease, transform .12s ease;
     /* Its own compositing layer: a solid-coloured child inside a
-       backdrop-filter surface tears on real iOS, which is the same
-       glitch the update banner's button had. */
-    transform:translateZ(0); backface-visibility:hidden; isolation:isolate;
+       backdrop-filter surface tears on real iOS (Known quirks). */
+    transform:translateZ(0); backface-visibility:hidden; -webkit-backface-visibility:hidden;
+    -webkit-tap-highlight-color:transparent;
   }
+  .vroom-setup-bar .vroom-bar-label{ overflow:hidden; text-overflow:ellipsis; }
+  .vroom-setup-bar .vroom-bar-icon{ flex:none; width:1.15rem; height:1.15rem; display:block; }
+  .vroom-setup-bar .vroom-bar-icon svg{ width:100%; height:100%; display:block; fill:none; stroke:currentColor;
+    stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
+  .vroom-setup-bar .vroom-bar-icon:empty{ display:none; }
+  #stage > .vroom-setup-bar > .vroom-setup-go:not(.is-inert):active,
+  #stage > .vroom-setup-bar > .vroom-readyup-btn:not(:disabled):active{
+    transform:translateZ(0) scale(.96);
+    box-shadow:0 1px 2px rgba(18,26,32,.28) inset, 0 -1px 1px rgba(255,255,255,.5) inset, 0 1px 2px rgba(0,0,0,.22);
+  }
+  /* NOT YET: clear glass, the selected tab's lens (.bottomtabs-slider::before) */
+  #stage > .vroom-setup-bar > .vroom-setup-go.is-inert,
+  #stage > .vroom-setup-bar > .vroom-readyup-btn:disabled,
+  #stage > .vroom-setup-bar > .vroom-readyup-btn.is-waiting{
+    opacity:1; cursor:default; color:rgba(255,255,255,.72);
+    background-color:transparent;
+    background-image:radial-gradient(120% 85% at 50% -10%, rgba(255,255,255,.13), rgba(255,255,255,0) 62%),
+      linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01) 55%, rgba(255,255,255,.045));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.34),
+      inset 0 1.5px 0 rgba(255,255,255,.5),
+      inset 0 3px 3px -2px rgba(140,215,255,.32),
+      inset 0 -3px 3px -2px rgba(255,150,215,.26),
+      inset 0 0 0 3px rgba(0,0,0,.08),
+      inset 0 0 12px rgba(255,255,255,.05),
+      0 3px 12px rgba(0,0,0,.28);
+  }
+  /* READIED, IN THE LOBBY: the ready green, as a ready row's chip is */
+  #stage > .vroom-setup-bar > .vroom-readyup-btn.is-ready:not(:disabled){ background-color:#3DD68C; color:#0E2818; }
+  /* LIT BY A TAP: the Start pill's one beat - the fill grows from the
+     centre, a small punch out and a sheen across (see .just-ready) */
+  #stage > .vroom-setup-bar > .is-lighting{ animation:start-ready-punch .45s cubic-bezier(.3,.7,.3,1) .12s both; }
+  #stage > .vroom-setup-bar > .is-lighting::before{
+    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
+    background:linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0) 58%), var(--accent);
+    clip-path:circle(0% at 50% 50%); animation:start-fill-in .3s cubic-bezier(.3,.8,.3,1) forwards;
+  }
+  #stage > .vroom-setup-bar > .is-lighting::after{
+    content:""; position:absolute; top:0; bottom:0; left:0; width:45%; pointer-events:none; border-radius:inherit;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.8), transparent);
+    animation:start-ready-sheen .46s cubic-bezier(.3,.6,.4,1) .14s both;
+  }
+  #stage > .vroom-setup-bar > .is-lighting{ overflow:hidden; isolation:isolate; }
+  [data-reduce-motion="true"] #stage > .vroom-setup-bar > .is-lighting,
+  [data-reduce-motion="true"] #stage > .vroom-setup-bar > .is-lighting::before,
+  [data-reduce-motion="true"] #stage > .vroom-setup-bar > .is-lighting::after{ animation:none; clip-path:none; }
+  /* A tablet's bar is taller and wider, as the tab bar is there. */
   @media (min-width:40rem){
-    .vroom-setup-bar .vroom-setup-go{ min-width:18rem; font-size:1.02rem; }
+    .startbar.vroom-setup-bar{ width:min(30rem, calc(100vw - 3rem)); padding:.55rem; }
+    #stage > .vroom-setup-bar > .vroom-setup-go,
+    #stage > .vroom-setup-bar > .vroom-readyup-btn{ min-height:5.1rem; min-width:14rem; padding:0 1.5rem; font-size:1.08rem; }
+    .vroom-bar-info{ padding-left:1.3rem; }
+    .vroom-bar-main{ font-size:1.08rem; }
+    .vroom-bar-sub{ font-size:.82rem; }
+    .vroom-setup-bar .vroom-bar-icon{ width:1.3rem; height:1.3rem; }
+  }
+  /* The bar holds no space, so the page keeps the tab bar's reservation
+     under its last card, and back-to-top clears it as it clears the bar. */
+  body:has(#stage > .vroom-setup-bar) .wrap{ padding-bottom:8rem; }
+  body:has(#stage > .vroom-setup-bar) .backtotop{ bottom:calc(env(safe-area-inset-bottom, 0px) + 6.2rem); }
+  @media (min-width:40rem){
+    body:has(#stage > .vroom-setup-bar) .backtotop{ bottom:calc(env(safe-area-inset-bottom, 0px) + 7rem); }
   }
   .vroom-test-summary{
     text-align:center; padding:.85rem 1rem .95rem; margin:0 0 1rem; border-radius:14px;
@@ -11457,10 +11555,27 @@
   .thx-row-side{ display:flex; align-items:center; gap:.35rem; flex:0 0 auto; }
   .thx-row-when{ font-size:.74rem; color:var(--soft); font-variant-numeric:tabular-nums; white-space:nowrap; }
   .thx-row-chev{ font-size:1.25rem; color:var(--soft); opacity:.6; line-height:1; }
-  .thx-chip{ display:inline-block; padding:.1rem .5rem; border-radius:999px; font-size:.68rem; font-weight:700;
-    letter-spacing:.02em; white-space:nowrap; color:#CFE6FF; background:rgba(124,192,244,.14); border:1px solid rgba(124,192,244,.3); }
-  .thx-chip-exam{ color:#FFDDBA; background:rgba(255,154,60,.14); border-color:rgba(255,154,60,.34); }
-  .thx-chip-vr{ color:#E6D4FF; background:rgba(168,85,247,.15); border-color:rgba(168,85,247,.34); }
+  /* ---- THE MODE'S WORD IN THE MODE'S COLOUR (build 325) ----
+     "In recent tests, I see drill tests but they aren't showing up in the
+     drill color for the word and same for qualifier." The chip was a
+     light blue for Drill (the Virtual Room's family), a pale peach for a
+     Qualifier and violet for the Virtual Room - none of them the colour
+     the mode wears everywhere else. It takes the mode picker's colours
+     now, the same --mode-c values as the results screen's .rs-mode: Drill
+     red, Qualifier orange, Briefing violet, Virtual Room blue, Game
+     magenta - the word lifted toward white so it reads on the dark row,
+     the fill and edge in the colour itself. One rule, so Stats' Recent
+     tests, Test history and a test's own page all agree. */
+  .thx-chip{ --mode-c:#FF6B70; display:inline-block; padding:.1rem .5rem; border-radius:999px; font-size:.68rem; font-weight:700;
+    letter-spacing:.02em; white-space:nowrap;
+    color:color-mix(in srgb, var(--mode-c) 72%, #fff);
+    background:color-mix(in srgb, var(--mode-c) 16%, transparent);
+    border:1px solid color-mix(in srgb, var(--mode-c) 42%, transparent); }
+  .thx-chip-drill{ --mode-c:#FF6B70; }
+  .thx-chip-exam{ --mode-c:#FF9A3C; }
+  .thx-chip-review{ --mode-c:#A694FF; }
+  .thx-chip-game{ --mode-c:#E0559A; }
+  .thx-chip-vr{ --mode-c:#4A9FE8; }
   .thx-day{ margin:1.15rem 0 .5rem; font-size:.74rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--soft); }
   .thx-groups > .thx-day:first-child{ margin-top:.4rem; }
   .thx-summary{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.6rem; margin:.2rem 0 1rem; }
@@ -11592,9 +11707,21 @@
      Madison sent. The dot is sized off the plot's own width (a container
      unit) so seven columns fit a 320px phone and do not turn into a
      sparse field on an iPad; 7px where cqi is not supported. */
+  /* ---- IN THE STATS TAB'S OWN COLOURS (build 325) ----
+     "The stats tab, the study time one is purple and still needs to match
+     the rest of the stats colors/theme." It was the flashcards' violet
+     throughout - the dots, the week switch, today's lane and name, the
+     cap's glow - on a darker card than any other on the tab. Every other
+     number on Stats is the theme's own colour (.stat-num is
+     var(--theme-c2)) on the stat cards' glass, so the chart is too: the
+     card is .stat-card's glass, a lit dot is --theme-c2 (deeper at the
+     foot of the scale, warming toward --theme-c1 at the top - see
+     studyDotColor), and the switch, today and the picked day take
+     --theme-c2 where they took violet. It follows a theme change like
+     the rest of the tab. */
   .stx-dots{ margin:.3rem 0 1rem; padding:.95rem .9rem .8rem; border-radius:18px;
-    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012) 40%, rgba(0,0,0,.16)), rgba(12,14,20,.55);
-    border:1px solid rgba(255,255,255,.09); box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 2px 10px rgba(0,0,0,.22);
+    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
+    border:1px solid rgba(255,255,255,.11); box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
     --sd-unlit:rgba(255,255,255,.075); }
   /* The switch sits beside the reading and never moves when the reading
      changes length (a tapped day): on a narrow phone it has its own row
@@ -11612,7 +11739,8 @@
     -webkit-tap-highlight-color:transparent; transition:background-color .2s ease, color .2s ease, box-shadow .2s ease; }
   /* 44px to the finger, 32px to the eye */
   .stx-dots-switch button::before{ content:""; position:absolute; inset:-6px -1px; }
-  .stx-dots-switch button[aria-selected="true"]{ background:rgba(166,148,255,.2); color:#ECE7FF; box-shadow:inset 0 0 0 1px rgba(166,148,255,.38); }
+  .stx-dots-switch button[aria-selected="true"]{ background:color-mix(in srgb, var(--theme-c2) 20%, transparent);
+    color:color-mix(in srgb, var(--theme-c2) 22%, #fff); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--theme-c2) 42%, transparent); }
   .stx-dots-plot{ --dot:7px; --gap:calc(var(--dot) * .5); container-type:inline-size;
     display:grid; grid-template-columns:auto minmax(0, 1fr); column-gap:.3rem; }
   @supports (width:1cqi){ .stx-dots-plot{ --dot:clamp(3.5px, calc(3.1cqi - 2.2px), 12px); } }
@@ -11626,16 +11754,16 @@
   .stx-dcol-grid{ display:grid; grid-template-columns:repeat(3, var(--dot)); grid-auto-rows:var(--dot); gap:var(--gap);
     padding:.3rem .25rem; border-radius:999px; transition:background-color .2s ease, box-shadow .2s ease; }
   /* today: a faint lane behind its column and its name in violet */
-  .stx-dcol.is-today .stx-dcol-grid{ background:rgba(166,148,255,.055); }
-  .stx-dcol.is-picked .stx-dcol-grid{ background:rgba(166,148,255,.15); box-shadow:inset 0 0 0 1px rgba(166,148,255,.42); }
+  .stx-dcol.is-today .stx-dcol-grid{ background:color-mix(in srgb, var(--theme-c2) 7%, transparent); }
+  .stx-dcol.is-picked .stx-dcol-grid{ background:color-mix(in srgb, var(--theme-c2) 16%, transparent); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--theme-c2) 45%, transparent); }
   .stx-dot{ width:var(--dot); height:var(--dot); border-radius:50%; background:var(--sd-unlit); }
   .stx-dot.on{ background:var(--c); transform:none;
     transition:background-color .3s ease var(--d, 0ms), transform .34s cubic-bezier(.3, 1.45, .5, 1) var(--d, 0ms), box-shadow .3s ease var(--d, 0ms); }
-  .stx-dot.is-cap{ --c:#F8F6FF; box-shadow:0 0 calc(var(--dot) * .9) rgba(207,196,255,.7); }
+  .stx-dot.is-cap{ --c:#FFF8F2; box-shadow:0 0 calc(var(--dot) * .9) color-mix(in srgb, var(--theme-c2) 70%, transparent); }
   /* held dim until playIn() - see buildStudyDotChart */
   .stx-dots.is-pre .stx-dot.on{ background:var(--sd-unlit); box-shadow:none; transform:scale(.55); transition:none; }
   .stx-dcol-lab{ font-size:.68rem; color:var(--soft); white-space:nowrap; transition:color .2s ease; }
-  .stx-dcol.is-today .stx-dcol-lab{ color:#CFC4FF; font-weight:800; }
+  .stx-dcol.is-today .stx-dcol-lab{ color:var(--theme-c2); font-weight:800; }
   .stx-dcol.is-picked .stx-dcol-lab{ color:var(--ink); font-weight:800; }
   .stx-dcol.is-future .stx-dcol-lab{ opacity:.5; }
   .stx-l-n{ display:none; }
@@ -17871,18 +17999,8 @@
   @media (min-width:40rem){
     .stat-grid:has(> button.stat-card:nth-of-type(5):last-of-type){ grid-template-columns:repeat(5, minmax(0, 1fr)); }
   }
-  /* A GRID LED BY A WIDE CARD COUNTS FROM THE CARD AFTER IT (build 324).
-     At a glance is Total XP across the top and four under it - five
-     buttons, so both rules above fired on it: on a phone the fifth ran
-     full width and left Hundos alone with a hole beside it, and on a
-     tablet the four sat in a five-column row with a hole at the end. */
-  @media (max-width:39.99rem){
-    .stat-grid:has(> button.stat-card-wide:first-child) > button.stat-card:last-of-type:nth-of-type(odd){ grid-column:auto; }
-    .stat-grid:has(> button.stat-card-wide:first-child) > button.stat-card:last-of-type:nth-of-type(even){ grid-column:1 / -1; }
-  }
-  @media (min-width:40rem){
-    .profile-stats-tab .stat-grid.stat-grid-four:has(> button.stat-card-wide:first-child){ grid-template-columns:repeat(4, minmax(0, 1fr)); }
-  }
+  /* (Build 324's rules for a grid led by a wide card went with the only
+     such grid - At a glance's Total XP, removed in build 325.) */
   .stat-card.is-asked{
     border-color:color-mix(in srgb, var(--accent) 55%, transparent);
     box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
@@ -18195,13 +18313,35 @@
      under it - no border (so it stays the height of Quit and nothing
      moves), and pressed it goes darker in place as Quit goes to #000,
      with the shared press shrink and the ghost's faint lift. */
+  /* ---- CLEAR GLASS, NOT A GREY (build 325) ----
+     "The save and exit button idk how I feel about the color." The flat
+     #3A3D43 was a third colour in a column of white and black - a colour
+     with no meaning of its own. It is the app's neutral Liquid Glass now,
+     the same pane the tab bar's selected tab is (.bottomtabs-slider::
+     before): a near-clear fill that lets the screen behind through, a
+     bright hairline rim with a specular along the top, the faint split of
+     colour where the glass bends the light (cool on top, warm under), a
+     darker band just inside the rim for the glass's thickness. And it
+     keeps what 321 asked for ("missing that nice button look the others
+     have"): it has a BODY - frosted, so it reads as a pane and not a hole
+     - and it sits on the surface with the same contact, mid and wide
+     shadows as Resume and Quit. No border (it stays Quit's height, so
+     nothing moves); pressed, the glass dims a touch with the shared press
+     shrink. */
   [data-layout="modern"] .pausepanel .next.ghost#pause-save{
-    background-color:#3A3D43; background-image:none;
     color:#fff; border:none;
-    box-shadow:0 1px 1px rgba(150,156,166,.75) inset, 0 -2px 2px rgba(0,0,0,.42) inset,
+    background-color:rgba(255,255,255,.045);
+    background-image:radial-gradient(120% 90% at 50% -12%, rgba(255,255,255,.16), rgba(255,255,255,0) 60%),
+      linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.015) 55%, rgba(255,255,255,.05));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),
+      inset 0 1.5px 0 rgba(255,255,255,.48),
+      inset 0 3px 3px -2px rgba(140,215,255,.28),
+      inset 0 -3px 3px -2px rgba(255,150,215,.22),
+      inset 0 0 0 3px rgba(0,0,0,.08),
       0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 22px -6px rgba(0,0,0,.55);
+    -webkit-backdrop-filter:blur(14px) saturate(1.6); backdrop-filter:blur(14px) saturate(1.6);
   }
-  [data-layout="modern"] .pausepanel .next.ghost#pause-save:active{ background-color:#2B2D32; opacity:1; }
+  [data-layout="modern"] .pausepanel .next.ghost#pause-save:active{ background-color:rgba(255,255,255,.02); opacity:1; }
   /* Back links were plain text with no button treatment at all \u2014 the
      same black-glass pill as the ghost button, just smaller, so it
      reads as a real tappable control instead of a caption. */
@@ -19892,180 +20032,19 @@
   .pick.is-pressing{ transform:scale(.965); box-shadow:0 0 0 2px rgba(111,194,255,.35); }
   .picks-holdhint{ margin:.35rem .2rem .7rem; font-size:.74rem; color:var(--soft); }
 
-  /* ---- UNIT ROWS, NOT SQUARES (build 323) ----
-     "I feel like the way the units are displayed could be improved, I
-     think the tiny square box idea needs to go away. Should it go back to
-     being longer rectangles?" and "similar the calendar list, but when you
-     click that is selecting the unit, but it opens (expands) and then
-     details come up". One full-width row per unit at every width, in the
-     teaching order: the select circle, the name, the question count and
-     the bar towards the badge on one line under it, and the badge at the
-     right. A ticked row lights (a tint layer fading in, not a background
-     swap, so nothing snaps) and opens a drawer of its short details
-     (.pick-more, built by appendUnitRowMore). The same markup as the
-     squares - label.pick, its checkbox, .box, .pname, .pcount and
-     appendUnitProgress's badge and bar - so drag-select, the hold, the
-     Penal Code pop-up and the Virtual Room's list all keep working; only
-     the arrangement is new. One column on a tablet as well: two columns
-     of rows that open put a tall row beside a short one, which reads as
-     a mistake, and a single list is what the calendar does too. */
-  .picks{ grid-template-columns:minmax(0,1fr); gap:.55rem; }
-  .picks > label.pick{
-    display:grid; isolation:isolate;
-    grid-template-columns:auto minmax(0,1fr) auto;
-    grid-template-areas:"box main badge" "more more more";
-    align-items:center; column-gap:.8rem; row-gap:0;
-    padding:.8rem .9rem .8rem .95rem; min-height:4.4rem; box-sizing:border-box;
-    /* opacity is not in the list: a row arrives as the cards always have,
-       shown at once and rising into place (the scroll reveal) */
-    transition:transform .34s cubic-bezier(.22,.8,.3,1), box-shadow .34s ease, border-color .28s ease;
-  }
-  .picks > label.pick > .box{ grid-area:box; margin:0; width:26px; height:26px; align-self:center; font-size:.9rem; }
-  .pick-main{ grid-area:main; display:flex; flex-direction:column; align-items:flex-start; min-width:0; }
-  .picks > label.pick .pname{
-    margin:0; padding:0; min-height:0; font-size:1rem; font-weight:700; line-height:1.28; max-width:100%;
-    hyphens:manual; -webkit-hyphens:manual; overflow-wrap:break-word;
-  }
-  .picks > label.pick .pick-version{ align-self:flex-start; margin-top:.32rem; margin-left:calc(-.5rem - 1px); }
-  .pick-meta{ display:flex; align-items:center; gap:.8rem; width:100%; margin-top:.3rem; min-width:0; }
-  .picks > label.pick .pcount{ margin:0; padding:0; font-size:.72rem; white-space:nowrap; flex:none; }
-  .picks > label.pick > .pick-stars{ display:contents; }
-  .picks > label.pick .pick-progress-label{ display:none; }
-  .picks > label.pick .pick-badge{ grid-area:badge; width:2.4rem; height:2.4rem; align-self:center; }
-  .picks > label.pick .pick-meta .pick-barrow{ flex:1 1 auto; max-width:10rem; min-width:0; }
-  /* the press: eased in while the finger is down, eased out on release -
-     transform and shadow on the same curve, and no overshoot */
-  .picks > .pick.is-pressing{
-    transform:scale(.978);
-    transition:transform .2s cubic-bezier(.3,.6,.4,1), box-shadow .2s ease, border-color .28s ease;
-  }
-  [data-theme="dark"][data-layout="modern"] .picks > .pick.is-pressing{
-    box-shadow:0 1px 6px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 0 rgba(0,0,0,.22);
-  }
-  /* SELECTED IS A LIGHT, NOT A NEW BACKGROUND. The square's selected state
-     swapped the glass for a flat fill and its 1px border for 1.5px - an
-     instant change of colour and a half-pixel jump. The row keeps its
-     glass and its border width; a tint layer under the content fades in,
-     and the edge takes the accent. */
-  .picks > label.pick:has(input:checked), .picks > label.pick.pick-checked{
-    border-width:1px !important;
-    border-color:color-mix(in srgb, var(--accent) 62%, transparent) !important;
-    --pick-selected-bg:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
-  }
-  [data-theme="dark"][data-layout="modern"] .picks > label.pick:has(input:checked),
-  [data-theme="dark"][data-layout="modern"] .picks > label.pick.pick-checked{
-    box-shadow:0 4px 16px rgba(0,0,0,.28), 0 0 18px -4px color-mix(in srgb, var(--accent) 40%, transparent),
-      inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 0 rgba(0,0,0,.22);
-  }
-  .picks > label.pick::before{
-    inset:0; width:auto; z-index:-1; border-radius:inherit; pointer-events:none;
-    background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 15%, transparent), color-mix(in srgb, var(--accent) 5%, transparent) 70%);
-    opacity:0; transition:opacity .28s ease;
-  }
-  .picks > label.pick:has(input:checked)::before, .picks > label.pick.pick-checked::before{
-    background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 15%, transparent), color-mix(in srgb, var(--accent) 5%, transparent) 70%);
-    opacity:1;
-  }
-  .picks > label.pick > .box{ transition:background .22s ease, border-color .22s ease, color .22s ease, box-shadow .22s ease; }
-
-  /* The drawer. Its height opens by its grid row (0fr to 1fr), the one
-     way to ease a height that is not known in advance; what is inside
-     fades and settles by opacity and transform. Closed it is hidden, so
-     its button cannot be tapped or focused. While a drag is selecting
-     rows nothing opens - a row growing under a moving finger would move
-     the next row out from under it. */
-  .pick-more{
-    grid-area:more; display:grid; grid-template-rows:0fr; min-width:0;
-    visibility:hidden;
-    transition:grid-template-rows .3s cubic-bezier(.22,.8,.3,1), visibility 0s linear .3s;
-  }
-  .pick-more-in{ min-height:0; overflow:hidden; }
-  .pick-more-body{
-    display:flex; align-items:center; gap:.7rem; margin-top:.7rem; padding-top:.65rem;
-    border-top:1px solid rgba(255,255,255,.09);
-    opacity:0; transform:translateY(-6px);
-    transition:opacity .2s ease, transform .3s cubic-bezier(.22,.8,.3,1);
-  }
-  .picks > label.pick:has(input:checked) > .pick-more, .picks > label.pick.pick-checked > .pick-more{
-    grid-template-rows:1fr; visibility:visible; transition-delay:0s;
-  }
-  .picks > label.pick:has(input:checked) .pick-more-body, .picks > label.pick.pick-checked .pick-more-body{
-    opacity:1; transform:none; transition-delay:.06s;
-  }
-  .picks.is-dragselecting > label.pick > .pick-more{ grid-template-rows:0fr !important; visibility:hidden !important; }
-  .picks.is-dragselecting > label.pick .pick-more-body{ opacity:0 !important; }
-  .picks.is-dragselecting > label.pick.dfz-open > .pick-more{ grid-template-rows:1fr !important; visibility:visible !important; }
-  .picks.is-dragselecting > label.pick.dfz-open .pick-more-body{ opacity:1 !important; transform:none !important; }
-  .pick-more-stats{ flex:1; min-width:0; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.35rem; }
-  .pick-more-stat{ display:flex; flex-direction:column; gap:.1rem; min-width:0; }
-  .pick-more-val{ font-size:.92rem; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .pick-more-lab{ font-size:.6rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--soft); }
-  .pick-more-open{
-    flex:none; display:inline-flex; align-items:center; gap:.2rem; min-height:44px; padding:0 .7rem 0 .9rem;
-    border-radius:999px; font:inherit; font-size:.78rem; font-weight:800; color:var(--ink); cursor:pointer;
-    background-color:#0A0A0C; border:none;
-    box-shadow:0 1px 1px rgba(70,74,80,.7) inset, 0 -2px 2px rgba(0,0,0,.5) inset, 0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.35);
-    transition:transform .15s ease, background-color .15s ease;
-    -webkit-tap-highlight-color:transparent;
-  }
-  .pick-more-open:active{ transform:scale(.96); background-color:#000; }
-  .pick-more-open svg{ width:1rem; height:1rem; }
-  [data-reduce-motion="true"] .pick-more, [data-reduce-motion="true"] .pick-more-body{ transition:none; }
-  .pick-more-lab{ white-space:nowrap; overflow:hidden; }
-  /* a 375px phone: the four still fit beside the button, set tighter */
-  @media (max-width:25rem){
-    .pick-more-body{ gap:.5rem; }
-    .pick-more-lab{ letter-spacing:.04em; }
-    .pick-more-open{ padding:0 .5rem 0 .75rem; }
-  }
-  /* a 320px phone: the button goes under the four rather than squeezing them */
-  @media (max-width:21.5rem){
-    .pick-more-body{ flex-wrap:wrap; row-gap:.4rem; }
-    .pick-more-stats{ flex:1 1 100%; }
-    .pick-more-open{ margin-left:auto; }
-  }
-
-  /* Review's Starred questions: a row like the units, last in the list. */
-  .picks > .pick.pick-flagged-all{
-    grid-column:auto; display:grid; grid-template-columns:26px minmax(0,1fr) auto; align-items:center;
-    column-gap:.8rem; width:100%; min-height:4.4rem; padding:.8rem .9rem .8rem .95rem; margin:0;
-    border-radius:14px; box-sizing:border-box;
-    border:1px solid rgba(255,255,255,.11);
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
-    transition:transform .34s cubic-bezier(.22,.8,.3,1), box-shadow .34s ease;
-  }
-  .picks > .pick.pick-flagged-all.is-pressing{
-    transform:scale(.978);
-    transition:transform .2s cubic-bezier(.3,.6,.4,1), box-shadow .2s ease;
-  }
-  .picks > .pick-flagged-all .pick-flagged-icon{ width:26px; height:26px; }
-  .picks > .pick-flagged-all .pick-flagged-icon .starred-card-star{ width:1.75rem; height:1.75rem; flex:none; }
-  .picks > .pick-flagged-all .pick-flagged-text{ gap:.25rem; }
-  .picks > .pick-flagged-all .pname{ font-size:1rem; font-weight:700; line-height:1.28; }
-  .picks > .pick-flagged-all .pcount{ font-size:.72rem; margin:0; white-space:normal; }
-  .picks > .pick-flagged-all .pick-flagged-go{ display:flex; align-items:center; justify-content:center; width:2.4rem; font-size:1.6rem; }
-
-  /* "More units coming soon": the same row, quiet. */
-  .picks > .pick.pick-tba{
-    grid-template-columns:26px minmax(0,1fr); grid-template-areas:"box name" "box sub";
-    min-height:4.4rem; padding:.8rem .9rem .8rem .95rem; column-gap:.8rem; align-items:center;
-  }
-  .picks > .pick.pick-tba > .box{ grid-area:box; width:26px; height:26px; margin:0; }
-  .picks > .pick.pick-tba > .pname{ grid-area:name; margin:0; padding:0; min-height:0; font-size:.95rem; }
-  .picks > .pick.pick-tba > .pick-other{ grid-area:sub; margin:.2rem 0 0; }
-
-  @media (min-width:40rem){
-    .picks{ gap:.65rem; }
-    .picks > label.pick, .picks > .pick.pick-flagged-all, .picks > .pick.pick-tba{ min-height:4.9rem; padding:.95rem 1.2rem .95rem 1.15rem; column-gap:1rem; }
-    .picks > label.pick .pname, .picks > .pick-flagged-all .pname{ font-size:1.08rem; }
-    .picks > label.pick .pcount, .picks > .pick-flagged-all .pcount{ font-size:.78rem; }
-    .picks > label.pick .pick-badge{ width:2.8rem; height:2.8rem; }
-    .picks > label.pick .pick-meta .pick-barrow{ max-width:14rem; }
-    .pick-more-stats{ grid-template-columns:repeat(4, minmax(0, 7.5rem)); gap:.6rem; }
-    .pick-more-val{ font-size:1.02rem; }
-    .pick-more-lab{ font-size:.64rem; }
-  }
+  /* ---- SQUARES AGAIN (build 325) ----
+     "The unit selection screen, I think we can revert that, the square
+     boxes were better I think." Build 323 made every unit a full-width
+     row that opened a drawer of scores when ticked (.pick-main,
+     .pick-meta, .pick-more, appendUnitRowMore); all of that is gone and
+     the cards are build 322's squares again, drawn by the .picks/.pick
+     rules further up. What 323 fixed that still applies is kept: the
+     details card fades into the card it closes onto (.unitdetail below),
+     a held card presses on this one curve only (applyGlassRefraction
+     skips it), and Briefing's Starred questions box is LAST in the list
+     ("not a fan of how the review section shows the starred question at
+     the top"), full width under the squares as it was full width over
+     them. */
   /* BUILD 308: "It's laggy opening up the details and stuff." Two of the
      three costs were here and on the card below. The scrim animated its
      blur RADIUS, 0 to 6px, which re-blurs the whole screen every frame;
@@ -24149,6 +24128,29 @@
      the code card, so this fills the width and is sized like a button
      somebody is meant to press. */
   .vroom-settings-btn{ width:100%; min-height:52px; font-size:1rem; font-weight:800; }
+  /* ---- THE LOBBY'S MATCH SETTINGS, IN THE TAB BAR'S GLASS (build 325) ----
+     "Make the match settings button how it was just better but give it
+     to the button tab vibe." The host's button in Room setup was the
+     matte black slab every ghost button is; it is the same object as the
+     Virtual Room's glass pill now (.vroom-setup-bar) - the tab bar's
+     dark glass with its hairline rim and the catch-light along the top -
+     with the sliders mark beside the words, so the lobby and Match
+     settings read as one family. Same size and place as before. */
+  [data-layout="modern"] .vroom-host-bar .next.ghost.vroom-settings-btn{
+    display:flex; align-items:center; justify-content:center; gap:.55rem;
+    color:#fff; border:none;
+    background-color:rgba(20,24,30,.55);
+    background-image:radial-gradient(120% 90% at 50% -12%, rgba(255,255,255,.12), rgba(255,255,255,0) 60%),
+      linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 45%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.14), inset 0 1px 0 rgba(255,255,255,.3),
+      inset 0 3px 3px -2px rgba(140,215,255,.2), inset 0 -3px 3px -2px rgba(255,150,215,.16), inset 0 -1px 1px rgba(0,0,0,.3),
+      0 1px 3px rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.35);
+  }
+  [data-layout="modern"] .vroom-host-bar .next.ghost.vroom-settings-btn:active{ background-color:rgba(20,24,30,.75); }
+  [data-layout="modern"] .vroom-host-bar .next.ghost.vroom-settings-btn:disabled{ opacity:.45; }
+  .vroom-settings-btn .vroom-bar-icon{ flex:none; width:1.15rem; height:1.15rem; display:block; }
+  .vroom-settings-btn .vroom-bar-icon svg{ width:100%; height:100%; display:block; fill:none; stroke:currentColor;
+    stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
   .vroom-host-bar{
     display:flex; align-items:center; gap:.5rem;
     margin-top:.8rem; padding-top:.7rem; border-top:1px solid var(--rule);
@@ -84670,71 +84672,7 @@ function appendUnitProgress(row, name){
    and the grid scrolls. The tap that ends a hold would otherwise tick
    the card (it is a <label>), so that one click is swallowed. */
 const UNIT_HOLD_MS = 420;
-/* ---- A SELECTED UNIT ROW OPENS UP (build 323) ----
-   "Should all the stuff instead of it being in boxes be let's say,
-   similar the calendar list, but when you click that is selecting the
-   unit, but it opens (expands) and then details come up?" Every unit
-   row carries its own short version of the details - best and last
-   score, how many times finished, the fastest 100% - in a drawer that
-   the CSS opens while the row is ticked, plus a Details button that
-   opens the full card a hold opens. Built here because both unit lists
-   (the test setup and the Virtual Room's) already call this for every
-   row, with the mode; nothing is shown that the details card does not
-   already say (unitDetailStats), and nothing about starred questions -
-   "do not display the amount of flagged questions on a unit card". */
-function appendUnitRowMore(row, name, mode){
-  if(!row || row.querySelector(":scope > .pick-more")) return;
-  /* The row's words in one column beside the circle and the badge: the
-     name, the Penal Code's version tag, and the count with the bar on a
-     line under them. Gathered here, after the list has built the row, so
-     neither list has to build it differently - a circle and a badge
-     spanning loose grid rows padded the empty ones out unevenly. */
-  const mainCol = document.createElement("span");
-  mainCol.className = "pick-main";
-  const meta = document.createElement("span");
-  meta.className = "pick-meta";
-  [":scope > .pname", ":scope > .pick-version"].forEach(sel => { const el = row.querySelector(sel); if(el) mainCol.appendChild(el); });
-  const cnt = row.querySelector(":scope > .pcount");
-  if(cnt) meta.appendChild(cnt);
-  const barRow = row.querySelector(".pick-stars > .pick-barrow");
-  if(barRow) meta.appendChild(barRow);
-  if(meta.childNodes.length) mainCol.appendChild(meta);
-  const boxEl = row.querySelector(":scope > .box");
-  if(boxEl) boxEl.after(mainCol); else row.appendChild(mainCol);
-  const more = document.createElement("span");
-  more.className = "pick-more";
-  const inner = document.createElement("span");
-  inner.className = "pick-more-in";
-  const body = document.createElement("span");
-  body.className = "pick-more-body";
-  const stats = document.createElement("span");
-  stats.className = "pick-more-stats";
-  const SHORT = { "Best score": "Best", "Last score": "Last", "Completed": "Done", "Best time": "Fastest" };
-  let st = [];
-  try{ st = unitDetailStats(name, mode); }catch(e){}
-  st.filter(s => SHORT[s.label]).forEach(s => {
-    const c = document.createElement("span");
-    c.className = "pick-more-stat";
-    const v = document.createElement("span"); v.className = "pick-more-val";
-    v.textContent = s.label === "Completed" ? s.value + "×" : s.value;
-    const l = document.createElement("span"); l.className = "pick-more-lab"; l.textContent = SHORT[s.label];
-    c.append(v, l);
-    stats.appendChild(c);
-  });
-  const open = document.createElement("button");
-  open.type = "button"; open.className = "pick-more-open";
-  open.setAttribute("aria-label", name + " details");
-  open.innerHTML = "<span>Details</span><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 6l6 6-6 6\"/></svg>";
-  /* A button inside the row's <label>: a click on it never ticks the
-     row, and it is not a hold either (attachUnitHold skips it). */
-  open.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); openUnitDetail(row, name, mode); });
-  body.append(stats, open);
-  inner.appendChild(body);
-  more.appendChild(inner);
-  row.appendChild(more);
-}
 function attachUnitHold(row, name, mode){
-  appendUnitRowMore(row, name, mode);
   let timer = null, sx = 0, sy = 0, fired = false;
   const cancel = () => {
     if(timer){ clearTimeout(timer); timer = null; }
@@ -84744,9 +84682,8 @@ function attachUnitHold(row, name, mode){
     if(e.button && e.button !== 0) return;
     fired = false; sx = e.clientX; sy = e.clientY;
     cancel();
-    /* the select circle is drag-select's handle (build 314), not a hold;
-       the Details button is a button (build 323) */
-    if(e.target.closest && e.target.closest(".box, .pick-more-open")) return;
+    /* the select circle is drag-select's handle (build 314), not a hold */
+    if(e.target.closest && e.target.closest(".box")) return;
     row.classList.add("is-pressing");
     timer = setTimeout(() => {
       timer = null; fired = true;
@@ -84838,11 +84775,6 @@ function attachDragSelect(list, onChange){
     st.anchor = st.rows.indexOf(st.row);
     if(st.anchor < 0){ st = null; return; }
     st.orig = st.rows.map(r => r.querySelector("input[type=checkbox]").checked);
-    /* Every row's details drawer holds still while the finger is moving
-       (build 323): open ones stay open, shut ones stay shut, and they all
-       catch up when the drag ends - a row growing or shrinking under a
-       moving finger would put a different row under it. */
-    st.rows.forEach((r, i) => r.classList.toggle("dfz-open", st.orig[i]));
     st.target = !st.orig[st.anchor];
     st.over = st.row;
     st.moved = true;
@@ -84884,7 +84816,6 @@ function attachDragSelect(list, onChange){
     if(e.button && e.button !== 0) return;
     const row = e.target.closest && e.target.closest("label.pick");
     if(!row || !list.contains(row) || !row.querySelector("input[type=checkbox]")) return;
-    if(e.target.closest(".pick-more-open")) return;   /* a button, not a drag (build 323) */
     st = { id: e.pointerId, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY, row,
            fromCircle: !!e.target.closest(".box"), mode: "pending" };
   });
@@ -86096,8 +86027,8 @@ function showSetup(){
   /* How anybody finds out the cards can be held. */
   const holdHint = document.createElement("p");
   holdHint.className = "picks-holdhint";
-  /* Tapping a row ticks it and opens its short details (build 323). */
-  holdHint.textContent = "Tap a unit to select it. Press and hold one for its full details and starred questions.";
+  /* Build 322's line again with the squares (build 325): a tap only ticks. */
+  holdHint.textContent = "Press and hold a unit to see your stats and starred questions for it.";
   unitSect.appendChild(holdHint);
 
   const list = document.createElement("div");
@@ -86148,10 +86079,10 @@ function showSetup(){
     /* ONE ROW AMONG THE UNITS, AFTER THEM (build 323): "I'm still not a
        fan of how the review section shows the starred question at the
        top." It was a wide box above the list (build 297: "double wide and
-       it'd be at the top"). It is now a row of the same size and glass as
-       the unit rows, last in the list - the star where a unit has its
-       select circle, a chevron where a unit has its badge, because it
-       opens rather than ticks. Pressed like a unit row (see .is-pressing). */
+       it'd be at the top"). It is last in the list now - still the full
+       width under the squares (build 325 put the squares back), the star,
+       the words and a chevron, because it opens rather than ticks.
+       Pressed like a unit card (see .is-pressing). */
     const press = on => box.classList.toggle("is-pressing", on);
     box.addEventListener("pointerdown", e => { if(!e.button) press(true); });
     ["pointerup", "pointercancel", "pointerleave"].forEach(t => box.addEventListener(t, () => press(false)));
@@ -87285,7 +87216,7 @@ function showSetup(){
     setTimeout(() => {
       startSimpleTour([
         { target: ".pick", align: "left", vplacement: "below",
-          text: "Tap a unit to add it to this test \u2014 it opens to show your scores in it. The bar under each name is how close you are to finding its badge \u2014 " + badgeRangeText() + " depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
+          text: "Tap a unit to add it to this test. The bar under each one is how close you are to finding its badge \u2014 " + badgeRangeText() + " depending on the unit\u2019s size (the smaller the unit, the more it takes), and a unit you have mastered shows its badge instead." },
         { target: "#bottomtab-start", align: "right", vplacement: "above",
           text: "Once you've picked your units, tap here \u2014 it opens a quick summary and lets you set the timer and other options before you begin." }
       ]);
@@ -100820,8 +100751,9 @@ function formatDuration(ms){
      at all lights one) and carries the white cap dot; the two beside it
      stop one dot short, which rounds the top off. They are drawing, not
      data - only the middle column is read.
-   - Lit dots are the flashcards' violet (#A694FF), deeper at the bottom
-     and paler towards the top of the scale; unlit are a dim grey.
+   - Lit dots are the theme's colour (build 325 - they were the
+     flashcards' violet), deeper at the bottom and warmer towards the top
+     of the scale; unlit are a dim grey.
    - Pure DOM: spans in a grid, sized off the plot's own width with a
      container unit, no canvas and no SVG filter. The light-up is a
      transition held back by .is-pre until playIn() is called - by the
@@ -100853,12 +100785,15 @@ function studyDotsLit(ms, scale){
   if(!(ms > 0)) return 0;
   return Math.max(1, Math.min(scale.rows, Math.round(ms / (scale.stepMin * 60000))));
 }
-/* deep violet at the foot of the scale, the flashcard violet, then pale */
+/* THE THEME'S OWN COLOUR (build 325), not the flashcards' violet: deep at
+   the foot of the scale, the theme's main colour (--theme-c2, what every
+   number on Stats is drawn in) through the middle, warming toward
+   --theme-c1 at the top. A CSS colour, not an rgb() worked out here, so
+   it follows the theme - including one changed while the tab is open. */
 function studyDotColor(t){
-  const A = [0x4E, 0x3F, 0xA8], B = [0xA6, 0x94, 0xFF], C = [0xD6, 0xCC, 0xFF];
-  const mix = (p, q, u) => p.map((v, i) => Math.round(v + (q[i] - v) * u));
-  const c = t < .72 ? mix(A, B, t / .72) : mix(B, C, (t - .72) / .28);
-  return "rgb(" + c.join(",") + ")";
+  t = Math.max(0, Math.min(1, t));
+  if(t < .72) return "color-mix(in srgb, var(--theme-c2) " + Math.round(48 + 52 * t / .72) + "%, #1A1214)";
+  return "color-mix(in srgb, var(--theme-c1) " + Math.round(55 * (t - .72) / .28) + "%, var(--theme-c2))";
 }
 function buildStudyDotChart(){
   const root = document.createElement("div");
@@ -101149,7 +101084,7 @@ function historyDayLabel(ts){
 function historyClockOf(ts){
   return new Date(ts).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
-function buildTestRow(entry){
+function buildTestRow(entry, opts){
   const row = document.createElement("button");
   row.type = "button";
   row.className = "thx-row" + (entry.pct === 100 ? " is-perfect" : "");
@@ -101184,7 +101119,14 @@ function buildTestRow(entry){
   const chev = document.createElement("span");
   chev.className = "thx-row-chev"; chev.setAttribute("aria-hidden", "true"); chev.textContent = "›";
   side.append(when, chev);
-  row.append(buildScoreRing(entry.pct), body, side);
+  /* NOTHING ON THE RIGHT IN STATS (build 325): "The recent tests also has
+     the badge on the right, remove that." Stats' three rows carry no day
+     heading, so the clock time stamped on the right said "10:54 PM" with
+     no day to belong to; the row is the ring, the test and its numbers,
+     and it still opens the test. Test history keeps the time - its rows
+     sit under a heading per day, where the time means something. */
+  if(opts && opts.side === false) row.append(buildScoreRing(entry.pct), body);
+  else row.append(buildScoreRing(entry.pct), body, side);
   row.addEventListener("click", () => showTestHistoryDetail(entry));
   return row;
 }
@@ -101764,6 +101706,38 @@ function vroomGameIconSVG(game){
       + "<path d=\"M6 21V4\"/><path d=\"M6 4.5h11l-2.2 3.5L17 11.5H6z\"/></svg>";
 }
 const VROOM_GAME_NAME = { race: "Race", tug: "Tug of War", battle: "Battle" };
+/* The Virtual Room's floating glass pill (build 325, .vroom-setup-bar):
+   its marks, and lighting its button. `lit` false is the clear-glass
+   "not yet"; turning lit by a TAP plays the Start pill's one beat
+   (.is-lighting), never on a first paint - the same rule as
+   syncStartInert's startReadyQuietUntil, by the button's own flag. */
+const VROOM_BAR_ICONS = {
+  next: "<svg viewBox=\"0 0 24 24\"><path d=\"M5 12h13\"/><path d=\"M13 6.5l5.5 5.5-5.5 5.5\"/></svg>",
+  check: "<svg viewBox=\"0 0 24 24\"><path d=\"M5 12.6l4.4 4.4L19 7.4\"/></svg>",
+  sliders: "<svg viewBox=\"0 0 24 24\"><path d=\"M4 7h9\"/><path d=\"M17 7h3\"/><circle cx=\"15\" cy=\"7\" r=\"2\"/><path d=\"M4 17h3\"/><path d=\"M11 17h9\"/><circle cx=\"9\" cy=\"17\" r=\"2\"/></svg>"
+};
+function vroomBarInfo(){
+  const info = document.createElement("div");
+  info.className = "vroom-bar-info";
+  const main = document.createElement("span"); main.className = "vroom-bar-main";
+  const sub = document.createElement("span"); sub.className = "vroom-bar-sub";
+  info.append(main, sub);
+  info.set = (a, b) => {
+    if(main.textContent !== a) main.textContent = a;
+    if(sub.textContent !== (b || "")) sub.textContent = b || "";
+  };
+  return info;
+}
+function vroomBarLight(btn, lit){
+  if(!btn) return;
+  const was = !btn.classList.contains("is-inert") && btn._barPainted;
+  btn.classList.toggle("is-inert", !lit);
+  if(lit && btn._barPainted && !was && !(theme && theme.reduceMotion)){
+    btn.classList.remove("is-lighting"); void btn.offsetWidth; btn.classList.add("is-lighting");
+    clearTimeout(btn._lightT); btn._lightT = setTimeout(() => btn.classList.remove("is-lighting"), 760);
+  } else if(!lit){ clearTimeout(btn._lightT); btn.classList.remove("is-lighting"); }
+  btn._barPainted = true;
+}
 /* A room participant as the person card reads a leaderboard row: the
    whole published entry, keyed by the participant key (which IS the
    public id, so the card's friend state and "this is you" both work). */
@@ -101855,19 +101829,19 @@ function showVirtualRoomSetup(editRoom){
      stray value again, it cannot be mistaken for a room. */
   const editing = !!(editRoom && Array.isArray(editRoom.units));
   setActiveNav(null);
-  /* THE TAB BAR IS BACK, WITH THE BUTTON IN IT (build 323). "The virtual
-     room match setting button at the bottom isn't the best, it doesn't
-     give me bottom tab vibes and looks weird ... It shouldn't be
-     clickable till you have units selected similar to the start button
-     on the other tests." Build 242 hid the bar here because a floating
-     button and the bar sat on top of each other; the button is now the
-     tests' own .floatbtn, which the bar takes in as its Start pill
-     (syncStartAction) - grey until a unit is ticked, lit after, and
-     "Select units to start" if it is pressed early. The lobby this is
-     reached from carries the same bar. The bar follows the header's
-     nav buttons, which a run hides, so they are put back here as
-     showSetup does - a lobby reached from a match would otherwise have
-     no bar to carry the button. */
+  /* NO TAB BAR HERE AGAIN (build 325) - AFTER setActiveNav, which clears
+     the flag on the way into every screen. "It should not be there when
+     you are selecting the units for the virtual room lobby either. So
+     revert that but make the match settings button how it was just
+     better but give it to the button tab vibe." Build 323 had brought
+     the bar back to carry this screen's button as its Start pill; the
+     button is on its own floating pill again (.vroom-setup-bar, built
+     below), drawn in the tab bar's own glass, and it keeps what 323 gave
+     it: not yet lit until a unit is ticked, "Select units to start." if
+     pressed early. The screen's own Back link is the way out, as it
+     was before 323. The header's nav buttons are still put back (a run
+     hides them), so the screens this leads to find them as they expect. */
+  window.forceHideBottomTabs = true;
   appearanceBtn.hidden = false; homeBtn.hidden = false; profileBtn.hidden = false;
   countEl.textContent = "Virtual Room";
   const panel = document.createElement("section");
@@ -102021,14 +101995,22 @@ function showVirtualRoomSetup(editRoom){
      own rather than by borrowing .bottomtabs - a tab bar is a row of
      destinations and this is one button, so sharing the markup would
      mean sharing rules that only make sense for four tabs. */
-  /* build 323: the tests' own bottom bar, not a pill of its own - see
-     the top of this function. .vroom-setup-go stays as the hook. */
+  /* A PILL OF ITS OWN AGAIN (build 325), in the tab bar's glass - see
+     the top of this function and .vroom-setup-bar. One line, "Match
+     settings" and an arrow, at every width: the pre-323 label ("Set up
+     lobby, 29 questions") wrapped to two lines inside the pill. */
   const bar = document.createElement("div");
-  bar.className = "startbar";
+  bar.className = "startbar vroom-setup-bar";
   const startBtn = document.createElement("button");
-  startBtn.type = "button"; startBtn.className = "next floatbtn playbtn vroom-setup-go"; startBtn.id = "nextbtn";
-  startBtn.dataset.tabLabel = "Next"; startBtn.dataset.tabIcon = "next";
-  bar.appendChild(startBtn);
+  startBtn.type = "button"; startBtn.className = "next playbtn vroom-setup-go"; startBtn.id = "nextbtn";
+  const startLabel = document.createElement("span");
+  startLabel.className = "vroom-bar-label"; startLabel.textContent = "Match settings";
+  const startIcon = document.createElement("span");
+  startIcon.className = "vroom-bar-icon"; startIcon.setAttribute("aria-hidden", "true");
+  startIcon.innerHTML = VROOM_BAR_ICONS.next;
+  startBtn.append(startLabel, startIcon);
+  const barInfo = vroomBarInfo();
+  bar.append(barInfo, startBtn);
 
   const optionsModalBody = document.createElement("div");
   optionsModalBody.className = "optionsmodal-body";
@@ -102245,12 +102227,13 @@ function showVirtualRoomSetup(editRoom){
     /* Same treatment as the ordinary unit picker: reads as unavailable,
        still takes the tap, and says why rather than doing nothing. */
     const inert = picked.size === 0;
-    startBtn.classList.toggle("is-inert", inert);
-    syncStartInert(inert);
+    vroomBarLight(startBtn, !inert);
+    barInfo.set(inert ? "No units yet" : picked.size === allUnits.length ? "All units"
+        : picked.size + (picked.size === 1 ? " unit" : " units"),
+      inert ? "Tap a unit to pick it" : n + (n === 1 ? " question" : " questions"));
     startBtn.setAttribute("aria-disabled", inert ? "true" : "false");
-    startBtn.textContent = inert ? "Pick units to continue"
-      : editing ? "Match settings"
-      : "Set up lobby, " + n + (n === 1 ? " question" : " questions");
+    startBtn.setAttribute("aria-label", inert ? "Match settings - select units first"
+      : "Match settings, " + n + (n === 1 ? " question" : " questions"));
 
     selAll.textContent = picked.size === allUnits.length ? "Clear all" : "Select all";
   }
@@ -105727,9 +105710,14 @@ function showVirtualRoomLobby(){
      declared up here because drawLobbyRoster runs before its own line */
   let sndLobbyKeys = null;
   setActiveNav(null);
-  /* THE BAR CARRIES READY UP NOW (build 323), and the bar follows the
-     header's nav buttons, which a run hides - so coming back from a match
-     they are put back, or there is no bar and no pill. */
+  /* NO TAB BAR IN THE LOBBY (build 325): "When in virtual room lobby,
+     the button tab should not be there." Build 323 brought it back to
+     carry Ready up as its Start pill; Ready up is on the Virtual Room's
+     own floating glass pill now (.vroom-setup-bar, below), the same one
+     Match settings uses. Set AFTER setActiveNav, which clears it. The
+     header's nav buttons are still put back - a run hides them, and the
+     screens the lobby leads to expect them. */
+  window.forceHideBottomTabs = true;
   appearanceBtn.hidden = false; homeBtn.hidden = false; profileBtn.hidden = false;
   countEl.textContent = "Virtual Room";
   /* THE SIGNATURE IS LOCAL TO THIS MOUNT, and it has to be.
@@ -105893,16 +105881,26 @@ function showVirtualRoomLobby(){
      the same pattern progress/finished already use elsewhere in this
      same document. */
   const readyBtn = document.createElement("button");
-  /* ON THE BOTTOM BAR, LIKE A TEST'S START (build 323): "Should the
-     ready up button be on the bottom tab similar to the other tests?"
-     It is the tests' own .floatbtn, so the tab bar takes it in as its
-     pill (syncStartAction): "Ready up" lit when you can, grey while the
-     room cannot start, green with a tick once you are ready - and a tap
-     there un-readies. The button keeps every job it had; the pill only
-     forwards the tap. */
-  readyBtn.type = "button"; readyBtn.className = "next floatbtn playbtn vroom-readyup-btn";
-  readyBtn.dataset.tabLabel = "Ready up"; readyBtn.dataset.tabIcon = "none";
-  readyBtn.textContent = "Ready up";
+  /* AT THE FOOT OF THE SCREEN, ON THE GLASS PILL (build 325). Build 323
+     asked for it "on the bottom tab similar to the other tests" and put
+     it in the tab bar's Start pill; the tab bar is gone from the lobby
+     now ("the button tab should not be there"), so it keeps its place at
+     the foot of the screen on the Virtual Room's own floating pill - the
+     tab bar's glass, the Start pill's shape: "Ready up" lit when you
+     can, clear glass while the room cannot start, green with a tick once
+     you are ready, and a tap there un-readies. */
+  readyBtn.type = "button"; readyBtn.className = "next playbtn vroom-readyup-btn";
+  const readyLabel = document.createElement("span");
+  readyLabel.className = "vroom-bar-label"; readyLabel.textContent = "Ready up";
+  const readyIcon = document.createElement("span");
+  readyIcon.className = "vroom-bar-icon"; readyIcon.setAttribute("aria-hidden", "true");
+  readyBtn.append(readyIcon, readyLabel);
+  /* the words and the mark, in one place */
+  const setReadyFace = (word, tick) => {
+    if(readyLabel.textContent !== word) readyLabel.textContent = word;
+    const ic = tick ? VROOM_BAR_ICONS.check : "";
+    if(readyIcon.innerHTML !== ic) readyIcon.innerHTML = ic;
+  };
   let amReady = false;
   /* NOBODY READIES UP INTO NOTHING. "You can ready up before you have
      people in the lobby and before you have units set." The start was
@@ -105918,15 +105916,13 @@ function showVirtualRoomLobby(){
      isn't syncing when hit". It paints immediately and the write
      confirms it; a failure puts it back and says so. */
   function paintReady(){
-    readyBtn.dataset.tabLabel = amReady ? "Ready" : "Ready up";
-    readyBtn.dataset.tabIcon = amReady ? "check" : "none";
     readyBtn.classList.toggle("is-ready", amReady);
-    /* last: the text change is the mutation the bar's pill re-reads on */
-    readyBtn.textContent = amReady ? "Not ready" : "Ready up";
+    readyBtn.classList.remove("is-midmatch");
+    setReadyFace(amReady ? "Ready" : "Ready up", amReady);
   }
   /* One write at a time, without `disabled` (build 323): disabling the
-     button for the round trip greyed the bar's pill for a beat on every
-     tap - lit, grey, then green. */
+     button for the round trip greyed the pill for a beat on every tap -
+     lit, grey, then green. */
   let readyBusy = false;
   readyBtn.addEventListener("click", () => {
     if(!fbDb || !vroomCode || !vroomMyKey){
@@ -105962,8 +105958,12 @@ function showVirtualRoomLobby(){
   /* Under the people it is waiting on, inside their box (build 323). */
   roster.appendChild(autostartNote);
   const readyBar = document.createElement("div");
-  readyBar.className = "startbar vroom-ready-bar";
-  readyBar.appendChild(readyBtn);
+  readyBar.className = "startbar vroom-setup-bar vroom-ready-bar";
+  /* who is ready, on the glass beside the button - the roster's own
+     count, kept in step with it below */
+  const readyInfo = vroomBarInfo();
+  readyInfo.set("In this room", "");
+  readyBar.append(readyInfo, readyBtn);
 
   if(vroomChatUnsubscribe) vroomChatUnsubscribe();
   vroomChatUnsubscribe = buildVroomChatPanel(panel);
@@ -105986,7 +105986,8 @@ function showVirtualRoomLobby(){
   }
   /* the people already known to be in the room, on the first frame */
   if(vroomLastDoc && vroomLastDoc.code === vroomCode && vroomLastDoc.data){
-    try{ const r0 = drawLobbyRoster(vroomLastDoc.data); readyCount.textContent = r0.readyN + " of " + r0.totalN + " ready"; }catch(e){}
+    try{ const r0 = drawLobbyRoster(vroomLastDoc.data); readyCount.textContent = r0.readyN + " of " + r0.totalN + " ready";
+      readyInfo.set(readyCount.textContent, vroomLastDoc.data.game ? (VROOM_GAME_NAME[vroomLastDoc.data.game] || "Race") : "No game yet"); }catch(e){}
   }
   stage.replaceChildren(panel, readyBar);
   toTop();
@@ -106096,7 +106097,8 @@ function showVirtualRoomLobby(){
       const setBtn = document.createElement("button");
       setBtn.type = "button";
       setBtn.className = "next ghost vroom-settings-btn";
-      setBtn.textContent = "Match settings";
+      /* the sliders mark and the words (build 325 - see the CSS) */
+      setBtn.innerHTML = "<span class=\"vroom-bar-icon\" aria-hidden=\"true\">" + VROOM_BAR_ICONS.sliders + "</span><span>Match settings</span>";
       setBtn.disabled = !!running;
       setBtn.addEventListener("click", () => showVirtualRoomSetup(data));
       hostBar.appendChild(setBtn);
@@ -106340,6 +106342,7 @@ function showVirtualRoomLobby(){
         paintReady();
       }
       readyCount.textContent = readyN + " of " + totalN + " ready";
+      readyInfo.set(readyCount.textContent, data.game ? (VROOM_GAME_NAME[data.game] || "Race") : "No game yet");
       /* TWO PEOPLE MINIMUM. totalN > 0 let a host sitting alone ready
          up and start a "race" against nobody, which is not what the
          Virtual Room is for. The note below says why it is waiting. */
@@ -106358,7 +106361,7 @@ function showVirtualRoomLobby(){
       const allReady = totalN > 1 && readyN === totalN && hasUnits && !oddTug;
       lobbyCanReady = hasUnits && totalN > 1;
       if(data.status === "waiting"){
-        if(readyBtn.textContent === "Match in progress") paintReady();
+        if(readyBtn.classList.contains("is-midmatch")) paintReady();
         readyBtn.disabled = !lobbyCanReady && !amReady;
         readyBtn.classList.toggle("is-waiting", !lobbyCanReady && !amReady);
         /* Somebody who readied up before the last other person left,
@@ -106464,9 +106467,8 @@ function showVirtualRoomLobby(){
            287): "it wouldn't say ready for everyone when joining like
            that, it would say in match." */
         const midMatch = data.status === "starting" && !inThisStart;
-        readyBtn.dataset.tabLabel = midMatch ? "In a match" : "Ready up";
-        readyBtn.dataset.tabIcon = "none";
-        readyBtn.textContent = midMatch ? "Match in progress" : "Ready up";
+        readyBtn.classList.toggle("is-midmatch", midMatch);
+        setReadyFace(midMatch ? "Match in progress" : "Ready up", false);
         autostartNote.classList.remove("all-ready");
         autostartNote.textContent = vroomIsHost
           ? "Opening the lobby for another match\u2026"
@@ -114684,7 +114686,6 @@ function showProfile(defaultTab, opts){
     "Questions answered": "Every question you have answered anywhere \u2014 drills, qualifiers, the daily question and the Virtual Room.",
     "Correct answers": "How many of those you got right first time. There is no second chance on a question, so this never counts a retry.",
     "Tests finished": "Drills and qualifiers you played to the end. The daily question is not a test.",
-    "Total XP": "Every XP you have earned on this account, from every test and the daily question. Your level is worked out from it.",
     "Hundos": "Units you have finished with every question right. A run covering three units can earn three, and the daily question earns none.",
     /* The Virtual Room's three, back in build 324 - see below. */
     "Matches": "Virtual Room matches you played to the end. Each race in a room counts once, however many times its results are opened.",
@@ -114781,15 +114782,11 @@ function showProfile(defaultTab, opts){
   glanceSect.appendChild(hero);
   const lifeGrid = document.createElement("div");
   lifeGrid.className = "stat-grid stat-grid-four";
-  /* THE TOTAL XP LIVES HERE (build 320): it came off the Profile card on a
-     phone, where the line under the bar now says only how far into this
-     level you are. One card across the grid, first, so it reads as the
-     headline number of your record rather than a fifth tile. */
-  {
-    const totCard = makeStatCard("Total XP", Math.round(Number(levelStateFor(store).total) || 0).toLocaleString());
-    totCard.classList.add("stat-card-wide", "stx-totalxp");
-    lifeGrid.appendChild(totCard);
-  }
+  /* NO TOTAL XP HERE (build 325): "I'm not sure why total xp is in the at
+     a glance box. Remove that." Build 320 had put it across the top of
+     this grid when it came off the Profile card; it is off Stats too now,
+     and the four left are two even rows on a phone and one row of four
+     from a tablet up - no wide card, no hole. */
   [["Questions answered", answered.toLocaleString()],
    ["Tests finished", testsCompleted.toLocaleString()],
    ["Hundos", String(store.lifetime.perfectTests)],
@@ -114809,7 +114806,7 @@ function showProfile(defaultTab, opts){
   if(hist.length){
     const list = document.createElement("div");
     list.className = "thx-list";
-    hist.slice(0, 3).forEach(e => list.appendChild(buildTestRow(e)));
+    hist.slice(0, 3).forEach(e => list.appendChild(buildTestRow(e, { side: false })));
     recentSect.appendChild(list);
   } else {
     const p = document.createElement("p");
