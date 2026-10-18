@@ -19,7 +19,7 @@ seed={"onboardingComplete":True,"firstName":"T","tourRev":99,"seenProfileTour":T
 with sync_playwright() as pw:
     br=pw.chromium.launch(executable_path="/opt/pw-browsers/chromium-1194/chrome-linux/chrome",args=["--no-sandbox"])
     pg=br.new_page(); errs=[]; pg.on("pageerror",lambda e: errs.append(str(e)[:200]))
-    pg.add_init_script("localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.intro.seen','1');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.drill.v1',%s)"%json.dumps(json.dumps(seed)))
+    pg.add_init_script("localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.intro.seen','1');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');localStorage.setItem('class26e.drill.v1',%s)"%json.dumps(json.dumps(seed)))
     pg.goto("http://127.0.0.1:%d/%s"%(srv.server_address[1], page)); pg.wait_for_timeout(2500)
     try:
       r = pg.evaluate("""()=>{

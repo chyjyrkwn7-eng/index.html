@@ -105,7 +105,7 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=cb.CHROME, args=["--force-device-scale-factor=2"])
     for fx in FXS:
         ctx = br.new_context(viewport={"width": W, "height": H}, device_scale_factor=2)
-        ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');"
+        ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');"
                             "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % cb.USED_ACCOUNT)
         pg = cb.open_page(ctx); errs = []
         pg.on("pageerror", lambda e: errs.append(str(e)[:200]))

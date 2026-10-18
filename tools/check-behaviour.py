@@ -157,7 +157,7 @@ def booted(br, w, h, seed=None, init=None, touch=False, dpr=1):
     if init:
         ctx.add_init_script(init)
     if seed:
-        ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');"
+        ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');"
                             "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % seed)
         # A gate's fixture is an up-to-date account: it has seen this week's
         # recap from Nova (build 324), or any check that fixtures last week's
@@ -17702,7 +17702,7 @@ def check_b319_rankup(br):
     once = ("try{ if(!localStorage.getItem('__seeded319')){ localStorage.setItem('__seeded319','1');"
             "localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
             "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
-            "localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.drill.v1', '%s'); } }catch(e){}" % USED_ACCOUNT)
+            "localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');localStorage.setItem('class26e.drill.v1', '%s'); } }catch(e){}" % USED_ACCOUNT)
     ctx, pg = booted(br, 440, 956, init=once)
     pg.evaluate(B319_RU_SEED, {})
     pg.evaluate(B319_RU_RUN, {})
@@ -18866,7 +18866,7 @@ def check_b317_sflare(br):
 B318_ONCE = ("try{ if(!sessionStorage.getItem('b318seeded')){ sessionStorage.setItem('b318seeded','1');"
              "localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
              "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
-             "localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.daily.seen','x');"
+             "localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');localStorage.setItem('class26e.daily.seen','x');"
              "localStorage.setItem('class26e.drill.v1', '%s'); } }catch(e){}")
 
 # Every scene and card logged, in order; the scenes are quick stand-ins
@@ -24085,7 +24085,7 @@ def check_b320h_fixes(br):
     ctx.close()
     # the waiting ring on a faked clock: answered, 11pm is a quarter of the way to 5pm
     ctx = br.new_context(viewport={"width": 440, "height": 956}, timezone_id="America/Los_Angeles")
-    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');"
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');"
                         "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % USED_ACCOUNT)
     pg = open_page(ctx)
     pg.clock.install(time="2026-10-12T23:00:00-07:00")

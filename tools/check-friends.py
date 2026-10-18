@@ -78,7 +78,7 @@ def booted(br, width=440, height=956):
         # that has not seen it - which is every harness device. Seeded
         # like frame.ok and tourRev, or it drops a dimmed overlay over
         # whatever is being measured.
-        "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');"
+        "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');"
         "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % SEED)
     pg = ctx.new_page()
     pg.route("**/index.html", lambda r: r.fulfill(
