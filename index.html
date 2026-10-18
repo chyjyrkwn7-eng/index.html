@@ -91093,7 +91093,11 @@ const HUNDO_FX_BOX_TOTAL = { confetti: 3000, fireworks: 3600, blackhole: 3600, u
    4.6s, 6 at 5.0s and none from 5.2s (the same on 336c444) - so its gate
    passed only when the machine was slow enough to start the effect late.
    4.6s is where its last pieces go. */
-const HUNDO_FX_TAIL_AT = { fireworks: 5000, blackhole: 4000, underwater: 5900, worldtree: 4100, bubbles: 4600, ufo: 9500 };
+/* Confetti (build 325): its dim (.stardust-dim) is down to nothing at 97%
+   of its 3s and its layer goes at 3s; the results' buttons and the first
+   unlock wait for that (3.05s), as they wait for every other effect -
+   without an entry they came at 1.5s, rising under the dim. */
+const HUNDO_FX_TAIL_AT = { confetti: 3050, fireworks: 5000, blackhole: 4000, underwater: 5900, worldtree: 4100, bubbles: 4600, ufo: 9500 };
 /* THE BOX'S COLOURS WHILE EACH ONE PLAYS (build 313): "Would be pretty
    cool if the themes matches the box, cause if the just stays yellow it
    would get kinda boring." Border, wash and the numerals' gradient;

@@ -224,7 +224,13 @@ def sec_dim(br):
       window.__dim = { full: full.map(e => e.getAnimations().map(a => { const t = a.effect.getComputedTiming(); return { dur: t.duration, delay: t.delay, k: a.effect.getKeyframes().map(f => [f.computedOffset, f.opacity == null ? null : +f.opacity]) }; })),
         bg: full.map(e => getComputedStyle(e).backgroundImage !== 'none' || getComputedStyle(e).backgroundColor !== 'rgba(0, 0, 0, 0)'),
         over: null };
-      setTimeout(() => { __dim.over = g && lay ? (+getComputedStyle(g).zIndex || 0) > (+getComputedStyle(lay).zIndex || 0) : false; }, 300); return r; }; }""")
+      setTimeout(() => { __dim.over = g && lay ? (+getComputedStyle(g).zIndex || 0) > (+getComputedStyle(lay).zIndex || 0) : false; }, 300);
+      /* the moment the way-on buttons start to come up: how dim the screen still is */
+      const dimEl = lay && full.find(e => getComputedStyle(e).backgroundImage !== 'none'), acts = document.querySelector('.rs-actions'), t0 = performance.now();
+      if(acts){ const mo = new MutationObserver(() => { if(acts.classList.contains('rs-in-now') || acts.classList.contains('rs-in')){ mo.disconnect();
+        __dim.atButtons = { t: Math.round(performance.now() - t0), dim: dimEl && dimEl.isConnected ? +getComputedStyle(dimEl).opacity : 0 }; } });
+        mo.observe(acts, { attributes: true, attributeFilter: ['class'] }); }
+      return r; }; }""")
     pg.evaluate("() => __run('Identity Crimes', 0, 'drill', false)")
     for _ in range(160):
         if pg.evaluate("() => !!window.__dim && window.__dim.over !== null"):
@@ -245,6 +251,13 @@ def sec_dim(br):
     check("Confetti: the screen dims while it plays (the Fireworks' .5 at its height)", a is not None and .4 <= peak <= .6, peak)
     check("Confetti: the dim is in within .5s and gone (0) by 3s", a is not None and t_in is not None and t_in <= 500 and t_out <= 3050 and end == 0, [t_in, t_out, end])
     check("Confetti: the 100% box is lifted over it, as the Fireworks lift theirs", d["over"], d["over"])
+    # the buttons wait for it: they start to rise only once the dim has lifted
+    for _ in range(80):
+        if pg.evaluate("() => !!(window.__dim && window.__dim.atButtons)"):
+            break
+        pg.wait_for_timeout(250)
+    ab = pg.evaluate("() => window.__dim && window.__dim.atButtons")
+    check("Confetti: the buttons rise only once its dim has lifted (dim 0 as they start)", a is not None and peak >= .4 and bool(ab) and ab["dim"] <= .02, ab)
     ctx.close()
 
 
