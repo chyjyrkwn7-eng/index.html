@@ -356,6 +356,16 @@ def check_vroom(br):
             tap_at(pg, "#stage > .vroom-setup-bar .vroom-setup-go"); pg.wait_for_timeout(500)
             early = pg.evaluate("() => ({ toast: (document.querySelector('.toast') || {}).textContent || '', sheet: !(document.getElementById('unitoptions-modal') || { hidden: true }).hidden })")
             pg.evaluate("() => document.querySelector('.picks .pick input').click()"); pg.wait_for_timeout(800)
+            # MOVED IN 326: the pill now holds its unlit grey through the
+            # fill's .3s by an ANIMATION (vroom-bar-hold, step-end) rather
+            # than lighting at once, so its lit colour arrives when that
+            # animation has run - on a loaded machine its start was still
+            # pending at 800ms (measured: grey at 270ms with currentTime 0,
+            # lit at 807ms). The lit look is read once the lighting is over.
+            try:
+                pg.wait_for_function("() => { const b = document.querySelector('#stage > .vroom-setup-bar .vroom-setup-go'); return !b || !b.classList.contains('is-lighting'); }", timeout=6000)
+            except Exception:
+                pass
         b = pg.evaluate(VR_BAR)
         opened = False
         if b.get("bar"):
