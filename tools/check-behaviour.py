@@ -26415,7 +26415,7 @@ def check_b323s_summary(br):
                beginOnTop: !!hit && (hit === begin || begin.contains(hit)),
                mode: t('.sheet-summary-mode'), line: t('.sheet-summary-line'), units: t('.sheet-summary-units'),
                opts: optsOn ? opts.textContent : '', chip: !!chip && !chip.hidden && box.contains(chip),
-               look: { bg: cs.backgroundImage, radius: cs.borderTopLeftRadius }, title: (sh.querySelector('.unitoptions-modal-title') || {}).textContent }; }"""
+               look: { bg: cs.backgroundImage, color: cs.backgroundColor, radius: cs.borderTopLeftRadius }, title: (sh.querySelector('.unitoptions-modal-title') || {}).textContent }; }"""
     ROW = """async (t)=>{ const sh=document.querySelector('#unitoptions-modal');
       const r=[...sh.querySelectorAll('.opt')].find(o=>o.querySelector('.otext') && o.querySelector('.otext').firstChild.textContent===t);
       if(!r) return false; r.click(); await new Promise(z=>setTimeout(z,300));
@@ -26433,7 +26433,7 @@ def check_b323s_summary(br):
           showVirtualRoomSetup({ units:['Identity Crimes'], count:null, game:'race' }); await wait(800);
           document.querySelector('.vroom-setup-go').click(); await wait(700);
           const b=document.querySelector('#unitoptions-modal .sheet-summary'); const cs=getComputedStyle(b);
-          return { bg: cs.backgroundImage, radius: cs.borderTopLeftRadius }; }""")
+          return { bg: cs.backgroundImage, color: cs.backgroundColor, radius: cs.borderTopLeftRadius }; }""")
         res = {}
         for mode, fl in (("drill", False), ("exam", False), ("review", False), ("review", True)):
             name = "Flashcards" if fl else {"drill": "Drill", "exam": "Qualifier", "review": "Review"}[mode]  # 326: Review again
@@ -26464,7 +26464,10 @@ def check_b323s_summary(br):
             check("%s %s: Begin is wholly in view and nothing covers it" % (label, name),
                   r["beginIn"] and r["beginOnTop"], {k: r[k] for k in ("beginIn", "beginOnTop")})
             check("%s %s: it is the Virtual Room's card - same glass and corners" % (label, name),
-                  r["look"]["bg"] == vr["bg"] and r["look"]["radius"] == vr["radius"] and r["look"]["bg"] != "none", [r["look"], vr])
+                  # MOVED IN 326 (b326f, one family of surfaces): the summary is a
+                  # flat --surface-lift fill now, no gradient image, so "the same
+                  # card" is the same image AND colour AND corners, and it has a fill
+                  r["look"] == vr and (r["look"]["bg"] != "none" or r["look"]["color"] not in ("rgba(0, 0, 0, 0)", "transparent")), [r["look"], vr])
             n = r["want"]["n"]
             check("%s %s: it names the mode, the units count, the question count and the units" % (label, name),
                   r["mode"] == r["want"]["mode"] and r["line"] == "2 units · %d questions" % n
@@ -27876,6 +27879,12 @@ def check_b324w_recap(br):
       /* a viewer who hides from the rankings: the recap without the class */
       document.querySelectorAll('.nova-talk, .rs-spot, .rs-fly, .scene-bridge, .invite-overlay').forEach(n => n.remove()); weekRecapOn = false;
       try{ localStorage.removeItem('class26e.weekrecap.v1'); }catch(e){}
+      /* build 326 (b326e): the recap is the day's one moment of his
+         (playWeekRecap stamps novaHeard['@last'], and maybeShowWeekRecap
+         waits for a day he has not spoken on), so the first recap above
+         rightly holds back a second one today. This leg is another week's
+         recap for a viewer who hides, so it is another day too. */
+      try{ if(store.novaHeard) delete store.novaHeard['@last']; }catch(e){}
       store.leaderboardOptIn = false;
       showHome();
       for(let i = 0; i < 40 && !up(); i++) await wait(150);
@@ -28892,8 +28901,11 @@ def check_b324v2_novavr(br):
     check("beating him in a Race (more of the room's XP) unlocks the Sheriff through the unlock card, over the standings",
           won["lockedBefore"] is True and won["locked"] is False and won["beaten"] is True and "Sheriff" in won["spotText"] and won["over"]
           and won["held"]["unlocked"] is True, {k: won[k] for k in ("lockedBefore", "locked", "beaten", "spotText", "over", "held")})
+    # MOVED IN 326 (b326e, the story): the line is "The Sheriff, one of my
+    # crew, is with you now" - the crew coming home - not "the Sheriff is
+    # yours". What holds is that it names the Sheriff and is not a loss line.
     check("...and he congratulates you for that match, naming the Sheriff",
-          len(won["dms"]) == 3 and "Sheriff is yours" in won["dms"][-1], won["dms"])
+          len(won["dms"]) == 3 and "Sheriff" in won["dms"][-1] and won["dms"][-1] not in won["dms"][:2], won["dms"])
     check("beating him again (Tug of War, Sheriff held): no second card, a different line, once however often the results are drawn",
           won["spot2"] is False and len(won["dms2"]) == 4 and "got me again" in won["dms2"][-1], won["dms2"])
     # ---- 8. who beats whom: the rules ----
