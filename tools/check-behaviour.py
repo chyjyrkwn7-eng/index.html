@@ -18451,8 +18451,20 @@ def check_b320d_rankup(br):
         # build 321 (b321e): the level challenge no longer counts with the climb - it waits where it stood until the bar is done
         sync = all(p["row"] == min(pre["cap"], p["need"]) for p in pf if p["climbing"] and p["row"] is not None and p["need"])
         dur = (last53 or 0) - (first_change or 0)
-        check(f"{dev}: the climb is slow ({dur}ms from level {pre['cap'] + 1} to {lvls[-1] if lvls else None}, 1.4s+ a level) and the level challenge holds still through it (build 321)",
-              lvls and lvls[-1] == 50 and dur >= 1400 * (50 - pre["cap"] - 1) and sync and (wk.get("after") or {}).get("level") == "Level 50", [dur, sorted(set(lvls)), sync, wk.get("after")])
+        # MOVED IN 326: the climb keeps its own clock - every step is due a
+        # fixed time from one start, so a step a loaded machine runs late is
+        # made up on the next, not added to the climb. Measured first-change
+        # to last, one late first step shortened the span by up to a whole
+        # step (12045ms for nine 1.5s steps). The pace is each level's own
+        # gap, by the median, so one late step cannot pass or fail it.
+        firsts = []
+        for p_ in pf:
+            if p_["lv"] is not None and p_["lv"] != pre["cap"] and (not firsts or p_["lv"] != firsts[-1][0]) and p_["lv"] not in [f_[0] for f_ in firsts]:
+                firsts.append((p_["lv"], p_["t"]))
+        gaps = sorted(b_[1] - a_[1] for a_, b_ in zip(firsts, firsts[1:]))
+        med = gaps[len(gaps) // 2] if gaps else 0
+        check(f"{dev}: the climb is slow ({dur}ms from level {pre['cap'] + 1} to {lvls[-1] if lvls else None}, {med}ms a level by the median, 1.4s+) and the level challenge holds still through it (build 321)",
+              lvls and lvls[-1] == 50 and len(gaps) >= 3 and med >= 1400 and sync and (wk.get("after") or {}).get("level") == "Level 50", [dur, med, gaps, sorted(set(lvls)), sync, wk.get("after")])
         check(f"{dev}: after it, the Profile tab tapped (on Profile and from Home) never rings or jumps, and nothing of the scene is left",
               not wk.get("tabAfter") and wk.get("homeAfter") is False and not (wk.get("after") or {}).get("blocker") and not (wk.get("after") or {}).get("veil"),
               [wk.get("tabAfter"), wk.get("homeAfter"), wk.get("after")])
