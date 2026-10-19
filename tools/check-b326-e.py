@@ -134,8 +134,8 @@ def check_story(br):
           and re.search(r"scanners", src[src.find("function novaGoodbye"):src.find("function novaGoodbye") + 900]), fresh[-1:] )
     bad = [t for t in fresh + existing if re.search(r"\b(all seven|seven|sixteen|16|only three|three secret|a few secret flares)\b", t, re.I)]
     check("no fixed totals in his introduction (no 'seven', '16', 'a few secret flares')", not bad, bad[:3])
-    check("the planet line costs nothing: a new account still hears at most 16 lines, an existing one at most 20 (325: 15 and 18), and every slide trigger is kept",
-          star and 0 < len(fresh) <= 16 and 0 < len(existing) <= 20
+    check("the planet line costs nothing: a new account still hears at most 16 lines, an existing one at most 21 (325: 15 and 18; D's banners-and-effects slide, asked for by Madison, is the one extra line), and every slide trigger is kept",
+          star and 0 < len(fresh) <= 16 and 0 < len(existing) <= 21
           and any("friend" in k for k in r.get("keys") or []) and any("final" in k for k in r.get("keys") or []) and sum(1 for k in r.get("keys") or [] if "enter" in k) >= 9,
           {"new": len(fresh), "existing": len(existing), "keys": r.get("keys")})
     ranks = r.get("ranks") or []

@@ -198,7 +198,7 @@ def kinds_truth(pg):
 def check_lag(br):
     print("\nd1. the badge and character slides: made ahead, no stall, the glide moving from its first frame, no badge struck again")
     for (w, h, dev) in DEVS:
-        for which, rx, sel in (("badges", r"badges were scattered", ".nt-badgepar"), ("characters", r"crew got away", ".nt-crewpar")):
+        for which, rx, sel in (("badges", r"badges landed", ".nt-badgepar"), ("characters", r"crew got away", ".nt-crewpar")):
             for throttle in (1, 4):
                 ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=2 if w < 600 else 1)
                 if throttle > 1:
