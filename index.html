@@ -5489,7 +5489,7 @@
   @media (hover:hover){ .vroom-access-opt:not(.is-on):hover{ color:#fff; } }
   .vroom-access-opt:focus{ outline:none; }
   .vroom-access-opt:focus-visible{ outline:2px solid rgba(255,255,255,.7); outline-offset:-3px; }
-  .vroom-access-line{ margin:0; min-width:0; font-size:.78rem; line-height:1.35; color:var(--soft); }
+  .vroom-access-line{ margin:0; min-width:0; font-size:.78rem; line-height:1.35; color:var(--soft); min-height:2.7em; }
   /* up to a 414px phone: both words whole, the marks a touch smaller; a 320px
      phone drops the marks rather than cut a word ("Invite o...") */
   @media (max-width:26.5rem){
@@ -109347,7 +109347,7 @@ function showVirtualRoomLobby(){
     const ACCESS = [
       { open: true, word: "Open room",
         icon: "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8.2\"/><path d=\"M3.8 12h16.4\"/><path d=\"M12 3.8c2.3 2.3 3.4 5 3.4 8.2s-1.1 5.9-3.4 8.2c-2.3-2.3-3.4-5-3.4-8.2s1.1-5.9 3.4-8.2z\"/></svg>",
-        line: "Anyone in 26E can find this room under Open rooms and join." },
+        line: "Anyone in 26E can find it and join." },
       { open: false, word: "Invite only",
         icon: "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"5\" y=\"10.5\" width=\"14\" height=\"9.5\" rx=\"2.4\"/><path d=\"M8.3 10.5V8a3.7 3.7 0 0 1 7.4 0v2.5\"/></svg>",
         line: "Only people you invite can join." }
@@ -113149,8 +113149,8 @@ function recapNum(v, cap){
 const RECAP_MENTIONS = [
   { cat: "hundos", fixed: true, title: "Flawless", color: "#FFD84D", min: 1, cap: 500, val: b => b.h,
     glyph: "M12 1.8a7.2 7.2 0 1 0 0 14.4 7.2 7.2 0 0 0 0-14.4Zm0 3.1 1.25 2.6 2.85.4-2.06 2 .48 2.84L12 11.4l-2.52 1.34.48-2.84-2.06-2 2.85-.4L12 4.9ZM7.4 15.4 5.8 22l3.3-1.7 2.1 1.6-.7-4.9a8.7 8.7 0 0 1-3.1-1.6Zm9.2 0a8.7 8.7 0 0 1-3.1 1.6l-.7 4.9 2.1-1.6 3.3 1.7-1.6-6.6Z",
-    line: v => v + (v === 1 ? " whole unit" : " whole units") + " at 100%",
-    say: (who, v) => "The Flawless award goes to " + who + ": " + v + (v === 1 ? " whole unit" : " whole units") + " at 100% in one week." },
+    line: v => v + (v === 1 ? " hundo" : " hundos"),
+    say: (who, v) => "The Flawless award goes to " + who + ": " + v + (v === 1 ? " hundo" : " hundos") + " in one week." },
   { cat: "tests", title: "Workhorse", color: "#5CA8FF", min: 3, cap: 1000, val: b => b.t,
     glyph: "M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1Zm1 2v2h4V4h-4Zm5.3 6.3-4.8 4.8-2.3-2.3-1.4 1.4 3.7 3.7 6.2-6.2-1.4-1.4Z",
     line: v => v + " tests finished",
