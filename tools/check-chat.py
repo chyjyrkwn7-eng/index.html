@@ -147,7 +147,15 @@ def run(src_dir, label):
             scrolled = pg.evaluate("""()=>{
               const w = document.querySelector('.vroom-chat');
               if(!w) return null;
-              w.scrollIntoView({block:'center'});
+              /* MOVED IN 326: instant. The app scrolls smoothly, so this
+                 was a 900px glide measured 600ms after it began - and 326's
+                 lobby is 64px taller, so on a loaded machine the glide had
+                 not arrived when the count was read (3 of 3 runs, while the
+                 same scroll reads the chat at 600ms unloaded on 325 and
+                 326 alike). What is under test is that arriving reads it,
+                 not how long the glide takes - the same reason the answer
+                 review's scroll check is instant. */
+              w.scrollIntoView({block:'center', behavior:'instant'});
               return true; }""")
             pg.wait_for_timeout(600)
             after = pg.evaluate("""()=>{
@@ -211,6 +219,14 @@ def run_class(src_dir, label):
               store.onboardingComplete = true; store.firstName = 'Madison';
               store.tourRev = 99; store.publicId = 'me0000000001';
               vroomCode = null; inVirtualRoom = false;
+              /* MOVED IN 326: an existing account meets Nova once, quietly,
+                 on the first calm moment on Home - his hello lands as an
+                 unread friend chat. That is right, and it raced the dot
+                 count in section 4 (read '2' when it beat it). This
+                 fixture is an account that has already met him and read
+                 his hello, like tourRev for the tours. */
+              try{ if(typeof novaBefriend === 'function'){ novaBefriend({ quiet: true });
+                const m = chatSeenMap(); m['DM-NOVA'] = Date.now() + 60000; localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify(m)); } }catch(e){}
               showHome(); return true;}""")
             if not seeded:
                 fails.append("showHome is not available")
