@@ -4309,10 +4309,28 @@ def check_audit_a(br):
       const paint = dots.map(d => getComputedStyle(d).stroke);
       return { n: dots.length, open: open.length, hits: hits.filter(Boolean).length, paint };
     }""")
-    # build 313: only the first three show until Void is held (this account
-    # has found none), and each is an HTML flare with a 44px tap disc
-    check("the secret-flare dots take a tap 15px from their centre", r["n"] == 3 and r["open"] >= 1 and r["hits"] == r["open"], r)
+    # build 313: only the first three showed until Void was held. MOVED IN
+    # 326 (b326d): Home shows every secret flare, unlit until found, so this
+    # account (none found) has all six - and an unfound one still takes the
+    # tap (homeLockedNudge plus its hint in the caption).
+    check("the secret-flare dots take a tap 15px from their centre", r["n"] == 6 and r["open"] >= 1 and r["hits"] == r["open"], r)
     check("and paint nothing new doing it", all(("0, 0, 0, 0" in x) or x in ("none", "transparent") for x in r["paint"]), r["paint"])
+    # 326 (b326d): the three Home only shows now (Umbra's, Horizon's and
+    # Genesis's, none found here) answer a real tap like any unfound flare -
+    # the head-shake and the "not found yet" words in the caption.
+    pt = pg.evaluate("""() => {
+      for(const k of ['violet', 'white', 'core']){
+        const d = document.querySelector('.panel.home .cosmic-orbit-dot[data-flare="' + k + '"]'); if(!d) continue;
+        const b = d.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
+        if(document.elementFromPoint(x, y) === d || d.contains(document.elementFromPoint(x, y))) return { k, x, y };
+      } return null; }""")
+    cap = None
+    if pt:
+        pg.mouse.click(pt["x"], pt["y"]); pg.wait_for_timeout(700)
+        cap = pg.evaluate("""() => { const c = document.querySelector('.panel.home .home-caption .hc-item:not(.is-out)');
+          return c ? { key: c.dataset.key, text: c.textContent.trim().slice(0, 80) } : null; }""")
+    check("an unfound flare Home now shows takes a real tap and says it is not found yet",
+          bool(pt) and bool(cap) and cap.get("key") == "flare:" + pt["k"] and bool(cap.get("text")), [pt, cap])
     ctx.close()
 
     # R3: a brand-new account finishes onboarding and does not get the
@@ -8113,7 +8131,13 @@ def check_b302(br):
           const seen = []; let first = null;
           document.getElementById('bottomtab-profile').click();
           const t0 = performance.now();
-          while(performance.now() - t0 < 700){
+          /* build 326 (integration): watched for at least 700ms AND eight
+             frames after the new screen is up, up to 3s, rather than 700ms
+             from the tap. Under a loaded machine an iPad's frames ran
+             100-900ms apart (on 325 as well as 326), so a fixed 700ms saw
+             3-5 frames and failed the frame floor with nothing moving. A
+             longer watch is a stricter test, never a looser one. */
+          while(performance.now() - t0 < 3000 && !(first !== null && seen.length >= 8 && performance.now() - t0 - first >= 700)){
             await new Promise(r => requestAnimationFrame(r));
             const el = stage.firstElementChild;
             if(el && el.classList.contains('screen-profile') || (el && el.querySelector('.profile-hero'))){
@@ -11583,9 +11607,20 @@ def check_b313_flares(br):
              flares you haven't got, you shouldn't be able to see their colors") */
           out.nextTinted = !!(vio && vio.classList.contains('is-next') && parseFloat(getComputedStyle(vio.querySelector('.cof-tint')).opacity) > .2
             && getComputedStyle(vio).getPropertyValue('--fc').trim().toUpperCase() !== MYSTERY_COLOR.violet.toUpperCase());
-          /* 2. three, then five, then six */
-          await home(F.none); out.count3 = document.querySelectorAll('.panel.home .cosmic-orbit-dot').length;
-          await home(F.five); out.count6 = document.querySelectorAll('.panel.home .cosmic-orbit-dot').length;
+          /* 2. MOVED IN 326 (b326d): Home shows EVERY secret flare, unlit
+             until found ("If the main menu needs to now show every single
+             secret flare not lit up so it all makes more sense then let's
+             do that"). This used to assert three dots before Void, five
+             with it, six after the fifth - build 313's steps. Now the six
+             dots are always there, and what changes is how many are lit:
+             none, three (Void's), five, six. */
+          const litN = () => document.querySelectorAll('.panel.home .cosmic-orbit-dot.is-found').length;
+          const dotN = () => document.querySelectorAll('.panel.home .cosmic-orbit-dot').length;
+          out.litVoid = litN();
+          await home(F.none); out.count3 = dotN(); out.litNone = litN();
+          await home(F.five); out.count6 = dotN(); out.litFive = litN();
+          await home(F.all); out.countAll = dotN(); out.litAll = litN();
+          await home(F.five);
           /* planet2: on the rings, Void's three outside, the other three inside */
           out.rings = ['red', 'orange', 'yellow', 'violet', 'white', 'core'].map(k => { const d = document.querySelector('.panel.home [data-flare="' + k + '"]');
             return !d ? 'none' : d.closest('.cosmic-hero-orbitlayer-inner') ? 'in' : d.closest('.cosmic-hero-orbitlayer') ? 'out' : 'elsewhere'; });
@@ -11634,8 +11669,13 @@ def check_b313_flares(br):
         check(f"{label}: every found flare on Home is lit in its own colour (they computed white)",
               len(lit) == 3 and all(x["ok"] for x in lit), lit)
         check(f"{label}: the flare being hunted next is marked (once Void is held) - in plain light, not its colour (build 314)", r.get("nextTinted") is True, r.get("nextTinted"))
-        check(f"{label}: three flares before Void, five with it, six once the fifth is found",
-              (r.get("count3"), r.get("countVoid"), r.get("count6")) == (3, 5, 6), (r.get("count3"), r.get("countVoid"), r.get("count6")))
+        # MOVED IN 326 (b326d): all six on Home from day one; the found ones lit
+        check(f"{label}: all six secret flares on Home whatever is found - none, Void, five, all",
+              (r.get("count3"), r.get("countVoid"), r.get("count6"), r.get("countAll")) == (6, 6, 6, 6),
+              (r.get("count3"), r.get("countVoid"), r.get("count6"), r.get("countAll")))
+        check(f"{label}: lit only once found - none lit, three with Void, five, then six",
+              (r.get("litNone"), r.get("litVoid"), r.get("litFive"), r.get("litAll")) == (0, 3, 5, 6),
+              (r.get("litNone"), r.get("litVoid"), r.get("litFive"), r.get("litAll")))
         check(f"{label}: the six ride the rings - Void's three on the outer, the other three (Genesis's too) on the inner (planet2)",
               r.get("rings") == ["out"] * 3 + ["in"] * 3, r.get("rings"))
         sp = r.get("spin") or [0, 0]
