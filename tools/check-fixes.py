@@ -167,7 +167,14 @@ def main():
                           const o=document.getElementById('splashscreen'); if(!o) return null;
                           o.style.width=(innerWidth+260)+'px'; o.style.height=(innerHeight+260)+'px';
                           return new Promise(res=>requestAnimationFrame(()=>requestAnimationFrame(()=>{
+                            /* the splash can tear itself down between the two
+                               frames (a loaded machine reaches its own timer):
+                               then there is nothing to measure. Throwing here
+                               left the promise unresolved and unreferenced -
+                               "Resulting promise was garbage collected", which
+                               took out whole device runs on 325 and 326 alike */
                             const g=document.getElementById('splash-group');
+                            if(!g||!o.isConnected){ res(null); return; }
                             const r=g.getBoundingClientRect();
                             res({dx:Math.round((r.left+r.right)/2-innerWidth/2),
                                  dy:Math.round((r.top+r.bottom)/2-innerHeight/2),
@@ -307,6 +314,11 @@ def main():
                           if(tr){ out.gap=Math.round(Math.max(fr.left-tr.right, tr.left-fr.right, fr.top-tr.bottom, tr.top-fr.bottom));
                             out.onScreen=tr.left>=0&&tr.top>=0&&tr.right<=innerWidth&&tr.bottom<=innerHeight;
                             out.btn=hit(tr,btn); out.bar=hit(tr,bar);
+                            /* the air between the bubble and Start Studying, by
+                               the layout box (offsetTop), not the pop's scale */
+                            const sep=(a,b)=>b&&b.width?Math.max(b.left-a.right, a.left-b.right, b.top-a.bottom, a.top-b.bottom):1e9;
+                            const lay={left:t.offsetLeft, top:t.offsetTop, right:t.offsetLeft+t.offsetWidth, bottom:t.offsetTop+t.offsetHeight};
+                            out.btnSep=Math.round(sep(lay,btn)*10)/10;
                             const q=r=>r?[Math.round(r.left),Math.round(r.top),Math.round(r.right),Math.round(r.bottom)]:null;
                             out.geo={tip:q(tr),fab:q(fr),btn:q(btn),bar:q(bar),cls:t.className}; }
                           t&&t.remove(); store.dailyQuestionDate=null; return out; }""")
@@ -316,6 +328,12 @@ def main():
                             if dl["tip"]:
                                 if not dl["onScreen"]: fails.append(f"{tag}: the daily 'done' bubble runs off the screen")
                                 if dl["btn"]: fails.append(f"{tag}: the daily 'done' bubble covers Start Studying")
+                                # Build 326: Start Studying rose 10px on a 14/15/16 and
+                                # the one-line bubble, squeezed into the 41px left over
+                                # the bar, clamped up FLUSH against the button's foot -
+                                # 0px of air, passing the overlap test above by rounding
+                                # alone. Touching is not clear: 2px at least.
+                                elif dl.get("btnSep", 99) < 2: fails.append(f"{tag}: the daily 'done' bubble touches Start Studying ({dl['btnSep']}px) {dl.get('geo')}")
                                 if dl["bar"]: fails.append(f"{tag}: the daily 'done' bubble covers the tab bar")
                                 # Within 24px: where two lines will not fit beside the
                                 # "?" (a phone browser window, Start Studying just above
