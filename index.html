@@ -81407,11 +81407,15 @@ function showDailyTip(full, compact, opts){
          band forgot it and the bubble went up over the button instead */
       const lo = Math.max(-1e9, ...over.filter(r => r.top + r.height / 2 <= cy).map(r => r.bottom + 6));
       const hi = Math.min(1e9, ...over.filter(r => r.top + r.height / 2 > cy).map(r => r.top - 6));
-      /* and when the gap is narrower than the bubble plus its 6px either
-         side (build 326: Start Studying rose 10px on a 14/15/16, leaving
-         41px over the bar for a 35px bubble), it splits what there is
-         rather than clamping up flush against the button's foot */
-      const band = hi - lo >= th ? Math.min(Math.max(cy - th / 2, lo), hi - th) : (lo + hi - th) / 2;
+      /* and when the gap holds the bubble and 6px but not 6px either side
+         (build 326: Start Studying rose 10px on a 14/15/16, leaving 41px
+         over the bar for a 35px bubble), it splits what there is rather
+         than clamping up flush against the button's foot. A gap with less
+         than that is still refused, as it was, so the one-line form gets
+         its turn (an SE on its side) */
+      const gapH = (hi + 6) - (lo - 6);
+      const band = hi - lo >= th ? Math.min(Math.max(cy - th / 2, lo), hi - th)
+        : gapH >= th + 6 ? (lo + hi - th) / 2 : hi - th;
       for(const y of [cy - th / 2, band, fr.bottom - th, fr.top]) if(ok(lx, y)) return { x: lx, y, side: "left" };
       /* above: over the "?", or pushed to the screen's edge - which clears
          a Start Studying that reaches out over the "?" (a zoomed phone) -
