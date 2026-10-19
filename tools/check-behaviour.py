@@ -12169,6 +12169,7 @@ def check_b313_fx(br):
             const alphas = (bg.match(/rgba\([^)]*\)/g) || []).map(c => parseFloat(c.split(',')[3]));
             return { sea: R(sea), vw: innerWidth, vh: innerHeight, pos: oc ? getComputedStyle(oc).position : null,
               waves: [...L.querySelectorAll('.hfx-uw-wave')].map(w => new DOMMatrixReadOnly(getComputedStyle(w).transform).m41),
+              wavesP: [...L.querySelectorAll('.hfx-uw-wave')].map(w => parseFloat(w.style.getPropertyValue('--p')) || 0),
               caus: [...L.querySelectorAll('.hfx-uw-caus')].map(e => getComputedStyle(e).backgroundImage.slice(0, 26)),
               alphas, rays: L.querySelectorAll('.hfx-uw-ray').length, bubbles: L.querySelectorAll('.hfx-uw-bub').length,
               /* round 6: the bubbles in sight, and how many moving things carry them */
@@ -12365,9 +12366,20 @@ def check_b313_fx(br):
             check("underwater: its surface stays in view near the top while the screen is under it (not off the top)",
                   w and w["vh"] * .03 <= ws[1] <= w["vh"] * .2, {"surface": ws[1], "vh": w.get("vh")})
             wa, wb = w.get("waves") or [], w2.get("waves") or []
-            dv = [b - a for a, b in zip(wa, wb)]
+            # MOVED IN 326: each sheet slides one period (--p) and starts
+            # again, so a raw difference across a wrap reads as the wrong
+            # way. 326 starts the sheets ~0.1s later relative to the effect's
+            # clock (more is built before them), which put the front sheet's
+            # wrap inside this 250ms window on every run: [-217 -> -22] is
+            # 24px LEFT through the wrap, not 195px right. Unwrapped modulo
+            # the sheet's own period, so the check reads the direction of
+            # travel whatever the phase. Frames read across 4.5s on 325 and
+            # 326: back -220 -> 0, front 0 -> -220, identical in both.
+            wp = w2.get("wavesP") or w.get("wavesP") or []
+            unwrap = lambda d, P: ((d + P / 2) % P) - P / 2 if P > 0 else d
+            dv = [unwrap(b - a, wp[i] if i < len(wp) else 0) for i, (a, b) in enumerate(zip(wa, wb))]
             check("underwater: a real surface - two wave layers, sliding opposite ways",
-                  len(wa) == 2 and len(wb) == 2 and dv[0] * dv[1] < 0 and all(abs(x) > .5 for x in dv), {"t0": wa, "t1": wb})
+                  len(wa) == 2 and len(wb) == 2 and dv[0] * dv[1] < 0 and all(abs(x) > .5 for x in dv), {"t0": wa, "t1": wb, "moved": [round(x, 1) for x in dv]})
             al = w.get("alphas") or []
             check("underwater: a depth tint that deepens to the floor, light rays and bubbles",
                   len(al) >= 3 and al[-1] > al[0] and w.get("rays", 0) >= 3 and w.get("bubbles", 0) >= 3, {k: w.get(k) for k in ("alphas", "rays", "bubbles")})
