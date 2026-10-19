@@ -123,7 +123,12 @@ def main():
                 call = sc if sc.endswith(")") else sc + "()"
                 try:
                     pg.evaluate("()=>{ %s }" % call); pg.wait_for_timeout(450)
-                    pg.evaluate("()=>document.querySelectorAll('.notice-bar,.update-banner,.daily-alert,.app-banner,#tour-overlay,#tour-tooltip').forEach(e=>e.remove())")
+                    # MOVED IN 326: .rs-spot too. The seeded account is owed an
+                    # unlock card (Koi, "Study 7 days in a row"); it opened on
+                    # Home and was still up over Welcome, and its border was
+                    # read as a hard side edge at x=22/356 (identical on 325).
+                    # A card's edge is not a clipped glow.
+                    pg.evaluate("()=>document.querySelectorAll('.notice-bar,.update-banner,.daily-alert,.app-banner,#tour-overlay,#tour-tooltip,.rs-spot').forEach(e=>e.remove())")
                     pg.wait_for_timeout(150)
                 except Exception:
                     continue
