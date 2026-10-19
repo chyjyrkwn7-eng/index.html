@@ -18455,15 +18455,18 @@ def check_b320d_rankup(br):
         # fixed time from one start, so a step a loaded machine runs late is
         # made up on the next, not added to the climb. Measured first-change
         # to last, one late first step shortened the span by up to a whole
-        # step (12045ms for nine 1.5s steps). The pace is each level's own
-        # gap, by the median, so one late step cannot pass or fail it.
+        # step (12045ms for nine 1.5s steps). The pace is the mean of the
+        # per-level gaps with the shortest one left out - the one a late
+        # step's catch-up squeezes. (Not the median: the levels are seen by
+        # sampling, and on a loaded machine their gaps come in uneven, so a
+        # median read 1.09s on 325's 12.8s climb.)
         firsts = []
         for p_ in pf:
             if p_["lv"] is not None and p_["lv"] != pre["cap"] and (not firsts or p_["lv"] != firsts[-1][0]) and p_["lv"] not in [f_[0] for f_ in firsts]:
                 firsts.append((p_["lv"], p_["t"]))
         gaps = sorted(b_[1] - a_[1] for a_, b_ in zip(firsts, firsts[1:]))
-        med = gaps[len(gaps) // 2] if gaps else 0
-        check(f"{dev}: the climb is slow ({dur}ms from level {pre['cap'] + 1} to {lvls[-1] if lvls else None}, {med}ms a level by the median, 1.4s+) and the level challenge holds still through it (build 321)",
+        med = round((sum(gaps) - gaps[0]) / (len(gaps) - 1)) if len(gaps) >= 2 else 0
+        check(f"{dev}: the climb is slow ({dur}ms from level {pre['cap'] + 1} to {lvls[-1] if lvls else None}, {med}ms a level less its shortest gap, 1.4s+) and the level challenge holds still through it (build 321)",
               lvls and lvls[-1] == 50 and len(gaps) >= 3 and med >= 1400 and sync and (wk.get("after") or {}).get("level") == "Level 50", [dur, med, gaps, sorted(set(lvls)), sync, wk.get("after")])
         check(f"{dev}: after it, the Profile tab tapped (on Profile and from Home) never rings or jumps, and nothing of the scene is left",
               not wk.get("tabAfter") and wk.get("homeAfter") is False and not (wk.get("after") or {}).get("blocker") and not (wk.get("after") or {}).get("veil"),
