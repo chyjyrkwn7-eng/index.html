@@ -10240,7 +10240,9 @@ def check_b310(br):
     check("a leaderboard snapshot keeps each character (no restart, no shake)", r["sameAvatar"] and r["boardFound"], r)
     check("no banners on leaderboard rows until one is picked", r["noRowBanner"], r)
     check("online: heartbeat green, just left green, left 3 min ago grey, 0 grey", r["online"] == [True, True, False, False] and r["grace"] == 120000, r)
-    check("the tiny flares are all one size of bubble, each with a rim", r["dots"] == 3 and r["dotR"] == ["5"] and r["rims"] == 3, r)
+    # MOVED IN 326 (b326d): Home shows all six secret flares, unlit until
+    # found (was the three build 313 showed before Void)
+    check("the tiny flares are all one size of bubble, each with a rim", r["dots"] == 6 and r["dotR"] == ["5"] and r["rims"] == 6, r)
     check("the big planet is the original: no night-side layer, no pale smoke", not r["shade"] and not r["litSmoke"], r)
     check("Platinum's two stars go round each other and nothing swings", r["plat"], r)
     check("Silver has a world going round it", r["silver"], r)
@@ -24175,8 +24177,13 @@ def check_b320h_fixes(br):
         def px(b):
             return _b320h_lum(_Im.open(_io.BytesIO(pg.screenshot(clip={"x": b[0] + 14, "y": b[1] + b[3] * .3, "width": 16, "height": b[3] * .4}))))
         sl, sc = px(p["save"]); ql, qc = px(p["quit"])
-        check("Save and exit is grey, not black: %.0f against Quit's %.0f (chroma %.0f)" % (sl, ql, sc),
-              sl >= ql + 18 and sl >= 32 and sc <= 14, p)
+        # MOVED IN 326 (b326a): "The save and exit button is clear and see
+        # through? Thats a terrible idea, let's try something else." It is a
+        # solid green matte button now, so the old "grey (chroma <= 14)" is
+        # gone; what holds is that it is solid, not Quit's black, and lighter.
+        bg = p.get("saveBg") or ""
+        check("Save and exit is solid and not Quit's black: %.0f against Quit's %.0f (chroma %.0f)" % (sl, ql, sc),
+              sl >= ql + 18 and sl >= 32 and bg.startswith("rgb(") and bg != p.get("quitBg"), p)
         check("Quit test is unchanged (#0A0A0C)", p["quitBg"] == "rgb(10, 10, 12)", p["quitBg"])
     else:
         check("the pause menu has Save and exit", False)
