@@ -339,14 +339,14 @@ with sync_playwright() as pw:
         sub = pg.evaluate("""()=>computeRunXp({good:37, answered:38, elapsedMs:38*20000,
           okList:Array(12).fill(true).concat([false], Array(25).fill(true)), hundos:0, wholeUnits:1})
           .lines.find(l=>l.key==='streak').sub""")
-        # MOVED in build 326: "The answers in a row one got worse somehow."
-        # 325's "10 in a row x2 +50 · 25 in a row +50" is a sentence now -
-        # the marks it reached, each once, with how often in a word, and
-        # "in a row" not repeated under a label that already says it. The
-        # shape is held: both tiers named in order, the 10 marked as twice.
+        # MOVED AGAIN in build 327: "Answers in a row is terrible, it was
+        # better how it was before." 326's sentence ("Reached 10 twice and
+        # 25") is gone and build 324's line is back: the marks in order, a
+        # count only where one came more than once, "in a row" said once at
+        # the end, no "+N" on any mark - "10 ×2 · 25 in a row".
         import re as _re
-        ck("and it says the marks it reached, 10 twice and 25, in words, without repeating 'in a row' (326)",
-           bool(_re.search(r"\b10\b.*\btwice\b.*\b25\b", sub or "")) and "in a row" not in (sub or "") and "+" not in (sub or ""), sub)
+        ck("and it says the marks it reached the way build 324 did: '10 ×2 · 25 in a row' (327)",
+           bool(_re.fullmatch(r"10 \u00d72 \u00b7 25 in a row", sub or "")) and "+" not in (sub or ""), sub)
         bl = pg.evaluate("()=>computeRunXp({good:12, answered:12, elapsedMs:60000, okList:Array(12).fill(true), hundos:0, wholeUnits:1, badgesPaid:['A','B','C']}).lines.filter(l=>l.badge)")
         # REVERSED IN 320: "no more xp bonus for getting a badge ... remove it
         # from the xp box". Three badges are no line at all.
@@ -388,10 +388,11 @@ with sync_playwright() as pw:
     ck("a one-unit test says 1 unit and lists it", hd["title"] == "1 unit" and hd["items"] == [UNIT], hd)
     lab = pg.evaluate("()=>computeRunXp({good:12, answered:12, elapsedMs:60000, okList:Array(12).fill(true), hundos:0, wholeUnits:1})"
                       ".lines.filter(l=>/^streak/.test(l.key)).map(l=>l.label)")
-    # build 325 renamed it ("the names of the xp ... hard to understand"):
-    # the shape held is that the one streak line says it is about answers
-    # in a row, not the exact words
-    ck("a streak line says what kind of bonus it is", len(lab) == 1 and "in a row" in lab[0].lower(), lab)
+    # build 325 renamed it ("the names of the xp ... hard to understand"),
+    # and 327 again ("could be answer streak or something"): the shape held
+    # is that the one streak line says it is about a streak of answers,
+    # not the exact words
+    ck("a streak line says what kind of bonus it is", len(lab) == 1 and ("in a row" in lab[0].lower() or "streak" in lab[0].lower()), lab)
     pg.evaluate("([u])=>__run(u,1,'drill',true)", [UNIT]); wait_done(pg)
     rt = pg.evaluate("()=>({ pct: !!document.querySelector('#stage .rs-pct'),"
       " note: (document.querySelector('#stage .rs-retake-line')||{}).textContent,"

@@ -204,17 +204,20 @@ def sec_sum(br):
 
 
 def sec_streak(br):
-    print("\n2. the answers-in-a-row line, in words")
+    # MOVED IN 327: "Answers in a row is terrible, it was better how it was
+    # before." The sentence this section held is gone; build 324's line is
+    # back ("10 ×2 · 25 in a row", tools/check-b327-b.py). Held here: no
+    # "+N" jammed into it, and it still fits one line on a phone.
+    print("\n2. the answer streak line (327: build 324's form, see check-b327-b)")
     ctx, pg = boot(br, 440, 956)
     cases = pg.evaluate("""() => { const sub = ok => (computeRunXp({good: ok.filter(Boolean).length, answered: ok.length, elapsedMs: ok.length * 20000, okList: ok, hundos: 0, wholeUnits: 1}).lines.find(l => l.key === 'streak') || {}).sub || null;
       const T = n => Array(n).fill(true), F = [false];
       return { one: sub(T(12)), two: sub(T(12).concat(F, T(25))), three: sub(T(12).concat(F, T(11), F, T(10))), full: sub(T(100)) }; }""")
-    bad = {k: v for k, v in cases.items() if not v or "in a row" in v or "+" in v or "×" in v}
-    check("no line says 'in a row' again under its label, or jams a '+N' or a 'x2' into it", not bad, cases)
-    check("and it reads as words: the marks in order, twice / three times spelled out",
-          bool(re.search(r"\b10\b", cases["one"] or "")) and re.search(r"\b10 twice\b.*\b25\b", cases["two"] or "") is not None
-          and re.search(r"\b10 3 times\b|\b10 three times\b", cases["three"] or "") is not None
-          and re.search(r"10, 25, 50, 75 and 100", cases["full"] or "") is not None, cases)
+    bad = {k: v for k, v in cases.items() if not v or "+" in v or v.count("in a row") != 1}
+    check("no line jams a '+N' into it, and each says 'in a row' once", not bad, cases)
+    check("and it is build 324's line: the marks in order, a count only where one came more than once",
+          cases["one"] == "10 in a row" and cases["two"] == "10 \u00d72 \u00b7 25 in a row"
+          and cases["three"] == "10 \u00d73 in a row" and cases["full"] == "10 \u00b7 25 \u00b7 50 \u00b7 75 \u00b7 100 in a row", cases)
     # on the card: one line, under a 440px phone's width, never wrapped
     r = pg.evaluate(RUN3.replace("bad = k === 25", "bad = k === 25 || k === 37"))
     sub = pg.evaluate("""() => { const l = [...document.querySelectorAll('#stage .rs-xp .rs-xpline')].find(e => /in a row/i.test(e.textContent));

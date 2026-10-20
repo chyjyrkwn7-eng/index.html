@@ -11155,7 +11155,9 @@
   /* deeper is darker: a lit cyan under the surface to a blue at the floor -
      the blue cast on everything under it */
   .hfx-uw-body{ position:absolute; inset:0; overflow:hidden;
-    background:linear-gradient(180deg, rgba(118,220,236,.24) 0%, rgba(52,170,206,.3) 28%, rgba(18,104,148,.4) 64%, rgba(6,54,90,.54) 100%); }
+    background:linear-gradient(180deg, rgba(118,220,236,.24) 0%, rgba(60,184,214,.3) 20%, rgba(28,130,172,.37) 46%, rgba(12,84,128,.47) 74%, rgba(4,40,74,.6) 100%); }
+  /* (build 327) a little deeper at the floor and a band more in between,
+     so the water reads as a depth and not a tint */
   /* the sheen starts from nothing at the surface (round 5): starting at its
      brightest, it drew a straight edge under the crest all the way across */
   .hfx-uw-sheen{ position:absolute; left:0; right:0; top:0; height:24%; background:linear-gradient(180deg, rgba(210,250,255,0), rgba(210,250,255,.16) 28%, rgba(210,250,255,0)); }
@@ -11210,6 +11212,13 @@
   @keyframes hfx-uw-wave{ from{ transform:translateX(0); } to{ transform:translateX(calc(var(--p) * -1)); } }
   @keyframes hfx-uw-wave-back{ from{ transform:translateX(calc(var(--p) * -1)); } to{ transform:translateX(0); } }
   .hfx-uw-fish{ left:0; top:0; }
+  /* (build 327) the fish at the back of the water, the water laid over
+     them: the veil thickens with depth, the dapple drifts across the band
+     they swim in. Static gradient / stepped strip - see hfxUnderwater. */
+  .hfx-uw-life{ position:absolute; left:0; top:0; width:0; height:0; }
+  .hfx-uw-veil{ position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(180deg, rgba(120,214,232,0) 0%, rgba(92,196,222,0) 55%, rgba(64,170,206,.08) 80%, rgba(40,132,178,.16) 100%); }
+  .hfx-uw-dapple{ position:absolute; background-repeat:repeat-x; background-position:0 0; opacity:.5; pointer-events:none; }
   /* THE FISH SWIM (build 326, see hfxFishURL and "THE LIFE IN IT"): a
      fish is an element moved along its wave by a script animation on
      `translate` and `rotate` (its `transform` only faces it the way it is
@@ -17885,14 +17894,18 @@
   /* THE EXTRA IS SPENT WHERE IT STANDS (build 326; build 325's "Saved XP"
      pool is gone - "the 'saved up' xp thing is not the move"). The number
      under the bar stays put and counts down level by level
-     (rankUpStandingClimb); each level's cost lifts off it as "-N XP"
-     (.ru-spend-chip, set over the number it came off) and the level's
+     (rankUpStandingClimb; since 327 it reads "N extra XP", no "-N XP"
+     chip) and the level's
      completion is a short light at the end of the bar (.ru-spend-flash).
      Both driven a frame at a time (ruTween), transform and opacity only. */
   .pf-standing .pf-xpnums{ position:relative; }
   .pf-standing.ru-spending .xpnums-have{ font-variant-numeric:tabular-nums; }
-  .ru-spend-chip{ position:absolute; bottom:100%; font-weight:800; font-size:.86em; color:#9FD0FF; pointer-events:none;
-    white-space:nowrap; text-shadow:0 1px 6px rgba(20,60,140,.6); opacity:0; will-change:transform, opacity; }
+  /* (build 327) the climb's line is "N extra XP" counting down
+     (buildXpExtra); no "-N XP" chip, and no "to Level N" beside it - the
+     level number above the bar is already counting on. */
+  .pf-standing.ru-spending .pf-xp-to{ display:none; }
+  .xpnums.is-extra .xpnums-need{ color:var(--soft); font-weight:700; }
+  .xpnums.is-extra.is-spent{ opacity:.55; transition:opacity .4s ease; }
   .ru-spend-flash{ position:absolute; right:-.35rem; top:50%; width:1.6rem; height:1.6rem; margin-top:-.8rem; border-radius:50%;
     pointer-events:none; opacity:0; background:radial-gradient(closest-side, rgba(225,242,255,.95), rgba(111,194,255,.45) 45%, rgba(111,194,255,0)); }
   .pf-level.ru-lvpop{ display:inline-block; animation:ru-lvpop .5s cubic-bezier(.2,1.5,.4,1) both; }
@@ -93921,15 +93934,19 @@ function hfxBubble(parent, o){
 const hfxFilmArt = {};
 function hfxFilmURL(h){
   h = Math.round(h);
-  if(hfxSprites["film" + h]) return hfxSprite("film" + h);
+  if(hfxSprites["film2-" + h]) return hfxSprite("film2-" + h);
   const hs = (d, l, a) => "hsla(" + ((h + d) % 360) + ",100%," + l + "%," + a + ")";
-  const arc = (d, a, len, r, w, al) => '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + hs(d, 70, al) + '" stroke-width="' + w + '" stroke-linecap="round" stroke-dasharray="' + len + ' 400" transform="rotate(' + a + ' 50 50)"/>';
+  /* (build 327) the film thinner and paler, each band twice - a soft wide
+     one and a fine bright one inside it - so it reads as the colour on a
+     soap film, not a striped ring painted round the bubble */
+  const arc = (d, a, len, r, w, al) => '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + hs(d, 76, al * .7) + '" stroke-width="' + w + '" stroke-linecap="round" stroke-dasharray="' + len + ' 400" transform="rotate(' + a + ' 50 50)"/>' +
+    '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + hs(d, 84, al) + '" stroke-width="' + (w * .32).toFixed(1) + '" stroke-linecap="round" stroke-dasharray="' + (len * .8).toFixed(1) + ' 400" transform="rotate(' + (a + len * .08) + ' 50 50)"/>';
   const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
-    arc(0, 10, 70, 42, 10, .46) + arc(60, 95, 52, 42.5, 9, .42) + arc(140, 170, 64, 42, 10, .44) + arc(210, 250, 48, 43, 8, .4) + arc(290, 310, 40, 42.5, 9, .42) +
+    arc(0, 10, 70, 43.5, 6.5, .46) + arc(60, 95, 52, 44, 6, .42) + arc(140, 170, 64, 43.5, 6.5, .44) + arc(210, 250, 48, 44, 5.5, .4) + arc(290, 310, 40, 44, 6, .42) +
     arc(30, 200, 90, 34, 6, .2) + arc(180, 20, 70, 33, 5, .18) +
     '<path d="M20 62 C 34 42, 54 76, 80 48" fill="none" stroke="' + hs(100, 75, .2) + '" stroke-width="6" stroke-linecap="round"/>' +
     '<path d="M28 34 C 44 50, 62 26, 76 38" fill="none" stroke="' + hs(250, 78, .16) + '" stroke-width="5" stroke-linecap="round"/></svg>';
-  return hfxSpriteSVG("film" + h, svg, 480);
+  return hfxSpriteSVG("film2-" + h, svg, 480);
 }
 let hfxHeroShellC = null, hfxRingC = null;
 function hfxHeroShellURL(){
@@ -94089,8 +94106,9 @@ function hfxWarm(id){
     else if(id === "worldtree"){ [0, 1, 2].forEach(i => urls.push(hfxBlossomURL(i))); urls.push(hfxLeafURL()); HFX_BLOOM.forEach(cl => urls.push(hfxPetalURL(cl))); }
     else if(id === "fireworks"){ hfxFwHeads(); urls.push(hfxGlintURL()); }
     else if(id === "blackhole"){ urls.push(hfxDiscURL(), hfxSwirlURL(), hfxStreakURL(), hfxGlintURL()); }
-    else if(id === "underwater"){ urls.push(hfxWaveURL(0), hfxWaveURL(1), hfxUwLensURL(), hfxUwLightURL(0), hfxUwLightURL(1), hfxRayURL(), hfxUwBubbleURL(), hfxDropURL(), hfxGlintURL());
-      [0, 1, 2, 4].forEach(k => urls.push(hfxFishURL(k))); urls.push(hfxFishURL(0, null, true)); [1, 2, 3, 4].forEach(k => urls.push(hfxFishURL(k, "body"), hfxFishURL(k, "tail"))); }
+    else if(id === "underwater"){ urls.push(hfxWaveURL(0), hfxWaveURL(1), hfxUwLensURL(), hfxUwLightURL(0), hfxUwLightURL(1), hfxUwDappleURL(), hfxRayURL(), hfxUwBubbleURL(), hfxDropURL(), hfxGlintURL());
+      [0, 1, 2, 4].forEach(k => urls.push(hfxFishURL(k))); urls.push(hfxFishURL(0, null, true)); [1, 2, 4].forEach(k => urls.push(hfxFishURL(k, "body", false, HFX_FISH_HAZE.mid), hfxFishURL(k, "tail", false, HFX_FISH_HAZE.mid)));
+      urls.push(hfxFishURL(3, "body", false, HFX_FISH_HAZE.near), hfxFishURL(3, "tail", false, HFX_FISH_HAZE.near)); }
   }catch(e){}
   /* every sprite made so far, this effect's included, to a bitmap */
   Object.keys(hfxSprites).forEach(k => hfxRasterise(hfxSprites[k]));
@@ -94517,6 +94535,26 @@ function hfxUwLightURL(seed){
       '<mask id="m"><rect width="' + P + '" height="' + H + '" fill="url(#f)"/></mask></defs><g mask="url(#m)">' + blobs + '</g>' + motes + '</svg>';
   }, 320);
 }
+/* LIGHT ON THE FISH (build 327): the dappled light that moves over
+   anything a few metres down - soft patches like hfxUwLightURL's but
+   fainter and smaller, faded out top and bottom (it lies across the band
+   the fish swim in, not from the surface), with flecks of silt in it. One
+   strip that tiles sideways, rasterised once. */
+function hfxUwDappleURL(){
+  return hfxSprite("uwdap", () => {
+    const rnd = bnRand(977), P = 300, H = 340, F = v => v.toFixed(1);
+    let blobs = "", silt = "";
+    for(let i = 0; i < 18; i++){
+      const x = rnd() * P, y = 30 + rnd() * (H - 60), rx = 7 + rnd() * 17, ry = rx * (.3 + rnd() * .3), a = Math.round(rnd() * 60 - 30), o = (.22 + rnd() * .4).toFixed(2);
+      [-P, 0, P].forEach(dx => { const X = x + dx; if(X + rx * 1.3 < 0 || X - rx * 1.3 > P) return;
+        blobs += '<ellipse cx="' + F(X) + '" cy="' + F(y) + '" rx="' + F(rx) + '" ry="' + F(ry) + '" transform="rotate(' + a + ' ' + F(X) + ' ' + F(y) + ')" fill="url(#b)" fill-opacity="' + o + '"/>'; });
+    }
+    for(let i = 0; i < 26; i++) silt += '<circle cx="' + F(rnd() * P) + '" cy="' + F(20 + rnd() * (H - 40)) + '" r="' + F(.7 + rnd() * 1.3) + '" fill="#E8FCFF" fill-opacity="' + (.25 + rnd() * .4).toFixed(2) + '"/>';
+    return 'viewBox="0 0 ' + P + ' ' + H + '"><defs><radialGradient id="b"><stop offset="0" stop-color="#EFFFFF" stop-opacity=".7"/><stop offset=".4" stop-color="#BFF2FF" stop-opacity=".22"/><stop offset="1" stop-color="#BFF2FF" stop-opacity="0"/></radialGradient>' +
+      '<linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".3" stop-color="#fff"/><stop offset=".7" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
+      '<mask id="m"><rect width="' + P + '" height="' + H + '" fill="url(#f)"/></mask></defs><g mask="url(#m)">' + blobs + silt + '</g></svg>';
+  }, 300);
+}
 /* a shaft of light from the surface: soft-edged (three nested wedges),
    bright at the top and gone by its foot */
 /* drawn LEANING (round 6): the lean used to be a rotate on the element,
@@ -94567,9 +94605,12 @@ function hfxUwBubbleURL(){
    over it, for the fish further off. Drawn once each and rasterised, like
    every sprite. */
 const HFX_FISH_ROOT = [.745, .715, .73, .69, .70];
-function hfxFishURL(k, part, far){
+/* how much of the water's haze is over a fish at each depth (build 327) */
+const HFX_FISH_HAZE = { mid: .34, near: .22 };
+function hfxFishURL(k, part, far, haze){
   k = ((k % 5) + 5) % 5;
-  const key = "fish3-" + k + "-" + (part || "all") + (far ? "-far" : "");
+  haze = Math.round(Math.max(0, Math.min(.6, Number(haze) || 0)) * 100) / 100;
+  const key = "fish3-" + k + "-" + (part || "all") + (far ? "-far" : "") + (haze ? "-h" + Math.round(haze * 100) : "");
   return hfxSprite(key, () => {
     const eye = (x, y, r, ring) => '<circle cx="' + x + '" cy="' + y + '" r="' + (r * 1.18) + '" fill="' + ring + '" fill-opacity=".85"/>' +
       '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="url(#ey)"/><circle cx="' + (x - r * .32) + '" cy="' + (y - r * .34) + '" r="' + (r * .3) + '" fill="#fff" fill-opacity=".95"/>';
@@ -94651,7 +94692,12 @@ function hfxFishURL(k, part, far){
     /* the sheen's clip is the body's own outline */
     defs += '<clipPath id="bc"><path d="' + bodyD + '"/></clipPath>';
     /* further off, the water's blue laid over it (its own outline) */
-    const veil = d => far ? '<path d="' + d + '" fill="' + tint + '" fill-opacity=".42"/>' : "";
+    /* (build 327) and nearer ones a HAZE: the scattered light between
+       you and a fish a few metres down, a pale aqua over its outline, so
+       its colours soften and its contrast drops without going brown (the
+       far veil's dark blue does that to orange and yellow) */
+    const veil = d => (far ? '<path d="' + d + '" fill="' + tint + '" fill-opacity=".42"/>' : "") +
+      (haze ? '<path d="' + d + '" fill="#9ADCE8" fill-opacity="' + haze + '"/>' : "");
     const parts = part === "body" ? body + veil(bodyD) : part === "tail" ? tail + veil(tailD) : tail + veil(tailD) + body + veil(bodyD);
     return 'viewBox="0 0 128 64"><defs>' + defs + '</defs>' + parts + '</svg>';
   }, 320);
@@ -95658,6 +95704,34 @@ function hfxUnderwater(scr, bx, c){
       n: { rays: mini ? 3 : small ? 4 : 6, vents: mini ? 2 : small ? 3 : 4, gap: mini ? [.55, .9] : [.3, .5],
         scatter: mini ? 3 : small ? 7 : 9, boxGap: mini ? [.7, 1.1] : [.4, .65], rush: mini ? 2 : small ? 4 : 5 } });
     const body = S.body, bodyH = S.bodyH;
+    /* THE FISH ARE IN THE WATER, NOT ON IT (build 327). Madison: "The
+       underwater fish are still bad, why are they clearly visible? They
+       don't look like they are in the water." They were drawn over
+       everything the water had - over its blue, over its light - so each
+       one was a crisp sticker on top of the sea. Now they swim in their
+       own layer at the BACK of the water (.hfx-uw-life) and the water is
+       laid over them: a veil of the water's own colour that thickens with
+       depth (.hfx-uw-veil - the haze that takes the contrast out of
+       anything a few metres off), dappled light drifting across the band
+       they swim in with flecks of silt in it (.hfx-uw-dapple), then the
+       sheen, the light patches and the rays the sea already had. Further
+       off is fainter: the school comes up to .42, the middle fish to .8,
+       the near angelfish to .9, each out of the blue and back into it at
+       the ends of its swim. All of it static or transform/opacity; the
+       dapple is one more strip, stepped like the light's. */
+    const life = hfxMk(body, "span", "hfx-uw-life");
+    const veil = hfxMk(body, "i", "hfx-uw-veil");
+    body.insertBefore(veil, body.firstChild); body.insertBefore(life, veil);
+    {
+      const tw = 300 * k, th = Math.round(340 * k);
+      const cardsBot = c.scene && c.scene.cards && c.scene.cards.length ? Math.max(...c.scene.cards.map(q => q.bottom)) - rest : box.top + box.height;
+      const fy = Math.max(0, Math.min(bodyH - th * .6, cardsBot - lvl - th * .2));
+      const d = hfxMk(body, "i", "hfx-uw-dapple", { left: "0px", top: Math.round(fy) + "px", width: (c.vw + tw) + "px", height: th + "px" });
+      d.style.backgroundImage = hfxUwDappleURL(); d.style.backgroundSize = tw + "px " + th + "px";
+      body.insertBefore(d, veil.nextSibling);
+      const dpr = window.devicePixelRatio || 1, st = Math.round(tw * dpr / 2), dx = -st * 2 / dpr;
+      hfxAnim(c, d, [{ transform: "translateX(0px)" }, { transform: "translateX(" + dx.toFixed(3) + "px)" }], { duration: (tot + .2) * 1000, easing: "steps(" + st + ")", fill: "both" });
+    }
     /* THE LIFE IN IT (build 326, after 325's "The fish coming by and the
        random shadow black thing is bad" and now "I don't like the fish you
        got going on. That can be better"). Three depths, so the water has
@@ -95691,7 +95765,7 @@ function hfxUnderwater(scr, bx, c){
         const vy = amp * 2 * Math.PI * waves * Math.cos(2 * Math.PI * waves * u + ph);
         const rot = Math.max(-11, Math.min(11, Math.atan(vy / (dx || 1)) * deg));
         const f = { translate: x.toFixed(1) + "px " + y.toFixed(1) + "px", rotate: rot.toFixed(2) + "deg" };
-        if(fade) f.opacity = u < .18 ? (u / .18) * fade : u > .8 ? Math.max(0, (1 - u) / .2) * fade : fade;
+        if(fade) f.opacity = u < .22 ? (u / .22) * fade : u > .76 ? Math.max(0, (1 - u) / .24) * fade : fade;
         fr.push(f);
       }
       const an = hfxAnim(c, el, fr, { duration: d * 1000, delay: Math.max(0, dl) * 1000, fill: "both", easing: "linear" });
@@ -95699,11 +95773,11 @@ function hfxUnderwater(scr, bx, c){
       return an;
     };
     /* one fish: its body still, its tail beating (`tb` s a stroke) */
-    const fishEl = (parent, kk, w, face, tb, d, far) => {
+    const fishEl = (parent, kk, w, face, tb, d, far, haze) => {
       const e = hfxMk(parent, "span", "hfx-uw-f", { "--fw": w + "px", "--fr": (HFX_FISH_ROOT[kk] * 100).toFixed(1) + "%", "--tb": tb.toFixed(2) + "s", "--tn": String(Math.ceil(d / tb) + 2) });
       e.style.transform = "scaleX(" + face + ")";
-      const tl = hfxMk(e, "i", "hfx-uw-ft"); tl.style.backgroundImage = hfxFishURL(kk, "tail", far);
-      const bd = hfxMk(e, "i", "hfx-uw-fb"); bd.style.backgroundImage = hfxFishURL(kk, "body", far);
+      const tl = hfxMk(e, "i", "hfx-uw-ft"); tl.style.backgroundImage = hfxFishURL(kk, "tail", far, haze);
+      const bd = hfxMk(e, "i", "hfx-uw-fb"); bd.style.backgroundImage = hfxFishURL(kk, "body", far, haze);
       return e;
     };
     /* swimming toward +x the drawing (which faces left) is flipped */
@@ -95718,12 +95792,12 @@ function hfxUnderwater(scr, bx, c){
       school.push({ w, dx: -dir * lag, dy: (i % 2 ? 1 : -1) * hfxR(4, 20) * k + hfxR(-6, 6) * k });
     }
     due(inAt, off => {
-      const sc = hfxMk(body, "span", "hfx-uw-school");
+      const sc = hfxMk(life, "span", "hfx-uw-school");
       /* the school is one picture: its fish do not move inside it */
       school.forEach(f => { const e = hfxMk(sc, "i", "hfx-uw-sf", { left: f.dx + "px", top: f.dy + "px", "--fw": f.w + "px" });
         e.style.backgroundImage = hfxFishURL(0, null, true); e.style.transform = "scaleX(" + faceFor(dir) + ")"; });
       const xs = dir > 0 ? -spread * .2 : c.vw + spread * .2, xe = dir > 0 ? c.vw * .78 + spread : c.vw * .22 - spread;
-      swim(sc, xs, xe, y0, 9 * k, 1.1, hfxR(0, 6.28), inAt - off, win, .62);
+      swim(sc, xs, xe, y0, 9 * k, 1.1, hfxR(0, 6.28), inAt - off, win, .42);
     });
     /* middle: crossing the other way, each at its own height and pace */
     const mids = [[1, 56, .15, .95, -.3, .3], [2, 60, .55, 1, .22, .38], [4, 34, .95, .8, -.06, .24], [4, 31, 1.05, .8, .02, .23]];
@@ -95732,9 +95806,9 @@ function hfxUnderwater(scr, bx, c){
       const w = w0 * k * sz, y = lowY - lvl + dy * 100 * k, dd = (win - dl) * sp;
       const x0 = dir > 0 ? c.vw + w : -w, x1 = dir > 0 ? -w * 1.3 : c.vw + w * 1.3;
       due(inAt + dl, off => {
-        const g = hfxMk(body, "span", "hfx-uw-fish3");
-        fishEl(g, kk, w, faceFor(-dir), tb, dd, false);
-        swim(g, x0, x1, y, hfxR(5, 9) * k, hfxR(.8, 1.3), hfxR(0, 6.28), inAt + dl - off, dd, 0);
+        const g = hfxMk(life, "span", "hfx-uw-fish3");
+        fishEl(g, kk, w, faceFor(-dir), tb, dd, false, HFX_FISH_HAZE.mid);
+        swim(g, x0, x1, y, hfxR(5, 9) * k, hfxR(.8, 1.3), hfxR(0, 6.28), inAt + dl - off, dd, .74);
       });
     });
     /* close: the angelfish, big, low and in front, quicker */
@@ -95742,9 +95816,9 @@ function hfxUnderwater(scr, bx, c){
       const w = 104 * k * sz, dl = .7, dd = Math.min(win - dl, 2.1), y = lowY - lvl + 46 * k;
       const x0 = dir > 0 ? -w : c.vw + w, x1 = dir > 0 ? c.vw + w * 1.3 : -w * 1.3;
       due(inAt + dl, off => {
-        const g = hfxMk(body, "span", "hfx-uw-fish3 is-near");
-        fishEl(g, 3, w, faceFor(dir), .36, dd, false);
-        swim(g, x0, x1, y, 7 * k, .9, hfxR(0, 6.28), inAt + dl - off, dd, 0);
+        const g = hfxMk(life, "span", "hfx-uw-fish3 is-near");
+        fishEl(g, 3, w, faceFor(dir), .36, dd, false, HFX_FISH_HAZE.near);
+        swim(g, x0, x1, y, 7 * k, .9, hfxR(0, 6.28), inAt + dl - off, dd, .84);
       });
     }
     /* drops running down the glass once the water has gone */
@@ -95766,7 +95840,7 @@ function hfxUnderwater(scr, bx, c){
         n: { rays: 2, vents: 2, gap: c.mini ? [.6, 1] : [.4, .7], scatter: c.mini ? 2 : 4, boxGap: null, rush: c.mini ? 1 : 2 } });
       for(let i = 0; i < 3; i++){
         const f = hfxPiece(bx, "hfx-uw-fish is-box", hfxFishURL(i), 0, 0, (c.mini ? 14 : 22), {});
-        hfxAnim(c, f, [{ transform: "translate(" + (c.bw + 20) + "px," + (c.bh * (.32 + i * .16)) + "px) scaleX(1)", opacity: 0 }, { transform: "translate(" + (c.bw * .5) + "px," + (c.bh * (.3 + i * .18)) + "px) scaleX(1)", opacity: 1, offset: .5 },
+        hfxAnim(c, f, [{ transform: "translate(" + (c.bw + 20) + "px," + (c.bh * (.32 + i * .16)) + "px) scaleX(1)", opacity: 0 }, { transform: "translate(" + (c.bw * .5) + "px," + (c.bh * (.3 + i * .18)) + "px) scaleX(1)", opacity: .62, offset: .5 },
           { transform: "translate(-20px," + (c.bh * (.36 + i * .14)) + "px) scaleX(1)", opacity: 0 }], { duration: 2200, delay: (.8 + i * .25) * 1000, fill: "both", easing: "ease-in-out" });
       }
     }
@@ -96252,7 +96326,7 @@ function buildHundoFxMock(id, o){
   el("span", "hfx-mk-sub", "1 unit · Identity Crimes", head);
   const xp = el("div", "rs-card rs-xp");
   el("p", "hfx-mk-kicker", "XP earned", xp);
-  [["Correct answers", "+120"], ["Hundo", "+100"], ["Answers in a row", "+25"]].forEach(r => { const l = el("p", "hfx-mk-line", null, xp); el("span", "", r[0], l); el("b", "", r[1], l); });
+  [["Correct answers", "+120"], ["Hundo", "+100"], ["Answer streak", "+25"]].forEach(r => { const l = el("p", "hfx-mk-line", null, xp); el("span", "", r[0], l); el("b", "", r[1], l); });
   const tl = el("p", "hfx-mk-line is-total", null, xp); el("span", "", "Total", tl); el("b", "", "+245 XP", tl);
   const xb = el("span", "hfx-mk-bar", null, xp); el("i", "", null, xb);
   const gr = el("div", "rs-card rs-grade is-perfect");
@@ -99304,22 +99378,16 @@ function multiUnitMultiplier(wholeUnits){
    answered), retake, daily, hundos, wholeUnits, timePRs / scorePRs
    ([{unit, text}]) and badgesPaid
    ([unit]). */
-/* THE ANSWERS-IN-A-ROW LINE, SAID IN WORDS (build 326). Madison: "The
-   answers in a row one got worse somehow. Fix that." Build 324 read
-   "10 ×2 · 25 in a row"; 325 made it "10 in a row ×2 +50 · 25 in a row
-   +50" - "in a row" said three times on one line (the label says it
-   already), a "×2" and a "+50" jammed against each other, and on a phone
-   it ran to the edge or wrapped. The label is "Answers in a row", so the
-   line under it only has to say which marks were reached and how often:
-   "Reached 10 twice and 25" - a sentence, nothing repeated, every count a
-   word. What each mark pays stays in the total on the right (the marks'
-   values are fixed: runStreakTierXp). */
+/* THE STREAK LINE IS "Answer streak", AND ITS LINE IS BUILD 324'S (build
+   327). Madison: "Answers in a row is terrible, it was better how it was
+   before. The title 'answers in a row' could be answer streak or
+   something." 326 wrote the marks as a sentence ("Reached 10 twice and
+   25"); 325 put a value after every mark ("10 in a row x2 +50 · 25 in a
+   row +50"). The one she liked was 324's: the marks, a count where one
+   came more than once, "in a row" said once at the end -
+   "10 ×2 · 25 in a row". What each mark pays is in the total. */
 function runStreakSub(tiers, keys){
-  const W = ["", "", "", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
-  const times = n => n === 1 ? "" : n === 2 ? " twice" : " " + (W[n] || n) + " times";
-  const parts = keys.map(t => t.toLocaleString() + times(tiers[t]));
-  const list = parts.length < 2 ? parts.join("") : parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
-  return "Reached " + list;
+  return keys.map(t => t.toLocaleString() + (tiers[t] > 1 ? " \u00d7" + tiers[t] : "")).join(" \u00b7 ") + " in a row";
 }
 function computeRunXp(r){
   const lines = [];
@@ -99342,16 +99410,30 @@ function computeRunXp(r){
      line first and the bonuses under their own heading. (Build 325's sum
      under the total is gone, build 326.) The keys did not change; the
      Virtual Room's steps are matched by key. */
+  /* THE XP BOX, SIMPLIFIED (build 327). Madison: "the descriptions under
+     some of the stuff is bad, it looks cluttered ... The whole xp box
+     needs to be simplified so it's simple to use and understand." One
+     line per kind, a short name, and a sub-line only where it says
+     something the name and the number do not: how many answers, which
+     marks, the average time, which bests, how many units. No line
+     repeats its own arithmetic ("+20% of the 955 above"). */
   add("correct", "Correct answers", r.good * POINTS_PER_QUESTION,
-      { sub: r.good + " right \u00d7 " + POINTS_PER_QUESTION + " XP", base: true });
+      { sub: r.good + " \u00d7 " + POINTS_PER_QUESTION + " XP", base: true });
   /* A retake is "literally gonna be just purely retake": the answers it
      got right, and nothing else of any kind. */
   if(r.retake) return { lines: lines, total: lines.reduce((s, l) => s + l.value, 0) };
 
   /* a hundo is called a Hundo (build 326 - "perfect" was the word Stats
      was told to drop, and this line said it too) */
-  if(r.hundos > 0) add("hundo", r.hundos > 1 ? "Hundos" : "Hundo", r.hundos * PERFECT_BONUS,
-      { sub: (r.hundos > 1 ? r.hundos + " whole units, every answer right \u00d7 " : "A whole unit, every answer right: ") + PERFECT_BONUS + " XP" });
+  /* No description for one hundo - "the hundo one has an unnecessary
+     description. That would probably only need to be there or there's
+     multiple units you got a hundo on?" (build 327). Several: the units,
+     named, and nothing else. */
+  if(r.hundos > 0){
+    const hu = Array.isArray(r.hundoUnits) ? r.hundoUnits.filter(Boolean) : [];
+    add("hundo", r.hundos > 1 ? "Hundos \u00d7" + r.hundos : "Hundo", r.hundos * PERFECT_BONUS,
+        r.hundos > 1 && hu.length > 1 ? { sub: hu.join(" \u00b7 ") } : null);
+  }
 
   /* ONE STREAK LINE, NOT ONE PER TIER (build 309): "The xp board looks
      good but it quickly seems to flood in with multiple types of xp
@@ -99364,7 +99446,7 @@ function computeRunXp(r){
   if(tierKeys.length){
     const streakXp = tierKeys.reduce((sum, t) => sum + runStreakTierXp(t) * tiers[t], 0);
     const top = tierKeys[tierKeys.length - 1];
-    add("streak", "Answers in a row", streakXp, {
+    add("streak", "Answer streak", streakXp, {
       streak: top, tiers: tierKeys.map(t => ({ t: t, n: tiers[t] })),
       sub: runStreakSub(tiers, tierKeys) });
   }
@@ -99373,8 +99455,7 @@ function computeRunXp(r){
     const avgSec = r.elapsedMs / 1000 / r.answered;
     const scaled = speedTierXp(avgSec) * Math.min(1, r.answered / 10) * (r.good / r.answered);
     const v = r.good > 0 ? Math.max(5, roundTo5(scaled)) : 0;
-    add("speed", "Speed", v, { sub: (avgSec < 10 ? avgSec.toFixed(1) : Math.round(avgSec)) + "s a question on average (" +
-      formatClock(r.elapsedMs) + " in all)" });
+    add("speed", "Speed", v, { sub: (avgSec < 10 ? avgSec.toFixed(1) : Math.round(avgSec)) + "s a question" });
   }
 
   /* THE LONG TEST BONUS - "taking a test with like loads of questions
@@ -99388,7 +99469,7 @@ function computeRunXp(r){
   if(longBlocks > 0 && r.good > 0){
     add("long", "Long test",
         Math.max(5, roundTo5(longBlocks * LONG_TEST_XP * (r.good / r.answered))),
-        { sub: "+" + LONG_TEST_XP + " for every " + LONG_TEST_EVERY + " questions (" + (longBlocks * LONG_TEST_EVERY) + "+)" });
+        { sub: (longBlocks * LONG_TEST_EVERY) + "+ questions" });
   }
 
   /* Personal bests, one line for both kinds (build 309) - the same
@@ -99415,7 +99496,7 @@ function computeRunXp(r){
   const m = multiUnitMultiplier(r.wholeUnits || 0);
   if(m > 1){
     add("multi", "Several units \u00d7" + (Math.round(m * 100) / 100), roundTo5(beforeMult * (m - 1)),
-        { sub: "+" + Math.round((m - 1) * 100) + "% of the " + beforeMult.toLocaleString() + " above, for " + r.wholeUnits + " whole units" });
+        { sub: r.wholeUnits + " whole units" });
   }
   return { lines: lines, total: lines.reduce((s, l) => s + l.value, 0) };
 }
@@ -102376,6 +102457,7 @@ function summarize(){
         good: good, answered: total, elapsedMs: elapsedMs,
         okList: order.map(qi => !missedSetXp.has(qi)),
         hundos: hundosEarned, wholeUnits: runWholeUnits,
+        hundoUnits: multiUnitStarsEarned.perfected.slice(),
         timePRs: timePRs, scorePRs: scorePRs,
         badgesPaid: badgesEarnedThisRun.filter(u => retroBadges.indexOf(u) < 0)
       };
@@ -123505,10 +123587,17 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
   const toBar = levelBarOf(to);
   const spanOf = lv => lv >= L1 ? Math.max(1, Math.round(toBar.span) || rankUpLevelSpan(lv)) : rankUpLevelSpan(lv);
   standing.classList.add("ru-climbing", "ru-spending");
-  /* the numbers that were there stay there: the extra, against the level */
+  /* THE LINE UNDER THE BAR IS THE EXTRA, AND IT GOES DOWN (build 327).
+     Madison: "not sure what's up with the -xp stuff in the bar.. it could
+     literally just be the xp that's the extra it goes down as you level
+     up." For the climb the line is one number - the XP past the level
+     the bar is filling, "40,266 extra XP" - and it only ever counts down:
+     each level takes what it costs out of it as the bar fills. No "-N XP"
+     lifts off it (rankUpSpendChip is gone) and nothing on it is ever
+     negative. When the climb lands the ordinary "x / y XP" is back. */
   let nums = numsHost && numsHost.querySelector(".xpnums");
-  if(nums){ const n = buildXpNumbers(into(L0), spanOf(L0), into(L0) > spanOf(L0)); nums.replaceWith(n); nums = n; }
-  const have = nums && nums.querySelector(".xpnums-have"), need = nums && nums.querySelector(".xpnums-need");
+  if(nums){ const n = buildXpExtra(Math.max(0, into(L0) - spanOf(L0))); nums.replaceWith(n); nums = n; }
+  const have = nums && nums.querySelector(".xpnums-have"), need = null;
   const toEl = standing.querySelector(".pf-xp-to");
   fill.style.transition = "none";
   const steps = L1 - L0;
@@ -123518,8 +123607,14 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
   const beat = Math.min(320, Math.round(stepMs * .22)), run = Math.max(380, Math.round(stepMs - beat));
   const rec = { from: L0, to: L1, ms: steps * (run + beat), levels: steps, start: into(L0), end: null, steps: [], total };
   if(scene) scene.climb = rec;
+  /* h is the XP into level lv; the line shows what is past the part of
+     lv the bar holds (f of its span): the extra still to be spent */
+  let extraShown = Infinity;
   const show = (lv, h, f) => {
-    if(have){ const t = Math.max(0, Math.round(h)).toLocaleString(); if(have.textContent !== t) have.textContent = t; }
+    const ex = Math.min(extraShown, Math.max(0, Math.round(h - Math.max(0, Math.min(1, f)) * spanOf(lv))));
+    extraShown = ex;
+    if(have){ const t = ex.toLocaleString(); if(have.textContent !== t) have.textContent = t; }
+    if(nums) nums.classList.toggle("is-spent", ex === 0);
     setBarFill(fill, Math.round(Math.max(0, Math.min(1, f)) * 1000) / 10);
     if(track) track.classList.toggle("is-banked", h > spanOf(lv));
     if(nums) nums.classList.toggle("is-over", h > spanOf(lv));
@@ -123547,15 +123642,14 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
     if(need) need.textContent = " / " + span1.toLocaleString() + " XP";
     if(toEl) toEl.textContent = nx < L1 || !to.stopped ? pfXpToText({ level: nx }) : "";
     rankUpSpendFlash(standing);
-    rankUpSpendChip(numsHost, have, cost);
-    show(nx, h0, 0);
-    /* the number counts down by what it cost while the new level fills */
+    show(nx, h1, 0);
+    /* the extra counts down by what the new level takes as it fills */
     await ruTween(standing, Math.max(160, due + run - performance.now()), k => {
       const e = .5 - .5 * Math.cos(Math.PI * k);
-      show(nx, h0 - cost * e, f1 * e);
+      show(nx, h1, f1 * e);
     });
     show(nx, h1, f1);
-    rec.steps.push({ level: nx, cost, have: h1, span: span1, sum: xpForLevel(nx) + h1, fill: parseFloat(fill.style.getPropertyValue("--fill")) || 0 });
+    rec.steps.push({ level: nx, cost, have: h1, extra: extraShown, span: span1, sum: xpForLevel(nx) + h1, fill: parseFloat(fill.style.getPropertyValue("--fill")) || 0 });
     const rest = due + run + beat - performance.now();
     if(rest > 0) await rankUpWait(rest);
   }
@@ -123585,23 +123679,18 @@ function ruTween(el, ms, fn){
     requestAnimationFrame(step);
   });
 }
-/* "-N XP" lifts off the number it was taken from, up and away */
-function rankUpSpendChip(host, from, n){
-  if(!host || !host.isConnected) return;
-  const c = document.createElement("span");
-  c.className = "ru-spend-chip"; c.setAttribute("aria-hidden", "true");
-  c.textContent = "−" + Math.round(n).toLocaleString() + " XP";
-  try{
-    const hr = host.getBoundingClientRect(), fr = from ? from.getBoundingClientRect() : hr;
-    c.style.left = Math.round(fr.left - hr.left) + "px";
-  }catch(e){}
-  host.appendChild(c);
-  host.dataset.ruTakes = String((Number(host.dataset.ruTakes) || 0) + 1);
-  ruTween(c, RU_SPEND_CHIP_MS, k => {
-    const e = 1 - Math.pow(1 - k, 2.2);
-    c.style.opacity = String(k < .14 ? k / .14 : Math.max(0, 1 - (k - .14) / .86));
-    c.style.transform = "translateY(" + (2 - 15 * e).toFixed(1) + "px) scale(" + (k < .14 ? .82 + 1.3 * k : 1.0 - .08 * k).toFixed(3) + ")";
-  }).then(() => c.remove());
+/* "40,266 extra XP": the line under the bar while a rank-up climb spends
+   the extra (build 327; the "-N XP" chip it replaces is gone). The same
+   two spans as buildXpNumbers, so its colour and type are the same. */
+function buildXpExtra(n){
+  const w = document.createElement("span");
+  w.className = "xpnums is-extra";
+  const a = document.createElement("span"); a.className = "xpnums-have";
+  a.textContent = Math.max(0, Math.round(Number(n) || 0)).toLocaleString();
+  const b = document.createElement("span"); b.className = "xpnums-need";
+  b.textContent = " extra XP";
+  w.append(a, b);
+  return w;
 }
 /* the level completing: a short light off the end of the full bar */
 function rankUpSpendFlash(standing){

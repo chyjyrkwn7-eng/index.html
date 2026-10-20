@@ -403,8 +403,15 @@ def section_xpcard(br):
         ctx, pg = boot(br, w, h)
         r = pg.evaluate(RUN)
         lines = r["lines"]
-        check("%s: every line says how it was worked out (a sub-line under each), and none is named by its arithmetic ('47 correct x 10')" % label,
-              len(lines) >= 4 and all(l["sub"] for l in lines) and not any(any(ch.isdigit() for ch in (l["name"] or "").split("×")[0]) for l in lines),
+        # MOVED IN 327: "the descriptions under some of the stuff is bad, it
+        # looks cluttered ... The whole xp box needs to be simplified." A
+        # sub-line only where it says something the name and the number do
+        # not (one hundo carries none); held instead: the answers' line says
+        # how many, no line is named by its arithmetic, and no sub-line
+        # spells out a percentage of the lines above it.
+        check("%s: the answers' line says how many, none is named by its arithmetic ('47 correct x 10'), and no sub-line restates a sum ('+20%% of the 955 above')" % label,
+              len(lines) >= 4 and lines[0]["sub"] and not any(any(ch.isdigit() for ch in (l["name"] or "").split("×")[0]) for l in lines)
+              and not any("above" in (l["sub"] or "") or "% of" in (l["sub"] or "") for l in lines),
               lines)
         check("%s: the answers' line comes first, then a Bonuses heading over every other line" % label,
               r["kick"] and r["kickAt"] == 2 and lines and r["xpLines"] and r["xpLines"][0]["key"] == "correct", r["kids"][:5])

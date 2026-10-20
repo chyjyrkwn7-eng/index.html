@@ -107,7 +107,7 @@ CLIMB = """async (a) => {
     const f = s.querySelector('.pf-xpbar .xpbar-fill');
     samples.push({ t: Math.round(performance.now() - T0), lv: num((s.querySelector('.pf-level') || {}).textContent),
       have: num((s.querySelector('.xpnums-have') || {}).textContent), need: num((s.querySelector('.xpnums-need') || {}).textContent),
-      fill: f ? parseFloat(getComputedStyle(f).getPropertyValue('--fill')) : null });
+      fill: f ? parseFloat(getComputedStyle(f).getPropertyValue('--fill')) : null, extra: !!s.querySelector('.xpnums.is-extra') });
     if(/saved/i.test(s.textContent)) out.saved = true;
     if(s.querySelector('.ru-pool')) out.pool = true;
     s.querySelectorAll('.ru-spend-chip, .ru-pool-chip').forEach(c => { if(!c.dataset.seen){ c.dataset.seen = 1; out.chips.push(c.textContent); } });
@@ -141,12 +141,17 @@ def section_spend(br):
         tot = to["total"]
         check("%s: no 'Saved XP' and no pool anywhere while it climbs (%d frames)" % (label, r["n"]),
               not r["saved"] and not r["pool"] and r["n"] >= 30, [r["saved"], r["pool"], r["n"]])
-        check("%s: it starts on the extra where it was - %s / %s XP at Level %s, the number past what the level asks" % (label, fr["into"], fr["span"], fr["level"]),
-              fr["stopped"] and s and s[0]["have"] == fr["into"] and s[0]["need"] == fr["span"] and s[0]["lv"] == fr["level"] and fr["into"] > fr["span"],
+        # MOVED IN 327: "not sure what's up with the -xp stuff in the bar..
+        # it could literally just be the xp that's the extra it goes down as
+        # you level up." The line is the extra itself ("N extra XP": the XP
+        # past the level the bar is full at), not "into / span"; it counts
+        # down while the levels fill, and no "-N XP" comes off it.
+        check("%s: it starts on the extra - %s extra XP at Level %s (%s into a level of %s)" % (label, fr["into"] - fr["span"], fr["level"], fr["into"], fr["span"]),
+              fr["stopped"] and s and s[0]["extra"] and s[0]["have"] == fr["into"] - fr["span"] and s[0]["lv"] == fr["level"] and fr["into"] > fr["span"],
               [s[:2], fr])
-        haves = [x["have"] for x in s]
-        check("%s: the number only ever counts down" % label,
-              all(haves[i] <= haves[i - 1] for i in range(1, len(haves))), [(i, haves[i - 1], haves[i]) for i in range(1, len(haves)) if haves[i] > haves[i - 1]][:4])
+        haves = [x["have"] for x in s if x["extra"]]
+        check("%s: the extra only ever counts down (%d frames on it)" % (label, len(haves)),
+              len(haves) >= 20 and all(haves[i] <= haves[i - 1] for i in range(1, len(haves))), [(i, haves[i - 1], haves[i]) for i in range(1, len(haves)) if haves[i] > haves[i - 1]][:4])
         lvs = []
         for x in s:
             if not lvs or lvs[-1] != x["lv"]:
@@ -155,9 +160,8 @@ def section_spend(br):
               lvs == list(range(fr["level"], to["level"] + 1)), lvs)
         rec = r.get("rec") or {}
         steps = rec.get("steps") or []
-        check("%s: each level's own cost comes off it, shown as it goes (-N XP)" % label,
-              [st["cost"] for st in steps] == r["spans"] and len(r["chips"]) == len(r["spans"])
-              and all(c.replace("−", "-").replace(",", "").startswith("-%d" % n) for c, n in zip(r["chips"], r["spans"])),
+        check("%s: each level's own cost comes off it (327: no '-N XP' shown - the extra going down is the telling)" % label,
+              [st["cost"] for st in steps] == r["spans"] and len(r["chips"]) == 0,
               [[st["cost"] for st in steps], r["spans"], r["chips"]])
         check("%s: nothing lost - at every step xpForLevel(level) + the number is the total (%d)" % (label, tot),
               steps and all(st["sum"] == tot for st in steps) and all(int(r["xpFor"][str(st["level"])]) + st["have"] == tot for st in steps),
