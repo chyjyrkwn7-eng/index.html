@@ -526,9 +526,32 @@ LEVEL_NEAR = """() => {
   store.seenUnlockedTiers = TIER_ORDER_FULL.slice(0, TIER_ORDER_FULL.indexOf(rankOf(store)) + 1);
   saveStore(); return levelProgress(store.lifetime.points); }"""
 
+FX_PICK = """() => {
+  /* every hundo effect held (350 hundos) and %s picked; their pop-ups were
+     shown long ago, so nothing but the effect plays */
+  store.lifetime.perfectTests = Math.max(store.lifetime.perfectTests || 0, 360);
+  store.hundoFx = "%s";
+  store.unlocksShown = store.unlocksShown || {}; store.unlocksShown.fx = HUNDO_FX.map(f => f.id);
+  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){}
+  saveStore(); return hundoFxInUse(); }"""
+
+AT_WALL = """() => {
+  /* no badges and far more XP than the first rank's level: the bar is held
+     full at the wall, so a run knocks it and the rest overflows */
+  store.unitPerfects = {}; store.rankFloor = 0; store.levelFloor = 0; store.levelWallRule = 325;
+  store.lifetime.points = xpForLevel(26) + 400;
+  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){}
+  saveStore(); return levelStateFor(store); }"""
+
 SCENARIOS = {
     "home-idle": (home_idle, 60, "Home on its own for 20s: the ambience she loves, untouched"),
     "results-hundo": (results(0), 150, "a real Identity Crimes drill, every answer right: count, grade, XP box, bar, the hundo effect"),
+    "hundo-confetti": (results(0, extra=FX_PICK % ("confetti", "confetti"), tail=3), 150, "a real 100%: Confetti"),
+    "hundo-fireworks": (results(0, extra=FX_PICK % ("fireworks", "fireworks"), tail=3), 150, "a real 100%: Fireworks"),
+    "hundo-underwater": (results(0, extra=FX_PICK % ("underwater", "underwater"), tail=3), 150, "a real 100%: Underwater"),
+    "hundo-bubbles": (results(0, extra=FX_PICK % ("bubbles", "bubbles"), tail=3), 150, "a real 100%: Bubbles"),
+    "hundo-ufo": (results(0, extra=FX_PICK % ("ufo", "ufo"), tail=3), 170, "a real 100%: UFO"),
+    "results-wall": (results(2, extra=AT_WALL), 150, "a pass with the XP bar held full at a wall: the full bar and the extra XP"),
     "results-pass": (results(2), 150, "the same drill with 2 of 12 missed (83%): a pass"),
     "results-fail": (results(6), 150, "6 of 12 missed (50%): under the pass mark"),
     "results-levelup": (results(2, extra=LEVEL_NEAR), 150, "a pass that crosses a level: the level-up jingle on the XP bar"),

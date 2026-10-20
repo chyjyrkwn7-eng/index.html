@@ -24520,3 +24520,55 @@ looking. All the progressive cracking could be better too."* Gate:
   colour (an 82% average is green) - grey like the accuracy ring is the
   other reading; Stats' heavier surfaces belong to the glass builder.
 
+
+### Build 327 (b327f) - the grade box red into green from its first frame, the hundo effects and the XP box in the main menu's voice, a full bar that brims
+
+Madison, Oct 20, after the first 327 videos: *"The green box is grey and then
+green? ... The hundo effect sounds need to be cooler, I think the xp box sound
+effects could be better. The xp bar being full, I don't like it. I really like
+the main menu sound effects, let's really ensure this is all done right."*
+
+- **GREY THEN GREEN WAS THE EDGE.** While the grade counted in, the card's
+  border was a faint white (`.is-counting{ border-color:rgba(255,255,255,.07) }`)
+  and its two crossfading washes (`.rs-grade-tone > i`) carried only a 16% wash
+  and a 28% border; the coloured rim every card has (`--rs-edge`: border, a 1px
+  line at 55%, a 30px glow at 26%) arrived only at the landing. Each wash now
+  carries that whole rim (`--te`, an r,g,b triplet like `--rs-edge`) and the
+  card's own border is transparent while counting, so the box is red into green
+  from its first frame and the landing changes nothing about the edge's look.
+- **The hundo effects and the XP box speak the Home ambience's language, not
+  the handheld pulse.** `amb.home` (untouched) has no pulse lead in it: a dark
+  lowpassed saw pad, the FM 3.01 bell with its echo, the triangle thrum, the
+  pink-noise wind, the FM 3.5 far twinkles. Rewritten with exactly those:
+  - `hundo.confetti` - a breath in, the crack on a deep thrum, a D major bell
+    choir panned wide, the pad blooming open, paper, stars falling down the key.
+  - `hundo.fireworks` - whistles (sine + air, panned with the shell), a brown
+    boom that rolls (reverb .5) per burst, a crackle spray after each, the
+    burst's bell chord, and under the whole show the pad walking Dm, Bb, C to a
+    blazing D major for the finale; embers as crackle and falling stars.
+  - `hundo.underwater` - a deep rush up, then the muffled world (a pressure hum,
+    a low pad, two whale-song FM glides, bubbles, the muffled bell melody with a
+    long echo), the drain with a falling gurgle, drips, a last bell.
+  - `hundo.bubbles` - liquid chirps each ringing a D major bell, an air pad, a
+    few glass pings; the flourish a ring of pops, a rising bell run and stars.
+  - `hundo.ufo` - a dark D minor pad with the Bb in it under the theremin (two
+    sines, opposite orbits), the beam's rising hum and shimmering drone, the
+    landing thud, the scan, FM lock beeps, the charge, the warp's boom with a
+    falling sweep, stars. All on the same beats as before.
+  - `res.xp.line` a bell climbing D minor per line, `res.xp.count` a far star per
+    tick (not a chip), `res.xp.total` thrum + the pad opening + a bell chord,
+    `res.xp.fill` the pad's filter opening with the wind for the fill's length
+    and bells stepping up faster, `res.xp.pop` a struck D major bell chord.
+- **THE FULL BAR BRIMS, IT DOES NOT KNOCK.** `res.xp.knock` (a full bar, a
+  wall, level 80) was a hollow wooden double knock - a failure sound. It is now
+  the ambience's thrum, a low muted FM gong and the pad's D-A fifth closing
+  softly. `res.xp.overflow` is wind lifting and stars streaming up into a bell
+  on D, not a wandering pulse. The bar's own visual knock (`xpBarBump`) is
+  unchanged; if "the xp bar being full" meant the picture, that is next.
+- Levels: every rewritten id's `vol` matches build 327a's loudest 50ms for the
+  same id, except `res.xp.knock` (lower, it now sustains) and `res.xp.count`
+  (raised to clear check-sound's silence floor).
+- `tools/record-sound.py` gained `hundo-confetti`, `hundo-fireworks`,
+  `hundo-underwater`, `hundo-bubbles`, `hundo-ufo` (a real 100% with that effect
+  picked) and `results-wall` (a pass with the bar held full at a wall).
+- Gates: check-sound ALL PASS, check-b327-a ALL PASS.
