@@ -1,6 +1,6 @@
 # Nova — working notes
 
-Study app for Class 26E, used by ~40 classmates. **26E is a police academy
+Study app for Class 26E, used by ~40 classmates. **Madison is the owner and he is a guy - he/him, never she/her.** Never put his name in anything the app shows: a line that tells people who to ask says "ask an admin". **26E is a police academy
 class**, which is worth knowing before writing any copy for it: "While you
 study" was rejected as a Settings header for not reading official enough, and
 became "Studying & tests". The tone the app wants is plain and unfussy, not
@@ -195,12 +195,12 @@ the gates in **Verifying**, send both reference screenshots, and then
 
 **The superseded instruction, and why it existed**, because the failure
 mode it was written for is real and has not gone away: a whole session's
-work once sat on the branch while she opened the app and found nothing had
+work once sat on the branch while he opened the app and found nothing had
 changed, and a branch that is 11 commits ahead looks exactly like one that
 is up to date from the Home Screen. So the hold costs something, and the
 price of it is stated plainly every time: **whenever work is finished but
 NOT on `main`, say so in the same message as the screenshots** — name the
-build and say it is waiting on her go. Never let her discover it by
+build and say it is waiting on his go. Never let him discover it by
 opening the app. That sentence was load-bearing under the old instruction
 and it is load-bearing under this one, for opposite reasons.
 
@@ -3372,8 +3372,8 @@ and ~40 people.
 
 **And now a second thing stands there: Madison's go.** See **DO NOT MERGE
 TO `main` UNTIL MADISON HAS SEEN THE SCREENSHOTS** under **Repo and
-deployment**. She asked for it on being told what this paragraph says —
-she had been asking when the work could be "pushed from the test URL to
+deployment**. He asked for it on being told what this paragraph says —
+he had been asking when the work could be "pushed from the test URL to
 the live class used URL", which is a step that stopped existing at build
 97. If a session is still describing this repo as a test repo, it is
 reading `Nova-Test`'s retired copy of this file.
@@ -3927,7 +3927,7 @@ re-evaluated on the next check.
 - **THE NEXT-QUESTION TRANSITION IS A FADE-THROUGH, NOT A SLIDE, and
   that is a deliberate reversal.** Reported after four rounds of
   tuning the slide: *"that motion is not easy on the eyes at all ...
-  maybe it needs to fade into the next question."* She was right, and
+  maybe it needs to fade into the next question."* He was right, and
   the reason is that the panel is nearly IDENTICAL between one
   question and the next — same header, same progress dots, same Pause,
   same Next bar. Sliding the whole thing a full screen width animates
@@ -4920,7 +4920,7 @@ pinch-zoom is never taken away from anybody.
   (the `rem`-gate trap that was the real cause of the Home screen
   report): `heroOffCentre` came back 0–1px every time. Recorded here
   because a guess at a layout that measures right is how a screen that
-  was fine stops being fine — it needs her screenshot, or the device's
+  was fine stops being fine — it needs his screenshot, or the device's
   own text-size setting, to go on.
 
 ### The three that were reported as not fixed, and were not (build 198)
@@ -4999,22 +4999,22 @@ reference device.**
 **Read this before touching any phone layout.** Eleven rounds of
 phone fixes — Home's planet, its wording, its button, the unit-selection
 bar, the typing zoom — were each measured correct at 440×956 and each
-reported back as *"not even changed"*. They were not changed, on her
+reported back as *"not even changed"*. They were not changed, on his
 phone. A screenshot from the device finally showed why: the planet
 small with its whole orbit visible, `v6.9` in the corner (phones hide
 it), a 224px Start button (phones use 200). **That is not the phone
 layout at all.**
 
-Measured off her screenshot against elements whose CSS size is known —
+Measured off his screenshot against elements whose CSS size is known —
 the "?" circle, the button, the tab bar, the version label — the device
 lays the app out **~518 CSS px wide and ~1125 tall**. A 440pt screen at
 518 CSS px is a **page zoom of about 85%** (Safari's aA menu / Page
 Zoom), which a Home Screen app inherits. Rendered at 518×1125, the
-harness reproduced her screenshot to within a few pixels: the circle's
+harness reproduced his screenshot to within a few pixels: the circle's
 top at 936 on both.
 
 Every phone gate in the file stopped at `max-width:512px` (or `32rem`,
-the same thing at a 16px root). 518 is past all of them, so her phone
+the same thing at a 16px root). 518 is past all of them, so his phone
 got the base styles with none of the phone refinements, and every fix
 was applied to a layout it never uses.
 
@@ -5139,11 +5139,11 @@ glow now stopped in two vertical lines down the sides.
   `check-trend.py` asserts all of this and **fails on build 200** on the
   newcomer case (`--against`), which is the reported bug exactly.
 
-### The Rank tab at her real width, and the chat sheet's drag (build 202)
+### The Rank tab at his real width, and the chat sheet's drag (build 202)
 
 - **"The Rank tab is offset to the right on the phone" was real, and
   build 197 measured it at the wrong width.** It was checked at 440 and
-  came back centred; her phone lays out at 518 (see build 199), where
+  came back centred; his phone lays out at 518 (see build 199), where
   the hero is a ROW, and for somebody with no rank yet the emblem slot
   is deliberately empty — but an empty 8rem box still took its space,
   so every line of the card sat in the right-hand two thirds. At 440 the
@@ -6162,7 +6162,7 @@ written on a thin plate: Police Tape, Siren, Glazed and so on), from a
 page of references Madison sent as "some banner ideas I like". **It was
 undone before it shipped.** Shown a screenshot of the build 225/226
 banners - the scene tiles in Customize and the banner as the Profile
-cover - she said: *"I was really liking how these banners working and
+cover - he said: *"I was really liking how these banners working and
 stuff for the profile this looks great. Don't change what you did
 here."* The 225 note on banners-as-scenes stands; the banner code is
 byte-identical to 226 again (reverted by reverse-applying the 226->227
@@ -6269,7 +6269,7 @@ Amethyst, red all the way through for Supernova (its swatch went
 strengths did not change. A new theme needs a family not on that list.
 
 **iPhone Home** (`(max-width:639px) and (min-height:736px) and
-(min-width:430px)`): Start Studying bigger (62x216 at her 518px zoomed
+(min-width:430px)`): Start Studying bigger (62x216 at his 518px zoomed
 view, was 57x200), 12px more gap above it, and 10px higher, text rising
 with it. 430px floor because a 393px phone's button nearly shares a
 column with the daily-question circle.
@@ -6779,8 +6779,8 @@ artifact, and section 24 of check-behaviour fails on 238 for every one:
   invites you to. Madison's rule is "if I am in a room or chat with them
   their old invite should disappear" - with anyone - and check-chatroom
   holds it. Being in chat A with Bo does therefore hide Bo's invite to
-  chat B; that edge case was put to her rather than decided here. The
-  invite items do carry `code` now, harmlessly, should she want it.
+  chat B; that edge case was put to him rather than decided here. The
+  invite items do carry `code` now, harmlessly, should he want it.
 - **Names are coloured by membership, not by who is awake**
   (`chatColorBasis`). Taken from the present set, somebody whose phone
   slept fell back to a hashed colour that could match somebody present.
@@ -6871,7 +6871,7 @@ Section 25 of check-behaviour covers all of it and fails on 239.
 ### Build 240, second round - Madison's review list before shipping
 
 "It's not a go for midnight. I need to review this stuff first." Nothing
-from build 240 is committed until she has. These landed in the same
+from build 240 is committed until he has. These landed in the same
 build number, uncommitted:
 
 - **Unit details are one layout for every mode** (`unitDetailStats`):
@@ -6950,7 +6950,7 @@ build number, uncommitted:
 
 ### Build 241 - Madison's list after reviewing 240
 
-Also uncommitted until she has reviewed it. `check-behaviour` 28 and 29
+Also uncommitted until he has reviewed it. `check-behaviour` 28 and 29
 are the gates; both were run against 239/240 and fail there.
 
 - **The Home flare bubbles are glass again.** A lit rank bubble is the
@@ -7185,7 +7185,7 @@ Paladin as already seen and nobody on Gold would ever be handed it.
   rank it needs and the rank you hold. Unlocked tiles are still one tap
   to use. Five across on a phone so no name wraps; `AVATAR_GRID_NAME`
   gives "Masked One" for the grid. Madison asked whether Customize should
-  be tabs - it stays one page (she likes it), with the groups as headings.
+  be tabs - it stays one page (he likes it), with the groups as headings.
 - **THE THEME CIRCLES.** `.dot.tier-veteran` was white into steel blue, a
   leftover from a silver tier, so "Gold" previewed lavender - it is the
   Gold rank's gold now. Default was a flat grey (`ACCENT_SWATCH.ink`) for
@@ -7227,7 +7227,7 @@ art came from four parallel drafts merged in; what is recorded here is
 what shipped, not every draft.
 
 - **THE LADDER IS BRONZE, SILVER, GOLD NOW.** "The bronze rank should be
-  the first rank." Asked, she chose Bronze -> Silver -> Gold over Bronze
+  the first rank." Asked, he chose Bronze -> Silver -> Gold over Bronze
   -> Iron. The KEYS did not move (rookie is Bronze, ranger is Silver,
   veteran is Gold) - only RANK_DISPLAY_NAME / ACCENT_DISPLAY_NAME,
   RANK_COLOR, ACCENT_SWATCH, the theme triads and the `.dot.tier-*`
@@ -7284,7 +7284,7 @@ what shipped, not every draft.
   refused outright ("I hate the wolf scholar and pirate"); they are
   retired ids, and the challenges went to the Valkyrie (10 Virtual Room
   wins), the Hacker (20 hours) and the Timekeeper (30 days studied,
-  `days30`, counted off the study log). What she likes is the sovereign
+  `days30`, counted off the study log). What he likes is the sovereign
   set, Zeus and Poseidon, the Detective: premium and a little epic, not
   cartoon mascots or animals - brief any new character against that.
 - **THE SWAT ITEM.** The sunglasses and the Undercover banner are gone;
@@ -7330,11 +7330,11 @@ what shipped, not every draft.
   round medallion, Silver a hexagon, Gold a triangular crest, Platinum a
   star, Sapphire a cut gem with fins, Amethyst winged, Supernova big
   wings and a crown) with the celestial motif set into each, escalating
-  in size and detail. Her answer was **"revert that immediately. Revert
+  in size and detail. His answer was **"revert that immediately. Revert
   the icons to the others."** The crests were reverted to 244's set first; what shipped is below. Lessons worth
   keeping: a reference image is a statement about a FEELING (escalation)
   rather than a style to copy - literal metal crests replaced the
-  celestial objects she already liked; and a redesign of something she
+  celestial objects he already liked; and a redesign of something he
   has named as liked ("I like the platinum, amethyst and sapphire")
   should keep those pieces untouched and be shown as a proposal first.
 - **THEN THE LADDER WAS RE-DEALT, NOT REDRAWN - AND THIS IS WHAT SHIPPED.**
@@ -7344,7 +7344,7 @@ what shipped, not every draft.
   ink at 44px bubble size): the old order was nearly upside down there
   (Bronze's nebula carried the most ink, Gold outshone Platinum and
   Sapphire, the Sapphire comet was the dimmest mark in the set). Four
-  mockup rounds with her, each a picture before any code, settled on:
+  mockup rounds with him, each a picture before any code, settled on:
   Bronze a softer nebula (no ball at the bottom - "I see bronze as a
   ball and then I see a ball in the later stages so it's not clicking"),
   Silver the protostar, Gold a fuller comet, Platinum the binary with
@@ -7363,7 +7363,7 @@ what shipped, not every draft.
     lanes, shadowed limbs, a darker hole in the ring nebula, darker
     crimson between Supernova's points, and `sepRing`, a thin soft dark
     band just outside a bright body, over its glow. It is a RING, not a
-    disc: a filled disc greyed Supernova's see-through core. She chose
+    disc: a filled disc greyed Supernova's see-through core. He chose
     the subtle strength over 2.6x ("I wanted more black ... Maybe +?");
     the constant is the only difference, so moving it is one line.
   - **Sapphire's galaxy was reshaped to sit between its neighbours**:
@@ -7441,7 +7441,7 @@ what shipped, not every draft.
     time. If people want to do it again they'd hit re run." The choice
     lives on the run's `cfg`, never on `store`; Re-run repeats it.
   - **The card advertises it, the choice stays off it.** First "nothing
-    else would change"; then, once she had seen it, "ensure the unit box
+    else would change"; then, once he had seen it, "ensure the unit box
     mentions it has the 0-85 version or something so people know and
     want to click it" - so the Penal Code card (and the Virtual Room
     host's copy of it) carries a small blue "Slides 0–85 version now included" pill
@@ -7461,13 +7461,13 @@ what shipped, not every draft.
     before this too. Such runs are now written to test history with
     `part: true` and skipped there (a history entry field, not `store`,
     so no default needed; old entries can't be told apart).
-  - **Never the words "test version"** in the UI, and the range is her
+  - **Never the words "test version"** in the UI, and the range is his
     "0–85" (the deck's questions sit on slides 2–79, so 0–85 and 1–87
     select the same 56). check-behaviour asserts the SHAPE of the two
     labels, not the strings.
   - **No notes on Q33 or Q218**, although the deck marks them with
     contradictory answers - "I'll let you know later if I need that."
-    Do not add a bankNoteAnswer to either without her asking.
+    Do not add a bankNoteAnswer to either without his asking.
   - The slides version is a shortened run, so the existing hundo rules
     already keep it off the badge: XP yes, hundo no. Select all takes
     the whole unit without asking; dismissing the pop-up selects
@@ -8192,7 +8192,7 @@ because "succeeded ... with fuzz" is the only warning there is.
   before writing, per the Knight lesson.
 - Three characters in this slot in four builds. What was asked against
   each time: armour (the Knight), a cute animal (the Owl). What the set
-  she likes has in common - the Hacker, the Timekeeper, the Valkyrie,
+  he likes has in common - the Hacker, the Timekeeper, the Valkyrie,
   Void - is a strong single silhouette and a light of its own on a dark
   figure. Start there next time.
 
@@ -8998,7 +8998,7 @@ are untouched.
   own enamel (not the empty slot the case shows), "Earn N hundos in this
   unit.", the green bar and "x of N". `showContextualInfo` is no longer
   used by the badge case. In Chromium that bubble does fade at 3.2s; on
-  her phone it did not, and it is not worth chasing now nothing here
+  his phone it did not, and it is not worth chasing now nothing here
   raises it. `check_b281_badge_card` fails on 280.
 - **Tab switches: what was measured, and what was not worth shipping.**
   *"Switching between tabs lags badly, the animation when opening up
@@ -9043,7 +9043,7 @@ are untouched.
   (rank emblems, characters): with them off, Profile drops 1 frame
   after opening instead of ~15, Home 3 instead of ~11. Glow filters
   account for about half of that. Freezing or thinning them is a look
-  decision - she asked for them to move (248) - so it is put to her,
+  decision - he asked for them to move (248) - so it is put to him,
   not done quietly.
 
 
@@ -9105,7 +9105,7 @@ are untouched.
   (box-shadow + brightness, infinite, on Profile and every results
   screen) is a white wash on `::after` fading in and out. Measured over
   a whole drill reveal at 4x: long tasks 92 -> 0ms, dropped frames 6 -> 3.
-- **Still on the table, and hers to decide**: the animations INSIDE
+- **Still on the table, and his to decide**: the animations INSIDE
   drawings (rank emblems, characters) remain the largest per-frame cost;
   freezing or thinning them changes the look (see 281).
 - Gates: `check_b282` (section 55) holds the rings to the Rank tab's own
@@ -11648,8 +11648,8 @@ device, phone and iPad) fails 34 checks there and passes on 307.
 ### Build 310 - streak colours, sliding tabs, the original planet, an orbit that goes round
 
 **Held for Madison's go.** On the branch only. The leaderboard row banners
-are built but OFF (`LB_ROW_BANNER = ""`); three options went to her as
-screenshots and nothing turns on until she picks one.
+are built but OFF (`LB_ROW_BANNER = ""`); three options went to him as
+screenshots and nothing turns on until he picks one.
 
 - **The streak pop climbs the colour wheel.** `.streak-lv2`..`lv8` each
   set `--sk` (teal, sky, violet, gold, orange, rose, then a moving prism
@@ -11696,7 +11696,7 @@ screenshots and nothing turns on until she picks one.
   (b) the plasma at .9 opacity, (c) the night-side/atmosphere disc
   (`.cosmic-sphere-shade`). (a) and (c) are gone, (b) is back to .55,
   and the smoke is the dark layer only, a little deeper. Do not re-add a
-  light smoke layer: it is the thing she was describing. (Build 317's
+  light smoke layer: it is the thing he was describing. (Build 317's
   planet round makes the dark smoke three dark layers that roil - still
   no light one; see "THE PLANET ROUND".)
 - **The tiny secret flares are tiny bubbles, all alike**: r 5 (the
@@ -11932,7 +11932,7 @@ shuffled and neither are the order of questions" - raised many times)
   instant it was built, so a card cut short (a screen change, a fast tap)
   still counted and Home never played it: that is why Zeus never got his
   Home banner. Madison's account already had Zeus marked shown and was not
-  re-queued; she has him in Customize.
+  re-queued; he has Zeus in Customize.
 - A badge card says only the requirement once it is earned.
 
 **UI**
@@ -12168,7 +12168,7 @@ perfectly and smoothly")
 - **What could not be reproduced:** the Profile fast-scroll lag itself.
   Profile renders completely on a throttled fling in Chromium; the two
   changes above are the measurable candidates, and the report should be
-  re-checked on her phone.
+  re-checked on his phone.
 
 **The answer streak gets cooler as it climbs**
 - "Ensure they get progressively cooler/different when it gets higher
@@ -12888,7 +12888,7 @@ frames across each 100, at each character's own beats),
 
 **The chat keeps 24 hours, everywhere, and nothing older is ever drawn.**
 *"The chat stuff, I thought we said that old chat messages delete after 24
-hours? I still see some."* She did see some, four ways at once:
+hours? I still see some."* He did see some, four ways at once:
 - a GROUP chat's history reset at local midnight rather than after a day,
   and kept its last three messages whatever their age "so it never opens
   empty" (`keepStale: 3`);
@@ -13501,7 +13501,7 @@ the screen layer as a whole is the cost, as the old ablation found for the
 tree. Still done for the device: the Fireworks canvas stops at the box's
 top edge (a third fewer pixels, nothing was drawn below it), Bubbles keeps
 4/6 glass heroes. Nothing here can measure an iPhone's GPU; the clips are
-what she judged, and those were the recorder.
+what he judged, and those were the recorder.
 
 **It is not backdrop-filter (build 317, round 3) - tested, and left alone.**
 The hypothesis was that a moving effect layer forces the results cards'
@@ -14366,7 +14366,7 @@ version is that set now; 0-85 is gone from the app.
   hidden from the stem - statute/section tags like "(PC 36.03 (a) (1);
   ...)", a leftover "42." numbering, quizlet and web links, and on
   Arrest/Search/Seizure 112 "(#57)" shown as "?". Asked directly whether
-  to show those exactly as the guide prints them, she chose to keep them
+  to show those exactly as the guide prints them, he chose to keep them
   hidden. Do not strip anything further and do not put them back.
 - **That repair made #346 a seventh question on one answer set** (the
   "which offense is this" questions: murder, manslaughter and the rest),
@@ -14787,7 +14787,7 @@ while reads still work.
   has to be weighed against 20,000 a day across ~40 people** - that is
   500 each. Upgrading the Firebase project to the Blaze plan keeps the
   same free allowance and charges about $0.18 per 100,000 writes past
-  it; it is Madison's call and her card.
+  it; it is Madison's call and his card.
 - After an outage, `firestore-admin.py audit` shows anybody whose phone
   republished a row on launch without its save landing. A single-device
   account can be credited exactly under its one tally key (Maddog, +545,
@@ -14876,7 +14876,7 @@ disagree with it.
   through every saved level. On the Oct 6 backup: Ht4l24 53 -> 39 (14
   saved), Madison 52 -> 49 (3), BigSlim 51 -> 29 (22), Napoleon 47 and Z
   41 -> 29, ALFRED 35 -> 29; Sauce, OdinSavior, Cap and Otx are inside
-  their caps and unchanged. Put to her in those terms before building:
+  their caps and unchanged. Put to him in those terms before building:
   *"Yeah that makes sense. Make sure it makes sense."*
 - **RANK CHALLENGES ARE THE ONE NAME FOR IT, EVERYWHERE.** *"It would
   need to say ... those are rank challenges, like bronze challenges or
@@ -15139,7 +15139,7 @@ disagree with it.
     level at <held rank>. Complete the <next rank> challenges to keep
     leveling up. Your XP still counts and turns into levels when you rank
     up." (unranked: "...before your first rank. Complete the Bronze
-    challenges..."). Her words: "this is the max level you can achieve at
+    challenges..."). His words: "this is the max level you can achieve at
     this rank, complete the challenges to keep leveling up, your xp still
     goes up and will be given to you when the levels or ranks unlock". No
     badge count and no ordinal - the Next rank card right under it lists
@@ -15436,7 +15436,7 @@ disagree with it.
   - **A SECRET'S SILHOUETTE HAS ITS HEAD FITTED (317 fix,
     `SIL_HEAD_FIT`).** *"Genesis looks great, Umbra is kinda bugged and
     too big, and Horizon is nearly perfect but also too big. They are cut
-    off."* (Her screenshot was most likely the LIVE app, build 313, where
+    off."* (His screenshot was most likely the LIVE app, build 313, where
     Umbra's flames were still blacked into a hood half again as tall -
     build 314's SIL_LIGHT fixed that. What was left on b6cd249 was still
     measurably wrong, so it was fixed anyway.) A cut-out is a black shape
@@ -16542,7 +16542,7 @@ disagree with it.
       in the Supernova cutscene's set-up if that is the first scarred hero
       of the session.
   - **SECOND PASS: A BURNING FISSURE, NOT A MARK.** Madison, of the
-    Supernova planet she had (the first scar): *"The permanent damage to
+    Supernova planet he had (the first scar): *"The permanent damage to
     the supernova thing is eh."* The first redesign was right up close and
     a thin dark scratch from arm's length - **what reads at phone size is
     light**, so the crack burns along most of its length: its heat cools
@@ -17531,7 +17531,7 @@ disagree with it.
     patched to freeze each new animation at the virtual moment it is made).
 - **A FOCUS RING IS FOR THE KEYBOARD (build 317).** *"There's a weird
   outline thing around the button there, I've seen this before, I'm not
-  sure why I'm seeing that but fix it"* - her iPhone, a failed run's
+  sure why I'm seeing that but fix it"* - his iPhone, a failed run's
   results, a thin light ring 2-4px outside "Continue to review (4
   missed)" and nowhere else. It was `.next:focus-visible` (2px of the
   accent, `outline-offset:2px`) on the button the SCREEN focuses for
@@ -17636,7 +17636,7 @@ disagree with it.
   lift the cap (`gateRankForBadges`), not the next rank by level. The
   What's New card adds a personal line for anybody held with saved
   levels ("You're level X with S levels saved ..."), which is the
-  explanation she asked for for the people it moves.
+  explanation he asked for for the people it moves.
 - `firestore-admin.py` `badge_wall`/`effective_level` mirror the bands
   with no floor default; check-curve section 8 asserts the caps, the
   saved count, no floor on load, no rank lost against build 313's
@@ -18347,7 +18347,7 @@ different/don't connect either, they also seem fake and have rough
 edges!!! I've already said this though."*
 
 **THE TOKEN IS RENDERED FROM A HEIGHT FIELD (`renderBadgeStrike`), and
-no vector recipe could have fixed what she named.** Every silver part of
+no vector recipe could have fixed what he named.** Every silver part of
 the band drawing was a gradient laid out by POSITION across that shape's
 own box, so the light fell differently on every badge (a wide shape and a
 tall one cannot match), and the channels were a second ramp that met the
@@ -18787,7 +18787,7 @@ they are cutoff"*.
 
 - **Where a find plays.** In the code the results screen already played
   the scenes - the pack recordings had played them over Home, which is
-  what she saw. What was really wrong: the 3rd-6th went card, scene,
+  what he saw. What was really wrong: the 3rd-6th went card, scene,
   character (build 241), and a find was LOST whenever its results never
   ran (Exit test, the app closed, a resumed run - `mysteryFoundThisSession`
   was reset on resume) apart from the character's card on Home.
@@ -20112,7 +20112,7 @@ now? ... figure this out"*, *"The rank up is still showing in unlocks."*
   first frame through its landing and never returns to red from anything;
   from the pass mark a smoothstep blend along the STRAIGHT line to the pass
   green (RGB - the same mix the card's two washes make crossfading; going
-  round the hue wheel is exactly the orange she rejected), all green at 100.
+  round the hue wheel is exactly the orange he rejected), all green at 100.
   The card's washes are two now (`is-red`, `is-green`). Both ends are the
   landed card's own `--wrong`/`--right`.
 - **A pass short of 100 finishes the blend as it lands** (the number's
@@ -20134,7 +20134,7 @@ now? ... figure this out"*, *"The rank up is still showing in unlocks."*
 - **The back end is slower**: the last bar is `1300 + 1800f + 1400f^3` ms
   easing out at `RS_GRADE_LAST_EASE` (3.6; 320: `1200 + 1700f + 900f^3`,
   3.2). A 12/12 now takes ~2.4s from 92 to the landing (320: ~1.9s).
-- **THE HUNDO EFFECT STAYS AFTER THE XP BOX** (the decision she left to
+- **THE HUNDO EFFECT STAYS AFTER THE XP BOX** (the decision he left to
   us): the results character on the XP box reacts to it (b320b), so it has
   to be on screen. The beat after the XP is `RS_FX_AFTER_XP_MS` 900 (650).
 - **THE XP NUMBER COUNTS WITH ITS BAR** (`buildResultsLevelBlock`,
@@ -20942,7 +20942,7 @@ key."*
 - **A calendar dot is its key's colour on every day**: the test dot amber and
   a no-class day's dot pink on today and on a picked day; today's class dot is
   the accent like the key's. Today keeps its ring and fill.
-- **Gate: `check_b323n_nav`** (fails on 22bf429). Moved, with her words:
+- **Gate: `check_b323n_nav`** (fails on 22bf429). Moved, with his words:
   `check_b319h_layout` (Profile / Stats / Settings; Month / List on the
   Calendar tab; B319H_CAL reads the Calendar tab root; the calendar's old ways
   in are held by check_b323n_nav), check-tours' Profile note.
@@ -21006,7 +21006,7 @@ key."*
   flare". Wherever the app puts a rank SYMBOL beside a person it is now
   Home's lit glass bubble with the emblem moving inside it, the rank's name
   beside it: the Overall board's Rank column and the person card. Places
-  she asked to be words stay words - the Profile line (321: "Remove the
+  he asked to be words stay words - the Profile line (321: "Remove the
   tiny icon"), no coin on any character (241; `decorateAvatar` still draws
   nothing, so the Virtual Room rows are words too) - and the bare emblem
   stays where it IS the rank (road map, rank-up journey, the Profile's "To
@@ -21071,7 +21071,7 @@ every Sunday."*
   Next test card and in the month's day card for that date (the cell gets
   `.cal-cell-topics`); not posted says "Not posted yet. Topics are usually
   posted Sunday."; a past test with nothing posted says nothing.
-- Gate: `check_b324c_calendar` (fails on ab75270). Moved, with her words:
+- Gate: `check_b324c_calendar` (fails on ab75270). Moved, with his words:
   check_b314h_lead2 (the countdowns are The course's tiles; the Month/List
   swipe and the list rows went; the grid now walks every month for test
   dots), check_b319h_layout (the Today card replaces the box; no Month /
@@ -21144,7 +21144,7 @@ like the stats tab, the virtual room section looks funny, improve this."*
   off - drawing, not data. The scale's top is the busier of the two weeks'
   longest day rounded up to a whole hour, never under 2h, and a dot is the
   smallest of 10/15/20/30/60/120 minutes that keeps a column at 16 dots or
-  fewer (6h = 30 min, as in her picture). Both weeks share it, so the
+  fewer (6h = 30 min, as in his picture). Both weeks share it, so the
   switch compares like with like.
 - Violet is the flashcards' `#A694FF`, deeper at the foot of the scale and
   paler at the top; unlit dots are a dim grey. Dots are spans sized off the
@@ -21166,7 +21166,7 @@ like the stats tab, the virtual room section looks funny, improve this."*
   days, and on a Monday the two disagreed by a whole week. Its
   `STAT_MEANINGS` line says so.
 - **The Virtual Room section is back**, reversing the 317 fix's removal on
-  her newer word. What looked funny (on the live 313b she was looking at):
+  his newer word. What looked funny (on the live 313b he was looking at):
   three cards in a two-column grid, the third full width under the other
   two, two labels wrapped, and three zeros for somebody who never played.
   Now: three centred tiles on ONE row at every width (`.stx-vr-row`),
@@ -21344,7 +21344,7 @@ moment is simply on 256-578 from its first launch.
   Terroristic Threat by the deck (slide 175, which cites Family Violence
   17.6) and the Penal study guide; #30 follows the instructor. keyText is
   never touched - it is identity. A strict reading of PC 42.06 favours
-  False Alarm; Madison was told so she can ask.
+  False Alarm; Madison was told so he can ask.
 - `TEST_TOPICS`: Oct 19 = Penal slides 124-256, Oct 26 = 256-578.
 - Gate `tools/check-b325-pc.py` (9 of 13 fail on 6fc16b7; the four that
   pass hold what must stay). check_b319_penal346 and check_b324q_penal
@@ -21665,7 +21665,7 @@ slot).
 
 ### Build 325 (b325c) - the wall is the next rank's level, a pool that empties, the tab that calls, a crack not a burn
 
-Madison's list for stream C, in her words, and what each became. Branch
+Madison's list for stream C, in his words, and what each became. Branch
 `b325c`. Gate: `tools/check-b325-c.py` (fails on 6fc16b7, passes here).
 
 - **THE LEVEL WALL IS THE NEXT RANK'S LEVEL (supersedes build 314's
@@ -21897,7 +21897,7 @@ new, you can message me now' but I've seen it multiple times."*
   opens on his sky with nobody in it: a beacon pulses under "Incoming signal"
   for ~1.8s, collapses towards where he stands, and he arrives in it (2.4s;
   taps do nothing until he is there; Reduce motion skips it). "There you
-  are, Madison ... I don't think we've met" (she liked that line), then "I've
+  are, Madison ... I don't think we've met" (he liked that line), then "I've
   been following your progress, and you've already found some of what I
   lost" over the characters THEY own (`novaFoundRow`). The recap of what they
   have stays at the end (`recap: true`, `skipTo` for tools).
@@ -21951,7 +21951,7 @@ new, you can message me now' but I've seen it multiple times."*
   `n.parentNode`.
 - **No Skip (`novaTalk` `noSkip`)** on his introduction (both flows), the
   meeting's chained What's New and his goodbye; Escape does not skip there
-  either. `el.__nova.skip` stays for tools that fast-forward. Decided on her
+  either. `el.__nova.skip` stays for tools that fast-forward. Decided on his
   behalf: the STANDALONE What's New (a device whose account already met him)
   and the weekly recap keep their Skip.
 - **What's New (`WHATS_NEW_320`)**: "Results, grade first", "Characters
@@ -22080,7 +22080,7 @@ b326a.)
   the clock time and the chevron — a time with no day (Stats has no day headings).
   `buildTestRow(entry, { side: false })` for Stats only; Test history keeps the
   time under its day headings. **This is a reading of an ambiguous line** — see the
-  report; if she meant something else (the chat button, which sits over the card's
+  report; if he meant something else (the chat button, which sits over the card's
   top-right corner when that section is scrolled under it), revert the opts.
 
 #### The mode word is in the mode's colour
@@ -22166,7 +22166,7 @@ button tab vibe."*
     transition with per-dot delays; read while the chart is below the fold (or
     while the tab's own smooth scroll-to-top is still running) and a lit dot can
     still compute as the unlit grey. Scroll it into view twice, then read.
-- Moved to 325's decisions, each quoting her: check-behaviour 320h ("Stats no
+- Moved to 325's decisions, each quoting him: check-behaviour 320h ("Stats no
   longer carries a Total XP card"), 321f (every Stats figure one colour), 324t
   (At a glance is four cards, no hole), 323u (boxes two across; a tap opens
   nothing; Starred after the units at full width; the Penal version line measured
@@ -22184,7 +22184,7 @@ button tab vibe."*
   measured directly the tip lands on screen every time) and check-studyflow 13's
   close-button reach (failed once while other harnesses were running, passes alone).
 
-### Build 325 (b325f) - the tab bar's Liquid Glass lens, built to her iOS 26 recording
+### Build 325 (b325f) - the tab bar's Liquid Glass lens, built to his iOS 26 recording
 
 *"the tab bar lens Liquid Glass. There is improvements but it needs to be
 better. I've attached a video, pay very close attention to the button tab
@@ -22193,7 +22193,7 @@ switches, now do the same. We need this to be identical!!! Do your best.
 When you have one selected, it should kinda grey. Ensure the lens size is
 perfect and ensure the selected tabs lens is perfect and matches."*
 
-Her recording (an iOS 26 three-tab bar, 1320x2868 at 59fps; crops of the
+His recording (an iOS 26 three-tab bar, 1320x2868 at 59fps; crops of the
 bar at 30fps in the b325 scratchpad, `tabvideo/bar/bNNNN.png`) is the spec.
 Every number below was read off it, in device pixels at 3x, and the code
 cites the frames (`LENS` in `setupBottomTabs`).
@@ -22281,7 +22281,7 @@ cites the frames (`LENS` in `setupBottomTabs`).
   scale(.97) ran after the lens on the same element and put the tab back to
   97% under the glass.
 - Reduce motion: no lens, no swell; the platter moves.
-- Selected labels stay white: the app's --accent is white by her earlier
+- Selected labels stay white: the app's --accent is white by his earlier
   word ("the buttons should not be changing colors"), so iOS's "tint" is
   white here.
 - **Gate `tools/check-b325-f.py`** (each check fails on 6fc16b7): the
@@ -22289,7 +22289,7 @@ cites the frames (`LENS` in `setupBottomTabs`).
   clock (Playwright's clock plus every animation paused and seeked, the
   review recordings' method) - in real time on this machine a first frame
   after a touch took 400ms and every sampled check was a coin toss; a 3x
-  pixel test for the seam. Moved in check_b323t, with her words: the rest
+  pixel test for the seam. Moved in check_b323t, with his words: the rest
   pill is grey now (was clear with a 30% rim), the press's lens is centred
   where the swell has carried the tab, and "over the bar's edges" on a tap
   is measured against the bar (the tabs fill its height now).
@@ -22920,7 +22920,7 @@ better too. We want these to look so good."* Branch `b326b`. Gate:
   330-551ms. Nothing measurable got slower.
 - **Not seen on WebKit.** There is no WebKit build here (its download host
   is blocked); the glitch was reproduced and fixed as Chromium shows it and
-  the lid is now the simplest 3D there is, but it wants a look on her
+  the lid is now the simplest 3D there is, but it wants a look on his
   phone. The backs render here in the fallback sans, lighter than on an
   iPhone; the plan measures the real font on the device.
   check_b317_badge2 part 3 (30s for sixteen 900px renders) times out under
@@ -23003,7 +23003,7 @@ the queue, C the crack; `B326C_ONLY=`), 49 failures on 325.
   "home"`) ends on Home, never Profile (which would start the next one).
 - **HIS LIGHT GETTING OUT: THE SUPERNOVA CRACK (supersedes 325's look,
   keeps its rules - a crack, no crater, no soot, no smoke, orange rings, the
-  ring streak).** The one she remembered is build 317's planet round
+  ring streak).** The one he remembered is build 317's planet round
   (5c16587, "a burning fissure ... debris riding the rings"); planet2
   (a461e28) turned it to char the same day. Both recorded from git.
   - **Larger**: `SCAR_CRACK_WIDE` 1.9 / `SCAR_CRACK_DEEP` 1.4 on the arms
@@ -23532,7 +23532,7 @@ home|cal`; 36/36 here, 34 fail on 325 - the two that pass are guards).
   `--cal-glass-shadow`, `--cal-dot`), so the screen can be pointed at the
   app's glass tokens in one place. The glance cards are still
   `.points-progress-sect` and follow the app's glass.
-- Gates moved, with her words: `check-b325-g` - a big exam's mark is a
+- Gates moved, with his words: `check-b325-g` - a big exam's mark is a
   round dot (was "its own shape", the diamond), a fifth kind (PT final)
   shares its look, the card lists five rows, and its recap section reads
   hundos and study from the class's awards.
@@ -23644,7 +23644,7 @@ Every design was rewritten except these:
 Even those were retuned where they carried notes (`rank.whirl` gained a D
 minor arpeggio quickening with the spin).
 
-**The ones she named:**
+**The ones he named:**
 
 - **`res.xp.fill`** (the XP bar): it was a continuous glide rising an
   octave. It is now a chip arpeggio of D minor climbing the octaves for the
@@ -23855,7 +23855,7 @@ This rebuilds the b325h recorder, whose pack folder was never in the repo.
 
 #### Rules learned
 
-- **A sound she likes is a spec.** Read it note by note (key, timbres,
+- **A sound he likes is a spec.** Read it note by note (key, timbres,
   space) before designing anything near it. "More of that kinda stuff"
   meant the ambience's key, bell and echo, not more ambience.
 - **A sound tied to a count is tied to the wrong thing when the count
@@ -23934,8 +23934,8 @@ slightly better. Touch all the hundo effects up."* Branch b327b. Gate:
   3). The keys did not change either: the Virtual Room's steps still match
   `/^streak/` by KEY (line ~112000), not by label.
   - **"It was better how it was before" means build 324, not 325.** 325
-    ("10 in a row ×2 +50 · 25 in a row +50") was the one she called worse in
-    326; 326's sentence is the one she calls terrible now. 324's
+    ("10 in a row ×2 +50 · 25 in a row +50") was the one he called worse in
+    326; 326's sentence is the one he calls terrible now. 324's
     `tierKeys.map(t => t + (n > 1 ? " ×" + n : "")).join(" · ") + " in a
     row"` is back verbatim in `runStreakSub`. Title "Answer streak".
   - **The hundo line names the units** from `hundoUnits` (new, optional, on
@@ -24210,12 +24210,12 @@ pictureless "pours its light" line is gone, so the count is unchanged.
 - **The calendar's boxes**: same number of boxes. If it still feels busy,
   the cheapest next step is folding "This week" into the Today card, or
   putting The course behind its existing switch by default.
-- **"Final Exams" in title case** (her words) beside "Class day" / "No
+- **"Final Exams" in title case** (his words) beside "Class day" / "No
   class" in sentence case on the key.
 - **The story's premise for "why avoid cracking ours"**: in the app the
   cracks can't be avoided - every rank from Gold makes one, and nothing
   repairs them - so he says the cracks are strain and badges are what keep
-  the planet whole. If she wants cracks that can actually get WORSE (e.g.
+  the planet whole. If he wants cracks that can actually get WORSE (e.g.
   from levelling without badges), that is a mechanic change, not copy.
 
 ### Build 327 (b327d) - one glass again, a tick that draws itself, the next test on its unit, bigger tab icons, the lobby's switch back, Save and exit blue, a quieter sky
@@ -24244,9 +24244,9 @@ Save and exit at 4.5:1", and the token-equality app-wide check).
   blue `rgba(13,16,21,.72)` under `blur(16px) saturate(1.2)` (b326f's
   `--surface-1`), the search field `--surface-2`, the chat button a third
   (`rgba(20,25,32,.55)` under an 8px blur that saturated 1.8 and brightened),
-  and the tab bar - the one surface she never stopped liking - a grey glass
+  and the tab bar - the one surface he never stopped liking - a grey glass
   `rgba(42,45,53,.8)` under `blur(30px) saturate(1.8)` with a bright 20% top
-  rim. The cards were the odd one out, which is what she could not name. So
+  rim. The cards were the odd one out, which is what he could not name. So
   the surface TOKENS now carry the bar's material, and everything already on
   the tokens follows (b326f did the work of putting ~60 rules on them):
   `--surface-1` `rgba(36,40,48,.7)` (the bar's neutral grey tint, never
@@ -24351,7 +24351,7 @@ Save and exit at 4.5:1", and the token-equality app-wide check).
   switch), 323v (Invite and the switch in the header), 324g (the lobby
   contributes one switch again, a tap turns it on).
 
-Screens for her (before = 326, after = this branch), 440x956 and 834x1194:
+Screens for him (before = 326, after = this branch), 440x956 and 834x1194:
 `/tmp/claude-0/b327d/before/` and `/tmp/claude-0/b327d/a2/` (unit screen,
 Penal Code card), `/tmp/claude-0/b327d/b326/` and `/tmp/claude-0/b327d/a3/`
 (lobby, pause), `/tmp/claude-0/b327d/a4/` (Home with the new tab icons).
@@ -24590,7 +24590,7 @@ that name, and change the icon, keep it orange though."*
 - **The name is Exam again** everywhere on screen (`modeTitleOf`, the
   activity text, the release notes and What's New, Nova's lines, the tour,
   the stat meanings, the empty states). "Qualifier" is only in comments now.
-  Picked over a new word because it is what she and the class already call
+  Picked over a new word because it is what he and the class already call
   it; any other name is one place (`modeTitleOf` NAMES) plus the copy.
 - **Exam's mark is a pencil** (`modeIcon("exam")`): a pencil at 45 degrees
   (`rotate(45 12 10.8)`) with a solid ferrule band and a solid lead, writing
@@ -24688,7 +24688,7 @@ code in the card, no `progress` read, nothing near-matches).
   in two and puts you on the leaderboard twice." (a device still holding
   an account: "...won't carry over to it, and you'll be on the leaderboard
   twice."). It and the code screen carry `.lostcode-line`: "Lost your
-  code? Ask Madison — she can find it for you." (she has
+  code? Ask an admin for help." (an admin has
   `tools/firestore-admin.py find`; nothing in the app looks a code up).
 - Gates moved: check-sync 9c (a taken name stops; no way on with it).
   shoot-flow puts a "TSale" row on the board and shoots `username-taken`

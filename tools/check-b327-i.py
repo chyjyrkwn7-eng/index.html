@@ -16,7 +16,7 @@ A classmate whose account is "TSale" signed up again as "T.Sale": build
      different person" does not go on - only a free name does
   C  a board not yet read is read before a name is let through
   D  Welcome, the check before sign-up and the code screen say plainly
-     what each choice is, what a second account costs, and "Ask Madison"
+     what each choice is, what a second account costs, and "Ask an admin for help"
   E  nothing beyond the public rankings row is shown or read
   F  a rename in Customize may not take a name somebody else wears
 
@@ -207,9 +207,9 @@ def section_copy(br):
         check("%s: the check says a second account splits your progress and puts you on the leaderboard twice" % dev,
               "second account splits your progress" in r.get("check", "") and "leaderboard twice" in r.get("check", ""),
               r.get("check"))
-        check("%s: the check and the code screen both say 'Lost your code? Ask Madison — she can find it for you.'" % dev,
-              "Lost your code? Ask Madison — she can find it for you." in r.get("check", "") and r.get("checkLost")
-              and "Lost your code? Ask Madison — she can find it for you." in r.get("code", "") and r.get("codeLost")
+        check("%s: the check and the code screen both say 'Lost your code? Ask an admin for help.'" % dev,
+              "Lost your code? Ask an admin for help." in r.get("check", "") and r.get("checkLost")
+              and "Lost your code? Ask an admin for help." in r.get("code", "") and r.get("codeLost")
               and r.get("lostAboveGo"), r)
 
 
