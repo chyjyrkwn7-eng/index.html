@@ -12272,6 +12272,9 @@
   .thx-row{
     font:inherit; color:inherit; text-align:left; width:100%; display:flex; align-items:center; gap:.8rem;
     padding:.7rem .8rem .7rem .7rem; border-radius:14px; cursor:pointer; -webkit-tap-highlight-color:transparent;
+    /* the faint wash is the RESULT's colour again, as it was before 326
+       (build 327): --tone is testResultTone, the same as the ring, and the
+       mode is only its chip - one colour code per piece */
     background:linear-gradient(90deg, color-mix(in srgb, var(--tone) 9%, transparent), transparent 55%), var(--surface-1);
     border:1px solid rgba(255,255,255,.09); box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
     transition:transform .15s ease, background-color .15s ease;
@@ -12312,12 +12315,25 @@
   .thx-chip-game{ --mode-c:#E0559A; }
   .thx-chip-vr{ --mode-c:#4A9FE8; }
   .thx-day{ margin:1.15rem 0 .5rem; font-size:.74rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--soft); }
-  .thx-groups > .thx-day:first-child{ margin-top:.4rem; }
-  .thx-summary{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.6rem; margin:.2rem 0 1rem; }
-  .thx-sum-cell{ text-align:center; padding:.75rem .4rem; border-radius:14px; background:var(--surface-1);
+  .thx-groups > .thx-day:first-child{ margin-top:.75rem; }
+  /* ---- ONE CARD: COUNT, RING, HUNDOS (build 327) ----
+     The average is the same ring each row leads with, in the middle and
+     a size up; the count and the hundos sit level with its centre either
+     side, each the same width, divided from it by a hairline. */
+  .thx-summary{ display:grid; grid-template-columns:minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows:auto auto; align-items:center;
+    justify-items:center; row-gap:.45rem; margin:.2rem 0 1.1rem; padding:.95rem .6rem .85rem; border-radius:18px; background:var(--surface-1);
     border:1px solid rgba(255,255,255,.09); box-shadow:inset 0 1px 0 rgba(255,255,255,.08); }
-  .thx-sum-num{ display:block; font-family:var(--mono); font-weight:700; font-size:1.35rem; color:var(--ink); font-variant-numeric:tabular-nums; }
-  .thx-sum-lab{ display:block; font-size:.72rem; color:var(--soft); margin-top:.15rem; }
+  .thx-sum-cell{ text-align:center; min-width:0; }
+  .thx-sum-avg{ padding:0 1.2rem; }
+  /* hairlines either side of the ring, the whole height of the card's content */
+  .thx-summary{ background-image:linear-gradient(rgba(255,255,255,.08), rgba(255,255,255,.08)), linear-gradient(rgba(255,255,255,.08), rgba(255,255,255,.08));
+    background-size:1px calc(100% - 1.8rem), 1px calc(100% - 1.8rem); background-repeat:no-repeat;
+    background-position:calc(50% - 3.4rem) 50%, calc(50% + 3.4rem) 50%; }
+  .thx-sum-ring{ width:4.4rem; height:4.4rem; }
+  .thx-sum-ring .thx-ring-num{ font-size:1rem; }
+  .thx-sum-num{ display:block; font-family:var(--mono); font-weight:700; font-size:1.6rem; line-height:1.1; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .thx-sum-hundos .thx-sum-num{ color:#FFD36A; }
+  .thx-sum-lab{ display:block; font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--soft); }
   .thx-filter{ display:flex; gap:.4rem; flex-wrap:wrap; margin:0 0 .4rem; }
   .thx-filter-btn{ font:inherit; font-size:.8rem; font-weight:700; padding:.45rem .85rem; min-height:2.2rem; border-radius:999px;
     color:var(--soft); background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); cursor:pointer; }
@@ -13204,7 +13220,7 @@
   /* a flake of the crust: char black, one edge catching the light in a
      dull grey - no ember under it and no glow round it any more (planet2);
      four shapes, all splinters - a square read as a cube (planet round) */
-  .csc-frag::after{ inset:0; background:linear-gradient(170deg, #040303 0, #0C0A0A 48%, #24201F 68%, #5E5955 86%, #9A948E 100%);
+  .csc-frag::after{ inset:0; background:linear-gradient(165deg, #040303 0, #0C0A0A 38%, #2E2A28 56%, #77716B 76%, #BDB7B0 100%);
     clip-path:polygon(38% 0, 62% 14%, 100% 52%, 72% 64%, 58% 100%, 30% 70%, 0 58%, 22% 30%); }
   .csc-frag:nth-child(4n+2)::after{ clip-path:polygon(12% 8%, 54% 0, 100% 34%, 86% 58%, 40% 100%, 30% 62%, 0 46%); }
   .csc-frag:nth-child(4n+3)::after{ clip-path:polygon(50% 0, 70% 30%, 100% 70%, 56% 82%, 22% 100%, 18% 54%, 0 24%); }
@@ -13256,7 +13272,7 @@
   .cosmic-scar .csc-run.is-burn{ width:9%;
     background:radial-gradient(circle, #FFFFFF 0 10%, rgba(255,240,214,.9) 24%, rgba(255,196,120,.38) 48%, rgba(255,160,80,0) 72%); }
   .cosmic-scar .csc-chip{ width:3.6%; aspect-ratio:1; margin:-1.8% 0 0 -1.8%; opacity:0;
-    background:linear-gradient(170deg, #040303 0, #121010 50%, #3A3634 75%, #8C8680 100%);
+    background:linear-gradient(165deg, #040303 0, #0C0A0A 38%, #2E2A28 56%, #77716B 76%, #BDB7B0 100%);
     clip-path:polygon(38% 0, 62% 14%, 100% 52%, 72% 64%, 58% 100%, 30% 70%, 0 58%, 22% 30%); }
   /* the plasma's light never washes over the rupture, and its smoke
      drifts only partly over the crack - the art's own mask (--scar-mask) */
@@ -13300,6 +13316,12 @@
   .csc-seam .csc-sm-halo{ stroke:#FF9E4A; opacity:.42; }
   .csc-seam .csc-sm-glow{ stroke:#FFC977; opacity:.72; }
   .csc-seam .csc-sm-core{ stroke:#FFF6E4; opacity:.95; }
+  /* a rank's faint seam (build 327, decorateCrackHero): brighter each rank */
+  .cosmic-scar.is-crack .csc-seam .csc-sm-spill{ opacity:0; }
+  .cosmic-scar.is-crack[data-crack="2"] .csc-seam{ opacity:.34; }
+  .cosmic-scar.is-crack[data-crack="3"] .csc-seam{ opacity:.52; }
+  .cosmic-scar.is-crack[data-crack="4"] .csc-seam{ opacity:.72; }
+  .cosmic-scar.is-crack .csc-seam.is-breath{ animation:none; }
   .csc-seam.is-breath{ will-change:opacity; }
   @media (prefers-reduced-motion:no-preference){
     .csc-seam.is-breath{ animation:csc-sm-breathe 4.3s ease-in-out infinite alternate; }
@@ -13326,9 +13348,17 @@
   .csc-motes > i > b > u{ left:50%; bottom:0; width:var(--s); aspect-ratio:4.2; translate:-50% 50%; opacity:0; border-radius:50%;
     background:radial-gradient(ellipse 20% 50% at 80% 50%, #FFFCF4 0 22%, rgba(255,226,170,.85) 48%, rgba(255,190,110,0) 100%),
       linear-gradient(90deg, rgba(255,170,90,0) 4%, rgba(255,190,110,.28) 55%, rgba(255,214,150,.6) 78%, rgba(255,214,150,0) 96%); }
+  /* (build 327) a rock: the ring debris' own stone and shapes (.csc-ringfrag),
+     with a hot edge on its underside where it broke from the crack - one
+     background layer, so a rock costs no more animations than the light it
+     replaced (Home's Supernova runs 174, as on 326) */
   .csc-motes > i.is-chip > b > u{ aspect-ratio:1; border-radius:0;
-    background:linear-gradient(140deg, #FFE3B0 0 9%, #8A5A3A 20%, #1C1210 42%, #070505 100%);
-    clip-path:polygon(38% 0, 70% 12%, 100% 52%, 70% 66%, 56% 100%, 26% 72%, 0 54%, 22% 26%); }
+    background:radial-gradient(60% 60% at 24% 84%, rgba(255,214,150,.95) 0, rgba(255,150,70,.6) 30%, rgba(255,110,40,0) 62%),
+      linear-gradient(165deg, #040303 0, #0C0A0A 38%, #2E2A28 56%, #77716B 76%, #BDB7B0 100%);
+    clip-path:polygon(38% 0, 62% 14%, 100% 52%, 72% 64%, 58% 100%, 30% 70%, 0 58%, 22% 30%); }
+  .csc-motes > i.rk1 > b > u{ clip-path:polygon(12% 8%, 54% 0, 100% 34%, 86% 58%, 40% 100%, 30% 62%, 0 46%); }
+  .csc-motes > i.rk2 > b > u{ clip-path:polygon(50% 0, 70% 30%, 100% 70%, 56% 82%, 22% 100%, 18% 54%, 0 24%); }
+
   @media (prefers-reduced-motion:no-preference){
     .csc-motes > i{ animation:csc-mote-turn var(--t) linear var(--d) infinite; }
     .csc-motes > i > b{ animation:csc-mote-out var(--t) linear var(--d) infinite; }
@@ -30353,20 +30383,19 @@
        covered button at every crossing - all gradients on a tile a quarter
        of the cushion wide, over the velvet, so it is one drawing at every
        size and in both cases. */
-    --case-lid-bg:radial-gradient(9% 11% at 50% 50%, #08090B 0 32%, rgba(214,220,228,.42) 44%, rgba(0,0,0,.42) 62%, rgba(0,0,0,0) 100%),
-      radial-gradient(9% 11% at 0 0, #08090B 0 32%, rgba(214,220,228,.42) 44%, rgba(0,0,0,.42) 62%, rgba(0,0,0,0) 100%),
-      radial-gradient(9% 11% at 100% 0, #08090B 0 32%, rgba(214,220,228,.42) 44%, rgba(0,0,0,.42) 62%, rgba(0,0,0,0) 100%),
-      radial-gradient(9% 11% at 0 100%, #08090B 0 32%, rgba(214,220,228,.42) 44%, rgba(0,0,0,.42) 62%, rgba(0,0,0,0) 100%),
-      radial-gradient(9% 11% at 100% 100%, #08090B 0 32%, rgba(214,220,228,.42) 44%, rgba(0,0,0,.42) 62%, rgba(0,0,0,0) 100%),
-      linear-gradient(to bottom right, rgba(0,0,0,0) 43%, rgba(0,0,0,.24) calc(50% - 1.5px), rgba(0,0,0,.7) 50%, rgba(255,255,255,.07) calc(50% + 1.3px), rgba(0,0,0,.2) calc(50% + 2.4px), rgba(0,0,0,0) 57%),
-      linear-gradient(to bottom left, rgba(0,0,0,0) 43%, rgba(0,0,0,.24) calc(50% - 1.5px), rgba(0,0,0,.7) 50%, rgba(255,255,255,.07) calc(50% + 1.3px), rgba(0,0,0,.2) calc(50% + 2.4px), rgba(0,0,0,0) 57%),
-      radial-gradient(42% 42% at 50% 0, rgba(255,255,255,.075), rgba(255,255,255,0) 100%),
-      radial-gradient(42% 42% at 50% 100%, rgba(255,255,255,.075), rgba(255,255,255,0) 100%),
-      radial-gradient(42% 42% at 0 50%, rgba(255,255,255,.075), rgba(255,255,255,0) 100%),
-      radial-gradient(42% 42% at 100% 50%, rgba(255,255,255,.075), rgba(255,255,255,0) 100%),
+    /* A PLAIN PADDED LID, NO QUILT (build 327): "I also don't like the
+       weird pattern of the case on the inside top part." Build 326's
+       buttoned diamond quilt is gone. The lid's inside is one soft cushion
+       of the lining's velvet: a broad dome of light where the cushion rises
+       toward the light (upper middle), falling into shade at its foot by
+       the hinge and in toward the frame on every side, so it reads as foam
+       under cloth rather than as a printed pattern. */
+    --case-lid-bg:radial-gradient(78% 64% at 50% 34%, rgba(255,255,255,.085) 0%, rgba(255,255,255,.03) 46%, rgba(255,255,255,0) 72%),
+      radial-gradient(120% 110% at 50% 40%, rgba(0,0,0,0) 54%, rgba(0,0,0,.34) 86%, rgba(0,0,0,.55) 100%),
+      linear-gradient(180deg, rgba(0,0,0,0) 68%, rgba(0,0,0,.28) 100%),
       var(--case-velvet),
       radial-gradient(110% 90% at 50% 0%, #343A42 0%, #21252B 56%, #131519 100%);
-    --case-lid-size:25% 25%, 25% 25%, 25% 25%, 25% 25%, 25% 25%, 25% 25%, 25% 25%, 25% 25%, 25% 25%, 25% 25%, 25% 25%, 32px 32px, 100% 100%;
+    --case-lid-size:100% 100%, 100% 100%, 100% 100%, 32px 32px, 100% 100%;
     --case-stitch:rgba(206,214,224,.24);
     /* THE CASE IS SQUARE (build 318): "the corners of the case don't look
        good, you can see where it disconnects on the top and bottom". The
@@ -30757,20 +30786,77 @@
     box-shadow:0 calc(var(--cu) * .12) calc(var(--cu) * .16) rgba(0,0,0,.7); }
   .nova-case-screw::after{ content:""; position:absolute; left:21%; right:21%; top:50%; height:15%; margin-top:-7.5%; border-radius:999px;
     background:linear-gradient(180deg, #050608 0 58%, rgba(255,255,255,.7) 100%); transform:rotate(var(--turn, 30deg)); }
-  /* a corner cap: a protector folded round the corner, screwed through its middle */
+  /* ---- A CORNER PROTECTOR, NOT A ROUNDED CAP (build 327) ----
+     "The corners of metal though, like when it's open, the bottom left and
+     right and the top part left and right are rounded edges and don't look
+     right." Each cap had a quarter-circle cut out of its free corner (half
+     its own width) and the case's radius on the other - a crescent of metal
+     at every corner, worst at the four by the hinge. A hard case's corner
+     protector is a SQUARE of pressed metal folded over the corner: square
+     on every side (a hair of radius, as metal has), its two outer edges
+     turned down over the case's edge - so along each a darker band, the
+     fold, with a bright line where the metal turns - and a ridge pressed
+     diagonally into its face from the corner, lit on the side toward the
+     light. One rivet through it. The guards down the walls under it take
+     the same square foot (--cap-ri). */
   .nova-case-cap{ position:absolute; z-index:3; pointer-events:none; width:calc(var(--cu) * 8.5); height:calc(var(--cu) * 8.5);
+    --cap-fold:calc(var(--cu) * 1.05);
     background-color:#9AA5B1;
-    background-image:var(--hw-spec), var(--hw-brush), linear-gradient(135deg, #E7ECF1 0%, #B4BEC8 26%, #7A8591 56%, #59636E 78%, #8B96A2 92%, #4A535D 100%);
-    box-shadow:var(--hw-bevel), var(--hw-seat); }
-  .nova-case-cap.is-tl{ left:-2px; top:-2px; border-radius:var(--hw-r) 0 calc(var(--cu) * 4.25) 0; }
-  .nova-case-cap.is-tr{ right:-2px; top:-2px; border-radius:0 var(--hw-r) 0 calc(var(--cu) * 4.25); }
-  .nova-case-cap.is-bl{ left:-2px; bottom:-2px; border-radius:0 calc(var(--cu) * 4.25) 0 var(--hw-r); }
-  .nova-case-cap.is-br{ right:-2px; bottom:-2px; border-radius:calc(var(--cu) * 4.25) 0 var(--hw-r) 0; }
+    background-image:var(--cap-lips), var(--cap-ridge), var(--hw-spec), var(--hw-brush),
+      linear-gradient(135deg, #E7ECF1 0%, #B4BEC8 26%, #7A8591 56%, #59636E 78%, #8B96A2 92%, #4A535D 100%);
+    box-shadow:var(--hw-bevel), var(--hw-seat); border-radius:var(--cap-ri); }
+  /* the fold over each outer edge: the turned-down face (dark, seen almost
+     edge on) and the bright line where the metal turns */
+  .nova-case-cap.is-tl{ left:-2px; top:-2px; border-radius:var(--cap-ri);
+    --cap-lips:linear-gradient(180deg, #3C444E 0, #59636E calc(var(--cap-fold) * .7), #F4F7FA var(--cap-fold), rgba(255,255,255,0) calc(var(--cap-fold) + 1px)),
+      linear-gradient(90deg, #3C444E 0, #59636E calc(var(--cap-fold) * .7), #E3E8ED var(--cap-fold), rgba(255,255,255,0) calc(var(--cap-fold) + 1px));
+    --cap-ridge:linear-gradient(45deg, rgba(0,0,0,0) 44%, rgba(0,0,0,.32) 48.6%, rgba(255,255,255,.55) 50.4%, rgba(255,255,255,0) 55%); }
+  .nova-case-cap.is-tr{ right:-2px; top:-2px; border-radius:var(--cap-ri);
+    --cap-lips:linear-gradient(180deg, #3C444E 0, #59636E calc(var(--cap-fold) * .7), #F4F7FA var(--cap-fold), rgba(255,255,255,0) calc(var(--cap-fold) + 1px)),
+      linear-gradient(270deg, #2E353D 0, #4A535D calc(var(--cap-fold) * .7), #AEB8C2 var(--cap-fold), rgba(255,255,255,0) calc(var(--cap-fold) + 1px));
+    --cap-ridge:linear-gradient(-45deg, rgba(0,0,0,0) 44%, rgba(255,255,255,.5) 49.6%, rgba(0,0,0,.34) 51.4%, rgba(0,0,0,0) 56%); }
+  .nova-case-cap.is-bl{ left:-2px; bottom:-2px; border-radius:var(--cap-ri);
+    --cap-lips:linear-gradient(0deg, #262C33 0, #3E4650 calc(var(--cap-fold) * .7), #9AA5B1 var(--cap-fold), rgba(255,255,255,0) calc(var(--cap-fold) + 1px)),
+      linear-gradient(90deg, #3C444E 0, #59636E calc(var(--cap-fold) * .7), #E3E8ED var(--cap-fold), rgba(255,255,255,0) calc(var(--cap-fold) + 1px));
+    --cap-ridge:linear-gradient(-45deg, rgba(0,0,0,0) 44%, rgba(255,255,255,.5) 49.6%, rgba(0,0,0,.34) 51.4%, rgba(0,0,0,0) 56%); }
+  .nova-case-cap.is-br{ right:-2px; bottom:-2px; border-radius:var(--cap-ri);
+    --cap-lips:linear-gradient(0deg, #262C33 0, #3E4650 calc(var(--cap-fold) * .7), #9AA5B1 var(--cap-fold), rgba(255,255,255,0) calc(var(--cap-fold) + 1px)),
+      linear-gradient(270deg, #2E353D 0, #4A535D calc(var(--cap-fold) * .7), #AEB8C2 var(--cap-fold), rgba(255,255,255,0) calc(var(--cap-fold) + 1px));
+    --cap-ridge:linear-gradient(45deg, rgba(0,0,0,0) 44%, rgba(0,0,0,.32) 48.6%, rgba(255,255,255,.55) 50.4%, rgba(255,255,255,0) 55%); }
   .nova-case-cap > .nova-case-screw{ left:50%; top:50%; margin:calc(var(--cu) * -1.3) 0 0 calc(var(--cu) * -1.3); }
-  .nova-case-cap.is-tl > .nova-case-screw{ margin:calc(var(--cu) * -1.8) 0 0 calc(var(--cu) * -1.8); }
-  .nova-case-cap.is-tr > .nova-case-screw{ margin:calc(var(--cu) * -1.8) 0 0 calc(var(--cu) * -.8); }
-  .nova-case-cap.is-bl > .nova-case-screw{ margin:calc(var(--cu) * -.8) 0 0 calc(var(--cu) * -1.8); }
-  .nova-case-cap.is-br > .nova-case-screw{ margin:calc(var(--cu) * -.8) 0 0 calc(var(--cu) * -.8); }
+  /* the rivet sits in the protector's middle, a little in from the fold */
+  .nova-case-cap.is-tl > .nova-case-screw{ margin:calc(var(--cu) * -1) 0 0 calc(var(--cu) * -1); }
+  .nova-case-cap.is-tr > .nova-case-screw{ margin:calc(var(--cu) * -1) 0 0 calc(var(--cu) * -1.6); }
+  .nova-case-cap.is-bl > .nova-case-screw{ margin:calc(var(--cu) * -1.6) 0 0 calc(var(--cu) * -1); }
+  .nova-case-cap.is-br > .nova-case-screw{ margin:calc(var(--cu) * -1.6) 0 0 calc(var(--cu) * -1.6); }
+  /* ---- THE CASE AS A SOLID (build 327) ----
+     "The case with the metal parts and stuff still doesn't look right or
+     legit, looks bad and not 3d." What read as flat, measured off the open
+     case: the lining sat level with the rim (one soft 12px inner shadow all
+     round), the rim's top had no lit edge, and nothing said the box had
+     walls. Now, one light from the top left as everywhere else on the case:
+     - THE RECESS: the lining is cut down into the tray, so its inner walls
+       show - the top wall (facing away from the light, toward you) in deep
+       shadow, the side walls shaded, the bottom wall catching a sliver of
+       light - and the floor darkens into the corners.
+     - THE RIM: the tray's and the lid's top surfaces carry a lit outer edge
+       and a dark inner one where they turn down into the recess.
+     Shadows only, painted once into the case's layers (nothing animates
+     them), and neutral - no blue in the lining (check_b232). */
+  .nova-case.ncase, .bc-scene{
+    --case-recess:inset 0 calc(var(--cu) * 1.6) calc(var(--cu) * 1.3) rgba(0,0,0,.82),
+      inset calc(var(--cu) * 1) 0 calc(var(--cu) * 1.2) rgba(0,0,0,.5), inset calc(var(--cu) * -1) 0 calc(var(--cu) * 1.2) rgba(0,0,0,.5),
+      inset 0 calc(var(--cu) * -.45) 0 rgba(255,255,255,.07), inset 0 calc(var(--cu) * -1.1) calc(var(--cu) * 1.4) rgba(0,0,0,.35),
+      inset 0 0 0 1px rgba(0,0,0,.7), 0 0 0 1px rgba(0,0,0,.6), 0 calc(var(--cu) * -.3) 0 rgba(255,255,255,.1);
+    --case-rim:0 0 0 1px rgba(0,0,0,.65), inset 0 calc(var(--cu) * .35) 0 rgba(255,255,255,.16), inset calc(var(--cu) * .3) 0 0 rgba(255,255,255,.07),
+      inset 0 calc(var(--cu) * -.45) 0 rgba(0,0,0,.45), inset calc(var(--cu) * -.3) 0 0 rgba(0,0,0,.3);
+  }
+  .nova-case .nova-case-lining{ box-shadow:var(--case-recess); }
+  .bc-tray, .nova-case.ncase > .ncase-tray{ box-shadow:var(--case-rim); }
+  .bc-lid-in{ box-shadow:0 0 0 1px rgba(0,0,0,.6), inset 0 calc(var(--cu) * .35) 0 rgba(255,255,255,.14), inset 0 calc(var(--cu) * -.45) 0 rgba(0,0,0,.45); }
+  .nova-case.ncase > .ncase-lid{ box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 2.5cqw 6cqw rgba(0,0,0,.45),
+    inset 0 calc(var(--cu) * .35) 0 rgba(255,255,255,.14), inset 0 calc(var(--cu) * -.45) 0 rgba(0,0,0,.45); }
+  .nova-case-cap{ --cap-fold:calc(var(--cu) * 1.35) !important; }
   /* a latch, a hasp, a clip: polished plate, bevelled, seated */
   :is(.bc-case .bc-front, .nova-case.ncase > .ncase-front) .nova-case-latch{
     border-radius:calc(var(--cu) * .9); background-color:#A3AEBA;
@@ -30887,12 +30973,12 @@
      seam between lid and base - and rounded only where a corner is free:
      its foot on the table takes the cap's inner curve (--cap-ri) and the
      case's own corner (--hw-r), the same two radii every cap has. */
-  .nova-case.ncase, .bc-scene{ --cap-w:calc(var(--cu) * 8.5); --cap-ri:calc(var(--cu) * 4.25); }
+  .nova-case.ncase, .bc-scene{ --cap-w:calc(var(--cu) * 8.5); --cap-ri:calc(var(--cu) * .45); }
   .nova-case-wall.is-hw::before, .nova-case-wall.is-hw::after{ width:var(--cap-w); min-width:0; background-color:#9AA5B1;
     background-image:var(--hw-spec), var(--hw-brush), linear-gradient(135deg, #E7ECF1 0%, #B4BEC8 26%, #7A8591 56%, #59636E 78%, #8B96A2 92%, #4A535D 100%);
     box-shadow:var(--hw-bevel), 0 0 0 calc(var(--cu) * .14) rgba(0,0,0,.55); }
-  .nova-case-wall.is-hw::before{ left:0; border-radius:0 0 var(--cap-ri) var(--hw-r); }
-  .nova-case-wall.is-hw::after{ right:0; border-radius:0 0 var(--cap-ri) var(--hw-r);
+  .nova-case-wall.is-hw::before{ left:0; border-radius:0 0 var(--cap-ri) var(--cap-ri); }
+  .nova-case-wall.is-hw::after{ right:0; border-radius:0 0 var(--cap-ri) var(--cap-ri);
     /* it is the left one mirrored (scaleX(-1)); its light is put back to the top left like every other part */
     background-image:radial-gradient(70% 60% at 70% 18%, rgba(255,255,255,.72) 0%, rgba(255,255,255,.22) 38%, rgba(255,255,255,0) 72%), var(--hw-brush),
       linear-gradient(225deg, #E7ECF1 0%, #B4BEC8 26%, #7A8591 56%, #59636E 78%, #8B96A2 92%, #4A535D 100%);
@@ -73853,7 +73939,7 @@ const CRACK_STAGES = [
   { reach: .30, width: .16, depth: .40, burn: 0, shine: 0 },     /* Gold: a hairline through the impact point */
   { reach: .62, width: .30, depth: .55, burn: 0, shine: 0 },     /* Platinum */
   { reach: .96, width: .48, depth: .70, burn: 0, shine: 0 },     /* Sapphire */
-  { reach: 1.36, width: .70, depth: .85, burn: 0, shine: .32 },   /* Amethyst: the shine starts to break (no burn since 325) */
+  { reach: 1.36, width: .70, depth: .85, burn: 0, shine: 0 },     /* Amethyst (build 327: no crazing on the shine - one crack) */
   { full: true }                                                  /* Supernova: the whole crack, glowing inside (325) */
 ];
 /* SUPERNOVA'S MARK IS A CRACK, NOT A BURN (build 325). Madison: "I'm not a
@@ -73872,7 +73958,12 @@ const CRACK_STAGES = [
    before it. The old scar's code is kept, switched by SCAR_CRACK_ONLY. */
 const SCAR_CRACK_ONLY = true, SCAR_CRACK_GLOW = .8;
 /* build 326: how much wider and deeper Supernova's crack is than the scar's network (see drawScarArt) */
-const SCAR_CRACK_WIDE = 1.9, SCAR_CRACK_DEEP = 1.4, SCAR_CRACK_WIDE_BRANCH = 1.15;
+/* (build 327) 1.9 -> 1.45: "The crack that is there for the supernova is
+   kinda bad". At 1.9 the arms were a uniform dark band as wide as a log
+   with the light running down it; at 1.45 the gap is a fissure again, its
+   walls and lips read, and the step from Amethyst (.70) is under twice. */
+const SCAR_CRACK_WIDE = 1.45, SCAR_CRACK_DEEP = 1.45, SCAR_CRACK_WIDE_BRANCH = 1.15;
+const SCAR_SHINE_CRAZE = false;
 const CRACK_TOP = CRACK_STAGES.length - 1;
 /* how far behind the crack's front it narrows to nothing */
 const CRACK_TAPER = .2;
@@ -74180,7 +74271,13 @@ function drawScarArt(stg){
     }
     /* the shine takes its own damage (build 319): on the burn, and half
        off the plasma's mask */
-    const shineAmt = FULL ? 1 : ST.shine;
+    /* ONE CRACK (build 327): "the smaller ash mark is bad and can just go
+       away, we need it to be combined". The shine's crazing - a web of dark
+       seams over the planet's highlight, a second mark beside the crack -
+       is drawn at no stage now; the crack that runs up into the shine
+       (recC) stays, as one of the crack's own branches. SCAR_SHINE_CRAZE
+       puts it back. */
+    const shineAmt = !SCAR_SHINE_CRAZE ? 0 : FULL ? 1 : ST.shine;
     if(shineAmt > 0){ try{ scarShineWound(gB, N, gM, MQ, shineAmt, P.Ar, recC.ar[recC.ar.length - 1], CK ? 2 : !FULL); }catch(e){} }
     if(gM) mask = cM.toDataURL("image/png");
     /* the fragments rise from the crack and the rupture: out from the
@@ -75389,6 +75486,16 @@ function decorateCrackHero(hero, stage){
   const art = cosmicScarArt(stage);
   if(art && art.mask) hero.style.setProperty("--scar-mask", "url(" + art.mask + ")");
   hero.classList.add("is-scarred");
+  /* HIS LIGHT, RANK BY RANK (build 327): "All the progressive cracking
+     could be better too." The crack grew in width and reach and then, only
+     at Supernova, was suddenly full of light. From Platinum the same seam
+     is in it, faint, and it brightens rank by rank (data-crack, CSS), its
+     strokes narrowed to the stage's own width, so the light is there to
+     see coming before it breaks out. Gold's hairline carries none. */
+  if(stage >= 2){
+    const st = CRACK_STAGES[stage];
+    try{ scarSeam(sc, art, Math.min(1, Math.pow(((st && st.width) || .5) / SCAR_CRACK_WIDE, .6))); }catch(e){}
+  }
   return sc;
 }
 /* ---- THE CRACK FORMS ON SCREEN (build 320) ----
@@ -75527,7 +75634,8 @@ function crackFormArm(hero, from, to){
   /* SUPERNOVA (build 326): the light in the crack is DRAWN ON with the
      crack, from the impact out, white-hot as it runs and cooling to Home's
      glow behind it; the motes leave the crack as it reaches them */
-  const seams = L.full ? [...sc.querySelectorAll(".csc-disc > .csc-seam")] : [];
+  /* (build 327) a rank's faint seam is drawn on with its crack too */
+  const seams = [...sc.querySelectorAll(".csc-disc > .csc-seam")];
   const seam = seams[0] || null;
   const motes = L.full ? hero.querySelector(":scope > .csc-motes") : null;
   seams.forEach(x => x.classList.add("is-forming"));
@@ -75658,12 +75766,15 @@ const SEAM_W = { main: [.034, .006], branch: [.012, .003] };
    Every path carries pathLength 1 and its stretch of the crack's arrival
    (--a0 / --a1, 0..1 of the whole crack) so it can be DRAWN ON from the
    impact outwards (.is-forming, the cutscene; .sn-fracture, the swell). */
-function scarSeamSVG(art, extra){
+function scarSeamSVG(art, extra, scale){
   if(!art || !art.fronts) return null;
   const NS = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("class", "csc-seam"); svg.setAttribute("viewBox", "-1 -1 2 2"); svg.setAttribute("aria-hidden", "true");
-  const defs = [["csc-sm-spill", 6.5], ["csc-sm-halo", 2.4], ["csc-sm-glow", 1.15], ["csc-sm-core", .42]].concat(extra || []);
+  /* (build 327) the spill 6.5 -> 3.4 and the halo 2.4 -> 1.8 of the seam's
+     width: the wide orange haze along the crack read as a smudge, not as
+     light coming out of a gap */
+  const defs = [["csc-sm-spill", 3.4], ["csc-sm-halo", 1.8], ["csc-sm-glow", 1.0], ["csc-sm-core", .4]].concat(extra || []);
   const layers = defs.map(([c, k]) => {
     const g = document.createElementNS(NS, "g"); g.setAttribute("class", c); g.dataset.k = k; svg.appendChild(g); return g;
   });
@@ -75682,7 +75793,7 @@ function scarSeamSVG(art, extra){
       const a0 = Math.max(0, Math.min(1, (p[a][2] || 0) / arMax)), a1 = Math.max(a0 + .001, Math.min(1, (p[b][2] || 0) / arMax));
       layers.forEach(g => {
         const el = document.createElementNS(NS, "path");
-        el.setAttribute("d", d); el.setAttribute("stroke-width", (w * Number(g.dataset.k)).toFixed(4));
+        el.setAttribute("d", d); el.setAttribute("stroke-width", (w * Number(g.dataset.k) * (scale || 1)).toFixed(4));
         el.setAttribute("pathLength", "1");
         el.style.setProperty("--a0", a0.toFixed(3)); el.style.setProperty("--a1", a1.toFixed(3));
         g.appendChild(el);
@@ -75691,10 +75802,10 @@ function scarSeamSVG(art, extra){
   });
   return svg;
 }
-function scarSeam(sc, art){
+function scarSeam(sc, art, scale){
   const disc = sc && sc.querySelector(".csc-disc");
   if(!disc || disc.querySelector(".csc-seam")) return null;
-  const svg = scarSeamSVG(art);
+  const svg = scarSeamSVG(art, null, scale);
   if(!svg) return null;
   /* THE BREATHING IS A WHOLE SVG'S OPACITY, NOT A GROUP'S: an animated
      <g> inside an svg repaints all ~800 paths every frame on Home; the
@@ -75718,10 +75829,18 @@ function scarMotePlan(art){
     const f = fr[i % fr.length], k = Math.max(1, Math.min(f.pts.length - 2, Math.round((.06 + .82 * rnd()) * (f.pts.length - 1))));
     const q = f.pts[k];
     const x = 52 * q[0], y = 52 * q[1], ar = Math.max(0, Math.min(1, (q[2] || 0) / Math.max(.001, Number(art.arMax) || 1)));
-    const chip = i % 5 === 4;
+    /* EVERY MOTE IS A ROCK (build 327): "Super nova crack is cool with the
+       stuff coming out but I thought it would look like some of the
+       floating rocks to put that connection in place?" What leaves the
+       crack is the same broken rock that rides the rings (.csc-ringfrag,
+       the same three shapes and the same lit stone), its underside still
+       hot from the crack, so the debris on the rings
+       reads as having come out of the planet. Sizes are the ring debris'
+       own (1.35-2.3% of the hero). */
+    const chip = true;
     const ring = rnd() < .55 ? 0 : 1;
     out.push({ x, y, ar, chip, ring, t: +(6.4 + 3.6 * rnd()).toFixed(2), d: +(-(i / N) * 10 - rnd() * .8).toFixed(2),
-      da: Math.round(70 + 60 * rnd()), s: chip ? +(1.7 + .9 * rnd()).toFixed(2) : +(3.9 + 2.2 * rnd()).toFixed(2), o: chip ? .95 : +(.72 + .28 * rnd()).toFixed(2),
+      da: Math.round(70 + 60 * rnd()), s: +(1.4 + 1.0 * rnd()).toFixed(2), o: .95, shape: i % 3,
       off: (rnd() - .5) * 6 });
   }
   return out;
@@ -75739,7 +75858,7 @@ function scarMotes(hero, art){
     const r0 = Math.hypot(m.x, m.y), a0 = Math.atan2(m.x, -m.y) * 180 / Math.PI;
     const R = (m.ring ? R1 : R0) + m.off;
     const el = document.createElement("i");
-    if(m.chip) el.className = "is-chip";
+    if(m.chip) el.className = "is-chip is-rock rk" + (m.shape || 0);
     el.style.cssText = "--a0:" + a0.toFixed(1) + "deg;--da:" + m.da + "deg;--r0:" + pc(r0) + ";--rl:" + pc(Math.max(r0 + 6, 62)) + ";--r1:" + pc(R) +
       ";--t:" + m.t + "s;--d:" + m.d + "s;--s:" + m.s + "%;--o:" + m.o +
       /* in the cutscene (is-fresh) each leaves as the forming crack reaches its place */
@@ -104575,6 +104694,25 @@ function testModeKey(entry){
   return TEST_MODE_COLOR[m] && m !== "vr" ? m : "drill";
 }
 function testModeColor(entry){ return TEST_MODE_COLOR[testModeKey(entry)]; }
+/* ---- THE RING SAYS HOW IT WENT, THE CHIP SAYS WHAT IT WAS (build 327) ----
+   "Recent test, why are the percentage rings color matched to the mode?
+   It should be color matched to hundo (gold) or pass green or fail red.
+   And then the mode would have that thing as its own color." Build 326
+   put the whole row in its mode's colour; the ring is the RESULT now, in
+   three colours that each mean one thing - gold a hundo or 100%, green a
+   pass (PASS_MARK and up), red under it - and the mode is only its chip.
+   The row itself carries no wash, so there is one colour code per piece. */
+const TEST_RESULT_TONE = { hundo: "#FFD36A", pass: "#5FD99A", fail: "#FF7A7A", none: "#8A94A3" };
+function testResultKey(pct, hundos){
+  if(typeof pct !== "number") return "none";
+  if(hundos > 0 || pct >= 100) return "hundo";
+  return pct >= PASS_MARK ? "pass" : "fail";
+}
+function testResultTone(entry){ return TEST_RESULT_TONE[testResultKey(entry && entry.pct, testHundosOf(entry))]; }
+/* The neutral ring (build 327): Stats' accuracy, which is not a test and
+   has no pass or fail. "Why is the accuracy percentage ring color
+   matched? I feel like that looked better as grey." */
+const NEUTRAL_RING_TONE = "#B4B8BE";
 function testModeName(entry){
   const k = testModeKey(entry);
   return k === "vr" ? "Virtual Room" : modeTitleOf(k);
@@ -104609,8 +104747,8 @@ function historyClockOf(ts){
 function buildTestRow(entry, opts){
   const row = document.createElement("button");
   row.type = "button";
-  row.className = "thx-row";
-  row.style.setProperty("--tone", testModeColor(entry));
+  row.className = "thx-row is-" + testResultKey(entry.pct, testHundosOf(entry));
+  row.style.setProperty("--tone", testResultTone(entry));
   const body = document.createElement("span");
   body.className = "thx-row-body";
   const name = document.createElement("span");
@@ -104647,7 +104785,7 @@ function buildTestRow(entry, opts){
      no day to belong to; the row is the ring, the test and its numbers,
      and it still opens the test. Test history keeps the time - its rows
      sit under a heading per day, where the time means something. */
-  const ring = buildScoreRing(entry.pct, null, testModeColor(entry));
+  const ring = buildScoreRing(entry.pct, null, testResultTone(entry));
   if(opts && opts.side === false) row.append(ring, body);
   else row.append(ring, body, side);
   row.addEventListener("click", () => showTestHistoryDetail(entry));
@@ -104674,6 +104812,17 @@ function buildHistoryGroups(entries){
   return box;
 }
 
+/* What Test history's three numbers say about a list of entries: how many
+   tests, their average score (entries that have one), and the hundos
+   they earned. One function, so the strip and its gate agree. */
+function testHistorySummary(list){
+  const scored = list.filter(e => typeof e.pct === "number");
+  return {
+    tests: list.length,
+    avg: scored.length ? Math.round(scored.reduce((n, e) => n + e.pct, 0) / scored.length) : null,
+    hundos: list.reduce((n, e) => n + testHundosOf(e), 0)
+  };
+}
 let testHistoryFilter = "all";
 function showTestReviewList(){
   stopTimer(); stopQuestionTimer();
@@ -104702,23 +104851,31 @@ function showTestReviewList(){
     toTop();
     return;
   }
-  /* The summary strip: the three numbers that say how the run of tests
-     is going, over everything listed. */
-  const scored = all.filter(e => typeof e.pct === "number");
-  const avg = scored.length ? Math.round(scored.reduce((s, e) => s + e.pct, 0) / scored.length) : null;
-  const hundosListed = all.reduce((n, e) => n + testHundosOf(e), 0);
+  /* ---- THE SUMMARY STRIP FOLLOWS THE FILTER (build 327) ----
+     "Just ensure the top numbers are accurate. I also feel like the three
+     top numbers could have that same look, like the percentage as a ring
+     and the numbers to its left and right could look better?" The three
+     numbers were worked out over EVERY test while the list under them
+     showed only the filter picked, so on Drill they still counted the
+     Qualifiers. They describe exactly the rows listed now
+     (testHistorySummary), and the average is the same score ring as each
+     row, between the count and the hundos. */
   const sum = document.createElement("div");
   sum.className = "thx-summary";
-  [[String(all.length), all.length === 1 ? "test" : "tests"],
-   [avg == null ? "—" : avg + "%", "average"],
-   [String(hundosListed), hundosListed === 1 ? "hundo" : "hundos"]].forEach(([v, l], i) => {
-    const c = document.createElement("div");
-    c.className = "thx-sum-cell";
-    const vv = document.createElement("span"); vv.className = "thx-sum-num"; vv.textContent = v;
-    const ll = document.createElement("span"); ll.className = "thx-sum-lab"; ll.textContent = l;
-    c.append(vv, ll);
-    sum.appendChild(c);
-  });
+  const paintSummary = (list) => {
+    const t = testHistorySummary(list);
+    /* a 3x2 grid: the two numbers level with the ring's middle on the
+       first row, the three labels on one line under them */
+    const el = (cls, txt) => { const e = document.createElement("span"); e.className = cls; if(txt != null) e.textContent = txt; return e; };
+    const ring = buildScoreRing(t.avg, "thx-sum-ring", t.avg == null ? TEST_RESULT_TONE.none : TEST_RESULT_TONE[testResultKey(t.avg, 0)]);
+    const midCell = el("thx-sum-cell thx-sum-avg"); midCell.appendChild(ring);
+    sum.replaceChildren(
+      el("thx-sum-cell thx-sum-num thx-sum-tests", String(t.tests)), midCell,
+      el("thx-sum-cell thx-sum-num thx-sum-hundos", String(t.hundos)),
+      el("thx-sum-lab", t.tests === 1 ? "test" : "tests"), el("thx-sum-lab thx-sum-lab-avg", "average"),
+      el("thx-sum-lab", t.hundos === 1 ? "hundo" : "hundos"));
+    sum.dataset.tests = t.tests; sum.dataset.avg = t.avg == null ? "" : t.avg; sum.dataset.hundos = t.hundos;
+  };
   panel.appendChild(sum);
 
   /* Drill / Exam / Virtual Room - only the filters this history can use. */
@@ -104730,6 +104887,7 @@ function showTestReviewList(){
     const shown = testHistoryFilter === "all" ? all
       : all.filter(e => testHistoryFilter === "vr" ? e.vr : (!e.vr && (e.mode || "drill") === testHistoryFilter));
     listHost.replaceChildren(buildHistoryGroups(shown));
+    paintSummary(shown);
   };
   if(kinds.length > 2){
     const seg = document.createElement("div");
@@ -104767,7 +104925,7 @@ function showTestHistoryDetail(entry){
 
   const panel = document.createElement("section");
   panel.className = "panel screen-testreview screen-testdetail";
-  panel.style.setProperty("--tone", testModeColor(entry));
+  panel.style.setProperty("--tone", testResultTone(entry));
 
   const back = buildBackLink("Test history", showTestReviewList);
   panel.appendChild(back);
@@ -104775,7 +104933,7 @@ function showTestHistoryDetail(entry){
   /* The hero: the score, big, in its own colour, with what and when. */
   const hero = document.createElement("div");
   hero.className = "thx-hero";
-  hero.appendChild(buildScoreRing(entry.pct, "thx-ring-big", testModeColor(entry)));
+  hero.appendChild(buildScoreRing(entry.pct, "thx-ring-big", testResultTone(entry)));
   const heroText = document.createElement("div");
   heroText.className = "thx-hero-text";
   const verdict = document.createElement("p");
@@ -104829,9 +104987,11 @@ function showTestHistoryDetail(entry){
       r.appendChild(n);
       if(typeof own === "number"){
         const v = document.createElement("span"); v.className = "thx-unit-pct"; v.textContent = own + "%";
-        v.style.color = "var(--tone)";
+        /* each unit by its own result (build 327) */
+        const ut = TEST_RESULT_TONE[testResultKey(own, 0)];
+        v.style.color = ut;
         const bar = document.createElement("span"); bar.className = "thx-unit-bar";
-        const fill = document.createElement("span"); fill.style.width = own + "%"; fill.style.background = "var(--tone)";
+        const fill = document.createElement("span"); fill.style.width = own + "%"; fill.style.background = ut;
         bar.appendChild(fill);
         r.append(v, bar);
       }
@@ -118688,7 +118848,10 @@ function showProfile(defaultTab, opts){
   /* in the tab's own colour, as every number on Stats is (build 326: it
      was the test-score bands, so 92% accuracy drew a green ring beside
      orange numbers) */
-  hero.appendChild(buildScoreRing(accPct, "stx-ring", "var(--theme-c2)"));
+  /* grey again (build 327): "why is the accuracy percentage ring color
+     matched? I feel like that looked better as grey". Accuracy is not a
+     test, so it has no pass/fail colour, and it is not the theme's. */
+  hero.appendChild(buildScoreRing(accPct, "stx-ring is-neutral", NEUTRAL_RING_TONE));
   const heroText = document.createElement("div");
   heroText.className = "stx-hero-text";
   const heroBig = document.createElement("p");

@@ -277,16 +277,25 @@ def sec_stats(br):
         check("%s: a test that earned a hundo says Hundo on its row, and its own page says Hundo" % label,
               hun and all(r["hundo"] and "Hundo" in r["text"] for r in hun) and det and det["verdict"] and "Hundo" in det["verdict"],
               [(r["pct"], r["hundo"]) for r in hun] + [det and det["verdict"]])
+        # MOVED IN 327 (b327e): "Recent test, why are the percentage rings
+        # color matched to the mode? It should be color matched to hundo
+        # (gold) or pass green or fail red. And then the mode would have that
+        # thing as its own color." 326's rule (ring, wash and chip all the
+        # mode's colour) is the decision that changed; what holds now is ONE
+        # colour code per piece: the ring and its wash are the RESULT
+        # (testResultTone), the chip alone is the mode. check-b327-e B holds
+        # the colours themselves.
         allrows = rows + hrows
-        one = [r for r in allrows if not (same_col(r["ring"], r["chip"]) and same_col(r["tone"], r["chip"]))]
-        check("%s: every row's ring and wash are its mode chip's colour (%d rows)" % (label, len(allrows)), len(allrows) >= 7 and not one,
+        res = lambda p: "#FFD36A" if p == "100%" else "#5FD99A" if int(p.rstrip("%")) >= 70 else "#FF7A7A"
+        one = [r for r in allrows if not (same_col(r["ring"], res(r["pct"])) and same_col(r["tone"], res(r["pct"])))]
+        check("%s: every row's ring and wash are its RESULT's colour (%d rows)" % (label, len(allrows)), len(allrows) >= 7 and not one,
               [(r["mode"], r["pct"], r["ring"], r["tone"], r["chip"]) for r in one])
         drills = [r for r in allrows if r["mode"] == "Drill"]
-        check("%s: tests of one mode are one colour whatever their score (Drill at %s)" % (label, sorted(set(r["pct"] for r in drills))),
-              len(set(r["pct"] for r in drills)) >= 2 and len(set(r["ring"] for r in drills)) == 1 and len(set(r["border"] for r in allrows)) == 1,
-              [(r["pct"], r["ring"], r["border"]) for r in drills])
-        check("%s: a test's own page is in its mode's colour too (ring, tone and each unit's bar)" % label,
-              bool(det) and same_col(det["ring"], det["chip"]) and same_col(det["tone"], det["chip"]) and all(same_col(b, det["chip"]) for b in det["bars"]), det)
+        check("%s: tests of one mode keep one chip colour, whatever their score (Drill at %s)" % (label, sorted(set(r["pct"] for r in drills))),
+              len(set(r["pct"] for r in drills)) >= 2 and len(set(r["chip"] for r in drills)) == 1 and len(set(r["border"] for r in allrows)) == 1,
+              [(r["pct"], r["chip"], r["border"]) for r in drills])
+        check("%s: a test's own page: its ring and tone are its result's colour, its chip its mode's" % label,
+              bool(det) and same_col(det["ring"], det["tone"]) and not same_col(det["ring"], det["chip"]), det)
         ctx.close()
 
 

@@ -37,8 +37,9 @@ On both reference devices where a device matters (iPhone 17 Pro Max
   E. THE LID IS THERE IN EVERY FRAME of its opening (stepped at 20 fps from
      the crack to open): its front edge is painted end to end, and every
      face of it that faces the camera is painted over its middle.
-  F. THE CASE LOOKS FINISHED: the lid's cushion is tufted (diagonal seams
-     and buttons) and the lid's outside carries a row of stitching, in the
+  F. THE CASE LOOKS FINISHED: the lid's cushion is plain - no quilt (moved
+     in 327: the tufting was "the weird pattern of the case on the inside top
+     part") - and the lid's outside carries a row of stitching, in the
      cutscene's case and the Badges tab's alike.
 """
 import importlib.util
@@ -255,7 +256,7 @@ LOOK = r"""() => {
 
 
 def section_f(br):
-    print("\nF. the case looks finished: a tufted lid, a stitched outside, in both cases")
+    print("\nF. the case looks finished: a plain padded lid, a stitched outside, in both cases")
     for (dev, w, h, dpr) in DEVICES:
         # the Badges tab, on its first (shut) frame
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, init=STANDALONE, dpr=1)
@@ -275,8 +276,13 @@ def section_f(br):
         cut = pg.evaluate(LOOK)
         ctx.close()
         cush = tab["cush"] + cut["cush"]
-        ok = len(cush) >= 2 and all(c["diag"] >= 2 and c["radial"] >= 5 for c in cush) and tab["stitch"][1] is True and cut["stitch"][0] is True
-        check(f"{dev}: both cases' lids are tufted (diagonal seams and buttons) and stitched round the outside", ok,
+        # MOVED IN 327 (b327e): "I also don't like the weird pattern of the
+        # case on the inside top part." The tufting 326 added is the pattern;
+        # the lid's inside is one plain padded cushion now (no diagonal seams,
+        # a soft dome of light - at most three radial layers). The stitching
+        # round the outside stays.
+        ok = len(cush) >= 2 and all(c["diag"] == 0 and 1 <= c["radial"] <= 3 for c in cush) and tab["stitch"][1] is True and cut["stitch"][0] is True
+        check(f"{dev}: both cases' lids are a plain padded cushion (no quilt) and stitched round the outside", ok,
               {"cushions": cush, "tab stitched": tab["stitch"][1], "cutscene stitched": cut["stitch"][0]})
 
 
