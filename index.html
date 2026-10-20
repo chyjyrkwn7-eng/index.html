@@ -29253,14 +29253,11 @@
      gold, orange, red - and 350 and up is all of them at once. Cyan at
      50 is kept clear of the XP blue it was once mistaken for. */
   .streak-lv2{ --sk:#2FE0C4; } .streak-lv3{ --sk:#38C8F0; } .streak-lv4{ --sk:#A07CFF; }
-  .streak-lv5{ --sk:#FFD23F; } .streak-lv6{ --sk:#FF9433; } .streak-lv7{ --sk:#FF4A6B; } .streak-lv8{ --sk:#FF7AD9; }
-  .streak-lv8 .streak-pop-num{
-    background:linear-gradient(90deg, #FFD23F, #FF7A45, #FF4A9B, #A07CFF, #38C8F0, #FFD23F);
-    background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent;
-    animation:streak-prism 1.6s linear infinite; text-shadow:none;
-  }
-  .streak-lv8{ border-image:none; border-color:rgba(255,255,255,.55); }
-  @keyframes streak-prism{ to{ background-position:-200% 0; } }
+  .streak-lv5{ --sk:#FFD23F; } .streak-lv6{ --sk:#FF9433; } .streak-lv7{ --sk:#FF4A6B; }
+  /* 350 and up is WHITE-HOT, one colour, past the red - never a rainbow
+     (build 327: "Why is 350 in a row rainbow? Don't do that"). */
+  .streak-lv8{ --sk:#FFF1CC; border-color:rgba(255,241,204,.6); }
+  .streak-lv8 .streak-pop-num{ text-shadow:0 0 14px rgba(255,214,140,.85), 0 0 4px rgba(255,255,255,.7); }
   .streak-pop-num{ font-family:var(--mono); font-size:1.3rem; font-weight:800; color:var(--sk); text-shadow:0 0 12px color-mix(in srgb, var(--sk) 60%, transparent); }
   .streak-pop-text{ font-size:.72rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.75); }
   .streak-lv2::after, .streak-lv3::after, .streak-lv4::after, .streak-lv5::after, .streak-lv6::after, .streak-lv7::after, .streak-lv8::after{
@@ -29277,7 +29274,7 @@
        100  a bigger pop, a second ring, and a flame beside the number
        150  more sparks
        250  the edges of the screen flash its colour
-       350  all of it, in every colour (the prism)
+       350  all of it, white-hot (one colour - no rainbow, build 327)
      One-shot, transform and opacity only, gone with the pill. */
   .streak-lv5, .streak-lv6{ --sk-pop:1.14; }
   .streak-lv7, .streak-lv8{ --sk-pop:1.22; }

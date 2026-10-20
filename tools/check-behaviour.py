@@ -10176,6 +10176,11 @@ def check_b310(br):
       let gap = 360 - hs[hs.length - 1] + hs[0]; for(let i = 1; i < hs.length; i++) gap = Math.max(gap, hs[i] - hs[i - 1]);
       out.hueSpan = Math.round(360 - gap);
       out.past50 = cols[3].indexOf('streak-lv4') >= 0 && cols[7].indexOf('streak-lv8') >= 0;
+      /* build 327: 350 and up is one colour, never a rainbow */
+      showRunStreakBanner(350); await wait(200);
+      { const num = document.querySelector('.streak-pop .streak-pop-num'), cs = num && getComputedStyle(num);
+        out.top = cs ? { img: cs.backgroundImage, clip: cs.webkitBackgroundClip || cs.backgroundClip, anim: cs.animationName, color: cs.color } : null; }
+      document.querySelectorAll('.streak-pop, .streak-flash').forEach(e => e.remove());
       showRunStreakBanner(25); await wait(2600); out.streakStill = !!document.querySelector('.streak-pop');
       await wait(900); out.streakGone = !document.querySelector('.streak-pop');
       /* the Profile tab stays lit on every screen reached from Profile
@@ -10246,6 +10251,8 @@ def check_b310(br):
       return out; }""")
     ctx.close()
     check("the streak pop has eight different colours, one per tier, across the wheel", r["streakDistinct"] == 8 and r["hueSpan"] >= 180, r)
+    t = r.get("top") or {}
+    check("350 in a row is one colour: no rainbow gradient on the number, not clipped to text, not animated", t and t.get("img") == "none" and "text" not in (t.get("clip") or "") and "prism" not in (t.get("anim") or "") and t.get("color") not in ("rgba(0, 0, 0, 0)",), t)
     check("streaks past 50 get their own tiers (75 is the 4th, 350 the 8th)", r["past50"], r)
     check("the streak pop is still up at 2.6s and gone by 3.5s", r["streakStill"] and r["streakGone"], r)
     check("the Profile tab stays lit on Friends and Test review, and the calendar lights its own Calendar tab (323)", all(v is True for v in r["lit"].values()), r["lit"])

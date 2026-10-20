@@ -24797,3 +24797,13 @@ text.)
   and b324m (Quiz, "Begin quiz", "Start quiz", the counter, history chips),
   check-b325-e and check-b327-e (filter and chip names), check-chat (What's
   New says quiz), check-savetest (the offer says Quiz), check-tours' note.
+
+### Build 327 - 350 in a row is white-hot, not a rainbow
+
+Madison: *"Why is 350 in a row rainbow? Don't do that."* Build 310 made the
+top streak tier (`.streak-lv8`, 350 and up) a moving prism of every colour on
+its number. It is one colour now: white-hot `#FFF1CC`, the step past the red
+at 250 on the cool-to-hot ladder, with a warm glow. Everything else the tier
+had (rings, sweep, sparks, flame, the screen-edge flash) is unchanged.
+check-behaviour 83 (`check_b310`) asserts the 350 number has no gradient, no
+text clip and no animation; it fails on the build before.
