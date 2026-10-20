@@ -463,7 +463,8 @@ def roadmap(r, out):
 
 
 def badge_cutscene(r, out):
-    r.js("() => showHome()")
+    # the badge really earned (and two before it), so the case's count line is true
+    r.js("() => { for(const u of ['Identity Crimes','Racial Profiling','Victims of Crime']) store.unitPerfects[u] = Math.max(store.unitPerfects[u]||0, badgeThresholdFor(u)); showHome(); }")
     r.wake()
     r.pg.wait_for_timeout(2500)
     r.start(out)
