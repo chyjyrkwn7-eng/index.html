@@ -3674,6 +3674,12 @@ PENAL_STATE = """()=>{ const row = [...document.querySelectorAll('.picks .pick')
            units: cfg.units.slice(), versions: JSON.stringify(cfg.versions || null) }; }"""
 
 
+PIN_BEFORE_PENAL_256 = """(() => { const off = Date.UTC(2026, 9, 19, 18, 0, 0) - Date.now(); const RD = Date;
+  function D(...a){ return a.length ? new RD(...a) : new RD(RD.now() + off); }
+  D.prototype = RD.prototype; D.now = () => RD.now() + off; D.UTC = RD.UTC; D.parse = RD.parse;
+  window.Date = D; })();"""
+
+
 def check_penal_versions(br):
     """The Penal Code has two versions: the whole unit, and the questions on
     slides 124-256 of the instructor's PowerPoint. Selecting it asks which,
@@ -3689,7 +3695,11 @@ def check_penal_versions(br):
     STAY as they were, so they hold the old behaviour rather than show
     the new one."""
     print("\n33. the Penal Code asks which version, every time")
-    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    # BUILD 327: slides 124-256 is the version BEFORE PENAL_256_AT (8 PM Oct
+    # 19); after it the app offers 256-578 (check-b325-pc holds that). This
+    # section pins the page's clock to the afternoon of Oct 19 so it goes on
+    # testing what it was written for, whatever day it is run on.
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=PIN_BEFORE_PENAL_256)
     setup = ("()=>{ store.seenUnitSelectTour = true; cfg.mode = 'drill'; cfg.source = 'all'; cfg.size = 0;"
              " cfg.units = []; cfg.versions = {}; showSetup(); }")
     pg.evaluate(setup)
