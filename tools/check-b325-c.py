@@ -194,37 +194,39 @@ def section_wall(br):
     check("...and the wall never costs a rank the XP's own level would hold", not r["rankLoss"] and not bad, r["rankLoss"][:4])
 
     loads = r["loads"]
-    drops, rdrops, wrong, notflag, reload = [], [], [], [], []
-    grandfathered = 0
+    # MOVED IN 327: NO GRANDFATHER. Build 324 never reached the class (live
+    # went 313c -> 327), so "the level 324 showed" was never seen. Madison:
+    # "People WILL ONLY be the max level of their current rank ... your new
+    # level will be the level required to hit that next rank and then all
+    # your extra xp is now saved xp". A copy loads at the NEW rule's level:
+    # min(curve, max(next rank's level, any floor the copy itself carries -
+    # a merge's bonusLevels gift)), and no rank is lost.
+    rdrops, wrong, notflag, reload, kept = [], [], [], [], []
+    moved = 0
     for d in loads:
         old_level = min(d["curve"], max(old_cap(d["badges"]), d["fl"]), CAP)
         new_level = min(d["curve"], max(new_cap(d["badges"], 0), d["fl"]), CAP)
-        want = max(old_level, new_level)
-        if d["lv"] < old_level:
-            drops.append(d)
         if d["rk"] < rank_of(old_level, d["badges"]):
             rdrops.append(d)
-        if d["lv"] != want:
-            wrong.append((d, want))
+        if d["lv"] != new_level:
+            wrong.append((d, new_level))
         if d["flag"] != 325:
             notflag.append(d)
         if d["lv2"] != d["lv"] or d["rk2"] != d["rk"]:
             reload.append(d)
-        if d.get("row") is not None and d["lv"] != d["row"]:
-            wrong.append((d, "row"))
+        if (d["floor"] or 0) > (d["fl"] or 0):
+            kept.append(d)
         if old_level > new_level:
-            grandfathered += 1
-    n_board = sum(1 for d in loads if d.get("row") is not None)
-    check("%d build-324 states (a grid, and the %d rows of the live board) load at exactly the level 324 showed or the new rule's, whichever is higher - none lower, every board row its published level - under the new rule's flag"
-          % (len(loads), n_board), not wrong and not drops and not notflag, (wrong or drops or notflag)[:3])
-    # (with the flag: on 324 this would pass trivially - it IS 324's rule)
-    check("...and no rank below the one 324 showed, with the new rule's flag set on every one", not rdrops and not notflag, (rdrops or notflag)[:3])
-    check("...%d of them kept by a grandfather floor; every one carries levelWallRule 325 after the load" % grandfathered,
-          grandfathered > 0 and not notflag, notflag[:3])
+            moved += 1
+    check("%d older states (a grid, and the %d rows of the live board) load at exactly the new rule's level - the next rank's level, or a floor the copy itself carries - under the new rule's flag (no grandfather, build 327)"
+          % (len(loads), sum(1 for d in loads if d.get("row") is not None)), not wrong and not notflag, (wrong or notflag)[:3])
+    check("...and no rank below the one the old rule showed", not rdrops and not notflag, (rdrops or notflag)[:3])
+    check("...%d of them come down to their next rank's level, and no floor is written for any of them" % moved,
+          moved > 0 and not kept, kept[:3])
     check("...and loading the saved copy again changes nothing (idempotent)", not reload and not notflag, reload[:3])
     o = r["oneShot"]
-    check("the floor is one shot: XP earned afterwards does not lift a grandfathered level the way the old rule would (24 stays 24 at XP for 28)",
-          o["before"] == 24 and o["after"] == 24 and o["flag"] == 325, o)
+    check("no grandfather floor: an unranked account at XP for 24 loads at 21, and stays at 21 at XP for 28 (build 327)",
+          o["before"] == 21 and o["after"] == 21 and not o["floor"] and o["flag"] == 325, o)
     m = r["merge"]
     check("two devices that each ran it merge to the higher floor, either way round, flag kept - and a copy from an older build changes nothing",
           m["m1"] == m["m2"] == m["m3"] == m["m4"] == [max(m["a"][0], m["b"][0]), 325] and m["a"][1] == m["b"][1] == 325, m)
@@ -232,8 +234,9 @@ def section_wall(br):
           r["fresh"] == {"flag": 325, "floor": 0} and r["reset"] == {"flag": 325, "floor": 0, "level": 21}, [r["fresh"], r["reset"]])
     note = r["note"] or []
     txt = " ".join(note)
-    check("What's New's note says the new rule - your next rank's level - and never that a level 'went from' one to another",
-          bool(note) and "next rank" in txt and "went from" not in txt and str(r["noteState"]["wall"]) in txt, [note, r["noteState"]])
+    # MOVED IN 327: levels DO move now, so the note says where it went from.
+    check("What's New's note says the new rule - your next rank's level - and where the level went from",
+          bool(note) and "next rank" in txt and "went from" in txt and str(r["noteState"]["wall"]) in txt, [note, r["noteState"]])
     ctx.close()
 
 
@@ -362,13 +365,16 @@ def section_pool(br):
             if(first == null) first = Number(((document.querySelector('.pf-standing .xpnums-have') || {}).textContent || '').replace(/[^0-9]/g, ''));
             if(!done && performance.now() - T0 < 40000) requestAnimationFrame(tick); else res(); };
             requestAnimationFrame(tick); });
-          out.pool = pool; out.first = first; out.extra = Math.round(from.into);
+          out.pool = pool; out.first = first; out.extra = Math.round(from.into); out.span = Math.round(from.span);
           const f = st.querySelector('.pf-xpbar .xpbar-fill');
           out.endFill = f ? getComputedStyle(f).getPropertyValue('--fill').trim() : null;
           return out;
         }""")
-        check("%s: no Saved XP pool; the number starts on the extra where it was (%s)" % (label, r.get("extra")),
-              not r.get("pool") and r.get("first") == r.get("extra"), r)
+        # MOVED IN 327 (b327b): "it could literally just be the xp that's the
+        # extra it goes down as you level up" - the one number is the XP past
+        # the part of the level the full bar holds: into - span.
+        check("%s: no Saved XP pool; the number starts on the extra past the full bar (%s - %s)" % (label, r.get("extra"), r.get("span")),
+              not r.get("pool") and abs((r.get("first") or 0) - (r.get("extra") - r.get("span"))) <= 1, r)
         check("%s: a climb that stops at the next wall ends with the bar full, not empty" % label,
               r["to"][2] and r.get("endFill") == "100%", [r["to"], r.get("endFill")])
         ctx.close()

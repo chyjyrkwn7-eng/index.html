@@ -24807,3 +24807,31 @@ at 250 on the cool-to-hot ladder, with a warm glow. Everything else the tier
 had (rings, sweep, sparks, flame, the screen-edge flash) is unchanged.
 check-behaviour 83 (`check_b310`) asserts the 350 number has no gradient, no
 text clip and no animation; it fails on the build before.
+
+### Build 327 - no grandfather: every level caps at the next rank's level
+
+Madison, on the day 327 went out: *"People WILL ONLY be the max level of
+their current rank. So if you are unranked because you don't have any
+badges, your new level will be the level required to hit that next rank
+and then all your extra xp is now saved xp that goes into the levels as you
+unlock them."* Live went straight from build 313c to 327, so build 324's
+"level shown" (325's grandfather floor) was a level nobody ever saw, and it
+held people at 29/39/49 instead of the rule.
+
+- **`LEVEL_WALL_NO_GRANDFATHER = true`** (beside `LEVEL_WALL_RULE`):
+  `levelWallMigrate325()` writes no floor; `applyLoadedData` still sets
+  `levelWallRule` 325. An explicit `levelFloor` (a merge's `bonusLevels`
+  gift) still counts. `tools/firestore-admin.py` carries the same switch
+  (`effective_level`), checked by check-curve 9.
+- **Checked on every real account** (the Oct 20 progress documents, loaded
+  by live 313c's and 327's own code): unranked -> 21, Bronze -> 30, Silver
+  -> 40, Gold inside its cap unchanged; nobody above their next rank's
+  level, no XP, rank or badge changed, every rankings row = the shown level.
+  ~29 accounts came down (e.g. 64 -> 30, 49 -> 21); their XP is saved and
+  turns into levels as their badges arrive.
+- **`levelGateNoteText`** now says "your level went from A to B" (A is
+  `legacyLevelOfPoints`, what 313c showed), reversing 325's "never say it
+  moved" - it did move.
+- Gates moved: check-curve 9 (a no-badge account from an older build at
+  21), check-b325-c B (loads at the new rule's level, no floor written, the
+  note says "went from") and D (b327b's extra = into - span).

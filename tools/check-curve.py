@@ -910,8 +910,9 @@ def main():
             check("its band caps are the page's", [fa.badge_wall(b) for b in range(17)] == page["caps"],
                   ([fa.badge_wall(b) for b in range(17)], page["caps"]))
             f = {"lifetime": {"points": 600000}, "unitPerfects": {}}
-            check("its effective level keeps a no-badge account from an older build at 29 (grandfathered), with no floor",
-                  fa.effective_level(f) == 29, fa.effective_level(f))
+            # MOVED IN 327: no grandfather (live went 313c -> 327, nobody saw 324's 29)
+            check("its effective level puts a no-badge account from an older build at 21, Bronze's level (no grandfather, build 327)",
+                  fa.effective_level(f) == 21, fa.effective_level(f))
             f2 = {"lifetime": {"points": 600000}, "unitPerfects": {}, "levelWallRule": 325}
             check("...and holds one under the new rule at 21 (build 325)",
                   fa.effective_level(f2) == 21, fa.effective_level(f2))

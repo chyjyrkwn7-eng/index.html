@@ -1008,6 +1008,9 @@ def badge_wall(badges, rank_floor=0):
     return LEVEL_CAP
 
 
+LEVEL_WALL_NO_GRANDFATHER = True
+
+
 def badge_wall_324(badges):
     """Build 324's cap (the top of the NEXT rank's block - 29, 39, 49 ...),
     for the grandfather floor only (levelWallMigrate325)."""
@@ -1027,6 +1030,9 @@ def effective_level(f):
     rf = int(rf) if isinstance(rf, (int, float)) else 0
     b, curve = badges_of(f), level_of(pts)
     rule = f.get("levelWallRule")
+    # 327: no grandfather floor (the app's LEVEL_WALL_NO_GRANDFATHER) - the
+    # branch below is kept only so the tool can be set back with the app.
+    if LEVEL_WALL_NO_GRANDFATHER: rule = 325
     if pts > 0 and not (isinstance(rule, (int, float)) and rule >= 325):
         old = min(curve, max(badge_wall_324(b), fl), LEVEL_CAP)
         if old > min(curve, max(badge_wall(b, rf), fl), LEVEL_CAP):

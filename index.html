@@ -57888,7 +57888,18 @@ function levelWallOf(badges, floor, rankFloor){
    up. A reset clears the floor and sets the flag (a fresh account starts
    under the new rule). Returns the floor written, or 0. */
 const LEVEL_WALL_RULE = 325;
+const LEVEL_WALL_NO_GRANDFATHER = true;
 function levelWallMigrate325(got, into){
+  /* RETIRED IN 327: NO GRANDFATHER. Build 324 never reached the class
+     (live went 313c -> 327), so "the level 324 showed" was a level nobody
+     ever saw, and keeping it held people at 29/39/49 instead of the rule.
+     Madison: "People WILL ONLY be the max level of their current rank. So
+     if you are unranked because you don't have any badges, your new level
+     will be the level required to hit that next rank and then all your
+     extra xp is now saved xp". So no floor is written; the flag is still
+     set by applyLoadedData. An existing levelFloor (a merge's bonusLevels
+     gift) is untouched. */
+  if(LEVEL_WALL_NO_GRANDFATHER) return 0;
   if(!got || typeof got !== "object") return 0;
   if(typeof got.levelWallRule === "number" && got.levelWallRule >= LEVEL_WALL_RULE) return 0;
   const pts = got.lifetime ? Number(got.lifetime.points) || 0 : 0;
@@ -86886,8 +86897,9 @@ function introRow(glyph, color, title, body){
 /* THE WALL, SAID ONCE IN WHAT'S NEW (build 325; was "Your level was
    adjusted", build 319). `s` is levelStateFor(store) for somebody at their
    wall with levels saved past it (s.held && s.saved > 0). Nobody's level
-   moved on this update (levelWallMigrate325 keeps what 324 showed), so it
-   never says "went from" - it says the rule and where you stand in it:
+   moved on this update (levelWallMigrate325 kept what 324 showed) - RETIRED
+   IN 327: levels DO move now, so it says "went from X to Y" when they did -
+   and says the rule and where you stand in it:
    the cap is the next rank's level, its badges lift it, and the saved
    levels come in then. A level floor above that level (grandfathered) is
    "you keep level N". */
@@ -86895,9 +86907,14 @@ function levelGateNoteText(s){
   const gate = s.gateKey ? RANK_DISPLAY_NAME[s.gateKey] || s.gateKey : "";
   const rule = s.gateKey ? TIER_UNLOCKS[s.gateKey] : null;
   const need = rule ? Number(rule.level) || 0 : 0;
+  /* 327: the level DID move for most people (no grandfather), so say
+     from what to what - the level the live build (313's curve, no wall)
+     showed them. */
+  let was = 0; try{ was = legacyLevelOfPoints(Number((store.lifetime || {}).points) || 0); }catch(e){}
   const first = "Your level now goes as high as your next rank's level and waits there until you have that rank's badges. " +
     (gate && s.level > need ? "You keep level " + s.level + ", and it stays there until you reach " + gate + "."
-      : gate ? "For you that is level " + need + ", the level " + gate + " asks for."
+      : gate ? "For you that is level " + need + ", the level " + gate + " asks for" +
+        (was > s.level ? ", so your level went from " + was + " to " + s.level + "." : ".")
       : "You are at level " + s.level + ".");
   const n = Math.max(1, Number(s.badgesToPass) || 1);
   const earn = "Earn " + n + (Number(s.badges) > 0 ? " more" : "") + (n === 1 ? " badge" : " badges") +
