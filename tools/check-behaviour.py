@@ -8592,8 +8592,9 @@ def check_b303(br):
         # away from the mode for what it's meant for, to give you no idea how
         # you do till the very end." An old preference left on judges nothing
         # now; Exam shows as Qualifier (check_b324m_modes holds the rest).
+        # MOVED IN 327 (b327k): the mode reads Quiz ("I prefer quiz").
         check(dev + ": in a Qualifier, even with an old Instant feedback preference on, a pick is not judged or locked (build 324)",
-              r.get("examJudged") is False and r.get("examLocked") is False and r.get("examMode") == "Exam", (r.get("examJudged"), r.get("examLocked"), r.get("examMode")))
+              r.get("examJudged") is False and r.get("examLocked") is False and r.get("examMode") == "Quiz", (r.get("examJudged"), r.get("examLocked"), r.get("examMode")))
         # Build 305 put the name back to Review; build 324 renamed it Briefing
         # ("exam mode and review mode need a new name and logo"). The sheet,
         # the list and the card all say the same thing.
@@ -22319,7 +22320,8 @@ def check_b320f_nova(br):
         # MOVED IN 324 (b324m): Exam and Review are Qualifier and Briefing on
         # screen ("exam mode and review mode need a new name and logo").
         # MOVED IN 326 (b326d): Review again
-        need = ["Nova", "explorer", "badge", "flare", "crew", "Supernova", "XP", "level", "Drill", "Exam", "Review", "Madison"]
+        # MOVED IN 327 (b327k): "The name 'exam' is not it. I prefer quiz."
+        need = ["Nova", "explorer", "badge", "flare", "crew", "Supernova", "XP", "level", "Drill", "Quiz", "Review", "Madison"]
         miss = [x for x in need if x not in lines]
         check("%s he introduces himself and the story: badges, flares, ranks, levels, tests" % dev, not miss and r.get("goLabel"), {"missing": miss, "go": r.get("goLabel")})
         check("%s the tooltips follow in his bubble, every one" % dev,
@@ -27387,8 +27389,9 @@ def check_b324m_modes(br):
         cards = r.get("cards") or {}
         # MOVED IN 326 (b326d): Review again
         # MOVED IN 327: Exam again ("Exams name 'qualifier' is not the move")
-        check("%s the mode cards read Drill, Exam, Review, Virtual Room" % label,
-              [cards.get(m, {}).get("title") for m in ("drill", "exam", "review", "vroom")] == ["Drill", "Exam", "Review", "Virtual Room"],
+        # MOVED IN 327 (b327k): Quiz ("The name 'exam' is not it. I prefer quiz")
+        check("%s the mode cards read Drill, Quiz, Review, Virtual Room" % label,
+              [cards.get(m, {}).get("title") for m in ("drill", "exam", "review", "vroom")] == ["Drill", "Quiz", "Review", "Virtual Room"],
               [cards.get(m, {}).get("title") for m in ("drill", "exam", "review", "vroom")])
         ed, rd = cards.get("exam", {}).get("desc") or "", cards.get("review", {}).get("desc") or ""
         check("%s the Qualifier card says no feedback until your grade; Briefing's says it is not a test, answers shown" % label,
@@ -27402,7 +27405,7 @@ def check_b324m_modes(br):
         check("%s the Qualifier's mark has its own colour, not Drill's, Briefing's or the Virtual Room's" % label,
               st["exam"] and len({st["drill"], st["exam"], st["review"], st["vroom"]}) == 4, st)
         sh = r.get("sheets") or {}
-        want = {"drill": ("Drill", "Begin drill"), "exam": ("Exam", "Begin exam"),
+        want = {"drill": ("Drill", "Begin drill"), "exam": ("Quiz", "Begin quiz"),  # MOVED IN 327 (b327k)
                 "review": ("Review", "Begin review"), "flash": ("Review", "Begin review")}  # 326: Review again
         for k, (name, begin) in want.items():
             s = sh.get(k) or {}
@@ -27418,16 +27421,17 @@ def check_b324m_modes(br):
               and (sh.get("drill") or {}).get("boxIcon") == st["drill"],
               {k: (sh.get(k) or {}).get("boxIcon") for k in ("drill", "exam", "review")})
         check("%s the unit-selection pill names the mode: Start drill / qualifier / review (326's name)" % label,
-              (sh.get("drill") or {}).get("pill", "").startswith("Start drill,") and (sh.get("exam") or {}).get("pill", "").startswith("Start exam,")
+              (sh.get("drill") or {}).get("pill", "").startswith("Start drill,") and (sh.get("exam") or {}).get("pill", "").startswith("Start quiz,")
               and (sh.get("review") or {}).get("pill", "").startswith("Start review,"),
               {k: (sh.get(k) or {}).get("pill") for k in ("drill", "exam", "review")})
         check("%s the Virtual Room host's sheet button reads Open lobby" % label,
               r.get("vrBegin") == "Open lobby",
               {k: r.get(k) for k in ("vrPill", "vrTitle", "vrBegin")})
         run = r.get("run") or {}
-        check("%s an Exam run says Exam, and cfg, store.opts and runMode keep \"exam\"" % label,
-              run.get("label") == "Exam" and run.get("stored") == "exam" and run.get("mode") == "exam" and run.get("runMode") == "exam"
-              and "exam" in (run.get("counter") or ""),
+        # MOVED IN 327 (b327k): a Quiz run says Quiz; the stored value stays "exam".
+        check("%s a Quiz run says Quiz, and cfg, store.opts and runMode keep \"exam\"" % label,
+              run.get("label") == "Quiz" and run.get("stored") == "exam" and run.get("mode") == "exam" and run.get("runMode") == "exam"
+              and "quiz" in (run.get("counter") or ""),
               {k: run.get(k) for k in ("label", "stored", "mode", "runMode", "counter")})
         # MOVED IN 327: "if you don't know whether you got it right or wrong it should be white"
         check("%s its progress blocks are white, never the Exam's orange (nothing is judged)" % label,
@@ -27440,10 +27444,11 @@ def check_b324m_modes(br):
               r.get("listTitle") == "Review" and r.get("fcLabel") == "Review" and r.get("listIcon") == st["review"],
               {k: r.get(k) for k in ("listTitle", "fcLabel", "listIcon")})
         hi = r.get("hist") or {}
-        check("%s history entries saved as \"exam\" read Exam (chips, filter, detail, results), still stored as exam" % label,
-              hi.get("chips", [])[:2] == ["Exam", "Exam"] and "Exam" in hi.get("filters", [])
-              and "Qualifier" not in " ".join(hi.get("names", []) + hi.get("filters", [])) and hi.get("detail") == "Exam"
-              and r.get("results") == "Exam" and hi.get("stored") == ["exam", "exam", "drill"],
+        # MOVED IN 327 (b327k): they read Quiz now, and never Exam or Qualifier.
+        check("%s history entries saved as \"exam\" read Quiz (chips, filter, detail, results), still stored as exam" % label,
+              hi.get("chips", [])[:2] == ["Quiz", "Quiz"] and "Quiz" in hi.get("filters", [])
+              and not re.search(r"Qualifier|\bExam\b", " ".join(hi.get("names", []) + hi.get("filters", []))) and hi.get("detail") == "Quiz"
+              and r.get("results") == "Quiz" and hi.get("stored") == ["exam", "exam", "drill"],
               {k: hi.get(k) for k in ("chips", "names", "filters", "detail", "stored")} | {"results": r.get("results")})
 
 
