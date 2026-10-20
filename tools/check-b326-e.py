@@ -115,7 +115,9 @@ def check_story(br):
       out.lore = RANK_LORE.titan + ' | ' + RANK_LORE.veteran;
       try{ out.planet = homeTapCopyPlanet(0).parts.join(' '); }catch(e){ out.planet = ''; }
       try{ out.cells = novaCardCells().map(c => c.join(': ')); }catch(e){ out.cells = []; }
-      try{ out.news = whatsNewLines(whatsNewState(), false).map(l => l.text).join(' | '); }catch(e){ out.news = ''; }
+      /* MOVED IN 327 (b327m): What's New is a card on Home, not narrated -
+         the story is told in his introduction alone */
+      out.news = typeof whatsNewLines === 'function' ? whatsNewLines(whatsNewState(), false).map(l => l.text).join(' | ') : '';
       return out; }""")
     src = cb.BODY
     fresh, existing = r.get("fresh") or [], r.get("existing") or []
@@ -137,7 +139,8 @@ def check_story(br):
           [t for t in fresh if re.search(r"rewards|mastered|joins", t)])
     check("no end: his scanners keep finding more of his ship (new account's last line, and his goodbye)",
           re.search(r"scanners", fresh[-1] if fresh else "") and re.search(r"more", fresh[-1] if fresh else "")
-          and re.search(r"scanners", src[src.find("function novaGoodbye"):src.find("function novaGoodbye") + 900]), fresh[-1:] )
+          # MOVED IN 327 (b327m): his goodbye is the existing account's last line
+          and re.search(r"scanners", existing[-1] if existing else ""), [fresh[-1:], existing[-1:]] )
     bad = [t for t in fresh + existing if re.search(r"\b(all seven|seven|sixteen|16|only three|three secret|a few secret flares)\b", t, re.I)]
     check("no fixed totals in his introduction (no 'seven', '16', 'a few secret flares')", not bad, bad[:3])
     check("the planet line costs nothing: a new account still hears at most 16 lines, an existing one at most 21 (325: 15 and 18; D's banners-and-effects slide, asked for by Madison, is the one extra line), and every slide trigger is kept",
@@ -163,7 +166,9 @@ def check_story(br):
           re.search(r"more light than it could hold", r.get("note", "")) and re.search(r"badges are what hold it together", r.get("note", ""))
           and re.search(r"mastered", r.get("note", "")) and re.search(r"scanners", r.get("note", "")),
           r.get("note", "")[:160])
-    check("What's New (on its own) leads in with the same story", re.search(r"unit mastered", r.get("news", "")) and re.search(r"star", r.get("news", "")), r.get("news", "")[:300])
+    # MOVED IN 327 (b327m): "So the nova instructor won't go through what's
+    # new one by one" - nothing of his is said on What's New any more
+    check("What's New (on its own) is not narrated - he does not tell the story there", r.get("news", "") == "", r.get("news", "")[:300])
     check("the planet's returning tip and the Rank tab's lore say the crack comes from his light and badges hold it, and Supernova makes it a star",
           re.search(r"badges are what hold it", r.get("tip", "")) and re.search(r"becomes a star", r.get("lore", "")) and re.search(r"Nova's light", r.get("lore", "")),
           [r.get("tip", "")[:200], r.get("lore", "")[:200]])

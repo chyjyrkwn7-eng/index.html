@@ -213,15 +213,24 @@ def check_meeting(br):
             const e = document.getElementById(id); if(e && !e.__d){ e.__d = 1; window.__seen.push(id); } }); }).observe(document.body, { childList: true });
           showHome(); }""")
         intro = pg.evaluate(TALK, {"id": "nova-intro"})
-        news = pg.evaluate(TALK, {"id": "intro-pop"})
+        # MOVED IN 327 (b327m): "The what's new stuff, make it just show on
+        # the main menu like how we have done it before, and then the
+        # walkthrough" - What's New is a card (no Nova), and his goodbye is
+        # the last line of his talk, not a third dialogue after the tips
+        news = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          for(let i = 0; i < 80 && !document.getElementById('intro-pop'); i++) await wait(100);
+          const el = document.getElementById('intro-pop'); if(!el) return { open: false };
+          const out = { open: true, narrated: !!el.__nova, skipSeen: !!el.querySelector('.nt-skip') };
+          const go = el.querySelector('.intro-go'); if(go) go.click(); return out; }""")
         tips = pg.evaluate(TOUR)
-        bye = pg.evaluate(TALK, {"id": "nova-intro"})
+        pg.wait_for_timeout(1500)
         want = pg.evaluate("() => { try{ return NOVA_NEW_TIPS_321.map(t => t.text); }catch(e){ return []; } }")
         seen = pg.evaluate("() => window.__seen")
-        check("%s the meeting runs introduction, What's New, tips, goodbye, with no Skip in any of his three dialogues" % dev,
-              intro.get("open") and news.get("open") and bye.get("open") and seen[:2] == ["nova-intro", "intro-pop"]
-              and not intro.get("skipSeen") and not news.get("skipSeen") and not bye.get("skipSeen"),
-              {"seen": seen, "skip": [intro.get("skipSeen"), news.get("skipSeen"), bye.get("skipSeen")]})
+        check("%s the meeting runs introduction (ending in his goodbye), the What's New card, tips - no Skip, no second dialogue of his" % dev,
+              intro.get("open") and news.get("open") and not news.get("narrated") and seen[:3] == ["nova-intro", "intro-pop", "tour-tooltip"]
+              and seen.count("nova-intro") == 1 and re.search(r"speak with you again", (intro.get("lines") or [""])[-1])
+              and not intro.get("skipSeen") and not news.get("skipSeen"),
+              {"seen": seen, "last": (intro.get("lines") or [""])[-1][:80], "news": news})
         check("%s the tips after What's New are only the once-'New' ones, and none starts 'New'" % dev,
               len(tips) == len(want) and len(want) >= 1 and not any(t.lower().startswith("new") for t in tips)
               and not any("Home always brings you back" in t for t in tips),
@@ -233,7 +242,8 @@ def check_whatsnew(br):
     print("\nd3. Nova's What's New: the six minor items gone (still in the version history), real Version 9 additions in")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""() => {
-      const lines = whatsNewLines(whatsNewState(), true).map(l => l.text).join(' | ');
+      /* MOVED IN 327 (b327m): What's New is a card, nothing narrated */
+      const lines = '';
       const rows = WHATS_NEW_320.map(x => (x.title + ' ' + x.body + ' ' + x.say));
       const hist = JSON.stringify(RELEASE_NOTES.map(v => v.groups.map(g => g.items.map(i => i.title + ' ' + i.body))));
       return { lines, rows, keys: WHATS_NEW_320.map(x => x.key), hist }; }""")

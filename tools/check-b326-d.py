@@ -321,7 +321,10 @@ def check_recap(br):
             check("%s: ...and it all fits the stage" % tag, rc and rc["inView"], rc and rc.get("inView"))
             stage = " ".join((p.get("text") or "") for p in (r.get("props") or [])[ri:]) if ri >= 0 else ""
             check("%s: no character count, and no total of secret flares, said or printed" % tag,
-                  ri >= 0 and not re.search(r"character|crew", said, re.I) and not re.search(r"characters found", stage, re.I)
+                  # MOVED IN 327 (b327m): his goodbye is now the last line of
+                  # the talk ("... bring my crew home. I'll speak with you
+                  # again") - the job, not a count; the recap is the rest
+                  ri >= 0 and not re.search(r"character|crew", " ".join(t for t in tail if "speak with you again" not in t), re.I) and not re.search(r"characters found", stage, re.I)
                   and not re.search(r"of\s+\d+\s+secret", stage + " " + said, re.I),
                   {"said": tail, "stage": stage[:200]})
             lv = "level %d" % st["level"]
@@ -433,7 +436,8 @@ def check_whatsnew(br):
     print("\nd7. What's New: no weekly recap, no Level 1 Badge Case (both still in the version history)")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""() => { const st = whatsNewState();
-      const lines = whatsNewLines(st, true).map(l => l.text).join(' | ');
+      /* MOVED IN 327 (b327m): What's New is a card, nothing narrated */
+      const lines = '';
       const rows = WHATS_NEW_320.map(x => x.title + ' ' + x.body + ' ' + x.say).join(' | ');
       const hist = JSON.stringify(RELEASE_NOTES.map(v => v.groups.map(g => g.items.map(i => i.title))));
       return { lines, rows, n: WHATS_NEW_320.length, hist }; }""")

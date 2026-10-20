@@ -24807,3 +24807,54 @@ at 250 on the cool-to-hot ladder, with a warm glow. Everything else the tier
 had (rings, sweep, sparks, flame, the screen-edge flash) is unchanged.
 check-behaviour 83 (`check_b310`) asserts the 350 number has no gradient, no
 text clip and no animation; it fails on the build before.
+
+### Build 327 (b327m) - a shorter meeting, What's New on Home
+
+Madison: *"I think the nova intro may be a little drawn out ... it has the
+intro, the what's new new stuff, and the home main menu walk through. The
+what's new stuff, make it just show on the main menu like how we have done
+it before, and then the walkthrough. So the nova instructor won't go through
+what's new one by one. It's too much I think."* Gate: `tools/check-b327-m.py`
+(m1-m5; every section fails on e5d3143).
+
+> **Supersedes** build 320's narrated What's New (`whatsNewLines`,
+> `novaMeCard`), 321's separate goodbye after the tips (`novaGoodbye`), and
+> b326d's "the chained What's New does not repeat the note" (nothing of his
+> is said there at all now).
+
+- **The order, an existing account (`playNovaMeeting`)**: the signal, his
+  introduction and recap, ending in his goodbye ("That's all for now, Name.
+  A few things have changed around here, so I've left you a list on your
+  Home screen. Light my flares, find my badges and bring my crew home. I'll
+  speak with you again when my scanners find more." on a **Goodbye**
+  button); then the **What's New card** on Home; Got it; then the three
+  returning tips (`startNovaReturnTour`); then `endNovaMeeting`. One Nova
+  dialogue, not two.
+- **What's New is build 319's card again** (`showIntroPopup(o)`:
+  `#intro-pop > .intro-card.intro-card-compact`, eyebrow "New in version N",
+  "What's new", every `WHATS_NEW_320` row at once via `introRow`, **Got it**).
+  Not narrated, no typing, no Skip; the rows' `say` lines are unused. The
+  level-wall note (`whatsNewState().note`, i.e. `levelGateNoteText()`'s
+  output, untouched) is a `.intro-gate-note` box at the top when it applies.
+  `o.chained` keeps the meeting's holds on after the card closes;
+  `o.then(reason)` runs as it closes ("nav" when a screen change took it).
+  `closeIntroPopup` now removes the card even in the meeting.
+- **An account that has met him** (`novaMet`): just the card, once per
+  INTRO_REV. Nothing of his.
+- **New accounts**: unchanged order (introduction, the seven main-menu tips,
+  the welcome bonus), the introduction a little shorter.
+- **What was cut from his introduction** (new 16 -> 14 lines, existing 21 ->
+  18): the secret-flare line folded into the flares line ("My secret flares
+  were thrown further, into your tests, and I've lost count of them."); the
+  Virtual Room line folded into the modes line ("And in a Virtual Room you
+  can race your classmates, or challenge me.") - `novaVroomProp` is unused;
+  the recap's two lines are one; the existing account's "let me show you
+  what's new" line is his goodbye. Every cause and every slide whose picture
+  still fits is kept; the wreck's crack and explosion stay two lines
+  (b325-d / b327-c need the crack before the blast).
+- Gates moved, each marked "MOVED IN 327 (b327m)": check-b325-d d2/d3,
+  check-b326-d d7, check-b326-e (What's New not narrated; the scanners line
+  is the existing account's last), check-chat's introduction section (the
+  card), check-behaviour b320f (the card on its own, no Skip), b321g (talk
+  ends in Goodbye, the card, no second dialogue), b319_levelnote (the note is
+  only on the card; its exact wording is the level-rule work's to change).
