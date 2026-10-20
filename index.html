@@ -67920,15 +67920,25 @@ function modeIcon(kind){
        paper: a pencil at the target's weight, its lead solid (the way the
        Virtual Room's heads and Review's heading bar are), writing a line.
        Not a container this time - the four before it read as one. */
-    const pg = document.createElementNS(svgNS2, "g");
-    pg.setAttribute("transform", "rotate(45 12 10.8)");
-    const pp = d => { const e = mk(d); pg.appendChild(e); return e; };
-    pp("M8.6 2.9a1.6 1.6 0 011.6-1.6h3.6a1.6 1.6 0 011.6 1.6V15.6L12 21.4 8.6 15.6z");
-    pp("M8.6 4.6h6.8v2.2H8.6z").setAttribute("class", "modeiconpath modeiconsolid");
-    pp("M8.6 15.6h6.8");
-    pp("M10.6 18.5h2.8L12 21.4z").setAttribute("class", "modeiconpath modeiconsolid");
-    svg.appendChild(pg);
-    svg.appendChild(mk("M3 21.8h17"));
+    /* EXAM'S ARROW (build 327h): "Exam as an underlined pencil is not the
+       move. It needs to give a cool unique vibe but also feel like drill
+       but without the answer retry when wrong." So it is Drill's target -
+       the same two rings, the same weight - with ONE arrow struck dead
+       centre: one shot, landed, no second try. The outer ring breaks where
+       the arrow goes in, so the shaft reads as going THROUGH it, and the
+       fletching is two stroked feathers (a solid flight read as a hammer at
+       card size). Plain paths, no group transform: check_b323u measures the
+       ink by flattening the parts, which would drop a group's transform.
+       Chosen from four (feathers on two rings, a solid flight, this, a
+       solid bullseye); the sheet is in the build's notes. */
+    svg.appendChild(mk("M17.17 9.53A7.9 7.9 0 1 1 14.47 6.83"));
+    const inner = document.createElementNS(svgNS2, "circle");
+    inner.setAttribute("cx", "10.4"); inner.setAttribute("cy", "13.6"); inner.setAttribute("r", "3.8");
+    inner.setAttribute("class", "modeiconpath");
+    svg.appendChild(inner);
+    for(const d of ["M10.4 13.6L19.6 4.4", "M16.9 4.3v2.8h2.8", "M18.8 2.4v2.8h2.8"]){
+      const a = mk(d); a.setAttribute("class", "modeiconpath modeiconarrow"); svg.appendChild(a);
+    }
   } else if(kind === "vroom"){
     const p1 = document.createElementNS(svgNS2, "circle");
     p1.setAttribute("cx", "8.5"); p1.setAttribute("cy", "8"); p1.setAttribute("r", "3");
