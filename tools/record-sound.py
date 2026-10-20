@@ -379,6 +379,9 @@ def prep_answer(r, wrong=(), stop_before=1):
         answer_one(r, k in wrong, real=True)
 
 
+SETTLED = "(() => !document.querySelector('.qpanel .choice') || (pos !== %d && document.querySelectorAll('.qpanel').length === 1))()"
+
+
 def answer_one(r, wrong_first, real=False):
     def tap_choice(right):
         js = "(() => { const s = correctSlot(order[pos]); const oo = optionOrder(order[pos]); const k = %s; return document.querySelector('.qpanel .choice[data-index=\"' + k + '\"]'); })()" % \
@@ -393,21 +396,24 @@ def answer_one(r, wrong_first, real=False):
         tap_choice(False)
     tap_choice(True)
     if real:
-        for _ in range(20):
-            if r.js("() => { const b = document.getElementById('nextbtn'); return !!b && !b.hidden && b.getBoundingClientRect().height > 0; }"):
+        for _ in range(30):
+            if r.js("() => { const b = document.getElementById('nextbtn'); return !!b && !b.hidden && b.getBoundingClientRect().height > 0 && +getComputedStyle(b).opacity > .98 && !b.getAnimations().some(a => a.playState === 'running' || a.playState === 'paused' && a.currentTime < (a.effect.getComputedTiming().endTime || 0)); }"):
                 break
             r.pg.wait_for_timeout(100)
+        r.pg.wait_for_timeout(300)
         xy = r.center("document.getElementById('nextbtn')")
         if xy: r.pg.mouse.click(xy[0], xy[1])
-        for _ in range(40):
+        # THE SLIDE HAS TWO QUESTIONS MOUNTED AT ONCE: wait for the new one
+        # alone, or the next click lands on the outgoing copy and is lost
+        for _ in range(60):
             r.pg.wait_for_timeout(100)
-            if r.js("() => pos") != p or not r.js("() => !!document.querySelector('.qpanel .choice')"):
+            if r.js(SETTLED % p):
                 break
+        r.pg.wait_for_timeout(250)
     else:
-        r.until("(() => { const b = document.getElementById('nextbtn'); return !!b && !b.hidden && b.getBoundingClientRect().height > 0; })()", 3)
-        r.wait(.25)
+        r.until("(() => { const b = document.getElementById('nextbtn'); return !!b && !b.hidden && b.getBoundingClientRect().height > 0 && +getComputedStyle(b).opacity > .98 && !b.getAnimations().some(a => a.playState === 'running' || a.playState === 'paused' && a.currentTime < (a.effect.getComputedTiming().endTime || 0)); })()", 3, then=.2)
         r.tap("document.getElementById('nextbtn')")
-        r.until("(() => pos !== %d || !document.querySelector('.qpanel .choice'))()" % p, 4)
+        r.until(SETTLED % p, 5, then=.35)
 
 
 RESULTS_DONE = "(() => { const a = document.querySelector('.rs-actions'); return !!a && +getComputedStyle(a).opacity > .9 && !document.querySelector('.rs-spot, .bc-scene, .sf-scene'); })()"
