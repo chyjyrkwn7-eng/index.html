@@ -5506,12 +5506,17 @@
   .vroom-open-switch:focus{ outline:none; }
   .vroom-open-word{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
   .vroom-open-line{ grid-area:line; margin:0; min-width:0; font-size:.78rem; line-height:1.35; color:var(--soft); }
-  /* a 320px phone: the invite button's word goes before the switch's */
-  @media (max-width:21rem){
+  /* the invite button's word goes before the switch's: under 26.5rem the
+     two did not fit one row and "Invite friends" ran over "Open to class"
+     (12-54px at 360-402px, build 327 audit); the icon keeps its label */
+  @media (max-width:26.5rem){
     .vroom-roster-tools .vroom-invite-btn{ padding:.4rem .7rem; }
     .vroom-roster-tools .vroom-invite-btn .vroom-invite-word{ display:none; }
+  }
+  @media (max-width:21rem){
     .vroom-open-switch{ font-size:.8rem; gap:.45rem; }
   }
+  .vroom-open-switch{ max-width:100%; min-width:0; }
   @media (min-width:40rem){
     .vroom-roster-tools{ grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"invite line open"; gap:.6rem 1rem; }
     .vroom-roster-tools .vroom-invite-btn{ font-size:.88rem; }
@@ -78092,7 +78097,7 @@ function showWelcomeCodeEntry(){
      screen) leaves just what's needed to actually do the thing. */
   /* Sign in is Welcome's first button now (build 322), so this is the
      front door rather than the second-device screen. */
-  sub.textContent = "Enter your code to sign in. You'll find it under Settings \u2192 Sync on a device you've used.";
+  sub.textContent = "Enter your code to sign in. You'll find it under Profile \u203a Settings \u203a Sync on a device you've used.";
   panel.appendChild(sub);
   /* Build 327 (b327h): the way back for somebody whose code is gone is a
      person, not a second account. Madison looks codes up with the admin
@@ -80185,8 +80190,8 @@ function mainMenuTourSteps(returning){
     { target: ".daily-question-fab", align: "right", vplacement: "above",
       text: "Your daily question: one a day, one try, worth " + DAILY_XP + " XP. After you answer, its ring fills until the next one. No retakes, so take your time." },
     { target: ".cosmic-icon-badge", align: "left", vplacement: "below",
-      text: returning ? "These are my flares, one for each rank. Every rank you reach lights one up, and its light goes into your planet. Tap one to see what it takes."
-        : "These are my flares, one for each rank, still dark. Reach a rank and its flare lights up, and its light goes into your planet. Tap one to see what it takes." },
+      text: returning ? "These are my flares, one for each rank. Every rank you reach lights one up. Tap one to see what it takes."
+        : "These are my flares, one for each rank, still dark. Reach a rank and its flare lights up. Tap one to see what it takes." },
     { target: "#nextbtn", align: "left", vplacement: "above",
       text: returning ? "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later."
         : "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later. I\u2019ll pop up with tips like these as you explore." }
@@ -90383,18 +90388,7 @@ function showSetup(){
 
   const searchWrap = document.createElement("div");
   searchWrap.className = "searchwrap";
-  const searchIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  searchIcon.setAttribute("viewBox", "0 0 24 24");
-  searchIcon.setAttribute("class", "searchicon");
-  searchIcon.setAttribute("aria-hidden", "true");
-  const searchCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  searchCircle.setAttribute("cx", "10"); searchCircle.setAttribute("cy", "10"); searchCircle.setAttribute("r", "6.5");
-  searchCircle.setAttribute("fill", "none"); searchCircle.setAttribute("stroke", "currentColor"); searchCircle.setAttribute("stroke-width", "2");
-  const searchLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  searchLine.setAttribute("x1", "15"); searchLine.setAttribute("y1", "15"); searchLine.setAttribute("x2", "20"); searchLine.setAttribute("y2", "20");
-  searchLine.setAttribute("stroke", "currentColor"); searchLine.setAttribute("stroke-width", "2"); searchLine.setAttribute("stroke-linecap", "round");
-  searchIcon.append(searchCircle, searchLine);
-  searchWrap.appendChild(searchIcon);
+  searchWrap.appendChild(searchMagnifier());
   const searchInput = document.createElement("input");
   searchInput.type = "search";
   searchInput.className = "searchbox";
@@ -91151,6 +91145,7 @@ function showSetup(){
      same task. */
   document.getElementById("unitoptions-modal")?.remove();
   const optionsModal = document.createElement("div");
+  bindSheetToScreen(optionsModal);
   optionsModal.id = "unitoptions-modal";
   optionsModal.className = "unitoptions-modal";
   optionsModal.hidden = true;
@@ -94321,7 +94316,7 @@ function showAddToHomeNotice(){
    so the second parks below the first. */
 const NOTICE_OBSTRUCTIONS = [".wrap > .top", ".wrap > .count", ".back-link",
                              ".panel > .navsegment", ".welcome-build",
-                             ".vroom-chat-alert",
+                             ".vroom-chat-alert", ".homeversion-btn",
                              ];
 
 /* Shared by both notices. The measured offset is applied with transitions
@@ -94398,6 +94393,10 @@ function topNoticeOffset(bar){
       /* Zero-sized means hidden (display:none, or not laid out yet), and
          anything already off the bottom of the screen is not in the way. */
       if(r.width <= 0 || r.height <= 0 || r.top >= vh) return;
+      /* only what sits along the TOP is in the way: the version label is
+         top-left on a phone (a banner covered it, build 327 audit) and at
+         the foot beside the tab bar on a tablet, where it is not */
+      if(r.top > vh * .4) return;
       if(r.bottom > bottomOf) bottomOf = r.bottom;
     });
   });
@@ -107132,6 +107131,9 @@ function showVirtualRoomSetup(editRoom){
      field sat straight on top of the Select all pill. This is the class
      the main unit picker uses, and it brings position:relative with it. */
   searchWrap.className = "searchwrap";
+  /* the same magnifier as the main picker's field - its gutter was empty
+     here (build 327 audit) */
+  searchWrap.appendChild(searchMagnifier());
   const searchInput = document.createElement("input");
   searchInput.type = "text"; searchInput.className = "searchbox";
   searchInput.placeholder = "Search units";
@@ -107407,6 +107409,7 @@ function showVirtualRoomSetup(editRoom){
 
   document.getElementById("unitoptions-modal")?.remove();
   const optionsModal = document.createElement("div");
+  bindSheetToScreen(optionsModal);
   optionsModal.id = "unitoptions-modal";
   optionsModal.className = "unitoptions-modal";
   optionsModal.hidden = true;
@@ -111153,7 +111156,10 @@ function showVirtualRoomLobby(){
      tab bar's glass, the Start pill's shape: "Ready up" lit when you
      can, clear glass while the room cannot start, green with a tick once
      you are ready, and a tap there un-readies. */
-  readyBtn.type = "button"; readyBtn.className = "next playbtn vroom-readyup-btn";
+  readyBtn.type = "button"; readyBtn.className = "next playbtn vroom-readyup-btn is-waiting";
+  /* unlit until the room says it can start - it looked lit and did
+     nothing before the first snapshot (build 327 audit) */
+  readyBtn.disabled = true;
   const readyLabel = document.createElement("span");
   readyLabel.className = "vroom-bar-label"; readyLabel.textContent = "Ready up";
   const readyIcon = document.createElement("span");
@@ -120745,6 +120751,36 @@ function showProfile(defaultTab, opts){
    It wears the active button's own look, read once before that look is
    handed over to it, so each switcher keeps its colours. Appended LAST so
    the profile tabs' :nth-child rules still count only buttons. */
+function searchMagnifier(){
+  const searchIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  searchIcon.setAttribute("viewBox", "0 0 24 24");
+  searchIcon.setAttribute("class", "searchicon");
+  searchIcon.setAttribute("aria-hidden", "true");
+  const searchCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  searchCircle.setAttribute("cx", "10"); searchCircle.setAttribute("cy", "10"); searchCircle.setAttribute("r", "6.5");
+  searchCircle.setAttribute("fill", "none"); searchCircle.setAttribute("stroke", "currentColor"); searchCircle.setAttribute("stroke-width", "2");
+  const searchLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  searchLine.setAttribute("x1", "15"); searchLine.setAttribute("y1", "15"); searchLine.setAttribute("x2", "20"); searchLine.setAttribute("y2", "20");
+  searchLine.setAttribute("stroke", "currentColor"); searchLine.setAttribute("stroke-width", "2"); searchLine.setAttribute("stroke-linecap", "round");
+  searchIcon.append(searchCircle, searchLine);
+  return searchIcon;
+}
+/* A start sheet lives on <body> (it has to - #stage animates), so it
+   belongs to the screen that made it and goes when that screen does.
+   It used to stay open over the next screen: open it, tap the chat
+   button over its dim and go to Friends, and the sheet sat over Friends
+   (build 327 audit). The owner is whatever #stage holds once the
+   builder has finished (a microtask after it). */
+function bindSheetToScreen(sheet){
+  Promise.resolve().then(() => { sheet._owner = stage.firstElementChild; });
+  if(bindSheetToScreen.mo) return;
+  bindSheetToScreen.mo = new MutationObserver(() => {
+    document.querySelectorAll("body > .unitoptions-modal").forEach(m => {
+      if(m._owner && !m._owner.isConnected){ m.hidden = true; m.remove(); }
+    });
+  });
+  bindSheetToScreen.mo.observe(stage, { childList: true });
+}
 function attachSegSlider(seg, activeSel){
   if(!seg || seg.querySelector(":scope > .seg-slider")) return;
   const sl = document.createElement("span");
@@ -120793,7 +120829,10 @@ function attachSegSlider(seg, activeSel){
   const mo = new MutationObserver(() => place(true));
   mo.observe(seg, { subtree: false, childList: false, attributes: true, attributeFilter: ["class"] });
   [...seg.children].forEach(c => { if(c !== sl) mo.observe(c, { attributes: true, attributeFilter: ["class", "hidden"] }); });
-  try{ new ResizeObserver(() => place(false)).observe(seg); }catch(e){}
+  /* the buttons too: a tab that changes width by itself (an unread count
+     appearing or clearing on the chat dock's Friends tab) leaves the
+     switcher's own size alone (build 327 audit) */
+  try{ const ro = new ResizeObserver(() => place(false)); ro.observe(seg); [...seg.children].forEach(c => { if(c !== sl) ro.observe(c); }); }catch(e){}
   requestAnimationFrame(() => place(false));
 }
 /* opts.zone: only a touch that STARTS inside this element counts (a
