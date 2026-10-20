@@ -10811,6 +10811,24 @@
   .namecheck-card{ width:100%; max-width:22rem; text-align:center; }
   .namecheck-text{ font-size:.95rem; line-height:1.45; margin:0 0 .8rem; }
   .namecheck-card .next{ width:100%; }
+  /* Build 327 (b327h): the account that already wears the name - its
+     character and level as the leaderboard shows them - then the way in
+     and the way to a different name. */
+  .namecheck-who{ display:flex; align-items:center; gap:.8rem; text-align:left; margin:0 0 .75rem; }
+  .namecheck-avatar{ flex:0 0 auto; width:3.2rem; height:3.2rem; border-radius:50%; overflow:hidden;
+    background:rgba(255,255,255,.06); box-shadow:inset 0 0 0 1px rgba(255,255,255,.12); }
+  .namecheck-words{ min-width:0; }
+  .namecheck-title{ font-size:1.02rem; font-weight:700; line-height:1.3; margin:0; overflow-wrap:anywhere; }
+  .namecheck-level{ font-size:.85rem; color:var(--soft); margin:.15rem 0 0; }
+  .namecheck-level[hidden], .namecheck-card .next[hidden]{ display:none; }
+  .namecheck-card .namecheck-other{ margin-top:.55rem; }
+  /* One plain line under each of Welcome's two buttons (build 327,
+     b327h), each sitting close under its own button and clear of the
+     next, so which line belongs to which button cannot be misread. */
+  .cosmic-welcome-actions .welcome-signin-cap, .cosmic-welcome-actions .welcome-new-cap{ margin-top:-.15rem; }
+  .cosmic-welcome-actions .welcome-signin-cap{ margin-bottom:.4rem; }
+  .lostcode-line{ position:relative; z-index:1; font-size:.85rem; line-height:1.4; color:var(--soft);
+    text-align:center; margin:.9rem 0 0; max-width:22rem; }
   .signupcheck-panel .signupcheck-text{ max-width:26rem; }
   .signupcheck-panel .signupcheck-signin{ position:relative; z-index:1; width:100%; max-width:22rem; margin-top:1.2rem; }
   /* Without this, any toast on a screen with the bottom tab bar
@@ -15004,7 +15022,7 @@
     display:flex; flex-direction:column; align-items:center;
     width:100%; gap:.55rem;
   }
-  .cosmic-welcome-hint{
+  .cosmic-welcome-hint, .cosmic-welcome-cap{
     font-size:.78rem; color:var(--soft); margin:.35rem 0 0; max-width:20rem; line-height:1.5;
   }
 
@@ -15198,7 +15216,9 @@
     .cosmic-welcome-actions{ gap:1rem; }
     /* .78rem is a phone size and read as fine print on a 1194px screen,
        the same complaint the intro cards and Pick your class got. */
-    .cosmic-welcome-hint{ margin-top:.6rem; font-size:1rem; max-width:28rem; }
+    .cosmic-welcome-hint, .cosmic-welcome-cap{ margin-top:.6rem; font-size:1rem; max-width:28rem; }
+    .cosmic-welcome-actions .welcome-signin-cap, .cosmic-welcome-actions .welcome-new-cap{ margin-top:-.45rem; }
+    .cosmic-welcome-actions .welcome-signin-cap{ margin-bottom:.35rem; }
   }
   /* Letting laptops into the block above was right for Home and too much
      for Welcome. Home gained real clearance (a MacBook Pro 14" sits 34px
@@ -15218,6 +15238,7 @@
     .cosmic-welcome-title{ margin-top:1.1rem; }
     .cosmic-welcome-actions{ gap:.6rem; }
     .cosmic-welcome-hint{ margin-top:.3rem; }
+    .cosmic-welcome-actions .welcome-signin-cap, .cosmic-welcome-actions .welcome-new-cap{ margin-top:-.2rem; }
   }
   /* The mirror image of the tall-tablet block above, and the reason it
      exists: on a SHORT viewport Home does not fit, and the Start
@@ -76506,7 +76527,20 @@ function fillWelcomeActions(actions, title, trace){
     second.classList.add("welcome-new");
     second.textContent = "I’m new here";
     second.addEventListener("click", showSignUpCheck);
-    hint.textContent = "Used Nova before? Sign in with your code. First time here? Choose I’m new here.";
+    /* ONE LINE UNDER EACH BUTTON SAYING WHAT IT IS (build 327, b327h):
+       "when you get on and you aren't logged in, ensure that page is
+       clear and makes sense to prevent people from making a second
+       account". One shared sentence under both buttons was being read
+       past. The second line is still .cosmic-welcome-hint, the last
+       thing in the group, so where the group meets the floor is
+       measured exactly as before. */
+    const signinCap = document.createElement("p");
+    signinCap.className = "cosmic-welcome-cap welcome-signin-cap";
+    signinCap.textContent = "Already use Nova on another phone or before? Use your sync code.";
+    hint.classList.add("welcome-new-cap");
+    hint.textContent = "Never used Nova before.";
+    actions.append(primary, signinCap, second, hint);
+    return;
   }
   actions.append(primary, second, hint);
 }
@@ -76604,13 +76638,20 @@ function showSignUpCheck(){
   const sub = document.createElement("p");
   sub.className = "hometagline signupcheck-text";
   sub.style.cssText = "position:relative;z-index:1;";
-  sub.textContent = "Have you used Nova before, on this or another device? If so, sign in with your code instead. Starting again makes a second account and your progress won’t carry over.";
+  /* Build 327 (b327h): what a second account does, said plainly -
+     "people keep making second accounts". */
+  sub.textContent = "Have you used Nova before, on this or another device? Sign in with your code instead. A second account splits your progress in two and puts you on the leaderboard twice.";
   panel.appendChild(sub);
 
   const back = document.createElement("button");
   back.type = "button"; back.className = "next ghost signupcheck-signin";
   back.textContent = "Sign in instead";
   panel.appendChild(back);
+
+  const lost = document.createElement("p");
+  lost.className = "lostcode-line";
+  lost.textContent = "Lost your code? Ask Madison — she can find it for you.";
+  panel.appendChild(lost);
 
   const go = document.createElement("button");
   go.type = "button"; go.className = "next playbtn signupcheck-go"; go.id = "nextbtn";
@@ -76624,7 +76665,7 @@ function showSignUpCheck(){
     shown = t;
     panel.dataset.trace = "1";
     sub.textContent = (t.name ? "This device still has " + t.name + "’s account on it." : "This device still has an account on it.")
-      + " Starting again makes a second account, and that progress won’t carry over to it.";
+      + " Starting again makes a second account: that progress won’t carry over to it, and you’ll be on the leaderboard twice.";
     back.textContent = welcomeContinueLabel(t);
   };
   back.addEventListener("click", () => {
@@ -76650,18 +76691,52 @@ function showSignUpCheck(){
   toTop();
 }
 
-/* Case and spaces do not make a different person: "Mad Dog" is "maddog". */
-function accountNameKey(s){ return String(s || "").toLowerCase().replace(/\s+/g, ""); }
-/* The name as somebody on the board already wears it, or null. Only the
-   rows every phone already reads (the board is world-readable), and only
-   the name comes back - never anything else about that account. */
-function nameTakenOnBoard(name){
+/* ONE NAME, ONE PERSON (build 327, b327h). Case, spaces and every
+   other mark do not make a different person: "Mad Dog", "mad_dog" and
+   "MadDog" are one key, and so are "TSale", "Tsale", "T.Sale" and
+   "T Sale" - the name a classmate signed up a second time under, which
+   build 322's case-and-spaces key let through. Only letters and digits
+   are kept. A name written as an email ("dmendoza9989@gmail.com", one
+   real row) is the part before the "@". Exact after that, never a
+   near-match: "Alex" and "Alex2" are two people. */
+function accountNameKey(s){
+  let t = String(s || "").normalize("NFKD").toLowerCase();
+  const at = t.indexOf("@");
+  if(at > 0) t = t.slice(0, at);
+  return t.replace(/[^\p{L}\p{N}]+/gu, "");
+}
+/* The rankings row that already wears this name, or null. Only rows
+   every phone already reads (the board is world-readable), never this
+   account's own, never a code-keyed legacy row. */
+function boardRowForName(name){
   const k = accountNameKey(name);
   if(!k) return null;
   const rows = Array.isArray(leaderboardRows) ? leaderboardRows : [];
-  const hit = rows.find(e => e && !isLegacyBoardId(e.pub) && accountNameKey(e.firstName) === k
-                             && !(store.publicId && e.pub === store.publicId));
+  return rows.find(e => e && !isLegacyBoardId(e.pub) && accountNameKey(e.firstName) === k
+                         && !(store.publicId && e.pub === store.publicId)) || null;
+}
+/* The name as somebody on the board already wears it, or null. */
+function nameTakenOnBoard(name){
+  const hit = boardRowForName(name);
   return hit ? String(hit.firstName).trim() : null;
+}
+/* Has this device read the board at all? A name cannot be checked
+   against a board that has not arrived. */
+function boardKnown(){
+  return boardFetchedAt > 0 || (Array.isArray(leaderboardRows) && leaderboardRows.length > 0);
+}
+/* Calls back once the board is known, or after `ms` if it cannot be read
+   (offline, Firebase blocked): the name is then let through, as it always
+   was, rather than leaving somebody stuck on this screen. */
+function whenBoardKnown(ms, cb){
+  if(boardKnown() || !fbDb){ cb(); return; }
+  try{ fetchBoardForInvites(true); }catch(e){}
+  const t0 = Date.now();
+  const tick = () => {
+    if(boardKnown() || Date.now() - t0 >= ms) return cb();
+    setTimeout(tick, 150);
+  };
+  setTimeout(tick, 150);
 }
 
 /* A short, purpose-explaining screen between the feature overview and
@@ -76884,50 +76959,98 @@ function showWelcomeNamePrompt(){
      is no longer the only thing stopping an empty submit. */
   continueBtn.hidden = true;
 
-  /* A NAME ALREADY ON THE BOARD IS PROBABLY SOMEBODY SIGNING UP TWICE
-     (build 322). Asked once, for that name: the person may well be
-     someone else with the same name, so "It's not me, continue" goes
-     straight on. Only the name is said - it is already on the board for
-     everyone to read - and nothing else about that account. */
+  /* A NAME ALREADY ON THE BOARD IS A STOP, NOT A QUESTION (build 327,
+     b327h). Build 322 asked once and "It's not me, continue" went
+     straight on - and people kept tapping through it: "TSale" signed up
+     again as "T.Sale". Usernames are one per person on the board now.
+     The card names the account plainly and shows what everybody can
+     already see of it on the leaderboard - its character and its level,
+     from the public rankings row, nothing else - with "That's me - sign
+     in" first. "I'm a different person" does not go on: a different
+     person picks a different username, and Continue stays away until
+     the name in the field is one nobody wears. */
   const clashCard = document.createElement("div");
   clashCard.className = "synccode-confirm namecheck-card";
   clashCard.setAttribute("role", "status");
+  const clashWho = document.createElement("div");
+  clashWho.className = "namecheck-who";
+  const clashArt = document.createElement("div");
+  clashArt.className = "namecheck-avatar";
+  const clashWords = document.createElement("div");
+  clashWords.className = "namecheck-words";
+  const clashTitle = document.createElement("p");
+  clashTitle.className = "namecheck-title";
+  const clashLevel = document.createElement("p");
+  clashLevel.className = "namecheck-level";
+  clashWords.append(clashTitle, clashLevel);
+  clashWho.append(clashArt, clashWords);
   const clashText = document.createElement("p");
   clashText.className = "namecheck-text";
   const clashSignIn = document.createElement("button");
-  clashSignIn.type = "button"; clashSignIn.className = "next ghost namecheck-signin";
-  clashSignIn.textContent = "Sign in";
+  clashSignIn.type = "button"; clashSignIn.className = "next namecheck-signin";
+  clashSignIn.textContent = "That’s me — sign in";
   clashSignIn.addEventListener("click", showWelcomeCodeEntry);
-  clashCard.append(clashText, clashSignIn);
+  const clashOther = document.createElement("button");
+  clashOther.type = "button"; clashOther.className = "next ghost namecheck-other";
+  clashOther.textContent = "I’m a different person";
+  clashCard.append(clashWho, clashText, clashSignIn, clashOther);
   panel.appendChild(clashCard);
-  let clashAsked = "";
+  let clashKey = "";
 
+  const showClash = row => {
+    clashKey = accountNameKey(input.value);
+    const shown = String(row.firstName || "").trim();
+    clashArt.replaceChildren(avatarSpanFor(row));
+    clashTitle.textContent = shown + " already has a Nova account.";
+    clashLevel.textContent = typeof row.level === "number" && row.level > 0 ? "Level " + row.level : "";
+    clashLevel.hidden = !clashLevel.textContent;
+    clashText.textContent = "If that’s you, sign in with your code. Making a second account splits your progress.";
+    clashOther.hidden = false;
+    clashCard.classList.add("show");
+    clashCard.dataset.taken = shown;
+    continueBtn.hidden = true;
+  };
+  const hideClash = () => {
+    clashKey = "";
+    clashCard.classList.remove("show");
+    delete clashCard.dataset.taken;
+  };
+  clashOther.addEventListener("click", () => {
+    clashText.textContent = "Two people can’t share a username on the leaderboard. Change it to continue.";
+    clashOther.hidden = true;
+    try{ input.focus({ preventScroll: true }); input.select(); }catch(e){}
+  });
+
+  let checking = false;
   continueBtn.addEventListener("click", () => {
+    if(checking) return;
     const name = input.value.trim();
     if(!name){
       showToast("Enter a username to continue.");
       return;
     }
-    const taken = nameTakenOnBoard(name);
-    if(taken && clashAsked !== accountNameKey(name)){
-      clashAsked = accountNameKey(name);
-      clashText.textContent = "Someone named " + taken + " already has an account. If that’s you, sign in with your code.";
-      clashCard.classList.add("show");
-      continueBtn.textContent = "It’s not me, continue";
-      return;
+    const decide = () => {
+      checking = false;
+      continueBtn.disabled = false; continueBtn.textContent = "Continue";
+      if(!panel.isConnected || input.value.trim() !== name) return;
+      const row = boardRowForName(name);
+      if(row){ showClash(row); return; }
+      store.firstName = name.slice(0, 40);
+      updateHeaderTitle();
+      showWelcomeCharacterPrompt();
+    };
+    /* the board not read yet: read it before saying yes to a name */
+    if(!boardKnown() && fbDb){
+      checking = true;
+      continueBtn.disabled = true; continueBtn.textContent = "Checking…";
     }
-    store.firstName = name.slice(0, 40);
-    updateHeaderTitle();
-    showWelcomeCharacterPrompt();
+    whenBoardKnown(5000, decide);
   });
   panel.appendChild(continueBtn);
   input.addEventListener("input", () => {
+    if(clashKey && clashKey === accountNameKey(input.value)){ continueBtn.hidden = true; return; }
+    if(clashKey) hideClash();
     continueBtn.hidden = !input.value.trim();
-    if(clashAsked && clashAsked !== accountNameKey(input.value)){
-      clashAsked = "";
-      clashCard.classList.remove("show");
-      continueBtn.textContent = "Continue";
-    }
   });
   /* the board's names, if this device has not read them yet */
   try{ fetchBoardForInvites(false); }catch(e){}
@@ -77240,6 +77363,12 @@ function showWelcomeCodeEntry(){
      front door rather than the second-device screen. */
   sub.textContent = "Enter your code to sign in. You'll find it under Settings \u2192 Sync on a device you've used.";
   panel.appendChild(sub);
+  /* Build 327 (b327h): the way back for somebody whose code is gone is a
+     person, not a second account. Madison looks codes up with the admin
+     tool; nothing in the app ever does. */
+  const lost = document.createElement("p");
+  lost.className = "lostcode-line";
+  lost.textContent = "Lost your code? Ask Madison — she can find it for you.";
 
   const inputWrap = document.createElement("div");
   inputWrap.className = "onboarding-input-wrap";
@@ -77270,6 +77399,7 @@ function showWelcomeCodeEntry(){
   status.className = "synccode-status";
   status.setAttribute("role", "status");
   panel.appendChild(status);
+  panel.appendChild(lost);
 
   const linkBtn = document.createElement("button");
   linkBtn.type = "button"; linkBtn.className = "next playbtn"; linkBtn.id = "nextbtn";
@@ -115761,6 +115891,14 @@ function buildCustomizeNameSect(){
   });
   function saveNameEdit(){
     const trimmed = nameInput.value.trim();
+    /* USERNAMES ARE ONE PER PERSON ON THE BOARD (build 327, b327h): a
+       rename may not take a name somebody else already wears. Your own
+       name, re-spelled, is still yours. */
+    if(trimmed && accountNameKey(trimmed) !== accountNameKey(store.firstName) && nameTakenOnBoard(trimmed)){
+      showToast("Someone on the leaderboard already uses that name. Choose a different one.");
+      try{ nameInput.focus({ preventScroll: true }); }catch(e){}
+      return;
+    }
     if(!trimmed){
       showToast("A name is needed \u2014 restoring your previous one.");
       nameInput.value = store.firstName || "";

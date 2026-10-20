@@ -24644,3 +24644,57 @@ wrong."*
   d6 assert a circle plus three `.modeiconarrow` parts whose shaft starts at
   the inner ring's centre, the broken 7.9 arc and Drill-sized inner ring, and
   still no pencil, shield, seal or ring-with-tick. Both fail on 7ec06e0.
+
+### Build 327 (b327h) - one account each
+
+Madison, Oct 20: *"when you get on and you aren't logged in, ensure that page
+is clear and makes sense to prevent people from making a second account ...
+people keep making second accounts."* A classmate whose account is "TSale"
+signed up again as "T.Sale": build 322's name key only ignored case and
+spaces. Gate: `tools/check-b327-i.py` (`ONLY=key,block,wait,copy,public,rename`,
+`--against`); 25 of 28 fail on 7ec06e0 (the three that pass are guards: no
+code in the card, no `progress` read, nothing near-matches).
+
+> **Supersedes** build 322's "asked once ... It's not me, continue goes
+> straight on". Usernames are one per person on the board now.
+
+- **`accountNameKey`** keeps letters and digits only (NFKD, lower case,
+  `\p{L}\p{N}`), and a name written as an email is the part before the "@".
+  "T.Sale", "T Sale", "t_sale", "tsale" are all "TSale". Exact after that,
+  never near: "Alex2" is not "Alex". `boardRowForName(name)` returns the
+  matching public rankings row (never your own, never a code-keyed legacy
+  row); `nameTakenOnBoard` is its name.
+- **A taken name is a stop** (`showWelcomeNamePrompt`). The card says
+  "TSale already has a Nova account.", shows that row's character and
+  level (the public row - nothing else of it), "If that's you, sign in with
+  your code. Making a second account splits your progress.", then **That's
+  me — sign in** (primary) and **I'm a different person** (ghost), which
+  does NOT go on: it says "Two people can't share a username on the
+  leaderboard. Change it to continue." Continue stays hidden (its slot
+  held, so the shared floor never moves) until the field holds a name
+  nobody wears; a Continue reached anyway re-checks and stops.
+- **The board is read before a name is let through** (`boardKnown`,
+  `whenBoardKnown`): a device that has not read the rankings yet shows
+  "Checking…" and fetches them (5s at most); with no Firebase at all the
+  name goes through, as it always did.
+- **A rename in Customize may not take a taken name either** (your own
+  name re-spelled is still yours).
+- **Welcome says what each button is**, one line under each: Sign in -
+  "Already use Nova on another phone or before? Use your sync code."; I'm
+  new here - "Never used Nova before." The second is still
+  `.cosmic-welcome-hint`, last in the group, so check-positions measures
+  Welcome exactly as before (its whole table is unchanged against 7ec06e0).
+- **The check before sign-up** says "A second account splits your progress
+  in two and puts you on the leaderboard twice." (a device still holding
+  an account: "...won't carry over to it, and you'll be on the leaderboard
+  twice."). It and the code screen carry `.lostcode-line`: "Lost your
+  code? Ask Madison — she can find it for you." (she has
+  `tools/firestore-admin.py find`; nothing in the app looks a code up).
+- Gates moved: check-sync 9c (a taken name stops; no way on with it).
+  shoot-flow puts a "TSale" row on the board and shoots `username-taken`
+  and `username-taken-different-person` (its fake board's rows are keyed
+  by code-shaped ids, which every reader has skipped since 318, so they
+  never reach `leaderboardRows`).
+- **Not done, and Madison's call:** names already duplicated on the board
+  are left alone (nobody is made to rename), and a hidden account (rankings
+  off, no row) cannot be checked against.
