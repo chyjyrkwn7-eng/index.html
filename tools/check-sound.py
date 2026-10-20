@@ -6,8 +6,13 @@ Madison: "This will be a setting in settings that will be off by default ...
 I NEED you to ensure all the sounds and sound effects are unique and make
 sense."
 
-  1. Off by default: a brand-new account, an existing account whose saved
-     theme predates the setting, and a saved value that is not a boolean.
+  1. ON by default since build 327 ("Let's automatically put the sound on
+     as default now ... option will still be in settings though to turn it
+     off"): a brand-new account is on; an existing account saved with the
+     old default (off) is switched on ONCE; turned off afterwards it stays
+     off, across a reload, and on a device that never saw the switch-on
+     (the account carries soundOn327); a non-boolean is ignored.
+     (Re-read in build 327 - this section asserted off-by-default before.)
   2. Free while off: no AudioContext is ever constructed - after boot, taps
      across Home and Settings, and direct calls to playSound/startAmbience.
   3. Settings: the switch (off), the volume shown only while on, Vibration
@@ -57,7 +62,7 @@ hundo.confetti hundo.fireworks hundo.underwater hundo.bubbles hundo.ufo
 react.confetti react.fireworks react.underwater react.bubbles react.ufo
 home.planet home.flare.rookie home.flare.ranger home.flare.veteran home.flare.vanguard home.flare.adept
 home.flare.elite home.flare.titan home.flare.locked home.secret.found home.daily.ready home.daily.fill
-home.supernova.ring
+res.xp.line res.xp.count res.xp.total
 badge.case.open badge.case.close badge.lift badge.spin badge.rub badge.squeak badge.sparkle badge.drop cs.badge
 rank.road.scroll rank.challenge.tick rank.road.fill rank.unlock.pop rank.flare.zoom rank.windup rank.flash
 rank.crack rank.supernova rank.upnext rank.card rank.xp.climb rank.whirl
@@ -238,18 +243,28 @@ def ev(pg, js, default=None):
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=CHROME, args=["--no-sandbox"])
 
-    print("\n  1. off by default")
+    print("\n  1. on by default (build 327), off when turned off")
     ctx, pg, errs = new_page(br)
     boot(pg)
     r = ev(pg, "()=>({ on: theme.soundOn, vib: theme.vibrate, vol: theme.soundVolume, fresh: !store.onboardingComplete, api: typeof NovaSound === 'object' && typeof playSound === 'function' && typeof startAmbience === 'function' && typeof stopAmbience === 'function' })")
     ck("the engine and its API exist (NovaSound, playSound, startAmbience, stopAmbience)", r.get("api") is True, r)
-    ck("a brand-new account: sound off, vibration off", r.get("fresh") is True and r.get("on") is False and r.get("vib") is False, r)
-    ev(pg, SEED.rstrip("}") + "; store.theme = { mode:'dark', accent:'ink', layout:'modern', swipeAdvance:true, autoAdvance:false, reduceMotion:false, muteBanners:false, autoFlagMissed:false, showClassDaysLeft:true }; saveStore(); }")
+    ck("a brand-new account: sound ON, vibration off", r.get("fresh") is True and r.get("on") is True and r.get("vib") is False, r)
+    ev(pg, SEED.rstrip("}") + "; store.theme = { mode:'dark', accent:'ink', layout:'modern', swipeAdvance:true, autoAdvance:false, reduceMotion:false, muteBanners:false, autoFlagMissed:false, showClassDaysLeft:true, soundOn:false, soundVolume:.7, vibrate:false }; saveStore(); try{ localStorage.removeItem('class26e.soundon.327'); }catch(e){} }")
     pg.reload(); pg.wait_for_timeout(2200); ev(pg, "()=>document.getElementById('splashscreen')?.remove()")
-    r = ev(pg, "()=>({ on: theme.soundOn, vib: theme.vibrate, stored: store.theme && ('soundOn' in store.theme), done: store.onboardingComplete })")
-    ck("an existing account saved before the setting: off", r.get("done") is True and r.get("on") is False and r.get("vib") is False, r)
+    r = ev(pg, "()=>({ on: theme.soundOn, vib: theme.vibrate, flag: store.theme && store.theme.soundOn327, dev: localStorage.getItem('class26e.soundon.327'), done: store.onboardingComplete, made: window.__acMade })")
+    ck("an existing account saved with the old default (off): switched on once, recorded on the account and the device", r.get("done") is True and r.get("on") is True and r.get("vib") is False and r.get("flag") is True and r.get("dev") == "1", r)
+    ck("on, but no AudioContext before the first gesture (iOS)", r.get("made") == 0, r)
+    ev(pg, "()=>{ theme.soundOn = false; saveTheme(); }")
+    pg.reload(); pg.wait_for_timeout(2200); ev(pg, "()=>document.getElementById('splashscreen')?.remove()")
+    r = ev(pg, "()=>({ on: theme.soundOn, saved: store.theme.soundOn })")
+    ck("turned off afterwards, it stays off across a reload", r.get("on") is False and r.get("saved") is False, r)
+    ev(pg, "()=>{ try{ localStorage.removeItem('class26e.soundon.327'); }catch(e){} }")
+    pg.reload(); pg.wait_for_timeout(2200); ev(pg, "()=>document.getElementById('splashscreen')?.remove()")
+    r = ev(pg, "()=>({ on: theme.soundOn })")
+    ck("...and on a device that never saw the switch-on (the account remembers it)", r.get("on") is False, r)
     r = ev(pg, "()=>{ store.theme.soundOn = 'yes'; store.theme.vibrate = 1; theme.soundOn = false; theme.vibrate = false; loadTheme(); return { on: theme.soundOn, vib: theme.vibrate }; }")
-    ck("a saved value that is not a boolean is ignored (still off)", r.get("on") is False and r.get("vib") is False, r)
+    ck("a saved value that is not a boolean is ignored", r.get("on") is False and r.get("vib") is False, r)
+    ev(pg, "()=>{ theme.soundOn = false; saveTheme(); }")
 
     print("\n  2. free while off")
     ev(pg, "()=>{ showHome(); }"); pg.wait_for_timeout(500)
