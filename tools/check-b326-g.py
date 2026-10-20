@@ -82,23 +82,31 @@ PLAY_JS = r"""async () => {
     try{ localStorage.removeItem('class26e.weekrecap.v1'); }catch(e){}
     const el = playWeekRecap(buildWeekRecap(rows));
     out.skip = !!(el && el.querySelector('.nt-skip'));
-    let seen = null;
+    /* MOVED IN 327 (b327c): the two awards are honorable mentions on a page
+       of their own (.wr-page-awards) before the class's totals, and the
+       class's page - the last - holds three tiles: hundos, tests, study */
+    const seen = { tiles: 0, awards: 0, bad: [], nums: [] };
+    const measure = pg => {
+      const box = el.querySelector('.wr-pages').getBoundingClientRect();
+      pg.querySelectorAll('.wr-tile, .wr-award, .wr-subwrap').forEach(c => {
+        const r = c.getBoundingClientRect(), cs = getComputedStyle(c);
+        if(cs.display === 'none' || !r.width) return;
+        if(r.left < -.5 || r.right > innerWidth + .5) seen.bad.push('x ' + c.className);
+        if(r.top < box.top - 1 || r.bottom > box.bottom + 1) seen.bad.push('y ' + c.className + ' ' + Math.round(r.top) + '..' + Math.round(r.bottom) + ' in ' + Math.round(box.top) + '..' + Math.round(box.bottom));
+      });
+    };
     for(let k = 0; k < 40 && el && el.__nova; k++){
       const n = el.__nova;
       if(n.typing){ n.advance(); await wait(60); }
       await wait(700);
+      const pa = el.querySelector('.wr-page-awards.is-on');
+      if(pa && pa.querySelectorAll('.wr-award.is-in').length === pa.querySelectorAll('.wr-award').length && !seen.awards){
+        seen.awards = pa.querySelectorAll('.wr-award').length; measure(pa);
+      }
       const pg = el.querySelector('.wr-page-class.is-on');
-      if(pg && el.querySelectorAll('.wr-award.is-in').length === el.querySelectorAll('.wr-award').length){
-        const box = el.querySelector('.wr-pages').getBoundingClientRect();
-        const bad = [];
-        pg.querySelectorAll('.wr-tile, .wr-award, .wr-subwrap').forEach(c => {
-          const r = c.getBoundingClientRect(), cs = getComputedStyle(c);
-          if(cs.display === 'none' || !r.width) return;
-          if(r.left < -.5 || r.right > innerWidth + .5) bad.push('x ' + c.className);
-          if(r.top < box.top - 1 || r.bottom > box.bottom + 1) bad.push('y ' + c.className + ' ' + Math.round(r.top) + '..' + Math.round(r.bottom) + ' in ' + Math.round(box.top) + '..' + Math.round(box.bottom));
-        });
-        seen = { tiles: pg.querySelectorAll('.wr-tile').length, awards: pg.querySelectorAll('.wr-award').length, bad,
-                 nums: [...pg.querySelectorAll('.wr-tile-num')].map(n => n.textContent) };
+      if(pg){
+        seen.tiles = pg.querySelectorAll('.wr-tile').length; measure(pg);
+        seen.nums = [...pg.querySelectorAll('.wr-tile-num')].map(n => n.textContent);
         break;
       }
       if(n.index >= n.count - 1) break;
@@ -144,9 +152,11 @@ def recap_section(br):
                       for x, title in zip(awards, ["Flawless", "Long Shift"]))
     check("Nova says the class's hundos and hours, then names both awards", said_totals and said_awards,
           [t for t in lines if "hundo" in t or "study" in t or "Flawless" in t or "Long Shift" in t])
-    close = lines[-2] if len(lines) > 1 else ""
-    check("the ending is read off this week's board (leader, their XP, your gap) - no 'anyone's'",
-          "anyone" not in joined.lower() and "Ada" in close and "1,240" in close and "820" in close,
+    # MOVED IN 327 (b327c): "it needs to end with the class time and hundos
+    # and tests completed and then that's it" - no closing line read off
+    # this week's board any more; the class's totals are the last line
+    check("the ending is the class's totals and nothing after them - no 'anyone's', no 'this week so far'",
+          "anyone" not in joined.lower() and "so far" not in joined and lines and ("%d hundos" % (a.get("wantH") or -1)) in lines[-1],
           lines[-2:])
     check("he still says goodbye until next Tuesday, in his own voice", lines and "next Tuesday" in lines[-1], lines[-1:])
     cq, cf = a.get("closeQuiet") or {}, a.get("closeFirst") or {}
@@ -157,8 +167,8 @@ def recap_section(br):
         b = pg.evaluate(PLAY_JS)
         ctx.close()
         p = b.get("page") or {}
-        check("%s: the class's page shows both tiles and both awards, inside the stage and the screen, Skip kept" % dev,
-              not b.get("err") and p.get("tiles") == 2 and p.get("awards") == 2 and not p.get("bad") and b.get("skip")
+        check("%s: the class's page shows its three tiles and the awards page both awards, inside the stage and the screen, Skip kept" % dev,
+              not b.get("err") and p.get("tiles") == 3 and p.get("awards") == 2 and not p.get("bad") and b.get("skip")
               and (b.get("scrollX") or 0) <= 0, [b.get("err"), p, b.get("skip")])
 
 
@@ -315,7 +325,8 @@ def cal_section(br):
               orange and all(p and len(p) == 2 and p[-1] == orange for p in pt) and (a.get("test") or [None])[-1] != orange,
               [pt, big, a.get("test")])
         key = a.get("key") or []
-        ok_key = any("PT final" in k["t"] and "Big exam" in k["t"] and k["bg"] == orange for k in key) and len(key) == 4
+        # MOVED IN 327 (b327c): "Final Exams is probably what the name should be for it"
+        ok_key = any(k["t"] == "Final Exams" and k["bg"] == orange for k in key) and len(key) == 4
         check("%s: the key has one orange entry for big exams and PT finals" % dev, ok_key, key)
         rows = a.get("bigRows") or []
         check("%s: the big exams card lists the PT finals as one row, in date order, and says Today on Jan 12" % dev,

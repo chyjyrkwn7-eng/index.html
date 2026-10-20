@@ -120,15 +120,21 @@ def check_story(br):
     src = cb.BODY
     fresh, existing = r.get("fresh") or [], r.get("existing") or []
     allt = " | ".join(fresh + existing)
-    star = [t for t in fresh if re.search(r"planet", t) and re.search(r"crack", t) and re.search(r"star", t) and re.search(r"light", t)]
-    check("why your planet cracks: a line says his light pours into it and it cracks becoming a star (not damage)",
-          len(star) == 1 and re.search(r"isn.t breaking|not damage", star[0]), star or fresh[3:8])
+    # MOVED IN 327 (b327c): "'every flare you light pours its light into
+    # your planet, it can't hold it all..' I don't like this one at all" and
+    # "it says something about finding them so I can teach you that unit?
+    # That's terrible". The crack is now the strain of a brighter flare,
+    # held by badges; a badge is a unit mastered (check-b327-c says more).
+    star = [t for t in fresh if re.search(r"planet", t) and re.search(r"crack", t) and re.search(r"badges are what hold", t, re.I)]
+    check("why your planet cracks: a line says each rank from Gold cracks it and badges hold it together (not 'pours its light')",
+          len(star) == 1 and not re.search(r"pours", star[0]), star or fresh[3:8])
     i_relit = next((i for i, t in enumerate(fresh) if re.search(r"flare", t) and re.search(r"earned", t)), -1)
     i_star = fresh.index(star[0]) if star else -1
     check("...said after the flares are relit by ranks, so it follows from them", 0 <= i_relit < i_star, {"relit": i_relit, "star": i_star})
-    check("what you get: his thanks with each rank's rewards, a page of his log for a badge, the crew join you",
-          re.search(r"thanks.*rewards|rewards.*thanks", allt) and re.search(r"page of my instructor.s log", allt) and re.search(r"joins you", allt),
-          [t for t in fresh if re.search(r"rewards|log|joins", t)])
+    check("what you get: his thanks with each rank's rewards, a badge is a unit mastered, the crew join you",
+          re.search(r"thanks.*rewards|rewards.*thanks", allt) and re.search(r"mastered that unit", allt) and re.search(r"joins you", allt)
+          and not re.search(r"instructor.s log|teach you", allt),
+          [t for t in fresh if re.search(r"rewards|mastered|joins", t)])
     check("no end: his scanners keep finding more of his ship (new account's last line, and his goodbye)",
           re.search(r"scanners", fresh[-1] if fresh else "") and re.search(r"more", fresh[-1] if fresh else "")
           and re.search(r"scanners", src[src.find("function novaGoodbye"):src.find("function novaGoodbye") + 900]), fresh[-1:] )
@@ -147,15 +153,19 @@ def check_story(br):
           len(ranks) == 7 and re.search(r"crack", ranks[2]) and re.search(r"light", ranks[2]) and re.search(r"star", ranks[6])
           and re.search(r"home", ranks[6]) and re.search(r"scanners", ranks[6]), [ranks[2:3], ranks[6:7]])
     ch = r.get("chats") or []
-    check("his chat replies tell the same story: the planet becoming a star, what you get, the crew joining you, where he is",
-          len(ch) == 4 and re.search(r"star", ch[0]) and re.search(r"rewards", ch[1]) and re.search(r"joins you", ch[2]) and re.search(r"debris field", ch[3]),
+    # MOVED IN 327 (b327c): the same story everywhere - badges hold the
+    # planet together, the crack is the strain, Supernova a star that held
+    check("his chat replies tell the same story: the planet held by badges (a star at Supernova), what you get, the crew joining you, where he is",
+          len(ch) == 4 and re.search(r"star", ch[0]) and re.search(r"[Bb]adges are what hold", ch[0]) and re.search(r"rewards", ch[1])
+          and re.search(r"joins you", ch[2]) and re.search(r"debris field", ch[3]),
           [c[:60] for c in ch])
-    check("the Version 9 'Nova, Your Instructor' note gives the cause, the payoff and the open end",
-          re.search(r"becoming a star", r.get("note", "")) and re.search(r"page of his instructor's log", r.get("note", "")) and re.search(r"scanners", r.get("note", "")),
+    check("the Version 9 'Nova, Your Instructor' note gives the cause, what a badge is, and the open end",
+          re.search(r"more light than it could hold", r.get("note", "")) and re.search(r"badges are what hold it together", r.get("note", ""))
+          and re.search(r"mastered", r.get("note", "")) and re.search(r"scanners", r.get("note", "")),
           r.get("note", "")[:160])
-    check("What's New (on its own) leads in with the same story", re.search(r"page of my log", r.get("news", "")) and re.search(r"star", r.get("news", "")), r.get("news", "")[:300])
-    check("the planet's returning tip and the Rank tab's lore say the crack is his light, and Supernova makes it a star",
-          re.search(r"light breaking through", r.get("tip", "")) and re.search(r"becomes a star", r.get("lore", "")) and re.search(r"Nova's light", r.get("lore", "")),
+    check("What's New (on its own) leads in with the same story", re.search(r"unit mastered", r.get("news", "")) and re.search(r"star", r.get("news", "")), r.get("news", "")[:300])
+    check("the planet's returning tip and the Rank tab's lore say the crack comes from his light and badges hold it, and Supernova makes it a star",
+          re.search(r"badges are what hold it", r.get("tip", "")) and re.search(r"becomes a star", r.get("lore", "")) and re.search(r"Nova's light", r.get("lore", "")),
           [r.get("tip", "")[:200], r.get("lore", "")[:200]])
     check("no totals the story cannot keep: Home's planet says how many secret flares you found (not 'of 3'), his card counts without '/'",
           not re.search(r"of \d+ secret", r.get("planet", "")) and r.get("cells") and not any("/" in c for c in r.get("cells") or []),
@@ -427,8 +437,9 @@ def check_rules(br):
         ctx.close()
         return
     L = r.get("lines") or []
-    check("progress messages differ by what was found: a badge is a page of his log, crew come home, a secret flare, a level",
-          len(L) == 7 and re.search(r"log", L[0]) and re.search(r"pages", L[1]) and re.search(r"home|with you", L[2])
+    # MOVED IN 327 (b327c): a badge is a unit mastered, not a page of his log
+    check("progress messages differ by what was found: a badge is a unit mastered, crew come home, a secret flare, a level",
+          len(L) == 7 and re.search(r"mastered", L[0]) and re.search(r"units mastered", L[1]) and re.search(r"home|with you", L[2])
           and re.search(r"secret flares", L[3]) and re.search(r"again", L[4]) and re.search(r"secret flares", L[5]) and re.search(r"scanners", L[6])
           and len(set(L)) == 7, [x[:60] for x in L])
     check("a badge on its own is its own message - delivered, with banners muted, and no banner",
