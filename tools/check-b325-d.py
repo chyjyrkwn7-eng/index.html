@@ -412,12 +412,18 @@ def check_qualifier(br):
         shield: paths.some(d => /^M12 2\\.2l8\\.1 3/.test(d)), fill: getComputedStyle(s.querySelector('.modeiconsolid') || s).fill };
       const rn = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /^Exam/.test(i.title));
       out.pencil = !!s.querySelector('g[transform^="rotate(45"]');
+      /* MOVED IN 327 (b327h): Drill's target with one arrow struck dead
+         centre - the inner ring, the arrow's shaft starting at its centre. */
+      const ring = s.querySelector('circle'), shaft = s.querySelector('.modeiconarrow');
+      out.arrow = !!(ring && shaft && s.querySelectorAll('.modeiconarrow').length >= 3 &&
+        (shaft.getAttribute('d') || '').startsWith('M' + ring.getAttribute('cx') + ' ' + ring.getAttribute('cy')));
       try{ const ic = rn.icon(); out.notes = ic.classList.contains('modeicon-exam'); }catch(e){ out.notes = false; }
       s.remove(); return out; }""")
-    # MOVED IN 327 (b327g): the mark is Exam's pencil now ("change the icon,
-    # keep it orange though"), not 326's tick.
-    check("modeIcon('exam'): the pencil; neither the shield nor the seal; the Version 9 note uses it",
-          not r.get("seal") and r.get("pencil") and not r.get("shield") and r.get("notes"), r)
+    # MOVED IN 327 (b327h): "Exam as an underlined pencil is not the move ...
+    # feel like drill but without the answer retry when wrong." The mark is
+    # Drill's target with one arrow in it; no pencil, no shield, no seal.
+    check("modeIcon('exam'): a target with one arrow in its centre; not the pencil, the shield or the seal; the Version 9 note uses it",
+          not r.get("seal") and r.get("arrow") and not r.get("pencil") and not r.get("shield") and r.get("notes"), r)
     ctx.close()
 
 

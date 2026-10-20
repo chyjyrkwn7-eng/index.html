@@ -24614,3 +24614,33 @@ that name, and change the icon, keep it orange though."*
 - check-b326-d's "two by two" (Nova's how-they-come-home cards) fails now and
   then on an iPad (cards measured mid-stagger, icons 52-54px); it fails the
   same way on the build before this change.
+
+### Build 327 (b327h) - the Exam icon: Drill's target with one arrow in it
+
+Madison: *"Exam as an underlined pencil is not the move. It needs to give a
+cool unique vibe but also feel like drill but without the answer retry when
+wrong."*
+
+> **Supersedes** b327g's pencil (and with it every container and object
+> mark before it: clipboard, shield, seal, ring-with-tick).
+
+- **`modeIcon("exam")` is Drill's target, struck once.** The inner ring is a
+  circle (r 3.8 at 10.4,13.6, Drill's 4.5 a touch smaller and lower-left so
+  the arrow has room); the outer ring (r 7.9) is a PATH ARC broken where the
+  shaft goes in (`M17.17 9.53A7.9 7.9 0 1 1 14.47 6.83`, a gap of 28 degrees
+  round -45); the arrow is three `.modeiconarrow` paths - the shaft from the
+  target's dead centre to the top right, and two stroked feathers (corner
+  brackets). Same 1.6 stroke, same orange `#FF9A3C`, no solid parts. Drill
+  practises at the target; Exam is one shot, landed - no second try.
+- **Plain paths, no group transform.** `check_b323u_units` measures a mode
+  icon's ink by serializing its paths and circles one by one, which drops a
+  `<g transform>` - the pencil's rotation was never in its measurement. Exam
+  now measures ink .258 / width 82 against Drill's .226 / 73.
+- Chosen from four (feathers on two whole rings, a solid flight, this, a
+  solid bullseye; sheet: `/tmp/claude-0/b327h/exam/candidates.png`). The
+  solid flight read as a hammer at card size; the solid bullseye drifted from
+  Drill; the broken ring makes the shaft read as going through.
+- Gates moved, marked "MOVED IN 327 (b327h)": check-b325-d d6 and check-b326-d
+  d6 assert a circle plus three `.modeiconarrow` parts whose shaft starts at
+  the inner ring's centre, the broken 7.9 arc and Drill-sized inner ring, and
+  still no pencil, shield, seal or ring-with-tick. Both fail on 7ec06e0.
