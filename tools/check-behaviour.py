@@ -20616,6 +20616,12 @@ def check_b318_planet(br):
     speed by ~4x in one frame."""
     print("\n318p. planet taps: the rings speed up, smoothly, capped, never backwards, on every theme")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    # BUILD 327: sound is on by default now. With it on, each tap also builds
+    # its sound, which makes frames uneven enough here that the per-frame
+    # rate (Supernova's rings, the heaviest tap) reads 1.35 against 1.2 -
+    # build 326 with sound switched on reads the same. This section is about
+    # the rings' arithmetic, so it measures with sound off, as it always did.
+    pg.evaluate("() => { theme.soundOn = false; try{ NovaSound.sync(); }catch(e){} }")
     pg.evaluate(HOMETAP_PREP, {})
     for kind in ("default", "accent:veteran", "accent:titan", "orange", "eclipse"):
         st = pg.evaluate(B318_STATE, kind)

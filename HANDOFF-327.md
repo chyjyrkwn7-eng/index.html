@@ -18,6 +18,8 @@ For a fresh session picking this up. Build 327 is branch `wip/build-327`, which 
   - check-results: iPad heading gap [23.8, 19.8].
   - check-fixes: iPhone SE 1st gen 568x260 GREY BAR.
   - check-behaviour b313_fx: Underwater and UFO "tail never cut" (`rs-pct-sign`).
+- check-behaviour b323b_stars "status-bar band untouched" (233): fails on 326 identically.
+- check-behaviour b318_planet (Supernova rings, ten fast taps): with SOUND ON each tap's sound makes frames uneven enough to read 1.35x against 1.2x per frame. Build 326 with sound switched on reads the same, so the section now measures with sound off. Worth Madison spamming the Supernova planet on her phone to feel whether the taps hitch.
 - Flaky under load, passing alone: check-b326-e (Nova's scheduler), and check-behaviour b313_notice "se: the planet goes back".
 - check-behaviour runs in chunks via `ONLY_FN` (the whole run is over 2 hours). Three Penal Code sections now pin the page clock before `PENAL_256_AT` (`PIN_BEFORE_PENAL_256`), because the app switched to slides 256-578 on Oct 19.
 
