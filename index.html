@@ -125375,6 +125375,9 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
   /* where it ends, in the card's own numbers */
   const cur = numsHost && numsHost.querySelector(".xpnums");
   if(cur) cur.replaceWith(buildXpNumbers(toBar.into, toBar.span, toBar.over));
+  /* the climb is over the moment its line is: "to Level N" comes back
+     with the ordinary numbers, not 650ms after them (build 327 audit) */
+  standing.classList.remove("ru-climbing", "ru-spending");
   syncPfXpTo(standing, to);
   setBarFill(fill, Math.round((to.stopped ? 1 : Math.max(0, Math.min(1, toBar.fraction || 0))) * 1000) / 10);
   rec.end = Math.round(toBar.into);

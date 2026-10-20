@@ -18322,7 +18322,7 @@ def _b321e_checks(dev, pre, frames):
     num_ok = all(re.match(r"^[\d,]+ extra XP$", f["pf"]["nums"]) for f in cl)
     haves = [f["pf"]["nums"].split(" ")[0] for f in cl]
     check(f"{dev}: while the saved XP climbs, the line under the bar is the numbers counting ({len(cl)} frames), never 'Saved XP / climbing'",
-          len(cl) > 60 and num_ok and len(set(haves)) > 20, [len(cl), cl[0]["pf"]["nums"] if cl else None, len(set(haves))])
+          len(cl) > 60 and num_ok and len(set(haves)) > 20, [len(cl), cl[0]["pf"]["nums"] if cl else None, len(set(haves)), sorted(set(f["pf"]["nums"] for f in cl if not re.match(r"^[\d,]+ extra XP$", f["pf"]["nums"])))[:6]])
     # 17. the level challenge waits for the bar
     rows = [(f["t"], f["pf"]["row"], f["pf"]["climb"]) for f in pf]
     end_climb = max((t for t, _, c in rows if c), default=None)
