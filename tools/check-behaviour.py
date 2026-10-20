@@ -26699,7 +26699,7 @@ def check_b323u_units(br):
               and all(x["w"] < r["lw"] * 0.55 and x["h"] / max(1, x["w"]) >= 0.45 for x in rows), (r.get("lw"), rows[:3]))
         v = r.get("version") or {}
         check("%s the Penal Code row's version line sits under its name, on the name's edge" % label,
-              abs(v.get("dx", 99)) <= 1.5 and -2 <= v.get("below", -99) <= 24, v)   # 24: a square's gap on a tablet (325)
+              abs(v.get("dx", 99)) <= 1.5 and -2 <= v.get("below", -99) <= 48, v)   # 24: a square's gap on a tablet (325); MOVED IN 327: +24 for the "Next test" tag that can sit between them (b327d)
         t = r.get("tap") or {}
         # 325: a tap only ticks the card again - nothing opens and nothing
         # grows; the full details are a press and hold away, as in 322.
@@ -28617,7 +28617,7 @@ def check_b324q_penal(br):
         noteKey: typeof penalVersionNoteKey === 'function' ? penalVersionNoteKey() : (typeof PENAL_VERSION_NOTE_KEY !== 'undefined' ? PENAL_VERSION_NOTE_KEY : null),
         live256: typeof penal256Live === 'function' && penal256Live(),
         label: UNIT_TEST_VERSIONS['Penal Code'].label, tag: UNIT_TEST_VERSIONS['Penal Code'].tag }; }"""
-    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=PIN_BEFORE_PENAL_256)  # 327: before the 256-578 switch
     r = pg.evaluate(Q)
     want = PENAL_SLIDES_SRCS
     check("the slides 124-256 version is exactly the deck's 116 (109 different, seven twice)",
