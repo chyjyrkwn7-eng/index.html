@@ -25058,3 +25058,61 @@ what's new one by one. It's too much I think."* Gate: `tools/check-b327-m.py`
   card), check-behaviour b320f (the card on its own, no Skip), b321g (talk
   ends in Goodbye, the card, no second dialogue), b319_levelnote (the note is
   only on the card; its exact wording is the level-rule work's to change).
+
+### Build 327 (round 3) - Madison's review of the 327 videos, and a full audit
+
+Madison: *"Correct answer is not a satisfying sound ... the rank road map
+video didn't even work properly? And the progress within the bar was beyond
+your next rank? ... When getting a Hundo the green [went] to the Hundo color
+from left to right and not the fade it used to be ... I also saw the rank up
+characters showing unlocked in the main menu ... Do a full thorough check on
+the entire app."*
+
+- **A 100's green FADES into its effect's colour, by hue (`rsHandoff`).**
+  b327j's left-to-right wipe is gone for the hand-off: the green's own look
+  fades to the effect's, interpolated in OKLCH so it never passes grey. The
+  pass-mark switch (red to green in place, b327j) is unchanged.
+- **`test.correct` is a "ding-DING"**: an A5 pickup, then a D major chord
+  struck at once on two pulse widths over a triangle D4, a D7 glint and a
+  short sparkle tail. Its vol (`SND_CHIP_VOL`) is .85, loudest 50ms ~ the
+  old one's.
+- **A rank's character and banner never pop up on Home.** They belong to the
+  rank-up journey's reward card on Profile (b319); Home's queue drops every
+  rank reward, owed or not.
+- **The road map draws a rank held through the rank floor as reached**
+  (`buildRanksTab`'s `rankPct` returns 1 for any rank at or below the one
+  `rankOf` holds). It drew it locked, so the road's light sat past the
+  "next" rank. While the map celebrates a rank, the rank after it stays
+  locked (`ru-nexthold`) until the camera reaches it.
+- **The grade's fraction ("8 / 12") appears as the grade lands** (`.is-waiting`
+  until `landGrade`): the count is by PERCENTAGE (b327j), so a right-answer
+  count beside a moving percent disagreed with it ("70%" next to "8 / 12").
+- **The rank-up climb ends with its line**: `ru-climbing`/`ru-spending` come off
+  in the frame the ordinary "x / y XP" comes back.
+- **No back-to-top arrow during a cutscene or the rank-up journey.**
+- **Loading and flashcard sounds**: LOADING REVIEW/FLASHCARDS play `test.load`;
+  a card flip is `fc.flip` (new id; `.fc-card` is out of the generic tap
+  layer); a card thrown is `test.next`; flashcard pause/resume play the
+  test's. A flashcard pause shows white blocks and no count line.
+- **The pause line says "the clock is stopped" only when there is a clock.**
+  The keyboard hint counts this question's keys ("1 through 3").
+- **Begin plays one sound**: `closeOptionsModal(true)` from Begin is quiet
+  (the tap's own thock and LOADING's sound were stacking with the sheet's).
+- **The saved-test offer and "Saved test removed" open with `ui.popup.open`.**
+- **A start sheet goes with its screen (`bindSheetToScreen`)**: a sheet whose
+  owning screen leaves `#stage` is removed, so it can never sit over the next
+  screen.
+- **Segmented sliders follow their buttons' size** (`attachSegSlider` watches
+  each button). The VR unit search has the magnifier (`searchMagnifier()`).
+  **Ready up starts waiting** (`is-waiting`, disabled). Top notices clear the
+  version label (`.homeversion-btn` in `NOTICE_OBSTRUCTIONS`; anything in the
+  lower 60% of the screen is ignored). The lobby's Invite word hides from
+  26.5rem down so the switch and Invite fit.
+- **The VR sheet's "Save settings" has no play mark** (`.is-save`).
+- **The calendar's day card lists the day like the Today card** (`scheduleList`:
+  names and "3.5 hrs"), never the raw "PENAL CODE (3.5) • PT".
+- **A short screen keeps the start sheet's rows in view**: under 46rem tall the
+  pinned summary keeps its head and one line of units, its switched-on line
+  goes, Begin is 3rem; the bar's colour runs under it (`box-shadow`) so a row
+  scrolled past never shows below Begin on an SE.
+- Gates moved: check-behaviour b320d (the climb's line accepts "N extra XP").

@@ -10316,6 +10316,8 @@
     -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'><path d='M1.5 1.2v11.6c0 .7.8 1.1 1.4.7l8.6-5.8c.5-.3.5-1.1 0-1.4L2.9.5C2.3.1 1.5.5 1.5 1.2z'/></svg>") center / contain no-repeat;
             mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'><path d='M1.5 1.2v11.6c0 .7.8 1.1 1.4.7l8.6-5.8c.5-.3.5-1.1 0-1.4L2.9.5C2.3.1 1.5.5 1.5 1.2z'/></svg>") center / contain no-repeat;
   }
+  /* Match settings in a lobby SAVES; it starts nothing, so no play mark (327). */
+  .sheet-begin-btn.next.playbtn.is-save::before{ content:none; }
   .sheet-begin-btn.next.playbtn:active{
     transform:scale(.97);
     box-shadow:0 2px 3px rgba(18,26,32,.3) inset, 0 -1px 1px rgba(255,255,255,.5) inset, 0 1px 2px rgba(0,0,0,.22);
@@ -21854,6 +21856,17 @@
   .unitoptions-modal-sheet.is-setup .start-summary .is-empty > .sheet-summary-opts{ opacity:0; }
   .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-opt.is-set{ color:#4ADE80; }
   [data-reduce-motion="true"] .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-optswrap{ transition:none; }
+  /* A SHORT SCREEN KEEPS THE SHEET'S ROWS IN VIEW (327 audit). On an SE the
+     pinned summary and Begin took half the screen. Under 46rem tall the
+     summary keeps its head and one line of units; the switched-on line goes
+     (its switches are right above it), and Begin is a little shorter. */
+  @media (max-height:46rem){
+    .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-units{ -webkit-line-clamp:1; margin-top:.35rem; padding-top:.35rem; }
+    .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-optswrap{ display:none; }
+    .unitoptions-modal-sheet.is-setup .sheet-summary.start-summary{ margin-bottom:.55rem; padding-top:.6rem; padding-bottom:.6rem; }
+    .unitoptions-modal-sheet.is-setup .sheet-begin-bar{ padding-top:.8rem; }
+    .unitoptions-modal-sheet.is-setup .sheet-begin-bar .sheet-begin-btn.next.playbtn{ min-height:3rem; }
+  }
   /* The reason under "No hundo" opens ABOVE it, so its tip is underneath. */
   .hundo-why.is-above{ animation-name:hundo-why-up; }
   .hundo-why.is-above::before{ top:auto; bottom:-6px; left:calc(var(--tip-x, 50%) - 6px);
@@ -21969,6 +21982,9 @@
   .unitoptions-modal-sheet.is-setup .sheet-begin-bar{
     position:sticky; bottom:0; z-index:3; margin:0 -1.25rem; padding:1.1rem 1.25rem .2rem;
     background:linear-gradient(180deg, rgba(15,17,21,0) 0, #0F1115 1.1rem);
+    /* the sheet's own colour under the bar too, so a row scrolled past
+       Begin never shows in the strip below it (327 audit, SE) */
+    box-shadow:0 3rem 0 0 #0F1115;
   }
   /* ---------- Profile: identity, level, badges -----------------------
      The shine. One animation, two palettes, used on the level number,
@@ -44842,6 +44858,7 @@ function showRunOffer(s, via){
     wrap.addEventListener("keydown", e => { if(e.key === "Escape"){ e.stopPropagation(); close(); } });
   }
   document.body.appendChild(wrap);
+  playSound("ui.popup.open");
   requestAnimationFrame(() => wrap.classList.add("show"));
 }
 /* The saved test could not come through an update: said once, plainly,
@@ -44863,6 +44880,7 @@ function showSavedTestDropped(){
   card.append(h, sub, actions);
   wrap.appendChild(card);
   document.body.appendChild(wrap);
+  playSound("ui.popup.open");
   requestAnimationFrame(() => wrap.classList.add("show"));
   focusQuietly(ok);
 }
@@ -91099,7 +91117,7 @@ function showSetup(){
   beginBtn.textContent = beginLabelOf(cfg.mode);
   beginBtn.addEventListener("click", () => {
     if(cfg.units.length === 0) return;
-    closeOptionsModal();
+    closeOptionsModal(true);
     /* Review mode reroutes this same button to the Answer Review screen
        instead of starting a run — the exact closeOptionsModal() +
        showAnswerReview() pair the old, now-removed reviewBtn used, just
@@ -91174,7 +91192,7 @@ function showSetup(){
   optionsModalSheet.append(optionsModalHandle, optionsModalHead, optionsModalBody);
   optionsModal.append(optionsModalScrim, optionsModalSheet);
   document.body.appendChild(optionsModal);
-  function closeOptionsModal(){ if(!optionsModal.hidden) playSound("ui.sheet.close"); optionsModal.hidden = true; }
+  function closeOptionsModal(quiet){ if(!optionsModal.hidden && !quiet) playSound("ui.sheet.close"); optionsModal.hidden = true; }
 
   /* The whole sheet, not only the handle (build 267): attachSheetSwipe.
      A swipe down CLOSES it, in every mode (build 297): "when in the test
@@ -107384,6 +107402,7 @@ function showVirtualRoomSetup(editRoom){
      where the match starts once everyone readies up - so it says that,
      in Begin drill's shape: the verb, then where it takes you. */
   beginBtn.textContent = editing ? "Save settings" : "Open lobby";
+  if(editing) beginBtn.classList.add("is-save");
   beginBtn.addEventListener("click", () => {
     if(picked.size === 0) return;
     if(!vroomGame){
@@ -107432,7 +107451,7 @@ function showVirtualRoomSetup(editRoom){
   optionsModalSheet.append(optionsModalHandle, optionsModalHead, optionsModalBody);
   optionsModal.append(optionsModalScrim, optionsModalSheet);
   document.body.appendChild(optionsModal);
-  function closeOptionsModal(){ if(!optionsModal.hidden) playSound("ui.sheet.close"); optionsModal.hidden = true; }
+  function closeOptionsModal(quiet){ if(!optionsModal.hidden && !quiet) playSound("ui.sheet.close"); optionsModal.hidden = true; }
   optionsModalScrim.addEventListener("click", closeOptionsModal);
   optionsModalDone.addEventListener("click", closeOptionsModal);
 
@@ -118061,8 +118080,12 @@ function buildCalendarPane(panel){
       badge.className = "cal-today-badge"; badge.textContent = "Today";
       head.appendChild(badge);
     }
-    const body = document.createElement("p");
-    body.className = "cal-row-text"; body.textContent = entry.text;
+    /* The day's schedule as the Today card lists it - names and "3.5 hrs" -
+       not the raw "PENAL CODE (3.5) • PT" text (327 audit). */
+    const parts = entry.holiday ? [] : scheduleParts(entry.text);
+    let body;
+    if(parts.length){ body = scheduleList(entry); body.classList.add("cal-row-text"); }
+    else { body = document.createElement("p"); body.className = "cal-row-text"; body.textContent = entry.text; }
     dayCard.append(head, body);
     /* WHAT'S ON IT (build 324): a test day says what the test covers, or
        that it has not been posted yet - the Next test card's own block. */
