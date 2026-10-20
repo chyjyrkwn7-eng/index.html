@@ -125,7 +125,16 @@ looking. All the progressive cracking could be better too."* Gate:
   shine's dark cover off the art's own canvas.
 - Moved (each marked "MOVED IN 327"): check-b326-a 3 (ring and wash are the
   result, the chip the mode), check-b326-b F (a plain padded lid, still
-  stitched).
+  stitched), check-behaviour check_b319_shine (the shine keeps 90%+ of its
+  light with only the crack's branch through it - it was "dulled under 85%
+  with crazing"; fails on 326 at 72 against 88).
+- Still green, unchanged: check-b325-b (all six; one iPad run lost the
+  tab's shut frame under load and passed on the rerun, as 326 does),
+  check-b326-c C, check-statsbadges, check-loops (473 loops, 0 seams), and
+  check-behaviour's b324t_stats, b321f_profile, b324s_settings,
+  b324p_unlocks, b242, b317_badge2, b317_badgecase, b318_badges,
+  b319_badges, b319f_casespace, b320c_case, b321c_case, b232, b317_planet,
+  b317_supernova, b318_planet, b318_scar, b320e_cracks, b317_cutend.
 - **Open decisions:** the history strip's ring takes the average's RESULT
   colour (an 82% average is green) - grey like the accuracy ring is the
   other reading; Stats' heavier surfaces belong to the glass builder.

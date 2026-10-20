@@ -20702,7 +20702,7 @@ def check_b319_shine(br):
     (3%+ of it under 40, against under 1% clean). And nothing new is warm.
     Fails on 8aded7f, where the scar never reaches the shine."""
     from PIL import Image
-    print("\n319s. the Supernova planet's shine carries the blast's damage")
+    print("\n319s. the Supernova planet's shine: one crack through it, no crazing (moved in 327)")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=3)
     pg.evaluate(HOMETAP_PREP, {})
     for acc in ("titan", "ink", "adept"):
@@ -20737,11 +20737,14 @@ def check_b319_shine(br):
           h.querySelector(':scope > .cosmic-scar').style.visibility = 'hidden'; h.classList.remove('is-scarred'); }""")
         pg.wait_for_timeout(100)
         lB, dB = shot()
-        check("%s: the shine is damaged - dulled (%.0f against %.0f clean, under 85%% - 80%% before 326's finer crazing) with structure in it (%.1f%% under 40, clean %.1f%%)" % (acc, lA, lB, dA * 100, dB * 100),
-              # MOVED IN 326: Supernova's shine is fine warm crazing, not a black
-              # web ("it read as a tree"), so less of it is under 40 - still
-              # dulled the same, still structure where the clean shine has none
-              box["scar"] and lA <= .85 * lB and dA >= .008 and dB < .01 and dA > 3 * dB, (round(lA, 1), round(lB, 1), round(dA, 4), round(dB, 4)))
+        # MOVED IN 327 (b327e): "the smaller ash mark is bad and can just go
+        # away, we need it to be combined". The crazing over the shine was that
+        # second mark; it is gone (SCAR_SHINE_CRAZE false). What reaches the
+        # shine now is the crack's own branch (recC) and nothing else: the
+        # highlight keeps 90%+ of its brightness, with the branch's thin dark
+        # line in it (0.5-4% under 40) where the clean shine has none.
+        check("%s: the shine keeps its light - %.0f against %.0f clean (90%%+) - with only the crack's branch through it (%.1f%% under 40, clean %.1f%%)" % (acc, lA, lB, dA * 100, dB * 100),
+              box["scar"] and lA >= .9 * lB and .005 <= dA < .04 and dB < .01, (round(lA, 1), round(lB, 1), round(dA, 4), round(dB, 4)))
     ctx.close()
 
 B318_DAILY = """async (acc) => { const wait = ms => new Promise(r => setTimeout(r, ms));
