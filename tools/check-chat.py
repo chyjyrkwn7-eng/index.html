@@ -546,7 +546,7 @@ def run_intro(src_dir, label):
                          MOVED IN 326 (b326d): "I kinda prefer briefing to be called
                          review" and "Remove the weekly recap and badge case from
                          what's new" - neither word is asked for, and both must be gone */
-                      says78: ['nova', 'sound', 'qualifier', 'profile', 'calendar', 'save a test', 'study', 'virtual room'].every(w => txt.indexOf(w) >= 0)
+                      says78: ['nova', 'sound', 'exam', 'profile', 'calendar', 'save a test', 'study', 'virtual room'].every(w => txt.indexOf(w) >= 0)
                         && ['briefing', 'badge case', 'weekly recap'].every(w => txt.indexOf(w) < 0)
                         && txt.indexOf('version 9') >= 0,
                       go: !!el.querySelector('.intro-go')};}""")

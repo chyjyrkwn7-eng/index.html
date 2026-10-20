@@ -1957,7 +1957,7 @@
     font-variant-numeric:tabular-nums; color:color-mix(in srgb, var(--kc) 55%, #fff); background:color-mix(in srgb, var(--kc) 14%, rgba(0,0,0,.25)); }
   .nt-kind.is-challenge{ --kc:#7FA3D6; } .nt-kind.is-secret{ --kc:#B79BFF; } .nt-kind.is-ultimate{ --kc:#FFD98A; }
   .nt-modes .nt-mode.is-drill{ --kc:#FF5A60; } .nt-modes .nt-mode.is-exam{ --kc:#FF9A3C; }
-  .nt-modes .nt-mode.is-review{ --kc:#A694FF; } .nt-modes .nt-mode.is-vroom{ --kc:#4A9FE8; }
+  .nt-modes .nt-mode.is-review{ --kc:#4ADE80; } .nt-modes .nt-mode.is-vroom{ --kc:#4A9FE8; }
   .nt-mode-t{ display:flex; flex-direction:column; gap:.2rem; min-width:0; }
   .nt-modes .nt-mode-ic svg{ width:100%; height:100%; }
   /* banners and hundo effects */
@@ -3588,13 +3588,10 @@
      color green for the progress bar ... white is boring and green kinda
      makes me think of test and xp." Green is a right answer and blue is
      XP; studying cards is neither, so it is a soft violet. */
-  .wrap:has(.fc-screen) .meter .tick.clean{ background:#A694FF; }
-  .wrap:has(.fc-screen) .meter .tick.now{ background:#CFC4FF; box-shadow:0 0 4px rgba(166,148,255,.6); }
-  /* A QUALIFIER'S BLOCKS (build 324) take the Qualifier's orange, the way
-     flashcards take Review's violet: answered ones in it, the
-     one you are on a lighter, lit step (as flashcards do). See drawMeter(). */
-  .meter.is-qualifier .tick.done{ background:#FF9A3C; opacity:1; }
-  .meter.is-qualifier .tick.now{ background:#FFC48F; box-shadow:0 0 4px rgba(255,154,60,.6); }
+  /* WHITE NOW (build 327): "review flashcards are purple, let's not do
+     that." A card seen is the plain white a test's unscored block is
+     (.tick.done), the card you are on the plain marker. */
+  .wrap:has(.fc-screen) .meter .tick.clean{ background:var(--accent); opacity:.55; }
   .panel.fc-screen{ background:none; border:none; box-shadow:none; padding:0; }
   /* ---- MOVING THROUGH THE DECK (build 306) ----
      "Ensure you can swipe to the next flash card but give it a nice
@@ -12372,7 +12369,7 @@
     border:1px solid color-mix(in srgb, var(--mode-c) 42%, transparent); }
   .thx-chip-drill{ --mode-c:#FF6B70; }
   .thx-chip-exam{ --mode-c:#FF9A3C; }
-  .thx-chip-review{ --mode-c:#A694FF; }
+  .thx-chip-review{ --mode-c:#4ADE80; }
   .thx-chip-game{ --mode-c:#E0559A; }
   .thx-chip-vr{ --mode-c:#4A9FE8; }
   .thx-day{ margin:1.15rem 0 .5rem; font-size:.74rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--soft); }
@@ -12496,8 +12493,8 @@
     border:1px solid rgba(255,255,255,.11); box-shadow:inset 0 1px 0 rgba(255,255,255,.12); }
   .ar-head.is-starred{ border-color:rgba(255,211,106,.28);
     background:radial-gradient(120% 160% at 0% 50%, rgba(255,211,106,.12), transparent 60%), var(--surface-1); }
-  .ar-head.is-reviewmode{ border-color:rgba(166,148,255,.3);
-    background:radial-gradient(120% 160% at 0% 50%, rgba(166,148,255,.13), transparent 60%), var(--surface-1); }
+  .ar-head.is-reviewmode{ border-color:rgba(74,222,128,.28);
+    background:radial-gradient(120% 160% at 0% 50%, rgba(74,222,128,.11), transparent 60%), var(--surface-1); }
   .ar-head-icon{ flex:0 0 auto; width:2.4rem; height:2.4rem; display:grid; place-items:center; }
   .ar-head-icon svg{ width:85%; height:85%; }
   .ar-head-text{ min-width:0; }
@@ -16852,7 +16849,10 @@
      beside it: the meaning does not change with the accent. */
   /* VIOLET NOW (build 324), the flashcards' own #A694FF - see the
      Review's icon in modeIcon(). Green stays a right answer. */
-  .modeicon-review .modeiconpath{ stroke:#A694FF; }
+  /* GREEN AGAIN (build 327): "I also prefer the green color for review
+     icon, but I like the new review icons look just make it green." The
+     live build's #4ADE80. */
+  .modeicon-review .modeiconpath{ stroke:#4ADE80; }
   /* The Virtual Room's two ways in (build 287), coloured like the modes */
   .modeicon-host .modeiconpath{ stroke:#B48CFF; }
   .modeicon-join .modeiconpath{ stroke:#3FE3A8; }
@@ -16876,7 +16876,7 @@
   /* the solid parts of the Exam and Review marks (build 323) take their
      mode's colour as a fill, like the Virtual Room's heads */
   .modeicon-exam .modeiconsolid{ fill:#FF9A3C; }
-  .modeicon-review .modeiconsolid{ fill:#A694FF; }
+  .modeicon-review .modeiconsolid{ fill:#4ADE80; }
   .modecard.locked .modeiconsolid{ fill:var(--soft); }
   .modecard.locked .modeiconpath{ stroke:var(--soft); }
   .modecardtitle{
@@ -18924,7 +18924,7 @@
   [data-layout="modern"] .modedisplay-top .modeicon-drill .modeiconpath{ stroke:#FF5A60; fill:none; }
   [data-layout="modern"] .modedisplay-top .modeicon-exam .modeiconpath{ stroke:#FF9A3C; fill:none; }
   [data-layout="modern"] .modedisplay-top .modeicon-exam .modeiconsolid{ fill:#FF9A3C; }
-  [data-layout="modern"] .modedisplay-top .modeicon-review .modeiconpath{ stroke:#A694FF; fill:none; }
+  [data-layout="modern"] .modedisplay-top .modeicon-review .modeiconpath{ stroke:#4ADE80; fill:none; }
   [data-layout="modern"] .modedisplay-top .modeicon-game .modeiconpath{ fill:#C23B7A; stroke:none; }
   [data-layout="modern"] .modedisplay-top .modeicon-vroom .modeiconpath{ stroke:#4A9FE8; fill:none; }
   [data-layout="modern"] .modedisplay-top .modeicon-vroom circle.modeiconpath{ fill:#4A9FE8; }
@@ -26215,7 +26215,7 @@
   .rs-mode-exam{ --mode-c:#FF9A3C; }
   .rs-mode-game{ --mode-c:#EE6FA8; }
   .rs-mode-vroom{ --mode-c:#7CC0F4; }
-  .rs-mode-review{ --mode-c:#A694FF; }
+  .rs-mode-review{ --mode-c:#4ADE80; }
   .rs-mode-src{ padding-left:.72rem; }
   /* The grade's face, not Georgia (build 315): its figures are old-style,
      so the "1" of "1 unit" sat at lowercase height on a phone. */
@@ -28919,7 +28919,7 @@
   .rs-mode-exam{ --mode-c:#FF9A3C; }   /* build 324: the Qualifier's orange */
   .rs-mode-game{ --mode-c:#E0559A; }
   .rs-mode-vroom{ --mode-c:#4A9FE8; }
-  .rs-mode-review{ --mode-c:#A694FF; }   /* build 324: Review's violet */
+  .rs-mode-review{ --mode-c:#4ADE80; }   /* build 327: Review's green again */
   .rs-mode{
     background:color-mix(in srgb, var(--mode-c) 22%, rgba(20,24,30,.6));
     border-color:color-mix(in srgb, var(--mode-c) 55%, transparent);
@@ -31390,7 +31390,7 @@
 
     var messagePool = [
       "> booting core runtime...",
-      "> loading Drill & Qualifier modes...",
+      "> loading Drill & Exam modes...",
       "> syncing unit progress...",
       "> initializing badge case...",
       "> calibrating XP curve...",
@@ -53651,7 +53651,7 @@ const ACTIVITY_MIN_GAP_MS = 8000;
 const ACTIVITY_TEXT = {
   menu:    ["Main menu",      "On the main menu"],
   drill:   ["In a Drill",     "In a Drill"],
-  exam:    ["In a Qualifier", "Taking a Qualifier"],   /* build 324: Exam is the Qualifier on screen */
+  exam:    ["In an Exam", "Taking an Exam"],   /* build 327: Exam again (Qualifier, 324-327, "doesn't fit") */
   game:    ["In Game mode",   "Playing Game mode"],
   review:  ["In Review",      "Going over questions"],   /* build 326: the mode is Review again (324-325 called it the Briefing) */
   daily:   ["Daily question", "On the daily question"],
@@ -57152,7 +57152,7 @@ function applySaved(){
    actually." Back to the name 305 settled on; the value was always
    "review", so nothing stored moves. Its violet and its cards stay. */
 function modeTitleOf(mode){
-  const NAMES = { drill: "Drill", exam: "Qualifier", review: "Review", vroom: "Virtual Room", game: "Game" };
+  const NAMES = { drill: "Drill", exam: "Exam", review: "Review", vroom: "Virtual Room", game: "Game" };
   if(NAMES[mode]) return NAMES[mode];
   return String(mode || "").charAt(0).toUpperCase() + String(mode || "").slice(1);
 }
@@ -67915,11 +67915,20 @@ function modeIcon(kind){
        four (a tick through a ring, rank stripes, a finish flag, a
        graduation cap - the sheet is in the build's notes): the stripes
        read as ranking up, the flag as finishing, the cap as studying. */
-    svg.appendChild(mk("M20.3 9.7A8.6 8.6 0 1 1 15.7 4.1"));
-    const check = document.createElementNS(svgNS2, "path");
-    check.setAttribute("d", "M7.7 11.8l3.5 3.5L20.4 5.1");
-    check.setAttribute("class", "modeiconpath modeiconcheck");
-    svg.appendChild(check);
+    /* EXAM'S PENCIL (build 327): "Exams name 'qualifier' is not the move
+       ... change the icon, keep it orange though." Test day is pencil on
+       paper: a pencil at the target's weight, its lead solid (the way the
+       Virtual Room's heads and Review's heading bar are), writing a line.
+       Not a container this time - the four before it read as one. */
+    const pg = document.createElementNS(svgNS2, "g");
+    pg.setAttribute("transform", "rotate(45 12 10.8)");
+    const pp = d => { const e = mk(d); pg.appendChild(e); return e; };
+    pp("M8.6 2.9a1.6 1.6 0 011.6-1.6h3.6a1.6 1.6 0 011.6 1.6V15.6L12 21.4 8.6 15.6z");
+    pp("M8.6 4.6h6.8v2.2H8.6z").setAttribute("class", "modeiconpath modeiconsolid");
+    pp("M8.6 15.6h6.8");
+    pp("M10.6 18.5h2.8L12 21.4z").setAttribute("class", "modeiconpath modeiconsolid");
+    svg.appendChild(pg);
+    svg.appendChild(mk("M3 21.8h17"));
   } else if(kind === "vroom"){
     const p1 = document.createElementNS(svgNS2, "circle");
     p1.setAttribute("cx", "8.5"); p1.setAttribute("cy", "8"); p1.setAttribute("r", "3");
@@ -72019,7 +72028,7 @@ const RELEASE_NOTES = [
         { icon: buildPillTabBarIcon, color: "#FFFFFF", title: "A Liquid Glass Tab Bar", body: "The tab bar is clear glass with white icons and labels. A glass lens lifts out and follows your finger when you tap or slide between tabs." },
         { icon: buildCalendarGridIcon, color: "#FFD27A", title: "Calendar On The Tab Bar", body: "The class calendar has its own tab at the bottom: today, this week and the next test at a glance, the days left in the course, and what is on the next test once it is posted. Settings moved into Profile, so Profile's tabs are Profile, Stats and Settings." },
         { icon: buildPersonIcon, color: "#4ADE80", title: "Friends On Your Profile", body: "Your Profile card shows your friends and what each one is doing, or that they are offline. Manage friends works as before." },
-        { icon: () => modeIcon("exam"), color: "#FF9A3C", title: "The Qualifier", body: "Exam is now the Qualifier: a real test with no feedback until your grade. Review is every question with its answer, as a list or flashcards. Each mode has its own look, and every start button says what you are beginning." },
+        { icon: () => modeIcon("exam"), color: "#FF9A3C", title: "Exam, A Real Test", body: "Exam is now a real test: no feedback on any question until your grade. Review is every question with its answer, as a list or flashcards. Each mode has its own look, and every start button says what you are beginning." },
         { icon: buildBarStatsIcon, color: "#A694FF", title: "Your Study Hours", body: "Stats has a new chart of your study time this week, in dots. Tap a day for its exact time, or look back at last week." }
       ]},
       { label: "Meet Nova", items: [
@@ -76676,7 +76685,7 @@ function showWelcomeIntro(){
      itself an earlier explicit fix for text that read as too small. */
   const items = [
     { head: "Built for one thing", body: "Every question is written to match what you'll actually see on test day \u2014 by classmates studying the exact same material." },
-    { head: "Four ways to study", body: "Drill gives instant feedback, Qualifier is test day with your grade at the end, Review goes over the material, and Virtual Room takes it live against classmates." },
+    { head: "Four ways to study", body: "Drill gives instant feedback, Exam is test day with your grade at the end, Review goes over the material, and Virtual Room takes it live against classmates." },
     { head: "Progress that means something", body: "Right answers level you up, a perfect unit earns its badge, and levels and badges together climb the ranks." },
     { head: "Everything saves itself", body: "No save button \u2014 your progress is already here next time, on any device." },
   ];
@@ -78862,7 +78871,7 @@ function novaIntroLines(o){
   /* BANNERS AND HUNDO EFFECTS (build 326) - after the crew, as asked */
   lines.push({ gesture: "raise", text: "As thanks, I’ll hand you things along the way: banners for your profile, and effects that play when you score a hundo. You earn them by studying, and they’re all in Customize, on your Profile.",
     ...novaSlide("flair", () => novaStack(novaWarmTake("flair") || novaFlairProp(), novaCap("Yours to wear · Customize"))) });
-  lines.push({ text: "Drill to learn a unit, the Qualifier to prove you’re ready, and Review to go over the material first. Or take any of them into a Virtual Room.",
+  lines.push({ text: "Drill to learn a unit, an Exam to prove you’re ready, and Review to go over the material first. Or take any of them into a Virtual Room.",
     ...novaSlide("modes", () => novaModeRow()) });
   lines.push({ gesture: "raise", text: "You don’t have to do it alone, either. In a Virtual Room you can race your classmates, and you can challenge me there too.",
     enter: ctx => novaProp(ctx, novaVroomProp()) });
@@ -83510,7 +83519,7 @@ function novaReplyFor(raw){
   if(has(/ (xp|levels?|level up) /))
     return "Every right answer earns XP, and XP raises your level. Your level waits at your next rank\u2019s level until you have its badges, so mastering units matters as much as answering a lot.";
   if(has(/ (drill|exam|review|flashcards?|learn|modes?|study|studying|practice|starred|flag\w*) /))
-    return "Drill to learn a unit, a Qualifier to test yourself, and Review to go over the material first. They’re all under Start Studying on Home.";
+    return "Drill to learn a unit, an Exam to test yourself, and Review to go over the material first. They’re all under Start Studying on Home.";
   /* the story as his introduction tells it (build 326) */
   if(has(/ (planet|crack\w*|becoming a star) /))
     return "The planet I was studying took in more light than it could hold, with nothing holding it together, and it exploded. Yours cracks a little more with every rank from Gold up: the strain of a brighter flare. Badges are what hold it together, which is why every rank asks for them. Keep finding them and it holds, all the way to Supernova, where it becomes a star.";
@@ -86669,9 +86678,9 @@ const WHATS_NEW_320 = [
   /* build 326: Review is Review again ("I kinda prefer briefing to be
      called review actually"), so only the Qualifier is a new name - and
      its mark is modeIcon's own (`icon`), not a copy of it */
-  { key: "modes", color: "#FF9A3C", title: "The Qualifier", icon: () => modeIcon("exam"),
-    body: "Exam is now the Qualifier: a real test, with nothing shown until your grade.",
-    say: "One mode has a new name. Exam is now the Qualifier, a real test with no feedback until your grade." },
+  { key: "modes", color: "#FF9A3C", title: "Exam, a real test", icon: () => modeIcon("exam"),
+    body: "Exam is now a real test, with nothing shown until your grade.",
+    say: "Exam is a real test now: no feedback on any question until you see your grade at the end." },
   /* build 323: the calendar to the bar, Settings into Profile */
   { key: "profile", color: "#5CA8FF", title: "Calendar in the tab bar",
     glyph: "M3 4.5h5.2v4.2H3V4.5Zm6.4 0h5.2v4.2H9.4V4.5Zm6.4 0H21v4.2h-5.2V4.5ZM3 10.2h18V20H3v-9.8Z",
@@ -86679,7 +86688,7 @@ const WHATS_NEW_320 = [
     say: "The class calendar has its own tab at the bottom now. Settings moved into Profile, and your Friends box shows who is on." },
   { key: "save", color: "#4ADE80", title: "Save a test for later",
     glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-3.4 6.2h2.3v7.6H8.6V8.2Zm4.5 0h2.3v7.6h-2.3V8.2Z",
-    body: "Pause a Drill or Qualifier and tap Save and exit. Start Studying offers it back, and Resume loads it right where you left off.",
+    body: "Pause a Drill or Exam and tap Save and exit. Start Studying offers it back, and Resume loads it right where you left off.",
     say: "You can save a test for later. Pause it, tap Save and exit, and Resume picks it up right where you left off." },
   /* BUILD 325: "Results grade first, characters celebrate, the ranking up
      on the road map, a planet that cracks, supernovas mark, the daily
@@ -88005,7 +88014,7 @@ function showModeSelect(){
       { target: '.modecard[data-mode="drill"]', align: "left", vplacement: "below",
         text: "Drill is the classic mode \u2014 instant feedback, and you can retry until you get it right. Best for learning." },
       { target: '.modecard[data-mode="exam"]', align: "left", vplacement: "below",
-        text: "Qualifier is a real test: no feedback on any question until you see your grade at the end." },
+        text: "Exam is a real test: no feedback on any question until you see your grade at the end." },
       /* Review had no step (build 289: "ensure all the tool tips are
          updated for this new app") - it became a mode of its own in
          build 128 and the tour went straight from Exam to Virtual Room. */
@@ -91110,7 +91119,11 @@ function drawMeter(){
      says nothing about right or wrong, which a Qualifier never does
      until the results. A Virtual Room race runs as "exam" too and is
      left as it was. */
-  meterEl.classList.toggle("is-qualifier", runMode === "exam" && !vroomCode);
+  /* WHITE WHEREVER YOU ARE NOT TOLD (build 327): "exam mode, and review
+     mode (flashcards) and virtual room where applicable if you don't know
+     whether you got it right or wrong it should be white." An Exam's blocks
+     are the plain white .done again (they were its orange, 324-327). */
+  meterEl.classList.remove("is-qualifier");
   if(!meterTicks){
     meterTicks = order.map(() => {
       const t = document.createElement("span");
@@ -91181,7 +91194,7 @@ function render(){
 
   drawMeter();
   countEl.textContent = scopeLabel() + " \u2014 " +
-    (runMode === "exam" ? "qualifier, " : "") +
+    (runMode === "exam" ? "exam, " : "") +
     (runLabel ? runLabel + ", " : "") +
     "question " + (pos + 1) + " of " + order.length;
   testScopeLabelEl.textContent = countEl.textContent;
@@ -103102,7 +103115,7 @@ function summarize(){
   }
 
   countEl.textContent = scopeLabel() + " \u2014 " +
-    (timedOut ? "time's up" : (runMode === "exam" ? "qualifier complete" : (runLabel ? runLabel : "run") + " complete"));
+    (timedOut ? "time's up" : (runMode === "exam" ? "exam complete" : (runLabel ? runLabel : "run") + " complete"));
   testScopeLabelEl.textContent = countEl.textContent;
 
   /* Daily question's entire results treatment, per explicit, revised
@@ -105185,7 +105198,7 @@ function buildScoreRing(pct, cls, tone){
    is the number in the ring, and a test that earned a hundo says so in a
    word with the app's gold mark (.thx-hundo) - not a gold row. The same
    on Stats' Recent tests, Test history and a test's own page. */
-const TEST_MODE_COLOR = { drill: "#FF6B70", exam: "#FF9A3C", review: "#A694FF", game: "#E0559A", vr: "#4A9FE8" };
+const TEST_MODE_COLOR = { drill: "#FF6B70", exam: "#FF9A3C", review: "#4ADE80", game: "#E0559A", vr: "#4A9FE8" };
 function testModeKey(entry){
   if(entry && entry.vr) return "vr";
   const m = entry && entry.mode;
@@ -105343,7 +105356,7 @@ function showTestReviewList(){
   if(all.length === 0){
     const p = document.createElement("p");
     p.className = "info-note";
-    p.textContent = "Finish a drill or a qualifier and it shows up here. The last 50 are kept.";
+    p.textContent = "Finish a drill or an exam and it shows up here. The last 50 are kept.";
     panel.appendChild(p);
     stage.replaceChildren(panel);
     toTop();
@@ -119330,9 +119343,9 @@ function showProfile(defaultTab, opts){
     "This month": "Time spent inside tests since the 1st of this month.",
     "All time": "Every minute you have spent inside tests on this account, across all your devices.",
     "Study sessions": "Tests you have finished. One test is one session however many units were in it, and a test you quit part way does not count.",
-    "Questions answered": "Every question you have answered anywhere \u2014 drills, qualifiers, the daily question and the Virtual Room.",
+    "Questions answered": "Every question you have answered anywhere \u2014 drills, exams, the daily question and the Virtual Room.",
     "Correct answers": "How many of those you got right first time. There is no second chance on a question, so this never counts a retry.",
-    "Tests finished": "Drills and qualifiers you played to the end. The daily question is not a test.",
+    "Tests finished": "Drills and exams you played to the end. The daily question is not a test.",
     "Hundos": "Units you have finished with every question right. A run covering three units can earn three, and the daily question earns none.",
     /* The Virtual Room's three, back in build 324 - see below. */
     "Matches": "Virtual Room matches you played to the end. Each race in a room counts once, however many times its results are opened.",
@@ -119464,7 +119477,7 @@ function showProfile(defaultTab, opts){
   } else {
     const p = document.createElement("p");
     p.className = "info-note";
-    p.textContent = "Finish a drill or a qualifier and it shows up here.";
+    p.textContent = "Finish a drill or an exam and it shows up here.";
     recentSect.appendChild(p);
   }
   const reviewBtn = document.createElement("button");

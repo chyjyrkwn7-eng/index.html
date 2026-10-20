@@ -426,9 +426,10 @@ def check_timer(br):
       out.left = timerDeadline ? timerDeadline - Date.now() : null; out.mode = runMode; out.pos = pos;
     """)
     check("an Exam offers Save and exit too", a.get("hasSave") is True, a.get("hasSave"))
-    # build 324 (b324m): an Exam is called a Qualifier on screen ("exam mode
+    # build 324 (b324m): an Exam was called a Qualifier on screen; 327 (b327g)
+    # named it Exam again. Was ("exam mode
     # and review mode need a new name") - the saved run is still mode "exam".
-    check("the pop-up says it is a Qualifier and how much time is left", bool(b.get("offer")) and "Qualifier" in b["offer"] and "left on the timer" in b["offer"], b.get("offer"))
+    check("the pop-up says it is an Exam and how much time is left", bool(b.get("offer")) and "Exam" in b["offer"] and "left on the timer" in b["offer"], b.get("offer"))
     check("resumed, the time left is what it was at the pause (within 1.5s), not minus the ~8s it sat saved",
           b.get("left") is not None and abs(b["left"] - a.get("left", 0)) < 1500 and b.get("pos") == 3,
           (a.get("left"), b.get("left"), b.get("pos")))
@@ -478,7 +479,7 @@ def check_discard_and_one_slot(br):
     check("Delete and start new empties the slot and opens the modes",
           r.get("deleted") is True and r.get("modeSelect") is True, (r.get("deleted"), r.get("modeSelect")))
     check("one slot: the second saved test is the one offered and resumed; the first is gone",
-          bool(r.get("offerB")) and "Qualifier" in r["offerB"] and "Question 5 of" in r["offerB"] and r.get("resumedB") is True
+          bool(r.get("offerB")) and "Exam" in r["offerB"] and "Question 5 of" in r["offerB"] and r.get("resumedB") is True
           and r.get("notA") is True and r.get("keys") == ["class26e.runsession.v1"],
           (r.get("offerB"), r.get("resumedB"), r.get("keys")))
     check("no page errors", not errors, errors[:3])

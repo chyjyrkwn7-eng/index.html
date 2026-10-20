@@ -24572,3 +24572,45 @@ the main menu sound effects, let's really ensure this is all done right."*
   `hundo-underwater`, `hundo-bubbles`, `hundo-ufo` (a real 100% with that effect
   picked) and `results-wall` (a pass with the bar held full at a wall).
 - Gates: check-sound ALL PASS, check-b327-a ALL PASS.
+
+### Build 327 (b327g) - Exam again, a pencil, Review green, white blocks where nothing is judged
+
+Madison, on the live mode screen: *"I like the drill icon and name ... i
+think the exam mode, and review mode (flashcards) and virtual room where
+applicable if you don't know whether you got it right or wrong it should be
+white. I think review flashcards are purple, let's not do that. I also prefer
+the green color for review icon, but I like the new review icons look just
+make it green. Exams name "qualifier" is not the move. It doesn't fit. Change
+that name, and change the icon, keep it orange though."*
+
+> **Supersedes** build 324's Qualifier name and orange progress blocks, 326's
+> tick-through-a-ring mark, and Review's violet (324-327) for the icon, chip
+> and colour. Nothing stored changed: the mode was always `"exam"`.
+
+- **The name is Exam again** everywhere on screen (`modeTitleOf`, the
+  activity text, the release notes and What's New, Nova's lines, the tour,
+  the stat meanings, the empty states). "Qualifier" is only in comments now.
+  Picked over a new word because it is what she and the class already call
+  it; any other name is one place (`modeTitleOf` NAMES) plus the copy.
+- **Exam's mark is a pencil** (`modeIcon("exam")`): a pencil at 45 degrees
+  (`rotate(45 12 10.8)`) with a solid ferrule band and a solid lead, writing
+  a line (`M3 21.8h17`). Still orange (`#FF9A3C`). It is sized to Drill's
+  presence: check_b323u's ink is .232 against Drill's .226, width 73 of 73
+  (the first, smaller pencil measured .174 and 53 and failed).
+- **Review is green, `#4ADE80`** (the live build's green), with 324's cards
+  shape: the icon's stroke and solid parts, the mode chip, `TEST_MODE_COLOR
+  .review`, the results chip, Nova's mode card and the Review list's header.
+- **A progress block is white wherever nothing says right or wrong.**
+  `drawMeter()` no longer adds `.meter.is-qualifier` (its orange CSS is
+  gone), so an Exam's and a Virtual Room race's done blocks are the plain
+  white `var(--accent)` at .55; flashcards' seen cards are white too
+  (`.wrap:has(.fc-screen) .meter .tick.clean`), and their violet current
+  block is gone. Drill keeps green and red, because Drill tells you.
+- Gates moved, each marked "MOVED IN 327 (b327g)": check-behaviour 324m
+  (Exam, green, white blocks; `_b327_white`), check-b325-d d6 and its
+  What's New adds, check-b326-d d6 (the pencil), check-b325-e and check-b327-e
+  (filter and chip names), check-chat, check-savetest (the offer says Exam),
+  check-tours' note.
+- check-b326-d's "two by two" (Nova's how-they-come-home cards) fails now and
+  then on an iPad (cards measured mid-stagger, icons 52-54px); it fails the
+  same way on the build before this change.

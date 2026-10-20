@@ -249,11 +249,13 @@ def check_whatsnew(br):
           not present and len(in_hist) == len(gone), {"present": present, "history": in_hist})
     # MOVED IN 326 (b326d): "I kinda prefer briefing to be called review" and
     # "Remove the weekly recap and badge case from what's new" - so the
-    # Qualifier is the one renamed mode, and the recap row is gone
-    adds = [n for n, rx in (("Qualifier", r"Qualifier"), ("message him", r"Message Nova|message"),
+    # Qualifier is the one renamed mode, and the recap row is gone.
+    # MOVED IN 327 (b327g): "Exams name 'qualifier' is not the move" - the
+    # row is Exam again.
+    adds = [n for n, rx in (("Exam", r"\bExam\b"), ("message him", r"Message Nova|message"),
                             ("challenge him", r"Challenge Nova|Sheriff"), ("study hours", r"study time|study hours"))
             if re.search(rx, " ".join(r["rows"]), re.I)]
-    check("Version 9's real additions are in it: the Qualifier, messaging and challenging Nova, study hours",
+    check("Version 9's real additions are in it: Exam as a real test, messaging and challenging Nova, study hours",
           len(adds) == 4, adds)
     ctx.close()
 
@@ -408,11 +410,14 @@ def check_qualifier(br):
       const out = { n: paths.length, seal: paths.some(d => (d.match(/Q/g) || []).length >= 10),
         solid: s.querySelectorAll('.modeiconsolid').length, check: !!s.querySelector('.modeiconcheck'),
         shield: paths.some(d => /^M12 2\\.2l8\\.1 3/.test(d)), fill: getComputedStyle(s.querySelector('.modeiconsolid') || s).fill };
-      const rn = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /Qualifier/.test(i.title));
+      const rn = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /^Exam/.test(i.title));
+      out.pencil = !!s.querySelector('g[transform^="rotate(45"]');
       try{ const ic = rn.icon(); out.notes = ic.classList.contains('modeicon-exam'); }catch(e){ out.notes = false; }
       s.remove(); return out; }""")
-    check("modeIcon('exam'): a bold tick; neither the shield nor the seal; the Version 9 note uses it",
-          not r.get("seal") and r.get("check") and not r.get("shield") and r.get("notes"), r)
+    # MOVED IN 327 (b327g): the mark is Exam's pencil now ("change the icon,
+    # keep it orange though"), not 326's tick.
+    check("modeIcon('exam'): the pencil; neither the shield nor the seal; the Version 9 note uses it",
+          not r.get("seal") and r.get("pencil") and not r.get("shield") and r.get("notes"), r)
     ctx.close()
 
 

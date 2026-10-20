@@ -8593,7 +8593,7 @@ def check_b303(br):
         # you do till the very end." An old preference left on judges nothing
         # now; Exam shows as Qualifier (check_b324m_modes holds the rest).
         check(dev + ": in a Qualifier, even with an old Instant feedback preference on, a pick is not judged or locked (build 324)",
-              r.get("examJudged") is False and r.get("examLocked") is False and r.get("examMode") == "Qualifier", (r.get("examJudged"), r.get("examLocked"), r.get("examMode")))
+              r.get("examJudged") is False and r.get("examLocked") is False and r.get("examMode") == "Exam", (r.get("examJudged"), r.get("examLocked"), r.get("examMode")))
         # Build 305 put the name back to Review; build 324 renamed it Briefing
         # ("exam mode and review mode need a new name and logo"). The sheet,
         # the list and the card all say the same thing.
@@ -22319,7 +22319,7 @@ def check_b320f_nova(br):
         # MOVED IN 324 (b324m): Exam and Review are Qualifier and Briefing on
         # screen ("exam mode and review mode need a new name and logo").
         # MOVED IN 326 (b326d): Review again
-        need = ["Nova", "explorer", "badge", "flare", "crew", "Supernova", "XP", "level", "Drill", "Qualifier", "Review", "Madison"]
+        need = ["Nova", "explorer", "badge", "flare", "crew", "Supernova", "XP", "level", "Drill", "Exam", "Review", "Madison"]
         miss = [x for x in need if x not in lines]
         check("%s he introduces himself and the story: badges, flares, ranks, levels, tests" % dev, not miss and r.get("goLabel"), {"missing": miss, "go": r.get("goLabel")})
         check("%s the tooltips follow in his bubble, every one" % dev,
@@ -26493,7 +26493,7 @@ def check_b323s_summary(br):
           return { bg: cs.backgroundImage, color: cs.backgroundColor, radius: cs.borderTopLeftRadius }; }""")
         res = {}
         for mode, fl in (("drill", False), ("exam", False), ("review", False), ("review", True)):
-            name = "Flashcards" if fl else {"drill": "Drill", "exam": "Qualifier", "review": "Review"}[mode]  # 326: Review again
+            name = "Flashcards" if fl else {"drill": "Drill", "exam": "Exam", "review": "Review"}[mode]  # 326: Review again
             pg.evaluate(OPEN, [mode, UNITS])
             if fl:
                 pg.evaluate(ROW, "Flashcards")
@@ -26529,7 +26529,7 @@ def check_b323s_summary(br):
             check("%s %s: it names the mode, the units count, the question count and the units" % (label, name),
                   r["mode"] == r["want"]["mode"] and r["line"] == "2 units · %d questions" % n
                   and all(u in r["units"] for u in UNITS), {k: r[k] for k in ("mode", "line", "units")})
-        d, e, v, f = res.get("Drill", {}), res.get("Qualifier", {}), res.get("Review", {}), res.get("Flashcards", {})
+        d, e, v, f = res.get("Drill", {}), res.get("Exam", {}), res.get("Review", {}), res.get("Flashcards", {})
         if d.get("ok"):
             check("%s Drill: the options line says what is on (Shuffled choices), and nothing that is off" % label,
                   d["opts"] == "Shuffled choices", d["opts"])
@@ -26544,7 +26544,7 @@ def check_b323s_summary(br):
         # switch - "Let's also remove the instant feedback option from the
         # exam mode." What still holds: nothing on says nothing.
         if e.get("ok"):
-            check("%s Qualifier: nothing on says nothing" % label, e["opts"] == "", e["opts"])
+            check("%s Exam: nothing on says nothing" % label, e["opts"] == "", e["opts"])
         if v.get("ok") and f.get("ok"):
             off = f.get("afterOff") or {}
             check("%s Briefing / Flashcards: Flashcards on says Flashcards, and off takes it away" % label,
@@ -27350,6 +27350,14 @@ B324M_MODES = """async ()=>{ const wait = ms => new Promise(r => setTimeout(r, m
   return out; }"""
 
 
+def _b327_white(c):
+    """A progress block in no verdict colour: grey to white, channels within 16."""
+    import re as _re
+    m = _re.findall(r"[\d.]+", c or "")
+    if len(m) < 3: return False
+    r, g, b = (float(x) for x in m[:3])
+    return max(r, g, b) - min(r, g, b) <= 16 and min(r, g, b) >= 120
+
 def check_b324m_modes(br):
     """Build 324 (b324m): Exam and Review get their own names, marks and
     colours, Instant feedback is gone, and every Begin names its mode.
@@ -27378,20 +27386,23 @@ def check_b324m_modes(br):
             print("   threw:", r["threw"])
         cards = r.get("cards") or {}
         # MOVED IN 326 (b326d): Review again
-        check("%s the mode cards read Drill, Qualifier, Review, Virtual Room" % label,
-              [cards.get(m, {}).get("title") for m in ("drill", "exam", "review", "vroom")] == ["Drill", "Qualifier", "Review", "Virtual Room"],
+        # MOVED IN 327: Exam again ("Exams name 'qualifier' is not the move")
+        check("%s the mode cards read Drill, Exam, Review, Virtual Room" % label,
+              [cards.get(m, {}).get("title") for m in ("drill", "exam", "review", "vroom")] == ["Drill", "Exam", "Review", "Virtual Room"],
               [cards.get(m, {}).get("title") for m in ("drill", "exam", "review", "vroom")])
         ed, rd = cards.get("exam", {}).get("desc") or "", cards.get("review", {}).get("desc") or ""
         check("%s the Qualifier card says no feedback until your grade; Briefing's says it is not a test, answers shown" % label,
               "no feedback" in ed and "grade" in ed and "Instant feedback" not in ed
               and rd.startswith("Not a test") and "answer" in rd and "flashcards" in rd, [ed, rd])
         st = {m: cards.get(m, {}).get("stroke") for m in ("drill", "exam", "review", "vroom")}
-        check("%s Briefing's mark is the flashcards' violet" % label,
-              st["review"] is not None and st["review"] == r.get("flashTick"), [st["review"], r.get("flashTick")])
+        # MOVED IN 327: Review's mark is green again, and flashcards' blocks are white
+        # ("review flashcards are purple, let's not do that ... just make it green")
+        check("%s Review's mark is green, and the flashcards' blocks are white, not violet" % label,
+              st["review"] == "rgb(74, 222, 128)" and _b327_white(r.get("flashTick")), [st["review"], r.get("flashTick")])
         check("%s the Qualifier's mark has its own colour, not Drill's, Briefing's or the Virtual Room's" % label,
               st["exam"] and len({st["drill"], st["exam"], st["review"], st["vroom"]}) == 4, st)
         sh = r.get("sheets") or {}
-        want = {"drill": ("Drill", "Begin drill"), "exam": ("Qualifier", "Begin qualifier"),
+        want = {"drill": ("Drill", "Begin drill"), "exam": ("Exam", "Begin exam"),
                 "review": ("Review", "Begin review"), "flash": ("Review", "Begin review")}  # 326: Review again
         for k, (name, begin) in want.items():
             s = sh.get(k) or {}
@@ -27407,20 +27418,20 @@ def check_b324m_modes(br):
               and (sh.get("drill") or {}).get("boxIcon") == st["drill"],
               {k: (sh.get(k) or {}).get("boxIcon") for k in ("drill", "exam", "review")})
         check("%s the unit-selection pill names the mode: Start drill / qualifier / review (326's name)" % label,
-              (sh.get("drill") or {}).get("pill", "").startswith("Start drill,") and (sh.get("exam") or {}).get("pill", "").startswith("Start qualifier,")
+              (sh.get("drill") or {}).get("pill", "").startswith("Start drill,") and (sh.get("exam") or {}).get("pill", "").startswith("Start exam,")
               and (sh.get("review") or {}).get("pill", "").startswith("Start review,"),
               {k: (sh.get(k) or {}).get("pill") for k in ("drill", "exam", "review")})
         check("%s the Virtual Room host's sheet button reads Open lobby" % label,
               r.get("vrBegin") == "Open lobby",
               {k: r.get(k) for k in ("vrPill", "vrTitle", "vrBegin")})
         run = r.get("run") or {}
-        check("%s a Qualifier run says Qualifier, while cfg, store.opts and runMode keep \"exam\"" % label,
-              run.get("label") == "Qualifier" and run.get("stored") == "exam" and run.get("mode") == "exam" and run.get("runMode") == "exam"
-              and "qualifier" in (run.get("counter") or ""),
+        check("%s an Exam run says Exam, and cfg, store.opts and runMode keep \"exam\"" % label,
+              run.get("label") == "Exam" and run.get("stored") == "exam" and run.get("mode") == "exam" and run.get("runMode") == "exam"
+              and "exam" in (run.get("counter") or ""),
               {k: run.get(k) for k in ("label", "stored", "mode", "runMode", "counter")})
-        check("%s its progress blocks wear the Qualifier's orange, not white" % label,
-              "is-qualifier" in (run.get("meterClass") or "") and run.get("done") == st["exam"]
-              and run.get("now") not in (None, "rgb(255, 255, 255)", "rgb(231, 237, 241)"),
+        # MOVED IN 327: "if you don't know whether you got it right or wrong it should be white"
+        check("%s its progress blocks are white, never the Exam's orange (nothing is judged)" % label,
+              "is-qualifier" not in (run.get("meterClass") or "") and _b327_white(run.get("done")) and _b327_white(run.get("now")),
               {k: run.get(k) for k in ("meterClass", "done", "now")})
         check("%s nothing says right or wrong before the results, even with an old Instant feedback preference on" % label,
               run.get("judgedWrong") is False and run.get("judgedRight") is False and run.get("changed") is True,
@@ -27429,10 +27440,10 @@ def check_b324m_modes(br):
               r.get("listTitle") == "Review" and r.get("fcLabel") == "Review" and r.get("listIcon") == st["review"],
               {k: r.get(k) for k in ("listTitle", "fcLabel", "listIcon")})
         hi = r.get("hist") or {}
-        check("%s history entries saved as \"exam\" read Qualifier (chips, filter, label, detail, results), still stored as exam" % label,
-              hi.get("chips", [])[:2] == ["Qualifier", "Qualifier"] and "Qualifier" in hi.get("filters", [])
-              and "Exam" not in " ".join(hi.get("names", []) + hi.get("filters", [])) and hi.get("detail") == "Qualifier"
-              and r.get("results") == "Qualifier" and hi.get("stored") == ["exam", "exam", "drill"],
+        check("%s history entries saved as \"exam\" read Exam (chips, filter, detail, results), still stored as exam" % label,
+              hi.get("chips", [])[:2] == ["Exam", "Exam"] and "Exam" in hi.get("filters", [])
+              and "Qualifier" not in " ".join(hi.get("names", []) + hi.get("filters", [])) and hi.get("detail") == "Exam"
+              and r.get("results") == "Exam" and hi.get("stored") == ["exam", "exam", "drill"],
               {k: hi.get(k) for k in ("chips", "names", "filters", "detail", "stored")} | {"results": r.get("results")})
 
 

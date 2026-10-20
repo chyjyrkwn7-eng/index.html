@@ -388,7 +388,9 @@ def check_review_name(br):
 
 
 def check_qualifier_icon(br):
-    print("\nd6. the Qualifier's mark is new: a tick through a ring, at the target's weight, and the same mark everywhere it appears")
+    # MOVED IN 327 (b327g): "Exams name 'qualifier' is not the move ... change
+    # the icon, keep it orange though." The mark is a pencil writing a line.
+    print("\nd6. Exam's mark: a pencil (no seal, no ring, no tick), and the same mark everywhere it appears")
     for (w, h, dev) in DEVS:
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
@@ -397,16 +399,17 @@ def check_qualifier_icon(br):
           const paths = [...ref.querySelectorAll('path')].map(p => p.getAttribute('d'));
           out.seal = paths.some(d => (d.match(/Q/g) || []).length >= 10); out.tails = !!ref.querySelector('.modeiconsolid');
           out.ring = paths.some(d => /A\\s*8\\.\\d/.test(d)); out.tick = !!ref.querySelector('.modeiconcheck');
+          out.pencil = !!ref.querySelector('g[transform^="rotate(45"]') && !!ref.querySelector('.modeiconsolid');
           showModeSelect(); await wait(400);
           out.picker = sig(document.querySelector('.modecard .modeicon-exam'));
           out.news = (() => { const it = WHATS_NEW_320.find(x => x.key === 'modes'); if(!it) return ''; const row = introRow(it.icon || it.glyph, it.color, it.title, it.body); return sig(row.querySelector('svg.modeicon-exam')); })();
-          out.notes = (() => { const it = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /Qualifier/.test(i.title)); try{ return sig(it.icon()); }catch(e){ return ''; } })();
+          out.notes = (() => { const it = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /^Exam/.test(i.title)); try{ return sig(it.icon()); }catch(e){ return ''; } })();
           out.slide = sig(novaModeRow().querySelector('.modeicon-exam'));
           return out; }""")
         ctx.close()
         same = all(r.get(k) == r.get("ref") for k in ("picker", "news", "notes", "slide"))
-        check("%s modeIcon('exam'): one ring and a bold tick - no seal, no ribbon tails" % dev,
-              r.get("ring") and r.get("tick") and not r.get("seal") and not r.get("tails"), {k: r.get(k) for k in ("ring", "tick", "seal", "tails")})
+        check("%s modeIcon('exam'): a pencil with a solid lead - no seal, no ring, no tick" % dev,
+              r.get("pencil") and not r.get("ring") and not r.get("tick") and not r.get("seal"), {k: r.get(k) for k in ("pencil", "ring", "tick", "seal")})
         check("%s ...the same mark on the mode picker, What's New, Version 9's notes and Nova's modes slide" % dev, same and bool(r.get("ref")),
               {k: (r.get(k) or "")[:30] for k in ("ref", "picker", "news", "notes", "slide")})
 
