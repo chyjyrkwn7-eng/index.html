@@ -7623,7 +7623,7 @@ def check_b298(br):
               6 <= r["underLine"] <= 14 and abs(r["rightOff"]) <= 2 and r["toQuestion"] >= 16, r)
         ctx.close()
     # "if it's in that version, it also needs to be in the entire unit ... every single question from the guide"
-    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=PIN_BEFORE_PENAL_256)  # 327: before the 256-578 switch
     r = pg.evaluate("""()=>{ const all = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === 'Penal Code');
       /* the WHOLE unit, as a run draws it (build 300: a repeat is the short version's only) */
       cfg.mode = 'drill'; cfg.units = ['Penal Code']; cfg.source = 'all'; cfg.versions = {};
@@ -7990,7 +7990,7 @@ def check_b300(br):
     # "Remove it from the entire unit one, the entire unit one should be 340
     # questions not 341" - the card says so, and a whole-unit run of 340
     # is still a whole unit (its hundo counts); the slides 124-256 version has 116 (build 324).
-    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=PIN_BEFORE_PENAL_256)  # 327: before the 256-578 switch
     r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       try{
         document.getElementById('pushing-update')?.remove();
@@ -16462,7 +16462,8 @@ def check_b317_tabplate(br):
           return { ratio: ic.width / home.width, bg: cs.backgroundImage, radius: cs.borderTopLeftRadius, ring: cs.boxShadow,
                    glow: t.style.getPropertyValue('--char-glow'), gap: lab.top - ic.bottom,
                    labelsLevel: Math.abs(lab.top - homeLab.top), anims }; }""")
-        check(f"{dev}: the character is ~20% bigger than the other tab icons", r["ratio"] >= 1.15, round(r["ratio"], 3))
+        # MOVED IN 327: the other icons grew (Madison: "slightly bigger and more white"); the character keeps its size, so it stays a touch bigger
+        check(f"{dev}: the character is still a touch bigger than the other tab icons", r["ratio"] >= 1.05, round(r["ratio"], 3))
         check(f"{dev}: a soft pool of its own colour behind it - and no circle round it", "radial-gradient" in r["bg"] and bool(r["glow"])
               and r["radius"] in ("0px", "") and r["ring"] in ("none", ""), [r["bg"][:40], r["radius"], r["ring"][:30], r["glow"]])
         check(f"{dev}: the labels stay level - the bar did not grow round it", r["labelsLevel"] <= 1 and r["gap"] >= 0, [r["labelsLevel"], r["gap"]])
@@ -18295,8 +18296,10 @@ def _b321e_checks(dev, pre, frames):
     check(f"{dev}: the Profile card keeps its grey look throughout (no rank gold in its background or edge)", pf and not gold, gold[:3])
     # 16. numbers, not words, while the saved XP climbs
     cl = [f for f in pf if f["pf"]["climb"]]
-    num_ok = all(re.match(r"^[\d,]+ / [\d,]+ XP", f["pf"]["nums"]) for f in cl)
-    haves = [f["pf"]["nums"].split(" / ")[0] for f in cl]
+    # MOVED IN 327 (b327b): during the climb the line is the extra XP counting
+    # down ("40,461 extra XP"), never negative, never 'Saved XP / climbing'.
+    num_ok = all(re.match(r"^[\d,]+ extra XP$", f["pf"]["nums"]) for f in cl)
+    haves = [f["pf"]["nums"].split(" ")[0] for f in cl]
     check(f"{dev}: while the saved XP climbs, the line under the bar is the numbers counting ({len(cl)} frames), never 'Saved XP / climbing'",
           len(cl) > 60 and num_ok and len(set(haves)) > 20, [len(cl), cl[0]["pf"]["nums"] if cl else None, len(set(haves))])
     # 17. the level challenge waits for the bar
