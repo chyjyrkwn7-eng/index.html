@@ -12389,8 +12389,12 @@ def check_b313_fx(br):
             # should have the holding breath animation when going under?"
             # Every check below fails on f1b1fea (round 4).
             li = r.get("uwLight") or []
-            check("underwater round 5: NO WHITE LINE MESH - the light in the water is soft patches: two layers, no sharp step anywhere in them (<= 40 alpha levels a px; the web had lines), faint (<= .35 on screen) and brightest near the surface",
-                  len(li) >= 2 and all(x["step"] <= 40 and x["peak"] <= .35 and x["topHeavy"] for x in li), li)
+            # MOVED IN 327: a third strip, the dapple over the fish's band
+            # (.hfx-uw-dapple), lies across the middle of the water by design,
+            # so "brightest near the surface" is asked of the surface light
+            # only; the dapple is held to the same softness and faintness.
+            check("underwater round 5: NO WHITE LINE MESH - the light in the water is soft patches: two layers, no sharp step anywhere in them (<= 40 alpha levels a px; the web had lines), faint (<= .35 on screen) and the surface light brightest near the surface",
+                  len([x for x in li if x["cls"] == "hfx-uw-light"]) >= 2 and all(x["step"] <= 40 and x["peak"] <= .35 and (x["topHeavy"] or x["cls"] == "hfx-uw-dapple") for x in li), li)
             uwd = r.get("uw") or {}
             bubs = uwd.get("bubs") or []
             src = {k: sum(1 for b in bubs if b["from"] == k) for k in ("vent", "box", "deep", "rush")}

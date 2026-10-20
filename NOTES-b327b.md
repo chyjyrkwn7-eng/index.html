@@ -102,12 +102,23 @@ slightly better. Touch all the hundo effects up."* Branch b327b. Gate:
   both. No regression beyond noise. The first draft also pulsed the dapple's
   opacity and drew it 2 tile-widths wider than its drift needs; both cut
   before measuring the numbers above.
+- **The dapple is as soft as the light** (`uwdap4`): check_b313_fx reads
+  the sharpest alpha step in every light strip in the water (<= 40 a px).
+  The first dapple's silt was hard 1-2px dots (129) and its patches too
+  narrow (46); the silt is radial specks now and the patches wider (raw
+  step 29). check_b313_fx's "brightest near the surface" is asked of the
+  two surface strips only - the dapple lies mid-water on purpose.
 - **Gates moved** (each marked in place): check-results 3 (the streak line
   is 324's form) and 5 (a streak label says "streak" or "in a row");
   check-b325-c E (no sub-line under every line any more; held: the answers'
   line says how many, no name is arithmetic, no sub restates a sum);
   check-b326-a 2 (324's form, still one line on a phone); check-b326-c A
-  (the line starts on the extra, "N extra XP", counts down, no chips).
+  (the line starts on the extra, "N extra XP", counts down, no chips); check_b313_fx (the dapple, above).
+- **Failing on 326 as well, not touched**: check_b313_fx "in its tail it
+  is still on screen, fading - never cut" for Underwater and the UFO
+  (`cutFull: rs-pct-sign`, the same on index-326.html), and check-results
+  "a two-unit drill on an iPad: the same gap under every card's heading"
+  ([23.8, 19.8] on both builds).
 - **Open decisions**
   - A climb that ends at the NEXT wall (more extra still to come) lands on
     the wall's ordinary `12,731 / 4,001 XP`, as Profile shows a wall

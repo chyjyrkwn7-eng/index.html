@@ -94541,16 +94541,18 @@ function hfxUwLightURL(seed){
    the fish swim in, not from the surface), with flecks of silt in it. One
    strip that tiles sideways, rasterised once. */
 function hfxUwDappleURL(){
-  return hfxSprite("uwdap", () => {
+  return hfxSprite("uwdap4", () => {
     const rnd = bnRand(977), P = 300, H = 340, F = v => v.toFixed(1);
     let blobs = "", silt = "";
     for(let i = 0; i < 18; i++){
-      const x = rnd() * P, y = 30 + rnd() * (H - 60), rx = 7 + rnd() * 17, ry = rx * (.3 + rnd() * .3), a = Math.round(rnd() * 60 - 30), o = (.22 + rnd() * .4).toFixed(2);
+      const x = rnd() * P, y = 30 + rnd() * (H - 60), rx = 14 + rnd() * 16, ry = rx * (.5 + rnd() * .3), a = Math.round(rnd() * 60 - 30), o = (.22 + rnd() * .4).toFixed(2);
       [-P, 0, P].forEach(dx => { const X = x + dx; if(X + rx * 1.3 < 0 || X - rx * 1.3 > P) return;
         blobs += '<ellipse cx="' + F(X) + '" cy="' + F(y) + '" rx="' + F(rx) + '" ry="' + F(ry) + '" transform="rotate(' + a + ' ' + F(X) + ' ' + F(y) + ')" fill="url(#b)" fill-opacity="' + o + '"/>'; });
     }
-    for(let i = 0; i < 26; i++) silt += '<circle cx="' + F(rnd() * P) + '" cy="' + F(20 + rnd() * (H - 40)) + '" r="' + F(.7 + rnd() * 1.3) + '" fill="#E8FCFF" fill-opacity="' + (.25 + rnd() * .4).toFixed(2) + '"/>';
-    return 'viewBox="0 0 ' + P + ' ' + H + '"><defs><radialGradient id="b"><stop offset="0" stop-color="#EFFFFF" stop-opacity=".7"/><stop offset=".4" stop-color="#BFF2FF" stop-opacity=".22"/><stop offset="1" stop-color="#BFF2FF" stop-opacity="0"/></radialGradient>' +
+    /* silt as soft specks, no edge (the water's light has none anywhere -
+       check_b313_fx measures the sharpest step in every light strip) */
+    for(let i = 0; i < 26; i++) silt += '<circle cx="' + F(rnd() * P) + '" cy="' + F(20 + rnd() * (H - 40)) + '" r="' + F(3.6 + rnd() * 1.6) + '" fill="url(#mo)"/>';
+    return 'viewBox="0 0 ' + P + ' ' + H + '"><defs><radialGradient id="mo"><stop offset="0" stop-color="#F2FFFF" stop-opacity=".34"/><stop offset="1" stop-color="#F2FFFF" stop-opacity="0"/></radialGradient><radialGradient id="b"><stop offset="0" stop-color="#EFFFFF" stop-opacity=".48"/><stop offset=".45" stop-color="#BFF2FF" stop-opacity=".18"/><stop offset="1" stop-color="#BFF2FF" stop-opacity="0"/></radialGradient>' +
       '<linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".3" stop-color="#fff"/><stop offset=".7" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
       '<mask id="m"><rect width="' + P + '" height="' + H + '" fill="url(#f)"/></mask></defs><g mask="url(#m)">' + blobs + silt + '</g></svg>';
   }, 300);
