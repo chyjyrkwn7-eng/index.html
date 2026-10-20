@@ -1406,28 +1406,37 @@ with sync_playwright() as pw:
     ctx.close()
 
     # ---- 9c. a name already on the board ----
-    print("\n9c. a username already on the board is asked about once, with nothing else said")
+    # MOVED IN 327 (b327h): "people keep making second accounts" - "TSale"
+    # signed up again as "T.Sale". A taken name is a stop now, not a
+    # question: usernames are one per person on the board, "It's not me,
+    # continue" is gone, and "I'm a different person" means changing the
+    # name. The key ignores every mark, not only case and spaces.
+    print("\n9c. a username already on the board stops sign-up: sign in, or pick a different name")
     ctx, pg = booted()
     r = pg.evaluate("""async ()=>{
       const wait = ms => new Promise(res => setTimeout(res, ms));
       const out = {};
       try{
-        leaderboardRows = [{ pub: 'mdgaaaaaaaaa', firstName: 'Mad Dog', level: 31, badges: 6, xp: 12345, hundos: 7, correct: 900 },
+        leaderboardRows = [{ pub: 'mdgaaaaaaaaa', firstName: 'Mad Dog', avatarChar: 'ghost', level: 31, badges: 6, xp: 12345, hundos: 7, correct: 900 },
                            { pub: 'smbbbbbbbbbb', firstName: 'Sam', level: 4 }];
         boardFetchedAt = Date.now();
         const type = v => { const i = document.querySelector('.onboarding-shortform-panel .searchbox'); i.value = v; i.dispatchEvent(new Event('input')); };
         const go = () => [...document.querySelectorAll('.onboarding-shortform-panel > .playbtn')].pop();
+        const vis = el => !!el && !el.hidden && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
         showWelcomeNamePrompt(); await wait(150);
-        type(' MADdog '); go().click(); await wait(250);
+        type(' MAD.dog '); go().click(); await wait(250);
         const card = document.querySelector('.namecheck-card');
         out.stopped = !document.querySelector('.charselect-panel');
-        out.shown = !!(card && getComputedStyle(card).display !== 'none');
+        out.shown = vis(card);
+        out.title = card ? (card.querySelector('.namecheck-title') || {}).textContent : '';
         out.text = card ? card.innerText.replace(/\\s+/g, ' ') : '';
-        out.btn = go() ? go().textContent : '';
+        out.continueGone = !vis(go());
         out.signIn = !!(card && card.querySelector('.namecheck-signin'));
         go().click(); await wait(250);
-        out.onAfter = !!document.querySelector('.charselect-panel'); out.name = store.firstName;
-        showWelcomeNamePrompt(); await wait(150);
+        out.stillStopped = !document.querySelector('.charselect-panel');
+        const other = card && card.querySelector('.namecheck-other');
+        if(other) other.click(); await wait(200);
+        out.otherStopped = !document.querySelector('.charselect-panel') && !vis(go());
         type('Riley'); go().click(); await wait(250);
         out.newName = !!document.querySelector('.charselect-panel');
         showWelcomeNamePrompt(); await wait(150);
@@ -1436,14 +1445,14 @@ with sync_playwright() as pw:
         out.signInOpens = !!document.querySelector('.synccode-entry-panel');
       }catch(e){ out.err = String(e); }
       return out; }""")
-    check("a name already on the board, in any case and spacing, is stopped once with the warning and Sign in",
+    check("a name already on the board, in any case, spacing or punctuation, stops sign-up with the account named and Sign in",
           not r.get("err") and r.get("stopped") and r.get("shown") and r.get("signIn")
-          and "Someone named Mad Dog already has an account. If that’s you, sign in with your code." in r.get("text", "")
-          and r.get("btn") == "It’s not me, continue", str(r))
-    check("the warning names the name and nothing else about that account",
-          r.get("shown") and not re.search(r"\d", r.get("text", "")) and "Level" not in r.get("text", ""), r.get("text", ""))
-    check("It's not me, continue goes on; a name nobody has is never stopped; Sign in opens the code screen",
-          r.get("onAfter") and r.get("newName") and r.get("signInOpens"), str(r))
+          and r.get("title") == "Mad Dog already has a Nova account." and r.get("continueGone"), str(r))
+    check("the card shows only what the leaderboard shows (its level), never its XP, hundos or right answers",
+          r.get("shown") and "Level 31" in r.get("text", "") and not any(x in r.get("text", "") for x in ("12345", "12,345", "900", " 7 ")),
+          r.get("text", ""))
+    check("there is no way on with the taken name, I'm a different person included; a free name goes on; Sign in opens the code screen",
+          r.get("stillStopped") and r.get("otherStopped") and r.get("newName") and r.get("signInOpens"), str(r))
     ctx.close()
 
     # ---- 9d. an account still on the device comes before sign-up ----

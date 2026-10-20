@@ -268,6 +268,17 @@ def main():
                 page.click(".classselect-panel .modecard"); page.wait_for_timeout(250)
                 shot(page, 5.5, "pick-your-class-picked")
                 page.click(".classselect-panel .next.playbtn");       shot(page, 6, "enter-a-username")
+                # Build 327 (b327h): a name somebody already wears stops
+                # sign-up. The fake board's rows are keyed by code-shaped
+                # ids, which every reader skips (build 318), so the one
+                # row this needs is put on the board directly.
+                page.evaluate("""()=>{ leaderboardRows = (leaderboardRows || []).concat([{ pub: 'tsaleshotaaa',
+                  firstName: 'TSale', avatarChar: 'alien', level: 24 }]); boardFetchedAt = Date.now(); }""")
+                page.fill(".searchbox", "T.Sale"); page.wait_for_timeout(250)
+                page.click(".onboarding-shortform-panel .next.playbtn"); page.wait_for_timeout(350)
+                shot(page, 6.2, "username-taken")
+                page.click(".namecheck-card .namecheck-other"); page.wait_for_timeout(300)
+                shot(page, 6.3, "username-taken-different-person")
                 page.fill(".searchbox", "Madison"); page.wait_for_timeout(250)
                 # The armed state as well as the gated one: these screens
                 # hide Continue until something is chosen, and where it
