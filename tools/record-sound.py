@@ -65,6 +65,7 @@ DEV = arg("--device", "phone")
 
 FIRESTORE_STUB = """
   window.__stub = function(){
+    if(!window.__osr0) window.__osr0 = onSnapshotResilient;
     fbDb = { collection: function(){ return { doc: function(){ return {
       set: function(){ return Promise.resolve(); },
       get: function(){ return Promise.resolve({ exists: false }); },
@@ -80,6 +81,25 @@ FIRESTORE_STUB = """
 INSET_RE = re.compile(r"env\(safe-area-inset-(top|bottom|left|right)(?:\s*,[^()]*)?\)")
 BODY = INSET_RE.sub(lambda m: "0px", open(SRC, encoding="utf-8").read()) \
     .replace("let fbDb = null;", "let fbDb = null;" + FIRESTORE_STUB, 1)
+# check-vroom's fake Firestore (localStorage-backed, live listeners): the
+# scenarios that need a class (the leaderboard, a lobby, the chat) switch to it.
+FAKE_FS = re.search(r'FAKE_FIRESTORE = """(.*?)"""', open(os.path.join(ROOT, "tools", "check-vroom.py"), encoding="utf-8").read(), re.S).group(1)
+USE_FAKE = r"""() => {
+  fbDb = window.__fakeDb; if(window.__osr0) onSnapshotResilient = window.__osr0;
+  syncCode = 'MADI-0001'; store.publicId = 'pub-madison'; store.leaderboardOptIn = true; saveStore();
+}"""
+# A class on the board: rows the way buildLeaderboardRow() writes them.
+CLASS_ROWS = r"""() => {
+  const wk = weekKeyNow(), now = Date.now(), all = {};
+  [['Devonte','ghost',41,5,88400,6200],['Sauce','wizard',47,7,121000,9400],['Odin','alien',44,6,101500,7100],
+   ['Brandon','bear',33,3,52000,4100],['Aranda','tempest',29,2,38800,3300],['Hughesha','solar',38,4,70100,5600],
+   ['Cap','ninja',35,3,61200,2100],['Tsale','lunar',26,1,30500,2900],['Z','frost',40,5,79900,4800],
+   ['Vishal','ghost',24,1,25300,1500],['Rogelio','wizard',22,0,19900,1200],['Napoleon','alien',37,4,66800,3900]]
+  .forEach(([n, av, lv, b, xp, wp], i) => { all['pub-' + n.toLowerCase()] = { firstName: n, avatarChar: av, accent: 'ink',
+     correct: Math.round(xp / 11), level: lv, badges: b, mystery: 0, hundos: b * 9 + i, rankFloor: 0, xp, tests: 40 + i * 3,
+     week: wk, weekPoints: wp, lastModified: now - i * 60000, seenAt: now - i * 90000 }; });
+  localStorage.setItem('fakefs::leaderboard', JSON.stringify(all));
+}"""
 _b = re.search(r'const APP_BUILD = "([^"]+)"', BODY)
 BUILD = _b.group(1) if _b else ""
 
@@ -276,6 +296,7 @@ class Rec:
         self.w, self.h = w, h
         self.br = pw.chromium.launch(executable_path=CHROME, args=["--no-sandbox", "--autoplay-policy=no-user-gesture-required", "--force-device-scale-factor=%d" % dpr])
         self.ctx = self.br.new_context(viewport={"width": w, "height": h}, device_scale_factor=dpr)
+        self.ctx.add_init_script(FAKE_FS)
         self.ctx.add_init_script(SEED_LS)
         self.ctx.add_init_script(REC_AUDIO.replace("%BUDGET%", str(budget)))
         pg = self.pg = self.ctx.new_page()
@@ -514,6 +535,215 @@ def test(r, out):
     r.wait(1.5)
 
 
+def streak(r, out):
+    """A drill on a long unit, every answer right; before each of eight
+    answers the run's live streak is set one short of the next tier (10,
+    25, 50 ... 350), so each right answer is a real streak pop and its sound."""
+    r.wake()
+    r.js("() => { theme.muteBanners = false; theme.autoAdvance = false; }")
+    r.js(START_DRILL, "Penal Code")
+    r.pg.wait_for_selector(".qpanel .choice", timeout=25000)
+    r.pg.wait_for_timeout(600)
+    r.start(out)
+    r.wait(.6)
+    for t in [10, 25, 50, 75, 100, 150, 250, 350]:
+        r.js("(n) => { runLiveStreak = n - 1; }", t)
+        answer_one(r, False)
+        r.wait(2.6)
+    r.wait(1.5)
+
+
+def unlock_banner(r, out):
+    """The unlock banner on Home, three times: a challenge character, a banner,
+    and a character after a scene's bridge (its chord comes .35s sooner)."""
+    r.js("() => { homeUnlockPlaying = true; theme.muteBanners = false; showHome(); }")
+    r.wake()
+    r.pg.wait_for_timeout(2500)
+    r.start(out)
+    r.wait(.5)
+    for js in ["characterUnlockItem('zeus')", "bannerUnlockItem((BANNERS.find(b => !b.rank && !b.secret) || BANNERS[0]).id)", "characterUnlockItem('detective')"]:
+        if "detective" in js:
+            r.js("() => { try{ openSceneBridge('#7FC8FF'); }catch(e){} }")
+        r.js("() => { window.__spDone = false; playUnlockSpotlight(" + js + ", 1, 1, () => { window.__spDone = true; }); }")
+        r.wait(3.2)
+        r.tap("document.querySelector('.rs-spot')", 2)
+        r.until("window.__spDone || !document.querySelector('.rs-spot')", 6, then=.8)
+    r.wait(1)
+
+
+def flare_scene(fn_js, secs):
+    def body(r, out):
+        r.js("() => { homeUnlockPlaying = true; showHome(); }")
+        r.wake()
+        r.pg.wait_for_timeout(2500)
+        r.start(out)
+        r.wait(.4)
+        r.js("() => { window.__sfDone = false; " + fn_js + "(() => { window.__sfDone = true; }); }")
+        r.until("window.__sfDone", secs, then=1)
+    return body
+
+
+def drag(r, frm_js, to_js, steps=14):
+    """A real pointer drag from one element's middle to another's, a frame
+    between each move, so what follows the finger is heard as it moves."""
+    a, b = r.center(frm_js), r.center(to_js)
+    if not a or not b:
+        return False
+    r.pg.mouse.move(a[0], a[1]); r.pg.mouse.down(); r.frame()
+    for i in range(1, steps + 1):
+        f = i / steps
+        r.pg.mouse.move(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
+        r.frame()
+    r.pg.mouse.up()
+    return True
+
+
+def btn(text, scope="#stage"):
+    return "[...document.querySelectorAll('%s button')].find(b => b.offsetParent && b.textContent.trim().indexOf(%s) === 0)" % (scope, json.dumps(text))
+
+
+def tabs(r, out):
+    """Home, Profile, Leaderboard, Calendar and back with real taps on the
+    tab bar, Profile's top tabs (Profile, Stats, Settings), and one drag
+    along the bar from Home to Calendar."""
+    r.js("() => { homeUnlockPlaying = true; showHome(); }")
+    r.wake()
+    r.pg.wait_for_timeout(2500)
+    r.start(out)
+    r.wait(1.2)
+    r.tap("document.getElementById('bottomtab-profile')"); r.wait(1.4)
+    r.tap("document.querySelector('.profile-stats-tab-btn')"); r.wait(1.1)
+    r.tap("document.querySelector('.profile-settings-tab-btn')"); r.wait(1.1)
+    r.tap("document.querySelector('.navsegment.profiletabs .iconbtn')"); r.wait(1.1)
+    r.tap("document.getElementById('bottomtab-rewards')"); r.wait(1.4)
+    r.tap("document.getElementById('bottomtab-calendar')"); r.wait(1.4)
+    r.tap("document.getElementById('bottomtab-home')"); r.wait(1.6)
+    drag(r, "document.getElementById('bottomtab-home')", "document.getElementById('bottomtab-calendar')", 24)
+    r.wait(2)
+
+
+def leaderboard(r, out):
+    """The Leaderboard with a class on it: every board, Find me, a
+    classmate's card opened and closed."""
+    r.js(CLASS_ROWS); r.js(USE_FAKE)
+    r.js("() => { homeUnlockPlaying = true; showHome(); }")
+    r.wake()
+    r.pg.wait_for_timeout(2500)
+    r.start(out)
+    r.wait(1)
+    r.tap("document.getElementById('bottomtab-rewards')"); r.wait(1.8)
+    for i in (0, 2, 1):
+        r.tap("document.querySelectorAll('#stage .navsegment .iconbtn')[%d]" % i); r.wait(1.2)
+    r.tap("document.querySelector('.rank-me-btn')"); r.wait(2)
+    r.tap("[...document.querySelectorAll('.rank-row')].find(e => { const b = e.getBoundingClientRect(); return b.top > 150 && b.bottom < innerHeight - 140 && !e.classList.contains('is-me'); })")
+    r.wait(2)
+    r.tap("document.querySelector('.person-sheet-close')"); r.wait(1.6)
+
+
+def lobby(r, out):
+    """The Virtual Room: Host a room, Match settings (units ticked, the
+    games tried, saved), back in the lobby a classmate joins and readies,
+    then Ready up and the countdown."""
+    r.js(CLASS_ROWS); r.js(USE_FAKE)
+    r.js("() => { showModeSelect(); }")
+    r.wake()
+    r.pg.wait_for_timeout(1500)
+    r.start(out)
+    r.wait(1)
+    r.tap("document.querySelector('.modecard[data-mode=\"vroom\"]')"); r.wait(1.4)
+    r.tap("document.querySelector('.vrc-card-host')")
+    r.until("!!document.querySelector('.screen-vroom-lobby')", 8, then=1.6)
+    r.tap("document.querySelector('.vroom-settings-btn')"); r.wait(1.4)
+    r.tap("document.querySelectorAll('.picks > label.pick')[0]"); r.wait(.5)
+    r.tap("document.querySelectorAll('.picks > label.pick')[1]"); r.wait(.8)
+    r.tap("document.querySelector('.vroom-setup-go')"); r.wait(1.3)
+    for g in ("tug", "battle", "race"):
+        r.tap("document.querySelector('.unitoptions-modal:not([hidden]) .vroom-host-mode[data-mode=\"%s\"]')" % g); r.wait(.8)
+    r.tap(btn("Save settings", ".unitoptions-modal:not([hidden])"))
+    r.until("!!document.querySelector('.screen-vroom-lobby')", 8, then=1.5)
+    r.js("() => fbDb.collection('vrooms').doc(vroomCode).update({ 'participants.pub-devonte': { name: 'Devonte', avatarChar: 'ghost', joinedAt: Date.now(), seen: Date.now(), ready: false, finished: false, progress: 0, level: 41, badges: 5 } })")
+    r.wait(2)
+    r.js("() => fbDb.collection('vrooms').doc(vroomCode).update({ 'participants.pub-devonte.ready': true })")
+    r.wait(1.6)
+    r.tap("document.querySelector('.vroom-readyup-btn')")
+    r.wait(7)
+
+
+def selections(r, out):
+    """Picking things: the mode, units ticked and unticked (and a drag
+    select), the start sheet's switches, How many and All, closed; two
+    Settings switches; Customize picking a character, a banner, a theme."""
+    r.js("() => { theme.shuffle = theme.shuffle; showModeSelect(); }")
+    r.wake()
+    r.pg.wait_for_timeout(1500)
+    r.start(out)
+    r.wait(1)
+    r.tap("document.querySelector('.modecard[data-mode=\"drill\"]')"); r.wait(1.4)
+    P = "document.querySelectorAll('.picks > label.pick')[%d]"
+    for i in (0, 1, 2):
+        r.tap(P % i); r.wait(.45)
+    r.tap(P % 1); r.wait(.7)
+    drag(r, P % 3 + ".querySelector('.box')", P % 7 + ".querySelector('.box')", 18)
+    r.wait(1)
+    r.tap("document.getElementById('bottomtab-start')"); r.wait(1.3)
+    S = ".unitoptions-modal:not([hidden])"
+    for t in ("Shuffle", "Hide answer", "Stopwatch", "Shuffle"):
+        r.tap("[...document.querySelectorAll('%s label.opt')].find(l => l.offsetParent && l.textContent.indexOf(%s) >= 0)" % (S, json.dumps(t))); r.wait(.6)
+    rng = "[...document.querySelectorAll('%s input[type=range]')].find(e => e.offsetParent)" % S
+    b = r.js("() => { const e = " + rng + "; if(!e) return null; e.scrollIntoView({ block: 'center' }); const q = e.getBoundingClientRect(); return [q.left, q.right, q.top + q.height / 2]; }")
+    if b:
+        r.wait(.4)
+        r.pg.mouse.move(b[1] - 6, b[2]); r.pg.mouse.down(); r.frame()
+        for i in range(1, 31):
+            r.pg.mouse.move(b[1] - 6 - (b[1] - b[0]) * .6 * i / 30, b[2]); r.frame()
+        r.pg.mouse.up(); r.wait(.8)
+        r.tap("[...document.querySelectorAll('%s .slider-allbtn')].find(e => e.offsetParent && !e.classList.contains('slider-maxbtn'))" % S); r.wait(1)
+    r.tap(btn("Close", S)); r.wait(1.2)
+    r.tap("document.getElementById('bottomtab-profile')"); r.wait(1.3)
+    r.tap("document.querySelector('.profile-settings-tab-btn')"); r.wait(1.2)
+    O = "[...document.querySelectorAll('#stage .profile-settings-tab label.opt')].find(l => l.offsetParent && l.textContent.indexOf(%s) >= 0)"
+    for t in ("Swipe to next", "Auto-advance", "Auto-advance", "Swipe to next"):
+        r.tap(O % json.dumps(t)); r.wait(.7)
+    r.tap("document.querySelector('.navsegment.profiletabs .iconbtn')"); r.wait(1)
+    r.tap(btn("Customize")); r.wait(1.3)
+    for row, opt in (("character", ".avatarchar-option"), ("banner", ".banner-opt"), ("theme", ".swatch")):
+        r.tap("document.querySelector('.cz-row-%s')" % row); r.wait(1.3)
+        r.tap("[...document.querySelectorAll('#stage %s')].find(e => e.offsetParent && !e.classList.contains('locked') && !e.classList.contains('selected') && !e.classList.contains('on') && e.getBoundingClientRect().top > 120 && e.getBoundingClientRect().bottom < innerHeight - 120)" % opt)
+        r.wait(1.3)
+        r.tap("document.querySelector('#stage .back-link')"); r.wait(1.1)
+    r.wait(1)
+
+
+def chat(r, out):
+    """The chat dock: opened, its tabs, a group chat started, a message
+    typed and sent, a classmate joining and answering, closed."""
+    r.js(CLASS_ROWS); r.js(USE_FAKE)
+    r.js("() => { homeUnlockPlaying = true; showHome(); }")
+    r.wake()
+    r.pg.wait_for_timeout(2500)
+    r.start(out)
+    r.wait(1)
+    r.tap("document.querySelector('.chatdock-btn')"); r.wait(1.4)
+    for i in (1, 2, 0, 1):
+        r.tap("document.querySelectorAll('.chatdock-tab')[%d]" % i); r.wait(.8)
+    r.tap(btn("Start a group", ".chatdock"))
+    r.until("typeof chatRoomCode === 'string' && !!chatRoomCode && !!document.querySelector('.chatdock .vroom-chat-input')", 6, then=1)
+    r.tap("[...document.querySelectorAll('.chatdock .vroom-chat-input')].find(e => e.offsetParent)"); r.wait(.4)
+    for ch in "Who's up for a race?":
+        r.pg.keyboard.type(ch); r.frame()
+    r.wait(.3)
+    r.tap(btn("Send", ".chatdock")); r.wait(1.6)
+    r.js("""() => { const now = Date.now(); return fbDb.collection('vrooms').doc(chatRoomCode).update({
+        'participants.pub-devonte': { name: 'Devonte', avatarChar: 'ghost', joinedAt: now, seen: now },
+        chatMessages: firebase.firestore.FieldValue.arrayUnion({ id: 'pub-devonte-' + now, key: 'pub-devonte', name: 'Devonte', text: 'Me! Penal Code?', ts: now }) }); }""")
+    r.wait(2.4)
+    r.tap("[...document.querySelectorAll('.chatdock .vroom-chat-input')].find(e => e.offsetParent)"); r.wait(.3)
+    for ch in "Deal":
+        r.pg.keyboard.type(ch); r.frame()
+    r.tap(btn("Send", ".chatdock")); r.wait(1.4)
+    r.tap("document.querySelector('.chatdock-close')"); r.wait(1.6)
+
+
 LEVEL_NEAR = """() => {
   /* every badge held, so no rank wall stands in front of the next level
      (a wall turns the level-up into a knock), and ~60 XP to go */
@@ -544,7 +774,7 @@ AT_WALL = """() => {
   saveStore(); return levelStateFor(store); }"""
 
 SCENARIOS = {
-    "home-idle": (home_idle, 60, "Home on its own for 20s: the ambience she loves, untouched"),
+    "home-idle": (home_idle, 60, "Home on its own for 20s: the ambience he loves, untouched"),
     "results-hundo": (results(0), 150, "a real Identity Crimes drill, every answer right: count, grade, XP box, bar, the hundo effect"),
     "hundo-confetti": (results(0, extra=FX_PICK % ("confetti", "confetti"), tail=3), 150, "a real 100%: Confetti"),
     "hundo-fireworks": (results(0, extra=FX_PICK % ("fireworks", "fireworks"), tail=3), 150, "a real 100%: Fireworks"),
@@ -559,6 +789,18 @@ SCENARIOS = {
     "badge-cutscene": (badge_cutscene, 90, "BADGE FOUND: the badge, the case rising, latches, lid, the drop"),
     "rankup-cutscene": (rankup, 90, "a rank-up cutscene (Gold)"),
     "supernova": (supernova, 120, "Supernova on Home (the comet streaks, now silent) and its cutscene"),
+    "streak": (streak, 150, "a Penal Code drill, eight right answers each a streak tier (10, 25, 50, 75, 100, 150, 250, 350): the pop and its sound"),
+    "unlock-banner": (unlock_banner, 90, "the unlock banner on Home: a character, a banner, a character after a scene"),
+    "flare-void": (flare_scene("playVoidFlareScene", 40), 120, "the secret flare scene that brings Void"),
+    "flare-umbra": (flare_scene("playUmbraFlareScene", 40), 120, "the secret flare scene that brings Umbra"),
+    "flare-horizon": (flare_scene("playHorizonFlareScene", 40), 120, "the secret flare scene that brings Horizon"),
+    "flare-genesis": (flare_scene("playGenesisFlareScene", 40), 120, "the secret flare scene that brings Genesis"),
+    "flare-first": (flare_scene("(d => playFirstFlaresScene('orange', d))", 20), 80, "one of the first two secret flares' scenes"),
+    "tabs": (tabs, 90, "the tab bar: Home, Profile and its top tabs, Leaderboard, Calendar, and a drag along the bar"),
+    "leaderboard": (leaderboard, 90, "the Leaderboard with a class on it: the boards, Find me, a classmate's card"),
+    "lobby": (lobby, 120, "a Virtual Room: Host, Match settings, a classmate joining and readying, Ready up, the countdown"),
+    "selections": (selections, 150, "the mode, units ticked, untick, drag-select, the start sheet's switches and slider, Settings switches, Customize picks"),
+    "chat": (chat, 90, "the chat dock: its tabs, a group chat, a message sent, a classmate answering"),
     "test": (test, 120, "a drill from LOADING TEST: a wrong answer, then right answers into the 10-in-a-row streak pop"),
 }
 
