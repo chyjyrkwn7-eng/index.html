@@ -29024,8 +29024,8 @@
      to hundo". So the colour changes IN PLACE again - card, number and
      each bar - as a switch, not a fade: red while the count is under the
      pass mark and, the frame it crosses, green, with a .38s bloom of the
-     green itself. No frame is a mix. The 100's hand-off (--rs-gl, below)
-     still draws the effect's look in from the left. The wipe's notes: */
+     green itself. No frame is a mix. The 100's hand-off (--rs-gf, below)
+     fades the effect's look in over the green. The wipe's notes: */
      "The grade box is still grey? It was red then grey then green? That
      regressed badly." Two washes CROSSFADED (320-327) meet in the middle
      at half strength each, and red and green half and half is a muddy
@@ -29061,25 +29061,19 @@
   @keyframes rs-bar-flip{ 0%{ filter:brightness(1.3) saturate(1.6); } 100%{ filter:none; } }
   [data-reduce-motion="true"] .rs-grade-tone.is-green-on > i.is-green, [data-reduce-motion="true"] .rs-grade .rs-pct.pct.rs-num-flip,
   [data-reduce-motion="true"] .rs-byunit .unit-breakdown-fill.rs-bar-flip{ animation:none; }
-  /* the 100's hand-off: the effect's look (copied off the card) in from
-     the left, the green giving way to it at the same line */
+  /* the 100's hand-off: a FADE (b327j round 3 - "the green told to the
+     Hundo color from left to right and not the fade it used to be"). The
+     effect's look (copied off the card) fades in OVER the green, which
+     stays fully on underneath until the end, so no frame is a dim blend
+     of two half-strength washes; --rs-gf is how far in (0-1). */
   .rs-grade-tone.is-handoff > i.is-red{ display:none; }
-  .rs-grade-tone.is-handoff > i.is-green{
-    -webkit-mask-image:linear-gradient(90deg, transparent var(--rs-gl, -4px), #000 var(--rs-gl, -4px));
-            mask-image:linear-gradient(90deg, transparent var(--rs-gl, -4px), #000 var(--rs-gl, -4px)); }
-  .rs-grade-tone > i.is-fx{
-    -webkit-mask-image:linear-gradient(90deg, #000 var(--rs-gl, -4px), transparent var(--rs-gl, -4px));
-            mask-image:linear-gradient(90deg, #000 var(--rs-gl, -4px), transparent var(--rs-gl, -4px)); }
-  .rs-grade:has(> .rs-grade-tone.is-handoff) > .hfx-tint{
-    -webkit-mask-image:linear-gradient(90deg, #000 var(--rs-gl, -4px), transparent var(--rs-gl, -4px));
-            mask-image:linear-gradient(90deg, #000 var(--rs-gl, -4px), transparent var(--rs-gl, -4px)); }
+  .rs-grade-tone > i.is-fx{ opacity:var(--rs-gf, 0); }
+  .rs-grade:has(> .rs-grade-tone.is-handoff) > .hfx-tint{ opacity:var(--rs-gf, 0); }
   .rs-screen .rs-card.rs-grade.is-perfect.rs-graded .rs-pct.pct{ transition:filter .9s ease; }
-  /* a 100's bars: the green lifts off their effect gradient as the line
-     crosses each one (delay and length set per bar to the card's wipe) */
+  /* a 100's bars: the green fades off their effect gradient with the card */
   .rs-byunit .unit-breakdown-fill.rs-was{ position:relative; }
   .rs-byunit .unit-breakdown-fill.rs-was::after{ content:""; position:absolute; inset:0; border-radius:inherit;
-    background:var(--was); animation:rs-was-wipe var(--wd, .9s) linear var(--wdl, 0s) both; }
-  @keyframes rs-was-wipe{ from{ clip-path:inset(0 0 0 0); } to{ clip-path:inset(0 0 0 100%); } }
+    background:var(--was); opacity:calc(1 - var(--rs-gf, 0)); }
   .rs-grade .rs-stamps{ transition:opacity .45s ease .3s; }
   .rs-grade.is-counting .rs-stamps{ opacity:0; transition:none; }
   /* the empty card comes down like any card; the slam is the grade's */
@@ -102555,6 +102549,46 @@ function rsToneAt(p){
 /* A 100's green crossing into its hundo effect's look as it lands (the
    card's wash, its border and glow, the bars and the number together). */
 const RS_HUNDO_CROSS_MS = 900;
+
+/* OKLCH mixing for the results' grade hand-off (build 327): two colours
+   turned into each other by hue, so a pair of opposites (green and
+   magenta) passes through blue rather than grey. rsHex("#rrggbb") ->
+   [r,g,b]; rsOklchMix(a, b, k, alpha, bare) -> "rgba(...)" or "r,g,b". */
+function rsHex(h){ const m = /^#?([0-9a-f]{6})$/i.exec(h || ""); if(!m) return [242, 211, 138];
+  const n = parseInt(m[1], 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+function rsToOklch(c){
+  const lin = v => { v /= 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
+  const r = lin(c[0]), g = lin(c[1]), b = lin(c[2]);
+  const l = Math.cbrt(.4122214708 * r + .5363325363 * g + .0514459929 * b),
+        m = Math.cbrt(.2119034982 * r + .6806995451 * g + .1073969566 * b),
+        s = Math.cbrt(.0883024619 * r + .2817188376 * g + .6299787005 * b);
+  const L = .2104542553 * l + .793617785 * m - .0040720468 * s,
+        A = 1.9779984951 * l - 2.428592205 * m + .4505937099 * s,
+        B = .0259040371 * l + .7827717662 * m - .808675766 * s;
+  return [L, Math.hypot(A, B), Math.atan2(B, A)];
+}
+function rsFromOklch(L, C, H){
+  const A = C * Math.cos(H), B = C * Math.sin(H);
+  const l = Math.pow(L + .3963377774 * A + .2158037573 * B, 3),
+        m = Math.pow(L - .1055613458 * A - .0638541728 * B, 3),
+        s = Math.pow(L - .0894841775 * A - 1.291485548 * B, 3);
+  const g = v => { v = v <= .0031308 ? 12.92 * v : 1.055 * Math.pow(Math.max(0, v), 1 / 2.4) - .055; return Math.max(0, Math.min(255, Math.round(v * 255))); };
+  return [g(4.0767416621 * l - 3.3077115913 * m + .2309699292 * s),
+          g(-1.2684380046 * l + 2.6097574011 * m - .3413193965 * s),
+          g(-.0041960863 * l - .7034186147 * m + 1.707614701 * s)];
+}
+function rsOklchMix(a, b, k, alpha, bare){
+  const A = rsToOklch(a), B = rsToOklch(b);
+  let dh = B[2] - A[2];
+  while(dh > Math.PI) dh -= 2 * Math.PI;
+  while(dh < -Math.PI) dh += 2 * Math.PI;
+  /* a dead heat (opposite hues) goes through blue */
+  if(Math.abs(Math.abs(dh) - Math.PI) < .35) dh = Math.abs(dh);
+  const c = rsFromOklch(A[0] + (B[0] - A[0]) * k, A[1] + (B[1] - A[1]) * k, A[2] + dh * k);
+  if(bare) return c.join(",");
+  return alpha >= 1 ? "rgb(" + c.join(",") + ")" : "rgba(" + c.join(",") + "," + Math.max(0, alpha).toFixed(3) + ")";
+}
+
 /* The last unit bar's ease-out power: its slow finish is the suspense
    (build 321: 3.6, was 3.2 - "slow down a little more at the back end"). */
 const RS_GRADE_LAST_EASE = 3.6;
@@ -103171,14 +103205,15 @@ function showRunRewards(run, hooks, opts){
     if(gc.raf) cancelAnimationFrame(gc.raf);
     unitBars.forEach(u => { u.fill.style.transition = "none"; unitHome(u); });
   };
-  /* A 100 HANDS TO ITS EFFECT (build 327, b327j): the effect's look -
-     copied off the card itself, so it is exactly what is left when the
-     layers come off - wipes in from the left over the green, the number's
-     ramp behind the same line and each bar's green lifting off as the
-     line crosses it, over RS_HUNDO_CROSS_MS. */
+  /* A 100 HANDS TO ITS EFFECT - A FADE (build 327, b327j round 3:
+     "the green told to the Hundo color from left to right and not the
+     fade it used to be"). The effect's look - copied off the card itself,
+     so it is exactly what is left when the layers come off - fades in
+     over the green, which stays at full strength under it; the number's
+     green fades off its effect ramp and each bar's green off its effect
+     gradient on the same clock (--rs-gf, 0-1), over RS_HUNDO_CROSS_MS. */
   const rsHandoff = (tl, pe, done) => {
-    if(!wipe.measured) wipeMeasure();
-    const T = RS_HUNDO_CROSS_MS, W = wipe.W || grade.offsetWidth || 1;
+    const T = RS_HUNDO_CROSS_MS;
     tl.classList.add("is-reading");
     const cs = getComputedStyle(grade);
     const look = { bc: cs.borderTopColor, bi: cs.backgroundImage, bgc: cs.backgroundColor, bs: cs.boxShadow };
@@ -103189,40 +103224,48 @@ function showRunRewards(run, hooks, opts){
     fx.style.backgroundImage = look.bi; fx.style.backgroundColor = look.bgc;
     fx.style.boxShadow = look.bs;
     tl.appendChild(fx);
-    grade.style.setProperty("--rs-gl", "-4px");
+    grade.style.setProperty("--rs-gf", "0");
     tl.classList.add("is-handoff");
-    /* the number: its ramp to the left of the line, the green to the right */
+    /* where the colours are going: the effect's own (the default's gold) */
+    let tint = null;
+    try{ tint = HFX_TINT[hundoFxInUse()] || null; }catch(e){}
+    const G = [92, 214, 146];
+    const to = rsHex(tint && tint.b || "#F2D38A"), toN = rsHex(tint && tint.g2 || "#F6D58E");
+    const green = grade.querySelector(".rs-grade-tone > i.is-green");
+    /* the number: its effect ramp under a fill that turns towards the
+       effect's colour as it fades off */
     numPlain(pe, "");
     const ramp = getComputedStyle(pe).backgroundImage;
     const hasRamp = ramp && ramp !== "none";
-    const paintN = x => {
-      if(!hasRamp){ pe.style.color = x > 40 ? "" : rsToneAt(100); return; }
-      pe.style.backgroundImage = "linear-gradient(90deg, rgba(0,0,0,0) " + x.toFixed(1) + "px, var(--right) " + x.toFixed(1) + "px), " + ramp;
+    const paintN = k => {
+      if(!hasRamp){ pe.style.color = k >= 1 ? "" : rsOklchMix(G, toN, k, 1); return; }
       pe.style.webkitBackgroundClip = "text"; pe.style.backgroundClip = "text";
-      pe.style.webkitTextFillColor = "transparent";
-      pe.style.color = x > 40 ? "" : rsToneAt(100);
+      pe.style.webkitTextFillColor = k >= 1 ? "" : rsOklchMix(G, toN, Math.min(1, k * 1.25), Math.pow(1 - k, 1.4));
+      pe.style.color = "";
     };
-    paintN(-1);
-    /* the bars: each bar's green lifts off in step with the card's line */
-    const gr = grade.getBoundingClientRect(), sc = (gr.width / W) || 1;
-    unitBars.forEach(u => {
-      const tr = (u.fill.parentNode || u.fill).getBoundingClientRect();
-      const x0 = Math.max(0, (tr.left - gr.left) / sc), w = Math.max(1, tr.width / sc);
-      u.fill.style.setProperty("--was", "var(--right)");
-      u.fill.style.setProperty("--wdl", Math.round(x0 / W * T) + "ms");
-      u.fill.style.setProperty("--wd", Math.max(60, Math.round(w / W * T)) + "ms");
-      u.fill.classList.add("rs-was");
-    });
+    paintN(0);
+    unitBars.forEach(u => { u.fill.style.setProperty("--was", "rgb(" + G.join(",") + ")"); u.fill.classList.add("rs-was"); });
     const t0 = performance.now();
     const step = now => {
       if(!grade.isConnected) return;
-      const k = Math.min(1, (now - t0) / T);
-      const gl = k <= 0 ? -4 : k >= 1 ? W + 4 : k * W;
-      grade.style.setProperty("--rs-gl", Math.round(gl) + "px");
-      paintN(gl - wipe.numX);
-      if(k < 1){ requestAnimationFrame(step); return; }
-      unitBars.forEach(u => { u.fill.classList.remove("rs-was"); ["--was", "--wdl", "--wd"].forEach(v => u.fill.style.removeProperty(v)); });
-      grade.style.removeProperty("--rs-gl");
+      const t = Math.min(1, (now - t0) / T);
+      const k = t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+      /* the green turns, by hue, into the effect's colour - never through
+         grey, whatever the pair (green and magenta are opposites) - and
+         the effect's own look fades in over it once the two agree */
+      const hk = Math.min(1, k / .7);
+      if(green){
+        const rim = rsOklchMix(G, to, hk, 1, true);
+        green.style.setProperty("--te", rim);
+        green.style.setProperty("--tw", "rgba(" + rim + ",.16)");
+      }
+      const fk = Math.max(0, (k - .45) / .55);
+      grade.style.setProperty("--rs-gf", fk.toFixed(3));
+      unitBars.forEach(u => u.fill.style.setProperty("--was", rsOklchMix(G, to, hk, 1)));
+      paintN(k);
+      if(t < 1){ requestAnimationFrame(step); return; }
+      unitBars.forEach(u => { u.fill.classList.remove("rs-was"); u.fill.style.removeProperty("--was"); });
+      grade.style.removeProperty("--rs-gf");
       done();
     };
     requestAnimationFrame(step);

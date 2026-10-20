@@ -178,7 +178,7 @@ def run_case(pw, label, good, fx=None, size=(440, 956), n=12, frames=260):
         if st["op"] > .05 and (st["tone"] or not landed or seen_land is None or f <= seen_land + 4):
             im = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
             st["rim"] = rim_wash(im, st["box"], 1)
-            if os.environ.get("B327J_DUMP") and (st["rim"][0] > 3 or st["rim"][1] > 3):
+            if os.environ.get("B327J_DUMP") and (os.environ.get("B327J_DUMPALL") or st["rim"][0] > 3 or st["rim"][1] > 3):
                 im.save(os.path.join(os.environ["B327J_DUMP"], "%s-%03d.png" % (re.sub(r"\W+", "_", label), f)))
             if not landed and st["pbox"]:
                 st["num"] = number_grey(im, st["pbox"], 1)
@@ -385,7 +385,8 @@ with sync_playwright() as pw:
         print("\n  A/B. the grade card and its ticks, frame by frame (" + os.path.basename(SRC) + ")")
         CASES = [("9/12 pass (phone)", 9, None, (440, 956)), ("6/12 fail (phone)", 6, None, (440, 956)),
                  ("12/12 Confetti (phone)", 12, None, (440, 956)), ("12/12 Underwater (phone)", 12, "underwater", (440, 956)),
-                 ("9/12 pass (iPad)", 9, None, (834, 1194))]
+                 ("9/12 pass (iPad)", 9, None, (834, 1194)),
+                 ("12/12 Fireworks (phone)", 12, "fireworks", (440, 956))]
         pick = os.environ.get("B327J_CASES")
         for i, (lab, good, fx, size) in enumerate(CASES):
             if pick and str(i) not in pick.split(","):
