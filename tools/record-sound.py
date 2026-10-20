@@ -448,14 +448,18 @@ def home_idle(r, out):
 
 def roadmap(r, out):
     r.js(SEED_RANK, "veteran")
-    r.js("""() => { const held = TIER_ORDER_FULL.indexOf(rankOf(store)); store.rankMapSeen = held;
-      store.rankMapProg = { i: held, p: 0 }; store.lifetime.points += 2600; saveStore(); showHome(); }""")
+    r.js("""() => { const held = TIER_ORDER_FULL.indexOf(rankOf(store)); 
+      /* the rank held is new to the map (it pops on the road) and the
+         stretch past it has grown since the last look (the climb) */
+      store.rankMapSeen = held - 1; store.rankMapProg = { i: held - 1, p: .4 }; store.lifetime.points += 2600;
+      try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){}
+      saveStore(); showHome(); }""")
     r.wake()
     r.pg.wait_for_timeout(2500)
     r.start(out)
     r.wait(.6)
     r.js("() => showRanksScreen('ranks')")
-    r.wait(14)
+    r.wait(24)
 
 
 def badge_cutscene(r, out):
@@ -509,11 +513,16 @@ def test(r, out):
     r.wait(1.5)
 
 
-LEVEL_NEAR = """() => { let p = store.lifetime.points; const lp = levelProgress(p);
-  /* leave ~60 XP to the next level, so this run's XP crosses it */
-  const need = (lp.next != null ? lp.next : lp.toNext != null ? lp.toNext + p : null);
-  if(lp.remaining != null) store.lifetime.points = p + lp.remaining - 60;
-  else if(need != null) store.lifetime.points = need - 60;
+LEVEL_NEAR = """() => {
+  /* every badge held, so no rank wall stands in front of the next level
+     (a wall turns the level-up into a knock), and ~60 XP to go */
+  const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean);
+  store.unitPerfects = store.unitPerfects || {};
+  topics.forEach(t => { store.unitPerfects[t] = Math.max(store.unitPerfects[t] || 0, badgeThresholdFor(t)); });
+  const lp = levelProgress(store.lifetime.points);
+  store.lifetime.points = store.lifetime.points + lp.toNext - 60;
+  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){}
+  store.seenUnlockedTiers = TIER_ORDER_FULL.slice(0, TIER_ORDER_FULL.indexOf(rankOf(store)) + 1);
   saveStore(); return levelProgress(store.lifetime.points); }"""
 
 SCENARIOS = {

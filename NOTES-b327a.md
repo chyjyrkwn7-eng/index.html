@@ -284,3 +284,28 @@ This rebuilds the b325h recorder, whose pack folder was never in the repo.
 - **A sustained tone that follows a long fill is the loudest thing on the
   screen for its whole length.** Notes with gaps between them carry a fill
   without filling the room.
+
+#### Verified (for the record)
+
+- `check-js` passes. `check-sound` and `check-b327-a` are ALL PASS, and
+  `check-b327-a --against` 326 fails 12 checks.
+- `check-results` has ONE failure: "a two-unit drill on an iPad (834px):
+  the same gap under every card's heading (within 3.5px) -> [23.8, 19.8]".
+  It fails identically on build 326 (`--against`), so it is not a sound
+  change.
+- **Ten clips** in `/tmp/claude-0/b327/videos/a/`, each at 1320x2868 (17 Pro
+  Max, dpr 3) with H.264 and AAC 48k stereo, and each with its
+  `.sound.json`:
+  - `home-idle`
+  - `test`
+  - `results-pass`, `results-hundo`, `results-fail`, `results-levelup`
+  - `roadmap-climb`
+  - `badge-cutscene`
+  - `rankup-cutscene`
+  - `supernova`
+- Each clip was checked with `ffmpeg volumedetect`: the mean is -31 to -39
+  dB and the max is -3.6 to -25 dB (home-idle is the quiet one; it is the
+  ambience alone).
+- Every percussive play has an energy onset within 10-60ms of its logged
+  frame time. The ones without a clear onset are slow swells and ticks
+  under louder sounds.
