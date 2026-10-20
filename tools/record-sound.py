@@ -468,11 +468,18 @@ def home_idle(r, out):
 
 
 def roadmap(r, out):
+    # A REAL CLIMB (build 327): the rank held is Gold and long since shown
+    # (rankUpShown, rankMapSeen), and the stretch to Platinum has grown since
+    # the last look - two units most of the way to their badges and a few
+    # levels more. The old fixture replayed a rank reached on the map's
+    # first look, a path today's rank-up journey has replaced.
     r.js(SEED_RANK, "veteran")
-    r.js("""() => { const held = TIER_ORDER_FULL.indexOf(rankOf(store)); 
-      /* the rank held is new to the map (it pops on the road) and the
-         stretch past it has grown since the last look (the climb) */
-      store.rankMapSeen = held - 1; store.rankMapProg = { i: held - 1, p: .4 }; store.lifetime.points += 2600;
+    r.js("""() => { const held = TIER_ORDER_FULL.indexOf(rankOf(store));
+      const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean).filter(t => !(store.unitPerfects[t] >= badgeThresholdFor(t)));
+      topics.slice(0, 2).forEach(t => { store.unitPerfects[t] = Math.max(1, badgeThresholdFor(t) - 1); });
+      let pts = store.lifetime.points; while(levelProgress(pts).level < 46) pts += 400; store.lifetime.points = pts;
+      store.rankUpShown = held + 1; store.rankMapSeen = held; store.rankMapFx244 = true;
+      store.rankMapProg = { i: held, p: .04 };
       try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){}
       saveStore(); showHome(); }""")
     r.wake()
@@ -480,7 +487,35 @@ def roadmap(r, out):
     r.start(out)
     r.wait(.6)
     r.js("() => showRanksScreen('ranks')")
-    r.wait(24)
+    r.wait(16)
+
+
+def rankup_journey(r, out):
+    # THE RANK-UP AS PEOPLE SEE IT (build 319-327): Silver held and shown,
+    # Gold's badges and level reached, Home locks and the Profile tab
+    # calls; tapping it plays the journey on Profile and the road map.
+    r.js(SEED_RANK, "ranger")
+    r.js("""() => { const held = TIER_ORDER_FULL.indexOf(rankOf(store));
+      store.rankUpShown = held + 1; store.rankMapSeen = held; store.rankMapFx244 = true; store.rankMapProg = { i: held, p: .6 };
+      try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){}
+      saveStore(); showHome();
+      /* the badges and level Gold asks for, as a test would hand them over */
+      const rule = TIER_UNLOCKS.veteran;
+      const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean);
+      store.rankUpFrom = { r: held, b: badgeCountOf(store), p: store.lifetime.points, d: .6 };
+      topics.slice(0, rule.badges).forEach(t => { store.unitPerfects[t] = badgeThresholdFor(t); });
+      let pts = store.lifetime.points; while(levelProgress(pts).level < rule.level + 3) pts += 400; store.lifetime.points = pts;
+      saveStore(); showHome(); }""")
+    r.wake()
+    r.pg.wait_for_timeout(3500)
+    r.start(out)
+    r.wait(2.2)
+    r.tap("document.getElementById('bottomtab-profile')")
+    r.wait(4)
+    # the rank's reward card: read for a few seconds, then tapped on, as people do
+    r.until("!!document.querySelector('.rs-spot')", 60, then=3.5)
+    r.tap("document.querySelector('.rs-spot')", 2)
+    r.until("!document.body.classList.contains('ru-journey')", 60, then=3)
 
 
 def badge_cutscene(r, out):
@@ -786,6 +821,7 @@ SCENARIOS = {
     "results-fail": (results(6), 150, "6 of 12 missed (50%): under the pass mark"),
     "results-levelup": (results(2, extra=LEVEL_NEAR), 150, "a pass that crosses a level: the level-up jingle on the XP bar"),
     "roadmap-climb": (roadmap, 80, "the Rank tab's road map climbing to where you are"),
+    "rankup-journey": (rankup_journey, 160, "a rank-up as people see it: Home locks, Profile, the road map, the cutscene, the reward card, back to Profile"),
     "badge-cutscene": (badge_cutscene, 90, "BADGE FOUND: the badge, the case rising, latches, lid, the drop"),
     "rankup-cutscene": (rankup, 90, "a rank-up cutscene (Gold)"),
     "supernova": (supernova, 120, "Supernova on Home (the comet streaks, now silent) and its cutscene"),

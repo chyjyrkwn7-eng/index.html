@@ -2472,17 +2472,19 @@ def check_b235(br):
       await wait(700);
       await T('pulse', () => document.getElementById('bottomtab-profile').classList.contains('avatar-pulse'));
       await wait(1900);
-      await T('second', () => { const sp = document.querySelector('.rs-spot'); if(!sp) return null;
-        const st = sp.querySelector('.rs-spot-strip.is-rankreward');
-        return { text: sp.textContent, strip: st ? st.textContent : null, emblem: !!(st && st.querySelector('svg')) }; });
-      document.querySelector('.rs-spot') && document.querySelector('.rs-spot').click(); await wait(1400);
+      /* MOVED IN 327: a rank's character is never Home's - it plays in the
+         rank-up journey's reward card. Recorded across the whole sitting. */
+      await T('second', () => ({ solarOwed: pendingHomeUnlocks().chars.indexOf('solar') >= 0 }));
       /* Build 313: this account has 141 hundos and no record of the hundo
          effects being announced, so it is owed the first two (Fireworks
          and the World Tree, read off HUNDO_FX rather than named here) as
          well - they follow in the same sitting, each up long enough to
          count as seen and then tapped away. */
       out.fx = []; out.fxOwed = HUNDO_FX.filter(d => d.need > 0 && d.need <= hundosOf(store)).map(d => d.name);
+      out.solarCard = /Solar/.test(String((out.first || {}).text));
       for(let k = 0; k < 6; k++){
+        const any = document.querySelector('.rs-spot');
+        if(any && /Solar/.test(any.textContent)) out.solarCard = true;
         const sp = document.querySelector('.rs-spot.rs-spot-fx');
         if(!sp){ await wait(400); continue; }
         out.fx.push((sp.querySelector('.rs-spot-name') || {}).textContent);
@@ -2524,20 +2526,20 @@ def check_b235(br):
     sd = r["seed"] if isinstance(r["seed"], dict) else {}
     check("an account already on Gold is NOT marked as having seen its rank character (Solar since 244)", sd.get("gold") is True and sd.get("pharaoh") is False, r["seed"])
     check("Home waits a beat before an unlock arrives", r["notYet"] is False, r["notYet"])
-    # BUILD 308: a rank's reward plays ahead of a challenge's (it follows
-    # the rank-up), so Gold's Solar is first and Zeus second. The
-    # assertions about each card are unchanged; only their order moved.
+    # MOVED IN 327: "I also saw the rank up characters showing unlocked in
+    # the main menu". A rank's character is never announced on Home (it is
+    # the rank-up journey's reward card on the road map), so Gold's Solar
+    # never plays here and Zeus, won off-screen, is the first card.
     fc = r["first"] if isinstance(r["first"], dict) else {}
-    check("Gold's character (Solar since 244) plays first on Home as a Rank reward, with Gold's emblem and name in the strip",
-          "Solar" in str(fc.get("text")) and "Rank reward" in str(fc.get("strip")) and "Gold" in str(fc.get("strip"))
-          and fc.get("emblem") is True, r["first"])
+    sc = r["second"] if isinstance(r["second"], dict) else {}
+    check("Gold's character (Solar) is never announced on Home - not owed, no card",
+          sc.get("solarOwed") is False and not r.get("solarCard"), [r["second"], r.get("solarCard")])
+    st = str(fc.get("text"))
+    check("Zeus, won away from any results screen, plays first as a finished challenge",
+          "Zeus" in st and st.count("Challenge complete") == 1 and "Character unlocked" in st, r["first"])
     fl = r["flying"] if isinstance(r["flying"], dict) else {}
     check("tapping it away flies it to the Profile tab (fixed, above the screen) and rings the tab",
           fl.get("pos") == "fixed" and 0 < fl.get("y", -1) < 956 and r["pulse"] is True, [r["flying"], r["pulse"]])
-    sc = r["second"] if isinstance(r["second"], dict) else {}
-    st = str(sc.get("text"))
-    check("Zeus, won away from any results screen, follows as a finished challenge",
-          "Zeus" in st and st.count("Challenge complete") == 1 and "Character unlocked" in st, r["second"])
     check("the hundo effects this account already qualifies for follow in the same sitting (build 313)",
           len(r.get("fxOwed") or []) == 2 and r.get("fx") == r.get("fxOwed"), [r.get("fx"), r.get("fxOwed")])
     af = r["after"] if isinstance(r["after"], dict) else {}
