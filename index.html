@@ -6955,6 +6955,15 @@
   }
   .chatdock-chathost .vroom-chat-list{ flex:1 1 auto; max-height:none; min-height:6rem; }
   .chatdock-notiflist{ display:flex; flex-direction:column; gap:.2rem; overflow-y:auto; }
+  /* A LIST AT ITS END STOPS THERE (build 327). Scrolled past its top or
+     its bottom, a list's leftover scroll chained to the page behind the
+     sheet - the screen under the chat moved. Each scroller in the dock
+     keeps its own overscroll. The lobby's chat is not in the dock and is
+     left to scroll its page as it always has. */
+  .chatdock-panel .vroom-chat-list, .chatdock-notiflist, .chatdock-panel .vroom-chat-tray{
+    overscroll-behavior:contain;
+  }
+  .chatdock-roomwho{ overscroll-behavior-x:contain; }
   .chatdock-notif{
     display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;
     padding:.6rem .1rem; border-bottom:1px solid var(--rule);
@@ -7025,7 +7034,10 @@
        an iPhone that is the cost of the whole drag. While a finger has
        it, and for the slide after, the glass is a near-opaque fill of
        the same tone instead; it goes back to glass once it is still. */
-    .chatdock-panel.is-dragging, .chatdock-panel.is-settling{
+    /* (build 327) the flat fill waits for .is-flat - 18px of travel - so a
+       finger that slips a few pixels never swaps the glass. */
+    .chatdock-panel.is-dragging{ will-change:transform; }
+    .chatdock-panel.is-flat, .chatdock-panel.is-settling{
       backdrop-filter:none; -webkit-backdrop-filter:none;
       background:rgba(20,25,32,.94); will-change:transform;
     }
@@ -7056,6 +7068,19 @@
     }
     /* The tab bar would otherwise paint on top of an open sheet. */
     body.chatdock-open .bottomtabs{ opacity:0; pointer-events:none; }
+    /* THE PAGE BEHIND AN OPEN SHEET DOES NOT PAN (build 327). "I somehow
+       moved the screen behind the chat box even [though] I clicked the
+       chat box when it was open." Nothing in the sheet but its lists is
+       a scroller, so a drag that started on its composer, its header or
+       its padding chained straight to the page under it. touch-action is
+       decided before the first touchmove and is worked out up to the
+       nearest scroller, so `none` here stops every pan whose nearest
+       scroller is the page, and leaves the message list (its own
+       scroller) scrolling exactly as before. The sheet's own drag is
+       script, not a pan, and is untouched. Paired with the touchmove
+       guard in startChatDock(), which covers the one place this cannot
+       reach - a text field is a scroller of its own - and the iPad. */
+    body.chatdock-open{ touch-action:none; }
     /* flush on the keyboard (build 314 - see kbSync) */
     .chatdock-panel.is-kb{
       bottom:var(--kb-bottom, 0px);
@@ -85015,6 +85040,7 @@ function startChatDock(){
      Dragging UP resizes instead of doing nothing: the sheet grows, the
      height is remembered, and that is the "resizable chat box". */
   const DRAG_SLOP = 6;
+  const DRAG_FLAT_AT = 18;
   const CHAT_H_KEY = "class26e.chatheight";
   function storedChatHeight(){
     try{ return parseInt(localStorage.getItem(CHAT_H_KEY) || "", 10) || 0; }catch(e){ return 0; }
@@ -85044,16 +85070,35 @@ function startChatDock(){
   const savedH = storedChatHeight();
   if(savedH) panel.style.setProperty("--chat-h", savedH + "px");
 
-  let dragFrom = null, dragDy = 0, dragArmed = false, dragH0 = 0;
-  function dragChrome(t){
-    /* The grip, or the panel itself - never a control and never a
-       scroller. `closest` on the panel is the last resort: anything
-       inside a child that is not the grip is somebody else's. */
+  let dragFrom = null, dragDy = 0, dragArmed = false, dragH0 = 0, dragFlat = false;
+  /* ONLY THE SHEET'S HEAD MOVES THE SHEET (build 327). "If the chat is
+     open I click at the bottom, the foreground behind it starts changing
+     colors." Every bit of dead space in the sheet armed the drag - the
+     padding round the composer, the gaps in its row, the space under the
+     typing line - so a tap at the bottom whose finger slid past the 6px
+     slop (a thumb's tap does, at the bottom of a phone) became a drag:
+     the sheet jumped a few pixels, and its glass swapped for the flat
+     .is-dragging fill and back (.is-settling) - everything seen through
+     it changed colour for a third of a second, and a slide up resized
+     it. A sheet is moved by its top: the grip, the tab row, the back
+     row and the room's header. Below those, a touch is never a drag. */
+  function dragZoneBottom(){
+    let y = panel.getBoundingClientRect().top + 96;
+    panel.querySelectorAll(".chatdock-grip, .chatdock-tabs, .chatdock-backrow, .chatdock-roomhead").forEach(el => {
+      const r = el.getBoundingClientRect();
+      if(r.height > 0) y = Math.max(y, r.bottom + 6);
+    });
+    return y;
+  }
+  function dragChrome(t, y){
+    /* The grip, or the panel's own chrome in its head - never a control
+       and never a scroller. `closest` on the panel is the last resort:
+       anything inside a child that is not the grip is somebody else's. */
     if(!t) return false;
     if(t.closest(".chatdock-grip")) return true;
     if(t.closest("button, a, input, textarea, select, label, .vroom-chat-list, " +
                  ".chatdock-notiflist, .chatdock-roomwho, .chatdock-sizer")) return false;
-    return true;
+    return !(y > dragZoneBottom());
   }
   /* SMOOTHER, AND A TAP IS ONLY A TAP (build 314). "Swipe down
      functions are laggy (like in chat)" and "if I click on that stuff,
@@ -85076,8 +85121,8 @@ function startChatDock(){
   let dragLastY = 0, dragLastT = 0, dragVel = 0;
   panel.addEventListener("touchstart", (e) => {
     if(!chatDockOpen) return;
-    if(!dragChrome(e.target)) return;
-    dragFrom = e.touches[0].clientY; dragDy = 0; dragArmed = false;
+    if(!dragChrome(e.target, e.touches[0].clientY)) return;
+    dragFrom = e.touches[0].clientY; dragDy = 0; dragArmed = false; dragFlat = false;
     dragLastY = dragFrom; dragLastT = performance.now(); dragVel = 0;
   }, { passive: true });
   panel.addEventListener("touchmove", (e) => {
@@ -85095,6 +85140,9 @@ function startChatDock(){
       dragH0 = panel.offsetHeight;
       panel.classList.add("is-dragging");
     }
+    /* The flat fill only once the sheet is really travelling: a nudge of
+       a few pixels keeps its glass, so nothing behind it changes colour. */
+    if(!dragFlat && Math.abs(dy) >= DRAG_FLAT_AT){ dragFlat = true; panel.classList.add("is-flat"); }
     if(dy < 0){
       /* Up: taller, live. Nothing is translated, so the sheet stays
          anchored to the bottom edge while it grows. */
@@ -85113,12 +85161,16 @@ function startChatDock(){
     /* stale velocity (the finger stopped before lifting) counts for nothing */
     const flick = performance.now() - dragLastT < 90 && dragVel > 0.55 && dragDy > 24;
     const closing = dragDy > 70 || flick;
-    panel.classList.remove("is-dragging");
+    panel.classList.remove("is-dragging", "is-flat");
     /* The glass stays flat through the slide that follows as well:
-       see .is-settling. */
-    panel.classList.add("is-settling");
+       see .is-settling. Only after a drag that went flat - a nudge that
+       never left the glass has nothing to settle. */
     clearTimeout(endDrag._t);
-    endDrag._t = setTimeout(() => panel.classList.remove("is-settling"), 320);
+    if(dragFlat || closing){
+      panel.classList.add("is-settling");
+      endDrag._t = setTimeout(() => panel.classList.remove("is-settling"), 320);
+    }
+    dragFlat = false;
     if(closing){
       /* Leave the offset in place for one frame so the close
          transition starts from where the finger let go. */
@@ -85178,6 +85230,41 @@ function startChatDock(){
   }catch(e){}
   chatDockKbSync = kbSync;
   panel.addEventListener("touchcancel", endDrag);
+  /* ---- NO TOUCH IN THE SHEET MOVES THE PAGE BEHIND IT (build 327) ----
+     A drag that did not arm the sheet (anything below its head) was left
+     to the browser, and on the composer, the send row, a chat row or the
+     sheet's own padding nothing is a scroller - so the pan went to the
+     page under the sheet and the screen behind moved. Read once on
+     touchstart: which axes the touch can scroll INSIDE the sheet (the
+     nearest list that really overflows; a text field may move its caret
+     sideways). On every move after, anything else is cancelled. The
+     lists themselves scroll as before and stop at their ends
+     (overscroll-behavior:contain). Covers the iPad's popover too, which
+     the phone-only touch-action lock does not. */
+  let guardX = 0, guardY = 0, guardFree = null;
+  function sheetScrollAxes(t){
+    const free = { x: false, y: false };
+    for(let el = t; el && el !== panel && el.nodeType === 1; el = el.parentElement){
+      if(/^(INPUT|TEXTAREA)$/.test(el.tagName)){ free.x = true; if(el.tagName === "TEXTAREA" && el.scrollHeight > el.clientHeight + 1) free.y = true; continue; }
+      const cs = getComputedStyle(el);
+      if(!free.y && /auto|scroll/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 1) free.y = true;
+      if(!free.x && /auto|scroll/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 1) free.x = true;
+      if(free.x && free.y) break;
+    }
+    return free;
+  }
+  panel.addEventListener("touchstart", (e) => {
+    if(!chatDockOpen || e.touches.length !== 1){ guardFree = null; return; }
+    guardX = e.touches[0].clientX; guardY = e.touches[0].clientY;
+    guardFree = sheetScrollAxes(e.target);
+  }, { passive: true });
+  panel.addEventListener("touchmove", (e) => {
+    if(!chatDockOpen || dragFrom !== null || !guardFree || !e.cancelable) return;
+    if(e.touches.length !== 1){ e.preventDefault(); return; }
+    const dx = Math.abs(e.touches[0].clientX - guardX), dy = Math.abs(e.touches[0].clientY - guardY);
+    const axis = dx > dy ? "x" : "y";
+    if(!guardFree[axis]) e.preventDefault();
+  }, { passive: false });
 
   /* The tablet's bottom-edge handle. Pointer events rather than touch,
      because this one is dragged with a trackpad as often as a finger. */
@@ -85261,10 +85348,13 @@ document.addEventListener("visibilitychange", () => {
   }catch(e){}
 });
 
+var chatDockPageAt = null;
 function toggleChatDock(){ chatDockOpen ? closeChatDock() : openChatDock(); }
 function openChatDock(){
   if(!chatDock) return;
   chatDockOpen = true;
+  /* where the page stood (build 327): see closeChatDock */
+  chatDockPageAt = { y: window.scrollY, screen: stage.firstElementChild };
   try{ if(chatDockKbSync) chatDockKbSync(); }catch(e){}
   playSound("ui.sheet.open");
   chatDock.classList.add("is-open");
@@ -85295,6 +85385,19 @@ function closeChatDock(){
   closeLeaveChatConfirm();
   chatDock.classList.remove("is-open");
   document.body.classList.remove("chatdock-open");
+  /* THE PAGE IS WHERE IT WAS (build 327). Nothing in the sheet may
+     scroll the page behind it, but iOS has its own ways (a field it
+     scrolls into view, a keyboard that pans the layout), and the screen
+     under a chat you were only reading should not come back somewhere
+     else. Only on the same screen - a chat action that changed screens
+     owns the scroll. Instant, never the root's smooth glide. */
+  const at = chatDockPageAt; chatDockPageAt = null;
+  if(at && at.screen === stage.firstElementChild && Math.abs(window.scrollY - at.y) > 1){
+    const de = document.documentElement, prev = de.style.scrollBehavior;
+    de.style.scrollBehavior = "auto"; void getComputedStyle(de).scrollBehavior;
+    try{ window.scrollTo(0, at.y); }catch(e){}
+    de.style.scrollBehavior = prev;
+  }
   syncChatDock();
 }
 

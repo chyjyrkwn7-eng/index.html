@@ -24614,3 +24614,57 @@ that name, and change the icon, keep it orange though."*
 - check-b326-d's "two by two" (Nova's how-they-come-home cards) fails now and
   then on an iPad (cards measured mid-stagger, icons 52-54px); it fails the
   same way on the build before this change.
+
+### Build 327 (b327h) - the chat sheet: a tap is a tap, and the page behind stays put
+
+Madison, Oct 20, on his iPhone (installed): *"if the chat is open I click
+at the bottom, the foreground behind it starts changing colors, fix that. I
+also somehow moved the screen behind the chat box even [though] I clicked
+the chat box when it was open. Ensure the app is lag free and works super
+smooth."* Branch `b327h-chat`. Gate: `tools/check-b327-h.py` (A taps, B
+drags; `B327H_ONLY=`, `--against`). It fails 5 checks on 7ec06e0 and passes
+here.
+
+- **The colour change was the sheet's drag, armed by a tap.** Every bit of
+  dead space in the sheet armed the drag (`dragChrome` returned true for
+  anything that was not a control or a scroller): its bottom padding, the
+  gaps round the composer, and the typing line. A thumb's tap slides a few
+  pixels, and past the 6px slop that became a drag. The sheet jumped or
+  grew (a slide up resizes it), and the glass swapped for the flat
+  `.is-dragging` fill and then `.is-settling`. Everything seen through the
+  glass changed colour for a third of a second. **Fix:**
+  - `dragChrome(t, y)` only arms in the sheet's HEAD: above
+    `dragZoneBottom()`, the bottom of the grip, tabs, back row and room
+    header, or at least 96px from the top.
+  - The flat fill waits for `.is-flat`, set after 18px of travel
+    (`DRAG_FLAT_AT`), so a nudge never swaps the glass.
+  - `.is-settling` only follows a drag that went flat, or one that closes.
+- **The page moved because nothing in the sheet was a scroller.** A drag
+  on the composer, the send row or the padding chained to the page under
+  the sheet, and so did a drag on the message list past its ends. On
+  7ec06e0 a phone's page went from y 781 to 1308. **Fix:**
+  - `body.chatdock-open{ touch-action:none }` on a phone. touch-action is
+    worked out up to the nearest scroller, so the list still scrolls.
+  - `overscroll-behavior:contain` on the dock's lists, the notification
+    list and the tray (and `-x` on the roster).
+  - A non-passive touchmove guard in `startChatDock()`. It reads once, on
+    touchstart, which axes the touch can scroll INSIDE the sheet
+    (`sheetScrollAxes`), and prevents every other move. That covers a text
+    field, which is a scroller of its own, and the iPad popover.
+  - `openChatDock` remembers the page's scroll (`chatDockPageAt`), and
+    `closeChatDock` puts it back if the same screen is still up.
+- **Untouched:** the head's drag to resize and close, list scrolling,
+  reactions, typing, `kbSync`, and the lobby's own room chat (not in the
+  dock).
+- **Rule: a sheet is moved by its head, never by its dead space; and a
+  sheet over a page must own every touch that starts on it.** Anything
+  that does not scroll inside the sheet must not pan what is behind it.
+- **Harness traps, found writing the gate:**
+  - **Chromium holds back touchmoves inside a ~15px slop**, so a "tap with
+    a 4px slide" sends no touchmove at all. The gate's slides end at 17px.
+  - **Chromium's touch adjustment snaps a touch near a control onto it.**
+    The sheet's bottom padding is 16px here (every safe-area inset reads
+    0), so a tap 8px under the field landed on the field. Section A gives
+    the phone sheet the iPhone's 34px home-indicator padding.
+  - A drag in the message list is the list's own scroll, so section A
+    leaves out any point inside `.vroom-chat-list`.
