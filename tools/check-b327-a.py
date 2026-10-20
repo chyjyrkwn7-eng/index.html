@@ -156,7 +156,14 @@ with sync_playwright() as pw:
     on_steps = bool(step) and all(abs(f * 100 / step - round(f * 100 / step)) < 1e-6 for f in ta + tb)
     ck("the count ticks on percentage steps, never once per right answer (pitch = the percentage)", ta and tb and on_steps, [step, ta[:12], tb[:12]])
     ck("...and never past the percentage it lands on", ta and tb and max(ta) <= .75 + 1e-9 and max(tb) <= .75 + 1e-9, [max(ta or [0]), max(tb or [0])])
-    ck("30 right answers do not tick more than 9 do (the count is the percentage's)", ta and tb and len(tb) <= len(ta) + 3, [len(ta), len(tb)])
+    # MOVED IN 327 (b327j): "The sound effects aren't perfectly lined up with
+    # the percentage grade going up." A tick now plays on every change of the
+    # shown number (rate-limited by SND_GRADE_GAP_MS), so how many there are
+    # follows how long the count takes, not the answers. What still holds:
+    # never more ticks than percentages passed (75), and 30 answers tick about
+    # as often as 9 do - nowhere near three times as many. It was "within 3".
+    ck("30 right answers do not tick more than 9 do (the count is the percentage's)",
+       ta and tb and len(ta) <= 75 and len(tb) <= 75 and len(tb) <= len(ta) * 1.3 + 3, [len(ta), len(tb)])
     ck("no page errors", not errs, errs[:3])
 
     print("\n  5. the XP box is heard")

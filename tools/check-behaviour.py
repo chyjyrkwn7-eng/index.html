@@ -16041,8 +16041,19 @@ def check_b317_hundobox(br):
                 # (build 326: the rim is at full from the first frame, as
                 # every card's edge is - only the beam's wash waits for it)
                 unlit = lambda a: bool(a) and (a.get("border") or "") == "rgb(107, 255, 143)"
+                # MOVED IN 327 (b327j): the grade is now counted in as a WIPE
+                # of two full-look layers (red, then the green filling from
+                # the left), and a 100 hands to its effect by wiping the
+                # effect's look in over the green. While a layer is up the
+                # card's own border is transparent and the LAYER draws the
+                # rim - at full, in green, then the effect's - so on the
+                # first frame the rim is the green layer's, not the card's.
+                # What this guarded (never the 22% unlit rim) still holds:
+                # the first frame's rim is either the card's at full or the
+                # green layer's (green(fi): wash and number at full green).
+                rimfull = lambda a: unlit(a) or ((a.get("border") or "") == "rgba(0, 0, 0, 0)" and green(a))
                 check("%s: then into its colours by the end of the hand-off - the 100%% and the bar exactly as settled, never the gold default - with its rim at full throughout (326) (%s)" % (tag, ha.get("border")),
-                      cleared(ha) and same(ha, ("num", "bar")) and unlit(fi) and unlit(ha) and se.get("border") == "rgb(107, 255, 143)"
+                      cleared(ha) and same(ha, ("num", "bar")) and rimfull(fi) and unlit(ha) and se.get("border") == "rgb(107, 255, 143)"
                       and f.get("tinted") and "217, 169, 58" not in (ha.get("bar") or ""), {"first": fi, "handed": ha, "settled": se})
             elif fx == "confetti":
                 check("%s: then gold, the default's own look, by the end of the hand-off - border, 100%%, bar exactly as settled" % tag,
