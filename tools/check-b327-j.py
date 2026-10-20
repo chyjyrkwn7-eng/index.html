@@ -204,6 +204,13 @@ def section_a(c):
     ck("A %s: %d frames read, the card's rim and wash are never a neutral grey" % (lab, len(rows)), rows and not rim_bad, rim_bad[:6] or worst)
     ck("A %s: the number is never grey while it counts" % lab, rows and not num_bad, num_bad[:6])
     ck("A %s: no unit bar is ever grey while it counts" % lab, rows and not bar_bad, bar_bad[:6])
+    # MOVED IN 327 (b327j, second answer): "Change it to how it was before
+    # but don't make it grey, it should go from red to green to hundo." The
+    # count's colour is ONE colour across the card in every frame - red, or
+    # (the frame it passes) green - never a wipe with both on the card at
+    # once (b327j's first answer, 9b79f55) and never a blend (7ec06e0).
+    both = [(r["f"], r["rim"][2], r["rim"][3]) for r in rows if "rs-graded" not in r["cls"] and r["rim"][2] > 3 and r["rim"][3] > 3]
+    ck("A %s: the card is one colour in every frame while it counts - all red or all green, never both (no wipe)" % lab, rows and not both, both[:6])
     rows = [r for r in rows if r["op"] > .97] or rows
     greens = [r["rim"][2] for r in rows]
     reds = [r["rim"][3] for r in rows]

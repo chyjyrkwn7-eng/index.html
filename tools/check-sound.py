@@ -533,7 +533,8 @@ with sync_playwright() as pw:
       runStartTime = Date.now() - 42000; testInProgress = true; pos = order.length - 1;
       summarize();
       const got = [];
-      for(let i = 0; i < 140; i++){ await wait(100); got.push(...window.__played.splice(0));
+      /* 22s: b327j made the XP bar 1.4x slower on request (a budget, not a decision) */
+      for(let i = 0; i < 220; i++){ await wait(100); got.push(...window.__played.splice(0));
         if(got.some(x => x === 'res.xp.pop' || x === 'res.xp.knock')) break; }
       return got; }""", default=[])
     r = r if isinstance(r, list) else []

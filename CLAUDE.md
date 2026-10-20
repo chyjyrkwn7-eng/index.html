@@ -24615,7 +24615,7 @@ that name, and change the icon, keep it orange though."*
   then on an iPad (cards measured mid-stagger, icons 52-54px); it fails the
   same way on the build before this change.
 
-### Build 327 (b327j) - red into green as a wipe, a tick on every number, the UFO's scan and steal, a streak worth hearing, the unlock banner and the secret flare scenes scored, more sound videos
+### Build 327 (b327j) - red into green as a switch, chiptune sound app-wide, a slower XP bar, a tick on every number, the UFO's scan and steal, a streak worth hearing, the unlock banner and the secret flare scenes scored, more sound videos
 
 Madison, after the 327 sound videos: *"The grade box is still grey? It was
 red then grey then green? That regressed badly and needs to be fixed. The
@@ -24630,6 +24630,65 @@ tabs, lobby, leaderboard, just random selections and stuff."* Branch
 
 > **Supersedes** b327f's "each wash carries the whole rim" crossfade (the
 > grey was the crossfade itself) and b327a's `SND_GRADE_STEP` of 4.
+
+**SECOND ANSWER (read first; it supersedes the wipe below and most of the
+327a/327f sound designs).** Madison (he/him) on the first b327j videos: *"the
+sounds for the results ... are bad. The grade bar color change why did that
+regress so badly? Change it to how it was before but don't make it grey, it
+should go from red to green to hundo ... the xp sound effects don't sound like
+xp. The xp bar filling up sound, I'm not a fan ... The xp bar filling up could
+be a smidge slower too"*, then *"they all need to take on that Pokemon style
+beeps and bops"*, and the tab bar's sound "a little more subtle".
+- **THE GRADE IS A SWITCH, NOT A WIPE AND NOT A BLEND.** The card, the number
+  and each unit bar change colour IN PLACE: red while the count is under the
+  pass mark, and in the very frame it crosses it, green (`goGreen()` adds
+  `.is-green-on` to `.rs-grade-tone`; each bar switches by its own unit's
+  verdict in `paintUnit`). The change is marked by a .38s bloom of the green
+  itself (`rs-green-on` / `rs-num-flip` / `rs-bar-flip`: brightness 1.25-1.3
+  and saturate 1.5-1.6 easing to none). **No scale and no stronger
+  brightness in that bloom**: brightness 1.75 whitened the rim to a
+  low-chroma near-white and a scale(1.018) pulled the layer's rim off the
+  card's edge - both read as grey to check-b327-j A on an iPad. A fail never
+  turns. A 100 still hands to its effect by `rsHandoff` (`--rs-gl`, `.is-fx`).
+  An early tap: `goGreen()` and the layers come off 400ms later.
+  check-b327-j A adds "one colour in every frame - all red or all green,
+  never both".
+- **CHIPTUNE, APP-WIDE (`sndSquare`, `sndChipKit`, `SND_CHIP`, after the
+  catalogue).** A crisp pulse (`o.sq` on `K.tone`: 12.5/25/50% duty,
+  harmonics kept; `o.duty` stays the soft lead) plus `K.sq`, `K.seq`, `K.tri`
+  (triangle bass), `K.hat`/`K.snare`/`K.kick` (the noise channel) and
+  `K.bed` (a little music bed: bpm, arpeggio bars, lead, bass, a drum
+  string). Still D harmonic minor, still dark, dry. `SND_CHIP` REPLACES the
+  fn and desc of the ids it names (the old designs above it are the record);
+  `SND_CHIP_VOL` sets each one's vol so its loudest 50ms is the build-327
+  one's - **the frequent taps (`ui.tap.*`, `ui.tab.*`, toggles, `ui.back`,
+  the slider, a field, `test.select`, `lb.switch`) 5dB under, low passed and
+  short**, the grade/XP ticks 3dB under. The Home ambience and the hundo
+  effects' scores are untouched. Re-measure a vol with a render against the
+  previous build, never by ear here.
+- **THE XP SET IS DESIGN A (`XP_SOUND_DESIGN`, `SND_XP.A/B/C`).** A: an EXP
+  orb pling per line a step higher each time, crisp ticks on the count
+  climbing with it, ding-ding-DING on the total, the fill a 25% pulse whose
+  pitch rides the bar's OWN ease (`XP_FILL_EASE` = `XP_EASE`, sampled with
+  `sndBezier`) D4 to D6 with a 12.5% shimmer an octave up, a ding on the pop,
+  the level-up jingle. B and C are alternatives one constant away (not
+  recorded for comparison - he asked for one).
+- **THE XP BAR IS 1.4x SLOWER** with a longer ease-out: `XP_EASE`
+  `cubic-bezier(.4,.05,.15,1)`, `fillMsFor` 1.4-3.22s (was 1.0-2.3), a
+  level-up's first fill 1.12-1.96s. `wrap.fillMs` follows, so the reveal
+  waits for it. check-sound's results wait went 14s -> 22s (a budget).
+- **THE BADGE CASE OPENS IN CHIP** (`badge.case.open`, same beats as before:
+  `latch2`, `crack`, `swing` from CASE_OPEN): a clear chip click per latch, the
+  lid a creaky-but-musical rising 50% pulse sweep with a fast wobble, and an
+  item-get jingle as the light comes out. BADGE FOUND has its own music bed
+  (`cs.badge`, 160bpm, 12 bars = 18s for a ~17s scene: Dm Dm Bb A Dm Bb C A
+  Dm Bb C D major, lead/arp/bass/drums). **The other cutscenes (rank-up,
+  Supernova, the secret flare scenes, the planet) keep their 327 scores** -
+  chip beds for them are not done.
+- **The unlock banner** keeps its swell timed to the card and lands on a chip
+  item-get jingle over the bell chord (check-b327-j E still holds it).
+
+The first answer, for the record:
 
 - **WHY IT WAS GREY: A BLEND OF RED AND GREEN IS GREY.** 320-327 crossfaded
   two washes (red, green) by opacity as the count climbed; at the middle each

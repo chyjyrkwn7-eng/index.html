@@ -28972,7 +28972,14 @@
      They are no longer crossfaded (b327j, below): the green WIPES across
      from the left, so no pixel is ever a blend of the two. The stamps
      ("3 to review", "Passed") wait too: they would give the grade away. */
-  /* ---- RED INTO GREEN AS A WIPE, NEVER A BLEND (build 327, b327j) ----
+  /* ---- RED, THEN GREEN: A SWITCH, NEVER A BLEND OR A WIPE (b327j) ----
+     The first b327j answer (below) was a wipe; Madison: "Change it to how
+     it was before but don't make it grey, it should go from red to green
+     to hundo". So the colour changes IN PLACE again - card, number and
+     each bar - as a switch, not a fade: red while the count is under the
+     pass mark and, the frame it crosses, green, with a .38s bloom of the
+     green itself. No frame is a mix. The 100's hand-off (--rs-gl, below)
+     still draws the effect's look in from the left. The wipe's notes: */
      "The grade box is still grey? It was red then grey then green? That
      regressed badly." Two washes CROSSFADED (320-327) meet in the middle
      at half strength each, and red and green half and half is a muddy
@@ -28993,12 +29000,21 @@
   .rs-grade-tone > i{ position:absolute; inset:0; border-radius:inherit;
     border:1px solid rgb(var(--te)); background:linear-gradient(180deg, var(--tw), var(--rs-card) 62%);
     box-shadow:inset 0 0 0 1px rgba(var(--te), .55), inset 0 0 30px rgba(var(--te), .26); }
-  .rs-grade-tone > i.is-red{ --tw:rgba(200,60,84,.16); --te:232,104,124;
-    -webkit-mask-image:linear-gradient(90deg, transparent var(--rs-gx, -4px), #000 var(--rs-gx, -4px));
-            mask-image:linear-gradient(90deg, transparent var(--rs-gx, -4px), #000 var(--rs-gx, -4px)); }
-  .rs-grade-tone > i.is-green{ --tw:rgba(46,170,106,.16); --te:92,214,146;
-    -webkit-mask-image:linear-gradient(90deg, #000 var(--rs-gx, -4px), transparent var(--rs-gx, -4px));
-            mask-image:linear-gradient(90deg, #000 var(--rs-gx, -4px), transparent var(--rs-gx, -4px)); }
+  .rs-grade-tone > i.is-red{ --tw:rgba(200,60,84,.16); --te:232,104,124; }
+  .rs-grade-tone > i.is-green{ --tw:rgba(46,170,106,.16); --te:92,214,146; opacity:0; }
+  /* passed: the green is the card in ONE frame, never a blend - and it
+     comes on with a bloom of itself (a brighter, richer green - no scale:
+     a scaled layer pulls its rim off the card edge)
+     over .38s, so the change reads as a moment, not a cut */
+  .rs-grade-tone.is-green-on > i.is-red{ opacity:0; }
+  .rs-grade-tone.is-green-on > i.is-green{ opacity:1; animation:rs-green-on .38s cubic-bezier(.2,.8,.3,1) both; }
+  @keyframes rs-green-on{ 0%{ filter:brightness(1.25) saturate(1.6); } 100%{ filter:none; } }
+  .rs-grade .rs-pct.pct.rs-num-flip{ animation:rs-num-flip .38s cubic-bezier(.2,1.3,.35,1) both; transform-origin:20% 60%; }
+  @keyframes rs-num-flip{ 0%{ transform:scale(1.12); filter:brightness(1.25) saturate(1.5); } 100%{ transform:none; filter:none; } }
+  .rs-byunit .unit-breakdown-fill.rs-bar-flip{ animation:rs-bar-flip .38s ease-out both; }
+  @keyframes rs-bar-flip{ 0%{ filter:brightness(1.3) saturate(1.6); } 100%{ filter:none; } }
+  [data-reduce-motion="true"] .rs-grade-tone.is-green-on > i.is-green, [data-reduce-motion="true"] .rs-grade .rs-pct.pct.rs-num-flip,
+  [data-reduce-motion="true"] .rs-byunit .unit-breakdown-fill.rs-bar-flip{ animation:none; }
   /* the 100's hand-off: the effect's look (copied off the card) in from
      the left, the green giving way to it at the same line */
   .rs-grade-tone.is-handoff > i.is-red{ display:none; }
@@ -65765,7 +65781,9 @@ function sndKit(G, out, t0, seed){
     const t = K.T(o.t), a = o.a == null ? .005 : o.a, hold = o.hold || 0, d = o.d == null ? .2 : o.d, len = a + hold + d;
     const osc = ctx.createOscillator();
     /* o.duty: a soft pulse wave (the handheld lead, build 327) */
-    if(o.duty) osc.setPeriodicWave(sndPulse(ctx, o.duty)); else osc.type = o.type || "sine";
+    /* o.sq: the crisp handheld pulse (b327j chip set); o.duty: the soft one */
+    if(o.sq) osc.setPeriodicWave(sndSquare(ctx, o.sq));
+    else if(o.duty) osc.setPeriodicWave(sndPulse(ctx, o.duty)); else osc.type = o.type || "sine";
     const f = sndHz(o.f);
     osc.frequency.setValueAtTime(f, t);
     if(o.pts) o.pts.forEach(p => osc.frequency.linearRampToValueAtTime(sndHz(p[1]), t + p[0]));
@@ -65941,6 +65959,7 @@ function sndKit(G, out, t0, seed){
       K.fm({ t: tt, f, ratio: o.ratio || 4.1, idx: .8, idx2: 0, d: o.d || .25, g: o.g || .02, pan: K.r(-.7, .7), rev: o.rev, dly: o.dly });
     }
   };
+  sndChipKit(K);
   return K;
 }
 
@@ -67318,6 +67337,318 @@ const SOUND_CATALOGUE = {
 };
 /* the seven rank flares, Bronze (rookie) to Supernova (titan) */
 SND_FLARE_KEYS.forEach(k => { if(!SOUND_CATALOGUE["home.flare." + k]) console.warn("sound: no flare " + k); });
+
+
+/* ---- THE CHIP SET (build 327, b327j) ----
+   Madison, after the 327 sound videos: "The sounds seem dark and cool but
+   they all need to take on that Pokemon style beeps and bops ya know? ...
+   the result screen sounds are still bad ... the xp sound effects don't
+   sound like xp ... The badge cutscene when the case opens is weird and
+   bad", and "the bottom tab sound effect could be a little more subtle".
+   So every UI and results sound is a handheld's: a CRISP pulse wave
+   (sndSquare: 12.5/25/50% duty, harmonics kept), a triangle bass, the
+   noise channel for hits and swishes, short envelopes, two- and three-note
+   beep-bops, the cursor blip, confirm/back, item-get, EXP and level-up
+   jingles - still in D harmonic minor, still dark, and still dry (a
+   handheld has no reverb; a little of the dotted echo on the big ones).
+   The Home ambience is untouched ("the only legit one"). The frequent taps
+   (tabs, the generic tick, toggles, a choice) are dull on purpose: low
+   passed, short, soft attack, a few dB under the rest.
+   This table REPLACES the fn, vol and desc of the ids it names (the
+   designs above it are the build-327 ones, kept only as the record of
+   what they were); an id not named here is unchanged. Every vol is set so
+   the id's loudest 50ms sits where the old one did, the taps 5dB under.
+   check-sound holds them all: none silent, none clipping, no two alike. */
+const sndSquareCache = new WeakMap();
+function sndSquare(ctx, d){
+  let c = sndSquareCache.get(ctx);
+  if(!c){ c = {}; sndSquareCache.set(ctx, c); }
+  const key = String(d);
+  if(c[key]) return c[key];
+  const N = 48, re = new Float32Array(N), im = new Float32Array(N);
+  for(let n = 1; n < N; n++){
+    const cn = (2 / (n * Math.PI)) * Math.sin(n * Math.PI * d) / (1 + Math.pow(n / 30, 2));
+    re[n] = cn * Math.cos(n * Math.PI * d); im[n] = cn * Math.sin(n * Math.PI * d);
+  }
+  c[key] = ctx.createPeriodicWave(re, im);
+  return c[key];
+}
+/* cubic-bezier(x1,y1,x2,y2) as a function of time 0..1 (the XP bar's ease) */
+function sndBezier(x1, y1, x2, y2){
+  const bx = t => 3 * x1 * t * (1 - t) * (1 - t) + 3 * x2 * t * t * (1 - t) + t * t * t;
+  const by = t => 3 * y1 * t * (1 - t) * (1 - t) + 3 * y2 * t * t * (1 - t) + t * t * t;
+  return x => { let lo = 0, hi = 1; for(let i = 0; i < 30; i++){ const m = (lo + hi) / 2; if(bx(m) < x) lo = m; else hi = m; } return by((lo + hi) / 2); };
+}
+/* The XP bar's own ease (results level block); the fill's pitch rides it. */
+const XP_FILL_EASE = [.4, .05, .15, 1];
+/* the chip voices, added to a kit */
+function sndChipKit(K){
+  /* one crisp pulse voice: f -> f2 over gl, pts path, vib, duty sq */
+  K.sq = o => K.tone(Object.assign({ sq: .25, a: .002, d: .08, g: .06, lp: 5200 }, o));
+  /* notes in a row: [[t, note, len], ...] on one voice */
+  K.seq = (o, notes) => notes.forEach(n => K.sq(Object.assign({}, o, { t: (o.t || 0) + n[0], f: n[1], hold: Math.max(0, (n[2] || o.len || .08) - (o.d == null ? .03 : o.d) * .3), d: o.d == null ? .03 : o.d })));
+  /* the wave channel: a triangle bass */
+  K.tri = o => K.tone(Object.assign({ type: "triangle", a: .002, d: .12, g: .14, lp: 1600 }, o));
+  /* the noise channel: a hat (hi), a snare (sn), a kick (tri drop), a swish */
+  K.hat = o => K.noise(Object.assign({ hp: 7000, a: .0008, d: .03, g: .05 }, o));
+  K.snare = o => { K.noise(Object.assign({ bp: 2200, q: .7, a: .001, d: .09, g: .12 }, o)); };
+  K.kick = o => K.tone(Object.assign({ type: "triangle", f: 150, f2: 42, gl: .07, a: .001, d: .12, g: .3 }, o));
+  /* a tiny music bed: bpm, bars of [chord root, chord notes], a lead
+     line (step, note, steps), a bass pattern and drums, from t for bars */
+  K.bed = o => {
+    const s = 60 / o.bpm / 4, t0 = o.t || 0;
+    (o.lead || []).forEach(n => K.sq({ t: t0 + n[0] * s, f: n[1], hold: Math.max(.01, n[2] * s - .05), d: .06, g: o.lg || .045, sq: o.lduty || .25, vib: n[2] >= 4 ? [6, 16, 0, n[2] * s * .4] : null, lp: 3400, dly: o.dly || 0 }));
+    (o.arp || []).forEach((bar, b) => { for(let k = 0; k < 16; k++){ if(o.arpEvery && k % o.arpEvery) continue; K.sq({ t: t0 + (b * 16 + k) * s, f: bar[k % bar.length], d: s * .7, g: o.ag || .018, sq: .125, lp: 2600 }); } });
+    (o.bass || []).forEach(n => K.tri({ t: t0 + n[0] * s, f: n[1], hold: Math.max(.01, n[2] * s - .04), d: .05, g: o.bg || .12 }));
+    (o.drums || "").split("").forEach((c, k) => {
+      const t = t0 + k * s;
+      if(c === "k") K.kick({ t, g: o.kg || .22 });
+      else if(c === "s") K.snare({ t, g: o.sg || .07 });
+      else if(c === "h") K.hat({ t, g: o.hg || .03 });
+      else if(c === "x"){ K.kick({ t, g: o.kg || .22 }); K.hat({ t, g: o.hg || .03 }); }
+    });
+  };
+  return K;
+}
+/* a pattern string of bars, repeated */
+const sndRep = (str, n) => Array(n).fill(str).join("");
+/* notes of D harmonic minor by degree from a root, as names the kit takes */
+const sndDm = (K, i, root) => K.dm(i, root);
+
+const SND_CHIP = {
+  /* ---- the frequent taps: dull, short, soft (a few dB under) ---- */
+  "ui.tap.primary": { desc: "A primary button: a soft two-note bop up a fifth on a 50% pulse, low passed so it never pokes out.",
+    fn: K => { K.sq({ f: "D5", sq: .5, d: .035, g: .05, lp: 1700 }); K.sq({ t: .04, f: "A5", sq: .5, d: .05, g: .045, lp: 1700 }); } },
+  "ui.tap.secondary": { desc: "Any other button: one dull cursor tick, a 25% pulse on A5 for 30ms, low passed.",
+    fn: K => K.sq({ f: "A5", sq: .25, a: .003, d: .03, g: .05, lp: 1500 }) },
+  "ui.tab.bottom": { desc: "The tab bar: the quietest bop in the app - a 12.5% pulse dipping F5 to D5 in 40ms, low passed hard.",
+    fn: K => K.sq({ f: "F5", f2: "D5", gl: .035, sq: .125, a: .004, d: .045, g: .05, lp: 1300 }) },
+  "ui.tab.top": { desc: "A top tab: a little upward flick, E5 bent up to A5 in 25ms, dull.",
+    fn: K => K.sq({ f: "E5", f2: "A5", gl: .025, sq: .25, a: .003, d: .04, g: .045, lp: 1600 }) },
+  "ui.toggle.on": { desc: "A switch on: two quick blips up, D5 then A5, on a 12.5% pulse.",
+    fn: K => { K.sq({ f: "D5", sq: .125, d: .025, g: .05, lp: 1800 }); K.sq({ t: .045, f: "A5", sq: .125, d: .04, g: .05, lp: 1800 }); } },
+  "ui.toggle.off": { desc: "A switch off: the same two blips falling, A5 then D5, a touch quieter.",
+    fn: K => { K.sq({ f: "A5", sq: .125, d: .025, g: .045, lp: 1500 }); K.sq({ t: .045, f: "D5", sq: .125, d: .045, g: .045, lp: 1500 }); } },
+  "test.select": { desc: "An answer picked: the menu cursor - one round blip on B5, 50% pulse, 25ms.",
+    fn: K => K.sq({ f: "B5", sq: .5, a: .002, d: .025, g: .045, lp: 2000 }) },
+  "ui.back": { desc: "Back: the cancel bop, A5 down to E5, two notes.",
+    fn: K => { K.sq({ f: "A5", sq: .25, d: .03, g: .05, lp: 1800 }); K.sq({ t: .05, f: "E5", sq: .25, d: .05, g: .05, lp: 1800 }); } },
+  "ui.slider.tick": { desc: "A slider moving: a 15ms blip, pitched by where the thumb is (D5 to D6).",
+    fn: (K, o) => { const v = Math.max(0, Math.min(1, o && o.value != null ? +o.value : .5)); K.sq({ f: K.dm(Math.round(v * 7), "D5"), sq: .125, a: .001, d: .016, g: .04, lp: 2400 }); } },
+  "lb.switch": { desc: "A leaderboard board: two blips on one note, F5 F5, like a cursor stepping across.",
+    fn: K => { K.sq({ f: "F5", sq: .25, d: .02, g: .045, lp: 1700 }); K.sq({ t: .06, f: "F5", sq: .25, d: .035, g: .045, lp: 1700 }); } },
+  "ui.field.focus": { desc: "A text field: a soft high tick-tock, D6 then C#6.",
+    fn: K => { K.sq({ f: "D6", sq: .125, d: .02, g: .035, lp: 2400 }); K.sq({ t: .07, f: "C#6", sq: .125, d: .025, g: .03, lp: 2400 }); } },
+
+  /* ---- sheets, pop-ups, errors ---- */
+  "ui.sheet.open": { desc: "A sheet coming up: a quick chip run up D minor, D5 F5 A5, and a breath of noise.",
+    fn: K => { K.seq({ sq: .25, g: .05, lp: 2600, d: .03 }, [[0, "D5", .035], [.035, "F5", .035], [.07, "A5", .06]]); K.noise({ hp: 3000, ff2: 6000, a: .02, d: .08, g: .02 }); } },
+  "ui.sheet.close": { desc: "A sheet going down: the run falling, A5 F5 D5.",
+    fn: K => { K.seq({ sq: .25, g: .045, lp: 2200, d: .03 }, [[0, "A5", .035], [.035, "F5", .035], [.07, "D5", .06]]); K.noise({ hp: 5000, ff2: 2500, a: .005, d: .08, g: .018 }); } },
+  "ui.popup.open": { desc: "A pop-up: pi-ding, A5 then a held D6 on a 12.5% pulse.",
+    fn: K => { K.sq({ f: "A5", sq: .125, d: .04, g: .05 }); K.sq({ t: .07, f: "D6", sq: .125, hold: .08, d: .18, g: .05, vib: [7, 12, 0, .08] }); } },
+  "ui.error": { desc: "Something refused: the handheld buzz - two low 50% blats on C#4.",
+    fn: K => { K.sq({ f: "C#4", sq: .5, d: .07, g: .07, lp: 1400 }); K.sq({ t: .1, f: "C#4", sq: .5, d: .1, g: .07, lp: 1400 }); } },
+  "ui.locked": { desc: "Locked: a short thud and a semitone falling, D4 to C#4.",
+    fn: K => { K.kick({ g: .12, d: .06 }); K.sq({ f: "D4", sq: .5, d: .05, g: .06, lp: 1300 }); K.sq({ t: .07, f: "C#4", sq: .5, d: .12, g: .06, lp: 1300 }); } },
+  "ui.notice": { desc: "A notice: two bright pings, C#6 to D6 - the leading note home.",
+    fn: K => { K.sq({ f: "C#6", sq: .125, d: .05, g: .045 }); K.sq({ t: .09, f: "D6", sq: .125, hold: .06, d: .2, g: .045 }); } },
+
+  /* ---- the test ---- */
+  "test.correct": { desc: "Right: the Pokemon 'correct' - A5 then D6 held, a 25% pulse with a little echo.",
+    fn: K => { K.sq({ f: "A5", sq: .25, d: .05, g: .06, lp: 4000 }); K.sq({ t: .07, f: "D6", sq: .25, hold: .1, d: .14, g: .06, lp: 4000, dly: .08 }); } },
+  "test.wrong": { desc: "Wrong: a buzzy half step down, Bb4 to A4 on a 50% pulse, and a dull thump.",
+    fn: K => { K.kick({ f: 110, g: .14, d: .08 }); K.sq({ f: "Bb4", sq: .5, d: .06, g: .065, lp: 1600 }); K.sq({ t: .1, f: "A4", f2: "G#4", gl: .2, sq: .5, hold: .05, d: .16, g: .065, lp: 1500 }); } },
+  "test.next": { desc: "On to the next question: a noise swish with a rising chirp, E5 up to E6.",
+    fn: K => { K.noise({ hp: 2500, ff2: 7000, a: .01, d: .07, g: .025 }); K.sq({ f: "E5", f2: "E6", gl: .06, sq: .125, d: .05, g: .035, lp: 3000 }); } },
+  "test.star": { desc: "Starred: a twinkle of three, A6 C#7 D7.",
+    fn: K => K.seq({ sq: .125, g: .035, d: .04 }, [[0, "A6", .03], [.035, "C#7", .03], [.07, "D7", .12]]) },
+  "test.unstar": { desc: "Unstarred: the twinkle falling, D7 to A6.",
+    fn: K => K.seq({ sq: .125, g: .032, d: .04, lp: 3000 }, [[0, "D7", .03], [.04, "A6", .08]]) },
+  "test.pause": { desc: "Paused: the classic pause - two blips down, D6 A5, 50% pulse.",
+    fn: K => { K.sq({ f: "D6", sq: .5, d: .04, g: .05, lp: 2200 }); K.sq({ t: .08, f: "A5", sq: .5, hold: .04, d: .08, g: .05, lp: 2200 }); } },
+  "test.resume": { desc: "Resumed: the same two up, A5 D6.",
+    fn: K => { K.sq({ f: "A5", sq: .5, d: .04, g: .05, lp: 2200 }); K.sq({ t: .08, f: "D6", sq: .5, hold: .04, d: .08, g: .05, lp: 2200 }); } },
+  "test.tick": { desc: "The last ten seconds: a hard clock tick on the noise channel and a low blip.",
+    fn: K => { K.hat({ g: .06, d: .02 }); K.sq({ f: "A4", sq: .5, d: .025, g: .05, lp: 1600 }); } },
+  "test.timeup": { desc: "Time's up: a falling buzz D5 to D4 and two low hits.",
+    fn: K => { K.sq({ f: "D5", f2: "D4", gl: .35, sq: .5, hold: .1, d: .25, g: .07, lp: 1800 }); K.kick({ g: .2 }); K.kick({ t: .2, g: .16 }); } },
+  "test.save": { desc: "Saved: the save jingle - D5 F5 A5 and a held D6.",
+    fn: K => K.seq({ sq: .25, g: .05, d: .05 }, [[0, "D5", .06], [.07, "F5", .06], [.14, "A5", .06], [.21, "D6", .28]]) },
+  "test.load": { desc: "LOADING TEST: a chip run climbing two octaves of D minor, quickening, into a ding.",
+    fn: K => { for(let i = 0; i < 12; i++) K.sq({ t: i * .07 * (1 - i * .03), f: K.dm(i, "D4"), sq: .125, d: .04, g: .035, lp: 3000 }); K.sq({ t: .78, f: "D6", sq: .25, hold: .1, d: .25, g: .05 }); K.tri({ t: .78, f: "D3", hold: .1, d: .2, g: .1 }); } },
+
+  /* ---- the results: the count, the landing ---- */
+  "res.bar.tick": { desc: "The grade counting in: one crisp chip blip per percent, climbing D harmonic minor from D4 to D7 with the number; brighter once it passes.",
+    fn: (K, o) => { const fr = Math.max(0, Math.min(1, o && o.frac != null ? +o.frac : .5)); K.sq({ f: K.dm(Math.round(fr * 21), "D4"), sq: o && o.pass ? .25 : .125, a: .001, d: .022, g: .05, lp: 4200 }); } },
+  "res.grade.fail": { desc: "Under the pass mark: a sad little chip line falling A4 F4 E4 D4, a 50% pulse over a low triangle D2.",
+    fn: K => { K.seq({ sq: .5, g: .06, d: .06, lp: 1800 }, [[0, "A4", .14], [.16, "F4", .14], [.32, "E4", .14], [.48, "D4", .45]]); K.tri({ t: .48, f: "D2", hold: .3, d: .3, g: .16 }); } },
+  "res.grade.pass": { desc: "A pass: up the key, D5 F5 A5 and a held D6 with vibrato, over a triangle D3-A3.",
+    fn: K => { K.seq({ sq: .25, g: .055, d: .05 }, [[0, "D5", .09], [.1, "F5", .09], [.2, "A5", .09], [.3, "D6", .4]]); K.sq({ t: .3, f: "D6", sq: .25, hold: .3, d: .2, g: .04, vib: [6, 14, 0, .1] }); K.tri({ f: "D3", hold: .2, d: .1, g: .12 }); K.tri({ t: .3, f: "A3", hold: .3, d: .2, g: .12 }); } },
+  "res.grade.great": { desc: "90 and up: the turn to the major - D5 F#5 A5 D6 quick, a stab of the chord and a snare.",
+    fn: K => { K.seq({ sq: .25, g: .055, d: .04 }, [[0, "D5", .07], [.07, "F#5", .07], [.14, "A5", .07], [.21, "D6", .5]]); K.sq({ t: .21, f: "A5", sq: .125, hold: .4, d: .2, g: .035 }); K.sq({ t: .21, f: "F#5", sq: .125, hold: .4, d: .2, g: .03 }); K.tri({ t: .21, f: "D3", hold: .4, d: .2, g: .14 }); K.snare({ t: .21, g: .06 }); } },
+  "res.grade.perfect": { desc: "100: a mini fanfare - A5 A5 A5, a held D6, then Bb5 C6 and a long D major on top, with drums and a walking triangle.",
+    fn: K => {
+      K.seq({ sq: .25, g: .06, d: .04 }, [[0, "A5", .08], [.1, "A5", .08], [.2, "A5", .08], [.3, "D6", .3], [.62, "Bb5", .13], [.76, "C6", .13], [.9, "D6", .7]]);
+      [["F#5", .03], ["A5", .03]].forEach(n => K.sq({ t: .9, f: n[0], sq: .125, hold: .5, d: .25, g: n[1] }));
+      K.sq({ t: .9, f: "D6", sq: .25, hold: .4, d: .3, g: .03, vib: [6, 16, 0, .15] });
+      [[0, "D3"], [.3, "A2"], [.62, "Bb2"], [.76, "C3"], [.9, "D3"]].forEach(n => K.tri({ t: n[0], f: n[1], hold: .12, d: .1, g: .14 }));
+      [0, .3, .62, .9].forEach(t => K.kick({ t, g: .18 })); [.2, .76].forEach(t => K.snare({ t, g: .06 }));
+    } },
+
+  /* ---- the unlocks on the results ---- */
+  "res.unlock.banner": { desc: "An unlock card: the dark pad swelling up with the card and a breath of air, then - as it lands - the item-get jingle on pulse (F5 A5 D6, C#6 into a held D6) over the bell chord, a triangle and a hit, a twinkle after. Timed off the card (it rises from .45s, .1s after a scene).",
+    fn: (K, o) => {
+      const L = (o && o.bridged ? .1 : .45) + .38;   /* where the card is all but landed */
+      K.pad(["D3", "A3", "D4"], { a: L * .8, d: 1.2, g: .012, lp: 600, ff2: 1500, fgl: L });
+      K.hush({ t: Math.max(0, L - .55), bp: 600, ff2: 2400, fgl: .55, a: .5, d: .5, g: .05, pan: -.4, pan2: .4, pd: 1 });
+      K.seq({ t: L, sq: .25, g: .055, d: .04 }, [[0, "F5", .07], [.08, "A5", .07], [.16, "D6", .2], [.38, "C#6", .1], [.5, "D6", .65]]);
+      K.sq({ t: L + .5, f: "A5", sq: .125, hold: .45, d: .2, g: .028 }); K.sq({ t: L + .5, f: "F#5", sq: .125, hold: .45, d: .2, g: .024 });
+      ["D5", "F#5", "A5"].forEach((f, i) => K.chime({ f, t: L + i * .03, d: 1.4, g: .016, pan: (i - 1) * .3 }));
+      [[0, "D3", .3], [.38, "A2", .1], [.5, "D3", .5]].forEach(n => K.tri({ t: L + n[0], f: n[1], hold: n[2], d: .1, g: .12 }));
+      K.kick({ t: L, g: .15 }); K.snare({ t: L + .5, g: .05 });
+      K.twinkle({ f: "A6", t: L + .8, d: .9, g: .012, pan: .4 });
+      K.twinkle({ f: "D7", t: L + 1.05, d: 1, g: .012, pan: -.3 });
+    } },
+  "res.unlock.reveal": { desc: "A colour, banner or effect found: a sparkly three-note chip, D6 F#6 A6.",
+    fn: K => K.seq({ sq: .125, g: .04, d: .05 }, [[0, "D6", .05], [.05, "F#6", .05], [.1, "A6", .2]]) },
+  "res.found.badge": { desc: "A badge found: a bright bell-like chip, A5 D6 F6 and the octave.",
+    fn: K => { K.seq({ sq: .25, g: .05, d: .05 }, [[0, "A5", .07], [.08, "D6", .07], [.16, "F6", .07], [.24, "D7", .3]]); K.tri({ f: "D3", hold: .3, d: .1, g: .1 }); } },
+  "res.found.flare": { desc: "A secret flare found: an eerie chip turn, Bb5 to C#6 to D6, with a shimmering 12.5% voice.",
+    fn: K => { K.seq({ sq: .125, g: .05, d: .06, vib: [9, 20] }, [[0, "Bb5", .12], [.13, "C#6", .12], [.26, "D6", .4]]); K.tri({ f: "D3", hold: .5, d: .2, g: .1 }); } },
+  "res.found.character": { desc: "A character found: a happy little march, C6 C6 D6 and a held F#6.",
+    fn: K => { K.seq({ sq: .5, g: .045, d: .04, lp: 3600 }, [[0, "C6", .06], [.08, "C6", .06], [.16, "D6", .1], [.3, "F#6", .3]]); K.tri({ f: "C3", hold: .15, d: .05, g: .1 }); K.tri({ t: .16, f: "D3", hold: .3, d: .1, g: .1 }); } },
+
+  /* ---- the badge case opening ---- */
+  "badge.case.open": { desc: "The case opening: two clear chip clicks for the latches, a creaky-but-musical lid as a rising 50% pulse sweep with a fast wobble, then the item-get chime as the light comes out - all on the case's own beats (opts latch2, crack, swing).",
+    fn: (K, o) => {
+      o = o || {};
+      const C = SND_CASE_OPEN(), l2 = o.latch2 != null ? o.latch2 : .26, cr = o.crack != null ? o.crack : (C.hold + C.crack) / 1000, sw = o.swing != null ? o.swing : cr + .2;
+      [[0, "E6"], [l2, "A6"]].forEach(n => { K.hat({ t: n[0], g: .08, d: .015 }); K.sq({ t: n[0], f: n[1], sq: .5, d: .02, g: .055 }); K.sq({ t: n[0] + .03, f: n[1], sq: .125, d: .03, g: .03 }); });
+      /* the lid: a creak that sings, from the crack to wide open */
+      const lift = Math.max(.35, sw - cr + .45);
+      K.sq({ t: cr, f: "D3", f2: "A4", gl: lift, sq: .5, a: .03, hold: lift - .1, d: .1, g: .03, lp: 1400, vib: [22, 60] });
+      K.sq({ t: cr, f: "A3", f2: "D5", gl: lift, sq: .125, a: .05, hold: lift - .1, d: .12, g: .02, lp: 2400 });
+      if(o.light !== false){
+        const L = cr + lift * .55;
+        K.seq({ t: L, sq: .25, g: .055, d: .05 }, [[0, "D6", .06], [.07, "F#6", .06], [.14, "A6", .06], [.21, "D7", .45]]);
+        K.sq({ t: L + .21, f: "A6", sq: .125, hold: .35, d: .2, g: .025, vib: [7, 14, 0, .1] });
+        K.tri({ t: L + .21, f: "D4", hold: .3, d: .15, g: .09 });
+      }
+    } },
+  "badge.case.close": { desc: "The case closing: the lid falling as a sweep down, a thud and two clicks.",
+    fn: K => { K.sq({ f: "A4", f2: "D3", gl: .22, sq: .5, d: .2, g: .04, lp: 1500 }); K.kick({ t: .22, g: .2 }); [.3, .4].forEach(t => K.hat({ t, g: .06, d: .015 })); } },
+
+  /* ---- the badge cutscene's music bed (BADGE FOUND), ~17s at 160bpm ----
+     Its own tune: 160bpm (12 bars = 18s, the scene is ~17s), D minor, dark-heroic like an evolution cue -
+     a 12.5% arpeggio under a 25% lead, triangle bass and noise drums; the
+     second half climbs to the bright D major as the badge goes home. */
+  "cs.badge": { desc: "BADGE FOUND's own chiptune bed, ~17s: a dark-heroic D minor tune (Dm, Bb, C, A) on pulse, triangle and noise, turning to D major at the end as the badge goes home.",
+    fn: K => {
+      const D = ["D5", "F5", "A5"], Bb = ["Bb4", "D5", "F5"], Cc = ["C5", "E5", "G5"], A = ["A4", "C#5", "E5"], DM = ["D5", "F#5", "A5"];
+      const bars = [D, D, Bb, A, D, Bb, Cc, A, D, Bb, Cc, DM];
+      K.bed({ bpm: 160, arp: bars, ag: .014,
+        lead: [[16, "A5", 4], [20, "F5", 4], [24, "D5", 8], [32, "Bb5", 6], [38, "A5", 2], [40, "G5", 4], [44, "E5", 4], [48, "A5", 4], [52, "C6", 4], [56, "D6", 8],
+          [64, "F6", 4], [68, "E6", 4], [72, "D6", 4], [76, "C6", 4], [80, "Bb5", 4], [84, "A5", 4], [88, "G5", 4], [92, "C#6", 4], [96, "D6", 6], [102, "C6", 2], [104, "D6", 4], [108, "E6", 4], [112, "F#6", 4], [116, "A6", 4], [120, "D7", 16], [136, "D7", 16]],
+        lg: .03,
+        bass: bars.map((b, i) => [i * 16, b[0].replace(/\d/, "3"), 6]).concat(bars.map((b, i) => [i * 16 + 8, b[0].replace(/\d/, "2"), 6])),
+        bg: .09, drums: "................................" + sndRep("k...h...s...h...", 8) + "x...h.h.s.h.s.ss", kg: .12, sg: .045, hg: .022 });
+    } },
+  "bc.rise": { desc: "The case rising: a triangle climbing D3 to A3 under a 12.5% sweep.",
+    fn: (K, o) => { const d = Math.max(.6, o && o.dur || 1.2); K.tri({ f: "D3", f2: "A3", gl: d, hold: d - .2, d: .2, g: .1 }); K.sq({ f: "D5", f2: "A5", gl: d, sq: .125, a: .1, hold: d - .3, d: .2, g: .015, lp: 2200 }); } },
+  "badge.slide": { desc: "The badge going in over the front wall: a quick chip slide A5 up to D6.",
+    fn: K => K.sq({ f: "A5", f2: "D6", gl: .12, sq: .25, d: .12, g: .045 }) },
+  "badge.drop": { desc: "The badge seated: a thunk on the triangle and the item ding, D6 + A6.",
+    fn: (K, o) => { K.kick({ g: .2 }); K.sq({ t: .03, f: "D6", sq: .25, hold: .05, d: .2, g: .05 }); if(!o || o.ring !== false) K.sq({ t: .1, f: "A6", sq: .125, hold: .05, d: .3, g: .035, dly: .1 }); } },
+  "badge.spin": { desc: "A badge spinning: a whirring 12.5% pulse, its pitch with the speed.",
+    fn: (K, o) => { const v = Math.max(.2, Math.min(1, o && o.speed != null ? +o.speed : .6)); K.sq({ f: 400 + 600 * v, f2: 300 + 400 * v, gl: .1, sq: .125, d: .09, g: .03, lp: 2400, vib: [30, 40] }); } },
+
+  /* ---- the XP box: the EXP gain (default design A) ---- */
+};
+/* THE XP SET, three designs, one constant (b327j): A is the default. */
+const XP_SOUND_DESIGN = "A";
+const SND_XP = {
+  A: {
+    "res.xp.line": { desc: "An XP line landing: an EXP orb pling - a 12.5% blip with a quick upward flick, a step higher each line.",
+      fn: (K, o) => { const i = Math.max(0, Math.min(10, o && o.i || 0)), f = K.dm(7 + i, "D4"); K.sq({ f, sq: .125, d: .03, g: .05 }); K.sq({ t: .03, f: f * 1.5, sq: .125, d: .07, g: .045 }); } },
+    "res.xp.count": { desc: "The XP total counting: crisp rapid ticks tied to the number, climbing as it goes.",
+      fn: (K, o) => { const k = Math.max(0, Math.min(1, o && o.k != null ? +o.k : .5)); K.sq({ f: K.dm(Math.round(k * 10), "D6"), sq: .25, a: .001, d: .014, g: .035, lp: 5000 }); } },
+    "res.xp.total": { desc: "The XP total landing: ding-ding-DING, A5 A5 and a held D6 over a triangle.",
+      fn: K => { K.sq({ f: "A5", sq: .5, d: .04, g: .05, lp: 3200 }); K.sq({ t: .09, f: "A5", sq: .5, d: .04, g: .05, lp: 3200 }); K.sq({ t: .18, f: "D6", sq: .25, hold: .14, d: .25, g: .06, vib: [7, 14, 0, .1] }); K.tri({ t: .18, f: "D4", hold: .15, d: .15, g: .1 }); } },
+    "res.xp.fill": { desc: "The XP bar filling: the classic EXP-gain tone - a 25% pulse whose pitch rises WITH the bar on its own ease (XP_FILL_EASE), D4 to D6, a 12.5% shimmer an octave up.",
+      fn: (K, o) => {
+        const dur = Math.max(.3, Math.min(4, o && o.dur || 1.6)), e = sndBezier(...XP_FILL_EASE), pts = [];
+        for(let i = 1; i <= 24; i++){ const x = i / 24; pts.push([x * dur, sndHz("D4") * Math.pow(4, e(x))]); }
+        K.sq({ f: "D4", pts, sq: .25, a: .01, hold: dur - .05, d: .05, g: .045, lp: 3400 });
+        K.sq({ f: "D5", pts: pts.map(p => [p[0], p[1] * 2]), sq: .125, a: .05, hold: dur - .08, d: .05, g: .014, lp: 4000, vib: [14, 20] });
+      } },
+    "res.xp.pop": { desc: "The bar landing: a clean ding, D6 with A6 over it.",
+      fn: K => { K.sq({ f: "D6", sq: .25, hold: .05, d: .22, g: .055 }); K.sq({ t: .04, f: "A6", sq: .125, hold: .05, d: .3, g: .035, dly: .08 }); } },
+    "res.xp.knock": { desc: "A full bar knocking at its wall: a dull bonk on the triangle and a low muted blip, A3.",
+      fn: K => { K.kick({ f: 120, g: .2 }); K.sq({ t: .02, f: "A3", sq: .5, d: .12, g: .045, lp: 900 }); K.sq({ t: .16, f: "A4", sq: .125, d: .1, g: .02, lp: 1500 }); } },
+    "res.xp.overflow": { desc: "XP with nowhere to go, counting on: a quick chip arpeggio running up past the top, D6 E6 F6 A6 D7.",
+      fn: K => K.seq({ sq: .125, g: .035, d: .03 }, [[0, "D6", .05], [.06, "E6", .05], [.12, "F6", .05], [.18, "A6", .05], [.24, "D7", .2]]) },
+    "res.levelup": { desc: "Level up: the level-up jingle - a quick D major run in triplets, then A5 B5 C#6 and a held D6 chord with a snare.",
+      fn: K => {
+        K.seq({ sq: .25, g: .06, d: .035 }, [[0, "D5", .06], [.065, "F#5", .06], [.13, "A5", .06], [.2, "D6", .12], [.36, "A5", .08], [.45, "B5", .08], [.54, "C#6", .08], [.63, "D6", .6]]);
+        K.sq({ t: .63, f: "F#5", sq: .125, hold: .45, d: .2, g: .03 }); K.sq({ t: .63, f: "A5", sq: .125, hold: .45, d: .2, g: .03 });
+        [[0, "D3", .3], [.36, "A2", .25], [.63, "D3", .5]].forEach(n => K.tri({ t: n[0], f: n[1], hold: n[2], d: .1, g: .13 }));
+        K.kick({ g: .18 }); K.snare({ t: .63, g: .06 });
+      } },
+  },
+  B: {
+    "res.xp.line": { desc: "Design B: a two-step coin blip, B5 then E6 transposed up each line.",
+      fn: (K, o) => { const i = Math.max(0, Math.min(10, o && o.i || 0)), f = K.dm(6 + i, "D4"); K.sq({ f, sq: .5, d: .03, g: .045, lp: 3600 }); K.sq({ t: .045, f: f * 4 / 3, sq: .5, hold: .03, d: .08, g: .045, lp: 3600 }); } },
+    "res.xp.count": { desc: "Design B: a soft tick on the noise channel with a pitched blip.",
+      fn: (K, o) => { const k = Math.max(0, Math.min(1, o && o.k != null ? +o.k : .5)); K.hat({ g: .025, d: .01 }); K.sq({ f: K.dm(Math.round(k * 7), "D5"), sq: .5, d: .012, g: .025, lp: 3000 }); } },
+    "res.xp.total": { desc: "Design B: a cash-in chord, D6 + F#6 + A6 struck, a sparkle up.",
+      fn: K => { ["D6", "F#6", "A6"].forEach(f => K.sq({ f, sq: .25, hold: .1, d: .3, g: .03 })); K.seq({ t: .12, sq: .125, g: .025, d: .03 }, [[0, "D7", .03], [.04, "F#7", .03], [.08, "A7", .1]]); } },
+    "res.xp.fill": { desc: "Design B: the EXP tone as a fast arpeggio climbing with the bar.",
+      fn: (K, o) => { const dur = Math.max(.3, Math.min(4, o && o.dur || 1.6)), e = sndBezier(...XP_FILL_EASE), n = Math.floor(dur / .05);
+        for(let i = 0; i < n; i++){ const x = i / n, deg = Math.round(e(x) * 14); K.sq({ t: x * dur, f: K.dm(deg, "D4"), sq: .25, d: .035, g: .035, lp: 3400 }); } } },
+    "res.xp.pop": { desc: "Design B: a two-note ding, A6 D7.",
+      fn: K => { K.sq({ f: "A6", sq: .125, d: .05, g: .045 }); K.sq({ t: .06, f: "D7", sq: .125, hold: .05, d: .25, g: .045 }); } },
+    "res.xp.knock": { desc: "Design B: a low double buzz at the wall.",
+      fn: K => { K.sq({ f: "D3", sq: .5, d: .05, g: .05, lp: 900 }); K.sq({ t: .08, f: "D3", sq: .5, d: .1, g: .05, lp: 900 }); } },
+    "res.xp.overflow": { desc: "Design B: a trill running up.",
+      fn: K => { for(let i = 0; i < 8; i++) K.sq({ t: i * .035, f: K.dm(7 + i + (i % 2), "D4"), sq: .125, d: .025, g: .03 }); } },
+    "res.levelup": { desc: "Design B level-up: a bouncy D major fanfare.",
+      fn: K => { K.seq({ sq: .5, g: .05, d: .035, lp: 3600 }, [[0, "A5", .07], [.08, "D6", .07], [.16, "F#6", .07], [.24, "A6", .14], [.4, "F#6", .07], [.48, "A6", .5]]); K.tri({ f: "D3", hold: .6, d: .2, g: .12 }); K.kick({ g: .16 }); K.snare({ t: .48, g: .06 }); } },
+  },
+  C: {
+    "res.xp.line": { desc: "Design C: a bubbly 12.5% chirp sweeping up a fifth.",
+      fn: (K, o) => { const i = Math.max(0, Math.min(10, o && o.i || 0)), f = K.dm(7 + i, "D4"); K.sq({ f, f2: f * 1.5, gl: .05, sq: .125, d: .08, g: .05 }); } },
+    "res.xp.count": { desc: "Design C: a tiny falling blip per tick.",
+      fn: (K, o) => { const k = Math.max(0, Math.min(1, o && o.k != null ? +o.k : .5)), f = K.dm(Math.round(k * 10), "D6"); K.sq({ f: f * 1.2, f2: f, gl: .012, sq: .25, d: .016, g: .03 }); } },
+    "res.xp.total": { desc: "Design C: a rolling chime, D6 A6 D7.",
+      fn: K => K.seq({ sq: .25, g: .05, d: .05 }, [[0, "D6", .06], [.07, "A6", .06], [.14, "D7", .35]]) },
+    "res.xp.fill": { desc: "Design C: a 50% tone rising with the bar plus a ticking pulse.",
+      fn: (K, o) => { const dur = Math.max(.3, Math.min(4, o && o.dur || 1.6)), e = sndBezier(...XP_FILL_EASE), pts = [];
+        for(let i = 1; i <= 24; i++){ const x = i / 24; pts.push([x * dur, sndHz("D4") * Math.pow(4, e(x))]); }
+        K.sq({ f: "D4", pts, sq: .5, a: .01, hold: dur - .05, d: .05, g: .03, lp: 2200 });
+        for(let t = 0; t < dur; t += .08) K.hat({ t, g: .015, d: .01 }); } },
+    "res.xp.pop": { desc: "Design C: a bright pop blip and its echo.",
+      fn: K => { K.sq({ f: "D7", f2: "A6", gl: .04, sq: .25, d: .1, g: .05, dly: .15 }); } },
+    "res.xp.knock": { desc: "Design C: a bonk sliding down.",
+      fn: K => K.sq({ f: "A4", f2: "D3", gl: .1, sq: .5, d: .12, g: .055, lp: 1200 }) },
+    "res.xp.overflow": { desc: "Design C: a sweep up past the top.",
+      fn: K => K.sq({ f: "D6", f2: "D7", gl: .3, sq: .125, hold: .2, d: .1, g: .03, vib: [12, 20] }) },
+    "res.levelup": { desc: "Design C level-up: a rising sweep into a held chord.",
+      fn: K => { K.sq({ f: "D5", f2: "D6", gl: .25, sq: .25, d: .1, g: .05 }); ["D6", "F#6", "A6"].forEach(f => K.sq({ t: .28, f, sq: .25, hold: .4, d: .25, g: .03 })); K.tri({ t: .28, f: "D3", hold: .4, d: .2, g: .12 }); } },
+  },
+};
+Object.assign(SND_CHIP, SND_XP[XP_SOUND_DESIGN] || SND_XP.A);
+
+/* each vol sets the id's loudest 50ms (measured against the build-327
+   design it replaces; the frequent taps ~5dB under) */
+const SND_CHIP_VOL = {"res.unlock.banner": 0.524, "badge.case.close": 2.121, "badge.case.open": 0.494, "badge.drop": 1.039, "badge.slide": 2.244, "badge.spin": 3.127, "bc.rise": 1.316, "cs.badge": 0.587, "lb.switch": 0.963, "res.bar.tick": 2.187, "res.found.badge": 0.548, "res.found.character": 0.299, "res.found.flare": 0.507, "res.grade.fail": 1.233, "res.grade.great": 0.748, "res.grade.pass": 0.774, "res.grade.perfect": 1.698, "res.levelup": 1.702, "res.unlock.reveal": 2.29, "res.xp.count": 1.926, "res.xp.fill": 0.613, "res.xp.knock": 0.558, "res.xp.line": 3.19, "res.xp.overflow": 2.913, "res.xp.pop": 1.181, "res.xp.total": 0.593, "test.correct": 1.693, "test.load": 0.849, "test.next": 2.458, "test.pause": 0.983, "test.resume": 0.864, "test.save": 3.699, "test.select": 2.092, "test.star": 2.085, "test.tick": 0.525, "test.timeup": 0.888, "test.unstar": 2.933, "test.wrong": 1.302, "ui.back": 1.798, "ui.error": 2.363, "ui.field.focus": 4.928, "ui.locked": 1.376, "ui.notice": 1.932, "ui.popup.open": 2.397, "ui.sheet.close": 2.403, "ui.sheet.open": 1.251, "ui.slider.tick": 2.767, "ui.tab.bottom": 4.209, "ui.tab.top": 0.883, "ui.tap.primary": 2.746, "ui.tap.secondary": 1.058, "ui.toggle.off": 3.498, "ui.toggle.on": 3.319};
+Object.keys(SND_CHIP).forEach(id => {
+  const c = SOUND_CATALOGUE[id], d = SND_CHIP[id];
+  if(!c){ console.warn("sound: chip design for unknown id " + id); return; }
+  c.fn = d.fn;
+  if(d.desc) c.desc = d.desc;
+  if(SND_CHIP_VOL[id] != null) c.vol = SND_CHIP_VOL[id];
+});
 
 /* ---- THE HOME AMBIENCE ----
    "a cool dark kinda offset noise": a low D pad with a slow beating
@@ -98196,13 +98527,14 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   const steps = levelsUp ? after.level - before.level : 0;
   const stepMs = steps <= 1 ? 900 : Math.max(240, Math.min(700, Math.round(2800 / steps)));
   if(steps > 1) lvl.dataset.jump = String(steps);
-  /* The fill's own pace (build 320): slow away, slow in, longer the
+  /* The fill's own pace (build 320; b327j 1.4x slower with a longer ease-out,
+     Madison: "a smidge slower too to draw it out make it more suspenseful"): slow away, slow in, longer the
      further it goes. */
-  const XP_EASE = "cubic-bezier(.45,.05,.22,1)";
+  const XP_EASE = "cubic-bezier(.4,.05,.15,1)";  /* = XP_FILL_EASE, which the fill sound rides */
   /* (a bar with nowhere to go - full already, or no XP - lands at once) */
-  const fillMsFor = d => d <= .002 ? 260 : Math.round(1000 + 1300 * Math.min(1, d / .6));
+  const fillMsFor = d => d <= .002 ? 260 : Math.round(1400 + 1820 * Math.min(1, d / .6));
   const target = Math.round(barAfter.fraction * 1000) / 10;
-  const firstMs = levelsUp ? (steps > 1 ? stepMs : Math.round(800 + 600 * Math.min(1, (1 - barBefore.fraction) / .6)))
+  const firstMs = levelsUp ? (steps > 1 ? stepMs : Math.round(1120 + 840 * Math.min(1, (1 - barBefore.fraction) / .6)))
     : fillMsFor(barAfter.fraction - barBefore.fraction);
   const lastMs = levelsUp ? fillMsFor(barAfter.fraction) : 0;
   /* after the fill: the pop's settle, or the knock (+170 to its settle),
@@ -102217,8 +102549,6 @@ function showRunRewards(run, hooks, opts){
     tl.className = "rs-grade-tone"; tl.setAttribute("aria-hidden", "true");
     /* two washes, red and green - nothing between them (build 321) */
     toneLayers = ["is-red", "is-green"].map(c => { const s = document.createElement("i"); s.className = c; tl.appendChild(s); return s; });
-    /* the green starts off the card's left edge: all red (build 327) */
-    grade.style.setProperty("--rs-gx", "-4px");
     grade.appendChild(tl);
   }
   /* A 100 IS IN ITS EFFECT'S COLOURS BEFORE IT IS EVER SEEN (build 317):
@@ -102524,64 +102854,43 @@ function showRunRewards(run, hooks, opts){
      finishes the count and lands the grade. */
   const gc = { done: !countIt, raf: 0 };
   const plan = countIt ? rsGradeCountPlan(unitBars, run.good) : null;
-  /* RED INTO GREEN AS A WIPE (build 327, b327j): the green fills the
-     card from the left as the count climbs from the pass mark to the
-     grade it lands on - so it is all green the moment the count is home,
-     and a fail never takes any. The number and each bar are wiped the
-     same way (a hard line, red one side, green the other), never blended:
-     a blend of red and green is grey. */
-  const wipe = { W: 0, numX: 0, g: -1, measured: false };
+  /* RED, THEN GREEN (b327j, second answer): the card, the number and each
+     bar are red while their count is under the pass mark and green the
+     frame it crosses it - a switch with a bloom, never a blend (a blend of
+     red and green is grey) and never a wipe. A fail never turns. */
+  const wipe = { W: 0, numX: 0, measured: false };
   const wipeMeasure = () => {
     wipe.measured = true;
     wipe.W = grade.offsetWidth || 0;
     const gr = grade.getBoundingClientRect(), sc = wipe.W ? (gr.width / wipe.W) || 1 : 1;
     if(gradeParts){ const pr = gradeParts.pctEl.getBoundingClientRect(); wipe.numX = (pr.left - gr.left) / sc; }
-    unitBars.forEach(u => { u.W = u.fill.offsetWidth || (u.fill.parentNode ? u.fill.parentNode.offsetWidth : 0) || 0; });
   };
   const fillExact = run.total ? 100 * run.good / run.total : 0;
   const passes = run.pct >= PASS_MARK;
-  /* how far the green has come at count sp (0-100, continuous) */
-  const wipeAt = sp => !passes ? 0 : fillExact - PASS_MARK < .5 ? (sp >= fillExact - 1e-6 ? 1 : 0)
-    : Math.max(0, Math.min(1, (sp - PASS_MARK) / (fillExact - PASS_MARK)));
+  const passAt = Math.min(PASS_MARK, fillExact - 1e-6);
   const numPlain = (pe, col) => {
     pe.style.backgroundImage = ""; pe.style.webkitBackgroundClip = ""; pe.style.backgroundClip = "";
     pe.style.webkitTextFillColor = ""; pe.style.color = col || "";
   };
-  const paintNum = x => {
-    if(!gradeParts) return;
-    const pe = gradeParts.pctEl;
-    if(x <= 0){ numPlain(pe, rsToneAt(0)); return; }
-    if(x >= 4000){ numPlain(pe, rsToneAt(100)); return; }
-    pe.style.backgroundImage = "linear-gradient(90deg, var(--right) " + x.toFixed(1) + "px, var(--wrong) " + x.toFixed(1) + "px)";
-    pe.style.webkitBackgroundClip = "text"; pe.style.backgroundClip = "text";
-    pe.style.webkitTextFillColor = "transparent";
-    pe.style.color = x > 40 ? rsToneAt(100) : rsToneAt(0);
-  };
-  const paintWipe = g => {
-    g = Math.max(0, Math.min(1, g));
-    if(g === wipe.g) return;
-    wipe.g = g;
-    if(!wipe.measured) wipeMeasure();
-    const gx = g <= 0 ? -4 : g >= 1 ? wipe.W + 4 : g * wipe.W;
-    grade.style.setProperty("--rs-gx", Math.round(gx) + "px");
-    paintNum(g >= 1 ? 1e6 : g <= 0 ? 0 : gx - wipe.numX);
+  let greenOn = false;
+  const goGreen = () => {
+    if(greenOn) return;
+    greenOn = true;
+    const tl = grade.querySelector(".rs-grade-tone");
+    if(tl) tl.classList.add("is-green-on");
+    if(gradeParts){ numPlain(gradeParts.pctEl, rsToneAt(100)); gradeParts.pctEl.classList.add("rs-num-flip"); }
   };
   const paintUnit = (u, p) => {
     setBarFill(u.fill, Math.round(u.up * p * 10) / 10);
     const r = Math.min(u.right, Math.floor(u.right * p + 1e-6));
     if(u.shown !== r){ u.shown = r; rsPair(u.score, r, u.total); }
-    /* the bar's own wipe, by its own unit's verdict */
-    const gb = u.up < PASS_MARK ? 0 : u.up - PASS_MARK < .5 ? (p >= 1 ? 1 : 0) : Math.max(0, Math.min(1, (u.up * p - PASS_MARK) / (u.up - PASS_MARK)));
-    let bg;
-    if(gb <= 0) bg = "var(--wrong)";
-    else if(gb >= 1) bg = "var(--right)";
-    else {
-      if(!wipe.measured) wipeMeasure();
-      const f = u.up * p / 100, W = u.W || 0;
-      const x = Math.round((gb * f * W + (1 - f) * W) * 2) / 2;
-      bg = "linear-gradient(90deg, var(--right) " + x + "px, var(--wrong) " + x + "px)";
+    /* the bar's own switch, by its own unit's verdict */
+    const green = u.up >= PASS_MARK && u.up * p >= Math.min(PASS_MARK, u.up - 1e-6);
+    const bg = green ? "var(--right)" : "var(--wrong)";
+    if(u.bgNow !== bg){
+      u.bgNow = bg; u.fill.style.background = bg;
+      if(green){ u.fill.classList.remove("rs-bar-flip"); void u.fill.offsetWidth; u.fill.classList.add("rs-bar-flip"); }
     }
-    if(u.bgNow !== bg){ u.bgNow = bg; u.fill.style.background = bg; }
   };
   /* a bar home takes its own verdict's colour - which its wipe has
      already reached (build 327); a 100's gold is the landing's */
@@ -102590,7 +102899,7 @@ function showRunRewards(run, hooks, opts){
     u.home = true;
     paintUnit(u, 1);
     u.fill.style.background = "";
-    u.fill.className = u.tone + " sbar is-home";
+    u.fill.className = u.tone + " sbar is-home" + (u.fill.classList.contains("rs-bar-flip") ? " rs-bar-flip" : "");
   };
   /* the card is built showing 0% and 0 / N: the first change ticks */
   let shownPct = 0, shownGood = 0;
@@ -102606,7 +102915,7 @@ function showRunRewards(run, hooks, opts){
     });
     const pc = Math.min(run.pct, Math.floor(sofar / run.total * 100 + 1e-6));
     if(pc !== shownPct){ sndGradeTick(shownPct, pc); shownPct = pc; gradePctMarkup(gradeParts.pctEl, pc); }
-    paintWipe(wipeAt(sofar / run.total * 100));
+    if(passes && sofar / run.total * 100 >= passAt) goGreen();
     const g = Math.min(run.good, Math.floor(sofar + 1e-6));
     if(g !== shownGood){
       /* (the count's ticks follow the percentage since build 327 -
@@ -102720,17 +103029,11 @@ function showRunRewards(run, hooks, opts){
         unitBars.forEach(u => u.fill.classList.add("is-gold"));
         if(instant || !tl) done();
         else rsHandoff(tl, pe, done);
-      } else if(passes && !instant && tl && wipe.g < 1){
-        /* tapped in early, or a pass on the mark: the green finishes
-           filling the card before the layers come off */
-        const g0 = Math.max(0, wipe.g), t0 = performance.now(), D = 520;
-        const step = now => {
-          if(!grade.isConnected) return;
-          const k = Math.min(1, (now - t0) / D);
-          paintWipe(g0 + (1 - g0) * (1 - Math.pow(1 - k, 2)));
-          if(k < 1) requestAnimationFrame(step); else done();
-        };
-        requestAnimationFrame(step);
+      } else if(passes && !instant && tl && !greenOn){
+        /* tapped in early: it turns green as it lands, with its bloom,
+           and the layers come off once the bloom is over */
+        goGreen();
+        setTimeout(() => { if(grade.isConnected) done(); }, 400);
       } else done();
     }
     if(!instant){
