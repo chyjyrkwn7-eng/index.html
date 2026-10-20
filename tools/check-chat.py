@@ -529,16 +529,23 @@ def run_intro(src_dir, label):
             out = pg.evaluate("""()=>{
               const el = document.getElementById('intro-pop');
               if(!el) return null;
-              const list = el.querySelector('.nt-list'), bub = el.querySelector('.nt-bubble');
-              if(!list || !bub) return { rows: 0, wide: false, topReachable: false, bottomReachable: false, says78: false, go: false };
-              const lr = list.getBoundingClientRect(), br = bub.getBoundingClientRect();
+              /* MOVED IN 327 (b327m): "The what's new stuff, make it just
+                 show on the main menu like how we have done it before" -
+                 the card again (#intro-pop > .intro-card), every row at
+                 once, the overlay scrolling to its Got it */
+              const list = el.querySelector('.intro-card'), go = el.querySelector('.intro-go');
+              if(!list || !go || el.__nova) return { rows: 0, wide: false, topReachable: false, bottomReachable: false, says78: false, go: false };
+              el.scrollTop = 0;
+              const lr = list.getBoundingClientRect();
+              const top = lr.top >= -1;
+              el.scrollTop = el.scrollHeight;
+              const gr = go.getBoundingClientRect();
+              el.scrollTop = 0;
               const txt = el.innerText.toLowerCase();
               return {rows: el.querySelectorAll('.intro-row').length,
-                      topReachable: lr.top >= -1,
-                      /* the list scrolls inside its own box, which ends
-                         above his bubble, and the bubble is on screen */
-                      bottomReachable: lr.bottom <= br.top + 1 && br.bottom <= innerHeight + 1 && list.scrollHeight >= list.clientHeight,
-                      wide: lr.width > innerWidth * 0.7,
+                      topReachable: top,
+                      bottomReachable: gr.bottom <= innerHeight + 1 && gr.top >= 0,
+                      wide: lr.width > Math.min(innerWidth * 0.7, 380),
                       /* build 325: "Results grade first, characters celebrate, the
                          ranking up on the road map, a planet that cracks, supernovas
                          mark, the daily question ring. Remove all of those" - and
@@ -573,6 +580,7 @@ def run_intro(src_dir, label):
               for(let i = 0; i < 30 && !document.getElementById('tour-tooltip'); i++) await wait(100);
               for(let i = 0; i < 20 && document.getElementById('tour-tooltip'); i++){ document.getElementById('tour-next').click(); await wait(400); }
               for(let i = 0; i < 30 && !document.getElementById('nova-intro'); i++) await wait(100);
+              /* MOVED IN 327 (b327m): no goodbye after the tips - it is the end of his talk */
               const bye = document.getElementById('nova-intro'); if(bye){ await wait(700); bye.__nova.skip(); }
               await wait(600);
               return new Promise(r => setTimeout(() => {

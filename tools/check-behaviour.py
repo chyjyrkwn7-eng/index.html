@@ -21520,17 +21520,12 @@ B319_NOTE = """async ([lvl, nb]) => {
   store.lifetime.points = xpForLevel(lvl) + 10;
   document.getElementById('intro-pop')?.remove();
   showIntroPopup();
-  /* build 320: What's New is narrated, and the note is his - Skip puts it
-     on the card at once, and his lines carry the same words */
-  document.querySelector('#intro-pop .nt-skip')?.click();
+  /* MOVED IN 327 (b327m): What's New is a card on Home again ("make it just
+     show on the main menu like how we have done it before"), not narrated -
+     the note is a box on the card, and nothing of his says it */
   await new Promise(r => setTimeout(r, 150));
   const n = document.querySelector('#intro-pop .intro-gate-note');
-  let spoken = '';
-  try{ spoken = whatsNewLines(whatsNewState()).map(l => l.text).join(' '); }catch(e){}
-  /* build 321: and in the meeting with Nova, where What's New follows his
-     introduction (chained) - the note is said there too */
-  let chained = '';
-  try{ chained = whatsNewLines(whatsNewState(), true).map(l => l.text).join(' '); }catch(e){}
+  const spoken = '', chained = '';
 
   const s = levelStateFor(store);
   const r = n ? n.getBoundingClientRect() : null;
@@ -21572,14 +21567,9 @@ def check_b319_levelnote(br):
                     "The levels your XP has already paid for come in then."]
             bad = [x for x in ("keep leveling up", "turns back into levels", "rank system", "wall", "band", "went from") if x in t]
             miss = [x for x in want if x not in t]
-            # build 320: Nova says the note, its facts exactly
-            miss += ["(spoken) " + x for x in want if x not in (r.get("spoken") or "")]
-            # build 321: and in the meeting's What's New, after his introduction.
-            # MOVED IN 326 (b326d): the meeting's recap says where the wall
-            # leaves them just before ("it also doesn't mention anything about
-            # your level ... Shouldn't that be there??"), so the chained What's
-            # New no longer repeats it - check-b326-d d3 holds the recap's words
-            miss += ["(chained, said twice) " + x for x in want[:1] if "Here’s what’s new" not in (r.get("chained") or "") or x in (r.get("chained") or "")]
+            # MOVED IN 327 (b327m): What's New is not narrated any more, so
+            # the note is only on the card (the box above); check-b327-m m3
+            # holds the box itself
             check("%s: level %d, %d badge(s): the note says it plainly" % (dev, lvl, nb),
                   r["title"] == "Levels wait for your next rank" and not miss and not bad and r["level"] == top and r["inView"],
                   {"missing": miss, "bad": bad, "text": r["text"], "state": [r["level"], r["curve"], r["held"], r["gate"], r["need"]]})
@@ -22223,47 +22213,36 @@ B320F_NEW = """async () => {
 }"""
 
 B320F_NEWS = """async ([reduce]) => {
+  /* MOVED IN 327 (b327m): "The what's new stuff, make it just show on the
+     main menu like how we have done it before ... So the nova instructor
+     won't go through what's new one by one" - the card, every row at once,
+     Got it; he does not narrate it */
   const wait = ms => new Promise(r => setTimeout(r, ms));
-  const out = { lines: [], err: null };
+  const out = { err: null };
   try{
     const U = topicsIn(QUESTIONS); out.units = U.length;
     store.unitPerfects = {}; U.slice(0, 3).forEach(u => store.unitPerfects[u] = badgeThresholdFor(u) + 1);
-    /* Gold held from the old ladder (rankFloor 3), three badges */
     store.levelFloor = 0; store.rankFloor = 3; store.lifetime.points = xpForLevel(49) + 300;
-    /* build 321: an account that has not met Nova meets him first
-       (check_b321g_nova); this is What's New on its own */
     store.novaMet = 1;
     theme.reduceMotion = !!reduce; applyTheme(); saveStore();
-    out.rank = RANK_DISPLAY_NAME[rankOf(store)]; out.badges = badgeCountOf(store); out.level = levelOf(store);
+    out.rank = RANK_DISPLAY_NAME[rankOf(store)]; out.badges = badgeCountOf(store);
     localStorage.removeItem('class26e.intro.seen');
     showHome();
     for(let i = 0; i < 50 && !document.getElementById('intro-pop'); i++) await wait(100);
     const el = document.getElementById('intro-pop');
-    if(!el || !el.__nova){ out.err = 'no narrated What\\'s New'; return out; }
-    const nv = el.__nova;
-    await wait(reduce ? 100 : 900);
-    out.firstTyping = nv.typing;
-    out.firstRest = ((el.querySelector('.nt-text .nv-rest') || {}).textContent || '').length;
-    out.count = nv.count;
-    const idx0 = nv.index;
-    el.querySelector('.nt-stage').click(); await wait(60);
-    out.oneTapMoved = nv.index - idx0;
-    out.lines.push(el.querySelector('.nt-text').textContent);
-    for(let i = 0; i < 60; i++){
-      const t = el.querySelector('.nt-text').textContent;
-      if(out.lines[out.lines.length - 1] !== t) out.lines.push(t);
-      if(nv.index === nv.count - 1 && !nv.typing) break;
-      el.querySelector('.nt-stage').click(); await wait(40);
-    }
-    out.rows = el.querySelectorAll('.nt-list .nt-card').length;
-    out.me = (el.querySelector('.nt-me') || {}).textContent || '';
-    const go = el.querySelector('.nt-go');
-    out.go = go ? getComputedStyle(go).display !== 'none' : false;
+    if(!el){ out.err = 'no card'; return out; }
+    out.narrated = !!el.__nova || !!el.querySelector('.nt-text');
+    out.nova = !!document.getElementById('nova-intro');
+    out.rows = el.querySelectorAll('.intro-card .intro-row').length;
+    out.want = WHATS_NEW_320.length;
+    out.text = el.innerText;
+    const go = el.querySelector('.intro-go');
+    out.go = go ? go.textContent : null;
     go && go.click(); await wait(600);
     out.closed = !document.getElementById('intro-pop');
     out.seen = Number(localStorage.getItem('class26e.intro.seen')) >= INTRO_REV;
     showHome(); await wait(3400);
-    out.again = !!document.getElementById('intro-pop');
+    out.again = !!document.getElementById('intro-pop') || !!document.getElementById('nova-intro');
   }catch(e){ out.err = String(e); }
   theme.reduceMotion = false; applyTheme();
   return out;
@@ -22278,12 +22257,12 @@ B320F_SKIP = """async () => {
     for(let i = 0; i < 50 && !document.getElementById('intro-pop'); i++) await wait(100);
     const el = document.getElementById('intro-pop');
     await wait(900);
-    el.querySelector('.nt-skip').click(); await wait(200);
-    out.atEnd = el.__nova.index === el.__nova.count - 1;
-    out.rows = el.querySelectorAll('.nt-list .nt-card').length;
+    /* MOVED IN 327 (b327m): the card has no Skip - every row is there at once */
+    out.atEnd = !el.querySelector('.nt-skip') && !el.__nova;
+    out.rows = el.querySelectorAll('.intro-card .intro-row').length;
     out.want = WHATS_NEW_320.length;
     out.open = !!document.getElementById('intro-pop');
-    el.querySelector('.nt-go').click(); await wait(500);
+    el.querySelector('.intro-go').click(); await wait(500);
     /* the introduction's Skip goes straight to the tooltips */
     store.onboardingComplete = false; store.tourRev = 0; pendingMainMenuTour = true; showHome();
     for(let i = 0; i < 40 && !document.getElementById('nova-intro'); i++) await wait(100);
@@ -22350,27 +22329,26 @@ def check_b320f_nova(br):
     for (w, h, dev) in ((440, 956, "17 Pro Max"), (834, 1194, "iPad Pro 11")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         r = pg.evaluate(B320F_NEWS, [False])
-        txt = " ".join(r.get("lines") or [])
-        check("%s existing account: the narrated What's New opens on Home" % dev, not r.get("err") and r.get("firstTyping"), {k: r.get(k) for k in ("err", "firstTyping")})
-        check("%s he greets them by username, names the rank and the badges found" % dev,
-              "Madison" in txt and "Nova" in txt and (r.get("rank") or "?") in txt and "found 3 of my lost badges" in txt and r.get("rank") == "Gold" and r.get("badges") == 3,
-              {"rank": r.get("rank"), "badges": r.get("badges"), "head": (r.get("lines") or [])[:4]})
-        check("%s the card is built as he talks, and ends on Got it" % dev,
-              # MOVED IN 325 (b325d): no badge total ("they will be more")
-              # MOVED IN 326 (b326d): "Remove the weekly recap and badge case
-              # from what's new" - nine rows became seven
-              (r.get("rows") or 0) >= 7 and "3 badges found" in (r.get("me") or "") and r.get("go") and "speak with you again" in txt,
-              {k: r.get(k) for k in ("rows", "me", "go")})
+        # MOVED IN 327 (b327m): What's New on its own is the card on Home,
+        # not narrated ("So the nova instructor won't go through what's new
+        # one by one"); no greeting, no rank or badge line - the meeting's
+        # recap holds those (check-b327-m m1, check-b326-d d3)
+        check("%s existing account: What's New opens on Home as the card, not narrated, no Nova" % dev,
+              not r.get("err") and not r.get("narrated") and not r.get("nova"), {k: r.get(k) for k in ("err", "narrated", "nova")})
+        check("%s every row on the card at once, ending on Got it" % dev,
+              r.get("want", 0) > 0 and r.get("rows") == r.get("want") and r.get("go") == "Got it" and "version 9" in (r.get("text") or "").lower(),
+              {k: r.get(k) for k in ("rows", "want", "go")})
         check("%s once: marked seen and not shown again" % dev, r.get("closed") and r.get("seen") and not r.get("again"), {k: r.get(k) for k in ("closed", "seen", "again")})
         ctx.close()
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate(B320F_NEWS, [True])
-    check("reduce motion: every line is there at once, and one tap moves on", not r.get("err") and not r.get("firstTyping") and r.get("firstRest") == 0 and r.get("oneTapMoved") == 1,
-          {k: r.get(k) for k in ("err", "firstTyping", "firstRest", "oneTapMoved")})
+    check("reduce motion: the same card, every row at once", not r.get("err") and not r.get("narrated") and r.get("rows") == r.get("want"),
+          {k: r.get(k) for k in ("err", "narrated", "rows", "want")})
     ctx.close()
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate(B320F_SKIP)
-    check("Skip on What's New keeps the news: every row on the card, his last line", r.get("open") and r.get("atEnd") and r.get("rows") == r.get("want") and r.get("want", 0) > 0, r)
+    # MOVED IN 327 (b327m): the card has no Skip; every row is on it from the start
+    check("What's New has no Skip: every row on the card from the start", r.get("open") and r.get("atEnd") and r.get("rows") == r.get("want") and r.get("want", 0) > 0, r)
     check("the introduction has no Skip (325), and fast-forwarding it goes straight to the tooltips", r.get("intro") and not r.get("introSkipBtn") and r.get("tourAfterSkip"), r)
     check("Nova is not a character: not in the list, not in Customize", r.get("inChars") is False and r.get("inPicker") is False and (r.get("pickerHasChars") or 0) > 0, r)
     ctx.close()
@@ -22501,11 +22479,21 @@ def check_b321g_nova(br):
           and not re.search(r"characters found", intro.get("stage") or "") and not re.search(r"of \d+ secret flares", (intro.get("stage") or "") + it)
           and re.search(r"\d\s*secret flares? found", intro.get("stage") or ""),
           {"tail": (intro.get("lines") or [])[-4:], "stage": (intro.get("stage") or "")[:200]})
-    news = pg.evaluate(B321G_TALK, "intro-pop")
-    nt = " ".join(news.get("lines") or [])
-    check("then What's New, narrated, with no second hello, leading into the tips",
-          news.get("open") and "Hello" not in (news.get("lines") or [""])[0] and "version 9" in nt and news.get("go") == "Show me",
-          {"head": (news.get("lines") or [])[:2], "go": news.get("go")})
+    # MOVED IN 327 (b327m): "The what's new stuff, make it just show on the
+    # main menu like how we have done it before, and then the walkthrough" -
+    # his talk ends in his goodbye, then the card on Home, not narrated
+    check("his talk ends in his goodbye ('I'll speak with you again'), on a Goodbye button",
+          "speak with you again" in (intro.get("lines") or [""])[-1] and intro.get("go") == "Goodbye",
+          {"last": (intro.get("lines") or [""])[-1][:120], "go": intro.get("go")})
+    news = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      for(let i = 0; i < 60 && !document.getElementById('intro-pop'); i++) await wait(100);
+      const el = document.getElementById('intro-pop'); if(!el) return { open: false };
+      const out = { open: true, narrated: !!el.__nova, rows: el.querySelectorAll('.intro-row').length, want: WHATS_NEW_320.length,
+                    text: el.innerText, go: (el.querySelector('.intro-go') || {}).textContent || null };
+      await wait(400); const go = el.querySelector('.intro-go'); if(go) go.click(); return out; }""")
+    check("then the What's New card, not narrated, every row, Got it, leading into the tips",
+          news.get("open") and not news.get("narrated") and news.get("rows") == news.get("want") and "version 9" in (news.get("text") or "").lower() and news.get("go") == "Got it",
+          {k: news.get(k) for k in ("open", "narrated", "rows", "want", "go")})
     tips = pg.evaluate(B321G_TOUR)
     # MOVED IN 325 (b325d): "all the walk through stuff on the main menu can
     # be removed, only the ones with the 'new' at the beginning ... it
@@ -22516,17 +22504,16 @@ def check_b321g_nova(br):
           want == 3 and len(tips) == want and "Home always brings you back" not in tj and "planet" in tj and "calendar" in tips[-1].lower() and "Profile has been rebuilt" in tj
           and not any(t.lower().startswith("new") for t in tips),
           {"n": len(tips), "want": want, "first": tips[:1], "last": tips[-3:]})
-    bye = pg.evaluate(B321G_TALK, "nova-intro")
-    check("then he says goodbye, and that he'll speak again", bye.get("open") and "speak with you again" in " ".join(bye.get("lines") or []) and "Madison" in " ".join(bye.get("lines") or []),
-          bye.get("lines"))
-    pg.wait_for_timeout(800)
+    # MOVED IN 327 (b327m): no second Nova dialogue after the tips - his
+    # goodbye was the end of his talk
+    pg.wait_for_timeout(3000)
     after = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       const seen0 = window.__seen.length; showProfile('profile'); await wait(500); showHome(); await wait(3600);
       return { more: window.__seen.slice(seen0), met: store.novaMet, local: Number(localStorage.getItem('class26e.intro.seen')) >= INTRO_REV,
                tour: !!document.getElementById('tour-tooltip'), welcome: !!document.getElementById('welcomebonus-banner'),
                seen: window.__seen }; }""")
     order = [x.split(":")[0] for x in after.get("seen") or []]
-    check("in that order, with no other tour and no welcome bonus", order[:2] == ["nova-intro", "intro-pop"] and order[-1] == "nova-intro" and not after.get("welcome"),
+    check("in that order, with no other tour and no welcome bonus, and his talk once", order[:3] == ["nova-intro", "intro-pop", "tour-tooltip"] and order.count("nova-intro") == 1 and not after.get("welcome"),
           after.get("seen"))
     check("once: recorded on the account and on the device, and nothing on the next Home", after.get("met") == 1 and after.get("local") and not after.get("more") and not after.get("tour"), after)
     # a second device of the same account: What's New alone
@@ -22542,9 +22529,10 @@ def check_b321g_nova(br):
       /* build 324: and no unlock card comes up over it while it is open */
       out.stacked = false;
       for(let i = 0; i < 30 && document.getElementById('intro-pop'); i++){ if(document.querySelector('.rs-spot')) out.stacked = true; await wait(100); }
-      const el = document.getElementById('intro-pop'); if(el && el.__nova){ el.__nova.skip(); await wait(100); out.last = el.querySelector('.nt-text').textContent; }
+      const el = document.getElementById('intro-pop'); if(el){ out.narrated = !!el.__nova; out.go = (el.querySelector('.intro-go') || {}).textContent || null; }
       return out; }""")
-    check("a device whose account has met him gets What's New alone, ending on 'I'll speak with you again'", r2.get("news") and not r2.get("intro") and "speak with you again" in (r2.get("last") or ""), r2)
+    # MOVED IN 327 (b327m): just the card, not narrated
+    check("a device whose account has met him gets the What's New card alone, not narrated", r2.get("news") and not r2.get("intro") and not r2.get("narrated") and r2.get("go") == "Got it", r2)
     check("and no unlock card lands on top of What's New while it is open", r2.get("news") and not r2.get("stacked"), r2.get("stacked"))
     ctx.close()
 

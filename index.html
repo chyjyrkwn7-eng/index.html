@@ -72764,7 +72764,7 @@ const RELEASE_NOTES = [
     version: "9",
     groups: [
       { label: "New In Version 9", items: [
-        { icon: buildSparkleIcon, color: "#FFD27A", title: "Sound Effects", body: "A new option in Settings, off until you turn it on. Sounds for nearly everything: your answers, your results, Home's ambience, the planet, badges, cutscenes, the Leaderboard and the Virtual Room." },
+        { icon: buildSparkleIcon, color: "#FFD27A", title: "Sound Effects", body: "On by default, and you can turn them off in Settings. Sounds for nearly everything: your answers, your results, Home's ambience, the planet, badges, cutscenes, the Leaderboard and the Virtual Room." },
         { icon: buildDevicesIcon, color: "#4ADE80", title: "Vibration On Android", body: "Android phones can buzz on answers and moments that matter. Also a setting, also off until you turn it on." },
         { icon: buildPersonIcon, color: "#5CA8FF", title: "Sign In First", body: "Welcome leads with Sign in. Signing up asks whether you have used Nova before, and warns you if the name you chose already belongs to an account." },
         { icon: buildDualBoardIcon, color: "#F5C518", title: "Rankings That Match Profile", body: "Your rank, level and badges on the Leaderboard always match what your own Profile says." },
@@ -79575,12 +79575,12 @@ function novaRecapLines(st, name){
   const hi = (ctx, sel) => { ctx.stage.querySelectorAll(".nt-rc .is-hi").forEach(e => e.classList.remove("is-hi"));
     ctx.stage.querySelectorAll(sel).forEach(e => e.classList.add("is-hi")); };
   const first = RANK_DISPLAY_NAME[TIER_ORDER_FULL[0]];
-  lines.push({ gesture: "raise", recap: true, text: "Now, " + name + ", let’s see how you’re doing.",
-    enter: (ctx, instant) => { const p = novaRecapCard(st); novaProp(ctx, p); novaRecapReveal(p, instant); } });
   const g = st.gate;
-  lines.push({ text: st.rank ? "You’re " + RANK_DISPLAY_NAME[st.rank] + " rank, level " + st.level + "." + (g ? "" : " Good work.")
-                             : "You’re level " + st.level + (g ? "." : ", on your way to your first rank, " + first + "."),
-    enter: ctx => hi(ctx, ".nt-rc-head, .nt-rc-xp") });
+  /* one line, not two (build 327, b327m: "a little drawn out") */
+  lines.push({ gesture: "raise", recap: true, text: "Now, " + name + ", let’s see how you’re doing. " +
+      (st.rank ? "You’re " + RANK_DISPLAY_NAME[st.rank] + " rank, level " + st.level + "." + (g ? "" : " Good work.")
+               : "You’re level " + st.level + (g ? "." : ", on your way to your first rank, " + first + ".")),
+    enter: (ctx, instant) => { const p = novaRecapCard(st); novaProp(ctx, p); novaRecapReveal(p, instant); } });
   if(g){
     /* WORDED FOR THE TWO WAYS THE WALL MEETS SOMEBODY (levelStateOf):
        held at the next rank's level, or above it, where build 325's
@@ -79687,11 +79687,12 @@ function novaIntroLines(o){
     enter: (ctx, instant) => { novaProp(ctx, buildNovaWreck()); if(!instant && !novaMotionOff()) playSound("cs.planet"); } });
   lines.push({ gesture: "raise", text: "Then its core gave way, and the whole planet exploded. The blast tore through my ship and threw everything aboard across this system." });
   lines.push({ text: existing && rankIdx >= 0
-      ? "My flares, one for each rank, came to rest around your planet, but the blast had put their light out. They’re the flares on your Home screen."
-      : "My flares, one for each rank, came to rest around your planet, but the blast had put their light out. That’s why the flares on your Home screen are dark.",
+      ? "My flares, one for each rank, came to rest around your planet, but the blast had put their light out. They’re the flares on your Home screen. My secret flares were thrown further, into your tests, and I’ve lost count of them."
+      : "My flares, one for each rank, came to rest around your planet, but the blast had put their light out. That’s why the flares on your Home screen are dark. My secret flares were thrown further, into your tests, and I’ve lost count of them.",
+    /* build 327 (b327m): the secret flares are said here, over the same
+       picture, instead of on a line of their own ("I think the nova intro
+       may be a little drawn out") */
     enter: ctx => novaProp(ctx, novaStack(novaFlareRow(rankIdx), novaCap(rankIdx >= 0 ? (rankIdx + 1) + " of " + TIER_ORDER_FULL.length + " lit again" : "My flares, all dark"))) });
-  /* said over the flares, so it keeps their picture (build 327) */
-  lines.push({ text: "Some of my secret flares were thrown further out, into your tests. I’ve lost count of them, so keep your eyes open." });
   lines.push({ gesture: "raise", text: existing && rankIdx >= 0
       ? "A flare only lights again for someone who has earned it. Every rank you reach relights one, and you’ve already lit " + (rankIdx === 0 ? "the first" : (["two", "three", "four", "five", "six"][rankIdx - 1] || (rankIdx + 1))) + ". Each one comes with my thanks: that rank’s rewards."
       : "A flare only lights again for someone who has earned it. Every rank you reach relights one, and each comes with my thanks: that rank’s rewards.",
@@ -79723,10 +79724,10 @@ function novaIntroLines(o){
   /* BANNERS AND HUNDO EFFECTS (build 326) - after the crew, as asked */
   lines.push({ gesture: "raise", text: "As thanks, I’ll hand you things along the way: banners for your profile, and effects that play when you score a hundo. You earn them by studying, and they’re all in Customize, on your Profile.",
     ...novaSlide("flair", () => novaStack(novaWarmTake("flair") || novaFlairProp(), novaCap("Yours to wear · Customize"))) });
-  lines.push({ text: "Drill to learn a unit, a Quiz to prove you’re ready, and Review to go over the material first. Or take any of them into a Virtual Room.",
+  /* build 327 (b327m): the Virtual Room is said here, on the modes slide
+     (which already shows it), not on a line and a picture of its own */
+  lines.push({ text: "Drill to learn a unit, a Quiz to prove you’re ready, and Review to go over the material first. And in a Virtual Room you can race your classmates, or challenge me.",
     ...novaSlide("modes", () => novaModeRow()) });
-  lines.push({ gesture: "raise", text: "You don’t have to do it alone, either. In a Virtual Room you can race your classmates, and you can challenge me there too.",
-    enter: ctx => novaProp(ctx, novaVroomProp()) });
   /* ---- AND HE BECOMES YOUR FRIEND, PARTWAY THROUGH (build 324) ----
      "When Mr nova introduces himself, throughout that cutscene you will get
      the added friends notification thing saying y'all are now friends."
@@ -79746,7 +79747,12 @@ function novaIntroLines(o){
   /* what this account has, said to them by name (build 326: novaRecapLines) */
   novaRecapLines(novaRecapState(), name).forEach(l => lines.push(l));
   lines.push(friendLine);
-  lines.push({ gesture: "nod", final: true, text: "A few things have changed around here, too. Let me show you what’s new." });
+  /* HIS GOODBYE IS THE END OF HIS TALK (build 327, b327m): "it has the
+     intro, the what's new new stuff, and the home main menu walk through
+     ... make it just show on the main menu like how we have done it
+     before". What's New is a card on Home after this (showIntroPopup), and
+     there is no separate goodbye after the tips. */
+  lines.push({ gesture: "wave", final: true, text: "That’s all for now, " + name + ". A few things have changed around here, so I’ve left you a list on your Home screen. Light my flares, find my badges and bring my crew home. I’ll speak with you again when my scanners find more." });
   return lines;
 }
 /* The friend line's picture: his face on a chat row, the way his chat
@@ -79773,7 +79779,7 @@ function playNovaIntro(then, o){
   setTimeout(() => { try{ if(!novaMotionOff()) warmCrackForm(0, CRACK_TOP); }catch(e){} }, 900);
   /* and the parades of characters and badges (build 325) */
   novaWarmProps();
-  novaTalk({ id: "nova-intro", label: "Nova introduces himself", lines, finalLabel: o.existing ? "What’s new" : "Let’s go",
+  novaTalk({ id: "nova-intro", label: "Nova introduces himself", lines, finalLabel: o.existing ? "Goodbye" : "Let’s go",
     skipTo: recapAt > 0 ? recapAt : null, noSkip: true,
     /* an existing account is found by him (build 325) */
     signal: o.existing ? "Nova, explorer" : null,
@@ -79818,25 +79824,19 @@ function onNovaHome(){ return !!stage.querySelector('[data-screen="home"]'); }
 function playNovaMeeting(){
   if(novaMeetOn) return;
   novaMeetOn = true; introPending = true;
+  /* BUILD 327 (b327m): his talk (ending in his goodbye), then What's New
+     as a card on Home, then the tips - and that is the end of it */
   playNovaIntro(() => {
     markNovaMet();
     if(!onNovaHome()){ endNovaMeeting(); return; }
     showIntroPopup({ chained: true, then: reason => {
       if(reason === "nav" || !onNovaHome()){ endNovaMeeting(); return; }
-      startNovaReturnTour(() => {
-        if(!onNovaHome()){ endNovaMeeting(); return; }
-        setTimeout(novaGoodbye, novaMotionOff() ? 0 : 300);
-      });
+      startNovaReturnTour(() => endNovaMeeting());
     } });
   }, { existing: true });
 }
-function novaGoodbye(){
-  const name = novaName();
-  novaTalk({ id: "nova-intro", label: "Nova says goodbye", finalLabel: "Goodbye", noSkip: true,
-    lines: [{ gesture: "wave", final: true,
-      text: "That’s everything for now, " + name + ". Light my flares, find my badges and bring my crew home, and your badges will keep your planet whole while you climb. I’ll speak with you again when my scanners find more. Goodbye for now." }],
-    onClose: () => endNovaMeeting() });
-}
+/* novaGoodbye() is gone (build 327, b327m): his goodbye is the last line of
+   his introduction, so nothing of his comes up again after the tips. */
 function endNovaMeeting(){
   if(!novaMeetOn) return;
   novaMeetOn = false; introPending = false;
@@ -87609,7 +87609,7 @@ const WHATS_NEW_320 = [
      in first, the rankings - is for new devices and the board) */
   { key: "sound", color: "#FFD27A", title: "Sound effects",
     glyph: "M4 9h4l5-4v14l-5-4H4V9Zm12.5-1.8a6.5 6.5 0 0 1 0 9.6l-1.4-1.4a4.5 4.5 0 0 0 0-6.8l1.4-1.4Zm2.8-2.8a10.5 10.5 0 0 1 0 15.2l-1.4-1.4a8.5 8.5 0 0 0 0-12.4l1.4-1.4Z",
-    body: "A new option in Settings, off until you turn it on: sounds for your answers, your results, Home, badges, cutscenes and more.",
+    body: "On by default, and you can turn them off in Settings: sounds for your answers, your results, Home, badges, cutscenes and more.",
     say: "First, something you can hear. Sound effects are a new option in Settings. They are off until you turn them on." },
   /* build 326: Review is Review again ("I kinda prefer briefing to be
      called review actually"), so only the Qualifier is a new name - and
@@ -87647,28 +87647,6 @@ const WHATS_NEW_320 = [
   /* BUILD 326: "Remove the weekly recap and badge case from what's new."
      Both are still in RELEASE_NOTES (Version 9's history). */
 ];
-/* You, as he sees you: your character, your name, your rank and level,
-   and how many of his badges you have found. */
-function novaMeCard(st){
-  const c = document.createElement("div");
-  c.className = "nt-me";
-  if(st.rank) c.style.setProperty("--rank-color", RANK_COLOR[st.rank] || "#8B939E");
-  const av = document.createElement("span"); av.className = "nt-me-av";
-  try{ av.appendChild(buildAvatarCharSVGSafe(store.avatarChar || "ninja")); }catch(e){}
-  const t = document.createElement("div");
-  const n = document.createElement("p"); n.className = "nt-me-name"; n.textContent = st.name;
-  const l1 = document.createElement("p"); l1.className = "nt-me-line";
-  if(st.rank){ try{ l1.appendChild(buildRankEmblemSVG(st.rank)); }catch(e){} }
-  const rk = document.createElement("b"); rk.textContent = st.rank ? RANK_DISPLAY_NAME[st.rank] : "No rank yet";
-  l1.append(rk, document.createTextNode("· Level " + st.level));
-  const l2 = document.createElement("p"); l2.className = "nt-me-line nt-me-badges";
-  /* a count, never "of 16" (build 325): "we can't say there were only 16
-     badges because they will be more" */
-  l2.textContent = st.badges + (st.badges === 1 ? " badge" : " badges") + " found";
-  t.append(n, l1, l2);
-  c.append(av, t);
-  return c;
-}
 function whatsNewState(){
   const st = { name: novaName(), rank: null, level: 0, badges: 0, units: 16, note: null,
                chars: novaCrewTally(), flares: 0, flareTotal: 3 };
@@ -87684,100 +87662,79 @@ function whatsNewState(){
   try{ const ls = levelStateFor(store); if(ls.held && ls.saved > 0) st.note = levelGateNoteText(ls); }catch(e){}
   return st;
 }
-/* The whole script, in order. Exposed so the gate can read every line. */
-function whatsNewLines(st, chained){
-  const name = st.name, first = RANK_DISPLAY_NAME[TIER_ORDER_FULL[0]];
-  let news = null, list = null, me = null;
-  const card = (ctx, row, instant) => {
-    if(!list) return;
-    list.querySelectorAll(".nt-card.is-now").forEach(r => r.classList.remove("is-now"));
-    row.classList.add("nt-card");
-    if(instant) row.classList.add("is-instant"); else row.classList.add("is-now");
-    list.appendChild(row);
-    const to = Math.max(0, row.offsetTop - list.offsetTop - 8);
-    if(to + row.offsetHeight > list.scrollTop + list.clientHeight || to < list.scrollTop){
-      try{ list.scrollTo({ top: Math.min(to, list.scrollHeight), behavior: instant || novaMotionOff() ? "auto" : "smooth" }); }
-      catch(e){ list.scrollTop = to; }
-    }
-  };
-  const lines = [];
-  const openCard = ctx => {
-      news = document.createElement("div"); news.className = "nt-news";
-      const head = document.createElement("div"); head.className = "nt-head";
-      const eb = document.createElement("p"); eb.className = "nt-eyebrow intro-eyebrow"; eb.textContent = "New in version " + RELEASE_NOTES[0].version;
-      const ti = document.createElement("h2"); ti.className = "nt-title intro-title"; ti.textContent = "What’s new";
-      head.append(eb, ti);
-      list = document.createElement("div"); list.className = "nt-list";
-      news.append(head, list);
-      ctx.stage.appendChild(news);
-    };
-  /* CHAINED (build 321): straight after his introduction, which has just
-     greeted them and gone over what they have - so no second hello, and it
-     ends by leading into the tooltips, not by saying goodbye. */
-  if(chained){
-    lines.push({ gesture: "raise", text: "Here’s what’s new in version " + RELEASE_NOTES[0].version + ".", enter: openCard });
-  } else {
-  lines.push({ gesture: "wave", text: "Hello again, " + name + ". It’s Nova.", enter: openCard });
-  lines.push({ text: st.rank ? "I see you’re " + RANK_DISPLAY_NAME[st.rank] + " rank, level " + st.level + ". Good work."
-                             : "I see you’re level " + st.level + ", on your way to your first rank, " + first + ".",
-    enter: (ctx, instant) => { me = novaMeCard(st); if(instant) me.style.animation = "none"; if(list) list.appendChild(me); } });
-  lines.push({ gesture: "raise",
-    text: st.badges >= st.units ? "And it appears you have found every one of my lost badges. Remarkable."
-        : st.badges > 1 ? "And it appears you have found " + st.badges + " of my lost badges."
-        : st.badges === 1 ? "And it appears you have found one of my lost badges."
-        : "You haven’t found any of my lost badges yet, but I have a feeling you will.",
-    enter: () => { const b = me && me.querySelector(".nt-me-badges"); if(b) b.classList.add("is-hi"); } });
-  lines.push({ text: "Every badge you find is a unit mastered and one more thing holding your planet together, every one of my crew you find joins you, and every flare you light brings your planet closer to being a star." });
-  lines.push({ gesture: "raise", text: (st.badges > 0 ? "Thank you. " : "") + "Now, here’s what’s new." });
-  }
-  WHATS_NEW_320.forEach(it => lines.push({ text: it.say, gesture: it.key === "planet" ? "nod" : null,
-    enter: (ctx, instant) => card(ctx, introRow(it.icon || it.glyph, it.color, it.title, it.body), instant) }));
-  /* NOT IN THE MEETING (build 326): his recap, a minute before, has just
-     told them where the level wall leaves them, in their own case's words
-     (novaRecapLines) - saying it again here was the same news twice */
-  if(st.note && !chained){
-    lines.push({ gesture: "raise", text: "One more thing, " + name + ". " + st.note[0],
-      enter: (ctx, instant) => {
-        const n = document.createElement("div"); n.className = "intro-gate-note";
-        const h = document.createElement("p"); h.className = "intro-gate-title"; h.textContent = "Levels wait for your next rank";
-        n.appendChild(h);
-        st.note.forEach(t => { const b = document.createElement("p"); b.className = "intro-gate-body"; b.textContent = t; n.appendChild(b); });
-        card(ctx, n, instant);
-      } });
-    lines.push({ text: st.note[1] });
-  }
-  lines.push(chained
-    ? { gesture: "nod", final: true, text: "That’s the news. Now let me show you where some of it lives." }
-    : { gesture: "nod", final: true,
-        text: "That’s all for now, " + name + ". I’ll speak with you again when there’s more to show you. Good luck." });
-  return lines;
-}
-/* o.chained / o.then (build 321): part of the meeting with Nova - then(reason)
-   runs as it closes ("nav" when a screen change took it). */
+/* ---- WHAT'S NEW IS A CARD ON HOME AGAIN (build 327, b327m) ----
+   Madison: "I think the nova intro may be a little drawn out ... it has the
+   intro, the what's new new stuff, and the home main menu walk through. The
+   what's new stuff, make it just show on the main menu like how we have done
+   it before, and then the walkthrough. So the nova instructor won't go
+   through what's new one by one. It's too much I think."
+   So this is build 319's card again (#intro-pop > .intro-card, every row at
+   once, Got it), built from WHATS_NEW_320 - he no longer narrates it, and
+   the rows' `say` lines are unused. Somebody the level wall holds gets the
+   note as a box at the top of the card. In the meeting (o.chained) it comes
+   after his talk, and o.then(reason) runs as it closes ("nav" when a screen
+   change took it) - the tips follow. On its own (an account that has met
+   him) it is just the card. */
 function showIntroPopup(o){
   o = o || {};
   if(document.getElementById("intro-pop")) return;
   const st = whatsNewState();
-  const el = novaTalk({ id: "intro-pop", news: true, label: "What’s new, from Nova", lines: whatsNewLines(st, !!o.chained),
-    /* in the meeting, no Skip (build 325) */
-    noSkip: !!o.chained,
-    finalLabel: o.chained ? "Show me" : "Got it",
-    onClose: reason => {
-      closeIntroPopup(null, !!o.chained);
-      if(typeof o.then === "function") setTimeout(() => o.then(reason), novaMotionOff() ? 0 : 380);
-    } });
+  const el = document.createElement("div");
+  el.className = "intro-pop"; el.id = "intro-pop";
+  el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true");
+  el.setAttribute("aria-label", "What’s new");
+  const card = document.createElement("div");
+  card.className = "intro-card intro-card-compact";
+  const eyebrow = document.createElement("p");
+  eyebrow.className = "intro-eyebrow"; eyebrow.textContent = "New in version " + RELEASE_NOTES[0].version;
+  const title = document.createElement("h2");
+  title.className = "intro-title"; title.textContent = "What’s new";
+  card.append(eyebrow, title);
+  if(st.note){
+    const n = document.createElement("div"); n.className = "intro-gate-note";
+    const h = document.createElement("p"); h.className = "intro-gate-title"; h.textContent = "Levels wait for your next rank";
+    n.appendChild(h);
+    st.note.forEach(t => { const b = document.createElement("p"); b.className = "intro-gate-body"; b.textContent = t; n.appendChild(b); });
+    card.appendChild(n);
+  }
+  WHATS_NEW_320.forEach(it => {
+    const row = introRow(it.icon || it.glyph, it.color, it.title, it.body);
+    row.dataset.key = it.key;
+    card.appendChild(row);
+  });
+  const go = document.createElement("button");
+  go.type = "button"; go.className = "next intro-go";
+  go.textContent = "Got it";
+  card.appendChild(go);
+  el.appendChild(card);
+  let done = false;
+  const close = reason => {
+    if(done) return; done = true;
+    try{ onNavigate.disconnect(); }catch(e){}
+    closeIntroPopup(el, !!o.chained);
+    if(typeof o.then === "function") setTimeout(() => o.then(reason), reason === "nav" ? 0 : 300);
+  };
+  go.addEventListener("click", () => close("done"));
+  /* On <body>, like every other fixed overlay here - #stage animates, and a
+     transform on an ancestor re-parents a fixed element's containing block. */
+  document.body.appendChild(el);
+  void el.offsetHeight;
+  el.classList.add("show");
+  playSound("ui.notice");
+  try{ go.focus({ preventScroll: true }); }catch(e){}
   /* A screen change takes it with it, and counts as seen: somebody who
      navigated away has decided they are done reading. */
-  const onNavigate = new MutationObserver(() => {
-    onNavigate.disconnect();
-    if(el.__nova) el.__nova.close("nav");
-  });
+  const onNavigate = new MutationObserver(() => close("nav"));
   onNavigate.observe(stage, { childList: true });
 }
 
 function closeIntroPopup(el, chained){
   markIntroSeen();
-  /* in the meeting, the holds stay on until he has said goodbye */
+  if(el && el.parentNode){
+    el.classList.remove("show");
+    setTimeout(() => { if(el.parentNode) el.remove(); }, 260);
+  }
+  /* in the meeting, the holds stay on until the tips are done */
   if(chained && novaMeetOn) return;
   introPending = false;
   popupGapUntil = Date.now() + 260 + POPUP_GAP_MS;
@@ -87791,9 +87748,6 @@ function closeIntroPopup(el, chained){
     checkLobbyInvites(); checkFriendRequests(); checkChatInvites();
     checkSaveCodeReminder();
   }, 260 + POPUP_GAP_MS);
-  if(!el || !el.parentNode) return;
-  el.classList.remove("show");
-  setTimeout(() => { if(el.parentNode) el.remove(); }, 260);
 }
 
 /* TWO SECONDS AFTER HOME, asked for in those words - long enough that
