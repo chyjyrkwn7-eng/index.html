@@ -122,50 +122,49 @@ def ring_pixels(pg, rows):
 
 
 def check_ready_ring(br):
-    """1. "The virtual room, when ready up is set not everyone has a green
-    outline and if they do it's not fully there." On 325: the last card had
-    no bottom border (a :last-child rule from the list days), your own card
-    in a full room kept its accent edge instead of green, and the ring was a
-    1px border at 55% that the card's clipped banner art could cut into."""
-    print("\n1. every ready player's card has the whole green ring - self and others, 2/4/8/20 players, both devices")
+    """1. MOVED IN BUILD 327. 326 answered "not everyone has a green outline
+    and if they do it's not fully there" with a whole 2px green ring; 327
+    took the ring off on her next look: "I don't like the green outline for
+    being ready in the lobby, it's too much." What this holds now is what
+    the ring was FOR - every ready player, self included, at every room
+    size, reads as ready, and arrives whole: the chip says Ready (green
+    words, a tick), the card wears a faint green wash, and no card has a
+    green edge or ring. check-b327-d holds the rest."""
+    print("\n1. every ready player reads as ready - the chip, not a ring (327) - self and others, 2/4/8/20 players, both devices")
+    READ = """() => [...document.querySelectorAll('.vroom-roster-list .vroom-row')].map(r => { const s = getComputedStyle(r), b = r.querySelector('.vroom-ready-badge');
+      const bs = b ? getComputedStyle(b) : null, wash = getComputedStyle(r, '::before').backgroundImage;
+      return { ready: r.classList.contains('is-ready'), you: r.classList.contains('is-you'), ring: /61, 214, 140/.test(s.borderTopColor + s.boxShadow),
+               chip: b ? b.textContent.trim() : null, chipGreen: bs ? /\(1[0-9]{2}, 2[0-9]{2}, 1[0-9]{2}|61, 214, 140/.test(bs.color + bs.backgroundColor) : false,
+               wash: /61, 214, 140/.test(wash) }; })"""
     for label, w, h in (PHONE, TABLET):
         for n in (2, 4, 8, 20):
             ctx, pg = booted(br, w, h, seed=USED, init=ROOM_FAKE)
             pg.evaluate(CLEAN)
             pg.evaluate("(o) => (%s)(o)" % LOBBY, {"n": n, "meReady": n != 2})
             pg.wait_for_timeout(1400)
-            rows = pg.evaluate(RING)
+            rows = pg.evaluate(READ)
             ready = [r for r in rows if r["ready"]]
-            css_ok = bool(ready) and all(all(s["c"] and s["w"] >= 1 for s in r["sides"]) and r["spread"] and not r["clipped"] for r in ready)
-            not_ready_plain = all(not any(s["c"] for s in r["sides"]) for r in rows if not r["ready"])
             you = [r for r in rows if r["you"]]
-            last_ok = bool(rows) and rows[-1]["ready"] and rows[-1]["sides"][2]["w"] >= 1 and rows[-1]["sides"][2]["c"]
-            # the page scrolled so the roster is in view, then the pixels
-            pg.evaluate("() => { const l = document.querySelector('.vroom-roster-list'); if(l) window.scrollTo({ top: l.getBoundingClientRect().top + scrollY - 90, behavior: 'instant' }); }")
-            pg.wait_for_timeout(350)
-            bad = ring_pixels(pg, pg.evaluate(RING))
-            check("%s, %d players: all %d ready cards ringed green on all four sides with the outer spread, unclipped; self too; the last card's bottom edge; the not-ready plain"
-                  % (label, n, len(ready)),
-                  css_ok and not_ready_plain and you and (n == 2 or (you[0]["ready"] and you[0]["sides"][0]["c"])) and last_ok,
-                  {"bad": [(i, r["sides"], r["spread"], r["clipped"]) for i, r in enumerate(rows) if r["ready"] and not (all(s["c"] for s in r["sides"]) and r["spread"])][:4],
-                   "last": rows[-1] if rows else None})
-            check("%s, %d players: the ring is green in the PIXELS all the way round every visible ready card (sides and corners)" % (label, n),
-                  not bad and bool(ready), bad[:6])
+            ok = (bool(ready) and all(r["chipGreen"] and not r["ring"] for r in ready)
+                  and all(r["chip"] == "Ready" or n > 6 for r in ready)
+                  and all(r["wash"] for r in ready) and not any(r["ring"] or r["wash"] for r in rows if not r["ready"])
+                  and you and (n == 2 or you[0]["ready"]))
+            check("%s, %d players: all %d ready cards say so in green (chip + faint wash), none has a green ring, the not-ready plain, self too" % (label, n, len(ready)),
+                  ok, [r for r in rows if (r["ready"] and (r["ring"] or not r["chipGreen"] or not r["wash"])) or (not r["ready"] and (r["ring"] or r["wash"]))][:4])
             if n == 4:
-                # readying and un-readying: the ring arrives whole and leaves whole
                 pg.evaluate("() => { const P = __rooms.ROOM326.participants[vroomMyKey]; P.ready = false; vroomLastDoc = { code:'ROOM326', data: JSON.parse(JSON.stringify(__rooms.ROOM326)) }; showVirtualRoomLobby(); }")
                 pg.wait_for_timeout(1300)
                 frames = []
                 tap_at(pg, "#stage > .vroom-setup-bar .vroom-readyup-btn")
                 for _ in range(14):
                     frames.append(pg.evaluate("""() => { const r = document.querySelector('.vroom-row.is-you'); if(!r) return 'none';
-                      const s = getComputedStyle(r); const g = ['Top','Right','Bottom','Left'].map(k => /61, 214, 140/.test(s['border'+k+'Color']) && !/0\\.\\d+\\)/.test(s['border'+k+'Color']));
-                      return g.every(Boolean) && /61, 214, 140\\) 0px 0px 0px 1/.test(s.boxShadow) ? 'full' : g.some(Boolean) ? 'part' : 'off'; }"""))
+                      const b = r.querySelector('.vroom-ready-badge');
+                      return r.classList.contains('is-ready') && b && b.textContent.trim() === 'Ready' ? 'full' : r.classList.contains('is-ready') || (b && b.textContent.trim() === 'Ready') ? 'part' : 'off'; }"""))
                     pg.wait_for_timeout(45)
                 tap_at(pg, "#stage > .vroom-setup-bar .vroom-readyup-btn")
                 pg.wait_for_timeout(900)
-                off = pg.evaluate("() => { const r = document.querySelector('.vroom-row.is-you'); return r && !r.classList.contains('is-ready') && !/61, 214, 140/.test(getComputedStyle(r).borderTopColor); }")
-                check("%s: tapping Ready up rings your card whole (never part-drawn) and tapping again takes it off whole" % label,
+                off = pg.evaluate("() => { const r = document.querySelector('.vroom-row.is-you'); return r && !r.classList.contains('is-ready'); }")
+                check("%s: tapping Ready up marks your card ready whole (never half) and tapping again takes it off" % label,
                       "part" not in frames and frames[-1] == "full" and off, {"frames": frames, "off": off})
             ctx.close()
 
@@ -188,34 +187,35 @@ ACCESS = """() => {
 
 
 def check_access(br):
-    """2. "The toggle for open room is confusing because it says open room and
-    then invite only under it?" On 325 it was a switch named "Open room" with
-    its state, "Invite only", printed underneath."""
-    print("\n2. who can join: two options, one lit, a line saying what the current one means")
+    """2. MOVED IN BUILD 327. 326 made "Open room / Invite only" two options;
+    327 put the switch back: "For the lobby, I prefer the regular toggle
+    switch with the invite friends button to the left of it. The toggles
+    description is just confusing?" What still holds from 326's reason - a
+    control must not say two things at once - is held as: one switch with
+    ONE name, a line under it that does not change with the state (so it
+    can never contradict the switch), every word whole on five widths, and
+    a tap writes the room's `open`. check-b327-d holds the layout."""
+    print("\n2. who can join: one switch with one name, one line that never contradicts it (327)")
+    READ = """() => { const T = document.querySelector('.vroom-roster-tools'); if(!T) return null;
+      const sw = T.querySelector('[role="switch"]');
+      const cut = [...T.querySelectorAll('*')].some(e => e.scrollWidth > e.clientWidth + 0.5 && getComputedStyle(e).overflow !== 'visible' && e.textContent.trim());
+      return { sw: sw ? { name: sw.getAttribute('aria-label'), on: sw.getAttribute('aria-checked'), h: sw.getBoundingClientRect().height, nsw: !!sw.querySelector('.nsw') } : null,
+               lines: [...T.querySelectorAll('p')].map(p => p.textContent.trim()), groups: document.querySelectorAll('[role="radiogroup"]').length, cut, open: vroomIsOpen }; }"""
     for label, w, h in (PHONE, TABLET, ("iPhone SE 2nd gen", 375, 667), ("iPhone 14/15/16", 393, 852), ("iPhone SE 1st gen", 320, 568)):
         ctx, pg = booted(br, w, h, seed=USED, init=ROOM_FAKE)
         pg.evaluate(CLEAN)
         pg.evaluate("(o) => (%s)(o)" % LOBBY, {"n": 3, "meReady": False})
         pg.wait_for_timeout(1300)
-        a = pg.evaluate(ACCESS)
-        shape = (a["n"] == 1 and len(a["radios"]) == 2 and sum(r["on"] for r in a["radios"]) == 1 and not a["oldSwitch"]
-                 and all(r["h"] >= 44 for r in a["radios"]) and len(a["line"]) > 10 and not a["cut"])
-        lit = [r for r in a["radios"] if r["on"]]
-        unlit = [r for r in a["radios"] if not r["on"]]
-        distinct = bool(lit and unlit) and lit[0]["a"] > unlit[0]["a"] + 0.1 and lit[0]["col"] != unlit[0]["col"]
-        check("%s: one radio group of two options (44px each, every word whole), exactly one checked, no switch with a contradicting sub-label" % label, shape, a)
-        check("%s: the chosen option is raised and lit, the other quiet" % label, distinct, a["radios"])
-        # choose the other one: the room's `open` flips, the line changes, the lit one moves
-        other = next((i for i, r in enumerate(a["radios"]) if not r["on"]), None)
-        b = None
-        if other is not None:
-            pg.evaluate("(i) => document.querySelectorAll('[role=radiogroup] [role=radio]')[i].click()", other)
-            pg.wait_for_timeout(400)
-            b = pg.evaluate(ACCESS)
-            b["doc"] = pg.evaluate("() => (__rooms.ROOM326 || {}).open")
-        check("%s: choosing the other option writes the room open/closed, moves the light and changes the line" % label,
-              bool(b) and b["open"] != a["open"] and b["doc"] == b["open"] and b["line"] != a["line"] and len(b["line"]) > 10
-              and [r["on"] for r in b["radios"]] == [not r["on"] for r in a["radios"]], {"before": a, "after": b})
+        a = pg.evaluate(READ)
+        check("%s: one switch (the app's .nsw, 44px target) with one name, no radio group, one line, every word whole" % label,
+              bool(a and a["sw"]) and a["sw"]["nsw"] and a["sw"]["h"] >= 44 and a["sw"]["on"] == "false" and a["groups"] == 0
+              and len(a["lines"]) == 1 and len(a["lines"][0]) > 10 and not a["cut"], a)
+        pg.evaluate("() => document.querySelector('.vroom-roster-tools [role=\"switch\"]').click()")
+        pg.wait_for_timeout(400)
+        b = pg.evaluate(READ)
+        doc = pg.evaluate("() => (__rooms.ROOM326 || {}).open")
+        check("%s: a tap turns it on and writes the room open; the line under it stays the same" % label,
+              bool(b and b["sw"]) and b["sw"]["on"] == "true" and b["open"] is True and doc is True and b["lines"] == a["lines"], {"before": a, "after": b, "doc": doc})
         ctx.close()
 
 
@@ -365,9 +365,13 @@ def check_surfaces(br):
         on_token = bool(found) and len(toks) == 3 and all(e["bg"] in toks for _, e in found)
         # a screen's boxes of one kind share one surface; page cards are dark and opaque enough to read on
         page = [e for s, e in found if "unitoptions" not in s and "motion-summary" not in s and "searchbox" not in s]
-        dark = all(rgba(e["bg"])[3] >= 0.6 and sum(rgba(e["bg"])[:3]) / 3 <= 40 for e in page)
+        # MOVED IN BUILD 327: "the new darker Liquid Glass ... doesn't go with
+        # the start bar, the search bar, the chat button". The cards are the
+        # tab bar's grey glass now (rgba(44,48,57,.64)): still opaque enough to
+        # read on (5b holds the contrast), no longer near-black (<= 40 grey).
+        dark = all(rgba(e["bg"])[3] >= 0.6 and sum(rgba(e["bg"])[:3]) / 3 <= 60 for e in page)
         no_boost = all(("saturate(1.9" not in e["bf"] and "brightness(1.0" not in e["bf"] and "saturate(2" not in e["bf"]) for _, e in found)
-        check("%s: every box is a surface token (%d boxes, %d fill%s), page cards dark (>=60%%, <=40 grey), no frost that boosts what is behind"
+        check("%s: every box is a surface token (%d boxes, %d fill%s), page cards opaque enough to read on (>=60%%, <=60 grey; 327: the bar's glass), no frost that boosts what is behind"
               % (name, len(found), len(bgs), "" if len(bgs) == 1 else "s"),
               on_token and dark and no_boost, {"bgs": sorted(bgs), "tok": r["tok"], "bf": sorted(set(e["bf"] for _, e in found))})
         pg.evaluate("() => { const m = document.getElementById('unitoptions-modal'); if(m) m.hidden = true; }")

@@ -247,15 +247,34 @@
      a token, never a fresh rgba(). The tab bar and its lens keep their
      own recipe (build 323/325), and so do the floating overlays (toast,
      banners, tooltips). */
+  /* BUILD 327 (b327d): ONE LIQUID GLASS, THE TAB BAR'S. "The new darker
+     Liquid Glass for the unit selection screen ... don't go with the rest
+     of the page, like it doesn't go with the start bar, the search bar,
+     the chat button ... the Liquid Glass feel/interface app wide kinda
+     lost its touch. It's not cohesive." 326 made every box a near-black
+     72% card under a 16px frost, while the tab bar (the one surface she
+     never stopped liking) stayed a grey glass - rgba(42,45,53,.8) under
+     blur(30px) saturate(1.8) with a bright top rim - and the chat button
+     a third recipe (55% under an 8px saturating blur). Three families on
+     one screen. Now every surface is the BAR'S glass: its neutral grey
+     tint (never 326's blue-black), a heavy blur that keeps the stars and
+     glow from showing through as detail but lets their colour in a
+     little (saturate 1.2, not the old frost's 1.9 + brightness), the
+     bar's rim - a hairline, a bright catch-light along the top, a dark
+     lip along the bottom - and its soft drop shadow. The fill is
+     lighter than 326 and more opaque than 325, so it reads as the
+     bar's material at every size and text on it still clears 4.5:1
+     (check-b326-f 5b). --surface-1 is a card; --surface-2 is a raised
+     control (search, chat button, header slabs) one step lighter. */
   :root{
-    --surface-1:rgba(13,16,21,.72);
-    --surface-2:rgba(31,36,44,.78);
+    --surface-1:rgba(36,40,48,.7);
+    --surface-2:rgba(44,48,57,.72);
     --surface-lift:rgba(255,255,255,.07);
     --surface-inset:rgba(0,0,0,.3);
-    --surface-sheen:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.012) 42%, rgba(0,0,0,.1));
-    --surface-border:rgba(255,255,255,.1);
-    --surface-shadow:0 2px 12px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.11), inset 0 -1px 0 rgba(0,0,0,.28);
-    --surface-blur:blur(16px) saturate(1.2);
+    --surface-sheen:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.015) 40%, rgba(0,0,0,.06));
+    --surface-border:rgba(255,255,255,.13);
+    --surface-shadow:0 4px 18px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.03), inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 1px rgba(0,0,0,.28);
+    --surface-blur:blur(24px) saturate(1.2);
   }
 
   /* ---------- dark mode ---------- */
@@ -264,7 +283,8 @@
     --paper:#12161B;
     --panel:#1A2027;
     --rule:#333D46;
-    --soft:#8E9BA5;
+    /* build 327: a step lighter (was #8E9BA5) - the glass under it is the tab bar's grey now, not 326's near-black, and the small labels on it (section headings, "In this room", the week switch) have to keep 4.5:1 (check-b326-f 5b) */
+    --soft:#A0ACB6;
     --wrong:#E3707C;
     --right:#4FBE8C;
   }
@@ -4191,7 +4211,7 @@
   }
   [data-theme="dark"][data-layout="modern"] .motion-summary{
     background:var(--surface-sheen), var(--surface-2);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    box-shadow:var(--surface-shadow);
   }
   .section-divider{
     margin-top:2.2rem;
@@ -4579,8 +4599,8 @@
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .cal-month-head{
-    background:var(--surface-sheen), var(--surface-2); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-2); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   .cal-month-head-open{ border-color:var(--accent); }
   [data-layout="modern"] .cal-month-head-open{ border:1.5px solid var(--accent); }
@@ -4636,8 +4656,8 @@
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .cal-action-btn{
-    background:var(--surface-sheen), var(--surface-2); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-2); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   @media (hover:hover){ .cal-action-btn:hover{ border-color:var(--accent); } }
   /* The "go to today" pulse \u2014 a brief glow that draws the eye to the
@@ -4661,8 +4681,8 @@
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .cal-row{
-    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   .cal-row-date{
     display:flex; align-items:center; gap:.5rem; font-size:.8rem; font-weight:800;
@@ -4733,7 +4753,7 @@
     will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
   }
   [data-theme="dark"][data-layout="modern"] .cal-grid-arrow{
-    background:var(--surface-sheen), var(--surface-2); border:1px solid rgba(255,255,255,.11);
+    background:var(--surface-sheen), var(--surface-2); border:1px solid var(--surface-border);
   }
   .cal-grid-head, .cal-grid{
     display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:.3rem;
@@ -4881,8 +4901,8 @@
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .cal-daycard{
-    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   .cal-daycard-empty{ background:transparent; border-style:dashed; }
   /* A day with nothing on (build 302): a quieter card, same shape. */
@@ -5376,8 +5396,8 @@
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .lb-row{
-    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   .lb-row-me{ border-color:var(--accent); }
   [data-layout="modern"] .lb-row-me{ border:1.5px solid var(--accent); }
@@ -5446,7 +5466,9 @@
     width:.62rem; height:.62rem; padding:0; font-size:0; border-radius:50%;
     background:rgba(160,170,185,.35);
   }
-  .vroom-roster.is-crowded .vroom-ready-badge.is-ready{ background:#3DD68C; }
+  .vroom-roster.is-crowded .vroom-ready-badge.is-ready{ background:#3DD68C; box-shadow:0 0 6px rgba(61,214,140,.55); }
+  .vroom-roster.is-crowded .vroom-ready-badge.is-ready::before{ display:none; }
+  @media (max-width:21rem){ .vroom-ready-badge.is-ready::before{ display:none; } }
   @media (min-width:40rem){
     .vroom-roster.is-crowded .vroom-roster-list .vroom-row{ padding:.5rem .7rem; }
     .vroom-roster.is-crowded .vroom-avatar{ width:2.7rem; height:2.7rem; }
@@ -5455,74 +5477,50 @@
     .vroom-roster.is-crowded .vroom-you-tag{ display:inline; }
   }
   .vroom-setup-head{ margin-top:.2rem; }
-  /* ---- THE LOBBY BOX'S HEADER: WHO CAN JOIN, AND INVITE (build 326) ----
-     A full-width row under "In this room" at every width (build 323 put
-     a switch and an Invite pill there; 326 replaced the switch - see
-     .vroom-access-seg). Phone: the two choices across the box, then the
-     line saying what the current one means, with Invite friends beside
-     it. From a tablet up all three sit on one line. */
+  /* ---- THE LOBBY BOX'S HEADER: INVITE, THEN THE SWITCH (build 327) ----
+     "For the lobby, I prefer the regular toggle switch with the invite
+     friends button to the left of it. The toggles description is just
+     confusing?" 326's two-choice segment is gone. One row: Invite friends
+     on the left, and on the right the app's one switch (.nsw, its lens
+     and all) with its name, "Open to class", beside it. Under the row ONE
+     line that never changes with the state, so it can never be read as
+     the opposite of what the switch shows: what ON does. Off is the
+     default and needs no sentence - nobody walks in uninvited. */
   .vroom-roster.has-tools .vroom-roster-head{ flex-wrap:wrap; align-items:center; row-gap:.55rem; margin-bottom:.7rem; }
   .vroom-roster-tools{
-    flex:0 0 100%; display:grid; grid-template-columns:minmax(0,1fr) auto;
-    grid-template-areas:"seg seg" "line invite"; align-items:center; gap:.55rem .7rem;
+    flex:0 0 100%; display:grid; grid-template-columns:auto minmax(0,1fr);
+    grid-template-areas:"invite open" "line line"; align-items:center; gap:.45rem .7rem;
     padding-top:.65rem; border-top:1px solid rgba(255,255,255,.07);
   }
-  .vroom-roster-tools .vroom-access-seg{ grid-area:seg; }
-  .vroom-roster-tools .vroom-access-line{ grid-area:line; }
   .vroom-roster-tools .vroom-invite-btn{
     grid-area:invite; display:inline-flex; align-items:center; gap:.4rem; margin:0;
     min-height:44px; padding:.4rem .9rem; font-size:.82rem; font-weight:800; white-space:nowrap; justify-content:center;
   }
   .vroom-roster-tools .vroom-invite-btn svg{ width:1.05rem; height:1.05rem; flex:none; }
-  /* Two options in one track, the app's segmented look (the Profile /
-     Stats / Settings switcher): a dark inset track, the chosen option a
-     raised lighter pill with white words, the other quiet. Each option
-     is a whole 44px target, never a word on a switch. */
-  .vroom-access-seg{
-    display:grid; grid-template-columns:1fr 1fr; gap:.25rem; padding:.25rem;
-    border-radius:999px; background:rgba(0,0,0,.32);
-    box-shadow:inset 0 1px 2px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.07);
-  }
-  .vroom-access-opt{
-    display:flex; align-items:center; justify-content:center; gap:.42rem; min-width:0;
-    min-height:44px; padding:0 .8rem; margin:0; border:0; border-radius:999px;
-    background:transparent; color:rgba(255,255,255,.6);
+  .vroom-open-switch{
+    grid-area:open; justify-self:end; display:flex; align-items:center; gap:.6rem;
+    min-height:44px; padding:0 0 0 .4rem; margin:0; border:0; background:transparent; color:var(--ink);
     font:inherit; font-size:.86rem; font-weight:800; letter-spacing:.01em; white-space:nowrap; cursor:pointer;
-    -webkit-tap-highlight-color:transparent;
-    transition:background-color .2s ease, color .2s ease, box-shadow .2s ease;
+    -webkit-tap-highlight-color:transparent; touch-action:pan-y;
   }
-  .vroom-access-word{ overflow:hidden; text-overflow:ellipsis; }
-  .vroom-access-icon{ flex:none; width:1.05rem; height:1.05rem; display:block; }
-  .vroom-access-icon svg{ width:100%; height:100%; display:block; fill:none; stroke:currentColor;
-    stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
-  .vroom-access-opt.is-on{
-    color:#fff; background:rgba(255,255,255,.2);
-    box-shadow:0 1px 4px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(255,255,255,.1);
+  .vroom-open-switch .nsw{ order:0; margin:0; }
+  .vroom-open-switch:focus{ outline:none; }
+  .vroom-open-word{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .vroom-open-line{ grid-area:line; margin:0; min-width:0; font-size:.78rem; line-height:1.35; color:var(--soft); }
+  /* a 320px phone: the invite button's word goes before the switch's */
+  @media (max-width:21rem){
+    .vroom-roster-tools .vroom-invite-btn{ padding:.4rem .7rem; }
+    .vroom-roster-tools .vroom-invite-btn .vroom-invite-word{ display:none; }
+    .vroom-open-switch{ font-size:.8rem; gap:.45rem; }
   }
-  /* open is the one that lets the class in, so it is lit in the ready
-     green's family; invite only is the private default, plain white */
-  .vroom-access-seg.is-open .vroom-access-opt.is-on .vroom-access-icon{ color:#5BE39F; }
-  .vroom-access-opt:not(.is-on):active{ background:rgba(255,255,255,.07); }
-  @media (hover:hover){ .vroom-access-opt:not(.is-on):hover{ color:#fff; } }
-  .vroom-access-opt:focus{ outline:none; }
-  .vroom-access-opt:focus-visible{ outline:2px solid rgba(255,255,255,.7); outline-offset:-3px; }
-  .vroom-access-line{ margin:0; min-width:0; font-size:.78rem; line-height:1.35; color:var(--soft); min-height:2.7em; }
-  /* up to a 414px phone: both words whole, the marks a touch smaller; a 320px
-     phone drops the marks rather than cut a word ("Invite o...") */
-  @media (max-width:26.5rem){
-    .vroom-access-opt{ padding:0 .45rem; gap:.32rem; font-size:.8rem; }
-    .vroom-access-icon{ width:.92rem; height:.92rem; }
+  @media (min-width:40rem){
+    .vroom-roster-tools{ grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"invite line open"; gap:.6rem 1rem; }
+    .vroom-roster-tools .vroom-invite-btn{ font-size:.88rem; }
+    .vroom-open-switch{ font-size:.9rem; }
+    .vroom-open-line{ font-size:.82rem; text-align:right; }
   }
-  @media (max-width:21rem){ .vroom-access-icon{ display:none; } }
   .vroom-roster > .vroom-autostart-note{ margin:.55rem 0 .1rem; }
   .vroom-roster:not(.is-crowded) > .vroom-autostart-note{ margin-top:.2rem; }
-  @media (min-width:40rem){
-    .vroom-roster-tools{ grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"seg line invite"; gap:.6rem 1rem; }
-    .vroom-access-seg{ min-width:19rem; }
-    .vroom-access-opt{ font-size:.9rem; }
-    .vroom-roster-tools .vroom-invite-btn{ font-size:.88rem; }
-    .vroom-access-line{ font-size:.82rem; }
-  }
   @media (min-width:40rem){
     .vroom-roster{ padding:1.1rem 1.15rem; }
     .vroom-roster-title{ font-size:.82rem; }
@@ -5627,8 +5625,8 @@
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .rank-row{
-    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   /* Placeholder rows while the board loads (build 313): the real row's
      box, with soft bars where the name and the stat go. The breathing
@@ -5867,7 +5865,7 @@
   [data-theme="dark"][data-layout="modern"] .rank-me-btn{
     background:rgba(28,33,40,.65); border:1px solid rgba(255,255,255,.12);
     color:var(--ink);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    box-shadow:var(--surface-shadow);
   }
   [data-layout="modern"] .rank-me-btn:active{ opacity:.75; }
   /* THE SAME GLASS AS THE FIELD IT SITS BESIDE - "the find me button in
@@ -5879,9 +5877,9 @@
   [data-theme="dark"][data-layout="modern"] .iconbtn.rank-me-btn{
     align-self:stretch; min-height:0; height:auto; padding:0 1.15rem;
     font-size:.95rem; font-weight:700; letter-spacing:.01em; color:var(--ink);
-    background:var(--surface-sheen), var(--surface-2); border:1px solid rgba(255,255,255,.11); border-radius:999px;
+    background:var(--surface-sheen), var(--surface-2); border:1px solid var(--surface-border); border-radius:999px;
     will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
-    box-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    box-shadow:var(--surface-shadow);
   }
   /* The top three carry their medal colour through the row's own text,
      not just the rank circle, per explicit request - name and stat line
@@ -5987,11 +5985,16 @@
      green glow. Two pixels, all four sides, round every corner, the same
      on your card and everybody else's. It arrives with the card (the
      roster redraws on a ready change), so there is no half-drawn frame. */
-  [data-layout="modern"] .vroom-roster .vroom-roster-list .vroom-row.is-ready,
-  .vroom-roster .vroom-roster-list .vroom-row.is-ready{
-    border-color:#3DD68C;
-    box-shadow:0 0 0 1px #3DD68C, 0 0 14px rgba(61,214,140,.28), 0 2px 10px rgba(0,0,0,.25),
-      inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+  /* BUILD 327 (b327d): NO RING AT ALL. "I don't like the green outline
+     for being ready in the lobby, it's too much." A ready card is the
+     same card as everybody else's - same edge, same shadow - with the
+     faintest wash of green across it (::before, under its content) and
+     its chip saying Ready with a tick, in a soft green rather than a
+     solid one. The chip is where the eye goes to ask "who's ready", so
+     it is the only place that says it. */
+  .vroom-roster .vroom-roster-list .vroom-row.is-ready::before{
+    right:0; width:auto; border-radius:inherit; pointer-events:none;
+    background:linear-gradient(90deg, rgba(61,214,140,.09), rgba(61,214,140,.02) 65%, rgba(61,214,140,0));
   }
   /* ...and the words sit dead centre in the pill. Capitals ride high in a
      line box that keeps room for descenders, so "NOT READY" read a pixel
@@ -6004,7 +6007,14 @@
     text-box:trim-both cap alphabetic; text-align:center;
     border-radius:999px; color:var(--soft); background:rgba(128,128,128,.16);
   }
-  .vroom-ready-badge.is-ready{ color:#0E2818; background:#3DD68C; }
+  .vroom-ready-badge.is-ready{
+    color:#8EF0BF; background:rgba(61,214,140,.14); box-shadow:inset 0 0 0 1px rgba(61,214,140,.38);
+    display:inline-flex; align-items:center; gap:.3rem;
+  }
+  .vroom-ready-badge.is-ready::before{
+    content:""; width:.55rem; height:.32rem; flex:none; margin-top:-.12rem;
+    border-left:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(-45deg);
+  }
   /* Nova taking his few seconds (build 324): his own gold, breathing,
      three dots filling in after the words - opacity only. */
   .vroom-ready-badge.is-prep{ color:#FFD27A; background:rgba(255,210,122,.14);
@@ -6627,12 +6637,14 @@
     width:44px; height:44px; padding:0; margin:0;
     display:flex; align-items:center; justify-content:center;
     border-radius:50%; overflow:visible;
-    background:rgba(20,25,32,.55);
-    border:1px solid rgba(255,255,255,.14);
+    /* build 327: the app's one glass (the surface tokens), as the search
+       field and the unit cards beside it - it was a third recipe */
+    background:var(--surface-sheen), var(--surface-2);
+    border:1px solid var(--surface-border);
     will-change:backdrop-filter;
-    backdrop-filter:blur(8px) saturate(1.8) brightness(1.05);
-    -webkit-backdrop-filter:blur(8px) saturate(1.8) brightness(1.05);
-    box-shadow:0 2px 10px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
+    backdrop-filter:var(--surface-blur);
+    -webkit-backdrop-filter:var(--surface-blur);
+    box-shadow:var(--surface-shadow);
     color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent;
   }
   .chatdock-btn:active{ transform:translateY(1px); }
@@ -7708,8 +7720,8 @@
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .vroom-test-summary{
-    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   .vroom-test-summary-title{ font-family:var(--serif); font-size:1rem; font-weight:800; color:var(--ink); margin:0 0 .3rem; }
   /* The game's name with its mark beside it, centred like the rest of
@@ -8296,8 +8308,8 @@
     .welcomeintro-panel .welcomeintro-row:last-of-type{ margin-bottom:2.2rem; }
   }
   [data-theme="dark"][data-layout="modern"] .welcomeintro-row{
-    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   .welcomeintro-head{ font-weight:800; font-size:1rem; margin:0 0 .2rem; color:var(--ink); }
   /* Bumped from .8rem/1.3 line-height, per explicit report that these
@@ -8580,8 +8592,8 @@
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .speedopt{
-    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   [data-layout="modern"] .speedopt.on{
     background:var(--accent); border-color:var(--accent);
@@ -8630,10 +8642,10 @@
      with a real top highlight for the same subtle 3D depth every
      other button in this layout already has. */
   [data-layout="modern"] .chip{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.12);
+    background:var(--surface-sheen), var(--surface-2); border:1px solid var(--surface-border);
     border-radius:999px; color:#F3F5F7;
-    will-change:backdrop-filter; backdrop-filter:blur(8px) saturate(1.8) brightness(1.05); -webkit-backdrop-filter:blur(8px) saturate(1.8) brightness(1.05);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.1), 0 2px 8px rgba(0,0,0,.2);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
+    box-shadow:var(--surface-shadow);
   }
   /* The selected chip shares .next's own var(--accent) fill (so it was
      already the same COLOR as Close/Begin/Start Studying), but was
@@ -9015,7 +9027,7 @@
   [data-theme="dark"] .info-note{
     background:var(--surface-sheen), var(--surface-1); border-color:rgba(255,255,255,.09);
     border-left:3px solid var(--accent);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    box-shadow:var(--surface-shadow);
   }
   /* The sync-not-reachable note specifically, per explicit request \u2014
      the accent-colored left stripe every other .info-note carries is
@@ -9049,7 +9061,7 @@
   }
   [data-theme="dark"][data-layout="modern"] .codereveal-box{
     background:var(--surface-sheen), var(--surface-1);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    box-shadow:var(--surface-shadow);
   }
   .infoicon-wrap{ position:relative; display:inline-block; margin-left:.35rem; }
   .infoicon{
@@ -9110,8 +9122,8 @@
   [data-theme="dark"][data-layout="modern"] .points-breakdown,
   [data-theme="dark"][data-layout="modern"] .results-level,
   [data-theme="dark"][data-layout="modern"] .results-review{
-    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   .points-line{
     display:flex; justify-content:space-between; gap:1rem; font-size:.85rem;
@@ -9127,8 +9139,8 @@
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .points-progress-sect{
-    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   .points-progress-sect .slab{ margin:0 0 .5rem; }
   /* The grid's own bottom margin is for a grid followed by something;
@@ -9191,8 +9203,8 @@
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .points-stat-box{
-    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   .points-stat-label{ font-size:.75rem; color:var(--soft); margin:.3rem 0 0; font-weight:600; }
   .points-progress-track{
@@ -9400,7 +9412,7 @@
   }
   [data-theme="dark"][data-layout="modern"] .bottomtabs-extrarow{
     background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    box-shadow:var(--surface-shadow);
   }
   /* The actual fix for the reported "not Liquid Glass" difference on
      this split bar \u2014 both halves already matched each other exactly
@@ -9774,7 +9786,7 @@
     /* WHITE, NOT GREY (build 323): "You see how the bottom tab icons and
        wording is that nice white too and not the grey we have?" The tabs
        you are not on are a soft white; the one you are on is full white. */
-    padding:.55rem 1.15rem; color:rgba(255,255,255,.84); font:inherit;
+    padding:.55rem 1.15rem; color:rgba(255,255,255,.94); font:inherit;
     /* The explicit rgba form, not the "transparent" keyword \u2014 some iOS
        Safari versions honor this reliably and the keyword not always,
        which was exactly the cause of an old square-tap-highlight glitch
@@ -10102,6 +10114,27 @@
   .bottomtabs.has-options-tab .bottomtab{ padding-left:.3rem; padding-right:.3rem; font-size:.68rem; }
   .bottomtabs.has-options-tab .bottomtab-start{ padding-left:.4rem; padding-right:.4rem; font-size:.68rem; }
   .bottomtabs.has-options-tab .bottomtab-icon{ width:1.6rem; height:1.6rem; }
+  /* BUILD 327 (b327d): THE FOUR ICONS, A STEP BIGGER AND WHITER. "The
+     icons of the 4 things are good but could they not be slightly bigger
+     and more white? I feel like it'd be a cleaner look." The three line
+     icons (Home, Leaderboard, Calendar - the Profile tab is the character,
+     sized on its own since build 317) go 1.75rem -> 1.95rem on a phone and
+     2.2rem -> 2.4rem from 40rem, and the tabs you are not on are near-white
+     (.94, was .84; the one you are on is #fff). Scoped past every older
+     icon rule by the :not()s, and after them in the file; the merged
+     Start pill's own play icon is left alone. The six-item bar (Options
+     on) keeps its compact 1.6rem -> 1.75rem. Measured on a 320px phone:
+     the bar still fits with the labels hidden, as before. */
+  /* The bar does NOT grow with them: the extra .2rem is taken back as a
+     -.1rem margin above and below, so the bar is 326's height on every
+     device. It grew 3-4px on the first pass, and the daily "?" bubble,
+     which parks above the bar on a tablet or a phone on its side, landed
+     27px from its button where check-fixes holds it to 24. */
+  .bottomtabs .bottomtabs-navrow .bottomtab-icon:not(.bottomtab-icon-avatar):not(.bottomtab-start-icon){ width:1.95rem; height:1.95rem; margin:-.1rem 0; }
+  .bottomtabs.has-options-tab .bottomtabs-navrow .bottomtab-icon:not(.bottomtab-icon-avatar):not(.bottomtab-start-icon){ width:1.75rem; height:1.75rem; margin:-.075rem 0; }
+  @media (min-width:40rem){
+    .bottomtabs:not(.has-options-tab) .bottomtabs-navrow .bottomtab-icon:not(.bottomtab-icon-avatar):not(.bottomtab-start-icon){ width:2.4rem; height:2.4rem; }
+  }
   /* ---- THE START PILL: A BUTTON'S SHAPE, AND A BUTTON'S DEPTH (build 245) ----
      "I feel like it's an awkward shape, and the start button could be a
      little bit wider (the white when it's enabled and the dull part when
@@ -11736,8 +11769,8 @@
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .pbbanner{
-    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   .pbbanner::after{
     content:""; position:absolute; top:0; bottom:0; left:-60%; width:35%;
@@ -12262,8 +12295,8 @@
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .stat-card{
-    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   /* Solid color pulled from the theme gradient's own middle stop,
      not a per-element gradient-clip — see the matching comment above
@@ -12278,7 +12311,9 @@
   .stat-num{
     display:block; font-family:var(--mono); font-size:1.7rem; font-weight:700; line-height:1.1;
     font-variant-numeric:tabular-nums; letter-spacing:-0.02em;
-    color:var(--theme-c2);
+    /* build 327: lifted a fifth towards white - on the grey glass the deep
+       theme colours (Sapphire's #2F6BFF) fell under 3:1; same hue */
+    color:color-mix(in srgb, var(--theme-c2) 80%, #fff);
   }
   .stat-lab{ display:block; font-size:.78rem; color:var(--soft); margin-top:.3rem; }
   /* ---------- test history and the Stats tab (build 311) ---------- */
@@ -12498,7 +12533,7 @@
      the rest of the tab. */
   .stx-dots{ margin:.3rem 0 1rem; padding:.95rem .9rem .8rem; border-radius:18px;
     background:var(--surface-sheen), var(--surface-1);
-    border:1px solid rgba(255,255,255,.11); box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    border:1px solid rgba(255,255,255,.11); box-shadow:var(--surface-shadow);
     --sd-unlit:rgba(255,255,255,.075); }
   /* The switch sits beside the reading and never moves when the reading
      changes length (a tapped day): on a narrow phone it has its own row
@@ -18839,8 +18874,8 @@
     box-shadow:0 2px 10px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .pick{
-    background:var(--surface-sheen), var(--surface-1); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   [data-layout="modern"] .searchbox{
     border-radius:999px; border:1px solid rgba(255,255,255,.5);
@@ -18849,8 +18884,8 @@
     box-shadow:0 2px 8px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
   }
   [data-theme="dark"][data-layout="modern"] .searchbox{
-    background:var(--surface-sheen), var(--surface-2); border:1px solid rgba(255,255,255,.11);
-    box-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    background:var(--surface-sheen), var(--surface-2); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
   }
   [data-layout="modern"] .selall-btn{ padding:.4rem 1rem; }
   [data-layout="modern"] .modedisplay-top{
@@ -18936,7 +18971,7 @@
   }
   [data-theme="dark"][data-layout="modern"] .more-toggle{
     background:var(--surface-sheen), var(--surface-2);
-    box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    box-shadow:var(--surface-shadow);
   }
   /* Solid, deliberately NOT the glass treatment every other control on
      this screen uses - glass on a dark, low-contrast background reads as
@@ -19337,15 +19372,27 @@
      border (Quit's height, so centerPauseStack moves nothing); pressed it
      goes darker in place, as Quit goes to #000. Not themed: the pause
      sheet is the same on every theme, and green is nobody's rank colour
-     to be confused with. */
+     to be confused with. (superseded in 327: deep blue, below.) */
+  /* ---- THE APP'S OWN BLUE, DEEP (build 327) ----
+     "Save and exit as a green button is ABSOLUTELY not the move. What are
+     you even thinking? Make that a color that makes sense and goes with
+     it all." Green is a right answer and a ready player in this app; on
+     a pause sheet it read as a verdict. Blue is the colour the app
+     already uses for the things it KEEPS FOR YOU and that are calm - the
+     XP bar and its number (#3D8BFF), the sync code, the slider's fill -
+     taken deep and a little muted so white words sit on it at 6.5:1 and it stays quieter
+     than Resume's white. Same matte recipe as before (opaque fill, a lit
+     lip in its own lighter blue, a shade inside the bottom edge, Quit's
+     contact/mid/wide shadows), no border (Quit's height), darker pressed.
+     Resume white, Save and exit blue, Quit black. */
   [data-layout="modern"] .pausepanel .next.ghost#pause-save{
     color:#fff; border:none;
-    background-color:#1E7A4F; background-image:none;
-    box-shadow:0 1px 1px rgba(150,230,186,.55) inset, 0 -2px 2px rgba(0,0,0,.35) inset,
+    background-color:#2B5AAE; background-image:none;
+    box-shadow:0 1px 1px rgba(170,205,255,.55) inset, 0 -2px 2px rgba(0,0,0,.32) inset,
       0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 22px -6px rgba(0,0,0,.55);
     -webkit-backdrop-filter:none; backdrop-filter:none;
   }
-  [data-layout="modern"] .pausepanel .next.ghost#pause-save:active{ background-color:#165C3B; opacity:1; }
+  [data-layout="modern"] .pausepanel .next.ghost#pause-save:active{ background-color:#224A8F; opacity:1; }
   /* Back links were plain text with no button treatment at all \u2014 the
      same black-glass pill as the ghost button, just smaller, so it
      reads as a real tappable control instead of a caption. */
@@ -21064,8 +21111,8 @@
      untouched; the whole card is still the tap target. */
   [data-layout="modern"] .picks > label.pick{
     grid-template-columns:minmax(0,1fr) auto;
-    grid-template-rows:auto auto minmax(0,1fr) auto 1.05rem;
-    grid-template-areas:"box badge" "name name" "ver ver" "count count" "bar bar";
+    grid-template-rows:auto auto auto minmax(0,1fr) auto 1.05rem;
+    grid-template-areas:"box badge" "name name" "next next" "ver ver" "count count" "bar bar";
     align-items:start; gap:0; padding:.8rem .85rem .75rem .9rem; border-radius:18px;
   }
   .picks > label.pick::before{ display:none; }
@@ -21114,10 +21161,56 @@
       0 2px 12px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.12) !important;
   }
   .picks > label.pick.is-pressing{ box-shadow:0 0 0 2px rgba(111,194,255,.35) !important; }
+  /* BUILD 327 (b327d): THE TICK. "Could they be improved by making the
+     checkmark better?" It was the text glyph (a check character) in a
+     filled circle, drawn in the font's own weight and sitting on its
+     baseline - a hair low, a different stroke on every platform. Now the
+     circle is a lit disc (the accent with a top light and a hairline rim,
+     like a pressed glass bead), it pops once when picked, and an SVG tick
+     DRAWS ITSELF in (stroke-dashoffset 1 -> 0 on a pathLength of 1) after
+     the pop. Unpicking runs both back, quicker. The text glyph stays in
+     the box at font-size 0 for anything that reads it. */
+  .picks > label.pick > .box{ position:relative; font-size:0 !important; color:transparent !important;
+    transition:transform .32s cubic-bezier(.3,1.7,.5,1), background-color .18s ease, border-color .18s ease, box-shadow .2s ease; }
+  .picks > label.pick > .box > .pick-tick{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+  .picks > label.pick > .box > .pick-tick path{
+    fill:none; stroke:var(--accent-ink); stroke-width:2.9; stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:1; stroke-dashoffset:1; transition:stroke-dashoffset .14s ease-in;
+  }
+  [data-theme="dark"][data-layout="modern"] .picks > label.pick input:checked ~ .box{
+    background:radial-gradient(120% 90% at 50% 18%, rgba(255,255,255,.55), rgba(255,255,255,0) 60%), var(--accent);
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent), 0 2px 6px rgba(0,0,0,.35), inset 0 -1px 1px rgba(0,0,0,.18);
+    transform:scale(1.06);
+  }
+  .picks > label.pick input:checked ~ .box > .pick-tick path{ stroke-dashoffset:0; transition:stroke-dashoffset .3s cubic-bezier(.55,.1,.3,1) .12s; }
+  [data-reduce-motion="true"] .picks > label.pick > .box,
+  [data-reduce-motion="true"] .picks > label.pick > .box > .pick-tick path{ transition:none !important; }
+  @media (prefers-reduced-motion:reduce){
+    .picks > label.pick > .box, .picks > label.pick > .box > .pick-tick path{ transition:none !important; }
+  }
+  /* THE NEXT TEST'S MARK (appendUnitNextTestTag): a small amber line under
+     the name - the calendar's test amber, which is what the class already
+     reads as "test" - saying it is on the next test and when. Its own
+     grid row ("next"), an auto row that is zero high on every other
+     card, so the cards without it do not move. A label: taps go to the
+     card, holds still open its details. */
+  .picks > label.pick > .pick-nexttest{
+    grid-area:next; justify-self:start; align-self:start; margin-top:.45rem; max-width:100%;
+    display:inline-flex; flex-wrap:wrap; align-items:center; gap:.08rem .35rem;
+    padding:.14rem .5rem .14rem .42rem; margin-left:calc(-.42rem - 1px); border-radius:.5rem;
+    font-size:.66rem; font-weight:800; line-height:1.25; letter-spacing:.03em;
+    color:#FFD27A; background:rgba(245,181,77,.1); border:1px solid rgba(245,181,77,.3);
+    pointer-events:none;
+  }
+  .pick-nexttest-what{ display:inline-flex; align-items:center; gap:.3rem; white-space:nowrap; text-transform:uppercase; }
+  .pick-nexttest-what::before{ content:""; width:.42rem; height:.42rem; border-radius:50%; background:#F5B54D; box-shadow:0 0 6px rgba(245,181,77,.7); flex:none; }
+  .pick-nexttest-when{ white-space:nowrap; font-weight:700; color:rgba(255,226,170,.82); letter-spacing:.01em; }
+  @media (min-width:40rem){ .picks > label.pick > .pick-nexttest{ font-size:.72rem; margin-top:.55rem; } }
   /* the "more units coming" tile keeps its own quiet layout, on the same corner */
   [data-layout="modern"] .picks > .pick.pick-tba{ border-radius:18px; }
   @media (min-width:40rem){
-    [data-layout="modern"] .picks > label.pick{ padding:1.05rem 1.15rem 1rem 1.15rem; grid-template-rows:auto auto minmax(0,1fr) auto 1.15rem; border-radius:20px; }
+    [data-layout="modern"] .picks > label.pick{ padding:1.05rem 1.15rem 1rem 1.15rem; grid-template-rows:auto auto auto minmax(0,1fr) auto 1.15rem; border-radius:20px; }
     .picks > label.pick > .box{ width:26px; height:26px; }
     .picks > label.pick > .pname{ margin-top:.75rem; font-size:1.12rem; line-height:1.25; min-height:calc(2 * 1.25em); }
     .picks > label.pick:has(> .pick-version) > .pname{ min-height:0; }
@@ -25337,7 +25430,8 @@
   }
   .vroom-invite-btn{ min-height:44px; padding:.4rem .9rem; font-size:.8rem; margin-left:auto; }
   /* (The lobby's Open room switch, .vroom-open-toggle and its row, came
-     out in build 326 - see .vroom-access-seg.) */
+     out in build 326 for a two-choice segment, and came back in 327 as
+     .vroom-open-switch - see the lobby box's header.) */
   .rooms-list{ display:flex; flex-direction:column; }
   .room-row .friend-row-sub{ color:var(--soft); }
   .rooms-refresh{ width:100%; min-height:44px; margin-top:.9rem; }
@@ -29189,10 +29283,10 @@
      blur and shadow; it keeps its pill shape because it carries a word. */
   [data-layout="modern"] .top #pausebtn:not([hidden]),
   [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
-    background:rgba(20,25,32,.55); color:var(--ink);
-    border:1px solid rgba(255,255,255,.14); border-radius:999px;
-    will-change:backdrop-filter; backdrop-filter:blur(8px) saturate(1.8) brightness(1.05); -webkit-backdrop-filter:blur(8px) saturate(1.8) brightness(1.05);
-    box-shadow:0 2px 10px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
+    background:var(--surface-sheen), var(--surface-2); color:var(--ink);
+    border:1px solid var(--surface-border); border-radius:999px;
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
+    box-shadow:var(--surface-shadow);
   }
 
   /* Customize: the characters grouped by how they are earned. */
@@ -44061,8 +44155,8 @@ addEventListener("resize", () => { const w = document.querySelector(".wrap.test-
    Stars near a tile's edge are drawn again across it, so none is cut in
    half where two tiles meet. */
 const SKY_TILES = [
-  { css: 239, seed: 0x51a7, n: 42, kind: "dust" },
-  { css: 433, seed: 0x9e21, n: 94, kind: "stars" },
+  { css: 239, seed: 0x51a7, n: 38, kind: "dust" },
+  { css: 433, seed: 0x9e21, n: 86, kind: "stars" },
 ];
 /* A SMIDGE LESS (build 326): "I like the background with the stars, I do
    kinda think it's a SMIDGE tiny bit too much." Trimmed, not redesigned:
@@ -44074,7 +44168,14 @@ const SKY_TILES = [
    Pro Max and an iPad Pro 11"; the brightest star is unchanged in kind.
    Same tiles on every screen and theme, so the .6 / 1 / 0 strengths below
    keep their ratios. */
-const SKY_ALPHA = .96;
+/* AND A SMIDGE SMIDGE LESS (build 327): "the stars in the background,
+   they are good but also a smidge too much, needs to be a smidge smidge
+   less. They are great but a little distracting." The same trim again,
+   the same way: 42 -> 38 dust, 94 -> 86 stars off the END of each seeded
+   run (every star that stays is where it was), and every star and halo at
+   .88 of its drawn alpha (was .96). Still present on every screen; the
+   field's light on Home comes down about a further 20% (check-b327-d). */
+const SKY_ALPHA = .88;
 let skyUrls = [];
 function buildSkyTiles(){
   const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
@@ -56865,6 +56966,61 @@ function testTopicsFor(iso){
   const topics = t.topics.map(x => String(x == null ? "" : x).trim()).filter(Boolean);
   if(!topics.length) return null;
   return { title: t.title ? String(t.title) : null, topics, postedAt: t.postedAt ? String(t.postedAt) : null };
+}
+/* BUILD 327 (b327d): THE UNITS ON THE NEXT TEST. "Would it be a cool
+   feature if somehow like a mark on the units for the upcoming test?"
+   The app only KNOWS what is on a test when TEST_TOPICS has it posted
+   (the Calendar's "What's on it" reads the same table), so this is
+   that: the next test still to sit (nextTestEntry, today included), its
+   posted topics, and every unit whose name a topic starts with ("Penal
+   Code \u2014 slides 256\u2013578" names Penal Code). A test with
+   nothing posted marks nothing - never a guess off the class day's
+   text, which says what is TAUGHT that day, not what is tested. */
+function nextTestUnits(){
+  let e = null;
+  try{ e = nextTestEntry(); }catch(err){ e = null; }
+  if(!e) return null;
+  const t = testTopicsFor(e.date);
+  if(!t) return null;
+  const today = todayCalendarKey();
+  const days = calendarDaysBetween(today, e.date);
+  const when = days <= 0 ? "Today" : days === 1 ? "Tomorrow"
+    : formatCalendarDate(e.date).replace(/^[A-Za-z]+,\s*/, "");
+  const units = new Set();
+  unitsInTeachingOrder().forEach(u => {
+    const n = String(u).toLowerCase();
+    if(t.topics.some(tp => { const x = tp.toLowerCase(); return x === n || (x.startsWith(n) && /^[\s\u2014\u2013:,(-]/.test(x.slice(n.length))); })) units.add(u);
+  });
+  return units.size ? { date: e.date, when, units } : null;
+}
+/* The mark itself, on a unit card in either picker (the test setup and
+   the Virtual Room host's). A label, not a control: a tap on it is a tap
+   on the card, and a hold still opens the unit's details. */
+function appendUnitNextTestTag(row, name){
+  const n = nextTestUnits();
+  if(!n || !n.units.has(name)) return;
+  const t = document.createElement("span");
+  t.className = "pick-nexttest";
+  t.setAttribute("data-date", n.date);
+  const a = document.createElement("span"); a.className = "pick-nexttest-what"; a.textContent = "Next test";
+  const b = document.createElement("span"); b.className = "pick-nexttest-when"; b.textContent = n.when;
+  t.append(a, b);
+  row.appendChild(t);
+}
+/* The selected circle's tick, drawn as a stroke so it can draw itself in
+   when the unit is picked (build 327: "could they be improved by making
+   the checkmark better?"). The text tick stays in the box for anything
+   that reads it, hidden by the card's CSS. */
+function appendPickTick(box){
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("class", "pick-tick");
+  const path = document.createElementNS(NS, "path");
+  path.setAttribute("d", "M6.6 12.4l3.7 3.7 7.2-7.6");
+  path.setAttribute("pathLength", "1");
+  svg.appendChild(path);
+  box.appendChild(svg);
 }
 /* The next test still to sit, today included - the same days
    testsRemaining() counts, so the card and the count can never disagree. */
@@ -89257,9 +89413,11 @@ function showSetup(){
     });
     const box = document.createElement("span");
     box.className = "box"; box.setAttribute("aria-hidden", "true"); box.textContent = "\u2713";
+    appendPickTick(box);
     const label = document.createElement("span");
     label.className = "pname"; label.textContent = name;
     row.append(cb, box, label);
+    appendUnitNextTestTag(row, name);
     appendUnitVersionTag(row, name);
     const count = document.createElement("span");
     count.className = "pcount";
@@ -105779,9 +105937,11 @@ function showVirtualRoomSetup(editRoom){
     });
     const box = document.createElement("span");
     box.className = "box"; box.setAttribute("aria-hidden", "true"); box.textContent = "\u2713";
+    appendPickTick(box);
     const label = document.createElement("span");
     label.className = "pname"; label.textContent = name;
     row.append(cb, box, label);
+    appendUnitNextTestTag(row, name);
     appendUnitVersionTag(row, name);
     const count = document.createElement("span");
     count.className = "pcount";
@@ -109647,6 +109807,7 @@ function showVirtualRoomLobby(){
     inviteBtn.innerHTML = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">"
       + "<circle cx=\"9.5\" cy=\"8\" r=\"3.6\"/><path d=\"M3 20c.6-3.6 3.2-5.6 6.5-5.6s5.9 2 6.5 5.6\"/><path d=\"M19 8v6\"/><path d=\"M16 11h6\"/></svg>";
     const inviteWord = document.createElement("span");
+    inviteWord.className = "vroom-invite-word";
     inviteWord.textContent = "Invite friends";
     inviteBtn.appendChild(inviteWord);
     inviteBtn.addEventListener("click", () => openInviteFriendsSheet(vroomCode));
@@ -109672,62 +109833,41 @@ function showVirtualRoomLobby(){
        them saying what the CURRENT choice means. Nothing on it can be
        read as the opposite of what it is. Still host only, still a
        field write on the room (`open`), still private by default. */
-    const access = document.createElement("div");
-    access.className = "vroom-access-seg";
-    access.setAttribute("role", "radiogroup");
-    access.setAttribute("aria-label", "Who can join");
-    const ACCESS = [
-      { open: true, word: "Open room",
-        icon: "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8.2\"/><path d=\"M3.8 12h16.4\"/><path d=\"M12 3.8c2.3 2.3 3.4 5 3.4 8.2s-1.1 5.9-3.4 8.2c-2.3-2.3-3.4-5-3.4-8.2s1.1-5.9 3.4-8.2z\"/></svg>",
-        line: "Anyone in 26E can find it and join." },
-      { open: false, word: "Invite only",
-        icon: "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"5\" y=\"10.5\" width=\"14\" height=\"9.5\" rx=\"2.4\"/><path d=\"M8.3 10.5V8a3.7 3.7 0 0 1 7.4 0v2.5\"/></svg>",
-        line: "Only people you invite can join." }
-    ];
-    const accessLine = document.createElement("p");
-    accessLine.className = "vroom-access-line";
-    accessLine.setAttribute("aria-live", "polite");
-    const accessBtns = ACCESS.map(o => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "vroom-access-opt";
-      b.setAttribute("role", "radio");
-      b.dataset.open = o.open ? "1" : "0";
-      b.innerHTML = "<span class=\"vroom-access-icon\">" + o.icon + "</span><span class=\"vroom-access-word\">" + o.word + "</span>";
-      b.addEventListener("click", () => setAccess(o.open));
-      access.appendChild(b);
-      return b;
-    });
-    const paintAccess = () => {
-      accessBtns.forEach((b, i) => {
-        const on = ACCESS[i].open === vroomIsOpen;
-        b.classList.toggle("is-on", on);
-        b.setAttribute("aria-checked", on ? "true" : "false");
-        b.tabIndex = on ? 0 : -1;
-      });
-      access.classList.toggle("is-open", vroomIsOpen);
-      const cur = ACCESS.find(o => o.open === vroomIsOpen);
-      if(accessLine.textContent !== cur.line) accessLine.textContent = cur.line;
+    /* ---- ONE SWITCH AGAIN, INVITE TO ITS LEFT (build 327) ----
+       "I prefer the regular toggle switch with the invite friends button
+       to the left of it. The toggles description is just confusing?" The
+       two-choice segment above came out. The app's one switch (the .nsw
+       track every Settings switch is, lens and all - nswHost finds it by
+       role=switch), named "Open to class", and one line under the row
+       that says what ON does and never changes with the state. */
+    const sw = document.createElement("button");
+    sw.type = "button";
+    sw.className = "vroom-open-switch nsw-host";
+    sw.setAttribute("role", "switch");
+    sw.setAttribute("aria-label", "Open to class");
+    const swWord = document.createElement("span");
+    swWord.className = "vroom-open-word"; swWord.textContent = "Open to class";
+    const knob = document.createElement("span");
+    knob.className = "nsw"; knob.setAttribute("aria-hidden", "true");
+    sw.append(swWord, knob);
+    const openLine = document.createElement("p");
+    openLine.className = "vroom-open-line";
+    openLine.textContent = "On, anyone in 26E can find this room and join.";
+    const paintOpen = () => {
+      sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
+      sw.classList.toggle("on", vroomIsOpen);
     };
-    function setAccess(open){
-      if(open === vroomIsOpen) return;
-      vroomIsOpen = open;
-      paintAccess();
-      playSound(open ? "ui.toggle.on" : "ui.toggle.off");
+    sw.addEventListener("click", () => {
+      vroomIsOpen = !vroomIsOpen;
+      paintOpen();
+      playSound(vroomIsOpen ? "ui.toggle.on" : "ui.toggle.off");
       if(fbDb && vroomCode){
         try{ fbDb.collection("vrooms").doc(vroomCode)
                .update({ open: vroomIsOpen }).catch(() => {}); }catch(e){}
       }
-    }
-    /* a radio group moves with the arrow keys */
-    access.addEventListener("keydown", e => {
-      if(e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
-      e.preventDefault();
-      setAccess(!vroomIsOpen);
-      const on = accessBtns.find(b => b.classList.contains("is-on")); if(on) on.focus();
     });
-    paintAccess();
-    lobbyTools.append(access, accessLine, inviteBtn);
+    paintOpen();
+    lobbyTools.append(inviteBtn, sw, openLine);
   }
 
   /* The pre-test summary, per explicit request \u2014 "make sure to show
