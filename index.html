@@ -1835,6 +1835,10 @@
   .nt-prop.is-in .nt-xp-bar i{ animation:nt-xpfill 2.4s cubic-bezier(.4,0,.2,1) .3s both; }
   @keyframes nt-xpfill{ from{ transform:scaleX(.08); } to{ transform:scaleX(1); } }
   .nt-wreck{ width:min(15rem, 62%); aspect-ratio:1; }
+  /* build 327: the planet with a rank's crack, sized by the stage it is on */
+  .nt-strain{ width:min(17rem, 66cqh, 80cqw); }
+  .nt-strain .cosmic-hero-wrap{ max-width:none; margin:0; }
+  @media (min-width:40rem){ .nt-strain{ width:min(26rem, 66cqh, 70cqw); } }
   .nt-wreck svg{ width:100%; height:100%; display:block; overflow:visible; }
 
   /* What's New: the card he builds as he talks */
@@ -2188,6 +2192,13 @@
   .wr-story{ margin:0 0 .4rem; padding:.22rem .62rem; border-radius:999px; font-size:.6rem; font-weight:900; letter-spacing:.12em;
     text-transform:uppercase; white-space:nowrap; color:#241A04; background:linear-gradient(180deg, #FFEBB0, #FFC93D);
     box-shadow:0 4px 14px rgba(255,201,61,.32), inset 0 1px 0 rgba(255,255,255,.7); }
+  /* build 327: on the podium before - a quiet tag over the avatar */
+  .wr-again{ margin:0 0 .3rem; padding:.14rem .5rem; border-radius:999px; font-size:.56rem; font-weight:900; letter-spacing:.1em;
+    text-transform:uppercase; white-space:nowrap; color:var(--wr-c); border:1px solid color-mix(in srgb, var(--wr-c) 55%, transparent);
+    background:color-mix(in srgb, var(--wr-c) 12%, transparent); opacity:0; transition:opacity .35s ease .6s; }
+  .wr-col.is-up .wr-again{ opacity:1; }
+  @container (max-height:13rem){ .wr-again{ display:none; } }
+  @media (min-width:40rem){ .wr-again{ font-size:.7rem; padding:.2rem .65rem; } }
   .wr-glow{ position:absolute; z-index:-1; left:50%; top:-12%; width:15rem; height:15rem; margin-left:-7.5rem; border-radius:50%; pointer-events:none;
     background:radial-gradient(circle, rgba(255,220,120,.42), rgba(255,170,60,.13) 40%, transparent 68%);
     opacity:0; transform:scale(.4); transition:opacity .7s ease .15s, transform 1.1s cubic-bezier(.2,1,.3,1) .15s; }
@@ -2291,7 +2302,7 @@
      so the totals and both award cards still fit between the title and
      his bubble */
   @container (max-height:16rem){
-    .wr-page-class .wr-subwrap{ display:none; }
+    .wr-page-class .wr-subwrap, .wr-page-awards .wr-subwrap{ display:none; }
     .wr-tiles{ margin-bottom:.35rem; gap:.4rem; width:auto; }
     .wr-tile{ padding:.2rem .6rem .2rem .3rem; gap:.35rem; border-radius:999px; }
     .wr-tile-icon{ width:1.3rem; height:1.3rem; } .wr-tile-icon svg{ width:.78rem; height:.78rem; }
@@ -5212,9 +5223,15 @@
   .cal-course-grid > .cal-stat{ cursor:default; padding:.8rem .8rem .75rem; min-width:0; }
   .cal-stat .stat-num{ font-size:1.55rem; }
   .cal-stat .stat-lab{ font-size:.74rem; line-height:1.3; }
-  .cal-stat.is-days .stat-num{ color:#9CCBFF; }
+  /* THE COURSE, IN TWO COLOURS THAT MEAN SOMETHING (build 327): "some of
+     the colors in 'the course' box look confusing because it's so many".
+     It was a blue ring and blue, amber and gold numbers. Now blue is
+     class days - the ring and Class days left, the same blue - amber is
+     tests, the calendar's own test-dot colour, and Days to graduation is
+     plain white (the heading beside the ring already names it). */
+  .cal-stat.is-days .stat-num{ color:#6FC2FF; }
   .cal-stat.is-tests .stat-num{ color:#F5B54D; }
-  .cal-stat.is-grad .stat-num{ color:#E5C06A; }
+  .cal-stat.is-grad .stat-num{ color:#F3F5F7; }
   @media (min-width:40rem){
     .cal-today-status{ font-size:1.9rem; }
     .cal-week{ gap:.5rem; }
@@ -56743,6 +56760,10 @@ function formatCalendarDate(iso){
      "2026-10-19": { title: "Test #5", topics: ["Arrest", "Search", ...], postedAt: "2026-10-18" }
    title is optional (the schedule names the test anyway). Seeded EMPTY on
    purpose: a test with no entry says "Not posted yet", never a guess.
+   (BUILD 327: a test with no entry now shows no "On the test" part at
+   all, and postedAt is kept in the data but never shown - Madison: "where
+   it says the date of when the test got posted, don't include that ...
+   ensure that part is only there if we have the information".)
    BUILD 325, Madison on Sunday Oct 18: "the next test over slides
    124-256 from penal code. The test over is slides 256-578" - Monday's
    test is the one the slides 124-256 version is for, and the one after it
@@ -71592,7 +71613,7 @@ const RELEASE_NOTES = [
         { icon: buildBarStatsIcon, color: "#A694FF", title: "Your Study Hours", body: "Stats has a new chart of your study time this week, in dots. Tap a day for its exact time, or look back at last week." }
       ]},
       { label: "Meet Nova", items: [
-        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. A cracked planet his ship was studying exploded, and the blast scattered everything aboard: his flares came to rest, dark, around the planet on your Home screen, his badges landed one in every unit, and his crew are the characters. Every rank you reach relights a flare and he thanks you with its rewards; its light pours into your planet, which is why it cracks: it is becoming a star. Every badge you find gives him back a page of his instructor's log, and every character you find joins you. His scanners keep finding more of his ship, so there is always more to bring home." },
+        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. The planet his ship was studying took in more light than it could hold, cracked and exploded, and the blast scattered everything aboard: his flares came to rest, dark, around the planet on your Home screen, his badges landed one in every unit, and his crew are the characters. Every rank you reach relights a flare and he thanks you with its rewards. From Gold up each rank also cracks your planet a little more, and badges are what hold it together: a badge is a unit you have mastered, and every rank asks for them. Every character you find joins you. His scanners keep finding more of his ship, so there is always more to bring home." },
         { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "He Meets Everyone", body: "Everybody meets him once: he tells the story, goes over what you have found, narrates What's New and shows you what has changed. He narrates every tip in the app." },
         { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova is your friend now. Back on Home after a rank-up he tells you what your new flare did, he notices when you find a badge or one of his crew, he invites you to a match once a week, and he passes on news and the odd tip. Never more than one message a day, and he answers questions when he is in range." },
         { icon: buildTrophyIcon, color: "#F5C518", title: "The Weekly Recap", body: "Every Tuesday on Home, Nova presents last week's top three, with comebacks and photo finishes, and hands out honorable mentions." },
@@ -77897,6 +77918,18 @@ function novaXpBar(){
    that slide too.. not just the 3, would make more sense." The mode
    picker's own list, in its order, each with its mark and one line - the
    picker's cards in miniature. */
+/* THE STRAIN (build 327): Home's own planet, built with a rank's crack
+   (Sapphire's - CRACK_RANK_STAGE.adept) so the line about cracks shows
+   one; the same build the wreck uses, with heroCrackStageFor set for it. */
+function novaStrainPlanet(){
+  const w = document.createElement("div"); w.className = "nt-strain";
+  const was = heroCrackStageFor;
+  let hero = null;
+  try{ heroCrackStageFor = Math.min(CRACK_TOP - 1, CRACK_RANK_STAGE.adept || 3); hero = buildCosmicHero(true); }catch(e){ hero = null; }
+  heroCrackStageFor = was;
+  if(hero) w.appendChild(hero);
+  return w;
+}
 const NOVA_MODE_LINES = {
   drill: "Learn a unit, answer by answer",
   exam: "Prove you’re ready, graded at the end",
@@ -78307,7 +78340,28 @@ function novaRecapLines(st, name){
    is becoming a star (one new line; "Hello" and "I need your help" made
    one to keep the count); a badge gives him back a page of his
    instructor's log; the crew join you; his scanners keep finding more of
-   his ship (the last line), so it never ends. No totals anywhere. */
+   his ship (the last line), so it never ends. No totals anywhere.
+   BUILD 327 (supersedes the "becoming a star" and "page of my log" parts
+   of 326): "Meeting nova, he starts to explain the cracking, 'every flare
+   you light pours its light into your planet, it can't hold it all..' I
+   don't like this one at all ... The badge explanation is bad at the end,
+   it says something about finding them so I can teach you that unit? ...
+   we need to understand why your planet blew up, what the badges and
+   stuff are, and why we should avoid cracking ours". So the story is the
+   app's own rules, said once each:
+   - THE PLANET HE WAS STUDYING had taken in more light than it could
+     hold, with nothing holding it together; it cracked, its core gave
+     way, and it exploded.
+   - A BADGE is a unit mastered (that unit's hundos, badgeThresholdFor),
+     and badges are what hold a planet together.
+   - YOUR PLANET cracks from Gold up, a little more every rank
+     (CRACK_RANK_STAGE): the strain of a brighter flare. It never goes
+     the way his did because every rank asks for badges, and your level
+     waits at the next rank's level until you have them (levelWallOf) -
+     your planet never takes in more than it can hold. That is the
+     reason to keep finding badges, not a warning to stop climbing.
+   - Supernova: your planet held all of his light and is a star (the rank
+     message and the lore keep that). */
 function novaIntroLines(o){
   o = o || {};
   const existing = !!o.existing, name = novaName();
@@ -78325,25 +78379,39 @@ function novaIntroLines(o){
   } else {
     lines.push({ gesture: "wave", text: "Hello, " + name + "! I’m Nova, an explorer and an instructor. I’ll be your guide here, and I need your help.", enter: hello });
   }
-  lines.push({ text: "Not long ago, my ship was studying a planet much like the one on your Home screen. Its core was failing, and it had started to crack.",
+  lines.push({ text: "Not long ago, my ship was studying a planet much like the one on your Home screen. It had taken in more light than it could hold, and it had started to crack.",
     enter: (ctx, instant) => { novaProp(ctx, buildNovaWreck()); if(!instant && !novaMotionOff()) playSound("cs.planet"); } });
-  lines.push({ gesture: "raise", text: "Then the core gave way, and the whole planet exploded. The blast tore through my ship and threw everything aboard across this system." });
+  lines.push({ gesture: "raise", text: "Then its core gave way, and the whole planet exploded. The blast tore through my ship and threw everything aboard across this system." });
   lines.push({ text: existing && rankIdx >= 0
       ? "My flares, one for each rank, came to rest around your planet, but the blast had put their light out. They’re the flares on your Home screen."
       : "My flares, one for each rank, came to rest around your planet, but the blast had put their light out. That’s why the flares on your Home screen are dark.",
     enter: ctx => novaProp(ctx, novaStack(novaFlareRow(rankIdx), novaCap(rankIdx >= 0 ? (rankIdx + 1) + " of " + TIER_ORDER_FULL.length + " lit again" : "My flares, all dark"))) });
+  /* said over the flares, so it keeps their picture (build 327) */
+  lines.push({ text: "Some of my secret flares were thrown further out, into your tests. I’ve lost count of them, so keep your eyes open." });
   lines.push({ gesture: "raise", text: existing && rankIdx >= 0
       ? "A flare only lights again for someone who has earned it. Every rank you reach relights one, and you’ve already lit " + (rankIdx === 0 ? "the first" : (["two", "three", "four", "five", "six"][rankIdx - 1] || (rankIdx + 1))) + ". Each one comes with my thanks: that rank’s rewards."
       : "A flare only lights again for someone who has earned it. Every rank you reach relights one, and each comes with my thanks: that rank’s rewards.",
     enter: ctx => novaProp(ctx, novaStack(novaRankRow(), novaCap("A flare for every rank"))) });
-  /* WHY YOUR OWN PLANET CRACKS (build 326): "why is our own planet system
-     cracking? ... Maybe our planet system shouldn't crack?" It is not
-     breaking: it is where his light came to rest, and it is waking up. */
-  lines.push({ text: "Every flare you light pours its light into your planet. It can’t hold it all, so it cracks and the light shows through. It isn’t breaking. It’s becoming a star, and at Supernova it will be one." });
-  lines.push({ text: "Some of my secret flares were thrown further out, into your tests. I’ve lost count of them, so keep your eyes open." });
-  lines.push({ text: "My badges landed one in every unit. Master a unit and you’ll find its badge, and each one gives me back a page of my instructor’s log, so I can teach you that unit.",
+  /* WHAT A BADGE IS, IN THE APP AND IN THE STORY (build 327): "The badge
+     explanation is bad at the end, it says something about finding them so
+     I can teach you that unit? That's terrible." A badge is a unit
+     mastered - its threshold of hundos (badgeThresholdFor) - and in the
+     story it is what holds a planet together. */
+  lines.push({ text: "My badges landed one in every unit. A badge means you’ve mastered that unit: score a hundo on the whole unit enough times, and it’s yours.",
     /* build 326: this slide and the four after it are made ahead (novaSlide) */
     ...novaSlide("badges", () => novaStack(novaBadgeParade(), novaCap(existing && st.badges > 0 ? st.badges + (st.badges === 1 ? " badge" : " badges") + " found so far" : "Every unit has its own badge"))) });
+  /* WHY YOUR PLANET CRACKS, AND WHY IT MUST NOT GO THE WAY HIS DID (build
+     327): "we need to understand why your planet blew up, what the badges
+     and stuff are, and why we should avoid cracking ours". The app's own
+     rules, told as the story: a rank (its flare) is what cracks the planet
+     on Home, from Gold up (CRACK_RANK_STAGE); a rank asks for badges as
+     well as a level, and your level waits at the next rank's level until
+     you have its badges (levelWallOf). So the light never runs ahead of
+     what holds it - which is exactly what the planet he was studying did. */
+  lines.push({ text: "Your planet is a lot like that one. From Gold up, every rank you reach will put a crack in it: the strain of holding a brighter flare. Badges are what hold a planet together. The one I was studying had none.",
+    ...novaSlide("strain", () => novaStack(novaStrainPlanet(), novaCap("A crack for every rank from Gold"))) });
+  lines.push({ gesture: "raise", text: "So every rank asks for badges as well as a level. Right answers earn XP and XP raises your level, but your level waits at your next rank until you have its badges. That way your planet never takes in more than it can hold, all the way to Supernova.",
+    enter: ctx => novaProp(ctx, novaXpBar()) });
   lines.push({ gesture: "raise", text: "My crew got away in escape pods and landed all over this system. They’re the characters in this app, and every one you find joins you.",
     ...novaSlide("crew", () => novaStack(novaCrewParade(), novaCap(crew.have + " of " + crew.total + " characters found"))) });
   lines.push({ text: "Each one comes home a different way: some with a rank, most with a challenge, a few behind a secret flare, and the ultimate ones ask for nearly everything else first.",
@@ -78351,8 +78419,6 @@ function novaIntroLines(o){
   /* BANNERS AND HUNDO EFFECTS (build 326) - after the crew, as asked */
   lines.push({ gesture: "raise", text: "As thanks, I’ll hand you things along the way: banners for your profile, and effects that play when you score a hundo. You earn them by studying, and they’re all in Customize, on your Profile.",
     ...novaSlide("flair", () => novaStack(novaWarmTake("flair") || novaFlairProp(), novaCap("Yours to wear · Customize"))) });
-  lines.push({ gesture: "raise", text: "You’ll do all of it by studying. Right answers earn XP, XP raises your level, and your level and badges decide your rank.",
-    enter: ctx => novaProp(ctx, novaXpBar()) });
   lines.push({ text: "Drill to learn a unit, the Qualifier to prove you’re ready, and Review to go over the material first. Or take any of them into a Virtual Room.",
     ...novaSlide("modes", () => novaModeRow()) });
   lines.push({ gesture: "raise", text: "You don’t have to do it alone, either. In a Virtual Room you can race your classmates, and you can challenge me there too.",
@@ -78464,7 +78530,7 @@ function novaGoodbye(){
   const name = novaName();
   novaTalk({ id: "nova-intro", label: "Nova says goodbye", finalLabel: "Goodbye", noSkip: true,
     lines: [{ gesture: "wave", final: true,
-      text: "That’s everything for now, " + name + ". Light my flares, find my badges and bring my crew home, and your planet will be a star one day. I’ll speak with you again when my scanners find more. Goodbye for now." }],
+      text: "That’s everything for now, " + name + ". Light my flares, find my badges and bring my crew home, and your badges will keep your planet whole while you climb. I’ll speak with you again when my scanners find more. Goodbye for now." }],
     onClose: () => endNovaMeeting() });
 }
 function endNovaMeeting(){
@@ -78820,9 +78886,11 @@ function startMainMenuTour(){
    calendar reposition". After the main menu's own tips, and nothing else. */
 const NOVA_NEW_TIPS_321 = [
   { target: ".panel.home .cosmic-plasma", align: "left", vplacement: "below",
-    text: "The planet answers your touch. Tap it to see where you stand, and keep tapping to spin its rings. From Gold up it cracks a little more with every rank: that’s my light breaking through as it becomes a star." },
+    text: "The planet answers your touch. Tap it to see where you stand, and keep tapping to spin its rings. From Gold up it cracks a little more with every rank, and your badges are what hold it together." },
+  /* build 327: What's New no longer has the badge case's row, so the tip
+     no longer leans on it (HANDOFF-326, known issue 2) */
   { target: "#bottomtab-profile", align: "left", vplacement: "above",
-    text: "Profile has been rebuilt. Your rank, your level and your badges are on one card, your badge case opens from it, and Friends is back underneath." },
+    text: "Profile has been rebuilt. Your rank, your level and your badges are on one card, and Friends is back underneath." },
   /* build 323: the calendar has its own tab in the bar, Settings is in Profile */
   { target: "#bottomtab-calendar", align: "right", vplacement: "above",
     text: "The class calendar has its own tab down here now, and Settings has moved into Profile, beside Stats." }
@@ -82219,24 +82287,31 @@ const NOVA_TIPS = [
    finding everything? Idk it's hard because we will get more levels and
    ranks at some point and more badges and stuff." The story every line of
    his keeps to:
-   - a flare you light is his light returned. It pours into your planet,
-     which cannot hold it all: from Gold up it cracks and the light shows
-     through. Not damage - it is waking up, becoming a star. At Supernova
-     it is one: the system has a sun again, and he has a home;
+   - a flare you light is his light returned (BUILD 327, superseding 326's
+     "it pours into your planet ... becoming a star"): the planet he was
+     studying took in more light than it could hold, with nothing holding
+     it together, and it exploded. Yours cracks from Gold up, a little more
+     every rank - the strain of a brighter flare - and badges are what hold
+     it together. A badge is a unit mastered (its hundos). Every rank asks
+     for badges, and your level waits at the next rank's until you have
+     them, so your planet never takes in more than it can hold. At
+     Supernova it has held all of his light and is a star: the system has
+     a sun again, and he has a home;
    - he thanks you for each with that rank's rewards;
-   - a badge gives him back a page of his instructor's log, so he can teach
-     that unit again; one of his crew found joins you;
+   - a badge is a unit you have mastered, and one more thing holding your
+     planet together (never "so I can teach you that unit" - 327); one of
+     his crew found joins you;
    - his scanners keep finding more of his ship further out, which is why
      new ranks, badges and characters keep arriving. Never finished, and no
      totals in his voice. */
 const NOVA_RANK_HEAD = [
   n => "Bronze, " + n + "! My Bronze flare is lit again: the first of my light back around your planet.",
   n => "Silver! My Silver flare is burning again, " + n + ", and your planet is holding its light.",
-  n => "Gold, " + n + ". My Gold flare is lit, and there’s so much of my light in your planet now that it has started to crack. Don’t worry: that’s the light breaking through. It’s waking up.",
-  n => "Platinum! Another of my flares is lit, " + n + ". The crack in your planet is wider now, and the light through it is brighter.",
-  n => "Sapphire, " + n + ". My Sapphire flare is shining, and not many get this far. Your planet is more light than rock now.",
+  n => "Gold, " + n + ". My Gold flare is lit, and your planet has started to crack under its light. That’s the strain the planet I was studying showed, but yours has your badges holding it together. Keep finding them.",
+  n => "Platinum! Another of my flares is lit, " + n + ". The crack in your planet is wider now, and your badges are holding it.",
+  n => "Sapphire, " + n + ". My Sapphire flare is shining, and not many get this far. Your planet carries more light than ever, and it’s holding.",
   n => "Amethyst! My Amethyst flare is shining, " + n + ", and your planet is nearly a star.",
-  n => "Supernova. " + n + ", you’ve done it: your planet has become a star. This system has a sun again, and I have a home."
+  n => "Supernova. " + n + ", you’ve done it: your planet has held all of my light, and it has become a star. This system has a sun again, and I have a home."
 ];
 /* what the rank hands over, said as his thanks - read off the tables, so a
    rank with no character or no colour never promises one */
@@ -82297,7 +82372,7 @@ function novaChallengeLine(wk){
    "he will randomly send you messages when you make progress with helping
    him". Different words for each kind of find, and more than one way of
    saying each (picked by what was found, so the same find always reads the
-   same on every device): a badge is a page of his log back, one of his
+   same on every device): a badge is a unit mastered (327), one of his
    crew is home, a secret flare is one more he had lost count of, every
    tenth level his scanners reach further. */
 function novaPickOf(list, key){
@@ -82326,13 +82401,15 @@ function novaProgressLine(p){
   if(p.badges && p.badges.length){
     let t;
     if(p.badges.length > 1){
-      t = "You found " + p.badges.length + " of my badges, " + n + ": " + homeJoin(p.badges) + ". That’s " + p.badges.length + " pages of my instructor’s log restored.";
+      t = "You found " + p.badges.length + " of my badges, " + n + ": " + homeJoin(p.badges) + ". That’s " + p.badges.length + " units mastered, and your planet is stronger for every one.";
     } else {
+      /* build 327: a badge is a unit mastered, and one more thing holding
+         your planet together - never "so I can teach you that unit" */
       const u = p.badges[0];
       t = novaPickOf([
-        "You found my " + u + " badge, " + n + ". That’s a page of my instructor’s log restored, and I can teach " + u + " properly again.",
-        "My " + u + " badge is home. Thank you, " + n + ". Another page of my log is readable again: " + u + ".",
-        "That’s the " + u + " badge back where it belongs. One more page of my log restored, and one more unit I can teach from it."
+        "You found my " + u + " badge, " + n + ". You’ve mastered " + u + ", and that’s one more badge holding your planet together.",
+        "My " + u + " badge is home. Thank you, " + n + ". " + u + " is mastered, and your planet is stronger for it.",
+        "That’s the " + u + " badge back where it belongs. " + u + " mastered, and your planet can hold a little more light."
       ], u);
     }
     return t + novaProgressTail(p, "badges");
@@ -82351,12 +82428,23 @@ function novaProgressLine(p){
   return "";
 }
 /* one more sentence for what else was found the same day, never a list */
+/* BUILD 327 (HANDOFF-326, known issue 1): it returned the FIRST other
+   kind only, so a rank-up with a badge and one of his crew named the crew
+   and dropped the badge - and the badge was marked said, so it was never
+   named at all. Every kind found and not yet said goes into the one
+   sentence, each by name. */
 function novaProgressTail(p, said){
-  if(said !== "crew" && p.crew && p.crew.length) return " " + (p.crew.length === 1 ? novaCrewName(p.crew[0]) + " came home on the way, too." : homeJoin(p.crew.map(novaCrewName)) + " came home on the way, too.");
-  if(said !== "badges" && said !== "crew" && p.badges && p.badges.length) return " " + (p.badges.length === 1 ? "You found my " + p.badges[0] + " badge on the way, too: another page of my log is back." : "You found " + p.badges.length + " of my badges on the way, too: that’s " + p.badges.length + " pages of my log back.");
-  if(said === "crew" && p.badges && p.badges.length) return " " + (p.badges.length === 1 ? "And my " + p.badges[0] + " badge, too." : "And " + p.badges.length + " of my badges, too.");
-  if(said !== "sflares" && p.sflares && p.sflares.length) return " And one of my secret flares, too.";
-  return "";
+  const parts = [], found = [];
+  if(said !== "crew" && p.crew && p.crew.length) parts.push(homeJoin(p.crew.map(novaCrewName)) + " came home");
+  if(said !== "badges" && p.badges && p.badges.length)
+    found.push("my " + homeJoin(p.badges) + (p.badges.length === 1 ? " badge" : " badges"));
+  if(said !== "sflares" && p.sflares && p.sflares.length){
+    const nm = k => (typeof MYSTERY_NAME === "object" && MYSTERY_NAME[k]) || "a secret flare";
+    found.push(p.sflares.length === 1 ? nm(p.sflares[0]) + ", one of my secret flares" : p.sflares.length + " of my secret flares");
+  }
+  if(found.length) parts.push("you found " + homeJoin(found));
+  if(!parts.length) return "";
+  return " On the way, " + homeJoin(parts) + ", too.";
 }
 
 function isNovaChatCode(code){ return code === "DM-NOVA"; }
@@ -82969,24 +83057,24 @@ function novaReplyFor(raw){
       : "A Virtual Room is a race against your classmates. Open one from Start Studying and invite your friends.";
   /* what helping him gets you (build 326) */
   if(has(/ (rewards?|what do i get|what do we get|in return|why help|why should i|what's in it|whats in it) /))
-    return "For every flare you light, I give you that rank’s rewards. Every badge gives me back a page of my instructor’s log, so I can teach you that unit, and every one of my crew you find joins you.";
+    return "For every flare you light, I give you that rank’s rewards. Every badge is a unit you’ve mastered and one more thing holding your planet together, and every one of my crew you find joins you.";
   if(has(/ (ranks?|rank up|supernova|bronze|silver|gold|platinum|sapphire|amethyst|promot\w*) /))
     return "So far the ranks go " + homeJoin(TIER_ORDER_FULL.map(k => RANK_DISPLAY_NAME[k])) + ". Each one relights a flare of mine and asks for a level and a number of badges. " + rankNow
       + (next ? "; Profile shows what " + next + " needs." : ", at the very top. Well done.");
   if(has(/ (badges?|hundos?|100%|100|master\w*) /))
     /* no total (build 325): there will be more units */
-    return "There’s a badge for every unit. Score 100% on a whole unit and that’s a hundo; a few hundos in one unit earns its badge, and gives me back a page of my instructor’s log. You’ve found " + badges + " so far.";
+    return "There’s a badge for every unit. Score 100% on a whole unit and that’s a hundo; a few hundos in one unit earns its badge: that unit, mastered. Badges are what hold your planet together. You’ve found " + badges + " so far.";
   if(has(/ (xp|levels?|level up) /))
     return "Every right answer earns XP, and XP raises your level. Your level waits at your next rank\u2019s level until you have its badges, so mastering units matters as much as answering a lot.";
   if(has(/ (drill|exam|review|flashcards?|learn|modes?|study|studying|practice|starred|flag\w*) /))
     return "Drill to learn a unit, a Qualifier to test yourself, and Review to go over the material first. They’re all under Start Studying on Home.";
   /* the story as his introduction tells it (build 326) */
   if(has(/ (planet|crack\w*|becoming a star) /))
-    return "Your planet is where my light came to rest. Every flare you light pours more of it in, and from Gold up it can’t hold it all, so it cracks and the light shows through. It isn’t breaking. It’s becoming a star, and at Supernova it will be one.";
+    return "The planet I was studying took in more light than it could hold, with nothing holding it together, and it exploded. Yours cracks a little more with every rank from Gold up: the strain of a brighter flare. Badges are what hold it together, which is why every rank asks for them. Keep finding them and it holds, all the way to Supernova, where it becomes a star.";
   if(has(/ (crew|characters?|pods?) /))
     return "My crew got away from the blast in escape pods and landed all over this system. They’re the characters. Every one you find comes home and joins you: some with a rank, most with a challenge, a few behind my secret flares.";
   if(has(/ (flares?|secret) /))
-    return "My flares came to rest around your planet, dark. Every rank you reach relights one, and its light pours into your planet. My secret flares were thrown further, into your tests. I’ve lost count of how many.";
+    return "My flares came to rest around your planet, dark. Every rank you reach relights one. My secret flares were thrown further, into your tests. I’ve lost count of how many.";
   if(has(/ (where are you|away|range|scanning|scanner\w*|busy|offline) /))
     return "When I’m out of range I’m scanning the debris field for more of my ship. The top of this chat says what I’m doing and when I’ll be back.";
   if(has(/ (ship|blast|wreck|lost|explorer|space|save you|finish\w*|end) /))
@@ -86251,7 +86339,7 @@ function whatsNewLines(st, chained){
         : st.badges === 1 ? "And it appears you have found one of my lost badges."
         : "You haven’t found any of my lost badges yet, but I have a feeling you will.",
     enter: () => { const b = me && me.querySelector(".nt-me-badges"); if(b) b.classList.add("is-hi"); } });
-  lines.push({ text: "Every badge you find gives me back a page of my log, every one of my crew you find joins you, and every flare you light brings your planet closer to being a star." });
+  lines.push({ text: "Every badge you find is a unit mastered and one more thing holding your planet together, every one of my crew you find joins you, and every flare you light brings your planet closer to being a star." });
   lines.push({ gesture: "raise", text: (st.badges > 0 ? "Thank you. " : "") + "Now, here’s what’s new." });
   }
   WHATS_NEW_320.forEach(it => lines.push({ text: it.say, gesture: it.key === "planet" ? "nod" : null,
@@ -113134,6 +113222,11 @@ function buildLastWeekPodium(top, entries){
    recap too, without a list to keep up to date. It carries `is-weekrecap`.
    Skip ends it; the last line ends on "See you next week".
 
+   (BUILD 327: he calls it last week's board, never "the This Week board" -
+   that tab is THIS week; the honorable mentions include the two awards;
+   a podium place says when that person was up there before; and the
+   recap ENDS on the class's totals - hundos, tests, study time - with
+   nothing after. The rest of this note is 324's order.)
    WHAT HE SAYS, in order: hello and last week's recap; third, second and
    first on the This Week board as each rises on the podium, first with a
    storyline when the numbers support one (weekRecapStory: a comeback, a
@@ -113181,8 +113274,11 @@ function markWeekRecapSeen(r){
   try{
     const prev = weekRecapRecord() || {};
     const hist = prev.hist && typeof prev.hist === "object" ? prev.hist : {};
-    hist[r.week] = { win: r.top[0] ? r.top[0].pub : "", cats: r.mentions.map(m => m.cat) };
-    Object.keys(hist).sort().slice(0, -6).forEach(k => delete hist[k]);
+    /* build 327: the whole podium too (`top`), so a later recap can say
+       somebody has been up there before - only ever from weeks this
+       device actually recapped from the server's rows */
+    hist[r.week] = { win: r.top[0] ? r.top[0].pub : "", top: r.top.map(t => t.pub).filter(Boolean), cats: r.mentions.map(m => m.cat) };
+    Object.keys(hist).sort().slice(0, -12).forEach(k => delete hist[k]);
     localStorage.setItem(WEEK_RECAP_KEY, JSON.stringify({ wk: r.week, hist }));
   }catch(e){}
 }
@@ -113368,17 +113464,33 @@ function weekRecapClassWeek(list, top, lw, mentions){
   const named = new Set((mentions || []).map(m => m.pub));
   const namedNames = new Set((mentions || []).map(m => recapNameKey(m.name)).filter(Boolean));
   const out = { totals: {}, awards: [] };
-  RECAP_FIXED.forEach(cat => {
-    const def = RECAP_MENTIONS.find(d => d.cat === cat);
+  const valsOf = def => {
     const vals = [];
     rows.forEach(e => {
       const b = weekBlockOfEntry(e, lw);
       const v = b ? recapNum(def.val(b), def.cap) : null;
       if(v != null) vals.push({ e, v, x: Number(b.x) || 0 });
     });
-    if(vals.length < 3 || vals.length < Math.ceil(active * .6)) return;
+    return (vals.length < 3 || vals.length < Math.ceil(active * .6)) ? null : vals;
+  };
+  /* THE CLASS'S TOTALS (build 327: "it needs to end with the class time
+     and hundos and tests completed and then that's it"): hundos, tests
+     finished and study time, each summed only off the rows that report
+     it, under the same three-row / 60% rule as before. */
+  ["hundos", "tests", "study"].forEach(cat => {
+    const vals = valsOf(RECAP_MENTIONS.find(d => d.cat === cat));
+    if(!vals) return;
     const sum = vals.reduce((a, r) => a + r.v, 0);
     if(sum > 0) out.totals[cat] = sum;
+  });
+  /* The two fixed awards (Flawless, Long Shift) are honorable mentions,
+     and since 327 they are said WITH the mentions, before the class's
+     totals - "it mentioned more honorable mentions but that section was
+     over with?" */
+  RECAP_FIXED.forEach(cat => {
+    const def = RECAP_MENTIONS.find(d => d.cat === cat);
+    const vals = valsOf(def);
+    if(!vals) return;
     const nk = r => recapNameKey(r.e.firstName);
     const cands = vals.filter(r => !topPubs.has(r.e.pub) && !topNames.has(nk(r)) && !named.has(r.e.pub) && !namedNames.has(nk(r)) && r.v >= def.min)
       .sort((a, b) => (b.v - a.v) || (b.x - a.x) || String(a.e.firstName || "").localeCompare(String(b.e.firstName || "")));
@@ -113424,6 +113536,63 @@ function weekRecapWinnerOf(wk){
   if(c && c.pub) return c.pub;
   const k = (WEEK_RESULTS_KNOWN[wk] || [])[0];
   return k ? (typeof k === "string" ? k : k.pub) : null;
+}
+/* ON THE PODIUM BEFORE (build 327): "If someone manages to get top 3 more
+   than once or back to back mention that during the podium presentation
+   part too." Only from weeks whose podium is KNOWN, never guessed:
+   - WEEK_RESULTS_KNOWN (a week recorded by hand), and
+   - this device's own recaps (`hist[week].top`, written by
+     markWeekRecapSeen from the server's rows since 327; recaps from
+     before that recorded the winner alone - `win` - which counts for the
+     winner and says nothing about second or third).
+   The live top-three cache (class26e.weektop.v1) is NOT used: it is the
+   board as this device last saw it during a week, not where it ended.
+   Returns null when nothing earlier is known about this person. */
+function weekRecapKnownPodium(wk){
+  const k = WEEK_RESULTS_KNOWN[wk];
+  if(k) return { pubs: k.map(x => typeof x === "string" ? x : x.pub), full: true };
+  const rec = weekRecapRecord() || {};
+  const h = rec.hist && rec.hist[wk];
+  if(!h) return null;
+  if(Array.isArray(h.top) && h.top.length) return { pubs: h.top.slice(), full: true };
+  if(h.win) return { pubs: [h.win], full: false };
+  return null;
+}
+function weekRecapPodiumHistory(pub, lw){
+  if(!pub) return null;
+  const rec = weekRecapRecord() || {};
+  const weeks = Object.keys(WEEK_RESULTS_KNOWN).concat(Object.keys(rec.hist || {})).filter(w => w < lw).sort();
+  if(!weeks.length) return null;
+  const earliest = weeks[0];
+  const prevWk = weekKeyBefore(lw);
+  let times = 0, complete = true, prev = false, streak = 0, streakOpen = true, streakExact = false;
+  for(let wk = prevWk, n = 0; wk >= earliest && n < 104; wk = weekKeyBefore(wk), n++){
+    const p = weekRecapKnownPodium(wk);
+    const inIt = !!(p && p.pubs.indexOf(pub) >= 0);
+    if(!p || !p.full) complete = false;
+    if(inIt) times++;
+    if(wk === prevWk) prev = inIt;
+    if(streakOpen){
+      if(inIt) streak++;
+      else { streakOpen = false; streakExact = !!(p && p.full); }
+    }
+  }
+  if(!times) return null;
+  return { times, prev, streak, streakExact, complete };
+}
+/* what he adds about it, in the podium line; `me` speaks to the viewer */
+function weekRecapAgainSay(t, isWinnerRepeat){
+  const a = t && t.again;
+  if(!a) return "";
+  const who = t.me ? "you" : t.name, Who = t.me ? "You" : t.name;
+  const num = n => ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"][n] || String(n);
+  if(a.prev){
+    if(isWinnerRepeat) return "";
+    if(a.streakExact && a.streak + 1 >= 3) return " That’s " + num(a.streak + 1) + " weeks running on the podium for " + who + ".";
+    return " " + Who + (t.me ? " were" : " was") + " on the podium the week before, too: back to back.";
+  }
+  if(a.complete) return " That’s " + (t.me ? "your" : t.name + "’s") + " " + recapOrdinal(a.times + 1) + " time on the podium.";
+  return " " + Who + (t.me ? " have" : " has") + " been on the podium before.";
 }
 /* THE STORYLINE FOR FIRST PLACE, from what the rows can prove.
    comeback - the winner was 4th or lower on Friday night and won it over
@@ -113504,7 +113673,10 @@ function buildWeekRecap(rowsIn){
   const inTop = top.findIndex(t => t.me);
   const place = mine > 0 ? 1 + list.filter(e => e.pub !== me && lastWeekPointsOfEntry(e) > mine).length : 0;
   const viewer = { pts: mine, place, inTop, mention: mentions.some(m => m.me) || !!(classWeek && classWeek.awards.some(a => a.me)) };
-  return { week: lw, optedOut: false, top, story, mentions, classWeek, viewer, close: weekRecapClose(list, top, viewer) };
+  /* build 327: no closing card - the recap ends on the class's totals.
+     weekRecapClose is kept for anything that asks, unused here. */
+  top.forEach(t => { t.again = weekRecapPodiumHistory(t.pub, lw); });
+  return { week: lw, optedOut: false, top, story, mentions, classWeek, viewer, close: null };
 }
 function buildWeekRecapOptedOut(){
   const lw = lastWeekKey();
@@ -113553,6 +113725,11 @@ function buildWeekRecapStage(r){
         if(i === 0){ for(let k = 0; k < 6; k++){ const sp = el("i", "wr-spark"); sp.style.setProperty("--k", k); av.appendChild(sp); } }
         if(t.me) av.appendChild(el("b", "wr-you", "You"));
         col.append(av, el("p", "wr-name", t.name), el("p", "wr-pts", t.pts != null ? recapFmt(t.pts) + " XP" : " "));
+      }
+      /* build 327: on the podium the week before too, or before that */
+      if(t && t.again && !(i === 0 && r.story.kind === "repeat")){
+        const avEl = col.querySelector(".wr-av");
+        col.insertBefore(el("p", "wr-again", t.again.prev ? "Back to back" : "Again"), avEl);
       }
       const block = el("div", "wr-block");
       block.appendChild(el("b", null, String(i + 1)));
@@ -113603,25 +113780,17 @@ function buildWeekRecapStage(r){
       pm.appendChild(ml);
       pages.push(pm);
     }
-    /* the class's week (build 326): the totals, then its two awards */
+    /* the class's week (build 326; 327: the two awards are honorable
+       mentions, on a page of their own straight after the others, and
+       the class's totals - hundos, tests, study time - are the last
+       page) */
     if(r.classWeek){
       const cw = r.classWeek, t = cw.totals;
-      const pc = el("div", "wr-page wr-page-class"); pc.dataset.page = "class";
-      const sub = el("div", "wr-subwrap");
-      sub.append(el("p", "wr-sub", "The class’s week"), el("p", "wr-subnote", "Everyone, together"));
-      pc.appendChild(sub);
-      const tiles = el("div", "wr-tiles");
-      const tile = (cat, big, lab) => {
-        const def = RECAP_MENTIONS.find(d => d.cat === cat);
-        const tl = el("div", "wr-tile"); tl.dataset.cat = cat; tl.style.setProperty("--wr-m", def.color);
-        const ic = el("span", "wr-tile-icon"); ic.appendChild(recapIcon(def.glyph));
-        const tx = el("div", "wr-tile-text"); tx.append(el("p", "wr-tile-num", big), el("p", "wr-tile-lab", lab));
-        tl.append(ic, tx); tiles.appendChild(tl);
-      };
-      if(t.hundos) tile("hundos", recapFmt(t.hundos), t.hundos === 1 ? "hundo" : "hundos");
-      if(t.study) tile("study", recapClockShort(t.study), "studied");
-      if(tiles.children.length) pc.appendChild(tiles);
       if(cw.awards.length){
+        const pa = el("div", "wr-page wr-page-awards"); pa.dataset.page = "awards";
+        const sub = el("div", "wr-subwrap");
+        sub.append(el("p", "wr-sub", "Honorable mentions"), el("p", "wr-subnote", "Off the podium"));
+        pa.appendChild(sub);
         const al = el("div", "wr-mlist wr-alist");
         cw.awards.forEach(m => {
           const def = RECAP_MENTIONS.find(d => d.cat === m.cat);
@@ -113637,9 +113806,25 @@ function buildWeekRecapStage(r){
           al.appendChild(c);
           acards.push(c);
         });
-        pc.appendChild(al);
+        pa.appendChild(al);
+        pages.push(pa);
       }
-      pages.push(pc);
+      const pc = el("div", "wr-page wr-page-class"); pc.dataset.page = "class";
+      const sub = el("div", "wr-subwrap");
+      sub.append(el("p", "wr-sub", "The class’s week"), el("p", "wr-subnote", "Everyone, together"));
+      pc.appendChild(sub);
+      const tiles = el("div", "wr-tiles");
+      const tile = (cat, big, lab) => {
+        const def = RECAP_MENTIONS.find(d => d.cat === cat);
+        const tl = el("div", "wr-tile"); tl.dataset.cat = cat; tl.style.setProperty("--wr-m", def.color);
+        const ic = el("span", "wr-tile-icon"); ic.appendChild(recapIcon(def.glyph));
+        const tx = el("div", "wr-tile-text"); tx.append(el("p", "wr-tile-num", big), el("p", "wr-tile-lab", lab));
+        tl.append(ic, tx); tiles.appendChild(tl);
+      };
+      if(t.hundos) tile("hundos", recapFmt(t.hundos), t.hundos === 1 ? "hundo" : "hundos");
+      if(t.tests) tile("tests", recapFmt(t.tests), t.tests === 1 ? "test" : "tests");
+      if(t.study) tile("study", recapClockShort(t.study), "studied");
+      if(tiles.children.length){ pc.appendChild(tiles); pages.push(pc); }
     }
   } else {
     const pg = el("div", "wr-page wr-page-me"); pg.dataset.page = "me";
@@ -113655,8 +113840,9 @@ function buildWeekRecapStage(r){
     pg.appendChild(card);
     pages.push(pg);
   }
-  /* the ending (build 326): this week's board so far, in one small card,
-     so the stage says what he is saying - and is short enough for an SE */
+  /* the ending (build 326): this week's board so far, in one small card.
+     BUILD 327: the recap ends on the class's totals ("then that's it"),
+     so this page is no longer built (r.close is no longer set). */
   if(!r.optedOut && r.close){
     const cl = r.close;
     const pe = el("div", "wr-page wr-page-close"); pe.dataset.page = "close";
@@ -113722,7 +113908,7 @@ function weekRecapLines(r){
   }
   const P = t => t.pts != null ? recapFmt(t.pts) + " XP" : "";
   const withP = t => t.pts != null ? ", with " + P(t) : "";
-  lines.push({ gesture: "wave", text: "Hello, " + name + ". It’s Nova, with my recap of last week. First, the This Week board.",
+  lines.push({ gesture: "wave", text: "Hello, " + name + ". It’s Nova, with my recap of last week. First, the top three on last week’s board.",
     enter: ctx => { open(ctx); page("podium"); } });
   /* third, then second, then first */
   for(let i = r.top.length - 1; i >= 0; i--){
@@ -113743,12 +113929,19 @@ function weekRecapLines(r){
       if(t.me) text += " Congratulations!";
       if(st.kind === "plain" && t.me) text = "And in first place: you, " + name + withP(t) + ". Congratulations!";
     }
+    /* been up here before? (build 327 - weekRecapPodiumHistory) */
+    text += weekRecapAgainSay(t, i === 0 && st.kind === "repeat");
     lines.push({ gesture: i === 0 ? "raise" : null, text,
       enter: (ctx, instant) => { on(ui && ui.cols[i], "is-up"); if(i === 0 && !still && !instant) playSound("lb.winner"); } });
   }
-  if(r.mentions.length){
-    lines.push({ gesture: "raise", text: r.mentions.length === 1 ? "Now, from off the podium, my honorable mention." : "Now, from off the podium, my honorable mentions.",
-      enter: () => page("mentions") });
+  /* THE HONORABLE MENTIONS, ALL OF THEM TOGETHER (build 327): the rotating
+     ones, then the two fixed awards (Flawless, Long Shift) on a page of
+     their own - said before the class's totals, never after them */
+  const awards = (r.classWeek && r.classWeek.awards) || [];
+  const nMent = r.mentions.length + awards.length;
+  if(nMent){
+    lines.push({ gesture: "raise", text: nMent === 1 ? "Now, from off the podium, my honorable mention." : "Now, from off the podium, my honorable mentions.",
+      enter: () => page(r.mentions.length ? "mentions" : "awards") });
     r.mentions.forEach((m, k) => {
       const def = RECAP_MENTIONS.find(d => d.cat === m.cat);
       let text = def.say(m.name, m.value);
@@ -113758,48 +113951,37 @@ function weekRecapLines(r){
         if(!still && !instant) playSound("ui.notice");
       } });
     });
-  }
-  /* the class's week (build 326): hundos and hours, then the two awards */
-  if(r.classWeek){
-    const cw = r.classWeek, t = cw.totals;
-    let text;
-    if(t.hundos && t.study) text = "Now the whole class: " + recapFmt(t.hundos) + (t.hundos === 1 ? " hundo" : " hundos") + " last week, and " + recapClockSay(t.study) + " on the study clock.";
-    else if(t.hundos) text = "Now the whole class: " + recapFmt(t.hundos) + (t.hundos === 1 ? " hundo" : " hundos") + " last week.";
-    else if(t.study) text = "Now the whole class: " + recapClockSay(t.study) + " on the study clock last week.";
-    else text = "Now the whole class’s week.";
-    lines.push({ gesture: "raise", text, enter: () => page("class") });
-    cw.awards.forEach((m, k) => {
+    awards.forEach((m, k) => {
       const def = RECAP_MENTIONS.find(d => d.cat === m.cat);
       let tx = def.say(m.name, m.value);
       if(m.me) tx += " That’s you! Well earned.";
       lines.push({ text: tx, enter: (ctx, instant) => {
+        if(k === 0) page("awards");
         on(ui && ui.acards[k], "is-in");
         if(!still && !instant) playSound("ui.notice");
       } });
     });
   }
-  /* YOUR WEEK, AND THE ONE UNDER WAY (build 326) - see weekRecapClose */
-  const v = r.viewer, cl = r.close || { kind: "open" };
+  /* where you finished, if he has not named you - before the class's
+     totals, so they stay the last thing he says (327) */
+  const v = r.viewer;
   if(v.inTop < 0 && !v.mention && v.place > 0 && v.pts > 0){
     const third = r.top[2] && r.top[2].pts;
     lines.push({ text: "As for you, " + name + ": " + recapOrdinal(v.place) + ", with " + recapFmt(v.pts) + " XP"
-      + (third && third > v.pts && cl.kind === "now" ? ", " + recapFmt(third - v.pts) + " XP off the podium." : ".") });
+      + (third && third > v.pts ? ", " + recapFmt(third - v.pts) + " XP off the podium." : ".") });
   }
-  let closing;
-  if(cl.kind === "now"){
-    if(cl.leaderMe) closing = "This week so far, you lead with " + recapFmt(cl.leaderPts) + " XP. Hold it to Sunday night.";
-    else if(cl.mine > 0 && cl.gap === 0) closing = "This week so far, you and " + cl.leader + " are level on " + recapFmt(cl.leaderPts) + " XP.";
-    else if(cl.mine > 0) closing = "This week so far, " + cl.leader + " leads with " + recapFmt(cl.leaderPts) + " XP. You’re " + recapFmt(cl.gap) + " behind.";
-    else closing = "This week so far, " + cl.leader + " leads with " + recapFmt(cl.leaderPts) + " XP. One test puts you on the board.";
-  }
-  else if(cl.kind === "defend") closing = "The board reset Monday, and you’re the one to catch now.";
-  else if(cl.kind === "chase") closing = "You finished " + recapFmt(cl.gap) + " XP off first. The board reset Monday.";
-  else if(cl.kind === "podium") closing = "You finished " + recapFmt(cl.gap) + " XP off the podium. The board reset Monday.";
-  else closing = "The board reset Monday. One test puts you on it.";
-  lines.push({ text: closing, enter: () => page("close") });
+  /* THE END: THE WHOLE CLASS (build 327). "It needs to end with the class
+     time and hundos and tests completed and then that's it." One line,
+     the last, with the sign-off in it - nothing after. */
+  const t = (r.classWeek && r.classWeek.totals) || {};
+  const bits = [];
+  if(t.hundos) bits.push(recapFmt(t.hundos) + (t.hundos === 1 ? " hundo" : " hundos"));
+  if(t.tests) bits.push(recapFmt(t.tests) + (t.tests === 1 ? " test finished" : " tests finished"));
+  if(t.study) bits.push(recapClockSay(t.study) + " on the study clock");
+  const bye = " That’s the week. See you all next Tuesday.";
   lines.push({ gesture: "wave", final: true,
-    text: "I’ll be out scanning for more of my ship. See you all next Tuesday.",
-    enter: () => on(ui && ui.next, "is-in") });
+    text: bits.length ? "And the whole class, together last week: " + homeJoin(bits) + "." + bye : "That’s the week, everyone." + bye,
+    enter: () => { if(bits.length) page("class"); on(ui && ui.next, "is-in"); } });
   return lines;
 }
 let weekRecapTimer = null, weekRecapOn = false;
@@ -116173,7 +116355,7 @@ function buildCalendarPane(panel){
      cell's own class, so the two cannot drift apart. */
   const legend = document.createElement("div");
   legend.className = "cal-grid-legend";
-  [["", "Class day"], ["cal-cell-dot-test cal-legend-dot-test", "Test"], ["cal-cell-dot-big", "Big exam / PT final"], ["cal-cell-dot-off cal-legend-dot-holiday", "No class"]].forEach(([cls, label]) => {
+  [["", "Class day"], ["cal-cell-dot-test cal-legend-dot-test", "Test"], ["cal-cell-dot-big", "Final Exams"], ["cal-cell-dot-off cal-legend-dot-holiday", "No class"]].forEach(([cls, label]) => {
     const it = document.createElement("span");
     it.className = "cal-legend-item";
     const dot = document.createElement("i");
@@ -116325,7 +116507,7 @@ function buildCalendarPane(panel){
       const chip = document.createElement("p");
       chip.className = "cal-nt-big";
       const dm = document.createElement("i"); dm.className = "cal-cell-dot cal-cell-dot-big"; dm.setAttribute("aria-hidden", "true");
-      chip.append(dm, document.createTextNode(isBigExamDay(entry) ? "Big exam \u00b7 " + testNameOf(entry) : "PT finals"));
+      chip.append(dm, document.createTextNode(isBigExamDay(entry) ? "Final exam \u00b7 " + testNameOf(entry) : "PT finals"));
       dayCard.appendChild(chip);
     }
     const head = document.createElement("p");
@@ -116547,7 +116729,7 @@ function buildCalendarPane(panel){
     let kind = "free", status = "No class", sub = null;
     if(entry && entry.holiday){ kind = "holiday"; sub = holidayName(entry); }
     else if(entry && todayStr === lastClassDay){ kind = "last"; status = "Last day"; }
-    else if(entry && isExamDay(entry)){ kind = "test"; status = isBigExamDay(entry) ? "Big exam day" : "Test day"; }
+    else if(entry && isExamDay(entry)){ kind = "test"; status = isBigExamDay(entry) ? "Final exam day" : "Test day"; }
     else if(entry && isPtFinalDay(entry)){ kind = "class"; status = "PT finals"; }
     else if(entry){ kind = "class"; status = "Class day"; }
     else if(firstClassDay && todayStr < firstClassDay){ status = "No class yet"; sub = "Class 26E begins " + formatCalendarDate(firstClassDay) + "."; }
@@ -116646,31 +116828,24 @@ function buildCalendarPane(panel){
 
   /* What is on a test: the posted topics, or plainly that they are not
      posted yet. A test that has been sat with nothing posted says nothing. */
+  /* BUILD 327: "where it says the date of when the test got posted, don't
+     include that ... ensure that part is only there if we have the
+     information (we know what's on the test)". No "Posted <date>" (the
+     TEST_TOPICS entry may still carry postedAt; it is simply not shown),
+     and no "Not posted yet" box: a test whose topics are not known has
+     no "On the test" part at all. */
   function buildTopicsBlock(entry){
     const tp = testTopicsFor(entry.date);
-    const past = entry.date < todayStr;
-    if(!tp && past) return null;
+    if(!tp || !tp.topics || !tp.topics.length) return null;
     const box = document.createElement("div");
-    box.className = "cal-topics" + (tp ? " is-posted" : " is-none");
+    box.className = "cal-topics is-posted";
     const lab = document.createElement("p");
     lab.className = "cal-topics-lab"; lab.textContent = "On the test";
     box.appendChild(lab);
-    if(tp){
-      const ul = document.createElement("ul");
-      ul.className = "cal-topics-list";
-      tp.topics.forEach(x => { const li = document.createElement("li"); li.textContent = x; ul.appendChild(li); });
-      box.appendChild(ul);
-      if(tp.postedAt){
-        const ps = document.createElement("p");
-        ps.className = "cal-topics-posted"; ps.textContent = "Posted " + formatCalendarDate(tp.postedAt);
-        box.appendChild(ps);
-      }
-    } else {
-      const none = document.createElement("p");
-      none.className = "cal-topics-none";
-      none.textContent = "Not posted yet. Topics are usually posted Sunday.";
-      box.appendChild(none);
-    }
+    const ul = document.createElement("ul");
+    ul.className = "cal-topics-list";
+    tp.topics.forEach(x => { const li = document.createElement("li"); li.textContent = x; ul.appendChild(li); });
+    box.appendChild(ul);
     return box;
   }
 
@@ -116699,7 +116874,7 @@ function buildCalendarPane(panel){
       const chip = document.createElement("p");
       chip.className = "cal-nt-big";
       const dm = document.createElement("i"); dm.className = "cal-cell-dot cal-cell-dot-big"; dm.setAttribute("aria-hidden", "true");
-      chip.append(dm, document.createTextNode("Big exam"));
+      chip.append(dm, document.createTextNode("Final exam"));
       words.appendChild(chip);
     }
     const title = document.createElement("p");
@@ -116751,7 +116926,9 @@ function buildCalendarPane(panel){
     card.className = "points-progress-sect cal-card cal-big-card";
     if(!rows.length){ card.hidden = true; return card; }
     const left = rows.filter(r => r.end >= todayStr).length;
-    card.appendChild(cardHead(pt.length ? "Big exams & PT finals" : "Big exams", left ? left + " to go" : "All done"));
+    /* build 327: "Final Exams is probably what the name should be for it"
+       - the key, this card, and every chip; PT finals included */
+    card.appendChild(cardHead("Final Exams", left ? left + " to go" : "All done"));
     const ul = document.createElement("div");
     ul.className = "cal-big-list";
     rows.forEach(e => {
@@ -121299,7 +121476,7 @@ function beginSettle(ms){ settleUntil = Date.now() + (ms || 420); }
 const RANK_LORE = {
   rookie: "A nebula: a cloud of gas and dust where every star begins. Nothing shines yet, but the work has started, and every rank above this one started right here.",
   ranger: "A protostar. The cloud has pulled itself together into a young star, still wrapped in the disc it feeds on, firing light out of both ends. The habits are forming.",
-  veteran: "A sun, making its own light, with a world turning round it. This is where you stop borrowing light and start giving it — the one classmates come to with questions. It is also where your planet starts to crack: Nova's light breaking through as it wakes.",
+  veteran: "A sun, making its own light, with a world turning round it. This is where you stop borrowing light and start giving it — the one classmates come to with questions. It is also where your planet starts to crack under Nova's light, and where your badges start to matter most: they are what hold it together.",
   vanguard: "A binary: two stars holding each other in orbit. Neither one drifts, because each keeps the other steady — the way a good partner does.",
   adept: "A spiral galaxy, billions of stars turning together as one. From here on the ranks are not single stars any more, and the units stop being separate subjects.",
   elite: "A quasar: the black hole at the heart of a galaxy, feeding, so bright it can be seen from across the universe. Very few make it this far.",

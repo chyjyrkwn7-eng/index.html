@@ -27665,9 +27665,12 @@ def check_b324c_calendar(br):
             check("%s: the Next test card is Test #5 on Mon, Oct 19, 6 days to go (the schedule's next exam day)" % dev,
                   want.get("nt") == "2026-10-19" and n.get("date") == "2026-10-19" and n.get("title") == "Test #5"
                   and n.get("when") == want.get("ntWhen") and n.get("days") == "6" and n.get("num") == "6", [n, want])
-            check("%s: nothing posted - the card says so plainly, and so does that day in the month" % dev,
-                  a.get("hasTopics") and "usually posted Sunday" in (n.get("none") or "") and not n.get("topics")
-                  and "usually posted Sunday" in ((a.get("ntDay") or {}).get("none") or "") and not (a.get("ntDay") or {}).get("topics"),
+            # MOVED IN 327 (b327c): "ensure that part is only there if we
+            # have the information" - nothing posted means no topics part at
+            # all, on the card or that day in the month
+            check("%s: nothing posted - no 'On the test' part on the card, nor on that day in the month" % dev,
+                  a.get("hasTopics") and not n.get("none") and not n.get("topics")
+                  and not ((a.get("ntDay") or {}).get("none")) and not (a.get("ntDay") or {}).get("topics"),
                   [n.get("none"), a.get("ntDay")])
             c = a.get("course") or {}
             check("%s: the remaining counts are classDaysRemaining() and testsRemaining(), in the Stats tab's ring and tiles" % dev,
@@ -27695,8 +27698,10 @@ def check_b324c_calendar(br):
             n = c3.get("next") or {}
             nd = c3.get("ntDay") or {}
             want_t = TOPICS["2026-10-19"]["topics"]
-            check("%s: TEST_TOPICS shows on the Next test card (and when it was posted) and on that day in the month" % dev,
-                  n.get("topics") == want_t and not n.get("none") and "Oct 18" in (n.get("posted") or "")
+            # MOVED IN 327 (b327c): "where it says the date of when the test
+            # got posted, don't include that" - no posted date
+            check("%s: TEST_TOPICS shows on the Next test card (with no posted date) and on that day in the month" % dev,
+                  n.get("topics") == want_t and not n.get("none") and not (n.get("posted") or "")
                   and nd.get("topics") == want_t and nd.get("topicsCls") and not nd.get("none"), [n, nd])
             # a weekend (Sat Oct 10)
             e = pg.evaluate(B324C_CAL, ["2026-10-10", None])
