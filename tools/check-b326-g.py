@@ -186,8 +186,11 @@ def sky_section(br):
     light = sum(i * n for i, n in enumerate(hist))
     stars = sum(hist[31:])
     ratio = light / SKY_REF
-    check("the stars add 82-92%% of build 325's light to Home (a smidge less, same sky)",
-          0.82 <= ratio <= 0.92 and stars > 3000, "light %d (%.3f of %d), %d bright pixels" % (light, ratio, SKY_REF, stars))
+    # MOVED IN BUILD 327: "a smidge smidge less" again - 326's 86% of 325 went
+    # to ~72% (check-b327-d holds 65-88% of 326). What stays from 326: less
+    # than 325, and still a sky.
+    check("the stars add 60-92% of build 325's light to Home (less, same sky; 327 trimmed again)",
+          0.60 <= ratio <= 0.92 and stars > 2000, "light %d (%.3f of %d), %d bright pixels" % (light, ratio, SKY_REF, stars))
 
 
 # ---------------------------------------------------------------------------
