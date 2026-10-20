@@ -3591,7 +3591,9 @@
   /* WHITE NOW (build 327): "review flashcards are purple, let's not do
      that." A card seen is the plain white a test's unscored block is
      (.tick.done), the card you are on the plain marker. */
-  .wrap:has(.fc-screen) .meter .tick.clean{ background:var(--accent); opacity:.55; }
+  .wrap:has(.fc-screen) .meter .tick.clean,
+  .wrap:has(.pausepanel.is-fcpause) .meter .tick.clean{ background:var(--accent); opacity:.55; }
+  .wrap:has(.pausepanel.is-fcpause) #count{ display:none; }
   .panel.fc-screen{ background:none; border:none; box-shadow:none; padding:0; }
   /* ---- MOVING THROUGH THE DECK (build 306) ----
      "Ensure you can swipe to the next flash card but give it a nice
@@ -12087,6 +12089,7 @@
      moves or resizes, it just stops being legible whenever it would
      otherwise duplicate or contradict what the top bar is doing. */
   .top:has(#pausebtn:not([hidden])) ~ #count,
+  .wrap:has(.qpanel.is-dailyq) #count,
   .wrap:has(.pausepanel) #count{
     color:transparent; user-select:none;
   }
@@ -28346,7 +28349,8 @@
      "out of" half is quieter, as it is under the level bar. An opacity
      of the number's own colour rather than a grey, so the hundo
      effect's tint (hfx-tinted) still reaches the whole figure. */
-  .rs-screen .rs-grade-frac{ letter-spacing:-.02em; }
+  .rs-screen .rs-grade-frac{ letter-spacing:-.02em; transition:opacity .35s ease, transform .35s cubic-bezier(.2,.8,.2,1); }
+  .rs-screen .rs-grade-frac.is-waiting{ opacity:0; transform:translateY(4px); }
   .rs-screen .rs-frac-of{ font-weight:700; opacity:.62; }
   /* the grade card's "8 / 12" is one colour, white, both sides (build
      317): "I'm not sure why the right side is grey there. Should all be
@@ -29041,8 +29045,8 @@
      reaches (px across the card); the two layers' masks meet there. While
      the layers are up the card's own look is off, and each layer is the
      landed card's look exactly (bg, rim, line, glow), so taking them away
-     at the landing changes nothing. A 100 hands to its effect the same
-     way: --rs-gl wipes the effect's look (.is-fx) in over the green. */
+     at the landing changes nothing. A 100 hands to its effect by a FADE
+     by hue (rsHandoff, --rs-gf), never a wipe (build 327 round 3). */
   .rs-grade:has(> .rs-grade-tone){ isolation:isolate; }
   .rs-screen .rs-card.rs-grade:has(> .rs-grade-tone:not(.is-reading)){ background:none !important; border-color:transparent !important;
     box-shadow:0 10px 30px -14px rgba(0,0,0,.6) !important; }
@@ -31745,7 +31749,7 @@
       </button>
     </div>
   </nav>
-  <p class="hint" id="hint">Press 1 through 9 to pick an answer. Press Enter to continue.</p>
+  <p class="hint" id="hint">Press 1 through 4 to pick an answer. Press Enter to continue.</p>
 </div>
 
 <script>
@@ -66327,6 +66331,12 @@ const SOUND_CATALOGUE = {
       K.tone({ f: "E5", t: .07, type: "triangle", lp: 2200, a: .004, d: .05, g: .035 });
       K.tone({ f: "D5", t: .12, type: "triangle", lp: 2000, a: .004, d: .12, g: .035 });
     } },
+  "fc.flip": { vol: 1, group: "Test", bus: "ui", cd: 90, hap: "tap",
+    desc: "A flashcard turned over: a quick paper flick of filtered noise and a soft blip bending up a fourth, A5 to D6, on a thin pulse.",
+    fn: K => {
+      K.noise({ bp: 3200, q: .8, ff2: 5600, a: .002, d: .055, g: .05, pan: -.2, pan2: .2 });
+      K.sq({ t: .03, f: "A5", f2: "D6", gl: .03, sq: .125, a: .002, d: .06, g: .04, lp: 3200 });
+    } },
   "test.star": { vol: 0.9, group: "Test", bus: "ui", cd: 150, hap: "tap",
     desc: "Star a question: two far twinkles, the leading note C# rising to D - marked for later.",
     fn: K => {
@@ -68058,7 +68068,7 @@ function stopAmbience(){ try{ NovaSound.stopAmbience(); }catch(e){} }
    surfaces that make their own sound. Nothing here does anything while sound and vibration
    are both off - playSound returns at once. */
 const SND_NO_GENERIC = ".ru-blocker, " +
-  ".qpanel .choice, .flagbtn, .settings-sound-row, .binspect, .cosmic-hero-wrap, #vroom-cutscene";
+  ".qpanel .choice, .flagbtn, .fc-card, .settings-sound-row, .binspect, .cosmic-hero-wrap, #vroom-cutscene";
 function sndForTap(t){
   if(!t || !t.closest || t.closest(SND_NO_GENERIC)) return null;
   if(document.documentElement.classList.contains("ru-scene")) return null;
@@ -70621,7 +70631,10 @@ function renderPausedScreen(){
      is "on hold" for it, per direct request, was simply inaccurate,
      not just imprecise. Same runLabel check every other daily-question
      wording branch in this screen already uses. */
-  p.textContent = (runLabel === "Daily question")
+  /* only say "timer" when there is one (build 327 audit: a run with no
+     clock read "the question and timer are on hold") */
+  const hasClock = (typeof raceTimed !== "undefined" && raceTimed) || !timerlineEl.hidden;
+  p.textContent = (runLabel === "Daily question" || !hasClock)
     ? "The question is on hold."
     : "The question and timer are on hold.";
   const actions = document.createElement("div");
@@ -91757,6 +91770,7 @@ function showStudyLoading(text, then){
   const { overlay, barFill } = buildLoadingOverlay(text);
   stage.replaceChildren();
   document.body.appendChild(overlay);
+  playSound("test.load", { dur: STUDY_LOADING_MS / 1000 });
   if(typeof syncChatDock === "function") syncChatDock();
   const startedAt = Date.now();
   let done = false;
@@ -92088,6 +92102,8 @@ function render(){
   choiceFx = null;
   const slots = optionOrder(qi);
   const right = correctSlot(qi);
+  /* the keyboard hint names this question's keys: "1 through 4" */
+  { const t = "Press 1 through " + slots.length + " to pick an answer. Press Enter to continue."; if(hintEl.textContent !== t) hintEl.textContent = t; }
 
   drawMeter();
   countEl.textContent = scopeLabel() + " \u2014 " +
@@ -102907,7 +102923,11 @@ function showRunRewards(run, hooks, opts){
     gSide.className = "rs-grade-side";
     const frac = document.createElement("p");
     frac.className = "rs-grade-frac";
-    rsPair(frac, countIt ? 0 : run.good, run.total);
+    /* the fraction is the result, shown as the grade lands: beside a
+       percentage counting smoothly no whole number of answers ever agrees
+       with it ("70%" beside "8 / 12", build 327 audit) */
+    rsPair(frac, run.good, run.total);
+    if(countIt) frac.classList.add("is-waiting");
     gradeParts = { pctEl, pctTone, frac };
     const fracSub = document.createElement("p");
     fracSub.className = "rs-grade-sub slabel";
@@ -103177,7 +103197,7 @@ function showRunRewards(run, hooks, opts){
     u.fill.className = u.tone + " sbar is-home" + (u.fill.classList.contains("rs-bar-flip") ? " rs-bar-flip" : "");
   };
   /* the card is built showing 0% and 0 / N: the first change ticks */
-  let shownPct = 0, shownGood = 0;
+  let shownPct = 0;
   const paintCount = el => {
     let sofar = 0;
     unitBars.forEach((u, i) => {
@@ -103191,15 +103211,7 @@ function showRunRewards(run, hooks, opts){
     const pc = Math.min(run.pct, Math.floor(sofar / run.total * 100 + 1e-6));
     if(pc !== shownPct){ sndGradeTick(shownPct, pc); shownPct = pc; gradePctMarkup(gradeParts.pctEl, pc); }
     if(passes && sofar / run.total * 100 >= passAt) goGreen();
-    /* the fraction is the right answers nearest the percentage shown, so
-       the two never sit more than half an answer apart mid-count ("70%"
-       beside "8 / 12" read as wrong) */
-    const g = Math.min(run.good, Math.round(sofar));
-    if(g !== shownGood){
-      /* (the count's ticks follow the percentage since build 327 -
-         sndGradeTick, above - never the number of right answers) */
-      shownGood = g; rsPair(gradeParts.frac, g, run.total);
-    }
+
   };
   gc.start = () => {
     if(gc.done) return;
@@ -103302,6 +103314,7 @@ function showRunRewards(run, hooks, opts){
       pe.className = gradeParts.pctTone;
       gradePctMarkup(pe, run.pct);
       rsPair(gradeParts.frac, run.good, run.total);
+      gradeParts.frac.classList.remove("is-waiting");
       unitBars.forEach(u => rsPair(u.score, u.right, u.total));
       const done = () => { numPlain(pe, ""); if(tl && tl.isConnected) tl.remove(); };
       /* a 100 in its effect's colours from the moment it lands (the UFO's
@@ -118935,6 +118948,7 @@ function renderFlashcard(dir){
   card.addEventListener("click", () => {
     if(card.dataset.swiped) return;
     flip();
+    playSound("fc.flip");
     if(!resultsMotionOff()){
       card.classList.remove("is-flipping"); void card.offsetWidth; card.classList.add("is-flipping");
       clearTimeout(card._flipT); card._flipT = setTimeout(() => card.classList.remove("is-flipping"), 760);
@@ -119054,7 +119068,7 @@ function fcGo(d, fromX){
   if(fc.pos + d < 0) return;
   if(fcThrowing){ const t = fcThrowing; fcThrowing = null; clearTimeout(t.timer); fcStep(t.d); if(!fc || fc.pos + d < 0) return; }
   const mover = document.querySelector(".fc-mover");
-  if(!mover || resultsMotionOff()){ fcStep(d); return; }
+  if(!mover || resultsMotionOff()){ playSound("test.next"); fcStep(d); return; }
   const w = mover.offsetWidth || 300;
   const x = (d > 0 ? -1 : 1) * (w * 1.15 + Math.abs(fromX || 0));
   mover.classList.remove("is-returning", "is-armed");
@@ -119062,6 +119076,7 @@ function fcGo(d, fromX){
   const scene = mover.parentElement; if(scene) scene.style.setProperty("--p", "1");
   requestAnimationFrame(() => { mover.style.transform = "translate3d(" + x.toFixed(0) + "px,-10px,0) rotate(" + (d > 0 ? -14 : 14) + "deg)"; });
   const t = { d: d, timer: 0 };
+  playSound("test.next");
   t.timer = setTimeout(() => { if(fcThrowing === t){ fcThrowing = null; fcStep(d); } }, 300);
   fcThrowing = t;
 }
@@ -119102,10 +119117,11 @@ function showFlashcardsDone(){
    clock, no score). Resume puts the same card back, unflipped. */
 function pauseFlashcards(){
   if(!fc) return;
+  playSound("test.pause");
   pauseBtn.hidden = true;
   const at = fc.pos;
   const panel = document.createElement("section");
-  panel.className = "panel pausepanel is-pause";
+  panel.className = "panel pausepanel is-pause is-fcpause";
   const h = document.createElement("p"); h.className = "qnum"; h.textContent = "Paused";
   const info = document.createElement("div"); info.className = "pause-info";
   const unitsEl = document.createElement("p"); unitsEl.className = "pause-units";
@@ -119118,6 +119134,7 @@ function pauseFlashcards(){
   resumeBtn.textContent = "Resume";
   resumeBtn.addEventListener("click", () => {
     if(!fc) return;
+    playSound("test.resume");
     pauseBtn.hidden = false;
     if(fc.pos >= fc.deck.length) showFlashcardsDone(); else renderFlashcard(0);
   });
