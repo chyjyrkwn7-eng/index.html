@@ -23570,3 +23570,953 @@ hanging between two packages:
 - **One day in the week strip, two packages.** F made the today / picked
   number white for 4.5:1; G restyled the picked day to look like the
   month's. Check F's contrast gate (5b) still passes on the merged Calendar.
+
+### Build 327 (integrator) - five packages merged on 326
+
+Five builders (A sound, B XP box/hundo effects, C story/recap/calendar, D glass/units/tab bar/lobby/stars/Save and exit, E stats/history/badge case/crack), each on its own worktree cut from 5ce026a, merged into `wip/build-327` with no conflicts. Each package gate is `tools/check-b327-<x>.py`, written to fail on 326 (`git show 5ce026a:index.html`).
+- **Worktrees can start on the wrong commit.** Three of the five builders found their worktree on main (9435301), not the branch they were cut for, and reset it. Tell a builder the exact base commit and have it check `git log -1` first.
+- **`APP_BUILD` / `version.json` are NOT bumped on this branch** - the bump was refused as a deploy-shaped action. Bump both to the same value as part of the go, together with the 326 handoff steps.
+- **D and E both touched Stats**: D brightened `.stat-num` (theme colour + 20% white) for contrast on the lighter glass; E made the accuracy ring grey. Both gates pass merged.
+- **`tools/record-sound.py SCENARIO OUT.mp4`** (A) is the sound-video recorder now kept in the repo; `--list` for scenarios.
+
+### Build 327 (b327a) - every sound in the ambience's language, on by default, a grade that follows the percentage, the XP box heard
+
+Madison, about sound:
+
+- *"The Home Screen on idle is cool, I like it, it works, it sounds nice.
+  The swooshing of the random stars on supernova is not it."*
+- *"I'm not a fan of the sounds right now, they aren't good enough. The xp
+  box is still missing sounds, like when the numbers come in it should be
+  cool. The xp bar effect is a bad sound, the xp road map is a bad sound, a
+  lot of the sounds seem shared/repetitive. I feel like they just don't go
+  with the app."*
+- *"Sound effect for your grade, shouldn't the sound effect be synced with
+  the percentage and not the amount of questions you got right..?"*
+- *"Looking at the badge cutscene the sounds are bad too."*
+- *"The idle screen is the only legit one ... The main menu music gives me
+  dark Pokemon music vibes and I love it. More of that kinda stuff app
+  wide."*
+- *"Let's automatically put the sound on as default now. Cause it's cool,
+  option will still be in settings though to turn it off."*
+- *"I don't really want all the videos of everything or photos. I just want
+  videos for the sounds this time around."*
+
+#### One palette, read off the ambience
+
+`amb.home` is untouched: it is the reference. Read note by note, it is **D
+harmonic minor**: a D pad (D, A, F, C), a triangle thrum on D, a muted bell
+on **Bb** (the dark sixth) at an FM ratio of 3.01 with the dotted echo, and
+far twinkles on A, E, **C#** (the leading note) and F at a ratio of 3.5.
+
+The kit gained that language as named parts (in `sndKit`, after `K.arp`).
+Every design is now written with them:
+
+- `K.dm(i, root)` - degree i of D harmonic minor (D E F G A Bb C#).
+- `K.chime` - the ambience's bell: FM 3.01, a falling index, reverb and
+  echo.
+- `K.twinkle` - the ambience's far twinkle: FM 3.5, long echo.
+- `K.lead` - the "dark Pokemon" voice: a **soft pulse wave** (`o.duty` on
+  `K.tone`, `sndPulse()`: a handheld's square with its upper harmonics
+  rolled off), a lowpass, and a vibrato that comes in late (`vib[3]`, the
+  delay).
+- `K.chip` - a chip arpeggio: one pulse voice stepping through a chord
+  every 30-45ms, the way a handheld plays a chord.
+- `K.bass` (a triangle), `K.pad` (the ambience's detuned saw pad) and
+  `K.hush` (its filtered air).
+
+The grammar:
+
+- Good news resolves UP: to A, to D, or through **Bb and C to a bright D
+  major**. That is the heroic minor turn, used for 90+, level up, streaks
+  of 50, the winner and the podium.
+- Bad news falls a half step: Bb to A on a wrong answer; a C# that never
+  resolves on the error knock.
+- Movement is air, not a swoosh.
+
+#### What changed, by id
+
+Every design was rewritten except these:
+
+- the five character reactions (`react.*`), which are voices;
+- the physical sounds: `badge.rub`, `badge.squeak`, `rank.crack`, `vr.tug`;
+- the roar inside `rank.whirl`.
+
+Even those were retuned where they carried notes (`rank.whirl` gained a D
+minor arpeggio quickening with the spin).
+
+**The ones she named:**
+
+- **`res.xp.fill`** (the XP bar): it was a continuous glide rising an
+  octave. It is now a chip arpeggio of D minor climbing the octaves for the
+  length of the fill, quickening and brightening as it charges.
+- **`rank.road.fill`** (the road map): it was the same kind of glide. It
+  is now a stair - one step of D harmonic minor in pulse and a faint bell
+  per stair, the steps easing out with the light, landing on a bell on the
+  high D.
+- **`rank.road.scroll`**: it was a ratchet of wooden detents. It is now
+  air drifting the way you travel, with one low bell.
+- **The badge cutscene:**
+  - `cs.badge` - the dark pad, then an "obtained" fanfare in pulse (D, F,
+    A, C#, then the high D held) over a bell chord, and twinkles on the
+    glint.
+  - `bc.rise` - a triangle climbing D to A under the air.
+  - `badge.case.open` - the latches tick on F and D, the lid groans as a
+    low triangle, and the glint is two twinkles.
+  - `badge.slide` - a thin pulse slide, A up to D.
+  - `badge.drop` - its ring is a bell on D.
+- **The results screen:**
+  - **The grade by band:**
+    - `res.grade.fail` - a slow pulse falling F, E, D over the dark pad.
+    - `res.grade.pass` - D, E, F, A.
+    - `res.grade.great` - chip chords Bb, C, D major with the lead up to
+      F#.
+    - `res.grade.perfect` - a held breath, a thrum, D major in bells, and
+      a fanfare A, D, F#, A.
+  - `res.levelup`: three quick A's, then Bb, C, and a held D major - a
+    handheld level-up.
+  - `res.xp.pop`, `res.xp.overflow` (it ends on C# to D), and the found
+    rows: the badge is a bell figure A, D, F; the flare is twinkles on Bb
+    and C# (the augmented second); the character is C major to D major.
+
+**New:**
+
+- `res.xp.line` - a note per line of how the XP was earned, a step higher
+  each line (`opts.i`).
+- `res.xp.total` - the coin: A up to D with vibrato over a D minor bell
+  chord.
+- `res.xp.count` existed but was never played. It is now the tick of the
+  total counting up, climbing two octaves of D minor with `opts.k`.
+
+**Removed:** `home.supernova.ring` (see below).
+
+**Loudness:** every id's `vol` was recalibrated so its loudest 50ms
+matches build 326's for the same id. The old balance had been tuned by
+ear on a device, so it was kept. That was done with a scratch script that
+renders both builds; the numbers are in the catalogue. Two were
+deliberately trimmed below the old one:
+
+- `res.xp.fill` to 0.45: the old glide was a loud sustained tone, which is
+  most of why it was bad;
+- `rank.whirl`.
+
+`check-sound` 7: no pair above .90. The closest is `res.xp.knock` /
+`ui.error` at .87; the median pair is .16.
+
+**Distinct by construction:** each id has its own figure, and the gate
+renders every id and fails on two identical renders. Where an idea
+repeats, it is deliberate and stated in the desc:
+
+- the C#-to-D "arrival" in `ui.notice`, `test.star`, `res.xp.overflow`;
+- the heroic turn in the four celebrations.
+
+**Note for anyone redesigning a sound:** the streak tiers are at **10, 25,
+50**, not 3, 5, 10. The old `test.streak.*` descs said 3/5/10 and were
+stale; they are corrected.
+
+#### The Supernova "random stars"
+
+That was `home.supernova.ring`. The Supernova ring's comet streaks round
+Home:
+
+- on a tap of the planet;
+- on the planet's pulse;
+- at random every 12-38s (build 325).
+
+Each streak played a stereo-circling noise whoosh. It now plays nothing
+and the id is gone. The comet itself is unchanged, and a tap on the
+planet still rings `home.planet`. `rank.supernova` (the detonation) also
+lost its 28 random high glitter pings for a slow D major chord in bells,
+so nothing on Supernova scatters random noise any more.
+
+#### The grade follows the percentage
+
+The landing was already chosen by `run.pct`. The count was not:
+`res.bar.tick` fired once per RIGHT ANSWER with `frac = good / total`. So
+a 12-question run ticked 9 times and a 40-question run 30 times for the
+same 75%, at different pitches.
+
+- Now `sndGradeTick(from, to)` is called where the shown percentage
+  changes in `paintCount`, and plays one tick per `SND_GRADE_STEP` (4)
+  percent passed, pitched by that percentage. The same percentage sounds
+  alike at any length.
+- `gradeSoundFor(pct)` is the one place the landing is chosen: 100 is
+  perfect, 90+ great, the pass mark and up pass, below that fail.
+- **A tick per frame at most**: on a slow device a frame can pass several
+  steps and plays one. That is the frame rate, never the question count.
+
+#### The XP box heard
+
+Each are one-line hooks:
+
+- `sndXpLine(el)` on every XP line as it lands. Not on the "Bonuses"
+  kicker or the "No XP" line.
+- `sndXpCount(k)` in `countUp`'s frame: a `res.xp.count` each time the
+  number moves (its 40ms cooldown makes ~22 ticks over the 900ms count),
+  and `res.xp.total` on the count's last frame. That is outside the
+  "changed" test, or a count whose last frame repeats the figure would
+  never ring.
+
+#### The Rank tab's own climb has sound
+
+`runRankMapCelebration` (opening Rank with progress since the last look)
+was silent. It now plays:
+
+- `rank.road.fill` with the climb (3.2s, the CSS's own `.is-climbing`
+  transition);
+- `rank.road.fill` (2.6s) and `rank.unlock.pop` for each rank reached on
+  the road.
+
+The rank-up journey on Profile already had both.
+
+#### Sound on by default
+
+- `theme.soundOn` defaults **true**. Vibration stays off.
+- **An account saved with the old default is switched on ONCE.** It is
+  recorded in two places:
+  - on the account, as `theme.soundOn327`. It is synced, so turning sound
+    off on one phone is not undone by another phone's first launch on 327.
+  - on the device, as `class26e.soundon.327`. An older build's `saveTheme`
+    drops the field, and the device marker stops that from causing a
+    second switch-on here.
+- The switch-on happens only when an account's theme exists and has
+  neither mark. A device that boots with no theme yet (a sign-in) waits
+  for the cloud copy and switches that on.
+- The behaviour-toggle rule is followed: a default, a line in `loadTheme`
+  (`theme.soundOn327 = store.theme.soundOn327 === true`) and a field in
+  `saveTheme`. A new account's theme starts with `soundOn327: true`.
+- **iOS:** nothing changed in the engine and nothing needed to. With sound
+  on, no `AudioContext` exists until the first touchend/click/keydown
+  (`onGesture`). Every play before that returns null quietly, and the Home
+  ambience starts on that first tap (`afterResume`). `check-b327-a` 1
+  asserts no context before the first gesture with sound on.
+- **check-sound section 1 was re-read, not deleted.** It now asserts on by
+  default; the one-time switch-on; off sticks across a reload and on a
+  device without the marker; and non-booleans are ignored. Sections 2 and
+  3 test "free while off" after turning it off.
+
+#### Recording with sound: `tools/record-sound.py`
+
+```
+python3 tools/record-sound.py SCENARIO OUT.mp4 [--device phone|ipad] [--fps 30] [--against FILE]
+python3 tools/record-sound.py --list
+```
+
+This rebuilds the b325h recorder, whose pack folder was never in the repo.
+
+- The output is H.264 plus AAC-LC 48 kHz stereo, with `OUT.sound.json`
+  beside it listing every play (id, seconds into the clip, whether the
+  engine played it).
+- **The audio:** an init script swaps `AudioContext` for an
+  `OfflineAudioContext` subclass whose `currentTime` is `performance.now()`.
+  It also applies the b325h "now is explicit" fixes, but only to nodes
+  made on that context:
+  - `start()` and `stop()` with no time, or a past time, mean now;
+  - `.value =` becomes `setValueAtTime(v, now)`;
+  - cancel-then-hold becomes `cancelAndHoldAtTime`;
+  - `disconnect` is a no-op.
+  At the end the context is rendered once, cut from the first frame, and
+  muxed.
+- **The picture:** `tools/record-hundo.py`'s page clock (timers, rAF,
+  smooth scroll and every animation seeked to it), installed when
+  recording starts. **It continues from the real `performance.now()`.**
+  build 325's trap was a clock that moved time BACK, after which
+  NovaSound's cooldown refused every tap. This one never does, so no gate
+  on plays is needed.
+- **Scenarios:** `home-idle`, `results-hundo`, `results-pass` (83%),
+  `results-fail` (50%), `results-levelup`, `roadmap-climb`,
+  `badge-cutscene`, `rankup-cutscene`, `supernova`, `test`.
+  - The results scenarios run a REAL Identity Crimes drill answered by
+    real clicks. The first 11 questions are answered in real time and not
+    recorded; the clip starts at the last answer.
+- **Cost:** at dpr 3 a frame costs ~0.5s here, so a 20s clip is ~5
+  minutes. Run one at a time.
+- **Harness fixture:** a Supernova Home needs `store.supernovaAchieved`,
+  its reward cards marked shown, and `homeUnlockPlaying` FALSE.
+  `homeUnlockPlaying` holds the ring's streak (`ringDrawHeld`), so
+  record-cutscenes' habit of setting it true silences the very thing being
+  recorded.
+
+#### Gates
+
+- **`tools/check-b327-a.py`** (`--against`). It fails on build 326 in 12
+  checks, and passes on this build. It covers:
+  - on by default, the one-time switch-on, and off sticking;
+  - no context before a gesture;
+  - two REAL results screens at 75% (9/12 and 30/40) landing alike and
+    ticking on 4% steps, never once per answer;
+  - 50% landing differently;
+  - the XP box's line notes, the count ticks climbing, and the coin last;
+  - the palette in the kit;
+  - no two ids rendering the same;
+  - the Supernova comet streaking with no sound, and its id gone.
+- **`tools/check-sound.py`:** ALL PASS. Section 1 was re-read to on by
+  default. REQUIRED drops `home.supernova.ring` and adds `res.xp.line`,
+  `res.xp.count` and `res.xp.total`.
+
+#### Rules learned
+
+- **A sound she likes is a spec.** Read it note by note (key, timbres,
+  space) before designing anything near it. "More of that kinda stuff"
+  meant the ambience's key, bell and echo, not more ambience.
+- **A sound tied to a count is tied to the wrong thing when the count
+  means a percentage.** Tick on the number the screen is showing.
+- **Loudness is a decision that was already made.** When redesigning,
+  match the old id's loudest 50ms rather than re-balancing by guesswork.
+- **A sustained tone that follows a long fill is the loudest thing on the
+  screen for its whole length.** Notes with gaps between them carry a fill
+  without filling the room.
+
+#### Verified (for the record)
+
+- `check-js` passes. `check-sound` and `check-b327-a` are ALL PASS, and
+  `check-b327-a --against` 326 fails 12 checks.
+- `check-results` has ONE failure: "a two-unit drill on an iPad (834px):
+  the same gap under every card's heading (within 3.5px) -> [23.8, 19.8]".
+  It fails identically on build 326 (`--against`), so it is not a sound
+  change.
+- **Ten clips** in `/tmp/claude-0/b327/videos/a/`, each at 1320x2868 (17 Pro
+  Max, dpr 3) with H.264 and AAC 48k stereo, and each with its
+  `.sound.json`:
+  - `home-idle`
+  - `test`
+  - `results-pass`, `results-hundo`, `results-fail`, `results-levelup`
+  - `roadmap-climb`
+  - `badge-cutscene`
+  - `rankup-cutscene`
+  - `supernova`
+- Each clip was checked with `ffmpeg volumedetect`: the mean is -31 to -39
+  dB and the max is -3.6 to -25 dB (home-idle is the quiet one; it is the
+  ambience alone).
+- Every percussive play has an energy onset within 10-60ms of its logged
+  frame time. The ones without a clear onset are slow swells and ticks
+  under louder sounds.
+
+### Build 327 (b327b) - one line a kind in the XP box, "Answer streak" with 324's line, the extra that goes down, fish in the water, a softer soap film
+
+Madison: *"Let's talk about the xp box, the descriptions under some of the
+stuff is bad, it looks cluttered. The hundo one has an unnecessary
+description. That would probably only need to be there or there's multiple
+units you got a hundo on? Answers in a row is terrible, it was better how it
+was before. The title "answers in a row" could be answer streak or
+something. The whole xp box needs to be simplified so it's simple to use and
+understand."* *"The xp bar with the extra, not sure what's up with the -xp
+stuff in the bar.. it could literally just be the xp that's the extra it
+goes down as you level up.. fix that."* *"The underwater fish are still bad,
+why are they clearly visible? They don't look like they are in the water..
+the water needs to look even better. Bubbles looks good but could be
+slightly better. Touch all the hundo effects up."* Branch b327b. Gate:
+`tools/check-b327-b.py` (A lines, B the extra, C the fish; `--only A,B,C`),
+21 failures on build 326, none here.
+
+> **Supersedes** b326a's "the streak line in words" (`runStreakSub` said
+> "Reached 10 twice and 25"), b325's "every line says how it was worked out"
+> (a sub-line under every XP line with its arithmetic), and b326c's "-N XP
+> lifts off the number" (`rankUpSpendChip`, `.ru-spend-chip`).
+
+- **THE XP BOX: ONE LINE A KIND, A SUB-LINE ONLY WHERE IT SAYS SOMETHING
+  (`computeRunXp`).** What each line reads now:
+
+  | line | sub-line |
+  |---|---|
+  | Correct answers | `47 × 10 XP` |
+  | Hundo | none |
+  | Hundos ×N | the units, `Identity Crimes · TCOLE Rules` - only when 2+ |
+  | Answer streak | `10 ×2 · 25 in a row` (build 324's form) |
+  | Speed | `3.5s a question` |
+  | Long test | `150+ questions` |
+  | Personal bests / Best time / Best score | which ones (unchanged) |
+  | Several units ×1.2 | `3 whole units` |
+
+  Gone: "A whole unit, every answer right: 100 XP", "(0:42 in all)", "on
+  average", "+100 for every 50 questions", "+20% of the 955 above, for 3
+  whole units". **The values did not change** - every line pays what it
+  paid on 326, and the total is the lines' sum (check-b327-b A, check-results
+  3). The keys did not change either: the Virtual Room's steps still match
+  `/^streak/` by KEY (line ~112000), not by label.
+  - **"It was better how it was before" means build 324, not 325.** 325
+    ("10 in a row ×2 +50 · 25 in a row +50") was the one she called worse in
+    326; 326's sentence is the one she calls terrible now. 324's
+    `tierKeys.map(t => t + (n > 1 ? " ×" + n : "")).join(" · ") + " in a
+    row"` is back verbatim in `runStreakSub`. Title "Answer streak".
+  - **The hundo line names the units** from `hundoUnits` (new, optional, on
+    `computeRunXp`'s argument): `multiUnitStarsEarned.perfected`, passed by
+    `summarize()`. A single-unit hundo has no list, and needs none.
+  - The Customize hundo-effect mock card's line reads "Answer streak" too.
+- **THE EXTRA GOES DOWN (`rankUpStandingClimb`, `buildXpExtra`).** For the
+  rank-up climb on Profile the line under the bar is ONE number, the XP
+  past the part of the level the bar holds - `40,266 extra XP` - and it
+  only ever counts down: each level's fill comes out of it as the bar
+  fills (`extra = into(level) - fill * span(level)`, clamped never to rise,
+  so rounding cannot tick it back up). No "-N XP" lifts off anything
+  (`rankUpSpendChip` deleted; `RU_SPEND_CHIP_MS` is left, unused), and the
+  phone's "to Level N" beside it is hidden while it climbs (the level
+  number above is already counting). When the climb lands, the ordinary
+  `x / y XP` comes back. Every number the climb records
+  (`scene.climb.steps`: `have`, `sum = xpForLevel + have`) is as before;
+  each step also records `extra`. The same two spans (`.xpnums-have` /
+  `.xpnums-need`) carry it, so colour and type are the bar's; the line is
+  `.xpnums.is-extra`, and `.is-spent` at 0.
+- **THE FISH ARE IN THE WATER, NOT ON IT.** They were drawn over the
+  water's blue and over its light: stickers on the sea. Now
+  - **the water is laid over them**: every fish swims in `.hfx-uw-life`,
+    the body's FIRST child, so the sheen, the two light strips and the rays
+    paint over them; a new `.hfx-uw-dapple` strip (soft light patches with
+    silt in them, `hfxUwDappleURL`, faded top and bottom) lies across the
+    band they swim in, stepped sideways like the light strips; and
+    `.hfx-uw-veil` deepens the floor a touch (static, transparent above
+    55% so it never greys the cards);
+  - **the haze is in the picture**: `hfxFishURL(k, part, far, haze)` lays a
+    pale aqua (`#9ADCE8`) over the fish's outline at `HFX_FISH_HAZE.mid`
+    (.34) or `.near` (.22). Pale on purpose - the far veil's dark blue
+    turns orange and yellow fish brown (b326a). The key gains `-h34`/`-h22`;
+    hfxWarm warms the hazed pieces;
+  - **further off is fainter, and every fish comes out of the blue**: the
+    school peaks at .42 (was .62), the middle fish at .74 and the near
+    angelfish at .84 (both were 1, from the screen edge), each fading in
+    over the first 22% of its swim and out over the last 24%;
+  - the water itself one band deeper (a 5-stop body gradient, the floor
+    .6), the box-only fish fainter (.62).
+  Transform/opacity only; no filter, no backdrop-filter (still gated by
+  check-b326-a 7).
+- **BUBBLES: A SOFTER SOAP FILM (`hfxFilmURL`, sprite `film2-<h>`).** The
+  film round each glass hero was bands of saturated colour 8-10 units
+  wide, which read as a striped ring painted on. Each band is now two
+  strokes, a wide soft one (lightness 76, alpha x.7) and a fine bright one
+  inside it, ~6 units in all and pushed out to the rim. Nothing else in
+  Bubbles moved.
+- **Fireworks, the UFO and Confetti were looked at and left.** Frames at
+  2.2s/3.6s (Fireworks) and 3.0s/4.6s (UFO) on a phone read clean, and
+  each carries gates on its exact timings and edges (b313_fx,
+  b317_hundobox, check-b326-a 5/6) that a touch-up would only put at risk.
+- **Measured** (440x956, CPU x4, real time from the effect's first frame,
+  7s, 3 runs each; load 3-6 on 4 shared cores, so frames are noise -
+  compare main-thread task time): Underwater on 326 4.9-5.0s of task time
+  (frames 350-404); on 327 4.6-4.9s (frames 308-404). Script 240-330ms
+  both. No regression beyond noise. The first draft also pulsed the dapple's
+  opacity and drew it 2 tile-widths wider than its drift needs; both cut
+  before measuring the numbers above.
+- **The dapple is as soft as the light** (`uwdap4`): check_b313_fx reads
+  the sharpest alpha step in every light strip in the water (<= 40 a px).
+  The first dapple's silt was hard 1-2px dots (129) and its patches too
+  narrow (46); the silt is radial specks now and the patches wider (raw
+  step 29). check_b313_fx's "brightest near the surface" is asked of the
+  two surface strips only - the dapple lies mid-water on purpose.
+- **Gates moved** (each marked in place): check-results 3 (the streak line
+  is 324's form) and 5 (a streak label says "streak" or "in a row");
+  check-b325-c E (no sub-line under every line any more; held: the answers'
+  line says how many, no name is arithmetic, no sub restates a sum);
+  check-b326-a 2 (324's form, still one line on a phone); check-b326-c A
+  (the line starts on the extra, "N extra XP", counts down, no chips); check_b313_fx (the dapple, above).
+- **Failing on 326 as well, not touched**: check_b313_fx "in its tail it
+  is still on screen, fading - never cut" for Underwater and the UFO
+  (`cutFull: rs-pct-sign`, the same on index-326.html), and check-results
+  "a two-unit drill on an iPad: the same gap under every card's heading"
+  ([23.8, 19.8] on both builds).
+- **Open decisions**
+  - A climb that ends at the NEXT wall (more extra still to come) lands on
+    the wall's ordinary `12,731 / 4,001 XP`, as Profile shows a wall
+    everywhere else; it could instead keep `8,730 extra XP`. That would mean
+    changing how a wall reads on Profile and the results card too.
+  - "Hundos ×2" carries a ×N in its name, like "Several units ×1.2"; the
+    sub-line already lists the units, so the ×N could go.
+
+### Build 327 (b327c) - Nova's story with a reason, the recap ends on the class, repeat podium finishers, Final Exams, a calmer course card
+
+Madison, Oct 20:
+*"In the weekly recap, why are we are calling it to the this week board?
+Fix that. The weekly recap, I like it all up until the point after the
+class combined [hundos] and combined study time, because it mentioned more
+honorable mentions but that section was over with? So it needs to end with
+the class time and hundos and tests completed and then that's it. If
+someone manages to get top 3 more than once or back to back mention that
+during the podium presentation part too."*
+*"Calendar is looking good, where it says the date of when the test got
+posted, don't include that? The orange dot, it says big exam, and pt
+final. It can be more than that though. Final Exams is probably what the
+name should be for it. On the calendar, it says, on the test, ensure that
+part is only there if we have the information ... some of the colors in
+'the course' box look confusing because it's so many."*
+*"Meeting nova, he starts to explain the cracking, 'every flare you light
+pours its light into your planet, it can't hold it all..' ... I don't like
+this one at all."* *"The badge explanation is bad at the end, it says
+something about finding them so I can teach you that unit? That's
+terrible."* *"The storyline is still not great, we need to understand why
+your planet blew up, what the badges and stuff are, and why we should
+avoid cracking ours kinda thing."*
+
+Branch: builder C's worktree off `wip/build-326` (5ce026a). Gate:
+`tools/check-b327-c.py` (`ONLY=recap,cal,story,issues`; 41 checks, all
+pass here; 33 fail on 326 - the eight that pass on both are guards: no
+claim without a record, a known topic still shown, the line counts).
+
+#### Nova's story (supersedes 326's "pours its light / becoming a star / a page of my log")
+
+**The story is the app's own rules, said once each:**
+- **The planet his ship was studying had taken in more light than it could
+  hold**, with nothing holding it together. It cracked, its core gave way,
+  it exploded, and the blast scattered his flares, badges and crew.
+- **A badge is a unit mastered** - that unit's hundos
+  (`badgeThresholdFor`) - and **badges are what hold a planet together.**
+  Never "so I can teach you that unit", never a page of his log.
+- **Your planet cracks from Gold up, a little more every rank**
+  (`CRACK_RANK_STAGE`): the strain of holding a brighter flare. It never
+  goes the way his did because **every rank asks for badges** and **your
+  level waits at your next rank's level until you have its badges**
+  (`levelWallOf`). That is why you keep finding badges - not a warning to
+  stop climbing (the cracks cannot be avoided in the app: ranking up makes
+  them, and nothing repairs them).
+- **At Supernova it has held all of his light and become a star**, as the
+  rank-up message and the lore already said.
+
+**The introduction, new account (16 lines, as on 326):**
+1. Hello, *Name*! I'm Nova, an explorer and an instructor. I'll be your guide here, and I need your help. *(his name)*
+2. Not long ago, my ship was studying a planet much like the one on your Home screen. It had taken in more light than it could hold, and it had started to crack. *(the wreck)*
+3. Then its core gave way, and the whole planet exploded. The blast tore through my ship and threw everything aboard across this system. *(the wreck, exploding)*
+4. My flares, one for each rank, came to rest around your planet, but the blast had put their light out. That's why the flares on your Home screen are dark. *(his flares, dark)*
+5. Some of my secret flares were thrown further out, into your tests. I've lost count of them, so keep your eyes open. *(the flares, still - moved here so it keeps a picture that matches)*
+6. A flare only lights again for someone who has earned it. Every rank you reach relights one, and each comes with my thanks: that rank's rewards. *(the rank emblems)*
+7. My badges landed one in every unit. A badge means you've mastered that unit: score a hundo on the whole unit enough times, and it's yours. *(every unit's badge)*
+8. Your planet is a lot like that one. From Gold up, every rank you reach will put a crack in it: the strain of holding a brighter flare. Badges are what hold a planet together. The one I was studying had none. *(NEW picture: Home's planet with Sapphire's crack, `novaStrainPlanet()`, "A crack for every rank from Gold")*
+9. So every rank asks for badges as well as a level. Right answers earn XP and XP raises your level, but your level waits at your next rank until you have its badges. That way your planet never takes in more than it can hold, all the way to Supernova. *(the XP bar)*
+10. My crew got away in escape pods and landed all over this system. They're the characters in this app, and every one you find joins you. *(the crew)*
+11. Each one comes home a different way: some with a rank, most with a challenge, a few behind a secret flare, and the ultimate ones ask for nearly everything else first. *(how they come home)*
+12. As thanks, I'll hand you things along the way: banners for your profile, and effects that play when you score a hundo. You earn them by studying, and they're all in Customize, on your Profile. *(banners and effects)*
+13. Drill to learn a unit, the Qualifier to prove you're ready, and Review to go over the material first. Or take any of them into a Virtual Room. *(the modes)*
+14. You don't have to do it alone, either. In a Virtual Room you can race your classmates, and you can challenge me there too. *(the Virtual Room)*
+15. One more thing: I've added you as a friend. When I have news for you, I'll send it to your chats, up there. *(his chat row)*
+16. So that's the job: light my flares, find my badges and bring my crew home. My scanners keep finding more of my ship, so there will always be more. Let me show you around.
+
+**An existing account (21 lines with the level note, as on 326):** "There
+you are, *Name*. I'm Nova ... I don't think we've met." / "I've been
+following your progress, and you've already found some of what I lost.
+Let me tell you how I lost it." then lines 2-14 above (line 4 reads
+"They're the flares on your Home screen" and line 6 "you've already lit
+*N*" once they hold a rank), the recap of what they have
+(`novaRecapLines`), the friend line, and "A few things have changed
+around here, too. Let me show you what's new."
+
+**The old line 9** ("You'll do all of it by studying ... your level and
+badges decide your rank") is folded into the new line 9, and the
+pictureless "pours its light" line is gone, so the count is unchanged.
+
+**Everywhere else he tells it, the same story:**
+- Goodbye: "Light my flares, find my badges and bring my crew home, and
+  your badges will keep your planet whole while you climb."
+- Rank-ups (`NOVA_RANK_HEAD`): Gold "your planet has started to crack
+  under its light. That's the strain the planet I was studying showed,
+  but yours has your badges holding it together. Keep finding them.";
+  Platinum "The crack in your planet is wider now, and your badges are
+  holding it."; Sapphire "Your planet carries more light than ever, and
+  it's holding."; Supernova "your planet has held all of my light, and it
+  has become a star." Bronze, Silver, Amethyst unchanged.
+- Badge messages: "You found my *Unit* badge ... You've mastered *Unit*,
+  and that's one more badge holding your planet together." (and two
+  other wordings); several: "That's *N* units mastered, and your planet
+  is stronger for every one."
+- Chat replies (planet, badges, rewards, flares), the Version 9 "Nova,
+  Your Instructor" note, standalone What's New's story line, the
+  returning planet tip, and Gold's Rank-tab lore ("starts to crack under
+  Nova's light, and where your badges start to matter most: they are what
+  hold it together").
+- Canon comments rewritten above `novaIntroLines` and `NOVA_RANK_HEAD`.
+
+#### HANDOFF-326 known issues
+1. **A badge found with a rank-up is named now.** `novaProgressTail`
+   returned only the FIRST other kind found, so rank + crew + badge named
+   the crew and dropped the badge (which was then marked said). It now
+   names every kind not yet said, by name, in one sentence: "On the way,
+   Detective came home and you found my Penal Code badge, too." (secret
+   flares by name too).
+2. **The returning Profile tip** no longer says "your badge case opens from
+   it" (What's New lost the badge case's row in 326).
+3. Left alone, as asked (the crew slide's count).
+4. Not looked into (two frames between the badge and crew slides) - likely
+   the recorder; the badge/crew slides are made ahead as before.
+
+#### The weekly recap
+- **"Last week's board", never "the This Week board"**: the hello is
+  "First, the top three on last week's board." (The unlock notes for Zeus
+  and Poseidon still say "the This Week board" - that is the tab's name
+  and they mean the live board; left.)
+- **It ends on the class**: one last line, final, with the sign-off in it -
+  "And the whole class, together last week: 15 hundos, 53 tests finished
+  and 27 hours on the study clock. That's the week. See you all next
+  Tuesday." The class's page (the last page) has three tiles: hundos,
+  tests, studied. `weekRecapClassWeek` totals `t` as well as `h` and `m`,
+  each only off the rows that report it (>= 3 rows and 60% of last
+  week's active rows, as before).
+- **Gone after it**: the "This week so far" closing line and its card
+  (`weekRecapClose` is kept, unused; `r.close` is null), and the separate
+  goodbye line.
+- **The two awards (Flawless, Long Shift) ARE honorable mentions** and are
+  said with them: "Now, from off the podium, my honorable mentions" counts
+  them, the rotating mentions play, then the awards on their own page
+  (`.wr-page-awards`, headed "Honorable mentions / Off the podium"), then
+  the class. Same rules for who can win them as 326.
+- **"As for you" (your place, if you were not named) moved before the
+  class's line**, so the class stays last.
+- **Repeat podium finishers** (`weekRecapPodiumHistory`,
+  `weekRecapAgainSay`): in the podium line - "Bo was on the podium the
+  week before, too: back to back." / "That's three weeks running on the
+  podium for Bo." / "That's Cy's second time on the podium." / "Cy has
+  been on the podium before." - and a small tag over the avatar ("Back to
+  back" / "Again"). **Only from weeks whose podium is known**:
+  `WEEK_RESULTS_KNOWN` (the hand-recorded 21 Sep week) and this device's
+  own recaps, which now record the whole podium (`hist[week].top`; kept 12
+  weeks). Recaps from 324-326 recorded only the winner (`win`): that
+  counts for the winner and claims nothing about second or third. **The
+  live top-three cache (`class26e.weektop.v1`) is not used** - it is the
+  board mid-week, not where it ended. An exact count ("second time",
+  "three weeks running") is said only when every week in range is fully
+  known; otherwise the softer true sentence. A winner whose story is
+  already "for the second week running" gets no second mention.
+- **What this means in practice**: until devices have recapped a few
+  weeks on 327, the history is thin - mostly winners and the 21 Sep week -
+  so most weeks will say nothing extra. It never says something it does
+  not know.
+
+#### The Calendar
+- **No "Posted <date>"** on the topics (postedAt stays in `TEST_TOPICS`,
+  unshown).
+- **"On the test" only when the topics are known**: no "Not posted yet"
+  box; a test with no `TEST_TOPICS` entry has no topics part at all.
+- **"Final Exams"**: the orange key entry and the card's heading (was "Big
+  exam / PT final" and "Big exams & PT finals"); the chips say "Final exam"
+  ("Final exam · Level One Final" on the day card), Today "Final exam
+  day"; PT finals keep their own name on their row and chip. The code's
+  names (`isBigExamDay`, `cal-cell-dot-big`) did not change.
+- **The course card in two colours that mean something**: blue = class
+  days (the ring and "Class days left", the same `#6FC2FF`), amber = tests
+  (the calendar's test-dot `#F5B54D`), "Days to graduation" plain white.
+  It was a blue ring with blue, amber and gold numbers.
+- **The boxes were left as they are** ("I like the boxes"); see open
+  decisions.
+
+#### Gates
+- `tools/check-b327-c.py` - new (above).
+- `check-b326-g.py`: the recap's ending (the class's totals, not "this
+  week so far"), the awards measured on their own page and three tiles on
+  the class's page, the key's orange entry "Final Exams".
+- `check-b326-e.py`: the planet line (badges hold it, no "pours"), what
+  you get (a badge is a unit mastered, no log), the chat replies, the
+  Version 9 note, standalone What's New, the planet tip, the progress
+  messages.
+
+#### Open decisions for Madison
+- **The recap's goodbye is inside the class's line** ("... That's the
+  week. See you all next Tuesday."), so nothing comes after the totals. If
+  "that's it" meant no goodbye at all, drop the last two sentences.
+- **"As for you" moved before the class's line** rather than being cut.
+- **The calendar's boxes**: same number of boxes. If it still feels busy,
+  the cheapest next step is folding "This week" into the Today card, or
+  putting The course behind its existing switch by default.
+- **"Final Exams" in title case** (her words) beside "Class day" / "No
+  class" in sentence case on the key.
+- **The story's premise for "why avoid cracking ours"**: in the app the
+  cracks can't be avoided - every rank from Gold makes one, and nothing
+  repairs them - so he says the cracks are strain and badges are what keep
+  the planet whole. If she wants cracks that can actually get WORSE (e.g.
+  from levelling without badges), that is a mechanic change, not copy.
+
+### Build 327 (b327d) - one glass again, a tick that draws itself, the next test on its unit, bigger tab icons, the lobby's switch back, Save and exit blue, a quieter sky
+
+Madison, Oct 20: *"The new darker liquid Liquid Glass for the unit selection
+screen is cool I guess but now it don't go with the rest of the page, like it
+doesn't go with the start bar, the search bar, the chat button? ... the Liquid
+Glass feel/interface app wide kinda lost its touch. I'm not in love with it
+anymore. It's not cohesive, maybe some reverting/improving is needed."* *"The
+unit selection cards, could they be improved by making the checkmark better?
+Would it be a cool feature if somehow like a mark on the units for the
+upcoming test?"* *"The bottom tab bar, the icons of the 4 things are good but
+could they not be slightly bigger and more white?"* *"I don't like the green
+outline for being ready in the lobby, it's too much. For the lobby, I prefer
+the regular toggle switch with the invite friends button to the left of it.
+The toggles description is just confusing?"* *"Save and exit as a green button
+is ABSOLUTELY not the move ... Make that a color that makes sense and goes with
+it all."* *"the stars in the background ... a smidge smidge less."* Branch
+`b327d`. Gate: `tools/check-b327-d.py` (7 sections, `ONLY_FN=check_lobby,...`;
+all pass here; against build 326 every section fails except its guards -
+"Oct 27 marks nothing", "no sideways scroll", "the bar on screen", "white on
+Save and exit at 4.5:1", and the token-equality app-wide check).
+
+- **ONE LIQUID GLASS, AND IT IS THE TAB BAR'S.** Measured on the unit screen
+  on 326 there were three recipes side by side: the unit card a near-black
+  blue `rgba(13,16,21,.72)` under `blur(16px) saturate(1.2)` (b326f's
+  `--surface-1`), the search field `--surface-2`, the chat button a third
+  (`rgba(20,25,32,.55)` under an 8px blur that saturated 1.8 and brightened),
+  and the tab bar - the one surface she never stopped liking - a grey glass
+  `rgba(42,45,53,.8)` under `blur(30px) saturate(1.8)` with a bright 20% top
+  rim. The cards were the odd one out, which is what she could not name. So
+  the surface TOKENS now carry the bar's material, and everything already on
+  the tokens follows (b326f did the work of putting ~60 rules on them):
+  `--surface-1` `rgba(36,40,48,.7)` (the bar's neutral grey tint, never
+  blue-black), `--surface-2` `rgba(44,48,57,.72)` (one step lighter, raised
+  controls), `--surface-blur` `blur(24px) saturate(1.2)` (heavy enough that
+  stars and glow come through as colour, not detail; 326's mild saturate and
+  no brightness, so its "nothing boosted" rule holds), `--surface-border` `rgba(255,255,255,.13)`,
+  `--surface-shadow` the bar's rim: a soft drop, a 3% inner hairline, a 20%
+  catch-light along the top and a dark lip along the bottom, and
+  `--surface-sheen` the bar's top-lit wash. The 22 rules that wrote out the old
+  card shadow by hand and the 18 that wrote the old `.11` hairline now read
+  the tokens. Moved onto the tokens as well: the chat button, Pause (which
+  "wears the chat button's glass" since build 215), the search field's and
+  Find me's shadows, and the start sheet's `.chip`. **The tab bar and its
+  lens are untouched** (b325f/j gates); the cards came to the bar, not the
+  other way. Overlays (toast, banners, tooltips, sync confirm) keep their own
+  recipe on purpose, as in 326. Lighter than 326 and more opaque than 325.
+- **CONTRAST WAS THE PRICE, AND IT IS MEASURED.** The first, lighter fill
+  (`rgba(44,48,57,.64)` under saturate 1.4) failed check-b326-f 5b on every
+  theme: the small `--soft` labels ("Display & motion", "In this room", "3 of
+  4 ready", Stats' week switch) at 4.0-4.48:1, and on Sapphire the Stats
+  numbers (`.stat-num`, the raw theme colour `#2F6BFF`) at 2.8 against 3:1.
+  Three moves, all in place: the fill came down to `.7` of `(36,40,48)`,
+  `--soft` went `#8E9BA5` -> `#A0ACB6` app-wide (secondary text a step
+  lighter everywhere, which suits the "more white" direction), and
+  `.stat-num` is the theme colour 80% with 20% white (same hue - check-b325-e
+  compares hues). 5b passes on all eight themes. **Any further lightening of
+  the glass has to run 5b.**
+- **A DARK-ENOUGH GREY, NOT A DARK CARD.** check-b326-f 5's "page cards
+  <= 40 grey" encoded 326's darkness; it reads `<= 60` now with a note. The
+  rule that stays: a new box takes a token, never a fresh rgba().
+- **The tick draws itself.** `appendPickTick(box)` puts an SVG path
+  (`pathLength=1`) in each unit card's circle on both pickers; picked, the
+  circle becomes a lit bead (a white radial light over the accent, a 3px
+  accent halo) and pops 1.06x on an overshooting curve, and the tick's
+  `stroke-dashoffset` runs 1 -> 0 over .3s after a .12s beat. Unpicked runs
+  back in .14s. The `"✓"` text stays in the box at `font-size:0` for
+  anything that reads it. Reduce motion (app or OS): no transitions. Drag to
+  select's `pick-drag-flip` pop is untouched.
+- **The next test's units carry a mark - only when the app KNOWS.**
+  `nextTestUnits()`: the next test still to sit (`nextTestEntry`, today
+  included), its posted topics (`testTopicsFor` - the Calendar's own table,
+  `TEST_TOPICS`), and every unit a topic starts with ("Penal Code - slides
+  256-578" names Penal Code). A test with nothing posted marks nothing: never
+  a guess off the class day's text, which says what is TAUGHT, not tested.
+  `appendUnitNextTestTag(row, name)` adds `.pick-nexttest` - a small amber
+  "NEXT TEST  Oct 26" (Today / Tomorrow when it is) in the calendar's test
+  amber - in its own grid row `next` (an auto row, zero high on every other
+  card), on the test setup and the Virtual Room host's picker. A label:
+  `pointer-events:none`, so a tap is the card's and a hold still opens the
+  details. On Oct 20 that is Penal Code alone; from Oct 27 (the Nov 2 test
+  has nothing posted) nothing. **Posting a test's topics in `TEST_TOPICS` is
+  all it takes to mark its units.**
+- **Tab icons a step bigger and whiter.** The three line icons (Home,
+  Leaderboard, Calendar) 1.75rem -> 1.95rem on a phone (28 -> 31px), 2.2rem ->
+  2.4rem from 40rem (35 -> 38px); the six-item bar 1.6 -> 1.75rem; tabs you
+  are not on `rgba(255,255,255,.94)` (was .84), the one you are on `#fff`.
+  The Profile character keeps its own size (build 317). One rule set after
+  every older icon rule, scoped with `:not(.bottomtab-icon-avatar)
+  :not(.bottomtab-start-icon)`. **The bar does not grow**: the extra size is
+  taken back as a -.1rem margin above and below each icon. On the first pass
+  the bar grew 3-4px, and on an iPad Pro 11" in landscape (and a 17 Pro Max
+  at 85% zoom on its side) the daily "?" bubble - which parks above the bar
+  there - landed 27px from its button, where check-fixes holds it to 24. On a
+  320px phone the bar is 296px with every tab inside it, Home and the unit
+  screen alike.
+- **The lobby's switch is back, Invite to its left, one line under it.** 326's
+  two-option segment (`.vroom-access-seg`) is gone. `.vroom-roster-tools` is a
+  grid: phone `"invite open" "line line"`, tablet `"invite line open"`.
+  `.vroom-open-switch` is a `role=switch` button round the app's `.nsw` track
+  (so `nswHost` gives it the Liquid Glass lens like every Settings switch),
+  named "Open to class". The line is ONE sentence that never changes with the
+  state - "On, anyone in 26E can find this room and join." - so it can never
+  be read as the opposite of the switch (the 325 complaint was a state printed
+  where a name should be; 326's was that each choice had its own sentence).
+  Off is the default and needs no sentence. On a 320px phone Invite friends
+  is its icon alone (`.vroom-invite-word` hidden; the aria-label stays).
+- **No green ring on a ready player.** The card keeps its ordinary edge and
+  shadow; `::before` (the old left strip, already transparent) becomes a full
+  faint green wash (9% fading to nothing), and the chip says Ready in soft
+  green `#8EF0BF` on a 14% green tint with a 1px inner green line and a
+  CSS-drawn tick (hidden on a 320px phone, where names were already short).
+  In a crowded room the dot stays solid green with a small glow. check-b326-f
+  1 was rewritten to the decision ("reads as ready, arrives whole, no ring").
+- **Save and exit is the app's blue, deep.** `#2B5AAE`, pressed `#224A8F`,
+  lip `rgba(170,205,255,.55)`; same matte recipe, no border, Quit's height.
+  White on it 6.6:1. Why blue: green is a right answer and a ready player
+  here, so on a pause sheet it read as a verdict; blue is what the app already
+  uses for what it keeps for you and is calm about (the XP bar `#3D8BFF`, the
+  sync code, the slider fill). Muted so it stays quieter than Resume's white.
+  Resume white, Save and exit blue, Quit black. No gate asserted green
+  (check-b326-a 4, check-behaviour 321h/320h ask only "opaque, not Quit's
+  colour, readable, darker pressed") - all still hold.
+- **The sky, a smidge smidge less.** Same trim as 326: `SKY_TILES` 42 -> 38
+  dust and 94 -> 86 stars off the END of each seeded run (every star that
+  stays is where it was), `SKY_ALPHA` .96 -> .88. Measured on Home at
+  440x956@3 with everything else hidden: 430,813 -> 362,657 (84% of 326, 73%
+  of 325). check-b326-g 2 now asks 60-92% of 325.
+- **Gates moved, each with a note in place:** check-b326-f 1 (ready: chip and
+  wash, no ring), 2 (one switch, one name, one unchanging line), 5 (cards
+  `<= 60` grey); check-b326-g 2 (60-92%); check-behaviour 266 (the lobby
+  switch), 323v (Invite and the switch in the header), 324g (the lobby
+  contributes one switch again, a tap turns it on).
+
+Screens for her (before = 326, after = this branch), 440x956 and 834x1194:
+`/tmp/claude-0/b327d/before/` and `/tmp/claude-0/b327d/a2/` (unit screen,
+Penal Code card), `/tmp/claude-0/b327d/b326/` and `/tmp/claude-0/b327d/a3/`
+(lobby, pause), `/tmp/claude-0/b327d/a4/` (Home with the new tab icons).
+
+Open questions:
+- **The bar itself is still saturate 1.8 at 80%; the cards 1.2 at 70%.** They
+  read as one material in Chromium (whose backdrop blur is not faithful);
+  judge it on a phone. If the cards look flatter than the bar, the token is
+  the one place to turn it - and 5b has to pass after.
+- **`--soft` changed app-wide**, the one change here that reaches screens no
+  gate in this package looked at. It only gets lighter, so contrast only
+  improves; worth a glance at anything that set a hierarchy against it.
+- **The next-test mark matches by name prefix.** A topic posted as anything
+  other than the unit's own name ("Arrest" for "Arrest, Search, and Seizure")
+  marks nothing. Post topics starting with the unit's name.
+- **The Calendar's `--cal-glass` is still its own** (b326 open question) -
+  not pointed at the new tokens here; it is the calendar package's screen.
+
+Gates run on this branch (one Chromium at a time): check-b327-d ALL PASS
+(fails on 326 as described); check-b326-f ALL PASS (sections 1, 2, 5 moved;
+5b contrast on all eight themes); check-b326-g sky PASS; check-b326-a ALL
+PASS; check-b325-f and check-b325-j ALL PASS (the lens); check-behaviour
+266, 323v, 324g, 321h ALL PASS; check-vroom ALL PASS; check-tours all steps;
+check-fixes --only "17 Pro Max" / "iPad Pro 11" / "iPad mini" all verified,
+"SE (1st" one failure, the known SE 1st gen 568x260 browser GREY BAR that
+326 also fails; sweep-layout --quick 14/14; check-js OK.
+
+### Build 327 (b327e) - rings that say how it went, the strip that follows the filter, a case with square corners and no quilt, rocks out of the crack
+
+Madison: *"Stats tab, why is the accuracy percentage ring color matched? I
+feel like that looked better as grey.. I feel like this tab got worse
+somehow. Recent test, why are the percentage rings color matched to the
+mode? It should be color matched to hundo (gold) or pass green or fail red.
+And then the mode would have that thing as its own color."* *"Test history
+is good ... Just ensure the top numbers are accurate. I also feel like the
+three top numbers could have that same look, like the percentage as a ring
+..."* *"The badge case looks better, the corners of metal though ... are
+rounded edges and don't look right? I also don't like the weird pattern of
+the case on the inside top part. The case with the metal parts and stuff
+still doesn't look right or legit, looks bad and not 3d."* *"Super nova
+crack is cool with the stuff coming out but I thought it would look like
+some of the floating rocks ... the smaller ash mark is bad and can just go
+away, we need it to be combined I guess and the crack needs to be better
+looking. All the progressive cracking could be better too."* Gate:
+`tools/check-b327-e.py` (A-E, `B327E_ONLY=`); every section fails on 326
+(5ce026a), 48 failures.
+
+> **Supersedes** b326a's "a test is its mode's colour" for the RING and the
+> row's wash (the chip keeps the mode's colour), b326a's accuracy ring in
+> `--theme-c2`, b326b's tufted lid (`--case-lid-bg`), b325b's "one corner"
+> radii (the cap's big inner curve, `--cap-ri` 4.25 units), 326c's
+> light-streak motes, and 320e's "the shine starts to break at Amethyst".
+
+#### Stats and Test history
+
+- **THE RING IS THE RESULT, THE CHIP IS THE MODE (`TEST_RESULT_TONE`,
+  `testResultKey(pct, hundos)`, `testResultTone(entry)`).** Gold `#FFD36A`
+  for a hundo or a 100%, green `#5FD99A` at `PASS_MARK` and up, red `#FF7A7A`
+  under it, grey for no score. The ring, the row's faint wash (`--tone`, as
+  before 326) and a test's own page (ring, hero wash, verdict) use it; each
+  unit's bar on a test's page is that unit's OWN result. The mode is the
+  `.thx-chip` alone, in `TEST_MODE_COLOR`. Rows carry `.is-hundo/.is-pass/
+  .is-fail`. `testModeColor` is still there for anything that wants the
+  mode's colour.
+- **The accuracy ring is grey (`NEUTRAL_RING_TONE` `#B4B8BE`, `.stx-ring
+  .is-neutral`).** Accuracy is not a test, so it has no pass/fail colour, and
+  it is not the theme's. Every other Stats number keeps `--theme-c2` (b325e).
+- **"Got worse somehow", looked at against 324 (21b0661):** the differences
+  were Total XP off At a glance (asked for in 325), the ring and rows in
+  mode colours (fixed above), and the sections' darker, more opaque glass -
+  that is b326f's app-wide surfaces ("one family of surfaces"), the glass
+  builder's area, not changed here. **Open: if Stats still reads heavy once
+  the rings are right, it is the surfaces.**
+- **THE STRIP FOLLOWS THE FILTER (`testHistorySummary(list)`).** The three
+  numbers were worked out over every test while the list under them showed
+  only the filter picked, so on Drill they still counted Qualifiers. Now
+  they are the count, `Math.round` of the mean score of the rows that have
+  one, and the summed `testHundosOf` - of exactly the rows listed, repainted
+  with them (`paintSummary` in `paint`). The strip also carries
+  `data-tests/avg/hundos`.
+- **One card: count, ring, hundos.** A 3x2 grid - the two numbers level
+  with the ring's middle (1.6rem mono), the three labels on one line under
+  them, hairlines either side of the ring (a background, so nothing extra in
+  the DOM). The ring is `buildScoreRing(avg, "thx-sum-ring", result tone)`,
+  the same ring as every row; hundos in gold. The first day heading has a
+  little more room under the filters.
+
+#### The badge case (both cases - all of it is `caseKit` CSS)
+
+- **A CORNER PROTECTOR, NOT A ROUNDED CAP.** Each cap had a quarter circle
+  half its width cut out of its free corner and the case's radius on the
+  other: a crescent of metal at every corner, worst at the four by the
+  hinge. Now every corner of every cap is `--cap-ri` (.45 units - a hair),
+  its two outer edges folded over the case's edge (`--cap-lips`: the dark
+  turned-down face and a bright line where the metal turns, `--cap-fold`
+  1.35 units), a ridge pressed diagonally from the corner (`--cap-ridge`, lit
+  toward the top left), the rivet a little in from the fold. The wall guards'
+  feet take the same `--cap-ri` (so check-b325-b D - foot = the cap's inner
+  radius - still holds). No clip-path (it would cut off the seat shadow).
+- **No quilt (`--case-lid-bg`, 5 layers).** A plain padded cushion: a broad
+  dome of light upper-middle, shade in toward the frame and at the foot by
+  the hinge, the velvet, the base. The nameplate/label and the two stitch
+  rows are unchanged.
+- **A SOLID (`--case-recess`, `--case-rim`).** The lining is cut down into
+  the tray: its top inner wall in deep shadow (1.6 units down), the sides
+  shaded, the bottom wall catching a sliver of light. The tray's and the
+  lid's top surfaces carry a lit outer edge and a dark inner one. Shadows
+  only, painted once; neutral (check_b232's no blue in the lining).
+- **Measured** (4x CPU, the badge scene's first 15s, two runs each, load
+  ~9): main-thread task time 14.2 / 15.2s against 326's 19.1 / 16.7s, script
+  4.8 / 6.1 against 7.9 / 5.6 - nothing measurably slower; frame counts are
+  load noise here (82-185 on one build).
+
+#### The planet's crack
+
+- **EVERYTHING THAT LEAVES THE CRACK IS ROCK (`scarMotePlan`, `.csc-motes >
+  i.is-rock.rk0-2`).** The 26 motes were light streaks; they are the ring
+  debris' own stone (the `.csc-ringfrag` gradient and its three clip
+  shapes, `rk0/1/2`), 1.4-2.4% of the hero like the debris, their underside
+  still hot from the crack (one radial layer in the same background - no
+  extra element or animation: Home's Supernova still runs 174 animations,
+  as on 326). Same three-box flight (turn/out/look), so check-b326-c C's
+  paths are unchanged; `csc-mote-look` is now unused. The flakes on the
+  scar (`.csc-frag`) and the forming's chips (`.csc-chip`) take the same
+  stone.
+- **ONE CRACK (`SCAR_SHINE_CRAZE` false).** The crazing on the planet's
+  highlight - a web of dark seams, the "smaller ash mark" - is drawn at no
+  stage (Amethyst's `shine` is 0, Supernova's `scarShineWound` is skipped).
+  The branch that runs up into the highlight (`recC`) stays, as one of the
+  crack's own.
+- **A FISSURE, NOT A LOG.** `SCAR_CRACK_WIDE` 1.9 -> 1.45 (`SCAR_CRACK_DEEP`
+  1.45): the walls and lips read again and Amethyst (.70) to Supernova is
+  under twice the width. The seam's spill 6.5 -> 3.4 and halo 2.4 -> 1.8 of
+  its width (`scarSeamSVG`): the wide orange haze was the smudge.
+- **THE LIGHT GROWS RANK BY RANK.** From Platinum a rank's crack carries the
+  same seam (`decorateCrackHero` -> `scarSeam(sc, art, scale)`, the strokes
+  narrowed to the stage's width by `(width / SCAR_CRACK_WIDE)^.6`), faint
+  and still: opacity .34 / .52 / .72 at Platinum / Sapphire / Amethyst
+  (`[data-crack]`), no spill, no breathing. Gold's hairline carries none.
+  `crackFormArm` now draws a rank's seam on with its crack (it was
+  Supernova only), so a rank-up never shows the new light before the new
+  crack.
+- Nothing here changes what a stage MEANS (`CRACK_RANK_STAGE`, reaches,
+  `heroCrackStage`, the forming's timing).
+
+#### Gates
+
+- `tools/check-b327-e.py` A-E (both reference devices). C works the numbers
+  out by hand from its fixture; D reads computed radii and the lining's
+  inset shadow's OFFSET (its blur passed on 326 and was dropped from the
+  measure); E reads the motes' stone against a live `.csc-ringfrag` and the
+  shine's dark cover off the art's own canvas.
+- Moved (each marked "MOVED IN 327"): check-b326-a 3 (ring and wash are the
+  result, the chip the mode), check-b326-b F (a plain padded lid, still
+  stitched), check-behaviour check_b319_shine (the shine keeps 90%+ of its
+  light with only the crack's branch through it - it was "dulled under 85%
+  with crazing"; fails on 326 at 72 against 88).
+- Still green, unchanged: check-b325-b (all six; one iPad run lost the
+  tab's shut frame under load and passed on the rerun, as 326 does),
+  check-b326-c C, check-statsbadges, check-loops (473 loops, 0 seams), and
+  check-behaviour's b324t_stats, b321f_profile, b324s_settings,
+  b324p_unlocks, b242, b317_badge2, b317_badgecase, b318_badges,
+  b319_badges, b319f_casespace, b320c_case, b321c_case, b232, b317_planet,
+  b317_supernova, b318_planet, b318_scar, b320e_cracks, b317_cutend.
+- **Open decisions:** the history strip's ring takes the average's RESULT
+  colour (an 82% average is green) - grey like the accuracy ring is the
+  other reading; Stats' heavier surfaces belong to the glass builder.
+
