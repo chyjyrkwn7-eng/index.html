@@ -9289,6 +9289,10 @@
   [data-theme="dark"] .backtotop{ box-shadow:0 2px 10px rgba(0,0,0,.5); }
   .backtotop.show{ opacity:1; pointer-events:auto; }
   .backtotop[hidden]{ display:none; }
+  /* nothing of the page's own chrome during a cutscene or the rank-up
+     journey (build 327 audit: the arrow stayed up over the road map) */
+  body.cutscene-focus:not(.cutscene-soft) .backtotop.show,
+  body.ru-journey .backtotop.show{ opacity:0; pointer-events:none; }
   .backtotop svg{ width:1.15rem; height:1.15rem; fill:var(--ink); }
   /* Enlarged on iPad, per explicit request — the phone-tuned 2.75rem
      button reads as tiny on a much bigger screen. Reuses the exact same
@@ -123414,6 +123418,11 @@ function buildRanksTab(){
   function rankPct(key){
     const rule = TIER_UNLOCKS[key];
     if(!rule) return 0;
+    /* a rank you hold is reached, however you hold it - build 314's rank
+       floor keeps a rank whose level the new ladder put higher, and the
+       map drew it locked with an unlit road (build 327 audit) */
+    const ki = TIER_ORDER_FULL.indexOf(key);
+    if(ki >= 0 && ki <= heldIndex && !(rankUpView && ki > rankUpView.idx)) return 1;
     const bad = (rule.badges || 0) > 0 ? badgesNow / rule.badges : 1;
     const lvl = (rule.level || 0) > 0 ? levelNow / rule.level : 1;
     let pct = Math.min(1, bad, lvl);
