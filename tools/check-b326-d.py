@@ -129,6 +129,14 @@ TALK = r"""async (o) => {
       const p = [...el.querySelectorAll('.nt-prop')].filter(x => !x.classList.contains('is-out') && !x.classList.contains('is-prepped')).pop();
       const snap = { i: out.lines.length - 1, kind: null };
       if(p){
+        // Build 327: wait for the slide's own entrance (staggered rows) to land
+        // before measuring - a loaded machine measured cards mid-rise and read
+        // three rows where there are two. Endless loops (pans, idles) are ignored.
+        for(let w = 0; w < 40; w++){
+          const moving = p.getAnimations({ subtree: true }).filter(a => a.playState === 'running' && isFinite((a.effect && a.effect.getComputedTiming().endTime) || Infinity));
+          if(!moving.length) break;
+          await wait(100);
+        }
         const stageR = el.querySelector('.nt-stage').getBoundingClientRect();
         snap.cap = (p.querySelector('.nt-cap') || {}).textContent || '';
         snap.text = (p.innerText || '').replace(/\s+/g, ' ').slice(0, 400);
