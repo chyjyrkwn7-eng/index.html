@@ -71,7 +71,7 @@ SCENARIOS = [
      "setup": "showHome(); startNovaReturnTour()",
      "note": "the main menu's tips, then the planet, Profile, the calendar"},
     {"key": "modeselect", "flag": "seenModeSelectTour", "source": "showModeSelect",
-     "setup": "showModeSelect()", "note": "Drill / Exam / Review / Virtual Room"},
+     "setup": "showModeSelect()", "note": "Drill / Quiz / Review / Virtual Room"  # MOVED IN 327 (b327k)},
     {"key": "unitselect", "flag": "seenUnitSelectTour", "source": "showSetup",
      "setup": "cfg.mode='drill'; showSetup()", "note": "unit cards, the count, Start"},
     {"key": "vroomunits", "flag": "seenUnitSelectTour", "source": "showVirtualRoomSetup",

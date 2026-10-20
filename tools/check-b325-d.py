@@ -252,10 +252,12 @@ def check_whatsnew(br):
     # Qualifier is the one renamed mode, and the recap row is gone.
     # MOVED IN 327 (b327g): "Exams name 'qualifier' is not the move" - the
     # row is Exam again.
-    adds = [n for n, rx in (("Exam", r"\bExam\b"), ("message him", r"Message Nova|message"),
+    # MOVED IN 327 (b327k): "The name 'exam' is not it. I prefer quiz" - the
+    # row is Quiz.
+    adds = [n for n, rx in (("Quiz", r"\bQuiz\b"), ("message him", r"Message Nova|message"),
                             ("challenge him", r"Challenge Nova|Sheriff"), ("study hours", r"study time|study hours"))
             if re.search(rx, " ".join(r["rows"]), re.I)]
-    check("Version 9's real additions are in it: Exam as a real test, messaging and challenging Nova, study hours",
+    check("Version 9's real additions are in it: Quiz as a real test, messaging and challenging Nova, study hours",
           len(adds) == 4, adds)
     ctx.close()
 
@@ -410,20 +412,24 @@ def check_qualifier(br):
       const out = { n: paths.length, seal: paths.some(d => (d.match(/Q/g) || []).length >= 10),
         solid: s.querySelectorAll('.modeiconsolid').length, check: !!s.querySelector('.modeiconcheck'),
         shield: paths.some(d => /^M12 2\\.2l8\\.1 3/.test(d)), fill: getComputedStyle(s.querySelector('.modeiconsolid') || s).fill };
-      const rn = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /^Exam/.test(i.title));
+      const rn = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /^Quiz/.test(i.title));
       out.pencil = !!s.querySelector('g[transform^="rotate(45"]');
-      /* MOVED IN 327 (b327h): Drill's target with one arrow struck dead
-         centre - the inner ring, the arrow's shaft starting at its centre. */
-      const ring = s.querySelector('circle'), shaft = s.querySelector('.modeiconarrow');
-      out.arrow = !!(ring && shaft && s.querySelectorAll('.modeiconarrow').length >= 3 &&
-        (shaft.getAttribute('d') || '').startsWith('M' + ring.getAttribute('cx') + ' ' + ring.getAttribute('cy')));
+      /* MOVED IN 327 (b327k): a quiz card - a rounded card, a question
+         mark in it with its solid dot, and an answer blank under it. No
+         arrow (327h's target), no pencil, no shield, no seal. */
+      out.arrow = !!s.querySelector('.modeiconarrow');
+      out.card = paths.some(d => /^M6\\.6 2\\.6h10\\.8a3 3 0 013 3/.test(d));
+      out.question = !!s.querySelector('.modeiconquestion');
+      out.dot = !!s.querySelector('circle.modeiconsolid');
+      out.blank = !!s.querySelector('.modeiconblank');
       try{ const ic = rn.icon(); out.notes = ic.classList.contains('modeicon-exam'); }catch(e){ out.notes = false; }
       s.remove(); return out; }""")
-    # MOVED IN 327 (b327h): "Exam as an underlined pencil is not the move ...
-    # feel like drill but without the answer retry when wrong." The mark is
-    # Drill's target with one arrow in it; no pencil, no shield, no seal.
-    check("modeIcon('exam'): a target with one arrow in its centre; not the pencil, the shield or the seal; the Version 9 note uses it",
-          not r.get("seal") and r.get("arrow") and not r.get("pencil") and not r.get("shield") and r.get("notes"), r)
+    # MOVED IN 327 (b327k): "I prefer quiz and make the icon look better" -
+    # the mark is a quiz card (a ? over an answer blank); not 327h's
+    # target and arrow, the pencil, the shield or the seal.
+    check("modeIcon('exam'): a quiz card, a ? with its dot over an answer blank; not the arrow, the pencil, the shield or the seal; the Version 9 note uses it",
+          not r.get("seal") and not r.get("arrow") and r.get("card") and r.get("question") and r.get("dot")
+          and r.get("blank") and not r.get("pencil") and not r.get("shield") and r.get("notes"), r)
     ctx.close()
 
 

@@ -24698,3 +24698,48 @@ code in the card, no `progress` read, nothing near-matches).
 - **Not done, and Madison's call:** names already duplicated on the board
   are left alone (nobody is made to rename), and a hidden account (rankings
   off, no row) cannot be checked against.
+
+### Build 327 (b327k) - Quiz, and a quiz card for its mark
+
+Madison, on the mode screen: *"The name 'exam' is not it. I prefer quiz and
+make the icon look better.."* (Madison is he/him; never put his name in app
+text.)
+
+> **Supersedes** b327g's "the name is Exam again" and b327h's target-and-arrow
+> mark. **Nothing stored changed**: the mode is still `"exam"` in `cfg.mode`,
+> `store.opts`, `runMode`, test history, saved runs and the Virtual Room.
+> Only `modeTitleOf("exam")` and the copy say Quiz.
+
+- **The name is Quiz** wherever the app shows the mode: `modeTitleOf` NAMES
+  (so the mode card, the start sheet, "Begin quiz", "Start quiz, N
+  questions", LOADING, the chips, the results, Stats and Test history's
+  filter and rows, the save-a-test offer all follow), `ACTIVITY_TEXT`
+  ("In a Quiz" / "Taking a Quiz"), the counter ("— quiz, question 2 of
+  12", "quiz complete"), Version 9's note ("Quiz, A Real Test") and the
+  Version 8 save-a-test line, What's New's modes row, Nova's modes line and
+  his chat reply (his keyword regex also hears "quiz"), the mode tooltip,
+  `STAT_MEANINGS`, the empty states, the meta descriptions and the splash.
+  A history label ending " — Quiz" is stripped like Exam and Qualifier were.
+  Grammar checked: "a Quiz", "a quiz", "quizzes".
+- **Left as Exam on purpose**: older version-history entries (6.0's "Exam",
+  3.0's "Exam Mode" - history), the calendar's "Final Exams" / "Final exam"
+  (the academy's finals, not this mode), comments and the question bank.
+- **The mark is a quiz card** (`modeIcon("exam")`): a rounded card (the
+  1.6-stroke family), a question mark (`.modeiconquestion`) with its solid
+  dot (`circle.modeiconsolid`), and an answer blank under it
+  (`.modeiconblank`). Plain paths, no group transform. Still orange
+  `#FF9A3C`. Ink .254 and width 73 against Drill's .226 / 73
+  (check_b323u's presence rule). Review's two cards with bars and this one
+  card with a ? read apart at card size.
+- **Rejected candidates**, rendered at 24/48/96 beside Drill, Review and the
+  Virtual Room and on the real mode screen: a speech bubble with ? (the chat
+  button is a bubble), a multiple-choice list (reads as a list icon), a ?
+  in a tile or ring (reads as help), the card with a solid answer bar, the
+  card with A B C dots (crowded at card size). Sheet:
+  `/tmp/claude-0/b327k/quiz/candidates.png`.
+- Gates moved, each marked "MOVED IN 327 (b327k)": check-b325-d (What's New
+  says Quiz; d6 the quiz card), check-b326-d d6 (the quiz card, plain paths,
+  no arrow / pencil / seal / ring-with-tick), check-behaviour b303, b320f_nova
+  and b324m (Quiz, "Begin quiz", "Start quiz", the counter, history chips),
+  check-b325-e and check-b327-e (filter and chip names), check-chat (What's
+  New says quiz), check-savetest (the offer says Quiz), check-tours' note.

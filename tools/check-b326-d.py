@@ -392,7 +392,10 @@ def check_qualifier_icon(br):
     # needs to give a cool unique vibe but also feel like drill but without
     # the answer retry when wrong." Drill's two rings with one arrow struck
     # dead centre, the outer ring broken where it goes in.
-    print("\nd6. Exam's mark: a target with one arrow in it (no pencil, no seal, no ring-with-tick), and the same mark everywhere it appears")
+    # MOVED IN 327 (b327k): "The name 'exam' is not it. I prefer quiz and make
+    # the icon look better" - a quiz card: a ? with its solid dot over an
+    # answer blank. No arrow, no pencil, no seal, no ring-with-tick.
+    print("\nd6. Quiz's mark: a quiz card, a ? over an answer blank (no arrow, no pencil, no seal, no ring-with-tick), and the same mark everywhere it appears")
     for (w, h, dev) in DEVS:
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
@@ -402,23 +405,26 @@ def check_qualifier_icon(br):
           out.seal = paths.some(d => (d.match(/Q/g) || []).length >= 10); out.tails = !!ref.querySelector('.modeiconsolid');
           out.ring = paths.some(d => /A\\s*8\\.\\d/.test(d)); out.tick = !!ref.querySelector('.modeiconcheck');
           out.pencil = !!ref.querySelector('g[transform^="rotate(45"]') && !!ref.querySelector('.modeiconsolid');
-          /* the target: an inner ring (a circle) and the outer ring as an arc broken for the shaft */
-          const inner = ref.querySelector('circle'), arrows = [...ref.querySelectorAll('.modeiconarrow')];
-          const shaft = arrows[0] && arrows[0].getAttribute('d') || '';
-          out.target = !!inner && paths.some(d => /A\\s*7\\.9 7\\.9 0 1 1/.test(d));
-          out.arrow = arrows.length >= 3 && !!inner && shaft.startsWith('M' + inner.getAttribute('cx') + ' ' + inner.getAttribute('cy'));
-          out.drillish = !!inner && modeIcon('drill').querySelectorAll('circle').length === 2 && Math.abs(parseFloat(inner.getAttribute('r')) - 4.5) < 1;
+          /* MOVED IN 327 (b327k): the quiz card - a rounded card, the ?'s
+             stroke, its solid dot and the answer blank; no arrow left. */
+          out.arrow = !!ref.querySelector('.modeiconarrow');
+          out.card = paths.some(d => /^M6\\.6 2\\.6h10\\.8a3 3 0 013 3/.test(d));
+          out.question = !!ref.querySelector('.modeiconquestion');
+          out.dot = !!ref.querySelector('circle.modeiconsolid');
+          out.blank = !!ref.querySelector('.modeiconblank');
+          out.group = !!ref.querySelector('g[transform]');
           showModeSelect(); await wait(400);
           out.picker = sig(document.querySelector('.modecard .modeicon-exam'));
           out.news = (() => { const it = WHATS_NEW_320.find(x => x.key === 'modes'); if(!it) return ''; const row = introRow(it.icon || it.glyph, it.color, it.title, it.body); return sig(row.querySelector('svg.modeicon-exam')); })();
-          out.notes = (() => { const it = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /^Exam/.test(i.title)); try{ return sig(it.icon()); }catch(e){ return ''; } })();
+          out.notes = (() => { const it = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /^Quiz/.test(i.title)); try{ return sig(it.icon()); }catch(e){ return ''; } })();
           out.slide = sig(novaModeRow().querySelector('.modeicon-exam'));
           return out; }""")
         ctx.close()
         same = all(r.get(k) == r.get("ref") for k in ("picker", "news", "notes", "slide"))
-        check("%s modeIcon('exam'): Drill's target with one arrow struck in its centre - no pencil, no seal, no ring-with-tick" % dev,
-              r.get("target") and r.get("arrow") and r.get("drillish") and not r.get("pencil") and not r.get("ring") and not r.get("tick") and not r.get("seal"),
-              {k: r.get(k) for k in ("target", "arrow", "drillish", "pencil", "ring", "tick", "seal")})
+        check("%s modeIcon('exam'): a quiz card, a ? with its dot over an answer blank, plain paths - no arrow, no pencil, no seal, no ring-with-tick" % dev,
+              r.get("card") and r.get("question") and r.get("dot") and r.get("blank") and not r.get("group")
+              and not r.get("arrow") and not r.get("pencil") and not r.get("ring") and not r.get("tick") and not r.get("seal"),
+              {k: r.get(k) for k in ("card", "question", "dot", "blank", "group", "arrow", "pencil", "ring", "tick", "seal")})
         check("%s ...the same mark on the mode picker, What's New, Version 9's notes and Nova's modes slide" % dev, same and bool(r.get("ref")),
               {k: (r.get(k) or "")[:30] for k in ("ref", "picker", "news", "notes", "slide")})
 
