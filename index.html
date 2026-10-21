@@ -1760,18 +1760,28 @@
   .nt-talk{ flex:0 0 auto; position:relative; display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto;
     grid-template-areas:"bubble bubble" "nova hint"; align-items:end; column-gap:.5rem; }
   .nt-bubble{ grid-area:bubble; position:relative; margin:0 0 .9rem; padding:.95rem 1.1rem 1rem;
-    border-radius:22px; background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.02) 50%, rgba(0,0,0,.12)), rgba(22,26,44,.9);
+    border-radius:22px; background:linear-gradient(0deg, rgba(0,0,0,.12) 0, rgba(0,0,0,.12) var(--nt-flat, 0px), rgba(255,255,255,.02) max(50%, calc(var(--nt-flat, 0px) + 2rem)), rgba(255,255,255,.1) 100%), rgb(22,26,44);
     border:1px solid rgba(255,255,255,.16);
-    box-shadow:0 14px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.14), 0 0 0 1px rgba(183,155,255,.06);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.14); filter:drop-shadow(0 14px 20px rgba(0,0,0,.45));
     transform-origin:18% 100%; opacity:0; transform:translateY(8px) scale(.94);
     transition:opacity .3s ease, transform .42s cubic-bezier(.25,1.4,.4,1); }
   .nt-bubble.is-up{ opacity:1; transform:none; }
   .nt-bubble.bump{ animation:nt-bump .32s cubic-bezier(.3,1.5,.5,1); }
   @keyframes nt-bump{ 0%{ transform:scale(.975); } 100%{ transform:none; } }
-  /* the tail, pointing down at him */
-  .nt-bubble::after{ content:""; position:absolute; left:3.2rem; bottom:-9px; width:18px; height:18px;
-    background:rgba(27,30,50,.96); border-right:1px solid rgba(255,255,255,.16); border-bottom:1px solid rgba(255,255,255,.16);
-    transform:rotate(45deg); border-bottom-right-radius:4px; }
+  /* THE TAIL IS PART OF THE BUBBLE (build 327), pointing down at him: a
+     square of the bubble's own fill and border, turned 45 degrees with its
+     middle on the bubble's inner edge and clipped to the half outside it,
+     so its fill covers the border where they meet and its edges are the
+     border carried on. It was a different, see-through colour laid whole
+     over the bubble, so half of it showed as a diamond inside. The bubble
+     is opaque now, and where the tail is at its side (a tablet) flat over
+     its last 4.6rem (--nt-flat), so this one colour
+     (rgba(0,0,0,.12) over rgb(22,26,44)) is exactly what it meets, below
+     or beside; the shadow is a filter so it follows the tail too. */
+  .nt-bubble::after{ content:""; position:absolute; left:3.2rem; bottom:-9px; width:18px; height:18px; box-sizing:border-box;
+    background:rgb(19,23,39); border:0 solid rgba(255,255,255,.16); border-right-width:1px; border-bottom-width:1px;
+    transform:rotate(45deg); border-bottom-right-radius:4px;
+    clip-path:polygon(calc(100% + 1px) -1px, calc(100% + 1px) calc(100% + 1px), -1px calc(100% + 1px)); }
   .nt-who{ margin:0 0 .3rem; font-size:.7rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase;
     color:#FFD27A; display:flex; align-items:center; gap:.35rem; }
   .nt-who::before{ content:""; width:.7rem; height:.7rem; background:#FFD27A;
@@ -2075,9 +2085,9 @@
     .nova-talk{ padding-left:calc(env(safe-area-inset-left, 0px) + 2rem); padding-right:calc(env(safe-area-inset-right, 0px) + 2rem); }
     .nt-talk{ grid-template-columns:auto 1fr; grid-template-rows:1fr auto; grid-template-areas:"nova bubble" "nova hint"; column-gap:1.4rem; }
     .nt-nova{ width:20rem; margin-left:-1rem; align-self:end; }
-    .nt-bubble{ align-self:end; margin:0 0 .6rem; max-width:34rem; padding:1.25rem 1.5rem 1.3rem; border-radius:26px; transform-origin:0 70%; }
-    .nt-bubble::after{ left:-10px; bottom:3.2rem; border-right:none; border-bottom:none;
-      border-left:1px solid rgba(255,255,255,.16); border-bottom:1px solid rgba(255,255,255,.16); border-bottom-left-radius:4px; border-bottom-right-radius:0; }
+    .nt-bubble{ align-self:end; margin:0 0 .6rem; max-width:34rem; padding:1.25rem 1.5rem 1.3rem; border-radius:26px; transform-origin:0 70%; --nt-flat:4.6rem; }
+    .nt-bubble::after{ left:-9px; bottom:3.2rem; border-right-width:0; border-left-width:1px; border-bottom-width:1px;
+      border-bottom-left-radius:4px; border-bottom-right-radius:0; clip-path:polygon(-1px -1px, -1px calc(100% + 1px), calc(100% + 1px) calc(100% + 1px)); }
     .nt-text{ font-size:1.32rem; line-height:1.5; }
     .nt-who{ font-size:.8rem; }
     .nt-hint{ justify-self:start; margin-bottom:calc(env(safe-area-inset-bottom, 0px) + 1.6rem); font-size:.92rem; }
@@ -2470,7 +2480,8 @@
      the fill covers the bubble's border where the two join. The text
      goes up from 13.8/12.8px to 16/14.7px. */
   #daily-lock-tip{ position:fixed; z-index:260; display:flex; flex-direction:column; gap:.15rem; padding:.7rem .95rem; border-radius:16px;
-    background:#1E242C; border:1px solid rgba(255,255,255,.16); box-shadow:0 10px 28px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.1);
+    background:#1E242C; border:1px solid rgba(255,255,255,.16); box-shadow:inset 0 1px 0 rgba(255,255,255,.1);
+    filter:drop-shadow(0 10px 14px rgba(0,0,0,.5));
     color:var(--ink, #F2F4F7); font-size:1rem; line-height:1.25; white-space:nowrap; pointer-events:none;
     opacity:0; transform:scale(.92); transition:opacity .18s ease, transform .2s cubic-bezier(.2,.9,.3,1.2); }
   #daily-lock-tip.is-left{ transform-origin:100% var(--caret, 50%); }
@@ -2478,9 +2489,8 @@
   #daily-lock-tip.is-on{ opacity:1; transform:none; }
   #daily-lock-tip b{ font-weight:700; }
   #daily-lock-tip.is-live{ pointer-events:auto; cursor:pointer; border-color:color-mix(in srgb, var(--theme-c1) 55%, transparent);
-    box-shadow:0 10px 28px rgba(0,0,0,.55), 0 0 18px color-mix(in srgb, var(--theme-c1) 30%, transparent), inset 0 1px 0 rgba(255,255,255,.1); }
+    filter:drop-shadow(0 10px 14px rgba(0,0,0,.5)) drop-shadow(0 0 8px color-mix(in srgb, var(--theme-c1) 32%, transparent)); }
   #daily-lock-tip.is-live b{ color:var(--theme-c1); }
-  #daily-lock-tip.is-live::before{ background:color-mix(in srgb, var(--theme-c1) 55%, #1E242C); }
   #daily-lock-tip.is-fresh.is-on{ animation:dq-tip-pop .5s cubic-bezier(.2,.9,.3,1.25) both; }
   @keyframes dq-tip-pop{ from{ opacity:0; transform:scale(.4); } to{ opacity:1; transform:none; } }
   [data-reduce-motion="true"] #daily-lock-tip.is-fresh.is-on{ animation:none; }
@@ -2493,13 +2503,20 @@
   #daily-lock-tip.is-tight{ padding:.5rem .7rem; font-size:.84rem; }
   #daily-lock-tip.is-tight span{ font-size:.78rem; }
   #daily-lock-tip span{ color:var(--soft, #A9B1BC); font-size:.92rem; }
-  #daily-lock-tip::before, #daily-lock-tip::after{ content:""; position:absolute; pointer-events:none; }
-  #daily-lock-tip::before{ background:#41474F; }
-  #daily-lock-tip::after{ background:#1E242C; }
-  #daily-lock-tip.is-left::before{ right:-9px; top:calc(var(--caret, 50%) - 9px); width:9px; height:18px; clip-path:polygon(0 0, 100% 50%, 0 100%); }
-  #daily-lock-tip.is-left::after{ right:-7.4px; top:calc(var(--caret, 50%) - 7.6px); width:8.4px; height:15.2px; clip-path:polygon(0 0, 100% 50%, 0 100%); }
-  #daily-lock-tip.is-above::before{ bottom:-9px; left:calc(var(--caret, 50%) - 9px); width:18px; height:9px; clip-path:polygon(0 0, 100% 0, 50% 100%); }
-  #daily-lock-tip.is-above::after{ bottom:-7.4px; left:calc(var(--caret, 50%) - 7.6px); width:15.2px; height:8.4px; clip-path:polygon(0 0, 100% 0, 50% 100%); }
+  /* THE CARET IS PART OF THE BUBBLE (build 327): a square of the bubble's
+     own fill and border, turned 45 degrees with its middle on the bubble's
+     inner edge and clipped to the half outside it - so its fill covers the
+     bubble's border where they meet, its two edges ARE the border carried
+     on, and the drop-shadow on the bubble (a filter, not a box-shadow)
+     glows round both as one outline. It was two triangles of different
+     slopes, a fixed colour and no glow: the edge thinned towards the base
+     and the caret read as stuck on. 12.73px = 9px out, 18px across. */
+  #daily-lock-tip::after{ content:""; position:absolute; pointer-events:none; box-sizing:border-box; width:12.73px; height:12.73px;
+    background:#1E242C; border:0 solid; border-color:inherit; }
+  #daily-lock-tip.is-left::after{ right:-6.37px; top:calc(var(--caret, 50%) - 6.37px); transform:rotate(45deg);
+    border-top-width:1px; border-right-width:1px; border-top-right-radius:2px; clip-path:polygon(-1px -1px, calc(100% + 1px) -1px, calc(100% + 1px) calc(100% + 1px)); }
+  #daily-lock-tip.is-above::after{ bottom:-6.37px; left:calc(var(--caret, 50%) - 6.37px); transform:rotate(45deg);
+    border-right-width:1px; border-bottom-width:1px; border-bottom-right-radius:2px; clip-path:polygon(calc(100% + 1px) -1px, calc(100% + 1px) calc(100% + 1px), -1px calc(100% + 1px)); }
   [data-reduce-motion="true"] #daily-lock-tip{ transition:none; transform:none; }
   /* (#contextual-info-popup and its pointer line and ring are gone - build 317,
      round three: Home's taps answer in one caption under the planet system,
@@ -82890,7 +82907,9 @@ function showDailyTip(full, compact, opts){
     tip.style.left = Math.round(x) + "px";
     tip.style.top = Math.round(y) + "px";
     /* the caret points at the middle of the "?" whichever side it opened on */
-    tip.style.setProperty("--caret", side === "left" ? Math.round(fr.top + fr.height / 2 - y) + "px" : Math.round(fr.left + fr.width / 2 - x) + "px");
+    tip.style.setProperty("--caret", side === "left"
+      ? (fr.top + fr.height / 2 - Math.round(y) - tip.clientTop).toFixed(2) + "px"
+      : (fr.left + fr.width / 2 - Math.round(x) - tip.clientLeft).toFixed(2) + "px");
     requestAnimationFrame(() => tip.classList.add("is-on"));
     const outside = e => { if(!tip.contains(e.target)) close(); };
     const close = () => {
