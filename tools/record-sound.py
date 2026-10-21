@@ -120,6 +120,16 @@ SEED_LS = ("try{['class26e.freshstart','1','class26e.frame.ok','go-live-1','clas
            ".reduce((a,v,i,l)=>{ if(i%%2===0) localStorage.setItem(v,l[i+1]); return a; },0);"
            "localStorage.setItem('class26e.drill.v1', %s);}catch(e){}") % json.dumps(ACCOUNT)
 
+# A brand-new install: none of the account, none of "seen" - only the keys
+# that would otherwise put a one-off notice over the walk.
+SEED_FRESH = ("try{['class26e.freshstart','1','class26e.frame.ok','go-live-1','class26e.weekrecap.v1','9999-12-31',"
+              "'class26e.penal55124.seen','1','class26e.penal124256.seen','1','class26e.penal256578.seen','1']"
+              ".forEach((v,i,l)=>{ if(i%2===0) localStorage.setItem(v,l[i+1]); });}catch(e){}")
+FRESH_SETUP = r"""() => {
+  document.getElementById('splashscreen')?.remove();
+  try{ __stub(); fbDb = window.__fakeDb; if(window.__osr0) onSnapshotResilient = window.__osr0; }catch(e){}
+}"""
+
 # ---------------------------------------------------------------- the audio
 REC_AUDIO = r"""
 (() => {
@@ -291,13 +301,13 @@ START_DRILL = r"""(unit) => {
 class Rec:
     """One page, one clip: prep in real time, then frames on the page's clock."""
 
-    def __init__(self, pw, budget):
+    def __init__(self, pw, budget, mode="used"):
         w, h, dpr = DEVICES[DEV]
         self.w, self.h = w, h
         self.br = pw.chromium.launch(executable_path=CHROME, args=["--no-sandbox", "--autoplay-policy=no-user-gesture-required", "--force-device-scale-factor=%d" % dpr])
         self.ctx = self.br.new_context(viewport={"width": w, "height": h}, device_scale_factor=dpr)
         self.ctx.add_init_script(FAKE_FS)
-        self.ctx.add_init_script(SEED_LS)
+        self.ctx.add_init_script(SEED_FRESH if mode == "fresh" else SEED_LS)
         self.ctx.add_init_script(REC_AUDIO.replace("%BUDGET%", str(budget)))
         pg = self.pg = self.ctx.new_page()
         self.errs = []
@@ -307,7 +317,7 @@ class Rec:
                                                           body='{"build":"%s","frameId":"","note":""}' % BUILD))
         pg.goto(URL)
         pg.wait_for_timeout(2600)
-        pg.evaluate(SETUP)
+        pg.evaluate(FRESH_SETUP if mode == "fresh" else SETUP)
         pg.evaluate(LOG_PLAYS)
         self.cdp = self.ctx.new_cdp_session(pg)
         self.ff = None
@@ -808,6 +818,88 @@ AT_WALL = """() => {
   try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){}
   saveStore(); return levelStateFor(store); }"""
 
+NOVA_ADV = """() => { const el = document.getElementById('nova-intro'); if(!el || !el.__nova) return null;
+  const n = el.__nova; return { i: n.index, c: n.count, typing: n.typing, sig: !!el.querySelector('.nt-signal:not(.is-found)') }; }"""
+
+
+def nova_talk(r, read=1.6, max_sec=420):
+    """Let him say every line at his own pace, hold it long enough to read,
+    then a real tap on his bubble (the Goodbye / Let's go button on the last)."""
+    t_end = len(r.times) + max_sec * FPS
+    last = None
+    while len(r.times) < t_end:
+        st = r.js(NOVA_ADV)
+        if not st:
+            return
+        if st["sig"] or st["typing"]:
+            r.frame(); continue
+        if st["i"] != last:
+            last = st["i"]; r.wait(read)
+            continue
+        if st["i"] >= st["c"] - 1:
+            r.tap("document.querySelector('#nova-intro .nt-go')"); r.wait(.8)
+            last = None
+        else:
+            r.tap("document.querySelector('#nova-intro .nt-bubble')"); r.wait(.25)
+
+
+def tour_through(r, read=1.6, max_steps=14):
+    for _ in range(max_steps):
+        r.until("!!document.getElementById('tour-next')", 8)
+        if not r.js("() => !!document.getElementById('tour-next')"):
+            return
+        n = r.js("() => (document.getElementById('tour-tooltip') || {}).textContent.length || 80")
+        r.wait(min(6, n / 72 + read))
+        r.tap("document.getElementById('tour-next')", max_sec=2); r.wait(.5)
+
+
+def nova_new(r, out):
+    """A brand-new install: Welcome, I'm new here, the check, What's New,
+    the class, a username, a character, all set, GENERATING PROFILE, then
+    Nova's introduction and the main-menu tooltips."""
+    pg = r.pg
+    r.start(out)
+    r.wait(1.5)
+    r.tap("document.querySelector('.cosmic-welcome-btn.welcome-new')"); r.wait(1.4)
+    r.tap("document.querySelector('.signupcheck-panel .signupcheck-go')"); r.wait(1.6)
+    r.tap("document.querySelector('.releasenotes-panel .next.playbtn')"); r.wait(1.6)
+    r.tap("document.querySelector('.welcomeintro-panel .next.playbtn')"); r.wait(1.4)
+    r.tap("document.querySelector('.classselect-panel .modecard')"); r.wait(.8)
+    r.tap("document.querySelector('.classselect-panel .next.playbtn')"); r.wait(1.0)
+    r.tap("document.querySelector('.onboarding-shortform-panel .searchbox')"); r.wait(.4)
+    for ch in "Madison":
+        pg.keyboard.type(ch); r.wait(.12)
+    r.wait(.8)
+    r.tap("document.querySelector('.onboarding-shortform-panel .next.playbtn')"); r.wait(1.2)
+    r.until("!!document.querySelector('.charselect-panel .avatarchar-option')", 6)
+    r.tap("document.querySelectorAll('.charselect-panel .avatarchar-option')[2]"); r.wait(.8)
+    r.tap("document.querySelectorAll('.charselect-panel .avatarchar-option')[0]"); r.wait(1.0)
+    r.tap("document.querySelector('.charselect-panel .next.playbtn')"); r.wait(1.4)
+    r.tap("document.querySelector('.onboarding-shortform-panel .next.playbtn')"); r.wait(.5)
+    r.until("!document.getElementById('genprofile-overlay') && !!document.getElementById('nova-intro')", 30, then=.5)
+    nova_talk(r)
+    tour_through(r)
+    r.wait(2.5)
+
+
+def nova_existing(r, out):
+    """An account from before him (Silver, three badges): Home, the signal,
+    his introduction and recap ending in his goodbye, the What's New card,
+    then the three returning tips."""
+    r.js(SEED_RANK, "ranger")
+    r.js("""() => { store.novaMet = 0; try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){}
+      saveStore(); localStorage.setItem('class26e.intro.seen', '4'); }""")
+    r.wake()
+    r.start(out)
+    r.js("() => showHome()")
+    r.until("!!document.getElementById('nova-intro')", 15, then=.2)
+    nova_talk(r)
+    r.until("!!document.querySelector('#intro-pop .next, #intro-pop button')", 10, then=5.5)
+    r.tap("Array.from(document.querySelectorAll('#intro-pop button')).find(b => /got it/i.test(b.textContent))"); r.wait(1)
+    tour_through(r)
+    r.wait(2.5)
+
+
 SCENARIOS = {
     "home-idle": (home_idle, 60, "Home on its own for 20s: the ambience he loves, untouched"),
     "results-hundo": (results(0), 150, "a real Identity Crimes drill, every answer right: count, grade, XP box, bar, the hundo effect"),
@@ -837,6 +929,8 @@ SCENARIOS = {
     "lobby": (lobby, 120, "a Virtual Room: Host, Match settings, a classmate joining and readying, Ready up, the countdown"),
     "selections": (selections, 150, "the mode, units ticked, untick, drag-select, the start sheet's switches and slider, Settings switches, Customize picks"),
     "chat": (chat, 90, "the chat dock: its tabs, a group chat, a message sent, a classmate answering"),
+    "nova-new": (nova_new, 600, "a brand-new install: sign-up, GENERATING PROFILE, Nova's introduction, the main-menu tips", "fresh"),
+    "nova-existing": (nova_existing, 600, "an account from before Nova: his signal, introduction and recap, What's New, the returning tips"),
     "test": (test, 120, "a drill from LOADING TEST: a wrong answer, then right answers into the 10-in-a-row streak pop"),
 }
 
@@ -856,9 +950,10 @@ SRV = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), functools.partial(Q, 
 threading.Thread(target=SRV.serve_forever, daemon=True).start()
 URL = "http://127.0.0.1:%d/index.html" % PORT
 
-fn, budget, _ = SCENARIOS[name]
+fn, budget = SCENARIOS[name][:2]
+mode = SCENARIOS[name][3] if len(SCENARIOS[name]) > 3 else "used"
 with sync_playwright() as pw:
-    r = Rec(pw, budget)
+    r = Rec(pw, budget, mode)
     fn(r, out + ".video.mp4")
     log = r.finish(out)
 SRV.shutdown()

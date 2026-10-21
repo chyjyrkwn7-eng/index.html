@@ -25168,3 +25168,32 @@ background sound is the only thing I like."*
 - The timer's tock is C5 against the tick's D5 (a fourth was too far for
   check-sound's "the metric can fail: tick vs tock" control, .854).
 - Gates: check-sound, check-b327-a, check-b327-j ALL PASS.
+
+### Build 327 (round 5) - the road walks chords, the last lead voices rebuilt in bells
+
+Madison: *"The sound of the road map progress is not the move, it's still
+not great. Please get these sounds perfected. All of them."*
+
+- **`rank.road.fill` is a chord progression, not a rising tone.** The fill's
+  length (`opts.dur`, clamped .8-4s) is three parts, Dm, Bb, C: each a pad
+  whose filter opens with the light, a thrum walking root, fifth, octave,
+  fifth, and one chime on its top note (A4, D5, E5); air follows the light,
+  twinkles come in late; at the end a D major arrival (pad, thrum, chimes D5
+  F#5 A5 D6, twinkles F#7 A7). It is the ambience's progression, so a rank
+  arriving reads as Home's music resolving.
+- **Sixteen ids still built on the old lead voice were rebuilt in bells, pad,
+  air and thrum** (`SND_AMB`, "round 5" block): rank.upnext, vr.join,
+  vr.leave, vr.ready, vr.count, vr.go, vr.end, vr.podium, lb.winner,
+  chat.send, ob.step, ob.tooltip, cust.banner, badge.lift,
+  home.flare.ranger, pick.character. No `K.lead`, `duty`, `K.chip` or pluck
+  in them. Their vols are in `SND_AMB_VOL`, re-measured against round 4.
+- **Still on older designs, on purpose** (already in the ambience's
+  language through `sndAmbKit`): the streak tiers, the hundo effects'
+  scores, the character reactions, the secret flare scenes, Home's own taps,
+  the big rank cutscene beats, nova.arrive's harp.
+- **`tools/record-sound.py` records Nova's walkthroughs**: `nova-new` (a fresh
+  install, `SEED_FRESH`/`FRESH_SETUP`, walked by real taps through sign-up,
+  then his introduction at his own pace and the main-menu tips) and
+  `nova-existing` (a Silver account with `novaMet` 0 and What's New owed:
+  signal, introduction and recap, the What's New card, the returning tips).
+  A scenario's fourth tuple field is its Rec mode (`"fresh"`).
