@@ -68295,7 +68295,7 @@ function sndDarkKit(K){
   K.choir = o => { K.vox(Object.assign({ v: "o", v2: "u", a: .6, d: 1.2, g: .03, rev: .5 }, o)); K.vox(Object.assign({ v: "o", v2: "u", a: .6, d: 1.2, g: .03, rev: .5 }, o, { f: sndHz(o.f) * 1.5, g: (o.g || .03) * .6, pan: .4 })); };
   K.dpad = (notes, o) => notes.forEach(n => [-9, 0, 9].forEach(dt => tone0(Object.assign({ f: n, type: "sawtooth", lp: 520, det: dt, a: .5, d: 1.4, g: .011, rev: .45 }, o))));
   /* the older designs' bells, re-spoken one register down as the pluck */
-  K.chime = o => K.syn({ t: o.t, f: down(o.f), f2: o.f2 != null ? down(o.f2) : undefined, gl: o.gl, a: Math.max(.004, o.a || 0), d: Math.min(2.4, (o.d == null ? 1.2 : o.d) * .8), g: (o.g == null ? .05 : o.g) * 1.1, pan: o.pan, rev: .45, dly: o.dly == null ? .2 : o.dly * .7 });
+  K.chime = o => K.syn({ t: o.t, f: down(o.f), f2: o.f2 != null ? down(o.f2) : undefined, gl: o.gl, a: Math.max(.004, o.a || 0), d: (o.d == null ? 1.2 : o.d) * .8, g: (o.g == null ? .05 : o.g) * 1.1, pan: o.pan, rev: .45, dly: o.dly == null ? .2 : o.dly * .7 });
   K.twinkle = o => fm0({ t: o.t, f: down(o.f), ratio: 2, idx: .35, idx2: 0, a: .006, d: o.d == null ? .8 : o.d, g: (o.g == null ? .028 : o.g) * .6, lp: 2200, pan: o.pan, orbit: o.orbit, dly: .35, rev: .5 });
   K.tap = o => { tone0({ t: o.t, f: down(o.f), type: "triangle", lp: 1500, a: .002, d: o.d == null ? .16 : o.d, g: (o.g == null ? .04 : o.g) * 1.1, pan: o.pan, rev: .15 }); };
   K.glass = o => tone0(Object.assign({}, o, { type: "sine", f: down(o.f), f2: o.f2 != null ? down(o.f2) : undefined, a: Math.max(.012, o.a || 0), rev: .35 }));
