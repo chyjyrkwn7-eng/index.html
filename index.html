@@ -77760,10 +77760,10 @@ function showSignUpCheck(){
 
   const sub = document.createElement("p");
   sub.className = "hometagline signupcheck-text";
-  sub.style.cssText = "position:relative;z-index:1;";
+  sub.style.cssText = "position:relative;z-index:1;text-wrap:balance;";
   /* Build 327 (b327h): what a second account does, said plainly -
      "people keep making second accounts". */
-  sub.textContent = "Have you used Nova before, on this or another device? Sign in with your code instead. A second account splits your progress in two and puts you on the leaderboard twice.";
+  sub.textContent = "Have you used Nova before, on this or another device? Sign in with your code instead. A second account splits your progress in two.";
   panel.appendChild(sub);
 
   const back = document.createElement("button");
@@ -77788,7 +77788,7 @@ function showSignUpCheck(){
     shown = t;
     panel.dataset.trace = "1";
     sub.textContent = (t.name ? "This device still has " + t.name + "’s account on it." : "This device still has an account on it.")
-      + " Starting again makes a second account: that progress won’t carry over to it, and you’ll be on the leaderboard twice.";
+      + " Starting again makes a second account: that progress won’t carry over to it.";
     back.textContent = welcomeContinueLabel(t);
   };
   back.addEventListener("click", () => {

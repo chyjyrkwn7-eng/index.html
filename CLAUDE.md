@@ -24685,9 +24685,9 @@ code in the card, no `progress` read, nothing near-matches).
   `.cosmic-welcome-hint`, last in the group, so check-positions measures
   Welcome exactly as before (its whole table is unchanged against 7ec06e0).
 - **The check before sign-up** says "A second account splits your progress
-  in two and puts you on the leaderboard twice." (a device still holding
-  an account: "...won't carry over to it, and you'll be on the leaderboard
-  twice."). It and the code screen carry `.lostcode-line`: "Lost your
+  in two." (a device still holding an account: "...won't carry over to
+  it."). The "on the leaderboard twice" half of both was taken out on
+  request ("remove that"); check-b327-i asserts it stays out. It and the code screen carry `.lostcode-line`: "Lost your
   code? Ask an admin for help." (an admin has
   `tools/firestore-admin.py find`; nothing in the app looks a code up).
 - Gates moved: check-sync 9c (a taken name stops; no way on with it).

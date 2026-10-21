@@ -204,8 +204,9 @@ def section_copy(br):
               not r.get("err") and r.get("order") == [
                   "B:Sign in", "P:Already use Nova on another phone or before? Use your sync code.",
                   "B:I’m new here", "P:Never used Nova before."] and r.get("capsVisible"), r.get("order"))
-        check("%s: the check says a second account splits your progress and puts you on the leaderboard twice" % dev,
-              "second account splits your progress" in r.get("check", "") and "leaderboard twice" in r.get("check", ""),
+        # MOVED IN 327: "New to Nova ... 'puts you on the leaderboard twice' part of the description, remove that."
+        check("%s: the check says a second account splits your progress, and nothing about the leaderboard" % dev,
+              "second account splits your progress" in r.get("check", "") and "leaderboard" not in r.get("check", "").lower(),
               r.get("check"))
         check("%s: the check and the code screen both say 'Lost your code? Ask an admin for help.'" % dev,
               "Lost your code? Ask an admin for help." in r.get("check", "") and r.get("checkLost")
