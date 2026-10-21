@@ -5505,7 +5505,10 @@ def check_b267(br):
                     only); a SHEEN is a travelling gradient across it */
                  sheen: (()=>{ const a = getComputedStyle(f, '::after');
                    return a.content === 'none' || a.content === 'normal' ? 'none'
-                     : (/gradient/.test(a.backgroundImage) || a.animationName === 'xp-sheen') ? 'sheen' : 'none'; })() };
+                     /* MOVED IN 327: build 327's level rule (no grandfather) holds this
+                        account at a wall, and a banked bar's ::after is its breath - a
+                        gradient that only fades in place (build 317), not a sheen */
+                     : a.animationName === 'xp-sheen' || (/gradient/.test(a.backgroundImage) && !f.closest('.is-banked')) ? 'sheen' : 'none'; })() };
       /* build 315: the plate is the standing block, the level a line in it */
       out.plate = { bar: !!document.querySelector('.pf-standing .pf-bar, .profile-rankplate .profile-rankplate-bar, .profile-rankplate .profile-rankplate-next') };
       const lv = document.querySelector('.pf-standing .pf-level');
@@ -9075,8 +9078,16 @@ def check_b306_marks(br):
             import re
             n = [float(x) for x in re.findall(r"[\d.]+", c or "")]
             return len(n) >= 3 and n[2] > n[1] + 40 and n[0] > n[1] + 10
-        check(dev + ": the flashcard bar is its own colour - violet, not green or white (build 311)",
-              violet(r.get("cleanBg")) and not green(r.get("cleanBg")), (r.get("cleanBg"), r.get("nowBg")))
+        # MOVED IN 327 (b327g): "if you don't know whether you got it right or
+        # wrong it should be white. I think review flashcards are purple,
+        # let's not do that." A flashcard is never marked right or wrong, so
+        # its seen cards are the plain white block - never green, never violet.
+        def white(c):
+            import re
+            n = [float(x) for x in re.findall(r"[\d.]+", c or "")]
+            return len(n) >= 3 and min(n[:3]) > 200 and max(n[:3]) - min(n[:3]) < 20
+        check(dev + ": the flashcard bar is white - nothing on it says right or wrong (327, was violet in 311)",
+              white(r.get("cleanBg")) and not green(r.get("cleanBg")) and not violet(r.get("cleanBg")), (r.get("cleanBg"), r.get("nowBg")))
         check(dev + ": a wordy card's first choice is clear of the star", (r.get("starGap") or 0) >= 8, r.get("starGap"))
 
 
@@ -15934,7 +15945,10 @@ def check_b317_hundobox(br):
                 const fa = f ? getComputedStyle(f, '::after') : null;
                 return { border: cs(g).borderTopColor, num: p ? cs(p).backgroundImage.slice(0, 60) + '|' + cs(p).color : null,
                   bar: f ? cs(f).backgroundImage.slice(0, 80) : null, shown: +cs(g).opacity,
-                  pcol: p ? cs(p).color : null,
+                  /* MOVED IN 327: through the hand-off the number keeps its effect
+                     ramp under a fill (-webkit-text-fill-color) that starts at the
+                     green it counted up in, so read the fill when it is set */
+                  pcol: p ? ((cs(p).webkitTextFillColor && cs(p).webkitTextFillColor !== cs(p).color && cs(p).webkitTextFillColor !== 'rgba(0, 0, 0, 0)') ? cs(p).webkitTextFillColor : cs(p).color) : null,
                   wash: tl ? +cs(tl).opacity * (gi ? +cs(gi).opacity : 0) : 0,
                   barOver: fa && fa.content !== 'none' ? fa.backgroundColor + '|' + fa.opacity : null }; };
               /* the first frame the card is visible: sampled in the same task the

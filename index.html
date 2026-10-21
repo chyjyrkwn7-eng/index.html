@@ -28380,8 +28380,9 @@
      the font's own room over its capitals, which grows with the number:
      with the shared .75rem under "Grade" the gap read 21px against the XP
      card's 18 on a phone and 23.8 against 19.8 on an iPad (check-results'
-     "the same gap under every heading", 3.5px). .5rem takes that room back. */
-  .rs-screen .rs-grade > .rs-kicker{ margin-bottom:.5rem; }
+     "the same gap under every heading", 3.5px). .5rem takes that room back.
+     Not on a retake's card: its first line is a sentence, not the number. */
+  .rs-screen .rs-grade:not(.rs-retake-note) > .rs-kicker{ margin-bottom:.5rem; }
   .rs-screen .rs-pct.pct{ font-size:4.2rem; line-height:.95; flex-shrink:0; }
   /* THE GRADE NUMBER IS SET, NOT TYPED (build 315): "something about the
      number 100 doesn't look that clean." It was Georgia, whose figures
@@ -103759,7 +103760,9 @@ function showRunRewards(run, hooks, opts){
     /* where the colours are going: the effect's own (the default's gold) */
     let tint = null;
     try{ tint = HFX_TINT[hundoFxInUse()] || null; }catch(e){}
-    const G = [92, 214, 146];
+    /* from the exact green the number and the bars counted up in - a
+       different green here was a one-frame snap as the grade landed */
+    const G = RS_TONE_GREEN.slice();
     const to = rsHex(tint && tint.b || "#F2D38A"), toN = rsHex(tint && tint.g2 || "#F6D58E");
     const green = grade.querySelector(".rs-grade-tone > i.is-green");
     /* the number: its effect ramp under a fill that turns towards the
