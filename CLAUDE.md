@@ -25197,3 +25197,17 @@ not great. Please get these sounds perfected. All of them."*
   `nova-existing` (a Silver account with `novaMet` 0 and What's New owed:
   signal, introduction and recap, the What's New card, the returning tips).
   A scenario's fourth tuple field is its Rec mode (`"fresh"`).
+
+### Build 327 - no What's New list in sign-up
+
+Madison: *"What's new screen through the sign up process listing all the
+what's new stuff is not the move. We aren't gonna do that."* `showWhatsNew()`
+(the `.releasenotes-panel` list of `RELEASE_NOTES[0]`) was reached only from
+sign-up, so it is deleted with its CSS. New order: Welcome -> I'm new here ->
+`showSignUpCheck` -> I'm new, continue -> What This Actually Is (its Back
+returns to the check) -> class -> username -> character -> all set. A new
+account hears the story from Nova; the version history stays in Settings;
+an existing account still gets the What's New card on Home (b327m). Tools
+moved: shoot-flow (no `whats-new` shot), sweep-layout and check-positions
+(dropped from SCREENS / ONBOARDING_SCREENS), check-sync 9b (the check goes on
+to What This Actually Is), record-sound's `nova-new`.

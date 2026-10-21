@@ -108,7 +108,7 @@ def serve():
     return srv, f"http://127.0.0.1:{port}/index.html"
 
 ONBOARDING_SCREENS = {
-    "showWelcome", "showSignUpCheck", "showWhatsNew", "showWelcomeIntro", "showClassSelection",
+    "showWelcome", "showSignUpCheck", "showWelcomeIntro", "showClassSelection",
     "showWelcomeNamePrompt", "showWelcomeCharacterPrompt",
     "showWelcomeCodeEntry", "showWelcomeCodeReveal",
 }

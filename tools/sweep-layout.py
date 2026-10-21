@@ -128,7 +128,7 @@ SCREENS = [
     "showCalendarTab", "showProfile('settings')",
     # the rest
     "showInstallGuide", "showInstallPlatformPicker", "showResetWarning",
-    "showWhatsNew", "showReleaseHistory",
+    "showReleaseHistory",   # (showWhatsNew left sign-up and the app in build 327)
     # (showSoundTest, the hidden sound test page, came out in build 325)
     "showVirtualRoomChoice", "showVirtualRoomSetup",
     # The end of a run (build 315). It needs a run behind it, which is why
@@ -141,7 +141,7 @@ SCREENS = [
 
 # Reached only from Welcome, and only before the account exists.
 ONBOARDING_SCREENS = {
-    "showWelcome", "showSignUpCheck", "showWhatsNew", "showWelcomeIntro", "showClassSelection",
+    "showWelcome", "showSignUpCheck", "showWelcomeIntro", "showClassSelection",
     "showWelcomeNamePrompt", "showWelcomeCharacterPrompt",
     "showWelcomeCodeEntry", "showWelcomeCodeReveal",
 }

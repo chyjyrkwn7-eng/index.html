@@ -854,7 +854,7 @@ def tour_through(r, read=1.6, max_steps=14):
 
 
 def nova_new(r, out):
-    """A brand-new install: Welcome, I'm new here, the check, What's New,
+    """A brand-new install: Welcome, I'm new here, the check,
     the class, a username, a character, all set, GENERATING PROFILE, then
     Nova's introduction and the main-menu tooltips."""
     pg = r.pg
@@ -862,7 +862,6 @@ def nova_new(r, out):
     r.wait(1.5)
     r.tap("document.querySelector('.cosmic-welcome-btn.welcome-new')"); r.wait(1.4)
     r.tap("document.querySelector('.signupcheck-panel .signupcheck-go')"); r.wait(1.6)
-    r.tap("document.querySelector('.releasenotes-panel .next.playbtn')"); r.wait(1.6)
     r.tap("document.querySelector('.welcomeintro-panel .next.playbtn')"); r.wait(1.4)
     r.tap("document.querySelector('.classselect-panel .modecard')"); r.wait(.8)
     r.tap("document.querySelector('.classselect-panel .next.playbtn')"); r.wait(1.0)

@@ -1388,8 +1388,10 @@ with sync_playwright() as pw:
         out.signinOpens = !!document.querySelector('.synccode-entry-panel');
         showSignUpCheck(); await wait(300);
         document.querySelector('.signupcheck-go').click(); await wait(400);
-        out.goOpens = !!document.querySelector('.releasenotes-panel');
-        document.querySelector('.releasenotes-panel .back-link').click(); await wait(300);
+        /* MOVED IN 327: no What's New list in sign-up - the check goes
+           straight on to "What This Actually Is", whose Back returns here */
+        out.goOpens = !!document.querySelector('.welcomeintro-panel') && !document.querySelector('.releasenotes-panel');
+        document.querySelector('.welcomeintro-panel .back-link').click(); await wait(300);
         out.backTo = !!document.querySelector('.signupcheck-panel');
         /* and a device with nothing on it signs up exactly as before */
         store.firstName = 'Newbie'; store.avatarChar = AVATAR_CHARACTERS[0].id;

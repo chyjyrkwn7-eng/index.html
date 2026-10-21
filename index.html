@@ -18545,13 +18545,6 @@
   }
   .installguide-style-plain .installguide-glyph{ width:1.3rem; height:1.3rem; color:inherit; }
   .installguide-glyph{ width:1.3rem; height:1.3rem; color:var(--accent); }
-  .releasenotes-badge{
-    position:relative; z-index:1; display:inline-block; align-self:center; font-family:var(--mono);
-    font-size:.7rem; font-weight:800; letter-spacing:.06em; color:var(--accent-ink);
-    background:var(--accent); padding:.3rem .7rem; border-radius:999px; margin-bottom:.7rem;
-  }
-  .releasenotes-panel{ transition:opacity .2s ease; }
-  .releasenotes-panel.releasenotes-exit{ opacity:0; }
   @media (prefers-reduced-motion:no-preference){
     .panel-enter{ animation:panel-enter-anim .3s ease both; }
   }
@@ -73651,105 +73644,6 @@ function showReleaseHistory(){
   toTop();
 }
 
-function showWhatsNew(){
-  stopTimer(); stopQuestionTimer();
-  meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
-  timerlineEl.hidden = true;
-  appearanceBtn.hidden = true;
-  homeBtn.hidden = true;
-  profileBtn.hidden = true;
-  pauseBtn.hidden = true;
-  countEl.textContent = "";
-  setOnboardingHeader();
-
-  const panel = document.createElement("section");
-  panel.className = "panel home releasenotes-panel";
-  /* back to the check it came through (build 322), not past it */
-  panel.appendChild(buildBackLink("Back", showSignUpCheck));
-  const glow = document.createElement("div");
-  glow.className = "homeglow";
-  glow.setAttribute("aria-hidden", "true");
-  panel.appendChild(glow);
-
-  const badge = document.createElement("p");
-  badge.className = "releasenotes-badge";
-  /* THE BUILD, NOT JUST THE VERSION. "Version 6.0" never changes, so
-     when somebody reports a bug that was already fixed there is no way
-     to tell whether they are running the fix - an installed
-     home-screen app can sit on a cached copy for a long time and looks
-     identical to an up-to-date one. Reported as "the lag is still
-     here, has it not been pushed through yet?" when the fix had been
-     live for twenty minutes. This is the one place in the app that can
-     answer that question without guessing. */
-  badge.textContent = "VERSION " + RELEASE_NOTES[0].version + " \u00b7 BUILD " + APP_BUILD;
-  panel.appendChild(badge);
-
-  const title = document.createElement("p");
-  title.className = "hometitle";
-  title.style.cssText = "position:relative;z-index:1;font-size:1.7rem;";
-  title.textContent = "WHAT'S NEW";
-  panel.appendChild(title);
-
-  const intro = document.createElement("p");
-  intro.className = "hometagline";
-  intro.style.cssText = "position:relative;z-index:1;";
-  intro.textContent = "Nova \u2014 a space-themed study app for 26E, with cloud sync, ranks and badges, and a Liquid Glass interface throughout.";
-  panel.appendChild(intro);
-
-  /* Pulled from RELEASE_NOTES[0].groups directly now, not a separate
-     PRIMARY_FEATURES constant \u2014 this was the actual bug behind the
-     badge correctly reading "VERSION 5.0" while every item shown
-     below it was still the old 4.0 content: two data sources tracking
-     "the current version" independently, exactly like the footer bug
-     fixed just before this one. Same shape (label, items, icon,
-     title, body), so this is a direct swap with no rendering changes
-     needed \u2014 and it means this screen can never drift out of sync
-     with the release notes again on a future version bump. */
-  RELEASE_NOTES[0].groups.forEach(group => {
-    const head = document.createElement("p");
-    head.className = "unlock-section-head";
-    head.style.cssText = "position:relative;z-index:1;text-align:left;margin-top:1.3rem;";
-    head.textContent = group.label;
-    panel.appendChild(head);
-    group.items.forEach(f => {
-      const row = document.createElement("div");
-      row.className = "whatsnew-row whatsnew-row-compact";
-      const icon = document.createElement("span");
-      icon.className = "whatsnew-icon";
-      /* A real color per item now, not the same flat neutral every
-         icon on this screen previously shared \u2014 applied here rather
-         than baked into each icon function itself, since several of
-         those functions (modeIcon specifically) are shared with other
-         screens that already have their own, different color logic
-         and shouldn't be affected by this screen's own choices. */
-      if(f.color) icon.style.color = f.color;
-      icon.appendChild(f.icon());
-      const text = document.createElement("span");
-      text.className = "whatsnew-text";
-      const t = document.createElement("span");
-      t.className = "whatsnew-title"; t.textContent = f.title;
-      const b = document.createElement("span");
-      b.className = "whatsnew-body"; b.textContent = f.body;
-      text.append(t, b);
-      row.append(icon, text);
-      panel.appendChild(row);
-    });
-  });
-
-  const startBtn = document.createElement("button");
-  startBtn.type = "button"; startBtn.className = "next playbtn";
-  startBtn.style.cssText = "margin-top:1.4rem;";
-  startBtn.textContent = "Let's get started";
-  startBtn.addEventListener("click", () => {
-    panel.classList.add("releasenotes-exit");
-    setTimeout(showWelcomeIntro, 200);
-  });
-  panel.appendChild(startBtn);
-
-  stage.replaceChildren(panel);
-  toTop();
-}
-
 /* The cosmic "orbit" hero for the very first screen \u2014 a gradient sphere
    with faint orbit rings and a handful of study-themed icon badges
    floating around it, loosely inspired by the reference: full-bleed,
@@ -77884,7 +77778,11 @@ function showSignUpCheck(){
          next tap be the decision */
       if(t && accountTraceKey(t) !== accountTraceKey(shown)){ showTrace(t); return; }
       signupTraceAck = t ? accountTraceKey(t) : "";
-      showWhatsNew();
+      /* Straight on to the course (build 327): no What's New list in
+         sign-up - "listing all the what's new stuff is not the move".
+         A new account hears the story from Nova; the version history
+         is in Settings. */
+      showWelcomeIntro();
     });
   });
 
@@ -77955,7 +77853,7 @@ function showWelcomeIntro(){
   panel.className = "panel home welcomeintro-panel";
   /* Genuinely missing before \u2014 confirmed directly, no buildBackLink
      call existed anywhere in this function. */
-  panel.appendChild(buildBackLink("Back", showWhatsNew));
+  panel.appendChild(buildBackLink("Back", showSignUpCheck));
 
   const title = document.createElement("h1");
   title.className = "welcomeintro-title";

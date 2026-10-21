@@ -261,9 +261,9 @@ def main():
                 page.click(".synccode-entry-panel .back-link"); page.wait_for_timeout(400)
                 # the create-account path
                 page.click(".cosmic-welcome-btn.welcome-new");        shot(page, 2.8, "new-to-nova")
-                page.click(".signupcheck-panel .signupcheck-go"); page.wait_for_timeout(300)
-                shot(page, 3, "whats-new")
-                page.click(".releasenotes-panel .next.playbtn");      shot(page, 4, "what-this-actually-is")
+                # build 327: no What's New list in sign-up - the check goes
+                # straight on to "What This Actually Is"
+                page.click(".signupcheck-panel .signupcheck-go");     shot(page, 4, "what-this-actually-is")
                 page.click(".welcomeintro-panel .next.playbtn");      shot(page, 5, "pick-your-class")
                 page.click(".classselect-panel .modecard"); page.wait_for_timeout(250)
                 shot(page, 5.5, "pick-your-class-picked")
