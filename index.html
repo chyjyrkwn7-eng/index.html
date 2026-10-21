@@ -28375,6 +28375,13 @@
     100%{ opacity:1; transform:none; }
   }
   .rs-grade-row{ display:flex; align-items:center; gap:1.1rem; }
+  /* THE GRADE'S HEADING SITS AS FAR OVER ITS NUMBER AS EVERY OTHER
+     HEADING OVER ITS FIRST LINE (build 327). The number's line box carries
+     the font's own room over its capitals, which grows with the number:
+     with the shared .75rem under "Grade" the gap read 21px against the XP
+     card's 18 on a phone and 23.8 against 19.8 on an iPad (check-results'
+     "the same gap under every heading", 3.5px). .5rem takes that room back. */
+  .rs-screen .rs-grade > .rs-kicker{ margin-bottom:.5rem; }
   .rs-screen .rs-pct.pct{ font-size:4.2rem; line-height:.95; flex-shrink:0; }
   /* THE GRADE NUMBER IS SET, NOT TYPED (build 315): "something about the
      number 100 doesn't look that clean." It was Georgia, whose figures
