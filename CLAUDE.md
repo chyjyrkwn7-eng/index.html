@@ -25605,3 +25605,95 @@ mean luminance (326: 3.8-3.9), the corners 0 (326: 3.8).
   timeout at load ~23), check-b326-c, check-loops (the new layers use finite
   transitions only, so check-loops has nothing new to see), and the frame-cost
   measurement (scratchpad cost.py).
+
+### Build 327 round 6 (b327p) - sound: darker, lower, space and game-like
+
+Base e83f307. Head 9d065d3. Gate: `tools/check-b327p.py` (A-E, `--only`,
+`--against`, `--measure`).
+
+Madison: lower and darker everywhere except the Home ambience (`amb.home`, the
+spec, untouched). He wanted "less pokemon more cool but still some pokemon
+mix", not piano or bells, and not creepy. He also asked for:
+- the results sounds redone, with no change of tick at the pass mark;
+- a softer `test.correct`;
+- a cooler LOADING TEST and start-up;
+- cutscene music like Home's, and a bed under the road-map journey;
+- a quiet, slow, dark hand-off into the planet system;
+- a darker rank-up cutscene.
+
+#### The grade tick is one sound (5649e79)
+- `sndGradeTick` plays `res.bar.tick` with `{ frac }` only.
+- The base design's `o.pass` FM layer is gone.
+- Every tick on either side of `PASS_MARK` is the same voice, pitched by
+  percentage.
+
+#### The dark kit (`sndDarkKit(K)`, after `sndAmbKit` in `sndKit`)
+- **New voices:**
+  - `K.syn`: saw plus triangle pluck, with the lowpass closing.
+  - `K.sub`, `K.dbass`.
+  - `K.key`: a square, lowpassed at 1300 - the "bit of pokemon", never shrill.
+  - `K.rise`, `K.boom`.
+  - `K.choir`: an "o" to "u" vowel.
+  - `K.dpad`: a dark saw pad.
+- **The older bells are re-spoken one register down:**
+  - `K.chime` becomes a `K.syn` pluck, an octave down above 340Hz.
+  - `K.twinkle`, `K.tap`, `K.glass` and `K.sparkle` are lower and
+    lowpassed.
+- **`K.fm` and `K.tone` are NOT wrapped.** `amb.home` uses only those two,
+  so it cannot change. Never wrap them.
+
+#### Redesigned ids
+- They live in `SND_DARK` (fn/desc). Their levels are in `SND_DARK_VOL`,
+  calibrated so each id's loudest 50ms matches build 327's.
+- **Test:** `test.correct`, wrong, select, next, load.
+- **Results:** `res.bar.tick`, the four grades, `res.xp.*`, `res.levelup`.
+- **Rank-up journey and cutscene:** road fill and scroll, unlock pop, up
+  next, card, word, XP climb, challenge tick, `rank.flare.zoom`, attn,
+  windup, swell, bang, flash, title.
+- **Kept `SND_AMB` designs, made distinct and dark** so no two sit above
+  the .90 similarity bar:
+  - `vr.join`, `vr.leave`, `vr.ready`, `chat.receive`;
+  - `home.flare.veteran`, `ui.sheet.close`, `lb.switch`.
+- **New ids:**
+  - `app.start` (bus ui, cd 60s): played once, on the first gesture that
+    wakes the sound context, when Home or Welcome is up
+    (`NovaSound` `onGesture`, `st.started`).
+  - `rank.journey.bed` (bus music, poly 1, `opts.dur`): a continuous bed
+    under the road-map journey. `rankUpBed(scene, on, fade)`:
+    - on in `rankUpSceneToMap`;
+    - faded over `RU_HAND_MS` in `rankUpHandOut`;
+    - on again after the cutscene in `rankUpMapShow`;
+    - off in `rankUpSceneEnd`.
+- **`rank.flare.zoom`** is a slow swell: dark pad, "oo" choir, a soft brown
+  whoosh and a sub. Its loudest point is at 2.1s (327: 1.0s) and its peak
+  is .071 (327: .130).
+- `K.chime`'s length is not capped. A 2.4s cap made streak tiers 7 and 8
+  equally long, which failed check-b327-j D.
+
+#### Gates
+- `check-b327p`: ALL PASS here. Against e83f307, 36 fail. Two pass on both
+  builds and are guards:
+  - the tick is played four times across the pass mark;
+  - no page errors.
+- `check-sound`: ALL PASS (9870 pairs, closest .900).
+- `check-b327-a`: ALL PASS.
+- `check-js`: OK.
+- `check-b327-j`: B-F pass.
+  - **A fails**: "12/12 Confetti (phone): the card is never grey", at
+    frames 178-180.
+  - This is the grade card's colour, which no sound change touches.
+  - It was NOT run against e83f307 for lack of time, so whether it was
+    already failing there is unconfirmed.
+- `check-loops`: not run (no CSS animation was changed).
+
+#### Not done
+- No sound videos (the integrator records them).
+- Not individually redesigned. They only take the lower re-spoken voices:
+  `cs.badge`, `bc.rise`, `badge.*`, the secret flare scenes, `rank.whirl`,
+  `rank.crack`, `rank.supernova`, `rank.sn.swell`, and the hundo effects'
+  scores.
+- **Phone speakers.** Many redesigned sounds now have a spectral centroid of
+  50-190Hz, because sub energy dominates the weighting. iPhone speakers
+  roll off below ~200Hz, so on the speaker (not headphones) these may read
+  quieter than in the render. Listen on a phone. If they are quiet, raise
+  the pluck/key layers rather than the vol.
