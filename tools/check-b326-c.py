@@ -107,7 +107,8 @@ CLIMB = """async (a) => {
     const f = s.querySelector('.pf-xpbar .xpbar-fill');
     samples.push({ t: Math.round(performance.now() - T0), lv: num((s.querySelector('.pf-level') || {}).textContent),
       have: num((s.querySelector('.xpnums-have') || {}).textContent), need: num((s.querySelector('.xpnums-need') || {}).textContent),
-      fill: f ? parseFloat(getComputedStyle(f).getPropertyValue('--fill')) : null, extra: !!s.querySelector('.xpnums.is-extra') });
+      fill: f ? parseFloat(getComputedStyle(f).getPropertyValue('--fill')) : null, extra: !!s.querySelector('.pf-xp-extra'),
+      ex: num((s.querySelector('.pf-xp-extra-n') || {}).textContent) });
     if(/saved/i.test(s.textContent)) out.saved = true;
     if(s.querySelector('.ru-pool')) out.pool = true;
     s.querySelectorAll('.ru-spend-chip, .ru-pool-chip').forEach(c => { if(!c.dataset.seen){ c.dataset.seen = 1; out.chips.push(c.textContent); } });
@@ -146,10 +147,14 @@ def section_spend(br):
         # you level up." The line is the extra itself ("N extra XP": the XP
         # past the level the bar is full at), not "into / span"; it counts
         # down while the levels fill, and no "-N XP" comes off it.
-        check("%s: it starts on the extra - %s extra XP at Level %s (%s into a level of %s)" % (label, fr["into"] - fr["span"], fr["level"], fr["into"], fr["span"]),
-              fr["stopped"] and s and s[0]["extra"] and s[0]["have"] == fr["into"] - fr["span"] and s[0]["lv"] == fr["level"] and fr["into"] > fr["span"],
+        # MOVED IN 327 (round 6): "it should show the next level like normal
+        # and so on but as the next level's bar goes up the extra xp would go
+        # down to match it". The line is the ordinary "x / y XP" (here the full
+        # wall level, span / span) AND, on the right, "N extra XP".
+        check("%s: it starts on the extra - %s extra XP beside a full Level %s (%s into a level of %s)" % (label, fr["into"] - fr["span"], fr["level"], fr["into"], fr["span"]),
+              fr["stopped"] and s and s[0]["extra"] and s[0]["ex"] == fr["into"] - fr["span"] and s[0]["have"] == fr["span"] and s[0]["lv"] == fr["level"] and fr["into"] > fr["span"],
               [s[:2], fr])
-        haves = [x["have"] for x in s if x["extra"]]
+        haves = [x["ex"] for x in s if x["extra"]]
         check("%s: the extra only ever counts down (%d frames on it)" % (label, len(haves)),
               len(haves) >= 20 and all(haves[i] <= haves[i - 1] for i in range(1, len(haves))), [(i, haves[i - 1], haves[i]) for i in range(1, len(haves)) if haves[i] > haves[i - 1]][:4])
         lvs = []

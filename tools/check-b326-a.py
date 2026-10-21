@@ -387,11 +387,16 @@ def sec_dim_edges(br, do_dim=True, do_edges=True):
                         e = edge_of(card)
                         if card["cls"] == "rs-xp":
                             xp = xp or e
-                        if not (e[0] >= .99 and e[1] >= .5 and e[2][0] >= 24 and e[2][1] >= .2):
+                        # MOVED IN 327 (round 6): "I feel like the borders of the result
+                        # screen boxes used to be better. Now that the edges are like a
+                        # hard stop for the borders it's kinda bad." One SOFT recipe now:
+                        # the rim at about a third, no full-strength 1px line, a glow in
+                        # off the edge (and one outside it) - still on every card.
+                        if not (.25 <= e[0] <= .5 and e[1] < .2 and e[2][0] >= 20 and e[2][1] >= .1):
                             bad.append((round(t, 2), card["cls"], e))
                 grade = [edge_of(c) for t in times for c in S[t]["cards"] if c["cls"] == "rs-grade"]
                 same = bool(xp) and grade and all(g[0] == xp[0] and g[1] == xp[1] and g[2] == xp[2] for g in grade)
-                check("%s: every card has the edge (an opaque rim, the 1px line, the glow) at every moment sampled, and the 100%%'s is the XP card's %s at its first frame and after" % (tag, xp),
+                check("%s: every card has the edge (a soft rim, no hard 1px line, the glow) at every moment sampled, and the 100%%'s is the XP card's %s at its first frame and after" % (tag, xp),
                       not bad and same, {"bad": bad[:6], "grade": grade, "xp": xp})
             ctx.close()
     if do_dim:

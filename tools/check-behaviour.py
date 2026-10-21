@@ -12374,7 +12374,9 @@ def check_b313_fx(br):
           if(sampler){ clearInterval(sampler); out.still = still; out.cardAnims = scripted; }
           out.tail = tail;
           return out; }""", fx)
-        yellow = "rgba(242, 211, 138, 0.2)"
+        # MOVED IN 327 (round 6): the default's gold rim is soft (.36), so
+        # "not the gold default" compares with that
+        yellow = "rgba(242, 211, 138, 0.36)"
         check("%s: a 100%% plays it, on the screen and in the box" % fx, r.get("id") == fx and r.get("screen", 0) > 3 and r.get("box", 0) > 2, r)
         check("%s: the box takes the effect's colours while it plays" % fx, r.get("border") not in (None, yellow), r.get("border"))
         rgb = lambda h: "rgb(%d, %d, %d)" % tuple(int(h.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)) if h and h.startswith("#") else None
@@ -12502,8 +12504,11 @@ def check_b313_fx(br):
             # arrives it doesn't have the same border like xp, it's not as
             # dark" - the rim is the card's full edge from the first frame;
             # only the beam's wash waits for the beam (check-b326-a 6)
-            check("ufo: the box is in the UFO's colours before the beam reaches it, its rim at full like every card's - never gold first (build 317, 326)",
-                  (r.get("beforeBeam") or "") == "rgb(107, 255, 143)", r.get("beforeBeam"))
+            # MOVED IN 327 (round 6): "the edges are like a hard stop for the
+            # borders" - the rim is the soft one every card has (.36), still
+            # there from the first frame, still in the UFO's green
+            check("ufo: the box is in the UFO's colours before the beam reaches it, its rim the soft one every card has - never gold first (build 317, 326, 327)",
+                  (r.get("beforeBeam") or "") == "rgba(107, 255, 143, 0.36)", r.get("beforeBeam"))
             ld = r.get("landed") or {}
             check("ufo: it lands ON the 100% box - its feet on the box's top edge, over its middle",
                   ld and abs(ld.get("feet", 99)) <= 8 and abs(ld.get("cx", 99)) <= 30, ld)
@@ -12528,7 +12533,10 @@ def check_b313_fx(br):
       await wait(4200); const g = document.querySelector('.rs-grade'), f = document.querySelector('.rs-screen .unit-breakdown-fill.is-gold');
       return { border: getComputedStyle(g).borderTopColor, fill: f ? getComputedStyle(f).backgroundImage : null, tinted: g.classList.contains('hfx-tinted') }; }""")
     # (the default's rim at full strength since build 325: --rs-edge)
-    check("Confetti, the default, leaves the box and its bar gold", r.get("border") == "rgb(242, 211, 138)" and "rgb(217, 169, 58)" in (r.get("fill") or "") and not r.get("tinted"), r)
+    # MOVED IN 327 (round 6): "Now that the edges are like a hard stop for the
+    # borders it's kinda bad. It used to be better." Every results card's rim,
+    # the 100% box's included, is the colour at .36 now, not full strength.
+    check("Confetti, the default, leaves the box and its bar gold", r.get("border") == "rgba(242, 211, 138, 0.36)" and "rgb(217, 169, 58)" in (r.get("fill") or "") and not r.get("tinted"), r)
     ctx.close()
 
     # --- the pop-ups. An account with no record of them, at 120 hundos:
@@ -15926,7 +15934,10 @@ def check_b317_hundobox(br):
 
     # the default's rim at full strength since build 325 (every results
     # card carries the hundo box's edge, --rs-edge); it was .2
-    GOLD_BORDER = "rgb(242, 211, 138)"
+    # MOVED IN 327 (round 6): "Now that the edges are like a hard stop for the
+    # borders it's kinda bad. It used to be better." Every results card's rim,
+    # the 100% box's included, is the colour at .36 now, not full strength.
+    GOLD_BORDER = "rgba(242, 211, 138, 0.36)"
     for label, w, h in (("SE 1st gen", 320, 568), PHONE, TABLET):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         pg.evaluate("() => { " + RUN100 + " }")
@@ -16056,7 +16067,8 @@ def check_b317_hundobox(br):
                 # the UFO's rim stays unlit until its beam - through the hand-off too
                 # (build 326: the rim is at full from the first frame, as
                 # every card's edge is - only the beam's wash waits for it)
-                unlit = lambda a: bool(a) and (a.get("border") or "") == "rgb(107, 255, 143)"
+                # MOVED IN 327 (round 6): the UFO's rim is the soft one (.36), still there from the start
+                unlit = lambda a: bool(a) and (a.get("border") or "") == "rgba(107, 255, 143, 0.36)"
                 # MOVED IN 327 (b327j): the grade is now counted in as a WIPE
                 # of two full-look layers (red, then the green filling from
                 # the left), and a 100 hands to its effect by wiping the
@@ -16069,7 +16081,7 @@ def check_b317_hundobox(br):
                 # green layer's (green(fi): wash and number at full green).
                 rimfull = lambda a: unlit(a) or ((a.get("border") or "") == "rgba(0, 0, 0, 0)" and green(a))
                 check("%s: then into its colours by the end of the hand-off - the 100%% and the bar exactly as settled, never the gold default - with its rim at full throughout (326) (%s)" % (tag, ha.get("border")),
-                      cleared(ha) and same(ha, ("num", "bar")) and rimfull(fi) and unlit(ha) and se.get("border") == "rgb(107, 255, 143)"
+                      cleared(ha) and same(ha, ("num", "bar")) and rimfull(fi) and unlit(ha) and se.get("border") == "rgba(107, 255, 143, 0.36)"
                       and f.get("tinted") and "217, 169, 58" not in (ha.get("bar") or ""), {"first": fi, "handed": ha, "settled": se})
             elif fx == "confetti":
                 check("%s: then gold, the default's own look, by the end of the hand-off - border, 100%%, bar exactly as settled" % tag,
@@ -16079,7 +16091,10 @@ def check_b317_hundobox(br):
                       cleared(ha) and same(ha) and ha.get("border") != GOLD_BORDER and f.get("tinted")
                       and "217, 169, 58" not in (ha.get("bar") or ""), {"handed": ha, "settled": se})
             check("%s: every word in the box is the default's - GRADE, 12 / 12, the line under it, each unit and its count" % tag,
-                  base and f.get("text") == base and all(f["text"].get(k) for k in ("kicker", "frac", "sub", "unit", "countAll")), {"this": f.get("text"), "default": base})
+                  # MOVED IN 327 (round 6): "Why does the grade box ... show how many
+                  # you got right twice?" - a one-unit run has no count on its unit row
+                  # now, so the digits are the card's fraction alone
+                  base and f.get("text") == base and all(f["text"].get(k) for k in ("kicker", "frac", "sub", "unit")), {"this": f.get("text"), "default": base})
             if fx in ("fireworks", "ufo", "blackhole"):
                 dd = f.get("dim") or {}
                 rr = dd.get("rect") or [9, 9, 0, 0]
@@ -18160,7 +18175,7 @@ B321E_SAMPLE = r"""(t) => {
     const row = document.querySelector('.screen-profile .pf-goal .pf-task[data-kind="level"]');
     const ph = document.querySelector('.screen-profile .profile-hero');
     o.pf = { rank: sd && (sd.querySelector('.pf-rankname') || {}).textContent, lv: sd && (sd.querySelector('.pf-level') || {}).textContent,
-      nums: sd && ((sd.querySelector('.pf-xpnums .xpnums') || {}).textContent || ''), climb: !!(sd && sd.classList.contains('ru-climbing')),
+      nums: sd && ((sd.querySelector('.pf-xpnums .xpnums') || {}).textContent || ''), xex: sd && ((sd.querySelector('.pf-xpnums .pf-xp-extra') || {}).textContent || ''), climb: !!(sd && sd.classList.contains('ru-climbing')),
       row: row && (row.querySelector('.pf-now') || {}).textContent, rowW: row && (row.querySelector('.pf-bar > i') || { style: { getPropertyValue(){ return ''; } } }).style.getPropertyValue('--w'),
       bg: ph ? getComputedStyle(ph).backgroundImage + ' ' + getComputedStyle(ph).borderTopColor : '',
       dance: [...document.querySelectorAll('.screen-profile .pf-rw-char .rank-avatar')].some(a => a.getAnimations().some(x => x.playState !== 'idle' && /pf-wait/.test(x.animationName || ''))) ||
@@ -18331,12 +18346,15 @@ def _b321e_checks(dev, pre, frames):
     check(f"{dev}: the Profile card keeps its grey look throughout (no rank gold in its background or edge)", pf and not gold, gold[:3])
     # 16. numbers, not words, while the saved XP climbs
     cl = [f for f in pf if f["pf"]["climb"]]
-    # MOVED IN 327 (b327b): during the climb the line is the extra XP counting
-    # down ("40,461 extra XP"), never negative, never 'Saved XP / climbing'.
-    num_ok = all(re.match(r"^[\d,]+ extra XP$", f["pf"]["nums"]) for f in cl)
-    haves = [f["pf"]["nums"].split(" ")[0] for f in cl]
+    # MOVED IN 327 (round 6): "it should show the next level like normal and
+    # so on but as the next level's bar goes up the extra xp would go down to
+    # match it". The line is the ordinary "x / y XP" counting up AND its own
+    # "N extra XP" counting down beside it; never 'Saved XP / climbing'.
+    ext = [f for f in cl if f["pf"].get("xex")]
+    num_ok = all(re.match(r"^[\d,]+ / [\d,]+ XP$", f["pf"]["nums"]) for f in cl) and all(re.match(r"^[\d,]+ extra XP$", f["pf"]["xex"]) for f in ext)
+    haves = [f["pf"]["xex"].split(" ")[0] for f in ext]
     check(f"{dev}: while the saved XP climbs, the line under the bar is the numbers counting ({len(cl)} frames), never 'Saved XP / climbing'",
-          len(cl) > 60 and num_ok and len(set(haves)) > 20, [len(cl), cl[0]["pf"]["nums"] if cl else None, len(set(haves)), sorted(set(f["pf"]["nums"] for f in cl if not re.match(r"^[\d,]+ extra XP$", f["pf"]["nums"])))[:6]])
+          len(cl) > 60 and len(ext) > 60 and num_ok and len(set(haves)) > 20, [len(cl), cl[0]["pf"]["nums"] if cl else None, len(set(haves)), sorted(set(f["pf"]["nums"] for f in cl if not re.match(r"^[\d,]+ / [\d,]+ XP$", f["pf"]["nums"])))[:6]])
     # 17. the level challenge waits for the bar
     rows = [(f["t"], f["pf"]["row"], f["pf"]["climb"]) for f in pf]
     end_climb = max((t for t, _, c in rows if c), default=None)

@@ -59,7 +59,7 @@ CLIMB = _c[_i:_c.index('"""', _i)]
 # every frame: is any "-N XP" on the standing card, and is the line the extra
 CLIMB = CLIMB.replace("if(/saved/i.test(s.textContent)) out.saved = true;",
                       "if(/saved/i.test(s.textContent)) out.saved = true; if(/[\\u2212-]\\s?[\\d,]+\\s?XP/.test(s.textContent)) out.minus = (out.minus || 0) + 1;"
-                      " (out.lines = out.lines || []).push(((s.querySelector('.pf-xpnums .xpnums') || {}).textContent || '').trim());")
+                      " (out.lines = out.lines || []).push(((s.querySelector('.pf-xpnums .pf-xp-extra') || {}).textContent || '').trim());")
 assert "out.minus" in CLIMB
 
 
@@ -125,18 +125,22 @@ def sec_extra(br):
         fr, to, s = r["from"], r["to"], r["samples"]
         check("%s: no '-N XP' on the card at any frame (%d frames, %s found)" % (label, r["n"], r.get("minus") or 0),
               r["n"] >= 30 and not r.get("minus") and not r["chips"], [r.get("minus"), r["chips"][:3]])
+        # MOVED IN 327 (round 6): "it should show the next level like normal
+        # and so on but as the next level's bar goes up the extra xp would go
+        # down to match it". The extra is its own "N extra XP" beside the
+        # ordinary numbers, not in place of them.
         ex = [x for x in s if x.get("extra")]
         texts = sorted(set(t for t in (r.get("lines") or []) if "extra" in t))
-        check("%s: while it climbs the line is the extra ('N extra XP'), starting on the XP past the wall (%s)" % (label, texts[:2]),
-              len(ex) >= 20 and ex[0]["have"] == fr["into"] - fr["span"] and texts and all(re.fullmatch(r"[\d,]+ extra XP", t) for t in texts),
+        check("%s: while it climbs the extra is its own 'N extra XP', starting on the XP past the wall (%s)" % (label, texts[:2]),
+              len(ex) >= 20 and ex[0]["ex"] == fr["into"] - fr["span"] and texts and all(re.fullmatch(r"[\d,]+ extra XP", t) for t in texts),
               [ex[:1], fr, texts[:3]])
-        haves = [x["have"] for x in ex]
+        haves = [x["ex"] for x in ex]
         check("%s: and it only ever goes down (%d -> %d over %d frames)" % (label, haves[0] if haves else -1, haves[-1] if haves else -1, len(haves)),
               len(haves) >= 20 and all(haves[i] <= haves[i - 1] for i in range(1, len(haves))) and haves[-1] < haves[0],
               [(i, haves[i - 1], haves[i]) for i in range(1, len(haves)) if haves[i] > haves[i - 1]][:4])
         check("%s: it lands on the ordinary numbers - Level %s, %s / %s XP" % (label, to["level"], to["into"], to["span"]),
               r["after"]["level"] == "Level %d" % to["level"] and r["after"]["have"] == to["into"]
-              and not pg.evaluate("() => !!document.querySelector('.pf-standing .xpnums.is-extra')"), r["after"])
+              and not pg.evaluate("() => !!document.querySelector('.pf-standing .pf-xp-extra')"), r["after"])
         ctx.close()
 
 
