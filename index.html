@@ -68310,12 +68310,20 @@ const SND_DARK = {
   /* ---- the test ---- */
   "test.correct": { desc: "Right: a soft low square lead stepping up a fourth, A3 to D4, with a little vibrato, over a deep sine body and a breath of air - satisfying and warm, never a bell.",
     fn: K => { K.air({ bp: 900, ff2: 1500, fgl: .1, a: .005, d: .08, g: .02 }); K.key({ f: "A3", d: .1, g: .03, vib: null }); K.key({ t: .075, f: "D4", d: .5, g: .034 }); K.sub({ t: .075, f: "D2", a: .01, d: .35, g: .05 }); } },
+  "ui.sheet.close": { desc: "A sheet going down: the air falling away and a low sine sinking, D to A below - put away.",
+    fn: K => { K.hush({ bp: 1300, ff2: 380, fgl: .24, a: .04, d: .24, g: .045, rev: .25 }); K.sub({ t: .04, f: "D3", f2: "A2", gl: .2, a: .01, d: .3, g: .04 }); } },
+  "lb.switch": { desc: "A leaderboard board: a sweep of air across and one far twinkle on A.",
+    fn: K => { K.air({ bp: 800, ff2: 1500, fgl: .1, a: .02, d: .1, g: .03, pan: -.2, pan2: .2, pd: .12 }); K.twinkle({ t: .03, f: "A6", d: .3, g: .02 }); } },
+  "res.xp.pop": { desc: "The bar landing: a soft thud and a low square fifth, D and A, stabbed and let ring.",
+    fn: K => { K.sub({ f: "D2", a: .003, d: .3, g: .08 }); K.key({ f: "D3", a: .004, d: .7, g: .03, vib: null }); K.key({ f: "A3", a: .004, d: .7, g: .026, vib: null }); } },
+  "rank.upnext": { desc: "Up next: the next rank's box lifting - a rise of air and a low square lead, A to D, with vibrato.",
+    fn: K => { K.rise({ lp: 300, ff2: 1100, fgl: .3, a: .25, d: .2, g: .04 }); K.key({ t: .2, f: "A3", d: .3, g: .028 }); K.key({ t: .34, f: "D4", d: .9, g: .03 }); K.sub({ t: .34, f: "D2", a: .02, d: .6, g: .05 }); } },
   "vr.join": { desc: "Someone joins the room: air drawing in and a low sine swelling up a fifth, D to A, under the dark pad - someone arrives.",
     fn: K => { K.rise({ lp: 300, ff2: 1400, fgl: .3, a: .3, d: .2, g: .04 }); K.sub({ f: "D2", f2: "A2", gl: .3, a: .2, hold: .1, d: .5, g: .07 }); K.dpad(["D3", "A3"], { a: .25, d: .7, g: .009, lp: 700 }); } },
   "vr.leave": { desc: "Someone leaves the room: a low whoosh passing away to one side and a sine falling A to D - gone.",
     fn: K => { K.air({ bp: 700, ff2: 260, fgl: .5, q: .8, a: .03, d: .5, g: .05, pan: .1, pan2: .7, pd: .5 }); K.sub({ f: "A2", f2: "D2", gl: .45, a: .02, d: .55, g: .07 }); } },
-  "vr.ready": { desc: "Ready: locked in - a deep thump and a soft latch, then an open fifth held on the dark pad.",
-    fn: K => { K.boom({ f: 110, f2: 55, d: .3, g: .12 }); K.wood({ t: .04, f: "D3", d: .05, g: .05 }); K.dpad(["D2", "A2", "D3"], { t: .05, a: .04, hold: .2, d: .8, g: .012, lp: 900 }); } },
+  "vr.ready": { desc: "Ready: locked in - a soft double latch, then two quick low square notes stepping D up to A.",
+    fn: K => { [0, .05].forEach(t => K.wood({ t, f: "D3", d: .05, g: .05 })); K.key({ t: .09, f: "D3", d: .1, g: .028, vib: null }); K.key({ t: .17, f: "A3", d: .35, g: .03, vib: null }); } },
   "chat.receive": { group: "Chat", bus: "ui", cd: 300, poly: 2, hap: "tap", desc: "Message received: two far twinkles falling a third, A to F, over a breath of air - gentle, never a phone alert.",
     fn: K => { K.air({ bp: 2000, ff2: 1200, fgl: .2, a: .02, d: .2, g: .015 }); K.twinkle({ f: "A6", d: .6, g: .04 }); K.twinkle({ t: .12, f: "F6", d: .9, g: .04 }); } },
   "home.flare.veteran": { group: "Home", bus: "ui", cd: 90, poly: 2, hap: "tap", desc: "Tap the Gold flare (a sun, making its own light): a warm square lead swelling on A with vibrato over a deep sine on D.",
@@ -68391,8 +68399,6 @@ const SND_DARK = {
         K.syn({ t: lo * dur, f: K.dm(k, "D3"), d: .3, g: .024 + k * .0015, pan: k % 2 ? .3 : -.3, bright: 3.5 });
       }
     } },
-  "res.xp.pop": { desc: "The bar landing: a soft thud and D and A struck low together, a glint a beat later.",
-    fn: K => { K.sub({ f: "D2", a: .003, d: .3, g: .08 }); ["D3", "A3"].forEach(f => K.syn({ f, d: .9, g: .045 })); K.twinkle({ t: .14, f: "F#6", d: .6, g: .01 }); } },
   "res.xp.knock": { desc: "A full bar at its wall: a soft low gong on D with the pad's fifth closing - full, not wrong.",
     fn: K => { K.fm({ f: "D2", ratio: 1.4, idx: 1.2, idx2: .2, a: .004, d: 1, g: .07, lp: 900, rev: .35 }); K.sub({ f: "D1", a: .01, d: .6, g: .08 }); K.dpad(["D2", "A2"], { lp: 500, ff2: 250, fgl: .6, a: .02, d: .7, g: .012 }); } },
   "res.xp.overflow": { desc: "XP with nowhere to go, counting on: dark air lifting and low plucks streaming up D minor into a held D.",
@@ -68437,8 +68443,6 @@ const SND_DARK = {
     fn: K => { K.hush({ bp: 320, ff2: 520, fgl: .9, q: .7, a: .4, d: .7, g: .05, pan: -.3, pan2: .3, pd: 1 }); K.sub({ f: "A1", a: .3, d: .7, g: .05 }); } },
   "rank.unlock.pop": { desc: "A rank's circle unlocking on the road: a soft boom, a puff of dark air and the Bb major chord blooming low in plucks and pad, one glint.",
     fn: K => { K.boom({ f: 80, f2: 32, d: .9, g: .2 }); K.air({ bp: 600, ff2: 300, fgl: .3, a: .01, d: .3, g: .04 }); ["Bb2", "D3", "F3", "Bb3"].forEach((f, i) => K.syn({ t: i * .03, f, d: 1.4, g: .035, pan: (i - 1.5) * .3 })); K.dpad(["Bb1", "F2", "D3"], { lp: 700, a: .05, hold: .3, d: 1.4, g: .011 }); K.twinkle({ t: .15, f: "F6", d: 1, g: .012 }); } },
-  "rank.upnext": { desc: "Up next: the next rank's box lifting - a rise of air and two low plucks, A to D, a glint crossing.",
-    fn: K => { K.rise({ lp: 300, ff2: 1100, fgl: .3, a: .25, d: .2, g: .04 }); K.syn({ t: .2, f: "A2", d: .5, g: .035 }); K.syn({ t: .3, f: "D3", d: 1, g: .04 }); K.twinkle({ t: .35, f: "D6", d: .7, g: .01 }); } },
   "rank.card": { desc: "The card at the top changing over (RU_HERO_FADE_MS): a soft low breath as the old card dims, and a G minor chord blooming low in plucks and pad as the new one appears.",
     fn: K => { const F = (typeof RU_HERO_FADE_MS === "number" ? RU_HERO_FADE_MS : 900) / 1000; K.hush({ bp: 500, ff2: 300, q: 1, a: F * .4, d: F * .6, g: .045, rev: .3 }); ["G2", "Bb2", "D3"].forEach((n, i) => K.syn({ t: F * .3 + i * .05, f: n, d: 1.2, g: .035 })); K.dpad(["G1", "D2"], { t: F * .3, lp: 500, a: .2, d: 1.2, g: .01 }); } },
   "rank.word": { desc: "The new rank's name popping in on Profile: a reversed breath drawn in, and the name landing on a low pluck octave on A with the square lead on D over it.",
@@ -68492,7 +68496,7 @@ Object.keys(SND_DARK).forEach(id => {
 /* the levels: each id's loudest 50ms matched to build 327's (e83f307) for
    the same id - measured by rendering both builds - except the frequent
    ones, left quieter; the hand-off quieter on purpose; the bed under it all */
-const SND_DARK_VOL = {"test.correct": 0.98, "vr.join": 0.583, "vr.leave": 0.612, "vr.ready": 0.508, "chat.receive": 1.739, "home.flare.veteran": 1.186, "ui.field.focus": 2.1, "ui.sheet.open": 4.989, "ui.sheet.close": 9.731, "ui.popup.open": 3.099, "ui.notice": 2.342, "test.load": 0.3, "test.next": 4.519, "test.resume": 2.65, "test.save": 6.047, "res.grade.fail": 1.904, "res.grade.pass": 1.357, "res.grade.great": 0.845, "res.grade.perfect": 1.036, "res.xp.line": 0.818, "res.xp.total": 0.344, "res.xp.fill": 0.309, "res.xp.pop": 0.656, "res.xp.knock": 0.513, "res.levelup": 1.205, "res.xp.overflow": 0.924, "res.unlock.banner": 1.045, "res.unlock.reveal": 3.357, "res.found.flare": 2.656, "hundo.bubbles": 0.882, "home.flare.rookie": 2.92, "home.flare.ranger": 2.291, "home.secret.tap": 4.165, "home.secret.found": 1.141, "home.daily.ready": 1.972, "home.daily.fill": 2.034, "badge.sparkle": 1.911, "badge.slide": 5.912, "rank.road.scroll": 0.551, "rank.challenge.tick": 1.434, "rank.road.fill": 0.426, "rank.unlock.pop": 0.305, "rank.flare.zoom": 0.522, "rank.attn": 1.278, "rank.windup": 1.266, "rank.swell": 0.847, "rank.title": 0.904, "rank.upnext": 1.328, "rank.card": 1.138, "rank.word": 0.824, "rank.xp.climb": 0.694, "vr.count": 1.61, "vr.go": 1.833, "chat.invite": 1.49, "nova.arrive": 1.354, "ob.whatsnew": 1.351, "ob.tooltip": 1.847, "cust.banner": 1.226, "cust.fx": 2.116, "app.start": 0.361, "rank.journey.bed": 0.668};
+const SND_DARK_VOL = {"vr.ready": 1.602, "lb.switch": 2.3, "ui.sheet.close": 3.114, "res.xp.pop": 0.798, "rank.upnext": 0.637, "test.correct": 0.98, "vr.join": 0.583, "vr.leave": 0.612, "chat.receive": 1.739, "home.flare.veteran": 1.186, "ui.field.focus": 2.1, "ui.sheet.open": 4.989, "ui.popup.open": 3.099, "ui.notice": 2.342, "test.load": 0.3, "test.next": 4.519, "test.resume": 2.65, "test.save": 6.047, "res.grade.fail": 1.904, "res.grade.pass": 1.357, "res.grade.great": 0.845, "res.grade.perfect": 1.036, "res.xp.line": 0.818, "res.xp.total": 0.344, "res.xp.fill": 0.309, "res.xp.knock": 0.513, "res.levelup": 1.205, "res.xp.overflow": 0.924, "res.unlock.banner": 1.045, "res.unlock.reveal": 3.357, "res.found.flare": 2.656, "hundo.bubbles": 0.882, "home.flare.rookie": 2.92, "home.flare.ranger": 2.291, "home.secret.tap": 4.165, "home.secret.found": 1.141, "home.daily.ready": 1.972, "home.daily.fill": 2.034, "badge.sparkle": 1.911, "badge.slide": 5.912, "rank.road.scroll": 0.551, "rank.challenge.tick": 1.434, "rank.road.fill": 0.426, "rank.unlock.pop": 0.305, "rank.flare.zoom": 0.522, "rank.attn": 1.278, "rank.windup": 1.266, "rank.swell": 0.847, "rank.title": 0.904, "rank.card": 1.138, "rank.word": 0.824, "rank.xp.climb": 0.694, "vr.count": 1.61, "vr.go": 1.833, "chat.invite": 1.49, "nova.arrive": 1.354, "ob.whatsnew": 1.351, "ob.tooltip": 1.847, "cust.banner": 1.226, "cust.fx": 2.116, "app.start": 0.361, "rank.journey.bed": 0.668};
 Object.keys(SND_DARK_VOL).forEach(id => { if(SOUND_CATALOGUE[id]) SOUND_CATALOGUE[id].vol = SND_DARK_VOL[id]; });
 
 
