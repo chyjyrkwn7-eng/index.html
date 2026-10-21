@@ -68048,7 +68048,6 @@ const SND_AMB = {
     fn: (K, o) => {
       const fr = Math.max(0, Math.min(1, o && o.frac != null ? +o.frac : .5)), f = K.dm(Math.round(fr * 14), "D5");
       K.fm({ f, ratio: 3.5, idx: .45, idx2: 0, a: .001, d: .07, g: .025 });
-      if(o && o.pass) K.fm({ f: f / 2, ratio: 3.01, idx: .4, idx2: 0, a: .002, d: .1, g: .012 });
     } },
   "res.grade.fail": { desc: "Under the pass mark: four bells falling slowly, A F E D, over the dark pad and a low thrum - sorry, not punishing.",
     fn: K => { [["A4", 0], ["F4", .22], ["E4", .44], ["D4", .66]].forEach((n, i) => K.chime({ t: n[1], f: n[0], idx: .6, d: i === 3 ? 1.6 : .7, g: .035 })); K.pad(["D3", "F3", "A3"], { lp: 600, a: .3, hold: .4, d: 1.4, g: .014 }); K.thrum({ t: .66, f: "D2", d: 1.2, g: .08 }); } },
@@ -68567,7 +68566,11 @@ function sndGradeTick(from, to){
   const now = performance.now();
   if(now - sndGradeLastAt < SND_GRADE_GAP_MS) return;
   sndGradeLastAt = now;
-  playSound("res.bar.tick", { frac: to / 100, pass: to >= (typeof PASS_MARK === "number" ? PASS_MARK : 70) });
+  /* ONE TICK, THE SAME TIMBRE THE WHOLE WAY (build 327, round 6). Madison:
+     "The grade percentage, when it changes from red to green the sound
+     changes for some reason?? Why? Fix that." It passed `pass` and the tick
+     added a bell once over the pass mark. The tick hears only the number. */
+  playSound("res.bar.tick", { frac: to / 100 });
 }
 /* THE XP BOX HEARD (build 327): "The xp box is still missing sounds, like
    when the numbers come in it should be cool." Each line of how the XP was
