@@ -8027,41 +8027,62 @@
   .friend-moment-actions .next{ width:100%; min-height:48px; margin:0; justify-content:center; }
 
   /* ---- build 240: the room's chat on the results and the leaderboard ---- */
+  /* ONE OF THE CHAT BUTTONS, NOT A BLUE ONE (build 327, round 6). "Why is
+     the room chat icon blue and not the same color as the other chat
+     button?" It was a blue pill (rgba(40,70,120) under a sky-blue rim) -
+     a colour of its own for the same speech bubble. It is the dock
+     button's own glass, rim, shadow and icon colour now, read off the same
+     surface tokens, and what says it is the ROOM's chat is a word on it,
+     "Room", not a colour. It only exists where the room's chat is not on
+     the page (mountRoomChatFab), and it is the dock button's size. */
   .roomchat-fab{
     position:fixed; z-index:445;
     top:calc(env(safe-area-inset-top, 0px) + .75rem + var(--vv-shift, 0px));
     right:calc(max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem)) + 44px + .5rem);
-    height:44px; padding:0 .95rem 0 .75rem; border-radius:999px;
-    display:flex; align-items:center; gap:.45rem;
-    background:rgba(40,70,120,.55); border:1px solid rgba(124,200,255,.45); color:#DCEEFF;
-    font:inherit; font-size:.85rem; font-weight:800; cursor:pointer; -webkit-tap-highlight-color:transparent;
-    will-change:backdrop-filter; backdrop-filter:blur(8px) saturate(1.6); -webkit-backdrop-filter:blur(8px) saturate(1.6);
-    box-shadow:0 2px 12px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12);
+    height:44px; padding:0 .85rem 0 .7rem; margin:0; border-radius:999px; box-sizing:border-box;
+    display:flex; align-items:center; gap:.4rem;
+    background:var(--surface-sheen), var(--surface-2);
+    border:1px solid var(--surface-border);
+    will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
+    box-shadow:var(--surface-shadow);
+    color:var(--ink); font:inherit; font-size:.8rem; font-weight:800; letter-spacing:.01em;
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
   }
-  .roomchat-fab svg{ width:1.15rem; height:1.15rem; }
-  .roomchat-fab-count{ min-width:1.1rem; height:1.1rem; padding:0 .25rem; border-radius:999px;
-    background:#FF5F56; color:#fff; font-size:.68rem; font-weight:800; display:inline-flex; align-items:center; justify-content:center; }
+  .roomchat-fab:active{ transform:translateY(1px); }
+  .roomchat-fab svg{ width:1.2rem; height:1.2rem; display:block; opacity:.92; }
+  .roomchat-fab-count{ position:absolute; top:-4px; right:-4px; min-width:1.1rem; height:1.1rem; padding:0 .25rem; border-radius:999px;
+    background:#FF5F56; color:#fff; font-size:.68rem; font-weight:800; display:inline-flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 2px rgba(10,12,16,.85); }
   .roomchat-fab-count[hidden]{ display:none; }
+  @media (min-width:40rem){
+    .roomchat-fab{ height:52px; padding:0 1rem 0 .85rem; font-size:.86rem; }
+    .roomchat-fab svg{ width:1.45rem; height:1.45rem; }
+  }
   body.chatdock-open .roomchat-fab{ display:none; }
   .invite-overlay.roomchat-overlay{ z-index:455; }
-  /* Over the leaderboard cutscene on a phone the pill sat on the
-     "RACE RESULTS" heading. There it is a circle like the dock's own
-     button, with its count on the corner, which clears the heading. */
-  @media (max-width:39.99rem){
-    body:has(#vroom-race-cut) .roomchat-fab{ width:44px; padding:0; justify-content:center; }
-    body:has(#vroom-race-cut) .roomchat-fab-label{ display:none; }
-    body:has(#vroom-race-cut) .roomchat-fab-count{ position:absolute; top:-4px; right:-4px; }
-  }
-  /* ONE CHAT BUTTON ON THE RACE LEADERBOARD (build 318). "Leaderboard
-     has two chat buttons." Over the leaderboard cutscene the Room chat
-     button turns into a circle (above) beside the dock's circle, both
-     with the same speech bubble - two identical buttons side by side,
-     the one thing build 194 ruled out. While the cutscene is up the
-     room's chat is the chat that matters (build 240 asked for it there),
-     so it takes the dock's own corner and the dock's button steps out
-     until the cutscene goes; DMs still arrive as banners meanwhile. */
+  /* ONE CHAT BUTTON ON THE RACE LEADERBOARD (build 318): while the
+     cutscene is up the room's chat is the chat that matters, so the dock's
+     button steps out and this is the only one. */
   body:has(#vroom-race-cut):has(#roomchat-fab) .chatdock-btn{ visibility:hidden; pointer-events:none; }
-  body:has(#vroom-race-cut) .roomchat-fab{ right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem)) !important; }
+  /* INSIDE THE SHIP'S WINDOW, ON A ROW OF ITS OWN (build 327, round 6).
+     "the room chat and the other chat button are on top of the virtual
+     room stuff". Over the leaderboard it sat across the window's frame,
+     in the screen's top corner; now it is inside the window, in its top
+     right corner, and the window's content (RACE RESULTS, the board) is
+     pushed down by its height so nothing is under it. The window is inset
+     5% of the height and 3% of the width with a 9px rim (.vrc-window). */
+  body:has(#vroom-race-cut) .roomchat-fab{
+    top:max(calc(5vh + 9px + .55rem), calc(env(safe-area-inset-top, 0px) + .55rem)) !important;
+    right:calc(3vw + 9px + .7rem) !important;
+  }
+  body:has(#roomchat-fab) .vrc{
+    padding-top:calc(max(calc(5vh + 9px + .55rem), calc(env(safe-area-inset-top, 0px) + .55rem)) + 44px + .5rem);
+  }
+  @media (min-width:40rem){
+    body:has(#roomchat-fab) .vrc{
+      padding-top:calc(max(calc(5vh + 9px + .55rem), calc(env(safe-area-inset-top, 0px) + .55rem)) + 52px + .5rem);
+    }
+  }
   .roomchat-sheet{ display:flex; flex-direction:column; max-height:min(80vh, 44rem); }
   .roomchat-sheet .vroom-chat{ margin:0 0 .6rem; }
   .roomchat-sheet .vroom-chat-list{ max-height:min(52vh, 26rem); }
@@ -12212,6 +12233,22 @@
     min-height:var(--test-top-h, 0px); z-index:140; isolation:isolate;
   }
   .wrap.test-pinned{ padding-top:calc(var(--test-top-y, 1.25rem) + var(--test-top-h, 0px)) !important; }
+  /* The live race line pinned under the header (build 327, round 6) - see
+     syncTestPin. Its place is measured; it carries the header's fade. */
+  .wrap.test-pinned.race-pinned{ padding-top:calc(var(--test-top-y, 1.25rem) + var(--test-top-h, 0px) + var(--test-race-h, 0px)) !important; }
+  .wrap.test-pinned.race-pinned > #vroomracebar{ position:fixed; margin:0; z-index:141; box-sizing:border-box; isolation:isolate; }
+  [data-layout="modern"] .wrap.test-pinned.race-pinned > .top::before{
+    bottom:calc(-1 * var(--test-race-h, 0px));
+    background:color-mix(in srgb, var(--paper) 96%, transparent);
+  }
+  .wrap.test-pinned.race-pinned > #vroomracebar::before{
+    content:""; position:absolute; left:calc(50% - 50vw); right:calc(50% - 50vw);
+    top:0; bottom:-.9rem; pointer-events:none; z-index:-1;
+    background:linear-gradient(to bottom,
+      color-mix(in srgb, var(--paper) 95%, transparent) 0%,
+      color-mix(in srgb, var(--paper) 95%, transparent) 70%,
+      color-mix(in srgb, var(--paper) 0%, transparent) 100%);
+  }
   [data-layout="modern"] .wrap.test-pinned > .top::before{
     content:""; position:absolute; left:calc(50% - 50vw); right:calc(50% - 50vw);
     top:calc(-1 * var(--test-top-y, 1.25rem)); bottom:-.9rem; pointer-events:none; z-index:-1;
@@ -44291,12 +44328,32 @@ function syncTestPin(force){
   if(!top) return;
   const want = !!stage.querySelector(".qnumrow") && !stage.querySelector(".pausepanel") && !stage.querySelector(".fc-screen");
   const has = wrap.classList.contains("test-pinned");
-  if(want === has && !force) return;
-  wrap.classList.remove("test-pinned");
+  /* THE LIVE RACE LINE IS PINNED WITH THE HEADER (build 327, round 6).
+     "the room chat and the other chat button are on top of the virtual
+     room stuff like the live race thing". The header row is pinned and
+     the chat button and Pause are fixed in it, but the race line under it
+     scrolled - so on any question long enough to scroll, the line and
+     everyone's marker slid up under the chat button and Pause. It is now
+     pinned straight under the header, where it rests, with the same fade
+     behind it, and .wrap reserves its height as it does the row's. */
+  const rb = document.getElementById("vroomracebar");
+  const raceWant = !!(want && rb && !rb.hidden);
+  const hasRace = wrap.classList.contains("race-pinned");
+  if(want === has && raceWant === hasRace && !force) return;
+  wrap.classList.remove("test-pinned", "race-pinned");
+  if(rb){ rb.style.top = ""; rb.style.left = ""; rb.style.width = ""; }
   if(!want) return;
   const y = parseFloat(getComputedStyle(wrap).paddingTop) || 0;
   wrap.style.setProperty("--test-top-y", y + "px");
   wrap.style.setProperty("--test-top-h", top.offsetHeight + "px");
+  if(raceWant){
+    const tr = top.getBoundingClientRect(), rr = rb.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
+    wrap.style.setProperty("--test-race-h", Math.max(0, rr.bottom - tr.bottom) + "px");
+    rb.style.top = (rr.top - wr.top) + "px";
+    rb.style.left = rr.left + "px";
+    rb.style.width = rr.width + "px";
+    wrap.classList.add("race-pinned");
+  }
   wrap.classList.add("test-pinned");
 }
 addEventListener("resize", () => { const w = document.querySelector(".wrap.test-pinned"); if(w) syncTestPin(true); });
@@ -83504,6 +83561,17 @@ const VROOM_CHAT_CTX = {
      as a Virtual Room. */
   label: "Virtual Room chat",
   alertTag: "VIRTUAL ROOM",
+  /* A TAPPED PREVIEW OPENS THE ROOM'S CHAT WHEREVER IT IS (build 327,
+     round 6). On the lobby the chat is a section on the page and the
+     preview scrolls to it (returns false: the panel's own reveal runs).
+     On the waiting results and the leaderboard it is built out of sight,
+     and scrolling to a hidden section did nothing - so there the preview
+     opens it in its sheet, the same one the Room button opens. */
+  reveal: (wrapEl) => {
+    if(!wrapEl || !wrapEl.closest("[hidden], .roomchat-host")) return false;
+    try{ openRoomChatSheet(); }catch(e){ return false; }
+    return true;
+  },
   /* ---- MOUNTED IS NOT THE SAME AS BEING LOOKED AT ----
      The room's chat is a section at the foot of the lobby now rather
      than a sheet you open, and the old test for "are you looking at
@@ -112684,7 +112752,7 @@ function buildVroomChatPanel(container, ctx){
     /* A host that owns its own container says how to get there - the
        dock has to open itself and select its tab, which no amount of
        scrolling would do. */
-    if(CTX.reveal){ CTX.reveal(); return; }
+    if(CTX.reveal && CTX.reveal(wrap) !== false) return;
     try{ wrap.scrollIntoView({ block: "center", behavior: "smooth" }); }
     catch(e){ try{ wrap.scrollIntoView(); }catch(e2){} }
     list.scrollTop = list.scrollHeight;
@@ -113079,7 +113147,11 @@ function buildVroomChatPanel(container, ctx){
        lobby keeps listening inside a Virtual Room until it is left, and
        a lobby-chat preview over a room that has its own chat is the
        wrong chat announcing itself. */
-    if(container && container.hidden) return;
+    /* The room's own chat built out of sight on the waiting results and
+       under the leaderboard (.roomchat-host) is not that: it is the room
+       you are in, and its preview is the way to it (build 327, round 6) -
+       tapping one opens it in its sheet (VROOM_CHAT_CTX.reveal). */
+    if(container && container.hidden && !container.classList.contains("roomchat-host")) return;
     /* The same rule the update notice and the daily alert follow:
        never over a tour's dim, never over the splash. */
     if(document.getElementById("tour-overlay")) return;
@@ -114869,14 +114941,30 @@ function paintRoomChatFab(){
   c.hidden = !roomChatUnread;
   c.textContent = roomChatUnread > 9 ? "9+" : String(roomChatUnread);
 }
+/* Is the room's chat panel ON THE PAGE, where scrolling reaches it? The
+   lobby and the room's own results screen carry it as their last
+   section; the waiting / finale results only build it out of sight
+   (.roomchat-host, hidden) so its listener counts. */
+function roomChatOnPage(){
+  return [...stage.querySelectorAll(".vroom-chat")].some(c => !c.closest("[hidden], .roomchat-host, #roomchat-sheet"));
+}
+/* ONLY WHERE THE CHAT IS NOT ALREADY ON THE PAGE (build 327, round 6).
+   "why is the room chat button a thing if you can just use the chat at
+   the bottom of the page? Should we just remove the room chat button
+   where the chat is available at the bottom?" Yes: on a screen whose
+   VIRTUAL ROOM CHAT section is right there (the room's results) a second
+   way to the same chat was a second button for nothing, so it is not
+   mounted. Where the chat is NOT on the page - the waiting results, and
+   the race leaderboard over them - it stays, as the one way to the room's
+   chat, in the dock button's own look (see .roomchat-fab). */
 function mountRoomChatFab(){
   document.getElementById("roomchat-fab")?.remove();
-  if(!stage.querySelector(".vroom-chat")) return;
+  if(!stage.querySelector(".vroom-chat") || roomChatOnPage()) return;
   const b = document.createElement("button");
   b.type = "button"; b.id = "roomchat-fab"; b.className = "roomchat-fab";
   b.setAttribute("aria-label", "Room chat");
   b.appendChild(chatDockIcon());
-  const t = document.createElement("span"); t.className = "roomchat-fab-label"; t.textContent = "Room chat";
+  const t = document.createElement("span"); t.className = "roomchat-fab-label"; t.textContent = "Room";
   const c = document.createElement("span"); c.className = "roomchat-fab-count"; c.hidden = true;
   b.append(t, c);
   b.addEventListener("click", openRoomChatSheet);
