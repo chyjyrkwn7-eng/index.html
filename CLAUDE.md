@@ -25497,3 +25497,111 @@ rank-up cutscene (T). Branch `b327s` off e83f307. Gate:
    a decision (b321g) and check-fixes reads that screen.
 7. Toasts fade on a plain `.2s ease`. A small ease-out curve would match
    the sheets. This is cosmetic only, so it was not touched this late.
+
+### Build 327 (round 6, b327t) - the hand-off slow and mysterious, the rank-up cutscene darker and deeper
+
+Madison: *"The cutscene for ranking up needs to be way cooler, darker."* and
+*"When the road map transitions to the planet system it's so loud and fast and
+bad..... shoukd be like Pokemon with a dark mysterious noise ... We don't want
+creepy."* Branch `b327t`. Gate: `tools/check-b327t.py` (H the hand-off, D the
+cutscene; `B327T_ONLY=H|D`, `B327T_OUT=dir` for the whirl frames,
+`--against`). Against e83f307 every assertion fails (H1, H2, H3, H4, H5;
+D1-D5 on both reference devices).
+
+**Nothing approved moved**: the attention pulse in place, the whirl and its
+trails, the bang, the after-glow, the pulse at the stop, the flash FROM the
+new flare, the swap, the title, the tap at the title / one ending, the secret
+flares under the glass, Reduce motion's still scene, and the flare's clock
+through the hand-off (`ruClockSnap`) are all untouched. The cutscene's own
+times (`spec.times`, `RANK_*`) did not change.
+
+#### The hand-off (`rankUpHandOut`, `rankCutHandoff`)
+
+- **Slower draw-back**: `RU_HAND_MS` 2000 -> 3200 on `RU_HAND_DRAW_EASE`
+  (`cubic-bezier(.4,0,.25,1)`), still to `RU_HAND_SCALE` .84.
+- **A long, even veil**: `RU_VEIL_MS` 1300 -> 2600 on `RU_VEIL_EASE`
+  (`cubic-bezier(.42,0,.38,1)`), still ending with the draw-back.
+- **A beat in the dark**: `RU_HAND_HOLD_MS` (700) after the veil, the flare
+  alone (`.ru-veil.is-dark`), before rankUpHandOut returns.
+- **The cut, still dark**: the scene opens with the planet system covered
+  (unchanged), and holds that `RU_HAND_DARK_MS` (400) more before anything
+  moves.
+- **A slow pull-back**: `RU_HAND_ZOOM_MS` 2800 -> 4200 on
+  `RU_HAND_ZOOM_EASE` (`cubic-bezier(.4,0,.2,1)`: a gentle start and a long
+  settle; a steeper middle, `(.5,0,.15,1)`, made the copy's rim jump 14% in a
+  50ms step on the iPhone and failed check-b325-i K). The system rises out of the dark round the flare over
+  `RU_HAND_RISE_MS` 3200 from `RU_HAND_RISE_AT` 600 (was 2000 from 300); the
+  other bubbles 3.2s from .8s (was 2s from .3s); the bubble lights from .5s
+  over 2s (was .25s/1.3s) and the copy fades from `RU_HAND_COPY_AT` 750
+  over `RU_HAND_COPY_MS` 1500 (was 650/1000), while it is still shrinking - still the bubble first, then
+  the copy (build 325's rule).
+- **The scene waits for it**: when the hand-off took, the attention, the
+  ignite and the whirl's backstop are all `RU_HAND_LEAD_MS` later
+  (`RU_HAND_DARK_MS + RU_HAND_ZOOM_MS - 1300 - 400` = 2900): the attention
+  starts as the pull-back settles (measured ~4.3s after the cut, against
+  ~1.4s on 326). `overlay.dataset.handLead` says what it was. Without a
+  hand-off (Home, the gates that call the scene directly) nothing moves.
+- **The sky comes last**: in a hand-off the starfield fades in from 1.8s
+  after the cut, so nothing new is near the copy while it crosses into its
+  bubble (check-b325-i measures the copy's rim, ring and glow).
+- Measured on the iPhone, the journey from the hand-off's start to the
+  attention: ~10.3s (was ~5.8s).
+
+**For the sound (P) / the integrator**: `rank.flare.zoom` reads `RU_HAND_MS`
+(now 3200). The rest of the hand-off's clock is `RU_VEIL_MS` (2600, from
+`RU_HAND_MS - RU_VEIL_MS`), `RU_HAND_HOLD_MS` (700), then the cut, then
+`RU_HAND_DARK_MS` (400), then the pull-back `RU_HAND_ZOOM_MS` (4200); the
+attention (`rank.attn`) is at `RANK_ATTN_AT + RU_HAND_LEAD_MS` after the cut
+when handed off. Every sound scored off the cutscene's own times is
+unchanged relative to the attention.
+
+#### The cutscene, darker and deeper (`playRankUpScene`, CSS by `.rank-sky`)
+
+- **A step darker**: `--cut-dark` (#030206, was #050308) on
+  `#supernova-cutscene`, `.ru-veil` and `.ru-hand-veil` - one colour, so the
+  cut cannot show.
+- **Depth behind the planet**, four layers between `.rank-tint` and the
+  stage, made in `playRankUpScene` (`overlay.style --mood` = the new rank's
+  `flareColorOf`). All transform/opacity, FINITE transitions (nothing loops,
+  check-loops untouched), no filter, no backdrop-filter:
+  - `.rank-sky` - a faint starfield (CSS dots on seven tiles), fainter in the
+    middle, fading in over 3.6s and drifting 4% over 60s;
+  - `.rank-nebula` - the new rank's colour as a LOW glow behind the planet,
+    .75 at rest, 1 during the whirl, turning 14deg over 40s;
+  - `.rank-rays` - soft light rays in the new colour, only during the whirl
+    (`.is-cutspin:not(.is-cutrest)`, .5, in over 5s; out over 2.6s at the
+    rest), turning 80deg; masked to a ring round the planet so they never
+    wash the screen;
+  - `.rank-vignette` - the edges fall to black.
+  The ending fades the sky and the nebula with the stage (`rank-fadeout`);
+  Reduce motion holds them still (`rank-still`).
+- **The tint at the end is lower**: `.rank-tint` gradients 20/8/12/10% ->
+  14/5/7/6% - a mood, not a wash.
+- **The flash blooms deep to bright**: no pure white at its heart (its
+  first stop is the new rank's c1 mixed 32% with white, the next 68%), its
+  keyframes rise through .4 at 14% to .94 at the 35% peak (the swap is
+  still under the peak at b+850), and a deep bloom in the rank's darkest
+  colour (`.supernova-flash::before`, `rank-flash-deep`) leads it out. Under
+  the reduced-motion media query the deep bloom is off.
+- **The title arrives like a film's**: from `translateY(12px) scale(1.12)`
+  over 2.4s with a 1.7s fade, and a hairline of the rank's light draws out
+  under it (`::after`, scaleX 0 -> 1 from .6s). Rank scenes only.
+
+Measured in the middle of the whirl (D1/D2): the screen's outer band 2.3-2.7
+mean luminance (326: 3.8-3.9), the corners 0 (326: 3.8).
+
+#### Gates
+- `tools/check-b327t.py` - new (above).
+- check-b325-i: ALL PASS on both reference devices at 81fb7d8 (K: rimL max
+  step .096 iPhone, glow .126 -> passing after the slower bubble reveal on the
+  iPad). Its harness can throw "Clock.pause_at: Cannot fast-forward" under load
+  (load ~23 here); rerun.
+- check-b327t D1 reads the screen at a fixed real-time moment (+4.2s into the
+  whirl); under heavy load it can sample before the whirl's layers are up and
+  read brighter (main saw 8.41 / 3.16 once on a merge at ac47bc2, and a pass at
+  81fb7d8). Worth moving onto the scene's own clock.
+- NOT run before the 23:30 merge: check-behaviour's b317_evolve, cutspin,
+  cutend, supernova, b320d_rankup, b319_rankup (a b320d run was killed by its
+  timeout at load ~23), check-b326-c, check-loops (the new layers use finite
+  transitions only, so check-loops has nothing new to see), and the frame-cost
+  measurement (scratchpad cost.py).
