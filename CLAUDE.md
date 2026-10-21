@@ -25269,3 +25269,231 @@ some people could be confused."*
   - check-b326-d d3: the held and kept fixtures are changed levels, so
     they expect "went from ... lose any XP".
   - check-b327-m m4: an existing account's talk is at most 19 lines (was 18).
+
+### Build 327, round 6 (b327q) - one count, soft edges, the climb like normal, a beam that is fired
+
+Madison, on the 327 videos:
+- *"Why does the grade box on the result screen show how many you got right
+  twice? It says 12/12 above the bar and at the top. Redundant."*
+- *"I feel like the borders of the result screen boxes used to be better.
+  Now that the edges are like a hard stop for the borders it's kinda bad.
+  It used to be better.."*
+- *"The entire road map cutscene at the end when you get extra xp ... should
+  show the next level like normal and so on but as is the next levels bar
+  goes up the extra xp would go down to match it however it can."*
+- *"when the ufos beam comes out it does it fast and not like legit"*
+
+Branch `b327q` (off e83f307). Gate: `tools/check-b327q.py` (A-D,
+`--only A,B,C,D`, `--against FILE`).
+
+> **Supersedes** build 325's "every card has the hundo box's edge at full
+> strength" (`--rs-edge` rim opaque + an inset 1px line at 55%), and b327b's
+> "the line under the bar is ONE number, the extra" during the rank-up climb.
+
+#### One count on a one-unit run
+- A run over ONE unit has no count on its unit row (`.rs-byunit.is-single`,
+  no `.unit-breakdown-score`): the card's own "12 / 12" is the count, the
+  row is the unit's name over its bar. Several units keep each unit's own
+  count (the card's figure is the total, each row is that unit's).
+- `paintUnit` / `landGrade` only write the count where there is one.
+
+#### Soft edges (`--rs-edge`, `.rs-grade-tone > i`, `.hfx-tinted`, `.hfx-tint`)
+- Still ONE recipe in each card's own colour, the 100% box's included: the
+  rim at .36 (was the colour at full), no 1px line at strength inside it,
+  a soft glow OUTSIDE the edge (`0 0 22px -8px` at .42), a softer one in
+  off the edge (`inset 0 0 24px` at .14), a 6% hairline of light on top.
+- The hundo box writes its rim as rgba() (`--hfx-rim`, `--hfx-rimglow`,
+  `--hfx-rimin` from `hfxTintVars`), never a color-mix(), because the
+  hand-off copies and fades it (the build 325 rule).
+- Gates moved with Madison's words: check-b326-a edges, check-b325-a 5,
+  check-behaviour's default gold / UFO rims (`rgba(.., 0.36)`).
+
+#### The climb: the next level like normal, the extra going down beside it
+- `rankUpStandingClimb` shows the ordinary `x / y XP` (counting UP with the
+  bar, the level's span updating each level) and, on the right,
+  `.pf-xp-extra` "N extra XP" counting DOWN. Every frame
+  `shown into level + extra = into(level)`, so the XP is visibly moving from
+  one to the other. No chips. When it lands the extra goes and the line is
+  the ordinary one (a wall's `x / y XP` past its span, as everywhere).
+- `scene.climb.steps` is unchanged (level, cost, have, extra, span, sum).
+- Gates moved: check-b326-c A, check-b327-b B, check-behaviour b320d.
+
+#### The UFO's beam is fired, not drawn
+- The hull charges first (`.hfx-ufo-prime`, a gathering, flickering glow
+  under it from ~3.1s), the beam leaves slowly and gathers speed
+  (`cubic-bezier(.62,.02,.28,1)` from 3.66s), its bright head
+  (`.hfx-ufo-beamtip`, on the same curve, its light ending AT the head)
+  rides the tip, and the width shimmers as it settles (`scale`, composes
+  with the length's transform). The floor is still 4.18s (the box lights
+  then), the grab 7.38s, the box unlit until the beam.
+- The small (Customize) UFO's beam takes an eased curve too.
+
+#### Motion
+- `ruTween` clamps k at 0: a frame stamped before the tween began made an
+  eased k go UP and back, so the climb's number stepped 8 -> 0 on its first
+  frame (every ruTween user benefits).
+- The beam's head scales about its bottom, so it sits ON the beam's tip.
+
+#### Left / not done
+- Motion polish beyond the four items above was not reached in the time.
+
+### Build 327 (b327r) - the Virtual Room's chat buttons: one family, only where needed, never over the room
+
+Madison: *"Why is the room chat icon blue and not the same color as the other
+chat button? Also why is the room chat button a thing if you can just use the
+chat at the bottom of the page? Should we just remove the room chat button
+where the chat is available at the bottom? Idk what the answer is but figure
+this out."* and *"the room chat and the other chat button are on top of the
+virtual room stuff like the live race thing and whatever could be up there.
+Fix that."* Branch `b327r`. Gate: `tools/check-b327r.py` (`B327R_ONLY=A|B`,
+`--against`, `B327R_SHOTS=<dir>` saves 440x956 and 834x1194 shots).
+
+> **Supersedes** build 240's blue "Room chat" pill, its circle form over the
+> leaderboard on a phone (build 245), and the pill on the room's results
+> screen (`showVirtualRoomResults`).
+
+- **THE DECISION: KEEP ONE ROOM BUTTON, ONLY WHERE THE CHAT IS NOT ON THE
+  PAGE.** Two candidates were weighed: (a) the dock button opening onto a
+  "Room" tab while you are in a room, so there is only ever one button; (b)
+  the Room button kept where it is needed and made one of the chat buttons.
+  (b) was picked. The dock already has three tabs (Friends, Groups, Inbox),
+  its unread logic is per-chat-list, and the room's chat is a single live
+  panel that is LIFTED into a sheet (build 240: a second panel would be a
+  second listener and doubled previews) - folding it into the dock would mean
+  moving that panel into the dock's body and teaching the dock's counts a
+  fourth source, a far larger change to the most fragile code in the app, for
+  the two screens where the button exists at all. Over the race leaderboard,
+  where the room's chat matters most, (b) already IS one button (build 318:
+  the dock steps out).
+  - **`roomChatOnPage()`** - a `.vroom-chat` in `#stage` not inside `[hidden]`,
+    `.roomchat-host` or the sheet. **`mountRoomChatFab()` does nothing when it
+    is true**: the lobby and the room's own results screen (its VIRTUAL ROOM
+    CHAT section) have no Room button. It is mounted only on the waiting /
+    finale results (whose panel is built out of sight in `.roomchat-host`),
+    and so over the race leaderboard that rolls over them.
+  - **It is the dock button's own look** (`.roomchat-fab`): the surface
+    tokens (`--surface-sheen`, `--surface-2`, `--surface-border`,
+    `--surface-blur`, `--surface-shadow`), `color:var(--ink)`, the same 1.2rem
+    icon at .92 (1.45rem from 40rem, where the button is 52px tall like the
+    dock). What says it is the room's chat is the word **"Room"** on it
+    (aria-label "Room chat"), never a colour. The unread count is a red corner
+    badge like the dock's dot. No blue anywhere.
+- **The VIRTUAL ROOM preview opens the room's chat wherever it is.** Two
+  faults on e83f307: a message arriving on the waiting results made no preview
+  at all (`announceChatMessage` returned for any hidden container - a rule
+  written for the old chat lobby's hidden panel), and `revealChat()` would only
+  have scrolled to a hidden section. Now the `.roomchat-host` is exempt from
+  that rule, and `VROOM_CHAT_CTX.reveal(wrap)` opens `openRoomChatSheet()` when
+  the panel is out of sight and returns `false` on the lobby so the panel's
+  own scroll-to runs (`revealChat` treats `reveal() === false` as "not
+  handled"; the dock's and Nova's `reveal` return undefined and are
+  unchanged).
+- **NOTHING OVER THE ROOM:**
+  - **The live race line is pinned under the header** (`syncTestPin`,
+    `.wrap.race-pinned`). The header row was pinned and the chat button and
+    Pause are fixed in it, but the race line scrolled - so on a question long
+    enough to scroll, the line and every marker slid up under the chat button
+    and Pause (the screenshot Madison sent). It is now `position:fixed` at the
+    place it rests (measured: top relative to `.wrap`, left, width), `.wrap`
+    reserves its span (`--test-race-h`), the header's fade runs solid down to
+    it, and the line carries the fade below itself. Re-measured on resize and
+    whenever the line shows or hides (part of syncTestPin's signature).
+  - **Over the race leaderboard the Room button sits INSIDE the ship's window,
+    in its top-right corner**, and the window's content is pushed down by the
+    button's row (`body:has(#roomchat-fab) .vrc` padding-top), so RACE RESULTS,
+    the title and the board are under nothing. It used to sit across the
+    window's frame in the screen's corner.
+  - **The waiting results** at 320px: the shorter "Room" label clears "Test
+    results" (the old "Room chat" pill covered 7px of it).
+- **Measured** (`check-b327r` B): 320x568, 375x667, 393x852, 440x956,
+  518x1125 (the 85%-zoom Pro Max), 834x1194, 1194x834, 1366x638; the lobby, a
+  race in progress (at rest and scrolled 60/140/400px with a tall question),
+  the race's countdown, the waiting results, the race leaderboard, the room's
+  results, a Tug of War match and a Battle: no visible chat button's box
+  overlaps any visible text, character/svg/img, the race track or its markers,
+  the countdown ring or a leaderboard row. Tug of War and Battle already
+  measured clean (their screens have no Pause, and the dock keeps the corner
+  above their headers).
+- **Not done / for a decision:** folding the room's chat into the dock as a
+  tab (option a above) if Madison wants literally one button on the waiting
+  results too. A room preview arriving during the leaderboard's COUNT is held
+  by cutscene focus (b320c) and shows when the count ends, as every other
+  banner does.
+
+### Build 327 (b327s) - small quality-of-life fixes from a walk through the app
+
+Madison: *"Can you please check the app for any quality of life fixes? Like
+if anything could be better, removed, added, changed? ... Please make
+necessary changes."* Builder S walked the app on an iPhone 17 Pro Max
+(440x956, installed, touch), an iPad Pro 11" (834x1194) and an SE
+(375x667). The walk skipped other builders' areas: sound (P), the results
+screen and the Profile XP climb (Q), the Virtual Room chat (R), and the
+rank-up cutscene (T). Branch `b327s` off e83f307. Gate:
+`tools/check-b327s.py` (s1-s4, `ONLY=s1,...`, `--against FILE`).
+
+#### What changed
+
+- **A 44px tap on three small controls.** They measured as follows:
+  - every back link (`.back-link`), a 30px pill;
+  - Select all (`.selall-btn`), 34px;
+  - a banner's close x (`.app-banner-x`), 28px.
+  Each joins the existing invisible `::after` hit-area rule beside
+  `.profile-edit-btn`, so nothing on screen moves. `.selall-btn` and
+  `.app-banner-x` gain `position:relative`; `.back-link` already had it.
+- **The progress meter is one row however long the test.** It wrapped at
+  about 20 blocks:
+  - a 120-question drill drew 6 rows of blocks over the question;
+  - a whole Penal Code run (340) drew 17 rows, 200px tall;
+  - an iPad drew 4 rows.
+
+  Now `.meter` is `nowrap` and each block is `flex:0 1 16px` with
+  `min-width:1px`. The gaps close as the count grows: 2px from 41 blocks,
+  1px from 91, none from 181. The block you are on keeps at least 6px.
+  `drawMeter()` is untouched, and a short test looks exactly as it did.
+- **A banner's button goes under its words on a narrow phone**
+  (`max-width:26.5rem`). Beside them, a friend or invite banner's message
+  was a ~110px column of 5-6 lines on a 375px phone. Now:
+  - the button drops to a second row, lined up with the text;
+  - the close x stays on the top row;
+  - the message is 3 lines.
+  A 440px phone is unchanged.
+- **Test history names itself in the header.** The header was blank on
+  Test history and on a test's own page. That left the back link floating
+  at the very top with nothing saying where you were. It now reads "Test
+  history", as Friends reads "Friends". The list's own "Test history" slab
+  under it is gone, so the screen does not say it twice.
+
+#### Gates
+
+- `check-b327s`: all pass here. Against e83f307, 17 checks fail. The 10
+  that pass there are guards: "the back link itself did not grow", "the
+  meter stays on screen" and "the banner is on screen".
+- `check-js`: OK.
+- `sweep-layout --quick`: 14/14.
+- `check-save-code`, `check-fixes --only "17 Pro Max"`, `check-tours` (20
+  runs), `check-b327-e` A-C (the history strip and rows) and
+  `check-b326-a stats,save`: all pass.
+- `check-behaviour` `check_b302`, `check_b303`, `check_b305_flashcards` and
+  `check_b313_pause`: all pass.
+- `check-positions` flags only the known SE / Android onboarding and Home
+  rows that 326 also flags. Nothing changed there.
+
+#### Found, not fixed (proposals, most worth it first)
+
+1. **The Profile and Leaderboard top tabs are 37px tall.** They are under
+   44px, but each is wide, and they are the b325f/b327d switchers, so
+   growing them is a look change.
+2. **The save-your-code banner sits over Home's orbit on phones.** It is
+   the top banner position, measured round the header. It does not hide
+   anything tappable, but it covers the top flare bubble.
+3. **The badges page says the count twice** ("0 OF 16" on the case and "0
+   badges found" in the head). One could go.
+4. **The start sheet's title repeats the mode** that the summary under it
+   already shows.
+5. **Mode select's Back is centred, while every other back link is on the
+   left.**
+6. **Release history is the one screen with an in-panel title and an
+   empty header.** It was left alone because its bottom "Back to Home" is
+   a decision (b321g) and check-fixes reads that screen.
+7. Toasts fade on a plain `.2s ease`. A small ease-out curve would match
+   the sheets. This is cosmetic only, so it was not touched this late.
