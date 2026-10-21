@@ -28,9 +28,15 @@ Madison:
      countdown, the waiting results, the race leaderboard, a Tug of War
      match, a Battle and the room's results: the box of every visible chat
      button overlaps no visible content of the room (text, a character, the
-     race track and its markers, the countdown) with the page at its top.
+     race track and its markers, the countdown) with the page at its top;
+     a race scrolled 60/140/400px never has its race line under a chat
+     button; over the leaderboard the Room button sits inside the ship's
+     window, clear of its frame.
 
-Every check fails on e83f307.
+Every check about a change fails on e83f307. Guards that pass on both (they
+hold what was already right): the lobby has no Room button, the race at
+rest, the countdown, Tug of War and Battle overlaps, the leaderboard's one
+button, a Room button's count and its tap.
 """
 import argparse, functools, http.server, importlib.util, io, json, os, re, socket, sys, threading, time
 from playwright.sync_api import sync_playwright
@@ -147,6 +153,11 @@ def main():
                 r = pg.evaluate(MEASURE, None)
                 if SHOTS and (w, h) in ((440, 956), (834, 1194)):
                     pg.screenshot(path=os.path.join(SHOTS, "%s-%dx%d.png" % (re.sub(r"[^a-z]+", "-", state.lower()).strip("-"), w, h)))
+                if r["hits"]:
+                    # a hit must persist: a character's flip-book sheet can sit for
+                    # a frame where it is attached before it is placed
+                    pg.wait_for_timeout(900); settle()
+                    r = pg.evaluate(MEASURE, None)
                 if r["hits"]:
                     bad.append("%dx%d %s" % (w, h, r["hits"][:3]))
             pg.set_viewport_size({"width": 440, "height": 956})
