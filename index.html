@@ -17170,7 +17170,9 @@
      so the two parted by up to 9px at either end of a climb. */
   .rankmap-roadfill.is-tipped{ top:calc(var(--node) / 2 + 9px); bottom:calc(var(--node) / 2 + 9px); }
   .rankmap-roadstub{ position:absolute; left:0; right:0; top:calc(var(--node) / 2); height:9px;
-    background:var(--from-color, var(--rank-color)); box-shadow:0 0 10px color-mix(in srgb, var(--from-color, var(--rank-color)) 70%, transparent); }
+    background:var(--from-color, var(--rank-color)); box-shadow:0 0 10px color-mix(in srgb, var(--from-color, var(--rank-color)) 70%, transparent);
+    transition:opacity .3s ease .25s; }
+  .rankmap-roadstub.is-held{ opacity:0; transition:none; }
   /* The light at the end of the fill, on the stretch you are climbing.
      IT RIDES THE SAME TRANSFORM AS THE FILL (build 268): "the circle
      lags behind the animated line when it happens". The fill grows by
@@ -123717,7 +123719,11 @@ function buildRanksTab(){
         const endMix = "color-mix(in srgb, " + RANK_COLOR[below] + " " + Math.round(lit * 100) + "%, " + RANK_COLOR[key] + ")";
         road.style.setProperty("--end-color", endMix);
         const stub = document.createElement("span");
-        stub.className = "rankmap-roadstub";
+        /* HELD DARK UNTIL ITS LINE MOVES (327): it was drawn at once, so
+           a stretch about to be climbed - or one under a rank still
+           waiting to be celebrated - showed a bar of colour leaving a
+           circle that still said Locked. It comes on with the fill. */
+        stub.className = "rankmap-roadstub is-held";
         road.insertBefore(stub, roadFill);
         const tip = document.createElement("span");
         tip.className = "rankmap-roadtip";
@@ -123747,6 +123753,8 @@ function buildRanksTab(){
            rank-ups, so the show reads in order. */
         const from = rankProgFrom();
         roadFill.style.setProperty("--lit", String(from));
+        /* already part-way up from the last look: the stub is already there */
+        if(from > 0){ const st0 = road.querySelector(".rankmap-roadstub"); if(st0) st0.classList.remove("is-held"); }
         roadFill.dataset.progressTo = String(Math.round(lit * 1000) / 1000);
         roadFill.dataset.progressFor = below;
         const tipEl = stop.querySelector(".rankmap-roadtip");
@@ -123759,7 +123767,11 @@ function buildRanksTab(){
         }
         progressStop = stop;
       }
-      else fillsToAnimate.push({ el: roadFill, prop: "--lit", value: String(Math.round(lit * 1000) / 1000) });
+      else{
+        fillsToAnimate.push({ el: roadFill, prop: "--lit", value: String(Math.round(lit * 1000) / 1000) });
+        const st1 = road.querySelector(".rankmap-roadstub");
+        if(st1) fillsToAnimate.push({ el: st1, prop: "reveal" });
+      }
       if(below === nextKey) nowProg = lit;
       liftRoadColors(road, stop.querySelector(".rankmap-roadtip"));
       stop.appendChild(road);
@@ -123954,6 +123966,7 @@ function buildRanksTab(){
       if(!progFill) return;
       if(!theme.reduceMotion) playSound("rank.road.fill", { dur: 3.2 });
       if(progressStop) progressStop.classList.add("is-climbing");
+      progressStop && progressStop.querySelectorAll(".rankmap-roadstub.is-held").forEach(st => st.classList.remove("is-held"));
       progFill.style.setProperty("--lit", progFill.dataset.progressTo);
       const tipEl = progressStop && progressStop.querySelector(".rankmap-roadtip");
       if(tipEl && tipEl.dataset.progressTo){ tipEl.classList.add("is-climbing"); placeRoadTip(tipEl, tipEl.dataset.progressTo); }
@@ -124053,6 +124066,7 @@ function buildRanksTab(){
       runRankMapCelebration();
       fillsToAnimate.forEach(({ el, prop, value }) => {
         if(prop === "width") setBarFill(el, value);
+        else if(prop === "reveal") el.classList.remove("is-held");
         else if(prop === "--tip") placeRoadTip(el, value);
         else if(prop.indexOf("--") === 0) el.style.setProperty(prop, value);
         else el.style[prop] = value;
