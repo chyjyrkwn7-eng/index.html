@@ -333,7 +333,7 @@ EDGE = r"""(sel) => { const e = document.querySelector(sel); if(!e) return null;
 
 
 def edge_ok(e):
-    """an opaque rim, an inset 1px line, and an inset glow 24px+ deep, all one hue"""
+    """(327 round 6) a soft rim, no hard 1px line, an inset glow 20px+ deep, all one hue"""
     if not e:
         return False, "missing"
     b = _rgba(e["border"])
@@ -341,9 +341,14 @@ def edge_ok(e):
     insets = re.findall(r"(rgba?\([^)]*\)|color\([^)]*\))\s+0px\s+0px\s+([\d.]+)px\s+([\d.]+)px\s+inset", sh)
     insets += [(m[0], m[1], "0") for m in re.findall(r"(rgba?\([^)]*\)|color\([^)]*\))\s+0px\s+0px\s+([\d.]+)px\s+inset", sh)]
     line = [c for (c, bl, sp) in insets if float(bl) == 0 and float(sp) >= 1]
-    glow = [c for (c, bl, sp) in insets if float(bl) >= 24]
+    glow = [c for (c, bl, sp) in insets if float(bl) >= 20]
     same = lambda c: b and _rgba(c) and max(abs(_rgba(c)[j] - b[j]) for j in range(3)) <= 12
-    ok = bool(b) and b[3] >= .9 and any(same(c) for c in line) and any(same(c) for c in glow)
+    # MOVED IN 327 (round 6): "Now that the edges are like a hard stop for
+    # the borders it's kinda bad. It used to be better." Still ONE recipe in
+    # every card's own colour - but soft: the rim at about a third, NO 1px
+    # line at strength inside it, a glow coming in off the edge (20px+).
+    hard = [c for c in line if same(c) and (_rgba(c) or [0, 0, 0, 0])[3] >= .3]
+    ok = bool(b) and .25 <= b[3] <= .5 and not hard and any(same(c) for c in glow)
     return ok, {"border": e["border"], "line": line[:1], "glow": glow[:1]}
 
 
@@ -355,7 +360,7 @@ def sec_edges(br):
     pg.wait_for_timeout(1200)
     ref, d0 = edge_ok(pg.evaluate(EDGE, ".rs-grade.hfx-tinted"))
     if not ref:
-        check("the hundo box (Bubbles) is the recipe: a rim, a 1px line and a deep glow, one hue", False, d0)
+        check("the hundo box (Bubbles) is the recipe: a soft rim and a deep glow, one hue", False, d0)
     ok, d = edge_ok(pg.evaluate(EDGE, ".rs-xp"))
     check("the XP card has the hundo box's edge (Bubbles' here), in its blue", ok and ref, d)
     ctx.close()
