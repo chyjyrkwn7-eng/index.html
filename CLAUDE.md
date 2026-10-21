@@ -25211,3 +25211,26 @@ an existing account still gets the What's New card on Home (b327m). Tools
 moved: shoot-flow (no `whats-new` shot), sweep-layout and check-positions
 (dropped from SCREENS / ONBOARDING_SCREENS), check-sync 9b (the check goes on
 to What This Actually Is), record-sound's `nova-new`.
+
+### Build 327 - the unlock audit's fixes
+
+- **A Virtual Room match raced live is not backfilled again.** Live
+  matches are recorded `code@startAt` (build 313); `seedVroomHistory` /
+  `seedVroomTop3` compared the room's bare document id, so a room raced
+  live counted twice (Clown, Neon City, the Stats tiles). They compare by
+  code now (`vroomCodesOf`), and `vrRetroDone` / `vrTop3RetroDone` are
+  OR-merged in `mergeSameAccount`.
+- **"This card was shown" is merged** (`store.unlocksShown`, chars,
+  banners and fx unioned in `mergeSameAccount`; a copy still waiting to
+  seed takes the other's), so a card played on one phone does not play
+  again on the other.
+- Copy: the Sheriff's note says beat Nova; the Marksman's reads
+  `MARKSMAN_RUN`; Celestial is "Unlock every other banner"; the Clown's
+  five-wins toast is gone (the results card announces it).
+- Gate `tools/check-b327-n.py` (3 checks, all fail on fd3bbdd).
+- **Not changed, Madison's call:** VR, weekly and retake counters still
+  merge by the higher (two devices playing between syncs can lose one
+  side's increments); retired ids map onto characters that may be locked
+  (spartan/pirate to the Viper, officer to the Oracle, pharaoh/paladin to
+  Solar, sentinel to Tempest, blitz to the Astronaut); and the level wall
+  means a secret flare's level now also needs that rank's badges.

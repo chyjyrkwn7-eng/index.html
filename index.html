@@ -45593,7 +45593,7 @@ const CHARACTER_FEATS = {
                have: () => collectionProgress("chars").have,
                get need(){ return collectionProgress("chars").need; },
                get note(){ return collectionProgress("chars").note; } },
-  allbanners: { label: "Unlock every banner",
+  allbanners: { label: "Unlock every other banner",
                done: () => { const p = collectionProgress("banners"); return p.have >= p.need; },
                have: () => collectionProgress("banners").have,
                get need(){ return collectionProgress("banners").need; },
@@ -56171,6 +56171,23 @@ function mergeSameAccount(dst, src){
    "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest", "lateHundos"]
     .forEach(k => maxInto(dst, k, src[k]));
   ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied", "flareHintsShown", "weekWinWeeks"].forEach(k => unionArr(k));
+  /* The backfills ran once per ACCOUNT (build 327): a device whose copy
+     says not-yet would scan the rooms again and count them twice. */
+  ["vrRetroDone", "vrTop3RetroDone"].forEach(k => { if(src[k] === true && dst[k] !== true){ dst[k] = true; res.gained = true; } });
+  /* A card shown on one device is shown (build 327): without this the
+     newer copy's list won and a card played on one phone played again on
+     the other. A copy still waiting to seed (null) takes the other's. */
+  { const okU = o => o && Array.isArray(o.chars) && Array.isArray(o.banners);
+    const su = src.unlocksShown;
+    if(okU(su)){
+      if(!okU(dst.unlocksShown)){ dst.unlocksShown = JSON.parse(JSON.stringify(su)); res.gained = true; }
+      else ["chars", "banners", "fx"].forEach(kind => {
+        const a = Array.isArray(dst.unlocksShown[kind]) ? dst.unlocksShown[kind] : (dst.unlocksShown[kind] = []);
+        const b = Array.isArray(su[kind]) ? su[kind] : [];
+        b.forEach(id => { if(typeof id === "string" && a.indexOf(id) < 0){ a.push(id); res.gained = true; } });
+        if(a.some(id => b.indexOf(id) < 0)) res.otherHadLess = true;
+      });
+    } else if(okU(dst.unlocksShown)) res.otherHadLess = true; }
   /* The "seen" marks behind the new-item dots (build 299): seen on one
      device is seen. */
   { const okSeen = o => o && SEEN_KINDS.every(k => Array.isArray(o[k]));
@@ -63230,7 +63247,8 @@ function recordVroomOutcome(code, sortedKeys, myKey, startAt){
          line so it is not a surprise later. */
       /* The Clown since build 243 (it was the Champion, now retired). */
       store.pendingCharUnlocks = (store.pendingCharUnlocks || []).filter(x => x !== "clown").concat(["clown"]);
-      try{ showToast("Five wins - the Clown is yours."); }catch(e){}
+      /* No toast (build 327): the results card announces it, and the
+         toast was wrong for anybody already holding the Clown. */
     }
   }
   saveStore();
@@ -63241,14 +63259,23 @@ function recordVroomOutcome(code, sortedKeys, myKey, startAt){
    the Arena banner count wins and matches from before either existed.
    Individual races only for first places; a team room counts as a
    match. */
+function vroomCodesOf(list){
+  const out = new Set();
+  (Array.isArray(list) ? list : []).forEach(x => { if(typeof x === "string") out.add(x.split("@")[0]); });
+  return out;
+}
 function seedVroomHistory(){
   if(store.vrRetroDone || !fbDb || !store.onboardingComplete) return;
   const me = publicIdOf();
   fbDb.collection("vrooms").get().then(snap => {
     let matches = 0, wins = 0;
     const counted = new Set(Array.isArray(store.vrCounted) ? store.vrCounted : []);
+    /* A match recorded live is "code@startAt" (build 313); the room's
+       document id is the bare code. Compare by code, or every room this
+       account had already raced in on a live build counted twice. */
+    const countedCodes = vroomCodesOf(store.vrCounted);
     snap.forEach(doc => {
-      if(counted.has(doc.id)) return;
+      if(counted.has(doc.id) || countedCodes.has(doc.id)) return;
       const d = doc.data() || {};
       const parts = d.participants || {};
       const keys = Object.keys(parts);
@@ -63279,9 +63306,10 @@ function seedVroomTop3(){
   const me = publicIdOf();
   fbDb.collection("vrooms").get().then(snap => {
     const seen = new Set(Array.isArray(store.vrTop3Rooms) ? store.vrTop3Rooms : []);
+    const seenCodes = vroomCodesOf(store.vrTop3Rooms);
     let add = 0;
     snap.forEach(doc => {
-      if(seen.has(doc.id)) return;
+      if(seen.has(doc.id) || seenCodes.has(doc.id)) return;
       const d = doc.data() || {};
       if(d.tug || d.game === "tug" || d.game === "battle") return;
       const parts = d.participants || {};
@@ -116602,8 +116630,8 @@ function setBarFill(el, v){
 const UNLOCK_NOTES = {
   "character:detective": "The daily question on Home. A miss starts a new run, but your best run is kept.",
   "character:zeus": "Be #1 on the This Week board when the week ends.",
-  "character:poseidon": "#1 on the This Week board 3 times. The weeks don't have to be in a row.",
-  "character:marksman": "250 in a row, right on the first try, inside one test. A miss starts it over.",
+  "character:poseidon": "Invite Nova from a Virtual Room lobby and finish ahead of him, in any mode.",
+  "character:marksman": MARKSMAN_RUN + " in a row, right on the first try, inside one test. A miss starts it over.",
   "character:astronaut": "A hundo is 100% on a whole unit. Get one in 5 different units on the same day.",
   "character:ronin": "One test of " + RONIN_TEST_SIZE + " questions or more, finished at " + PASS_MARK + "% or better.",
   "character:voidwalker": "They hide inside tests. Keep your eyes open.",
