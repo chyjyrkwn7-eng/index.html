@@ -67846,6 +67846,61 @@ function sndAmbKit(K){
 }
 
 const SND_AMB = {
+  /* ---- round 5: the last lead-voice designs, rebuilt in bells ---- */
+  "rank.upnext": { desc: "Up next: the next rank's box lifts and lights - a lift of air, bells stepping A to D, and a twinkle crossing it.",
+    fn: K => { K.air({ bp: 1100, ff2: 2600, fgl: .3, a: .08, d: .25, g: .035, pan: -.3, pan2: .3, pd: .3 }); K.chime({ t: .05, f: "A5", idx: .7, d: .7, g: .028 }); K.chime({ t: .16, f: "D6", d: 1.1, g: .03 }); K.twinkle({ t: .3, f: "D7", d: .6, g: .014 }); } },
+  "vr.join": { desc: "Someone joins the room: two bells rising a fifth, D to A, and a puff of air - someone is here.",
+    fn: K => { K.air({ bp: 1400, ff2: 2600, fgl: .12, a: .01, d: .14, g: .03 }); K.chime({ f: "D5", idx: .7, d: .5, g: .03 }); K.chime({ t: .08, f: "A5", idx: .7, d: .9, g: .032 }); } },
+  "vr.leave": { desc: "Someone leaves the room: the bells falling, A to D, the second muffled, and the pad sinking.",
+    fn: K => { K.chime({ f: "A5", idx: .6, d: .5, g: .028 }); K.chime({ t: .09, f: "D5", idx: .4, d: .8, g: .024, lp: 1800 }); K.pad(["D3", "F3"], { t: .05, lp: 500, ff2: 250, fgl: .6, a: .05, d: .7, g: .01 }); } },
+  "vr.ready": { desc: "Ready: locked in - a soft double latch and an open fifth struck together, D and A.",
+    fn: K => { [0, .05].forEach(t => K.wood({ t, f: "D4", d: .05, g: .05 })); K.thrum({ t: .07, f: "D3", a: .003, d: .35, g: .06 }); K.chime({ t: .08, f: "D5", idx: .8, d: .9, g: .028 }); K.chime({ t: .08, f: "A5", idx: .6, d: .9, g: .022 }); } },
+  "vr.count": { desc: "The countdown's 3, 2, 1: one clear bell a step higher each number, D, E, F, over a low thrum (opts.n).",
+    demo: [{ n: 3 }, { n: 2 }, { n: 1 }],
+    fn: (K, o) => { const n = Math.max(1, Math.min(3, o && o.n || 3)), f = K.dm(3 - n, "D5"); K.chime({ f, idx: 1, d: .7, g: .04, dly: 0 }); K.thrum({ f: f / 4, a: .003, d: .3, g: .07 }); } },
+  "vr.go": { desc: "GO: the countdown's bell leaping to A over D, a thrum and a burst of air outward, twinkles flying off.",
+    fn: K => { K.thrum({ f: "D2", a: .003, d: .6, g: .1 }); K.air({ bp: 1500, ff2: 4500, fgl: .25, a: .005, d: .4, g: .05 }); K.chime({ f: "A5", idx: 1.1, d: 1.1, g: .04 }); K.chime({ f: "D5", idx: .6, d: 1.1, g: .028 }); for(let i = 0; i < 4; i++) K.twinkle({ t: .08 + i * .06, f: K.dm(12 + i, "D4"), d: .5, g: .01, pan: i % 2 ? .5 : -.5 }); } },
+  "vr.end": { desc: "The end of a match (VROOM_CUTSCENE_MS): two seconds of air and a heartbeat quickening under the pad rising, then D major in bells, a deep thrum and the air opening.",
+    fn: K => {
+      K.hush({ bp: 350, ff2: 1600, fgl: 2, a: 1.8, d: .3, g: .05 });
+      K.pad(["D3", "A3"], { lp: 300, ff2: 1200, fgl: 2, a: 1.6, hold: .4, d: .6, g: .014 });
+      let t = 0, iv = .42; while(t < 1.95){ K.thrum({ t, f: "D2", a: .004, d: .25, g: .04 + t * .025 }); t += iv; iv = Math.max(.14, iv * .84); }
+      K.thrum({ t: 2.05, f: "D2", a: .003, d: 1.2, g: .11 });
+      K.air({ t: 2.05, bp: 1200, ff2: 4000, fgl: .4, a: .005, d: .8, g: .05 });
+      ["D5", "F#5", "A5", "D6"].forEach((f, i) => K.chime({ t: 2.05 + i * .035, f, d: 1.8, g: .03, pan: (i - 1.5) * .3 }));
+      K.pad(["D4", "F#4", "A4"], { t: 2.05, lp: 1100, a: .05, hold: .5, d: 1.4, g: .014 });
+      for(let i = 0; i < 6; i++) K.twinkle({ t: 2.2 + i * .1, f: K.dm(14 + i, "D4"), d: .6, g: .01, pan: Math.cos(i * 1.9) * .7 });
+    } },
+  "vr.podium": { desc: "The podium: three steps up - third a low bell on F, second on A, then first ringing out on D major in bells with twinkles.",
+    fn: K => {
+      K.thrum({ f: "F2", a: .003, d: .35, g: .08 }); K.chime({ f: "F4", idx: .8, d: .7, g: .03 });
+      K.thrum({ t: .45, f: "A2", a: .003, d: .35, g: .09 }); K.chime({ t: .45, f: "A4", idx: .8, d: .7, g: .032 });
+      K.thrum({ t: .9, f: "D2", a: .003, d: 1, g: .11 }); K.air({ t: .9, bp: 1300, ff2: 3500, fgl: .3, a: .005, d: .5, g: .04 });
+      ["D5", "F#5", "A5", "D6"].forEach((f, i) => K.chime({ t: .9 + i * .03, f, d: 1.7, g: .03, pan: (i - 1.5) * .3 }));
+      for(let i = 0; i < 5; i++) K.twinkle({ t: 1 + i * .12, f: K.dm(14 + i * 2, "D4"), d: .5, g: .011 });
+    } },
+  "lb.winner": { desc: "Last week's winner announced: three quick bells on D, then F, A and the high D held, the pad moving Bb, C, D under them and the air opening.",
+    fn: K => {
+      [0, .1, .2].forEach(t => K.tap({ t, f: "D5", d: .12, g: .045 }));
+      K.chime({ t: .32, f: "F5", idx: .8, d: .5, g: .03 }); K.chime({ t: .44, f: "A5", idx: .8, d: .5, g: .03 }); K.chime({ t: .56, f: "D6", d: 1.6, g: .036 });
+      K.pad(["Bb2", "F3"], { lp: 600, a: .05, hold: .2, d: .3, g: .014 }); K.pad(["C3", "G3"], { t: .32, lp: 700, a: .05, hold: .1, d: .3, g: .014 }); K.pad(["D3", "F#3", "A3"], { t: .56, lp: 1000, a: .05, hold: .4, d: 1.2, g: .015 });
+      K.thrum({ t: .56, f: "D2", a: .003, d: .8, g: .1 }); K.air({ t: .56, bp: 1400, ff2: 4000, fgl: .4, a: .005, d: .7, g: .045 });
+      for(let i = 0; i < 4; i++) K.twinkle({ t: .7 + i * .1, f: K.dm(14 + i, "D4"), d: .5, g: .01, pan: i % 2 ? .5 : -.5 });
+    } },
+  "chat.send": { desc: "Message sent: a little lift of air and a bell on A answered by D above - away it goes.",
+    fn: K => { K.air({ bp: 1200, ff2: 3200, fgl: .1, a: .01, d: .12, g: .035, pan: 0, pan2: .4, pd: .12 }); K.tap({ t: .02, f: "A5", d: .2, g: .04 }); K.tap({ t: .08, f: "D6", d: .3, g: .03 }); } },
+  "ob.step": { desc: "A sign-up step forward: a soft footfall and two bells stepping up a fourth, A to D.",
+    fn: K => { K.thrum({ f: "D3", a: .004, d: .15, g: .06 }); K.tap({ t: .02, f: "A4", d: .25, g: .04 }); K.chime({ t: .08, f: "D5", idx: .7, d: .7, g: .028 }); } },
+  "ob.tooltip": { desc: "A tooltip step: a breath of paper and a soft bell on G - the next thing to look at.",
+    fn: K => { K.air({ bp: 2600, a: .005, d: .05, g: .02 }); K.chime({ t: .01, f: "G5", idx: .6, d: .6, g: .025 }); } },
+  "cust.banner": { desc: "A banner chosen: cloth unfurling with a snap, then two bells, D rising to F.",
+    fn: K => { K.noise({ color: "p", bp: 1300, ff2: 700, q: 1.2, am: [26, .8, 8], a: .02, d: .3, g: .05 }); K.air({ t: .28, bp: 2400, a: .001, d: .04, g: .03 }); K.chime({ t: .3, f: "D5", idx: .7, d: .5, g: .028 }); K.chime({ t: .38, f: "F5", d: .9, g: .03 }); } },
+  "badge.lift": { desc: "A badge lifted out of its slot: velvet sliding, two bells rising D to A as it comes up, and a twinkle when it is in your hand.",
+    fn: K => { K.hush({ bp: 900, ff2: 1600, a: .08, d: .15, g: .08, rev: .1 }); K.tap({ t: .05, f: "D5", d: .25, g: .035 }); K.tap({ t: .15, f: "A5", d: .3, g: .035 }); K.twinkle({ t: .25, f: "A6", d: .5, g: .02 }); } },
+  "home.flare.ranger": { desc: "Tap the Silver flare (a protostar, still forming): air gathering into a bell on E, then A answering high above it.",
+    fn: K => { K.hush({ bp: 1300, ff2: 2600, fgl: .25, a: .15, d: .2, g: .03 }); K.chime({ t: .15, f: "E5", idx: .8, d: .9, g: .03 }); K.twinkle({ t: .24, f: "A6", d: .8, g: .016 }); } },
+  "pick.character": { desc: "A character chosen (sign-up and Customize): a quick run of bells up D major and a far twinkle - here they are.",
+    fn: K => { ["D5", "F#5", "A5", "D6"].forEach((f, i) => K.tap({ t: i * .05, f, d: .35, g: .038, pan: (i - 1.5) * .2 })); K.twinkle({ t: .22, f: "F#7", d: .6, g: .012 }); K.thrum({ f: "D3", a: .004, d: .2, g: .05 }); } },
   /* ---- the frequent ones: soft, short, low in the mix ---- */
   "ui.tap.primary": { desc: "A primary button: a muted bell on D5 with a soft body under it - a press, not a beep.",
     fn: K => { K.tap({ f: "D5", d: .2, g: .045 }); K.thrum({ f: "D3", a: .004, d: .12, g: .05, rev: .1 }); } },
@@ -68043,17 +68098,23 @@ const SND_AMB = {
     fn: (K, o) => { const v = Math.max(.2, Math.min(1, o && o.speed != null ? +o.speed : .6)); K.noise({ color: "p", bp: 700 + 900 * v, q: 1.2, am: [8 + 22 * v, .7], a: .02, d: .12, g: .2 }); } },
 
   /* ---- the rank-up journey ---- */
-  "rank.road.fill": { desc: "The road's light filling: its own figure, heard nowhere else - a glass tone rising D to the octave on the light's own ease (opts.dur), the ambience's air following it, the pad opening, and far twinkles gathering faster near the end, landing on a bell on D with A above it.",
+  "rank.road.fill": { desc: "The road's light travelling: a short phrase that walks the road instead of rising like a siren - the Home pad moving Dm, Bb, C as the light goes (opts.dur), a soft walking bass under it, one bell on the top of each chord, the ambience's air following; then, as the light reaches the circle, the dark chord turns bright, D major in bells with far twinkles.",
     fn: (K, o) => {
-      const D = Math.max(.6, o && o.dur || 1.5), pts = [];
-      for(let i = 1; i <= 20; i++){ const x = i / 20; pts.push([x * D, sndHz("D4") * Math.pow(2, 1 - Math.pow(1 - x, 1.6))]); }
-      K.tone({ f: "D4", pts, type: "sine", a: .15, hold: D - .15, d: .35, g: .028, rev: .35 });
-      K.tone({ f: "D5", pts: pts.map(p => [p[0], p[1] * 2.003]), type: "sine", a: .3, hold: D - .3, d: .3, g: .006, rev: .35 });
-      K.hush({ bp: 450, ff2: 1500, fgl: D, a: D * .6, d: D * .5, g: .035, pan: -.3, pan2: .3, pd: D });
-      K.pad(["D3", "A3"], { lp: 300, ff2: 1500, fgl: D, a: .2, hold: D - .2, d: .6, g: .011 });
-      const n = Math.max(4, Math.min(12, Math.round(D * 4)));
-      for(let k = 0; k < n; k++){ const u = Math.pow(k / n, .6); K.twinkle({ t: u * D * .95, f: K.dm(9 + k, "D4"), d: .5, g: .006 + u * .008, pan: (k % 2 ? .4 : -.4) }); }
-      K.chime({ t: D, f: "D6", d: 1.2, g: .03 }); K.chime({ t: D + .04, f: "A6", idx: .6, d: 1, g: .018 });
+      const D = Math.max(.8, Math.min(4, o && o.dur || 1.5)), seg = D / 3;
+      const CH = [["D3", "F3", "A3", "A4", "D2"], ["Bb2", "D3", "F3", "D5", "Bb1"], ["C3", "E3", "G3", "E5", "C2"]];
+      CH.forEach((c, k) => {
+        const t = k * seg, u = k / 3;
+        K.pad([c[0], c[1], c[2]], { t, lp: 380 + u * 500, ff2: 600 + u * 700, fgl: seg, a: Math.min(.25, seg * .5), hold: seg * .55, d: seg * .9, g: .012 + u * .003 });
+        const b = sndHz(c[4]), steps = [1, 1.5, 2, 1.5];
+        steps.forEach((m, i) => K.thrum({ t: t + i * seg / 4, f: b * m, a: .006, d: seg * .45, g: .045 - i * .006, rev: .25 }));
+        K.chime({ t: t + .02, f: c[3], idx: .55, d: seg + .5, g: .024 + u * .006, pan: (k - 1) * .35, dly: .2 });
+      });
+      K.hush({ bp: 380, ff2: 1300, fgl: D, a: D * .5, d: D * .6, g: .03, pan: -.25, pan2: .25, pd: D });
+      for(let k = 0; k < 5; k++) K.twinkle({ t: D * (.55 + k * .08), f: K.dm(11 + k, "D4"), d: .5, g: .004 + k * .002, pan: k % 2 ? .45 : -.45 });
+      K.pad(["D3", "F#3", "A3", "D4"], { t: D - .05, lp: 900, ff2: 2200, fgl: .6, a: .08, hold: .4, d: 1.4, g: .016 });
+      K.thrum({ t: D, f: "D2", a: .004, d: .9, g: .07 });
+      ["D5", "F#5", "A5", "D6"].forEach((f, i) => K.chime({ t: D + i * .045, f, idx: .6, d: 1.6 - i * .15, g: .022 - i * .002, pan: (i - 1.5) * .25 }));
+      K.twinkle({ t: D + .22, f: "F#7", d: .7, g: .01, pan: .5 }); K.twinkle({ t: D + .34, f: "A7", d: .7, g: .008, pan: -.5 });
     } },
   "rank.challenge.tick": { desc: "A challenge ticked off: a soft wooden tick and two bells stepping F to A - met.",
     fn: K => { K.wood({ f: "D5", d: .05, g: .04 }); K.chime({ t: .03, f: "F5", idx: .7, d: .5, g: .028 }); K.chime({ t: .12, f: "A5", d: .9, g: .03 }); } },
@@ -68117,7 +68178,7 @@ SND_AMB["rank.whirl"] = { desc: "The whirl: a spinning roar of air whose pitch a
 
 /* each vol sets the id's loudest 50ms against build 327's (measured by
    rendering both; the frequent ones a few dB under) */
-const SND_AMB_VOL = {"ui.tap.primary": 1.416, "ui.tap.secondary": 0.839, "ui.toggle.on": 0.852, "ui.toggle.off": 0.911, "ui.tab.bottom": 2.426, "ui.tab.top": 1.13, "ui.sheet.open": 3.655, "ui.sheet.close": 7.224, "ui.back": 0.892, "ui.locked": 1.137, "ui.slider.tick": 0.998, "ui.field.focus": 1.106, "ui.notice": 1.805, "test.load": 1.831, "test.select": 1.217, "test.correct": 1.052, "test.wrong": 1.331, "test.streak.1": 1.082, "test.streak.2": 1.212, "test.next": 5.113, "fc.flip": 0.973, "test.star": 1.745, "test.pause": 2.3, "test.resume": 2.278, "test.tick": 0.475, "test.timeup": 1.734, "test.save": 5.212, "res.bar.tick": 1.169, "res.grade.fail": 2.559, "res.grade.pass": 1.809, "res.grade.great": 1.53, "res.grade.perfect": 3.579, "res.xp.line": 1.648, "res.xp.count": 1.519, "res.xp.total": 0.882, "res.xp.fill": 0.901, "res.xp.pop": 1.062, "res.xp.knock": 0.664, "res.levelup": 3.602, "res.xp.overflow": 2.286, "res.unlock.banner": 1.16, "res.found.badge": 1.044, "res.found.flare": 1.797, "res.found.character": 0.629, "home.flare.ranger": 0.781, "badge.case.open": 0.691, "badge.case.close": 3.878, "badge.lift": 1.982, "badge.spin": 3.079, "badge.drop": 1.526, "cs.badge": 1.123, "bc.rise": 1.749, "badge.slide": 3.344, "rank.challenge.tick": 1.263, "rank.road.fill": 1.081, "rank.unlock.pop": 0.89, "rank.whirl": 1.487, "rank.windup": 2.318, "rank.swell": 1.411, "rank.word": 1.235, "lb.switch": 1.799, "lb.winner": 1.008, "vr.join": 1.282, "vr.leave": 1.187, "vr.ready": 1.348, "vr.count": 1.763, "vr.go": 0.772, "chat.send": 1.066, "ob.tooltip": 1.24, "cust.banner": 0.996, "cust.fx": 1.581};
+const SND_AMB_VOL = {"ui.tap.primary": 1.416, "ui.tap.secondary": 0.839, "ui.toggle.on": 0.852, "ui.toggle.off": 0.911, "ui.tab.bottom": 2.426, "ui.tab.top": 1.13, "ui.sheet.open": 3.655, "ui.sheet.close": 7.224, "ui.back": 0.892, "ui.locked": 1.137, "ui.slider.tick": 0.998, "ui.field.focus": 1.106, "ui.notice": 1.805, "test.load": 1.831, "test.select": 1.217, "test.correct": 1.052, "test.wrong": 1.331, "test.streak.1": 1.082, "test.streak.2": 1.212, "test.next": 5.113, "fc.flip": 0.973, "test.star": 1.745, "test.pause": 2.3, "test.resume": 2.278, "test.tick": 0.475, "test.timeup": 1.734, "test.save": 5.212, "res.bar.tick": 1.169, "res.grade.fail": 2.559, "res.grade.pass": 1.809, "res.grade.great": 1.53, "res.grade.perfect": 3.579, "res.xp.line": 1.648, "res.xp.count": 1.519, "res.xp.total": 0.882, "res.xp.fill": 0.901, "res.xp.pop": 1.062, "res.xp.knock": 0.664, "res.levelup": 3.602, "res.xp.overflow": 2.286, "res.unlock.banner": 1.16, "res.found.badge": 1.044, "res.found.flare": 1.797, "res.found.character": 0.629, "home.flare.ranger": 1.765, "badge.case.open": 0.691, "badge.case.close": 3.878, "badge.lift": 1.76, "badge.spin": 3.079, "badge.drop": 1.526, "cs.badge": 1.123, "bc.rise": 1.749, "badge.slide": 3.344, "rank.challenge.tick": 1.263, "rank.road.fill": 0.625, "rank.unlock.pop": 0.89, "rank.whirl": 1.487, "rank.windup": 2.318, "rank.swell": 1.411, "rank.word": 1.235, "lb.switch": 1.799, "lb.winner": 2.271, "vr.join": 1.434, "vr.leave": 1.265, "vr.ready": 0.916, "vr.count": 1.918, "vr.go": 1.593, "chat.send": 0.995, "ob.tooltip": 1.389, "cust.banner": 0.907, "cust.fx": 1.581, "vr.end": 2.584, "vr.podium": 2.972, "ob.step": 1.56};
 Object.keys(SND_AMB).forEach(id => {
   const c = SOUND_CATALOGUE[id], d = SND_AMB[id];
   if(!c){ console.warn("sound: ambient design for unknown id " + id); return; }
