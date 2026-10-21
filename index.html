@@ -11788,7 +11788,7 @@
      an inner glow. Since build 317 round 3 it goes on as the card is BUILT
      (hfxTintGrade) - no transition from gold - and the words in the box
      stay the default's on every effect. */
-  .rs-screen .rs-card.rs-grade.is-perfect.hfx-tinted, .hfx-stage.hfx-tinted, .rs-screen .rs-card.hfx-preview-card.hfx-tinted, .hfx-mock > .rs-card.rs-grade.hfx-tinted{ border-color:var(--hfx-rim, color-mix(in srgb, var(--hfx-b) 36%, transparent));
+  .rs-screen .rs-card.rs-grade.is-perfect.hfx-tinted, .hfx-stage.hfx-tinted, .rs-screen .rs-card.hfx-preview-card.hfx-tinted, .hfx-mock > .rs-card.rs-grade.hfx-tinted{ border-color:var(--hfx-rim, color-mix(in srgb, var(--hfx-b) 46%, transparent));
     --hfx-wash:color-mix(in srgb, var(--hfx-b) 20%, transparent); --hfx-fa:var(--hfx-g2); --hfx-fb:var(--hfx-g1); }
   /* THE 100% ITSELF IN THE EFFECT'S RAMP (build 317, round 3) - the number
      and its inline % as one piece of type, not a copy laid over a gold
@@ -11808,7 +11808,7 @@
      same colour written as rgba() by hfxTintVars, which interpolates. */
   /* soft, as every card's edge (327, round 6 - see SOFT EDGES) */
   .hfx-tint{ position:absolute; inset:0; border-radius:inherit; opacity:0; pointer-events:none;
-    box-shadow:0 0 22px -8px var(--hfx-rimglow, color-mix(in srgb, var(--hfx-b) 42%, transparent)), inset 0 0 24px var(--hfx-rimin, color-mix(in srgb, var(--hfx-b) 14%, transparent)), inset 0 1px 0 rgba(255,255,255,.06); }
+    box-shadow:0 0 22px -8px var(--hfx-rimglow, color-mix(in srgb, var(--hfx-b) 42%, transparent)), inset 0 0 0 1px var(--hfx-rimline, color-mix(in srgb, var(--hfx-b) 18%, transparent)), inset 0 0 24px var(--hfx-rimin, color-mix(in srgb, var(--hfx-b) 26%, transparent)); }
   .hfx-tinted .hfx-tint{ opacity:1; }
   /* THE UFO'S BOX IS DARK UNTIL ITS BEAM STRIKES (build 317, round 5):
      "before the ufo lands on it, the box already has the beam there, I've
@@ -26459,6 +26459,13 @@
   }
   .rs-card.rs-land.rs-in::after{ animation:rs-impact .8s ease-out both; }
   .rs-grade.rs-land.rs-in::after{ animation-duration:1s; }
+  /* Build 327: the grade card lands while it is still counting, which is
+     red. A white flash over a red rim reads as grey for that frame, so its
+     flash is the red lifted towards white instead. */
+  .rs-screen .rs-card.rs-grade.is-counting.rs-land::after{
+    border-color:rgba(255,196,202,.6);
+    box-shadow:0 0 0 1px rgba(232,104,124,.34), 0 0 36px rgba(232,104,124,.2);
+  }
   /* Transform and opacity only (build 282). A blur rode the first half
      of every landing; on a whole card at 3x it is a filter re-rasterised
      every frame, and under the fade it was all but invisible. */
@@ -29318,8 +29325,8 @@
     box-shadow:0 10px 30px -14px rgba(0,0,0,.6) !important; }
   .rs-grade-tone{ position:absolute; inset:-1px; border-radius:inherit; pointer-events:none; z-index:-1; }
   .rs-grade-tone > i{ position:absolute; inset:0; border-radius:inherit;
-    border:1px solid rgba(var(--te), .36); background:linear-gradient(180deg, var(--tw), var(--rs-card) 62%);
-    box-shadow:0 0 22px -8px rgba(var(--te), .42), inset 0 0 24px rgba(var(--te), .14), inset 0 1px 0 rgba(255,255,255,.06); }
+    border:1px solid rgba(var(--te), .46); background:linear-gradient(180deg, var(--tw), var(--rs-card) 62%);
+    box-shadow:0 0 22px -8px rgba(var(--te), .42), inset 0 0 0 1px rgba(var(--te), .18), inset 0 0 24px rgba(var(--te), .26); }
   .rs-grade-tone > i.is-red{ --tw:rgba(200,60,84,.16); --te:232,104,124; }
   .rs-grade-tone > i.is-green{ --tw:rgba(46,170,106,.16); --te:92,214,146; opacity:0; }
   /* passed: the green is the card in ONE frame, never a blend - and it
@@ -30578,8 +30585,8 @@
      colour OUTSIDE it, a softer one coming in off the edge, and a hairline
      of light along the top. No full-strength line anywhere. */
   .rs-screen .rs-card:is(.rs-xp, .rs-unlocked, .vroom-waitcard, .rs-badges, .rs-grade.is-pass, .rs-grade.is-fail, .rs-grade.is-retake-clear, .rs-grade.is-retake-left, .rs-grade.is-over, .rs-grade.is-perfect:not(.hfx-tinted)){
-    border-color:rgba(var(--rs-edge), .36);
-    box-shadow:0 10px 30px -14px rgba(0,0,0,.6), 0 0 22px -8px rgba(var(--rs-edge), .42), inset 0 0 24px rgba(var(--rs-edge), .14), inset 0 1px 0 rgba(255,255,255,.06);
+    border-color:rgba(var(--rs-edge), .46);
+    box-shadow:0 10px 30px -14px rgba(0,0,0,.6), 0 0 22px -8px rgba(var(--rs-edge), .42), inset 0 0 0 1px rgba(var(--rs-edge), .18), inset 0 0 24px rgba(var(--rs-edge), .26);
   }
   /* (the grade does not ease into its edge any more: the wipe's layers
      are its edge already, and come off with nothing left to change -
@@ -96258,9 +96265,10 @@ function hfxTintVars(el, tint){
     el.style.setProperty("--hfx-glow", "rgba(" + rgb + ",.4)");
     /* the soft edge (327, round 6) as rgba(), never a color-mix(): the
        hand-off copies and fades it */
-    el.style.setProperty("--hfx-rim", "rgba(" + rgb + ",.36)");
+    el.style.setProperty("--hfx-rim", "rgba(" + rgb + ",.46)");
     el.style.setProperty("--hfx-rimglow", "rgba(" + rgb + ",.42)");
-    el.style.setProperty("--hfx-rimin", "rgba(" + rgb + ",.14)"); }
+    el.style.setProperty("--hfx-rimline", "rgba(" + rgb + ",.18)");
+    el.style.setProperty("--hfx-rimin", "rgba(" + rgb + ",.26)"); }
 }
 function hfxMotionOff(){
   try{ if(theme.reduceMotion) return true; }catch(e){}

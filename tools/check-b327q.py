@@ -110,7 +110,7 @@ def sec_edges(br):
                 pg.evaluate(WAITDONE)
             cards = pg.evaluate(CARDS)
             res = [(c["cls"], soft(c)) for c in cards if c["cls"] in ("rs-grade", "rs-xp")]
-            ok = len(res) == 2 and all(.25 <= s["rim"] <= .5 and s["hard"] == 0 and s["outer"] >= 1 and s["inner"] >= 1 for _, s in res)
+            ok = len(res) == 2 and all(.25 <= s["rim"] <= .7 and s["hard"] == 0 and s["outer"] >= 1 and s["inner"] >= 1 for _, s in res)
             check("%s, %s: the grade box and the XP box both have the soft edge (%s)" % (label, kind, res), ok, cards[:2])
             ctx.close()
 

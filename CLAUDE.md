@@ -25697,3 +25697,33 @@ mix", not piano or bells, and not creepy. He also asked for:
   roll off below ~200Hz, so on the speaker (not headphones) these may read
   quieter than in the render. Listen on a phone. If they are quiet, raise
   the pluck/key layers rather than the vol.
+
+### Build 327 (round 6, integration) - a soft edge that is never grey
+
+Q's soft edge (border .36, a 6% white hairline, an inner glow at .14) read
+grey on the grade card: check-b327-j A caught it on every case at frames
+15-24 and on the landed pass card. Sampled at dpr 1: the rim line itself was
+coloured, but the pixel just inside it (the inner glow at .14 over the dark
+card) came out (48,64,53), a chroma of .25 - a dull grey-green, and on an
+iPad the wash band 6px in was neutral. And the grade card lands while it is
+still counting (red) under the white landing flash (`rs-impact`), which for
+a frame read as pink-grey.
+- **The recipe now** (all result cards, the counting card's two washes and
+  the hundo box, which must match the XP card's): border `.46`, an inner
+  1px line in the card's colour at `.18` (under check-b327q's .3 "hard
+  line" limit and check-b326-a's .2), the outer glow `.42`, the inner glow
+  `.26`, no white hairline. The hundo box carries `--hfx-rimline` beside
+  `--hfx-rim`/`--hfx-rimin` (set in `hfxTintVars`).
+- **The counting card's landing flash is the red lifted towards white**
+  (`.rs-grade.is-counting.rs-land::after`), not white.
+- Gates moved: check-behaviour's expected hundo/UFO rims (`0.46`),
+  check-b327q's rim range (.25-.7).
+- Still failing, as on 326: check-b327-j A's Confetti frames 178-183 (the
+  gold hand-off at the end of the dim).
+- check-b325-i (the road map flare hand-off) fails on the iPad: its "glow"
+  annulus steps 14.5% (limit 12%) between 1500 and 1700ms, while the
+  flare's rim and ring hold steady (ring 72-74). The annulus samples the
+  background, and that is T's planet system rising out of the dark
+  (RU_HAND_RISE_AT 600 over 3200ms) - the scene behind, not the flare. Left
+  for Madison's look at the hand-off; the gate would have to sample the
+  flare apart from the scene to tell the two apart.

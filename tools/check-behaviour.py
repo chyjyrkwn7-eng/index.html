@@ -12380,7 +12380,7 @@ def check_b313_fx(br):
           return out; }""", fx)
         # MOVED IN 327 (round 6): the default's gold rim is soft (.36), so
         # "not the gold default" compares with that
-        yellow = "rgba(242, 211, 138, 0.36)"
+        yellow = "rgba(242, 211, 138, 0.46)"
         check("%s: a 100%% plays it, on the screen and in the box" % fx, r.get("id") == fx and r.get("screen", 0) > 3 and r.get("box", 0) > 2, r)
         check("%s: the box takes the effect's colours while it plays" % fx, r.get("border") not in (None, yellow), r.get("border"))
         rgb = lambda h: "rgb(%d, %d, %d)" % tuple(int(h.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)) if h and h.startswith("#") else None
@@ -12512,7 +12512,7 @@ def check_b313_fx(br):
             # borders" - the rim is the soft one every card has (.36), still
             # there from the first frame, still in the UFO's green
             check("ufo: the box is in the UFO's colours before the beam reaches it, its rim the soft one every card has - never gold first (build 317, 326, 327)",
-                  (r.get("beforeBeam") or "") == "rgba(107, 255, 143, 0.36)", r.get("beforeBeam"))
+                  (r.get("beforeBeam") or "") == "rgba(107, 255, 143, 0.46)", r.get("beforeBeam"))
             ld = r.get("landed") or {}
             check("ufo: it lands ON the 100% box - its feet on the box's top edge, over its middle",
                   ld and abs(ld.get("feet", 99)) <= 8 and abs(ld.get("cx", 99)) <= 30, ld)
@@ -12540,7 +12540,7 @@ def check_b313_fx(br):
     # MOVED IN 327 (round 6): "Now that the edges are like a hard stop for the
     # borders it's kinda bad. It used to be better." Every results card's rim,
     # the 100% box's included, is the colour at .36 now, not full strength.
-    check("Confetti, the default, leaves the box and its bar gold", r.get("border") == "rgba(242, 211, 138, 0.36)" and "rgb(217, 169, 58)" in (r.get("fill") or "") and not r.get("tinted"), r)
+    check("Confetti, the default, leaves the box and its bar gold", r.get("border") == "rgba(242, 211, 138, 0.46)" and "rgb(217, 169, 58)" in (r.get("fill") or "") and not r.get("tinted"), r)
     ctx.close()
 
     # --- the pop-ups. An account with no record of them, at 120 hundos:
@@ -15941,7 +15941,7 @@ def check_b317_hundobox(br):
     # MOVED IN 327 (round 6): "Now that the edges are like a hard stop for the
     # borders it's kinda bad. It used to be better." Every results card's rim,
     # the 100% box's included, is the colour at .36 now, not full strength.
-    GOLD_BORDER = "rgba(242, 211, 138, 0.36)"
+    GOLD_BORDER = "rgba(242, 211, 138, 0.46)"
     for label, w, h in (("SE 1st gen", 320, 568), PHONE, TABLET):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         pg.evaluate("() => { " + RUN100 + " }")
@@ -16072,7 +16072,7 @@ def check_b317_hundobox(br):
                 # (build 326: the rim is at full from the first frame, as
                 # every card's edge is - only the beam's wash waits for it)
                 # MOVED IN 327 (round 6): the UFO's rim is the soft one (.36), still there from the start
-                unlit = lambda a: bool(a) and (a.get("border") or "") == "rgba(107, 255, 143, 0.36)"
+                unlit = lambda a: bool(a) and (a.get("border") or "") == "rgba(107, 255, 143, 0.46)"
                 # MOVED IN 327 (b327j): the grade is now counted in as a WIPE
                 # of two full-look layers (red, then the green filling from
                 # the left), and a 100 hands to its effect by wiping the
@@ -16085,7 +16085,7 @@ def check_b317_hundobox(br):
                 # green layer's (green(fi): wash and number at full green).
                 rimfull = lambda a: unlit(a) or ((a.get("border") or "") == "rgba(0, 0, 0, 0)" and green(a))
                 check("%s: then into its colours by the end of the hand-off - the 100%% and the bar exactly as settled, never the gold default - with its rim at full throughout (326) (%s)" % (tag, ha.get("border")),
-                      cleared(ha) and same(ha, ("num", "bar")) and rimfull(fi) and unlit(ha) and se.get("border") == "rgba(107, 255, 143, 0.36)"
+                      cleared(ha) and same(ha, ("num", "bar")) and rimfull(fi) and unlit(ha) and se.get("border") == "rgba(107, 255, 143, 0.46)"
                       and f.get("tinted") and "217, 169, 58" not in (ha.get("bar") or ""), {"first": fi, "handed": ha, "settled": se})
             elif fx == "confetti":
                 check("%s: then gold, the default's own look, by the end of the hand-off - border, 100%%, bar exactly as settled" % tag,
