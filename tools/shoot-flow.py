@@ -187,7 +187,7 @@ def new_page(br, ins, installed, seeded):
             "try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.drill.v1', %s);"
             "localStorage.setItem('class26e.synccode','MADI-0001');"
             "localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');"
-            "localStorage.setItem('class26e.daily.seen','x');}catch(e){}"
+            "localStorage.setItem('class26e.daily.seen','x');localStorage.setItem('class26e.savecode.asked','1');}catch(e){}"
             % ("'" + SEED.replace("__WEEK__", week_key_now()) + "'"))
     page = ctx.new_page()
     body = patched(ins)
@@ -327,7 +327,19 @@ def main():
                 page.on("pageerror", lambda e: errs.append(str(e)[:160]))
                 page.goto(url); page.wait_for_timeout(3000)
                 page.evaluate("document.getElementById('splashscreen')?.remove()")
-                page.wait_for_timeout(600)
+                # An up-to-date account has already had its reward cards:
+                # without this the seed's 141 hundos are owed the hundo
+                # effects' pop-ups, which then cover Home in the shot.
+                page.evaluate("""()=>{try{
+                  const u = ensureUnlocksShown();
+                  (typeof HUNDO_FX!=='undefined'?HUNDO_FX:[]).forEach(f=>{ if(u.fx.indexOf(f.id)<0) u.fx.push(f.id); });
+                  (typeof AVATAR_CHARACTERS!=='undefined'?AVATAR_CHARACTERS:[]).forEach(c=>{ if(u.chars.indexOf(c.id)<0) u.chars.push(c.id); });
+                  (typeof BANNERS!=='undefined'?BANNERS:[]).forEach(b=>{ if(u.banners.indexOf(b.id)<0) u.banners.push(b.id); });
+                  persistLocally();
+                  document.querySelectorAll('.rs-spot, .daily-alert, .app-banner').forEach(n=>n.remove());
+                  showHome();
+                }catch(e){}}""")
+                page.wait_for_timeout(1200)
                 shot(page, 20, "home", bar_ok=True)
 
                 def home(pg):

@@ -108,10 +108,19 @@ with sync_playwright() as pw:
               if(all[want]) all[want].click();
               return false;}""")
             if done: break
+            pg.wait_for_timeout(500)
+            # a drill moves on with Next; summarize() called part-way
+            # through used to shoot a 4-of-10 run mid-count as "the result"
+            pg.evaluate("()=>{ const n=document.getElementById('nextbtn'); if(n && !n.hidden) n.click(); }")
             pg.wait_for_timeout(700)
-        pg.wait_for_timeout(1800)
-        pg.evaluate("()=>{ if(typeof summarize==='function' && document.querySelector('.choice')) summarize(); }")
-        pg.wait_for_timeout(1500)
+        # the reveal now counts the grade in, fills the XP and plays any
+        # unlocks before its buttons rise - shoot it once it has landed
+        try:
+            pg.wait_for_function("()=>!!document.querySelector('.rs-rewards.rs-done')", timeout=60000)
+        except Exception:
+            pass
+        pg.evaluate("()=>{ document.querySelectorAll('.rs-spot').forEach(n=>n.remove()); window.scrollTo({top:0,behavior:'instant'}); }")
+        pg.wait_for_timeout(800)
         pg.screenshot(path=f"{OUT}/{label}-50.0-drill-results.png")
         pg.evaluate("()=>window.scrollTo({top:document.documentElement.scrollHeight,behavior:'instant'})")
         pg.wait_for_timeout(500)
