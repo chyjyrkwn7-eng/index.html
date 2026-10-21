@@ -199,8 +199,11 @@ def m4(br):
     talk = pg.evaluate(TALK, "nova-intro")
     tips = pg.evaluate(TOUR)
     seen = pg.evaluate("async () => { await new Promise(r => setTimeout(r, 2500)); return window.__seen.slice(); }")
-    check("a new account's introduction is at most 14 lines (16 before) and an existing one's at most 18 (21 before)",
-          0 < n["fresh"] <= 14 and 0 < n["existing"] <= 18, n)
+    # MOVED IN 327: an existing account whose level changed on this update
+    # hears one more line, the level-change slide ("add a slide or
+    # something for the guys levels who changed") - USED_ACCOUNT is one.
+    check("a new account's introduction is at most 14 lines (16 before) and an existing one's at most 19 (21 before; one more for a changed level)",
+          0 < n["fresh"] <= 14 and 0 < n["existing"] <= 19, n)
     check("then the main menu's tips, and no What's New card",
           talk.get("open") and len(tips) >= 6 and "intro-pop" not in seen and seen.count("nova-intro") == 1, {"seen": seen, "tips": len(tips)})
     ctx.close()

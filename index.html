@@ -1992,6 +1992,29 @@
     box-shadow:0 14px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12);
     opacity:0; transform:translateY(14px) scale(.97); transition:opacity .45s ease, transform .6s cubic-bezier(.25,1.3,.4,1); }
   .nt-rc.is-in{ opacity:1; transform:none; }
+  /* the level that changed (build 327) */
+  .nt-lc{ --rank-color:#8B939E; width:min(25rem, 100%); display:flex; flex-direction:column; align-items:center; text-align:center; gap:.9rem; padding:1.1rem 1rem 1.15rem; border-radius:22px;
+    background:linear-gradient(160deg, color-mix(in srgb, var(--rank-color) 20%, rgba(22,26,44,.92)), rgba(22,26,44,.9) 58%);
+    border:1px solid color-mix(in srgb, var(--rank-color) 45%, rgba(255,255,255,.1));
+    box-shadow:0 14px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12);
+    opacity:0; transform:translateY(14px) scale(.97); transition:opacity .45s ease, transform .6s cubic-bezier(.25,1.3,.4,1); }
+  .nt-lc.is-in{ opacity:1; transform:none; } .nt-lc.is-still{ transition:none; }
+  .nt-lc-emblem{ width:1.4rem; height:1.4rem; flex:0 0 auto; } .nt-lc-emblem svg{ width:100%; height:100%; display:block; }
+  .nt-lc-kick{ margin:0; font-size:.74rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:rgba(243,245,247,.62); }
+  .nt-lc-row{ display:flex; align-items:center; justify-content:center; gap:1rem; }
+  .nt-lc-lv{ display:flex; flex-direction:column; align-items:center; gap:.15rem; min-width:5rem; }
+  .nt-lc-cap{ font-size:.7rem; font-weight:700; color:rgba(243,245,247,.55); }
+  .nt-lc-n{ font-size:2.6rem; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; }
+  .nt-lc-lv.is-was .nt-lc-n{ color:rgba(243,245,247,.45); text-decoration:line-through; text-decoration-thickness:3px; text-decoration-color:rgba(243,245,247,.4); }
+  .nt-lc-lv.is-now .nt-lc-n{ color:#F3F5F7; }
+  .nt-lc-arrow{ width:1.7rem; height:1.7rem; color:color-mix(in srgb, var(--rank-color) 55%, #fff); flex:0 0 auto; }
+  .nt-lc-arrow svg{ width:100%; height:100%; display:block; }
+  .nt-lc-xp{ display:flex; flex-direction:column; align-items:center; gap:.1rem; padding:.55rem 1rem; border-radius:14px; background:rgba(61,139,255,.1); border:1px solid rgba(143,193,255,.25); }
+  .nt-lc-xp b{ font-size:1.05rem; font-weight:800; color:#8FC1FF; font-variant-numeric:tabular-nums; }
+  .nt-lc-xp span{ font-size:.74rem; font-weight:700; color:rgba(243,245,247,.72); }
+  .nt-lc-unlock{ display:flex; align-items:center; gap:.5rem; font-size:.82rem; font-weight:700; color:rgba(243,245,247,.82); text-wrap:balance; }
+  .nt-lc .is-hi{ border-color:rgba(255,210,122,.55); transition:border-color .4s ease, color .4s ease; }
+  .nt-lc-unlock.is-hi{ color:#FFE3A6; }
   .nt-rc-head{ display:flex; align-items:center; gap:.8rem; min-width:0; }
   .nt-rc-av{ width:3.6rem; height:3.6rem; flex:0 0 auto; } .nt-rc-av svg{ width:100%; height:100%; display:block; }
   .nt-rc-who{ min-width:0; }
@@ -2065,6 +2088,10 @@
     .nt-flair-h{ font-size:.9rem; margin-bottom:.7rem; } .nt-flair-row{ gap:.9rem; } .nt-flair-art{ border-radius:16px; }
     .nt-flair-item figcaption{ font-size:1rem; } .nt-flair-art .hfx-stage-pct{ font-size:1.7rem; }
     .nt-rc{ width:min(36rem, 100%); padding:1.6rem 1.7rem 1.7rem; gap:1.25rem; border-radius:30px; }
+    .nt-lc{ width:min(36rem, 100%); padding:1.6rem 1.7rem 1.7rem; gap:1.25rem; border-radius:30px; }
+    .nt-lc-kick{ font-size:.95rem; } .nt-lc-cap{ font-size:.92rem; } .nt-lc-n{ font-size:4rem; } .nt-lc-lv{ min-width:7rem; }
+    .nt-lc-arrow{ width:2.5rem; height:2.5rem; } .nt-lc-xp{ padding:.8rem 1.5rem; border-radius:18px; } .nt-lc-xp b{ font-size:1.5rem; } .nt-lc-xp span{ font-size:1rem; }
+    .nt-lc-unlock{ font-size:1.1rem; } .nt-lc-emblem{ width:2.1rem; height:2.1rem; }
     .nt-rc-av{ width:5.8rem; height:5.8rem; } .nt-rc-name{ font-size:1.85rem; } .nt-rc-rank{ font-size:1.2rem; }
     .nt-rc-emblem{ width:2.1rem; height:2.1rem; } .nt-rc-xprow{ font-size:1rem; } .nt-rc-bar{ height:13px; border-radius:8px; }
     .nt-rc-grid{ gap:.9rem; } .nt-rc-tile{ padding:1rem 1.15rem 1.1rem; border-radius:20px; }
@@ -2149,6 +2176,14 @@
     .nt-rc-dots{ margin-top:.25rem; grid-template-columns:repeat(7, minmax(0, 1rem)); gap:.18rem; }
     .nt-rc-dots.is-secret{ grid-template-columns:repeat(auto-fill, minmax(.55rem, .7rem)); gap:.3rem; min-height:1rem; }
     .nt-rc-grid{ gap:.35rem; }
+    .nt-lc{ gap:.45rem; padding:.7rem .8rem .75rem; border-radius:18px; } .nt-lc-n{ font-size:1.8rem; } .nt-lc-xp{ padding:.35rem .8rem; } .nt-lc-unlock{ font-size:.74rem; }
+  }
+  @container (max-height:11rem){
+    .nt-lc{ gap:.3rem; padding:.45rem .7rem .5rem; }
+    .nt-lc-kick, .nt-lc-cap{ display:none; }
+    .nt-lc-row{ gap:.6rem; } .nt-lc-lv{ min-width:0; } .nt-lc-n{ font-size:1.5rem; } .nt-lc-arrow{ width:1.2rem; height:1.2rem; }
+    .nt-lc-xp{ flex-direction:row; gap:.4rem; align-items:baseline; padding:.25rem .7rem; } .nt-lc-xp b{ font-size:.9rem; } .nt-lc-xp span{ font-size:.68rem; }
+    .nt-lc-unlock{ font-size:.68rem; } .nt-lc-emblem{ width:1rem; height:1rem; }
   }
   @container (max-height:17rem){
     .nt-rc-av{ display:none; } .nt-rc-xprow{ display:none; } .nt-rc{ gap:.35rem; padding:.55rem .7rem .6rem; }
@@ -79890,6 +79925,13 @@ function novaRecapState(){
   st.flares = st.secrets.filter(x => x.found).length;
   /* the gate, as the level-wall code has it (levelStateOf): held at the
      next rank's level, or kept above it by build 325's grandfather floor */
+  /* WHAT THE LIVE BUILD SHOWED (build 327). Live went from 313c (no
+     level wall) straight to 327, so for most people the level on their
+     card is lower than the one they had: legacyLevelOfPoints is what 313c
+     showed (levelGateNoteText reads it the same way). */
+  st.xp = Number((store.lifetime || {}).points) || 0;
+  st.was = 0; try{ st.was = legacyLevelOfPoints(st.xp); }catch(e){}
+  st.changed = st.was > st.level;
   st.gate = null;
   if(st.ls && st.ls.held && st.ls.gateKey){
     const need = Number((TIER_UNLOCKS[st.ls.gateKey] || {}).level) || 0;
@@ -79959,6 +80001,48 @@ function novaRecapCard(st){
   wrap.appendChild(c);
   return wrap;
 }
+/* ---- THE LEVEL THAT CHANGED (build 327) ----
+   Madison: "Nova walk through, when he talks about how you are doing, add
+   a slide or something for the guys levels who changed. Mention that
+   because some people could be confused." So, only for somebody whose
+   level went down on this update (st.changed), a slide of its own straight
+   after the recap card: the level they had, struck, an arrow, the level
+   they have now; their XP, all of it kept; and what turns it back into
+   levels - the next rank's badges, with that rank's emblem. Built from the
+   same state as the card (novaRecapState), so it cannot disagree with it. */
+function novaLevelChangeCard(st){
+  const wrap = document.createElement("div"); wrap.className = "nt-rcwrap";
+  const c = document.createElement("div"); c.className = "nt-lc";
+  const g = st.gate;
+  if(g) c.style.setProperty("--rank-color", RANK_COLOR[g.key] || "#8B939E");
+  const kick = document.createElement("p"); kick.className = "nt-lc-kick"; kick.textContent = "Your level";
+  const row = document.createElement("div"); row.className = "nt-lc-row";
+  const lvl = (cls, n, cap) => {
+    const b = document.createElement("div"); b.className = "nt-lc-lv " + cls;
+    const t = document.createElement("span"); t.className = "nt-lc-cap"; t.textContent = cap;
+    const v = document.createElement("b"); v.className = "nt-lc-n"; v.textContent = String(n);
+    b.append(t, v); return b;
+  };
+  const arrow = document.createElement("span"); arrow.className = "nt-lc-arrow"; arrow.setAttribute("aria-hidden", "true");
+  arrow.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  row.append(lvl("is-was", st.was, "Before"), arrow, lvl("is-now", st.level, "Now"));
+  const xp = document.createElement("div"); xp.className = "nt-lc-xp";
+  const xb = document.createElement("b"); xb.textContent = st.xp.toLocaleString() + " XP";
+  const xs = document.createElement("span"); xs.textContent = "All of it kept";
+  xp.append(xb, xs);
+  c.append(kick, row, xp);
+  if(g){
+    const un = document.createElement("div"); un.className = "nt-lc-unlock";
+    const em = document.createElement("span"); em.className = "nt-lc-emblem";
+    try{ em.appendChild(buildRankEmblemSVG(g.key)); }catch(e){}
+    const t = document.createElement("span");
+    t.textContent = "Find " + (g.more === 1 ? "1 more badge" : g.more + " more badges") + " to reach " + g.name + " and climb again";
+    un.append(em, t);
+    c.appendChild(un);
+  }
+  wrap.appendChild(c);
+  return wrap;
+}
 /* The reveal: the card rises, the bar fills to where you are, the tiles
    come in one after another and each number counts up to itself. */
 function novaRecapReveal(root, instant){
@@ -79996,14 +80080,27 @@ function novaRecapLines(st, name){
       (st.rank ? "You’re " + RANK_DISPLAY_NAME[st.rank] + " rank, level " + st.level + "." + (g ? "" : " Good work.")
                : "You’re level " + st.level + (g ? "." : ", on your way to your first rank, " + first + ".")),
     enter: (ctx, instant) => { const p = novaRecapCard(st); novaProp(ctx, p); novaRecapReveal(p, instant); } });
-  if(g){
+  if(st.changed){
+    /* the level that changed gets a slide of its own (build 327) */
+    const word = n => n === 1 ? "one more badge" : n + " more badges";
+    lines.push({ gesture: "raise",
+      text: "One thing you’ll notice: your level went from " + st.was + " to " + st.level + ". Levels now go up one rank at a time. Your level climbs to your next rank’s level, then waits there until you’ve found that rank’s badges.",
+      enter: (ctx, instant) => { const p = novaLevelChangeCard(st); novaProp(ctx, p);
+        const card = p && p.querySelector(".nt-lc");
+        if(card){ if(instant || novaMotionOff()) card.classList.add("is-in", "is-still"); else requestAnimationFrame(() => card.classList.add("is-in")); } } });
+    lines.push({
+      text: "You didn’t lose any XP. All " + st.xp.toLocaleString() + " of it is still yours" +
+        (g ? ", and the levels it already paid for come back the moment you find " + word(g.more) + " and reach " + g.name + "." : "."),
+      enter: ctx => { ctx.stage.querySelectorAll(".nt-lc .is-hi").forEach(e => e.classList.remove("is-hi"));
+        ctx.stage.querySelectorAll(".nt-lc-xp, .nt-lc-unlock").forEach(e => e.classList.add("is-hi")); } });
+  } else if(g){
     /* WORDED FOR THE TWO WAYS THE WALL MEETS SOMEBODY (levelStateOf):
        held at the next rank's level, or above it, where build 325's
        grandfather floor kept the level they had - nobody's level went
        down, so nothing here says it did. */
     lines.push({ gesture: "raise",
       text: g.kept
-        ? "Levels now wait at your next rank’s level until you’ve found its badges, but nobody loses a level they had. You keep level " + st.level + ", and it stays there until you reach " + g.name + "."
+        ? "Levels now wait at your next rank’s level until you’ve found its badges. You keep level " + st.level + ", and it stays there until you reach " + g.name + "."
         : "Level " + g.need + " is " + g.name + "’s level, and that’s the gate: your level waits there until you’ve found " + g.name + "’s badges. Find " +
           (g.more === 1 ? "one more" : g.more + " more") + " and it moves on" +
           (g.saved > 0 ? ", with the " + (g.saved === 1 ? "level" : g.saved + " levels") + " your XP has already paid for." : "."),
@@ -80016,7 +80113,10 @@ function novaRecapLines(st, name){
     : b > 0 ? "You’ve found " + bn + ", but none of my secret flares yet." + more
     : f > 0 ? "You haven’t found any of my badges yet, but you’ve found " + fn + "."
     : "You haven’t found any of my badges or my secret flares yet. There are more secret flares out there than I can count.";
-  lines.push({ text: said, enter: ctx => hi(ctx, ".nt-rc-tile.is-badges, .nt-rc-tile.is-secret") });
+  lines.push({ text: said, enter: (ctx, instant) => {
+    /* after the level slide the card is put back up, already landed */
+    if(st.changed && !ctx.stage.querySelector(".nt-rc")){ const p = novaRecapCard(st); novaProp(ctx, p); novaRecapReveal(p, true); }
+    hi(ctx, ".nt-rc-tile.is-badges, .nt-rc-tile.is-secret"); } });
   return lines;
 }
 /* ---- ONE STORY, TOLD IN ORDER (build 325) ----

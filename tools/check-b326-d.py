@@ -338,10 +338,14 @@ def check_recap(br):
             lv = "level %d" % st["level"]
             if key == "plain":
                 ok = lv in said and st["rank"] in said and not re.search(r"gate|wait", said, re.I)
+            # MOVED IN 327: "add a slide or something for the guys levels who
+            # changed". Both fixtures are below the level 313c showed them
+            # (no grandfather in 327), so each gets the level-change slide:
+            # from what to what, no XP lost, and the badges that lift it.
             elif key == "held":
-                ok = lv in said.lower() and re.search(r"\bgate\b", said) and st["gate"] in said and re.search(r"badge", said) and re.search(r"paid for", said)
+                ok = re.search(r"went from \d+ to %d" % st["level"], said) and st["gate"] in said and re.search(r"badge", said) and re.search(r"paid for", said) and re.search(r"lose any XP", said)
             else:
-                ok = lv in said.lower() and re.search(r"keep level %d" % st["level"], said) and st["gate"] in said and re.search(r"nobody loses a level", said)
+                ok = re.search(r"went from \d+ to %d" % st["level"], said) and st["gate"] in said and re.search(r"lose any XP", said)
             check("%s: he says your level, and what the level wall means for you (held: the gate; kept: you keep it; neither: nothing)" % tag, ok,
                   {"state": st, "said": tail})
 

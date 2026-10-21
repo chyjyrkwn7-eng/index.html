@@ -25234,3 +25234,38 @@ to What This Actually Is), record-sound's `nova-new`.
   (spartan/pirate to the Viper, officer to the Oracle, pharaoh/paladin to
   Solar, sentinel to Tempest, blitz to the Astronaut); and the level wall
   means a secret flare's level now also needs that rank's badges.
+
+### Build 327 - Nova's recap says when your level changed
+
+Madison: *"Nova walk through, when he talks about how you are doing, add a
+slide or something for the guys levels who changed. Mention that because
+some people could be confused."*
+
+- **Who sees it.** An existing account whose level is lower than the one
+  live (313c) showed it gets one extra slide in the meeting, straight
+  after the recap card (`novaRecapState`: `st.was` =
+  `legacyLevelOfPoints(lifetime.points)`, `st.changed` = `was > level`).
+  Live went from 313c to 327 with no grandfather, so most accounts qualify.
+- **What it shows.** `novaLevelChangeCard(st)`, a card of its own
+  (`.nt-lc`, never `.nt-rc`, because gates read `.nt-rc` as the recap):
+  - "Your level", the old level struck through, an arrow, the level now;
+  - "N XP / All of it kept";
+  - the next rank's emblem and "Find K more badges to reach <rank> and
+    climb again".
+- **What he says.** Two lines:
+  - "your level went from A to B. Levels now go up one rank at a time ...";
+  - "You didn't lose any XP. All N of it is still yours, and the levels
+    it already paid for come back the moment you find K more badges and
+    reach <rank>."
+  The recap card comes back (already landed) for his line about what
+  you've found.
+- **The old gate line is now only for an account that did not change.** It
+  no longer says "nobody loses a level".
+- **Small stages.** Two `@container` tiers (24rem and 11rem) keep it on the
+  stage of an SE (the stage is 154px there under his two-sentence bubble).
+- **Gate.** `tools/check-b327-o.py` covers both reference devices and an SE,
+  and an unchanged account. It fails 15 ways on 651229b.
+- **Gates moved.**
+  - check-b326-d d3: the held and kept fixtures are changed levels, so
+    they expect "went from ... lose any XP".
+  - check-b327-m m4: an existing account's talk is at most 19 lines (was 18).
