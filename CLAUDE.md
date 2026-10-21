@@ -25116,3 +25116,55 @@ the entire app."*
   goes, Begin is 3rem; the bar's colour runs under it (`box-shadow`) so a row
   scrolled past never shows below Begin on an SE.
 - Gates moved: check-behaviour b320d (the climb's line accepts "N extra XP").
+
+### Build 327 (round 4) - every sound in the Home ambience's voice
+
+Madison: *"the noise of swiping to the next question is not good ... The
+sound of a correct answer is also annoying ... the rank up cutscene with the
+planets, the road map part of the cutscene all the sounds just sound very 8
+bit. None of the sounds match the vibe of the main menu. And again the rank
+road progress bar sound effects are just reused sounds ... the main menu
+background sound is the only thing I like."*
+
+> **Supersedes** b327j's chiptune ("chiptune, app-wide", `SND_CHIP`'s pulse
+> designs) and b327a's soft pulse lead. `amb.home` is untouched and is the
+> spec: the FM bell (3.01), the far twinkle (3.5), the triangle thrum, the
+> detuned saw pad, pink-noise air, D harmonic minor.
+
+- **No 8-bit voice is left anywhere (`sndAmbKit(K)`, called after
+  `sndChipKit` in `sndKit`).** It wraps `K.tone` so a pulse (`o.sq`) or a soft
+  lead (`o.duty`) is spoken as a sine with a faint octave, low passed, with a
+  little room; and re-speaks the chip kit's voices: `K.sq` a bell for a blip,
+  `K.seq` bells, `K.chip` a bell strum, `K.tri` low passed, `K.kick` a sine,
+  `K.snare` a breath, `K.hat` quiet high air, `K.bed` the ambience. New
+  voices: `K.tap` (a tiny bell), `K.wood` (FM 1.41, a soft knock), `K.air`,
+  `K.thrum`, `K.glass`. So every older design that still calls a chip voice
+  (the Virtual Room, chat, Customize, the streak tiers) now sounds like Home.
+  Every rendered id makes no `createPeriodicWave` (the pulse) at all.
+- **`SND_AMB` hand-designs the ones he hears most or named**, replacing fn
+  and desc: the taps, tabs, switches, sheets, slider, back, error, locked;
+  the test (`test.correct` two soft bells A5 then D6 over a low thrum;
+  `test.next` air only, no tone; `test.wrong`, select, star, pause, tick,
+  time's up, save, LOADING); `fc.flip`; the results (ticks, the four grades,
+  every XP sound, level up, the unlock banner and found rows); the badge case
+  and BADGE FOUND's score; and the rank road and rank-up cutscene
+  (`rank.road.fill` a glass tone rising D4 to D5 on the road's ease with the
+  pad and twinkles, landing on D6 and A6; `rank.whirl` keeps its roar - the
+  old fn run with `K.tone` stubbed - under twinkles quickening with the spin;
+  windup, swell, title, word, unlock pop, the climb, the tick).
+- **The road and the XP bar are not one sound twice**: the road is a rising
+  tone; `res.xp.fill` is bells stepping up D minor, placed on the bar's own
+  ease (`XP_FILL_EASE` inverted by binary search), over the pad. Similarity
+  .888 (gate .90).
+- **`SND_AMB_VOL` sets each id's vol absolutely**, computed so its loudest
+  50ms matches the previous build's for that id, the frequent ones (taps,
+  tabs, next, ticks) 2-6 dB under - then raised where needed to clear
+  check-sound's audibility floor (peak .04, RMS .01). A bell or air at the
+  same level reads softer than the pulse it replaced (no hard attack).
+  **Re-measure a vol with a render against the previous build, never by
+  ear here.** The scratch tools (lab.py: render every id in two builds and
+  compare level, peak, pulse count and the closest pairs; calib.py: the vols)
+  were in the session scratchpad, not the repo.
+- The timer's tock is C5 against the tick's D5 (a fourth was too far for
+  check-sound's "the metric can fail: tick vs tock" control, .854).
+- Gates: check-sound, check-b327-a, check-b327-j ALL PASS.
