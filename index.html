@@ -18121,10 +18121,10 @@
   /* (build 327, round 6: slower with the slower hand-off - the bubble lights
      from .8s over 1.6s, the copy goes from RU_HAND_COPY_AT 1.1s over 1.5s:
      still the bubble first, then the copy) */
-  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble.ru-hand-reveal{ transition:background-color 1.6s ease-in-out .8s, border-color 1.6s ease-in-out .8s, box-shadow 1.6s ease-in-out .8s; }
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble.ru-hand-reveal{ transition:background-color 2s ease-in-out .5s, border-color 2s ease-in-out .5s, box-shadow 2s ease-in-out .5s; }
   #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble.ru-hand-reveal > :not(.ru-ghost),
   #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble.ru-hand-reveal::before,
-  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble.ru-hand-reveal::after{ transition:opacity 1.6s ease-in-out .8s; }
+  #supernova-cutscene .cosmic-icon-badge.ru-hand-bubble.ru-hand-reveal::after{ transition:opacity 2s ease-in-out .5s; }
   #supernova-cutscene.ru-handoff:not(.ru-handoff-in) .rank-before .rank-orbit > :not(.ru-hand-slot){ opacity:0 !important; transition:none !important; }
   #supernova-cutscene.ru-handoff.ru-handoff-in .rank-before .rank-orbit > :not(.ru-hand-slot){ transition:opacity 3.2s cubic-bezier(.45,0,.35,1) .8s; }
   /* the sky comes last, out of the dark, once the flare is in its bubble */
@@ -81484,8 +81484,8 @@ function buildRankTrails(hero, orbit, tierKey, withVoid){
    (RU_HAND_COPY_*). The cutscene's own beats (attention, whirl, ...) wait
    RU_HAND_LEAD_MS more when the hand-off took, so the attention starts as
    the pull-back settles instead of in the middle of it. */
-var RU_HAND_ZOOM_MS = 4200, RU_HAND_DARK_MS = 400, RU_HAND_ZOOM_EASE = "cubic-bezier(.5,0,.15,1)";
-var RU_HAND_COPY_AT = 1100, RU_HAND_COPY_MS = 1500, RU_HAND_RISE_AT = 600, RU_HAND_RISE_MS = 3200;
+var RU_HAND_ZOOM_MS = 4200, RU_HAND_DARK_MS = 400, RU_HAND_ZOOM_EASE = "cubic-bezier(.4,0,.2,1)";
+var RU_HAND_COPY_AT = 750, RU_HAND_COPY_MS = 1500, RU_HAND_RISE_AT = 600, RU_HAND_RISE_MS = 3200;
 var RU_HAND_LEAD_MS = RU_HAND_DARK_MS + RU_HAND_ZOOM_MS - 1300 - 400;
 function rankCutHandoff(overlay, stageWrap, heroBefore, tierKey, ghost){
   try{
