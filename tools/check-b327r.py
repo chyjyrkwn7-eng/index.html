@@ -165,7 +165,8 @@ def main():
             check("B %s: no chat button over the room's content at any of %d sizes" % (state, len(SIZES)), not bad, bad[:4])
 
         def race_room(code, n, finished=True):
-            pg.evaluate("""([code, n, fin])=>{ const parts = __vrBots.room(code, n, i => fin ? __vrBots.finished(i, 90 + i * 7) : { progress: 20 * i });
+            pg.evaluate("""([code, n, fin])=>{ const parts = __vrBots.room(code, n, i => fin === 'wait' ? (i === 1 ? { progress: 50 } : __vrBots.finished(i, 90 + i * 7))
+                : fin ? __vrBots.finished(i, 90 + i * 7) : { progress: 20 * i });
               return fbDb.collection('vrooms').doc(code).set({ status:'starting', game:'race', units:['Identity Crimes'],
                 startAt: Date.now() - 2000, chatMessages: [], participants: parts, racers: Object.keys(parts) }); }""", [code, n, finished])
             pg.wait_for_timeout(250)
@@ -254,7 +255,10 @@ def main():
 
         # ---- the waiting results, the leaderboard --------------------------
         print("\nWaiting results and the race leaderboard")
-        race_room("R327FIN", 4, finished=True)
+        # one racer still going, so the leaderboard does not roll by itself
+        # while the waiting results are measured
+        race_room("R327FIN", 4, finished="wait")
+        pg.evaluate("()=>__vrBots.beat()")
         pg.evaluate("()=>{ order.forEach(qi=>{ picked[qi]=optionOrder(qi).indexOf(QUESTIONS[qi].answer); }); stopQuestionTimer(); summarize(); }")
         pg.wait_for_function("()=>!!document.querySelector('.vroom-waitcard')", timeout=30000)
         pg.wait_for_timeout(1500)
