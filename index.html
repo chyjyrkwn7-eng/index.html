@@ -31035,6 +31035,13 @@
   body.cutscene-focus .bottomtabs *, body.cutscene-focus:not(.cutscene-soft) .roomchat-fab *{ pointer-events:none !important; }
   body.cutscene-return:not(.cutscene-focus) .chatdock-btn, body.cutscene-return:not(.cutscene-focus) .roomchat-fab{ animation:cs-up-in .62s cubic-bezier(.2,.9,.25,1) both; }
   body.cutscene-return:not(.cutscene-focus) .bottomtabs{ animation:cs-down-in .62s cubic-bezier(.2,.9,.25,1) both; }
+  /* (327 round 6) over the race leaderboard the Room button sits INSIDE the
+     ship's window, lower than the screen's corner, so its slide has to clear
+     the window's top as well as its own height or it stops in frame. */
+  @keyframes cs-up-out-vrc{ from{ translate:0 0; } to{ translate:0 calc(-100% - 1.5rem - 5vh - 9px - .55rem - env(safe-area-inset-top, 0px)); } }
+  @keyframes cs-up-in-vrc{ from{ translate:0 calc(-100% - 1.5rem - 5vh - 9px - .55rem - env(safe-area-inset-top, 0px)); } to{ translate:0 0; } }
+  body.cutscene-focus:not(.cutscene-soft):has(#vroom-race-cut) .roomchat-fab{ animation-name:cs-up-out-vrc; }
+  body.cutscene-return:not(.cutscene-focus):has(#vroom-race-cut) .roomchat-fab{ animation-name:cs-up-in-vrc; }
   body.cutscene-focus :is(.daily-alert, .app-banner, .vroom-chat-alert, .toast, .update-banner){ visibility:hidden !important; pointer-events:none !important; }
   /* an open chat goes out of reach with its button */
   body.cutscene-focus:not(.cutscene-soft) :is(.chatdock-panel, #roomchat-sheet){ visibility:hidden !important; pointer-events:none !important; }

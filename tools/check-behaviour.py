@@ -4087,15 +4087,19 @@ def check_b240(br):
       out.moment = (document.querySelector('.friend-moment-title') || {}).textContent || '';
       document.querySelector('.friend-moment')?.remove();
       /* 7. the room's chat can be lifted over the results */
+      /* MOVED IN 327 (round 6): the Room button only exists where the room's
+         chat is out of sight - built in a hidden .roomchat-host, as the
+         waiting results build it. */
       const host = document.createElement('section'); host.className = 'panel';
+      const rch = document.createElement('div'); rch.className = 'roomchat-host'; rch.hidden = true;
       const chat = document.createElement('div'); chat.className = 'vroom-chat'; chat.textContent = 'room chat';
-      host.appendChild(chat); stage.replaceChildren(host);
+      rch.appendChild(chat); host.appendChild(rch); stage.replaceChildren(host);
       mountRoomChatFab(); await wait(100);
       out.fab = !!document.getElementById('roomchat-fab');
       openRoomChatSheet(); await wait(100);
       out.lifted = !!document.querySelector('#roomchat-sheet .vroom-chat');
       closeRoomChatSheet();
-      out.returned = chat.parentNode === host;
+      out.returned = chat.parentNode === rch;
       } catch(e){ out.threw = String(e); }
       return out; }""")
     check("one friend chat per pair, the same id from both sides", r.get("symmetric") is True, r)
@@ -20897,8 +20901,10 @@ def check_b318_one_chat(br):
             at("Leaderboard board %d" % (i + 1), "document.querySelectorAll('.screen-rankings .navsegment .iconbtn')[%d].click();" % i, 400)
         at("Leaderboard again", "showHome(); showRankings();")
         # the race leaderboard: a room's results with its chat, then the cutscene
+        # MOVED IN 327 (round 6): "why is the room chat button a thing if you can just use the chat at the bottom of the page? Should we just remove the room chat button where the chat is available at the bottom?" - the Room button is only mounted where the room's chat is NOT on the page, i.e. built out of sight in a hidden .roomchat-host (the waiting results).
         at("race results", """const host = document.createElement('section'); host.className = 'panel rs-screen'; host.dataset.screen = 'results';
-          const chat = document.createElement('div'); chat.className = 'vroom-chat'; chat.textContent = 'room chat'; host.appendChild(chat);
+          const rch = document.createElement('div'); rch.className = 'roomchat-host'; rch.hidden = true;
+          const chat = document.createElement('div'); chat.className = 'vroom-chat'; chat.textContent = 'room chat'; rch.appendChild(chat); host.appendChild(rch);
           stage.replaceChildren(host); mountRoomChatFab();""")
         at("race leaderboard", """vroomMyKey = 'me';
           playVroomRaceCutscene([{ key: 'me', xp: 275, p: { username: 'Madison', avatarChar: 'ninja', finished: true, joinedAt: 1 } },
@@ -20910,19 +20916,30 @@ def check_b318_one_chat(br):
         seen["race leaderboard (reveal)"] = seen.pop("race leaderboard")
         pg.wait_for_function("() => !document.body.classList.contains('cutscene-focus')", timeout=45000)
         pg.wait_for_timeout(900)
+        # (327 round 6) the button comes back from inside the ship's window, a longer
+        # slide than from the corner: wait for the slide to land (up to 4s) rather than
+        # sampling it mid-flight on a loaded machine.
+        try:
+            pg.wait_for_function("() => !document.body.classList.contains('cutscene-return')", timeout=4000)
+        except Exception:
+            pass
         seen["race leaderboard"] = pg.evaluate(B318_CHATS)
         dock = pg.evaluate("() => { const d = document.getElementById('chatdock-btn').getBoundingClientRect(); return [Math.round(d.right), Math.round(d.top + d.height / 2)]; }")
         race = seen["race leaderboard"]
+        win = pg.evaluate("() => { const w = document.querySelector('#vroom-race-cut .vrc-window'); if(!w) return null; const r = w.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.right), Math.round(r.bottom)]; }")
         at("Home after the race", "document.getElementById('vroom-race-cut')?.remove(); showHome();")
         bad = {k: v for k, v in seen.items() if len(v) != 1 and k not in ("race results", "race leaderboard (reveal)")}
         check(dev + ": exactly one chat button on each of %d screens and boards" % (len(seen) - 2), not bad, bad or "")
         check(dev + ": none at all while the race leaderboard's reveal plays (no chat during a cutscene)",
               seen["race leaderboard (reveal)"] == [], seen["race leaderboard (reveal)"])
-        ok_room = (len(race) == 1 and race[0][0] == "roomchat-fab"
-                   and abs(race[0][1] + race[0][3] - dock[0]) <= 2)
-        check(dev + ": on the race leaderboard it is the room's chat, in the dock's own corner", ok_room, [race, dock])
-        check(dev + ": the room's results screen keeps its labelled Room chat beside the dock (two different controls)",
-              len(seen["race results"]) == 2 and any(x[4].startswith("Room chat") for x in seen["race results"]), seen["race results"])
+        # MOVED IN 327 (round 6): "the room chat and the other chat button are on top of the virtual room stuff" -
+        # over the leaderboard the room's button sits inside the ship's window (top right), not across its frame
+        # in the dock's corner; it still is the only chat button there.
+        ok_room = (len(race) == 1 and race[0][0] == "roomchat-fab" and win is not None
+                   and race[0][1] >= win[0] + 9 and race[0][1] + race[0][3] <= win[2] - 9 and race[0][2] >= win[1] + 9)
+        check(dev + ": on the race leaderboard it is the room's chat, inside the ship's window", ok_room, [race, win])
+        check(dev + ": the waiting results keep a labelled Room button beside the dock (two different controls)",
+              len(seen["race results"]) == 2 and any(x[4].startswith("Room") for x in seen["race results"]), seen["race results"])
         ctx.close()
 
 
@@ -29130,7 +29147,9 @@ def check_b324_roomchat_focus(br):
         r = pg.evaluate("""async (race) => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
           document.querySelectorAll('#pushing-update,#intro-pop,.nova-talk').forEach(n => n.remove());
           showHome(); await wait(400);
-          const chat = document.createElement('section'); chat.className = 'vroom-chat'; stage.firstElementChild.appendChild(chat);
+          /* MOVED IN 327 (round 6): out of sight, as the waiting results build it - a chat on the page has no Room button now */
+          const rch = document.createElement('div'); rch.className = 'roomchat-host'; rch.hidden = true;
+          const chat = document.createElement('section'); chat.className = 'vroom-chat'; rch.appendChild(chat); stage.firstElementChild.appendChild(rch);
           if(race){ const c = document.createElement('div'); c.id = 'vroom-race-cut'; document.body.appendChild(c); }
           mountRoomChatFab(); await wait(300);
           const box = s => { const e = document.querySelector(s); if(!e) return null; const b = e.getBoundingClientRect();
