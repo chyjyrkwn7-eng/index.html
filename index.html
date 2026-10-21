@@ -2503,20 +2503,23 @@
   #daily-lock-tip.is-tight{ padding:.5rem .7rem; font-size:.84rem; }
   #daily-lock-tip.is-tight span{ font-size:.78rem; }
   #daily-lock-tip span{ color:var(--soft, #A9B1BC); font-size:.92rem; }
-  /* THE CARET IS PART OF THE BUBBLE (build 327): a square of the bubble's
-     own fill and border, turned 45 degrees with its middle on the bubble's
-     inner edge and clipped to the half outside it - so its fill covers the
-     bubble's border where they meet, its two edges ARE the border carried
-     on, and the drop-shadow on the bubble (a filter, not a box-shadow)
-     glows round both as one outline. It was two triangles of different
-     slopes, a fixed colour and no glow: the edge thinned towards the base
-     and the caret read as stuck on. 12.73px = 9px out, 18px across. */
-  #daily-lock-tip::after{ content:""; position:absolute; pointer-events:none; box-sizing:border-box; width:12.73px; height:12.73px;
-    background:#1E242C; border:0 solid; border-color:inherit; }
-  #daily-lock-tip.is-left::after{ right:-6.37px; top:calc(var(--caret, 50%) - 6.37px); transform:rotate(45deg);
-    border-top-width:1px; border-right-width:1px; border-top-right-radius:2px; clip-path:polygon(-1px -1px, calc(100% + 1px) -1px, calc(100% + 1px) calc(100% + 1px)); }
-  #daily-lock-tip.is-above::after{ bottom:-6.37px; left:calc(var(--caret, 50%) - 6.37px); transform:rotate(45deg);
-    border-right-width:1px; border-bottom-width:1px; border-bottom-right-radius:2px; clip-path:polygon(calc(100% + 1px) -1px, calc(100% + 1px) calc(100% + 1px), -1px calc(100% + 1px)); }
+  /* THE CARET IS PART OF THE BUBBLE (build 327): two filled triangles, no
+     borders and no rotation. ::before is the outline, in the border's own
+     colour flattened onto the bubble (rgba(255,255,255,.16) over #1E242C),
+     its base on the bubble's inner edge, 9px out. ::after is the bubble's
+     fill, the same triangle 1px in all round (1.414px along a 45-degree
+     edge) and running 3px back INSIDE the bubble, so it paints over the
+     bubble's border where they meet and nothing of that line is left
+     across the base. The bubble's drop-shadow (a filter, not a box-shadow)
+     glows round both as one outline. */
+  #daily-lock-tip::before, #daily-lock-tip::after{ content:""; position:absolute; pointer-events:none; }
+  #daily-lock-tip::before{ background:rgb(66,71,78); }
+  #daily-lock-tip::after{ background:#1E242C; }
+  #daily-lock-tip.is-live::before{ background:color-mix(in srgb, var(--theme-c1) 55%, #1E242C); }
+  #daily-lock-tip.is-left::before{ right:-9px; top:calc(var(--caret, 50%) - 9px); width:9px; height:18px; clip-path:polygon(0 0, 100% 50%, 0 100%); }
+  #daily-lock-tip.is-left::after{ right:-7.586px; top:calc(var(--caret, 50%) - 10.586px); width:10.586px; height:21.172px; clip-path:polygon(0 0, 100% 50%, 0 100%); }
+  #daily-lock-tip.is-above::before{ bottom:-9px; left:calc(var(--caret, 50%) - 9px); width:18px; height:9px; clip-path:polygon(0 0, 100% 0, 50% 100%); }
+  #daily-lock-tip.is-above::after{ bottom:-7.586px; left:calc(var(--caret, 50%) - 10.586px); width:21.172px; height:10.586px; clip-path:polygon(0 0, 100% 0, 50% 100%); }
   [data-reduce-motion="true"] #daily-lock-tip{ transition:none; transform:none; }
   /* (#contextual-info-popup and its pointer line and ring are gone - build 317,
      round three: Home's taps answer in one caption under the planet system,
