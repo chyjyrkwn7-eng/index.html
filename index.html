@@ -66126,6 +66126,7 @@ function sndKit(G, out, t0, seed){
   };
   sndChipKit(K);
   sndAmbKit(K);
+  sndDarkKit(K);
   return K;
 }
 
@@ -68253,6 +68254,238 @@ Object.keys(SND_AMB).forEach(id => {
 /* the levels cover the re-spoken ids too (a pulse made a sine changes its loudness) */
 Object.keys(SND_AMB_VOL).forEach(id => { if(SOUND_CATALOGUE[id]) SOUND_CATALOGUE[id].vol = SND_AMB_VOL[id]; });
 
+/* ---- ROUND 6: DARK, LOW, SPACE, A LITTLE GAME (build 327, round 6) ----
+   Madison: "The result screen sound effects like the xp box, the xp bar the
+   grade box are all just high pitched things. It doesn't sound very dark
+   themed. It doesn't sound very space themed. It doesn't sound very game
+   like ... The music sound effect (except the Home Screen) all just sounds
+   like piano noises ... Less pokemon more cool but still some pokemon mix.
+   Make it all go well together." Round 4/5 spoke the ambience's BELLS - and
+   a ringing FM bell an octave or two above the ambience is exactly a piano
+   note. The ambience itself is mostly its dark detuned saw pad, its thrum,
+   its wind; the bell is one quiet muted note in twenty seconds. So the
+   palette moves down to THAT:
+     - the bells (K.chime, K.twinkle, K.tap, K.glass, K.sparkle) are re-spoken
+       one register down as a soft analogue pluck - a sawtooth through a
+       lowpass that closes as it decays, over a sine body - so every older
+       design that still rings one sounds like a synth in a dark room, not a
+       piano; glints stay higher but quiet;
+     - new voices for the redesigned set: K.syn (that pluck), K.sub (a sine
+       swell under everything), K.dbass (a deep plucky bass), K.key (a soft
+       square lead, LOW-PASSED - the "little bit of pokemon", used sparingly),
+       K.rise (a reversed swell of air), K.boom (a sub drop with dark air),
+       K.choir (a low formant "oo", for the mysterious moments).
+   The ambience never meets this kit's re-spoken voices: it is built from
+   K.tone, K.fm and K.dest only, which stay as they were. */
+function sndDarkKit(K){
+  const tone0 = K.tone, fm0 = K.fm;
+  const down = f => { const h = sndHz(f); return h > 340 ? h / 2 : h; };
+  /* the pluck: saw + a quieter triangle an octave below, the filter closing */
+  K.syn = o => {
+    const f = sndHz(o.f), g = o.g == null ? .05 : o.g, d = o.d == null ? .6 : o.d, a = o.a == null ? .004 : o.a;
+    const lp = Math.min(o.lp || 2400, f * (o.bright || 5)), lp2 = Math.max(180, f * 1.15);
+    tone0({ t: o.t, f, f2: o.f2, gl: o.gl, type: "sawtooth", lp, ff2: lp2, fgl: Math.max(.05, d * .45), q: 1.2, a, hold: o.hold, d, g: g * .55, pan: o.pan, pan2: o.pan2, rev: o.rev == null ? .35 : o.rev, dly: o.dly, det: 4 });
+    tone0({ t: o.t, f: f / 2, f2: o.f2 != null ? sndHz(o.f2) / 2 : undefined, gl: o.gl, type: "triangle", lp: 900, a, hold: o.hold, d: d * 1.1, g: g * .7, pan: o.pan, rev: o.rev == null ? .35 : o.rev });
+  };
+  K.sub = o => tone0(Object.assign({ type: "sine", a: .3, d: .8, g: .1 }, o, { type: "sine" }));
+  K.dbass = o => { tone0(Object.assign({ type: "sawtooth", lp: 900, ff2: 140, fgl: .18, q: 2, a: .004, d: .35, g: .05 }, o, { type: "sawtooth" })); tone0({ t: o.t, f: o.f, type: "sine", a: .004, hold: o.hold, d: (o.d || .35) * 1.2, g: (o.g || .05) * 1.2 }); };
+  K.key = o => tone0(Object.assign({ type: "square", lp: 1300, q: .7, a: .012, d: .25, g: .028, vib: [5, 10, 0, .15], rev: .3, dly: .16 }, o, { type: "square" }));
+  K.rise = o => K.noise(Object.assign({ color: "p", lp: 260, ff2: 1800, fgl: o.a || .8, a: .8, d: .12, g: .06, rev: .35 }, o));
+  K.boom = o => { tone0(Object.assign({ type: "sine", f: 92, f2: 34, gl: .5, a: .004, d: 1.1, g: .3 }, o, { type: "sine" })); K.noise({ t: o.t, color: "b", lp: 420, ff2: 120, fgl: .8, a: .006, d: (o.d || 1.1) * .9, g: (o.g || .3) * .45, rev: .4 }); };
+  K.choir = o => { K.vox(Object.assign({ v: "o", v2: "u", a: .6, d: 1.2, g: .03, rev: .5 }, o)); K.vox(Object.assign({ v: "o", v2: "u", a: .6, d: 1.2, g: .03, rev: .5 }, o, { f: sndHz(o.f) * 1.5, g: (o.g || .03) * .6, pan: .4 })); };
+  K.dpad = (notes, o) => notes.forEach(n => [-9, 0, 9].forEach(dt => tone0(Object.assign({ f: n, type: "sawtooth", lp: 520, det: dt, a: .5, d: 1.4, g: .011, rev: .45 }, o))));
+  /* the older designs' bells, re-spoken one register down as the pluck */
+  K.chime = o => K.syn({ t: o.t, f: down(o.f), f2: o.f2 != null ? down(o.f2) : undefined, gl: o.gl, a: Math.max(.004, o.a || 0), d: Math.min(2.4, (o.d == null ? 1.2 : o.d) * .8), g: (o.g == null ? .05 : o.g) * 1.1, pan: o.pan, rev: .45, dly: o.dly == null ? .2 : o.dly * .7 });
+  K.twinkle = o => fm0({ t: o.t, f: down(o.f), ratio: 2, idx: .35, idx2: 0, a: .006, d: o.d == null ? .8 : o.d, g: (o.g == null ? .028 : o.g) * .6, lp: 2200, pan: o.pan, orbit: o.orbit, dly: .35, rev: .5 });
+  K.tap = o => { tone0({ t: o.t, f: down(o.f), type: "triangle", lp: 1500, a: .002, d: o.d == null ? .16 : o.d, g: (o.g == null ? .04 : o.g) * 1.1, pan: o.pan, rev: .15 }); };
+  K.glass = o => tone0(Object.assign({}, o, { type: "sine", f: down(o.f), f2: o.f2 != null ? down(o.f2) : undefined, a: Math.max(.012, o.a || 0), rev: .35 }));
+  K.sparkle = o => { for(let i = 0; i < o.n; i++){ const tt = o.t + (o.t2 - o.t) * (o.rise ? i / Math.max(1, o.n - 1) : K.R());
+    const f = o.rise ? o.f1 * Math.pow(o.f2 / o.f1, i / Math.max(1, o.n - 1)) : K.r(o.f1, o.f2);
+    fm0({ t: tt, f: f / 2, ratio: 2, idx: .3, idx2: 0, d: o.d || .25, g: (o.g || .02) * .5, lp: 2600, pan: K.r(-.7, .7), rev: .5 }); } };
+}
+
+/* THE REDESIGNED SET. Lower, warmer, satisfying: the results screen, the
+   test's own sounds, the start-up, the rank-up journey and its cutscene. */
+const SND_DARK = {
+  /* ---- the test ---- */
+  "test.correct": { desc: "Right: a soft synth pluck rising a fourth, A3 to D4, on a deep body - the 'okay' it always was, two octaves lower and warm.",
+    fn: K => { K.syn({ f: "A3", d: .22, g: .05 }); K.syn({ t: .07, f: "D4", d: .55, g: .06 }); K.sub({ t: .07, f: "D2", a: .01, d: .35, g: .05 }); K.twinkle({ t: .1, f: "D6", d: .4, g: .008 }); } },
+  "test.wrong": { desc: "Wrong: a muted low pluck falling a half step, Bb to A, over a soft sub - sorry, not a buzzer.",
+    fn: K => { K.syn({ f: "Bb2", d: .16, g: .05, bright: 3 }); K.syn({ t: .1, f: "A2", d: .45, g: .05, bright: 2.5 }); K.sub({ t: .1, f: "A1", a: .01, d: .4, g: .06 }); } },
+  "test.select": { desc: "An answer picked: one short low pluck on D4, damped.",
+    fn: K => { K.syn({ f: "D4", d: .09, g: .035, bright: 3, rev: .1 }); } },
+  "test.next": { desc: "On to the next question: a low breath of air passing across - no tone.",
+    fn: K => K.air({ bp: 420, ff2: 760, fgl: .16, q: .7, a: .05, d: .13, g: .05, pan: .25, pan2: -.25, pd: .2 }) },
+  "test.load": { desc: "LOADING TEST, an intro sting: a reversed swell of dark air and the pad opening for the length of the bar (opts.dur), the sub climbing under it, then a deep boom and a D minor chord struck low with a soft square lead answering A to D.",
+    fn: (K, o) => {
+      const D = Math.max(.8, Math.min(3, (o && o.dur) || 1)), L = D * .82;
+      K.rise({ lp: 180, ff2: 1500, fgl: L, a: L, d: .15, g: .07 });
+      K.dpad(["D2", "A2", "F3"], { lp: 260, ff2: 900, fgl: L, a: L * .8, hold: L * .2, d: 1.6, g: .012 });
+      K.sub({ f: "D1", f2: "D2", gl: L, a: L * .8, hold: L * .2, d: .6, g: .09 });
+      K.boom({ t: L, f: 80, f2: 32, d: 1, g: .28 });
+      ["D3", "F3", "A3", "D4"].forEach((f, i) => K.syn({ t: L + i * .03, f, d: 1.4, g: .04, pan: (i - 1.5) * .3 }));
+      K.key({ t: L + .12, f: "A3", d: .12, g: .024 }); K.key({ t: L + .28, f: "D4", d: .7, g: .026 });
+    } },
+  "app.start": { group: "Home", bus: "ui", cd: 60000, poly: 1, hap: null,
+    desc: "The app coming up (the first touch of a session on Home or Welcome, when sound can start): out of silence, a reversed swell and the Home pad's chord opening, a deep thrum, a low D minor chord and one far glint - an intro into the ambience.",
+    fn: K => {
+      K.rise({ lp: 150, ff2: 1100, fgl: 1.2, a: 1.2, d: .4, g: .06 });
+      K.dpad(["D2", "A2", "D3", "F3"], { lp: 220, ff2: 800, fgl: 1.3, a: 1.1, hold: .4, d: 2.2, g: .011 });
+      K.sub({ f: "D1", a: 1, hold: .3, d: 1.6, g: .1 });
+      K.boom({ t: 1.2, f: 70, f2: 30, d: 1.4, g: .22 });
+      ["D3", "A3", "F4"].forEach((f, i) => K.syn({ t: 1.22 + i * .05, f, d: 1.8, g: .035, pan: (i - 1) * .4 }));
+      K.twinkle({ t: 1.6, f: "A6", d: 1.4, g: .02 });
+    } },
+
+  /* ---- the results ---- */
+  "res.bar.tick": { desc: "The grade counting in: one soft, low pluck per percent, rising up D harmonic minor with the number - the same sound the whole way, never a different one past the pass mark.",
+    fn: (K, o) => {
+      const fr = Math.max(0, Math.min(1, o && o.frac != null ? +o.frac : .5)), f = K.dm(Math.round(fr * 10), "D3");
+      K.syn({ f, d: .07, g: .035, bright: 4, rev: .12 });
+    } },
+  "res.grade.fail": { desc: "Under the pass mark: low plucks falling slowly, A F E D, under the dark pad and a sub - sorry, not punishing.",
+    fn: K => { [["A3", 0], ["F3", .24], ["E3", .48], ["D3", .72]].forEach((n, i) => K.syn({ t: n[1], f: n[0], d: i === 3 ? 1.6 : .7, g: .045, bright: 3 })); K.dpad(["D2", "F2", "A2"], { lp: 380, a: .3, hold: .5, d: 1.6, g: .012 }); K.sub({ t: .72, f: "D1", a: .05, d: 1.4, g: .1 }); } },
+  "res.grade.pass": { desc: "A pass: plucks climbing D F A to a held D, the pad warming under them, a sub on the last.",
+    fn: K => { [["D3", 0], ["F3", .12], ["A3", .24]].forEach(n => K.syn({ t: n[1], f: n[0], d: .6, g: .045 })); K.syn({ t: .36, f: "D4", d: 1.4, g: .055 }); K.dpad(["D2", "A2", "D3"], { t: .2, lp: 600, a: .3, d: 1.6, g: .012 }); K.sub({ t: .36, f: "D2", a: .02, d: .9, g: .08 }); K.twinkle({ t: .5, f: "A6", d: .8, g: .012 }); } },
+  "res.grade.great": { desc: "90 and up: the dark key turning bright - plucks through Bb and C into D major, a soft square lead answering, the pad opening.",
+    fn: K => {
+      [["Bb2", "D3", "F3", 0], ["C3", "E3", "G3", .16], ["D3", "F#3", "A3", .32]].forEach(c => c.slice(0, 3).forEach((f, i) => K.syn({ t: c[3] + i * .02, f, d: c[3] > .3 ? 1.5 : .3, g: .035 })));
+      K.dbass({ f: "Bb1", d: .2, g: .05 }); K.dbass({ t: .16, f: "C2", d: .2, g: .05 }); K.dbass({ t: .32, f: "D2", d: .8, g: .06 });
+      K.key({ t: .4, f: "A3", d: .1 }); K.key({ t: .52, f: "D4", hold: .3, d: .6 });
+      K.dpad(["D3", "F#3", "A3"], { t: .32, lp: 900, a: .2, hold: .4, d: 1.4, g: .011 });
+      K.twinkle({ t: .6, f: "F#6", d: 1, g: .012 });
+    } },
+  "res.grade.perfect": { desc: "100: a reversed swell held, a deep boom, then D major struck low in plucks and pad, the square lead singing F# up to A, one far glint.",
+    fn: K => {
+      K.rise({ lp: 200, ff2: 2000, fgl: .5, a: .5, d: .2, g: .07 });
+      K.boom({ t: .5, f: 90, f2: 30, d: 1.3, g: .3 });
+      ["D3", "F#3", "A3", "D4"].forEach((f, i) => K.syn({ t: .5 + i * .03, f, d: 2, g: .04, pan: (i - 1.5) * .3 }));
+      K.dpad(["D2", "A2", "F#3", "A3"], { t: .5, lp: 1000, a: .1, hold: .8, d: 2, g: .012 });
+      K.key({ t: .72, f: "F#4", d: .12 }); K.key({ t: .86, f: "A4", hold: .4, d: .8 });
+      K.twinkle({ t: 1, f: "D7", d: 1.4, g: .014 });
+    } },
+  "res.xp.line": { desc: "An XP line landing: one low pluck, a step higher up D minor each line (opts.i), a soft thud under it.",
+    fn: (K, o) => { const i = Math.max(0, Math.min(10, (o && o.i) || 0)); K.syn({ f: K.dm(i, "D3"), d: .35, g: .045, bright: 4 }); K.sub({ f: "D2", a: .004, d: .12, g: .05 }); } },
+  "res.xp.count": { desc: "The XP total counting: a tiny low tick per step, climbing D minor with the count (opts.k).",
+    fn: (K, o) => { const k = Math.max(0, Math.min(1, (o && o.k) || 0)); K.syn({ f: K.dm(Math.round(k * 9), "A3"), d: .05, g: .028, bright: 3, rev: .08 }); } },
+  "res.xp.total": { desc: "The XP total landing: a soft boom, a low D minor chord struck in plucks, the pad opening and a glint.",
+    fn: K => { K.boom({ f: 85, f2: 36, d: .7, g: .2 }); ["D3", "A3", "D4", "F4"].forEach((f, i) => K.syn({ t: i * .025, f, d: 1.1, g: .04, pan: (i - 1.5) * .3 })); K.dpad(["D2", "A2"], { lp: 400, ff2: 900, fgl: .5, a: .05, d: 1.1, g: .012 }); K.twinkle({ t: .1, f: "A6", d: .7, g: .012 }); } },
+  "res.xp.fill": { desc: "The XP bar filling (opts.dur): a dark saw pad whose filter opens with the bar's own ease, a sub under it, and low plucks stepping up D minor placed where the bar reaches each step - quick while it runs, spacing out as it settles.",
+    fn: (K, o) => {
+      const dur = Math.max(.3, Math.min(4, o && o.dur || 1.6)), e = sndBezier(...XP_FILL_EASE), n = Math.max(5, Math.min(12, Math.round(dur * 4)));
+      K.dpad(["D2", "A2", "D3"], { lp: 220, ff2: 1100, fgl: dur, a: .15, hold: dur - .1, d: .5, g: .011 });
+      K.sub({ f: "D1", a: .2, hold: dur - .2, d: .4, g: .07 });
+      for(let k = 1; k <= n; k++){
+        let lo = 0, hi = 1;
+        for(let it = 0; it < 14; it++){ const m = (lo + hi) / 2; if(e(m) < k / (n + 1)) lo = m; else hi = m; }
+        K.syn({ t: lo * dur, f: K.dm(k, "D3"), d: .3, g: .024 + k * .0015, pan: k % 2 ? .3 : -.3, bright: 3.5 });
+      }
+    } },
+  "res.xp.pop": { desc: "The bar landing: a soft thud and D and A struck low together, a glint a beat later.",
+    fn: K => { K.sub({ f: "D2", a: .003, d: .3, g: .08 }); ["D3", "A3"].forEach(f => K.syn({ f, d: .9, g: .045 })); K.twinkle({ t: .14, f: "F#6", d: .6, g: .01 }); } },
+  "res.xp.knock": { desc: "A full bar at its wall: a soft low gong on D with the pad's fifth closing - full, not wrong.",
+    fn: K => { K.fm({ f: "D2", ratio: 1.4, idx: 1.2, idx2: .2, a: .004, d: 1, g: .07, lp: 900, rev: .35 }); K.sub({ f: "D1", a: .01, d: .6, g: .08 }); K.dpad(["D2", "A2"], { lp: 500, ff2: 250, fgl: .6, a: .02, d: .7, g: .012 }); } },
+  "res.xp.overflow": { desc: "XP with nowhere to go, counting on: dark air lifting and low plucks streaming up D minor into a held D.",
+    fn: K => { K.rise({ lp: 300, ff2: 1300, fgl: .8, a: .7, d: .3, g: .05 }); for(let i = 0; i < 6; i++) K.syn({ t: i * .1, f: K.dm(i * 2, "D3"), d: .25, g: .025 + i * .003, bright: 3 }); K.syn({ t: .62, f: "D4", d: 1, g: .045 }); K.sub({ t: .62, f: "D2", d: .6, g: .06 }); } },
+  "res.levelup": { desc: "Level up, a game's level-up made dark: a quick low square run A C# E, then D major struck - pad, plucks, a sub boom - the lead holding the high D.",
+    fn: K => {
+      [["A3", 0], ["C#4", .07], ["E4", .14]].forEach(n => K.key({ t: n[1], f: n[0], d: .06, vib: null, dly: 0 }));
+      K.boom({ t: .22, f: 88, f2: 32, d: 1, g: .24 });
+      ["D3", "F#3", "A3", "D4"].forEach((f, i) => K.syn({ t: .22 + i * .02, f, d: 1.6, g: .04, pan: (i - 1.5) * .3 }));
+      K.dpad(["D2", "A2", "F#3"], { t: .22, lp: 900, a: .08, hold: .6, d: 1.6, g: .012 });
+      K.key({ t: .3, f: "D4", hold: .45, d: .7, g: .03 });
+      K.twinkle({ t: .5, f: "A6", d: 1.2, g: .012 });
+    } },
+
+  /* ---- the rank-up journey ---- */
+  "rank.journey.bed": { group: "Rank-up journey", bus: "music", cd: 500, poly: 1, hap: null,
+    desc: "The rank-up journey's own music, the bed every moment of it sits in: the Home ambience's dark pad - D, A, F - breathing slowly through its filter for the length of the journey (opts.dur), a sub drone and the ambience's wind; started when the journey goes to the road map, faded under the hand-off, again after the cutscene, and stopped when it ends.",
+    fn: (K, o) => {
+      const D = Math.max(4, Math.min(120, (o && o.dur) || 60));
+      const seg = 6, n = Math.ceil(D / seg);
+      for(let k = 0; k < n; k++){
+        const t = k * seg, c = k % 3 === 2 ? ["Bb1", "F2", "D3"] : ["D2", "A2", "F3"];
+        K.dpad(c, { t, lp: 260, ff2: k % 2 ? 300 : 520, fgl: seg, a: k ? 3 : 2.5, hold: seg - 3, d: 3.5, g: .009 });
+      }
+      K.sub({ f: "D1", a: 2.5, hold: D - 3, d: 2, g: .06 });
+      K.hush({ color: "p", bp: 380, q: .8, am: [.12, .6], a: 3, hold: D - 4, d: 2, g: .025 });
+      for(let t = 3.5; t < D - 2; t += 7.3) K.twinkle({ t, f: ["A5", "F5", "D6"][Math.round(t) % 3], d: 1.6, g: .012, pan: Math.sin(t) * .6 });
+    } },
+  "rank.road.fill": { desc: "The road's light travelling (opts.dur), an accent inside the journey's bed: the pad walking Dm, Bb, C an octave below the old one, a deep walking bass, a filtered saw rising with the light; then the chord turning to D major low as the light reaches the circle.",
+    fn: (K, o) => {
+      const D = Math.max(.8, Math.min(4, o && o.dur || 1.5)), seg = D / 3;
+      [["D2", "F2", "A2", "D2"], ["Bb1", "D2", "F2", "Bb1"], ["C2", "E2", "G2", "C2"]].forEach((c, k) => {
+        K.dpad(c.slice(0, 3), { t: k * seg, lp: 260 + k * 120, ff2: 420 + k * 160, fgl: seg, a: Math.min(.3, seg * .5), hold: seg * .5, d: seg * .9, g: .01 });
+        K.dbass({ t: k * seg, f: c[3], d: seg * .7, g: .045 });
+      });
+      K.tone({ f: "D3", f2: "D4", gl: D, type: "sawtooth", lp: 300, ff2: 1300, fgl: D, a: D * .6, hold: D * .3, d: .3, g: .012, rev: .4 });
+      K.dpad(["D2", "F#2", "A2", "D3"], { t: D - .05, lp: 600, ff2: 1200, fgl: .6, a: .1, hold: .4, d: 1.6, g: .013 });
+      K.sub({ t: D, f: "D1", a: .02, d: 1, g: .08 });
+      ["D3", "F#3", "A3"].forEach((f, i) => K.syn({ t: D + i * .04, f, d: 1.4, g: .03, pan: (i - 1) * .3 }));
+    } },
+  "rank.road.scroll": { desc: "The camera gliding along the road: a slow breath of dark air drifting the way you travel, a sub swell under it.",
+    fn: K => { K.hush({ bp: 320, ff2: 520, fgl: .9, q: .7, a: .4, d: .7, g: .05, pan: -.3, pan2: .3, pd: 1 }); K.sub({ f: "A1", a: .3, d: .7, g: .05 }); } },
+  "rank.unlock.pop": { desc: "A rank's circle unlocking on the road: a soft boom, a puff of dark air and the Bb major chord blooming low in plucks and pad, one glint.",
+    fn: K => { K.boom({ f: 80, f2: 32, d: .9, g: .2 }); K.air({ bp: 600, ff2: 300, fgl: .3, a: .01, d: .3, g: .04 }); ["Bb2", "D3", "F3", "Bb3"].forEach((f, i) => K.syn({ t: i * .03, f, d: 1.4, g: .035, pan: (i - 1.5) * .3 })); K.dpad(["Bb1", "F2", "D3"], { lp: 700, a: .05, hold: .3, d: 1.4, g: .011 }); K.twinkle({ t: .15, f: "F6", d: 1, g: .012 }); } },
+  "rank.upnext": { desc: "Up next: the next rank's box lifting - a rise of air and two low plucks, A to D, a glint crossing.",
+    fn: K => { K.rise({ lp: 300, ff2: 1100, fgl: .3, a: .25, d: .2, g: .04 }); K.syn({ t: .2, f: "A2", d: .5, g: .035 }); K.syn({ t: .3, f: "D3", d: 1, g: .04 }); K.twinkle({ t: .35, f: "D6", d: .7, g: .01 }); } },
+  "rank.card": { desc: "The card at the top changing over (RU_HERO_FADE_MS): a soft low breath as the old card dims, and a G minor chord blooming low in plucks and pad as the new one appears.",
+    fn: K => { const F = (typeof RU_HERO_FADE_MS === "number" ? RU_HERO_FADE_MS : 900) / 1000; K.hush({ bp: 500, ff2: 300, q: 1, a: F * .4, d: F * .6, g: .045, rev: .3 }); ["G2", "Bb2", "D3"].forEach((n, i) => K.syn({ t: F * .3 + i * .05, f: n, d: 1.2, g: .035 })); K.dpad(["G1", "D2"], { t: F * .3, lp: 500, a: .2, d: 1.2, g: .01 }); } },
+  "rank.word": { desc: "The new rank's name popping in on Profile: a reversed breath drawn in, and the name landing on a low pluck octave on A with the square lead on D over it.",
+    fn: K => { K.rise({ lp: 300, ff2: 1600, fgl: .22, a: .22, d: .03, g: .05 }); K.syn({ t: .22, f: "A2", d: 1, g: .045 }); K.syn({ t: .22, f: "A3", d: .8, g: .035 }); K.key({ t: .22, f: "D4", d: .4, g: .022 }); K.sub({ t: .22, f: "A1", a: .005, d: .4, g: .06 }); } },
+  "rank.xp.climb": { desc: "The XP climbing on Profile: the dark pad rising under it, and a low pluck a step higher up D minor at each level it crosses (opts.dur; opts.marks or opts.levels).",
+    fn: (K, o) => {
+      const D = o.dur || 2.6, L = Math.max(0, Math.min(8, o.levels == null ? 1 : o.levels));
+      const marks = Array.isArray(o.marks) ? o.marks.slice(0, 8) : Array.from({ length: L }, (_, k) => D * (k + 1) / L);
+      K.dpad(["D2", "A2"], { lp: 240, ff2: 900, fgl: D, a: .3, hold: Math.max(0, D - .3), d: .5, g: .011 });
+      marks.forEach((t, k) => { K.syn({ t, f: K.dm(k * 2, "D3"), d: .7, g: .04 }); K.sub({ t, f: "D2", a: .003, d: .25, g: .05 }); });
+    } },
+  "rank.challenge.tick": { desc: "A challenge ticked off: a soft low tick and two plucks stepping F to A - met.",
+    fn: K => { K.wood({ f: "D3", d: .05, g: .04 }); K.syn({ t: .04, f: "F3", d: .4, g: .035 }); K.syn({ t: .14, f: "A3", d: .8, g: .04 }); } },
+  "rank.flare.zoom": { desc: "The road map's flare drawing back into the planet system (RU_HAND_MS, into the cutscene's pull-back): a slow, quiet, mysterious swell - the dark pad rising out of nothing, a low 'oo' choir on D and A, a deep soft whoosh and a sub - building, and carrying on into the cutscene instead of bursting.",
+    fn: K => {
+      const D = (typeof RU_HAND_MS === "number" ? RU_HAND_MS : 2000) / 1000;
+      const Z = (typeof RU_HAND_ZOOM_MS === "number" ? RU_HAND_ZOOM_MS : 2800) / 1000;
+      K.dpad(["D2", "A2", "F3"], { lp: 160, ff2: 700, fgl: D + Z * .6, a: D * .9, hold: Z * .5, d: Z * .8, g: .011 });
+      K.choir({ f: "D3", a: D * .8, hold: Z * .4, d: Z * .7, g: .018 });
+      K.noise({ color: "b", lp: 120, ff2: 520, fgl: D, a: D * .85, hold: Z * .2, d: Z * .7, g: .07, rev: .5 });
+      K.sub({ f: "D1", f2: "A1", gl: D + Z, a: D, hold: Z * .3, d: Z * .7, g: .07 });
+      K.twinkle({ t: D * .7, f: "C#6", d: 1.6, g: .008 });
+    } },
+  "rank.attn": { desc: "The cutscene's attention on the new flare (RANK_ATTN_MS): the dark pad and the low choir breathing in and out twice with the flare, a glint on its loop.",
+    fn: K => {
+      const D = (typeof RANK_ATTN_MS === "number" ? RANK_ATTN_MS : 4000) / 1000;
+      [0, D / 2].forEach(t => { K.dpad(["A1", "E2", "C#3"], { t, lp: 400, a: D * .22, d: D * .28, g: .012 }); K.choir({ t, f: "A2", a: D * .2, d: D * .25, g: .014 }); K.sub({ t, f: "A1", a: D * .22, d: D * .26, g: .06 }); });
+      [.55, .7].forEach((k, i) => K.twinkle({ t: D * k, f: ["E6", "A6"][i], d: .8, g: .01 }));
+    } },
+  "rank.windup": { desc: "One pulse of the charge into the flash, on the planet's pulse: a deep heartbeat and a low pluck climbing D harmonic minor, brighter with each one (opts.i of opts.n).",
+    fn: (K, o) => { const n = Math.max(1, o.n || 8), u = Math.max(0, Math.min(1, (o.i || 0) / n)); K.sub({ f: 70, f2: 40, gl: .15, a: .003, d: .3, g: .12 + u * .06 }); K.syn({ f: K.dm(Math.round(u * 7), "D2"), d: .35, g: .03 + u * .02, bright: 2 + u * 3 }); } },
+  "rank.swell": { desc: "The last held swell into the big flash (opts.dur): a riser of dark air under a filtered saw sliding from the leading note C# up an octave.",
+    fn: (K, o) => { const D = o.dur || .5; K.rise({ lp: 300, ff2: 3000, fgl: D, a: D, d: .08, g: .08 }); K.tone({ f: "C#3", f2: "D4", gl: D, type: "sawtooth", lp: 400, ff2: 1800, fgl: D, a: D, d: .06, g: .02 }); K.sub({ f: "D1", f2: "D2", gl: D, a: D, d: .1, g: .06 }); } },
+  "rank.bang": { desc: "The bang at the whirl's top speed: a mini-supernova at the new flare - a dark crack, a boom, and low plucks on D and A.",
+    fn: K => { K.noise({ lp: 2400, ff2: 400, fgl: .4, a: .001, d: .5, g: .16 }); K.boom({ f: 110, f2: 34, d: .8, g: .28 }); ["D3", "A3"].forEach(f => K.syn({ f, d: 1.4, g: .04 })); K.twinkle({ t: .05, f: "C#6", d: 1, g: .01 }); } },
+  "rank.flash": { desc: "The big flash as the planet changes colour: a bloom of dark air, a deep boom, and the leading note resolving - D major ringing out low in pad and plucks.",
+    fn: K => { K.noise({ lp: 3000, ff2: 300, fgl: 1.8, a: .005, d: 2.2, g: .16, rev: .5 }); K.boom({ f: 100, f2: 28, d: 1.6, g: .34 }); K.dpad(["D2", "A2", "D3", "F#3", "A3"], { lp: 1600, ff2: 500, fgl: 2.2, a: .01, d: 2.6, g: .012 }); ["D3", "F#3", "A3"].forEach((n, i) => K.syn({ f: n, t: .05 + i * .03, d: 2, g: .035 })); } },
+  "rank.title": { desc: "The new rank's title: the square lead singing A D F# A low over the dark pad, and a long low gong - the rank's name, sung in the ambience's room.",
+    fn: K => { K.dpad(["D2", "A2", "F#3"], { lp: 800, a: .3, hold: .5, d: 1.8, g: .012 }); ["A3", "D4", "F#4", "A4"].forEach((n, i) => K.key({ f: n, t: .1 + i * .17, hold: i === 3 ? .45 : 0, d: i === 3 ? 1 : .14, g: .028 })); K.fm({ f: "D2", ratio: 1.4, idx: 2, idx2: .3, d: 3, g: .07, lp: 1100, rev: .5 }); K.sub({ f: "D1", a: .2, d: 2, g: .07 }); } }
+};
+Object.keys(SND_DARK).forEach(id => {
+  const d = SND_DARK[id];
+  let c = SOUND_CATALOGUE[id];
+  if(!c){
+    if(!d.bus){ console.warn("sound: dark design for unknown id " + id); return; }
+    c = SOUND_CATALOGUE[id] = { vol: 1, group: d.group, bus: d.bus, cd: d.cd, poly: d.poly, hap: d.hap };
+  }
+  c.fn = d.fn;
+  if(d.desc) c.desc = d.desc;
+});
+/* the levels: each id's loudest 50ms matched to build 327's (e83f307) for
+   the same id - measured by rendering both builds - except the frequent
+   ones, left quieter; the hand-off quieter on purpose; the bed under it all */
+const SND_DARK_VOL = {"ui.sheet.open": 4.989, "ui.sheet.close": 9.731, "ui.popup.open": 3.099, "ui.notice": 2.342, "test.load": 0.3, "test.next": 4.519, "test.resume": 2.65, "test.save": 6.047, "res.grade.fail": 1.904, "res.grade.pass": 1.357, "res.grade.great": 0.845, "res.grade.perfect": 1.036, "res.xp.line": 0.818, "res.xp.total": 0.344, "res.xp.fill": 0.309, "res.xp.pop": 0.656, "res.xp.knock": 0.513, "res.levelup": 1.205, "res.xp.overflow": 0.924, "res.unlock.banner": 1.045, "res.unlock.reveal": 3.357, "res.found.flare": 2.656, "hundo.bubbles": 0.882, "home.flare.rookie": 2.92, "home.flare.ranger": 2.291, "home.secret.tap": 4.165, "home.secret.found": 1.141, "home.daily.ready": 1.972, "home.daily.fill": 2.034, "badge.sparkle": 1.911, "badge.slide": 5.912, "rank.road.scroll": 0.551, "rank.challenge.tick": 1.434, "rank.road.fill": 0.426, "rank.unlock.pop": 0.305, "rank.flare.zoom": 0.522, "rank.attn": 1.278, "rank.windup": 1.266, "rank.swell": 0.847, "rank.title": 0.904, "rank.upnext": 1.328, "rank.card": 1.138, "rank.word": 0.824, "rank.xp.climb": 0.694, "vr.join": 1.882, "vr.leave": 1.611, "vr.count": 1.61, "vr.go": 1.833, "chat.receive": 1.372, "chat.invite": 1.49, "nova.arrive": 1.354, "ob.whatsnew": 1.351, "ob.tooltip": 1.847, "cust.banner": 1.226, "cust.fx": 2.116, "app.start": 0.361, "rank.journey.bed": 0.668};
+Object.keys(SND_DARK_VOL).forEach(id => { if(SOUND_CATALOGUE[id]) SOUND_CATALOGUE[id].vol = SND_DARK_VOL[id]; });
+
+
 /* ---- THE HOME AMBIENCE ----
    "a cool dark kinda offset noise": a low D pad with a slow beating
    detune, a soft thrum every 4s against a muted bell every 5s (five
@@ -68344,6 +68577,14 @@ const NovaSound = (function(){
       try{ const b = st.ctx.createBuffer(1, 1, 22050), s = st.ctx.createBufferSource(); s.buffer = b; s.connect(st.ctx.destination); s.start(0); }catch(e){}
     }
     resume();
+    /* the app coming up (build 327, round 6): "Ensure the start up of the
+       app, that sound effect is cooler." Nothing can sound before a touch
+       (iOS), so the start-up sting is the first touch of a session that
+       wakes the sound, on Home or Welcome - an intro into the ambience. */
+    if(st.ctx && !had && !st.started){
+      st.started = true;
+      try{ if(document.querySelector('[data-screen="home"], [data-screen="welcome"]')) setTimeout(() => play("app.start"), 30); }catch(e){}
+    }
   }
   ["touchend", "pointerup", "click", "keydown"].forEach(ev => document.addEventListener(ev, onGesture, { capture: true, passive: true }));
   document.addEventListener("visibilitychange", () => {
@@ -125204,6 +125445,10 @@ function rankUpSceneToMap(scene){
     panel.classList.add("ru-dive");
   }
   rankUpCurtain(true);
+  /* the journey's own music (build 327, round 6): "the rank road map
+     cutscenes I feel like they are random noises and come out of nowhere" -
+     every moment of the road now sits inside one dark bed */
+  rankUpBed(scene, true);
   setTimeout(() => { if(rankUpScene === scene) rankUpSceneMap(scene); }, still ? 300 : 900);
 }
 
@@ -125443,6 +125688,7 @@ async function rankUpHandOut(scene, stop){
   const r = node.getBoundingClientRect();
   if(!r.width || r.bottom < 0 || r.top > window.innerHeight) return null;
   scene.phase = "handoff";
+  rankUpBed(scene, false, RU_HAND_MS / 1000);
   playSound("rank.flare.zoom");
   const ghost = document.createElement("div");
   ghost.className = stop.className.replace(/\b(is-celebrating|is-celebrate-pending|is-left|is-right|ru-nextpop)\b/g, " ").replace(/\s+/g, " ").trim() + " ru-ghost";
@@ -125633,6 +125879,7 @@ async function rankUpMapShow(scene, api){
   await rankUpWait(still ? 0 : 350);
   await rankUpCutscene(scene, api);
   if(rankUpScene !== scene) return;
+  rankUpBed(scene, true);
   await rankUpCards(scene);
   if(!rankUpAlive(scene)) return;
   scene.phase = "after";
@@ -126182,8 +126429,15 @@ async function rankUpSceneHome(scene){
   rankUpSceneEnd(scene, true);
 }
 /* The one way out, played or not. Safe to call twice. */
+/* the bed on (a fresh one) or off (faded over `fade` seconds) */
+function rankUpBed(scene, on, fade){
+  if(!scene) return;
+  if(scene.bed){ try{ scene.bed.stop(fade == null ? 1.5 : fade); }catch(e){} scene.bed = null; }
+  if(on) scene.bed = playSound("rank.journey.bed", { dur: 90 });
+}
 function rankUpSceneEnd(scene, played){
   if(rankUpScene !== scene) return;
+  rankUpBed(scene, false, 2);
   if(played && scene.more && !scene.homing){
     scene.homing = true;
     rankUpMarkShown(scene.toIdx);
