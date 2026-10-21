@@ -21577,11 +21577,14 @@ def check_b319_levelnote(br):
             r = pg.evaluate(B319_NOTE, [lvl, nb])
             t = " ".join(r["text"] or [])
             want = ["Your level now goes as high as your next rank's level and waits there until you have that rank's badges.",
-                    "For you that is level %d, the level %s asks for." % (top, gate),
+                    # MOVED IN 327 (no grandfather): the level DID move, so the
+                    # note says so - "the level X asks for, so your level went
+                    # from A to B" (levelGateNoteText)
+                    "For you that is level %d, the level %s asks for, so your level went from " % (top, gate),
                     "You keep all of your XP.",
                     "Earn %d%s %s to reach %s." % (n, " more" if nb else "", "badge" if n == 1 else "badges", gate),
                     "The levels your XP has already paid for come in then."]
-            bad = [x for x in ("keep leveling up", "turns back into levels", "rank system", "wall", "band", "went from") if x in t]
+            bad = [x for x in ("keep leveling up", "turns back into levels", "rank system", "wall", "band") if x in t]
             miss = [x for x in want if x not in t]
             # MOVED IN 327 (b327m): What's New is not narrated any more, so
             # the note is only on the card (the box above); check-b327-m m3
