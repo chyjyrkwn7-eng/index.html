@@ -3323,6 +3323,17 @@
 
   .meter{ display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin:.9rem 0 .5rem; }
   .tick{ width:16px; height:7px; border-radius:1px; background:var(--rule); }
+  /* Build 327 (b327s): the meter is ONE row however long the test.
+     It wrapped at ~20 blocks, so a 120-question drill was six rows of
+     blocks over the question and a whole Penal Code run ~17. The
+     blocks shrink to share the row instead, and the gaps close up as
+     the count grows; the block you are on keeps a readable width. */
+  .meter{ flex-wrap:nowrap; }
+  .meter > .tick{ flex:0 1 16px; min-width:1px; }
+  .meter:has(> .tick:nth-child(41)){ gap:2px; }
+  .meter:has(> .tick:nth-child(91)){ gap:1px; }
+  .meter:has(> .tick:nth-child(181)){ gap:0; }
+  .meter > .tick.now{ min-width:6px; }
   .tick.now{
     background:var(--accent); height:7px; border-radius:2px;
     /* Dimmed per explicit request — was pulling focus off the actual
@@ -22753,8 +22764,13 @@
      of the layout, which is the rule's own advice for a control that
      has to stay small. */
   .profile-edit-btn, .chatdock-close, .infoicon, .releasehistory-version-btn{ position:relative; }
+  /* Build 327 (b327s): three more that measured under 44px - every
+     back link (a 30px pill), Select all (34px) and a banner's close x
+     (28px). Same invisible target, nothing on screen moves. */
+  .selall-btn, .app-banner-x{ position:relative; }
   .profile-edit-btn::after, .chatdock-close::after, .infoicon::after,
-  .releasehistory-version-btn::after{
+  .releasehistory-version-btn::after, .back-link::after, .selall-btn::after,
+  .app-banner-x::after{
     content:""; position:absolute; left:50%; top:50%;
     width:max(100%, 44px); height:max(100%, 44px); transform:translate(-50%,-50%);
   }
@@ -25108,6 +25124,16 @@
     color:var(--banner-color, var(--accent));
   }
   .app-banner-body{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; }
+  /* Build 327 (b327s): on a narrow phone the button goes UNDER the
+     words. Beside them it left the message a ~120px column on a 375px
+     phone - six lines for one sentence. The close x stays on the top
+     row; the button lines up with the text. */
+  @media (max-width:26.5rem){
+    .app-banner{ flex-wrap:wrap; row-gap:.45rem; }
+    .app-banner > .app-banner-body{ flex:1 1 calc(100% - 1.35rem - 28px - 1.2rem); }
+    .app-banner > .app-banner-x{ order:2; }
+    .app-banner > .app-banner-act{ order:3; margin-left:1.95rem; }
+  }
   /* The tag is the half that survives being read in a hurry, and the
      half that works for somebody who cannot tell the two colours
      apart. Both are load-bearing; neither is decoration. */
@@ -107292,7 +107318,10 @@ function showTestReviewList(){
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
   pauseBtn.hidden = true;
-  countEl.textContent = "";
+  /* Build 327 (b327s): the header names the screen, like Friends and
+     every other sub-screen. It was blank, which left the back link
+     floating at the very top and nothing saying where you were. */
+  countEl.textContent = "Test history";
 
   const panel = document.createElement("section");
   panel.className = "panel screen-testreview screen-testhistory";
@@ -107300,10 +107329,7 @@ function showTestReviewList(){
   const back = buildBackLink("Back to Profile", () => showProfile("stats"));
   panel.appendChild(back);
 
-  const head = document.createElement("p");
-  head.className = "slab section-divider"; head.textContent = "Test history";
-  panel.appendChild(head);
-
+  /* (b327s) No second "Test history" under the header saying it. */
   const all = testHistoryEntries();
   if(all.length === 0){
     const p = document.createElement("p");
@@ -107384,7 +107410,7 @@ function showTestHistoryDetail(entry){
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
   pauseBtn.hidden = true;
-  countEl.textContent = "";
+  countEl.textContent = "Test history";
 
   const panel = document.createElement("section");
   panel.className = "panel screen-testreview screen-testdetail";
