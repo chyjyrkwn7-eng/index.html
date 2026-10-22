@@ -22875,6 +22875,31 @@
      is steel, the case's own metal, until the set is complete and it
      turns gold; the Profile card's coin is left as it is. */
   .badges-head .badges-medal:not(.is-complete){ --coin:#9FB4CC; }
+
+  /* ---- PAUSE AND EXIT BUTTONS ARE CLEAR GLASS (build 313d) ----
+     "Why aren't these the same colour themes as the other buttons? Why
+     does the Liquid Glass not seem right, like the mode and unit
+     buttons?" Resume was the solid chalk pill and Exit test the solid
+     black one - opaque slabs on a screen whose cards, tab bar and
+     banners are all see-through glass. Both are the cards' own glass
+     now (thin tint, backdrop blur + saturate, a lit top rim, a
+     shadowed lower lip); Resume is the brighter of the two, in the
+     theme's own colour, so which one is the way on still reads at a
+     glance. Same width, same place - nothing moves. Needs the longer
+     selector: the dark .next.ghost recipe is 0,4,0 and later. */
+  [data-layout="modern"] .pausepanel.is-pause .actions .next,
+  [data-theme="dark"][data-layout="modern"] .pausepanel.is-pause .actions .next{
+    color:#fff; border:1.5px solid rgba(255,255,255,.14); background-image:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,0) 55%);
+    background-color:rgba(28,33,40,.55);
+    backdrop-filter:blur(14px) saturate(1.7) brightness(1.06); -webkit-backdrop-filter:blur(14px) saturate(1.7) brightness(1.06);
+    box-shadow:0 6px 20px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.22), inset 0 -2px 3px rgba(0,0,0,.25);
+  }
+  [data-layout="modern"] .pausepanel.is-pause .actions .next:not(.ghost),
+  [data-theme="dark"][data-layout="modern"] .pausepanel.is-pause .actions .next:not(.ghost){
+    background-color:color-mix(in srgb, var(--theme-c2, #F5804D) 26%, rgba(28,33,40,.5));
+    border-color:color-mix(in srgb, var(--theme-c2, #F5804D) 55%, rgba(255,255,255,.2));
+    background-image:linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,0) 60%);
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
