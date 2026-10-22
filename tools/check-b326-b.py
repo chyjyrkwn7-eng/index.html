@@ -281,8 +281,10 @@ def section_f(br):
         # the lid's inside is one plain padded cushion now (no diagonal seams,
         # a soft dome of light - at most three radial layers). The stitching
         # round the outside stays.
-        ok = len(cush) >= 2 and all(c["diag"] == 0 and 1 <= c["radial"] <= 3 for c in cush) and tab["stitch"][1] is True and cut["stitch"][0] is True
-        check(f"{dev}: both cases' lids are a plain padded cushion (no quilt) and stitched round the outside", ok,
+        # MOVED IN 327 (round 10): the Badges tab is a tray with no lid ("tray
+        # only"), so only the cutscene's case has a lid to hold to this
+        ok = len(cut["cush"]) >= 1 and all(c["diag"] == 0 and 1 <= c["radial"] <= 3 for c in cush) and cut["stitch"][0] is True
+        check(f"{dev}: the cutscene case's lid is a plain padded cushion (no quilt) and stitched round the outside", ok,
               {"cushions": cush, "tab stitched": tab["stitch"][1], "cutscene stitched": cut["stitch"][0]})
 
 

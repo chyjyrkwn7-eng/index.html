@@ -67908,7 +67908,7 @@ const SOUND_CATALOGUE = {
 
   /* ----------------------------- BADGES ----------------------------- */
   "badge.case.open": { vol: 1.11, group: "Badges", bus: "ui", cd: 600, hap: "tap",
-    desc: "The badge case opens: two latches snapping on a pulse tick, the handle swinging as they let go, the lid cracking with a creak and swinging up on its hinges, a velvet breath, a bell glinting A then D. On CASE_OPEN on the Badges tab; on BC_T in the cutscene (opts: latch2, crack, swing, swingMs, glint, light, in seconds from the first latch).",
+    desc: "The badge case opens: two latches snapping on a pulse tick, the handle swinging as they let go, the lid cracking with a creak and swinging up on its hinges, a velvet breath, a bell glinting A then D. On BC_T in the badge cutscene - the Badges tab is a tray with no lid since build 327 (opts: latch2, crack, swing, swingMs, glint, light, in seconds from the first latch).",
     fn: (K, o) => {
       const C = SND_CASE_OPEN();
       const l2 = o.latch2 != null ? o.latch2 : .06, cr = o.crack != null ? o.crack : C.hold / 1000;

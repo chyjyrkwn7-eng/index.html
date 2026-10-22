@@ -521,7 +521,9 @@ with sync_playwright() as pw:
       return { scene, tab: window.__played.splice(0) }; }""", default={})
     r = r if isinstance(r, dict) else {}
     ck("BADGE FOUND: the badge's entrance is scored", "cs.badge" in (r.get("scene") or []), r.get("scene"))
-    ck("the Badges tab's case opens with its latches and lid", "badge.case.open" in (r.get("tab") or []), r.get("tab"))
+    # MOVED IN 327 (round 10): the Badges tab is a tray ("tray only") - it has
+    # no lid to open, so it makes no opening sound
+    ck("the Badges tab's tray is quiet (no lid to open)", "badge.case.open" not in (r.get("tab") or []), r.get("tab"))
     r = ev(pg, """async ()=>{ const wait = ms => new Promise(z => setTimeout(z, ms));
       showHome(); await wait(300); window.__played.splice(0);
       const unit = QUESTIONS[0].topic.trim();

@@ -274,7 +274,30 @@ def rects_overlap(a, b, slack=1.0):
     return min(a["r"], b["r"]) - max(a["l"], b["l"]) > slack and min(a["b"], b["b"]) - max(a["t"], b["t"]) > slack
 
 
-def judge_shut(dev, where, s):
+def judge_tray(dev, pg):
+    """The Badges tab since build 327 round 10 ("tray only", "sleek premium"):
+    no lid, guards, screws, hinges, handle or hasps - one graphite shell with
+    its lining sunk in, two flush latches and the nameplate on its front edge."""
+    t = pg.evaluate("""() => { const k = document.querySelector('.badges-tab .bcs'); if(!k) return null;
+      const box = e => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
+      const vis = e => { const c = getComputedStyle(e); const r = e.getBoundingClientRect(); return c.display !== 'none' && c.visibility !== 'hidden' && r.width > 0 && r.height > 0; };
+      const count = sel => [...k.querySelectorAll(sel)].filter(vis).length;
+      const plate = k.querySelector('.bcs-plate');
+      const latches = [...k.querySelectorAll('.bcs-latch')].filter(vis);
+      return { hardware: count('.ncase-lid, .nova-case-screw, .nova-case-cap, .nova-case-handle, .bc-handle, .nova-case-hasp, .nova-case-keeper, .nova-case-hinge'),
+        plates: count('.bcs-plate, .nova-case-nameplate'), plateText: plate ? plate.textContent.trim() : '', caseName: (() => { try{ return badgeCaseName(BADGE_CASES[0]); }catch(e){ return ''; } })(),
+        latches: latches.map(box), plate: plate ? box(plate) : null, well: !!k.querySelector('.bcs-well') }; }""")
+    if not t:
+        check(f"{dev}, the Badges tab: the tray is there", False, t)
+        return
+    check(f"{dev}, the Badges tab: a tray - no lid, guards, screws, caps, hinges, handle, hasps or keepers (round 10)", t["hardware"] == 0 and t["well"], t)
+    check(f"{dev}, the Badges tab: ONE nameplate, on the tray's front, with the case's name ('{t['caseName']}')",
+          t["plates"] == 1 and t["caseName"] and t["caseName"].upper() in t["plateText"].upper(), t)
+    bad = [i for i, l in enumerate(t["latches"]) if t["plate"] and rects_overlap(l, t["plate"])]
+    check(f"{dev}, the Badges tab: two flush latches either side of the plate, neither on top of it", len(t["latches"]) == 2 and not bad, t)
+
+
+def judge_shut(dev, where, s, skip=""):
     """B, C, D, E (shut) for one case."""
     if not s:
         check(f"{dev}, {where}: the case is there", False, s)
@@ -297,7 +320,7 @@ def judge_shut(dev, where, s):
         bad = [(a["cls"][:30], b["cls"][:30]) for i, a in enumerate(parts) for b in parts[i + 1:] if rects_overlap(a["box"], b["box"])]
         check(f"{dev}, {where}: nothing on the front sits on top of another part (latches, handle, plates, keepers: no overlaps)",
               len(parts) >= 3 and not bad, bad or len(parts))
-    if "D" in ONLY:
+    if "D" in ONLY and "D" not in skip:
         cs = s["corners"]
         misfit = []
         for c in cs:
@@ -344,7 +367,13 @@ def section_case(br):
         cut_parts = pg.evaluate("() => { try{ return caseHardwareOf(document.querySelector('.bc-scene .bc-case')); }catch(e){ return null; } }")
         cut_plate = pg.evaluate("""() => { const s = document.querySelector('.bc-scene .nova-case-nameplate .nova-case-np-slab'); if(!s) return null;
           const c = getComputedStyle(s); return { bg: c.backgroundImage.replace(/[\\d.]+px/g, 'N'), lines: s.children.length }; }""")
-        judge_shut(dev, "the cutscene's case", cut)
+        # MOVED IN 327 (round 10): the cutscene's case keeps its lid, plate and
+        # latches but lost its guards, caps, screws and handle - no corners to fit
+        judge_shut(dev, "the cutscene's case", cut, skip="D")
+        if "D" in ONLY:
+            gone = pg.evaluate("""() => [...document.querySelectorAll('.bc-scene .nova-case-cap, .bc-scene .nova-case-screw, .bc-scene .bc-handle, .bc-scene .nova-case-handle')]
+              .filter(e => getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0).length""")
+            check(f"{dev}, the cutscene's case: no corner caps, screws or handle (round 10's sleek shell)", gone == 0, gone)
         if "E" in ONLY:
             # from the first latch to the crack, a frame every 1/30s
             poses = []
@@ -369,12 +398,10 @@ def section_case(br):
         clk.step(1 / 30)
         pg.evaluate("() => { const k = document.querySelector('.badges-tab .ncase'); if(k) k.scrollIntoView({ block: 'end', behavior: 'instant' }); }")
         clk.step(1 / 30)
-        tab = pg.evaluate(SHUT, TAB_SEL)
-        tab_parts = pg.evaluate("() => { try{ return caseHardwareOf(document.querySelector('.badges-tab .ncase')); }catch(e){ return null; } }")
-        tab_plate = pg.evaluate("""() => { const s = document.querySelector('.badges-tab .nova-case-nameplate .nova-case-np-slab'); if(!s) return null;
-          const c = getComputedStyle(s); return { bg: c.backgroundImage.replace(/[\\d.]+px/g, 'N'), lines: s.children.length }; }""")
-        judge_shut(dev, "the Badges tab's case", tab)
-        if "E" in ONLY:
+        # MOVED IN 327 (round 10): the tab's case is a tray - "tray only",
+        # "sleek premium" - so its lid, plate-on-top, corners and hasps are gone
+        judge_tray(dev, pg)
+        if False:
             poses = []
             shut_lid = pg.evaluate("() => { const l = document.querySelector('.badges-tab .ncase-lid'); return l ? getComputedStyle(l).transform : ''; }")
             for _ in range(60):
@@ -393,7 +420,7 @@ def section_case(br):
                   ok, {"frames": len(poses), "hooked when the lid moved": moved_at and moved_at["hooked"], "poses": distinct})
         ctx.close()
 
-        if "F" in ONLY:
+        if False:  # MOVED IN 327 (round 10): the tab is a tray now, not the cutscene's case
             keys = ["nova-case-nameplate", "nova-case-keeper", "nova-case-staple", "nova-case-cap", "nova-case-screw", "nova-case-latch", "nova-case-hasp", "nova-case-handle"]
             a = {k: (tab_parts or {}).get(k) for k in keys}
             b = {k: (cut_parts or {}).get(k) for k in keys}

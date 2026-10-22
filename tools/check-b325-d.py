@@ -193,7 +193,12 @@ def check_story(br):
         # MOVED AGAIN (327 round 9, later): "maybe the found by you so far ... should be
         # incorporated at the end where it starts to talk about your progress" - the
         # found sections come up near the end, so the check finds that line wherever it is
+        # MOVED AGAIN (327 round 9, "could they each come up on the screen as
+        # sections one by one"): badges, flares, then the crew, one line each,
+        # building one picture - so the crew line is where all three are up
         fi = next((i for i, l in enumerate(lines) if re.search(r"already found", l)), -1)
+        if fi < 0:
+            fi = next((i for i, l in enumerate(lines) if re.search(r"my crew", l)), -1)
         p1 = (r.get("props") or {}).get(str(fi)) or (r.get("props") or {}).get(fi) or {}
         # MOVED IN 327 (round 9): "add another slide before it ... why we
         # haven't seen Mr nova" (line two) and "found by you so far doesn't show
