@@ -31910,7 +31910,15 @@
        bottom pixel, no inset shadows at all. The border stays (transparent)
        so no button changes size. */
     border-color:transparent;
-    background-image:linear-gradient(180deg, rgba(255,255,255,.34) 0%, rgba(255,255,255,0) 46%, rgba(16,22,30,0) 56%, rgba(16,22,30,.14) 100%) !important;
+    /* the 3D, all in the fill (round 10, second pass - "it doesn't look 3d"):
+       a lit band across the top, a darker lip along the bottom that steepens
+       into the edge the way the old inset shade did, and the ends rounding
+       away - three layers, every one reaching the border box's own edge */
+    background-image:
+      linear-gradient(180deg, rgba(255,255,255,.6) 0%, rgba(255,255,255,.18) 22%, rgba(255,255,255,0) 42%),
+      linear-gradient(180deg, rgba(16,22,30,0) 62%, rgba(16,22,30,.07) 80%, rgba(16,22,30,.2) 93%, rgba(16,22,30,.34) 100%),
+      radial-gradient(115% 190% at 50% 30%, rgba(16,22,30,0) 62%, rgba(16,22,30,.14) 100%) !important;
+    background-color:#EAEDF1 !important;
     background-origin:border-box; background-clip:border-box; background-repeat:no-repeat;
     box-shadow:0 1px 3px rgba(0,0,0,.3), 0 5px 10px rgba(0,0,0,.3), 0 14px 28px -8px rgba(0,0,0,.5);
   }
