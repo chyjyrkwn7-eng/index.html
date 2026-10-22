@@ -47234,7 +47234,11 @@ function charSilhouetteSVG(id, as){
     if(none && look !== "secret" && !((parseFloat(n.getAttribute("stroke-width")) || 0) >= 1.1)){ n.style.visibility = "hidden"; return; }
     n.style.fill = none ? "none" : color;
     n.style.stroke = color;
-    n.style.strokeWidth = width;
+    /* build 327 round 11: "the outline blue look isn't there" - a wide STROKED
+       ring (the Timekeeper's dial, the Valkyrie's bowl) is painted black on top
+       of its own thin edge, which buried it. Its edge is the ring's width plus
+       the edge on both sides, so it shows either side of the black. */
+    n.style.strokeWidth = none ? ((parseFloat(n.getAttribute("stroke-width")) || 0) + 2 * parseFloat(width)) + "px" : width;
     n.style.strokeLinejoin = "round";
   });
   /* the challenge look's fill: the challenge strip's diagonal stripes, dark
