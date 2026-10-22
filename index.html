@@ -65951,7 +65951,9 @@ let theme = { mode: "dark", accent: "ink", layout: "modern", smoothScroll: true,
                  stays off. soundVolume is 0-1. soundOn327: this account
                  has had the one-time switch-on (loadTheme) - a new
                  account starts with it done. */
-              soundOn: true, soundVolume: .7, vibrate: false, soundOn327: true };
+              soundOn: true, soundVolume: .7, vibrate: false, soundOn327: true,
+              /* iPhone haptics (build 327): on by default; Android keeps vibrate */
+              haptics: true };
 
 /* Pulls the saved theme (if any) into the in-memory `theme` object.
    Call this once at boot, before the first applyTheme(). */
@@ -65979,6 +65981,7 @@ function loadTheme(){
     if(typeof store.theme.soundOn === "boolean") theme.soundOn = store.theme.soundOn;
     if(typeof store.theme.soundVolume === "number" && isFinite(store.theme.soundVolume)) theme.soundVolume = Math.max(0, Math.min(1, store.theme.soundVolume));
     if(typeof store.theme.vibrate === "boolean") theme.vibrate = store.theme.vibrate;
+    if(typeof store.theme.haptics === "boolean") theme.haptics = store.theme.haptics;
     theme.soundOn327 = store.theme.soundOn327 === true;
   }
   /* SOUND ON FOR EVERYONE ONCE (build 327), the swipe's pattern below:
@@ -66162,7 +66165,7 @@ function saveTheme(){
                   muteBanners: theme.muteBanners,
                   autoFlagMissed: theme.autoFlagMissed,
                   showClassDaysLeft: theme.showClassDaysLeft,
-                  soundOn: theme.soundOn, soundVolume: theme.soundVolume, vibrate: theme.vibrate,
+                  soundOn: theme.soundOn, soundVolume: theme.soundVolume, vibrate: theme.vibrate, haptics: theme.haptics !== false,
                   soundOn327: theme.soundOn327 !== false };
   saveStore();
 }
@@ -66208,9 +66211,10 @@ function saveTheme(){
      silent switch mutes it and the person's own music keeps playing.
      That is deliberate (navigator.audioSession where it exists).
    - Vibration: navigator.vibrate patterns per kind of event, behind
-     its own switch, shown only on Android. iOS has no Vibration API and
-     the <input switch> trick fails on a device (see Known quirks in
-     CLAUDE.md) - it is NOT retried here.
+     its own switch, shown only on Android. iPhone (build 327): the
+     native switch's haptic tick, flipped through its label inside the
+     tap's own handler, behind a Haptics switch (on by default) - see
+     "iPHONE HAPTICS" in NovaSound.
    - API: playSound(id, opts), startAmbience(id, opts), stopAmbience().
      All no-ops while the setting is off. (The hidden sound test page,
      showSoundTest, came out in build 325: "I see a picture of a 'sound
@@ -69214,8 +69218,83 @@ const NovaSound = (function(){
   const volume = () => { const v = Number(theme && theme.soundVolume); return isFinite(v) ? Math.max(0, Math.min(1, v)) : SOUND_DEFAULT_VOLUME; };
   const level = v => .95 * v * v;
   const canVibrate = () => typeof navigator !== "undefined" && typeof navigator.vibrate === "function" && /Android/i.test(navigator.userAgent || "");
+  /* iPHONE HAPTICS (build 327): the native-switch tick. Madison: "It seems
+     like it is possible to make it work on iPhones after all. Let's make
+     this work... would be the greatest feature we could add." Since iOS
+     17.4 a <input type=checkbox switch> is a real iOS switch, and flipping
+     one plays the system's haptic tick. WebKit only plays it for a flip
+     that comes out of a real touch, so the tick has to happen INSIDE the
+     tap's own event handler, synchronously - which is where playSound()
+     already runs for every tap, answer, star and toggle. Anything that
+     plays later on a timer (the grade landing, a cutscene) does not buzz
+     on an iPhone; it cannot.
+     How it is driven matters, and is why the 2024 attempt (CLAUDE.md,
+     Known quirks) is not this: the switch is flipped by clicking its
+     <label>, the way the open-source ios-haptics package does it, not by
+     clicking the input or setting .checked. The switch stays RENDERED
+     (a 1px see-through box in the corner, never display:none), takes no
+     taps, and is hidden from screen readers. Its events must not reach
+     the app: a window-level capture listener, added before any other,
+     stops the label's click and the input's click/change/input there, so
+     no "tap outside" closes a sheet, no switch sound plays and no pick
+     list sees a change. Stopping propagation does not stop the label's
+     own activation, so the switch still flips. If the click moved focus
+     (a text field had it), focus goes straight back so the keyboard stays.
+     One tick per gesture moment (TICK_GAP_MS), patterns as a few ticks.
+     iPhone only: an iPad has no Taptic Engine. */
+  const isIPhone = () => typeof navigator !== "undefined" && /iPhone|iPod/i.test(navigator.userAgent || "");
+  const canTaptic = () => isIPhone() && !canVibrate();
+  const TICK_GAP_MS = 45;
+  const TAPTIC_TICKS = { tick: 1, tap: 1, select: 1, toggle: 1, swipe: 1, heavy: 1, success: 2, error: 2, boom: 2, celebrate: 3 };
+  let hapticHost = null, hapticInput = null, hapticAt = -1e9;
+  const isHapticNode = n => !!(hapticHost && n && (n === hapticHost || n === hapticInput || n === hapticHost.firstChild));
+  ["click", "change", "input", "focus", "focusin", "blur", "focusout"].forEach(ev => window.addEventListener(ev, e => {
+    if(isHapticNode(e.target)){ e.stopImmediatePropagation(); }
+  }, true));
+  function hapticEl(){
+    if(hapticHost && hapticHost.isConnected) return hapticHost;
+    if(!document.body) return null;
+    const host = document.createElement("label");
+    host.className = "nova-haptic";
+    host.setAttribute("aria-hidden", "true");
+    host.style.cssText = "position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:.01;overflow:hidden;pointer-events:none;z-index:-1;margin:0;padding:0;border:0;";
+    const inp = document.createElement("input");
+    inp.type = "checkbox";
+    inp.setAttribute("switch", "");
+    inp.tabIndex = -1;
+    inp.setAttribute("aria-hidden", "true");
+    inp.style.cssText = "margin:0;width:1px;height:1px;";
+    host.appendChild(inp);
+    document.body.appendChild(host);
+    hapticHost = host; hapticInput = inp;
+    return host;
+  }
+  function taptic(){
+    const now = (typeof performance !== "undefined" ? performance.now() : Date.now());
+    if(now - hapticAt < TICK_GAP_MS) return false;
+    const el = hapticEl();
+    if(!el) return false;
+    hapticAt = now;
+    const was = document.activeElement;
+    try{ el.click(); }catch(e){ return false; }
+    try{
+      if(was && was !== document.activeElement && was !== document.body && typeof was.focus === "function") was.focus({ preventScroll: true });
+    }catch(e){}
+    if(typeof window !== "undefined"){ window.__novaTaptic = (window.__novaTaptic || 0) + 1; }
+    return true;
+  }
+  const hapticsWanted = () => !!(theme && (canTaptic() ? theme.haptics !== false : theme.vibrate));
   function haptic(kind){
-    if(!kind || !(theme && theme.vibrate) || !canVibrate()) return;
+    if(!kind || !hapticsWanted()) return;
+    if(canTaptic()){
+      const n = TAPTIC_TICKS[kind] || 1;
+      if(!taptic()) return;
+      /* the rest of a pattern a beat apart; WebKit carries a tap's gesture
+         into a short timer, and if it does not they simply do not buzz */
+      for(let i = 1; i < n; i++) setTimeout(() => { hapticAt = -1e9; taptic(); }, i * 85);
+      return;
+    }
+    if(!canVibrate()) return;
     try{ navigator.vibrate(SOUND_HAPTIC[kind] || 8); }catch(e){}
   }
   /* The ONE live context, made only when sound is on and only from inside
@@ -69302,7 +69381,7 @@ const NovaSound = (function(){
   function play(id, opts){
     const e = SOUND_CATALOGUE[id];
     if(!e) return null;
-    const wantSound = on(), wantBuzz = !!(theme && theme.vibrate) && !!e.hap;
+    const wantSound = on(), wantBuzz = hapticsWanted() && !!e.hap;
     if(!wantSound && !wantBuzz) return null;
     const nowMs = (typeof performance !== "undefined" ? performance.now() : Date.now());
     if(st.last[id] && nowMs - st.last[id] < (e.cd || 0)) return null;
@@ -69445,7 +69524,7 @@ const NovaSound = (function(){
   }
 
   return {
-    play, startAmbience, stopAmbience, sync, render, renderAmbience, haptic, canVibrate,
+    play, startAmbience, stopAmbience, sync, render, renderAmbience, haptic, canVibrate, canTaptic,
     catalogue: SOUND_CATALOGUE, ambience: SOUND_AMBIENCE,
     /* for tools and the test page */
     state: () => ({ on: on(), hasContext: !!st.ctx, ctxState: st.ctx ? st.ctx.state : null, voices: st.voices.length,
@@ -69654,6 +69733,15 @@ function buildSoundSettings(){
     });
     vibRow.classList.add("settings-vibrate-row");
     card.appendChild(vibRow);
+  } else if(NovaSound.canTaptic()){
+    const hapRow = mkRow("Haptics", "A light tap you feel for buttons, answers and switches. Follows your iPhone's System Haptics setting.", theme.haptics !== false, on => {
+      theme.haptics = on;
+      saveTheme();
+      if(on) NovaSound.haptic("tap");
+      showToast(on ? "Haptics on." : "Haptics off.");
+    });
+    hapRow.classList.add("settings-haptics-row");
+    card.appendChild(hapRow);
   }
   host.appendChild(card);
   return host;

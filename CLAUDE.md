@@ -3788,6 +3788,11 @@ re-evaluated on the next check.
   the interaction — judged not worth the regression risk on the most-used
   screen for a nicety, and explicitly declined. Don't quietly retry it; a
   visual shake is the feedback that cannot fail.
+  **RETRIED IN BUILD 327, ON MADISON'S EXPLICIT ASK** ("It seems like it is
+  possible to make it work on iPhones after all. Let's make this work").
+  See **Build 327 (b327z) - iPhone haptics** at the end: the label-click
+  method (ios-haptics), inside the tap's own handler. Unverified on a
+  device until he tries it.
 - **"Flares" ≠ badges, and "Secret Flares" are a hunt, not a rank requirement.** Flares are the
   orbiting marks on Home, one per rank — the thing a rank hands over.
   Badges are the sixteen unit awards on Profile. The two are separate
@@ -25932,3 +25937,50 @@ an inset 1px ring plus a 20% top line.
   cards' text read through the bar in Chromium - which draws no backdrop
   blur here, so it is not what a phone shows. `.74` is the margin.
 - check-b325-f, check-b325-j and check-b327x pass on it.
+
+### Build 327 (b327z) - iPhone haptics, through the native switch
+
+Madison, with screenshots of the switch workaround (`web-haptics` /
+`ios-haptics`): *"I'm back in the Haptic Touch stuff. It seems like it is
+possible to make it work on iPhones after all. Let's make this work...
+would be the greatest feature we could add."* Gate: `tools/check-b327z.py`
+(z1-z5, `ONLY=`, `--against`); 9 failures on 363b05d.
+
+- **How it ticks (`taptic()` in NovaSound, "iPHONE HAPTICS").** A
+  `<label class="nova-haptic"><input type=checkbox switch></label>` lives on
+  `<body>`, RENDERED (1px, opacity .01, fixed in the corner, never
+  display:none), `pointer-events:none`, aria-hidden, tabindex -1. A tick is
+  `label.click()`, which flips the switch through its label - the way
+  ios-haptics does it, not `input.click()` or `.checked =`, which is what the
+  2024 attempt tried. iOS 17.4+ plays the system's haptic for the flip, but
+  ONLY inside a real touch's handler, so it is called synchronously from
+  `playSound()` - which already runs inside every tap, answer, star and
+  toggle. Sounds played on a timer (the grade landing, cutscenes, the XP
+  count) do not buzz on an iPhone; nothing can make them.
+- **The switch's events never reach the app.** A window capture listener,
+  added before any other, `stopImmediatePropagation`s click/change/input/
+  focus/blur whose target is the label or the input. The label's own
+  activation still flips the switch (propagation is not cancellation).
+  Without it: "tap outside" handlers would close the chat dock on every
+  sent message, the generic toggle sound would play, pick lists would see a
+  change. If the click moves focus, focus goes straight back (keyboard
+  stays up).
+- **Which events tick**: every catalogue id's `hap` kind; one tick, and
+  `success`/`error`/`boom` two, `celebrate` three, 85ms apart (a timer - if
+  WebKit does not carry the gesture into it, the extra ticks are simply
+  lost). At most one tick per 45ms (`TICK_GAP_MS`), so one tap that plays
+  two sounds buzzes once.
+- **The setting**: `theme.haptics` (default **true**; theme object,
+  `loadTheme` typeof line, `saveTheme` field), Settings > Sound & vibration
+  > **Haptics**, iPhone only (`canTaptic()`: an iPhone/iPod user agent and
+  no Vibration API). iPads have no Taptic Engine and get no row. Android
+  keeps its own `theme.vibrate` (off by default) and Vibration row. Haptics
+  work with sound off. They follow the iPhone's own Settings > Sounds &
+  Haptics > System Haptics.
+- **What Chromium cannot tell us**: whether the tick is felt. The gate
+  holds everything around it (the row, the switch rendered, the flip inside
+  the click dispatch, no events leaking, focus kept, off saves). If it is
+  not felt on his iPhone, the next thing to try is the switch under the
+  finger: a real `<input switch>` laid over each answer choice, forwarding
+  the tap (the CLAUDE.md quirk's "only route left").
+
