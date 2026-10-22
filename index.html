@@ -47226,6 +47226,8 @@ function charSilhouetteSVG(id, as){
        the edge on both sides, so it shows either side of the black. */
     n.style.strokeWidth = none ? ((parseFloat(n.getAttribute("stroke-width")) || 0) + 2 * parseFloat(width)) + "px" : width;
     n.style.strokeLinejoin = "round";
+    /* a faint drawn ring (its own stroke-opacity / opacity) must not make a faint edge */
+    if(!none || (parseFloat(n.getAttribute("stroke-width")) || 0) >= 1.1){ n.style.strokeOpacity = "1"; n.style.fillOpacity = "1"; n.style.opacity = "1"; }
   });
   /* the challenge look's fill: the challenge strip's diagonal stripes, dark
      on black, in the drawing's own units (its own id - one per drawing) */
@@ -47254,6 +47256,7 @@ function charSilhouetteSVG(id, as){
     const none = n.getAttribute("fill") === "none";
     n.style.fill = none ? "none" : fill;
     n.style.stroke = none ? SIL_BLACK : "none";
+    if(!none || (parseFloat(n.getAttribute("stroke-width")) || 0) >= 1.1){ n.style.strokeOpacity = "1"; n.style.fillOpacity = "1"; n.style.opacity = "1"; }
   });
   if(look === "challenge") rimPaint(rim, "#7FA3D6", "1.5px");
   else if(look === "ultimate") rimPaint(rim, "#FFF0C9", "1.3px");
