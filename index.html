@@ -32056,6 +32056,53 @@
      itself glows. */
   .sfh-below{ background:linear-gradient(180deg, rgba(110,170,235,.16) 0, rgba(40,70,120,.22) 2cqw, rgba(8,10,22,.82) 9cqw, #030209 16cqw) !important; }
   .sfh-line{ box-shadow:0 0 1.4cqw rgba(170,220,255,.85), 0 0 5cqw rgba(110,170,235,.45); }
+
+  /* ---- THE BADGES TAB'S CASE: A SLEEK TRAY (build 327 round 10) ----
+     One shell, one light from above: a graphite body that is lighter at the
+     top and falls off to the foot, a machined metal rim (the border, a
+     metal gradient - lit along the top, dark down the sides, a catch of
+     light again at the bottom edge where it turns), a lining sunk into it
+     (its top wall in shadow, the floor darkening into the corners), and a
+     front edge with two flush brushed latches and the nameplate between
+     them. All static: nothing here moves, so it is painted once. Sizes are
+     shares of the case's width (cqw), so phone and tablet are one drawing. */
+  .badges-tab .bcs{ position:relative; display:block; container-type:inline-size; box-sizing:border-box;
+    width:100%; max-width:34rem; margin:1rem auto 0; padding:0; border:0; border-radius:0; background:none; box-shadow:none; }
+  .badges-tab .bcs::before, .badges-tab .bcs::after{ content:none; }
+  .bcs-shell{ position:relative; box-sizing:border-box; padding:3.4cqw 3.4cqw 0; border-radius:6.5cqw;
+    border:max(1.5px, .45cqw) solid transparent;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.075) 0%, rgba(255,255,255,0) 28%) padding-box,
+      linear-gradient(180deg, #2C3139 0%, #1E2228 52%, #15181C 100%) padding-box,
+      linear-gradient(180deg, #A9B3BF 0%, #59626D 14%, #2B3038 42%, #262A31 78%, #4E5662 94%, #7E8894 100%) border-box;
+    box-shadow:0 .3cqw .6cqw rgba(0,0,0,.45), 0 2.6cqw 6cqw rgba(0,0,0,.5), 0 9cqw 16cqw -4cqw rgba(0,0,0,.55); }
+  .bcs-well{ display:grid; grid-template-columns:repeat(var(--case-cols, 4), minmax(0, 1fr)); gap:1.8cqw;
+    box-sizing:border-box; padding:3.6cqw 3.2cqw; border-radius:4cqw;
+    background:radial-gradient(130% 85% at 50% 0%, #1D2128 0%, #111317 58%, #0A0B0D 100%);
+    box-shadow:inset 0 1.6cqw 2.4cqw rgba(0,0,0,.78), inset 0 -.6cqw 1.2cqw rgba(0,0,0,.42), inset 1cqw 0 1.6cqw -1cqw rgba(0,0,0,.5),
+      inset -1cqw 0 1.6cqw -1cqw rgba(0,0,0,.5), inset 0 0 0 1px rgba(0,0,0,.65), 0 1px 0 rgba(255,255,255,.07); }
+  .bcs .ncase-cell{ position:relative; display:flex; align-items:center; justify-content:center; box-sizing:border-box;
+    width:auto; min-width:0; aspect-ratio:1; margin:0; padding:0; background:none; border:0; border-radius:0;
+    font:inherit; color:inherit; -webkit-tap-highlight-color:transparent; }
+  .bcs .ncase-cell .badge-tile-art{ width:100%; height:100%; max-width:none; aspect-ratio:auto; background:none; }
+  .bcs .ncase-cell .badge-tile-art::before{ content:none; }
+  .bcs .ncase-cell svg{ width:100%; height:100%; display:block; position:relative; overflow:visible; }
+  .badges-tab .bcs .bcs-front{ position:relative; inset:auto; display:flex; align-items:center; justify-content:space-between; gap:3cqw; padding:3.2cqw 2.4cqw 3.6cqw; pointer-events:none; }
+  .badges-tab .bcs .bcs-front .bcs-latch{ position:relative; flex:none; width:12cqw; height:3.4cqw; border-radius:999px;
+    background:linear-gradient(180deg, #F1F4F7 0%, #C3CAD3 30%, #8E98A4 62%, #A6AFBA 86%, #6E7883 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.85), inset 0 -1px 0 rgba(0,0,0,.35), 0 0 0 1px rgba(0,0,0,.55), 0 .5cqw 1.1cqw rgba(0,0,0,.55); }
+  .bcs-latch-slot{ position:absolute; left:22%; right:22%; top:50%; height:.7cqw; min-height:2px; margin-top:-.35cqw; border-radius:999px;
+    background:linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.25)); box-shadow:0 1px 0 rgba(255,255,255,.45); }
+  .bcs-plate{ display:flex; align-items:center; justify-content:center; min-width:0; flex:0 1 auto;
+    padding:0 3.6cqw; height:5.4cqw; border-radius:1.4cqw;
+    background:linear-gradient(180deg, #4A525D 0%, #343A43 48%, #262B32 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.6), 0 .4cqw .9cqw rgba(0,0,0,.45); }
+  .bcs-plate-text{ display:block; font-style:normal; font-size:2.65cqw; font-weight:800; letter-spacing:.24em; line-height:1;
+    text-transform:uppercase; white-space:nowrap; color:#D3DBE4; text-shadow:0 -1px 0 rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.08);
+    /* letter-spacing hangs a gap after the last letter; give it back so the
+       word is centred by its letters, not by its box */
+    margin-right:-.24em; }
+  @supports (text-box: trim-both cap alphabetic){ .bcs-plate-text{ text-box:trim-both cap alphabetic; } }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -123640,6 +123687,39 @@ function buildOpenBadgeCase(kind, cellFor){
   root.append(lid, tray, front);
   return root;
 }
+/* ---- THE TAB'S CASE IS A TRAY (build 327 round 10) ----
+   Madison: "I don't like how half the screen is defaulted to just the case
+   opened, seems like wasted space" and "the metal pieces, the 3d look, the
+   clip parts all of it is bad". Asked which way: the TRAY ONLY, and SLEEK
+   PREMIUM rather than a rivetted flight case. So the Badges tab no longer
+   draws the open lid standing behind the slots, nor the corner guards,
+   screws, hinges, hasps and handle: one moulded graphite shell with a
+   machined metal rim, the lining sunk into it, and a front edge carrying
+   two flush brushed latches and the case's nameplate, centred. The slots
+   are the same cells (badge-tile ncase-cell), so tapping, inspecting and
+   the badges themselves are unchanged. The cutscene and the Profile keep
+   buildOpenBadgeCase. */
+function buildSleekBadgeCase(cellFor){
+  const mk = (cls, tag) => { const e = document.createElement(tag || "div"); e.className = cls; return e; };
+  const root = mk("badge-case ncase ncase-tab bcs");
+  const shell = mk("bcs-shell", "div");
+  const well = mk("badge-case-lining bcs-well");
+  const held = badgeCaseUnits(BADGE_CASES[0]);
+  applyBadgeCaseGrid(root, held.length);
+  held.forEach(u => { const c = cellFor(u); if(c){ setBadgeSlotShift(c, u); well.appendChild(c); } });
+  shell.appendChild(well);
+  const front = mk("badge-case-front bcs-front");
+  front.setAttribute("aria-hidden", "true");
+  const latch = side => { const l = mk("bcs-latch is-" + side, "span"); l.appendChild(mk("bcs-latch-slot", "i")); return l; };
+  const plate = mk("bcs-plate", "b");
+  const plateText = mk("bcs-plate-text", "i");
+  plateText.textContent = badgeCaseName(BADGE_CASES[0]);
+  plate.appendChild(plateText);
+  front.append(latch("l"), plate, latch("r"));
+  shell.appendChild(front);
+  root.appendChild(shell);
+  return root;
+}
 function buildBadgeStrip(cls){
   const strip = document.createElement("span");
   strip.className = "badge-strip" + (cls ? " " + cls : "");
@@ -123731,7 +123811,9 @@ function buildBadgesTab(opts){
   const headLab = document.createElement("span");
   headLab.className = "rankhero-gaugelab badges-casename";
   /* the case's name heads its screen (build 320) */
-  headLab.textContent = badgeCaseName(BADGE_CASES[0]);
+  /* (round 10) the case carries its own nameplate now, so the head says
+     what the count is of rather than naming the case twice */
+  headLab.textContent = "Badges";
   headText.appendChild(headLab);
   const headTitle = document.createElement("p");
   headTitle.className = "badges-head-title";
@@ -123772,7 +123854,7 @@ function buildBadgesTab(opts){
      much about them until you get them". A tap opens the badge's card,
      which names it and says Mastered or how close it is. The name stays
      in the slot for a screen reader. */
-  const kase = buildOpenBadgeCase("tab", unit => {
+  const kase = buildSleekBadgeCase(unit => {
     const has = unitBadgeEarned(unit);
     const tile = document.createElement("button");
     tile.type = "button";
@@ -123804,8 +123886,7 @@ function buildBadgesTab(opts){
   /* Shut at first paint, opened by runFill once the screen is up - unless
      motion is off, or this is the same screen built again (opts.still):
      only a new opening of the screen opens the case. */
-  const willOpen = !(opts && opts.still) && !resultsMotionOff() && typeof kase.animate === "function";
-  if(willOpen) shutBadgeCase(kase);
+  /* (round 10) the tray has no lid to open - nothing to shut first */
 
   /* Same reason the XP bar waits: this panel is built while another
      tab is showing, so filling on build is filling out of sight. */
