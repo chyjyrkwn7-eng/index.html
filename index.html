@@ -9165,10 +9165,13 @@
      on an iPhone's own). Trimming the word's box to its capital height and its
      baseline centres the LETTERS by the font's own numbers, whatever the font.
      The pill keeps the height it had (min-height), so nothing around it moves. */
-  @supports (text-box: trim-both cap alphabetic){
-    .back-word{ text-box: trim-both cap alphabetic; }
-    [data-layout="modern"] .back-link{ min-height:calc(1em + 1rem); }
-  }
+  /* build 327 round 12: "the word in the Back button is NOT centred, I've asked
+     30 times". text-box trimming only exists in newer WebKit, so on any other
+     phone the word fell back to the font's own line box and sat high. The word
+     is centred by measurement now (centerBackWord(), a canvas read of the real
+     font's capital height and line metrics) in every browser, and this rule
+     only keeps the pill's height. */
+  [data-layout="modern"] .back-link{ min-height:calc(1em + 1rem); }
   .startbar{
     display:flex; align-items:center; gap:1rem; flex-wrap:wrap;
     margin-top:1rem;
@@ -70631,6 +70634,46 @@ function fillBackLabel(btn, label){
   const t = document.createElement("span");
   t.className = "back-word"; t.textContent = label;
   btn.append(sv, t);
+  centerBackWord(t);
+}
+
+/* CENTRE THE CAPITALS ON THE PILL, BY MEASUREMENT (build 327 round 12). The
+   word's box is one em tall with the font's ascent and descent laid out inside
+   it, and a font's capitals are not in the middle of that - about 1.5px high in
+   one face and 2px in another. So it is measured, not modelled: a zero-width
+   probe on the baseline gives the baseline's real position and, where the
+   browser knows the `cap` unit, the font's real capital height (a canvas
+   measure when it does not); the capitals' middle is then moved onto the
+   button's middle. Run when the button is in the document (a detached node has
+   no layout) and again once fonts settle. */
+function centerBackWord(t, tries){
+  tries = tries || 0;
+  try{
+    const btn = t.parentNode;
+    if(!t.isConnected){ if(tries < 20) requestAnimationFrame(() => centerBackWord(t, tries + 1)); return; }
+    const br = btn.getBoundingClientRect();
+    if(!(br.height > 0)) return;
+    t.style.transform = "";
+    const pr = document.createElement("span");
+    pr.style.cssText = "display:inline-block;width:0;height:1cap;vertical-align:baseline;pointer-events:none";
+    t.appendChild(pr);
+    const r = pr.getBoundingClientRect();
+    pr.remove();
+    let cap = r.height;
+    if(!(cap > 0)){
+      const cs = getComputedStyle(t);
+      const cv = centerBackWord.cv || (centerBackWord.cv = document.createElement("canvas").getContext("2d"));
+      cv.font = cs.fontStyle + " " + cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+      cap = cv.measureText("H").actualBoundingBoxAscent;
+    }
+    if(!(cap > 0)) return;
+    const shift = (r.bottom - cap / 2) - (br.top + br.height / 2);
+    if(Math.abs(shift) > 0.05 && Math.abs(shift) < 8) t.style.transform = "translateY(" + (-shift).toFixed(2) + "px)";
+    if(!centerBackWord.fontsHooked && document.fonts && document.fonts.ready){
+      centerBackWord.fontsHooked = true;
+      document.fonts.ready.then(() => document.querySelectorAll(".back-word").forEach(w => centerBackWord(w, 99)));
+    }
+  }catch(e){}
 }
 
 /* The little glyph shown per mode — reused on both the Mode Select cards
@@ -70758,8 +70801,13 @@ function modeIcon(kind){
     /* REVIEW'S FANNED CARDS (build 327, round 9): a front flashcard with two
        more fanned out behind it. The tilted edges are baked into the path
        coordinates - no group transform. */
-    svg.appendChild(mk("M7.46 19.62L4.22 7.54Q3.78 5.90 5.43 5.46L7.30 4.96"));
-    svg.appendChild(mk("M16.54 19.62L19.78 7.54Q20.22 5.90 18.57 5.46L16.70 4.96"));
+    /* ...with the bottoms joined (build 327 round 12): "the bottom of it is not
+       connected, it's like broken". Each back card's bottom edge ran off to a
+       loose end below the front card. It now runs on, round its rounded
+       corner, and meets the front card's bottom edge at the middle, where the
+       other back card's does - a closed fan. */
+    svg.appendChild(mk("M12 18.4L9.10 19.18Q7.46 19.62 7.02 17.98L4.22 7.54Q3.78 5.90 5.43 5.46L7.30 4.96"));
+    svg.appendChild(mk("M12 18.4L14.90 19.18Q16.54 19.62 16.98 17.98L19.78 7.54Q20.22 5.90 18.57 5.46L16.70 4.96"));
     svg.appendChild(mk("M9 4.2h6a1.7 1.7 0 011.7 1.7v10.8a1.7 1.7 0 01-1.7 1.7H9a1.7 1.7 0 01-1.7-1.7V5.9A1.7 1.7 0 019 4.2z"));
     svg.appendChild(mk("M9.6 9h4.8M9.6 12.2h3.2"));
   } else {
