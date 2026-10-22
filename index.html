@@ -31991,6 +31991,34 @@
   }
   .screen-settings .cal-profile-row.settings-pair > .cal-profile-btn{ white-space:nowrap; font-size:.94rem; }
   @media (max-width:380px){ .screen-settings .cal-profile-row.settings-pair > .cal-profile-btn{ font-size:.84rem; } }
+
+  /* ---- THE CASE'S CORNERS, ROUND 10 ----
+     "some of the edges corners and everything look bad". At 3x the case's
+     four outer corners were sharp squares and each corner guard carried a
+     diagonal crease that read as a drawn line. The case's OUTER corners -
+     the lid's top two, the front wall's foot - are rounded now the way a
+     moulded hard case is, the guards over them follow the same curve, and
+     the crease is gone (the fold bands along the edges carry the metal).
+     The seams (lid to tray, tray to front) stay square: two parts meet
+     there. */
+  .nova-case.ncase, .bc-scene{ --case-outer-r:calc(var(--cu) * 3.6); }
+  .nova-case-cap{ --cap-ridge:linear-gradient(transparent, transparent) !important; }
+  .nova-case.ncase > .ncase-lid{ border-top-left-radius:var(--case-outer-r); border-top-right-radius:var(--case-outer-r); }
+  .nova-case.ncase > .ncase-lid .ncase-pad{ border-top-left-radius:calc(var(--case-outer-r) * .7); border-top-right-radius:calc(var(--case-outer-r) * .7); }
+  .nova-case.ncase > .ncase-lid > .nova-case-cap.is-tl, .badge-case-lid > .nova-case-cap.is-tl{ border-top-left-radius:var(--case-outer-r); }
+  .nova-case.ncase > .ncase-lid > .nova-case-cap.is-tr, .badge-case-lid > .nova-case-cap.is-tr{ border-top-right-radius:var(--case-outer-r); }
+  .nova-case.ncase > .ncase-front{ border-radius:0 0 var(--case-outer-r) var(--case-outer-r); }
+  .nova-case.ncase > .ncase-front.nova-case-wall.is-hw::before,
+  .nova-case.ncase > .ncase-front.nova-case-wall.is-hw::after{ border-radius:0 0 var(--cap-ri) var(--case-outer-r); }
+  .nova-case.ncase > .ncase-front.nova-case-wall.is-hw::before{ border-radius:0 0 var(--cap-ri) var(--case-outer-r); border-bottom-left-radius:var(--case-outer-r); border-bottom-right-radius:var(--cap-ri); }
+  .nova-case.ncase > .ncase-front.nova-case-wall.is-hw::after{ border-bottom-left-radius:var(--case-outer-r); border-bottom-right-radius:var(--cap-ri); }
+  /* the badge cutscene's case: the same corners */
+  .bc-scene .bc-lid-in{ border-top-left-radius:var(--case-outer-r); border-top-right-radius:var(--case-outer-r); }
+  .bc-scene .bc-lid-in > .nova-case-cap.is-tl{ border-top-left-radius:var(--case-outer-r); }
+  .bc-scene .bc-lid-in > .nova-case-cap.is-tr{ border-top-right-radius:var(--case-outer-r); }
+  .bc-scene .bc-front{ border-bottom-left-radius:var(--case-outer-r); border-bottom-right-radius:var(--case-outer-r); }
+  .bc-scene .bc-front.nova-case-wall.is-hw::before,
+  .bc-scene .bc-front.nova-case-wall.is-hw::after{ border-bottom-left-radius:var(--case-outer-r); border-bottom-right-radius:var(--cap-ri); }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
