@@ -89805,13 +89805,6 @@ function showIntroPopup(o){
   const title = document.createElement("h2");
   title.className = "intro-title"; title.textContent = "What’s new";
   card.append(eyebrow, title);
-  if(st.note){
-    const n = document.createElement("div"); n.className = "intro-gate-note";
-    const h = document.createElement("p"); h.className = "intro-gate-title"; h.textContent = "Levels wait for your next rank";
-    n.appendChild(h);
-    st.note.forEach(t => { const b = document.createElement("p"); b.className = "intro-gate-body"; b.textContent = t; n.appendChild(b); });
-    card.appendChild(n);
-  }
   WHATS_NEW_320.forEach(it => {
     const row = introRow(it.icon || it.glyph, it.color, it.title, it.body);
     row.dataset.key = it.key;
