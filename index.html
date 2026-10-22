@@ -128081,7 +128081,7 @@ function applyGlassRefraction(el, mapImgId){
     }
     for(let i = 0; i < frames.length; i++){
       const f = frames[i];
-      if(i * LENS_DT >= greyAt + 80 && Math.abs(f.H - g.pillH) < 1.2 && Math.abs(f.W - hi.pw) < 1.6 && Math.abs(f.cx - hi.c) < 1){ handAt = i * LENS_DT; break; }
+      if(i * LENS_DT >= greyAt + 56 && Math.abs(f.H - g.pillH) < 1.2 && Math.abs(f.W - hi.pw) < 1.6 && Math.abs(f.cx - hi.c) < 1){ handAt = i * LENS_DT; break; }
     }
     handAt = Math.min(handAt, total);
     bar.classList.remove("is-pressing");
@@ -128102,8 +128102,9 @@ function applyGlassRefraction(el, mapImgId){
        frame apart), holds, and turns grey from greyAt; the lens hands over
        to the platter in one frame at handAt */
     const gl = lensOp(LENS_GLASS[0]), gIn = Math.max(1, Math.min(70, greyAt));
-    LENS_GLASS.forEach(el => lensFade(el, [[0, gl], [gIn, 1], [greyAt, 1], [greyAt + 80, 0]]));
-    LENS_GREY.forEach(el => lensFade(el, [[0, 1 - gl], [gIn, 0], [greyAt, 0], [greyAt + 80, 1]]));
+    /* 56ms, not 80: the round 7 bar is 62px, so the lens has 21px to shrink, not 27, and it greyed too late */
+    LENS_GLASS.forEach(el => lensFade(el, [[0, gl], [gIn, 1], [greyAt, 1], [greyAt + 56, 0]]));
+    LENS_GREY.forEach(el => lensFade(el, [[0, 1 - gl], [gIn, 0], [greyAt, 0], [greyAt + 56, 1]]));
     lensFade(lens, [[0, 1], [handAt, 1], [handAt + 1, 0]]);
     lensFade(slider, [[0, 0], [handAt, 0], [handAt + 1, 1]]);
     lensMagnify(hi.c, 0, 260, Math.max(0, greyAt - 60));

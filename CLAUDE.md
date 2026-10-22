@@ -25727,3 +25727,48 @@ a frame read as pink-grey.
   (RU_HAND_RISE_AT 600 over 3200ms) - the scene behind, not the flare. Left
   for Madison's look at the hand-off; the gate would have to sample the
   flare apart from the scene to tell the two apart.
+
+### Build 327 round 7 (b327x) - filled tab glyphs to the reference, the Installing update screen
+
+Madison sent a screenshot of another app's iOS 26 tab bar ("the size of the
+logos and words (it's perfect) ensure ours is the same perfectness"), asked
+for Home to be "a planet with a ring" and a better calendar; and for the
+pushing-update screen to be "like 10 seconds longer and with some new words
+going across like initiating sound system". Branch `b327x`. Gate:
+`tools/check-b327x.py` (`ONLY=bar|install`, `--against`). Notes and the
+measured table: `notes/b327x.md`.
+
+- **Filled SF-style glyphs** (`TAB_GLYPHS` in `setupBottomTabs`,
+  `svg.tab-glyph`, `stroke:none`): Home a filled planet with a tilted ring
+  whose near half crosses in front with a gap masked round it
+  (`tg-home-cut`); Calendar the reference's page - header band solid, body
+  cut out (`fill-rule:evenodd`), twelve day dots; Leaderboard a filled
+  trophy. Profile stays the character.
+- **The plain bar is the reference's proportions** ("THE REFERENCE BAR" CSS
+  block, `.bottomtabs:not(.has-start-tab)` only): 62px on a phone (was 79),
+  platter 3.5px in (4.5px from the bar's outer edge), a 28px icon box, the
+  label 11px / 600 one pixel under it, all centred. From 40rem the same x1.28
+  (79.3px, was 101); the tablet's daily "?" and version label move down to
+  the new centre line. The Start bar on the unit screen is NOT changed (open:
+  b245's "same height as Home's bar" no longer holds).
+- **The platter's vertical inset is a CSS variable, `--pill-in-y`**, read by
+  the lens JS (`pillInY()`, was the constant `PILL_IN_Y`): change it in CSS
+  and the lens follows.
+- **The lens turns grey over 56ms, not 80** (`lensFade` in the landing):
+  with 21px to shrink instead of 27 it greyed too late for check-b325-f.
+- **Installing update** (`#install-update`, from the splash script when
+  `sessionStorage class26e.updating` is set - the flag every older build
+  sets before its forced reload): a bar filling over `INSTALL_MS` 10.5s and
+  ten lines sliding through ("Initiating the sound system", "Teaching Nova
+  new lines" ...), the splash held exactly as long, so everything that waits
+  for a loading screen waits for it. z 500, a hard cap at 12s, the flag
+  consumed, never on an ordinary launch. A tap does not skip it. Reduce
+  motion: no slide or sheen. `window.__installUpdate` logs it for the gate.
+  This build's own "Pushing update…" gains a rotating line; its loop guard
+  is unchanged. **A 313c phone sees**: 313c's own "Pushing update…" (~1.1s),
+  the reload, then this screen for ~10.5s, then Home and whatever 327 shows
+  next.
+- **Open**: the bar is not lowered to the reference's 21pt off the bottom
+  edge (one `bottom` line, but it moves back-to-top, the VR setup bar and
+  check-fixes' inset rules); the 7.5rem reservation and 9.5rem toast are
+  unchanged (they clear the smaller bar with more room).
