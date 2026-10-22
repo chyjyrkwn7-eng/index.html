@@ -62,6 +62,12 @@ SIZES = """() => { const bar = document.getElementById('bottomtabs'), b = bar.ge
 }"""
 
 
+UNIT = """() => { const bar = document.getElementById('bottomtabs'), b = bar.getBoundingClientRect(), st = document.getElementById('bottomtab-start');
+  const s = st && st.offsetWidth ? st.getBoundingClientRect() : null, i = document.querySelector('#bottomtab-calendar .bottomtab-icon').getBoundingClientRect();
+  return { start: !!s && bar.classList.contains('has-start-tab'), barH: b.height, pTop: s ? s.top - b.top : 0, pBot: s ? b.bottom - s.bottom : 0, pEnd: s ? b.right - s.right : 0, icon: i.height };
+}"""
+
+
 def check_bar(br):
     print("\nA/B. the glyphs, and the bar's sizes against the reference")
     for (w, h, dpr, lo, hi, flo, fhi) in [(440, 956, 3, 61, 63, 10.7, 11.3), (834, 1194, 2, 77, 82, 13.5, 14.5)]:
@@ -82,6 +88,17 @@ def check_bar(br):
               -0.5 <= z["gap"] <= 3 and abs(z["topRoom"] - z["botRoom"]) <= 2, zz)
         if w == 440:
             check("440x956: the icon box is 27-29px (23px of ink)", 27 <= z["icon"] <= 29, zz)
+        # the unit screen's bar (with the Start pill) is the same height (build 245)
+        pg.evaluate("() => { cfg.mode = 'drill'; showSetup(); }")
+        pg.wait_for_timeout(700)
+        pg.evaluate(CLEAN)
+        u = pg.evaluate(UNIT)
+        uu = {k: (round(v, 1) if isinstance(v, (int, float)) else v) for k, v in u.items()}
+        check("%dx%d: the unit screen's bar (Start pill) is the plain bar's height (+-1)" % (w, h),
+              u["start"] and abs(u["barH"] - z["barH"]) <= 1, uu)
+        check("%dx%d: the Start pill sits as far in as the platter, top, bottom and end (+-0.8)" % (w, h),
+              u["start"] and abs(u["pTop"] - z["inTop"]) <= .8 and abs(u["pBot"] - z["inTop"]) <= .8 and abs(u["pEnd"] - z["inTop"]) <= .8, uu)
+        check("%dx%d: its icons are the plain bar's size" % (w, h), abs(u["icon"] - z["icon"]) <= .6, uu)
         ctx.close()
 
 
