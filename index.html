@@ -6813,12 +6813,14 @@
   .chatdock-panel{
     position:fixed; z-index:320;
     display:flex; flex-direction:column;
-    background:rgba(20,25,32,.62);
-    border:1px solid rgba(255,255,255,.12);
+    /* the banner's glass (.daily-alert / .app-banner): lighter and clearer
+       than the dark fill this panel had; the tab bar and chat button keep theirs */
+    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
+    border:1px solid rgba(255,255,255,.11);
     will-change:backdrop-filter;
-    backdrop-filter:blur(12px) saturate(1.9) brightness(1.05);
-    -webkit-backdrop-filter:blur(12px) saturate(1.9) brightness(1.05);
-    box-shadow:0 12px 40px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08);
+    backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    box-shadow:0 12px 40px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
     text-align:left; color:var(--ink);
     transition:transform .26s cubic-bezier(.2,.8,.25,1), opacity .2s ease;
   }
