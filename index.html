@@ -23433,6 +23433,7 @@
     grid-template-areas:"art tx chev" "art meta chev"; row-gap:.38rem;
     column-gap:.85rem; width:100%; min-height:5.4rem; padding:.8rem .85rem .8rem .75rem; border-radius:1.1rem; cursor:pointer;
     background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border); box-shadow:var(--surface-shadow);
+    backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur); /* the shared glass (build 327 round 12) */
     font-family:var(--sans); -webkit-tap-highlight-color:transparent; }
   .cz-row:active{ background:rgba(255,255,255,.05); }
   .cz-row:focus-visible{ outline:2px solid rgba(255,255,255,.6); outline-offset:2px; }
@@ -26630,7 +26631,7 @@
   .rs-card{
     position:relative; margin:0 0 .85rem; padding:1rem 1.1rem 1.05rem; border-radius:18px;
     background:var(--rs-card); border:1px solid var(--rs-line);
-    box-shadow:0 10px 30px -14px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    box-shadow:0 10px 30px -14px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 1px rgba(0,0,0,.28);
   }
   /* NO BACKDROP BLUR ON A RESULTS CARD (build 282). Every card lands by
      moving - dropping in, slamming down - and a moving backdrop-filter
@@ -45292,8 +45293,10 @@ function syncSky(isQuestion){
   const b = document.body;
   if(isQuestion){ b.classList.remove("sky-home"); b.classList.add("sky-calm"); return; }
   b.classList.toggle("sky-home", !!stage.querySelector('[data-screen="home"]'));
-  b.classList.toggle("sky-calm", !!(isQuestion || window.forceHideBottomTabs
-    || stage.querySelector(".qnumrow, .fc-screen, .actions-results")));
+  /* build 327 round 12: "the result screen, shouldn't the starry background be
+     there too?" Results had been calm (no stars) since 323 along with the
+     question; only a question or a flashcard on screen is now. */
+  b.classList.toggle("sky-calm", !!(isQuestion || stage.querySelector(".qnumrow, .fc-screen")));
 }
 new MutationObserver(() => {
   document.body.classList.toggle("has-floatbtn", !!stage.querySelector(".floatbtn"));
