@@ -258,10 +258,37 @@ def draw_pixel_glyph(icon, size, stops, sprite=V_SPRITE):
             out.append(run)
         return out
 
+    # DEPTH (build 327 round 10): "I don't think the v has depth, it doesn't
+    # look 3d it looks flat. Take any other Apple app and see how the stuff
+    # on it looks 3d against the blackish background." What an iOS glyph
+    # has that this one did not: it SITS on the tile (a soft shadow under
+    # it, blurred - never the one-cell offset block recorded above, which put
+    # a dark bead in every notch), it has THICKNESS (a darker face showing
+    # under each step, a fraction of a cell deep, like a pressed key), its
+    # upper edges catch the light, and its face is lit from above (a gloss
+    # over the top half). The cells stay crisp and square; only light and
+    # thickness are added.
+    def band_of(r):
+        return palette[min(PALETTE_STEPS - 1, int(r / rows * PALETTE_STEPS))]
+
+    sil = Image.new("L", icon.size, 0)
+    sd = ImageDraw.Draw(sil)
+    for (c, r) in cells:
+        sd.rectangle(box(c, r), fill=255)
+    ext = max(1, int(round(cell * 0.30)))
+    # the shadow on the tile: blurred, a little down, under glyph and extrusion
+    shadow = sil.filter(ImageFilter.GaussianBlur(max(1, size * 0.022))).point(lambda v: int(v * 0.62))
+    shadow = shadow.transform(shadow.size, Image.AFFINE, (1, 0, 0, 0, 1, -max(1, size * 0.026)))
+    icon = Image.composite(Image.new("RGBA", icon.size, (0, 0, 0, 255)), icon, shadow)
+
     d = ImageDraw.Draw(icon)
+    # the thickness: each cell's darker side face, showing below it
+    for (c, r) in sorted(cells, key=lambda k: k[1]):
+        side = lerp(band_of(r), (0, 0, 0), 0.48)
+        b = box(c, r)
+        d.rectangle([b[0], b[1] + ext, b[2], b[3] + ext], fill=side + (255,))
     for r in range(rows):
-        band = min(PALETTE_STEPS - 1, int(r / rows * PALETTE_STEPS))
-        base = palette[band]
+        base = band_of(r)
         for run in runs_in(r):
             for c in run:
                 col = base
@@ -270,6 +297,23 @@ def draw_pixel_glyph(icon, size, stops, sprite=V_SPRITE):
                 elif len(run) > 1 and c == run[-1]:
                     col = lerp(base, (0, 0, 0), 0.20)
                 d.rectangle(box(c, r), fill=col + (255,))
+    # the lit upper edge: a cell with nothing above it catches the light
+    lip = max(1, int(round(cell * 0.16)))
+    for (c, r) in cells:
+        if (c, r - 1) not in cells:
+            b = box(c, r)
+            d.rectangle([b[0], b[1], b[2], b[1] + lip - 1], fill=lerp(band_of(r), (255, 255, 255), 0.42) + (255,))
+    # the face lit from above: a gloss over the glyph's top half, on the faces only
+    face = Image.new("L", icon.size, 0)
+    fd = ImageDraw.Draw(face)
+    gy0, gy1 = y0, y0 + rows * cell
+    for (c, r) in cells:
+        b = box(c, r)
+        t = (b[1] - gy0) / max(1, gy1 - gy0)
+        a = int(52 * max(0.0, 1 - t / 0.55) ** 1.6)
+        if a:
+            fd.rectangle(b, fill=a)
+    icon = Image.composite(Image.new("RGBA", icon.size, (255, 255, 255, 255)), icon, face)
     return icon
 
 

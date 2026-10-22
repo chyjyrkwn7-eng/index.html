@@ -250,8 +250,10 @@ def check_story(br):
                 if not seq or seq[-1] != k:
                     seq.append(k)
             idx = {k: seq.index(k) if k in seq else -1 for k in ("badges", "crew", "kinds", "flair", "modes")}
-            check("%s %s: badges, then the crew, how they come home, banners and effects, and later every mode" % (dev, who),
-                  0 <= idx["badges"] < idx["crew"] < idx["kinds"] < idx["flair"] < idx["modes"], seq)
+            # REVISED (327 round 9): "'How my crew comes home' slide, remove that slide" - the
+            # crew line carries it; the slide (and its four cards) is gone
+            check("%s %s: badges, then the crew, banners and effects, and later every mode - no 'how they come home' slide" % (dev, who),
+                  0 <= idx["badges"] < idx["crew"] < idx["flair"] < idx["modes"] and idx["kinds"] == -1, seq)
             # one locked look
             crew = next((p for p in props if p.get("kind") == "crew"), {}).get("crew") or []
             lost = [c for c in crew if c["lost"]]
@@ -269,12 +271,6 @@ def check_story(br):
                     got[m.group(1)] = [int(mm.group(1)), int(mm.group(2))] if mm else None
             want = {k: v for k, v in truth["kinds"].items() if k not in ("kept", "starter")}
             cols = sorted(set(k["x"] for k in kp)); rows_ = sorted(set(k["y"] for k in kp))
-            check("%s %s: how they come home - a card per way (ranks, challenges, secrets, ultimate), counts from the table" % (dev, who),
-                  got == want, {"got": got, "want": want})
-            check("%s %s: ...two by two, each led by a mark (not a character), one short line, all on the stage, nothing cut off" % (dev, who),
-                  len(kp) == 4 and len(cols) == 2 and len(rows_) == 2 and all(k["icon"] >= 30 and not k["char"] and 1 <= k["lines"] <= 2
-                                                                              and k["howPx"] >= 12 and k["fits"] and k["inView"] for k in kp),
-                  [{x: k.get(x) for x in ("icon", "char", "lines", "howPx", "fits", "inView")} for k in kp])
             # banners and effects
             fp = next((p for p in props if p.get("kind") == "flair"), None)
             fi = next((i for i, p in enumerate(props) if p.get("kind") == "flair"), -1)
