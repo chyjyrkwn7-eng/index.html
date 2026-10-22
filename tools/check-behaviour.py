@@ -17702,7 +17702,7 @@ B319_RU_WALK = """async (a) => {
     if(ht && !out.hero){ at('heroturn'); out.hero = { kick: (ht.querySelector('.rankhero-kicker') || {}).textContent, name: (ht.querySelector('.rankhero-name') || {}).textContent }; }
     if(document.querySelector('.ru-curtain.is-on') && out.at.heroturn) at('curtain');
     if((out.at.curtain || out.at.ph_return || out.at.ph_back) && document.querySelector('.screen-profile')) at('back');
-    if(document.querySelector('.pf-goal.ru-flip-out')) at('flipout');
+    /* MOVED IN 327 round 7: "don't flip the sheet, just do a nice fade like the other one.." - the hand-over is the completed card fading out (.ru-goal-old), not .ru-flip-out */ if(document.querySelector('.pf-goal.ru-goal-old, .pf-goal.ru-flip-out')) at('flipout');
     if(document.querySelector('.pf-goal.ru-goal-in')) at('goalin');
     const lv = document.querySelector('.screen-profile .pf-standing .pf-level');
     if(out.at.back && lv && lv.textContent !== lastLv){ lastLv = lv.textContent; out.lvls.push(lastLv); }
@@ -17807,7 +17807,7 @@ def check_b319_rankup(br):
         # build 321: the card no longer turns over - it fades to the new one (b321e)
         check(f"{dev}: then the card changes to Gold with a fade, not a turn ('Your rank', no 'Rank up')",
               at.get("upnext", 0) < at.get("heroturn", -1) and "turnout" not in at and hr == {"kick": "Your rank", "name": "Gold"}, [at, hr])
-        check(f"{dev}: a slow fade back to Profile; the completed card folds away and Platinum's comes in",
+        check(f"{dev}: a slow fade back to Profile; the completed card fades away and Platinum's comes in",
               at.get("heroturn", 0) < at.get("curtain", -1) < at.get("back", -1) < at.get("flipout", -1) < at.get("goalin", -1), at)
         af = wk.get("after") or {}
         lv = wk.get("lvls") or []
@@ -18107,7 +18107,7 @@ B320D_WALK = """async (a) => {
           levelText: (h.querySelector('.rankhero-gauge.is-level .rankhero-gaugetarget') || {}).textContent, levelMet: !!h.querySelector('.rankhero-gauge.is-level.is-met') }; }, 2800); }
     if(document.querySelector('.ru-curtain.is-on') && (out.at.turnin || out.at.ph_hero)) at('curtain');
     if(out.at.map && (out.at.curtain || out.at.ph_back || out.at.ph_return) && document.querySelector('.screen-profile')) at('back');
-    if(document.querySelector('.pf-goal.ru-flip-out')) at('flipout');
+    /* MOVED IN 327 round 7: "don't flip the sheet, just do a nice fade like the other one.." - the hand-over is the completed card fading out (.ru-goal-old), not .ru-flip-out */ if(document.querySelector('.pf-goal.ru-goal-old, .pf-goal.ru-flip-out')) at('flipout');
     if(document.querySelector('.pf-standing.ru-climbing')) at('climb');
     if(s && performance.now() - lastTap > 900 && ['profile', 'tick', 'road', 'after', 'upnext', 'top', 'hero', 'return', 'cards'].indexOf(ph) >= 0){ lastTap = performance.now(); tryTaps(ph); }
     if(seenScene && !s){ at('done'); break; }
@@ -18357,11 +18357,14 @@ def _b321e_checks(dev, pre, frames):
     # so on but as the next level's bar goes up the extra xp would go down to
     # match it". The line is the ordinary "x / y XP" counting up AND its own
     # "N extra XP" counting down beside it; never 'Saved XP / climbing'.
+    # MOVED IN 327 round 7: "THE NUMBER on the left would go into the level?" -
+    # no "N extra XP" any more; the ordinary "x / y XP" counts, its x pouring
+    # into each new level (check-b327u B holds it in full).
     ext = [f for f in cl if f["pf"].get("xex")]
-    num_ok = all(re.match(r"^[\d,]+ / [\d,]+ XP$", f["pf"]["nums"]) for f in cl) and all(re.match(r"^[\d,]+ extra XP$", f["pf"]["xex"]) for f in ext)
-    haves = [f["pf"]["xex"].split(" ")[0] for f in ext]
-    check(f"{dev}: while the saved XP climbs, the line under the bar is the numbers counting ({len(cl)} frames), never 'Saved XP / climbing'",
-          len(cl) > 60 and len(ext) > 60 and num_ok and len(set(haves)) > 20, [len(cl), cl[0]["pf"]["nums"] if cl else None, len(set(haves)), sorted(set(f["pf"]["nums"] for f in cl if not re.match(r"^[\d,]+ / [\d,]+ XP$", f["pf"]["nums"])))[:6]])
+    num_ok = all(re.match(r"^[\d,]+ / [\d,]+ XP$", f["pf"]["nums"]) for f in cl) and not ext
+    haves = [f["pf"]["nums"].split(" ")[0] for f in cl]
+    check(f"{dev}: while the saved XP climbs, the line under the bar is the numbers counting ({len(cl)} frames), never 'Saved XP / climbing' or 'N extra XP'",
+          len(cl) > 60 and num_ok and len(set(haves)) > 20, [len(cl), cl[0]["pf"]["nums"] if cl else None, len(set(haves)), sorted(set(f["pf"]["nums"] for f in cl if not re.match(r"^[\d,]+ / [\d,]+ XP$", f["pf"]["nums"])))[:6]])
     # 17. the level challenge waits for the bar
     rows = [(f["t"], f["pf"]["row"], f["pf"]["climb"]) for f in pf]
     end_climb = max((t for t, _, c in rows if c), default=None)
@@ -18527,7 +18530,7 @@ def check_b320d_rankup(br):
         last53 = next((p["t"] for p in pf if p["lv"] == lvls[-1]), None) if lvls else None
         check(f"{dev}: back on Profile the XP bar does not load again - it is where it stands from the first frame",
               len(pre_climb) > 10 and all((p["x"] or 0) >= .97 for p in pre_climb if p["x"] is not None), [len(pre_climb), [p["x"] for p in pre_climb][:8]])
-        check(f"{dev}: the challenge box flips first, THEN the saved XP climbs",
+        check(f"{dev}: the challenge box changes over first (a fade since 327 round 7), THEN the saved XP climbs",
               at.get("flipout") is not None and first_change is not None and at["flipout"] < first_change, [at.get("flipout"), first_change])
         # build 321 (b321e): the level challenge no longer counts with the climb - it waits where it stood until the bar is done
         sync = all(p["row"] == min(pre["cap"], p["need"]) for p in pf if p["climbing"] and p["row"] is not None and p["need"])

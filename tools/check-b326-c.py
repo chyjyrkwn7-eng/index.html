@@ -151,12 +151,15 @@ def section_spend(br):
         # and so on but as the next level's bar goes up the extra xp would go
         # down to match it". The line is the ordinary "x / y XP" (here the full
         # wall level, span / span) AND, on the right, "N extra XP".
-        check("%s: it starts on the extra - %s extra XP beside a full Level %s (%s into a level of %s)" % (label, fr["into"] - fr["span"], fr["level"], fr["into"], fr["span"]),
-              fr["stopped"] and s and s[0]["extra"] and s[0]["ex"] == fr["into"] - fr["span"] and s[0]["have"] == fr["span"] and s[0]["lv"] == fr["level"] and fr["into"] > fr["span"],
+        # MOVED IN 327 round 7: "WHEN YOU HAVE EXTRA XP going into ranking up, the number
+        # on the left will obviously be higher, but at the cutscene it would do the level
+        # up effect/sound then go to the next level, THE NUMBER on the left would go into
+        # the level?" No "N extra XP": the ordinary "x / y XP" with x past y, and x goes
+        # into each new level. check-b327u B holds the climb in full.
+        check("%s: it starts on the ordinary line with the extra IN the number - %s / %s XP at a full Level %s" % (label, fr["into"], fr["span"], fr["level"]),
+              fr["stopped"] and s and s[0]["have"] == fr["into"] and s[0]["lv"] == fr["level"] and fr["into"] > fr["span"],
               [s[:2], fr])
-        haves = [x["ex"] for x in s if x["extra"]]
-        check("%s: the extra only ever counts down (%d frames on it)" % (label, len(haves)),
-              len(haves) >= 20 and all(haves[i] <= haves[i - 1] for i in range(1, len(haves))), [(i, haves[i - 1], haves[i]) for i in range(1, len(haves)) if haves[i] > haves[i - 1]][:4])
+        check("%s: no 'N extra XP' at any frame" % label, not any(x["extra"] for x in s), [x for x in s if x["extra"]][:2])
         lvs = []
         for x in s:
             if not lvs or lvs[-1] != x["lv"]:

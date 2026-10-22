@@ -25727,3 +25727,41 @@ a frame read as pink-grey.
   (RU_HAND_RISE_AT 600 over 3200ms) - the scene behind, not the flare. Left
   for Madison's look at the hand-off; the gate would have to sample the
   flare apart from the scene to tell the two apart.
+
+### Build 327 round 7 (b327u) - the status words at the colour's speed, the number goes into the level, a fade not a flip
+
+Madison, Oct 22: *"the words above the first answer choice, when you get it
+right or wrong it changes crazy fast. Could it match the speed of the button
+lighting up to green?"*; *"The xp bar still shows extra xp? ... THE NUMBER on
+the left would go into the level?"*; *"when the challenges change, don't flip
+the sheet, just do a nice fade like the other one.."* Gate:
+`tools/check-b327u.py` (A-C, `B327U_ONLY=`, `--against`); 18 failures on
+61d9620.
+
+> **Supersedes** b327b's "N extra XP" and round 6 (b327q)'s extra counting
+> down beside the ordinary numbers, and b319/b320d's flip of the challenge card.
+
+- **The status line changes on the choice colour's timing** (`statusWordsIn`,
+  from render()): the new words fade in over `STATUS_SWAP_MS` (360ms,
+  `cubic-bezier(.25,.6,.3,1)`, no delay - the picked choice's own colour
+  ease), the old fade out from `.status::before` (`data-was`) laid over, so
+  the height never jumps and textContent is the new words only. Nothing plays
+  when the words did not change or the question did; none under Reduce
+  motion; none in the slide's copies. `statusShown` is `var` (TDZ).
+- **No extra number in the rank-up climb** (`rankUpStandingClimb`): the line is
+  the ordinary "x / y XP", x past y at the start with the bar full. Per level:
+  the level up (`.pf-xpbarwrap.ru-levelup` pop, `rankUpSpendFlash`,
+  `res.levelup`), the level steps on, the bar empties, x counts DOWN by that
+  level's cost while the bar fills - x is now the remainder over the new
+  level's span. Ends on the remainder or full at the next wall.
+  `buildXpExtra`/`.pf-xp-extra*` are deleted; each step records `prev`, and
+  xpForLevel(level) + have = the total.
+- **The challenge card fades** (`rankUpProfileReturn`): the completed card is
+  laid over the next rank's at the same box (`.ru-goal-old`) and they cross on
+  `RU_HERO_FADE_MS` ease-in-out, opacity only - rankUpHeroTurn's fade. No
+  rotate or perspective; the flip CSS is gone.
+- Gates moved ("MOVED IN 327 round 7"): check-b326-c A, check-b327-b B and
+  check-b327q C (skipped - check-b327u B holds the climb), check-behaviour
+  b320d/b319_rankup (hand-over marker `.ru-goal-old`, numbers only).
+- Open: `res.levelup`'s 1000ms cooldown drops level-up sounds on a climb whose
+  steps are under 1s (the 15s cap); the rank.xp.climb plucks still mark each.
