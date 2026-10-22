@@ -410,7 +410,7 @@ def check_qualifier_icon(br):
     # MOVED IN 327 (b327k): "The name 'exam' is not it. I prefer quiz and make
     # the icon look better" - a quiz card: a ? with its solid dot over an
     # answer blank. No arrow, no pencil, no seal, no ring-with-tick.
-    print("\nd6. Mock Test's mark: a quiz card, a ? over an answer blank (no arrow, no pencil, no seal, no ring-with-tick), and the same mark everywhere it appears")
+    print("\nd6. Mock's mark: a quiz card, a ? over an answer blank (no arrow, no pencil, no seal, no ring-with-tick), and the same mark everywhere it appears")
     for (w, h, dev) in DEVS:
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
@@ -431,13 +431,13 @@ def check_qualifier_icon(br):
           showModeSelect(); await wait(400);
           out.picker = sig(document.querySelector('.modecard .modeicon-exam'));
           out.news = (() => { const it = WHATS_NEW_320.find(x => x.key === 'modes'); if(!it) return ''; const row = introRow(it.icon || it.glyph, it.color, it.title, it.body); return sig(row.querySelector('svg.modeicon-exam')); })();
-          out.notes = (() => { const it = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /^Mock Test/.test(i.title)); try{ return sig(it.icon()); }catch(e){ return ''; } })();
+          out.notes = (() => { const it = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /^Mock/.test(i.title)); try{ return sig(it.icon()); }catch(e){ return ''; } })();
           out.slide = sig(novaModeRow().querySelector('.modeicon-exam'));
           return out; }""")
         ctx.close()
         same = all(r.get(k) == r.get("ref") for k in ("picker", "news", "notes", "slide"))
         check("%s modeIcon('exam'): MOVED IN 327 round 9: a graded sheet (the card, an A and a plus), plain paths - no arrow, no pencil, no seal, no ring-with-tick" % dev,
-              r.get("card") and not r.get("question") and not r.get("dot") and not r.get("blank") and not r.get("group")
+              r.get("card") and r.get("question") and r.get("dot") and r.get("blank") and not r.get("group")
               and not r.get("arrow") and not r.get("pencil") and not r.get("ring") and not r.get("tick") and not r.get("seal"),
               {k: r.get(k) for k in ("card", "question", "dot", "blank", "group", "arrow", "pencil", "ring", "tick", "seal")})
         check("%s ...the same mark on the mode picker, What's New, Version 9's notes and Nova's modes slide" % dev, same and bool(r.get("ref")),

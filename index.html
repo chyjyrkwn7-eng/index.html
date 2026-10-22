@@ -19821,14 +19821,21 @@
      lip in its own lighter blue, a shade inside the bottom edge, Quit's
      contact/mid/wide shadows), no border (Quit's height), darker pressed.
      Resume white, Save and exit blue, Quit black. */
+  /* ---- GREY AGAIN (build 327 round 9) ----
+     "Save and exit as a blue color? That's crazy. Maybe just a grey or
+     something? Not a fan of the blue." Black, glass, matte grey, green and blue
+     have each been turned down; the grey that came back is the matte one (build
+     321's recipe: opaque, a lit lip, a shade inside the bottom edge, Quit's
+     shadows), a neutral mid grey so it is neither Resume's white nor Quit's
+     black. */
   [data-layout="modern"] .pausepanel .next.ghost#pause-save{
     color:#fff; border:none;
-    background-color:#2B5AAE; background-image:none;
-    box-shadow:0 1px 1px rgba(170,205,255,.55) inset, 0 -2px 2px rgba(0,0,0,.32) inset,
+    background-color:#3E4249; background-image:none;
+    box-shadow:0 1px 1px rgba(200,206,215,.38) inset, 0 -2px 2px rgba(0,0,0,.34) inset,
       0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 22px -6px rgba(0,0,0,.55);
     -webkit-backdrop-filter:none; backdrop-filter:none;
   }
-  [data-layout="modern"] .pausepanel .next.ghost#pause-save:active{ background-color:#224A8F; opacity:1; }
+  [data-layout="modern"] .pausepanel .next.ghost#pause-save:active{ background-color:#2F3238; opacity:1; }
   /* Back links were plain text with no button treatment at all \u2014 the
      same black-glass pill as the ghost button, just smaller, so it
      reads as a real tappable control instead of a caption. */
@@ -32050,7 +32057,7 @@
 
     var messagePool = [
       "> booting core runtime...",
-      "> loading Drill & Mock Test modes...",
+      "> loading Drill & Mock modes...",
       "> syncing unit progress...",
       "> initializing badge case...",
       "> calibrating XP curve...",
@@ -54406,7 +54413,7 @@ const ACTIVITY_MIN_GAP_MS = 8000;
 const ACTIVITY_TEXT = {
   menu:    ["Main menu",      "On the main menu"],
   drill:   ["In a Drill",     "In a Drill"],
-  exam:    ["In a Mock Test",  "Taking a Mock Test"],   /* build 327: Quiz (Qualifier 324-327, Exam for one build: "The name 'exam' is not it") */
+  exam:    ["In a Mock",  "Taking a Mock"],   /* build 327: Quiz (Qualifier 324-327, Exam for one build: "The name 'exam' is not it") */
   game:    ["In Game mode",   "Playing Game mode"],
   review:  ["In Review",      "Going over questions"],   /* build 326: the mode is Review again (324-325 called it the Briefing) */
   daily:   ["Daily question", "On the daily question"],
@@ -57924,7 +57931,7 @@ function applySaved(){
    actually." Back to the name 305 settled on; the value was always
    "review", so nothing stored moves. Its violet and its cards stay. */
 function modeTitleOf(mode){
-  const NAMES = { drill: "Drill", exam: "Mock Test", review: "Review", vroom: "Virtual Room", game: "Game" };
+  const NAMES = { drill: "Drill", exam: "Mock", review: "Review", vroom: "Virtual Room", game: "Game" };
   if(NAMES[mode]) return NAMES[mode];
   return String(mode || "").charAt(0).toUpperCase() + String(mode || "").slice(1);
 }
@@ -70398,16 +70405,21 @@ function modeIcon(kind){
        multiple-choice list - reads as a list; a "?" tile - reads as help;
        the card with a solid answer bar or with A B C dots - crowded at card
        size). Plain paths, no group transform (check_b323u's ink). */
-    /* THE GRADED SHEET (build 327, round 9): "The logo for quiz is not my
-       favorite ... I want something better and simple and unique. You see it
-       and it makes sense." A test paper with its grade on it: an A and a plus
-       on one rounded sheet. It is the thing this mode ends on - nothing is
-       marked until the grade - and nothing in it needs explaining. No ?
-       (Review's old mark and the chat button both read as help). Plain
-       paths, no group transform (check_b323u's ink). */
+    /* THE ? CARD (build 327k, kept): a card with a question mark on it over an
+       answer blank. Round 9 tried an answer sheet of bubbles and then a graded
+       A+ ("the a+ is not it"); the card is what stayed. Plain paths, no group
+       transform (check_b323u's ink). */
     svg.appendChild(mk("M6.6 2.6h10.8a3 3 0 013 3v12.8a3 3 0 01-3 3H6.6a3 3 0 01-3-3V5.6a3 3 0 013-3z"));
-    svg.appendChild(mk("M7.2 16.4l2.9-8.6 2.9 8.6M8.2 13.6h3.8"));
-    svg.appendChild(mk("M16.3 9.4v4.6M14 11.7h4.6"));
+    const q = mk("M9.7 7.4a2.3 2.3 0 114.4.9c-.5 1-2.1 1.3-2.1 2.7");
+    q.setAttribute("class", "modeiconpath modeiconquestion");
+    svg.appendChild(q);
+    const dot = document.createElementNS(svgNS2, "circle");
+    dot.setAttribute("cx", "12"); dot.setAttribute("cy", "13.6"); dot.setAttribute("r", ".5");
+    dot.setAttribute("class", "modeiconpath modeiconsolid");
+    svg.appendChild(dot);
+    const blank = mk("M7.8 17.6h8.4");
+    blank.setAttribute("class", "modeiconpath modeiconblank");
+    svg.appendChild(blank);
   } else if(kind === "vroom"){
     const p1 = document.createElementNS(svgNS2, "circle");
     p1.setAttribute("cx", "8.5"); p1.setAttribute("cy", "8"); p1.setAttribute("r", "3");
@@ -72359,9 +72371,14 @@ function renderPausedScreen(){
   /* only say "timer" when there is one (build 327 audit: a run with no
      clock read "the question and timer are on hold") */
   const hasClock = (typeof raceTimed !== "undefined" && raceTimed) || !timerlineEl.hidden;
+  /* build 327 round 9: "shouldn't it say the mode - the drill test is on hold,
+     or the mock test?" It names what you are in. */
+  const subject = runLabel === "Daily question" ? "Your daily question"
+    : runMode === "exam" ? "Your Mock test" : runMode === "drill" ? "Your Drill test"
+    : (typeof vroomCode !== "undefined" && vroomCode) ? "Your Virtual Room test" : "Your test";
   p.textContent = (runLabel === "Daily question" || !hasClock)
-    ? "The question is on hold."
-    : "The question and timer are on hold.";
+    ? subject + " is on hold."
+    : subject + " and its timer are on hold.";
   const actions = document.createElement("div");
   actions.className = "actions";
   const resumeBtn = document.createElement("button");
@@ -74517,7 +74534,7 @@ const RELEASE_NOTES = [
         { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "The Daily Question Card", body: "The daily question is named in its pinned header, like a test, and its result is one card: your verdict, then the XP you earned, in the same soft-edged style as the results screen." },
         { icon: buildCalendarGridIcon, color: "#FFD27A", title: "Calendar On The Tab Bar", body: "The class calendar has its own tab at the bottom: today, this week and the next test at a glance, the days left in the course, and what is on the next test once it is posted. Settings moved into Profile, so Profile's tabs are Profile, Stats and Settings." },
         { icon: buildPersonIcon, color: "#4ADE80", title: "Friends On Your Profile", body: "Your Profile card shows your friends and what each one is doing, or that they are offline. Manage friends works as before." },
-        { icon: () => modeIcon("exam"), color: "#FF9A3C", title: "Mock Test, A Real Test", body: "Mock Test is a real test: no feedback on any question until your grade, and its icon is a graded sheet, an A+. Review is every question with its answer, as a list or flashcards, and its icon is an open book. The mode at the top of every unit screen has a soft edge like the results boxes. Each mode has its own look, and every start button says what you are beginning." },
+        { icon: () => modeIcon("exam"), color: "#FF9A3C", title: "Mock, A Real Test", body: "Mock is a real test: no feedback on any question until your grade, and its icon is a graded sheet, an A+. Review is every question with its answer, as a list or flashcards, and its icon is an open book. The mode at the top of every unit screen has a soft edge like the results boxes. Each mode has its own look, and every start button says what you are beginning." },
         { icon: buildBarStatsIcon, color: "#A694FF", title: "Your Study Hours", body: "Stats has a new chart of your study time this week, in dots. Tap a day for its exact time, or look back at last week." }
       ]},
       { label: "Meet Nova", items: [
@@ -74580,7 +74597,7 @@ const RELEASE_NOTES = [
         { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Profile, Calendar And Stats", body: "Profile is three tabs: Profile, Calendar and Stats. Your badge count sits beside your level, the badge case opens from the card, and Friends is back under it." }
       ]},
       { label: "Studying", items: [
-        { icon: buildPauseIcon, color: "#4ADE80", title: "Save A Test For Later", body: "Pause a Drill or Mock Test and tap Save and exit. The next time you tap Start Studying, you can resume it exactly where you left off or start a new test. Resume loads it like a new test, then picks up where you were. One test can be saved at a time. Not available in Review, flashcards, the daily question or a Virtual Room." },
+        { icon: buildPauseIcon, color: "#4ADE80", title: "Save A Test For Later", body: "Pause a Drill or Mock and tap Save and exit. The next time you tap Start Studying, you can resume it exactly where you left off or start a new test. Resume loads it like a new test, then picks up where you were. One test can be saved at a time. Not available in Review, flashcards, the daily question or a Virtual Room." },
         { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "The Daily Question Ring", body: "After you answer, a ring around the daily question button fills until the next question at 5pm, and fills the rest of the way when it arrives." }
       ]}
     ]
@@ -79136,7 +79153,7 @@ function showWelcomeIntro(){
      itself an earlier explicit fix for text that read as too small. */
   const items = [
     { head: "Built for one thing", body: "Every question is written to match what you'll actually see on test day \u2014 by classmates studying the exact same material." },
-    { head: "Four ways to study", body: "Drill gives instant feedback, Mock Test is test day with your grade at the end, Review goes over the material, and Virtual Room takes it live against classmates." },
+    { head: "Four ways to study", body: "Drill gives instant feedback, Mock is test day with your grade at the end, Review goes over the material, and Virtual Room takes it live against classmates." },
     { head: "Progress that means something", body: "Right answers level you up, a perfect unit earns its badge, and levels and badges together climb the ranks." },
     { head: "Everything saves itself", body: "No save button \u2014 your progress is already here next time, on any device." },
   ];
@@ -81504,7 +81521,7 @@ function novaIntroLines(o){
     ...novaSlide("flair", () => novaStack(novaWarmTake("flair") || novaFlairProp(), novaCap("Yours to wear · Customize"))) });
   /* build 327 (b327m): the Virtual Room is said here, on the modes slide
      (which already shows it), not on a line and a picture of its own */
-  lines.push({ text: "Drill to learn a unit, a Mock Test to prove you’re ready, and Review to go over the material first. And in a Virtual Room you can race your classmates, or challenge me.",
+  lines.push({ text: "Drill to learn a unit, a Mock to prove you’re ready, and Review to go over the material first. And in a Virtual Room you can race your classmates, or challenge me.",
     ...novaSlide("modes", () => novaModeRow()) });
   /* ---- AND HE BECOMES YOUR FRIEND, PARTWAY THROUGH (build 324) ----
      "When Mr nova introduces himself, throughout that cutscene you will get
@@ -86178,7 +86195,7 @@ function novaReplyFor(raw){
   if(has(/ (xp|levels?|level up) /))
     return "Every right answer earns XP, and XP raises your level. Your level waits at your next rank\u2019s level until you have its badges, so mastering units matters as much as answering a lot.";
   if(has(/ (drill|exam|quiz|quizzes|mock|review|flashcards?|learn|modes?|study|studying|practice|starred|flag\w*) /))
-    return "Drill to learn a unit, a Mock Test to test yourself, and Review to go over the material first. They’re all under Start Studying on Home.";
+    return "Drill to learn a unit, a Mock to test yourself, and Review to go over the material first. They’re all under Start Studying on Home.";
   /* the story as his introduction tells it (build 326) */
   if(has(/ (planet|crack\w*|becoming a star) /))
     return "The planet I was studying took in more light than it could hold, with nothing holding it together, and it exploded. Yours cracks a little more with every rank from Gold up: the strain of a brighter flare. Badges are what hold it together, which is why every rank asks for them. Keep finding them and it holds, all the way to Supernova, where it becomes a star.";
@@ -89427,9 +89444,9 @@ const WHATS_NEW_320 = [
   /* build 326: Review is Review again ("I kinda prefer briefing to be
      called review actually"), so only the Qualifier is a new name - and
      its mark is modeIcon's own (`icon`), not a copy of it */
-  { key: "modes", color: "#FF9A3C", title: "Mock Test, a real test", icon: () => modeIcon("exam"),
-    body: "Mock Test is now a real test, with nothing shown until your grade.",
-    say: "Mock Test is a real test now: no feedback on any question until you see your grade at the end." },
+  { key: "modes", color: "#FF9A3C", title: "Mock, a real test", icon: () => modeIcon("exam"),
+    body: "Mock is now a real test, with nothing shown until your grade.",
+    say: "Mock is a real test now: no feedback on any question until you see your grade at the end." },
   /* build 323: the calendar to the bar, Settings into Profile */
   { key: "profile", color: "#5CA8FF", title: "Calendar in the tab bar",
     glyph: "M3 4.5h5.2v4.2H3V4.5Zm6.4 0h5.2v4.2H9.4V4.5Zm6.4 0H21v4.2h-5.2V4.5ZM3 10.2h18V20H3v-9.8Z",
@@ -89437,7 +89454,7 @@ const WHATS_NEW_320 = [
     say: "The class calendar has its own tab at the bottom now. Settings moved into Profile, and your Friends box shows who is on." },
   { key: "save", color: "#4ADE80", title: "Save a test for later",
     glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-3.4 6.2h2.3v7.6H8.6V8.2Zm4.5 0h2.3v7.6h-2.3V8.2Z",
-    body: "Pause a Drill or Mock Test and tap Save and exit. Start Studying offers it back, and Resume loads it right where you left off.",
+    body: "Pause a Drill or Mock and tap Save and exit. Start Studying offers it back, and Resume loads it right where you left off.",
     say: "You can save a test for later. Pause it, tap Save and exit, and Resume picks it up right where you left off." },
   /* BUILD 325: "Results grade first, characters celebrate, the ranking up
      on the road map, a planet that cracks, supernovas mark, the daily
@@ -90717,7 +90734,7 @@ function showModeSelect(){
       { target: '.modecard[data-mode="drill"]', align: "left", vplacement: "below",
         text: "Drill is the classic mode \u2014 instant feedback, and you can retry until you get it right. Best for learning." },
       { target: '.modecard[data-mode="exam"]', align: "left", vplacement: "below",
-        text: "Mock Test is a real test: no feedback on any question until you see your grade at the end." },
+        text: "Mock is a real test: no feedback on any question until you see your grade at the end." },
       /* Review had no step (build 289: "ensure all the tool tips are
          updated for this new app") - it became a mode of its own in
          build 128 and the tour went straight from Exam to Virtual Room. */
@@ -93891,7 +93908,7 @@ function render(){
 
   drawMeter();
   countEl.textContent = scopeLabel() + " \u2014 " +
-    (runMode === "exam" ? "mock test, " : "") +
+    (runMode === "exam" ? "mock, " : "") +
     (runLabel ? runLabel + ", " : "") +
     "question " + (pos + 1) + " of " + order.length;
   testScopeLabelEl.textContent = countEl.textContent;
@@ -108031,7 +108048,7 @@ function testHistoryUnitLine(entry){
     : entry && entry.mode === "vroom" ? "Virtual Room" : "Drill";
   /* An older entry's stored label ends in the name it was saved under
      ("All units - Exam"); it reads under today's name (build 324). */
-  if(!units.length) return entry && entry.label ? String(entry.label).replace(/ \u2014 (Exam|Qualifier|Quiz|Mock Test)$/, " \u2014 " + modeTitleOf("exam")) : modeName;
+  if(!units.length) return entry && entry.label ? String(entry.label).replace(/ \u2014 (Exam|Qualifier|Quiz|Mock)$/, " \u2014 " + modeTitleOf("exam")) : modeName;
   const all = topicsIn(QUESTIONS);
   let what;
   if(units.length === all.length) what = "All " + units.length + " units";
@@ -108228,7 +108245,7 @@ function buildTestRow(entry, opts){
   body.className = "thx-row-body";
   const name = document.createElement("span");
   name.className = "thx-row-name";
-  name.textContent = testHistoryUnitLine(entry).replace(/ · (Drill|Exam|Qualifier|Quiz|Mock Test|Game|Virtual Room)$/, "");
+  name.textContent = testHistoryUnitLine(entry).replace(/ · (Drill|Exam|Qualifier|Quiz|Mock|Game|Virtual Room)$/, "");
   const meta = document.createElement("span");
   meta.className = "thx-row-meta";
   const chip = document.createElement("span");

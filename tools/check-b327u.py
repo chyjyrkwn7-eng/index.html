@@ -10,7 +10,7 @@ Madison's words, each held by checks that FAIL on 61d9620 and pass here:
   A. "When taking a test, the words above the first answer choice, when you
      get it right or wrong it changes crazy fast. Could it match the speed of
      the button lighting up to green?"
-     Drill (a wrong pick, then the right one) and Mock Test (a pick), phone and
+     Drill (a wrong pick, then the right one) and Mock (a pick), phone and
      iPad: the status line's new words arrive by an opacity animation whose
      delay, duration and curve are the picked choice's colour transition
      (read off getAnimations and getComputedStyle); the line's box does not
@@ -82,7 +82,7 @@ STATUS = """async (a) => {
     });
     let pick = document.querySelector('.qpanel .choice.is-right-pop, .qpanel .choice.is-wrong-flash');
     let probe = null;
-    /* a Mock Test pick has no right/wrong colour of its own (a fresh dot, no
+    /* a Mock pick has no right/wrong colour of its own (a fresh dot, no
        ease): the choice colour's timing is the result colour's, read off a
        probe choice carrying it */
     if(!pick && document.querySelector('.qpanel .choice.is-pick-pop')){
@@ -143,7 +143,7 @@ def section_status(br):
             ctx, pg = boot(br, w, h)
             r = pg.evaluate(STATUS, {"mode": mode})
             ctx.close()
-            tag = "%s %s" % (label, "Drill" if mode == "drill" else "Mock Test")
+            tag = "%s %s" % (label, "Drill" if mode == "drill" else "Mock")
             if r.get("errs"):
                 check(tag + ": ran", False, r["errs"])
                 continue

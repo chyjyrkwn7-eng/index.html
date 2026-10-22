@@ -276,10 +276,10 @@ def check_whatsnew(br):
     # row is Exam again.
     # MOVED IN 327 (b327k): "The name 'exam' is not it. I prefer quiz" - the
     # row is Quiz.
-    adds = [n for n, rx in (("Mock Test", r"\bMock Test\b"), ("message him", r"Message Nova|message"),
+    adds = [n for n, rx in (("Mock", r"\bMock\b"), ("message him", r"Message Nova|message"),
                             ("challenge him", r"Challenge Nova|Sheriff"), ("study hours", r"study time|study hours"))
             if re.search(rx, " ".join(r["rows"]), re.I)]
-    check("Version 9's real additions are in it: Mock Test as a real test, messaging and challenging Nova, study hours",
+    check("Version 9's real additions are in it: Mock as a real test, messaging and challenging Nova, study hours",
           len(adds) == 4, adds)
     ctx.close()
 
@@ -434,7 +434,7 @@ def check_qualifier(br):
       const out = { n: paths.length, seal: paths.some(d => (d.match(/Q/g) || []).length >= 10),
         solid: s.querySelectorAll('.modeiconsolid').length, check: !!s.querySelector('.modeiconcheck'),
         shield: paths.some(d => /^M12 2\\.2l8\\.1 3/.test(d)), fill: getComputedStyle(s.querySelector('.modeiconsolid') || s).fill };
-      const rn = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /^Mock Test/.test(i.title));
+      const rn = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /^Mock/.test(i.title));
       out.pencil = !!s.querySelector('g[transform^="rotate(45"]');
       /* MOVED IN 327 (b327k): a quiz card - a rounded card, a question
          mark in it with its solid dot, and an answer blank under it. No
@@ -449,12 +449,12 @@ def check_qualifier(br):
     # MOVED IN 327 (b327k): "I prefer quiz and make the icon look better" -
     # the mark is a quiz card (a ? over an answer blank); not 327h's
     # target and arrow, the pencil, the shield or the seal.
-    # MOVED IN 327 (round 9): "The logo for quiz is not my favorite ... something
-    # better and simple and unique" - a graded sheet: the card, an A and a plus,
-    # no question mark, no blank, no dot.
-    check("modeIcon('exam'): a graded sheet - the card with an A and a plus; not the ?, the arrow, the pencil, the shield or the seal; the Version 9 note uses it",
-          not r.get("seal") and not r.get("arrow") and r.get("card") and not r.get("question") and not r.get("dot")
-          and not r.get("blank") and not r.get("pencil") and not r.get("shield") and r.get("n") == 3 and r.get("notes"), r)
+    # 327 round 9: the ? card stayed ("the a+ is not it") - a rounded card, a
+    # question mark with its solid dot, and an answer blank; no arrow, pencil,
+    # shield or seal.
+    check("modeIcon('exam'): a ? card - a ? with its dot over an answer blank; not the arrow, the pencil, the shield or the seal; the Version 9 note uses it",
+          not r.get("seal") and not r.get("arrow") and r.get("card") and r.get("question") and r.get("dot")
+          and r.get("blank") and not r.get("pencil") and not r.get("shield") and r.get("notes"), r)
     ctx.close()
 
 

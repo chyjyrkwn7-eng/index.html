@@ -258,7 +258,7 @@ def check_mode_colours(br):
                                  ".stx-recent" if where == "stats" else ".screen-testhistory")
     pg.evaluate("() => showTestHistoryDetail(testHistoryEntries()[1])"); pg.wait_for_timeout(900)
     res["detail"] = pg.evaluate("() => [...document.querySelectorAll('.screen-testdetail .thx-chip')].map(c => ({ cls: c.className, color: getComputedStyle(c).color, border: getComputedStyle(c).borderTopColor }))")
-    # the mode picker's own colours: Drill red, Mock Test orange, Virtual Room blue (MOVED IN 327 (b327k): Mock Test)
+    # the mode picker's own colours: Drill red, Mock orange, Virtual Room blue (MOVED IN 327 (b327k): Mock)
     want = {"thx-chip-drill": (340, 12), "thx-chip-exam": (18, 40), "thx-chip-vr": (195, 225)}
     bad = []
     for where, chips in res.items():
@@ -270,7 +270,7 @@ def check_mode_colours(br):
             if not (hb and hue_in(hb["h"], *want[k]) and hb["s"] >= 0.3):
                 bad.append((where, k, c["border"], hb))
     n = sum(len(v) for v in res.values())
-    check("every mode chip (%d) is its mode's colour: Drill red, Mock Test orange, Virtual Room blue" % n,
+    check("every mode chip (%d) is its mode's colour: Drill red, Mock orange, Virtual Room blue" % n,
           n >= 7 and not bad, bad or n)
     ctx.close()
 

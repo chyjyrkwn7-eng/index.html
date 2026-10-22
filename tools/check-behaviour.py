@@ -8611,7 +8611,7 @@ def check_b303(br):
         # now; Exam shows as Qualifier (check_b324m_modes holds the rest).
         # MOVED IN 327 (b327k): the mode reads Quiz ("I prefer quiz").
         check(dev + ": in a Qualifier, even with an old Instant feedback preference on, a pick is not judged or locked (build 324)",
-              r.get("examJudged") is False and r.get("examLocked") is False and r.get("examMode") == "Mock Test", (r.get("examJudged"), r.get("examLocked"), r.get("examMode")))
+              r.get("examJudged") is False and r.get("examLocked") is False and r.get("examMode") == "Mock", (r.get("examJudged"), r.get("examLocked"), r.get("examMode")))
         # Build 305 put the name back to Review; build 324 renamed it Briefing
         # ("exam mode and review mode need a new name and logo"). The sheet,
         # the list and the card all say the same thing.

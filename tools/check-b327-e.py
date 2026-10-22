@@ -29,9 +29,9 @@ Every section fails on build 326 (5ce026a):
   B. RESULT RINGS: on Stats' Recent tests, Test history and a test's own
      page, each score ring is the RESULT's colour - gold for a hundo/100%,
      green at PASS_MARK and up, red under it - and each row's mode chip is
-     its MODE's colour (Drill red, Mock Test orange, Virtual Room blue),
+     its MODE's colour (Drill red, Mock orange, Virtual Room blue),
      never the ring's.
-  C. TEST HISTORY'S NUMBERS: for every filter (All, Drill, Mock Test,
+  C. TEST HISTORY'S NUMBERS: for every filter (All, Drill, Mock,
      Virtual Room) the strip's three figures are the count, the rounded
      mean score and the hundos of exactly the rows listed under it - checked
      against values worked out by hand from the fixture, not read back from
@@ -82,11 +82,11 @@ HIST_SEED = """() => { const now = Date.now(), m = 60000, d = 86400000;
 #   drill : rows 1, 2 (row 4 is a Virtual Room) -> 2, (100+92)/2 = 96, 1
 #   exam  : rows 3, 5, 6 -> 3, (60+100+77)/3 = 79, 1
 #   vr    : row 4 -> 1, 64, 0
-# MOVED IN 327 (b327k): the mode reads Mock Test on screen ("I prefer quiz"); stored as "exam".
-WANT = {"All": (6, 82, 2), "Drill": (2, 96, 1), "Mock Test": (3, 79, 1), "Virtual Room": (1, 64, 0)}
+# MOVED IN 327 (b327k): the mode reads Mock on screen ("I prefer quiz"); stored as "exam".
+WANT = {"All": (6, 82, 2), "Drill": (2, 96, 1), "Mock": (3, 79, 1), "Virtual Room": (1, 64, 0)}
 # what each fixture row's ring must be: the result
 GOLD, GREEN, RED = (255, 211, 106), (95, 217, 154), (255, 122, 122)
-MODE = {"Drill": (255, 107, 112), "Mock Test": (255, 154, 60), "Virtual Room": (74, 159, 232)}
+MODE = {"Drill": (255, 107, 112), "Mock": (255, 154, 60), "Virtual Room": (74, 159, 232)}
 
 
 def rgb(s):
@@ -184,7 +184,7 @@ def section_c(br):
             if name == "All":
                 check("%s: the average is a ring (an arc at its value) between the count and the hundos" % label,
                       bool(r) and r["ring"] and r["between"] and re.match(r"^%d\b" % avg, r["dash"] or ""), r and {"ring": r["ring"], "between": r["between"], "dash": r["dash"]})
-        check("%s: the filters are All, Drill, Mock Test, Virtual Room" % label, set(WANT) <= set(names), names)
+        check("%s: the filters are All, Drill, Mock, Virtual Room" % label, set(WANT) <= set(names), names)
         ctx.close()
 
 
