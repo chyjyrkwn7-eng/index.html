@@ -27,6 +27,7 @@ CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
 def arg(n, d=None): return sys.argv[sys.argv.index(n) + 1] if n in sys.argv else d
 SRC = arg("--against") or os.path.join(ROOT, "index.html")
 TOL = float(arg("--tol", "0.8"))
+HTOL = float(arg("--htol", "1.5"))
 
 SEED = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,"leaderboardOptIn":true,"lastModified":1700000000000,'
         '"tourRev":99,"rankMapFx244":true,"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,"seenMainMenuTour":true,'
@@ -66,7 +67,8 @@ def audit(pg, tag, rows):
         if not bb: continue
         sc = a.size[1] / c["h"]
         top, bot = bb[1] / sc, (a.size[1] - bb[3]) / sc
-        rows.append((tag, c["t"], c["cls"][:36], round(c["h"], 1), round((top - bot) / 2, 2)))
+        left, right = bb[0] / sc, (a.size[0] - bb[2]) / sc
+        rows.append((tag, c["t"], c["cls"][:36], round(c["h"], 1), round((top - bot) / 2, 2), round((left - right) / 2, 2)))
 
 def main():
     rows = []; fails = []
@@ -96,6 +98,9 @@ def main():
     print("%d controls measured, letters centred within %.1fpx:" % (len(rows), TOL))
     for r in sorted(rows, key=lambda r: -abs(r[4])):
         if abs(r[4]) > TOL: fails.append(r); print("  FAIL %-24s %-16s %-34s h=%-5s letters %+.2fpx %s" % (r[0], r[1], r[2], r[3], r[4], "high" if r[4] < 0 else "low"))
+    # and across: a pill whose label (with its icon) sits left or right of the middle
+    for r in sorted(rows, key=lambda r: -abs(r[5])):
+        if abs(r[5]) > HTOL: fails.append(r); print("  FAIL %-24s %-16s %-34s w-offset %+.2fpx %s" % (r[0], r[1], r[2], r[5], "left" if r[5] < 0 else "right"))
     print("\nALL PASS" if not fails else "\nFAILED: %d" % len(fails))
     sys.exit(1 if fails else 0)
 
