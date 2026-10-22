@@ -32212,6 +32212,13 @@
     background:linear-gradient(rgba(255,107,91,.14), rgba(255,107,91,.14)), var(--pop-bg-card); border:1px solid rgba(255,107,91,.4);
     backdrop-filter:var(--pop-blur); -webkit-backdrop-filter:var(--pop-blur);
   }
+
+  /* build 327d: "the Goodbye and See you next week buttons have a weird white
+     outline". That was the keyboard focus ring (.next:focus-visible, 2px of the
+     accent, which is white on the default theme, drawn 2px out), shown whenever
+     the button took focus as it landed. Nova's buttons carry no ring: the press
+     and the lit face are their feedback, and there is nothing to tab to here. */
+  .nova-talk .nt-go, .nova-talk .nt-go:focus, .nova-talk .nt-go:focus-visible, .intro-pop .intro-go:focus-visible{ outline:none; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -96418,7 +96425,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-22-327c";
+const APP_BUILD = "2026-10-22-327d";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
