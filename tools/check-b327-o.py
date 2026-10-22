@@ -111,7 +111,9 @@ def o1(br):
               ("went from %d to %d" % (st["was"], st["level"])) in said and "one rank at a time" in said and "lose any XP" in said and "paid for" in said,
               said[:300])
         nxt = steps[li + 2] if li >= 0 and li + 2 < len(steps) else {}
-        check("%s: after it, the recap card is back for what you've found" % dev, nxt.get("rc") and not nxt.get("lc") and "found" in nxt.get("text", ""), nxt)
+        # REVISED (round 9): "found by you so far" became sections that come up one by one at the
+        # end, so what follows the level slide is him naming what you found, not the old recap card
+        check("%s: after it, he goes on to what you've found" % dev, not nxt.get("lc") and "found" in nxt.get("text", ""), nxt)
 
 
 def o2(br):
