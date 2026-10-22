@@ -5006,6 +5006,7 @@
     .cal-cell-dot{ width:.42rem; height:.42rem; }
     .cal-grid-month{ font-size:1.3rem; }
   }
+  .cal-daycard[hidden], .cal-action-row[hidden]{ display:none !important; }
   .cal-daycard{
     margin:1rem 0 0; padding:.9rem .95rem; border-radius:14px;
     background:var(--panel); border:1px solid var(--rule);
@@ -12853,6 +12854,16 @@
     background:rgba(255,211,106,.08); border:1px solid rgba(255,211,106,.25); }
   /* The Stats tab's own pieces */
   .stx-hero{ display:flex; align-items:center; gap:1rem; margin:.2rem 0 .9rem; }
+  .stx-units-label{ margin:.7rem 0 .35rem; font-size:.7rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(236,239,245,.6); }
+  .stx-unit-row{ display:grid; grid-template-columns:minmax(0,1fr) 5.2rem 2.6rem; align-items:center; gap:.7rem; width:100%; min-height:44px; padding:.45rem .2rem;
+    background:none; border:none; border-top:1px solid rgba(255,255,255,.07); color:var(--ink); font:inherit; text-align:left; cursor:pointer; }
+  .stx-unit-row:first-of-type{ border-top:none; }
+  .stx-unit-name{ font-size:.92rem; font-weight:600; line-height:1.25; }
+  .stx-units .info-note{ border:none; background:none; padding:.5rem 0 0; margin:0; font-size:.8rem; box-shadow:none; }
+  .stx-units .info-note::before{ display:none; }
+  .stx-unit-bar{ height:.5rem; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden; display:block; }
+  .stx-unit-bar i{ display:block; height:100%; border-radius:999px; }
+  .stx-unit-pct{ font-size:.9rem; font-weight:700; text-align:right; font-variant-numeric:tabular-nums; }
   .stx-ring{ width:5.2rem; height:5.2rem; }
   .stx-ring .thx-ring-num{ font-size:1.15rem; }
   .stx-hero-text{ min-width:0; }
@@ -74568,6 +74579,8 @@ const RELEASE_NOTES = [
         { icon: buildCalendarGridIcon, color: "#FFD27A", title: "Calendar On The Tab Bar", body: "The class calendar has its own tab at the bottom: today, this week and the next test at a glance, the days left in the course, and what is on the next test once it is posted. Settings moved into Profile, so Profile's tabs are Profile, Stats and Settings." },
         { icon: buildPersonIcon, color: "#4ADE80", title: "Friends On Your Profile", body: "Your Profile card shows your friends and what each one is doing, or that they are offline. Manage friends works as before." },
         { icon: () => modeIcon("exam"), color: "#FF9A3C", title: "Mock, A Real Test", body: "Mock is a real test: no feedback on any question until your grade, and its icon is a graded sheet, an A+. Review is every question with its answer, as a list or flashcards, and its icon is an open book. The mode at the top of every unit screen has a soft edge like the results boxes. Each mode has its own look, and every start button says what you are beginning." },
+        { icon: buildCalendarGridIcon, color: "#FFD27A", title: "A Calmer Calendar", body: "Today and your next test sit at the top, then the month, then the final exams and the course. The week strip is gone (the month shows the same days), the day card steps aside when it would only repeat Today, and Go to today only shows when you are somewhere else." },
+        { icon: buildBarStatsIcon, color: "#4ADE80", title: "Your Units On Stats", body: "Stats shows the units that need the most work and your strongest, with how much of each you get right. Tap one to drill it. The accuracy ring is green." },
         { icon: buildBarStatsIcon, color: "#A694FF", title: "Your Study Hours", body: "Stats has a new chart of your study time this week, in dots. Tap a day for its exact time, or look back at last week." }
       ]},
       { label: "Meet Nova", items: [
@@ -81980,7 +81993,7 @@ function mainMenuTourSteps(returning){
         : "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks. Stats and Settings are its other two tabs." },
     /* Calendar took Settings' place on the bar (build 323) */
     { target: "#bottomtab-calendar", align: "right", vplacement: "above",
-      text: "Calendar is the class calendar: how many class days are left, the next class day, and every day of the course." },
+      text: "Calendar is Class 26E\u2019s: what\u2019s on today, your next test and what\u2019s on it, the final exams, and every day of the course." },
     /* Added right after the bottom-tab run, per explicit request,
        since the daily question button sits right there on Home
        already \u2014 no reason to make it wait for a separate pass
@@ -82017,10 +82030,15 @@ const NOVA_NEW_TIPS_321 = [
   /* build 327: What's New no longer has the badge case's row, so the tip
      no longer leans on it (HANDOFF-326, known issue 2) */
   { target: "#bottomtab-profile", align: "left", vplacement: "above",
-    text: "Profile has been rebuilt. Your rank, your level and your badges are on one card, and Friends is back underneath." },
-  /* build 323: the calendar has its own tab in the bar, Settings is in Profile */
+    text: "Profile has been rebuilt. Your rank, your level and your badges are on one card, with Friends underneath, and Settings now sits beside Stats." },
+  /* build 327 round 9: "split it up into two so I can talk about the stats,
+     and profile changes" */
+  { target: "#bottomtab-profile", align: "left", vplacement: "above",
+    text: "Stats got a rebuild too: your accuracy, your last three tests, a week of study time, and which units need the most work. Tap a unit and it opens in Drill." },
+  /* build 323: the calendar has its own tab in the bar, Settings is in Profile.
+     Round 9: "simple but catching so people want to click it" */
   { target: "#bottomtab-calendar", align: "right", vplacement: "above",
-    text: "The class calendar has its own tab down here now, and Settings has moved into Profile, beside Stats." }
+    text: "Class 26E now has its own calendar: what\u2019s on today, your next test and what\u2019s on it, the final exams, and how many days to graduation. Tap it and take a look." }
 ];
 /* An existing account's tooltips, once, in its meeting with Nova. No
    welcome bonus - that is for a new account.
@@ -119778,7 +119796,7 @@ function showCalendarTab(){
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
   setActiveNav("calendar");
-  countEl.textContent = "Class 26E calendar";
+  countEl.textContent = "Calendar";
   const panel = document.createElement("section");
   panel.className = "panel screen-calendar screen-calendar-tab";
   panel.dataset.nav = "calendar";
@@ -119981,6 +119999,10 @@ function buildCalendarPane(panel){
   function renderDayCard(){
     dayCard.replaceChildren();
     paintWeekSel();
+    /* today is the Today card above; saying it again here was the same words twice */
+    dayCard.hidden = selectedDate === todayStr;
+    gridTodayRow.hidden = selectedDate === todayStr && monthKeys[gridMonthIdx] === todayMonthKey;
+    if(dayCard.hidden){ dayCard.className = "cal-daycard cal-daycard-empty"; return; }
     const entry = selectedDate ? byDate[selectedDate] : null;
     if(!entry && selectedDate){
       dayCard.className = "cal-daycard cal-daycard-none";
@@ -120156,11 +120178,11 @@ function buildCalendarPane(panel){
 
   prevBtn.addEventListener("click", () => {
     if(gridMonthIdx === 0) return;
-    gridMonthIdx -= 1; renderGrid();
+    gridMonthIdx -= 1; renderGrid(); renderDayCard();
   });
   nextBtn.addEventListener("click", () => {
     if(gridMonthIdx === monthKeys.length - 1) return;
-    gridMonthIdx += 1; renderGrid();
+    gridMonthIdx += 1; renderGrid(); renderDayCard();
   });
   gridTodayBtn.addEventListener("click", () => {
     const idx = monthKeys.indexOf(todayMonthKey);
@@ -120524,7 +120546,7 @@ function buildCalendarPane(panel){
     const big = document.createElement("p");
     big.className = "stx-hero-big"; big.textContent = toGrad > 0 ? "Graduation" : "Graduated";
     const sub = document.createElement("p");
-    sub.className = "stx-hero-sub"; sub.textContent = formatCalendarDate(GRADUATION_DATE) + " \u00b7 " + done + " of " + total + " class days done";
+    sub.className = "stx-hero-sub"; sub.textContent = formatCalendarDate(GRADUATION_DATE);
     ht.append(big, sub);
     hero.appendChild(ht);
     card.appendChild(hero);
@@ -120544,7 +120566,15 @@ function buildCalendarPane(panel){
     return card;
   }
 
-  glance.append(buildTodayCard(), buildWeekCard(), buildNextTestCard());
+  /* build 327 round 9: "a little confusing and overwhelming ... I don't want
+     any redundancy". The week strip showed the same seven days the month grid
+     shows a screen lower, so it is gone; the day card repeated Today when
+     today was the day picked, so it stays out of the way then; "Go to today"
+     only shows when you are somewhere else; and the course card says its
+     class-day count once. Today and Next test answer "what is on" and "what
+     is next" before the month, the month is the way to look around, and the
+     exams and the course sit under it. */
+  glance.append(buildTodayCard(), buildNextTestCard());
   /* The course goes UNDER the month: the month is the heart of the tab
      ("I like the current calendar"), so the countdowns follow it rather
      than pushing it further down. */
@@ -122495,7 +122525,11 @@ function showProfile(defaultTab, opts){
   /* grey again (build 327): "why is the accuracy percentage ring color
      matched? I feel like that looked better as grey". Accuracy is not a
      test, so it has no pass/fail colour, and it is not the theme's. */
-  hero.appendChild(buildScoreRing(accPct, "stx-ring is-neutral", NEUTRAL_RING_TONE));
+  /* GREEN, AS IT WAS (build 327 round 9): "make sure the top progress circle is
+     green like how it was". Accuracy is the share of answers right, and right
+     is green everywhere else in the app; a fixed green, not the pass/fail
+     bands, so a low number is not painted as a failed test. */
+  hero.appendChild(buildScoreRing(accPct, "stx-ring is-accuracy", "#4ADE80"));
   const heroText = document.createElement("div");
   heroText.className = "stx-hero-text";
   const heroBig = document.createElement("p");
@@ -122539,7 +122573,7 @@ function showProfile(defaultTab, opts){
   } else {
     const p = document.createElement("p");
     p.className = "info-note";
-    p.textContent = "Finish a drill or a quiz and it shows up here.";
+    p.textContent = "Finish a Drill or a Mock and it shows up here.";
     recentSect.appendChild(p);
   }
   const reviewBtn = document.createElement("button");
@@ -122548,6 +122582,49 @@ function showProfile(defaultTab, opts){
   reviewBtn.addEventListener("click", showTestReviewList);
   recentSect.appendChild(reviewBtn);
   statsTab.appendChild(recentSect);
+
+  /* ---- YOUR UNITS (build 327 round 9): "extremely useful" ----
+     Where the misses are, per unit, from the per-question record every mode
+     already writes (store.stats: n answered, m missed). The three weakest and
+     the three strongest, judged on units with enough answers to mean
+     something; tapping a unit opens it in Drill. */
+  try{
+    const rows = [];
+    topicsIn(QUESTIONS).forEach(u => {
+      let n = 0, m = 0;
+      QUESTIONS.forEach((q, i) => { if((q.topic || "").trim() === u){ const st = store.stats[KEYS[i]]; if(st){ n += st.n || 0; m += st.m || 0; } } });
+      if(n >= 15) rows.push({ u, n, pct: Math.max(0, Math.min(100, Math.round((1 - m / n) * 100))) });
+    });
+    if(rows.length >= 2){
+      rows.sort((a, b) => a.pct - b.pct || b.n - a.n);
+      const sect = document.createElement("div");
+      sect.className = "points-progress-sect stx-units";
+      const hd = document.createElement("p"); hd.className = "slab"; hd.textContent = "Your units";
+      sect.appendChild(hd);
+      const group = (label, list) => {
+        if(!list.length) return;
+        const l = document.createElement("p"); l.className = "stx-units-label"; l.textContent = label; sect.appendChild(l);
+        list.forEach(r => {
+          const b = document.createElement("button"); b.type = "button"; b.className = "stx-unit-row";
+          const nm = document.createElement("span"); nm.className = "stx-unit-name"; nm.textContent = r.u;
+          const bar = document.createElement("span"); bar.className = "stx-unit-bar";
+          const fill = document.createElement("i"); fill.style.width = r.pct + "%";
+          fill.style.background = r.pct >= 85 ? "#4ADE80" : r.pct >= 70 ? "#F5C518" : "#FF8A5C";
+          bar.appendChild(fill);
+          const pc = document.createElement("span"); pc.className = "stx-unit-pct"; pc.textContent = r.pct + "%";
+          b.append(nm, bar, pc);
+          b.setAttribute("aria-label", r.u + ", " + r.pct + " percent right. Drill it.");
+          b.addEventListener("click", () => { try{ cfg.mode = "drill"; runMode = "drill"; cfg.units = [r.u]; showSetup(); }catch(e){} });
+          sect.appendChild(b);
+        });
+      };
+      if(rows.length >= 6){ group("Needs the most work", rows.slice(0, 3)); group("Strongest", rows.slice(-3).reverse()); }
+      else group("By unit, weakest first", rows);
+      const hint = document.createElement("p"); hint.className = "info-note"; hint.textContent = "Tap a unit to drill it.";
+      sect.appendChild(hint);
+      statsTab.appendChild(sect);
+    }
+  }catch(e){}
 
   const studyTimeSect = document.createElement("div");
   studyTimeSect.className = "points-progress-sect";
