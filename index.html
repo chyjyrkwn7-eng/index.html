@@ -19865,13 +19865,20 @@
      be a better way to display three options". Resume is the one white
      button; Save and exit and Quit test are the same glass as each other, so
      the screen has two materials, not three colours. */
-  html[data-theme="dark"][data-layout="modern"] .pausepanel .actions :is(#pause-save, #pause-quit){
-    color:#fff; border:none; background-image:none;
-    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74);
-    box-shadow:0 0 0 1px rgba(255,255,255,.16) inset, 0 1px 1px rgba(255,255,255,.14) inset, 0 4px 14px rgba(0,0,0,.4);
-    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
+  /* PAUSE BUTTONS ARE SOLID, NOT GLASS (build 327 round 12): "They should
+     NOT be glass, they need to be like other buttons, white and black ...
+     I guess just make [Save and exit] grey." Resume is the white primary,
+     Quit test is the ordinary black ghost (no override at all now), and
+     Save and exit is the same matte button in a neutral grey: opaque fill,
+     a lighter lip along the top, a shade inside the bottom edge, Quit's own
+     contact/mid/wide shadows, no border (Quit's height, so nothing moves). */
+  html[data-theme="dark"][data-layout="modern"] .pausepanel .actions #pause-save{
+    color:#fff; border:none; background-image:none; background-color:#4A4E55;
+    backdrop-filter:none; -webkit-backdrop-filter:none;
+    box-shadow:0 1px 1px rgba(255,255,255,.28) inset, 0 -2px 2px rgba(0,0,0,.4) inset,
+      0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 22px -6px rgba(0,0,0,.55);
   }
-  html[data-theme="dark"][data-layout="modern"] .pausepanel .actions :is(#pause-save, #pause-quit):active{ background:rgba(12,13,19,.9); opacity:1; }
+  html[data-theme="dark"][data-layout="modern"] .pausepanel .actions #pause-save:active{ background-color:#383B41; opacity:1; }
   /* Back links were plain text with no button treatment at all \u2014 the
      same black-glass pill as the ghost button, just smaller, so it
      reads as a real tappable control instead of a caption. */
