@@ -2557,8 +2557,12 @@
      the fill covers the bubble's border where the two join. The text
      goes up from 13.8/12.8px to 16/14.7px. */
   #daily-lock-tip{ position:fixed; z-index:260; display:flex; flex-direction:column; gap:.15rem; padding:.7rem .95rem; border-radius:16px;
-    background:#1E242C; border:1px solid rgba(255,255,255,.16); box-shadow:inset 0 1px 0 rgba(255,255,255,.1);
-    filter:drop-shadow(0 10px 14px rgba(0,0,0,.5));
+    /* build 327e: the tab bar's clear glass ("doesn't have that clear
+       interface"). A filter on the same element would flatten the glass, so
+       the shadow is a box-shadow. */
+    background:linear-gradient(rgba(255,255,255,.075), rgba(255,255,255,.045)), rgba(12,13,19,.74);
+    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
+    border:1px solid rgba(255,255,255,.16); box-shadow:0 10px 24px rgba(0,0,0,.4);
     color:var(--ink, #F2F4F7); font-size:1rem; line-height:1.25; white-space:nowrap; pointer-events:none;
     opacity:0; transform:scale(.92); transition:opacity .18s ease, transform .2s cubic-bezier(.2,.9,.3,1.2); }
   #daily-lock-tip.is-left{ transform-origin:100% var(--caret, 50%); }
@@ -2566,7 +2570,7 @@
   #daily-lock-tip.is-on{ opacity:1; transform:none; }
   #daily-lock-tip b{ font-weight:700; }
   #daily-lock-tip.is-live{ pointer-events:auto; cursor:pointer; border-color:color-mix(in srgb, var(--theme-c1) 55%, transparent);
-    filter:drop-shadow(0 10px 14px rgba(0,0,0,.5)) drop-shadow(0 0 8px color-mix(in srgb, var(--theme-c1) 32%, transparent)); }
+    box-shadow:0 10px 24px rgba(0,0,0,.4), 0 0 8px color-mix(in srgb, var(--theme-c1) 32%, transparent); }
   #daily-lock-tip.is-live b{ color:var(--theme-c1); }
   #daily-lock-tip.is-fresh.is-on{ animation:dq-tip-pop .5s cubic-bezier(.2,.9,.3,1.25) both; }
   @keyframes dq-tip-pop{ from{ opacity:0; transform:scale(.4); } to{ opacity:1; transform:none; } }
@@ -2591,7 +2595,7 @@
      glows round both as one outline. */
   #daily-lock-tip::before, #daily-lock-tip::after{ content:""; position:absolute; pointer-events:none; }
   #daily-lock-tip::before{ background:rgb(66,71,78); }
-  #daily-lock-tip::after{ background:#1E242C; }
+  #daily-lock-tip::after{ background:rgb(26,28,35); }
   #daily-lock-tip.is-live::before{ background:color-mix(in srgb, var(--theme-c1) 55%, #1E242C); }
   #daily-lock-tip.is-left::before{ right:-9px; top:calc(var(--caret, 50%) - 9px); width:9px; height:18px; clip-path:polygon(0 0, 100% 50%, 0 100%); }
   #daily-lock-tip.is-left::after{ right:-7.586px; top:calc(var(--caret, 50%) - 10.586px); width:10.586px; height:21.172px; clip-path:polygon(0 0, 100% 50%, 0 100%); }
@@ -32005,6 +32009,9 @@
   }
   .screen-calendar-tab .cal-course-card .cal-course-hero{ margin-bottom:.15rem; }
   .screen-calendar-tab .cal-cell-class .cal-cell-num{ color:#F3F5F8; }
+  /* a picked day is a light tile: its number is the dark ink, not the class
+     days' white (build 327e: "when selecting days you can't see the day") */
+  .screen-calendar-tab .cal-cell-class.cal-cell-sel:not(.cal-cell-today) .cal-cell-num{ color:var(--accent-ink); }
   .screen-calendar-tab .cal-cell:not(.cal-cell-class):not(.cal-cell-blank){ color:rgba(236,239,245,.62); }
   .screen-calendar-tab .cal-cell-dot-test{ box-shadow:0 0 6px rgba(245,181,77,.6); }
   .unitdetail-badgecap{ margin:.35rem 0 0; font-size:.74rem; font-weight:600; color:rgba(236,239,245,.62); font-variant-numeric:tabular-nums; }
@@ -96420,7 +96427,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-22-327d";
+const APP_BUILD = "2026-10-22-327e";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -120359,7 +120366,9 @@ function buildCalendarPane(panel){
     dayCard.replaceChildren();
     paintWeekSel();
     /* today is the Today card above; saying it again here was the same words twice */
-    dayCard.hidden = selectedDate === todayStr;
+    /* build 327e: the day card is always there, today included ("the
+       current day below the calendar isn't there") */
+    dayCard.hidden = !selectedDate;
     gridTodayRow.hidden = selectedDate === todayStr && monthKeys[gridMonthIdx] === todayMonthKey;
     if(dayCard.hidden){ dayCard.className = "cal-daycard cal-daycard-empty"; return; }
     const entry = selectedDate ? byDate[selectedDate] : null;
@@ -129736,6 +129745,10 @@ const SWIPE_SURFACE = document;
 const SWIPE_BLOCKING_TARGET = "input, textarea, select, [contenteditable]";
 function swipeGestureAllowed(target){
   if(!document.querySelector(".choices")) return false;
+  /* the daily question has nothing to swipe to, and a thumb that drifts a few
+     pixels on Submit answer was being read as a swipe, which cancelled the
+     tap (build 327e) */
+  if(runLabel === "Daily question") return false;
   if(target && target.closest && target.closest(SWIPE_BLOCKING_TARGET)) return false;
   return true;
 }
