@@ -266,9 +266,9 @@ def check_save(br):
         bg, fg = r["bg"], r["fg"]
         lum = lambda c: sum(k * ((v / 255) / 12.92 if v / 255 <= .03928 else (((v / 255) + .055) / 1.055) ** 2.4) for k, v in zip((.2126, .7152, .0722), c[:3]))
         con = (max(lum(bg), lum(fg)) + .05) / (min(lum(bg), lum(fg)) + .05)
-        # REVISED (round 9): "Save and exit as a blue color? ... Maybe just a grey" - a matte grey now
-        check("%s: not green and not blue - a neutral grey (rgb %s)" % (label, bg[:3]),
-              max(bg[:3]) - min(bg[:3]) <= 16 and not (bg[1] > bg[0] + 30 and bg[1] > bg[2]), bg)
+        # REVISED (round 10): picked from three - "The purple save and exit button is nice" - plum
+        check("%s: plum - red and blue over green, not green (rgb %s)" % (label, bg[:3]),
+              bg[0] > bg[1] + 15 and bg[2] > bg[1] + 30 and not (bg[1] > bg[0] + 30 and bg[1] > bg[2]), bg)
         check("%s: white words on it at >= 4.5:1 (%.1f)" % (label, con), con >= 4.5, con)
 
 

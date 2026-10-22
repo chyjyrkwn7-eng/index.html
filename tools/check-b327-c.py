@@ -275,7 +275,8 @@ def story_section(br):
     check("in order: his planet took in more light than it could hold, it exploded; then a badge is a unit mastered (hundos)",
           0 <= i_crack < i_boom < i_badge, {"crack": i_crack, "boom": i_boom, "badge": i_badge})
     check("the strain slide is gone: no intro line says your planet cracks",
-          not any(re.search(r"crack", t) for t in fresh + existing), [t for t in fresh + existing if re.search(r"crack", t)][:2])
+          not any(re.search(r"crack", t) and re.search(r"\byour planet\b|\byours\b", t) for t in fresh + existing),
+          [t for t in fresh + existing if re.search(r"crack", t) and re.search(r"\byour planet\b|\byours\b", t)][:2])
     check("both flows say what a badge is (the existing account too)",
           any(re.search(r"mastered", t) for t in existing), existing[3:10])
     check("line counts stay sensible: a new account at most 16 lines, an existing one at most 21",

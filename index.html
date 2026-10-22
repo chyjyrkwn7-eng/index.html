@@ -19852,14 +19852,17 @@
      321's recipe: opaque, a lit lip, a shade inside the bottom edge, Quit's
      shadows), a neutral mid grey so it is neither Resume's white nor Quit's
      black. */
+  /* PLUM (build 327 round 10): picked from three side by side on the pause
+     screen - "The purple save and exit button is nice. We can keep that."
+     The same flat fill and lips as Quit, only the colour. */
   [data-layout="modern"] .pausepanel .next.ghost#pause-save{
     color:#fff; border:none;
-    background-color:#3E4249; background-image:none;
-    box-shadow:0 1px 1px rgba(200,206,215,.38) inset, 0 -2px 2px rgba(0,0,0,.34) inset,
+    background-color:#4E3160; background-image:none;
+    box-shadow:0 1px 1px rgba(230,200,245,.36) inset, 0 -2px 2px rgba(0,0,0,.34) inset,
       0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 22px -6px rgba(0,0,0,.55);
     -webkit-backdrop-filter:none; backdrop-filter:none;
   }
-  [data-layout="modern"] .pausepanel .next.ghost#pause-save:active{ background-color:#2F3238; opacity:1; }
+  [data-layout="modern"] .pausepanel .next.ghost#pause-save:active{ background-color:#3E264D; opacity:1; }
   /* Back links were plain text with no button treatment at all \u2014 the
      same black-glass pill as the ghost button, just smaller, so it
      reads as a real tappable control instead of a caption. */
@@ -31900,27 +31903,20 @@
      recipes. */
   [data-theme="dark"][data-layout="modern"] .next:not(.ghost):not(.danger),
   [data-theme="dark"][data-layout="modern"] .chip.on{
-    /* ROUND 10, AND THE ONE THAT HOLDS: "the dark doesn't fade into the
-       edge, there are hard lines". An inset box-shadow is painted inside
-       the PADDING box, so the 1px border ring never received the shade -
-       every version that shaded with inset shadows left a flat 1px band at
-       the edge with a step on its inner side, whatever colour the border
-       was given. So the shading is in the button's own background, which
-       covers the border box: lit at the top, darkening smoothly to the very
-       bottom pixel, no inset shadows at all. The border stays (transparent)
-       so no button changes size. */
-    border-color:transparent;
-    /* the 3D, all in the fill (round 10, second pass - "it doesn't look 3d"):
-       a lit band across the top, a darker lip along the bottom that steepens
-       into the edge the way the old inset shade did, and the ends rounding
-       away - three layers, every one reaching the border box's own edge */
-    background-image:
-      linear-gradient(180deg, rgba(255,255,255,.6) 0%, rgba(255,255,255,.18) 22%, rgba(255,255,255,0) 42%),
-      linear-gradient(180deg, rgba(16,22,30,0) 62%, rgba(16,22,30,.07) 80%, rgba(16,22,30,.2) 93%, rgba(16,22,30,.34) 100%),
-      radial-gradient(115% 190% at 50% 30%, rgba(16,22,30,0) 62%, rgba(16,22,30,.14) 100%) !important;
-    background-color:#EAEDF1 !important;
-    background-origin:border-box; background-clip:border-box; background-repeat:no-repeat;
-    box-shadow:0 1px 3px rgba(0,0,0,.3), 0 5px 10px rgba(0,0,0,.3), 0 14px 28px -8px rgba(0,0,0,.5);
+    /* THE OTHER BUTTONS' RECIPE, IN WHITE (build 327 round 10): "the white
+       button does not look like the other 3d buttons". Quit and Save and
+       exit are a flat fill with NO border, a 1px lit lip inset along the top
+       and a 2px shaded lip inset along the bottom, and three shadows under
+       them. The white was the only one with a 1px border - and an inset
+       shadow is painted inside the border, so that border was the pale ring
+       and every shading tried round it was fighting it. Same recipe now,
+       border gone, so the lips run to the very edge exactly as they do on
+       the dark ones; only the colour differs (and its lips are tuned for a
+       light fill: the top one white, the bottom one a soft grey). */
+    border:0 !important;
+    background-color:#ECEFF3 !important; background-image:none !important;
+    box-shadow:0 1px 1px rgba(255,255,255,.95) inset, 0 -2px 2px rgba(20,28,40,.26) inset,
+      0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 22px -6px rgba(0,0,0,.55);
   }
   /* The same centring for the other small labels that sat high in their
      pills (found by tools/check-ink-centre.py, which measures where the
@@ -32118,6 +32114,31 @@
   }
   .bc-scene .nova-case-cap, .bc-scene .nova-case-screw, .bc-scene .bc-handle, .bc-scene .nova-case-handle{ display:none !important; }
   .bc-scene .nova-case-wall.is-hw::before, .bc-scene .nova-case-wall.is-hw::after{ display:none !important; }
+
+  /* ---- ONE GLASS FOR EVERY SYSTEM CONTROL (build 327 round 10) ----
+     "I don't know how much more clear I could be about getting that bottom
+     tab Liquid Glass look app wide. The pause button chat button and
+     ANYWHERE ELSE, the same kind of interface/system buttons". Round 8 gave
+     the floating controls the bar's body, but at a 24px blur against the
+     bar's 30, with their own shadows - close, and visibly not the same. Now
+     the bar's EXACT recipe, read off .bottomtabs: the same body and lift,
+     blur(30px) saturate(1.25), the one .16 rim, the bar's faint top
+     catch-light and its soft drop shadow - and the controls that were still
+     something else join: back links ("Profile", "Back"), the calendar's
+     month arrows and its Go to today. Action buttons (Start, Resume, Quit,
+     Customize) stay solid 3D buttons; this is the chrome. */
+  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .backtotop, .toast:not(.toast-flag), .back-link, .cal-grid-arrow, .cal-action-btn, .screen-calendar .cal-grid-arrow),
+  [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border:1px solid rgba(255,255,255,.16) !important;
+    backdrop-filter:blur(30px) saturate(1.25) !important; -webkit-backdrop-filter:blur(30px) saturate(1.25) !important;
+    box-shadow:0 8px 28px rgba(0,0,0,.45), inset 0 1px 1px rgba(255,255,255,.05) !important;
+    color:var(--ink);
+  }
+  [data-theme="dark"][data-layout="modern"] :is(.back-link, .cal-grid-arrow, .cal-action-btn):active{
+    background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.08) 55%), rgba(12,13,19,.74) !important;
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
