@@ -122533,7 +122533,7 @@ function showProfile(defaultTab, opts){
   const correct = store.lifetime.correct;
   /* Red under 70 (PASS_MARK), green from 70, gold at 100 - the accuracy
      ring and every Your units bar read this one rule. */
-  const statBand = p => p == null ? "#4ADE80" : p >= 100 ? "#F2C14E" : p >= PASS_MARK ? "#4ADE80" : "#FF5A60";
+  const statBand = p => p == null ? "#5FD99A" : p >= 100 ? "#FFD36A" : p >= PASS_MARK ? "#5FD99A" : "#FF7A7A";
   const testsCompleted = testsCompletedOf(store);
 
   const glanceSect = document.createElement("div");

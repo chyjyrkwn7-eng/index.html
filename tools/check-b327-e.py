@@ -118,18 +118,20 @@ def hexrgb(h):
 
 
 def section_a(br):
-    print("\nA. Stats: the accuracy ring is grey")
+    print("\nA. Stats: the accuracy ring is red under 70, green from 70, gold at 100")
     for label, w, h in (PHONE, TABLET):
         ctx, pg = boot(br, w, h)
         for acc in ("ink", "titan", "adept"):
             r = pg.evaluate("""async (acc) => { theme.accent = acc; try{ applyTheme(); }catch(e){} showProfile('stats');
               await new Promise(r => setTimeout(r, 700));
               const arc = document.querySelector('.stx-hero .thx-ring-arc'), num = document.querySelector('.profile-stats-tab .stat-num');
-              return { ring: arc ? getComputedStyle(arc).stroke : null, num: num ? getComputedStyle(num).color : null }; }""", acc)
+              const pct = store.lifetime.answered ? Math.round(store.lifetime.correct / store.lifetime.answered * 100) : null;
+              return { ring: arc ? getComputedStyle(arc).stroke : null, num: num ? getComputedStyle(num).color : null, pct }; }""", acc)
+            # build 327 round 10 replaced the grey (and round 9's fixed green): "Red if under a 70,
+            # green if above a 70 and a gold if somehow a hundred" - the same bands whatever the theme
             c = rgb(r["ring"])
-            grey = bool(c) and max(c) - min(c) <= 16 and 120 <= sum(c) / 3 <= 215
-            check("%s, %s theme: the accuracy ring is a neutral grey (%s), not the numbers' colour (%s)" % (label, acc, r["ring"], r["num"]),
-                  grey and not near(c, rgb(r["num"]), 10), r)
+            check("%s, %s theme: the accuracy ring is in its band for %s%% (%s), not the theme's colour" % (label, acc, r.get("pct"), r["ring"]),
+                  r.get("pct") is not None and near(c, want_ring(r["pct"]), 8), r)
         ctx.close()
 
 

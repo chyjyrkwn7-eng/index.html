@@ -66,18 +66,20 @@ def check_surfaces(br):
         ctx.close()
         if not all(r.values()):
             check("%s: all four surfaces are on the unit screen" % label, False, {k: bool(v) for k, v in r.items()}); continue
-        bar = r["bar"]["bg"]
-        tint = lambda x: all(abs(x["bg"][k] - bar[k]) <= 16 for k in "rgb") and x["bg"]["a"] >= .55
-        check("%s: card, search and chat are the bar's grey tint (within 16 of rgb(%d,%d,%d)), never 326's blue-black" % (label, bar["r"], bar["g"], bar["b"]),
-              all(tint(r[k]) for k in ("card", "search", "chat")), {k: r[k]["bg"] for k in ("card", "search", "chat")})
-        check("%s: card, search and chat share one frost (%s)" % (label, r["card"]["bf"]),
-              r["card"]["bf"] == r["search"]["bf"] == r["chat"]["bf"] and "blur" in r["card"]["bf"] and "brightness" not in r["card"]["bf"],
-              [r[k]["bf"] for k in ("card", "search", "chat")])
-        check("%s: card, search and chat share one rim colour" % label,
-              r["card"]["border"] == r["search"]["border"] == r["chat"]["border"], [r[k]["border"] for k in ("card", "search", "chat")])
-        cl = {k: catch_light(r[k]["shadow"]) for k in r}
-        check("%s: all four carry the bar's bright catch-light along the top (>= .18)" % label,
-              all(v >= .18 for v in cl.values()), cl)
+        # REVISED (round 7/8 decisions): the bar became clear near-black glass with one
+        # .16 rim and no catch-light, and every FLOATING control took its recipe;
+        # "cards and rows are surfaces, not floating glass, and keep theirs".
+        bar = r["bar"]
+        tint = lambda x: all(abs(x["bg"][k] - bar["bg"][k]) <= 4 for k in "rgb") and abs(x["bg"]["a"] - bar["bg"]["a"]) < .05
+        check("%s: the search field and the chat button are the bar's glass tint" % label,
+              all(tint(r[k]) for k in ("search", "chat")), {k: r[k]["bg"] for k in ("search", "chat", "bar")})
+        check("%s: the search field and the chat button share the bar's frost saturation (%s)" % (label, bar["bf"]),
+              r["search"]["bf"] == r["chat"]["bf"] and "saturate(1.25)" in r["search"]["bf"] and "saturate(1.25)" in bar["bf"],
+              [r[k]["bf"] for k in ("search", "chat", "bar")])
+        check("%s: the search field, the chat button and the bar share one rim colour" % label,
+              r["search"]["border"] == r["chat"]["border"] == bar["border"], [r[k]["border"] for k in ("search", "chat", "bar")])
+        check("%s: the unit card stays a surface (no catch-light lip needed, still frosted)" % label,
+              "blur" in r["card"]["bf"], r["card"]["bf"])
     # app-wide: the same card on other screens
     ctx, pg = booted(br, *PHONE[1:], seed=USED)
     pg.evaluate("() => { document.querySelectorAll('#pushing-update,#intro-pop,.nova-talk').forEach(n => n.remove()); showModeSelect(); }")
@@ -176,7 +178,8 @@ def check_tab_icons(br):
     they not be slightly bigger and more white?" 326: 28px (35.2 tablet) at
     84% white."""
     print("\n4. the tab icons a step bigger and whiter, and the bar still fits")
-    for label, w, h, need in (("iPhone 17 Pro Max", 440, 956, 30), ("iPad Pro 11\"", 834, 1194, 37), ("SE 1st gen", 320, 568, 30)):
+    # REVISED: b327x (round 7) matched the reference bar's 28px icon box, superseding the 30px step here
+    for label, w, h, need in (("iPhone 17 Pro Max", 440, 956, 27), ("iPad Pro 11\"", 834, 1194, 35), ("SE 1st gen", 320, 568, 27)):
         ctx, pg = booted(br, w, h, seed=USED)
         pg.evaluate("() => document.querySelectorAll('#pushing-update,#intro-pop,.nova-talk').forEach(n => n.remove())")
         r = pg.evaluate(ICONS)
@@ -188,8 +191,8 @@ def check_tab_icons(br):
               r["out"] == 0 and r["bar"][0] >= 0 and r["bar"][1] <= r["vw"], r)
         pg.evaluate(UNITS); pg.wait_for_timeout(1000)
         r = pg.evaluate(ICONS)
-        check("%s units (with Start): every tab inside the bar, the bar on screen, icons >= %dpx" % (label, need if w >= 640 else 30),
-              r["out"] == 0 and r["bar"][0] >= 0 and r["bar"][1] <= r["vw"] and r["w"] and min(r["w"]) >= (need if w >= 640 else 30), r)
+        check("%s units (with Start): every tab inside the bar, the bar on screen, icons >= %dpx" % (label, need),
+              r["out"] == 0 and r["bar"][0] >= 0 and r["bar"][1] <= r["vw"] and r["w"] and min(r["w"]) >= need, r)
         ctx.close()
 
 
@@ -263,8 +266,9 @@ def check_save(br):
         bg, fg = r["bg"], r["fg"]
         lum = lambda c: sum(k * ((v / 255) / 12.92 if v / 255 <= .03928 else (((v / 255) + .055) / 1.055) ** 2.4) for k, v in zip((.2126, .7152, .0722), c[:3]))
         con = (max(lum(bg), lum(fg)) + .05) / (min(lum(bg), lum(fg)) + .05)
-        check("%s: not green (rgb %s): blue leads, green does not" % (label, bg[:3]),
-              bg[2] > bg[1] + 40 and bg[2] > bg[0] + 60 and not (bg[1] > bg[0] + 30 and bg[1] > bg[2]), bg)
+        # REVISED (round 9): "Save and exit as a blue color? ... Maybe just a grey" - a matte grey now
+        check("%s: not green and not blue - a neutral grey (rgb %s)" % (label, bg[:3]),
+              max(bg[:3]) - min(bg[:3]) <= 16 and not (bg[1] > bg[0] + 30 and bg[1] > bg[2]), bg)
         check("%s: white words on it at >= 4.5:1 (%.1f)" % (label, con), con >= 4.5, con)
 
 

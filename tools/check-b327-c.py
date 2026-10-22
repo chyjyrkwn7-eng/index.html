@@ -228,11 +228,9 @@ def cal_section(br):
               z.get("topics") == [] and "Not posted" not in (z.get("text") or "") and "on the test" not in (z.get("text") or "").lower(), z.get("topics"))
         nums = a.get("nums") or []
         allowed = {a.get("ring"), a.get("testDot"), "243,245,247"}
-        check("%s: The course's numbers use the ring's blue (class days), the test dot's amber (tests) and white - nothing else" % dev,
-              len(nums) == 3 and all(x["rgb"] in allowed for x in nums)
-              and next((x["rgb"] for x in nums if "is-days" in x["c"]), None) == a.get("ring")
-              and next((x["rgb"] for x in nums if "is-tests" in x["c"]), None) == a.get("testDot"),
-              [nums, a.get("ring"), a.get("testDot")])
+        # round 10: "Let's just have class days" - the three tiles went; the ring and one line say it
+        check("%s: The course has no number tiles, only its ring and the class days" % dev,
+              len(nums) == 0, [nums, a.get("ring"), a.get("testDot")])
 
 
 # ---------------------------------------------------------------------------

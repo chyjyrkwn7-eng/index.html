@@ -9947,6 +9947,7 @@ def check_b314h_lead2(br):
       showCalendar(); await wait(500);
       const course = document.querySelector('#stage .cal-course-card');
       out.tiles = course ? [...course.querySelectorAll('.cal-stat')].map(e => [...e.children].map(c => c.textContent.trim()).join(' ')) : [];
+      out.courseBig = course ? ((course.querySelector('.stx-hero-big') || {}).textContent || '') : '';
       out.daysLeft = typeof classDaysRemaining === 'function' ? classDaysRemaining() : null;
       out.testsLeft = typeof testsRemaining === 'function' ? testsRemaining() : null;
       out.exams = typeof isExamDay === 'function' ? CALENDAR_DATA.filter(isExamDay).map(e => e.date) : [];
@@ -9965,9 +9966,11 @@ def check_b314h_lead2(br):
     # page looks" - the Class 26E box is gone; the Calendar tab's The course
     # card shows both counts as Stats tiles (check_b324c_calendar holds the
     # numbers to classDaysRemaining() / testsRemaining()).
+    # REVISED IN 327 round 10: "Let's just have class days" - the tiles went;
+    # The course says the class days left in one line, from classDaysRemaining()
     tiles = r.get("tiles") or []
-    check("the Calendar tab shows class days left and tests left, from the same helpers",
-          any(t == "%s Class days left" % r.get("daysLeft") for t in tiles) and any(t == "%s Tests left" % r.get("testsLeft") for t in tiles), (tiles, r.get("daysLeft"), r.get("testsLeft")))
+    check("the Calendar tab's course card says the class days left, from the same helper, and nothing else",
+          not tiles and r.get("courseBig", "").startswith("%s class day" % r.get("daysLeft")), (tiles, r.get("courseBig"), r.get("daysLeft")))
     check("July 8th is the State test and says Last day", r.get("j8") and "State Test" in r["j8"] and "Last Day" in r["j8"], r.get("j8"))
     # the last day, both views
     r2 = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
@@ -22005,7 +22008,7 @@ B319H_CAL = """async (iso) => {
   const todayMarks = [...tab.querySelectorAll('.cal-today-badge, .profile-classday.is-today')].filter(e => e.getClientRects().length);
   return { tab: true, key: k, todayEntry: today ? today.text : null,
            card: !!card, head: !!(card && card.querySelector('.cal-card-head .slab')),
-           daysLeft: (tab.querySelector('.cal-course-card .cal-stat.is-days .stat-num') || {}).textContent || null,
+           daysLeft: (tab.querySelector('.cal-course-card .stx-hero-big') || {}).textContent || null,
            wantLeft: classDaysRemaining(),
            rows: card ? [...card.querySelectorAll('.profile-classday-label')].map(e => e.textContent.trim()) : [],
            nextText: (card && card.querySelector('.profile-classday-what') || {}).textContent || null,
@@ -27058,7 +27061,7 @@ def check_b324g_toggles(br):
         # ---- press, drag, release on Settings ----
         pg.evaluate("() => showAppearance()"); pg.wait_for_timeout(1300)
         pg.evaluate("() => document.querySelectorAll('#tour-overlay,.tour-tip').forEach(n=>n.remove())")
-        idx = pg.evaluate("() => [...document.querySelectorAll('.settings-card .opt')].findIndex(o => /class days/i.test(o.textContent))")
+        idx = pg.evaluate("() => [...document.querySelectorAll('.settings-card .opt')].findIndex(o => /auto-advance/i.test(o.textContent))")
         pg.evaluate("(i) => { const t=[...document.querySelectorAll('.settings-card .opt > .box')][i]; window.scrollBy({ top: t.getBoundingClientRect().top - 300, behavior: 'instant' }); }", idx)
         pg.wait_for_timeout(300)
         rest = pg.evaluate(B324G_LENS, idx)
@@ -27083,8 +27086,8 @@ def check_b324g_toggles(br):
               m["lens"] and abs(m["cx"] - end) < 4 and m["h"] > th + 6, {"cx": m.get("cx"), "end": end, "h": m.get("h")})
         T("touchEnd", []); pg.wait_for_timeout(1100)
         a = pg.evaluate(B324G_LENS, idx)
-        setting = pg.evaluate("() => theme.showClassDaysLeft !== false")
-        check("%s: let go past the middle: the switch flips, and the setting behind it (Show class days remaining)" % label,
+        setting = pg.evaluate("() => !!theme.autoAdvance")
+        check("%s: let go past the middle: the switch flips, and the setting behind it (Auto-advance)" % label,
               a["on"] == (not rest["on"]) and setting == a["on"], {"before": rest["on"], "after": a["on"], "setting": setting})
         check("%s: and the lens is gone, the knob back at its resting size at the new end" % label,
               not a["lens"] and a["knobOp"] > .99 and abs(a["kw"] - rest["kw"]) < .5 and abs(a["kh"] - rest["kh"]) < .5
@@ -27716,8 +27719,8 @@ B324C_CAL = """async ([iso, topics]) => {
                      posted: txt(n.querySelector('.cal-topics-posted')) } : null;
     /* 5. the remaining counts */
     const c = tab && tab.querySelector('.cal-course-card');
-    out.course = c ? { shown: !c.hidden && !!c.getClientRects().length, days: txt(c.querySelector('.cal-stat.is-days .stat-num')),
-                       tests: txt(c.querySelector('.cal-stat.is-tests .stat-num')), ring: !!c.querySelector('.thx-ring svg') } : null;
+    out.course = c ? { shown: !c.hidden && !!c.getClientRects().length, days: ((txt(c.querySelector('.stx-hero-big')) || '').match(/\d+/) || [null])[0],
+                       tiles: c.querySelectorAll('.cal-stat').length, ring: !!c.querySelector('.thx-ring svg') } : null;
     out.order = tab ? [t, w, n, tab.querySelector('.cal-grid')].map(e => e ? Math.round(e.getBoundingClientRect().top + scrollY) : null) : null;
     out.scrollX = document.documentElement.scrollWidth - document.documentElement.clientWidth;
     out.outside = tab ? [...tab.querySelectorAll('.cal-card')].filter(e => { const r = e.getBoundingClientRect(); return r.left < -1 || r.right > innerWidth + 1; }).length : null;
@@ -27743,11 +27746,12 @@ B324C_CAL = """async ([iso, topics]) => {
       out.pick = { want: pick.dataset.date, sel: sel ? sel.dataset.date : null, card: txt(document.querySelector('.cal-daycard')),
                    entry: pe.text, weekSel: pick.classList.contains('is-sel') };
     }
-    /* 9. "Show class days remaining" off hides the countdowns */
+    /* 9. build 327 round 10: the Settings switch is gone, so the course card
+       shows even for a theme that saved it off */
     const was = theme.showClassDaysLeft; theme.showClassDaysLeft = false;
     (typeof showCalendarTab === 'function' ? showCalendarTab : showCalendar)(); await wait(400);
     const c2 = document.querySelector('#stage .cal-course-card');
-    out.offHidden = !!c2 && !c2.getClientRects().length;
+    out.offHidden = !!c2 && !!c2.getClientRects().length;
     theme.showClassDaysLeft = was;
     if(out.hasTopics) Object.keys(TEST_TOPICS).forEach(k => delete TEST_TOPICS[k]);
   }catch(e){ out.err = String(e && e.message || e); }
@@ -27808,9 +27812,9 @@ def check_b324c_calendar(br):
                   and not ((a.get("ntDay") or {}).get("none")) and not (a.get("ntDay") or {}).get("topics"),
                   [n.get("none"), a.get("ntDay")])
             c = a.get("course") or {}
-            check("%s: the remaining counts are classDaysRemaining() and testsRemaining(), in the Stats tab's ring and tiles" % dev,
-                  c.get("shown") and c.get("ring") and c.get("days") == str(want.get("days")) and c.get("tests") == str(want.get("tests")), [c, want])
-            check("%s: 'Show class days remaining' off hides the countdowns" % dev, a.get("offHidden") is True, a.get("offHidden"))
+            check("%s: the course card says classDaysRemaining() class days, by its ring, and nothing else (round 10: 'just have class days')" % dev,
+                  c.get("shown") and c.get("ring") and c.get("days") == str(want.get("days")) and c.get("tiles") == 0, [c, want])
+            check("%s: the course card shows even with the old setting off (no switch in Settings any more)" % dev, a.get("offHidden") is True, a.get("offHidden"))
             o = a.get("order") or []
             check("%s: Today, This week and Next test sit above the month, nothing sideways" % dev,
                   len(o) == 4 and all(v is not None for v in o) and max(o[:3]) < o[3] and a.get("scrollX", 1) <= 0 and a.get("outside") == 0,
