@@ -233,11 +233,21 @@ CLOCK = r"""() => {
   window.scrollBy = function(a){ if(a && typeof a === 'object') return window.scrollTo(Object.assign({}, a, { top: scrollY + (a.top || 0) })); return nScrollTo(scrollX + arguments[0], scrollY + arguments[1]); };
   const seek = () => {
     for(const an of document.getAnimations()){
-      let base = C.seen.get(an);
-      if(base === undefined){ base = C.t - (an.currentTime || 0); C.seen.set(an, base); try{ an.pause(); }catch(e){} }
+      /* INTEGRATED, NOT MULTIPLIED (build 327 round 7): the time is advanced
+         by each step at the rate in force for that step. It was
+         (elapsed since first seen) x playbackRate, so a planet tap that set
+         the Home rings' rate to 3x put every ring (whose currentTime is the
+         wall clock since LOOP_EPOCH, months of it) at a random angle every
+         frame: "all the stuff around it started glitching and moving
+         incredibly fast". A currentTime the app wrote itself is taken. */
+      let s = C.seen.get(an);
+      if(s === undefined){ s = { ct: Number(an.currentTime) || 0, t: C.t }; C.seen.set(an, s); try{ an.pause(); }catch(e){} }
       if(an.playState === 'finished') continue;
+      const cur = Number(an.currentTime);
+      if(isFinite(cur) && Math.abs(cur - s.ct) > .5) s.ct = cur;
       let end = Infinity; try{ end = an.effect.getComputedTiming().endTime; }catch(e){}
-      const t = (C.t - base) * (an.playbackRate || 1);
+      const t = s.ct + (C.t - s.t) * (an.playbackRate || 1);
+      s.ct = t; s.t = C.t;
       if(isFinite(end) && t >= end){ try{ an.finish(); }catch(e){} continue; }
       try{ an.currentTime = t; }catch(e){}
     }

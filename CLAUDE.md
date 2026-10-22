@@ -25727,3 +25727,35 @@ a frame read as pink-grey.
   (RU_HAND_RISE_AT 600 over 3200ms) - the scene behind, not the flare. Left
   for Madison's look at the hand-off; the gate would have to sample the
   flare apart from the scene to tell the two apart.
+
+### Build 327 round 7 (b327v) - the road map's line is one movement, a planet tap is gentle
+
+Madison: *"The rank road map, the progress bar of the map is messed up it
+skips sections and it's not fluid."* and *"When tapping the center planet
+in the video all the stuff around it started glitching and moving
+incredibly fast."* Gate: `tools/check-b327v.py` (`ONLY=still,climb,planet`,
+`--against`); 9 failures on 61d9620. Notes: `notes/b327v.md`.
+
+- **A STRETCH THAT DID NOT MOVE IS DRAWN WHERE IT IS.** `buildRanksTab`
+  refilled every reached stretch from 0 on every open, all at once - the
+  line arrived in pieces down the map. Now its `--lit` is set before the
+  element is in the page (nothing to transition from), its stub shown and
+  its light placed instantly (`--tip-still`). Only what grew animates: the
+  climb and a rank being celebrated.
+- **The circle opens when the line gets there**: the celebration waits for
+  the fill's `transitionend` (2.9s cap); it used to pop at 1.5-1.8s of a
+  2.65s fill and the line then jumped the rest.
+- **The stub grows out of the circle** (`scaleY`, .22s linear; held =
+  `scaleY(0)`, not opacity 0) and the climb starts from its end 230ms
+  later. `rankUpRide` clamps k at 0.
+- **A planet tap is gentle**: `ORBIT_BOOST.cap` 1 (peak ~1.55x pace, was
+  ~4.8x), applied with `updatePlaybackRate`.
+- **THE RECORDERS SEEK BY INTEGRATING THE RATE.** `record-sound.py` and
+  `record-hundo.py` set `currentTime = elapsed x playbackRate`, so a rate
+  change spun an animation by its rate times ALL the time so far in one
+  frame - what read as "incredibly fast glitching". Every seek now adds
+  (step x rate) to where the animation was. Any recorder that pauses and
+  seeks must do the same.
+- Gates moved: check_b318_planet (1.3x-2.3x, was 2.5x-7.5x), check-b327-stub
+  (a held stub is scaled, not faded).
+

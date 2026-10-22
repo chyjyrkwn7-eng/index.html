@@ -23,8 +23,12 @@ SEED = """() => { document.querySelectorAll('#pushing-update,#intro-pop,.nova-ta
   store.lifetime.points = xpForLevel(46) + 500; store.levelFloor = 0; store.levelWallRule = 325;
   store.rankMapSeen = TIER_ORDER_FULL.indexOf('ranger'); store.rankMapFx244 = true; store.rankUpShown = null;
   showRanksScreen('ranks'); }"""
-READ = """() => [...document.querySelectorAll('.rankmap-roadstub')].map(e => ({ op: +getComputedStyle(e).opacity,
-  pending: !!document.querySelector('.rankmap-stop.is-celebrate-pending') }))"""
+# MOVED IN 327 round 7 (b327v): a held stub is scaled to nothing at the
+# circle's edge (it grows out of it with the climb) instead of faded, so
+# "shows" is its opacity times its height.
+READ = """() => [...document.querySelectorAll('.rankmap-roadstub')].map(e => { const cs = getComputedStyle(e);
+  const sy = cs.transform === 'none' ? 1 : new DOMMatrix(cs.transform).d; return { op: +cs.opacity * sy,
+  pending: !!document.querySelector('.rankmap-stop.is-celebrate-pending') }; })"""
 
 with sync_playwright() as p:
     br = p.chromium.launch(executable_path=cb.CHROME)
