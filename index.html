@@ -31900,14 +31900,19 @@
      recipes. */
   [data-theme="dark"][data-layout="modern"] .next:not(.ghost):not(.danger),
   [data-theme="dark"][data-layout="modern"] .chip.on{
-    border-color:rgba(20,26,34,0) rgba(20,26,34,.13) rgba(20,26,34,.2) rgba(20,26,34,.13);
+    /* ROUND 10, AND THE ONE THAT HOLDS: "the dark doesn't fade into the
+       edge, there are hard lines". An inset box-shadow is painted inside
+       the PADDING box, so the 1px border ring never received the shade -
+       every version that shaded with inset shadows left a flat 1px band at
+       the edge with a step on its inner side, whatever colour the border
+       was given. So the shading is in the button's own background, which
+       covers the border box: lit at the top, darkening smoothly to the very
+       bottom pixel, no inset shadows at all. The border stays (transparent)
+       so no button changes size. */
+    border-color:transparent;
+    background-image:linear-gradient(180deg, rgba(255,255,255,.34) 0%, rgba(255,255,255,0) 46%, rgba(16,22,30,0) 56%, rgba(16,22,30,.14) 100%) !important;
     background-origin:border-box; background-clip:border-box; background-repeat:no-repeat;
-    /* the dark inset edge starts at the padding box, 1px inside the border, so
-       the border read as a lighter ring; the same shadow drawn from the
-       border box's own edge (spread 1px outward past it, clipped by the
-       radius) lets the shade run right to the edge */
-    box-shadow:0 1px 1px 0 rgba(255,255,255,.18) inset, 0 -2px 3px 0 rgba(0,0,0,.16) inset,
-      0 1px 3px rgba(0,0,0,.3), 0 5px 10px rgba(0,0,0,.3), 0 14px 28px -8px rgba(0,0,0,.5);
+    box-shadow:0 1px 3px rgba(0,0,0,.3), 0 5px 10px rgba(0,0,0,.3), 0 14px 28px -8px rgba(0,0,0,.5);
   }
   /* The same centring for the other small labels that sat high in their
      pills (found by tools/check-ink-centre.py, which measures where the
@@ -31959,6 +31964,33 @@
   .screen-calendar-tab .cal-cell:not(.cal-cell-class):not(.cal-cell-blank){ color:rgba(236,239,245,.62); }
   .screen-calendar-tab .cal-cell-dot-test{ box-shadow:0 0 6px rgba(245,181,77,.6); }
   .unitdetail-badgecap{ margin:.35rem 0 0; font-size:.74rem; font-weight:600; color:rgba(236,239,245,.62); font-variant-numeric:tabular-nums; }
+
+  /* ---- SETTINGS, ROUND 10 ----
+     "the headers and the boxes look the exact same, this regressed ... the
+     Liquid Glass needs to be incorporated into the boxes". A section's
+     header is a label now, not a second box: small caps, no surface, sitting
+     on the card it names. The cards take the tab bar's glass - the
+     near-black see-through body, the faint lift, one .16 rim - so the page is
+     one glass, the way iOS groups settings. And the Share & install pair
+     stays one line each ("why are the share this app and add to Home Screen
+     buttons so much bigger"): "Add to Home Screen" wrapped to two lines and
+     made both buttons taller than Help's. */
+  [data-theme="dark"][data-layout="modern"] .screen-settings .slab.motion-summary{
+    background:none !important; box-shadow:none !important; border:none !important;
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important; will-change:auto;
+    margin:1.6rem 0 .5rem; padding:0 .25rem; border-radius:0;
+    font-size:.72rem; letter-spacing:.12em; color:rgba(236,239,245,.58);
+  }
+  [data-theme="dark"][data-layout="modern"] .screen-settings .slab.motion-summary:first-child{ margin-top:.4rem; }
+  [data-theme="dark"][data-layout="modern"] .screen-settings .settings-card{
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border:1px solid rgba(255,255,255,.16) !important;
+    backdrop-filter:blur(24px) saturate(1.25); -webkit-backdrop-filter:blur(24px) saturate(1.25);
+    box-shadow:0 6px 22px rgba(0,0,0,.4), inset 0 2px 4px -1px rgba(255,255,255,.06) !important;
+  }
+  .screen-settings .cal-profile-row.settings-pair > .cal-profile-btn{ white-space:nowrap; font-size:.94rem; }
+  @media (max-width:380px){ .screen-settings .cal-profile-row.settings-pair > .cal-profile-btn{ font-size:.84rem; } }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
