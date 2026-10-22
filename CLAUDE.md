@@ -25749,8 +25749,10 @@ measured table: `notes/b327x.md`.
   platter 3.5px in (4.5px from the bar's outer edge), a 28px icon box, the
   label 11px / 600 one pixel under it, all centred. From 40rem the same x1.28
   (79.3px, was 101); the tablet's daily "?" and version label move down to
-  the new centre line. The Start bar on the unit screen is NOT changed (open:
-  b245's "same height as Home's bar" no longer holds).
+  the new centre line. The bar with the Start pill (unit screen) is matched
+  to it: 62 / 79.3px, the pill 53 / 67.8px and 4.5 / 5.8px in on every side,
+  the tabs the pill's height (`--pill-in-y:0`), the plain bar's icons and
+  tablet labels; its states untouched. Six items (`has-options-tab`) are not.
 - **The platter's vertical inset is a CSS variable, `--pill-in-y`**, read by
   the lens JS (`pillInY()`, was the constant `PILL_IN_Y`): change it in CSS
   and the lens follows.

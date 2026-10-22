@@ -10267,7 +10267,8 @@
      and the end padding to match, so it stays concentric. From 40rem the
      same proportions x1.28 (the tablet bar was already that much bigger
      than the phone's): 79px, a 35.8px icon box, a 14px label. The Start
-     bar (has-start-tab) is untouched. */
+     bar (has-start-tab) is matched to it further down (THE UNIT SCREEN'S
+     BAR MATCHES THE REFERENCE BAR). */
   .bottomtab-icon svg.tab-glyph{ stroke:none; overflow:visible; }
   .bottomtabs:not(.has-start-tab){ --pill-in-y:3.5px; padding:0 7.5px; }
   .bottomtabs:not(.has-start-tab) .bottomtabs-navrow{ width:min(calc(23.7rem - 17px), calc(100vw - 1.5rem - 17px)); }
@@ -10467,6 +10468,29 @@
     .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtab-start .bottomtab-icon{
       width:1.3rem; height:1.3rem;
     }
+  }
+  /* ---- THE UNIT SCREEN'S BAR MATCHES THE REFERENCE BAR (build 327 round 7) ----
+     Build 245: "the two bars come out the same height". The plain bar is
+     62px on a phone and 79.3px from 40rem now, so the bar with the Start
+     pill is too: the pill sits 4.5pt in from the bar's outer edge (top,
+     bottom and its end), the tabs fill the same height so the grey
+     platter is the pill's height and just as far in (--pill-in-y 0: the
+     tab IS the platter's box), and the icons and labels are the plain
+     bar's. A phone still shows icons only beside the pill, as before.
+     Only the size changes: the pill's states (unlit grey, lit, the
+     fill-from-centre beat) are the rules above, untouched. Six items
+     (has-options-tab) keep their compact treatment. */
+  html body .bottomtabs.has-start-tab:not(.has-options-tab){ --pill-in-y:0px; padding:3.5px 3.5px 3.5px 7.5px; }
+  html body .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab{ padding-top:12.5px; padding-bottom:12.5px; }
+  html body .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab-icon:not(.bottomtab-icon-avatar):not(.bottomtab-start-icon){ width:1.75rem; height:1.75rem; margin:0; }
+  html body .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtab-start{ min-height:53px; height:53px; }
+  @media (min-width:40rem){
+    html body .bottomtabs.has-start-tab:not(.has-options-tab){ padding:4.76px 4.76px 4.76px 8.76px; }
+    html body .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab{ padding-top:7.04px; padding-bottom:7.04px; gap:1.3px; }
+    html body .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab-icon:not(.bottomtab-icon-avatar):not(.bottomtab-start-icon){ width:2.24rem; height:2.24rem; margin:0; }
+    html body .bottomtabs.has-start-tab:not(.has-options-tab) #bottomtab-profile > .bottomtab-icon-avatar{ width:2.64rem; height:2.64rem; margin:-.3rem 0 -.1rem; }
+    html body .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab-label{ font-size:.88rem; font-weight:600; line-height:16.6px; letter-spacing:.005em; }
+    html body .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtab-start{ min-height:67.78px; height:67.78px; }
   }
   /* The color you've earned shouldn't go flat and static the moment
      it's actually applied \u2014 the swatch preview already shimmers, so
