@@ -117,6 +117,11 @@ def sec_edges(br):
 
 def sec_climb(br):
     print("\nC. the climb: the next level like normal, the extra going down beside it")
+    # MOVED IN 327 round 7: "THE NUMBER on the left would go into the level?" -
+    # the extra is in the ordinary number now, never beside it; tools/check-b327u.py
+    # section B holds the climb.
+    print("  SKIP superseded by check-b327u B (no 'N extra XP' since round 7)")
+    return
     for (label, w, h), lv, plus in ((PHONE, 53, 700), (TABLET, 47, 300)):
         ctx, pg = boot(br, w, h)
         pts = pg.evaluate("(a) => xpForLevel(a[0]) + a[1]", [lv, plus])

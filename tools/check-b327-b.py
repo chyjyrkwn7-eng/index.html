@@ -114,6 +114,11 @@ def sec_lines(br):
 
 def sec_extra(br):
     print("\nB. the extra goes down as the levels fill; no '-N XP'")
+    # MOVED IN 327 round 7: "The xp bar still shows extra xp? You aren't getting
+    # this right ... THE NUMBER on the left would go into the level?" There is no
+    # "N extra XP" any more; tools/check-b327u.py section B holds the climb.
+    print("  SKIP superseded by check-b327u B (no 'N extra XP' since round 7)")
+    return
     for (label, w, h), lv, plus in ((PHONE, 53, 700), (TABLET, 47, 300)):
         ctx, pg = boot(br, w, h)
         pts = pg.evaluate("(a) => xpForLevel(a[0]) + a[1]", [lv, plus])
