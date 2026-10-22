@@ -6771,6 +6771,25 @@
     color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent;
   }
   .chatdock-btn:active{ transform:translateY(1px); }
+  /* TWO GLASSES, ON PURPOSE (build 327 round 11). Madison: "the chat button
+     would match the bottom tab because that's a core thing that's always
+     gonna be there ... other Liquid Glass stuff can have its own look and
+     then some pops and the tool tips and other stuff will have the other
+     look". So: CHROME - the controls that are on screen all the time (the
+     chat buttons, Pause) - wears the tab bar's own glass, value for value
+     (see [data-theme="dark"][data-layout="modern"] .bottomtabs). Everything
+     that comes and goes - banners, toasts, tool tips, pop-ups, the chat
+     panel - wears the clear banner glass (.daily-alert), and the cards use
+     the shared --surface-* tokens. Change the tab bar's glass and change
+     these four values with it. */
+  html[data-theme="dark"] .chatdock-btn,
+  html[data-theme="dark"] .roomchat-fab,
+  html[data-theme="dark"] #pausebtn{
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74);
+    border:1px solid rgba(255,255,255,.16);
+    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05);
+    backdrop-filter:blur(16px) saturate(2.2) brightness(1.05); -webkit-backdrop-filter:blur(16px) saturate(2.2) brightness(1.05);
+  }
   /* DURING A QUESTION, PAUSE OWNS THIS CORNER. Both are fixed top-right
      and they landed on each other. The dock drops below the counter row
      rather than going away - the chat is supposed to be reachable
@@ -12398,7 +12417,7 @@
      margin-left:auto is what's left to push it to the right, and
      this naturally settles at the opposite, start edge. */
   .test-qcounter{ display:none; }
-  .wrap:has(.qnumrow):not(:has(.pausepanel)) .test-qcounter{
+  .wrap:has(.qnumrow, .pausepanel) .test-qcounter{
     display:block;
     font-family:var(--sans); font-size:.85rem; font-weight:700; color:var(--soft);
     letter-spacing:.02em; font-variant-numeric:tabular-nums; margin:0; flex-shrink:0;
@@ -12410,7 +12429,7 @@
      Pause, so it does not drift with the length of the mode's name. */
   .test-modelabel{ display:none; }
   .wrap:has(.fc-screen) .test-modelabel:not(:empty),
-  .wrap:has(.qnumrow):not(:has(.pausepanel)) .test-modelabel:not(:empty){
+  .wrap:has(.qnumrow, .pausepanel) .test-modelabel:not(:empty){
     display:block; margin:0; flex-shrink:0;
     font-size:.85rem; font-weight:700; color:var(--soft); letter-spacing:.02em;
   }
@@ -12420,7 +12439,7 @@
      scrolls away with the page instead. */
   .wrap:has(.fc-screen) .top{ position:relative; top:0; }
   .wrap:has(.fc-screen) .top .test-qcounter{ display:block; font-family:var(--sans); font-weight:700; color:var(--soft); letter-spacing:.02em; font-variant-numeric:tabular-nums; margin:0; }
-  .wrap:has(.qnumrow):not(:has(.pausepanel)) .top{ position:sticky; }
+  .wrap:has(.qnumrow, .pausepanel) .top{ position:sticky; }
   /* ---- THE TEST HEADER IS PINNED, NOT STICKY (build 308) ----
      "When scrolling down, the amount of questions mode type don't stay
      put, they should in a test." The row was sticky, and on iOS a sticky
@@ -12464,7 +12483,7 @@
       color-mix(in srgb, var(--paper) 0%, transparent) 100%);
   }
   .wrap:has(.fc-screen) .top .test-qcounter,
-  .wrap:has(.qnumrow):not(:has(.pausepanel)) .top .test-qcounter{
+  .wrap:has(.qnumrow, .pausepanel) .top .test-qcounter{
     position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);
     /* The count reads like the mode name beside it - same grey, size and
        weight - in every mode (build 306): "The '1/12' at the top used to
@@ -12478,7 +12497,7 @@
      so there the count sits in the gap between the mode and the buttons. */
   @media (max-width:22rem){
     .wrap:has(.fc-screen) .top .test-qcounter,
-    .wrap:has(.qnumrow):not(:has(.pausepanel)) .top .test-qcounter{ left:38%; }
+    .wrap:has(.qnumrow, .pausepanel) .top .test-qcounter{ left:38%; }
   }
   .navsegment{
     display:none; align-items:center; background:var(--rule);
@@ -12605,7 +12624,7 @@
      number itself is frozen because the interval is stopped. */
   .timerline.is-paused .tmain, .timerline.is-paused .tmain.low{ color:#F5B83D; }
   .timerline.is-paused .tclock{ stroke:#F5B83D; opacity:1; }
-  .timerline.is-paused .tpaused{ display:inline-block; }
+  .timerline.is-paused .tpaused{ display:none; } /* build 327 round 11: "no need for the word paused" */
   .timerline.is-paused .tbest{ display:none; }
   /* The timer sits where #count's (invisible, in a test) text line was,
      so with the timer up that line folds away and the divider stays one
@@ -72698,7 +72717,9 @@ function renderPausedScreen(){
   } else {
     actions.append(resumeBtn, menuBtn);
   }
-  mountPausePanel(panel, [h, info, p, actions], resumeBtn);
+  /* build 327 round 11: no "Paused" heading - the header row above already shows the
+     mode and the count, the clock is amber, and the units are right here. */
+  mountPausePanel(panel, [info, p, actions], resumeBtn);
 }
 
 /* PAUSE AND ITS CONFIRMATIONS SHARE ONE PLACE (build 297): "ensure the
