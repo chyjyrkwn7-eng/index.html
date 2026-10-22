@@ -10360,26 +10360,9 @@
      bar (has-start-tab) is matched to it further down (THE UNIT SCREEN'S
      BAR MATCHES THE REFERENCE BAR). */
   .bottomtab-icon svg.tab-glyph{ stroke:none; overflow:visible; }
-  .bottomtabs:not(.has-start-tab){ --pill-in-y:3.5px; padding:0 7.5px; }
-  .bottomtabs:not(.has-start-tab) .bottomtabs-navrow{ width:min(calc(23.7rem - 17px), calc(100vw - 1.5rem - 17px)); }
-  .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab{ padding-top:9px; padding-bottom:9px; gap:1px; }
-  .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab-icon:not(.bottomtab-icon-avatar):not(.bottomtab-start-icon){ width:1.75rem; height:1.75rem; margin:0; }
-  .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab-label{ font-size:.6875rem; font-weight:600; line-height:13px; letter-spacing:.005em; }
-  @media (min-width:40rem){
-    .bottomtabs:not(.has-start-tab){ --pill-in-y:4.76px; padding:0 8.76px; }
-    .bottomtabs:not(.has-start-tab) .bottomtabs-navrow{ width:min(calc(30.14rem - 19.5px), calc(100vw - 1.5rem - 19.5px)); }
-    .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab{ padding-top:11.8px; padding-bottom:11.8px; gap:1.3px; }
-    .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab-icon:not(.bottomtab-icon-avatar):not(.bottomtab-start-icon){ width:2.24rem; height:2.24rem; margin:0; }
-    .bottomtabs:not(.has-start-tab):not(.has-options-tab) #bottomtab-profile > .bottomtab-icon-avatar{ width:2.64rem; height:2.64rem; margin:-.3rem 0 -.1rem; }
-    .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab-label{ font-size:.88rem; line-height:16.6px; }
-  }
   /* The corner pair on a tablet sits on the bar's centre line (build 245):
      the bar is 79.3px now, not 101, so its centre is .6rem + 39.65px up -
      the 4.6rem circle 12.45px off the bottom and the version label 36.35px. */
-  @media (min-width:40rem){
-    html body .daily-question-fab{ bottom:calc(12.45px + env(safe-area-inset-bottom, 0px)); }
-    html body .homeversion{ bottom:calc(36.35px + env(safe-area-inset-bottom, 0px)); }
-  }
   /* ---- THE START PILL: A BUTTON'S SHAPE, AND A BUTTON'S DEPTH (build 245) ----
      "I feel like it's an awkward shape, and the start button could be a
      little bit wider (the white when it's enabled and the dull part when
@@ -10570,18 +10553,6 @@
      Only the size changes: the pill's states (unlit grey, lit, the
      fill-from-centre beat) are the rules above, untouched. Six items
      (has-options-tab) keep their compact treatment. */
-  html body .bottomtabs.has-start-tab:not(.has-options-tab){ --pill-in-y:0px; padding:3.5px 3.5px 3.5px 7.5px; }
-  html body .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab{ padding-top:12.5px; padding-bottom:12.5px; }
-  html body .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab-icon:not(.bottomtab-icon-avatar):not(.bottomtab-start-icon){ width:1.75rem; height:1.75rem; margin:0; }
-  html body .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtab-start{ min-height:53px; height:53px; }
-  @media (min-width:40rem){
-    html body .bottomtabs.has-start-tab:not(.has-options-tab){ padding:4.76px 4.76px 4.76px 8.76px; }
-    html body .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab{ padding-top:7.04px; padding-bottom:7.04px; gap:1.3px; }
-    html body .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab-icon:not(.bottomtab-icon-avatar):not(.bottomtab-start-icon){ width:2.24rem; height:2.24rem; margin:0; }
-    html body .bottomtabs.has-start-tab:not(.has-options-tab) #bottomtab-profile > .bottomtab-icon-avatar{ width:2.64rem; height:2.64rem; margin:-.3rem 0 -.1rem; }
-    html body .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab-label{ font-size:.88rem; font-weight:600; line-height:16.6px; letter-spacing:.005em; }
-    html body .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtab-start{ min-height:67.78px; height:67.78px; }
-  }
   /* The color you've earned shouldn't go flat and static the moment
      it's actually applied \u2014 the swatch preview already shimmers, so
      the two most prominent accent-colored surfaces (this button and
@@ -32470,7 +32441,7 @@
        update check) waits for this too; boot, recovery and sync run under
        it as on any launch. A tap does not skip it - it is ten seconds, he
        asked for it to be seen - and it can never outlive INSTALL_CAP_MS. */
-    if(isUpdating){
+    if(false && isUpdating){ /* the long Installing screen is off: back to the short splash */
       var INSTALL_MS = 10500, INSTALL_CAP_MS = 12000;
       duration = INSTALL_MS;
       try{
@@ -96434,7 +96405,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-22-327f";
+const APP_BUILD = "2026-10-22-327g";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
