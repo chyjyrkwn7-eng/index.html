@@ -19887,6 +19887,17 @@
     -webkit-backdrop-filter:none; backdrop-filter:none;
   }
   [data-layout="modern"] .pausepanel .next.ghost#pause-save:active{ background-color:#3E264D; opacity:1; }
+  /* QUIT, VISIBLE (build 327 round 11): "The quit test button is not even
+     there?" - near-black on the near-black page it had no edge at all. It is
+     the tab bar's glass now, with its rim drawn as an inset ring (a border
+     would make it two pixels taller than Save and exit). One white button,
+     one plum, one glass: three buttons, three materials, no fight over hue. */
+  html[data-theme="dark"][data-layout="modern"] .pausepanel .actions #pause-quit{
+    color:#fff; border:none;
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74);
+    box-shadow:0 0 0 1px rgba(255,255,255,.16) inset, 0 1px 1px rgba(255,255,255,.14) inset, 0 4px 14px rgba(0,0,0,.4);
+    backdrop-filter:blur(16px) saturate(2.2) brightness(1.05); -webkit-backdrop-filter:blur(16px) saturate(2.2) brightness(1.05);
+  }
   /* Back links were plain text with no button treatment at all \u2014 the
      same black-glass pill as the ghost button, just smaller, so it
      reads as a real tappable control instead of a caption. */
