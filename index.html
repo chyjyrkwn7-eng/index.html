@@ -12856,9 +12856,10 @@
   .stx-hero{ display:flex; align-items:center; gap:1rem; margin:.2rem 0 .9rem; }
   .stx-units-label{ margin:.7rem 0 .35rem; font-size:.7rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(236,239,245,.6); }
   .stx-unit-row{ display:grid; grid-template-columns:minmax(0,1fr) 5.2rem 2.6rem; align-items:center; gap:.7rem; width:100%; min-height:44px; padding:.45rem .2rem;
-    background:none; border:none; border-top:1px solid rgba(255,255,255,.07); color:var(--ink); font:inherit; text-align:left; cursor:pointer; }
+    background:none; border:none; border-top:1px solid rgba(255,255,255,.07); color:var(--ink); font:inherit; text-align:left; }
   .stx-unit-row:first-of-type{ border-top:none; }
-  .stx-unit-name{ font-size:.92rem; font-weight:600; line-height:1.25; }
+  .stx-unit-name{ font-size:.92rem; font-weight:600; line-height:1.25; min-width:0; }
+  .stx-unit-n{ display:block; margin-top:.12rem; font-size:.72rem; font-weight:500; color:rgba(236,239,245,.5); font-variant-numeric:tabular-nums; }
   .stx-units .info-note{ border:none; background:none; padding:.5rem 0 0; margin:0; font-size:.8rem; box-shadow:none; }
   .stx-units .info-note::before{ display:none; }
   .stx-unit-bar{ height:.5rem; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden; display:block; }
@@ -29907,14 +29908,16 @@
      recipe now. Cards and rows are surfaces, not floating glass, and keep
      theirs. The circles keep b327y's rules (no repeat under the border, no
      hairline lip). */
-  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn),
+  /* build 327 round 10: "the background to top button is the old color, fix
+     it. And anywhere else." Back to top and the plain toast join the list. */
+  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .backtotop, .toast:not(.toast-flag)),
   [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
     background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
     border-color:rgba(255,255,255,.16) !important;
     backdrop-filter:blur(24px) saturate(1.25); -webkit-backdrop-filter:blur(24px) saturate(1.25);
   }
-  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done)),
+  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .backtotop, .toast:not(.toast-flag)),
   [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
     box-shadow:0 6px 22px rgba(0,0,0,.45), inset 0 2px 4px -1px rgba(255,255,255,.06);
   }
@@ -31897,13 +31900,13 @@
      recipes. */
   [data-theme="dark"][data-layout="modern"] .next:not(.ghost):not(.danger),
   [data-theme="dark"][data-layout="modern"] .chip.on{
-    border-color:transparent;
+    border-color:rgba(20,26,34,0) rgba(20,26,34,.13) rgba(20,26,34,.2) rgba(20,26,34,.13);
     background-origin:border-box; background-clip:border-box; background-repeat:no-repeat;
     /* the dark inset edge starts at the padding box, 1px inside the border, so
        the border read as a lighter ring; the same shadow drawn from the
        border box's own edge (spread 1px outward past it, clipped by the
        radius) lets the shade run right to the edge */
-    box-shadow:0 1px 1px -1px rgba(255,255,255,.18) inset, 0 -1px 2px -1px rgba(0,0,0,.35) inset,
+    box-shadow:0 1px 1px 0 rgba(255,255,255,.18) inset, 0 -2px 3px 0 rgba(0,0,0,.16) inset,
       0 1px 3px rgba(0,0,0,.3), 0 5px 10px rgba(0,0,0,.3), 0 14px 28px -8px rgba(0,0,0,.5);
   }
   /* The same centring for the other small labels that sat high in their
@@ -31921,6 +31924,41 @@
       .homeversion.homeversion-btn{ text-box:trim-both cap alphabetic; padding-block:calc((1lh - 1cap)/2); }
     }
   }
+
+  /* ---- THE CALENDAR, ROUND 10 (build 327) ----
+     "color matched boxes and stuff"; "the 'class 26e' is yellow at the top,
+     is there a better color cause there's yellow stuff in the box under
+     that"; "the calendar itself ... is a smidge hard to see". Each card
+     takes the colour of what it is about - its edge, a faint wash from the
+     top and its kicker - the way the results boxes do: Next test amber (its
+     date, countdown and test dots), Final Exams orange (its counts and
+     dots), The course blue (its ring). Today stays neutral, it is the day.
+     The Class 26E line is white, so the only amber near it is the test. */
+  .cal-classhead b{ color:var(--ink); }
+  [data-theme="dark"][data-layout="modern"] .screen-calendar-tab :is(.cal-nexttest-card, .cal-big-card, .cal-course-card){
+    border-color:color-mix(in srgb, var(--cal-c) 34%, transparent) !important;
+    background:radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--cal-c) 11%, transparent), transparent 70%),
+               linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.45) !important;
+    box-shadow:0 0 22px -10px color-mix(in srgb, var(--cal-c) 55%, transparent), 0 6px 18px rgba(0,0,0,.28),
+               inset 0 0 0 1px color-mix(in srgb, var(--cal-c) 8%, transparent) !important;
+  }
+  .screen-calendar-tab .cal-nexttest-card{ --cal-c:#F5B54D; }
+  .screen-calendar-tab .cal-big-card{ --cal-c:#FF9D5C; }
+  .screen-calendar-tab .cal-course-card{ --cal-c:#6FC2FF; }
+  .screen-calendar-tab :is(.cal-nexttest-card, .cal-big-card, .cal-course-card) .cal-card-head .slab{
+    color:color-mix(in srgb, var(--cal-c) 70%, #ECEFF5);
+  }
+  /* the grid: class days a step lighter with a firmer edge, numbers white,
+     the dots bigger, and the weekend numbers readable */
+  .screen-calendar{ --cal-cell:rgba(255,255,255,.1); --cal-cell-off:rgba(255,255,255,.04); --cal-dot:.42rem; }
+  [data-theme="dark"][data-layout="modern"] .screen-calendar .cal-cell-class:not(.cal-cell-sel):not(.cal-cell-today):not(.cal-cell-last){
+    border:1px solid rgba(255,255,255,.1);
+  }
+  .screen-calendar-tab .cal-course-card .cal-course-hero{ margin-bottom:.15rem; }
+  .screen-calendar-tab .cal-cell-class .cal-cell-num{ color:#F3F5F8; }
+  .screen-calendar-tab .cal-cell:not(.cal-cell-class):not(.cal-cell-blank){ color:rgba(236,239,245,.62); }
+  .screen-calendar-tab .cal-cell-dot-test{ box-shadow:0 0 6px rgba(245,181,77,.6); }
+  .unitdetail-badgecap{ margin:.35rem 0 0; font-size:.74rem; font-weight:600; color:rgba(236,239,245,.62); font-variant-numeric:tabular-nums; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -82043,7 +82081,7 @@ const NOVA_NEW_TIPS_321 = [
   /* build 323: the calendar has its own tab in the bar, Settings is in Profile.
      Round 9: "simple but catching so people want to click it" */
   { target: "#bottomtab-calendar", align: "right", vplacement: "above",
-    text: "Class 26E now has its own calendar: what\u2019s on today, your next test and what\u2019s on it, the final exams, and how many days to graduation. Tap it and take a look." }
+    text: "Class 26E now has its own calendar: what\u2019s on today, your next test and what\u2019s on it, the final exams, and how many class days are left. Tap it and take a look." }
 ];
 /* An existing account's tooltips, once, in its meeting with Nova. No
    welcome bonus - that is for a new account.
@@ -91159,9 +91197,11 @@ function unitDetailStats(name, mode){
   if(unitPerfectCount(name) > 0) bestPct = 100;
   const done = Math.max(unitCompletedCount(name), unitPerfectCount(name));
   const last = unitLastScoreOf(name);
-  add("Best score", typeof bestPct === "number" ? bestPct + "%" : dash, "whole unit");
-  add("Last score", last ? last.pct + "%" : dash, last ? lastScoreWhen(last.at) : "not taken yet");
-  add("Completed", String(done), done === 1 ? "time" : "times");
+  add("Best score", typeof bestPct === "number" ? bestPct + "%" : dash, typeof bestPct === "number" ? "on the whole unit" : "take the whole unit to set one");
+  /* round 10: the last score can be a shorter run (a Length under All, or
+     a slides version) while the best is the whole unit's - so it says so */
+  add("Last score", last ? last.pct + "%" : dash, last ? lastScoreWhen(last.at) + (last.part ? ", part of the unit" : "") : "not taken yet");
+  add("Times taken", String(done), "any length, any mode");
   add("Hundos", String(unitPerfectCount(name)), "100% on the whole unit");
   /* BEST TIME, IN THE DETAILS AND NOT ON THE CARD (build 309): "In the
      unit details, go ahead and put the best time you have there. Not on
@@ -91194,7 +91234,7 @@ function unitLastScoreOf(u){
      reported as never taken. */
   const h = (store.testHistory || []).find(x => x && ((x.up && typeof x.up[u] === "number") ||
     (Array.isArray(x.units) && x.units.length === 1 && x.units[0] === u && typeof x.pct === "number")));
-  if(h) return { pct: (h.up && typeof h.up[u] === "number") ? h.up[u] : h.pct, at: h.playedAt || 0 };
+  if(h){ const fromUp = h.up && typeof h.up[u] === "number"; return { pct: fromUp ? h.up[u] : h.pct, at: h.playedAt || 0, part: !fromUp && !!h.part }; }
   let best = null;
   Object.keys(store.testStats || {}).forEach(k => {
     if(k.split("|")[0] !== u) return;
@@ -91256,6 +91296,15 @@ function openUnitDetail(row, name, mode){
   cnt.className = "pcount"; cnt.textContent = unitQuestionCount(name) + " questions";
   head.append(nm, cnt);
   appendUnitProgress(head, name);
+  /* round 10: "let's ensure that pop is perfect and makes sense". The bar
+     under the name had no words: say what it counts. */
+  {
+    const need = badgeThresholdFor(name), have = Math.min(unitPerfectCount(name), need);
+    const cap = document.createElement("p");
+    cap.className = "unitdetail-badgecap";
+    cap.textContent = have >= need ? "Badge earned" : "Hundos toward this unit's badge";
+    head.appendChild(cap);
+  }
 
   const views = document.createElement("div");
   views.className = "unitdetail-views";
@@ -106939,30 +106988,10 @@ function showAppearance(opts){
   /* The countdown on Profile's class card. It is the one number in the
      app that gets worse the closer it gets for some people and better for
      others, so it is a switch rather than a decision. */
-  const classDaysRow = document.createElement("label");
-  classDaysRow.className = "opt";
-  const classDaysCb = document.createElement("input");
-  classDaysCb.type = "checkbox";
-  classDaysCb.checked = theme.showClassDaysLeft !== false;
-  classDaysCb.addEventListener("change", () => {
-    theme.showClassDaysLeft = classDaysCb.checked;
-    saveTheme();
-    showToast(theme.showClassDaysLeft
-      ? "Class days remaining is back on the Calendar tab."
-      : "Class days remaining hidden.");
-  });
-  const classDaysBox = document.createElement("span");
-  classDaysBox.className = "box"; classDaysBox.setAttribute("aria-hidden", "true");
-  classDaysBox.textContent = "\u2713";
-  const classDaysWrap = document.createElement("span");
-  classDaysWrap.className = "otext";
-  classDaysWrap.appendChild(document.createTextNode("Show class days remaining"));
-  const classDaysHint = document.createElement("span");
-  classDaysHint.className = "ohint";
-  classDaysHint.textContent = "The countdown to graduation on the Calendar tab.";
-  classDaysWrap.appendChild(classDaysHint);
-  classDaysRow.append(classDaysCb, classDaysBox, classDaysWrap);
-  studyDetails.appendChild(classDaysRow);
+  /* No "Show class days remaining" switch (build 327 round 10): "Remove the
+     days to graduation or whatever option from settings." The Calendar's
+     course card always shows; theme.showClassDaysLeft is still loaded and
+     saved so nothing in a stored theme changes meaning, but nothing reads it. */
 
   const autoFlagRow = document.createElement("label");
   autoFlagRow.className = "opt";
@@ -107014,7 +107043,6 @@ function showAppearance(opts){
     });
     const HINTS = {
       "Reduce motion":                  "Turns off shimmer, pulse and other animations.",
-      "Show class days remaining":      "Shows the countdown to graduation on the Calendar tab.",
       "Swipe to next question":         "Swipe left to move on instead of tapping Next.",
       /* BUILD 324: "the auto advance in correct, the title and description
          are slightly vague. The auto star description says every 5th miss
@@ -107037,7 +107065,7 @@ function showAppearance(opts){
       "Skip celebrations and pop-ups":  "No rank-up, badge or unlock scenes, streak banners or message pop-ups. Everything you earn still counts."
     };
     const GROUPS = [
-      [motionDetails, ["Reduce motion", "Show class days remaining"]],
+      [motionDetails, ["Reduce motion"]],
       [studyDetails,  ["Swipe to next question", "Auto-advance",
                        "Auto-star questions you keep missing", "Skip celebrations and pop-ups"]]
     ];
@@ -120530,16 +120558,17 @@ function buildCalendarPane(panel){
      numbers are classDaysRemaining() and testsRemaining() - the ones the
      class card and the calendar always used - not a second count. Behind
      the same "Show class days remaining" switch the class card's pill was. */
+  /* JUST CLASS DAYS (build 327 round 10): "The graduation box, it says class
+     days and days left. Let's just have class days". Tests left is the Next
+     test card's and the date of graduation is under the count, so the three
+     tiles went; and it is never hidden (the Settings switch is gone). */
   function buildCourseCard(){
     const left = classDaysRemaining();
-    const tests = testsRemaining();
     const total = classDaysTotal();
     const done = Math.max(0, Math.min(total, total - left));
     const pct = total ? Math.round(done / total * 100) : 0;
-    const toGrad = Math.max(0, calendarDaysBetween(todayStr, GRADUATION_DATE));
     const card = document.createElement("section");
     card.className = "points-progress-sect cal-card cal-course-card";
-    card.hidden = theme.showClassDaysLeft === false;
     card.appendChild(cardHead("The course"));
     const hero = document.createElement("div");
     hero.className = "stx-hero cal-course-hero";
@@ -120549,25 +120578,13 @@ function buildCalendarPane(panel){
     const ht = document.createElement("div");
     ht.className = "stx-hero-text";
     const big = document.createElement("p");
-    big.className = "stx-hero-big"; big.textContent = toGrad > 0 ? "Graduation" : "Graduated";
+    big.className = "stx-hero-big";
+    big.textContent = left > 0 ? left + (left === 1 ? " class day left" : " class days left") : "Every class day done";
     const sub = document.createElement("p");
-    sub.className = "stx-hero-sub"; sub.textContent = formatCalendarDate(GRADUATION_DATE);
+    sub.className = "stx-hero-sub"; sub.textContent = "Graduation " + formatCalendarDate(GRADUATION_DATE);
     ht.append(big, sub);
     hero.appendChild(ht);
     card.appendChild(hero);
-    const grid = document.createElement("div");
-    grid.className = "cal-course-grid";
-    [["Class days left", left, "is-days"], ["Tests left", tests, "is-tests"], ["Days to graduation", toGrad, "is-grad"]].forEach(([lab, n, cls]) => {
-      const tile = document.createElement("div");
-      tile.className = "stat-card cal-stat " + cls;
-      const v = document.createElement("span");
-      v.className = "stat-num"; v.textContent = String(n);
-      const l = document.createElement("span");
-      l.className = "stat-lab"; l.textContent = lab;
-      tile.append(v, l);
-      grid.appendChild(tile);
-    });
-    card.appendChild(grid);
     return card;
   }
 
@@ -122514,6 +122531,9 @@ function showProfile(defaultTab, opts){
      can tap for what it counts - STAT_MEANINGS above is unchanged. */
   const answered = store.lifetime.answered;
   const correct = store.lifetime.correct;
+  /* Red under 70 (PASS_MARK), green from 70, gold at 100 - the accuracy
+     ring and every Your units bar read this one rule. */
+  const statBand = p => p == null ? "#4ADE80" : p >= 100 ? "#F2C14E" : p >= PASS_MARK ? "#4ADE80" : "#FF5A60";
   const testsCompleted = testsCompletedOf(store);
 
   const glanceSect = document.createElement("div");
@@ -122534,7 +122554,10 @@ function showProfile(defaultTab, opts){
      green like how it was". Accuracy is the share of answers right, and right
      is green everywhere else in the app; a fixed green, not the pass/fail
      bands, so a low number is not painted as a failed test. */
-  hero.appendChild(buildScoreRing(accPct, "stx-ring is-accuracy", "#4ADE80"));
+  /* BY THE PASS MARK (build 327 round 10): "ensure it's green or red. Red if
+     under a 70, green if above a 70 and a gold if somehow a hundred".
+     statBand() is the one rule, shared with Your units below. */
+  hero.appendChild(buildScoreRing(accPct, "stx-ring is-accuracy", statBand(accPct)));
   const heroText = document.createElement("div");
   heroText.className = "stx-hero-text";
   const heroBig = document.createElement("p");
@@ -122610,22 +122633,25 @@ function showProfile(defaultTab, opts){
         if(!list.length) return;
         const l = document.createElement("p"); l.className = "stx-units-label"; l.textContent = label; sect.appendChild(l);
         list.forEach(r => {
-          const b = document.createElement("button"); b.type = "button"; b.className = "stx-unit-row";
+          /* not a button (round 10): "it says tap any unit to drill it. Let's not do that." */
+          const b = document.createElement("div"); b.className = "stx-unit-row";
           const nm = document.createElement("span"); nm.className = "stx-unit-name"; nm.textContent = r.u;
+          const nn = document.createElement("span"); nn.className = "stx-unit-n"; nn.textContent = r.n.toLocaleString() + " answered";
+          nm.appendChild(nn);
           const bar = document.createElement("span"); bar.className = "stx-unit-bar";
           const fill = document.createElement("i"); fill.style.width = r.pct + "%";
-          fill.style.background = r.pct >= 85 ? "#4ADE80" : r.pct >= 70 ? "#F5C518" : "#FF8A5C";
+          const tone = statBand(r.pct);
+          fill.style.background = tone; fill.style.boxShadow = "0 0 8px -1px " + tone;
           bar.appendChild(fill);
-          const pc = document.createElement("span"); pc.className = "stx-unit-pct"; pc.textContent = r.pct + "%";
+          const pc = document.createElement("span"); pc.className = "stx-unit-pct"; pc.textContent = r.pct + "%"; pc.style.color = tone;
           b.append(nm, bar, pc);
-          b.setAttribute("aria-label", r.u + ", " + r.pct + " percent right. Drill it.");
-          b.addEventListener("click", () => { try{ cfg.mode = "drill"; runMode = "drill"; cfg.units = [r.u]; showSetup(); }catch(e){} });
+          b.setAttribute("aria-label", r.u + ", " + r.pct + " percent right, " + r.n + " answered.");
           sect.appendChild(b);
         });
       };
-      if(rows.length >= 6){ group("Needs the most work", rows.slice(0, 3)); group("Strongest", rows.slice(-3).reverse()); }
+      if(rows.length >= 6){ group("Needs work", rows.slice(0, 3)); group("Strongest", rows.slice(-3).reverse()); }
       else group("By unit, weakest first", rows);
-      const hint = document.createElement("p"); hint.className = "info-note"; hint.textContent = "Tap a unit to drill it.";
+      const hint = document.createElement("p"); hint.className = "info-note"; hint.textContent = "Share of your answers right in each unit. Under " + PASS_MARK + "% is red.";
       sect.appendChild(hint);
       statsTab.appendChild(sect);
     }

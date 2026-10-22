@@ -271,50 +271,23 @@ def story_section(br):
     i_crack = next((i for i, t in enumerate(fresh) if re.search(r"more light than it could hold", t)), -1)
     i_boom = next((i for i, t in enumerate(fresh) if re.search(r"explod", t)), -1)
     i_badge = next((i for i, t in enumerate(fresh) if re.search(r"badge", t) and re.search(r"mastered", t) and re.search(r"hundo", t)), -1)
-    i_hold = next((i for i, t in enumerate(fresh) if re.search(r"crack", t) and re.search(r"Gold", t) and re.search(r"[Bb]adges are what hold", t)), -1)
     i_wall = next((i for i, t in enumerate(fresh) if re.search(r"level waits", t) and re.search(r"badges", t)), -1)
-    check("in order: his planet took in more light than it could hold, it exploded; a badge is a unit mastered (hundos); "
-          "yours cracks from Gold up and badges hold it; and your level waits for the badges, so it never takes in too much",
-          0 <= i_crack < i_boom < i_badge < i_hold < i_wall, {"crack": i_crack, "boom": i_boom, "badge": i_badge, "hold": i_hold, "wall": i_wall})
-    check("both flows say it (the existing account too)",
-          any(re.search(r"[Bb]adges are what hold", t) for t in existing) and any(re.search(r"mastered", t) for t in existing), existing[3:10])
+    # build 327 round 9: the strain slide ("your planet is a lot like that one ... cracks") was removed on
+    # request - the cracks story did not make sense beside "badges hold a planet together"
+    check("in order: his planet took in more light than it could hold, it exploded; then a badge is a unit mastered (hundos)",
+          0 <= i_crack < i_boom < i_badge, {"crack": i_crack, "boom": i_boom, "badge": i_badge})
+    check("the strain slide is gone: no intro line says your planet cracks",
+          not any(re.search(r"crack", t) for t in fresh + existing), [t for t in fresh + existing if re.search(r"crack", t)][:2])
+    check("both flows say what a badge is (the existing account too)",
+          any(re.search(r"mastered", t) for t in existing), existing[3:10])
     check("line counts stay sensible: a new account at most 16 lines, an existing one at most 21",
           0 < len(fresh) <= 16 and 0 < len(existing) <= 21, [len(fresh), len(existing)])
-    sl = r.get("slides") or []
-    check("the crack line has its own picture: Home's planet with a rank's crack in it",
-          r.get("strain") and i_hold >= 0 and i_hold < len(sl) and sl[i_hold], [r.get("strain"), sl[i_hold] if 0 <= i_hold < len(sl) else None])
     ranks = r.get("ranks") or []
     check("Gold's rank-up says the crack is strain and the badges hold it; Supernova's: it held, a star",
           len(ranks) == 7 and re.search(r"crack", ranks[2]) and re.search(r"badges", ranks[2]) and re.search(r"held", ranks[6]) and re.search(r"star", ranks[6]),
           [ranks[2:3], ranks[6:7]])
     check("his badge messages say the unit is mastered", all(re.search(r"mastered", x) for x in r.get("progress") or []), r.get("progress"))
-    # the strain slide, on the stage, on both devices
     ctx.close()
-    for (w, h, dev) in DEVS:
-        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
-        s = pg.evaluate("""async () => {
-          const wait = ms => new Promise(r => setTimeout(r, ms));
-          playNovaIntro(() => {}, {});
-          let el = null; for(let i = 0; i < 60 && !(el = document.getElementById('nova-intro')); i++) await wait(100);
-          for(let i = 0; i < 60 && el.__nova.index < 0; i++) await wait(100);
-          for(let k = 0; k < 40; k++){
-            const t = el.querySelector('.nt-text').textContent;
-            if(/what hold a planet together/.test(el.__nova.typing ? '' : t)){
-              await wait(900);
-              const prop = [...el.querySelectorAll('.nt-prop')].filter(p => p.classList.contains('is-in') && !p.classList.contains('is-prepped')).pop();
-              const hero = prop && prop.querySelector('.cosmic-hero-wrap');
-              const r = hero ? hero.getBoundingClientRect() : null;
-              return { ok: !!hero, scar: !!(prop && prop.querySelector('.cosmic-scar')), r: r && [r.left, r.top, r.right, r.bottom].map(Math.round),
-                       cap: ((prop && prop.querySelector('.nt-cap')) || {}).textContent || '' };
-            }
-            el.__nova.advance(); await wait(el.__nova.typing ? 60 : 300);
-          }
-          return { ok: false };
-        }""")
-        ctx.close()
-        rr = s.get("r") or [0, 0, 0, 0]
-        check("%s: the crack line shows the cracked planet, whole and on the screen" % dev,
-              s.get("ok") and s.get("scar") and rr[0] >= -1 and rr[2] <= w + 1 and rr[1] >= -1 and rr[3] - rr[1] > 100, s)
 
 
 # ---------------------------------------------------------------------------

@@ -2696,7 +2696,7 @@ def check_b235b(br):
     check("the fold is named for the timers", "timer" in str(r["timerLabel"]).lower(), r["timerLabel"])
     d = r["detail"] if isinstance(r["detail"], dict) else {}
     check("holding a unit card opens its details without ticking it",
-          d.get("unticked") is True and d.get("doors") == 1 and "Completed" in d.get("stats", []) and "Last score" in d.get("stats", [])
+          d.get("unticked") is True and d.get("doors") == 1 and "Times taken" in d.get("stats", []) and "Last score" in d.get("stats", [])
           and "Hundos" in d.get("stats", []) and d.get("w", 0) > 300, r["detail"])
     l = r["list"] if isinstance(r["list"], dict) else {}
     # REVISED IN 270: "When looking at your most missed, remove the flag
