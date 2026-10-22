@@ -25727,3 +25727,35 @@ a frame read as pink-grey.
   (RU_HAND_RISE_AT 600 over 3200ms) - the scene behind, not the flare. Left
   for Madison's look at the hand-off; the gate would have to sample the
   flare apart from the scene to tell the two apart.
+
+### Build 327 round 7 (b327w) - the hundo effect scores, cinematic and on their beats
+
+Madison: *"The ufo hundo sound effects are not it, fix that. Let's ensure the
+hundo sound effects are awesome and perfect."* Branch `b327w`. Gate:
+`tools/check-b327w.py` (`--base` the old index for comparison, `--against`);
+ALL PASS here, 18 failures on 61d9620.
+
+> **Supersedes** b327f's hundo scores (ambience-language bells and pad).
+
+- **`SND_HUNDO`** (after `SND_DARK_VOL`) replaces the fn, desc and vol of the
+  five `hundo.*` ids. Weighted hits (`sndHit`: sub + mid body + air crack),
+  whooshes (`sndWhoosh`), wet plops (`sndPlop`), FM shimmer and a short dark
+  D minor motif - no 8-bit, bells or piano. 62-90% of the energy in
+  200Hz-4kHz (the old ones 16-57%), for phone speakers.
+- **Scored on the effects' own beats, copied** from `hfxFireworks`, `HFX_UW`,
+  Bubbles' 3.5s flourish and `hfxUfo` - move a beat there, move it here.
+- **The UFO's engine dopplers past on its real circle**: `hfxUfoArrival`
+  records `hfxUfoFlight = { side, marks, at }` (the times the saucer passes
+  five points of its path) and `playHundoFx` passes them as
+  `playSound("hundo.ufo", { side, marks })` when fresh (under 1s); without it
+  `SND_UFO_MARKS` (a phone's path). Then the prime (3.1), the beam fired
+  (3.66), landing (6.1), scan with blips (6.3, 6.92), lock (6.95/7.07/7.19),
+  the steal (7.38, gulp 7.98), charge (8.0), warp (8.55).
+- **Levels**: vols chosen so each loudest 50ms is within 0.4 dB of the old
+  score's (confetti 1.25, bubbles 1.6, UFO 1.4).
+- **The gate's "new design" bar is 0.90** (check-sound 7's bar for two
+  different sounds): the underwater (.83) and UFO (.85) scores keep a close
+  long-term SPECTRUM to the old ones (band-limited noise either way) though
+  shape and envelope differ.
+- Also run: check-js, check-sound (ALL PASS), check-b327-j C. Not checked on
+  a phone speaker; no recordings this round.
