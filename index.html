@@ -3187,7 +3187,8 @@
     box-shadow:inset 0 0 0 1.5px rgba(8,10,14,.55);
     opacity:0; transition:opacity .22s cubic-bezier(.2,.8,.2,1); will-change:opacity;
   }
-  .avatarchar-option.selected:not(.locked)::after{ opacity:1; }
+  /* build 327 round 11: "the character you have selected being circled is not the move, just the checkmark is okay" */
+  .avatarchar-option.selected:not(.locked)::after{ opacity:0; }
   .avatarchar-option.selected{ transform:scale(1.04) translateZ(0); }
   .avatarchar-check{
     /* centred on the ring's line, 45 degrees below the right-hand side:
@@ -4618,7 +4619,8 @@
   .picks .pick-version{
     grid-column:1 / -1; grid-row:2; align-self:end; justify-self:start; max-width:100%;
     padding:.16rem .5rem; border-radius:.5rem; font-size:.68rem; font-weight:700; line-height:1.25; letter-spacing:.02em;
-    color:#9ED3FF; background:rgba(111,194,255,.1); border:1px solid rgba(111,194,255,.26);
+    /* build 327 round 11: "make that a white box" */
+    color:#10131A; background:rgba(255,255,255,.92); border:1px solid rgba(255,255,255,.92);
     /* Its words start on the title's left edge, not the box's (build
        270: "it needs to be offset so it's inline with the title"), so
        the box itself sits out by exactly its own padding and border. */
@@ -19858,25 +19860,18 @@
   /* PLUM (build 327 round 10): picked from three side by side on the pause
      screen - "The purple save and exit button is nice. We can keep that."
      The same flat fill and lips as Quit, only the colour. */
-  [data-layout="modern"] .pausepanel .next.ghost#pause-save{
-    color:#fff; border:none;
-    background-color:#4E3160; background-image:none;
-    box-shadow:0 1px 1px rgba(230,200,245,.36) inset, 0 -2px 2px rgba(0,0,0,.34) inset,
-      0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 22px -6px rgba(0,0,0,.55);
-    -webkit-backdrop-filter:none; backdrop-filter:none;
-  }
-  [data-layout="modern"] .pausepanel .next.ghost#pause-save:active{ background-color:#3E264D; opacity:1; }
-  /* QUIT, VISIBLE (build 327 round 11): "The quit test button is not even
-     there?" - near-black on the near-black page it had no edge at all. It is
-     the tab bar's glass now, with its rim drawn as an inset ring (a border
-     would make it two pixels taller than Save and exit). One white button,
-     one plum, one glass: three buttons, three materials, no fight over hue. */
-  html[data-theme="dark"][data-layout="modern"] .pausepanel .actions #pause-quit{
-    color:#fff; border:none;
+  /* ONE PRIMARY, TWO SECONDARIES (build 327 round 11): "what is happening to
+     the pause buttons, why is one purple and one see through ... there's gotta
+     be a better way to display three options". Resume is the one white
+     button; Save and exit and Quit test are the same glass as each other, so
+     the screen has two materials, not three colours. */
+  html[data-theme="dark"][data-layout="modern"] .pausepanel .actions :is(#pause-save, #pause-quit){
+    color:#fff; border:none; background-image:none;
     background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74);
     box-shadow:0 0 0 1px rgba(255,255,255,.16) inset, 0 1px 1px rgba(255,255,255,.14) inset, 0 4px 14px rgba(0,0,0,.4);
     backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
   }
+  html[data-theme="dark"][data-layout="modern"] .pausepanel .actions :is(#pause-save, #pause-quit):active{ background:rgba(12,13,19,.9); opacity:1; }
   /* Back links were plain text with no button treatment at all \u2014 the
      same black-glass pill as the ghost button, just smaller, so it
      reads as a real tappable control instead of a caption. */
@@ -21595,7 +21590,8 @@
      untouched; the whole card is still the tap target. */
   [data-layout="modern"] .picks > label.pick{
     grid-template-columns:minmax(0,1fr) auto;
-    grid-template-rows:auto auto auto minmax(0,1fr) auto 1.05rem;
+    grid-template-rows:auto auto auto minmax(0,1fr) auto auto;
+    min-height:9.6rem;
     grid-template-areas:"box badge" "name name" "next next" "ver ver" "count count" "bar bar";
     align-items:start; gap:0; padding:.8rem .85rem .75rem .9rem; border-radius:18px;
   }
@@ -21603,14 +21599,14 @@
   .picks > label.pick > .box{ grid-area:box; align-self:center; width:24px; height:24px; font-size:.8rem; }
   .picks > label.pick > .pname{
     grid-area:name; margin:.6rem 0 0; font-size:.88rem; font-weight:700; line-height:1.22; letter-spacing:.005em;
-    min-height:calc(3 * 1.22em); color:var(--ink);
+    min-height:calc(2 * 1.22em); color:var(--ink);
   }
   /* the version line has a row of its own under the name, and that row
      takes the card's slack - so on a 375px phone, where it wraps to three
      lines, it can never sit on top of the name (it did, sharing the name's
      cell, on the first pass). A card that carries it holds no lines for its
      name: "Penal Code" plus the line is about the height of three lines. */
-  .picks > label.pick > .pick-version{ grid-area:ver; align-self:start; margin-top:.45rem; }
+  .picks > label.pick > .pick-version{ grid-area:ver; align-self:start; margin-top:.55rem; margin-bottom:.2rem; }
   .picks > label.pick:has(> .pick-version) > .pname{ min-height:0; }
   .picks > label.pick > .pcount{
     grid-area:count; margin:.55rem 0 0;
