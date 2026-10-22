@@ -75,6 +75,8 @@ TALK = r"""async (o) => {
           lost: par ? par.querySelectorAll('.nt-crewman.is-lost').length : 0,
           crewFound: prop.querySelectorAll('.nt-crew .nt-crewman:not(.is-lost)').length,
           crewLost: prop.querySelectorAll('.nt-crew .nt-crewman.is-lost').length,
+          fdGroups: prop.querySelectorAll('.nt-fd-group').length, fdBadges: prop.querySelectorAll('.nt-fd-badge').length,
+          fdFlares: prop.querySelectorAll('.nt-fd-flare').length, fdCrew: prop.querySelectorAll('.nt-fd-crew').length,
           vis, text: (prop.innerText || '').replace(/\s+/g, ' ').slice(0, 300) };
       }
     }
@@ -156,8 +158,13 @@ def story_checks(dev, r, truth, existing):
     # character is very badly shown and confusing" - rebuilt as the WAYS a
     # crewman comes home; the starters are not a way of finding anyone
     want = {k: v for k, v in truth["kinds"].items() if k not in ("kept", "starter")}
-    check("%s %s: a box on how characters are found - ranks, challenges, secrets, ultimate - each 'have of total' from the table, all on screen" % (dev, who),
-          kp is not None and got == want and kp.get("vis"), {"got": got, "want": want, "vis": (kp or {}).get("vis")})
+    # MOVED IN 327 (round 9): "How my crew comes home ... remove that slide ...
+    # just add another text box after the first one on the character slide" -
+    # no box of kinds any more, and the sentence about them is the next line.
+    ls = r.get("lines") or []
+    ci = next((i for i, l in enumerate(ls) if re.search(r"escape pods", l)), -1)
+    check("%s %s: no 'how my crew comes home' box; its sentence is the text box right after the characters one" % (dev, who),
+          kp is None and ci >= 0 and ci + 1 < len(ls) and re.search(r"comes home a different way", ls[ci + 1]), {"kinds": kp is not None, "ci": ci})
     # 6. no Skip, and Escape does not skip either
     check("%s %s: no Skip on the introduction, and Escape does not skip it" % (dev, who),
           r.get("open") and not r.get("skipSeen") and r.get("escMoved") is False, {k: r.get(k) for k in ("open", "skipSeen", "escMoved")})
@@ -183,11 +190,16 @@ def check_story(br):
         r = pg.evaluate(TALK, {"id": "nova-intro"})
         story_checks(dev, r, truth, True)
         lines = r.get("lines") or []
-        p1 = (r.get("props") or {}).get("1") or (r.get("props") or {}).get(1) or {}
-        check("%s existing: a signal comes in before he says a word; he has not met them; and line two shows only characters they have found" % dev,
-              r.get("signalBeforeFirst") and re.search(r"met", lines[0] if lines else "") and re.search(r"already found", lines[1] if len(lines) > 1 else "")
-              and p1.get("crewFound", 0) > 0 and p1.get("crewLost") == 0,
-              {"signal": r.get("signalBeforeFirst"), "l0": lines[:2], "p1": {k: p1.get(k) for k in ("crewFound", "crewLost", "cap")}})
+        p1 = (r.get("props") or {}).get("2") or (r.get("props") or {}).get(2) or {}
+        # MOVED IN 327 (round 9): "add another slide before it ... why we
+        # haven't seen Mr nova" (line two) and "found by you so far doesn't show
+        # badges or flares or anything just characters" - line three shows
+        # every group they have found, and only what they have found.
+        check("%s existing: a signal comes in before he says a word; he has not met them; line two says where he has been; line three shows what they have found - badges, flares and characters" % dev,
+              r.get("signalBeforeFirst") and re.search(r"met", lines[0] if lines else "") and re.search(r"lost in the dark", lines[1] if len(lines) > 1 else "")
+              and re.search(r"already found", lines[2] if len(lines) > 2 else "")
+              and p1.get("fdGroups", 0) >= 2 and p1.get("fdBadges", 0) > 0 and p1.get("fdFlares", 0) > 0 and p1.get("fdCrew", 0) > 0,
+              {"signal": r.get("signalBeforeFirst"), "l": lines[:3], "p2": {k: p1.get(k) for k in ("fdGroups", "fdBadges", "fdFlares", "fdCrew", "cap")}})
         ctx.close()
     # Reduce motion: no signal, the first line is there at once
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
@@ -264,10 +276,10 @@ def check_whatsnew(br):
     # row is Exam again.
     # MOVED IN 327 (b327k): "The name 'exam' is not it. I prefer quiz" - the
     # row is Quiz.
-    adds = [n for n, rx in (("Quiz", r"\bQuiz\b"), ("message him", r"Message Nova|message"),
+    adds = [n for n, rx in (("Mock Test", r"\bMock Test\b"), ("message him", r"Message Nova|message"),
                             ("challenge him", r"Challenge Nova|Sheriff"), ("study hours", r"study time|study hours"))
             if re.search(rx, " ".join(r["rows"]), re.I)]
-    check("Version 9's real additions are in it: Quiz as a real test, messaging and challenging Nova, study hours",
+    check("Version 9's real additions are in it: Mock Test as a real test, messaging and challenging Nova, study hours",
           len(adds) == 4, adds)
     ctx.close()
 
@@ -422,7 +434,7 @@ def check_qualifier(br):
       const out = { n: paths.length, seal: paths.some(d => (d.match(/Q/g) || []).length >= 10),
         solid: s.querySelectorAll('.modeiconsolid').length, check: !!s.querySelector('.modeiconcheck'),
         shield: paths.some(d => /^M12 2\\.2l8\\.1 3/.test(d)), fill: getComputedStyle(s.querySelector('.modeiconsolid') || s).fill };
-      const rn = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /^Quiz/.test(i.title));
+      const rn = RELEASE_NOTES[0].groups.flatMap(g => g.items).find(i => /^Mock Test/.test(i.title));
       out.pencil = !!s.querySelector('g[transform^="rotate(45"]');
       /* MOVED IN 327 (b327k): a quiz card - a rounded card, a question
          mark in it with its solid dot, and an answer blank under it. No
@@ -437,9 +449,12 @@ def check_qualifier(br):
     # MOVED IN 327 (b327k): "I prefer quiz and make the icon look better" -
     # the mark is a quiz card (a ? over an answer blank); not 327h's
     # target and arrow, the pencil, the shield or the seal.
-    check("modeIcon('exam'): a quiz card, a ? with its dot over an answer blank; not the arrow, the pencil, the shield or the seal; the Version 9 note uses it",
-          not r.get("seal") and not r.get("arrow") and r.get("card") and r.get("question") and r.get("dot")
-          and r.get("blank") and not r.get("pencil") and not r.get("shield") and r.get("notes"), r)
+    # MOVED IN 327 (round 9): "The logo for quiz is not my favorite ... something
+    # better and simple and unique" - a graded sheet: the card, an A and a plus,
+    # no question mark, no blank, no dot.
+    check("modeIcon('exam'): a graded sheet - the card with an A and a plus; not the ?, the arrow, the pencil, the shield or the seal; the Version 9 note uses it",
+          not r.get("seal") and not r.get("arrow") and r.get("card") and not r.get("question") and not r.get("dot")
+          and not r.get("blank") and not r.get("pencil") and not r.get("shield") and r.get("n") == 3 and r.get("notes"), r)
     ctx.close()
 
 

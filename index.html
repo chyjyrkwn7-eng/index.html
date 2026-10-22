@@ -1843,6 +1843,19 @@
     background:linear-gradient(90deg, #FFD37A, #F5804D 55%, #C23B7A); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .nt-cap{ margin:0; font-size:.74rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:rgba(243,245,247,.62); }
   .nt-row{ display:flex; flex-wrap:wrap; justify-content:center; gap:.55rem; max-width:24rem; }
+  /* build 327 round 9: the recap of what you have found, group by group */
+  .nt-found{ display:flex; flex-direction:column; align-items:center; gap:.6rem; }
+  .nt-fd-group{ display:flex; flex-direction:column; align-items:center; gap:.3rem; }
+  .nt-fd-label{ margin:0; font-size:.66rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(236,239,245,.6);
+    animation:nt-popin .5s cubic-bezier(.25,1.5,.4,1) both; animation-delay:calc(var(--i, 0) * 70ms); }
+  .nt-fd-label b{ color:#FFD37A; font-size:.8rem; margin-right:.1rem; }
+  .nt-fd-row{ gap:.4rem; }
+  .nt-fd-row .nt-fd-badge{ width:2.5rem; height:2.5rem; }
+  .nt-fd-row .nt-fd-flare{ width:2.3rem; height:2.3rem; }
+  .nt-fd-row .nt-fd-crew{ width:2.7rem !important; height:2.7rem !important; }
+  .nt-fd-sf{ display:block; width:1.1rem; height:1.1rem; border-radius:50%; margin:.6rem .25rem;
+    background:radial-gradient(circle at 35% 30%, #fff 0 12%, var(--fc,#fff) 40%, rgba(0,0,0,.35) 100%);
+    box-shadow:0 0 12px 2px var(--fc,#fff); }
   .nt-row > *{ animation:nt-popin .5s cubic-bezier(.25,1.5,.4,1) both; animation-delay:calc(var(--i, 0) * 70ms); }
   @keyframes nt-popin{ from{ opacity:0; transform:scale(.4); } to{ opacity:1; transform:none; } }
   .nt-slot{ width:3.1rem; height:3.1rem; display:block; }
@@ -29382,9 +29395,16 @@
   .rs-mode-review{ --mode-c:#4ADE80; }   /* build 327: Review's green again */
   .rs-mode{
     background:color-mix(in srgb, var(--mode-c) 22%, rgba(20,24,30,.6));
-    border-color:color-mix(in srgb, var(--mode-c) 55%, transparent);
+    /* build 327 round 9: "the border is kinda hard ... remember how we said
+       the result screen boxes borders could be fixed" - the results boxes'
+       soft edge, at a chip's size: the border at .46, a faint hairline
+       inside it, a soft glow out and a soft glow in, never a flat line. */
+    border-color:color-mix(in srgb, var(--mode-c) 46%, transparent);
     color:color-mix(in srgb, var(--mode-c) 70%, #fff);
-    box-shadow:0 0 14px -4px color-mix(in srgb, var(--mode-c) 60%, transparent);
+    background-repeat:no-repeat; background-origin:border-box;
+    box-shadow:0 0 16px -6px color-mix(in srgb, var(--mode-c) 42%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--mode-c) 18%, transparent),
+      inset 0 0 12px color-mix(in srgb, var(--mode-c) 26%, transparent);
   }
   .rs-mode .modeiconpath{ stroke:currentColor; }
   .rs-mode .modeiconsolid{ fill:currentColor; }
@@ -32003,7 +32023,7 @@
 
     var messagePool = [
       "> booting core runtime...",
-      "> loading Drill & Quiz modes...",
+      "> loading Drill & Mock Test modes...",
       "> syncing unit progress...",
       "> initializing badge case...",
       "> calibrating XP curve...",
@@ -54359,7 +54379,7 @@ const ACTIVITY_MIN_GAP_MS = 8000;
 const ACTIVITY_TEXT = {
   menu:    ["Main menu",      "On the main menu"],
   drill:   ["In a Drill",     "In a Drill"],
-  exam:    ["In a Quiz",  "Taking a Quiz"],   /* build 327: Quiz (Qualifier 324-327, Exam for one build: "The name 'exam' is not it") */
+  exam:    ["In a Mock Test",  "Taking a Mock Test"],   /* build 327: Quiz (Qualifier 324-327, Exam for one build: "The name 'exam' is not it") */
   game:    ["In Game mode",   "Playing Game mode"],
   review:  ["In Review",      "Going over questions"],   /* build 326: the mode is Review again (324-325 called it the Briefing) */
   daily:   ["Daily question", "On the daily question"],
@@ -57877,7 +57897,7 @@ function applySaved(){
    actually." Back to the name 305 settled on; the value was always
    "review", so nothing stored moves. Its violet and its cards stay. */
 function modeTitleOf(mode){
-  const NAMES = { drill: "Drill", exam: "Quiz", review: "Review", vroom: "Virtual Room", game: "Game" };
+  const NAMES = { drill: "Drill", exam: "Mock Test", review: "Review", vroom: "Virtual Room", game: "Game" };
   if(NAMES[mode]) return NAMES[mode];
   return String(mode || "").charAt(0).toUpperCase() + String(mode || "").slice(1);
 }
@@ -70351,17 +70371,16 @@ function modeIcon(kind){
        multiple-choice list - reads as a list; a "?" tile - reads as help;
        the card with a solid answer bar or with A B C dots - crowded at card
        size). Plain paths, no group transform (check_b323u's ink). */
+    /* THE GRADED SHEET (build 327, round 9): "The logo for quiz is not my
+       favorite ... I want something better and simple and unique. You see it
+       and it makes sense." A test paper with its grade on it: an A and a plus
+       on one rounded sheet. It is the thing this mode ends on - nothing is
+       marked until the grade - and nothing in it needs explaining. No ?
+       (Review's old mark and the chat button both read as help). Plain
+       paths, no group transform (check_b323u's ink). */
     svg.appendChild(mk("M6.6 2.6h10.8a3 3 0 013 3v12.8a3 3 0 01-3 3H6.6a3 3 0 01-3-3V5.6a3 3 0 013-3z"));
-    const q = mk("M9.7 7.4a2.3 2.3 0 114.4.9c-.5 1-2.1 1.3-2.1 2.7");
-    q.setAttribute("class", "modeiconpath modeiconquestion");
-    svg.appendChild(q);
-    const dot = document.createElementNS(svgNS2, "circle");
-    dot.setAttribute("cx", "12"); dot.setAttribute("cy", "13.6"); dot.setAttribute("r", ".5");
-    dot.setAttribute("class", "modeiconpath modeiconsolid");
-    svg.appendChild(dot);
-    const blank = mk("M7.8 17.6h8.4");
-    blank.setAttribute("class", "modeiconpath modeiconblank");
-    svg.appendChild(blank);
+    svg.appendChild(mk("M7.2 16.4l2.9-8.6 2.9 8.6M8.2 13.6h3.8"));
+    svg.appendChild(mk("M16.3 9.4v4.6M14 11.7h4.6"));
   } else if(kind === "vroom"){
     const p1 = document.createElementNS(svgNS2, "circle");
     p1.setAttribute("cx", "8.5"); p1.setAttribute("cy", "8"); p1.setAttribute("r", "3");
@@ -70392,12 +70411,16 @@ function modeIcon(kind){
        flashcards' own colour: "I like how the flashcard section has the
        purple progress bar stuff. Could we somehow make it where the
        review section is now a purple colored icon as well?" */
-    svg.appendChild(mk("M8 6.4V4.6A1.6 1.6 0 019.6 3h9.2a1.6 1.6 0 011.6 1.6v9.6a1.6 1.6 0 01-1.6 1.6h-1.4"));
-    svg.appendChild(mk("M5.2 7.4h10.6a1.6 1.6 0 011.6 1.6v10.4a1.6 1.6 0 01-1.6 1.6H5.2a1.6 1.6 0 01-1.6-1.6V9a1.6 1.6 0 011.6-1.6z"));
-    const mark = mk("M7.7 10.8h5.6a.8.8 0 010 1.6H7.7a.8.8 0 010-1.6z");
-    mark.setAttribute("class", "modeiconpath modeiconsolid");
-    svg.appendChild(mark);
-    svg.appendChild(mk("M6.9 16.4h5.4"));
+    /* REVIEW'S BOOK (build 327, round 9): "I think review is also kinda
+       lacking that" - the two cards with a bar read as a list of anything.
+       Going over the material is reading it: an open book, two pages and a
+       spine, with a solid ribbon, at the target's weight. */
+    svg.appendChild(mk("M12 6.4C10.3 4.9 7.6 4.3 3.6 4.5v13.6c4-.2 6.7.4 8.4 1.9"));
+    svg.appendChild(mk("M12 6.4c1.7-1.5 4.4-2.1 8.4-1.9v13.6c-4-.2-6.7.4-8.4 1.9"));
+    svg.appendChild(mk("M12 6.4V20"));
+    const rib = mk("M15.2 4.4h2.2v5.2l-1.1-.9-1.1.9z");
+    rib.setAttribute("class", "modeiconpath modeiconsolid");
+    svg.appendChild(rib);
   } else {
     svg.appendChild(mk("M12 20s-7-4.5-9.5-9C.8 7.5 3 4 6.5 4c2 0 3.5 1.3 5.5 3.5C14 5.3 15.5 4 17.5 4 21 4 23.2 7.5 21.5 11c-2.5 4.5-9.5 9-9.5 9z"));
   }
@@ -74463,15 +74486,16 @@ const RELEASE_NOTES = [
         { icon: buildDevicesIcon, color: "#4ADE80", title: "Vibration On Android", body: "Android phones can buzz on answers and moments that matter. Also a setting, also off until you turn it on." },
         { icon: buildPersonIcon, color: "#5CA8FF", title: "Sign In First", body: "Welcome leads with Sign in. Signing up asks whether you have used Nova before, and warns you if the name you chose already belongs to an account." },
         { icon: buildDualBoardIcon, color: "#F5C518", title: "Rankings That Match Profile", body: "Your rank, level and badges on the Leaderboard always match what your own Profile says." },
-        { icon: buildPillTabBarIcon, color: "#FFFFFF", title: "A Liquid Glass Tab Bar", body: "The tab bar is clear glass with white icons and labels. A glass lens lifts out and follows your finger when you tap or slide between tabs." },
+        { icon: buildPillTabBarIcon, color: "#FFFFFF", title: "A Liquid Glass Tab Bar", body: "The tab bar is clear glass with white icons and labels. A glass lens lifts out and follows your finger when you tap or slide between tabs. The chat button, Pause, the daily question button, the top tabs, the search bars and Find me all wear the same glass." },
+        { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "The Daily Question Card", body: "The daily question is named in its pinned header, like a test, and its result is one card: your verdict, then the XP you earned, in the same soft-edged style as the results screen." },
         { icon: buildCalendarGridIcon, color: "#FFD27A", title: "Calendar On The Tab Bar", body: "The class calendar has its own tab at the bottom: today, this week and the next test at a glance, the days left in the course, and what is on the next test once it is posted. Settings moved into Profile, so Profile's tabs are Profile, Stats and Settings." },
         { icon: buildPersonIcon, color: "#4ADE80", title: "Friends On Your Profile", body: "Your Profile card shows your friends and what each one is doing, or that they are offline. Manage friends works as before." },
-        { icon: () => modeIcon("exam"), color: "#FF9A3C", title: "Quiz, A Real Test", body: "Quiz is now a real test: no feedback on any question until your grade. Review is every question with its answer, as a list or flashcards. Each mode has its own look, and every start button says what you are beginning." },
+        { icon: () => modeIcon("exam"), color: "#FF9A3C", title: "Mock Test, A Real Test", body: "Mock Test is a real test: no feedback on any question until your grade, and its icon is a graded sheet, an A+. Review is every question with its answer, as a list or flashcards, and its icon is an open book. The mode at the top of every unit screen has a soft edge like the results boxes. Each mode has its own look, and every start button says what you are beginning." },
         { icon: buildBarStatsIcon, color: "#A694FF", title: "Your Study Hours", body: "Stats has a new chart of your study time this week, in dots. Tap a day for its exact time, or look back at last week." }
       ]},
       { label: "Meet Nova", items: [
-        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. The planet his ship was studying took in more light than it could hold, cracked and exploded, and the blast scattered everything aboard: his flares came to rest, dark, around the planet on your Home screen, his badges landed one in every unit, and his crew are the characters. Every rank you reach relights a flare and he thanks you with its rewards. From Gold up each rank also cracks your planet a little more, and badges are what hold it together: a badge is a unit you have mastered, and every rank asks for them. Every character you find joins you. His scanners keep finding more of his ship, so there is always more to bring home." },
-        { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "He Meets Everyone", body: "Everybody meets him once: he tells the story, goes over what you have found, narrates What's New and shows you what has changed. He narrates every tip in the app." },
+        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. His ship was lost in the dark after a planet it was studying took in more light than it could hold, cracked and exploded, and his signal has only just reached this system. The blast scattered everything aboard: his flares came to rest, dark, around the planet on your Home screen, his badges landed one in every unit, and his crew are the characters. His ship can only fly when its flares are lit and its badges hold it together, so every rank you reach relights a flare (he thanks you with its rewards) and every unit you master gives back something he knew. A rank asks for badges as well as a level for the same reason: your level waits at your next rank until you have the units that hold it together. Find them all and he can rebuild his ship and fly home, and you will know every unit for the real exam. Every character you find joins you, and his scanners keep finding more of his ship." },
+        { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "He Meets Everyone", body: "Everybody meets him once: he tells the story, and for an account that was here before him, why you have not seen him until now. He goes over what you have found, with your badges, flares and characters landing one group at a time, explains the new level rule on your own numbers, narrates What's New and shows you what has changed. He narrates every tip in the app." },
         { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova is your friend now. Back on Home after a rank-up he tells you what your new flare did, he notices when you find a badge or one of his crew, he invites you to a match once a week, and he passes on news and the odd tip. Never more than one message a day, and he answers questions when he is in range." },
         { icon: buildTrophyIcon, color: "#F5C518", title: "The Weekly Recap", body: "Every Tuesday on Home, Nova presents last week's top three, with comebacks and photo finishes, and hands out honorable mentions." },
         { icon: buildDevicesIcon, color: "#E23B3B", title: "Challenge Nova", body: "Invite Nova to a Virtual Room, or accept his weekly challenge in your chats. He answers in two to four seconds and almost never misses. Beat him in any game and the Sheriff is yours." }
@@ -74529,7 +74553,7 @@ const RELEASE_NOTES = [
         { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Profile, Calendar And Stats", body: "Profile is three tabs: Profile, Calendar and Stats. Your badge count sits beside your level, the badge case opens from the card, and Friends is back under it." }
       ]},
       { label: "Studying", items: [
-        { icon: buildPauseIcon, color: "#4ADE80", title: "Save A Test For Later", body: "Pause a Drill or Quiz and tap Save and exit. The next time you tap Start Studying, you can resume it exactly where you left off or start a new test. Resume loads it like a new test, then picks up where you were. One test can be saved at a time. Not available in Review, flashcards, the daily question or a Virtual Room." },
+        { icon: buildPauseIcon, color: "#4ADE80", title: "Save A Test For Later", body: "Pause a Drill or Mock Test and tap Save and exit. The next time you tap Start Studying, you can resume it exactly where you left off or start a new test. Resume loads it like a new test, then picks up where you were. One test can be saved at a time. Not available in Review, flashcards, the daily question or a Virtual Room." },
         { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "The Daily Question Ring", body: "After you answer, a ring around the daily question button fills until the next question at 5pm, and fills the rest of the way when it arrives." }
       ]}
     ]
@@ -74793,6 +74817,9 @@ function showReleaseHistory(){
      can already leave does not get its own exit. Release History is
      reached from Home's version label and every tab is one tap away
      from here. */
+  /* build 327 round 9: "Ensure there is a back button in the version stuff" -
+     the history is long, so the way out is at the top as well as the foot */
+  panel.appendChild(buildBackLink("Home", showHome));
   const head = document.createElement("p");
   head.className = "slab section-divider";
   head.textContent = "Release History";
@@ -79082,7 +79109,7 @@ function showWelcomeIntro(){
      itself an earlier explicit fix for text that read as too small. */
   const items = [
     { head: "Built for one thing", body: "Every question is written to match what you'll actually see on test day \u2014 by classmates studying the exact same material." },
-    { head: "Four ways to study", body: "Drill gives instant feedback, Quiz is test day with your grade at the end, Review goes over the material, and Virtual Room takes it live against classmates." },
+    { head: "Four ways to study", body: "Drill gives instant feedback, Mock Test is test day with your grade at the end, Review goes over the material, and Virtual Room takes it live against classmates." },
     { head: "Progress that means something", body: "Right answers level you up, a perfect unit earns its badge, and levels and badges together climb the ranks." },
     { head: "Everything saves itself", body: "No save button \u2014 your progress is already here next time, on any device." },
   ];
@@ -81030,12 +81057,51 @@ function novaFlairProp(){
 /* An existing account's characters, the ones it has found (build 325):
    "you've already found some of these". Your own first. */
 function novaFoundRow(){
+  /* build 327 round 9: "doesn't show badges there or flares or anything
+     just characters. Have them appear or something in a cool way". Every
+     group this account has found - badges, the rank flares it has lit, the
+     secret flares, the crew - lands in turn, each piece popping in after
+     the one before it. A group with nothing in it is left out. */
+  const col = document.createElement("div"); col.className = "nt-found";
+  let st = null; try{ st = novaRecapState(); }catch(e){}
+  let n = 0;
+  const group = (label, count, pieces) => {
+    if(!pieces.length) return;
+    const g = document.createElement("div"); g.className = "nt-fd-group";
+    const l = document.createElement("p"); l.className = "nt-fd-label"; l.style.setProperty("--i", n);
+    const b = document.createElement("b"); b.textContent = count;
+    l.append(b, document.createTextNode(" " + label));
+    const r = document.createElement("div"); r.className = "nt-row nt-fd-row";
+    pieces.forEach(el => { n++; el.style.setProperty("--i", n); r.appendChild(el); });
+    g.append(l, r); col.appendChild(g);
+  };
+  /* badges */
+  let have = []; try{ have = badgesEarnedList(); }catch(e){}
+  group(have.length === 1 ? "badge" : "badges", have.length, have.slice(0, 8).map(u => {
+    const s = document.createElement("span"); s.className = "nt-slot nt-fd-badge";
+    try{ s.appendChild(buildUnitBadgeSVG(u, true, { px: 40 })); }catch(e){}
+    return s; }));
+  /* the rank flares lit */
+  const lit = st ? st.rankIdx + 1 : 0;
+  group(lit === 1 ? "flare lit" : "flares lit", lit, TIER_ORDER_FULL.slice(0, lit).map(k => {
+    const s = document.createElement("span"); s.className = "nt-flare is-lit nt-fd-flare";
+    try{ s.appendChild(buildFlareBubble(k, { lit: true })); }catch(e){}
+    return s; }));
+  /* the secret flares found */
+  const sec = st ? st.secrets.filter(x => x.found) : [];
+  group(sec.length === 1 ? "secret flare" : "secret flares", sec.length, sec.map(x => {
+    const s = document.createElement("span"); s.className = "nt-fd-sf"; s.style.setProperty("--fc", MYSTERY_COLOR[x.k]);
+    return s; }));
+  /* the crew */
   const mine = novaCrewShown().filter(c => !isLockedCharacter(c.id));
   const own = mine.find(c => c.id === store.avatarChar);
   const pick = (own ? [own] : []).concat(mine.filter(c => c !== own)).slice(0, 6);
-  const row = document.createElement("div"); row.className = "nt-row nt-crew";
-  pick.forEach((c, i) => { const s = novaCrewArt(c.id); s.style.setProperty("--i", i); row.appendChild(s); });
-  return row;
+  group(mine.length === 1 ? "character" : "characters", mine.length, pick.map(c => {
+    const s = novaCrewArt(c.id); s.classList.add("nt-fd-crew"); return s; }));
+  if(!col.children.length){
+    const e = document.createElement("p"); e.className = "nt-fd-label"; e.textContent = "Nothing yet - the first is waiting"; col.appendChild(e);
+  }
+  return col;
 }
 /* The Virtual Room, and him in it. */
 function novaVroomProp(){
@@ -81259,7 +81325,7 @@ function novaRecapLines(st, name){
     /* build 327 round 9: the level rule is always said here, on the card of
        what you have, now that its own slide is gone */
     lines.push({ gesture: "raise",
-      text: "One thing has changed: levels now go up one rank at a time. Your level climbs to your next rank’s level, then waits there until you’ve found that rank’s badges. You never lose XP while it waits.",
+      text: "One thing has changed: a rank asks for badges as well as a level, because a flare can’t relight until you’ve mastered the units that hold it. Your level climbs to your next rank’s level, then waits there until you’ve found that rank’s badges. You never lose XP while it waits.",
       enter: ctx => hi(ctx, ".nt-rc-xp") });
   }
   const b = st.badges, f = st.flares;
@@ -81348,8 +81414,12 @@ function novaIntroLines(o){
     novaProp(ctx, novaStack(t, novaCap("Explorer · Instructor"))); };
   if(existing){
     lines.push({ gesture: "wave", text: "There you are, " + name + ". I’m Nova, an explorer and an instructor. I don’t think we’ve met.", enter: hello });
+    /* build 327 round 9: "add another slide before it ... talking about why
+       we haven't seen Mr nova or where he's been" */
     lines.push({ gesture: "raise",
-      text: "I’ve been following your progress, and you’ve already found some of what I lost. Let me tell you how I lost it.",
+      text: "You haven’t seen me because I’ve been lost in the dark since the blast. My signal has only just reached this system, and your Home screen is the first place my scanners found." });
+    lines.push({ gesture: "raise",
+      text: "Since then I’ve been watching your progress, and you’ve already found some of what I lost. Here it is. Let me tell you how I lost the rest.",
       enter: ctx => novaProp(ctx, novaStack(novaFoundRow(), novaCap("Found by you so far"))) });
   } else {
     lines.push({ gesture: "wave", text: "Hello, " + name + "! I’m Nova, an explorer and an instructor. I’ll be your guide here, and I need your help.", enter: hello });
@@ -81389,8 +81459,13 @@ function novaIntroLines(o){
      make sense ... Remove that one"). The level rule is said once instead:
      to an existing account on its recap ("let's see how you're doing"),
      and to a new one here, on the badges slide, since they have no recap. */
+  /* build 327 round 9: "the objective of why we need to find the badges
+     and master the rank ... the purpose of them all". Everything he asks for
+     is a part of getting home, and the app's own rules are the story. */
+  lines.push({ gesture: "raise",
+    text: "Here’s why it matters. My ship can only fly when its flares are lit and its badges hold it together. Every unit you master gives back something I knew, and every rank you reach relights a flare. Find them all and I can rebuild my ship, fly home, and you’ll know every unit on the real exam." });
   if(!existing) lines.push({ gesture: "raise",
-    text: "A rank asks for badges as well as a level. Your level climbs to your next rank’s level, then waits there until you’ve found that rank’s badges." });
+    text: "That’s also why a rank asks for badges as well as a level. Your level climbs to your next rank’s level, then waits there until you’ve mastered the units that hold that rank together." });
   lines.push({ gesture: "raise", text: "My crew got away in escape pods and landed all over this system. They’re the characters in this app, and every one you find joins you.",
     ...novaSlide("crew", () => novaStack(novaCrewParade(), novaCap(crew.have + " of " + crew.total + " characters found"))) });
   /* build 327 round 9: said on the crew slide, its own picture gone ("How
@@ -81402,7 +81477,7 @@ function novaIntroLines(o){
     ...novaSlide("flair", () => novaStack(novaWarmTake("flair") || novaFlairProp(), novaCap("Yours to wear · Customize"))) });
   /* build 327 (b327m): the Virtual Room is said here, on the modes slide
      (which already shows it), not on a line and a picture of its own */
-  lines.push({ text: "Drill to learn a unit, a Quiz to prove you’re ready, and Review to go over the material first. And in a Virtual Room you can race your classmates, or challenge me.",
+  lines.push({ text: "Drill to learn a unit, a Mock Test to prove you’re ready, and Review to go over the material first. And in a Virtual Room you can race your classmates, or challenge me.",
     ...novaSlide("modes", () => novaModeRow()) });
   /* ---- AND HE BECOMES YOUR FRIEND, PARTWAY THROUGH (build 324) ----
      "When Mr nova introduces himself, throughout that cutscene you will get
@@ -86058,7 +86133,7 @@ function novaReplyFor(raw){
   const rankNow = rk ? "You’re " + RANK_DISPLAY_NAME[rk] + " now" : "You haven’t reached Bronze yet";
   const nextIdx = rk ? TIER_ORDER_FULL.indexOf(rk) + 1 : 0;
   const next = TIER_ORDER_FULL[nextIdx] ? RANK_DISPLAY_NAME[TIER_ORDER_FULL[nextIdx]] : null;
-  if(has(/ (next test|the test|test (on|is|day|date|topics?)|what's on|whats on|on the test|calendar|sunday|topics?|quiz) /))
+  if(has(/ (next test|the test|test (on|is|day|date|topics?)|what's on|whats on|on the test|calendar|sunday|topics?|quiz|mock) /))
     return "The Calendar tab has the next test date and every class day. When your instructor gives out what’s on it, I’ll pass the topics on here, usually on a Sunday.";
   if(has(/ (virtual room|vr|race|challenge|sheriff|battle|duel|versus|vs|play you|fight) /))
     return NOVA_VR_READY
@@ -86075,8 +86150,8 @@ function novaReplyFor(raw){
     return "There’s a badge for every unit. Score 100% on a whole unit and that’s a hundo; a few hundos in one unit earns its badge: that unit, mastered. Badges are what hold your planet together. You’ve found " + badges + " so far.";
   if(has(/ (xp|levels?|level up) /))
     return "Every right answer earns XP, and XP raises your level. Your level waits at your next rank\u2019s level until you have its badges, so mastering units matters as much as answering a lot.";
-  if(has(/ (drill|exam|quiz|quizzes|review|flashcards?|learn|modes?|study|studying|practice|starred|flag\w*) /))
-    return "Drill to learn a unit, a Quiz to test yourself, and Review to go over the material first. They’re all under Start Studying on Home.";
+  if(has(/ (drill|exam|quiz|quizzes|mock|review|flashcards?|learn|modes?|study|studying|practice|starred|flag\w*) /))
+    return "Drill to learn a unit, a Mock Test to test yourself, and Review to go over the material first. They’re all under Start Studying on Home.";
   /* the story as his introduction tells it (build 326) */
   if(has(/ (planet|crack\w*|becoming a star) /))
     return "The planet I was studying took in more light than it could hold, with nothing holding it together, and it exploded. Yours cracks a little more with every rank from Gold up: the strain of a brighter flare. Badges are what hold it together, which is why every rank asks for them. Keep finding them and it holds, all the way to Supernova, where it becomes a star.";
@@ -89325,9 +89400,9 @@ const WHATS_NEW_320 = [
   /* build 326: Review is Review again ("I kinda prefer briefing to be
      called review actually"), so only the Qualifier is a new name - and
      its mark is modeIcon's own (`icon`), not a copy of it */
-  { key: "modes", color: "#FF9A3C", title: "Quiz, a real test", icon: () => modeIcon("exam"),
-    body: "Quiz is now a real test, with nothing shown until your grade.",
-    say: "Quiz is a real test now: no feedback on any question until you see your grade at the end." },
+  { key: "modes", color: "#FF9A3C", title: "Mock Test, a real test", icon: () => modeIcon("exam"),
+    body: "Mock Test is now a real test, with nothing shown until your grade.",
+    say: "Mock Test is a real test now: no feedback on any question until you see your grade at the end." },
   /* build 323: the calendar to the bar, Settings into Profile */
   { key: "profile", color: "#5CA8FF", title: "Calendar in the tab bar",
     glyph: "M3 4.5h5.2v4.2H3V4.5Zm6.4 0h5.2v4.2H9.4V4.5Zm6.4 0H21v4.2h-5.2V4.5ZM3 10.2h18V20H3v-9.8Z",
@@ -89335,7 +89410,7 @@ const WHATS_NEW_320 = [
     say: "The class calendar has its own tab at the bottom now. Settings moved into Profile, and your Friends box shows who is on." },
   { key: "save", color: "#4ADE80", title: "Save a test for later",
     glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-3.4 6.2h2.3v7.6H8.6V8.2Zm4.5 0h2.3v7.6h-2.3V8.2Z",
-    body: "Pause a Drill or Quiz and tap Save and exit. Start Studying offers it back, and Resume loads it right where you left off.",
+    body: "Pause a Drill or Mock Test and tap Save and exit. Start Studying offers it back, and Resume loads it right where you left off.",
     say: "You can save a test for later. Pause it, tap Save and exit, and Resume picks it up right where you left off." },
   /* BUILD 325: "Results grade first, characters celebrate, the ranking up
      on the road map, a planet that cracks, supernovas mark, the daily
@@ -90615,7 +90690,7 @@ function showModeSelect(){
       { target: '.modecard[data-mode="drill"]', align: "left", vplacement: "below",
         text: "Drill is the classic mode \u2014 instant feedback, and you can retry until you get it right. Best for learning." },
       { target: '.modecard[data-mode="exam"]', align: "left", vplacement: "below",
-        text: "Quiz is a real test: no feedback on any question until you see your grade at the end." },
+        text: "Mock Test is a real test: no feedback on any question until you see your grade at the end." },
       /* Review had no step (build 289: "ensure all the tool tips are
          updated for this new app") - it became a mode of its own in
          build 128 and the tour went straight from Exam to Virtual Room. */
@@ -93789,7 +93864,7 @@ function render(){
 
   drawMeter();
   countEl.textContent = scopeLabel() + " \u2014 " +
-    (runMode === "exam" ? "quiz, " : "") +
+    (runMode === "exam" ? "mock test, " : "") +
     (runLabel ? runLabel + ", " : "") +
     "question " + (pos + 1) + " of " + order.length;
   testScopeLabelEl.textContent = countEl.textContent;
@@ -107929,7 +108004,7 @@ function testHistoryUnitLine(entry){
     : entry && entry.mode === "vroom" ? "Virtual Room" : "Drill";
   /* An older entry's stored label ends in the name it was saved under
      ("All units - Exam"); it reads under today's name (build 324). */
-  if(!units.length) return entry && entry.label ? String(entry.label).replace(/ \u2014 (Exam|Qualifier|Quiz)$/, " \u2014 " + modeTitleOf("exam")) : modeName;
+  if(!units.length) return entry && entry.label ? String(entry.label).replace(/ \u2014 (Exam|Qualifier|Quiz|Mock Test)$/, " \u2014 " + modeTitleOf("exam")) : modeName;
   const all = topicsIn(QUESTIONS);
   let what;
   if(units.length === all.length) what = "All " + units.length + " units";
@@ -108126,7 +108201,7 @@ function buildTestRow(entry, opts){
   body.className = "thx-row-body";
   const name = document.createElement("span");
   name.className = "thx-row-name";
-  name.textContent = testHistoryUnitLine(entry).replace(/ · (Drill|Exam|Qualifier|Quiz|Game|Virtual Room)$/, "");
+  name.textContent = testHistoryUnitLine(entry).replace(/ · (Drill|Exam|Qualifier|Quiz|Mock Test|Game|Virtual Room)$/, "");
   const meta = document.createElement("span");
   meta.className = "thx-row-meta";
   const chip = document.createElement("span");
