@@ -9743,7 +9743,7 @@
      the same 6px from the bar's edge at the top, the bottom and the end:
      concentric with the bar, as iOS draws it. */
   .bottomtabs-slider::before{
-    content:""; position:absolute; inset:5px -4px; border-radius:999px; pointer-events:none;
+    content:""; position:absolute; inset:var(--pill-in-y, 5px) -4px; border-radius:999px; pointer-events:none;
     /* her recording: the bar reads 34 and the platter 59 on a 255 scale, an
        11% white over the bar; flat, with the faintest top light */
     background-color:rgba(255,255,255,.11);
@@ -10255,6 +10255,40 @@
   @media (min-width:40rem){
     .bottomtabs:not(.has-options-tab) .bottomtabs-navrow .bottomtab-icon:not(.bottomtab-icon-avatar):not(.bottomtab-start-icon){ width:2.4rem; height:2.4rem; }
   }
+  /* ---- THE REFERENCE BAR (build 327 round 7) ----
+     "pay attention to the bottom tabs size their and the size of the logos
+     and words (it's perfect) ensure ours is the same perfectness." His
+     screenshot (another app, iPhone 17 Pro Max), measured off the pixels in
+     pt: the bar 62 tall; the platter 4.5 inside it; the glyphs ~23 of ink;
+     the label 11pt semibold, its caps ~6.5 under the glyph; glyph and label
+     centred in the bar. Ours on a phone: a 62px bar (1px edge + 9px + a
+     28px icon box holding 23px of ink + 1px + a 13px label line + 9px +
+     1px), the platter 3.5px inside the tab (4.5 from the bar's outer edge)
+     and the end padding to match, so it stays concentric. From 40rem the
+     same proportions x1.28 (the tablet bar was already that much bigger
+     than the phone's): 79px, a 35.8px icon box, a 14px label. The Start
+     bar (has-start-tab) is untouched. */
+  .bottomtab-icon svg.tab-glyph{ stroke:none; overflow:visible; }
+  .bottomtabs:not(.has-start-tab){ --pill-in-y:3.5px; padding:0 7.5px; }
+  .bottomtabs:not(.has-start-tab) .bottomtabs-navrow{ width:min(calc(23.7rem - 17px), calc(100vw - 1.5rem - 17px)); }
+  .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab{ padding-top:9px; padding-bottom:9px; gap:1px; }
+  .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab-icon:not(.bottomtab-icon-avatar):not(.bottomtab-start-icon){ width:1.75rem; height:1.75rem; margin:0; }
+  .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab-label{ font-size:.6875rem; font-weight:600; line-height:13px; letter-spacing:.005em; }
+  @media (min-width:40rem){
+    .bottomtabs:not(.has-start-tab){ --pill-in-y:4.76px; padding:0 8.76px; }
+    .bottomtabs:not(.has-start-tab) .bottomtabs-navrow{ width:min(calc(30.14rem - 19.5px), calc(100vw - 1.5rem - 19.5px)); }
+    .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab{ padding-top:11.8px; padding-bottom:11.8px; gap:1.3px; }
+    .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab-icon:not(.bottomtab-icon-avatar):not(.bottomtab-start-icon){ width:2.24rem; height:2.24rem; margin:0; }
+    .bottomtabs:not(.has-start-tab):not(.has-options-tab) #bottomtab-profile > .bottomtab-icon-avatar{ width:2.64rem; height:2.64rem; margin:-.3rem 0 -.1rem; }
+    .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab-label{ font-size:.88rem; line-height:16.6px; }
+  }
+  /* The corner pair on a tablet sits on the bar's centre line (build 245):
+     the bar is 79.3px now, not 101, so its centre is .6rem + 39.65px up -
+     the 4.6rem circle 12.45px off the bottom and the version label 36.35px. */
+  @media (min-width:40rem){
+    html body .daily-question-fab{ bottom:calc(12.45px + env(safe-area-inset-bottom, 0px)); }
+    html body .homeversion{ bottom:calc(36.35px + env(safe-area-inset-bottom, 0px)); }
+  }
   /* ---- THE START PILL: A BUTTON'S SHAPE, AND A BUTTON'S DEPTH (build 245) ----
      "I feel like it's an awkward shape, and the start button could be a
      little bit wider (the white when it's enabled and the dull part when
@@ -10695,6 +10729,35 @@
   .pushing-update-sub{
     margin:0; font-size:.85rem; color:var(--soft); text-align:center;
   }
+  /* INSTALLING UPDATE (build 327 round 7): the new build's first screen after
+     an update - see the splash script. The pushing screen's family, with the
+     theme's glow behind it, a bar that fills, and a line that changes. */
+  .install-update{
+    background:radial-gradient(60% 42% at 50% 46%, color-mix(in srgb, var(--theme-c2) 16%, transparent), transparent 70%), #0A0A0A;
+    transition:opacity .55s ease;
+  }
+  .install-update.is-leaving{ opacity:0; pointer-events:none; }
+  .install-update .pushing-update-label{ font-size:max(17px, 1.05rem); letter-spacing:.12em; text-transform:uppercase; }
+  .install-track{ position:relative; width:min(19rem, 100%); }
+  .install-fill{ position:absolute; inset:0; border-radius:999px; transform-origin:0 50%; transform:scaleX(0);
+    background:linear-gradient(90deg, var(--theme-c1), var(--theme-c2), var(--theme-c3)); }
+  .install-update .install-sheen{ position:relative; width:30%; opacity:.5;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent); }
+  @keyframes install-fill{ from{ transform:scaleX(0) } to{ transform:scaleX(1) } }
+  .install-line{ position:relative; margin:0; height:1.5em; width:min(22rem, 100%); font-family:var(--mono); font-size:.92rem; color:var(--ink); text-align:center; overflow:hidden; }
+  .install-line > span{ position:absolute; left:0; right:0; top:0; animation:install-line-in .38s cubic-bezier(.2,.8,.3,1) both; }
+  .install-line > span.is-out{ animation:install-line-out .38s ease-in both; }
+  @keyframes install-line-in{ from{ opacity:0; transform:translateX(28px) } to{ opacity:1; transform:none } }
+  @keyframes install-line-out{ from{ opacity:1; transform:none } to{ opacity:0; transform:translateX(-28px) } }
+  .install-line > span::after{ content:"\2026"; }
+  [data-reduce-motion="true"] .install-update .install-sheen{ display:none; }
+  [data-reduce-motion="true"] .install-line > span.is-out{ display:none; }
+  @media (prefers-reduced-motion:reduce){
+    .install-update .install-sheen{ display:none; }
+    .install-line > span{ animation:none; }
+    .install-line > span.is-out{ display:none; }
+  }
+  .pushing-update-line{ margin:0; min-height:1.4em; font-family:var(--mono); font-size:.88rem; color:var(--soft); text-align:center; }
   .update-banner{
     /* Side insets as well as the top one: this is a full-width fixed
        element, and a phone held sideways puts the notch straight through
@@ -31800,6 +31863,71 @@
        on it - so it gets the brisk returning-user pace rather than the
        long first-run one, whichever kind of user triggered it. */
     var duration = isUpdating ? 2600 : (isReturningUser ? 2500 : 8000);
+    /* ---- INSTALLING UPDATE (build 327 round 7) ----
+       "Let's make this 'pushing update' screen like 10 seconds longer and
+       with some new words going across like initiating sound system stuff
+       like that to make it cool." The old build shows "Pushing update" and
+       reloads; the page it reloads into is this one, which knows it was an
+       update from the flag read just above (and already consumed, so it is
+       shown once). So the longer screen is the NEW build's first frame: a
+       full-screen "Installing update" in the pushing screen's own family,
+       a bar that fills over INSTALL_MS while a new line takes over every
+       ~1.2s, then it fades into whatever the app put up under it. The
+       splash runs exactly as long underneath it, so everything that waits
+       for a loading screen (What's New, Nova, tours, reward cards, the
+       update check) waits for this too; boot, recovery and sync run under
+       it as on any launch. A tap does not skip it - it is ten seconds, he
+       asked for it to be seen - and it can never outlive INSTALL_CAP_MS. */
+    if(isUpdating){
+      var INSTALL_MS = 10500, INSTALL_CAP_MS = 12000;
+      duration = INSTALL_MS;
+      try{
+        var lines = ["Installing the update", "Initiating the sound system", "Tuning the ambience", "Refining colors",
+                     "Polishing the Liquid Glass", "Redrawing the road map", "Teaching Nova new lines",
+                     "Charging the planet system", "Calibrating hundo effects", "Almost there"];
+        var iu = document.createElement("div");
+        iu.id = "install-update";
+        iu.className = "pushing-update install-update";
+        iu.setAttribute("role", "status");
+        iu.innerHTML = '<p class="pushing-update-label">Installing update</p>' +
+          '<div class="pushing-update-track install-track"><div class="install-fill"></div><div class="pushing-update-fill install-sheen"></div></div>' +
+          '<p class="install-line" aria-live="polite"><span></span></p>' +
+          '<p class="pushing-update-sub">Your progress is saved.</p>';
+        document.body.appendChild(iu);
+        var iuFill = iu.querySelector(".install-fill");
+        iuFill.style.setProperty("animation", "install-fill " + INSTALL_MS + "ms cubic-bezier(.3,.05,.3,1) forwards", "important");
+        var iuLine = iu.querySelector(".install-line");
+        var t0 = performance.now();
+        var log = window.__installUpdate = { start: t0, end: null, lines: [] };
+        var showLine = function(i){
+          var span = document.createElement("span");
+          span.textContent = lines[i];
+          var old = iuLine.lastElementChild;
+          if(old && old.textContent){ old.classList.add("is-out"); setTimeout(function(){ if(old.parentNode) old.remove(); }, 420); }
+          else if(old) old.remove();
+          iuLine.appendChild(span);
+          log.lines.push({ t: performance.now() - t0, text: lines[i] });
+        };
+        var step = INSTALL_MS / lines.length, shown = 0;
+        showLine(0); shown = 1;
+        var done = false;
+        var finish = function(){
+          if(done) return; done = true;
+          clearInterval(iuTimer);
+          log.end = performance.now() - t0;
+          iu.classList.add("is-leaving");
+          setTimeout(function(){ if(iu.parentNode) iu.remove(); }, 600);
+        };
+        var iuTimer = setInterval(function(){
+          var el = performance.now() - t0;
+          var want = Math.min(lines.length, 1 + Math.floor(el / step));
+          while(shown < want){ showLine(shown); shown++; }
+          if(el >= INSTALL_MS) finish();
+        }, 100);
+        setTimeout(finish, INSTALL_CAP_MS);
+        window.__installUpdateFinish = finish;
+      }catch(e){}
+    }
     /* A random subset of the pool, in random order, so this doesn't
        read the same canned four lines on every single load \u2014 always
        ends on "ready." though, so the sequence still lands somewhere
@@ -31832,6 +31960,7 @@
         requestAnimationFrame(tick);
       } else {
         clearInterval(msgTimer);
+        try{ if(window.__installUpdateFinish) window.__installUpdateFinish(); }catch(e){}
         splash.classList.add("splash-hide");
         /* Handed back as the fade STARTS, not when the element is
            removed, so Safari's bars cross-fade along with the splash
@@ -95999,7 +96128,14 @@ function showPushingUpdate(){
   const sub = document.createElement("p");
   sub.className = "pushing-update-sub";
   sub.textContent = "Your progress is saved.";
-  wrap.append(label, track, sub);
+  /* the same rotating lines as the install screen (build 327 round 7) */
+  const line = document.createElement("p");
+  line.className = "pushing-update-line";
+  const PUSH_LINES = ["Downloading the update\u2026", "Packing up your progress\u2026", "Getting the new build ready\u2026"];
+  let li = 0;
+  line.textContent = PUSH_LINES[0];
+  const lt = setInterval(() => { if(!line.isConnected){ clearInterval(lt); return; } li = Math.min(PUSH_LINES.length - 1, li + 1); line.textContent = PUSH_LINES[li]; }, 1200);
+  wrap.append(label, track, line, sub);
   document.body.appendChild(wrap);
 }
 
@@ -127082,6 +127218,40 @@ function applyGlassRefraction(el, mapImgId){
        grid of days, the days as round-capped dots so they hold at 28px. */
     calendar: "M6.5 5h11A2.5 2.5 0 0120 7.5v10a2.5 2.5 0 01-2.5 2.5h-11A2.5 2.5 0 014 17.5v-10A2.5 2.5 0 016.5 5zM4 9.5h16M8.5 3v4M15.5 3v4M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01"
   };
+  /* ---- THE BAR'S GLYPHS ARE FILLED (build 327 round 7) ----
+     "the home icon, let's make that a planet with a ring ... Make the
+     calendar look a little bit better" - with a screenshot of another
+     app's bar he called perfect: solid SF Symbols style glyphs (a filled
+     moon, a filled calendar page with a header band and a dot grid cut
+     out of it, a gear), ~23pt of ink in a 62pt bar. Ours, in a 24-unit
+     box drawn at 28px, so 20 units of ink is 23px:
+     - Home: a planet with a tilted ring. The ring's near half crosses in
+       front of the planet with a gap cut round it; its far half goes
+       behind the planet.
+     - Calendar: that calendar - a rounded page, the header band solid,
+       the body cut out with the days left as dots.
+     - Leaderboard: a filled trophy, so the set matches. Profile stays the
+       person's character. */
+  const TAB_GLYPHS = {
+    home:
+      '<defs><mask id="tg-home-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">' +
+      '<rect width="24" height="24" fill="#fff"/>' +
+      '<path d="M2 16.4A10.9 4 -24 0 0 22 7.6" fill="none" stroke="#000" stroke-width="4.6" stroke-linecap="round"/></mask></defs>' +
+      '<path class="tg-ring tg-ring-back" d="M22 7.6A10.9 4 -24 0 0 2 16.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>' +
+      '<circle class="tg-planet" cx="12" cy="12" r="7.7" fill="currentColor" mask="url(#tg-home-cut)"/>' +
+      '<path class="tg-ring tg-ring-front" d="M2 16.4A10.9 4 -24 0 0 22 7.6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+    calendar:
+      '<path class="tg-page" fill="currentColor" fill-rule="evenodd" d="M5.4 2.8h13.2A3.4 3.4 0 0 1 22 6.2v12A3.4 3.4 0 0 1 18.6 21.6H5.4A3.4 3.4 0 0 1 2 18.2v-12A3.4 3.4 0 0 1 5.4 2.8zM5.6 8.4a1.6 1.6 0 0 0-1.6 1.6v8a1.6 1.6 0 0 0 1.6 1.6h12.8a1.6 1.6 0 0 0 1.6-1.6v-8a1.6 1.6 0 0 0-1.6-1.6z"/>' +
+      '<g class="tg-days" fill="currentColor">' +
+      [[1,0],[2,0],[3,0],[4,0],[0,1],[1,1],[2,1],[3,1],[4,1],[0,2],[1,2],[2,2]].map(([c, r]) =>
+        '<rect class="tg-day" x="' + (5.65 + c * 2.85).toFixed(2) + '" y="' + (10.2 + r * 2.85).toFixed(2) + '" width="1.85" height="1.85" rx=".45"/>').join("") +
+      '</g>',
+    rewards:
+      '<path class="tg-cup" fill="currentColor" d="M6.8 3h10.4v5.6a5.2 5.2 0 0 1-10.4 0z"/>' +
+      '<path class="tg-handles" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M6.8 4.9H4.4a2.5 2.5 0 0 0 2.7 4.9M17.2 4.9h2.4a2.5 2.5 0 0 1-2.7 4.9"/>' +
+      '<path class="tg-stem" fill="currentColor" d="M10.9 13.4h2.2v3.7h-2.2z"/>' +
+      '<path class="tg-base" fill="currentColor" d="M8.6 16.6h6.8a1 1 0 0 1 1 .8l.5 2.6a.8.8 0 0 1-.8 1H7.9a.8.8 0 0 1-.8-1l.5-2.6a1 1 0 0 1 1-.8z"/>'
+  };
   bar.querySelectorAll(".bottomtab").forEach(tab => {
     const dest = tab.dataset.dest;
     if(dest === "profile"){
@@ -127091,11 +127261,18 @@ function applyGlassRefraction(el, mapImgId){
     } else {
       const svg = document.createElementNS(svgNS, "svg");
       svg.setAttribute("viewBox", "0 0 24 24");
-      const path = document.createElementNS(svgNS, "path");
-      path.setAttribute("d", iconPaths[dest]);
-      path.setAttribute("stroke-linecap", "round");
-      path.setAttribute("stroke-linejoin", "round");
-      svg.appendChild(path);
+      if(TAB_GLYPHS[dest]){
+        /* FILLED GLYPHS (build 327 round 7), to the bar Madison sent as
+           perfect: SF Symbols style, solid shapes with the detail cut out. */
+        svg.setAttribute("class", "tab-glyph tab-glyph-" + dest);
+        svg.innerHTML = TAB_GLYPHS[dest];
+      } else {
+        const path = document.createElementNS(svgNS, "path");
+        path.setAttribute("d", iconPaths[dest]);
+        path.setAttribute("stroke-linecap", "round");
+        path.setAttribute("stroke-linejoin", "round");
+        svg.appendChild(path);
+      }
       tab.querySelector(".bottomtab-icon").appendChild(svg);
     }
     const navigateTab = () => {
@@ -127353,12 +127530,15 @@ function applyGlassRefraction(el, mapImgId){
      upright capsule. The slider box is cut there so the platter is no
      taller than the narrowest tab's platter is wide: a circle at worst. Everywhere else the box is the row's full height. */
   /* the platter's inset in its tab: .bottomtabs-slider::before's 5px -4px */
-  const PILL_IN_Y = 5, PILL_IN_X = -4;
+  /* build 327 round 7: the plain bar's platter sits 4.5px inside the bar (his reference),
+     so the vertical inset is read off the bar's --pill-in-y (5px elsewhere) */
+  const PILL_IN_X = -4;
+  const pillInY = () => parseFloat(getComputedStyle(bar).getPropertyValue("--pill-in-y")) || 5;
   function pillBoxH(){
     const rowH = parseFloat(getComputedStyle(navrow).height) || navrow.offsetHeight;
     let minW = Infinity;
     navrow.querySelectorAll(".bottomtab").forEach(t => { if(!t.hidden && t.offsetWidth) minW = Math.min(minW, tabBox(t).w); });
-    return { rowH, boxH: Math.min(rowH, minW - 2 * PILL_IN_X + 2 * PILL_IN_Y) };
+    return { rowH, boxH: Math.min(rowH, minW - 2 * PILL_IN_X + 2 * pillInY()) };
   }
   /* ---- THE BUBBLE MOVES ON THE COMPOSITOR ALONE (build 310) ----
      "There is still lag when clicking a new tab, the bottom tab doesn't
@@ -127597,7 +127777,7 @@ function applyGlassRefraction(el, mapImgId){
       .map(t => { const b = tabBox(t); return { el: t, c: b.c, w: b.w }; });
     if(!tabs.length) return null;
     const vb = pillBoxH();
-    const pillH = Math.max(8, vb.boxH - 2 * PILL_IN_Y);
+    const pillH = Math.max(8, vb.boxH - 2 * pillInY());
     /* the bar beside a Start pill has icon-only tabs half the width; a
        lens of the full height there would be a bubble twice its tab, so
        it is held to 1.6 of its platter's width and its height follows */
