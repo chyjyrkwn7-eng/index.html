@@ -116,7 +116,8 @@ ACCOUNT = json.dumps({
 
 SEED_LS = ("try{['class26e.freshstart','1','class26e.frame.ok','go-live-1','class26e.intro.seen','9',"
            "'class26e.unithold.tip','1','class26e.penal55124.seen','1','class26e.penal124256.seen','1',"
-           "'class26e.penal256578.seen','1','class26e.weekrecap.v1','9999-12-31','class26e.soundon.327','1']"
+           "'class26e.penal256578.seen','1','class26e.weekrecap.v1','9999-12-31','class26e.soundon.327','1',"
+           "'class26e.savecode.asked','1']"
            ".reduce((a,v,i,l)=>{ if(i%%2===0) localStorage.setItem(v,l[i+1]); return a; },0);"
            "localStorage.setItem('class26e.drill.v1', %s);}catch(e){}") % json.dumps(ACCOUNT)
 

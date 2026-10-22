@@ -81255,6 +81255,12 @@ function novaRecapLines(st, name){
           (g.more === 1 ? "one more" : g.more + " more") + " and it moves on" +
           (g.saved > 0 ? ", with the " + (g.saved === 1 ? "level" : g.saved + " levels") + " your XP has already paid for." : "."),
       enter: ctx => hi(ctx, ".nt-rc-xp") });
+  } else {
+    /* build 327 round 9: the level rule is always said here, on the card of
+       what you have, now that its own slide is gone */
+    lines.push({ gesture: "raise",
+      text: "One thing has changed: levels now go up one rank at a time. Your level climbs to your next rank’s level, then waits there until you’ve found that rank’s badges. You never lose XP while it waits.",
+      enter: ctx => hi(ctx, ".nt-rc-xp") });
   }
   const b = st.badges, f = st.flares;
   const bn = b === 1 ? "one of my badges" : b + " of my badges", fn = f === 1 ? "one of my secret flares" : f + " of my secret flares";
@@ -81378,14 +81384,19 @@ function novaIntroLines(o){
      well as a level, and your level waits at the next rank's level until
      you have its badges (levelWallOf). So the light never runs ahead of
      what holds it - which is exactly what the planet he was studying did. */
-  lines.push({ text: "Your planet is a lot like that one. From Gold up, every rank you reach will put a crack in it: the strain of holding a brighter flare. Badges are what hold a planet together. The one I was studying had none.",
-    ...novaSlide("strain", () => novaStack(novaStrainPlanet(), novaCap("A crack for every rank from Gold"))) });
-  lines.push({ gesture: "raise", text: "So every rank asks for badges as well as a level. Right answers earn XP and XP raises your level, but your level waits at your next rank until you have its badges. That way your planet never takes in more than it can hold, all the way to Supernova.",
-    enter: ctx => novaProp(ctx, novaXpBar()) });
+  /* BUILD 327 ROUND 9: the "your planet is a lot like that one" slide and
+     the "every rank asks for badges" slide are gone ("Story line doesn't
+     make sense ... Remove that one"). The level rule is said once instead:
+     to an existing account on its recap ("let's see how you're doing"),
+     and to a new one here, on the badges slide, since they have no recap. */
+  if(!existing) lines.push({ gesture: "raise",
+    text: "A rank asks for badges as well as a level. Your level climbs to your next rank’s level, then waits there until you’ve found that rank’s badges." });
   lines.push({ gesture: "raise", text: "My crew got away in escape pods and landed all over this system. They’re the characters in this app, and every one you find joins you.",
     ...novaSlide("crew", () => novaStack(novaCrewParade(), novaCap(crew.have + " of " + crew.total + " characters found"))) });
-  lines.push({ text: "Each one comes home a different way: some with a rank, most with a challenge, a few behind a secret flare, and the ultimate ones ask for nearly everything else first.",
-    ...novaSlide("kinds", () => novaStack(novaCrewKinds(), novaCap("How my crew comes home"))) });
+  /* build 327 round 9: said on the crew slide, its own picture gone ("How
+     my crew comes home ... remove that slide ... Just add another text box
+     after the first one on the character slide") */
+  lines.push({ text: "Each one comes home a different way: some with a rank, most with a challenge, a few behind a secret flare, and the ultimate ones ask for nearly everything else first." });
   /* BANNERS AND HUNDO EFFECTS (build 326) - after the crew, as asked */
   lines.push({ gesture: "raise", text: "As thanks, I’ll hand you things along the way: banners for your profile, and effects that play when you score a hundo. You earn them by studying, and they’re all in Customize, on your Profile.",
     ...novaSlide("flair", () => novaStack(novaWarmTake("flair") || novaFlairProp(), novaCap("Yours to wear · Customize"))) });
@@ -81855,7 +81866,7 @@ function startMainMenuTour(){
    calendar reposition". After the main menu's own tips, and nothing else. */
 const NOVA_NEW_TIPS_321 = [
   { target: ".panel.home .cosmic-plasma", align: "left", vplacement: "below",
-    text: "The planet answers your touch. Tap it to see where you stand, and keep tapping to spin its rings. From Gold up it cracks a little more with every rank, and your badges are what hold it together." },
+    text: "The planet answers your touch. Tap it to see where you stand, and keep tapping to spin its rings." },
   /* build 327: What's New no longer has the badge case's row, so the tip
      no longer leans on it (HANDOFF-326, known issue 2) */
   { target: "#bottomtab-profile", align: "left", vplacement: "above",
