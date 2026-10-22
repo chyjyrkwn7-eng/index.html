@@ -9144,6 +9144,16 @@
      cap height and centred on it by the flex row, not by the font. */
   .back-chevron{ width:.95em; height:.95em; flex-shrink:0; display:block; margin-left:-.15em; }
   .back-word{ display:block; line-height:1; }
+  /* build 327 round 9: "Back ... it's not centered". The word sat above the
+     middle of its pill: a font's letters are not centred in its line box, and
+     they are off by a different amount in each font (about 1.5px here, about 2px
+     on an iPhone's own). Trimming the word's box to its capital height and its
+     baseline centres the LETTERS by the font's own numbers, whatever the font.
+     The pill keeps the height it had (min-height), so nothing around it moves. */
+  @supports (text-box: trim-both cap alphabetic){
+    .back-word{ text-box: trim-both cap alphabetic; }
+    [data-layout="modern"] .back-link{ min-height:calc(1em + 1rem); }
+  }
   .startbar{
     display:flex; align-items:center; gap:1rem; flex-wrap:wrap;
     margin-top:1rem;
@@ -31844,6 +31854,21 @@
      drawing's size: 100cqmin of the slot), in both cases. */
   .bc-slot, .nova-case.ncase .ncase-cell .badge-tile-art{ container-type:size; }
   .bc-slot > svg, .nova-case.ncase .ncase-cell .badge-tile-art > svg{ translate:calc(var(--sdx, 0) * 100cqmin) calc(var(--sdy, 0) * 100cqmin); }
+  /* The same centring for the other small labels that sat high in their
+     pills (found by tools/check-ink-centre.py, which measures where the
+     letters really are inside each control). The padding gives back what
+     trimming takes, so each control keeps its height. */
+  @supports (text-box: trim-both cap alphabetic){
+    .profile-hero .profile-edit-btn{ text-box:trim-both cap alphabetic; padding-block:calc(.46rem + (1lh - 1cap)/2); }
+    @media (min-width:40rem){ .profile-hero .profile-edit-btn{ padding-block:calc(.5rem + (1lh - 1cap)/2); } }
+    .friend-act{ text-box:trim-both cap alphabetic; }
+    @media (max-width:639px){
+      .homeversion.homeversion-btn{ text-box:trim-both cap alphabetic; padding-block:calc(.7rem + (1.15em - 1cap)/2); }
+    }
+    @media (min-width:640px){
+      .homeversion.homeversion-btn{ text-box:trim-both cap alphabetic; padding-block:calc((1lh - 1cap)/2); }
+    }
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
