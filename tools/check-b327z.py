@@ -238,12 +238,92 @@ def z6(br):
         ctx.close()
 
 
+def z8(br):
+    """Nova's introduction, the tour and What's New, with a real finger.
+
+    Madison: "I need it to work through the nova introduction ... and feel
+    like the app is legit." Every tap on the bubble, the Let's go button, the
+    What's New card's button and each tour tooltip has to tick ONCE, on the
+    release (inside the tap's own gesture - WebKit refuses a haptic from a
+    timer or a pointerdown), and the typing and the auto-advance must not
+    buzz on their own (nothing but a finger may)."""
+    ctx = br.new_context(viewport={"width": 440, "height": 956}, has_touch=True, is_mobile=True, device_scale_factor=2)
+    ctx.add_init_script(init_for("iphone"))
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');localStorage.setItem('class26e.savecode.asked','1');localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % USED_ACCOUNT)
+    ctx.add_init_script("try{localStorage.setItem('class26e.weekrecap.v1','9999-12-31');}catch(e){}")
+    pg = cb.open_page(ctx)
+    try:
+        pg.goto(cb.URL)
+        pg.wait_for_timeout(2600)
+        pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
+        pg.evaluate("""() => { window.__tk = []; window.__ev = [];
+          const orig = HTMLLabelElement.prototype.click;
+          const op = window.playSound; window.__ids = [];
+          HTMLLabelElement.prototype.click = function(){ if(this.matches('label.nova-haptic')) window.__tk.push((window.__lastEv || 'none')); return orig.apply(this, arguments); };
+          const ps = NovaSound.play; NovaSound.play = function(id){ window.__ids.push(id); return ps.apply(this, arguments); };
+          ['pointerdown','pointerup','touchstart','touchend','click'].forEach(ev => window.addEventListener(ev, () => { window.__lastEv = ev; }, true)); }""")
+        up = pg.wait_for_selector("#nova-intro", timeout=20000) if pg.evaluate("()=>!!document.getElementById('nova-intro')") or True else None
+    except Exception as e:
+        check("z8 Nova's introduction came up", False, str(e)[:200])
+        ctx.close(); return
+    check("z8 Nova's introduction came up", True)
+    # nothing may buzz by itself while he types and talks
+    pg.wait_for_timeout(2500)
+    check("z8 typing and talking do not buzz (only a notice banner may, and iOS ignores that outside a tap)", pg.evaluate("()=>window.__tk.length") <= pg.evaluate("()=>window.__ids.filter(i=>i==='ui.notice').length"), str(pg.evaluate("()=>[window.__tk, window.__ids]")))
+    pg.evaluate("()=>{window.__tk=[];}")
+    steps = 0; bad = []
+    for _ in range(60):
+        if not pg.evaluate("()=>!!document.getElementById('nova-intro')"): break
+        st = pg.evaluate("()=>{const e=document.getElementById('nova-intro'); return e&&e.__nova?{i:e.__nova.index,n:e.__nova.count,t:!!e.__nova.typing}:null}")
+        if not st: pg.wait_for_timeout(200); continue
+        pg.evaluate("()=>{window.__tk=[];}")
+        last = st["i"] == st["n"] - 1 and pg.evaluate("()=>!!document.querySelector('#nova-intro .nt-go')")
+        sel = "#nova-intro .nt-go" if last else "#nova-intro"
+        try:
+            if last: pg.tap(sel)
+            else:
+                box = pg.evaluate("()=>{const b=document.querySelector('#nova-intro .nt-bubble, #nova-intro .nt-box, #nova-intro'); const r=b.getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2];}")
+                pg.touchscreen.tap(box[0], box[1])
+        except Exception as e:
+            bad.append("tap failed: " + str(e)[:80]); break
+        pg.wait_for_timeout(350)
+        tk = pg.evaluate("()=>window.__tk")
+        steps += 1
+        if len(tk) > 3 or any(x in ("pointerdown", "touchstart") for x in tk):
+            bad.append("step %d: %s %s" % (st["i"], tk, pg.evaluate("()=>window.__ids.slice(-8)")))
+        if len(tk) == 0 and not st["t"]:
+            bad.append("step %d: silent tap" % st["i"])
+        pg.wait_for_timeout(1700)
+    check("z8 %d taps through the introduction: each ticks on the release (a prop's own sound may add a short pattern), never on touch-down" % steps, steps > 8 and not bad, str(bad[:6]))
+    # then What's New's card and the tooltips that follow it
+    try:
+        pg.wait_for_selector("#intro-pop .intro-go", timeout=20000); pg.wait_for_timeout(1500)
+        pg.evaluate("()=>{window.__tk=[];}")
+        pg.evaluate("()=>{const c=document.getElementById('intro-pop'); const sc=[c,...c.querySelectorAll('*')].find(e=>e.scrollHeight>e.clientHeight+20&&getComputedStyle(e).overflowY!='visible'); if(sc) sc.scrollTop=sc.scrollHeight;}")
+        pg.wait_for_timeout(500)
+        pg.tap("#intro-pop .intro-go"); pg.wait_for_timeout(400)
+        tk = pg.evaluate("()=>window.__tk")
+        check("z8 What's New's button ticks once, on the release", 1 <= len(tk) <= 3 and "pointerdown" not in tk and "touchstart" not in tk, str(tk))
+        n = 0; badtips = []
+        pg.wait_for_timeout(1500)
+        for _ in range(12):
+            if not pg.evaluate("()=>!!document.getElementById('tour-next')"): break
+            pg.wait_for_timeout(1500); pg.evaluate("()=>{window.__tk=[];}")
+            pg.tap("#tour-next"); pg.wait_for_timeout(400); n += 1
+            tk = pg.evaluate("()=>window.__tk")
+            if not (1 <= len(tk) <= 3) or "pointerdown" in tk or "touchstart" in tk: badtips.append((n, tk, pg.evaluate("()=>window.__ids.slice(-4)"), pg.evaluate("()=>!!document.getElementById('tour-next')")))
+        check("z8 %d tooltip taps: each ticks on the release" % n, n >= 3 and not badtips, str(badtips))
+    except Exception as e:
+        check("z8 What's New and the tour were reachable", False, str(e)[:200])
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
         try:
             only = os.environ.get("ONLY", "")
-            for fn in (z1, z2_z3_z4, z5, z6):
+            for fn in (z1, z2_z3_z4, z5, z6, z8):
                 if only and fn.__name__ not in only.split(","):
                     continue
                 try:

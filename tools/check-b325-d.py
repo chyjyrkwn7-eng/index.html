@@ -441,7 +441,7 @@ def check_qualifier(br):
          arrow (327h's target), no pencil, no shield, no seal. */
       out.arrow = !!s.querySelector('.modeiconarrow');
       out.card = paths.some(d => /^M6\\.6 2\\.6h10\\.8a3 3 0 013 3/.test(d));
-      out.question = !!s.querySelector('.modeiconquestion');
+      out.question = !!s.querySelector('.modeiconquestion'); out.bubbles = s.querySelectorAll('circle.modeiconpath').length; out.solid = s.querySelectorAll('circle.modeiconsolid').length;
       out.dot = !!s.querySelector('circle.modeiconsolid');
       out.blank = !!s.querySelector('.modeiconblank');
       try{ const ic = rn.icon(); out.notes = ic.classList.contains('modeicon-exam'); }catch(e){ out.notes = false; }
@@ -453,8 +453,8 @@ def check_qualifier(br):
     # question mark with its solid dot, and an answer blank; no arrow, pencil,
     # shield or seal.
     check("modeIcon('exam'): a ? card - a ? with its dot over an answer blank; not the arrow, the pencil, the shield or the seal; the Version 9 note uses it",
-          not r.get("seal") and not r.get("arrow") and r.get("card") and r.get("question") and r.get("dot")
-          and r.get("blank") and not r.get("pencil") and not r.get("shield") and r.get("notes"), r)
+          not r.get("seal") and not r.get("arrow") and r.get("card") and r.get("bubbles") == 4 and r.get("solid") == 2
+          and not r.get("question") and not r.get("blank") and not r.get("pencil") and not r.get("shield") and r.get("notes"), r)
     ctx.close()
 
 

@@ -424,7 +424,7 @@ def check_qualifier_icon(br):
              stroke, its solid dot and the answer blank; no arrow left. */
           out.arrow = !!ref.querySelector('.modeiconarrow');
           out.card = paths.some(d => /^M6\\.6 2\\.6h10\\.8a3 3 0 013 3/.test(d));
-          out.question = !!ref.querySelector('.modeiconquestion');
+          out.question = !!ref.querySelector('.modeiconquestion'); out.bubbles = ref.querySelectorAll('circle.modeiconpath').length; out.solid = ref.querySelectorAll('circle.modeiconsolid').length;
           out.dot = !!ref.querySelector('circle.modeiconsolid');
           out.blank = !!ref.querySelector('.modeiconblank');
           out.group = !!ref.querySelector('g[transform]');
@@ -436,8 +436,8 @@ def check_qualifier_icon(br):
           return out; }""")
         ctx.close()
         same = all(r.get(k) == r.get("ref") for k in ("picker", "news", "notes", "slide"))
-        check("%s modeIcon('exam'): MOVED IN 327 round 9: a graded sheet (the card, an A and a plus), plain paths - no arrow, no pencil, no seal, no ring-with-tick" % dev,
-              r.get("card") and r.get("question") and r.get("dot") and r.get("blank") and not r.get("group")
+        check("%s modeIcon('exam'): MOVED IN 327 round 9: answer bubbles (the card, a 2x2 grid of bubbles, two solid), plain paths - no arrow, no pencil, no seal, no ring-with-tick" % dev,
+              r.get("card") and r.get("bubbles") == 4 and r.get("solid") == 2 and not r.get("question") and not r.get("blank") and not r.get("group")
               and not r.get("arrow") and not r.get("pencil") and not r.get("ring") and not r.get("tick") and not r.get("seal"),
               {k: r.get(k) for k in ("card", "question", "dot", "blank", "group", "arrow", "pencil", "ring", "tick", "seal")})
         check("%s ...the same mark on the mode picker, What's New, Version 9's notes and Nova's modes slide" % dev, same and bool(r.get("ref")),

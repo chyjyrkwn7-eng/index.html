@@ -31891,16 +31891,20 @@
      its lower edge, so the border read as a light ring with a gap between it
      and the fill; and the highlight gradient was painted on the padding box
      and repeated, so the repeat's bright top edge showed in the border along
-     the bottom. The gradient now covers the whole box (no repeat, over the
-     border, which is transparent), with its shade built into it, so the edge
-     is one continuous surface. Quit, Save and exit and Reset keep their own
+     the bottom. The border is transparent and the button's own gradient now covers the
+     whole box (no repeat); its inset light and dark edges and its three
+     shadows are untouched, so it keeps the 3D feel of the other buttons. Quit, Save and exit and Reset keep their own
      recipes. */
   [data-theme="dark"][data-layout="modern"] .next:not(.ghost):not(.danger),
   [data-theme="dark"][data-layout="modern"] .chip.on{
     border-color:transparent;
     background-origin:border-box; background-clip:border-box; background-repeat:no-repeat;
-    background-image:linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,0) 58%, rgba(0,0,0,.09) 100%);
-    box-shadow:0 1px 3px rgba(0,0,0,.3), 0 5px 10px rgba(0,0,0,.3), 0 14px 28px -8px rgba(0,0,0,.5);
+    /* the dark inset edge starts at the padding box, 1px inside the border, so
+       the border read as a lighter ring; the same shadow drawn from the
+       border box's own edge (spread 1px outward past it, clipped by the
+       radius) lets the shade run right to the edge */
+    box-shadow:0 1px 1px -1px rgba(255,255,255,.18) inset, 0 -1px 2px -1px rgba(0,0,0,.35) inset,
+      0 1px 3px rgba(0,0,0,.3), 0 5px 10px rgba(0,0,0,.3), 0 14px 28px -8px rgba(0,0,0,.5);
   }
   /* The same centring for the other small labels that sat high in their
      pills (found by tools/check-ink-centre.py, which measures where the
@@ -68099,14 +68103,14 @@ const SOUND_CATALOGUE = {
       K.arp(["D5", "F#5", "A5", "D6"], .06, (n, t) => K.pluck({ f: n, t, d: .4, bright: .65, g: .1 }));
       K.vox({ t: .26, f: 440, f2: 520, v: "e", v2: "i", d: .14, g: .03 });
     } },
-  "nova.arrive": { vol: 1.23, group: "Onboarding & Nova", bus: "ui", cd: 2000, hap: "tap",
+  "nova.arrive": { vol: 1.23, group: "Onboarding & Nova", bus: "ui", cd: 2000, hap: null,
     desc: "Nova arrives: a harp glissando up D harmonic minor over the dark pad, landing on a warm bell - the professor appearing.",
     fn: K => {
       K.arp(["D4", "E4", "F4", "G4", "A4", "Bb4", "C#5", "D5", "F5"], .035, (n, t) => K.pluck({ f: n, t, d: 1.2, bright: .85, g: .06, rev: .4 }));
       K.pad(["D4", "A4"], { a: .4, d: 1.5, g: .012 });
       K.chime({ t: .45, f: "D6", d: 1.6, g: .04 });
     } },
-  "nova.blip": { vol: 1.6, group: "Onboarding & Nova", bus: "ui", cd: 45, poly: 2, hap: null,
+  "nova.blip": { vol: 1.6, group: "Onboarding & Nova", bus: "ui", cd: 45, poly: 2, hap: null, ambient: true,
     desc: "Nova talking, a few letters at a time: a tiny soft vowel blip wandering D minor (opts.i), so a line sounds spoken, not beeped.",
     demo: [{ i: 0 }, { i: 1 }, { i: 2 }, { i: 3 }, { i: 4 }, { i: 5 }],
     fn: (K, o) => {
@@ -69607,7 +69611,10 @@ const NovaSound = (function(){
     if(opts && opts.generic && nowMs - st.genAt < 90) return null;
     if(opts && opts.generic) st.genAt = nowMs;
     st.last[id] = nowMs;
-    if(!(opts && opts.generic)) st.lastAt = nowMs;
+    /* his typing blips go on all the while he talks; counting them as "the sound
+       this tap already made" made every button tapped mid-sentence give way
+       to a blip - no thock, and no tick (build 327, round 9) */
+    if(!(opts && opts.generic) && !e.ambient) st.lastAt = nowMs;
     if(wantBuzz) haptic(e.hap);
     if(!wantSound) return null;
     const ctx = st.ctx;
@@ -69845,7 +69852,7 @@ function sndForTap(t){
    nothing ticked; now they tick. A tap that already ticked (a button with
    its own sound) is not ticked twice (NovaSound's TICK_GAP_MS). The
    rank-up journey's input blocker still says nothing. */
-const SND_SCENE_TAP = "#badge-cutscene, #supernova-cutscene, #void-cutscene, #vroom-cutscene, .rs-spot, .rs-screen, " +
+const SND_SCENE_TAP = ".nova-talk, #tour-overlay, #badge-cutscene, #supernova-cutscene, #void-cutscene, #vroom-cutscene, .rs-spot, .rs-screen, " +
   ".invite-overlay, [class*='cutscene'], [class*='-scene']";
 document.addEventListener("click", e => {
   const id = sndForTap(e.target);
@@ -70451,16 +70458,15 @@ function modeIcon(kind){
        A+ ("the a+ is not it"); the card is what stayed. Plain paths, no group
        transform (check_b323u's ink). */
     svg.appendChild(mk("M6.6 2.6h10.8a3 3 0 013 3v12.8a3 3 0 01-3 3H6.6a3 3 0 01-3-3V5.6a3 3 0 013-3z"));
-    const q = mk("M9.7 7.4a2.3 2.3 0 114.4.9c-.5 1-2.1 1.3-2.1 2.7");
-    q.setAttribute("class", "modeiconpath modeiconquestion");
-    svg.appendChild(q);
-    const dot = document.createElementNS(svgNS2, "circle");
-    dot.setAttribute("cx", "12"); dot.setAttribute("cy", "13.6"); dot.setAttribute("r", ".5");
-    dot.setAttribute("class", "modeiconpath modeiconsolid");
-    svg.appendChild(dot);
-    const blank = mk("M7.8 17.6h8.4");
-    blank.setAttribute("class", "modeiconpath modeiconblank");
-    svg.appendChild(blank);
+    /* MOCK'S ANSWER BUBBLES (build 327, round 9): a card holding a 2x2 grid of
+       answer bubbles, one filled per row - a test being answered. Plain
+       shapes, no group transform (check_b323u's ink). */
+    [[8.7,8.7,0],[15.3,8.7,1],[8.7,15.3,1],[15.3,15.3,0]].forEach(function(c){
+      const b = document.createElementNS(svgNS2, "circle");
+      b.setAttribute("cx", String(c[0])); b.setAttribute("cy", String(c[1])); b.setAttribute("r", "2.3");
+      b.setAttribute("class", "modeiconpath" + (c[2] ? " modeiconsolid" : ""));
+      svg.appendChild(b);
+    });
   } else if(kind === "vroom"){
     const p1 = document.createElementNS(svgNS2, "circle");
     p1.setAttribute("cx", "8.5"); p1.setAttribute("cy", "8"); p1.setAttribute("r", "3");
@@ -70496,14 +70502,13 @@ function modeIcon(kind){
        open book read as a library. Going over the material is looking closely at
        it: a page of text with a magnifying glass over its corner. At the target's
        weight, plain paths, no group transform. */
-    svg.appendChild(mk("M5 3.4h8.6l3.4 3.4v3.6"));
-    svg.appendChild(mk("M5 3.4v17.2h5"));
-    svg.appendChild(mk("M8 8h5M8 11.4h2.4"));
-    const lens = document.createElementNS(svgNS2, "circle");
-    lens.setAttribute("cx", "15.4"); lens.setAttribute("cy", "15.4"); lens.setAttribute("r", "3.9");
-    lens.setAttribute("class", "modeiconpath");
-    svg.appendChild(lens);
-    svg.appendChild(mk("M18.3 18.3l3 3"));
+    /* REVIEW'S FANNED CARDS (build 327, round 9): a front flashcard with two
+       more fanned out behind it. The tilted edges are baked into the path
+       coordinates - no group transform. */
+    svg.appendChild(mk("M7.46 19.62L4.22 7.54Q3.78 5.90 5.43 5.46L7.30 4.96"));
+    svg.appendChild(mk("M16.54 19.62L19.78 7.54Q20.22 5.90 18.57 5.46L16.70 4.96"));
+    svg.appendChild(mk("M9 4.2h6a1.7 1.7 0 011.7 1.7v10.8a1.7 1.7 0 01-1.7 1.7H9a1.7 1.7 0 01-1.7-1.7V5.9A1.7 1.7 0 019 4.2z"));
+    svg.appendChild(mk("M9.6 9h4.8M9.6 12.2h3.2"));
   } else {
     svg.appendChild(mk("M12 20s-7-4.5-9.5-9C.8 7.5 3 4 6.5 4c2 0 3.5 1.3 5.5 3.5C14 5.3 15.5 4 17.5 4 21 4 23.2 7.5 21.5 11c-2.5 4.5-9.5 9-9.5 9z"));
   }
