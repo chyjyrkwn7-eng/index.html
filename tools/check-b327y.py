@@ -187,11 +187,32 @@ def pause(br):
         ctx.close()
 
 
+def pills(br):
+    """Build 327 round 8: "noticed other stuff, such as the search bars, the
+    find me button on the leaderboard at the bottom, stuff like that." The
+    surface recipe's rounded controls, the same two measurements."""
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, touch=True, dpr=DPR)
+    try:
+        k = 60
+        for screen, sel, name in (("showRankings()", ".rank-search", "Leaderboard search bar"),
+                                  ("showRankings()", ".rank-me-btn", "Find me"),
+                                  ("showFriends()", ".friend-add-input", "friend code field")):
+            pg.evaluate("() => { " + screen + " }")
+            pg.wait_for_timeout(1400)
+            el = pg.query_selector(sel)
+            if el:
+                el.scroll_into_view_if_needed(); pg.wait_for_timeout(250)
+            freeze(pg)
+            judge(pg, el, name, k); k += 1
+    finally:
+        ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
         try:
-            for fn in (home, pause):
+            for fn in (home, pause, pills):
                 try:
                     fn(br)
                 except Exception as e:

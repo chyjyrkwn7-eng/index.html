@@ -3450,7 +3450,7 @@
      card as its own independent, full-width element, genuinely
      centered on the whole screen rather than a card-relative column,
      and enlarged again to actually read as a top-of-screen heading. */
-  .qnum-daily-block{ text-align:center; padding:0 1.5rem; margin:.5rem 0 1.2rem; }
+  .qnum-daily-block{ text-align:center; padding:0 1.5rem; margin:.25rem 0 1rem; }
   .qnum-daily{ font-size:2rem; font-weight:800; color:var(--ink); margin:0 0 .4rem; font-family:var(--serif); }
   .qnum-daily-sub{ font-size:.9rem; font-weight:600; color:var(--soft); margin:0; }
   .qnumrow{ display:flex; justify-content:space-between; align-items:center; margin:0 0 .6rem; gap:.75rem; position:relative; }
@@ -29816,6 +29816,22 @@
       inset 0 3px 5px -2px rgba(255,255,255,.2), inset 0 -3px 5px -2px rgba(0,0,0,.28);
   }
 
+  /* ...AND ROUND THE PILLS (build 327 round 8). Madison: "Remember earlier
+     how I said the bottom of the circles like the flares and daily question
+     circle has a like thing, noticed other stuff, such as the search bars,
+     the find me button on the leaderboard at the bottom, stuff like that.
+     Needs to be perfect." The same two causes as above, on every rounded
+     control built from the surface recipe (--surface-sheen over
+     --surface-2, --surface-shadow): the sheen's bright top repeated under
+     the see-through bottom border, and the recipe's 0-blur inset lip. Both
+     go the way the circles' did; cards keep their edge. */
+  [data-theme="dark"][data-layout="modern"] :is(.searchbox, .iconbtn.rank-me-btn, .rank-me-btn, .cal-action-btn, .cal-grid-arrow,
+    .roomchat-fab, .chip, .more-toggle){
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    box-shadow:0 4px 18px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.03),
+      inset 0 3px 5px -2px rgba(255,255,255,.2), inset 0 -3px 5px -2px rgba(0,0,0,.28);
+  }
+
   /* Customize: the characters grouped by how they are earned. */
   .avatarchar-group-title{
     margin:1.1rem 0 .55rem; font-size:.74rem; font-weight:800; letter-spacing:.12em;
@@ -29845,10 +29861,39 @@
   /* The results' type (build 315): the verdict in the grade's heavy sans,
      not Georgia, and the XP in the screen's figures. */
   .dailyq-outro{ font-variant-numeric:lining-nums tabular-nums; }
-  .dailyq-outro-head{ margin:.6rem 0 0; font-family:var(--sans); font-size:1.9rem; font-weight:800; line-height:1.15; letter-spacing:-.025em; color:#fff; }
-  .dailyq-outro-xp{ margin:.3rem 0 0; font-size:1rem; font-weight:800; color:#8FC1FF; }
-  .dailyq-outro.is-wrong .dailyq-outro-xp{ color:var(--soft); }
-  .dailyq-outro-next{ margin:.6rem 0 0; font-size:1.02rem; font-weight:600; color:rgba(255,255,255,.88); text-wrap:balance; }
+  /* THE GRADE BOX + THE XP BOX (build 327 round 8): the results cards' own
+     surface, edge and kickers, in the verdict's colour - left-aligned like
+     them, the verdict where the grade's number sits. */
+  .dailyq-outro{
+    --dqe:92,214,146; text-align:left; padding:1rem 1.1rem 1.1rem; border-radius:18px;
+    background:linear-gradient(180deg, rgba(var(--dqe), .12), rgba(24,29,37,.72) 62%);
+    border-color:rgba(var(--dqe), .46);
+    box-shadow:0 10px 30px -14px rgba(0,0,0,.6), 0 0 22px -8px rgba(var(--dqe), .42), inset 0 0 0 1px rgba(var(--dqe), .18), inset 0 0 24px rgba(var(--dqe), .26), inset 0 1px 0 rgba(255,255,255,.15);
+  }
+  .dailyq-outro.is-wrong{ --dqe:232,104,124; }
+  .dailyq-outro-kick{ margin:0 0 .6rem; font-size:.68rem; font-weight:800; letter-spacing:.14em; line-height:1.2; text-transform:uppercase; color:rgba(255,255,255,.52); }
+  .dailyq-outro-verdict{ display:flex; align-items:center; gap:.85rem; }
+  .dailyq-outro-mark{ flex:none; }
+  .dailyq-outro-vtext{ min-width:0; }
+  .dailyq-outro-head{
+    margin:0; font-family:var(--sans); font-size:2.3rem; font-weight:800; line-height:1.05; letter-spacing:-.035em;
+    background:linear-gradient(180deg, #fff, color-mix(in srgb, var(--dq) 70%, #fff)); -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .dailyq-outro-of{ margin:.3rem 0 0; display:flex; flex-wrap:wrap; align-items:baseline; gap:.15rem .55rem; }
+  .dailyq-outro-ofn{ font-size:1.05rem; font-weight:800; color:#fff; }
+  .dailyq-outro-ofw{ font-size:.9rem; font-weight:500; color:rgba(255,255,255,.62); }
+  .dailyq-outro-xpbox{
+    margin:1rem 0 0; padding:1rem 0 0; border-top:1px solid rgba(255,255,255,.08);
+    animation:dq-line-in .45s ease .9s both;
+  }
+  .dailyq-outro-line{ display:flex; justify-content:space-between; gap:1rem; font-size:.95rem; color:rgba(255,255,255,.74); }
+  .dailyq-outro-lineval{ font-weight:800; color:#8FC1FF; }
+  .dailyq-outro-total{ display:flex; align-items:baseline; justify-content:space-between; gap:1rem; margin:.85rem 0 0; padding-top:.85rem; border-top:1px solid rgba(255,255,255,.08); }
+  .dailyq-outro-totallabel{ font-size:.95rem; font-weight:800; color:var(--ink); }
+  .dailyq-outro-xp{ margin:0; font-family:var(--sans); font-size:2.1rem; font-weight:800; line-height:1; letter-spacing:-.035em; color:#8FC1FF; text-shadow:0 0 18px rgba(61,139,255,.55); }
+  .dailyq-outro-xpunit{ margin-left:.3rem; font-size:.85rem; letter-spacing:.02em; opacity:.8; }
+  .dailyq-outro.is-wrong .dailyq-outro-xp{ font-size:.95rem; font-weight:600; letter-spacing:0; color:var(--soft); text-shadow:none; }
+  .dailyq-outro-next{ margin:1rem 0 0; padding-top:.9rem; border-top:1px solid rgba(255,255,255,.08); font-size:1.02rem; font-weight:600; color:rgba(255,255,255,.88); text-wrap:balance; }
   .dailyq-outro-streak{ margin:.55rem 0 0; font-size:.8rem; color:#D9A441; font-weight:700; }
   [data-reduce-motion="true"] .dailyq-outro{ animation:none; }
   /* THE SAME ORDER AS A TEST'S RESULTS (build 320): the verdict, then what
@@ -29859,7 +29904,7 @@
   .dailyq-outro-next{ animation:dq-line-in .45s ease 1.45s both; }
   @keyframes dq-line-in{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
   @media (prefers-reduced-motion:reduce){ .dailyq-outro-xp, .dailyq-outro-next{ animation:none; } }
-  @media (min-width:40rem){ .dailyq-outro-head{ font-size:2.3rem; } .dailyq-outro-next{ font-size:1.12rem; } }
+  @media (min-width:40rem){ .dailyq-outro-head{ font-size:2.7rem; } .dailyq-outro-next{ font-size:1.12rem; } }
 
   /* ---- XP IS BLUE WHEREVER IT FLIES ---- */
   #welcomebonus-banner, [data-theme="dark"] #welcomebonus-banner{
@@ -45460,7 +45505,14 @@ window.addEventListener("pagehide", saveRunSession);
 /* What the top-left of a question says (build 303). The daily question
    has its own title on the screen and says nothing up here. */
 function runModeTitle(){
-  if(runLabel === "Daily question") return "";
+  /* THE DAILY QUESTION'S NAME IS IN THE PINNED HEADER (build 327 round
+     8): "at the top of the daily question, there's some words/stuff at
+     the top that is blocked or kinda in a weird spot because it's near
+     the edge of the greyed out dark stuff ... when I scroll down [in a
+     test] the name of the mode, the pause button the chat button [stay],
+     should the daily question stuff AT the very top be repositioned and
+     be similar?" So it is named where a test is named, and stays put. */
+  if(runLabel === "Daily question") return "Daily question";
   if(vroomCode) return "Virtual Room";
   if(isMissedRetake) return "Retake";
   return modeTitleOf(runMode === "exam" ? "exam" : "drill");
@@ -93731,10 +93783,8 @@ function render(){
   if(isDaily){
     dailyTitleBlock = document.createElement("div");
     dailyTitleBlock.className = "qnum-daily-block";
-    const num = document.createElement("p");
-    num.className = "qnum-daily";
-    num.textContent = "Daily Question";
-    dailyTitleBlock.appendChild(num);
+    /* (the big "Daily Question" heading went to the pinned header row,
+       build 327 round 8 - runModeTitle) */
     /* Only shown before an attempt is actually made \u2014 once answered,
        the status line below already covers what happened, and
        repeating "one attempt remaining" after the attempt has
@@ -105905,18 +105955,58 @@ function summarize(){
       const gotIt = !!store.dailyQuestionCorrect;
       const outro = document.createElement("div");
       outro.className = "dailyq-outro " + (gotIt ? "is-right" : "is-wrong");
+      /* THE GRADE BOX AND THE XP BOX, AS ONE CARD (build 327 round 8):
+         "I do kinda wish the box looked a little more like the test result
+         grade box combined with the xp box". The top is the grade box -
+         its kicker, the verdict big in the grade's heavy face and its
+         colour, what it was out of beside it - and under a rule, the XP
+         box: its kicker, the line the XP came from and the blue total.
+         Still no level bar (build 213); the XP flies to Profile on Home. */
+      const kick = document.createElement("p");
+      kick.className = "dailyq-outro-kick"; kick.textContent = "Daily question";
+      const verdict = document.createElement("div");
+      verdict.className = "dailyq-outro-verdict";
       const mark = document.createElement("span");
       mark.className = "dailyq-outro-mark"; mark.textContent = gotIt ? "\u2713" : "\u2715";
+      mark.setAttribute("aria-hidden", "true");
       const head = document.createElement("p");
       head.className = "dailyq-outro-head"; head.textContent = gotIt ? "Correct" : "Not this time";
+      const of = document.createElement("p");
+      of.className = "dailyq-outro-of";
+      const ofN = document.createElement("span"); ofN.className = "dailyq-outro-ofn"; ofN.textContent = (gotIt ? "1" : "0") + " / 1";
+      const ofW = document.createElement("span"); ofW.className = "dailyq-outro-ofw"; ofW.textContent = gotIt ? "right on your one try" : "one try a day";
+      of.append(ofN, ofW);
+      const vText = document.createElement("div"); vText.className = "dailyq-outro-vtext";
+      vText.append(head, of);
+      verdict.append(mark, vText);
+      const xpBox = document.createElement("div");
+      xpBox.className = "dailyq-outro-xpbox";
+      const xpKick = document.createElement("p");
+      xpKick.className = "dailyq-outro-kick"; xpKick.textContent = "XP earned";
+      xpBox.appendChild(xpKick);
       const xpLine = document.createElement("p");
       xpLine.className = "dailyq-outro-xp";
-      xpLine.textContent = gotIt ? "+" + DAILY_XP.toLocaleString() + " XP" : "No XP today";
+      if(gotIt){
+        const line = document.createElement("div"); line.className = "dailyq-outro-line";
+        const ln = document.createElement("span"); ln.textContent = "Daily question";
+        const lv = document.createElement("span"); lv.className = "dailyq-outro-lineval"; lv.textContent = "+" + DAILY_XP.toLocaleString();
+        line.append(ln, lv);
+        const total = document.createElement("div"); total.className = "dailyq-outro-total";
+        const tl = document.createElement("span"); tl.className = "dailyq-outro-totallabel"; tl.textContent = "Total";
+        xpLine.textContent = "+" + DAILY_XP.toLocaleString();
+        const unit = document.createElement("span"); unit.className = "dailyq-outro-xpunit"; unit.textContent = "XP";
+        xpLine.appendChild(unit);
+        total.append(tl, xpLine);
+        xpBox.append(line, total);
+      } else {
+        xpLine.textContent = "No XP today";
+        xpBox.appendChild(xpLine);
+      }
       const next = document.createElement("p");
       next.className = "dailyq-outro-next";
       next.textContent = gotIt ? "Come back tomorrow for the next daily question."
                                : "Come back tomorrow and try again.";
-      outro.append(mark, head, xpLine, next);
+      outro.append(kick, verdict, xpBox, next);
       /* NO PROGRESS BANNER FOR THE DETECTIVE (build 317) - "when you are
          working towards that, you get a banner notification at the top for
          the progression towards the character, we don't need that, we'd

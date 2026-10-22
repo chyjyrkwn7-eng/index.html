@@ -4747,7 +4747,7 @@ def check_b245_daily_announce(br):
       return {x:r.left+r.width/2, y:r.top+r.height/2, charging:f.classList.contains('is-charging')}; }""")
     pg.mouse.click(b["x"], b["y"])
     pg.wait_for_timeout(7300)
-    q = pg.evaluate("""()=>({ daily: !!document.querySelector('.qnum-daily'), orb: !!document.querySelector('.daily-orb'),
+    q = pg.evaluate("""()=>({ daily: !!document.querySelector('.qnum-daily-block'), orb: !!document.querySelector('.daily-orb'),
                               banner: !!document.getElementById('dailyalert') || !!document.getElementById('daily-lock-tip') })""")
     check("a real tap on the button mid-charge opens the question", b["charging"] and q["daily"], [b, q])
     check("and nothing of the sequence is left over the question", not q["orb"] and not q["banner"], q)
