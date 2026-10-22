@@ -9771,7 +9771,8 @@
     content:""; position:absolute; inset:var(--pill-in-y, 5px) -4px; border-radius:999px; pointer-events:none;
     /* her recording: the bar reads 34 and the platter 59 on a 255 scale, an
        11% white over the bar; flat, with the faintest top light */
-    background-color:rgba(255,255,255,.11);
+    /* (round 7) his reference's platter is ~+33 over its bar (55 on 22) */
+    background-color:rgba(255,255,255,.14);
     background-image:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 50%);
     box-shadow:inset 0 .75px 0 rgba(255,255,255,.1);
     transform-origin:50% 50%;
@@ -10574,7 +10575,7 @@
      Declared after the refraction rule so it wins on every device. */
   [data-layout="modern"] .bottomtabs,
   [data-layout="modern"] .bottomtabs.has-glass-refraction{
-    backdrop-filter:blur(30px) saturate(1.8); -webkit-backdrop-filter:blur(30px) saturate(1.8);
+    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
     /* THE TEAR, AGAIN (build 308): "the settings tab on the bottom has
        glitched lines running through it" on the Reset screen. The same
        iOS fault the update banner had (see Known quirks): solid layers
@@ -10593,8 +10594,20 @@
     /* (build 325) A shade lighter than the page, as her reference's bar
        is: there the bar reads 34 on a 20 page (255 scale); here it read 23
        on 24, the same as what was behind it, and only its rim drew it. */
-    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 40%), rgba(42,45,53,.8);
-    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.07), inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 1px rgba(0,0,0,.3);
+    /* CLEAR GLASS, ONE CRISP EDGE (build 327 round 7). Madison, on his
+       reference: "their Liquid Glass is so nice and crisp.. Ours looks
+       kinda grey". Measured off his screenshot: the bar is only ~14 levels
+       over the page (22 on 8) and drawn by ONE hairline rim (~+47) that
+       fades over a device pixel or two; ours was a blue-grey fill ~21 over
+       the page with two stacked hairlines (a 1px ring and a 1px top line).
+       Now: a near-black, see-through body with a faint white lift, the
+       blur kept (it still hides what scrolls under it), less saturation so
+       the glow behind does not tint it, and a single half-pixel ring. */
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.66);
+    /* The edge IS the bar's 1px border (the base rule's var(--rule) is a
+       blue-grey that stacked with an inset ring into a thick double rim). */
+    border-color:rgba(255,255,255,.16);
+    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05);
   }
   /* A slow, subtly shifting sheen across the glass \u2014 real glass and
      Liquid Glass both catch ambient light rather than sitting flat, so
@@ -10619,7 +10632,7 @@
     animation:glass-sheen 9s ease-in-out infinite;
   }
   [data-theme="dark"][data-layout="modern"] .bottomtabs-sheen::before{
-    background:linear-gradient(120deg, transparent 38%, rgba(255,255,255,.08) 50%, transparent 62%);
+    background:linear-gradient(120deg, transparent 38%, rgba(255,255,255,.05) 50%, transparent 62%);
   }
   @keyframes glass-sheen{
     0%, 100%{ transform:translate3d(-18%,0,0); }
