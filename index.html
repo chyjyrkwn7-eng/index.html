@@ -267,14 +267,31 @@
      (check-b326-f 5b). --surface-1 is a card; --surface-2 is a raised
      control (search, chat button, header slabs) one step lighter. */
   :root{
-    --surface-1:rgba(36,40,48,.7);
-    --surface-2:rgba(44,48,57,.72);
+    /* build 327 round 12: "take the mode selection buttons - that is a grey
+       background, ensure that matches the chat button look". The cards' grey
+       (rgba(36,40,48,.7)) was a different material from the chat button, the
+       tab bar and the search pills (a near-black 74% pane, a faint white lift,
+       a .16 rim, a 24px frost). Every token is the chat button's now, so every
+       box that takes a token - mode cards, unit cards, Settings, Customize,
+       the header slabs - is the same glass as the controls beside it. */
+    --surface-1:rgba(12,13,19,.74);
+    --surface-2:rgba(18,20,28,.74);
     --surface-lift:rgba(255,255,255,.07);
     --surface-inset:rgba(0,0,0,.3);
-    --surface-sheen:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.015) 40%, rgba(0,0,0,.06));
-    --surface-border:rgba(255,255,255,.13);
-    --surface-shadow:0 4px 18px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.03), inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 1px rgba(0,0,0,.28);
-    --surface-blur:blur(24px) saturate(1.2);
+    --surface-sheen:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%);
+    --surface-border:rgba(255,255,255,.16);
+    --surface-shadow:0 6px 22px rgba(0,0,0,.45), inset 0 2px 4px -1px rgba(255,255,255,.06);
+    --surface-blur:blur(24px) saturate(1.25);
+    /* ...and the CLEAR glass of the banners ("this circled stuff is great, we
+       need more of this"): a see-through 40% pane that lets the planet and the
+       stars show and brightens them a little, a hairline, a catch-light on top
+       and a dark lip under. Every pop-up takes this. */
+    --pop-bg:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
+    --pop-bg-card:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.5);
+    --pop-border:1px solid rgba(255,255,255,.11);
+    --pop-blur:blur(9px) saturate(1.9) brightness(1.06);
+    --pop-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    --pop-shadow-card:0 14px 40px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
 
   /* ---------- dark mode ---------- */
@@ -26641,7 +26658,7 @@
      quarters. What is under them is the app's own soft ambient glow,
      which a blur does almost nothing to, so the tint carries the glass
      look on its own - a touch more opaque to stand in for the blur. */
-  .rs-screen{ --rs-card:rgba(24,29,37,.7); }
+  .rs-screen{ --rs-card:rgba(12,13,19,.74); }
   .rs-kicker{
     margin:0 0 .75rem; font-size:var(--rs-kick, .68rem); font-weight:800; letter-spacing:.14em;
     line-height:1.2; text-transform:uppercase; color:rgba(255,255,255,.52);
@@ -32170,6 +32187,31 @@
     background-repeat:no-repeat !important; background-origin:border-box !important;
     border-color:rgba(255,255,255,.16) !important;
     backdrop-filter:blur(30px) saturate(1.25) !important; -webkit-backdrop-filter:blur(30px) saturate(1.25) !important;
+  }
+
+  /* ---- THE BANNERS' CLEAR GLASS, ON EVERY POP-UP (build 327 round 12) ----
+     "This circled stuff is great. We need more of this. Like the tool tips,
+     the what's new, when the daily question thing comes up, other pop-ups."
+     The save-your-code banner, the toasts and the tour tooltip already wore
+     it; Nova's speech
+     bubbles a solid navy, What's new a 72% dark pane, the leave-chat sheet a
+     94% one, the person / unlock card the page's solid panel, the start
+     sheet a solid #0F1115 and the no-hundo note a solid red-black. They take
+     the same material now (--pop-*), the bigger cards a shade more fill so
+     their words stay at 4.5:1 over whatever scrolls behind. */
+  html[data-theme="dark"][data-layout="modern"] :is(.nt-bubble, .chat-leavesheet-group, .chat-leavesheet-cancel){
+    background:var(--pop-bg); border:var(--pop-border);
+    backdrop-filter:var(--pop-blur); -webkit-backdrop-filter:var(--pop-blur);
+    box-shadow:var(--pop-shadow);
+  }
+  html[data-theme="dark"][data-layout="modern"] :is(.intro-card, .invite-sheet.unlock-card, .invite-sheet.person-card){
+    background:var(--pop-bg-card); border:var(--pop-border);
+    backdrop-filter:var(--pop-blur); -webkit-backdrop-filter:var(--pop-blur);
+    box-shadow:var(--pop-shadow-card);
+  }
+  html[data-theme="dark"][data-layout="modern"] .hundo-why{
+    background:linear-gradient(rgba(255,107,91,.14), rgba(255,107,91,.14)), var(--pop-bg-card); border:1px solid rgba(255,107,91,.4);
+    backdrop-filter:var(--pop-blur); -webkit-backdrop-filter:var(--pop-blur);
   }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
