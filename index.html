@@ -17406,8 +17406,13 @@
   .rankmap-roadfill.is-tipped{ top:calc(var(--node) / 2 + 9px); bottom:calc(var(--node) / 2 + 9px); }
   .rankmap-roadstub{ position:absolute; left:0; right:0; top:calc(var(--node) / 2); height:9px;
     background:var(--from-color, var(--rank-color)); box-shadow:0 0 10px color-mix(in srgb, var(--from-color, var(--rank-color)) 70%, transparent);
-    transition:opacity .3s ease .25s; }
-  .rankmap-roadstub.is-held{ opacity:0; transition:none; }
+    transform-origin:50% 0%; transition:transform .22s linear; }
+  /* THE STUB GROWS OUT OF THE CIRCLE (build 327 round 7), it does not
+     fade in: faded, the first 9px of a climb from nothing appeared all at
+     once beside a line already running - a jump. Held, it is scaled to
+     nothing at the circle's edge; the climb grows it to the light's
+     starting point and only then sets the line off from there. */
+  .rankmap-roadstub.is-held{ transform:scaleY(0); transition:none; }
   /* The light at the end of the fill, on the stretch you are climbing.
      IT RIDES THE SAME TRANSFORM AS THE FILL (build 268): "the circle
      lags behind the animated line when it happens". The fill grows by
@@ -95120,7 +95125,19 @@ function homeStreakArm(hero){
    the compositor's; only the rate is set from script, and only while a
    boost is running (about two seconds after the last tap).
    Reduce motion: the rings are still, nothing to speed up. */
-const ORBIT_BOOST = { cap: 6, kick: .62, tauU: .42, tauW: .12 };
+/* A GENTLE SURGE (build 327 round 7). "When tapping the center planet in
+   the video all the stuff around it started glitching and moving
+   incredibly fast." The glitching was the recorder (it multiplied a
+   ring's whole wall-clock time by the new rate - fixed in
+   tools/record-sound.py and record-hundo.py), but 6x its pace was fast on
+   a phone too. The cap is now 1 extra pace (2x at most, however fast the
+   taps come), the speed eases in more slowly (tauW .25) and settles back
+   to its own pace over about two seconds after the last tap (tauU .45,
+   stopping at .005). The rate is applied with updatePlaybackRate() where
+   there is one: setting playbackRate directly on an animation the
+   compositor is running can jump it, because the main thread's time
+   lags the compositor's; updatePlaybackRate syncs the two first. */
+const ORBIT_BOOST = { cap: 1, kick: .5, tauU: .45, tauW: .25, stop: .005 };
 const orbitBoost = { u: 0, w: 0, raf: 0, last: 0, anims: [] };
 function orbitPhaseAnims(hero){
   const out = [];
@@ -95134,7 +95151,18 @@ function orbitPhaseAnims(hero){
 }
 function orbitBoostApply(rate){
   orbitBoost.anims.forEach(a => {
-    try{ const t = a.effect && a.effect.target; if(t && t.isConnected && a.playbackRate !== rate) a.playbackRate = rate; }catch(e){}
+    try{
+      const t = a.effect && a.effect.target;
+      if(!t || !t.isConnected) return;
+      const was = typeof a.__nvRate === "number" ? a.__nvRate : a.playbackRate;
+      /* small changes are skipped (each update re-syncs the compositor),
+         never the last one back to the ring's own pace */
+      if(rate !== 1 && Math.abs(was - rate) < .01) return;
+      if(rate === 1 && was === 1 && a.playbackRate === 1) return;
+      a.__nvRate = rate;
+      if(typeof a.updatePlaybackRate === "function" && a.playState === "running") a.updatePlaybackRate(rate);
+      else a.playbackRate = rate;
+    }catch(e){}
   });
 }
 function orbitBoostKick(hero){
@@ -95158,7 +95186,7 @@ function orbitBoostStep(ts){
   orbitAdvanceMs += s.w * dt * 1000;
   s.u *= Math.exp(-dt / B.tauU);
   s.w += (s.u - s.w) * (1 - Math.exp(-dt / B.tauW));
-  if(s.u < .003 && s.w < .003 || ringMotionOff()){
+  if(s.u < B.stop && s.w < B.stop || ringMotionOff()){
     s.u = 0; s.w = 0;
     orbitBoostApply(1);
     /* What the frames above add up is close; what the ring actually shows
@@ -124869,9 +124897,23 @@ function buildRanksTab(){
         progressStop = stop;
       }
       else{
-        fillsToAnimate.push({ el: roadFill, prop: "--lit", value: String(Math.round(lit * 1000) / 1000) });
+        /* ONE ROAD, ALREADY THERE (build 327 round 7). "The rank road map,
+           the progress bar of the map is messed up it skips sections and
+           it's not fluid." Every reached stretch used to be refilled from
+           nothing each time the tab opened, all of them at once, so the
+           line showed up in pieces down the map instead of flowing. A
+           stretch that did not move since you last looked is simply drawn
+           where it is: set before the element is in the page, so it has
+           nothing to transition from. Only what grew is ever animated
+           (the climb above, the celebration below). */
+        roadFill.style.setProperty("--lit", String(Math.round(lit * 1000) / 1000));
         const st1 = road.querySelector(".rankmap-roadstub");
-        if(st1) fillsToAnimate.push({ el: st1, prop: "reveal" });
+        if(st1) st1.classList.remove("is-held");
+        const tip1 = stop.querySelector(".rankmap-roadtip");
+        if(tip1){
+          const k1 = fillsToAnimate.findIndex(f => f.el === tip1);
+          if(k1 >= 0) fillsToAnimate[k1] = { el: tip1, prop: "--tip-still", value: fillsToAnimate[k1].value };
+        }
       }
       if(below === nextKey) nowProg = lit;
       liftRoadColors(road, stop.querySelector(".rankmap-roadtip"));
@@ -125066,11 +125108,17 @@ function buildRanksTab(){
     const runProgress = () => {
       if(!progFill) return;
       if(!theme.reduceMotion) playSound("rank.road.fill", { dur: 3.2 });
-      if(progressStop) progressStop.classList.add("is-climbing");
-      progressStop && progressStop.querySelectorAll(".rankmap-roadstub.is-held").forEach(st => st.classList.remove("is-held"));
-      progFill.style.setProperty("--lit", progFill.dataset.progressTo);
-      const tipEl = progressStop && progressStop.querySelector(".rankmap-roadtip");
-      if(tipEl && tipEl.dataset.progressTo){ tipEl.classList.add("is-climbing"); placeRoadTip(tipEl, tipEl.dataset.progressTo); }
+      const held = progressStop ? progressStop.querySelectorAll(".rankmap-roadstub.is-held") : [];
+      held.forEach(st => st.classList.remove("is-held"));
+      const go = () => {
+        if(progressStop) progressStop.classList.add("is-climbing");
+        progFill.style.setProperty("--lit", progFill.dataset.progressTo);
+        const tipEl = progressStop && progressStop.querySelector(".rankmap-roadtip");
+        if(tipEl && tipEl.dataset.progressTo){ tipEl.classList.add("is-climbing"); placeRoadTip(tipEl, tipEl.dataset.progressTo); }
+      };
+      /* a held stub grows out of the circle first (.22s), then the line
+         runs on from its end - one movement, no jump */
+      if(held.length && !theme.reduceMotion) setTimeout(go, 230); else go();
     };
     const finish = c => {
       const rf = map.querySelector('.rankmap-roadfill[data-celebrate-for="' + c.key + '"]');
@@ -125081,6 +125129,13 @@ function buildRanksTab(){
     const liftNext = () => { try{ rankUpNextLift(map.querySelector(".rankmap-stop.ru-nexthold")); }catch(e){} };
     if(theme.reduceMotion){ celebrateStops.forEach(finish); liftNext(); runProgress(); return; }
     const wait = ms => new Promise(r => setTimeout(r, ms));
+    const fillDone = (el, cap) => new Promise(r => {
+      let done = false;
+      const end = () => { if(done) return; done = true; el.removeEventListener("transitionend", on); r(); };
+      const on = e => { if(e.target === el && e.propertyName === "transform") end(); };
+      el.addEventListener("transitionend", on);
+      setTimeout(end, cap);
+    });
     /* Several in a row keep the same beats but tighter, so six ranks do
        not become half a minute of waiting. */
     const many = celebrateStops.length > 2;
@@ -125096,7 +125151,11 @@ function buildRanksTab(){
         await glideCentre(r.top + window.scrollY + r.height / 2);
         await wait(many ? 250 : 350);
         const rf = map.querySelector('.rankmap-roadfill[data-celebrate-for="' + c.key + '"]');
-        if(rf){ rf.style.setProperty("--lit", "1"); playSound("rank.road.fill", { dur: 2.6 }); await wait(many ? 1500 : 1800); }
+        /* THE CIRCLE OPENS WHEN THE LINE GETS THERE (build 327 round 7):
+           the pop came 1.5-1.8s into a fill that takes 2.65s, so the
+           rank unlocked with a third of its line still to come and the
+           line then jumped the rest. Wait for the fill itself. */
+        if(rf){ rf.style.setProperty("--lit", "1"); playSound("rank.road.fill", { dur: 2.6 }); await fillDone(rf, 2900); }
         c.stop.classList.add("is-celebrating"); playSound("rank.unlock.pop");
         finish(c);
         await wait(many ? 1500 : 1900);
@@ -125169,6 +125228,7 @@ function buildRanksTab(){
         if(prop === "width") setBarFill(el, value);
         else if(prop === "reveal") el.classList.remove("is-held");
         else if(prop === "--tip") placeRoadTip(el, value);
+        else if(prop === "--tip-still"){ placeRoadTip(el, value, true); el.classList.add("is-lit"); }
         else if(prop.indexOf("--") === 0) el.style.setProperty(prop, value);
         else el.style[prop] = value;
       });
@@ -125920,7 +125980,7 @@ async function rankUpRide(scene, P, R, s0, s1, ms, under, go){
     const t0 = performance.now();
     const step = now => {
       if(!rankUpAlive(scene)){ res(); return; }
-      const k = Math.min(1, (now - t0) / ms);
+      const k = Math.max(0, Math.min(1, (now - t0) / ms));
       /* in gently, along steadily, and slowing into the centre */
       const e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
       y = R.set(s0 + (s1 - s0) * e);

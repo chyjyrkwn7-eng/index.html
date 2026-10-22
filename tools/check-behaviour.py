@@ -5617,7 +5617,12 @@ def check_b268(br):
       (function tick(){ if(stop) return;
         const d = document.querySelector('.rankmap-roadtip-dot') || document.querySelector('.rankmap-roadtip');
         const st = d && d.closest('.rankmap-stop'); const f = st && st.querySelector('.rankmap-roadfill');
-        if(d && f){ const a = d.getBoundingClientRect(), b = f.getBoundingClientRect(); frames.push(Math.abs((a.top + a.height / 2) - b.bottom)); }
+        /* MOVED IN 327 round 7 (b327v): "the progress bar of the map ...
+           skips sections and it's not fluid" - a stretch that did not move
+           is drawn where it is, so on this second open nothing fills and the
+           light is placed in the frame it is lit. Frames where the light is
+           not showing yet are not a light off its line. */
+        if(d && f && parseFloat(getComputedStyle(d).opacity) > .5){ const a = d.getBoundingClientRect(), b = f.getBoundingClientRect(); frames.push(Math.abs((a.top + a.height / 2) - b.bottom)); }
         requestAnimationFrame(tick); })();
       showProfile('ranks'); await wait(2800); stop = true;
       return { n: frames.length, worst: Math.round(Math.max.apply(null, frames.concat([0])) * 10) / 10 }; }""")
@@ -9440,7 +9445,12 @@ def check_b314h_rankmap(br):
         fr = r.get("frames") or []
         h0 = fr[0]["fillH"] if fr else 0
         before = [f for f in fr if f["fillH"] <= h0 + 0.5 and f["t"] < 6000]
-        lit_early = [round(f["op"], 2) for f in before if f["op"] > 0.1]
+        # MOVED IN 327 round 7 (b327v): in the walk nothing grew, so the line
+        # is drawn where it is from the first frame and its light with it
+        # ("it skips sections and it's not fluid" - it used to refill from 0
+        # on every open). What 313 got wrong was a light on an EMPTY road;
+        # that is still what is asked for there.
+        lit_early = [round(f["op"], 2) for f in before if f["op"] > 0.1 and (scen == "climb" or f["fillH"] < 1)]
         check("%s: the light is not there while its line has not moved (%d frames before the fill set off)" % (scen, len(before)),
               len(before) >= 3 and not lit_early, lit_early[:8])
         last = fr[-1] if fr else {}
@@ -20693,8 +20703,13 @@ def check_b318_planet(br):
         rr = _b318_rates(res)
         lab = "%s (rings %s)" % (st.get("accent"), st.get("ring") or "plain")
         print("    %s: outer %s, inner %s" % (lab, rr[0], rr[1]))
-        check(lab + ": ten fast taps speed both rings up (over 2.5x their pace) and cap it (under 7.5x)",
-              all(2.5 <= r["maxRate"] <= 7.5 for r in rr), rr)
+        # MOVED IN 327 round 7 (b327v): "When tapping the center planet ...
+        # all the stuff around it started glitching and moving incredibly
+        # fast." The surge is gentle now - a little faster, capped at about
+        # twice the rings' own pace - so this asks for a surge you can see
+        # (over 1.3x) and no more than 2.3x, where it asked for 2.5x-7.5x.
+        check(lab + ": ten fast taps speed both rings up (over 1.3x their pace) and cap it gently (under 2.3x)",
+              all(1.3 <= r["maxRate"] <= 2.3 for r in rr), rr)
         check(lab + ": the rings never run slower than their own pace, let alone backwards",
               all(r["minRate"] >= .95 for r in rr), rr)
         check(lab + ": the speed changes smoothly frame to frame (under 1.2x of pace per 60fps frame)",
