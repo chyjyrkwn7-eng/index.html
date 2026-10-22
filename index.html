@@ -32019,6 +32019,25 @@
   .bc-scene .bc-front{ border-bottom-left-radius:var(--case-outer-r); border-bottom-right-radius:var(--case-outer-r); }
   .bc-scene .bc-front.nova-case-wall.is-hw::before,
   .bc-scene .bc-front.nova-case-wall.is-hw::after{ border-bottom-left-radius:var(--case-outer-r); border-bottom-right-radius:var(--cap-ri); }
+
+  /* ---- A RANK'S CRACK, ROUND 10 ----
+     "The cracking look could have a better legit look too." At 4x it read
+     as a dark twig laid on the planet: a thin line with a hairline of gold
+     in it, and on a phone its ends ran out to the planet's edge and past
+     it. A crack in a planet is a fissure with heat in it: the crack is held
+     inside the sphere (clipped to its disc, so nothing ever crosses the
+     limb), and the light inside it glows out onto the rock round it - a
+     tight hot rim and a wider ember haze, as drop-shadows on the crack's
+     own drawing (a CSS filter on the element, not an SVG filter, and the
+     drawing does not move, so it is rasterised once). */
+  .cosmic-scar.is-crack{ clip-path:circle(49.5% at 50% 50%); }
+  .cosmic-scar.is-crack canvas.csc-art{ opacity:.72; }
+  .cosmic-scar.is-crack .csc-seam{ filter:drop-shadow(0 0 2px rgba(255,170,90,.9)) drop-shadow(0 0 7px rgba(255,90,40,.6)); }
+  .cosmic-scar.is-crack[data-crack="1"] .csc-seam{ opacity:.3; }
+  .cosmic-scar.is-crack[data-crack="2"] .csc-seam{ opacity:.5; }
+  .cosmic-scar.is-crack[data-crack="3"] .csc-seam{ opacity:.7; }
+  .cosmic-scar.is-crack[data-crack="4"] .csc-seam{ opacity:.9; }
+  .cosmic-scar.is-crack .csc-seam .csc-sm-spill{ opacity:.1; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
