@@ -81872,8 +81872,13 @@ function novaIntroLines(o){
      want the storyline to feel so good". The stakes and the ask come right
      after the blast, so everything he describes after them is something you
      are helping him get back, and why. */
-  lines.push({ text: "I can’t fly home without them. My flares power my ship, my badges hold everything I knew, and my crew are the people I’d have taught beside. I’m an instructor with nothing left to teach." });
+  /* build 327c: the stakes line is gone (the ask below says the same) - "shorten the Nova introduction" */
   lines.push({ gesture: "raise", text: "Then I found your signal: a class studying the very units I taught. Every unit you master finds one of my badges, and every rank you reach relights one of my flares. Help me bring them home, and I’ll help you pass the real exam." });
+  /* build 327c: an account that has been here already knows its flares, badges,
+     characters, banners and modes - so the introduction is only the story and
+     what has changed (the recap below), and the walk through all of it is for a
+     new account. */
+  if(!existing){
   lines.push({ text: existing && rankIdx >= 0
       ? "My flares, one for each rank, came to rest around your planet, but the blast had put their light out. They’re the flares on your Home screen. My secret flares were thrown further, into your tests, and I’ve lost count of them."
       : "My flares, one for each rank, came to rest around your planet, but the blast had put their light out. That’s why the flares on your Home screen are dark. My secret flares were thrown further, into your tests, and I’ve lost count of them.",
@@ -81921,6 +81926,7 @@ function novaIntroLines(o){
      (which already shows it), not on a line and a picture of its own */
   lines.push({ text: "Drill to learn a unit, a Mock to prove you’re ready, and Review to go over the material first. And in a Virtual Room you can race your classmates, or challenge me.",
     ...novaSlide("modes", () => novaModeRow()) });
+  }
   /* ---- AND HE BECOMES YOUR FRIEND, PARTWAY THROUGH (build 324) ----
      "When Mr nova introduces himself, throughout that cutscene you will get
      the added friends notification thing saying y'all are now friends."
@@ -86245,7 +86251,7 @@ function novaCalm(){
   try{ if(introPending || novaMeetOn || novaIntroOn) return false; }catch(e){}
   if(document.body.classList.contains("has-active-question")) return false;
   if(document.documentElement.classList.contains("ru-scene")) return false;
-  return !document.querySelector("#nova-intro, #intro-pop, #tour-overlay, #splashscreen, #genprofile-overlay, " +
+  return !document.querySelector("#nova-intro, #intro-pop, #tour-overlay, #splashscreen, #install-update, #genprofile-overlay, " +
     "#teststart-overlay, .rs-spot, .unlock-card, #badge-cutscene, #supernova-cutscene, .friend-moment");
 }
 function novaUsedToday(){
@@ -90036,7 +90042,7 @@ function maybeShowIntro(){
     if(!screen || screen.dataset.screen !== "home"){ introPending = false; return; }
     /* Busy, not finished: the splash, a tour's dim, or the generating
        overlay. Come back and look again. */
-    const busy = document.getElementById("splashscreen")
+    const busy = document.getElementById("splashscreen") || document.getElementById("install-update")
       || document.getElementById("tour-overlay")
       || document.getElementById("genprofile-overlay")
       || document.querySelector(".rs-spot, #badge-cutscene, #supernova-cutscene, #void-cutscene, #vroom-cutscene, #resume-offer");
@@ -96412,7 +96418,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-22-327b";
+const APP_BUILD = "2026-10-22-327c";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -117146,11 +117152,19 @@ function weekRecapRecord(){
     return { wk: String(raw) };
   }catch(e){ return null; }
 }
+/* build 327c: "the weekly leaderboard showed up again for some reason". The
+   seen mark lived only in this device's localStorage, so another device of the
+   account (or one whose storage was cleared) showed last week's recap again. It
+   is also written into store.novaHeard now (synced, max-merged) as the week's
+   start date in one number, and either mark counts. */
+function weekKeyNum(k){ const p = String(k || "").split("-").map(Number); return p.length === 3 && p.every(isFinite) ? p[0] * 10000 + p[1] * 100 + p[2] : 0; }
 function weekRecapSeen(lw){
   const r = weekRecapRecord();
-  return !!(r && typeof r.wk === "string" && r.wk >= lw);
+  if(r && typeof r.wk === "string" && r.wk >= lw) return true;
+  try{ return (Number(novaHeardMap()["@recap"]) || 0) >= weekKeyNum(lw); }catch(e){ return false; }
 }
 function markWeekRecapSeen(r){
+  try{ const h = novaHeardMap(); h["@recap"] = Math.max(Number(h["@recap"]) || 0, weekKeyNum(r.week)); persistLocally(); }catch(e){}
   try{
     const prev = weekRecapRecord() || {};
     const hist = prev.hist && typeof prev.hist === "object" ? prev.hist : {};
@@ -117870,7 +117884,7 @@ function scheduleWeekRecap(ms){
   weekRecapTimer = setTimeout(() => maybeShowWeekRecap(0), ms == null ? WEEK_RECAP_DELAY_MS : ms);
 }
 function weekRecapBlocked(){
-  if(document.getElementById("splashscreen") || document.getElementById("tour-overlay") || document.getElementById("genprofile-overlay")) return true;
+  if(document.getElementById("splashscreen") || document.getElementById("install-update") || document.getElementById("tour-overlay") || document.getElementById("genprofile-overlay")) return true;
   if(document.querySelector(".nova-talk, #intro-pop, #nova-intro, #badge-cutscene, #supernova-cutscene, #void-cutscene, #vroom-cutscene, " +
     ".rs-spot, .rs-fly, .fl-scene, .ff-scene, .bc-scene, .scene-bridge, #teststart-overlay, .invite-overlay, .chatdock.is-open, #resume-offer")) return true;
   try{ if(whatsNewHolds()) return true; }catch(e){}
