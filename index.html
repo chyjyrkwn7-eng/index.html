@@ -68936,6 +68936,193 @@ Object.keys(SND_DARK).forEach(id => {
 const SND_DARK_VOL = {"vr.ready": 1.602, "lb.switch": 2.3, "ui.sheet.close": 3.114, "res.xp.pop": 0.798, "rank.upnext": 0.637, "test.correct": 0.98, "vr.join": 0.583, "vr.leave": 0.612, "chat.receive": 1.739, "home.flare.veteran": 1.186, "ui.field.focus": 2.1, "ui.sheet.open": 4.989, "ui.popup.open": 3.099, "ui.notice": 2.342, "test.load": 0.3, "test.next": 4.519, "test.resume": 2.65, "test.save": 6.047, "res.grade.fail": 1.904, "res.grade.pass": 1.357, "res.grade.great": 0.845, "res.grade.perfect": 1.036, "res.xp.line": 0.818, "res.xp.total": 0.344, "res.xp.fill": 0.309, "res.xp.knock": 0.513, "res.levelup": 1.205, "res.xp.overflow": 0.924, "res.unlock.banner": 1.045, "res.unlock.reveal": 3.357, "res.found.flare": 2.656, "hundo.bubbles": 0.882, "home.flare.rookie": 2.92, "home.flare.ranger": 2.291, "home.secret.tap": 4.165, "home.secret.found": 1.141, "home.daily.ready": 1.972, "home.daily.fill": 2.034, "badge.sparkle": 1.911, "badge.slide": 5.912, "rank.road.scroll": 0.551, "rank.challenge.tick": 1.434, "rank.road.fill": 0.426, "rank.unlock.pop": 0.305, "rank.flare.zoom": 0.522, "rank.attn": 1.278, "rank.windup": 1.266, "rank.swell": 0.847, "rank.title": 0.904, "rank.card": 1.138, "rank.word": 0.824, "rank.xp.climb": 0.694, "vr.count": 1.61, "vr.go": 1.833, "chat.invite": 1.49, "nova.arrive": 1.354, "ob.whatsnew": 1.351, "ob.tooltip": 1.847, "cust.banner": 1.226, "cust.fx": 2.116, "app.start": 0.361, "rank.journey.bed": 0.668};
 Object.keys(SND_DARK_VOL).forEach(id => { if(SOUND_CATALOGUE[id]) SOUND_CATALOGUE[id].vol = SND_DARK_VOL[id]; });
 
+/* ---- THE HUNDO SCORES, CINEMATIC (build 327, round 7, b327w) ----
+   Madison: "The ufo hundo sound effects are not it, fix that. Let's ensure
+   the hundo sound effects are awesome and perfect." Round 4-6's scores were
+   still bell choirs and pluck runs re-spoken a register down: a 100% that
+   sounded like a music box. These are sound DESIGN, not tunes: synth
+   whooshes, weighted impacts with a mid body as well as a sub (a phone's
+   speaker gives nothing under ~200Hz, so every hit carries its weight in
+   300Hz-2kHz too), risers, shimmering FM, and only a short dark D minor
+   motif tying each back to the Home ambience. Every beat below is copied
+   from its effect's own code - move a beat there, move it here:
+     confetti   celebrate(): the burst at 0, the pieces falling to ~2.9s
+     fireworks  hfxFireworks' `shots` [launch, climb] (bursts at launch +
+                climb), the crackle 4.5-5.2s, the embers from 3.9s
+     underwater HFX_UW (the sea up at rise + riseD, the drain at drain)
+     bubbles    hfxBubblesGlass (TF = 3.5, the flourish)
+     ufo        hfxUfoArrival (T0 1, T1 3.7, the circle's marks), the UFO
+                CSS: prime 3.1, the beam fired 3.66 (its floor 4.18), the
+                sweep 4.2-5.1, landing 6.1, scan 6.3 (and back 6.92), lock
+                6.95, steal 7.38, lift 7.4, charge 8.0, warp 8.55, stars 9.9 */
+/* the UFO's flight, read off hfxUfoArrival as it builds the path: which way
+   it circles and when it passes the far top, its side, the near bottom,
+   the other side and the top again (seconds from the effect's start). */
+var hfxUfoFlight = null;
+const SND_UFO_MARKS = [1.68, 1.99, 2.29, 2.6, 2.9];
+/* a weighted hit: a sub drop, a mid body and a crack of air, so it lands on
+   a phone speaker as well as on headphones */
+function sndHit(K, o){
+  const t = o.t || 0, g = o.g == null ? 1 : o.g, pan = o.pan || 0;
+  K.tone({ t, f: o.f || 90, f2: o.f2 || 38, gl: .35, type: "sine", a: .003, d: (o.d || .9) * .7, g: .06 * g });
+  K.tone({ t, f: (o.f || 90) * 3.2, f2: (o.f2 || 38) * 4, gl: .2, type: "triangle", lp: 1400, a: .003, d: (o.d || .9) * .55, g: .3 * g, pan: pan * .5 });
+  K.noise({ t, color: "p", bp: o.bp || 1100, q: 1.1, a: .002, d: .09, g: .4 * g, pan });
+  K.noise({ t, color: "p", bp: 520, ff2: 260, fgl: (o.d || .9), q: .8, a: .004, d: (o.d || .9) * 1.1, g: .3 * g, pan, rev: .45 });
+  K.noise({ t, color: "b", lp: o.lp || 900, ff2: 300, fgl: (o.d || .9) * 1.2, a: .004, d: (o.d || .9) * 1.2, g: .06 * g, pan, rev: .45 });
+}
+/* a synth whoosh: filtered air swept up or down, panned across */
+function sndWhoosh(K, o){
+  K.noise({ t: o.t || 0, color: "p", bp: o.f || 500, ff2: o.f2 || 2600, fgl: o.dur || .5, q: o.q || 1.4, a: (o.dur || .5) * (o.peak == null ? .7 : o.peak), hold: 0, d: (o.dur || .5) * (1 - (o.peak == null ? .7 : o.peak)) + .08, g: o.g || .12, pan: o.pan, pan2: o.pan2, pd: o.dur || .5, rev: o.rev == null ? .25 : o.rev });
+  if(o.tone !== false) K.tone({ t: o.t || 0, f: (o.f || 500) * .5, f2: (o.f2 || 2600) * .5, gl: o.dur || .5, type: "sawtooth", lp: 1600, a: (o.dur || .5) * .7, d: .12, g: (o.g || .12) * .12, pan: o.pan, pan2: o.pan2, pd: o.dur || .5 });
+}
+/* a wet plop: a sine flicked up fast (the bubble), a bead of noise */
+function sndPlop(K, o){
+  const f = o.f || 320, t = o.t || 0;
+  K.tone({ t, f, f2: f * (o.k || 2.6), gl: o.gl || .035, a: .002, d: o.d || .07, g: o.g || .05, pan: o.pan, lp: 2600 });
+  K.noise({ t, bp: f * 4, q: 4, a: .001, d: .02, g: (o.g || .05) * .35, pan: o.pan });
+}
+const SND_HUNDO = {
+  "hundo.confetti": { vol: 1.25, desc: "Confetti: a quick suck of air and a popper's crack with a body to it, the paper flung out in a whoosh across both ears, a short low D major stab rising under it, the paper fluttering down round you and a few soft glints as it lands.",
+    fn: K => {
+      sndWhoosh(K, { t: 0, f: 1800, f2: 500, dur: .08, peak: .9, g: .08, tone: false });
+      sndHit(K, { t: .07, f: 150, f2: 55, d: .45, bp: 1600, g: .75 });
+      K.noise({ t: .07, bp: 2400, q: 1.2, a: .001, d: .05, g: .22 });
+      sndWhoosh(K, { t: .09, f: 700, f2: 3200, dur: .42, peak: .2, g: .14, pan: -.6, pan2: .6, rev: .3 });
+      [["D4", 0], ["F#4", .05], ["A4", .1], ["D5", .15]].forEach(([n, d]) => K.syn({ t: .12 + d, f: n, d: .9, g: .05, pan: -.4 + d * 4 }));
+      K.dpad(["D4", "F#4", "A4"], { t: .12, lp: 900, ff2: 1500, fgl: .6, a: .1, hold: .5, d: 1.2, g: .009 });
+      K.noise({ t: .3, bp: 2600, q: .8, am: [17, .9, 8], amType: "square", a: .15, hold: 1.4, d: 1.0, g: .05, pan: -.6, pan2: .6, pd: 2.6, rev: .2 });
+      for(let i = 0; i < 7; i++) K.fm({ t: .55 + i * .3 + K.R() * .1, f: K.dm(7 + (i * 3) % 6, "D4"), ratio: 1.5, idx: .7, idx2: 0, a: .003, d: .35, g: .012, lp: 3200, pan: K.r(-.7, .7), rev: .4 });
+    } },
+  "hundo.fireworks": { vol: 1, desc: "Fireworks, on the show's own shots: each shell whistles up from the box with a hiss, then bursts in a weighted thud - sub, a mid body and a crack of air rolling round the room - the chrysanthemums glitter and fizz, the willow hangs in a long falling hiss, the ring shimmers; the low D minor walk (D, Bb, C) steps under the show to a big D major for the three-shell finale, then the crackle and the embers' fizz.",
+    fn: K => {
+      /* hfxFireworks' shots: [launch, climb, x in the sky (0..1), type, big] */
+      const SHOTS = [[.25, .75, .26, "peony"], [.6, .8, .74, "chrys"], [1.0, .85, .5, "ring"], [1.45, .8, .16, "willow"], [1.6, .75, .86, "peony"],
+        [2.55, .8, .22, "peony"], [2.5, .95, .5, "chrys", 1], [2.6, .8, .78, "peony"]];
+      SHOTS.forEach((s, i) => {
+        const tb = s[0] + s[1], big = !!s[4], pan = (s[2] - .5) * 1.7, fin = i >= 5;
+        /* the launch: a thump off the box, a whistle and its hiss climbing */
+        K.noise({ t: s[0], bp: 700, q: 1, a: .002, d: .06, g: .12, pan: pan * .3 });
+        K.tone({ t: s[0], f: 520, f2: 1500 + i * 40, gl: s[1], type: "sine", a: .06, hold: s[1] - .12, d: .05, g: .016, vib: [11, 18], pan: pan * .3, pan2: pan, pd: s[1] });
+        K.noise({ t: s[0], color: "p", bp: 1200, ff2: 3600, fgl: s[1], q: 1.2, a: s[1] * .85, d: .04, g: .05, pan: pan * .3, pan2: pan, pd: s[1] });
+        /* the burst */
+        sndHit(K, { t: tb, f: big ? 82 : fin ? 92 : 100, f2: 32, d: big ? 1.5 : 1.0, bp: big ? 900 : 1300, g: big ? 1.05 : fin ? .8 : .7, pan, lp: big ? 1100 : 900 });
+        if(s[3] === "chrys") for(let k = 0; k < (big ? 30 : 16); k++) K.click({ t: tb + .25 + K.R() * (big ? 1.3 : .9), bp: K.r(1800, 4200), q: 3, d: .012, g: K.r(.02, .05), pan: pan + K.r(-.4, .4) });
+        if(s[3] === "willow") K.noise({ t: tb + .1, color: "p", bp: 2600, ff2: 700, fgl: 2.4, q: .9, a: .2, hold: .6, d: 1.6, g: .05, pan, rev: .4 });
+        if(s[3] === "ring") K.fm({ t: tb + .02, f: "A4", ratio: 1.5, idx: 1.2, idx2: .1, a: .01, d: 1.4, g: .03, vib: [6, 12], pan, rev: .5, lp: 3000 });
+        if(s[3] === "peony") K.noise({ t: tb + .15, color: "p", bp: 1800, ff2: 900, fgl: .9, q: .8, a: .05, d: .8, g: .045, pan, rev: .4 });
+      });
+      /* the walk under it: D minor, Bb, C, then the finale's D major */
+      [[1.0, "D2", "A2", "D3", "F3"], [1.85, "Bb1", "F2", "Bb2", "D3"], [2.3, "C2", "G2", "C3", "E3"]].forEach(([t, b, ...n]) => {
+        K.dbass({ t, f: b, d: .45, g: .018 }); n.forEach((m, k) => K.syn({ t: t + .01 + k * .012, f: sndHz(m) * 2, d: .7, g: .03, pan: (k - 1) * .4 })); });
+      K.dbass({ t: 3.35, f: "D3", hold: .4, d: 1.4, g: .028 });
+      ["D4", "F#4", "A4", "D5"].forEach((m, k) => K.syn({ t: 3.36 + k * .02, f: m, hold: .3, d: 1.6, g: .04, pan: (k - 1.5) * .35 }));
+      K.dpad(["D3", "F#3", "A3"], { t: 3.35, lp: 700, ff2: 1600, fgl: .5, a: .06, hold: 1.2, d: 1.6, g: .011 });
+      for(let i = 0; i < 34; i++) K.click({ t: 4.5 + K.R() * .75, bp: K.r(1500, 4000), q: 4, d: .01, g: K.r(.025, .055), pan: K.r(-.85, .85) });
+      K.noise({ t: 3.9, color: "p", bp: 3000, q: 1, am: [23, .7], a: .4, hold: .5, d: 1.0, g: .025, pan: -.4, pan2: .4, pd: 2, rev: .3 });
+    } },
+  "hundo.underwater": { vol: 1, desc: "Underwater, on HFX_UW: the sea comes up over you in a rising rush and you plunge under it (a muffled thud and a splash); then the world goes muffled - pressure and a low murmur, bubbly glugs rising past both ears, a whale's long glide and a slow dark D minor figure as the fish pass; then the drain, a falling pull with a gurgle, and the last drips.",
+    fn: K => {
+      const U = (typeof HFX_UW === "object" && HFX_UW) ? HFX_UW : { rise: .15, riseD: 1.6, drain: 5.0, drainD: 1.2 };
+      const up = U.rise, full = U.rise + U.riseD, dr = U.drain, out = U.drain + U.drainD;
+      /* the rush up, and the plunge as the surface reaches the face */
+      K.noise({ t: up, color: "p", bp: 500, ff2: 2400, fgl: U.riseD * .9, q: .9, a: U.riseD * .85, d: .15, g: .2, rev: .3 });
+      K.tone({ t: up, f: 90, f2: 240, gl: U.riseD, type: "sawtooth", lp: 700, a: U.riseD * .8, d: .2, g: .02 });
+      sndHit(K, { t: full - .05, f: 110, f2: 40, d: .7, bp: 700, lp: 600, g: .55 });
+      for(let i = 0; i < 8; i++) sndPlop(K, { t: full - .02 + i * .03 + K.R() * .03, f: K.r(380, 900), k: 2, g: .03, pan: K.r(-.6, .6) });
+      /* the muffled world */
+      K.noise({ t: full, color: "b", lp: 520, am: [.45, .5], a: .4, hold: dr - full - .3, d: .5, g: .06 });
+      K.noise({ t: full, color: "p", bp: 380, q: .8, am: [.7, .6], a: .3, hold: dr - full - .3, d: .5, g: .12, rev: .3 });
+      K.noise({ t: full + .3, color: "p", bp: 900, ff2: 600, fgl: dr - full, q: 3, a: 1.2, hold: dr - full - 2, d: .8, g: .1, pan: -.7, pan2: .7, pd: dr - full, rev: .3 });
+      for(let t = full + .4; t < dr - .6; t += 1.1) K.tone({ t, f: "D3", f2: "C#3", gl: 1, type: "triangle", lp: 600, a: .45, d: .6, g: .05, rev: .4 });
+      for(let i = 0; i < 70; i++){
+        const t = full + .15 + K.R() * (dr - full - .3);
+        sndPlop(K, { t, f: K.r(240, 520), k: K.r(1.8, 2.6), gl: .05, d: .09, g: .06, pan: K.r(-.75, .75) });
+      }
+      [[full + 1.0, "A2"], [full + 1.6, "D3"]].forEach(([t, n]) => K.syn({ t, f: n, lp: 600, d: 1.6, g: .04, rev: .55, dly: .3 }));
+      /* the drain */
+      K.noise({ t: dr, color: "p", bp: 1800, ff2: 300, fgl: U.drainD, q: 1, a: .2, hold: U.drainD * .5, d: .5, g: .16, rev: .2 });
+      K.tone({ t: dr + .1, f: 320, f2: 110, gl: U.drainD, type: "triangle", lp: 800, a: .1, hold: U.drainD * .5, d: .3, g: .05, vib: [12, 70] });
+      for(let i = 0; i < 9; i++) sndPlop(K, { t: dr + .2 + i * .1 + K.R() * .05, f: K.r(200, 420), k: 1.6, gl: .06, d: .1, g: .04 });
+      for(let i = 0; i < 5; i++) sndPlop(K, { t: out + .1 + i * .2 + K.R() * .1, f: K.r(700, 1200), k: 1.8, d: .05, g: .03, pan: K.r(-.7, .7) });
+      K.syn({ t: out + .2, f: "D3", d: 1.2, g: .035 });
+    } },
+  "hundo.bubbles": { vol: 1.6, desc: "Bubbles: wet plops rising off the box all round you - big ones low and round, small ones quick and high - over a soft breath of air; then the flourish at 3.5s, a ring of pops going round both ears, a soft low D major stab and a shimmer rising out of it.",
+    fn: K => {
+      K.noise({ color: "p", bp: 900, q: .7, a: .5, hold: 2.6, d: .8, g: .02, rev: .3 });
+      for(let i = 0; i < 26; i++){
+        const t = .1 + (i / 26) * 3.2 + K.R() * .1, big = K.R() < .35;
+        sndPlop(K, { t, f: big ? K.r(200, 300) : K.r(380, 720), k: big ? 2.2 : 2.8, gl: big ? .05 : .03, d: big ? .11 : .07, g: big ? .06 : .045, pan: K.r(-.8, .8) });
+      }
+      for(let i = 0; i < 5; i++){ const t = .7 + i * .55 + K.R() * .2; K.noise({ t, bp: 1600, q: 2, a: .001, d: .03, g: .06, pan: K.r(-.6, .6) }); K.tone({ t, f: 600, f2: 260, gl: .05, a: .001, d: .08, g: .03 }); }
+      /* the flourish */
+      for(let i = 0; i < 12; i++) sndPlop(K, { t: 3.5 + i * .022, f: K.r(300, 620), k: 2.4, d: .07, g: .05, pan: Math.cos(i / 12 * Math.PI * 2) * .9 });
+      ["D4", "F#4", "A4"].forEach((n, k) => K.syn({ t: 3.53 + k * .03, f: n, d: .9, g: .04, pan: (k - 1) * .5 }));
+      K.fm({ t: 3.6, f: "A4", f2: "D5", gl: .5, ratio: 1.5, idx: .8, idx2: .1, a: .2, d: 1.0, g: .02, lp: 3200, vib: [6, 14], rev: .5 });
+    } },
+  "hundo.ufo": { vol: 1.4, desc: "UFO, the showpiece, on the saucer's own beats: a dark D minor drone as the night comes down; the saucer's warbling engine dopplers past as it circles (high coming at you, dropping as it passes close, across your ears); it settles to a hover, its hull charges (3.1s) and the tractor beam fires (3.66s) with a hit and a hum that powers up and sweeps with the beam; the landing clanks (6.1s); the scan reads the number with a sweeping tone and blips (6.3s, and back), three lock-on tones (6.95s), then the steal (7.38s) - the score sucked up the beam with a rising whoop and a gulp as it goes in; the engine charges and shudders (8.0s), the warp goes with a boom and a falling sweep (8.55s), and a short low D minor figure as the stars fade.",
+    fn: (K, o) => {
+      o = o || {};
+      const side = o.side === -1 ? -1 : 1, M = Array.isArray(o.marks) && o.marks.length === 5 ? o.marks : SND_UFO_MARKS;
+      /* the night coming down: the ambience's dark drone with the Bb in it */
+      K.dpad(["D3", "A3", "Bb3"], { lp: 600, ff2: 1100, fgl: 3.5, a: 1.0, hold: 7.2, d: 1.4, g: .009 });
+      K.tone({ f: "D2", type: "triangle", lp: 400, a: .8, hold: 7.3, d: 1.2, g: .025 });
+      /* the engine: a warbling hum from the moment it is seen to the warp,
+         its pitch the doppler of its circle - higher coming at you, a drop
+         as it passes close, settling into the hover */
+      const f0 = 150, D = [[M[0], f0], [M[1], f0 * 1.05], [M[2] - .12, f0 * 1.09], [M[2] + .12, f0 * .92], [M[3], f0 * .95], [M[4], f0 * 1.0], [3.7, f0 * .98], [8.0, f0 * .98], [8.55, f0 * 1.6]];
+      [0, 7].forEach((det, k) => K.tone({ t: .95, f: f0 * 1.04, pts: D.map(p => [p[0] - .95, p[1]]), type: "sawtooth", det, lp: 1100, q: 2, a: .4, hold: 7.2, d: .1, g: k ? .013 : .019, vib: [6.5, 45] }));
+      K.fm({ t: .95, f: f0 * 2, ratio: 1.5, idx: .5, idx2: .5, a: .4, hold: 7.2, d: .1, g: .012, vib: [6.5, 45], lp: 2000 });
+      /* the near pass: a whoosh and a whine sweeping across your ears */
+      sndWhoosh(K, { t: M[1], f: 500, f2: 1400, dur: M[3] - M[1], peak: .5, g: .55, pan: side * .95, pan2: -side * .95, q: 1.1, tone: false });
+      [0, 9].forEach(det => K.tone({ t: M[1], f: f0 * 2.1, pts: [[M[2] - M[1] - .1, f0 * 2.18], [M[2] - M[1] + .1, f0 * 1.86], [M[3] - M[1], f0 * 1.9]], type: "sawtooth", det, lp: 1500, q: 2, a: M[2] - M[1], d: (M[3] - M[2]) * .8, g: .1, vib: [7, 40], pan: side * .95, pan2: -side * .95, pd: M[3] - M[1] }));
+      K.fm({ t: M[1], f: 700, f2: 520, gl: M[3] - M[1], ratio: 1.01, idx: .4, a: M[2] - M[1], d: (M[3] - M[2]) * .9, g: .05, pan: side * .95, pan2: -side * .95, pd: M[3] - M[1], vib: [9, 30] });
+      sndWhoosh(K, { t: .9, f: 300, f2: 900, dur: M[0] - .7, peak: .8, g: .08, pan: -side * .8, pan2: 0, tone: false });
+      /* the hull charges, then the beam fires (3.66s) and powers up to the floor (4.18s) */
+      K.tone({ t: 3.1, f: 110, f2: 520, gl: .56, type: "sawtooth", lp: 500, ff2: 2600, fgl: .56, a: .5, d: .04, g: .04 });
+      K.noise({ t: 3.1, color: "p", bp: 600, ff2: 3000, fgl: .56, q: 1.5, a: .52, d: .04, g: .08 });
+      sndHit(K, { t: 3.66, f: 130, f2: 50, d: .5, bp: 1500, g: .7 });
+      K.fm({ t: 3.66, f: 880, f2: 330, gl: .14, ratio: 2.01, idx: 2.5, idx2: .5, a: .001, d: .18, g: .07 });
+      /* the tractor beam: a hum that powers up as the beam reaches the box
+         and holds until the score is taken, sweeping with the beam */
+      [["D3", 0, .05], ["A3", 4, .03]].forEach(([n, det, g]) => K.tone({ t: 3.66, f: sndHz(n) * .7, pts: [[.52, sndHz(n)], [1.2, sndHz(n) * 1.01], [4.3, sndHz(n)]], type: "sawtooth", det, lp: 500, ff2: 1500, fgl: .52, q: 3, a: .5, hold: 3.8, d: .25, g }));
+      K.noise({ t: 3.66, color: "p", bp: 700, ff2: 950, fgl: .52, q: 2, am: [6, .85], a: .5, hold: 3.8, d: .3, g: .09, rev: .25 });
+      K.noise({ t: 3.66, bp: 1700, q: 5, am: [14, .7], a: .5, hold: 3.8, d: .3, g: .035 });
+      K.noise({ t: 4.2, bp: 1100, ff2: 2200, fgl: .45, q: 3, a: .25, hold: .4, d: .25, g: .05, pan: -.6, pan2: .6, pd: .63 });
+      K.noise({ t: 4.83, bp: 2200, ff2: 1100, fgl: .27, q: 3, a: .1, d: .2, g: .04, pan: .6, pan2: 0, pd: .27 });
+      /* the landing (6.1s): its feet on the box - a weighted metal clank */
+      sndHit(K, { t: 6.1, f: 140, f2: 46, d: .5, bp: 900, g: .55 });
+      K.fm({ t: 6.1, f: 330, ratio: 1.41, idx: 3, idx2: .3, a: .001, d: .35, g: .05, lp: 2800 });
+      /* scan: the bar sweeps the number and back (6.3s, 6.92s) - a reading
+         tone across your ears, and the digits read off as blips */
+      K.noise({ t: 6.3, bp: 900, ff2: 2600, fgl: .62, q: 9, a: .04, hold: .5, d: .1, g: .035, pan: -.7, pan2: .7, pd: .62 });
+      K.noise({ t: 6.92, bp: 2600, ff2: 900, fgl: .62, q: 9, a: .03, hold: .5, d: .12, g: .035, pan: .7, pan2: -.7, pd: .62 });
+      [7, 9, 11, 8, 10, 12, 9, 11, 13, 12, 10, 8, 11, 9, 7, 4].forEach((k, i) =>
+        K.key({ t: 6.32 + i * .077, f: K.dm(k, "D3") * 2, lp: 3200, a: .002, d: .03, g: .14, vib: null, dly: 0, rev: .1, pan: i < 8 ? -.6 + i * .17 : .6 - (i - 8) * .17 }));
+      /* lock: the brackets close on the number (6.95s) - target acquired */
+      [[6.95, "C#5"], [7.07, "D5"], [7.19, "A5"]].forEach(([t, n], i) => { K.key({ t, f: n, lp: 2600, a: .002, d: i === 2 ? .3 : .12, g: .06, vib: null, dly: 0, rev: .15 }); K.click({ t, bp: 2600, d: .01, g: .06 }); });
+      /* steal: the 100% sucked up the beam into the saucer (7.38s, .6s) - a
+         rising whoop, the air pulled up with it, and a gulp (7.98s) */
+      K.tone({ t: 7.38, f: "D3", f2: "D5", gl: .58, type: "sawtooth", lp: 900, ff2: 3200, fgl: .58, a: .02, hold: .45, d: .12, g: .05, vib: [9, 30] });
+      K.noise({ t: 7.38, bp: 1900, q: 1.2, a: .001, d: .05, g: .16 });
+      K.tone({ t: 7.38, f: 220, f2: 60, gl: .06, type: "triangle", a: .001, d: .1, g: .1 });
+      sndWhoosh(K, { t: 7.38, f: 300, f2: 3600, dur: .6, peak: .85, g: .2, q: 1.6, tone: false });
+      K.sparkle({ t: 7.45, t2: 7.95, n: 10, f1: 1200, f2: 4200, rise: true, g: .03 });
+      K.tone({ t: 7.98, f: 700, f2: 160, gl: .08, a: .002, d: .14, g: .08 });
+      K.noise({ t: 7.98, bp: 500, q: 2, a: .002, d: .07, g: .1 });
+      /* the charge: the engine winds up and shudders (8.0-8.55s) */
+      K.tone({ t: 8.0, f: 160, f2: 1400, gl: .55, type: "sawtooth", lp: 700, ff2: 3600, fgl: .55, a: .5, d: .05, g: .05 });
+      K.noise({ t: 8.0, color: "p", bp: 500, ff2: 3600, fgl: .55, q: 1.4, am: [9, .8, 30], a: .5, d: .05, g: .12 });
+      /* the warp (8.55s): a boom, a crack of air, a sweep falling away */
+      sndHit(K, { t: 8.55, f: 120, f2: 30, d: 1.3, bp: 1000, g: 1.1, lp: 1200 });
+      K.tone({ t: 8.55, f: 1800, f2: 90, gl: .8, type: "sawtooth", lp: 2400, ff2: 300, fgl: .8, a: .002, d: .8, g: .04, rev: .4 });
+      K.fm({ t: 8.55, f: 600, f2: 120, gl: .5, ratio: 1.5, idx: 3, idx2: .2, a: .002, d: .6, g: .05, rev: .4 });
+      /* and a short low D minor figure as the stars fade */
+      [[9.4, "A3"], [9.62, "F3"], [9.84, "D3"]].forEach(([t, n], i) => K.syn({ t, f: n, d: i === 2 ? 1.6 : .7, g: .04, rev: .5 }));
+      for(let i = 0; i < 6; i++) K.fm({ t: 9.9 + i * .15, f: K.dm(9 + i, "D4"), ratio: 1.5, idx: .6, idx2: 0, a: .003, d: .4, g: .01, lp: 3000, pan: K.r(-.7, .7), rev: .5 });
+    } }
+};
+Object.keys(SND_HUNDO).forEach(id => { const c = SOUND_CATALOGUE[id]; if(c){ c.fn = SND_HUNDO[id].fn; c.desc = SND_HUNDO[id].desc; c.vol = SND_HUNDO[id].vol; } });
+
 
 /* ---- THE HOME AMBIENCE ----
    "a cool dark kinda offset noise": a low D pad with a slow beating
@@ -99445,6 +99632,10 @@ function hfxUfoArrival(c, u, bob, L, hov, w){
   const dt = .001, cum = [0];
   for(let t = dt; t <= D + 1e-9; t += dt) cum.push(cum[cum.length - 1] + shape(t - dt / 2) * dt);
   const k = len[len.length - 1] / cum[cum.length - 1];
+  /* for the score (b327w): which way it circles and when it passes the
+     circle's top, its side, the near bottom, the other side and the top */
+  try{ const tOf = sArc => { let i = 0; while(i < cum.length - 1 && k * cum[i] < sArc) i++; return T0 + i * dt; };
+    hfxUfoFlight = { side, marks: [40, 70, 100, 130, 160].map(j => +tOf(len[j]).toFixed(3)), at: Date.now() }; }catch(e){}
   const at = t => { const sArc = k * cum[Math.min(cum.length - 1, Math.max(0, Math.round(t / dt)))];
     let j = 1; while(j < len.length - 1 && len[j] < sArc) j++;
     const f = Math.max(0, Math.min(1, (sArc - len[j - 1]) / ((len[j] - len[j - 1]) || 1)));
@@ -99639,7 +99830,8 @@ function playHundoFx(id, opts){
   }
   const handle = { id, screen: scr, box: bx, total, startedAt: performance.now(), done: false };
   /* its own score, timed to its own beats - the full effect only */
-  const sndFx = (!opts.boxOnly && !opts.frame) ? playSound("hundo." + id) : null;
+  const sndFx = (!opts.boxOnly && !opts.frame) ? playSound("hundo." + id,
+    id === "ufo" && hfxUfoFlight && Date.now() - hfxUfoFlight.at < 1000 ? { side: hfxUfoFlight.side, marks: hfxUfoFlight.marks } : undefined) : null;
   const lifted = () => { if(opts.box) opts.box.classList.remove("hfx-over", "hfx-lift"); };
   const end = () => { if(handle.done) return; handle.done = true; if(scr) scr.remove(); if(bx) bx.remove(); if(dim) dim.remove(); if(mo) mo.disconnect(); lifted(); undo(false); };
   handle.timer = setTimeout(end, total);
