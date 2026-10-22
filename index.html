@@ -66853,7 +66853,7 @@ const SOUND_CATALOGUE = {
       K.pad(["D3", "A3"], { lp: 1200, ff2: 360, fgl: .9, a: .06, hold: .2, d: .9, g: .02 });
       K.chime({ f: "A5", t: .08, d: 1, g: .018, idx: .6, lp: 2400 });
     } },
-  "res.levelup": { vol: 2.25, group: "Results", bus: "cut", cd: 1000, hap: "celebrate",
+  "res.levelup": { vol: 2.25, group: "Results", bus: "cut", cd: 300, hap: "celebrate",
     desc: "Level up: a handheld level-up jingle - three quick pulse A's, then up through Bb and C to a held D major, triangle bass under it and a bell.",
     fn: K => {
       [0, .08, .16].forEach(t => K.tone({ t, f: "A5", duty: .5, lp: 3200, a: .003, d: .05, g: .05 }));
