@@ -26090,3 +26090,68 @@ Held on `wip/build-327` for Madison's go, like the rest of 327.
 - **Tooltips**: the existing account's Profile tip is two steps (Profile; Stats) and its Calendar tip names what the calendar now holds. `check-tours` counts steps from the source.
 
 - **Haptics through Nova's introduction, the What's New card and the tour (round 9).** "I need it to work through the nova introduction ... and feel like the app is legit." Found and fixed with real touch taps (`check-b327z` z8, which counts every tick by the event it happened in): (1) a tap on Nova's bubble made no tick at all - `.nova-talk` and `#tour-overlay` are in `SND_SCENE_TAP` now; (2) a button tapped mid-sentence was silent, because his typing blips (`nova.blip`) counted as "the sound this tap already made" and the generic tap gave way to them - blips carry `ambient: true` and no longer set `st.lastAt`; (3) `nova.arrive` asked for a haptic on a timer, outside any gesture, which iOS ignores - its `hap` is null. Chromium cannot feel any of it; the gate holds the path (every tick inside the finger's release, none on touch-down, none on its own). **A real iPhone is still the only proof the Taptic Engine answers.**
+
+### Build 327 round 10 - the last list before shipping
+
+Madison's messages of 22 Oct (the 15:37 list the previous session never
+reached, then four more). Everything below is on `wip/build-327`.
+
+- **White buttons are Quit's recipe in white.** "The white button does not
+  look like the other 3d buttons." Quit and Save and exit are a flat fill,
+  NO border, a 1px lit lip and a 2px shaded lip inset, three shadows. The
+  white `.next` was the only one with a 1px border, and an inset shadow is
+  painted INSIDE the border, so that border was the pale ring with a step
+  inside it, whatever colour it was given. Three rounds shaded around it
+  (border colours, background gradients); the fix was `border:0` and the
+  same lips. It is 2px shorter than it was (the border's), the same height
+  as Quit. **If a white button ever looks different from the dark ones,
+  diff their computed box-shadow and border first.**
+- **Save and exit is plum** (#4E3160), picked from three shown on the
+  pause screen. Black, glass, grey, green and blue had each been turned down.
+- **One glass for every system control.** The tab bar's exact recipe
+  (body, lift, `blur(30px) saturate(1.25)`, one .16 rim, its soft shadow)
+  on the chat button, Pause, the daily-question button, search pills, Find
+  me, the top switchers, back to top, the plain toast, BACK LINKS, the
+  calendar's month arrows and Go to today. Round 8 had them at a 24px blur
+  with their own shadows, which read as close but not the same. Action
+  buttons (Start, Resume, Quit, Customize) are solid 3D buttons, not glass.
+- **Settings**: section headers are plain labels (they had the cards' own
+  surface, so header and card looked the same); the cards are the bar's
+  glass; Share & install's labels stay on one line (a two-line "Add to Home
+  Screen" made both buttons taller than Help's). The "Show class days
+  remaining" switch is gone; the Calendar's course card always shows and
+  says only the class days left.
+- **Stats**: the accuracy ring and every Your units bar are red under 70,
+  green from 70, gold at 100 (`statBand`, the test rings' hexes). Your units
+  rows are not buttons ("tap to drill" came off) and say how many answers
+  each is based on.
+- **Calendar**: each card edged and washed in its own colour (Next test
+  amber, Final Exams orange, The course blue; Today neutral); "Class 26E" is
+  white, not gold; class-day cells lighter with white numbers. A full
+  redesign was offered and not done - it is the one open item.
+- **The Badges tab's case is a tray** (`buildSleekBadgeCase`), asked for as
+  "tray only" and "sleek premium": one graphite shell, a machined metal rim
+  (a gradient border), the lining sunk in, two flush latches and the
+  nameplate on the front edge. No lid, guards, screws, hinges or handle.
+  The cells are the same `badge-tile ncase-cell`, so inspecting is
+  unchanged. The head reads "Badges" (the case carries its name). The
+  badge cutscene's case takes the same smooth shell and loses the same
+  hardware (`.bc-scene` overrides), keeping its latches and lid motion.
+- **A rank's crack** is clipped to the planet's disc and its seam glows onto
+  the rock (drop-shadows on the seam svg); brighter each rank.
+- **Horizon's reveal** sinks its base into a lit haze on the horizon instead
+  of a hard crop.
+- **App icon**: the pixel V has depth - a blurred shadow on the tile (never
+  the one-cell offset block), a darker thickness face a third of a cell under
+  every step, lit upper edges and a gloss over its top half. The tile's grey
+  is unchanged; matching it needs a photo of the Home Screen beside an Apple
+  dark icon.
+- **Nova's recap names no crew count** again ("some of my crew"), per 326.
+- **Unit details pop-up**: a line under the badge bar says what it counts;
+  Best score says "on the whole unit"; Last score says when it was part of
+  the unit; "Completed" is "Times taken - any length, any mode".
+- Gates re-read with these decisions: b327-c (no strain slide; no tiles on
+  the course card), b327-d (floating glass rule, 28px icons, plum), b327-e
+  (banded ring), b327-m (16/21 lines), b327-o and b325-d (found sections at
+  the end), b326-d (no "how they come home" slide; no crew COUNT), and
+  check-behaviour's class-days and course checks.
