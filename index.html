@@ -72791,7 +72791,9 @@ function centerPauseStack(panel, stack){
     const r = stack.getBoundingClientRect(), pr = panel.getBoundingClientRect();
     const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    let line = vh / 2 + 1.75 * rem;
+    /* build 327 round 11: the "Paused" heading is gone, so the group is ~30px
+       shorter above the buttons; the line comes up .9rem to keep it centred */
+    let line = vh / 2 + 0.85 * rem;
     /* A THIRD BUTTON (build 319: Save and exit) makes the group a button
        taller, so the line rises by half a button for the Pause panel AND
        for its Quit confirmation (both carry .has-save): the group stays on
