@@ -274,8 +274,8 @@
        a .16 rim, a 24px frost). Every token is the chat button's now, so every
        box that takes a token - mode cards, unit cards, Settings, Customize,
        the header slabs - is the same glass as the controls beside it. */
-    --surface-1:rgba(12,13,19,.74);
-    --surface-2:rgba(18,20,28,.74);
+    --surface-1:rgba(12,13,19,.62);
+    --surface-2:rgba(18,20,28,.62);
     --surface-lift:rgba(255,255,255,.07);
     --surface-inset:rgba(0,0,0,.3);
     --surface-sheen:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%);
@@ -26658,7 +26658,7 @@
      quarters. What is under them is the app's own soft ambient glow,
      which a blur does almost nothing to, so the tint carries the glass
      look on its own - a touch more opaque to stand in for the blur. */
-  .rs-screen{ --rs-card:rgba(12,13,19,.74); }
+  .rs-screen{ --rs-card:rgba(12,13,19,.62); }
   .rs-kicker{
     margin:0 0 .75rem; font-size:var(--rs-kick, .68rem); font-weight:800; letter-spacing:.14em;
     line-height:1.2; text-transform:uppercase; color:rgba(255,255,255,.52);
@@ -29953,7 +29953,7 @@
      it. And anywhere else." Back to top and the plain toast join the list. */
   [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .backtotop),
   [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
-    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74) !important;
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
     border-color:rgba(255,255,255,.16) !important;
     backdrop-filter:blur(24px) saturate(1.25); -webkit-backdrop-filter:blur(24px) saturate(1.25);
@@ -32027,7 +32027,7 @@
   }
   [data-theme="dark"][data-layout="modern"] .screen-settings .slab.motion-summary:first-child{ margin-top:.4rem; }
   [data-theme="dark"][data-layout="modern"] .screen-settings .settings-card{
-    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74) !important;
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
     border:1px solid rgba(255,255,255,.16) !important;
     backdrop-filter:blur(24px) saturate(1.25); -webkit-backdrop-filter:blur(24px) saturate(1.25);
@@ -32170,7 +32170,7 @@
      own look. */
   [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .backtotop),
   [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
-    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74) !important;
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
     border:1px solid rgba(255,255,255,.16) !important;
     backdrop-filter:blur(30px) saturate(1.25) !important; -webkit-backdrop-filter:blur(30px) saturate(1.25) !important;
@@ -45338,7 +45338,8 @@ function syncSky(isQuestion){
   /* build 327 round 12: "the result screen, shouldn't the starry background be
      there too?" Results had been calm (no stars) since 323 along with the
      question; only a question or a flashcard on screen is now. */
-  b.classList.toggle("sky-calm", !!(isQuestion || stage.querySelector(".qnumrow, .fc-screen")));
+  b.classList.toggle("sky-calm", !!(isQuestion || window.forceHideBottomTabs
+    || stage.querySelector(".qnumrow, .fc-screen, .actions-results")));
 }
 new MutationObserver(() => {
   document.body.classList.toggle("has-floatbtn", !!stage.querySelector(".floatbtn"));
@@ -96412,7 +96413,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-18-326";
+const APP_BUILD = "2026-10-22-327";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
