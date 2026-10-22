@@ -191,19 +191,22 @@ def section_c(br):
 
 
 CASE = r"""(root) => { const sc = document.querySelector(root); if(!sc) return null;
+  const capsShown = [...sc.querySelectorAll('.nova-case-cap')].filter(c => getComputedStyle(c).display !== 'none' && c.getClientRects().length).length;
+  const guardsShown = [...sc.querySelectorAll('.nova-case-wall.is-hw')].flatMap(wl => ['::before', '::after'].map(p => getComputedStyle(wl, p).display)).filter(d => d !== 'none').length;
+  const lidShown = !!sc.querySelector('.ncase-lid');
   const caps = [...sc.querySelectorAll('.nova-case-cap')].map(c => { const cs = getComputedStyle(c), w = c.offsetWidth || 1;
     return Math.max(...['borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomLeftRadius', 'borderBottomRightRadius'].map(k => parseFloat(cs[k]) || 0)) / w; });
   const guards = [...sc.querySelectorAll('.nova-case-wall.is-hw')].flatMap(wl => ['::before', '::after'].map(p => { const cs = getComputedStyle(wl, p), w = parseFloat(cs.width) || 1;
     return Math.max(parseFloat(cs.borderBottomLeftRadius) || 0, parseFloat(cs.borderBottomRightRadius) || 0) / w; }));
   const cush = [...sc.querySelectorAll('.nova-case-cushion')].map(e => { const cs = getComputedStyle(e); const bg = cs.backgroundImage;
     return { diag: (bg.match(/linear-gradient\((to (right|left) bottom|to bottom (right|left))/g) || []).length, tiles: /(^|,\s*)25%/.test(cs.backgroundSize) }; });
-  const lin = sc.querySelector('.nova-case-lining'), cw = (sc.querySelector('.nova-case.ncase, .bc-case') || sc).offsetWidth || 1;
+  const lin = sc.querySelector('.bcs-well, .nova-case-lining'), cw = (sc.querySelector('.bcs, .nova-case.ncase, .bc-case') || sc).offsetWidth || 1;
   const sh = lin ? getComputedStyle(lin).boxShadow : '';
   /* the deepest inset shadow pushed DOWN from the lining's top edge (its y offset - the wall's height; not its blur), as a share of the case's width */
   let deep = 0;
   sh.split(/,(?![^(]*\))/).forEach(p => { if(!/inset/.test(p)) return; const n = (p.replace(/rgba?\([^)]*\)/, '').match(/-?[\d.]+px/g) || []).map(parseFloat);
     if(n.length >= 2 && n[1] > 0){ deep = Math.max(deep, n[1]); } });
-  return { caps, guards, cush, recess: deep / cw }; }"""
+  return { caps, guards, cush, recess: deep / cw, capsShown, guardsShown, lidShown }; }"""
 
 
 def section_d(br):
@@ -224,11 +227,16 @@ def section_d(br):
         for where, c in (("the Badges tab", tab), ("the cutscene", cut)):
             if not c:
                 check("%s, %s: the case is there" % (label, where), False); continue
-            check("%s, %s: all %d corner protectors are square (largest corner radius %.0f%% of the width, under 12%%)" % (label, where, len(c["caps"]), 100 * max(c["caps"] or [1])),
-                  len(c["caps"]) >= 8 and max(c["caps"]) < .12, [round(v, 2) for v in c["caps"]])
-            check("%s, %s: every wall guard's foot is square too" % (label, where), c["guards"] and max(c["guards"]) < .12, [round(v, 2) for v in c["guards"]])
-            check("%s, %s: the lid's inside has no quilt (no diagonal seams, no tiled buttons)" % (label, where),
-                  c["cush"] and all(x["diag"] == 0 and not x["tiles"] for x in c["cush"]), c["cush"])
+            # REVISED (327 round 10): "the metal pieces, the 3d look, the clip parts all of it is bad" -
+            # asked which way: tray only, sleek premium. No corner protectors or wall guards are drawn
+            # anywhere, the tab has no lid at all, and the cutscene's lid keeps no quilt.
+            check("%s, %s: no corner protectors or wall guards drawn (sleek, round 10)" % (label, where),
+                  c["capsShown"] == 0 and c["guardsShown"] == 0, {"caps": c["capsShown"], "guards": c["guardsShown"]})
+            if where == "the Badges tab":
+                check("%s, %s: tray only - no lid" % (label, where), not c["lidShown"], c["lidShown"])
+            else:
+                check("%s, %s: the lid's inside has no quilt (no diagonal seams, no tiled buttons)" % (label, where),
+                      c["cush"] and all(x["diag"] == 0 and not x["tiles"] for x in c["cush"]), c["cush"])
             check("%s, %s: the lining is a recess - its top edge's inner shadow %.1f%% of the case deep (1.2%%+)" % (label, where, 100 * c["recess"]),
                   c["recess"] >= .012, round(c["recess"], 4))
         ctx.close()
