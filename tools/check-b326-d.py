@@ -328,12 +328,17 @@ def check_recap(br):
                   # MOVED IN 327 (b327m): his goodbye is now the last line of
                   # the talk ("... bring my crew home. I'll speak with you
                   # again") - the job, not a count; the recap is the rest
-                  ri >= 0 and not re.search(r"character|crew", " ".join(t for t in tail if "speak with you again" not in t), re.I) and not re.search(r"characters found", stage, re.I)
+                  # REVISED (327 round 9): the recap names the crew that came home (found-so-far
+                  # shows badges, flares AND characters) - what 326 ruled out is the COUNT
+                  ri >= 0 and not re.search(r"\d+\s+(?:of\s+my\s+)?(?:crew|characters?)", " ".join(t for t in tail if "speak with you again" not in t), re.I) and not re.search(r"characters found", stage, re.I)
                   and not re.search(r"of\s+\d+\s+secret", stage + " " + said, re.I),
                   {"said": tail, "stage": stage[:200]})
             lv = "level %d" % st["level"]
             if key == "plain":
-                ok = lv in said and st["rank"] in said and not re.search(r"gate|wait", said, re.I)
+                # REVISED (327 round 9): "a text box ... needs to come up to talk about the
+                # change of your level and explain it there" - every existing account hears the
+                # rule now; only an account whose level did not move hears no "went from"
+                ok = lv in said and st["rank"] in said and not re.search(r"went from", said, re.I)
             # MOVED IN 327: "add a slide or something for the guys levels who
             # changed". Both fixtures are below the level 313c showed them
             # (no grandfather in 327), so each gets the level-change slide:

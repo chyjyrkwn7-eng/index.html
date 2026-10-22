@@ -190,14 +190,18 @@ def check_story(br):
         r = pg.evaluate(TALK, {"id": "nova-intro"})
         story_checks(dev, r, truth, True)
         lines = r.get("lines") or []
-        p1 = (r.get("props") or {}).get("2") or (r.get("props") or {}).get(2) or {}
+        # MOVED AGAIN (327 round 9, later): "maybe the found by you so far ... should be
+        # incorporated at the end where it starts to talk about your progress" - the
+        # found sections come up near the end, so the check finds that line wherever it is
+        fi = next((i for i, l in enumerate(lines) if re.search(r"already found", l)), -1)
+        p1 = (r.get("props") or {}).get(str(fi)) or (r.get("props") or {}).get(fi) or {}
         # MOVED IN 327 (round 9): "add another slide before it ... why we
         # haven't seen Mr nova" (line two) and "found by you so far doesn't show
         # badges or flares or anything just characters" - line three shows
         # every group they have found, and only what they have found.
-        check("%s existing: a signal comes in before he says a word; he has not met them; line two says where he has been; line three shows what they have found - badges, flares and characters" % dev,
+        check("%s existing: a signal comes in before he says a word; he has not met them; line two says where he has been; later, what they have found - badges, flares and characters" % dev,
               r.get("signalBeforeFirst") and re.search(r"met", lines[0] if lines else "") and re.search(r"lost in the dark", lines[1] if len(lines) > 1 else "")
-              and re.search(r"already found", lines[2] if len(lines) > 2 else "")
+              and fi > 2
               and p1.get("fdGroups", 0) >= 2 and p1.get("fdBadges", 0) > 0 and p1.get("fdFlares", 0) > 0 and p1.get("fdCrew", 0) > 0,
               {"signal": r.get("signalBeforeFirst"), "l": lines[:3], "p2": {k: p1.get(k) for k in ("fdGroups", "fdBadges", "fdFlares", "fdCrew", "cap")}})
         ctx.close()

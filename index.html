@@ -81626,7 +81626,9 @@ function novaRecapLines(st, name){
   lines.push({ text: (lit > 0 ? "You’ve relit " + many(lit, "one of my flares", "of my flares") : "You haven’t relit any of my flares yet") +
       (f > 0 ? ", and found " + many(f, "one of my secret flares", "of my secret flares") + "." : ", and none of my secret flares yet. There are more of them out there than I can count."),
     enter: ctx => novaProp(ctx, novaStack(novaFoundRow(2), novaCap("What you’ve found"))) });
-  lines.push({ text: crewHave > 0 ? "And " + many(crewHave, "one of my crew has", "of my crew have") + " come home to you. Thank you." : "None of my crew has come home to you yet. I’ll be here when they do.",
+  /* no number (build 326: "talks about how many characters you have found as
+     if that's an achievement?") - the faces on the stage say who */
+  lines.push({ text: crewHave > 1 ? "And some of my crew have come home to you. Thank you." : crewHave === 1 ? "And one of my crew has come home to you. Thank you." : "None of my crew has come home to you yet. I’ll be here when they do.",
     enter: ctx => novaProp(ctx, novaStack(novaFoundRow(3), novaCap("What you’ve found"))) });
   return lines;
 }
