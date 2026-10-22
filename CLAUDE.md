@@ -25984,3 +25984,44 @@ would be the greatest feature we could add."* Gate: `tools/check-b327z.py`
   finger: a real `<input switch>` laid over each answer choice, forwarding
   the tap (the CLAUDE.md quirk's "only route left").
 
+
+### Build 327 round 8 - the road's light at rest, no progress scene without progress, haptics on the touch that counts
+
+Madison: *"The road map, when it goes to the end or wherever you are, the
+circle/dot isn't there till it starts moving. Fix that. Also, let's
+remember that the progress won't change if progress hasn't been made and
+if progress hasn't made there will not be that tiny cutscene showing the
+progress."* and *"Ensure Haptic Touch is working flawlessly. Like
+selecting answers, tapping the planet stuff, I want it to feel legit like
+Haptic Touch does normally."* Gates: check-b327z z3 and z6 (4 failures on
+a22b1ff), check-behaviour 53 and 96 (3 failures on a22b1ff).
+
+> **Supersedes** build 311's "down the road and back on EVERY open" (back
+> to build 280: the map only moves when the climb moved) and build 314's
+> "the light is not there until the line moves".
+
+- **The light is lit where it stands as the tab opens** (`tab.runFill`):
+  it used to be laid at its start dark and lit only by an animated move,
+  so the glide down arrived at a line with no light. It still waits while
+  a rank-up has a circle to open first (`tipWaits`: celebrating ranks, the
+  rank-up scene, `.ru-nexthold`, `data-ru-climb`).
+- **Nothing moved, nothing plays**: `runRankMapCelebration` returns when
+  there is no rank to celebrate and no climb (`rankProgGrew` - any growth
+  at all still counts).
+- **Home's taps never buzzed on an iPhone, and that was the event, not the
+  switch.** `homeTapBind` (the planet, rank bubbles, secret flares) runs on
+  `pointerdown` and then skips the click; a finger's pointerdown is not a
+  user gesture to WebKit (touchend / pointerup / click are), so the tick
+  was asked for where iOS ignores it. NovaSound now holds any tick asked
+  for inside a touch's pointerdown/touchstart dispatch (`downDispatch`,
+  `pendingKind` - the strongest kind of that touch) and plays it in that
+  touch's `touchend`/`pointerup`; `pointercancel` (a scroll) drops it. The
+  flag also clears when the task ends, in case a handler stops the event.
+  Answers were always on `click` and tick inside it.
+- **The tick is ios-haptics' exact form**: a fresh `display:none` label +
+  switch in `<head>`, `label.click()`, removed. The first version's
+  persistent 1px rendered switch is gone; the capture-phase stopper keys
+  on a WeakSet of the transient nodes. A display:none input cannot take
+  focus, so the focus-restore code went too.
+- **Still unverifiable here**: whether the tick is felt. If it is not, the
+  fallback stays a real `<input switch>` under each finger.

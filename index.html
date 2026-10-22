@@ -69231,62 +69231,99 @@ const NovaSound = (function(){
      How it is driven matters, and is why the 2024 attempt (CLAUDE.md,
      Known quirks) is not this: the switch is flipped by clicking its
      <label>, the way the open-source ios-haptics package does it, not by
-     clicking the input or setting .checked. The switch stays RENDERED
-     (a 1px see-through box in the corner, never display:none), takes no
-     taps, and is hidden from screen readers. Its events must not reach
+     clicking the input or setting .checked. Since round 8 each tick is a
+     fresh display:none label in <head>, clicked and removed - the
+     package's own form (see taptic()). Its events must not reach
      the app: a window-level capture listener, added before any other,
      stops the label's click and the input's click/change/input there, so
      no "tap outside" closes a sheet, no switch sound plays and no pick
      list sees a change. Stopping propagation does not stop the label's
-     own activation, so the switch still flips. If the click moved focus
-     (a text field had it), focus goes straight back so the keyboard stays.
+     own activation, so the switch still flips. A tick asked for on a
+     finger's pointerdown is played on its release (see below).
      One tick per gesture moment (TICK_GAP_MS), patterns as a few ticks.
      iPhone only: an iPad has no Taptic Engine. */
   const isIPhone = () => typeof navigator !== "undefined" && /iPhone|iPod/i.test(navigator.userAgent || "");
   const canTaptic = () => isIPhone() && !canVibrate();
   const TICK_GAP_MS = 45;
   const TAPTIC_TICKS = { tick: 1, tap: 1, select: 1, toggle: 1, swipe: 1, heavy: 1, success: 2, error: 2, boom: 2, celebrate: 3 };
-  let hapticHost = null, hapticInput = null, hapticAt = -1e9;
-  const isHapticNode = n => !!(hapticHost && n && (n === hapticHost || n === hapticInput || n === hapticHost.firstChild));
+  /* THE TICK IS IOS-HAPTICS' OWN, EXACTLY (build 327, round 8). Madison:
+     "Ensure Haptic Touch is working flawlessly. Like selecting answers,
+     tapping the planet stuff". The first version kept one switch rendered
+     in the corner; the open-source package his screenshots came from
+     (ios-haptics) makes a fresh <label style="display:none"> with the
+     switch inside, puts it in <head>, clicks the label and takes it out
+     again - the one form reported working on real iPhones, so it is the
+     form used now. A display:none input cannot take focus, so the
+     keyboard is never touched. Its click/change/input still bubble
+     through the document, and the capture listener below stops them
+     there, so nothing in the app ever sees one. */
+  let hapticAt = -1e9;
+  const hapticNodes = new WeakSet();
   ["click", "change", "input", "focus", "focusin", "blur", "focusout"].forEach(ev => window.addEventListener(ev, e => {
-    if(isHapticNode(e.target)){ e.stopImmediatePropagation(); }
+    if(e.target && hapticNodes.has(e.target)){ e.stopImmediatePropagation(); }
   }, true));
-  function hapticEl(){
-    if(hapticHost && hapticHost.isConnected) return hapticHost;
-    if(!document.body) return null;
-    const host = document.createElement("label");
-    host.className = "nova-haptic";
-    host.setAttribute("aria-hidden", "true");
-    host.style.cssText = "position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:.01;overflow:hidden;pointer-events:none;z-index:-1;margin:0;padding:0;border:0;";
-    const inp = document.createElement("input");
-    inp.type = "checkbox";
-    inp.setAttribute("switch", "");
-    inp.tabIndex = -1;
-    inp.setAttribute("aria-hidden", "true");
-    inp.style.cssText = "margin:0;width:1px;height:1px;";
-    host.appendChild(inp);
-    document.body.appendChild(host);
-    hapticHost = host; hapticInput = inp;
-    return host;
-  }
   function taptic(){
     const now = (typeof performance !== "undefined" ? performance.now() : Date.now());
     if(now - hapticAt < TICK_GAP_MS) return false;
-    const el = hapticEl();
-    if(!el) return false;
+    const host = document.head || document.documentElement;
+    if(!host) return false;
     hapticAt = now;
-    const was = document.activeElement;
-    try{ el.click(); }catch(e){ return false; }
+    let label = null;
     try{
-      if(was && was !== document.activeElement && was !== document.body && typeof was.focus === "function") was.focus({ preventScroll: true });
-    }catch(e){}
+      label = document.createElement("label");
+      label.className = "nova-haptic";
+      label.setAttribute("aria-hidden", "true");
+      label.style.display = "none";
+      const inp = document.createElement("input");
+      inp.type = "checkbox";
+      inp.setAttribute("switch", "");
+      inp.tabIndex = -1;
+      label.appendChild(inp);
+      hapticNodes.add(label); hapticNodes.add(inp);
+      host.appendChild(label);
+      label.click();
+    }catch(e){ return false; }
+    finally{ try{ if(label && label.parentNode) label.parentNode.removeChild(label); }catch(e){} }
     if(typeof window !== "undefined"){ window.__novaTaptic = (window.__novaTaptic || 0) + 1; }
     return true;
   }
+  /* A TICK ASKED FOR ON A FINGER'S POINTERDOWN WAITS FOR THE RELEASE.
+     Home's planet, rank bubbles and secret flares answer on pointerdown
+     (homeTapBind), so the light is under the finger at once - and a
+     touch's pointerdown is not a user gesture to WebKit (touchend,
+     pointerup and click are), so a switch flipped there plays no haptic,
+     and the click that would have counted was skipped. Anything asked for
+     inside a touch's pointerdown/touchstart dispatch is held and ticked in
+     that touch's touchend (or pointerup); a touch that turns into a scroll
+     (pointercancel) drops it, as a scroll should. */
+  let downDispatch = false, pendingKind = null, pendingAt = 0;
+  const isTouchDown = e => e.type === "touchstart" || (e.pointerType && e.pointerType !== "mouse");
+  ["pointerdown", "touchstart"].forEach(ev => {
+    /* cleared by the bubbling listener below, and - in case a handler
+       stopped the event before it got there - when this task ends */
+    window.addEventListener(ev, e => { if(isTouchDown(e)){ downDispatch = true; setTimeout(() => { downDispatch = false; }, 0); } }, { capture: true, passive: true });
+    window.addEventListener(ev, () => { downDispatch = false; }, { passive: true });
+  });
+  const firePending = () => {
+    downDispatch = false;
+    if(!pendingKind) return;
+    const k = pendingKind; pendingKind = null;
+    if((typeof performance !== "undefined" ? performance.now() : Date.now()) - pendingAt > 1500) return;
+    haptic(k);
+  };
+  ["touchend", "pointerup"].forEach(ev => window.addEventListener(ev, firePending, { capture: true, passive: true }));
+  ["pointercancel", "touchcancel"].forEach(ev => window.addEventListener(ev, () => { pendingKind = null; }, { capture: true, passive: true }));
+  const TAPTIC_RANK = { tick: 0, tap: 1, select: 1, toggle: 1, swipe: 1, heavy: 2, success: 3, error: 3, boom: 4, celebrate: 5 };
   const hapticsWanted = () => !!(theme && (canTaptic() ? theme.haptics !== false : theme.vibrate));
   function haptic(kind){
     if(!kind || !hapticsWanted()) return;
     if(canTaptic()){
+      if(downDispatch){
+        /* one touch, one tick: the strongest kind it asked for */
+        if(!pendingKind || (TAPTIC_RANK[kind] || 0) > (TAPTIC_RANK[pendingKind] || 0)) pendingKind = kind;
+        pendingAt = (typeof performance !== "undefined" ? performance.now() : Date.now());
+        return;
+      }
       const n = TAPTIC_TICKS[kind] || 1;
       if(!taptic()) return;
       /* the rest of a pattern a beat apart; WebKit carries a tap's gesture
@@ -125587,19 +125624,11 @@ function buildRanksTab(){
        light and comes back. Either way it is glideScrollTo - a speed we
        pick, not the browser's - and a touch, a wheel or a key stops it
        where it is. */
-    if(!celebrateStops.length && !progFill){
-      if(theme.reduceMotion) return;
-      const wait = ms => new Promise(r => setTimeout(r, ms));
-      (async () => {
-        await wait(650);
-        if(!(await screenClear()) || userTookOver) return;
-        await glideCentre(focusOf());
-        if(userTookOver || !map.isConnected) return;
-        await wait(1100);
-        await glideHome();
-      })();
-      return;
-    }
+    /* ...REVERSED AGAIN IN BUILD 327 (round 8): "the progress won't
+       change if progress hasn't been made and if progress hasn't [been]
+       made there will not be that tiny cutscene showing the progress."
+       Nothing moved since the last look: the map simply opens, still. */
+    if(!celebrateStops.length && !progFill) return;
     store.rankMapSeen = heldIndex; saveStore(); syncProfileTabDot();
     const runProgress = () => {
       if(!progFill) return;
@@ -125669,8 +125698,8 @@ function buildRanksTab(){
       await glideHome();
     })();
   }
-  /* (Build 280's "no glance when nothing moved" is reversed in build 311 -
-     see runRankMapCelebration.) */
+  /* (Build 280's "no glance when nothing moved" was reversed in build 311
+     and is back since 327 round 8 - see runRankMapCelebration.) */
   /* Armed when the tab is SHOWN (runRankMapCelebration), not when it is
      built: Profile builds every tab up front, and the tap that switched
      to this one would otherwise count as taking over before it began. */
@@ -125706,8 +125735,18 @@ function buildRanksTab(){
   let tipWatch = null;
   tab.runFill = () => {
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      map.querySelectorAll(".rankmap-roadtip").forEach(t =>
-        placeRoadTip(t, t.dataset.progressTo ? (t.dataset.progressFrom || 0) : 0, true));
+      /* THE LIGHT IS THERE BEFORE IT MOVES (build 327, round 8). "The road
+         map, when it goes to the end or wherever you are, the circle/dot
+         isn't there till it starts moving." Laid at its start it was left
+         dark (only an animated move lit it), so the walk down the road
+         arrived at an empty line. It is lit where it stands now - unless a
+         rank-up still has to open the circle it leaves (build 327: no
+         colour past a rank you are still arriving at). */
+      const tipWaits = celebrateKeys.length > 0 || !!ruScene || !!map.querySelector(".ru-nexthold, [data-ru-climb]");
+      map.querySelectorAll(".rankmap-roadtip").forEach(t => {
+        placeRoadTip(t, t.dataset.progressTo ? (t.dataset.progressFrom || 0) : 0, true);
+        if(!tipWaits) t.classList.add("is-lit");
+      });
       if(!tipWatch && typeof ResizeObserver === "function"){
         let lastW = map.offsetWidth;
         tipWatch = new ResizeObserver(() => {

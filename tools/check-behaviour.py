@@ -6304,8 +6304,11 @@ def check_b280_rankmap_still(br):
     # time, you should follow the rank road map progress bar to your rank
     # and then back to the top". Opened with nothing changed it now WALKS
     # (travels and comes back) but does not re-run the climb.
-    check("opened with nothing changed, the Rank tab walks down to your progress (build 311) without re-running the climb",
-          r.get("recorded") is not None and 0 < r["recorded"] < 1 and r.get("stillMax", 0) > 40 and not r.get("stillClimb"), r)
+    # MOVED IN 327 round 8: build 311's walk-every-open is reversed again -
+    # "if progress hasn't [been] made there will not be that tiny cutscene
+    # showing the progress." Opened with nothing changed, the map is still.
+    check("opened with nothing changed, the Rank tab stays where it opened and does not re-run the climb (327 round 8)",
+          r.get("recorded") is not None and 0 < r["recorded"] < 1 and r.get("stillMax", 99) <= 2 and not r.get("stillClimb"), r)
     check("opened after the climb grew by a thousandth, it travels to it and runs the climb",
           r.get("grownClimb") is True and r.get("grownMax", 0) > 40, r)
     ctx.close()
@@ -9438,7 +9441,7 @@ def check_b314h_rankmap(br):
     walk was scrollTo({behavior:"instant"}) on a smooth-scrolling page (an
     engine without "instant" falls back to the page's own smooth glide),
     and Gold's road was the raw #F5C21B rather than the name's lifted gold."""
-    print("\n96. build 314: the road's light waits for its line, the walk comes back to the top, Gold's road is the name's gold")
+    print("\n96. build 314 / 327 round 8: the road's light is there before it moves, only progress scrolls, Gold's road is the name's gold")
     for scen in ("climb", "walk"):
         ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
         r = pg.evaluate(_RANKMAP_SAMPLE, scen)
@@ -9450,17 +9453,26 @@ def check_b314h_rankmap(br):
         # ("it skips sections and it's not fluid" - it used to refill from 0
         # on every open). What 313 got wrong was a light on an EMPTY road;
         # that is still what is asked for there.
-        lit_early = [round(f["op"], 2) for f in before if f["op"] > 0.1 and (scen == "climb" or f["fillH"] < 1)]
-        check("%s: the light is not there while its line has not moved (%d frames before the fill set off)" % (scen, len(before)),
-              len(before) >= 3 and not lit_early, lit_early[:8])
+        # MOVED IN 327 round 8: "the circle/dot isn't there till it starts
+        # moving. Fix that." The light is lit where it stands from the
+        # start (after its own short fade-in), before the line moves.
+        settled = [f for f in before if f["t"] > 900]
+        dark = [round(f["op"], 2) for f in settled if f["op"] < 0.9]
+        check("%s: the light is there before its line moves (%d frames before the fill set off)" % (scen, len(settled)),
+              len(settled) >= 3 and not dark, dark[:8])
         last = fr[-1] if fr else {}
         check("%s: once the fill has run, the light is lit and sits at the end of the line" % scen,
               last and last["op"] > 0.9 and abs(last["dotY"] - last["fillEnd"]) <= 3, last)
         sy = [f["sy"] for f in fr]
-        check("%s: the walk went down the road and came back to the very top" % scen,
-              sy and max(sy) > 100 and sy[-1] == 0, {"max": max(sy) if sy else None, "end": sy[-1] if sy else None})
-        check("%s: every scroll of the walk is a plain jump, never the options form an engine may not know" % scen,
-              r.get("calls") and all(c == "xy" for c in r["calls"]), r.get("calls"))
+        if scen == "climb":
+            check("climb: the show went down the road and came back to the very top",
+                  sy and max(sy) > 100 and sy[-1] == 0, {"max": max(sy) if sy else None, "end": sy[-1] if sy else None})
+            check("climb: every scroll of the show is a plain jump, never the options form an engine may not know",
+                  r.get("calls") and all(c == "xy" for c in r["calls"]), r.get("calls"))
+        else:
+            # MOVED IN 327 round 8: nothing grew, so there is no walk at all
+            check("walk: nothing moved, so the map does not scroll (no cutscene without progress)",
+                  sy and max(sy) <= 2 and not r.get("calls"), {"max": max(sy) if sy else None, "calls": r.get("calls")})
         ctx.close()
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};

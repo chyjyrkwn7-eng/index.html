@@ -12,11 +12,15 @@ is everything around the tick:
   z2. a real tap on an answer flips the hidden switch, in the tap's own
       handler (the counter moves before the click returns), and keeps
       doing it with sound turned off.
-  z3. the hidden switch is rendered (never display:none), takes no taps and
-      is hidden from screen readers; none of its click / change events reach
-      the app (no listener at document level sees them, no switch sound).
+  z3. each tick is a fresh display:none label + switch in <head>, clicked and
+      removed (ios-haptics' own form, round 8), hidden from screen readers;
+      none of its click / change events reach the app.
   z4. a text field that had focus keeps it.
   z5. Haptics off: nothing flips; the choice is saved and survives a reload.
+  z6. Home's planet and bubbles answer on pointerdown, which is not a gesture
+      to WebKit for a finger: their tick is held to that touch's release
+      (pointerup/touchend), one per touch, and a touch that becomes a scroll
+      (pointercancel) drops it. Round 8; fails on a22b1ff.
 
   python3 tools/check-b327z.py [--against FILE]
 
@@ -110,14 +114,24 @@ def z2_z3_z4(br):
         check("z2 a tap on an answer flips the hidden switch", got >= 1, str(got))
         inside = pg.evaluate("() => window.__inClick")
         check("z2 ...inside the tap's own click handler", inside is not None and inside >= 1, str(inside))
-        el = pg.evaluate("""() => { const l = document.querySelector('label.nova-haptic'); if(!l) return null;
-          const i = l.querySelector('input'); const cs = getComputedStyle(l); const r = l.getBoundingClientRect();
-          return { sw: i && i.hasAttribute('switch'), disp: cs.display, pe: cs.pointerEvents, aria: l.getAttribute('aria-hidden'),
-                   w: r.width, h: r.height, tab: i && i.tabIndex, inBody: l.parentNode === document.body }; }""")
-        check("z3 the hidden control is a native switch in a label", el and el["sw"], str(el))
-        check("z3 it is rendered (not display:none), 1px, takes no taps",
-              el and el["disp"] != "none" and el["w"] >= 1 and el["pe"] == "none", str(el))
-        check("z3 it is hidden from screen readers and the tab order", el and el["aria"] == "true" and el["tab"] == -1, str(el))
+        # MOVED IN 327 round 8: the switch is ios-haptics' own form now - a
+        # fresh display:none label in <head>, clicked and removed per tick.
+        el = pg.evaluate("""() => { let got = null;
+          /* the label is in and out inside one call, so catch it as it goes in */
+          const orig = HTMLLabelElement.prototype.click;
+          HTMLLabelElement.prototype.click = function(){
+            if(!got && this.matches('label.nova-haptic')){ const i = this.querySelector('input');
+              got = { sw: !!(i && i.hasAttribute('switch')), disp: this.style.display, aria: this.getAttribute('aria-hidden'),
+                      tab: i ? i.tabIndex : null, inHead: this.parentNode === document.head }; }
+            return orig.apply(this, arguments); };
+          window.__novaTaptic = 0; NovaSound.haptic('select');
+          HTMLLabelElement.prototype.click = orig;
+          return { got, left: document.querySelectorAll('label.nova-haptic').length, n: window.__novaTaptic }; }""")
+        g = (el or {}).get("got") or {}
+        check("z3 each tick is a native switch in a label", g.get("sw") is True, str(el))
+        check("z3 ...display:none, in <head>, and gone again straight after (the ios-haptics form)",
+              g.get("disp") == "none" and g.get("inHead") is True and el["left"] == 0 and el["n"] == 1, str(el))
+        check("z3 it is hidden from screen readers and the tab order", g.get("aria") == "true" and g.get("tab") == -1, str(el))
         seen = pg.evaluate("() => window.__docSeen.filter(x => /nova-haptic|INPUT/.test(x))")
         check("z3 none of its click/change events reach the app", not seen, str(seen))
         # sound off, haptics still on
@@ -167,12 +181,55 @@ def z5(br):
         ctx.close()
 
 
+def z6(br):
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=init_for("iphone"), touch=True, dpr=2)
+    try:
+        pg.evaluate("() => showHome()")
+        pg.wait_for_timeout(1500)
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          const out = {};
+          const sphere = [...document.querySelectorAll('[data-screen="home"] svg circle')].find(c => c.style.cursor === 'pointer');
+          const bubble = document.querySelector('[data-screen="home"] .cosmic-badge-tappable');
+          out.have = { sphere: !!sphere, bubble: !!bubble };
+          const pe = (t, el) => el.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerType: 'touch', isPrimary: true, pointerId: 7, button: 0 }));
+          let duringDown = null;
+          const spy = () => { duringDown = window.__novaTaptic || 0; };
+          for(const [name, el] of [['sphere', sphere], ['bubble', bubble]]){
+            if(!el) continue;
+            await wait(200);
+            window.__novaTaptic = 0;
+            window.addEventListener('pointerdown', spy, { once: true });
+            pe('pointerdown', el);
+            out[name + 'Down'] = duringDown;
+            pe('pointerup', el);
+            out[name + 'Up'] = window.__novaTaptic || 0;
+            el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            out[name + 'Click'] = window.__novaTaptic || 0;
+          }
+          /* a touch that turns into a scroll */
+          if(bubble){
+            await wait(200);
+            window.__novaTaptic = 0;
+            pe('pointerdown', bubble); pe('pointercancel', bubble); pe('pointerup', bubble);
+            out.cancelled = window.__novaTaptic || 0;
+          }
+          return out; }""")
+        check("z6 Home's planet and a rank bubble are there", r["have"]["sphere"] and r["have"]["bubble"], str(r))
+        for k in ("sphere", "bubble"):
+            check("z6 %s: no tick inside the finger's pointerdown (not a gesture to WebKit)" % k, r.get(k + "Down") == 0, str(r))
+            check("z6 %s: one tick on the release" % k, r.get(k + "Up") == 1, str(r))
+            check("z6 %s: the click after it does not tick again" % k, r.get(k + "Click") == 1, str(r))
+        check("z6 a touch that becomes a scroll (pointercancel) does not tick", r.get("cancelled") == 0, str(r))
+    finally:
+        ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
         try:
             only = os.environ.get("ONLY", "")
-            for fn in (z1, z2_z3_z4, z5):
+            for fn in (z1, z2_z3_z4, z5, z6):
                 if only and fn.__name__ not in only.split(","):
                     continue
                 try:
