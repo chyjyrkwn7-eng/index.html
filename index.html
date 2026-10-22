@@ -29640,6 +29640,49 @@
     box-shadow:var(--surface-shadow);
   }
 
+  /* ---- NO HARD LINE ROUND A CIRCLE (build 327 round 7, b327y) ----
+     "Some of the circle shaped stuff across the app, especially the Home
+     Screen, has like a hard but very hard to notice line at the bottom
+     and maybe the top ... some of the flares have a line at the bottom of
+     the bubble ... The daily question button is the same." Measured at
+     3x down each one's centre column, it was three things:
+     1. A BACKGROUND IMAGE REPEATS UNDER A SEE-THROUGH BORDER. Every one
+        of these lays a top-lit gradient over its fill and has a 1px
+        translucent border. The image is sized to the padding box but
+        painted under the border too, so the tile repeats there: the
+        strip under the BOTTOM border showed the gradient's TOP - its
+        brightest highlight - and the strip under the top border showed
+        its bottom. On a lit flare bubble that was a bright 3-device-px
+        line along the bottom 60-100 levels over the glass just inside it.
+        The gradient now starts at the outer edge and is painted once.
+     2. A 0-BLUR CATCH-LIGHT IS A RULED LINE ON A CIRCLE. The chat button
+        and Pause wear --surface-shadow, whose catch-light (inset 0 1px 0)
+        and lip (inset 0 -1px 1px) are hairlines; on a card they read as
+        an edge catching the light, on a circle as a line drawn round the
+        top and bottom. Round controls take the same light softened.
+     3. The flare bubble's rim glow (::before) started 1px in from the
+        border, leaving a dark hairline ring between the rim and the glow
+        at the bottom. It starts at the rim now, and the rim's own light
+        falls off into the glass instead of stopping.
+     Sizes, positions, colours and every animation are as they were.
+     Gate: tools/check-b327y.py. */
+  .cosmic-icon-badge, .daily-question-fab, .chatdock-btn,
+  [data-layout="modern"] .top #pausebtn:not([hidden]){
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+  }
+  .cosmic-icon-badge.cosmic-badge-rank::before{
+    inset:0;
+    box-shadow:inset 1px 2px 5px rgba(255,255,255,.2), inset -1px -2px 5px rgba(255,255,255,.08),
+      inset 0 0 3px 0 rgba(255,255,255,.1);
+  }
+  .daily-question-fab{ box-shadow:0 4px 14px rgba(0,0,0,.3), inset 0 0 4px 0 rgba(255,255,255,.08); }
+  .chatdock-btn,
+  [data-layout="modern"] .top #pausebtn:not([hidden]),
+  [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
+    box-shadow:0 4px 18px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.03),
+      inset 0 3px 5px -2px rgba(255,255,255,.2), inset 0 -3px 5px -2px rgba(0,0,0,.28);
+  }
+
   /* Customize: the characters grouped by how they are earned. */
   .avatarchar-group-title{
     margin:1.1rem 0 .55rem; font-size:.74rem; font-weight:800; letter-spacing:.12em;

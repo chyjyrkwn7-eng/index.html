@@ -25727,3 +25727,39 @@ a frame read as pink-grey.
   (RU_HAND_RISE_AT 600 over 3200ms) - the scene behind, not the flare. Left
   for Madison's look at the hand-off; the gate would have to sample the
   flare apart from the scene to tell the two apart.
+
+### Build 327 round 7 (b327y) - no hard line round a circle
+
+Madison: *"some of the circles shaped stuff across the app, especially the
+Home Screen has like a hard but very hard to notice line at the bottom and
+maybe the top ... some of the flares have a line at the bottom of the bubble
+that makes it look weird. The daily question button is the same."* Branch
+`b327y`. Gate: `tools/check-b327y.py` (fails on 61d9620). Notes:
+`notes/b327y.md`.
+
+- **A BACKGROUND IMAGE REPEATS UNDER A SEE-THROUGH BORDER.** An image's
+  default is `background-origin:padding-box; background-repeat:repeat`, but
+  it is PAINTED under the border too. A top-lit gradient on a circle with a
+  1px translucent border therefore shows its own TOP (the highlight) again in
+  the strip under the bottom border: a bright band round the bottom rim (an
+  unlit flare bubble 120 -> 162 of 255, the daily button 56 -> 73), and its
+  bottom under the top border. The flare bubbles (`.cosmic-icon-badge`, also
+  Profile's and the road map's), the daily question button, the chat button
+  and Pause now take `background-repeat:no-repeat; background-origin:
+  border-box` (!important - later rules use the `background` shorthand).
+  **Any gradient on a translucent-bordered round control needs both.**
+- **A 0-blur inset catch-light or lip is a hairline round a circle.** The
+  chat button and Pause wore `--surface-shadow` (`inset 0 1px 0`, `inset 0
+  -1px 1px`); they take the same light softened (`inset 0 +-3px 5px -2px`).
+  `--surface-shadow` is unchanged for cards, where a hairline is an edge.
+- The bubble's `::before` glow starts at the rim (`inset:0`, was 1px - a dark
+  hairline ring between rim and glow); the daily button has a faint even
+  inner feather. Sizes, positions and colours did not move.
+- **The gate** shoots each element as it is and with only its background
+  image removed; the difference (what the image paints) from just inside the
+  outer edge, 8 device rows in, may not step more than 9 levels row to row,
+  top and bottom (opaque borders - a lit bubble's rim - skipped), and there
+  may be no inset shadow with a y offset under 2px blur. Seven bubbles lit
+  and unlit, secret flares, the daily button ready/answered, chat, Pause.
+- Open: lit bubbles passed on both builds (opaque rim); avatar circles,
+  `.rank-mark`, stat rings and the unit select circle were not checked.
