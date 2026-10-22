@@ -89938,6 +89938,13 @@ function showIntroPopup(o){
   const title = document.createElement("h2");
   title.className = "intro-title"; title.textContent = "What’s new";
   card.append(eyebrow, title);
+  if(st.note){
+    const n = document.createElement("div"); n.className = "intro-gate-note";
+    const h = document.createElement("p"); h.className = "intro-gate-title"; h.textContent = "Levels wait for your next rank";
+    n.appendChild(h);
+    st.note.forEach(t => { const b = document.createElement("p"); b.className = "intro-gate-body"; b.textContent = t; n.appendChild(b); });
+    card.appendChild(n);
+  }
   WHATS_NEW_320.forEach(it => {
     const row = introRow(it.icon || it.glyph, it.color, it.title, it.body);
     row.dataset.key = it.key;
@@ -96427,7 +96434,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-22-327e";
+const APP_BUILD = "2026-10-22-327f";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
