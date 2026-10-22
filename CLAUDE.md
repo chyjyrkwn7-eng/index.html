@@ -26025,3 +26025,50 @@ a22b1ff), check-behaviour 53 and 96 (3 failures on a22b1ff).
   focus, so the focus-restore code went too.
 - **Still unverifiable here**: whether the tick is felt. If it is not, the
   fallback stays a real `<input switch>` under each finger.
+
+### Build 327 round 8 (continued) - the 04:41 and 04:49 lists
+
+The session that built round 7 ran out of context before reaching two of
+Madison's messages; this finishes them. Two items were already done in
+earlier rounds and needed nothing: Pause only says "and timer" when a clock
+is running (build 327 audit), and no "Starred / Star removed" label shows
+(build 314).
+
+- **What's New lists Haptic Touch** (`WHATS_NEW_320` key `haptics`, and
+  RELEASE_NOTES Version 9's "Haptic Touch"). The sound row's spoken line no
+  longer says sounds are off by default (they are on since b327a).
+- **A tap on a scene is felt** (`SND_SCENE_TAP`, in the generic click
+  listener): "vibrations during cutscenes, during the result screen stuff".
+  iOS only plays a haptic inside a finger's tap, so a cutscene cannot buzz
+  by itself; the taps people make during them - speeding up the results,
+  Tap to continue on an unlock, skipping a scene - tick now. Not inside the
+  rank-up journey's blocker. check-b327z z7.
+- **The daily question is named in the pinned header** (`runModeTitle`
+  returns "Daily question"), like a test's mode name: "the words/stuff at
+  the top ... blocked or kinda in a weird spot ... near the edge of the
+  greyed out dark stuff ... should the daily question stuff AT the very top
+  be repositioned and be similar?" The big serif "Daily Question" heading is
+  gone; "One question, one attempt." stays in the flow.
+- **The daily result is the grade box and the XP box in one card** ("I do
+  kinda wish the box looked a little more like the test result grade box
+  combined with the xp box"): a DAILY QUESTION kicker, the verdict big in
+  the grade's heavy face beside its mark with "1 / 1 right on your one
+  try", a rule, XP EARNED with the "Daily question +200" line and the blue
+  "+200 XP" total, then the come-back line. The results cards' soft edge in
+  the verdict's colour. Still no level bar (build 213's decision); the XP
+  still flies to Profile. Class names the gates use are kept
+  (`.dailyq-outro`, `-head`, `-xp` - now the total, `-next`).
+- **No hard line round the pills** ("the search bars, the find me button on
+  the leaderboard at the bottom, stuff like that. Needs to be perfect"):
+  b327y's two fixes (no repeat under the border, no 0-blur inset lip) on
+  every rounded control built from the surface recipe - `.searchbox`,
+  `.rank-me-btn`, `.cal-action-btn`, `.cal-grid-arrow`, `.roomchat-fab`,
+  `.chip`, `.more-toggle`. Cards keep their hairline edge on purpose.
+  check-b327y `pills` (a 14-15 level step at the edge on the build before).
+- **The tab bar's glass on every floating glass control** ("let's ensure
+  any other Liquid Glass on the app that needs to have the same new look and
+  feel/touch also gets the respective changes"): the chat button, Pause,
+  the daily question button (its answered state dimmer), the room's chat
+  button, the top tab switchers and the search / Find me pills take the
+  bar's near-black see-through body, saturate 1.25 and one .16 rim. Cards,
+  rows and the Home flare bubbles are not floating glass and keep theirs.
