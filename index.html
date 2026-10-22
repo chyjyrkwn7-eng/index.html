@@ -11382,8 +11382,11 @@
     mask-image:linear-gradient(90deg, transparent, #000 35%, #000 65%, transparent);
     animation:hfx-lit-win var(--d) cubic-bezier(.4,0,.6,1) var(--dl) both; }
   .hfx-lit.is-sweep .hfx-lit-in{ animation:hfx-lit-in var(--d) cubic-bezier(.4,0,.6,1) var(--dl) both; }
-  @keyframes hfx-lit-win{ 0%{ transform:translateX(calc(var(--band) * -1)); } 100%{ transform:translateX(var(--pw)); } }
-  @keyframes hfx-lit-in{ 0%{ transform:translateX(var(--band)); } 100%{ transform:translateX(calc(var(--pw) * -1)); } }
+  /* the window travels a whole band PAST the number, so the raised % (which
+     overhangs the number's box) is clear of it at the end instead of left
+     lit until the layer is taken away (check_b313_fx, "never cut") */
+  @keyframes hfx-lit-win{ 0%{ transform:translateX(calc(var(--band) * -1)); } 100%{ transform:translateX(calc(var(--pw) + var(--band))); } }
+  @keyframes hfx-lit-in{ 0%{ transform:translateX(var(--band)); } 100%{ transform:translateX(calc((var(--pw) + var(--band)) * -1)); } }
   .hfx-lit.is-flash{ opacity:0; animation:hfx-lit-flash var(--d) ease-out var(--dl) both; }
   @keyframes hfx-lit-flash{ 0%{ opacity:0; } 8%{ opacity:1; } 35%{ opacity:.8; } 100%{ opacity:0; } }
 
@@ -30889,7 +30892,9 @@
   .rs-screen .rs-card.rs-grade.is-fail{ --rs-edge:232,104,124; }
   .rs-screen .rs-card.rs-grade.is-retake-left{ --rs-edge:255,178,92; }
   .rs-screen .rs-card.rs-grade.is-over{ --rs-edge:255,140,90; }
-  .rs-screen .rs-card.rs-grade.is-perfect:not(.hfx-tinted){ --rs-edge:242,211,138; }
+  /* a richer gold than the 100's pale #F2D38A: at a rim's soft strength the
+     pale one read as beige-grey down the card's lower edge (b327j) */
+  .rs-screen .rs-card.rs-grade.is-perfect:not(.hfx-tinted){ --rs-edge:242,200,115; }
   .rs-screen .rs-card.vroom-waitcard{ --rs-edge:74,159,232; }
   .rs-screen .rs-card.rs-badges{ --rs-edge:176,190,210; }
   /* ---- SOFT EDGES (327, round 6) ----
@@ -104782,14 +104787,17 @@ function rsFromOklch(L, C, H){
           g(-1.2684380046 * l + 2.6097574011 * m - .3413193965 * s),
           g(-.0041960863 * l - .7034186147 * m + 1.707614701 * s)];
 }
-function rsOklchMix(a, b, k, alpha, bare){
+/* boost: extra chroma at the middle of the turn (0 at both ends). A hue
+   turn from green to gold passes a yellow-green with less colour than
+   either end, and at a rim's soft strength that middle read as grey. */
+function rsOklchMix(a, b, k, alpha, bare, boost){
   const A = rsToOklch(a), B = rsToOklch(b);
   let dh = B[2] - A[2];
   while(dh > Math.PI) dh -= 2 * Math.PI;
   while(dh < -Math.PI) dh += 2 * Math.PI;
   /* a dead heat (opposite hues) goes through blue */
   if(Math.abs(Math.abs(dh) - Math.PI) < .35) dh = Math.abs(dh);
-  const c = rsFromOklch(A[0] + (B[0] - A[0]) * k, A[1] + (B[1] - A[1]) * k, A[2] + dh * k);
+  const c = rsFromOklch(A[0] + (B[0] - A[0]) * k, (A[1] + (B[1] - A[1]) * k) * (1 + (boost || 0) * Math.sin(Math.PI * k)), A[2] + dh * k);
   if(bare) return c.join(",");
   return alpha >= 1 ? "rgb(" + c.join(",") + ")" : "rgba(" + c.join(",") + "," + Math.max(0, alpha).toFixed(3) + ")";
 }
@@ -105445,7 +105453,7 @@ function showRunRewards(run, hooks, opts){
     /* from the exact green the number and the bars counted up in - a
        different green here was a one-frame snap as the grade landed */
     const G = RS_TONE_GREEN.slice();
-    const to = rsHex(tint && tint.b || "#F2D38A"), toN = rsHex(tint && tint.g2 || "#F6D58E");
+    const to = rsHex(tint && tint.b || "#F2C873"), toN = rsHex(tint && tint.g2 || "#F6D58E");
     const green = grade.querySelector(".rs-grade-tone > i.is-green");
     /* the number: its effect ramp under a fill that turns towards the
        effect's colour as it fades off */
@@ -105470,7 +105478,7 @@ function showRunRewards(run, hooks, opts){
          the effect's own look fades in over it once the two agree */
       const hk = Math.min(1, k / .7);
       if(green){
-        const rim = rsOklchMix(G, to, hk, 1, true);
+        const rim = rsOklchMix(G, to, hk, 1, true, .4);
         green.style.setProperty("--te", rim);
         green.style.setProperty("--tw", "rgba(" + rim + ",.16)");
       }

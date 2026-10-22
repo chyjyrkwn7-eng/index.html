@@ -12405,13 +12405,16 @@ def check_b313_fx(br):
           return out; }""", fx)
         # MOVED IN 327 (round 6): the default's gold rim is soft (.36), so
         # "not the gold default" compares with that
-        yellow = "rgba(242, 211, 138, 0.46)"
+        # MOVED IN 327 (round 10): a richer gold (242,200,115) - the pale one
+        # read as beige-grey down the card's lower edge (check-b327-j)
+        yellow = "rgba(242, 200, 115, 0.46)"
         check("%s: a 100%% plays it, on the screen and in the box" % fx, r.get("id") == fx and r.get("screen", 0) > 3 and r.get("box", 0) > 2, r)
         check("%s: the box takes the effect's colours while it plays" % fx, r.get("border") not in (None, yellow), r.get("border"))
         rgb = lambda h: "rgb(%d, %d, %d)" % tuple(int(h.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)) if h and h.startswith("#") else None
         tv = r.get("tintVars") or [None, None, None]
         check("%s: and KEEPS them once the effect has finished, the results screen still up (round 3: \"it stays yellow\")" % fx,
-              r.get("screenUp") and tv[0] and r.get("borderAfter") == rgb(tv[0])
+              # MOVED IN 327 (round 6): the rim is the colour at .46, not full strength
+              r.get("screenUp") and tv[0] and r.get("borderAfter") in (rgb(tv[0]), (rgb(tv[0]) or "").replace("rgb(", "rgba(")[:-1] + ", 0.46)")
               and (r.get("numAfter") or {}).get("color") == "rgba(0, 0, 0, 0)" and (r.get("numAfter") or {}).get("bg", "").startswith("linear-gradient(105deg, %s" % rgb(tv[1])),
               {k: r.get(k) for k in ("borderAfter", "numAfter", "screenUp", "tintVars")})
         check("%s: in its tail it is still on screen, fading - never cut (nothing fully shown at the last look before the layer goes)" % fx,
@@ -12565,7 +12568,7 @@ def check_b313_fx(br):
     # MOVED IN 327 (round 6): "Now that the edges are like a hard stop for the
     # borders it's kinda bad. It used to be better." Every results card's rim,
     # the 100% box's included, is the colour at .36 now, not full strength.
-    check("Confetti, the default, leaves the box and its bar gold", r.get("border") == "rgba(242, 211, 138, 0.46)" and "rgb(217, 169, 58)" in (r.get("fill") or "") and not r.get("tinted"), r)
+    check("Confetti, the default, leaves the box and its bar gold", r.get("border") == "rgba(242, 200, 115, 0.46)" and "rgb(217, 169, 58)" in (r.get("fill") or "") and not r.get("tinted"), r)
     ctx.close()
 
     # --- the pop-ups. An account with no record of them, at 120 hundos:
@@ -15966,7 +15969,8 @@ def check_b317_hundobox(br):
     # MOVED IN 327 (round 6): "Now that the edges are like a hard stop for the
     # borders it's kinda bad. It used to be better." Every results card's rim,
     # the 100% box's included, is the colour at .36 now, not full strength.
-    GOLD_BORDER = "rgba(242, 211, 138, 0.46)"
+    # MOVED IN 327 (round 10): a richer gold, see check-b327-j
+    GOLD_BORDER = "rgba(242, 200, 115, 0.46)"
     for label, w, h in (("SE 1st gen", 320, 568), PHONE, TABLET):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         pg.evaluate("() => { " + RUN100 + " }")

@@ -26158,8 +26158,24 @@ reached, then four more). Everything below is on `wip/build-327`.
 - **Unit details pop-up**: a line under the badge bar says what it counts;
   Best score says "on the whole unit"; Last score says when it was part of
   the unit; "Completed" is "Times taken - any length, any mode".
+- **A 100% card never passes through grey on its way to gold.** Found by
+  b327-j, and older than round 10 (it fails the same way on build 327's
+  round-9 commit): the green-to-gold turn (`rsHandoff`) crosses a
+  yellow-green with less colour than either end, and at a rim's soft .46
+  that middle read as grey; and the default's pale gold #F2D38A read
+  beige-grey down the card's lower edge. `rsOklchMix(..., boost)` adds
+  chroma at the middle of a turn (0 at both ends; the rim uses .4), and the
+  default 100's edge is a richer #F2C873 (`--rs-edge:242,200,115`, and the
+  hand-off's target with it). The 100% number and the bars are unchanged.
+  The same run found the Underwater and UFO sweeps leaving the raised %
+  lit at their end (the light's window stopped at the number's edge, which
+  the % overhangs) until the layer was taken away - a cut, not a fade; the
+  window now travels a whole band past it. check_b313_fx's "keeps them"
+  assertion also still asked for the rim at full strength, which round 6
+  softened to .46 on purpose; it accepts .46.
 - Gates re-read with these decisions: b327-c (no strain slide; no tiles on
-  the course card), b327-d (floating glass rule, 28px icons, plum), b327-e
+  the course card), check-behaviour b313_fx / b317_hundobox (the default
+  100's gold edge is 242,200,115), b327-d (floating glass rule, 28px icons, plum), b327-e
   (banded ring), b327-m (16/21 lines), b327-o and b325-d (found sections at
   the end), b326-d (no "how they come home" slide; no crew COUNT), and
   check-behaviour's class-days and course checks.
