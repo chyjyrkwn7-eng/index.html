@@ -5226,6 +5226,8 @@
      Next test, The course. A few big, readable things. Colours keep their
      calendar meanings: amber is a test (the key's dot), gold the last day,
      the information blue the countdown. */
+  .cal-classhead{ margin:0 0 .7rem; text-align:center; font-size:.72rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(236,239,245,.6); }
+  .cal-classhead b{ color:#FFD37A; font-weight:800; }
   .cal-glance{ display:flex; flex-direction:column; gap:.85rem; margin:0 0 1.5rem; }
   .screen-calendar-tab .cal-glance > .cal-card{ margin:0; min-width:0; }
   .screen-calendar-tab > .cal-course-card{ margin:1.2rem 0 0; }
@@ -119706,7 +119708,7 @@ function showCalendarTab(){
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
   setActiveNav("calendar");
-  countEl.textContent = "Calendar";
+  countEl.textContent = "Class 26E calendar";
   const panel = document.createElement("section");
   panel.className = "panel screen-calendar screen-calendar-tab";
   panel.dataset.nav = "calendar";
@@ -119761,6 +119763,14 @@ function calDayDots(entry, base, into){
   return into;
 }
 function buildCalendarPane(panel){
+  /* build 327 round 9: "make it clear that this is for class 26E" - the Class
+     26E box went in build 324 and nothing on the tab said whose calendar it
+     is. A line at the top of the pane says it. */
+  const classHead = document.createElement("p");
+  classHead.className = "cal-classhead";
+  const ch1 = document.createElement("b"); ch1.textContent = "Class 26E";
+  classHead.append(ch1, document.createTextNode(" \u00B7 police academy"));
+  panel.appendChild(classHead);
   const glance = document.createElement("div");
   glance.className = "cal-glance";
   panel.appendChild(glance);
