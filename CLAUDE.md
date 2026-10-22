@@ -25912,3 +25912,23 @@ ALL PASS here, 18 failures on 61d9620.
   shape and envelope differ.
 - Also run: check-js, check-sound (ALL PASS), check-b327-j C. Not checked on
   a phone speaker; no recordings this round.
+
+### Build 327 round 7 (integration) - the tab bar is clear glass with one crisp edge
+
+Madison, on his reference (an iOS 26 tab bar): *"their Liquid Glass is so
+nice and crisp..? Ours looks kinda grey."* Measured off his screenshot: the
+bar is only ~14 levels over the page and drawn by ONE hairline rim. Ours was
+a blue-grey fill ~21 over the page (`rgba(42,45,53,.8)`, saturate 1.8) with
+TWO stacked rims - the base rule's 1px `var(--rule)` border (blue-grey) and
+an inset 1px ring plus a 20% top line.
+- **Dark modern `.bottomtabs`**: a near-black see-through body
+  (`rgba(12,13,19,.74)` under a .075 -> .045 white lift), the blur kept at
+  30px (it hides what scrolls under it - build 245), saturate 1.25 so the
+  glow behind does not tint it, and the 1px BORDER is the one rim
+  (`rgba(255,255,255,.16)`), no inset ring. The sheen is .05 (was .08).
+- **The grey platter is .14** (was .11): his reference's is ~+33 over its
+  bar.
+- `.66` was tried first and is clearer still, but over the unit grid the
+  cards' text read through the bar in Chromium - which draws no backdrop
+  blur here, so it is not what a phone shows. `.74` is the margin.
+- check-b325-f, check-b325-j and check-b327x pass on it.
