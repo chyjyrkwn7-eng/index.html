@@ -31861,6 +31861,24 @@
      drawing's size: 100cqmin of the slot), in both cases. */
   .bc-slot, .nova-case.ncase .ncase-cell .badge-tile-art{ container-type:size; }
   .bc-slot > svg, .nova-case.ncase .ncase-cell .badge-tile-art > svg{ translate:calc(var(--sdx, 0) * 100cqmin) calc(var(--sdy, 0) * 100cqmin); }
+  /* THE WHITE BUTTONS' EDGE (build 327 round 9): "why is the edge of the white
+     buttons like that? ... the weird looking edge with the gap". Two things
+     made a pale line round the bottom and sides, then a dark band, then the
+     fill. The button's 1px border sat OUTSIDE the inset shadow that darkened
+     its lower edge, so the border read as a light ring with a gap between it
+     and the fill; and the highlight gradient was painted on the padding box
+     and repeated, so the repeat's bright top edge showed in the border along
+     the bottom. The gradient now covers the whole box (no repeat, over the
+     border, which is transparent), with its shade built into it, so the edge
+     is one continuous surface. Quit, Save and exit and Reset keep their own
+     recipes. */
+  [data-theme="dark"][data-layout="modern"] .next:not(.ghost):not(.danger),
+  [data-theme="dark"][data-layout="modern"] .chip.on{
+    border-color:transparent;
+    background-origin:border-box; background-clip:border-box; background-repeat:no-repeat;
+    background-image:linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,0) 58%, rgba(0,0,0,.09) 100%);
+    box-shadow:0 1px 3px rgba(0,0,0,.3), 0 5px 10px rgba(0,0,0,.3), 0 14px 28px -8px rgba(0,0,0,.5);
+  }
   /* The same centring for the other small labels that sat high in their
      pills (found by tools/check-ink-centre.py, which measures where the
      letters really are inside each control). The padding gives back what
