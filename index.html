@@ -32123,11 +32123,12 @@
      bar's 30, with their own shadows - close, and visibly not the same. Now
      the bar's EXACT recipe, read off .bottomtabs: the same body and lift,
      blur(30px) saturate(1.25), the one .16 rim, the bar's faint top
-     catch-light and its soft drop shadow - and the controls that were still
-     something else join: back links ("Profile", "Back"), the calendar's
-     month arrows and its Go to today. Action buttons (Start, Resume, Quit,
-     Customize) stay solid 3D buttons; this is the chrome. */
-  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .backtotop, .toast:not(.toast-flag), .back-link, .cal-grid-arrow, .cal-action-btn, .screen-calendar .cal-grid-arrow),
+     catch-light and its soft drop shadow. ONLY the controls that are glass
+     by nature - "Just the buttons that need to be Liquid Glass ... Not all
+     the back buttons, not every button" - and the chat box itself (below).
+     Back links, the calendar's arrows, and every action button keep their
+     own look. */
+  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .backtotop, .toast:not(.toast-flag)),
   [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
     background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
@@ -32136,8 +32137,16 @@
     box-shadow:0 8px 28px rgba(0,0,0,.45), inset 0 1px 1px rgba(255,255,255,.05) !important;
     color:var(--ink);
   }
-  [data-theme="dark"][data-layout="modern"] :is(.back-link, .cal-grid-arrow, .cal-action-btn):active{
-    background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.08) 55%), rgba(12,13,19,.74) !important;
+  /* THE CHAT BOX (round 10): "the chat box should now be that same Liquid
+     Glass". The panel that opens from the chat button was the last floating
+     surface on an older glass (a blue-grey body at a 12px blur). It takes
+     the bar's body, blur and rim; a little more opaque than the bar, because
+     it holds text read over the page. */
+  [data-theme="dark"][data-layout="modern"] .chatdock-panel{
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.82) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border-color:rgba(255,255,255,.16) !important;
+    backdrop-filter:blur(30px) saturate(1.25) !important; -webkit-backdrop-filter:blur(30px) saturate(1.25) !important;
   }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->

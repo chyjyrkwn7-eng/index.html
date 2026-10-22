@@ -26108,13 +26108,21 @@ reached, then four more). Everything below is on `wip/build-327`.
   diff their computed box-shadow and border first.**
 - **Save and exit is plum** (#4E3160), picked from three shown on the
   pause screen. Black, glass, grey, green and blue had each been turned down.
-- **One glass for every system control.** The tab bar's exact recipe
-  (body, lift, `blur(30px) saturate(1.25)`, one .16 rim, its soft shadow)
-  on the chat button, Pause, the daily-question button, search pills, Find
-  me, the top switchers, back to top, the plain toast, BACK LINKS, the
-  calendar's month arrows and Go to today. Round 8 had them at a 24px blur
-  with their own shadows, which read as close but not the same. Action
-  buttons (Start, Resume, Quit, Customize) are solid 3D buttons, not glass.
+- **One glass for the controls that ARE glass - and only those.** The tab
+  bar's exact recipe (body, lift, `blur(30px) saturate(1.25)`, one .16 rim,
+  its soft shadow) on the chat button, Pause, the daily-question button,
+  search pills, Find me, the top switchers, back to top, the plain toast,
+  and the CHAT BOX itself (`.chatdock-panel`, a touch more opaque at .82
+  because text is read on it; it was the last floating surface on an older
+  blue-grey 12px glass). Round 8 had them at a 24px blur with their own
+  shadows, which read as close but not the same.
+  **It is NOT every button.** A first pass put the glass on back links, the
+  calendar's month arrows and Go to today as well, and it came straight
+  back: *"Just the buttons that need to be Liquid Glass ... Not all the
+  back buttons, not every button, the ones that make sense. Like the chat
+  box."* Back links are the black 3D pill again, the calendar's controls
+  are their own. Action buttons (Start, Resume, Quit, Customize) are solid
+  3D buttons. Glass is for chrome that floats over the page.
 - **Settings**: section headers are plain labels (they had the cards' own
   surface, so header and card looked the same); the cards are the bar's
   glass; Share & install's labels stay on one line (a two-line "Add to Home
