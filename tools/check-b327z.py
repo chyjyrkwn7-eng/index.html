@@ -220,6 +220,20 @@ def z6(br):
             check("z6 %s: one tick on the release" % k, r.get(k + "Up") == 1, str(r))
             check("z6 %s: the click after it does not tick again" % k, r.get(k + "Click") == 1, str(r))
         check("z6 a touch that becomes a scroll (pointercancel) does not tick", r.get("cancelled") == 0, str(r))
+        # z7 (round 8): a tap on a results screen / unlock pop-up / cutscene,
+        # which makes no sound of its own, still ticks - once
+        z = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
+          for(const [k, html] of [['results', '<div class="rs-screen"><p>x</p></div>'], ['spot', '<div class="rs-spot"><p>x</p></div>'],
+                                  ['cutscene', '<div id="badge-cutscene"><p>x</p></div>'], ['plain', '<div class="plainbox"><p>x</p></div>']]){
+            await wait(120);
+            const host = document.createElement('div'); host.innerHTML = html; document.body.appendChild(host);
+            window.__novaTaptic = 0;
+            host.querySelector('p').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            out[k] = window.__novaTaptic || 0; host.remove(); }
+          return out; }""")
+        for k in ("results", "spot", "cutscene"):
+            check("z7 a tap on a %s ticks once" % k, z.get(k) == 1, str(z))
+        check("z7 a tap on plain page text does not", z.get("plain") == 0, str(z))
     finally:
         ctx.close()
 

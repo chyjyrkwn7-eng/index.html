@@ -69659,9 +69659,24 @@ function sndForTap(t){
   if(primary && !(typeof store === "object" && store && store.onboardingComplete)) return "ob.step";
   return primary ? "ui.tap.primary" : "ui.tap.secondary";
 }
+/* A TAP ON A SCENE IS FELT (build 327 round 8). Madison: "vibrations
+   during cutscenes, during the result screen stuff, tapping and all that
+   kinda stuff." A cutscene or the results reveal plays on its own clock,
+   and iOS only lets a haptic play inside a finger's tap - so what CAN be
+   felt there is the tap: speeding the results up, "Tap to continue" on an
+   unlock, skipping a cutscene. Those taps make no sound of their own, so
+   nothing ticked; now they tick. A tap that already ticked (a button with
+   its own sound) is not ticked twice (NovaSound's TICK_GAP_MS). The
+   rank-up journey's input blocker still says nothing. */
+const SND_SCENE_TAP = "#badge-cutscene, #supernova-cutscene, #void-cutscene, #vroom-cutscene, .rs-spot, .rs-screen, " +
+  ".invite-overlay, [class*='cutscene'], [class*='-scene']";
 document.addEventListener("click", e => {
   const id = sndForTap(e.target);
-  if(id) playSound(id, { generic: true });
+  if(id){ playSound(id, { generic: true }); return; }
+  const t = e.target;
+  if(!t || !t.closest || t.closest(".ru-blocker") || !t.closest(SND_SCENE_TAP)) return;
+  if(document.documentElement.classList.contains("ru-scene")) return;
+  try{ NovaSound.haptic("tap"); }catch(err){}
 });
 document.addEventListener("change", e => {
   const t = e.target;
@@ -74362,6 +74377,7 @@ const RELEASE_NOTES = [
     groups: [
       { label: "New In Version 9", items: [
         { icon: buildSparkleIcon, color: "#FFD27A", title: "Sound Effects", body: "On by default, and you can turn them off in Settings. Sounds for nearly everything: your answers, your results, Home's ambience, the planet, badges, cutscenes, the Leaderboard and the Virtual Room." },
+        { icon: buildDevicesIcon, color: "#7CC8FF", title: "Haptic Touch", body: "On iPhone, a light tap you feel as you answer, star a question, flip a switch, change tabs or touch the planet and its flares. On by default, under Sound & vibration in Settings, and it follows your iPhone's own System Haptics setting." },
         { icon: buildDevicesIcon, color: "#4ADE80", title: "Vibration On Android", body: "Android phones can buzz on answers and moments that matter. Also a setting, also off until you turn it on." },
         { icon: buildPersonIcon, color: "#5CA8FF", title: "Sign In First", body: "Welcome leads with Sign in. Signing up asks whether you have used Nova before, and warns you if the name you chose already belongs to an account." },
         { icon: buildDualBoardIcon, color: "#F5C518", title: "Rankings That Match Profile", body: "Your rank, level and badges on the Leaderboard always match what your own Profile says." },
@@ -89206,7 +89222,13 @@ const WHATS_NEW_320 = [
   { key: "sound", color: "#FFD27A", title: "Sound effects",
     glyph: "M4 9h4l5-4v14l-5-4H4V9Zm12.5-1.8a6.5 6.5 0 0 1 0 9.6l-1.4-1.4a4.5 4.5 0 0 0 0-6.8l1.4-1.4Zm2.8-2.8a10.5 10.5 0 0 1 0 15.2l-1.4-1.4a8.5 8.5 0 0 0 0-12.4l1.4-1.4Z",
     body: "On by default, and you can turn them off in Settings: sounds for your answers, your results, Home, badges, cutscenes and more.",
-    say: "First, something you can hear. Sound effects are a new option in Settings. They are off until you turn them on." },
+    say: "First, something you can hear. Sound effects are on, and you can turn them off in Settings." },
+  /* build 327 round 8: "If Haptic Touch is introduced (it will be) we will
+     show that as one of the new features in the what's new" */
+  { key: "haptics", color: "#7CC8FF", title: "Haptic Touch",
+    glyph: "M9 2h6a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm0 3v13h6V5H9ZM3.6 7.5l1.6.6-.9 3.9.9 3.9-1.6.6L2.6 12l1-4.5Zm16.8 0 1 4.5-1 4.5-1.6-.6.9-3.9-.9-3.9 1.6-.6Z",
+    body: "On iPhone you feel a light tap as you answer, star, flip a switch, change tabs and touch the planet. On by default; turn it off under Sound & vibration in Settings.",
+    say: "Next, something you can feel. On an iPhone, Nova taps back: a light tick as you answer, change tabs or touch the planet." },
   /* build 326: Review is Review again ("I kinda prefer briefing to be
      called review actually"), so only the Qualifier is a new name - and
      its mark is modeIcon's own (`icon`), not a copy of it */
