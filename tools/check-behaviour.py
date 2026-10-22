@@ -16451,10 +16451,13 @@ def check_b317_hundobox(br):
         return float(m.group(1)) if m else 1.0
     # MOVED in build 326: the rim and the glow are the box's edge from the
     # first frame, as on the results screen (only the beam's wash waits)
-    okm = mk and all(alpha(x["border"]) > .9 and (x["glow"] or 0) > .9 for x in mk["mock"])
-    oks = mk and all(alpha(x["border"]) > .9 and (x["glow"] or 0) > .9 for x in mk["stage"])
+    # MOVED IN 327 (round 6): the edge is soft now - the rim at .46, not
+    # full - "the edges are like a hard stop ... it's kinda bad". Still the
+    # edge from the first frame, and still well clear of the unlit .22.
+    okm = mk and all(alpha(x["border"]) >= .4 and (x["glow"] or 0) > .9 for x in mk["mock"])
+    oks = mk and all(alpha(x["border"]) >= .4 and (x["glow"] or 0) > .9 for x in mk["stage"])
     check("ufo: the unlock card's miniature and a live Customize stage - their boxes carry their edge from the first frame, before the beam and after (326)",
-          okm and oks and alpha(mk["first"]["mock"]) > .9 and alpha(mk["first"]["stage"]) > .9, mk)
+          okm and oks and alpha(mk["first"]["mock"]) >= .4 and alpha(mk["first"]["stage"]) >= .4, mk)
     # and the results flow waits for all of it: the first scene comes after
     # the saucer has gone (8.91s), not 2.3s in, nor at the old 7s tail
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
