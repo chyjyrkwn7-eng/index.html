@@ -267,14 +267,14 @@
      (check-b326-f 5b). --surface-1 is a card; --surface-2 is a raised
      control (search, chat button, header slabs) one step lighter. */
   :root{
-    --surface-1:rgba(30,35,43,.5);
-    --surface-2:rgba(34,39,48,.52);
+    --surface-1:rgba(36,40,48,.7);
+    --surface-2:rgba(44,48,57,.72);
     --surface-lift:rgba(255,255,255,.07);
     --surface-inset:rgba(0,0,0,.3);
-    --surface-sheen:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14));
+    --surface-sheen:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.015) 40%, rgba(0,0,0,.06));
     --surface-border:rgba(255,255,255,.13);
     --surface-shadow:0 4px 18px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.03), inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 1px rgba(0,0,0,.28);
-    --surface-blur:blur(12px) saturate(1.8) brightness(1.06);
+    --surface-blur:blur(24px) saturate(1.2);
   }
 
   /* ---------- dark mode ---------- */
@@ -6771,25 +6771,6 @@
     color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent;
   }
   .chatdock-btn:active{ transform:translateY(1px); }
-  /* TWO GLASSES, ON PURPOSE (build 327 round 11). Madison: "the chat button
-     would match the bottom tab because that's a core thing that's always
-     gonna be there ... other Liquid Glass stuff can have its own look and
-     then some pops and the tool tips and other stuff will have the other
-     look". So: CHROME - the controls that are on screen all the time (the
-     chat buttons, Pause) - wears the tab bar's own glass, value for value
-     (see [data-theme="dark"][data-layout="modern"] .bottomtabs). Everything
-     that comes and goes - banners, toasts, tool tips, pop-ups, the chat
-     panel - wears the clear banner glass (.daily-alert), and the cards use
-     the shared --surface-* tokens. Change the tab bar's glass and change
-     these four values with it. */
-  html[data-theme="dark"] .chatdock-btn,
-  html[data-theme="dark"] .roomchat-fab,
-  html[data-theme="dark"] #pausebtn{
-    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74);
-    border:1px solid rgba(255,255,255,.16);
-    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05);
-    backdrop-filter:blur(16px) saturate(2.2) brightness(1.05); -webkit-backdrop-filter:blur(16px) saturate(2.2) brightness(1.05);
-  }
   /* DURING A QUESTION, PAUSE OWNS THIS CORNER. Both are fixed top-right
      and they landed on each other. The dock drops below the counter row
      rather than going away - the chat is supposed to be reachable
@@ -6832,14 +6813,12 @@
   .chatdock-panel{
     position:fixed; z-index:320;
     display:flex; flex-direction:column;
-    /* the banner's glass (.daily-alert / .app-banner): lighter and clearer
-       than the dark fill this panel had; the tab bar and chat button keep theirs */
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
-    border:1px solid rgba(255,255,255,.11);
+    background:rgba(20,25,32,.62);
+    border:1px solid rgba(255,255,255,.12);
     will-change:backdrop-filter;
-    backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
-    -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
-    box-shadow:0 12px 40px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    backdrop-filter:blur(12px) saturate(1.9) brightness(1.05);
+    -webkit-backdrop-filter:blur(12px) saturate(1.9) brightness(1.05);
+    box-shadow:0 12px 40px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08);
     text-align:left; color:var(--ink);
     transition:transform .26s cubic-bezier(.2,.8,.25,1), opacity .2s ease;
   }
@@ -19896,7 +19875,7 @@
     color:#fff; border:none;
     background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74);
     box-shadow:0 0 0 1px rgba(255,255,255,.16) inset, 0 1px 1px rgba(255,255,255,.14) inset, 0 4px 14px rgba(0,0,0,.4);
-    backdrop-filter:blur(16px) saturate(2.2) brightness(1.05); -webkit-backdrop-filter:blur(16px) saturate(2.2) brightness(1.05);
+    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
   }
   /* Back links were plain text with no button treatment at all \u2014 the
      same black-glass pill as the ghost button, just smaller, so it
@@ -29948,14 +29927,14 @@
      hairline lip). */
   /* build 327 round 10: "the background to top button is the old color, fix
      it. And anywhere else." Back to top and the plain toast join the list. */
-  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .backtotop, .toast:not(.toast-flag)),
+  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .backtotop),
   [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
     background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
     border-color:rgba(255,255,255,.16) !important;
     backdrop-filter:blur(24px) saturate(1.25); -webkit-backdrop-filter:blur(24px) saturate(1.25);
   }
-  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .backtotop, .toast:not(.toast-flag)),
+  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .backtotop),
   [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
     box-shadow:0 6px 22px rgba(0,0,0,.45), inset 0 2px 4px -1px rgba(255,255,255,.06);
   }
@@ -32165,7 +32144,7 @@
      the back buttons, not every button" - and the chat box itself (below).
      Back links, the calendar's arrows, and every action button keep their
      own look. */
-  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .backtotop, .toast:not(.toast-flag)),
+  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .backtotop),
   [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
     background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
