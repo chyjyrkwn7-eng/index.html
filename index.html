@@ -81868,41 +81868,41 @@ function novaIntroLines(o){
     /* build 327 round 9: "add another slide before it ... talking about why
        we haven't seen Mr nova or where he's been" */
     lines.push({ gesture: "raise",
-      text: "You haven’t seen me because I’ve been lost in the dark since the blast. My signal has only just reached this system, and your Home screen is the first place my scanners found." });
+      text: "I’ve been lost in the dark since the blast. My signal has only just reached this system." });
   } else {
     lines.push({ gesture: "wave", text: "Hello, " + name + "! I’m Nova, an explorer and an instructor. I’ll be your guide here, and I need your help.", enter: hello });
   }
-  lines.push({ text: "Not long ago, my ship was studying a planet much like the one on your Home screen. It had taken in more light than it could hold, and it had started to crack.",
+  lines.push({ text: "My ship was studying a planet much like the one on your Home screen. It had taken in more light than it could hold, and it began to crack.",
     enter: (ctx, instant) => { novaProp(ctx, buildNovaWreck()); if(!instant && !novaMotionOff()) playSound("cs.planet"); } });
-  lines.push({ gesture: "raise", text: "Then its core gave way, and the whole planet exploded. The blast tore my ship apart and threw everything aboard across this system: my flares, my badges and my crew." });
+  lines.push({ gesture: "raise", text: "Then it exploded, and the blast threw my flares, my badges and my crew across this system." });
   /* build 327 round 9: "the storyline at the very beginning is kinda weak. I
      want the storyline to feel so good". The stakes and the ask come right
      after the blast, so everything he describes after them is something you
      are helping him get back, and why. */
   /* build 327c: the stakes line is gone (the ask below says the same) - "shorten the Nova introduction" */
-  lines.push({ gesture: "raise", text: "Then I found your signal: a class studying the very units I taught. Every unit you master finds one of my badges, and every rank you reach relights one of my flares. Help me bring them home, and I’ll help you pass the real exam." });
+  lines.push({ gesture: "raise", text: "Then I found your class. Every unit you master finds one of my badges, and every rank you reach relights one of my flares. Help me bring them home, and I’ll help you pass the real exam." });
   /* build 327c: an account that has been here already knows its flares, badges,
      characters, banners and modes - so the introduction is only the story and
      what has changed (the recap below), and the walk through all of it is for a
      new account. */
   if(!existing){
   lines.push({ text: existing && rankIdx >= 0
-      ? "My flares, one for each rank, came to rest around your planet, but the blast had put their light out. They’re the flares on your Home screen. My secret flares were thrown further, into your tests, and I’ve lost count of them."
-      : "My flares, one for each rank, came to rest around your planet, but the blast had put their light out. That’s why the flares on your Home screen are dark. My secret flares were thrown further, into your tests, and I’ve lost count of them.",
+      ? "My flares came to rest around your planet. They’re the flares on your Home screen. My secret flares were thrown further, into your tests."
+      : "My flares came to rest around your planet with their light out. That’s why the flares on your Home screen are dark. My secret flares were thrown further, into your tests.",
     /* build 327 (b327m): the secret flares are said here, over the same
        picture, instead of on a line of their own ("I think the nova intro
        may be a little drawn out") */
     enter: ctx => novaProp(ctx, novaStack(novaFlareRow(rankIdx), novaCap(rankIdx >= 0 ? (rankIdx + 1) + " of " + TIER_ORDER_FULL.length + " lit again" : "My flares, all dark"))) });
   lines.push({ gesture: "raise", text: existing && rankIdx >= 0
-      ? "A flare only lights again for someone who has earned it. Every rank you reach relights one, and you’ve already lit " + (rankIdx === 0 ? "the first" : (["two", "three", "four", "five", "six"][rankIdx - 1] || (rankIdx + 1))) + ". Each one comes with my thanks: that rank’s rewards."
-      : "A flare only lights again for someone who has earned it. Every rank you reach relights one, and each comes with my thanks: that rank’s rewards.",
+      ? "Every rank you reach relights a flare, and you’ve already lit " + (rankIdx === 0 ? "the first" : (["two", "three", "four", "five", "six"][rankIdx - 1] || (rankIdx + 1))) + ". Each comes with my thanks: that rank’s rewards."
+      : "Every rank you reach relights a flare, and each comes with my thanks: that rank’s rewards.",
     enter: ctx => novaProp(ctx, novaStack(novaRankRow(), novaCap("A flare for every rank"))) });
   /* WHAT A BADGE IS, IN THE APP AND IN THE STORY (build 327): "The badge
      explanation is bad at the end, it says something about finding them so
      I can teach you that unit? That's terrible." A badge is a unit
      mastered - its threshold of hundos (badgeThresholdFor) - and in the
      story it is what holds a planet together. */
-  lines.push({ text: "My badges landed one in every unit. A badge means you’ve mastered that unit: score a hundo on the whole unit enough times, and it’s yours.",
+  lines.push({ text: "My badges landed one in every unit. Score enough hundos on a whole unit and its badge is yours. That’s why a rank asks for badges as well as a level.",
     /* build 326: this slide and the four after it are made ahead (novaSlide) */
     ...novaSlide("badges", () => novaStack(novaBadgeParade(), novaCap(existing && st.badges > 0 ? st.badges + (st.badges === 1 ? " badge" : " badges") + " found so far" : "Every unit has its own badge"))) });
   /* WHY YOUR PLANET CRACKS, AND WHY IT MUST NOT GO THE WAY HIS DID (build
@@ -81918,20 +81918,14 @@ function novaIntroLines(o){
      make sense ... Remove that one"). The level rule is said once instead:
      to an existing account on its recap ("let's see how you're doing"),
      and to a new one here, on the badges slide, since they have no recap. */
-  if(!existing) lines.push({ gesture: "raise",
-    text: "That’s why a rank asks for badges as well as a level, and not a level alone. Your level climbs to your next rank’s level, then waits there until you’ve mastered the units that hold that rank together." });
-  lines.push({ gesture: "raise", text: "My crew got away in escape pods and landed all over this system. They’re the characters in this app, and every one you find joins you.",
+  lines.push({ gesture: "raise", text: "My crew got away in escape pods. They’re the characters in this app, and every one you find joins you: through ranks, challenges and secrets.",
     ...novaSlide("crew", () => novaStack(novaCrewParade(), novaCap(crew.have + " of " + crew.total + " characters found"))) });
   /* build 327 round 9: said on the crew slide, its own picture gone ("How
      my crew comes home ... remove that slide ... Just add another text box
      after the first one on the character slide") */
-  lines.push({ text: "Each one comes home a different way: some with a rank, most with a challenge, a few behind a secret flare, and the ultimate ones ask for nearly everything else first." });
-  /* BANNERS AND HUNDO EFFECTS (build 326) - after the crew, as asked */
-  lines.push({ gesture: "raise", text: "As thanks, I’ll hand you things along the way: banners for your profile, and effects that play when you score a hundo. You earn them by studying, and they’re all in Customize, on your Profile.",
-    ...novaSlide("flair", () => novaStack(novaWarmTake("flair") || novaFlairProp(), novaCap("Yours to wear · Customize"))) });
   /* build 327 (b327m): the Virtual Room is said here, on the modes slide
      (which already shows it), not on a line and a picture of its own */
-  lines.push({ text: "Drill to learn a unit, a Mock to prove you’re ready, and Review to go over the material first. And in a Virtual Room you can race your classmates, or challenge me.",
+  lines.push({ text: "Drill to learn, Mock to prove you’re ready, Review to go over the material, and a Virtual Room to race your classmates or challenge me. Banners and effects await in Customize.",
     ...novaSlide("modes", () => novaModeRow()) });
   }
   /* ---- AND HE BECOMES YOUR FRIEND, PARTWAY THROUGH (build 324) ----
@@ -81940,13 +81934,13 @@ function novaIntroLines(o){
      The app's own FRIENDS banner drops in over his sky and his hello lands
      in your chats (novaFriendMoment). */
   const friendLine = { gesture: "raise", friend: true,
-    text: "One more thing: I’ve added you as a friend. When I have news for you, I’ll send it to your chats, up there.",
+    text: "I’ve added you as a friend. I’ll send news to your chats, up there.",
     /* a new account sees his chat row; an existing one keeps the recap of
        what it has found on the stage while he says it */
     enter: ctx => { if(!existing) novaProp(ctx, novaStack(novaFriendProp(), novaCap("Friends"))); novaFriendMoment(); } };
   if(!existing){
     lines.push(friendLine);
-    lines.push({ gesture: "nod", final: true, text: "So that’s the job: light my flares, find my badges and bring my crew home. My scanners keep finding more of my ship, so there will always be more. Let me show you around.",
+    lines.push({ gesture: "nod", final: true, text: "So that’s the job: light my flares, find my badges, bring my crew home. Let me show you around.",
       enter: ctx => novaProp(ctx, null) });
     return lines;
   }
@@ -81958,7 +81952,7 @@ function novaIntroLines(o){
      ... make it just show on the main menu like how we have done it
      before". What's New is a card on Home after this (showIntroPopup), and
      there is no separate goodbye after the tips. */
-  lines.push({ gesture: "wave", final: true, text: "That’s all for now, " + name + ". A few things have changed around here, so I’ve left you a list on your Home screen. Light my flares, find my badges and bring my crew home. I’ll speak with you again when my scanners find more." });
+  lines.push({ gesture: "wave", final: true, text: "That’s all for now, " + name + ". I’ve left a list of what’s new on your Home screen. I’ll speak with you again when my scanners find more." });
   return lines;
 }
 /* The friend line's picture: his face on a chat row, the way his chat
