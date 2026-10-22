@@ -32103,6 +32103,21 @@
        word is centred by its letters, not by its box */
     margin-right:-.24em; }
   @supports (text-box: trim-both cap alphabetic){ .bcs-plate-text{ text-box:trim-both cap alphabetic; } }
+
+  /* ---- THE CUTSCENE'S CASE, SLEEK TOO (build 327 round 10) ----
+     The case you watch open is the case on the Badges tab: the same smooth
+     graphite shell (no grain), and none of the flight-case hardware - no
+     corner guards, screws, wall guards or handle. The latches stay, because
+     they are what lets go before the lid lifts, and the nameplate stays,
+     without its screws. */
+  .bc-scene{
+    --case-shell-bg:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,0) 30%, rgba(0,0,0,.2)),
+      linear-gradient(180deg, #2C3139 0%, #1E2228 52%, #15181C 100%);
+    --case-shell-size:100% 100%, 100% 100%;
+    --case-trim:linear-gradient(180deg, #A9B3BF 0%, #59626D 14%, #2B3038 42%, #262A31 78%, #4E5662 94%, #7E8894 100%);
+  }
+  .bc-scene .nova-case-cap, .bc-scene .nova-case-screw, .bc-scene .bc-handle, .bc-scene .nova-case-handle{ display:none !important; }
+  .bc-scene .nova-case-wall.is-hw::before, .bc-scene .nova-case-wall.is-hw::after{ display:none !important; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
