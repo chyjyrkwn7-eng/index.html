@@ -45844,7 +45844,7 @@ function showRunOffer(s, via){
     const actions = document.createElement("div"); actions.className = "resume-actions";
     const go = btn("Resume test", "next", "resume-go", resume);
     const other = via === "start"
-      ? btn("Start a new test", "next ghost", "resume-new", confirmNew)
+      ? btn("Start a new test", "next ghost", "resume-new", () => { clearRunSession(); close(); showModeSelect(); })
       : btn("Not now", "next ghost", "resume-later", () => {
           markRunSessionSaved(); close();
           /* Anything that run had earned was held for its results; kept
@@ -96684,7 +96684,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327n";
+const APP_BUILD = "2026-10-23-327o";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way

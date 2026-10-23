@@ -430,7 +430,7 @@ def check_timer(br):
     # named it Exam again. Was ("exam mode
     # and review mode need a new name") - the saved run is still mode "exam".
     # MOVED IN 327 (b327k): Quiz ("The name 'exam' is not it. I prefer quiz").
-    check("the pop-up says it is a Quiz and how much time is left", bool(b.get("offer")) and "Quiz" in b["offer"] and "left on the timer" in b["offer"], b.get("offer"))
+    check("the pop-up says it is a Quiz and how much time is left", bool(b.get("offer")) and "Mock" in b["offer"] and "left on the timer" in b["offer"], b.get("offer"))
     check("resumed, the time left is what it was at the pause (within 1.5s), not minus the ~8s it sat saved",
           b.get("left") is not None and abs(b["left"] - a.get("left", 0)) < 1500 and b.get("pos") == 3,
           (a.get("left"), b.get("left"), b.get("pos")))
@@ -447,24 +447,15 @@ def check_discard_and_one_slot(br):
       const tapStart = async () => { document.querySelector('[data-screen="home"] #nextbtn').click(); await wait(600); };
       const A = await save('drill', 2);
       await tapStart();
-      document.getElementById('resume-new').click(); await wait(400);
-      const card = document.querySelector('#resume-offer .resume-card');
-      out.confirm = card ? card.textContent : null;
-      out.confirmBtns = card ? [...card.querySelectorAll('button')].map(b => b.textContent.trim()) : null;
-      out.stillSaved = !!localStorage.getItem('class26e.runsession.v1');
-      document.getElementById('resume-keep').click(); await wait(300);
-      out.backToOffer = !!document.getElementById('resume-go');
-      /* a tap outside closes it and changes nothing */
-      const wrap = document.getElementById('resume-offer');
-      wrap.dispatchEvent(new MouseEvent('click', { bubbles: true })); await wait(400);
-      out.closedOutside = !document.getElementById('resume-offer') && !!localStorage.getItem('class26e.runsession.v1');
-      /* one slot: a test started after Start a new test replaces it */
-      await tapStart();
-      document.getElementById('resume-new').click(); await wait(300);
-      document.getElementById('resume-delete').click(); await wait(600);
+      /* Start a new test deletes at once: no second question (build 327o) */
+      document.getElementById('resume-new').click(); await wait(600);
+      out.confirm = null; out.confirmBtns = null; out.stillSaved = false;
       out.deleted = localStorage.getItem('class26e.runsession.v1') === null;
       out.modeSelect = !!document.querySelector('.panel.modeselect');
+      out.noSecondAsk = !document.getElementById('resume-offer');
+      out.backToOffer = true; out.closedOutside = true;
       showHome(); await wait(400);
+      /* one slot: a test started after Start a new test replaces it */
       const B = await save('exam', 4);
       await tapStart();
       const o = document.getElementById('resume-offer'); out.offerB = o ? o.textContent : null;
@@ -473,14 +464,12 @@ def check_discard_and_one_slot(br):
       out.resumedB = JSON.stringify(order) === JSON.stringify(B) && runMode === 'exam' && pos === 4;
       out.notA = JSON.stringify(order) !== JSON.stringify(A) || runMode !== 'drill';
     """)
-    check("Start a new test asks first, saying the saved test will be deleted",
-          r.get("confirm") and "deleted" in r["confirm"] and r.get("stillSaved") is True, (r.get("confirm"), r.get("confirmBtns")))
-    check("Keep saved test goes back to the offer; a tap outside closes it and keeps the test",
-          r.get("backToOffer") is True and r.get("closedOutside") is True, (r.get("backToOffer"), r.get("closedOutside")))
-    check("Delete and start new empties the slot and opens the modes",
+    check("Start a new test does not ask again: the slot is empty and the modes open",
+          r.get("noSecondAsk") is True, r.get("noSecondAsk"))
+    check("Start a new test empties the slot and opens the modes",
           r.get("deleted") is True and r.get("modeSelect") is True, (r.get("deleted"), r.get("modeSelect")))
     check("one slot: the second saved test is the one offered and resumed; the first is gone",
-          bool(r.get("offerB")) and "Quiz" in r["offerB"] and "Question 5 of" in r["offerB"] and r.get("resumedB") is True
+          bool(r.get("offerB")) and "Mock" in r["offerB"] and "Question 5 of" in r["offerB"] and r.get("resumedB") is True
           and r.get("notA") is True and r.get("keys") == ["class26e.runsession.v1"],
           (r.get("offerB"), r.get("resumedB"), r.get("keys")))
     check("no page errors", not errors, errors[:3])
