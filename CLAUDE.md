@@ -26179,3 +26179,90 @@ reached, then four more). Everything below is on `wip/build-327`.
   (banded ring), b327-m (16/21 lines), b327-o and b325-d (found sections at
   the end), b326-d (no "how they come home" slide; no crew COUNT), and
   check-behaviour's class-days and course checks.
+
+### Build 327 (b327l) - Haptic Touch through a real switch under the finger, Nova stops reciting a rule
+
+Madison: *"Haptic Touch is not working. Please look into this"* and *"Novas
+message says it's never more than once a day? Remove that and fix that
+message some seems weird"*, with *"There's still a bunch of lag with the
+bottom tab, still some lag loading screens."* Gate: `tools/check-b327z.py`
+(z1-z11, `ONLY=`); the haptics sections are z2-z11.
+
+- **WHY THE TICK STOPPED (reported, not verified here).** `taptic()` plays
+  the iPhone's tick by flipping a `<input type=checkbox switch>` from script
+  (`label.click()`), which is what the ios-haptics package did up to v2 and
+  what worked from iOS 17.4. Apple is reported to have patched that in iOS
+  26.5: a switch flipped from script is ignored; only a real finger toggling
+  a real native switch plays the tick (ios-haptics 3.x and "Project
+  Fathom", both written after the patch and reported working on a physical
+  iPhone on 26.5). `taptic()` is KEPT as the fallback for iOS 17.4-26.4 and
+  for a tap that did not land on a switch.
+- **EVERY TAPPABLE CONTROL ON AN IPHONE CARRIES A SWITCH** (`hswAttach`, in
+  NovaSound "A REAL SWITCH UNDER THE FINGER"). `<input type=checkbox switch
+  class="nova-hsw">` is the LAST CHILD of the control (`HSW_HOSTS`: buttons,
+  `[role=button]`, the Customize tiles, the Home flares and rank bubbles),
+  absolutely placed over all of it, `opacity:0`, `aria-hidden`,
+  `tabindex=-1`, `touch-action:pan-x pan-y`. A real touch lands on it, iOS
+  plays the tick, and the CLICK bubbles to the control's own handlers
+  because the switch is inside it. A MutationObserver attaches them in idle
+  slices (`HSW_BUDGET_MS` 5, never a long task); `hswStop()` removes every
+  one and the page is exactly what it was.
+  - **Never `appearance:none`, `display:none` or `visibility:hidden` on
+    the switch** - a stripped switch plays nothing. `opacity:0` is fine.
+  - **The host is positioned by a zero-specificity rule, never inline**:
+    `:where([data-hsw]){position:relative}`. An inline `relative` set while
+    Pause was still static overrode its later `position:fixed` and moved it
+    (and the chat button beside it) 20px inside a test. Found by
+    `check-b327z` z11 on the Question screen. Never set an inline position
+    on a host.
+  - **Only controls that hold no other control** (`HSW_INNER`): a card with
+    buttons in it would have them covered. Skipped on purpose: inputs,
+    selects, labels, `.nsw` switches, `.opt` rows, a locked `.choice`,
+    anything in `.ru-blocker`, `[data-no-hsw]`.
+  - **The switch's change/input/focus/blur never leave it** (a window
+    capture listener); its click does, deliberately. Code that refuses a
+    touch that starts on an `<input>` (the question swipe, the sheet swipe,
+    the chat sheet's `sheetScrollAxes`) is told to ignore `.nova-hsw`.
+  - A touch that turns into a drag (more than 10px) leaves the switch
+    un-toggled. A tap on a switch is that tap's tick: `taptic()`'s first
+    tick is skipped for `HSW_TAP_MS` (600) so a tap never ticks twice.
+  - **The Home planet is an SVG circle and cannot hold a switch**, so a
+    round HTML box of its exact size (`.cosmic-sphere-hsw`) lies over it and
+    runs the same tap (`planetRun`, bound with `homeTapBind`).
+  - The Haptics switch in Settings calls `NovaSound.sync()` now, which
+    adds or removes the whole layer. iPhone only (`canTaptic()`); an iPad
+    or Android never gets a switch.
+- **WHAT NOBODY CAN PROMISE.** Chromium has no Taptic Engine, so the gate
+  holds the WIRING (a real native switch is there, inside, covering the
+  control, and the click reaches it, nothing moves, nothing leaks, off
+  reverts), not the buzz. Only a real iPhone on 26.5+ can say whether it is
+  felt. It plays iOS's one system tick on a DIRECT tap; a haptic asked for
+  from a timer (the grade landing, a cutscene, the XP count) has no finger
+  under it and cannot tick; a multi-tick pattern ticks once (the follow-up
+  ticks are timer-driven and are only a hope on older iOS).
+- **Cost, measured:** with an iPhone user agent at 4x CPU, twelve tab
+  switches with the layer on and off were the same within run-to-run noise
+  (home 248 against 234ms worst gap, profile 166 against 168ms; long
+  tasks 38 against 37). That is Chromium; WebKit's native switches were not
+  measurable here.
+- **Nova no longer recites a rule.** His hello said "I'll message you after
+  a rank-up, when you find something of mine, once a week with a challenge,
+  and when there's news. Never more than once a day." - a list that ran on
+  and read as terms and conditions. Now: "I'll check in when you rank up
+  or find something of mine, and I'll challenge you to a match every week.
+  You can message me too." The tooltip and the Version 9 note say the same.
+  **The scheduler still sends at most one a day and one a session** - that
+  is behaviour, not copy; only the promise is gone.
+- **Lag, profiled and NOT changed** (4x CPU, 440x956 at 3x, a used
+  account): the working tree and the committed build are within noise on
+  twelve tab switches (long tasks 27-43, 2.4-3.9s) and on LOADING TEST
+  (two frames over 50ms, worst 79-87ms; the one hitch is the 70-80ms
+  question build as the bar hands over). A tap on a tab is answered in
+  under 20ms; what is left is the new screen's build (Home heaviest, ~230ms
+  worst gap at 4x). The splash has one 1.1-1.3s main-thread stall ~1.4s in -
+  `EvaluateScript` of the main script (top level ~800ms, compile ~190ms, the
+  first Home build under it) - identical on the committed build; the splash
+  bar is a compositor animation and keeps moving through it. Nothing there
+  is a regression, and none of it was cut. If a real phone still lags, the
+  next lever is to defer the first Home build until after the splash's
+  first paint, which changes boot order and wants a device to judge.

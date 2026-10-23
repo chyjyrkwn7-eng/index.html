@@ -32218,6 +32218,17 @@
      the button took focus as it landed. Nova's buttons carry no ring: the press
      and the lit face are their feedback, and there is nothing to tab to here. */
   .nova-talk .nt-go, .nova-talk .nt-go:focus, .nova-talk .nt-go:focus-visible, .intro-pop .intro-go:focus-visible{ outline:none; }
+
+/* A REAL SWITCH UNDER THE FINGER (build 328, iPhone only, see NovaSound).
+   Invisible, the size of the control it sits in, and still a native iOS
+   switch: no appearance:none, no display:none, no visibility:hidden. */
+:where([data-hsw]){position:relative}
+.nova-hsw{position:absolute;left:0;top:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;
+  pointer-events:auto;z-index:2;touch-action:pan-x pan-y;-webkit-tap-highlight-color:transparent;cursor:pointer}
+.cosmic-flare-dot > .nova-hsw{left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;clip-path:circle(50%)}
+.cosmic-icon-badge > .nova-hsw,.cosmic-sphere-hsw > .nova-hsw{clip-path:circle(50%)}
+.cosmic-sphere-hsw{position:absolute;left:50%;top:47.368%;width:28.889%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+  -webkit-tap-highlight-color:transparent}
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -69820,6 +69831,156 @@ const NovaSound = (function(){
   };
   ["touchend", "pointerup"].forEach(ev => window.addEventListener(ev, firePending, { capture: true, passive: true }));
   ["pointercancel", "touchcancel"].forEach(ev => window.addEventListener(ev, () => { pendingKind = null; }, { capture: true, passive: true }));
+  /* ---- A REAL SWITCH UNDER THE FINGER (build 328) ----
+     Madison: "Haptic Touch is not working. Please look into this."
+     Why: Apple patched the script-driven switch tick in iOS 26.5 (it is
+     what taptic() above does, and what the ios-haptics package did up to
+     v2) - a switch flipped from script is ignored there now, and ONLY a
+     real finger toggling a real <input type=checkbox switch> plays the
+     tick (ios-haptics 3.x, "Project Fathom", both written after the patch
+     and reported working on a physical iPhone on 26.5). So every
+     tappable control on an iPhone gets a real native switch laid over it
+     as its last child: opacity 0, the whole size of the control, a real
+     touch lands on it, the tap toggles it, iOS plays the tick - and the
+     click bubbles up to the control's own handlers exactly as if the
+     control had been tapped, because the switch is INSIDE it.
+     The rules this lives by, each one a way it could break the app:
+     - iPhone only (canTaptic), and only where the control holds no other
+       control (a card with buttons in it would have them covered);
+     - never `appearance:none` and never display:none/visibility:hidden -
+       a stripped switch plays nothing (Fathom: "native appearance
+       required"); opacity 0 is fine;
+     - the control is marked [data-hsw] and a :where() rule (zero specificity)
+       makes it relative ONLY if the page itself sets no position;
+     - the switch's change/input/focus events never leave it (a "toggle"
+       sound, a focus handler or a "tap outside" must never see them) -
+       the click does leave it, on purpose;
+     - code that refuses a touch that starts on an <input> (the question
+       swipe, the sheet swipe) is told to ignore .nova-hsw;
+     - a touch that turns into a drag leaves the switch un-toggled;
+     - this replaces taptic()'s first tick for a tap that landed on one
+       (two ticks would be a buzz), keeps it for a tap that did not, and
+       the Haptics switch in Settings turns the whole layer off.
+     It is felt on a phone only: Chromium has no Taptic Engine, so the
+     gate holds the wiring (the switch is there, real, native, inside,
+     clickable, and the click reaches the control), not the buzz. */
+  const HSW_HOSTS = "button, [role='button'], .avatarchar-option, .swatch, .banner-opt, .hfx-opt, .cosmic-flare-dot, .cosmic-icon-badge, .cosmic-sphere-hsw";
+  const HSW_INNER = "a, button, input:not(.nova-hsw), select, textarea, label, [role='button'], [role='switch'], [role='slider']";
+  const HSW_TAP_MS = 600;            /* how long after a finger lands on a switch a tick counts as that tap's */
+  const HSW_BUDGET_MS = 5;           /* per slice: attaching is never a long task */
+  let hswDownAt = -1e9, hswMoved = false, hswY0 = 0, hswX0 = 0;
+  let hswQueue = new Set(), hswTimer = 0, hswObs = null;
+  const hswNow = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
+  const hswIs = t => !!(t && t.classList && t.classList.contains("nova-hsw"));
+  function hswOk(h){
+    if(!h || h.nodeType !== 1 || h.namespaceURI !== "http://www.w3.org/1999/xhtml") return false;
+    if(h.tagName === "INPUT" || h.tagName === "SELECT" || h.tagName === "TEXTAREA" || h.tagName === "LABEL") return false;
+    /* nothing to tick for: off, answered, or a control that is only a part of another */
+    if(h.disabled || h.matches(".choice.locked, [data-no-hsw]")) return false;
+    if(h.closest(".nsw, .opt, label, .ru-blocker, [data-no-hsw]")) return false;
+    if(h.querySelector(HSW_INNER)) return false;
+    return true;
+  }
+  function hswAttach(h){
+    const sw = document.createElement("input");
+    sw.type = "checkbox";
+    sw.setAttribute("switch", "");
+    sw.className = "nova-hsw";
+    sw.tabIndex = -1;
+    sw.setAttribute("aria-hidden", "true");
+    /* The switch is absolutely placed, so its host has to be positioned. That
+       is a ZERO-SPECIFICITY rule on [data-hsw] (:where, end of the stylesheet),
+       never an inline style: a host the page positions itself (Pause is fixed
+       on a phone from the moment a test is pinned) keeps whatever the page
+       says, and one that is only static becomes relative with no offset.
+       An inline "relative", set while Pause was still static, overrode its
+       later "fixed" and moved it 20px - and with it the chat button. */
+    h.setAttribute("data-hsw", "");
+    h.__hsw = sw;
+    h.appendChild(sw);
+  }
+  function hswFlush(){
+    hswTimer = 0;
+    if(!hswObs) { hswQueue.clear(); return; }
+    const t0 = hswNow();
+    while(hswQueue.size){
+      const n = hswQueue.values().next().value;
+      hswQueue.delete(n);
+      if(!n.isConnected) continue;
+      const hosts = [];
+      if(n.matches(HSW_HOSTS)) hosts.push(n);
+      n.querySelectorAll(HSW_HOSTS).forEach(x => hosts.push(x));
+      const todo = hosts.filter(h => !(h.__hsw && h.__hsw.parentNode === h) && hswOk(h));
+      todo.forEach(hswAttach);
+      if(hswNow() - t0 > HSW_BUDGET_MS) break;
+    }
+    if(hswQueue.size) hswSchedule();
+  }
+  function hswSchedule(){
+    if(hswTimer || !hswObs) return;
+    /* a beat after a screen is mounted, never inside its first frames: a
+       control with no switch yet still works, it only waits to tick */
+    hswTimer = setTimeout(() => {
+      hswTimer = 0;
+      if(typeof requestIdleCallback === "function") requestIdleCallback(hswFlush, { timeout: 300 });
+      else hswFlush();
+    }, 90);
+  }
+  function hswQueueAdd(n){
+    if(!n || n.nodeType !== 1 || hswIs(n)) return;
+    hswQueue.add(n);
+    hswSchedule();
+  }
+  function hswStart(){
+    if(hswObs || typeof MutationObserver === "undefined" || !document.documentElement) return;
+    hswObs = new MutationObserver(recs => {
+      for(const m of recs){
+        m.addedNodes.forEach(hswQueueAdd);
+        /* a control whose contents were replaced lost its switch with them */
+        if(m.removedNodes.length && m.target && m.target.nodeType === 1 && !hswIs(m.target)){
+          for(const r of m.removedNodes){ if(hswIs(r)){ hswQueueAdd(m.target); break; } }
+        }
+      }
+    });
+    hswObs.observe(document.documentElement, { childList: true, subtree: true });
+    hswQueueAdd(document.body || document.documentElement);
+  }
+  function hswStop(){
+    if(hswObs){ hswObs.disconnect(); hswObs = null; }
+    hswQueue.clear();
+    if(hswTimer){ clearTimeout(hswTimer); hswTimer = 0; }
+    document.querySelectorAll(".nova-hsw").forEach(sw => {
+      const h = sw.parentNode;
+      if(h){ h.removeAttribute("data-hsw"); h.__hsw = null; }
+      sw.remove();
+    });
+  }
+  /* Haptics on (and an iPhone): the switches are there; off or anywhere else:
+     the page is exactly as it was without them, children and all */
+  function hswSync(){
+    try{ if(canTaptic() && hapticsWanted()) hswStart(); else hswStop(); }catch(e){}
+  }
+  ["pointerdown", "touchstart"].forEach(ev => window.addEventListener(ev, e => {
+    if(!isTouchDown(e)) return;
+    if(hswIs(e.target)){
+      const pt = e.touches ? e.touches[0] : e;
+      hswDownAt = hswNow(); hswMoved = false;
+      hswY0 = pt ? pt.clientY : 0; hswX0 = pt ? pt.clientX : 0;
+    } else if(ev === "pointerdown"){ hswDownAt = -1e9; }
+  }, { capture: true, passive: true }));
+  window.addEventListener("pointermove", e => {
+    if(hswMoved || !hswIs(e.target)) return;
+    if(Math.abs(e.clientY - hswY0) > 10 || Math.abs(e.clientX - hswX0) > 10){ hswMoved = true; try{ e.target.checked = false; }catch(err){} }
+  }, { capture: true, passive: true });
+  ["pointerup", "pointercancel"].forEach(ev => window.addEventListener(ev, e => {
+    if(hswIs(e.target) && (hswMoved || ev === "pointercancel")){ try{ e.target.checked = false; }catch(err){} }
+    hswMoved = false;
+  }, { capture: true, passive: true }));
+  /* the switch's own change/focus never reaches the app; its click does */
+  ["change", "input", "focus", "focusin", "blur", "focusout"].forEach(ev => window.addEventListener(ev, e => {
+    if(hswIs(e.target)) e.stopImmediatePropagation();
+  }, true));
+  const hswTapped = () => hswNow() - hswDownAt < HSW_TAP_MS;
   const TAPTIC_RANK = { tick: 0, tap: 1, select: 1, toggle: 1, swipe: 1, heavy: 2, success: 3, error: 3, boom: 4, celebrate: 5 };
   const hapticsWanted = () => !!(theme && (canTaptic() ? theme.haptics !== false : theme.vibrate));
   function haptic(kind){
@@ -69832,7 +69993,10 @@ const NovaSound = (function(){
         return;
       }
       const n = TAPTIC_TICKS[kind] || 1;
-      if(!taptic()) return;
+      /* a tap that landed on a real switch gets its tick from that switch
+         (the only kind that works on iOS 26.5+); do not tick twice */
+      const first = hswTapped() ? true : taptic();
+      if(!first) return;
       /* the rest of a pattern a beat apart; WebKit carries a tap's gesture
          into a short timer, and if it does not they simply do not buzz */
       for(let i = 1; i < n; i++) setTimeout(() => { hapticAt = -1e9; taptic(); }, i * 85);
@@ -70051,6 +70215,7 @@ const NovaSound = (function(){
 
   /* settings changed (the switch, the slider, a sync from another device) */
   function sync(){
+    hswSync();
     if(!on()){
       stopAmbience(true);
       st.voices.slice().forEach(v => kill(v, .05));
@@ -70115,7 +70280,7 @@ const NovaSound = (function(){
   setTimeout(() => { prewarmArmed = true; later(prewarm); }, 2500);
 
   return {
-    play, startAmbience, stopAmbience, sync, render, renderAmbience, haptic, canVibrate, canTaptic,
+    play, startAmbience, stopAmbience, sync, render, renderAmbience, haptic, canVibrate, canTaptic, hswCount: () => document.querySelectorAll('.nova-hsw').length,
     catalogue: SOUND_CATALOGUE, ambience: SOUND_AMBIENCE,
     /* for tools and the test page */
     state: () => ({ on: on(), hasContext: !!st.ctx, ctxState: st.ctx ? st.ctx.state : null, voices: st.voices.length,
@@ -70343,6 +70508,7 @@ function buildSoundSettings(){
     const hapRow = mkRow("Haptics", "A light tap you feel for buttons, answers and switches. Follows your iPhone's System Haptics setting.", theme.haptics !== false, on => {
       theme.haptics = on;
       saveTheme();
+      NovaSound.sync();
       if(on) NovaSound.haptic("tap");
       showToast(on ? "Haptics on." : "Haptics off.");
     });
@@ -75010,7 +75176,7 @@ const RELEASE_NOTES = [
       { label: "Meet Nova", items: [
         { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. A planet he was studying exploded and scattered his badges, flares and crew across this system. Every unit you master finds a badge, every rank relights a flare, and every character you find is one of his crew come home." },
         { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "He Meets Everyone", body: "Everybody meets Nova once. He tells the story, goes over your progress and shows you what has changed." },
-        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova is your friend now. He sends news when you rank up or find something, invites you to a match once a week, and never more than one message a day." },
+        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova is your friend now. He checks in when you rank up or find something of his, and challenges you to a match every week. You can message him too." },
         { icon: buildTrophyIcon, color: "#F5C518", title: "The Weekly Recap", body: "Every Tuesday on Home, Nova presents last week's top three, with comebacks and photo finishes, and hands out honorable mentions." },
         { icon: buildDevicesIcon, color: "#E23B3B", title: "Challenge Nova", body: "Invite Nova to a Virtual Room, or accept his weekly challenge in your chats. He answers in two to four seconds and almost never misses. Beat him in any game and the Sheriff is yours." }
       ]},
@@ -78037,6 +78203,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     }
   }
   const sphere = document.createElementNS(svgNS, "circle");
+  let planetHsw = null;
   sphere.setAttribute("cx", 180); sphere.setAttribute("cy", 150); sphere.setAttribute("r", 52);
   sphere.setAttribute("fill", "url(#cosmicSphereGrad)");
   if(useTierIcons){
@@ -78051,7 +78218,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
        touch itself; the caption says where you stand, and tapped again
        while it is up, what is next (round three - the "....." box went
        with the other boxes) */
-    homeTapBind(sphere, (e) => {
+    const planetRun = (e) => {
       playSound("home.planet");
       try{ planetTapFx(wrap, e); }catch(err){}
       /* and at Supernova, the cutscene's streak round the rings (b321h) */
@@ -78061,7 +78228,20 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
         homeCaptionState.planetN = again ? homeCaptionState.planetN + 1 : 0;
         homeCaptionShow(homePanelOf(wrap), homeTapCopyPlanet(homeCaptionState.planetN), "planet");
       }catch(err){}
-    });
+    };
+    homeTapBind(sphere, planetRun);
+    /* On an iPhone the planet is tapped through a real switch like every
+       other control (NovaSound, "A REAL SWITCH UNDER THE FINGER"): an SVG
+       circle cannot hold one, so a round HTML box of its exact size lies
+       over it and answers the same touch the same way. */
+    try{
+      if(NovaSound.canTaptic()){
+        planetHsw = document.createElement("div");
+        planetHsw.className = "cosmic-sphere-hsw";
+        planetHsw.setAttribute("aria-hidden", "true");
+        homeTapBind(planetHsw, planetRun);
+      }
+    }catch(err){}
   }
   svg.appendChild(sphere);
   /* A bright, warm corona right at the sphere's own boundary instead
@@ -78290,7 +78470,9 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   if(ringOld) wrap.appendChild(ringOld);
   if(ringLayer) wrap.appendChild(ringLayer);
   if(ringDraw) wrap.appendChild(ringDraw);
-  wrap.append(svg, animLayer, orbitLayer, innerOrbitLayer);
+  wrap.append(svg);
+  if(planetHsw) wrap.append(planetHsw);
+  wrap.append(animLayer, orbitLayer, innerOrbitLayer);
   /* The sphere's life, on the compositor: two soft light pools drifting
      over the surface inside a circular window the exact size of the
      sphere. Transform and opacity only, so it costs nothing per frame
@@ -82153,7 +82335,7 @@ function startSimpleTour(steps, onComplete, _waitedMs){
   document.body.appendChild(tooltip);
   let tourTyper = null;
   tooltip.addEventListener("click", e => {
-    if(e.target === nextBtn) return;
+    if(e.target === nextBtn || nextBtn.contains(e.target)) return;
     if(tourTyper) tourTyper.finish();
   });
 
@@ -85906,10 +86088,13 @@ function novaRankLine(idx, extra){
   return t;
 }
 function novaHelloLine(fromIntro){
+  /* Build 328: no promise about how often he writes ("Never more than once
+     a day" read as a rule he was reciting, and the list before it ran on).
+     What he says is what to expect, in his own voice. */
   const n = novaName();
   return fromIntro
-    ? "Hello, " + n + "! It’s Nova. We’re friends now, so this is where you’ll find me. I’ll message you after a rank-up, when you find something of mine, once a week with a challenge, and when there’s news. Never more than once a day. You can message me too."
-    : "Hello again, " + n + ". It’s Nova. I’ve added you as a friend, so you’ll find me here in your chats now. I’ll message you after a rank-up, when you find something of mine, once a week with a challenge, and when there’s news. Never more than once a day. You can message me too, when I’m in range.";
+    ? "Hello, " + n + "! It’s Nova. We’re friends now, so this is where you’ll find me. I’ll check in when you rank up or find something of mine, and I’ll challenge you to a match every week. You can message me too."
+    : "Hello again, " + n + ". It’s Nova. I’ve added you as a friend, so you’ll find me here in your chats now. I’ll check in when you rank up or find something of mine, and I’ll challenge you to a match every week. You can message me too, when I’m in range.";
 }
 /* ---- THE WEEK'S CHALLENGE ----
    "ensure you get like a challenge to play him once a week, he will invite
@@ -88342,7 +88527,7 @@ function startChatDock(){
   function sheetScrollAxes(t){
     const free = { x: false, y: false };
     for(let el = t; el && el !== panel && el.nodeType === 1; el = el.parentElement){
-      if(/^(INPUT|TEXTAREA)$/.test(el.tagName)){ free.x = true; if(el.tagName === "TEXTAREA" && el.scrollHeight > el.clientHeight + 1) free.y = true; continue; }
+      if(/^(INPUT|TEXTAREA)$/.test(el.tagName) && !el.classList.contains("nova-hsw")){ free.x = true; if(el.tagName === "TEXTAREA" && el.scrollHeight > el.clientHeight + 1) free.y = true; continue; }
       const cs = getComputedStyle(el);
       if(!free.y && /auto|scroll/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 1) free.y = true;
       if(!free.x && /auto|scroll/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 1) free.x = true;
@@ -96462,7 +96647,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327k";
+const APP_BUILD = "2026-10-23-327l";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -118921,7 +119106,7 @@ function attachHoldDetail(el, detail){
    when it would change. A quick flick down closes it too. */
 function attachSheetSwipe(sheet, onDismiss){
   let y0 = null, s0 = 0, mode = null, dy = 0, raf = 0, want = null, lastY = 0, lastT = 0, vel = 0;
-  const skip = t => !!(t && t.closest && t.closest('input, textarea, select, [role="slider"]'));
+  const skip = t => !!(t && t.closest && t.closest('input:not(.nova-hsw), textarea, select, [role="slider"]'));
   const flush = () => {
     raf = 0;
     if(!want) return;
@@ -129783,7 +129968,7 @@ const SWIPE_SURFACE = document;
    just applied earlier so the drag is never claimed in the first
    place), and the touch must not have STARTED on something that owns
    its own drag - a slider, a text field, a scrollable box. */
-const SWIPE_BLOCKING_TARGET = "input, textarea, select, [contenteditable]";
+const SWIPE_BLOCKING_TARGET = "input:not(.nova-hsw), textarea, select, [contenteditable]";
 function swipeGestureAllowed(target){
   if(!document.querySelector(".choices")) return false;
   /* the daily question has nothing to swipe to, and a thumb that drifts a few

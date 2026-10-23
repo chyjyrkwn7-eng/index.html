@@ -51,7 +51,10 @@ def init_for(kind):
     if kind == "android":
         s += "navigator.vibrate = navigator.vibrate || (()=>true);"
     # what the app's own document-level listeners would see
-    s += """window.__docSeen = [];
+    s += """window.__hswFlips = 0; window.__flipEv = [];
+      window.addEventListener('change', e => { const t = e.target; if(t && t.classList && t.classList.contains('nova-hsw')){ window.__hswFlips++; window.__flipEv.push(window.__lastEvName || 'none'); } }, true);
+      ['pointerdown','pointerup','touchstart','touchend','click'].forEach(ev => window.addEventListener(ev, () => { window.__lastEvName = ev; }, true));
+      window.__docSeen = [];
       ['click','change','input'].forEach(ev => document.addEventListener(ev, e => {
         const t = e.target; window.__docSeen.push(ev + ':' + (t && (t.className || t.tagName)));
       }, true));"""
@@ -103,17 +106,19 @@ def z2_z3_z4(br):
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=init_for("iphone"), touch=True, dpr=2)
     try:
         check("z2 a run starts", start_run(pg))
-        pg.evaluate("() => { window.__novaTaptic = 0; window.__docSeen = []; }")
+        pg.evaluate("() => { window.__novaTaptic = 0; window.__hswFlips = 0; window.__docSeen = []; }")
         # read at the end of the tap's own click dispatch (window, bubbling):
-        # the tick has to happen inside the gesture, not on a timer after it
+        # a script tick has to happen inside the gesture, not on a timer after it
         pg.evaluate("""() => { window.__inClick = null; window.addEventListener('click', e => {
           if(e.target && e.target.closest && e.target.closest('.qpanel .choice')) window.__inClick = window.__novaTaptic || 0; }); }""")
         pg.tap(".qpanel .choice")
         pg.wait_for_timeout(250)
-        got = pg.evaluate("() => window.__novaTaptic || 0")
-        check("z2 a tap on an answer flips the hidden switch", got >= 1, str(got))
-        inside = pg.evaluate("() => window.__inClick")
-        check("z2 ...inside the tap's own click handler", inside is not None and inside >= 1, str(inside))
+        got = pg.evaluate("() => (window.__novaTaptic || 0) + (window.__hswFlips || 0)")
+        check("z2 a tap on an answer ticks (the switch under the finger, or the script one where it missed)", got >= 1, str(got))
+        inside = pg.evaluate("() => ({ click: window.__inClick, flips: window.__hswFlips || 0, ev: window.__flipEv.slice(0, 3) })")
+        check("z2 ...inside the tap's own gesture (the switch flips on the tap itself; a script tick is inside the click)",
+              inside["flips"] >= 1 or (inside["click"] is not None and inside["click"] >= 1), str(inside))
+        pg.wait_for_timeout(700)   # no tap on a switch is "recent" any more: the script form below is the fallback
         # MOVED IN 327 round 8: the switch is ios-haptics' own form now - a
         # fresh display:none label in <head>, clicked and removed per tick.
         el = pg.evaluate("""() => { let got = null;
@@ -142,9 +147,10 @@ def z2_z3_z4(br):
         if pg.evaluate("() => !!document.querySelector('#nextbtn') && !document.querySelector('#nextbtn').hidden"):
             pg.evaluate("() => document.querySelector('#nextbtn').click()")
             pg.wait_for_timeout(900)
+        pg.evaluate("() => { window.__hswFlips = 0; window.__novaTaptic = 0; }")
         pg.tap(".qpanel .choice")
         pg.wait_for_timeout(250)
-        got = pg.evaluate("() => window.__novaTaptic || 0")
+        got = pg.evaluate("() => (window.__novaTaptic || 0) + (window.__hswFlips || 0)")
         check("z2 with sound off, a tap still ticks", got >= 1, str(got))
         # focus kept
         r = pg.evaluate("""() => { const f = document.createElement('input'); f.type = 'text'; f.id = 'zfield';
@@ -170,8 +176,8 @@ def z5(br):
         pg.wait_for_timeout(500)
         st = pg.evaluate("() => ({ t: theme.haptics, saved: JSON.parse(localStorage.getItem('class26e.drill.v1')||'{}').theme })")
         check("z5 turning it off saves haptics:false", st["t"] is False and st["saved"] and st["saved"].get("haptics") is False, str(st)[:200])
-        pg.evaluate("() => { window.__novaTaptic = 0; NovaSound.play('ui.tap.primary'); NovaSound.haptic('tap'); }")
-        got = pg.evaluate("() => window.__novaTaptic || 0")
+        pg.evaluate("() => { window.__novaTaptic = 0; window.__hswFlips = 0; NovaSound.play('ui.tap.primary'); NovaSound.haptic('tap'); }")
+        got = pg.evaluate("() => (window.__novaTaptic || 0) + (window.__hswFlips || 0)")
         check("z5 off: nothing flips", got == 0, str(got))
         # the seed is re-written on every navigation, so read it back the way
         # a reload does: loadTheme() from the saved account
@@ -260,6 +266,10 @@ def z8(br):
           const orig = HTMLLabelElement.prototype.click;
           const op = window.playSound; window.__ids = [];
           HTMLLabelElement.prototype.click = function(){ if(this.matches('label.nova-haptic')) window.__tk.push((window.__lastEv || 'none')); return orig.apply(this, arguments); };
+          /* a tap that lands on a switch under the finger flips it: that is the tick on an iPhone with the 26.5 patch */
+          /* counted on the CLICK that lands on it, not its change event: a card's button removes its own card in its click handler, and a
+             removed input fires no change - but the finger did land on the real switch, which is the whole of what an iPhone needs */
+          window.addEventListener('click', e => { if(e.target && e.target.classList && e.target.classList.contains('nova-hsw')) window.__tk.push('click'); }, true);
           const ps = NovaSound.play; NovaSound.play = function(id){ window.__ids.push(id); return ps.apply(this, arguments); };
           ['pointerdown','pointerup','touchstart','touchend','click'].forEach(ev => window.addEventListener(ev, () => { window.__lastEv = ev; }, true)); }""")
         up = pg.wait_for_selector("#nova-intro", timeout=20000) if pg.evaluate("()=>!!document.getElementById('nova-intro')") or True else None
@@ -318,12 +328,231 @@ def z8(br):
     ctx.close()
 
 
+HSW_STATE = """() => { const all = [...document.querySelectorAll('.nova-hsw')];
+  const cs = e => getComputedStyle(e);
+  const tabs = [...document.querySelectorAll('.bottomtab')];
+  return { n: all.length, count: NovaSound.hswCount ? NovaSound.hswCount() : null,
+    tabsWith: tabs.filter(t => t.lastElementChild && t.lastElementChild.classList.contains('nova-hsw')).length, tabs: tabs.length,
+    native: all.length && all.every(e => e.tagName === 'INPUT' && e.type === 'checkbox' && e.hasAttribute('switch')),
+    hidden: all.filter(e => { const c = cs(e); return c.display === 'none' || c.visibility === 'hidden' || c.appearance === 'none' || c.webkitAppearance === 'none'; }).length,
+    opaque: all.filter(e => parseFloat(cs(e).opacity) > 0.02).length,
+    badParent: all.filter(e => !e.parentElement || e.parentElement.lastElementChild !== e).length,
+    nested: all.filter(e => e.parentElement && e.parentElement.closest('.nova-hsw')).length }; }"""
+
+
+def z9(br):
+    """The real switch under the finger (build 328 / 327l): iOS 26.5 stopped
+    ticking for a switch flipped from script; a real finger on a real
+    native switch still does. Chromium cannot feel it - this holds the
+    wiring: it is there, native, inside its control, covering it, and the
+    tap still reaches the control's own handlers."""
+    # --- iPhone: present, native, invisible, the whole size of its control
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=init_for("iphone"), touch=True, dpr=2)
+    try:
+        pg.evaluate("() => showHome()")
+        pg.wait_for_timeout(1800)
+        r = pg.evaluate(HSW_STATE)
+        check("z9 iPhone: switches are laid over the controls", r["n"] >= 6 and r["count"] == r["n"], str(r))
+        check("z9 iPhone: every tab has one as its last child", r["tabs"] >= 4 and r["tabsWith"] == r["tabs"], str(r))
+        check("z9 iPhone: they are real native switches (not stripped, not hidden)", r["native"] and r["hidden"] == 0, str(r))
+        check("z9 iPhone: and invisible (opacity 0)", r["opaque"] == 0, str(r))
+        check("z9 iPhone: last child of the control, never nested", r["badParent"] == 0 and r["nested"] == 0, str(r))
+        # the switch covers the control's padding box (inset:0), so a 1px border
+        # shows as 2px at most; a secret flare's switch is its 44px tap disc
+        geo = pg.evaluate("""() => [...document.querySelectorAll('.nova-hsw')].map(e => { const a = e.getBoundingClientRect(), b = e.parentElement.getBoundingClientRect();
+          const flare = e.parentElement.classList.contains('cosmic-flare-dot');
+          if(flare) return (a.width >= b.width - 1 && a.height >= b.height - 1) ? 0 : 99;
+          return Math.max(Math.abs(a.width - b.width), Math.abs(a.height - b.height), Math.abs(a.left - b.left), Math.abs(a.top - b.top)); }).filter(d => d > 2.3).length""")
+        check("z9 iPhone: each covers its control (within its border)", geo == 0, str(geo))
+        planet = pg.evaluate("() => { const p = document.querySelector('.cosmic-sphere-hsw'); return p ? { has: !!p.querySelector('.nova-hsw'), w: p.getBoundingClientRect().width } : null; }")
+        check("z9 iPhone: Home's planet has its own overlay", planet and planet["has"] and planet["w"] > 60, str(planet))
+
+        # --- a real tap on a tab reaches the tab's own handler through the switch
+        pg.evaluate("""() => { window.__clickT = []; window.addEventListener('click', e => { window.__clickT.push(e.target.className || e.target.tagName); }, true);
+          window.__docSeen = []; }""")
+        box = pg.evaluate("() => { const r = document.getElementById('bottomtab-profile').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
+        pg.touchscreen.tap(box[0], box[1])
+        pg.wait_for_timeout(1200)
+        seen = pg.evaluate("() => ({ clicks: window.__clickT, screen: !!document.querySelector('#stage .screen-profile'), leak: window.__docSeen.filter(x => /^(change|input):/.test(x)) })")
+        check("z9 a tap on a tab lands on the switch", any("nova-hsw" in str(c) for c in seen["clicks"]), str(seen))
+        check("z9 ...and the tab still navigates (the click reached it)", seen["screen"], str(seen))
+        check("z9 ...and no change/input event leaves the switch", not seen["leak"], str(seen))
+        check("z9 ...and the switch is left unchecked or reset (never stuck on)", pg.evaluate("() => [...document.querySelectorAll('.nova-hsw')].filter(e => e.checked).length") <= 1)
+
+        # --- a run: answers get switches, a tap on one still answers
+        check("z9 a run starts", start_run(pg))
+        pg.wait_for_timeout(700)
+        ch = pg.evaluate("""() => { const c = [...document.querySelectorAll('.qpanel .choice')];
+          return { n: c.length, with: c.filter(x => x.querySelector(':scope > .nova-hsw')).length }; }""")
+        check("z9 every answer choice has a switch", ch["n"] >= 2 and ch["with"] == ch["n"], str(ch))
+        pg.evaluate("""() => { window.__novaTaptic = 0; window.__clickT = []; window.__atClick = null;
+          window.addEventListener('click', e => { if(window.__atClick === null) window.__atClick = window.__novaTaptic || 0; }); }""")
+        pg.tap(".qpanel .choice")
+        pg.wait_for_timeout(500)
+        st = pg.evaluate("""() => ({ clicks: window.__clickT, picked: !!document.querySelector('.qpanel .choice.is-wrong-pick, .qpanel .choice.is-right-pop, .qpanel .choice.is-wrong-flash, .qpanel .choice.locked, .qpanel .choice.picked'),
+          taptic: window.__atClick })""")
+        check("z9 a tap on an answer lands on the switch and still answers", any("nova-hsw" in str(c) for c in st["clicks"]) and st["picked"], str(st))
+        check("z9 ...and that tap's first tick came from the switch, not a script flip (pattern ticks follow on a timer)", st["taptic"] == 0, str(st))
+        # a tap that did NOT land on a switch still ticks from script (the fallback)
+        pg.evaluate("() => { window.__novaTaptic = 0; }")
+        pg.wait_for_timeout(700)
+        pg.evaluate("() => { const b = document.createElement('div'); b.id = 'zplain'; document.body.appendChild(b); b.dispatchEvent(new MouseEvent('click', { bubbles: true })); b.remove(); NovaSound.haptic('tap'); }")
+        check("z9 a tap not on a switch falls back to the script tick", pg.evaluate("() => window.__novaTaptic || 0") >= 1)
+
+        # --- off: nothing left in the page, and position put back
+        pg.evaluate("() => showHome()")
+        pg.wait_for_timeout(1500)
+        pos_on = pg.evaluate("() => [...document.querySelectorAll('.nova-hsw')].map(e => e.parentElement).filter(h => h.style.position).length")
+        check("z9 hosts are positioned by a zero-specificity rule, never an inline style", pos_on == 0, str(pos_on))
+        pg.evaluate("() => { theme.haptics = false; saveTheme(); NovaSound.sync(); }")
+        pg.wait_for_timeout(300)
+        off = pg.evaluate("() => ({ n: document.querySelectorAll('.nova-hsw').length, count: NovaSound.hswCount(), marked: document.querySelectorAll('[data-hsw]').length })")
+        check("z9 Haptics off: every switch is gone", off["n"] == 0 and off["count"] == 0, str(off))
+        check("z9 Haptics off: no host left marked", off["marked"] == 0, str(off))
+        pg.evaluate("() => showProfile()")
+        pg.wait_for_timeout(900)
+        check("z9 Haptics off: new screens get none", pg.evaluate("() => document.querySelectorAll('.nova-hsw').length") == 0)
+        pg.evaluate("() => { theme.haptics = true; saveTheme(); NovaSound.sync(); }")
+        pg.wait_for_timeout(1200)
+        check("z9 Haptics back on: they return", pg.evaluate("() => document.querySelectorAll('.nova-hsw').length") > 3)
+    finally:
+        ctx.close()
+
+    # --- not on anything but an iPhone
+    for kind in ("ipad", "android", "desktop"):
+        ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=init_for(kind), touch=kind != "desktop", dpr=2)
+        try:
+            pg.evaluate("() => showHome()")
+            pg.wait_for_timeout(1500)
+            n = pg.evaluate("() => document.querySelectorAll('.nova-hsw, .cosmic-sphere-hsw').length")
+            check("z9 %s: no switches at all" % kind, n == 0, str(n))
+        finally:
+            ctx.close()
+
+
+def z10(br):
+    """What the switches must not break: the question swipe that starts on an
+    answer, a list scroll that starts on a button, a text field, a native
+    toggle, a disabled/locked control."""
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=init_for("iphone"), touch=True, dpr=2)
+    cdp = ctx.new_cdp_session(pg)
+    try:
+        check("z10 a run starts", start_run(pg))
+        pg.wait_for_timeout(900)
+        # which slot is right, which is not (the run is a drill: a wrong pick does not move on)
+        info = pg.evaluate("""() => { const qi = order[pos], oo = optionOrder(qi); const right = oo.indexOf(QUESTIONS[qi].answer);
+          const cs = [...document.querySelectorAll('.qpanel .choice')];
+          const pt = i => { const r = cs[i].getBoundingClientRect(); return [r.left + r.width * .85, r.top + r.height / 2]; };
+          return { right, wrong: right === 0 ? 1 : 0, pr: pt(right), pw: pt(right === 0 ? 1 : 0), n: cs.length,
+                   sw: cs.filter(c => c.querySelector(':scope > .nova-hsw')).length }; }""")
+        check("z10 the unanswered choices carry switches", info["sw"] == info["n"], str(info))
+        qn = "() => document.querySelector('.qnum') ? document.querySelector('.qnum').textContent : ''"
+        marks = "() => document.querySelectorAll('.qpanel .choice.is-wrong-pick, .qpanel .choice.is-wrong-flash, .qpanel .choice.is-right-pop, .qpanel .choice.locked').length"
+        # a swipe that starts on an unanswered answer (its switch) is a swipe: it answers nothing
+        cb._swipe(cdp, info["pw"][0], info["pw"][1], -330, 6, steps=10)
+        pg.wait_for_timeout(900)
+        check("z10 a swipe starting on an unanswered choice (its switch) answers nothing", pg.evaluate(marks) == 0 and pg.evaluate(qn) == "Question 1", "%s marks, %r" % (pg.evaluate(marks), pg.evaluate(qn)))
+        # answer it for real (a tap on the right one's switch), then swipe on
+        pg.touchscreen.tap(info["pr"][0], info["pr"][1])
+        pg.wait_for_timeout(1500)
+        check("z10 a tap on the right choice's switch answers it", pg.evaluate("() => { const n = document.getElementById('nextbtn'); return !!n && !n.hidden; }"), "")
+        b = pg.evaluate("() => { const c = document.querySelector('.qpanel .choice'); const r = c.getBoundingClientRect(); return [r.left + r.width * .85, r.top + r.height / 2]; }")
+        cb._swipe(cdp, b[0], b[1], -330, 6, steps=10)
+        pg.wait_for_timeout(1300)
+        after = pg.evaluate(qn)
+        check("z10 and a swipe from there advances the question", after != "Question 1" and after != "", repr(after))
+        # locked choices carry none
+        locked = pg.evaluate("() => [...document.querySelectorAll('.choice.locked')].filter(c => c.querySelector('.nova-hsw')).length")
+        check("z10 a locked choice has no switch", locked == 0, str(locked))
+        # no switch in the controls that are not 'a button'
+        pg.evaluate("() => showAppearance()")
+        pg.wait_for_timeout(1400)
+        bad = pg.evaluate("""() => ({ inInput: document.querySelectorAll('input .nova-hsw, select .nova-hsw, textarea .nova-hsw, label .nova-hsw, .nsw .nova-hsw, .opt .nova-hsw').length,
+          onHost: [...document.querySelectorAll('.nova-hsw')].filter(e => e.parentElement.querySelector('button:not(.nova-hsw), a, select, textarea, input:not(.nova-hsw)')).length })""")
+        check("z10 none inside a native control, a label, a Settings switch, or a card holding other controls", bad["inInput"] == 0 and bad["onHost"] == 0, str(bad))
+        # a scroll that starts on a button (its switch) still scrolls the page, and does not tap it
+        done = False
+        for name, js in (("Profile", "() => showProfile()"), ("Stats", "() => showProfile('stats')"), ("Leaderboard", "() => showRankings()")):
+            pg.evaluate(js)
+            pg.wait_for_timeout(1600)
+            pg.evaluate("() => window.scrollTo(0, 0)")
+            pg.wait_for_timeout(300)
+            h = pg.evaluate("() => document.documentElement.scrollHeight - innerHeight")
+            pt = pg.evaluate("""() => { const b = [...document.querySelectorAll('#stage button, #stage [role=button]')].find(x => { const r = x.getBoundingClientRect(); return x.querySelector(':scope > .nova-hsw') && r.top > 260 && r.bottom < innerHeight - 200 && r.width > 80; });
+              if(!b) return null; const r = b.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }""")
+            if h > 250 and pt:
+                pg.evaluate("() => { window.__clicks = 0; window.addEventListener('click', () => { window.__clicks++; }, true); }")
+                y0 = pg.evaluate("() => scrollY")
+                cb._swipe(cdp, pt[0], pt[1], 0, -260, steps=12)
+                pg.wait_for_timeout(600)
+                y1 = pg.evaluate("() => scrollY")
+                clicks = pg.evaluate("() => window.__clicks")
+                check("z10 %s: a drag that starts on a button scrolls the page" % name, y1 - y0 > 60, "%s -> %s" % (y0, y1))
+                check("z10 %s: ...and does not tap it" % name, clicks == 0, str(clicks))
+                done = True
+                break
+        check("z10 a scrollable page with a switch-bearing button was found", done)
+    finally:
+        ctx.close()
+
+
+def z11(br):
+    """The layer is invisible: with it on, nothing in any screen moves a pixel
+    compared with it off (same page, animations stopped at frame 0)."""
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=init_for("iphone"), touch=True, dpr=2)
+    # every element that exists when the first snapshot is taken is numbered; the
+    # second reads the same elements (new ones - a flip-book landing, a row
+    # arriving - are not what is being tested)
+    SNAP1 = """() => { document.getAnimations().forEach(a => { try{ a.pause(); a.currentTime = 0; }catch(e){} });
+      const els = [...document.querySelectorAll('body *')].filter(e => !e.classList.contains('nova-hsw') && !e.closest('.nova-hsw'));
+      window.__zEls = els; return els.map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.left * 2) / 2, Math.round(r.top * 2) / 2, Math.round(r.width * 2) / 2, Math.round(r.height * 2) / 2]; }); }"""
+    SNAP2 = """() => { document.getAnimations().forEach(a => { try{ a.pause(); a.currentTime = 0; }catch(e){} });
+      return window.__zEls.map(e => { if(!e.isConnected) return null; const r = e.getBoundingClientRect(); return [Math.round(r.left * 2) / 2, Math.round(r.top * 2) / 2, Math.round(r.width * 2) / 2, Math.round(r.height * 2) / 2]; }); }"""
+    def settle(pg):
+        last, same = -1, 0
+        for _ in range(30):
+            n = pg.evaluate("() => [...document.querySelectorAll('body *')].filter(e => !e.classList.contains('nova-hsw') && !e.closest('.nova-hsw')).length")
+            same = same + 1 if n == last else 0
+            last = n
+            if same >= 3: return
+            pg.wait_for_timeout(300)
+    screens = [("Home", "() => showHome()"), ("Profile", "() => showProfile()"), ("Stats", "() => showProfile('stats')"),
+               ("Settings", "() => showAppearance()"), ("Leaderboard", "() => showRankings()"),
+               ("Calendar", "() => showCalendarTab ? showCalendarTab() : showCalendar()"),
+               ("Units", "() => { cfg.mode = 'drill'; showSetup(); }"), ("Modes", "() => showModeSelect()"),
+               ("Friends", "() => showFriends()"), ("Badges", "() => showRanksScreen('badges')"), ("Rank", "() => showRanksScreen('ranks')"),
+               ("Customize", "() => showCustomize()"), ("Question", START)]
+    try:
+        for name, js in screens:
+            try:
+                pg.evaluate("() => { theme.haptics = true; saveTheme(); NovaSound.sync(); }")
+                pg.evaluate(js)
+                pg.wait_for_timeout(1800)
+                settle(pg)
+                on = pg.evaluate(SNAP1)
+                n_on = pg.evaluate("() => document.querySelectorAll('.nova-hsw').length")
+                pg.evaluate("() => { theme.haptics = false; saveTheme(); NovaSound.sync(); }")
+                pg.wait_for_timeout(500)
+                off = pg.evaluate(SNAP2)
+                diffs = []
+                for i, (a, b) in enumerate(zip(on, off)):
+                    if b is None: continue
+                    if any(abs(a[k] - b[k]) > .6 for k in range(4)):
+                        diffs.append("%d:%s->%s" % (i, a, b))
+                        if len(diffs) > 4: break
+                check("z11 %s: %d switches, no element moves or resizes by them" % (name, n_on), not diffs and n_on > 0, "; ".join(diffs)[:300])
+            except Exception as e:
+                check("z11 %s ran" % name, False, str(e)[:200])
+    finally:
+        ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
         try:
             only = os.environ.get("ONLY", "")
-            for fn in (z1, z2_z3_z4, z5, z6, z8):
+            for fn in (z1, z2_z3_z4, z5, z6, z8, z9, z10, z11):
                 if only and fn.__name__ not in only.split(","):
                     continue
                 try:
